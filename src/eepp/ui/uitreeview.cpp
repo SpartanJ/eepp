@@ -178,7 +178,7 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 								 const ModelIndex& index ) {
 	widget->setParent( rowWidget );
 	widget->unsetFlags( UI_AUTO_SIZE );
-	widget->setClipType( ClipType::ContentBox );
+	widget->setClipType( mDisableCellCliping ? ClipType::None : ClipType::ContentBox );
 	widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	widget->setTextAlign( UI_HALIGN_LEFT );
 	widget->setCurIndex( index );
@@ -256,8 +256,14 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 		}
 
 		Variant txt( getModel()->data( index, ModelRole::Display ) );
-		if ( txt.isValid() )
-			cell->setText( txt.toString() );
+		if ( txt.isValid() ) {
+			if ( txt.is( Variant::Type::String ) )
+				cell->setText( txt.asString() );
+			else if ( txt.is( Variant::Type::StringPtr ) )
+				cell->setText( txt.asStringPtr() );
+			else
+				cell->setText( txt.toString() );
+		}
 
 		bool hasChilds = false;
 
@@ -735,6 +741,14 @@ void UITreeView::onOpenTreeModelIndex( const ModelIndex& index, bool open ) {
 	ModelEvent event( getModel(), index, this,
 					  open ? ModelEventType::OpenTree : ModelEventType::CloseTree );
 	sendEvent( &event );
+}
+
+bool UITreeView::getDisableCellCliping() const {
+	return mDisableCellCliping;
+}
+
+void UITreeView::setDisableCellCliping( bool disableCellCliping ) {
+	mDisableCellCliping = disableCellCliping;
 }
 
 void UITreeView::onSortColumn( const size_t& ) {

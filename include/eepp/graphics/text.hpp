@@ -10,6 +10,8 @@ namespace EE { namespace Graphics {
 
 class EE_API Text {
   public:
+	static bool TextShaperEnabled;
+
 	enum Style {
 		Regular = 0,			///< Regular characters, no style
 		Bold = 1 << 0,			///< Bold characters
@@ -60,6 +62,11 @@ class EE_API Text {
 							   const Color& outlineColor, const Color& shadowColor,
 							   const Vector2f& shadowOffset );
 
+	static void drawStrikeThrough( const Vector2f& pos, Float width, Font* font, Float fontSize,
+								  const Color& fontColor, const Uint32& style,
+								  Float outlineThickness, const Color& outlineColor,
+								  const Color& shadowColor, const Vector2f& shadowOffset );
+
 	static Int32 findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font* font,
 									   const Uint32& fontSize, const String& string,
 									   const Uint32& style, const Uint32& tabWidth = 4,
@@ -68,7 +75,8 @@ class EE_API Text {
 	static Vector2f findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
 									  const String& string, const Uint32& style,
 									  const Uint32& tabWidth = 4,
-									  const Float& outlineThickness = 0.f, bool allowNewLine = true );
+									  const Float& outlineThickness = 0.f,
+									  bool allowNewLine = true );
 
 	static std::size_t findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
 													const String& string, Float maxWidth,

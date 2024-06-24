@@ -167,6 +167,7 @@ newoption { trigger = "thread-sanitizer", description ="Compile with ThreadSanit
 newoption { trigger = "address-sanitizer", description = "Compile with AddressSanitizer." }
 newoption { trigger = "time-trace", description = "Compile with time trace." }
 newoption { trigger = "disable-static-build", description = "Disables eepp static build project, this is just a helper to avoid rebuilding twice eepp while developing the library." }
+newoption { trigger = "with-text-shaper", description = "Enables text-shaping capabilities by relying on harfbuzz." }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -404,8 +405,10 @@ function build_base_cpp_configuration( package_name )
 		buildoptions{ "-fPIC" }
 	end
 
-	if is_vs() then
-		buildoptions { "/utf-8" }
+	if not is_vs() then
+		buildoptions{ "-std=c++17" }
+	else
+		buildoptions{ "/std:c++17", "/utf-8" }
 	end
 
 	set_ios_config()
@@ -737,6 +740,11 @@ function add_static_links()
 
 	if not _OPTIONS["with-dynamic-freetype"] then
 		links { "freetype-static", "libpng-static" }
+	end
+
+	if _OPTIONS["with-text-shaper"] then
+		links { "harfbuzz-static" }
+		defines { "EE_TEXT_SHAPER_ENABLED" }
 	end
 
 	links { "SOIL2-static",
@@ -1107,6 +1115,17 @@ solution "eepp"
 		includedirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng" }
 		build_base_configuration( "freetype" )
 
+	if _OPTIONS["with-text-shaper"] then
+		project "harfbuzz-static"
+			kind "StaticLib"
+			language "C++"
+			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+			defines { "HAVE_CONFIG_H" }
+			files { "src/thirdparty/harfbuzz/**.cc" }
+			includedirs { "src/thirdparty/freetype2/include", "src/thirdparty/harfbuzz" }
+			build_base_cpp_configuration( "harfbuzz" )
+	end
+
 	project "chipmunk-static"
 		kind "StaticLib"
 
@@ -1144,7 +1163,7 @@ solution "eepp"
 			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 			includedirs { "include/eepp/thirdparty/mojoAL" }
 			files { "src/thirdparty/mojoAL/*.c" }
-			build_base_cpp_configuration( "mojoal" )
+			build_base_configuration( "mojoal" )
 	end
 
 	project "efsw-static"

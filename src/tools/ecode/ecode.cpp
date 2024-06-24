@@ -3222,6 +3222,7 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 		}
 	}
 
+	mProjectTreeView->setDisableCellCliping( true );
 	mProjectTreeView->setAutoExpandOnSingleColumn( true );
 }
 
@@ -4053,6 +4054,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		"Try to set the default language the editor will be loaded. The language must be supported "
 		"in order to this option do something.",
 		{ "language" }, "" );
+	args::Flag textShaper( parser, "text-shaper", "Enables text-shaping capabilities",
+						   { "text-shaper" } );
 
 	std::vector<std::string> args;
 	try {
@@ -4110,6 +4113,9 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		std::cout << ecode::Version::getVersionFullName() << '\n';
 		return EXIT_SUCCESS;
 	}
+
+	if ( textShaper.Get() )
+		Text::TextShaperEnabled = true;
 
 	appInstance = eeNew( App, ( jobs, args ) );
 	appInstance->init( logLevel.Get(), folder ? folder.Get() : fileOrFolderPos.Get(),

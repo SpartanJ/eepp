@@ -998,6 +998,11 @@ SyntaxStyleType LinterPlugin::getMatchString( const LinterType& type ) {
 	return "error"_sst;
 }
 
+void LinterPlugin::preDraw( UICodeEditor*, const Vector2f& /*startScroll*/,
+							const Float& /*lineHeight*/, const TextPosition& /*cursor*/ ) {
+	mQuickFixRect = {};
+}
+
 void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
 									  const Float& /*fontSize*/, const Float& lineHeight ) {
 	Lock l( mMatchesMutex );
@@ -1057,24 +1062,30 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 
 		Float rLineWidth = 0;
 
-		if ( !quickFixRendered && doc->getSelection().start().line() == index &&
-			 !match.diagnostic.codeActions.empty() ) {
-			rLineWidth = editor->getLineWidth( index ) + editor->getGlyphWidth();
-			Color wcolor( editor->getColorScheme().getEditorSyntaxStyle( "warning"_sst ).color );
-			if ( nullptr == mLightbulbIcon ) {
-				mLightbulbIcon = editor->getUISceneNode()->getUIIconThemeManager()->findIcon(
-					"lightbulb-autofix" );
-			}
-			if ( nullptr != mLightbulbIcon ) {
-				Drawable* drawable = mLightbulbIcon->getSize( (int)eefloor( lineHeight ) );
-				if ( drawable == nullptr )
-					return;
+		if ( !quickFixRendered && doc->getSelection().start().line() == index ) {
+			if ( !match.diagnostic.codeActions.empty() ) {
+				rLineWidth = editor->getLineWidth( index ) + editor->getGlyphWidth();
+				Color wcolor(
+					editor->getColorScheme().getEditorSyntaxStyle( "warning"_sst ).color );
+				if ( nullptr == mLightbulbIcon ) {
+					mLightbulbIcon = editor->getUISceneNode()->getUIIconThemeManager()->findIcon(
+						"lightbulb-autofix" );
+				}
+				if ( nullptr != mLightbulbIcon ) {
+					Drawable* drawable = mLightbulbIcon->getSize( (int)eefloor( lineHeight ) );
+					if ( drawable == nullptr )
+						return;
 
-				Color oldColor( drawable->getColor() );
-				drawable->setColor( wcolor );
-				drawable->draw( { position.x + rLineWidth, position.y } );
-				drawable->setColor( oldColor );
-				quickFixRendered = true;
+					Color oldColor( drawable->getColor() );
+					drawable->setColor( wcolor );
+					Vector2f pos = { position.x + rLineWidth, position.y };
+					drawable->draw( pos );
+					mQuickFixRect = { pos, drawable->getPixelsSize() };
+					drawable->setColor( oldColor );
+					quickFixRendered = true;
+				}
+			} else {
+				mQuickFixRect = {};
 			}
 		}
 
@@ -1251,7 +1262,21 @@ void LinterPlugin::goToPrevError( UICodeEditor* editor ) {
 	}
 }
 
+bool LinterPlugin::onMouseClick( UICodeEditor* editor, const Vector2i& pos, const Uint32& flags ) {
+	if ( ( flags & EE_BUTTON_LMASK ) && mQuickFixRect.Right != 0 && mQuickFixRect.Bottom != 0 &&
+		 mQuickFixRect.contains( pos.asFloat() ) ) {
+		editor->getDocument().execute( "lsp-symbol-code-action", editor );
+		return true;
+	}
+	return false;
+}
+
 bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const Uint32& flags ) {
+	if ( mQuickFixRect.Right != 0 && mQuickFixRect.Bottom != 0 &&
+		 mQuickFixRect.contains( pos.asFloat() ) ) {
+		editor->getUISceneNode()->setCursor( Cursor::Hand );
+		return true;
+	}
 	if ( flags != 0 ) {
 		tryHideHoveringMatch( editor );
 		return false;

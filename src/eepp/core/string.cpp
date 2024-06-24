@@ -953,8 +953,15 @@ String& String::rTrim( char character ) {
 	return *this;
 }
 
-bool String::contains( const String& needle ) {
+bool String::contains( const String& needle ) const {
 	return String::contains( *this, needle );
+}
+
+bool String::isAscii() const {
+	for ( const auto& ch : mString )
+		if ( ch > 127 )
+			return false;
+	return true;
 }
 
 String::View String::view() const {

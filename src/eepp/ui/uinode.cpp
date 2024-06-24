@@ -1063,7 +1063,8 @@ void UINode::nodeDraw() {
 
 		matrixSet();
 
-		bool needsClipPlanes = isMeOrParentTreeScaledOrRotatedOrFrameBuffer();
+		bool needsClipPlanes =
+			mClip.getClipType() != ClipType::None && isMeOrParentTreeScaledOrRotatedOrFrameBuffer();
 
 		smartClipStart( ClipType::BorderBox, needsClipPlanes );
 

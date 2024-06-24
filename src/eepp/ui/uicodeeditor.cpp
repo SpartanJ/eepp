@@ -2195,6 +2195,10 @@ Vector2f UICodeEditor::getTextPositionOffset( const TextPosition& position,
 	Float lh = lineHeight ? *lineHeight : getLineHeight();
 	if ( mDocView.isWrappedLine( position.line() ) ) {
 		auto info = mDocView.getVisibleLineRange( position, allowVisualLineEnd );
+		auto firstWrappedIndex = mDocView.toVisibleIndex( position.line() );
+		Float offsetX =
+			( info.visibleIndex != firstWrappedIndex ? mDocView.getLinePadding( position.line() )
+													 : 0.f );
 		Float offsetY = mDocView.getLineYOffset( info.visibleIndex, lh );
 		if ( mFont && !mFont->isMonospace() ) {
 			const auto& line = mDoc->line( position.line() ).getText();
@@ -2204,7 +2208,8 @@ Vector2f UICodeEditor::getTextPositionOffset( const TextPosition& position,
 											 getCharacterSize(), partialLine,
 											 mFontStyleConfig.Style, mTabWidth,
 											 mFontStyleConfig.OutlineThickness, false )
-						 .x,
+							 .x +
+						 offsetX,
 					 offsetY };
 		}
 		const String& line = mDoc->line( position.line() ).getText();
@@ -2218,11 +2223,7 @@ Vector2f UICodeEditor::getTextPositionOffset( const TextPosition& position,
 				x += glyphWidth;
 			}
 		}
-		auto firstWrappedIndex = mDocView.toVisibleIndex( position.line() );
-		if ( info.visibleIndex != firstWrappedIndex ) {
-			x += mDocView.getLinePadding( position.line() );
-		}
-		return { x, offsetY };
+		return { x + offsetX, offsetY };
 	}
 
 	Float offsetY = mDocView.getLineYOffset( position.line(), lh );
@@ -3885,7 +3886,8 @@ void UICodeEditor::drawColorPreview( const Vector2f& startScroll, const Float& l
 
 void UICodeEditor::drawWhitespaces( const DocumentLineRange& lineRange, const Vector2f& startScroll,
 									const Float& lineHeight ) {
-	Float tabWidth = getTextWidth( String( "\t" ) );
+	static const String tab = "\t";
+	Float tabWidth = getTextWidth( tab );
 	Float glyphW = getGlyphWidth();
 	Color color( Color( mWhitespaceColor ).blendAlpha( mAlpha ) );
 	unsigned int fontSize = getCharacterSize();
@@ -4806,8 +4808,12 @@ void UICodeEditor::refreshTag() {
 }
 
 void UICodeEditor::updateMouseCursor( const Vector2f& position ) {
-	bool overGutter = convertToNodeSpace( position ).x < getGutterWidth();
-	getUISceneNode()->setCursor( !overGutter && !mLocked ? Cursor::IBeam : Cursor::Arrow );
+	if ( getScreenBounds().contains( position ) ) {
+		bool overGutter = convertToNodeSpace( position ).x < getGutterWidth();
+		getUISceneNode()->setCursor(
+			mHandShown ? Cursor::Hand
+					   : ( !overGutter && !mLocked ? Cursor::IBeam : Cursor::Arrow ) );
+	}
 }
 
 }} // namespace EE::UI

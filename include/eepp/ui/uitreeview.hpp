@@ -106,6 +106,10 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	virtual void onOpenTreeModelIndex( const ModelIndex& index, bool open );
 
+	bool getDisableCellCliping() const;
+
+	void setDisableCellCliping( bool disableCellCliping );
+
   protected:
 	enum class IterationDecision {
 		Continue,
@@ -121,6 +125,7 @@ class EE_API UITreeView : public UIAbstractTableView {
 	bool mExpandersAsIcons{ false };
 	bool mFocusOnSelection{ true };
 	bool mFocusSelectionDirty{ false };
+	bool mDisableCellCliping{ false };
 
 	UITreeView();
 

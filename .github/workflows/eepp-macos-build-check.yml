@@ -19,7 +19,7 @@ jobs:
         brew install wget SDL2 premake
     - name: Build
       run: |
-        premake5 gmake2
+        premake5 --with-text-shaper gmake2
         make -C make/macosx/ -e config=release_arm64
     - name: Unit Tests
       run: |

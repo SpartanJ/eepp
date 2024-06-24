@@ -15,6 +15,7 @@ newoption { trigger = "thread-sanitizer", description = "Compile with ThreadSani
 newoption { trigger = "address-sanitizer", description = "Compile with AddressSanitizer." }
 newoption { trigger = "time-trace", description = "Compile with time tracing." }
 newoption { trigger = "disable-static-build", description = "Disables eepp static build project, this is just a helper to avoid rebuilding twice eepp while developing the library." }
+newoption { trigger = "with-text-shaper", description = "Enables text-shaping capabilities by relying on harfbuzz." }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -262,9 +263,10 @@ function build_base_cpp_configuration( package_name )
 	end
 
 	filter "action:vs*"
-		buildoptions { "/utf-8" }
+		buildoptions{ "/std:c++17", "/utf-8" }
 
 	filter "action:not vs*"
+		cppdialect "C++17"
 		buildoptions { "-Wall" }
 
 	filter "configurations:debug*"
@@ -494,6 +496,11 @@ function add_static_links()
 
 	if not _OPTIONS["with-dynamic-freetype"] then
 		links { "freetype-static", "libpng-static" }
+	end
+
+	if _OPTIONS["with-text-shaper"] then
+		links { "harfbuzz-static" }
+		defines { "EE_TEXT_SHAPER_ENABLED" }
 	end
 
 	links { "SOIL2-static",
@@ -910,6 +917,15 @@ workspace "eepp"
 		files { "src/thirdparty/freetype2/src/**.c" }
 		incdirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng" }
 		build_base_configuration( "freetype" )
+		target_dir_thirdparty()
+
+	project "harfbuzz-static"
+		kind "StaticLib"
+		language "C++"
+		defines { "HAVE_CONFIG_H" }
+		files { "src/thirdparty/harfbuzz/**.cc" }
+		incdirs { "src/thirdparty/freetype2/include", "src/thirdparty/harfbuzz" }
+		build_base_cpp_configuration( "harfbuzz" )
 		target_dir_thirdparty()
 
 	project "chipmunk-static"

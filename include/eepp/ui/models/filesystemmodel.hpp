@@ -84,6 +84,8 @@ class EE_API FileSystemModel : public Model {
 
 		const std::string& getName() const { return mName; }
 
+		const String& getDisplayName() const { return mDisplayName; }
+
 		Node* getParent() const { return mParent; }
 
 		const FileInfo& info() const { return mInfo; }
@@ -128,6 +130,7 @@ class EE_API FileSystemModel : public Model {
 
 		friend class FileSystemModel;
 		std::string mName;
+		String mDisplayName;
 		std::string mMimeType;
 		Node* mParent{ nullptr };
 		FileInfo mInfo;

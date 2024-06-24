@@ -204,7 +204,9 @@ bool SyntaxHighlighter::updateDirty( int visibleLinesCount ) {
 		mMaxWantedLine = 0;
 	} else {
 		bool changed = false;
-		Int64 max = eemax( 0LL, eemin( mFirstInvalidLine + visibleLinesCount, mMaxWantedLine ) );
+		Int64 max =
+			eemax( 0LL, eemin( eemin( mFirstInvalidLine + visibleLinesCount, mMaxWantedLine ),
+							   static_cast<Int64>( mDoc->linesCount() - 1 ) ) );
 
 		for ( Int64 index = mFirstInvalidLine; index <= max; index++ ) {
 			SyntaxState state;

@@ -4,7 +4,7 @@
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/documentview.hpp>
 
-#ifdef EE_DEBUG
+#if 0
 #define EE_VERIFY_STRUCTURAL_CONSISTENCY
 #endif
 

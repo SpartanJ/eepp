@@ -7,6 +7,7 @@
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <nlohmann/json.hpp>
 using namespace EE::Graphics;
@@ -1209,8 +1210,11 @@ void AutoCompletePlugin::resetSuggestions( UICodeEditor* editor ) {
 		mSuggestionsEditor = nullptr;
 	}
 	mSuggestions.clear();
-	if ( editor && editor->hasFocus() )
-		editor->getUISceneNode()->setCursor( !editor->isLocked() ? Cursor::IBeam : Cursor::Arrow );
+	if ( editor && editor->hasFocus() ) {
+		auto mousePos( editor->getUISceneNode()->getUIEventDispatcher()->getMousePosf() );
+		if ( editor->getScreenRect().contains( mousePos ) )
+			editor->updateMouseCursor( mousePos );
+	}
 }
 
 void AutoCompletePlugin::resetSignatureHelp() {
