@@ -720,6 +720,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setFoldsRefreshTime( const Time& foldsRefreshTime );
 
+	void updateMouseCursor( const Vector2f& position );
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -1035,8 +1037,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void findRegionsDelayed();
 
 	void refreshTag();
-
-	void updateMouseCursor( const Vector2f& position );
 };
 
 }} // namespace EE::UI

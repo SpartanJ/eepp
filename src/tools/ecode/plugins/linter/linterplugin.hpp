@@ -96,6 +96,8 @@ class LinterPlugin : public Plugin {
 
 	bool onMouseLeave( UICodeEditor*, const Vector2i&, const Uint32& );
 
+	bool onMouseClick( UICodeEditor*, const Vector2i&, const Uint32& flags );
+
 	const Time& getDelayTime() const;
 
 	void setDelayTime( const Time& delayTime );
@@ -121,10 +123,12 @@ class LinterPlugin : public Plugin {
 
 	void unregisterNativeLinter( const std::string& cmd );
 
+	void preDraw( UICodeEditor*, const Vector2f&, const Float&, const TextPosition& );
+
   protected:
 	std::vector<Linter> mLinters;
 	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
-	std::set<TextDocument*> mDocs;
+	std::unordered_set<TextDocument*> mDocs;
 	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
 	std::unordered_map<TextDocument*, std::unique_ptr<Clock>> mDirtyDoc;
 	std::unordered_map<TextDocument*, std::map<Int64, std::vector<LinterMatch>>> mMatches;
@@ -150,6 +154,7 @@ class LinterPlugin : public Plugin {
 	String::HashType mConfigHash{ 0 };
 	UIIcon* mLightbulbIcon{ nullptr };
 	std::string mErrorMsg;
+	Rectf mQuickFixRect;
 
 	LinterPlugin( PluginManager* pluginManager, bool sync );
 
