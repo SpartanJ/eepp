@@ -1,5 +1,5 @@
-#include "lspclientplugin.hpp"
 #include "../../version.hpp"
+#include "lspclientplugin.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
@@ -184,8 +184,12 @@ static LSPURIAndServer getServerURIFromTextDocumentURI( LSPClientServerManager& 
 	return { uri, manager.getOneLSPClientServer( uri ) };
 }
 
-static void sanitizeCommand( std::string& cmd ) {
-	String::replaceAll( cmd, "$NPROC", String::toString( Sys::getCPUCount() ) );
+static void sanitizeCommand( std::string& cmd, const std::string& workspaceFolder ) {
+	std::string cpucount( String::toString( Sys::getCPUCount() ) );
+	String::replaceAll( cmd, "$NPROC", cpucount );
+	String::replaceAll( cmd, "${nproc}", cpucount );
+	String::replaceAll( cmd, "$PROJECTPATH", workspaceFolder );
+	String::replaceAll( cmd, "${project_root}", workspaceFolder );
 }
 
 LSPPositionAndServer getLSPLocationFromJSON( LSPClientServerManager& manager, const json& data ) {
@@ -836,7 +840,7 @@ void LSPClientPlugin::load( PluginManager* pluginManager ) {
 	}
 }
 
-static std::string parseCommand( nlohmann::json cmd ) {
+static std::string parseCommand( nlohmann::json cmd, const std::string& workspaceFolder ) {
 	std::string command;
 	if ( cmd.is_string() ) {
 		command = cmd.get<std::string>();
@@ -852,7 +856,7 @@ static std::string parseCommand( nlohmann::json cmd ) {
 				command = cmd[platform].get<std::string>();
 		}
 	}
-	sanitizeCommand( command );
+	sanitizeCommand( command, workspaceFolder );
 	return command;
 }
 
@@ -1023,14 +1027,15 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 						lspR.shareProcessWithOtherDefinition = obj["share_process"].get<bool>();
 					}
 					if ( obj.contains( "command" ) ) {
-						lspR.command = parseCommand( obj["command"] );
+						lspR.command =
+							parseCommand( obj["command"], mManager->getWorkspaceFolder() );
 					}
 					if ( !obj.value( "command_parameters", "" ).empty() ) {
 						std::string cmdParam( obj.value( "command_parameters", "" ) );
 						if ( !cmdParam.empty() && cmdParam.front() != ' ' )
 							cmdParam = " " + cmdParam;
 						lspR.commandParameters += cmdParam;
-						sanitizeCommand( lspR.commandParameters );
+						sanitizeCommand( lspR.commandParameters, mManager->getWorkspaceFolder() );
 					}
 					if ( obj.contains( "host" ) ) {
 						lspR.host = obj.value( "host", "" );
@@ -1062,7 +1067,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 				if ( tlsp.name == use ) {
 					lsp.language = obj["language"];
 					foundTlsp = true;
-					lsp.command = parseCommand( tlsp.command );
+					lsp.command = parseCommand( tlsp.command, mManager->getWorkspaceFolder() );
 					lsp.name = tlsp.name;
 					lsp.rootIndicationFileNames = tlsp.rootIndicationFileNames;
 					lsp.url = tlsp.url;
@@ -1083,7 +1088,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			}
 		} else {
 			lsp.language = obj["language"];
-			lsp.command = parseCommand( obj["command"] );
+			lsp.command = parseCommand( obj["command"], mManager->getWorkspaceFolder() );
 			lsp.name = obj["name"];
 			lsp.url = obj.value( "url", "" );
 			lsp.host = obj.value( "host", "" );
@@ -1114,8 +1119,8 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 				lsp.rootIndicationFileNames.push_back( fn );
 		}
 
-		sanitizeCommand( lsp.command );
-		sanitizeCommand( lsp.commandParameters );
+		sanitizeCommand( lsp.command, mManager->getWorkspaceFolder() );
+		sanitizeCommand( lsp.commandParameters, mManager->getWorkspaceFolder() );
 
 		tryAddEnv( obj, lsp );
 

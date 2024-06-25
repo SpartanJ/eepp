@@ -1,5 +1,5 @@
-﻿#include "linterplugin.hpp"
-#include "../../stringhelper.hpp"
+﻿#include "../../stringhelper.hpp"
+#include "linterplugin.hpp"
 #include <algorithm>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
@@ -827,7 +827,11 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 							  const std::string& path ) {
 	Clock clock;
 	std::string cmd( linter.command );
-	String::replaceAll( cmd, "$FILENAME", "\"" + path + "\"" );
+	std::string pathstr( "\"" + path + "\"" );
+	String::replaceAll( cmd, "$FILENAME", pathstr );
+	String::replaceAll( cmd, "${file_path}", pathstr );
+	String::replaceAll( cmd, "$PROJECTPATH", mManager->getWorkspaceFolder() );
+	String::replaceAll( cmd, "${project_root}", mManager->getWorkspaceFolder() );
 	if ( linter.isNative && mNativeLinters.find( cmd ) != mNativeLinters.end() ) {
 		mNativeLinters[cmd]( doc, path );
 		return;
