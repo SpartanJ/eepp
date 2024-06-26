@@ -1137,6 +1137,8 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 		shapeAndRun( string, rFont, fontSize, style, outlineThickness,
 					 [&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t*, Uint32 glyphCount,
 						  TextShapeRun& run ) {
+						 curPos = run.pos();
+
 						 if ( index == curPos )
 							 return false;
 
@@ -1145,6 +1147,11 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 
 						 for ( std::size_t i = 0; i < glyphCount; ++i ) {
 							 hb_glyph_info_t curGlyph = glyphInfo[i];
+							 curPos = run.pos() + curGlyph.cluster;
+
+							 if ( curPos >= index )
+								 return false;
+
 							 auto curChar = string[curGlyph.cluster];
 
 							 if ( curChar == '\t' ) {
@@ -1169,13 +1176,11 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 							 }
 
 							 prevGlyphIndex = curGlyph.codepoint;
-							 curPos++;
-
-							 if ( index == curPos )
+							 if ( curPos >= index )
 								 return false;
 						 }
 
-						 if ( run.runIsNewLine() ) {
+						 if ( run.runIsNewLine() && allowNewLine ) {
 							 position.x = 0;
 							 position.y = vspace;
 						 }
@@ -1251,7 +1256,6 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( TextShaperEnabled && font->getType() == FontType::TTF ) {
 		FontTrueType* rFont = static_cast<FontTrueType*>( font );
-		Int32 it = 0;
 		bool completeRun = shapeAndRun(
 			string, rFont, fontSize, style, outlineThickness,
 			[&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t*, Uint32 glyphCount,
@@ -1286,15 +1290,15 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 
 					if ( pos.x <= width && pos.x >= lWidth && pos.y <= height &&
 						 pos.y >= lHeight ) {
-						if ( it + 1 < (Int32)tSize ) {
+						if ( run.pos() + curGlyph.cluster + 1 < tSize ) {
 							Int32 tcurDist = eeabs( pos.x - lWidth );
 							Int32 nextDist = eeabs( pos.x - width );
 							if ( nextDist < tcurDist ) {
-								nearest = ++it;
+								nearest = run.pos() + curGlyph.cluster + 1;
 								return false;
 							}
 						}
-						nearest = it;
+						nearest = run.pos() + curGlyph.cluster;
 						return false;
 					}
 
@@ -1303,13 +1307,12 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 							fpos.distance( Vector2f( width - ( width - lWidth ) * 0.5f,
 													 height - ( height - lHeight ) * 0.5f ) ) );
 						if ( curDist < minDist ) {
-							nearest = it;
+							nearest = run.pos() + curGlyph.cluster;
 							minDist = curDist;
 						}
 					}
 
 					prevGlyphIndex = curGlyph.codepoint;
-					it++;
 				}
 
 				if ( run.runIsNewLine() ) {
@@ -1318,7 +1321,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 					lHeight = height;
 					height += vspace;
 					if ( pos.x > width && pos.y <= lHeight ) {
-						nearest = it;
+						nearest = run.pos() + glyphInfo[glyphCount - 1].cluster + 1;
 						return false;
 					}
 				}

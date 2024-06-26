@@ -1,6 +1,7 @@
 
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/text.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostream.hpp>
@@ -336,7 +337,7 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 		if ( !mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() != nullptr &&
 			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
 
-			if ( isMonospace() && maxWidth == 0.f ) {
+			if ( isMonospace() && maxWidth == 0.f && !Text::TextShaperEnabled ) {
 				const Glyph& monospaceGlyph =
 					getGlyph( ' ', characterSize, bold, italic, outlineThickness );
 				maxWidth = monospaceGlyph.advance;
@@ -356,7 +357,7 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 		} else if ( !mIsEmojiFont && FontManager::instance()->getEmojiFont() != nullptr &&
 					FontManager::instance()->getEmojiFont()->getType() == FontType::TTF ) {
 
-			if ( isMonospace() && maxWidth == 0.f ) {
+			if ( isMonospace() && maxWidth == 0.f && !Text::TextShaperEnabled ) {
 				const Glyph& monospaceGlyph =
 					getGlyph( ' ', characterSize, bold, italic, outlineThickness );
 				maxWidth = monospaceGlyph.advance;

@@ -1037,6 +1037,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void findRegionsDelayed();
 
 	void refreshTag();
+
+	bool isNotMonospace() const;
 };
 
 }} // namespace EE::UI

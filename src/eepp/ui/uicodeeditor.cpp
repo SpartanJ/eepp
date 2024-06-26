@@ -1756,7 +1756,7 @@ Float UICodeEditor::getLineWidth( const Int64& docLine ) {
 		auto& line = mDoc->line( docLine ).getText();
 		Float width = 0;
 
-		if ( mFont && !mFont->isMonospace() ) {
+		if ( isNotMonospace() ) {
 			auto& line = mDoc->line( docLine );
 			auto found = mLinesWidthCache.find( docLine );
 			if ( found != mLinesWidthCache.end() && line.getHash() == found->second.first )
@@ -1772,14 +1772,14 @@ Float UICodeEditor::getLineWidth( const Int64& docLine ) {
 			width = eemax( width, curWidth );
 		}
 
-		if ( mFont && !mFont->isMonospace() ) {
+		if ( isNotMonospace() ) {
 			mLinesWidthCache[docLine] = { line.getHash(), width };
 		}
 
 		return width;
 	}
 
-	if ( mFont && !mFont->isMonospace() ) {
+	if ( isNotMonospace() ) {
 		auto& line = mDoc->line( docLine );
 		auto found = mLinesWidthCache.find( docLine );
 		if ( found != mLinesWidthCache.end() && line.getHash() == found->second.first )
@@ -2200,7 +2200,7 @@ Vector2f UICodeEditor::getTextPositionOffset( const TextPosition& position,
 			( info.visibleIndex != firstWrappedIndex ? mDocView.getLinePadding( position.line() )
 													 : 0.f );
 		Float offsetY = mDocView.getLineYOffset( info.visibleIndex, lh );
-		if ( mFont && !mFont->isMonospace() ) {
+		if ( isNotMonospace() ) {
 			const auto& line = mDoc->line( position.line() ).getText();
 			auto partialLine =
 				line.view().substr( info.range.start().column(), info.range.end().column() );
@@ -2227,7 +2227,7 @@ Vector2f UICodeEditor::getTextPositionOffset( const TextPosition& position,
 	}
 
 	Float offsetY = mDocView.getLineYOffset( position.line(), lh );
-	if ( mFont && !mFont->isMonospace() ) {
+	if ( isNotMonospace() ) {
 		return { Text::findCharacterPos(
 					 ( position.column() == (Int64)mDoc->line( position.line() ).getText().size() )
 						 ? position.column() - 1
@@ -2277,7 +2277,7 @@ Float UICodeEditor::getTextWidth( const String::View& text ) const {
 }
 
 template <typename StringType> Float UICodeEditor::getTextWidth( const StringType& line ) const {
-	if ( mFont && !mFont->isMonospace() ) {
+	if ( isNotMonospace() ) {
 		return Text::getTextWidth( mFont, getCharacterSize(), line, mFontStyleConfig.Style,
 								   mTabWidth );
 	}
@@ -2788,7 +2788,7 @@ Int64 UICodeEditor::getColFromXOffset( VisibleIndex visibleIndex, const Float& x
 						.view()
 						.substr( visibleIndexRange.start().column(), visibleIndexRange.length() );
 
-		if ( mFont && !mFont->isMonospace() ) {
+		if ( isNotMonospace() ) {
 			return visibleIndexRange.start().column() +
 				   Text::findCharacterFromPos( Vector2i( eemax( -xOffset + x, 0.f ), 0 ), true,
 											   mFont, getCharacterSize(), line,
@@ -2815,7 +2815,7 @@ Int64 UICodeEditor::getColFromXOffset( VisibleIndex visibleIndex, const Float& x
 		return visibleIndexRange.start().column() + static_cast<Int64>( line.size() ) - 1;
 	}
 
-	if ( mFont && !mFont->isMonospace() ) {
+	if ( isNotMonospace() ) {
 		return Text::findCharacterFromPos( Vector2i( x, 0 ), true, mFont, getCharacterSize(),
 										   mDoc->line( pos.line() ).getText(),
 										   mFontStyleConfig.Style, mTabWidth );
@@ -4805,6 +4805,10 @@ void UICodeEditor::findRegionsDelayed() {
 
 void UICodeEditor::refreshTag() {
 	mTagFoldRange = String::hash( mDoc->getURI().toString() + ":foldrange" );
+}
+
+bool UICodeEditor::isNotMonospace() const {
+	return ( mFont && !mFont->isMonospace() ) || Text::TextShaperEnabled;
 }
 
 void UICodeEditor::updateMouseCursor( const Vector2f& position ) {
