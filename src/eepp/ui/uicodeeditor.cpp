@@ -27,6 +27,8 @@ using namespace EE::UI::Tools;
 
 namespace EE { namespace UI {
 
+static const String notSpaceStr = "\t ";
+
 UICodeEditor* UICodeEditor::New() {
 	return eeNew( UICodeEditor, ( true, true ) );
 }
@@ -3353,7 +3355,7 @@ void UICodeEditor::drawSelectionMatch( const DocumentLineRange& lineRange,
 		 selection.end().column() >= 0 && selection.end().column() < (Int64)selectionLine.size() ) {
 		String text( selectionLine.substr(
 			selection.start().column(), selection.end().column() - selection.start().column() ) );
-		if ( !text.empty() )
+		if ( !text.empty() && text.find_first_not_of( notSpaceStr.view() ) != String::InvalidPos )
 			drawWordMatch( text, lineRange, startScroll, lineHeight, true );
 	}
 }
@@ -4424,8 +4426,10 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 			auto text( selectionLine.view().substr( selection.start().column(),
 													selection.end().column() -
 														selection.start().column() ) );
-			if ( !text.empty() )
+			if ( !text.empty() &&
+				 text.find_first_not_of( notSpaceStr.view() ) != String::InvalidPos ) {
 				selectionString = text;
+			}
 		}
 	}
 

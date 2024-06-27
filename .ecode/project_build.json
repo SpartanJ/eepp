@@ -127,7 +127,7 @@
   "eepp-linux": {
     "build": [
       {
-        "args": "--with-debug-symbols gmake --disable-static-build",
+        "args": "--with-debug-symbols --disable-static-build --with-text-shaper gmake",
         "command": "premake4",
         "working_dir": "${project_root}"
       },
