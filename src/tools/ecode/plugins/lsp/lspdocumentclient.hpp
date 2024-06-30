@@ -66,6 +66,8 @@ class LSPDocumentClient : public TextDocument::Client {
 
 	void requestCodeLens();
 
+	bool tryRequestFoldRanges( bool requestFolds );
+
   protected:
 	LSPClientServer* mServer{ nullptr };
 	LSPClientServerManager* mServerManager{ nullptr };

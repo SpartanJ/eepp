@@ -23,7 +23,7 @@ class EE_API UICodeEditorSplitter {
 
 	class EE_API Client {
 	  public:
-		virtual ~Client(){};
+		virtual ~Client() {};
 
 		virtual void onTabCreated( UITab* tab, UIWidget* widget ) = 0;
 
@@ -40,6 +40,8 @@ class EE_API UICodeEditorSplitter {
 		virtual void onDocumentSelectionChange( UICodeEditor* editor, TextDocument& doc ) = 0;
 
 		virtual void onDocumentCursorPosChange( UICodeEditor* editor, TextDocument& doc ) = 0;
+
+		virtual void onDocumentUndoRedo( UICodeEditor* editor, TextDocument& doc ) = 0;
 
 		virtual void onColorSchemeChanged( const std::string& currentColorScheme ) = 0;
 

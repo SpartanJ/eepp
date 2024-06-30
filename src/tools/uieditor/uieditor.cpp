@@ -1480,6 +1480,8 @@ void App::onDocumentModified( UICodeEditor* editor, TextDocument& doc ) {
 	}
 }
 
+void App::onDocumentUndoRedo( UICodeEditor*, TextDocument& ) {}
+
 void App::onDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
 	mSplitter->removeUnusedTab( mSplitter->tabWidgetFromEditor( editor ) );
 

@@ -34,6 +34,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	virtual void onDocumentModified( UICodeEditor*, TextDocument& );
 
+	virtual void onDocumentUndoRedo( UICodeEditor*, TextDocument& );
+
 	virtual void onDocumentSelectionChange( UICodeEditor*, TextDocument& );
 
 	virtual void onDocumentCursorPosChange( UICodeEditor*, TextDocument& ){};

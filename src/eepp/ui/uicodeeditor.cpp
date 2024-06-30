@@ -27,8 +27,6 @@ using namespace EE::UI::Tools;
 
 namespace EE { namespace UI {
 
-static const String notSpaceStr = "\t ";
-
 UICodeEditor* UICodeEditor::New() {
 	return eeNew( UICodeEditor, ( true, true ) );
 }
@@ -3346,6 +3344,7 @@ void UICodeEditor::drawMatchingBrackets( const Vector2f& startScroll, const Floa
 
 void UICodeEditor::drawSelectionMatch( const DocumentLineRange& lineRange,
 									   const Vector2f& startScroll, const Float& lineHeight ) {
+	static const String notSpaceStr = "\t ";
 	if ( !mDoc->hasSelection() )
 		return;
 	TextRange selection = mDoc->getSelection( true );
@@ -3927,7 +3926,7 @@ void UICodeEditor::drawWhitespaces( const DocumentLineRange& lineRange, const Ve
 						 mScreenPos.x &&
 					 position.x <= mScreenPos.x + mScroll.x + mSize.getWidth() ) {
 					if ( ' ' == text[i] ) {
-						cpoint->draw( Vector2f( position.x, position.y ) );
+						cpoint->draw( position );
 						position.x += glyphW;
 					} else if ( '\t' == text[i] ) {
 						adv->draw( Vector2f( position.x + tabCenter, position.y ) );
@@ -3990,7 +3989,7 @@ void UICodeEditor::drawIndentationGuides( const DocumentLineRange& lineRange,
 }
 
 void UICodeEditor::drawLineEndings( const DocumentLineRange& lineRange, const Vector2f& startScroll,
-									const Float& lineHeight ) {
+									const Float& /*lineHeight*/ ) {
 	Color color( Color( mWhitespaceColor ).blendAlpha( mAlpha ) );
 	auto fontSize = getCharacterSize();
 	GlyphDrawable* nl = mFont->getGlyphDrawable( 8628 /*'↴'*/, fontSize );
@@ -4001,8 +4000,9 @@ void UICodeEditor::drawLineEndings( const DocumentLineRange& lineRange, const Ve
 	for ( auto index = lineRange.first; index <= lineRange.second; index++ ) {
 		if ( !mDocView.isLineVisible( index ) )
 			continue;
-		Vector2f position( { startScroll.x + getLineWidth( index ) - getGlyphWidth(),
-							 startScroll.y + mDocView.getLineYOffset( index, lineHeight ) } );
+		auto offset =
+			getTextPositionOffset( { index, static_cast<Int64>( mDoc->line( index ).size() ) } );
+		Vector2f position( { startScroll.x + offset.x, startScroll.y + offset.y } );
 		nl->draw( Vector2f( position.x, position.y ) );
 	}
 }
@@ -4426,6 +4426,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 			auto text( selectionLine.view().substr( selection.start().column(),
 													selection.end().column() -
 														selection.start().column() ) );
+			static const String notSpaceStr = "\t ";
 			if ( !text.empty() &&
 				 text.find_first_not_of( notSpaceStr.view() ) != String::InvalidPos ) {
 				selectionString = text;

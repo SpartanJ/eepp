@@ -152,19 +152,21 @@ std::string App::titleFromEditor( UICodeEditor* editor ) {
 void App::updateEditorTabTitle( UICodeEditor* editor ) {
 	if ( editor == nullptr )
 		return;
-	std::string title( titleFromEditor( editor ) );
 	if ( editor->getData() ) {
 		UITab* tab = (UITab*)editor->getData();
-		tab->setText( title );
+		tab->setText( editor->getDocument().getFilename() );
+
+		bool dirty = editor->getDocument().isDirty();
+		tab->removeClass( dirty ? "tab_clear" : "tab_modified" );
+		tab->addClass( dirty ? "tab_modified" : "tab_clear" );
 	}
 }
 
 void App::updateEditorTitle( UICodeEditor* editor ) {
 	if ( editor == nullptr )
 		return;
-	std::string title( titleFromEditor( editor ) );
 	updateEditorTabTitle( editor );
-	setAppTitle( title );
+	setAppTitle( titleFromEditor( editor ) );
 }
 
 void App::setAppTitle( const std::string& title ) {
@@ -195,10 +197,14 @@ void App::onDocumentModified( UICodeEditor* editor, TextDocument& ) {
 	if ( isDirty != wasDirty )
 		setAppTitle( titleFromEditor( editor ) );
 
-	bool tabDirty = ( (UITab*)editor->getData() )->getText().lastChar() == '*';
+	bool tabDirty = ( (UITab*)editor->getData() )->hasClass( "tab_modified" );
 
 	if ( isDirty != tabDirty )
 		updateEditorTitle( editor );
+}
+
+void App::onDocumentUndoRedo( UICodeEditor* editor, TextDocument& doc ) {
+	onDocumentModified( editor, doc );
 }
 
 void App::openFileDialog() {

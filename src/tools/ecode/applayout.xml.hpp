@@ -456,6 +456,29 @@ Anchor.error:hover {
 	margin-right: 2dp;
 	font-style: shadow;
 }
+
+#code_container Tab.tab_modified > tab::icon {
+	tint: var(--font-highlight);
+}
+#code_container Tab.tab_clear > tab::icon {
+	tint: var(--icon);
+}
+#code_container Tab.tab_clear:selected > tab::icon,
+#code_container Tab.tab_clear:not(:selected):hover > tab::icon {
+	tint: var(--menu-font-active);
+}
+
+@media (prefers-color-scheme: light) {
+
+#code_container Tab.tab_clear > tab::icon,
+#code_container Tab.tab_clear:selected > tab::icon, {
+	tint: var(--icon);
+}
+#code_container Tab.tab_clear:not(:selected):hover > tab::icon {
+	tint: var(--menu-font-active);
+}
+
+}
 ]]>
 </style>
 )html"

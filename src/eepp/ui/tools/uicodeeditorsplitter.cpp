@@ -262,6 +262,10 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 			event->getNode()->asType<UICodeEditor>(),
 			event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
+	editor->addEventListener( Event::OnDocumentUndoRedo, [this]( const Event* event ) {
+		mClient->onDocumentUndoRedo( event->getNode()->asType<UICodeEditor>(),
+									 event->getNode()->asType<UICodeEditor>()->getDocument() );
+	} );
 	editor->addKeyBinds( getLocalDefaultKeybindings() );
 	editor->addUnlockedCommands( getUnlockedCommands() );
 

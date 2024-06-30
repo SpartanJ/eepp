@@ -18,13 +18,11 @@ LSPDocumentClient::LSPDocumentClient( LSPClientServer* server, TextDocument* doc
 	notifyOpen();
 	requestSymbolsDelayed();
 	requestSemanticHighlightingDelayed();
-	doc->getFoldRangeService().setProvider( [this]( auto, bool requestFolds ) -> bool {
-		bool ret = mServer->getCapabilities().foldingRangeProvider;
-		if ( ret && requestFolds )
-			requestFoldRange();
-		return ret;
+	mDoc->getFoldRangeService().setProvider( [this]( auto, bool requestFolds ) -> bool {
+		return tryRequestFoldRanges( requestFolds );
 	} );
-	mDoc->getFoldRangeService().findRegions();
+	if ( mDoc->getFoldRangeService().isEnabled() )
+		tryRequestFoldRanges( true );
 }
 
 LSPDocumentClient::~LSPDocumentClient() {
@@ -38,6 +36,13 @@ LSPDocumentClient::~LSPDocumentClient() {
 	mShutdown = true;
 	while ( mRunningSemanticTokens )
 		Sys::sleep( Milliseconds( 0.1f ) );
+}
+
+bool LSPDocumentClient::tryRequestFoldRanges( bool requestFolds ) {
+	bool ret = mServer->getCapabilities().foldingRangeProvider;
+	if ( ret && requestFolds )
+		requestFoldRange();
+	return ret;
 }
 
 void LSPDocumentClient::onDocumentLoaded( TextDocument* ) {

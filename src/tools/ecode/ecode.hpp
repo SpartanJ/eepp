@@ -592,6 +592,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void onDocumentModified( UICodeEditor* editor, TextDocument& );
 
+	void onDocumentUndoRedo( UICodeEditor* editor, TextDocument& );
+
 	void onColorSchemeChanged( const std::string& );
 
 	void onRealDocumentLoaded( UICodeEditor* editor, const std::string& path );
