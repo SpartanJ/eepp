@@ -422,6 +422,9 @@ Anchor.error:hover {
 #code_container Tab:hover > Tab::close {
 	opacity: 1;
 }
+#code_container Tab.tab_modified > tab::icon {
+	tint: var(--font-highlight);
+}
 #project_view ScrollBar {
 	opacity: 0;
 	transition: opacity 0.15;
@@ -455,29 +458,6 @@ Anchor.error:hover {
 	margin-bottom: 16dp;
 	margin-right: 2dp;
 	font-style: shadow;
-}
-
-#code_container Tab.tab_modified > tab::icon {
-	tint: var(--font-highlight);
-}
-#code_container Tab.tab_clear > tab::icon {
-	tint: var(--icon);
-}
-#code_container Tab.tab_clear:selected > tab::icon,
-#code_container Tab.tab_clear:not(:selected):hover > tab::icon {
-	tint: var(--menu-font-active);
-}
-
-@media (prefers-color-scheme: light) {
-
-#code_container Tab.tab_clear > tab::icon,
-#code_container Tab.tab_clear:selected > tab::icon, {
-	tint: var(--icon);
-}
-#code_container Tab.tab_clear:not(:selected):hover > tab::icon {
-	tint: var(--menu-font-active);
-}
-
 }
 ]]>
 </style>
