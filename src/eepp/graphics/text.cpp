@@ -1290,7 +1290,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 
 					if ( pos.x <= width && pos.x >= lWidth && pos.y <= height &&
 						 pos.y >= lHeight ) {
-						if ( run.pos() + curGlyph.cluster + 1 < tSize ) {
+						if ( run.pos() + curGlyph.cluster + 1 <= tSize ) {
 							Int32 tcurDist = eeabs( pos.x - lWidth );
 							Int32 nextDist = eeabs( pos.x - width );
 							if ( nextDist < tcurDist ) {
@@ -1355,7 +1355,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 		}
 
 		if ( pos.x <= width && pos.x >= lWidth && pos.y <= height && pos.y >= lHeight ) {
-			if ( i + 1 < tSize ) {
+			if ( i + 1 <= tSize ) {
 				Int32 tcurDist = eeabs( pos.x - lWidth );
 				Int32 nextDist = eeabs( pos.x - width );
 				if ( nextDist < tcurDist )
