@@ -4060,9 +4060,10 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		"Try to set the default language the editor will be loaded. The language must be supported "
 		"in order to this option do something.",
 		{ "language" }, "" );
+#ifdef EE_TEXT_SHAPER_ENABLED
 	args::Flag textShaper( parser, "text-shaper", "Enables text-shaping capabilities",
 						   { "text-shaper" } );
-
+#endif
 	std::vector<std::string> args;
 	try {
 		args = Sys::parseArguments( argc, argv );
@@ -4120,8 +4121,10 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		return EXIT_SUCCESS;
 	}
 
+#ifdef EE_TEXT_SHAPER_ENABLED
 	if ( textShaper.Get() )
 		Text::TextShaperEnabled = true;
+#endif
 
 	appInstance = eeNew( App, ( jobs, args ) );
 	appInstance->init( logLevel.Get(), folder ? folder.Get() : fileOrFolderPos.Get(),
