@@ -422,28 +422,6 @@ Anchor.error:hover {
 #code_container Tab:hover > Tab::close {
 	opacity: 1;
 }
-#code_container Tab > Tab::close {
-	foreground-image: icon(tab-close, 10dp);
-	foreground-tint: var(--tab-close);
-	foreground-size: 10dp;
-	foreground-position: center;
-}
-#code_container Tab > Tab::close:hover {
-	foreground-tint: var(--tab-close-hover);
-}
-#code_container Tab.tab_modified > tab::close {
-	foreground-image: icon(circle-filled, 6dp);
-	foreground-tint: var(--primary);
-	foreground-size: 6dp;
-	foreground-position: center;
-	opacity: 1;
-}
-#code_container Tab.tab_modified > Tab::close:hover {
-	foreground-image: icon(tab-close, 10dp);
-	foreground-tint: var(--tab-close-hover);
-	foreground-size: 10dp;
-	foreground-position: center;
-}
 #project_view ScrollBar {
 	opacity: 0;
 	transition: opacity 0.15;
@@ -452,6 +430,28 @@ Anchor.error:hover {
 #project_view ScrollBar.dragging,
 #project_view ScrollBar:focus-within {
 	opacity: 1;
+}
+#code_container Tab > Tab::close {
+	foreground-image: url("data:image/svg,<svg width='16' height='16' viewBox='0 0 16 16'><path fill='#ffffff' fill-rule='evenodd' d='M 2.3432061,13.657206 A 8.0002061,8.0002061 0 1 1 13.657206,2.3432061 8.0002061,8.0002061 0 0 1 2.3432061,13.657206 Z m 3.687,-8.6869999 a 0.75,0.75 0 0 0 -1.06,1.06 l 1.97,1.97 -1.97,1.97 a 0.75,0.75 0 1 0 1.06,1.0599999 l 1.97,-1.9699999 1.97,1.9699999 A 0.75,0.75 0 1 0 11.030206,9.9702061 l -1.9699999,-1.97 1.9699999,-1.97 a 0.75,0.75 0 1 0 -1.0599999,-1.06 l -1.97,1.97 z' /></svg>");
+	foreground-tint: var(--tab-close);
+	foreground-size: 10dp 10dp;
+	foreground-position: center;
+}
+#code_container Tab > Tab::close:hover {
+	foreground-tint: var(--tab-close-hover);
+}
+#code_container Tab.tab_modified > tab::close {
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' width='12' height='12' fill='#ffffff'><path d='M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z'></path></svg>");
+	foreground-tint: var(--primary);
+	foreground-size: 6dp 6dp;
+	foreground-position: center;
+	opacity: 1;
+}
+#code_container Tab.tab_modified > Tab::close:hover {
+	foreground-image: url("data:image/svg,<svg width='16' height='16' viewBox='0 0 16 16'><path fill='#ffffff' fill-rule='evenodd' d='M 2.3432061,13.657206 A 8.0002061,8.0002061 0 1 1 13.657206,2.3432061 8.0002061,8.0002061 0 0 1 2.3432061,13.657206 Z m 3.687,-8.6869999 a 0.75,0.75 0 0 0 -1.06,1.06 l 1.97,1.97 -1.97,1.97 a 0.75,0.75 0 1 0 1.06,1.0599999 l 1.97,-1.9699999 1.97,1.9699999 A 0.75,0.75 0 1 0 11.030206,9.9702061 l -1.9699999,-1.97 1.9699999,-1.97 a 0.75,0.75 0 1 0 -1.0599999,-1.06 l -1.97,1.97 z' /></svg>");
+	foreground-tint: var(--tab-close-hover);
+	foreground-size: 10dp 10dp;
+	foreground-position: center;
 }
 #code_container TabWidget::TabBar ScrollBarMini {
 	opacity: 0;

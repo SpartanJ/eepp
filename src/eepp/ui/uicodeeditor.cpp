@@ -1517,24 +1517,24 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 		if ( getUISceneNode()->getWindow()->getInput()->isKeyModPressed() ) {
 			mDoc->execute( "font-size-shrink" );
 		} else if ( input->isModState( KEYMOD_SHIFT ) ) {
-			setScrollX( mScroll.x + PixelDensity::dpToPx( mMouseWheelScroll ) );
+			setScrollX( mScroll.x + mMouseWheelScroll );
 		} else {
-			setScrollY( mScroll.y + PixelDensity::dpToPx( mMouseWheelScroll ) );
+			setScrollY( mScroll.y + mMouseWheelScroll );
 		}
 		invalidateDraw();
 	} else if ( flags & EE_BUTTON_WUMASK ) {
 		if ( getUISceneNode()->getWindow()->getInput()->isKeyModPressed() ) {
 			mDoc->execute( "font-size-grow" );
 		} else if ( input->isModState( KEYMOD_SHIFT ) ) {
-			setScrollX( mScroll.x - PixelDensity::dpToPx( mMouseWheelScroll ) );
+			setScrollX( mScroll.x - mMouseWheelScroll );
 		} else {
-			setScrollY( mScroll.y - PixelDensity::dpToPx( mMouseWheelScroll ) );
+			setScrollY( mScroll.y - mMouseWheelScroll );
 		}
 		invalidateDraw();
 	} else if ( flags & EE_BUTTON_WRMASK ) {
-		setScrollX( mScroll.x + PixelDensity::dpToPx( mMouseWheelScroll ) );
+		setScrollX( mScroll.x + mMouseWheelScroll );
 	} else if ( flags & EE_BUTTON_WLMASK ) {
-		setScrollX( mScroll.x - PixelDensity::dpToPx( mMouseWheelScroll ) );
+		setScrollX( mScroll.x - mMouseWheelScroll );
 	} else if ( !minimapHover && ( flags & EE_BUTTON_RMASK ) ) {
 		onCreateContextMenu( position, flags );
 	}
@@ -2925,6 +2925,7 @@ Float UICodeEditor::getGlyphWidth() const {
 
 void UICodeEditor::udpateGlyphWidth() {
 	mGlyphWidth = mFont->getGlyph( '@', getCharacterSize(), false, false ).advance;
+	mMouseWheelScroll = 3 * getLineHeight();
 	invalidateLongestLineWidth();
 }
 

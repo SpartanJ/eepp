@@ -507,7 +507,7 @@ Sizef UINodeDrawable::LayerDrawable::calcDrawableSize( const std::string& drawab
 		if ( mDrawable->getDrawableType() == Drawable::RECTANGLE ) {
 			size = mSize;
 		} else {
-			size = mDrawable->getSize();
+			size = mDrawable->getPixelsSize();
 		}
 	} else if ( drawableSizeEq == "expand" ) {
 		size = mSize;
