@@ -423,26 +423,26 @@ Anchor.error:hover {
 	opacity: 1;
 }
 #code_container Tab > Tab::close {
-	foreground-image: icon(tab-close, 15dp);
+	foreground-image: icon(tab-close, 10dp);
 	foreground-tint: var(--tab-close);
+	foreground-size: 10dp;
 	foreground-position: center;
-	foreground-size: auto;
 }
 #code_container Tab > Tab::close:hover {
 	foreground-tint: var(--tab-close-hover);
 }
 #code_container Tab.tab_modified > tab::close {
-	foreground-image: icon(circle-filled, 16dp);
+	foreground-image: icon(circle-filled, 6dp);
 	foreground-tint: var(--primary);
-	foreground-size: auto;
+	foreground-size: 6dp;
 	foreground-position: center;
 	opacity: 1;
 }
 #code_container Tab.tab_modified > Tab::close:hover {
-	foreground-image: icon(tab-close, 15dp);
+	foreground-image: icon(tab-close, 10dp);
 	foreground-tint: var(--tab-close-hover);
+	foreground-size: 10dp;
 	foreground-position: center;
-	foreground-size: auto;
 }
 #project_view ScrollBar {
 	opacity: 0;
