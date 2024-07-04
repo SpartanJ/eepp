@@ -149,37 +149,37 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 												 const Http::Response&,
 												 const Http::Request::Status& status,
 												 size_t totalBytes, size_t currentBytes ) {
-					if ( status == Http::Request::ContentReceived ) {
-						static Clock elapsed;
-						static Clock tickElapsed;
-						if ( tickElapsed.getElapsedTime().asMilliseconds() < 100.f &&
-							 totalBytes != currentBytes )
-							return true;
-						tickElapsed.restart();
-						double progress =
-							totalBytes > 0 ? currentBytes / static_cast<double>( totalBytes ) : 0;
-						Time eta( elapsed.getElapsedTime() / progress - elapsed.getElapsedTime() );
-						int percent = static_cast<int>( eefloor( progress * 100. ) );
-						std::string bytesProgress( String::format(
-							"%s of %s", FileSystem::sizeToString( currentBytes ).c_str(),
-							FileSystem::sizeToString( totalBytes ).c_str() ) );
-						double downloadSpeed = currentBytes / elapsed.getElapsedTime().asSeconds();
-						std::cout << "\rDownloaded " << percent << "% (" << bytesProgress << ").";
+					if ( status != Http::Request::ContentReceived )
+						return true;
+					static Clock elapsed;
+					static Clock tickElapsed;
+					if ( tickElapsed.getElapsedTime().asMilliseconds() < 100.f &&
+						 totalBytes != currentBytes )
+						return true;
+					tickElapsed.restart();
+					double progress =
+						totalBytes > 0 ? currentBytes / static_cast<double>( totalBytes ) : 0;
+					Time eta( elapsed.getElapsedTime() / progress - elapsed.getElapsedTime() );
+					int percent = static_cast<int>( eefloor( progress * 100. ) );
+					std::string bytesProgress( String::format(
+						"%s of %s", FileSystem::sizeToString( currentBytes ).c_str(),
+						FileSystem::sizeToString( totalBytes ).c_str() ) );
+					double downloadSpeed = currentBytes / elapsed.getElapsedTime().asSeconds();
+					std::cout << "\rDownloaded " << percent << "% (" << bytesProgress << ").";
 
-						if ( totalBytes != currentBytes ) {
-							std::cout << " ETA: " << eta.toString() << ".";
-						} else {
-							std::cout << " Downloaded in: " << elapsed.getElapsedTime().toString()
-									  << ".";
-						}
-
-						std::cout << " Download Speed: "
-								  << FileSystem::sizeToString( downloadSpeed ) << "/s.";
-						std::cout << "          ";
-						std::cout << std::flush;
-						if ( totalBytes == currentBytes )
-							std::cout << std::endl;
+					if ( totalBytes != currentBytes ) {
+						std::cout << " ETA: " << eta.toString() << ".";
+					} else {
+						std::cout << " Downloaded in: " << elapsed.getElapsedTime().toString()
+								  << ".";
 					}
+
+					std::cout << " Download Speed: " << FileSystem::sizeToString( downloadSpeed )
+							  << "/s.";
+					std::cout << "          ";
+					std::cout << std::flush;
+					if ( totalBytes == currentBytes )
+						std::cout << std::endl;
 					return true;
 				} );
 			}
