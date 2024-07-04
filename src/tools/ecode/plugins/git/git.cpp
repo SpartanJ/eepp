@@ -1,5 +1,5 @@
-#include "../../stringhelper.hpp"
 #include "git.hpp"
+#include "../../stringhelper.hpp"
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
@@ -42,8 +42,8 @@ int Git::git( const std::string& args, const std::string& projectDir, std::strin
 	buf.clear();
 	Process p;
 	p.create( mGitPath, args,
-			  Process::CombinedStdoutStderr | Process::Options::NoWindow | Process::Options::EnableAsync |
-				  Process::Options::InheritEnvironment,
+			  Process::CombinedStdoutStderr | Process::Options::NoWindow |
+				  Process::Options::EnableAsync | Process::Options::InheritEnvironment,
 			  { { "LC_ALL", "en_US.UTF-8" } }, projectDir.empty() ? mProjectPath : projectDir );
 	p.readAllStdOut( buf );
 	int retCode = 0;

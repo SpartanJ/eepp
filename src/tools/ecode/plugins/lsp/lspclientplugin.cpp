@@ -1,5 +1,5 @@
-#include "../../version.hpp"
 #include "lspclientplugin.hpp"
+#include "../../version.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
@@ -8,6 +8,7 @@
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/window/engine.hpp>
@@ -532,18 +533,25 @@ void LSPClientPlugin::createListView( UICodeEditor* editor, const std::shared_pt
 		lv->addClass( "editor_listview" );
 		auto pos =
 			editor->getRelativeScreenPosition( editor->getDocumentRef()->getSelection().start() );
-		lv->setModel( model );
 		lv->setSelection( model->index( 0, 0 ) );
-		Float colWidth = lv->getMaxColumnContentWidth( 0 ) + PixelDensity::dpToPx( 4 );
-		lv->setColumnWidth( 0, colWidth );
-		lv->setPixelsSize(
-			{ colWidth, std::min( lv->getContentSize().y, lv->getRowHeight() * 8 ) } );
 		lv->setPixelsPosition( { pos.x, pos.y + editor->getLineHeight() } );
 		if ( !lv->getParent()->getLocalBounds().contains(
 				 lv->getLocalBounds().setPosition( lv->getPixelsPosition() ) ) ) {
 			lv->setPixelsPosition( { pos.x, pos.y - lv->getPixelsSize().getHeight() } );
 		}
 		lv->setVisible( true );
+		lv->getVerticalScrollBar()->reloadStyle( true, true, true );
+		lv->setAutoExpandOnSingleColumn( false );
+		lv->setModel( model );
+		Float height = std::min( lv->getContentSize().y, lv->getRowHeight() * 8 );
+		Float colWidth = lv->getMaxColumnContentWidth( 0 ) + PixelDensity::dpToPx( 4 );
+		bool needsVScroll = lv->getContentSize().y > lv->getRowHeight() * 8;
+		Float width = colWidth + lv->getPixelsPadding().getWidth() +
+					  ( needsVScroll ? lv->getVerticalScrollBar()->getPixelsSize().getWidth() : 0 );
+		lv->setPixelsSize( { width, height } );
+		lv->setColumnWidth( 0, colWidth );
+		lv->setScrollMode( needsVScroll ? ScrollBarMode::Auto : ScrollBarMode::AlwaysOff,
+						   ScrollBarMode::AlwaysOff );
 		if ( onCreateCb )
 			onCreateCb( lv );
 		lv->setFocus();

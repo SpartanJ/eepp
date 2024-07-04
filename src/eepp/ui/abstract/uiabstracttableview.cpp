@@ -569,10 +569,10 @@ UIWidget* UIAbstractTableView::updateCell( const Vector2<Int64>& posIndex, const
 	}
 	const auto& colData = columnData( index.column() );
 	if ( !colData.visible ) {
-		widget->setVisible( false );
+		widget->setVisible( false, false );
 		return widget;
 	} else {
-		widget->setVisible( true );
+		widget->setVisible( true, false );
 	}
 	widget->setPixelsSize( colData.width, getRowHeight() );
 	widget->setPixelsPosition( { getColumnPosition( index.column() ).x, 0 } );

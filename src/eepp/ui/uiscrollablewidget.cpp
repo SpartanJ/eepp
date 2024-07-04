@@ -19,9 +19,9 @@ UIScrollableWidget::UIScrollableWidget( const std::string& tag ) :
 	mHScroll->setParent( this );
 
 	mVScroll->addEventListener( Event::OnValueChange,
-								[this] ( auto event ) { onValueChangeCb( event ); } );
+								[this]( auto event ) { onValueChangeCb( event ); } );
 	mHScroll->addEventListener( Event::OnValueChange,
-								[this] ( auto event ) { onValueChangeCb( event ); } );
+								[this]( auto event ) { onValueChangeCb( event ); } );
 
 	applyDefaultTheme();
 }
@@ -72,6 +72,15 @@ const ScrollBarMode& UIScrollableWidget::getHorizontalScrollMode() const {
 	return mHScrollMode;
 }
 
+void UIScrollableWidget::setScrollMode( const ScrollBarMode& verticalMode,
+										const ScrollBarMode& horizontalMode ) {
+	if ( verticalMode != mVScrollMode || horizontalMode != mHScrollMode ) {
+		mVScrollMode = verticalMode;
+		mHScrollMode = horizontalMode;
+		onContentSizeChange();
+	}
+}
+
 const UIScrollableWidget::ScrollViewType& UIScrollableWidget::getViewType() const {
 	return mScrollViewType;
 }
@@ -115,8 +124,10 @@ void UIScrollableWidget::onContentSizeChange() {
 	} else if ( ScrollBarMode::AlwaysOff == mVScrollMode ) {
 		mVScroll->setVisible( false )->setEnabled( false );
 	} else {
-		Float totH = getPixelsSize().getHeight() - getPixelsPadding().Top -
-					 getPixelsPadding().Bottom - mHScroll->getPixelsSize().getHeight();
+		Float totH =
+			getPixelsSize().getHeight() - getPixelsPadding().Top - getPixelsPadding().Bottom -
+			( ScrollBarMode::AlwaysOff == mHScrollMode ? 0
+													   : mHScroll->getPixelsSize().getHeight() );
 
 		bool visible = contentSize.getHeight() > totH;
 

@@ -15,6 +15,8 @@ class EE_API UIScrollableWidget : public UIWidget {
 
 	virtual bool isType( const Uint32& type ) const;
 
+	void setScrollMode( const ScrollBarMode& verticalMode, const ScrollBarMode& horizontalMode );
+
 	void setVerticalScrollMode( const ScrollBarMode& Mode );
 
 	const ScrollBarMode& getVerticalScrollMode() const;
