@@ -1,5 +1,3 @@
-#include <algorithm>
-#include <bitset>
 #include <cstring>
 #include <eepp/network/ipaddress.hpp>
 #include <eepp/network/packet.hpp>
@@ -333,13 +331,13 @@ Socket::Status TcpSocket::receive( Packet& packet ) {
 	return Done;
 }
 
-void TcpSocket::setSendTimeout( SocketHandle /*sock*/, const Time& timeout ) {
+void TcpSocket::setSendTimeout( const Time& timeout ) {
 	if ( getHandle() != Private::SocketImpl::invalidSocket() ) {
 		Private::SocketImpl::setSendTimeout( getHandle(), timeout );
 	}
 }
 
-void TcpSocket::setReceiveTimeout( SocketHandle /*sock*/, const Time& timeout ) {
+void TcpSocket::setReceiveTimeout( const Time& timeout ) {
 	if ( getHandle() != Private::SocketImpl::invalidSocket() ) {
 		Private::SocketImpl::setReceiveTimeout( getHandle(), timeout );
 	}
@@ -347,7 +345,7 @@ void TcpSocket::setReceiveTimeout( SocketHandle /*sock*/, const Time& timeout ) 
 
 void TcpSocket::startAsyncRead( ReadFn readFn ) {
 	mReadThread = std::thread( [this, readFn] {
-		setReceiveTimeout( mSocket, Milliseconds( 100 ) );
+		setReceiveTimeout( Milliseconds( 100 ) );
 		std::string buffer;
 		buffer.resize( 131072 );
 		Clock clock;

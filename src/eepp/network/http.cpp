@@ -746,6 +746,11 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 			connection->setSSL( isSSL );
 		}
 
+		if ( timeout != Time::Zero ) {
+			socket->setReceiveTimeout( timeout );
+			socket->setSendTimeout( timeout );
+		}
+
 		connection->setSocket( socket );
 
 		mConnection = connection;

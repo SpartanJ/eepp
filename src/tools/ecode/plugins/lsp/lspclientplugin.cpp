@@ -533,7 +533,6 @@ void LSPClientPlugin::createListView( UICodeEditor* editor, const std::shared_pt
 		lv->addClass( "editor_listview" );
 		auto pos =
 			editor->getRelativeScreenPosition( editor->getDocumentRef()->getSelection().start() );
-		lv->setSelection( model->index( 0, 0 ) );
 		lv->setPixelsPosition( { pos.x, pos.y + editor->getLineHeight() } );
 		if ( !lv->getParent()->getLocalBounds().contains(
 				 lv->getLocalBounds().setPosition( lv->getPixelsPosition() ) ) ) {
@@ -554,6 +553,7 @@ void LSPClientPlugin::createListView( UICodeEditor* editor, const std::shared_pt
 						   ScrollBarMode::AlwaysOff );
 		if ( onCreateCb )
 			onCreateCb( lv );
+		lv->setSelection( model->index( 0 ) );
 		lv->setFocus();
 		Uint32 focusCb = lv->getUISceneNode()->getUIEventDispatcher()->addFocusEventCallback(
 			[lv]( const auto&, Node* focus, Node* ) {
