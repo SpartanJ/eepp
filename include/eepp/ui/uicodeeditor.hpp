@@ -480,11 +480,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void unregisterPlugin( UICodeEditorPlugin* plugin );
 
-	virtual Vector2f getTextPositionOffset( const TextPosition& pos,
+	virtual Vector2d getTextPositionOffset( const TextPosition& pos,
 											std::optional<Float> lineHeight = {},
 											bool allowVisualLineEnd = false ) const;
 
-	Vector2f getTextPositionOffsetSanitized( TextPosition pos,
+	Vector2d getTextPositionOffsetSanitized( TextPosition pos,
 											 std::optional<Float> lineHeight = {} ) const;
 
 	virtual Int64 getColFromXOffset( VisibleIndex visibleIndex, const Float& x ) const;

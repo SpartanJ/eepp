@@ -125,9 +125,9 @@ class EE_API DocumentView {
 
 	void clearCache();
 
-	Float getLineYOffset( VisibleIndex visibleIndex, Float lineHeight ) const;
+	double getLineYOffset( VisibleIndex visibleIndex, Float lineHeight ) const;
 
-	Float getLineYOffset( Int64 docIdx, Float lineHeight ) const;
+	double getLineYOffset( Int64 docIdx, Float lineHeight ) const;
 
 	bool isLineVisible( Int64 docIdx ) const;
 

@@ -391,13 +391,13 @@ void DocumentView::clear() {
 	mDoc->getFoldRangeService().clear();
 }
 
-Float DocumentView::getLineYOffset( VisibleIndex visibleIndex, Float lineHeight ) const {
-	return static_cast<Float>( visibleIndex ) * lineHeight;
+double DocumentView::getLineYOffset( VisibleIndex visibleIndex, Float lineHeight ) const {
+	return static_cast<double>( visibleIndex ) * lineHeight;
 }
 
-Float DocumentView::getLineYOffset( Int64 docIdx, Float lineHeight ) const {
+double DocumentView::getLineYOffset( Int64 docIdx, Float lineHeight ) const {
 	eeASSERT( docIdx >= 0 && docIdx < static_cast<Int64>( mDoc->linesCount() ) );
-	return static_cast<Float>( toVisibleIndex( docIdx ) ) * lineHeight;
+	return lineHeight * static_cast<double>( toVisibleIndex( docIdx ) );
 }
 
 bool DocumentView::isLineVisible( Int64 docIdx ) const {

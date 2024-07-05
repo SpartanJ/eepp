@@ -343,7 +343,7 @@ void UICodeEditor::draw() {
 
 		Vector2f curScroll(
 			{ startScroll.x,
-			  static_cast<float>( startScroll.y + mDocView.getLineYOffset( i, lineHeight ) ) } );
+			  static_cast<Float>( startScroll.y + mDocView.getLineYOffset( i, lineHeight ) ) } );
 
 		for ( auto& plugin : mPlugins )
 			plugin->drawBeforeLineText( this, i, curScroll, charSize, lineHeight );
@@ -364,7 +364,7 @@ void UICodeEditor::draw() {
 				plugin.plugin->drawGutter(
 					this, gi,
 					{ screenStart.x + curGutterPos,
-					  static_cast<float>( startScroll.y +
+					  static_cast<Float>( startScroll.y +
 										  mDocView.getLineYOffset( gi, lineHeight ) ) },
 					lineHeight, plugin.space, charSize );
 			}
@@ -1157,7 +1157,8 @@ Rectf UICodeEditor::getScreenPosition( const TextPosition& position ) const {
 	Vector2f start( screenStart.x + getGutterWidth(), screenStart.y );
 	Vector2f startScroll( start - mScroll );
 	auto offset = getTextPositionOffsetSanitized( position, lineHeight );
-	return { { startScroll.x + offset.x, startScroll.y + offset.y },
+	return { { static_cast<Float>( startScroll.x + offset.x ),
+			   static_cast<Float>( startScroll.y + offset.y ) },
 			 { getGlyphWidth(), lineHeight } };
 }
 
@@ -1675,7 +1676,8 @@ Vector2f UICodeEditor::getRelativeScreenPosition( const TextPosition& pos ) {
 	Vector2f start( gutterWidth, getPluginsTopSpace() );
 	Vector2f startScroll( start - mScroll );
 	auto offset = getTextPositionOffset( pos );
-	return { startScroll.x + offset.x, startScroll.y + offset.y + getLineOffset() };
+	return { static_cast<Float>( startScroll.x + offset.x ),
+			 static_cast<Float>( startScroll.y + offset.y + getLineOffset() ) };
 }
 
 bool UICodeEditor::getShowLinesRelativePosition() const {
@@ -2083,8 +2085,8 @@ void UICodeEditor::scrollToVisibleIndex( Int64 visibleIndex, bool centered,
 	scrollArea.Top += lineHeight;
 	scrollArea.Bottom = eemax( scrollArea.Top, scrollArea.Bottom - minDistance * lineHeight );
 
-	Vector2f offsetEnd{
-		0.f, mDocView.getLineYOffset( static_cast<VisibleIndex>( visibleIndex ), lineHeight ) };
+	Vector2f offsetEnd{ 0.f, static_cast<Float>( mDocView.getLineYOffset(
+								 static_cast<VisibleIndex>( visibleIndex ), lineHeight ) ) };
 
 	// Vertical Scroll
 	Float halfScreenSize = eefloor( getViewportDimensions().getHeight() * 0.5f );
@@ -2103,8 +2105,8 @@ void UICodeEditor::scrollTo( TextRange position, bool centered, bool forceExactP
 							 bool scrollX ) {
 	position.normalize();
 	Rectf scrollArea = getVisibleScrollArea();
-	Vector2f offsetStart = getTextPositionOffset( position.start() );
-	Vector2f offsetEnd = getTextPositionOffset( position.end() );
+	Vector2f offsetStart = getTextPositionOffset( position.start() ).asFloat();
+	Vector2f offsetEnd = getTextPositionOffset( position.end() ).asFloat();
 
 	Float lineHeight = getLineHeight();
 	Int64 minDistance = mHScrollBar->isVisible() ? 3 : 2;
@@ -2189,17 +2191,17 @@ void UICodeEditor::setScrollY( const Float& val, bool emmitEvent ) {
 	}
 }
 
-Vector2f UICodeEditor::getTextPositionOffset( const TextPosition& position,
+Vector2d UICodeEditor::getTextPositionOffset( const TextPosition& position,
 											  std::optional<Float> lineHeight,
 											  bool allowVisualLineEnd ) const {
-	Float lh = lineHeight ? *lineHeight : getLineHeight();
+	double lh = lineHeight ? *lineHeight : getLineHeight();
 	if ( mDocView.isWrappedLine( position.line() ) ) {
 		auto info = mDocView.getVisibleLineRange( position, allowVisualLineEnd );
 		auto firstWrappedIndex = mDocView.toVisibleIndex( position.line() );
 		Float offsetX =
 			( info.visibleIndex != firstWrappedIndex ? mDocView.getLinePadding( position.line() )
 													 : 0.f );
-		Float offsetY = mDocView.getLineYOffset( info.visibleIndex, lh );
+		double offsetY = mDocView.getLineYOffset( info.visibleIndex, lh );
 		if ( isNotMonospace() ) {
 			const auto& line = mDoc->line( position.line() ).getText();
 			auto partialLine =
@@ -2226,7 +2228,7 @@ Vector2f UICodeEditor::getTextPositionOffset( const TextPosition& position,
 		return { x + offsetX, offsetY };
 	}
 
-	Float offsetY = mDocView.getLineYOffset( position.line(), lh );
+	double offsetY = mDocView.getLineYOffset( position.line(), lh );
 	if ( isNotMonospace() ) {
 		return { Text::findCharacterPos(
 					 ( position.column() == (Int64)mDoc->line( position.line() ).getText().size() )
@@ -2291,7 +2293,7 @@ template <typename StringType> Float UICodeEditor::getTextWidth( const StringTyp
 	return x;
 }
 
-Vector2f UICodeEditor::getTextPositionOffsetSanitized( TextPosition position,
+Vector2d UICodeEditor::getTextPositionOffsetSanitized( TextPosition position,
 													   std::optional<Float> lineHeight ) const {
 	position.setLine( eeclamp<Int64>( position.line(), 0L, mDoc->linesCount() - 1 ) );
 	// This is different from sanitizePosition, sinze allows the last character.
@@ -3684,8 +3686,8 @@ UICodeEditor::getTextRangeRectangles( const TextRange& range, const Vector2f& st
 				  visibleIdx <= static_cast<Int64>( toInfo.visibleIndex ); visibleIdx++ ) {
 				auto info =
 					mDocView.getVisibleIndexPosition( static_cast<VisibleIndex>( visibleIdx ) );
-				Vector2f startOffset;
-				Vector2f endOffset;
+				Vector2d startOffset;
+				Vector2d endOffset;
 				if ( ln == range.start().line() && fromInfo.range.start().line() == ln &&
 					 fromInfo.visibleIndex == static_cast<VisibleIndex>( visibleIdx ) ) {
 					startOffset = getTextPositionOffset( range.start(), lh );
@@ -3857,11 +3859,12 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 
 				if ( mDocView.isWrappedLine( i ) ) {
 					auto info = mDocView.getVisibleLineRange( { i, 0 }, true );
-					offset += getTextPositionOffset( info.range.end(), lineHeight, true );
+					offset += getTextPositionOffset( info.range.end(), lineHeight, true ).asFloat();
 				} else {
 					offset += getTextPositionOffset(
-						{ i, static_cast<Int64>( mDoc->line( i ).getText().size() ) }, lineHeight,
-						true );
+								  { i, static_cast<Int64>( mDoc->line( i ).getText().size() ) },
+								  lineHeight, true )
+								  .asFloat();
 				}
 
 				Text::draw( String( (String::StringBaseType)0x2026 /* … */ ), offset, fontStyle,
@@ -3910,18 +3913,21 @@ void UICodeEditor::drawWhitespaces( const DocumentLineRange& lineRange, const Ve
 			for ( size_t i = 0; i < text.size(); i++ ) {
 				if ( ' ' == text[i] ) {
 					auto offset =
-						startScroll + getTextPositionOffset( { index, static_cast<Int64>( i ) } );
+						startScroll +
+						getTextPositionOffset( { index, static_cast<Int64>( i ) } ).asFloat();
 					cpoint->draw( offset );
 				} else if ( '\t' == text[i] ) {
 					auto offset =
-						startScroll + getTextPositionOffset( { index, static_cast<Int64>( i ) } );
+						startScroll +
+						getTextPositionOffset( { index, static_cast<Int64>( i ) } ).asFloat();
 					offset.x += tabCenter;
 					adv->draw( offset );
 				}
 			}
 		} else {
 			Vector2f position(
-				{ startScroll.x, startScroll.y + mDocView.getLineYOffset( index, lineHeight ) } );
+				{ startScroll.x, static_cast<Float>( startScroll.y + mDocView.getLineYOffset(
+																		 index, lineHeight ) ) } );
 			for ( size_t i = 0; i < text.size(); i++ ) {
 				if ( position.x + mScroll.x + ( text[i] == '\t' ? tabWidth : glyphW ) >=
 						 mScreenPos.x &&
@@ -3982,7 +3988,8 @@ void UICodeEditor::drawIndentationGuides( const DocumentLineRange& lineRange,
 		if ( !mDocView.isLineVisible( index ) )
 			continue;
 		Vector2f position(
-			{ startScroll.x, startScroll.y + mDocView.getLineYOffset( index, lineHeight ) } );
+			{ startScroll.x, static_cast<Float>( startScroll.y +
+												 mDocView.getLineYOffset( index, lineHeight ) ) } );
 		auto spaces = getLineIndentGuideSpaces( *mDoc.get(), index, indentSize );
 		for ( auto i = 0; i < spaces; i += indentSize )
 			p.drawRectangle( Rectf( { position.x + spaceW * i, position.y }, { w, lineHeight } ) );
@@ -4003,7 +4010,8 @@ void UICodeEditor::drawLineEndings( const DocumentLineRange& lineRange, const Ve
 			continue;
 		auto offset =
 			getTextPositionOffset( { index, static_cast<Int64>( mDoc->line( index ).size() ) } );
-		Vector2f position( { startScroll.x + offset.x, startScroll.y + offset.y } );
+		Vector2f position( { static_cast<Float>( startScroll.x + offset.x ),
+							 static_cast<Float>( startScroll.y + offset.y ) } );
 		nl->draw( Vector2f( position.x, position.y ) );
 	}
 }

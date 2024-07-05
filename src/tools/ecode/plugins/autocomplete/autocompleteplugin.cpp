@@ -906,8 +906,9 @@ void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f
 						  curParamRect.getPosition().y },
 						curParamRect.getSize() } ) ) {
 			auto offset = editor->getTextPositionOffset( mSignatureHelpPosition );
-			pos = { startScroll.x - curParam.start * editor->getGlyphWidth() + offset.x,
-					startScroll.y + offset.y + vdiff };
+			pos = { static_cast<Float>( startScroll.x - curParam.start * editor->getGlyphWidth() +
+										offset.x ),
+					static_cast<Float>( startScroll.y + offset.y + vdiff ) };
 
 			boxRect.setPosition( pos );
 
