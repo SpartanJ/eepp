@@ -105,6 +105,12 @@ class EE_API Font {
 	virtual Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
 							  bool italic, Float outlineThickness = 0 ) const = 0;
 
+	virtual Float getAscent( unsigned int characterSize ) const {
+		return getLineSpacing( characterSize );
+	}
+
+	virtual Float getDescent( unsigned int characterSize ) const { return 0.f; }
+
 	virtual Float getLineSpacing( unsigned int characterSize ) const = 0;
 
 	virtual Float getUnderlinePosition( unsigned int characterSize ) const = 0;

@@ -704,6 +704,36 @@ Float FontTrueType::getLineSpacing( unsigned int characterSize ) const {
 	}
 }
 
+Float FontTrueType::getAscent( unsigned int characterSize ) const {
+	FT_Face face = static_cast<FT_Face>( mFace );
+
+	if ( face && setCurrentSize( characterSize ) ) {
+		if ( !FT_IS_SCALABLE( face ) )
+			return static_cast<Float>( face->size->metrics.ascender ) /
+				   static_cast<Float>( 1 << 6 );
+
+		return static_cast<Float>( FT_MulFix( face->ascender, face->size->metrics.y_scale ) ) /
+			   static_cast<Float>( 1 << 6 );
+	} else {
+		return 0.f;
+	}
+}
+
+Float FontTrueType::getDescent( unsigned int characterSize ) const {
+	FT_Face face = static_cast<FT_Face>( mFace );
+
+	if ( face && setCurrentSize( characterSize ) ) {
+		if ( !FT_IS_SCALABLE( face ) )
+			return static_cast<Float>( face->size->metrics.descender ) /
+				   static_cast<Float>( 1 << 6 );
+
+		return static_cast<Float>( FT_MulFix( -face->descender, face->size->metrics.y_scale ) ) /
+			   static_cast<Float>( 1 << 6 );
+	} else {
+		return 0.f;
+	}
+}
+
 #define FT_FLOOR( X ) ( ( X & -64 ) / 64 )
 #define FT_CEIL( X ) ( ( ( X + 63 ) & -64 ) / 64 )
 
