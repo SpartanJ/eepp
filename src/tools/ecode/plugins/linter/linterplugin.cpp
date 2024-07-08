@@ -1151,6 +1151,8 @@ void LinterPlugin::tryHideHoveringMatch( UICodeEditor* editor ) {
 	if ( mHoveringMatch && editor->getTooltip() && editor->getTooltip()->isVisible() ) {
 		editor->setTooltipText( "" );
 		editor->getTooltip()->hide();
+		editor->getTooltip()->setWordWrap( mOldWordWrap );
+		editor->getTooltip()->setMaxWidthEq( mOldMaxWidth );
 		mHoveringMatch = false;
 	}
 }
@@ -1306,6 +1308,10 @@ bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 					tooltip->setHorizontalAlign( UI_HALIGN_LEFT );
 					tooltip->setDontAutoHideOnMouseMove( true );
 					tooltip->setPixelsPosition( tooltip->getTooltipPosition( pos.asFloat() ) );
+					mOldWordWrap = tooltip->isWordWrap();
+					mOldMaxWidth = tooltip->getMaxWidthEq();
+					tooltip->setWordWrap( true );
+					tooltip->setMaxWidthEq( "50vw" );
 					if ( !tooltip->isVisible() )
 						tooltip->show();
 					return true;

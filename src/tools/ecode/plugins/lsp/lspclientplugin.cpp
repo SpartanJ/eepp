@@ -1619,7 +1619,7 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 		},
 		mHoverDelay, tag );
 	tryHideTooltip( editor, position );
-	return editor->getTooltip() && editor->getTooltip()->isVisible();
+	return editor->getTooltip() && editor->getTooltip()->isVisible() && mSymbolInfoShowing;
 }
 
 void LSPClientPlugin::onFocusLoss( UICodeEditor* editor ) {

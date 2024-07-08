@@ -149,12 +149,14 @@ class LinterPlugin : public Plugin {
 	bool mEnableLSPDiagnostics{ true };
 	bool mErrorLens{ true };
 	bool mGoToIgnoreWarnings{ false };
+	bool mOldWordWrap{ false };
 	std::set<std::string> mLanguagesDisabled;
 	std::set<std::string> mLSPLanguagesDisabled;
 	String::HashType mConfigHash{ 0 };
 	UIIcon* mLightbulbIcon{ nullptr };
 	std::string mErrorMsg;
 	Rectf mQuickFixRect;
+	std::string mOldMaxWidth;
 
 	LinterPlugin( PluginManager* pluginManager, bool sync );
 

@@ -180,6 +180,8 @@ UICodeEditor::~UICodeEditor() {
 		getUISceneNode()->getThreadPool()->removeWithTag( tag );
 	}
 
+	getUISceneNode()->removeActionsByTag( mTagFoldRange );
+
 	if ( mCurrentMenu ) {
 		mCurrentMenu->clearEventListener();
 		mCurrentMenu = nullptr;
@@ -4215,12 +4217,13 @@ String UICodeEditor::checkMouseOverLink( const Vector2i& position ) {
 }
 
 String UICodeEditor::resetLinkOver( const Vector2i& mousePos ) {
-	if ( mHandShown )
+	if ( mHandShown ) {
+		mHandShown = false;
+		updateMouseCursor( mousePos.asFloat() );
+		mLinkPosition = TextRange();
+		mLink.clear();
 		invalidateDraw();
-	mHandShown = false;
-	updateMouseCursor( mousePos.asFloat() );
-	mLinkPosition = TextRange();
-	mLink.clear();
+	}
 	return "";
 }
 
