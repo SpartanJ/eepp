@@ -138,7 +138,6 @@ class EE_API UITextView : public UIWidget {
 	std::vector<SelPosCache> mSelPosCache;
 	Int32 mLastSelCurInit;
 	Int32 mLastSelCurEnd;
-	Int32 mFontLineCenter;
 	bool mSelecting;
 	bool mUsingCustomStyling{ false };
 	std::string mTextOverflow;
@@ -184,8 +183,6 @@ class EE_API UITextView : public UIWidget {
 	virtual void onSelectionChange();
 
 	virtual Text* getVisibleTextCache() const;
-
-	const Int32& getFontLineCenter();
 
 	void transformText();
 

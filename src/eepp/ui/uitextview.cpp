@@ -34,7 +34,6 @@ UITextView::UITextView( const std::string& tag ) :
 	mSelCurEnd( 0 ),
 	mLastSelCurInit( 0 ),
 	mLastSelCurEnd( 0 ),
-	mFontLineCenter( 0 ),
 	mSelecting( false ) {
 	mTextCache = Text::New();
 
@@ -92,8 +91,7 @@ void UITextView::draw() {
 
 		mTextCache->setAlign( Font::getHorizontalAlign( getFlags() ) );
 		mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
-						  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
-							  (int)mPaddingPx.Top,
+						  (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
 						  Vector2f::One, 0.f, getBlendMode() );
 
 		if ( isClipped() )
@@ -370,8 +368,8 @@ void UITextView::alignFix() {
 	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
 			mRealAlignOffset.x =
-				(Float)( (Int32)( ( mSize.x - mPaddingPx.Left - mPaddingPx.Right ) / 2 -
-								  getTextWidth() / 2 ) );
+				(Float)( (Int32)( ( mSize.x - mPaddingPx.Left - mPaddingPx.Right ) * 0.5f -
+								  getTextWidth() * 0.5f ) );
 			break;
 		case UI_HALIGN_RIGHT:
 			mRealAlignOffset.x =
@@ -383,12 +381,15 @@ void UITextView::alignFix() {
 	}
 
 	switch ( Font::getVerticalAlign( getFlags() ) ) {
-		case UI_VALIGN_CENTER:
-			mRealAlignOffset.y =
-				(Float)( (Int32)( ( mSize.y - mPaddingPx.Top - mPaddingPx.Bottom ) / 2 -
-								  mTextCache->getTextHeight() / 2 ) ) -
-				1;
+		case UI_VALIGN_CENTER: {
+			Float height = mSize.y - mPaddingPx.Top - mPaddingPx.Bottom;
+			Float fontSize = mTextCache->getCharacterSize();
+			Float lineSpacing = mTextCache->getFont()->getLineSpacing( fontSize );
+			Float center = eefloor( ( lineSpacing - fontSize ) * 0.5f );
+			Float textHeight = mTextCache->getTextHeight();
+			mRealAlignOffset.y = eefloor( ( height - textHeight + center ) * 0.5f );
 			break;
+		}
 		case UI_VALIGN_BOTTOM:
 			mRealAlignOffset.y = ( (Float)mSize.y - mPaddingPx.Top - mPaddingPx.Bottom -
 								   (Float)mTextCache->getTextHeight() );
@@ -568,17 +569,19 @@ void UITextView::drawSelection( Text* textCache ) {
 		if ( !mSelPosCache.empty() ) {
 			Primitives P;
 			P.setColor( mFontStyleConfig.FontSelectionBackColor );
-			Float vspace = textCache->getFont()->getFontHeight( textCache->getCharacterSize() );
+			Float vspace = textCache->getFont()->getLineSpacing( mTextCache->getCharacterSize() );
+			Float height = mSize.y - mPaddingPx.Top - mPaddingPx.Bottom;
+			Float offsetY = eefloor( ( height - mTextCache->getTextHeight() ) * 0.5f );
 
 			for ( size_t i = 0; i < mSelPosCache.size(); i++ ) {
 				initPos = mSelPosCache[i].initPos;
 				endPos = mSelPosCache[i].endPos;
 
-				P.drawRectangle( Rectf(
-					mScreenPos.x + initPos.x + mRealAlignOffset.x + mPaddingPx.Left,
-					mScreenPos.y + initPos.y + mRealAlignOffset.y + mPaddingPx.Top,
-					mScreenPos.x + endPos.x + mRealAlignOffset.x + mPaddingPx.Left,
-					mScreenPos.y + endPos.y + vspace + mRealAlignOffset.y + mPaddingPx.Top ) );
+				P.drawRectangle(
+					Rectf( mScreenPos.x + initPos.x + mRealAlignOffset.x + mPaddingPx.Left,
+						   mScreenPos.y + initPos.y + offsetY + mPaddingPx.Top,
+						   mScreenPos.x + endPos.x + mRealAlignOffset.x + mPaddingPx.Left,
+						   mScreenPos.y + endPos.y + offsetY + mPaddingPx.Top + vspace ) );
 			}
 		}
 	}
@@ -660,15 +663,7 @@ Text* UITextView::getVisibleTextCache() const {
 	return mTextCache;
 }
 
-const Int32& UITextView::getFontLineCenter() {
-	return mFontLineCenter;
-}
-
 void UITextView::recalculate() {
-	int fontHeight = mTextCache->getCharacterSize();
-	mFontLineCenter = eefloor(
-		(Float)( ( mTextCache->getFont()->getLineSpacing( fontHeight ) - fontHeight ) / 2 ) );
-
 	updateTextOverflow();
 	autoWrap();
 	onAutoSize();

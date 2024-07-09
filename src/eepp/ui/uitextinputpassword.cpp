@@ -50,8 +50,7 @@ void UITextInputPassword::draw() {
 			}
 
 			mHintCache->draw( (Float)mScreenPosi.x + (int)mHintAlignOffset.x + (int)mPaddingPx.Left,
-							  mFontLineCenter + (Float)mScreenPosi.y + (int)mHintAlignOffset.y +
-								  (int)mPaddingPx.Top,
+							  (Float)mScreenPosi.y + (int)mHintAlignOffset.y + (int)mPaddingPx.Top,
 							  Vector2f::One, 0.f, getBlendMode() );
 
 			if ( isClipped() ) {

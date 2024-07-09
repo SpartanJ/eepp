@@ -136,14 +136,12 @@ void UITextInput::draw() {
 			drawSelection( mTextCache );
 			mTextCache->setAlign( getFlags() );
 			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
-							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
-								  (int)mPaddingPx.Top,
+							  (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
 							  Vector2f::One, 0.f, getBlendMode() );
 		} else if ( !mHintCache->getString().empty() &&
 					( mHintDisplay == HintDisplay::Always || hasFocus() ) ) {
 			mHintCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
-							  mFontLineCenter + (Float)mScreenPosi.y + (int)mRealAlignOffset.y +
-								  (int)mPaddingPx.Top,
+							  (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
 							  Vector2f::One, 0.f, getBlendMode() );
 		}
 	}
@@ -199,22 +197,6 @@ void UITextInput::resetWaitCursor() {
 void UITextInput::alignFix() {
 	Vector2f rOffset( mRealAlignOffset );
 	UITextView::alignFix();
-
-	switch ( Font::getVerticalAlign( getFlags() ) ) {
-		case UI_VALIGN_CENTER:
-			mRealAlignOffset.y =
-				(Float)( (Int32)( ( mSize.y - mPaddingPx.Top - mPaddingPx.Bottom ) / 2 -
-								  mTextCache->getLineSpacing() / 2 ) ) -
-				1;
-			break;
-		case UI_VALIGN_BOTTOM:
-			mRealAlignOffset.y =
-				mSize.y - mPaddingPx.Top - mPaddingPx.Bottom - mTextCache->getLineSpacing();
-			break;
-		case UI_VALIGN_TOP:
-			mRealAlignOffset.y = 0;
-			break;
-	}
 
 	if ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT ) {
 		Float tW = getVisibleTextCache()->findCharacterPos( selCurInit() ).x;
