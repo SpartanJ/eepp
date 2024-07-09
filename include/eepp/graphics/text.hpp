@@ -153,8 +153,6 @@ class EE_API Text {
 
 	unsigned int getCharacterSize() const;
 
-	const Uint32& getFontHeight() const;
-
 	Uint32 getStyle() const;
 
 	/** @see Set the alpha of each individual character.
@@ -270,7 +268,6 @@ class EE_API Text {
 
 	Float mCachedWidth{ 0 };
 	Uint32 mAlign{ TEXT_ALIGN_LEFT };
-	Uint32 mFontHeight{ 0 };
 	Uint32 mTabWidth{ 4 };
 
 	std::vector<VertexCoords> mVertices;

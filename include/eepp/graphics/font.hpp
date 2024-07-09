@@ -10,15 +10,14 @@ namespace EE { namespace Graphics {
 
 class Font;
 
-class EE_API Glyph {
-  public:
+struct EE_API Glyph {
 	Float advance{ 0 }; ///< Offset to move horizontally to the next character
-	Rectf bounds;	  ///< Bounding rectangle of the glyph, in coordinates relative to the baseline
-	Rect textureRect; ///< Texture coordinates of the glyph inside the font's texture
-	Sizef size;
+	Rectf bounds;	   ///< Bounding rectangle of the glyph, in coordinates relative to the baseline
+	Rect textureRect;  ///< Texture coordinates of the glyph inside the font's texture
+	Sizef size;		   ///< The glyph bitmap size on screen
 	int lsbDelta{ 0 }; //!< Left offset after forced autohint. Internally used by getKerning()
 	int rsbDelta{ 0 }; //!< Right offset after forced autohint. Internally used by getKerning()
-	Font* font{ nullptr };
+	Font* font{ nullptr }; ///< The glyph font
 };
 
 enum class FontType { TTF, BMF, Sprite };
@@ -109,7 +108,7 @@ class EE_API Font {
 		return getLineSpacing( characterSize );
 	}
 
-	virtual Float getDescent( unsigned int characterSize ) const { return 0.f; }
+	virtual Float getDescent( unsigned int ) const { return 0.f; }
 
 	virtual Float getLineSpacing( unsigned int characterSize ) const = 0;
 

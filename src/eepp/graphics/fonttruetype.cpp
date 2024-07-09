@@ -1517,4 +1517,11 @@ FontTrueType::Page::~Page() {
 		TextureFactory::instance()->remove( texture->getTextureId() );
 }
 
+void FontTrueType::clearCache() {
+	mPages.clear();
+	mClosestCharacterSize.clear();
+	mCodePointIndexCache.clear();
+	mKeyCache.clear();
+}
+
 }} // namespace EE::Graphics

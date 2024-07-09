@@ -144,6 +144,8 @@ class EE_API FontTrueType : public Font {
 
 	bool setCurrentSize( unsigned int characterSize ) const;
 
+	void clearCache();
+
   protected:
 	friend class Text;
 

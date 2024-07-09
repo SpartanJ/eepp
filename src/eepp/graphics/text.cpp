@@ -149,6 +149,7 @@ static bool shapeAndRun( const String& string, const FontStyleConfig& config,
 	return shapeAndRun( string, static_cast<FontTrueType*>( config.Font ), config.CharacterSize,
 						config.Style, config.OutlineThickness, cb );
 }
+
 #endif
 
 } // namespace
@@ -693,19 +694,20 @@ Text::Text( const String& string, Font* font, unsigned int characterSize ) :
 Text::Text( Font* font, unsigned int characterSize ) {
 	mFontStyleConfig.Font = font;
 	mFontStyleConfig.CharacterSize = characterSize;
-	mFontHeight = mFontStyleConfig.Font->getFontHeight( mFontStyleConfig.CharacterSize );
-	if ( !mFontStyleConfig.Font->isScalable() )
-		mFontStyleConfig.CharacterSize = mFontHeight;
+	if ( !mFontStyleConfig.Font->isScalable() ) {
+		mFontStyleConfig.CharacterSize =
+			mFontStyleConfig.Font->getFontHeight( mFontStyleConfig.CharacterSize );
+	}
 }
 
 void Text::create( Font* font, const String& text, Color FontColor, Color FontShadowColor,
 				   Uint32 characterSize ) {
 	mFontStyleConfig.Font = font;
 	mFontStyleConfig.CharacterSize = characterSize;
-
-	mFontHeight = mFontStyleConfig.Font->getFontHeight( mFontStyleConfig.CharacterSize );
-	if ( !mFontStyleConfig.Font->isScalable() )
-		mFontStyleConfig.CharacterSize = mFontHeight;
+	if ( !mFontStyleConfig.Font->isScalable() ) {
+		mFontStyleConfig.CharacterSize =
+			mFontStyleConfig.Font->getFontHeight( mFontStyleConfig.CharacterSize );
+	}
 	mString = text;
 	setFillColor( FontColor );
 	setShadowColor( FontShadowColor );
@@ -756,10 +758,10 @@ bool Text::setString( String&& string ) {
 void Text::setFont( Font* font ) {
 	if ( NULL != font && mFontStyleConfig.Font != font ) {
 		mFontStyleConfig.Font = font;
-
-		mFontHeight = mFontStyleConfig.Font->getFontHeight( mFontStyleConfig.CharacterSize );
-		if ( !mFontStyleConfig.Font->isScalable() )
-			mFontStyleConfig.CharacterSize = mFontHeight;
+		if ( !mFontStyleConfig.Font->isScalable() ) {
+			mFontStyleConfig.CharacterSize =
+				mFontStyleConfig.Font->getFontHeight( mFontStyleConfig.CharacterSize );
+		}
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
 	}
@@ -768,11 +770,10 @@ void Text::setFont( Font* font ) {
 void Text::setFontSize( unsigned int size ) {
 	if ( NULL != mFontStyleConfig.Font && mFontStyleConfig.CharacterSize != size ) {
 		mFontStyleConfig.CharacterSize = size;
-
-		mFontHeight = mFontStyleConfig.Font->getFontHeight( mFontStyleConfig.CharacterSize );
-		if ( !mFontStyleConfig.Font->isScalable() )
-			mFontStyleConfig.CharacterSize = mFontHeight;
-
+		if ( !mFontStyleConfig.Font->isScalable() ) {
+			mFontStyleConfig.CharacterSize =
+				mFontStyleConfig.Font->getFontHeight( mFontStyleConfig.CharacterSize );
+		}
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
 	}
@@ -840,10 +841,6 @@ Font* Text::getFont() const {
 
 unsigned int Text::getCharacterSize() const {
 	return mFontStyleConfig.CharacterSize;
-}
-
-const Uint32& Text::getFontHeight() const {
-	return mFontHeight;
 }
 
 Uint32 Text::getStyle() const {
