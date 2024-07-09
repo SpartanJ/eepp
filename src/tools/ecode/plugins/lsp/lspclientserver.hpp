@@ -72,6 +72,8 @@ class LSPClientServer {
 
 	bool isRunning();
 
+	bool isReady() const;
+
 	const LSPServerCapabilities& getCapabilities() const;
 
 	LSPClientServerManager* getManager() const;

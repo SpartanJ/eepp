@@ -85,6 +85,8 @@ class LSPDocumentClient : public TextDocument::Client {
 
 	void refreshTag();
 
+	void setupFoldRangeService();
+
 	UISceneNode* getUISceneNode();
 
 	void processTokens( LSPSemanticTokensDelta&& tokens, const Uint64& docModificationId );

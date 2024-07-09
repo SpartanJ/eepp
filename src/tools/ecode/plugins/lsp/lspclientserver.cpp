@@ -1308,6 +1308,10 @@ bool LSPClientServer::isRunning() {
 						 : ( mUsingSocket && mSocket != nullptr );
 }
 
+bool LSPClientServer::isReady() const {
+	return mReady;
+}
+
 void LSPClientServer::removeDoc( TextDocument* doc ) {
 	Lock l( mClientsMutex );
 	if ( mClients.erase( doc ) > 0 ) {

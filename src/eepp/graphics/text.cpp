@@ -1768,11 +1768,11 @@ void Text::ensureGeometryUpdate() {
 	Float vspace = static_cast<Float>(
 		mFontStyleConfig.Font->getLineSpacing( mFontStyleConfig.CharacterSize ) );
 	Float x = 0.f;
-	Float y = static_cast<Float>( mFontStyleConfig.CharacterSize );
+	Float y = mFontStyleConfig.CharacterSize;
 
 	// Create one quad for each character
-	Float minX = static_cast<Float>( mFontStyleConfig.CharacterSize );
-	Float minY = static_cast<Float>( mFontStyleConfig.CharacterSize );
+	Float minX = mFontStyleConfig.CharacterSize;
+	Float minY = mFontStyleConfig.CharacterSize;
 	Float maxX = 0.f;
 	Float maxY = 0.f;
 	Float maxW = 0.f;

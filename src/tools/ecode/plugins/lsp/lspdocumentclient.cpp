@@ -18,6 +18,18 @@ LSPDocumentClient::LSPDocumentClient( LSPClientServer* server, TextDocument* doc
 	notifyOpen();
 	requestSymbolsDelayed();
 	requestSemanticHighlightingDelayed();
+	if ( mServer->isReady() )
+		setupFoldRangeService();
+}
+
+void LSPDocumentClient::onServerInitialized() {
+	requestSymbols();
+	requestSemanticHighlighting();
+	setupFoldRangeService();
+	// requestCodeLens();
+}
+
+void LSPDocumentClient::setupFoldRangeService() {
 	mDoc->getFoldRangeService().setProvider( [this]( auto, bool requestFolds ) -> bool {
 		return tryRequestFoldRanges( requestFolds );
 	} );
@@ -120,13 +132,6 @@ LSPClientServer* LSPDocumentClient::getServer() const {
 
 int LSPDocumentClient::getVersion() const {
 	return mVersion;
-}
-
-void LSPDocumentClient::onServerInitialized() {
-	requestSymbols();
-	requestSemanticHighlighting();
-	mDoc->getFoldRangeService().findRegions();
-	// requestCodeLens();
 }
 
 void LSPDocumentClient::refreshTag() {

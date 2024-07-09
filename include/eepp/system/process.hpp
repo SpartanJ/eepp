@@ -218,7 +218,7 @@ class EE_API Process {
 	void startShutdown();
 
 	/** Indicates if the process started its shutdown */
-	const bool& isShuttingDown();
+	bool isShuttingDown() const;
 
   protected:
 	void* mProcess{ nullptr };
