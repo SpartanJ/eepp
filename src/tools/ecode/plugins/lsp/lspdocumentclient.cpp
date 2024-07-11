@@ -30,9 +30,7 @@ void LSPDocumentClient::onServerInitialized() {
 }
 
 void LSPDocumentClient::setupFoldRangeService() {
-	mDoc->getFoldRangeService().setProvider( [this]( auto, bool requestFolds ) -> bool {
-		return tryRequestFoldRanges( requestFolds );
-	} );
+	mDoc->getFoldRangeService().setProvider( this );
 	if ( mDoc->getFoldRangeService().isEnabled() )
 		tryRequestFoldRanges( true );
 }
@@ -55,6 +53,10 @@ bool LSPDocumentClient::tryRequestFoldRanges( bool requestFolds ) {
 	if ( ret && requestFolds )
 		requestFoldRange();
 	return ret;
+}
+
+bool LSPDocumentClient::foldingRangeProvider() const {
+	return mServer->getCapabilities().foldingRangeProvider;
 }
 
 void LSPDocumentClient::onDocumentLoaded( TextDocument* ) {

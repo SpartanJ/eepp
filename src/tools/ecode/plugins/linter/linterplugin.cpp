@@ -565,6 +565,7 @@ PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notificat
 }
 
 TextDocument* LinterPlugin::getDocumentFromURI( const URI& uri ) {
+	Lock l( mDocMutex );
 	for ( TextDocument* doc : mDocs ) {
 		if ( doc->getURI() == uri )
 			return doc;

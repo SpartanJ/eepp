@@ -104,7 +104,7 @@ FoldRangeServive::FoldRangeServive( TextDocument* doc ) : mDoc( doc ) {}
 bool FoldRangeServive::canFold() const {
 	if ( !mEnabled )
 		return false;
-	if ( mProvider && mProvider( mDoc, false ) )
+	if ( mProvider && mProvider->foldingRangeProvider() )
 		return true;
 	auto type = mDoc->getSyntaxDefinition().getFoldRangeType();
 	return type == FoldRangeType::Braces || type == FoldRangeType::Indentation;
@@ -114,8 +114,10 @@ void FoldRangeServive::findRegions() {
 	if ( !mEnabled || mDoc == nullptr || !canFold() )
 		return;
 
-	if ( mProvider && mProvider( mDoc, true ) )
+	if ( mProvider && mProvider->foldingRangeProvider() ){
+		mProvider->requestFoldRange();
 		return;
+	}
 
 	switch ( mDoc->getSyntaxDefinition().getFoldRangeType() ) {
 		case FoldRangeType::Braces:
@@ -190,7 +192,7 @@ void FoldRangeServive::setFoldingRegions( std::vector<TextRange> regions ) {
 	mDoc->notifyFoldRegionsUpdated( oldCount, newCount );
 }
 
-const FoldRangeServive::FoldRangeProvider& FoldRangeServive::getProvider() const {
+FoldRangeProvider* FoldRangeServive::getProvider() const {
 	return mProvider;
 }
 
@@ -198,7 +200,7 @@ bool FoldRangeServive::hasProvider() const {
 	return mProvider != nullptr;
 }
 
-void FoldRangeServive::setProvider( const FoldRangeProvider& provider ) {
+void FoldRangeServive::setProvider( FoldRangeProvider* provider ) {
 	mProvider = provider;
 	if ( provider == nullptr ) {
 		mFoldingRegions.clear();

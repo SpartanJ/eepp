@@ -20,7 +20,7 @@ namespace ecode {
 class LSPClientServer;
 class LSPClientServerManager;
 
-class LSPDocumentClient : public TextDocument::Client {
+class LSPDocumentClient : public TextDocument::Client, public FoldRangeProvider {
   public:
 	LSPDocumentClient( LSPClientServer* server, TextDocument* doc );
 
@@ -59,6 +59,8 @@ class LSPDocumentClient : public TextDocument::Client {
 	void requestSemanticHighlightingDelayed( bool reqFull = false );
 
 	void requestFoldRange();
+
+	bool foldingRangeProvider() const;
 
 	bool isRunningSemanticTokens() const;
 
