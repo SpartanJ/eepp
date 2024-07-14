@@ -458,10 +458,7 @@ bool TextDocument::isBOM() const {
 }
 
 void TextDocument::notifyDocumentMoved( const std::string& path ) {
-	mFilePath = path;
-	mFileURI = URI( "file://" + mFilePath );
-	mFileRealPath = FileInfo::isLink( mFilePath ) ? FileInfo( FileInfo( mFilePath ).linksTo() )
-												  : FileInfo( mFilePath );
+	changeFilePath( path, false );
 	notifyDocumentMoved();
 }
 
@@ -503,19 +500,14 @@ TextDocument::LoadStatus TextDocument::loadFromFile( const std::string& path ) {
 		std::string pathFix( path );
 		Pack* pack = PackManager::instance()->exists( pathFix );
 		if ( NULL != pack ) {
-			mFilePath = pathFix;
-			mFileRealPath = FileInfo();
-			mFileURI = URI( "file://" + mFilePath );
+			changeFilePath( pathFix, false );
 			return loadFromPack( pack, pathFix );
 		}
 	}
 
 	IOStreamFile file( path, "rb" );
 	auto ret = loadFromStream( file, path, true );
-	mFilePath = path;
-	mFileURI = URI( "file://" + mFilePath );
-	mFileRealPath = FileInfo::isLink( mFilePath ) ? FileInfo( FileInfo( mFilePath ).linksTo() )
-												  : FileInfo( mFilePath );
+	changeFilePath( path, false );
 	resetSyntax();
 	mLoading = false;
 	if ( !mLoadingAsync )
@@ -3002,6 +2994,32 @@ std::vector<TextDocumentLine> TextDocument::getLines() const {
 
 void TextDocument::setLines( std::vector<TextDocumentLine>&& lines ) {
 	mLines = std::move( lines );
+}
+
+std::string TextDocument::serializeUndoRedo( bool inverted ) {
+	return mUndoStack.toJSON( inverted );
+}
+
+void TextDocument::unserializeUndoRedo( const std::string& jsonString ) {
+	return mUndoStack.fromJSON( jsonString );
+}
+
+void TextDocument::changeFilePath( const std::string& filePath ) {
+	changeFilePath( filePath, true );
+}
+
+void TextDocument::setDirtyUntilSave() {
+	mCleanChangeId = std::numeric_limits<Uint64>::max();
+	notifySelectionChanged();
+}
+
+void TextDocument::changeFilePath( const std::string& filePath, bool notify ) {
+	mFilePath = filePath;
+	mFileURI = URI( "file://" + mFilePath );
+	mFileRealPath = FileInfo::isLink( mFilePath ) ? FileInfo( FileInfo( mFilePath ).linksTo() )
+												  : FileInfo( mFilePath );
+	if ( notify )
+		notifyDocumentMoved();
 }
 
 static inline void changeDepth( SyntaxHighlighter* highlighter, int& depth, const TextPosition& pos,

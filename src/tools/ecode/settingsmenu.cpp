@@ -640,6 +640,16 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 					   mApp->getConfig().editor.autoReloadOnDiskChange )
 		->setId( "autoreload_on_disk_change" );
 
+	mGlobalMenu
+		->addCheckBox( i18n( "auto_save_documents", "Auto-Save Open Documents" ),
+					   mApp->getConfig().workspace.autoSave )
+		->setTooltipText(
+			i18n( "auto_save_documents_desc",
+				  "When auto-save open documents is enabled the editor will keep\n"
+				  "the document buffer changes between sessions, even if they are not saved\n"
+				  "before exiting the program." ) )
+		->setId( "auto_save_documents" );
+
 	mGlobalMenu->addSeparator();
 
 	mGlobalMenu->add( i18n( "line_breaking_column", "Line Breaking Column" ) )
@@ -668,6 +678,8 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 				mApp->getConfig().doc.autoDetectIndentType = item->isActive();
 			} else if ( "autoreload_on_disk_change" == id ) {
 				mApp->getConfig().editor.autoReloadOnDiskChange = item->isActive();
+			} else if ( "auto_save_documents" == id ) {
+				mApp->getConfig().workspace.autoSave = item->isActive();
 			}
 		} else if ( "line_breaking_column" == id ) {
 			mApp->setLineBreakingColumn();

@@ -122,7 +122,6 @@ struct ProjectDocumentConfig {
 };
 
 struct ProjectBuildConfiguration {
-	ProjectBuildConfiguration() {}
 	std::string buildName;
 	std::string buildType;
 	std::string runName;
@@ -166,10 +165,20 @@ struct TerminalConfig {
 struct WorkspaceConfig {
 	bool restoreLastSession{ false };
 	bool checkForUpdatesAtStartup{ true };
+	bool autoSave{ true };
 };
 
 struct LanguagesExtensions {
 	std::map<std::string, std::string> priorities;
+};
+
+struct AutoSaveFile {
+	std::string cachePath;
+	std::string fspath;
+	Uint64 fsmtime{ 0 };
+	std::string fshash;
+	std::string name;
+	std::string selection;
 };
 
 class AppConfig {
@@ -203,17 +212,18 @@ class AppConfig {
 
 	void saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, const ProjectDocumentConfig& docConfig,
-					  const ProjectBuildConfiguration& buildConfig );
+					  const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
+					  bool autoSave );
 
 	void loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, ProjectDocumentConfig& docConfig,
-					  ecode::App* app );
+					  ecode::App* app, bool autoSave );
 
   protected:
 	Int64 editorsToLoad{ 0 };
 
 	void loadDocuments( UICodeEditorSplitter* editorSplitter, json j, UITabWidget* curTabWidget,
-						ecode::App* app );
+						ecode::App* app, const std::vector<AutoSaveFile>& autoSaveFiles );
 
 	void editorLoadedCounter( ecode::App* app );
 };

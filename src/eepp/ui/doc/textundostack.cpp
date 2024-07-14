@@ -1,10 +1,131 @@
 #include <eepp/core/core.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/doc/textundostack.hpp>
+
+#include <nlohmann/json.hpp>
 
 using namespace EE::System;
 
 namespace EE { namespace UI { namespace Doc {
+
+using json = nlohmann::json;
+
+class TextUndoCommand {
+  public:
+	TextUndoCommand( const Uint64& id, const TextUndoCommandType& type, const Time& timestamp );
+
+	virtual ~TextUndoCommand();
+
+	const Uint64& getId() const;
+
+	const TextUndoCommandType& getType() const;
+
+	const Time& getTimestamp() const;
+
+	virtual json toJSON() = 0;
+
+  protected:
+	Uint64 mId;
+	TextUndoCommandType mType;
+	Time mTimestamp;
+
+	json baseJSON() {
+		json j;
+		j["type"] = mType;
+		j["timestamp"] = mTimestamp.toString();
+		return j;
+	}
+};
+
+class TextUndoCommandInsert : public TextUndoCommand {
+  public:
+	TextUndoCommandInsert( const Uint64& id, const size_t& cursorIdx, const String& text,
+						   const TextPosition& position, const Time& timestamp );
+
+	const String& getText() const;
+
+	const TextPosition& getPosition() const;
+
+	size_t getCursorIdx() const;
+
+	json toJSON() {
+		auto j = baseJSON();
+		j["text"] = mText.toUtf8();
+		j["position"] = mPosition.toString();
+		j["cursorIdx"] = mCursorIdx;
+		return j;
+	}
+
+	static TextUndoCommandInsert* fromJSON( json j, Uint64 id ) {
+		auto timestamp = Time::fromString( j["timestamp"].get<std::string>() );
+		auto text = String::fromUtf8( j["text"].get<std::string>() );
+		auto position = TextPosition::fromString( j["position"].get<std::string>() );
+		auto cursorIdx = j["cursorIdx"].get<size_t>();
+		return eeNew( TextUndoCommandInsert, ( id, cursorIdx, text, position, timestamp ) );
+	}
+
+  protected:
+	String mText;
+	TextPosition mPosition;
+	size_t mCursorIdx;
+};
+
+class TextUndoCommandRemove : public TextUndoCommand {
+  public:
+	TextUndoCommandRemove( const Uint64& id, const size_t& cursorIdx, const TextRange& range,
+						   const Time& timestamp );
+
+	const TextRange& getRange() const;
+
+	size_t getCursorIdx() const;
+
+	json toJSON() {
+		auto j = baseJSON();
+		j["range"] = mRange.toString();
+		j["cursorIdx"] = mCursorIdx;
+		return j;
+	}
+
+	static TextUndoCommandRemove* fromJSON( json j, Uint64 id ) {
+		auto timestamp = Time::fromString( j["timestamp"].get<std::string>() );
+		auto range = TextRange::fromString( j["range"].get<std::string>() );
+		auto cursorIdx = j["cursorIdx"].get<size_t>();
+		return eeNew( TextUndoCommandRemove, ( id, cursorIdx, range, timestamp ) );
+	}
+
+  protected:
+	TextRange mRange;
+	size_t mCursorIdx;
+};
+
+class TextUndoCommandSelection : public TextUndoCommand {
+  public:
+	TextUndoCommandSelection( const Uint64& id, const size_t& cursorIdx,
+							  const TextRanges& selection, const Time& timestamp );
+
+	const TextRanges& getSelection() const;
+
+	size_t getCursorIdx() const;
+
+	json toJSON() {
+		auto j = baseJSON();
+		j["range"] = mSelection.toString();
+		j["cursorIdx"] = mCursorIdx;
+		return j;
+	}
+
+	static TextUndoCommandSelection* fromJSON( json j, Uint64 id ) {
+		auto timestamp = Time::fromString( j["timestamp"].get<std::string>() );
+		auto range = TextRange::fromString( j["range"].get<std::string>() );
+		auto cursorIdx = j["cursorIdx"].get<size_t>();
+		return eeNew( TextUndoCommandSelection, ( id, cursorIdx, range, timestamp ) );
+	}
+
+  protected:
+	TextRanges mSelection;
+	size_t mCursorIdx;
+};
 
 TextUndoCommand::TextUndoCommand( const Uint64& id, const TextUndoCommandType& type,
 								  const Time& timestamp ) :
@@ -198,6 +319,57 @@ Uint64 TextUndoStack::getCurrentChangeId() const {
 	if ( mUndoStack.empty() )
 		return 0;
 	return mUndoStack.back()->getId();
+}
+
+std::string TextUndoStack::toJSON( bool inverted ) {
+	json j = json::array();
+	if ( inverted ) {
+		while ( hasUndo() )
+			undo();
+
+		for ( auto it = mRedoStack.rbegin(); it != mRedoStack.rend(); it++ ) {
+			auto cmd = *it;
+			j.push_back( cmd->toJSON() );
+		}
+
+		while ( hasRedo() )
+			redo();
+	} else {
+		for ( auto it = mUndoStack.rbegin(); it != mUndoStack.rend(); it++ ) {
+			auto cmd = *it;
+			j.push_back( cmd->toJSON() );
+		}
+	}
+	return j.dump();
+}
+
+void TextUndoStack::fromJSON( const std::string& jsonString ) {
+	json j;
+	try {
+		j = json::parse( jsonString, nullptr, true, true );
+		if ( !j.is_array() )
+			return;
+		for ( auto it = j.rbegin(); it != j.rend(); it++ ) {
+			const auto& jobj = *it;
+			auto type = static_cast<TextUndoCommandType>( jobj["type"].get<int>() );
+			switch ( type ) {
+				case TextUndoCommandType::Insert:
+					pushUndo( mRedoStack,
+							  TextUndoCommandInsert::fromJSON( jobj, ++mChangeIdCounter ) );
+					break;
+				case TextUndoCommandType::Remove:
+					pushUndo( mRedoStack,
+							  TextUndoCommandRemove::fromJSON( jobj, ++mChangeIdCounter ) );
+					break;
+				case TextUndoCommandType::Selection:
+					pushUndo( mRedoStack,
+							  TextUndoCommandSelection::fromJSON( jobj, ++mChangeIdCounter ) );
+					break;
+			}
+		}
+	} catch ( const json::exception& e ) {
+		Log::error( "TextUndoStack::fromJSON - Error parsing json string:\n%s", jsonString );
+	}
 }
 
 UndoStackContainer& TextUndoStack::getUndoStackContainer() {

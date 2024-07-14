@@ -54,7 +54,7 @@ void appLoop() {
 }
 
 bool App::onCloseRequestCallback( EE::Window::Window* ) {
-	if ( mSplitter->isAnyEditorDirty() ) {
+	if ( mSplitter->isAnyEditorDirty() && !mConfig.workspace.autoSave ) {
 		if ( mCloseMsgBox )
 			return false;
 		mCloseMsgBox = UIMessageBox::New(
@@ -2200,11 +2200,12 @@ bool App::isUnlockedCommand( const std::string& command ) {
 	return std::find( cmds.begin(), cmds.end(), command ) != cmds.end();
 }
 
-void App::saveProject() {
+void App::saveProject( bool onlyIfNeeded, bool autoSaveEnabled ) {
 	if ( !mCurrentProject.empty() ) {
 		mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
 							 mProjectBuildManager ? mProjectBuildManager->getConfig()
-												  : ProjectBuildConfiguration() );
+												  : ProjectBuildConfiguration(),
+							 onlyIfNeeded, autoSaveEnabled && mConfig.workspace.autoSave );
 	}
 }
 
@@ -2258,10 +2259,12 @@ void App::closeFolder() {
 	if ( mCurrentProject.empty() )
 		return;
 
+	saveProject( true );
+
 	if ( mProjectBuildManager )
 		mProjectBuildManager.reset();
 
-	if ( mSplitter->isAnyEditorDirty() ) {
+	if ( mSplitter->isAnyEditorDirty() && !mConfig.workspace.autoSave ) {
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
 			i18n( "confirm_close_folder",
@@ -2284,7 +2287,7 @@ void App::closeFolder() {
 	}
 }
 
-void App::createDocDirtyAlert( UICodeEditor* editor ) {
+void App::createDocDirtyAlert( UICodeEditor* editor, bool showEnableAutoReload ) {
 	UILinearLayout* docAlert = editor->findByClass<UILinearLayout>( "doc_alert" );
 
 	if ( docAlert )
@@ -2310,7 +2313,7 @@ void App::createDocDirtyAlert( UICodeEditor* editor ) {
 	editor->enableReportSizeChangeToChilds();
 
 	docAlert->find( "file_autoreload" )
-		->setVisible( !editor->getDocument().isDirty() )
+		->setVisible( showEnableAutoReload ? !editor->getDocument().isDirty() : false )
 		->onClick( [editor, docAlert, this]( const MouseEvent* ) {
 			editor->getDocument().reload();
 			editor->disableReportSizeChangeToChilds();
@@ -2688,6 +2691,11 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
 		editor->runOnMainThread( [this, editor] {
 			updateEditorTabTitle( editor );
+
+			UITab* tab = reinterpret_cast<UITab*>( editor->getData() );
+			tab->setTooltipText(
+				editor->getDocument().hasFilepath() ? editor->getDocument().getFilePath() : "" );
+
 			editor->setSyntaxDefinition( editor->getDocument().guessSyntax() );
 		} );
 	} );
@@ -3345,7 +3353,8 @@ void App::loadFolder( const std::string& path ) {
 	Clock projClock;
 	mProjectBuildManager =
 		std::make_unique<ProjectBuildManager>( rpath, mThreadPool, mSidePanel, this );
-	mConfig.loadProject( rpath, mSplitter, mConfigPath, mProjectDocConfig, this );
+	mConfig.loadProject( rpath, mSplitter, mConfigPath, mProjectDocConfig, this,
+						 mConfig.workspace.autoSave );
 	Log::info( "Load project took: %.2f ms", projClock.getElapsedTime().asMilliseconds() );
 
 	loadFileSystemMatcher( rpath );
@@ -3379,7 +3388,7 @@ void App::loadFolder( const std::string& path ) {
 
 	mPluginManager->setWorkspaceFolder( rpath );
 
-	saveProject();
+	saveProject( true, false );
 }
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS
@@ -3895,7 +3904,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 				if ( mWindow && mThreadPool &&
 					 mWindow->getInput()->getElapsedSinceLastKeyboardOrMouseEvent().asSeconds() <
 						 60.f ) {
-					saveProject();
+					saveProject( true );
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 					mThreadPool->run( [] { malloc_trim( 0 ); } );
 #endif

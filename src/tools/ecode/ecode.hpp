@@ -457,13 +457,15 @@ class App : public UICodeEditorSplitter::Client {
 
 	const std::string& getFileToOpen() const;
 
-	void saveProject();
+	void saveProject( bool onlyIfNeeded = false, bool autoSaveEnabled = true );
 
 	std::pair<bool, std::string> generateConfigPath();
 
 	const std::string getScriptsPath() const { return mScriptsPath; }
 
 	bool isAnyStatusBarSectionVisible() const;
+
+	void createDocDirtyAlert( UICodeEditor* editor, bool showEnableAutoReload = true );
 
   protected:
 	std::vector<std::string> mArgs;
@@ -622,8 +624,6 @@ class App : public UICodeEditorSplitter::Client {
 	void closeEditors();
 
 	void removeFolderWatches();
-
-	void createDocDirtyAlert( UICodeEditor* editor );
 
 	void createDocManyLangsAlert( UICodeEditor* editor );
 

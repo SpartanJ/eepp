@@ -175,6 +175,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	workspace.restoreLastSession = ini.getValueB( "workspace", "restore_last_session", false );
 	workspace.checkForUpdatesAtStartup =
 		ini.getValueB( "workspace", "check_for_updates_at_startup", true );
+	workspace.autoSave = ini.getValueB( "workspace", "auto_save", true );
 
 	std::map<std::string, bool> pluginsEnabled;
 	const auto& creators = pluginManager->getDefinitions();
@@ -314,6 +315,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "workspace", "restore_last_session", workspace.restoreLastSession );
 	ini.setValueB( "workspace", "check_for_updates_at_startup",
 				   workspace.checkForUpdatesAtStartup );
+	ini.setValueB( "workspace", "auto_save", workspace.autoSave );
 
 	const auto& pluginsEnabled = pluginManager->getPluginsEnabled();
 	for ( const auto& plugin : pluginsEnabled )
@@ -398,7 +400,8 @@ json saveNode( Node* node ) {
 
 void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, const ProjectDocumentConfig& docConfig,
-							 const ProjectBuildConfiguration& buildConfig ) {
+							 const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
+							 bool autoSave ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	if ( !FileSystem::fileExists( projectsPath ) )
@@ -426,7 +429,67 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	cfg.setValue( "nodes", "documents",
 				  saveNode( editorSplitter->getBaseLayout()->getFirstChild() ).dump() );
 	cfg.deleteKey( "files" );
-	cfg.writeFile();
+	if ( onlyIfNeeded ) {
+		IOStreamString stringFile;
+		cfg.writeStream( stringFile );
+		if ( !FileSystem::fileExists( cfg.path() ) ||
+			 MD5::fromString( stringFile.getStream() ) != MD5::fromFile( cfg.path() ) ) {
+			FileSystem::fileWrite( cfg.path(), stringFile.getStream() );
+		}
+	} else {
+		cfg.writeFile();
+	}
+	if ( !autoSave )
+		return;
+	std::string statePath( projectsPath + "state" );
+	if ( !FileSystem::fileExists( statePath ) && !FileSystem::makeDir( statePath ) )
+		return;
+	std::string projectStatePath( statePath + FileSystem::getOSSlash() + hash.toHexString() );
+	if ( !FileSystem::fileExists( projectStatePath ) && !FileSystem::makeDir( projectStatePath ) )
+		return;
+	FileSystem::dirAddSlashAtEnd( projectStatePath );
+	nlohmann::json j = nlohmann::json::array();
+	std::vector<std::string> fileNames;
+	editorSplitter->forEachDocSharedPtr(
+		[&j, &projectStatePath, &fileNames]( std::shared_ptr<TextDocument> doc ) {
+			if ( !doc->isDirty() )
+				return;
+			nlohmann::json fj;
+			IOStreamString stream;
+			doc->save( stream, true );
+			std::string hash = MD5::fromString( stream.getStream() ).toHexString();
+			std::string cacheFileName = hash + "." + doc->getFilename();
+			std::string cachePath = projectStatePath + cacheFileName;
+			fj["cachepath"] = cachePath;
+			if ( doc->hasFilepath() ) {
+				fj["fspath"] = doc->getFilePath();
+				fj["fsmtime"] = FileInfo( doc->getFilePath() ).getModificationTime();
+				fj["fshash"] = doc->getHashHexString();
+			} else {
+				fj["name"] = doc->getFilename();
+				fj["selection"] = doc->getSelections().toString();
+			}
+			j.push_back( std::move( fj ) );
+			fileNames.push_back( cacheFileName );
+			if ( !FileSystem::fileExists( cachePath ) ||
+				 MD5::fromFile( cachePath ) != MD5::fromString( stream.getStream() ) ) {
+				FileSystem::fileWrite( cachePath, stream.getStream() );
+			}
+		} );
+	std::string stateFileName( "state.json" );
+	fileNames.push_back( stateFileName );
+	std::string projectStateFilePath( projectStatePath + stateFileName );
+	if ( j.size() != 0 ) {
+		std::string stateString( j.dump( 2 ) );
+		if ( MD5::fromFile( projectStateFilePath ) != MD5::fromString( stateString ) )
+			FileSystem::fileWrite( projectStateFilePath, stateString );
+	} else if ( FileSystem::fileExists( projectStateFilePath ) ) {
+		FileSystem::fileRemove( projectStateFilePath );
+	}
+	auto curFiles = FileSystem::filesGetInPath( projectStatePath );
+	for ( const auto& file : curFiles )
+		if ( std::find( fileNames.begin(), fileNames.end(), file ) == fileNames.end() )
+			FileSystem::fileRemove( projectStatePath + file );
 }
 
 static void countTotalEditors( json j, size_t& curTotal ) {
@@ -460,7 +523,8 @@ void AppConfig::editorLoadedCounter( ecode::App* app ) {
 }
 
 void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
-							   UITabWidget* curTabWidget, ecode::App* app ) {
+							   UITabWidget* curTabWidget, ecode::App* app,
+							   const std::vector<AutoSaveFile>& autoSaveFiles ) {
 	if ( j["type"] == "tabwidget" ) {
 		Int64 currentPage = j["current_page"];
 		size_t totalToLoad = j["files"].size();
@@ -491,19 +555,44 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 
 					editorLoadedCounter( app );
 				} else {
+					auto autoSaveIt = std::find_if(
+						autoSaveFiles.begin(), autoSaveFiles.end(),
+						[&path]( const AutoSaveFile& file ) { return file.fspath == path; } );
+
+					std::string loadPath( path );
+					AutoSaveFile autoSaveFile;
+					if ( autoSaveIt != autoSaveFiles.end() )
+						autoSaveFile = *autoSaveIt;
+
 					editorSplitter->loadAsyncFileFromPathInNewTab(
 						path,
-						[this, curTabWidget, selection, totalToLoad, currentPage,
-						 app]( UICodeEditor* editor, const std::string& ) {
+						[this, curTabWidget, selection, totalToLoad, currentPage, app, path,
+						 autoSaveFile]( UICodeEditor* editor, const std::string& ) {
 							if ( !editor->getDocument().getSelection().isValid() ||
 								 editor->getDocument().getSelection() ==
 									 TextRange( { 0, 0 }, { 0, 0 } ) ) {
 								editor->getDocument().setSelection( selection );
 								editor->scrollToCursor();
 							}
+
 							if ( curTabWidget->getTabCount() == totalToLoad )
 								curTabWidget->setTabSelected( eeclamp<Int32>(
 									currentPage, 0, curTabWidget->getTabCount() - 1 ) );
+
+							if ( !autoSaveFile.cachePath.empty() ) {
+								TextDocument& doc = editor->getDocument();
+								auto diskFileInfo = doc.getFileInfo();
+								TextDocument cachedDoc;
+								cachedDoc.loadFromFile( autoSaveFile.cachePath );
+								doc.selectAll();
+								doc.textInput( cachedDoc.getText() );
+								doc.setSelection( selection );
+								doc.resetUndoRedo();
+								doc.setDirtyUntilSave();
+								editor->scrollToCursor();
+								if ( diskFileInfo.getModificationTime() > autoSaveFile.fsmtime )
+									app->createDocDirtyAlert( editor, false );
+							}
 
 							editorLoadedCounter( app );
 						},
@@ -527,9 +616,9 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 		if ( nullptr == splitter )
 			return;
 
-		loadDocuments( editorSplitter, j["first"], curTabWidget, app );
+		loadDocuments( editorSplitter, j["first"], curTabWidget, app, autoSaveFiles );
 		UITabWidget* tabWidget = splitter->getLastWidget()->asType<UITabWidget>();
-		loadDocuments( editorSplitter, j["last"], tabWidget, app );
+		loadDocuments( editorSplitter, j["last"], tabWidget, app, autoSaveFiles );
 
 		splitter->setSplitPartition( StyleSheetLength( j["split"] ) );
 	}
@@ -537,7 +626,7 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 
 void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, ProjectDocumentConfig& docConfig,
-							 ecode::App* app ) {
+							 ecode::App* app, bool autoSave ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	MD5::Result hash = MD5::fromString( projectFolder );
@@ -572,21 +661,72 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 		app->getProjectBuildManager()->setConfig( prjCfg );
 	}
 
+	std::vector<AutoSaveFile> autoSaveFiles;
+	if ( autoSave ) {
+		std::string projectStatePath( projectsPath + "state" + FileSystem::getOSSlash() +
+									  hash.toHexString() + FileSystem::getOSSlash() +
+									  "state.json" );
+		if ( FileSystem::fileExists( projectStatePath ) ) {
+			std::string stateStr;
+			FileSystem::fileGet( projectStatePath, stateStr );
+			json j;
+			try {
+				j = json::parse( stateStr );
+				if ( !j.is_discarded() && j.is_array() ) {
+					for ( const auto& jobj : j ) {
+						AutoSaveFile autoSaveFile;
+						autoSaveFile.cachePath = jobj.value( "cachepath", "" );
+						if ( autoSaveFile.cachePath.empty() )
+							continue;
+						autoSaveFile.fspath = jobj.value( "fspath", "" );
+						autoSaveFile.fsmtime = jobj.value( "fsmtime", 0 );
+						autoSaveFile.fshash = jobj.value( "fshash", "" );
+						autoSaveFile.name = jobj.value( "name", "" );
+						autoSaveFile.selection = jobj.value( "selection", "" );
+						autoSaveFiles.emplace_back( std::move( autoSaveFile ) );
+					}
+				}
+			} catch ( const json::exception& e ) {
+				Log::error( "AppConfig::loadProject: error loading project state: %s", e.what() );
+			}
+		}
+	}
+
+	UITabWidget* curTabWidget =
+		editorSplitter->tabWidgetFromWidget( editorSplitter->getCurWidget() );
+
 	if ( cfg.keyValueExists( "nodes", "documents" ) ) {
 		json j;
 		try {
 			j = json::parse( cfg.getValue( "nodes", "documents" ) );
 		} catch ( const json::exception& e ) {
 			Log::error( "AppConfig::loadProject: error loading project: %s", e.what() );
-			return;
 		}
-		if ( j.is_discarded() )
-			return;
+		if ( !j.is_discarded() ) {
+			editorsToLoad = countTotalEditors( j );
+			loadDocuments( editorSplitter, j, curTabWidget, app, autoSaveFiles );
+		}
+	}
 
-		editorsToLoad = countTotalEditors( j );
-		UITabWidget* curTabWidget =
-			editorSplitter->tabWidgetFromWidget( editorSplitter->getCurWidget() );
-		loadDocuments( editorSplitter, j, curTabWidget, app );
+	for ( const auto& autoSaveFile : autoSaveFiles ) {
+		if ( !autoSaveFile.fspath.empty() || autoSaveFile.name.empty() ||
+			 autoSaveFile.cachePath.empty() )
+			continue;
+
+		editorSplitter->loadAsyncFileFromPathInNewTab(
+			autoSaveFile.cachePath,
+			[autoSaveFile]( UICodeEditor* editor, const std::string& ) {
+				TextDocument& doc = editor->getDocument();
+				auto selection = TextRange::fromString( autoSaveFile.selection );
+				doc.setDefaultFileName( autoSaveFile.name );
+				doc.changeFilePath( autoSaveFile.name );
+				doc.setDirtyUntilSave();
+				doc.setSelection( selection );
+				doc.resetUndoRedo();
+				doc.setDirtyUntilSave();
+				editor->scrollToCursor();
+			},
+			curTabWidget );
 	}
 }
 

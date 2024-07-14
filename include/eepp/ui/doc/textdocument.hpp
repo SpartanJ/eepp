@@ -631,6 +631,14 @@ class EE_API TextDocument {
 
 	void setLines( std::vector<TextDocumentLine>&& lines );
 
+	std::string serializeUndoRedo( bool inverted );
+
+	void unserializeUndoRedo( const std::string& jsonString );
+
+	void changeFilePath( const std::string& filePath );
+
+	void setDirtyUntilSave();
+
   protected:
 	friend class TextUndoStack;
 	friend class FoldRangeServive;
@@ -672,7 +680,7 @@ class EE_API TextDocument {
 	Clock mTimer;
 	SyntaxDefinition mSyntaxDefinition;
 	std::string mDefaultFileName;
-	Uint64 mCleanChangeId;
+	Uint64 mCleanChangeId{ 0 };
 	Uint32 mPageSize{ 10 };
 	UnorderedMap<std::string, DocumentCommand> mCommands;
 	UnorderedMap<std::string, DocumentRefCommand> mRefCommands;
@@ -754,6 +762,8 @@ class EE_API TextDocument {
 							   bool wholeWord = false,
 							   FindReplaceType type = FindReplaceType::Normal,
 							   TextRange restrictRange = TextRange() );
+
+	void changeFilePath( const std::string& filePath, bool notify );
 };
 
 struct TextSearchParams {
