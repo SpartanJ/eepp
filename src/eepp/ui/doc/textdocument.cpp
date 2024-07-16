@@ -2839,7 +2839,7 @@ int TextDocument::replaceAll( const String& text, const String& replace, const b
 	do {
 		found = find( text, from, caseSensitive, wholeWord, type, restrictRange );
 		if ( found.isValid() ) {
-			if ( numCaptures && numCaptures == found.captures.size() ) {
+			if ( numCaptures && numCaptures <= found.captures.size() ) {
 				String finalReplace( replace );
 				std::string l( line( found.captures[0].start().line() ).toUtf8() );
 				for ( size_t i = 0; i < numCaptures; i++ ) {
