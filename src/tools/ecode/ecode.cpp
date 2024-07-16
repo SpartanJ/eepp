@@ -54,7 +54,7 @@ void appLoop() {
 }
 
 bool App::onCloseRequestCallback( EE::Window::Window* ) {
-	if ( mSplitter->isAnyEditorDirty() && !mConfig.workspace.autoSave ) {
+	if ( mSplitter->isAnyEditorDirty() && !mConfig.workspace.sessionSnapshot ) {
 		if ( mCloseMsgBox )
 			return false;
 		mCloseMsgBox = UIMessageBox::New(
@@ -2209,12 +2209,12 @@ bool App::isUnlockedCommand( const std::string& command ) {
 	return std::find( cmds.begin(), cmds.end(), command ) != cmds.end();
 }
 
-void App::saveProject( bool onlyIfNeeded, bool autoSaveEnabled ) {
+void App::saveProject( bool onlyIfNeeded, bool sessionSnapshotEnabled ) {
 	if ( !mCurrentProject.empty() ) {
-		mConfig.saveProject( mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
-							 mProjectBuildManager ? mProjectBuildManager->getConfig()
-												  : ProjectBuildConfiguration(),
-							 onlyIfNeeded, autoSaveEnabled && mConfig.workspace.autoSave );
+		mConfig.saveProject(
+			mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
+			mProjectBuildManager ? mProjectBuildManager->getConfig() : ProjectBuildConfiguration(),
+			onlyIfNeeded, sessionSnapshotEnabled && mConfig.workspace.sessionSnapshot );
 	}
 }
 
@@ -2273,7 +2273,7 @@ void App::closeFolder() {
 	if ( mProjectBuildManager )
 		mProjectBuildManager.reset();
 
-	if ( mSplitter->isAnyEditorDirty() && !mConfig.workspace.autoSave ) {
+	if ( mSplitter->isAnyEditorDirty() && !mConfig.workspace.sessionSnapshot ) {
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
 			i18n( "confirm_close_folder",
@@ -3237,7 +3237,7 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 	} else if ( mConfig.workspace.restoreLastSession && !mRecentFolders.empty() && !openClean ) {
 		loadFolder( mRecentFolders[0] );
 	} else {
-		if ( mConfig.workspace.autoSave && !openClean )
+		if ( mConfig.workspace.sessionSnapshot && !openClean )
 			loadFolder( getPlaygroundPath() );
 
 		updateOpenRecentFolderBtn();
@@ -3367,7 +3367,7 @@ void App::loadFolder( const std::string& path ) {
 	mProjectBuildManager =
 		std::make_unique<ProjectBuildManager>( rpath, mThreadPool, mSidePanel, this );
 	mConfig.loadProject( rpath, mSplitter, mConfigPath, mProjectDocConfig, this,
-						 mConfig.workspace.autoSave );
+						 mConfig.workspace.sessionSnapshot );
 	Log::info( "Load project took: %.2f ms", projClock.getElapsedTime().asMilliseconds() );
 
 	loadFileSystemMatcher( rpath );

@@ -175,7 +175,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	workspace.restoreLastSession = ini.getValueB( "workspace", "restore_last_session", false );
 	workspace.checkForUpdatesAtStartup =
 		ini.getValueB( "workspace", "check_for_updates_at_startup", true );
-	workspace.autoSave = ini.getValueB( "workspace", "auto_save", true );
+	workspace.sessionSnapshot = ini.getValueB( "workspace", "session_snapshot", true );
 
 	std::map<std::string, bool> pluginsEnabled;
 	const auto& creators = pluginManager->getDefinitions();
@@ -315,7 +315,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "workspace", "restore_last_session", workspace.restoreLastSession );
 	ini.setValueB( "workspace", "check_for_updates_at_startup",
 				   workspace.checkForUpdatesAtStartup );
-	ini.setValueB( "workspace", "auto_save", workspace.autoSave );
+	ini.setValueB( "workspace", "session_snapshot", workspace.sessionSnapshot );
 
 	const auto& pluginsEnabled = pluginManager->getPluginsEnabled();
 	for ( const auto& plugin : pluginsEnabled )
@@ -401,7 +401,7 @@ json saveNode( Node* node ) {
 void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, const ProjectDocumentConfig& docConfig,
 							 const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
-							 bool autoSave ) {
+							 bool sessionSnapshot ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	if ( !FileSystem::fileExists( projectsPath ) )
@@ -439,7 +439,7 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	} else {
 		cfg.writeFile();
 	}
-	if ( !autoSave )
+	if ( !sessionSnapshot )
 		return;
 	std::string statePath( projectsPath + "state" );
 	if ( !FileSystem::fileExists( statePath ) && !FileSystem::makeDir( statePath ) )
@@ -524,7 +524,7 @@ void AppConfig::editorLoadedCounter( ecode::App* app ) {
 
 void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 							   UITabWidget* curTabWidget, ecode::App* app,
-							   const std::vector<AutoSaveFile>& autoSaveFiles ) {
+							   const std::vector<SessionSnapshotFile>& sessionSnapshotFiles ) {
 	if ( j["type"] == "tabwidget" ) {
 		Int64 currentPage = j["current_page"];
 		size_t totalToLoad = j["files"].size();
@@ -555,19 +555,21 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 
 					editorLoadedCounter( app );
 				} else {
-					auto autoSaveIt = std::find_if(
-						autoSaveFiles.begin(), autoSaveFiles.end(),
-						[&path]( const AutoSaveFile& file ) { return file.fspath == path; } );
+					auto snapshotSaveIt =
+						std::find_if( sessionSnapshotFiles.begin(), sessionSnapshotFiles.end(),
+									  [&path]( const SessionSnapshotFile& file ) {
+										  return file.fspath == path;
+									  } );
 
 					std::string loadPath( path );
-					AutoSaveFile autoSaveFile;
-					if ( autoSaveIt != autoSaveFiles.end() )
-						autoSaveFile = *autoSaveIt;
+					SessionSnapshotFile snapshotFile;
+					if ( snapshotSaveIt != sessionSnapshotFiles.end() )
+						snapshotFile = *snapshotSaveIt;
 
 					editorSplitter->loadAsyncFileFromPathInNewTab(
 						path,
 						[this, curTabWidget, selection, totalToLoad, currentPage, app, path,
-						 autoSaveFile]( UICodeEditor* editor, const std::string& ) {
+						 snapshotFile]( UICodeEditor* editor, const std::string& ) {
 							if ( !editor->getDocument().getSelection().isValid() ||
 								 editor->getDocument().getSelection() ==
 									 TextRange( { 0, 0 }, { 0, 0 } ) ) {
@@ -579,18 +581,18 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 								curTabWidget->setTabSelected( eeclamp<Int32>(
 									currentPage, 0, curTabWidget->getTabCount() - 1 ) );
 
-							if ( !autoSaveFile.cachePath.empty() ) {
+							if ( !snapshotFile.cachePath.empty() ) {
 								TextDocument& doc = editor->getDocument();
 								auto diskFileInfo = doc.getFileInfo();
 								TextDocument cachedDoc;
-								cachedDoc.loadFromFile( autoSaveFile.cachePath );
+								cachedDoc.loadFromFile( snapshotFile.cachePath );
 								doc.selectAll();
 								doc.textInput( cachedDoc.getText() );
 								doc.setSelection( selection );
 								doc.resetUndoRedo();
 								doc.setDirtyUntilSave();
 								editor->scrollToCursor();
-								if ( diskFileInfo.getModificationTime() > autoSaveFile.fsmtime )
+								if ( diskFileInfo.getModificationTime() > snapshotFile.fsmtime )
 									app->createDocDirtyAlert( editor, false );
 							}
 
@@ -616,9 +618,9 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 		if ( nullptr == splitter )
 			return;
 
-		loadDocuments( editorSplitter, j["first"], curTabWidget, app, autoSaveFiles );
+		loadDocuments( editorSplitter, j["first"], curTabWidget, app, sessionSnapshotFiles );
 		UITabWidget* tabWidget = splitter->getLastWidget()->asType<UITabWidget>();
-		loadDocuments( editorSplitter, j["last"], tabWidget, app, autoSaveFiles );
+		loadDocuments( editorSplitter, j["last"], tabWidget, app, sessionSnapshotFiles );
 
 		splitter->setSplitPartition( StyleSheetLength( j["split"] ) );
 	}
@@ -626,7 +628,7 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 
 void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, ProjectDocumentConfig& docConfig,
-							 ecode::App* app, bool autoSave ) {
+							 ecode::App* app, bool sessionSnapshot ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	MD5::Result hash = MD5::fromString( projectFolder );
@@ -661,8 +663,8 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 		app->getProjectBuildManager()->setConfig( prjCfg );
 	}
 
-	std::vector<AutoSaveFile> autoSaveFiles;
-	if ( autoSave ) {
+	std::vector<SessionSnapshotFile> sessionSnapshotFiles;
+	if ( sessionSnapshot ) {
 		std::string projectStatePath( projectsPath + "state" + FileSystem::getOSSlash() +
 									  hash.toHexString() + FileSystem::getOSSlash() +
 									  "state.json" );
@@ -674,16 +676,16 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 				j = json::parse( stateStr );
 				if ( !j.is_discarded() && j.is_array() ) {
 					for ( const auto& jobj : j ) {
-						AutoSaveFile autoSaveFile;
-						autoSaveFile.cachePath = jobj.value( "cachepath", "" );
-						if ( autoSaveFile.cachePath.empty() )
+						SessionSnapshotFile snapshotFile;
+						snapshotFile.cachePath = jobj.value( "cachepath", "" );
+						if ( snapshotFile.cachePath.empty() )
 							continue;
-						autoSaveFile.fspath = jobj.value( "fspath", "" );
-						autoSaveFile.fsmtime = jobj.value( "fsmtime", 0 );
-						autoSaveFile.fshash = jobj.value( "fshash", "" );
-						autoSaveFile.name = jobj.value( "name", "" );
-						autoSaveFile.selection = jobj.value( "selection", "" );
-						autoSaveFiles.emplace_back( std::move( autoSaveFile ) );
+						snapshotFile.fspath = jobj.value( "fspath", "" );
+						snapshotFile.fsmtime = jobj.value( "fsmtime", 0 );
+						snapshotFile.fshash = jobj.value( "fshash", "" );
+						snapshotFile.name = jobj.value( "name", "" );
+						snapshotFile.selection = jobj.value( "selection", "" );
+						sessionSnapshotFiles.emplace_back( std::move( snapshotFile ) );
 					}
 				}
 			} catch ( const json::exception& e ) {
@@ -704,22 +706,22 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 		}
 		if ( !j.is_discarded() ) {
 			editorsToLoad = countTotalEditors( j );
-			loadDocuments( editorSplitter, j, curTabWidget, app, autoSaveFiles );
+			loadDocuments( editorSplitter, j, curTabWidget, app, sessionSnapshotFiles );
 		}
 	}
 
-	for ( const auto& autoSaveFile : autoSaveFiles ) {
-		if ( !autoSaveFile.fspath.empty() || autoSaveFile.name.empty() ||
-			 autoSaveFile.cachePath.empty() )
+	for ( const auto& snapshotFile : sessionSnapshotFiles ) {
+		if ( !snapshotFile.fspath.empty() || snapshotFile.name.empty() ||
+			 snapshotFile.cachePath.empty() )
 			continue;
 
 		editorSplitter->loadAsyncFileFromPathInNewTab(
-			autoSaveFile.cachePath,
-			[autoSaveFile]( UICodeEditor* editor, const std::string& ) {
+			snapshotFile.cachePath,
+			[snapshotFile]( UICodeEditor* editor, const std::string& ) {
 				TextDocument& doc = editor->getDocument();
-				auto selection = TextRange::fromString( autoSaveFile.selection );
-				doc.setDefaultFileName( autoSaveFile.name );
-				doc.changeFilePath( autoSaveFile.name );
+				auto selection = TextRange::fromString( snapshotFile.selection );
+				doc.setDefaultFileName( snapshotFile.name );
+				doc.changeFilePath( snapshotFile.name );
 				doc.setDirtyUntilSave();
 				doc.setSelection( selection );
 				doc.resetUndoRedo();

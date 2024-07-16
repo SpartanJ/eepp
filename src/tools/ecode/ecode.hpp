@@ -457,7 +457,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	const std::string& getFileToOpen() const;
 
-	void saveProject( bool onlyIfNeeded = false, bool autoSaveEnabled = true );
+	void saveProject( bool onlyIfNeeded = false, bool sessionSnapshotEnabled = true );
 
 	std::pair<bool, std::string> generateConfigPath();
 

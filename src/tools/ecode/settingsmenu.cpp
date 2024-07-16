@@ -641,14 +641,14 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		->setId( "autoreload_on_disk_change" );
 
 	mGlobalMenu
-		->addCheckBox( i18n( "auto_save_documents", "Auto-Save Open Documents" ),
-					   mApp->getConfig().workspace.autoSave )
+		->addCheckBox( i18n( "session_snapshot", "Session Snapshot & Periodic Backup" ),
+					   mApp->getConfig().workspace.sessionSnapshot )
 		->setTooltipText(
-			i18n( "auto_save_documents_desc",
-				  "When auto-save open documents is enabled the editor will keep\n"
+			i18n( "session_snapshot_desc",
+				  "When session snapshot is enabled the editor will keep\n"
 				  "the document buffer changes between sessions, even if they are not saved\n"
 				  "before exiting the program." ) )
-		->setId( "auto_save_documents" );
+		->setId( "session_snapshot" );
 
 	mGlobalMenu->addSeparator();
 
@@ -678,8 +678,8 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 				mApp->getConfig().doc.autoDetectIndentType = item->isActive();
 			} else if ( "autoreload_on_disk_change" == id ) {
 				mApp->getConfig().editor.autoReloadOnDiskChange = item->isActive();
-			} else if ( "auto_save_documents" == id ) {
-				mApp->getConfig().workspace.autoSave = item->isActive();
+			} else if ( "session_snapshot" == id ) {
+				mApp->getConfig().workspace.sessionSnapshot = item->isActive();
 			}
 		} else if ( "line_breaking_column" == id ) {
 			mApp->setLineBreakingColumn();

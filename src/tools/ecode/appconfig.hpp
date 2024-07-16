@@ -165,14 +165,14 @@ struct TerminalConfig {
 struct WorkspaceConfig {
 	bool restoreLastSession{ false };
 	bool checkForUpdatesAtStartup{ true };
-	bool autoSave{ true };
+	bool sessionSnapshot{ true };
 };
 
 struct LanguagesExtensions {
 	std::map<std::string, std::string> priorities;
 };
 
-struct AutoSaveFile {
+struct SessionSnapshotFile {
 	std::string cachePath;
 	std::string fspath;
 	Uint64 fsmtime{ 0 };
@@ -213,17 +213,18 @@ class AppConfig {
 	void saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, const ProjectDocumentConfig& docConfig,
 					  const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
-					  bool autoSave );
+					  bool sessionSnapshot );
 
 	void loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, ProjectDocumentConfig& docConfig,
-					  ecode::App* app, bool autoSave );
+					  ecode::App* app, bool sessionSnapshot );
 
   protected:
 	Int64 editorsToLoad{ 0 };
 
 	void loadDocuments( UICodeEditorSplitter* editorSplitter, json j, UITabWidget* curTabWidget,
-						ecode::App* app, const std::vector<AutoSaveFile>& autoSaveFiles );
+						ecode::App* app,
+						const std::vector<SessionSnapshotFile>& sessionSnapshotFiles );
 
 	void editorLoadedCounter( ecode::App* app );
 };
