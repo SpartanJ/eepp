@@ -522,6 +522,7 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 	mLanguagesPath = mConfigPath + "languages";
 	mThemesPath = mConfigPath + "themes";
 	mScriptsPath = mConfigPath + "scripts";
+	mPlaygroundPath = mConfigPath + "playground";
 	mColorSchemesPath = mConfigPath + "editor" + FileSystem::getOSSlash() + "colorschemes" +
 						FileSystem::getOSSlash();
 	mTerminalManager = std::make_unique<TerminalManager>( this );
@@ -545,6 +546,10 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 	if ( !FileSystem::fileExists( mScriptsPath ) )
 		FileSystem::makeDir( mScriptsPath );
 	FileSystem::dirAddSlashAtEnd( mScriptsPath );
+
+	if ( !FileSystem::fileExists( mPlaygroundPath ) )
+		FileSystem::makeDir( mPlaygroundPath );
+	FileSystem::dirAddSlashAtEnd( mPlaygroundPath );
 
 	mLogsPath = mConfigPath + "ecode.log";
 
@@ -702,6 +707,10 @@ void App::onFileDropped( String file ) {
 			codeEditor = d.second;
 			tab = d.first;
 		}
+	} else {
+		auto d = mSplitter->createEditorInNewTab();
+		codeEditor = d.second;
+		tab = d.first;
 	}
 
 	loadFileFromPath( file, false, codeEditor,
@@ -3228,6 +3237,9 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 	} else if ( mConfig.workspace.restoreLastSession && !mRecentFolders.empty() && !openClean ) {
 		loadFolder( mRecentFolders[0] );
 	} else {
+		if ( mConfig.workspace.autoSave && !openClean )
+			loadFolder( getPlaygroundPath() );
+
 		updateOpenRecentFolderBtn();
 
 		if ( getConfig().ui.welcomeScreen ) {
@@ -3340,7 +3352,8 @@ void App::loadFolder( const std::string& path ) {
 		mStatusBar->setVisible( mConfig.ui.showStatusBar );
 	}
 
-	mProjectViewEmptyCont->setVisible( false );
+	mProjectViewEmptyCont->setVisible( path == getPlaygroundPath() );
+	mProjectTreeView->setVisible( !mProjectViewEmptyCont->isVisible() );
 
 	std::string rpath( FileSystem::getRealPath( path ) );
 	FileSystem::dirAddSlashAtEnd( rpath );
@@ -3375,9 +3388,11 @@ void App::loadFolder( const std::string& path ) {
 	if ( mFileSystemListener )
 		mFileSystemListener->setFileSystemModel( mFileSystemModel );
 
-	insertRecentFolder( rpath );
-	cleanUpRecentFolders();
-	updateRecentFolders();
+	if ( rpath != getPlaygroundPath() ) {
+		insertRecentFolder( rpath );
+		cleanUpRecentFolders();
+		updateRecentFolders();
+	}
 	mSettings->updateProjectSettingsMenu();
 
 	if ( mSplitter->getCurWidget() )

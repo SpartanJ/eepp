@@ -463,6 +463,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	const std::string getScriptsPath() const { return mScriptsPath; }
 
+	const std::string& getPlaygroundPath() const { return mPlaygroundPath; }
+
 	bool isAnyStatusBarSectionVisible() const;
 
 	void createDocDirtyAlert( UICodeEditor* editor, bool showEnableAutoReload = true );
@@ -504,6 +506,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mLogsPath;
 	std::string mi18nPath;
 	std::string mScriptsPath;
+	std::string mPlaygroundPath;
 	Float mDisplayDPI{ 96 };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;

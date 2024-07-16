@@ -533,7 +533,7 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 				std::string path( file["path"] );
 				if ( !FileSystem::fileExists( path ) ) {
 					editorLoadedCounter( app );
-					return;
+					continue;
 				}
 				TextRanges selection( TextRanges::fromString( file["selection"] ) );
 				UITab* tab = nullptr;
