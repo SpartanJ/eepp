@@ -531,10 +531,19 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 		for ( const auto& file : j["files"] ) {
 			if ( !file.contains( "type" ) || file["type"] == "editor" ) {
 				std::string path( file["path"] );
-				if ( !FileSystem::fileExists( path ) ) {
+				auto snapshotSaveIt = std::find_if(
+					sessionSnapshotFiles.begin(), sessionSnapshotFiles.end(),
+					[&path]( const SessionSnapshotFile& file ) { return file.fspath == path; } );
+
+				SessionSnapshotFile snapshotFile;
+				if ( snapshotSaveIt != sessionSnapshotFiles.end() )
+					snapshotFile = *snapshotSaveIt;
+
+				if ( !FileSystem::fileExists( path ) && snapshotFile.cachePath.empty() ) {
 					editorLoadedCounter( app );
 					continue;
 				}
+
 				TextRanges selection( TextRanges::fromString( file["selection"] ) );
 				UITab* tab = nullptr;
 				if ( ( tab = editorSplitter->isDocumentOpen( path, false, true ) ) != nullptr ) {
@@ -555,17 +564,6 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 
 					editorLoadedCounter( app );
 				} else {
-					auto snapshotSaveIt =
-						std::find_if( sessionSnapshotFiles.begin(), sessionSnapshotFiles.end(),
-									  [&path]( const SessionSnapshotFile& file ) {
-										  return file.fspath == path;
-									  } );
-
-					std::string loadPath( path );
-					SessionSnapshotFile snapshotFile;
-					if ( snapshotSaveIt != sessionSnapshotFiles.end() )
-						snapshotFile = *snapshotSaveIt;
-
 					editorSplitter->loadAsyncFileFromPathInNewTab(
 						path,
 						[this, curTabWidget, selection, totalToLoad, currentPage, app, path,
@@ -592,8 +590,12 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 								doc.resetUndoRedo();
 								doc.setDirtyUntilSave();
 								editor->scrollToCursor();
-								if ( diskFileInfo.getModificationTime() > snapshotFile.fsmtime )
+								if ( !FileSystem::fileExists( path ) ) {
+									app->createDocDoesNotExistsInFSAlert( editor );
+								} else if ( diskFileInfo.getModificationTime() >
+											snapshotFile.fsmtime ) {
 									app->createDocDirtyAlert( editor, false );
+								}
 							}
 
 							editorLoadedCounter( app );

@@ -469,6 +469,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void createDocDirtyAlert( UICodeEditor* editor, bool showEnableAutoReload = true );
 
+	void createDocDoesNotExistsInFSAlert( UICodeEditor* editor );
+
   protected:
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };

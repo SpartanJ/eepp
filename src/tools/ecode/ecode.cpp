@@ -2361,6 +2361,48 @@ void App::createDocDirtyAlert( UICodeEditor* editor, bool showEnableAutoReload )
 		Seconds( 30.f ) );
 }
 
+void App::createDocDoesNotExistsInFSAlert( UICodeEditor* editor ) {
+	UILinearLayout* docAlert = editor->findByClass<UILinearLayout>( "doc_alert" );
+
+	if ( docAlert )
+		return;
+
+	const auto msg = R"xml(
+	<hbox class="doc_alert" layout_width="wrap_content" layout_height="wrap_content" layout_gravity="top|right" gravity-owner="true">
+		<TextView id="doc_alert_text" layout_width="wrap_content" layout_height="wrap_content" margin-right="24dp"
+			text='@string(reload_current_file, "The file does not exists anymore on the disk. You are editing a non-existent file.&#xA;Do you want to continue editing the saved buffer?")'
+		/>
+		<PushButton id="file_continue_editing" layout_width="wrap_content" layout_height="18dp" text='@string("continue_editing", "Continue Editing")' margin-right="4dp"
+					tooltip='@string(tooltip_continue_editing_file, "Continue editing the text document buffer.")' />
+		<PushButton id="file_close" layout_width="wrap_content" layout_height="18dp" text='@string("close_file", "Close File")'
+					tooltip='@string(tooltip_close_unexistent_file, "Closes the edited buffer")' />
+	</hbox>
+	)xml";
+	docAlert = mUISceneNode->loadLayoutFromString( msg, editor )->asType<UILinearLayout>();
+
+	editor->enableReportSizeChangeToChilds();
+
+	docAlert->find( "file_continue_editing" )->onClick( [docAlert, editor]( const MouseEvent* ) {
+		editor->disableReportSizeChangeToChilds();
+		docAlert->close();
+		editor->setFocus();
+	} );
+
+	docAlert->find( "file_close" )->onClick( [this, editor, docAlert]( const MouseEvent* ) {
+		editor->disableReportSizeChangeToChilds();
+		docAlert->close();
+		mSplitter->closeTab( editor, UITabWidget::FocusTabBehavior::Default );
+	} );
+
+	docAlert->runOnMainThread(
+		[docAlert, editor] {
+			editor->disableReportSizeChangeToChilds();
+			docAlert->close();
+			editor->setFocus();
+		},
+		Seconds( 30.f ) );
+}
+
 void App::createDocManyLangsAlert( UICodeEditor* editor ) {
 	UILinearLayout* docAlert = editor->findByClass<UILinearLayout>( "doc_alert_manylangs" );
 
