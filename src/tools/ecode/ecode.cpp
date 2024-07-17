@@ -54,7 +54,8 @@ void appLoop() {
 }
 
 bool App::onCloseRequestCallback( EE::Window::Window* ) {
-	if ( mSplitter->isAnyEditorDirty() && !mConfig.workspace.sessionSnapshot ) {
+	if ( mSplitter->isAnyEditorDirty() &&
+		 ( !mConfig.workspace.sessionSnapshot || mCurrentProject.empty() ) ) {
 		if ( mCloseMsgBox )
 			return false;
 		mCloseMsgBox = UIMessageBox::New(
