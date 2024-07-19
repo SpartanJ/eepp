@@ -172,7 +172,7 @@ void App::updateEditorTitle( UICodeEditor* editor ) {
 
 void App::setAppTitle( const std::string& title ) {
 	std::string fullTitle( mWindowTitle );
-	if ( !mCurrentProjectName.empty() )
+	if ( !mCurrentProjectName.empty() && mCurrentProject != getPlaygroundPath() )
 		fullTitle += " - " + mCurrentProjectName;
 
 	if ( !title.empty() )
