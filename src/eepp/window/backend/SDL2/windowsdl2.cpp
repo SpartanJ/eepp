@@ -228,7 +228,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	mWindow.WindowConfig = Settings;
 	mWindow.ContextConfig = Context;
 
-	if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
+	if ( !SDL_WasInit( SDL_INIT_VIDEO ) && SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
 		Log::error( "Unable to initialize SDL: %s", SDL_GetError() );
 
 		logFailureInit( "WindowSDL", getVersion() );
@@ -389,6 +389,8 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	if ( NULL == Renderer::existsSingleton() ) {
 		Renderer::createSingleton( mWindow.ContextConfig.Version );
 		Renderer::instance()->init();
+		if ( mWindow.ContextConfig.Multisamples > 0 )
+			Renderer::instance()->multisample( true );
 	}
 
 	getMainContext();
@@ -861,7 +863,7 @@ bool WindowSDL::showMessageBox( const MessageBoxType& type, const std::string& t
 										  mSDLWindow );
 }
 
-SDL_Window* WindowSDL::GetSDLWindow() const {
+SDL_Window* WindowSDL::getSDLWindow() const {
 	return mSDLWindow;
 }
 

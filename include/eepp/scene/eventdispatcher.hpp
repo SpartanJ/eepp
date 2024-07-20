@@ -5,7 +5,7 @@
 #include <eepp/math/vector2.hpp>
 #include <eepp/system/time.hpp>
 #include <eepp/window/keycodes.hpp>
-#include <vector>
+#include <eepp/scene/nodefocusreason.hpp>
 
 using namespace EE::System;
 using namespace EE::Math;
@@ -38,7 +38,7 @@ class EE_API EventDispatcher {
 
 	Node* getFocusNode() const;
 
-	void setFocusNode( Node* node );
+	void setFocusNode( Node* node, NodeFocusReason reason = NodeFocusReason::Unknown );
 
 	Node* getMouseOverNode() const;
 

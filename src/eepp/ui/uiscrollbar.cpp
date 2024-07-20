@@ -61,7 +61,7 @@ UIScrollBar::UIScrollBar( const std::string& tag, const UIOrientation& orientati
 	mSlider->setAllowHalfSliderOut( false );
 	mSlider->setExpandBackground( false );
 	mSlider->addEventListener( Event::OnValueChange,
-							   cb::Make1( this, &UIScrollBar::onValueChangeCb ) );
+							   [this] ( auto event ) { onValueChangeCb( event ); } );
 	if ( orientation == UIOrientation::Vertical ) {
 		mSlider->getSliderButton()->setElementTag( mTag + "::vbutton" );
 		mSlider->getBackSlider()->setElementTag( mTag + "::vback" );

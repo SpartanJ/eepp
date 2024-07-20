@@ -15,6 +15,11 @@ class EE_API PlatformHelper {
 	 */
 	virtual bool openURL( const std::string& url ) = 0;
 
+	virtual char* iconv( const char* tocode, const char* fromcode, const char* inbuf,
+						 size_t inbytesleft ) = 0;
+
+	virtual void iconvFree( char* buf ) = 0;
+
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	/** @return The Activity object for the application */
 	virtual void* getActivity() = 0;

@@ -52,18 +52,18 @@ void InputSDL::waitEvent( const Time& timeout ) {
 }
 
 bool InputSDL::grabInput() {
-	return ( SDL_GetWindowGrab( static_cast<WindowSDL*>( mWindow )->GetSDLWindow() ) == SDL_TRUE )
+	return ( SDL_GetWindowGrab( static_cast<WindowSDL*>( mWindow )->getSDLWindow() ) == SDL_TRUE )
 			   ? true
 			   : false;
 }
 
 void InputSDL::grabInput( const bool& Grab ) {
-	SDL_SetWindowGrab( static_cast<WindowSDL*>( mWindow )->GetSDLWindow(),
+	SDL_SetWindowGrab( static_cast<WindowSDL*>( mWindow )->getSDLWindow(),
 					   Grab ? SDL_TRUE : SDL_FALSE );
 }
 
 void InputSDL::injectMousePos( const Uint16& x, const Uint16& y ) {
-	SDL_WarpMouseInWindow( reinterpret_cast<WindowSDL*>( mWindow )->GetSDLWindow(), x, y );
+	SDL_WarpMouseInWindow( reinterpret_cast<WindowSDL*>( mWindow )->getSDLWindow(), x, y );
 }
 
 Vector2i InputSDL::queryMousePos() {
@@ -71,7 +71,7 @@ Vector2i InputSDL::queryMousePos() {
 	Vector2i tempMouse;
 	Vector2i tempWinPos;
 	Rect bordersSize;
-	SDL_Window* sdlw = reinterpret_cast<WindowSDL*>( mWindow )->GetSDLWindow();
+	SDL_Window* sdlw = reinterpret_cast<WindowSDL*>( mWindow )->getSDLWindow();
 	SDL_GetGlobalMouseState( &tempMouse.x, &tempMouse.y );
 	SDL_GetWindowPosition( sdlw, &tempWinPos.x, &tempWinPos.y );
 	// Since an unknown version the window position includes the margin from the border size.
@@ -88,7 +88,7 @@ void InputSDL::captureMouse( const bool& capture ) {
 }
 
 bool InputSDL::isMouseCaptured() const {
-	return SDL_GetWindowFlags( reinterpret_cast<WindowSDL*>( mWindow )->GetSDLWindow() ) &
+	return SDL_GetWindowFlags( reinterpret_cast<WindowSDL*>( mWindow )->getSDLWindow() ) &
 		   SDL_WINDOW_MOUSE_CAPTURE;
 }
 
@@ -253,8 +253,6 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			break;
 		}
 		case SDL_TEXTEDITING: {
-			if ( SDLEvent.edit.length == 0 )
-				return;
 			event.Type = InputEvent::TextEditing;
 			event.textediting.text = SDLEvent.edit.text;
 			event.textediting.start = SDLEvent.edit.start;
@@ -264,8 +262,6 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 		}
 #if SDL_VERSION_ATLEAST( 2, 0, 22 )
 		case SDL_TEXTEDITING_EXT: {
-			if ( SDLEvent.edit.length == 0 )
-				return;
 			event.Type = InputEvent::TextEditing;
 			event.textediting.text = SDLEvent.editExt.text;
 			event.textediting.start = SDLEvent.editExt.start;

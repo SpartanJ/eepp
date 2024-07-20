@@ -128,6 +128,7 @@ bool FontSprite::loadFromStream( IOStream& stream, Color key, Uint32 firstChar, 
 					  charWidth, charHeight );
 			glyph.advance = charWidth + spacing;
 			glyph.bounds = Rectf( 0.f, -charHeight, charWidth, charHeight );
+			glyph.font = this;
 
 			xPosToRead += ( charWidth + charSpacing );
 

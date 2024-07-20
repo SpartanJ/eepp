@@ -158,6 +158,17 @@ const Uint64& StyleSheet::getVersion() const {
 	return mVersion;
 }
 
+StyleSheet& StyleSheet::operator=( const StyleSheet& other ) {
+	mVersion += other.mVersion; // Increase version since the original stylesheet changed
+	mMarker = other.mMarker;
+	mNodes = other.mNodes;
+	mNodeIndex = other.mNodeIndex;
+	mMediaQueryList = other.mMediaQueryList;
+	mKeyframesMap = other.mKeyframesMap;
+	mNodeCache = other.mNodeCache;
+	return *this;
+}
+
 bool StyleSheet::addStyleToNodeIndex( StyleSheetStyle* style ) {
 	const std::string& id = style->getSelector().getSelectorId();
 	const std::string& tag = style->getSelector().getSelectorTagName();

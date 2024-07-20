@@ -190,8 +190,9 @@ const KeyBindings::Shortcut& UIMessageBox::getCloseShortcut() const {
 	return mCloseShortcut;
 }
 
-void UIMessageBox::setCloseShortcut( const KeyBindings::Shortcut& closeWithKey ) {
+UIMessageBox* UIMessageBox::setCloseShortcut( const KeyBindings::Shortcut& closeWithKey ) {
 	mCloseShortcut = closeWithKey;
+	return this;
 }
 
 UITextInput* UIMessageBox::getTextInput() const {

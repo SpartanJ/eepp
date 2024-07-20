@@ -106,9 +106,9 @@ void UISceneNode::onDrawDebugDataChange() {
 	}
 }
 
-Node* UISceneNode::setFocus() {
+Node* UISceneNode::setFocus( NodeFocusReason reason ) {
 	if ( NULL != getEventDispatcher() )
-		getEventDispatcher()->setFocusNode( mRoot );
+		getEventDispatcher()->setFocusNode( mRoot, reason );
 	return this;
 }
 

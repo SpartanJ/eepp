@@ -31,13 +31,13 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #include <stdlib.h>
 
 #include "zipint.h"
 
-
+
 
 ZIP_EXTERN struct zip_source *
 zip_source_function(struct zip *za, zip_source_callback zcb, void *ud)
@@ -56,7 +56,7 @@ zip_source_function(struct zip *za, zip_source_callback zcb, void *ud)
     return zs;
 }
 
-
+
 
 struct zip_source *
 _zip_source_new(struct zip *za)

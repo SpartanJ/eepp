@@ -6,6 +6,7 @@
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/system/luapattern.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/window/engine.hpp>
@@ -364,6 +365,7 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 	caps.documentHighlightProvider = toBoolOrObject( json, "documentHighlightProvider" );
 	caps.documentFormattingProvider = toBoolOrObject( json, "documentFormattingProvider" );
 	caps.workspaceSymbolProvider = toBoolOrObject( json, "workspaceSymbolProvider" );
+	caps.foldingRangeProvider = toBoolOrObject( json, "foldingRangeProvider" );
 	if ( json.contains( "documentRangeFormattingProvider" ) )
 		caps.documentRangeFormattingProvider =
 			toBoolOrObject( json, "documentRangeFormattingProvider" );
@@ -823,10 +825,11 @@ static LSPCompletionList parseDocumentCompletion( const json& result ) {
 
 static LSPSignatureInformation parseSignatureInformation( const json& json ) {
 	LSPSignatureInformation info;
-
 	info.label = json.value( MEMBER_LABEL, "" );
 	if ( json.contains( MEMBER_DOCUMENTATION ) )
 		info.documentation = parseMarkupContent( json.at( MEMBER_DOCUMENTATION ) );
+	if ( !json.contains( "parameters" ) || !json["parameters"].is_array() )
+		return info;
 	const auto& params = json.at( "parameters" );
 	for ( const auto& par : params ) {
 		auto& label = par.at( MEMBER_LABEL );
@@ -984,6 +987,31 @@ static LSPSemanticTokensDelta parseSemanticTokensDelta( const json& result ) {
 						[]( const json& jv ) { return jv.get<int>(); } );
 	}
 	return ret;
+}
+
+static std::vector<LSPFoldingRange> parseFoldingRange( const json& result ) {
+	std::vector<LSPFoldingRange> ranges;
+	if ( !result.is_array() )
+		return ranges;
+	for ( const auto& range : result ) {
+		if ( !range.contains( "startLine" ) || !range.contains( "endLine" ) )
+			continue;
+		LSPFoldingRange nrange;
+		nrange.startLine = range.value( "startLine", 0u );
+		nrange.endLine = range.value( "endLine", 0u );
+		auto kind = range.value( "kind", "region" );
+		switch ( String::hash( kind ) ) {
+			case static_cast<String::HashType>( LSPFoldingRangeKind::Comment ):
+				nrange.kind = LSPFoldingRangeKind::Comment;
+			case static_cast<String::HashType>( LSPFoldingRangeKind::Imports ):
+				nrange.kind = LSPFoldingRangeKind::Imports;
+			case static_cast<String::HashType>( LSPFoldingRangeKind::Region ):
+			default:
+				nrange.kind = LSPFoldingRangeKind::Region;
+		}
+		ranges.emplace_back( nrange );
+	}
+	return ranges;
 }
 
 void LSPClientServer::registerCapabilities( const json& jcap ) {
@@ -1154,6 +1182,8 @@ LSPClientServer::LSPClientServer( LSPClientServerManager* manager, const String:
 
 LSPClientServer::~LSPClientServer() {
 	shutdown();
+	std::unique_lock<std::mutex> lock( mShutdownMutex );
+	mShutdownCond.wait_for( lock, std::chrono::milliseconds( 275 ), [this]() { return !mReady; } );
 	eeSAFE_DELETE( mSocket );
 	{
 		Lock l( mClientsMutex );
@@ -1188,23 +1218,46 @@ void LSPClientServer::socketInitialize() {
 
 bool LSPClientServer::start() {
 	std::string cmd( mLSP.command );
+
 	if ( !mLSP.commandParameters.empty() ) {
 		if ( mLSP.commandParameters.front() != ' ' )
 			mLSP.commandParameters = " " + mLSP.commandParameters;
 		cmd += mLSP.commandParameters;
 	}
+
+	if ( !mLSP.cmdVars.empty() ) {
+		for ( const auto& [key, val] : mLSP.cmdVars ) {
+			std::string rkey( "$" + key );
+			if ( String::contains( mLSP.command, rkey ) ||
+				 String::contains( mLSP.commandParameters, rkey ) ) {
+				Process p;
+				if ( p.create( val, Process::getDefaultOptions() ) ) {
+					std::string buf;
+					p.readAllStdOut( buf );
+					String::trimInPlace( buf, '\n' );
+					String::trimInPlace( buf );
+					String::replaceAll( cmd, rkey, buf );
+				}
+			}
+		}
+	}
+
 	if ( !cmd.empty() ) {
 		bool ret = mProcess.create( cmd, Process::getDefaultOptions() | Process::EnableAsync,
 									mLSP.env, mRootPath );
-		if ( ret && mProcess.isAlive() ) {
-			mUsingProcess = true;
+		if ( ret ) {
+			if ( mProcess.isAlive() ) {
+				mUsingProcess = true;
 
-			mProcess.startAsyncRead(
-				[this]( const char* bytes, size_t n ) { readStdOut( bytes, n ); },
-				[this]( const char* bytes, size_t n ) { readStdErr( bytes, n ); } );
+				mProcess.startAsyncRead(
+					[this]( const char* bytes, size_t n ) { readStdOut( bytes, n ); },
+					[this]( const char* bytes, size_t n ) { readStdErr( bytes, n ); } );
 
-			if ( mLSP.host.empty() )
-				initialize();
+				if ( mLSP.host.empty() )
+					initialize();
+			} else {
+				ret = false;
+			}
 		}
 
 		if ( ret && !mLSP.host.empty() ) {
@@ -1255,6 +1308,10 @@ bool LSPClientServer::isRunning() {
 						 : ( mUsingSocket && mSocket != nullptr );
 }
 
+bool LSPClientServer::isReady() const {
+	return mReady;
+}
+
 void LSPClientServer::removeDoc( TextDocument* doc ) {
 	Lock l( mClientsMutex );
 	if ( mClients.erase( doc ) > 0 ) {
@@ -1291,8 +1348,10 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( json&& msg, const Json
 	LSPRequestHandle ret;
 	ret.server = this;
 
-	if ( !isRunning() )
+	if ( !isRunning() ) {
+		notifyServerError();
 		return ret;
+	}
 
 	msg["jsonrpc"] = "2.0";
 
@@ -1370,8 +1429,15 @@ LSPClientServer::LSPRequestHandle LSPClientServer::send( json&& msg, const JsonR
 	if ( isRunning() ) {
 		return write( std::move( msg ), h, eh );
 	} else {
-		Log::warning( "LSPClientServer server %s Send for non-running server: %s",
-					  mLSP.name.c_str(), mLSP.name.c_str() );
+		auto msg( String::format( "LSPClientServer server %s Send for non-running server: %s",
+								  mLSP.name, mLSP.name ) );
+
+		Log::warning( msg );
+
+		notifyServerError();
+
+		if ( eh )
+			eh( {}, { { MEMBER_ERROR, msg } } );
 	}
 	return LSPRequestHandle();
 }
@@ -1379,10 +1445,25 @@ LSPClientServer::LSPRequestHandle LSPClientServer::send( json&& msg, const JsonR
 LSPClientServer::LSPRequestHandle LSPClientServer::sendSync( json&& msg, const JsonReplyHandler& h,
 															 const JsonReplyHandler& eh ) {
 	if ( isRunning() ) {
-		return write( std::move( msg ), h, eh );
+		auto ret = write( std::move( msg ), h, eh );
+		if ( ret.isEmpty() && h ) {
+			if ( eh ) {
+				eh( {}, { { MEMBER_ERROR,
+							String::format(
+								"LSPClientServer server %s Unknown error sending sync message",
+								mLSP.name ) } } );
+			}
+		}
 	} else {
-		Log::warning( "LSPClientServer server %s Send for non-running server: %s",
-					  mLSP.name.c_str(), mLSP.name.c_str() );
+		auto msg( String::format( "LSPClientServer server %s Send for non-running server: %s",
+								  mLSP.name, mLSP.name ) );
+
+		Log::warning( msg );
+
+		notifyServerError();
+
+		if ( eh )
+			eh( {}, { { MEMBER_ERROR, msg } } );
 	}
 	return LSPRequestHandle();
 }
@@ -1412,7 +1493,18 @@ bool LSPClientServer::trimLogs() const {
 
 LSPClientServer::LSPRequestHandle LSPClientServer::didOpen( const URI& document,
 															const std::string& text, int version ) {
-	auto params = textDocumentParams( textDocumentItem( document, mLSP.language, text, version ) );
+	std::string languageId = mLSP.language;
+	if ( !mLSP.languageIdsForFilePatterns.empty() ) {
+		for ( const auto& filePattern : mLSP.languageIdsForFilePatterns ) {
+			LuaPattern ptrn( filePattern.first );
+			if ( ptrn.matches( document.toString() ) ) {
+				languageId = filePattern.second;
+				break;
+			}
+		}
+	}
+
+	auto params = textDocumentParams( textDocumentItem( document, languageId, text, version ) );
 	return send( newRequest( "textDocument/didOpen", params ) );
 }
 
@@ -1509,6 +1601,29 @@ LSPClientServer::LSPRequestHandle LSPClientServer::documentSymbols( const URI& d
 																	const JsonReplyHandler& eh ) {
 	auto params = textDocumentParams( document );
 	return send( newRequest( "textDocument/documentSymbol", params ), h, eh );
+}
+
+LSPClientServer::LSPRequestHandle
+LSPClientServer::documentFoldingRange( const URI& document, const JsonReplyHandler& h,
+									   const JsonReplyHandler& eh ) {
+	auto params = textDocumentParams( document );
+	return send( newRequest( "textDocument/foldingRange", params ), h, eh );
+}
+
+LSPClientServer::LSPRequestHandle
+LSPClientServer::documentFoldingRange( const URI& document,
+									   const ReplyHandler<std::vector<LSPFoldingRange>>& h,
+									   const ReplyHandler<LSPResponseError>& eh ) {
+	return documentFoldingRange(
+		document,
+		[h]( const IdType& id, const json& json ) {
+			if ( h )
+				h( id, parseFoldingRange( json ) );
+		},
+		[eh]( const IdType& id, const json& json ) {
+			if ( eh )
+				eh( id, parseResponseError( json ) );
+		} );
 }
 
 LSPClientServer::LSPRequestHandle
@@ -1739,6 +1854,8 @@ void LSPClientServer::processRequest( const json& msg ) {
 }
 
 void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
+	if ( mEnded )
+		return;
 	mReceive.append( bytes, n );
 
 	std::string& buffer = mReceive;
@@ -1862,18 +1979,32 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 	}
 }
 
-void LSPClientServer::readStdErr( const char* bytes, size_t n ) {
-	mReceiveErr += std::string( bytes, n );
+void LSPClientServer::notifyServerError() {
+	if ( mNotifiedServerError || mReady )
+		return;
+	mNotifiedServerError = true;
 	LSPShowMessageParams msg;
-	const auto lastNewLineIndex = mReceiveErr.find_last_of( '\n' );
-	if ( lastNewLineIndex != std::string::npos ) {
-		msg.message = mReceiveErr.substr( 0, lastNewLineIndex );
-		mReceiveErr.erase( 0, lastNewLineIndex + 1 );
-	}
-	if ( !msg.message.empty() ) {
-		Log::debug( "LSPClientServer::readStdErr server %s:\n%s", mLSP.name.c_str(),
-					msg.message.c_str() );
-	}
+	msg.message = String::format( "LSP Server %s failed to initialize, received some error:\n%s",
+								  mLSP.name, mReceiveErr );
+	msg.type = LSPMessageType::Error;
+	mManager->getPluginManager()->sendBroadcast( PluginMessageType::ShowMessage,
+												 PluginMessageFormat::ShowMessage, &msg );
+}
+
+void LSPClientServer::readStdErr( const char* bytes, size_t n ) {
+	if ( mEnded )
+		return;
+
+	std::string_view received( bytes, n );
+	received = String::trim( received, '\n' );
+	received = String::trim( received, ' ' );
+	mReceiveErr = received;
+
+	if ( !received.empty() )
+		Log::debug( "LSPClientServer::readStdErr server %s:\n%s", mLSP.name, received );
+
+	if ( !isRunning() )
+		notifyServerError();
 }
 
 void LSPClientServer::sendQueuedMessages() {
@@ -2193,15 +2324,47 @@ void LSPClientServer::documentSemanticTokensFull( const URI& document, bool delt
 }
 
 void LSPClientServer::shutdown() {
-	if ( mReady ) {
-		Log::info( "LSPClientServer:shutdown: %s", mLSP.name.c_str() );
+	if ( !mReady )
+		return;
+	Log::info( "LSPClientServer:shutdown: %s", mLSP.name.c_str() );
+	{
+		Lock l( mHandlersMutex );
 		mHandlers.clear();
-		sendSync( newRequest( "shutdown" ) );
-		Sys::sleep( Milliseconds( 100 ) );
-		sendSync( newRequest( "exit" ) );
-		Sys::sleep( Milliseconds( 100 ) );
-		mReady = false;
 	}
+
+	sendSync(
+		newRequest( "shutdown" ),
+		[this]( const IdType&, const json& ) {
+			sendSync( newRequest( "exit" ) );
+			{
+				std::lock_guard l( mShutdownMutex );
+				mReady = false;
+			}
+			mEnded = true;
+
+			if ( mUsingProcess ) {
+				Clock clock;
+				bool waited = false;
+				while ( mProcess.isAlive() && clock.getElapsedTime().asMilliseconds() < 250.f ) {
+					Sys::sleep( Milliseconds( 10 ) );
+					waited = true;
+				}
+				if ( waited ) {
+					Log::debug( "Waited \"%s\" LSP process to exit: %s", mLSP.name,
+								clock.getElapsedTime().toString() );
+				}
+			}
+
+			mShutdownCond.notify_all();
+		},
+		[this]( const IdType&, const json& ) {
+			{
+				std::lock_guard l( mShutdownMutex );
+				mReady = false;
+			}
+			mEnded = true;
+			mShutdownCond.notify_all();
+		} );
 }
 
 bool LSPClientServer::supportsLanguage( const std::string& lang ) const {

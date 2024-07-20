@@ -16,7 +16,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 		UI_WIN_MODAL );
 
 	mUIWindow->addEventListener( Event::OnWindowClose,
-								 cb::Make1( this, &TextureAtlasNew::windowClose ) );
+								 [this] ( auto event ) { windowClose( event ); } );
 	mUIWindow->setTitle( "New Texture Atlas" );
 
 	static const auto layout = R"xml(
@@ -105,11 +105,11 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 	mComboHeight->getListBox()->setSelected( "2048" );
 
 	mSetPathButton->addEventListener( Event::MouseClick,
-									  cb::Make1( this, &TextureAtlasNew::onDialogFolderSelect ) );
+									  [this] ( auto event ) { onDialogFolderSelect( event ); } );
 	mUIWindow->find<UIPushButton>( "okButton" )
-		->addEventListener( Event::MouseClick, cb::Make1( this, &TextureAtlasNew::okClick ) );
+		->addEventListener( Event::MouseClick, [this] ( auto event ) { okClick( event ); } );
 	mUIWindow->find<UIPushButton>( "cancelButton" )
-		->addEventListener( Event::MouseClick, cb::Make1( this, &TextureAtlasNew::cancelClick ) );
+		->addEventListener( Event::MouseClick, [this] ( auto event ) { cancelClick( event ); } );
 
 	container->addEventListener( Event::OnLayoutUpdate, [this]( const Event* event ) {
 		mUIWindow->setMinWindowSize( event->getNode()->getSize() );
@@ -133,7 +133,7 @@ void TextureAtlasNew::okClick( const Event* event ) {
 		TGDialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Save Texture Atlas" );
 		TGDialog->addEventListener( Event::SaveFile,
-									cb::Make1( this, &TextureAtlasNew::textureAtlasSave ) );
+									[this] ( auto event ) { textureAtlasSave( event ); } );
 		TGDialog->center();
 		TGDialog->show();
 	}
@@ -212,7 +212,7 @@ void TextureAtlasNew::onDialogFolderSelect( const Event* event ) {
 		TGDialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Create Texture Atlas ( Select Folder Containing Textures )" );
 		TGDialog->addEventListener( Event::OpenFile,
-									cb::Make1( this, &TextureAtlasNew::onSelectFolder ) );
+									[this] ( auto event ) { onSelectFolder( event ); } );
 		TGDialog->center();
 		TGDialog->show();
 	}

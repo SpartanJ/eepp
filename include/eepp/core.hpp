@@ -3,8 +3,6 @@
 
 #include <functional>
 
-#include <eepp/thirdparty/PlusCallback/callback.hpp>
-
 #include <eepp/config.hpp>
 
 #include <eepp/core/core.hpp>

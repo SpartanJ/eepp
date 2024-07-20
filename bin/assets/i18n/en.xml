@@ -8,6 +8,8 @@
 	<string name="add_clean_step">Add Clean Step</string>
 	<string name="add_custom_output_parser">Add Custom Output Parser</string>
 	<string name="add_custom_variable">Add Custom Environment Variable</string>
+	<string name="add_exclude_filter">Add Exclude Filter</string>
+	<string name="add_include_filter">Add Include Filter</string>
 	<string name="advanced_options">Advanced Options</string>
 	<string name="any_https_or_http_url">Any https or http URL</string>
 	<string name="any_name_ellipsis">Any name...</string>
@@ -17,6 +19,7 @@
 	<string name="auto_close_brackets_and_tags">Auto-Close Brackets &amp; Tags</string>
 	<string name="auto_close_xml_tags">Auto Close XML Tags</string>
 	<string name="auto_detect_indent_type_and_width">Auto Detect Indent Type &amp; Width</string>
+	<string name="autoreload_on_disk_change">Auto-Reload on Disk Change</string>
 	<string name="back_quotes">Back Quotes ``</string>
 	<string name="brackets">Brackets ()</string>
 	<string name="branches">Branches</string>
@@ -106,6 +109,7 @@ All changes in "%s" will be lost.</string>
 	<string name="confirm_ecode_exit">Do you really want to close the code editor?
 All changes will be lost.</string>
 	<string name="confirm_loading_font">Font loading confirmation</string>
+	<string name="confirm_new_file_encoding">To confirm the new file encoding it's required to save the file. Do you want to save it now?</string>
 	<string name="confirm_remove_file">Do you really want to remove "%s"?</string>
 	<string name="console_toggle">Console Toggle</string>
 	<string name="copy">Copy</string>
@@ -138,7 +142,7 @@ File path is: </string>
 	<string name="custom_variables">Custom Variables</string>
 	<string name="custom_variables_desc">Custom Variables allow to simplify the build commands steps adding custom variables that can be used over the build settings in commands, arguments, and working directories.</string>
 	<string name="custom_variables_desc_2">Custom Variables can be invoked using ${variable_name} in any of the commands.</string>
-	<string name="custom_variables_desc_3">There are predefined custom variables available to use:&amp;#10;${project_root}: The folder / project root directory.&amp;#10;${build_type}: The build type selected to build the project.&amp;#10;${os}: The current operating system name.&amp;#10;${nproc}: The number of logical processing units.</string>
+	<string name="custom_variables_desc_3">There are predefined custom variables available to use:&amp;#10;${project_root}: The folder / project root directory.&amp;#10;${build_type}: The build type selected to build the project.&amp;#10;${os}: The current operating system name.&amp;#10;${nproc}: The number of logical processing units.&amp;#10;${current_doc}: The last or current focused document path.&amp;#10;${current_doc_name}: The last or current focused document name (without extension</string>
 	<string name="cut">Cut</string>
 	<string name="dark">Dark</string>
 	<string name="date">Date</string>
@@ -181,6 +185,7 @@ Do you want to download it now?</string>
 	<string name="editor_set_line_breaking_column">Editor Set Line Breaking Column</string>
 	<string name="editor_set_line_spacing">Editor Set Line Spacing</string>
 	<string name="empty_file_name">You must set a name to the file.</string>
+	<string name="enable_autoreload">Enable Auto-Reload</string>
 	<string name="enable_color_picker">Enable Color Picker</string>
 	<string name="enable_color_picker_tooltip">Enables the color picker tool when a double click selection
 is done over a word representing a color.</string>
@@ -206,9 +211,11 @@ is hover a word that represents a color.</string>
 	<string name="fallback_font">Fallback Font</string>
 	<string name="fallback_font_ellipsis">Fallback Font...</string>
 	<string name="feature_not_supported_in_emscripten">This feature is only supported in the desktop version of ecode.</string>
-	<string name="feature_not_supported_in_os">This feature is not supported in this Operating System</string>
+	<string name="feature_not_supported_in_os">This feature is not supported in this Operating System.
+ecode will try to open an external terminal.</string>
 	<string name="file">file</string>
 	<string name="file_already_exists">File already exists!</string>
+	<string name="file_encoding">File Encoding</string>
 	<string name="file_name">File Name</string>
 	<string name="file_type">File Type</string>
 	<string name="find_and_replace">Find And Replace</string>
@@ -448,6 +455,7 @@ Please restart the application.</string>
 	<string name="owner">Owner</string>
 	<string name="paste">Paste</string>
 	<string name="path">Path</string>
+	<string name="path_filters">Path Filters:</string>
 	<string name="pattern">Pattern</string>
 	<string name="pick_widget">Pick Widget</string>
 	<string name="please_enter_file_url_ellipsis">Please enter the file URL...</string>
@@ -497,7 +505,6 @@ Please check that the application directory has write permissions.</string>
 	<string name="replace">Replace</string>
 	<string name="replace_all">Replace All</string>
 	<string name="replace_and_find">Replace &amp; Find</string>
-	<string name="replace_in_files">Replace In Files</string>
 	<string name="replace_selection">Replace Selection</string>
 	<string name="replace_with_text">Replace with:</string>
 	<string name="restore_last_session_at_startup">Restart last session at startup</string>
@@ -512,10 +519,11 @@ Please check that the application directory has write permissions.</string>
 	<string name="search">Search</string>
 	<string name="search_and_replace">Search &amp; Replace</string>
 	<string name="search_for">Search for:</string>
-	<string name="search_for_document_symbols">Search for Symbols in Current Document</string>
 	<string name="search_for_workspace_symbols">Search for Workspace Symbols</string>
 	<string name="search_in_command_palette">Search in Command Palette</string>
+	<string name="search_in_files">Search In Files</string>
 	<string name="search_set_string">Search Set String</string>
+	<string name="search_where_example">e.g. *.ts, src/**/include, -src/**/exclude</string>
 	<string name="select_all">Select All</string>
 	<string name="select_all_results">Select All Results</string>
 	<string name="select_font_file">Select Font File</string>
@@ -565,6 +573,7 @@ Minimum value is 1, and maximum 6. Requires restart.</string>
 	<string name="size">Size</string>
 	<string name="source_control">Source Control</string>
 	<string name="spaces">Spaces</string>
+	<string name="split">Split</string>
 	<string name="split_bottom">Split Bottom</string>
 	<string name="split_left">Split Left</string>
 	<string name="split_right">Split Right</string>
@@ -578,6 +587,7 @@ Minimum value is 1, and maximum 6. Requires restart.</string>
 	<string name="supported_platforms_desc">Selecting none means that the build settings will work and be available on any Operating System</string>
 	<string name="switch_build">Switch Build</string>
 	<string name="switch_build_type">Switch Build Type</string>
+	<string name="switch_file_type">Switch File Type</string>
 	<string name="switch_side_panel">Switch Side Panel</string>
 	<string name="switch_to_first_tab">Switch To First Tab</string>
 	<string name="switch_to_last_tab">Switch To Last Tab</string>
@@ -601,6 +611,7 @@ file in the directory tree.</string>
 	<string name="terminal_font_size">Terminal Font Size</string>
 	<string name="terminal_font_size_grow">Terminal Font Size Grow</string>
 	<string name="terminal_font_size_shrink">Terminal Font Size Shrink</string>
+	<string name="terminal_not_supported_do_not_warn">Always open an external terminal (do not warn)</string>
 	<string name="terminal_open_link">Terminal Open Link</string>
 	<string name="terminal_paste">Terminal Paste</string>
 	<string name="terminal_rename">Terminal Rename</string>
@@ -623,6 +634,7 @@ file in the directory tree.</string>
 	<string name="toggle_status_locate_bar">Toggle Status Locate Bar</string>
 	<string name="toggle_status_terminal">Toggle Status Terminal</string>
 	<string name="tools">Tools</string>
+	<string name="tooltip_autoreload_file">Will never again warn about on disk changes but always reload unless there are local changes.</string>
 	<string name="tooltip_ignore_file_changes">Ignores the changes on disk without any action.</string>
 	<string name="tooltip_reload_file">Reload the file from disk. Unsaved changes will be lost.</string>
 	<string name="tooltip_write_local_changes">Writes the local changes on disk, overwriting the disk changes</string>

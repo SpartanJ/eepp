@@ -10,6 +10,7 @@
 #include "plugins/pluginmanager.hpp"
 #include "projectbuild.hpp"
 #include "projectdirectorytree.hpp"
+#include "statusappoutputcontroller.hpp"
 #include "statusbuildoutputcontroller.hpp"
 #include "statusterminalcontroller.hpp"
 #include "terminalmanager.hpp"
@@ -180,8 +181,6 @@ class App : public UICodeEditorSplitter::Client {
 
 	void toggleSettingsMenu();
 
-	void createNewTerminal();
-
 	UIStatusBar* getStatusBar() const { return mStatusBar; }
 
 	void showFolderTreeViewTab();
@@ -201,7 +200,8 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "download-file-web", [this] { downloadFileWebDialog(); } );
 		t.setCommand( "move-panel-left", [this] { panelPosition( PanelPosition::Left ); } );
 		t.setCommand( "move-panel-right", [this] { panelPosition( PanelPosition::Right ); } );
-		t.setCommand( "create-new-terminal", [this] { createNewTerminal(); } );
+		t.setCommand( "create-new-terminal",
+					  [this] { mTerminalManager->createTerminalInSplitter(); } );
 		t.setCommand( "terminal-split-right", [this] {
 			auto cwd = getCurrentWorkingDir();
 			mSplitter->split( UICodeEditorSplitter::SplitDirection::Right,
@@ -239,6 +239,8 @@ class App : public UICodeEditorSplitter::Client {
 					  [this] { mGlobalSearchController->toggleGlobalSearchBar(); } );
 		t.setCommand( "toggle-status-build-output",
 					  [this] { mStatusBuildOutputController->toggle(); } );
+		t.setCommand( "toggle-status-app-output",
+					  [this] { mStatusAppOutputController->toggle(); } );
 		t.setCommand( "toggle-status-terminal", [this] { mStatusTerminalController->toggle(); } );
 		t.setCommand( "open-locatebar", [this] { mUniversalLocator->showLocateBar(); } );
 		t.setCommand( "toggle-status-locate-bar",
@@ -258,6 +260,19 @@ class App : public UICodeEditorSplitter::Client {
 				mProjectBuildManager->cancelBuild();
 			}
 		} );
+		t.setCommand( "project-run-executable", [this] {
+			if ( mProjectBuildManager && mStatusAppOutputController )
+				mProjectBuildManager->runCurrentConfig( mStatusAppOutputController.get(), false );
+		} );
+		t.setCommand( "project-build-and-run", [this] {
+			if ( mProjectBuildManager && mStatusAppOutputController )
+				mProjectBuildManager->runCurrentConfig( mStatusAppOutputController.get(), true,
+														mStatusBuildOutputController.get() );
+		} );
+		t.setCommand( "project-stop-executable", [this] {
+			if ( mProjectBuildManager && mProjectBuildManager->isRunningApp() )
+				mProjectBuildManager->cancelRun();
+		} );
 		t.setCommand( "show-folder-treeview-tab", [this] { showFolderTreeViewTab(); } );
 		t.setCommand( "show-build-tab", [this] { showBuildTab(); } );
 		t.setCommand( "open-workspace-symbol-search",
@@ -273,6 +288,7 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "ui-scale-factor", [this] { setUIScaleFactor(); } );
 		t.setCommand( "show-side-panel", [this] { switchSidePanel(); } );
 		t.setCommand( "toggle-status-bar", [this] { switchStatusBar(); } );
+		t.setCommand( "toggle-menu-bar", [this] { switchMenuBar(); } );
 		t.setCommand( "editor-font-size", [this] { setEditorFontSize(); } );
 		t.setCommand( "terminal-font-size", [this] { setTerminalFontSize(); } );
 		t.setCommand( "ui-font-size", [this] { setUIFontSize(); } );
@@ -317,6 +333,8 @@ class App : public UICodeEditorSplitter::Client {
 	void setLineSpacing();
 
 	void setCursorBlinkingTime();
+
+	void setFoldRefreshFreq();
 
 	void checkForUpdates( bool fromStartup = false );
 
@@ -415,11 +433,17 @@ class App : public UICodeEditorSplitter::Client {
 
 	void hideStatusBuildOutput();
 
+	void hideStatusAppOutput();
+
 	StatusBuildOutputController* getStatusBuildOutputController() const;
+
+	StatusAppOutputController* getStatusAppOutputController() const;
 
 	void switchStatusBar();
 
 	void showStatusBar( bool show );
+
+	void switchMenuBar();
 
 	ProjectBuildManager* getProjectBuildManager() const;
 
@@ -433,9 +457,19 @@ class App : public UICodeEditorSplitter::Client {
 
 	const std::string& getFileToOpen() const;
 
-	void saveProject();
+	void saveProject( bool onlyIfNeeded = false, bool sessionSnapshotEnabled = true );
 
 	std::pair<bool, std::string> generateConfigPath();
+
+	const std::string getScriptsPath() const { return mScriptsPath; }
+
+	const std::string& getPlaygroundPath() const { return mPlaygroundPath; }
+
+	bool isAnyStatusBarSectionVisible() const;
+
+	void createDocDirtyAlert( UICodeEditor* editor, bool showEnableAutoReload = true );
+
+	void createDocDoesNotExistsInFSAlert( UICodeEditor* editor );
 
   protected:
 	std::vector<std::string> mArgs;
@@ -473,6 +507,8 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mThemesPath;
 	std::string mLogsPath;
 	std::string mi18nPath;
+	std::string mScriptsPath;
+	std::string mPlaygroundPath;
 	Float mDisplayDPI{ 96 };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;
@@ -508,6 +544,7 @@ class App : public UICodeEditorSplitter::Client {
 	std::unique_ptr<NotificationCenter> mNotificationCenter;
 	std::unique_ptr<StatusTerminalController> mStatusTerminalController;
 	std::unique_ptr<StatusBuildOutputController> mStatusBuildOutputController;
+	std::unique_ptr<StatusAppOutputController> mStatusAppOutputController;
 	std::unique_ptr<ProjectBuildManager> mProjectBuildManager;
 	std::string mLastFileFolder;
 	ColorSchemePreference mUIColorScheme;
@@ -520,6 +557,7 @@ class App : public UICodeEditorSplitter::Client {
 	UISplitter* mMainSplitter{ nullptr };
 	StyleSheet mAppStyleSheet;
 	UIMessageBox* mCloseMsgBox{ nullptr };
+	UIMenuBar* mMenuBar{ nullptr };
 
 	void saveAllProcess();
 
@@ -561,6 +599,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void onDocumentModified( UICodeEditor* editor, TextDocument& );
 
+	void onDocumentUndoRedo( UICodeEditor* editor, TextDocument& );
+
 	void onColorSchemeChanged( const std::string& );
 
 	void onRealDocumentLoaded( UICodeEditor* editor, const std::string& path );
@@ -590,8 +630,6 @@ class App : public UICodeEditorSplitter::Client {
 
 	void removeFolderWatches();
 
-	void createDocDirtyAlert( UICodeEditor* editor );
-
 	void createDocManyLangsAlert( UICodeEditor* editor );
 
 	void syncProjectTreeWithEditor( UICodeEditor* editor );
@@ -617,6 +655,10 @@ class App : public UICodeEditorSplitter::Client {
 	void onReady();
 
 	bool dirInFolderWatches( const std::string& dir );
+
+	void insertRecentFile( const std::string& path );
+
+	void insertRecentFileAndUpdateUI( const std::string& path );
 };
 
 } // namespace ecode

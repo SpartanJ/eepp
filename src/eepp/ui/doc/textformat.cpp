@@ -34,10 +34,6 @@ struct Enc_Bytes {
 				   ? TextDecodeResult{}
 				   : TextDecodeResult{ (Uint8)view[0], TextDecodeResult::Status::Valid, 1 };
 	}
-
-	static inline Uint32 backNumBytes( std::string_view view ) { return view.empty() ? 0 : 1; }
-
-	static inline Uint32 numBytes( Uint32 ) { return 1; }
 };
 
 //-------------------------------------------------------------------
@@ -55,29 +51,6 @@ struct UTF8 {
 		}
 		return decodePointSlowPath( view );
 	}
-
-	static Uint32 backNumBytesSlowPath( std::string_view view );
-
-	static inline Uint32 backNumBytes( std::string_view view ) {
-		if ( view.size() > 0 ) {
-			Uint8 last = view[view.size() - 1];
-			if ( last < 0x80 ) {
-				return 1;
-			}
-		}
-		return backNumBytesSlowPath( view );
-	}
-
-	static inline Uint32 numBytes( Uint32 point ) {
-		if ( point < 0x80 )
-			return 1;
-		else if ( point < 0x800 )
-			return 2;
-		else if ( point < 0x10000 )
-			return 3;
-		else
-			return 4;
-	}
 };
 
 //-------------------------------------------------------------------
@@ -89,16 +62,6 @@ template <bool BigEndian> struct UTF16 {
 			return ( Uint16( Uint8( src[0] ) ) << 8 ) | Uint8( src[1] );
 		} else {
 			return Uint8( src[0] ) | ( Uint16( Uint8( src[1] ) ) << 8 );
-		}
-	}
-
-	static inline void putUnit( char* src, Uint16 u ) {
-		if constexpr ( BigEndian ) {
-			src[0] = Uint8( u >> 8 );
-			src[1] = Uint8( u );
-		} else {
-			src[0] = Uint8( u );
-			src[1] = Uint8( u >> 8 );
 		}
 	}
 
@@ -123,31 +86,51 @@ template <bool BigEndian> struct UTF16 {
 		}
 		return { first, status, 2 };
 	}
-
-	static inline Uint32 backNumBytes( std::string_view view ) {
-		if ( view.size() < 2 ) {
-			return 0;
-		}
-		const char* tail = view.data() + view.size();
-		if ( view.size() >= 4 ) {
-			Uint16 first = getUnit( tail - 4 );
-			Uint16 second = getUnit( tail - 2 );
-			if ( first >= 0xd800 && first < 0xdc00 && second >= 0xdc00 && second < 0xe000 )
-				return 4;
-		}
-		return 2;
-	}
-
-	static inline Uint32 numBytes( Uint32 point ) {
-		if ( point < 0x10000 )
-			return 2;
-		else
-			return 4;
-	}
 };
 
 using UTF16_LE = UTF16<false>;
 using UTF16_BE = UTF16<true>;
+
+//-------------------------------------------------------------------
+// Shift JIS
+//-------------------------------------------------------------------
+struct ShiftJIS {
+	static inline Uint16 getUnit( const char* src ) {
+		return Uint8( src[0] ) | ( Uint16( Uint8( src[1] ) ) << 8 );
+	}
+
+	static inline TextDecodeResult decodePoint( std::string_view view ) {
+		// Shift JIS ranges for single-byte and double-byte characters
+		static constexpr std::pair<unsigned char, unsigned char> firstByteRange1( 0x81, 0x9F );
+		static constexpr std::pair<unsigned char, unsigned char> firstByteRange2( 0xE0, 0xEF );
+		static constexpr std::pair<unsigned char, unsigned char> secondByteRange1( 0x40, 0x7E );
+		static constexpr std::pair<unsigned char, unsigned char> secondByteRange2( 0x80, 0xFC );
+
+		if ( view.size() == 0 )
+			return {};
+
+		Uint8 first = view[0];
+		if ( first < 0x7F )
+			return { first, TextDecodeResult::Status::Valid, 1 };
+
+		if ( view.size() < 2 &&
+			 ( ( first >= secondByteRange1.first && first <= secondByteRange1.second ) ||
+			   ( first >= secondByteRange2.first && first <= secondByteRange2.second ) ) ) {
+			return { first, TextDecodeResult::Status::Valid, 1 };
+		}
+
+		Uint8 second = view[1];
+
+		if ( ( ( first >= firstByteRange1.first && first <= firstByteRange1.second ) ||
+			   ( first >= firstByteRange2.first && first <= firstByteRange2.second ) ) &&
+			 ( ( second >= secondByteRange1.first && second <= secondByteRange1.second ) ||
+			   ( second >= secondByteRange2.first && second <= secondByteRange2.second ) ) ) {
+			return { getUnit( view.data() ), TextDecodeResult::Status::Valid, 2 };
+		}
+
+		return { first, TextDecodeResult::Status::Invalid, 1 };
+	}
+};
 
 //-------------------------------------------------------------------
 // UTF8
@@ -226,28 +209,6 @@ consume1Byte:
 	return result;
 }
 
-Uint32 UTF8::backNumBytesSlowPath( std::string_view view ) {
-	if ( view.size() == 0 ) {
-		return 0;
-	}
-	const Uint8* tail = (const Uint8*)view.data() + view.size();
-	if ( ( tail[-1] & 0xc0 ) == 0x80 && view.size() >= 2 ) {
-		if ( ( tail[-2] & 0xc0 ) == 0x80 && view.size() >= 3 ) {
-			if ( ( tail[-3] & 0xc0 ) == 0x80 && view.size() >= 4 ) {
-				if ( ( tail[-4] & 0xf8 ) == 0xf0 )
-					return 4;
-			} else {
-				if ( ( tail[-3] & 0xf0 ) == 0xe0 )
-					return 3;
-			}
-		} else {
-			if ( ( tail[-2] & 0xe0 ) == 0xc0 )
-				return 2;
-		}
-	}
-	return 1;
-}
-
 //-------------------------------------------------------------------
 // TextEncoding helper objects
 //-------------------------------------------------------------------
@@ -273,6 +234,9 @@ template <> struct TextEncoding::Wrapper<UTF16_LE> {
 template <> struct TextEncoding::Wrapper<UTF16_BE> {
 	static TextEncoding Instance;
 };
+template <> struct TextEncoding::Wrapper<ShiftJIS> {
+	static TextEncoding Instance;
+};
 
 //-------------------------------------------------------------------
 // TextEncoding (indirect through function vectors)
@@ -295,6 +259,11 @@ TextEncoding TextEncoding::Wrapper<UTF16_LE>::Instance = {
 TextEncoding TextEncoding::Wrapper<UTF16_BE>::Instance = {
 	&UTF16_BE::decodePoint,
 	2,
+};
+
+TextEncoding TextEncoding::Wrapper<ShiftJIS>::Instance = {
+	&ShiftJIS::decodePoint,
+	1,
 };
 
 const TextEncoding* encodingFromEnum( TextFormat::Encoding enc ) {
@@ -323,7 +292,10 @@ struct TextFileStats {
 	Uint32 numPlainAscii = 0; // includes whitespace, excludes control characters < 32
 	Uint32 numWhitespace = 0;
 	Uint32 numExtended = 0;
+	Uint32 num16bytes = 0;
 	float ooNumPoints = 0.f;
+	float score = 0.f;
+	bool count16b{ false };
 
 	Uint32 numInvalidPoints() const { return numPoints - numValidPoints; }
 
@@ -336,10 +308,18 @@ struct TextFileStats {
 		}
 	}
 
-	float getScore() const {
-		return ( 2.5f * numWhitespace + numPlainAscii - 100.f * numInvalidPoints() -
-				 50.f * numControl + 5.f * numExtended ) *
-			   ooNumPoints;
+	void calcScore() {
+		score = ( ( 2.5f * numWhitespace + numPlainAscii - 100.f * numInvalidPoints() -
+					50.f * numControl + 5.f * numExtended + 2.5f * num16bytes ) *
+				  ( count16b ? ( num16bytes > 0 ? 1 : 0 ) : 1 ) ) *
+				ooNumPoints;
+	}
+
+	bool allValidPoints() const { return numPoints == numValidPoints; }
+
+	float getScore() {
+		calcScore();
+		return score;
 	}
 };
 
@@ -394,6 +374,8 @@ static Uint32 scanTextFile( TextFileStats& stats, IOStream& ins, const TextEncod
 				}
 			} else if ( decoded.point >= 65536 ) {
 				stats.numExtended++;
+			} else if ( stats.count16b && decoded.point >= 0x8140 ) {
+				stats.num16bytes++;
 			}
 		}
 		prevWasCR = ( decoded.point == '\r' );
@@ -401,6 +383,7 @@ static Uint32 scanTextFile( TextFileStats& stats, IOStream& ins, const TextEncod
 	if ( stats.numPoints > 0 ) {
 		stats.ooNumPoints = 1.f / stats.numPoints;
 	}
+	stats.calcScore();
 	return numBytes;
 }
 
@@ -451,6 +434,17 @@ TextFormat guessFileEncoding( IOStream& ins ) {
 		encoding = TextFormat::Encoding::UTF16BE;
 	}
 
+	TextFileStats statsShiftJIS;
+	statsShiftJIS.count16b = true;
+	scanTextFile( statsShiftJIS, ins, TextEncoding::get<ShiftJIS>(), NumBytesForAutodetect );
+	ins.seek( 0 );
+
+	if ( statsShiftJIS.allValidPoints() && statsShiftJIS.num16bytes &&
+		 statsShiftJIS.getScore() > stats->getScore() ) {
+		stats = &statsShiftJIS;
+		encoding = TextFormat::Encoding::Shift_JIS;
+	}
+
 	// Choose between the UTF16 and 8-bit encoding:
 	if ( stats8.getScore() >= stats->getScore() ) {
 		stats = &stats8;
@@ -484,7 +478,7 @@ TextFormat TextFormat::autodetect( IOStream& ins ) {
 			tff.encoding = TextFormat::Encoding::UTF16BE;
 			tff.bom = true;
 		} else if ( h[0] == 0xff && h[1] == 0xfe ) {
-			tff.encoding = TextFormat::Encoding::UTF16BE;
+			tff.encoding = TextFormat::Encoding::UTF16LE;
 			tff.bom = true;
 		}
 		ins.seek( start );
@@ -520,7 +514,7 @@ TextFormat::LineEnding TextFormat::stringToLineEnding( const std::string& str ) 
 	return TextFormat::LineEnding::LF;
 }
 
-TextFormat::Encoding TextFormat::encodingFromString( const std::string_view& str ) {
+TextFormat::Encoding TextFormat::encodingFromString( const std::string& str ) {
 	switch ( String::hash( str ) ) {
 		case static_cast<String::HashType>( TextFormat::Encoding::UTF16LE ):
 			return TextFormat::Encoding::UTF16LE;
@@ -528,6 +522,8 @@ TextFormat::Encoding TextFormat::encodingFromString( const std::string_view& str
 			return TextFormat::Encoding::UTF16BE;
 		case static_cast<String::HashType>( TextFormat::Encoding::Latin1 ):
 			return TextFormat::Encoding::Latin1;
+		case static_cast<String::HashType>( TextFormat::Encoding::Shift_JIS ):
+			return TextFormat::Encoding::Shift_JIS;
 		case static_cast<String::HashType>( TextFormat::Encoding::UTF8 ):
 		default:
 			return TextFormat::Encoding::UTF8;
@@ -542,6 +538,8 @@ std::string TextFormat::encodingToString( TextFormat::Encoding enc ) {
 			return "UTF-16 BE";
 		case TextFormat::Encoding::Latin1:
 			return "ISO-8859-1";
+		case TextFormat::Encoding::Shift_JIS:
+			return "Shift-JIS";
 		case TextFormat::Encoding::UTF8:
 		default:
 			break;
@@ -555,6 +553,7 @@ std::vector<std::pair<TextFormat::Encoding, std::string>> TextFormat::encodings(
 	encs.emplace_back( Encoding::UTF16BE, encodingToString( Encoding::UTF16BE ) );
 	encs.emplace_back( Encoding::UTF16LE, encodingToString( Encoding::UTF16LE ) );
 	encs.emplace_back( Encoding::Latin1, encodingToString( Encoding::Latin1 ) );
+	encs.emplace_back( Encoding::Shift_JIS, encodingToString( Encoding::Shift_JIS ) );
 	return encs;
 }
 

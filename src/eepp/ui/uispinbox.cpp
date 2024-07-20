@@ -306,6 +306,7 @@ std::string UISpinBox::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::HintFontStyle:
 		case PropertyId::HintStrokeWidth:
 		case PropertyId::HintStrokeColor:
+		case PropertyId::HintDisplay:
 		case PropertyId::Color:
 		case PropertyId::TextShadowColor:
 		case PropertyId::TextShadowOffset:
@@ -343,6 +344,7 @@ std::vector<PropertyId> UISpinBox::getPropertiesImplemented() const {
 				   PropertyId::HintFontStyle,
 				   PropertyId::HintStrokeWidth,
 				   PropertyId::HintStrokeColor,
+				   PropertyId::HintDisplay,
 				   PropertyId::Color,
 				   PropertyId::TextShadowColor,
 				   PropertyId::TextShadowOffset,
@@ -394,6 +396,7 @@ bool UISpinBox::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::HintFontStyle:
 		case PropertyId::HintStrokeWidth:
 		case PropertyId::HintStrokeColor:
+		case PropertyId::HintDisplay:
 		case PropertyId::Color:
 		case PropertyId::TextShadowColor:
 		case PropertyId::TextShadowOffset:

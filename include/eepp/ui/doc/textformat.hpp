@@ -17,6 +17,7 @@ class EE_API TextFormat {
 		UTF16LE = String::hash( "UTF-16 LE" ),
 		UTF16BE = String::hash( "UTF-16 BE" ),
 		Latin1 = String::hash( "ISO-8859-1" ),
+		Shift_JIS = String::hash( "Shift-JIS" ),
 	};
 
 	enum class LineEnding { LF, CRLF, CR };
@@ -33,7 +34,7 @@ class EE_API TextFormat {
 
 	static std::string encodingToString( TextFormat::Encoding enc );
 
-	static Encoding encodingFromString( const std::string_view& str );
+	static Encoding encodingFromString( const std::string& str );
 
 	static TextFormat autodetect( IOStream& ins );
 };

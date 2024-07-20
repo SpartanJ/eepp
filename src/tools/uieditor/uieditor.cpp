@@ -865,6 +865,9 @@ void App::closeProject() {
 }
 
 bool App::onCloseRequestCallback( EE::Window::Window* ) {
+	if ( mMsgBox )
+		return false;
+
 	SceneManager::instance()->setCurrentUISceneNode( mAppUISceneNode );
 
 	mMsgBox = UIMessageBox::New(
@@ -1477,6 +1480,8 @@ void App::onDocumentModified( UICodeEditor* editor, TextDocument& doc ) {
 	}
 }
 
+void App::onDocumentUndoRedo( UICodeEditor*, TextDocument& ) {}
+
 void App::onDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
 	mSplitter->removeUnusedTab( mSplitter->tabWidgetFromEditor( editor ) );
 
@@ -1540,6 +1545,7 @@ void App::saveAll() {
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setAutoCloseXMLTags( true );
 	editor->setColorPreview( true );
+	editor->setLineWrapMode( LineWrapMode::Word );
 	doc.setCommand( "save-doc", [this] { saveDoc(); } );
 	doc.setCommand( "save-as-doc", [this] {
 		if ( mSplitter->curEditorExistsAndFocused() )

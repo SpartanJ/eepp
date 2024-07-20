@@ -15,12 +15,15 @@ struct LSPDefinition {
 	std::string language;
 	std::string name;
 	std::vector<std::string> filePatterns;
+	std::unordered_map<std::string, std::string> cmdVars;
 	std::string command;
 	std::string commandParameters;
 	std::vector<std::string> rootIndicationFileNames;
 	std::string url;
 	std::string host;
 	std::unordered_map<std::string, std::string> env;
+	/* filePattern, languageId */
+	std::unordered_map<std::string, std::string> languageIdsForFilePatterns;
 	int port{ 0 };
 	nlohmann::json initializationOptions;
 

@@ -23,10 +23,6 @@
 #include <unordered_map>
 #include <vector>
 
-#define MAX_KEYNAME 128
-#define MAX_VALUENAME 128
-#define MAX_VALUEDATA 2048
-
 namespace EE { namespace System {
 
 class Pack;
@@ -65,7 +61,7 @@ class EE_API IniFile {
 	void path( const std::string& newPath ) { mPath = newPath; }
 
 	/** @return The ini file path */
-	std::string path() const { return mPath; }
+	const std::string& path() const { return mPath; }
 
 	/** Reads ini file specified using mPath.
 	 *	@return true if successful, false otherwise. */
@@ -73,6 +69,9 @@ class EE_API IniFile {
 
 	/** Writes data stored in class to ini file. */
 	bool writeFile();
+
+	/** Writes data stored in class to a IOStream. */
+	bool writeStream( IOStream& stream );
 
 	/** Deletes all stored ini data. */
 	void clear();

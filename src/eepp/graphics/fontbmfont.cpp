@@ -233,6 +233,7 @@ Glyph FontBMFont::loadGlyph( Uint32 codePoint, unsigned int characterSize, bool,
 		glyph.bounds = oriGlyph.bounds * scale;
 		glyph.advance = oriGlyph.advance * scale;
 		glyph.size = oriGlyph.textureRect.getSize().asFloat() * scale;
+		glyph.font = (Font*)this;
 	}
 
 	return glyph;

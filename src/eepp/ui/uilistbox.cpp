@@ -59,7 +59,7 @@ UIListBox::UIListBox( const std::string& tag ) :
 	mVScrollBar->setEnabled( false )->setVisible( false );
 	mVScrollBar->addEventListener( Event::OnSizeChange, cb );
 	mVScrollBar->addEventListener( Event::OnValueChange,
-								   cb::Make1( this, &UIListBox::onScrollValueChange ) );
+								   [this] ( auto event ) { onScrollValueChange( event ); } );
 
 	mHScrollBar = UIScrollBar::NewHorizontal();
 	mHScrollBar->setParent( this );
@@ -68,7 +68,7 @@ UIListBox::UIListBox( const std::string& tag ) :
 	mHScrollBar->setEnabled( false )->setVisible( false );
 	mHScrollBar->addEventListener( Event::OnSizeChange, cb );
 	mHScrollBar->addEventListener( Event::OnValueChange,
-								   cb::Make1( this, &UIListBox::onHScrollValueChange ) );
+								   [this] ( auto event ) { onHScrollValueChange( event ); } );
 
 	mDummyItem = createListBoxItem( "" );
 	mDummyItem->setSize( 0, 0 );
@@ -214,6 +214,9 @@ void UIListBox::removeListBoxItems( std::vector<Uint32> ItemsIndex ) {
 
 	if ( selectedSize != mSelected.size() )
 		sendCommonEvent( Event::OnSelectionChanged );
+
+	if ( mTexts.empty() )
+		sendCommonEvent( Event::OnClear );
 }
 
 void UIListBox::clear() {
@@ -231,7 +234,7 @@ void UIListBox::clear() {
 }
 
 Uint32 UIListBox::removeListBoxItem( Uint32 ItemIndex ) {
-	removeListBoxItems( std::vector<Uint32>( 1, ItemIndex ) );
+	removeListBoxItems( { ItemIndex } );
 
 	return ItemIndex;
 }

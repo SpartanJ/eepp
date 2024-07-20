@@ -16,6 +16,11 @@ void addHTML() {
 					  "<%s*/[sS][cC][rR][iI][pP][tT]>" },
 					"function",
 					"JavaScript" },
+				  { { "<%s*[sS][cC][rR][iI][pP][tT]%s+[tT][yY][pP][eE]%s*=%s*['\"]%a+/"
+					  "[pP][yY][tT][hH][oO][nN]['\"]%s*>",
+					  "<%s*/[sS][cC][rR][iI][pP][tT]>" },
+					"function",
+					"Python" },
 				  { { "<%s*[sS][cC][rR][iI][pP][tT]%s*>", "<%s*/%s*[sS][cC][rR][iI][pP][tT]>" },
 					"function",
 					"JavaScript" },

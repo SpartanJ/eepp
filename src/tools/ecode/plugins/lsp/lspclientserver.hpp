@@ -72,6 +72,8 @@ class LSPClientServer {
 
 	bool isRunning();
 
+	bool isReady() const;
+
 	const LSPServerCapabilities& getCapabilities() const;
 
 	LSPClientServerManager* getManager() const;
@@ -94,6 +96,14 @@ class LSPClientServer {
 	LSPRequestHandle documentSymbols( const URI& document,
 									  const WReplyHandler<LSPSymbolInformationList>& h,
 									  const ReplyHandler<LSPResponseError>& eh = {} );
+
+	LSPClientServer::LSPRequestHandle documentFoldingRange( const URI& document,
+															const JsonReplyHandler& h,
+															const JsonReplyHandler& eh );
+
+	LSPRequestHandle documentFoldingRange( const URI& document,
+										   const ReplyHandler<std::vector<LSPFoldingRange>>& h,
+										   const ReplyHandler<LSPResponseError>& eh = {} );
 
 	LSPRequestHandle documentSymbolsBroadcast( const URI& document );
 
@@ -259,8 +269,10 @@ class LSPClientServer {
 	Mutex mClientsMutex;
 	Mutex mHandlersMutex;
 	bool mReady{ false };
+	bool mEnded{ false };
 	bool mUsingProcess{ false };
 	bool mUsingSocket{ false };
+	bool mNotifiedServerError{ false };
 	struct QueueMessage {
 		json msg;
 		JsonReplyHandler h;
@@ -280,6 +292,8 @@ class LSPClientServer {
 	};
 	std::queue<DidChangeQueue> mDidChangeQueue;
 	Mutex mDidChangeMutex;
+	std::mutex mShutdownMutex;
+	std::condition_variable mShutdownCond;
 
 	std::atomic<int> mLastMsgId{ 0 };
 
@@ -316,6 +330,8 @@ class LSPClientServer {
 	void refreshCodeLens();
 
 	bool trimLogs() const;
+
+	void notifyServerError();
 };
 
 } // namespace ecode

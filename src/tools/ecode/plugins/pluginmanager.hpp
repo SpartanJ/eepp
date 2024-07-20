@@ -64,7 +64,7 @@ struct PluginDefinition {
 	PluginCreatorFn creatorSyncFn{ nullptr };
 };
 
-enum class PluginCapability { WorkspaceSymbol, TextDocumentSymbol, Max };
+enum class PluginCapability { WorkspaceSymbol, TextDocumentSymbol, FoldingRange, Max };
 
 enum class PluginMessageType {
 	WorkspaceFolderChanged, // Broadcast the workspace folder from the application to the plugins
@@ -92,6 +92,7 @@ enum class PluginMessageType {
 	QueryPluginCapability, // Requests / queries if a plugin providers a capability
 	UIReady,			   // Informs the Plugins that the UI is ready to be used
 	UIThemeReloaded,	   // Informs the plugins that the UI theme has been reloaded
+	FoldingRanges,		   // Request to the LSP server the folding ranges of a document
 	Undefined
 };
 
@@ -106,7 +107,8 @@ enum class PluginMessageFormat {
 	ShowMessage,
 	ShowDocument,
 	SymbolInformation,
-	DiagnosticsCodeAction
+	DiagnosticsCodeAction,
+	FoldingRanges
 };
 
 class PluginIDType {
@@ -347,6 +349,8 @@ class PluginManager {
 	void subscribeFileSystemListener( Plugin* plugin );
 
 	void unsubscribeFileSystemListener( Plugin* plugin );
+
+	bool isClosing() const;
 
   protected:
 	using SubscribedPlugins =

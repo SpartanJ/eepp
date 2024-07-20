@@ -11,19 +11,22 @@ UIEventDispatcher* UIEventDispatcher::New( SceneNode* sceneNode ) {
 }
 
 UIEventDispatcher::UIEventDispatcher( SceneNode* sceneNode ) :
-	EventDispatcher( sceneNode ), mJustGainedFocus( false ) {}
+	EventDispatcher( sceneNode ) {}
 
-const bool& UIEventDispatcher::justGainedFocus() const {
+bool UIEventDispatcher::justGainedFocus() const {
 	return mJustGainedFocus;
 }
 
 void UIEventDispatcher::inputCallback( InputEvent* event ) {
-	EventDispatcher::inputCallback( event );
+	if ( event->Type != InputEvent::TextEditing )
+		EventDispatcher::inputCallback( event );
 
 	switch ( event->Type ) {
 		case InputEvent::Window:
 			if ( event->window.type == InputEvent::WindowKeyboardFocusGain ) {
 				mJustGainedFocus = true;
+			} else if ( event->window.type == InputEvent::WindowKeyboardFocusLost ) {
+				mJustLostFocus = true;
 			}
 			break;
 		case InputEvent::KeyDown:
@@ -31,6 +34,13 @@ void UIEventDispatcher::inputCallback( InputEvent* event ) {
 			break;
 		case InputEvent::EventsSent:
 			mJustGainedFocus = false;
+			mJustLostFocus = false;
+			break;
+		case InputEvent::TextEditing:
+			if ( !mJustLostFocus ) {
+				sendTextEditing( event->textediting.text, event->textediting.start,
+								 event->textediting.length );
+			}
 			break;
 	}
 }

@@ -8,9 +8,14 @@ jobs:
     env:
       MSBUILD_PATH: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\
     steps:
+    - name: Configure Git
+      shell: cmd
+      run: |
+        git config --system core.autocrlf false
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
+        ref: ${{ github.ref }}
         fetch-depth: 2
     - name: Checkout submodules
       run: |
@@ -18,13 +23,17 @@ jobs:
     - name: Install dependencies
       shell: powershell
       run: |
-        Invoke-WebRequest -Uri "https://github.com/premake/premake-core/releases/download/v5.0.0-beta1/premake-5.0.0-beta1-windows.zip" -OutFile "premake-5.0.0-beta1-windows.zip"
-        Expand-Archive -DestinationPath . -Path premake-5.0.0-beta1-windows.zip
+        Invoke-WebRequest -Uri "https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-windows.zip" -OutFile "premake-5.0.0-beta2-windows.zip"
+        Expand-Archive -DestinationPath . -Path premake-5.0.0-beta2-windows.zip
     - name: Create project
       shell: powershell
       run: |
-        ./premake5.exe --windows-vc-build vs2022
+        ./premake5.exe --windows-vc-build --with-text-shaper vs2022
     - name: Build
       shell: cmd
       run: |
-        "%MSBUILD_PATH%\MSBuild.exe" .\make\windows\eepp.sln -m /p:Platform="x64"
+        "%MSBUILD_PATH%\MSBuild.exe" .\make\windows\eepp.sln -m /p:Platform="x64" /p:Configuration="release"
+    - name: Unit Tests
+      shell: cmd
+      run: |
+        bin\unit_tests\eepp-unit_tests.exe

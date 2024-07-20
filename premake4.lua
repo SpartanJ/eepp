@@ -165,6 +165,9 @@ newoption { trigger = "with-mold-linker", description = "Tries to use the mold l
 newoption { trigger = "with-debug-symbols", description = "Release builds are built with debug symbols." }
 newoption { trigger = "thread-sanitizer", description ="Compile with ThreadSanitizer." }
 newoption { trigger = "address-sanitizer", description = "Compile with AddressSanitizer." }
+newoption { trigger = "time-trace", description = "Compile with time trace." }
+newoption { trigger = "disable-static-build", description = "Disables eepp static build project, this is just a helper to avoid rebuilding twice eepp while developing the library." }
+newoption { trigger = "with-text-shaper", description = "Enables text-shaping capabilities by relying on harfbuzz." }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -341,7 +344,7 @@ os_links = { }
 backends = { }
 static_backends = { }
 backend_selected = false
-remote_sdl2_version = "SDL2-2.0.20"
+remote_sdl2_version = "SDL2-2.30.3"
 
 function build_arch_configuration()
 	if os.is_real("mingw32") or os.is_real("mingw64") then
@@ -362,7 +365,7 @@ function build_base_configuration( package_name )
 	end
 
 	set_ios_config()
-	set_xcode_config()
+	set_apple_config()
 	build_arch_configuration()
 
 	configuration "debug"
@@ -402,12 +405,14 @@ function build_base_cpp_configuration( package_name )
 		buildoptions{ "-fPIC" }
 	end
 
-	if is_vs() then
-		buildoptions { "/utf-8" }
+	if not is_vs() then
+		buildoptions{ "-std=c++17" }
+	else
+		buildoptions{ "/std:c++17", "/utf-8" }
 	end
 
 	set_ios_config()
-	set_xcode_config()
+	set_apple_config()
 	build_arch_configuration()
 
 	if _OPTIONS["with-static-eepp"] then
@@ -522,7 +527,11 @@ function build_link_configuration( package_name, use_ee_icon )
 
 		if os.is("windows") and not is_vs() then
 			if ( true == use_ee_icon ) then
-				linkoptions { "../../bin/assets/icon/ee.res" }
+				if os.is64bit() then
+					linkoptions { "../../bin/assets/icon/ee.x64.res" }
+				else
+					linkoptions { "../../bin/assets/icon/ee.res" }
+				end
 			end
 		end
 
@@ -579,7 +588,7 @@ function build_link_configuration( package_name, use_ee_icon )
 	end
 
 	set_ios_config()
-	set_xcode_config()
+	set_apple_config()
 	build_arch_configuration()
 
 	configuration "debug"
@@ -712,6 +721,10 @@ function parse_args()
 			links { "asan" }
 		end
 	end
+
+	if _OPTIONS["time-trace"] then
+		buildoptions { "-ftime-trace" }
+	end
 end
 
 function add_static_links()
@@ -727,6 +740,11 @@ function add_static_links()
 
 	if not _OPTIONS["with-dynamic-freetype"] then
 		links { "freetype-static", "libpng-static" }
+	end
+
+	if _OPTIONS["with-text-shaper"] then
+		links { "harfbuzz-static" }
+		defines { "EE_TEXT_SHAPER_ENABLED" }
 	end
 
 	links { "SOIL2-static",
@@ -776,12 +794,18 @@ function add_sdl2()
 	end
 end
 
-function set_xcode_config()
+function set_apple_config()
 	if is_xcode() or _OPTIONS["use-frameworks"] then
 		linkoptions { "-F /Library/Frameworks" }
 		buildoptions { "-F /Library/Frameworks" }
 		includedirs { "/Library/Frameworks/SDL2.framework/Headers" }
+	end
+	if os.is("macosx") then
 		defines { "EE_SDL2_FROM_ROOTPATH" }
+		if not is_xcode() and not _OPTIONS["use-frameworks"] then
+			local sdl2flags = popen("sdl2-config --cflags"):gsub("\n", "")
+			buildoptions { sdl2flags }
+		end
 	end
 end
 
@@ -925,7 +949,7 @@ function build_eepp( build_name )
 
 	set_macos_and_ios_config()
 	set_ios_config()
-	set_xcode_config()
+	set_apple_config()
 
 	add_static_links()
 
@@ -1091,6 +1115,17 @@ solution "eepp"
 		includedirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng" }
 		build_base_configuration( "freetype" )
 
+	if _OPTIONS["with-text-shaper"] then
+		project "harfbuzz-static"
+			kind "StaticLib"
+			language "C++"
+			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+			defines { "HAVE_CONFIG_H" }
+			files { "src/thirdparty/harfbuzz/**.cc" }
+			includedirs { "src/thirdparty/freetype2/include", "src/thirdparty/harfbuzz" }
+			build_base_cpp_configuration( "harfbuzz" )
+	end
+
 	project "chipmunk-static"
 		kind "StaticLib"
 
@@ -1128,7 +1163,7 @@ solution "eepp"
 			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 			includedirs { "include/eepp/thirdparty/mojoAL" }
 			files { "src/thirdparty/mojoAL/*.c" }
-			build_base_cpp_configuration( "mojoal" )
+			build_base_configuration( "mojoal" )
 	end
 
 	project "efsw-static"
@@ -1274,11 +1309,13 @@ solution "eepp"
 		build_base_cpp_configuration( "eterm" )
 
 	-- Library
+	if not _OPTIONS["disable-static-build"] then
 	project "eepp-static"
 		kind "StaticLib"
 		language "C++"
 		set_targetdir("libs/" .. os.get_real() .. "/")
 		build_eepp( "eepp-static" )
+	end
 
 	project "eepp-shared"
 		kind "SharedLib"
@@ -1286,6 +1323,7 @@ solution "eepp"
 		set_targetdir("libs/" .. os.get_real() .. "/")
 		build_eepp( "eepp" )
 		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp" )
+		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/unit_tests/", "eepp" )
 
 	-- Examples
 	project "eepp-external-shader"
@@ -1471,7 +1509,12 @@ solution "eepp"
 			links { "bsd" }
 		end
 		if os.is("windows") and not is_vs() then
-			linkoptions { "../../bin/assets/icon/ecode.res" }
+			if os.is64bit() then
+				linkoptions { "../../bin/assets/icon/ecode.x64.res" }
+			else
+				linkoptions { "../../bin/assets/icon/ecode.res" }
+			end
+			buildoptions{ "-Wa,-mbig-obj" }
 		end
 		build_link_configuration( "ecode", false )
 
@@ -1488,7 +1531,11 @@ solution "eepp"
 			links { "bsd" }
 		end
 		if os.is("windows") and not is_vs() then
-			linkoptions { "../../bin/assets/icon/eterm.res" }
+			if os.is64bit() then
+				linkoptions { "../../bin/assets/icon/eterm.x64.res" }
+			else
+				linkoptions { "../../bin/assets/icon/eterm.res" }
+			end
 		end
 		build_link_configuration( "eterm", false )
 
@@ -1514,6 +1561,13 @@ solution "eepp"
 		files { "src/tests/ui_perf_test/*.cpp" }
 		includedirs { "src/thirdparty" }
 		build_link_configuration( "eepp-ui-perf-test", true )
+
+	project "eepp-unit_tests"
+		kind "ConsoleApp"
+		targetdir("./bin/unit_tests")
+		language "C++"
+		files { "src/tests/unit_tests/*.cpp" }
+		build_link_configuration( "eepp-unit_tests", true )
 
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")

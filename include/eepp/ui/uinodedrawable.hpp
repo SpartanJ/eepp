@@ -74,7 +74,7 @@ class EE_API UINodeDrawable : public Drawable {
 
 		Sizef calcDrawableSize( const std::string& drawableSizeEq );
 
-		Vector2f calcPosition( const std::string& positionEq );
+		Vector2f calcPosition( std::string positionXEq, std::string positionYEq );
 
 		const std::string& getPositionX() const;
 
@@ -169,13 +169,18 @@ class EE_API UINodeDrawable : public Drawable {
 
 	UIBackgroundDrawable& getBackgroundDrawable();
 
+	bool isSmooth() const;
+
+	void setSmooth( bool smooth );
+
   protected:
 	UINode* mOwner;
 	UIBackgroundDrawable mBackgroundColor;
 	std::map<int, LayerDrawable*> mGroup;
 	Sizef mSize;
-	bool mNeedsUpdate;
-	bool mClipEnabled;
+	bool mNeedsUpdate{ true };
+	bool mClipEnabled{ false };
+	bool mSmooth{ false };
 
 	virtual void onPositionChange();
 

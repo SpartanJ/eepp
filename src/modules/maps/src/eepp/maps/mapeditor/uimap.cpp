@@ -42,7 +42,7 @@ UIMap::UIMap( UITheme* Theme, TileMap* Map ) :
 	mMap->setBackColor( Color( 100, 100, 100, 100 ) );
 	mMap->setGridLinesColor( Color( 150, 150, 150, 150 ) );
 	mMap->setScale( PixelDensity::getPixelDensity() );
-	mMap->setDrawCallback( cb::Make0( this, &UIMap::mapDraw ) );
+	mMap->setDrawCallback( [this] { mapDraw(); } );
 	mMap->setViewSize( mSize );
 
 	mDragButton = EE_BUTTON_MMASK;
@@ -586,7 +586,7 @@ void UIMap::createObjPopUpMenu() {
 	Menu->add( "Remove Object" );
 	Menu->addSeparator();
 	Menu->add( "Object Properties..." );
-	Menu->addEventListener( Event::OnItemClicked, cb::Make1( this, &UIMap::objItemClick ) );
+	Menu->addEventListener( Event::OnItemClicked, [this] ( auto event ) { objItemClick( event ); } );
 
 	if ( Menu->show() ) {
 		Vector2f Pos = getEventDispatcher()->getMousePosf();

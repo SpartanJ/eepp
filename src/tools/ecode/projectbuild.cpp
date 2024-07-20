@@ -23,6 +23,8 @@ static const char* VAR_PROJECT_ROOT = "${project_root}";
 static const char* VAR_BUILD_TYPE = "${build_type}";
 static const char* VAR_OS = "${os}";
 static const char* VAR_NPROC = "${nproc}";
+static const char* VAR_CURRENT_DOC = "${current_doc}";
+static const char* VAR_CURRENT_DOC_NAME = "${current_doc_name}";
 
 static void replaceVar( ProjectBuildStep& s, const std::string& var, const std::string& val ) {
 	static std::string slashDup = FileSystem::getOSSlash() + FileSystem::getOSSlash();
@@ -31,6 +33,18 @@ static void replaceVar( ProjectBuildStep& s, const std::string& var, const std::
 	String::replaceAll( s.args, var, val );
 	String::replaceAll( s.workingDir, slashDup, FileSystem::getOSSlash() );
 	FileSystem::dirAddSlashAtEnd( s.workingDir );
+}
+
+ProjectBuildStep ProjectBuild::replaceVars( const ProjectBuildStep& step ) const {
+	ProjectBuildStep s( step );
+	replaceVar( s, VAR_PROJECT_ROOT, mProjectRoot );
+	for ( auto& var : mVars ) {
+		std::string varKey( "${" + var.first + "}" );
+		std::string varVal( var.second );
+		String::replaceAll( varVal, VAR_PROJECT_ROOT, mProjectRoot );
+		replaceVar( s, varKey, varVal );
+	}
+	return s;
 }
 
 ProjectBuildSteps ProjectBuild::replaceVars( const ProjectBuildSteps& steps ) const {
@@ -76,6 +90,23 @@ json ProjectBuild::serialize( const ProjectBuild::Map& builds ) {
 			if ( !build.enabled )
 				step["enabled"] = build.enabled;
 			jclean.push_back( step );
+		}
+
+		if ( curBuild.hasRun() ) {
+			bj["run"] = json::array();
+			auto& jrun = bj["run"];
+			for ( auto& run : curBuild.mRun ) {
+				json step;
+				step["name"] = run.name;
+				step["working_dir"] = run.workingDir;
+				step["args"] = run.args;
+				step["command"] = run.cmd;
+				if ( !run.enabled )
+					step["enabled"] = run.enabled;
+				if ( run.runInTerminal )
+					step["run_in_terminal"] = run.runInTerminal;
+				jrun.push_back( step );
+			}
 		}
 
 		bj["build_types"] = curBuild.buildTypes();
@@ -261,6 +292,20 @@ void ProjectBuildManager::editBuild( std::string buildName, UIWidget* buildTab )
 	ret.first->setIcon( mApp->findIcon( "hammer" ) );
 }
 
+void ProjectBuildManager::editCurrentBuild() {
+	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab_view" );
+	if ( buildTab == nullptr )
+		return;
+	if ( !mConfig.buildName.empty() && !mBuilds.empty() )
+		editBuild( mConfig.buildName, buildTab );
+	else
+		mTab->setTabSelected();
+}
+
+void ProjectBuildManager::selectTab() {
+	mTab->setTabSelected();
+}
+
 ProjectBuildManager::~ProjectBuildManager() {
 	if ( mUISceneNode && !SceneManager::instance()->isShuttingDown() && mSidePanel && mTab ) {
 		mSidePanel->removeTab( mTab );
@@ -274,6 +319,7 @@ ProjectBuildManager::~ProjectBuildManager() {
 
 	mShuttingDown = true;
 	mCancelBuild = true;
+	mCancelRun = true;
 	save();
 	while ( mLoading )
 		Sys::sleep( Milliseconds( 0.1f ) );
@@ -281,9 +327,24 @@ ProjectBuildManager::~ProjectBuildManager() {
 		Sys::sleep( Milliseconds( 0.1f ) );
 }
 
+void ProjectBuildManager::replaceDynamicVars( ProjectBuildCommand& cmd ) {
+	std::string currentOS = String::toLower( Sys::getPlatform() );
+	std::string nproc = String::format( "%d", Sys::getCPUCount() );
+	std::string curDoc = getCurrentDocument();
+	std::string curDocName =
+		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( curDoc ) );
+	replaceVar( cmd, VAR_OS, currentOS );
+	replaceVar( cmd, VAR_NPROC, nproc );
+	replaceVar( cmd, VAR_CURRENT_DOC, curDoc );
+	replaceVar( cmd, VAR_CURRENT_DOC_NAME, curDocName );
+	if ( cmd.workingDir.empty() )
+		cmd.workingDir = mProjectRoot;
+}
+
 ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands( const std::string& buildName,
 																	const ProjectBuildi18nFn& i18n,
-																	const std::string& buildType ) {
+																	const std::string& buildType,
+																	bool isClean ) {
 	const auto& buildIt = mBuilds.find( buildName );
 
 	if ( buildIt == mBuilds.end() )
@@ -300,17 +361,12 @@ ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands( const std::s
 		return {
 			i18n( "build_os_not_supported", "Operating System not supported for this build!" ) };
 
-	std::string nproc = String::format( "%d", Sys::getCPUCount() );
+	auto finalBuild( build.replaceVars( isClean ? build.mClean : build.mBuild ) );
+
 	ProjectBuildCommandsRes res;
-
-	auto finalBuild( build.replaceVars( build.mBuild ) );
-
 	for ( const auto& step : finalBuild ) {
 		ProjectBuildCommand buildCmd( step );
-		replaceVar( buildCmd, VAR_OS, currentOS );
-		replaceVar( buildCmd, VAR_NPROC, nproc );
-		if ( buildCmd.workingDir.empty() )
-			buildCmd.workingDir = mProjectRoot;
+		replaceDynamicVars( buildCmd );
 		if ( !buildType.empty() )
 			replaceVar( buildCmd, VAR_BUILD_TYPE, buildType );
 		buildCmd.config = build.mConfig;
@@ -322,12 +378,11 @@ ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands( const std::s
 	return res;
 }
 
-ProjectBuildCommandsRes ProjectBuildManager::build( const std::string& buildName,
-													const ProjectBuildi18nFn& i18n,
-													const std::string& buildType,
-													const ProjectBuildProgressFn& progressFn,
-													const ProjectBuildDoneFn& doneFn ) {
-	ProjectBuildCommandsRes res = generateBuildCommands( buildName, i18n, buildType );
+ProjectBuildCommandsRes
+ProjectBuildManager::build( const std::string& buildName, const ProjectBuildi18nFn& i18n,
+							const std::string& buildType, const ProjectBuildProgressFn& progressFn,
+							const ProjectBuildDoneFn& doneFn, bool isClean ) {
+	ProjectBuildCommandsRes res = generateBuildCommands( buildName, i18n, buildType, isClean );
 	if ( !res.isValid() )
 		return res;
 	if ( !mThreadPool ) {
@@ -340,66 +395,25 @@ ProjectBuildCommandsRes ProjectBuildManager::build( const std::string& buildName
 	} );
 
 	return res;
-};
-
-ProjectBuildCommandsRes ProjectBuildManager::generateCleanCommands( const std::string& buildName,
-																	const ProjectBuildi18nFn& i18n,
-																	const std::string& buildType ) {
-	const auto& buildIt = mBuilds.find( buildName );
-
-	if ( buildIt == mBuilds.end() )
-		return { i18n( "build_name_not_found", "Build name not found!" ) };
-
-	const auto& build = buildIt->second;
-
-	if ( !build.mBuildTypes.empty() && buildType.empty() )
-		return { i18n( "build_type_required", "Build type must be set!" ) };
-
-	std::string currentOS = String::toLower( Sys::getPlatform() );
-
-	if ( !build.isOSSupported( currentOS ) )
-		return {
-			i18n( "build_os_not_supported", "Operating System not supported for this build!" ) };
-
-	std::string nproc = String::format( "%d", Sys::getCPUCount() );
-	ProjectBuildCommandsRes res;
-
-	auto finalBuild( build.replaceVars( build.mClean ) );
-
-	for ( const auto& step : finalBuild ) {
-		ProjectBuildCommand buildCmd( step );
-		replaceVar( buildCmd, VAR_OS, currentOS );
-		replaceVar( buildCmd, VAR_NPROC, nproc );
-		if ( !buildType.empty() )
-			replaceVar( buildCmd, VAR_BUILD_TYPE, buildType );
-		buildCmd.config = build.mConfig;
-		res.cmds.emplace_back( std::move( buildCmd ) );
-	}
-
-	res.envs = build.mEnvs;
-
-	return res;
 }
 
-ProjectBuildCommandsRes ProjectBuildManager::clean( const std::string& buildName,
-													const ProjectBuildi18nFn& i18n,
-													const std::string& buildType,
-													const ProjectBuildProgressFn& progressFn,
-													const ProjectBuildDoneFn& doneFn ) {
-	ProjectBuildCommandsRes res = generateCleanCommands( buildName, i18n, buildType );
-	if ( !res.isValid() )
-		return res;
+ProjectBuildCommandsRes ProjectBuildManager::run( const ProjectBuildCommand& runData,
+												  const ProjectBuildi18nFn& i18n,
+												  const ProjectBuildProgressFn& progressFn,
+												  const ProjectBuildDoneFn& doneFn ) {
+	ProjectBuildCommandsRes res;
+
 	if ( !mThreadPool ) {
-		res.errorMsg = i18n( "no_threads", "Threaded ecode required to compile builds." );
+		res.errorMsg = i18n( "no_threads", "Threaded ecode required to run builds." );
 		return res;
 	}
 
-	mThreadPool->run( [this, res, progressFn, doneFn, i18n, buildName, buildType]() {
-		runBuild( buildName, buildType, i18n, res, progressFn, doneFn );
+	mThreadPool->run( [this, res, progressFn, doneFn, i18n, runData]() {
+		runApp( runData, i18n, res, progressFn, doneFn );
 	} );
 
 	return res;
-};
+}
 
 static bool isValidType( const std::string& typeStr ) {
 	return "error" == typeStr || "warning" == typeStr || "notice" == typeStr;
@@ -462,14 +476,28 @@ ProjectBuild::Map ProjectBuild::deserialize( const json& j, const std::string& p
 		}
 
 		if ( buildObj.contains( "clean" ) && buildObj["clean"].is_array() ) {
-			const auto& buildArray = buildObj["clean"];
-			for ( const auto& step : buildArray ) {
-				ProjectBuildStep bstep;
-				bstep.cmd = step.value( "command", "" );
-				bstep.args = step.value( "args", "" );
-				bstep.workingDir = step.value( "working_dir", "" );
-				bstep.enabled = step.value( "enabled", true );
-				b.mClean.emplace_back( std::move( bstep ) );
+			const auto& cleanArray = buildObj["clean"];
+			for ( const auto& step : cleanArray ) {
+				ProjectBuildStep cstep;
+				cstep.cmd = step.value( "command", "" );
+				cstep.args = step.value( "args", "" );
+				cstep.workingDir = step.value( "working_dir", "" );
+				cstep.enabled = step.value( "enabled", true );
+				b.mClean.emplace_back( std::move( cstep ) );
+			}
+		}
+
+		if ( buildObj.contains( "run" ) && buildObj["run"].is_array() ) {
+			const auto& runArray = buildObj["run"];
+			for ( const auto& step : runArray ) {
+				ProjectBuildStep rstep;
+				rstep.name = step.value( "name", "" );
+				rstep.cmd = step.value( "command", "" );
+				rstep.args = step.value( "args", "" );
+				rstep.workingDir = step.value( "working_dir", "" );
+				rstep.enabled = step.value( "enabled", true );
+				rstep.runInTerminal = step.value( "run_in_terminal", false );
+				b.mRun.emplace_back( std::move( rstep ) );
 			}
 		}
 
@@ -626,58 +654,135 @@ void ProjectBuildManager::cancelBuild() {
 	}
 }
 
+void ProjectBuildManager::cancelRun() {
+	mCancelRun = true;
+	if ( mProcess ) {
+		mProcess->destroy();
+		mProcess->kill();
+	}
+}
+
 ProjectBuildConfiguration ProjectBuildManager::getConfig() const {
 	return mConfig;
 }
 
 void ProjectBuildManager::setConfig( const ProjectBuildConfiguration& config ) {
-	bool buildNameChanged = false;
-	bool buildTypeChanged = false;
-
 	if ( mConfig.buildName != config.buildName ) {
 		mConfig.buildName = config.buildName;
-		buildNameChanged = true;
 		updateSidePanelTab();
 	}
 
 	if ( mConfig.buildType != config.buildType ) {
 		mConfig.buildType = config.buildType;
-		buildTypeChanged = true;
 		updateBuildType();
 	}
 
-	if ( buildNameChanged )
-		updateSidePanelTab();
-	else if ( buildTypeChanged )
-		updateBuildType();
+	if ( mConfig.runName != config.runName ) {
+		mConfig.runName = config.runName;
+		updateRunConfig();
+	}
 }
 
-void ProjectBuildManager::buildCurrentConfig( StatusBuildOutputController* sboc ) {
+void ProjectBuildManager::buildCurrentConfig( StatusBuildOutputController* sboc,
+											  std::function<void( int exitStatus )> doneFn ) {
 	if ( sboc && !isBuilding() && !getBuilds().empty() ) {
-		const ProjectBuild* build = nullptr;
-		for ( const auto& buildIt : getBuilds() )
-			if ( buildIt.second.getName() == mConfig.buildName )
-				build = &buildIt.second;
-
+		const ProjectBuild* build = getBuild( mConfig.buildName );
 		if ( build ) {
 			mApp->saveAll();
 			sboc->runBuild( build->getName(), mConfig.buildType,
-							getOutputParser( build->getName() ) );
+							getOutputParser( build->getName() ), false, doneFn );
 		}
 	}
 }
 
 void ProjectBuildManager::cleanCurrentConfig( StatusBuildOutputController* sboc ) {
 	if ( sboc && !isBuilding() && !getBuilds().empty() ) {
-		const ProjectBuild* build = nullptr;
-		for ( const auto& buildIt : getBuilds() )
-			if ( buildIt.second.getName() == mConfig.buildName )
-				build = &buildIt.second;
-
+		const ProjectBuild* build = getBuild( mConfig.buildName );
 		if ( build )
-			sboc->runClean( build->getName(), mConfig.buildType,
-							getOutputParser( build->getName() ) );
+			sboc->runBuild( build->getName(), mConfig.buildType,
+							getOutputParser( build->getName() ), true );
 	}
+}
+
+void ProjectBuildManager::runCurrentConfig( StatusAppOutputController* saoc, bool build,
+											StatusBuildOutputController* sboc ) {
+	if ( build ) {
+		buildCurrentConfig( sboc, [this, saoc]( int exitStatus ) {
+			if ( EXIT_SUCCESS == exitStatus )
+				mApp->getUISceneNode()->runOnMainThread( [saoc, this] { runConfig( saoc ); } );
+		} );
+	} else {
+		runConfig( saoc );
+	}
+}
+
+bool ProjectBuildManager::hasBuildConfig() {
+	return !getBuilds().empty() && !mConfig.buildName.empty();
+}
+
+bool ProjectBuildManager::hasRunConfig() {
+	if ( hasBuildConfig() ) {
+		auto build = getBuild( mConfig.buildName );
+		return build != nullptr && build->hasRun();
+	}
+	return false;
+}
+
+void ProjectBuildManager::runConfig( StatusAppOutputController* saoc ) {
+	if ( !isRunningApp() && !getBuilds().empty() ) {
+		BoolScopedOp op( mRunning, true );
+		const ProjectBuild* build = getBuild( mConfig.buildName );
+
+		if ( nullptr == build || !build->hasRun() )
+			return;
+
+		const ProjectBuildStep* run = nullptr;
+		for ( const auto& crun : build->mRun ) {
+			if ( crun.name == mConfig.runName || mConfig.runName.empty() ) {
+				run = &crun;
+				break;
+			}
+		}
+
+		if ( nullptr == run ) {
+			Log::info( "No run configuration found to run with runName: %s", mConfig.runName );
+			return;
+		}
+
+		ProjectBuildCommand finalBuild( build->replaceVars( *run ) );
+		replaceDynamicVars( finalBuild );
+		String::trimInPlace( finalBuild.cmd );
+		if ( finalBuild.cmd.find_first_of( "\\/" ) == std::string::npos &&
+			 Sys::which( finalBuild.cmd ).empty() ) {
+			FileSystem::dirAddSlashAtEnd( finalBuild.workingDir );
+			finalBuild.cmd = finalBuild.workingDir + finalBuild.cmd;
+		}
+
+		auto cmd = finalBuild.cmd + " " + finalBuild.args;
+		if ( finalBuild.runInTerminal ) {
+			UITerminal* term = mApp->getTerminalManager()->createTerminalInSplitter(
+				finalBuild.workingDir, false );
+			Log::info( "Running \"%s\" in terminal", cmd );
+			if ( term == nullptr || term->getTerm() == nullptr ) {
+				mApp->getTerminalManager()->openInExternalTerminal( cmd, finalBuild.workingDir );
+			} else {
+				term->executeFile( cmd );
+			}
+		} else {
+			Log::info( "Running \"%s\" in app", cmd );
+			finalBuild.config = build->getConfig();
+			saoc->run( finalBuild, {} );
+		}
+	} else {
+		Log::info( "ProjectBuildManager::runConfig is already running or isRunningApp() is true" );
+	}
+}
+
+std::string ProjectBuildManager::getCurrentDocument() {
+	return mApp->getSplitter() && mApp->getSplitter()->getCurEditor() &&
+				   mApp->getSplitter()->getCurEditor()->getDocument().hasFilepath()
+			   ? mApp->getSplitter()->getCurEditor()->getDocument().getFilePath()
+			   : "";
 }
 
 static std::unordered_map<std::string, std::string>
@@ -763,7 +868,7 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 
 		if ( mProcess->create( cmd.cmd, cmd.args, options, toUnorderedMap( res.envs ),
 							   cmd.workingDir ) ) {
-			std::string buffer( 1024, '\0' );
+			std::string buffer( 4096, '\0' );
 			unsigned bytesRead = 0;
 			int returnCode;
 			do {
@@ -826,6 +931,107 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 	}
 }
 
+void ProjectBuildManager::runApp( const ProjectBuildCommand& cmd, const ProjectBuildi18nFn& i18n,
+								  const ProjectBuildCommandsRes& res,
+								  const ProjectBuildProgressFn& progressFn,
+								  const ProjectBuildDoneFn& doneFn ) {
+	Clock clock;
+
+	auto printElapsed = [&clock, &i18n, &progressFn]() {
+		if ( progressFn ) {
+			progressFn(
+				100,
+				Sys::getDateTimeStr() + ": " +
+					String::format(
+						i18n( "build_elapsed_time", "Elapsed Time: %s.\n" ).toUtf8().c_str(),
+						clock.getElapsedTime().toString().c_str() ),
+				nullptr );
+		}
+	};
+
+	mProcess = std::make_unique<Process>();
+
+	auto options = Process::SearchUserPath | Process::CombinedStdoutStderr | Process::NoWindow;
+	if ( !cmd.config.clearSysEnv )
+		options |= Process::InheritEnvironment;
+
+	if ( progressFn ) {
+		progressFn(
+			0,
+			Sys::getDateTimeStr() + ": " +
+				String::format( i18n( "starting_process", "Starting %s %s\n" ).toUtf8().c_str(),
+								cmd.cmd.c_str(), cmd.args.c_str() ),
+			nullptr );
+
+		progressFn(
+			0,
+			Sys::getDateTimeStr() + ": " +
+				String::format( i18n( "working_dir_at", "Working Dir %s\n" ).toUtf8().c_str(),
+								cmd.workingDir.c_str() ),
+			nullptr );
+	}
+
+	if ( mProcess->create( cmd.cmd, cmd.args, options, toUnorderedMap( res.envs ),
+						   cmd.workingDir ) ) {
+		std::string buffer( 4096, '\0' );
+		unsigned bytesRead = 0;
+		int returnCode;
+		do {
+			bytesRead = mProcess->readStdOut( buffer );
+			std::string data( buffer.substr( 0, bytesRead ) );
+			if ( progressFn )
+				progressFn( 0, std::move( data ), &cmd );
+		} while ( bytesRead != 0 && mProcess->isAlive() && !mShuttingDown && !mCancelRun );
+
+		if ( mShuttingDown || mCancelRun ) {
+			mProcess->kill();
+			mCancelRun = false;
+			printElapsed();
+			if ( doneFn )
+				doneFn( EXIT_FAILURE, &cmd );
+			return;
+		}
+
+		mProcess->join( &returnCode );
+		mProcess->destroy();
+
+		if ( returnCode != EXIT_SUCCESS ) {
+			if ( progressFn ) {
+				progressFn( 100,
+							String::format( i18n( "process_exited_with_errors",
+												  "The process \"%s\" exited with errors.\n" )
+												.toUtf8()
+												.c_str(),
+											cmd.cmd.c_str() ),
+							nullptr );
+			}
+			printElapsed();
+			if ( doneFn )
+				doneFn( returnCode, &cmd );
+			return;
+		} else {
+			if ( progressFn ) {
+				progressFn( 100,
+							String::format( i18n( "process_exited_normally",
+												  "The process \"%s\" exited normally.\n" )
+												.toUtf8()
+												.c_str(),
+											cmd.cmd.c_str() ),
+							nullptr );
+			}
+		}
+	} else {
+		printElapsed();
+		if ( doneFn )
+			doneFn( EXIT_FAILURE, nullptr );
+		return;
+	}
+
+	printElapsed();
+	if ( doneFn )
+		doneFn( EXIT_SUCCESS, &cmd );
+}
+
 void ProjectBuildManager::buildSidePanelTab() {
 	mUISceneNode = mSidePanel->getUISceneNode();
 	UIIcon* icon = mUISceneNode->findIcon( "symbol-property" );
@@ -833,17 +1039,20 @@ void ProjectBuildManager::buildSidePanelTab() {
 		R"html(
 			<ScrollView id="build_tab_view" lw="mp" lh="mp">
 				<vbox lw="mp" lh="wc" padding="4dp">
-					<TextView text="@string(build_settings, Build Settings)" font-size="15dp" />
-					<TextView text="@string(build_configuration, Build Configuration)" />
-					<hbox lw="mp" lh="wc" margin-bottom="4dp">
+					<TextView text="@string(build_settings, Build Settings)" font-size="15dp" focusable="false" />
+					<TextView text="@string(build_configuration, Build Configuration)" focusable="false" />
+					<hbox lw="mp" lh="wc" margin-top="2dp" margin-bottom="4dp">
 						<DropDownList id="build_list" layout_width="0" lw8="1" layout_height="wrap_content" />
 						<PushButton id="build_edit" id="build_edit" text="@string(edit_build, Edit Build)" tooltip="@string(edit_build, Edit Build)"  text-as-fallback="true" icon="icon(file-edit, 12dp)" margin-left="2dp" />
 						<PushButton id="build_add" id="build_add" text="@string(add_build, Add Build)" tooltip="@string(add_build, Add Build)" text-as-fallback="true" icon="icon(add, 12dp)" margin-left="2dp" />
 					</hbox>
-					<TextView text="@string(build_target, Build Target)" margin-top="8dp" />
-					<DropDownList lw="mp" id="build_type_list" />
+					<TextView text="@string(build_target, Build Target)" margin-top="8dp" focusable="false" />
+					<DropDownList lw="mp" id="build_type_list" margin-top="2dp" />
 					<PushButton id="build_button" lw="mp" lh="wc" text="@string(build, Build)" margin-top="8dp" icon="icon(hammer, 12dp)" />
 					<PushButton id="clean_button" lw="mp" lh="wc" text="@string(clean, Clean)" margin-top="8dp" icon="icon(eraser, 12dp)" />
+					<TextView text="@string(run_target, Run Target)" margin-top="8dp" focusable="false" />
+					<DropDownList lw="mp" id="run_config_list" margin-top="2dp" />
+					<PushButton id="run_button" lw="mp" lh="wc" text="@string(run, Run)" margin-top="8dp" icon="icon(play, 12dp)" />
 				</vbox>
 			</ScrollView>
 		)html" );
@@ -871,6 +1080,7 @@ void ProjectBuildManager::updateSidePanelTab() {
 	UIDropDownList* buildList = buildTab->find<UIDropDownList>( "build_list" );
 	UIPushButton* buildButton = buildTab->find<UIPushButton>( "build_button" );
 	UIPushButton* cleanButton = buildTab->find<UIPushButton>( "clean_button" );
+	UIPushButton* runButton = buildTab->find<UIPushButton>( "run_button" );
 	UIPushButton* buildAdd = buildTab->find<UIPushButton>( "build_add" );
 	UIPushButton* buildEdit = buildTab->find<UIPushButton>( "build_edit" );
 
@@ -901,12 +1111,16 @@ void ProjectBuildManager::updateSidePanelTab() {
 
 	updateBuildType();
 
+	updateRunConfig();
+
 	if ( !buildList->hasEventsOfType( Event::OnItemSelected ) ) {
 		buildList->on( Event::OnItemSelected, [this, buildEdit, buildList]( const Event* ) {
 			mConfig.buildName = buildList->getListBox()->getItemSelectedText();
 			mConfig.buildType = "";
+			mConfig.runName = "";
 			buildEdit->setEnabled( true );
 			updateBuildType();
+			updateRunConfig();
 		} );
 	}
 
@@ -932,6 +1146,16 @@ void ProjectBuildManager::updateSidePanelTab() {
 				cancelBuild();
 			} else {
 				cleanCurrentConfig( mApp->getStatusBuildOutputController() );
+			}
+		} );
+	}
+
+	if ( !runButton->hasEventsOfType( Event::MouseClick ) ) {
+		runButton->onClick( [this]( auto ) {
+			if ( isRunningApp() ) {
+				cancelRun();
+			} else {
+				runCurrentConfig( mApp->getStatusAppOutputController(), false );
 			}
 		} );
 	}
@@ -977,10 +1201,67 @@ void ProjectBuildManager::updateBuildType() {
 	}
 	buildTypeList->setEnabled( !buildTypeList->getListBox()->isEmpty() );
 
-	if ( !buildTypeList->hasEventsOfType( Event::OnItemSelected ) )
+	if ( !buildTypeList->hasEventsOfType( Event::OnItemSelected ) ) {
 		buildTypeList->on( Event::OnItemSelected, [this, buildTypeList]( const Event* ) {
 			mConfig.buildType = buildTypeList->getListBox()->getItemSelectedText();
 		} );
+	}
+}
+
+void ProjectBuildManager::updateRunConfig() {
+	if ( mTab == nullptr )
+		return;
+	UIWidget* buildTab = mTab->getOwnedWidget()->find<UIWidget>( "build_tab_view" );
+	if ( buildTab == nullptr )
+		return;
+	UIDropDownList* buildList = buildTab->find<UIDropDownList>( "build_list" );
+	UIDropDownList* runConfigList = buildTab->find<UIDropDownList>( "run_config_list" );
+
+	auto runName = mConfig.runName;
+	runConfigList->getListBox()->clear();
+	mConfig.runName = runName;
+
+	String first = buildList->getListBox()->getItemSelectedText();
+	if ( !first.empty() ) {
+		auto foundIt = mBuilds.find( first );
+		if ( foundIt != mBuilds.end() ) {
+			const auto& runConfigs = foundIt->second.runConfigs();
+			std::vector<String> items;
+			size_t i = 1;
+			for ( const auto& run : runConfigs ) {
+				auto name = run.name.empty() ? String::format( mApp->i18n( "custom_executable_num",
+																		   "Custom Executable %d" )
+																   .toUtf8(),
+															   i )
+											 : run.name;
+				items.emplace_back( name );
+				i++;
+			}
+			runConfigList->getListBox()->addListBoxItems( items );
+			if ( runConfigList->getListBox()->getItemIndex( mConfig.runName ) !=
+				 eeINDEX_NOT_FOUND ) {
+				runConfigList->getListBox()->setSelected( mConfig.runName );
+			} else if ( !runConfigList->getListBox()->isEmpty() ) {
+				runConfigList->getListBox()->setSelected( 0 );
+				mConfig.runName = runConfigList->getListBox()->getItemSelectedText();
+			}
+		}
+	}
+	runConfigList->setEnabled( !runConfigList->getListBox()->isEmpty() );
+	buildTab->find( "run_button" )->setEnabled( !runConfigList->getListBox()->isEmpty() );
+
+	if ( !runConfigList->hasEventsOfType( Event::OnItemSelected ) ) {
+		runConfigList->on( Event::OnItemSelected, [this, runConfigList, buildTab]( const Event* ) {
+			mConfig.runName = runConfigList->getListBox()->getItemSelectedText();
+			buildTab->find( "run_button" )->setEnabled( !runConfigList->getListBox()->isEmpty() );
+		} );
+	}
+	if ( !runConfigList->hasEventsOfType( Event::OnClear ) ) {
+		runConfigList->on( Event::OnClear, [this, runConfigList, buildTab]( const Event* ) {
+			mConfig.runName = "";
+			buildTab->find( "run_button" )->setEnabled( !runConfigList->getListBox()->isEmpty() );
+		} );
+	}
 }
 
 std::map<std::string, ProjectBuildOutputParser> ProjectBuildOutputParser::getPresets() {

@@ -9,17 +9,20 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
+        ref: ${{ github.ref }}
         fetch-depth: 2
     - name: Checkout submodules
       run: |
         git submodule update --init --recursive
     - name: Install dependencies
       run: |
-        brew install wget
-        brew install SDL2
-        wget https://github.com/premake/premake-core/releases/download/v5.0.0-beta1/premake-5.0.0-beta1-macosx.tar.gz
-        tar -xzf premake-5.0.0-beta1-macosx.tar.gz
+        brew install wget SDL2 premake
     - name: Build
       run: |
-        ./premake5 gmake2
-        make -C make/macosx/ all
+        premake5 --with-text-shaper gmake2
+        make -C make/macosx/ -e config=release_arm64
+    - name: Unit Tests
+      run: |
+        cd bin/unit_tests
+        ./eepp-unit_tests
+

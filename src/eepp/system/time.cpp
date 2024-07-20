@@ -62,9 +62,7 @@ std::string Time::toString() const {
 	Uint64 totalSeconds = asSeconds();
 
 	if ( asSeconds() < 1 ) {
-		if ( asMilliseconds() == static_cast<double>( (Int64)asMilliseconds() ) )
-			return String::fromFloat( asMilliseconds() );
-		return String::fromFloat( asMilliseconds() );
+		return String::fromFloat( asMilliseconds(), "ms" );
 	} else if ( totalSeconds < 60 ) {
 		return String::format( "%lus", static_cast<unsigned long>( totalSeconds ) );
 	}

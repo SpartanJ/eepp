@@ -30,8 +30,6 @@ class EE_API UITextInputPassword : public UITextInput {
 	Vector2f mHintAlignOffset;
 	String mBulletCharacter;
 
-	void alignFix();
-
 	void updateText();
 
 	void updatePass( const String& pass );
@@ -41,6 +39,10 @@ class EE_API UITextInputPassword : public UITextInput {
 	virtual void onStateChange();
 
 	virtual void onFontChanged();
+
+	virtual void onFontStyleChanged();
+
+	virtual Text* getVisibleTextCache() const;
 };
 
 }} // namespace EE::UI

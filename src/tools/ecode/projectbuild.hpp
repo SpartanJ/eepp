@@ -9,7 +9,6 @@
 #include <set>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 using namespace EE;
@@ -20,6 +19,7 @@ namespace ecode {
 
 class App;
 class StatusBuildOutputController;
+class StatusAppOutputController;
 
 /** reference:
 {
@@ -72,6 +72,20 @@ class StatusBuildOutputController;
 		}
 	  ]
 	},
+	"run": [
+	  {
+		"args": "-x",
+		"command": "${project_root}/bin/ecode-debug",
+		"name": "ecode-debug",
+		"working_dir": "${project_root}/bin/"
+	  },
+	  {
+		"args": "-x",
+		"command": "${project_root}/bin/ecode",
+		"name": "ecode-release",
+		"working_dir": "${project_root}/bin/"
+	  }
+	],
 	"var": {
 	  "build_dir": "${project_root}/make/${os}"
 	}
@@ -83,7 +97,9 @@ struct ProjectBuildStep {
 	std::string cmd;
 	std::string args;
 	std::string workingDir;
+	std::string name;
 	bool enabled{ true };
+	bool runInTerminal{ false };
 };
 
 using ProjectBuildSteps = std::vector<ProjectBuildStep>;
@@ -172,6 +188,8 @@ class ProjectBuild {
 
 	const ProjectBuildSteps& cleanSteps() const { return mClean; }
 
+	const ProjectBuildSteps& runConfigs() const { return mRun; }
+
 	const ProjectBuildKeyVal& envs() const { return mEnvs; }
 
 	const ProjectBuildKeyVal& vars() const { return mVars; }
@@ -179,6 +197,13 @@ class ProjectBuild {
 	bool hasBuild() const { return !mBuild.empty(); }
 
 	bool hasClean() const { return !mClean.empty(); }
+
+	bool hasRun() const {
+		return !mRun.empty() && ( !mRun.front().cmd.empty() || !mRun.front().args.empty() ||
+								  !mRun.front().workingDir.empty() );
+	}
+
+	ProjectBuildStep replaceVars( const ProjectBuildStep& step ) const;
 
 	ProjectBuildSteps replaceVars( const ProjectBuildSteps& steps ) const;
 
@@ -196,6 +221,7 @@ class ProjectBuild {
 	std::set<std::string> mBuildTypes;
 	ProjectBuildSteps mBuild;
 	ProjectBuildSteps mClean;
+	ProjectBuildSteps mRun;
 	ProjectBuildKeyVal mEnvs;
 	ProjectBuildKeyVal mVars;
 	ProjectBuildConfig mConfig;
@@ -240,20 +266,18 @@ class ProjectBuildManager {
 	ProjectBuildCommandsRes build( const std::string& buildName, const ProjectBuildi18nFn& i18n,
 								   const std::string& buildType = "",
 								   const ProjectBuildProgressFn& progressFn = {},
-								   const ProjectBuildDoneFn& doneFn = {} );
+								   const ProjectBuildDoneFn& doneFn = {}, bool isClean = false );
+
+	ProjectBuildCommandsRes run( const ProjectBuildCommand& runData, const ProjectBuildi18nFn& i18n,
+								 const ProjectBuildProgressFn& progressFn = {},
+								 const ProjectBuildDoneFn& doneFn = {} );
 
 	ProjectBuildCommandsRes generateBuildCommands( const std::string& buildName,
 												   const ProjectBuildi18nFn& i18n,
-												   const std::string& buildType = "" );
+												   const std::string& buildType = "",
+												   bool isClean = false );
 
-	ProjectBuildCommandsRes clean( const std::string& buildName, const ProjectBuildi18nFn& i18n,
-								   const std::string& buildType = "",
-								   const ProjectBuildProgressFn& progressFn = {},
-								   const ProjectBuildDoneFn& doneFn = {} );
-
-	ProjectBuildCommandsRes generateCleanCommands( const std::string& buildName,
-												   const ProjectBuildi18nFn& i18n,
-												   const std::string& buildType = "" );
+	void replaceDynamicVars( ProjectBuildCommand& cmd );
 
 	ProjectBuildOutputParser getOutputParser( const std::string& buildName );
 
@@ -262,6 +286,8 @@ class ProjectBuildManager {
 	const std::string& getProjectRoot() const { return mProjectRoot; }
 
 	const std::string& getProjectFile() const { return mProjectFile; }
+
+	std::string getCurrentDocument();
 
 	ProjectBuild* getBuild( const std::string& buildName );
 
@@ -277,15 +303,31 @@ class ProjectBuildManager {
 
 	bool isBuilding() const { return mBuilding; }
 
+	bool isRunningApp() const { return mRunning; }
+
 	void cancelBuild();
+
+	void cancelRun();
 
 	ProjectBuildConfiguration getConfig() const;
 
 	void setConfig( const ProjectBuildConfiguration& config );
 
-	void buildCurrentConfig( StatusBuildOutputController* sboc );
+	void buildCurrentConfig( StatusBuildOutputController* sboc,
+							 std::function<void( int exitStatus )> doneFn = {} );
 
 	void cleanCurrentConfig( StatusBuildOutputController* sboc );
+
+	void runCurrentConfig( StatusAppOutputController* saoc, bool build,
+						   StatusBuildOutputController* sboc = nullptr );
+
+	void editCurrentBuild();
+
+	bool hasRunConfig();
+
+	bool hasBuildConfig();
+
+	void selectTab();
 
   protected:
 	std::string mProjectRoot;
@@ -304,12 +346,18 @@ class ProjectBuildManager {
 	bool mBuilding{ false };
 	bool mShuttingDown{ false };
 	bool mCancelBuild{ false };
+	bool mCancelRun{ false };
+	bool mRunning{ false };
 	std::unordered_map<Node*, std::set<Uint32>> mCbs;
 
 	void runBuild( const std::string& buildName, const std::string& buildType,
 				   const ProjectBuildi18nFn& i18n, const ProjectBuildCommandsRes& res,
 				   const ProjectBuildProgressFn& progressFn = {},
 				   const ProjectBuildDoneFn& doneFn = {} );
+
+	void runApp( const ProjectBuildCommand& runStep, const ProjectBuildi18nFn& i18n,
+				 const ProjectBuildCommandsRes& res, const ProjectBuildProgressFn& progressFn = {},
+				 const ProjectBuildDoneFn& doneFn = {} );
 
 	bool load();
 
@@ -323,6 +371,8 @@ class ProjectBuildManager {
 
 	void updateBuildType();
 
+	void updateRunConfig();
+
 	void addNewBuild();
 
 	bool cloneBuild( const std::string& build, std::string newBuildName );
@@ -330,6 +380,8 @@ class ProjectBuildManager {
 	void addBuild( UIWidget* buildTab );
 
 	void editBuild( std::string buildName, UIWidget* buildTab );
+
+	void runConfig( StatusAppOutputController* saoc );
 };
 
 } // namespace ecode

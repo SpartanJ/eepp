@@ -31,13 +31,13 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #include <stdlib.h>
 
 #include "zipint.h"
 
-
+
 
 ZIP_EXTERN int
 zip_set_archive_comment(struct zip *za, const char *comment, int len)

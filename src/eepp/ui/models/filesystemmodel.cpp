@@ -19,6 +19,8 @@ FileSystemModel::Node::Node( const std::string& rootPath, const FileSystemModel&
 	mInfoDirty = false;
 	mName = FileSystem::fileNameFromPath( mInfo.getFilepath() );
 	mMimeType = "";
+	mHash = String::hash( mName );
+	mDisplayName = mName;
 	traverseIfNeeded( model );
 }
 
@@ -26,6 +28,8 @@ FileSystemModel::Node::Node( FileInfo&& info, FileSystemModel::Node* parent ) :
 	mParent( parent ), mInfo( info ) {
 	mInfoDirty = false;
 	mName = FileSystem::fileNameFromPath( mInfo.getFilepath() );
+	mHash = String::hash( mName );
+	mDisplayName = mName;
 	updateMimeType();
 }
 
@@ -99,20 +103,27 @@ FileSystemModel::Node* FileSystemModel::Node::createChild( const std::string& ch
 														   const FileSystemModel& model ) {
 	std::string childPath( mInfo.getDirectoryPath() + childName );
 	FileInfo file( childPath, false );
-	auto child = eeNew( Node, ( std::move( file ), this ) );
 
 	if ( model.getDisplayConfig().ignoreHidden && file.isHidden() )
-		return {};
+		return nullptr;
 
 	if ( model.getMode() == Mode::DirectoriesOnly && !file.isDirectory() )
-		return {};
+		return nullptr;
 
-	return child;
+	auto hash = String::hash( childName );
+
+	for ( auto node : mChildren )
+		if ( node->mParent == this && node->mHash == hash )
+			return nullptr;
+
+	return eeNew( Node, ( std::move( file ), this ) );
 }
 
 void FileSystemModel::Node::rename( const FileInfo& file ) {
 	mInfo = file;
 	mName = file.getFileName();
+	mHash = String::hash( mName );
+	mDisplayName = mName;
 	updateMimeType();
 }
 
@@ -252,6 +263,8 @@ bool FileSystemModel::Node::fetchData( const String& fullPath ) {
 	if ( mInfoDirty ) {
 		mInfo = FileInfo( fullPath, mParent == nullptr );
 		mName = FileSystem::fileNameFromPath( mInfo.getFilepath() );
+		mHash = String::hash( mName );
+		mDisplayName = mName;
 		mInfoDirty = false;
 	}
 	return true;
@@ -437,7 +450,7 @@ Variant FileSystemModel::data( const ModelIndex& index, ModelRole role ) const {
 				case Column::Icon:
 					return iconFor( node, index );
 				case Column::Name:
-					return Variant( node.getName().c_str() );
+					return Variant( &node.getDisplayName() );
 				case Column::Size:
 					return Variant( FileSystem::sizeToString( node.info().getSize() ) );
 				case Column::Owner:
@@ -601,7 +614,7 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 
 			Node* childNode = parent->createChild( file.getFileName(), *this );
 
-			if ( childNode->getName().empty() )
+			if ( childNode == nullptr || childNode->getName().empty() )
 				return false;
 
 			size_t pos = getFileIndex( parent, file );
@@ -669,6 +682,15 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 					return selectionIndex.internalData() == index.internalData() ||
 						   ( node->childCount() > 0 && nodeSelected->inParentTree( node ) );
 				} );
+			} );
+
+			if ( beginDeleteRows( index.parent(), index.row(), index.row() ) ) {
+				eeDelete( parent->mChildren[index.row()] );
+				parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+				endDeleteRows();
+			}
+
+			forEachView( [&]( UIAbstractView* view ) {
 				std::vector<ModelIndex> newIndexes;
 				view->getSelection().forEachIndex( [&]( const ModelIndex& selectedIndex ) {
 					if ( !selectedIndex.isValid() )
@@ -676,9 +698,11 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 					Node* curNode = static_cast<Node*>( selectedIndex.internalData() );
 					if ( curNode->getParent() == parent ) {
 						if ( selectedIndex.row() >= (Int64)pos ) {
-							newIndexes.emplace_back( this->index( selectedIndex.row() - 1,
-																  selectedIndex.column(),
-																  selectedIndex.parent() ) );
+							auto newIndex =
+								this->index( selectedIndex.row() - 1, selectedIndex.column(),
+											 selectedIndex.parent() );
+							if ( newIndex.isValid() )
+								newIndexes.emplace_back( newIndex );
 						} else {
 							newIndexes.emplace_back( selectedIndex );
 						}
@@ -689,13 +713,6 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 
 				view->getSelection().set( newIndexes, false );
 			} );
-
-			beginDeleteRows( index.parent(), index.row(), index.row() );
-
-			eeDelete( parent->mChildren[index.row()] );
-			parent->mChildren.erase( parent->mChildren.begin() + index.row() );
-
-			endDeleteRows();
 
 			break;
 		}

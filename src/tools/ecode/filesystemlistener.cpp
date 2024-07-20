@@ -1,4 +1,5 @@
 #include "filesystemlistener.hpp"
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/md5.hpp>
 
 namespace ecode {
@@ -50,10 +51,10 @@ void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir
 			}
 
 			if ( mFileSystemModel )
-				mFileSystemModel.get()->handleFileEvent( event );
+				mFileSystemModel->handleFileEvent( event );
 
 			if ( mDirTree )
-				mDirTree.get()->onChange( (ProjectDirectoryTree::Action)action, file, oldFilename );
+				mDirTree->onChange( (ProjectDirectoryTree::Action)action, file, oldFilename );
 
 			if ( action == efsw::Actions::Moved ) {
 				FileInfo oldFile( FileSystem::isRelativePath( oldFilename ) ? dir + oldFilename

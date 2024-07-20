@@ -65,3 +65,5 @@ ecode.dmg
 /.ecode/.prjallowed
 /.cache/
 /compile_commands.json
+/bin/unit_tests/eepp*
+/bin/unit_tests/lib*

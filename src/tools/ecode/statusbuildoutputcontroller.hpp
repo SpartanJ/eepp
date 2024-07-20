@@ -3,7 +3,6 @@
 
 #include "projectbuild.hpp"
 #include "uistatusbar.hpp"
-#include "widgetcommandexecuter.hpp"
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
@@ -19,6 +18,7 @@ using namespace EE::UI::Tools;
 namespace ecode {
 
 class App;
+class UIRelativeLayoutCommandExecuter;
 
 struct StatusMessage {
 	ProjectOutputParserTypes type;
@@ -39,13 +39,11 @@ class StatusBuildOutputController : public StatusBarElement {
   public:
 	StatusBuildOutputController( UISplitter* mainSplitter, UISceneNode* uiSceneNode, App* app );
 
-	virtual ~StatusBuildOutputController() {};
+	virtual ~StatusBuildOutputController(){};
 
 	void runBuild( const std::string& buildName, const std::string& buildType,
-				   const ProjectBuildOutputParser& outputParser = {} );
-
-	void runClean( const std::string& buildName, const std::string& buildType,
-				   const ProjectBuildOutputParser& outputParser = {} );
+				   const ProjectBuildOutputParser& outputParser = {}, bool isClean = false,
+				   std::function<void( int exitStatus )> doneFn = {} );
 
 	UIWidget* getWidget();
 
@@ -58,11 +56,17 @@ class StatusBuildOutputController : public StatusBarElement {
 	void showBuildOutput();
 
   protected:
-	UIRelativeLayoutCommandExecuter* mContainer{ nullptr };
+	UILinearLayout* mContainer{ nullptr };
+	UIRelativeLayoutCommandExecuter* mRelLayCE{ nullptr };
 	UICodeEditor* mBuildOutput{ nullptr };
 	UISelectButton* mButOutput{ nullptr };
 	UISelectButton* mButIssues{ nullptr };
 	UITableView* mTableIssues{ nullptr };
+	UIPushButton* mClearButton{ nullptr };
+	UIPushButton* mBuildButton{ nullptr };
+	UIPushButton* mStopButton{ nullptr };
+	UIPushButton* mFindButton{ nullptr };
+	UIPushButton* mConfigureButton{ nullptr };
 
 	std::vector<StatusMessage> mStatusResults;
 	std::vector<PatternHolder> mPatternHolder;

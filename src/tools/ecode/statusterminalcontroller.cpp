@@ -33,12 +33,9 @@ UITerminal* StatusTerminalController::createTerminal( const std::string& working
 		mApp->termConfig().fontSize.asPixels( 0, Sizef(), mApp->getDisplayDPI() ), initialSize,
 		program, args, !workingDir.empty() ? workingDir : mApp->getCurrentWorkingDir(), 10000,
 		nullptr, false );
-	if ( term->getTerm() == nullptr ) {
-		UIMessageBox* msgBox = UIMessageBox::New(
-			UIMessageBox::OK,
-			mApp->i18n( "feature_not_supported_in_os",
-						"This feature is not supported in this Operating System" ) );
-		msgBox->showWhenReady();
+
+	if ( term == nullptr || term->getTerm() == nullptr ) {
+		mApp->getTerminalManager()->displayError( workingDir );
 		return nullptr;
 	}
 

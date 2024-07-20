@@ -251,6 +251,14 @@ class EE_API UIWidget : public UINode {
 
 	void setTabStop();
 
+	void unsetTabStop();
+
+	bool isTabFocusable() const;
+
+	void setTabFocusable();
+
+	void unsetTabFocusable();
+
 	UIWidget* getPrevTabWidget() const;
 
 	UIWidget* getNextTabWidget() const;
@@ -341,7 +349,7 @@ class EE_API UIWidget : public UINode {
 
 	virtual void onFocusNextWidget();
 
-	virtual Uint32 onFocus();
+	virtual Uint32 onFocus( NodeFocusReason reason );
 
 	virtual Uint32 onFocusLoss();
 

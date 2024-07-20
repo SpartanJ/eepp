@@ -8,6 +8,10 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/packmanager.hpp>
 
+#define MAX_KEYNAME 128
+#define MAX_VALUENAME 128
+#define MAX_VALUEDATA 2048
+
 namespace EE { namespace System {
 
 IniFile::IniFile( const std::string& iniPath, bool autoLoad ) {
@@ -159,51 +163,47 @@ bool IniFile::readFile() {
 }
 
 bool IniFile::writeFile() {
-	unsigned commentID, keyID, valueID;
-
 	IOStreamFile f( mPath, "w" );
+	return writeStream( f );
+}
 
-	if ( !f.isOpen() )
+bool IniFile::writeStream( IOStream& stream ) {
+	if ( !stream.isOpen() )
 		return false;
 
+	unsigned commentID, keyID, valueID;
 	std::string str;
 
 	// Write header mComments.
 	for ( commentID = 0; commentID < mComments.size(); ++commentID ) {
 		str = ';' + mComments[commentID] + '\n';
-
-		f.write( str.c_str(), str.size() );
+		stream.write( str.c_str(), str.size() );
 	}
 
 	if ( mComments.size() ) {
 		str = "\n";
-
-		f.write( str.c_str(), str.size() );
+		stream.write( str.c_str(), str.size() );
 	}
 
 	// Write Keys and values.
 	for ( keyID = 0; keyID < mKeys.size(); ++keyID ) {
 		str = '[' + mNames[keyID] + ']' + '\n';
-
-		f.write( str.c_str(), str.size() );
+		stream.write( str.c_str(), str.size() );
 
 		// Comments.
 		for ( commentID = 0; commentID < mKeys[keyID].comments.size(); ++commentID ) {
 			str = ';' + mKeys[keyID].comments[commentID] + '\n';
-
-			f.write( str.c_str(), str.size() );
+			stream.write( str.c_str(), str.size() );
 		}
 
 		// Values.
 		for ( valueID = 0; valueID < mKeys[keyID].names.size(); ++valueID ) {
 			str = mKeys[keyID].names[valueID] + '=' + mKeys[keyID].values[valueID] + '\n';
-
-			f.write( str.c_str(), str.size() );
+			stream.write( str.c_str(), str.size() );
 		}
 
 		str = "\n";
-
-		f.write( str.c_str(), str.size() );
+		stream.write( str.c_str(), str.size() );
 	}
 
 	return true;

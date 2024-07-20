@@ -40,7 +40,7 @@ enum class ParticleEffect : Uint32 {
 /** @brief Basic but powerfull Particle System */
 class EE_API ParticleSystem {
   public:
-	typedef cb::Callback2<void, Particle*, ParticleSystem*> ParticleCallback;
+	typedef std::function<void( Particle*, ParticleSystem* )> ParticleCallback;
 
 	ParticleSystem();
 

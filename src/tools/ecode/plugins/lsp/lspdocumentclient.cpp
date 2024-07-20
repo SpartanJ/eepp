@@ -18,9 +18,25 @@ LSPDocumentClient::LSPDocumentClient( LSPClientServer* server, TextDocument* doc
 	notifyOpen();
 	requestSymbolsDelayed();
 	requestSemanticHighlightingDelayed();
+	if ( mServer->isReady() )
+		setupFoldRangeService();
+}
+
+void LSPDocumentClient::onServerInitialized() {
+	requestSymbols();
+	requestSemanticHighlighting();
+	setupFoldRangeService();
+	// requestCodeLens();
+}
+
+void LSPDocumentClient::setupFoldRangeService() {
+	mDoc->getFoldRangeService().setProvider( this );
+	if ( mDoc->getFoldRangeService().isEnabled() )
+		tryRequestFoldRanges( true );
 }
 
 LSPDocumentClient::~LSPDocumentClient() {
+	mDoc->getFoldRangeService().setProvider( nullptr );
 	mDoc = nullptr;
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( nullptr != sceneNode && 0 != mTag )
@@ -30,6 +46,17 @@ LSPDocumentClient::~LSPDocumentClient() {
 	mShutdown = true;
 	while ( mRunningSemanticTokens )
 		Sys::sleep( Milliseconds( 0.1f ) );
+}
+
+bool LSPDocumentClient::tryRequestFoldRanges( bool requestFolds ) {
+	bool ret = mServer->getCapabilities().foldingRangeProvider;
+	if ( ret && requestFolds )
+		requestFoldRange();
+	return ret;
+}
+
+bool LSPDocumentClient::foldingRangeProvider() const {
+	return mServer->getCapabilities().foldingRangeProvider;
 }
 
 void LSPDocumentClient::onDocumentLoaded( TextDocument* ) {
@@ -93,6 +120,10 @@ void LSPDocumentClient::onDocumentReloaded( TextDocument* ) {
 	refreshTag();
 }
 
+void LSPDocumentClient::onDocumentReset( TextDocument* doc ) {
+	onDocumentReloaded( doc );
+}
+
 TextDocument* LSPDocumentClient::getDoc() const {
 	return mDoc;
 }
@@ -103,12 +134,6 @@ LSPClientServer* LSPDocumentClient::getServer() const {
 
 int LSPDocumentClient::getVersion() const {
 	return mVersion;
-}
-
-void LSPDocumentClient::onServerInitialized() {
-	requestSymbols();
-	requestSemanticHighlighting();
-	// requestCodeLens();
 }
 
 void LSPDocumentClient::refreshTag() {
@@ -375,6 +400,34 @@ void LSPDocumentClient::requestSymbols() {
 			[server, uri]() { server->documentSymbolsBroadcast( uri ); } );
 	} else {
 		server->documentSymbolsBroadcast( uri );
+	}
+}
+
+void LSPDocumentClient::requestFoldRange() {
+	eeASSERT( mDoc );
+	LSPClientServer* server = mServer;
+	if ( !server->getCapabilities().foldingRangeProvider )
+		return;
+	URI uri = mDoc->getURI();
+	TextDocument* doc = mDoc;
+	auto handler = [uri, server, doc]( const PluginIDType&,
+									   const std::vector<LSPFoldingRange>& res ) {
+		if ( !server->hasDocument( uri ) )
+			return;
+		std::vector<TextRange> regions;
+		regions.reserve( res.size() );
+		for ( const auto& region : res ) {
+			if ( region.endLine - region.startLine > 1 )
+				regions.push_back( { { region.startLine, 0 }, { region.endLine, 0 } } );
+		}
+		doc->getFoldRangeService().setFoldingRegions( regions );
+	};
+
+	if ( Engine::instance()->isMainThread() ) {
+		server->getThreadPool()->run(
+			[server, uri, handler]() { server->documentFoldingRange( uri, handler ); } );
+	} else {
+		server->documentFoldingRange( uri, handler );
 	}
 }
 

@@ -133,6 +133,19 @@ bool XMLToolsPlugin::isOverMatch( TextDocument* doc, const Int64& index ) const 
 	return true;
 }
 
+bool XMLToolsPlugin::isVisibleInRange( TextDocument* doc, const DocumentLineRange& docLineRange ) {
+	if ( mMatches.empty() )
+		return false;
+	auto clientIt = mMatches.find( doc );
+	if ( clientIt == mMatches.end() )
+		return false;
+	const ClientMatch& match = clientIt->second;
+	if ( !match.matchBracket.inSameLine() && !match.currentBracket.inSameLine() )
+		return false;
+	return match.matchBracket.intersectsLineRange( docLineRange ) ||
+		   match.currentBracket.intersectsLineRange( docLineRange );
+}
+
 static bool isClosedTag( TextDocument* doc, TextPosition start ) {
 	SyntaxHighlighter* highlighter = doc->getHighlighter();
 	TextPosition endOfDoc = doc->endOfDoc();
@@ -346,7 +359,7 @@ void XMLToolsPlugin::XMLToolsClient::clearMatch() {
 }
 
 void XMLToolsPlugin::drawBeforeLineText( UICodeEditor* editor, const Int64& index,
-										 Vector2f position, const Float& /*fontSize*/,
+										 Vector2f /*position*/, const Float& /*fontSize*/,
 										 const Float& lineHeight ) {
 	if ( !isOverMatch( &editor->getDocument(), index ) )
 		return;
@@ -356,31 +369,31 @@ void XMLToolsPlugin::drawBeforeLineText( UICodeEditor* editor, const Int64& inde
 	p.setColor( blendedColor );
 
 	const ClientMatch& match = mMatches[&editor->getDocument()];
+	auto screenScroll = editor->getScreenScroll();
 	for ( const auto& range : { match.matchBracket, match.currentBracket } ) {
 		if ( range.start().line() != index || !range.inSameLine() )
 			continue;
-		Float offset1 = editor->getXOffsetCol( range.normalized().start() );
-		Float offset2 = editor->getXOffsetCol( range.normalized().end() );
-		p.drawRectangle(
-			Rectf( { position.x + offset1, position.y }, { ( offset2 - offset1 ), lineHeight } ) );
+		auto rects =
+			editor->getTextRangeRectangles( range.normalized(), screenScroll, {}, lineHeight );
+		for ( const auto& rect : rects )
+			p.drawRectangle( rect );
 	}
 }
 
-void XMLToolsPlugin::minimapDrawAfterLineText( UICodeEditor* editor, const Int64& index,
-											   const Vector2f& pos, const Vector2f& size,
-											   const Float&, const Float& ) {
-	if ( !isOverMatch( &editor->getDocument(), index ) )
+void XMLToolsPlugin::minimapDrawAfter( UICodeEditor* editor, const DocumentLineRange& docLineRange,
+									   const DocumentViewLineRange&, const Vector2f& /*linePos*/,
+									   const Vector2f& /*lineSize*/, const Float& /*charWidth*/,
+									   const Float& /*gutterWidth*/,
+									   const DrawTextRangesFn& drawTextRanges ) {
+	if ( !isVisibleInRange( &editor->getDocument(), docLineRange ) )
 		return;
 	Primitives p;
 	Color color( editor->getColorScheme().getEditorSyntaxStyle( "matching_bracket"_sst ).color );
 	Color blendedColor( Color( color, 50 ) );
 	p.setColor( blendedColor );
-
 	const ClientMatch& match = mMatches[&editor->getDocument()];
 	for ( const auto& range : { match.matchBracket, match.currentBracket } ) {
-		if ( range.start().line() != index || !range.inSameLine() )
-			continue;
-		p.drawRectangle( Rectf( pos, size ) );
+		drawTextRanges( range, blendedColor, true );
 	}
 }
 

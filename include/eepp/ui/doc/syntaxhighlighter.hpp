@@ -54,7 +54,7 @@ class EE_API SyntaxHighlighter {
 
 	Mutex& getLinesMutex();
 
-	void moveHighlight( const Int64& fromLine, const Int64& numLines );
+	void moveHighlight( const Int64& fromLine, const Int64& toLine, const Int64& numLines );
 
 	Uint64 getTokenizedLineSignature( const size_t& index );
 
@@ -77,6 +77,8 @@ class EE_API SyntaxHighlighter {
 	Int64 mFirstInvalidLine;
 	Int64 mMaxWantedLine;
 	Int64 mMaxTokenizationLength{ 0 };
+	std::mutex mAsyncTokenizeMutex;
+	std::condition_variable mAsyncTokenizeConf;
 	bool mTokenizeAsync{ false };
 	bool mStopTokenizing{ false };
 };

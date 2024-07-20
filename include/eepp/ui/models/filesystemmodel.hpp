@@ -84,6 +84,8 @@ class EE_API FileSystemModel : public Model {
 
 		const std::string& getName() const { return mName; }
 
+		const String& getDisplayName() const { return mDisplayName; }
+
 		Node* getParent() const { return mParent; }
 
 		const FileInfo& info() const { return mInfo; }
@@ -115,6 +117,8 @@ class EE_API FileSystemModel : public Model {
 
 		FileSystemModel::Node* childWithPathExists( const std::string& path );
 
+		const Uint32& getHash() { return mHash; }
+
 	  private:
 		friend class FileSystemModel;
 
@@ -126,12 +130,14 @@ class EE_API FileSystemModel : public Model {
 
 		friend class FileSystemModel;
 		std::string mName;
+		String mDisplayName;
 		std::string mMimeType;
 		Node* mParent{ nullptr };
 		FileInfo mInfo;
 		std::vector<Node*> mChildren;
 		bool mHasTraversed{ false };
 		bool mInfoDirty{ true };
+		Uint32 mHash{ 0 };
 
 		ModelIndex index( const FileSystemModel& model, int column ) const;
 

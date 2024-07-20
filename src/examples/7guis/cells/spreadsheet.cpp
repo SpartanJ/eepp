@@ -45,7 +45,7 @@ void Cell::setData( std::string&& data ) {
 	calc();
 	bool circular = !subscribeToObservers();
 	if ( circular ) {
-		displayValue = "!CIRCULAR";
+		displayValue = "#REF!";
 		formulaContainsErrors = true;
 	} else {
 		setChanged();
@@ -72,7 +72,7 @@ void Cell::calc() {
 	auto oldDisplayValue = displayValue;
 
 	if ( !hasFormula() && !value.empty() && value[0] == '=' ) {
-		displayValue = "!ERR";
+		displayValue = "#ERR!";
 		formulaContainsErrors = true;
 		return;
 	} else if ( !hasFormula() ) {
@@ -85,7 +85,7 @@ void Cell::calc() {
 	if ( res )
 		displayValue = String::fromDouble( *res );
 	else
-		displayValue = "!ERR";
+		displayValue = "#ERR!";
 
 	formulaContainsErrors = res ? false : true;
 

@@ -13,6 +13,9 @@ newoption { trigger = "with-mold-linker", description = "Tries to use the mold l
 newoption { trigger = "with-debug-symbols", description = "Release builds are built with debug symbols." }
 newoption { trigger = "thread-sanitizer", description = "Compile with ThreadSanitizer." }
 newoption { trigger = "address-sanitizer", description = "Compile with AddressSanitizer." }
+newoption { trigger = "time-trace", description = "Compile with time tracing." }
+newoption { trigger = "disable-static-build", description = "Disables eepp static build project, this is just a helper to avoid rebuilding twice eepp while developing the library." }
+newoption { trigger = "with-text-shaper", description = "Enables text-shaping capabilities by relying on harfbuzz." }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -133,16 +136,23 @@ os_links = { }
 backends = { }
 static_backends = { }
 backend_selected = false
-remote_sdl2_version = "SDL2-2.26.2"
-remote_sdl2_devel_src_url = "https://libsdl.org/release/SDL2-2.26.2.zip"
-remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-2.26.2-VC.zip"
-remote_sdl2_devel_mingw_url = "https://www.libsdl.org/release/SDL2-devel-2.26.2-mingw.zip"
+remote_sdl2_version = "SDL2-2.30.3"
+remote_sdl2_devel_src_url = "https://libsdl.org/release/SDL2-2.30.3.zip"
+remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-2.30.3-VC.zip"
+remote_sdl2_devel_mingw_url = "https://www.libsdl.org/release/SDL2-devel-2.30.3-mingw.zip"
 
 function incdirs( dirs )
 	if is_xcode() then
 		sysincludedirs { dirs }
 	end
 	includedirs { dirs }
+end
+
+function popen( executable_path )
+	local handle = io.popen(executable_path)
+	local result = handle:read("*a")
+	handle:close()
+	return result
 end
 
 function download_and_extract_sdl(sdl_url)
@@ -157,6 +167,16 @@ function download_and_extract_sdl(sdl_url)
 	else
 		print("Failed to download: " .. sdl_url .. " res: " .. res)
 		exit(1)
+	end
+end
+
+function copy_sdl()
+	if _OPTIONS["windows-vc-build"] then
+		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/lib/x64/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/SDL2.dll" )
+		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/lib/x64/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/SDL2.dll" )
+	elseif _OPTIONS["windows-mingw-build"] then
+		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/bin/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/SDL2.dll" )
+		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/bin/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/SDL2.dll" )
 	end
 end
 
@@ -180,8 +200,10 @@ function download_and_extract_dependencies()
 	if not os.isdir("src/thirdparty/" .. remote_sdl2_version) then
 		if _OPTIONS["windows-vc-build"] then
 			download_and_extract_sdl(remote_sdl2_devel_vc_url)
+			copy_sdl()
 		elseif _OPTIONS["windows-mingw-build"] then
 			download_and_extract_sdl(remote_sdl2_devel_mingw_url)
+			copy_sdl()
 		elseif os.istarget("ios") then
 			download_and_extract_sdl(remote_sdl2_devel_src_url)
 		end
@@ -200,7 +222,7 @@ function build_base_configuration( package_name )
 	incdirs { "src/thirdparty/zlib" }
 
 	set_ios_config()
-	set_xcode_config()
+	set_apple_config()
 	build_arch_configuration()
 
 	filter "not system:windows"
@@ -233,7 +255,7 @@ function build_base_cpp_configuration( package_name )
 	end
 
 	set_ios_config()
-	set_xcode_config()
+	set_apple_config()
 	build_arch_configuration()
 
 	if _OPTIONS["with-static-eepp"] then
@@ -241,9 +263,10 @@ function build_base_cpp_configuration( package_name )
 	end
 
 	filter "action:vs*"
-		buildoptions { "/utf-8" }
+		buildoptions{ "/std:c++17", "/utf-8" }
 
 	filter "action:not vs*"
+		cppdialect "C++17"
 		buildoptions { "-Wall" }
 
 	filter "configurations:debug*"
@@ -303,7 +326,7 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	cppdialect "C++17"
 	set_ios_config()
-	set_xcode_config()
+	set_apple_config()
 	build_arch_configuration()
 
 	filter { "system:linux or system:macosx or system:haiku or system:bsd", "action:not vs*" }
@@ -364,10 +387,10 @@ function build_link_configuration( package_name, use_ee_icon )
 	filter { "options:windows-vc-build", "system:windows", "platforms:x86_64" }
 		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/lib/x64" }
 
-	filter { "options:windows-mingw-build", "architecture:x86", "options:cc=mingw" }
+	filter { "options:windows-mingw-build", "architecture:x86" }
 		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/lib/", "/usr/i686-w64-mingw32/sys-root/mingw/lib/" }
 
-	filter { "options:windows-mingw-build", "architecture:x86_64", "options:cc=mingw" }
+	filter { "options:windows-mingw-build", "architecture:x86_64" }
 		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/lib/", "/usr/x86_64-w64-mingw32/sys-root/mingw/lib/" }
 
 	filter "system:emscripten"
@@ -454,6 +477,10 @@ function parse_args()
 			links { "asan" }
 		end
 	end
+
+	if _OPTIONS["time-trace"] then
+		buildoptions { "-ftime-trace" }
+	end
 end
 
 function add_static_links()
@@ -469,6 +496,11 @@ function add_static_links()
 
 	if not _OPTIONS["with-dynamic-freetype"] then
 		links { "freetype-static", "libpng-static" }
+	end
+
+	if _OPTIONS["with-text-shaper"] then
+		links { "harfbuzz-static" }
+		defines { "EE_TEXT_SHAPER_ENABLED" }
 	end
 
 	links { "SOIL2-static",
@@ -517,12 +549,18 @@ function add_sdl2()
 	table.insert( backends, "SDL2" )
 end
 
-function set_xcode_config()
+function set_apple_config()
 	if is_xcode() or _OPTIONS["use-frameworks"] then
 		linkoptions { "-F /Library/Frameworks" }
 		buildoptions { "-F /Library/Frameworks" }
 		incdirs { "/Library/Frameworks/SDL2.framework/Headers" }
+	end
+	if os.istarget("macosx") then
 		defines { "EE_SDL2_FROM_ROOTPATH" }
+		if not is_xcode() and not _OPTIONS["use-frameworks"] then
+			local sdl2flags = popen("sdl2-config --cflags"):gsub("\n", "")
+			buildoptions { sdl2flags }
+		end
 	end
 end
 
@@ -711,10 +749,10 @@ function build_eepp( build_name )
 	filter "options:windows-vc-build"
 		incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
 
-	filter { "options:windows-mingw-build", "architecture:x86", "options:cc=mingw" }
+	filter { "options:windows-mingw-build", "architecture:x86" }
 		incdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/include/" }
 
-	filter { "options:windows-mingw-build", "architecture:x86_64", "options:cc=mingw" }
+	filter { "options:windows-mingw-build", "architecture:x86_64" }
 		incdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/include/" }
 
 	filter "action:vs*"
@@ -748,6 +786,13 @@ function postsymlinklib_arch(name)
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:ARM" )
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:ARM64" )
 	postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/universal/", _MAIN_SCRIPT_DIR .. "/bin/", name, "architecture:universal" )
+	if name == "eepp" then
+		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/x86/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:x86" )
+		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/x86_64/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:x86_64" )
+		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:ARM" )
+		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/arm64/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:ARM64" )
+		postsymlinklib( _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/universal/", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/", name, "architecture:universal" )
+	end
 end
 
 workspace "eepp"
@@ -874,6 +919,15 @@ workspace "eepp"
 		build_base_configuration( "freetype" )
 		target_dir_thirdparty()
 
+	project "harfbuzz-static"
+		kind "StaticLib"
+		language "C++"
+		defines { "HAVE_CONFIG_H" }
+		files { "src/thirdparty/harfbuzz/**.cc" }
+		incdirs { "src/thirdparty/freetype2/include", "src/thirdparty/harfbuzz" }
+		build_base_cpp_configuration( "harfbuzz" )
+		target_dir_thirdparty()
+
 	project "chipmunk-static"
 		kind "StaticLib"
 		files { "src/thirdparty/chipmunk/*.c", "src/thirdparty/chipmunk/constraints/*.c" }
@@ -910,9 +964,9 @@ workspace "eepp"
 		target_dir_thirdparty()
 		filter "options:windows-vc-build"
 			incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
-		filter { "options:windows-mingw-build", "architecture:x86", "options:cc=mingw" }
+		filter { "options:windows-mingw-build", "architecture:x86" }
 			incdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/include/" }
-		filter { "options:windows-mingw-build", "architecture:x86_64", "options:cc=mingw" }
+		filter { "options:windows-mingw-build", "architecture:x86_64" }
 			incdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/include/" }
 
 	project "efsw-static"
@@ -1039,11 +1093,13 @@ workspace "eepp"
 			buildoptions { "-std=c++17" }
 
 	-- Library
+	if not _OPTIONS["disable-static-build"] then
 	project "eepp-static"
 		kind "StaticLib"
 		language "C++"
 		build_eepp( "eepp-static" )
 		target_dir_lib("")
+	end
 
 	project "eepp-shared"
 		kind "SharedLib"
@@ -1202,6 +1258,8 @@ workspace "eepp"
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/" }
 		links { "efsw-static", "eterm-static" }
 		build_link_configuration( "ecode", false )
+		filter { "system:windows", "action:not vs*" }
+			buildoptions{ "-Wa,-mbig-obj" }
 		filter { "system:windows", "action:vs*" }
 			files { "bin/assets/icon/ecode.rc", "bin/assets/icon/ecode.ico" }
 			vpaths { ['Resources/*'] = { "ecode.rc", "ecode.ico" } }
@@ -1268,6 +1326,13 @@ workspace "eepp"
 		files { "src/tests/ui_perf_test/*.cpp" }
 		includedirs { "src/thirdparty" }
 		build_link_configuration( "eepp-ui-perf-test", true )
+
+	project "eepp-unit_tests"
+		kind "ConsoleApp"
+		targetdir("./bin/unit_tests")
+		language "C++"
+		files { "src/tests/unit_tests/*.cpp" }
+		build_link_configuration( "eepp-unit_tests", true )
 
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")

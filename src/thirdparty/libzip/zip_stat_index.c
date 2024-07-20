@@ -31,11 +31,11 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #include "zipint.h"
 
-
+
 
 ZIP_EXTERN int
 zip_stat_index(struct zip *za, zip_uint64_t index, int flags,

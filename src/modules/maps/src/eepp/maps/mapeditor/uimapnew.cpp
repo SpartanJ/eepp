@@ -43,7 +43,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 		->setMinWindowSize( 320, 380 );
 
 	mUIWindow->addEventListener( Event::OnWindowClose,
-								 cb::Make1( this, &UIMapNew::onWindowClose ) );
+								 [this] ( auto event ) { onWindowClose( event ); } );
 
 	if ( !mResizeMap ) {
 		mUIWindow->setTitle( "New Map" );
@@ -217,7 +217,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 	mUIRedSlider->setMaxValue( 255 );
 	mUIRedSlider->setValue( 255 );
 	mUIRedSlider->addEventListener( Event::OnValueChange,
-									cb::Make1( this, &UIMapNew::onRedChange ) );
+									[this] ( auto event ) { onRedChange( event ); } );
 
 	mUIRedTxt = createTextBox(
 		String::toString( 255 ), mUIWindow->getContainer(), Sizef(),
@@ -242,7 +242,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 	mUIGreenSlider->setMaxValue( 255 );
 	mUIGreenSlider->setValue( 255 );
 	mUIGreenSlider->addEventListener( Event::OnValueChange,
-									  cb::Make1( this, &UIMapNew::onGreenChange ) );
+									  [this] ( auto event ) { onGreenChange( event ); } );
 
 	mUIGreenTxt = createTextBox(
 		String::toString( 255 ), mUIWindow->getContainer(), Sizef(),
@@ -267,7 +267,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 	mUIBlueSlider->setMaxValue( 255 );
 	mUIBlueSlider->setValue( 255 );
 	mUIBlueSlider->addEventListener( Event::OnValueChange,
-									 cb::Make1( this, &UIMapNew::onBlueChange ) );
+									 [this] ( auto event ) { onBlueChange( event ); } );
 
 	mUIBlueTxt = createTextBox(
 		String::toString( 255 ), mUIWindow->getContainer(), Sizef(),
@@ -285,7 +285,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 	OKButton->setPosition(
 		mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4,
 		mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
-	OKButton->addEventListener( Event::MouseClick, cb::Make1( this, &UIMapNew::onOKClick ) );
+	OKButton->addEventListener( Event::MouseClick, [this] ( auto event ) { onOKClick( event ); } );
 	OKButton->setText( "OK" );
 
 	UIPushButton* CancelButton = UIPushButton::New();
@@ -295,7 +295,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 					   OKButton->getPosition().y );
 	CancelButton->setIcon( sceneNode->findIconDrawable( "cancel", PixelDensity::dpToPxI( 16 ) ) );
 	CancelButton->addEventListener( Event::MouseClick,
-									cb::Make1( this, &UIMapNew::onCancelClick ) );
+									[this] ( auto event ) { onCancelClick( event ); } );
 	CancelButton->setText( "Cancel" );
 
 	mUIWindow->center();

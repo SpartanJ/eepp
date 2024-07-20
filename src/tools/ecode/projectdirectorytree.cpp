@@ -1,5 +1,4 @@
 #include "projectdirectorytree.hpp"
-#include "ecode.hpp"
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
 #include <limits>
@@ -8,8 +7,9 @@ namespace ecode {
 
 #define PRJ_ALLOWED_PATH ".ecode/.prjallowed"
 
-ProjectDirectoryTree::ProjectDirectoryTree( const std::string& path,
-											std::shared_ptr<ThreadPool> threadPool, App* app ) :
+ProjectDirectoryTree::ProjectDirectoryTree(
+	const std::string& path, std::shared_ptr<ThreadPool> threadPool, PluginManager* pluginManager,
+	std::function<void( const std::string& )> loadFileFromPathOrFocusFn ) :
 	mPath( path ),
 	mPool( threadPool ),
 	mRunning( false ),
@@ -17,14 +17,15 @@ ProjectDirectoryTree::ProjectDirectoryTree( const std::string& path,
 	mIgnoreHidden( true ),
 	mClosing( false ),
 	mIgnoreMatcher( path ),
-	mApp( app ) {
+	mPluginManager( pluginManager ),
+	mLoadFileFromPathOrFocusFn( std::move( loadFileFromPathOrFocusFn ) ) {
 	FileSystem::dirAddSlashAtEnd( mPath );
 }
 
 ProjectDirectoryTree::~ProjectDirectoryTree() {
 	mClosing = true;
-	if ( mApp->getPluginManager() )
-		mApp->getPluginManager()->unsubscribeMessages( "ProjectDirectoryTree" );
+	if ( mPluginManager )
+		mPluginManager->unsubscribeMessages( "ProjectDirectoryTree" );
 	Lock rl( mMatchingMutex );
 	if ( mRunning ) {
 		mRunning = false;
@@ -38,7 +39,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 								 const bool& ignoreHidden ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 	mPool->run(
-		[this, acceptedPatterns, ignoreHidden] {
+		[this, acceptedPatterns = std::move( acceptedPatterns ), ignoreHidden] {
 #endif
 			Lock l( mFilesMutex );
 			mRunning = true;
@@ -46,15 +47,15 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 			mDirectories.push_back( mPath );
 
 			if ( !mAllowedMatcher && FileSystem::fileExists( mPath + PRJ_ALLOWED_PATH ) )
-				mAllowedMatcher = std::make_unique<GitIgnoreMatcher>( mPath, PRJ_ALLOWED_PATH );
+				mAllowedMatcher = std::make_unique<GitIgnoreMatcher>( mPath, PRJ_ALLOWED_PATH, false );
 
 			if ( !acceptedPatterns.empty() ) {
 				std::vector<std::string> files;
 				std::vector<std::string> names;
-				std::vector<LuaPattern> patterns;
-				for ( auto& strPattern : acceptedPatterns )
-					patterns.emplace_back( LuaPattern( strPattern ) );
-				mAcceptedPatterns = patterns;
+				mAcceptedPatterns.clear();
+				mAcceptedPatterns.reserve( acceptedPatterns.size() );
+				for ( const auto& strPattern : acceptedPatterns )
+					mAcceptedPatterns.emplace_back( std::string{ strPattern } );
 				std::set<std::string> info;
 				getDirectoryFiles( files, names, mPath, info, false, mIgnoreMatcher,
 								   mAllowedMatcher.get() );
@@ -62,7 +63,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 				bool found;
 				for ( size_t i = 0; i < namesCount; i++ ) {
 					found = false;
-					for ( auto& pattern : patterns ) {
+					for ( const auto& pattern : mAcceptedPatterns ) {
 						if ( pattern.matches( names[i] ) ) {
 							found = true;
 							break;
@@ -79,10 +80,13 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 								   mAllowedMatcher.get() );
 			}
 			mIsReady = true;
-			mApp->getPluginManager()->subscribeMessages(
-				"ProjectDirectoryTree", [this]( const PluginMessage& msg ) -> PluginRequestHandle {
-					return processMessage( msg );
-				} );
+			if ( mPluginManager ) {
+				mPluginManager->subscribeMessages(
+					"ProjectDirectoryTree",
+					[this]( const PluginMessage& msg ) -> PluginRequestHandle {
+						return processMessage( msg );
+					} );
+			}
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN && !defined( __EMSCRIPTEN_PTHREADS__ )
 			if ( scanComplete )
 				scanComplete( *this );
@@ -319,6 +323,10 @@ void ProjectDirectoryTree::onChange( const ProjectDirectoryTree::Action& action,
 	}
 }
 
+void ProjectDirectoryTree::resetPluginManager() {
+	mPluginManager = nullptr;
+}
+
 void ProjectDirectoryTree::tryAddFile( const FileInfo& file ) {
 	if ( mIgnoreHidden && file.isHidden() )
 		return;
@@ -414,8 +422,15 @@ void ProjectDirectoryTree::moveFile( const FileInfo& file, const std::string& ol
 		FileSystem::dirAddSlashAtEnd( dir );
 		size_t index = findFileIndex( dir + oldFilename );
 		if ( index != std::string::npos ) {
-			mFiles[index] = file.getFilepath();
-			mNames[index] = file.getFileName();
+			IgnoreMatcherManager matcher( getIgnoreMatcherFromPath( file.getFilepath() ) );
+			if ( !( mIgnoreHidden && file.isHidden() ) &&
+				 ( !matcher.foundMatch() || !matcher.match( file ) ) ) {
+				mFiles[index] = file.getFilepath();
+				mNames[index] = file.getFileName();
+			} else {
+				mFiles.erase( mFiles.begin() + index );
+				mNames.erase( mNames.begin() + index );
+			}
 		} else {
 			tryAddFile( file );
 		}
@@ -530,9 +545,11 @@ PluginRequestHandle ProjectDirectoryTree::processMessage( const PluginMessage& m
 	}
 
 	if ( !matchesMap.empty() ) {
-		std::string filePath( matchesMap.begin()->second );
-		mApp->getUISceneNode()->runOnMainThread(
-			[this, filePath]() { mApp->loadFileFromPathOrFocus( filePath ); } );
+		if ( mPluginManager && mLoadFileFromPathOrFocusFn ) {
+			std::string filePath( matchesMap.begin()->second );
+			mPluginManager->getUISceneNode()->runOnMainThread(
+				[this, filePath]() { mLoadFileFromPathOrFocusFn( filePath ); } );
+		}
 	}
 
 	return PluginRequestHandle::broadcast();

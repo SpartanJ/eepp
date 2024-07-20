@@ -28,37 +28,37 @@ std::unordered_map<std::string, LogLevel> Log::getMapFlag() {
 			 { "assert", LogLevel::Assert } };
 }
 
-Log* Log::create( const std::string& logPath, const LogLevel& level, bool consoleOutput,
+Log* Log::create( const std::string& logPath, const LogLevel& level, bool stdOutLog,
 				  bool liveWrite ) {
 	if ( NULL == ms_singleton ) {
-		ms_singleton = eeNew( Log, ( logPath, level, consoleOutput, liveWrite ) );
+		ms_singleton = eeNew( Log, ( logPath, level, stdOutLog, liveWrite ) );
 	} else {
 		ms_singleton->setLogLevelThreshold( level );
-		ms_singleton->setLogToStdOut( consoleOutput );
+		ms_singleton->setLogToStdOut( stdOutLog );
 		ms_singleton->setLiveWrite( liveWrite );
 	}
 	return ms_singleton;
 }
 
-Log* Log::create( const LogLevel& level, bool consoleOutput, bool liveWrite ) {
+Log* Log::create( const LogLevel& level, bool stdOutLog, bool liveWrite ) {
 	if ( NULL == ms_singleton ) {
-		ms_singleton = eeNew( Log, ( "", level, consoleOutput, liveWrite ) );
+		ms_singleton = eeNew( Log, ( "", level, stdOutLog, liveWrite ) );
 	} else {
 		ms_singleton->setLogLevelThreshold( level );
-		ms_singleton->setLogToStdOut( consoleOutput );
+		ms_singleton->setLogToStdOut( stdOutLog );
 		ms_singleton->setLiveWrite( liveWrite );
 	}
 	return ms_singleton;
 }
 
-Log::Log() : mSave( false ), mConsoleOutput( false ), mLiveWrite( false ), mFS( NULL ) {
+Log::Log() : mSave( false ), mStdOutEnabled( false ), mLiveWrite( false ), mFS( NULL ) {
 	writel( LogLevel::Info, "eepp initialized" );
 }
 
-Log::Log( const std::string& logPath, const LogLevel& level, bool consoleOutput, bool liveWrite ) :
+Log::Log( const std::string& logPath, const LogLevel& level, bool stdOutLog, bool liveWrite ) :
 	mFilePath( logPath ),
 	mSave( false ),
-	mConsoleOutput( consoleOutput ),
+	mStdOutEnabled( stdOutLog ),
 	mLiveWrite( liveWrite ),
 	mLogLevelThreshold( level ),
 	mFS( NULL ) {
@@ -123,7 +123,7 @@ void Log::write( const std::string_view& text ) {
 
 	writeToReaders( text );
 
-	if ( mConsoleOutput ) {
+	if ( mStdOutEnabled ) {
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 		__android_log_print( ANDROID_LOG_INFO, "eepp", "%s", text.data() );
 #elif defined( EE_COMPILER_MSVC )
@@ -133,7 +133,7 @@ void Log::write( const std::string_view& text ) {
 		OutputDebugString( text.c_str() );
 #endif
 #else
-		std::cout << text;
+		std::cout << text << std::flush;
 #endif
 	}
 
@@ -189,7 +189,7 @@ void Log::writel( const std::string_view& text ) {
 	writeToReaders( text );
 	writeToReaders( "\n" );
 
-	if ( mConsoleOutput ) {
+	if ( mStdOutEnabled ) {
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 		__android_log_print( ANDROID_LOG_INFO, "eepp", "%s\n", text.data() );
 #elif defined( EE_COMPILER_MSVC )
@@ -241,13 +241,13 @@ const std::string& Log::getBuffer() const {
 }
 
 const bool& Log::isLoggingToStdOut() const {
-	return mConsoleOutput;
+	return mStdOutEnabled;
 }
 
 void Log::setLogToStdOut( const bool& output ) {
-	bool OldOutput = mConsoleOutput;
+	bool OldOutput = mStdOutEnabled;
 
-	mConsoleOutput = output;
+	mStdOutEnabled = output;
 
 	if ( !OldOutput && output && !mData.empty() ) {
 		lock();

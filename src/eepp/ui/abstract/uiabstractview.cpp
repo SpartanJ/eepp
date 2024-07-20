@@ -9,6 +9,8 @@ UIAbstractView::UIAbstractView( const std::string& tag ) :
 
 UIAbstractView::~UIAbstractView() {
 	eeSAFE_DELETE( mEditingDelegate );
+	if ( mModel )
+		mModel->unregisterView( this );
 }
 
 UIAbstractView::SelectionKind UIAbstractView::getSelectionKind() const {

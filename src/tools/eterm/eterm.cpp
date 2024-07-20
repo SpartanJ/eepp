@@ -98,30 +98,6 @@ void inputCallback( InputEvent* event ) {
 	}
 }
 
-void mainLoop() {
-	bool termNeedsUpdate = false;
-	win->getInput()->update();
-
-	if ( terminal )
-		termNeedsUpdate = !terminal->update();
-
-	if ( terminal && ( benchmarkMode || terminal->isDirty() ) &&
-		 ( !termNeedsUpdate || lastRender.getElapsedTime() >= frameTime ) ) {
-		lastRender.restart();
-		win->clear();
-		terminal->draw();
-		win->display();
-	} else if ( !benchmarkMode && !termNeedsUpdate ) {
-		win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
-	}
-
-	if ( benchmarkMode && secondsCounter.getElapsedTime() >= Seconds( 1 ) ) {
-		win->setTitle( "eterm - " + windowStringData + " - " + String::toString( win->getFPS() ) +
-					   " FPS" );
-		secondsCounter.restart();
-	}
-}
-
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 #ifdef EE_DEBUG
 	Log::instance()->setLogToStdOut( true );
@@ -263,42 +239,73 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		Float realMaxFPS = maxFPS.Get() ? maxFPS.Get() : currentDisplay->getRefreshRate();
 		frameTime = benchmarkMode ? Time::Zero : Milliseconds( 1000.f / realMaxFPS );
 
-		if ( !terminal || terminal->hasTerminated() ) {
-			FileInfo file( wd ? wd.Get() : FileSystem::getCurrentWorkingDirectory() );
-			terminal = TerminalDisplay::create(
-				win, fontMono, PixelDensity::dpToPx( fontSize.Get() ), win->getSize().asFloat(),
-				file.isRegularFile() && file.isExecutable() ? file.getFilepath() : shell.Get(),
-				shellArgs ? String::split( shellArgs.Get() ) : std::vector<std::string>(),
-				file.getDirectoryPath(), historySize.Get(), nullptr, fb.Get(),
-				!( file.isRegularFile() && file.isExecutable() ) );
-			terminal->getTerminal()->setAllowMemoryTrimnming( true );
-			terminal->pushEventCallback( [&closeOnExit]( const TerminalDisplay::Event& event ) {
-				if ( event.type == TerminalDisplay::EventType::TITLE ) {
-					windowStringData = event.eventData;
-					win->setTitle( "eterm - " + windowStringData );
-				} else if ( event.type == TerminalDisplay::EventType::PROCESS_EXIT &&
-							closeOnExit.Get() ) {
-					win->close();
-				}
-			} );
-			if ( shell )
-				terminal->setKeepAlive( false );
+		FileInfo file( wd ? wd.Get() : FileSystem::getCurrentWorkingDirectory() );
+		terminal = TerminalDisplay::create(
+			win, fontMono, PixelDensity::dpToPx( fontSize.Get() ), win->getSize().asFloat(),
+			file.isRegularFile() && file.isExecutable() ? file.getFilepath() : shell.Get(),
+			shellArgs ? String::split( shellArgs.Get() ) : std::vector<std::string>(),
+			file.getDirectoryPath(), historySize.Get(), nullptr, fb.Get(),
+			!( file.isRegularFile() && file.isExecutable() ) );
 
-			if ( colorScheme ) {
-				auto selColorScheme = terminalColorSchemes.find( colorScheme.Get() );
-				if ( selColorScheme != terminalColorSchemes.end() )
-					terminal->setColorScheme( selColorScheme->second );
-			}
-
-			if ( !executeInShell.Get().empty() )
-				terminal->executeFile( executeInShell.Get() );
-
-			win->startTextInput();
+		if ( terminal == nullptr ) {
+			win->close();
+			win->showMessageBox( EE::Window::Window::MessageBoxType::Error, "eterm",
+								 "Operating System not supported." );
+			terminal.reset();
+			Engine::destroySingleton();
+			MemoryManager::showResults();
+			return EXIT_FAILURE;
 		}
+
+		terminal->getTerminal()->setAllowMemoryTrimnming( true );
+		terminal->pushEventCallback( [&closeOnExit]( const TerminalDisplay::Event& event ) {
+			if ( event.type == TerminalDisplay::EventType::TITLE ) {
+				windowStringData = event.eventData;
+				win->setTitle( "eterm - " + windowStringData );
+			} else if ( event.type == TerminalDisplay::EventType::PROCESS_EXIT &&
+						closeOnExit.Get() ) {
+				win->close();
+			}
+		} );
+		if ( shell )
+			terminal->setKeepAlive( false );
+
+		if ( colorScheme ) {
+			auto selColorScheme = terminalColorSchemes.find( colorScheme.Get() );
+			if ( selColorScheme != terminalColorSchemes.end() )
+				terminal->setColorScheme( selColorScheme->second );
+		}
+
+		if ( !executeInShell.Get().empty() )
+			terminal->executeFile( executeInShell.Get() );
+
+		win->startTextInput();
 
 		win->getInput()->pushCallback( &inputCallback );
 
-		win->runMainLoop( &mainLoop );
+		win->runMainLoop( [] {
+			bool termNeedsUpdate = false;
+			win->getInput()->update();
+
+			if ( terminal )
+				termNeedsUpdate = !terminal->update();
+
+			if ( terminal && ( benchmarkMode || terminal->isDirty() ) &&
+				 ( !termNeedsUpdate || lastRender.getElapsedTime() >= frameTime ) ) {
+				lastRender.restart();
+				win->clear();
+				terminal->draw();
+				win->display();
+			} else if ( !benchmarkMode && !termNeedsUpdate ) {
+				win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
+			}
+
+			if ( benchmarkMode && secondsCounter.getElapsedTime() >= Seconds( 1 ) ) {
+				win->setTitle( "eterm - " + windowStringData + " - " +
+							   String::toString( win->getFPS() ) + " FPS" );
+				secondsCounter.restart();
+			}
+		} );
 	}
 
 	terminal.reset();

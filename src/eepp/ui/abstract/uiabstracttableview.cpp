@@ -338,10 +338,10 @@ void UIAbstractTableView::updateColumnsWidth() {
 	}
 }
 
-Uint32 UIAbstractTableView::onFocus() {
+Uint32 UIAbstractTableView::onFocus( NodeFocusReason reason ) {
 	if ( !Sys::isMobile() )
 		getUISceneNode()->getWindow()->startTextInput();
-	return UIAbstractView::onFocus();
+	return UIAbstractView::onFocus( reason );
 }
 
 Uint32 UIAbstractTableView::onFocusLoss() {
@@ -569,10 +569,10 @@ UIWidget* UIAbstractTableView::updateCell( const Vector2<Int64>& posIndex, const
 	}
 	const auto& colData = columnData( index.column() );
 	if ( !colData.visible ) {
-		widget->setVisible( false );
+		widget->setVisible( false, false );
 		return widget;
 	} else {
-		widget->setVisible( true );
+		widget->setVisible( true, false );
 	}
 	widget->setPixelsSize( colData.width, getRowHeight() );
 	widget->setPixelsPosition( { getColumnPosition( index.column() ).x, 0 } );
@@ -599,8 +599,14 @@ UIWidget* UIAbstractTableView::updateCell( const Vector2<Int64>& posIndex, const
 		}
 
 		Variant txt( getModel()->data( index, ModelRole::Display ) );
-		if ( txt.isValid() )
-			cell->setText( txt.toString() );
+		if ( txt.isValid() ) {
+			if ( txt.is( Variant::Type::String ) )
+				cell->setText( txt.asString() );
+			else if ( txt.is( Variant::Type::StringPtr ) )
+				cell->setText( txt.asStringPtr() );
+			else
+				cell->setText( txt.toString() );
+		}
 
 		bool isVisible = false;
 		Variant icon( getModel()->data( index, ModelRole::Icon ) );
@@ -791,41 +797,37 @@ Uint32 UIAbstractTableView::onTextInput( const TextInputEvent& event ) {
 			mSearchTextAction = nullptr;
 			mSearchText = "";
 		},
-		Milliseconds( 350 ) );
+		Milliseconds( 750 ) );
 	runAction( mSearchTextAction );
 	mSearchText += String::trim( String::toLower( event.getText() ) );
-	if ( !mSearchText.empty() ) {
-		ModelIndex index = findRowWithText( mSearchText );
-		if ( index.isValid() ) {
-			setSelection( index );
-		} else {
-			if ( mSearchText.size() >= 2 &&
-				 mSearchText[mSearchText.size() - 2] == mSearchText[mSearchText.size() - 1] ) {
-				mSearchText.pop_back();
-				const Model* model = getModel();
-				ModelIndex sel = getSelection().first();
-				ModelIndex next =
-					model->index( sel.row() + 1,
-								  model->keyColumn() != -1
-									  ? model->keyColumn()
-									  : ( model->treeColumn() >= 0 ? model->treeColumn() : 0 ),
-								  sel.parent() );
-				if ( next.isValid() ) {
-					Variant var = model->data( next );
-					if ( var.isValid() &&
-						 String::startsWith( String::toLower( var.toString() ), mSearchText ) ) {
-						setSelection( model->index( next.row(), 0, next.parent() ) );
-					} else {
-						ModelIndex fIndex = findRowWithText( mSearchText );
-						if ( fIndex.isValid() )
-							setSelection( fIndex );
-					}
-				} else {
-					ModelIndex fIndex = findRowWithText( mSearchText );
-					if ( fIndex.isValid() )
-						setSelection( fIndex );
+	if ( mSearchText.empty() )
+		return 1;
+	ModelIndex index = findRowWithText( mSearchText );
+	if ( index.isValid() ) {
+		setSelection( index );
+	} else {
+		if ( mSearchText.size() >= 2 &&
+			 mSearchText[mSearchText.size() - 2] == mSearchText[mSearchText.size() - 1] ) {
+			mSearchText.pop_back();
+			const Model* model = getModel();
+			ModelIndex sel = getSelection().first();
+			auto col = model->keyColumn() != -1
+						   ? model->keyColumn()
+						   : ( model->treeColumn() >= 0 ? model->treeColumn() : 0 );
+			Int64 rowCount = model->rowCount( sel.parent() );
+			for ( auto rowNext = sel.row() + 1; rowNext < rowCount; rowNext++ ) {
+				ModelIndex next = model->index( rowNext, col, sel.parent() );
+				Variant var = model->data( next );
+				if ( var.isValid() &&
+					 String::startsWith( String::toLower( var.toString() ), mSearchText ) ) {
+					setSelection( model->index( next.row(), 0, next.parent() ) );
+					return 1;
 				}
 			}
+
+			ModelIndex fIndex = findRowWithText( mSearchText );
+			if ( fIndex.isValid() )
+				setSelection( fIndex );
 		}
 	}
 	return 1;

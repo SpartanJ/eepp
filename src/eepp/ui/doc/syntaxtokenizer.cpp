@@ -194,8 +194,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 	SyntaxState retState = state;
 	SyntaxStateRestored curState = SyntaxTokenizer::retrieveSyntaxState( syntax, state );
 
-	size_t size = !text.empty() ? ( text[text.size() - 1] == '\n' ? text.size() - 1 : text.size() )
-								: 0; // skip last char ( new line char )
+	size_t size = text.size();
 	std::string patternStr;
 	std::string patternText;
 
@@ -263,9 +262,9 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 		}
 
 		bool matched = false;
+		size_t patternsCount = curState.currentSyntax->getPatterns().size();
 
-		for ( size_t patternIndex = 0; patternIndex < curState.currentSyntax->getPatterns().size();
-			  patternIndex++ ) {
+		for ( size_t patternIndex = 0; patternIndex < patternsCount; patternIndex++ ) {
 			const SyntaxPattern& pattern = curState.currentSyntax->getPatterns()[patternIndex];
 			if ( i != 0 && pattern.patterns[0][0] == '^' )
 				continue;

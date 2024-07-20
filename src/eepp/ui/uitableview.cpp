@@ -133,7 +133,7 @@ Node* UITableView::overFind( const Vector2f& point ) {
 Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGuess ) {
 	Float lWidth = 0;
 	ConditionalLock l( getModel() != nullptr, getModel() ? &getModel()->resourceMutex() : nullptr );
-	if ( getModel()->rowCount() == 0 )
+	if ( nullptr == getModel() || getModel()->rowCount() == 0 )
 		return lWidth;
 	ScopedOp op( [this] { mUISceneNode->setIsLoading( true ); },
 				 [this] { mUISceneNode->setIsLoading( false ); } );

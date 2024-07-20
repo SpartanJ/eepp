@@ -62,15 +62,6 @@ void UITextEdit::setTheme( UITheme* Theme ) {
 	onThemeLoaded();
 }
 
-void UITextEdit::wrapText( const Float& maxWidth ) {
-	Text text;
-	text.setStyleConfig( mFontStyleConfig );
-	text.setString( getText() );
-	text.wrapText( maxWidth );
-	mDoc->reset();
-	mDoc->textInput( text.getString() );
-}
-
 String UITextEdit::getText() const {
 	return mDoc->getText();
 }
@@ -78,25 +69,20 @@ String UITextEdit::getText() const {
 void UITextEdit::setText( const String& text ) {
 	mDoc->reset();
 	mDoc->textInput( text );
-	if ( mFlags & UI_WORD_WRAP ) {
-		wrapText( getViewportWidth( true ) );
-	}
-	if ( !hasFocus() ) {
+	if ( !hasFocus() )
 		mCursorVisible = false;
-	}
 	invalidateLongestLineWidth();
 }
 
-void UITextEdit::onDocumentLineChanged( const Int64& lineIndex ) {
-	UICodeEditor::onDocumentLineChanged( lineIndex );
-	updateLineCache( lineIndex );
-}
+void UITextEdit::setWordWrap( bool enabled ) {
+	if ( enabled )
+		setFlags( UI_WORD_WRAP );
+	else
+		unsetFlags( UI_WORD_WRAP );
 
-void UITextEdit::drawLineText( const Int64& index, Vector2f position, const Float&, const Float& ) {
-	Color fontColor( mFontStyleConfig.FontColor );
-	mFontStyleConfig.FontColor.blendAlpha( mAlpha );
-	getLineText( index ).draw( position.x, position.y );
-	mFontStyleConfig.FontColor = fontColor;
+	setLineWrapKeepIndentation( false );
+	setLineWrapType( LineWrapType::Viewport );
+	setLineWrapMode( enabled ? LineWrapMode::Word : LineWrapMode::NoWrap );
 }
 
 bool UITextEdit::applyProperty( const StyleSheetProperty& attribute ) {
@@ -107,6 +93,8 @@ bool UITextEdit::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Text:
 			setText( attribute.value() );
 			break;
+		case PropertyId::Wordwrap:
+			setWordWrap( attribute.asBool() );
 		default:
 			return UICodeEditor::applyProperty( attribute );
 	}
@@ -117,8 +105,8 @@ bool UITextEdit::applyProperty( const StyleSheetProperty& attribute ) {
 void UITextEdit::drawCursor( const Vector2f& startScroll, const Float& lineHeight,
 							 const TextPosition& cursor ) {
 	if ( mCursorVisible && !mLocked && isTextSelectionEnabled() ) {
-		Vector2f cursorPos( startScroll.x + getXOffsetCol( cursor ),
-							startScroll.y + cursor.line() * lineHeight );
+		auto offset = getTextPositionOffset( cursor );
+		Vector2f cursorPos( startScroll.x + offset.x, startScroll.y + offset.y );
 		Primitives primitives;
 		primitives.setColor( Color( mFontStyleConfig.FontColor ).blendAlpha( mAlpha ) );
 		primitives.drawRectangle(

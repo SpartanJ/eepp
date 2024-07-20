@@ -10,6 +10,23 @@ namespace EE { namespace System {
 
 class EE_API Sys {
   public:
+	enum class PlatformType {
+		Linux,
+		Android,
+		FreeBSD,
+		OpenBSD,
+		NetBSD,
+		DragonFlyBSD,
+		BSD,
+		Emscripten,
+		Haiku,
+		iOS,
+		macOS,
+		Solaris,
+		Windows,
+		Unknown
+	};
+
 	/** @return The current process id */
 	static Uint64 getProcessID();
 
@@ -29,9 +46,6 @@ class EE_API Sys {
 	/** @return The number of milliseconds since the first call. Note that this value wraps if the
 	 * program runs for more than ~49 days. */
 	static Uint64 getTicks();
-
-	/** Wait a specified number of milliseconds before returning. */
-	static void sleep( const Uint32& ms );
 
 	/** Wait the time defined before returning. */
 	static void sleep( const Time& time );
@@ -57,6 +71,9 @@ class EE_API Sys {
 
 	/** @return The platform name. */
 	static std::string getPlatform();
+
+	/** @return The platform type. */
+	static Sys::PlatformType getPlatformType();
 
 	/** @return The Number of CPUs of the system. */
 	static int getCPUCount();
@@ -100,7 +117,7 @@ class EE_API Sys {
 	static bool windowAttachConsole();
 
 	/** Executes a command */
-	static void execute( const std::string& cmd );
+	static void execute( const std::string& cmd, const std::string& workingDir = "" );
 
 	/** @return True if current running platform / os is a mobile one */
 	static bool isMobile();

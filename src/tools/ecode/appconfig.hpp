@@ -30,6 +30,8 @@ struct UIConfig {
 	StyleSheetLength panelFontSize{ 11, StyleSheetLength::Dp };
 	bool showSidePanel{ true };
 	bool showStatusBar{ true };
+	bool showMenuBar{ false };
+	bool welcomeScreen{ true };
 	PanelPosition panelPosition{ PanelPosition::Left };
 	std::string serifFont;
 	std::string monospaceFont;
@@ -70,12 +72,19 @@ struct CodeEditorConfig {
 	bool minimap{ true };
 	bool showDocInfo{ true };
 	bool hideTabBarOnSingleTab{ true };
-	bool singleClickTreeNavigation{ false };
+	bool singleClickNavigation{ false };
 	bool syncProjectTreeWithEditor{ true };
 	bool autoCloseXMLTags{ true };
 	bool linesRelativePosition{ false };
+	bool autoReloadOnDiskChange{ false };
+	bool codeFoldingEnabled{ true };
+	bool codeFoldingAlwaysVisible{ false };
+	LineWrapMode wrapMode{ LineWrapMode::NoWrap };
+	LineWrapType wrapType{ LineWrapType::Viewport };
+	bool wrapKeepIndentation{ true };
 	std::string autoCloseBrackets{ "" };
 	Time cursorBlinkingTime{ Seconds( 0.5f ) };
+	Time codeFoldingRefreshFreq{ Seconds( 2.f ) };
 };
 
 struct DocumentConfig {
@@ -113,9 +122,9 @@ struct ProjectDocumentConfig {
 };
 
 struct ProjectBuildConfiguration {
-	ProjectBuildConfiguration() {}
 	std::string buildName;
 	std::string buildType;
+	std::string runName;
 };
 
 class NewTerminalOrientation {
@@ -150,15 +159,26 @@ struct TerminalConfig {
 	NewTerminalOrientation::Orientation newTerminalOrientation{
 		NewTerminalOrientation::Horizontal };
 	size_t scrollback{ 10000 };
+	bool unsupportedOSWarnDisabled{ false };
 };
 
 struct WorkspaceConfig {
 	bool restoreLastSession{ false };
 	bool checkForUpdatesAtStartup{ true };
+	bool sessionSnapshot{ true };
 };
 
 struct LanguagesExtensions {
 	std::map<std::string, std::string> priorities;
+};
+
+struct SessionSnapshotFile {
+	std::string cachePath;
+	std::string fspath;
+	Uint64 fsmtime{ 0 };
+	std::string fshash;
+	std::string name;
+	std::string selection;
 };
 
 class AppConfig {
@@ -192,17 +212,19 @@ class AppConfig {
 
 	void saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, const ProjectDocumentConfig& docConfig,
-					  const ProjectBuildConfiguration& buildConfig );
+					  const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
+					  bool sessionSnapshot );
 
 	void loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, ProjectDocumentConfig& docConfig,
-					  ecode::App* app );
+					  ecode::App* app, bool sessionSnapshot );
 
   protected:
 	Int64 editorsToLoad{ 0 };
 
 	void loadDocuments( UICodeEditorSplitter* editorSplitter, json j, UITabWidget* curTabWidget,
-						ecode::App* app );
+						ecode::App* app,
+						const std::vector<SessionSnapshotFile>& sessionSnapshotFiles );
 
 	void editorLoadedCounter( ecode::App* app );
 };

@@ -35,6 +35,7 @@ using json = nlohmann::json;
 namespace ecode {
 
 static constexpr auto DEFAULT_HIGHLIGHT_COLOR = "var(--font-highlight)"sv;
+static constexpr auto GIT_STATUS_UPDATE_TAG = String::hash( "git::status-update" );
 
 std::string GitPlugin::statusTypeToString( Git::GitStatusType type ) {
 	switch ( type ) {
@@ -91,6 +92,9 @@ GitPlugin::~GitPlugin() {
 
 	endModelStyler();
 
+	if ( getUISceneNode() )
+		getUISceneNode()->removeActionsByTag( GIT_STATUS_UPDATE_TAG );
+
 	{ Lock l( mGitBranchMutex ); }
 	{ Lock l( mGitStatusMutex ); }
 	{ Lock l( mRepoMutex ); }
@@ -98,10 +102,10 @@ GitPlugin::~GitPlugin() {
 
 	// TODO: Add a signal for these waits
 	while ( mRunningUpdateStatus )
-		Sys::sleep( 1.f );
+		Sys::sleep( Milliseconds( 1.f ) );
 
 	while ( mRunningUpdateBranches )
-		Sys::sleep( 1.f );
+		Sys::sleep( Milliseconds( 1.f ) );
 }
 
 void GitPlugin::load( PluginManager* pluginManager ) {
@@ -292,8 +296,7 @@ void GitPlugin::updateUI() {
 	if ( !mGit || !getUISceneNode() )
 		return;
 
-	getUISceneNode()->debounce( [this] { updateUINow(); }, mRefreshFreq,
-								String::hash( "git::status-update" ) );
+	getUISceneNode()->debounce( [this] { updateUINow(); }, mRefreshFreq, GIT_STATUS_UPDATE_TAG );
 }
 
 void GitPlugin::updateStatusBarSync() {
@@ -468,6 +471,9 @@ PluginRequestHandle GitPlugin::processMessage( const PluginMessage& msg ) {
 
 				updateUINow( true );
 				mInitialized = true;
+
+				if ( mModelStylerId == 0 )
+					initModelStyler();
 			}
 			break;
 		}
@@ -733,8 +739,9 @@ void GitPlugin::branchMerge( Git::Branch branch ) {
 			branch.name ) );
 
 	msgBox->on( Event::OnConfirm, [this, branch]( auto ) {
-		runAsync( [this, branch]() { return mGit->mergeBranch( branch.name, repoSelected() ); },
-				  true, true, true, true, true );
+		runAsync(
+			[this, branch]() { return mGit->mergeBranch( branch.name, false, repoSelected() ); },
+			true, true, true, true, true );
 	} );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 	msgBox->setTitle( i18n( "git_confirm", "Confirm" ) );
@@ -902,8 +909,12 @@ void GitPlugin::commit( const std::string& repoPath ) {
 void GitPlugin::fastForwardMerge( Git::Branch branch ) {
 	runAsync(
 		[this, branch]() {
-			if ( branch.name == gitBranch() )
-				return mGit->fastForwardMerge( repoSelected() );
+			if ( branch.name == gitBranch() ) {
+				auto res = mGit->fastForwardMerge( repoSelected() );
+				if ( res.success() )
+					return res;
+				return mGit->mergeBranch( "", true, repoSelected() );
+			}
 
 			auto remoteBranch = mGit->getAllBranchesAndTags(
 				Git::RefType::Remote, "refs/remotes/" + branch.remote, repoSelected() );
@@ -1061,7 +1072,8 @@ void GitPlugin::diff( const Git::DiffMode mode, const std::string& repoPath ) {
 					break;
 			}
 			doc->setDefaultFileName( repoName + "-" + modeName + ".diff" );
-			doc->setSyntaxDefinition( SyntaxDefinitionManager::instance()->getByLSPName( "diff" ) );
+			ret.second->setSyntaxDefinition(
+				SyntaxDefinitionManager::instance()->getByLSPName( "diff" ) );
 			doc->textInput( res.result, false );
 			doc->moveToStartOfDoc();
 			doc->resetUndoRedo();
@@ -1079,10 +1091,11 @@ void GitPlugin::diff( const std::string& file, bool isStaged ) {
 			auto ret = mManager->getSplitter()->createEditorInNewTab();
 			auto doc = ret.second->getDocumentRef();
 			doc->setDefaultFileName( FileSystem::fileNameFromPath( file ) + ".diff" );
-			doc->setSyntaxDefinition( SyntaxDefinitionManager::instance()->getByLSPName( "diff" ) );
 			doc->textInput( res.result, false );
 			doc->moveToStartOfDoc();
 			doc->resetUndoRedo();
+			ret.second->setSyntaxDefinition(
+				SyntaxDefinitionManager::instance()->getByLSPName( "diff" ) );
 		} );
 	} );
 }
@@ -1408,7 +1421,7 @@ void GitPlugin::buildSidePanelTab() {
 		color: var(--font);
 	}
 	.git_highlight_style > treeview::cell::icon {
-		foreground-image: icon(circle, 12dpru), icon(circle-filled, 12dpru);
+		foreground-image: icon(circle, 8dpru), icon(circle-filled, 8dpru);
 		foreground-position: 80%% 80%%, 80%% 80%%;
 		foreground-tint: black, %s;
 	}
@@ -1434,8 +1447,7 @@ void GitPlugin::buildSidePanelTab() {
 				</vbox>
 			</StackWidget>
 		</vbox>
-		<TextView id="git_no_content" lw="mp" lh="wc" word-wrap="true" visible="false"
-			text='@string(git_no_git_repo, "Current folder is not a Git repository.")' padding="16dp" />
+		<TextView id="git_no_content" lw="mp" lh="wc" word-wrap="true" visible="false" text='@string(git_no_git_repo, "Current folder is not a Git repository.")' margin="8dp" text-align="center" />
 		<Loader margin-top="32dp" id="git_panel_loader" indeterminate="true" lw="24dp" lh="24dp" outline-thickness="2dp" visible="false" layout_gravity="bottom|right" margin-bottom="24dp" margin-right="24dp" />
 	</RelativeLayout>
 	)html";

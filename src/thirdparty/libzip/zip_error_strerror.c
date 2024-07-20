@@ -31,7 +31,7 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #include <errno.h>
 #include <stdio.h>
@@ -40,7 +40,7 @@
 
 #include "zipint.h"
 
-
+
 
 const char *
 _zip_error_strerror(struct zip_error *err)

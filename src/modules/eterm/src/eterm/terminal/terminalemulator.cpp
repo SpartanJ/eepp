@@ -96,7 +96,7 @@ static const unsigned int tabspaces = 4;
 #define MAX( a, b ) ( ( a ) < ( b ) ? ( b ) : ( a ) )
 #define LEN( a ) ( sizeof( a ) / sizeof( a )[0] )
 #define BETWEEN( x, a, b ) ( ( a ) <= ( x ) && ( x ) <= ( b ) )
-#define DIVCEIL( n, d ) ( ( ( n ) + ( (d)-1 ) ) / ( d ) )
+#define DIVCEIL( n, d ) ( ( ( n ) + ( ( d ) - 1 ) ) / ( d ) )
 #define DEFAULT( a, b ) ( a ) = ( a ) ? ( a ) : ( b )
 #define LIMIT( x, a, b ) ( x ) = ( x ) < ( a ) ? ( a ) : ( x ) > ( b ) ? ( b ) : ( x )
 #define ATTRCMP( a, b ) ( ( a ).mode != ( b ).mode || ( a ).fg != ( b ).fg || ( a ).bg != ( b ).bg )
@@ -120,7 +120,7 @@ static const unsigned int tabspaces = 4;
 #define TLINE( y )                                                                                \
 	( ( y ) < mTerm.scr && mTerm.histsize > 0                                                     \
 		  ? mTerm.hist[( ( y ) + mTerm.histi - mTerm.scr + mTerm.histsize + 1 ) % mTerm.histsize] \
-		  : mTerm.line[(y)-mTerm.scr] )
+		  : mTerm.line[( y ) - mTerm.scr] )
 
 typedef struct emoji_range {
 	int32_t min_code;
@@ -439,6 +439,10 @@ void TerminalEmulator::selnormalize( void ) {
 	selsnap( &mSel.nb.x, &mSel.nb.y, -1 );
 	selsnap( &mSel.ne.x, &mSel.ne.y, +1 );
 
+	/* selection is over terminal size? */
+	mSel.nb.y = MIN( mTerm.bot, mSel.nb.y );
+	mSel.ne.y = MIN( mTerm.bot, mSel.ne.y );
+
 	/* expand selection over line breaks */
 	if ( mSel.type == SEL_RECTANGULAR )
 		return;
@@ -539,7 +543,7 @@ char* TerminalEmulator::getsel( void ) const {
 	ptr = str = (char*)xmalloc( bufsize );
 
 	/* append every set & selected glyph to the selection */
-	for ( y = mSel.nb.y; y <= mSel.ne.y; y++ ) {
+	for ( y = mSel.nb.y; y <= mSel.ne.y && y < mTerm.row; y++ ) {
 		if ( ( linelen = tlinelen( y ) ) == 0 ) {
 			*ptr++ = '\n';
 			continue;

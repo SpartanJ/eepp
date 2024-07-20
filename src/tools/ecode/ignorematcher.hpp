@@ -1,7 +1,7 @@
 #ifndef ECODE_IGNOREMATCHER_HPP
 #define ECODE_IGNOREMATCHER_HPP
 
-#include <eepp/system/filesystem.hpp>
+#include <eepp/system/fileinfo.hpp>
 #include <string>
 #include <vector>
 
@@ -38,7 +38,8 @@ class IgnoreMatcher {
 class GitIgnoreMatcher : public IgnoreMatcher {
   public:
 	GitIgnoreMatcher( const std::string& rootPath,
-					  const std::string& ignoreFileName = ".gitignore" );
+					  const std::string& ignoreFileName = ".gitignore",
+					  bool addGitFolderFilter = true );
 
 	bool canMatch() override;
 

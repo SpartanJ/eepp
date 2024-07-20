@@ -21,12 +21,7 @@ class EE_API UIMessageBox : public UIWindow {
 	static UIMessageBox* New( const Type& type, const String& message,
 							  const Uint32& windowFlags = UI_MESSAGE_BOX_DEFAULT_FLAGS );
 
-	UIMessageBox( const Type& type, const String& message,
-				  const Uint32& windowFlags = UI_MESSAGE_BOX_DEFAULT_FLAGS );
-
 	virtual ~UIMessageBox();
-
-	virtual Uint32 onMessage( const NodeMessage* Msg );
 
 	virtual void setTheme( UITheme* theme );
 
@@ -40,7 +35,7 @@ class EE_API UIMessageBox : public UIWindow {
 
 	const KeyBindings::Shortcut& getCloseShortcut() const;
 
-	void setCloseShortcut( const KeyBindings::Shortcut& closeWithKey );
+	UIMessageBox* setCloseShortcut( const KeyBindings::Shortcut& closeWithKey );
 
 	UITextInput* getTextInput() const;
 
@@ -58,9 +53,15 @@ class EE_API UIMessageBox : public UIWindow {
 	KeyBindings::Shortcut mCloseShortcut;
 	UILayout* mLayoutCont{ nullptr };
 
+	UIMessageBox( const Type& type, const String& message,
+				  const Uint32& windowFlags = UI_MESSAGE_BOX_DEFAULT_FLAGS );
+
 	virtual void onWindowReady();
 
 	virtual Uint32 onKeyUp( const KeyEvent& event );
+
+	virtual Uint32 onMessage( const NodeMessage* Msg );
+
 };
 
 }} // namespace EE::UI

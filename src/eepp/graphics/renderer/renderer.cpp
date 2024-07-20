@@ -376,8 +376,7 @@ bool Renderer::shadersSupported() {
 std::string Renderer::getExtensions() {
 	std::string exts;
 
-#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN || \
-	EE_PLATFORM == EE_PLATFORM_MACOS
+#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS
 	if ( GLv_3 == version() || GLv_3CP == version() ) {
 		static pglGetStringiFunc eeglGetStringiFunc = NULL;
 
@@ -580,6 +579,19 @@ void Renderer::polygonMode() {
 
 void Renderer::pixelStorei( unsigned int pname, int param ) {
 	glPixelStorei( pname, param );
+}
+
+void Renderer::multisample( bool enabled ) {
+	if ( enabled )
+		enable( GL_MULTISAMPLE );
+	else
+		disable( GL_MULTISAMPLE );
+
+	BitOp::writeBitKey( &mStateFlags, RSF_MULTISAMPLE, enabled ? 1 : 0 );
+}
+
+bool Renderer::isMultisample() {
+	return BitOp::readBitKey( &mStateFlags, RSF_MULTISAMPLE );
 }
 
 void Renderer::polygonMode( const PrimitiveFillMode& Mode ) {

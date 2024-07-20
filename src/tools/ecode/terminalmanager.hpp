@@ -15,10 +15,14 @@ class TerminalManager {
   public:
 	TerminalManager( App* app );
 
+	UITerminal* createTerminalInSplitter( const std::string& workingDir = "",
+										  bool fallback = true );
+
 	UITerminal* createNewTerminal( const std::string& title = "",
 								   UITabWidget* inTabWidget = nullptr,
 								   const std::string& workingDir = "", std::string program = "",
-								   const std::vector<std::string>& args = {} );
+								   const std::vector<std::string>& args = {},
+								   bool fallback = true );
 
 	void applyTerminalColorScheme( const TerminalColorScheme& colorScheme );
 
@@ -53,6 +57,10 @@ class TerminalManager {
 	const std::string& getTerminalCurrentColorScheme() { return mTerminalCurrentColorScheme; }
 
 	void setKeybindings( UITerminal* term );
+
+	void displayError( const std::string& workingDir );
+
+	void openInExternalTerminal( const std::string& cmd, const std::string& workingDir );
 
   protected:
 	App* mApp;

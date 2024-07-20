@@ -15,8 +15,7 @@ namespace EE { namespace Maps { namespace Private {
 
 class EE_MAPS_API UIMapNew {
   public:
-	UIMapNew( UIMap* Map, std::function<void()> NewMapCb = cb::Callback0<void>(),
-			  bool ResizeMap = false );
+	UIMapNew( UIMap* Map, std::function<void()> NewMapCb = {}, bool ResizeMap = false );
 
 	virtual ~UIMapNew();
 

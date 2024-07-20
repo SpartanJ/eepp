@@ -34,7 +34,7 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #ifndef ZIP_EXTERN
 /*#ifdef _WIN32
@@ -160,7 +160,7 @@ extern "C" {
 #endif
 #define ZIP_EM_UNKNOWN    0xffff  /* unknown algorithm */
 
-
+
 
 enum zip_source_cmd {
     ZIP_SOURCE_OPEN,	/* prepare for reading */
@@ -203,7 +203,7 @@ struct zip_source;
 typedef zip_int64_t (*zip_source_callback)(void *, void *, zip_uint64_t,
 					   enum zip_source_cmd);
 
-
+
 
 ZIP_EXTERN zip_int64_t zip_add(struct zip *, const char *, struct zip_source *);
 ZIP_EXTERN zip_int64_t zip_add_dir(struct zip *, const char *);

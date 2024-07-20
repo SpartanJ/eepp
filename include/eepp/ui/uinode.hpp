@@ -235,7 +235,7 @@ class EE_API UINode : public Node {
 
 	const Uint32& getDragButton() const;
 
-	virtual Node* setFocus();
+	virtual Node* setFocus( NodeFocusReason reason = NodeFocusReason::Unknown );
 
 	Float
 	getPropertyRelativeTargetContainerLength( const CSS::PropertyRelativeTarget& relativeTarget,
@@ -382,7 +382,7 @@ class EE_API UINode : public Node {
 
 	virtual Uint32 onMouseLeave( const Vector2i& position, const Uint32& flags );
 
-	virtual Uint32 onFocus();
+	virtual Uint32 onFocus( NodeFocusReason reason );
 
 	virtual Uint32 onFocusLoss();
 

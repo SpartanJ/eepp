@@ -12,6 +12,7 @@
 #include <eepp/system/pack.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/system/time.hpp>
+#include <eepp/ui/doc/foldrangeservice.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <eepp/ui/doc/textdocumentline.hpp>
 #include <eepp/ui/doc/textformat.hpp>
@@ -43,16 +44,45 @@ class EE_API TextDocument {
 
 	enum class LoadStatus { Loaded, Interrupted, Failed };
 
+	struct SearchResult {
+		TextRange result{};
+		std::vector<TextRange> captures{};
+		bool isValid() const { return result.isValid(); }
+		bool operator==( const SearchResult& other ) {
+			return result == other.result && captures == other.captures;
+		}
+	};
+
+	class SearchResults : public std::vector<SearchResult> {
+	  public:
+		bool isSorted() const { return mIsSorted; }
+
+		void setSorted() { mIsSorted = true; }
+
+		TextRanges ranges() const {
+			TextRanges ranges;
+			ranges.reserve( size() );
+			for ( const auto& r : *this )
+				ranges.push_back( r.result );
+			if ( isSorted() )
+				ranges.setSorted();
+			return ranges;
+		}
+
+	  protected:
+		bool mIsSorted{ false };
+	};
+
 	enum class MatchDirection { Forward, Backward };
 
 	class EE_API Client {
 	  public:
 		virtual ~Client();
-		virtual void onDocumentLoaded( TextDocument* ){};
+		virtual void onDocumentLoaded( TextDocument* ) {};
 		virtual void onDocumentTextChanged( const DocumentContentChange& ) = 0;
 		virtual void onDocumentUndoRedo( const UndoRedo& eventType ) = 0;
 		virtual void onDocumentCursorChange( const TextPosition& ) = 0;
-		virtual void onDocumentInterestingCursorChange( const TextPosition& ){};
+		virtual void onDocumentInterestingCursorChange( const TextPosition& ) {};
 		virtual void onDocumentSelectionChange( const TextRange& ) = 0;
 		virtual void onDocumentLineCountChange( const size_t& lastCount,
 												const size_t& newCount ) = 0;
@@ -65,14 +95,16 @@ class EE_API TextDocument {
 			onDocumentClosed( doc );
 			onDocumentLoaded( doc );
 		}
+		virtual void onDocumentReset( TextDocument* ) = 0;
 		virtual void onDocumentSyntaxDefinitionChange( const SyntaxDefinition& ) {}
-		virtual void onDocumentLineMove( const Int64& /*fromLine*/, const Int64& /*numLines*/ ){};
+		virtual void onDocumentLineMove( const Int64& /*fromLine*/, const Int64& /*toLine*/,
+										 const Int64& /*numLines*/ ) {}
 		virtual TextRange getVisibleRange() const { return {}; };
+		virtual void onFoldRegionsUpdated( size_t /*oldCount*/, size_t /*newCount*/ ) {}
 	};
 
 	typedef std::function<void()> DocumentCommand;
 	typedef std::function<void( Client* )> DocumentRefCommand;
-
 
 	TextDocument( bool verbose = true );
 
@@ -153,8 +185,6 @@ class EE_API TextDocument {
 
 	const TextDocumentLine& getCurrentLine() const;
 
-	std::vector<TextDocumentLine>& lines();
-
 	bool hasSelection() const;
 
 	const std::array<Uint8, 16>& getHash() const;
@@ -173,12 +203,15 @@ class EE_API TextDocument {
 
 	String::StringBaseType getChar( const TextPosition& position ) const;
 
+	String::StringBaseType getCharFromUnsanitizedPosition( const TextPosition& position ) const;
+
 	TextPosition insert( const size_t& cursorIdx, const TextPosition& position,
 						 const String& text );
 
 	size_t remove( const size_t& cursorIdx, TextRange range );
 
-	TextPosition positionOffset( TextPosition position, int columnOffset ) const;
+	TextPosition positionOffset( TextPosition position, int columnOffset,
+								 bool sanitizeInput = true ) const;
 
 	TextPosition positionOffset( TextPosition position, TextPosition offset ) const;
 
@@ -218,6 +251,8 @@ class EE_API TextDocument {
 
 	TextRange getDocRange() const;
 
+	TextRange getLineRange( Int64 line ) const;
+
 	void deleteTo( const size_t& cursorIdx, TextPosition position );
 
 	void deleteTo( const size_t& cursorIdx, int offset );
@@ -233,6 +268,8 @@ class EE_API TextDocument {
 	void moveTo( int columnOffset );
 
 	void textInput( const String& text, bool mightBeInteresting = true );
+
+	void pasteText( String&& text );
 
 	void imeTextEditing( const String& text );
 
@@ -346,17 +383,18 @@ class EE_API TextDocument {
 
 	bool removeCommand( const std::string& command );
 
-	TextRange find( const String& text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
-					bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
-					TextRange restrictRange = TextRange() );
+	SearchResult find( const String& text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
+					   bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
+					   TextRange restrictRange = TextRange() );
 
-	TextRange findLast( const String& text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
-						bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
-						TextRange restrictRange = TextRange() );
+	SearchResult findLast( const String& text, TextPosition from = { 0, 0 },
+						   bool caseSensitive = true, bool wholeWord = false,
+						   FindReplaceType type = FindReplaceType::Normal,
+						   TextRange restrictRange = TextRange() );
 
-	TextRanges findAll( const String& text, bool caseSensitive = true, bool wholeWord = false,
-						FindReplaceType type = FindReplaceType::Normal,
-						TextRange restrictRange = TextRange(), size_t maxResults = 0 );
+	SearchResults findAll( const String& text, bool caseSensitive = true, bool wholeWord = false,
+						   FindReplaceType type = FindReplaceType::Normal,
+						   TextRange restrictRange = TextRange(), size_t maxResults = 0 );
 
 	int replaceAll( const String& text, const String& replace, const bool& caseSensitive = true,
 					const bool& wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
@@ -408,6 +446,8 @@ class EE_API TextDocument {
 	void toggleLineComments();
 
 	void setNonWordChars( const String& nonWordChars );
+
+	const SyntaxDefinition& guessSyntax() const;
 
 	void resetSyntax();
 
@@ -484,7 +524,7 @@ class EE_API TextDocument {
 
 	void resetSelection( const TextRanges& selection );
 
-	std::vector<TextRange> getSelectionsSorted() const;
+	TextRanges getSelectionsSorted() const;
 
 	void addCursorAbove();
 
@@ -583,8 +623,25 @@ class EE_API TextDocument {
 
 	void setEncoding( TextFormat::Encoding encoding );
 
+	const FoldRangeServive& getFoldRangeService() const;
+
+	FoldRangeServive& getFoldRangeService();
+
+	std::vector<TextDocumentLine> getLines() const;
+
+	void setLines( std::vector<TextDocumentLine>&& lines );
+
+	std::string serializeUndoRedo( bool inverted );
+
+	void unserializeUndoRedo( const std::string& jsonString );
+
+	void changeFilePath( const std::string& filePath );
+
+	void setDirtyUntilSave();
+
   protected:
 	friend class TextUndoStack;
+	friend class FoldRangeServive;
 
 	Uint64 mModificationId{ 0 };
 	TextUndoStack mUndoStack;
@@ -623,7 +680,7 @@ class EE_API TextDocument {
 	Clock mTimer;
 	SyntaxDefinition mSyntaxDefinition;
 	std::string mDefaultFileName;
-	Uint64 mCleanChangeId;
+	Uint64 mCleanChangeId{ 0 };
 	Uint32 mPageSize{ 10 };
 	UnorderedMap<std::string, DocumentCommand> mCommands;
 	UnorderedMap<std::string, DocumentRefCommand> mRefCommands;
@@ -635,6 +692,7 @@ class EE_API TextDocument {
 	std::unique_ptr<SyntaxHighlighter> mHighlighter;
 	Mutex mStopFlagsMutex;
 	UnorderedMap<bool*, std::unique_ptr<bool>> mStopFlags;
+	FoldRangeServive mFoldRangeService;
 
 	void initializeCommands();
 
@@ -643,6 +701,8 @@ class EE_API TextDocument {
 	void notifyDocumentLoaded();
 
 	void notifyDocumentReloaded();
+
+	void notifyDocumentReset();
 
 	void notifyTextChanged( const DocumentContentChange& );
 
@@ -666,9 +726,12 @@ class EE_API TextDocument {
 
 	void notifySyntaxDefinitionChange();
 
-	void notifiyDocumenLineMove( const Int64& fromLine, const Int64& numLines );
+	void notifiyDocumenLineMove( const Int64& fromLine, const Int64& toLine,
+								 const Int64& numLines );
 
 	void notifyInterstingCursorChange( TextPosition selection );
+
+	void notifyFoldRegionsUpdated( size_t oldCount, size_t newCount );
 
 	void insertAtStartOfSelectedLines( const String& text, bool skipEmpty );
 
@@ -691,13 +754,16 @@ class EE_API TextDocument {
 
 	LoadStatus loadFromStream( IOStream& file, std::string path, bool callReset );
 
-	TextRange findText( String text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
-						bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
-						TextRange restrictRange = TextRange() );
+	SearchResult findText( String text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
+						   bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
+						   TextRange restrictRange = TextRange() );
 
-	TextRange findTextLast( String text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
-							bool wholeWord = false, FindReplaceType type = FindReplaceType::Normal,
-							TextRange restrictRange = TextRange() );
+	SearchResult findTextLast( String text, TextPosition from = { 0, 0 }, bool caseSensitive = true,
+							   bool wholeWord = false,
+							   FindReplaceType type = FindReplaceType::Normal,
+							   TextRange restrictRange = TextRange() );
+
+	void changeFilePath( const std::string& filePath, bool notify );
 };
 
 struct TextSearchParams {

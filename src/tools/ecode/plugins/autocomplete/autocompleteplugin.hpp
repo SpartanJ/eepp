@@ -27,7 +27,9 @@ class AutoCompletePlugin : public Plugin {
 		std::string detail;
 		std::string sortText;
 		TextRange range;
+		std::string insertText;
 		double score{ 0 };
+		LSPMarkupContent documentation;
 
 		void setScore( const double& score ) const {
 			const_cast<Suggestion*>( this )->score = score;
@@ -35,14 +37,16 @@ class AutoCompletePlugin : public Plugin {
 
 		Suggestion( const std::string& text ) : text( text ), sortText( text ) {}
 
-		Suggestion( const LSPCompletionItemKind& kind, const std::string& text,
-					const std::string& detail, const std::string& sortText,
-					const TextRange& range = {} ) :
+		Suggestion( LSPCompletionItemKind kind, std::string&& text, std::string&& detail,
+					std::string&& sortText, const TextRange& range, std::string&& insertText,
+					LSPMarkupContent&& doc ) :
 			kind( kind ),
-			text( text ),
-			detail( detail ),
-			sortText( sortText.empty() ? text : sortText ),
-			range( range ){};
+			text( std::move( text ) ),
+			detail( std::move( detail ) ),
+			sortText( sortText.empty() ? std::string{ this->text } : std::move( sortText ) ),
+			range( range ),
+			insertText( std::move( insertText ) ),
+			documentation( doc ){};
 
 		bool operator<( const Suggestion& other ) const { return getCmpStr() < other.getCmpStr(); }
 
@@ -59,10 +63,13 @@ class AutoCompletePlugin : public Plugin {
 				 "Auto complete shows the completion popup as you type, so you can fill "
 				 "in long words by typing only a few characters.",
 				 AutoCompletePlugin::New,
-				 { 0, 2, 2 } };
+				 { 0, 2, 4 },
+				 AutoCompletePlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
+
+	static Plugin* NewSync( PluginManager* pluginManager );
 
 	virtual ~AutoCompletePlugin();
 
@@ -120,13 +127,13 @@ class AutoCompletePlugin : public Plugin {
 	bool mDirty{ false };
 	bool mReplacing{ false };
 	bool mSignatureHelpVisible{ false };
+	bool mHighlightSuggestions{ false };
 	struct DocCache {
 		Uint64 changeId{ static_cast<Uint64>( -1 ) };
 		SymbolsList symbols;
 	};
 	std::unordered_map<TextDocument*, DocCache> mDocCache;
 	std::unordered_map<std::string, SymbolsList> mLangCache;
-
 	std::vector<Suggestion> mSuggestions;
 	Mutex mSuggestionsEditorMutex;
 	Mutex mSignatureHelpEditorMutex;
@@ -144,11 +151,16 @@ class AutoCompletePlugin : public Plugin {
 	std::unordered_map<TextDocument*, std::vector<PluginIDType>> mHandles;
 	std::unordered_map<TextDocument*, std::atomic<bool>> mDocsUpdating;
 	Mutex mDocsUpdatingMutex;
+	Text mSuggestionDoc;
+	size_t mMaxLabelCharacters{ 100 };
+	String::HashType mConfigHash{ 0 };
 
 	Float mRowHeight{ 0 };
 	Rectf mBoxRect;
 
-	explicit AutoCompletePlugin( PluginManager* pluginManager );
+	explicit AutoCompletePlugin( PluginManager* pluginManager, bool sync );
+
+	void load( PluginManager* pluginManager );
 
 	void resetSuggestions( UICodeEditor* editor );
 
@@ -183,6 +195,11 @@ class AutoCompletePlugin : public Plugin {
 
 	void drawSignatureHelp( UICodeEditor* editor, const Vector2f& startScroll,
 							const Float& lineHeight, bool drawUp );
+
+	bool hasCompleteSteps( const Suggestion& suggestion );
+
+	void tryStartSnippetNav( const Suggestion& suggestion, UICodeEditor* editor,
+							 const TextRanges& prevSels );
 };
 
 } // namespace ecode

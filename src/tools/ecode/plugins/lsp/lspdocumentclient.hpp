@@ -20,7 +20,7 @@ namespace ecode {
 class LSPClientServer;
 class LSPClientServerManager;
 
-class LSPDocumentClient : public TextDocument::Client {
+class LSPDocumentClient : public TextDocument::Client, public FoldRangeProvider {
   public:
 	LSPDocumentClient( LSPClientServer* server, TextDocument* doc );
 
@@ -38,6 +38,7 @@ class LSPDocumentClient : public TextDocument::Client {
 	virtual void onDocumentDirtyOnFileSystem( TextDocument* );
 	virtual void onDocumentMoved( TextDocument* );
 	virtual void onDocumentReloaded( TextDocument* );
+	virtual void onDocumentReset( TextDocument* );
 
 	void notifyOpen();
 
@@ -57,11 +58,17 @@ class LSPDocumentClient : public TextDocument::Client {
 
 	void requestSemanticHighlightingDelayed( bool reqFull = false );
 
+	void requestFoldRange();
+
+	bool foldingRangeProvider() const;
+
 	bool isRunningSemanticTokens() const;
 
 	bool isWaitingSemanticTokensResponse() const;
 
 	void requestCodeLens();
+
+	bool tryRequestFoldRanges( bool requestFolds );
 
   protected:
 	LSPClientServer* mServer{ nullptr };
@@ -79,6 +86,8 @@ class LSPDocumentClient : public TextDocument::Client {
 	bool mFirstHighlight{ true };
 
 	void refreshTag();
+
+	void setupFoldRangeService();
 
 	UISceneNode* getUISceneNode();
 

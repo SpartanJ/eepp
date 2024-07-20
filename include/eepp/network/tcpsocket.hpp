@@ -118,11 +118,11 @@ class EE_API TcpSocket : public Socket {
 
 	/** Set the send timeout. Only callable after connect ( after the socket
 	 ** has been initialized ). */
-	void setSendTimeout( SocketHandle sock, const Time& timeout );
+	void setSendTimeout( const Time& timeout );
 
 	/** Set the receive timeout Only callable after connect ( after the socket
 	 ** has been initialized ). */
-	void setReceiveTimeout( SocketHandle sock, const Time& timeout );
+	void setReceiveTimeout( const Time& timeout );
 
 	typedef std::function<void( const char* bytes, size_t n )> ReadFn;
 

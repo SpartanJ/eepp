@@ -57,13 +57,14 @@ void UIStyle::setStyleSheetProperty( const StyleSheetProperty& property ) {
 void UIStyle::resetGlobalDefinition() {
 	const auto& stylesheet = mWidget->getUISceneNode()->getStyleSheet();
 
-	if ( stylesheet.getVersion() == mLoadedVersion )
+	if ( &stylesheet == mLoadedStyleSheet && stylesheet.getVersion() == mLoadedVersion )
 		return;
 
 	auto prefDef = mGlobalDefinition;
 
 	mGlobalDefinition = stylesheet.getElementStyles( mWidget, false );
 
+	mLoadedStyleSheet = &stylesheet;
 	mLoadedVersion = stylesheet.getVersion();
 }
 

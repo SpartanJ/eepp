@@ -31,7 +31,7 @@
       }
     },
     {
-      "language": "tsx",
+      "language": "typescriptreact",
       "use": "typescript-language-server",
       "share_process": true,
       "file_patterns": ["%.tsx$"]
@@ -43,7 +43,7 @@
       "file_patterns": ["%.js$"]
     },
     {
-      "language": "jsx",
+      "language": "javascriptreact",
       "use": "typescript-language-server",
       "share_process": true,
       "file_patterns": ["%.jsx$"]
@@ -54,7 +54,13 @@
       "url": "https://golang.org/x/tools/gopls",
       "command": "gopls",
       "file_patterns": ["%.go$"],
-      "rootIndicationFileNames": ["go.work", "go.mod", ".git"]
+      "rootIndicationFileNames": ["go.work", "go.mod", ".git"],
+      "initializationOptions": {
+        "usePlaceholders": true,
+        "semanticTokens": true,
+        "noSemanticString": true,
+        "noSemanticNumber": true
+      }
     },
     {
       "language": "php",
@@ -172,10 +178,32 @@
     },
     {
       "language": "html",
-      "name": "vscode-html-languageserver",
-      "url": "https://github.com/vscode-langservers/vscode-html-languageserver-bin",
-      "command": "html-languageserver --stdio",
-      "file_patterns": ["%.htm", "%.html"]
+      "name": "emmet-language-server",
+      "url": "https://github.com/olrtg/emmet-language-server",
+      "command": "emmet-language-server --stdio",
+      "file_patterns": ["%.htm", "%.html"],
+      "rootIndicationFileNames": [".git"],
+      "initializationOptions": {
+        "showSuggestionsAsSnippets": true
+      }
+    },
+    {
+      "language": "css",
+      "use": "emmet-language-server",
+      "share_process": true,
+      "file_patterns": ["%.css$"]
+    },
+    {
+      "language": "sass",
+      "use": "emmet-language-server",
+      "share_process": true,
+      "file_patterns": ["%.sass$", "%.scss$"]
+    },
+    {
+      "language": "xml",
+      "use": "emmet-language-server",
+      "share_process": true,
+      "file_patterns": ["%.xml$", "%.svg$"]
     },
     {
       "language": "dockerfile",
@@ -217,7 +245,7 @@
       "language": "haskell",
       "name": "haskell-language-server",
       "url": "https://github.com/haskell/haskell-language-server",
-      "command": "haskell-language-server-wrapper",
+      "command": "haskell-language-server-wrapper --lsp",
       "file_patterns": ["%.hs$"],
       "rootIndicationFileNames": ["%.cabal$", "stack.yaml", "cabal.project", "package.yaml", "hie.yaml"]
     },
@@ -289,6 +317,41 @@
       "url": "https://github.com/nolanderc/glsl_analyzer",
       "command": "glsl_analyzer",
       "file_patterns": ["%.glsl$", "%.frag$", "%.vert$", "%.fs$", "%.vs$", "%.tesc", "%.tese"]
+    },
+    {
+      "language": "vala",
+      "name": "vala-language-server",
+      "url": "https://github.com/vala-lang/vala-language-server",
+      "command": "vala-language-server",
+      "file_patterns": ["%.vala$", "%.genie$"]
+    },
+    {
+      "language": "adept",
+      "name": "AdeptLSP",
+      "url": "https://github.com/AdeptLanguage/AdeptLSP",
+      "vars": {
+        "ADEPT_ROOT": "adept --root"
+      },
+      "command": "adeptls --infrastructure $ADEPT_ROOT",
+      "file_patterns": ["%.adept$"]
+    },
+    {
+      "language": "latex",
+      "name": "texlab",
+      "url": "https://github.com/latex-lsp",
+      "command": "texlab",
+      "file_patterns": ["%.tex$"]
+    },
+    {
+      "language": "clojure",
+      "name": "clojure-lsp",
+      "url": "https://github.com/clojure-lsp/clojure-lsp",
+      "command": "clojure-lsp",
+      "file_patterns": ["%.clj$", "%.cljs$", "%.clc$", "%.edn$"],
+      "rootIndicationFileNames": ["project.clj", "deps.edn"],
+      "initializationOptions": {
+        "ignore-classpath-directories": true
+      }
     }
   ]
 }

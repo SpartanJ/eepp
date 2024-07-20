@@ -8,7 +8,7 @@ void addPascal() {
 	SyntaxDefinitionManager::instance()->add(
 
 		{ "Pascal",
-		  { "%.pas$" },
+		  { "%.pas$", "%.dpr$", "%.dpk$" },
 		  {
 			  { { "//.*" }, "comment" },
 			  { { "%(%*", "%*%)" }, "comment" },

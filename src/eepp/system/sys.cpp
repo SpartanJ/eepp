@@ -395,6 +395,40 @@ std::string Sys::getOSArchitecture() {
 #endif
 }
 
+Sys::PlatformType Sys::getPlatformType() {
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+	return Sys::PlatformType::Linux;
+#elif EE_PLATFORM == EE_PLATFORM_ANDROID
+	return Sys::PlatformType::Android;
+#elif EE_PLATFORM == EE_PLATFORM_BSD
+#if defined( __FreeBSD__ )
+	return Sys::PlatformType::FreeBSD;
+#elif defined( __OpenBSD__ )
+	return Sys::PlatformType::OpenBSD;
+#elif defined( __NetBSD__ )
+	return Sys::PlatformType::NetBSD;
+#elif defined( __DragonFly__ )
+	return Sys::PlatformType::DragonFlyBSD;
+#else
+	return Sys::PlatformType::BSD;
+#endif
+#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	return Sys::PlatformType::Emscripten;
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+	return Sys::PlatformType::Haiku;
+#elif EE_PLATFORM == EE_PLATFORM_IOS
+	return Sys::PlatformType::iOS;
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+	return Sys::PlatformType::macOS;
+#elif EE_PLATFORM == EE_PLATFORM_SOLARIS
+	return Sys::PlatformType::Solaris;
+#elif EE_PLATFORM_WIN
+	return Sys::PlatformType::Windows;
+#else
+	return Sys::PlatformType::Unknown;
+#endif
+}
+
 std::string Sys::getPlatform() {
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 	return "Linux";
@@ -478,10 +512,6 @@ Uint64 Sys::getTicks() {
 #else
 #warning Sys::getTicks() not implemented in this platform.
 #endif
-}
-
-void Sys::sleep( const Uint32& ms ) {
-	sleep( Milliseconds( ms ) );
 }
 
 void Sys::sleep( const Time& time ) {
@@ -1178,24 +1208,27 @@ bool Sys::windowAttachConsole() {
 }
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-static void windowsSystem( const std::string& programPath ) {
+static void windowsSystem( const std::string& programPath, const std::string& workingDirectory ) {
 	STARTUPINFOW si;
 	PROCESS_INFORMATION pi;
 	ZeroMemory( &si, sizeof( si ) );
 	si.cb = sizeof( si );
 	ZeroMemory( &pi, sizeof( pi ) );
 
+	std::wstring workingDir = String( workingDirectory ).toWideString();
+
 	if ( CreateProcessW( NULL, (LPWSTR)String( programPath ).toWideString().c_str(), NULL, NULL,
-						 FALSE, 0, NULL, NULL, &si, &pi ) ) {
+						 FALSE, 0, NULL, workingDir.empty() ? NULL : workingDir.c_str(), &si,
+						 &pi ) ) {
 		CloseHandle( pi.hProcess );
 		CloseHandle( pi.hThread );
 	}
 }
 #endif
 
-void Sys::execute( const std::string& cmd ) {
+void Sys::execute( const std::string& cmd, const std::string& workingDir ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	windowsSystem( cmd );
+	windowsSystem( cmd, workingDir );
 #elif EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	pid_t pid = fork();
 	if ( pid == 0 ) {
@@ -1204,6 +1237,10 @@ void Sys::execute( const std::string& cmd ) {
 		for ( size_t i = 0; i < cmdArr.size(); ++i )
 			strings.push_back( cmdArr[i].c_str() );
 		strings.push_back( NULL );
+
+		if ( !workingDir.empty() )
+			FileSystem::changeWorkingDirectory( workingDir );
+
 		execvp( strings[0], (char* const*)strings.data() );
 		exit( 0 );
 	}

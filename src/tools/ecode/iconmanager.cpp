@@ -75,7 +75,25 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 		{ "eraser", 0xec9e },
 		{ "file-search", 0xed05 },
 		{ "window", 0xf2c4 },
-		{ "file-lock-fill", 0xecf2 } };
+		{ "file-lock-fill", 0xecf2 },
+		{ "filetype-svg", 0xF3C5 },
+		{ "filetype-png", 0xF3C5 },
+		{ "filetype-jpg", 0xF3C5 },
+		{ "filetype-jpeg", 0xF3C5 },
+		{ "filetype-tga", 0xF3C5 },
+		{ "filetype-dds", 0xF3C5 },
+		{ "filetype-qoi", 0xF3C5 },
+		{ "filetype-bmp", 0xF3C5 },
+		{ "filetype-gif", 0xF3C5 },
+		{ "filetype-psd", 0xF3C5 },
+		{ "filetype-hdr", 0xF3C5 },
+		{ "filetype-pic", 0xF3C5 },
+		{ "filetype-pvr", 0xF3C5 },
+		{ "filetype-pkm", 0xF3C5 },
+		{ "settings", 0xF0E3 },
+		{ "stop", 0xF1A0 },
+		{ "text-wrap", 0xF200 },
+	};
 
 	for ( const auto& icon : icons )
 		iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
@@ -198,6 +216,7 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 			{ "symbol-key", 0xea93 },
 			{ "symbol-null", 0xea8f },
 			{ "collapse-all", 0xeac5 },
+			{ "chevron-down", 0xeab4 },
 			{ "chevron-right", 0xeab6 },
 			{ "lightbulb-autofix", 0xeb13 },
 			{ "layout-sidebar-left-off", 0xec02 },
@@ -224,6 +243,12 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 			{ "circle-filled", 0xea71 },
 			{ "circle", 0xeabc },
 			{ "diff-multiple", 0xec23 },
+			{ "extensions", 0xeae6 },
+			{ "window-opt", 0xeb7f },
+			{ "tools", 0xeb6d },
+			{ "play", 0xeb2c },
+			{ "output", 0xeb9d },
+			{ "fold", 0xeaf5 },
 		};
 
 		for ( const auto& icon : codIcons )

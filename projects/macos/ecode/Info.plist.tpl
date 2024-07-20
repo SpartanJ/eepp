@@ -5,7 +5,7 @@
   <key>CFBundleGetInfoString</key>
   <string>ecode</string>
   <key>CFBundleExecutable</key>
-  <string>run.sh</string>
+  <string>ecode</string>
   <key>CFBundleIdentifier</key>
   <string>ensoft.dev</string>
   <key>CFBundleName</key>

@@ -184,7 +184,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual void updateColumnsWidth();
 
-	virtual Uint32 onFocus();
+	virtual Uint32 onFocus( NodeFocusReason reason );
 
 	virtual Uint32 onFocusLoss();
 

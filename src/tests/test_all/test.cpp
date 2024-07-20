@@ -138,7 +138,7 @@ void EETest::init() {
 		setScreen( StartScreen );
 
 		mWindow->setTitle( "eepp - Test Application" );
-		mWindow->pushResizeCallback( cb::Make1( this, &EETest::onWindowResize ) );
+		mWindow->pushResizeCallback( [this]( auto event ) { onWindowResize( event ); } );
 
 		TF = TextureFactory::instance();
 		TF->allocate( 40 );
@@ -152,12 +152,12 @@ void EETest::init() {
 
 		PS.resize( 5 );
 
-		Scenes[0] = cb::Make0( this, &EETest::physicsUpdate );
-		Scenes[1] = cb::Make0( this, &EETest::screen1 );
-		Scenes[2] = cb::Make0( this, &EETest::screen2 );
-		Scenes[3] = cb::Make0( this, &EETest::screen3 );
-		Scenes[4] = cb::Make0( this, &EETest::screen4 );
-		Scenes[5] = cb::Make0( this, &EETest::screen5 );
+		Scenes[0] = [this] { physicsUpdate(); };
+		Scenes[1] = [this] { screen1(); };
+		Scenes[2] = [this] { screen2(); };
+		Scenes[3] = [this] { screen3(); };
+		Scenes[4] = [this] { screen4(); };
+		Scenes[5] = [this] { screen5(); };
 
 		setRandomSeed( static_cast<Uint32>( Sys::getSystemTime() * 1000 ) );
 
@@ -276,7 +276,7 @@ void EETest::onFontLoaded() {
 	Con = UIConsole::NewOpt( monospace, true, true, 8191 );
 	Con->setQuakeMode( true );
 	Con->setVisible( false );
-	Con->addCommand( "setparticlesnum", cb::Make1( this, &EETest::cmdSetPartsNum ) );
+	Con->addCommand( "setparticlesnum", [this]( auto event ) { cmdSetPartsNum( event ); } );
 
 	mEEText.create( TTF, "Entropia Engine++\nCTRL + Number to change Demo Screen\nRight click to "
 						 "see the PopUp Menu" );
@@ -372,8 +372,8 @@ void EETest::createBaseUI() {
 
 	tWin->setTitle( "Widgets Test" );
 
-	tWin->addEventListener( Event::MouseUp, cb::Make1( this, &EETest::onWinMouseUp ) );
-	C->addEventListener( Event::MouseUp, cb::Make1( this, &EETest::onWinMouseUp ) );
+	tWin->addEventListener( Event::MouseUp, [this]( auto event ) { onWinMouseUp( event ); } );
+	C->addEventListener( Event::MouseUp, [this]( auto event ) { onWinMouseUp( event ); } );
 
 	UISprite* sprite = UISprite::New();
 	sprite->setFlags( UI_AUTO_SIZE );
@@ -397,7 +397,7 @@ void EETest::createBaseUI() {
 	Button->setParent( C )->setPosition( 225, 215 )->setSize( 90, 0 );
 	Button->setIcon( mSceneNode->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) ) );
 	Button->setText( "Click Me" );
-	Button->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onButtonClick ) );
+	Button->addEventListener( Event::MouseClick, [this]( auto event ) { onButtonClick( event ); } );
 	Button->setTooltipText( "Click and see what happens..." );
 
 	UICheckBox* Checkbox = UICheckBox::New();
@@ -418,7 +418,7 @@ void EETest::createBaseUI() {
 		->setPosition( 220, 80 )
 		->setSize( 80, 24 );
 	mSlider->addEventListener( Event::OnValueChange,
-							   cb::Make1( this, &EETest::onSliderValueChange ) );
+							   [this]( auto event ) { onSliderValueChange( event ); } );
 
 	UISlider::New()
 		->setOrientation( UIOrientation::Vertical )
@@ -437,7 +437,8 @@ void EETest::createBaseUI() {
 
 	mScrollBar = UIScrollBar::New();
 	mScrollBar->setParent( C )->setSize( 0, 240 );
-	mScrollBar->addEventListener( Event::OnValueChange, cb::Make1( this, &EETest::onValueChange ) );
+	mScrollBar->addEventListener( Event::OnValueChange,
+								  [this]( auto event ) { onValueChange( event ); } );
 
 	mProgressBar = UIProgressBar::New();
 	mProgressBar->setParent( C )->setSize( 200, 24 )->setPosition( 20, 190 );
@@ -559,12 +560,12 @@ void EETest::createBaseUI() {
 	Menu->addSeparator();
 	Menu->add( "Quit" );
 
-	Menu->addEventListener( Event::OnItemClicked, cb::Make1( this, &EETest::onItemClick ) );
+	Menu->addEventListener( Event::OnItemClicked, [this]( auto event ) { onItemClick( event ); } );
 	Menu->getItem( "Quit" )->addEventListener( Event::MouseUp,
-											   cb::Make1( this, &EETest::onQuitClick ) );
+											   [this]( auto event ) { onQuitClick( event ); } );
 
 	SceneManager::instance()->getUISceneNode()->getRoot()->addEventListener(
-		Event::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
+		Event::MouseClick, [this]( auto event ) { onMainClick( event ); } );
 
 #ifdef EE_PLATFORM_TOUCH
 	UISkin nSkin( "button-te" );
@@ -584,7 +585,7 @@ void EETest::createBaseUI() {
 	mShowMenu->setPosition( screenSize.getWidth() - mShowMenu->getSize().getWidth() - 32,
 							screenSize.getHeight() - mShowMenu->getSize().getHeight() - 9 );
 	mShowMenu->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
-	mShowMenu->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onShowMenu ) );
+	mShowMenu->addEventListener( Event::MouseClick, [this]( auto event ) { onShowMenu( event ); } );
 #endif
 }
 
@@ -659,9 +660,10 @@ void EETest::createNewUI() {
 	scrollView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent )
 		->setParent( relLay );
 	scrollView->getContainer()->addEventListener( Event::MouseClick,
-												  cb::Make1( this, &EETest::onMainClick ) );
+												  [this]( auto event ) { onMainClick( event ); } );
 	container->setParent( scrollView );
-	container->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onMainClick ) );
+	container->addEventListener( Event::MouseClick,
+								 [this]( auto event ) { onMainClick( event ); } );
 
 	UILoader* loader = UILoader::New();
 	loader->setOutlineThickness( 4 )
@@ -1011,7 +1013,7 @@ void EETest::createMapEditor() {
 	tWin->setStyleConfig( windowStyleConfig );
 
 	Clock mapEditorTime;
-	mMapEditor = MapEditor::New( tWin, cb::Make0( this, &EETest::onMapEditorClose ) );
+	mMapEditor = MapEditor::New( tWin, [this] { onMapEditorClose(); } );
 	Log::info( "Map Editor created in: %s.", mapEditorTime.getElapsedTime().toString().c_str() );
 	tWin->center();
 	tWin->show();
@@ -1076,7 +1078,8 @@ void EETest::createDecoratedWindow() {
 		->setMinWindowSize( 530, 350 )
 		->setPosition( 200, 50 );
 
-	mUIWindow->addEventListener( Event::OnWindowClose, cb::Make1( this, &EETest::onCloseClick ) );
+	mUIWindow->addEventListener( Event::OnWindowClose,
+								 [this]( auto event ) { onCloseClick( event ); } );
 	mUIWindow->setTitle( "Test Window" );
 	mUIWindow->addEventListener( Event::OnDragStart, onWinDragStart );
 	mUIWindow->addEventListener( Event::OnDragStop, onWinDragStop );
@@ -1138,7 +1141,7 @@ void EETest::createDecoratedWindow() {
 	Button->setText( "Click Me" );
 	Button->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( lay );
-	Button->addEventListener( Event::MouseClick, cb::Make1( this, &EETest::onButtonClick ) );
+	Button->addEventListener( Event::MouseClick, [this]( auto event ) { onButtonClick( event ); } );
 
 	mUIWindow->setKeyBindingCommand( "button-click", [this] { addFlyingIcon(); } );
 	mUIWindow->addKeyBinding( { KEY_C, KEYMOD_LALT }, "button-click" );
@@ -1380,7 +1383,7 @@ void EETest::loadTextures() {
 	SndMng.loadFromFile( "mysound", MyPath + "sounds/sound.ogg" );
 
 	mResLoad.setThreaded( EE->isSharedGLContextEnabled() );
-	mResLoad.load( cb::Make1( this, &EETest::onTextureLoaded ) );
+	mResLoad.load( [this]( auto event ) { onTextureLoaded( event ); } );
 
 	TN.resize( 12 );
 	TNP.resize( 12 );
@@ -1423,7 +1426,8 @@ void EETest::loadTextures() {
 			SP.addFrame( TN[4], Sizef( 0, 0 ), Vector2i( 0, 0 ),
 						 Rect( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 
-	PS[0].setCallbackReset( cb::Make2( this, &EETest::particlesCallback ) );
+	PS[0].setCallbackReset(
+		[this]( Particle* P, ParticleSystem* Me ) { particlesCallback( P, Me ); } );
 	PS[0].create( ParticleEffect::Callback, 500, TN[5], Vector2f( 0, 0 ), 16, true );
 	PS[1].create( ParticleEffect::Heal, 250, TN[5],
 				  Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 16, true );
@@ -2355,7 +2359,8 @@ cpBool EETest::catcherBarBegin( Arbiter* arb, Physics::Space*, void* ) {
 
 	emitter->queue++;
 
-	mSpace->addPostStepCallback( cb::Make3( this, &EETest::postStepRemove ), b, NULL );
+	mSpace->addPostStepCallback(
+		[this]( Space* s, void* tshape, void* v ) { postStepRemove( s, tshape, v ); }, b, NULL );
 
 	return cpFalse;
 }
@@ -2391,15 +2396,17 @@ void EETest::demo2Create() {
 	Space::CollisionHandler handler;
 	handler.a = BLOCKING_SENSOR_TYPE;
 	handler.b = BALL_TYPE;
-	handler.begin = cb::Make3( this, &EETest::blockerBegin );
-	handler.separate = cb::Make3( this, &EETest::blockerSeparate );
+	handler.begin = [this]( Arbiter* arb, Space* s, void* v ) { return blockerBegin( arb, s, v ); };
+	handler.separate = [this]( Arbiter* arb, Space* s, void* v ) { blockerSeparate( arb, s, v ); };
 	mSpace->addCollisionHandler( handler );
 
 	handler.reset(); // Reset all the values and the callbacks ( set the callbacks as !IsSet()
 
 	handler.a = CATCH_SENSOR_TYPE;
 	handler.b = BALL_TYPE;
-	handler.begin = cb::Make3( this, &EETest::catcherBarBegin );
+	handler.begin = [this]( Arbiter* arb, Physics::Space* s, void* v ) {
+		return catcherBarBegin( arb, s, v );
+	};
 	mSpace->addCollisionHandler( handler );
 }
 
@@ -2448,14 +2455,14 @@ void EETest::physicsCreate() {
 
 	physicDemo demo;
 
-	demo.init = cb::Make0( this, &EETest::demo1Create );
-	demo.update = cb::Make0( this, &EETest::demo1Update );
-	demo.destroy = cb::Make0( this, &EETest::demo1Destroy );
+	demo.init = [this] { demo1Create(); };
+	demo.update = [this] { demo1Update(); };
+	demo.destroy = [this] { demo1Destroy(); };
 	mDemo.push_back( demo );
 
-	demo.init = cb::Make0( this, &EETest::demo2Create );
-	demo.update = cb::Make0( this, &EETest::demo2Update );
-	demo.destroy = cb::Make0( this, &EETest::demo2Destroy );
+	demo.init = [this] { demo2Create(); };
+	demo.update = [this] { demo2Update(); };
+	demo.destroy = [this] { demo2Destroy(); };
 	mDemo.push_back( demo );
 
 	changeDemo( 0 );

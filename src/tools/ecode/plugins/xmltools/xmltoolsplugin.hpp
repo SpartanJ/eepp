@@ -20,7 +20,7 @@ class XMLToolsPlugin : public PluginBase {
 				 "XML Tools",
 				 "Simple tools to improve your XML editing experience.",
 				 XMLToolsPlugin::New,
-				 { 0, 0, 2 },
+				 { 0, 0, 3 },
 				 XMLToolsPlugin::NewSync };
 	}
 
@@ -43,8 +43,10 @@ class XMLToolsPlugin : public PluginBase {
 	void drawBeforeLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
 							 const Float& fontSize, const Float& lineHeight ) override;
 
-	void minimapDrawAfterLineText( UICodeEditor*, const Int64&, const Vector2f&, const Vector2f&,
-								   const Float&, const Float& ) override;
+	void minimapDrawAfter( UICodeEditor*, const DocumentLineRange&, const DocumentViewLineRange&,
+						   const Vector2f& /*linePos*/, const Vector2f& /*lineSize*/,
+						   const Float& /*charWidth*/, const Float& /*gutterWidth*/,
+						   const DrawTextRangesFn& ) override;
 
   protected:
 	bool mHighlightMatch{ true };
@@ -71,16 +73,17 @@ class XMLToolsPlugin : public PluginBase {
 			mDoc( doc ), mParent( parent ) {}
 
 		virtual void onDocumentTextChanged( const DocumentContentChange& );
-		virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& ){};
-		virtual void onDocumentCursorChange( const TextPosition& ){};
-		virtual void onDocumentInterestingCursorChange( const TextPosition& ){};
+		virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& ) {};
+		virtual void onDocumentCursorChange( const TextPosition& ) {};
+		virtual void onDocumentInterestingCursorChange( const TextPosition& ) {};
 		virtual void onDocumentSelectionChange( const TextRange& );
-		virtual void onDocumentLineCountChange( const size_t&, const size_t& ){};
-		virtual void onDocumentLineChanged( const Int64& ){};
-		virtual void onDocumentSaved( TextDocument* ){};
-		virtual void onDocumentClosed( TextDocument* ){};
-		virtual void onDocumentDirtyOnFileSystem( TextDocument* ){};
-		virtual void onDocumentMoved( TextDocument* ){};
+		virtual void onDocumentLineCountChange( const size_t&, const size_t& ) {};
+		virtual void onDocumentLineChanged( const Int64& ) {};
+		virtual void onDocumentSaved( TextDocument* ) {};
+		virtual void onDocumentClosed( TextDocument* doc ) { onDocumentReset( doc ); };
+		virtual void onDocumentDirtyOnFileSystem( TextDocument* ) {};
+		virtual void onDocumentMoved( TextDocument* ) {};
+		virtual void onDocumentReset( TextDocument* ) { mSelections.clear(); }
 
 	  protected:
 		TextDocument* mDoc{ nullptr };
@@ -112,6 +115,8 @@ class XMLToolsPlugin : public PluginBase {
 	virtual void onUnregisterDocument( TextDocument* doc ) override;
 
 	bool isOverMatch( TextDocument* doc, const Int64& index ) const;
+
+	bool isVisibleInRange( TextDocument* doc, const DocumentLineRange& docLineRange );
 };
 
 } // namespace ecode

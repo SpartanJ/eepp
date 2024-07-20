@@ -38,6 +38,7 @@ struct Linter {
 	std::vector<Int64> expectedExitCodes{};
 	int noErrorsExitCode{ 0 };
 	std::string url;
+	bool isNative{ false };
 };
 
 struct LinterMatch {
@@ -46,7 +47,7 @@ struct LinterMatch {
 	LinterType type{ LinterType::Error };
 	String::HashType lineCache{ 0 };
 	MatchOrigin origin{ MatchOrigin::Linter };
-	std::map<UICodeEditor*, Rectf> box;
+	std::unordered_map<UICodeEditor*, Rectf> box;
 	LSPDiagnostic diagnostic;
 };
 
@@ -58,7 +59,7 @@ class LinterPlugin : public Plugin {
 				 "Use static code analysis tool used to flag programming errors, bugs, "
 				 "stylistic errors, and suspicious constructs.",
 				 LinterPlugin::New,
-				 { 0, 2, 3 },
+				 { 0, 2, 5 },
 				 LinterPlugin::NewSync };
 	}
 
@@ -83,14 +84,19 @@ class LinterPlugin : public Plugin {
 	void drawAfterLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
 							const Float& fontSize, const Float& lineHeight );
 
-	void minimapDrawBeforeLineText( UICodeEditor*, const Int64&, const Vector2f&, const Vector2f&,
-									const Float&, const Float& );
+	void minimapDrawBefore( UICodeEditor* /*editor*/, const DocumentLineRange&,
+							const DocumentViewLineRange&, const Vector2f& /*linePos*/,
+							const Vector2f& /*lineSize*/, const Float& /*charWidth*/,
+							const Float& /*gutterWidth*/,
+							const DrawTextRangesFn& /* drawTextRanges */ );
 
 	void update( UICodeEditor* );
 
 	bool onMouseMove( UICodeEditor*, const Vector2i&, const Uint32& flags );
 
 	bool onMouseLeave( UICodeEditor*, const Vector2i&, const Uint32& );
+
+	bool onMouseClick( UICodeEditor*, const Vector2i&, const Uint32& flags );
 
 	const Time& getDelayTime() const;
 
@@ -111,10 +117,18 @@ class LinterPlugin : public Plugin {
 	virtual bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
 									  const Vector2i& position, const Uint32& flags );
 
+	void registerNativeLinter( const std::string& cmd,
+							   const std::function<void( std::shared_ptr<TextDocument> doc,
+														 const std::string& file )>& nativeLinter );
+
+	void unregisterNativeLinter( const std::string& cmd );
+
+	void preDraw( UICodeEditor*, const Vector2f&, const Float&, const TextPosition& );
+
   protected:
 	std::vector<Linter> mLinters;
 	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
-	std::set<TextDocument*> mDocs;
+	std::unordered_set<TextDocument*> mDocs;
 	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
 	std::unordered_map<TextDocument*, std::unique_ptr<Clock>> mDirtyDoc;
 	std::unordered_map<TextDocument*, std::map<Int64, std::vector<LinterMatch>>> mMatches;
@@ -127,16 +141,22 @@ class LinterPlugin : public Plugin {
 	std::map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 	std::mutex mRunningProcessesMutex;
 	std::unordered_map<TextDocument*, Process*> mRunningProcesses;
+	std::unordered_map<std::string, std::function<void( std::shared_ptr<TextDocument> doc,
+														const std::string& file )>>
+		mNativeLinters;
 
 	bool mHoveringMatch{ false };
 	bool mEnableLSPDiagnostics{ true };
 	bool mErrorLens{ true };
 	bool mGoToIgnoreWarnings{ false };
+	bool mOldWordWrap{ false };
 	std::set<std::string> mLanguagesDisabled;
 	std::set<std::string> mLSPLanguagesDisabled;
 	String::HashType mConfigHash{ 0 };
 	UIIcon* mLightbulbIcon{ nullptr };
 	std::string mErrorMsg;
+	Rectf mQuickFixRect;
+	std::string mOldMaxWidth;
 
 	LinterPlugin( PluginManager* pluginManager, bool sync );
 
@@ -177,6 +197,8 @@ class LinterPlugin : public Plugin {
 	void goToNextError( UICodeEditor* editor );
 
 	void goToPrevError( UICodeEditor* editor );
+
+	void registerNativeLinters();
 };
 
 } // namespace ecode

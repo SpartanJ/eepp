@@ -96,4 +96,9 @@ void UIMultiModelView::setSelection( const ModelIndex& index, bool scrollToSelec
 	mTable->setSelection( index, scrollToSelection );
 }
 
+void UIMultiModelView::setSingleClickNavigation( bool singleClickNavigation ) {
+	mList->setSingleClickNavigation( singleClickNavigation );
+	mTable->setSingleClickNavigation( singleClickNavigation );
+}
+
 }} // namespace EE::UI

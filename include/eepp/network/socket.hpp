@@ -4,7 +4,6 @@
 #include <eepp/core.hpp>
 #include <eepp/core/noncopyable.hpp>
 #include <eepp/network/sockethandle.hpp>
-#include <vector>
 
 namespace EE { namespace Network {
 class SocketSelector;

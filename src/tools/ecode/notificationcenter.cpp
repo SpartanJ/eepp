@@ -11,7 +11,7 @@ NotificationCenter::NotificationCenter( UILayout* layout, PluginManager* pluginM
 			if ( msg.type == PluginMessageType::ShowMessage ) {
 				auto sm = msg.asShowMessage();
 				if ( !sm.message.empty() )
-					addNotification( sm.message, Seconds( 10 ) );
+					addNotification( sm.message, Seconds( 10 ), sm.allowCopy );
 			} else if ( msg.type == PluginMessageType::ShowDocument ) {
 				auto sd = msg.asShowDocument();
 				if ( !sd.uri.empty() ) {
@@ -24,12 +24,13 @@ NotificationCenter::NotificationCenter( UILayout* layout, PluginManager* pluginM
 		} );
 }
 
-void NotificationCenter::addNotification( const String& text, const Time& delay ) {
-	auto action = [this, text, delay]() {
+void NotificationCenter::addNotification( const String& text, const Time& delay, bool allowCopy ) {
+	auto action = [this, text, delay, allowCopy]() {
 		UITextView* tv = UITextView::New();
-		tv->addEventListener( Event::MouseClick, [tv]( const Event* event ) {
+		tv->on( Event::MouseClick, [tv, allowCopy]( const Event* event ) {
 			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
-			if ( mouseEvent->getFlags() & EE_BUTTON_LMASK )
+			if ( mouseEvent->getFlags() &
+				 ( allowCopy ? EE_BUTTON_MMASK : ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) )
 				tv->close();
 		} );
 		tv->setParent( mLayout );
@@ -37,6 +38,7 @@ void NotificationCenter::addNotification( const String& text, const Time& delay 
 		tv->setFlags( UI_WORD_WRAP );
 		tv->setText( text );
 		tv->addClass( "notification" );
+		tv->setTextSelection( allowCopy );
 		Action* sequence = Actions::Sequence::New(
 			{ Actions::FadeIn::New( Seconds( 0.125 ) ), Actions::Delay::New( delay ),
 			  Actions::FadeOut::New( Seconds( 0.125 ) ), Actions::Close::New() } );

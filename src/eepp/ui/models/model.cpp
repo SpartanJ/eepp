@@ -93,22 +93,22 @@ void Model::beginMoveColumns( ModelIndex const& sourceParent, int first, int las
 							targetParent, targetIndex } );
 }
 
-void Model::beginDeleteRows( ModelIndex const& parent, int first, int last ) {
-	eeASSERT( first >= 0 );
-	eeASSERT( first <= last );
-	eeASSERT( (size_t)last < rowCount( parent ) );
-
-	saveDeletedIndices<true>( parent, first, last );
-	mOperationStack.push( { OperationType::Delete, Direction::Row, parent, first, last } );
+bool Model::beginDeleteRows( ModelIndex const& parent, int first, int last ) {
+	if ( first >= 0 && first <= last && (size_t)last < rowCount( parent ) ) {
+		saveDeletedIndices<true>( parent, first, last );
+		mOperationStack.push( { OperationType::Delete, Direction::Row, parent, first, last } );
+		return true;
+	}
+	return false;
 }
 
-void Model::beginDeleteColumns( ModelIndex const& parent, int first, int last ) {
-	eeASSERT( first >= 0 );
-	eeASSERT( first <= last );
-	eeASSERT( (size_t)last < columnCount( parent ) );
-
-	saveDeletedIndices<false>( parent, first, last );
-	mOperationStack.push( { OperationType::Delete, Direction::Column, parent, first, last } );
+bool Model::beginDeleteColumns( ModelIndex const& parent, int first, int last ) {
+	if ( first >= 0 && first <= last && (size_t)last < columnCount( parent ) ) {
+		saveDeletedIndices<false>( parent, first, last );
+		mOperationStack.push( { OperationType::Delete, Direction::Column, parent, first, last } );
+		return true;
+	}
+	return false;
 }
 
 std::weak_ptr<PersistentHandle> Model::registerPersistentIndex( ModelIndex const& index ) {

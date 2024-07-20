@@ -30,7 +30,8 @@ class EE_API Variant {
 		Icon,
 		Vector2f,
 		Rectf,
-		cstr
+		cstr,
+		StringPtr
 	};
 	Variant() : mType( Type::Invalid ) {}
 	explicit Variant( const std::string& string ) : mType( Type::StdString ) {
@@ -39,6 +40,7 @@ class EE_API Variant {
 	explicit Variant( const String& string ) : mType( Type::String ) {
 		mValue.asString = eeNew( String, ( string ) );
 	}
+	explicit Variant( const String* string ) : mType( Type::StringPtr ) { mValue.asStringPtr = string; }
 	Variant( Drawable* drawable, bool ownDrawable = false ) : mType( Type::Drawable ) {
 		mValue.asDrawable = drawable;
 		mOwnsObject = ownDrawable;
@@ -59,6 +61,7 @@ class EE_API Variant {
 	~Variant() { reset(); }
 	const std::string& asStdString() const { return *mValue.asStdString; }
 	const String& asString() const { return *mValue.asString; }
+	const String& asStringPtr() const { return *mValue.asStringPtr; }
 	Drawable* asDrawable() const { return mValue.asDrawable; }
 	const bool& asBool() const { return mValue.asBool; }
 	const Float& asFloat() const { return mValue.asFloat; }
@@ -73,7 +76,8 @@ class EE_API Variant {
 	void* asDataPtr() const { return mValue.asDataPtr; }
 	bool is( const Type& type ) const { return type == mType; }
 	bool isString() const {
-		return mType == Type::StdString || mType == Type::cstr || mType == Type::String;
+		return mType == Type::StdString || mType == Type::cstr || mType == Type::String ||
+			   mType == Type::StringPtr;
 	}
 	void reset() {
 		switch ( mType ) {
@@ -118,6 +122,8 @@ class EE_API Variant {
 				return asStdString();
 			case Type::String:
 				return asString();
+			case Type::StringPtr:
+				return asStringPtr();
 			case Type::Drawable:
 				return asDrawable()->isDrawableResource()
 						   ? static_cast<DrawableResource*>( asDrawable() )->getName()
@@ -159,6 +165,8 @@ class EE_API Variant {
 				return asStdString() < other.asStdString();
 			case Type::String:
 				return asString() < other.asString();
+			case Type::StringPtr:
+				return asStringPtr() < other.asStringPtr();
 			case Type::Drawable:
 				return asDrawable() < other.asDrawable();
 			case Type::Icon:
@@ -197,6 +205,8 @@ class EE_API Variant {
 				return asStdString() == other.asStdString();
 			case Type::String:
 				return asString() == other.asString();
+			case Type::StringPtr:
+				return asStringPtr() == other.asStringPtr();
 			case Type::Drawable:
 				return asDrawable() == other.asDrawable();
 			case Type::Icon:
@@ -233,6 +243,8 @@ class EE_API Variant {
 				return asStdString().size();
 			case Type::String:
 				return asString().size();
+			case Type::StringPtr:
+				return asStringPtr().size();
 			case Type::Drawable:
 				return sizeof( mValue.asDrawable );
 			case Type::Icon:
@@ -258,6 +270,7 @@ class EE_API Variant {
 		UIIcon* asIcon;
 		std::string* asStdString;
 		String* asString;
+		const String* asStringPtr;
 		bool asBool;
 		Float asFloat;
 		int asInt;

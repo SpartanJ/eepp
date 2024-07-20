@@ -25,7 +25,7 @@ class LSPClientPlugin : public Plugin {
   public:
 	static PluginDefinition Definition() {
 		return { "lspclient",		   "LSP Client", "Language Server Protocol Client.",
-				 LSPClientPlugin::New, { 0, 2, 3 },	 LSPClientPlugin::NewSync };
+				 LSPClientPlugin::New, { 0, 2, 6 },	 LSPClientPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
@@ -109,6 +109,7 @@ class LSPClientPlugin : public Plugin {
 	LSPClientServerManager mClientManager;
 	bool mOldDontAutoHideOnMouseMove{ false };
 	bool mOldUsingCustomStyling{ false };
+	bool mOldWordWrap{ false };
 	bool mSymbolInfoShowing{ false };
 	bool mSemanticHighlighting{ true };
 	bool mSilence{ false };
@@ -124,6 +125,7 @@ class LSPClientPlugin : public Plugin {
 	UnorderedSet<std::string> mSemanticHighlightingDisabledLangs;
 	String::HashType mConfigHash{ 0 };
 	Color mOldBackgroundColor;
+	std::string mOldMaxWidth;
 
 	LSPClientPlugin( PluginManager* pluginManager, bool sync );
 
@@ -176,6 +178,8 @@ class LSPClientPlugin : public Plugin {
 						 const std::function<void( UIListView* )> onCreateCb = {} );
 
 	PluginRequestHandle processTextDocumentSymbol( const PluginMessage& msg );
+
+	PluginRequestHandle processFoldingRanges( const PluginMessage& msg );
 
 	void setDocumentSymbols( const URI& docURI, LSPSymbolInformationList&& res );
 

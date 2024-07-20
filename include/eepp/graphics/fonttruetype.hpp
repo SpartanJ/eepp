@@ -41,10 +41,22 @@ class EE_API FontTrueType : public Font {
 									 bool bold = false, bool italic = false,
 									 Float outlineThickness = 0, const Float& maxWidth = 0 ) const;
 
+	GlyphDrawable* getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex, unsigned int characterSize,
+												   bool bold = false, bool italic = false,
+												   Float outlineThickness = 0,
+												   const Float& maxWidth = 0 ) const;
+
 	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
 					  bool italic, Float outlineThickness = 0 ) const;
 
+	Float getKerningFromGlyphIndex( Uint32 first, Uint32 second, unsigned int characterSize,
+									bool bold, bool italic, Float outlineThickness = 0 ) const;
+
 	Float getLineSpacing( unsigned int characterSize ) const;
+
+	Float getAscent( unsigned int characterSize ) const;
+
+	Float getDescent( unsigned int characterSize ) const;
 
 	Uint32 getFontHeight( const Uint32& characterSize ) const;
 
@@ -126,7 +138,17 @@ class EE_API FontTrueType : public Font {
 
 	void setBoldItalicFont( FontTrueType* fontBoldItalic );
 
+	void* face() const { return mFace; }
+
+	void* hb() const { return mHBFont; }
+
+	bool setCurrentSize( unsigned int characterSize ) const;
+
+	void clearCache();
+
   protected:
+	friend class Text;
+
 	explicit FontTrueType( const std::string& FontName );
 
 	struct Row {
@@ -163,14 +185,17 @@ class EE_API FontTrueType : public Font {
 	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
 						   Float outlineThickness, Page& page, const Float& maxWidth ) const;
 
+	GlyphDrawable* getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex, unsigned int characterSize,
+												   bool bold, bool italic,
+												   Float outlineThickness, Page& page,
+												   const Float& maxWidth = 0 ) const;
+
 	Uint32 getGlyphIndex( const Uint32& codePoint ) const;
 
-	Glyph loadGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
-					 Float outlineThickness, Page& page, const Float& maxWidth = 0.f ) const;
+	Glyph loadGlyphByIndex( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
+							Float outlineThickness, Page& page, const Float& maxWidth = 0.f ) const;
 
 	Rect findGlyphRect( Page& page, unsigned int width, unsigned int height ) const;
-
-	bool setCurrentSize( unsigned int characterSize ) const;
 
 	Page& getPage( unsigned int characterSize ) const;
 
@@ -185,6 +210,7 @@ class EE_API FontTrueType : public Font {
 					  ///< implementation details)
 	void* mStroker;	  ///< Pointer to the stroker (it is typeless to avoid exposing implementation
 					  ///< details)
+	void* mHBFont{ nullptr };
 	mutable ScopedBuffer mMemCopy; ///< If loaded from memory, this is the file copy in memory
 	Font::Info mInfo;			   ///< Information about the font
 	Uint32 mFontInternalId{ 0 };
@@ -204,6 +230,7 @@ class EE_API FontTrueType : public Font {
 	bool mIsItalic{ false };
 	mutable UnorderedMap<unsigned int, unsigned int> mClosestCharacterSize;
 	mutable UnorderedMap<Uint32, Uint32> mCodePointIndexCache;
+	mutable UnorderedMap<Uint32, std::tuple<Uint32, Uint32, bool>> mKeyCache;
 	FontHinting mHinting{ FontHinting::Full };
 	FontAntialiasing mAntialiasing{ FontAntialiasing::Grayscale };
 	FontTrueType* mFontBold{ nullptr };

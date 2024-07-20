@@ -92,6 +92,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	ui.panelFontSize = ini.getValue( "ui", "panel_font_size", "11dp" );
 	ui.showSidePanel = ini.getValueB( "ui", "show_side_panel", true );
 	ui.showStatusBar = ini.getValueB( "ui", "show_status_bar", true );
+	ui.showMenuBar = ini.getValueB( "ui", "show_menu_bar", false );
+	ui.welcomeScreen = ini.getValueB( "ui", "welcome_screen", true );
 	ui.panelPosition = panelPositionFromString( ini.getValue( "ui", "panel_position", "left" ) );
 	ui.serifFont = ini.getValue( "ui", "serif_font", "fonts/NotoSans-Regular.ttf" );
 	ui.monospaceFont = ini.getValue( "ui", "monospace_font", "fonts/DejaVuSansMono.ttf" );
@@ -128,8 +130,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.minimap = ini.getValueB( "editor", "minimap", true );
 	editor.showDocInfo = ini.getValueB( "editor", "show_doc_info", true );
 	editor.hideTabBarOnSingleTab = ini.getValueB( "editor", "hide_tab_bar_on_single_tab", false );
-	editor.singleClickTreeNavigation =
-		ini.getValueB( "editor", "single_click_tree_navigation", false );
+	editor.singleClickNavigation = ini.getValueB( "editor", "single_click_tree_navigation", false );
 	editor.syncProjectTreeWithEditor =
 		ini.getValueB( "editor", "sync_project_tree_with_editor", true );
 	editor.autoCloseXMLTags = ini.getValueB( "editor", "auto_close_xml_tags", true );
@@ -137,6 +138,19 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.cursorBlinkingTime =
 		Time::fromString( ini.getValue( "editor", "cursor_blinking_time", "0.5s" ) );
 	editor.linesRelativePosition = ini.getValueB( "editor", "lines_relative_position", false );
+	editor.autoReloadOnDiskChange = ini.getValueB( "editor", "auto_reload_on_disk_change", false );
+
+	editor.wrapMode =
+		DocumentView::toLineWrapMode( ini.getValue( "editor", "wrap_mode", "nowrap" ) );
+	editor.wrapType =
+		DocumentView::toLineWrapType( ini.getValue( "editor", "wrap_type", "viewport" ) );
+	editor.wrapKeepIndentation = ini.getValueB( "editor", "wrap_keep_indentation", true );
+
+	editor.codeFoldingEnabled = ini.getValueB( "editor", "code_folding_enabled", true );
+	editor.codeFoldingAlwaysVisible =
+		ini.getValueB( "editor", "code_folding_always_visible", false );
+	editor.codeFoldingRefreshFreq =
+		Time::fromString( ini.getValue( "editor", "code_folding_refresh_frequency", "2s" ) );
 
 	searchBarConfig.caseSensitive = ini.getValueB( "search_bar", "case_sensitive", false );
 	searchBarConfig.luaPattern = ini.getValueB( "search_bar", "lua_pattern", false );
@@ -156,10 +170,12 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	term.newTerminalOrientation = NewTerminalOrientation::fromString(
 		ini.getValue( "terminal", "new_terminal_orientation", "vertical" ) );
 	term.scrollback = ini.getValueI( "terminal", "scrollback", 10000 );
+	term.unsupportedOSWarnDisabled = ini.getValueB( "terminal", "unsupported_os_warn_disabled" );
 
 	workspace.restoreLastSession = ini.getValueB( "workspace", "restore_last_session", false );
 	workspace.checkForUpdatesAtStartup =
 		ini.getValueB( "workspace", "check_for_updates_at_startup", true );
+	workspace.sessionSnapshot = ini.getValueB( "workspace", "session_snapshot", true );
 
 	std::map<std::string, bool> pluginsEnabled;
 	const auto& creators = pluginManager->getDefinitions();
@@ -227,6 +243,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "ui", "panel_font_size", ui.panelFontSize.toString() );
 	ini.setValueB( "ui", "show_side_panel", ui.showSidePanel );
 	ini.setValueB( "ui", "show_status_bar", ui.showStatusBar );
+	ini.setValueB( "ui", "show_menu_bar", ui.showMenuBar );
+	ini.setValueB( "ui", "welcome_screen", ui.welcomeScreen );
 	ini.setValue( "ui", "panel_position", panelPositionToString( ui.panelPosition ) );
 	ini.setValue( "ui", "serif_font", ui.serifFont );
 	ini.setValue( "ui", "monospace_font", ui.monospaceFont );
@@ -253,12 +271,22 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "minimap", editor.minimap );
 	ini.setValueB( "editor", "show_doc_info", editor.showDocInfo );
 	ini.setValueB( "editor", "hide_tab_bar_on_single_tab", editor.hideTabBarOnSingleTab );
-	ini.setValueB( "editor", "single_click_tree_navigation", editor.singleClickTreeNavigation );
+	ini.setValueB( "editor", "single_click_tree_navigation", editor.singleClickNavigation );
 	ini.setValueB( "editor", "sync_project_tree_with_editor", editor.syncProjectTreeWithEditor );
 	ini.setValueB( "editor", "auto_close_xml_tags", editor.autoCloseXMLTags );
 	ini.setValue( "editor", "line_spacing", editor.lineSpacing.toString() );
 	ini.setValue( "editor", "cursor_blinking_time", editor.cursorBlinkingTime.toString() );
 	ini.setValueB( "editor", "lines_relative_position", editor.linesRelativePosition );
+	ini.setValueB( "editor", "auto_reload_on_disk_change", editor.autoReloadOnDiskChange );
+
+	ini.setValue( "editor", "wrap_mode", DocumentView::fromLineWrapMode( editor.wrapMode ) );
+	ini.setValue( "editor", "wrap_type", DocumentView::fromLineWrapType( editor.wrapType ) );
+	ini.setValueB( "editor", "wrap_keep_indentation", editor.wrapKeepIndentation );
+
+	ini.setValueB( "editor", "code_folding_enabled", editor.codeFoldingEnabled );
+	ini.setValueB( "editor", "code_folding_always_visible", editor.codeFoldingAlwaysVisible );
+	ini.setValue( "editor", "code_folding_refresh_frequency",
+				  editor.codeFoldingRefreshFreq.toString() );
 
 	ini.setValueB( "search_bar", "case_sensitive", searchBarConfig.caseSensitive );
 	ini.setValueB( "search_bar", "lua_pattern", searchBarConfig.luaPattern );
@@ -276,6 +304,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "terminal", "new_terminal_orientation",
 				  NewTerminalOrientation::toString( term.newTerminalOrientation ) );
 	ini.setValue( "terminal", "scrollback", String::toString( term.scrollback ) );
+	ini.setValueB( "terminal", "unsupported_os_warn_disabled", term.unsupportedOSWarnDisabled );
 
 	ini.setValueB( "window", "vsync", context.VSync );
 	ini.setValue( "window", "glversion",
@@ -286,6 +315,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "workspace", "restore_last_session", workspace.restoreLastSession );
 	ini.setValueB( "workspace", "check_for_updates_at_startup",
 				   workspace.checkForUpdatesAtStartup );
+	ini.setValueB( "workspace", "session_snapshot", workspace.sessionSnapshot );
 
 	const auto& pluginsEnabled = pluginManager->getPluginsEnabled();
 	for ( const auto& plugin : pluginsEnabled )
@@ -340,10 +370,15 @@ json saveNode( Node* node ) {
 				continue;
 			if ( ownedWidget->isType( UI_TYPE_CODEEDITOR ) ) {
 				UICodeEditor* editor = ownedWidget->asType<UICodeEditor>();
-				if ( !editor->getDocument().getFilePath().empty() ) {
+				if ( !editor->getDocument().isLoading() && editor->getDocument().isEmpty() )
+					continue;
+				if ( !editor->getDocument().getFilePath().empty() ||
+					 !editor->getDocument().getLoadingFilePath().empty() ) {
 					json f;
 					f["type"] = "editor";
-					f["path"] = editor->getDocument().getFilePath();
+					f["path"] = editor->getDocument().isLoading()
+									? editor->getDocument().getLoadingFilePath()
+									: editor->getDocument().getFilePath();
 					f["selection"] = editor->getDocument().getSelections().toString();
 					files.emplace_back( f );
 				}
@@ -365,7 +400,8 @@ json saveNode( Node* node ) {
 
 void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, const ProjectDocumentConfig& docConfig,
-							 const ProjectBuildConfiguration& buildConfig ) {
+							 const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
+							 bool sessionSnapshot ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	if ( !FileSystem::fileExists( projectsPath ) )
@@ -389,10 +425,71 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	cfg.setValueI( "document", "line_breaking_column", docConfig.doc.lineBreakingColumn );
 	cfg.setValue( "build", "build_name", buildConfig.buildName );
 	cfg.setValue( "build", "build_type", buildConfig.buildType );
+	cfg.setValue( "build", "run_name", buildConfig.runName );
 	cfg.setValue( "nodes", "documents",
 				  saveNode( editorSplitter->getBaseLayout()->getFirstChild() ).dump() );
 	cfg.deleteKey( "files" );
-	cfg.writeFile();
+	if ( onlyIfNeeded ) {
+		IOStreamString stringFile;
+		cfg.writeStream( stringFile );
+		if ( !FileSystem::fileExists( cfg.path() ) ||
+			 MD5::fromString( stringFile.getStream() ) != MD5::fromFile( cfg.path() ) ) {
+			FileSystem::fileWrite( cfg.path(), stringFile.getStream() );
+		}
+	} else {
+		cfg.writeFile();
+	}
+	if ( !sessionSnapshot )
+		return;
+	std::string statePath( projectsPath + "state" );
+	if ( !FileSystem::fileExists( statePath ) && !FileSystem::makeDir( statePath ) )
+		return;
+	std::string projectStatePath( statePath + FileSystem::getOSSlash() + hash.toHexString() );
+	if ( !FileSystem::fileExists( projectStatePath ) && !FileSystem::makeDir( projectStatePath ) )
+		return;
+	FileSystem::dirAddSlashAtEnd( projectStatePath );
+	nlohmann::json j = nlohmann::json::array();
+	std::vector<std::string> fileNames;
+	editorSplitter->forEachDocSharedPtr(
+		[&j, &projectStatePath, &fileNames]( std::shared_ptr<TextDocument> doc ) {
+			if ( !doc->isDirty() )
+				return;
+			nlohmann::json fj;
+			IOStreamString stream;
+			doc->save( stream, true );
+			std::string hash = MD5::fromString( stream.getStream() ).toHexString();
+			std::string cacheFileName = hash + "." + doc->getFilename();
+			std::string cachePath = projectStatePath + cacheFileName;
+			fj["cachepath"] = cachePath;
+			if ( doc->hasFilepath() ) {
+				fj["fspath"] = doc->getFilePath();
+				fj["fsmtime"] = FileInfo( doc->getFilePath() ).getModificationTime();
+				fj["fshash"] = doc->getHashHexString();
+			} else {
+				fj["name"] = doc->getFilename();
+				fj["selection"] = doc->getSelections().toString();
+			}
+			j.push_back( std::move( fj ) );
+			fileNames.push_back( cacheFileName );
+			if ( !FileSystem::fileExists( cachePath ) ||
+				 MD5::fromFile( cachePath ) != MD5::fromString( stream.getStream() ) ) {
+				FileSystem::fileWrite( cachePath, stream.getStream() );
+			}
+		} );
+	std::string stateFileName( "state.json" );
+	fileNames.push_back( stateFileName );
+	std::string projectStateFilePath( projectStatePath + stateFileName );
+	if ( j.size() != 0 ) {
+		std::string stateString( j.dump( 2 ) );
+		if ( MD5::fromFile( projectStateFilePath ) != MD5::fromString( stateString ) )
+			FileSystem::fileWrite( projectStateFilePath, stateString );
+	} else if ( FileSystem::fileExists( projectStateFilePath ) ) {
+		FileSystem::fileRemove( projectStateFilePath );
+	}
+	auto curFiles = FileSystem::filesGetInPath( projectStatePath );
+	for ( const auto& file : curFiles )
+		if ( std::find( fileNames.begin(), fileNames.end(), file ) == fileNames.end() )
+			FileSystem::fileRemove( projectStatePath + file );
 }
 
 static void countTotalEditors( json j, size_t& curTotal ) {
@@ -426,17 +523,27 @@ void AppConfig::editorLoadedCounter( ecode::App* app ) {
 }
 
 void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
-							   UITabWidget* curTabWidget, ecode::App* app ) {
+							   UITabWidget* curTabWidget, ecode::App* app,
+							   const std::vector<SessionSnapshotFile>& sessionSnapshotFiles ) {
 	if ( j["type"] == "tabwidget" ) {
 		Int64 currentPage = j["current_page"];
 		size_t totalToLoad = j["files"].size();
 		for ( const auto& file : j["files"] ) {
 			if ( !file.contains( "type" ) || file["type"] == "editor" ) {
 				std::string path( file["path"] );
-				if ( !FileSystem::fileExists( path ) ) {
+				auto snapshotSaveIt = std::find_if(
+					sessionSnapshotFiles.begin(), sessionSnapshotFiles.end(),
+					[&path]( const SessionSnapshotFile& file ) { return file.fspath == path; } );
+
+				SessionSnapshotFile snapshotFile;
+				if ( snapshotSaveIt != sessionSnapshotFiles.end() )
+					snapshotFile = *snapshotSaveIt;
+
+				if ( !FileSystem::fileExists( path ) && snapshotFile.cachePath.empty() ) {
 					editorLoadedCounter( app );
-					return;
+					continue;
 				}
+
 				TextRanges selection( TextRanges::fromString( file["selection"] ) );
 				UITab* tab = nullptr;
 				if ( ( tab = editorSplitter->isDocumentOpen( path, false, true ) ) != nullptr ) {
@@ -459,17 +566,37 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 				} else {
 					editorSplitter->loadAsyncFileFromPathInNewTab(
 						path,
-						[this, curTabWidget, selection, totalToLoad, currentPage,
-						 app]( UICodeEditor* editor, const std::string& ) {
+						[this, curTabWidget, selection, totalToLoad, currentPage, app, path,
+						 snapshotFile]( UICodeEditor* editor, const std::string& ) {
 							if ( !editor->getDocument().getSelection().isValid() ||
 								 editor->getDocument().getSelection() ==
 									 TextRange( { 0, 0 }, { 0, 0 } ) ) {
 								editor->getDocument().setSelection( selection );
 								editor->scrollToCursor();
 							}
+
 							if ( curTabWidget->getTabCount() == totalToLoad )
 								curTabWidget->setTabSelected( eeclamp<Int32>(
 									currentPage, 0, curTabWidget->getTabCount() - 1 ) );
+
+							if ( !snapshotFile.cachePath.empty() ) {
+								TextDocument& doc = editor->getDocument();
+								auto diskFileInfo = doc.getFileInfo();
+								TextDocument cachedDoc;
+								cachedDoc.loadFromFile( snapshotFile.cachePath );
+								doc.selectAll();
+								doc.textInput( cachedDoc.getText() );
+								doc.setSelection( selection );
+								doc.resetUndoRedo();
+								doc.setDirtyUntilSave();
+								editor->scrollToCursor();
+								if ( !FileSystem::fileExists( path ) ) {
+									app->createDocDoesNotExistsInFSAlert( editor );
+								} else if ( diskFileInfo.getModificationTime() >
+											snapshotFile.fsmtime ) {
+									app->createDocDirtyAlert( editor, false );
+								}
+							}
 
 							editorLoadedCounter( app );
 						},
@@ -493,9 +620,9 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 		if ( nullptr == splitter )
 			return;
 
-		loadDocuments( editorSplitter, j["first"], curTabWidget, app );
+		loadDocuments( editorSplitter, j["first"], curTabWidget, app, sessionSnapshotFiles );
 		UITabWidget* tabWidget = splitter->getLastWidget()->asType<UITabWidget>();
-		loadDocuments( editorSplitter, j["last"], tabWidget, app );
+		loadDocuments( editorSplitter, j["last"], tabWidget, app, sessionSnapshotFiles );
 
 		splitter->setSplitPartition( StyleSheetLength( j["split"] ) );
 	}
@@ -503,7 +630,7 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 
 void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, ProjectDocumentConfig& docConfig,
-							 ecode::App* app ) {
+							 ecode::App* app, bool sessionSnapshot ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	MD5::Result hash = MD5::fromString( projectFolder );
@@ -534,8 +661,43 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 		ProjectBuildConfiguration prjCfg;
 		prjCfg.buildName = cfg.getValue( "build", "build_name", "" );
 		prjCfg.buildType = cfg.getValue( "build", "build_type", "" );
+		prjCfg.runName = cfg.getValue( "build", "run_name", "" );
 		app->getProjectBuildManager()->setConfig( prjCfg );
 	}
+
+	std::vector<SessionSnapshotFile> sessionSnapshotFiles;
+	if ( sessionSnapshot ) {
+		std::string projectStatePath( projectsPath + "state" + FileSystem::getOSSlash() +
+									  hash.toHexString() + FileSystem::getOSSlash() +
+									  "state.json" );
+		if ( FileSystem::fileExists( projectStatePath ) ) {
+			std::string stateStr;
+			FileSystem::fileGet( projectStatePath, stateStr );
+			json j;
+			try {
+				j = json::parse( stateStr );
+				if ( !j.is_discarded() && j.is_array() ) {
+					for ( const auto& jobj : j ) {
+						SessionSnapshotFile snapshotFile;
+						snapshotFile.cachePath = jobj.value( "cachepath", "" );
+						if ( snapshotFile.cachePath.empty() )
+							continue;
+						snapshotFile.fspath = jobj.value( "fspath", "" );
+						snapshotFile.fsmtime = jobj.value( "fsmtime", 0 );
+						snapshotFile.fshash = jobj.value( "fshash", "" );
+						snapshotFile.name = jobj.value( "name", "" );
+						snapshotFile.selection = jobj.value( "selection", "" );
+						sessionSnapshotFiles.emplace_back( std::move( snapshotFile ) );
+					}
+				}
+			} catch ( const json::exception& e ) {
+				Log::error( "AppConfig::loadProject: error loading project state: %s", e.what() );
+			}
+		}
+	}
+
+	UITabWidget* curTabWidget =
+		editorSplitter->tabWidgetFromWidget( editorSplitter->getCurWidget() );
 
 	if ( cfg.keyValueExists( "nodes", "documents" ) ) {
 		json j;
@@ -543,15 +705,32 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 			j = json::parse( cfg.getValue( "nodes", "documents" ) );
 		} catch ( const json::exception& e ) {
 			Log::error( "AppConfig::loadProject: error loading project: %s", e.what() );
-			return;
 		}
-		if ( j.is_discarded() )
-			return;
+		if ( !j.is_discarded() ) {
+			editorsToLoad = countTotalEditors( j );
+			loadDocuments( editorSplitter, j, curTabWidget, app, sessionSnapshotFiles );
+		}
+	}
 
-		editorsToLoad = countTotalEditors( j );
-		UITabWidget* curTabWidget =
-			editorSplitter->tabWidgetFromWidget( editorSplitter->getCurWidget() );
-		loadDocuments( editorSplitter, j, curTabWidget, app );
+	for ( const auto& snapshotFile : sessionSnapshotFiles ) {
+		if ( !snapshotFile.fspath.empty() || snapshotFile.name.empty() ||
+			 snapshotFile.cachePath.empty() )
+			continue;
+
+		editorSplitter->loadAsyncFileFromPathInNewTab(
+			snapshotFile.cachePath,
+			[snapshotFile]( UICodeEditor* editor, const std::string& ) {
+				TextDocument& doc = editor->getDocument();
+				auto selection = TextRange::fromString( snapshotFile.selection );
+				doc.setDefaultFileName( snapshotFile.name );
+				doc.changeFilePath( snapshotFile.name );
+				doc.setDirtyUntilSave();
+				doc.setSelection( selection );
+				doc.resetUndoRedo();
+				doc.setDirtyUntilSave();
+				editor->scrollToCursor();
+			},
+			curTabWidget );
 	}
 }
 

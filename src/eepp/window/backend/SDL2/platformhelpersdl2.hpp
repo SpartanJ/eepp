@@ -12,6 +12,10 @@ class EE_API PlatformHelperSDL2 : public PlatformHelper {
 
 	bool openURL( const std::string& url );
 
+	char* iconv( const char* tocode, const char* fromcode, const char* inbuf, size_t inbytesleft );
+
+	void iconvFree( char* buf );
+
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	void* getActivity();
 

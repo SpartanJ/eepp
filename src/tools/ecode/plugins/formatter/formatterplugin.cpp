@@ -442,7 +442,11 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 	}
 
 	std::string cmd( formatter.command );
-	String::replaceAll( cmd, "$FILENAME", "\"" + path + "\"" );
+	std::string pathstr( "\"" + path + "\"" );
+	String::replaceAll( cmd, "$FILENAME", pathstr );
+	String::replaceAll( cmd, "${file_path}", pathstr );
+	String::replaceAll( cmd, "$PROJECTPATH", mPluginManager->getWorkspaceFolder() );
+	String::replaceAll( cmd, "${project_root}", mPluginManager->getWorkspaceFolder() );
 	Process process;
 	if ( process.create( cmd ) ) {
 		std::string data;

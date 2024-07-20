@@ -16,6 +16,9 @@ using namespace EE::UI::Models;
 
 namespace ecode {
 
+using GlobMatch = std::pair<std::string, bool>; // where string is the glob and bool true
+												// indicates that it's inverted / negated
+
 class ProjectSearch {
   public:
 	struct ResultData {
@@ -28,6 +31,8 @@ class ProjectSearch {
 			Int64 start{ 0 };
 			Int64 end{ 0 };
 			bool selected{ true };
+			std::vector<std::string> captures;
+			std::shared_ptr<TextDocument> openDoc;
 		};
 		std::string file;
 		std::vector<Result> results;
@@ -190,9 +195,14 @@ class ProjectSearch {
 
 		bool isResultFromSymbolReference() const { return mResultFromSymbolReference; }
 
+		void setResultFromLuaPattern( bool ref ) { mResultFromLuaPattern = ref; }
+
+		bool isResultFromLuaPattern() const { return mResultFromLuaPattern; }
+
 	  protected:
 		Result mResult;
 		bool mResultFromSymbolReference{ false };
+		bool mResultFromLuaPattern{ false };
 	};
 
 	static std::shared_ptr<ResultModel> asModel( const Result& result ) {
@@ -202,13 +212,17 @@ class ProjectSearch {
 	static void
 	find( const std::vector<std::string> files, const std::string& string, ResultCb result,
 		  bool caseSensitive, bool wholeWord = false,
-		  const TextDocument::FindReplaceType& type = TextDocument::FindReplaceType::Normal );
+		  const TextDocument::FindReplaceType& type = TextDocument::FindReplaceType::Normal,
+		  const std::vector<GlobMatch>& pathFilters = {}, std::string basePath = "",
+		  std::vector<std::shared_ptr<TextDocument>> openDocs = {} );
 
 	static void
 	find( const std::vector<std::string> files, std::string string,
 		  std::shared_ptr<ThreadPool> pool, ResultCb result, bool caseSensitive,
 		  bool wholeWord = false,
-		  const TextDocument::FindReplaceType& type = TextDocument::FindReplaceType::Normal );
+		  const TextDocument::FindReplaceType& type = TextDocument::FindReplaceType::Normal,
+		  const std::vector<GlobMatch>& pathFilters = {}, std::string basePath = "",
+		  std::vector<std::shared_ptr<TextDocument>> openDocs = {} );
 };
 
 } // namespace ecode

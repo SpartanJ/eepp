@@ -26,6 +26,10 @@ PluginManager::~PluginManager() {
 	unsubscribeFileSystemListener();
 }
 
+bool PluginManager::isClosing() const {
+	return mClosing;
+}
+
 void PluginManager::registerPlugin( const PluginDefinition& def ) {
 	mDefinitions[def.id] = def;
 }
@@ -493,6 +497,11 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 			if ( plugin )
 				plugin->removeReadyCallback( cb.second );
 		}
+	} );
+	win->on( Event::KeyDown, [win]( const Event* event ) {
+		const KeyEvent* kevent = event->asKeyEvent();
+		if ( kevent->getKeyCode() == EE::Window::KEY_ESCAPE )
+			win->close();
 	} );
 	win->center();
 	return win;

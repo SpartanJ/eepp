@@ -7,16 +7,18 @@ namespace EE { namespace UI { namespace Doc {
 
 class EE_API TextDocumentLine {
   public:
-	TextDocumentLine( const String& text ) : mText( text ) { updateHash(); }
+	enum Flags { AllAscii = 1 << 0 };
+
+	TextDocumentLine( const String& text ) : mText( text ) { updateState(); }
 
 	void setText( String&& text ) {
 		mText = std::move( text );
-		updateHash();
+		updateState();
 	}
 
 	void setText( const String& text ) {
 		mText = text;
-		updateHash();
+		updateState();
 	}
 
 	const String& getText() const { return mText; }
@@ -29,17 +31,17 @@ class EE_API TextDocumentLine {
 
 	void insertChar( const unsigned int& pos, const String::StringBaseType& tchar ) {
 		mText.insert( mText.begin() + pos, tchar );
-		updateHash();
+		updateState();
 	}
 
 	void append( const String& text ) {
 		mText.append( text );
-		updateHash();
+		updateState();
 	}
 
 	void append( const String::StringBaseType& code ) {
 		mText.append( code );
-		updateHash();
+		updateState();
 	}
 
 	String substr( std::size_t pos = 0, std::size_t n = String::StringType::npos ) const {
@@ -48,7 +50,7 @@ class EE_API TextDocumentLine {
 
 	String::Iterator insert( String::Iterator p, const String::StringBaseType& c ) {
 		auto it = mText.insert( p, c );
-		updateHash();
+		updateState();
 		return it;
 	}
 
@@ -65,8 +67,12 @@ class EE_API TextDocumentLine {
   protected:
 	String mText;
 	String::HashType mHash;
+	Uint32 mFlags{ 0 };
 
-	void updateHash() { mHash = mText.getHash(); }
+	void updateState() {
+		mHash = mText.getHash();
+		mFlags = mText.isAscii() ? AllAscii : 0;
+	}
 };
 
 }}} // namespace EE::UI::Doc

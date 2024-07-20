@@ -48,7 +48,7 @@ void UIBackgroundDrawable::draw( const Vector2f& position, const Sizef& size ) {
 	if ( hasRadius() && mVertexBuffer ) {
 		bool isPolySmooth = GLi->isPolygonSmooth();
 
-		if ( mSmooth )
+		if ( mSmooth && !isPolySmooth )
 			GLi->polygonSmooth( true );
 
 		mVertexBuffer->bind();

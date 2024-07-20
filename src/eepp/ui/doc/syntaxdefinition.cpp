@@ -75,12 +75,41 @@ bool SyntaxDefinition::hasExtensionPriority() const {
 	return mHasExtensionPriority;
 }
 
-void SyntaxDefinition::setExtensionPriority( bool hasExtensionPriority ) {
+SyntaxDefinition& SyntaxDefinition::setExtensionPriority( bool hasExtensionPriority ) {
 	mHasExtensionPriority = hasExtensionPriority;
+	return *this;
 }
 
 UnorderedMap<std::string, std::string> SyntaxDefinition::getSymbolNames() const {
 	return mSymbolNames;
+}
+
+bool SyntaxDefinition::isCaseInsensitive() const {
+	return mCaseInsensitive;
+}
+
+SyntaxDefinition& SyntaxDefinition::setCaseInsensitive( bool caseInsensitive ) {
+	mCaseInsensitive = caseInsensitive;
+	return *this;
+}
+
+FoldRangeType SyntaxDefinition::getFoldRangeType() const {
+	return mFoldRangeType;
+}
+
+SyntaxDefinition& SyntaxDefinition::setFoldRangeType( FoldRangeType foldRangeType ) {
+	mFoldRangeType = foldRangeType;
+	return *this;
+}
+
+std::vector<std::pair<Int64, Int64>> SyntaxDefinition::getFoldBraces() const {
+	return mFoldBraces;
+}
+
+SyntaxDefinition&
+SyntaxDefinition::setFoldBraces( const std::vector<std::pair<Int64, Int64>>& foldBraces ) {
+	mFoldBraces = foldBraces;
+	return *this;
 }
 
 const std::vector<SyntaxPattern>& SyntaxDefinition::getPatterns() const {
@@ -96,7 +125,7 @@ const UnorderedMap<std::string, SyntaxStyleType>& SyntaxDefinition::getSymbols()
 }
 
 SyntaxStyleType SyntaxDefinition::getSymbol( const std::string& symbol ) const {
-	auto it = mSymbols.find( symbol );
+	auto it = mSymbols.find( mCaseInsensitive ? String::toLower( symbol ) : symbol );
 	if ( it != mSymbols.end() )
 		return it->second;
 	return SyntaxStyleEmpty();

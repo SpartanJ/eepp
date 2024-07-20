@@ -1040,7 +1040,7 @@ void UIWidget::popState( const Uint32& State, bool emitEvent ) {
 	}
 }
 
-Uint32 UIWidget::onFocus() {
+Uint32 UIWidget::onFocus( NodeFocusReason reason ) {
 	pushState( UIState::StateFocusWithin );
 
 	Node* parent = mParentNode;
@@ -1050,7 +1050,7 @@ Uint32 UIWidget::onFocus() {
 		parent = parent->getParent();
 	}
 
-	return UINode::onFocus();
+	return UINode::onFocus( reason );
 }
 
 Uint32 UIWidget::onFocusLoss() {
@@ -1369,7 +1369,9 @@ std::vector<PropertyId> UIWidget::getPropertiesImplemented() const {
 			 PropertyId::BorderBottomLeftRadius,
 			 PropertyId::BorderBottomRightRadius,
 			 PropertyId::BorderSmooth,
-			 PropertyId::BackgroundSmooth };
+			 PropertyId::BackgroundSmooth,
+			 PropertyId::Focusable,
+			 PropertyId::ForegroundSmooth };
 }
 
 std::string UIWidget::getPropertyString( const std::string& property ) const {
@@ -1522,6 +1524,12 @@ std::string UIWidget::getPropertyString( const PropertyDefinition* propertyDef,
 			return mBackground
 					   ? ( mBackground->getBackgroundDrawable().isSmooth() ? "true" : "false" )
 					   : "false";
+		case PropertyId::ForegroundSmooth:
+			return mBackground
+					   ? ( mForeground->getBackgroundDrawable().isSmooth() ? "true" : "false" )
+					   : "false";
+		case PropertyId::Focusable:
+			return isTabFocusable() ? "true" : "false";
 		default:
 			break;
 	}
@@ -1922,8 +1930,10 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			setBorderEnabled( true )->setSmooth( attribute.asBool() );
 			break;
 		case PropertyId::BackgroundSmooth:
-			setBackgroundFillEnabled( true )->getBackgroundDrawable().setSmooth(
-				attribute.asBool() );
+			setBackgroundFillEnabled( true )->setSmooth( attribute.asBool() );
+			break;
+		case PropertyId::ForegroundSmooth:
+			setForegroundFillEnabled( true )->setSmooth( attribute.asBool() );
 			break;
 		case PropertyId::Focusable:
 			if ( attribute.asBool() ) {
@@ -2063,6 +2073,22 @@ void UIWidget::setTabStop() {
 	mFlags |= UI_TAB_STOP;
 }
 
+void UIWidget::unsetTabStop() {
+	mFlags &= ~UI_TAB_STOP;
+}
+
+bool UIWidget::isTabFocusable() const {
+	return ( mFlags & UI_TAB_FOCUSABLE ) != 0;
+}
+
+void UIWidget::setTabFocusable() {
+	mFlags |= UI_TAB_FOCUSABLE;
+}
+
+void UIWidget::unsetTabFocusable() {
+	mFlags &= ~UI_TAB_FOCUSABLE;
+}
+
 UIWidget* UIWidget::getPrevWidget() const {
 	UIWidget* found = NULL;
 	UIWidget* possible = NULL;
@@ -2192,7 +2218,7 @@ void UIWidget::onFocusPrevWidget() {
 	if ( !isTabStop() ) {
 		Node* node = getPrevTabWidget();
 		if ( NULL != node ) {
-			node->setFocus();
+			node->setFocus( NodeFocusReason::Tab );
 			sendCommonEvent( Event::OnTabNavigate );
 		}
 	} else {
@@ -2204,7 +2230,7 @@ void UIWidget::onFocusNextWidget() {
 	if ( !isTabStop() ) {
 		Node* node = getNextTabWidget();
 		if ( NULL != node ) {
-			node->setFocus();
+			node->setFocus( NodeFocusReason::Tab );
 			sendCommonEvent( Event::OnTabNavigate );
 		}
 	} else {

@@ -95,7 +95,7 @@ class EE_API UIWindow : public UIWidget {
 
 	virtual bool hide();
 
-	void showWhenReady();
+	UIWindow* showWhenReady();
 
 	virtual void scheduledUpdate( const Time& time );
 
@@ -107,7 +107,7 @@ class EE_API UIWindow : public UIWidget {
 
 	const Uint8& getBaseAlpha() const;
 
-	void setTitle( const String& Text );
+	UIWindow* setTitle( const String& Text );
 
 	String getTitle() const;
 

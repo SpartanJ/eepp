@@ -38,15 +38,15 @@ UIDropDownList::UIDropDownList( const std::string& tag ) :
 	mListBox->setParent( this );
 
 	mListBox->addEventListener( Event::OnWidgetFocusLoss,
-								cb::Make1( this, &UIDropDownList::onListBoxFocusLoss ) );
+								[this] ( auto event ) { onListBoxFocusLoss( event ); } );
 	mListBox->addEventListener( Event::OnItemSelected,
-								cb::Make1( this, &UIDropDownList::onItemSelected ) );
+								[this] ( auto event ) { onItemSelected( event ); } );
 	mListBox->addEventListener( Event::OnItemClicked,
-								cb::Make1( this, &UIDropDownList::onItemClicked ) );
+								[this] ( auto event ) { onItemClicked( event ); } );
 	mListBox->addEventListener( Event::OnItemKeyDown,
-								cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
-	mListBox->addEventListener( Event::KeyDown, cb::Make1( this, &UIDropDownList::onItemKeyDown ) );
-	mListBox->addEventListener( Event::OnClear, cb::Make1( this, &UIDropDownList::onWidgetClear ) );
+								[this] ( auto event ) { onItemKeyDown( event ); } );
+	mListBox->addEventListener( Event::KeyDown, [this] ( auto event ) { onItemKeyDown( event ); } );
+	mListBox->addEventListener( Event::OnClear, [this] ( auto event ) { onWidgetClear( event ); } );
 	mListBox->addEventListener( Event::OnClose, [this]( const Event* ) { mListBox = nullptr; } );
 	mListBox->addEventListener( Event::OnSelectionChanged, [this]( auto ) {
 		if ( !mListBox->hasSelection() )
@@ -239,6 +239,7 @@ void UIDropDownList::setStyleConfig( const StyleConfig& styleConfig ) {
 
 void UIDropDownList::onWidgetClear( const Event* ) {
 	setText( "" );
+	sendCommonEvent( Event::OnClear );
 }
 
 void UIDropDownList::onItemKeyDown( const Event* Event ) {

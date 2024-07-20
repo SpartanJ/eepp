@@ -115,8 +115,13 @@ void LSPClientServerManager::tryRunServer( const std::shared_ptr<TextDocument>& 
 					runLSPServer( id, rlsp, rootPath, languagesSupported );
 				if ( ( server = serverUP.get() ) ) {
 					mClients[id] = std::move( serverUP );
-					if ( !mLSPWorkspaceFolder.uri.empty() )
-						server->didChangeWorkspaceFolders( { mLSPWorkspaceFolder }, {}, true );
+					if ( server->isRunning() ) {
+						if ( !mLSPWorkspaceFolder.uri.empty() )
+							server->didChangeWorkspaceFolders( { mLSPWorkspaceFolder }, {}, true );
+					} else {
+						Log::debug( "LSP Server: %s failed to initialize.",
+									server->getDefinition().name );
+					}
 				}
 			} else {
 				server = clientIt->second.get();
@@ -466,8 +471,7 @@ const std::vector<LSPDefinition>& LSPClientServerManager::getLSPs() const {
 	return mLSPs;
 }
 
-LSPDefinition
-LSPClientServerManager::getLSPForLang( const std::string& lang ) const {
+LSPDefinition LSPClientServerManager::getLSPForLang( const std::string& lang ) const {
 	for ( const auto& lsp : mLSPs ) {
 		if ( lsp.language == lang )
 			return lsp;

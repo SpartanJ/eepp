@@ -8,6 +8,7 @@
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/window/engine.hpp>
@@ -184,8 +185,12 @@ static LSPURIAndServer getServerURIFromTextDocumentURI( LSPClientServerManager& 
 	return { uri, manager.getOneLSPClientServer( uri ) };
 }
 
-static void sanitizeCommand( std::string& cmd ) {
-	String::replaceAll( cmd, "$NPROC", String::toString( Sys::getCPUCount() ) );
+static void sanitizeCommand( std::string& cmd, const std::string& workspaceFolder ) {
+	std::string cpucount( String::toString( Sys::getCPUCount() ) );
+	String::replaceAll( cmd, "$NPROC", cpucount );
+	String::replaceAll( cmd, "${nproc}", cpucount );
+	String::replaceAll( cmd, "$PROJECTPATH", workspaceFolder );
+	String::replaceAll( cmd, "${project_root}", workspaceFolder );
 }
 
 LSPPositionAndServer getLSPLocationFromJSON( LSPClientServerManager& manager, const json& data ) {
@@ -335,6 +340,34 @@ PluginRequestHandle LSPClientPlugin::processTextDocumentSymbol( const PluginMess
 			[server, uri, handler]() { server->documentSymbols( uri, handler ); } );
 	} else {
 		server->documentSymbols( uri, handler );
+	}
+
+	return { uri.toString() };
+}
+
+PluginRequestHandle LSPClientPlugin::processFoldingRanges( const PluginMessage& msg ) {
+	if ( !msg.isRequest() || msg.type != PluginMessageType::FoldingRanges ||
+		 msg.format != PluginMessageFormat::JSON || !msg.asJSON().contains( "uri" ) )
+		return {};
+
+	URI uri( msg.asJSON().value( "uri", "" ) );
+	if ( uri.empty() )
+		return {};
+
+	LSPClientServer* server = mClientManager.getOneLSPClientServer( uri );
+	if ( !server || !server->getCapabilities().foldingRangeProvider )
+		return {};
+
+	auto handler = [uri, this]( const PluginIDType& id, const std::vector<LSPFoldingRange>& res ) {
+		mManager->sendResponse( this, PluginMessageType::FoldingRanges,
+								PluginMessageFormat::FoldingRanges, &res, id );
+	};
+
+	if ( Engine::instance()->isMainThread() ) {
+		server->getThreadPool()->run(
+			[server, uri, handler]() { server->documentFoldingRange( uri, handler ); } );
+	} else {
+		server->documentFoldingRange( uri, handler );
 	}
 
 	return { uri.toString() };
@@ -500,20 +533,27 @@ void LSPClientPlugin::createListView( UICodeEditor* editor, const std::shared_pt
 		lv->addClass( "editor_listview" );
 		auto pos =
 			editor->getRelativeScreenPosition( editor->getDocumentRef()->getSelection().start() );
-		lv->setModel( model );
-		lv->setSelection( model->index( 0, 0 ) );
-		Float colWidth = lv->getMaxColumnContentWidth( 0 ) + PixelDensity::dpToPx( 4 );
-		lv->setColumnWidth( 0, colWidth );
-		lv->setPixelsSize(
-			{ colWidth, std::min( lv->getContentSize().y, lv->getRowHeight() * 8 ) } );
 		lv->setPixelsPosition( { pos.x, pos.y + editor->getLineHeight() } );
 		if ( !lv->getParent()->getLocalBounds().contains(
 				 lv->getLocalBounds().setPosition( lv->getPixelsPosition() ) ) ) {
 			lv->setPixelsPosition( { pos.x, pos.y - lv->getPixelsSize().getHeight() } );
 		}
 		lv->setVisible( true );
+		lv->getVerticalScrollBar()->reloadStyle( true, true, true );
+		lv->setAutoExpandOnSingleColumn( false );
+		lv->setModel( model );
+		Float height = std::min( lv->getContentSize().y, lv->getRowHeight() * 8 );
+		Float colWidth = lv->getMaxColumnContentWidth( 0 ) + PixelDensity::dpToPx( 4 );
+		bool needsVScroll = lv->getContentSize().y > lv->getRowHeight() * 8;
+		Float width = colWidth + lv->getPixelsPadding().getWidth() +
+					  ( needsVScroll ? lv->getVerticalScrollBar()->getPixelsSize().getWidth() : 0 );
+		lv->setPixelsSize( { width, height } );
+		lv->setColumnWidth( 0, colWidth );
+		lv->setScrollMode( needsVScroll ? ScrollBarMode::Auto : ScrollBarMode::AlwaysOff,
+						   ScrollBarMode::AlwaysOff );
 		if ( onCreateCb )
 			onCreateCb( lv );
+		lv->setSelection( model->index( 0 ) );
 		lv->setFocus();
 		Uint32 focusCb = lv->getUISceneNode()->getUIEventDispatcher()->addFocusEventCallback(
 			[lv]( const auto&, Node* focus, Node* ) {
@@ -689,6 +729,8 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 								return server->getCapabilities().workspaceSymbolProvider;
 							case PluginCapability::TextDocumentSymbol:
 								return server->getCapabilities().documentSymbolProvider;
+							case PluginCapability::FoldingRange:
+								return server->getCapabilities().foldingRangeProvider;
 							default: {
 							}
 						}
@@ -734,6 +776,10 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 			processDiagnosticsCodeAction( msg );
 			break;
 		}
+		case PluginMessageType::FoldingRanges: {
+			processFoldingRanges( msg );
+			break;
+		}
 		default:
 			break;
 	}
@@ -770,6 +816,24 @@ void LSPClientPlugin::load( PluginManager* pluginManager ) {
 		}
 	}
 
+	std::unordered_map<std::string, std::unordered_map<std::string, std::string>> lspPatternsLangId;
+
+	for ( auto& lsp : lsps ) {
+		if ( lsp.shareProcessWithOtherDefinition && !lsp.usesLSP.empty() ) {
+			for ( const auto& ptrn : lsp.filePatterns )
+				lspPatternsLangId[lsp.usesLSP][ptrn] = lsp.language;
+		}
+	}
+
+	for ( auto& lsp : lsps ) {
+		auto ptrnsLangIds = lspPatternsLangId.find( lsp.name );
+		if ( ptrnsLangIds != lspPatternsLangId.end() ) {
+			lsp.languageIdsForFilePatterns.merge( ptrnsLangIds->second );
+			for ( const auto& ptrn : lsp.filePatterns )
+				lsp.languageIdsForFilePatterns[ptrn] = lsp.language;
+		}
+	}
+
 	mClientManager.load( this, pluginManager, std::move( lsps ) );
 
 	subscribeFileSystemListener();
@@ -784,7 +848,7 @@ void LSPClientPlugin::load( PluginManager* pluginManager ) {
 	}
 }
 
-static std::string parseCommand( nlohmann::json cmd ) {
+static std::string parseCommand( nlohmann::json cmd, const std::string& workspaceFolder ) {
 	std::string command;
 	if ( cmd.is_string() ) {
 		command = cmd.get<std::string>();
@@ -800,7 +864,7 @@ static std::string parseCommand( nlohmann::json cmd ) {
 				command = cmd[platform].get<std::string>();
 		}
 	}
-	sanitizeCommand( command );
+	sanitizeCommand( command, workspaceFolder );
 	return command;
 }
 
@@ -971,14 +1035,15 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 						lspR.shareProcessWithOtherDefinition = obj["share_process"].get<bool>();
 					}
 					if ( obj.contains( "command" ) ) {
-						lspR.command = parseCommand( obj["command"] );
+						lspR.command =
+							parseCommand( obj["command"], mManager->getWorkspaceFolder() );
 					}
 					if ( !obj.value( "command_parameters", "" ).empty() ) {
 						std::string cmdParam( obj.value( "command_parameters", "" ) );
 						if ( !cmdParam.empty() && cmdParam.front() != ' ' )
 							cmdParam = " " + cmdParam;
 						lspR.commandParameters += cmdParam;
-						sanitizeCommand( lspR.commandParameters );
+						sanitizeCommand( lspR.commandParameters, mManager->getWorkspaceFolder() );
 					}
 					if ( obj.contains( "host" ) ) {
 						lspR.host = obj.value( "host", "" );
@@ -1010,7 +1075,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 				if ( tlsp.name == use ) {
 					lsp.language = obj["language"];
 					foundTlsp = true;
-					lsp.command = parseCommand( tlsp.command );
+					lsp.command = parseCommand( tlsp.command, mManager->getWorkspaceFolder() );
 					lsp.name = tlsp.name;
 					lsp.rootIndicationFileNames = tlsp.rootIndicationFileNames;
 					lsp.url = tlsp.url;
@@ -1031,12 +1096,19 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			}
 		} else {
 			lsp.language = obj["language"];
-			lsp.command = parseCommand( obj["command"] );
+			lsp.command = parseCommand( obj["command"], mManager->getWorkspaceFolder() );
 			lsp.name = obj["name"];
 			lsp.url = obj.value( "url", "" );
 			lsp.host = obj.value( "host", "" );
 			lsp.port = obj.value( "port", 0 );
 			lsp.shareProcessWithOtherDefinition = obj.value( "share_process", false );
+			if ( obj.contains( "vars" ) && obj.is_object() ) {
+				auto vars = obj["vars"];
+				for ( const auto& var : vars.items() ) {
+					if ( var.value().is_string() )
+						lsp.cmdVars[var.key()] = var.value().get<std::string>();
+				}
+			}
 		}
 
 		lsp.commandParameters = obj.value( "command_parameters", lsp.commandParameters );
@@ -1055,8 +1127,8 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 				lsp.rootIndicationFileNames.push_back( fn );
 		}
 
-		sanitizeCommand( lsp.command );
-		sanitizeCommand( lsp.commandParameters );
+		sanitizeCommand( lsp.command, mManager->getWorkspaceFolder() );
+		sanitizeCommand( lsp.commandParameters, mManager->getWorkspaceFolder() );
 
 		tryAddEnv( obj, lsp );
 
@@ -1140,14 +1212,15 @@ void LSPClientPlugin::renameSymbol( UICodeEditor* editor ) {
 								 "New name (caution: not all references may be replaced)" ) );
 	msgBox->setTitle( editor->getUISceneNode()->i18n( "rename", "Rename" ) );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
-	TextPosition pos = editor->getDocument().getSelection().start();
-	msgBox->getTextInput()->setText(
-		editor->getDocument().getWordInPosition( editor->getDocument().getSelection().start() ) );
+	auto selection = editor->getDocument().getSelection();
+	TextPosition selStart = selection.start();
+	msgBox->getTextInput()->setText( editor->getDocument().getWordInPosition(
+		selection.hasSelection() ? selection.end() : selStart ) );
 	msgBox->getTextInput()->getDocument().selectAll();
 	msgBox->showWhenReady();
-	msgBox->addEventListener( Event::OnConfirm, [this, pos, editor, msgBox]( const Event* ) {
+	msgBox->addEventListener( Event::OnConfirm, [this, selStart, editor, msgBox]( const Event* ) {
 		String newName( msgBox->getTextInput()->getText() );
-		mClientManager.renameSymbol( editor->getDocumentRef()->getURI(), pos, newName );
+		mClientManager.renameSymbol( editor->getDocumentRef()->getURI(), selStart, newName );
 		msgBox->closeWindow();
 	} );
 	msgBox->addEventListener( Event::OnClose, [this]( const Event* ) {
@@ -1229,6 +1302,7 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 
 	listeners.push_back(
 		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
+			mEditorDocs[editor] = editor->getDocumentRef().get();
 			mClientManager.run( editor->getDocumentRef() );
 		} ) );
 
@@ -1236,6 +1310,15 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 		editor->addEventListener( Event::OnCursorPosChange, [this, editor]( const Event* ) {
 			if ( mSymbolInfoShowing )
 				hideTooltip( editor );
+		} ) );
+
+	listeners.push_back(
+		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* ) {
+			TextDocument* oldDoc = mEditorDocs[editor];
+			TextDocument* newDoc = editor->getDocumentRef().get();
+			Lock l( mDocMutex );
+			mDocs.erase( oldDoc );
+			mEditorDocs[editor] = newDoc;
 		} ) );
 
 	mEditors.insert( { editor, listeners } );
@@ -1421,6 +1504,8 @@ void LSPClientPlugin::hideTooltip( UICodeEditor* editor ) {
 		tooltip->setUsingCustomStyling( mOldUsingCustomStyling );
 		tooltip->setDontAutoHideOnMouseMove( mOldDontAutoHideOnMouseMove );
 		tooltip->setBackgroundColor( mOldBackgroundColor );
+		tooltip->setWordWrap( mOldWordWrap );
+		tooltip->setMaxWidthEq( mOldMaxWidth );
 	}
 }
 
@@ -1430,19 +1515,23 @@ TextPosition currentMouseTextPosition( UICodeEditor* editor ) {
 }
 
 void LSPClientPlugin::tryHideTooltip( UICodeEditor* editor, const Vector2i& position ) {
-	TextPosition cursorPosition = editor->resolveScreenPosition( position.asFloat() );
 	if ( !mCurrentHover.range.isValid() ||
-		 ( mCurrentHover.range.isValid() && !mCurrentHover.range.contains( cursorPosition ) ) )
+		 ( mCurrentHover.range.isValid() &&
+		   !mCurrentHover.range.contains( editor->resolveScreenPosition( position.asFloat() ) ) ) )
 		hideTooltip( editor );
 }
 
 void LSPClientPlugin::displayTooltip( UICodeEditor* editor, const LSPHover& resp,
 									  const Vector2f& position ) {
-	editor->setTooltipText( resp.contents[0].value );
 	// HACK: Gets the old font style to restore it when the tooltip is hidden
 	UITooltip* tooltip = editor->createTooltip();
 	if ( tooltip == nullptr )
 		return;
+	mOldWordWrap = tooltip->isWordWrap();
+	mOldMaxWidth = tooltip->getMaxWidthEq();
+	tooltip->setWordWrap( true );
+	tooltip->setMaxWidthEq( "50vw" );
+	editor->setTooltipText( resp.contents[0].value );
 	mOldTextStyle = tooltip->getFontStyle();
 	mOldTextAlign = tooltip->getHorizontalAlign();
 	mOldDontAutoHideOnMouseMove = tooltip->dontAutoHideOnMouseMove();
@@ -1530,7 +1619,7 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 		},
 		mHoverDelay, tag );
 	tryHideTooltip( editor, position );
-	return editor->getTooltip() && editor->getTooltip()->isVisible();
+	return editor->getTooltip() && editor->getTooltip()->isVisible() && mSymbolInfoShowing;
 }
 
 void LSPClientPlugin::onFocusLoss( UICodeEditor* editor ) {

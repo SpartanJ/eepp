@@ -9,6 +9,7 @@
 #include <eepp/scene/actions/actions.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
+#include <eepp/system/process.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiconsole.hpp>
@@ -403,15 +404,20 @@ void UIConsole::privPushText( String&& str ) {
 }
 
 Int32 UIConsole::linesOnScreen() {
+	auto lh = getLineHeight();
+	if ( lh == 0.f )
+		return 0;
 	return static_cast<Int32>(
-		( ( getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom ) / getLineHeight() ) -
-		1 );
+		( ( getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom ) / lh ) - 1 );
 }
 
 Int32 UIConsole::maxLinesOnScreen() {
-	return static_cast<Int32>(
-		( ( getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom ) / getLineHeight() ) +
-		3 );
+	auto lh = getLineHeight();
+	if ( lh == 0.f )
+		return 1;
+	auto maxLines =
+		( ( getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom ) / lh ) + 3;
+	return static_cast<Int32>( eemax( 1.f, maxLines ) );
 }
 
 void UIConsole::draw() {
@@ -572,6 +578,27 @@ void UIConsole::createDefaultCommands() {
 	addCommand( "gettexturememory", [this]( const auto& ) { cmdGetTextureMemory(); } );
 	addCommand( "hide", [this]( const auto& ) { hide(); } );
 	addCommand( "grep", [this]( const auto& params ) { cmdGrep( params ); } );
+	addCommand( "arch", [this]( const auto& ) { privPushText( Sys::getOSArchitecture() ); } );
+	addCommand( "pwd", [this]( const auto& ) {
+		privPushText( FileSystem::getCurrentWorkingDirectory() );
+	} );
+	addCommand( "env", [this]( const auto& ) {
+		auto envVars = Sys::getEnvironmentVariables();
+		for ( const auto& env : envVars )
+			privPushText( env.first + "=" + env.second );
+	} );
+	addCommand( "exec", [this]( const std::vector<String>& params ) {
+		auto executeArr = params;
+		executeArr.erase( executeArr.begin() );
+		std::string execute = String::join( executeArr );
+		Process p;
+		p.create( execute, Process::CombinedStdoutStderr | Process::getDefaultOptions() );
+		std::string buffer;
+		p.readAllStdOut( buffer, Seconds( 1 ) );
+		auto lines = String::split( buffer );
+		for ( const auto& line : lines )
+			privPushText( line );
+	} );
 }
 
 void UIConsole::cmdClear() {
@@ -992,8 +1019,8 @@ void UIConsole::resetCursor() {
 	mBlinkTimer.restart();
 }
 
-Uint32 UIConsole::onFocus() {
-	UIWidget::onFocus();
+Uint32 UIConsole::onFocus( NodeFocusReason reason ) {
+	UIWidget::onFocus( reason );
 
 	resetCursor();
 

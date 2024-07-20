@@ -184,13 +184,13 @@ its submodules, in order to achieve this easily you can simply clone with:
 
 ## UI Screenshots
 
-### ecode - Text Editor
+### ecode - Code Editor
 
-Text editor inspired in [lite](https://github.com/rxi/lite).
+[ecode](https://github.com/SpartanJ/ecode/) is a code editor inspired in [lite](https://github.com/rxi/lite).
 It's using the newest pure CSS theme based on the default [Plasma](https://kde.org/plasma-desktop)
-dark theme: Breeze Dark.
+dark theme: [Breeze Dark](https://github.com/KDE/breeze).
 
-![ecode - Text Editor](https://cdn.ensoft.dev/eepp-demos/screenshots/ecode.png)
+![ecode - Code Editor](https://cdn.ensoft.dev/eepp-demos/screenshots/ecode.png)
 
 ### UI Editor
 
@@ -342,10 +342,11 @@ Here is a small example on how the CSS looks like:
 
 Since eepp supports emscripten you can take a quick look on some of the examples, demos and tools that
 the library currently provides. Please be aware that you'll find some differences based on the limitations
-that emscripten have at the moment (no access to the file system, no custom cursors, etc).
+that emscripten have at the moment (no access to the file system, no custom cursors, etc) and also
+demos are not optimized for size and they're bigger than they should be.
 Note: Please use a modern browser with good WebGL and WASM support (Chrome/ium 70+ or Firefox 80+).
 
-* **[ecode - Text Editor](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=ecode.js)**
+* **[ecode - Code Editor](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=ecode.js)**
 
 * **[UI Editor](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-UIEditor.js)**
 
@@ -362,6 +363,30 @@ Note: Please use a modern browser with good WebGL and WASM support (Chrome/ium 7
 * **[Sprites example](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-sprites.js)**
 
 * **[Full Test](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-test.js)**
+
+### 7GUIs Examples
+
+[7GUIs](https://7guis.github.io/7guis/) is known as a "GUI Programming Benchmark" that it's used to
+compare different GUI libraries and explore each library approach to GUI programming. All the 7 tasks
+proposed in 7GUIs has been implemented for eepp. The tasks are very good representative of what can
+be achieved with eepp GUI and also are very useful to demonstrate how to implement different tasks
+with the library.
+
+The 7GUIs are composed by the following tasks:
+
+* [Counter](https://7guis.github.io/7guis/tasks#counter): [Demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-7guis-counter.js) and [code implementation](https://github.com/SpartanJ/eepp/blob/develop/src/examples/7guis/counter/counter.cpp).
+
+* [Temperature Converter](https://7guis.github.io/7guis/tasks#temp): [Demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-7guis-temperature-converter.js) and [code implementation](https://github.com/SpartanJ/eepp/blob/develop/src/examples/7guis/temperature_converter/temperature_converter.cpp).
+
+* [Flight Booker](https://7guis.github.io/7guis/tasks#flight): [Demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-7guis-flight-booker.js) and [code implementation](https://github.com/SpartanJ/eepp/blob/develop/src/examples/7guis/flight_booker/flight_booker.cpp).
+
+* [Timer](https://7guis.github.io/7guis/tasks#timer): [Demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-7guis-timer.js) and [code implementation](https://github.com/SpartanJ/eepp/blob/develop/src/examples/7guis/timer/timer.cpp).
+
+* [CRUD](https://7guis.github.io/7guis/tasks#crud): [Demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-7guis-crud.js) and [code implementation](https://github.com/SpartanJ/eepp/blob/develop/src/examples/7guis/crud/crud.cpp).
+
+* [Circle Drawer](https://7guis.github.io/7guis/tasks#circle): [Demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-7guis-circle-drawer.js) and [code implementation](https://github.com/SpartanJ/eepp/blob/develop/src/examples/7guis/circle_drawer/circle_drawer.cpp).
+
+* [Cells](https://7guis.github.io/7guis/tasks#cells): [Demo](https://cdn.ensoft.dev/eepp-demos/demo-fs.html?run=eepp-7guis-cells.js) and [code implementation](https://github.com/SpartanJ/eepp/tree/develop/src/examples/7guis/cells).
 
 ## How to build it
 
@@ -400,30 +425,26 @@ That's it. That will build the whole project.
 ### Windows
 
 You have two options: build with [Visual Studio](https://visualstudio.microsoft.com/)
-or with [MinGW](https://sourceforge.net/projects/mingw-w64/).
+or with [MinGW](https://github.com/skeeto/w64devkit/releases/latest).
 To be able to build the project with any of these options first you will need to
 generate the project files with [premake4 or premake5](https://premake.github.io/download).
 Then you will need to add the binary file to any of the executable paths defined
-in `PATH` ( or add one, or use it from a local path ). Also you will need to
-install the prebuild binaries and development libraries of [SDL2](http://libsdl.org/download-2.0.php)
-and [openal-soft](http://kcat.strangesoft.net/openal.html#download).
+in `PATH` ( or add one, or use it from a local path ).
 Download *Visual Studio* or *MinGW* files depending on your needs.
 
 #### Visual Studio
 
 You will need to use premake5 and run:
 
-`premake5.exe vs2022`
+`premake5.exe --windows-vc-build vs2022`
 
 Then the project files should be found in `make/windows/`. A complete solution
 and all the project will be available. Having installed everything, you'll be
 able to build the *Visual Studio* solution as any other project.
 
-If you are very new to programming there's an alternative to build the project
-without external dependencies, in order to do that you need to generate the
-project files with the command:
-
-`premake5.exe --windows-vc-build vs2022`
+Using the commnad line argument `--windows-vc-build` will download the SDL2 dependency automatically
+and add the paths to the build process to link against it without the need to download manually any
+external dependency.
 
 Then just build the solution in Visual Studio or run `MSBuild` manually in a
 console:
@@ -437,12 +458,29 @@ _VS2022 Community Edition_ the path usually is:
 
 #### MinGW
 
-`premake5.exe gmake2`
+Windows MinGW builds are being produced and tested with [w64devkit](https://github.com/skeeto/w64devkit/releases/latest) distribution.
+MSYS is currently not officially supported given some issues found on the build process (but it's possible to build with some extra steps).
 
- Then just build the project located in `make/windows/` with `mingw32-make.exe` or `mingw64-make.exe` (depending on your target architecture)
- or any equivalent:
+If you're using w64devkit you'll have to [download](https://github.com/skeeto/w64devkit/releases/latest) it and extract it, we will assume that it's extracted at `C:\w64devkit`.
 
-`mingw32-make.exe -C make\windows`
+Execute `C:\w64devkit\w64devkit.exe` as an administrator (`right click` -> `Run as administrator` ).
+
+Then go to the `eepp` cloned repository directory and run:
+
+`premake5.exe --windows-mingw-build gmake2`
+
+`--windows-mingw-build` will automatically download and link external dependencies (SDL2).
+
+Then just build the project located in `make/windows/` with `mingw32-make.exe` or any equivalent:
+
+`mingw32-make.exe -C make\windows config=release_x86_64`
+
+To build a debug build run:
+
+`mingw32-make.exe -C make\windows config=debug_x86_64`
+
+And then make sure to copy the `SDL2.dll` file located at `src/thirdparty/SDL2-2.XX.X/x86_64-w64-mingw32/bin/SDL2.dll` to `bin`.
+If for some reason `eepp.dll` (or `eepp-debug.dll`) hasn't being copied automatically you can copy them from `libs/windows/x86_64/` to `bin`.
 
 ### macOS
 

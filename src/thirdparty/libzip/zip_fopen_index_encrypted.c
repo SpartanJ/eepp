@@ -31,7 +31,7 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+
 
 #include <errno.h>
 #include <stdio.h>
@@ -41,7 +41,7 @@
 
 static struct zip_file *_zip_file_new(struct zip *za);
 
-
+
 
 ZIP_EXTERN struct zip_file *
 zip_fopen_index_encrypted(struct zip *za, zip_uint64_t fileno, int flags,
@@ -154,7 +154,7 @@ zip_fopen_index_encrypted(struct zip *za, zip_uint64_t fileno, int flags,
     return zf;
 }
 
-
+
 
 static struct zip_file *
 _zip_file_new(struct zip *za)

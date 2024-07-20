@@ -178,30 +178,28 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 								 const ModelIndex& index ) {
 	widget->setParent( rowWidget );
 	widget->unsetFlags( UI_AUTO_SIZE );
-	widget->setClipType( ClipType::ContentBox );
+	widget->setClipType( mDisableCellCliping ? ClipType::None : ClipType::ContentBox );
 	widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	widget->setTextAlign( UI_HALIGN_LEFT );
 	widget->setCurIndex( index );
 	if ( index.column() == (Int64)getModel()->treeColumn() ) {
 		bindNavigationClick( widget );
-		widget->addEventListener( Event::MouseClick, [this]( const Event* event ) {
+		widget->onClick( [this]( const MouseEvent* mouseEvent ) {
 			if ( mSingleClickNavigation )
 				return;
-			auto mouseEvent = static_cast<const MouseEvent*>( event );
 			UIWidget* icon = mouseEvent->getNode()->asType<UIPushButton>()->getExtraInnerWidget();
-			if ( icon ) {
-				Vector2f pos( icon->convertToNodeSpace( mouseEvent->getPosition().asFloat() ) );
-				if ( pos >= Vector2f::Zero && pos <= icon->getPixelsSize() ) {
-					ConditionalLock l( getModel() != nullptr,
-									   getModel() ? &getModel()->resourceMutex() : nullptr );
-					auto idx =
-						mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
-					if ( getModel()->rowCount( idx ) ) {
-						auto& data = getIndexMetadata( idx );
-						data.open = !data.open;
-						createOrUpdateColumns( false );
-						onOpenTreeModelIndex( idx, data.open );
-					}
+			if ( nullptr == icon )
+				return;
+			Vector2f pos( icon->convertToNodeSpace( mouseEvent->getPosition().asFloat() ) );
+			if ( pos >= Vector2f::Zero && pos <= icon->getPixelsSize() ) {
+				ConditionalLock l( getModel() != nullptr,
+								   getModel() ? &getModel()->resourceMutex() : nullptr );
+				auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
+				if ( getModel()->rowCount( idx ) ) {
+					auto& data = getIndexMetadata( idx );
+					data.open = !data.open;
+					createOrUpdateColumns( false );
+					onOpenTreeModelIndex( idx, data.open );
 				}
 			}
 		} );
@@ -258,8 +256,14 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 		}
 
 		Variant txt( getModel()->data( index, ModelRole::Display ) );
-		if ( txt.isValid() )
-			cell->setText( txt.toString() );
+		if ( txt.isValid() ) {
+			if ( txt.is( Variant::Type::String ) )
+				cell->setText( txt.asString() );
+			else if ( txt.is( Variant::Type::StringPtr ) )
+				cell->setText( txt.asStringPtr() );
+			else
+				cell->setText( txt.toString() );
+		}
 
 		bool hasChilds = false;
 
@@ -737,6 +741,14 @@ void UITreeView::onOpenTreeModelIndex( const ModelIndex& index, bool open ) {
 	ModelEvent event( getModel(), index, this,
 					  open ? ModelEventType::OpenTree : ModelEventType::CloseTree );
 	sendEvent( &event );
+}
+
+bool UITreeView::getDisableCellCliping() const {
+	return mDisableCellCliping;
+}
+
+void UITreeView::setDisableCellCliping( bool disableCellCliping ) {
+	mDisableCellCliping = disableCellCliping;
 }
 
 void UITreeView::onSortColumn( const size_t& ) {

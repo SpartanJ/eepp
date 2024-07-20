@@ -64,18 +64,6 @@ bool Translator::loadNodes( pugi::xml_node node, std::string lang ) {
 	return true;
 }
 
-static size_t countLines( const std::string_view& text ) {
-	const char* startPtr = text.data();
-	const char* endPtr = text.data() + text.size();
-	size_t count = 0;
-	if ( startPtr != endPtr ) {
-		count = 1 + *startPtr == '\n' ? 1 : 0;
-		while ( ++startPtr && startPtr != endPtr )
-			count += ( '\n' == *startPtr ) ? 1 : 0;
-	}
-	return count;
-}
-
 bool Translator::loadFromFile( const std::string& path, std::string lang ) {
 	if ( FileSystem::fileExists( path ) ) {
 		lang = lang.size() == 2
@@ -91,10 +79,6 @@ bool Translator::loadFromFile( const std::string& path, std::string lang ) {
 			Log::error( "Couldn't load i18n file: %s", path.c_str() );
 			Log::error( "Error description: %s", result.description() );
 			Log::error( "Error offset: %d", result.offset );
-			std::string file;
-			FileSystem::fileGet( path, file );
-			Log::error( "Error line: %d",
-						countLines( std::string_view{ file }.substr( 0, result.offset ) ) + 1 );
 		}
 	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string packPath( path );
@@ -116,8 +100,6 @@ bool Translator::loadFromString( const std::string& string, std::string lang ) {
 		Log::error( "Couldn't load i18n file from string: %s", string.c_str() );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );
-		Log::error( "Error line: %d",
-					countLines( std::string_view{ string }.substr( 0, result.offset ) ) + 1 );
 	}
 	return false;
 }
@@ -132,10 +114,6 @@ bool Translator::loadFromMemory( const void* buffer, Int32 bufferSize, std::stri
 		Log::error( "Couldn't load i18n file from buffer" );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );
-		Log::error( "Error line: %d",
-					countLines( std::string_view{ (const char*)buffer, (size_t)bufferSize }.substr(
-						0, result.offset ) ) +
-						1 );
 	}
 	return false;
 }

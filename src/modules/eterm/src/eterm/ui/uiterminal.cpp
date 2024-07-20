@@ -512,13 +512,13 @@ void UITerminal::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
-Uint32 UITerminal::onFocus() {
+Uint32 UITerminal::onFocus( NodeFocusReason reason ) {
 	getUISceneNode()->getWindow()->startTextInput();
 	updateScreenPos();
 	mTerm->setPosition( mScreenPosi.asFloat() );
 	mTerm->setFocus( true );
 	invalidateDraw();
-	return UIWidget::onFocus();
+	return UIWidget::onFocus( reason );
 }
 
 Uint32 UITerminal::onFocusLoss() {

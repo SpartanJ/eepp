@@ -1,5 +1,5 @@
-#include "ecode.hpp"
 #include "uiwelcomescreen.hpp"
+#include "ecode.hpp"
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/window.hpp>
 
@@ -112,9 +112,10 @@ static const auto LAYOUT = R"xml(
 			</vbox>
 		</vbox>
 		<vbox class="right" lw="0" lh="wc" lw8="0.5" lg="center">
+			<button id="create-new" text="@string(new_file, New File)" />
+			<button id="create-new-terminal" text="@string(new_terminal, New Terminal)" />
 			<button id="open-folder" text="@string(open_a_folder, Open a Folder)" />
 			<button id="open-file" text="@string(open_a_file, Open a File)" />
-			<button id="create-new-terminal" text="@string(new_terminal, New Terminal)" />
 			<button id="recent-folders" text="@string(recent_folders_ellipsis, Recent Folders...)" />
 			<button id="recent-files" text="@string(recent_files_ellipsis, Recent Files...)" />
 			<button id="plugin-manager-open" text="@string(plugin_manager, Plugin Manager)" />
@@ -140,6 +141,7 @@ static const auto LAYOUT = R"xml(
 			</vbox>
 		</vbox>
 	</hbox>
+	<CheckBox id="disable_welcome_screen" text="@string(disable_welcome_screen, Disable Welcome Screen)" lg="bottom|center_horizontal" margin-bottom="8dp" />
 </RelativeLayout>
 )xml";
 
@@ -199,8 +201,8 @@ UIWelcomeScreen::UIWelcomeScreen( App* app ) :
 			bindBtn( id );
 	};
 
-	bindBtns( { "open-folder", "open-file", "create-new-terminal", "check-for-updates",
-				"plugin-manager-open", "keybindings" } );
+	bindBtns( { "create-new", "open-folder", "open-file", "create-new-terminal",
+				"check-for-updates", "plugin-manager-open", "keybindings" } );
 
 	auto recentFolders = find( "recent-folders" );
 	if ( !mApp->getRecentFolders().empty() ) {
@@ -237,6 +239,11 @@ UIWelcomeScreen::UIWelcomeScreen( App* app ) :
 	find<UITextView>( "open_folder_shortcut" )->setText( mApp->getKeybind( "open-folder" ) );
 
 	find<UITextView>( "open_file_shortcut" )->setText( mApp->getKeybind( "open-file" ) );
+
+	auto welcomeDisabledChk = find<UICheckBox>( "disable_welcome_screen" );
+	welcomeDisabledChk->on( Event::OnValueChange, [welcomeDisabledChk, this]( auto ) {
+		mApp->getConfig().ui.welcomeScreen = !welcomeDisabledChk->isChecked();
+	} );
 }
 
 } // namespace ecode

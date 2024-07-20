@@ -28,7 +28,7 @@ MapLayerProperties::MapLayerProperties( MapLayer* Map, RefreshLayerListCb Cb ) :
 		->setMinWindowSize( 500, 500 );
 
 	mUIWindow->addEventListener( Event::OnWindowClose,
-								 cb::Make1( this, &MapLayerProperties::onWindowClose ) );
+								 [this] ( auto event ) { onWindowClose( event ); } );
 	mUIWindow->setTitle( "Layer Properties" );
 
 	Int32 InitialY = 16;
@@ -47,7 +47,7 @@ MapLayerProperties::MapLayerProperties( MapLayer* Map, RefreshLayerListCb Cb ) :
 		->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle );
 	mUIInput->setText( mLayer->getName() );
 	mUIInput->addEventListener( Event::OnPressEnter,
-								cb::Make1( this, &MapLayerProperties::onOKClick ) );
+								[this] ( auto event ) { onOKClick( event ); } );
 
 	UITextView* TxtBox = UITextView::New();
 	TxtBox->setFontStyle( Text::Shadow )
@@ -72,7 +72,7 @@ MapLayerProperties::MapLayerProperties( MapLayer* Map, RefreshLayerListCb Cb ) :
 		mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4,
 		mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
 	OKButton->addEventListener( Event::MouseClick,
-								cb::Make1( this, &MapLayerProperties::onOKClick ) );
+								[this] ( auto event ) { onOKClick( event ); } );
 	OKButton->setText( "OK" );
 	OKButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 
@@ -83,7 +83,7 @@ MapLayerProperties::MapLayerProperties( MapLayer* Map, RefreshLayerListCb Cb ) :
 					   OKButton->getPosition().y );
 	CancelButton->setIcon( sceneNode->findIconDrawable( "cancel", PixelDensity::dpToPxI( 16 ) ) );
 	CancelButton->addEventListener( Event::MouseClick,
-									cb::Make1( this, &MapLayerProperties::onCancelClick ) );
+									[this] ( auto event ) { onCancelClick( event ); } );
 	CancelButton->setText( "Cancel" );
 	CancelButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 
@@ -107,7 +107,7 @@ MapLayerProperties::MapLayerProperties( MapLayer* Map, RefreshLayerListCb Cb ) :
 	AddButton->setIcon( sceneNode->findIconDrawable( "add", PixelDensity::dpToPxI( 16 ) ) );
 	AddButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	AddButton->addEventListener( Event::MouseClick,
-								 cb::Make1( this, &MapLayerProperties::onAddCellClick ) );
+								 [this] ( auto event ) { onAddCellClick( event ); } );
 
 	if ( NULL == AddButton->getIcon()->getDrawable() )
 		AddButton->setText( "+" );
@@ -119,7 +119,7 @@ MapLayerProperties::MapLayerProperties( MapLayer* Map, RefreshLayerListCb Cb ) :
 	RemoveButton->setIcon( sceneNode->findIconDrawable( "remove", PixelDensity::dpToPxI( 16 ) ) );
 	RemoveButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	RemoveButton->addEventListener( Event::MouseClick,
-									cb::Make1( this, &MapLayerProperties::onRemoveCellClick ) );
+									[this] ( auto event ) { onRemoveCellClick( event ); } );
 
 	if ( NULL == RemoveButton->getIcon()->getDrawable() )
 		RemoveButton->setText( "-" );

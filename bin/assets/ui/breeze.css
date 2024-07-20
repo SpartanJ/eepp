@@ -206,6 +206,16 @@ ListView::cell::icon {
 	margin-right: 4dp;
 }
 
+CheckBox,
+RadioButton {
+	text-decoration: none;
+}
+
+CheckBox:focus,
+RadioButton:focus {
+	text-decoration: underline;
+}
+
 CheckBox::active,
 CheckBox::inactive {
 	width: 12dp;
@@ -593,7 +603,6 @@ tab::icon {
 Tab::close {
 	width: 10dp;
 	height: 10dp;
-	border-radius: 5dp;
 	foreground-image: url("data:image/svg,<svg width='16' height='16' viewBox='0 0 16 16'><path fill='#ffffff' fill-rule='evenodd' d='M 2.3432061,13.657206 A 8.0002061,8.0002061 0 1 1 13.657206,2.3432061 8.0002061,8.0002061 0 0 1 2.3432061,13.657206 Z m 3.687,-8.6869999 a 0.75,0.75 0 0 0 -1.06,1.06 l 1.97,1.97 -1.97,1.97 a 0.75,0.75 0 1 0 1.06,1.0599999 l 1.97,-1.9699999 1.97,1.9699999 A 0.75,0.75 0 1 0 11.030206,9.9702061 l -1.9699999,-1.97 1.9699999,-1.97 a 0.75,0.75 0 1 0 -1.0599999,-1.06 l -1.97,1.97 z' /></svg>");
 	foreground-tint: var(--tab-close);
 	foreground-size: 10dp 10dp;
@@ -620,7 +629,7 @@ Window::close {
 	height: 12dp;
 	border-radius: 6dp;
 	background-color: var(--icon-back-hover);
-	foreground-image: poly(line, var(--icon-line-hover), "0dp 0dp, 6dp 6dp"), poly(line, var(--icon-line-hover), "6dp 0dp, 0dp 6dp");
+	foreground-image: poly(line, var(--icon-line-hover), "0dp 0dp, 6dp 6dp", 1dp), poly(line, var(--icon-line-hover), "6dp 0dp, 0dp 6dp", 1dp);
 	foreground-position: 3dp 3dp, 3dp 3dp;
 	transition: all 0.15s;
 }
@@ -634,14 +643,14 @@ Window::maximize {
 	height: 12dp;
 	border-radius: 6dp;
 	background-color: transparent;
-	foreground-image: poly(line, var(--win-icon), "0dp 4dp, 4dp 0dp"), poly(line, var(--win-icon), "4dp 0dp, 8dp 4dp");
+	foreground-image: poly(line, var(--win-icon), "0dp 4dp, 4dp 0dp", 1dp), poly(line, var(--win-icon), "4dp 0dp, 8dp 4dp", 1dp);
 	foreground-position: 2dp 4dp, 2dp 4dp;
 	transition: all 0.15s;
 }
 
 Window::maximize:hover {
 	background-color: var(--icon-back-hover);
-	foreground-image: poly(line, var(--icon-line-hover), "0dp 4dp, 4dp 0dp"), poly(line, var(--icon-line-hover), "4dp 0dp, 8dp 4dp");
+	foreground-image: poly(line, var(--icon-line-hover), "0dp 4dp, 4dp 0dp", 1dp), poly(line, var(--icon-line-hover), "4dp 0dp, 8dp 4dp", 1dp);
 }
 
 Window::minimize {
@@ -649,14 +658,14 @@ Window::minimize {
 	height: 12dp;
 	border-radius: 6dp;
 	background-color: transparent;
-	foreground-image: poly(line, var(--win-icon), "0dp 0dp, 4dp 4dp"), poly(line, var(--win-icon), "4dp 4dp, 8dp 0dp");
+	foreground-image: poly(line, var(--win-icon), "0dp 0dp, 4dp 4dp", 1dp), poly(line, var(--win-icon), "4dp 4dp, 8dp 0dp", 1dp);
 	foreground-position: 2dp 4dp, 2dp 4dp;
 	transition: all 0.15s;
 }
 
 Window::minimize:hover {
 	background-color: var(--icon-back-hover);
-	foreground-image: poly(line, var(--icon-line-hover), "0dp 0dp, 4dp 4dp"), poly(line, var(--icon-line-hover), "4dp 4dp, 8dp 0dp");
+	foreground-image: poly(line, var(--icon-line-hover), "0dp 0dp, 4dp 4dp", 1dp), poly(line, var(--icon-line-hover), "4dp 4dp, 8dp 0dp", 1dp);
 }
 
 Window {
@@ -681,52 +690,54 @@ Window::border::bottom {
 	background-color: var(--back);
 }
 
-DropDownList {
-	foreground-image: poly(line, var(--icon), "-8dp 0dp, -12dp 3dp"), poly(line, var(--icon), "-16dp 0dp, -12dp 3dp");
-	foreground-position-x: right, right;
-	foreground-position-y: center, center;
+DropDownList,
+ComboBox::Button {
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M12 15.6315L20.9679 10.8838L20.0321 9.11619L12 13.3685L3.96788 9.11619L3.0321 10.8838L12 15.6315Z'></path></svg>");
+	foreground-position-x: right 6dp;
+	foreground-position-y: center 1dp;
+	foreground-size: 12dp 16dp;
+	foreground-tint: var(--icon);
 }
 
 DropDownList:hover,
-DropDownList:focus {
-	foreground-image: poly(line, var(--icon-active), "-8dp 0dp, -12dp 3dp"), poly(line, var(--icon-active), "-16dp 0dp, -12dp 3dp");
+DropDownList:focus,
+ComboBox::Button:focus,
+ComboBox::Button:hover {
+	foreground-tint: var(--icon-active);
 }
 
 ComboBox::Button {
 	width: 24dp;
 	height: 16dp;
-	foreground-image: poly(line, var(--icon), "-8dp 0dp, -12dp 3dp"), poly(line, var(--icon), "-16dp 0dp, -12dp 3dp");
-	foreground-position-x: right, right;
-	foreground-position-y: center, center;
-}
-
-ComboBox::Button:focus,
-ComboBox::Button:hover {
-	foreground-image: poly(line, var(--icon-active), "-8dp 0dp, -12dp 3dp"), poly(line, var(--icon-active), "-16dp 0dp, -12dp 3dp");
 }
 
 SpinBox::btndown {
 	width: 16dp;
 	height: 12dp;
-	foreground-image: poly(line, var(--icon), "1dp 4dp, 5dp 7dp"), poly(line, var(--icon), "5dp 7dp, 9dp 4dp");
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M12 15.6315L20.9679 10.8838L20.0321 9.11619L12 13.3685L3.96788 9.11619L3.0321 10.8838L12 15.6315Z'></path></svg>");
+	foreground-position-x: -1dp;
+	foreground-position-y: center -1dp;
+	foreground-size: 12dp 16dp;
+	foreground-tint: var(--icon);
 }
 
-SpinBox::btndown:hover {
-	foreground-image: poly(line, var(--primary), "1dp 4dp, 5dp 7dp"), poly(line, var(--primary), "5dp 7dp, 9dp 4dp");
+SpinBox::btndown:hover,
+SpinBox::btnup:hover {
+	foreground-tint: var(--primary);
 }
 
 SpinBox::btnup {
 	width: 16dp;
 	height: 12dp;
-	foreground-image: poly(line, var(--icon), "1dp 7dp, 5dp 4dp"), poly(line, var(--icon), "5dp 4dp, 9dp 7dp");
-}
-
-SpinBox::btnup:hover {
-	foreground-image: poly(line, var(--primary), "1dp 7dp, 5dp 4dp"), poly(line, var(--primary), "5dp 4dp, 9dp 7dp");
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M12 8.36853L20.9679 13.1162L20.0321 14.8838L12 10.6315L3.96788 14.8838L3.0321 13.1162L12 8.36853Z'></path></svg>");
+	foreground-position-x: -1dp;
+	foreground-position-y: center 1dp;
+	foreground-size: 12dp 16dp;
+	foreground-tint: var(--icon);
 }
 
 MenuBar {
-	height: 24dp;
+	height: 18dp;
 	background-color: var(--back);
 }
 
@@ -743,9 +754,10 @@ PopUpMenu {
 MenuBar::Button {
 	padding-left: 4dp;
 	padding-right: 4dp;
-	min-height: 24dp;
+	min-height: 18dp;
 }
 
+MenuBar::Button:selected,
 MenuBar::Button:hover {
 	background-color: var(--primary);
 }
@@ -820,7 +832,7 @@ Menu::SubMenu::Arrow {
 	width: 16dp;
 	height: 16dp;
 	margin-right: 1dp;
-	foreground-image: poly(line, var(--icon), "5dp 3dp, 10dp 8dp"), poly(line, var(--icon), "5dp 13dp, 10dp 8dp");
+	foreground-image: poly(line, var(--icon), "5dp 3dp, 10dp 8dp", 1dp), poly(line, var(--icon), "5dp 13dp, 10dp 8dp", 1dp);
 }
 
 Menu::Item::icon,
@@ -844,7 +856,7 @@ Menu::CheckBox::icon {
 Menu::CheckBox::icon:selected {
 	border-color: var(--primary);
 	background-image: rectangle(solid, var(--primary));
-	background-size: 70% 70%;
+	background-size: 8dpru 8dpru;
 	background-position: center;
 }
 
@@ -984,7 +996,7 @@ treeview::header::column::arrow-up,
 listview::header::column::arrow-up {
 	width: 16dp;
 	height: 12dp;
-	foreground-image: poly(line, var(--icon), "1dp 4dp, 5dp 7dp"), poly(line, var(--icon), "5dp 7dp, 9dp 4dp");
+	foreground-image: poly(line, var(--icon), "1dp 4dp, 5dp 7dp", 1dp), poly(line, var(--icon), "5dp 7dp, 9dp 4dp", 1dp);
 }
 
 tableview::header::column::arrow-down,
@@ -992,7 +1004,7 @@ treeview::header::column::arrow-down,
 listview::header::column::arrow-down {
 	width: 16dp;
 	height: 12dp;
-	foreground-image: poly(line, var(--icon), "1dp 7dp, 5dp 4dp"), poly(line, var(--icon), "5dp 4dp, 9dp 7dp");
+	foreground-image: poly(line, var(--icon), "1dp 7dp, 5dp 4dp", 1dp), poly(line, var(--icon), "5dp 4dp, 9dp 7dp", 1dp);
 }
 
 ScrollBarMini {
@@ -1078,7 +1090,7 @@ TextInput.table_cell_edit {
 	--primary: #3daee9;
 	--back: #eff0f1;
 	--font: #232627;
-	--font-highlight: #1a5676;
+	--font-highlight: #3daee9;
 	--font-hint: #232627;
 	--button-back: #fcfcfc;
 	--button-border: #b3b4b5;

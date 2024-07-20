@@ -1,5 +1,4 @@
-﻿#include <cstdio>
-#include <eepp/core/debug.hpp>
+﻿#include <eepp/core/debug.hpp>
 #include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
@@ -12,6 +11,7 @@
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
+#include <eepp/window/engine.hpp>
 #include <string>
 
 using namespace std::literals;
@@ -37,7 +37,8 @@ TextDocument::TextDocument( bool verbose ) :
 	mDefaultFileName( "untitled" ),
 	mCleanChangeId( 0 ),
 	mNonWordChars( DEFAULT_NON_WORD_CHARS ),
-	mHighlighter( std::make_unique<SyntaxHighlighter>( this ) ) {
+	mHighlighter( std::make_unique<SyntaxHighlighter>( this ) ),
+	mFoldRangeService( this ) {
 	initializeCommands();
 	reset();
 }
@@ -93,6 +94,7 @@ void TextDocument::reset() {
 	notifySyntaxDefinitionChange();
 	notifyCursorChanged();
 	notifySelectionChanged();
+	notifyDocumentReset();
 }
 
 void TextDocument::resetCursor() {
@@ -102,6 +104,17 @@ void TextDocument::resetCursor() {
 	mLastSelection = 0;
 	notifyCursorChanged();
 	notifySelectionChanged();
+}
+
+String shiftJISToUTF32( const std::string_view& shiftJISString ) {
+	String string;
+	auto* ret = Window::Engine::instance()->getPlatformHelper()->iconv(
+		"UTF-32LE", "SHIFT-JIS", shiftJISString.data(), shiftJISString.size() );
+	if ( ret ) {
+		string = String( reinterpret_cast<String::StringBaseType*>( ret ) );
+		Window::Engine::instance()->getPlatformHelper()->iconvFree( ret );
+	}
+	return string;
 }
 
 static constexpr int codepointSize( TextFormat::Encoding enc ) {
@@ -167,7 +180,9 @@ static String ptrGetLine( char* data, const size_t& size, size_t& position,
 		position++;
 	}
 
-	if ( enc == TextFormat::Encoding::Latin1 )
+	if ( enc == TextFormat::Encoding::Shift_JIS )
+		return shiftJISToUTF32( std::string_view{ data, position } );
+	else if ( enc == TextFormat::Encoding::Latin1 )
 		return String::fromLatin1( data, position );
 
 	return String( data, position );
@@ -258,6 +273,10 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 							std::search( lineBuffer.begin(), lineBuffer.end(), BINARY_STR.data(),
 										 BINARY_STR.data() + BINARY_STR.size() ) !=
 							lineBuffer.end();
+
+						if ( mMightBeBinary && mEncoding == TextFormat::Encoding::UTF16BE ) {
+							mEncoding = TextFormat::Encoding::UTF8;
+						}
 					}
 
 					if ( mLineEnding == TextFormat::LineEnding::CRLF && lineBufferSize > 1 &&
@@ -375,6 +394,11 @@ bool TextDocument::hasSyntaxDefinition() const {
 	return !mSyntaxDefinition.getPatterns().empty();
 }
 
+const SyntaxDefinition& TextDocument::guessSyntax() const {
+	String header( getText( { { 0, 0 }, positionOffset( { 0, 0 }, 128 ) } ) );
+	return SyntaxDefinitionManager::instance()->find( mFilePath, header, mHAsCpp );
+}
+
 void TextDocument::resetSyntax() {
 	String header( getText( { { 0, 0 }, positionOffset( { 0, 0 }, 128 ) } ) );
 	std::string oldDef = mSyntaxDefinition.getLSPName();
@@ -434,10 +458,7 @@ bool TextDocument::isBOM() const {
 }
 
 void TextDocument::notifyDocumentMoved( const std::string& path ) {
-	mFilePath = path;
-	mFileURI = URI( "file://" + mFilePath );
-	mFileRealPath = FileInfo::isLink( mFilePath ) ? FileInfo( FileInfo( mFilePath ).linksTo() )
-												  : FileInfo( mFilePath );
+	changeFilePath( path, false );
 	notifyDocumentMoved();
 }
 
@@ -479,19 +500,14 @@ TextDocument::LoadStatus TextDocument::loadFromFile( const std::string& path ) {
 		std::string pathFix( path );
 		Pack* pack = PackManager::instance()->exists( pathFix );
 		if ( NULL != pack ) {
-			mFilePath = pathFix;
-			mFileRealPath = FileInfo();
-			mFileURI = URI( "file://" + mFilePath );
+			changeFilePath( pathFix, false );
 			return loadFromPack( pack, pathFix );
 		}
 	}
 
 	IOStreamFile file( path, "rb" );
 	auto ret = loadFromStream( file, path, true );
-	mFilePath = path;
-	mFileURI = URI( "file://" + mFilePath );
-	mFileRealPath = FileInfo::isLink( mFilePath ) ? FileInfo( FileInfo( mFilePath ).linksTo() )
-												  : FileInfo( mFilePath );
+	changeFilePath( path, false );
 	resetSyntax();
 	mLoading = false;
 	if ( !mLoadingAsync )
@@ -682,6 +698,7 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 				MD5::update( md5Ctx, bom, sizeof( bom ) );
 				break;
 			}
+			case TextFormat::Encoding::Shift_JIS:
 			case TextFormat::Encoding::Latin1:
 				break;
 		}
@@ -757,6 +774,15 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 						latin1.push_back( utf32[i] );
 				stream.write( latin1.c_str(), latin1.size() );
 				MD5::update( md5Ctx, latin1.data(), latin1.size() );
+				break;
+			}
+			case TextFormat::Encoding::Shift_JIS: {
+				auto* ret = Window::Engine::instance()->getPlatformHelper()->iconv(
+					"SHIFT-JIS", "UTF-8", text.c_str(), text.size() );
+				auto len = strlen( ret );
+				stream.write( ret, len );
+				MD5::update( md5Ctx, ret, len );
+				Window::Engine::instance()->getPlatformHelper()->iconvFree( ret );
 				break;
 			}
 			case TextFormat::Encoding::UTF8: {
@@ -947,7 +973,7 @@ const TextRanges& TextDocument::getSelections() const {
 	return mSelection;
 }
 
-std::vector<TextRange> TextDocument::getSelectionsSorted() const {
+TextRanges TextDocument::getSelectionsSorted() const {
 	auto selections( mSelection );
 	for ( auto& selection : selections )
 		selection.normalize();
@@ -966,11 +992,15 @@ const TextRange& TextDocument::getSelection() const {
 }
 
 TextDocumentLine& TextDocument::line( const size_t& index ) {
-	return mLines[index];
+	static TextDocumentLine safeLine = TextDocumentLine( "" );
+	eeASSERT( index < mLines.size() );
+	return index >= mLines.size() ? safeLine : mLines[index];
 }
 
 const TextDocumentLine& TextDocument::line( const size_t& index ) const {
-	return mLines[index];
+	static TextDocumentLine safeLine = TextDocumentLine( "" );
+	eeASSERT( index < mLines.size() );
+	return index >= mLines.size() ? safeLine : mLines[index];
 }
 
 size_t TextDocument::linesCount() const {
@@ -979,10 +1009,6 @@ size_t TextDocument::linesCount() const {
 
 const TextDocumentLine& TextDocument::getCurrentLine() const {
 	return mLines[getSelection().start().line()];
-}
-
-std::vector<TextDocumentLine>& TextDocument::lines() {
-	return mLines;
 }
 
 bool TextDocument::hasSelection() const {
@@ -1076,6 +1102,11 @@ String::StringBaseType TextDocument::getChar( const TextPosition& position ) con
 	return mLines[pos.line()][pos.column()];
 }
 
+String::StringBaseType
+TextDocument::getCharFromUnsanitizedPosition( const TextPosition& position ) const {
+	return mLines[position.line()][position.column()];
+}
+
 TextPosition TextDocument::insert( const size_t& cursorIdx, const TextPosition& position,
 								   const String& text ) {
 	mUndoStack.clearRedoStack();
@@ -1128,8 +1159,8 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 	mUndoStack.pushRemove( undoStack, cursorIdx, { position, cursor }, time );
 
 	if ( linesAdd > 0 ) {
-		mHighlighter->moveHighlight( position.line(), linesAdd );
-		notifiyDocumenLineMove( position.line(), linesAdd );
+		mHighlighter->moveHighlight( position.line(), position.line(), linesAdd );
+		notifiyDocumenLineMove( position.line(), position.line(), linesAdd );
 	}
 
 	notifyTextChanged( { { position, position }, text } );
@@ -1195,7 +1226,8 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 	mUndoStack.pushSelection( undoStack, cursorIdx, mSelection, time );
 	mUndoStack.pushInsert( undoStack, getText( range ), cursorIdx, range.start(), time );
 
-	size_t linesRemoved = 0;
+	Int64 linesRemoved = 0;
+	bool deletedAcrossNewLine = false;
 
 	// First delete all the lines in between the first and last one.
 	if ( range.start().line() + 1 < range.end().line() ) {
@@ -1246,9 +1278,10 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 		firstLine.setText( beforeSelection + afterSelection );
 		mLines.erase( mLines.begin() + range.end().line() );
 		linesRemoved += 1;
+		deletedAcrossNewLine = true;
 	}
 
-	if ( lines().empty() )
+	if ( mLines.empty() )
 		mLines.emplace_back( String( "\n" ) );
 
 	if ( mSelection.size() > 1 ) {
@@ -1275,8 +1308,11 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 	}
 
 	if ( linesRemoved > 0 ) {
-		mHighlighter->moveHighlight( range.start().line(), -linesRemoved );
-		notifiyDocumenLineMove( range.start().line(), -linesRemoved );
+		mHighlighter->moveHighlight( deletedAcrossNewLine ? range.start().line()
+														  : range.end().line(),
+									 range.end().line(), -linesRemoved );
+		notifiyDocumenLineMove( originalRange.start().line(), originalRange.end().line(),
+								-linesRemoved );
 	}
 
 	notifyTextChanged( { originalRange, "" } );
@@ -1285,15 +1321,19 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 	return linesRemoved;
 }
 
-TextPosition TextDocument::positionOffset( TextPosition position, int columnOffset ) const {
-	position = sanitizePosition( position );
+TextPosition TextDocument::positionOffset( TextPosition position, int columnOffset,
+										   bool sanitizeInput ) const {
+	if ( sanitizeInput )
+		position = sanitizePosition( position );
 	position.setColumn( position.column() + columnOffset );
 	while ( position.line() > 0 && position.column() < 0 ) {
 		position.setLine( position.line() - 1 );
-		position.setColumn( eemax<Int64>( 0, position.column() + mLines[position.line()].size() ) );
+		position.setColumn(
+			eemax<Int64>( 0, position.column() + (Int64)mLines[position.line()].size() ) );
 	}
 	while ( position.line() < (Int64)mLines.size() - 1 &&
-			position.column() > (Int64)eemax<Int64>( 0, mLines[position.line()].size() - 1 ) ) {
+			position.column() >
+				(Int64)eemax<Int64>( 0, (Int64)mLines[position.line()].size() - 1 ) ) {
 		position.setColumn( position.column() - mLines[position.line()].size() );
 		position.setLine( position.line() + 1 );
 	}
@@ -1460,6 +1500,10 @@ TextRange TextDocument::getDocRange() const {
 	return { startOfDoc(), endOfDoc() };
 }
 
+TextRange TextDocument::getLineRange( Int64 line ) const {
+	return { startOfLine( { line, 0 } ), endOfLine( { line, 0 } ) };
+}
+
 void TextDocument::deleteTo( const size_t& cursorIdx, int offset ) {
 	eeASSERT( cursorIdx < mSelection.size() );
 	BoolScopedOpOptional op( !mDoingTextInput, mDoingTextInput, true );
@@ -1529,15 +1573,20 @@ std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
 	if ( !mAutoCloseBrackets || 1 != text.size() )
 		return {};
 
-	size_t pos = 0xFFFFFFFF;
+	size_t pos = std::numeric_limits<size_t>::max();
+	bool isClose = false;
+	bool isSame = false;
 	for ( size_t i = 0; i < mAutoCloseBracketsPairs.size(); i++ ) {
-		if ( text[0] == mAutoCloseBracketsPairs[i].first ) {
+		if ( text[0] == mAutoCloseBracketsPairs[i].first ||
+			 text[0] == mAutoCloseBracketsPairs[i].second ) {
 			pos = i;
+			isClose = text[0] == mAutoCloseBracketsPairs[i].second;
+			isSame = mAutoCloseBracketsPairs[i].first == mAutoCloseBracketsPairs[i].second;
 			break;
 		}
 	}
 
-	if ( pos == 0xFFFFFFFF )
+	if ( pos == std::numeric_limits<size_t>::max() )
 		return {};
 
 	std::vector<bool> inserted;
@@ -1554,7 +1603,18 @@ std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
 
 			if ( sel.start().column() < (Int64)line( sel.start().line() ).size() ) {
 				auto ch = line( sel.start().line() ).getText()[sel.start().column()];
-				if ( ch == closeChar )
+
+				if ( isClose && ch == closeChar &&
+					 ( !isSame ||
+					   ( sel.start().column() - 1 >= 0 &&
+						 line( sel.start().line() ).getText()[sel.start().column() - 1] ==
+							 text[0] ) ) ) {
+					deleteTo( i, 1 );
+					inserted.push_back( false );
+					continue;
+				}
+
+				if ( isClose && !isSame )
 					mustClose = false;
 			}
 
@@ -1613,6 +1673,32 @@ void TextDocument::textInput( const String& text, bool mightBeInteresting ) {
 
 	if ( mightBeInteresting )
 		mLastCursorChangeWasInteresting = true;
+}
+
+void TextDocument::pasteText( String&& text ) {
+	if ( text.find_first_of( '\r' ) != String::InvalidPos )
+		String::replaceAll( text, "\r", "" );
+
+	if ( std::count( text.begin(), text.end(), '\n' ) ==
+			 static_cast<Int64>( mSelection.size() ) - 1 &&
+		 text.back() != '\n' ) {
+		std::vector<String> textLines = text.split( '\n', true, false );
+		if ( textLines.size() == mSelection.size() ) {
+			BoolScopedOp op( mDoingTextInput, true );
+			BoolScopedOp op2( mInsertingText, true );
+			for ( size_t i = 0; i < mSelection.size(); ++i ) {
+				if ( mSelection[i].hasSelection() )
+					deleteTo( i, 0 );
+				setSelection( i, insert( i, getSelectionIndex( i ).start(), textLines[i] ) );
+			}
+		} else {
+			textInput( text );
+		}
+	} else {
+		textInput( text );
+	}
+
+	mLastCursorChangeWasInteresting = true;
 }
 
 void TextDocument::imeTextEditing( const String& text ) {
@@ -1725,7 +1811,7 @@ void TextDocument::moveToEndOfDoc() {
 void TextDocument::moveToStartOfContent() {
 	for ( size_t i = 0; i < mSelection.size(); ++i ) {
 		TextPosition start = getSelectionIndex( i ).start();
-		TextPosition indented = startOfContent( getSelectionIndex( i ).start() );
+		TextPosition indented = startOfContent( start );
 		setSelection( i, indented.column() == start.column() ? TextPosition( start.line(), 0 )
 															 : indented );
 	}
@@ -1882,15 +1968,15 @@ void TextDocument::selectWord( bool withMulticursor ) {
 						previousWordBoundary( getSelection().start(), false ) } );
 	} else if ( withMulticursor ) {
 		String text( getSelectedText() );
-		TextRange res( find( text, getBottomMostCursor().normalized().end() ) );
-		if ( res.isValid() && !mSelection.exists( res.reversed() ) ) {
-			addSelection( res.reversed() );
+		auto res( find( text, getBottomMostCursor().normalized().end() ) );
+		if ( res.isValid() && !mSelection.exists( res.result.reversed() ) ) {
+			addSelection( res.result.reversed() );
 		} else {
 			res = findLast( text, getTopMostCursor().normalized().start(), true, false,
 							FindReplaceType::Normal,
 							{ startOfDoc(), getTopMostCursor().normalized().start() } );
-			if ( res.isValid() && !mSelection.exists( res ) ) {
-				addSelection( res );
+			if ( res.isValid() && !mSelection.exists( res.result ) ) {
+				addSelection( res.result );
 			}
 		}
 	}
@@ -1904,8 +1990,8 @@ void TextDocument::selectAllWords() {
 					   { getBottomMostCursor().normalized().end(), endOfDoc() } ) );
 	if ( !res.empty() ) {
 		for ( auto& selection : res )
-			selection.reverse();
-		addSelections( std::move( res ) );
+			selection.result.reverse();
+		addSelections( res.ranges() );
 	}
 }
 
@@ -2243,7 +2329,7 @@ const SyntaxDefinition& TextDocument::getSyntaxDefinition() const {
 }
 
 void TextDocument::setSyntaxDefinition( const SyntaxDefinition& definition ) {
-	if ( &mSyntaxDefinition != &definition ) {
+	if ( mSyntaxDefinition.getLSPName() != definition.getLSPName() ) {
 		mSyntaxDefinition = definition;
 		notifySyntaxDefinitionChange();
 	}
@@ -2284,12 +2370,12 @@ void TextDocument::execute( const std::string& command ) {
 }
 
 void TextDocument::execute( const std::string& command, Client* client ) {
-	auto cmdIt = mCommands.find( command );
-	if ( cmdIt != mCommands.end() )
-		return cmdIt->second();
 	auto cmdRefIt = mRefCommands.find( command );
 	if ( cmdRefIt != mRefCommands.end() )
 		return cmdRefIt->second( client );
+	auto cmdIt = mCommands.find( command );
+	if ( cmdIt != mCommands.end() )
+		return cmdIt->second();
 }
 
 void TextDocument::setCommands( const UnorderedMap<std::string, DocumentCommand>& cmds ) {
@@ -2315,17 +2401,35 @@ bool TextDocument::removeCommand( const std::string& command ) {
 	return mCommands.erase( command ) > 0 || mRefCommands.erase( command ) > 0;
 }
 
-static std::pair<size_t, size_t> findType( const String& str, const String& findStr,
-										   const TextDocument::FindReplaceType& type ) {
+static constexpr auto MAX_CAPTURES = 12;
+
+struct FindTypeResult {
+	size_t start{ String::StringType::npos };
+	size_t end{ String::StringType::npos };
+	std::vector<LuaPattern::Range> captures{};
+};
+
+static FindTypeResult findType( const String& str, const String& findStr,
+								const TextDocument::FindReplaceType& type, int colOffset ) {
 	switch ( type ) {
 		case TextDocument::FindReplaceType::LuaPattern: {
 			LuaPatternStorage words( findStr.toUtf8() );
-			int start, end = 0;
-			words.find( str, start, end );
-			if ( start < 0 )
+			LuaPattern::Range matches[MAX_CAPTURES];
+			if ( words.matches( str, matches ) ) {
+				FindTypeResult result{ static_cast<size_t>( matches[0].start ),
+									   static_cast<size_t>( matches[0].end ) };
+				if ( words.getNumMatches() > 1 ) {
+					std::vector<TextPosition> captures;
+					captures.reserve( words.getNumMatches() - 1 );
+					for ( size_t i = 1; i < words.getNumMatches(); i++ ) {
+						result.captures.emplace_back( LuaPattern::Range{
+							colOffset + matches[i].start, colOffset + matches[i].end } );
+					}
+				}
+				return result;
+			} else {
 				return { String::StringType::npos, String::StringType::npos };
-			else
-				return { start, end };
+			}
 		}
 		case TextDocument::FindReplaceType::Normal:
 		default: {
@@ -2335,18 +2439,28 @@ static std::pair<size_t, size_t> findType( const String& str, const String& find
 	}
 }
 
-static std::pair<size_t, size_t> findLastType( const String& str, const String& findStr,
-											   const TextDocument::FindReplaceType& type ) {
+static FindTypeResult findLastType( const String& str, const String& findStr,
+									const TextDocument::FindReplaceType& type ) {
 	switch ( type ) {
 		case TextDocument::FindReplaceType::LuaPattern: {
 			// TODO: Implement findLastType for Lua patterns
 			LuaPatternStorage words( findStr.toUtf8() );
-			int start, end = 0;
-			words.find( str, start, end );
-			if ( start < 0 )
+			LuaPattern::Range matches[MAX_CAPTURES];
+			if ( words.matches( str, matches ) ) {
+				FindTypeResult result{ static_cast<size_t>( matches[0].start ),
+									   static_cast<size_t>( matches[0].end ) };
+				if ( words.getNumMatches() > 1 ) {
+					std::vector<TextPosition> captures;
+					captures.reserve( words.getNumMatches() - 1 );
+					for ( size_t i = 1; i < words.getNumMatches(); i++ ) {
+						result.captures.emplace_back(
+							LuaPattern::Range{ matches[i].start, matches[i].end } );
+					}
+				}
+				return result;
+			} else {
 				return { String::StringType::npos, String::StringType::npos };
-			else
-				return { end, start };
+			}
 		}
 		case TextDocument::FindReplaceType::Normal:
 		default: {
@@ -2356,10 +2470,27 @@ static std::pair<size_t, size_t> findLastType( const String& str, const String& 
 	}
 }
 
-TextRange TextDocument::findText( String text, TextPosition from, bool caseSensitive,
-								  bool wholeWord, FindReplaceType type, TextRange restrictRange ) {
+TextDocument::SearchResult toSearchResult( TextDocument* doc, const Int64 line,
+										   const FindTypeResult& res ) {
+	TextDocument::SearchResult ret;
+	TextRange pos(
+		{ { line, static_cast<Int64>( res.start ) }, { line, static_cast<Int64>( res.end ) } } );
+	if ( pos.end().column() == (Int64)doc->line( pos.end().line() ).size() )
+		pos.setEnd( doc->positionOffset( pos.end(), 1 ) );
+	ret.result = std::move( pos );
+	ret.captures.reserve( res.captures.size() );
+	for ( const auto& capture : res.captures ) {
+		ret.captures.push_back(
+			TextRange( TextPosition( line, capture.start ), TextPosition( line, capture.end ) ) );
+	}
+	return ret;
+}
+
+TextDocument::SearchResult TextDocument::findText( String text, TextPosition from,
+												   bool caseSensitive, bool wholeWord,
+												   FindReplaceType type, TextRange restrictRange ) {
 	if ( text.empty() )
-		return TextRange();
+		return TextDocument::SearchResult{};
 	from = sanitizePosition( from );
 
 	TextPosition to = endOfDoc();
@@ -2367,7 +2498,7 @@ TextRange TextDocument::findText( String text, TextPosition from, bool caseSensi
 		restrictRange = sanitizeRange( restrictRange.normalized() );
 		to = restrictRange.end();
 		if ( from < restrictRange.start() || from > restrictRange.end() )
-			return TextRange();
+			return TextDocument::SearchResult{};
 	}
 
 	if ( type == FindReplaceType::LuaPattern && caseSensitive == false )
@@ -2378,41 +2509,46 @@ TextRange TextDocument::findText( String text, TextPosition from, bool caseSensi
 		text.toLower();
 
 	for ( Int64 i = from.line(); i <= to.line(); i++ ) {
-		std::pair<size_t, size_t> col;
+		FindTypeResult col;
 		if ( i == from.line() ) {
 			col = caseSensitive
-					  ? findType( line( i ).getText().substr( from.column() ), text, type )
-					  : findType( String::toLower( line( i ).getText() ).substr( from.column() ),
-								  text, type );
-			if ( String::StringType::npos != col.first ) {
-				col.first += from.column();
-				col.second += from.column();
+					  ? findType( line( i ).getText().substr( from.column(),
+															  from.line() == to.line()
+																  ? to.column() - from.column()
+																  : String::InvalidPos ),
+								  text, type, from.column() )
+					  : findType( String::toLower( line( i ).getText() )
+									  .substr( from.column(), from.line() == to.line()
+																  ? to.column() - from.column()
+																  : String::InvalidPos ),
+								  text, type, from.column() );
+			if ( String::StringType::npos != col.start ) {
+				col.start += from.column();
+				col.end += from.column();
 			}
 		} else if ( i == to.line() && to != endOfDoc() ) {
 			col = caseSensitive
-					  ? findType( line( i ).getText().substr( 0, to.column() ), text, type )
+					  ? findType( line( i ).getText().substr( 0, to.column() ), text, type, 0 )
 					  : findType( String::toLower( line( i ).getText() ).substr( 0, to.column() ),
-								  text, type );
+								  text, type, 0 );
 		} else {
-			col = caseSensitive ? findType( line( i ).getText(), text, type )
-								: findType( String::toLower( line( i ).getText() ), text, type );
+			col = caseSensitive ? findType( line( i ).getText(), text, type, 0 )
+								: findType( String::toLower( line( i ).getText() ), text, type, 0 );
 		}
-		if ( String::StringType::npos != col.first &&
-			 ( !wholeWord || String::isWholeWord( line( i ).getText(), text, col.first ) ) ) {
-			TextRange pos( { { (Int64)i, (Int64)col.first }, { (Int64)i, (Int64)col.second } } );
-			if ( pos.end().column() == (Int64)mLines[pos.end().line()].size() )
-				pos.setEnd( positionOffset( pos.end(), 1 ) );
-			return pos;
+		if ( String::StringType::npos != col.start &&
+			 ( !wholeWord || String::isWholeWord( line( i ).getText(), text, col.start ) ) ) {
+			return toSearchResult( this, i, col );
 		}
 	}
-	return TextRange();
+	return TextDocument::SearchResult{};
 }
 
-TextRange TextDocument::findTextLast( String text, TextPosition from, bool caseSensitive,
-									  bool wholeWord, FindReplaceType type,
-									  TextRange restrictRange ) {
+TextDocument::SearchResult TextDocument::findTextLast( String text, TextPosition from,
+													   bool caseSensitive, bool wholeWord,
+													   FindReplaceType type,
+													   TextRange restrictRange ) {
 	if ( text.empty() )
-		return TextRange();
+		return TextDocument::SearchResult{};
 	from = sanitizePosition( from );
 
 	TextPosition to = startOfDoc();
@@ -2420,7 +2556,7 @@ TextRange TextDocument::findTextLast( String text, TextPosition from, bool caseS
 		restrictRange = sanitizeRange( restrictRange.normalized() );
 		to = restrictRange.start();
 		if ( from < restrictRange.start() || from > restrictRange.end() )
-			return TextRange();
+			return TextDocument::SearchResult{};
 	}
 
 	if ( type == FindReplaceType::LuaPattern && caseSensitive == false )
@@ -2431,44 +2567,46 @@ TextRange TextDocument::findTextLast( String text, TextPosition from, bool caseS
 		text.toLower();
 
 	for ( Int64 i = from.line(); i >= to.line(); i-- ) {
-		std::pair<size_t, size_t> col;
+		FindTypeResult res;
 		if ( i == from.line() ) {
-			col = caseSensitive
-					  ? findLastType( line( i ).getText().substr( 0, from.column() ), text, type )
-					  : findLastType(
-							String::toLower( line( i ).getText().substr( 0, from.column() ) ), text,
-							type );
+			res =
+				caseSensitive
+					? findLastType( line( i ).getText().substr(
+										from.line() == to.line() ? to.column() : 0, from.column() ),
+									text, type )
+					: findLastType(
+						  String::toLower( line( i ).getText().substr(
+							  from.line() == to.line() ? to.column() : 0, from.column() ) ),
+						  text, type );
 		} else if ( i == to.line() ) {
-			col = caseSensitive
+			res = caseSensitive
 					  ? findLastType( line( i ).getText().substr( to.column() ), text, type )
 					  : findLastType( String::toLower( line( i ).getText().substr( to.column() ) ),
 									  text, type );
-			if ( String::StringType::npos != col.first ) {
-				col.first += to.column();
-				col.second += to.column();
+			if ( String::StringType::npos != res.start ) {
+				res.start += to.column();
+				res.end += to.column();
 			}
 		} else {
-			col = caseSensitive
+			res = caseSensitive
 					  ? findLastType( line( i ).getText(), text, type )
 					  : findLastType( String::toLower( line( i ).getText() ), text, type );
 		}
-		if ( String::StringType::npos != col.first &&
-			 ( !wholeWord || String::isWholeWord( line( i ).getText(), text, col.first ) ) ) {
-			TextRange pos( { { (Int64)i, (Int64)col.second }, { (Int64)i, (Int64)col.first } } );
-			if ( pos.start().column() == (Int64)mLines[pos.start().line()].size() )
-				pos.setStart( positionOffset( pos.start(), 1 ) );
-			return pos;
+		if ( String::StringType::npos != res.start &&
+			 ( !wholeWord || String::isWholeWord( line( i ).getText(), text, res.start ) ) ) {
+			return toSearchResult( this, i, res );
 		}
 	}
-	return TextRange();
+	return TextDocument::SearchResult{};
 }
 
-TextRange TextDocument::find( const String& text, TextPosition from, bool caseSensitive,
-							  bool wholeWord, FindReplaceType type, TextRange restrictRange ) {
+TextDocument::SearchResult TextDocument::find( const String& text, TextPosition from,
+											   bool caseSensitive, bool wholeWord,
+											   FindReplaceType type, TextRange restrictRange ) {
 	std::vector<String> textLines = text.split( '\n', true, true );
 
 	if ( textLines.empty() || textLines.size() > mLines.size() )
-		return TextRange();
+		return {};
 
 	from = sanitizePosition( from );
 
@@ -2477,30 +2615,30 @@ TextRange TextDocument::find( const String& text, TextPosition from, bool caseSe
 		restrictRange = sanitizeRange( restrictRange.normalized() );
 		to = restrictRange.end();
 		if ( from < restrictRange.start() || from >= restrictRange.end() )
-			return TextRange();
+			return {};
 	}
 
 	if ( from == to )
-		return TextRange();
+		return {};
 
 	if ( textLines.size() == 1 )
 		return findText( text, from, caseSensitive, wholeWord, type, restrictRange );
 
-	TextRange range = findText( textLines[0], from, caseSensitive, false, type, restrictRange );
+	auto range = findText( textLines[0], from, caseSensitive, false, type, restrictRange );
 
 	if ( !range.isValid() )
-		return TextRange();
+		return {};
 
-	TextPosition initPos( range.end().line(), 0 );
+	TextPosition initPos( range.result.end().line(), 0 );
 
 	for ( size_t i = 1; i < textLines.size() - 1; i++ ) {
 		if ( initPos < from || initPos > to )
-			return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+			return find( text, range.result.end(), caseSensitive, wholeWord, type, restrictRange );
 
 		String currentLine( mLines[initPos.line()].getText() );
 
 		if ( TextPosition( initPos.line(), (Int64)currentLine.size() - 1 ) > to )
-			return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+			return find( text, range.result.end(), caseSensitive, wholeWord, type, restrictRange );
 
 		if ( !caseSensitive ) {
 			currentLine.toLower();
@@ -2511,44 +2649,46 @@ TextRange TextDocument::find( const String& text, TextPosition from, bool caseSe
 			initPos = TextPosition( initPos.line() + 1, 0 );
 
 			if ( initPos >= restrictRange.end() )
-				return TextRange();
+				return {};
 		} else {
-			return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+			return find( text, range.result.end(), caseSensitive, wholeWord, type, restrictRange );
 		}
 	}
 
 	if ( initPos < from || initPos > to )
-		return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+		return find( text, range.result.end(), caseSensitive, wholeWord, type, restrictRange );
 
 	const String& lastLine = mLines[initPos.line()].getText();
 	const String& curSearch = textLines[textLines.size() - 1];
 
 	if ( TextPosition( initPos.line(), (Int64)curSearch.size() - 1 ) > to )
-		return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+		return find( text, range.result.end(), caseSensitive, wholeWord, type, restrictRange );
 
 	if ( lastLine.size() < curSearch.size() )
-		return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+		return find( text, range.result.end(), caseSensitive, wholeWord, type, restrictRange );
 
 	if ( ( caseSensitive && String::startsWith( lastLine, curSearch ) ) ||
 		 ( !caseSensitive &&
 		   String::startsWith( String( lastLine ).toLower(), String( curSearch ).toLower() ) ) ) {
-		TextRange foundRange( range.start(), TextPosition( initPos.line(), curSearch.size() ) );
+		TextRange foundRange( range.result.start(),
+							  TextPosition( initPos.line(), curSearch.size() ) );
 		if ( foundRange.end().column() == (Int64)mLines[foundRange.end().line()].size() )
 			foundRange.setEnd( positionOffset( foundRange.end(), 1 ) );
-		return foundRange;
+		return range;
 	} else {
-		return find( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+		return find( text, range.result.end(), caseSensitive, wholeWord, type, restrictRange );
 	}
 
-	return TextRange();
+	return {};
 }
 
-TextRange TextDocument::findLast( const String& text, TextPosition from, bool caseSensitive,
-								  bool wholeWord, FindReplaceType type, TextRange restrictRange ) {
+TextDocument::SearchResult TextDocument::findLast( const String& text, TextPosition from,
+												   bool caseSensitive, bool wholeWord,
+												   FindReplaceType type, TextRange restrictRange ) {
 	std::vector<String> textLines = text.split( '\n', true, true );
 
 	if ( textLines.empty() || textLines.size() > mLines.size() )
-		return TextRange();
+		return {};
 
 	from = sanitizePosition( from );
 
@@ -2557,30 +2697,32 @@ TextRange TextDocument::findLast( const String& text, TextPosition from, bool ca
 		restrictRange = sanitizeRange( restrictRange.normalized() );
 		to = restrictRange.start();
 		if ( from < restrictRange.start() || from > restrictRange.end() )
-			return TextRange();
+			return {};
 	}
 
 	if ( from == to )
-		return TextRange();
+		return {};
 
 	if ( textLines.size() == 1 )
 		return findTextLast( text, from, caseSensitive, wholeWord, type, restrictRange );
 
-	TextRange range = findTextLast( textLines[0], from, caseSensitive, false, type, restrictRange );
+	auto range = findTextLast( textLines[0], from, caseSensitive, false, type, restrictRange );
 
 	if ( !range.isValid() )
-		return TextRange();
+		return {};
 
-	TextPosition initPos( range.end().line(), 0 );
+	TextPosition initPos( range.result.end().line(), 0 );
 
 	for ( size_t i = 1; i < textLines.size() - 1; i++ ) {
 		if ( initPos < from || initPos > to )
-			return findLast( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+			return findLast( text, range.result.end(), caseSensitive, wholeWord, type,
+							 restrictRange );
 
 		String currentLine( mLines[initPos.line()].getText() );
 
 		if ( TextPosition( initPos.line(), (Int64)currentLine.size() - 1 ) > to )
-			return findLast( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+			return findLast( text, range.result.end(), caseSensitive, wholeWord, type,
+							 restrictRange );
 
 		if ( !caseSensitive ) {
 			currentLine.toLower();
@@ -2590,32 +2732,30 @@ TextRange TextDocument::findLast( const String& text, TextPosition from, bool ca
 		if ( currentLine == textLines[i] ) {
 			initPos = TextPosition( i + 1, 0 );
 		} else {
-			return findLast( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+			return findLast( text, range.result.end(), caseSensitive, wholeWord, type,
+							 restrictRange );
 		}
 	}
 
 	if ( initPos < from || initPos > to )
-		return findLast( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+		return findLast( text, range.result.end(), caseSensitive, wholeWord, type, restrictRange );
 
 	const String& lastLine = mLines[initPos.line()].getText();
 	const String& curSearch = textLines[textLines.size() - 1];
 
 	if ( TextPosition( initPos.line(), (Int64)curSearch.size() - 1 ) > to )
-		return findLast( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+		return findLast( text, range.result.end(), caseSensitive, wholeWord, type, restrictRange );
 
 	if ( lastLine.size() < curSearch.size() )
-		return findLast( text, range.end(), caseSensitive, wholeWord, type, restrictRange );
+		return findLast( text, range.result.end(), caseSensitive, wholeWord, type, restrictRange );
 
 	if ( ( caseSensitive && String::startsWith( lastLine, curSearch ) ) ||
 		 ( !caseSensitive &&
 		   String::startsWith( String( lastLine ).toLower(), String( curSearch ).toLower() ) ) ) {
-		TextRange foundRange( range.start(), TextPosition( initPos.line(), curSearch.size() ) );
-		if ( foundRange.end().column() == (Int64)mLines[foundRange.end().line()].size() )
-			foundRange.setEnd( positionOffset( foundRange.end(), 1 ) );
-		return foundRange;
+		return range;
 	}
 
-	return TextRange();
+	return {};
 }
 
 void TextDocument::stopActiveFindAll() {
@@ -2632,11 +2772,11 @@ bool TextDocument::isInsertingText() const {
 	return mInsertingText;
 }
 
-TextRanges TextDocument::findAll( const String& text, bool caseSensitive, bool wholeWord,
-								  FindReplaceType type, TextRange restrictRange,
-								  size_t maxResults ) {
-	TextRanges all;
-	TextRange found;
+TextDocument::SearchResults TextDocument::findAll( const String& text, bool caseSensitive,
+												   bool wholeWord, FindReplaceType type,
+												   TextRange restrictRange, size_t maxResults ) {
+	SearchResults all;
+	TextDocument::SearchResult found;
 	TextPosition from = startOfDoc();
 	auto stopFlagUP = std::make_unique<bool>( false );
 	bool* stopFlag = stopFlagUP.get();
@@ -2652,7 +2792,7 @@ TextRanges TextDocument::findAll( const String& text, bool caseSensitive, bool w
 		if ( found.isValid() ) {
 			if ( !all.empty() && all.back() == found )
 				break;
-			from = found.end();
+			from = found.result.end();
 			all.push_back( found );
 			if ( ( maxResults != 0 && all.size() >= maxResults ) || *stopFlag )
 				break;
@@ -2677,19 +2817,53 @@ int TextDocument::replaceAll( const String& text, const String& replace, const b
 	if ( !wasRunningTransaction )
 		setRunningTransaction( true );
 	int count = 0;
-	TextRange found;
+	TextDocument::SearchResult found;
 	TextPosition startedPosition = getSelection().start();
 	TextPosition from = startOfDoc();
 	if ( restrictRange.isValid() )
 		from = restrictRange.normalized().start();
+
+	size_t numCaptures = 0;
+	LuaPattern::Range matchList[MAX_CAPTURES];
+
+	if ( type == FindReplaceType::LuaPattern ) {
+		std::string replaceUtf8( replace.toUtf8() );
+		LuaPattern ptrn( "$%d+"sv );
+		while ( numCaptures < MAX_CAPTURES &&
+				ptrn.matches( replaceUtf8, &matchList[numCaptures],
+							  numCaptures > 0 ? matchList[numCaptures - 1].end : 0 ) ) {
+			numCaptures++;
+		}
+	}
+
 	do {
 		found = find( text, from, caseSensitive, wholeWord, type, restrictRange );
 		if ( found.isValid() ) {
-			setSelection( found );
-			from = replaceSelection( replace );
+			if ( numCaptures && numCaptures <= found.captures.size() ) {
+				String finalReplace( replace );
+				std::string l( line( found.captures[0].start().line() ).toUtf8() );
+				for ( size_t i = 0; i < numCaptures; i++ ) {
+					String matchSubStr( replace.substr(
+						matchList[i].start, matchList[i].end - matchList[i].start ) ); // $1 $2 ...
+					std::string matchNum( matchSubStr.substr( 1 ) );				   // 1 2 ...
+					int num;
+					if ( String::fromString( num, matchNum ) && num > 0 &&
+						 num - 1 < static_cast<int>( found.captures.size() ) ) {
+						auto start = found.captures[num - 1].start().column();
+						auto end = found.captures[num - 1].end().column();
+						finalReplace.replaceAll(
+							matchSubStr, String::fromUtf8( l.substr( start, end - start ) ) );
+					}
+				}
+				setSelection( found.result );
+				from = replaceSelection( finalReplace );
+			} else {
+				setSelection( found.result );
+				from = replaceSelection( replace );
+			}
 			count++;
 		}
-	} while ( found.isValid() && endOfDoc() != found.end() );
+	} while ( found.isValid() && endOfDoc() != found.result.end() );
 	if ( !wasRunningTransaction )
 		setRunningTransaction( false );
 	setSelection( startedPosition );
@@ -2721,23 +2895,60 @@ void TextDocument::selectAllMatches() {
 	if ( !hasSelection() )
 		return;
 	auto sel = getSelection();
-	TextRanges ranges = findAll( getSelectedText(), true, false );
+	auto ranges = findAll( getSelectedText(), true, false );
 	for ( const auto& range : ranges ) {
-		if ( sel == range || sel.normalized() == range )
+		if ( sel == range.result || sel.normalized() == range.result )
 			continue;
-		addSelection( range.reversed() );
+		addSelection( range.result.reversed() );
 	}
 }
 
 TextPosition TextDocument::replace( String search, const String& replace, TextPosition from,
 									const bool& caseSensitive, const bool& wholeWord,
 									FindReplaceType type, TextRange restrictRange ) {
-	TextRange found( findText( search, from, caseSensitive, wholeWord, type, restrictRange ) );
+	auto found( findText( search, from, caseSensitive, wholeWord, type, restrictRange ) );
+	size_t numCaptures = 0;
+	LuaPattern::Range matchList[MAX_CAPTURES];
+
+	if ( type == FindReplaceType::LuaPattern ) {
+		std::string replaceUtf8( replace.toUtf8() );
+		LuaPattern ptrn( "$%d+"sv );
+		while ( numCaptures < MAX_CAPTURES &&
+				ptrn.matches( replaceUtf8, &matchList[numCaptures],
+							  numCaptures > 0 ? matchList[numCaptures - 1].end : 0 ) ) {
+			numCaptures++;
+		}
+	}
+
 	if ( found.isValid() ) {
-		setSelection( found );
-		deleteTo( 0, 0 );
-		setSelection( 0, insert( 0, getSelectionIndex( 0 ).start(), replace ) );
-		return found.end();
+		if ( numCaptures && numCaptures == found.captures.size() ) {
+			String finalReplace( replace );
+			std::string l( line( found.captures[0].start().line() ).toUtf8() );
+			for ( size_t i = 0; i < numCaptures; i++ ) {
+				String matchSubStr( replace.substr(
+					matchList[i].start, matchList[i].end - matchList[i].start ) ); // $1 $2 ...
+				std::string matchNum( matchSubStr.substr( 1 ) );				   // 1 2 ...
+				int num;
+				if ( String::fromString( num, matchNum ) && num > 0 &&
+					 num - 1 < static_cast<int>( found.captures.size() ) ) {
+					auto start =
+						restrictRange.start().column() + found.captures[num - 1].start().column();
+					auto end =
+						restrictRange.start().column() + found.captures[num - 1].end().column();
+					if ( start < static_cast<Int64>( l.size() ) &&
+						 end < static_cast<Int64>( l.size() ) ) {
+						finalReplace.replaceAll(
+							matchSubStr, String::fromUtf8( l.substr( start, end - start ) ) );
+					}
+				}
+			}
+			setSelection( found.result );
+			replaceSelection( finalReplace );
+		} else {
+			setSelection( found.result );
+			replaceSelection( replace );
+		}
+		return found.result.end();
 	}
 	return TextPosition();
 }
@@ -2769,6 +2980,48 @@ void TextDocument::setEncoding( TextFormat::Encoding encoding ) {
 	mEncoding = encoding;
 }
 
+const FoldRangeServive& TextDocument::getFoldRangeService() const {
+	return mFoldRangeService;
+}
+
+FoldRangeServive& TextDocument::getFoldRangeService() {
+	return mFoldRangeService;
+}
+
+std::vector<TextDocumentLine> TextDocument::getLines() const {
+	return mLines;
+}
+
+void TextDocument::setLines( std::vector<TextDocumentLine>&& lines ) {
+	mLines = std::move( lines );
+}
+
+std::string TextDocument::serializeUndoRedo( bool inverted ) {
+	return mUndoStack.toJSON( inverted );
+}
+
+void TextDocument::unserializeUndoRedo( const std::string& jsonString ) {
+	return mUndoStack.fromJSON( jsonString );
+}
+
+void TextDocument::changeFilePath( const std::string& filePath ) {
+	changeFilePath( filePath, true );
+}
+
+void TextDocument::setDirtyUntilSave() {
+	mCleanChangeId = std::numeric_limits<Uint64>::max();
+	notifySelectionChanged();
+}
+
+void TextDocument::changeFilePath( const std::string& filePath, bool notify ) {
+	mFilePath = filePath;
+	mFileURI = URI( "file://" + mFilePath );
+	mFileRealPath = FileInfo::isLink( mFilePath ) ? FileInfo( FileInfo( mFilePath ).linksTo() )
+												  : FileInfo( mFilePath );
+	if ( notify )
+		notifyDocumentMoved();
+}
+
 static inline void changeDepth( SyntaxHighlighter* highlighter, int& depth, const TextPosition& pos,
 								int dir ) {
 	if ( highlighter ) {
@@ -2787,7 +3040,7 @@ TextPosition TextDocument::getMatchingBracket( TextPosition sp,
 	SyntaxHighlighter* highlighter = getHighlighter();
 	int depth = 0;
 	while ( sp.isValid() ) {
-		auto byte = getChar( sp );
+		auto byte = getCharFromUnsanitizedPosition( sp );
 		if ( byte == openBracket ) {
 			changeDepth( highlighter, depth, sp, 1 );
 			if ( depth == 0 )
@@ -2803,7 +3056,7 @@ TextPosition TextDocument::getMatchingBracket( TextPosition sp,
 		}
 
 		auto prevPos = sp;
-		sp = positionOffset( sp, dir == MatchDirection::Forward ? 1 : -1 );
+		sp = positionOffset( sp, dir == MatchDirection::Forward ? 1 : -1, false );
 		if ( sp == prevPos )
 			return {};
 	}
@@ -2843,7 +3096,8 @@ TextRange TextDocument::getMatchingBracket( TextPosition start, const String& op
 					do {
 						foundOpen = find( openBracket, start, true, false,
 										  TextDocument::FindReplaceType::Normal,
-										  { start, foundClose.start() } );
+										  { start, foundClose.result.start() } )
+										.result;
 
 						if ( foundOpen.isValid() ) {
 							TextPosition closePosition =
@@ -2863,14 +3117,15 @@ TextRange TextDocument::getMatchingBracket( TextPosition start, const String& op
 				} else {
 					foundOpen = find( openBracket, start, true, false,
 									  TextDocument::FindReplaceType::Normal,
-									  { start, foundClose.start() } );
+									  { start, foundClose.result.start() } )
+									.result;
 				}
 
 				if ( foundOpen.isValid() ) {
 					start = foundOpen.end();
 					changeDepth( highlighter, depth, start, 1 );
 				} else {
-					start = foundClose.end();
+					start = foundClose.result.end();
 					changeDepth( highlighter, depth, start, -1 );
 				}
 			} while ( foundOpen.isValid() );
@@ -2883,7 +3138,7 @@ TextRange TextDocument::getMatchingBracket( TextPosition start, const String& op
 			}
 		} while ( depth > 0 );
 
-		return foundClose;
+		return foundClose.result;
 	} else {
 		{
 			TextPosition end( positionOffset( start, -closeBracket.size() ) );
@@ -2899,7 +3154,7 @@ TextRange TextDocument::getMatchingBracket( TextPosition start, const String& op
 		TextRange foundOpen;
 		if ( matchingXMLTags ) {
 			do {
-				foundOpen = findLast( openBracket, start );
+				foundOpen = findLast( openBracket, start ).result;
 				if ( foundOpen.isValid() ) {
 					TextPosition closePosition =
 						getMatchingBracket( foundOpen.normalized().start(), openBracket[0], '>',
@@ -2916,7 +3171,7 @@ TextRange TextDocument::getMatchingBracket( TextPosition start, const String& op
 				}
 			} while ( foundOpen.isValid() );
 		} else {
-			foundOpen = findLast( openBracket, start );
+			foundOpen = findLast( openBracket, start ).result;
 		}
 		if ( !foundOpen.isValid() )
 			return {}; // Not found, exit
@@ -2927,10 +3182,13 @@ TextRange TextDocument::getMatchingBracket( TextPosition start, const String& op
 		do {
 			// Find all the close brackets between the first close bracket and the first open
 			// bracket
+			TextRange lastFoundClose;
 			do {
+				lastFoundClose = foundClose;
 				foundClose =
 					findLast( closeBracket, start, true, false,
-							  TextDocument::FindReplaceType::Normal, { start, foundOpen.start() } );
+							  TextDocument::FindReplaceType::Normal, { start, foundOpen.start() } )
+						.result;
 				if ( foundClose.isValid() ) {
 					start = foundClose.end();
 					changeDepth( highlighter, depth, start, 1 );
@@ -2938,13 +3196,14 @@ TextRange TextDocument::getMatchingBracket( TextPosition start, const String& op
 					start = foundOpen.end();
 					changeDepth( highlighter, depth, start, -1 );
 				}
-			} while ( foundClose.isValid() );
+			} while ( foundClose.isValid() && lastFoundClose != foundClose );
 
 			if ( depth > 0 ) {
 				// Find the next open bracket from the last open bracket
+				auto prevFoundOpen = foundOpen;
 				if ( matchingXMLTags ) {
 					do {
-						foundOpen = findLast( openBracket, start );
+						foundOpen = findLast( openBracket, start ).result;
 						if ( foundOpen.isValid() ) {
 							TextPosition closePosition =
 								getMatchingBracket( foundOpen.normalized().start(), openBracket[0],
@@ -2961,10 +3220,10 @@ TextRange TextDocument::getMatchingBracket( TextPosition start, const String& op
 						}
 					} while ( foundOpen.isValid() );
 				} else {
-					foundOpen = findLast( openBracket, start );
+					foundOpen = findLast( openBracket, start ).result;
 				}
 
-				if ( !foundOpen.isValid() )
+				if ( !foundOpen.isValid() || prevFoundOpen == foundOpen )
 					break;
 			}
 		} while ( depth > 0 );
@@ -3031,6 +3290,13 @@ void TextDocument::notifyInterstingCursorChange( TextPosition selection ) {
 	}
 }
 
+void TextDocument::notifyFoldRegionsUpdated( size_t oldCount, size_t newCount ) {
+	Lock l( mClientsMutex );
+	for ( auto& client : mClients ) {
+		client->onFoldRegionsUpdated( oldCount, newCount );
+	}
+}
+
 void TextDocument::notifySelectionChanged( TextRange selection ) {
 	if ( !selection.isValid() )
 		selection = getSelection();
@@ -3051,6 +3317,13 @@ void TextDocument::notifyDocumentReloaded() {
 	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
 		client->onDocumentReloaded( this );
+	}
+}
+
+void TextDocument::notifyDocumentReset() {
+	Lock l( mClientsMutex );
+	for ( auto& client : mClients ) {
+		client->onDocumentReset( this );
 	}
 }
 
@@ -3110,10 +3383,11 @@ void TextDocument::notifySyntaxDefinitionChange() {
 	}
 }
 
-void TextDocument::notifiyDocumenLineMove( const Int64& fromLine, const Int64& numLines ) {
+void TextDocument::notifiyDocumenLineMove( const Int64& fromLine, const Int64& toLine,
+										   const Int64& numLines ) {
 	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
-		client->onDocumentLineMove( fromLine, numLines );
+		client->onDocumentLineMove( fromLine, toLine, numLines );
 	}
 }
 

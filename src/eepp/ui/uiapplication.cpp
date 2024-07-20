@@ -1,3 +1,4 @@
+#include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -33,7 +34,8 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 		appSettings.pixelDensity
 			? *appSettings.pixelDensity
 			: eemax( mWindow->getScale(),
-					 displayManager->getDisplayIndex( 0 )->getPixelDensity() ) );
+					 displayManager->getDisplayIndex( mWindow->getCurrentDisplayIndex() )
+						 ->getPixelDensity() ) );
 
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
@@ -46,6 +48,12 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 	Font* font = appSettings.baseFont
 					 ? appSettings.baseFont
 					 : FontTrueType::New( "NotoSans-Regular", "assets/fonts/NotoSans-Regular.ttf" );
+
+	if ( font && font->getType() == FontType::TTF )
+		FontFamily::loadFromRegular( static_cast<FontTrueType*>( font ) );
+
+	if ( appSettings.emojiFont == nullptr )
+		FontTrueType::New( "NotoEmoji-Regular", "assets/fonts/NotoEmoji-Regular.ttf" );
 
 	mUISceneNode->getUIThemeManager()->setDefaultFont( font );
 	mUISceneNode->getRoot()->addClass( "appbackground" );
@@ -94,10 +102,12 @@ int UIApplication::run() {
 }
 
 UIApplication::Settings::Settings( std::optional<Float> pixelDensity, bool loadBaseResources,
-								   Font* baseFont, std::optional<std::string> baseStyleSheetPath ) :
+								   Font* baseFont, std::optional<std::string> baseStyleSheetPath,
+								   Font* emojiFont ) :
 	pixelDensity( pixelDensity ),
 	loadBaseResources( loadBaseResources ),
 	baseFont( baseFont ),
-	baseStyleSheetPath( baseStyleSheetPath ) {}
+	baseStyleSheetPath( baseStyleSheetPath ),
+	emojiFont( emojiFont ) {}
 
 }} // namespace EE::UI

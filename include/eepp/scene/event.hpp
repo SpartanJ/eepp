@@ -1,7 +1,8 @@
-#ifndef EE_UICUIEVENT_HPP
-#define EE_UICUIEVENT_HPP
+#ifndef EE_SCENE_EVENT_HPP
+#define EE_SCENE_EVENT_HPP
 
 #include <eepp/config.hpp>
+#include <eepp/scene/nodefocusreason.hpp>
 #include <string>
 
 namespace EE { namespace UI {
@@ -19,6 +20,7 @@ class TextInputEvent;
 class WindowEvent;
 class ItemValueEvent;
 class RowCreatedEvent;
+class FocusEvent;
 
 class EE_API Event {
   public:
@@ -49,7 +51,9 @@ class EE_API Event {
 		OnChildCountChanged,
 		OnDocumentLoaded,
 		OnDocumentChanged,
+		OnDocumentReset,
 		OnDocumentClosed,
+		OnDocumentReloaded,
 		OnDocumentSyntaxDefinitionChange,
 		OnDocumentDirtyOnFileSysten,
 		OnFontStyleChanged,
@@ -140,6 +144,8 @@ class EE_API Event {
 
 	const RowCreatedEvent* asRowCreatedEvent() const;
 
+	const FocusEvent* asFocusEvent() const;
+
   protected:
 	friend class Node;
 	Node* mNode;
@@ -197,6 +203,17 @@ class EE_API RowCreatedEvent : public Event {
 
   protected:
 	UI::UITableRow* row;
+};
+
+class EE_API FocusEvent : public Event {
+  public:
+	FocusEvent( Node* node, const Uint32& EventNum, NodeFocusReason reason ) :
+		Event( node, EventNum ), mReason( reason ) {}
+
+	const NodeFocusReason& getReason() const { return mReason; }
+
+  protected:
+	NodeFocusReason mReason;
 };
 
 }} // namespace EE::Scene

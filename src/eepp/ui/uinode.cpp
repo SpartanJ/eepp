@@ -1063,7 +1063,8 @@ void UINode::nodeDraw() {
 
 		matrixSet();
 
-		bool needsClipPlanes = isMeOrParentTreeScaledOrRotatedOrFrameBuffer();
+		bool needsClipPlanes =
+			mClip.getClipType() != ClipType::None && isMeOrParentTreeScaledOrRotatedOrFrameBuffer();
 
 		smartClipStart( ClipType::BorderBox, needsClipPlanes );
 
@@ -1559,9 +1560,9 @@ void UINode::onWidgetFocusLoss() {
 	invalidateDraw();
 }
 
-Node* UINode::setFocus() {
+Node* UINode::setFocus( NodeFocusReason reason ) {
 	if ( NULL != getEventDispatcher() )
-		getEventDispatcher()->setFocusNode( this );
+		getEventDispatcher()->setFocusNode( this, reason );
 	return this;
 }
 
@@ -1646,10 +1647,10 @@ Float UINode::lengthFromValueAsDp( const CSS::StyleSheetProperty& property,
 								property.getIndex() );
 }
 
-Uint32 UINode::onFocus() {
+Uint32 UINode::onFocus( NodeFocusReason reason ) {
 	pushState( UIState::StateFocus );
 
-	return Node::onFocus();
+	return Node::onFocus( reason );
 }
 
 Uint32 UINode::onFocusLoss() {

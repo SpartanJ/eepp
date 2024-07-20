@@ -329,10 +329,10 @@ class EE_API String {
 	}
 
 	static std::string fromFloat( const Float& value, const std::string& append = "",
-								  const std::string& prepend = "" );
+								  const std::string& prepend = "", size_t digitsAfterComma = 2 );
 
 	static std::string fromDouble( const double& value, const std::string& append = "",
-								   const std::string& prepend = "" );
+								   const std::string& prepend = "", size_t digitsAfterComma = 2 );
 
 	/** Converts from a string to type */
 	template <class T>
@@ -397,6 +397,18 @@ class EE_API String {
 
 	/** @return The next character in a utf8 null terminated string */
 	static Uint32 utf8Next( char*& utf8String );
+
+	/** glob matches a string against a glob
+	** @return True if matches
+	*/
+	static bool globMatch( const std::string_view& text, const std::string_view& glob,
+						   bool caseInsensitive = false );
+
+	/** glob matches a string against a set of globs
+	** @return True if matches
+	*/
+	static bool globMatch( const std::string_view& text, const std::vector<std::string>& globs,
+						   bool caseInsensitive = false );
 
 	/** @brief Default constructor
 	** This constructor creates an empty string.
@@ -932,7 +944,9 @@ class EE_API String {
 	/** @return True if a string contains a substring.
 	 * @param needle The searched string.
 	 */
-	bool contains( const String& needle );
+	bool contains( const String& needle ) const;
+
+	bool isAscii() const;
 
 	String::View view() const;
 

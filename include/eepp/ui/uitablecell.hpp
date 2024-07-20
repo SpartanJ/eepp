@@ -58,9 +58,9 @@ class EE_API UITableCell : public UIPushButton {
 
 	virtual void onModelIndexChange() {}
 
-	Uint32 onFocus() {
+	Uint32 onFocus( NodeFocusReason reason ) {
 		getUISceneNode()->getWindow()->startTextInput();
-		return UIPushButton::onFocus();
+		return UIPushButton::onFocus( reason );
 	}
 
 	Uint32 onFocusLoss() {

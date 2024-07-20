@@ -75,6 +75,8 @@ class EE_API UICheckBox : public UITextView {
 
 	virtual void onPaddingChange();
 
+	virtual void onTextChanged();
+
 	virtual void alignFix();
 };
 

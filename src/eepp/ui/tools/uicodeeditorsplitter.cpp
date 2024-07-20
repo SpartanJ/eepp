@@ -262,6 +262,10 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 			event->getNode()->asType<UICodeEditor>(),
 			event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
+	editor->addEventListener( Event::OnDocumentUndoRedo, [this]( const Event* event ) {
+		mClient->onDocumentUndoRedo( event->getNode()->asType<UICodeEditor>(),
+									 event->getNode()->asType<UICodeEditor>()->getDocument() );
+	} );
 	editor->addKeyBinds( getLocalDefaultKeybindings() );
 	editor->addUnlockedCommands( getUnlockedCommands() );
 
@@ -674,6 +678,9 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 		 !prevCurEditor->getDocument().isEmpty() ) {
 		editorData.second->setDocument( prevCurEditor->getDocumentRef() );
 		editorData.second->goToLine( prevCurEditor->getDocument().getSelection().start() );
+		auto path( editorData.second->getDocument().getFilePath() );
+		if ( !path.empty() )
+			editorData.first->setTooltipText( path );
 	}
 	mAboutToAddEditor = nullptr;
 	Lock l( mTabWidgetMutex );
@@ -812,6 +819,16 @@ void UICodeEditorSplitter::forEachDoc( std::function<void( TextDocument& )> run 
 		[&docs]( UICodeEditor* editor ) { docs.insert( editor->getDocumentRef().get() ); } );
 	for ( auto doc : docs )
 		run( *doc );
+}
+
+void UICodeEditorSplitter::forEachDocSharedPtr(
+	std::function<void( std::shared_ptr<TextDocument> )> run ) const {
+	std::unordered_map<TextDocument*, std::shared_ptr<TextDocument>> docs;
+	forEachEditor( [&docs]( UICodeEditor* editor ) {
+		docs.insert( { editor->getDocumentRef().get(), editor->getDocumentRef() } );
+	} );
+	for ( const auto& doc : docs )
+		run( doc.second );
 }
 
 void UICodeEditorSplitter::forEachTabWidget( std::function<void( UITabWidget* )> run ) const {
@@ -1405,6 +1422,8 @@ void UICodeEditorSplitter::updateCurrentPositionInNavigationHistory() {
 }
 
 void UICodeEditorSplitter::goBackInNavigationHistory() {
+	if ( mNavigationHistoryPos == std::numeric_limits<size_t>::max() )
+		return;
 	updateCurrentPositionInNavigationHistory();
 	while ( mNavigationHistoryPos > 0 ) {
 		mNavigationHistoryPos--;

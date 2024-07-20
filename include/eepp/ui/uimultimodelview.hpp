@@ -43,6 +43,8 @@ class EE_API UIMultiModelView : public UIStackWidget {
 
 	void setSelection( const ModelIndex& index, bool scrollToSelection = true );
 
+	void setSingleClickNavigation( bool singleClickNavigation );
+
   protected:
 	UIMultiModelView( const std::string& tag );
 

@@ -219,7 +219,7 @@ void Process::startShutdown() {
 	mShuttingDown = true;
 }
 
-const bool& Process::isShuttingDown() {
+bool Process::isShuttingDown() const {
 	return mShuttingDown;
 }
 

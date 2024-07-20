@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <eepp/scene/eventdispatcher.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/window/engine.hpp>
@@ -130,11 +129,15 @@ void EventDispatcher::update( const Time& time ) {
 			mOverNode->onMouseDown( mMousePosi, mInput->getPressTrigger() );
 			sendMsg( mOverNode, NodeMessage::MouseDown, mInput->getPressTrigger() );
 		}
-	}
-#if EE_PLATFORM == EE_PLATFORM_MACOS
-	else if ( NULL != mOverNode && mInput->getReleaseTrigger() &&
-			  !( mInput->getPressTrigger() & mInput->getReleaseTrigger() ) &&
-			  !( mInput->getLastPressTrigger() & mInput->getReleaseTrigger() ) ) {
+
+		if ( NULL != mFocusNode && mDownNode == mOverNode &&
+			 ( mInput->getPressTrigger() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) &&
+			 ( !nodeWasDragging || mMousePos == mLastMousePos ) ) {
+			setFocusNode( mOverNode, NodeFocusReason::Click );
+		}
+	} else if ( NULL != mOverNode && mInput->getReleaseTrigger() &&
+				!( mInput->getPressTrigger() & mInput->getReleaseTrigger() ) &&
+				!( mInput->getLastPressTrigger() & mInput->getReleaseTrigger() ) ) {
 		if ( !mFirstPress ) {
 			mDownNode = mOverNode;
 			mMouseDownPos = mMousePosi;
@@ -142,16 +145,17 @@ void EventDispatcher::update( const Time& time ) {
 		}
 		mOverNode->onMouseDown( mMousePosi, mInput->getReleaseTrigger() );
 		sendMsg( mOverNode, NodeMessage::MouseDown, mInput->getReleaseTrigger() );
+
+		if ( NULL != mFocusNode && mDownNode == mOverNode &&
+			 ( mInput->getReleaseTrigger() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) &&
+			 ( !nodeWasDragging || mMousePos == mLastMousePos ) ) {
+			setFocusNode( mOverNode, NodeFocusReason::Click );
+		}
 	}
-#endif
 
 	if ( mInput->getReleaseTrigger() ) {
 		if ( NULL != mFocusNode ) {
 			if ( !nodeWasDragging || mMousePos == mLastMousePos ) {
-				if ( mDownNode == mOverNode &&
-					 ( mInput->getReleaseTrigger() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) )
-					setFocusNode( mOverNode );
-
 				// The focused node can change after the MouseUp ( since the node can call
 				// "setFocus()" on other node And the MouseClick would be received by the new
 				// focused node instead of the real one
@@ -171,7 +175,7 @@ void EventDispatcher::update( const Time& time ) {
 						sendMsg( mOverNode, NodeMessage::MouseUp, mInput->getReleaseTrigger() );
 				}
 
-				if ( mInput->getClickTrigger() ) {
+				if ( mInput->getClickTrigger() && mDownNode == mOverNode ) {
 					mLastFocusNode->onMouseClick( mMousePosi, mInput->getClickTrigger() );
 					sendMsg( mLastFocusNode, NodeMessage::MouseClick, mInput->getClickTrigger() );
 
@@ -287,7 +291,7 @@ void EventDispatcher::sendMouseDown( Node* toNode, const Vector2i& pos, const Ui
 	toNode->onMouseDown( pos, flags );
 }
 
-void EventDispatcher::setFocusNode( Node* node ) {
+void EventDispatcher::setFocusNode( Node* node, NodeFocusReason reason ) {
 	if ( NULL != mFocusNode && NULL != node && node != mFocusNode ) {
 		mWindow->getIME().stop();
 
@@ -298,7 +302,7 @@ void EventDispatcher::setFocusNode( Node* node ) {
 		mLossFocusNode->onFocusLoss();
 		sendMsg( mLossFocusNode, NodeMessage::FocusLoss );
 
-		mFocusNode->onFocus();
+		mFocusNode->onFocus( reason );
 		sendMsg( mFocusNode, NodeMessage::Focus );
 
 		if ( !mFocusCbs.empty() ) {

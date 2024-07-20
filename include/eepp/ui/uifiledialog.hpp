@@ -120,6 +120,8 @@ class EE_API UIFileDialog : public UIWindow {
 
 	void setOpenShortut( const KeyBindings::Shortcut& newOpenShortut );
 
+	void setSingleClickNavigation( bool singleClickNavigation );
+
   protected:
 	std::string mCurPath;
 	UIPushButton* mButtonOpen;

@@ -3,6 +3,7 @@
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uimenu.hpp>
+#include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -214,7 +215,7 @@ UIMenuItem* UIMenu::getItem( const String& text ) {
 	return nullptr;
 }
 
-UIMenuItem* UIMenu::getItemId( const String& id ) {
+UIMenuItem* UIMenu::getItemId( const std::string& id ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( mItems[i]->isType( UI_TYPE_MENUITEM ) ) {
 			UIMenuItem* tMenuItem = mItems[i]->asType<UIMenuItem>();
@@ -444,7 +445,8 @@ void UIMenu::trySelect( UIWidget* node, bool up ) {
 				if ( up ) {
 					if ( index > 0 ) {
 						for ( Int32 i = (Int32)index - 1; i >= 0; i-- ) {
-							if ( !mItems[i]->isType( UI_TYPE_MENU_SEPARATOR ) ) {
+							if ( !mItems[i]->isType( UI_TYPE_MENU_SEPARATOR ) &&
+								 mItems[i]->isVisible() ) {
 								setItemSelected( mItems[i] );
 								return;
 							}
@@ -453,7 +455,8 @@ void UIMenu::trySelect( UIWidget* node, bool up ) {
 					setItemSelected( mItems[mItems.size()] );
 				} else {
 					for ( Uint32 i = index + 1; i < mItems.size(); i++ ) {
-						if ( !mItems[i]->isType( UI_TYPE_MENU_SEPARATOR ) ) {
+						if ( !mItems[i]->isType( UI_TYPE_MENU_SEPARATOR ) &&
+							 mItems[i]->isVisible() ) {
 							setItemSelected( mItems[i] );
 							return;
 						}
@@ -515,8 +518,18 @@ Uint32 UIMenu::onKeyDown( const KeyEvent& event ) {
 		case KEY_RIGHT:
 			if ( nullptr != mItemSelected && mItemSelected->isType( UI_TYPE_MENUSUBMENU ) )
 				mItemSelected->asType<UIMenuSubMenu>()->showSubMenu();
+			else if ( getOwnerNode() && getOwnerNode()->getParent() &&
+					  getOwnerNode()->getParent()->isType( UI_TYPE_MENUBAR ) )
+				getOwnerNode()->getParent()->asType<UIMenuBar>()->showNextMenu();
 			break;
 		case KEY_LEFT:
+			if ( getOwnerNode() && getOwnerNode()->getParent() &&
+				 getOwnerNode()->getParent()->isType( UI_TYPE_MENUBAR ) )
+				getOwnerNode()->getParent()->asType<UIMenuBar>()->showPrevMenu();
+			else if ( getOwnerNode() && getOwnerNode()->getParent() &&
+					  getOwnerNode()->getParent()->isType( UI_TYPE_MENU ) )
+				hide();
+			break;
 		case KEY_ESCAPE:
 			hide();
 			break;
@@ -786,8 +799,21 @@ void UIMenu::findBestMenuPos( Vector2f& pos, UIMenu* menu, UIMenu* parent,
 							pos.y = qScreen.Bottom - menu->getPixelsSize().getHeight();
 							qPos.Left = pos.x;
 							qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
+
+							if ( qPos.Right > qScreen.Right ) {
+								qPos.Right = qScreen.Right;
+								qPos.Left = qPos.Right - menu->getPixelsSize().getWidth();
+							}
+
 							qPos.Top = pos.y;
 							qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+
+							if ( qPos.Top < qScreen.Top ) {
+								qPos.Top = qScreen.Top;
+								qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+							}
+
+							pos = qPos.getPosition();
 						}
 					}
 				}
