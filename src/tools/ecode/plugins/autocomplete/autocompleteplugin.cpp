@@ -1236,7 +1236,7 @@ AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocu
 	std::string current( getPartialSymbol( doc ) );
 	TextPosition end = doc->getSelection().end();
 	for ( Int64 i = 0; i < static_cast<Int64>( doc->linesCount() ); i++ ) {
-		const auto& string = doc->line( i ).toUtf8();
+		auto string = doc->line( i ).toUtf8();
 		for ( auto& match : pattern.gmatch( string ) ) {
 			std::string matchStr( match[0] );
 			// Ignore the symbol if is actually the current symbol being written

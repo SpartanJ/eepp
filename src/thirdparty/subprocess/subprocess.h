@@ -1059,12 +1059,13 @@ int subprocess_join(struct subprocess_s *const process,
     process->hStdInput = SUBPROCESS_NULL;
   }
 
-  WaitForSingleObject(process->hProcess, infinite);
+  if (process->hProcess) {
+	  WaitForSingleObject( process->hProcess, infinite );
+  }
 
   if (out_return_code) {
-    if (!GetExitCodeProcess(
-            process->hProcess,
-            SUBPROCESS_PTR_CAST(unsigned long *, out_return_code))) {
+	if (process->hProcess && !GetExitCodeProcess(process->hProcess,
+        SUBPROCESS_PTR_CAST(unsigned long *, out_return_code))) {
       return -1;
     }
   }
@@ -1128,18 +1129,22 @@ int subprocess_destroy(struct subprocess_s *const process) {
 
     if (process->hStdInput) {
       CloseHandle(process->hStdInput);
+	  process->hStdInput = SUBPROCESS_NULL;
     }
 
     if (process->hEventInput) {
       CloseHandle(process->hEventInput);
+	  process->hEventInput = SUBPROCESS_NULL;
     }
 
     if (process->hEventOutput) {
       CloseHandle(process->hEventOutput);
+	  process->hEventOutput = SUBPROCESS_NULL;
     }
 
     if (process->hEventError) {
       CloseHandle(process->hEventError);
+	  process->hEventError = SUBPROCESS_NULL;
     }
   }
 #endif

@@ -59,6 +59,7 @@ class EE_API UIDropDownList : public UITextInput {
 	StyleConfig mStyleConfig;
 	UIListBox* mListBox;
 	UINode* mFriendNode;
+	Uint32 mListBoxCloseCb{ 0 };
 
 	void onListBoxFocusLoss( const Event* Event );
 
