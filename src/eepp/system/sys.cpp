@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <ctype.h>
+#include <unistd.h>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/sys.hpp>
