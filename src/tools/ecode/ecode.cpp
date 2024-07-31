@@ -230,7 +230,7 @@ void App::openFileDialog() {
 }
 
 std::string App::getLastUsedFolder() {
-	if ( !mCurrentProject.empty() )
+	if ( !mCurrentProject.empty() && mCurrentProject != getPlaygroundPath() )
 		return mCurrentProject;
 	if ( !mRecentFolders.empty() )
 		return mRecentFolders.front();

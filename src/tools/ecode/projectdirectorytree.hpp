@@ -42,7 +42,14 @@ class FileListModel : public Model {
 		switch ( role ) {
 			case ModelRole::Icon:
 				return Variant( iconFor( index ) );
-			case ModelRole::Display:
+			case ModelRole::Display: {
+				if ( !mBasePath.empty() && index.column() == 1 &&
+					 mBasePath.size() < mFiles[index.row()].size() )
+					return Variant( mFiles[index.row()].substr( mBasePath.size() ) );
+				return Variant( index.column() == 0 ? mNames[index.row()].c_str()
+													: mFiles[index.row()].c_str() );
+			}
+			case ModelRole::Custom:
 				return Variant( index.column() == 0 ? mNames[index.row()].c_str()
 													: mFiles[index.row()].c_str() );
 			default:
@@ -57,9 +64,12 @@ class FileListModel : public Model {
 		mIcons[idx] = icon;
 	}
 
+	void setBasePath( const std::string& basePath ) { mBasePath = basePath; }
+
   protected:
 	std::vector<std::string> mFiles;
 	std::vector<std::string> mNames;
+	std::string mBasePath;
 	mutable std::vector<UIIcon*> mIcons;
 
 	UIIcon* iconFor( const ModelIndex& index ) const {
@@ -106,17 +116,20 @@ class ProjectDirectoryTree {
 			   const bool& ignoreHidden = true );
 
 	std::shared_ptr<FileListModel> fuzzyMatchTree( const std::vector<std::string>& matches,
-												   const size_t& max ) const;
+												   const size_t& max,
+												   const std::string& basePath = "" ) const;
 
-	std::shared_ptr<FileListModel> fuzzyMatchTree( const std::string& match,
-												   const size_t& max ) const;
+	std::shared_ptr<FileListModel> fuzzyMatchTree( const std::string& match, const size_t& max,
+												   const std::string& basePath = "" ) const;
 
-	std::shared_ptr<FileListModel> matchTree( const std::string& match, const size_t& max ) const;
+	std::shared_ptr<FileListModel> matchTree( const std::string& match, const size_t& max,
+											  const std::string& basePath = "" ) const;
 
-	void asyncFuzzyMatchTree( const std::string& match, const size_t& max,
-							  MatchResultCb res ) const;
+	void asyncFuzzyMatchTree( const std::string& match, const size_t& max, MatchResultCb res,
+							  const std::string& basePath = "" ) const;
 
-	void asyncMatchTree( const std::string& match, const size_t& max, MatchResultCb res ) const;
+	void asyncMatchTree( const std::string& match, const size_t& max, MatchResultCb res,
+						 const std::string& basePath = "" ) const;
 
 	struct CommandInfo {
 		std::string name;
@@ -124,11 +137,13 @@ class ProjectDirectoryTree {
 		UIIcon* icon{ nullptr };
 	};
 
-	std::shared_ptr<FileListModel>
-	asModel( const size_t& max, const std::vector<CommandInfo>& prependCommands = {} ) const;
+	std::shared_ptr<FileListModel> asModel( const size_t& max,
+											const std::vector<CommandInfo>& prependCommands = {},
+											const std::string& basePath = "" ) const;
 
 	static std::shared_ptr<FileListModel>
-	emptyModel( const std::vector<CommandInfo>& prependCommands = {} );
+	emptyModel( const std::vector<CommandInfo>& prependCommands = {},
+				const std::string& basePath = "" );
 
 	size_t getFilesCount() const;
 
