@@ -552,7 +552,7 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 				modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
 				ModelRole::Custom ) );
 			auto range =
-				rangeStr.isValid() ? TextRange::fromString( rangeStr.asStdString() ) : TextRange();
+				rangeStr.isValid() ? TextRange::fromString( rangeStr.toString() ) : TextRange();
 			if ( !range.isValid() && !FileSystem::isRelativePath( path ) &&
 				 pathHasPosition( mLocateInput->getText() ) &&
 				 String::startsWith( mLocateInput->getText().toUtf8(), path ) ) {
