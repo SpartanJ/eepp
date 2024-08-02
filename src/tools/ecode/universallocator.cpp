@@ -1,7 +1,7 @@
+#include "universallocator.hpp"
 #include "ecode.hpp"
 #include "pathhelper.hpp"
 #include "settingsmenu.hpp"
-#include "universallocator.hpp"
 
 #include <algorithm>
 
@@ -553,15 +553,16 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 				ModelRole::Custom ) );
 			auto range =
 				rangeStr.isValid() ? TextRange::fromString( rangeStr.toString() ) : TextRange();
+
+			if ( FileSystem::isRelativePath( path ) )
+				path = mApp->getCurrentProject() + path;
+
 			if ( !range.isValid() && !FileSystem::isRelativePath( path ) &&
 				 pathHasPosition( mLocateInput->getText() ) &&
 				 String::startsWith( mLocateInput->getText().toUtf8(), path ) ) {
 				auto pathAndPos = getPathAndPosition( mLocateInput->getText() );
 				range = { pathAndPos.second, pathAndPos.second };
 			}
-
-			if ( FileSystem::isRelativePath( path ) )
-				path = mApp->getCurrentProject() + path;
 
 			focusOrLoadFile( path, range );
 			mLocateBarLayout->execute( "close-locatebar" );
