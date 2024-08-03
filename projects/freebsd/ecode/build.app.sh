@@ -49,7 +49,7 @@ VERSIONPATH=../../../src/tools/ecode/version.hpp
 ECODE_MAJOR_VERSION=$(grep "define ECODE_MAJOR_VERSION" $VERSIONPATH | awk '{print $3}')
 ECODE_MINOR_VERSION=$(grep "define ECODE_MINOR_VERSION" $VERSIONPATH | awk '{print $3}')
 ECODE_PATCH_LEVEL=$(grep "define ECODE_PATCH_LEVEL" $VERSIONPATH | awk '{print $3}')
-ECODE_NAME=ecode-bsd-"$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH_LEVEL"-x86_64
+ECODE_NAME=ecode-freebsd-"$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH_LEVEL"-x86_64
 
 mv ecode.app/AppRun ecode.app/ecode
 mv ecode.app ecode
