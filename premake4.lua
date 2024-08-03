@@ -626,10 +626,6 @@ function build_link_configuration( package_name, use_ee_icon )
 			buildoptions { "-fno-strict-aliasing -ffast-math" }
 		end
 
-		if not is_vs() and not os.is_real("emscripten") and not os.is_real("macosx") then
-			buildoptions { "-s" }
-		end
-
 		fix_shared_lib_linking_path( package_name, "libeepp" )
 
 		targetname ( package_name .. extension )

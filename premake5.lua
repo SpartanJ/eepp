@@ -367,9 +367,6 @@ function build_link_configuration( package_name, use_ee_icon )
 	filter { "configurations:release*", "action:not vs*" }
 		buildoptions { "-fno-strict-aliasing -ffast-math" }
 
-	filter { "configurations:release*", "action:not vs*", "system:not macosx" }
-		buildoptions { "-s" }
-
 	filter "configurations:debug*"
 		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
 		targetname ( package_name .. "-debug" .. extension )
