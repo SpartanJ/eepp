@@ -6,6 +6,7 @@
 #include <eepp/system/packmanager.hpp>
 #include <eepp/ui/doc/languages/adept.hpp>
 #include <eepp/ui/doc/languages/angelscript.hpp>
+#include <eepp/ui/doc/languages/awkscript.hpp>
 #include <eepp/ui/doc/languages/batchscript.hpp>
 #include <eepp/ui/doc/languages/bend.hpp>
 #include <eepp/ui/doc/languages/blueprint.hpp>
@@ -118,12 +119,13 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 98 );
+	mDefinitions.reserve( 99 );
 
 	// Register some languages support.
 	addPlainText();
 	addAdept();
 	addAngelScript();
+	addAwkScript();
 	addBatchScript();
 	addBend();
 	addBlueprint();
