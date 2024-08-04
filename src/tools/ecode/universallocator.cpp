@@ -1141,7 +1141,7 @@ void UniversalLocator::asyncFuzzyMatchTextDocumentSymbol(
 std::vector<ProjectDirectoryTree::CommandInfo> UniversalLocator::getLocatorCommands() const {
 	std::vector<ProjectDirectoryTree::CommandInfo> vec;
 	UIIcon* icon = mUISceneNode->findIcon( "chevron-right" );
-	bool isOpenFolder = mApp->getCurrentProject().empty();
+	bool isOpenFolder = !mApp->getCurrentProject().empty();
 	for ( const auto& locator : mLocatorProviders ) {
 		if ( !isOpenFolder && locator.projectNeeded )
 			continue;

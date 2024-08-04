@@ -2291,6 +2291,8 @@ void App::closeFolder() {
 	mFileSystemModel->setRootPath( "" );
 	mPluginManager->setWorkspaceFolder( "" );
 	updateOpenRecentFolderBtn();
+	if ( mUniversalLocator )
+		mUniversalLocator->updateFilesTable();
 	if ( getConfig().ui.welcomeScreen ) {
 		UIWelcomeScreen::createWelcomeScreen( this );
 		mStatusBar->setVisible( false );

@@ -44,7 +44,8 @@ class FileListModel : public Model {
 				return Variant( iconFor( index ) );
 			case ModelRole::Display: {
 				if ( !mBasePath.empty() && index.column() == 1 &&
-					 mBasePath.size() < mFiles[index.row()].size() )
+					 mBasePath.size() < mFiles[index.row()].size() &&
+					 String::startsWith( mFiles[index.row()], mBasePath ) )
 					return Variant( mFiles[index.row()].substr( mBasePath.size() ) );
 				return Variant( index.column() == 0 ? mNames[index.row()].c_str()
 													: mFiles[index.row()].c_str() );
