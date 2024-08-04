@@ -68,7 +68,7 @@ class EE_API UIFileDialog : public UIWindow {
 
 	UITextInput* getFileInput() const;
 
-	UIDropDownList* getFiletypeList() const;
+	UIDropDownList* getFileTypeList() const;
 
 	void addFilePattern( std::string pattern, bool select = false );
 

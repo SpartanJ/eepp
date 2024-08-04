@@ -106,7 +106,14 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 				if ( !FileSystem::fileExists( newFolderPath ) &&
 					 FileSystem::makeDir( newFolderPath ) ) {
 					refreshFolder();
+
+					ModelIndex index =
+						mMultiView->getCurrentView()->findRowWithText( folderName, true, true );
+					if ( index.isValid() )
+						mMultiView->setSelection( index );
 				}
+
+				msgBox->closeWindow();
 			} );
 		}
 	} );
@@ -203,7 +210,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 			mMultiView->getCurrentView()->setFocus();
 			mMultiView->getCurrentView()->forceKeyDown( *kevent );
 		}
-	});
+	} );
 
 	mButtonOpen = UIPushButton::New();
 	mButtonOpen
@@ -439,8 +446,7 @@ std::string UIFileDialog::getSelectedDrive() const {
 	ModelIndex index = getSelectionModelIndex();
 	ModelIndex modelIndex( mDiskDrivesModel->index( index.row(), DiskDrivesModel::Name ) );
 	Variant var( mDiskDrivesModel->data( modelIndex ) );
-	std::string drive( var.asCStr() );
-	return drive;
+	return var.toString();
 }
 
 void UIFileDialog::openFileOrFolder( bool shouldOpenFolder = false ) {
@@ -712,7 +718,7 @@ UITextInput* UIFileDialog::getFileInput() const {
 	return mFile;
 }
 
-UIDropDownList* UIFileDialog::getFiletypeList() const {
+UIDropDownList* UIFileDialog::getFileTypeList() const {
 	return mFiletype;
 }
 
