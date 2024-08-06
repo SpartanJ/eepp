@@ -1570,18 +1570,22 @@ void TextDocument::moveTo( const size_t& cursorIdx, int columnOffset ) {
 }
 
 std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
-	if ( !mAutoCloseBrackets || 1 != text.size() )
+	static std::vector<std::pair<String::StringBaseType, String::StringBaseType>>
+		sAutoCloseBracketsPairs = { { '(', ')' }, { '{', '}' },	  { '[', ']' },
+									{ '"', '"' }, { '\'', '\'' }, { '`', '`' } };
+
+	if ( 1 != text.size() )
 		return {};
 
 	size_t pos = std::numeric_limits<size_t>::max();
 	bool isClose = false;
 	bool isSame = false;
-	for ( size_t i = 0; i < mAutoCloseBracketsPairs.size(); i++ ) {
-		if ( text[0] == mAutoCloseBracketsPairs[i].first ||
-			 text[0] == mAutoCloseBracketsPairs[i].second ) {
+	for ( size_t i = 0; i < sAutoCloseBracketsPairs.size(); i++ ) {
+		if ( text[0] == sAutoCloseBracketsPairs[i].first ||
+			 text[0] == sAutoCloseBracketsPairs[i].second ) {
 			pos = i;
-			isClose = text[0] == mAutoCloseBracketsPairs[i].second;
-			isSame = mAutoCloseBracketsPairs[i].first == mAutoCloseBracketsPairs[i].second;
+			isClose = text[0] == sAutoCloseBracketsPairs[i].second;
+			isSame = sAutoCloseBracketsPairs[i].first == sAutoCloseBracketsPairs[i].second;
 			break;
 		}
 	}
@@ -1594,11 +1598,17 @@ std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
 	for ( size_t i = 0; i < mSelection.size(); ++i ) {
 		auto& sel = mSelection[i];
 		if ( sel.hasSelection() ) {
-			replaceSelection( i, mAutoCloseBracketsPairs[pos].first + getSelectedText() +
-									 mAutoCloseBracketsPairs[pos].second );
+			replaceSelection( i, sAutoCloseBracketsPairs[pos].first + getSelectedText() +
+									 sAutoCloseBracketsPairs[pos].second );
 			inserted.push_back( true );
-		} else {
-			auto closeChar = mAutoCloseBracketsPairs[pos].second;
+		} else if ( mAutoCloseBrackets ) {
+			// Confirm it's enabled
+			auto closeChar = sAutoCloseBracketsPairs[pos].second;
+			if ( std::find_if( mAutoCloseBracketsPairs.begin(), mAutoCloseBracketsPairs.end(),
+							   [closeChar]( auto bracket ) {
+								   return bracket.second == closeChar;
+							   } ) == mAutoCloseBracketsPairs.end() )
+				continue;
 			bool mustClose = true;
 
 			if ( sel.start().column() < (Int64)line( sel.start().line() ).size() ) {
@@ -1635,7 +1645,7 @@ void TextDocument::textInput( const String& text, bool mightBeInteresting ) {
 	BoolScopedOp op( mDoingTextInput, true );
 	BoolScopedOp op2( mInsertingText, true );
 
-	if ( mAutoCloseBrackets && 1 == text.size() ) {
+	if ( 1 == text.size() ) {
 		auto inserted = autoCloseBrackets( text );
 
 		if ( !inserted.empty() ) {
