@@ -83,8 +83,10 @@ void StatusAppOutputController::run( const ProjectBuildCommand& runData,
 
 	const auto updateRunButton = [this]() {
 		UIPushButton* buildButton = getRunButton( mApp );
-		buildButton->runOnMainThread(
-			[this, buildButton] { buildButton->setText( mApp->i18n( "run", "Run" ) ); } );
+		if ( buildButton ) {
+			buildButton->runOnMainThread(
+				[this, buildButton] { buildButton->setText( mApp->i18n( "run", "Run" ) ); } );
+		}
 		mRunButton->setEnabled( true );
 		mStopButton->setEnabled( false );
 	};
