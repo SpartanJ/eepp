@@ -8,7 +8,7 @@
   "formatters": [
     {
       "language": ["javascript", "typescript", "jsx", "tsx", "html"],
-      "file_patterns": ["%.js$", "%.ts$", "%.jsx$", "%.tsx$", "%.html?$"],
+      "file_patterns": ["%.js$", "%.ts$", "%.jsx$", "%.tsx$", "%.[mp]?html?$"],
       "command": "prettier $FILENAME",
       "url": "https://prettier.io"
     },

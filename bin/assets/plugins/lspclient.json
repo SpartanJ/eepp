@@ -181,7 +181,7 @@
       "name": "emmet-language-server",
       "url": "https://github.com/olrtg/emmet-language-server",
       "command": "emmet-language-server --stdio",
-      "file_patterns": ["%.htm", "%.html"],
+      "file_patterns": ["%.[mp]?html?"],
       "rootIndicationFileNames": [".git"],
       "initializationOptions": {
         "showSuggestionsAsSnippets": true
