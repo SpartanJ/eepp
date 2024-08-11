@@ -933,6 +933,8 @@ workspace "eepp"
 		incdirs { "src/thirdparty/freetype2/include", "src/thirdparty/harfbuzz" }
 		build_base_cpp_configuration( "harfbuzz" )
 		target_dir_thirdparty()
+		filter "action:vs*"
+			buildoptions{ "/bigobj" }
 
 	project "chipmunk-static"
 		kind "StaticLib"

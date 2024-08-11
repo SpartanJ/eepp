@@ -1120,6 +1120,9 @@ solution "eepp"
 			files { "src/thirdparty/harfbuzz/**.cc" }
 			includedirs { "src/thirdparty/freetype2/include", "src/thirdparty/harfbuzz" }
 			build_base_cpp_configuration( "harfbuzz" )
+			if is_vs() then
+				buildoptions{ "/bigobj" }
+			end
 	end
 
 	project "chipmunk-static"
