@@ -784,6 +784,11 @@ PluginRequestHandle AutoCompletePlugin::processResponse( const PluginMessage& ms
 			}
 		}
 		return processCodeCompletion( msg.asCodeCompletion() );
+	} else if ( msg.isRequest() && msg.type == PluginMessageType::SignatureHelp ) {
+		if ( getManager() && getManager()->getSplitter() &&
+			 getManager()->getSplitter()->curEditorIsNotNull() ) {
+			requestSignatureHelp( getManager()->getSplitter()->getCurEditor() );
+		}
 	} else if ( msg.isResponse() && msg.type == PluginMessageType::SignatureHelp ) {
 		return processSignatureHelp( msg.asSignatureHelp() );
 	} else if ( msg.isBroadcast() && msg.type == PluginMessageType::LanguageServerCapabilities ) {

@@ -27,6 +27,15 @@ namespace ecode {
 #define LSPCLIENT_THREADED 0
 #endif
 
+static json getURIAndPositionJSON( UICodeEditor* editor ) {
+	json data;
+	auto doc = editor->getDocumentRef();
+	auto sel = doc->getSelection();
+	data["uri"] = doc->getURI().toString();
+	data["position"] = { { "line", sel.start().line() }, { "character", sel.start().column() } };
+	return data;
+}
+
 class LSPLocationModel : public Model {
   public:
 	enum CustomInfo { URI, TextRange };
@@ -1386,6 +1395,10 @@ void LSPClientPlugin::getSymbolInfo( UICodeEditor* editor ) {
 						editor->getScreenPosition( editor->getDocument().getSelection().start() )
 							.getPosition() );
 				} );
+			} else {
+				json data = getURIAndPositionJSON( editor );
+				mManager->sendRequest( PluginMessageType::SignatureHelp, PluginMessageFormat::JSON,
+									   &data );
 			}
 		} );
 }
