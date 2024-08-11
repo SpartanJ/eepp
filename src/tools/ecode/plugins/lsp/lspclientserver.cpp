@@ -1220,6 +1220,12 @@ bool LSPClientServer::start() {
 	std::string cmd( mLSP.command );
 
 	if ( !mLSP.commandParameters.empty() ) {
+		if ( FileSystem::isRelativePath( cmd ) ) {
+			auto fullPath( Sys::which( cmd ) );
+			if ( !fullPath.empty() )
+				cmd = fullPath;
+		}
+
 		if ( mLSP.commandParameters.front() != ' ' )
 			mLSP.commandParameters = " " + mLSP.commandParameters;
 		cmd += mLSP.commandParameters;
