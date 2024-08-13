@@ -967,6 +967,10 @@ function build_eepp( build_name )
 		files { "src/eepp/network/platform/unix/*.cpp" }
 	end
 
+	if os.is_real("windows") then
+		links { "bcrypt" }
+	end
+
 	files { "src/eepp/core/*.cpp",
 			"src/eepp/math/*.cpp",
 			"src/eepp/system/*.cpp",
@@ -1054,15 +1058,13 @@ solution "eepp"
 			build_base_configuration( "glew" )
 	end
 
-	if not _OPTIONS["with-openssl"] then
-		project "mbedtls-static"
-			kind "StaticLib"
-			language "C"
-			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
-			includedirs { "src/thirdparty/mbedtls/include/" }
-			files { "src/thirdparty/mbedtls/library/*.c" }
-			build_base_cpp_configuration( "mbedtls" )
-	end
+	project "mbedtls-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		includedirs { "src/thirdparty/mbedtls/include/" }
+		files { "src/thirdparty/mbedtls/library/*.c" }
+		build_base_configuration( "mbedtls" )
 
 	project "vorbis-static"
 		kind "StaticLib"

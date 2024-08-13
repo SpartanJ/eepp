@@ -739,6 +739,7 @@ function build_eepp( build_name )
 	filter "system:windows"
 		files { "src/eepp/system/platform/win/*.cpp" }
 		files { "src/eepp/network/platform/win/*.cpp" }
+		links { "bcrypt" }
 
 	filter "system:not windows"
 		files { "src/eepp/system/platform/posix/*.cpp" }
@@ -875,7 +876,7 @@ workspace "eepp"
 		language "C"
 		incdirs { "src/thirdparty/mbedtls/include/" }
 		files { "src/thirdparty/mbedtls/library/*.c" }
-		build_base_cpp_configuration( "mbedtls" )
+		build_base_configuration( "mbedtls" )
 		target_dir_thirdparty()
 
 	project "vorbis-static"

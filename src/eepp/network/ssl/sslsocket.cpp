@@ -61,16 +61,13 @@ bool SSLSocket::init() {
 				CertificatesPath = "/usr/share/ssl/certs/ca-bundle.crt";
 			}
 #elif EE_PLATFORM == EE_PLATFORM_BSD
-			// FreeBSD
-			if ( FileSystem::fileExists( "/usr/local/share/certs/ca-root.crt" ) ) {
-				CertificatesPath = "/usr/local/share/certs/ca-root.crt";
-				// OpenBSD
-			} else if ( FileSystem::fileExists( "/etc/ssl/cert.pem" ) ) {
+			// FreeBSD and OpenBSD
+			if ( FileSystem::fileExists( "/etc/ssl/cert.pem" ) ) {
 				CertificatesPath = "/etc/ssl/cert.pem";
 			}
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
-			if ( FileSystem::fileExists( "/boot/common/data/ssl/cert.pem" ) ) {
-				CertificatesPath = "/boot/common/data/ssl/cert.pem";
+			if ( FileSystem::fileExists( "/boot/system/data/ssl/CARootCertificates.pem" ) ) {
+				CertificatesPath = "/boot/system/data/ssl/CARootCertificates.pem";
 			}
 #endif
 
