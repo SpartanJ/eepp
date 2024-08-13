@@ -1645,7 +1645,7 @@ void TextDocument::textInput( const String& text, bool mightBeInteresting ) {
 	BoolScopedOp op( mDoingTextInput, true );
 	BoolScopedOp op2( mInsertingText, true );
 
-	if ( 1 == text.size() ) {
+	if ( 1 == text.size() && mAutoCloseBrackets ) {
 		auto inserted = autoCloseBrackets( text );
 
 		if ( !inserted.empty() ) {

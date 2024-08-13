@@ -401,7 +401,7 @@ double DocumentView::getLineYOffset( Int64 docIdx, Float lineHeight ) const {
 }
 
 bool DocumentView::isLineVisible( Int64 docIdx ) const {
-	return mDocLineToVisibleIndex.empty() ||
+	return mDocLineToVisibleIndex.empty() || isOneToOne() ||
 		   ( docIdx < static_cast<Int64>( mDocLineToVisibleIndex.size() ) &&
 			 mDocLineToVisibleIndex[docIdx] != static_cast<Int64>( VisibleIndex::invalid ) );
 }

@@ -1585,7 +1585,7 @@ Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i& position, const Uint32&
 		if ( plugin->onMouseDoubleClick( this, position, flags ) )
 			return UIWidget::onMouseDoubleClick( position, flags );
 
-	if ( mLocked || NULL == mFont )
+	if ( NULL == mFont )
 		return 1;
 
 	if ( mMinimapEnabled ) {
@@ -1594,7 +1594,7 @@ Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i& position, const Uint32&
 			return 1;
 	}
 
-	if ( flags & EE_BUTTON_LMASK ) {
+	if ( isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) ) {
 		mDoc->selectWord( false );
 		mLastDoubleClick.restart();
 		checkColorPickerAction();
