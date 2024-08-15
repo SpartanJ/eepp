@@ -155,6 +155,8 @@ LSPClientPlugin::~LSPClientPlugin() {
 			if ( editor.first->hasDocument() )
 				editor.first->getDocument().removeCommand( kb.first );
 		}
+		for ( auto listener : editor.second )
+			editor.first->removeEventListener( listener );
 		editor.first->unregisterPlugin( this );
 	}
 	if ( nullptr == mManager->getSplitter() )
