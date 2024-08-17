@@ -1336,16 +1336,19 @@ void App::setCursorBlinkingTime() {
 
 void App::setIndentTabCharacter() {
 	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT,
+		UIMessageBox::COMBOBOX,
 		i18n( "set_indent_tab_character", "Set the tab indentation guide character displayed." ) );
+	msgBox->setId( "indent_tab_window" );
 	msgBox->setTitle( mWindowTitle );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->getTextInput()->setFont( mFontMono );
-	msgBox->getTextInput()->setText( String::fromUtf8(
+	msgBox->getComboBox()->getDropDownList()->getListBox()->addClass( "indent_tab_listbox_item" );
+	msgBox->getComboBox()->getDropDownList()->getListBox()->addListBoxItems(
+		{ u8"»", u8"→", u8"⇒", u8"↪", u8"⇢", u8"↣" } );
+	msgBox->getComboBox()->setText( String::fromUtf8(
 		mConfig.editor.tabIndentCharacter.empty() ? u8"»" : mConfig.editor.tabIndentCharacter ) );
 	msgBox->showWhenReady();
 	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		auto txt( msgBox->getTextInput()->getText() );
+		auto txt( msgBox->getComboBox()->getText() );
 		if ( txt.size() == 1 ) {
 			mConfig.editor.tabIndentCharacter = txt.toUtf8();
 			mSplitter->forEachEditor(
@@ -2107,51 +2110,50 @@ std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	return {
 		{ { KEY_RETURN, KEYMOD_LALT | KEYMOD_LCTRL }, "fullscreen-toggle" },
-			{ { KEY_F3, KEYMOD_NONE }, "repeat-find" }, { { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
-			{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
-			{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
-			{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
-			{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
-			{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
-			{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
-			{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
-			{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
-			{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
-			{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
-			{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
+		{ { KEY_F3, KEYMOD_NONE }, "repeat-find" },
+		{ { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
+		{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
+		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
+		{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
+		{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
+		{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
+		{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
+		{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
+		{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
+		{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
+		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
+		{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-			{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
+		{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
 #else
-			{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
+		{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
 #endif
-			{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
-			{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
-			{ { KEY_J, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-			  "terminal-split-left" },
-			{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-			  "terminal-split-right" },
-			{ { KEY_I, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-			  "terminal-split-top" },
-			{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-			  "terminal-split-bottom" },
-			{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-			  "terminal-split-swap" },
-			{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-			  "reopen-closed-tab" },
-			{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
-			{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
-			{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
-			{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
-			{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
-			{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
-			{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
-			{ { KEY_F5, KEYMOD_NONE }, "project-build-and-run" },
-			{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
-			{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
-			  "open-workspace-symbol-search" },
-			{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
-			  "open-document-symbol-search" },
-			{ { KEY_N, KEYMOD_SHIFT | KEYMOD_LALT }, "create-new-window" },
+		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
+		{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
+		{ { KEY_J, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		  "terminal-split-left" },
+		{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		  "terminal-split-right" },
+		{ { KEY_I, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		  "terminal-split-top" },
+		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		  "terminal-split-bottom" },
+		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		  "terminal-split-swap" },
+		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		  "reopen-closed-tab" },
+		{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
+		{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
+		{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
+		{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
+		{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
+		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
+		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
+		{ { KEY_F5, KEYMOD_NONE }, "project-build-and-run" },
+		{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
+		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-workspace-symbol-search" },
+		{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-document-symbol-search" },
+		{ { KEY_N, KEYMOD_SHIFT | KEYMOD_LALT }, "create-new-window" },
 	};
 }
 
@@ -2160,13 +2162,13 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 std::map<std::string, std::string> App::getMigrateKeybindings() {
 	return {
 		{ "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
-			{ "switch-to-tab-2", "alt+2" }, { "switch-to-tab-3", "alt+3" },
-			{ "switch-to-tab-4", "alt+4" }, { "switch-to-tab-5", "alt+5" },
-			{ "switch-to-tab-6", "alt+6" }, { "switch-to-tab-7", "alt+7" },
-			{ "switch-to-tab-8", "alt+8" }, { "switch-to-tab-9", "alt+9" },
-			{ "switch-to-last-tab", "alt+0" },
+		{ "switch-to-tab-2", "alt+2" },		   { "switch-to-tab-3", "alt+3" },
+		{ "switch-to-tab-4", "alt+4" },		   { "switch-to-tab-5", "alt+5" },
+		{ "switch-to-tab-6", "alt+6" },		   { "switch-to-tab-7", "alt+7" },
+		{ "switch-to-tab-8", "alt+8" },		   { "switch-to-tab-9", "alt+9" },
+		{ "switch-to-last-tab", "alt+0" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-			{ "menu-toggle", "mod+shift+m" },
+		{ "menu-toggle", "mod+shift+m" },
 #endif
 	};
 }
@@ -2211,6 +2213,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "editor-set-line-breaking-column",
 			 "editor-set-line-spacing",
 			 "editor-set-cursor-blinking-time",
+			 "editor-set-indent-tab-character",
 			 "check-for-updates",
 			 "keybindings",
 			 "about-ecode",

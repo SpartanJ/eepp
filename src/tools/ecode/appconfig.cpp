@@ -27,6 +27,7 @@ std::string characterAlignmentToString( CharacterAlignment alignment ) {
 			return "right";
 			break;
 	}
+	return "left";
 }
 
 CharacterAlignment characterAlignmentFromString( const std::string_view& str ) {

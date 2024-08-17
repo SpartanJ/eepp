@@ -295,6 +295,8 @@ class EE_API UIWindow : public UIWidget {
 	void setupModal();
 
 	void forcedApplyStyle();
+
+	void sendWindowToFront();
 };
 
 }} // namespace EE::UI

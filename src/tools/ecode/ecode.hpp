@@ -282,6 +282,7 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "editor-set-line-breaking-column", [this] { setLineBreakingColumn(); } );
 		t.setCommand( "editor-set-line-spacing", [this] { setLineSpacing(); } );
 		t.setCommand( "editor-set-cursor-blinking-time", [this] { setCursorBlinkingTime(); } );
+		t.setCommand( "editor-set-indent-tab-character", [this] { setIndentTabCharacter(); } );
 		t.setCommand( "check-for-updates", [this] { checkForUpdates(); } );
 		t.setCommand( "about-ecode", [this] { aboutEcode(); } );
 		t.setCommand( "ecode-source", [this] { ecodeSource(); } );

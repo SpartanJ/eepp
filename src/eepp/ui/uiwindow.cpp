@@ -785,7 +785,7 @@ void UIWindow::fixChildsSize() {
 Uint32 UIWindow::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::Focus: {
-			toFront();
+			sendWindowToFront();
 			break;
 		}
 		case NodeMessage::MouseDown: {
@@ -808,7 +808,7 @@ Uint32 UIWindow::onMessage( const NodeMessage* Msg ) {
 			if ( getUISceneNode() != NULL )
 				getUISceneNode()->setCursor( Cursor::Hand );
 
-			toFront();
+			sendWindowToFront();
 
 			break;
 		}
@@ -1071,7 +1071,7 @@ void UIWindow::setupModal() {
 		mModalNode->setVisible( true );
 		mModalNode->toFront();
 
-		toFront();
+		sendWindowToFront();
 	}
 }
 
@@ -1801,6 +1801,11 @@ void UIWindow::executeKeyBindingCommand( const std::string& command ) {
 	if ( cmdIt != mKeyBindingCommands.end() ) {
 		cmdIt->second();
 	}
+}
+
+void UIWindow::sendWindowToFront() {
+	toFront();
+	sendCommonEvent( Event::OnWindowToFront );
 }
 
 }} // namespace EE::UI
