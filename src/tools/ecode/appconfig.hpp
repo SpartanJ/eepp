@@ -6,6 +6,7 @@
 #include <eepp/system/inifile.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
+#include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/window/window.hpp>
 
 #include <nlohmann/json.hpp>
@@ -85,6 +86,8 @@ struct CodeEditorConfig {
 	std::string autoCloseBrackets{ "" };
 	Time cursorBlinkingTime{ Seconds( 0.5f ) };
 	Time codeFoldingRefreshFreq{ Seconds( 2.f ) };
+	std::string tabIndentCharacter{ "" };
+	CharacterAlignment tabIndentAlignment{ CharacterAlignment::Center };
 };
 
 struct DocumentConfig {

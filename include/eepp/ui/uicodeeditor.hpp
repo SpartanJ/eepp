@@ -33,6 +33,8 @@ class UILoader;
 class UIPopUpMenu;
 class UIMenuItem;
 
+enum class CharacterAlignment : Uint32 { Left = 0, Center = 1, Right = 2 };
+
 using DocumentLineRange = std::pair<Int64, Int64>;
 using DocumentViewLineRange = std::pair<VisibleIndex, VisibleIndex>;
 
@@ -80,30 +82,30 @@ class UICodeEditorPlugin {
 	}
 
 	virtual void drawBeforeLineText( UICodeEditor*, const Int64&, Vector2f, const Float&,
-									 const Float& ) {};
+									 const Float& ){};
 
 	virtual void drawAfterLineText( UICodeEditor* /*editor*/, const Int64& /*index*/,
 									Vector2f /*position*/, const Float& /*fontSize*/,
-									const Float& /*lineHeight*/ ) {};
+									const Float& /*lineHeight*/ ){};
 
 	virtual void minimapDrawBefore( UICodeEditor* /*editor*/, const DocumentLineRange&,
 									const DocumentViewLineRange&, const Vector2f& /*linePos*/,
 									const Vector2f& /*lineSize*/, const Float& /*charWidth*/,
 									const Float& /*gutterWidth*/,
-									const DrawTextRangesFn& /* drawTextRanges */ ) {};
+									const DrawTextRangesFn& /* drawTextRanges */ ){};
 
 	virtual void minimapDrawAfter( UICodeEditor* /*editor*/, const DocumentLineRange&,
 								   const DocumentViewLineRange&, const Vector2f& /* linePos */,
 								   const Vector2f& /* lineSize */, const Float& /* charWidth */,
 								   const Float& /* gutterWidth */,
-								   const DrawTextRangesFn& /* drawTextRanges */ ) {};
+								   const DrawTextRangesFn& /* drawTextRanges */ ){};
 
 	virtual void drawGutter( UICodeEditor* /*editor*/, const Int64& /*index*/,
 							 const Vector2f& /*screenStart*/, const Float& /*lineHeight*/,
-							 const Float& /*gutterWidth*/, const Float& /*fontSize*/ ) {};
+							 const Float& /*gutterWidth*/, const Float& /*fontSize*/ ){};
 
 	virtual void drawTop( UICodeEditor* /*editor*/, const Vector2f& /*screenStart*/,
-						  const Sizef& /*size*/, const Float& /*fontSize*/ ) {};
+						  const Sizef& /*size*/, const Float& /*fontSize*/ ){};
 
 	Uint32 addOnReadyCallback( const OnReadyCb& cb ) {
 		mOnReadyCallbacks[mReadyCbNum++] = cb;
@@ -722,6 +724,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void updateMouseCursor( const Vector2f& position );
 
+	Uint32 getTabIndentCharacter() const { return mTabIndentCharacter; }
+
+	void setTabIndentCharacter( Uint32 chr );
+
+	CharacterAlignment getTabIndentAlignment() const { return mTabIndentAlignment; }
+
+	void setTabIndentAlignment( CharacterAlignment alignment );
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -843,6 +853,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Drawable* mFoldDrawable{ nullptr };
 	Drawable* mFoldedDrawable{ nullptr };
 	String::HashType mTagFoldRange{ 0 };
+	Uint32 mTabIndentCharacter{ 187 /*'»'*/ };
+	CharacterAlignment mTabIndentAlignment{ CharacterAlignment::Center };
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );

@@ -334,6 +334,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void setCursorBlinkingTime();
 
+	void setIndentTabCharacter();
+
 	void setFoldRefreshFreq();
 
 	void checkForUpdates( bool fromStartup = false );

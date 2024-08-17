@@ -3899,9 +3899,20 @@ void UICodeEditor::drawWhitespaces( const DocumentLineRange& lineRange, const Ve
 	Color color( Color( mWhitespaceColor ).blendAlpha( mAlpha ) );
 	unsigned int fontSize = getCharacterSize();
 	// We use the GlyphDrawable since can batch the draw calls instead of Text.
-	GlyphDrawable* adv = mFont->getGlyphDrawable( 187 /*'»'*/, fontSize );
+	GlyphDrawable* adv = mFont->getGlyphDrawable( mTabIndentCharacter, fontSize );
 	GlyphDrawable* cpoint = mFont->getGlyphDrawable( 183 /*'·'*/, fontSize );
-	Float tabCenter = ( tabWidth - adv->getPixelsSize().getWidth() ) * 0.5f;
+	Float tabAlign = 0;
+	switch ( mTabIndentAlignment ) {
+		case CharacterAlignment::Center:
+			tabAlign = ( tabWidth - adv->getPixelsSize().getWidth() ) * 0.5f;
+			break;
+		case CharacterAlignment::Right:
+			tabAlign = ( tabWidth - adv->getPixelsSize().getWidth() );
+			break;
+		case CharacterAlignment::Left:
+			break;
+	}
+
 	adv->setDrawMode( GlyphDrawable::DrawMode::Text );
 	cpoint->setDrawMode( GlyphDrawable::DrawMode::Text );
 	adv->setColor( color );
@@ -3922,7 +3933,7 @@ void UICodeEditor::drawWhitespaces( const DocumentLineRange& lineRange, const Ve
 					auto offset =
 						startScroll +
 						getTextPositionOffset( { index, static_cast<Int64>( i ) } ).asFloat();
-					offset.x += tabCenter;
+					offset.x += tabAlign;
 					adv->draw( offset );
 				}
 			}
@@ -3938,7 +3949,7 @@ void UICodeEditor::drawWhitespaces( const DocumentLineRange& lineRange, const Ve
 						cpoint->draw( position );
 						position.x += glyphW;
 					} else if ( '\t' == text[i] ) {
-						adv->draw( Vector2f( position.x + tabCenter, position.y ) );
+						adv->draw( Vector2f( position.x + tabAlign, position.y ) );
 						position.x += tabWidth;
 					} else {
 						position.x += glyphW;
@@ -4834,6 +4845,20 @@ void UICodeEditor::updateMouseCursor( const Vector2f& position ) {
 		getUISceneNode()->setCursor(
 			mHandShown ? Cursor::Hand
 					   : ( !overGutter && !mLocked ? Cursor::IBeam : Cursor::Arrow ) );
+	}
+}
+
+void UICodeEditor::setTabIndentCharacter( Uint32 chr ) {
+	if ( mTabIndentCharacter != chr ) {
+		mTabIndentCharacter = chr;
+		invalidateDraw();
+	}
+}
+
+void UICodeEditor::setTabIndentAlignment( CharacterAlignment alignment ) {
+	if ( mTabIndentAlignment != alignment ) {
+		mTabIndentAlignment = alignment;
+		invalidateDraw();
 	}
 }
 
