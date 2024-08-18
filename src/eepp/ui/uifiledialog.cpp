@@ -169,20 +169,31 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		}
 	} );
 	mMultiView->setOnSelectionChange( [this] {
-		if ( mMultiView->getSelection().isEmpty() || mDisplayingDrives )
+		if ( mMultiView->getSelection().isEmpty() || mDisplayingDrives ||
+			 ( isSaveDialog() && allowMultiFileSelect() ) )
 			return;
-		const FileSystemModel::Node* node = getSelectionNode();
-		if ( !node ) {
+		auto nodes = getSelectionNodes();
+		if ( nodes.empty() ) {
 			Log::error( "UIFileDialog() - mMultiView->setOnSelectionChange - "
 						"UIFileDialog::getSelectionNode() was empty, shouldn't "
 						"be empty" );
 			return;
 		}
-		if ( !isSaveDialog() ) {
-			if ( allowFolderSelect() || !FileSystem::isDirectory( node->fullPath() ) )
+		if ( nodes.size() == 1 ) {
+			const FileSystemModel::Node* node = nodes[0];
+			if ( !isSaveDialog() ) {
+				if ( allowFolderSelect() || !FileSystem::isDirectory( node->fullPath() ) )
+					setFileName( node->getName() );
+			} else if ( !FileSystem::isDirectory( node->fullPath() ) ) {
 				setFileName( node->getName() );
-		} else if ( !FileSystem::isDirectory( node->fullPath() ) ) {
-			setFileName( node->getName() );
+			}
+		} else {
+			std::string names;
+			for ( size_t i = 0; i < nodes.size(); i++ ) {
+				auto node = nodes[i];
+				names += node->getName() + ( ( i != nodes.size() - 1 ) ? "; " : "" );
+			}
+			setFileName( names );
 		}
 	} );
 
@@ -393,21 +404,29 @@ void UIFileDialog::setCurPath( const std::string& path ) {
 	refreshFolder( true );
 }
 
-ModelIndex UIFileDialog::getSelectionModelIndex() const {
+std::vector<ModelIndex> UIFileDialog::getSelectionModelIndex() const {
 	if ( mMultiView->getSelection().isEmpty() )
 		return {};
-	auto index = mMultiView->getSelection().first();
-	auto* filterModel = (SortingProxyModel*)mMultiView->getModel().get();
-	auto localIndex = filterModel->mapToSource( index );
-	return localIndex;
+	std::vector<ModelIndex> indexes;
+	mMultiView->getSelection().forEachIndex( [this, &indexes]( const ModelIndex& index ) {
+		auto* filterModel = (SortingProxyModel*)mMultiView->getModel().get();
+		auto localIndex = filterModel->mapToSource( index );
+		indexes.emplace_back( std::move( localIndex ) );
+	} );
+	return indexes;
 }
 
-const FileSystemModel::Node* UIFileDialog::getSelectionNode() const {
+std::vector<const FileSystemModel::Node*> UIFileDialog::getSelectionNodes() const {
 	if ( mMultiView->getSelection().isEmpty() || mDisplayingDrives )
-		return nullptr;
-	auto localIndex = getSelectionModelIndex();
-	const FileSystemModel::Node& node = mModel->node( localIndex );
-	return &node;
+		return {};
+	auto localIndexes = getSelectionModelIndex();
+	std::vector<const FileSystemModel::Node*> nodes;
+	nodes.reserve( localIndexes.size() );
+	for ( const auto& localIndex : localIndexes ) {
+		const FileSystemModel::Node& node = mModel->node( localIndex );
+		nodes.push_back( &node );
+	}
+	return nodes;
 }
 
 void UIFileDialog::openSaveClick() {
@@ -443,7 +462,10 @@ void UIFileDialog::disableButtons() {
 std::string UIFileDialog::getSelectedDrive() const {
 	if ( !mDisplayingDrives )
 		return "";
-	ModelIndex index = getSelectionModelIndex();
+	auto indexes = getSelectionModelIndex();
+	if ( indexes.empty() )
+		return "";
+	ModelIndex index = indexes[0];
 	ModelIndex modelIndex( mDiskDrivesModel->index( index.row(), DiskDrivesModel::Name ) );
 	Variant var( mDiskDrivesModel->data( modelIndex ) );
 	return var.toString();
@@ -458,7 +480,10 @@ void UIFileDialog::openFileOrFolder( bool shouldOpenFolder = false ) {
 		return;
 	}
 
-	auto* node = getSelectionNode();
+	auto nodes = getSelectionNodes();
+	if ( nodes.empty() )
+		return;
+	auto* node = nodes[0];
 	if ( !node ) {
 		Log::error( "UIFileDialog::getSelectionNode() was empty, shouldn't be empty" );
 		return;
@@ -543,21 +568,24 @@ void UIFileDialog::save() {
 }
 
 void UIFileDialog::open() {
+	auto fullPath( getFullPath() );
+
 	if ( mMultiView->getSelection().isEmpty() &&
-		 !( allowFolderSelect() && FileSystem::isDirectory( getFullPath() ) ) &&
-		 !FileSystem::fileExists( getFullPath() ) )
+		 !( allowFolderSelect() && FileSystem::isDirectory( fullPath ) ) &&
+		 !FileSystem::fileExists( fullPath ) )
 		return;
 
 	if ( mDisplayingDrives ) {
 		if ( !allowFolderSelect() )
 			return;
-		if ( FileSystem::isDirectory( getFullPath() ) )
+		if ( FileSystem::isDirectory( fullPath ) )
 			return;
 	}
 
-	auto* node = !mMultiView->getSelection().isEmpty() ? getSelectionNode() : nullptr;
+	auto nodes = getSelectionNodes();
+	auto* node = !nodes.empty() ? nodes[0] : nullptr;
 	if ( !node ) {
-		node = mModel->getNodeFromPath( getFullPath() );
+		node = mModel->getNodeFromPath( fullPath );
 
 		if ( !node ) {
 			Log::warning( "UIFileDialog::open() - Should contain a valid path." );
@@ -567,11 +595,10 @@ void UIFileDialog::open() {
 
 	if ( ( node && "" != node->getName() ) || allowFolderSelect() ) {
 		if ( !allowFolderSelect() ) {
-			if ( FileSystem::isDirectory( getFullPath() ) )
+			if ( FileSystem::isDirectory( fullPath ) )
 				return;
 		} else {
-			if ( !FileSystem::isDirectory( getFullPath() ) &&
-				 !FileSystem::isDirectory( getCurPath() ) )
+			if ( !FileSystem::isDirectory( fullPath ) && !FileSystem::isDirectory( getCurPath() ) )
 				return;
 		}
 
@@ -610,28 +637,32 @@ void UIFileDialog::addFilePattern( std::string pattern, bool select ) {
 	}
 }
 
-bool UIFileDialog::isSaveDialog() {
+bool UIFileDialog::isSaveDialog() const {
 	return 0 != ( mDialogFlags & SaveDialog );
 }
 
-bool UIFileDialog::getSortAlphabetically() {
+bool UIFileDialog::getSortAlphabetically() const {
 	return 0 != ( mDialogFlags & SortAlphabetically );
 }
 
-bool UIFileDialog::getFoldersFirst() {
+bool UIFileDialog::getFoldersFirst() const {
 	return 0 != ( mDialogFlags & FoldersFirst );
 }
 
-bool UIFileDialog::allowFolderSelect() {
+bool UIFileDialog::allowFolderSelect() const {
 	return 0 != ( mDialogFlags & AllowFolderSelect );
 }
 
-bool UIFileDialog::getShowOnlyFolders() {
+bool UIFileDialog::getShowOnlyFolders() const {
 	return 0 != ( mDialogFlags & ShowOnlyFolders );
 }
 
-bool UIFileDialog::getShowHidden() {
+bool UIFileDialog::getShowHidden() const {
 	return 0 != ( mDialogFlags & ShowHidden );
+}
+
+bool UIFileDialog::allowMultiFileSelect() const {
+	return 0 != ( mDialogFlags & AllowMultiFileSelection );
 }
 
 void UIFileDialog::setSortAlphabetically( const bool& sortAlphabetically ) {
@@ -658,24 +689,48 @@ void UIFileDialog::setShowHidden( const bool& showHidden ) {
 	refreshFolder();
 }
 
-std::string UIFileDialog::getFullPath() {
+void UIFileDialog::setAllowsMultiFileSelect( bool allow ) {
+	BitOp::setBitFlagValue( &mDialogFlags, AllowMultiFileSelection, allow ? 1 : 0 );
+	mMultiView->setMultiSelect( allow );
+	mFile->setEnabled( !allow );
+}
+
+std::string UIFileDialog::getFullPath( size_t index ) const {
 	if ( mDisplayingDrives )
 		return getCurFile();
 
 	std::string tPath = mCurPath;
-
 	FileSystem::dirAddSlashAtEnd( tPath );
-
-	tPath += getCurFile();
-
+	tPath += getCurFile( index );
 	return tPath;
+}
+
+std::string UIFileDialog::getFullPath() const {
+	return getFullPath( 0 );
+}
+
+std::vector<std::string> UIFileDialog::getFullPaths() const {
+	if ( mDisplayingDrives )
+		return { getCurFile() };
+
+	std::vector<std::string> paths;
+	auto nodes = getSelectionNodes();
+
+	for ( size_t i = 0; i < nodes.size(); i++ ) {
+		std::string tPath( mCurPath );
+		FileSystem::dirAddSlashAtEnd( tPath );
+		tPath += nodes[i]->getName();
+		paths.emplace_back( std::move( tPath ) );
+	}
+
+	return paths;
 }
 
 std::string UIFileDialog::getCurPath() const {
 	return mCurPath;
 }
 
-std::string UIFileDialog::getCurFile() const {
+std::string UIFileDialog::getCurFile( size_t index ) const {
 	if ( mDialogFlags & SaveDialog )
 		return mFile->getText();
 	if ( mMultiView->getSelection().isEmpty() )
@@ -683,8 +738,10 @@ std::string UIFileDialog::getCurFile() const {
 	if ( mDisplayingDrives ) {
 		return getSelectedDrive();
 	} else {
-		auto* node = getSelectionNode();
-
+		auto nodes = getSelectionNodes();
+		if ( nodes.empty() || index >= nodes.size() )
+			return "";
+		auto* node = nodes[index];
 		if ( !node ) {
 			Log::error( "UIFileDialog::getCurFile() - UIFileDialog::getSelectionNode() was empty, "
 						"shouldn't be empty" );

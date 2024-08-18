@@ -216,10 +216,13 @@ void App::openFileDialog() {
 	dialog->setTitle( i18n( "open_file", "Open File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->setSingleClickNavigation( mConfig.editor.singleClickNavigation );
+	dialog->setAllowsMultiFileSelect( true );
 	dialog->on( Event::OpenFile, [this]( const Event* event ) {
-		auto file = event->getNode()->asType<UIFileDialog>()->getFullPath();
-		mLastFileFolder = FileSystem::fileRemoveFileName( file );
-		loadFileFromPath( file );
+		auto files = event->getNode()->asType<UIFileDialog>()->getFullPaths();
+		for ( const auto& file : files ) {
+			mLastFileFolder = FileSystem::fileRemoveFileName( file );
+			loadFileFromPath( file );
+		}
 	} );
 	dialog->on( Event::OnWindowClose, [this]( const Event* ) {
 		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )

@@ -3,9 +3,9 @@
 
 #include <eepp/core.hpp>
 #include <eepp/math/vector2.hpp>
+#include <eepp/scene/nodefocusreason.hpp>
 #include <eepp/system/time.hpp>
 #include <eepp/window/keycodes.hpp>
-#include <eepp/scene/nodefocusreason.hpp>
 
 using namespace EE::System;
 using namespace EE::Math;
@@ -79,6 +79,8 @@ class EE_API EventDispatcher {
 	const Uint32& getDoubleClickTrigger() const;
 
 	const Uint32& getReleaseTrigger() const;
+
+	bool justPressTriggered( Uint32 flag );
 
 	void setNodeDragging( Node* dragging );
 

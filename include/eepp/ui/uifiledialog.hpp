@@ -23,7 +23,8 @@ class EE_API UIFileDialog : public UIWindow {
 		SortAlphabetically = ( 1 << 2 ),
 		AllowFolderSelect = ( 1 << 3 ),
 		ShowOnlyFolders = ( 1 << 4 ),
-		ShowHidden = ( 1 << 5 )
+		ShowHidden = ( 1 << 5 ),
+		AllowMultiFileSelection = ( 1 << 6 ),
 	};
 
 	static const Uint32 DefaultFlags = UIFileDialog::Flags::FoldersFirst |
@@ -52,9 +53,11 @@ class EE_API UIFileDialog : public UIWindow {
 
 	std::string getCurPath() const;
 
-	std::string getCurFile() const;
+	std::string getCurFile( size_t index = 0 ) const;
 
-	std::string getFullPath();
+	std::string getFullPath() const;
+
+	std::vector<std::string> getFullPaths() const;
 
 	UIPushButton* getButtonOpen() const;
 
@@ -72,17 +75,19 @@ class EE_API UIFileDialog : public UIWindow {
 
 	void addFilePattern( std::string pattern, bool select = false );
 
-	bool isSaveDialog();
+	bool isSaveDialog() const;
 
-	bool getSortAlphabetically();
+	bool getSortAlphabetically() const;
 
-	bool getFoldersFirst();
+	bool getFoldersFirst() const;
 
-	bool getShowOnlyFolders();
+	bool getShowOnlyFolders() const;
 
-	bool getShowHidden();
+	bool getShowHidden() const;
 
-	bool allowFolderSelect();
+	bool allowFolderSelect() const;
+
+	bool allowMultiFileSelect() const;
 
 	void setSortAlphabetically( const bool& sortAlphabetically );
 
@@ -93,6 +98,8 @@ class EE_API UIFileDialog : public UIWindow {
 	void setShowOnlyFolders( const bool& showOnlyFolders );
 
 	void setShowHidden( const bool& showHidden );
+
+	void setAllowsMultiFileSelect( bool allow );
 
 	const KeyBindings::Shortcut& getCloseShortcut() const;
 
@@ -167,11 +174,13 @@ class EE_API UIFileDialog : public UIWindow {
 
 	void setCurPath( const std::string& path );
 
-	const FileSystemModel::Node* getSelectionNode() const;
+	std::vector<const FileSystemModel::Node*> getSelectionNodes() const;
 
-	ModelIndex getSelectionModelIndex() const;
+	std::vector<ModelIndex> getSelectionModelIndex() const;
 
 	std::string getSelectedDrive() const;
+
+	std::string getFullPath( size_t index ) const;
 };
 
 }} // namespace EE::UI

@@ -101,4 +101,11 @@ void UIMultiModelView::setSingleClickNavigation( bool singleClickNavigation ) {
 	mTable->setSingleClickNavigation( singleClickNavigation );
 }
 
+void UIMultiModelView::setMultiSelect( bool enable ) {
+	auto kind =
+		enable ? UIAbstractView::SelectionKind::Multiple : UIAbstractView::SelectionKind::Single;
+	mList->setSelectionKind( kind );
+	mTable->setSelectionKind( kind );
+}
+
 }} // namespace EE::UI
