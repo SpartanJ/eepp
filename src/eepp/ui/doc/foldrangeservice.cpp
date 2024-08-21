@@ -149,10 +149,19 @@ std::optional<TextRange> FoldRangeServive::find( Int64 docIdx ) {
 	return foldRegionIt->second;
 }
 
-void FoldRangeServive::addFoldRegion( TextRange region ) {
-	Lock l( mMutex );
-	region.normalize();
-	mFoldingRegions[region.start().line()] = std::move( region );
+void FoldRangeServive::addFoldRegions( std::vector<TextRange> regions ) {
+	size_t newCount;
+	size_t oldCount;
+	{
+		Lock l( mMutex );
+		oldCount = mFoldingRegions.size();
+		for ( auto& region : regions ) {
+			region.normalize();
+			mFoldingRegions[region.start().line()] = std::move( region );
+		}
+		newCount = mFoldingRegions.size();
+	}
+	mDoc->notifyFoldRegionsUpdated( oldCount, newCount );
 }
 
 bool FoldRangeServive::isFoldingRegionInLine( Int64 docIdx ) {
@@ -179,8 +188,8 @@ void FoldRangeServive::shiftFoldingRegions( Int64 fromLine, Int64 numLines ) {
 void FoldRangeServive::setFoldingRegions( std::vector<TextRange> regions ) {
 	size_t newCount = regions.size();
 	size_t oldCount;
-	Lock l( mMutex );
 	{
+		Lock l( mMutex );
 		oldCount = mFoldingRegions.size();
 		mFoldingRegions.clear();
 		std::sort( regions.begin(), regions.end() );

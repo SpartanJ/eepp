@@ -34,7 +34,7 @@ class EE_API FoldRangeServive {
 
 	std::optional<TextRange> find( Int64 docIdx );
 
-	void addFoldRegion( TextRange region );
+	void addFoldRegions( std::vector<TextRange> regions );
 
 	bool isFoldingRegionInLine( Int64 docIdx );
 

@@ -557,6 +557,19 @@ void DocumentView::ensureCursorVisibility() {
 		unfoldRegion( range.start().line() );
 }
 
+void DocumentView::onFoldRegionsUpdated() {
+	if ( mUpdatingFoldRegions )
+		return;
+	BoolScopedOp op( mUpdatingFoldRegions, true );
+	std::vector<TextRange> add;
+	for ( const auto& region : mFoldedRegions ) {
+		if ( !mDoc->getFoldRangeService().isFoldingRegionInLine( region.start().line() ) )
+			add.push_back( region );
+	}
+	if ( !add.empty() )
+		mDoc->getFoldRangeService().addFoldRegions( add );
+}
+
 void DocumentView::moveCursorToVisibleArea() {
 	if ( mFoldedRegions.empty() )
 		return;

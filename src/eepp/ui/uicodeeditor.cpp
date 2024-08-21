@@ -666,6 +666,7 @@ void UICodeEditor::onFoldRegionsUpdated( size_t oldCount, size_t newCount ) {
 			invalidateLongestLineWidth();
 		} );
 	}
+	runOnMainThread( [this] { mDocView.onFoldRegionsUpdated(); } );
 }
 
 Uint32 UICodeEditor::onMessage( const NodeMessage* msg ) {
