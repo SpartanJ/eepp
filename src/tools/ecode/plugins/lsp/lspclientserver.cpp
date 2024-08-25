@@ -35,6 +35,7 @@ static const char* MEMBER_POSITION = "position";
 static const char* MEMBER_POSITIONS = "positions";
 static const char* MEMBER_LOCATION = "location";
 static const char* MEMBER_RANGE = "range";
+static const char* MEMBER_SELECTION_RANGE = "selectionRange";
 static const char* MEMBER_LINE = "line";
 static const char* MEMBER_CHARACTER = "character";
 static const char* MEMBER_KIND = "kind";
@@ -394,8 +395,12 @@ static bool isPositionValid( const TextPosition& pos ) {
 struct LSPSymbolInformationTmp {
 	LSPSymbolInformationTmp() = default;
 	LSPSymbolInformationTmp( const std::string& _name, LSPSymbolKind _kind, TextRange _range,
-							 const std::string& _detail ) :
-		name( _name ), detail( _detail ), kind( _kind ), range( _range ) {}
+							 const std::string& _detail, TextRange _selectionRange ) :
+		name( _name ),
+		detail( _detail ),
+		kind( _kind ),
+		range( _range ),
+		selectionRange( _selectionRange ) {}
 	std::string name;
 	std::string detail;
 	LSPSymbolKind kind{ LSPSymbolKind::File };
@@ -415,6 +420,10 @@ struct LSPSymbolInformationTmp {
 		info.score = std::move( tmp.score );
 		for ( const auto& child : tmp.children )
 			info.children.push_back( fromTmp( child ) );
+		std::sort( info.children.begin(), info.children.end(),
+				   []( const LSPSymbolInformation& left, const LSPSymbolInformation& right ) {
+					   return left.range < right.range;
+				   } );
 		return info;
 	}
 };
@@ -430,7 +439,13 @@ static LSPSymbolInformationList parseDocumentSymbols( const json& result, bool i
 			const auto& mrange = symbol.contains( MEMBER_RANGE )
 									 ? symbol.at( MEMBER_RANGE )
 									 : symbol[MEMBER_LOCATION].at( MEMBER_RANGE );
+
+			const auto& srange = symbol.contains( MEMBER_SELECTION_RANGE )
+									 ? symbol.at( MEMBER_SELECTION_RANGE )
+									 : symbol[MEMBER_LOCATION].at( MEMBER_SELECTION_RANGE );
+
 			auto range = parseRange( mrange );
+			auto selectionRange = parseRange( srange );
 			auto it = index.end();
 			if ( !parent ) {
 				auto container =
@@ -453,7 +468,7 @@ static LSPSymbolInformationList parseDocumentSymbols( const json& result, bool i
 				auto name = symbol.at( ( "name" ) ).get<std::string>();
 				auto kind = static_cast<LSPSymbolKind>( symbol.at( MEMBER_KIND ).get<int>() );
 				auto detail = symbol.value( MEMBER_DETAIL, "" );
-				list->push_back( { name, kind, range, detail } );
+				list->push_back( { name, kind, range, detail, selectionRange } );
 				index.insert( std::make_pair( name, &list->back() ) );
 				if ( symbol.contains( "children" ) ) {
 					const auto& children = symbol.at( ( "children" ) );

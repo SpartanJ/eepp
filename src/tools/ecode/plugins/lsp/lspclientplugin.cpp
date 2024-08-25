@@ -1,5 +1,6 @@
 #include "lspclientplugin.hpp"
 #include "../../version.hpp"
+#include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/luapattern.hpp>
@@ -10,6 +11,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uistyle.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
@@ -334,10 +336,13 @@ PluginRequestHandle LSPClientPlugin::processTextDocumentSymbol( const PluginMess
 	const LSPSymbolInformationList& symbols = msg.type == PluginMessageType::TextDocumentSymbol
 												  ? getDocumentSymbols( uri )
 												  : getDocumentFlattenSymbols( uri );
-	if ( !symbols.empty() ) {
-		mManager->sendResponse( this, msg.type, PluginMessageFormat::SymbolInformation, &symbols,
-								uri.toString() );
-		return { uri.toString() };
+	{
+		Lock l( mDocSymbolsMutex );
+		if ( !symbols.empty() ) {
+			mManager->sendResponse( this, msg.type, PluginMessageFormat::SymbolInformation,
+									&symbols, uri.toString() );
+			return { uri.toString() };
+		}
 	}
 
 	LSPClientServer* server = mClientManager.getOneLSPClientServer( uri );
@@ -439,17 +444,30 @@ void LSPClientPlugin::setDocumentSymbols( const URI& docURI, LSPSymbolInformatio
 								  ? LSPSymbolInformationListHelper::flatten( res )
 								  : res;
 	mDocSymbols[docURI] = std::move( res );
+
+	getManager()->getSplitter()->forEachDoc( [docURI, this]( TextDocument& doc ) {
+		if ( doc.getURI() == docURI )
+			updateCurrentSymbol( doc );
+	} );
 }
 
 void LSPClientPlugin::setDocumentSymbolsFromResponse( const PluginIDType& id, const URI& docURI,
 													  LSPSymbolInformationList&& res ) {
 	setDocumentSymbols( docURI, std::move( res ) );
-	mManager->sendResponse( this, PluginMessageType::TextDocumentSymbol,
-							PluginMessageFormat::SymbolInformation, &getDocumentSymbols( docURI ),
-							id );
-	mManager->sendResponse( this, PluginMessageType::TextDocumentFlattenSymbol,
-							PluginMessageFormat::SymbolInformation,
-							&getDocumentFlattenSymbols( docURI ), id );
+
+	{
+		const auto& docSymbols = getDocumentSymbols( docURI );
+		Lock l( mDocSymbolsMutex );
+		mManager->sendResponse( this, PluginMessageType::TextDocumentSymbol,
+								PluginMessageFormat::SymbolInformation, &docSymbols, id );
+	}
+
+	{
+		const auto& docFlattenSymbols = getDocumentFlattenSymbols( docURI );
+		Lock l( mDocSymbolsMutex );
+		mManager->sendResponse( this, PluginMessageType::TextDocumentFlattenSymbol,
+								PluginMessageFormat::SymbolInformation, &docFlattenSymbols, id );
+	}
 }
 
 const LSPSymbolInformationList& LSPClientPlugin::getDocumentSymbols( const URI& docURI ) {
@@ -966,6 +984,16 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		} else {
 			config["disable_semantic_highlighting_lang"] = json::array();
 		}
+
+		if ( config.contains( "breadcrumb_navigation" ) )
+			mBreadcrumb = config.value( "breadcrumb_navigation", true );
+		else if ( updateConfigFile )
+			config["breadcrumb_navigation"] = mBreadcrumb;
+
+		if ( config.contains( "breadcrumb_height" ) )
+			mBreadcrumbHeight = config.value( "breadcrumb_height", "20dp" );
+		else if ( updateConfigFile )
+			config["breadcrumb_height"] = mBreadcrumbHeight.toString();
 	}
 
 	if ( mKeyBindings.empty() ) {
@@ -1315,12 +1343,14 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
 			mEditorDocs[editor] = editor->getDocumentRef().get();
 			mClientManager.run( editor->getDocumentRef() );
+			updateCurrentSymbol( editor->getDocument() );
 		} ) );
 
 	listeners.push_back(
 		editor->addEventListener( Event::OnCursorPosChange, [this, editor]( const Event* ) {
 			if ( mSymbolInfoShowing )
 				hideTooltip( editor );
+			updateCurrentSymbol( editor->getDocument() );
 		} ) );
 
 	listeners.push_back(
@@ -1329,8 +1359,18 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 			TextDocument* newDoc = editor->getDocumentRef().get();
 			Lock l( mDocMutex );
 			mDocs.erase( oldDoc );
+			mDocCurrentSymbols.erase( oldDoc->getURI() );
 			mEditorDocs[editor] = newDoc;
+			updateCurrentSymbol( editor->getDocument() );
 		} ) );
+
+	if ( mBreadcrumb ) {
+		mPluginTopSpace = mBreadcrumbHeight.asPixels(
+			getUISceneNode()->getPixelsSize().getWidth(), getUISceneNode()->getPixelsSize(),
+			getUISceneNode()->getDPI(), getUISceneNode()->getUIThemeManager()->getDefaultFontSize(),
+			getUISceneNode()->getUIThemeManager()->getDefaultFontSize() );
+		editor->registerTopSpace( this, mPluginTopSpace, 0 );
+	}
 
 	mEditors.insert( { editor, listeners } );
 	mEditorsTags.insert( { editor, UnorderedSet<String::HashType>{} } );
@@ -1417,6 +1457,10 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 	const auto& cbs = mEditors[editor];
 	for ( auto listener : cbs )
 		editor->removeEventListener( listener );
+
+	if ( mBreadcrumb )
+		editor->unregisterTopSpace( this );
+
 	mEditors.erase( editor );
 	mEditorsTags.erase( editor );
 	mEditorDocs.erase( editor );
@@ -1436,6 +1480,7 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 	}
 
 	mDocs.erase( doc );
+	mDocCurrentSymbols.erase( doc->getURI() );
 }
 
 bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
@@ -1662,6 +1707,129 @@ void LSPClientPlugin::onVersionUpgrade( Uint32 oldVersion, Uint32 ) {
 	if ( oldVersion <= ECODE_VERSIONNUM( 0, 5, 0 ) ) {
 		mSemanticHighlighting = true;
 	}
+}
+
+void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart, const Sizef& size,
+							   const Float& /*fontSize*/ ) {
+	Float width = size.getWidth() - editor->getMinimapWidth();
+	Primitives p;
+	Color backColor( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::Background ) );
+	p.setColor( backColor );
+	p.drawRectangle( Rectf( screenStart, Sizef( width, mPluginTopSpace ) ) );
+
+	Color lineColor( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::LineBreakColumn ) );
+	p.setColor( lineColor );
+	Vector2f p1( screenStart.x, screenStart.y + size.getHeight() );
+	p.drawLine( { p1, { p1.x + width, p1.y } } );
+
+	Font* font = getUISceneNode()->getUIThemeManager()->getDefaultFont();
+	if ( !font )
+		return;
+
+	Float fontSize = editor->getUISceneNode()->getUIThemeManager()->getDefaultFontSize();
+
+	bool isPath = true;
+	std::string path( editor->getDocument().getFilePath() );
+	if ( path.empty() ) {
+		path = editor->getDocument().getFilename();
+		isPath = false;
+	}
+
+	Color textColor( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::LineNumber2 ) );
+	const auto& workspace = getManager()->getWorkspaceFolder();
+	if ( isPath && !workspace.empty() && String::startsWith( path, workspace ) )
+		path = path.substr( workspace.size() );
+	Float textOffsetY = eefloor( ( size.getHeight() - font->getLineSpacing( fontSize ) ) * 0.5f );
+
+	Vector2f pos( screenStart.x + eefloor( PixelDensity::dpToPx( 8 ) ),
+				  screenStart.y + textOffsetY );
+
+	auto drawn = Text::draw( String::fromUtf8( path ), pos, font, fontSize, textColor );
+
+	Lock l( mDocSymbolsMutex );
+	auto symbolsInfoIt = mDocCurrentSymbols.find( editor->getDocument().getURI() );
+	if ( symbolsInfoIt == mDocCurrentSymbols.end() )
+		return;
+
+	pos.x += drawn.getWidth();
+	UIIcon* icon = getUISceneNode()->findIcon( "chevron-right" );
+	Float textHeight = drawn.getHeight();
+
+	const auto drawSep = [&pos, textHeight, icon, textColor, &drawn, &screenStart, textOffsetY]() {
+		if ( icon ) {
+			pos.x += eefloor( PixelDensity::dpToPx( 8 ) );
+			Float iconSize = PixelDensity::dpToPxI( drawn.getHeight() * 0.5f );
+			auto iconDrawable = icon->getSize( iconSize );
+			Color c = iconDrawable->getColor();
+			iconDrawable->setColor( textColor );
+			Float iconHeight = iconDrawable->getPixelsSize().getHeight();
+			Vector2f iconPos( { pos.x, screenStart.y + textOffsetY +
+										   eefloor( ( textHeight - iconHeight ) * 0.5f ) } );
+			iconDrawable->draw( iconPos );
+			pos.x +=
+				iconDrawable->getPixelsSize().getWidth() + eefloor( PixelDensity::dpToPx( 8 ) );
+			iconDrawable->setColor( c );
+		} else {
+			pos.x += eefloor( PixelDensity::dpToPx( 16 ) );
+		}
+	};
+
+	const auto& symbolsInfo = symbolsInfoIt->second;
+
+	for ( const auto& info : symbolsInfo ) {
+		drawSep();
+		UIIcon* iconKind = getUISceneNode()->findIcon( info.icon );
+		if ( iconKind ) {
+			auto iconDrawable = iconKind->getSize( fontSize );
+			Color c = iconDrawable->getColor();
+			iconDrawable->setColor( textColor );
+			Float iconHeight = iconDrawable->getPixelsSize().getHeight();
+			iconDrawable->draw( { pos.x, screenStart.y + textOffsetY +
+											 eefloor( ( textHeight - iconHeight ) * 0.5f ) } );
+			pos.x += iconDrawable->getPixelsSize().getWidth() + PixelDensity::dpToPxI( 4 );
+			iconDrawable->setColor( c );
+		}
+
+		drawn = Text::draw( String::fromUtf8( info.name ), pos, font, fontSize, textColor );
+		pos.x += drawn.getWidth();
+	}
+}
+
+void LSPClientPlugin::updateCurrentSymbol( TextDocument& doc ) {
+	if ( !mBreadcrumb )
+		return;
+
+	Lock l( mDocSymbolsMutex );
+	URI uri = doc.getURI();
+	auto symbolsIt = mDocSymbols.find( uri );
+	if ( symbolsIt == mDocSymbols.end() ) {
+		mDocCurrentSymbols[uri] = {};
+		return;
+	}
+
+	LSPSymbolInformationList* list = &symbolsIt->second;
+	auto sel = doc.getSelection();
+	LSPSymbolInformationList::iterator foundIt;
+	std::vector<DisplaySymbolInfo> symbolsInfo;
+
+	bool found = false;
+	do {
+		foundIt = std::lower_bound( list->begin(), list->end(), sel,
+									[]( const LSPSymbolInformation& cur, const TextRange& sel ) {
+										return cur.range < sel;
+									} );
+		found = foundIt != list->end() && foundIt->range.contains( sel );
+		if ( found ) {
+			symbolsInfo.push_back( { String::fromUtf8( foundIt->name ),
+									 LSPSymbolKindHelper::toIconString( foundIt->kind ) } );
+			if ( foundIt->children.empty() )
+				break;
+			list = &foundIt->children;
+		} else
+			break;
+	} while ( found );
+
+	mDocCurrentSymbols[uri] = std::move( symbolsInfo );
 }
 
 const LSPClientServerManager& LSPClientPlugin::getClientManager() const {

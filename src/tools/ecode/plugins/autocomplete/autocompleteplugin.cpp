@@ -162,7 +162,7 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];
 		if ( config.contains( "suggestions_syntax_highlight" ) )
-			mHighlightSuggestions = config.value( "suggestions_syntax_highlight", false );
+			mHighlightSuggestions = config.value( "suggestions_syntax_highlight", true );
 		else {
 			config["suggestions_syntax_highlight"] = mHighlightSuggestions;
 			updateConfigFile = true;

@@ -93,6 +93,9 @@ class LSPClientPlugin : public Plugin {
 
 	void onVersionUpgrade( Uint32 oldVersion, Uint32 currentVersion );
 
+	void drawTop( UICodeEditor* editor, const Vector2f& screenStart, const Sizef& size,
+				  const Float& fontSize );
+
   protected:
 	friend class LSPDocumentClient;
 	friend class LSPClientServer;
@@ -114,6 +117,8 @@ class LSPClientPlugin : public Plugin {
 	bool mSemanticHighlighting{ true };
 	bool mSilence{ false };
 	bool mTrimLogs{ false };
+	bool mBreadcrumb{ true };
+	StyleSheetLength mBreadcrumbHeight{ "20dp" };
 	UnorderedMap<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 	UnorderedMap<TextDocument*, std::shared_ptr<TextDocument>> mDelayedDocs;
 	Uint32 mHoverWaitCb{ 0 };
@@ -126,6 +131,12 @@ class LSPClientPlugin : public Plugin {
 	String::HashType mConfigHash{ 0 };
 	Color mOldBackgroundColor;
 	std::string mOldMaxWidth;
+	Float mPluginTopSpace{ 0 };
+	struct DisplaySymbolInfo {
+		String name;
+		std::string icon;
+	};
+	UnorderedMap<URI, std::vector<DisplaySymbolInfo>> mDocCurrentSymbols;
 
 	LSPClientPlugin( PluginManager* pluginManager, bool sync );
 
@@ -189,6 +200,8 @@ class LSPClientPlugin : public Plugin {
 	void processDiagnosticsCodeAction( const PluginMessage& msg );
 
 	void renameSymbol( UICodeEditor* editor );
+
+	void updateCurrentSymbol( TextDocument& doc );
 };
 
 } // namespace ecode

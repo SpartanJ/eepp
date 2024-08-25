@@ -266,15 +266,6 @@ void UICodeEditor::draw() {
 	for ( auto& plugin : mPlugins )
 		plugin->preDraw( this, startScroll, lineHeight, cursor );
 
-	if ( mPluginsTopSpace > 0 ) {
-		Float curTopPos = 0.f;
-		for ( auto& plugin : mPluginTopSpaces ) {
-			plugin.plugin->drawTop( this, { screenStart.x, screenStart.y + curTopPos },
-									{ mSize.getWidth(), plugin.space }, charSize );
-			curTopPos += plugin.space;
-		}
-	}
-
 	if ( !mLocked && mHighlightCurrentLine ) {
 		for ( const auto& sel : mDoc->getSelections() ) {
 			if ( mDocView.isFolded( sel.start().line(), true ) )
@@ -398,6 +389,15 @@ void UICodeEditor::draw() {
 
 	if ( mMinimapEnabled )
 		drawMinimap( screenStart, lineRange, visualLineRange );
+
+	if ( mPluginsTopSpace > 0 ) {
+		Float curTopPos = 0.f;
+		for ( auto& plugin : mPluginTopSpaces ) {
+			plugin.plugin->drawTop( this, { screenStart.x, screenStart.y + curTopPos },
+									{ mSize.getWidth(), plugin.space }, charSize );
+			curTopPos += plugin.space;
+		}
+	}
 
 	if ( mLocked && mDisplayLockedIcon )
 		drawLockedIcon( start );
@@ -1380,8 +1380,11 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		setFocus();
 
 		auto textScreenPos( resolveScreenPosition( position.asFloat() ) );
+		Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
+		if ( localPos.y < mPluginsTopSpace )
+			return UIWidget::onMouseDown( position, flags );
+
 		if ( flags & EE_BUTTON_LMASK ) {
-			Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
 			if ( localPos.x < mPaddingPx.Left + getGutterWidth() ) {
 				if ( mDoc->getFoldRangeService().isFoldingRegionInLine( textScreenPos.line() ) ) {
 					if ( mDocView.isFolded( textScreenPos.line() ) ) {
@@ -1468,15 +1471,17 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 			return 1;
 	}
 
+	Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
+
 	if ( !minimapHover && isTextSelectionEnabled() &&
 		 !getUISceneNode()->getEventDispatcher()->isNodeDragging() && NULL != mFont && mMouseDown &&
-		 ( flags & EE_BUTTON_LMASK ) ) {
+		 ( flags & EE_BUTTON_LMASK ) && localPos.y >= mPluginsTopSpace ) {
 		TextRange selection = mDoc->getSelection();
 		selection.setStart( resolveScreenPosition( position.asFloat() ) );
 		mDoc->setSelection( selection );
 	}
 
-	if ( minimapHover ) {
+	if ( minimapHover || localPos.y <= mPluginsTopSpace ) {
 		getUISceneNode()->setCursor( Cursor::Arrow );
 	} else {
 		checkMouseOverColor( position );
@@ -1487,7 +1492,6 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 	}
 
 	if ( mShowFoldingRegion && !mFoldsAlwaysVisible ) {
-		Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
 		bool oldFoldVisible = mFoldsVisible;
 		mFoldsVisible = localPos.x <= mPaddingPx.Left + getGutterWidth();
 		if ( oldFoldVisible != mFoldsVisible )
@@ -3777,7 +3781,8 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 	bool foldVisible = mShowFoldingRegion && mDoc->getFoldRangeService().canFold();
 	if ( foldVisible )
 		w += mFoldRegionWidth;
-	primitives.drawRectangle( Rectf( screenStart, Sizef( w, mSize.getHeight() ) ) );
+	primitives.drawRectangle( Rectf( { screenStart.x, screenStart.y + mPluginsTopSpace },
+									 Sizef( w, mSize.getHeight() - mPluginsTopSpace ) ) );
 	TextRange selection = mDoc->getSelection( true );
 	Float lineOffset = getLineOffset();
 
@@ -4248,6 +4253,8 @@ void UICodeEditor::resetPreviewColor() {
 }
 
 Float UICodeEditor::getMinimapWidth() const {
+	if ( !mMinimapEnabled )
+		return 0.f;
 	Float w = PixelDensity::dpToPx( mMinimapConfig.width );
 	// Max [mMinimapConfig.maxPercentWidth]% of the editor view width
 	if ( w / getPixelsSize().getWidth() > mMinimapConfig.maxPercentWidth )
@@ -4842,10 +4849,11 @@ bool UICodeEditor::isNotMonospace() const {
 
 void UICodeEditor::updateMouseCursor( const Vector2f& position ) {
 	if ( getScreenBounds().contains( position ) ) {
-		bool overGutter = convertToNodeSpace( position ).x < getGutterWidth();
+		auto localPos( convertToNodeSpace( position ) );
+		bool overGutterOrTop = localPos.x < getGutterWidth() || localPos.y < mPluginsTopSpace;
 		getUISceneNode()->setCursor(
 			mHandShown ? Cursor::Hand
-					   : ( !overGutter && !mLocked ? Cursor::IBeam : Cursor::Arrow ) );
+					   : ( !overGutterOrTop && !mLocked ? Cursor::IBeam : Cursor::Arrow ) );
 	}
 }
 
