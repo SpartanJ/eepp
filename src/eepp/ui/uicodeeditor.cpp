@@ -1481,14 +1481,15 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 		mDoc->setSelection( selection );
 	}
 
-	if ( minimapHover || localPos.y <= mPluginsTopSpace ) {
+	if ( minimapHover ) {
 		getUISceneNode()->setCursor( Cursor::Arrow );
 	} else {
 		checkMouseOverColor( position );
 
 		checkMouseOverLink( position );
 
-		updateMouseCursor( position.asFloat() );
+		if ( localPos.y >= mPluginsTopSpace )
+			updateMouseCursor( position.asFloat() );
 	}
 
 	if ( mShowFoldingRegion && !mFoldsAlwaysVisible ) {

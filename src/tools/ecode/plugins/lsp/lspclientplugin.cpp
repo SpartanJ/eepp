@@ -13,6 +13,7 @@
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uitooltip.hpp>
+#include <eepp/ui/uitreeview.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/input.hpp>
 #include <eepp/window/window.hpp>
@@ -37,6 +38,106 @@ static json getURIAndPositionJSON( UICodeEditor* editor ) {
 	data["position"] = { { "line", sel.start().line() }, { "character", sel.start().column() } };
 	return data;
 }
+
+class LSPSymbolInfoTreeModel : public Model {
+  public:
+	static std::shared_ptr<LSPSymbolInfoTreeModel> create( UISceneNode* uiSceneNode,
+														   LSPSymbolInformationList&& data,
+														   const std::string& query = "" ) {
+		return std::make_shared<LSPSymbolInfoTreeModel>( uiSceneNode, std::move( data ), query );
+	}
+
+	explicit LSPSymbolInfoTreeModel( UISceneNode* uiSceneNode, LSPSymbolInformationList&& info,
+									 const std::string& query = "" ) :
+		mUISceneNode( uiSceneNode ), mInfo( std::move( info ) ) {
+		for ( auto& info : mInfo )
+			info.updateParentsRefs();
+		if ( !query.empty() )
+			filter( String::toLower( query ) );
+	}
+
+	size_t rowCount( const ModelIndex& index ) const override {
+		if ( !index.isValid() )
+			return mInfo.size();
+		if ( index.internalId() == -1 )
+			return mInfo[index.row()].children.size();
+		if ( index.internalData() )
+			return static_cast<LSPSymbolInformation*>( index.internalData() )->children.size();
+		return 0;
+	};
+
+	size_t columnCount( const ModelIndex& ) const override { return 1; }
+
+	ModelIndex index( int row, int column, const ModelIndex& parent ) const override {
+		if ( !parent.isValid() )
+			return createIndex( row, column, &mInfo[row], -1 );
+		if ( parent.internalData() ) {
+			LSPSymbolInformation* parentNode =
+				static_cast<LSPSymbolInformation*>( parent.internalData() );
+			return createIndex( row, column, &parentNode->children[row], parent.row() );
+		}
+		return {};
+	}
+
+	ModelIndex parentIndex( const ModelIndex& index ) const override {
+		if ( !index.isValid() || index.internalId() == -1 )
+			return {};
+		if ( index.internalData() ) {
+			LSPSymbolInformation* node = static_cast<LSPSymbolInformation*>( index.internalData() );
+			if ( !node->parent )
+				return {};
+			return createIndex( index.internalId(), 0, node->parent );
+		}
+		return {};
+	}
+
+	Variant data( const ModelIndex& index, ModelRole role ) const override {
+		LSPSymbolInformation* node = static_cast<LSPSymbolInformation*>( index.internalData() );
+		if ( node == nullptr )
+			return {};
+
+		if ( role == ModelRole::Display ) {
+			return Variant( node->name.c_str() );
+		} else if ( role == ModelRole::Icon ) {
+			return mUISceneNode->findIcon( LSPSymbolKindHelper::toIconString( node->kind ) );
+		}
+		return {};
+	}
+
+  protected:
+	UISceneNode* mUISceneNode{ nullptr };
+	LSPSymbolInformationList mInfo;
+
+	std::optional<LSPSymbolInformation> filterNode( const LSPSymbolInformation& node,
+													const std::string& query ) {
+		LSPSymbolInformation filteredNode( node.name, node.kind, node.range, node.detail );
+
+		for ( const auto& child : node.children ) {
+			if ( auto filteredChild = filterNode( child, query ); filteredChild ) {
+				filteredChild->parent = &filteredNode;
+				filteredNode.children.push_back( std::move( *filteredChild ) );
+			}
+		}
+
+		if ( String::toLower( node.name ).find( query ) != std::string::npos ||
+			 !filteredNode.children.empty() )
+			return filteredNode;
+
+		return std::nullopt;
+	}
+
+	void filter( const std::string& query ) {
+		std::vector<LSPSymbolInformation> filteredRoots;
+
+		for ( const auto& rootNode : mInfo )
+			if ( auto filteredRoot = filterNode( rootNode, query ); filteredRoot )
+				filteredRoots.push_back( std::move( *filteredRoot ) );
+
+		mInfo = std::move( filteredRoots );
+		for ( auto& i : mInfo )
+			i.updateParentsRefs();
+	}
+};
 
 class LSPLocationModel : public Model {
   public:
@@ -443,6 +544,10 @@ void LSPClientPlugin::setDocumentSymbols( const URI& docURI, LSPSymbolInformatio
 	mDocFlatSymbols[docURI] = !LSPSymbolInformationListHelper::isFlat( res )
 								  ? LSPSymbolInformationListHelper::flatten( res )
 								  : res;
+
+	for ( auto& r : res )
+		r.updateParentsRefs();
+
 	mDocSymbols[docURI] = std::move( res );
 
 	getManager()->getSplitter()->forEachDoc( [docURI, this]( TextDocument& doc ) {
@@ -498,6 +603,11 @@ TextDocument* LSPClientPlugin::getDocumentFromURI( const URI& uri ) {
 
 bool LSPClientPlugin::onMouseClick( UICodeEditor* editor, const Vector2i& pos,
 									const Uint32& flags ) {
+	if ( mBreadcrumb && editor->convertToNodeSpace( pos.asFloat() ).y < mPluginTopSpace ) {
+		editor->getDocument().execute( "lsp-show-document-symbols", editor );
+		return true;
+	}
+
 	Input* input = editor->getUISceneNode()->getWindow()->getInput();
 	Uint32 mod = input->getSanitizedModState();
 	if ( mod != ( KEYMOD_LALT | KeyMod::getDefaultModifier() ) || ( flags & EE_BUTTON_LMASK ) == 0 )
@@ -1004,6 +1114,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		mKeyBindings["lsp-rename-symbol-under-cursor"] = "mod+shift+r";
 		mKeyBindings["lsp-symbol-references"] = "mod+shift+u";
 		mKeyBindings["lsp-format-range"] = "alt+shift+f";
+		mKeyBindings["lsp-show-document-symbols"] = "mod+shift+l";
 	}
 
 	if ( j.contains( "keybindings" ) ) {
@@ -1335,6 +1446,10 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 		} );
 
 		doc.setCommand( "lsp-plugin-restart", [this] { mManager->reload( getId() ); } );
+
+		doc.setCommand( "lsp-show-document-symbols", [this]( TextDocument::Client* client ) {
+			showDocumentSymbols( static_cast<UICodeEditor*>( client ) );
+		} );
 	}
 
 	std::vector<Uint32> listeners;
@@ -1357,10 +1472,19 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* ) {
 			TextDocument* oldDoc = mEditorDocs[editor];
 			TextDocument* newDoc = editor->getDocumentRef().get();
-			Lock l( mDocMutex );
-			mDocs.erase( oldDoc );
-			mDocCurrentSymbols.erase( oldDoc->getURI() );
-			mEditorDocs[editor] = newDoc;
+			URI docURI;
+			{
+				Lock l( mDocMutex );
+				docURI = oldDoc->getURI();
+				mDocs.erase( oldDoc );
+				mEditorDocs[editor] = newDoc;
+			}
+
+			{
+				Lock l( mDocCurrentSymbolsMutex );
+				mDocCurrentSymbols.erase( docURI );
+			}
+
 			updateCurrentSymbol( editor->getDocument() );
 		} ) );
 
@@ -1452,35 +1576,43 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 	if ( mShuttingDown )
 		return;
 
-	Lock l( mDocMutex );
-	TextDocument* doc = &editor->getDocument();
-	const auto& cbs = mEditors[editor];
-	for ( auto listener : cbs )
-		editor->removeEventListener( listener );
+	URI docURI;
+	{
+		Lock l( mDocMutex );
+		TextDocument* doc = &editor->getDocument();
+		docURI = doc->getURI();
+		const auto& cbs = mEditors[editor];
+		for ( auto listener : cbs )
+			editor->removeEventListener( listener );
 
-	if ( mBreadcrumb )
-		editor->unregisterTopSpace( this );
+		if ( mBreadcrumb )
+			editor->unregisterTopSpace( this );
 
-	mEditors.erase( editor );
-	mEditorsTags.erase( editor );
-	mEditorDocs.erase( editor );
-	for ( const auto& ieditor : mEditorDocs ) {
-		if ( ieditor.second == doc )
-			return;
+		mEditors.erase( editor );
+		mEditorsTags.erase( editor );
+		mEditorDocs.erase( editor );
+		for ( const auto& ieditor : mEditorDocs ) {
+			if ( ieditor.second == doc )
+				return;
+		}
+
+		if ( editor->hasDocument() )
+			for ( auto& kb : mKeyBindings )
+				editor->getDocument().removeCommand( kb.first );
+
+		{
+			Lock lds( mDocSymbolsMutex );
+			mDocSymbols.erase( doc->getURI() );
+			mDocFlatSymbols.erase( doc->getURI() );
+		}
+
+		mDocs.erase( doc );
 	}
-
-	if ( editor->hasDocument() )
-		for ( auto& kb : mKeyBindings )
-			editor->getDocument().removeCommand( kb.first );
 
 	{
-		Lock lds( mDocSymbolsMutex );
-		mDocSymbols.erase( doc->getURI() );
-		mDocFlatSymbols.erase( doc->getURI() );
+		Lock l2( mDocCurrentSymbolsMutex );
+		mDocCurrentSymbols.erase( docURI );
 	}
-
-	mDocs.erase( doc );
-	mDocCurrentSymbols.erase( doc->getURI() );
 }
 
 bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
@@ -1534,6 +1666,10 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 		addFn( "lsp-refresh-semantic-highlighting",
 			   i18n( "lsp_refresh_semantic_highlighting", "Refresh Semantic Highlighting" ),
 			   "refresh" );
+
+	if ( cap.documentSymbolProvider )
+		addFn( "lsp-show-document-symbols",
+			   i18n( "show-document-symbols", "Show Document Symbols" ), "symbol-function" );
 
 	if ( server->getDefinition().language == "cpp" || server->getDefinition().language == "c" )
 		addFn( "lsp-switch-header-source",
@@ -1645,6 +1781,19 @@ void LSPClientPlugin::tryDisplayTooltip( UICodeEditor* editor, const LSPHover& r
 
 bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position,
 								   const Uint32& flags ) {
+	if ( mBreadcrumb && editor->convertToNodeSpace( position.asFloat() ).y < mPluginTopSpace ) {
+		if ( !mHoveringBreadcrumb ) {
+			mHoveringBreadcrumb = true;
+			editor->invalidateDraw();
+		}
+		getUISceneNode()->setCursor( Cursor::Hand );
+		return false;
+	}
+	if ( mHoveringBreadcrumb ) {
+		mHoveringBreadcrumb = false;
+		editor->invalidateDraw();
+	}
+
 	if ( flags != 0 ) {
 		tryHideTooltip( editor, position );
 		return false;
@@ -1680,6 +1829,15 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 		mHoverDelay, tag );
 	tryHideTooltip( editor, position );
 	return editor->getTooltip() && editor->getTooltip()->isVisible() && mSymbolInfoShowing;
+}
+
+bool LSPClientPlugin::onMouseLeave( UICodeEditor* editor, const Vector2i&, const Uint32& ) {
+	if ( mHoveringBreadcrumb ) {
+		mHoveringBreadcrumb = false;
+		editor->invalidateDraw();
+	}
+
+	return false;
 }
 
 void LSPClientPlugin::onFocusLoss( UICodeEditor* editor ) {
@@ -1735,7 +1893,8 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 		isPath = false;
 	}
 
-	Color textColor( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::LineNumber2 ) );
+	Color textColor( editor->getColorScheme().getEditorColor(
+		mHoveringBreadcrumb ? SyntaxStyleTypes::Text : SyntaxStyleTypes::LineNumber2 ) );
 	const auto& workspace = getManager()->getWorkspaceFolder();
 	if ( isPath && !workspace.empty() && String::startsWith( path, workspace ) )
 		path = path.substr( workspace.size() );
@@ -1746,7 +1905,7 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 
 	auto drawn = Text::draw( String::fromUtf8( path ), pos, font, fontSize, textColor );
 
-	Lock l( mDocSymbolsMutex );
+	Lock l( mDocCurrentSymbolsMutex );
 	auto symbolsInfoIt = mDocCurrentSymbols.find( editor->getDocument().getURI() );
 	if ( symbolsInfoIt == mDocCurrentSymbols.end() )
 		return;
@@ -1799,37 +1958,119 @@ void LSPClientPlugin::updateCurrentSymbol( TextDocument& doc ) {
 	if ( !mBreadcrumb )
 		return;
 
-	Lock l( mDocSymbolsMutex );
+	std::vector<DisplaySymbolInfo> symbolsInfo;
 	URI uri = doc.getURI();
-	auto symbolsIt = mDocSymbols.find( uri );
-	if ( symbolsIt == mDocSymbols.end() ) {
-		mDocCurrentSymbols[uri] = {};
-		return;
+
+	{
+		mDocSymbolsMutex.lock();
+
+		auto symbolsIt = mDocSymbols.find( uri );
+		if ( symbolsIt == mDocSymbols.end() ) {
+			mDocSymbolsMutex.unlock();
+			Lock l( mDocCurrentSymbolsMutex );
+			mDocCurrentSymbols[uri] = {};
+			return;
+		}
+
+		LSPSymbolInformationList* list = &symbolsIt->second;
+		auto sel = doc.getSelection();
+		LSPSymbolInformationList::iterator foundIt;
+
+		bool found = false;
+		do {
+			foundIt = std::lower_bound( list->begin(), list->end(), sel,
+										[]( const LSPSymbolInformation& cur,
+											const TextRange& sel ) { return cur.range < sel; } );
+			found = foundIt != list->end() && foundIt->range.contains( sel );
+			if ( found ) {
+				symbolsInfo.push_back( { String::fromUtf8( foundIt->name ),
+										 LSPSymbolKindHelper::toIconString( foundIt->kind ) } );
+				if ( foundIt->children.empty() )
+					break;
+				list = &foundIt->children;
+			} else
+				break;
+		} while ( found );
+
+		mDocSymbolsMutex.unlock();
 	}
 
-	LSPSymbolInformationList* list = &symbolsIt->second;
-	auto sel = doc.getSelection();
-	LSPSymbolInformationList::iterator foundIt;
-	std::vector<DisplaySymbolInfo> symbolsInfo;
-
-	bool found = false;
-	do {
-		foundIt = std::lower_bound( list->begin(), list->end(), sel,
-									[]( const LSPSymbolInformation& cur, const TextRange& sel ) {
-										return cur.range < sel;
-									} );
-		found = foundIt != list->end() && foundIt->range.contains( sel );
-		if ( found ) {
-			symbolsInfo.push_back( { String::fromUtf8( foundIt->name ),
-									 LSPSymbolKindHelper::toIconString( foundIt->kind ) } );
-			if ( foundIt->children.empty() )
-				break;
-			list = &foundIt->children;
-		} else
-			break;
-	} while ( found );
-
+	Lock l( mDocCurrentSymbolsMutex );
 	mDocCurrentSymbols[uri] = std::move( symbolsInfo );
+}
+
+void LSPClientPlugin::showDocumentSymbols( UICodeEditor* editor ) {
+	TextDocument& doc = editor->getDocument();
+	URI uri = doc.getURI();
+
+	auto model = createDocSymbolsModel( uri );
+	if ( !model )
+		return;
+
+	getUISceneNode()->getRoot()->setFocus();
+	UIWindow* win = UIWindow::NewOpt( UIMessageBox::WindowBaseContainerType::LINEAR_LAYOUT );
+	win->setMinWindowSize( 400, getUISceneNode()->getSize().getHeight() * 0.7f );
+	win->setKeyBindingCommand( "closeWindow", [win, editor] {
+		win->closeWindow();
+		editor->setFocus();
+	} );
+	win->getKeyBindings().addKeybind( { KEY_ESCAPE }, "closeWindow" );
+	win->setWindowFlags( UI_WIN_NO_DECORATION | UI_WIN_SHADOW | UI_WIN_MODAL | UI_WIN_EPHEMERAL );
+	win->center();
+	UITextInput* input = UITextInput::New();
+	input->setParent( win->getContainer() );
+	input->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
+	input->setHint( i18n( "search_symbols_ellipsis", "Search Symbols..." ) );
+
+	UITreeView* tv = UITreeView::New();
+	tv->setHeadersVisible( false );
+	tv->setAutoExpandOnSingleColumn( true );
+	tv->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed );
+	tv->setLayoutWeight( 1 );
+	tv->setParent( win->getContainer() );
+	tv->setModel( model );
+	tv->expandAll();
+	tv->setFocusOnSelection( false );
+	win->show();
+	input->setFocus();
+
+	input->on( Event::KeyDown, [tv, input]( const Event* event ) {
+		tv->forceKeyDown( *event->asKeyEvent() );
+		input->setFocus();
+	} );
+
+	input->on( Event::OnTextChanged, [tv, input, uri, this]( const Event* ) {
+		tv->setModel( createDocSymbolsModel( uri, input->getText().toUtf8() ) );
+		tv->expandAll();
+	} );
+
+	tv->setOnSelection( [editor]( const ModelIndex& index ) {
+		LSPSymbolInformation* node = static_cast<LSPSymbolInformation*>( index.internalData() );
+		editor->getDocument().setSelection( node->range.start() );
+		editor->scrollTo( node->range.start(), true );
+	} );
+
+	input->on( Event::OnPressEnter,
+			   [win]( const Event* ) { win->executeKeyBindingCommand( "closeWindow" ); } );
+
+	tv->on( Event::OnModelEvent, [win]( const Event* event ) {
+		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
+		if ( modelEvent->getModelEventType() == ModelEventType::Open )
+			win->executeKeyBindingCommand( "closeWindow" );
+	} );
+}
+
+std::shared_ptr<LSPSymbolInfoTreeModel>
+LSPClientPlugin::createDocSymbolsModel( URI uri, const std::string& query ) {
+	LSPSymbolInformationList docSymbolsCopy;
+	{
+		Lock l( mDocSymbolsMutex );
+		auto docSymbols = mDocSymbols.find( uri );
+		if ( docSymbols == mDocSymbols.end() )
+			return nullptr;
+		docSymbolsCopy = docSymbols->second;
+	}
+	return LSPSymbolInfoTreeModel::create( getUISceneNode(), std::move( docSymbolsCopy ), query );
 }
 
 const LSPClientServerManager& LSPClientPlugin::getClientManager() const {

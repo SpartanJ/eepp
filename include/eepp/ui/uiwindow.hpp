@@ -25,7 +25,8 @@ enum UIWindowFlags {
 	UI_WIN_MODAL = ( 1 << 8 ),
 	UI_WIN_SHADOW = ( 1 << 9 ),
 	UI_WIN_FRAME_BUFFER = ( 1 << 10 ),
-	UI_WIN_COLOR_BUFFER = ( 1 << 11 )
+	UI_WIN_COLOR_BUFFER = ( 1 << 11 ),
+	UI_WIN_EPHEMERAL = ( 1 << 12 ), // Windows is closed when focus is lost
 };
 
 static const Uint32 UI_WIN_DEFAULT_FLAGS = UI_WIN_CLOSE_BUTTON |
@@ -242,6 +243,8 @@ class EE_API UIWindow : public UIWidget {
 
 	virtual void matrixUnset();
 
+	virtual Uint32 onFocusLoss();
+
 	void fixChildsSize();
 
 	void doResize( const NodeMessage* Msg );
@@ -297,6 +300,8 @@ class EE_API UIWindow : public UIWidget {
 	void forcedApplyStyle();
 
 	void sendWindowToFront();
+
+	void checkEphemeralClose();
 };
 
 }} // namespace EE::UI

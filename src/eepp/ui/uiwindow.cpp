@@ -8,6 +8,7 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
@@ -84,7 +85,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	mContainer->setClipType( ClipType::ContentBox );
 	mContainer->enableReportSizeChangeToChilds();
 	mContainer->addEventListener( Event::OnPositionChange,
-								  [this] ( auto event ) { onContainerPositionChange( event ); } );
+								  [this]( auto event ) { onContainerPositionChange( event ); } );
 
 	updateWinFlags();
 
@@ -788,6 +789,10 @@ Uint32 UIWindow::onMessage( const NodeMessage* Msg ) {
 			sendWindowToFront();
 			break;
 		}
+		case NodeMessage::FocusLoss: {
+			checkEphemeralClose();
+			break;
+		}
 		case NodeMessage::MouseDown: {
 			doResize( Msg );
 			break;
@@ -1128,8 +1133,8 @@ UIWindow* UIWindow::showWhenReady() {
 	if ( mWindowReady ) {
 		show();
 	} else {
-		hide();
 		mShowWhenReady = true;
+		hide();
 	}
 	return this;
 }
@@ -1382,6 +1387,11 @@ void UIWindow::matrixUnset() {
 	} else {
 		UIWidget::matrixUnset();
 	}
+}
+
+Uint32 UIWindow::onFocusLoss() {
+	checkEphemeralClose();
+	return UIWidget::onFocusLoss();
 }
 
 bool UIWindow::ownsFrameBuffer() {
@@ -1806,6 +1816,13 @@ void UIWindow::executeKeyBindingCommand( const std::string& command ) {
 void UIWindow::sendWindowToFront() {
 	toFront();
 	sendCommonEvent( Event::OnWindowToFront );
+}
+
+void UIWindow::checkEphemeralClose() {
+	Node* focusNode = getUISceneNode()->getUIEventDispatcher()->getFocusNode();
+	if ( !mShowWhenReady && ( mStyleConfig.WinFlags & UI_WIN_EPHEMERAL ) && focusNode != this &&
+		 !inParentTreeOf( focusNode ) )
+		closeWindow();
 }
 
 }} // namespace EE::UI

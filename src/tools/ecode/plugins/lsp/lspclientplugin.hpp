@@ -19,6 +19,8 @@ using namespace EE::UI;
 
 namespace ecode {
 
+class LSPSymbolInfoTreeModel;
+
 // Implementation of the LSP Client:
 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/
 class LSPClientPlugin : public Plugin {
@@ -54,6 +56,9 @@ class LSPClientPlugin : public Plugin {
 									  const Vector2i& position, const Uint32& flags );
 
 	virtual bool onMouseMove( UICodeEditor* editor, const Vector2i& position, const Uint32& flags );
+
+	virtual bool onMouseLeave( UICodeEditor* editor, const Vector2i& position,
+							   const Uint32& flags );
 
 	virtual void onFocusLoss( UICodeEditor* editor );
 
@@ -103,6 +108,7 @@ class LSPClientPlugin : public Plugin {
 	Clock mClock;
 	Mutex mDocMutex;
 	Mutex mDocSymbolsMutex;
+	Mutex mDocCurrentSymbolsMutex;
 	UnorderedMap<UICodeEditor*, std::vector<Uint32>> mEditors;
 	UnorderedMap<UICodeEditor*, UnorderedSet<String::HashType>> mEditorsTags;
 	UnorderedSet<TextDocument*> mDocs;
@@ -118,6 +124,7 @@ class LSPClientPlugin : public Plugin {
 	bool mSilence{ false };
 	bool mTrimLogs{ false };
 	bool mBreadcrumb{ true };
+	bool mHoveringBreadcrumb{ false };
 	StyleSheetLength mBreadcrumbHeight{ "20dp" };
 	UnorderedMap<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 	UnorderedMap<TextDocument*, std::shared_ptr<TextDocument>> mDelayedDocs;
@@ -202,6 +209,11 @@ class LSPClientPlugin : public Plugin {
 	void renameSymbol( UICodeEditor* editor );
 
 	void updateCurrentSymbol( TextDocument& doc );
+
+	void showDocumentSymbols( UICodeEditor* editor );
+
+	std::shared_ptr<LSPSymbolInfoTreeModel> createDocSymbolsModel( URI uri,
+																   const std::string& query = "" );
 };
 
 } // namespace ecode
