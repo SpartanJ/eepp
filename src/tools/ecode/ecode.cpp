@@ -1535,13 +1535,16 @@ static void updateKeybindings( IniFile& ini, const std::string& group, Input* in
 						break;
 					}
 				}
-				if ( !shortcut.empty() &&
-					 !iniState.keyValueExists( "migrated_keybindings_" + group, migrate.first ) ) {
-					auto newShortcutStr = bindings.getShortcutString( shortcut );
-					ini.setValue( group, newShortcutStr, foundCmd->first );
+				if ( !iniState.keyValueExists( "migrated_keybindings_" + group, migrate.first ) ) {
+					if ( !shortcut.empty() ) {
+						auto newShortcutStr = bindings.getShortcutString( shortcut );
+						ini.setValue( group, newShortcutStr, foundCmd->first );
+						invertedKeybindings[foundCmd->first] = newShortcutStr;
+					} else {
+						invertedKeybindings.erase( foundCmd->first );
+					}
 					ini.deleteValue( group, migrate.second );
 					keybindings.erase( migrate.second );
-					invertedKeybindings[foundCmd->first] = newShortcutStr;
 					iniState.setValue( "migrated_keybindings_" + group, migrate.first,
 									   migrate.second );
 					added = true;
@@ -2173,6 +2176,7 @@ std::map<std::string, std::string> App::getMigrateKeybindings() {
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 		{ "menu-toggle", "mod+shift+m" },
 #endif
+		{ "lock-toggle", "mod+shift+l" },
 	};
 }
 

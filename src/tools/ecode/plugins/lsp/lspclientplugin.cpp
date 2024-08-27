@@ -603,7 +603,8 @@ TextDocument* LSPClientPlugin::getDocumentFromURI( const URI& uri ) {
 
 bool LSPClientPlugin::onMouseClick( UICodeEditor* editor, const Vector2i& pos,
 									const Uint32& flags ) {
-	if ( mBreadcrumb && editor->convertToNodeSpace( pos.asFloat() ).y < mPluginTopSpace ) {
+	if ( mBreadcrumb && ( flags & EE_BUTTON_LMASK ) &&
+		 editor->convertToNodeSpace( pos.asFloat() ).y < mPluginTopSpace ) {
 		editor->getDocument().execute( "lsp-show-document-symbols", editor );
 		return true;
 	}
@@ -1781,13 +1782,17 @@ void LSPClientPlugin::tryDisplayTooltip( UICodeEditor* editor, const LSPHover& r
 
 bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position,
 								   const Uint32& flags ) {
-	if ( mBreadcrumb && editor->convertToNodeSpace( position.asFloat() ).y < mPluginTopSpace ) {
-		if ( !mHoveringBreadcrumb ) {
-			mHoveringBreadcrumb = true;
-			editor->invalidateDraw();
+	if ( mBreadcrumb ) {
+		auto localPos( editor->convertToNodeSpace( position.asFloat() ) );
+		if ( localPos.y < mPluginTopSpace &&
+			 localPos.x < editor->getPixelsSize().getWidth() - editor->getMinimapWidth() ) {
+			if ( !mHoveringBreadcrumb ) {
+				mHoveringBreadcrumb = true;
+				editor->invalidateDraw();
+			}
+			getUISceneNode()->setCursor( Cursor::Hand );
+			return false;
 		}
-		getUISceneNode()->setCursor( Cursor::Hand );
-		return false;
 	}
 	if ( mHoveringBreadcrumb ) {
 		mHoveringBreadcrumb = false;
@@ -1877,8 +1882,9 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 
 	Color lineColor( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::LineBreakColumn ) );
 	p.setColor( lineColor );
-	Vector2f p1( screenStart.x, screenStart.y + size.getHeight() );
-	p.drawLine( { p1, { p1.x + width, p1.y } } );
+	Float lineHeight = eefloor( PixelDensity::dpToPxI( 1 ) );
+	p.drawRectangle( { { screenStart.x, screenStart.y + size.getHeight() - lineHeight },
+					   Sizef( width, lineHeight ) } );
 
 	Font* font = getUISceneNode()->getUIThemeManager()->getDefaultFont();
 	if ( !font )
