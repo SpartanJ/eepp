@@ -574,7 +574,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void showSidePanel( bool show );
 
-	void onFileDropped( String file );
+	void onFileDropped( std::string file );
 
 	void onTextDropped( String text );
 

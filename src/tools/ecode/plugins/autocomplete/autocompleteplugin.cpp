@@ -1235,8 +1235,7 @@ void AutoCompletePlugin::resetSignatureHelp() {
 AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocument* doc ) {
 	LuaPattern pattern( mSymbolPattern );
 	AutoCompletePlugin::SymbolsList symbols;
-	Int64 lc = doc->linesCount();
-	if ( lc == 0 || lc > 50000 || mShuttingDown )
+	if ( doc->linesCount() == 0 || doc->isHuge() || mShuttingDown )
 		return symbols;
 	std::string current( getPartialSymbol( doc ) );
 	TextPosition end = doc->getSelection().end();

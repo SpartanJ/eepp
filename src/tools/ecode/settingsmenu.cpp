@@ -414,8 +414,10 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		auto le =
 			TextFormat::stringToLineEnding( event->getNode()->asType<UIRadioButton>()->getId() );
 		if ( mSplitter->curEditorExistsAndFocused() ) {
-			mSplitter->getCurEditor()->getDocument().setLineEnding( le );
-			mApp->updateDocInfo( mSplitter->getCurEditor()->getDocument() );
+			TextDocument& doc = mSplitter->getCurEditor()->getDocument();
+			doc.setLineEnding( le );
+			doc.setDirtyUntilSave();
+			mApp->updateDocInfo( doc );
 		}
 	} );
 

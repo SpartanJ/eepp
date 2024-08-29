@@ -19,6 +19,8 @@ using namespace EE::Scene;
 
 namespace ecode {
 
+static constexpr auto SidePanelLoadUniqueId = String::hash( "ProjectBuildManager::load::async" );
+
 static const char* VAR_PROJECT_ROOT = "${project_root}";
 static const char* VAR_BUILD_TYPE = "${build_type}";
 static const char* VAR_OS = "${os}";
@@ -307,6 +309,8 @@ void ProjectBuildManager::selectTab() {
 }
 
 ProjectBuildManager::~ProjectBuildManager() {
+	mSidePanel->removeActionsByTag( SidePanelLoadUniqueId );
+
 	if ( mUISceneNode && !SceneManager::instance()->isShuttingDown() && mSidePanel && mTab ) {
 		mSidePanel->removeTab( mTab );
 	}
@@ -568,7 +572,8 @@ bool ProjectBuildManager::load() {
 					   [this]() {
 						   mLoading = false;
 						   if ( mSidePanel )
-							   mSidePanel->runOnMainThread( [this]() { buildSidePanelTab(); } );
+							   mSidePanel->runOnMainThread( [this]() { buildSidePanelTab(); },
+															Time::Zero, SidePanelLoadUniqueId );
 					   } );
 
 	mProjectFile = mProjectRoot + ".ecode/project_build.json";

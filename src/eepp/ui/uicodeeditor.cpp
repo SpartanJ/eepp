@@ -2763,6 +2763,10 @@ void UICodeEditor::checkMatchingBrackets() {
 			pos.setColumn( pos.column() - 1 );
 		}
 	}
+
+	if ( ( isOpenIt == open.end() && isCloseIt == close.end() ) || mDoc->isHuge() )
+		return;
+
 	if ( isOpenIt != open.end() ) {
 		size_t index = std::distance( open.begin(), isOpenIt );
 		String::StringBaseType openBracket = open[index];

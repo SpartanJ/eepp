@@ -3023,6 +3023,18 @@ void TextDocument::setDirtyUntilSave() {
 	notifySelectionChanged();
 }
 
+static size_t guessFileSize( const TextDocument* doc ) {
+	Int64 maxLines = std::min( 101ul, doc->linesCount() );
+	Int64 totalSize = 0;
+	for ( Int64 i = 0; i < maxLines; i++ )
+		totalSize += doc->line( i ).size();
+	return totalSize;
+}
+
+bool TextDocument::isHuge() const {
+	return linesCount() > 50000 || guessFileSize( this ) > EE_1MB * 10;
+}
+
 void TextDocument::changeFilePath( const std::string& filePath, bool notify ) {
 	mFilePath = filePath;
 	mFileURI = URI( "file://" + mFilePath );

@@ -678,7 +678,7 @@ void App::mainLoop() {
 	}
 }
 
-void App::onFileDropped( String file ) {
+void App::onFileDropped( std::string file ) {
 	Vector2f mousePos( mUISceneNode->getEventDispatcher()->getMousePosf() );
 	Node* node = mUISceneNode->overFind( mousePos );
 	UIWidget* widget = mSplitter->getCurWidget();
@@ -695,8 +695,7 @@ void App::onFileDropped( String file ) {
 	if ( node && node->isType( UI_TYPE_CODEEDITOR ) ) {
 		codeEditor = node->asType<UICodeEditor>();
 		if ( ( codeEditor->getDocument().isLoading() || !codeEditor->getDocument().isEmpty() ) &&
-			 ( !Image::isImageExtension( file ) ||
-			   FileSystem::fileExtension( file.toUtf8() ) == "svg" ) ) {
+			 ( !Image::isImageExtension( file ) || FileSystem::fileExtension( file ) == "svg" ) ) {
 			auto d = mSplitter->createCodeEditorInTabWidget(
 				mSplitter->tabWidgetFromEditor( codeEditor ) );
 			codeEditor = d.second;
@@ -704,8 +703,7 @@ void App::onFileDropped( String file ) {
 		}
 	} else if ( widget && widget->isType( UI_TYPE_TERMINAL ) ) {
 		if ( !Image::isImageExtension( file ) &&
-			 ( !Image::isImageExtension( file ) ||
-			   FileSystem::fileExtension( file.toUtf8() ) == "svg" ) ) {
+			 ( !Image::isImageExtension( file ) || FileSystem::fileExtension( file ) == "svg" ) ) {
 			auto d =
 				mSplitter->createCodeEditorInTabWidget( mSplitter->tabWidgetFromWidget( widget ) );
 			codeEditor = d.second;
@@ -3455,6 +3453,9 @@ void App::loadFolder( const std::string& path ) {
 	loadDirTree( rpath );
 
 	Clock projClock;
+	if ( mProjectBuildManager )
+		mProjectBuildManager.reset();
+
 	mProjectBuildManager =
 		std::make_unique<ProjectBuildManager>( rpath, mThreadPool, mSidePanel, this );
 	mConfig.loadProject( rpath, mSplitter, mConfigPath, mProjectDocConfig, this,
@@ -3740,7 +3741,12 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		mWindow->getInput()->pushCallback( [this]( InputEvent* event ) {
 			if ( event->Type == InputEvent::FileDropped ) {
-				onFileDropped( event->file.file );
+				std::string file( event->file.file );
+
+				if ( FileSystem::isDirectory( file ) )
+					loadFolder( file );
+				else
+					onFileDropped( file );
 			} else if ( event->Type == InputEvent::TextDropped ) {
 				onTextDropped( event->textdrop.text );
 			}

@@ -639,6 +639,8 @@ class EE_API TextDocument {
 
 	void setDirtyUntilSave();
 
+	bool isHuge() const;
+
   protected:
 	friend class TextUndoStack;
 	friend class FoldRangeServive;
