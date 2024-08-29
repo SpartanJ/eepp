@@ -2002,7 +2002,14 @@ void LSPClientPlugin::updateCurrentSymbol( TextDocument& doc ) {
 	}
 
 	Lock l( mDocCurrentSymbolsMutex );
-	mDocCurrentSymbols[uri] = std::move( symbolsInfo );
+	auto prevSymbols = mDocCurrentSymbols.find( uri );
+	if ( prevSymbols == mDocCurrentSymbols.end() || prevSymbols->second != symbolsInfo ) {
+		mDocCurrentSymbols[uri] = std::move( symbolsInfo );
+		getManager()->getSplitter()->forEachEditor( [&uri]( UICodeEditor* editor ) {
+			if ( editor->getDocument().getURI() == uri )
+				editor->invalidateDraw();
+		} );
+	}
 }
 
 void LSPClientPlugin::showDocumentSymbols( UICodeEditor* editor ) {
@@ -2037,6 +2044,20 @@ void LSPClientPlugin::showDocumentSymbols( UICodeEditor* editor ) {
 	tv->setModel( model );
 	tv->expandAll();
 	tv->setFocusOnSelection( false );
+
+	{
+		Lock l( mDocCurrentSymbolsMutex );
+		auto symbolsIt = mDocCurrentSymbols.find( uri );
+		ModelIndex index;
+		if ( symbolsIt != mDocCurrentSymbols.end() ) {
+			auto docSymbols = symbolsIt->second;
+			std::vector<std::string> path;
+			for ( const auto& sym : docSymbols )
+				path.emplace_back( sym.name );
+			tv->selectRowWithPath( String::join( path, '/' ) );
+		}
+	}
+
 	win->show();
 	input->setFocus();
 

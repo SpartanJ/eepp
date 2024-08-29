@@ -142,6 +142,10 @@ class LSPClientPlugin : public Plugin {
 	struct DisplaySymbolInfo {
 		String name;
 		std::string icon;
+
+		bool operator==( const DisplaySymbolInfo& other ) const {
+			return name == other.name && icon == other.icon;
+		}
 	};
 	UnorderedMap<URI, std::vector<DisplaySymbolInfo>> mDocCurrentSymbols;
 
