@@ -89,7 +89,9 @@ class EE_API UITreeView : public UIAbstractTableView {
 	virtual ModelIndex findRowWithText( const std::string& text, const bool& caseSensitive = false,
 										const bool& exactMatch = false ) const;
 
-	virtual ModelIndex selectRowWithPath( std::string path );
+	ModelIndex selectRowWithPath( std::string path );
+
+	virtual ModelIndex selectRowWithPath( const std::vector<std::string>& pathTree );
 
 	virtual void setSelection( const ModelIndex& index, bool scrollToSelection = true,
 							   bool openModelIndexTree = true );

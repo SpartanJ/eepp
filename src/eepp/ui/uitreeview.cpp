@@ -779,19 +779,14 @@ ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& cas
 	return foundIndex;
 }
 
-ModelIndex UITreeView::selectRowWithPath( std::string path ) {
+ModelIndex UITreeView::selectRowWithPath( const std::vector<std::string>& pathTree ) {
 	const Model* model = getModel();
 	if ( !model || model->rowCount() == 0 )
 		return {};
-	String::replaceAll( path, "\\", "/" );
-	auto pathPart = String::split( path, "/" );
-	if ( pathPart.empty() )
-		return {};
-
 	ModelIndex parentIndex = {};
-	for ( size_t i = 0; i < pathPart.size(); i++ ) {
+	for ( size_t i = 0; i < pathTree.size(); i++ ) {
 		ModelIndex foundIndex = {};
-		const auto& part = pathPart[i];
+		const auto& part = pathTree[i];
 
 		traverseTree(
 			[&model, &foundIndex, &part, &parentIndex,
@@ -813,12 +808,20 @@ ModelIndex UITreeView::selectRowWithPath( std::string path ) {
 
 		parentIndex = foundIndex;
 
-		if ( i == pathPart.size() - 1 ) {
+		if ( i == pathTree.size() - 1 ) {
 			setSelection( foundIndex );
 			return foundIndex;
 		}
 	}
 	return {};
+}
+
+ModelIndex UITreeView::selectRowWithPath( std::string path ) {
+	String::replaceAll( path, "\\", "/" );
+	auto pathTree = String::split( path, "/" );
+	if ( pathTree.empty() )
+		return {};
+	return selectRowWithPath( pathTree );
 }
 
 void UITreeView::setSelection( const ModelIndex& index, bool scrollToSelection,

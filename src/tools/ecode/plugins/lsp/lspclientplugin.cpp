@@ -2006,7 +2006,7 @@ void LSPClientPlugin::updateCurrentSymbol( TextDocument& doc ) {
 	if ( prevSymbols == mDocCurrentSymbols.end() || prevSymbols->second != symbolsInfo ) {
 		mDocCurrentSymbols[uri] = std::move( symbolsInfo );
 		getManager()->getSplitter()->forEachEditor( [&uri]( UICodeEditor* editor ) {
-			if ( editor->getDocument().getURI() == uri )
+			if ( editor->isVisible() && editor->getDocument().getURI() == uri )
 				editor->invalidateDraw();
 		} );
 	}
@@ -2054,7 +2054,7 @@ void LSPClientPlugin::showDocumentSymbols( UICodeEditor* editor ) {
 			std::vector<std::string> path;
 			for ( const auto& sym : docSymbols )
 				path.emplace_back( sym.name );
-			tv->selectRowWithPath( String::join( path, '/' ) );
+			tv->selectRowWithPath( path );
 		}
 	}
 

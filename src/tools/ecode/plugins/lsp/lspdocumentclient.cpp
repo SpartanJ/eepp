@@ -321,7 +321,8 @@ void LSPDocumentClient::highlight() {
 	}
 	Clock clock;
 	const auto& caps = mServer->getCapabilities().semanticTokenProvider;
-	Uint32 currentLine = 0;
+	Int64 firstLine = !data.empty() ? data[0] : -1;
+	Int64 currentLine = 0;
 	Uint32 start = 0;
 	std::unordered_map<size_t, TokenizedLine> tokenizerLines;
 	Int64 lastLine = 0;
@@ -370,6 +371,16 @@ void LSPDocumentClient::highlight() {
 			return;
 
 		mDoc->getHighlighter()->mergeLine( tline.first, tline.second );
+	}
+
+	if ( firstLine != -1 && lastLine >= firstLine && mDoc ) {
+		getServer()->getManager()->getPlugin()->getManager()->getSplitter()->forEachEditor(
+			[this, firstLine, lastLine]( UICodeEditor* editor ) {
+				if ( editor->isVisible() && &editor->getDocument() == mDoc &&
+					 editor->getVisibleRange().intersectsLineRange( firstLine, lastLine ) ) {
+					editor->invalidateDraw();
+				}
+			} );
 	}
 
 	if ( !mServer->isSilent() ) {
