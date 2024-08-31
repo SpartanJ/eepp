@@ -82,30 +82,30 @@ class UICodeEditorPlugin {
 	}
 
 	virtual void drawBeforeLineText( UICodeEditor*, const Int64&, Vector2f, const Float&,
-									 const Float& ){};
+									 const Float& ) {};
 
 	virtual void drawAfterLineText( UICodeEditor* /*editor*/, const Int64& /*index*/,
 									Vector2f /*position*/, const Float& /*fontSize*/,
-									const Float& /*lineHeight*/ ){};
+									const Float& /*lineHeight*/ ) {};
 
 	virtual void minimapDrawBefore( UICodeEditor* /*editor*/, const DocumentLineRange&,
 									const DocumentViewLineRange&, const Vector2f& /*linePos*/,
 									const Vector2f& /*lineSize*/, const Float& /*charWidth*/,
 									const Float& /*gutterWidth*/,
-									const DrawTextRangesFn& /* drawTextRanges */ ){};
+									const DrawTextRangesFn& /* drawTextRanges */ ) {};
 
 	virtual void minimapDrawAfter( UICodeEditor* /*editor*/, const DocumentLineRange&,
 								   const DocumentViewLineRange&, const Vector2f& /* linePos */,
 								   const Vector2f& /* lineSize */, const Float& /* charWidth */,
 								   const Float& /* gutterWidth */,
-								   const DrawTextRangesFn& /* drawTextRanges */ ){};
+								   const DrawTextRangesFn& /* drawTextRanges */ ) {};
 
 	virtual void drawGutter( UICodeEditor* /*editor*/, const Int64& /*index*/,
 							 const Vector2f& /*screenStart*/, const Float& /*lineHeight*/,
-							 const Float& /*gutterWidth*/, const Float& /*fontSize*/ ){};
+							 const Float& /*gutterWidth*/, const Float& /*fontSize*/ ) {};
 
 	virtual void drawTop( UICodeEditor* /*editor*/, const Vector2f& /*screenStart*/,
-						  const Sizef& /*size*/, const Float& /*fontSize*/ ){};
+						  const Sizef& /*size*/, const Float& /*fontSize*/ ) {};
 
 	Uint32 addOnReadyCallback( const OnReadyCb& cb ) {
 		mOnReadyCallbacks[mReadyCbNum++] = cb;
@@ -955,7 +955,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 								bool ignoreSelectionMatch = false );
 
 	virtual void drawWhitespaces( const DocumentLineRange& lineRange, const Vector2f& startScroll,
-								  const Float& lineHeight );
+								  const Float& lineHeight,
+								  const DocumentViewLineRange& visualLineRange );
 
 	virtual void drawIndentationGuides( const DocumentLineRange& lineRange,
 										const Vector2f& startScroll, const Float& lineHeight );

@@ -323,7 +323,7 @@ void UICodeEditor::draw() {
 
 	// Draw tab marker
 	if ( mShowWhitespaces ) {
-		drawWhitespaces( lineRange, startScroll, lineHeight );
+		drawWhitespaces( lineRange, startScroll, lineHeight, visualLineRange );
 	}
 
 	if ( mShowLineEndings ) {
@@ -1475,7 +1475,7 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 
 	if ( !minimapHover && isTextSelectionEnabled() &&
 		 !getUISceneNode()->getEventDispatcher()->isNodeDragging() && NULL != mFont && mMouseDown &&
-		 ( flags & EE_BUTTON_LMASK ) && localPos.y >= mPluginsTopSpace ) {
+		 ( flags & EE_BUTTON_LMASK ) && ( localPos.y <= 0 || localPos.y >= mPluginsTopSpace ) ) {
 		TextRange selection = mDoc->getSelection();
 		selection.setStart( resolveScreenPosition( position.asFloat() ) );
 		mDoc->setSelection( selection );
@@ -3903,7 +3903,8 @@ void UICodeEditor::drawColorPreview( const Vector2f& startScroll, const Float& l
 }
 
 void UICodeEditor::drawWhitespaces( const DocumentLineRange& lineRange, const Vector2f& startScroll,
-									const Float& lineHeight ) {
+									const Float& lineHeight,
+									const DocumentViewLineRange& visualLineRange ) {
 	static const String tab = "\t";
 	Float tabWidth = getTextWidth( tab );
 	Float glyphW = getGlyphWidth();
@@ -3928,13 +3929,23 @@ void UICodeEditor::drawWhitespaces( const DocumentLineRange& lineRange, const Ve
 	cpoint->setDrawMode( GlyphDrawable::DrawMode::Text );
 	adv->setColor( color );
 	cpoint->setColor( color );
+
+	auto startRange = mDocView.getVisibleIndexRange( visualLineRange.first );
+	auto endRange = mDocView.getVisibleIndexRange( visualLineRange.second );
+	TextRange visibleDocRange( startRange.start(), endRange.end() );
+
 	for ( auto index = lineRange.first; index <= lineRange.second; index++ ) {
 		if ( !mDocView.isLineVisible( index ) )
 			continue;
 
 		const auto& text = mDoc->line( index ).getText();
 		if ( mDocView.isWrappedLine( index ) || !mFont->isMonospace() ) {
-			for ( size_t i = 0; i < text.size(); i++ ) {
+			size_t startCol =
+				visibleDocRange.start().line() == index ? visibleDocRange.start().column() : 0;
+			size_t endCol = visibleDocRange.end().line() == index ? visibleDocRange.end().column()
+																  : text.size();
+
+			for ( size_t i = startCol; i < endCol; i++ ) {
 				if ( ' ' == text[i] ) {
 					auto offset =
 						startScroll +
