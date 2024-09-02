@@ -3342,7 +3342,7 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 		}
 	}
 
-	mProjectTreeView->setDisableCellCliping( true );
+	mProjectTreeView->setDisableCellClipping( true );
 	mProjectTreeView->setAutoExpandOnSingleColumn( true );
 }
 

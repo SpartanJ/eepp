@@ -178,7 +178,7 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 								 const ModelIndex& index ) {
 	widget->setParent( rowWidget );
 	widget->unsetFlags( UI_AUTO_SIZE );
-	widget->setClipType( mDisableCellCliping ? ClipType::None : ClipType::ContentBox );
+	widget->setClipType( mDisableCellClipping ? ClipType::None : ClipType::ContentBox );
 	widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	widget->setTextAlign( UI_HALIGN_LEFT );
 	widget->setCurIndex( index );
@@ -743,12 +743,12 @@ void UITreeView::onOpenTreeModelIndex( const ModelIndex& index, bool open ) {
 	sendEvent( &event );
 }
 
-bool UITreeView::getDisableCellCliping() const {
-	return mDisableCellCliping;
+bool UITreeView::getDisableCellClipping() const {
+	return mDisableCellClipping;
 }
 
-void UITreeView::setDisableCellCliping( bool disableCellCliping ) {
-	mDisableCellCliping = disableCellCliping;
+void UITreeView::setDisableCellClipping( bool disableCellClipping ) {
+	mDisableCellClipping = disableCellClipping;
 }
 
 void UITreeView::onSortColumn( const size_t& ) {
