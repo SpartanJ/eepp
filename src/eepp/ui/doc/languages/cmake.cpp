@@ -10,7 +10,7 @@ void addCMake() {
 		{ "CMake",
 		  { "%.cmake$", "CMakeLists.txt$" },
 		  {
-			  { { "#", "[^\\]\n" }, "comment" },
+			  { { "#", "\n" }, "comment" },
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },
 			  { { "[%a_][%w_]*%s?%f[(]" }, "function" },

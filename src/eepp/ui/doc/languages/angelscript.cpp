@@ -12,7 +12,7 @@ void addAngelScript() {
 		  {
 			  { { "//.-\n" }, "comment" },
 			  { { "/%*", "%*/" }, "comment" },
-			  { { "#", "[^\\]\n" }, "comment" },
+			  { { "#", "\n" }, "comment" },
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },
 			  { { "-?0[xX]%x+" }, "number" },

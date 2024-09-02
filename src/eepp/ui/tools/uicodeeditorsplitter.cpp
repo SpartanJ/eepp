@@ -945,6 +945,15 @@ bool UICodeEditorSplitter::isAnyEditorDirty() {
 	return any;
 }
 
+bool UICodeEditorSplitter::allEditorsEmpty() {
+	bool empty = true;
+	forEachEditor( [&empty]( UICodeEditor* editor ) {
+		empty &= editor->getDocument().isEmpty();
+		return false;
+	} );
+	return empty;
+}
+
 void UICodeEditorSplitter::zoomIn() {
 	forEachEditor( []( UICodeEditor* editor ) { editor->fontSizeGrow(); } );
 }

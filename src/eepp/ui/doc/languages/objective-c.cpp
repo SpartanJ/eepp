@@ -12,7 +12,7 @@ void addObjectiveC() {
 		  {
 			  { { "//.-\n" }, "comment" },
 			  { { "/%*", "%*/" }, "comment" },
-			  { { "#", "[^\\]\n" }, "comment" },
+			  { { "#", "\n" }, "comment" },
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },
 			  { { "-?0x%x+" }, "number" },

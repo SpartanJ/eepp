@@ -208,6 +208,8 @@ class EE_API UICodeEditorSplitter {
 
 	bool isAnyEditorDirty();
 
+	bool allEditorsEmpty();
+
 	void forEachEditorStoppable( std::function<bool( UICodeEditor* )> run ) const;
 
 	std::vector<UICodeEditor*> getAllEditors();

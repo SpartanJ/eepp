@@ -3336,7 +3336,7 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 
 		updateOpenRecentFolderBtn();
 
-		if ( getConfig().ui.welcomeScreen ) {
+		if ( getConfig().ui.welcomeScreen && mSplitter->allEditorsEmpty() ) {
 			createWelcomeTab();
 			mStatusBar->setVisible( false );
 		}
