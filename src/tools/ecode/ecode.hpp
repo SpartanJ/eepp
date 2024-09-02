@@ -320,6 +320,7 @@ class App : public UICodeEditorSplitter::Client {
 				Sys::execute( cmd );
 			}
 		} );
+		t.setCommand( "create-new-welcome-tab", [this] { createWelcomeTab(); } );
 		mSplitter->registerSplitterCommands( t );
 	}
 
@@ -662,6 +663,8 @@ class App : public UICodeEditorSplitter::Client {
 	void insertRecentFile( const std::string& path );
 
 	void insertRecentFileAndUpdateUI( const std::string& path );
+
+	void createWelcomeTab();
 };
 
 } // namespace ecode

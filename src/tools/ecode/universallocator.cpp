@@ -130,11 +130,10 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 			  if ( idx.isValid() ) {
 				  String cmd = modelEvent->getModel()->data( idx, ModelRole::Display ).toString();
 				  mApp->runCommand( cmd );
-				  if ( !mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
-					  if ( mSplitter->curEditorIsNotNull() &&
-						   mSplitter->getCurEditor()->getDocument().hasCommand( cmd ) )
-						  mSplitter->getCurEditor()->setFocus();
-				  }
+				  if ( mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) &&
+					   mSplitter->curEditorIsNotNull() &&
+					   mSplitter->getCurEditor()->getDocument().hasCommand( cmd ) )
+					  mSplitter->getCurEditor()->setFocus();
 				  if ( cmd != "open-locatebar" && cmd != "open-workspace-symbol-search" &&
 					   cmd != "open-document-symbol-search" && cmd != "go-to-line" &&
 					   cmd != "show-open-documents" ) {

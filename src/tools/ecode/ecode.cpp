@@ -2181,6 +2181,7 @@ std::map<std::string, std::string> App::getMigrateKeybindings() {
 std::vector<std::string> App::getUnlockedCommands() {
 	return { "create-new",
 			 "create-new-terminal",
+			 "create-new-welcome-tab",
 			 "fullscreen-toggle",
 			 "open-file",
 			 "open-folder",
@@ -2331,9 +2332,13 @@ void App::closeFolder() {
 	if ( mUniversalLocator )
 		mUniversalLocator->updateFilesTable();
 	if ( getConfig().ui.welcomeScreen ) {
-		UIWelcomeScreen::createWelcomeScreen( this );
+		createWelcomeTab();
 		mStatusBar->setVisible( false );
 	}
+}
+
+void App::createWelcomeTab() {
+	UIWelcomeScreen::createWelcomeScreen( this );
 }
 
 void App::createDocDirtyAlert( UICodeEditor* editor, bool showEnableAutoReload ) {
@@ -3332,7 +3337,7 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 		updateOpenRecentFolderBtn();
 
 		if ( getConfig().ui.welcomeScreen ) {
-			UIWelcomeScreen::createWelcomeScreen( this );
+			createWelcomeTab();
 			mStatusBar->setVisible( false );
 		}
 	}
@@ -3700,7 +3705,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		} );
 #endif
 
-		Log::info( "Window creation took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
+		Log::info( "Window creation took: %s", globalClock.getElapsedTime().toString() );
 
 		mWindow->setFrameRateLimit( mConfig.context.FrameRateLimit );
 
