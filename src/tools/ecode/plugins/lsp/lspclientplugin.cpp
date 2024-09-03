@@ -1,5 +1,5 @@
-#include "../../version.hpp"
 #include "lspclientplugin.hpp"
+#include "../../version.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
@@ -260,6 +260,8 @@ LSPClientPlugin::~LSPClientPlugin() {
 		}
 		for ( auto listener : editor.second )
 			editor.first->removeEventListener( listener );
+		if ( mBreadcrumb )
+			editor.first->unregisterTopSpace( this );
 		editor.first->unregisterPlugin( this );
 	}
 	if ( nullptr == mManager->getSplitter() )

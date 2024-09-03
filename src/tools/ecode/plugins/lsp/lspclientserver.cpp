@@ -428,6 +428,16 @@ struct LSPSymbolInformationTmp {
 	}
 };
 
+static void sortRecursive( std::list<LSPSymbolInformationTmp>& symbols ) {
+	symbols.sort( []( const LSPSymbolInformationTmp& left, const LSPSymbolInformationTmp& right ) {
+		return left.range < right.range;
+	} );
+
+	for ( auto& symbol : symbols )
+		if ( !symbol.children.empty() )
+			sortRecursive( symbol.children );
+}
+
 static LSPSymbolInformationList parseDocumentSymbols( const json& result, bool isSilent ) {
 	// TODO: Optimize this
 	Clock clock;
@@ -481,6 +491,8 @@ static LSPSymbolInformationList parseDocumentSymbols( const json& result, bool i
 	const auto& symInfos = result;
 	for ( const auto& info : symInfos )
 		parseSymbol( info, nullptr );
+
+	sortRecursive( ret );
 
 	LSPSymbolInformationList rret;
 	for ( const auto& r : ret )
