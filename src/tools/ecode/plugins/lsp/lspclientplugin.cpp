@@ -1,5 +1,5 @@
-#include "lspclientplugin.hpp"
 #include "../../version.hpp"
+#include "lspclientplugin.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
@@ -603,8 +603,12 @@ TextDocument* LSPClientPlugin::getDocumentFromURI( const URI& uri ) {
 
 bool LSPClientPlugin::onMouseClick( UICodeEditor* editor, const Vector2i& pos,
 									const Uint32& flags ) {
-	if ( mBreadcrumb && ( flags & EE_BUTTON_LMASK ) &&
-		 editor->convertToNodeSpace( pos.asFloat() ).y < mPluginTopSpace ) {
+	const Vector2f localPos( mBreadcrumb && ( flags & EE_BUTTON_LMASK )
+								 ? editor->convertToNodeSpace( pos.asFloat() )
+								 : Vector2f::Zero );
+
+	if ( mBreadcrumb && ( flags & EE_BUTTON_LMASK ) && localPos.y < mPluginTopSpace &&
+		 localPos.x < editor->getPixelsSize().getWidth() - editor->getMinimapWidth() ) {
 		editor->getDocument().execute( "lsp-show-document-symbols", editor );
 		return true;
 	}
