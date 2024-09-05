@@ -10,6 +10,7 @@
 #include "plugins/pluginmanager.hpp"
 #include "projectbuild.hpp"
 #include "projectdirectorytree.hpp"
+#include "settingsactions.hpp"
 #include "statusappoutputcontroller.hpp"
 #include "statusbuildoutputcontroller.hpp"
 #include "statusterminalcontroller.hpp"
@@ -163,14 +164,6 @@ class App : public UICodeEditorSplitter::Client {
 
 	void debugDrawData();
 
-	void setUIFontSize();
-
-	void setEditorFontSize();
-
-	void setTerminalFontSize();
-
-	void setUIScaleFactor();
-
 	void toggleSidePanel();
 
 	UIMainLayout* getMainLayout() const { return mMainLayout; }
@@ -279,21 +272,24 @@ class App : public UICodeEditorSplitter::Client {
 					  [this] { mUniversalLocator->showWorkspaceSymbol(); } );
 		t.setCommand( "open-document-symbol-search",
 					  [this] { mUniversalLocator->showDocumentSymbol(); } );
-		t.setCommand( "editor-set-line-breaking-column", [this] { setLineBreakingColumn(); } );
-		t.setCommand( "editor-set-line-spacing", [this] { setLineSpacing(); } );
-		t.setCommand( "editor-set-cursor-blinking-time", [this] { setCursorBlinkingTime(); } );
-		t.setCommand( "editor-set-indent-tab-character", [this] { setIndentTabCharacter(); } );
-		t.setCommand( "check-for-updates", [this] { checkForUpdates(); } );
-		t.setCommand( "about-ecode", [this] { aboutEcode(); } );
-		t.setCommand( "ecode-source", [this] { ecodeSource(); } );
-		t.setCommand( "ui-scale-factor", [this] { setUIScaleFactor(); } );
+		t.setCommand( "editor-set-line-breaking-column",
+					  [this] { mSettingsActions->setLineBreakingColumn(); } );
+		t.setCommand( "editor-set-line-spacing", [this] { mSettingsActions->setLineSpacing(); } );
+		t.setCommand( "editor-set-cursor-blinking-time",
+					  [this] { mSettingsActions->setCursorBlinkingTime(); } );
+		t.setCommand( "editor-set-indent-tab-character",
+					  [this] { mSettingsActions->setIndentTabCharacter(); } );
+		t.setCommand( "check-for-updates", [this] { mSettingsActions->checkForUpdates(); } );
+		t.setCommand( "about-ecode", [this] { mSettingsActions->aboutEcode(); } );
+		t.setCommand( "ecode-source", [this] { mSettingsActions->ecodeSource(); } );
+		t.setCommand( "ui-scale-factor", [this] { mSettingsActions->setUIScaleFactor(); } );
 		t.setCommand( "show-side-panel", [this] { switchSidePanel(); } );
 		t.setCommand( "toggle-status-bar", [this] { switchStatusBar(); } );
 		t.setCommand( "toggle-menu-bar", [this] { switchMenuBar(); } );
-		t.setCommand( "editor-font-size", [this] { setEditorFontSize(); } );
-		t.setCommand( "terminal-font-size", [this] { setTerminalFontSize(); } );
-		t.setCommand( "ui-font-size", [this] { setUIFontSize(); } );
-		t.setCommand( "ui-panel-font-size", [this] { setUIPanelFontSize(); } );
+		t.setCommand( "editor-font-size", [this] { mSettingsActions->setEditorFontSize(); } );
+		t.setCommand( "terminal-font-size", [this] { mSettingsActions->setTerminalFontSize(); } );
+		t.setCommand( "ui-font-size", [this] { mSettingsActions->setUIFontSize(); } );
+		t.setCommand( "ui-panel-font-size", [this] { mSettingsActions->setUIPanelFontSize(); } );
 		t.setCommand( "serif-font", [this] { openFontDialog( mConfig.ui.serifFont, false ); } );
 		t.setCommand( "monospace-font",
 					  [this] { openFontDialog( mConfig.ui.monospaceFont, true ); } );
@@ -312,7 +308,7 @@ class App : public UICodeEditorSplitter::Client {
 			if ( mTerminalManager )
 				mTerminalManager->configureTerminalScrollback();
 		} );
-		t.setCommand( "check-for-updates", [this] { checkForUpdates( false ); } );
+		t.setCommand( "check-for-updates", [this] { mSettingsActions->checkForUpdates( false ); } );
 		t.setCommand( "create-new-window", [] {
 			std::string processPath = Sys::getProcessFilePath();
 			if ( !processPath.empty() ) {
@@ -329,20 +325,6 @@ class App : public UICodeEditorSplitter::Client {
 	void loadFileFromPathOrFocus( const std::string& path );
 
 	UISceneNode* getUISceneNode() const { return mUISceneNode; }
-
-	void setLineBreakingColumn();
-
-	void setLineSpacing();
-
-	void setCursorBlinkingTime();
-
-	void setIndentTabCharacter();
-
-	void setFoldRefreshFreq();
-
-	void checkForUpdates( bool fromStartup = false );
-
-	void aboutEcode();
 
 	void updateRecentFiles();
 
@@ -388,10 +370,6 @@ class App : public UICodeEditorSplitter::Client {
 	const std::stack<std::string>& getRecentClosedFiles() const;
 
 	void updateTerminalMenu();
-
-	void ecodeSource();
-
-	void setUIPanelFontSize();
 
 	void refreshFolderView();
 
@@ -474,6 +452,8 @@ class App : public UICodeEditorSplitter::Client {
 	void createDocDirtyAlert( UICodeEditor* editor, bool showEnableAutoReload = true );
 
 	void createDocDoesNotExistsInFSAlert( UICodeEditor* editor );
+
+	SettingsActions* getSettingsActions() { return mSettingsActions.get(); }
 
   protected:
 	std::vector<std::string> mArgs;
@@ -562,6 +542,7 @@ class App : public UICodeEditorSplitter::Client {
 	StyleSheet mAppStyleSheet;
 	UIMessageBox* mCloseMsgBox{ nullptr };
 	UIMenuBar* mMenuBar{ nullptr };
+	std::unique_ptr<SettingsActions> mSettingsActions;
 
 	void saveAllProcess();
 
@@ -641,8 +622,6 @@ class App : public UICodeEditorSplitter::Client {
 	void initPluginManager();
 
 	void onPluginEnabled( Plugin* plugin );
-
-	void checkForUpdatesResponse( Http::Response response, bool fromStartup );
 
 	std::string getLastUsedFolder();
 

@@ -712,13 +712,13 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 				mApp->getConfig().workspace.sessionSnapshot = item->isActive();
 			}
 		} else if ( "line_breaking_column" == id ) {
-			mApp->setLineBreakingColumn();
+			mApp->getSettingsActions()->setLineBreakingColumn();
 		} else if ( "line_spacing" == id ) {
-			mApp->setLineSpacing();
+			mApp->getSettingsActions()->setLineSpacing();
 		} else if ( "cursor_blinking_time" == id ) {
-			mApp->setCursorBlinkingTime();
+			mApp->getSettingsActions()->setCursorBlinkingTime();
 		} else if ( "indent_tab_character" == id ) {
-			mApp->setIndentTabCharacter();
+			mApp->getSettingsActions()->setIndentTabCharacter();
 		}
 	} );
 
@@ -1431,7 +1431,7 @@ UIMenu* SettingsMenu::createViewMenu() {
 								editor->setFoldsAlwaysVisible( enabled );
 							} );
 						} else if ( "folds_refresh_freq" == item->getId() ) {
-							mApp->setFoldRefreshFreq();
+							mApp->getSettingsActions()->setFoldRefreshFreq();
 						}
 					} );
 			}
