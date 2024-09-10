@@ -1,5 +1,5 @@
-#include "ecode.hpp"
 #include "settingsactions.hpp"
+#include "ecode.hpp"
 #include "version.hpp"
 
 namespace ecode {
@@ -99,6 +99,8 @@ void SettingsActions::checkForUpdatesResponse( Http::Response response, bool fro
 void SettingsActions::checkForUpdates( bool fromStartup ) {
 	Http::getAsync(
 		[this, fromStartup]( const Http&, Http::Request&, Http::Response& response ) {
+			if ( !SceneManager::existsSingleton() || SceneManager::instance()->isShuttingDown() )
+				return;
 			mApp->getUISceneNode()->runOnMainThread( [this, response, fromStartup]() {
 				checkForUpdatesResponse( response, fromStartup );
 			} );
@@ -201,14 +203,22 @@ void SettingsActions::setIndentTabCharacter() {
 	msgBox->setId( "indent_tab_window" );
 	msgBox->setTitle( mApp->getWindowTitle() );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->getComboBox()->getDropDownList()->getListBox()->addClass( "indent_tab_listbox_item" );
-	msgBox->getComboBox()->getDropDownList()->getListBox()->addListBoxItems(
-		{ u8"»", u8"→", u8"⇒", u8"↪", u8"⇢", u8"↣" } );
+	UIComboBox* comboBox = msgBox->getComboBox();
+	UIListBox* listBox = msgBox->getComboBox()->getDropDownList()->getListBox();
+	listBox->addClass( "indent_tab_listbox_item" );
+	listBox->addListBoxItems( { u8"»", u8"→", u8"⇒", u8"↪", u8"⇢", u8"↣" } );
 	msgBox->getComboBox()->setText(
 		String::fromUtf8( mApp->getConfig().editor.tabIndentCharacter.empty()
 							  ? u8"»"
 							  : mApp->getConfig().editor.tabIndentCharacter ) );
 	msgBox->showWhenReady();
+	comboBox->on( Event::OnValueChange, [this, comboBox]( const Event* ) {
+		if ( comboBox->getText().size() != 1 )
+			return;
+		mApp->getSplitter()->forEachEditor( [comboBox]( UICodeEditor* editor ) {
+			editor->setTabIndentCharacter( comboBox->getText()[0] );
+		} );
+	} );
 	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 		auto txt( msgBox->getComboBox()->getText() );
 		if ( txt.size() == 1 ) {
@@ -223,6 +233,13 @@ void SettingsActions::setIndentTabCharacter() {
 			msgBoxAlert->setTitle( mApp->getWindowTitle() );
 			msgBoxAlert->setCloseShortcut( { KEY_ESCAPE, 0 } );
 		}
+	} );
+	msgBox->on( Event::OnCancel, [this]( const Event* ) {
+		String txt = String::fromUtf8( mApp->getConfig().editor.tabIndentCharacter );
+		if ( txt.size() != 1 )
+			return;
+		mApp->getSplitter()->forEachEditor(
+			[&txt]( UICodeEditor* editor ) { editor->setTabIndentCharacter( txt[0] ); } );
 	} );
 	mApp->setFocusEditorOnClose( msgBox );
 }

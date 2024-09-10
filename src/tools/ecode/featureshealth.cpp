@@ -358,20 +358,38 @@ void FeaturesHealth::displayHealth( PluginManager* pluginManager, UISceneNode* s
 		window-title="@string(languages_health, Languages Health)"
 		window-flags="default|maximize|shadow"
 		window-min-size="300dp 300dp">
-		<vbox lw="mp" lh="mp">
-			<TableView id="health-table" lw="mp" lh="0" lw8="1" />
-			<vbox id="health-lang-info" lw="mp" lh="wc" min-height="118dp" visible="false"></vbox>
-		</vbox>
+		<RelativeLayout lw="mp" lh="mp">
+			<vbox id="health_container" lw="mp" lh="mp" visible="false">
+				<TableView id="health_table" lw="mp" lh="0" lw8="1" />
+				<vbox id="health_lang_info" lw="mp" lh="wc" min-height="118dp" visible="false"></vbox>
+			</vbox>
+			<Loader id="health_loader" lw="64dp" lh="64dp" outline-thickness="6dp" lg="center" visible="true" />
+		</RelativeLayout>
 	</window>
 	)xml" )
 						->asType<UIWindow>();
-	UITableView* table = win->find<UITableView>( "health-table" );
-	auto health = FeaturesHealth::getHealth( pluginManager );
-	auto model = HealthModel::create( std::move( health ), sceneNode );
+	auto healthLoader = win->find( "health_loader" );
+	auto healthContainer = win->find( "health_container" );
+	UITableView* table = win->find<UITableView>( "health_table" );
 	table->setAutoColumnsWidth( true );
 	table->setFitAllColumnsToWidget( true );
-	table->setModel( model );
-	auto healthLangInfo = win->find( "health-lang-info" );
+
+	const auto loadModel = [table, sceneNode, pluginManager, healthLoader, healthContainer]() {
+		auto health = FeaturesHealth::getHealth( pluginManager );
+		auto model = HealthModel::create( std::move( health ), sceneNode );
+		table->setModel( model );
+		healthLoader->runOnMainThread( [healthLoader] { healthLoader->setVisible( false ); } );
+		healthContainer->runOnMainThread(
+			[healthContainer] { healthContainer->setVisible( true ); } );
+	};
+
+	if ( sceneNode->hasThreadPool() ) {
+		sceneNode->getThreadPool()->run( [loadModel] { loadModel(); } );
+	} else {
+		loadModel();
+	}
+
+	auto healthLangInfo = win->find( "health_lang_info" );
 	table->setOnSelectionChange( [table, healthLangInfo, sceneNode]() {
 		if ( table->getSelection().isEmpty() || nullptr == table->getModel() ) {
 			healthLangInfo->setVisible( false );
@@ -387,36 +405,34 @@ void FeaturesHealth::displayHealth( PluginManager* pluginManager, UISceneNode* s
 		HealthModel* model = static_cast<HealthModel*>( table->getModel() );
 		const auto& lang = model->getHealthRow( index.row() );
 		healthLangInfo->childsCloseAll();
-		std::string type = lang.lsp.url.empty()
-							   ? "TextView"
-							   : String::format( "Anchor href='%s'", lang.lsp.url.c_str() );
+		std::string type =
+			lang.lsp.url.empty() ? "TextView" : String::format( "Anchor href='%s'", lang.lsp.url );
 		std::string l = String::format(
 			R"xml(
 			<hbox><TextView text='%s: ' /><TextView text='%s' font-style="bold" /></hbox>
 			<hbox><TextView text='%s: ' /><TextView text='%s' class="success" /></hbox>
 			<hbox><TextView text='%s: ' /><%s text='%s' class='%s' /></hbox>
 		)xml",
-			I18N( "language", "Language" ), lang.lang.c_str(), I18N( "highlight", "Highlight" ),
+			I18N( "language", "Language" ), lang.lang, I18N( "highlight", "Highlight" ),
 			I18N( "found", "Found" ),
-			I18N( "configured_language_server", "Configured language server" ), type.c_str(),
-			lang.lsp.name.empty() ? none.c_str() : lang.lsp.name.c_str(),
+			I18N( "configured_language_server", "Configured language server" ), type,
+			lang.lsp.name.empty() ? none : lang.lsp.name,
 			lang.lsp.found ? "success" : ( lang.lsp.name.empty() ? "none" : "error" ) );
 
 		if ( !lang.lsp.name.empty() ) {
 			l += String::format( "<hbox><TextView text='%s: ' /><TextView text='%s' class='%s' "
 								 "tooltip='%s' /></hbox>",
 								 I18N( "binary_for_language_server", "Binary for language server" ),
-								 lang.lsp.path.empty() ? notFound.c_str() : lang.lsp.path.c_str(),
+								 lang.lsp.path.empty() ? notFound : lang.lsp.path,
 								 !lang.lsp.path.empty() ? "success" : "error",
-								 lang.lsp.path.empty() ? patherr.c_str() : "" );
+								 lang.lsp.path.empty() ? patherr : "" );
 		}
 
-		type = lang.linter.url.empty()
-				   ? "TextView"
-				   : String::format( "Anchor href='%s'", lang.linter.url.c_str() );
+		type = lang.linter.url.empty() ? "TextView"
+									   : String::format( "Anchor href='%s'", lang.linter.url );
 		l += String::format( "<hbox><TextView text='%s: ' /><%s text='%s' class='%s' /></hbox>",
-							 I18N( "configured_linter", "Configured linter" ), type.c_str(),
-							 lang.linter.name.empty() ? none.c_str() : lang.linter.name.c_str(),
+							 I18N( "configured_linter", "Configured linter" ), type,
+							 lang.linter.name.empty() ? none : lang.linter.name,
 							 lang.linter.found ? "success"
 											   : ( lang.linter.name.empty() ? "none" : "error" ) );
 
@@ -424,29 +440,27 @@ void FeaturesHealth::displayHealth( PluginManager* pluginManager, UISceneNode* s
 			l += String::format( "<hbox><TextView text='%s: ' /><TextView text='%s' class='%s' "
 								 "tooltip='%s' /></hbox>",
 								 I18N( "binary_for_linter", "Binary for linter" ),
-								 lang.linter.path.empty() ? notFound.c_str()
-														  : lang.linter.path.c_str(),
+								 lang.linter.path.empty() ? notFound : lang.linter.path,
 								 !lang.linter.path.empty() ? "success" : "error",
-								 lang.linter.path.empty() ? patherr.c_str() : "" );
+								 lang.linter.path.empty() ? patherr : "" );
 		}
 
 		type = lang.formatter.url.empty()
 				   ? "TextView"
-				   : String::format( "Anchor href='%s'", lang.formatter.url.c_str() );
+				   : String::format( "Anchor href='%s'", lang.formatter.url );
 		l += String::format(
 			"<hbox><TextView text='%s: ' /><%s text='%s' class='%s' /></hbox>",
-			I18N( "configured_formatter", "Configured formatter" ), type.c_str(),
-			lang.formatter.name.empty() ? none.c_str() : lang.formatter.name.c_str(),
+			I18N( "configured_formatter", "Configured formatter" ), type,
+			lang.formatter.name.empty() ? none : lang.formatter.name,
 			lang.formatter.found ? "success" : ( lang.formatter.name.empty() ? "none" : "error" ) );
 
 		if ( !lang.formatter.name.empty() ) {
 			l += String::format( "<hbox><TextView text='%s: ' /><TextView text='%s' class='%s' "
 								 "tooltip='%s' /></hbox>",
 								 I18N( "binary_for_formatter", "Binary for formatter" ),
-								 lang.formatter.path.empty() ? notFound.c_str()
-															 : lang.formatter.path.c_str(),
+								 lang.formatter.path.empty() ? notFound : lang.formatter.path,
 								 !lang.formatter.path.empty() ? "success" : "error",
-								 lang.formatter.path.empty() ? patherr.c_str() : "" );
+								 lang.formatter.path.empty() ? patherr : "" );
 		}
 
 		sceneNode->loadLayoutFromString( l, healthLangInfo );

@@ -558,6 +558,9 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 		return UIAbstractTableView::onKeyDown( event );
 	auto curIndex = getSelection().first();
 
+	if ( nullptr == getModel() || getModel()->rowCount() == 0 )
+		return UIAbstractTableView::onKeyDown( event );
+
 	switch ( event.getKeyCode() ) {
 		case KEY_PAGEUP: {
 			int pageSize = eefloor( getVisibleArea().getHeight() / getRowHeight() ) - 1;

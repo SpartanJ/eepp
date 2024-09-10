@@ -92,6 +92,8 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 		} );
 	}
 
+	on( Event::OnWindowCloseClick, [this]( const Event* ) { sendCommonEvent( Event::OnCancel ); } );
+
 	UILinearLayout* hlay = UILinearLayout::NewHorizontal();
 	hlay->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
