@@ -173,9 +173,6 @@ class EE_API Input {
 	/** @return The Mouse position vector */
 	Vector2i getMousePos() const;
 
-	/** @return The position vector converted to float */
-	Vector2f getMousePosf();
-
 	/** This will change the value of the mouse pos, will not REALLY move the mouse ( for that is
 	 * InjectMousePos ). */
 	void setMousePos( const Vector2i& Pos );

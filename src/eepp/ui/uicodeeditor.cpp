@@ -422,7 +422,8 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 
 	if ( mMouseDown ) {
 		if ( !( getUISceneNode()->getWindow()->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
-			stopMinimapDragging( getUISceneNode()->getWindow()->getInput()->getMousePosf() );
+			stopMinimapDragging(
+				getUISceneNode()->getWindow()->getInput()->getMousePos().asFloat() );
 			mMouseDown = false;
 			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
 		} else if ( !isMouseOverMeOrChilds() || mMinimapDragging ) {
@@ -1009,7 +1010,7 @@ Uint32 UICodeEditor::onFocus( NodeFocusReason reason ) {
 Uint32 UICodeEditor::onFocusLoss() {
 	if ( mMouseDown )
 		getUISceneNode()->getWindow()->getInput()->captureMouse( false );
-	stopMinimapDragging( getUISceneNode()->getWindow()->getInput()->getMousePosf() );
+	stopMinimapDragging( getUISceneNode()->getWindow()->getInput()->getMousePos().asFloat() );
 	mMouseDown = false;
 	mCursorVisible = false;
 	getSceneNode()->getWindow()->stopTextInput();
@@ -1474,8 +1475,8 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 	Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
 
 	if ( !minimapHover && isTextSelectionEnabled() &&
-		 !getUISceneNode()->getEventDispatcher()->isNodeDragging() && NULL != mFont && mMouseDown &&
-		 ( flags & EE_BUTTON_LMASK ) && ( localPos.y <= 0 || localPos.y >= mPluginsTopSpace ) ) {
+		 !getUISceneNode()->getEventDispatcher()->isNodeDragging() && NULL != mFont &&
+		 mMouseDown ) {
 		TextRange selection = mDoc->getSelection();
 		selection.setStart( resolveScreenPosition( position.asFloat() ) );
 		mDoc->setSelection( selection );

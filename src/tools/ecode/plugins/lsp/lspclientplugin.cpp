@@ -605,14 +605,18 @@ TextDocument* LSPClientPlugin::getDocumentFromURI( const URI& uri ) {
 
 bool LSPClientPlugin::onMouseClick( UICodeEditor* editor, const Vector2i& pos,
 									const Uint32& flags ) {
-	const Vector2f localPos( mBreadcrumb && ( flags & EE_BUTTON_LMASK )
-								 ? editor->convertToNodeSpace( pos.asFloat() )
-								 : Vector2f::Zero );
-
-	if ( mBreadcrumb && ( flags & EE_BUTTON_LMASK ) && localPos.y < mPluginTopSpace &&
+	const bool breadcrumbClick = mBreadcrumb && ( flags & EE_BUTTON_LMASK );
+	const Vector2f localPos( breadcrumbClick ? editor->convertToNodeSpace( pos.asFloat() )
+											 : Vector2f::Zero );
+	if ( breadcrumbClick && localPos.y < mPluginTopSpace &&
 		 localPos.x < editor->getPixelsSize().getWidth() - editor->getMinimapWidth() ) {
-		editor->getDocument().execute( "lsp-show-document-symbols", editor );
-		return true;
+		const Vector2f downLocalPos( editor->convertToNodeSpace(
+			editor->getEventDispatcher()->getMouseDownPos().asFloat() ) );
+		if ( downLocalPos.y < mPluginTopSpace &&
+			 downLocalPos.x < editor->getPixelsSize().getWidth() - editor->getMinimapWidth() ) {
+			editor->getDocument().execute( "lsp-show-document-symbols", editor );
+			return true;
+		}
 	}
 
 	Input* input = editor->getUISceneNode()->getWindow()->getInput();
@@ -1714,7 +1718,7 @@ void LSPClientPlugin::hideTooltip( UICodeEditor* editor ) {
 
 TextPosition currentMouseTextPosition( UICodeEditor* editor ) {
 	return editor->resolveScreenPosition(
-		editor->getUISceneNode()->getWindow()->getInput()->getMousePosf() );
+		editor->getUISceneNode()->getWindow()->getInput()->getMousePos().asFloat() );
 }
 
 void LSPClientPlugin::tryHideTooltip( UICodeEditor* editor, const Vector2i& position ) {
@@ -1830,7 +1834,8 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 							if ( !editor->getScreenRect().contains( editor->getUISceneNode()
 																		->getWindow()
 																		->getInput()
-																		->getMousePosf() ) )
+																		->getMousePos()
+																		.asFloat() ) )
 								return;
 							tryDisplayTooltip( editor, resp, position );
 						} );

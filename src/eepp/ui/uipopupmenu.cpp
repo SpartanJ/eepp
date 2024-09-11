@@ -68,7 +68,7 @@ void UIPopUpMenu::showAtScreenPosition( Vector2f pos ) {
 }
 
 void UIPopUpMenu::showOverMouseCursor() {
-	showAtScreenPosition( getUISceneNode()->getWindow()->getInput()->getMousePosf() );
+	showAtScreenPosition( getUISceneNode()->getWindow()->getInput()->getMousePos().asFloat() );
 }
 
 bool UIPopUpMenu::hide() {

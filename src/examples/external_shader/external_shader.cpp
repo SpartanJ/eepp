@@ -107,7 +107,7 @@ void mainLoop() {
 	}
 
 	Float p;
-	Vector2f mf = imp->getMousePosf();
+	Vector2f mf = imp->getMousePos().asFloat();
 	Float tratio = tw / th;
 	Float touchX = ( mf.x / tw - 1 ) * tratio;
 	Float touchY = -( mf.y / th - 1 );

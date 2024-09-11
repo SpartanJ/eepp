@@ -312,10 +312,6 @@ void Input::setMousePos( const Vector2i& Pos ) {
 	mMousePos = Pos;
 }
 
-Vector2f Input::getMousePosf() {
-	return Vector2f( (Float)mMousePos.x, (Float)mMousePos.y );
-}
-
 Vector2f Input::getMousePosFromView( const View& View ) {
 	return mWindow->mapPixelToCoords( getMousePos(), View );
 }
