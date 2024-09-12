@@ -658,6 +658,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Float getViewportWidth( const bool& forceVScroll = false ) const;
 
+	Float getTopAreaWidth() const;
+
 	bool getShowIndentationGuides() const;
 
 	void setShowIndentationGuides( bool showIndentationGuides );

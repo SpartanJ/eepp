@@ -115,7 +115,7 @@ bool SSLSocket::end() {
 }
 
 bool SSLSocket::isSupported() {
-#ifdef EE_SSL_SUPPORT
+#if defined( EE_SSL_SUPPORT ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	return true;
 #else
 	return false;
