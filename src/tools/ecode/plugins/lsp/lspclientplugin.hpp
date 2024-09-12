@@ -19,6 +19,8 @@ using namespace EE::UI;
 
 namespace ecode {
 
+class LSPSymbolInfoTreeModel;
+
 // Implementation of the LSP Client:
 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/
 class LSPClientPlugin : public Plugin {
@@ -54,6 +56,9 @@ class LSPClientPlugin : public Plugin {
 									  const Vector2i& position, const Uint32& flags );
 
 	virtual bool onMouseMove( UICodeEditor* editor, const Vector2i& position, const Uint32& flags );
+
+	virtual bool onMouseLeave( UICodeEditor* editor, const Vector2i& position,
+							   const Uint32& flags );
 
 	virtual void onFocusLoss( UICodeEditor* editor );
 
@@ -93,6 +98,9 @@ class LSPClientPlugin : public Plugin {
 
 	void onVersionUpgrade( Uint32 oldVersion, Uint32 currentVersion );
 
+	void drawTop( UICodeEditor* editor, const Vector2f& screenStart, const Sizef& size,
+				  const Float& fontSize );
+
   protected:
 	friend class LSPDocumentClient;
 	friend class LSPClientServer;
@@ -100,6 +108,7 @@ class LSPClientPlugin : public Plugin {
 	Clock mClock;
 	Mutex mDocMutex;
 	Mutex mDocSymbolsMutex;
+	Mutex mDocCurrentSymbolsMutex;
 	UnorderedMap<UICodeEditor*, std::vector<Uint32>> mEditors;
 	UnorderedMap<UICodeEditor*, UnorderedSet<String::HashType>> mEditorsTags;
 	UnorderedSet<TextDocument*> mDocs;
@@ -114,6 +123,9 @@ class LSPClientPlugin : public Plugin {
 	bool mSemanticHighlighting{ true };
 	bool mSilence{ false };
 	bool mTrimLogs{ false };
+	bool mBreadcrumb{ true };
+	bool mHoveringBreadcrumb{ false };
+	StyleSheetLength mBreadcrumbHeight{ "20dp" };
 	UnorderedMap<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 	UnorderedMap<TextDocument*, std::shared_ptr<TextDocument>> mDelayedDocs;
 	Uint32 mHoverWaitCb{ 0 };
@@ -126,6 +138,16 @@ class LSPClientPlugin : public Plugin {
 	String::HashType mConfigHash{ 0 };
 	Color mOldBackgroundColor;
 	std::string mOldMaxWidth;
+	Float mPluginTopSpace{ 0 };
+	struct DisplaySymbolInfo {
+		String name;
+		std::string icon;
+
+		bool operator==( const DisplaySymbolInfo& other ) const {
+			return name == other.name && icon == other.icon;
+		}
+	};
+	UnorderedMap<URI, std::vector<DisplaySymbolInfo>> mDocCurrentSymbols;
 
 	LSPClientPlugin( PluginManager* pluginManager, bool sync );
 
@@ -189,6 +211,13 @@ class LSPClientPlugin : public Plugin {
 	void processDiagnosticsCodeAction( const PluginMessage& msg );
 
 	void renameSymbol( UICodeEditor* editor );
+
+	void updateCurrentSymbol( TextDocument& doc );
+
+	void showDocumentSymbols( UICodeEditor* editor );
+
+	std::shared_ptr<LSPSymbolInfoTreeModel> createDocSymbolsModel( URI uri,
+																   const std::string& query = "" );
 };
 
 } // namespace ecode

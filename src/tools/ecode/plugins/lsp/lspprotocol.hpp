@@ -3,7 +3,6 @@
 
 #include <eepp/ui/doc/textdocument.hpp>
 #include <nlohmann/json.hpp>
-#include <optional>
 #include <string>
 
 using namespace EE;
@@ -381,6 +380,14 @@ struct LSPSymbolInformation {
 	TextRange selectionRange;
 	double score = 0.0;
 	std::vector<LSPSymbolInformation> children;
+	LSPSymbolInformation* parent{ nullptr };
+
+	void updateParentsRefs() {
+		for ( auto& child : children ) {
+			child.parent = this;
+			child.updateParentsRefs();
+		}
+	}
 };
 
 using LSPSymbolInformationList = std::vector<LSPSymbolInformation>;

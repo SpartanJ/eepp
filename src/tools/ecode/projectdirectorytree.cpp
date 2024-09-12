@@ -47,7 +47,8 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 			mDirectories.push_back( mPath );
 
 			if ( !mAllowedMatcher && FileSystem::fileExists( mPath + PRJ_ALLOWED_PATH ) )
-				mAllowedMatcher = std::make_unique<GitIgnoreMatcher>( mPath, PRJ_ALLOWED_PATH, false );
+				mAllowedMatcher =
+					std::make_unique<GitIgnoreMatcher>( mPath, PRJ_ALLOWED_PATH, false );
 
 			if ( !acceptedPatterns.empty() ) {
 				std::vector<std::string> files;
@@ -104,8 +105,8 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 }
 
 std::shared_ptr<FileListModel>
-ProjectDirectoryTree::fuzzyMatchTree( const std::vector<std::string>& matches,
-									  const size_t& max ) const {
+ProjectDirectoryTree::fuzzyMatchTree( const std::vector<std::string>& matches, const size_t& max,
+									  const std::string& basePath ) const {
 	Lock rl( mMatchingMutex );
 	std::multimap<int, int, std::greater<int>> matchesMap;
 	std::vector<std::string> files;
@@ -123,11 +124,14 @@ ProjectDirectoryTree::fuzzyMatchTree( const std::vector<std::string>& matches,
 			files.emplace_back( mFiles[res.second] );
 		}
 	}
-	return std::make_shared<FileListModel>( files, names );
+	auto model = std::make_shared<FileListModel>( files, names );
+	model->setBasePath( basePath );
+	return model;
 }
 
-std::shared_ptr<FileListModel> ProjectDirectoryTree::fuzzyMatchTree( const std::string& match,
-																	 const size_t& max ) const {
+std::shared_ptr<FileListModel>
+ProjectDirectoryTree::fuzzyMatchTree( const std::string& match, const size_t& max,
+									  const std::string& basePath ) const {
 	Lock rl( mMatchingMutex );
 	std::multimap<int, int, std::greater<int>> matchesMap;
 	std::vector<std::string> files;
@@ -143,11 +147,14 @@ std::shared_ptr<FileListModel> ProjectDirectoryTree::fuzzyMatchTree( const std::
 			files.emplace_back( mFiles[res.second] );
 		}
 	}
-	return std::make_shared<FileListModel>( files, names );
+	auto model = std::make_shared<FileListModel>( files, names );
+	model->setBasePath( basePath );
+	return model;
 }
 
-std::shared_ptr<FileListModel> ProjectDirectoryTree::matchTree( const std::string& match,
-																const size_t& max ) const {
+std::shared_ptr<FileListModel>
+ProjectDirectoryTree::matchTree( const std::string& match, const size_t& max,
+								 const std::string& basePath ) const {
 	Lock rl( mMatchingMutex );
 	std::vector<std::string> files;
 	std::vector<std::string> names;
@@ -160,25 +167,27 @@ std::shared_ptr<FileListModel> ProjectDirectoryTree::matchTree( const std::strin
 				return std::make_shared<FileListModel>( files, names );
 		}
 	}
-	return std::make_shared<FileListModel>( files, names );
+	auto model = std::make_shared<FileListModel>( files, names );
+	model->setBasePath( basePath );
+	return model;
 }
 
 void ProjectDirectoryTree::asyncFuzzyMatchTree( const std::string& match, const size_t& max,
-												ProjectDirectoryTree::MatchResultCb res ) const {
-	mPool->run( [this, match, max, res]() { res( fuzzyMatchTree( match, max ) ); } );
+												ProjectDirectoryTree::MatchResultCb res,
+												const std::string& basePath ) const {
+	mPool->run(
+		[this, match, max, res, basePath]() { res( fuzzyMatchTree( match, max, basePath ) ); } );
 }
 
 void ProjectDirectoryTree::asyncMatchTree( const std::string& match, const size_t& max,
-										   ProjectDirectoryTree::MatchResultCb res ) const {
-	mPool->run( [this, match, max, res]() { res( matchTree( match, max ) ); } );
+										   ProjectDirectoryTree::MatchResultCb res,
+										   const std::string& basePath ) const {
+	mPool->run( [this, match, max, res, basePath]() { res( matchTree( match, max, basePath ) ); } );
 }
 
 std::shared_ptr<FileListModel>
-ProjectDirectoryTree::asModel( const size_t& max,
-							   const std::vector<CommandInfo>& prependCommands ) const {
-	if ( mNames.empty() )
-		return std::make_shared<FileListModel>( std::vector<std::string>(),
-												std::vector<std::string>() );
+ProjectDirectoryTree::asModel( const size_t& max, const std::vector<CommandInfo>& prependCommands,
+							   const std::string& basePath ) const {
 	size_t rmax = eemin( mNames.size(), max );
 	std::vector<std::string> files( rmax );
 	std::vector<std::string> names( rmax );
@@ -195,6 +204,7 @@ ProjectDirectoryTree::asModel( const size_t& max,
 		}
 	}
 	auto model = std::make_shared<FileListModel>( files, names );
+	model->setBasePath( basePath );
 
 	if ( !prependCommands.empty() ) {
 		for ( size_t i = 0; i < prependCommands.size(); ++i )
@@ -205,7 +215,8 @@ ProjectDirectoryTree::asModel( const size_t& max,
 }
 
 std::shared_ptr<FileListModel>
-ProjectDirectoryTree::emptyModel( const std::vector<CommandInfo>& prependCommands ) {
+ProjectDirectoryTree::emptyModel( const std::vector<CommandInfo>& prependCommands,
+								  const std::string& basePath ) {
 	std::vector<std::string> files;
 	std::vector<std::string> names;
 	if ( !prependCommands.empty() ) {
@@ -217,6 +228,7 @@ ProjectDirectoryTree::emptyModel( const std::vector<CommandInfo>& prependCommand
 		}
 	}
 	auto model = std::make_shared<FileListModel>( files, names );
+	model->setBasePath( basePath );
 
 	if ( !prependCommands.empty() ) {
 		for ( size_t i = 0; i < prependCommands.size(); ++i )

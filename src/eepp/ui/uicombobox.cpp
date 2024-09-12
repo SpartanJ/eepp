@@ -15,16 +15,15 @@ UIComboBox::UIComboBox() : UIWidget( "combobox" ), mDropDownList( NULL ), mButto
 	mDropDownList->setEnabled( true );
 	mDropDownList->setAllowEditing( true );
 	mDropDownList->setTextSelection( true );
-	mDropDownList->addEventListener( Event::OnPaddingChange,
-									 [this]( const Event* ) { onPaddingChange(); } );
-	mDropDownList->addEventListener( Event::OnSizeChange,
-									 [this]( const Event* ) { onSizeChange(); } );
-
+	mDropDownList->on( Event::OnPaddingChange, [this]( const Event* ) { onPaddingChange(); } );
+	mDropDownList->on( Event::OnSizeChange, [this]( const Event* ) { onSizeChange(); } );
+	mDropDownList->on( Event::OnValueChange,
+					   [this]( const Event* ) { sendCommonEvent( Event::OnValueChange ); } );
 	mButton = UIWidget::NewWithTag( "combobox::button" );
 	mButton->setParent( this );
 	mButton->setVisible( true );
 	mButton->setEnabled( true );
-	mButton->addEventListener( Event::OnSizeChange, [this]( const Event* ) { onSizeChange(); } );
+	mButton->on( Event::OnSizeChange, [this]( const Event* ) { onSizeChange(); } );
 
 	applyDefaultTheme();
 }

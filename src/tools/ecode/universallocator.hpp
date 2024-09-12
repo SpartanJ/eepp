@@ -19,13 +19,15 @@ class UniversalLocator {
 		LocatorProvider(
 			String&& symbol, String&& description, std::function<bool( const String& )> switchFn,
 			std::function<void( const Variant& var, const ModelEvent* modelEvent )> openFn,
-			std::function<bool( const String& )> pressEnterFn = nullptr ) :
+			std::function<bool( const String& )> pressEnterFn = nullptr,
+			bool projectNeeded = true ) :
 			symbol( std::move( symbol ) ),
 			symbolTrigger( this->symbol + " " ),
 			description( std::move( description ) ),
 			switchFn( std::move( switchFn ) ),
 			openFn( std::move( openFn ) ),
-			pressEnterFn( std::move( pressEnterFn ) ) {}
+			pressEnterFn( std::move( pressEnterFn ) ),
+			projectNeeded( projectNeeded ) {}
 
 		String symbol;
 		String symbolTrigger;
@@ -33,6 +35,7 @@ class UniversalLocator {
 		std::function<bool( const String& )> switchFn;
 		std::function<void( const Variant&, const ModelEvent* )> openFn;
 		std::function<bool( const String& )> pressEnterFn{ nullptr };
+		bool projectNeeded{ true };
 	};
 
 	UniversalLocator( UICodeEditorSplitter* editorSplitter, UISceneNode* sceneNode, App* app );

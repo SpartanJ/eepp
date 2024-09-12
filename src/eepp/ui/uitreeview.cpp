@@ -178,7 +178,7 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 								 const ModelIndex& index ) {
 	widget->setParent( rowWidget );
 	widget->unsetFlags( UI_AUTO_SIZE );
-	widget->setClipType( mDisableCellCliping ? ClipType::None : ClipType::ContentBox );
+	widget->setClipType( mDisableCellClipping ? ClipType::None : ClipType::ContentBox );
 	widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	widget->setTextAlign( UI_HALIGN_LEFT );
 	widget->setCurIndex( index );
@@ -558,6 +558,9 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 		return UIAbstractTableView::onKeyDown( event );
 	auto curIndex = getSelection().first();
 
+	if ( nullptr == getModel() || getModel()->rowCount() == 0 )
+		return UIAbstractTableView::onKeyDown( event );
+
 	switch ( event.getKeyCode() ) {
 		case KEY_PAGEUP: {
 			int pageSize = eefloor( getVisibleArea().getHeight() / getRowHeight() ) - 1;
@@ -743,12 +746,12 @@ void UITreeView::onOpenTreeModelIndex( const ModelIndex& index, bool open ) {
 	sendEvent( &event );
 }
 
-bool UITreeView::getDisableCellCliping() const {
-	return mDisableCellCliping;
+bool UITreeView::getDisableCellClipping() const {
+	return mDisableCellClipping;
 }
 
-void UITreeView::setDisableCellCliping( bool disableCellCliping ) {
-	mDisableCellCliping = disableCellCliping;
+void UITreeView::setDisableCellClipping( bool disableCellClipping ) {
+	mDisableCellClipping = disableCellClipping;
 }
 
 void UITreeView::onSortColumn( const size_t& ) {
@@ -779,19 +782,14 @@ ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& cas
 	return foundIndex;
 }
 
-ModelIndex UITreeView::selectRowWithPath( std::string path ) {
+ModelIndex UITreeView::selectRowWithPath( const std::vector<std::string>& pathTree ) {
 	const Model* model = getModel();
 	if ( !model || model->rowCount() == 0 )
 		return {};
-	String::replaceAll( path, "\\", "/" );
-	auto pathPart = String::split( path, "/" );
-	if ( pathPart.empty() )
-		return {};
-
 	ModelIndex parentIndex = {};
-	for ( size_t i = 0; i < pathPart.size(); i++ ) {
+	for ( size_t i = 0; i < pathTree.size(); i++ ) {
 		ModelIndex foundIndex = {};
-		const auto& part = pathPart[i];
+		const auto& part = pathTree[i];
 
 		traverseTree(
 			[&model, &foundIndex, &part, &parentIndex,
@@ -813,12 +811,20 @@ ModelIndex UITreeView::selectRowWithPath( std::string path ) {
 
 		parentIndex = foundIndex;
 
-		if ( i == pathPart.size() - 1 ) {
+		if ( i == pathTree.size() - 1 ) {
 			setSelection( foundIndex );
 			return foundIndex;
 		}
 	}
 	return {};
+}
+
+ModelIndex UITreeView::selectRowWithPath( std::string path ) {
+	String::replaceAll( path, "\\", "/" );
+	auto pathTree = String::split( path, "/" );
+	if ( pathTree.empty() )
+		return {};
+	return selectRowWithPath( pathTree );
 }
 
 void UITreeView::setSelection( const ModelIndex& index, bool scrollToSelection,

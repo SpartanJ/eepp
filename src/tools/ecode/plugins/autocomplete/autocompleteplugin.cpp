@@ -162,7 +162,7 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];
 		if ( config.contains( "suggestions_syntax_highlight" ) )
-			mHighlightSuggestions = config.value( "suggestions_syntax_highlight", false );
+			mHighlightSuggestions = config.value( "suggestions_syntax_highlight", true );
 		else {
 			config["suggestions_syntax_highlight"] = mHighlightSuggestions;
 			updateConfigFile = true;
@@ -784,6 +784,11 @@ PluginRequestHandle AutoCompletePlugin::processResponse( const PluginMessage& ms
 			}
 		}
 		return processCodeCompletion( msg.asCodeCompletion() );
+	} else if ( msg.isRequest() && msg.type == PluginMessageType::SignatureHelp ) {
+		if ( getManager() && getManager()->getSplitter() &&
+			 getManager()->getSplitter()->curEditorIsNotNull() ) {
+			requestSignatureHelp( getManager()->getSplitter()->getCurEditor() );
+		}
 	} else if ( msg.isResponse() && msg.type == PluginMessageType::SignatureHelp ) {
 		return processSignatureHelp( msg.asSignatureHelp() );
 	} else if ( msg.isBroadcast() && msg.type == PluginMessageType::LanguageServerCapabilities ) {
@@ -1230,13 +1235,12 @@ void AutoCompletePlugin::resetSignatureHelp() {
 AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocument* doc ) {
 	LuaPattern pattern( mSymbolPattern );
 	AutoCompletePlugin::SymbolsList symbols;
-	Int64 lc = doc->linesCount();
-	if ( lc == 0 || lc > 50000 || mShuttingDown )
+	if ( doc->linesCount() == 0 || doc->isHuge() || mShuttingDown )
 		return symbols;
 	std::string current( getPartialSymbol( doc ) );
 	TextPosition end = doc->getSelection().end();
 	for ( Int64 i = 0; i < static_cast<Int64>( doc->linesCount() ); i++ ) {
-		const auto& string = doc->line( i ).toUtf8();
+		auto string = doc->line( i ).toUtf8();
 		for ( auto& match : pattern.gmatch( string ) ) {
 			std::string matchStr( match[0] );
 			// Ignore the symbol if is actually the current symbol being written

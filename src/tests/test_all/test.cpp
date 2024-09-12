@@ -1272,7 +1272,7 @@ void EETest::onQuitClick( const Event* event ) {
 
 void EETest::showMenu() {
 	if ( NULL != Menu && Menu->show() ) {
-		Vector2f Pos = KM->getMousePosf();
+		Vector2f Pos = KM->getMousePos().asFloat();
 		UIMenu::findBestMenuPos( Pos, Menu );
 		Menu->setPixelsPosition( Pos );
 	}
@@ -2470,7 +2470,8 @@ void EETest::physicsCreate() {
 
 void EETest::physicsUpdate() {
 #ifndef EE_PLATFORM_TOUCH
-	mMousePoint = cVectNew( KM->getMousePosf().x, KM->getMousePosf().y );
+	const Vector2f mousePos( KM->getMousePos().asFloat() );
+	mMousePoint = cVectNew( mousePos.x, mousePos.y );
 	cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last ), tocpv( mMousePoint ), 0.25 ) );
 	mMouseBody->setPos( newPoint );
 	mMouseBody->setVel( ( newPoint - mMousePoint_last ) * (cpFloat)mWindow->getFPS() );
@@ -2478,7 +2479,7 @@ void EETest::physicsUpdate() {
 
 	if ( KM->isMouseLeftPressed() ) {
 		if ( NULL == mMouseJoint ) {
-			cVect point = cVectNew( KM->getMousePosf().x, KM->getMousePosf().y );
+			cVect point = cVectNew( mousePos.x, mousePos.y );
 
 			Shape* shape = mSpace->pointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
 

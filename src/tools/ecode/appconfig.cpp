@@ -15,6 +15,29 @@ using namespace std::literals;
 
 namespace ecode {
 
+std::string characterAlignmentToString( CharacterAlignment alignment ) {
+	switch ( alignment ) {
+		case CharacterAlignment::Left:
+			return "left";
+			break;
+		case CharacterAlignment::Center:
+			return "center";
+			break;
+		case CharacterAlignment::Right:
+			return "right";
+			break;
+	}
+	return "left";
+}
+
+CharacterAlignment characterAlignmentFromString( const std::string_view& str ) {
+	if ( str == "center" )
+		return CharacterAlignment::Center;
+	if ( str == "right" )
+		return CharacterAlignment::Right;
+	return CharacterAlignment::Left;
+}
+
 static PanelPosition panelPositionFromString( const std::string& str ) {
 	if ( String::toLower( str ) == "right" )
 		return PanelPosition::Right;
@@ -151,6 +174,10 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		ini.getValueB( "editor", "code_folding_always_visible", false );
 	editor.codeFoldingRefreshFreq =
 		Time::fromString( ini.getValue( "editor", "code_folding_refresh_frequency", "2s" ) );
+	editor.tabIndentCharacter = ini.getValue( "editor", "tab_indent_character" );
+	editor.tabIndentAlignment = characterAlignmentFromString(
+		ini.getValue( "editor", "tab_indent_alignment",
+					  characterAlignmentToString( CharacterAlignment::Center ) ) );
 
 	searchBarConfig.caseSensitive = ini.getValueB( "search_bar", "case_sensitive", false );
 	searchBarConfig.luaPattern = ini.getValueB( "search_bar", "lua_pattern", false );
@@ -287,6 +314,9 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "code_folding_always_visible", editor.codeFoldingAlwaysVisible );
 	ini.setValue( "editor", "code_folding_refresh_frequency",
 				  editor.codeFoldingRefreshFreq.toString() );
+	ini.setValue( "editor", "tab_indent_character", editor.tabIndentCharacter );
+	ini.setValue( "editor", "tab_indent_alignment",
+				  characterAlignmentToString( editor.tabIndentAlignment ) );
 
 	ini.setValueB( "search_bar", "case_sensitive", searchBarConfig.caseSensitive );
 	ini.setValueB( "search_bar", "lua_pattern", searchBarConfig.luaPattern );

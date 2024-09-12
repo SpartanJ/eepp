@@ -1409,7 +1409,7 @@ Http::HttpConnection::HttpConnection() :
 	mIsConnected( false ),
 	mIsTunneled( false ),
 	mIsSSL( false ),
-	mIsKeepAlive( true ) {}
+	mIsKeepAlive( false ) {}
 
 Http::HttpConnection::HttpConnection( TcpSocket* socket ) :
 	mSocket( socket ), mIsConnected( false ), mIsTunneled( false ), mIsSSL( false ) {}

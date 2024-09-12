@@ -46,6 +46,8 @@
 #include <sys/statvfs.h>
 #elif EE_PLATFORM == EE_PLATFORM_SOLARIS
 #include <stdlib.h>
+#elif EE_PLATFORM == EE_PLATFORM_BSD
+#include <unistd.h>
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS

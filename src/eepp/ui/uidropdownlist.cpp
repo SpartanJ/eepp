@@ -47,7 +47,8 @@ UIDropDownList::UIDropDownList( const std::string& tag ) :
 								[this] ( auto event ) { onItemKeyDown( event ); } );
 	mListBox->addEventListener( Event::KeyDown, [this] ( auto event ) { onItemKeyDown( event ); } );
 	mListBox->addEventListener( Event::OnClear, [this] ( auto event ) { onWidgetClear( event ); } );
-	mListBox->addEventListener( Event::OnClose, [this]( const Event* ) { mListBox = nullptr; } );
+	mListBoxCloseCb = mListBox->addEventListener( Event::OnClose,
+											   [this]( const Event* ) { mListBox = nullptr; } );
 	mListBox->addEventListener( Event::OnSelectionChanged, [this]( auto ) {
 		if ( !mListBox->hasSelection() )
 			mListBox->setSelected( 0 );
@@ -60,6 +61,8 @@ UIDropDownList::UIDropDownList( const std::string& tag ) :
 }
 
 UIDropDownList::~UIDropDownList() {
+	if ( mListBox != nullptr && mListBoxCloseCb )
+		mListBox->removeEventListener( mListBoxCloseCb );
 	destroyListBox();
 }
 

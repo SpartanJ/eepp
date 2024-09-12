@@ -401,8 +401,9 @@ double DocumentView::getLineYOffset( Int64 docIdx, Float lineHeight ) const {
 }
 
 bool DocumentView::isLineVisible( Int64 docIdx ) const {
-	return mDocLineToVisibleIndex.empty() ||
-		   mDocLineToVisibleIndex[docIdx] != static_cast<Int64>( VisibleIndex::invalid );
+	return mDocLineToVisibleIndex.empty() || isOneToOne() ||
+		   ( docIdx < static_cast<Int64>( mDocLineToVisibleIndex.size() ) &&
+			 mDocLineToVisibleIndex[docIdx] != static_cast<Int64>( VisibleIndex::invalid ) );
 }
 
 std::vector<TextRange> DocumentView::intersectsFoldedRegions( const TextRange& range ) const {
@@ -554,6 +555,19 @@ void DocumentView::ensureCursorVisibility() {
 	}
 	for ( const auto& range : ranges )
 		unfoldRegion( range.start().line() );
+}
+
+void DocumentView::onFoldRegionsUpdated() {
+	if ( mUpdatingFoldRegions )
+		return;
+	BoolScopedOp op( mUpdatingFoldRegions, true );
+	std::vector<TextRange> add;
+	for ( const auto& region : mFoldedRegions ) {
+		if ( !mDoc->getFoldRangeService().isFoldingRegionInLine( region.start().line() ) )
+			add.push_back( region );
+	}
+	if ( !add.empty() )
+		mDoc->getFoldRangeService().addFoldRegions( add );
 }
 
 void DocumentView::moveCursorToVisibleArea() {

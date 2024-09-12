@@ -6,7 +6,8 @@
       "language": "typescript",
       "name": "typescript-language-server",
       "url": "https://github.com/theia-ide/typescript-language-server",
-      "command": "typescript-language-server --stdio",
+      "command": "typescript-language-server",
+      "command_parameters": "--stdio",
       "file_patterns": ["%.ts$"],
       "rootIndicationFileNames": ["package.json", "package-lock.json"],
       "share_process": true,
@@ -181,7 +182,7 @@
       "name": "emmet-language-server",
       "url": "https://github.com/olrtg/emmet-language-server",
       "command": "emmet-language-server --stdio",
-      "file_patterns": ["%.htm", "%.html"],
+      "file_patterns": ["%.[mp]?html?"],
       "rootIndicationFileNames": [".git"],
       "initializationOptions": {
         "showSuggestionsAsSnippets": true

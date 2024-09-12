@@ -626,10 +626,6 @@ function build_link_configuration( package_name, use_ee_icon )
 			buildoptions { "-fno-strict-aliasing -ffast-math" }
 		end
 
-		if not is_vs() and not os.is_real("emscripten") and not os.is_real("macosx") then
-			buildoptions { "-s" }
-		end
-
 		fix_shared_lib_linking_path( package_name, "libeepp" )
 
 		targetname ( package_name .. extension )
@@ -971,6 +967,10 @@ function build_eepp( build_name )
 		files { "src/eepp/network/platform/unix/*.cpp" }
 	end
 
+	if os.is_real("windows") then
+		links { "bcrypt" }
+	end
+
 	files { "src/eepp/core/*.cpp",
 			"src/eepp/math/*.cpp",
 			"src/eepp/system/*.cpp",
@@ -1058,15 +1058,13 @@ solution "eepp"
 			build_base_configuration( "glew" )
 	end
 
-	if not _OPTIONS["with-openssl"] then
-		project "mbedtls-static"
-			kind "StaticLib"
-			language "C"
-			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
-			includedirs { "src/thirdparty/mbedtls/include/" }
-			files { "src/thirdparty/mbedtls/library/*.c" }
-			build_base_cpp_configuration( "mbedtls" )
-	end
+	project "mbedtls-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		includedirs { "src/thirdparty/mbedtls/include/" }
+		files { "src/thirdparty/mbedtls/library/*.c" }
+		build_base_configuration( "mbedtls" )
 
 	project "vorbis-static"
 		kind "StaticLib"
@@ -1124,6 +1122,9 @@ solution "eepp"
 			files { "src/thirdparty/harfbuzz/**.cc" }
 			includedirs { "src/thirdparty/freetype2/include", "src/thirdparty/harfbuzz" }
 			build_base_cpp_configuration( "harfbuzz" )
+			if is_vs() then
+				buildoptions{ "/bigobj" }
+			end
 	end
 
 	project "chipmunk-static"

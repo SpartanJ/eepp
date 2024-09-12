@@ -19,6 +19,8 @@ using namespace EE::Scene;
 
 namespace ecode {
 
+static constexpr auto SidePanelLoadUniqueId = String::hash( "ProjectBuildManager::load::async" );
+
 static const char* VAR_PROJECT_ROOT = "${project_root}";
 static const char* VAR_BUILD_TYPE = "${build_type}";
 static const char* VAR_OS = "${os}";
@@ -307,6 +309,8 @@ void ProjectBuildManager::selectTab() {
 }
 
 ProjectBuildManager::~ProjectBuildManager() {
+	mSidePanel->removeActionsByTag( SidePanelLoadUniqueId );
+
 	if ( mUISceneNode && !SceneManager::instance()->isShuttingDown() && mSidePanel && mTab ) {
 		mSidePanel->removeTab( mTab );
 	}
@@ -568,7 +572,8 @@ bool ProjectBuildManager::load() {
 					   [this]() {
 						   mLoading = false;
 						   if ( mSidePanel )
-							   mSidePanel->runOnMainThread( [this]() { buildSidePanelTab(); } );
+							   mSidePanel->runOnMainThread( [this]() { buildSidePanelTab(); },
+															Time::Zero, SidePanelLoadUniqueId );
 					   } );
 
 	mProjectFile = mProjectRoot + ".ecode/project_build.json";
@@ -935,6 +940,7 @@ void ProjectBuildManager::runApp( const ProjectBuildCommand& cmd, const ProjectB
 								  const ProjectBuildCommandsRes& res,
 								  const ProjectBuildProgressFn& progressFn,
 								  const ProjectBuildDoneFn& doneFn ) {
+	BoolScopedOp op( mRunning, true );
 	Clock clock;
 
 	auto printElapsed = [&clock, &i18n, &progressFn]() {
@@ -975,7 +981,7 @@ void ProjectBuildManager::runApp( const ProjectBuildCommand& cmd, const ProjectB
 						   cmd.workingDir ) ) {
 		std::string buffer( 4096, '\0' );
 		unsigned bytesRead = 0;
-		int returnCode;
+		int returnCode = 0;
 		do {
 			bytesRead = mProcess->readStdOut( buffer );
 			std::string data( buffer.substr( 0, bytesRead ) );
@@ -984,7 +990,8 @@ void ProjectBuildManager::runApp( const ProjectBuildCommand& cmd, const ProjectB
 		} while ( bytesRead != 0 && mProcess->isAlive() && !mShuttingDown && !mCancelRun );
 
 		if ( mShuttingDown || mCancelRun ) {
-			mProcess->kill();
+			if ( mProcess )
+				mProcess->kill();
 			mCancelRun = false;
 			printElapsed();
 			if ( doneFn )
@@ -992,8 +999,10 @@ void ProjectBuildManager::runApp( const ProjectBuildCommand& cmd, const ProjectB
 			return;
 		}
 
-		mProcess->join( &returnCode );
-		mProcess->destroy();
+		if ( mProcess ) {
+			mProcess->join( &returnCode );
+			mProcess->destroy();
+		}
 
 		if ( returnCode != EXIT_SUCCESS ) {
 			if ( progressFn ) {

@@ -118,33 +118,32 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 	mApp( app ),
 	mCommandPalette( mApp->getThreadPool() ) {
 
-	mLocatorProviders.push_back( {
-		">",
-		mUISceneNode->i18n( "search_in_command_palette", "Search in Command Palette" ),
-		[this]( auto ) {
-			showCommandPalette();
-			return true;
-		},
-		[this]( const Variant&, const ModelEvent* modelEvent ) {
-			ModelIndex idx( modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 2 ) );
-			if ( idx.isValid() ) {
-				String cmd = modelEvent->getModel()->data( idx, ModelRole::Display ).toString();
-				mApp->runCommand( cmd );
-				if ( !mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
-					if ( mSplitter->curEditorIsNotNull() &&
-						 mSplitter->getCurEditor()->getDocument().hasCommand( cmd ) )
-						mSplitter->getCurEditor()->setFocus();
-				}
-				if ( cmd != "open-locatebar" && cmd != "open-workspace-symbol-search" &&
-					 cmd != "open-document-symbol-search" && cmd != "go-to-line" &&
-					 cmd != "show-open-documents" ) {
-					hideLocateBar();
-				} else {
-					mLocateInput->setFocus();
-				}
-			}
-		},
-	} );
+	mLocatorProviders.push_back(
+		{ ">", mUISceneNode->i18n( "search_in_command_palette", "Search in Command Palette" ),
+		  [this]( auto ) {
+			  showCommandPalette();
+			  return true;
+		  },
+		  [this]( const Variant&, const ModelEvent* modelEvent ) {
+			  ModelIndex idx(
+				  modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 2 ) );
+			  if ( idx.isValid() ) {
+				  String cmd = modelEvent->getModel()->data( idx, ModelRole::Display ).toString();
+				  mApp->runCommand( cmd );
+				  if ( mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) &&
+					   mSplitter->curEditorIsNotNull() &&
+					   mSplitter->getCurEditor()->getDocument().hasCommand( cmd ) )
+					  mSplitter->getCurEditor()->setFocus();
+				  if ( cmd != "open-locatebar" && cmd != "open-workspace-symbol-search" &&
+					   cmd != "open-document-symbol-search" && cmd != "go-to-line" &&
+					   cmd != "show-open-documents" ) {
+					  hideLocateBar();
+				  } else {
+					  mLocateInput->setFocus();
+				  }
+			  }
+		  },
+		  nullptr, false } );
 
 	mLocatorProviders.push_back(
 		{ ":", mUISceneNode->i18n( "search_for_workspace_symbols", "Search for Workspace Symbols" ),
@@ -217,14 +216,15 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 				  }
 			  }
 			  return false;
-		  } } );
+		  },
+		  false } );
 
 	mLocatorProviders.push_back( { "o", mUISceneNode->i18n( "open_documents", "Open Documents" ),
 								   [this]( auto ) {
 									   showOpenDocuments();
 									   return true;
 								   },
-								   nullptr } );
+								   nullptr, nullptr, false } );
 
 	// clang-format off
 	mLocatorProviders.push_back( { "sb", mUISceneNode->i18n( "switch_build", "Switch Build" ),
@@ -339,27 +339,31 @@ void UniversalLocator::updateFilesTable() {
 	}
 
 	if ( !mApp->isDirTreeReady() ) {
-		mLocateTable->setModel( ProjectDirectoryTree::emptyModel( getLocatorCommands() ) );
+		mLocateTable->setModel(
+			ProjectDirectoryTree::emptyModel( getLocatorCommands(), mApp->getCurrentProject() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	} else if ( !mLocateInput->getText().empty() ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		mApp->getDirTree()->asyncFuzzyMatchTree(
-			text, LOCATEBAR_MAX_RESULTS, [this, text]( auto res ) {
+			text, LOCATEBAR_MAX_RESULTS,
+			[this, text]( auto res ) {
 				mUISceneNode->runOnMainThread( [this, res] {
 					mLocateTable->setModel( res );
 					mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 					mLocateTable->scrollToTop();
 					updateLocateBarSync();
 				} );
-			} );
+			},
+			mApp->getCurrentProject() );
 #else
-		mLocateTable->setModel( mApp->getDirTree()->fuzzyMatchTree( text, LOCATEBAR_MAX_RESULTS ) );
+		mLocateTable->setModel( mApp->getDirTree()->fuzzyMatchTree( text, LOCATEBAR_MAX_RESULTS,
+																	mApp->getCurrentProject() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 		mLocateTable->scrollToTop();
 #endif
 	} else {
-		mLocateTable->setModel(
-			mApp->getDirTree()->asModel( LOCATEBAR_MAX_RESULTS, getLocatorCommands() ) );
+		mLocateTable->setModel( mApp->getDirTree()->asModel(
+			LOCATEBAR_MAX_RESULTS, getLocatorCommands(), mApp->getCurrentProject() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	}
 }
@@ -547,13 +551,18 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 				modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
 				ModelRole::Custom ) );
 			auto range =
-				rangeStr.isValid() ? TextRange::fromString( rangeStr.asStdString() ) : TextRange();
+				rangeStr.isValid() ? TextRange::fromString( rangeStr.toString() ) : TextRange();
+
+			if ( FileSystem::isRelativePath( path ) )
+				path = mApp->getCurrentProject() + path;
+
 			if ( !range.isValid() && !FileSystem::isRelativePath( path ) &&
 				 pathHasPosition( mLocateInput->getText() ) &&
 				 String::startsWith( mLocateInput->getText().toUtf8(), path ) ) {
 				auto pathAndPos = getPathAndPosition( mLocateInput->getText() );
 				range = { pathAndPos.second, pathAndPos.second };
 			}
+
 			focusOrLoadFile( path, range );
 			mLocateBarLayout->execute( "close-locatebar" );
 		}
@@ -618,11 +627,12 @@ void UniversalLocator::showLocateBar() {
 		mLocateInput->setText( "" );
 
 	if ( mApp->getDirTree() && !mLocateTable->getModel() ) {
-		mLocateTable->setModel(
-			mApp->getDirTree()->asModel( LOCATEBAR_MAX_RESULTS, getLocatorCommands() ) );
+		mLocateTable->setModel( mApp->getDirTree()->asModel(
+			LOCATEBAR_MAX_RESULTS, getLocatorCommands(), mApp->getCurrentProject() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	} else if ( !mLocateTable->getModel() ) {
-		mLocateTable->setModel( ProjectDirectoryTree::emptyModel( getLocatorCommands() ) );
+		mLocateTable->setModel(
+			ProjectDirectoryTree::emptyModel( getLocatorCommands(), mApp->getCurrentProject() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	}
 
@@ -1130,8 +1140,12 @@ void UniversalLocator::asyncFuzzyMatchTextDocumentSymbol(
 std::vector<ProjectDirectoryTree::CommandInfo> UniversalLocator::getLocatorCommands() const {
 	std::vector<ProjectDirectoryTree::CommandInfo> vec;
 	UIIcon* icon = mUISceneNode->findIcon( "chevron-right" );
-	for ( const auto& locator : mLocatorProviders )
+	bool isOpenFolder = !mApp->getCurrentProject().empty();
+	for ( const auto& locator : mLocatorProviders ) {
+		if ( !isOpenFolder && locator.projectNeeded )
+			continue;
 		vec.push_back( { locator.symbolTrigger, locator.description, icon } );
+	}
 	return vec;
 }
 

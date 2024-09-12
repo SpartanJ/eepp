@@ -1,3 +1,5 @@
+#include <eepp/ui/uicombobox.hpp>
+#include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uilayout.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uimessagebox.hpp>
@@ -56,7 +58,41 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 											 [this] { sendCommonEvent( Event::OnConfirm ); } );
 		mTextEdit->getKeyBindings().addKeybind( { KEY_RETURN, KeyMod::getDefaultModifier() },
 												"complete-edit" );
+	} else if ( mMsgBoxType == DROPDOWNLIST ) {
+		mDropDownList = UIDropDownList::New();
+		mDropDownList->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent )
+			->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
+			->setSize( PixelDensity::dpToPx( Vector2f{ 200, 18 } ) )
+			->setParent( vlay );
+		mDropDownList->setPopUpToRoot( true );
+	} else if ( mMsgBoxType == COMBOBOX ) {
+		mComboBox = UIComboBox::New();
+		mComboBox->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent )
+			->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
+			->setSize( PixelDensity::dpToPx( Vector2f{ 200, 18 } ) )
+			->setParent( vlay );
+		mComboBox->getDropDownList()->setPopUpToRoot( true );
+		mComboBox->getDropDownList()->getDocument().setCommand(
+			"complete-edit", [this] { sendCommonEvent( Event::OnConfirm ); } );
+		mComboBox->getDropDownList()->getKeyBindings().addKeybind(
+			{ KEY_RETURN, KeyMod::getDefaultModifier() }, "complete-edit" );
 	}
+
+	if ( mMsgBoxType == DROPDOWNLIST || mMsgBoxType == COMBOBOX ) {
+		on( Event::OnWindowToFront, [this]( auto ) {
+			UIListBox* listBox = nullptr;
+			if ( mMsgBoxType == DROPDOWNLIST ) {
+				listBox = mDropDownList->getListBox();
+			} else if ( mMsgBoxType == COMBOBOX ) {
+				listBox = mComboBox->getDropDownList()->getListBox();
+			}
+
+			if ( listBox && listBox->isVisible() )
+				listBox->toFront();
+		} );
+	}
+
+	on( Event::OnWindowCloseClick, [this]( const Event* ) { sendCommonEvent( Event::OnCancel ); } );
 
 	UILinearLayout* hlay = UILinearLayout::NewHorizontal();
 	hlay->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
@@ -74,6 +110,8 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 	switch ( mMsgBoxType ) {
 		case UIMessageBox::INPUT:
 		case UIMessageBox::TEXT_EDIT:
+		case DROPDOWNLIST:
+		case COMBOBOX:
 		case UIMessageBox::OK_CANCEL: {
 			mButtonOK->setText( i18n( "msg_box_ok", "Ok" ) );
 			mButtonCancel->setText( i18n( "msg_box_cancel", "Cancel" ) );
@@ -205,6 +243,14 @@ UITextEdit* UIMessageBox::getTextEdit() const {
 
 UILayout* UIMessageBox::getLayoutCont() const {
 	return mLayoutCont;
+}
+
+UIDropDownList* UIMessageBox::getDropDownList() const {
+	return mDropDownList;
+}
+
+UIComboBox* UIMessageBox::getComboBox() const {
+	return mComboBox;
 }
 
 void UIMessageBox::onWindowReady() {

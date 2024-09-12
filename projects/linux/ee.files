@@ -1545,6 +1545,8 @@
 ../../src/tools/ecode/applayout.xml.hpp
 ../../src/tools/ecode/commandpalette.cpp
 ../../src/tools/ecode/commandpalette.hpp
+../../src/tools/ecode/docsearchcontroller.cpp
+../../src/tools/ecode/docsearchcontroller.hpp
 ../../src/tools/ecode/ecode.cpp
 ../../src/tools/ecode/ecode.hpp
 ../../src/tools/ecode/docsearchcontroller.cpp
@@ -1559,8 +1561,13 @@
 ../../src/tools/ecode/iconmanager.hpp
 ../../src/tools/ecode/ignorematcher.cpp
 ../../src/tools/ecode/ignorematcher.hpp
+../../src/tools/ecode/keybindingshelper.cpp
+../../src/tools/ecode/keybindingshelper.hpp
 ../../src/tools/ecode/macos/macos.hpp
 ../../src/tools/ecode/macos/macos.m
+../../src/tools/ecode/notificationcenter.cpp
+../../src/tools/ecode/notificationcenter.hpp
+../../src/tools/ecode/pathhelper.hpp
 ../../src/tools/ecode/plugins/autocomplete/autocompleteplugin.cpp
 ../../src/tools/ecode/plugins/autocomplete/autocompleteplugin.hpp
 ../../src/tools/ecode/plugins/formatter/formatterplugin.cpp
@@ -1600,6 +1607,8 @@
 ../../src/tools/ecode/projectdirectorytree.hpp
 ../../src/tools/ecode/projectsearch.cpp
 ../../src/tools/ecode/projectsearch.hpp
+../../src/tools/ecode/settingsactions.cpp
+../../src/tools/ecode/settingsactions.hpp
 ../../src/tools/ecode/settingsmenu.cpp
 ../../src/tools/ecode/settingsmenu.hpp
 ../../src/tools/ecode/statusappoutputcontroller.cpp
@@ -1608,6 +1617,8 @@
 ../../src/tools/ecode/statusbuildoutputcontroller.hpp
 ../../src/tools/ecode/statusterminalcontroller.cpp
 ../../src/tools/ecode/statusterminalcontroller.hpp
+../../src/tools/ecode/stringhelper.cpp
+../../src/tools/ecode/stringhelper.hpp
 ../../src/tools/ecode/terminalmanager.cpp
 ../../src/tools/ecode/terminalmanager.hpp
 ../../src/tools/ecode/uibuildsettings.cpp

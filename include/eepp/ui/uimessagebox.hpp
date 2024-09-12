@@ -9,6 +9,8 @@ class UITextEdit;
 class UITextInput;
 class UILayout;
 class UIPushButton;
+class UIDropDownList;
+class UIComboBox;
 
 #define UI_MESSAGE_BOX_DEFAULT_FLAGS                                          \
 	UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_MODAL | \
@@ -16,7 +18,7 @@ class UIPushButton;
 
 class EE_API UIMessageBox : public UIWindow {
   public:
-	enum Type { OK_CANCEL, YES_NO, RETRY_CANCEL, OK, INPUT, TEXT_EDIT };
+	enum Type { OK_CANCEL, YES_NO, RETRY_CANCEL, OK, INPUT, TEXT_EDIT, DROPDOWNLIST, COMBOBOX };
 
 	static UIMessageBox* New( const Type& type, const String& message,
 							  const Uint32& windowFlags = UI_MESSAGE_BOX_DEFAULT_FLAGS );
@@ -43,6 +45,10 @@ class EE_API UIMessageBox : public UIWindow {
 
 	UILayout* getLayoutCont() const;
 
+	UIDropDownList* getDropDownList() const;
+
+	UIComboBox* getComboBox() const;
+
   protected:
 	Type mMsgBoxType;
 	UITextView* mTextBox{ nullptr };
@@ -50,6 +56,8 @@ class EE_API UIMessageBox : public UIWindow {
 	UIPushButton* mButtonCancel{ nullptr };
 	UITextInput* mTextInput{ nullptr };
 	UITextEdit* mTextEdit{ nullptr };
+	UIDropDownList* mDropDownList{ nullptr };
+	UIComboBox* mComboBox{ nullptr };
 	KeyBindings::Shortcut mCloseShortcut;
 	UILayout* mLayoutCont{ nullptr };
 

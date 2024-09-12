@@ -8,6 +8,7 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
@@ -84,7 +85,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	mContainer->setClipType( ClipType::ContentBox );
 	mContainer->enableReportSizeChangeToChilds();
 	mContainer->addEventListener( Event::OnPositionChange,
-								  [this] ( auto event ) { onContainerPositionChange( event ); } );
+								  [this]( auto event ) { onContainerPositionChange( event ); } );
 
 	updateWinFlags();
 
@@ -785,7 +786,11 @@ void UIWindow::fixChildsSize() {
 Uint32 UIWindow::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::Focus: {
-			toFront();
+			sendWindowToFront();
+			break;
+		}
+		case NodeMessage::FocusLoss: {
+			checkEphemeralClose();
 			break;
 		}
 		case NodeMessage::MouseDown: {
@@ -808,7 +813,7 @@ Uint32 UIWindow::onMessage( const NodeMessage* Msg ) {
 			if ( getUISceneNode() != NULL )
 				getUISceneNode()->setCursor( Cursor::Hand );
 
-			toFront();
+			sendWindowToFront();
 
 			break;
 		}
@@ -1071,7 +1076,7 @@ void UIWindow::setupModal() {
 		mModalNode->setVisible( true );
 		mModalNode->toFront();
 
-		toFront();
+		sendWindowToFront();
 	}
 }
 
@@ -1128,8 +1133,8 @@ UIWindow* UIWindow::showWhenReady() {
 	if ( mWindowReady ) {
 		show();
 	} else {
-		hide();
 		mShowWhenReady = true;
+		hide();
 	}
 	return this;
 }
@@ -1382,6 +1387,11 @@ void UIWindow::matrixUnset() {
 	} else {
 		UIWidget::matrixUnset();
 	}
+}
+
+Uint32 UIWindow::onFocusLoss() {
+	checkEphemeralClose();
+	return UIWidget::onFocusLoss();
 }
 
 bool UIWindow::ownsFrameBuffer() {
@@ -1801,6 +1811,18 @@ void UIWindow::executeKeyBindingCommand( const std::string& command ) {
 	if ( cmdIt != mKeyBindingCommands.end() ) {
 		cmdIt->second();
 	}
+}
+
+void UIWindow::sendWindowToFront() {
+	toFront();
+	sendCommonEvent( Event::OnWindowToFront );
+}
+
+void UIWindow::checkEphemeralClose() {
+	Node* focusNode = getUISceneNode()->getUIEventDispatcher()->getFocusNode();
+	if ( !mShowWhenReady && ( mStyleConfig.WinFlags & UI_WIN_EPHEMERAL ) && focusNode != this &&
+		 !inParentTreeOf( focusNode ) )
+		closeWindow();
 }
 
 }} // namespace EE::UI

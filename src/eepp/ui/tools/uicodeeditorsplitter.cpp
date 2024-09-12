@@ -20,7 +20,6 @@ const std::map<KeyBindings::Shortcut, std::string>
 UICodeEditorSplitter::getLocalDefaultKeybindings() {
 	return {
 		{ { KEY_S, KeyMod::getDefaultModifier() }, "save-doc" },
-		{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "lock-toggle" },
 		{ { KEY_T, KeyMod::getDefaultModifier() }, "create-new" },
 		{ { KEY_W, KeyMod::getDefaultModifier() }, "close-tab" },
 		{ { KEY_TAB, KeyMod::getDefaultModifier() }, "next-tab" },
@@ -944,6 +943,15 @@ bool UICodeEditorSplitter::isAnyEditorDirty() {
 		return false;
 	} );
 	return any;
+}
+
+bool UICodeEditorSplitter::allEditorsEmpty() {
+	bool empty = true;
+	forEachEditor( [&empty]( UICodeEditor* editor ) {
+		empty &= editor->getDocument().isEmpty();
+		return false;
+	} );
+	return empty;
 }
 
 void UICodeEditorSplitter::zoomIn() {

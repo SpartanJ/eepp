@@ -370,7 +370,7 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 
 		<vbox lw="mp" lh="wc" class="run_step">
 			<TextView class="subtitle" text="@string(run, Run)" focusable="false" />
-			<StackLayout is="run_select" lw="mp" lh="wc" class="stack_margins">
+			<StackLayout id="run_select" lw="mp" lh="wc" class="stack_margins">
 				<TextView text="@string(run_configuration_colon, Run configuration:)" focusable="false" />
 				<DropDownList id="run_list" layout_width="200dp" layout_height="19dp" />
 				<PushButton id="run_add" text="@string(add_ellipsis, Add...)" />

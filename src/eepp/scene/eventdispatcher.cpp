@@ -366,6 +366,10 @@ const Uint32& EventDispatcher::getReleaseTrigger() const {
 	return mInput->getReleaseTrigger();
 }
 
+bool EventDispatcher::justPressTriggered( Uint32 flag ) {
+	return ( getPressTrigger() & flag ) && ( 0 == ( getLastPressTrigger() & flag ) );
+}
+
 void EventDispatcher::setNodeDragging( Node* dragging ) {
 	eeASSERT( mNodeDragging == nullptr || mNodeDragging == dragging || dragging == nullptr );
 	mNodeDragging = dragging;

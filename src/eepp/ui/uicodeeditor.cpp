@@ -266,15 +266,6 @@ void UICodeEditor::draw() {
 	for ( auto& plugin : mPlugins )
 		plugin->preDraw( this, startScroll, lineHeight, cursor );
 
-	if ( mPluginsTopSpace > 0 ) {
-		Float curTopPos = 0.f;
-		for ( auto& plugin : mPluginTopSpaces ) {
-			plugin.plugin->drawTop( this, { screenStart.x, screenStart.y + curTopPos },
-									{ mSize.getWidth(), plugin.space }, charSize );
-			curTopPos += plugin.space;
-		}
-	}
-
 	if ( !mLocked && mHighlightCurrentLine ) {
 		for ( const auto& sel : mDoc->getSelections() ) {
 			if ( mDocView.isFolded( sel.start().line(), true ) )
@@ -332,7 +323,7 @@ void UICodeEditor::draw() {
 
 	// Draw tab marker
 	if ( mShowWhitespaces ) {
-		drawWhitespaces( lineRange, startScroll, lineHeight );
+		drawWhitespaces( lineRange, startScroll, lineHeight, visualLineRange );
 	}
 
 	if ( mShowLineEndings ) {
@@ -399,6 +390,15 @@ void UICodeEditor::draw() {
 	if ( mMinimapEnabled )
 		drawMinimap( screenStart, lineRange, visualLineRange );
 
+	if ( mPluginsTopSpace > 0 ) {
+		Float curTopPos = 0.f;
+		for ( auto& plugin : mPluginTopSpaces ) {
+			plugin.plugin->drawTop( this, { screenStart.x, screenStart.y + curTopPos },
+									{ mSize.getWidth(), plugin.space }, charSize );
+			curTopPos += plugin.space;
+		}
+	}
+
 	if ( mLocked && mDisplayLockedIcon )
 		drawLockedIcon( start );
 
@@ -422,7 +422,8 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 
 	if ( mMouseDown ) {
 		if ( !( getUISceneNode()->getWindow()->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
-			stopMinimapDragging( getUISceneNode()->getWindow()->getInput()->getMousePosf() );
+			stopMinimapDragging(
+				getUISceneNode()->getWindow()->getInput()->getMousePos().asFloat() );
 			mMouseDown = false;
 			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
 		} else if ( !isMouseOverMeOrChilds() || mMinimapDragging ) {
@@ -666,6 +667,7 @@ void UICodeEditor::onFoldRegionsUpdated( size_t oldCount, size_t newCount ) {
 			invalidateLongestLineWidth();
 		} );
 	}
+	runOnMainThread( [this] { mDocView.onFoldRegionsUpdated(); } );
 }
 
 Uint32 UICodeEditor::onMessage( const NodeMessage* msg ) {
@@ -1008,7 +1010,7 @@ Uint32 UICodeEditor::onFocus( NodeFocusReason reason ) {
 Uint32 UICodeEditor::onFocusLoss() {
 	if ( mMouseDown )
 		getUISceneNode()->getWindow()->getInput()->captureMouse( false );
-	stopMinimapDragging( getUISceneNode()->getWindow()->getInput()->getMousePosf() );
+	stopMinimapDragging( getUISceneNode()->getWindow()->getInput()->getMousePos().asFloat() );
 	mMouseDown = false;
 	mCursorVisible = false;
 	getSceneNode()->getWindow()->stopTextInput();
@@ -1379,8 +1381,11 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		setFocus();
 
 		auto textScreenPos( resolveScreenPosition( position.asFloat() ) );
+		Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
+		if ( localPos.y < mPluginsTopSpace )
+			return UIWidget::onMouseDown( position, flags );
+
 		if ( flags & EE_BUTTON_LMASK ) {
-			Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
 			if ( localPos.x < mPaddingPx.Left + getGutterWidth() ) {
 				if ( mDoc->getFoldRangeService().isFoldingRegionInLine( textScreenPos.line() ) ) {
 					if ( mDocView.isFolded( textScreenPos.line() ) ) {
@@ -1467,9 +1472,11 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 			return 1;
 	}
 
+	Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
+
 	if ( !minimapHover && isTextSelectionEnabled() &&
-		 !getUISceneNode()->getEventDispatcher()->isNodeDragging() && NULL != mFont && mMouseDown &&
-		 ( flags & EE_BUTTON_LMASK ) ) {
+		 !getUISceneNode()->getEventDispatcher()->isNodeDragging() && NULL != mFont &&
+		 mMouseDown ) {
 		TextRange selection = mDoc->getSelection();
 		selection.setStart( resolveScreenPosition( position.asFloat() ) );
 		mDoc->setSelection( selection );
@@ -1482,11 +1489,11 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 
 		checkMouseOverLink( position );
 
-		updateMouseCursor( position.asFloat() );
+		if ( localPos.y >= mPluginsTopSpace )
+			updateMouseCursor( position.asFloat() );
 	}
 
 	if ( mShowFoldingRegion && !mFoldsAlwaysVisible ) {
-		Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
 		bool oldFoldVisible = mFoldsVisible;
 		mFoldsVisible = localPos.x <= mPaddingPx.Left + getGutterWidth();
 		if ( oldFoldVisible != mFoldsVisible )
@@ -1585,7 +1592,7 @@ Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i& position, const Uint32&
 		if ( plugin->onMouseDoubleClick( this, position, flags ) )
 			return UIWidget::onMouseDoubleClick( position, flags );
 
-	if ( mLocked || NULL == mFont )
+	if ( NULL == mFont )
 		return 1;
 
 	if ( mMinimapEnabled ) {
@@ -1594,7 +1601,7 @@ Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i& position, const Uint32&
 			return 1;
 	}
 
-	if ( flags & EE_BUTTON_LMASK ) {
+	if ( isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) ) {
 		mDoc->selectWord( false );
 		mLastDoubleClick.restart();
 		checkColorPickerAction();
@@ -2757,6 +2764,10 @@ void UICodeEditor::checkMatchingBrackets() {
 			pos.setColumn( pos.column() - 1 );
 		}
 	}
+
+	if ( ( isOpenIt == open.end() && isCloseIt == close.end() ) || mDoc->isHuge() )
+		return;
+
 	if ( isOpenIt != open.end() ) {
 		size_t index = std::distance( open.begin(), isOpenIt );
 		String::StringBaseType openBracket = open[index];
@@ -3776,7 +3787,8 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 	bool foldVisible = mShowFoldingRegion && mDoc->getFoldRangeService().canFold();
 	if ( foldVisible )
 		w += mFoldRegionWidth;
-	primitives.drawRectangle( Rectf( screenStart, Sizef( w, mSize.getHeight() ) ) );
+	primitives.drawRectangle( Rectf( { screenStart.x, screenStart.y + mPluginsTopSpace },
+									 Sizef( w, mSize.getHeight() - mPluginsTopSpace ) ) );
 	TextRange selection = mDoc->getSelection( true );
 	Float lineOffset = getLineOffset();
 
@@ -3892,27 +3904,49 @@ void UICodeEditor::drawColorPreview( const Vector2f& startScroll, const Float& l
 }
 
 void UICodeEditor::drawWhitespaces( const DocumentLineRange& lineRange, const Vector2f& startScroll,
-									const Float& lineHeight ) {
+									const Float& lineHeight,
+									const DocumentViewLineRange& visualLineRange ) {
 	static const String tab = "\t";
 	Float tabWidth = getTextWidth( tab );
 	Float glyphW = getGlyphWidth();
 	Color color( Color( mWhitespaceColor ).blendAlpha( mAlpha ) );
 	unsigned int fontSize = getCharacterSize();
 	// We use the GlyphDrawable since can batch the draw calls instead of Text.
-	GlyphDrawable* adv = mFont->getGlyphDrawable( 187 /*'»'*/, fontSize );
+	GlyphDrawable* adv = mFont->getGlyphDrawable( mTabIndentCharacter, fontSize );
 	GlyphDrawable* cpoint = mFont->getGlyphDrawable( 183 /*'·'*/, fontSize );
-	Float tabCenter = ( tabWidth - adv->getPixelsSize().getWidth() ) * 0.5f;
+	Float tabAlign = 0;
+	switch ( mTabIndentAlignment ) {
+		case CharacterAlignment::Center:
+			tabAlign = ( tabWidth - adv->getPixelsSize().getWidth() ) * 0.5f;
+			break;
+		case CharacterAlignment::Right:
+			tabAlign = ( tabWidth - adv->getPixelsSize().getWidth() );
+			break;
+		case CharacterAlignment::Left:
+			break;
+	}
+
 	adv->setDrawMode( GlyphDrawable::DrawMode::Text );
 	cpoint->setDrawMode( GlyphDrawable::DrawMode::Text );
 	adv->setColor( color );
 	cpoint->setColor( color );
+
+	auto startRange = mDocView.getVisibleIndexRange( visualLineRange.first );
+	auto endRange = mDocView.getVisibleIndexRange( visualLineRange.second );
+	TextRange visibleDocRange( startRange.start(), endRange.end() );
+
 	for ( auto index = lineRange.first; index <= lineRange.second; index++ ) {
 		if ( !mDocView.isLineVisible( index ) )
 			continue;
 
 		const auto& text = mDoc->line( index ).getText();
 		if ( mDocView.isWrappedLine( index ) || !mFont->isMonospace() ) {
-			for ( size_t i = 0; i < text.size(); i++ ) {
+			size_t startCol =
+				visibleDocRange.start().line() == index ? visibleDocRange.start().column() : 0;
+			size_t endCol = visibleDocRange.end().line() == index ? visibleDocRange.end().column()
+																  : text.size();
+
+			for ( size_t i = startCol; i < endCol; i++ ) {
 				if ( ' ' == text[i] ) {
 					auto offset =
 						startScroll +
@@ -3922,7 +3956,7 @@ void UICodeEditor::drawWhitespaces( const DocumentLineRange& lineRange, const Ve
 					auto offset =
 						startScroll +
 						getTextPositionOffset( { index, static_cast<Int64>( i ) } ).asFloat();
-					offset.x += tabCenter;
+					offset.x += tabAlign;
 					adv->draw( offset );
 				}
 			}
@@ -3938,7 +3972,7 @@ void UICodeEditor::drawWhitespaces( const DocumentLineRange& lineRange, const Ve
 						cpoint->draw( position );
 						position.x += glyphW;
 					} else if ( '\t' == text[i] ) {
-						adv->draw( Vector2f( position.x + tabCenter, position.y ) );
+						adv->draw( Vector2f( position.x + tabAlign, position.y ) );
 						position.x += tabWidth;
 					} else {
 						position.x += glyphW;
@@ -4236,6 +4270,8 @@ void UICodeEditor::resetPreviewColor() {
 }
 
 Float UICodeEditor::getMinimapWidth() const {
+	if ( !mMinimapEnabled )
+		return 0.f;
 	Float w = PixelDensity::dpToPx( mMinimapConfig.width );
 	// Max [mMinimapConfig.maxPercentWidth]% of the editor view width
 	if ( w / getPixelsSize().getWidth() > mMinimapConfig.maxPercentWidth )
@@ -4830,10 +4866,25 @@ bool UICodeEditor::isNotMonospace() const {
 
 void UICodeEditor::updateMouseCursor( const Vector2f& position ) {
 	if ( getScreenBounds().contains( position ) ) {
-		bool overGutter = convertToNodeSpace( position ).x < getGutterWidth();
+		auto localPos( convertToNodeSpace( position ) );
+		bool overGutterOrTop = localPos.x < getGutterWidth() || localPos.y < mPluginsTopSpace;
 		getUISceneNode()->setCursor(
 			mHandShown ? Cursor::Hand
-					   : ( !overGutter && !mLocked ? Cursor::IBeam : Cursor::Arrow ) );
+					   : ( !overGutterOrTop && !mLocked ? Cursor::IBeam : Cursor::Arrow ) );
+	}
+}
+
+void UICodeEditor::setTabIndentCharacter( Uint32 chr ) {
+	if ( mTabIndentCharacter != chr ) {
+		mTabIndentCharacter = chr;
+		invalidateDraw();
+	}
+}
+
+void UICodeEditor::setTabIndentAlignment( CharacterAlignment alignment ) {
+	if ( mTabIndentAlignment != alignment ) {
+		mTabIndentAlignment = alignment;
+		invalidateDraw();
 	}
 }
 

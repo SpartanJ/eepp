@@ -52,6 +52,7 @@ eepp.geany
 /bin/assets/icon/ee.iconset
 ecode.dmg
 /projects/linux/ecode/ecode.app
+/projects/freebsd/ecode/ecode.app
 *.AppImage
 /projects/mingw32/ecode/ecode/
 /projects/mingw32/ecode/ecode-*

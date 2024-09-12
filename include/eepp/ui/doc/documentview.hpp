@@ -148,6 +148,10 @@ class EE_API DocumentView {
 	/* Unfolds any folded region that contains a current non-visible cursor */
 	void ensureCursorVisibility();
 
+	const std::vector<TextRange> getFoldedRegions() const { return mFoldedRegions; }
+
+	void onFoldRegionsUpdated();
+
   protected:
 	std::shared_ptr<TextDocument> mDoc;
 	FontStyleConfig mFontStyle;
@@ -160,6 +164,7 @@ class EE_API DocumentView {
 	std::vector<TextRange> mFoldedRegions;
 	bool mPendingReconstruction{ false };
 	bool mUnderConstruction{ false };
+	bool mUpdatingFoldRegions{ false };
 
 	void changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visible,
 						   bool recomputeOffset = true, bool recomputeLineToVisibleIndex = true );

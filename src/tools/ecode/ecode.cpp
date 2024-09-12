@@ -1,6 +1,7 @@
 #include "ecode.hpp"
 #include "featureshealth.hpp"
 #include "iconmanager.hpp"
+#include "keybindingshelper.hpp"
 #include "pathhelper.hpp"
 #include "plugins/autocomplete/autocompleteplugin.hpp"
 #include "plugins/formatter/formatterplugin.hpp"
@@ -8,6 +9,7 @@
 #include "plugins/linter/linterplugin.hpp"
 #include "plugins/lsp/lspclientplugin.hpp"
 #include "plugins/xmltools/xmltoolsplugin.hpp"
+#include "settingsactions.hpp"
 #include "settingsmenu.hpp"
 #include "uibuildsettings.hpp"
 #include "uiwelcomescreen.hpp"
@@ -216,10 +218,13 @@ void App::openFileDialog() {
 	dialog->setTitle( i18n( "open_file", "Open File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->setSingleClickNavigation( mConfig.editor.singleClickNavigation );
+	dialog->setAllowsMultiFileSelect( true );
 	dialog->on( Event::OpenFile, [this]( const Event* event ) {
-		auto file = event->getNode()->asType<UIFileDialog>()->getFullPath();
-		mLastFileFolder = FileSystem::fileRemoveFileName( file );
-		loadFileFromPath( file );
+		auto files = event->getNode()->asType<UIFileDialog>()->getFullPaths();
+		for ( const auto& file : files ) {
+			mLastFileFolder = FileSystem::fileRemoveFileName( file );
+			loadFileFromPath( file );
+		}
 	} );
 	dialog->on( Event::OnWindowClose, [this]( const Event* ) {
 		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
@@ -230,7 +235,7 @@ void App::openFileDialog() {
 }
 
 std::string App::getLastUsedFolder() {
-	if ( !mCurrentProject.empty() )
+	if ( !mCurrentProject.empty() && mCurrentProject != getPlaygroundPath() )
 		return mCurrentProject;
 	if ( !mRecentFolders.empty() )
 		return mRecentFolders.front();
@@ -675,7 +680,7 @@ void App::mainLoop() {
 	}
 }
 
-void App::onFileDropped( String file ) {
+void App::onFileDropped( std::string file ) {
 	Vector2f mousePos( mUISceneNode->getEventDispatcher()->getMousePosf() );
 	Node* node = mUISceneNode->overFind( mousePos );
 	UIWidget* widget = mSplitter->getCurWidget();
@@ -692,8 +697,7 @@ void App::onFileDropped( String file ) {
 	if ( node && node->isType( UI_TYPE_CODEEDITOR ) ) {
 		codeEditor = node->asType<UICodeEditor>();
 		if ( ( codeEditor->getDocument().isLoading() || !codeEditor->getDocument().isEmpty() ) &&
-			 ( !Image::isImageExtension( file ) ||
-			   FileSystem::fileExtension( file.toUtf8() ) == "svg" ) ) {
+			 ( !Image::isImageExtension( file ) || FileSystem::fileExtension( file ) == "svg" ) ) {
 			auto d = mSplitter->createCodeEditorInTabWidget(
 				mSplitter->tabWidgetFromEditor( codeEditor ) );
 			codeEditor = d.second;
@@ -701,8 +705,7 @@ void App::onFileDropped( String file ) {
 		}
 	} else if ( widget && widget->isType( UI_TYPE_TERMINAL ) ) {
 		if ( !Image::isImageExtension( file ) &&
-			 ( !Image::isImageExtension( file ) ||
-			   FileSystem::fileExtension( file.toUtf8() ) == "svg" ) ) {
+			 ( !Image::isImageExtension( file ) || FileSystem::fileExtension( file ) == "svg" ) ) {
 			auto d =
 				mSplitter->createCodeEditorInTabWidget( mSplitter->tabWidgetFromWidget( widget ) );
 			codeEditor = d.second;
@@ -743,14 +746,13 @@ void App::onTextDropped( String text ) {
 App::App( const size_t& jobs, const std::vector<std::string>& args ) :
 	mArgs( args ),
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-	mThreadPool(
-		ThreadPool::createShared( jobs > 0 ? jobs : eemax<int>( 2, Sys::getCPUCount() ) ) ) {
-}
+	mThreadPool( ThreadPool::createShared( jobs > 0 ? jobs : eemax<int>( 2, Sys::getCPUCount() ) ) )
 #elif defined( __EMSCRIPTEN_PTHREADS__ )
-	mThreadPool(
-		ThreadPool::createShared( jobs > 0 ? jobs : eemin<int>( 8, Sys::getCPUCount() ) ) ) {
-}
+	mThreadPool( ThreadPool::createShared( jobs > 0 ? jobs : eemin<int>( 8, Sys::getCPUCount() ) ) )
 #endif
+	,
+	mSettingsActions( std::make_unique<SettingsActions>( this ) ) {
+}
 
 App::~App() {
 	if ( mProjectBuildManager )
@@ -959,264 +961,8 @@ UITreeView* App::getProjectTreeView() const {
 	return mProjectTreeView;
 }
 
-void App::checkForUpdatesResponse( Http::Response response, bool fromStartup ) {
-	auto updatesError = [this, fromStartup]() {
-		if ( fromStartup )
-			return;
-		UIMessageBox* msg = UIMessageBox::New(
-			UIMessageBox::OK, i18n( "error_checking_version", "Failed checking for updates." ) );
-		msg->setTitle( "Error" );
-		msg->setCloseShortcut( { KEY_ESCAPE, 0 } );
-		msg->showWhenReady();
-	};
-
-	if ( response.getStatus() != Http::Response::Status::Ok || response.getBody().empty() ) {
-		updatesError();
-		return;
-	}
-
-	auto addStartUpCheckbox = [this]( UIMessageBox* msg ) {
-		msg->setId( "check_for_updates" );
-		msg->on( Event::OnWindowReady, [this, msg]( const Event* ) {
-			msg->setVisible( false );
-			UICheckBox* cbox = UICheckBox::New();
-			cbox->addClass( "check_at_startup" );
-			cbox->setParent( msg->getLayoutCont()->getFirstChild() );
-			cbox->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
-			cbox->setText( i18n( "check_for_new_updates_at_startup",
-								 "Always check for new updates at startup." ) );
-			cbox->setChecked( mConfig.workspace.checkForUpdatesAtStartup );
-			cbox->toPosition( 1 );
-			cbox->runOnMainThread( [msg]() {
-				msg->setMinWindowSize( msg->getLayoutCont()->getSize() );
-				msg->center();
-				msg->show();
-			} );
-			cbox->on( Event::OnValueChange, [this, cbox]( const Event* ) {
-				mConfig.workspace.checkForUpdatesAtStartup = cbox->isChecked();
-			} );
-		} );
-	};
-
-	json j;
-	try {
-		j = json::parse( response.getBody(), nullptr, true, true );
-
-		if ( j.contains( "tag_name" ) ) {
-			auto tagName( j["tag_name"].get<std::string>() );
-			auto versionNum = ecode::Version::getVersionNumFromTag( tagName );
-			if ( versionNum > ecode::Version::getVersionNum() ) {
-				auto name( j.value( "name", tagName ) );
-				UIMessageBox* msg = UIMessageBox::New(
-					UIMessageBox::OK_CANCEL,
-					name + i18n( "ecode_updates_available",
-								 " is available!\nDo you want to download it now?" )
-							   .unescape() );
-
-				auto url( j.value( "html_url", "https://github.com/SpartanJ/ecode/releases/" ) );
-				msg->on( Event::OnConfirm, [url, msg]( const Event* ) {
-					Engine::instance()->openURI( url );
-					msg->closeWindow();
-				} );
-				msg->setTitle( "ecode" );
-				msg->setCloseShortcut( { KEY_ESCAPE, 0 } );
-				addStartUpCheckbox( msg );
-			} else if ( versionNum < ecode::Version::getVersionNum() ) {
-				if ( fromStartup )
-					return;
-				UIMessageBox* msg = UIMessageBox::New(
-					UIMessageBox::OK,
-					i18n( "ecode_unreleased_version",
-						  "You are running an unreleased version of ecode!\nCurrent version: " )
-							.unescape() +
-						ecode::Version::getVersionNumString() );
-				msg->setTitle( "ecode" );
-				msg->setCloseShortcut( { KEY_ESCAPE, 0 } );
-				addStartUpCheckbox( msg );
-			} else {
-				if ( fromStartup )
-					return;
-				UIMessageBox* msg = UIMessageBox::New(
-					UIMessageBox::OK, i18n( "ecode_no_updates_available",
-											"There are currently no updates available." ) );
-				msg->setTitle( "ecode" );
-				msg->setCloseShortcut( { KEY_ESCAPE, 0 } );
-				addStartUpCheckbox( msg );
-			}
-		} else {
-			updatesError();
-		}
-	} catch ( ... ) {
-		updatesError();
-	}
-}
-
-void App::checkForUpdates( bool fromStartup ) {
-	Http::getAsync(
-		[this, fromStartup]( const Http&, Http::Request&, Http::Response& response ) {
-			mUISceneNode->runOnMainThread( [this, response, fromStartup]() {
-				checkForUpdatesResponse( response, fromStartup );
-			} );
-		},
-		"https://api.github.com/repos/SpartanJ/ecode/releases/latest", Seconds( 30 ) );
-}
-
-void App::aboutEcode() {
-	String msg( ecode::Version::getVersionFullName() + " (codename: \"" +
-				ecode::Version::getCodename() + "\")" );
-	UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::OK, msg );
-	UIImage* image = UIImage::New();
-	image->setParent( msgBox->getContainer()->getFirstChild() );
-	auto tf = TextureFactory::instance();
-	Texture* tex = tf->getByName( "ecode-logo" );
-	if ( tex == nullptr ) {
-		tex = tf->loadFromFile( mResPath + "icon/ecode.png" );
-		if ( tex )
-			tex->setName( "ecode-logo" );
-	}
-	image->setDrawable( tex );
-	image->setLayoutGravity( UI_NODE_ALIGN_CENTER );
-	image->setGravity( UI_NODE_ALIGN_CENTER );
-	image->setScaleType( UIScaleType::FitInside );
-	image->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
-	image->setSize( { 128, 128 } );
-	image->toBack();
-	msgBox->setTitle( i18n( "about_ecode", "About ecode..." ) );
-	msgBox->showWhenReady();
-}
-
-void App::ecodeSource() {
-	Engine::instance()->openURI( "https://github.com/SpartanJ/ecode" );
-}
-
-void App::setUIScaleFactor() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT,
-		i18n( "set_ui_scale_factor", "Set the UI scale factor (pixel density):\nMinimum value is "
-									 "1, and maximum 6. Requires restart." ) );
-	msgBox->setTitle( mWindowTitle );
-	msgBox->getTextInput()->setText( String::fromFloat( mConfig.windowState.pixelDensity ) );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		msgBox->closeWindow();
-		Float val;
-		if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 1 &&
-			 val <= 6 ) {
-			if ( mConfig.windowState.pixelDensity != val ) {
-				mConfig.windowState.pixelDensity = val;
-				UIMessageBox* msg = UIMessageBox::New(
-					UIMessageBox::OK,
-					i18n( "new_ui_scale_factor", "New UI scale factor assigned.\nPlease "
-												 "restart the application." ) );
-				msg->showWhenReady();
-				setFocusEditorOnClose( msg );
-			} else if ( mSplitter && mSplitter->getCurWidget() ) {
-				mSplitter->getCurWidget()->setFocus();
-			}
-		} else {
-			UIMessageBox* msg = UIMessageBox::New( UIMessageBox::OK, "Invalid value!" );
-			msg->showWhenReady();
-			setFocusEditorOnClose( msg );
-		}
-	} );
-}
-
 PluginManager* App::getPluginManager() const {
 	return mPluginManager.get();
-}
-
-void App::setEditorFontSize() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT, i18n( "set_editor_font_size", "Set the editor font size:" ) );
-	msgBox->setTitle( mWindowTitle );
-	msgBox->getTextInput()->setText( mConfig.editor.fontSize.toString() );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		mConfig.editor.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
-		mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
-			editor->setFontSize( mConfig.editor.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) );
-		} );
-	} );
-	setFocusEditorOnClose( msgBox );
-}
-
-void App::setTerminalFontSize() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT, i18n( "set_terminal_font_size", "Set the terminal font size:" ) );
-	msgBox->setTitle( mWindowTitle );
-	msgBox->getTextInput()->setText( mConfig.term.fontSize.toString() );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		mConfig.term.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
-		mSplitter->forEachWidget( [this]( UIWidget* widget ) {
-			if ( widget && widget->isType( UI_TYPE_TERMINAL ) )
-				widget->asType<UITerminal>()->setFontSize(
-					mConfig.term.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) );
-		} );
-	} );
-	setFocusEditorOnClose( msgBox );
-}
-
-void App::setUIFontSize() {
-	UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::INPUT,
-											  i18n( "set_ui_font_size", "Set the UI font size:" ) );
-	msgBox->setTitle( mWindowTitle );
-	msgBox->getTextInput()->setText( mConfig.ui.fontSize.toString() );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		mConfig.ui.fontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
-		Float fontSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
-		UIThemeManager* manager = mUISceneNode->getUIThemeManager();
-		manager->setDefaultFontSize( fontSize );
-		manager->getDefaultTheme()->setDefaultFontSize( fontSize );
-		mUISceneNode->forEachNode( [this]( Node* node ) {
-			if ( node->isType( UI_TYPE_TEXTVIEW ) ) {
-				UITextView* textView = node->asType<UITextView>();
-				if ( !textView->getUIStyle()->hasProperty( PropertyId::FontSize ) ) {
-					textView->setFontSize(
-						mConfig.ui.fontSize.asPixels( node->getParent()->getPixelsSize().getWidth(),
-													  Sizef(), mUISceneNode->getDPI() ) );
-				}
-			}
-		} );
-		msgBox->closeWindow();
-	} );
-	setFocusEditorOnClose( msgBox );
-}
-
-void App::setUIPanelFontSize() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT, i18n( "set_side_panel_font_size", "Set side panel font size:" ) );
-	msgBox->setTitle( mWindowTitle );
-	msgBox->getTextInput()->setText( mConfig.ui.panelFontSize.toString() );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		mConfig.ui.panelFontSize = StyleSheetLength( msgBox->getTextInput()->getText() );
-
-		// Update the CSS
-		auto selsFound = mUISceneNode->getStyleSheet().findStyleFromSelectorName(
-			"#project_view > treeview::row > treeview::cell > treeview::cell::text" );
-		if ( !selsFound.empty() ) {
-			for ( auto sel : selsFound )
-				sel->updatePropertyValue( "font-size", mConfig.ui.panelFontSize.toString() );
-			mUISceneNode->getStyleSheet().refreshCacheFromStyles( selsFound );
-		}
-
-		UITreeView* treeView = mUISceneNode->find<UITreeView>( "project_view" );
-		if ( !treeView ) {
-			msgBox->closeWindow();
-			return;
-		}
-		treeView->reloadStyle( true, true, true, true );
-		treeView->updateContentSize();
-		msgBox->closeWindow();
-	} );
-	setFocusEditorOnClose( msgBox );
 }
 
 void App::setFocusEditorOnClose( UIMessageBox* msgBox ) {
@@ -1275,89 +1021,6 @@ const std::string& App::getWindowTitle() const {
 	return mWindowTitle;
 }
 
-void App::setLineBreakingColumn() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT,
-		i18n( "set_line_breaking_column", "Set Line Breaking Column:\nSet 0 to disable it.\n" )
-			.unescape() );
-	msgBox->setTitle( mWindowTitle );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
-	msgBox->getTextInput()->setText( String::toString( mConfig.doc.lineBreakingColumn ) );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		int val;
-		if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
-			mConfig.doc.lineBreakingColumn = val;
-			mSplitter->forEachEditor(
-				[val]( UICodeEditor* editor ) { editor->setLineBreakingColumn( val ); } );
-			msgBox->closeWindow();
-		}
-	} );
-	setFocusEditorOnClose( msgBox );
-}
-
-void App::setLineSpacing() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT,
-		i18n( "set_line_spacing", "Set Line Spacing:\nSet 0 to disable it.\n" ).unescape() );
-	msgBox->setTitle( mWindowTitle );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->getTextInput()->setText( mConfig.editor.lineSpacing.toString() );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		mConfig.editor.lineSpacing = StyleSheetLength( msgBox->getTextInput()->getText() );
-		mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
-			editor->setLineSpacing( mConfig.editor.lineSpacing );
-		} );
-	} );
-	setFocusEditorOnClose( msgBox );
-}
-
-void App::setCursorBlinkingTime() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT,
-		i18n( "set_cursor_blinking_time", "Set Cursor Blinking Time:\nSet 0 to disable it.\n" )
-			.unescape() );
-	msgBox->setTitle( mWindowTitle );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->getTextInput()->setText( mConfig.editor.cursorBlinkingTime.toString() );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		mConfig.editor.cursorBlinkingTime =
-			Time::fromString( msgBox->getTextInput()->getText().toUtf8() );
-		mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
-			editor->setCursorBlinkTime( mConfig.editor.cursorBlinkingTime );
-		} );
-		msgBox->closeWindow();
-	} );
-	setFocusEditorOnClose( msgBox );
-}
-
-void App::setFoldRefreshFreq() {
-	UIMessageBox* msgBox = UIMessageBox::New(
-		UIMessageBox::INPUT,
-		i18n( "set_fold_refresh_frequency",
-			  "Set code folds refresh frequency:\nIt should be bigger than 1 second.\nFolds are "
-			  "only refreshed after any document modification." )
-			.unescape() );
-	msgBox->setTitle( mWindowTitle );
-	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-	msgBox->getTextInput()->setText( mConfig.editor.codeFoldingRefreshFreq.toString() );
-	msgBox->showWhenReady();
-	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
-		mConfig.editor.codeFoldingRefreshFreq =
-			Time::fromString( msgBox->getTextInput()->getText().toUtf8() );
-		if ( mConfig.editor.codeFoldingRefreshFreq < Seconds( 1 ) )
-			mConfig.editor.codeFoldingRefreshFreq = Seconds( 1 );
-		mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
-			editor->setFoldsRefreshTime( mConfig.editor.codeFoldingRefreshFreq );
-		} );
-		msgBox->closeWindow();
-	} );
-	setFocusEditorOnClose( msgBox );
-}
-
 void App::loadFileFromPathOrFocus( const std::string& path ) {
 	UITab* tab = mSplitter->isDocumentOpen( path );
 	if ( !tab ) {
@@ -1386,175 +1049,6 @@ void App::debugDrawData() {
 	mUISceneNode->setDrawDebugData( !mUISceneNode->getDrawDebugData() );
 }
 
-static void updateKeybindings( IniFile& ini, const std::string& group, Input* input,
-							   std::unordered_map<std::string, std::string>& keybindings,
-							   const std::unordered_map<std::string, std::string>& defKeybindings,
-							   bool forceRebind,
-							   const std::map<std::string, std::string>& migrateKeyindings,
-							   IniFile& iniState ) {
-	KeyBindings bindings( input );
-	bool added = false;
-	bool migrated = false;
-
-	if ( ini.findKey( group ) != IniFile::noID ) {
-		keybindings = ini.getKeyUnorderedMap( group );
-	} else {
-		for ( const auto& it : defKeybindings )
-			ini.setValue( group, it.first, it.second );
-		added = true;
-	}
-	std::unordered_map<std::string, std::string> invertedKeybindings;
-	for ( const auto& key : keybindings )
-		invertedKeybindings[key.second] = key.first;
-
-	if ( !added && forceRebind ) {
-		for ( const auto& migrate : migrateKeyindings ) {
-			auto foundCmd = invertedKeybindings.find( migrate.first );
-			if ( foundCmd != invertedKeybindings.end() && foundCmd->second == migrate.second ) {
-				std::string shortcut;
-				for ( const auto& defKb : defKeybindings ) {
-					if ( defKb.second == foundCmd->first ) {
-						shortcut = defKb.first;
-						break;
-					}
-				}
-				if ( !shortcut.empty() &&
-					 !iniState.keyValueExists( "migrated_keybindings_" + group, migrate.first ) ) {
-					ini.setValue( group, shortcut, foundCmd->first );
-					ini.deleteValue( group, migrate.second );
-					keybindings.erase( migrate.second );
-					invertedKeybindings[foundCmd->first] = shortcut;
-					iniState.setValue( "migrated_keybindings_" + group, migrate.first,
-									   migrate.second );
-					added = true;
-					migrated = true;
-				}
-			}
-		}
-	}
-
-	if ( defKeybindings.size() != keybindings.size() || forceRebind ) {
-		for ( const auto& key : defKeybindings ) {
-			auto foundCmd = invertedKeybindings.find( key.second );
-			auto& shortcutStr = key.first;
-			if ( foundCmd == invertedKeybindings.end() &&
-				 keybindings.find( shortcutStr ) == keybindings.end() ) {
-				keybindings[shortcutStr] = key.second;
-				invertedKeybindings[key.second] = shortcutStr;
-				ini.setValue( group, shortcutStr, key.second );
-				added = true;
-			} else if ( foundCmd == invertedKeybindings.end() ) {
-				// Override the shortcut if the command that holds that
-				// shortcut does not exists anymore
-				auto kb = keybindings.find( shortcutStr );
-				if ( kb != keybindings.end() ) {
-					bool found = false;
-					for ( const auto& val : defKeybindings )
-						if ( val.second == kb->second )
-							found = true;
-					if ( !found ) {
-						keybindings[shortcutStr] = key.second;
-						invertedKeybindings[key.second] = shortcutStr;
-						ini.setValue( group, shortcutStr, key.second );
-						added = true;
-					}
-				}
-			}
-		}
-	}
-
-	if ( migrated )
-		iniState.writeFile();
-	if ( added )
-		ini.writeFile();
-}
-
-static void updateKeybindings( IniFile& ini, const std::string& group, Input* input,
-							   std::unordered_map<std::string, std::string>& keybindings,
-							   std::unordered_map<std::string, std::string>& invertedKeybindings,
-							   const std::map<KeyBindings::Shortcut, std::string>& defKeybindings,
-							   bool forceRebind,
-							   const std::map<std::string, std::string>& migrateKeyindings,
-							   IniFile& iniState ) {
-	KeyBindings bindings( input );
-	bool added = false;
-	bool migrated = false;
-
-	if ( ini.findKey( group ) != IniFile::noID ) {
-		keybindings = ini.getKeyUnorderedMap( group );
-	} else {
-		for ( const auto& it : defKeybindings )
-			ini.setValue( group, bindings.getShortcutString( it.first ), it.second );
-		added = true;
-	}
-	for ( const auto& key : keybindings )
-		invertedKeybindings[key.second] = key.first;
-
-	if ( !added && forceRebind ) {
-		for ( const auto& migrate : migrateKeyindings ) {
-			auto foundCmd = invertedKeybindings.find( migrate.first );
-			if ( foundCmd != invertedKeybindings.end() && foundCmd->second == migrate.second ) {
-				KeyBindings::Shortcut shortcut;
-				for ( const auto& defKb : defKeybindings ) {
-					if ( defKb.second == foundCmd->first ) {
-						shortcut = defKb.first;
-						break;
-					}
-				}
-				if ( !shortcut.empty() &&
-					 !iniState.keyValueExists( "migrated_keybindings_" + group, migrate.first ) ) {
-					auto newShortcutStr = bindings.getShortcutString( shortcut );
-					ini.setValue( group, newShortcutStr, foundCmd->first );
-					ini.deleteValue( group, migrate.second );
-					keybindings.erase( migrate.second );
-					invertedKeybindings[foundCmd->first] = newShortcutStr;
-					iniState.setValue( "migrated_keybindings_" + group, migrate.first,
-									   migrate.second );
-					added = true;
-					migrated = true;
-				}
-			}
-		}
-	}
-
-	bool keybindingsWereEmpty = keybindings.empty();
-
-	if ( defKeybindings.size() != keybindings.size() || forceRebind ) {
-		for ( auto& key : defKeybindings ) {
-			auto foundCmd = invertedKeybindings.find( key.second );
-			auto shortcutStr = bindings.getShortcutString( key.first );
-
-			if ( ( foundCmd == invertedKeybindings.end() || keybindingsWereEmpty ) &&
-				 keybindings.find( shortcutStr ) == keybindings.end() ) {
-				keybindings[shortcutStr] = key.second;
-				invertedKeybindings[key.second] = shortcutStr;
-				ini.setValue( group, shortcutStr, key.second );
-				added = true;
-			} else if ( foundCmd == invertedKeybindings.end() ) {
-				// Override the shortcut if the command that holds that
-				// shortcut does not exists anymore
-				auto kb = keybindings.find( shortcutStr );
-				if ( kb != keybindings.end() ) {
-					bool found = false;
-					for ( const auto& val : defKeybindings )
-						if ( val.second == kb->second )
-							found = true;
-					if ( !found ) {
-						keybindings[shortcutStr] = key.second;
-						invertedKeybindings[key.second] = shortcutStr;
-						ini.setValue( group, shortcutStr, key.second );
-						added = true;
-					}
-				}
-			}
-		}
-	}
-	if ( migrated )
-		iniState.writeFile();
-	if ( added )
-		ini.writeFile();
-}
-
 void App::loadKeybindings() {
 	if ( !mKeybindings.empty() )
 		return;
@@ -1581,17 +1075,19 @@ void App::loadKeybindings() {
 	if ( KEYMOD_NONE != defModKeyCode )
 		KeyMod::setDefaultModifier( defModKeyCode );
 
-	updateKeybindings( ini, "editor", mWindow->getInput(), mKeybindings, mKeybindingsInvert,
-					   getDefaultKeybindings(), forceRebind, getMigrateKeybindings(),
-					   mConfig.iniState );
+	KeybindingsHelper::updateKeybindings( ini, "editor", mWindow->getInput(), mKeybindings,
+										  mKeybindingsInvert, getDefaultKeybindings(), forceRebind,
+										  getMigrateKeybindings(), mConfig.iniState );
 
-	updateKeybindings( ini, "global_search", mWindow->getInput(), mGlobalSearchKeybindings,
-					   GlobalSearchController::getDefaultKeybindings(), forceRebind,
-					   getMigrateKeybindings(), mConfig.iniState );
+	KeybindingsHelper::updateKeybindings( ini, "global_search", mWindow->getInput(),
+										  mGlobalSearchKeybindings,
+										  GlobalSearchController::getDefaultKeybindings(),
+										  forceRebind, getMigrateKeybindings(), mConfig.iniState );
 
-	updateKeybindings( ini, "document_search", mWindow->getInput(), mDocumentSearchKeybindings,
-					   DocSearchController::getDefaultKeybindings(), forceRebind,
-					   getMigrateKeybindings(), mConfig.iniState );
+	KeybindingsHelper::updateKeybindings( ini, "document_search", mWindow->getInput(),
+										  mDocumentSearchKeybindings,
+										  DocSearchController::getDefaultKeybindings(), forceRebind,
+										  getMigrateKeybindings(), mConfig.iniState );
 
 	auto localKeybindings = getLocalKeybindings();
 	for ( const auto& kb : localKeybindings ) {
@@ -2139,12 +1635,14 @@ std::map<std::string, std::string> App::getMigrateKeybindings() {
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 		{ "menu-toggle", "mod+shift+m" },
 #endif
+		{ "lock-toggle", "mod+shift+l" },
 	};
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
 	return { "create-new",
 			 "create-new-terminal",
+			 "create-new-welcome-tab",
 			 "fullscreen-toggle",
 			 "open-file",
 			 "open-folder",
@@ -2182,6 +1680,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "editor-set-line-breaking-column",
 			 "editor-set-line-spacing",
 			 "editor-set-cursor-blinking-time",
+			 "editor-set-indent-tab-character",
 			 "check-for-updates",
 			 "keybindings",
 			 "about-ecode",
@@ -2291,10 +1790,16 @@ void App::closeFolder() {
 	mFileSystemModel->setRootPath( "" );
 	mPluginManager->setWorkspaceFolder( "" );
 	updateOpenRecentFolderBtn();
+	if ( mUniversalLocator )
+		mUniversalLocator->updateFilesTable();
 	if ( getConfig().ui.welcomeScreen ) {
-		UIWelcomeScreen::createWelcomeScreen( this );
+		createWelcomeTab();
 		mStatusBar->setVisible( false );
 	}
+}
+
+void App::createWelcomeTab() {
+	UIWelcomeScreen::createWelcomeScreen( this );
 }
 
 void App::createDocDirtyAlert( UICodeEditor* editor, bool showEnableAutoReload ) {
@@ -2631,6 +2136,13 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.getFoldRangeService().setEnabled( config.codeFoldingEnabled );
 	editor->setFoldsAlwaysVisible( config.codeFoldingAlwaysVisible );
 	editor->setFoldsRefreshTime( config.codeFoldingRefreshFreq );
+
+	if ( !config.tabIndentCharacter.empty() ) {
+		String indentChar( config.tabIndentCharacter );
+		if ( indentChar.size() == 1 )
+			editor->setTabIndentCharacter( indentChar[0] );
+	}
+	editor->setTabIndentAlignment( config.tabIndentAlignment );
 
 	editor->addKeyBinds( getLocalKeybindings() );
 	editor->addUnlockedCommands( getUnlockedCommands() );
@@ -3285,13 +2797,13 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 
 		updateOpenRecentFolderBtn();
 
-		if ( getConfig().ui.welcomeScreen ) {
-			UIWelcomeScreen::createWelcomeScreen( this );
+		if ( getConfig().ui.welcomeScreen && mSplitter->allEditorsEmpty() ) {
+			createWelcomeTab();
 			mStatusBar->setVisible( false );
 		}
 	}
 
-	mProjectTreeView->setDisableCellCliping( true );
+	mProjectTreeView->setDisableCellClipping( true );
 	mProjectTreeView->setAutoExpandOnSingleColumn( true );
 }
 
@@ -3407,6 +2919,9 @@ void App::loadFolder( const std::string& path ) {
 	loadDirTree( rpath );
 
 	Clock projClock;
+	if ( mProjectBuildManager )
+		mProjectBuildManager.reset();
+
 	mProjectBuildManager =
 		std::make_unique<ProjectBuildManager>( rpath, mThreadPool, mSidePanel, this );
 	mConfig.loadProject( rpath, mSplitter, mConfigPath, mProjectDocConfig, this,
@@ -3651,7 +3166,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		} );
 #endif
 
-		Log::info( "Window creation took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
+		Log::info( "Window creation took: %s", globalClock.getElapsedTime().toString() );
 
 		mWindow->setFrameRateLimit( mConfig.context.FrameRateLimit );
 
@@ -3692,7 +3207,12 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		mWindow->getInput()->pushCallback( [this]( InputEvent* event ) {
 			if ( event->Type == InputEvent::FileDropped ) {
-				onFileDropped( event->file.file );
+				std::string file( event->file.file );
+
+				if ( FileSystem::isDirectory( file ) )
+					loadFolder( file );
+				else
+					onFileDropped( file );
 			} else if ( event->Type == InputEvent::TextDropped ) {
 				onTextDropped( event->textdrop.text );
 			}
@@ -3955,7 +3475,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 #endif
 
 		if ( mConfig.workspace.checkForUpdatesAtStartup )
-			checkForUpdates( true );
+			mSettingsActions->checkForUpdates( true );
 
 		mUISceneNode->setInterval(
 			[this] {

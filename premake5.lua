@@ -143,7 +143,7 @@ remote_sdl2_devel_mingw_url = "https://www.libsdl.org/release/SDL2-devel-2.30.3-
 
 function incdirs( dirs )
 	if is_xcode() then
-		sysincludedirs { dirs }
+		externalincludedirs { dirs }
 	end
 	includedirs { dirs }
 end
@@ -334,6 +334,11 @@ function build_link_configuration( package_name, use_ee_icon )
 			linkoptions { "-Wl,-rpath,'$$ORIGIN'" }
 		end
 
+	filter { "system:bsd" }
+		if package_name ~= "eepp" and package_name ~= "eepp-static" then
+			flags { "RelativeLinks" }
+		end
+
 	filter { "system:windows", "action:not vs*", "architecture:x86" }
 		if true == use_ee_icon then
 			linkoptions { "../../bin/assets/icon/ee.res" }
@@ -361,9 +366,6 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	filter { "configurations:release*", "action:not vs*" }
 		buildoptions { "-fno-strict-aliasing -ffast-math" }
-
-	filter { "configurations:release*", "action:not vs*", "system:not macosx" }
-		buildoptions { "-s" }
 
 	filter "configurations:debug*"
 		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
@@ -591,7 +593,7 @@ function set_ios_config()
 		linkoptions { sysroot_ver }
 		libdirs { framework_libs_path }
 		linkoptions { " -F" .. framework_path .. " -L" .. framework_libs_path .. " -isysroot " .. sysroot_path }
-		includedirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
+		incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
 	end
 end
 
@@ -737,6 +739,7 @@ function build_eepp( build_name )
 	filter "system:windows"
 		files { "src/eepp/system/platform/win/*.cpp" }
 		files { "src/eepp/network/platform/win/*.cpp" }
+		links { "bcrypt" }
 
 	filter "system:not windows"
 		files { "src/eepp/system/platform/posix/*.cpp" }
@@ -847,6 +850,10 @@ workspace "eepp"
 	filter { "system:windows", "action:vs*" }
 		flags { "MultiProcessorCompile" }
 
+	filter "system:bsd"
+		syslibdirs { "/usr/local/lib" }
+		externalincludedirs { "/usr/local/include" }
+
 	project "SOIL2-static"
 		kind "StaticLib"
 		language "C"
@@ -869,7 +876,7 @@ workspace "eepp"
 		language "C"
 		incdirs { "src/thirdparty/mbedtls/include/" }
 		files { "src/thirdparty/mbedtls/library/*.c" }
-		build_base_cpp_configuration( "mbedtls" )
+		build_base_configuration( "mbedtls" )
 		target_dir_thirdparty()
 
 	project "vorbis-static"
@@ -927,6 +934,8 @@ workspace "eepp"
 		incdirs { "src/thirdparty/freetype2/include", "src/thirdparty/harfbuzz" }
 		build_base_cpp_configuration( "harfbuzz" )
 		target_dir_thirdparty()
+		filter "action:vs*"
+			buildoptions{ "/bigobj" }
 
 	project "chipmunk-static"
 		kind "StaticLib"
@@ -1284,6 +1293,8 @@ workspace "eepp"
 			links { "bfd", "dw", "dl" }
 		filter "system:haiku"
 			links { "bsd" }
+		filter "system:bsd"
+			links { "util" }
 
 	project "eterm"
 		set_kind()
@@ -1299,7 +1310,7 @@ workspace "eepp"
 			linkoptions { "../../bin/assets/icon/eterm.res" }
 		filter { "system:windows", "action:not vs*", "architecture:x86_64" }
 			linkoptions { "../../bin/assets/icon/eterm.x64.res" }
-		filter "system:linux"
+		filter "system:linux or system:bsd"
 			links { "util" }
 		filter "system:haiku"
 			links { "bsd" }
@@ -1324,7 +1335,7 @@ workspace "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tests/ui_perf_test/*.cpp" }
-		includedirs { "src/thirdparty" }
+		incdirs { "src/thirdparty" }
 		build_link_configuration( "eepp-ui-perf-test", true )
 
 	project "eepp-unit_tests"

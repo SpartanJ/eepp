@@ -456,7 +456,9 @@ UITableRow* UIAbstractTableView::createRow() {
 	rowWidget->reloadStyle( true, true, true );
 	rowWidget->on( Event::MouseDown, [this]( const Event* event ) {
 		if ( !( event->asMouseEvent()->getFlags() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) ||
-			 !isRowSelection() )
+			 !isRowSelection() ||
+			 !getUISceneNode()->getEventDispatcher()->justPressTriggered( EE_BUTTON_LMASK |
+																		  EE_BUTTON_RMASK ) )
 			return;
 		auto index = event->getNode()->asType<UITableRow>()->getCurIndex();
 		if ( mSelectionKind == SelectionKind::Single &&

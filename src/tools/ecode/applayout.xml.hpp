@@ -478,6 +478,11 @@ Anchor.error:hover {
 	margin-right: 2dp;
 	font-style: shadow;
 }
+#indent_tab_window ComboBox,
+#indent_tab_window ListBox::item,
+.indent_tab_listbox_item combobox::dropdownlist::listbox::item {
+	font-family: monospace;
+}
 ]]>
 </style>
 )html"

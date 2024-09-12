@@ -51,7 +51,7 @@ Uint32 UITextEdit::getType() const {
 }
 
 bool UITextEdit::isType( const Uint32& type ) const {
-	return UITextEdit::getType() == type ? true : UIWidget::isType( type );
+	return UITextEdit::getType() == type ? true : UICodeEditor::isType( type );
 }
 
 void UITextEdit::setTheme( UITheme* Theme ) {

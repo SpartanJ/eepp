@@ -89,7 +89,9 @@ class EE_API UITreeView : public UIAbstractTableView {
 	virtual ModelIndex findRowWithText( const std::string& text, const bool& caseSensitive = false,
 										const bool& exactMatch = false ) const;
 
-	virtual ModelIndex selectRowWithPath( std::string path );
+	ModelIndex selectRowWithPath( std::string path );
+
+	virtual ModelIndex selectRowWithPath( const std::vector<std::string>& pathTree );
 
 	virtual void setSelection( const ModelIndex& index, bool scrollToSelection = true,
 							   bool openModelIndexTree = true );
@@ -106,9 +108,9 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	virtual void onOpenTreeModelIndex( const ModelIndex& index, bool open );
 
-	bool getDisableCellCliping() const;
+	bool getDisableCellClipping() const;
 
-	void setDisableCellCliping( bool disableCellCliping );
+	void setDisableCellClipping( bool disableCellCliping );
 
   protected:
 	enum class IterationDecision {
@@ -125,7 +127,7 @@ class EE_API UITreeView : public UIAbstractTableView {
 	bool mExpandersAsIcons{ false };
 	bool mFocusOnSelection{ true };
 	bool mFocusSelectionDirty{ false };
-	bool mDisableCellCliping{ false };
+	bool mDisableCellClipping{ false };
 
 	UITreeView();
 

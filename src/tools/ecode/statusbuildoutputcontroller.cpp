@@ -504,7 +504,7 @@ void StatusBuildOutputController::createContainer() {
 			UITableCell* cell = mTableIssues->getCellFromIndex( idx );
 			if ( modelEvent->getTriggerEvent()->getType() == Event::MouseClick ||
 				 cell == nullptr ) {
-				Vector2f pos( mApp->getWindow()->getInput()->getMousePosf() );
+				Vector2f pos( mApp->getWindow()->getInput()->getMousePos().asFloat() );
 				menu->nodeToWorldTranslation( pos );
 				UIMenu::findBestMenuPos( pos, menu );
 				menu->setPixelsPosition( pos );

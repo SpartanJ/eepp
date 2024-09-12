@@ -180,9 +180,11 @@ bool Process::join( int* const returnCodeOut ) {
 }
 
 bool Process::kill() {
+	if ( mProcess == nullptr )
+		return true;
+	eeASSERT( mProcess != nullptr );
 	mShuttingDown = true;
 	subprocess_init_shutdown( PROCESS_PTR );
-	eeASSERT( mProcess != nullptr );
 	if ( PROCESS_PTR->alive ) {
 		destroy();
 		return 0 == subprocess_terminate( PROCESS_PTR );

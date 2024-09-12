@@ -108,8 +108,13 @@ bool IniFile::readFile() {
 
 	while ( pos < size ) {
 		curPos = buffer.find_first_of( '\n', pos );
-		line = buffer.substr( pos, curPos - pos );
-		pos = curPos + 1;
+		if ( curPos != std::string_view::npos ) {
+			line = buffer.substr( pos, curPos - pos );
+			pos = curPos + 1;
+		} else {
+			line = buffer.substr( pos );
+			pos = size;
+		}
 
 		// To be compatible with Win32, check for existence of '\r'.
 		// Win32 files have the '\r' and Unix files don't at the end of a line.

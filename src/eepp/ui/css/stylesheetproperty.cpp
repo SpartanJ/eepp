@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/text.hpp>
@@ -38,7 +37,7 @@ StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
 	checkVars();
 
 	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
-		Log::warning( "Property \"%s\" is not defined!", mName.c_str() );
+		Log::warning( "Property \"%s\" is not defined!", mName );
 	}
 }
 
@@ -62,7 +61,7 @@ StyleSheetProperty::StyleSheetProperty( const bool& isVolatile,
 	checkVars();
 
 	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
-		Log::warning( "Property \"%s\" is not defined!", mName.c_str() );
+		Log::warning( "Property \"%s\" is not defined!", mName );
 	}
 }
 
@@ -88,7 +87,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	checkVars();
 
 	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
-		Log::warning( "Property \"%s\" is not defined!", mName.c_str() );
+		Log::warning( "Property \"%s\" is not defined!", mName );
 	}
 }
 
@@ -114,7 +113,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 	checkVars();
 
 	if ( NULL == mShorthandDefinition && NULL == mPropertyDefinition ) {
-		Log::warning( "Property \"%s\" is not defined!" );
+		Log::warning( "Property \"%s\" is not defined!", mName );
 	}
 }
 

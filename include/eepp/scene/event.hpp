@@ -115,6 +115,7 @@ class EE_API Event {
 		OnRowCreated,
 		OnScrollChange,
 		OnModelChanged,
+		OnWindowToFront,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 

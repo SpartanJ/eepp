@@ -414,8 +414,10 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		auto le =
 			TextFormat::stringToLineEnding( event->getNode()->asType<UIRadioButton>()->getId() );
 		if ( mSplitter->curEditorExistsAndFocused() ) {
-			mSplitter->getCurEditor()->getDocument().setLineEnding( le );
-			mApp->updateDocInfo( mSplitter->getCurEditor()->getDocument() );
+			TextDocument& doc = mSplitter->getCurEditor()->getDocument();
+			doc.setLineEnding( le );
+			doc.setDirtyUntilSave();
+			mApp->updateDocInfo( doc );
 		}
 	} );
 
@@ -660,6 +662,34 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	mGlobalMenu->add( i18n( "cursor_blinking_time", "Cursor Blinking Time" ) )
 		->setId( "cursor_blinking_time" );
 
+	mGlobalMenu->add( i18n( "indent_tab_character", "Indent Tab Character" ) )
+		->setId( "indent_tab_character" );
+
+	UIPopUpMenu* indentTabAlignmentMenuGlobal = UIPopUpMenu::New();
+	indentTabAlignmentMenuGlobal->addRadioButton( i18n( "left", "Left" ) )
+		->setActive( mApp->getConfig().editor.tabIndentAlignment == CharacterAlignment::Left )
+		->setId( "left" );
+	indentTabAlignmentMenuGlobal->addRadioButton( i18n( "center", "Center" ) )
+		->setActive( mApp->getConfig().editor.tabIndentAlignment == CharacterAlignment::Center )
+		->setId( "center" );
+	indentTabAlignmentMenuGlobal->addRadioButton( i18n( "right", "Right" ) )
+		->setActive( mApp->getConfig().editor.tabIndentAlignment == CharacterAlignment::Right )
+		->setId( "right" );
+	mGlobalMenu
+		->addSubMenu( i18n( "indent_tab_alignment", "Indent Tab Alignment" ), nullptr,
+					  indentTabAlignmentMenuGlobal )
+		->setId( "indent_type_alignment" );
+	indentTabAlignmentMenuGlobal->on( Event::OnItemClicked, [this]( const Event* event ) {
+		const String& text = event->getNode()->asType<UIMenuRadioButton>()->getId();
+		mApp->getConfig().editor.tabIndentAlignment =
+			text == "center"
+				? CharacterAlignment::Center
+				: ( text == "right" ? CharacterAlignment::Right : CharacterAlignment::Left );
+		mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
+			editor->setTabIndentAlignment( mApp->getConfig().editor.tabIndentAlignment );
+		} );
+	} );
+
 	mGlobalMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
 			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
@@ -682,11 +712,13 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 				mApp->getConfig().workspace.sessionSnapshot = item->isActive();
 			}
 		} else if ( "line_breaking_column" == id ) {
-			mApp->setLineBreakingColumn();
+			mApp->getSettingsActions()->setLineBreakingColumn();
 		} else if ( "line_spacing" == id ) {
-			mApp->setLineSpacing();
+			mApp->getSettingsActions()->setLineSpacing();
 		} else if ( "cursor_blinking_time" == id ) {
-			mApp->setCursorBlinkingTime();
+			mApp->getSettingsActions()->setCursorBlinkingTime();
+		} else if ( "indent_tab_character" == id ) {
+			mApp->getSettingsActions()->setIndentTabCharacter();
 		}
 	} );
 
@@ -1399,7 +1431,7 @@ UIMenu* SettingsMenu::createViewMenu() {
 								editor->setFoldsAlwaysVisible( enabled );
 							} );
 						} else if ( "folds_refresh_freq" == item->getId() ) {
-							mApp->setFoldRefreshFreq();
+							mApp->getSettingsActions()->setFoldRefreshFreq();
 						}
 					} );
 			}
@@ -1645,7 +1677,7 @@ UIPopUpMenu* SettingsMenu::createToolsMenu() {
 	mToolsMenu
 		->add( i18n( "document_symbol_find_ellipsis", "Search Document Symbol..." ),
 			   findIcon( "search" ), getKeybind( "open-document-symbol-search" ) )
-		->setId( "open-workspace-symbol-search" );
+		->setId( "open-document-symbol-search" );
 	mToolsMenu
 		->add( i18n( "go_to_line_ellipsis", "Go to line..." ), findIcon( "go-to-line" ),
 			   getKeybind( "go-to-line" ) )

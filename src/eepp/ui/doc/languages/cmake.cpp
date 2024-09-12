@@ -10,7 +10,7 @@ void addCMake() {
 		{ "CMake",
 		  { "%.cmake$", "CMakeLists.txt$" },
 		  {
-			  { { "#", "[^\\]\n" }, "comment" },
+			  { { "#", "\n" }, "comment" },
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },
 			  { { "[%a_][%w_]*%s?%f[(]" }, "function" },
@@ -70,7 +70,7 @@ void addCMake() {
 			  { "VERSION", "keyword2" },	 { "KEEP_EXTENSION", "keyword2" },
 			  { "EQUAL", "operator" },		 { "MSVC", "keyword2" },
 			  { "RESOURCE", "keyword2" },	 { "ADVANCED", "keyword2" },
-			  { "ON", "literal" },
+			  { "ON", "literal" },			 { "LANGUAGES", "keyword2" },
 
 		  },
 		  "#",
