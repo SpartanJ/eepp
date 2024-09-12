@@ -756,7 +756,7 @@ function add_static_links()
 		links { "mojoal-static"}
 	end
 
-	if not _OPTIONS["with-openssl"] then
+	if not _OPTIONS["with-openssl"] and not os.is_real("emscripten") then
 		links { "mbedtls-static" }
 	end
 
@@ -890,25 +890,27 @@ function select_backend()
 end
 
 function check_ssl_support()
-	if _OPTIONS["with-openssl"] then
-		if os.is("windows") then
-			table.insert( link_list, get_backend_link_name( "libssl" ) )
-			table.insert( link_list, get_backend_link_name( "libcrypto" ) )
+	if not os.is_real("emscripten") then
+		if _OPTIONS["with-openssl"] then
+			if os.is("windows") then
+				table.insert( link_list, get_backend_link_name( "libssl" ) )
+				table.insert( link_list, get_backend_link_name( "libcrypto" ) )
+			else
+				table.insert( link_list, get_backend_link_name( "ssl" ) )
+				table.insert( link_list, get_backend_link_name( "crypto" ) )
+			end
+
+			files { "src/eepp/network/ssl/backend/openssl/*.cpp" }
+
+			defines { "EE_OPENSSL" }
 		else
-			table.insert( link_list, get_backend_link_name( "ssl" ) )
-			table.insert( link_list, get_backend_link_name( "crypto" ) )
+			files { "src/eepp/network/ssl/backend/mbedtls/*.cpp" }
+
+			defines { "EE_MBEDTLS" }
 		end
 
-		files { "src/eepp/network/ssl/backend/openssl/*.cpp" }
-
-		defines { "EE_OPENSSL" }
-	else
-		files { "src/eepp/network/ssl/backend/mbedtls/*.cpp" }
-
-		defines { "EE_MBEDTLS" }
+		defines { "EE_SSL_SUPPORT" }
 	end
-
-	defines { "EE_SSL_SUPPORT" }
 end
 
 function set_macos_and_ios_config()

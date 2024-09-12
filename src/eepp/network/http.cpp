@@ -654,7 +654,7 @@ void Http::setHost( const std::string& host, unsigned short port, bool useSSL, U
 		mPort = ( port != 0 ? port : 80 );
 	} else if ( String::toLower( host.substr( 0, 8 ) ) == "https://" ) {
 // HTTPS protocol
-#ifdef EE_SSL_SUPPORT
+#if defined( EE_SSL_SUPPORT ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 		mIsSSL = true;
 		mHostName = host.substr( 8 );
 		mPort = ( port != 0 ? port : 443 );
@@ -667,7 +667,7 @@ void Http::setHost( const std::string& host, unsigned short port, bool useSSL, U
 		mHostName = host;
 		mPort = ( port != 0 ? port : 80 );
 
-#ifdef EE_SSL_SUPPORT
+#if defined( EE_SSL_SUPPORT ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 		mPort = useSSL ? ( port != 0 ? port : 443 ) : mPort;
 		mIsSSL = useSSL || mPort == 443;
 #endif

@@ -700,6 +700,14 @@ Float UICodeEditor::getViewportWidth( const bool& forceVScroll ) const {
 	return eemax( 0.f, viewWidth );
 }
 
+Float UICodeEditor::getTopAreaWidth() const {
+	Float vScrollWidth = mVScrollBar->isVisible() ? mVScrollBar->getPixelsSize().getWidth() : 0.f;
+	if ( mMinimapEnabled )
+		vScrollWidth += getMinimapWidth();
+	Float viewWidth = eefloor( mSize.getWidth() - vScrollWidth );
+	return eemax( 0.f, viewWidth );
+}
+
 bool UICodeEditor::getShowIndentationGuides() const {
 	return mShowIndentationGuides;
 }

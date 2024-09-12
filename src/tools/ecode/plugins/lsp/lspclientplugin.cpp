@@ -609,11 +609,10 @@ bool LSPClientPlugin::onMouseClick( UICodeEditor* editor, const Vector2i& pos,
 	const Vector2f localPos( breadcrumbClick ? editor->convertToNodeSpace( pos.asFloat() )
 											 : Vector2f::Zero );
 	if ( breadcrumbClick && localPos.y < mPluginTopSpace &&
-		 localPos.x < editor->getPixelsSize().getWidth() - editor->getMinimapWidth() ) {
+		 localPos.x < editor->getTopAreaWidth() ) {
 		const Vector2f downLocalPos( editor->convertToNodeSpace(
 			editor->getEventDispatcher()->getMouseDownPos().asFloat() ) );
-		if ( downLocalPos.y < mPluginTopSpace &&
-			 downLocalPos.x < editor->getPixelsSize().getWidth() - editor->getMinimapWidth() ) {
+		if ( downLocalPos.y < mPluginTopSpace && downLocalPos.x < editor->getTopAreaWidth() ) {
 			editor->getDocument().execute( "lsp-show-document-symbols", editor );
 			return true;
 		}
@@ -1794,8 +1793,7 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 								   const Uint32& flags ) {
 	if ( mBreadcrumb ) {
 		auto localPos( editor->convertToNodeSpace( position.asFloat() ) );
-		if ( localPos.y < mPluginTopSpace &&
-			 localPos.x < editor->getPixelsSize().getWidth() - editor->getMinimapWidth() ) {
+		if ( localPos.y < mPluginTopSpace && localPos.x < editor->getTopAreaWidth() ) {
 			if ( !mHoveringBreadcrumb ) {
 				mHoveringBreadcrumb = true;
 				editor->invalidateDraw();
@@ -1885,7 +1883,7 @@ void LSPClientPlugin::onVersionUpgrade( Uint32 oldVersion, Uint32 ) {
 
 void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart, const Sizef& size,
 							   const Float& /*fontSize*/ ) {
-	Float width = size.getWidth() - editor->getMinimapWidth();
+	Float width = editor->getTopAreaWidth();
 	Primitives p;
 	Color backColor( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::Background ) );
 	p.setColor( backColor );
