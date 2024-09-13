@@ -28,6 +28,16 @@
 
 namespace EE { namespace System {
 
+static bool isFlatpakEnv() {
+	static bool sChecked = false;
+	static bool sIsFlatpak = false;
+	if (!sChecked) {
+		sIsFlatpak = getenv( "FLATPAK_ID" ) != NULL;
+		sChecked = true;
+	}
+	return sIsFlatpak;
+}
+
 #define PROCESS_PTR ( static_cast<struct subprocess_s*>( mProcess ) )
 
 Process::Process() {}
@@ -93,10 +103,19 @@ bool Process::create( const std::string& command, const std::vector<std::string>
 			envVars = Sys::getEnvironmentVariables();
 			options &= ~Process::InheritEnvironment;
 		}
+		std::size_t deltaExtra = 0;
+		#if EE_PLATFORM == EE_PLATFORM_LINUX
+		deltaExtra = isFlatpakEnv() ? 2 : 0;
+		#endif
 		envArr.reserve( environment.size() + envVars.size() );
-		strings.reserve( cmdArr.size() + 1 );
+		strings.reserve( cmdArr.size() + 1 + deltaExtra );
 		envStrings.reserve( envArr.size() + 1 );
-
+		#if EE_PLATFORM == EE_PLATFORM_LINUX
+		if ( isFlatpakEnv() ) {
+			strings.push_back( "/usr/bin/flatpak-spawn" );
+			strings.push_back( "--host" );
+		}
+		#endif
 		strings.push_back( rcommand.c_str() );
 		for ( size_t i = 0; i < cmdArr.size(); ++i )
 			strings.push_back( cmdArr[i].c_str() );
