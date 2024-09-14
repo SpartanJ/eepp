@@ -123,6 +123,10 @@ void ActionManager::update( const Time& time ) {
 	for ( auto it = actions.begin(); it != actions.end(); ++it ) {
 		Action* action = *it;
 
+		if ( std::find( mActionsRemoveList.begin(), mActionsRemoveList.end(), action ) !=
+			 mActionsRemoveList.end() )
+			continue;
+
 		action->update( time );
 
 		if ( action->isDone() ) {
@@ -177,7 +181,8 @@ bool ActionManager::removeAction( Action* action ) {
 
 				eeSAFE_DELETE( action );
 			}
-		} else {
+		} else if ( std::find( mActionsRemoveList.begin(), mActionsRemoveList.end(), action ) ==
+					mActionsRemoveList.end() ) {
 			mActionsRemoveList.emplace_back( action );
 		}
 
