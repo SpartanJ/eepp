@@ -28,6 +28,7 @@
 
 namespace EE { namespace System {
 
+#if EE_PLATFORM == EE_PLATFORM_LINUX
 static bool isFlatpakEnv() {
 	static bool sChecked = false;
 	static bool sIsFlatpak = false;
@@ -37,6 +38,7 @@ static bool isFlatpakEnv() {
 	}
 	return sIsFlatpak;
 }
+#endif
 
 #define PROCESS_PTR ( static_cast<struct subprocess_s*>( mProcess ) )
 
