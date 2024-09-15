@@ -452,7 +452,7 @@ static LSPSymbolInformationList parseDocumentSymbols( const json& result, bool i
 
 			const auto& srange = symbol.contains( MEMBER_SELECTION_RANGE )
 									 ? symbol.at( MEMBER_SELECTION_RANGE )
-									 : symbol[MEMBER_LOCATION].at( MEMBER_SELECTION_RANGE );
+									 : symbol[MEMBER_LOCATION].at( MEMBER_RANGE );
 
 			auto range = parseRange( mrange );
 			auto selectionRange = parseRange( srange );
