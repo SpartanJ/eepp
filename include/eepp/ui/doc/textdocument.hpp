@@ -516,9 +516,9 @@ class EE_API TextDocument {
 
 	void toLowerSelection();
 
-	const std::string& getLoadingFilePath() const;
+	std::string getLoadingFilePath() const;
 
-	const URI& getLoadingFileURI() const;
+	URI getLoadingFileURI() const;
 
 	void setSelection( const TextRanges& selection );
 

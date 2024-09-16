@@ -57,6 +57,17 @@ TextDocument::~TextDocument() {
 		mLoading = false;
 		Lock l( mLoadingMutex );
 	}
+
+	{
+		Lock l( mClientsMutex );
+	}
+
+	// Loading has been stopped
+	while ( mLoadingAsync ) {
+		mLoading = false;
+		Sys::sleep( Milliseconds( 0.1 ) );
+	}
+
 	notifyDocumentClosed();
 	if ( mDeleteOnClose )
 		FileSystem::fileRemove( mFilePath );
@@ -484,12 +495,12 @@ void TextDocument::toLowerSelection() {
 	}
 }
 
-const std::string& TextDocument::getLoadingFilePath() const {
+std::string TextDocument::getLoadingFilePath() const {
 	Lock l( mLoadingFilePathMutex );
 	return mLoadingFilePath;
 }
 
-const URI& TextDocument::getLoadingFileURI() const {
+URI TextDocument::getLoadingFileURI() const {
 	Lock l( mLoadingFilePathMutex );
 	return mLoadingFileURI;
 }
@@ -534,8 +545,8 @@ bool TextDocument::loadAsyncFromFile( const std::string& path, std::shared_ptr<T
 			mLoadingFilePath.clear();
 			mLoadingFileURI = URI();
 		}
-		mLoadingAsync = false;
 		notifyDocumentLoaded();
+		mLoadingAsync = false;
 	} );
 	return true;
 }
@@ -566,12 +577,13 @@ static std::string getTempPathFromURI( const URI& uri ) {
 
 TextDocument::LoadStatus TextDocument::loadFromURL( const std::string& url,
 													const Http::Request::FieldTable& headers ) {
+	mLoading = true;
 	URI uri( url );
 
-	if ( uri.getScheme().empty() )
+	if ( uri.getScheme().empty() ) {
+		mLoading = false;
 		return LoadStatus::Failed;
-
-	mLoading = true;
+	}
 
 	Http::Response response =
 		Http::get( uri, Seconds( 10 ), nullptr, headers, "", true, Http::getEnvProxyURI() );
@@ -594,12 +606,14 @@ bool TextDocument::loadAsyncFromURL( const std::string& url,
 									 const Http::Request::FieldTable& headers,
 									 std::function<void( TextDocument*, bool success )> onLoaded,
 									 const Http::Request::ProgressCallback& progressCallback ) {
+	mLoading = true;
 	URI uri( url );
 
-	if ( uri.getScheme().empty() || ( uri.getScheme() != "https" && uri.getScheme() != "http" ) )
+	if ( uri.getScheme().empty() || ( uri.getScheme() != "https" && uri.getScheme() != "http" ) ) {
+		mLoading = false;
 		return false;
+	}
 
-	mLoading = true;
 	mLoadingAsync = true;
 
 	Http::getAsync(
@@ -617,8 +631,8 @@ bool TextDocument::loadAsyncFromURL( const std::string& url,
 				onLoaded( this, false );
 			}
 			mLoading = false;
-			mLoadingAsync = false;
 			notifyDocumentLoaded();
+			mLoadingAsync = false;
 		},
 		uri, Seconds( 10 ), progressCallback, headers, "", true, Http::getEnvProxyURI() );
 	return true;
