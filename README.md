@@ -473,11 +473,11 @@ Then go to the `eepp` cloned repository directory and run:
 
 Then just build the project located in `make/windows/` with `mingw32-make.exe` or any equivalent:
 
-`mingw32-make.exe -C make\windows config=release_x86_64`
+`mingw32-make.exe -C make\\windows config=release_x86_64`
 
 To build a debug build run:
 
-`mingw32-make.exe -C make\windows config=debug_x86_64`
+`mingw32-make.exe -C make\\windows config=debug_x86_64`
 
 And then make sure to copy the `SDL2.dll` file located at `src/thirdparty/SDL2-2.XX.X/x86_64-w64-mingw32/bin/SDL2.dll` to `bin`.
 If for some reason `eepp.dll` (or `eepp-debug.dll`) hasn't being copied automatically you can copy them from `libs/windows/x86_64/` to `bin`.
