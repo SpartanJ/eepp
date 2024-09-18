@@ -859,9 +859,10 @@ void UITreeView::setSelection( const ModelIndex& index, bool scrollToSelection,
 			if ( curY < mScrollOffset.y + getHeaderHeight() + getRowHeight() ||
 				 curY > mScrollOffset.y + getPixelsSize().getHeight() - mPaddingPx.Top -
 							mPaddingPx.Bottom - getRowHeight() ) {
-				curY -= getHeaderHeight() + getRowHeight();
-				mVScroll->setValue( eemin<Float>(
-					1.f, eemax<Float>( 0.f, curY / getScrollableArea().getHeight() ) ) );
+				runOnMainThread( [this, curY] {
+					scrollToPosition( { { mScrollOffset.x, curY },
+										{ getPixelsSize().getWidth(), getRowHeight() } } );
+				} );
 			}
 		}
 	}
