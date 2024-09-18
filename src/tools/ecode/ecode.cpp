@@ -1575,50 +1575,51 @@ std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	return {
 		{ { KEY_RETURN, KEYMOD_LALT | KEYMOD_LCTRL }, "fullscreen-toggle" },
-		{ { KEY_F3, KEYMOD_NONE }, "repeat-find" },
-		{ { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
-		{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
-		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
-		{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
-		{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
-		{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
-		{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
-		{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
-		{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
-		{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
-		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
-		{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
+			{ { KEY_F3, KEYMOD_NONE }, "repeat-find" }, { { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
+			{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
+			{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
+			{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
+			{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
+			{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
+			{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
+			{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
+			{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
+			{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
+			{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
+			{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-		{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
+			{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
 #else
-		{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
+			{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
 #endif
-		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
-		{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
-		{ { KEY_J, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-		  "terminal-split-left" },
-		{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-		  "terminal-split-right" },
-		{ { KEY_I, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-		  "terminal-split-top" },
-		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-		  "terminal-split-bottom" },
-		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-		  "terminal-split-swap" },
-		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-		  "reopen-closed-tab" },
-		{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
-		{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
-		{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
-		{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
-		{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
-		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
-		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
-		{ { KEY_F5, KEYMOD_NONE }, "project-build-and-run" },
-		{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
-		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-workspace-symbol-search" },
-		{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-document-symbol-search" },
-		{ { KEY_N, KEYMOD_SHIFT | KEYMOD_LALT }, "create-new-window" },
+			{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
+			{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
+			{ { KEY_J, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-left" },
+			{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-right" },
+			{ { KEY_I, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-top" },
+			{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-bottom" },
+			{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-swap" },
+			{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "reopen-closed-tab" },
+			{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
+			{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
+			{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
+			{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
+			{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
+			{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
+			{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
+			{ { KEY_F5, KEYMOD_NONE }, "project-build-and-run" },
+			{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
+			{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
+			  "open-workspace-symbol-search" },
+			{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
+			  "open-document-symbol-search" },
+			{ { KEY_N, KEYMOD_SHIFT | KEYMOD_LALT }, "create-new-window" },
 	};
 }
 
@@ -1627,15 +1628,15 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 std::map<std::string, std::string> App::getMigrateKeybindings() {
 	return {
 		{ "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
-		{ "switch-to-tab-2", "alt+2" },		   { "switch-to-tab-3", "alt+3" },
-		{ "switch-to-tab-4", "alt+4" },		   { "switch-to-tab-5", "alt+5" },
-		{ "switch-to-tab-6", "alt+6" },		   { "switch-to-tab-7", "alt+7" },
-		{ "switch-to-tab-8", "alt+8" },		   { "switch-to-tab-9", "alt+9" },
-		{ "switch-to-last-tab", "alt+0" },
+			{ "switch-to-tab-2", "alt+2" }, { "switch-to-tab-3", "alt+3" },
+			{ "switch-to-tab-4", "alt+4" }, { "switch-to-tab-5", "alt+5" },
+			{ "switch-to-tab-6", "alt+6" }, { "switch-to-tab-7", "alt+7" },
+			{ "switch-to-tab-8", "alt+8" }, { "switch-to-tab-9", "alt+9" },
+			{ "switch-to-last-tab", "alt+0" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-		{ "menu-toggle", "mod+shift+m" },
+			{ "menu-toggle", "mod+shift+m" },
 #endif
-		{ "lock-toggle", "mod+shift+l" },
+			{ "lock-toggle", "mod+shift+l" },
 	};
 }
 
@@ -3206,15 +3207,49 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		} );
 
 		mWindow->getInput()->pushCallback( [this]( InputEvent* event ) {
-			if ( event->Type == InputEvent::FileDropped ) {
-				std::string file( event->file.file );
+			switch ( event->Type ) {
+				case InputEvent::FileDropped: {
+					std::string file( event->file.file );
+					mPathsToLoad.emplace_back( std::move( file ) );
+					break;
+				}
+				case InputEvent::TextDropped: {
+					onTextDropped( event->textdrop.text );
+					break;
+				}
+				case InputEvent::EventsSent: {
+					if ( mPathsToLoad.empty() )
+						break;
 
-				if ( FileSystem::isDirectory( file ) )
-					loadFolder( file );
-				else
-					onFileDropped( file );
-			} else if ( event->Type == InputEvent::TextDropped ) {
-				onTextDropped( event->textdrop.text );
+					std::size_t dirCount = 0;
+					std::size_t lastDirIdx = std::numeric_limits<std::size_t>::max();
+					std::size_t idx = 0;
+					for ( const auto& file : mPathsToLoad ) {
+						if ( FileSystem::isDirectory( file ) ) {
+							dirCount++;
+							lastDirIdx = idx;
+						}
+						idx++;
+					}
+
+					bool onlyDirectories = dirCount == mPathsToLoad.size();
+
+					// If only directories has been dropped, just load the last directory dropped
+					if ( onlyDirectories ) {
+						loadFolder( mPathsToLoad[lastDirIdx] );
+					} else {
+						// Load only files even if there are directories
+						for ( const auto& file : mPathsToLoad ) {
+							if ( !FileSystem::isDirectory( file ) )
+								onFileDropped( file );
+						}
+					}
+
+					mPathsToLoad.clear();
+					break;
+				}
+				default:
+					break;
 			}
 		} );
 

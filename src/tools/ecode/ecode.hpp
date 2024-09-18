@@ -543,6 +543,7 @@ class App : public UICodeEditorSplitter::Client {
 	UIMessageBox* mCloseMsgBox{ nullptr };
 	UIMenuBar* mMenuBar{ nullptr };
 	std::unique_ptr<SettingsActions> mSettingsActions;
+	std::vector<std::string> mPathsToLoad;
 
 	void saveAllProcess();
 
