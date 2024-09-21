@@ -8,7 +8,7 @@ void addConfigFile() {
 	SyntaxDefinitionManager::instance()->add(
 
 		{ "Config File",
-		  { "%.ini$", "%.conf$", "%.desktop$", "%.service$", "%.cfg$", "%.properties$",
+		  { "%.ini$", "%.conf$", "%.desktop$", "%.service$", "%.cfg$", "%.properties$", "%.wrap$",
 			"Doxyfile" },
 		  {
 			  { { "%s?#%x%x%x%x%x%x%x%x" }, "string" },
