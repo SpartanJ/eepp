@@ -750,6 +750,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mDirtyScroll{ false };
 	bool mCursorVisible{ false };
 	bool mMouseDown{ false };
+	bool mMouseDownMinimap{ false };
 	bool mShowLineNumber{ true };
 	bool mShowFoldingRegion{ true };
 	bool mShowWhitespaces{ true };

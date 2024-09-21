@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 14.0.1, 2024-09-16T20:13:14. -->
+<!-- Written by QtCreator 14.0.1, 2024-09-19T17:31:08. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -201,7 +201,7 @@
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
-      <value type="QString" key="ProjectExplorer.ProcessStep.Arguments">--with-debug-symbols --with-text-shaper gmake</value>
+      <value type="QString" key="ProjectExplorer.ProcessStep.Arguments">--with-debug-symbols --disable-static-build --with-text-shaper gmake</value>
       <value type="QString" key="ProjectExplorer.ProcessStep.Command">premake4</value>
       <value type="QString" key="ProjectExplorer.ProcessStep.WorkingDirectory">%{buildDir}../../../</value>
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.ProcessStep</value>

@@ -420,11 +420,12 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 		}
 	}
 
-	if ( mMouseDown ) {
+	if ( mMouseDown || mMouseDownMinimap ) {
 		if ( !( getUISceneNode()->getWindow()->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
 			stopMinimapDragging(
 				getUISceneNode()->getWindow()->getInput()->getMousePos().asFloat() );
 			mMouseDown = false;
+			mMouseDownMinimap = false;
 			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
 		} else if ( !isMouseOverMeOrChilds() || mMinimapDragging ) {
 			onMouseMove( getUISceneNode()->getEventDispatcher()->getMousePos(),
@@ -1362,6 +1363,7 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 				return 1;
 			}
 			mMouseDown = true;
+			mMouseDownMinimap = true;
 			mMinimapScrollOffset = calculateMinimapClickedLine( position ) -
 								   static_cast<Int64>( getVisibleLineRange().first );
 			mMinimapDragging = true;
@@ -1476,19 +1478,22 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 			return 1;
 		}
 		minimapHover = getMinimapRect( getScreenStart() ).contains( position.asFloat() );
-		if ( ( flags & EE_BUTTON_LMASK ) && minimapHover )
+		if ( mMouseDownMinimap && ( flags & EE_BUTTON_LMASK ) && minimapHover )
 			return 1;
 	}
 
 	Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
 
-	if ( !minimapHover && isTextSelectionEnabled() &&
+	if ( !mMouseDownMinimap && isTextSelectionEnabled() &&
 		 !getUISceneNode()->getEventDispatcher()->isNodeDragging() && NULL != mFont &&
 		 mMouseDown ) {
 		TextRange selection = mDoc->getSelection();
 		selection.setStart( resolveScreenPosition( position.asFloat() ) );
 		mDoc->setSelection( selection );
 	}
+
+	if ( mMouseDownMinimap )
+		return 1;
 
 	if ( minimapHover ) {
 		getUISceneNode()->setCursor( Cursor::Arrow );
@@ -1529,6 +1534,7 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 		stopMinimapDragging( position.asFloat() );
 		if ( mMouseDown ) {
 			mMouseDown = false;
+			mMouseDownMinimap = false;
 			input->captureMouse( false );
 		}
 	} else if ( flags & EE_BUTTON_WDMASK ) {
