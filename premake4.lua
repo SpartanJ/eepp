@@ -749,7 +749,8 @@ function add_static_links()
 			"zlib-static",
 			"imageresampler-static",
 			"pugixml-static",
-			"vorbis-static"
+			"vorbis-static",
+			"pcre2-8-static"
 	}
 
 	if not _OPTIONS["without-mojoal"] then
@@ -938,7 +939,18 @@ function eepp_module_physics_add()
 end
 
 function build_eepp( build_name )
-	includedirs { "include", "src", "src/thirdparty", "include/eepp/thirdparty", "src/thirdparty/freetype2/include", "src/thirdparty/zlib", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include", "src/thirdparty/mbedtls/include" }
+	includedirs {
+		"include",
+		"src",
+		"src/thirdparty",
+		"include/eepp/thirdparty",
+		"src/thirdparty/freetype2/include",
+		"src/thirdparty/zlib",
+		"src/thirdparty/libogg/include",
+		"src/thirdparty/libvorbis/include",
+		"src/thirdparty/mbedtls/include",
+		"src/thirdparty/pcre2/src"
+	}
 
 	if not _OPTIONS["without-mojoal"] then
 		defines( "AL_LIBTYPE_STATIC" )
@@ -1114,6 +1126,42 @@ solution "eepp"
 		files { "src/thirdparty/freetype2/src/**.c" }
 		includedirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng" }
 		build_base_configuration( "freetype" )
+
+	project "pcre2-8-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		defines { "HAVE_CONFIG_H", "PCRE2_STATIC", "PCRE2_CODE_UNIT_WIDTH=8" }
+		files {
+			'src/thirdparty/pcre2/src/pcre2_auto_possess.c',
+			'src/thirdparty/pcre2/src/pcre2_compile.c',
+			'src/thirdparty/pcre2/src/pcre2_config.c',
+			'src/thirdparty/pcre2/src/pcre2_context.c',
+			'src/thirdparty/pcre2/src/pcre2_convert.c',
+			'src/thirdparty/pcre2/src/pcre2_dfa_match.c',
+			'src/thirdparty/pcre2/src/pcre2_error.c',
+			'src/thirdparty/pcre2/src/pcre2_extuni.c',
+			'src/thirdparty/pcre2/src/pcre2_find_bracket.c',
+			'src/thirdparty/pcre2/src/pcre2_jit_compile.c',
+			'src/thirdparty/pcre2/src/pcre2_maketables.c',
+			'src/thirdparty/pcre2/src/pcre2_match.c',
+			'src/thirdparty/pcre2/src/pcre2_match_data.c',
+			'src/thirdparty/pcre2/src/pcre2_newline.c',
+			'src/thirdparty/pcre2/src/pcre2_ord2utf.c',
+			'src/thirdparty/pcre2/src/pcre2_pattern_info.c',
+			'src/thirdparty/pcre2/src/pcre2_script_run.c',
+			'src/thirdparty/pcre2/src/pcre2_serialize.c',
+			'src/thirdparty/pcre2/src/pcre2_string_utils.c',
+			'src/thirdparty/pcre2/src/pcre2_study.c',
+			'src/thirdparty/pcre2/src/pcre2_substitute.c',
+			'src/thirdparty/pcre2/src/pcre2_substring.c',
+			'src/thirdparty/pcre2/src/pcre2_tables.c',
+			'src/thirdparty/pcre2/src/pcre2_ucd.c',
+			'src/thirdparty/pcre2/src/pcre2_valid_utf.c',
+			'src/thirdparty/pcre2/src/pcre2_xclass.c',
+		}
+		includedirs { "src/thirdparty/pcre2/src" }
+		build_base_configuration( "pcre2-8" )
 
 	if _OPTIONS["with-text-shaper"] then
 		project "harfbuzz-static"
