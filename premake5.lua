@@ -713,7 +713,7 @@ function build_eepp( build_name )
 	add_static_links()
 	check_ssl_support()
 
-	defines { "PCRE2_CODE_UNIT_WIDTH=8" }
+	defines { "PCRE2_STATIC", "PCRE2_CODE_UNIT_WIDTH=8" }
 
 	if table.contains( backends, "SDL2" ) then
 		files { "src/eepp/window/backend/SDL2/*.cpp" }

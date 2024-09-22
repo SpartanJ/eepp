@@ -952,7 +952,7 @@ function build_eepp( build_name )
 		"src/thirdparty/pcre2/src"
 	}
 
-	defines { "PCRE2_CODE_UNIT_WIDTH=8" }
+	defines { "PCRE2_STATIC", "PCRE2_CODE_UNIT_WIDTH=8" }
 
 	if not _OPTIONS["without-mojoal"] then
 		defines( "AL_LIBTYPE_STATIC" )
