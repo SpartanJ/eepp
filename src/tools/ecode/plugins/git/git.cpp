@@ -465,7 +465,7 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 		std::string ptrn( "(stash@{%d+}):%s(.*)" );
 		LuaPattern pattern( ptrn );
 		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
-			LuaPattern::Range matches[3];
+			PatternMatcher::Range matches[3];
 			if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
 				std::string id(
 					line.substr( matches[1].start, matches[1].end - matches[1].start ) );
@@ -490,7 +490,7 @@ std::vector<std::string> Git::fetchSubModules( const std::string& projectDir ) {
 	std::string ptrn( "^%s*path%s*=%s*(.+)" );
 	LuaPattern pattern( ptrn );
 	StringHelper::readBySeparator( buf, [&pattern, &submodules]( const std::string_view& line ) {
-		LuaPattern::Range matches[2];
+		PatternMatcher::Range matches[2];
 		if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
 			submodules.emplace_back( String::trim(
 				line.substr( matches[1].start, matches[1].end - matches[1].start ), '\n' ) );
@@ -580,7 +580,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 			return;
 
 		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
-			LuaPattern::Range matches[3];
+			PatternMatcher::Range matches[3];
 			if ( subModulePattern.matches( line.data(), 0, matches, line.size() ) ) {
 				subModulePath = String::trim(
 					line.substr( matches[1].start, matches[1].end - matches[1].start ) );
@@ -610,7 +610,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				if ( status.symbol == GitStatusChar::Renamed ) {
 					std::string rptrn( ".*%s%-%>%s(.*)" );
 					LuaPattern rpattern( rptrn );
-					LuaPattern::Range rranges[2];
+					PatternMatcher::Range rranges[2];
 					if ( rpattern.matches( file.data(), 0, rranges, file.size() ) )
 						file = file.substr( rranges[1].start, rranges[1].end - rranges[1].start );
 				}
@@ -656,7 +656,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 		LuaPattern pattern( ptrn );
 		std::string subModulePath = "";
 		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
-			LuaPattern::Range matches[4];
+			PatternMatcher::Range matches[4];
 			if ( subModulePattern.matches( line.data(), 0, matches, line.size() ) ) {
 				subModulePath = String::trim(
 					line.substr( matches[1].start, matches[1].end - matches[1].start ) );

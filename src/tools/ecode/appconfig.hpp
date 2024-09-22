@@ -104,6 +104,7 @@ struct DocumentConfig {
 
 struct SearchBarConfig {
 	bool caseSensitive{ false };
+	bool regex{ false };
 	bool luaPattern{ false };
 	bool wholeWord{ false };
 	bool escapeSequence{ false };

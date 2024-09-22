@@ -7,6 +7,7 @@
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/regex.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
@@ -58,9 +59,7 @@ TextDocument::~TextDocument() {
 		Lock l( mLoadingMutex );
 	}
 
-	{
-		Lock l( mClientsMutex );
-	}
+	{ Lock l( mClientsMutex ); }
 
 	// Loading has been stopped
 	while ( mLoadingAsync ) {
@@ -2430,15 +2429,17 @@ static constexpr auto MAX_CAPTURES = 12;
 struct FindTypeResult {
 	size_t start{ String::StringType::npos };
 	size_t end{ String::StringType::npos };
-	std::vector<LuaPattern::Range> captures{};
+	std::vector<PatternMatcher::Range> captures{};
 };
 
 static FindTypeResult findType( const String& str, const String& findStr,
 								const TextDocument::FindReplaceType& type, int colOffset ) {
 	switch ( type ) {
-		case TextDocument::FindReplaceType::LuaPattern: {
-			LuaPatternStorage words( findStr.toUtf8() );
-			LuaPattern::Range matches[MAX_CAPTURES];
+		case TextDocument::FindReplaceType::RegEx: {
+			RegEx words( findStr.toUtf8() );
+			if ( !words.isValid() )
+				return { String::StringType::npos, String::StringType::npos };
+			RegEx::Range matches[MAX_CAPTURES];
 			if ( words.matches( str, matches ) ) {
 				FindTypeResult result{ static_cast<size_t>( matches[0].start ),
 									   static_cast<size_t>( matches[0].end ) };
@@ -2446,7 +2447,26 @@ static FindTypeResult findType( const String& str, const String& findStr,
 					std::vector<TextPosition> captures;
 					captures.reserve( words.getNumMatches() - 1 );
 					for ( size_t i = 1; i < words.getNumMatches(); i++ ) {
-						result.captures.emplace_back( LuaPattern::Range{
+						result.captures.emplace_back( PatternMatcher::Range{
+							colOffset + matches[i].start, colOffset + matches[i].end } );
+					}
+				}
+				return result;
+			} else {
+				return { String::StringType::npos, String::StringType::npos };
+			}
+		}
+		case TextDocument::FindReplaceType::LuaPattern: {
+			LuaPatternStorage words( findStr.toUtf8() );
+			PatternMatcher::Range matches[MAX_CAPTURES];
+			if ( words.matches( str, matches ) ) {
+				FindTypeResult result{ static_cast<size_t>( matches[0].start ),
+									   static_cast<size_t>( matches[0].end ) };
+				if ( words.getNumMatches() > 1 ) {
+					std::vector<TextPosition> captures;
+					captures.reserve( words.getNumMatches() - 1 );
+					for ( size_t i = 1; i < words.getNumMatches(); i++ ) {
+						result.captures.emplace_back( PatternMatcher::Range{
 							colOffset + matches[i].start, colOffset + matches[i].end } );
 					}
 				}
@@ -2466,10 +2486,12 @@ static FindTypeResult findType( const String& str, const String& findStr,
 static FindTypeResult findLastType( const String& str, const String& findStr,
 									const TextDocument::FindReplaceType& type ) {
 	switch ( type ) {
-		case TextDocument::FindReplaceType::LuaPattern: {
+		case TextDocument::FindReplaceType::RegEx: {
 			// TODO: Implement findLastType for Lua patterns
-			LuaPatternStorage words( findStr.toUtf8() );
-			LuaPattern::Range matches[MAX_CAPTURES];
+			RegEx words( findStr.toUtf8() );
+			if ( !words.isValid() )
+				return { String::StringType::npos, String::StringType::npos };
+			RegEx::Range matches[MAX_CAPTURES];
 			if ( words.matches( str, matches ) ) {
 				FindTypeResult result{ static_cast<size_t>( matches[0].start ),
 									   static_cast<size_t>( matches[0].end ) };
@@ -2478,7 +2500,27 @@ static FindTypeResult findLastType( const String& str, const String& findStr,
 					captures.reserve( words.getNumMatches() - 1 );
 					for ( size_t i = 1; i < words.getNumMatches(); i++ ) {
 						result.captures.emplace_back(
-							LuaPattern::Range{ matches[i].start, matches[i].end } );
+							PatternMatcher::Range{ matches[i].start, matches[i].end } );
+					}
+				}
+				return result;
+			} else {
+				return { String::StringType::npos, String::StringType::npos };
+			}
+		}
+		case TextDocument::FindReplaceType::LuaPattern: {
+			// TODO: Implement findLastType for Lua patterns
+			LuaPatternStorage words( findStr.toUtf8() );
+			PatternMatcher::Range matches[MAX_CAPTURES];
+			if ( words.matches( str, matches ) ) {
+				FindTypeResult result{ static_cast<size_t>( matches[0].start ),
+									   static_cast<size_t>( matches[0].end ) };
+				if ( words.getNumMatches() > 1 ) {
+					std::vector<TextPosition> captures;
+					captures.reserve( words.getNumMatches() - 1 );
+					for ( size_t i = 1; i < words.getNumMatches(); i++ ) {
+						result.captures.emplace_back(
+							PatternMatcher::Range{ matches[i].start, matches[i].end } );
 					}
 				}
 				return result;
@@ -2525,9 +2567,11 @@ TextDocument::SearchResult TextDocument::findText( String text, TextPosition fro
 			return TextDocument::SearchResult{};
 	}
 
-	if ( type == FindReplaceType::LuaPattern && caseSensitive == false )
+	if ( ( type == FindReplaceType::LuaPattern || type == FindReplaceType::RegEx ) &&
+		 caseSensitive == false ) {
 		caseSensitive =
 			true; // Ignore case insensitive request since this is managed at pattern level
+	}
 
 	if ( !caseSensitive )
 		text.toLower();
@@ -2583,9 +2627,11 @@ TextDocument::SearchResult TextDocument::findTextLast( String text, TextPosition
 			return TextDocument::SearchResult{};
 	}
 
-	if ( type == FindReplaceType::LuaPattern && caseSensitive == false )
+	if ( ( type == FindReplaceType::LuaPattern || type == FindReplaceType::RegEx ) &&
+		 caseSensitive == false ) {
 		caseSensitive =
 			true; // Ignore case insensitive request since this is managed at pattern level
+	}
 
 	if ( !caseSensitive )
 		text.toLower();
@@ -2848,11 +2894,19 @@ int TextDocument::replaceAll( const String& text, const String& replace, const b
 		from = restrictRange.normalized().start();
 
 	size_t numCaptures = 0;
-	LuaPattern::Range matchList[MAX_CAPTURES];
+	PatternMatcher::Range matchList[MAX_CAPTURES];
 
 	if ( type == FindReplaceType::LuaPattern ) {
 		std::string replaceUtf8( replace.toUtf8() );
 		LuaPattern ptrn( "$%d+"sv );
+		while ( numCaptures < MAX_CAPTURES &&
+				ptrn.matches( replaceUtf8, &matchList[numCaptures],
+							  numCaptures > 0 ? matchList[numCaptures - 1].end : 0 ) ) {
+			numCaptures++;
+		}
+	} else if ( type == FindReplaceType::RegEx ) {
+		std::string replaceUtf8( replace.toUtf8() );
+		RegEx ptrn( "$\\d+"sv );
 		while ( numCaptures < MAX_CAPTURES &&
 				ptrn.matches( replaceUtf8, &matchList[numCaptures],
 							  numCaptures > 0 ? matchList[numCaptures - 1].end : 0 ) ) {
@@ -2932,11 +2986,19 @@ TextPosition TextDocument::replace( String search, const String& replace, TextPo
 									FindReplaceType type, TextRange restrictRange ) {
 	auto found( findText( search, from, caseSensitive, wholeWord, type, restrictRange ) );
 	size_t numCaptures = 0;
-	LuaPattern::Range matchList[MAX_CAPTURES];
+	PatternMatcher::Range matchList[MAX_CAPTURES];
 
 	if ( type == FindReplaceType::LuaPattern ) {
 		std::string replaceUtf8( replace.toUtf8() );
 		LuaPattern ptrn( "$%d+"sv );
+		while ( numCaptures < MAX_CAPTURES &&
+				ptrn.matches( replaceUtf8, &matchList[numCaptures],
+							  numCaptures > 0 ? matchList[numCaptures - 1].end : 0 ) ) {
+			numCaptures++;
+		}
+	} else if ( type == FindReplaceType::RegEx ) {
+		std::string replaceUtf8( replace.toUtf8() );
+		RegEx ptrn( "$\\d+"sv );
 		while ( numCaptures < MAX_CAPTURES &&
 				ptrn.matches( replaceUtf8, &matchList[numCaptures],
 							  numCaptures > 0 ? matchList[numCaptures - 1].end : 0 ) ) {

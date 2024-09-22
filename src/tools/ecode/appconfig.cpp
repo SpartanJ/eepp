@@ -181,6 +181,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 
 	searchBarConfig.caseSensitive = ini.getValueB( "search_bar", "case_sensitive", false );
 	searchBarConfig.luaPattern = ini.getValueB( "search_bar", "lua_pattern", false );
+	searchBarConfig.regex = ini.getValueB( "search_bar", "regex", false );
 	searchBarConfig.wholeWord = ini.getValueB( "search_bar", "whole_word", false );
 	searchBarConfig.escapeSequence = ini.getValueB( "search_bar", "escape_sequence", false );
 
@@ -320,6 +321,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 
 	ini.setValueB( "search_bar", "case_sensitive", searchBarConfig.caseSensitive );
 	ini.setValueB( "search_bar", "lua_pattern", searchBarConfig.luaPattern );
+	ini.setValueB( "search_bar", "regex", searchBarConfig.regex );
 	ini.setValueB( "search_bar", "whole_word", searchBarConfig.wholeWord );
 	ini.setValueB( "search_bar", "escape_sequence", searchBarConfig.escapeSequence );
 

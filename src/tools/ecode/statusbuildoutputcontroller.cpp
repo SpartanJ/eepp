@@ -41,7 +41,7 @@ UIPushButton* StatusBuildOutputController::getCleanButton( App* app ) {
 bool StatusBuildOutputController::searchFindAndAddStatusResult(
 	const std::vector<PatternHolder>& patterns, const std::string& text,
 	const ProjectBuildCommand* cmd ) {
-	LuaPattern::Range matches[12];
+	PatternMatcher::Range matches[12];
 	for ( const auto& pattern : patterns ) {
 		if ( pattern.pattern.matches( text, matches ) ) {
 			StatusMessage status;

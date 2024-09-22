@@ -40,7 +40,7 @@ class EE_API TextDocument {
 
 	enum class IndentType { IndentSpaces, IndentTabs };
 
-	enum class FindReplaceType { Normal, LuaPattern };
+	enum class FindReplaceType { Normal, LuaPattern, RegEx };
 
 	enum class LoadStatus { Loaded, Interrupted, Failed };
 

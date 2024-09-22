@@ -1,13 +1,35 @@
 #ifndef EE_SYSTEM_REGEX
 #define EE_SYSTEM_REGEX
 
+#include <eepp/core/containers.hpp>
 #include <eepp/system/patternmatcher.hpp>
+#include <eepp/system/singleton.hpp>
 
 namespace EE { namespace System {
 
+class EE_API RegExCache {
+	SINGLETON_DECLARE_HEADERS( RegExCache )
+  public:
+	~RegExCache();
+
+	bool isEnabled() const { return mEnabled; }
+
+	void setEnabled( bool enabled );
+
+	void insert( std::string_view, void* cache );
+
+	void* find( const std::string_view& );
+
+	void clear();
+
+  protected:
+	bool mEnabled{ true };
+	UnorderedMap<String::HashType, void*> mCache;
+};
+
 class EE_API RegEx : public PatternMatcher {
   public:
-	RegEx( const std::string_view& pattern );
+	RegEx( const std::string_view& pattern, bool useCache = true );
 
 	virtual ~RegEx();
 
@@ -29,16 +51,11 @@ class EE_API RegEx : public PatternMatcher {
 	void* mCompiledPattern;
 	int mCaptureCount;
 	bool mValid{ false };
-};
+	bool mCached{ false };
 
-class EE_API RegExStorage : public RegEx {
-  public:
-	RegExStorage( const std::string& pattern );
+	RegEx( const std::string_view& pattern, bool useCache, bool init );
 
-	explicit RegExStorage( std::string&& pattern );
-
-  protected:
-	std::string mPatternStorage;
+	void init( const std::string_view& pattern, bool useCache );
 };
 
 }} // namespace EE::System

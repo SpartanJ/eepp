@@ -8,7 +8,7 @@ void Tokenizer::add( std::string regex, TokenType token ) {
 
 bool Tokenizer::tokenize( const std::string& s ) {
 	tokens.clear();
-	LuaPattern::Range matches[4];
+	PatternMatcher::Range matches[4];
 	size_t i = 0;
 	while ( i < s.size() ) {
 		bool match = false;

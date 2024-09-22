@@ -103,7 +103,7 @@ searchInFileLuaPattern( const std::string& file, const std::string& text, const 
 		String::toLowerInPlace( fileText );
 	}
 
-	LuaPattern::Range matches[12];
+	PatternMatcher::Range matches[12];
 	do {
 		int start, end = 0;
 

@@ -39,6 +39,7 @@ class DocSearchController {
 				 { "mod+s", "change-case" },
 				 { "mod+w", "change-whole-word" },
 				 { "mod+l", "toggle-lua-pattern" },
+				 { "mod+p", "toggle-regex" },
 				 { "mod+e", "change-escape-sequence" },
 				 { "mod+shift+g", "find-prev" },
 				 { "mod+shift+a", "select-all-results" } };
@@ -84,11 +85,13 @@ class DocSearchController {
 	UICheckBox* mCaseSensitiveChk{ nullptr };
 	UICheckBox* mEscapeSequenceChk{ nullptr };
 	UICheckBox* mWholeWordChk{ nullptr };
+	UICheckBox* mRegExChk{ nullptr };
 	UICheckBox* mLuaPatternChk{ nullptr };
 	App* mApp{ nullptr };
 	SearchState mSearchState;
 	String mLastSearch;
 	size_t mSearchingCount{ 0 };
+	bool mValueChanging{ false };
 };
 
 } // namespace ecode

@@ -539,6 +539,7 @@ R"html(
 			</vbox>
 			<vbox lw="wc" lh="wc" margin-right="4dp">
 				<CheckBox id="case_sensitive" lw="wc" lh="wc" text='@string(case_sensitive, "Case sensitive")' selected="false" />
+				<CheckBox id="regex" lw="wc" lh="wc" text='@string(regular_expression, "Regular Expression")' selected="false" />
 				<CheckBox id="lua_pattern" lw="wc" lh="wc" text='@string(lua_pattern, "Lua Pattern")' selected="false" />
 			</vbox>
 			<vbox lw="wc" lh="wc" margin-right="4dp">

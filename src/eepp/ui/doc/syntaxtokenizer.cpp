@@ -187,7 +187,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 		return std::make_pair( std::move( tokens ), SyntaxState{} );
 	}
 
-	LuaPattern::Range matches[12];
+	PatternMatcher::Range matches[12];
 	int start, end;
 	size_t numMatches;
 	size_t i = startIndex;

@@ -3,20 +3,61 @@
 
 namespace EE { namespace System {
 
-RegEx::RegEx( const std::string_view& pattern ) :
+SINGLETON_DECLARE_IMPLEMENTATION( RegExCache )
+
+RegExCache::~RegExCache() {
+	clear();
+}
+
+void RegExCache::insert( std::string_view key, void* cache ) {
+	mCache.insert( { String::hash( key ), cache } );
+}
+
+void* RegExCache::find( const std::string_view& key ) {
+	auto it = mCache.find( String::hash( key ) );
+	return ( it != mCache.end() ) ? it->second : nullptr;
+}
+
+void RegExCache::clear() {
+	for ( auto& cache : mCache )
+		pcre2_code_free( reinterpret_cast<pcre2_code*>( cache.second ) );
+	mCache.clear();
+}
+
+RegEx::RegEx( const std::string_view& pattern, bool useCache, bool initRegEx ) :
 	PatternMatcher( PatternType::PCRE ),
 	mPattern( pattern ),
 	mMatchNum( 0 ),
 	mCompiledPattern( nullptr ),
 	mCaptureCount( 0 ),
 	mValid( true ) {
+	if ( initRegEx )
+		init( pattern, useCache );
+}
+
+RegEx::RegEx( const std::string_view& pattern, bool useCache ) : RegEx( pattern, useCache, true ) {}
+
+RegEx::~RegEx() {
+	if ( !mCached && mCompiledPattern != nullptr ) {
+		pcre2_code_free( reinterpret_cast<pcre2_code*>( mCompiledPattern ) );
+	}
+}
+
+void RegEx::init( const std::string_view& pattern, bool useCache ) {
 	int errornumber;
 	PCRE2_SIZE erroroffset;
 	PCRE2_SPTR pattern_sptr = reinterpret_cast<PCRE2_SPTR>( pattern.data() );
 
+	if ( useCache && RegExCache::instance()->isEnabled() &&
+		 ( mCompiledPattern = RegExCache::instance()->find( pattern ) ) ) {
+		mValid = true;
+		mCached = true;
+		return;
+	}
+
 	mCompiledPattern = pcre2_compile( pattern_sptr,	  // the pattern
 									  pattern.size(), // the length of the pattern
-									  0,			  // default options
+									  PCRE2_UTF,	  // default options
 									  &errornumber,	  // for error number
 									  &erroroffset,	  // for error offset
 									  NULL			  // use default compile context
@@ -31,18 +72,17 @@ RegEx::RegEx( const std::string_view& pattern ) :
 		// 								  reinterpret_cast<const char*>( buffer ) );
 	}
 
+	pcre2_jit_compile( reinterpret_cast<pcre2_code*>( mCompiledPattern ), PCRE2_JIT_COMPLETE );
+
 	int rc = pcre2_pattern_info( reinterpret_cast<pcre2_code*>( mCompiledPattern ),
 								 PCRE2_INFO_CAPTURECOUNT, &mCaptureCount );
 	if ( rc != 0 ) {
 		// 		throw std::runtime_error( "PCRE2 pattern info failed with error code " +
 		// 								  std::to_string( rc ) );
 		mValid = false;
-	}
-}
-
-RegEx::~RegEx() {
-	if ( mCompiledPattern != nullptr ) {
-		pcre2_code_free( reinterpret_cast<pcre2_code*>( mCompiledPattern ) );
+	} else if ( useCache && RegExCache::instance()->isEnabled() ) {
+		RegExCache::instance()->insert( pattern, mCompiledPattern );
+		mCached = true;
 	}
 }
 
@@ -78,11 +118,16 @@ bool RegEx::matches( const char* stringSearch, int stringStartOffset,
 		for ( size_t i = 0; i < static_cast<size_t>( rc ); ++i ) {
 			matchList[i].start = static_cast<int>( ovector[2 * i] );
 			matchList[i].end = static_cast<int>( ovector[2 * i + 1] );
+			if ( matchList[i].start >= matchList[i].end ) {
+				matchList[i].start = matchList[i].end = -1;
+				mMatchNum--;
+				break;
+			}
 		}
 	}
 
 	pcre2_match_data_free( match_data );
-	return true;
+	return mMatchNum > 0;
 }
 
 bool RegEx::matches( const std::string& str, PatternMatcher::Range* matchList,
@@ -92,15 +137,6 @@ bool RegEx::matches( const std::string& str, PatternMatcher::Range* matchList,
 
 const size_t& RegEx::getNumMatches() const {
 	return mMatchNum;
-}
-
-RegExStorage::RegExStorage( const std::string& pattern ) : RegEx( "" ), mPatternStorage( pattern ) {
-	mPattern = std::string_view{ mPatternStorage };
-}
-
-RegExStorage::RegExStorage( std::string&& pattern ) :
-	RegEx( "" ), mPatternStorage( std::move( pattern ) ) {
-	mPattern = std::string_view{ mPatternStorage };
 }
 
 }} // namespace EE::System

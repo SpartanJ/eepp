@@ -6,7 +6,7 @@ using namespace std::literals;
 
 namespace EE { namespace System {
 
-const int MAX_DEFAULT_MATCHES = 12;
+#define MAX_DEFAULT_MATCHES 12
 static bool sFailHandlerInitialized = false;
 
 static void failHandler( const char* msg ) {

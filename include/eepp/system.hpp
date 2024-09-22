@@ -28,6 +28,7 @@
 #include <eepp/system/pak.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/system/rc4.hpp>
+#include <eepp/system/regex.hpp>
 #include <eepp/system/resourceloader.hpp>
 #include <eepp/system/resourcemanager.hpp>
 #include <eepp/system/scopedbuffer.hpp>

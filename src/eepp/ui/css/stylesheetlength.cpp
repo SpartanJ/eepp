@@ -168,7 +168,7 @@ std::string StyleSheetLength::unitToString( const StyleSheetLength::Unit& unit )
 
 bool StyleSheetLength::isLength( const std::string& unitStr ) {
 	LuaPattern ptrn( "(-?%d+[%d%.eE]*)(%w*)" );
-	LuaPattern::Range matches[4];
+	PatternMatcher::Range matches[4];
 	if ( ptrn.matches( unitStr, matches ) ) {
 		if ( matches[2].isValid() ) {
 			std::string unit =
