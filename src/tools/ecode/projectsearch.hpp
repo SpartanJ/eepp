@@ -199,10 +199,15 @@ class ProjectSearch {
 
 		bool isResultFromLuaPattern() const { return mResultFromLuaPattern; }
 
+		void setResultFromRegEx( bool ref ) { mResultFromRegEx = ref; }
+
+		bool isResultFromRegEx() const { return mResultFromRegEx; }
+
 	  protected:
 		Result mResult;
 		bool mResultFromSymbolReference{ false };
 		bool mResultFromLuaPattern{ false };
+		bool mResultFromRegEx{ false };
 	};
 
 	static std::shared_ptr<ResultModel> asModel( const Result& result ) {

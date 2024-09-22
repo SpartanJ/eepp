@@ -19,6 +19,7 @@ class GlobalSearchController {
 			{ "escape", "close-global-searchbar" },
 			{ "mod+s", "change-case" },
 			{ "mod+w", "change-whole-word" },
+			{ "mod+p", "toggle-regex" },
 			{ "mod+l", "toggle-lua-pattern" },
 			{ "mod+r", "search-replace-in-files" },
 			{ "mod+g", "search-again" },
@@ -48,8 +49,8 @@ class GlobalSearchController {
 	void initGlobalSearchTree( UITreeViewGlobalSearch* searchTree );
 
 	void doGlobalSearch( String text, String filter, bool caseSensitive, bool wholeWord,
-						 bool luaPattern, bool escapeSequence, bool searchReplace,
-						 bool searchAgain = false );
+						 TextDocument::FindReplaceType searchType, bool escapeSequence,
+						 bool searchReplace, bool searchAgain = false );
 
 	size_t replaceInFiles( const std::string& replaceText,
 						   std::shared_ptr<ProjectSearch::ResultModel> model );
@@ -86,6 +87,7 @@ class GlobalSearchController {
 		std::shared_ptr<ProjectSearch::ResultModel> result;
 	};
 	std::deque<SearchHistoryItem> mGlobalSearchHistory;
+	bool mValueChanging{ false };
 
 	void onLoadDone( const Variant& lineNum, const Variant& colNum );
 

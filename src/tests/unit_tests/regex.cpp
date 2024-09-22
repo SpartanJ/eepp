@@ -40,14 +40,32 @@ UTEST( RegEx, cacheHit ) {
 	RegExCache::destroySingleton();
 }
 
+UTEST( RegEx, captures ) {
+	RegEx regex( "(\\d+) and (\\d+)" );
+	std::string testStr = "The number is 42 and 23.";
+	PatternMatcher::Range matches[10];
+	regex.matches( testStr, matches );
+	ASSERT_EQ( regex.isValid(), true );
+	ASSERT_EQ( regex.getNumMatches(), 3ul );
+	EXPECT_EQ( matches[0].start, 14 );
+	EXPECT_EQ( matches[0].end, 23 );
+	EXPECT_EQ( matches[1].start, 14 );
+	EXPECT_EQ( matches[1].end, 16 );
+	EXPECT_EQ( matches[2].start, 21 );
+	EXPECT_EQ( matches[2].end, 23 );
+	RegExCache::destroySingleton();
+}
+
 UTEST( RegEx, TextDocument ) {
 	TextDocument doc;
-	doc.textInput( "This number is 42.\nThe number is 69.\n" );
+	doc.textInput( "This number is 42.\nThe number is 23.\n" );
 	auto res = doc.findAll( "\\d+", true, false, TextDocument::FindReplaceType::RegEx );
-	EXPECT_EQ( res.size(), 2ul );
+	ASSERT_EQ( res.size(), 2ul );
 	if ( res.size() == 2ul ) {
 		EXPECT_EQ( res[0].isValid(), true );
+		EXPECT_TRUE( res[0].result == TextRange( { 0, 15 }, { 0, 17 } ) );
 		EXPECT_EQ( res[1].isValid(), true );
+		EXPECT_TRUE( res[1].result == TextRange( { 1, 14 }, { 1, 16 } ) );
 	}
 	RegExCache::destroySingleton();
 }

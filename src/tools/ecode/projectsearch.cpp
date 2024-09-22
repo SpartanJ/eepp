@@ -1,6 +1,7 @@
 #include "projectsearch.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/system/regex.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 // For malloc_trim, which is a GNU extension
@@ -142,6 +143,63 @@ searchInFileLuaPattern( const std::string& file, const std::string& text, const 
 	return results;
 }
 
+static std::vector<ProjectSearch::ResultData::Result> searchInFileRegEx( const std::string& file,
+																		 const std::string& text,
+																		 const bool& caseSensitive,
+																		 const bool& wholeWord ) {
+	std::string fileText;
+	FileSystem::fileGet( file, fileText );
+	RegEx pattern( text );
+	std::vector<ProjectSearch::ResultData::Result> results;
+	Int64 totNl = 0;
+	bool matched = false;
+	Int64 searchRes = 0;
+	std::string fileTextOriginal;
+
+	if ( !caseSensitive ) {
+		fileTextOriginal = fileText;
+		String::toLowerInPlace( fileText );
+	}
+
+	PatternMatcher::Range matches[12];
+	do {
+		int start, end = 0;
+
+		if ( ( matched = pattern.matches( fileText, matches, searchRes ) ) ) {
+			start = matches[0].start;
+			end = matches[0].end;
+
+			if ( wholeWord &&
+				 !String::isWholeWord( fileText, fileText.substr( start, end - start ), start ) ) {
+				searchRes = end;
+				continue;
+			}
+
+			Int64 relCol;
+			totNl += countNewLines( fileText, searchRes, start );
+			String str( textLine( caseSensitive ? fileText : fileTextOriginal, start, relCol ) );
+			int len = end - start;
+			ProjectSearch::ResultData::Result res;
+			res.line = std::move( str );
+			res.position = { { totNl, (Int64)relCol }, { totNl, (Int64)( relCol + len ) } };
+			res.start = start;
+			res.end = end;
+			for ( size_t c = 1; c < 12; c++ ) {
+				if ( matches[c].isValid() ) {
+					res.captures.push_back(
+						fileText.substr( matches[c].start, matches[c].end - matches[c].start ) );
+				} else {
+					break;
+				}
+			}
+			results.emplace_back( std::move( res ) );
+			searchRes = end;
+		}
+	} while ( matched );
+
+	return results;
+}
+
 void ProjectSearch::find( const std::vector<std::string> files, const std::string& string,
 						  ResultCb result, bool caseSensitive, bool wholeWord,
 						  const TextDocument::FindReplaceType& type,
@@ -168,9 +226,12 @@ void ProjectSearch::find( const std::vector<std::string> files, const std::strin
 		if ( skip )
 			continue;
 
-		auto fileRes = type == TextDocument::FindReplaceType::Normal
-						   ? searchInFileHorspool( file, string, caseSensitive, wholeWord, occ )
-						   : searchInFileLuaPattern( file, string, caseSensitive, wholeWord );
+		auto fileRes =
+			type == TextDocument::FindReplaceType::Normal
+				? searchInFileHorspool( file, string, caseSensitive, wholeWord, occ )
+				: ( type == TextDocument::FindReplaceType::LuaPattern
+						? searchInFileLuaPattern( file, string, caseSensitive, wholeWord )
+						: searchInFileRegEx( file, string, caseSensitive, wholeWord ) );
 		if ( !fileRes.empty() )
 			res.push_back( { file, fileRes } );
 	}
@@ -306,11 +367,14 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 			} else {
 				pool->run(
 					[findData, file, string, caseSensitive, wholeWord, occ, type] {
-						auto fileRes =
-							type == TextDocument::FindReplaceType::Normal
-								? searchInFileHorspool( file, string, caseSensitive, wholeWord,
-														occ )
-								: searchInFileLuaPattern( file, string, caseSensitive, wholeWord );
+						auto fileRes = type == TextDocument::FindReplaceType::Normal
+										   ? searchInFileHorspool( file, string, caseSensitive,
+																   wholeWord, occ )
+										   : ( type == TextDocument::FindReplaceType::LuaPattern
+												   ? searchInFileLuaPattern(
+														 file, string, caseSensitive, wholeWord )
+												   : searchInFileRegEx( file, string, caseSensitive,
+																		wholeWord ) );
 						if ( !fileRes.empty() ) {
 							Lock l( findData->resMutex );
 							findData->res.push_back( { std::move( file ), std::move( fileRes ) } );

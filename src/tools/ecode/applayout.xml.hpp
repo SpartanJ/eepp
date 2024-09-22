@@ -529,24 +529,24 @@ R"html(
 			</RelativeLayout>
 		</Splitter>
 		<searchbar id="search_bar" lw="mp" lh="wc">
-			<vbox lw="wc" lh="wc" margin-right="4dp">
+			<vbox lw="wc" lh="wc" margin-right="4dp" layout-gravity="center">
 				<TextView lw="wc" lh="18dp" text='@string("find_text", "Find:")' margin-bottom="2dp" />
 				<TextView lw="wc" lh="18dp" text='@string("replace_with_text", "Replace with:")' />
 			</vbox>
-			<vbox lw="0" lw8="1" lh="wc" margin-right="4dp">
+			<vbox lw="0" lw8="1" lh="wc" margin-right="4dp" layout-gravity="center">
 				<TextInput id="search_find" lw="mp" lh="18dp" padding="0" margin-bottom="2dp" />
 				<TextInput id="search_replace" lw="mp" lh="18dp" padding="0" />
 			</vbox>
-			<vbox lw="wc" lh="wc" margin-right="4dp">
+			<vbox lw="wc" lh="wc" margin-right="4dp" layout-gravity="center">
 				<CheckBox id="case_sensitive" lw="wc" lh="wc" text='@string(case_sensitive, "Case sensitive")' selected="false" />
 				<CheckBox id="regex" lw="wc" lh="wc" text='@string(regular_expression, "Regular Expression")' selected="false" />
 				<CheckBox id="lua_pattern" lw="wc" lh="wc" text='@string(lua_pattern, "Lua Pattern")' selected="false" />
 			</vbox>
-			<vbox lw="wc" lh="wc" margin-right="4dp">
+			<vbox lw="wc" lh="wc" margin-right="4dp" layout-gravity="center">
 				<CheckBox id="whole_word" lw="wc" lh="wc" text='@string(match_whole_word, "Match Whole Word")' selected="false" />
 				<CheckBox id="escape_sequence" lw="wc" lh="wc" text='@string(use_escape_sequences, "Use escape sequences")' selected="false" tooltip='@string(escape_sequence_tooltip, "Replace \\, \\t, \\n, \\r and \\uXXXX (Unicode characters) with the corresponding control")' />
 			</vbox>
-			<vbox lw="wc" lh="wc">
+			<vbox lw="wc" lh="wc" layout-gravity="center">
 				<hbox lw="wc" lh="wc" margin-bottom="2dp">
 					<PushButton id="find_prev" lw="wc" lh="18dp" text='@string(previous, "Previous")' margin-right="4dp" />
 					<PushButton id="find_next" lw="wc" lh="18dp" text='@string(next, "Next")' margin-right="4dp" />"
@@ -582,6 +582,7 @@ R"html(
 					<StackLayout lw="mp" lh="wc" margin-bottom="2dp">
 						<CheckBox id="case_sensitive" text='@string(case_sensitive, "Case sensitive")' selected="true" margin-right="8dp" />
 						<CheckBox id="whole_word" text='@string(match_whole_word, "Match Whole Word")' selected="false" margin-right="8dp" />
+						<CheckBox id="regex" text='@string(regular_expression, "Regular Expression")' selected="false" margin-right="8dp" />
 						<CheckBox id="lua_pattern" text='@string(lua_pattern, "Lua Pattern")' selected="false" margin-right="8dp" />
 						<CheckBox id="escape_sequence" text='@string(use_escape_sequences, "Use escape sequences")' margin-right="8dp" selected="false"
 								  tooltip='@string(escape_sequence_tooltip, "Replace \\, \t, \n, \r and \uXXXX (Unicode characters) with the corresponding control")' />
