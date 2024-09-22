@@ -12,9 +12,9 @@ UITerminal* TerminalManager::createTerminalInSplitter( const std::string& workin
 													   bool fallback ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	std::string os = Sys::getOSName( true );
-	if ( !LuaPattern::matches( os, "Windows 1%d"sv ) &&
-		 !LuaPattern::matches( os, "Windows Server 201[69]"sv ) &&
-		 !LuaPattern::matches( os, "Windows Server 202%d"sv ) )
+	if ( !LuaPattern::hasMatches( os, "Windows 1%d"sv ) &&
+		 !LuaPattern::hasMatches( os, "Windows Server 201[69]"sv ) &&
+		 !LuaPattern::hasMatches( os, "Windows Server 202%d"sv ) )
 		return nullptr;
 #endif
 

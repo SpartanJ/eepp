@@ -1,5 +1,5 @@
-#include "globalsearchcontroller.hpp"
 #include "ecode.hpp"
+#include "globalsearchcontroller.hpp"
 #include "uitreeviewglobalsearch.hpp"
 
 namespace ecode {
@@ -63,7 +63,7 @@ size_t GlobalSearchController::replaceInFiles( const std::string& replaceText,
 
 	const ProjectSearch::Result& res = model->getResult();
 	bool hasCaptures =
-		model->isResultFromLuaPattern() && LuaPattern::find( replaceText, "$%d+" ).isValid();
+		model->isResultFromLuaPattern() && LuaPattern::hasMatches( replaceText, "$%d+" );
 
 	if ( hasCaptures ) {
 		for ( const auto& fileResult : res ) {

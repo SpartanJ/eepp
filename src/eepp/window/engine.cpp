@@ -396,7 +396,7 @@ bool Engine::openURI( const std::string& url ) {
 	if ( nullptr == getPlatformHelper() )
 		return false;
 
-	if ( !LuaPattern::matches( url, "^%w+://" ) )
+	if ( !LuaPattern::hasMatches( url, "^%w+://" ) )
 		return openURI( "file://" + url );
 
 	if ( String::startsWith( url, "file://" ) ) {

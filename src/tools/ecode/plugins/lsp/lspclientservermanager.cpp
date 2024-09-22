@@ -28,7 +28,7 @@ LSPClientServerManager::supportsLSP( const std::shared_ptr<TextDocument>& doc ) 
 
 	for ( auto& lsp : mLSPs ) {
 		for ( auto& ext : lsp.filePatterns ) {
-			if ( LuaPattern::find( fileName, ext ).isValid() ) {
+			if ( LuaPattern::hasMatches( fileName, ext ) ) {
 				lsps.push_back( lsp );
 				break;
 			}

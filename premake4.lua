@@ -952,6 +952,8 @@ function build_eepp( build_name )
 		"src/thirdparty/pcre2/src"
 	}
 
+	defines { "PCRE2_CODE_UNIT_WIDTH=8" }
+
 	if not _OPTIONS["without-mojoal"] then
 		defines( "AL_LIBTYPE_STATIC" )
 		includedirs { "src/thirdparty/mojoAL" }
@@ -1134,6 +1136,8 @@ solution "eepp"
 		defines { "HAVE_CONFIG_H", "PCRE2_STATIC", "PCRE2_CODE_UNIT_WIDTH=8" }
 		files {
 			'src/thirdparty/pcre2/src/pcre2_auto_possess.c',
+			'src/thirdparty/pcre2/src/pcre2_chartables.c',
+			'src/thirdparty/pcre2/src/pcre2_chkdint.c',
 			'src/thirdparty/pcre2/src/pcre2_compile.c',
 			'src/thirdparty/pcre2/src/pcre2_config.c',
 			'src/thirdparty/pcre2/src/pcre2_context.c',

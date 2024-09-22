@@ -59,12 +59,12 @@ Time Time::fromString( const std::string& str ) {
 }
 
 std::string Time::toString() const {
-	Uint64 totalSeconds = asSeconds();
+	double totalSeconds = asSeconds();
 
-	if ( asSeconds() < 1 ) {
+	if ( totalSeconds < 1 ) {
 		return String::fromFloat( asMilliseconds(), "ms" );
 	} else if ( totalSeconds < 60 ) {
-		return String::format( "%lus", static_cast<unsigned long>( totalSeconds ) );
+		return String::fromFloat( totalSeconds, "s" );
 	}
 
 	long minutesLeft = totalSeconds / 60;

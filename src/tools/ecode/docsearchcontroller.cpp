@@ -392,7 +392,7 @@ void DocSearchController::findAndReplace( SearchState& search, const String& rep
 	if ( doc.hasSelection() &&
 		 ( doc.getSelectedText() == txt ||
 		   ( search.type == TextDocument::FindReplaceType::LuaPattern &&
-			 LuaPattern::matches( doc.getAllSelectedText().toUtf8(), txt.toUtf8() ) ) ) ) {
+			 LuaPattern::hasMatches( doc.getAllSelectedText().toUtf8(), txt.toUtf8() ) ) ) ) {
 		replaceSelection( search, repl );
 	} else {
 		findNextText( search );

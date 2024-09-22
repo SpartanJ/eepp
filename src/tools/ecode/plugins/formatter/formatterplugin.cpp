@@ -496,7 +496,7 @@ FormatterPlugin::Formatter FormatterPlugin::supportsFormatter( std::shared_ptr<T
 
 	for ( const auto& formatter : mFormatters ) {
 		for ( const auto& ext : formatter.files ) {
-			if ( LuaPattern::matches( fileName, ext ) )
+			if ( LuaPattern::hasMatches( fileName, ext ) )
 				return formatter;
 			auto& files = def.getFiles();
 			if ( std::find( files.begin(), files.end(), ext ) != files.end() )
