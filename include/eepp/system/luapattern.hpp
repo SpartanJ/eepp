@@ -33,6 +33,8 @@ class EE_API LuaPattern : public PatternMatcher {
 
 	const std::string_view& getPattern() const { return mPattern; }
 
+	virtual bool isValid() const { return true; }
+
   protected:
 	std::string_view mPattern;
 	mutable size_t mMatchNum;

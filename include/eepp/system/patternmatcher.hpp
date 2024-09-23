@@ -128,6 +128,8 @@ class EE_API PatternMatcher {
 
 	virtual const size_t& getNumMatches() const = 0;
 
+	virtual bool isValid() const = 0;
+
   protected:
 	PatternType mType;
 };

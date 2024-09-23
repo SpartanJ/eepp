@@ -64,7 +64,7 @@ class EE_API RegEx : public PatternMatcher {
 
 	virtual ~RegEx();
 
-	bool isValid() const { return mValid; }
+	virtual bool isValid() const override { return mValid; }
 
 	virtual bool matches( const char* stringSearch, int stringStartOffset,
 						  PatternMatcher::Range* matchList, size_t stringLength ) const override;

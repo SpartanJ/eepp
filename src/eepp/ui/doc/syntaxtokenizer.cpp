@@ -1,7 +1,9 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/system/regex.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/syntaxtokenizer.hpp>
+#include <variant>
 
 using namespace EE::System;
 
@@ -84,7 +86,8 @@ static void pushToken( std::vector<T>& tokens, const SyntaxStyleType& type,
 	}
 }
 
-bool isScaped( const std::string& text, const size_t& startIndex, const std::string& escapeStr ) {
+static bool isScaped( const std::string& text, const size_t& startIndex,
+					  const std::string& escapeStr ) {
 	char escapeByte = escapeStr.empty() ? '\\' : escapeStr[0];
 	int count = 0;
 	for ( int i = startIndex - 1; i >= 0; i-- ) {
@@ -95,12 +98,17 @@ bool isScaped( const std::string& text, const size_t& startIndex, const std::str
 	return count % 2 == 1;
 }
 
-std::pair<int, int> findNonEscaped( const std::string& text, const std::string& pattern, int offset,
-									const std::string& escapeStr ) {
+static std::pair<int, int> findNonEscaped( const std::string& text, const std::string& pattern,
+										   int offset, const std::string& escapeStr,
+										   bool isRegEx ) {
 	eeASSERT( !pattern.empty() );
 	if ( pattern.empty() )
 		return std::make_pair( -1, -1 );
-	LuaPattern words( pattern );
+	std::variant<RegEx, LuaPattern> wordsVar =
+		isRegEx ? std::variant<RegEx, LuaPattern>( RegEx( pattern ) )
+				: std::variant<RegEx, LuaPattern>( LuaPattern( pattern ) );
+	PatternMatcher& words =
+		std::visit( []( auto& patternType ) -> PatternMatcher& { return patternType; }, wordsVar );
 	int start, end;
 	while ( words.find( text, start, end, offset ) ) {
 		if ( !escapeStr.empty() && isScaped( text, start, escapeStr ) ) {
@@ -202,9 +210,9 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 		if ( curState.currentPatternIdx != SYNTAX_TOKENIZER_STATE_NONE ) {
 			const SyntaxPattern& pattern =
 				curState.currentSyntax->getPatterns()[curState.currentPatternIdx - 1];
-			std::pair<int, int> range =
-				findNonEscaped( text, pattern.patterns[1], i,
-								pattern.patterns.size() >= 3 ? pattern.patterns[2] : "" );
+			std::pair<int, int> range = findNonEscaped(
+				text, pattern.patterns[1], i,
+				pattern.patterns.size() >= 3 ? pattern.patterns[2] : "", pattern.isRegEx );
 
 			bool skip = false;
 
@@ -213,7 +221,8 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 					findNonEscaped( text, curState.subsyntaxInfo->patterns[1], i,
 									curState.subsyntaxInfo->patterns.size() >= 3
 										? curState.subsyntaxInfo->patterns[2]
-										: "" );
+										: "",
+									pattern.isRegEx );
 
 				if ( rangeSubsyntax.first != -1 &&
 					 ( range.first == -1 || rangeSubsyntax.first < range.first ) ) {
@@ -249,7 +258,8 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 			std::pair<int, int> rangeSubsyntax = findNonEscaped(
 				text, "^" + curState.subsyntaxInfo->patterns[1], i,
 				curState.subsyntaxInfo->patterns.size() >= 3 ? curState.subsyntaxInfo->patterns[2]
-															 : "" );
+															 : "",
+				curState.subsyntaxInfo->isRegEx );
 
 			if ( rangeSubsyntax.first != -1 ) {
 				if ( !skipSubSyntaxSeparator ) {
@@ -270,7 +280,13 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 				continue;
 			patternStr =
 				pattern.patterns[0][0] == '^' ? pattern.patterns[0] : "^" + pattern.patterns[0];
-			LuaPattern words( patternStr );
+			std::variant<RegEx, LuaPattern> wordsVar =
+				pattern.isRegEx ? std::variant<RegEx, LuaPattern>( RegEx( patternStr ) )
+								: std::variant<RegEx, LuaPattern>( LuaPattern( patternStr ) );
+			PatternMatcher& words = std::visit(
+				[]( auto& patternType ) -> PatternMatcher& { return patternType; }, wordsVar );
+			if ( !words.isValid() ) // Skip invalid patterns
+				continue;
 			if ( words.matches( text, matches, i ) && ( numMatches = words.getNumMatches() ) > 0 ) {
 				if ( numMatches > 1 ) {
 					int patternMatchStart = matches[0].start;
