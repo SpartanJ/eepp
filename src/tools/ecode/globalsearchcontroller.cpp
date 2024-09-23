@@ -62,8 +62,8 @@ size_t GlobalSearchController::replaceInFiles( const std::string& replaceText,
 	}
 
 	const ProjectSearch::Result& res = model->getResult();
-	bool hasCaptures = ( model->isResultFromLuaPattern() || model->isResultFromRegEx() ) &&
-					   LuaPattern::hasMatches( replaceText, "$%d+" );
+	bool hasCaptures =
+		model->isResultFromPatternMatch() && LuaPattern::hasMatches( replaceText, "$%d+" );
 
 	if ( hasCaptures ) {
 		for ( const auto& fileResult : res ) {
@@ -678,9 +678,7 @@ void GlobalSearchController::doGlobalSearch( String text, String filter, bool ca
 				mUISceneNode->runOnMainThread( [this, loader, res, search, searchReplace,
 												searchAgain, escapeSequence, searchType, filter] {
 					auto model = ProjectSearch::asModel( res );
-					model->setResultFromLuaPattern( searchType ==
-													TextDocument::FindReplaceType::LuaPattern );
-					model->setResultFromRegEx( searchType == TextDocument::FindReplaceType::RegEx );
+					model->setOpType( searchType );
 					updateGlobalSearchHistory( model, search, filter, searchReplace, searchAgain,
 											   escapeSequence );
 					updateGlobalSearchBarResults( search, model, searchReplace, escapeSequence );

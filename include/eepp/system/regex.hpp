@@ -16,9 +16,9 @@ class EE_API RegExCache {
 
 	void setEnabled( bool enabled );
 
-	void insert( std::string_view, void* cache );
+	void insert( std::string_view, Uint32 options, void* cache );
 
-	void* find( const std::string_view& );
+	void* find( const std::string_view&, Uint32 options );
 
 	void clear();
 
@@ -29,7 +29,38 @@ class EE_API RegExCache {
 
 class EE_API RegEx : public PatternMatcher {
   public:
-	RegEx( const std::string_view& pattern, bool useCache = true );
+	enum Options : Uint32 {
+		None = 0x00000000u,
+		AllowEmptyClass = 0x00000001u,	 // C
+		AltBsux = 0x00000002u,			 // C
+		AutoCallout = 0x00000004u,		 // C
+		Caseless = 0x00000008u,			 // C
+		DollarEndonly = 0x00000010u,	 // J M D
+		Dotall = 0x00000020u,			 // C
+		Dupnames = 0x00000040u,			 // C
+		Extended = 0x00000080u,			 // C
+		Firstline = 0x00000100u,		 // J M D
+		MatchUnsetBackref = 0x00000200u, // C J M
+		Multiline = 0x00000400u,		 // C
+		NeverUcp = 0x00000800u,			 // C
+		NeverUtf = 0x00001000u,			 // C
+		NoAutoCapture = 0x00002000u,	 // C
+		NoAutoPossess = 0x00004000u,	 // C
+		NoDotstarAnchor = 0x00008000u,	 // C
+		NoStartOptimize = 0x00010000u,	 // J M D
+		Ucp = 0x00020000u,				 // C J M D
+		Ungreedy = 0x00040000u,			 // C
+		Utf = 0x00080000u,				 // C J M D
+		NeverBackslashC = 0x00100000u,	 // C
+		AltCircumflex = 0x00200000u,	 // J M D
+		AltVerbnames = 0x00400000u,		 // C
+		UseOffsetLimit = 0x00800000u,	 // J M D
+		ExtendedMore = 0x01000000u,		 // C
+		Literal = 0x02000000u,			 // C
+		MatchInvalidUtf = 0x04000000u,	 // J M D
+	};
+
+	RegEx( const std::string_view& pattern, Options options = Options::Utf, bool useCache = true );
 
 	virtual ~RegEx();
 
@@ -52,10 +83,6 @@ class EE_API RegEx : public PatternMatcher {
 	int mCaptureCount;
 	bool mValid{ false };
 	bool mCached{ false };
-
-	RegEx( const std::string_view& pattern, bool useCache, bool init );
-
-	void init( const std::string_view& pattern, bool useCache );
 };
 
 }} // namespace EE::System

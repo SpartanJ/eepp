@@ -9,12 +9,12 @@ RegExCache::~RegExCache() {
 	clear();
 }
 
-void RegExCache::insert( std::string_view key, void* cache ) {
-	mCache.insert( { String::hash( key ), cache } );
+void RegExCache::insert( std::string_view key, Uint32 options, void* cache ) {
+	mCache.insert( { hashCombine( String::hash( key ), options ), cache } );
 }
 
-void* RegExCache::find( const std::string_view& key ) {
-	auto it = mCache.find( String::hash( key ) );
+void* RegExCache::find( const std::string_view& key, Uint32 options ) {
+	auto it = mCache.find( hashCombine( String::hash( key ), options ) );
 	return ( it != mCache.end() ) ? it->second : nullptr;
 }
 
@@ -24,32 +24,19 @@ void RegExCache::clear() {
 	mCache.clear();
 }
 
-RegEx::RegEx( const std::string_view& pattern, bool useCache, bool initRegEx ) :
+RegEx::RegEx( const std::string_view& pattern, Options options, bool useCache ) :
 	PatternMatcher( PatternType::PCRE ),
 	mPattern( pattern ),
 	mMatchNum( 0 ),
 	mCompiledPattern( nullptr ),
 	mCaptureCount( 0 ),
 	mValid( true ) {
-	if ( initRegEx )
-		init( pattern, useCache );
-}
-
-RegEx::RegEx( const std::string_view& pattern, bool useCache ) : RegEx( pattern, useCache, true ) {}
-
-RegEx::~RegEx() {
-	if ( !mCached && mCompiledPattern != nullptr ) {
-		pcre2_code_free( reinterpret_cast<pcre2_code*>( mCompiledPattern ) );
-	}
-}
-
-void RegEx::init( const std::string_view& pattern, bool useCache ) {
 	int errornumber;
 	PCRE2_SIZE erroroffset;
 	PCRE2_SPTR pattern_sptr = reinterpret_cast<PCRE2_SPTR>( pattern.data() );
 
 	if ( useCache && RegExCache::instance()->isEnabled() &&
-		 ( mCompiledPattern = RegExCache::instance()->find( pattern ) ) ) {
+		 ( mCompiledPattern = RegExCache::instance()->find( pattern, options ) ) ) {
 		mValid = true;
 		mCached = true;
 		return;
@@ -57,7 +44,7 @@ void RegEx::init( const std::string_view& pattern, bool useCache ) {
 
 	mCompiledPattern = pcre2_compile( pattern_sptr,	  // the pattern
 									  pattern.size(), // the length of the pattern
-									  PCRE2_UTF,	  // default options
+									  options,		  // default options
 									  &errornumber,	  // for error number
 									  &erroroffset,	  // for error offset
 									  NULL			  // use default compile context
@@ -81,8 +68,14 @@ void RegEx::init( const std::string_view& pattern, bool useCache ) {
 		// 								  std::to_string( rc ) );
 		mValid = false;
 	} else if ( useCache && RegExCache::instance()->isEnabled() ) {
-		RegExCache::instance()->insert( pattern, mCompiledPattern );
+		RegExCache::instance()->insert( pattern, options, mCompiledPattern );
 		mCached = true;
+	}
+}
+
+RegEx::~RegEx() {
+	if ( !mCached && mCompiledPattern != nullptr ) {
+		pcre2_code_free( reinterpret_cast<pcre2_code*>( mCompiledPattern ) );
 	}
 }
 

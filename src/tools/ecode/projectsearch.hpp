@@ -195,16 +195,15 @@ class ProjectSearch {
 
 		bool isResultFromSymbolReference() const { return mResultFromSymbolReference; }
 
-		void setResultFromLuaPattern( bool ref ) { mResultFromLuaPattern = ref; }
+		void setOpType( TextDocument::FindReplaceType opType ) { mOpType = opType; }
 
-		bool isResultFromLuaPattern() const { return mResultFromLuaPattern; }
-
-		void setResultFromRegEx( bool ref ) { mResultFromRegEx = ref; }
-
-		bool isResultFromRegEx() const { return mResultFromRegEx; }
+		bool isResultFromPatternMatch() const {
+			return mOpType != TextDocument::FindReplaceType::Normal;
+		}
 
 	  protected:
 		Result mResult;
+		TextDocument::FindReplaceType mOpType{ TextDocument::FindReplaceType::Normal };
 		bool mResultFromSymbolReference{ false };
 		bool mResultFromLuaPattern{ false };
 		bool mResultFromRegEx{ false };

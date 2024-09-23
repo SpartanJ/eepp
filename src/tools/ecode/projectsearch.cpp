@@ -88,11 +88,10 @@ searchInFileHorspool( const std::string& file, const std::string& text, const bo
 }
 
 static std::vector<ProjectSearch::ResultData::Result>
-searchInFileLuaPattern( const std::string& file, const std::string& text, const bool& caseSensitive,
-						const bool& wholeWord ) {
+searchInFilePatternMatch( const std::string& file, PatternMatcher& pattern,
+						  const bool& caseSensitive, const bool& wholeWord ) {
 	std::string fileText;
 	FileSystem::fileGet( file, fileText );
-	LuaPattern pattern( text );
 	std::vector<ProjectSearch::ResultData::Result> results;
 	Int64 totNl = 0;
 	bool matched = false;
@@ -143,61 +142,21 @@ searchInFileLuaPattern( const std::string& file, const std::string& text, const 
 	return results;
 }
 
+static std::vector<ProjectSearch::ResultData::Result>
+searchInFileLuaPattern( const std::string& file, const std::string& text, const bool& caseSensitive,
+						const bool& wholeWord ) {
+	LuaPattern pattern( text );
+	return searchInFilePatternMatch( file, pattern, caseSensitive, wholeWord );
+}
+
 static std::vector<ProjectSearch::ResultData::Result> searchInFileRegEx( const std::string& file,
 																		 const std::string& text,
 																		 const bool& caseSensitive,
 																		 const bool& wholeWord ) {
-	std::string fileText;
-	FileSystem::fileGet( file, fileText );
-	RegEx pattern( text );
-	std::vector<ProjectSearch::ResultData::Result> results;
-	Int64 totNl = 0;
-	bool matched = false;
-	Int64 searchRes = 0;
-	std::string fileTextOriginal;
-
-	if ( !caseSensitive ) {
-		fileTextOriginal = fileText;
-		String::toLowerInPlace( fileText );
-	}
-
-	PatternMatcher::Range matches[12];
-	do {
-		int start, end = 0;
-
-		if ( ( matched = pattern.matches( fileText, matches, searchRes ) ) ) {
-			start = matches[0].start;
-			end = matches[0].end;
-
-			if ( wholeWord &&
-				 !String::isWholeWord( fileText, fileText.substr( start, end - start ), start ) ) {
-				searchRes = end;
-				continue;
-			}
-
-			Int64 relCol;
-			totNl += countNewLines( fileText, searchRes, start );
-			String str( textLine( caseSensitive ? fileText : fileTextOriginal, start, relCol ) );
-			int len = end - start;
-			ProjectSearch::ResultData::Result res;
-			res.line = std::move( str );
-			res.position = { { totNl, (Int64)relCol }, { totNl, (Int64)( relCol + len ) } };
-			res.start = start;
-			res.end = end;
-			for ( size_t c = 1; c < 12; c++ ) {
-				if ( matches[c].isValid() ) {
-					res.captures.push_back(
-						fileText.substr( matches[c].start, matches[c].end - matches[c].start ) );
-				} else {
-					break;
-				}
-			}
-			results.emplace_back( std::move( res ) );
-			searchRes = end;
-		}
-	} while ( matched );
-
-	return results;
+	RegEx pattern( text, static_cast<RegEx::Options>( RegEx::Options::Utf |
+													  ( !caseSensitive ? RegEx::Options::Caseless
+																	   : RegEx::Options::None ) ) );
+	return searchInFilePatternMatch( file, pattern, caseSensitive, wholeWord );
 }
 
 void ProjectSearch::find( const std::vector<std::string> files, const std::string& string,

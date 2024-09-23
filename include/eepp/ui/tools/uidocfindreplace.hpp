@@ -15,15 +15,11 @@ namespace EE { namespace UI { namespace Tools {
 class EE_API UIDocFindReplace : public UILinearLayout, public WidgetCommandExecuter {
   public:
 	static std::unordered_map<std::string, std::string> getDefaultKeybindings() {
-		return { { "mod+g", "repeat-find" },
-				 { "escape", "close-find-replace" },
-				 { "mod+r", "replace-selection" },
-				 { "mod+shift+n", "find-and-replace" },
-				 { "mod+shift+r", "replace-all" },
-				 { "mod+s", "change-case" },
-				 { "mod+w", "change-whole-word" },
-				 { "mod+l", "toggle-lua-pattern" },
-				 { "mod+e", "change-escape-sequence" },
+		return { { "mod+g", "repeat-find" },		{ "escape", "close-find-replace" },
+				 { "mod+r", "replace-selection" },	{ "mod+shift+n", "find-and-replace" },
+				 { "mod+shift+r", "replace-all" },	{ "mod+s", "change-case" },
+				 { "mod+w", "change-whole-word" },	{ "mod+p", "toggle-regex" },
+				 { "mod+l", "toggle-lua-pattern" }, { "mod+e", "change-escape-sequence" },
 				 { "mod+shift+g", "find-prev" } };
 	}
 
@@ -46,18 +42,19 @@ class EE_API UIDocFindReplace : public UILinearLayout, public WidgetCommandExecu
   protected:
 	bool mReady{ false };
 	bool mReplaceDisabled{ false };
+	bool mChangingPattern{ false };
 	UIWidget* mFindReplaceToggle{ nullptr };
 	UITextInput* mFindInput{ nullptr };
 	UITextInput* mReplaceInput{ nullptr };
 	UISelectButton* mCaseSensitive{ nullptr };
 	UISelectButton* mLuaPattern{ nullptr };
+	UISelectButton* mRegEx{ nullptr };
 	UISelectButton* mWholeWord{ nullptr };
 	UISelectButton* mEscapeSequences{ nullptr };
 	UIWidget* mToggle{ nullptr };
 	UIWidget* mReplaceBox{ nullptr };
 	std::shared_ptr<Doc::TextDocument> mDoc;
 	std::vector<std::unique_ptr<UIDataBind<bool>>> mDataBinds;
-	std::unique_ptr<UIDataBind<TextDocument::FindReplaceType>> mPatternBind;
 
 	UIDocFindReplace(
 		UIWidget* parent, const std::shared_ptr<Doc::TextDocument>& doc,

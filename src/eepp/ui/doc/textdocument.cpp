@@ -2433,10 +2433,14 @@ struct FindTypeResult {
 };
 
 static FindTypeResult findType( const String& str, const String& findStr,
-								const TextDocument::FindReplaceType& type, int colOffset ) {
+								const TextDocument::FindReplaceType& type, int colOffset,
+								bool caseSensitive ) {
 	switch ( type ) {
 		case TextDocument::FindReplaceType::RegEx: {
-			RegEx words( findStr.toUtf8() );
+			RegEx words( findStr.toUtf8(),
+						 static_cast<RegEx::Options>( RegEx::Options::Utf |
+													  ( !caseSensitive ? RegEx::Options::Caseless
+																	   : RegEx::Options::None ) ) );
 			if ( !words.isValid() )
 				return { String::StringType::npos, String::StringType::npos };
 			RegEx::Range matches[MAX_CAPTURES];
@@ -2484,11 +2488,15 @@ static FindTypeResult findType( const String& str, const String& findStr,
 }
 
 static FindTypeResult findLastType( const String& str, const String& findStr,
-									const TextDocument::FindReplaceType& type ) {
+									const TextDocument::FindReplaceType& type,
+									bool caseSensitive ) {
 	switch ( type ) {
 		case TextDocument::FindReplaceType::RegEx: {
 			// TODO: Implement findLastType for Lua patterns
-			RegEx words( findStr.toUtf8() );
+			RegEx words( findStr.toUtf8(),
+						 static_cast<RegEx::Options>( RegEx::Options::Utf |
+													  ( !caseSensitive ? RegEx::Options::Caseless
+																	   : RegEx::Options::None ) ) );
 			if ( !words.isValid() )
 				return { String::StringType::npos, String::StringType::npos };
 			RegEx::Range matches[MAX_CAPTURES];
@@ -2567,6 +2575,7 @@ TextDocument::SearchResult TextDocument::findText( String text, TextPosition fro
 			return TextDocument::SearchResult{};
 	}
 
+	bool realCaseSensitive = caseSensitive;
 	if ( ( type == FindReplaceType::LuaPattern || type == FindReplaceType::RegEx ) &&
 		 caseSensitive == false ) {
 		caseSensitive =
@@ -2584,24 +2593,26 @@ TextDocument::SearchResult TextDocument::findText( String text, TextPosition fro
 															  from.line() == to.line()
 																  ? to.column() - from.column()
 																  : String::InvalidPos ),
-								  text, type, from.column() )
+								  text, type, from.column(), realCaseSensitive )
 					  : findType( String::toLower( line( i ).getText() )
 									  .substr( from.column(), from.line() == to.line()
 																  ? to.column() - from.column()
 																  : String::InvalidPos ),
-								  text, type, from.column() );
+								  text, type, from.column(), realCaseSensitive );
 			if ( String::StringType::npos != col.start ) {
 				col.start += from.column();
 				col.end += from.column();
 			}
 		} else if ( i == to.line() && to != endOfDoc() ) {
 			col = caseSensitive
-					  ? findType( line( i ).getText().substr( 0, to.column() ), text, type, 0 )
+					  ? findType( line( i ).getText().substr( 0, to.column() ), text, type, 0,
+								  realCaseSensitive )
 					  : findType( String::toLower( line( i ).getText() ).substr( 0, to.column() ),
-								  text, type, 0 );
+								  text, type, 0, realCaseSensitive );
 		} else {
-			col = caseSensitive ? findType( line( i ).getText(), text, type, 0 )
-								: findType( String::toLower( line( i ).getText() ), text, type, 0 );
+			col = caseSensitive ? findType( line( i ).getText(), text, type, 0, realCaseSensitive )
+								: findType( String::toLower( line( i ).getText() ), text, type, 0,
+											realCaseSensitive );
 		}
 		if ( String::StringType::npos != col.start &&
 			 ( !wholeWord || String::isWholeWord( line( i ).getText(), text, col.start ) ) ) {
@@ -2627,6 +2638,7 @@ TextDocument::SearchResult TextDocument::findTextLast( String text, TextPosition
 			return TextDocument::SearchResult{};
 	}
 
+	bool realCaseSensitive = caseSensitive;
 	if ( ( type == FindReplaceType::LuaPattern || type == FindReplaceType::RegEx ) &&
 		 caseSensitive == false ) {
 		caseSensitive =
@@ -2643,24 +2655,25 @@ TextDocument::SearchResult TextDocument::findTextLast( String text, TextPosition
 				caseSensitive
 					? findLastType( line( i ).getText().substr(
 										from.line() == to.line() ? to.column() : 0, from.column() ),
-									text, type )
+									text, type, realCaseSensitive )
 					: findLastType(
 						  String::toLower( line( i ).getText().substr(
 							  from.line() == to.line() ? to.column() : 0, from.column() ) ),
-						  text, type );
+						  text, type, realCaseSensitive );
 		} else if ( i == to.line() ) {
 			res = caseSensitive
-					  ? findLastType( line( i ).getText().substr( to.column() ), text, type )
+					  ? findLastType( line( i ).getText().substr( to.column() ), text, type,
+									  realCaseSensitive )
 					  : findLastType( String::toLower( line( i ).getText().substr( to.column() ) ),
-									  text, type );
+									  text, type, realCaseSensitive );
 			if ( String::StringType::npos != res.start ) {
 				res.start += to.column();
 				res.end += to.column();
 			}
 		} else {
-			res = caseSensitive
-					  ? findLastType( line( i ).getText(), text, type )
-					  : findLastType( String::toLower( line( i ).getText() ), text, type );
+			res = caseSensitive ? findLastType( line( i ).getText(), text, type, realCaseSensitive )
+								: findLastType( String::toLower( line( i ).getText() ), text, type,
+												realCaseSensitive );
 		}
 		if ( String::StringType::npos != res.start &&
 			 ( !wholeWord || String::isWholeWord( line( i ).getText(), text, res.start ) ) ) {
