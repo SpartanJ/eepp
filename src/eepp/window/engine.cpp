@@ -14,6 +14,7 @@
 #include <eepp/system/inifile.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/regex.hpp>
 #include <eepp/system/thread.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
@@ -106,6 +107,8 @@ Engine::~Engine() {
 	eeSAFE_DELETE( mDisplayManager );
 
 	eeSAFE_DELETE( mBackend );
+
+	RegExCache::destroySingleton();
 
 	Log::destroySingleton();
 }
@@ -396,7 +399,7 @@ bool Engine::openURI( const std::string& url ) {
 	if ( nullptr == getPlatformHelper() )
 		return false;
 
-	if ( !LuaPattern::matches( url, "^%w+://" ) )
+	if ( !LuaPattern::hasMatches( url, "^%w+://" ) )
 		return openURI( "file://" + url );
 
 	if ( String::startsWith( url, "file://" ) ) {

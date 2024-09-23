@@ -1335,7 +1335,7 @@ Linter LinterPlugin::supportsLinter( std::shared_ptr<TextDocument> doc ) {
 
 	for ( auto& linter : mLinters ) {
 		for ( auto& ext : linter.files ) {
-			if ( LuaPattern::find( fileName, ext ).isValid() )
+			if ( LuaPattern::hasMatches( fileName, ext ) )
 				return linter;
 			auto& files = def.getFiles();
 			if ( std::find( files.begin(), files.end(), ext ) != files.end() ) {

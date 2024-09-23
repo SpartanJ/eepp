@@ -672,9 +672,9 @@ void AutoCompletePlugin::tryStartSnippetNav( const Suggestion& suggestion, UICod
 bool AutoCompletePlugin::hasCompleteSteps( const Suggestion& suggestion ) {
 	if ( suggestion.kind != LSPCompletionItemKind::Snippet )
 		return false;
-	if ( LuaPattern::matches( suggestion.insertText, SNIPPET_PTRN1 ) ||
-		 LuaPattern::matches( suggestion.insertText, SNIPPET_PTRN2 ) ||
-		 LuaPattern::matches( suggestion.insertText, SNIPPET_PTRN3 ) ) {
+	if ( LuaPattern::hasMatches( suggestion.insertText, SNIPPET_PTRN1 ) ||
+		 LuaPattern::hasMatches( suggestion.insertText, SNIPPET_PTRN2 ) ||
+		 LuaPattern::hasMatches( suggestion.insertText, SNIPPET_PTRN3 ) ) {
 		return true;
 	}
 	return false;

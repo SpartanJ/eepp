@@ -934,7 +934,7 @@ static bool isPath( const std::string& file ) {
 	bool ret = !file.empty() && file[0] == '/';
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	if ( !ret )
-		ret = LuaPattern::matches( file, "%w:[\\/][\\/]" );
+		ret = LuaPattern::hasMatches( file, "%w:[\\/][\\/]" );
 #endif
 	return ret;
 }

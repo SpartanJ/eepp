@@ -831,6 +831,7 @@
 ../../src/eepp/system/pack.cpp
 ../../src/eepp/system/packmanager.cpp
 ../../src/eepp/system/pak.cpp
+../../src/eepp/system/patternmatcher.cpp
 ../../src/eepp/system/platform/platformimpl.hpp
 ../../src/eepp/system/platform/posix/clockimpl.cpp
 ../../src/eepp/system/platform/posix/clockimpl.hpp
@@ -854,6 +855,7 @@
 ../../src/eepp/system/platform/win/threadlocalimpl.hpp
 ../../src/eepp/system/process.cpp
 ../../src/eepp/system/rc4.cpp
+../../src/eepp/system/regex.cpp
 ../../src/eepp/system/resourceloader.cpp
 ../../src/eepp/system/sys.cpp
 ../../src/eepp/system/thread.cpp
@@ -1445,6 +1447,7 @@
 ../../src/tests/test_everything/test.hpp
 ../../src/tests/ui_perf_test/ui_perf_test.cpp
 ../../src/tests/unit_tests/main.cpp
+../../src/tests/unit_tests/regex.cpp
 ../../src/tests/unit_tests/textformat.cpp
 ../../src/tests/unit_tests/utest.h
 ../../src/thirdparty/SOIL2/src/SOIL2/etc1_utils.c

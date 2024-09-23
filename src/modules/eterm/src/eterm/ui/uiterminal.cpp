@@ -535,7 +535,7 @@ void UITerminal::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	if ( mTerm->getTerminal()->hasSelection() ) {
 		auto sel( mTerm->getTerminal()->getSelection() );
 
-		if ( LuaPattern::matches( sel, LuaPattern::getURIPattern() ) ) {
+		if ( LuaPattern::hasMatches( sel, LuaPattern::getURIPattern() ) ) {
 			menuAdd( menu, i18n( "uiterminal_open_link", "Open Link" ), "earth",
 					 "terminal-open-link" );
 		}

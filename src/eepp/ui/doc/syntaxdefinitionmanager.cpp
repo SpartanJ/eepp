@@ -233,10 +233,11 @@ static json toJson( const SyntaxDefinition& def ) {
 		j["patterns"] = json::array();
 		for ( const auto& ptrn : def.getPatterns() ) {
 			json pattern;
+			auto ptrnType = ptrn.isRegEx ? "regex" : "pattern";
 			if ( ptrn.patterns.size() == 1 ) {
-				pattern["pattern"] = ptrn.patterns[0];
+				pattern[ptrnType] = ptrn.patterns[0];
 			} else {
-				pattern["pattern"] = ptrn.patterns;
+				pattern[ptrnType] = ptrn.patterns;
 			}
 			if ( ptrn.typesNames.size() == 1 ) {
 				pattern["type"] = ptrn.typesNames[0];
@@ -352,9 +353,13 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 	buf += join( def.getFiles() ) + ",\n";
 	// patterns
 	buf += "{\n";
-	for ( const auto& pattern : def.getPatterns() )
+	for ( const auto& pattern : def.getPatterns() ) {
 		buf += "{ " + join( pattern.patterns ) + ", " + join( pattern.typesNames, true, true ) +
-			   str( pattern.syntax, ", ", "", false ) + " },\n";
+			   str( pattern.syntax, ", ", "", false );
+		if ( pattern.isRegEx )
+			buf += ", true";
+		buf += " },\n";
+	}
 	buf += "\n},\n";
 	// symbols
 	buf += "{\n";
@@ -521,6 +526,7 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 								  ? ""
 								  : pattern.value( "syntax", "" );
 				std::vector<std::string> ptrns;
+				bool isRegEx = false;
 				if ( pattern.contains( "pattern" ) ) {
 					if ( pattern["pattern"].is_array() ) {
 						const auto& ptrnIt = pattern["pattern"];
@@ -529,8 +535,18 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 					} else if ( pattern["pattern"].is_string() ) {
 						ptrns.emplace_back( pattern["pattern"] );
 					}
+				} else if ( pattern.contains( "regex" ) ) {
+					isRegEx = true;
+					if ( pattern["regex"].is_array() ) {
+						const auto& ptrnIt = pattern["regex"];
+						for ( const auto& ptrn : ptrnIt )
+							ptrns.emplace_back( ptrn );
+					} else if ( pattern["regex"].is_string() ) {
+						ptrns.emplace_back( pattern["regex"] );
+					}
 				}
-				def.addPattern( SyntaxPattern( std::move( ptrns ), std::move( type ), syntax ) );
+				def.addPattern(
+					SyntaxPattern( std::move( ptrns ), std::move( type ), syntax, isRegEx ) );
 			}
 		}
 		if ( json.contains( "symbols" ) ) {

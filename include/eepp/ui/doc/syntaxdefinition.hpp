@@ -37,18 +37,19 @@ struct EE_API SyntaxPattern {
 	std::vector<std::string> typesNames;
 	std::string syntax{ "" };
 	DynamicSyntax dynSyntax;
+	bool isRegEx{ false };
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
-				   const std::string& _syntax = "" );
+				   const std::string& _syntax = "", bool isRegEx = false );
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
-				   const std::string& _syntax = "" );
+				   const std::string& _syntax = "", bool isRegEx = false );
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
-				   DynamicSyntax&& _syntax );
+				   DynamicSyntax&& _syntax, bool isRegEx = false );
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
-				   DynamicSyntax&& _syntax );
+				   DynamicSyntax&& _syntax, bool isRegEx = false );
 
 	bool hasSyntax() const { return !syntax.empty() || dynSyntax; }
 };

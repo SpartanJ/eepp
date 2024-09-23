@@ -1780,7 +1780,7 @@ UIMenu* SettingsMenu::createLanguagesMenu() {
 			FileSystem::fileGet( file.getFilepath(), data );
 			std::string lptrn( "title=\"(.-)\"" );
 			LuaPattern pattern( lptrn );
-			LuaPattern::Range matches[2];
+			PatternMatcher::Range matches[2];
 			if ( pattern.matches( data, matches ) ) {
 				std::string title(
 					data.substr( matches[1].start, matches[1].end - matches[1].start ) );

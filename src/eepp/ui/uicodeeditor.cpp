@@ -1360,12 +1360,12 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 			if ( !mMinimapHover && !mMouseDown ) {
 				mMinimapScrollOffset = 0;
 				scrollToVisibleIndex( calculateMinimapClickedLine( position ), false, true );
-				return 1;
+			} else {
+				mMinimapScrollOffset = calculateMinimapClickedLine( position ) -
+									   static_cast<Int64>( getVisibleLineRange().first );
 			}
 			mMouseDown = true;
 			mMouseDownMinimap = true;
-			mMinimapScrollOffset = calculateMinimapClickedLine( position ) -
-								   static_cast<Int64>( getVisibleLineRange().first );
 			mMinimapDragging = true;
 			getEventDispatcher()->setNodeDragging( this );
 			mVScrollBar->setEnabled( false );
