@@ -585,7 +585,7 @@ class EE_API String {
 	std::string toUtf8() const;
 
 	/** Convert the string to a UTF-16 string */
-	std::basic_string<Uint16> toUtf16() const;
+	std::basic_string<char16_t> toUtf16() const;
 
 	/** @return The hash code of the String */
 	HashType getHash() const;

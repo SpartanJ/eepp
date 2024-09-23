@@ -1348,9 +1348,9 @@ std::string String::toUtf8() const {
 	return output;
 }
 
-std::basic_string<Uint16> String::toUtf16() const {
+std::basic_string<char16_t> String::toUtf16() const {
 	// Prepare the output string
-	std::basic_string<Uint16> output;
+	std::basic_string<char16_t> output;
 	output.reserve( mString.length() );
 
 	// Convert
