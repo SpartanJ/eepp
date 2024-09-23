@@ -27,6 +27,12 @@ class EE_API UIDocFindReplace : public UILinearLayout, public WidgetCommandExecu
 	New( UIWidget* parent, const std::shared_ptr<Doc::TextDocument>& doc,
 		 std::unordered_map<std::string, std::string> keybindings = getDefaultKeybindings() );
 
+	UIDocFindReplace( const UIDocFindReplace& ) = delete;
+	UIDocFindReplace& operator=( const UIDocFindReplace& ) = delete;
+
+	UIDocFindReplace( UIDocFindReplace&& ) = default;
+	UIDocFindReplace& operator=( UIDocFindReplace&& ) = default;
+
 	const std::shared_ptr<Doc::TextDocument>& getDoc() const;
 
 	void setDoc( const std::shared_ptr<Doc::TextDocument>& doc );
