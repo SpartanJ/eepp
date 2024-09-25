@@ -226,6 +226,15 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 								   },
 								   nullptr, nullptr, false } );
 
+	mLocatorProviders.push_back(
+		{ "g",
+		  mUISceneNode->i18n( "search_files_with_glob_match", "Search files with glob matching" ),
+		  [this]( auto ) {
+			  showLocateTableGlob();
+			  return true;
+		  },
+		  nullptr, nullptr, false } );
+
 	// clang-format off
 	mLocatorProviders.push_back( { "sb", mUISceneNode->i18n( "switch_build", "Switch Build" ),
 		   [this](auto) {
@@ -330,7 +339,7 @@ void UniversalLocator::toggleLocateBar() {
 	}
 }
 
-void UniversalLocator::updateFilesTable() {
+void UniversalLocator::updateFilesTable( bool useGlob ) {
 	auto text = mLocateInput->getText();
 
 	if ( pathHasPosition( text ) ) {
@@ -338,13 +347,18 @@ void UniversalLocator::updateFilesTable() {
 		text = pathAndPos.first;
 	}
 
+	if ( useGlob && String::startsWith( text, "g " ) )
+		text = text.substr( 2 );
+
 	if ( !mApp->isDirTreeReady() ) {
 		mLocateTable->setModel(
 			ProjectDirectoryTree::emptyModel( getLocatorCommands(), mApp->getCurrentProject() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	} else if ( !mLocateInput->getText().empty() ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-		mApp->getDirTree()->asyncFuzzyMatchTree(
+		mApp->getDirTree()->asyncMatchTree(
+			useGlob ? ProjectDirectoryTree::MatchType::Glob
+					: ProjectDirectoryTree::MatchType::Fuzzy,
 			text, LOCATEBAR_MAX_RESULTS,
 			[this, text]( auto res ) {
 				mUISceneNode->runOnMainThread( [this, res] {
@@ -356,8 +370,11 @@ void UniversalLocator::updateFilesTable() {
 			},
 			mApp->getCurrentProject() );
 #else
-		mLocateTable->setModel( mApp->getDirTree()->fuzzyMatchTree( text, LOCATEBAR_MAX_RESULTS,
-																	mApp->getCurrentProject() ) );
+		mLocateTable->setModel(
+			useGlob ? mApp->getDirTree()->globMatchTree( text, LOCATEBAR_MAX_RESULTS,
+														 mApp->getCurrentProject() )
+					: mApp->getDirTree()->fuzzyMatchTree( text, LOCATEBAR_MAX_RESULTS,
+														  mApp->getCurrentProject() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 		mLocateTable->scrollToTop();
 #endif
@@ -410,6 +427,14 @@ void UniversalLocator::showLocateTable() {
 	pos.y -= mLocateTable->getPixelsSize().getHeight();
 	mLocateTable->setPixelsPosition( pos );
 	updateFilesTable();
+}
+
+void UniversalLocator::showLocateTableGlob() {
+	mLocateTable->setVisible( true );
+	Vector2f pos( mLocateInput->convertToWorldSpace( { 0, 0 } ) );
+	pos.y -= mLocateTable->getPixelsSize().getHeight();
+	mLocateTable->setPixelsPosition( pos );
+	updateFilesTable( true );
 }
 
 void UniversalLocator::goToLine() {

@@ -52,11 +52,13 @@ class UniversalLocator {
 
 	void goToLine();
 
-	void updateFilesTable();
+	void updateFilesTable( bool useGlob = false );
 
 	void updateCommandPaletteTable();
 
 	void showLocateTable();
+
+	void showLocateTableGlob();
 
 	void showWorkspaceSymbol();
 

@@ -11,13 +11,18 @@ TextInput.small_input,
 	padding-bottom: 0;
 	font-family: monospace;
 }
-#search_bar,
 #global_search_bar,
 #locate_bar {
 	padding-left: 4dp;
 	padding-right: 4dp;
 	padding-bottom: 3dp;
 	margin-bottom: 2dp;
+	margin-top: 2dp;
+}
+#search_bar {
+	padding-left: 4dp;
+	padding-right: 4dp;
+	padding-bottom: 1dp;
 	margin-top: 2dp;
 }
 .close_button {

@@ -122,6 +122,8 @@ ProjectDirectoryTree::fuzzyMatchTree( const std::vector<std::string>& matches, c
 		if ( names.size() < max ) {
 			names.emplace_back( mNames[res.second] );
 			files.emplace_back( mFiles[res.second] );
+		} else {
+			break;
 		}
 	}
 	auto model = std::make_shared<FileListModel>( files, names );
@@ -145,6 +147,8 @@ ProjectDirectoryTree::fuzzyMatchTree( const std::string& match, const size_t& ma
 		if ( names.size() < max ) {
 			names.emplace_back( mNames[res.second] );
 			files.emplace_back( mFiles[res.second] );
+		} else {
+			break;
 		}
 	}
 	auto model = std::make_shared<FileListModel>( files, names );
@@ -163,8 +167,11 @@ ProjectDirectoryTree::matchTree( const std::string& match, const size_t& max,
 		if ( String::toLower( mNames[i] ).find( lowerMatch ) != std::string::npos ) {
 			names.emplace_back( mNames[i] );
 			files.emplace_back( mFiles[i] );
-			if ( max == names.size() )
-				return std::make_shared<FileListModel>( files, names );
+			if ( max == names.size() ) {
+				auto res = std::make_shared<FileListModel>( files, names );
+				res->setBasePath( basePath );
+				return res;
+			}
 		}
 	}
 	auto model = std::make_shared<FileListModel>( files, names );
@@ -172,17 +179,52 @@ ProjectDirectoryTree::matchTree( const std::string& match, const size_t& max,
 	return model;
 }
 
-void ProjectDirectoryTree::asyncFuzzyMatchTree( const std::string& match, const size_t& max,
-												ProjectDirectoryTree::MatchResultCb res,
-												const std::string& basePath ) const {
-	mPool->run(
-		[this, match, max, res, basePath]() { res( fuzzyMatchTree( match, max, basePath ) ); } );
+std::shared_ptr<FileListModel>
+ProjectDirectoryTree::globMatchTree( const std::string& match, const size_t& max,
+									 const std::string& basePath ) const {
+	Lock rl( mMatchingMutex );
+	std::vector<std::string> files;
+	std::vector<std::string> names;
+	for ( size_t i = 0; i < mNames.size(); i++ ) {
+		std::string_view file( mFiles[i] );
+		if ( !match.empty() && !basePath.empty() && file.size() >= basePath.size() &&
+			 String::startsWith( file, std::string_view{ basePath } ) ) {
+			file = file.substr( basePath.size() );
+		}
+
+		if ( match.empty() || String::globMatch( file, match ) ) {
+			names.emplace_back( mNames[i] );
+			files.emplace_back( mFiles[i] );
+			if ( max == names.size() ) {
+				auto res = std::make_shared<FileListModel>( files, names );
+				res->setBasePath( basePath );
+				return res;
+			}
+		}
+	}
+	auto model = std::make_shared<FileListModel>( files, names );
+	model->setBasePath( basePath );
+	return model;
 }
 
-void ProjectDirectoryTree::asyncMatchTree( const std::string& match, const size_t& max,
-										   ProjectDirectoryTree::MatchResultCb res,
+void ProjectDirectoryTree::asyncMatchTree( MatchType type, const std::string& match,
+										   const size_t& max, MatchResultCb res,
 										   const std::string& basePath ) const {
-	mPool->run( [this, match, max, res, basePath]() { res( matchTree( match, max, basePath ) ); } );
+	mPool->run( [this, match, max, res, basePath, type]() {
+		std::shared_ptr<FileListModel> result;
+		switch ( type ) {
+			case MatchType::Substring:
+				result = matchTree( match, max, basePath );
+				break;
+			case MatchType::Fuzzy:
+				result = fuzzyMatchTree( match, max, basePath );
+				break;
+			case MatchType::Glob:
+				result = globMatchTree( match, max, basePath );
+				break;
+		}
+		res( result );
+	} );
 }
 
 std::shared_ptr<FileListModel>

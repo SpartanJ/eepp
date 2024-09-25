@@ -126,11 +126,13 @@ class ProjectDirectoryTree {
 	std::shared_ptr<FileListModel> matchTree( const std::string& match, const size_t& max,
 											  const std::string& basePath = "" ) const;
 
-	void asyncFuzzyMatchTree( const std::string& match, const size_t& max, MatchResultCb res,
-							  const std::string& basePath = "" ) const;
+	std::shared_ptr<FileListModel> globMatchTree( const std::string& match, const size_t& max,
+												  const std::string& basePath = "" ) const;
 
-	void asyncMatchTree( const std::string& match, const size_t& max, MatchResultCb res,
-						 const std::string& basePath = "" ) const;
+	enum class MatchType { Substring, Fuzzy, Glob };
+
+	void asyncMatchTree( MatchType type, const std::string& match, const size_t& max,
+						 MatchResultCb res, const std::string& basePath = "" ) const;
 
 	struct CommandInfo {
 		std::string name;

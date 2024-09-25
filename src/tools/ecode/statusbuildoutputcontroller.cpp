@@ -377,10 +377,11 @@ void StatusBuildOutputController::onLoadDone( const Variant& lineNum, const Vari
 }
 
 void StatusBuildOutputController::setHeaderWidth() {
-	auto totWidth = eefloor( mTableIssues->getPixelsSize().getWidth() -
-					( mTableIssues->getVerticalScrollBar()->isVisible()
-						  ? mTableIssues->getVerticalScrollBar()->getPixelsSize().getWidth()
-						  : 0.f ) );
+	auto totWidth =
+		eefloor( mTableIssues->getPixelsSize().getWidth() -
+				 ( mTableIssues->getVerticalScrollBar()->isVisible()
+					   ? mTableIssues->getVerticalScrollBar()->getPixelsSize().getWidth()
+					   : 0.f ) );
 	Float col1 = eefloor( totWidth * 0.80f );
 	Float col2 = eefloor( totWidth * 0.15f );
 	Float col3 = totWidth - col1 - col2;
@@ -457,8 +458,9 @@ void StatusBuildOutputController::createContainer() {
 							} );
 					} else {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-						mApp->getDirTree()->asyncFuzzyMatchTree(
-							path, 1, [this, colNum, lineNum]( std::shared_ptr<FileListModel> res ) {
+						mApp->getDirTree()->asyncMatchTree(
+							ProjectDirectoryTree::MatchType::Fuzzy, path, 1,
+							[this, colNum, lineNum]( std::shared_ptr<FileListModel> res ) {
 								if ( res->rowCount( {} ) == 0 )
 									return;
 								auto data = res->data( res->index( 0, 1 ) );
