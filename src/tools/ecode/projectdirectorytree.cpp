@@ -167,11 +167,8 @@ ProjectDirectoryTree::matchTree( const std::string& match, const size_t& max,
 		if ( String::toLower( mNames[i] ).find( lowerMatch ) != std::string::npos ) {
 			names.emplace_back( mNames[i] );
 			files.emplace_back( mFiles[i] );
-			if ( max == names.size() ) {
-				auto res = std::make_shared<FileListModel>( files, names );
-				res->setBasePath( basePath );
-				return res;
-			}
+			if ( max == names.size() )
+				break;
 		}
 	}
 	auto model = std::make_shared<FileListModel>( files, names );
@@ -195,11 +192,8 @@ ProjectDirectoryTree::globMatchTree( const std::string& match, const size_t& max
 		if ( match.empty() || String::globMatch( file, match ) ) {
 			names.emplace_back( mNames[i] );
 			files.emplace_back( mFiles[i] );
-			if ( max == names.size() ) {
-				auto res = std::make_shared<FileListModel>( files, names );
-				res->setBasePath( basePath );
-				return res;
-			}
+			if ( max == names.size() )
+				break;
 		}
 	}
 	auto model = std::make_shared<FileListModel>( files, names );
