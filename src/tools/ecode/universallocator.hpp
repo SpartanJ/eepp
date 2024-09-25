@@ -42,7 +42,7 @@ class UniversalLocator {
 
 	void initLocateBar( UILocateBar* locateBar, UITextInput* locateInput );
 
-	void showLocateBar();
+	void showLocateBar( bool useGlob = false );
 
 	void hideLocateBar();
 

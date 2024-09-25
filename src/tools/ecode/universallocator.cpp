@@ -136,7 +136,7 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 					  mSplitter->getCurEditor()->setFocus();
 				  if ( cmd != "open-locatebar" && cmd != "open-workspace-symbol-search" &&
 					   cmd != "open-document-symbol-search" && cmd != "go-to-line" &&
-					   cmd != "show-open-documents" ) {
+					   cmd != "show-open-documents" && cmd != "open-locatebar-glob-search" ) {
 					  hideLocateBar();
 				  } else {
 					  mLocateInput->setFocus();
@@ -645,11 +645,11 @@ void UniversalLocator::showBar() {
 	mLocateInput->on( Event::OnSizeChange, [this]( const Event* ) { updateLocateBar(); } );
 }
 
-void UniversalLocator::showLocateBar() {
+void UniversalLocator::showLocateBar( bool useGlob ) {
 	showBar();
 
 	if ( isLocator( mLocateInput->getText() ) )
-		mLocateInput->setText( "" );
+		mLocateInput->setText( useGlob ? "g " : "" );
 
 	if ( mApp->getDirTree() && !mLocateTable->getModel() ) {
 		mLocateTable->setModel( mApp->getDirTree()->asModel(

@@ -236,6 +236,8 @@ class App : public UICodeEditorSplitter::Client {
 					  [this] { mStatusAppOutputController->toggle(); } );
 		t.setCommand( "toggle-status-terminal", [this] { mStatusTerminalController->toggle(); } );
 		t.setCommand( "open-locatebar", [this] { mUniversalLocator->showLocateBar(); } );
+		t.setCommand( "open-locatebar-glob-search",
+					  [this] { mUniversalLocator->showLocateBar( true ); } );
 		t.setCommand( "toggle-status-locate-bar",
 					  [this] { mUniversalLocator->toggleLocateBar(); } );
 		t.setCommand( "open-command-palette", [this] { mUniversalLocator->showCommandPalette(); } );

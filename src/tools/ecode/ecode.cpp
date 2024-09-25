@@ -1651,6 +1651,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "console-toggle",
 			 "close-app",
 			 "open-locatebar",
+			 "open-locatebar-glob-search",
 			 "open-command-palette",
 			 "open-global-search",
 			 "project-build-start",
