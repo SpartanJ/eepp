@@ -76,7 +76,8 @@ void KeyBindings::replaceKeybind( const KeyBindings::Shortcut& keys, const std::
 	mKeybindingsInvert[command] = sanitizeShortcut( keys );
 }
 
-KeyBindings::Shortcut KeyBindings::getShortcutFromString( const std::string& keys ) {
+KeyBindings::Shortcut KeyBindings::toShortcut( const Window::Input* input,
+											   const std::string& keys ) {
 	Shortcut shortcut;
 	Uint32 mod = 0;
 	auto keysSplit = String::split( keys, '+' );
@@ -89,10 +90,14 @@ KeyBindings::Shortcut KeyBindings::getShortcutFromString( const std::string& key
 		if ( ( mod = KeyMod::getKeyMod( part ) ) ) {
 			shortcut.mod |= mod;
 		} else {
-			shortcut.key = mInput->getKeyFromName( part );
+			shortcut.key = input->getKeyFromName( part );
 		}
 	}
 	return shortcut;
+}
+
+KeyBindings::Shortcut KeyBindings::getShortcutFromString( const std::string& keys ) {
+	return toShortcut( mInput, keys );
 }
 
 void KeyBindings::removeKeybind( const KeyBindings::Shortcut& keys ) {
@@ -163,9 +168,10 @@ const std::map<std::string, Uint64> KeyBindings::getKeybindings() const {
 	return mKeybindingsInvert;
 }
 
-std::string KeyBindings::getShortcutString( KeyBindings::Shortcut shortcut, bool format ) const {
+std::string KeyBindings::fromShortcut( const Window::Input* input, KeyBindings::Shortcut shortcut,
+									   bool format ) {
 	std::vector<std::string> mods;
-	std::string keyname( String::toLower( mInput->getKeyName( shortcut.key ) ) );
+	std::string keyname( String::toLower( input->getKeyName( shortcut.key ) ) );
 	const auto& MOD_MAP = KeyMod::getModMap();
 	if ( shortcut.mod & MOD_MAP.at( "mod" ) )
 		mods.emplace_back( "mod" );
@@ -183,6 +189,10 @@ std::string KeyBindings::getShortcutString( KeyBindings::Shortcut shortcut, bool
 		return format ? keybindFormat( keyname ) : keyname;
 	auto ret = String::join( mods, '+' ) + "+" + keyname;
 	return format ? keybindFormat( ret ) : ret;
+}
+
+std::string KeyBindings::getShortcutString( KeyBindings::Shortcut shortcut, bool format ) const {
+	return fromShortcut( mInput, shortcut, format );
 }
 
 }} // namespace EE::UI

@@ -1479,20 +1479,19 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 		} ) );
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* ) {
+		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* event ) {
+			const DocChangedEvent* docChangedEvent = static_cast<const DocChangedEvent*>( event );
 			TextDocument* oldDoc = mEditorDocs[editor];
 			TextDocument* newDoc = editor->getDocumentRef().get();
-			URI docURI;
 			{
 				Lock l( mDocMutex );
-				docURI = oldDoc->getURI();
 				mDocs.erase( oldDoc );
 				mEditorDocs[editor] = newDoc;
 			}
 
 			{
 				Lock l( mDocCurrentSymbolsMutex );
-				mDocCurrentSymbols.erase( docURI );
+				mDocCurrentSymbols.erase( docChangedEvent->getOldDocURI() );
 			}
 
 			updateCurrentSymbol( editor->getDocument() );

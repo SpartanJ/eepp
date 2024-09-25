@@ -37,6 +37,11 @@ class EE_API KeyBindings {
 
 	static std::string keybindFormat( std::string str );
 
+	static Shortcut toShortcut( const Window::Input* input, const std::string& keys );
+
+	static std::string fromShortcut( const Window::Input* input, KeyBindings::Shortcut shortcut,
+									 bool format = false );
+
 	KeyBindings( const Window::Input* input );
 
 	void addKeybindsString( const std::map<std::string, std::string>& binds );

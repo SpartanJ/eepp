@@ -136,6 +136,18 @@ class EE_API DocEvent : public Event {
 	TextDocument* doc;
 };
 
+class EE_API DocChangedEvent : public DocEvent {
+  public:
+	DocChangedEvent( Node* node, TextDocument* doc, const Uint32& eventType, URI oldDocURI ) :
+		DocEvent( node, doc, eventType ), mOldDocURI( oldDocURI ) {}
+
+	const URI& getOldDocURI() const { return mOldDocURI; }
+
+  protected:
+	TextDocument* doc;
+	URI mOldDocURI;
+};
+
 class EE_API DocSyntaxDefEvent : public DocEvent {
   public:
 	DocSyntaxDefEvent( Node* node, TextDocument* doc, const Uint32& eventType,
@@ -990,7 +1002,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void onDocumentReset( TextDocument* );
 
-	virtual void onDocumentChanged();
+	virtual void onDocumentChanged( URI oldDocURI );
 
 	virtual void onFoldRegionsUpdated( size_t oldCount, size_t newCount );
 

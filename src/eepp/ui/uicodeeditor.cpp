@@ -654,10 +654,10 @@ void UICodeEditor::onDocumentReset( TextDocument* ) {
 	findRegionsDelayed();
 }
 
-void UICodeEditor::onDocumentChanged() {
+void UICodeEditor::onDocumentChanged( URI oldDocURI ) {
 	if ( mFindReplace )
 		mFindReplace->setDoc( mDoc );
-	DocEvent event( this, mDoc.get(), Event::OnDocumentChanged );
+	DocChangedEvent event( this, mDoc.get(), Event::OnDocumentChanged, oldDocURI );
 	sendEvent( &event );
 }
 
@@ -942,6 +942,7 @@ TextDocument& UICodeEditor::getDocument() {
 
 void UICodeEditor::setDocument( std::shared_ptr<TextDocument> doc ) {
 	if ( mDoc.get() != doc.get() ) {
+		URI oldDocURI = mDoc->getURI();
 		mDoc->unregisterClient( this );
 		mDocView.setDocument( nullptr );
 		if ( mDoc.use_count() == 1 )
@@ -949,7 +950,7 @@ void UICodeEditor::setDocument( std::shared_ptr<TextDocument> doc ) {
 		mDoc = doc;
 		mDoc->registerClient( this );
 		mDocView.setDocument( doc );
-		onDocumentChanged();
+		onDocumentChanged( oldDocURI );
 		if ( mDoc->isLoading() ) {
 			mInvalidateOnLoaded = true;
 		} else {
