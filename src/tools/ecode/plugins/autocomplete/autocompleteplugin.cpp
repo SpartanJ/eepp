@@ -175,12 +175,64 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 		}
 	}
 
+	if ( mKeyBindings.empty() ) {
+		mKeyBindings["autocomplete-close-suggestion"] = "escape";
+		mKeyBindings["autocomplete-prev-suggestion"] = "up";
+		mKeyBindings["autocomplete-next-suggestion"] = "down";
+		mKeyBindings["autocomplete-first-suggestion"] = "home";
+		mKeyBindings["autocomplete-last-suggestion"] = "end";
+		mKeyBindings["autocomplete-prev-suggestion-page"] = "pageup";
+		mKeyBindings["autocomplete-next-suggestion-page"] = "pagedown";
+		mKeyBindings["autocomplete-pick-suggestion"] = "tab";
+		mKeyBindings["autocomplete-pick-suggestion-alt"] = "enter";
+		mKeyBindings["autocomplete-pick-suggestion-alt-2"] = "return";
+		mKeyBindings["autocomplete-update-suggestions"] = "mod+space";
+		mKeyBindings["autocomplete-close-signature-help"] = "escape";
+		mKeyBindings["autocomplete-prev-signature-help"] = "up";
+		mKeyBindings["autocomplete-next-signature-help"] = "down";
+	}
+
+	if ( j.contains( "keybindings" ) ) {
+		auto& kb = j["keybindings"];
+		// clang-format off
+		auto list = {
+			"autocomplete-close-suggestion",
+			"autocomplete-prev-suggestion",
+			"autocomplete-next-suggestion",
+			"autocomplete-first-suggestion",
+			"autocomplete-last-suggestion",
+			"autocomplete-prev-suggestion-page",
+			"autocomplete-next-suggestion-page",
+			"autocomplete-pick-suggestion",
+			"autocomplete-pick-suggestion-alt",
+			"autocomplete-pick-suggestion-alt-2",
+			"autocomplete-update-suggestions",
+			"autocomplete-close-signature-help",
+			"autocomplete-prev-signature-help",
+			"autocomplete-next-signature-help",
+		};
+		// clang-format on
+		for ( const auto& key : list ) {
+			if ( kb.contains( key ) ) {
+				if ( !kb[key].empty() )
+					mKeyBindings[key] = kb[key];
+			} else {
+				kb[key] = mKeyBindings[key];
+				updateConfigFile = true;
+			}
+		}
+	}
+
 	if ( updateConfigFile ) {
 		std::string newData = j.dump( 2 );
 		if ( newData != data ) {
 			FileSystem::fileWrite( path, newData );
 			mConfigHash = String::hash( newData );
 		}
+	}
+
+	if ( getUISceneNode() ) {
+		updateShortcuts();
 	}
 
 	subscribeFileSystemListener();
@@ -284,12 +336,13 @@ void AutoCompletePlugin::onUnregister( UICodeEditor* editor ) {
 }
 
 bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event ) {
+	KeyBindings::Shortcut eventShortcut( event.getKeyCode(), event.getSanitizedMod() );
 	if ( mSignatureHelpVisible ) {
-		if ( event.getKeyCode() == KEY_ESCAPE ) {
+		if ( mShortcuts["autocomplete-close-signature-help"] == eventShortcut ) {
 			resetSignatureHelp();
 			editor->invalidateDraw();
 			return true;
-		} else if ( event.getKeyCode() == KEY_UP ) {
+		} else if ( mShortcuts["autocomplete-prev-signature-help"] == eventShortcut ) {
 			if ( mSignatureHelp.signatures.size() > 1 ) {
 				mSignatureHelpSelected = mSignatureHelpSelected == -1 ? 0 : mSignatureHelpSelected;
 				++mSignatureHelpSelected;
@@ -300,7 +353,7 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			} else if ( mSuggestions.empty() ) {
 				resetSignatureHelp();
 			}
-		} else if ( event.getKeyCode() == KEY_DOWN ) {
+		} else if ( mShortcuts["autocomplete-next-signature-help"] == eventShortcut ) {
 			if ( mSignatureHelp.signatures.size() > 1 ) {
 				mSignatureHelpSelected =
 					mSignatureHelpSelected == (int)mSignatureHelp.signatures.size() - 1
@@ -329,8 +382,9 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			}
 		}
 	}
+
 	if ( !mSuggestions.empty() ) {
-		if ( event.getKeyCode() == KEY_DOWN ) {
+		if ( mShortcuts["autocomplete-next-suggestion"] == eventShortcut ) {
 			if ( mSuggestionIndex + 1 < (int)mSuggestions.size() ) {
 				mSuggestionIndex++;
 				if ( mSuggestionIndex < mSuggestionsStartIndex )
@@ -345,7 +399,7 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			}
 			editor->invalidateDraw();
 			return true;
-		} else if ( event.getKeyCode() == KEY_UP ) {
+		} else if ( mShortcuts["autocomplete-prev-suggestion"] == eventShortcut ) {
 			if ( mSuggestionIndex - 1 < 0 ) {
 				mSuggestionIndex = mSuggestions.size() - 1;
 				mSuggestionsStartIndex =
@@ -357,22 +411,22 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 				mSuggestionsStartIndex = mSuggestionIndex;
 			editor->invalidateDraw();
 			return true;
-		} else if ( event.getKeyCode() == KEY_ESCAPE ) {
+		} else if ( mShortcuts["autocomplete-close-suggestion"] == eventShortcut ) {
 			resetSuggestions( editor );
 			resetSignatureHelp();
 			editor->invalidateDraw();
 			return true;
-		} else if ( event.getKeyCode() == KEY_HOME ) {
+		} else if ( mShortcuts["autocomplete-first-suggestion"] == eventShortcut ) {
 			mSuggestionIndex = 0;
 			mSuggestionsStartIndex = 0;
 			editor->invalidateDraw();
 			return true;
-		} else if ( event.getKeyCode() == KEY_END ) {
+		} else if ( mShortcuts["autocomplete-last-suggestion"] == eventShortcut ) {
 			mSuggestionIndex = mSuggestions.size() - 1;
 			mSuggestionsStartIndex = eemax( 0, (int)mSuggestions.size() - mSuggestionsMaxVisible );
 			editor->invalidateDraw();
 			return true;
-		} else if ( event.getKeyCode() == KEY_PAGEUP ) {
+		} else if ( mShortcuts["autocomplete-prev-suggestion-page"] == eventShortcut ) {
 			if ( mSuggestionIndex - (int)( mSuggestionsMaxVisible - 1 ) >= 0 ) {
 				mSuggestionIndex -= ( mSuggestionsMaxVisible - 1 );
 				if ( mSuggestionIndex < mSuggestionsStartIndex )
@@ -383,7 +437,7 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			}
 			editor->invalidateDraw();
 			return true;
-		} else if ( event.getKeyCode() == KEY_PAGEDOWN ) {
+		} else if ( mShortcuts["autocomplete-next-suggestion-page"] == eventShortcut ) {
 			if ( mSuggestionIndex + mSuggestionsMaxVisible < (int)mSuggestions.size() ) {
 				mSuggestionIndex += mSuggestionsMaxVisible - 1;
 			} else {
@@ -393,13 +447,13 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 				eemax<int>( 0, mSuggestionIndex - ( mSuggestionsMaxVisible - 1 ) );
 			editor->invalidateDraw();
 			return true;
-		} else if ( event.getKeyCode() == KEY_TAB || event.getKeyCode() == KEY_RETURN ||
-					event.getKeyCode() == KEY_KP_ENTER ) {
+		} else if ( mShortcuts["autocomplete-pick-suggestion"] == eventShortcut ||
+					mShortcuts["autocomplete-pick-suggestion-alt"] == eventShortcut ||
+					mShortcuts["autocomplete-pick-suggestion-alt-2"] == eventShortcut ) {
 			pickSuggestion( editor );
 			return true;
 		}
-	} else if ( event.getKeyCode() == KEY_SPACE &&
-				( event.getMod() & KeyMod::getDefaultModifier() ) ) {
+	} else if ( mShortcuts["autocomplete-update-suggestions"] == eventShortcut ) {
 		std::string partialSymbol( getPartialSymbol( &editor->getDocument() ) );
 		updateSuggestions( partialSymbol, editor );
 		return true;
@@ -773,8 +827,20 @@ AutoCompletePlugin::processSignatureHelp( const LSPSignatureHelp& signatureHelp 
 	return {};
 }
 
+void AutoCompletePlugin::updateShortcuts() {
+	const auto toShortcut = [this]( const std::string& keys ) {
+		return KeyBindings::toShortcut(
+			getManager()->getUISceneNode()->getEventDispatcher()->getInput(), keys );
+	};
+
+	for ( const auto& kb : mKeyBindings )
+		mShortcuts[kb.first] = toShortcut( kb.second );
+}
+
 PluginRequestHandle AutoCompletePlugin::processResponse( const PluginMessage& msg ) {
-	if ( msg.isResponse() && msg.type == PluginMessageType::CodeCompletion ) {
+	if ( msg.type == PluginMessageType::UIReady ) {
+		updateShortcuts();
+	} else if ( msg.isResponse() && msg.type == PluginMessageType::CodeCompletion ) {
 		if ( msg.responseID ) {
 			Lock l( mHandlesMutex );
 			for ( auto& handle : mHandles ) {

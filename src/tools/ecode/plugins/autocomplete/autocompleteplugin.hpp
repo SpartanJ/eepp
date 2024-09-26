@@ -63,7 +63,7 @@ class AutoCompletePlugin : public Plugin {
 				 "Auto complete shows the completion popup as you type, so you can fill "
 				 "in long words by typing only a few characters.",
 				 AutoCompletePlugin::New,
-				 { 0, 2, 4 },
+				 { 0, 2, 5 },
 				 AutoCompletePlugin::NewSync };
 	}
 
@@ -154,6 +154,8 @@ class AutoCompletePlugin : public Plugin {
 	Text mSuggestionDoc;
 	size_t mMaxLabelCharacters{ 100 };
 	String::HashType mConfigHash{ 0 };
+	UnorderedMap<std::string, std::string> mKeyBindings;
+	std::unordered_map<std::string, KeyBindings::Shortcut> mShortcuts;
 
 	Float mRowHeight{ 0 };
 	Rectf mBoxRect;
@@ -200,6 +202,8 @@ class AutoCompletePlugin : public Plugin {
 
 	void tryStartSnippetNav( const Suggestion& suggestion, UICodeEditor* editor,
 							 const TextRanges& prevSels );
+
+	void updateShortcuts();
 };
 
 } // namespace ecode
