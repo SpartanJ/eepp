@@ -2909,17 +2909,9 @@ int TextDocument::replaceAll( const String& text, const String& replace, const b
 	size_t numCaptures = 0;
 	PatternMatcher::Range matchList[MAX_CAPTURES];
 
-	if ( type == FindReplaceType::LuaPattern ) {
+	if ( type == FindReplaceType::LuaPattern || type == FindReplaceType::RegEx ) {
 		std::string replaceUtf8( replace.toUtf8() );
 		LuaPattern ptrn( "$%d+"sv );
-		while ( numCaptures < MAX_CAPTURES &&
-				ptrn.matches( replaceUtf8, &matchList[numCaptures],
-							  numCaptures > 0 ? matchList[numCaptures - 1].end : 0 ) ) {
-			numCaptures++;
-		}
-	} else if ( type == FindReplaceType::RegEx ) {
-		std::string replaceUtf8( replace.toUtf8() );
-		RegEx ptrn( "$\\d+"sv );
 		while ( numCaptures < MAX_CAPTURES &&
 				ptrn.matches( replaceUtf8, &matchList[numCaptures],
 							  numCaptures > 0 ? matchList[numCaptures - 1].end : 0 ) ) {
@@ -3001,17 +2993,9 @@ TextPosition TextDocument::replace( String search, const String& replace, TextPo
 	size_t numCaptures = 0;
 	PatternMatcher::Range matchList[MAX_CAPTURES];
 
-	if ( type == FindReplaceType::LuaPattern ) {
+	if ( type == FindReplaceType::LuaPattern || type == FindReplaceType::RegEx ) {
 		std::string replaceUtf8( replace.toUtf8() );
 		LuaPattern ptrn( "$%d+"sv );
-		while ( numCaptures < MAX_CAPTURES &&
-				ptrn.matches( replaceUtf8, &matchList[numCaptures],
-							  numCaptures > 0 ? matchList[numCaptures - 1].end : 0 ) ) {
-			numCaptures++;
-		}
-	} else if ( type == FindReplaceType::RegEx ) {
-		std::string replaceUtf8( replace.toUtf8() );
-		RegEx ptrn( "$\\d+"sv );
 		while ( numCaptures < MAX_CAPTURES &&
 				ptrn.matches( replaceUtf8, &matchList[numCaptures],
 							  numCaptures > 0 ? matchList[numCaptures - 1].end : 0 ) ) {
