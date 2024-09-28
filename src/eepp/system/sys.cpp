@@ -57,11 +57,12 @@ typedef DWORD( WINAPI* GetModuleBaseName_t )( HANDLE, HMODULE, LPSTR, DWORD );
 #include <Path.h>
 #include <Volume.h>
 #include <VolumeRoster.h>
-#include <extended_system_info.h>
-#include <extended_system_info_defs.h>
 #include <fs_info.h>
 #include <kernel/OS.h>
 #include <kernel/image.h>
+#include <private/kernel/util/KMessage.h>
+#include <private/libroot/extended_system_info.h>
+#include <private/system/extended_system_info_defs.h>
 #include <sys/statvfs.h>
 #elif EE_PLATFORM == EE_PLATFORM_SOLARIS
 #include <stdlib.h>
