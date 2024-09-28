@@ -71,6 +71,11 @@ void Plugin::showMessage( LSPMessageType type, const std::string& message,
 							 &msgReq );
 }
 
+Plugin::~Plugin() {
+	while ( mLoading )
+		Sys::sleep( Milliseconds( 1 ) );
+}
+
 void Plugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {
 	if ( ev.type != FileSystemEventType::Modified || mShuttingDown || isLoading() )
 		return;

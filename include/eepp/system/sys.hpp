@@ -124,6 +124,12 @@ class EE_API Sys {
 
 	/** @return The process environment variables */
 	static std::unordered_map<std::string, std::string> getEnvironmentVariables();
+
+	/** @return The process ids found with the correspoding process / binary / executable name */
+	static std::vector<Uint64> pidof( const std::string& processName );
+
+	/** @returns The unix timestamp of the process creation time */
+	static Uint64 getProcessCreationTime( Uint64 pid );
 };
 
 }} // namespace EE::System

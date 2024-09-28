@@ -17,6 +17,8 @@ class Plugin : public UICodeEditorPlugin {
   public:
 	explicit Plugin( PluginManager* manager );
 
+	virtual ~Plugin();
+
 	void subscribeFileSystemListener();
 
 	void unsubscribeFileSystemListener();
@@ -89,23 +91,23 @@ class PluginBase : public Plugin {
 	//! If the configuration is stored in a file, keep track of the config hash
 	String::HashType mConfigHash{ 0 };
 
-	virtual void onDocumentLoaded( TextDocument* ){};
+	virtual void onDocumentLoaded( TextDocument* ) {};
 
-	virtual void onDocumentClosed( TextDocument* ){};
+	virtual void onDocumentClosed( TextDocument* ) {};
 
-	virtual void onDocumentChanged( UICodeEditor*, TextDocument* /*oldDoc*/ ){};
+	virtual void onDocumentChanged( UICodeEditor*, TextDocument* /*oldDoc*/ ) {};
 
-	virtual void onRegisterListeners( UICodeEditor*, std::vector<Uint32>& /*listeners*/ ){};
+	virtual void onRegisterListeners( UICodeEditor*, std::vector<Uint32>& /*listeners*/ ) {};
 
 	//! Usually used to remove keybindings in an editor
-	virtual void onBeforeUnregister( UICodeEditor* ){};
+	virtual void onBeforeUnregister( UICodeEditor* ) {};
 
-	virtual void onRegisterDocument( TextDocument* ){};
+	virtual void onRegisterDocument( TextDocument* ) {};
 
-	virtual void onUnregisterEditor( UICodeEditor* ){};
+	virtual void onUnregisterEditor( UICodeEditor* ) {};
 
 	//! Usually used to unregister commands in a document
-	virtual void onUnregisterDocument( TextDocument* ){};
+	virtual void onUnregisterDocument( TextDocument* ) {};
 };
 
 } // namespace ecode

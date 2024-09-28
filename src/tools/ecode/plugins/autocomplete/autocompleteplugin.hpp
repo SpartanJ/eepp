@@ -154,7 +154,7 @@ class AutoCompletePlugin : public Plugin {
 	Text mSuggestionDoc;
 	size_t mMaxLabelCharacters{ 100 };
 	String::HashType mConfigHash{ 0 };
-	UnorderedMap<std::string, std::string> mKeyBindings;
+	std::unordered_map<std::string, std::string> mKeyBindings;
 	std::unordered_map<std::string, KeyBindings::Shortcut> mShortcuts;
 
 	Float mRowHeight{ 0 };

@@ -529,6 +529,7 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 	mThemesPath = mConfigPath + "themes";
 	mScriptsPath = mConfigPath + "scripts";
 	mPlaygroundPath = mConfigPath + "playground";
+	mIpcPath = mConfigPath + "ipc";
 	mColorSchemesPath = mConfigPath + "editor" + FileSystem::getOSSlash() + "colorschemes" +
 						FileSystem::getOSSlash();
 	mTerminalManager = std::make_unique<TerminalManager>( this );
@@ -556,6 +557,16 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 	if ( !FileSystem::fileExists( mPlaygroundPath ) )
 		FileSystem::makeDir( mPlaygroundPath );
 	FileSystem::dirAddSlashAtEnd( mPlaygroundPath );
+
+	if ( !FileSystem::fileExists( mIpcPath ) )
+		FileSystem::makeDir( mIpcPath );
+	FileSystem::dirAddSlashAtEnd( mIpcPath );
+
+	Uint64 pid = Sys::getProcessID();
+	mPidPath = mIpcPath + String::toString( pid );
+	FileSystem::dirAddSlashAtEnd( mPidPath );
+	if ( !FileSystem::fileExists( mPidPath ) )
+		FileSystem::makeDir( mPidPath );
 
 	mLogsPath = mConfigPath + "ecode.log";
 
@@ -754,6 +765,14 @@ App::App( const size_t& jobs, const std::vector<std::string>& args ) :
 	mSettingsActions( std::make_unique<SettingsActions>( this ) ) {
 }
 
+static void fsRemoveAll( const std::string& fpath ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	fs::remove_all( std::filesystem::path( String( fpath ).toWideString() ) );
+#else
+	fs::remove_all( fpath );
+#endif
+}
+
 App::~App() {
 	if ( mProjectBuildManager )
 		mProjectBuildManager.reset();
@@ -772,10 +791,26 @@ App::~App() {
 	eeSAFE_DELETE( mSplitter );
 
 	if ( mFileSystemListener ) {
+		if ( mIpcListenerId )
+			mFileSystemListener->removeListener( mIpcListenerId );
 		delete mFileSystemListener;
 		mFileSystemListener = nullptr;
 	}
 	mDirTree.reset();
+
+	fsRemoveAll( mPidPath );
+}
+
+void App::updateRecentButtons() {
+	updateOpenRecentFolderBtn();
+
+	if ( mSplitter ) {
+		mSplitter->forEachWidgetType(
+			static_cast<UINodeType>( CustomWidgets::UI_TYPE_WELCOME_TAB ), []( UIWidget* widget ) {
+				UIWelcomeScreen* welcomeTab = static_cast<UIWelcomeScreen*>( widget );
+				welcomeTab->refresh();
+			} );
+	}
 }
 
 void App::updateRecentFiles() {
@@ -807,6 +842,7 @@ void App::updateRecentFiles() {
 			} else if ( id == "clear-menu" ) {
 				mRecentFiles.clear();
 				updateRecentFiles();
+				updateRecentButtons();
 			} else {
 				const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
 				std::string path( txt.toUtf8() );
@@ -847,6 +883,7 @@ void App::updateRecentFolders() {
 			if ( id == "clear-menu" ) {
 				mRecentFolders.clear();
 				updateRecentFolders();
+				updateRecentButtons();
 			} else if ( id == "restore-last-session-at-startup" ) {
 				mConfig.workspace.restoreLastSession =
 					event->getNode()->asType<UIMenuCheckBox>()->isActive();
@@ -1575,51 +1612,50 @@ std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	return {
 		{ { KEY_RETURN, KEYMOD_LALT | KEYMOD_LCTRL }, "fullscreen-toggle" },
-			{ { KEY_F3, KEYMOD_NONE }, "repeat-find" }, { { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
-			{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
-			{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
-			{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
-			{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
-			{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
-			{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
-			{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
-			{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
-			{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
-			{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
-			{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
+		{ { KEY_F3, KEYMOD_NONE }, "repeat-find" },
+		{ { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
+		{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
+		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
+		{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
+		{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
+		{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
+		{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
+		{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
+		{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
+		{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
+		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
+		{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-			{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
+		{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
 #else
-			{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
+		{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
 #endif
-			{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
-			{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
-			{ { KEY_J, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-			  "terminal-split-left" },
-			{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-			  "terminal-split-right" },
-			{ { KEY_I, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-			  "terminal-split-top" },
-			{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-			  "terminal-split-bottom" },
-			{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-			  "terminal-split-swap" },
-			{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-			  "reopen-closed-tab" },
-			{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
-			{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
-			{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
-			{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
-			{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
-			{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
-			{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
-			{ { KEY_F5, KEYMOD_NONE }, "project-build-and-run" },
-			{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
-			{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
-			  "open-workspace-symbol-search" },
-			{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
-			  "open-document-symbol-search" },
-			{ { KEY_N, KEYMOD_SHIFT | KEYMOD_LALT }, "create-new-window" },
+		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
+		{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
+		{ { KEY_J, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		  "terminal-split-left" },
+		{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		  "terminal-split-right" },
+		{ { KEY_I, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		  "terminal-split-top" },
+		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		  "terminal-split-bottom" },
+		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		  "terminal-split-swap" },
+		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		  "reopen-closed-tab" },
+		{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
+		{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
+		{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
+		{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
+		{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
+		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
+		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
+		{ { KEY_F5, KEYMOD_NONE }, "project-build-and-run" },
+		{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
+		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-workspace-symbol-search" },
+		{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-document-symbol-search" },
+		{ { KEY_N, KEYMOD_SHIFT | KEYMOD_LALT }, "create-new-window" },
 	};
 }
 
@@ -1628,15 +1664,15 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 std::map<std::string, std::string> App::getMigrateKeybindings() {
 	return {
 		{ "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
-			{ "switch-to-tab-2", "alt+2" }, { "switch-to-tab-3", "alt+3" },
-			{ "switch-to-tab-4", "alt+4" }, { "switch-to-tab-5", "alt+5" },
-			{ "switch-to-tab-6", "alt+6" }, { "switch-to-tab-7", "alt+7" },
-			{ "switch-to-tab-8", "alt+8" }, { "switch-to-tab-9", "alt+9" },
-			{ "switch-to-last-tab", "alt+0" },
+		{ "switch-to-tab-2", "alt+2" },		   { "switch-to-tab-3", "alt+3" },
+		{ "switch-to-tab-4", "alt+4" },		   { "switch-to-tab-5", "alt+5" },
+		{ "switch-to-tab-6", "alt+6" },		   { "switch-to-tab-7", "alt+7" },
+		{ "switch-to-tab-8", "alt+8" },		   { "switch-to-tab-9", "alt+9" },
+		{ "switch-to-last-tab", "alt+0" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-			{ "menu-toggle", "mod+shift+m" },
+		{ "menu-toggle", "mod+shift+m" },
 #endif
-			{ "lock-toggle", "mod+shift+l" },
+		{ "lock-toggle", "mod+shift+l" },
 	};
 }
 
@@ -2657,6 +2693,20 @@ void App::consoleToggle() {
 		mSplitter->getCurWidget()->setFocus();
 }
 
+std::function<void( UICodeEditor* codeEditor, const std::string& path )>
+App::getForcePositionFn( TextPosition initialPosition ) {
+	std::function<void( UICodeEditor * codeEditor, const std::string& path )> forcePosition;
+	if ( initialPosition.isValid() ) {
+		forcePosition = [this, initialPosition]( UICodeEditor* editor, const auto& ) {
+			editor->runOnMainThread( [this, initialPosition, editor] {
+				editor->goToLine( initialPosition );
+				mSplitter->addEditorPositionToNavigationHistory( editor );
+			} );
+		};
+	}
+	return forcePosition;
+}
+
 void App::initProjectTreeView( std::string path, bool openClean ) {
 	mProjectViewEmptyCont = mUISceneNode->find<UILinearLayout>( "project_view_empty" );
 	mProjectViewEmptyCont->find<UIPushButton>( "open_folder" )
@@ -2771,16 +2821,7 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 				if ( mFileSystemListener )
 					mFileSystemListener->setFileSystemModel( mFileSystemModel );
 
-				std::function<void( UICodeEditor * codeEditor, const std::string& path )>
-					forcePosition;
-				if ( initialPosition.isValid() ) {
-					forcePosition = [this, initialPosition]( UICodeEditor* editor, const auto& ) {
-						editor->runOnMainThread( [this, initialPosition, editor] {
-							editor->goToLine( initialPosition );
-							mSplitter->addEditorPositionToNavigationHistory( editor );
-						} );
-					};
-				}
+				auto forcePosition = getForcePositionFn( initialPosition );
 
 				if ( FileSystem::fileExists( rpath ) ) {
 					loadFileFromPath( rpath, false, nullptr, forcePosition );
@@ -3040,6 +3081,56 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 	return nullptr;
 }
 
+bool App::needsRedirectToRunningProcess( std::string file ) {
+	if ( !mConfig.ui.singleInstance || file.empty() )
+		return false;
+
+	bool hasPosition = pathHasPosition( file );
+	TextPosition position;
+	if ( hasPosition ) {
+		auto pathAndPosition = getPathAndPosition( file );
+		file = pathAndPosition.first;
+		position = pathAndPosition.second;
+	}
+
+	std::string rpath( FileSystem::getRealPath( file ) );
+	FileInfo finfo( rpath );
+
+	if ( !finfo.exists() || finfo.isDirectory() )
+		return false;
+
+	std::string processName( FileSystem::fileNameFromPath( Sys::getProcessFilePath() ) );
+	auto pids = Sys::pidof( processName );
+	if ( pids.size() <= 1 )
+		return false;
+
+	Uint64 processPid = Sys::getProcessID();
+	Uint64 latestPid = processPid;
+	Uint64 lastCreationTime = 0;
+
+	for ( const auto pid : pids ) {
+		if ( pid != Sys::getProcessID() ) {
+			Uint64 creationTime = Sys::getProcessCreationTime( pid );
+			if ( creationTime >= lastCreationTime ) {
+				latestPid = pid;
+				lastCreationTime = creationTime;
+			}
+		}
+	}
+
+	if ( latestPid == processPid )
+		return false;
+
+	std::string pidPath = mIpcPath + String::toString( latestPid );
+	if ( !FileSystem::isDirectory( pidPath ) )
+		return false;
+	FileSystem::dirAddSlashAtEnd( pidPath );
+	FileSystem::fileWrite( pidPath + MD5::fromString( finfo.getFilepath() ).toHexString(),
+						   finfo.getFilepath() +
+							   ( position.isValid() ? position.toPositionString() : "" ) );
+	return true;
+}
+
 void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 				const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
 				const std::string& css, bool health, const std::string& healthLang,
@@ -3072,6 +3163,9 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		FeaturesHealth::doHealth( mPluginManager.get(), healthLang, healthFormat );
 		return;
 	}
+
+	if ( needsRedirectToRunningProcess( file ) )
+		return;
 
 	currentDisplay = displayManager->getDisplayIndex( mConfig.windowState.displayIndex <
 															  displayManager->getDisplayCount()
@@ -3437,8 +3531,37 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mFileWatcher = new efsw::FileWatcher();
 		mFileSystemListener = new FileSystemListener( mSplitter, mFileSystemModel, { mLogsPath } );
 		mFileWatcher->addWatch( mPluginsPath, mFileSystemListener );
+		mFileWatcher->addWatch( mPidPath, mFileSystemListener );
 		mFileWatcher->watch();
 		mPluginManager->setFileSystemListener( mFileSystemListener );
+		mIpcListenerId = mFileSystemListener->addListener( [this]( const FileEvent& fe,
+																   const FileInfo& fi ) {
+			if ( !( ( fe.type == FileSystemEventType::Add ||
+					  fe.type == FileSystemEventType::Modified ) &&
+					fe.directory == mPidPath ) )
+				return;
+			std::string path;
+			FileSystem::fileGet( fi.getFilepath(), path );
+			String::trimInPlace( path, ' ' );
+			String::trimInPlace( path, '\n' );
+
+			bool hasPosition = pathHasPosition( path );
+			TextPosition initialPosition;
+			if ( hasPosition ) {
+				auto pathAndPosition = getPathAndPosition( path );
+				path = pathAndPosition.first;
+				initialPosition = pathAndPosition.second;
+			}
+
+			if ( FileSystem::fileExists( path ) ) {
+				mUISceneNode->runOnMainThread( [path, initialPosition, this] {
+					loadFileFromPath( path, true, nullptr, getForcePositionFn( initialPosition ) );
+				} );
+				if ( !mWindow->hasFocus() )
+					mWindow->raise();
+			}
+			FileSystem::fileRemove( fi.getFilepath() );
+		} );
 #endif
 
 		mNotificationCenter = std::make_unique<NotificationCenter>(

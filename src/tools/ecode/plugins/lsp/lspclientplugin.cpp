@@ -251,25 +251,27 @@ LSPClientPlugin::~LSPClientPlugin() {
 	mShuttingDown = true;
 	mManager->unsubscribeMessages( this );
 	unsubscribeFileSystemListener();
-	Lock l( mDocMutex );
-	for ( const auto& editor : mEditors ) {
-		for ( auto& kb : mKeyBindings ) {
-			editor.first->getKeyBindings().removeCommandKeybind( kb.first );
-			if ( editor.first->hasDocument() )
-				editor.first->getDocument().removeCommand( kb.first );
+	{
+		Lock l( mDocMutex );
+		for ( const auto& editor : mEditors ) {
+			for ( auto& kb : mKeyBindings ) {
+				editor.first->getKeyBindings().removeCommandKeybind( kb.first );
+				if ( editor.first->hasDocument() )
+					editor.first->getDocument().removeCommand( kb.first );
+			}
+			for ( auto listener : editor.second )
+				editor.first->removeEventListener( listener );
+			if ( mBreadcrumb )
+				editor.first->unregisterTopSpace( this );
+			editor.first->unregisterPlugin( this );
 		}
-		for ( auto listener : editor.second )
-			editor.first->removeEventListener( listener );
-		if ( mBreadcrumb )
-			editor.first->unregisterTopSpace( this );
-		editor.first->unregisterPlugin( this );
-	}
-	if ( nullptr == mManager->getSplitter() )
-		return;
-	for ( const auto& editor : mEditorsTags ) {
-		if ( mManager->getSplitter()->editorExists( editor.first ) ) {
-			for ( const auto& tag : editor.second )
-				editor.first->removeActionsByTag( tag );
+		if ( nullptr == mManager->getSplitter() )
+			return;
+		for ( const auto& editor : mEditorsTags ) {
+			if ( mManager->getSplitter()->editorExists( editor.first ) ) {
+				for ( const auto& tag : editor.second )
+					editor.first->removeActionsByTag( tag );
+			}
 		}
 	}
 }

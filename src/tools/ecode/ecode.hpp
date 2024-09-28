@@ -24,6 +24,10 @@
 
 using namespace eterm::UI;
 
+enum class CustomWidgets {
+	UI_TYPE_WELCOME_TAB = UI_TYPE_USER + 1,
+};
+
 namespace ecode {
 
 class AutoCompletePlugin;
@@ -332,6 +336,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void updateRecentFolders();
 
+	void updateRecentButtons();
+
 	const CodeEditorConfig& getCodeEditorConfig() const;
 
 	AppConfig& getConfig();
@@ -495,6 +501,8 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mi18nPath;
 	std::string mScriptsPath;
 	std::string mPlaygroundPath;
+	std::string mIpcPath;
+	std::string mPidPath;
 	Float mDisplayDPI{ 96 };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;
@@ -546,6 +554,7 @@ class App : public UICodeEditorSplitter::Client {
 	UIMenuBar* mMenuBar{ nullptr };
 	std::unique_ptr<SettingsActions> mSettingsActions;
 	std::vector<std::string> mPathsToLoad;
+	Uint64 mIpcListenerId{ 0 };
 
 	void saveAllProcess();
 
@@ -647,6 +656,11 @@ class App : public UICodeEditorSplitter::Client {
 	void insertRecentFileAndUpdateUI( const std::string& path );
 
 	void createWelcomeTab();
+
+	bool needsRedirectToRunningProcess( std::string file );
+
+	std::function<void( UICodeEditor*, const std::string& )>
+	getForcePositionFn( TextPosition initialPosition );
 };
 
 } // namespace ecode

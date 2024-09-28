@@ -24,6 +24,12 @@ class UIWelcomeScreen : public UIRelativeLayout, public WidgetCommandExecuter {
 		return WidgetCommandExecuter::onKeyDown( event );
 	}
 
+	void refresh();
+
+	Uint32 getType() const;
+
+	bool isType( const Uint32& type ) const;
+
   protected:
 	App* mApp{ nullptr };
 };

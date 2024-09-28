@@ -105,7 +105,7 @@ enum UINodeType {
 	UI_TYPE_STACK_LAYOUT,
 	UI_TYPE_MODULES = 10000,
 	UI_TYPE_TERMINAL = 10001,
-	UI_TYPE_USER = 100000
+	UI_TYPE_USER = 200000
 };
 
 enum class ScrollBarMode : Uint32 { Auto, AlwaysOn, AlwaysOff };

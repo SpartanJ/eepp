@@ -126,7 +126,7 @@ class LSPClientPlugin : public Plugin {
 	bool mBreadcrumb{ true };
 	bool mHoveringBreadcrumb{ false };
 	StyleSheetLength mBreadcrumbHeight{ "20dp" };
-	UnorderedMap<std::string, std::string> mKeyBindings; /* cmd, shortcut */
+	std::unordered_map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 	UnorderedMap<TextDocument*, std::shared_ptr<TextDocument>> mDelayedDocs;
 	Uint32 mHoverWaitCb{ 0 };
 	LSPHover mCurrentHover;
