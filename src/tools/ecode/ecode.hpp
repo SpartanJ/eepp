@@ -328,7 +328,11 @@ class App : public UICodeEditorSplitter::Client {
 
 	PluginManager* getPluginManager() const;
 
-	void loadFileFromPathOrFocus( const std::string& path );
+	void
+	loadFileFromPathOrFocus( const std::string& path, bool inNewTab = true,
+							 UICodeEditor* codeEditor = nullptr,
+							 std::function<void( UICodeEditor*, const std::string& )> onLoaded =
+								 std::function<void( UICodeEditor*, const std::string& )>() );
 
 	UISceneNode* getUISceneNode() const { return mUISceneNode; }
 

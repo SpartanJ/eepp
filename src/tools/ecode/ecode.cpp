@@ -1058,10 +1058,12 @@ const std::string& App::getWindowTitle() const {
 	return mWindowTitle;
 }
 
-void App::loadFileFromPathOrFocus( const std::string& path ) {
+void App::loadFileFromPathOrFocus(
+	const std::string& path, bool inNewTab, UICodeEditor* codeEditor,
+	std::function<void( UICodeEditor*, const std::string& )> onLoaded ) {
 	UITab* tab = mSplitter->isDocumentOpen( path );
 	if ( !tab ) {
-		loadFileFromPath( path );
+		loadFileFromPath( path, inNewTab, codeEditor, onLoaded );
 	} else {
 		tab->getTabWidget()->setTabSelected( tab );
 	}
@@ -3534,34 +3536,35 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mFileWatcher->addWatch( mPidPath, mFileSystemListener );
 		mFileWatcher->watch();
 		mPluginManager->setFileSystemListener( mFileSystemListener );
-		mIpcListenerId = mFileSystemListener->addListener( [this]( const FileEvent& fe,
-																   const FileInfo& fi ) {
-			if ( !( ( fe.type == FileSystemEventType::Add ||
-					  fe.type == FileSystemEventType::Modified ) &&
-					fe.directory == mPidPath ) )
-				return;
-			std::string path;
-			FileSystem::fileGet( fi.getFilepath(), path );
-			String::trimInPlace( path, ' ' );
-			String::trimInPlace( path, '\n' );
+		mIpcListenerId =
+			mFileSystemListener->addListener( [this]( const FileEvent& fe, const FileInfo& fi ) {
+				if ( !( ( fe.type == FileSystemEventType::Add ||
+						  fe.type == FileSystemEventType::Modified ) &&
+						fe.directory == mPidPath ) )
+					return;
+				std::string path;
+				FileSystem::fileGet( fi.getFilepath(), path );
+				String::trimInPlace( path, ' ' );
+				String::trimInPlace( path, '\n' );
 
-			bool hasPosition = pathHasPosition( path );
-			TextPosition initialPosition;
-			if ( hasPosition ) {
-				auto pathAndPosition = getPathAndPosition( path );
-				path = pathAndPosition.first;
-				initialPosition = pathAndPosition.second;
-			}
+				bool hasPosition = pathHasPosition( path );
+				TextPosition initialPosition;
+				if ( hasPosition ) {
+					auto pathAndPosition = getPathAndPosition( path );
+					path = pathAndPosition.first;
+					initialPosition = pathAndPosition.second;
+				}
 
-			if ( FileSystem::fileExists( path ) ) {
-				mUISceneNode->runOnMainThread( [path, initialPosition, this] {
-					loadFileFromPath( path, true, nullptr, getForcePositionFn( initialPosition ) );
-				} );
-				if ( !mWindow->hasFocus() )
-					mWindow->raise();
-			}
-			FileSystem::fileRemove( fi.getFilepath() );
-		} );
+				if ( FileSystem::fileExists( path ) ) {
+					mUISceneNode->runOnMainThread( [path, initialPosition, this] {
+						loadFileFromPathOrFocus( path, true, nullptr,
+												 getForcePositionFn( initialPosition ) );
+					} );
+					if ( !mWindow->hasFocus() )
+						mWindow->raise();
+				}
+				FileSystem::fileRemove( fi.getFilepath() );
+			} );
 #endif
 
 		mNotificationCenter = std::make_unique<NotificationCenter>(
