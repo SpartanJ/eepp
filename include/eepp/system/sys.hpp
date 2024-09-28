@@ -129,7 +129,7 @@ class EE_API Sys {
 	static std::vector<Uint64> pidof( const std::string& processName );
 
 	/** @returns The unix timestamp of the process creation time */
-	static Uint64 getProcessCreationTime( Uint64 pid );
+	static Int64 getProcessCreationTime( Uint64 pid );
 };
 
 }} // namespace EE::System

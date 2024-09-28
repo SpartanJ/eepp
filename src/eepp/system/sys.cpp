@@ -1322,8 +1322,8 @@ std::string Sys::getProcessFilePath() {
 #endif
 }
 
-Uint64 Sys::getProcessCreationTime( Uint64 pid ) {
-	Uint64 creationTime = 0;
+Int64 Sys::getProcessCreationTime( Uint64 pid ) {
+	Int64 creationTime = -1;
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	int rpid = static_cast<int>( pid );
@@ -1397,16 +1397,29 @@ Uint64 Sys::getProcessCreationTime( Uint64 pid ) {
 	creationTime = proc.ki_start.tv_sec;
 
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
-	thread_info threadInfo;
 	int rpid = static_cast<int>( pid );
-	status_t result = get_thread_info( rpid, &threadInfo ); // Get thread info for the PID passed
-	if ( result == B_OK ) {
-		// Approximate creation time by subtracting CPU time (user_time + kernel_time) from current
-		// time
-		creationTime = time( NULL ) - ( threadInfo.user_time + threadInfo.kernel_time ) /
-										  1000000; // Convert microseconds to seconds
-	} else {
-		return -1;
+	int32 cookie = 0;
+	team_info teamInfo;
+
+	while ( get_next_team_info( &cookie, &teamInfo ) == B_OK ) {
+		if ( teamInfo.team != rpid )
+			continue;
+
+		KMessage extendedInfo;
+		status_t status = get_extended_team_info( teamInfo.team, B_TEAM_INFO_BASIC, extendedInfo );
+
+		if ( status == B_BAD_TEAM_ID ) {
+			// The team might have simply ended between the last function calls.
+			continue;
+		} else if ( status != B_OK ) {
+			break;
+		}
+
+		bigtime_t startTime = 0;
+		if ( extendedInfo.FindInt64( "start_time", &startTime ) != B_OK )
+			continue;
+
+		return startTime;
 	}
 
 #endif
@@ -1544,12 +1557,26 @@ std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 	return pids;
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
 	std::vector<Uint64> pids;
-	team_info teamInfo;
 	int32 cookie = 0;
-	std::string lProcessName = String::toLower( processName );
+	team_info teamInfo;
+	const char* cprocessName = processName.c_str();
 
 	while ( get_next_team_info( &cookie, &teamInfo ) == B_OK ) {
-		if ( lProcessName == String::toLower( FileSystem::fileNameFromPath( teamInfo.args ) ) ) {
+		KMessage extendedInfo;
+		status_t status = get_extended_team_info( teamInfo.team, B_TEAM_INFO_BASIC, extendedInfo );
+
+		if ( status == B_BAD_TEAM_ID ) {
+			// The team might have simply ended between the last function calls.
+			continue;
+		} else if ( status != B_OK ) {
+			return {};
+		}
+
+		const char* teamName = NULL;
+		if ( extendedInfo.FindString( "name", &teamName ) != B_OK )
+			continue;
+
+		if ( strcmp( teamName, cprocessName ) == 0 ) {
 			pids.push_back( teamInfo.team );
 		}
 	}
