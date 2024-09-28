@@ -17,8 +17,6 @@ class Plugin : public UICodeEditorPlugin {
   public:
 	explicit Plugin( PluginManager* manager );
 
-	virtual ~Plugin();
-
 	void subscribeFileSystemListener();
 
 	void unsubscribeFileSystemListener();
@@ -63,6 +61,8 @@ class Plugin : public UICodeEditorPlugin {
 	std::atomic<bool> mShuttingDown{ false };
 
 	void setReady();
+
+	void waitUntilLoaded();
 };
 
 class PluginBase : public Plugin {

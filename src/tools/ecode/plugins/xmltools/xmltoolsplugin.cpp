@@ -35,6 +35,7 @@ XMLToolsPlugin::XMLToolsPlugin( PluginManager* pluginManager, bool sync ) :
 }
 
 XMLToolsPlugin::~XMLToolsPlugin() {
+	waitUntilLoaded();
 	mShuttingDown = true;
 	{
 		Lock l( mClientsMutex );

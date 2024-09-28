@@ -48,6 +48,7 @@ LinterPlugin::LinterPlugin( PluginManager* pluginManager, bool sync ) : Plugin( 
 }
 
 LinterPlugin::~LinterPlugin() {
+	waitUntilLoaded();
 	mShuttingDown = true;
 	mManager->unsubscribeMessages( this );
 	unsubscribeFileSystemListener();

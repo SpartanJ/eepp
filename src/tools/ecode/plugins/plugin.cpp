@@ -71,7 +71,7 @@ void Plugin::showMessage( LSPMessageType type, const std::string& message,
 							 &msgReq );
 }
 
-Plugin::~Plugin() {
+void Plugin::waitUntilLoaded() {
 	while ( mLoading )
 		Sys::sleep( Milliseconds( 1 ) );
 }

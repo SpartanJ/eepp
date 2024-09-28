@@ -83,6 +83,7 @@ GitPlugin::GitPlugin( PluginManager* pluginManager, bool sync ) :
 }
 
 GitPlugin::~GitPlugin() {
+	waitUntilLoaded();
 	mShuttingDown = true;
 	if ( mStatusButton )
 		mStatusButton->close();

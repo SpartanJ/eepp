@@ -106,6 +106,7 @@ AutoCompletePlugin::AutoCompletePlugin( PluginManager* pluginManager, bool sync 
 }
 
 AutoCompletePlugin::~AutoCompletePlugin() {
+	waitUntilLoaded();
 	mShuttingDown = true;
 	mManager->unsubscribeMessages( this );
 	unsubscribeFileSystemListener();

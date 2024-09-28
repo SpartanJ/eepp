@@ -45,6 +45,7 @@ FormatterPlugin::FormatterPlugin( PluginManager* pluginManager, bool sync ) :
 }
 
 FormatterPlugin::~FormatterPlugin() {
+	waitUntilLoaded();
 	mShuttingDown = true;
 	unsubscribeFileSystemListener();
 
