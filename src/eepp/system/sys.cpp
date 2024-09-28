@@ -60,9 +60,6 @@ typedef DWORD( WINAPI* GetModuleBaseName_t )( HANDLE, HMODULE, LPSTR, DWORD );
 #include <fs_info.h>
 #include <kernel/OS.h>
 #include <kernel/image.h>
-#include <private/kernel/util/KMessage.h>
-#include <private/libroot/extended_system_info.h>
-#include <private/system/extended_system_info_defs.h>
 #include <sys/statvfs.h>
 #elif EE_PLATFORM == EE_PLATFORM_SOLARIS
 #include <stdlib.h>
@@ -1314,8 +1311,14 @@ std::string Sys::getProcessFilePath() {
 	sysctl( mib, 4, exename, &len, NULL, 0 );
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
 	image_info info;
-	get_image_info( 0, &info );
-	strncpy( exename, info.name, sizeof( exename ) );
+	int32 cookie = 0;
+
+	while ( B_OK == get_next_image_info( 0, &cookie, &info ) ) {
+		if ( info.type == B_APP_IMAGE )
+			break;
+	}
+
+	return FileSystem::fileNameFromPath( std::string( info.name ) );
 #else
 	*exename = 0;
 #endif
@@ -1403,28 +1406,11 @@ Int64 Sys::getProcessCreationTime( Uint64 pid ) {
 	int rpid = static_cast<int>( pid );
 	int32 cookie = 0;
 	team_info teamInfo;
-
 	while ( get_next_team_info( &cookie, &teamInfo ) == B_OK ) {
 		if ( teamInfo.team != rpid )
 			continue;
-
-		KMessage extendedInfo;
-		status_t status = get_extended_team_info( teamInfo.team, B_TEAM_INFO_BASIC, extendedInfo );
-
-		if ( status == B_BAD_TEAM_ID ) {
-			// The team might have simply ended between the last function calls.
-			continue;
-		} else if ( status != B_OK ) {
-			break;
-		}
-
-		bigtime_t startTime = 0;
-		if ( extendedInfo.FindInt64( "start_time", &startTime ) != B_OK )
-			continue;
-
-		return startTime;
+		return teamInfo.start_time;
 	}
-
 #endif
 
 	return creationTime;
@@ -1562,28 +1548,10 @@ std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 	std::vector<Uint64> pids;
 	int32 cookie = 0;
 	team_info teamInfo;
-	const char* cprocessName = processName.c_str();
-
 	while ( get_next_team_info( &cookie, &teamInfo ) == B_OK ) {
-		KMessage extendedInfo;
-		status_t status = get_extended_team_info( teamInfo.team, B_TEAM_INFO_BASIC, extendedInfo );
-
-		if ( status == B_BAD_TEAM_ID ) {
-			// The team might have simply ended between the last function calls.
-			continue;
-		} else if ( status != B_OK ) {
-			return {};
-		}
-
-		const char* teamName = NULL;
-		if ( extendedInfo.FindString( "name", &teamName ) != B_OK )
-			continue;
-
-		if ( strcmp( teamName, cprocessName ) == 0 ) {
+		if ( std::string_view{ teamInfo.name } == std::string_view{ processName } )
 			pids.push_back( teamInfo.team );
-		}
 	}
-
 	return pids;
 #else
 #warning Platform not supported
