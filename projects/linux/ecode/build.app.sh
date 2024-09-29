@@ -4,10 +4,15 @@ DIRPATH="$(dirname "$CANONPATH")"
 cd "$DIRPATH" || exit
 cd ../../../ || exit
 DEBUG_SYMBOLS=
+VERSION=
 for i in "$@"; do
 	case $i in
 		--with-debug-symbols)
 			DEBUG_SYMBOLS="--with-debug-symbols"
+			shift
+			;;
+		--version)
+			if [[ -n $2 ]]; then VERSION="$2"; fi
 			shift
 			;;
 		-*|--*)
@@ -18,7 +23,18 @@ for i in "$@"; do
 			;;
 	esac
 done
-premake4 $DEBUG_SYMBOLS gmake || exit
+
+if command -v premake4 &> /dev/null
+then
+    premake4 $DEBUG_SYMBOLS gmake || exit
+elif command -v premake4 &> /dev/null
+then
+    premake5 $DEBUG_SYMBOLS gmake2 || exit
+else
+    echo "Neither premake5 nor premake4 is available. Please install one."
+    exit 1
+fi
+
 cd make/linux || exit
 make -j"$(nproc)" config=release ecode || exit
 cd "$DIRPATH" || exit
@@ -60,10 +76,16 @@ mkdir ecode.app/assets/ui
 cp ../../../bin/assets/ui/breeze.css ecode.app/assets/ui/
 cp ../../../bin/assets/ca-bundle.pem ecode.app/assets/ca-bundle.pem
 
+if [ -n "$VERSION" ];
+then
+ECODE_VERSION="$VERSION"
+else
 VERSIONPATH=../../../src/tools/ecode/version.hpp
 ECODE_MAJOR_VERSION=$(grep "define ECODE_MAJOR_VERSION" $VERSIONPATH | awk '{print $3}')
 ECODE_MINOR_VERSION=$(grep "define ECODE_MINOR_VERSION" $VERSIONPATH | awk '{print $3}')
 ECODE_PATCH_LEVEL=$(grep "define ECODE_PATCH_LEVEL" $VERSIONPATH | awk '{print $3}')
+ECODE_VERSION="$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH_LEVEL"
+fi
 
 export APPIMAGETOOL="appimagetool"
 
@@ -74,7 +96,7 @@ then
 	chmod +x "$APPIMAGETOOL"
 fi
 
-ECODE_NAME=ecode-linux-"$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH_LEVEL"-"$(arch)"
+ECODE_NAME=ecode-linux-"$ECODE_VERSION"-"$(arch)"
 
 if [ -n "$DEBUG_SYMBOLS" ];
 then

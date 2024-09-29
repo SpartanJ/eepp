@@ -1,6 +1,17 @@
 #!/bin/sh
 cd $(dirname "$0")
-premake4 --file=../../premake4.lua --disable-static-build gmake
+
+
+if command -v premake4 &> /dev/null
+then
+    premake4 --file=../../premake4.lua --disable-static-build gmake
+elif command -v premake4 &> /dev/null
+then
+    premake5 --file=../../premake5.lua --disable-static-build gmake2
+else
+    echo "Neither premake5 nor premake4 is available. Please install one."
+    exit 1
+fi
 
 cd ../../make/macosx/
 sed -e "s/-Wl,-x//g" -i .make

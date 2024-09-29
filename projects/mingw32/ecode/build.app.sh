@@ -6,8 +6,13 @@ cd "$DIRPATH" || exit
 ARCH=x86_64
 ARCHI=$ARCH
 BUILDTYPE=release
+VERSION=
 for i in "$@"; do
   case $i in
+    --version)
+      if [[ -n $2 ]]; then VERSION="$2"; fi
+      shift
+      ;;
     arch=*)
       ARCH_CONFIG="${i#*=}"
       shift
@@ -65,10 +70,17 @@ mkdir -p ecode/assets/icon
 cp ../../../bin/assets/icon/ecode.png ecode/assets/icon/
 cp ../../../bin/assets/ca-bundle.pem ecode/assets/ca-bundle.pem
 
+if [ -n "$VERSION" ];
+then
+ECODE_VERSION="$VERSION"
+else
 VERSIONPATH=../../../src/tools/ecode/version.hpp
 ECODE_MAJOR_VERSION=$(grep "define ECODE_MAJOR_VERSION" $VERSIONPATH | awk '{print $3}')
 ECODE_MINOR_VERSION=$(grep "define ECODE_MINOR_VERSION" $VERSIONPATH | awk '{print $3}')
 ECODE_PATCH_LEVEL=$(grep "define ECODE_PATCH_LEVEL" $VERSIONPATH | awk '{print $3}')
-ECODE_ZIP_NAME=ecode-windows-$ECODE_MAJOR_VERSION.$ECODE_MINOR_VERSION.$ECODE_PATCH_LEVEL-$ARCH.zip
+ECODE_VERSION="$ECODE_MAJOR_VERSION.$ECODE_MINOR_VERSION.$ECODE_PATCH_LEVEL"
+fi
+
+ECODE_ZIP_NAME=ecode-windows-"$ECODE_VERSION"-$ARCH.zip
 
 zip -r "$ECODE_ZIP_NAME" ecode/
