@@ -2031,6 +2031,16 @@ void TextDocument::selectLine() {
 	mergeSelection();
 }
 
+void TextDocument::selectSingleLine() {
+	for ( size_t i = 0; i < mSelection.size(); ++i ) {
+		auto sel = getSelectionIndex( i );
+		setSelection( i, { { sel.start().line(), 0 },
+						   { sel.start().line(),
+							 eemax( (Int64)line( sel.start().line() ).size() - 1, (Int64)0 ) } } );
+	}
+	mergeSelection();
+}
+
 void TextDocument::selectToPreviousLine() {
 	for ( size_t i = 0; i < mSelection.size(); ++i ) {
 		TextPosition pos = getSelectionIndex( i ).start();
@@ -3520,6 +3530,7 @@ void TextDocument::initializeCommands() {
 	mCommands["select-word"] = [this] { selectWord(); };
 	mCommands["select-all-words"] = [this] { selectAllWords(); };
 	mCommands["select-line"] = [this] { selectLine(); };
+	mCommands["select-single-line"] = [this] { selectSingleLine(); };
 	mCommands["select-to-start-of-line"] = [this] { selectToStartOfLine(); };
 	mCommands["select-to-end-of-line"] = [this] { selectToEndOfLine(); };
 	mCommands["select-to-start-of-doc"] = [this] { selectToStartOfDoc(); };

@@ -777,12 +777,20 @@ bool WindowSDL::isMaximized() {
 	return SDL_GetWindowFlags( mSDLWindow ) & SDL_WINDOW_MAXIMIZED;
 }
 
+bool WindowSDL::isMinimized() {
+	return SDL_GetWindowFlags( mSDLWindow ) & SDL_WINDOW_MINIMIZED;
+}
+
 void WindowSDL::hide() {
 	SDL_HideWindow( mSDLWindow );
 }
 
 void WindowSDL::raise() {
 	SDL_RaiseWindow( mSDLWindow );
+}
+
+void WindowSDL::restore() {
+	SDL_RestoreWindow( mSDLWindow );
 }
 
 void WindowSDL::flash( WindowFlashOperation op ) {

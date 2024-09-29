@@ -327,6 +327,8 @@ class EE_API TextDocument {
 
 	void selectLine();
 
+	void selectSingleLine();
+
 	void selectToNextWord();
 
 	void selectToPreviousLine();

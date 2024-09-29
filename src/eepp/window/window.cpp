@@ -534,9 +534,15 @@ bool Window::isMaximized() {
 	return false;
 }
 
+bool Window::isMinimized() {
+	return false;
+}
+
 void Window::hide() {}
 
 void Window::raise() {}
+
+void Window::restore() {}
 
 void Window::flash( WindowFlashOperation ) {}
 

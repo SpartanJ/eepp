@@ -63,9 +63,13 @@ class EE_API WindowSDL : public Window {
 
 	virtual bool isMaximized();
 
+	virtual bool isMinimized();
+
 	virtual void hide();
 
 	virtual void raise();
+
+	virtual void restore();
 
 	virtual void flash( WindowFlashOperation op );
 

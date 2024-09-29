@@ -193,11 +193,17 @@ class EE_API Window {
 	/** @return true if the window is maximized */
 	virtual bool isMaximized();
 
+	/** @return true if the window is minimized */
+	virtual bool isMinimized();
+
 	/** This will attempt to hide the window */
 	virtual void hide();
 
 	/** This will attempt to raise the window */
 	virtual void raise();
+
+	/** This will attempt to restore the window */
+	virtual void restore();
 
 	/** Request a window to demand attention from the user. */
 	virtual void flash( WindowFlashOperation op );

@@ -3560,8 +3560,11 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 						loadFileFromPathOrFocus( path, true, nullptr,
 												 getForcePositionFn( initialPosition ) );
 					} );
-					if ( !mWindow->hasFocus() )
+					if ( !mWindow->hasFocus() ) {
+						if ( mWindow->isMinimized() )
+							mWindow->restore();
 						mWindow->raise();
+					}
 				}
 				FileSystem::fileRemove( fi.getFilepath() );
 			} );
