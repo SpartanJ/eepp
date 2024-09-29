@@ -212,6 +212,18 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 #include <iomanip>
 #include <sstream>
 #define NTDDI_VERSION NTDDI_WIN10_RS5
+#ifdef _WIN32_WINDOWS
+#undef _WIN32_WINDOWS
+#endif
+#ifdef _WIN32_WINNT
+#undef _WIN32_WINNT
+#endif
+#ifdef WINVER
+#undef WINVER
+#endif
+#define _WIN32_WINDOWS 0x0602
+#define _WIN32_WINNT 0x0602
+#define WINVER 0x0602
 #include <windows.h>
 
 using namespace EE;

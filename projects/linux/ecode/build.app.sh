@@ -5,6 +5,7 @@ cd "$DIRPATH" || exit
 cd ../../../ || exit
 DEBUG_SYMBOLS=
 VERSION=
+ARCH=$(arch)
 for i in "$@"; do
 	case $i in
 		--with-debug-symbols)
@@ -13,6 +14,12 @@ for i in "$@"; do
 			;;
 		--version)
 			if [[ -n $2 ]]; then VERSION="$2"; fi
+			shift
+			shift
+			;;
+		--arch)
+			if [[ -n $2 ]]; then ARCH="$2"; fi
+			shift
 			shift
 			;;
 		-*|--*)
@@ -24,10 +31,14 @@ for i in "$@"; do
 	esac
 done
 
+if [ "$ARCH" = "aarch64" ]; then
+	ARCH="arm64"
+fi
+
 if command -v premake4 &> /dev/null
 then
     premake4 $DEBUG_SYMBOLS gmake || exit
-elif command -v premake4 &> /dev/null
+elif command -v premake5 &> /dev/null
 then
     premake5 $DEBUG_SYMBOLS gmake2 || exit
 else
@@ -96,7 +107,7 @@ then
 	chmod +x "$APPIMAGETOOL"
 fi
 
-ECODE_NAME=ecode-linux-"$ECODE_VERSION"-"$(arch)"
+ECODE_NAME=ecode-linux-"$ECODE_VERSION"-"$ARCH"
 
 if [ -n "$DEBUG_SYMBOLS" ];
 then
@@ -109,13 +120,14 @@ then
 	objcopy -S ecode.app/libs/libeepp.so ecode.app/libs/libeepp.so
 fi
 
+echo "Generating $ECODE_NAME.AppImage"
 $APPIMAGETOOL ecode.app "$ECODE_NAME".AppImage
 
 rm ecode.app/.DirIcon
 mv ecode.app/AppRun ecode.app/ecode
 mv ecode.app ecode
 
+echo "Generating $ECODE_NAME.tar.gz"
 tar -czf "$ECODE_NAME".tar.gz ecode
 
 mv ecode ecode.app
-

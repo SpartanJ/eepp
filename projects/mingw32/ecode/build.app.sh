@@ -12,6 +12,7 @@ for i in "$@"; do
     --version)
       if [[ -n $2 ]]; then VERSION="$2"; fi
       shift
+      shift
       ;;
     arch=*)
       ARCH_CONFIG="${i#*=}"
@@ -83,4 +84,5 @@ fi
 
 ECODE_ZIP_NAME=ecode-windows-"$ECODE_VERSION"-$ARCH.zip
 
+echo "Generating $ECODE_ZIP_NAME"
 zip -r "$ECODE_ZIP_NAME" ecode/
