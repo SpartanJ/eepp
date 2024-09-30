@@ -429,6 +429,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void moveToNextLine();
 
+	void moveToPreviousPage();
+
+	void moveToNextPage();
+
 	void moveToStartOfLine();
 
 	void moveToEndOfLine();
@@ -503,10 +507,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual Int64 getColFromXOffset( VisibleIndex visibleIndex, const Float& x ) const;
 
-	std::vector<Rectf>
-	getTextRangeRectangles( const TextRange& range, const Vector2f& startScroll,
-							std::optional<const DocumentLineRange> lineRange = {},
-							std::optional<Float> lineHeight = {} );
+	std::vector<Rectf> getTextRangeRectangles(
+		const TextRange& range, const Vector2f& startScroll,
+		std::optional<const DocumentLineRange> lineRange = {}, std::optional<Float> lineHeight = {},
+		std::optional<DocumentViewLineRange> visibleLineRange =
+			{} /* if passed it will clip rectangles against the visual line range */ );
 
 	virtual Float getLineWidth( const Int64& docLine );
 
@@ -960,18 +965,19 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void drawLineText( const Int64& line, Vector2f position, const Float& fontSize,
 							   const Float& lineHeight,
-							   const DocumentViewLineRange& visualLineRange );
+							   const DocumentViewLineRange& visibleLineRange );
 
 	virtual void drawSelectionMatch( const DocumentLineRange& lineRange,
 									 const Vector2f& startScroll, const Float& lineHeight );
 
 	virtual void drawWordMatch( const String& text, const DocumentLineRange& lineRange,
 								const Vector2f& startScroll, const Float& lineHeight,
-								bool ignoreSelectionMatch = false );
+								bool ignoreSelectionMatch = false,
+								const DocumentViewLineRange& visibleLineRange = {} );
 
 	virtual void drawWhitespaces( const DocumentLineRange& lineRange, const Vector2f& startScroll,
 								  const Float& lineHeight,
-								  const DocumentViewLineRange& visualLineRange );
+								  const DocumentViewLineRange& visibleLineRange );
 
 	virtual void drawIndentationGuides( const DocumentLineRange& lineRange,
 										const Vector2f& startScroll, const Float& lineHeight );
@@ -981,14 +987,16 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual void drawTextRange( const TextRange& range, const DocumentLineRange& lineRange,
 								const Vector2f& startScroll, const Float& lineHeight,
-								const Color& backgroundColor );
+								const Color& backgroundColor,
+								const DocumentViewLineRange& visibleLineRange );
 
 	virtual void drawLineNumbers( const DocumentLineRange& lineRange, const Vector2f& startScroll,
 								  const Vector2f& screenStart, const Float& lineHeight,
 								  const Float& lineNumberWidth, const int& lineNumberDigits,
 								  const Float& fontSize );
 
-	virtual void drawColorPreview( const Vector2f& startScroll, const Float& lineHeight );
+	virtual void drawColorPreview( const Vector2f& startScroll, const Float& lineHeight,
+								   const DocumentViewLineRange& visibleLineRange );
 
 	virtual void onFontChanged();
 
@@ -1046,7 +1054,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void drawWordRanges( const TextRanges& ranges, const DocumentLineRange& lineRange,
 						 const Vector2f& startScroll, const Float& lineHeight,
-						 bool ignoreSelectionMatch );
+						 bool ignoreSelectionMatch, const DocumentViewLineRange& visibleLineRange );
 
 	void updateHighlightWordCache();
 

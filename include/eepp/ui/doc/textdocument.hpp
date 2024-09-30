@@ -226,14 +226,20 @@ class EE_API TextDocument {
 
 	TextPosition previousChar( TextPosition position ) const;
 
-	TextPosition previousWordBoundary( TextPosition position,
-									   bool ignoreFirstNonWord = true ) const;
+	TextPosition previousWordBoundary( TextPosition position, bool ignoreFirstNonWord = true,
+									   std::size_t maxSeekChars = 1024,
+									   bool returnInvalidOnMaxSeek = false ) const;
 
-	TextPosition nextWordBoundary( TextPosition position, bool ignoreFirstNonWord = true ) const;
+	TextPosition nextWordBoundary( TextPosition position, bool ignoreFirstNonWord = true,
+								   std::size_t maxSeekChars = 1024,
+								   bool returnInvalidOnMaxSeek = false ) const;
 
-	TextPosition previousSpaceBoundaryInLine( TextPosition position ) const;
+	TextPosition previousSpaceBoundaryInLine( TextPosition position,
+											  std::size_t maxSeekChars = 1024,
+											  bool returnInvalidOnMaxSeek = false ) const;
 
-	TextPosition nextSpaceBoundaryInLine( TextPosition position ) const;
+	TextPosition nextSpaceBoundaryInLine( TextPosition position, std::size_t maxSeekChars = 1024,
+										  bool returnInvalidOnMaxSeek = false ) const;
 
 	TextPosition startOfWord( TextPosition position ) const;
 

@@ -326,6 +326,7 @@ DocumentView::VisibleLineRange DocumentView::getVisibleLineRange( const TextPosi
 	}
 	Int64 fromIdx = static_cast<Int64>( toVisibleIndex( pos.line() ) );
 	Int64 toIdx = static_cast<Int64>( toVisibleIndex( pos.line(), true ) );
+	// TODO: Implement binary search
 	DocumentView::VisibleLineRange info;
 	for ( Int64 i = fromIdx; i < toIdx; i++ ) {
 		Int64 fromCol = mVisibleLines[i].column();

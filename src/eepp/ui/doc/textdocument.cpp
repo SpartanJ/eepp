@@ -1380,13 +1380,15 @@ TextPosition TextDocument::previousChar( TextPosition position ) const {
 	return positionOffset( position, TextPosition( 0, -1 ) );
 }
 
-TextPosition TextDocument::previousWordBoundary( TextPosition position,
-												 bool ignoreFirstNonWord ) const {
+TextPosition TextDocument::previousWordBoundary( TextPosition position, bool ignoreFirstNonWord,
+												 std::size_t maxSeekChars,
+												 bool returnInvalidOnMaxSeek ) const {
 	auto ch = getChar( positionOffset( position, -1 ) );
 	bool inWord = !isNonWord( ch );
 	if ( !ignoreFirstNonWord && !inWord )
 		return position;
 	String::StringBaseType nextChar = 0;
+	Int64 seekedChars = static_cast<Int64>( maxSeekChars );
 	do {
 		TextPosition curPos = position;
 		position = positionOffset( position, -1 );
@@ -1394,17 +1396,20 @@ TextPosition TextDocument::previousWordBoundary( TextPosition position,
 			break;
 		}
 		nextChar = getChar( positionOffset( position, -1 ) );
-	} while ( ( inWord && !isNonWord( nextChar ) ) || ( !inWord && nextChar == ch ) );
-	return position;
+	} while ( ( ( inWord && !isNonWord( nextChar ) ) || ( !inWord && nextChar == ch ) ) &&
+			  --seekedChars );
+	return returnInvalidOnMaxSeek && seekedChars == 0 ? TextPosition() : position;
 }
 
-TextPosition TextDocument::nextWordBoundary( TextPosition position,
-											 bool ignoreFirstNonWord ) const {
+TextPosition TextDocument::nextWordBoundary( TextPosition position, bool ignoreFirstNonWord,
+											 std::size_t maxSeekChars,
+											 bool returnInvalidOnMaxSeek ) const {
 	auto ch = getChar( position );
 	bool inWord = !isNonWord( ch );
 	if ( !ignoreFirstNonWord && !inWord )
 		return position;
 	String::StringBaseType nextChar = 0;
+	Int64 seekedChars = static_cast<Int64>( maxSeekChars );
 	do {
 		TextPosition curPos = position;
 		position = positionOffset( position, 1 );
@@ -1412,14 +1417,18 @@ TextPosition TextDocument::nextWordBoundary( TextPosition position,
 			break;
 		}
 		nextChar = getChar( position );
-	} while ( ( inWord && !isNonWord( nextChar ) ) || ( !inWord && nextChar == ch ) );
-	return position;
+	} while ( ( ( inWord && !isNonWord( nextChar ) ) || ( !inWord && nextChar == ch ) ) &&
+			  --seekedChars );
+	return returnInvalidOnMaxSeek && seekedChars == 0 ? TextPosition() : position;
 }
 
-TextPosition TextDocument::previousSpaceBoundaryInLine( TextPosition position ) const {
+TextPosition TextDocument::previousSpaceBoundaryInLine( TextPosition position,
+														std::size_t maxSeekChars,
+														bool returnInvalidOnMaxSeek ) const {
 	auto ch = getChar( positionOffset( position, -1 ) );
 	bool inWord = ch != ' ';
 	String::StringBaseType nextChar = 0;
+	Int64 seekedChars = static_cast<Int64>( maxSeekChars );
 	do {
 		TextPosition curPos = position;
 		position = positionOffset( position, -1 );
@@ -1430,14 +1439,16 @@ TextPosition TextDocument::previousSpaceBoundaryInLine( TextPosition position ) 
 			break;
 		}
 		nextChar = getChar( positionOffset( position, -1 ) );
-	} while ( ( inWord && nextChar != ' ' ) || ( !inWord && nextChar == ch ) );
-	return position;
+	} while ( ( ( inWord && nextChar != ' ' ) || ( !inWord && nextChar == ch ) ) && --seekedChars );
+	return returnInvalidOnMaxSeek && seekedChars == 0 ? TextPosition() : position;
 }
 
-TextPosition TextDocument::nextSpaceBoundaryInLine( TextPosition position ) const {
+TextPosition TextDocument::nextSpaceBoundaryInLine( TextPosition position, std::size_t maxSeekChars,
+													bool returnInvalidOnMaxSeek ) const {
 	auto ch = getChar( position );
 	bool inWord = ch != ' ';
 	String::StringBaseType nextChar = 0;
+	Int64 seekedChars = static_cast<Int64>( maxSeekChars );
 	do {
 		TextPosition curPos = position;
 		position = positionOffset( position, 1 );
@@ -1448,8 +1459,8 @@ TextPosition TextDocument::nextSpaceBoundaryInLine( TextPosition position ) cons
 			break;
 		}
 		nextChar = getChar( position );
-	} while ( ( inWord && nextChar != ' ' ) || ( !inWord && nextChar == ch ) );
-	return position;
+	} while ( ( ( inWord && nextChar != ' ' ) || ( !inWord && nextChar == ch ) ) && --seekedChars );
+	return returnInvalidOnMaxSeek && seekedChars == 0 ? TextPosition() : position;
 }
 
 TextPosition TextDocument::startOfWord( TextPosition position ) const {
@@ -1987,8 +1998,10 @@ const Uint64& TextDocument::getModificationId() const {
 
 void TextDocument::selectWord( bool withMulticursor ) {
 	if ( !hasSelection() ) {
-		setSelection( { nextWordBoundary( getSelection().start(), false ),
-						previousWordBoundary( getSelection().start(), false ) } );
+		setSelection( { nextWordBoundary( getSelection().start(), false,
+										  std::numeric_limits<std::size_t>::max() ),
+						previousWordBoundary( getSelection().start(), false,
+											  std::numeric_limits<std::size_t>::max() ) } );
 	} else if ( withMulticursor ) {
 		String text( getSelectedText() );
 		auto res( find( text, getBottomMostCursor().normalized().end() ) );
