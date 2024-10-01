@@ -22,7 +22,7 @@ done
 
 SDL2_CONFIG=$(which sdl2-config)
 CONFIG_NAME=
-ARCH_PATH
+ARCH_PATH=
 
 if command -v premake4 &> /dev/null
 then
