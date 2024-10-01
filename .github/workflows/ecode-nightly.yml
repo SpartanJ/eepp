@@ -207,8 +207,9 @@ jobs:
         run: |
           brew install bash sdl2 create-dmg premake p7zip
           curl -OL https://github.com/libsdl-org/SDL/releases/download/release-2.30.7/SDL2-2.30.7.dmg
-          7z x SDL2-2.30.7.dmg
-          cp -r ./SDL2/SDL2.framework src/thirdparty/
+          hdiutil attach SDL2-2.30.7.dmg
+          sudo cp -r /Volumes/SDL2/SDL2.framework /Library/Frameworks/
+          hdiutil detach /Volumes/SDL2
       - name: Build
         run: |
           bash projects/macos/ecode/cross.build.app.sh --version ${{ env.INSTALL_REF }}
