@@ -560,9 +560,14 @@ end
 
 function set_apple_config()
 	if is_xcode() or _OPTIONS["use-frameworks"] then
-		linkoptions { "-F /Library/Frameworks" }
-		buildoptions { "-F /Library/Frameworks" }
-		incdirs { "/Library/Frameworks/SDL2.framework/Headers" }
+		linkoptions { "-F /Library/Frameworks", "src/thirdparty" }
+		buildoptions { "-F /Library/Frameworks", "src/thirdparty" }
+		local sdl2local = _MAIN_SCRIPT_DIR .. "src/thirdparty/SDL2.framework";
+		if os.isdir(sdl2local) then
+			incdirs { sdl2local .. "/Headers" }
+		else
+			incdirs { "/Library/Frameworks/SDL2.framework/Headers" }
+		end
 	end
 	if os.istarget("macosx") then
 		defines { "EE_SDL2_FROM_ROOTPATH" }

@@ -21,13 +21,26 @@ for i in "$@"; do
 done
 
 SDL2_CONFIG=$(which sdl2-config)
+CONFIG_NAME=
+
+if command -v premake4 &> /dev/null
+then
+	CONFIG_NAME=release
+elif command -v premake5 &> /dev/null
+then
+    CONFIG_NAME=release_arm64
+else
+    echo "Neither premake5 nor premake4 is available. Please install one."
+    exit 1
+fi
+
 rm -rf ../../../libs/macosx
 if [ -z $SDL2_CONFIG ]; then
 echo "Building using frameworks"
-../make.sh config=release ecode || exit
+../make.sh config=$CONFIG_NAME ecode || exit
 else
 echo "Building using sdl2-config"
-../make_no_fw.sh config=release ecode || exit
+../make_no_fw.sh config=$CONFIG_NAME ecode || exit
 fi
 
 rm -rf ./ecode.app
