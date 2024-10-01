@@ -14,6 +14,7 @@ fi
 
 cd ../../make/macosx/
 sed -e "s/-Wl,-x//g" -i .make
+find . -name "*.make" -exec sed -i 's/\$(AR) -rcs/\$(AR) -rcsv/g' {} +
 
 make -j$(sysctl -n hw.ncpu) $@
 
