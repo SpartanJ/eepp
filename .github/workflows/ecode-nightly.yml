@@ -108,10 +108,10 @@ jobs:
             sudo update-alternatives --set c++ /usr/bin/g++
             sudo update-alternatives --config gcc
             sudo update-alternatives --config g++
+            bash projects/linux/scripts/install_sdl2.sh
           else
             sudo apt-get install -y libsdl2-dev:arm64 libsdl2-2.0-0:arm64
           fi
-          bash projects/linux/scripts/install_sdl2.sh
       - name: Install Cross Compiler
         if: ${{ matrix.config.compiler != 'default' }}
         run: sudo apt-get install -y ${{ matrix.config.compiler }}
