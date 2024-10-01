@@ -560,11 +560,14 @@ end
 
 function set_apple_config()
 	if is_xcode() or _OPTIONS["use-frameworks"] then
-		linkoptions { "-F /Library/Frameworks", "src/thirdparty" }
-		buildoptions { "-F /Library/Frameworks", "src/thirdparty" }
+		linkoptions { "-F /Library/Frameworks", "-F ~/Library/Frameworks", "-F src/thirdparty" }
+		buildoptions { "-F /Library/Frameworks", "-F ~/Library/Frameworks", "-F src/thirdparty" }
 		local sdl2local = _MAIN_SCRIPT_DIR .. "src/thirdparty/SDL2.framework";
+		local sdl2user = "~/Library/Frameworks/SDL2.framework";
 		if os.isdir(sdl2local) then
 			incdirs { sdl2local .. "/Headers" }
+		elseif os.isdir(sdl2user) then
+			incdirs { sdl2user .. "/Headers" }
 		else
 			incdirs { "/Library/Frameworks/SDL2.framework/Headers" }
 		end
