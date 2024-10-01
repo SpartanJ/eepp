@@ -166,11 +166,11 @@ jobs:
       - name: Build
         run: |
           bash projects/macos/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
-          bash projects/macos/ecode/cross.build.app.sh --version ${{ env.INSTALL_REF }}
+          # bash projects/macos/ecode/cross.build.app.sh --version ${{ env.INSTALL_REF }}
       - name: Create DMG Image
         run: |
           bash projects/macos/ecode/create.dmg.sh --version ${{ env.INSTALL_REF }}
-          bash projects/macos/ecode/cross.create.dmg.sh --version ${{ env.INSTALL_REF }}
+          # bash projects/macos/ecode/cross.create.dmg.sh --version ${{ env.INSTALL_REF }}
       - name: Upload Files
         uses: softprops/action-gh-release@v2
         with:
@@ -179,4 +179,4 @@ jobs:
           prerelease: true
           files: |
             projects/macos/ecode/ecode-macos-${{ env.INSTALL_REF }}-arm64.dmg
-            projects/macos/ecode/ecode-macos-${{ env.INSTALL_REF }}-x86_64.dmg
+            # projects/macos/ecode/ecode-macos-${{ env.INSTALL_REF }}-x86_64.dmg
