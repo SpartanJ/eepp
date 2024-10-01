@@ -507,11 +507,13 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual Int64 getColFromXOffset( VisibleIndex visibleIndex, const Float& x ) const;
 
-	std::vector<Rectf> getTextRangeRectangles(
-		const TextRange& range, const Vector2f& startScroll,
-		std::optional<const DocumentLineRange> lineRange = {}, std::optional<Float> lineHeight = {},
-		std::optional<DocumentViewLineRange> visibleLineRange =
-			{} /* if passed it will clip rectangles against the visual line range */ );
+	std::vector<Rectf>
+	getTextRangeRectangles( const TextRange& range, const Vector2f& startScroll,
+							std::optional<const DocumentLineRange> lineRange = {},
+							std::optional<Float> lineHeight = {},
+							/* if passed it will clip rectangles against the visual line range */
+							std::optional<DocumentViewLineRange> visibleLineRange =
+								std::optional<DocumentViewLineRange>() );
 
 	virtual Float getLineWidth( const Int64& docLine );
 
@@ -968,7 +970,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 							   const DocumentViewLineRange& visibleLineRange );
 
 	virtual void drawSelectionMatch( const DocumentLineRange& lineRange,
-									 const Vector2f& startScroll, const Float& lineHeight );
+									 const Vector2f& startScroll, const Float& lineHeight,
+									 const DocumentViewLineRange& visibleLineRange );
 
 	virtual void drawWordMatch( const String& text, const DocumentLineRange& lineRange,
 								const Vector2f& startScroll, const Float& lineHeight,

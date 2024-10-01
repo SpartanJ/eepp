@@ -142,10 +142,10 @@ os_links = { }
 backends = { }
 static_backends = { }
 backend_selected = false
-remote_sdl2_version = "SDL2-2.30.3"
-remote_sdl2_devel_src_url = "https://libsdl.org/release/SDL2-2.30.3.zip"
-remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-2.30.3-VC.zip"
-remote_sdl2_devel_mingw_url = "https://www.libsdl.org/release/SDL2-devel-2.30.3-mingw.zip"
+remote_sdl2_version = "SDL2-2.30.8"
+remote_sdl2_devel_src_url = "https://libsdl.org/release/SDL2-2.30.8.zip"
+remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-2.30.8-VC.zip"
+remote_sdl2_devel_mingw_url = "https://www.libsdl.org/release/SDL2-devel-2.30.8-mingw.zip"
 
 function incdirs( dirs )
 	if is_xcode() then

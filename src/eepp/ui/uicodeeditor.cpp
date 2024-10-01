@@ -302,7 +302,7 @@ void UICodeEditor::draw() {
 	}
 
 	if ( mHighlightSelectionMatch && mDoc->hasSelection() && mDoc->getSelection().inSameLine() ) {
-		drawSelectionMatch( lineRange, startScroll, lineHeight );
+		drawSelectionMatch( lineRange, startScroll, lineHeight, visibleLineRange );
 	}
 
 	if ( mDoc->hasSelection() ) {
@@ -3384,7 +3384,8 @@ void UICodeEditor::drawMatchingBrackets( const Vector2f& startScroll, const Floa
 }
 
 void UICodeEditor::drawSelectionMatch( const DocumentLineRange& lineRange,
-									   const Vector2f& startScroll, const Float& lineHeight ) {
+									   const Vector2f& startScroll, const Float& lineHeight,
+									   const DocumentViewLineRange& visibleLineRange ) {
 	static const String notSpaceStr = "\t ";
 	if ( !mDoc->hasSelection() )
 		return;
@@ -3396,7 +3397,7 @@ void UICodeEditor::drawSelectionMatch( const DocumentLineRange& lineRange,
 		String text( selectionLine.substr(
 			selection.start().column(), selection.end().column() - selection.start().column() ) );
 		if ( !text.empty() && text.find_first_not_of( notSpaceStr.view() ) != String::InvalidPos )
-			drawWordMatch( text, lineRange, startScroll, lineHeight, true );
+			drawWordMatch( text, lineRange, startScroll, lineHeight, true, visibleLineRange );
 	}
 }
 
