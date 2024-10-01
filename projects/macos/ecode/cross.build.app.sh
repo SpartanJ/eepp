@@ -22,8 +22,6 @@ done
 
 premake5 --file=../../../premake5.lua --use-frameworks gmake2 || exit
 
-find ../../../make/macosx/ -name "*.make" -exec sed -i '' 's/\$(AR) -rcs/\$(AR) -rcsv/g' {} +
-
 make -C ../../../make/macosx/ -j$(sysctl -n hw.ncpu) -e verbose=true -e config=release_x86_64 ecode || exit
 rm -rf ./ecode.app
 mkdir -p ecode.app/Contents/MacOS/
