@@ -84,7 +84,13 @@ end
 
 function os_findlib( name )
 	if os.istarget("macosx") and ( is_xcode() or _OPTIONS["use-frameworks"] ) then
-		local path = "/Library/Frameworks/" .. name .. ".framework"
+		local path = _MAIN_SCRIPT_DIR .. "src/thirdparty/" .. name .. ".framework"
+
+		if os.isdir( path ) then
+			return path
+		end
+
+		path = "/Library/Frameworks/" .. name .. ".framework"
 
 		if os.isdir( path ) then
 			return path
@@ -736,7 +742,7 @@ function build_eepp( build_name )
 		defines { "EE_USE_FRAMEWORKS" }
 
 	filter { "system:macosx", "action:xcode* or options:use-frameworks" }
-		libdirs { "/System/Library/Frameworks", "/Library/Frameworks" }
+		libdirs { "/System/Library/Frameworks", "/Library/Frameworks", "src/thirdparty" }
 
 	filter { "system:macosx", "not action:xcode*", "not options:use-frameworks" }
 		libdirs { "/opt/homebrew/lib" }

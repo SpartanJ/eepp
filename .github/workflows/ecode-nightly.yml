@@ -131,3 +131,52 @@ jobs:
             projects/linux/ecode/ecode-linux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.AppImage
             projects/linux/ecode/ecode-linux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.tar.gz
             projects/mingw32/ecode/ecode-windows-${{ env.INSTALL_REF }}-${{ env.RARCH }}.zip
+
+  build_macos:
+    name: macOS
+    needs: release
+    runs-on: macos-14
+    strategy:
+      matrix:
+        arch: [arm64]
+    env:
+      CC: clang
+      CXX: clang++
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with: { fetch-depth: 0, submodules: 'recursive' }
+      - name: System Information
+        run: |
+          system_profiler SPSoftwareDataType
+          bash --version
+          gcc -v
+          xcodebuild -version
+          uname -a
+      - name: Set Environment Variables
+        run: |
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          echo "INSTALL_REF=${{ needs.release.outputs.version }}" >> "$GITHUB_ENV"
+      - name: Install Dependencies
+        run: |
+          brew install bash sdl2 create-dmg premake p7zip
+          curl -OL https://github.com/libsdl-org/SDL/releases/download/release-2.30.7/SDL2-2.30.7.dmg
+          7z x SDL2-2.30.7.dmg
+          cp -r ./SDL2/SDL2.framework src/thirdparty/
+      - name: Build
+        run: |
+          bash projects/macos/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
+          bash projects/macos/ecode/cross.build.app.sh --version ${{ env.INSTALL_REF }}
+      - name: Create DMG Image
+        run: |
+          bash projects/macos/ecode/create.dmg.sh --version ${{ env.INSTALL_REF }}
+          bash projects/macos/ecode/cross.create.dmg.sh --version ${{ env.INSTALL_REF }}
+      - name: Upload Files
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.release.outputs.version }}
+          draft: false
+          prerelease: true
+          files: |
+            projects/macos/ecode/ecode-macos-${{ env.INSTALL_REF }}-arm64.dmg
+            projects/macos/ecode/ecode-macos-${{ env.INSTALL_REF }}-x86_64.dmg

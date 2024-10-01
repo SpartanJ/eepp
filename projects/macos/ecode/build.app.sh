@@ -1,4 +1,25 @@
-#!/bin/sh
+#!/bin/bash
+CANONPATH=$(readlink -f "$0")
+DIRPATH="$(dirname "$CANONPATH")"
+cd "$DIRPATH" || exit
+
+VERSION=
+for i in "$@"; do
+	case $i in
+		--version)
+			if [[ -n $2 ]]; then VERSION="$2"; fi
+			shift
+			shift
+			;;
+		-*|--*)
+			echo "Unknown option $i"
+			exit 1
+			;;
+		*)
+			;;
+	esac
+done
+
 SDL2_CONFIG=$(which sdl2-config)
 rm -rf ../../../libs/macosx
 if [ -z $SDL2_CONFIG ]; then
@@ -8,17 +29,25 @@ else
 echo "Building using sdl2-config"
 ../make_no_fw.sh config=release ecode || exit
 fi
-ARCH=$(uname -m)
+
 rm -rf ./ecode.app
 mkdir -p ecode.app/Contents/MacOS/
 mkdir -p ecode.app/Contents/Resources/
 cp ../../../bin/assets/icon/ecode.icns ecode.app/Contents/Resources/ecode.icns
+
 VERSIONPATH=../../../src/tools/ecode/version.hpp
 ECODE_MAJOR_VERSION=$(grep "define ECODE_MAJOR_VERSION" $VERSIONPATH | awk '{print $3}')
 ECODE_MINOR_VERSION=$(grep "define ECODE_MINOR_VERSION" $VERSIONPATH | awk '{print $3}')
 ECODE_PATCH_LEVEL=$(grep "define ECODE_PATCH_LEVEL" $VERSIONPATH | awk '{print $3}')
-ECODE_VERSION_STRING="$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH_LEVEL"
-cat Info.plist.tpl | sed "s/ECODE_VERSION_STRING/${ECODE_VERSION_STRING}/g" | sed "s/ECODE_MAJOR_VERSION/${ECODE_MAJOR_VERSION}/g"  | sed "s/ECODE_MINOR_VERSION/${ECODE_MINOR_VERSION}/g" > Info.plist
+
+if [ -n "$VERSION" ];
+then
+ECODE_VERSION="$VERSION"
+else
+ECODE_VERSION="$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH_LEVEL"
+fi
+
+cat Info.plist.tpl | sed "s/ECODE_VERSION/${ECODE_VERSION}/g" | sed "s/ECODE_MAJOR_VERSION/${ECODE_MAJOR_VERSION}/g"  | sed "s/ECODE_MINOR_VERSION/${ECODE_MINOR_VERSION}/g" > Info.plist
 cp Info.plist ecode.app/Contents/
 rm Info.plist
 cp ../../../libs/macosx/libeepp.dylib ecode.app/Contents/MacOS

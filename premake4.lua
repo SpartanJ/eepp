@@ -921,6 +921,8 @@ function set_macos_and_ios_config()
 		libdirs { "/opt/homebrew/lib" }
 	end
 
+	libdirs { "src/thirdparty" }
+
 	if _OPTIONS["use-frameworks"] then
 		defines { "EE_USE_FRAMEWORKS" }
 	end
