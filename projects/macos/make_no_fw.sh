@@ -1,11 +1,10 @@
 #!/bin/sh
 cd $(dirname "$0")
 
-
 if command -v premake4 &> /dev/null
 then
     premake4 --file=../../premake4.lua --disable-static-build gmake
-elif command -v premake4 &> /dev/null
+elif command -v premake5 &> /dev/null
 then
     premake5 --file=../../premake5.lua --disable-static-build gmake2
 else
