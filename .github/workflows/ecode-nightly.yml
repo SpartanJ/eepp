@@ -95,7 +95,7 @@ jobs:
       matrix:
         config:
           - arch: aarch64
-            container: ubuntu-20.04
+            container: ubuntu-22.04
     runs-on: ${{ matrix.config.container }}
     env:
       CC: gcc
