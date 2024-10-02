@@ -8,16 +8,56 @@ ARCH="x86_64" # Default architecture for host
 # Function to install dependencies
 install_dependencies() {
     sudo apt-get update
-    sudo apt-get install -y build-essential unzip wget libasound2-dev libpulse-dev \
-                            libudev-dev libx11-dev libxext-dev libxrandr-dev \
-                            libxcursor-dev libxi-dev libxinerama-dev libxss-dev \
-                            libxkbcommon-dev libwayland-dev wayland-protocols \
-                            libegl1-mesa-dev libgbm-dev || exit
+    sudo apt-get install -y build-essential unzip wget wayland-protocols \
+                            libasound2-dev \
+                            libdbus-1-dev \
+                            libegl1-mesa-dev \
+                            libgl1-mesa-dev \
+                            libgles2-mesa-dev \
+                            libglu1-mesa-dev \
+                            libibus-1.0-dev \
+                            libpulse-dev \
+                            libsndio-dev \
+                            libudev-dev \
+                            libwayland-dev \
+                            libx11-dev \
+                            libxcursor-dev \
+                            libxext-dev \
+                            libxi-dev \
+                            libxinerama-dev \
+                            libxkbcommon-dev \
+                            libxrandr-dev \
+                            libxss-dev \
+                            libxt-dev \
+                            libxv-dev \
+                            libxxf86vm-dev || exit
 }
 
 # Function to install cross-compile dependencies for aarch64
 install_cross_dependencies() {
-    sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu || exit
+    sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu unzip wget wayland-protocols || exit
+    sudo apt-get install -y libasound2-dev:arm64 \
+                            libdbus-1-dev:arm64 \
+                            libegl1-mesa-dev:arm64 \
+                            libgl1-mesa-dev:arm64 \
+                            libgles2-mesa-dev:arm64 \
+                            libglu1-mesa-dev:arm64 \
+                            libibus-1.0-dev:arm64 \
+                            libpulse-dev:arm64 \
+                            libsndio-dev:arm64 \
+                            libudev-dev:arm64 \
+                            libwayland-dev:arm64 \
+                            libx11-dev:arm64 \
+                            libxcursor-dev:arm64 \
+                            libxext-dev:arm64 \
+                            libxi-dev:arm64 \
+                            libxinerama-dev:arm64 \
+                            libxkbcommon-dev:arm64 \
+                            libxrandr-dev:arm64 \
+                            libxss-dev:arm64 \
+                            libxt-dev:arm64 \
+                            libxv-dev:arm64 \
+                            libxxf86vm-dev:arm64 || exit
 }
 
 # Function to configure for cross-compilation
@@ -27,7 +67,7 @@ configure_for_aarch64() {
     export AR=aarch64-linux-gnu-ar
     export RANLIB=aarch64-linux-gnu-ranlib
     export STRIP=aarch64-linux-gnu-strip
-    ./configure --host=aarch64-linux-gnu --enable-video-x11 --enable-video-wayland --enable-wayland-shared || exit
+    ./configure --host=aarch64-linux-gnu --prefix=/usr --exec-prefix=/usr/local --enable-video-x11 --enable-video-wayland --enable-wayland-shared || exit
 }
 
 # Parse options

@@ -95,7 +95,7 @@ jobs:
       matrix:
         config:
           - arch: aarch64
-            container: ubuntu-22.04
+            container: ubuntu-20.04
     runs-on: ${{ matrix.config.container }}
     env:
       CC: gcc
@@ -123,16 +123,17 @@ jobs:
           url="http://ports.ubuntu.com/ubuntu-ports"
           repos="main restricted universe multiverse"
           echo "deb [arch=arm64] $url $codename $repos" > arm64.list
-          echo "deb [arch=arm64] $url $codename-updates $repos" >> arm64.list
-          echo "deb [arch=arm64] $url $codename-security $repos" >> arm64.list
           echo "deb [arch=arm64] $url $codename-backports $repos" >> arm64.list
+          echo "deb [arch=arm64] $url $codename-proposed $repos" >> arm64.list
+          echo "deb [arch=arm64] $url $codename-security $repos" >> arm64.list
+          echo "deb [arch=arm64] $url $codename-updates $repos" >> arm64.list
           sudo mv arm64.list /etc/apt/sources.list.d/
           sudo apt-get update
           sudo dpkg --add-architecture arm64
       - name: Install dependencies
         run: |
           sudo apt-get install -y premake4 libfuse2 fuse gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-          sudo apt-get install -y libsdl2-dev:arm64 libsdl2-2.0-0:arm64
+          # sudo apt-get install -y libsdl2-dev:arm64 libsdl2-2.0-0:arm64
           bash projects/linux/scripts/install_sdl2.sh --aarch64
       - name: Build ecode
         run: |

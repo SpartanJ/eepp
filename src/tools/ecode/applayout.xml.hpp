@@ -482,11 +482,19 @@ Anchor.error:hover {
 	margin-bottom: 16dp;
 	margin-right: 2dp;
 	font-style: shadow;
+	text-shadow-color: #323232e6;
 }
 #indent_tab_window ComboBox,
 #indent_tab_window ListBox::item,
 .indent_tab_listbox_item combobox::dropdownlist::listbox::item {
 	font-family: monospace;
+}
+@media (prefers-color-scheme: light) {
+
+.app_hint {
+	text-shadow-color: #b4b4b4e6;
+}
+
 }
 ]]>
 </style>
