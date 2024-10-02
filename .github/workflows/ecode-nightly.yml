@@ -43,13 +43,13 @@ jobs:
             Builds that include most recent changes as they happen. For stable releases check the whole list of [releases](https://github.com/SpartanJ/ecode/releases).
 
   build_linux_x86_64:
-    name: Linux Nightly
+    name: Linux x86_64 Nightly
     needs: release
     strategy:
       matrix:
         config:
           - arch: x86_64
-            container: ubuntu-20.04
+            container: ubuntu-18.04
     runs-on: ${{ matrix.config.container }}
     env:
       CC: gcc
@@ -74,6 +74,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get install -y libfuse2 fuse premake4 mesa-common-dev libgl1-mesa-dev
+          bash projects/linux/scripts/install_gcc.sh
           bash projects/linux/scripts/install_sdl2.sh
       - name: Build ecode
         run: |
@@ -89,14 +90,13 @@ jobs:
             projects/linux/ecode/ecode-linux-${{ env.INSTALL_REF }}-${{ env.RARCH }}.tar.gz
 
   build_linux_arm64:
-    name: Linux Nightly
+    name: Linux arm64 Nightly
     needs: release
     strategy:
       matrix:
         config:
           - arch: aarch64
-            container: ubuntu-22.04
-            codename: jammy
+            container: ubuntu-20.04
     runs-on: ${{ matrix.config.container }}
     env:
       CC: gcc
@@ -120,12 +120,13 @@ jobs:
           echo $(gcc --version)
       - name: Update Packages
         run: |
+          codename=$(lsb_release -cs)
           url="http://ports.ubuntu.com/ubuntu-ports"
           repos="main restricted universe multiverse"
-          echo "deb [arch=arm64] $url ${{ matrix.config.codename }} $repos" > arm64.list
-          echo "deb [arch=arm64] $url ${{ matrix.config.codename }}-updates $repos" >> arm64.list
-          echo "deb [arch=arm64] $url ${{ matrix.config.codename }}-security $repos" >> arm64.list
-          echo "deb [arch=arm64] $url ${{ matrix.config.codename }}-backports $repos" >> arm64.list
+          echo "deb [arch=arm64] $url $codename $repos" > arm64.list
+          echo "deb [arch=arm64] $url $codename-updates $repos" >> arm64.list
+          echo "deb [arch=arm64] $url $codename-security $repos" >> arm64.list
+          echo "deb [arch=arm64] $url $codename-backports $repos" >> arm64.list
           sudo mv arm64.list /etc/apt/sources.list.d/
           sudo apt-get update
           sudo dpkg --add-architecture arm64
