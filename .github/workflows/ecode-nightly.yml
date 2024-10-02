@@ -95,7 +95,7 @@ jobs:
       matrix:
         config:
           - arch: aarch64
-            container: ubuntu-20.04
+            container: ubuntu-22.04
     runs-on: ${{ matrix.config.container }}
     env:
       CC: gcc
@@ -124,13 +124,11 @@ jobs:
           sudo apt-get update || true
           url="http://ports.ubuntu.com/ubuntu-ports"
           repos="main restricted universe multiverse"
-          echo "deb [arch=arm64] $url focal $repos" > arm64.list
-          echo "deb [arch=arm64] $url focal-updates $repos" >> arm64.list
-          echo "deb [arch=arm64] $url focal-security $repos" >> arm64.list
-          echo "deb [arch=arm64] $url focal-backports $repos" >> arm64.list
+          echo "deb [arch=arm64] $url lemmy $repos" > arm64.list
+          echo "deb [arch=arm64] $url lemmy-updates $repos" >> arm64.list
+          echo "deb [arch=arm64] $url lemmy-security $repos" >> arm64.list
+          echo "deb [arch=arm64] $url lemmy-backports $repos" >> arm64.list
           sudo mv arm64.list /etc/apt/sources.list.d/
-          sudo cat /etc/apt/sources.list
-          sudo cat /etc/apt/sources.list.d/arm64.list
           sudo dpkg --add-architecture arm64
           sudo apt-get update || true
       - name: Install dependencies
