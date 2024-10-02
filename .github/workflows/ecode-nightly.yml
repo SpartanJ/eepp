@@ -49,7 +49,7 @@ jobs:
       matrix:
         config:
           - arch: x86_64
-            container: ubuntu-18.04
+            container: ubuntu-20.04
     runs-on: ${{ matrix.config.container }}
     env:
       CC: gcc
@@ -74,7 +74,6 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get install -y libfuse2 fuse premake4 mesa-common-dev libgl1-mesa-dev
-          bash projects/linux/scripts/install_gcc.sh
           bash projects/linux/scripts/install_sdl2.sh
       - name: Build ecode
         run: |
