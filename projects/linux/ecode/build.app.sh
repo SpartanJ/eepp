@@ -22,7 +22,7 @@ for i in "$@"; do
 			shift
 			shift
 			;;
-		-*|--*)
+		-*)
 			echo "Unknown option $i"
 			exit 1
 			;;
@@ -35,19 +35,22 @@ if [ "$ARCH" = "aarch64" ]; then
 	ARCH="arm64"
 fi
 
+CONFIG_NAME=
 if command -v premake4 &> /dev/null
 then
     premake4 $DEBUG_SYMBOLS gmake || exit
+    CONFIG_NAME=release
 elif command -v premake5 &> /dev/null
 then
     premake5 $DEBUG_SYMBOLS gmake2 || exit
+    CONFIG_NAME=release_"$ARCH"
 else
     echo "Neither premake5 nor premake4 is available. Please install one."
     exit 1
 fi
 
 cd make/linux || exit
-make -j"$(nproc)" config=release ecode || exit
+make -j"$(nproc)" config="$CONFIG_NAME" ecode || exit
 cd "$DIRPATH" || exit
 rm -rf ./ecode.app
 mkdir -p ecode.app/assets
@@ -58,8 +61,8 @@ cp ecode.desktop ecode.app/
 cp ../../../bin/assets/icon/ecode.png ecode.app/ecode.png
 cp ../../../libs/linux/libeepp.so ecode.app/libs/
 cp ../../../bin/ecode ecode.app/ecode.bin
-cp -L "$(whereis libSDL2-2.0.so.0 | awk '{print $NF}')" ecode.app/libs/
-strip ecode.app/libs/libSDL2-2.0.so.0
+cp -L "$(whereis libSDL2-2.0.so.0 | awk '{print $NF}')" ecode.app/libs/ || exit
+${STRIP:-strip} ecode.app/libs/libSDL2-2.0.so.0
 mkdir -p ecode.app/assets/colorschemes
 mkdir -p ecode.app/assets/fonts
 mkdir -p ecode.app/assets/i18n
