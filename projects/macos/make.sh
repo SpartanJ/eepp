@@ -20,8 +20,8 @@ sed -e "s/-Wl,-x//g" -i .make
 make -j$(sysctl -n hw.ncpu) $@
 
 cd ../../bin/
-ln -sf ../libs/macosx/"$$USE_ARCH"libeepp.dylib .
-ln -sf ../libs/macosx/"$$USE_ARCH"libeepp-debug.dylib .
-if [ -f ../libs/macosx/"$$USE_ARCH"libeepp-maps-debug.dylib ]; then
-ln -sf ../libs/macosx/"$$USE_ARCH"libeepp-maps-debug.dylib .
+ln -sf ../libs/macosx/"$USE_ARCH"libeepp.dylib .
+ln -sf ../libs/macosx/"$USE_ARCH"libeepp-debug.dylib .
+if [ -f ../libs/macosx/"$USE_ARCH"libeepp-maps-debug.dylib ]; then
+ln -sf ../libs/macosx/"$USE_ARCH"libeepp-maps-debug.dylib .
 fi
