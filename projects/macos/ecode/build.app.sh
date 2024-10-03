@@ -66,6 +66,7 @@ cat Info.plist.tpl | sed "s/ECODE_VERSION/${ECODE_VERSION}/g" | sed "s/ECODE_MAJ
 cp Info.plist ecode.app/Contents/
 rm Info.plist
 cp ../../../libs/macosx/"$ARCH_PATH"libeepp.dylib ecode.app/Contents/MacOS
+
 cp ../../../bin/ecode ecode.app/Contents/MacOS
 
 if [ -z "$SDL2_CONFIG" ]; then
@@ -79,7 +80,14 @@ SDL2_LIB_PATH=$(sdl2-config --libs | awk '{ print $1 }' | cut -b 3-)
 cp "$SDL2_LIB_PATH"/libSDL2-2.0.0.dylib ecode.app/Contents/MacOS
 SDL2_LIB_REAL_PATH=$(otool -L ecode.app/Contents/MacOS/libeepp.dylib | grep libSDL2 | awk '{ print $1 }')
 install_name_tool -change "$SDL2_LIB_REAL_PATH" @executable_path/libSDL2-2.0.0.dylib ecode.app/Contents/MacOS/libeepp.dylib
+
+# premake4 generates a different location
+if [ -z "$ARCH_PATH" ]; then
 install_name_tool -change libeepp.dylib @executable_path/libeepp.dylib ecode.app/Contents/MacOS/ecode
+else
+install_name_tool -change @rpath/libeepp.dylib @executable_path/libeepp.dylib ecode.app/Contents/MacOS/ecode
+fi
+
 fi
 
 #cp -r ../../../bin/assets ecode.app/Contents/MacOS/assets
