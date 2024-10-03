@@ -59,7 +59,9 @@ RegEx::RegEx( const std::string_view& pattern, Options options, bool useCache ) 
 		// 								  reinterpret_cast<const char*>( buffer ) );
 	}
 
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	pcre2_jit_compile( reinterpret_cast<pcre2_code*>( mCompiledPattern ), PCRE2_JIT_COMPLETE );
+#endif
 
 	int rc = pcre2_pattern_info( reinterpret_cast<pcre2_code*>( mCompiledPattern ),
 								 PCRE2_INFO_CAPTURECOUNT, &mCaptureCount );

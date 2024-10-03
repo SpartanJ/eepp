@@ -1,6 +1,5 @@
 /* src/config.h.in.  Generated from configure.ac by autoheader.  */
 
-
 /* PCRE2 is written in Standard C, but there are a few non-standard things it
 can cope with, allowing it to run on SunOS4 and other "close to standard"
 systems.
@@ -168,7 +167,7 @@ sure both macros are undefined; an emulation function will then be used. */
 #define HAVE_SYS_TYPES_H
 
 /* Define to 1 if you have the <sys/wait.h> header file. */
-#if !defined(_WIN32)
+#if !defined( _WIN32 )
 #define HAVE_SYS_WAIT_H
 #endif
 
@@ -296,7 +295,6 @@ sure both macros are undefined; an emulation function will then be used. */
 /* to make a symbol visible */
 #define PCRE2_EXPORT
 
-
 /* If you are compiling for a system other than a Unix-like system or
    Win32, and it needs some magic to be inserted before the definition
    of a function that is exported by the library, define this macro to
@@ -334,7 +332,7 @@ sure both macros are undefined; an emulation function will then be used. */
 // #undef SUPPORT_DIFF_FUZZ
 
 /* Define to any value to enable support for Just-In-Time compiling. */
-#if !(defined( __WIN32__ ) || defined( _WIN32 ) || defined( _WIN64 ))
+#if !( defined( __emscripten__ ) || defined( EMSCRIPTEN ) )
 #define SUPPORT_JIT
 #endif
 
@@ -379,7 +377,7 @@ sure both macros are undefined; an emulation function will then be used. */
    ASCII/Unicode, but not both at once. */
 #define SUPPORT_UNICODE
 
-#if defined(__linux__) || defined(__midipix__) && !defined(_GNU_SOURCE)
+#if defined( __linux__ ) || defined( __midipix__ ) && !defined( _GNU_SOURCE )
 /* Ensure that syscall() is available even when compiling with -std=c99 */
 #define _GNU_SOURCE
 #endif

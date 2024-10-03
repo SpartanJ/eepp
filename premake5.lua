@@ -953,7 +953,6 @@ workspace "eepp"
 			'src/thirdparty/pcre2/src/pcre2_error.c',
 			'src/thirdparty/pcre2/src/pcre2_extuni.c',
 			'src/thirdparty/pcre2/src/pcre2_find_bracket.c',
-			'src/thirdparty/pcre2/src/pcre2_jit_compile.c',
 			'src/thirdparty/pcre2/src/pcre2_maketables.c',
 			'src/thirdparty/pcre2/src/pcre2_match.c',
 			'src/thirdparty/pcre2/src/pcre2_match_data.c',
@@ -971,6 +970,9 @@ workspace "eepp"
 			'src/thirdparty/pcre2/src/pcre2_valid_utf.c',
 			'src/thirdparty/pcre2/src/pcre2_xclass.c',
 		}
+		if not os.istarget("emscripten") then
+			files { 'src/thirdparty/pcre2/src/pcre2_jit_compile.c' }
+		end
 		incdirs { "src/thirdparty/pcre2/src" }
 		build_base_configuration( "pcre2-8" )
 		target_dir_thirdparty()
