@@ -3084,7 +3084,7 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 }
 
 bool App::needsRedirectToRunningProcess( std::string file ) {
-	if ( !mConfig.ui.singleInstance || file.empty() )
+	if ( mConfig.ui.openFilesInNewWindow || file.empty() )
 		return false;
 
 	bool hasPosition = pathHasPosition( file );

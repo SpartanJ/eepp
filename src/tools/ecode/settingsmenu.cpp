@@ -1170,13 +1170,12 @@ UIMenu* SettingsMenu::createWindowMenu() {
 
 	mWindowMenu->addSeparator();
 	mWindowMenu
-		->addCheckBox( i18n( "single_instance_enable", "Enable Single Instance" ),
-					   mApp->getConfig().ui.singleInstance )
-		->setTooltipText(
-			i18n( "single_instance_desc",
-				  "Newly opened files will be opened in the latest opened ecode instance." ) )
-		->setId( "single-instance-enable" );
-
+		->addCheckBox( i18n( "open_files_in_new_window_enable", "Open Files in New Window" ),
+					   mApp->getConfig().ui.openFilesInNewWindow )
+		->setTooltipText( i18n( "open_files_in_new_window_desc",
+								"When files are opened from a file explorer or from the command "
+								"line, this\ncontrols whether a new window is created or not." ) )
+		->setId( "open-files-in-new-window-enable" );
 	mWindowMenu
 		->addCheckBox( i18n( "welcome_screen_enable", "Enable Welcome Screen" ),
 					   mApp->getConfig().ui.welcomeScreen )
@@ -1195,9 +1194,9 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		} else if ( "welcome-screen-enable" == item->getId() ) {
 			bool active = item->asType<UIMenuCheckBox>()->isActive();
 			mApp->getConfig().ui.welcomeScreen = active;
-		} else if ( "single-instance-enable" == item->getId() ) {
+		} else if ( "open-files-in-new-window-enable" == item->getId() ) {
 			bool active = item->asType<UIMenuCheckBox>()->isActive();
-			mApp->getConfig().ui.singleInstance = active;
+			mApp->getConfig().ui.openFilesInNewWindow = active;
 			mApp->saveConfig();
 		} else {
 			String text = String( event->getNode()->asType<UIMenuItem>()->getId() ).toLower();
