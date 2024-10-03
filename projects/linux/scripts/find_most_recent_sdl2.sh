@@ -20,20 +20,21 @@ lib_paths=$(whereis libSDL2-2.0.so.0 | cut -d ':' -f 2)
 
 get_sdl_version() {
     local lib_path="$1"
-    local lib_dir=$(dirname "$lib_path")
+    local lib_dir
+    lib_dir=$(dirname "$lib_path")
 
     if [[ -f "$lib_dir/../bin/sdl2-config" ]]; then
-        local version=$("$lib_dir/../bin/sdl2-config" --version 2>/dev/null)
-        echo "$version"
+        "$lib_dir/../bin/sdl2-config" --version 2>/dev/null
     else
-        version=$(strings "$lib_path" | grep -Eo "SDL2-[0-9]+\.[0-9]+\.[0-9]+" | head -n 1 | cut -d '-' -f 2)
-        echo "$version"
+        strings "$lib_path" | grep -Eo "SDL2-[0-9]+\.[0-9]+\.[0-9]+" | head -n 1 | cut -d '-' -f 2
     fi
 }
 
 version_to_int() {
     local version="$1"
-    printf "%03d%03d%03d" $(echo "$version" | tr '.' ' ')
+    local major minor patch
+    IFS='.' read -r major minor patch <<< "$version"
+    echo $((major * 10000 + minor * 100 + patch))
 }
 
 latest_version_int=0

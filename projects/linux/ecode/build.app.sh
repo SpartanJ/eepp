@@ -61,9 +61,6 @@ cp ecode.desktop ecode.app/
 cp ../../../bin/assets/icon/ecode.png ecode.app/ecode.png
 cp ../../../libs/linux/libeepp.so ecode.app/libs/
 cp ../../../bin/ecode ecode.app/ecode.bin
-
-bash ../scripts/find_most_recent_sdl2.sh --verbose
-
 cp -L "$(bash ../scripts/find_most_recent_sdl2.sh)" ecode.app/libs/ || exit
 ${STRIP:-strip} ecode.app/libs/libSDL2-2.0.so.0
 mkdir -p ecode.app/assets/colorschemes

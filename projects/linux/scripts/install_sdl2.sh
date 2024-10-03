@@ -67,7 +67,7 @@ configure_for_aarch64() {
     export AR=aarch64-linux-gnu-ar
     export RANLIB=aarch64-linux-gnu-ranlib
     export STRIP=aarch64-linux-gnu-strip
-    ./configure --host=aarch64-linux-gnu --prefix=/usr --exec-prefix=/usr/local --enable-video-x11 --enable-video-wayland --enable-wayland-shared || exit
+    ./configure --host=aarch64-linux-gnu --prefix=/usr --enable-video-x11 --enable-video-wayland --enable-wayland-shared || exit
 }
 
 # Parse options

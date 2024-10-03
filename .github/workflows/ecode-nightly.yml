@@ -124,7 +124,6 @@ jobs:
           repos="main restricted universe multiverse"
           echo "deb [arch=arm64] $url $codename $repos" > arm64.list
           echo "deb [arch=arm64] $url $codename-backports $repos" >> arm64.list
-          echo "deb [arch=arm64] $url $codename-proposed $repos" >> arm64.list
           echo "deb [arch=arm64] $url $codename-security $repos" >> arm64.list
           echo "deb [arch=arm64] $url $codename-updates $repos" >> arm64.list
           sudo mv arm64.list /etc/apt/sources.list.d/
