@@ -1,20 +1,19 @@
 <?xml version="1.0"?>
 <!--?yaml
-
 	title: 'German Translation for ecode'
 	author: 'NullPlane'
 	author_link: 'github.com/NullPlane'
 	collaborators: [ 'SpartanJ', 'NullPlane' ]
-	version: 0.2
+	version: 0.3
+	version_ecode: 0.6.1
 	created: 2024-02-08
-	updated: 2024-02-29
+	updated: 2024-10-04
 	language: 'de'
 	format: 'xml'
 	file: de.xml
 	source: 'github.com/SpartanJ/eepp/tree/develop/bin/assets/i18n'
 	credits: 'i18n/en.xml'
 	license: 'MIT (respective)'
-
 ?-->
 <resources language="de" title="Deutsch">
 	<string name="about_ecode">Über ecode...</string>
@@ -25,6 +24,8 @@
 	<string name="add_clean_step">Bereinigungsschritt hinzufügen</string>
 	<string name="add_custom_output_parser">Individuellen Output-Parser hinzufügen</string>
 	<string name="add_custom_variable">Individuelle Umgebungsvariable hinzufügen</string>
+	<string name="add_exclude_filter">Exkludierenden Filter hinzufügen</string>
+	<string name="add_include_filter">Inkludierenden Filter hinzufügen</string>
 	<string name="advanced_options">Erweiterte Optionen</string>
 	<string name="any_https_or_http_url">Jegliche http(s)/URLs</string>
 	<string name="any_name_ellipsis">Jeglicher Name...</string>
@@ -34,6 +35,7 @@
 	<string name="auto_close_brackets_and_tags">Klammern &amp; Tags automatisch vervollständigen</string>
 	<string name="auto_close_xml_tags">XML-Tags automatisch vervollständigen</string>
 	<string name="auto_detect_indent_type_and_width">Einzugsart- &amp; weite automatisch erkennen</string>
+	<string name="autoreload_on_disk_change">Auto-Auffrischen bei Dateiänderung im Festspeicher</string>
 	<string name="back_quotes">Backticks ``</string>
 	<string name="brackets">Klammern ()</string>
 	<string name="branches">Zweige</string>
@@ -122,6 +124,7 @@ Alle Änderungen in "%s" gehen dann verloren.</string>
 	<string name="confirm_ecode_exit">Soll ecode wirklich geschlossen werden?
 Alle ungespeicherten Änderungen gehen dann verloren.</string>
 	<string name="confirm_loading_font">Font-Ladebestätigung</string>
+	<string name="confirm_new_file_encoding">Für neue Kodierungen muss die Datei gespeichert werden. Soll sie jetzt gespeichert werden?</string>
 	<string name="confirm_remove_file">Wollen Sie "%s" wirklich entfernen?</string>
 	<string name="console_toggle">Konsole umschalten</string>
 	<string name="copy">Kopieren</string>
@@ -154,7 +157,7 @@ Dateipfad: </string>
 	<string name="custom_variables">Angepasste Variablen</string>
 	<string name="custom_variables_desc">Angepasste Variablen erlauben das Vereinfachen von Build-Befehlsschritten durch Hinzufügen eigener Variablen, die über die Build-Einstellungen in Befehlen, Argumenten und Arbeitsverzeichnissen angewendet werden können.</string>
 	<string name="custom_variables_desc_2">Angepasste Variablen können mit ${variable_name} in beliebigen Befehlen aufgerufen werden.</string>
-	<string name="custom_variables_desc_3">Es gibt bereits vordefinierte angepasste Variablen zur Nutzung:&amp;#10;${project_root}: Ordner-/Projekt-Root-Verzeichnis.&amp;#10;${build_type}: Ausgewählter Build-Typ zur Projekterstellung.&amp;#10;${os}: Name des aktuellen Betriebssystems.&amp;#10;${nproc}: Anzahl logischer Prozessoreinheiten.</string>
+	<string name="custom_variables_desc_3">Es gibt bereits vordefinierte angepasste Variablen zur Nutzung:&amp;#10;${project_root}: Ordner-/Projekt-Root-Verzeichnis.&amp;#10;${build_type}: Ausgewählter Build-Typ zur Projekterstellung.&amp;#10;${os}: Name des aktuellen Betriebssystems.&amp;#10;${nproc}: Anzahl logischer Prozessoreinheiten.&amp;#10;${current_doc}: Letzter oder aktueller Dokumentenpfad.&amp;#10;${current_doc_name}: Letzter oder aktueller Name fokussierten Dokuments (ohne Erweiterung)</string>
 	<string name="cut">Ausschneiden</string>
 	<string name="dark">Dunkel</string>
 	<string name="date">Datum</string>
@@ -195,6 +198,7 @@ Soll es jetzt heruntergeladen werden?</string>
 	<string name="editor_set_line_breaking_column">Editor: Umbruchspalte setzen</string>
 	<string name="editor_set_line_spacing">Editor: Zeilenabstand festlegen</string>
 	<string name="empty_file_name">Der Dateiname darf nicht leer sein.</string>
+	<string name="enable_autoreload">Auto-Auffrischen aktivieren</string>
 	<string name="enable_color_picker">Farbwähler aktivieren</string>
 	<string name="enable_color_picker_tooltip">Aktiviert den Farbwähler bei Doppelklick
 auf farbenrepräsentierende Wörter.</string>
@@ -221,9 +225,10 @@ auf farbenrepräsentierende Wörter.</string>
 	<string name="fallback_font">Reserve-Schriftart</string>
 	<string name="fallback_font_ellipsis">Reserve-Schriftart...</string>
 	<string name="feature_not_supported_in_emscripten">Diese Funktion wird nur in der ecode-Desktopversion unterstützt.</string>
-	<string name="feature_not_supported_in_os">Diese Funktion wird vom derzeitigen Betriebssystem nicht unterstützt</string>
+	<string name="feature_not_supported_in_os">Diese Funktion wird vom derzeitigen Betriebssystem nicht unterstützt. ecode versucht, externes Terminal zu öffnen.</string>
 	<string name="file">Datei</string>
 	<string name="file_already_exists">Diese Datei existiert bereits!</string>
+	<string name="file_encoding">Dateikodierung</string>
 	<string name="file_name">Dateiname</string>
 	<string name="file_type">Dateityp</string>
 	<string name="find_and_replace">Suchen und Ersetzen</string>
@@ -453,6 +458,7 @@ Bitte die Anwendung neu starten.</string>
 	<string name="owner">Eigentümer</string>
 	<string name="paste">Einfügen</string>
 	<string name="path">Pfad</string>
+	<string name="path_filters">Pfadfilter:</string>
 	<string name="pattern">Schema</string>
 	<string name="pick_widget">Widget wählen</string>
 	<string name="please_enter_file_url_ellipsis">Bitte Datei-URL eingeben...</string>
@@ -502,7 +508,6 @@ Bitte das Programmverzeichnis auf Schreibrechte überprüfen.</string>
 	<string name="replace">Ersetzen</string>
 	<string name="replace_all">Alle ersetzen</string>
 	<string name="replace_and_find">Ersetzen &amp; Suchen</string>
-	<string name="replace_in_files">In Dateien ersetzen</string>
 	<string name="replace_selection">Auswahl ersetzen</string>
 	<string name="replace_with_text">Ersetzen mit:</string>
 	<string name="restore_last_session_at_startup">Letzte Sitzung beim Start wiederherstellen</string>
@@ -517,10 +522,11 @@ Bitte das Programmverzeichnis auf Schreibrechte überprüfen.</string>
 	<string name="search">Suchen</string>
 	<string name="search_and_replace">Suchen &amp; Ersetzen</string>
 	<string name="search_for">Suchen nach:</string>
-	<string name="search_for_document_symbols">Suchen nach Symbolen in aktuellem Dokument</string>
 	<string name="search_for_workspace_symbols">Suchen nach Arbeitsbereichssymbolen</string>
 	<string name="search_in_command_palette">Suchen in Befehlspalette</string>
+	<string name="search_in_files">Suche in Dateien</string>
 	<string name="search_set_string">Suche festgesetzte Zeichenkette</string>
+	<string name="search_where_example">z.B. *.ts, src/**/include, -src/**/exclude</string>
 	<string name="select_all">Alles auswählen</string>
 	<string name="select_all_results">Alle Ergebnisse auswählen</string>
 	<string name="select_font_file">Font-Datei auswählen</string>
@@ -569,6 +575,7 @@ Minimalwert ist 1, Maximalwert 6. Anwendungsneustart benötigt.</string>
 	<string name="size">Größe</string>
 	<string name="source_control">Quellcode-Verwaltung</string>
 	<string name="spaces">Leerzeichen</string>
+	<string name="split">Kachelung</string>
 	<string name="split_bottom">Kachelung am Fußende</string>
 	<string name="split_left">Kachelung links</string>
 	<string name="split_right">Kachelung rechts</string>
@@ -582,6 +589,7 @@ Minimalwert ist 1, Maximalwert 6. Anwendungsneustart benötigt.</string>
 	<string name="supported_platforms_desc">Keine Festlegung heißt, dass die Build-Einstellungen unter jedem Betriebssystem funktionstüchtig und verfügbar sind</string>
 	<string name="switch_build">Build wechseln</string>
 	<string name="switch_build_type">Build-Typ wechseln</string>
+	<string name="switch_file_type">Dateityp wechseln</string>
 	<string name="switch_side_panel">Seitenpaneel wechseln</string>
 	<string name="switch_to_first_tab">Zu erstem Tab wechseln</string>
 	<string name="switch_to_last_tab">Zu letztem Tab wechseln</string>
@@ -605,6 +613,7 @@ Datei im Verzeichnisbaum.</string>
 	<string name="terminal_font_size">Konsole: Schriftgröße</string>
 	<string name="terminal_font_size_grow">Konsole: Schriftgröße erhöhen</string>
 	<string name="terminal_font_size_shrink">Konsole: Schriftgröße verringern</string>
+	<string name="terminal_not_supported_do_not_warn">Immer externes Terminal öffnen (nicht warnen)</string>
 	<string name="terminal_open_link">Konsole: Link öffnen</string>
 	<string name="terminal_paste">Konsole: Einfügen</string>
 	<string name="terminal_rename">Konsole: Umbenennen</string>
@@ -626,6 +635,7 @@ Datei im Verzeichnisbaum.</string>
 	<string name="toggle_status_locate_bar">Statusumschaltung: Suchleiste</string>
 	<string name="toggle_status_terminal">Statusumschaltung: Konsole</string>
 	<string name="tools">Werkzeuge</string>
+	<string name="tooltip_autoreload_file">Warnt nicht mehr bei Änderungen im Festspeicher, sondern frischt bei allen Änderungen außer den lokalen das Dokument sofort auf.</string>
 	<string name="tooltip_ignore_file_changes">Ignoriert Änderungen auf dem Datenträger ohne weitere Aktionen.</string>
 	<string name="tooltip_reload_file">Datei von Datenträger neu laden. Ungespeicherte Änderungen gehen verloren.</string>
 	<string name="tooltip_write_local_changes">Schreibt lokale Änderungen auf Datenträger und überschreibt Änderungen auf dem Datenträger</string>
