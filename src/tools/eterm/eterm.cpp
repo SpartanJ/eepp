@@ -86,6 +86,12 @@ void inputCallback( InputEvent* event ) {
 			terminal->onTextInput( event->text.text );
 			break;
 		}
+		case InputEvent::TextEditing: {
+			terminal->onTextEditing( event->textediting.text, event->textediting.start,
+									 event->textediting.length );
+
+			break;
+		}
 		case InputEvent::VideoExpose:
 			terminal->setFocus( win->hasFocus() );
 			terminal->invalidate();

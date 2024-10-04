@@ -1514,6 +1514,7 @@ void TerminalDisplay::onTextInput( const Uint32& chr ) {
 	input.push_back( chr );
 	std::string utf8Input( input.toUtf8() );
 	mTerminal->ttywrite( utf8Input.c_str(), utf8Input.size(), 1 );
+	mDirty = true;
 }
 
 void TerminalDisplay::onTextEditing( const String&, const Int32&, const Int32& ) {
