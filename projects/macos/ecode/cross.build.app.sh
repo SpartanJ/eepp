@@ -46,7 +46,7 @@ cp Info.plist ecode.app/Contents/
 rm Info.plist
 cp ../../../libs/macosx/x86_64/libeepp.dylib ecode.app/Contents/MacOS
 cp ../../../bin/ecode ecode.app/Contents/MacOS
-SDL2_LIB_PATH="/Library/SDL2.framework/Versions/A/"
+SDL2_LIB_PATH="/Library/Frameworks/SDL2.framework/Versions/A/"
 cp "$SDL2_LIB_PATH/SDL2" ecode.app/Contents/MacOS/SDL2
 install_name_tool -change @rpath/SDL2.framework/Versions/A/SDL2 @executable_path/SDL2 ecode.app/Contents/MacOS/libeepp.dylib
 codesign --force -s - ecode.app/Contents/MacOS/SDL2
