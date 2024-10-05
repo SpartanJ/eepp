@@ -62,11 +62,10 @@ else
 ECODE_VERSION="$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH_LEVEL"
 fi
 
-cat Info.plist.tpl | sed "s/ECODE_VERSION/${ECODE_VERSION}/g" | sed "s/ECODE_MAJOR_VERSION/${ECODE_MAJOR_VERSION}/g"  | sed "s/ECODE_MINOR_VERSION/${ECODE_MINOR_VERSION}/g" > Info.plist
+cat Info.plist.tpl | sed "s/ECODE_VERSION_STRING/${ECODE_VERSION}/g" | sed "s/ECODE_MAJOR_VERSION/${ECODE_MAJOR_VERSION}/g"  | sed "s/ECODE_MINOR_VERSION/${ECODE_MINOR_VERSION}/g" > Info.plist
 cp Info.plist ecode.app/Contents/
 rm Info.plist
 cp ../../../libs/macosx/"$ARCH_PATH"libeepp.dylib ecode.app/Contents/MacOS
-
 cp ../../../bin/ecode ecode.app/Contents/MacOS
 
 if [ -z "$SDL2_CONFIG" ]; then

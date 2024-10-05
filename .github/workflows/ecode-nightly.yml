@@ -227,9 +227,6 @@ jobs:
       - name: Install Dependencies
         run: |
           brew install bash sdl2 create-dmg premake p7zip
-          curl -OL https://github.com/libsdl-org/SDL/releases/download/release-2.30.8/SDL2-2.30.8.dmg
-          7z x SDL2-2.30.8.dmg
-          cp -r ./SDL2/SDL2.framework src/thirdparty/
       - name: Build
         run: |
           bash projects/macos/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
@@ -272,7 +269,7 @@ jobs:
           echo "INSTALL_REF=${{ needs.release.outputs.version }}" >> "$GITHUB_ENV"
       - name: Install Dependencies
         run: |
-          brew install bash sdl2 create-dmg premake p7zip
+          brew install bash create-dmg premake p7zip
           curl -OL https://github.com/libsdl-org/SDL/releases/download/release-2.30.8/SDL2-2.30.8.dmg
           hdiutil attach SDL2-2.30.8.dmg
           sudo cp -r /Volumes/SDL2/SDL2.framework /Library/Frameworks/
