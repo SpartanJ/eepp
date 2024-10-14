@@ -403,7 +403,7 @@ void UniversalLocator::updateCommandPaletteTable() {
 
 	if ( txt.size() > 1 ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-		mCommandPalette.asyncFuzzyMatch( txt.substr( 1 ), 1000, [this]( auto res ) {
+		mCommandPalette.asyncFuzzyMatch( txt.substr( 1 ).trim(), 10000, [this]( auto res ) {
 			mUISceneNode->runOnMainThread( [this, res] {
 				mLocateTable->setModel( res );
 				mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
@@ -411,7 +411,7 @@ void UniversalLocator::updateCommandPaletteTable() {
 			} );
 		} );
 #else
-		mLocateTable->setModel( mCommandPalette.fuzzyMatch( txt.substr(), 1000 ) );
+		mLocateTable->setModel( mCommandPalette.fuzzyMatch( txt.substr( 1 ).trim(), 10000 ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 		mLocateTable->scrollToTop();
 #endif

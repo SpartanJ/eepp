@@ -1090,7 +1090,7 @@ solution "eepp"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		includedirs { "src/thirdparty/libvorbis/lib/", "src/thirdparty/libogg/include", "src/thirdparty/libvorbis/include" }
 		files { "src/thirdparty/libogg/**.c", "src/thirdparty/libvorbis/**.c" }
-		build_base_cpp_configuration( "vorbis" )
+		build_base_configuration( "vorbis" )
 
 	project "pugixml-static"
 		kind "StaticLib"
