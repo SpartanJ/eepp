@@ -1156,7 +1156,27 @@ void App::createAppMenu() {
 	uiResourceMenu->addEventListener( Event::OnItemClicked,
 									  [this]( const Event* event ) { fileMenuClick( event ); } );
 
+	UIPopUpMenu* colorsMenu = UIPopUpMenu::New();
+	colorsMenu
+		->addRadioButton( i18n( "light", "Light" ), mUIColorScheme == ColorSchemePreference::Light )
+		->setId( "light" );
+	colorsMenu
+		->addRadioButton( i18n( "dark", "Dark" ), mUIColorScheme == ColorSchemePreference::Dark )
+		->setId( "dark" );
+	colorsMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		mUIColorScheme =
+			item->getId() == "light" ? ColorSchemePreference::Light : ColorSchemePreference::Dark;
+		mUISceneNode->setColorSchemePreference( mUIColorScheme );
+		updateLayoutFunc( InvalidationType::Memory );
+	} );
+
 	UIPopUpMenu* viewMenu = UIPopUpMenu::New();
+	viewMenu->addSubMenu( i18n( "ui_prefes_color_scheme", "UI Prefers Color Scheme" ),
+						  findIcon( "color-scheme" ), colorsMenu );
+	viewMenu->addSeparator();
 	viewMenu->add( "Highlight Focus & Hover", nullptr, "F6" )->setId( "highlight-focus" );
 	viewMenu->add( "Draw debug boxes", nullptr, "F7" )->setId( "debug-boxes" );
 	viewMenu->add( "Draw debug data (mouse hover boxes)", nullptr, "F8" )->setId( "debug-data" );
@@ -1190,7 +1210,8 @@ App::~App() {
 }
 
 void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const std::string& cssFile,
-				const std::string& xmlFile, const std::string& projectFile ) {
+				const std::string& xmlFile, const std::string& projectFile,
+				const std::string& colorScheme ) {
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	displayManager->enableScreenSaver();
 	displayManager->enableMouseFocusClickThrough();
@@ -1249,7 +1270,11 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 
 		FontTrueType* font =
 			FontTrueType::New( "NotoSans-Regular", mResPath + "fonts/NotoSans-Regular.ttf" );
-		FontTrueType::New( "monospace", mResPath + "fonts/DejaVuSansMono.ttf" );
+		FontTrueType* fontMono =
+			FontTrueType::New( "monospace", mResPath + "fonts/DejaVuSansMono.ttf" );
+
+		FontFamily::loadFromRegular( font );
+		FontFamily::loadFromRegular( fontMono );
 
 		mBaseStyleSheet = mResPath + "ui/breeze.css";
 		mTheme = UITheme::load( "uitheme", "uitheme", "", font, mBaseStyleSheet );
@@ -1265,6 +1290,10 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 
 		mAppUISceneNode->enableDrawInvalidation();
 		mUISceneNode->enableDrawInvalidation();
+
+		mUIColorScheme =
+			colorScheme == "light" ? ColorSchemePreference::Light : ColorSchemePreference::Dark;
+		mUISceneNode->setColorSchemePreference( mUIColorScheme );
 
 		FontTrueType* iconFont = loadFont( "icon", "fonts/remixicon.ttf" );
 		UIIconTheme* iconTheme = UIIconTheme::New( "ecode" );
@@ -1578,6 +1607,9 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::Flag useAppTheme( parser, "use-app-theme",
 							"Use the default application theme in the editor.",
 							{ 'u', "use-app-theme" } );
+	args::ValueFlag<std::string> prefersColorScheme(
+		parser, "prefers-color-scheme", "Set the preferred color scheme (\"light\" or \"dark\")",
+		{ 'c', "prefers-color-scheme" } );
 
 	try {
 		parser.ParseCLI( Sys::parseArguments( argc, argv ) );
@@ -1596,7 +1628,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 	appInstance = eeNew( App, () );
 	appInstance->init( pixelDensityConf.Get(), useAppTheme.Get(), cssFile.Get(), xmlFile.Get(),
-					   projectFile.Get() );
+					   projectFile.Get(), prefersColorScheme.Get() );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();
