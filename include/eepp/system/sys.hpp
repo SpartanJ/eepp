@@ -130,6 +130,9 @@ class EE_API Sys {
 
 	/** @returns The unix timestamp of the process creation time */
 	static Int64 getProcessCreationTime( Uint64 pid );
+
+	/** @returns The target destination of a windows shortcut path (.lnk files) */
+	static std::string getShortcutTarget( const std::string& lnkFilePath );
 };
 
 }} // namespace EE::System

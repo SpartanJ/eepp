@@ -2045,7 +2045,7 @@ void App::loadImageFromPath( const std::string& path ) {
 }
 
 void App::loadFileFromPath(
-	const std::string& path, bool inNewTab, UICodeEditor* codeEditor,
+	std::string path, bool inNewTab, UICodeEditor* codeEditor,
 	std::function<void( UICodeEditor* codeEditor, const std::string& path )> onLoaded ) {
 	if ( Image::isImageExtension( path ) && Image::isImage( path ) &&
 		 FileSystem::fileExtension( path ) != "svg" ) {
@@ -3307,6 +3307,15 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			switch ( event->Type ) {
 				case InputEvent::FileDropped: {
 					std::string file( event->file.file );
+					if ( FileSystem::fileExtension( file ) == "lnk" ) {
+						auto target = Sys::getShortcutTarget( file );
+						if ( !target.empty() ) {
+							if ( FileSystem::fileExists( target ) )
+								file = target;
+							else
+								return;
+						}
+					}
 					mPathsToLoad.emplace_back( std::move( file ) );
 					break;
 				}

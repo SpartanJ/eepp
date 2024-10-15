@@ -1559,4 +1559,62 @@ std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 #endif
 }
 
+#pragma pack( push, 1 )
+
+// Basic structure of the Shell Link Header (size = 76 bytes)
+struct ShellLinkHeader {
+	uint32_t headerSize;
+	uint8_t guid[16];
+	uint32_t linkFlags;
+	uint32_t fileAttributes;
+	uint64_t creationTime;
+	uint64_t accessTime;
+	uint64_t writeTime;
+	uint32_t fileSize;
+	uint32_t iconIndex;
+	uint32_t showCommand;
+	uint16_t hotKey;
+	uint16_t reserved1;
+	uint32_t reserved2;
+	uint32_t reserved3;
+};
+
+#pragma pack( pop )
+
+std::string Sys::getShortcutTarget( const std::string& lnkFilePath ) {
+	if ( FileSystem::fileExtension( lnkFilePath ) != "lnk" )
+		return "";
+
+	std::vector<Uint8> data;
+	FileSystem::fileGet( lnkFilePath, data );
+
+	ShellLinkHeader* header = reinterpret_cast<ShellLinkHeader*>( data.data() );
+
+	if ( header->headerSize != 76 )
+		return "";
+
+	size_t offset = sizeof( ShellLinkHeader );
+
+	if ( header->linkFlags & 0x01 ) {
+		uint16_t idListSize = *reinterpret_cast<uint16_t*>( &data[offset] );
+		offset += 2 + idListSize; // Skip the IDList section
+	}
+
+	if ( header->linkFlags & 0x02 ) {
+		uint32_t linkInfoSize = *reinterpret_cast<uint32_t*>( &data[offset] );
+
+		if ( linkInfoSize > 0 ) {
+			uint32_t localBasePathOffset = *reinterpret_cast<uint32_t*>( &data[offset + 16] );
+
+			if ( localBasePathOffset != 0 && ( offset + localBasePathOffset ) < data.size() ) {
+				std::string targetPath(
+					reinterpret_cast<char*>( &data[offset + localBasePathOffset] ) );
+				return targetPath;
+			}
+		}
+	}
+
+	return "";
+}
+
 }} // namespace EE::System
