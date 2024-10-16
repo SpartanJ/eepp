@@ -1795,9 +1795,10 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 								   const Uint32& flags ) {
 	if ( mBreadcrumb ) {
 		auto localPos( editor->convertToNodeSpace( position.asFloat() ) );
-		if ( localPos.y < mPluginTopSpace && localPos.x < editor->getTopAreaWidth() ) {
+		if ( localPos.y < mPluginTopSpace && localPos.x < editor->getTopAreaWidth() &&
+			 localPos.x >= 0 ) {
 			if ( !mHoveringBreadcrumb ) {
-				mHoveringBreadcrumb = true;
+				mHoveringBreadcrumb = editor;
 				editor->invalidateDraw();
 			}
 			getUISceneNode()->setCursor( Cursor::Hand );
@@ -1805,7 +1806,7 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 		}
 	}
 	if ( mHoveringBreadcrumb ) {
-		mHoveringBreadcrumb = false;
+		mHoveringBreadcrumb = nullptr;
 		editor->invalidateDraw();
 	}
 
@@ -1849,7 +1850,7 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 
 bool LSPClientPlugin::onMouseLeave( UICodeEditor* editor, const Vector2i&, const Uint32& ) {
 	if ( mHoveringBreadcrumb ) {
-		mHoveringBreadcrumb = false;
+		mHoveringBreadcrumb = nullptr;
 		editor->invalidateDraw();
 	}
 
@@ -1911,7 +1912,7 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 	}
 
 	Color textColor( editor->getColorScheme().getEditorColor(
-		mHoveringBreadcrumb ? SyntaxStyleTypes::Text : SyntaxStyleTypes::LineNumber2 ) );
+		mHoveringBreadcrumb == editor ? SyntaxStyleTypes::Text : SyntaxStyleTypes::LineNumber2 ) );
 	const auto& workspace = getManager()->getWorkspaceFolder();
 	if ( isPath && !workspace.empty() && String::startsWith( path, workspace ) )
 		path = path.substr( workspace.size() );

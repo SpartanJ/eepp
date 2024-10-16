@@ -124,7 +124,7 @@ class LSPClientPlugin : public Plugin {
 	bool mSilence{ false };
 	bool mTrimLogs{ false };
 	bool mBreadcrumb{ true };
-	bool mHoveringBreadcrumb{ false };
+	UICodeEditor* mHoveringBreadcrumb{ nullptr };
 	StyleSheetLength mBreadcrumbHeight{ "20dp" };
 	std::unordered_map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 	UnorderedMap<TextDocument*, std::shared_ptr<TextDocument>> mDelayedDocs;

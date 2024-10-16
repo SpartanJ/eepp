@@ -2044,9 +2044,21 @@ void App::loadImageFromPath( const std::string& path ) {
 	loadImageFromMedium( path, false );
 }
 
-void App::loadFileFromPath(
+bool App::loadFileFromPath(
 	std::string path, bool inNewTab, UICodeEditor* codeEditor,
 	std::function<void( UICodeEditor* codeEditor, const std::string& path )> onLoaded ) {
+
+	if ( FileSystem::fileExtension( path ) == "lnk" ) {
+		auto target = Sys::getShortcutTarget( path );
+		if ( !target.empty() ) {
+			if ( FileSystem::fileExists( target ) )
+				path = target;
+			else
+				return false;
+		} else if ( !FileSystem::fileExists( path ) )
+			return false;
+	}
+
 	if ( Image::isImageExtension( path ) && Image::isImage( path ) &&
 		 FileSystem::fileExtension( path ) != "svg" ) {
 		loadImageFromPath( path );
@@ -2070,6 +2082,8 @@ void App::loadFileFromPath(
 			}
 		}
 	}
+
+	return true;
 }
 
 void App::hideGlobalSearchBar() {
