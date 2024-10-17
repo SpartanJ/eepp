@@ -2957,8 +2957,8 @@ void App::cleanUpRecentFolders() {
 		mRecentFolders = recentFolders;
 }
 
-	Clock dirTreeClock;
 void App::loadFolder( std::string path ) {
+	Clock dirTreeClock;
 
 	if ( FileSystem::fileExtension( path ) == "lnk" ) {
 		auto target = Sys::getShortcutTarget( path );
