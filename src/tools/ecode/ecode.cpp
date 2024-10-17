@@ -2957,8 +2957,20 @@ void App::cleanUpRecentFolders() {
 		mRecentFolders = recentFolders;
 }
 
-void App::loadFolder( const std::string& path ) {
 	Clock dirTreeClock;
+void App::loadFolder( std::string path ) {
+
+	if ( FileSystem::fileExtension( path ) == "lnk" ) {
+		auto target = Sys::getShortcutTarget( path );
+		if ( !target.empty() ) {
+			if ( FileSystem::fileExists( target ) )
+				path = target;
+			else
+				return;
+		} else if ( !FileSystem::fileExists( path ) )
+			return;
+	}
+
 	if ( !mCurrentProject.empty() ) {
 		closeEditors();
 	} else {

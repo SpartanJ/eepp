@@ -590,7 +590,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void saveDoc();
 
-	void loadFolder( const std::string& path );
+	void loadFolder( std::string path );
 
 	void loadKeybindings();
 
