@@ -61,6 +61,7 @@ AutoHandle::AutoHandle( int fd ) : mHandle( fd ) {}
 void AutoHandle::release() const {
 	if ( mHandle != -1 ) {
 		close( mHandle );
+		mHandle = -1;
 	}
 }
 #endif
