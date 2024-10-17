@@ -3584,8 +3584,11 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 												 getForcePositionFn( initialPosition ) );
 					} );
 					if ( !mWindow->hasFocus() ) {
-						if ( mWindow->isMinimized() )
-							mWindow->restore();
+						if ( mWindow->isMinimized() ) {
+							// FIXME: SDL2 seems to very rarely dead-lock on SDL_RestoreWindow call.
+							// This can create a dead-lock for the file system listener.
+							mThreadPool->run( [this] { mWindow->restore(); } );
+						}
 						mWindow->raise();
 					}
 				}
