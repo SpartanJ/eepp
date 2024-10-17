@@ -8,7 +8,7 @@ then
 elif command -v premake5 &> /dev/null
 then
     premake5 --file=../../premake5.lua --disable-static-build gmake2
-    USE_ARCH=x86_64
+    USE_ARCH=arm64
 else
     echo "Neither premake5 nor premake4 is available. Please install one."
     exit 1
