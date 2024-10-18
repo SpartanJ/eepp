@@ -1,3 +1,5 @@
+require "premake.export-compile-commands.export-compile-commands"
+
 newoption { trigger = "with-openssl", description = "Enables OpenSSL support ( and disables mbedtls backend )." }
 newoption { trigger = "with-dynamic-freetype", description = "Dynamic link against freetype." }
 newoption { trigger = "with-static-eepp", description = "Force to build the demos and tests with eepp compiled statically" }
@@ -328,6 +330,10 @@ function build_link_configuration( package_name, use_ee_icon )
 				linkoptions { "-B/usr/bin/mold" }
 			end
 		end
+	end
+
+	if _OPTIONS["with-text-shaper"] then
+		defines { "EE_TEXT_SHAPER_ENABLED" }
 	end
 
 	cppdialect "C++17"

@@ -587,6 +587,10 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 	end
 
+	if _OPTIONS["with-text-shaper"] then
+		defines { "EE_TEXT_SHAPER_ENABLED" }
+	end
+
 	set_ios_config()
 	set_apple_config()
 	build_arch_configuration()

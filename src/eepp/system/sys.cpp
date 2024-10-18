@@ -211,14 +211,15 @@ static std::string GetWindowsArch() {
 		GetSystemInfo( &si );
 	}
 
-	if ( osvi.dwMajorVersion >= 6 ) {
-		if ( si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64 ) {
-			arch = "x64";
-		} else if ( si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL ) {
-			arch = "x86";
-		}
-	} else {
+	if ( si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64 ||
+		 si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64 ) {
+		arch = "x86_64";
+	} else if ( si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL ) {
 		arch = "x86";
+	} else if ( si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM64 ) {
+		arch = "arm64";
+	} else if ( si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM ) {
+		arch = "arm";
 	}
 
 	return arch;
