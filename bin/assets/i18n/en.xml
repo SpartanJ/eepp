@@ -8,11 +8,13 @@
 	<string name="add_clean_step">Add Clean Step</string>
 	<string name="add_custom_output_parser">Add Custom Output Parser</string>
 	<string name="add_custom_variable">Add Custom Environment Variable</string>
+	<string name="add_ellipsis">Add...</string>
 	<string name="add_exclude_filter">Add Exclude Filter</string>
 	<string name="add_include_filter">Add Include Filter</string>
 	<string name="advanced_options">Advanced Options</string>
 	<string name="any_https_or_http_url">Any https or http URL</string>
 	<string name="any_name_ellipsis">Any name...</string>
+	<string name="app_output">App Output</string>
 	<string name="arguments">Arguments</string>
 	<string name="ask_close_tab">Close Tab?</string>
 	<string name="author">Author</string>
@@ -52,8 +54,10 @@
 	<string name="camsg_box_cancel">Cancel</string>
 	<string name="cancel_build">Cancel Build</string>
 	<string name="cancel_clean">Cancel Clean</string>
+	<string name="cancel_run">Cancel Run</string>
 	<string name="capture_positions">Capture Positions</string>
 	<string name="case_sensitive">Case sensitive</string>
+	<string name="center">Center</string>
 	<string name="change_case">Change Case</string>
 	<string name="change_escape_sequence">Change Escape Sequence</string>
 	<string name="change_whole_word">Change Whole Word</string>
@@ -67,15 +71,18 @@
 	<string name="clean_steps">Clean Steps</string>
 	<string name="clean_successful">Clean run successfully
 </string>
+	<string name="clear">Clear</string>
 	<string name="clear_history">Clear History</string>
 	<string name="clear_menu">Clear Menu</string>
 	<string name="clear_system_enviroment">Clear System Environment</string>
+	<string name="clone_ellipsis">Clone...</string>
 	<string name="clone_setting">Clone Setting</string>
 	<string name="cloned_name_must_be_different">Cloned name must be different from any existing build name.</string>
 	<string name="close">Close</string>
 	<string name="close_all_tabs">Close All Tabs</string>
 	<string name="close_app">Close App</string>
 	<string name="close_clean_tabs">Close Clean Tabs</string>
+	<string name="close_file">Close File</string>
 	<string name="close_find_replace">Close Find Replace</string>
 	<string name="close_folder">Close Folder</string>
 	<string name="close_folder_question">Close Folder?</string>
@@ -87,6 +94,8 @@
 	<string name="close_tabs_to_the_left">Close Tabs To The Left</string>
 	<string name="close_tabs_to_the_right">Close Tabs To The Right</string>
 	<string name="close_title">Close %s?</string>
+	<string name="code_folding">Code Folding</string>
+	<string name="code_folding_always_display_folds">Folds always visible</string>
 	<string name="col_abbr">col</string>
 	<string name="collapse_all">Collapse All</string>
 	<string name="color_scheme_set">Color scheme: %s</string>
@@ -98,6 +107,7 @@
 	<string name="commit_bypass_hook">Commit Bypass Hook</string>
 	<string name="complete_edit">Complete Edit</string>
 	<string name="configure_default_shell">Configure default shell</string>
+	<string name="configure_ellipsis">Configure...</string>
 	<string name="configure_ignore_files_ellipsis">Configure Ignore Files...</string>
 	<string name="configure_terminal_scrollback">Configure Terminal Scrollback</string>
 	<string name="configure_terminal_shell">Configure Terminal Shell</string>
@@ -112,6 +122,7 @@ All changes will be lost.</string>
 	<string name="confirm_new_file_encoding">To confirm the new file encoding it's required to save the file. Do you want to save it now?</string>
 	<string name="confirm_remove_file">Do you really want to remove "%s"?</string>
 	<string name="console_toggle">Console Toggle</string>
+	<string name="continue_editing">Continue Editing</string>
 	<string name="copy">Copy</string>
 	<string name="copy_containing_folder_path">Copy Containing Folder Path</string>
 	<string name="copy_containing_folder_path_ellipsis">Copy Containing Folder Path...</string>
@@ -132,12 +143,15 @@ File path is: </string>
 	<string name="create_new_file">Create new file</string>
 	<string name="create_new_folder">Create new folder</string>
 	<string name="create_new_terminal">Create New Terminal</string>
+	<string name="create_new_welcome_tab">Create New Welcome Tab</string>
 	<string name="create_new_window">Create New Window</string>
 	<string name="curly_brackets">Curly Brackets {}</string>
 	<string name="current_document">Current Document</string>
 	<string name="current_terminal">Current Terminal</string>
 	<string name="cursor_blinking_time">Cursor Blinking Time</string>
 	<string name="custom_environment_variables">Custom Environment Variables</string>
+	<string name="custom_executable">Custom Executable</string>
+	<string name="custom_executable_num">Custom Executable %d</string>
 	<string name="custom_output_parser">Custom Output Parser</string>
 	<string name="custom_variables">Custom Variables</string>
 	<string name="custom_variables_desc">Custom Variables allow to simplify the build commands steps adding custom variables that can be used over the build settings in commands, arguments, and working directories.</string>
@@ -160,6 +174,7 @@ File path is: </string>
 	<string name="delete_setting">Delete Setting</string>
 	<string name="details_nbsp">Details </string>
 	<string name="directory">directory</string>
+	<string name="disable_welcome_screen">Disable Welcome Screen</string>
 	<string name="document">Document</string>
 	<string name="document_symbol_find_ellipsis">Search Document Symbol...</string>
 	<string name="documentation">documentation</string>
@@ -182,6 +197,7 @@ Do you want to download it now?</string>
 	<string name="editor_go_back">Editor Go Back</string>
 	<string name="editor_go_forward">Editor Go Forward</string>
 	<string name="editor_set_cursor_blinking_time">Editor Set Cursor Blinking Time</string>
+	<string name="editor_set_indent_tab_character">Editor Set Indent Tab Character</string>
 	<string name="editor_set_line_breaking_column">Editor Set Line Breaking Column</string>
 	<string name="editor_set_line_spacing">Editor Set Line Spacing</string>
 	<string name="empty_file_name">You must set a name to the file.</string>
@@ -194,6 +210,7 @@ is done over a word representing a color.</string>
 is hover a word that represents a color.</string>
 	<string name="enable_horizontal_scrollbar">Enable Horizontal ScrollBar</string>
 	<string name="enable_vertical_scrollbar">Enable Vertical ScrollBar</string>
+	<string name="enabled">Enabled</string>
 	<string name="enabled_question">Enabled?</string>
 	<string name="enter_duplicate_file_name">Enter duplicate file name:</string>
 	<string name="enter_new_file_name">Enter new file name:</string>
@@ -205,6 +222,7 @@ is hover a word that represents a color.</string>
 	<string name="escape_sequence_tooltip">Replace \, \t, \n, \r and (Unicode characters</string>
 	<string name="escape_sequences">Escape Sequences</string>
 	<string name="exclusive_mode">Exclusive Mode</string>
+	<string name="executable_to_run">Executable to Run</string>
 	<string name="execute_dir_in_terminal">Open directory in terminal</string>
 	<string name="execute_in_terminal">Execute in terminal</string>
 	<string name="expand_all">Expand All</string>
@@ -213,17 +231,19 @@ is hover a word that represents a color.</string>
 	<string name="feature_not_supported_in_emscripten">This feature is only supported in the desktop version of ecode.</string>
 	<string name="feature_not_supported_in_os">This feature is not supported in this Operating System.
 ecode will try to open an external terminal.</string>
-	<string name="file">file</string>
+	<string name="file">File</string>
 	<string name="file_already_exists">File already exists!</string>
 	<string name="file_encoding">File Encoding</string>
 	<string name="file_name">File Name</string>
 	<string name="file_type">File Type</string>
+	<string name="find">Find</string>
 	<string name="find_and_replace">Find And Replace</string>
 	<string name="find_prev">Find Prev</string>
 	<string name="find_replace">Find Replace</string>
 	<string name="find_text">Find:</string>
 	<string name="folder_project_settings">Folder/Project Settings</string>
 	<string name="folder_settings">Folder/Project Settings</string>
+	<string name="folds_refresh_freq">Folds Refresh Frequency</string>
 	<string name="font_size_grow">Font Size Grow</string>
 	<string name="font_size_reset">Font Size Reset</string>
 	<string name="font_size_shrink">Font Size Shrink</string>
@@ -320,6 +340,8 @@ Restart ecode to see the changes.</string>
 	<string name="history">History:</string>
 	<string name="ignore">Ignore</string>
 	<string name="indent">Indent</string>
+	<string name="indent_tab_alignment">Indent Tab Alignment</string>
+	<string name="indent_tab_character">Indent Tab Character</string>
 	<string name="indent_width">Indent Width</string>
 	<string name="indentation_type">Indentation Type</string>
 	<string name="inode">Inode</string>
@@ -327,12 +349,15 @@ Restart ecode to see the changes.</string>
 	<string name="inspect_widgets">Inspect Widgets</string>
 	<string name="issues">issues</string>
 	<string name="issues_capitalized">Issues</string>
+	<string name="it_must_be_a_single_character">It must be a single character</string>
 	<string name="jump_lines_down">Jump Lines Down</string>
 	<string name="jump_lines_up">Jump Lines Up</string>
+	<string name="keep_indentation">Keep Indentation</string>
 	<string name="key_bindings">Key Bindings</string>
 	<string name="keybindings">Keybindings</string>
 	<string name="lang_selected_default">The language selected will be set as the default language for this file extension.</string>
 	<string name="languages_health">Languages Health</string>
+	<string name="left">Left</string>
 	<string name="light">Light</string>
 	<string name="line">Line</string>
 	<string name="line_abbr">line</string>
@@ -340,6 +365,7 @@ Restart ecode to see the changes.</string>
 	<string name="line_endings">Line Endings</string>
 	<string name="line_number">Line Number</string>
 	<string name="line_spacing">Line Spacing</string>
+	<string name="line_wrap">Line Wrap</string>
 	<string name="linter_copy_error_message">Linter Copy Error Message</string>
 	<string name="linter_go_to_next_error">Linter Go To Next Error</string>
 	<string name="linter_go_to_previous_error">Linter Go To Previous Error</string>
@@ -363,6 +389,7 @@ Restart ecode to see the changes.</string>
 	<string name="lsp_refresh_semantic_highlighting">Lsp Refresh Semantic Highlighting</string>
 	<string name="lsp_rename_symbol_under_cursor">Lsp Rename Symbol Under Cursor</string>
 	<string name="lsp_restart_lsp_client">Restart LSP Client</string>
+	<string name="lsp_show_document_symbols">Lsp Show Document Symbols</string>
 	<string name="lsp_switch_header_source">Lsp Switch Header Source</string>
 	<string name="lsp_symbol_code_action">Lsp Symbol Code Action</string>
 	<string name="lsp_symbol_info">Lsp Symbol Info</string>
@@ -372,6 +399,8 @@ Restart ecode to see the changes.</string>
 	<string name="main_menu">Main Menu</string>
 	<string name="match_case">Match Case</string>
 	<string name="match_whole_word">Match Whole Word</string>
+	<string name="menu_hold_shift_hint">Hold "Shift" to keep menu open</string>
+	<string name="menu_hold_shift_hint_desc">Keeping "Shift" clicked while changing any options it will keep the menu open.</string>
 	<string name="menu_toggle">Menu Toggle</string>
 	<string name="message">Message</string>
 	<string name="message_capture_pattern">Message Capture Pattern</string>
@@ -387,8 +416,13 @@ Restart ecode to see the changes.</string>
 	<string name="move_panel_right_ellipsis">Move panel to right...</string>
 	<string name="move_scroll_down">Move Scroll Down</string>
 	<string name="move_scroll_up">Move Scroll Up</string>
+	<string name="move_to_end_of_line">Move To End Of Line</string>
 	<string name="move_to_next_line">Move To Next Line</string>
+	<string name="move_to_next_page">Move To Next Page</string>
 	<string name="move_to_previous_line">Move To Previous Line</string>
+	<string name="move_to_previous_page">Move To Previous Page</string>
+	<string name="move_to_start_of_content">Move To Start Of Content</string>
+	<string name="move_to_start_of_line">Move To Start Of Line</string>
 	<string name="move_up">Move Up</string>
 	<string name="msg_box_cancel">Cancel</string>
 	<string name="msg_box_no">No</string>
@@ -397,6 +431,8 @@ Restart ecode to see the changes.</string>
 	<string name="msg_box_yes">Yes</string>
 	<string name="multisamples_changed">Multisample Anti-Aliasing Level applied.
 Restart ecode to see the changes.</string>
+	<string name="must_configure_build_and_run_config">You must first add a build and run configuration</string>
+	<string name="must_configure_build_config">You must first add a build configuration</string>
 	<string name="name">Name</string>
 	<string name="new_file">New File</string>
 	<string name="new_file_ellipsis">New File...</string>
@@ -419,7 +455,8 @@ Please restart the application.</string>
 	<string name="no_code_action">No Code Action</string>
 	<string name="no_open_document">No open document</string>
 	<string name="no_running_lsp_server">No running LSP server</string>
-	<string name="no_threads">Threaded ecode required to compile builds.</string>
+	<string name="no_threads">Threaded ecode required to run builds.</string>
+	<string name="no_wrap">No Wrap</string>
 	<string name="none">None</string>
 	<string name="not_found_in_path">Not found in $PATH</string>
 	<string name="notice">Notice</string>
@@ -435,6 +472,9 @@ Please restart the application.</string>
 	<string name="open_file">Open File</string>
 	<string name="open_file_ellipsis">Open File...</string>
 	<string name="open_file_from_web_ellipsis">Open File from Web...</string>
+	<string name="open_files_in_new_window_desc">When files are opened from a file explorer or from the command line, this
+controls whether a new window is created or not.</string>
+	<string name="open_files_in_new_window_enable">Open Files in New Window</string>
 	<string name="open_first_a_folder">You must first open a folder.</string>
 	<string name="open_folder">Open Folder</string>
 	<string name="open_folder_ellipsis">Open Folder...</string>
@@ -445,6 +485,7 @@ Please restart the application.</string>
 	<string name="open_in_same_tabbar">Open In Current Tab Bar</string>
 	<string name="open_in_vertical_split">Open In New Vertical Split</string>
 	<string name="open_locatebar">Open Locatebar</string>
+	<string name="open_locatebar_glob_search">Open Locatebar Glob Search</string>
 	<string name="open_recent_folder_ellipsis">Open Recent Folder...</string>
 	<string name="open_workspace_symbol_search">Open Workspace Symbol Search</string>
 	<string name="output_capitalized">Output</string>
@@ -477,9 +518,12 @@ Please check that the application directory has write permissions.</string>
 	<string name="process_exited_with_errors">The process "%s" exited with errors.
 </string>
 	<string name="project">Project</string>
+	<string name="project_build_and_run">Project Build And Run</string>
 	<string name="project_build_cancel">Project Build Cancel</string>
 	<string name="project_build_start">Project Build Start</string>
 	<string name="project_find_ellipsis">Project Find...</string>
+	<string name="project_run_executable">Project Run Executable</string>
+	<string name="project_stop_executable">Project Stop Executable</string>
 	<string name="pull_branch">Pull Branch</string>
 	<string name="push_branch">Push Branch</string>
 	<string name="quit">Quit</string>
@@ -490,13 +534,18 @@ Please check that the application directory has write permissions.</string>
 	<string name="recent_folders_ellipsis">Recent Folders...</string>
 	<string name="redo">Redo</string>
 	<string name="refresh_view_ellipsis">Refresh View...</string>
+	<string name="regex_match">Regular Expression Match</string>
+	<string name="regular_expression">Regular Expression</string>
 	<string name="reload">Reload</string>
 	<string name="reload_current_file">The current document uses an extension that can be interpreted as more than one languages.&amp;#xA;Which language is this document?</string>
+	<string name="remove">Remove</string>
 	<string name="remove item">Remove Item</string>
+	<string name="remove_all">Remove All</string>
 	<string name="remove_ellipsis">Remove...</string>
 	<string name="remove_file_question">Remove file?</string>
 	<string name="remove_item">Remove Item</string>
 	<string name="rename">Rename</string>
+	<string name="rename_ellipsis">Rename...</string>
 	<string name="rename_file">Rename file</string>
 	<string name="rename_session">Rename Session</string>
 	<string name="reopen_closed_document">Reopen Closed Document</string>
@@ -508,6 +557,22 @@ Please check that the application directory has write permissions.</string>
 	<string name="replace_selection">Replace Selection</string>
 	<string name="replace_with_text">Replace with:</string>
 	<string name="restore_last_session_at_startup">Restart last session at startup</string>
+	<string name="right">Right</string>
+	<string name="run">Run</string>
+	<string name="run_configuration">Run Configuration</string>
+	<string name="run_configuration_colon">Run configuration:</string>
+	<string name="run_configuration_delete_all_confirm">Are you sure you want to delete all the run configurations?</string>
+	<string name="run_configuration_delete_confirm">Are you sure you want to delete the currently selected run configuration?</string>
+	<string name="run_configuration_name">Run configuration name:</string>
+	<string name="run_configuration_name_must_be_unique">Run configuration name must be unique!</string>
+	<string name="run_configuration_rename">Rename configuration name:</string>
+	<string name="run_failed">Run with errors
+</string>
+	<string name="run_in_terminal">Run in terminal</string>
+	<string name="run_settings">Run Settings</string>
+	<string name="run_successful">Run successfully
+</string>
+	<string name="run_target">Run Target</string>
 	<string name="running_steps_for_project_ellipsis">Running steps for project %s...
 </string>
 	<string name="save">Save</string>
@@ -517,27 +582,42 @@ Please check that the application directory has write permissions.</string>
 	<string name="save_doc">Save Doc</string>
 	<string name="save_file_as">Save File As</string>
 	<string name="search">Search</string>
+	<string name="search_again">Search Again</string>
 	<string name="search_and_replace">Search &amp; Replace</string>
+	<string name="search_files_with_glob_match">Search files with glob matching</string>
 	<string name="search_for">Search for:</string>
+	<string name="search_for_symbols_in_current_document">Search for Symbols in Current Document</string>
 	<string name="search_for_workspace_symbols">Search for Workspace Symbols</string>
 	<string name="search_in_command_palette">Search in Command Palette</string>
-	<string name="search_in_files">Search In Files</string>
+	<string name="search_replace_in_files">Search Replace In Files</string>
 	<string name="search_set_string">Search Set String</string>
+	<string name="search_symbols_ellipsis">Search Symbols...</string>
 	<string name="search_where_example">e.g. *.ts, src/**/include, -src/**/exclude</string>
 	<string name="select_all">Select All</string>
 	<string name="select_all_results">Select All Results</string>
 	<string name="select_font_file">Select Font File</string>
+	<string name="select_to_end_of_line">Select To End Of Line</string>
 	<string name="select_to_next_line">Select To Next Line</string>
 	<string name="select_to_previous_line">Select To Previous Line</string>
+	<string name="select_to_start_of_content">Select To Start Of Content</string>
+	<string name="select_to_start_of_line">Select To Start Of Line</string>
 	<string name="serif_font">Serif Font</string>
 	<string name="serif_font_ellipsis">Serif Font...</string>
+	<string name="session_snapshot">Session Snapshot &amp; Periodic Backup</string>
+	<string name="session_snapshot_desc">When session snapshot is enabled the editor will keep
+the document buffer changes between sessions, even if they are not saved
+before exiting the program.</string>
 	<string name="set_cursor_blinking_time">Set Cursor Blinking Time:
 Set 0 to disable it.
 </string>
 	<string name="set_editor_font_size">Set the editor font size:</string>
+	<string name="set_fold_refresh_frequency">Set code folds refresh frequency:
+It should be bigger than 1 second.
+Folds are only refreshed after any document modification.</string>
 	<string name="set_frame_rate_limit">Set Frame Rate Limit:
 Set 0 to disable it.
 </string>
+	<string name="set_indent_tab_character">Set the tab indentation guide character displayed.</string>
 	<string name="set_line_breaking_column">Set Line Breaking Column:
 Set 0 to disable it.
 </string>
@@ -552,6 +632,7 @@ Minimum value is 1, and maximum 6. Requires restart.</string>
 	<string name="shell">Shell</string>
 	<string name="shell_configuration">Shell Configuration</string>
 	<string name="shortcuts">Shortcuts</string>
+	<string name="show-document-symbols">Show Document Symbols</string>
 	<string name="show_build_tab">Show Build Tab</string>
 	<string name="show_console">Show Console</string>
 	<string name="show_doc_info">Show Document Info</string>
@@ -562,6 +643,7 @@ Minimum value is 1, and maximum 6. Requires restart.</string>
 	<string name="show_line_endings">Show Line Endings</string>
 	<string name="show_line_numbers">Show Line Numbers</string>
 	<string name="show_lines_relative_position">Show Lines Relative Position</string>
+	<string name="show_menu_bar">Show Menu Bar</string>
 	<string name="show_minimap">Show Minimap</string>
 	<string name="show_open_documents">Show Open Documents</string>
 	<string name="show_open_documents_ellipsis">Show Open Documents...</string>
@@ -588,6 +670,7 @@ Minimum value is 1, and maximum 6. Requires restart.</string>
 	<string name="switch_build">Switch Build</string>
 	<string name="switch_build_type">Switch Build Type</string>
 	<string name="switch_file_type">Switch File Type</string>
+	<string name="switch_run_target">Switch Run Target</string>
 	<string name="switch_side_panel">Switch Side Panel</string>
 	<string name="switch_to_first_tab">Switch To First Tab</string>
 	<string name="switch_to_last_tab">Switch To Last Tab</string>
@@ -628,6 +711,9 @@ file in the directory tree.</string>
 	<string name="texture_viewer">Texture Viewer</string>
 	<string name="the_ecode_nbsp">The ecode </string>
 	<string name="toggle_lua_pattern">Toggle Lua Pattern</string>
+	<string name="toggle_menu_bar">Toggle Menu Bar</string>
+	<string name="toggle_regex">Toggle Regex</string>
+	<string name="toggle_status_app_output">Toggle Status App Output</string>
 	<string name="toggle_status_bar">Toggle Status Bar</string>
 	<string name="toggle_status_build_output">Toggle Status Build Output</string>
 	<string name="toggle_status_global_search_bar">Toggle Status Global Search Bar</string>
@@ -635,11 +721,15 @@ file in the directory tree.</string>
 	<string name="toggle_status_terminal">Toggle Status Terminal</string>
 	<string name="tools">Tools</string>
 	<string name="tooltip_autoreload_file">Will never again warn about on disk changes but always reload unless there are local changes.</string>
+	<string name="tooltip_close_unexistent_file">Closes the edited buffer</string>
+	<string name="tooltip_continue_editing_file">Continue editing the text document buffer.</string>
 	<string name="tooltip_ignore_file_changes">Ignores the changes on disk without any action.</string>
 	<string name="tooltip_reload_file">Reload the file from disk. Unsaved changes will be lost.</string>
 	<string name="tooltip_write_local_changes">Writes the local changes on disk, overwriting the disk changes</string>
 	<string name="tree_view_configure_ignore_files">Tree View Configure Ignore Files</string>
-	<string name="treeview_single_click_nav">Single Click Navigation in Tree View</string>
+	<string name="treeview_single_click_nav">Single Click Navigation</string>
+	<string name="treeview_single_click_nav_tooltip">Uses single click to open files and expand subfolders in
+the directory tree and in file dialogs to open a folder or file.</string>
 	<string name="trim_trailing_whitespaces">Trim Trailing Whitespaces</string>
 	<string name="type">Type</string>
 	<string name="type_to_locate">Type to Locate</string>
@@ -689,16 +779,23 @@ file in the directory tree.</string>
 	<string name="using_build_type">Using build type: %s.
 </string>
 	<string name="view">View</string>
+	<string name="viewport">Viewport</string>
 	<string name="vsync">VSync</string>
 	<string name="vsync_changed">Vsync configuration changed.
 Restart ecode to see the changes.</string>
 	<string name="warning">Warning</string>
 	<string name="welcome">Welcome</string>
+	<string name="welcome_screen_enable">Enable Welcome Screen</string>
+	<string name="whole_word">Whole Word</string>
 	<string name="window">Window</string>
 	<string name="working_dir">Working Directory</string>
 	<string name="working_dir_at">Working Dir %s
 </string>
 	<string name="workspace_symbol_find_ellipsis">Search Worskspace Symbol...</string>
+	<string name="wrap_letter">Letter wrap</string>
+	<string name="wrap_mode">Wrap Mode</string>
+	<string name="wrap_type_ellipsis">Wrap Against...</string>
+	<string name="wrap_word">Word wrap</string>
 	<string name="write_unicode_bom">Write Unicode BOM</string>
 	<string name="you_have_not_yet_opened_a_folder">You have not yet opened a folder.</string>
 	<string name="zoom_in">Zoom In</string>
