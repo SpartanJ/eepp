@@ -1879,7 +1879,7 @@ void LSPClientPlugin::setHoverDelay( const Time& hoverDelay ) {
 }
 
 void LSPClientPlugin::onVersionUpgrade( Uint32 oldVersion, Uint32 ) {
-	if ( oldVersion <= ECODE_VERSIONNUM( 0, 5, 0 ) ) {
+	if ( oldVersion <= ECODE_VERSIONNUM( 0, 5, 0, 0 ) ) {
 		mSemanticHighlighting = true;
 	}
 }

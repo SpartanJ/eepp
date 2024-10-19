@@ -5,7 +5,7 @@ namespace EE {
 
 Version Version::getVersion() {
 	Version ver;
-	EEPP_VERSION( &ver );
+	EEPP_VERSION( ver );
 	return ver;
 }
 

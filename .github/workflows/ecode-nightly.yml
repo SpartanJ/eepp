@@ -77,6 +77,7 @@ jobs:
           bash projects/linux/scripts/install_sdl2.sh
       - name: Build ecode
         run: |
+          bash projects/scripts/patch_commit_number.sh
           bash projects/linux/ecode/build.app.sh --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }}
       - name: Upload Files
         uses: softprops/action-gh-release@v2
@@ -136,6 +137,7 @@ jobs:
           bash projects/linux/scripts/install_sdl2.sh --aarch64
       - name: Build ecode
         run: |
+          bash projects/scripts/patch_commit_number.sh
           bash projects/linux/ecode/build.app.sh --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }}
       - name: Upload Files
         uses: softprops/action-gh-release@v2
@@ -189,6 +191,7 @@ jobs:
           sudo update-alternatives --config g++
       - name: Build ecode
         run: |
+          bash projects/scripts/patch_commit_number.sh
           bash projects/mingw32/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
       - name: Upload Files
         uses: softprops/action-gh-release@v2
@@ -229,6 +232,7 @@ jobs:
           brew install bash sdl2 create-dmg premake p7zip
       - name: Build
         run: |
+          bash projects/scripts/patch_commit_number.sh
           bash projects/macos/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
       - name: Create DMG Image
         run: |
@@ -276,6 +280,7 @@ jobs:
           hdiutil detach /Volumes/SDL2
       - name: Build
         run: |
+          bash projects/scripts/patch_commit_number.sh
           bash projects/macos/ecode/cross.build.app.sh --version ${{ env.INSTALL_REF }}
       - name: Create DMG Image
         run: |

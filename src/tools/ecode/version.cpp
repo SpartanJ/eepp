@@ -5,35 +5,34 @@ namespace ecode {
 
 Version Version::getVersion() {
 	Version ver;
-	ECODE_VERSION( &ver );
+	ECODE_VERSION( ver );
 	return ver;
 }
 
-Uint32 Version::getVersionNum() {
+Uint64 Version::getVersionNum() {
 	Version ver = getVersion();
-	return ECODE_VERSIONNUM( ver.major, ver.minor, ver.patch );
+	return ECODE_VERSIONNUM( ver.major, ver.minor, ver.patch, ver.commit );
 }
 
 std::string Version::getVersionNumString() {
 	Version ver = getVersion();
+	if ( ver.commit > 0 && ver.commit < 9999 )
+		return String::format( "%d.%d.%d-%d", ver.major, ver.minor, ver.patch, ver.commit );
 	return String::format( "%d.%d.%d", ver.major, ver.minor, ver.patch );
 }
 
 std::string Version::getVersionFullName() {
 	Version ver = getVersion();
-	return String::format( "ecode version %d.%d.%d", ver.major, ver.minor, ver.patch );
-}
-
-std::string Version::getTagName() {
-	Version ver = getVersion();
-	return String::format( "ecode-%d.%d.%d", ver.major, ver.minor, ver.patch );
+	if ( ver.commit > 0 && ver.commit < 9999 )
+		return String::format( "ecode version %s nightly", getVersionNumString() );
+	return String::format( "ecode version %s", getVersionNumString() );
 }
 
 std::string Version::getCodename() {
 	return std::string( ECODE_CODENAME );
 }
 
-Uint32 Version::getVersionNumFromTag( const std::string& tag ) {
+Uint64 Version::getVersionNumFromTag( const std::string& tag ) {
 	auto tagPart = String::split( tag, '-' );
 	if ( tagPart.size() == 2 ) {
 		auto versionPart = String::split( tagPart[1], '.' );
@@ -42,7 +41,8 @@ Uint32 Version::getVersionNumFromTag( const std::string& tag ) {
 			if ( String::fromString( ver.major, versionPart[0] ) &&
 				 String::fromString( ver.minor, versionPart[1] ) &&
 				 String::fromString( ver.patch, versionPart[2] ) ) {
-				return ECODE_VERSIONNUM( ver.major, ver.minor, ver.patch );
+				return ECODE_VERSIONNUM( ver.major, ver.minor, ver.patch,
+										 0 /* tags don't count commits */ );
 			}
 		}
 	}
