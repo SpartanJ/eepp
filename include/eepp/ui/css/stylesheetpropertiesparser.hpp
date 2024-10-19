@@ -4,8 +4,6 @@
 #include <eepp/core/string.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetvariable.hpp>
-#include <map>
-#include <vector>
 
 namespace EE { namespace UI { namespace CSS {
 

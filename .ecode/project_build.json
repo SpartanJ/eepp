@@ -186,6 +186,18 @@
         "name": "eepp-unit_tests",
         "run_in_terminal": true,
         "working_dir": "${project_root}/bin/unit_tests"
+      },
+      {
+        "args": "",
+        "command": "eepp-empty-window-debug",
+        "name": "eepp-empty_window-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "eepp-empty-window",
+        "name": "eepp-empty_window",
+        "working_dir": "${project_root}/bin"
       }
     ],
     "var": {

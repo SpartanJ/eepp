@@ -4,8 +4,6 @@
 #include <eepp/system/singleton.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/css/shorthanddefinition.hpp>
-#include <memory>
-#include <unordered_map>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -35,8 +33,8 @@ class EE_API PropertySpecification {
 
   protected:
 	friend class PropertyDefinition;
-	std::unordered_map<Uint32, std::shared_ptr<PropertyDefinition>> mProperties;
-	std::unordered_map<Uint32, std::shared_ptr<ShorthandDefinition>> mShorthands;
+	UnorderedMap<Uint32, std::shared_ptr<PropertyDefinition>> mProperties;
+	UnorderedMap<Uint32, std::shared_ptr<ShorthandDefinition>> mShorthands;
 
 	const PropertyDefinition* addPropertyAlias( Uint32 aliasId, const PropertyDefinition* propDef );
 };

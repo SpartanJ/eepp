@@ -1,15 +1,8 @@
-#include <algorithm>
 #include <eepp/core.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/css/propertyspecification.hpp>
 
 namespace EE { namespace UI { namespace CSS {
-
-PropertyDefinition* PropertyDefinition::New( const std::string& name,
-											 const std::string& defaultValue,
-											 const bool& inherited ) {
-	return eeNew( PropertyDefinition, ( name, defaultValue, inherited ) );
-}
 
 PropertyDefinition::PropertyDefinition( const std::string& name, const std::string& defaultValue,
 										const bool& inherited ) :

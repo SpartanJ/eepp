@@ -1,9 +1,8 @@
 #ifndef EE_UI_CSS_PROPERTYIDSET_HPP
 #define EE_UI_CSS_PROPERTYIDSET_HPP
 
-#include <bitset>
+#include <eepp/core/containers.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
-#include <set>
 
 namespace EE { namespace UI { namespace CSS {
 
@@ -11,7 +10,7 @@ class PropertyIdSetIterator;
 
 class EE_API PropertyIdSet {
   private:
-	std::set<Uint32> mIds;
+	UnorderedSet<Uint32> mIds;
 
   public:
 	void insert( Uint32 id ) { mIds.insert( id ); }
@@ -74,7 +73,7 @@ class EE_API PropertyIdSet {
 
 class EE_API PropertyIdSetIterator {
   public:
-	using CustomIdsIt = std::set<Uint32>::const_iterator;
+	using CustomIdsIt = UnorderedSet<Uint32>::const_iterator;
 
 	PropertyIdSetIterator() : container( nullptr ), custom_ids_iterator() {}
 	PropertyIdSetIterator( const PropertyIdSet* container, CustomIdsIt custom_ids_iterator ) :

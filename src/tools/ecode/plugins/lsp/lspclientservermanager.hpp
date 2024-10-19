@@ -5,6 +5,7 @@
 #include "lspclientserver.hpp"
 #include "lspdefinition.hpp"
 #include <eepp/core.hpp>
+#include <set>
 
 using namespace EE;
 
