@@ -56,7 +56,8 @@ bool StatusBuildOutputController::searchFindAndAddStatusResult(
 					continue;
 				}
 
-				std::string subtxt = text.substr( matches[i].start, matches[i].end );
+				std::string subtxt =
+					text.substr( matches[i].start, matches[i].end - matches[i].start );
 				if ( pattern.config.patternOrder.message == i ) {
 					auto nl = subtxt.find_first_of( '\n' );
 					if ( nl == std::string::npos ) {

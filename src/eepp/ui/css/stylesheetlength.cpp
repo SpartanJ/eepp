@@ -317,7 +317,7 @@ StyleSheetLength StyleSheetLength::fromString( const std::string& str, const Flo
 
 	if ( !num.empty() ) {
 		Float val = 0;
-		if ( String::fromString<Float>( val, num ) )
+		if ( String::fromString( val, num ) )
 			length.setValue( val, unitFromString( unit ) );
 	}
 

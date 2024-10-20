@@ -1,15 +1,18 @@
 #ifndef EE_STRING_HPP
 #define EE_STRING_HPP
 
+#include <charconv>
 #include <cstdlib>
 #include <cstring>
-#include <eepp/config.hpp>
-#include <eepp/core/utf.hpp>
+#include <limits>
 #include <locale>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
+
+#include <eepp/config.hpp>
+#include <eepp/core/utf.hpp>
 
 namespace EE {
 
@@ -342,19 +345,41 @@ class EE_API String {
 								   const std::string& prepend = "", size_t digitsAfterComma = 2 );
 
 	/** Converts from a string to type */
-	template <class T>
-	static bool fromString( T& t, const std::string& s,
-							std::ios_base& ( *f )( std::ios_base& ) = std::dec ) {
-		std::istringstream iss( s );
-		return !( iss >> f >> t ).fail();
+	template <typename T> static bool fromString( T& t, const std::string& s, int base = 10 ) {
+		const char* begin = s.data();
+		const char* end = s.data() + s.size();
+
+		if constexpr ( std::is_integral_v<T> && std::is_signed_v<T> ) {
+			long long value = 0;
+			std::from_chars_result result = std::from_chars( begin, end, value, base );
+			if ( result.ec == std::errc{} && result.ptr == end &&
+				 value >= std::numeric_limits<T>::min() &&
+				 value <= std::numeric_limits<T>::max() ) {
+				t = static_cast<T>( value );
+				return true;
+			}
+			return false;
+		} else if constexpr ( std::is_integral_v<T> && std::is_unsigned_v<T> ) {
+			unsigned long long value = 0;
+			std::from_chars_result result = std::from_chars( begin, end, value, base );
+			if ( result.ec == std::errc{} && result.ptr == end &&
+				 value <= std::numeric_limits<T>::max() ) {
+				t = static_cast<T>( value );
+				return true;
+			}
+			return false;
+		} else if constexpr ( std::is_same_v<T, float> || std::is_same_v<T, double> ) {
+			std::from_chars_result result = std::from_chars( begin, end, t );
+			bool res = result.ec == std::errc{} && result.ptr == end;
+			return res;
+		} else {
+			static_assert( false, "String::fromString not implemented for this type" );
+		}
 	}
 
 	/** Converts from a String to type */
-	template <class T>
-	static bool fromString( T& t, const String& s,
-							std::ios_base& ( *f )( std::ios_base& ) = std::dec ) {
-		std::istringstream iss( s.toUtf8() );
-		return !( iss >> f >> t ).fail();
+	template <typename T> static bool fromString( T& t, const String& s, int base = 10 ) {
+		return fromString( t, s.toUtf8(), base );
 	}
 
 	template <typename... Args>

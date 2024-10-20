@@ -638,7 +638,7 @@ StructuralSelector StyleSheetSpecification::getStructuralSelector( const std::st
 			if ( nIndex == std::string::npos ) {
 				// The equation is 0n + b. So a = 0, and we only have to parse b.
 				a = 0;
-				if ( String::fromString( t, parameters ) ) {
+				if ( String::isNumber( parameters ) && String::fromString( t, parameters ) ) {
 					b = t;
 				} else {
 					return StructuralSelector( it->second, 0, 0, FunctionString::parse( name ) );

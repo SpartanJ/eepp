@@ -642,7 +642,7 @@ void URI::parseHostAndPort( std::string::const_iterator& it,
 		if ( !port.empty() ) {
 			int nport = 0;
 
-			if ( String::fromString<int>( nport, port ) && nport > 0 && nport < 65536 ) {
+			if ( String::fromString( nport, port ) && nport > 0 && nport < 65536 ) {
 				mPort = (unsigned short)nport;
 			} else {
 				return; // throw SyntaxException("bad or invalid port number", port);

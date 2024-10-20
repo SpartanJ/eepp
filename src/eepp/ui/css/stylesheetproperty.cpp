@@ -328,8 +328,8 @@ static OriginPoint toOriginPoint( std::string val ) {
 			Float x = 0;
 			Float y = 0;
 
-			bool Res1 = String::fromString<Float>( x, String::trim( parts[0] ) );
-			bool Res2 = String::fromString<Float>( y, String::trim( parts[1] ) );
+			bool Res1 = String::fromString( x, String::trim( parts[0] ) );
+			bool Res2 = String::fromString( y, String::trim( parts[1] ) );
 
 			if ( Res1 && Res2 ) {
 				return OriginPoint( x, y );
@@ -407,16 +407,16 @@ Vector2f StyleSheetProperty::asVector2f( const Vector2f& defaultValue ) const {
 			Float val;
 
 			vector.x =
-				String::fromString<Float>( val, String::trim( xySplit[0] ) ) ? val : defaultValue.x;
+				String::fromString( val, String::trim( xySplit[0] ) ) ? val : defaultValue.x;
 			vector.y =
-				String::fromString<Float>( val, String::trim( xySplit[1] ) ) ? val : defaultValue.y;
+				String::fromString( val, String::trim( xySplit[1] ) ) ? val : defaultValue.y;
 
 			return vector;
 		} else if ( xySplit.size() == 1 ) {
 			Float val;
 
 			vector.x = vector.y =
-				String::fromString<Float>( val, xySplit[0] ) ? val : defaultValue.x;
+				String::fromString( val, xySplit[0] ) ? val : defaultValue.x;
 
 			return vector;
 		}
@@ -434,15 +434,15 @@ Vector2i StyleSheetProperty::asVector2i( const Vector2i& defaultValue ) const {
 			int val;
 
 			vector.x =
-				String::fromString<int>( val, String::trim( xySplit[0] ) ) ? val : defaultValue.x;
+				String::fromString( val, String::trim( xySplit[0] ) ) ? val : defaultValue.x;
 			vector.y =
-				String::fromString<int>( val, String::trim( xySplit[1] ) ) ? val : defaultValue.y;
+				String::fromString( val, String::trim( xySplit[1] ) ) ? val : defaultValue.y;
 
 			return vector;
 		} else if ( xySplit.size() == 1 ) {
 			int val;
 
-			vector.x = vector.y = String::fromString<int>( val, xySplit[0] ) ? val : defaultValue.x;
+			vector.x = vector.y = String::fromString( val, xySplit[0] ) ? val : defaultValue.x;
 
 			return vector;
 		}

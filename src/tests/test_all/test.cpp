@@ -1329,7 +1329,7 @@ void EETest::cmdSetPartsNum( const std::vector<String>& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
-		bool Res = String::fromString<Int32>( tInt, params[1] );
+		bool Res = String::fromString( tInt, params[1] );
 
 		if ( Res && ( tInt >= 0 && tInt <= 100000 ) ) {
 			PS[2].create( ParticleEffect::WormHole, tInt, TN[5],

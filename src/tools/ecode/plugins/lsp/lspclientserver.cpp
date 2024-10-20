@@ -1902,7 +1902,7 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 			break;
 		}
 
-		index += strlen( CONTENT_LENGTH_HEADER );
+		index += std::strlen( CONTENT_LENGTH_HEADER );
 		auto endindex = buffer.find( "\r\n", index );
 		auto msgstart = buffer.find( "\r\n\r\n", index );
 		if ( endindex == std::string::npos || msgstart == std::string::npos )
@@ -1910,7 +1910,10 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 
 		msgstart += 4;
 		int length = 0;
-		bool ok = String::fromString( length, buffer.substr( index, endindex - index ) );
+		std::string lengthStr( buffer.substr( index, endindex - index ) );
+		String::trimInPlace( lengthStr );
+		bool ok = String::fromString( length, lengthStr );
+
 		// FIXME perhaps detect if no reply for some time
 		// then again possibly better left to user to restart in such case
 		if ( !ok ) {

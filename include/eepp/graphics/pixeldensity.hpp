@@ -78,6 +78,10 @@ class EE_API PixelDensity {
 
 	static Float toDpFromStringI( const std::string& str );
 
+	static Float toPxFromString( const std::string& str );
+
+	static Float toPxFromStringI( const std::string& str );
+
   protected:
 	static Float sPixelDensity;
 };

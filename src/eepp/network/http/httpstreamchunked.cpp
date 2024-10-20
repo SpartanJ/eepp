@@ -35,10 +35,10 @@ ios_size HttpStreamChunked::write( const char* data, ios_size size ) {
 
 			if ( lenEnd != std::string::npos ) {
 				std::string::size_type firstCharPos = lenEnd + 2;
-				unsigned long length;
+				std::size_t length;
 
 				// Get the length of the chunk
-				bool res = String::fromString( length, mChunkBuffer.substr( 0, lenEnd ), std::hex );
+				bool res = String::fromString( length, mChunkBuffer.substr( 0, lenEnd ), 16 );
 
 				// If the length is solved...
 				if ( res ) {
@@ -75,7 +75,7 @@ ios_size HttpStreamChunked::write( const char* data, ios_size size ) {
 
 									if ( lenEnd != std::string::npos ) {
 										bool res = String::fromString(
-											length, mChunkBuffer.substr( 0, lenEnd ), std::hex );
+											length, mChunkBuffer.substr( 0, lenEnd ), 16 );
 
 										if ( res && length > 0 ) {
 											retry = true;

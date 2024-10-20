@@ -628,7 +628,7 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::MinIconSize:
-			setIconMinimumSize( attribute.asSizei() );
+			setIconMinimumSize( attribute.asDpDimensionSizei() );
 			break;
 		case PropertyId::TextAlign: {
 			std::string align = String::toLower( attribute.value() );

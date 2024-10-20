@@ -891,7 +891,7 @@ void UISceneNode::loadGlyphIcon( const StyleSheetStyleVector& styles ) {
 			std::string buffer( glyphProp.asString() );
 			Uint32 value;
 			if ( String::startsWith( buffer, "0x" ) ) {
-				if ( String::fromString( value, buffer, std::hex ) )
+				if ( String::fromString( value, buffer, 16 ) )
 					codePoint = value;
 			} else if ( String::fromString( value, buffer ) ) {
 				codePoint = value;

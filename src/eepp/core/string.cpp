@@ -6,7 +6,6 @@
 #include <eepp/core/utf.hpp>
 #include <iostream>
 #include <iterator>
-#include <limits>
 #include <random>
 #include <thirdparty/utf8cpp/utf8.h>
 
@@ -351,7 +350,7 @@ String String::unescape( const String& str ) {
 							}
 						if ( buffer.size() >= len ) {
 							Uint32 value;
-							if ( String::fromString( value, buffer, std::hex ) )
+							if ( String::fromString( value, buffer, 16 ) )
 								output.push_back( value );
 						}
 					}
@@ -370,7 +369,7 @@ String String::unescape( const String& str ) {
 						}
 						if ( buffer.size() == len ) {
 							Uint32 value;
-							if ( String::fromString( value, buffer, std::hex ) )
+							if ( String::fromString( value, buffer, 16 ) )
 								output.push_back( value );
 						}
 					}
@@ -396,7 +395,7 @@ String String::unescape( const String& str ) {
 					}
 					if ( buffer.size() <= 3 ) {
 						Uint32 value;
-						if ( String::fromString( value, buffer, std::oct ) )
+						if ( String::fromString( value, buffer, 8 ) )
 							output.push_back( value );
 					}
 					break;

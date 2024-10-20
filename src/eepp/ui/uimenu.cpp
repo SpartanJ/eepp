@@ -632,7 +632,7 @@ bool UIMenu::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::MinIconSize:
-			setIconMinimumSize( attribute.asSizei() );
+			setIconMinimumSize( attribute.asDpDimensionSizei() );
 			break;
 		default:
 			return UIWidget::applyProperty( attribute );

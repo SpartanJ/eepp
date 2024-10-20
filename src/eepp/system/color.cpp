@@ -521,7 +521,7 @@ Color Color::fromString( std::string str ) {
 
 			for ( int i = 0; i < 3; i++ ) {
 				Float val = 0;
-				if ( String::fromString<Float>( val, functionString.getParameters().at( i ) ) ) {
+				if ( String::fromString( val, functionString.getParameters().at( i ) ) ) {
 					switch ( i ) {
 						case 0:
 							color.r = static_cast<Uint8>( eemax( eemin( 255.f, val ), 0.f ) );
@@ -542,7 +542,7 @@ Color Color::fromString( std::string str ) {
 
 			Float val = 255;
 			if ( functionString.getParameters().size() >= 4 ) {
-				if ( String::fromString<Float>( val, functionString.getParameters().at( 3 ) ) ) {
+				if ( String::fromString( val, functionString.getParameters().at( 3 ) ) ) {
 					color.a = static_cast<Uint8>( eemax( eemin( 1.f, val ), 0.f ) * 255.f + 0.5f );
 				} else {
 					return Color::Transparent;
@@ -558,7 +558,7 @@ Color Color::fromString( std::string str ) {
 			// Allow creating rgba( #AABBCC, 0.5 )
 			Color color( Color::fromString( functionString.getParameters()[0] ) );
 			Float val = 255;
-			if ( String::fromString<Float>( val, functionString.getParameters().at( 1 ) ) )
+			if ( String::fromString( val, functionString.getParameters().at( 1 ) ) )
 				color.a = static_cast<Uint8>( eemax( eemin( 1.f, val ), 0.f ) * 255.f + 0.5f );
 
 			return color;
@@ -575,7 +575,7 @@ Color Color::fromString( std::string str ) {
 			Float hueVal, saturationVal, lightnessVal;
 
 			int hueIntVal;
-			if ( String::fromString<int>( hueIntVal, functionString.getParameters().at( 0 ) ) &&
+			if ( String::fromString( hueIntVal, functionString.getParameters().at( 0 ) ) &&
 				 hueIntVal >= 0 && hueIntVal <= 360 ) {
 				hueVal = hueIntVal / 360.f;
 			} else {
@@ -585,7 +585,7 @@ Color Color::fromString( std::string str ) {
 			Float saturationFloatVal;
 			std::string saturationString( functionString.getParameters().at( 1 ) );
 			String::replaceAll( saturationString, "%", "" );
-			if ( String::fromString<Float>( saturationFloatVal, saturationString ) &&
+			if ( String::fromString( saturationFloatVal, saturationString ) &&
 				 saturationFloatVal >= 0 && saturationFloatVal <= 100 ) {
 				saturationVal = saturationFloatVal / 100.f;
 			} else {
@@ -595,7 +595,7 @@ Color Color::fromString( std::string str ) {
 			Float lightnessFloatVal;
 			std::string lightnessString( functionString.getParameters().at( 2 ) );
 			String::replaceAll( lightnessString, "%", "" );
-			if ( String::fromString<Float>( lightnessFloatVal, lightnessString ) &&
+			if ( String::fromString( lightnessFloatVal, lightnessString ) &&
 				 lightnessFloatVal >= 0 && lightnessFloatVal <= 100 ) {
 				lightnessVal = lightnessFloatVal / 100.f;
 			} else {
@@ -605,7 +605,7 @@ Color Color::fromString( std::string str ) {
 			Float alphaVal = 1;
 
 			if ( functionString.getParameters().size() >= 4 ) {
-				if ( String::fromString<Float>( alphaVal,
+				if ( String::fromString( alphaVal,
 												functionString.getParameters().at( 3 ) ) ) {
 					alphaVal = eemax( eemin( 1.f, alphaVal ), 0.f );
 				} else {
@@ -632,7 +632,7 @@ Color Color::fromString( std::string str ) {
 			Float hueVal, saturationVal, valueVal;
 
 			int hueIntVal;
-			if ( String::fromString<int>( hueIntVal, functionString.getParameters().at( 0 ) ) &&
+			if ( String::fromString( hueIntVal, functionString.getParameters().at( 0 ) ) &&
 				 hueIntVal >= 0 && hueIntVal <= 360 ) {
 				hueVal = hueIntVal;
 			} else {
@@ -642,7 +642,7 @@ Color Color::fromString( std::string str ) {
 			Float saturationFloatVal;
 			std::string saturationString( functionString.getParameters().at( 1 ) );
 			String::replaceAll( saturationString, "%", "" );
-			if ( String::fromString<Float>( saturationFloatVal, saturationString ) &&
+			if ( String::fromString( saturationFloatVal, saturationString ) &&
 				 saturationFloatVal >= 0 && saturationFloatVal <= 100 ) {
 				saturationVal = saturationFloatVal / 100.f;
 			} else {
@@ -652,7 +652,7 @@ Color Color::fromString( std::string str ) {
 			Float valueFloatVal;
 			std::string valueString( functionString.getParameters().at( 2 ) );
 			String::replaceAll( valueString, "%", "" );
-			if ( String::fromString<Float>( valueFloatVal, valueString ) && valueFloatVal >= 0 &&
+			if ( String::fromString( valueFloatVal, valueString ) && valueFloatVal >= 0 &&
 				 valueFloatVal <= 100 ) {
 				valueVal = valueFloatVal / 100.f;
 			} else {
@@ -662,7 +662,7 @@ Color Color::fromString( std::string str ) {
 			Float alphaVal = 1;
 
 			if ( functionString.getParameters().size() >= 4 ) {
-				if ( String::fromString<Float>( alphaVal,
+				if ( String::fromString( alphaVal,
 												functionString.getParameters().at( 3 ) ) ) {
 					alphaVal = eemax( eemin( 1.f, alphaVal ), 0.f );
 				} else {

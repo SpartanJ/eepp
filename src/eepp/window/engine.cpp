@@ -277,7 +277,7 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 			pixelDensity = currentDisplay->getPixelDensity();
 		} else {
 			float pd = 1;
-			bool res = String::fromString<float>( pd, pixelDensityStr );
+			bool res = String::fromString( pd, pixelDensityStr );
 
 			if ( res )
 				pixelDensity = pd;
