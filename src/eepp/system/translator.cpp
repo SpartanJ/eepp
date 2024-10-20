@@ -7,11 +7,35 @@
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
+#include <locale>
+
 namespace EE { namespace System {
 
-Translator::Translator( const std::locale& locale ) : mDefaultLanguage( "en" ) {
-	setLanguageFromLocale( locale );
+static std::string getLanguageFromLocale( std::locale locale ) {
+	std::string name = locale.name();
+
+	if ( "C" == name ) {
+#if defined( EE_SUPPORT_EXCEPTIONS ) && EE_PLATFORM != EE_PLATFORM_WIN
+		try {
+			const char* loc = setlocale( LC_CTYPE, "" );
+			locale = std::locale( loc );
+			name = locale.name();
+		} catch ( ... ) {
+		}
+#endif
+
+		if ( "C" == name ) {
+			return "en";
+		} else {
+			return name.substr( 0, 2 );
+		}
+	} else {
+		return name.substr( 0, 2 );
+	}
 }
+
+Translator::Translator() :
+	mDefaultLanguage( "en" ), mCurrentLanguage( getLanguageFromLocale( std::locale() ) ) {}
 
 bool Translator::loadFromDirectory( std::string dirPath, std::string ext ) {
 	FileSystem::dirAddSlashAtEnd( dirPath );
@@ -190,29 +214,6 @@ String Translator::getString( const std::string& key, const String& defaultValue
 
 void Translator::setString( const std::string& lang, const std::string& key, const String& val ) {
 	mDictionary[lang][key] = val;
-}
-
-void Translator::setLanguageFromLocale( std::locale locale ) {
-	std::string name = locale.name();
-
-	if ( "C" == name ) {
-#if defined( EE_SUPPORT_EXCEPTIONS ) && EE_PLATFORM != EE_PLATFORM_WIN
-		try {
-			const char* loc = setlocale( LC_CTYPE, "" );
-			locale = std::locale( loc );
-			name = locale.name();
-		} catch ( ... ) {
-		}
-#endif
-
-		if ( "C" == name ) {
-			mCurrentLanguage = "en";
-		} else {
-			mCurrentLanguage = name.substr( 0, 2 );
-		}
-	} else {
-		mCurrentLanguage = name.substr( 0, 2 );
-	}
 }
 
 std::string Translator::getDefaultLanguage() const {

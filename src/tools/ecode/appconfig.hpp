@@ -164,7 +164,7 @@ struct TerminalConfig {
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 	NewTerminalOrientation::Orientation newTerminalOrientation{
 		NewTerminalOrientation::Horizontal };
-	size_t scrollback{ 10000 };
+	Uint64 scrollback{ 10000 };
 	bool unsupportedOSWarnDisabled{ false };
 };
 

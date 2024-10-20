@@ -1401,7 +1401,8 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( json&& msg, const Json
 
 	try {
 		std::string sjson( msg.dump() );
-		sjson.insert( 0, "Content-Length: " + String::toString( sjson.size() ) + "\r\n\r\n" );
+		sjson.insert( 0,
+					  "Content-Length: " + String::toString( (Uint64)sjson.size() ) + "\r\n\r\n" );
 
 		if ( mReady || ( msg.contains( MEMBER_METHOD ) && msg[MEMBER_METHOD] == "initialize" ) ) {
 			if ( !isSilent() ) {

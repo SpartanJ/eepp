@@ -90,10 +90,6 @@ bool String::fromString( Uint64& t, const std::string& s, int base ) {
 	return _fromString<>( t, s, base );
 }
 
-bool String::fromString( std::size_t& t, const std::string& s, int base ) {
-	return _fromString<>( t, s, base );
-}
-
 bool String::fromString( float& t, const std::string& s ) {
 	return _fromString<>( t, s );
 }
@@ -131,10 +127,6 @@ bool String::fromString( Uint32& t, const String& s, int base ) {
 }
 
 bool String::fromString( Uint64& t, const String& s, int base ) {
-	return _fromString<>( t, s, base );
-}
-
-bool String::fromString( std::size_t& t, const String& s, int base ) {
 	return _fromString<>( t, s, base );
 }
 
@@ -181,10 +173,6 @@ std::string String::toString( const Uint32& i ) {
 }
 
 std::string String::toString( const Uint64& i ) {
-	return _toString<>( i );
-}
-
-std::string String::toString( const std::size_t& i ) {
 	return _toString<>( i );
 }
 

@@ -364,7 +364,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	UIPopUpMenu* indentWidthMenu = UIPopUpMenu::New();
 	for ( size_t w = 2; w <= 12; w++ )
 		indentWidthMenu
-			->addRadioButton( String::toString( w ),
+			->addRadioButton( String::toString( (Uint64)w ),
 							  mSplitter->curEditorExistsAndFocused() &&
 								  mSplitter->getCurEditor()->getDocument().getIndentWidth() == w )
 			->setId( String::format( "indent_width_%zu", w ) )
@@ -381,7 +381,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	UIPopUpMenu* tabWidthMenu = UIPopUpMenu::New();
 	for ( size_t w = 2; w <= 12; w++ )
 		tabWidthMenu
-			->addRadioButton( String::toString( w ),
+			->addRadioButton( String::toString( (Uint64)w ),
 							  mSplitter->curEditorExistsAndFocused() &&
 								  mSplitter->getCurEditor()->getTabWidth() == w )
 			->setId( String::format( "tab_width_%zu", w ) )

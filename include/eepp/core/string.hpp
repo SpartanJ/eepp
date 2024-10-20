@@ -334,7 +334,6 @@ class EE_API String {
 	static std::string toString( const Uint16& i );
 	static std::string toString( const Uint32& i );
 	static std::string toString( const Uint64& i );
-	static std::string toString( const std::size_t& i );
 	static std::string toString( const float& i );
 	static std::string toString( const double& i );
 
@@ -353,7 +352,6 @@ class EE_API String {
 	static bool fromString( Uint16& t, const std::string& s, int base = 10 );
 	static bool fromString( Uint32& t, const std::string& s, int base = 10 );
 	static bool fromString( Uint64& t, const std::string& s, int base = 10 );
-	static bool fromString( std::size_t& t, const std::string& s, int base = 10 );
 	static bool fromString( float& t, const std::string& s );
 	static bool fromString( double& t, const std::string& s );
 
@@ -366,7 +364,6 @@ class EE_API String {
 	static bool fromString( Uint16& t, const String& s, int base = 10 );
 	static bool fromString( Uint32& t, const String& s, int base = 10 );
 	static bool fromString( Uint64& t, const String& s, int base = 10 );
-	static bool fromString( std::size_t& t, const String& s, int base = 10 );
 	static bool fromString( float& t, const String& s );
 	static bool fromString( double& t, const String& s );
 

@@ -841,7 +841,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 				requestHead.setContinue( false );
 				requestHead.setMethod( Request::Head );
 				Response responseHead = downloadRequest( requestHead, responseHeadBody );
-				std::size_t contentLength = 0;
+				Uint64 contentLength = 0;
 
 				if ( responseHead.hasField( "Accept-Ranges" ) &&
 					 responseHead.hasField( "Content-Length" ) &&
@@ -887,7 +887,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 				bool isnheader = false;
 				bool chunked = false;
 				bool compressed = false;
-				std::size_t contentLength = 0;
+				Uint64 contentLength = 0;
 				std::string headerBuffer;
 				HttpStreamChunked* chunkedStream = NULL;
 				IOStreamInflate* inflateStream = NULL;

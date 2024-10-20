@@ -35,7 +35,7 @@ ios_size HttpStreamChunked::write( const char* data, ios_size size ) {
 
 			if ( lenEnd != std::string::npos ) {
 				std::string::size_type firstCharPos = lenEnd + 2;
-				std::size_t length;
+				Uint64 length;
 
 				// Get the length of the chunk
 				bool res = String::fromString( length, mChunkBuffer.substr( 0, lenEnd ), 16 );

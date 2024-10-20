@@ -210,10 +210,10 @@ class UIBuildStep : public UILinearLayout {
 	void updateStep( size_t stepNum, ProjectBuildStep* buildStep ) {
 		clearBindings();
 
-		removeClass( String::toString( mStepNum ) );
+		removeClass( String::toString( (Uint64)mStepNum ) );
 		mStepNum = stepNum;
 		mStep = buildStep;
-		addClass( String::toString( mStepNum ) );
+		addClass( String::toString( (Uint64)mStepNum ) );
 
 		forEachChild( [buildStep]( Node* node ) { node->setEnabled( buildStep != nullptr ); } );
 		if ( buildStep == nullptr )
@@ -250,7 +250,7 @@ class UIBuildStep : public UILinearLayout {
 		mStep( buildStep ) {
 		setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 		addClass( "build_step" );
-		addClass( String::toString( stepNum ) );
+		addClass( String::toString( (Uint64)stepNum ) );
 
 		static const auto BUILD_STEP_XML = R"xml(
 	<hbox class="header" lw="mp" lh="wc">
@@ -802,7 +802,7 @@ void UIBuildSettings::moveStepDir( size_t stepNum, bool isClean, int dir ) {
 		isClean ? find<UIWidget>( "build_clean_steps_cont" ) : find<UIWidget>( "build_steps_cont" );
 	int newStep = (int)stepNum + dir;
 	std::swap( steps[stepNum], steps[newStep] );
-	auto bs1 = cont->findByClass<UIBuildStep>( String::toString( stepNum ) );
+	auto bs1 = cont->findByClass<UIBuildStep>( String::toString( (Uint64)stepNum ) );
 	auto bs2 = cont->findByClass<UIBuildStep>( String::toString( newStep ) );
 	bs1->updateStep( stepNum, &steps[stepNum] );
 	bs2->updateStep( newStep, &steps[newStep] );
@@ -813,11 +813,11 @@ void UIBuildSettings::deleteStep( size_t stepNum, bool isClean ) {
 	UIWidget* cont =
 		isClean ? find<UIWidget>( "build_clean_steps_cont" ) : find<UIWidget>( "build_steps_cont" );
 	for ( auto step = stepNum; step < steps.size(); step++ )
-		cont->findByClass<UIBuildStep>( String::toString( step ) )->clearBindings();
+		cont->findByClass<UIBuildStep>( String::toString( (Uint64)step ) )->clearBindings();
 	steps.erase( steps.begin() + stepNum );
-	cont->findByClass<UIBuildStep>( String::toString( stepNum ) )->close();
+	cont->findByClass<UIBuildStep>( String::toString( (Uint64)stepNum ) )->close();
 	for ( auto step = stepNum + 1; step <= steps.size(); step++ )
-		cont->findByClass<UIBuildStep>( String::toString( step ) )
+		cont->findByClass<UIBuildStep>( String::toString( (Uint64)step ) )
 			->updateStep( step - 1, &steps[step - 1] );
 }
 

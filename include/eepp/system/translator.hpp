@@ -2,7 +2,6 @@
 #define EE_SYSTEM_STRINGLOCALERESOURCE_HPP
 
 #include <eepp/core.hpp>
-#include <locale>
 
 namespace pugi {
 class xml_node;
@@ -18,7 +17,7 @@ class EE_API Translator {
 	typedef std::unordered_map<std::string, String> StringDictionary;
 	typedef std::unordered_map<std::string, StringDictionary> StringLocaleDictionary;
 
-	Translator( const std::locale& locale = std::locale() );
+	Translator();
 
 	bool loadFromDirectory( std::string dirPath, std::string ext = "xml" );
 
@@ -41,8 +40,6 @@ class EE_API Translator {
 			std::string_view{ getString( key ).toUtf8() },
 			FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
 	}
-
-	void setLanguageFromLocale( std::locale locale );
 
 	std::string getDefaultLanguage() const;
 
