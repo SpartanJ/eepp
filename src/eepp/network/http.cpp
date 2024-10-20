@@ -494,10 +494,9 @@ void Http::Response::parse( const std::string& data ) {
 	std::string version;
 
 	if ( in >> version ) {
-		std::locale loc;
 		if ( ( version.size() >= 8 ) && ( version[6] == '.' ) &&
 			 ( String::toLower( version.substr( 0, 5 ) ) == "http/" ) &&
-			 std::isdigit( version[5], loc ) && std::isdigit( version[7], loc ) ) {
+			 std::isdigit( version[5] ) && std::isdigit( version[7] ) ) {
 			mMajorVersion = version[5] - '0';
 			mMinorVersion = version[7] - '0';
 		} else {
