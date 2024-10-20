@@ -344,6 +344,18 @@ class EE_API String {
 	static std::string fromDouble( const double& value, const std::string& append = "",
 								   const std::string& prepend = "", size_t digitsAfterComma = 2 );
 
+#if defined( __GNUC__ ) && __GNUC__ < 11
+#define USE_OLD_GCC
+#endif
+
+#if defined( __clang__ ) && __clang_major__ < 16
+#define USE_OLD_CLANG
+#endif
+
+#if defined( _MSC_VER ) && _MSC_VER < 1925
+#define USE_OLD_MSVC
+#endif
+
 	/** Converts from a string to type */
 	template <typename T> static bool fromString( T& t, const std::string& s, int base = 10 ) {
 		const char* begin = s.data();
@@ -368,10 +380,12 @@ class EE_API String {
 				return true;
 			}
 			return false;
-		} else if constexpr ( std::is_same_v<T, float> || std::is_same_v<T, double> ) {
+#if !defined( USE_OLD_GCC ) && !defined( USE_OLD_CLANG ) && !defined( USE_OLD_MSVC )
+		} else if constexpr ( (std::is_same_v<T, float> || std::is_same_v<T, double>)) {
 			std::from_chars_result result = std::from_chars( begin, end, t );
 			bool res = result.ec == std::errc{} && result.ptr == end;
 			return res;
+#endif
 		} else {
 			std::istringstream iss( s );
 			auto f = std::dec;
