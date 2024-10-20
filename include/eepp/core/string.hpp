@@ -435,14 +435,10 @@ class EE_API String {
 	**/
 	String();
 
-	/** @brief Construct from a single ANSI character and a locale
-	** The source character is converted to UTF-32 according
-	** to the given locale. If you want to use the current global
-	** locale, rather use the other constructor.
+	/** @brief Construct from a single ANSI character
 	** @param ansiChar ANSI character to convert
-	** @param locale   Locale to use for conversion
 	**/
-	String( char ansiChar, const std::locale& locale = std::locale() );
+	String( char ansiChar );
 
 #ifndef EE_NO_WIDECHAR
 	/** @brief Construct from single wide character
@@ -475,24 +471,6 @@ class EE_API String {
 	** @param utf8String UTF-8 string to convert
 	**/
 	String( const std::string_view& utf8String );
-
-	/** @brief Construct from a null-terminated C-style ANSI string and a locale
-	** The source string is converted to UTF-32 according
-	** to the given locale. If you want to use the current global
-	** locale, rather use the other constructor.
-	** @param ansiString ANSI string to convert
-	** @param locale     Locale to use for conversion
-	**/
-	String( const char* ansiString, const std::locale& locale );
-
-	/** @brief Construct from an ANSI string and a locale
-	** The source string is converted to UTF-32 according
-	** to the given locale. If you want to use the current global
-	** locale, rather use the other constructor.
-	** @param ansiString ANSI string to convert
-	** @param locale     Locale to use for conversion
-	**/
-	String( const std::string& ansiString, const std::locale& locale );
 
 #ifndef EE_NO_WIDECHAR
 	/** @brief Construct from null-terminated C-style wide string
@@ -544,19 +522,6 @@ class EE_API String {
 	** @see toAnsiString, operator String
 	**/
 	operator std::string() const;
-
-	/** @brief Convert the unicode string to an ANSI string
-	** The UTF-32 string is converted to an ANSI string in
-	** the encoding defined by \a locale. If you want to use
-	** the current global locale, see the other overload
-	** of toAnsiString.
-	** Characters that do not fit in the target encoding are
-	** discarded from the returned string.
-	** @param locale Locale to use for conversion
-	** @return Converted ANSI string
-	** @see toWideString, operator std::string
-	**/
-	std::string toAnsiString( const std::locale& locale = std::locale() ) const;
 
 #ifndef EE_NO_WIDECHAR
 	/** @brief Convert the unicode string to a wide string
@@ -1010,27 +975,18 @@ EE::String is a utility string class defined mainly for
 convenience. It is a Unicode string (implemented using
 UTF-32), thus it can store any character in the world
 (european, chinese, arabic, hebrew, etc.).
-It automatically handles conversions from/to ANSI and
+It automatically handles conversions from/to UTF-8 and
 wide strings, so that you can work with standard string
 classes and still be compatible with functions taking a
 EE::String.
 @code
 EE::String s;
-std::string s1 = s;  // automatically converted to ANSI string
+std::string s1 = s;  // automatically converted to UTF-8 string
 String s2 = s; // automatically converted to wide string
-s = "hello";         // automatically converted from ANSI string
+s = "hello";         // automatically converted from UTF-8 string
 s = L"hello";        // automatically converted from wide string
-s += 'a';            // automatically converted from ANSI string
+s += 'a';            // automatically converted from UTF-8 string
 s += L'a';           // automatically converted from wide string
-@endcode
-Conversions involving ANSI strings use the default user locale. However
-it is possible to use a custom locale if necessary:
-@code
-std::locale locale;
-EE::String s;
-...
-std::string s1 = s.toAnsiString(locale);
-s = EE::String("hello", locale);
 @endcode
 
 EE::String defines the most important functions of the

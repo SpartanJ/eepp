@@ -323,8 +323,8 @@ Git::CountResult Git::branchHistoryPosition( const std::string& localBranch,
 		String::trimInPlace( buf );
 		auto results = String::split( buf, '\t' );
 		if ( results.size() == 2 ) {
-			int64_t behind = 0;
-			int64_t ahead = 0;
+			Int64 behind = 0;
+			Int64 ahead = 0;
 			if ( String::fromString( ahead, results[0] ) &&
 				 String::fromString( behind, results[1] ) ) {
 				res.ahead = ahead;
@@ -372,12 +372,12 @@ static void parseAheadBehind( std::string_view aheadBehind, Git::Branch& branch 
 		s = String::trim( s );
 		if ( String::startsWith( s, BEHIND ) ) {
 			std::string numStr = std::string{ s.substr( BEHIND.size() ) };
-			int64_t val = 0;
+			Int64 val = 0;
 			if ( String::fromString( val, numStr ) )
 				branch.behind = val;
 		} else if ( String::startsWith( s, AHEAD ) ) {
 			std::string numStr = std::string{ s.substr( AHEAD.size() ) };
-			int64_t val = 0;
+			Int64 val = 0;
 			if ( String::fromString( val, numStr ) )
 				branch.ahead = val;
 		}

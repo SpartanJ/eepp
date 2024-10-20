@@ -1295,8 +1295,8 @@ void String::formatBuffer( char* Buffer, int BufferSize, const char* format, ...
 
 String::String() {}
 
-String::String( char ansiChar, const std::locale& locale ) {
-	mString += Utf32::decodeAnsi( ansiChar, locale );
+String::String( char ansiChar ) {
+	mString += Utf32::decodeAnsi( ansiChar, std::locale() );
 }
 
 #ifndef EE_NO_WIDECHAR
@@ -1361,22 +1361,6 @@ String::String( const std::string_view& utf8String ) {
 	}
 
 	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( mString ) );
-}
-
-String::String( const char* ansiString, const std::locale& locale ) {
-	if ( ansiString ) {
-		std::size_t length = strlen( ansiString );
-		if ( length > 0 ) {
-			mString.reserve( length + 1 );
-			Utf32::fromAnsi( ansiString, ansiString + length, std::back_inserter( mString ),
-							 locale );
-		}
-	}
-}
-
-String::String( const std::string& ansiString, const std::locale& locale ) {
-	mString.reserve( ansiString.length() + 1 );
-	Utf32::fromAnsi( ansiString.begin(), ansiString.end(), std::back_inserter( mString ), locale );
 }
 
 #ifndef EE_NO_WIDECHAR
@@ -1500,17 +1484,6 @@ Uint32 String::utf8Next( char*& utf8String ) {
 
 String::operator std::string() const {
 	return toUtf8();
-}
-
-std::string String::toAnsiString( const std::locale& locale ) const {
-	// Prepare the output string
-	std::string output;
-	output.reserve( mString.length() + 1 );
-
-	// Convert
-	Utf32::toAnsi( mString.begin(), mString.end(), std::back_inserter( output ), 0, locale );
-
-	return output;
 }
 
 #ifndef EE_NO_WIDECHAR

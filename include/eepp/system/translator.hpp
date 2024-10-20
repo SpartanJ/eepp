@@ -2,6 +2,7 @@
 #define EE_SYSTEM_STRINGLOCALERESOURCE_HPP
 
 #include <eepp/core.hpp>
+#include <locale>
 
 namespace pugi {
 class xml_node;

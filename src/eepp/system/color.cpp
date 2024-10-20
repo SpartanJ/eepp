@@ -1,6 +1,7 @@
 #include <eepp/system/color.hpp>
 #include <eepp/system/functionstring.hpp>
 
+#include <cmath>
 #include <cstdlib>
 #include <ctype.h>
 #include <iomanip>
@@ -606,8 +607,7 @@ Color Color::fromString( std::string str ) {
 			Float alphaVal = 1;
 
 			if ( functionString.getParameters().size() >= 4 ) {
-				if ( String::fromString( alphaVal,
-												functionString.getParameters().at( 3 ) ) ) {
+				if ( String::fromString( alphaVal, functionString.getParameters().at( 3 ) ) ) {
 					alphaVal = eemax( eemin( 1.f, alphaVal ), 0.f );
 				} else {
 					return Color::Transparent;
@@ -663,8 +663,7 @@ Color Color::fromString( std::string str ) {
 			Float alphaVal = 1;
 
 			if ( functionString.getParameters().size() >= 4 ) {
-				if ( String::fromString( alphaVal,
-												functionString.getParameters().at( 3 ) ) ) {
+				if ( String::fromString( alphaVal, functionString.getParameters().at( 3 ) ) ) {
 					alphaVal = eemax( eemin( 1.f, alphaVal ), 0.f );
 				} else {
 					return Color::Transparent;
