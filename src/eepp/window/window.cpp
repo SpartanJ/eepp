@@ -472,8 +472,7 @@ void Window::logSuccessfulInit( const std::string& BackendName ) {
 		"\n\tCPU Cores: " + String::toString( Sys::getCPUCount() ) +
 		"\n\tProcess Path: " + Sys::getProcessPath() + "\n\tCurrent Working Directory: " +
 		FileSystem::getCurrentWorkingDirectory() + "\n\tDisk Free Space: " +
-		String::toString(
-			FileSystem::sizeToString( FileSystem::getDiskFreeSpace( Sys::getProcessPath() ) ) ) +
+		FileSystem::sizeToString( FileSystem::getDiskFreeSpace( Sys::getProcessPath() ) ) +
 		"\n\tWindow/Input Backend: " + BackendName + "\n\tGL Backend: " + GLi->versionStr() +
 		"\n\tGL Vendor: " + GLi->getVendor() + "\n\tGL Renderer: " + GLi->getRenderer() +
 		"\n\tGL Version: " + GLi->getVersion() + "\n\tGL Shading Language Version: " +

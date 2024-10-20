@@ -1,4 +1,5 @@
 ﻿#include <eepp/core/debug.hpp>
+#include <eepp/core/utf.hpp>
 #include <eepp/network/uri.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
@@ -13,7 +14,6 @@
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/window/engine.hpp>
-#include <string>
 
 using namespace std::literals;
 

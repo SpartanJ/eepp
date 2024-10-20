@@ -1,15 +1,200 @@
-#include <algorithm>
-#include <cctype>
-#include <climits>
-#include <cstdarg>
 #include <eepp/core/string.hpp>
 #include <eepp/core/utf.hpp>
-#include <iostream>
-#include <iterator>
-#include <random>
+
+#include <thirdparty/fast_float/include/fast_float/fast_float.h>
 #include <thirdparty/utf8cpp/utf8.h>
 
+#include <algorithm>
+#include <cctype>
+#include <charconv>
+#include <climits>
+#include <cstdarg>
+#include <iostream>
+#include <iterator>
+#include <limits>
+#include <random>
+#include <sstream>
+
 namespace EE {
+
+template <typename T> static bool _fromString( T& t, const std::string& s, int base = 10 ) {
+	const char* begin = s.data();
+	const char* end = s.data() + s.size();
+
+	if constexpr ( std::is_integral_v<T> && std::is_signed_v<T> ) {
+		long long value = 0;
+		auto result = std::from_chars( begin, end, value, base );
+		if ( result.ec == std::errc{} && result.ptr == end &&
+			 value >= std::numeric_limits<T>::min() && value <= std::numeric_limits<T>::max() ) {
+			t = static_cast<T>( value );
+			return true;
+		}
+		return false;
+	} else if constexpr ( std::is_integral_v<T> && std::is_unsigned_v<T> ) {
+		unsigned long long value = 0;
+		auto result = std::from_chars( begin, end, value, base );
+		if ( result.ec == std::errc{} && result.ptr == end &&
+			 value <= std::numeric_limits<T>::max() ) {
+			t = static_cast<T>( value );
+			return true;
+		}
+		return false;
+	} else if constexpr ( (std::is_same_v<T, float> || std::is_same_v<T, double>)) {
+		auto result = fast_float::from_chars( begin, end, t );
+		bool res = result.ec == std::errc{} && result.ptr == end;
+		return res;
+	} else {
+		std::istringstream iss( s );
+		auto f = std::dec;
+		switch ( base ) {
+			case 8:
+				f = std::oct;
+				break;
+			case 16:
+				f = std::hex;
+				break;
+		}
+		return !( iss >> f >> t ).fail();
+	}
+}
+
+bool String::fromString( Int8& t, const std::string& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Int16& t, const std::string& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Int32& t, const std::string& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Int64& t, const std::string& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint8& t, const std::string& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint16& t, const std::string& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint32& t, const std::string& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint64& t, const std::string& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( std::size_t& t, const std::string& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( float& t, const std::string& s ) {
+	return _fromString<>( t, s );
+}
+
+bool String::fromString( double& t, const std::string& s ) {
+	return _fromString<>( t, s );
+}
+
+bool String::fromString( Int8& t, const String& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Int16& t, const String& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Int32& t, const String& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Int64& t, const String& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint8& t, const String& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint16& t, const String& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint32& t, const String& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint64& t, const String& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( std::size_t& t, const String& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( float& t, const String& s ) {
+	return _fromString<>( t, s );
+}
+
+bool String::fromString( double& t, const String& s ) {
+	return _fromString<>( t, s );
+}
+
+template <class T> static std::string _toString( const T& i ) {
+	std::ostringstream ss;
+	ss << std::fixed << i;
+	return ss.str();
+}
+
+std::string String::toString( const Int8& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const Int16& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const Int32& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const Int64& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const Uint8& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const Uint16& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const Uint32& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const Uint64& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const std::size_t& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const float& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const double& i ) {
+	return _toString<>( i );
+}
 
 const std::size_t String::InvalidPos = StringType::npos;
 
@@ -1286,7 +1471,7 @@ String String::fromUtf8( const std::string_view& utf8String ) {
 	return String( utf32 );
 }
 
-#define iscont( p ) ( ( *( p ) & 0xC0 ) == 0x80 )
+#define iscont( p ) ( ( *(p)&0xC0 ) == 0x80 )
 
 static inline const char* utf8_next( const char* s, const char* e ) {
 	while ( s < e && iscont( s + 1 ) )

@@ -1,9 +1,10 @@
-#include <cmath>
-#include <cstdlib>
-#include <ctype.h>
 #include <eepp/system/color.hpp>
 #include <eepp/system/functionstring.hpp>
+
+#include <cstdlib>
+#include <ctype.h>
 #include <iomanip>
+#include <sstream>
 
 namespace EE { namespace System {
 

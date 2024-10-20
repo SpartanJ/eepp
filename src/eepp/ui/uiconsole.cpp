@@ -648,8 +648,7 @@ void UIConsole::cmdFrameLimit( const std::vector<String>& params ) {
 }
 
 void UIConsole::cmdGetLog() {
-	std::vector<String> tvec =
-		String::split( String( String::toString( Log::instance()->getBuffer() ) ) );
+	std::vector<String> tvec = String::split( String::fromUtf8( Log::instance()->getBuffer() ) );
 	if ( tvec.size() > 0 ) {
 		for ( unsigned int i = 0; i < tvec.size(); i++ )
 			privPushText( std::move( tvec[i] ) );

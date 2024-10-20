@@ -1,18 +1,12 @@
 #ifndef EE_STRING_HPP
 #define EE_STRING_HPP
 
-#include <charconv>
+#include <eepp/config.hpp>
+
 #include <cstdlib>
 #include <cstring>
-#include <limits>
-#include <locale>
-#include <sstream>
 #include <string>
-#include <string_view>
 #include <vector>
-
-#include <eepp/config.hpp>
-#include <eepp/core/utf.hpp>
 
 namespace EE {
 
@@ -332,11 +326,17 @@ class EE_API String {
 		std::string dictionary = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" );
 
 	/** Converts from any basic type to std::string */
-	template <class T> static std::string toString( const T& i ) {
-		std::ostringstream ss;
-		ss << std::fixed << i;
-		return ss.str();
-	}
+	static std::string toString( const Int8& i );
+	static std::string toString( const Int16& i );
+	static std::string toString( const Int32& i );
+	static std::string toString( const Int64& i );
+	static std::string toString( const Uint8& i );
+	static std::string toString( const Uint16& i );
+	static std::string toString( const Uint32& i );
+	static std::string toString( const Uint64& i );
+	static std::string toString( const std::size_t& i );
+	static std::string toString( const float& i );
+	static std::string toString( const double& i );
 
 	static std::string fromFloat( const Float& value, const std::string& append = "",
 								  const std::string& prepend = "", size_t digitsAfterComma = 2 );
@@ -344,67 +344,31 @@ class EE_API String {
 	static std::string fromDouble( const double& value, const std::string& append = "",
 								   const std::string& prepend = "", size_t digitsAfterComma = 2 );
 
-#if defined( __GNUC__ ) && __GNUC__ < 11
-#define USE_OLD_GCC
-#endif
-
-#if defined( __clang__ ) && __clang_major__ < 16
-#define USE_OLD_CLANG
-#endif
-
-#if defined( _MSC_VER ) && _MSC_VER < 1925
-#define USE_OLD_MSVC
-#endif
-
 	/** Converts from a string to type */
-	template <typename T> static bool fromString( T& t, const std::string& s, int base = 10 ) {
-		const char* begin = s.data();
-		const char* end = s.data() + s.size();
-
-		if constexpr ( std::is_integral_v<T> && std::is_signed_v<T> ) {
-			long long value = 0;
-			std::from_chars_result result = std::from_chars( begin, end, value, base );
-			if ( result.ec == std::errc{} && result.ptr == end &&
-				 value >= std::numeric_limits<T>::min() &&
-				 value <= std::numeric_limits<T>::max() ) {
-				t = static_cast<T>( value );
-				return true;
-			}
-			return false;
-		} else if constexpr ( std::is_integral_v<T> && std::is_unsigned_v<T> ) {
-			unsigned long long value = 0;
-			std::from_chars_result result = std::from_chars( begin, end, value, base );
-			if ( result.ec == std::errc{} && result.ptr == end &&
-				 value <= std::numeric_limits<T>::max() ) {
-				t = static_cast<T>( value );
-				return true;
-			}
-			return false;
-#if !defined( USE_OLD_GCC ) && !defined( USE_OLD_CLANG ) && !defined( USE_OLD_MSVC )
-		} else if constexpr ( (std::is_same_v<T, float> || std::is_same_v<T, double>)) {
-			std::from_chars_result result = std::from_chars( begin, end, t );
-			bool res = result.ec == std::errc{} && result.ptr == end;
-			return res;
-#endif
-		} else {
-			std::istringstream iss( s );
-			auto f = std::dec;
-			switch ( base ) {
-				case 8:
-					f = std::oct;
-					break;
-				case 16:
-					f = std::hex;
-					break;
-			}
-			return !( iss >> f >> t ).fail();
-		}
-	}
+	static bool fromString( Int8& t, const std::string& s, int base = 10 );
+	static bool fromString( Int16& t, const std::string& s, int base = 10 );
+	static bool fromString( Int32& t, const std::string& s, int base = 10 );
+	static bool fromString( Int64& t, const std::string& s, int base = 10 );
+	static bool fromString( Uint8& t, const std::string& s, int base = 10 );
+	static bool fromString( Uint16& t, const std::string& s, int base = 10 );
+	static bool fromString( Uint32& t, const std::string& s, int base = 10 );
+	static bool fromString( Uint64& t, const std::string& s, int base = 10 );
+	static bool fromString( std::size_t& t, const std::string& s, int base = 10 );
+	static bool fromString( float& t, const std::string& s );
+	static bool fromString( double& t, const std::string& s );
 
 	/** Converts from a String to type */
-	template <typename T> static bool fromString( T& t, const String& s, int base = 10 ) {
-		return fromString( t, s.toUtf8(), base );
-	}
+	static bool fromString( Int8& t, const String& s, int base = 10 );
+	static bool fromString( Int16& t, const String& s, int base = 10 );
+	static bool fromString( Int32& t, const String& s, int base = 10 );
+	static bool fromString( Int64& t, const String& s, int base = 10 );
+	static bool fromString( Uint8& t, const String& s, int base = 10 );
+	static bool fromString( Uint16& t, const String& s, int base = 10 );
+	static bool fromString( Uint32& t, const String& s, int base = 10 );
+	static bool fromString( Uint64& t, const String& s, int base = 10 );
+	static bool fromString( std::size_t& t, const String& s, int base = 10 );
+	static bool fromString( float& t, const String& s );
+	static bool fromString( double& t, const String& s );
 
 	template <typename... Args>
 	static std::string format( std::string_view format, Args&&... args ) {
@@ -568,39 +532,6 @@ class EE_API String {
 							 bool isBigEndian = false );
 
 	static String fromLatin1( const char* string, const size_t& stringSize );
-
-	/** @brief Create a new String from a UTF-8 encoded string
-	**  @param begin Forward iterator to the begining of the UTF-8 sequence
-	**  @param end   Forward iterator to the end of the UTF-8 sequence
-	**  @return A String containing the source string
-	**  @see FromUtf16, FromUtf32 */
-	template <typename T> static String fromUtf8( T begin, T end ) {
-		String string;
-		Utf8::toUtf32( begin, end, std::back_inserter( string.mString ) );
-		return string;
-	}
-
-	/** @brief Create a new String from a UTF-16 encoded string
-	**  @param begin Forward iterator to the begining of the UTF-16 sequence
-	**  @param end   Forward iterator to the end of the UTF-16 sequence
-	**  @return A String containing the source string
-	**  @see FromUtf8, FromUtf32 */
-	template <typename T> static String fromUtf16( T begin, T end ) {
-		String string;
-		Utf16::toUtf32( begin, end, std::back_inserter( string.mString ) );
-		return string;
-	}
-
-	/** @brief Create a new String from a UTF-32 encoded string
-	**  @param begin Forward iterator to the begining of the UTF-32 sequence
-	**  @param end   Forward iterator to the end of the UTF-32 sequence
-	**  @return A String containing the source string
-	**  @see FromUtf8, FromUtf32 */
-	template <typename T> static String fromUtf32( T begin, T end ) {
-		String string;
-		Utf32::toUtf32( begin, end, std::back_inserter( string.mString ) );
-		return string;
-	}
 
 	/** @brief Implicit cast operator to std::string (ANSI string)
 	** The current global locale is used for conversion. If you

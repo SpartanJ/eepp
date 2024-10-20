@@ -11,6 +11,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 
 // This taints the System module!
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
