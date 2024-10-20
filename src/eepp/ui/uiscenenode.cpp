@@ -352,11 +352,13 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent, const
 	return widgets.empty() ? NULL : widgets[0];
 }
 
-void UISceneNode::setStyleSheet( const CSS::StyleSheet& styleSheet ) {
+void UISceneNode::setStyleSheet( const CSS::StyleSheet& styleSheet, bool loadStyle ) {
 	mStyleSheet = styleSheet;
 	processStyleSheetAtRules( styleSheet );
-	onMediaChanged();
-	reloadStyle();
+	if ( loadStyle ) {
+		onMediaChanged();
+		reloadStyle();
+	}
 }
 
 void UISceneNode::setStyleSheet( const std::string& inlineStyleSheet ) {

@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <eepp/core/string.hpp>
 #include <eepp/ui/css/stylesheetvariable.hpp>
 

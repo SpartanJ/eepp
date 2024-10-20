@@ -4,7 +4,6 @@
 #include <eepp/config.hpp>
 #include <eepp/core/containers.hpp>
 #include <eepp/core/string.hpp>
-#include <unordered_map>
 
 namespace EE { namespace UI { namespace CSS {
 

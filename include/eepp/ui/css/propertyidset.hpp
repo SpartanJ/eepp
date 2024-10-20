@@ -25,6 +25,10 @@ class EE_API PropertyIdSet {
 
 	size_t size() const { return mIds.size(); }
 
+	bool operator==( const PropertyIdSet& other ) { return mIds == other.mIds; }
+
+	bool operator!=( const PropertyIdSet& other ) { return mIds != other.mIds; }
+
 	// Union with another set
 	PropertyIdSet& operator|=( const PropertyIdSet& other ) {
 		mIds.insert( other.mIds.begin(), other.mIds.end() );

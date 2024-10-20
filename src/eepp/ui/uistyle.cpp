@@ -241,8 +241,8 @@ void UIStyle::onStateChange() {
 
 	mChangingState = true;
 
-	std::shared_ptr<ElementDefinition> prevDefinition = mDefinition;
-	std::shared_ptr<ElementDefinition> newDefinition =
+	auto prevDefinition = mDefinition;
+	auto newDefinition =
 		mWidget->getUISceneNode()->getStyleSheet().getElementStyles( mWidget, true );
 
 	if ( newDefinition != mDefinition || mForceReapplyProperties ) {
@@ -323,24 +323,25 @@ void UIStyle::onStateChange() {
 
 const StyleSheetProperty*
 UIStyle::getStatelessStyleSheetProperty( const Uint32& propertyId ) const {
-	if ( 0 != propertyId ) {
-		if ( !mElementStyle->getSelector().hasPseudoClasses() ) {
-			const StyleSheetProperty* property = mElementStyle->getPropertyById( propertyId );
+	if ( 0 == propertyId )
+		return nullptr;
+
+	if ( !mElementStyle->getSelector().hasPseudoClasses() ) {
+		const StyleSheetProperty* property = mElementStyle->getPropertyById( propertyId );
+
+		if ( property )
+			return property;
+	}
+
+	if ( nullptr == mDefinition )
+		return nullptr;
+
+	for ( auto style : mDefinition->getStyles() ) {
+		if ( style->getSelector().isCacheable() && !style->getSelector().hasPseudoClasses() ) {
+			const StyleSheetProperty* property = style->getPropertyById( propertyId );
 
 			if ( property )
 				return property;
-		}
-
-		if ( nullptr == mDefinition )
-			return nullptr;
-
-		for ( auto style : mDefinition->getStyles() ) {
-			if ( style->getSelector().isCacheable() && !style->getSelector().hasPseudoClasses() ) {
-				const StyleSheetProperty* property = style->getPropertyById( propertyId );
-
-				if ( property )
-					return property;
-			}
 		}
 	}
 

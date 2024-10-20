@@ -51,6 +51,8 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 
 	virtual void onSizeChange();
 
+	virtual void onLayoutUpdate();
+
 	virtual void onAlphaChange();
 
 	void onSubMenuFocusLoss( const Event* Event );

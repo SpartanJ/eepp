@@ -109,6 +109,8 @@ class EE_API UIPushButton : public UIWidget {
 
 	virtual void onPaddingChange();
 
+	virtual void onLayoutUpdate();
+
 	virtual Uint32 onKeyDown( const KeyEvent& Event );
 
 	virtual Uint32 onKeyUp( const KeyEvent& Event );

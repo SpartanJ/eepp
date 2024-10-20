@@ -50,12 +50,16 @@ UITextView* UIMenuItem::getShortcutView() const {
 
 void UIMenuItem::onSizeChange() {
 	UIPushButton::onSizeChange();
-	if ( mShortcutView ) {
-		mShortcutView->setPosition( getSize().getWidth() - mShortcutView->getSize().getWidth() -
-										mShortcutView->getLayoutMargin().Right,
-									0 );
-		mShortcutView->centerVertical();
-	}
+	refreshShortcut();
+}
+
+void UIMenuItem::onStateChange() {
+	UIPushButton::onStateChange();
+	refreshShortcut();
+}
+
+void UIMenuItem::onLayoutUpdate() {
+	refreshShortcut();
 }
 
 Uint32 UIMenuItem::onMouseOver( const Vector2i& pos, const Uint32& flags ) {
@@ -102,6 +106,16 @@ void UIMenuItem::createShortcutView() {
 	mShortcutView->addEventListener( Event::OnPaddingChange, cb );
 	mShortcutView->addEventListener( Event::OnMarginChange, cb );
 	mShortcutView->addEventListener( Event::OnSizeChange, cb );
+}
+
+void UIMenuItem::refreshShortcut() {
+	if ( mShortcutView == nullptr )
+		return;
+
+	mShortcutView->setPosition( getSize().getWidth() - mShortcutView->getSize().getWidth() -
+									mShortcutView->getLayoutMargin().Right,
+								0 );
+	mShortcutView->centerVertical();
 }
 
 }} // namespace EE::UI

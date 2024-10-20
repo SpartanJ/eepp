@@ -1074,25 +1074,25 @@ void UIWidget::reloadStyle( const bool& reloadChilds, const bool& disableAnimati
 							const bool& reportStateChange, const bool& forceReApplyProperties ) {
 	createStyle();
 
-	if ( NULL != mStyle ) {
-		mStyle->load();
+	if ( NULL == mStyle )
+		return;
 
-		if ( NULL != getFirstChild() && reloadChilds ) {
-			Node* child = getFirstChild();
+	mStyle->load();
 
-			while ( NULL != child ) {
-				if ( child->isWidget() )
-					child->asType<UIWidget>()->reloadStyle( reloadChilds, disableAnimations,
-															reportStateChange,
-															forceReApplyProperties );
+	if ( NULL != getFirstChild() && reloadChilds ) {
+		Node* child = getFirstChild();
 
-				child = child->getNextNode();
-			}
+		while ( NULL != child ) {
+			if ( child->isWidget() )
+				child->asType<UIWidget>()->reloadStyle( reloadChilds, disableAnimations,
+														reportStateChange, forceReApplyProperties );
+
+			child = child->getNextNode();
 		}
-
-		if ( reportStateChange )
-			reportStyleStateChange( disableAnimations, forceReApplyProperties );
 	}
+
+	if ( reportStateChange )
+		reportStyleStateChange( disableAnimations, forceReApplyProperties );
 }
 
 void UIWidget::onPaddingChange() {

@@ -1744,10 +1744,12 @@ UIMenu* SettingsMenu::createHelpMenu() {
 UIMenu* SettingsMenu::createThemesMenu() {
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 
+	auto shouldCloseCb = []( UIMenuItem* ) -> bool { return false; };
 	const std::string& curTheme = mApp->getConfig().ui.theme;
 
 	menu->addRadioButton( i18n( "default_theme", "Default Theme" ),
 						  curTheme.empty() || "default_theme" == curTheme )
+		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "default_theme" );
 
 	auto files = FileSystem::filesInfoGetInPath( mApp->getThemesPath(), true, true, true );
@@ -1756,7 +1758,9 @@ UIMenu* SettingsMenu::createThemesMenu() {
 		if ( file.getExtension() != "css" )
 			continue;
 		auto name( FileSystem::fileRemoveExtension( file.getFileName() ) );
-		menu->addRadioButton( name, curTheme == name )->setId( name );
+		menu->addRadioButton( name, curTheme == name )
+			->setOnShouldCloseCb( shouldCloseCb )
+			->setId( name );
 	}
 
 	menu->on( Event::OnItemClicked, [this]( const Event* event ) {

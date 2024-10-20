@@ -39,6 +39,10 @@ class EE_API UIMenuItem : public UIPushButton {
 
 	virtual void onSizeChange();
 
+	virtual void onStateChange();
+
+	virtual void onLayoutUpdate();
+
 	virtual Uint32 onMouseOver( const Vector2i& pos, const Uint32& flags );
 
 	virtual Uint32 onMouseLeave( const Vector2i& pos, const Uint32& flags );
@@ -46,6 +50,8 @@ class EE_API UIMenuItem : public UIPushButton {
 	virtual Uint32 onMouseClick( const Vector2i& pos, const Uint32& flags );
 
 	void createShortcutView();
+
+	void refreshShortcut();
 };
 
 }} // namespace EE::UI

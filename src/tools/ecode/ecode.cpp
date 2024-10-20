@@ -1485,10 +1485,15 @@ void App::setTheme( const std::string& path ) {
 		}
 	}
 
-	mUISceneNode->setStyleSheet( theme->getStyleSheet() );
+	theme->getStyleSheet().invalidateCache();
+	mAppStyleSheet.invalidateCache();
+
+	mUISceneNode->setStyleSheet( theme->getStyleSheet(), false );
 
 	if ( !mAppStyleSheet.isEmpty() )
 		mUISceneNode->getStyleSheet().combineStyleSheet( mAppStyleSheet );
+
+	mUISceneNode->getStyleSheet().updateMediaLists( mUISceneNode->getMediaFeatures() );
 
 	mUISceneNode
 		->getUIThemeManager()
@@ -1508,6 +1513,7 @@ void App::setTheme( const std::string& path ) {
 	mTheme = theme;
 
 	mUISceneNode->reloadStyle( true, true );
+
 	if ( !firstFrame )
 		mPluginManager->setUIThemeReloaded();
 }

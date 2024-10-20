@@ -51,6 +51,15 @@ void UIMenuSubMenu::setTheme( UITheme* Theme ) {
 
 void UIMenuSubMenu::onSizeChange() {
 	UIMenuItem::onSizeChange();
+	onLayoutUpdate();
+}
+
+void UIMenuSubMenu::onStateChange() {
+	UIMenuItem::onStateChange();
+	onLayoutUpdate();
+}
+
+void UIMenuSubMenu::onLayoutUpdate() {
 	mArrow->setPosition(
 		getSize().getWidth() - mArrow->getSize().getWidth() - mArrow->getLayoutMargin().Right, 0 );
 	mArrow->centerVertical();
@@ -63,11 +72,6 @@ void UIMenuSubMenu::onAlphaChange() {
 
 UIWidget* UIMenuSubMenu::getExtraInnerWidget() const {
 	return mArrow;
-}
-
-void UIMenuSubMenu::onStateChange() {
-	UIMenuItem::onStateChange();
-	onSizeChange();
 }
 
 void UIMenuSubMenu::setSubMenu( UIMenu* subMenu ) {

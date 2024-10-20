@@ -122,7 +122,7 @@ void UIMenuRadioButton::switchActive() {
 Uint32 UIMenuRadioButton::onMouseUp( const Vector2i& Pos, const Uint32& Flags ) {
 	UIMenuItem::onMouseUp( Pos, Flags );
 
-	if ( getParent()->isVisible() && ( Flags & EE_BUTTONS_LRM ) )
+	if ( getParent()->isVisible() && ( Flags & EE_BUTTONS_LRM ) && !mActive )
 		switchActive();
 
 	return 1;
