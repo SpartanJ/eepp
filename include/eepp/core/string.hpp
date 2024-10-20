@@ -373,7 +373,17 @@ class EE_API String {
 			bool res = result.ec == std::errc{} && result.ptr == end;
 			return res;
 		} else {
-			static_assert( false, "String::fromString not implemented for this type" );
+			std::istringstream iss( s );
+			auto f = std::dec;
+			switch ( base ) {
+				case 8:
+					f = std::oct;
+					break;
+				case 16:
+					f = std::hex;
+					break;
+			}
+			return !( iss >> f >> t ).fail();
 		}
 	}
 
