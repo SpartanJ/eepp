@@ -4,3 +4,9 @@
 [submodule "src/thirdparty/SOIL2"]
 	path = src/thirdparty/SOIL2
 	url = https://github.com/SpartanJ/soil2
+[submodule "premake/premake-ninja"]
+	path = premake/premake-ninja
+	url = ../../jimon/premake-ninja.git
+[submodule "premake/premake-cmake"]
+	path = premake/premake-cmake
+	url = ../../Jarod42/premake-cmake.git

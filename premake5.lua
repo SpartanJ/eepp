@@ -297,6 +297,29 @@ function build_base_cpp_configuration( package_name )
 		end
 end
 
+function get_architecture()
+    if jit then
+        return jit.arch
+    end
+
+    local handle = io.popen("uname -m 2>/dev/null")
+    if handle then
+        local arch = handle:read("*l")
+        handle:close()
+        if arch then return arch end
+    end
+
+    local arch = os.getenv("PROCESSOR_ARCHITECTURE")
+    if arch then
+        if arch == "AMD64" or arch == "IA64" then
+          return "x86_64"
+        end
+        return string.lower(arch)
+    end
+
+    return "x86_64"
+end
+
 function build_link_configuration( package_name, use_ee_icon )
 	incdirs { "include" }
 	local extension = "";
@@ -353,12 +376,12 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	filter { "system:windows", "action:not vs*", "architecture:x86" }
 		if true == use_ee_icon then
-			linkoptions { "../../bin/assets/icon/ee.res" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/ee.res" }
 		end
 
 	filter { "system:windows", "action:not vs*", "architecture:x86_64" }
 		if true == use_ee_icon then
-			linkoptions { "../../bin/assets/icon/ee.x64.res" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/ee.x64.res" }
 		end
 
 	filter { "system:windows", "action:vs*" }
@@ -549,7 +572,7 @@ function can_add_static_backend()
 end
 
 function insert_static_backend( name )
-	table.insert( static_backends, "../../libs/" .. os.target() .. "/lib" .. name .. ".a" )
+	table.insert( static_backends, _MAIN_SCRIPT_DIR .. "/libs/" .. os.target() .. "/lib" .. name .. ".a" )
 end
 
 function add_sdl2()
@@ -816,10 +839,11 @@ function postsymlinklib_arch(name)
 end
 
 workspace "eepp"
-	targetdir("./bin/")
-	if os.istarget("ios") then
-		configurations { "debug-x64", "debug-arm64", "release-x64", "release-arm64" }
-		platforms { "x86_64", "arm64" }
+	targetdir(_MAIN_SCRIPT_DIR .. "/bin/")
+
+	if _ACTION == "ninja" then
+		configurations { "debug", "release" }
+		platforms { get_architecture() }
 	else
 		configurations { "debug", "release" }
 		platforms { "x86_64", "x86", "arm64" }
@@ -1301,6 +1325,7 @@ workspace "eepp"
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 
+	if os.istarget("macosx") then
 	project "ecode-macos-helper-static"
 		kind "StaticLib"
 		language "C++"
@@ -1318,6 +1343,7 @@ workspace "eepp"
 			targetname ( "ecode-macos-helper-static" )
 		filter { "configurations:release*", "action:not vs*", "options:with-debug-symbols" }
 			symbols "On"
+	end
 
 	project "ecode"
 		set_kind()
@@ -1332,9 +1358,9 @@ workspace "eepp"
 			files { "bin/assets/icon/ecode.rc", "bin/assets/icon/ecode.ico" }
 			vpaths { ['Resources/*'] = { "ecode.rc", "ecode.ico" } }
 		filter { "system:windows", "action:not vs*", "architecture:x86" }
-			linkoptions { "../../bin/assets/icon/ecode.res" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/ecode.res" }
 		filter { "system:windows", "action:not vs*", "architecture:x86_64" }
-			linkoptions { "../../bin/assets/icon/ecode.x64.res" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/ecode.x64.res" }
 		filter "options:with-debug-symbols"
 			defines { "ECODE_USE_BACKWARD" }
 		filter "system:macosx"
@@ -1366,9 +1392,9 @@ workspace "eepp"
 			files { "bin/assets/icon/eterm.rc", "bin/assets/icon/eterm.ico" }
 			vpaths { ['Resources/*'] = { "eterm.rc", "eterm.ico" } }
 		filter { "system:windows", "action:not vs*", "architecture:x86" }
-			linkoptions { "../../bin/assets/icon/eterm.res" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eterm.res" }
 		filter { "system:windows", "action:not vs*", "architecture:x86_64" }
-			linkoptions { "../../bin/assets/icon/eterm.x64.res" }
+			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/eterm.x64.res" }
 		filter "system:linux or system:bsd"
 			links { "util" }
 		filter "system:haiku"
@@ -1399,7 +1425,7 @@ workspace "eepp"
 
 	project "eepp-unit_tests"
 		kind "ConsoleApp"
-		targetdir("./bin/unit_tests")
+		targetdir(_MAIN_SCRIPT_DIR .. "/bin/unit_tests")
 		language "C++"
 		files { "src/tests/unit_tests/*.cpp" }
 		build_link_configuration( "eepp-unit_tests", true )
