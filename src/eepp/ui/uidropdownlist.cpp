@@ -38,17 +38,17 @@ UIDropDownList::UIDropDownList( const std::string& tag ) :
 	mListBox->setParent( this );
 
 	mListBox->addEventListener( Event::OnWidgetFocusLoss,
-								[this] ( auto event ) { onListBoxFocusLoss( event ); } );
+								[this]( auto event ) { onListBoxFocusLoss( event ); } );
 	mListBox->addEventListener( Event::OnItemSelected,
-								[this] ( auto event ) { onItemSelected( event ); } );
+								[this]( auto event ) { onItemSelected( event ); } );
 	mListBox->addEventListener( Event::OnItemClicked,
-								[this] ( auto event ) { onItemClicked( event ); } );
+								[this]( auto event ) { onItemClicked( event ); } );
 	mListBox->addEventListener( Event::OnItemKeyDown,
-								[this] ( auto event ) { onItemKeyDown( event ); } );
-	mListBox->addEventListener( Event::KeyDown, [this] ( auto event ) { onItemKeyDown( event ); } );
-	mListBox->addEventListener( Event::OnClear, [this] ( auto event ) { onWidgetClear( event ); } );
+								[this]( auto event ) { onItemKeyDown( event ); } );
+	mListBox->addEventListener( Event::KeyDown, [this]( auto event ) { onItemKeyDown( event ); } );
+	mListBox->addEventListener( Event::OnClear, [this]( auto event ) { onWidgetClear( event ); } );
 	mListBoxCloseCb = mListBox->addEventListener( Event::OnClose,
-											   [this]( const Event* ) { mListBox = nullptr; } );
+												  [this]( const Event* ) { mListBox = nullptr; } );
 	mListBox->addEventListener( Event::OnSelectionChanged, [this]( auto ) {
 		if ( !mListBox->hasSelection() )
 			mListBox->setSelected( 0 );
@@ -250,6 +250,10 @@ void UIDropDownList::onItemKeyDown( const Event* Event ) {
 
 	if ( KEvent->getKeyCode() == KEY_RETURN )
 		onItemClicked( Event );
+	else if ( KEvent->getKeyCode() == KEY_ESCAPE ) {
+		hide();
+		setFocus();
+	}
 }
 
 void UIDropDownList::onListBoxFocusLoss( const Event* ) {
@@ -278,6 +282,9 @@ void UIDropDownList::onItemSelected( const Event* ) {
 	sendCommonEvent( Event::OnItemSelected );
 	sendCommonEvent( Event::OnValueChange );
 	sendCommonEvent( Event::OnSelectionChanged );
+
+	if ( !mListBox->isEnabled() )
+		setFocus();
 }
 
 void UIDropDownList::show() {
