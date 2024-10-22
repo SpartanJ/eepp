@@ -102,7 +102,7 @@ struct ProjectBuildStep {
 	bool runInTerminal{ false };
 };
 
-using ProjectBuildSteps = std::vector<ProjectBuildStep>;
+using ProjectBuildSteps = std::vector<std::unique_ptr<ProjectBuildStep>>;
 using ProjectBuildKeyVal = std::vector<std::pair<std::string, std::string>>;
 
 struct ProjectBuildConfig {
@@ -169,8 +169,16 @@ class ProjectBuild {
   public:
 	using Map = std::unordered_map<std::string, ProjectBuild>;
 
-	ProjectBuild( const std::string& name, const std::string& projectRoot ) :
-		mName( name ), mProjectRoot( projectRoot ){};
+	ProjectBuildSteps deepCopySteps( const ProjectBuildSteps& steps ) const;
+
+	ProjectBuild( const ProjectBuild& other );
+
+	ProjectBuild& operator=( const ProjectBuild& other );
+
+	ProjectBuild( ProjectBuild&& ) = default;
+	ProjectBuild& operator=( ProjectBuild&& ) = default;
+
+	ProjectBuild( const std::string& name, const std::string& projectRoot );
 
 	const ProjectBuildConfig& getConfig() const { return mConfig; }
 
@@ -199,8 +207,8 @@ class ProjectBuild {
 	bool hasClean() const { return !mClean.empty(); }
 
 	bool hasRun() const {
-		return !mRun.empty() && ( !mRun.front().cmd.empty() || !mRun.front().args.empty() ||
-								  !mRun.front().workingDir.empty() );
+		return !mRun.empty() && ( !mRun.front()->cmd.empty() || !mRun.front()->args.empty() ||
+								  !mRun.front()->workingDir.empty() );
 	}
 
 	ProjectBuildStep replaceVars( const ProjectBuildStep& step ) const;

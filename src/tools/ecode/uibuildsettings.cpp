@@ -409,7 +409,7 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 							<PushButton id="custom_var_del" icon="icon(delete-bin, 12dp)" min-width="20dp" tooltip="@string(del_custom_variable, Delete Selected Variable)" lg="center" />
 						</vbox>
 					</hbox>
-					<TextView class="span" lw="mp" lh="wc" word-wrap="true" text='@string(custom_variables_desc_3, There are predefined custom variables available to use:&#10;${project_root}: The folder / project root directory.&#10;${build_type}: The build type selected to build the project.&#10;${os}: The current operating system name.&#10;${nproc}: The number of logical processing units.&#10;${current_doc}: The last or current focused document path.&#10;${current_doc_name}: The last or current focused document name (without extension).)' />
+					<TextView class="span" lw="mp" lh="wc" word-wrap="true" text='@string(custom_variables_desc_3, There are predefined custom variables available to use:&#10;${project_root}: The folder / project root directory.&#10;${build_type}: The build type selected to build the project.&#10;${os}: The current operating system name.&#10;${arch}: The current operating architecture.&#10;${nproc}: The number of logical processing units.&#10;${current_doc}: The last or current focused document path.&#10;${current_doc_name}: The last or current focused document name (without extension).)' />
 				</vbox>
 
 				<vbox lw="mp" lh="wc" class="build_environment">
@@ -508,38 +508,37 @@ UIBuildSettings::UIBuildSettings(
 	}
 
 	if ( mBuild.mBuild.empty() )
-		mBuild.mBuild.push_back( {} );
+		mBuild.mBuild.push_back( std::make_unique<ProjectBuildStep>() );
 
 	if ( mBuild.mClean.empty() )
-		mBuild.mClean.push_back( {} );
+		mBuild.mClean.push_back( std::make_unique<ProjectBuildStep>() );
 
 	auto buildStepsParent = find( "build_steps_cont" );
 	for ( size_t step = 0; step < mBuild.mBuild.size(); ++step ) {
 		auto bs =
-			UIBuildStep::New( UIBuildStep::StepType::Build, this, step, &mBuild.mBuild[step] );
+			UIBuildStep::New( UIBuildStep::StepType::Build, this, step, mBuild.mBuild[step].get() );
 		bs->setParent( buildStepsParent );
 	}
 
 	find( "add_build_step" )->onClick( [this, buildStepsParent]( const Event* ) {
-		mBuild.mBuild.push_back( {} );
+		mBuild.mBuild.push_back( std::make_unique<ProjectBuildStep>() );
 		auto step = mBuild.mBuild.size() - 1;
-		UIBuildStep::New( UIBuildStep::StepType::Build, this, step, &mBuild.mBuild[step] )
+		UIBuildStep::New( UIBuildStep::StepType::Build, this, step, mBuild.mBuild[step].get() )
 			->setParent( buildStepsParent );
 	} );
 
 	auto buildCleanStepsParent = find( "build_clean_steps_cont" );
 	for ( size_t step = 0; step < mBuild.mClean.size(); ++step ) {
-		UIBuildStep::New( UIBuildStep::StepType::Clean, this, step, &mBuild.mClean[step] )
+		UIBuildStep::New( UIBuildStep::StepType::Clean, this, step, mBuild.mClean[step].get() )
 			->setParent( buildCleanStepsParent );
 	}
 
 	find( "add_clean_step" )->onClick( [this, buildCleanStepsParent]( const Event* ) {
-		mBuild.mClean.push_back( {} );
+		mBuild.mClean.push_back( std::make_unique<ProjectBuildStep>() );
 		auto step = mBuild.mClean.size() - 1;
-		UIBuildStep::New( UIBuildStep::StepType::Clean, this, step, &mBuild.mClean[step] )
+		UIBuildStep::New( UIBuildStep::StepType::Clean, this, step, mBuild.mClean[step].get() )
 			->setParent( buildCleanStepsParent );
 	} );
-
 
 	auto buildTypeDropDown = find<UIDropDownList>( "build_type_list" );
 	auto panelBuildTypeDDL = getUISceneNode()
@@ -804,8 +803,8 @@ void UIBuildSettings::moveStepDir( size_t stepNum, bool isClean, int dir ) {
 	std::swap( steps[stepNum], steps[newStep] );
 	auto bs1 = cont->findByClass<UIBuildStep>( String::toString( (Uint64)stepNum ) );
 	auto bs2 = cont->findByClass<UIBuildStep>( String::toString( newStep ) );
-	bs1->updateStep( stepNum, &steps[stepNum] );
-	bs2->updateStep( newStep, &steps[newStep] );
+	bs1->updateStep( stepNum, steps[stepNum].get() );
+	bs2->updateStep( newStep, steps[newStep].get() );
 }
 
 void UIBuildSettings::deleteStep( size_t stepNum, bool isClean ) {
@@ -818,16 +817,16 @@ void UIBuildSettings::deleteStep( size_t stepNum, bool isClean ) {
 	cont->findByClass<UIBuildStep>( String::toString( (Uint64)stepNum ) )->close();
 	for ( auto step = stepNum + 1; step <= steps.size(); step++ )
 		cont->findByClass<UIBuildStep>( String::toString( (Uint64)step ) )
-			->updateStep( step - 1, &steps[step - 1] );
+			->updateStep( step - 1, steps[step - 1].get() );
 }
 
 void UIBuildSettings::runSetup() {
 	if ( mBuild.mRun.empty() ) {
-		mBuild.mRun.push_back( {} );
-		mBuild.mRun.back().name = i18n( "custom_executable", "Custom Executable" );
+		mBuild.mRun.push_back( std::make_unique<ProjectBuildStep>() );
+		mBuild.mRun.back()->name = i18n( "custom_executable", "Custom Executable" );
 	}
 
-	UIBuildStep::New( UIBuildStep::StepType::Run, this, 0, &mBuild.mRun[runIndex()] )
+	UIBuildStep::New( UIBuildStep::StepType::Run, this, 0, mBuild.mRun[runIndex()].get() )
 		->setParent( find( "run_cont" ) );
 
 	UIDropDownList* runList = find( "run_list" )->asType<UIDropDownList>();
@@ -872,15 +871,15 @@ void UIBuildSettings::runSetup() {
 			bool unique = true;
 			auto newName = msgBox->getTextInput()->getText().toUtf8();
 			for ( const auto& run : mBuild.mRun ) {
-				if ( newName == run.name ) {
+				if ( newName == run->name ) {
 					unique = false;
 					break;
 				}
 			}
 
 			if ( unique ) {
-				mBuild.mRun.push_back( {} );
-				mBuild.mRun.back().name = newName;
+				mBuild.mRun.push_back( std::make_unique<ProjectBuildStep>() );
+				mBuild.mRun.back()->name = newName;
 
 				runList->getListBox()->addListBoxItem( newName );
 				runList->getListBox()->setSelected( newName );
@@ -945,16 +944,16 @@ void UIBuildSettings::runSetup() {
 				auto newName = msgBox->getTextInput()->getText().toUtf8();
 				for ( size_t i = 0; i < mBuild.mRun.size(); i++ ) {
 					const auto& run = mBuild.mRun[i];
-					if ( newName == run.name && i != selectedIndex ) {
+					if ( newName == run->name && i != selectedIndex ) {
 						unique = false;
 						break;
 					}
 				}
 
 				if ( unique && selectedIndex < mBuild.mRun.size() ) {
-					if ( mBuild.mRun[selectedIndex].name == mConfig.runName )
+					if ( mBuild.mRun[selectedIndex]->name == mConfig.runName )
 						mConfig.runName = newName;
-					mBuild.mRun[selectedIndex].name = newName;
+					mBuild.mRun[selectedIndex]->name = newName;
 					runList->getListBox()->setItemText( selectedIndex, newName );
 					if ( panelRunListDDL )
 						panelRunListDDL->getListBox()->setItemText( selectedIndex, newName );
@@ -983,7 +982,7 @@ void UIBuildSettings::runSetup() {
 			bool unique = true;
 			auto newName = msgBox->getTextInput()->getText().toUtf8();
 			for ( const auto& run : mBuild.mRun ) {
-				if ( newName == run.name ) {
+				if ( newName == run->name ) {
 					unique = false;
 					break;
 				}
@@ -992,11 +991,12 @@ void UIBuildSettings::runSetup() {
 			if ( unique ) {
 				auto selectedIndex = runList->getListBox()->getItemSelectedIndex();
 				if ( selectedIndex < mBuild.mRun.size() ) {
-					mBuild.mRun.push_back( mBuild.mRun[selectedIndex] );
+					mBuild.mRun.push_back(
+						std::make_unique<ProjectBuildStep>( *mBuild.mRun[selectedIndex].get() ) );
 				} else {
-					mBuild.mRun.push_back( {} );
+					mBuild.mRun.push_back( std::make_unique<ProjectBuildStep>() );
 				}
-				mBuild.mRun.back().name = newName;
+				mBuild.mRun.back()->name = newName;
 
 				runList->getListBox()->addListBoxItem( newName );
 				runList->getListBox()->setSelected( newName );
@@ -1022,13 +1022,13 @@ void UIBuildSettings::runSelect( Uint32 index ) {
 	UIWidget* cont = find<UIWidget>( "run_cont" );
 	auto bs = cont->findByClass<UIBuildStep>( String::toString( 0 ) );
 	if ( index < mBuild.mRun.size() ) {
-		bs->updateStep( 0, &mBuild.mRun[index] );
+		bs->updateStep( 0, mBuild.mRun[index].get() );
 	} else {
 		if ( mBuild.mRun.empty() ) {
-			mBuild.mRun.push_back( {} );
-			mBuild.mRun.back().name = i18n( "custom_executable", "Custom Executable" );
+			mBuild.mRun.push_back( std::make_unique<ProjectBuildStep>() );
+			mBuild.mRun.back()->name = i18n( "custom_executable", "Custom Executable" );
 		}
-		bs->updateStep( 0, &mBuild.mRun[0] );
+		bs->updateStep( 0, mBuild.mRun[0].get() );
 	}
 }
 
@@ -1067,10 +1067,10 @@ void UIBuildSettings::runUpdate( bool recreateList, UIDropDownList* runList,
 		size_t i = 1;
 		for ( const auto& run : mBuild.mRun ) {
 			auto name =
-				run.name.empty()
+				run->name.empty()
 					? String::format(
 						  i18n( "custom_executable_num", "Custom Executable %d" ).toUtf8(), i )
-					: run.name;
+					: run->name;
 			runList->getListBox()->addListBoxItem( name );
 			if ( panelRunListDDL )
 				panelRunListDDL->getListBox()->addListBoxItem( name );
@@ -1091,7 +1091,7 @@ void UIBuildSettings::runUpdate( bool recreateList, UIDropDownList* runList,
 
 Uint32 UIBuildSettings::runIndex() const {
 	for ( size_t i = 0; i < mBuild.mRun.size(); i++ ) {
-		if ( mBuild.mRun[i].name == mConfig.runName )
+		if ( mBuild.mRun[i]->name == mConfig.runName )
 			return i;
 	}
 	return 0;

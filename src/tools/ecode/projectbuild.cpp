@@ -24,6 +24,7 @@ static constexpr auto SidePanelLoadUniqueId = String::hash( "ProjectBuildManager
 static const char* VAR_PROJECT_ROOT = "${project_root}";
 static const char* VAR_BUILD_TYPE = "${build_type}";
 static const char* VAR_OS = "${os}";
+static const char* VAR_ARCH = "${arch}";
 static const char* VAR_NPROC = "${nproc}";
 static const char* VAR_CURRENT_DOC = "${current_doc}";
 static const char* VAR_CURRENT_DOC_NAME = "${current_doc_name}";
@@ -50,14 +51,14 @@ ProjectBuildStep ProjectBuild::replaceVars( const ProjectBuildStep& step ) const
 }
 
 ProjectBuildSteps ProjectBuild::replaceVars( const ProjectBuildSteps& steps ) const {
-	ProjectBuildSteps newSteps( steps );
+	ProjectBuildSteps newSteps( deepCopySteps( steps ) );
 	for ( auto& s : newSteps ) {
-		replaceVar( s, VAR_PROJECT_ROOT, mProjectRoot );
+		replaceVar( *s.get(), VAR_PROJECT_ROOT, mProjectRoot );
 		for ( auto& var : mVars ) {
 			std::string varKey( "${" + var.first + "}" );
 			std::string varVal( var.second );
 			String::replaceAll( varVal, VAR_PROJECT_ROOT, mProjectRoot );
-			replaceVar( s, varKey, varVal );
+			replaceVar( *s.get(), varKey, varVal );
 		}
 	}
 	return newSteps;
@@ -74,11 +75,11 @@ json ProjectBuild::serialize( const ProjectBuild::Map& builds ) {
 		auto& jbuild = bj["build"];
 		for ( const auto& build : curBuild.buildSteps() ) {
 			json step;
-			step["working_dir"] = build.workingDir;
-			step["args"] = build.args;
-			step["command"] = build.cmd;
-			if ( !build.enabled )
-				step["enabled"] = build.enabled;
+			step["working_dir"] = build->workingDir;
+			step["args"] = build->args;
+			step["command"] = build->cmd;
+			if ( !build->enabled )
+				step["enabled"] = build->enabled;
 			jbuild.push_back( step );
 		}
 
@@ -86,11 +87,11 @@ json ProjectBuild::serialize( const ProjectBuild::Map& builds ) {
 		auto& jclean = bj["clean"];
 		for ( const auto& build : curBuild.cleanSteps() ) {
 			json step;
-			step["working_dir"] = build.workingDir;
-			step["args"] = build.args;
-			step["command"] = build.cmd;
-			if ( !build.enabled )
-				step["enabled"] = build.enabled;
+			step["working_dir"] = build->workingDir;
+			step["args"] = build->args;
+			step["command"] = build->cmd;
+			if ( !build->enabled )
+				step["enabled"] = build->enabled;
 			jclean.push_back( step );
 		}
 
@@ -99,14 +100,14 @@ json ProjectBuild::serialize( const ProjectBuild::Map& builds ) {
 			auto& jrun = bj["run"];
 			for ( auto& run : curBuild.mRun ) {
 				json step;
-				step["name"] = run.name;
-				step["working_dir"] = run.workingDir;
-				step["args"] = run.args;
-				step["command"] = run.cmd;
-				if ( !run.enabled )
-					step["enabled"] = run.enabled;
-				if ( run.runInTerminal )
-					step["run_in_terminal"] = run.runInTerminal;
+				step["name"] = run->name;
+				step["working_dir"] = run->workingDir;
+				step["args"] = run->args;
+				step["command"] = run->cmd;
+				if ( !run->enabled )
+					step["enabled"] = run->enabled;
+				if ( run->runInTerminal )
+					step["run_in_terminal"] = run->runInTerminal;
 				jrun.push_back( step );
 			}
 		}
@@ -151,6 +152,50 @@ json ProjectBuild::serialize( const ProjectBuild::Map& builds ) {
 
 	return j;
 }
+
+ProjectBuildSteps ProjectBuild::deepCopySteps( const ProjectBuildSteps& steps ) const {
+	ProjectBuildSteps copy;
+	for ( const auto& step : steps )
+		copy.push_back( std::make_unique<ProjectBuildStep>( *step.get() ) );
+	return copy;
+}
+
+ProjectBuild::ProjectBuild( const ProjectBuild& other ) :
+	mName( other.mName ),
+	mProjectRoot( other.mProjectRoot ),
+	mOS( other.mOS ),
+	mBuildTypes( other.mBuildTypes ),
+	mEnvs( other.mEnvs ),
+	mVars( other.mVars ),
+	mConfig( other.mConfig ),
+	mOutputParser( other.mOutputParser ) {
+	mBuild = deepCopySteps( other.mBuild );
+	mClean = deepCopySteps( other.mClean );
+	mRun = deepCopySteps( other.mRun );
+}
+
+ProjectBuild& ProjectBuild::operator=( const ProjectBuild& other ) {
+	if ( this != &other ) {
+		mName = other.mName;
+		mProjectRoot = other.mProjectRoot;
+		mOS = other.mOS;
+		mBuildTypes = other.mBuildTypes;
+		mEnvs = other.mEnvs;
+		mVars = other.mVars;
+		mConfig = other.mConfig;
+		mOutputParser = other.mOutputParser;
+		mBuild.clear();
+		mClean.clear();
+		mRun.clear();
+		mBuild = deepCopySteps( other.mBuild );
+		mClean = deepCopySteps( other.mClean );
+		mRun = deepCopySteps( other.mRun );
+	}
+	return *this;
+}
+
+ProjectBuild::ProjectBuild( const std::string& name, const std::string& projectRoot ) :
+	mName( name ), mProjectRoot( projectRoot ) {}
 
 bool ProjectBuild::isOSSupported( const std::string& os ) const {
 	return mOS.empty() || std::any_of( mOS.begin(), mOS.end(), [&os]( const auto& oos ) {
@@ -338,6 +383,7 @@ void ProjectBuildManager::replaceDynamicVars( ProjectBuildCommand& cmd ) {
 	std::string curDocName =
 		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( curDoc ) );
 	replaceVar( cmd, VAR_OS, currentOS );
+	replaceVar( cmd, VAR_ARCH, Sys::getOSArchitecture() );
 	replaceVar( cmd, VAR_NPROC, nproc );
 	replaceVar( cmd, VAR_CURRENT_DOC, curDoc );
 	replaceVar( cmd, VAR_CURRENT_DOC_NAME, curDocName );
@@ -369,7 +415,7 @@ ProjectBuildCommandsRes ProjectBuildManager::generateBuildCommands( const std::s
 
 	ProjectBuildCommandsRes res;
 	for ( const auto& step : finalBuild ) {
-		ProjectBuildCommand buildCmd( step );
+		ProjectBuildCommand buildCmd( *step );
 		replaceDynamicVars( buildCmd );
 		if ( !buildType.empty() )
 			replaceVar( buildCmd, VAR_BUILD_TYPE, buildType );
@@ -470,11 +516,11 @@ ProjectBuild::Map ProjectBuild::deserialize( const json& j, const std::string& p
 		if ( buildObj.contains( "build" ) && buildObj["build"].is_array() ) {
 			const auto& buildArray = buildObj["build"];
 			for ( const auto& step : buildArray ) {
-				ProjectBuildStep bstep;
-				bstep.cmd = step.value( "command", "" );
-				bstep.args = step.value( "args", "" );
-				bstep.workingDir = step.value( "working_dir", "" );
-				bstep.enabled = step.value( "enabled", true );
+				std::unique_ptr<ProjectBuildStep> bstep = std::make_unique<ProjectBuildStep>();
+				bstep->cmd = step.value( "command", "" );
+				bstep->args = step.value( "args", "" );
+				bstep->workingDir = step.value( "working_dir", "" );
+				bstep->enabled = step.value( "enabled", true );
 				b.mBuild.emplace_back( std::move( bstep ) );
 			}
 		}
@@ -482,11 +528,11 @@ ProjectBuild::Map ProjectBuild::deserialize( const json& j, const std::string& p
 		if ( buildObj.contains( "clean" ) && buildObj["clean"].is_array() ) {
 			const auto& cleanArray = buildObj["clean"];
 			for ( const auto& step : cleanArray ) {
-				ProjectBuildStep cstep;
-				cstep.cmd = step.value( "command", "" );
-				cstep.args = step.value( "args", "" );
-				cstep.workingDir = step.value( "working_dir", "" );
-				cstep.enabled = step.value( "enabled", true );
+				std::unique_ptr<ProjectBuildStep> cstep = std::make_unique<ProjectBuildStep>();
+				cstep->cmd = step.value( "command", "" );
+				cstep->args = step.value( "args", "" );
+				cstep->workingDir = step.value( "working_dir", "" );
+				cstep->enabled = step.value( "enabled", true );
 				b.mClean.emplace_back( std::move( cstep ) );
 			}
 		}
@@ -494,13 +540,13 @@ ProjectBuild::Map ProjectBuild::deserialize( const json& j, const std::string& p
 		if ( buildObj.contains( "run" ) && buildObj["run"].is_array() ) {
 			const auto& runArray = buildObj["run"];
 			for ( const auto& step : runArray ) {
-				ProjectBuildStep rstep;
-				rstep.name = step.value( "name", "" );
-				rstep.cmd = step.value( "command", "" );
-				rstep.args = step.value( "args", "" );
-				rstep.workingDir = step.value( "working_dir", "" );
-				rstep.enabled = step.value( "enabled", true );
-				rstep.runInTerminal = step.value( "run_in_terminal", false );
+				std::unique_ptr<ProjectBuildStep> rstep = std::make_unique<ProjectBuildStep>();
+				rstep->name = step.value( "name", "" );
+				rstep->cmd = step.value( "command", "" );
+				rstep->args = step.value( "args", "" );
+				rstep->workingDir = step.value( "working_dir", "" );
+				rstep->enabled = step.value( "enabled", true );
+				rstep->runInTerminal = step.value( "run_in_terminal", false );
 				b.mRun.emplace_back( std::move( rstep ) );
 			}
 		}
@@ -743,8 +789,8 @@ void ProjectBuildManager::runConfig( StatusAppOutputController* saoc ) {
 
 		const ProjectBuildStep* run = nullptr;
 		for ( const auto& crun : build->mRun ) {
-			if ( crun.name == mConfig.runName || mConfig.runName.empty() ) {
-				run = &crun;
+			if ( crun->name == mConfig.runName || mConfig.runName.empty() ) {
+				run = crun.get();
 				break;
 			}
 		}
@@ -1238,11 +1284,11 @@ void ProjectBuildManager::updateRunConfig() {
 			std::vector<String> items;
 			size_t i = 1;
 			for ( const auto& run : runConfigs ) {
-				auto name = run.name.empty() ? String::format( mApp->i18n( "custom_executable_num",
-																		   "Custom Executable %d" )
-																   .toUtf8(),
-															   i )
-											 : run.name;
+				auto name = run->name.empty() ? String::format( mApp->i18n( "custom_executable_num",
+																			"Custom Executable %d" )
+																	.toUtf8(),
+																i )
+											  : run->name;
 				items.emplace_back( name );
 				i++;
 			}

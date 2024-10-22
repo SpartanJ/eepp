@@ -1,4 +1,6 @@
 require "premake.export-compile-commands.export-compile-commands"
+require "premake.premake-cmake.cmake"
+require "premake.premake-ninja.ninja"
 
 newoption { trigger = "with-openssl", description = "Enables OpenSSL support ( and disables mbedtls backend )." }
 newoption { trigger = "with-dynamic-freetype", description = "Dynamic link against freetype." }

@@ -291,10 +291,11 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 			  auto build = pbm->getBuild( cfg.buildName );
 			  if ( build != nullptr ) {
 				  std::string runTarget = vName.toString();
-				  auto it = std::find_if( build->runConfigs().begin(), build->runConfigs().end(),
-										  [&runTarget]( const ProjectBuildStep& run ) {
-											  return run.name == runTarget;
-										  } );
+				  auto it =
+					  std::find_if( build->runConfigs().begin(), build->runConfigs().end(),
+									[&runTarget]( const std::unique_ptr<ProjectBuildStep>& run ) {
+										return run->name == runTarget;
+									} );
 				  if ( it != build->runConfigs().end() ) {
 					  cfg.runName = runTarget;
 					  pbm->setConfig( cfg );
@@ -893,8 +894,8 @@ UniversalLocator::openRunTargetModel( const std::string& match ) {
 	runTargetNames.reserve( runs.size() );
 	for ( const auto& run : runs ) {
 		if ( match.empty() ||
-			 String::startsWith( String::toLower( run.name ), String::toLower( match ) ) )
-			runTargetNames.push_back( run.name );
+			 String::startsWith( String::toLower( run->name ), String::toLower( match ) ) )
+			runTargetNames.push_back( run->name );
 	}
 	std::sort( runTargetNames.begin(), runTargetNames.end() );
 	return ItemListOwnerModel<std::string>::create( runTargetNames );
