@@ -319,7 +319,7 @@ sure both macros are undefined; an emulation function will then be used. */
 /* Define to any non-zero number to enable support for SELinux compatible
    executable memory allocator in JIT. Note that this will have no effect
    unless SUPPORT_JIT is also defined. */
-#if defined( linux ) || defined( __linux__ ) || defined( __ANDROID__ ) || defined( ANDROID )
+#if (defined( linux ) || defined( __linux__ )) && !(defined( __ANDROID__ ) || defined( ANDROID ))
 #define SLJIT_PROT_EXECUTABLE_ALLOCATOR 1
 #endif
 

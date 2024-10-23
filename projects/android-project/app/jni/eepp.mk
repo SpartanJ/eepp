@@ -22,6 +22,7 @@ EEPP_C_INCLUDES			:= \
 	$(EEPP_THIRD_PARTY_PATH)/libogg/include \
 	$(EEPP_THIRD_PARTY_PATH)/mbedtls/include \
 	$(EEPP_THIRD_PARTY_PATH)/mojoAL \
+	$(EEPP_THIRD_PARTY_PATH)/pcre2/src \
 	$(EEPP_THIRD_PARTY_PATH)/efsw/include \
 	$(EEPP_BASE_PATH)/modules/eterm/include \
 	$(EEPP_BASE_PATH)/modules/eterm/src \
@@ -45,7 +46,9 @@ EEPP_C_FLAGS				:= \
 	-D$(EE_SDL_VERSION) \
 	-DAL_LIBTYPE_STATIC \
 	-I$(EEPP_INC_PATH) \
-	-I$(EEPP_BASE_PATH)
+	-I$(EEPP_BASE_PATH) \
+	-DPCRE2_STATIC \
+	-DPCRE2_CODE_UNIT_WIDTH=8
 
 EEPP_LDLIBS				:= $(APP_LDLIBS)
 
@@ -99,7 +102,7 @@ LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES)
 
 LOCAL_SRC_FILES			:= $(foreach F, $(CODE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES	:= freetype libpng
+LOCAL_STATIC_LIBRARIES	:= freetype libpng pcre2 harfbuzz
 
 LOCAL_SHARED_LIBRARIES	:= SDL2
 
@@ -169,6 +172,66 @@ LOCAL_SRC_FILES			:= $(foreach F, $(LIBPNG_SRCS), $(addprefix $(dir $(F)),$(notd
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** LIBPNG ***************
+
+#**************** PCRE2 ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
+
+LOCAL_MODULE			:= pcre2
+
+LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/pcre2/src
+LOCAL_CFLAGS			:= -Os -DHAVE_CONFIG_H -DPCRE2_STATIC -DPCRE2_CODE_UNIT_WIDTH=8
+
+LOCAL_SRC_FILES			:=   \
+	pcre2/src/pcre2_auto_possess.c \
+	pcre2/src/pcre2_chartables.c \
+	pcre2/src/pcre2_chkdint.c \
+	pcre2/src/pcre2_compile.c \
+	pcre2/src/pcre2_config.c \
+	pcre2/src/pcre2_context.c \
+	pcre2/src/pcre2_convert.c \
+	pcre2/src/pcre2_dfa_match.c \
+	pcre2/src/pcre2_error.c \
+	pcre2/src/pcre2_extuni.c \
+	pcre2/src/pcre2_find_bracket.c \
+	pcre2/src/pcre2_maketables.c \
+	pcre2/src/pcre2_match.c \
+	pcre2/src/pcre2_match_data.c \
+	pcre2/src/pcre2_newline.c \
+	pcre2/src/pcre2_ord2utf.c \
+	pcre2/src/pcre2_pattern_info.c \
+	pcre2/src/pcre2_script_run.c \
+	pcre2/src/pcre2_serialize.c \
+	pcre2/src/pcre2_string_utils.c \
+	pcre2/src/pcre2_study.c \
+	pcre2/src/pcre2_substitute.c \
+	pcre2/src/pcre2_substring.c \
+	pcre2/src/pcre2_tables.c \
+	pcre2/src/pcre2_ucd.c \
+	pcre2/src/pcre2_valid_utf.c \
+	pcre2/src/pcre2_xclass.c \
+	pcre2/src/pcre2_jit_compile.c
+
+include $(BUILD_STATIC_LIBRARY)
+#**************** PCRE2 ***************
+
+#*************** HARFBUZZ *************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
+
+LOCAL_MODULE			:= harfbuzz
+
+HARFBUZZ_SRCS			:=  harfbuzz/**.cc
+
+LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/harfbuzz/
+LOCAL_CFLAGS			:= -Os -DHAVE_CONFIG_H -I$(LOCAL_PATH)/freetype2/include
+
+LOCAL_SRC_FILES			:= $(foreach F, $(HARFBUZZ_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** HARFBUZZ *************
 
 #**************** SDL 2 ***************
 include $(CLEAR_VARS)

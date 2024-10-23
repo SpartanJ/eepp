@@ -14,6 +14,14 @@
 #include <limits>
 #include <random>
 
+#if __GNUC__ >= 11 || ( __clang__ && __clang_major__ >= 12 )
+#define STD_SUPPORTS_FIXED_TO_CHARS
+#endif
+
+#ifndef STD_SUPPORTS_FIXED_TO_CHARS
+#include <sstream>
+#endif
+
 namespace EE {
 
 template <typename T> static bool _fromString( T& t, const std::string& s, int base = 10 ) {
@@ -55,9 +63,15 @@ template <typename T> static bool _fromString( T& t, const std::string& s, int b
 template <class T> static std::string _toString( const T& value, size_t digitsAfterComma = 2 ) {
 	char buffer[32];
 	if constexpr ( (std::is_same_v<T, float> || std::is_same_v<T, double>)) {
+#ifdef STD_SUPPORTS_FIXED_TO_CHARS
 		auto [ptr, ec] = std::to_chars( buffer, buffer + sizeof( buffer ), value,
 										std::chars_format::fixed, digitsAfterComma );
 		return ec == std::errc() ? std::string( buffer, ptr ) : std::string{};
+#else
+		std::ostringstream ss;
+		ss << std::fixed << value;
+		return ss.str();
+#endif
 	} else {
 		auto [ptr, ec] = std::to_chars( buffer, buffer + sizeof( buffer ), value );
 		return ec == std::errc() ? std::string( buffer, ptr ) : std::string{};

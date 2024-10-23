@@ -265,7 +265,7 @@ bool Pak::addFile( const Uint8* data, const Uint32& dataSize, const std::string&
 
 			// Update the new pakEntrys on pakFile
 			mPak.fs->write( reinterpret_cast<const char*>( &pakE[0] ),
-							( std::streamsize )( sizeof( pakEntry ) * pakE.size() ) );
+							(ios_size)( sizeof( pakEntry ) * pakE.size() ) );
 
 			mPakFiles.push_back( pakE[mPak.pakFilesNum] );
 			mPak.pakFilesNum += 1;
@@ -357,12 +357,11 @@ bool Pak::eraseFiles( const std::vector<std::string>& paths ) {
 		if ( extractFileToMemory( std::string( uEntry[i].filename ), data ) ) {
 			uEntry[i].file_position = nPf.fs->tell();
 			uEntry[i].file_length = (Uint32)data.size();
-			nPf.fs->write( reinterpret_cast<const char*>( &data[0] ),
-						   (std::streamsize)data.size() );
+			nPf.fs->write( reinterpret_cast<const char*>( &data[0] ), (ios_size)data.size() );
 		}
 
 	nPf.fs->write( reinterpret_cast<const char*>( &uEntry[0] ),
-				   ( std::streamsize )( sizeof( pakEntry ) * uEntry.size() ) );
+				   (ios_size)( sizeof( pakEntry ) * uEntry.size() ) );
 
 	eeSAFE_DELETE( nPf.fs );
 

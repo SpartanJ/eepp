@@ -4,7 +4,7 @@
 #include <eepp/config.hpp>
 
 namespace EE {
-using ios_size = long;
+using ios_size = long long;
 }
 
 namespace EE { namespace System {

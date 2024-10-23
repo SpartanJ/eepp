@@ -13,11 +13,11 @@ def getProcessesCountArg() {
 }
 
 android {
-    compileSdkVersion 33
-    buildToolsVersion "33.0.0"
+    namespace "com.ensoft.eepp"
     defaultConfig {
         applicationId "com.ensoft.eepp"
         minSdk 27
+        compileSdk 34
         targetSdkVersion 33
         versionCode 1
         versionName "1.0"
@@ -33,7 +33,8 @@ android {
         }
         signingConfig signingConfigs.debug
     }
-    flavorDimensions "eepp"
+    flavorDimensions += "eepp"
+    buildFeatures { buildConfig true }
     productFlavors {
         ecode {
             buildConfigField "String", "SO_NAME", "\"ecode\""
@@ -99,14 +100,14 @@ android {
             path 'jni/Android.mk'
         }
     }
-    lintOptions {
-        abortOnError false
-    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
-    ndkVersion '25.1.8937393'
+    ndkVersion "27.2.12479018"
+    lint {
+        abortOnError false
+    }
 }
 
 dependencies {

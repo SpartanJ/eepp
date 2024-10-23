@@ -1,11 +1,11 @@
 #!/bin/sh
-adb devices
+adb devices || exit
 
-cd $(dirname "$0")
+cd "$(dirname "$0")" || exit
 
-./assets.sh
+./assets.sh || exit
 
-./gradlew build
+./gradlew build || exit
 
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 
