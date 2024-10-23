@@ -2246,7 +2246,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			return;
 		std::string processPath = Sys::getProcessFilePath();
 		if ( !processPath.empty() ) {
-			std::string cmd( processPath + " \"" + editor->getDocumentRef()->getFilePath() + "\"" );
+			std::string cmd( processPath + " -x \"" + editor->getDocumentRef()->getFilePath() + "\"" );
 			Sys::execute( cmd );
 		}
 	} );
@@ -3198,7 +3198,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		return;
 	}
 
-	if ( needsRedirectToRunningProcess( file ) )
+	if ( !openClean && needsRedirectToRunningProcess( file ) )
 		return;
 
 	currentDisplay = displayManager->getDisplayIndex( mConfig.windowState.displayIndex <
