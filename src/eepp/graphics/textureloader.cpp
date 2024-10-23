@@ -368,8 +368,11 @@ void TextureLoader::loadFromPixels() {
 					mClampMode, mCompressTexture || mIsCompressed, mLocalCopy, mSize );
 
 				if ( mFilepath.empty() ) {
-					Log::info( "Texture ID %d loaded in %4.3f ms.", mTexture->getTextureId(),
-							   mTE.getElapsedTimeAndReset().asMilliseconds() );
+					Log::instance()->writef(
+						mTE.getElapsedTimeAndReset() >= Milliseconds( 1 ) ? LogLevel::Info
+																		  : LogLevel::Debug,
+						"Texture ID %d loaded in %s.", mTexture->getTextureId(),
+						mTE.getElapsedTimeAndReset().toString() );
 				} else {
 					Log::info( "Texture %s loaded in %4.3f ms.", mFilepath.c_str(),
 							   mTE.getElapsedTimeAndReset().asMilliseconds() );

@@ -575,6 +575,7 @@ TextDocument* LinterPlugin::getDocumentFromURI( const URI& uri ) {
 }
 
 void LinterPlugin::load( PluginManager* pluginManager ) {
+	Clock clock;
 	AtomicBoolScopedOp loading( mLoading, true );
 	pluginManager->subscribeMessages( this,
 									  [this]( const auto& notification ) -> PluginRequestHandle {
@@ -606,7 +607,7 @@ void LinterPlugin::load( PluginManager* pluginManager ) {
 	mReady = !mLinters.empty();
 	if ( mReady ) {
 		fireReadyCbs();
-		setReady();
+		setReady( clock.getElapsedTime() );
 	}
 }
 

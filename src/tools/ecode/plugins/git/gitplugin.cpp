@@ -110,6 +110,7 @@ GitPlugin::~GitPlugin() {
 }
 
 void GitPlugin::load( PluginManager* pluginManager ) {
+	Clock clock;
 	AtomicBoolScopedOp loading( mLoading, true );
 	pluginManager->subscribeMessages( this,
 									  [this]( const auto& notification ) -> PluginRequestHandle {
@@ -234,7 +235,7 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 	subscribeFileSystemListener();
 	mReady = true;
 	fireReadyCbs();
-	setReady();
+	setReady( clock.getElapsedTime() );
 }
 
 void GitPlugin::initModelStyler() {

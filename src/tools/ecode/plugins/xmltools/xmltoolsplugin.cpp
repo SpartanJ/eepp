@@ -53,6 +53,7 @@ bool XMLToolsPlugin::getAutoEditMatch() const {
 }
 
 void XMLToolsPlugin::load( PluginManager* pluginManager ) {
+	Clock clock;
 	AtomicBoolScopedOp loading( mLoading, true );
 	std::string path = pluginManager->getPluginsPath() + "xmltools.json";
 	if ( FileSystem::fileExists( path ) ||
@@ -104,7 +105,7 @@ void XMLToolsPlugin::load( PluginManager* pluginManager ) {
 	subscribeFileSystemListener();
 	mReady = true;
 	fireReadyCbs();
-	setReady();
+	setReady( clock.getElapsedTime() );
 }
 
 void XMLToolsPlugin::onRegisterDocument( TextDocument* doc ) {

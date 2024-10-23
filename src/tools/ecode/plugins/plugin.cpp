@@ -103,10 +103,14 @@ void Plugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {
 	}
 }
 
-void Plugin::setReady() {
+void Plugin::setReady( Time loadTime ) {
 	if ( mReady ) {
-		Log::info( "Plugin: %s loaded and ready from process %u", getTitle().c_str(),
-				   Sys::getProcessID() );
+		if ( loadTime != Time::Zero ) {
+			Log::info( "Plugin: %s (PID %u) loaded in %s", getTitle(), Sys::getProcessID(),
+					   loadTime.toString() );
+		} else {
+			Log::info( "Plugin: %s (PID %u) loaded", getTitle(), Sys::getProcessID() );
+		}
 	}
 }
 

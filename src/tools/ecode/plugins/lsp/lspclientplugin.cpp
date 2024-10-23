@@ -939,6 +939,7 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 }
 
 void LSPClientPlugin::load( PluginManager* pluginManager ) {
+	Clock clock;
 	AtomicBoolScopedOp loading( mLoading, true );
 	pluginManager->subscribeMessages( this,
 									  [this]( const auto& notification ) -> PluginRequestHandle {
@@ -996,7 +997,7 @@ void LSPClientPlugin::load( PluginManager* pluginManager ) {
 	mDelayedDocs.clear();
 	if ( mReady ) {
 		fireReadyCbs();
-		setReady();
+		setReady( clock.getElapsedTime() );
 	}
 }
 

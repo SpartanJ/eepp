@@ -135,6 +135,7 @@ AutoCompletePlugin::~AutoCompletePlugin() {
 }
 
 void AutoCompletePlugin::load( PluginManager* pluginManager ) {
+	Clock clock;
 	AtomicBoolScopedOp loading( mLoading, true );
 	std::string path = pluginManager->getPluginsPath() + "autocomplete.json";
 	if ( FileSystem::fileExists( path ) ||
@@ -239,7 +240,7 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 	subscribeFileSystemListener();
 	mReady = true;
 	fireReadyCbs();
-	setReady();
+	setReady( clock.getElapsedTime() );
 }
 
 void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {

@@ -60,7 +60,7 @@ class Plugin : public UICodeEditorPlugin {
 	std::atomic<bool> mLoading{ false };
 	std::atomic<bool> mShuttingDown{ false };
 
-	void setReady();
+	void setReady( Time loadTime = Seconds( 0 ) );
 
 	void waitUntilLoaded();
 };

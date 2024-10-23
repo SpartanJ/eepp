@@ -13,7 +13,6 @@
 #include <iterator>
 #include <limits>
 #include <random>
-#include <sstream>
 
 namespace EE {
 
@@ -44,17 +43,24 @@ template <typename T> static bool _fromString( T& t, const std::string& s, int b
 		bool res = result.ec == std::errc{} && result.ptr == end;
 		return res;
 	} else {
-		std::istringstream iss( s );
-		auto f = std::dec;
-		switch ( base ) {
-			case 8:
-				f = std::oct;
-				break;
-			case 16:
-				f = std::hex;
-				break;
+		T value;
+		auto result = std::from_chars( begin, end, value, base );
+		if ( result.ec == std::errc{} && result.ptr == end ) {
+			t = static_cast<T>( value );
+			return true;
 		}
-		return !( iss >> f >> t ).fail();
+	}
+}
+
+template <class T> static std::string _toString( const T& value, size_t digitsAfterComma = 2 ) {
+	char buffer[32];
+	if constexpr ( (std::is_same_v<T, float> || std::is_same_v<T, double>)) {
+		auto [ptr, ec] = std::to_chars( buffer, buffer + sizeof( buffer ), value,
+										std::chars_format::fixed, digitsAfterComma );
+		return ec == std::errc() ? std::string( buffer, ptr ) : std::string{};
+	} else {
+		auto [ptr, ec] = std::to_chars( buffer, buffer + sizeof( buffer ), value );
+		return ec == std::errc() ? std::string( buffer, ptr ) : std::string{};
 	}
 }
 
@@ -138,12 +144,6 @@ bool String::fromString( double& t, const String& s ) {
 	return _fromString<>( t, s );
 }
 
-template <class T> static std::string _toString( const T& i ) {
-	std::ostringstream ss;
-	ss << std::fixed << i;
-	return ss.str();
-}
-
 std::string String::toString( const Int8& i ) {
 	return _toString<>( i );
 }
@@ -182,6 +182,20 @@ std::string String::toString( const float& i ) {
 
 std::string String::toString( const double& i ) {
 	return _toString<>( i );
+}
+
+std::string String::fromFloat( const Float& value, const std::string& append,
+							   const std::string& prepend, size_t digitsAfterComma ) {
+	std::string val( _toString( value, digitsAfterComma ) );
+	numberCleanInPlace( val );
+	return prepend + val + append;
+}
+
+std::string String::fromDouble( const double& value, const std::string& append,
+								const std::string& prepend, size_t digitsAfterComma ) {
+	std::string val( _toString( value, digitsAfterComma ) );
+	numberCleanInPlace( val );
+	return prepend + val + append;
 }
 
 const std::size_t String::InvalidPos = StringType::npos;
@@ -1246,26 +1260,6 @@ void String::numberCleanInPlace( std::string& strNumber ) {
 		strNumber.pop_back();
 }
 
-std::string String::fromFloat( const Float& value, const std::string& append,
-							   const std::string& prepend, size_t digitsAfterComma ) {
-	std::ostringstream ss;
-	ss.precision( digitsAfterComma );
-	ss << std::fixed << value;
-	std::string val( ss.str() );
-	numberCleanInPlace( val );
-	return prepend + val + append;
-}
-
-std::string String::fromDouble( const double& value, const std::string& append,
-								const std::string& prepend, size_t digitsAfterComma ) {
-	std::ostringstream ss;
-	ss.precision( digitsAfterComma );
-	ss << std::fixed << value;
-	std::string val( ss.str() );
-	numberCleanInPlace( val );
-	return prepend + val + append;
-}
-
 void String::insertChar( String& str, const unsigned int& pos, const StringBaseType& tchar ) {
 	str.insert( str.begin() + pos, tchar );
 }
@@ -1443,7 +1437,7 @@ String String::fromUtf8( const std::string_view& utf8String ) {
 	return String( utf32 );
 }
 
-#define iscont( p ) ( ( *(p)&0xC0 ) == 0x80 )
+#define iscont( p ) ( ( *( p ) & 0xC0 ) == 0x80 )
 
 static inline const char* utf8_next( const char* s, const char* e ) {
 	while ( s < e && iscont( s + 1 ) )

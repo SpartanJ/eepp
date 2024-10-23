@@ -267,6 +267,7 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 }
 
 void FormatterPlugin::load( PluginManager* pluginManager ) {
+	Clock clock;
 	AtomicBoolScopedOp loading( mLoading, true );
 	mPluginManager = pluginManager;
 	pluginManager->subscribeMessages( this,
@@ -300,7 +301,7 @@ void FormatterPlugin::load( PluginManager* pluginManager ) {
 	mReady = !mFormatters.empty();
 	if ( mReady ) {
 		fireReadyCbs();
-		setReady();
+		setReady( clock.getElapsedTime() );
 	}
 }
 

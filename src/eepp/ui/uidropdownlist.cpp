@@ -282,9 +282,6 @@ void UIDropDownList::onItemSelected( const Event* ) {
 	sendCommonEvent( Event::OnItemSelected );
 	sendCommonEvent( Event::OnValueChange );
 	sendCommonEvent( Event::OnSelectionChanged );
-
-	if ( !mListBox->isEnabled() )
-		setFocus();
 }
 
 void UIDropDownList::show() {
