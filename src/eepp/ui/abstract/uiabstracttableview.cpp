@@ -600,6 +600,18 @@ UIWidget* UIAbstractTableView::updateCell( const Vector2<Int64>& posIndex, const
 				cell->reportStyleStateChangeRecursive();
 		}
 
+		if ( getModel()->tooltipModelRoleEnabled() ) {
+			Variant tooltip( getModel()->data( index, ModelRole::Tooltip ) );
+			if ( tooltip.isValid() ) {
+				if ( tooltip.is( Variant::Type::String ) )
+					cell->setTooltipText( tooltip.asString() );
+				else if ( tooltip.is( Variant::Type::StringPtr ) )
+					cell->setTooltipText( tooltip.asStringPtr() );
+				else
+					cell->setTooltipText( tooltip.toString() );
+			}
+		}
+
 		Variant txt( getModel()->data( index, ModelRole::Display ) );
 		if ( txt.isValid() ) {
 			if ( txt.is( Variant::Type::String ) )

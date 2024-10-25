@@ -112,6 +112,8 @@ class EE_API Model {
 
 	virtual bool classModelRoleEnabled() { return false; }
 
+	virtual bool tooltipModelRoleEnabled() { return false; }
+
 	void registerView( UIAbstractView* );
 
 	void unregisterView( UIAbstractView* );

@@ -503,8 +503,15 @@ void GitPlugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {
 	if ( mShuttingDown || isLoading() )
 		return;
 
-	if ( String::startsWith( file.getFilepath(), mGit->getGitFolder() ) &&
-		 ( file.getExtension() == "lock" || file.isDirectory() ) )
+	if ( file.isDirectory() )
+		return;
+
+	auto inGitFolder = file.getFilepath().find( "/.git/" ) != std::string::npos;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	inGitFolder |= file.getFilepath().find( "\\.git\\" ) != std::string::npos;
+#endif
+
+	if ( inGitFolder && file.getExtension() == "lock" )
 		return;
 
 	updateUI();

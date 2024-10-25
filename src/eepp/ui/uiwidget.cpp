@@ -844,16 +844,21 @@ UIWidget* UIWidget::resetClass() {
 }
 
 UIWidget* UIWidget::setClass( const std::string& cls ) {
+	size_t oldClassesCount = mClasses.size();
 	if ( mClasses.size() != 1 || mClasses[0] != cls ) {
+		bool isSet = false;
 		mClasses.clear();
-		mClasses.push_back( cls );
+		if ( !cls.empty() ) {
+			mClasses.push_back( cls );
+			isSet = true;
 
-		if ( !isSceneNodeLoading() && !isLoadingState() ) {
-			getUISceneNode()->invalidateStyle( this );
-			getUISceneNode()->invalidateStyleState( this );
+			if ( !isSceneNodeLoading() && !isLoadingState() ) {
+				getUISceneNode()->invalidateStyle( this );
+				getUISceneNode()->invalidateStyleState( this );
+			}
 		}
-
-		onClassChange();
+		if ( oldClassesCount != mClasses.size() || isSet )
+			onClassChange();
 	}
 	return this;
 }

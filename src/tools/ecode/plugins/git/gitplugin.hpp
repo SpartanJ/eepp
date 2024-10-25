@@ -32,6 +32,7 @@ static constexpr const char* GIT_NOT_BOLD = "notbold";
 static constexpr const char* GIT_TAG = "tag";
 static constexpr const char* GIT_REPO = "repo";
 static constexpr const char* GIT_STASH = "git-stash";
+static constexpr const char* GIT_STASH_TOOLTIP_CLASS = "git-stash-tooltip";
 
 class GitPlugin : public PluginBase {
   public:

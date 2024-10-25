@@ -50,7 +50,9 @@ class GitBranchModel : public Model {
 
 	Variant data( const ModelIndex& index, ModelRole role ) const;
 
-	virtual bool classModelRoleEnabled() { return true; }
+	bool classModelRoleEnabled() { return true; }
+
+	bool tooltipModelRoleEnabled() { return true; }
 
 	size_t getHash() const { return mHash; }
 

@@ -392,7 +392,7 @@ Git::Branch parseLocalBranch( const std::string_view& raw ) {
 	std::string remote( std::string{ split[2] } );
 	std::string commitHash( std::string{ split[3] } );
 	auto ret = Git::Branch{ std::move( name ), std::move( remote ), Git::RefType::Head,
-							std::move( commitHash ) };
+							std::move( commitHash ), "" };
 	if ( split.size() > 4 )
 		parseAheadBehind( split[4], ret );
 	return ret;
@@ -406,7 +406,7 @@ static Git::Branch parseRemoteBranch( std::string_view raw ) {
 	std::string remote( std::string{ split[1] } );
 	std::string commitHash( std::string{ split[3] } );
 	auto ret = Git::Branch{ std::move( name ), std::move( remote ), Git::RefType::Remote,
-							std::move( commitHash ) };
+							std::move( commitHash ), "" };
 	if ( split.size() > 4 )
 		parseAheadBehind( split[4], ret );
 	return ret;
@@ -460,22 +460,26 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 		} );
 	}
 
-	if ( ( ref & RefType::Stash ) && EXIT_SUCCESS == git( "stash list", projectDir, buf ) ) {
+	if ( ( ref & RefType::Stash ) &&
+		 EXIT_SUCCESS == git( "stash list --date=format:\"%Y-%m-%d %H:%M\"", projectDir, buf ) ) {
 		branches.reserve( branches.size() + StringHelper::countLines( buf ) );
-		std::string ptrn( "(stash@{%d+}):%s(.*)" );
+		std::string ptrn( "stash@{(.*)}:%s(.*)" );
 		LuaPattern pattern( ptrn );
+		Uint64 id = 0;
 		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
 			PatternMatcher::Range matches[3];
 			if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
-				std::string id(
+				std::string date(
 					line.substr( matches[1].start, matches[1].end - matches[1].start ) );
 				std::string name(
 					line.substr( matches[2].start, matches[2].end - matches[2].start ) );
 				Git::Branch newBranch;
 				newBranch.type = RefType::Stash;
 				newBranch.name = std::move( name );
-				newBranch.remote = std::move( id );
+				newBranch.remote = String::format( "stash@{%llu}", id );
+				newBranch.date = date;
 				branches.emplace_back( std::move( newBranch ) );
+				id++;
 			}
 		} );
 	}

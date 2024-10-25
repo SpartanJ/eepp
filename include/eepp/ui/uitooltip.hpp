@@ -130,15 +130,17 @@ class EE_API UITooltip : public UIWidget {
 	bool isWordWrap() const;
 
   protected:
-	Text* mTextCache;
+	Text* mTextCache{ nullptr };
 	UIFontStyleConfig mStyleConfig;
 	Vector2f mAlignOffset;
 	Time mTooltipTime;
-	UINode* mTooltipOf;
+	UINode* mTooltipOf{ nullptr };
 	String mStringBuffer;
 	TextTransform::Value mTextTransform{ TextTransform::None };
 	bool mDontAutoHideOnMouseMove{ false };
 	bool mUsingCustomStyling{ false };
+
+	virtual void onAlignChange();
 
 	virtual void onAlphaChange();
 

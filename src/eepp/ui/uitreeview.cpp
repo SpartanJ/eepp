@@ -7,6 +7,7 @@
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uitreeview.hpp>
 #include <stack>
 
@@ -253,6 +254,25 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 			cell->setLoadingState( false );
 			if ( needsReloadStyle )
 				cell->reportStyleStateChangeRecursive();
+		}
+
+		if ( getModel()->tooltipModelRoleEnabled() ) {
+			Variant cls( getModel()->data( index, ModelRole::TooltipClass ) );
+			if ( cls.isValid() ) {
+				cell->createTooltip()->setClass( cls.toString() );
+			} else {
+				cell->createTooltip()->resetClass();
+			}
+
+			Variant tooltip( getModel()->data( index, ModelRole::Tooltip ) );
+			if ( tooltip.isValid() ) {
+				if ( tooltip.is( Variant::Type::String ) )
+					cell->setTooltipText( tooltip.asString() );
+				else if ( tooltip.is( Variant::Type::StringPtr ) )
+					cell->setTooltipText( tooltip.asStringPtr() );
+				else
+					cell->setTooltipText( tooltip.toString() );
+			}
 		}
 
 		Variant txt( getModel()->data( index, ModelRole::Display ) );

@@ -489,6 +489,10 @@ Anchor.error:hover {
 .indent_tab_listbox_item combobox::dropdownlist::listbox::item {
 	font-family: monospace;
 }
+.git-stash-tooltip {
+	text-align: left;
+}
+
 @media (prefers-color-scheme: light) {
 
 .app_hint {

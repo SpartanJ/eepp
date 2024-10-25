@@ -42,6 +42,42 @@ static bool isFlatpakEnv() {
 
 #define PROCESS_PTR ( static_cast<struct subprocess_s*>( mProcess ) )
 
+static std::vector<std::string> parseArgs( const std::string& str ) {
+	bool inquote = false;
+	char quoteChar = 0;
+	std::vector<std::string> res;
+	std::string curstr;
+
+	for ( size_t i = 0; i < str.size(); ++i ) {
+		char c = str[i];
+		if ( inquote ) {
+			if ( c == quoteChar ) {
+				inquote = false;
+			} else if ( c == '\\' && i + 1 < str.size() && str[i + 1] == quoteChar ) {
+				curstr += quoteChar;
+				++i;
+			} else {
+				curstr += c;
+			}
+		} else if ( c == ' ' || c == '\t' ) {
+			if ( !curstr.empty() ) {
+				res.push_back( curstr );
+				curstr.clear();
+			}
+		} else if ( c == '\'' || c == '"' ) {
+			inquote = true;
+			quoteChar = c;
+		} else {
+			curstr += c;
+		}
+	}
+
+	if ( !curstr.empty() )
+		res.push_back( curstr );
+
+	return res;
+}
+
 Process::Process() {}
 
 Process::Process( const std::string& command, Uint32 options,
@@ -76,8 +112,7 @@ bool Process::create( const std::string& command, Uint32 options,
 bool Process::create( const std::string& command, const std::string& args, Uint32 options,
 					  const std::unordered_map<std::string, std::string>& environment,
 					  const std::string& workingDirectory ) {
-	return create( command, String::split( args, " ", "", "\"", true ), options, environment,
-				   workingDirectory );
+	return create( command, parseArgs( args ), options, environment, workingDirectory );
 }
 
 bool Process::create( const std::string& command, const std::vector<std::string>& cmdArr,

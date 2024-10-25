@@ -211,6 +211,7 @@ class Git {
 		}
 		return nullptr;
 	}
+
 	struct Branch {
 		/** Branch name */
 		std::string name;
@@ -220,6 +221,10 @@ class Git {
 		RefType type = All;
 		/** last commit on this branch, may be empty **/
 		std::string lastCommit;
+
+		/** date string in yyyy-mm-dd hh:mn */
+		std::string date;
+
 		/** if it's HEAD how much ahead and behind the current local branch is against remote */
 		int64_t ahead{ 0 };
 		int64_t behind{ 0 };
