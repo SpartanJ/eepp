@@ -5,6 +5,8 @@
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
+#include <array>
+
 namespace EE { namespace UI {
 
 enum class InnerWidgetOrientation {
@@ -117,9 +119,9 @@ class EE_API UIPushButton : public UIWidget {
 
 	void updateTextBox();
 
-	Vector2f packLayout( const std::vector<UIWidget*>& widgets, const Rectf& padding );
+	Vector2f packLayout( const std::array<UIWidget*, 3>& widgets, const Rectf& padding );
 
-	Vector2f calcLayoutSize( const std::vector<UIWidget*>& widgets, const Rectf& padding ) const;
+	Vector2f calcLayoutSize( const std::array<UIWidget*, 3>& widgets, const Rectf& padding ) const;
 };
 
 }} // namespace EE::UI

@@ -177,6 +177,8 @@ bool UITreeView::tryOpenModelIndex( const ModelIndex& index, bool forceUpdate ) 
 
 UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 								 const ModelIndex& index ) {
+	mUISceneNode->invalidateStyle( this );
+	mUISceneNode->invalidateStyleState( this, true );
 	widget->setParent( rowWidget );
 	widget->unsetFlags( UI_AUTO_SIZE );
 	widget->setClipType( mDisableCellClipping ? ClipType::None : ClipType::ContentBox );

@@ -548,6 +548,8 @@ UIWidget* UIAbstractTableView::createCell( UIWidget* rowWidget, const ModelIndex
 
 UIWidget* UIAbstractTableView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 										  const ModelIndex& index ) {
+	mUISceneNode->invalidateStyle( this );
+	mUISceneNode->invalidateStyleState( this, true );
 	widget->setParent( rowWidget );
 	widget->unsetFlags( UI_AUTO_SIZE );
 	widget->setClipType( ClipType::ContentBox );

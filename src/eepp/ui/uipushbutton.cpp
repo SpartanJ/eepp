@@ -160,7 +160,7 @@ void UIPushButton::onAutoSize() {
 	}
 }
 
-Vector2f UIPushButton::calcLayoutSize( const std::vector<UIWidget*>& widgets,
+Vector2f UIPushButton::calcLayoutSize( const std::array<UIWidget*, 3>& widgets,
 									   const Rectf& padding ) const {
 	Vector2f totSize{ padding.Left, padding.Top + padding.Bottom };
 	UIWidget* widget;
@@ -182,8 +182,8 @@ Vector2f UIPushButton::calcLayoutSize( const std::vector<UIWidget*>& widgets,
 	return totSize;
 }
 
-Vector2f UIPushButton::packLayout( const std::vector<UIWidget*>& widgets, const Rectf& padding ) {
-	std::vector<Vector2f> pos( widgets.size() );
+Vector2f UIPushButton::packLayout( const std::array<UIWidget*, 3>& widgets, const Rectf& padding ) {
+	std::array<Vector2f, 3> pos;
 	Vector2f totSize{ padding.Left, padding.Top + padding.Bottom };
 	UIWidget* widget;
 	for ( size_t i = 0; i < widgets.size(); i++ ) {

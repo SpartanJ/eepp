@@ -672,6 +672,7 @@ void UISceneNode::invalidateStyle( UIWidget* node, bool tryReinsert ) {
 	if ( node->isClosing() )
 		return;
 
+	// Already invalidated?
 	if ( mDirtyStyle.count( node ) > 0 ) {
 		if ( !tryReinsert )
 			return;
@@ -679,12 +680,17 @@ void UISceneNode::invalidateStyle( UIWidget* node, bool tryReinsert ) {
 			mDirtyStyle.erase( node );
 	}
 
-	for ( auto& dirtyNode : mDirtyStyle )
-		if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) )
+	// Any parent dirty?
+	Node* parent = node->getParent();
+	while ( parent != nullptr ) {
+		if ( parent->isWidget() && mDirtyStyle.count( parent->asType<UIWidget>() ) > 0 )
 			return;
+		parent = parent->getParent();
+	}
 
 	std::vector<UIWidget*> eraseList;
 
+	// Any child in list? remove it
 	for ( auto widget : mDirtyStyle )
 		if ( NULL == widget || node->isParentOf( widget ) )
 			eraseList.push_back( widget );
@@ -702,6 +708,7 @@ void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimation
 	if ( node->isClosing() )
 		return;
 
+	// Already invalidated?
 	if ( mDirtyStyleState.count( node ) > 0 ) {
 		if ( !tryReinsert )
 			return;
@@ -709,12 +716,17 @@ void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimation
 			mDirtyStyleState.erase( node );
 	}
 
-	for ( auto& dirtyNode : mDirtyStyleState )
-		if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) )
+	// Any parent dirty?
+	Node* parent = node->getParent();
+	while ( parent != nullptr ) {
+		if ( parent->isWidget() && mDirtyStyleState.count( parent->asType<UIWidget>() ) > 0 )
 			return;
+		parent = parent->getParent();
+	}
 
 	std::vector<UIWidget*> eraseList;
 
+	// Any child in list? remove it
 	for ( auto widget : mDirtyStyleState )
 		if ( NULL == widget || node->isParentOf( widget ) )
 			eraseList.push_back( widget );
