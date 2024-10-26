@@ -56,16 +56,21 @@ function postsymlinklib(src_path, dst_path, lib, arch)
 		else
 			postbuildcommands { "ln -sf \"" .. src_path .. lib .. "." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
 		end
+
 	filter { "configurations:debug*", "system:windows", arch }
 		if os_ishost("windows") then
 			postbuildcommands { "mklink \"" .. dst_path .. lib .. "-debug.dll\"" .. " \"" .. src_path .. lib .. "-debug.dll\" || ver>nul" }
 		else
 			postbuildcommands { "ln -sf \"" .. src_path .. lib .. "-debug." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
 		end
+
 	filter { "configurations:release*", "not system:windows", arch }
 		postbuildcommands { "ln -sf \"" .. src_path .. "lib" .. lib .. "." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
+
 	filter { "configurations:debug*", "not system:windows", arch }
 		postbuildcommands { "ln -sf \"" .. src_path .. "lib" .. lib .. "-debug." .. get_dll_extension() .. "\" \"" .. dst_path .. "\"" }
+
+	filter {}
 end
 
 function print_table( table_ref )
@@ -226,6 +231,8 @@ function build_arch_configuration()
 
 	filter {"architecture:x86_64", "options:cc=mingw"}
 		buildoptions { "-D__USE_MINGW_ANSI_STDIO=1 -B /usr/bin/x86_64-w64-mingw32-" }
+
+	filter {}
 end
 
 function build_base_configuration( package_name )
@@ -257,6 +264,8 @@ function build_base_configuration( package_name )
 		if _OPTIONS["with-emscripten-pthreads"] then
 			buildoptions { "-s USE_PTHREADS=1" }
 		end
+
+	filter {}
 end
 
 function build_base_cpp_configuration( package_name )
@@ -297,6 +306,8 @@ function build_base_cpp_configuration( package_name )
 		if _OPTIONS["with-emscripten-pthreads"] then
 			buildoptions { "-s USE_PTHREADS=1" }
 		end
+
+	filter {}
 end
 
 function get_architecture()
@@ -452,6 +463,8 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	filter { "action:export-compile-commands", "system:macosx" }
 		buildoptions { "-std=c++17" }
+
+	filter {}
 end
 
 function generate_os_links()
@@ -806,6 +819,8 @@ function build_eepp( build_name )
 
 	filter { "action:export-compile-commands", "system:macosx" }
 		buildoptions { "-std=c++17" }
+
+	filter {}
 end
 
 function target_dir_lib(path)
@@ -819,6 +834,7 @@ function target_dir_lib(path)
 		targetdir("libs/" .. os.target() .. "/arm64/" .. path .. "/")
 	filter "architecture:universal"
 		targetdir("libs/" .. os.target() .. "/universal/" .. path .. "/")
+	filter {}
 end
 
 function target_dir_thirdparty()
