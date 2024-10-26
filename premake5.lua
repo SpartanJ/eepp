@@ -913,6 +913,8 @@ workspace "eepp"
 		syslibdirs { "/usr/local/lib" }
 		externalincludedirs { "/usr/local/include" }
 
+	filter {}
+
 	project "SOIL2-static"
 		kind "StaticLib"
 		language "C"
@@ -1049,6 +1051,7 @@ workspace "eepp"
 			buildoptions { "/TP" }
 		filter "action:not vs*"
 			language "C"
+		filter {}
 
 	project "jpeg-compressor-static"
 		kind "StaticLib"
@@ -1078,6 +1081,7 @@ workspace "eepp"
 			incdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/include/" }
 		filter { "options:windows-mingw-build", "architecture:x86_64" }
 			incdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/include/" }
+		filter {}
 
 	project "efsw-static"
 		kind "StaticLib"
@@ -1124,6 +1128,7 @@ workspace "eepp"
 			}
 		filter "system:not windows"
 			files { "src/thirdparty/efsw/src/efsw/platform/posix/*.cpp" }
+		filter {}
 
 	project "eepp-maps-static"
 		kind "StaticLib"
@@ -1139,6 +1144,7 @@ workspace "eepp"
 		target_dir_lib("")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
+		filter {}
 
 	project "eepp-maps"
 		kind "SharedLib"
@@ -1153,6 +1159,7 @@ workspace "eepp"
 		target_dir_lib("")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
+		filter {}
 
 	project "eepp-physics-static"
 		kind "StaticLib"
@@ -1168,6 +1175,7 @@ workspace "eepp"
 		target_dir_lib("")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
+		filter {}
 
 	project "eepp-physics"
 		kind "SharedLib"
@@ -1182,6 +1190,7 @@ workspace "eepp"
 		target_dir_lib("")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
+		filter {}
 
 	project "eterm-static"
 		kind "StaticLib"
@@ -1201,6 +1210,7 @@ workspace "eepp"
 			buildoptions { "-Wall" }
 		filter { "action:export-compile-commands", "system:macosx" }
 			buildoptions { "-std=c++17" }
+		filter {}
 
 	-- Library
 	if not _OPTIONS["disable-static-build"] then
@@ -1342,6 +1352,7 @@ workspace "eepp"
 			links { "CoreFoundation.framework", "CoreServices.framework" }
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
+		filter {}
 
 	if os.istarget("macosx") then
 	project "ecode-macos-helper-static"
@@ -1398,6 +1409,7 @@ workspace "eepp"
 			links { "bsd" }
 		filter "system:bsd"
 			links { "util" }
+		filter {}
 
 	project "eterm"
 		set_kind()
@@ -1417,6 +1429,7 @@ workspace "eepp"
 			links { "util" }
 		filter "system:haiku"
 			links { "bsd" }
+		filter {}
 
 	project "eepp-texturepacker"
 		kind "ConsoleApp"
