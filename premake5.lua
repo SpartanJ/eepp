@@ -1291,6 +1291,12 @@ workspace "eepp"
 		incdirs { "src/thirdparty" }
 		build_link_configuration( "eepp-http-request", true )
 
+	project "eepp-ui-custom-widget"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_custom_widget/*.cpp" }
+		build_link_configuration( "eepp-ui-custom-widget", true )
+
 	project "eepp-ui-hello-world"
 		set_kind()
 		language "C++"
