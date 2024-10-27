@@ -27,6 +27,7 @@ newoption {
 		{ "SDL2",  "SDL2" },
 	}
 }
+newoption { trigger = "arch", description = "Used exclusively to indicate premake the architecture of the dependencies that need to be downloaded" }
 
 function get_dll_extension()
 	if os.target() == "macosx" then
@@ -155,6 +156,7 @@ remote_sdl2_version = "SDL2-2.30.8"
 remote_sdl2_devel_src_url = "https://libsdl.org/release/SDL2-2.30.8.zip"
 remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-2.30.8-VC.zip"
 remote_sdl2_devel_mingw_url = "https://www.libsdl.org/release/SDL2-devel-2.30.8-mingw.zip"
+remote_sdl2_arm64_cross_tools_path = "/usr/local/cross-tools/aarch64-w64-mingw32"
 
 function incdirs( dirs )
 	if is_xcode() then
@@ -189,7 +191,7 @@ function copy_sdl()
 	if _OPTIONS["windows-vc-build"] then
 		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/lib/x64/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/SDL2.dll" )
 		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/lib/x64/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/SDL2.dll" )
-	elseif _OPTIONS["windows-mingw-build"] then
+	elseif _OPTIONS["windows-mingw-build"] and _OPTIONS["arch"] ~= "arm64" then
 		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/bin/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/SDL2.dll" )
 		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/bin/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/SDL2.dll" )
 	end
@@ -216,9 +218,11 @@ function download_and_extract_dependencies()
 		if _OPTIONS["windows-vc-build"] then
 			download_and_extract_sdl(remote_sdl2_devel_vc_url)
 			copy_sdl()
-		elseif _OPTIONS["windows-mingw-build"] then
+		elseif _OPTIONS["windows-mingw-build"] and _OPTIONS["arch"] ~= "arm64" then
 			download_and_extract_sdl(remote_sdl2_devel_mingw_url)
 			copy_sdl()
+		elseif _OPTIONS["windows-mingw-build"] and _OPTIONS["arch"] == "arm64" then
+			download_and_extract_sdl(remote_sdl2_devel_src_url)
 		elseif os.istarget("ios") then
 			download_and_extract_sdl(remote_sdl2_devel_src_url)
 		end
@@ -230,7 +234,9 @@ function build_arch_configuration()
 		buildoptions { "-D__USE_MINGW_ANSI_STDIO=1 -B /usr/bin/i686-w64-mingw32-" }
 
 	filter {"architecture:x86_64", "options:cc=mingw"}
-		buildoptions { "-D__USE_MINGW_ANSI_STDIO=1 -B /usr/bin/x86_64-w64-mingw32-" }
+		if _OPTIONS["arch"] ~= "arm64" then
+			buildoptions { "-D__USE_MINGW_ANSI_STDIO=1 -B /usr/bin/x86_64-w64-mingw32-" }
+		end
 
 	filter {}
 end
@@ -441,7 +447,12 @@ function build_link_configuration( package_name, use_ee_icon )
 		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/lib/", "/usr/i686-w64-mingw32/sys-root/mingw/lib/" }
 
 	filter { "options:windows-mingw-build", "architecture:x86_64" }
-		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/lib/", "/usr/x86_64-w64-mingw32/sys-root/mingw/lib/" }
+		if _OPTIONS["arch"] ~= "arm64" then
+			syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/lib/", "/usr/x86_64-w64-mingw32/sys-root/mingw/lib/" }
+		end
+
+	filter { "options:windows-mingw-build", "options:arch=arm64" }
+		syslibdirs { remote_sdl2_arm64_cross_tools_path.. "/lib/" }
 
 	filter "system:emscripten"
 		targetname ( package_name .. extension )
@@ -811,7 +822,12 @@ function build_eepp( build_name )
 		incdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/include/" }
 
 	filter { "options:windows-mingw-build", "architecture:x86_64" }
-		incdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/include/" }
+		if _OPTIONS["arch"] ~= "arm64" then
+			incdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/include/" }
+		end
+
+	filter { "options:windows-mingw-build", "options:arch=arm64" }
+		incdirs { remote_sdl2_arm64_cross_tools_path .. "/include/" }
 
 	filter "action:vs*"
 		incdirs { "src/thirdparty/libzip/vs" }
@@ -1051,7 +1067,6 @@ workspace "eepp"
 			buildoptions { "/TP" }
 		filter "action:not vs*"
 			language "C"
-		filter {}
 
 	project "jpeg-compressor-static"
 		kind "StaticLib"
@@ -1078,10 +1093,13 @@ workspace "eepp"
 		filter "options:windows-vc-build"
 			incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
 		filter { "options:windows-mingw-build", "architecture:x86" }
-			incdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/include/" }
+				incdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/include/" }
 		filter { "options:windows-mingw-build", "architecture:x86_64" }
-			incdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/include/" }
-		filter {}
+			if _OPTIONS["arch"] ~= "arm64" then
+				incdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/include/" }
+			end
+		filter { "options:windows-mingw-build", "options:arch=arm64" }
+			incdirs { remote_sdl2_arm64_cross_tools_path .."/include/" }
 
 	project "efsw-static"
 		kind "StaticLib"
@@ -1128,7 +1146,6 @@ workspace "eepp"
 			}
 		filter "system:not windows"
 			files { "src/thirdparty/efsw/src/efsw/platform/posix/*.cpp" }
-		filter {}
 
 	project "eepp-maps-static"
 		kind "StaticLib"
@@ -1144,7 +1161,6 @@ workspace "eepp"
 		target_dir_lib("")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
-		filter {}
 
 	project "eepp-maps"
 		kind "SharedLib"
@@ -1159,7 +1175,6 @@ workspace "eepp"
 		target_dir_lib("")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
-		filter {}
 
 	project "eepp-physics-static"
 		kind "StaticLib"
@@ -1175,7 +1190,6 @@ workspace "eepp"
 		target_dir_lib("")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
-		filter {}
 
 	project "eepp-physics"
 		kind "SharedLib"
@@ -1190,7 +1204,6 @@ workspace "eepp"
 		target_dir_lib("")
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
-		filter {}
 
 	project "eterm-static"
 		kind "StaticLib"
@@ -1210,7 +1223,6 @@ workspace "eepp"
 			buildoptions { "-Wall" }
 		filter { "action:export-compile-commands", "system:macosx" }
 			buildoptions { "-std=c++17" }
-		filter {}
 
 	-- Library
 	if not _OPTIONS["disable-static-build"] then
@@ -1352,7 +1364,6 @@ workspace "eepp"
 			links { "CoreFoundation.framework", "CoreServices.framework" }
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
-		filter {}
 
 	if os.istarget("macosx") then
 	project "ecode-macos-helper-static"
@@ -1409,7 +1420,6 @@ workspace "eepp"
 			links { "bsd" }
 		filter "system:bsd"
 			links { "util" }
-		filter {}
 
 	project "eterm"
 		set_kind()
@@ -1429,7 +1439,6 @@ workspace "eepp"
 			links { "util" }
 		filter "system:haiku"
 			links { "bsd" }
-		filter {}
 
 	project "eepp-texturepacker"
 		kind "ConsoleApp"

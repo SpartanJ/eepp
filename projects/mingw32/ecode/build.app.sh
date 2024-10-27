@@ -14,11 +14,11 @@ for i in "$@"; do
       shift
       shift
       ;;
-    arch=*)
+    --arch=*)
       ARCH_CONFIG="${i#*=}"
       shift
       ;;
-    buildtype=*)
+    --buildtype=*)
       BUILDTYPE_CONFIG="${i#*=}"
       shift
       ;;
@@ -34,16 +34,25 @@ fi
 if [[ "$ARCH_CONFIG" == "x86" ]]; then
   ARCH=x86
   ARCHI=i686
+elif [[ "$ARCH_CONFIG" == "arm64" ]]; then
+  ARCH=arm64
+  ARCHI=arm64
 fi
 
-../make.sh -e config="$BUILDTYPE"_"$ARCH" -j"$(nproc)" ecode
+../make.sh -e config="$BUILDTYPE"_"$ARCH" -j"$(nproc)" ecode || exit
 
 SDLVER=$(grep "remote_sdl2_version =" ../../../premake5.lua | awk '{print $3}' | tr -d '"')
 rm -rf ./ecode
 mkdir -p ecode/assets
 cp ../../../bin/ecode.exe ecode/
 cp ../../../bin/eepp.dll ecode/
+
+if [[ "$ARCH_CONFIG" == "arm64" ]]; then
+cp "/usr/local/cross-tools/aarch64-w64-mingw32/bin/SDL2.dll" ecode/
+else
 cp ../../../src/thirdparty/"$SDLVER"/$ARCHI-w64-mingw32/bin/SDL2.dll ecode/
+fi
+
 mkdir -p ecode/assets/colorschemes
 mkdir -p ecode/assets/fonts
 mkdir -p ecode/assets/i18n
