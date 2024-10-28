@@ -180,6 +180,8 @@ class EE_API UICodeEditorSplitter {
 
 	void forEachTabWidget( std::function<void( UITabWidget* )> run ) const;
 
+	void forEachTabWidgetStoppable( std::function<bool( UITabWidget* )> run ) const;
+
 	void zoomIn();
 
 	void zoomOut();

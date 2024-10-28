@@ -3726,6 +3726,8 @@ UICodeEditor::getTextRangeRectangles( const TextRange& range, const Vector2f& st
 				ln == range.start().line() ? range.start() : mDoc->startOfLine( { ln, 0 } ) );
 			auto toInfo = mDocView.getVisibleLineRange(
 				ln == range.end().line() ? range.end() : mDoc->endOfLine( { ln, 0 } ) );
+			auto realFromInfoVisibleIndex = fromInfo.visibleIndex;
+			auto realToInfoVisibleIndex = toInfo.visibleIndex;
 			if ( visibleLineRange ) {
 				if ( fromInfo.visibleIndex < visibleLineRange->first )
 					fromInfo.visibleIndex = visibleLineRange->first;
@@ -3740,7 +3742,7 @@ UICodeEditor::getTextRangeRectangles( const TextRange& range, const Vector2f& st
 				Vector2d startOffset;
 				Vector2d endOffset;
 				if ( ln == range.start().line() && fromInfo.range.start().line() == ln &&
-					 fromInfo.visibleIndex == static_cast<VisibleIndex>( visibleIdx ) ) {
+					 realFromInfoVisibleIndex == static_cast<VisibleIndex>( visibleIdx ) ) {
 					startOffset = getTextPositionOffset( range.start(), lh );
 				} else {
 					startOffset = getTextPositionOffset( info, lh );
@@ -3749,7 +3751,7 @@ UICodeEditor::getTextRangeRectangles( const TextRange& range, const Vector2f& st
 				selRect.Bottom = selRect.Top + lh;
 				selRect.Left = startScroll.x + startOffset.x;
 				if ( ln == range.end().line() && toInfo.range.end().line() == ln &&
-					 toInfo.visibleIndex == static_cast<VisibleIndex>( visibleIdx ) ) {
+					 realToInfoVisibleIndex == static_cast<VisibleIndex>( visibleIdx ) ) {
 					endOffset = getTextPositionOffset( range.end(), lh );
 				} else {
 					auto nextInfo = mDocView.getVisibleIndexPosition(

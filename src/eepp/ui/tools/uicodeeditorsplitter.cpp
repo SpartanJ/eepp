@@ -835,6 +835,13 @@ void UICodeEditorSplitter::forEachTabWidget( std::function<void( UITabWidget* )>
 		run( widget );
 }
 
+void UICodeEditorSplitter::forEachTabWidgetStoppable(
+	std::function<bool( UITabWidget* )> run ) const {
+	for ( auto widget : mTabWidgets )
+		if ( run( widget ) )
+			return;
+}
+
 void UICodeEditorSplitter::forEachEditorStoppable(
 	std::function<bool( UICodeEditor* )> run ) const {
 	for ( auto tabWidget : mTabWidgets ) {

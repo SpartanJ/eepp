@@ -580,6 +580,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void updateEditorTabTitle( UICodeEditor* editor );
 
+	void updateNonUniqueTabTitles();
+
 	std::string titleFromEditor( UICodeEditor* editor );
 
 	bool onCloseRequestCallback( EE::Window::Window* );

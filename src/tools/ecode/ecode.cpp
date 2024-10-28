@@ -50,6 +50,7 @@ bool firstUpdate = true;
 App* appInstance = nullptr;
 
 static const Uint32 APP_LAYOUT_STYLE_MARKER = String::hash( "app_layout_style" );
+static const auto NOT_UNIQUE_FILENAME = "not_unique";
 
 void appLoop() {
 	appInstance->mainLoop();
@@ -152,14 +153,108 @@ std::string App::titleFromEditor( UICodeEditor* editor ) {
 	return editor->getDocument().isDirty() ? title + "*" : title;
 }
 
+void App::updateNonUniqueTabTitles() {
+	if ( mSplitter == nullptr )
+		return;
+	mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
+		if ( editor->hasClass( NOT_UNIQUE_FILENAME ) )
+			updateEditorTabTitle( editor );
+	} );
+}
+
 void App::updateEditorTabTitle( UICodeEditor* editor ) {
+	const auto isUniqueTabTitle = [this]( UITab* tab ) -> bool {
+		bool unique = true;
+		auto doc = tab->getOwnedWidget()->asType<UICodeEditor>()->getDocumentRef();
+		auto fileName = doc->getFilename();
+		mSplitter->forEachTabWidgetStoppable( [tab, &unique, &fileName,
+											   &doc]( UITabWidget* tabWidget ) {
+			for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
+				UITab* curTab = tabWidget->getTab( i );
+				if ( !curTab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) )
+					continue;
+				auto curDoc = curTab->getOwnedWidget()->asType<UICodeEditor>()->getDocumentRef();
+				if ( curDoc && tab != curTab && fileName == curDoc->getFilename() &&
+					 doc->getFilePath() != curDoc->getFilePath() ) {
+					unique = false;
+					return true;
+				}
+			}
+			return false;
+		} );
+		return unique;
+	};
+
+	const auto getTabWithSameTitle = [this]( UITab* tab ) -> std::vector<UITab*> {
+		std::vector<UITab*> tabs{ tab };
+		auto doc = tab->getOwnedWidget()->asType<UICodeEditor>()->getDocumentRef();
+		const auto& fileName = doc->getFilename();
+		mSplitter->forEachTabWidget( [tab, &tabs, &fileName]( UITabWidget* tabWidget ) {
+			for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
+				UITab* curTab = tabWidget->getTab( i );
+				if ( !curTab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) )
+					continue;
+				auto curDoc = curTab->getOwnedWidget()->asType<UICodeEditor>()->getDocumentRef();
+				if ( curDoc && tab != curTab && fileName == curDoc->getFilename() )
+					tabs.push_back( curTab );
+			}
+		} );
+		return tabs;
+	};
+
+	const auto getUniqueNameForTabs =
+		[]( const std::vector<UITab*>& tabs ) -> std::unordered_map<UITab*, String> {
+		std::unordered_map<UITab*, String> uniqueTitles;
+
+		size_t subFoldersDisplayed = 1;
+		String firstTitle;
+		do {
+			for ( UITab* tab : tabs ) {
+				auto doc = tab->getOwnedWidget()->asType<UICodeEditor>()->getDocumentRef();
+				auto path = doc->getFilePath();
+				std::string fileName = FileSystem::fileNameFromPath( path );
+				std::string containingFolder = FileSystem::fileRemoveFileName( path );
+				std::vector<std::string> displayedFolders;
+
+				for ( size_t i = 0; i < subFoldersDisplayed; i++ ) {
+					FileSystem::dirRemoveSlashAtEnd( containingFolder );
+					displayedFolders.insert( displayedFolders.begin(),
+											 FileSystem::fileNameFromPath( containingFolder ) );
+					containingFolder = FileSystem::fileRemoveFileName( containingFolder );
+				}
+
+				uniqueTitles[tab] = fileName + " - " + String::join( displayedFolders, '/' );
+			}
+
+			subFoldersDisplayed++;
+			firstTitle = uniqueTitles.begin()->second;
+		} while ( std::all_of( ++uniqueTitles.begin(), uniqueTitles.end(),
+							   [&firstTitle]( const std::pair<UITab*, String>& title ) {
+								   return title.second == firstTitle;
+							   } ) );
+
+		return uniqueTitles;
+	};
+
 	if ( editor == nullptr )
 		return;
 	if ( editor->getData() ) {
 		UITab* tab = (UITab*)editor->getData();
-		tab->setText( editor->getDocument().getFilename() );
+		auto doc = editor->getDocumentRef();
+		tab->setText( doc->getFilename() );
 
-		bool dirty = editor->getDocument().isDirty();
+		if ( tab->getText() != doc->getDefaultFileName() && !isUniqueTabTitle( tab ) ) {
+			auto tabsTitles = getUniqueNameForTabs( getTabWithSameTitle( tab ) );
+			for ( auto [ntab, title] : tabsTitles ) {
+				ntab->setText( title );
+				if ( ntab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) )
+					ntab->getOwnedWidget()->asType<UICodeEditor>()->addClass( NOT_UNIQUE_FILENAME );
+			}
+		} else if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+			tab->getOwnedWidget()->asType<UICodeEditor>()->removeClass( NOT_UNIQUE_FILENAME );
+		}
+
+		bool dirty = doc->isDirty();
 		tab->removeClass( dirty ? "tab_clear" : "tab_modified" );
 		tab->addClass( dirty ? "tab_modified" : "tab_clear" );
 	}
@@ -2246,7 +2341,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			return;
 		std::string processPath = Sys::getProcessFilePath();
 		if ( !processPath.empty() ) {
-			std::string cmd( processPath + " -x \"" + editor->getDocumentRef()->getFilePath() + "\"" );
+			auto cmd( processPath + " -x \"" + editor->getDocumentRef()->getFilePath() + "\"" );
 			Sys::execute( cmd );
 		}
 	} );
@@ -2290,6 +2385,11 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		editor->getKeyBindings().reset();
 		editor->getKeyBindings().addKeybindsStringUnordered( mKeybindings );
 	}
+
+	editor->on( Event::OnClose, [this, editor]( auto ) {
+		if ( editor->hasClass( NOT_UNIQUE_FILENAME ) )
+			updateNonUniqueTabTitles();
+	} );
 
 	editor->on( Event::OnDocumentClosed, [this]( const Event* event ) {
 		if ( !appInstance )
