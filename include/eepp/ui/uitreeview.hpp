@@ -141,8 +141,6 @@ class EE_API UITreeView : public UIAbstractTableView {
 											 const Float& )>
 		TreeViewCallback;
 
-	void traverseTree( TreeViewCallback ) const;
-
 	mutable std::unordered_map<void*, MetadataForIndex> mViewMetadata;
 
 	virtual size_t getItemCount() const;
@@ -168,6 +166,19 @@ class EE_API UITreeView : public UIAbstractTableView {
 	virtual void onModelSelectionChange();
 
 	virtual void bindNavigationClick( UIWidget* widget );
+
+	struct TraverseTreeVars {
+		UITreeView::TreeViewCallback callback;
+		const Model& model;
+		int indentLevel = 0;
+		Float yOffset = 0;
+		int rowIndex = -1;
+		Float rowHeight = 0;
+	};
+
+	IterationDecision traverseIndex( TraverseTreeVars& v, const ModelIndex& index ) const;
+
+	void traverseTree( TreeViewCallback ) const;
 };
 
 }} // namespace EE::UI

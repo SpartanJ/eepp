@@ -1905,12 +1905,9 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 
 	Float fontSize = editor->getUISceneNode()->getUIThemeManager()->getDefaultFontSize();
 
-	bool isPath = true;
-	std::string path( editor->getDocument().getFilePath() );
-	if ( path.empty() ) {
-		path = editor->getDocument().getFilename();
-		isPath = false;
-	}
+	bool isPath = !editor->getDocument().getFilePath().empty();
+	std::string path( !isPath ? editor->getDocument().getFilename()
+							  : editor->getDocument().getFilePath() );
 
 	Color textColor( editor->getColorScheme().getEditorColor(
 		mHoveringBreadcrumb == editor ? SyntaxStyleTypes::Text : SyntaxStyleTypes::LineNumber2 ) );

@@ -3837,19 +3837,22 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
 		if ( !mDocView.isLineVisible( i ) )
 			continue;
-		String pos;
+		String::StringBaseType pos[16];
+
 		if ( mShowLinesRelativePosition && selection.start().line() != i ) {
-			pos = String( String::toString( eeabs( i - selection.start().line() ) ) )
-					  .padLeft( lineNumberDigits, ' ' );
+			String::intToStrBuf<int, String::StringBaseType>( eeabs( i - selection.start().line() ),
+															  pos, 16, lineNumberDigits, ' ' );
 		} else {
-			pos = String( String::toString( i + 1 ) ).padLeft( lineNumberDigits, ' ' );
+			String::intToStrBuf<int, String::StringBaseType>( i + 1, pos, 16, lineNumberDigits,
+															  ' ' );
 		}
+
 		auto lnPos(
 			Vector2f( screenStart.x + mLineNumberPaddingLeft,
 					  startScroll.y + mDocView.getLineYOffset( i, lineHeight ) + lineOffset ) );
 
 		if ( mShowLineNumber ) {
-			Text::draw( pos, lnPos, mFontStyleConfig.Font, fontSize,
+			Text::draw( String::View{ pos }, lnPos, mFontStyleConfig.Font, fontSize,
 						( i >= selection.start().line() && i <= selection.end().line() )
 							? mLineNumberActiveFontColor
 							: mLineNumberFontColor,
@@ -4343,6 +4346,19 @@ Rectf UICodeEditor::getMinimapRect( const Vector2f& start ) const {
 
 static const SyntaxStyleType SYNTAX_NORMAL = SyntaxStyleTypes::Normal;
 
+struct MinimapTextRangesVars {
+	BatchRenderer* BR;
+	Float minimapStart;
+	Float charHeight;
+	Int64 minimapStartLine;
+	Float lineSpacing;
+	Rectf rect;
+	Float minimapCutoffX;
+	Float widthScale;
+	Int64 endidx;
+	Int64 maxVisibleColumn;
+};
+
 void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 								const DocumentViewLineRange& visibleLineRange ) {
 	Float charHeight = PixelDensity::getPixelDensity() * mMinimapConfig.scale;
@@ -4437,15 +4453,17 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 
 	Float minimapStart = rect.Left + gutterWidth;
 
-	const auto drawTextRanges = [this, &BR, &minimapStart, &charHeight, &minimapStartLine,
-								 &lineSpacing, &rect, &minimapCutoffX, &widthScale, &endidx,
-								 &maxVisibleColumn]( const TextRanges& ranges,
-													 const Color& backgroundColor,
-													 bool drawCompleteLine = false ) {
-		BR->quadsSetColor( backgroundColor );
+	// Avoid heap allocating the lambda
+	MinimapTextRangesVars v{ BR,   minimapStart,   charHeight, minimapStartLine, lineSpacing,
+							 rect, minimapCutoffX, widthScale, endidx,			 maxVisibleColumn };
+
+	const auto drawMinimapTextRanges = [this, &v]( const TextRanges& ranges,
+												   const Color& backgroundColor,
+												   bool drawCompleteLine = false ) {
+		v.BR->quadsSetColor( backgroundColor );
 		Int64 lineSkip = -1;
 		for ( const auto& range : ranges ) {
-			if ( !mDocView.isWrapEnabled() && range.start().column() > maxVisibleColumn )
+			if ( !mDocView.isWrapEnabled() && range.start().column() > v.maxVisibleColumn )
 				continue;
 
 			auto rangeStart = mDocView.getVisibleLineRange( range.start() );
@@ -4456,39 +4474,39 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 			if ( rangeEnd.visibleIndex == VisibleIndex::invalid )
 				continue;
 
-			if ( minimapStartLine > static_cast<Int64>( rangeEnd.visibleIndex ) ||
-				 endidx < static_cast<Int64>( rangeStart.visibleIndex ) )
+			if ( v.minimapStartLine > static_cast<Int64>( rangeEnd.visibleIndex ) ||
+				 v.endidx < static_cast<Int64>( rangeStart.visibleIndex ) )
 				continue;
 
-			if ( ranges.isSorted() && static_cast<Int64>( rangeStart.visibleIndex ) > endidx &&
-				 static_cast<Int64>( rangeEnd.visibleIndex ) > endidx )
+			if ( ranges.isSorted() && static_cast<Int64>( rangeStart.visibleIndex ) > v.endidx &&
+				 static_cast<Int64>( rangeEnd.visibleIndex ) > v.endidx )
 				break;
 
 			if ( lineSkip == static_cast<Int64>( rangeStart.visibleIndex ) )
 				continue;
 
 			auto selRects = getTextRangeRectangles(
-				range, { 0, rect.Top - minimapStartLine * lineSpacing }, {}, lineSpacing,
-				DocumentViewLineRange{ static_cast<VisibleIndex>( minimapStartLine ),
-									   static_cast<VisibleIndex>( endidx ) } );
+				range, { 0, v.rect.Top - v.minimapStartLine * v.lineSpacing }, {}, v.lineSpacing,
+				DocumentViewLineRange{ static_cast<VisibleIndex>( v.minimapStartLine ),
+									   static_cast<VisibleIndex>( v.endidx ) } );
 
 			for ( auto& selRect : selRects ) {
-				auto curLine = eefloor( selRect.Top / lineSpacing );
+				auto curLine = eefloor( selRect.Top / v.lineSpacing );
 
 				if ( curLine == lineSkip )
 					continue;
 
-				selRect.Bottom = selRect.Top + charHeight;
+				selRect.Bottom = selRect.Top + v.charHeight;
 				if ( drawCompleteLine ) {
-					selRect.Left = minimapStart;
-					selRect.Right = minimapStart + rect.getWidth();
+					selRect.Left = v.minimapStart;
+					selRect.Right = v.minimapStart + v.rect.getWidth();
 				} else {
-					selRect.Left = minimapStart + selRect.Left * widthScale;
-					selRect.Right = minimapStart + selRect.Right * widthScale;
+					selRect.Left = v.minimapStart + selRect.Left * v.widthScale;
+					selRect.Right = v.minimapStart + selRect.Right * v.widthScale;
 				}
 
-				if ( selRect.Left <= minimapCutoffX ) {
-					BR->batchQuad( selRect );
+				if ( selRect.Left <= v.minimapCutoffX ) {
+					v.BR->batchQuad( selRect );
 				} else {
 					lineSkip = curLine;
 				}
@@ -4496,7 +4514,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 		}
 	};
 
-	auto drawWordMatch = [this, &drawTextRanges]( const String& text, const Int64& ln ) {
+	auto drawWordMatch = [this, &drawMinimapTextRanges]( const String& text, const Int64& ln ) {
 		size_t pos = 0;
 		const String& line( mDoc->line( ln ).getText() );
 		if ( line.size() > 300 )
@@ -4507,7 +4525,8 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 				Int64 startCol = pos;
 				Int64 endCol = pos + text.size();
 				TextRange range( { ln, startCol }, { ln, endCol } );
-				drawTextRanges( { range }, Color( mMinimapHighlightColor ).blendAlpha( mAlpha ) );
+				drawMinimapTextRanges( { range },
+									   Color( mMinimapHighlightColor ).blendAlpha( mAlpha ) );
 				pos = endCol;
 			} else {
 				break;
@@ -4538,7 +4557,8 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 
 	if ( !mHighlightWord.isEmpty() ) {
 		Lock l( mHighlightWordCacheMutex );
-		drawTextRanges( mHighlightWordCache, Color( mMinimapHighlightColor ).blendAlpha( mAlpha ) );
+		drawMinimapTextRanges( mHighlightWordCache,
+							   Color( mMinimapHighlightColor ).blendAlpha( mAlpha ) );
 	}
 
 	Int64 minimapStartDocLine =
@@ -4552,7 +4572,7 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 	for ( auto* plugin : mPlugins ) {
 		plugin->minimapDrawBefore( this, docRange, docViewRange, { rect.Left, lineY },
 								   { rect.getWidth(), charHeight }, charSpacing, gutterWidth,
-								   drawTextRanges );
+								   drawMinimapTextRanges );
 	}
 
 	for ( Int64 line = minimapStartDocLine; line <= endDocIdx; line++ ) {
@@ -4690,17 +4710,17 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 	for ( auto* plugin : mPlugins ) {
 		plugin->minimapDrawAfter( this, docRange, docViewRange, { rect.Left, lineY },
 								  { rect.getWidth(), charHeight }, charSpacing, gutterWidth,
-								  drawTextRanges );
+								  drawMinimapTextRanges );
 	}
 
 	if ( mHighlightTextRange.isValid() && mHighlightTextRange.hasSelection() ) {
-		drawTextRanges( { mHighlightTextRange },
-						Color( mMinimapSelectionColor ).blendAlpha( mAlpha ) );
+		drawMinimapTextRanges( { mHighlightTextRange },
+							   Color( mMinimapSelectionColor ).blendAlpha( mAlpha ) );
 	}
 
 	if ( mDoc->hasSelection() ) {
-		drawTextRanges( mDoc->getSelectionsSorted(),
-						Color( mMinimapSelectionColor ).blendAlpha( mAlpha ) );
+		drawMinimapTextRanges( mDoc->getSelectionsSorted(),
+							   Color( mMinimapSelectionColor ).blendAlpha( mAlpha ) );
 	}
 
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {

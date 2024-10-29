@@ -1227,7 +1227,7 @@ void Node::clearEventListener() {
 
 void Node::sendEvent( const Event* event ) {
 	if ( 0 != mEvents.count( event->getType() ) ) {
-		std::map<Uint32, EventCallback> eventMap = mEvents[event->getType()];
+		auto& eventMap = mEvents[event->getType()];
 		if ( eventMap.begin() != eventMap.end() ) {
 			std::map<Uint32, EventCallback>::iterator it;
 			for ( it = eventMap.begin(); it != eventMap.end(); ++it ) {

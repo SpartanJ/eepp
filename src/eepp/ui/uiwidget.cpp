@@ -863,6 +863,26 @@ UIWidget* UIWidget::setClass( const std::string& cls ) {
 	return this;
 }
 
+UIWidget* UIWidget::setClass( std::string&& cls ) {
+	size_t oldClassesCount = mClasses.size();
+	if ( mClasses.size() != 1 || mClasses[0] != cls ) {
+		bool isSet = false;
+		mClasses.clear();
+		if ( !cls.empty() ) {
+			mClasses.emplace_back( std::move( cls ) );
+			isSet = true;
+
+			if ( !isSceneNodeLoading() && !isLoadingState() ) {
+				getUISceneNode()->invalidateStyle( this );
+				getUISceneNode()->invalidateStyleState( this );
+			}
+		}
+		if ( oldClassesCount != mClasses.size() || isSet )
+			onClassChange();
+	}
+	return this;
+}
+
 UIWidget* UIWidget::setClasses( const std::vector<std::string>& classes ) {
 	if ( mClasses != classes ) {
 		mClasses = classes;
@@ -949,7 +969,7 @@ UIWidget* UIWidget::removeClasses( const std::vector<std::string>& classes ) {
 	return this;
 }
 
-bool UIWidget::hasClass( const std::string& cls ) const {
+bool UIWidget::hasClass( const std::string_view& cls ) const {
 	return std::find( mClasses.begin(), mClasses.end(), cls ) != mClasses.end();
 }
 
@@ -993,7 +1013,7 @@ void UIWidget::setElementTag( const std::string& tag ) {
 	}
 }
 
-const std::vector<std::string> UIWidget::getClasses() const {
+const std::vector<std::string>& UIWidget::getClasses() const {
 	return mClasses;
 }
 

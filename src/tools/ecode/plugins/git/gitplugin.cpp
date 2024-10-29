@@ -258,8 +258,11 @@ void GitPlugin::initModelStyler() {
 			auto model = static_cast<const FileSystemModel*>( index.model() );
 			auto node = static_cast<const FileSystemModel::Node*>( data );
 			Lock l( mGitStatusFileCacheMutex );
-			auto found =
-				mGitStatusFilesCache.find( std::string{ model->getNodeRelativePath( node ) } );
+			std::string_view nodePath = model->getNodeRelativePath( node );
+			auto found = std::find_if( mGitStatusFilesCache.begin(), mGitStatusFilesCache.end(),
+									   [&nodePath]( const std::string& key ) {
+										   return std::string_view{ key } == nodePath;
+									   } );
 			if ( found != mGitStatusFilesCache.end() )
 				return Variant( STYLE_MODIFIED );
 			return Variant( STYLE_NONE );

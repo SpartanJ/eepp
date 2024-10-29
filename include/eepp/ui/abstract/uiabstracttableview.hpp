@@ -196,6 +196,8 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	virtual UIWidget* updateCell( const Vector2<Int64>& posIndex, const ModelIndex& index,
 								  const size_t& indentLevel, const Float& yOffset );
 
+	virtual void updateTableCellData( UITableCell* cell, const ModelIndex& index );
+
 	virtual UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index );
 
 	virtual UIWidget* setupCell( UITableCell* widget, UIWidget* rowWidget,

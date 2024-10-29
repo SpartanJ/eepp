@@ -899,6 +899,60 @@ class EE_API String {
 
 	String::View view() const;
 
+	// No allocation int to str
+	template <typename IntType, typename StrType>
+	static const StrType* intToStrBuf( IntType value, StrType* buffer, size_t bufferSize,
+									   size_t padding, StrType padChar ) {
+		static_assert( std::is_integral<IntType>::value, "Type must be an integer" );
+
+		if ( bufferSize <= 1 ) {
+			if ( bufferSize == 1 )
+				*buffer = '\0';
+			return buffer;
+		}
+
+		StrType* ptr = buffer;
+		StrType* endPtr = buffer + bufferSize - 1;
+
+		if constexpr ( std::is_signed<IntType>::value ) {
+			if ( value < 0 ) {
+				if ( ptr == endPtr ) {
+					*buffer = '\0';
+					return buffer;
+				}
+				*ptr++ = '-';
+				value = -value;
+				padding--;
+			}
+		}
+
+		StrType* start = ptr;
+		do {
+			if ( ptr == endPtr ) { // Out of buffer space
+				*buffer = '\0';
+				return buffer;
+			}
+			*ptr++ = '0' + ( value % 10 );
+			value /= 10;
+			padding--;
+		} while ( value > 0 );
+
+		while ( padding-- > 0 ) {
+			if ( ptr == endPtr ) {
+				*buffer = '\0';
+				return buffer;
+			}
+			*ptr++ = padChar;
+		}
+
+		StrType* reverseEnd = ptr - 1;
+		while ( start < reverseEnd )
+			std::swap( *start++, *reverseEnd-- );
+
+		*ptr = '\0';
+		return buffer;
+	}
+
   private:
 	friend EE_API bool operator==( const String& left, const String& right );
 	friend EE_API bool operator<( const String& left, const String& right );

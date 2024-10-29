@@ -46,23 +46,27 @@ TerminalKeyMap::TerminalKeyMap( const TerminalKey keys[], size_t keysLen,
 								const TerminalShortcut shortcuts[], size_t shortcutsLen,
 								const TerminalMouseShortcut mouseShortcuts[],
 								size_t mouseShortcutsLen ) {
+	mKeyMap.reserve( keysLen );
 	for ( size_t i = 0; i < keysLen; i++ ) {
 		auto& e = mKeyMap[keys[i].keysym];
 		e.push_back( { keys[i].mask, keys[i].string, keys[i].appkey, keys[i].appcursor } );
 	}
 
+	mPlatformKeyMap.reserve( platformKeysLen );
 	for ( size_t i = 0; i < platformKeysLen; i++ ) {
 		auto& e = mPlatformKeyMap[platformKeys[i].scancode];
 		e.push_back( { platformKeys[i].mask, platformKeys[i].string, platformKeys[i].appkey,
 					   platformKeys[i].appcursor } );
 	}
 
+	mShortcuts.reserve( shortcutsLen );
 	for ( size_t i = 0; i < shortcutsLen; i++ ) {
 		auto& e = mShortcuts[shortcuts[i].keysym];
 		e.push_back( { shortcuts[i].mask, shortcuts[i].action, shortcuts[i].appkey,
 					   shortcuts[i].appcursor, shortcuts[i].altscrn } );
 	}
 
+	mMouseShortcuts.reserve( mouseShortcutsLen );
 	for ( size_t i = 0; i < mouseShortcutsLen; i++ ) {
 		auto& e = mMouseShortcuts[mouseShortcuts[i].button];
 		e.push_back( { mouseShortcuts[i].mask, mouseShortcuts[i].action, mouseShortcuts[i].appkey,

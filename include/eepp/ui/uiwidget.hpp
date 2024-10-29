@@ -166,6 +166,8 @@ class EE_API UIWidget : public UINode {
 	/** Resets all classes and assign a class */
 	UIWidget* setClass( const std::string& cls );
 
+	UIWidget* setClass( std::string&& cls );
+
 	/** Resets all classes and assign vector of classes */
 	UIWidget* setClasses( const std::vector<std::string>& classes );
 
@@ -177,13 +179,13 @@ class EE_API UIWidget : public UINode {
 
 	UIWidget* removeClasses( const std::vector<std::string>& classes );
 
-	bool hasClass( const std::string& cls ) const;
+	bool hasClass( const std::string_view& cls ) const;
 
 	void toggleClass( const std::string& cls );
 
 	void setElementTag( const std::string& tag );
 
-	const std::vector<std::string> getClasses() const;
+	const std::vector<std::string>& getClasses() const;
 
 	const std::string& getElementTag() const;
 

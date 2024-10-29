@@ -582,47 +582,7 @@ UIWidget* UIAbstractTableView::updateCell( const Vector2<Int64>& posIndex, const
 	widget->setPixelsPosition( { getColumnPosition( index.column() ).x, 0 } );
 	if ( widget->isType( UI_TYPE_TABLECELL ) ) {
 		UITableCell* cell = widget->asType<UITableCell>();
-		cell->setCurIndex( index );
-
-		if ( getModel()->classModelRoleEnabled() ) {
-			bool needsReloadStyle = false;
-			Variant cls( getModel()->data( index, ModelRole::Class ) );
-			cell->setLoadingState( true );
-			if ( cls.isValid() ) {
-				std::string clsStr( cls.toString() );
-				needsReloadStyle = cell->getClasses().empty() || cell->getClasses().size() != 1 ||
-								   clsStr != cell->getClasses()[0];
-				cell->setClass( clsStr );
-			} else {
-				needsReloadStyle = !cell->getClasses().empty();
-				cell->resetClass();
-			}
-			cell->setLoadingState( false );
-			if ( needsReloadStyle )
-				cell->reportStyleStateChangeRecursive();
-		}
-
-		if ( getModel()->tooltipModelRoleEnabled() ) {
-			Variant tooltip( getModel()->data( index, ModelRole::Tooltip ) );
-			if ( tooltip.isValid() ) {
-				if ( tooltip.is( Variant::Type::String ) )
-					cell->setTooltipText( tooltip.asString() );
-				else if ( tooltip.is( Variant::Type::StringPtr ) )
-					cell->setTooltipText( tooltip.asStringPtr() );
-				else
-					cell->setTooltipText( tooltip.toString() );
-			}
-		}
-
-		Variant txt( getModel()->data( index, ModelRole::Display ) );
-		if ( txt.isValid() ) {
-			if ( txt.is( Variant::Type::String ) )
-				cell->setText( txt.asString() );
-			else if ( txt.is( Variant::Type::StringPtr ) )
-				cell->setText( txt.asStringPtr() );
-			else
-				cell->setText( txt.toString() );
-		}
+		updateTableCellData( cell, index );
 
 		bool isVisible = false;
 		Variant icon( getModel()->data( index, ModelRole::Icon ) );
@@ -648,6 +608,59 @@ UIWidget* UIAbstractTableView::updateCell( const Vector2<Int64>& posIndex, const
 	}
 
 	return widget;
+}
+
+void UIAbstractTableView::updateTableCellData( UITableCell* cell, const ModelIndex& index ) {
+	cell->setCurIndex( index );
+
+	if ( getModel()->classModelRoleEnabled() ) {
+		bool needsReloadStyle = false;
+		Variant cls( getModel()->data( index, ModelRole::Class ) );
+		cell->setLoadingState( true );
+		if ( cls.isValid() ) {
+			bool hasClass = false;
+
+			hasClass =
+				( cls.is( Variant::Type::cstr ) &&
+				  cell->hasClass( std::string_view{ cls.asCStr() } ) ) ||
+				( cls.is( Variant::Type::StdString ) && cell->hasClass( cls.asStdString() ) ) ||
+				cell->hasClass( cls.toString() );
+
+			needsReloadStyle =
+				cell->getClasses().empty() || cell->getClasses().size() != 1 || !hasClass;
+
+			if ( !hasClass )
+				cell->setClass( cls.toString() );
+		} else {
+			needsReloadStyle = !cell->getClasses().empty();
+			cell->resetClass();
+		}
+		cell->setLoadingState( false );
+		if ( needsReloadStyle )
+			cell->reportStyleStateChangeRecursive();
+	}
+
+	if ( getModel()->tooltipModelRoleEnabled() ) {
+		Variant tooltip( getModel()->data( index, ModelRole::Tooltip ) );
+		if ( tooltip.isValid() ) {
+			if ( tooltip.is( Variant::Type::String ) )
+				cell->setTooltipText( tooltip.asString() );
+			else if ( tooltip.is( Variant::Type::StringPtr ) )
+				cell->setTooltipText( tooltip.asStringPtr() );
+			else
+				cell->setTooltipText( tooltip.toString() );
+		}
+	}
+
+	Variant txt( getModel()->data( index, ModelRole::Display ) );
+	if ( txt.isValid() ) {
+		if ( txt.is( Variant::Type::String ) )
+			cell->setText( txt.asString() );
+		else if ( txt.is( Variant::Type::StringPtr ) )
+			cell->setText( txt.asStringPtr() );
+		else
+			cell->setText( txt.toString() );
+	}
 }
 
 void UIAbstractTableView::moveSelection( int steps ) {
