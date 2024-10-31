@@ -61,6 +61,7 @@
 #include <eepp/ui/doc/languages/nim.hpp>
 #include <eepp/ui/doc/languages/objeck.hpp>
 #include <eepp/ui/doc/languages/objective-c.hpp>
+#include <eepp/ui/doc/languages/ocaml.hpp>
 #include <eepp/ui/doc/languages/odin.hpp>
 #include <eepp/ui/doc/languages/pascal.hpp>
 #include <eepp/ui/doc/languages/perl.hpp>
@@ -180,6 +181,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager() {
 	addNim();
 	addObjeck();
 	addObjectiveC();
+	addOCaml();
 	addOdin();
 	addPascal();
 	addPerl();
