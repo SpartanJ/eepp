@@ -6,7 +6,7 @@
 
 #define EEPP_MAJOR_VERSION 2
 #define EEPP_MINOR_VERSION 8
-#define EEPP_PATCH_LEVEL 2
+#define EEPP_PATCH_LEVEL 3
 #define EEPP_CODENAME "Siddhi"
 
 /** The compiled version of the library */

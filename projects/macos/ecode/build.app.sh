@@ -89,6 +89,8 @@ fi
 
 fi
 
+codesign --force --deep --verbose -s - ecode.app
+
 #cp -r ../../../bin/assets ecode.app/Contents/MacOS/assets
 mkdir -p ecode.app/Contents/MacOS/assets/colorschemes
 cp -r ../../../bin/assets/colorschemes/ ecode.app/Contents/MacOS/assets/colorschemes/
