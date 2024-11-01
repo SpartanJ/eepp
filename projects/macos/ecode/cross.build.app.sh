@@ -52,10 +52,6 @@ install_name_tool -change @rpath/SDL2.framework/Versions/A/SDL2 @executable_path
 codesign --force -s - ecode.app/Contents/MacOS/SDL2
 install_name_tool -change @rpath/libeepp.dylib @executable_path/libeepp.dylib ecode.app/Contents/MacOS/ecode
 
-# Clear permissions (basically for libSDL2)
-chmod -R u+rwX,go+rX,go-w ecode.app
-xattr -cr ecode.app
-
 #cp -r ../../../bin/assets ecode.app/Contents/MacOS/assets
 mkdir -p ecode.app/Contents/MacOS/assets/colorschemes
 cp -r ../../../bin/assets/colorschemes/ ecode.app/Contents/MacOS/assets/colorschemes/
@@ -83,3 +79,8 @@ cp ../../../bin/assets/icon/ecode.png ecode.app/Contents/MacOS/assets/icon
 cp ../../../bin/assets/ca-bundle.pem ecode.app/Contents/MacOS/assets/ca-bundle.pem
 mkdir ecode.app/Contents/MacOS/assets/ui
 cp ../../../bin/assets/ui/breeze.css ecode.app/Contents/MacOS/assets/ui/
+
+# Clear permissions (basically for libSDL2)
+chmod -R u+rwX,go+rX,go-w ecode.app
+xattr -cr ecode.app
+

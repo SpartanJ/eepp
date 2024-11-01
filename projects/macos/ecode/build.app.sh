@@ -89,10 +89,6 @@ fi
 
 fi
 
-# Clear permissions (basically for libSDL2)
-chmod -R u+rwX,go+rX,go-w ecode.app
-xattr -cr ecode.app
-
 #cp -r ../../../bin/assets ecode.app/Contents/MacOS/assets
 mkdir -p ecode.app/Contents/MacOS/assets/colorschemes
 cp -r ../../../bin/assets/colorschemes/ ecode.app/Contents/MacOS/assets/colorschemes/
@@ -122,3 +118,7 @@ cp ../../../bin/assets/icon/ecode.png ecode.app/Contents/MacOS/assets/icon
 cp ../../../bin/assets/ca-bundle.pem ecode.app/Contents/MacOS/assets/ca-bundle.pem
 mkdir ecode.app/Contents/MacOS/assets/ui
 cp ../../../bin/assets/ui/breeze.css ecode.app/Contents/MacOS/assets/ui/
+
+# Clear permissions (basically for libSDL2)
+chmod -R u+rwX,go+rX,go-w ecode.app
+xattr -cr ecode.app
