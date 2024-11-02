@@ -366,8 +366,7 @@ bool TextureAtlasLoader::updateTextureAtlas() {
 			fs.write( reinterpret_cast<char*>( tTexHdr ), sizeof( sTextureHdr ) );
 
 			fs.write( reinterpret_cast<char*>( &tTexAtlas->TextureRegions[0] ),
-					  sizeof( sTextureRegionHdr ) *
-						  (std::streamsize)tTexAtlas->TextureRegions.size() );
+					  sizeof( sTextureRegionHdr ) * (std::size_t)tTexAtlas->TextureRegions.size() );
 		}
 
 		return true;

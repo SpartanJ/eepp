@@ -1,4 +1,5 @@
 #include "version.hpp"
+#include <cinttypes>
 #include <eepp/core/string.hpp>
 
 namespace ecode {
@@ -13,12 +14,12 @@ Uint64 Version::getVersionNum() {
 	Version ver = getVersion();
 	return ECODE_VERSIONNUM( ver.major, ver.minor, ver.patch, ver.commit );
 }
-
 std::string Version::getVersionNumString() {
 	Version ver = getVersion();
 	if ( ver.commit > 0 && ver.commit < 9999 )
-		return String::format( "%d.%d.%d-%d", ver.major, ver.minor, ver.patch, ver.commit );
-	return String::format( "%d.%d.%d", ver.major, ver.minor, ver.patch );
+		return String::format( "%" PRIu64 ".%" PRIu64 ".%" PRIu64 "-%" PRIu64, ver.major, ver.minor,
+							   ver.patch, ver.commit );
+	return String::format( "%" PRIu64 ".%" PRIu64 ".%" PRIu64, ver.major, ver.minor, ver.patch );
 }
 
 std::string Version::getVersionFullName() {

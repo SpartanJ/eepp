@@ -14,7 +14,8 @@
 #include <limits>
 #include <random>
 
-#if __GNUC__ >= 11 || ( __clang__ && __clang_major__ >= 12 )
+#if ( __GNUC__ >= 11 || ( __clang__ && __clang_major__ >= 12 ) ) && \
+	EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 #define STD_SUPPORTS_FIXED_TO_CHARS
 #endif
 
