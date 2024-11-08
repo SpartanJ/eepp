@@ -1413,7 +1413,7 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 				range = mDoc->sanitizeRange( range );
 				TextRanges ranges;
 				ranges.reserve( range.end().line() - range.start().line() + 1 );
-				for ( Int64 i = range.start().line(); i < range.end().line(); ++i ) {
+				for ( Int64 i = range.start().line(); i <= range.end().line(); ++i ) {
 					TextPosition pos{ i, range.start().column() };
 					ranges.push_back( TextRange{ pos, pos } );
 				}

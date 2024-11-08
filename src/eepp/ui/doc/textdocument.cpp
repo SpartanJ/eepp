@@ -937,14 +937,8 @@ TextRange TextDocument::addSelection( const TextPosition& selection ) {
 
 TextRange TextDocument::addSelections( TextRanges&& selections ) {
 	mSelection.reserve( mSelection.size() + selections.size() );
-	for ( auto& selection : selections ) {
-		if ( mSelection.exists( selection ) )
-			return {};
-		selection = sanitizeRange( selection );
-		if ( mSelection.exists( selection ) )
-			return {};
-		mSelection.push_back( selection );
-	}
+	for ( auto& selection : selections )
+		mSelection.push_back( sanitizeRange( selection ) );
 	mSelection.sort();
 	mergeSelection();
 	notifyCursorChanged( selections.back().start() );
