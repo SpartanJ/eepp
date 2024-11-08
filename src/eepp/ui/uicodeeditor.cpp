@@ -1409,11 +1409,11 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 				}
 			} else if ( input->isModState( KEYMOD_LALT | KEYMOD_SHIFT ) ) {
 				TextRange range( mDoc->getSelection().start(), textScreenPos );
-				range.normalize();
 				range = mDoc->sanitizeRange( range );
+				TextRange nrange = range.normalized();
 				TextRanges ranges;
-				ranges.reserve( range.end().line() - range.start().line() + 1 );
-				for ( Int64 i = range.start().line(); i <= range.end().line(); ++i ) {
+				ranges.reserve( nrange.end().line() - nrange.start().line() + 1 );
+				for ( Int64 i = nrange.start().line(); i <= nrange.end().line(); ++i ) {
 					TextPosition pos{ i, range.start().column() };
 					ranges.push_back( TextRange{ pos, pos } );
 				}
