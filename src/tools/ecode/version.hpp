@@ -8,7 +8,7 @@ using namespace EE;
 
 #define ECODE_MAJOR_VERSION 0
 #define ECODE_MINOR_VERSION 6
-#define ECODE_PATCH_LEVEL 3
+#define ECODE_PATCH_LEVEL 4
 /* ECODE_COMMIT_NUMBER 9999 is used for official releases, nightly builds (pre-releases) will
  * contain the number of commits after the last official release
  */

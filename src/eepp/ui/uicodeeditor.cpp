@@ -1411,8 +1411,13 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 				TextRange range( mDoc->getSelection().start(), textScreenPos );
 				range.normalize();
 				range = mDoc->sanitizeRange( range );
-				for ( Int64 i = range.start().line(); i < range.end().line(); ++i )
-					mDoc->addSelection( { i, range.start().column() } );
+				TextRanges ranges;
+				ranges.reserve( range.end().line() - range.start().line() + 1 );
+				for ( Int64 i = range.start().line(); i < range.end().line(); ++i ) {
+					TextPosition pos{ i, range.start().column() };
+					ranges.push_back( TextRange{ pos, pos } );
+				}
+				mDoc->addSelections( std::move( ranges ) );
 			} else if ( input->isModState( KEYMOD_SHIFT ) ) {
 				mDoc->selectTo( textScreenPos );
 			} else if ( input->isModState( KEYMOD_CTRL ) &&

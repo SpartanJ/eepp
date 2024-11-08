@@ -185,18 +185,20 @@ class EE_API TextRanges : public std::vector<TextRange> {
 	}
 
 	bool exists( const TextRange& range ) const {
-		for ( const auto& r : *this )
-			if ( range == r )
-				return true;
-		return false;
+		if ( !mIsSorted )
+			return std::find( begin(), end(), range ) != end();
+		return std::binary_search( begin(), end(), range );
 	}
 
 	size_t findIndex( const TextRange& range ) const {
-		for ( size_t i = 0; i < size(); ++i ) {
-			if ( ( *this )[i] == range )
-				return i;
+		if ( !mIsSorted ) {
+			auto it = std::find( begin(), end(), range );
+			return it != end() ? std::distance( begin(), it ) : static_cast<size_t>( -1 );
+		} else {
+			auto it = std::lower_bound( begin(), end(), range );
+			return ( it != end() && *it == range ) ? std::distance( begin(), it )
+												   : static_cast<size_t>( -1 );
 		}
-		return 0;
 	}
 
 	bool hasSelection() const {
@@ -216,15 +218,17 @@ class EE_API TextRanges : public std::vector<TextRange> {
 	bool merge() {
 		if ( size() <= 1 )
 			return false;
-		size_t oldSize = size();
-		TextRanges newRanges;
-		newRanges.emplace_back( ( *this )[0] );
-		for ( size_t i = 1; i < size(); ++i )
-			if ( !newRanges.exists( ( *this )[i] ) )
-				newRanges.emplace_back( ( *this )[i] );
-		*this = newRanges;
-		sort();
-		return oldSize != size();
+
+		if ( !mIsSorted )
+			sort();
+
+		auto it = std::unique( begin(), end(),
+							   []( const TextRange& a, const TextRange& b ) { return a == b; } );
+
+		bool merged = it != end();
+		erase( it, end() );
+
+		return merged;
 	}
 
 	std::string toString() const {
