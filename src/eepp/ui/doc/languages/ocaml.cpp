@@ -11,7 +11,7 @@ void addOCaml() {
 		  { "%.ml$", "%.mli$" },
 		  {
 		  	// Regex's based on those in the OCaml's VSCode plugin.
-			  { { "(%*", "%*)" }, "comment" },
+			  { { "%(%*", "%*%)" }, "comment" },
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "0[oO_][0-7]+" }, "number" },
 			  { { "-?0x[%x_]+" }, "number" },
@@ -23,7 +23,6 @@ void addOCaml() {
 			  { { "#[~!?$&*+\\-/=>@^|%<:.]+" }, "operator" },
 			  { { "![~!?$&*+\\-/=>@^|%<:.]*" }, "operator" },
 			  { { "[?~][~!?$&*+\\-/=>@^|%<:.]+" }, "operator" },
-			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 
 		  },
