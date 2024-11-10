@@ -89,8 +89,13 @@ Process::Process( const std::string& command, Uint32 options,
 
 Process::~Process() {
 	mShuttingDown = true;
-	if ( mProcess && isAlive() )
-		kill();
+	if ( mProcess ) {
+		if ( isAlive() ) {
+			kill();
+		} else {
+			destroy();
+		}
+	}
 	if ( mStdOutThread.joinable() )
 		mStdOutThread.join();
 	if ( mStdErrThread.joinable() )

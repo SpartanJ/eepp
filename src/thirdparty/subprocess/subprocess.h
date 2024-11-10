@@ -457,7 +457,7 @@ int subprocess_create_named_pipe_helper(void **rd, void **wr) {
 
   *wr = CreateFileA(name, genericWrite, SUBPROCESS_NULL,
                     SUBPROCESS_PTR_CAST(LPSECURITY_ATTRIBUTES, &saAttr), openExisting,
-					 fileAttributeNormal | fileNoBuffering | fileWriteThrough, SUBPROCESS_NULL );
+                    fileAttributeNormal | fileNoBuffering | fileWriteThrough, SUBPROCESS_NULL );
 
   if (invalidHandleValue == *wr) {
     return -1;
@@ -678,7 +678,8 @@ int subprocess_create_ex(const char *const commandLine[], int options,
     len++;
 
     // Quote the argument if it has a space in it
-    if (strpbrk(commandLine[i], "\t\v ") != SUBPROCESS_NULL)
+    if (strpbrk(commandLine[i], "\t\v ") != SUBPROCESS_NULL ||
+        commandLine[i][0] == SUBPROCESS_NULL)
       len += 2;
 
     for (j = 0; '\0' != commandLine[i][j]; j++) {
@@ -713,7 +714,8 @@ int subprocess_create_ex(const char *const commandLine[], int options,
       commandLineCombined[len++] = ' ';
     }
 
-    need_quoting = strpbrk(commandLine[i], "\t\v ") != SUBPROCESS_NULL;
+    need_quoting = strpbrk(commandLine[i], "\t\v ") != SUBPROCESS_NULL ||
+                   commandLine[i][0] == SUBPROCESS_NULL;;
     if (need_quoting) {
       commandLineCombined[len++] = '"';
     }
@@ -1060,11 +1062,11 @@ int subprocess_join(struct subprocess_s *const process,
   }
 
   if (process->hProcess) {
-	  WaitForSingleObject( process->hProcess, infinite );
+    WaitForSingleObject( process->hProcess, infinite );
   }
 
   if (out_return_code) {
-	if (process->hProcess && !GetExitCodeProcess(process->hProcess,
+    if (process->hProcess && !GetExitCodeProcess(process->hProcess,
         SUBPROCESS_PTR_CAST(unsigned long *, out_return_code))) {
       return -1;
     }
@@ -1129,23 +1131,23 @@ int subprocess_destroy(struct subprocess_s *const process) {
 
     if (process->hStdInput) {
       CloseHandle(process->hStdInput);
-	  process->hStdInput = SUBPROCESS_NULL;
+      process->hStdInput = SUBPROCESS_NULL;
     }
+  }
 
-    if (process->hEventInput) {
-      CloseHandle(process->hEventInput);
-	  process->hEventInput = SUBPROCESS_NULL;
-    }
+  if (process->hEventInput) {
+    CloseHandle(process->hEventInput);
+    process->hEventInput = SUBPROCESS_NULL;
+  }
 
-    if (process->hEventOutput) {
-      CloseHandle(process->hEventOutput);
-	  process->hEventOutput = SUBPROCESS_NULL;
-    }
+  if (process->hEventOutput) {
+    CloseHandle(process->hEventOutput);
+    process->hEventOutput = SUBPROCESS_NULL;
+  }
 
-    if (process->hEventError) {
-      CloseHandle(process->hEventError);
-	  process->hEventError = SUBPROCESS_NULL;
-    }
+  if (process->hEventError) {
+    CloseHandle(process->hEventError);
+    process->hEventError = SUBPROCESS_NULL;
   }
 #endif
 
