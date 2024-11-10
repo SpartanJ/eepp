@@ -171,7 +171,7 @@ void FileSystemModel::Node::refresh( const FileSystemModel& model ) {
 	std::vector<Node*> newChildren;
 	Node* node = nullptr;
 
-	for ( auto file : files ) {
+	for ( auto& file : files ) {
 		node = childWithPathExists( file.getFilepath() );
 
 		if ( !isAcceptedExtension( displayCfg.acceptedExtensions, file ) )
@@ -197,7 +197,7 @@ void FileSystemModel::Node::refresh( const FileSystemModel& model ) {
 	for ( Node* oldNode : oldFiles )
 		eeDelete( oldNode );
 
-	mChildren = newChildren;
+	mChildren = std::move( newChildren );
 }
 
 void FileSystemModel::Node::cleanChildren() {
@@ -209,7 +209,6 @@ void FileSystemModel::Node::cleanChildren() {
 void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 	if ( !mInfo.isDirectory() || mHasTraversed )
 		return;
-	mHasTraversed = true;
 	cleanChildren();
 
 	const auto& displayCfg = model.getDisplayConfig();
@@ -219,7 +218,7 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 
 	const auto& patterns = displayCfg.acceptedExtensions;
 	bool accepted;
-	for ( auto file : files ) {
+	for ( auto& file : files ) {
 		if ( ( model.getMode() == Mode::DirectoriesOnly &&
 			   ( file.isDirectory() || file.linksToDirectory() ) ) ||
 			 model.getMode() == Mode::FilesAndDirectories ) {
@@ -230,9 +229,11 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 				mChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
 			} else {
 				accepted = false;
-				if ( patterns.size() ) {
-					for ( size_t z = 0; z < patterns.size(); z++ ) {
-						if ( patterns[z] == FileSystem::fileExtension( file.getFilepath() ) ) {
+				size_t psize = patterns.size();
+				if ( psize ) {
+					auto ext( FileSystem::fileExtension( file.getFilepath() ) );
+					for ( size_t z = 0; z < psize; z++ ) {
+						if ( patterns[z] == ext ) {
 							accepted = true;
 							break;
 						}
@@ -251,6 +252,7 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 			}
 		}
 	}
+	mHasTraversed = true;
 }
 
 void FileSystemModel::Node::refreshIfNeeded( const FileSystemModel& model ) {
@@ -543,6 +545,7 @@ void FileSystemModel::setPreviouslySelectedIndex( const ModelIndex& previouslySe
 
 size_t FileSystemModel::getFileIndex( Node* parent, const FileInfo& file ) {
 	std::vector<FileInfo> files;
+	files.reserve( parent->mChildren.size() + 1 );
 
 	for ( Node* nodeFile : parent->mChildren ) {
 		files.emplace_back( nodeFile->info() );
@@ -553,26 +556,14 @@ size_t FileSystemModel::getFileIndex( Node* parent, const FileInfo& file ) {
 
 	files.emplace_back( file );
 
-	std::sort( files.begin(), files.end(), []( FileInfo a, FileInfo b ) {
+	std::sort( files.begin(), files.end(), []( const FileInfo& a, const FileInfo& b ) {
 		return std::strncmp( a.getFileName().c_str(), b.getFileName().c_str(),
 							 a.getFileName().size() ) < 0;
 	} );
 
 	if ( getDisplayConfig().foldersFirst ) {
-		std::vector<FileInfo> folders;
-		std::vector<FileInfo> file;
-		for ( size_t i = 0; i < files.size(); i++ ) {
-			if ( files[i].isDirectory() ) {
-				folders.push_back( files[i] );
-			} else {
-				file.push_back( files[i] );
-			}
-		}
-		files.clear();
-		for ( auto& folder : folders )
-			files.push_back( folder );
-		for ( auto& f : file )
-			files.push_back( f );
+		std::stable_partition( files.begin(), files.end(),
+							   []( const FileInfo& info ) { return info.isDirectory(); } );
 	}
 
 	size_t pos = parent->childCount();

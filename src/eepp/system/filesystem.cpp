@@ -431,31 +431,18 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 		String fpath( path );
 		if ( fpath[fpath.size() - 1] != '/' && fpath[fpath.size() - 1] != '\\' )
 			fpath += getOSSlash();
-		std::vector<String> folders;
-		std::vector<String> file;
-		for ( size_t i = 0; i < files.size(); i++ ) {
-			if ( FileSystem::isDirectory( fpath + files[i] ) ) {
-				folders.push_back( files[i] );
-			} else {
-				file.push_back( files[i] );
-			}
-		}
-		files.clear();
-		for ( auto& folder : folders )
-			files.push_back( folder );
-		for ( auto& f : file )
-			files.push_back( f );
+		std::stable_partition(files.begin(), files.end(), [&fpath](const String& file) {
+			return FileSystem::isDirectory( fpath + file );
+		});
 	}
 
 	if ( ignoreHidden ) {
 		String fpath( path );
 		if ( fpath[fpath.size() - 1] != '/' && fpath[fpath.size() - 1] != '\\' )
 			fpath += getOSSlash();
-		std::vector<String> filtered;
-		for ( size_t i = 0; i < files.size(); i++ )
-			if ( !FileSystem::fileIsHidden( fpath + files[i] ) )
-				filtered.push_back( files[i] );
-		return filtered;
+		files.erase(std::remove_if(files.begin(), files.end(), [&fpath](const String& file) {
+			return FileSystem::fileIsHidden(fpath + file);
+		}), files.end());
 	}
 
 	return files;
@@ -468,6 +455,7 @@ std::vector<FileInfo> FileSystem::filesInfoGetInPath( std::string path, bool lin
 	dirAddSlashAtEnd( path );
 	std::vector<FileInfo> fileInfo;
 	auto files = filesGetInPath( path, sortByName, foldersFirst, ignoreHidden );
+	fileInfo.reserve( files.size() );
 	for ( const auto& file : files )
 		fileInfo.emplace_back( FileInfo( path + file, linkInfo ) );
 	return fileInfo;
@@ -533,30 +521,17 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 	if ( foldersFirst ) {
 		std::string fpath( path );
 		dirAddSlashAtEnd( fpath );
-		std::vector<std::string> folders;
-		std::vector<std::string> file;
-		for ( size_t i = 0; i < files.size(); i++ ) {
-			if ( FileSystem::isDirectory( fpath + files[i] ) ) {
-				folders.push_back( files[i] );
-			} else {
-				file.push_back( files[i] );
-			}
-		}
-		files.clear();
-		for ( auto& folder : folders )
-			files.push_back( folder );
-		for ( auto& f : file )
-			files.push_back( f );
+		std::stable_partition(files.begin(), files.end(), [&fpath](const std::string& file) {
+			return FileSystem::isDirectory( fpath + file );
+		});
 	}
 
 	if ( ignoreHidden ) {
 		std::string fpath( path );
 		dirAddSlashAtEnd( fpath );
-		std::vector<std::string> filtered;
-		for ( size_t i = 0; i < files.size(); i++ )
-			if ( !FileSystem::fileIsHidden( fpath + files[i] ) )
-				filtered.push_back( files[i] );
-		return filtered;
+		files.erase(std::remove_if(files.begin(), files.end(), [&fpath](const std::string& file) {
+			return FileSystem::fileIsHidden(fpath + file);
+		}), files.end());
 	}
 
 	return files;
