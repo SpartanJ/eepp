@@ -793,7 +793,7 @@ void App::onFileDropped( std::string file ) {
 	UITab* tab = mSplitter->isDocumentOpen( file );
 	UICodeEditor* codeEditor = nullptr;
 
-	if ( tab ) {
+	if ( tab && tab->getTabWidget() ) {
 		tab->getTabWidget()->setTabSelected( tab );
 		return;
 	}

@@ -319,10 +319,11 @@ size_t Process::readAll( std::string& buffer, bool readErr, Time timeout ) {
 	buffer.resize( mBufferSize );
 	bool anyOpen = pollfd.fd != -1;
 	ssize_t n = 0;
-	while ( anyOpen && !mShuttingDown && isAlive() && errno != EINTR ) {
+	while ( anyOpen && !mShuttingDown && isAlive() ) {
 		int res = poll( &pollfd, static_cast<nfds_t>( 1 ), 100 );
 		if ( res <= 0 ) {
-			if ( timeout != Time::Zero && clock.getElapsedTime() >= timeout )
+			if ( ( timeout != Time::Zero && clock.getElapsedTime() >= timeout ) ||
+				 ( res < 0 && errno != EINTR ) )
 				break;
 			continue;
 		}
@@ -419,7 +420,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 		std::string buffer;
 		buffer.resize( mBufferSize );
 		bool anyOpen = !pollfds.empty();
-		while ( anyOpen && !mShuttingDown && errno != EINTR ) {
+		while ( anyOpen && !mShuttingDown ) {
 			int res = poll( pollfds.data(), static_cast<nfds_t>( pollfds.size() ), 100 );
 			if ( res > 0 ) {
 				anyOpen = false;
@@ -447,7 +448,8 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 						anyOpen = true;
 					}
 				}
-			}
+			} else if ( res < 0 && errno != EINTR )
+				break;
 		}
 	} );
 #endif
