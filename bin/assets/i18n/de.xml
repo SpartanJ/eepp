@@ -490,7 +490,7 @@ in einem neuen Fenster geöffnet werden.</string>
 	<string name="open_in_vertical_split">In neuer vertikaler Kachel öffnen</string>
 	<string name="open_locatebar">Suchleiste öffnen</string>
 	<string name="open_locatebar_glob_search">Globale Suchleiste öffnen</string>
-	<string name="open_recent_folder_ellipsis">Letzteddafdsfasdkjökjn Ordner öffnen...</string>
+	<string name="open_recent_folder_ellipsis">Letzte Ordner öffnen...</string>
 	<string name="open_workspace_symbol_search">Arbeitsbereichssymbolsuche öffnen</string>
 	<string name="output">Ausgabe</string>
 	<string name="output_parser">Ausgabe-Parser</string>
