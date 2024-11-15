@@ -230,6 +230,8 @@ void EventDispatcher::sendTextInput( const Uint32& textChar, const Uint32& times
 void EventDispatcher::sendTextEditing( const String& text, const Int32& start,
 									   const Int32& length ) {
 	mWindow->getIME().onTextEditing( text, start, length );
+	if ( !mWindow->getIME().isEditing() && length <= 0 )
+		return;
 	TextEditingEvent textEditingEvent =
 		TextEditingEvent( mFocusNode, Event::TextInput, text, start, length );
 	Node* node = mFocusNode;

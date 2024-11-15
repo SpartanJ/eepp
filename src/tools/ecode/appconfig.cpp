@@ -755,7 +755,10 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 
 		editorSplitter->loadAsyncFileFromPathInNewTab(
 			snapshotFile.cachePath,
-			[snapshotFile]( UICodeEditor* editor, const std::string& ) {
+			[snapshotFile, editorSplitter]( UICodeEditor* editor, const std::string& ) {
+				// Editor could have been closed right after load
+				if ( !editorSplitter->editorExists( editor ) )
+					return;
 				TextDocument& doc = editor->getDocument();
 				auto selection = TextRange::fromString( snapshotFile.selection );
 				doc.setDefaultFileName( snapshotFile.name );

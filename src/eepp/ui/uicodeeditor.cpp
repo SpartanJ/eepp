@@ -1170,7 +1170,7 @@ Sizef UICodeEditor::getViewportDimensions() const {
 Rectf UICodeEditor::getScreenPosition( const TextPosition& position ) const {
 	Float lineHeight = getLineHeight();
 	Vector2f screenStart( getScreenStart() );
-	Vector2f start( screenStart.x + getGutterWidth(), screenStart.y );
+	Vector2f start( screenStart.x + getGutterWidth(), screenStart.y + getPluginsTopSpace() );
 	Vector2f startScroll( start - mScroll );
 	auto offset = getTextPositionOffsetSanitized( position, lineHeight );
 	return { { static_cast<Float>( startScroll.x + offset.x ),
@@ -4332,9 +4332,10 @@ Float UICodeEditor::getMinimapWidth() const {
 	if ( !mMinimapEnabled )
 		return 0.f;
 	Float w = PixelDensity::dpToPx( mMinimapConfig.width );
+	Float pw = getPixelsSize().getWidth();
 	// Max [mMinimapConfig.maxPercentWidth]% of the editor view width
-	if ( w / getPixelsSize().getWidth() > mMinimapConfig.maxPercentWidth )
-		w = getPixelsSize().getWidth() * mMinimapConfig.maxPercentWidth;
+	if ( pw != 0 && w / pw > mMinimapConfig.maxPercentWidth )
+		w = pw * mMinimapConfig.maxPercentWidth;
 	return w;
 }
 
