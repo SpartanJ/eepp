@@ -353,6 +353,13 @@
       "initializationOptions": {
         "ignore-classpath-directories": true
       }
+    },
+    {
+      "language": "ocaml",
+      "name": "OCaml-LSP",
+      "url": "https://github.com/ocaml/ocaml-lsp",
+      "command": "ocamllsp",
+      "file_patterns": ["%.ml$", "%.mli$"]
     }
   ]
 }
