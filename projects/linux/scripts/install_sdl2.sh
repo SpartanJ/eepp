@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define SDL version and download URL
-SDL_VERSION="2.30.8"
+SDL_VERSION="2.30.9"
 SDL_URL="https://libsdl.org/release/SDL2-${SDL_VERSION}.zip"
 ARCH="x86_64" # Default architecture for host
 
