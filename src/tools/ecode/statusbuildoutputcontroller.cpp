@@ -254,8 +254,10 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 
 			updateBuildButton();
 
-			if ( !mApp->getWindow()->hasFocus() )
-				mApp->getWindow()->flash( WindowFlashOperation::UntilFocused );
+			if ( !mApp->getWindow()->hasFocus() ) {
+				mApp->getUISceneNode()->runOnMainThread(
+					[this] { mApp->getWindow()->flash( WindowFlashOperation::UntilFocused ); } );
+			}
 
 			if ( doneFn )
 				doneFn( exitCode );

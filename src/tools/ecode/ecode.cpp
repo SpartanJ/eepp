@@ -3709,15 +3709,13 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 					mUISceneNode->runOnMainThread( [path, initialPosition, this] {
 						loadFileFromPathOrFocus( path, true, nullptr,
 												 getForcePositionFn( initialPosition ) );
-					} );
-					if ( !mWindow->hasFocus() ) {
-						if ( mWindow->isMinimized() ) {
-							// FIXME: SDL2 seems to very rarely dead-lock on SDL_RestoreWindow call.
-							// This can create a dead-lock for the file system listener.
-							mThreadPool->run( [this] { mWindow->restore(); } );
+
+						if ( !mWindow->hasFocus() ) {
+							if ( mWindow->isMinimized() )
+								mWindow->restore();
+							mWindow->raise();
 						}
-						mWindow->raise();
-					}
+					} );
 				}
 				FileSystem::fileRemove( fi.getFilepath() );
 			} );
