@@ -1,5 +1,6 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
 #include <eepp/ui/models/filesystemmodel.hpp>
@@ -14,14 +15,23 @@ using namespace EE::Scene;
 
 namespace EE { namespace UI { namespace Models {
 
-FileSystemModel::Node::Node( const std::string& rootPath, const FileSystemModel& model ) :
+FileSystemModel::Node::Node( const std::string& rootPath, const FileSystemModel& model,
+							 const std::shared_ptr<ThreadPool>& threadPool ) :
 	mInfo( FileSystem::getRealPath( rootPath ) ) {
 	mInfoDirty = false;
 	mName = FileSystem::fileNameFromPath( mInfo.getFilepath() );
 	mMimeType = "";
 	mHash = String::hash( mName );
 	mDisplayName = mName;
-	traverseIfNeeded( model );
+	if ( threadPool ) {
+		mQueuedForTraversal = true;
+		threadPool->run( [this, &model] {
+			traverseIfNeeded( model );
+			model.refreshView();
+		} );
+	} else {
+		traverseIfNeeded( model );
+	}
 }
 
 FileSystemModel::Node::Node( FileInfo&& info, FileSystemModel::Node* parent ) :
@@ -96,6 +106,8 @@ Int64 FileSystemModel::Node::findChildRowFromName( const std::string& name,
 }
 
 FileSystemModel::Node::~Node() {
+	while ( mIsTraversing )
+		Sys::sleep( Milliseconds( 1 ) );
 	cleanChildren();
 }
 
@@ -157,16 +169,23 @@ static bool isAcceptedExtension( const std::vector<std::string>& acceptedExtensi
 	return true;
 }
 
-void FileSystemModel::Node::refresh( const FileSystemModel& model ) {
+bool FileSystemModel::Node::refresh( const FileSystemModel& model ) {
 	if ( !mInfo.isDirectory() )
-		return;
+		return false;
 
-	auto oldFiles = mChildren;
+	std::vector<Node*> oldFiles;
+
+	{
+		Lock l( model.mResourceLock );
+		oldFiles = mChildren;
+	}
 
 	const auto& displayCfg = model.getDisplayConfig();
 
-	auto files = FileSystem::filesInfoGetInPath( mInfo.getFilepath(), false, displayCfg.sortByName,
-												 displayCfg.foldersFirst, displayCfg.ignoreHidden );
+	auto files = FileSystem::filesInfoGetInPath(
+		mInfo.getFilepath(), false, displayCfg.sortByName, displayCfg.foldersFirst,
+		displayCfg.ignoreHidden,
+		[&model] { return model.mShutingDown.load( std::memory_order::memory_order_relaxed ); } );
 
 	std::vector<Node*> newChildren;
 	Node* node = nullptr;
@@ -194,30 +213,43 @@ void FileSystemModel::Node::refresh( const FileSystemModel& model ) {
 		}
 	}
 
+	Lock l( model.mResourceLock );
+
 	for ( Node* oldNode : oldFiles )
 		eeDelete( oldNode );
 
 	mChildren = std::move( newChildren );
+	return true;
 }
 
 void FileSystemModel::Node::cleanChildren() {
-	for ( size_t i = 0; i < mChildren.size(); ++i )
+	size_t size = mChildren.size();
+	for ( size_t i = 0; i < size; ++i )
 		eeDelete( mChildren[i] );
 	mChildren.clear();
 }
 
-void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
-	if ( !mInfo.isDirectory() || mHasTraversed )
-		return;
-	cleanChildren();
+bool FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
+	if ( !mInfo.isDirectory() || mHasTraversed || mIsTraversing )
+		return false;
+	BoolScopedOp op( mIsTraversing, true );
+
+	{
+		Lock l( model.mResourceLock );
+		cleanChildren();
+	}
 
 	const auto& displayCfg = model.getDisplayConfig();
-
-	auto files = FileSystem::filesInfoGetInPath( mInfo.getFilepath(), false, displayCfg.sortByName,
-												 displayCfg.foldersFirst, displayCfg.ignoreHidden );
+	auto files = FileSystem::filesInfoGetInPath(
+		mInfo.getFilepath(), false, displayCfg.sortByName, displayCfg.foldersFirst,
+		displayCfg.ignoreHidden,
+		[&model] { return model.mShutingDown.load( std::memory_order::memory_order_relaxed ); } );
 
 	const auto& patterns = displayCfg.acceptedExtensions;
 	bool accepted;
+	std::vector<Node*> newChildren;
+	newChildren.reserve( files.size() );
+
 	for ( auto& file : files ) {
 		if ( ( model.getMode() == Mode::DirectoriesOnly &&
 			   ( file.isDirectory() || file.linksToDirectory() ) ) ||
@@ -226,7 +258,7 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 				if ( displayCfg.fileIsVisibleFn &&
 					 !displayCfg.fileIsVisibleFn( file.getFilepath() ) )
 					continue;
-				mChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
+				newChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
 			} else {
 				accepted = false;
 				size_t psize = patterns.size();
@@ -248,17 +280,38 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 				}
 
 				if ( accepted )
-					mChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
+					newChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
 			}
 		}
 	}
+
+	{
+		Lock l( model.mResourceLock );
+		mChildren = std::move( newChildren );
+	}
+
 	mHasTraversed = true;
+	mQueuedForTraversal = false;
+	return true;
 }
 
-void FileSystemModel::Node::refreshIfNeeded( const FileSystemModel& model ) {
-	traverseIfNeeded( model );
+bool FileSystemModel::Node::refreshIfNeeded( const FileSystemModel& model,
+											 const std::shared_ptr<ThreadPool>& threadPool ) {
+	bool res = false;
+	if ( threadPool ) {
+		if ( !mInfo.isDirectory() || mHasTraversed || mIsTraversing || mQueuedForTraversal )
+			return false;
+		threadPool->run( [this, &model] {
+			traverseIfNeeded( model );
+			model.refreshView();
+		} );
+		return true;
+	} else {
+		res = traverseIfNeeded( model );
+	}
 	if ( mInfoDirty )
 		fetchData( fullPath() );
+	return res;
 }
 
 bool FileSystemModel::Node::fetchData( const String& fullPath ) {
@@ -283,25 +336,30 @@ void FileSystemModel::Node::updateMimeType() {
 std::shared_ptr<FileSystemModel> FileSystemModel::New( const std::string& rootPath,
 													   const FileSystemModel::Mode& mode,
 													   const DisplayConfig& displayConfig,
-													   Translator* translator ) {
+													   Translator* translator,
+													   std::shared_ptr<ThreadPool> threadPool ) {
 	return std::shared_ptr<FileSystemModel>(
-		new FileSystemModel( rootPath, mode, displayConfig, translator ) );
+		new FileSystemModel( rootPath, mode, displayConfig, translator, threadPool ) );
 }
 
 FileSystemModel::FileSystemModel( const std::string& rootPath, const FileSystemModel::Mode& mode,
-								  const DisplayConfig& displayConfig, Translator* translator ) :
+								  const DisplayConfig& displayConfig, Translator* translator,
+								  std::shared_ptr<ThreadPool> threadPool ) :
 	mRootPath( rootPath ),
 	mRealRootPath( FileSystem::getRealPath( rootPath ) ),
 	mMode( mode ),
-	mDisplayConfig( displayConfig ) {
-	mRoot = std::make_unique<Node>( mRootPath, *this );
+	mDisplayConfig( displayConfig ),
+	mThreadPool( threadPool ) {
+	mRoot = std::make_unique<Node>( mRootPath, *this, threadPool );
 	mInitOK = true;
 	setupColumnNames( translator );
 	invalidate();
 }
 
 FileSystemModel::~FileSystemModel() {
+	mShutingDown = true;
 	mInitOK = false;
+	mRoot.reset();
 }
 
 const std::string& FileSystemModel::getRootPath() const {
@@ -358,13 +416,15 @@ void FileSystemModel::reload() {
 }
 
 void FileSystemModel::refresh() {
-	Lock l( resourceMutex() );
-	mRoot->refresh( *this );
+	{
+		Lock l( resourceMutex() );
+		mRoot->refresh( *this );
+	}
 	invalidate();
 }
 
 void FileSystemModel::update() {
-	mRoot = std::make_unique<Node>( mRootPath, *this );
+	mRoot = std::make_unique<Node>( mRootPath, *this, mThreadPool );
 	invalidate();
 }
 
@@ -381,7 +441,12 @@ FileSystemModel::Node& FileSystemModel::nodeRef( const ModelIndex& index ) const
 
 size_t FileSystemModel::rowCount( const ModelIndex& index ) const {
 	Node& node = const_cast<Node&>( this->node( index ) );
-	node.refreshIfNeeded( *this );
+	if ( node.mIsTraversing )
+		return 0;
+	bool isThreaded = mThreadPool && &node == mRoot.get();
+	bool res = node.refreshIfNeeded( *this, isThreaded ? mThreadPool : nullptr );
+	if ( isThreaded && res )
+		return 0;
 	if ( node.info().isDirectory() )
 		return node.mChildren.size();
 	return 0;
@@ -389,6 +454,13 @@ size_t FileSystemModel::rowCount( const ModelIndex& index ) const {
 
 size_t FileSystemModel::columnCount( const ModelIndex& ) const {
 	return Column::Count;
+}
+
+bool FileSystemModel::hasChilds( const ModelIndex& index ) const {
+	Node& node = const_cast<Node&>( this->node( index ) );
+	if ( node.mInfoDirty )
+		node.fetchData( node.fullPath() );
+	return node.mInfo.isDirectory();
 }
 
 std::string FileSystemModel::columnName( const size_t& column ) const {
@@ -500,7 +572,11 @@ ModelIndex FileSystemModel::index( int row, int column, const ModelIndex& parent
 	if ( row < 0 || column < 0 )
 		return {};
 	auto& node = this->node( parent );
-	const_cast<Node&>( node ).refreshIfNeeded( *this );
+	bool isThreaded = mThreadPool && &node == mRoot.get();
+	bool res =
+		const_cast<Node&>( node ).refreshIfNeeded( *this, isThreaded ? mThreadPool : nullptr );
+	if ( isThreaded && res )
+		return {};
 	if ( static_cast<size_t>( row ) >= node.mChildren.size() )
 		return {};
 	return createIndex( row, column, node.mChildren[row] );

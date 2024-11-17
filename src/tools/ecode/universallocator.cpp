@@ -780,7 +780,7 @@ void UniversalLocator::focusOrLoadFile( const std::string& path, const TextRange
 void UniversalLocator::updateOpenDocumentsTable() {
 	mLocateTable->setModel(
 		openDocumentsModel( mLocateInput->getText().substr( 2 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->rowCount() > 0 )
+	if ( mLocateTable->getModel()->hasChilds() )
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	mLocateTable->scrollToTop();
 }
@@ -817,7 +817,7 @@ UniversalLocator::openBuildModel( const std::string& match ) {
 
 void UniversalLocator::updateSwitchBuildTable() {
 	mLocateTable->setModel( openBuildModel( mLocateInput->getText().substr( 3 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->rowCount() > 0 ) {
+	if ( mLocateTable->getModel()->hasChilds() ) {
 		ModelIndex idx =
 			mLocateTable->findRowWithText( mApp->getProjectBuildManager()->getConfig().buildName );
 		mLocateTable->getSelection().set( idx.isValid() ? idx
@@ -904,7 +904,7 @@ UniversalLocator::openRunTargetModel( const std::string& match ) {
 void UniversalLocator::updateSwitchBuildTypeTable() {
 	mLocateTable->setModel(
 		openBuildTypeModel( mLocateInput->getText().substr( 4 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->rowCount() > 0 && nullptr != mApp->getProjectBuildManager() ) {
+	if ( mLocateTable->getModel()->hasChilds() && nullptr != mApp->getProjectBuildManager() ) {
 		ModelIndex idx =
 			mLocateTable->findRowWithText( mApp->getProjectBuildManager()->getConfig().buildType );
 		mLocateTable->getSelection().set( idx.isValid() ? idx
@@ -917,7 +917,7 @@ void UniversalLocator::updateSwitchBuildTypeTable() {
 void UniversalLocator::updateSwitchRunTargetTable() {
 	mLocateTable->setModel(
 		openRunTargetModel( mLocateInput->getText().substr( 4 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->rowCount() > 0 && nullptr != mApp->getProjectBuildManager() ) {
+	if ( mLocateTable->getModel()->hasChilds() && nullptr != mApp->getProjectBuildManager() ) {
 		ModelIndex idx =
 			mLocateTable->findRowWithText( mApp->getProjectBuildManager()->getConfig().runName );
 		mLocateTable->getSelection().set( idx.isValid() ? idx
@@ -958,7 +958,7 @@ UniversalLocator::openFileTypeModel( const std::string& match ) {
 void UniversalLocator::updateSwitchFileTypeTable() {
 	mLocateTable->setModel(
 		openFileTypeModel( mLocateInput->getText().substr( 3 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->rowCount() > 0 && mApp->getSplitter()->getCurEditor() ) {
+	if ( mLocateTable->getModel()->hasChilds() && mApp->getSplitter()->getCurEditor() ) {
 		ModelIndex idx = mLocateTable->findRowWithText( mApp->getSplitter()
 															->getCurEditor()
 															->getDocumentRef()

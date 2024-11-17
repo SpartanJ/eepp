@@ -197,7 +197,7 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 				ConditionalLock l( getModel() != nullptr,
 								   getModel() ? &getModel()->resourceMutex() : nullptr );
 				auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
-				if ( getModel()->rowCount( idx ) ) {
+				if ( getModel()->hasChilds( idx ) ) {
 					auto& data = getIndexMetadata( idx );
 					data.open = !data.open;
 					createOrUpdateColumns( false );
@@ -257,7 +257,7 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 
 			Float indentation = minIndent + getIndentWidth() * indentLevel;
 
-			hasChilds = getModel()->rowCount( index ) > 0;
+			hasChilds = getModel()->hasChilds( index );
 
 			if ( hasChilds ) {
 				UIIcon* icon = getIndexMetadata( index ).open ? mExpandIcon : mContractIcon;
@@ -447,7 +447,7 @@ void UITreeView::setAllExpanded( const ModelIndex& index, bool expanded ) {
 	for ( size_t i = 0; i < count; i++ ) {
 		auto curIndex = model.index( i, model.treeColumn(), index );
 		getIndexMetadata( curIndex ).open = expanded;
-		if ( model.rowCount( curIndex ) > 0 )
+		if ( model.hasChilds( curIndex ) )
 			setAllExpanded( curIndex, expanded );
 	}
 }
@@ -536,7 +536,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 		return UIAbstractTableView::onKeyDown( event );
 	auto curIndex = getSelection().first();
 
-	if ( nullptr == getModel() || getModel()->rowCount() == 0 )
+	if ( nullptr == getModel() || !getModel()->hasChilds() )
 		return UIAbstractTableView::onKeyDown( event );
 
 	switch ( event.getKeyCode() ) {
@@ -742,7 +742,7 @@ ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& cas
 	const Model* model = getModel();
 	ConditionalLock l( getModel() != nullptr,
 					   getModel() ? &const_cast<Model*>( getModel() )->resourceMutex() : nullptr );
-	if ( !model || model->rowCount() == 0 )
+	if ( !model || !model->hasChilds() )
 		return {};
 	ModelIndex foundIndex = {};
 	traverseTree( [&]( const int&, const ModelIndex& index, const size_t&, const Float& ) {
@@ -762,7 +762,7 @@ ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& cas
 
 ModelIndex UITreeView::selectRowWithPath( const std::vector<std::string>& pathTree ) {
 	const Model* model = getModel();
-	if ( !model || model->rowCount() == 0 )
+	if ( !model || !model->hasChilds() )
 		return {};
 	ModelIndex parentIndex = {};
 	for ( size_t i = 0; i < pathTree.size(); i++ ) {

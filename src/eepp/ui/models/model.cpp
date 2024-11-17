@@ -12,7 +12,7 @@ void Model::onModelUpdate( unsigned flags ) {
 	forEachView( [flags]( UIAbstractView* view ) { view->onModelUpdate( flags ); } );
 }
 
-void Model::forEachView( std::function<void( UIAbstractView* )> callback ) {
+void Model::forEachView( std::function<void( UIAbstractView* )> callback ) const {
 	for ( auto view : mViews )
 		callback( view );
 }
@@ -29,7 +29,7 @@ void Model::unregisterClient( Model::Client* client ) {
 	mClients.erase( client );
 }
 
-void Model::refreshView() {
+void Model::refreshView() const {
 	forEachView( []( UIAbstractView* view ) { view->invalidateDraw(); } );
 }
 

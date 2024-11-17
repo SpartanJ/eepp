@@ -520,6 +520,7 @@ class App : public UICodeEditorSplitter::Client {
 	bool mBenchmarkMode{ false };
 	bool mPortableMode{ false };
 	bool mPortableModeFailed{ false };
+	bool mDestroyingApp{ false };
 	Time mFrameTime{ Time::Zero };
 	Clock mLastRender;
 	Clock mSecondsCounter;

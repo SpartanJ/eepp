@@ -6,6 +6,7 @@
 #include <memory>
 
 #include <eepp/system/fileinfo.hpp>
+#include <eepp/system/threadpool.hpp>
 #include <eepp/system/translator.hpp>
 #include <eepp/ui/models/model.hpp>
 #include <eepp/ui/uiicon.hpp>
@@ -78,7 +79,8 @@ class EE_API FileSystemModel : public Model {
 
 	struct EE_API Node {
 	  public:
-		Node( const std::string& rootPath, const FileSystemModel& model );
+		Node( const std::string& rootPath, const FileSystemModel& model,
+			  const std::shared_ptr<ThreadPool>& threadPool = {} );
 
 		Node( FileInfo&& info, Node* parent );
 
@@ -111,13 +113,13 @@ class EE_API FileSystemModel : public Model {
 		Int64 findChildRowFromName( const std::string& name, const FileSystemModel& model,
 									bool forceRefresh = false );
 
-		void refresh( const FileSystemModel& model );
+		bool refresh( const FileSystemModel& model );
 
 		~Node();
 
 		FileSystemModel::Node* childWithPathExists( const std::string& path );
 
-		const Uint32& getHash() { return mHash; }
+		Uint32 getHash() const { return mHash; }
 
 	  private:
 		friend class FileSystemModel;
@@ -136,6 +138,8 @@ class EE_API FileSystemModel : public Model {
 		FileInfo mInfo;
 		std::vector<Node*> mChildren;
 		bool mHasTraversed{ false };
+		bool mIsTraversing{ false };
+		bool mQueuedForTraversal{ false };
 		bool mInfoDirty{ true };
 		Uint32 mHash{ 0 };
 
@@ -143,9 +147,10 @@ class EE_API FileSystemModel : public Model {
 
 		void cleanChildren();
 
-		void traverseIfNeeded( const FileSystemModel& );
+		bool traverseIfNeeded( const FileSystemModel& );
 
-		void refreshIfNeeded( const FileSystemModel& );
+		bool refreshIfNeeded( const FileSystemModel&,
+							  const std::shared_ptr<ThreadPool>& threadPool = nullptr );
 
 		bool fetchData( const String& fullPath );
 
@@ -154,7 +159,8 @@ class EE_API FileSystemModel : public Model {
 
 	static std::shared_ptr<FileSystemModel>
 	New( const std::string& rootPath, const Mode& mode = Mode::FilesAndDirectories,
-		 const DisplayConfig& displayConfig = DisplayConfig(), Translator* translator = nullptr );
+		 const DisplayConfig& displayConfig = DisplayConfig(), Translator* translator = nullptr,
+		 std::shared_ptr<ThreadPool> threadPool = {} );
 
 	const Mode& getMode() const { return mMode; }
 
@@ -176,6 +182,7 @@ class EE_API FileSystemModel : public Model {
 	virtual size_t treeColumn() const { return Column::Name; }
 	virtual size_t rowCount( const ModelIndex& = ModelIndex() ) const;
 	virtual size_t columnCount( const ModelIndex& = ModelIndex() ) const;
+	virtual bool hasChilds( const ModelIndex& = ModelIndex() ) const;
 	virtual std::string columnName( const size_t& column ) const;
 	virtual Variant data( const ModelIndex&, ModelRole role = ModelRole::Display ) const;
 	virtual ModelIndex parentIndex( const ModelIndex& ) const;
@@ -202,19 +209,22 @@ class EE_API FileSystemModel : public Model {
 
   protected:
 	std::atomic<bool> mInitOK;
+	std::atomic<bool> mShutingDown{ false };
 	std::string mRootPath;
 	std::string mRealRootPath;
 	std::unique_ptr<Node> mRoot{ nullptr };
 	Mode mMode{ Mode::FilesAndDirectories };
 	DisplayConfig mDisplayConfig;
 	std::array<std::string, Column::Count> mColumnNames;
+	mutable std::shared_ptr<ThreadPool> mThreadPool;
 
 	ModelIndex mPreviouslySelectedIndex{};
 
 	Node& nodeRef( const ModelIndex& index ) const;
 
 	FileSystemModel( const std::string& rootPath, const Mode& mode,
-					 const DisplayConfig& displayConfig, Translator* translator );
+					 const DisplayConfig& displayConfig, Translator* translator,
+					 std::shared_ptr<ThreadPool> threadPool );
 
 	size_t getFileIndex( Node* parent, const FileInfo& file );
 

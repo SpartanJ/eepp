@@ -869,6 +869,7 @@ static void fsRemoveAll( const std::string& fpath ) {
 }
 
 App::~App() {
+	mDestroyingApp = true;
 	if ( mProjectBuildManager )
 		mProjectBuildManager.reset();
 
@@ -1323,12 +1324,13 @@ void App::syncProjectTreeWithEditor( UICodeEditor* editor ) {
 		   !editor->getDocument().getLoadingFilePath().empty() ) ) {
 		std::string loadingPath( editor->getDocument().getLoadingFilePath() );
 		std::string path = !loadingPath.empty() ? loadingPath : editor->getDocument().getFilePath();
-		if ( path.size() >= mCurrentProject.size() ) {
-			path = path.substr( mCurrentProject.size() );
-			mProjectTreeView->setFocusOnSelection( false );
-			mProjectTreeView->selectRowWithPath( path );
-			mProjectTreeView->setFocusOnSelection( true );
+		mProjectTreeView->setFocusOnSelection( false );
+		if ( !mCurrentProject.empty() && String::startsWith( path, mCurrentProject ) ) {
+			mProjectTreeView->selectRowWithPath( path.substr( mCurrentProject.size() ) );
+		} else {
+			mProjectTreeView->selectRowWithPath( FileSystem::fileNameFromPath( path ) );
 		}
+		mProjectTreeView->setFocusOnSelection( true );
 	}
 }
 
@@ -2681,7 +2683,7 @@ void App::toggleHiddenFiles() {
 											   [this]( const std::string& filePath ) -> bool {
 												   return isFileVisibleInTreeView( filePath );
 											   } },
-											 &mUISceneNode->getTranslator() );
+											 &mUISceneNode->getTranslator(), mThreadPool );
 	if ( mProjectTreeView )
 		mProjectTreeView->setModel( mFileSystemModel );
 	if ( mFileSystemListener )
@@ -2935,7 +2937,7 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 											[this]( const std::string& filePath ) -> bool {
 												return isFileVisibleInTreeView( filePath );
 											} },
-										  &mUISceneNode->getTranslator() );
+										  &mUISceneNode->getTranslator(), mThreadPool );
 
 				mProjectTreeView->setModel( mFileSystemModel );
 				mProjectViewEmptyCont->setVisible( false );
@@ -2944,11 +2946,17 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 					mFileSystemListener->setFileSystemModel( mFileSystemModel );
 
 				auto forcePosition = getForcePositionFn( initialPosition );
+				auto onLoaded = [this, forcePosition]( UICodeEditor* codeEditor,
+													   const std::string& path ) {
+					if ( forcePosition )
+						forcePosition( codeEditor, path );
+					syncProjectTreeWithEditor( mSplitter->getCurEditor() );
+				};
 
 				if ( FileSystem::fileExists( rpath ) ) {
-					loadFileFromPath( rpath, false, nullptr, forcePosition );
+					loadFileFromPath( rpath, false, nullptr, onLoaded );
 				} else if ( FileSystem::fileWrite( path, "" ) ) {
-					loadFileFromPath( path, false, nullptr, forcePosition );
+					loadFileFromPath( path, false, nullptr, onLoaded );
 				}
 
 				mSettings->updateProjectSettingsMenu();
@@ -2988,7 +2996,8 @@ void App::initImageView() {
 }
 
 bool App::isFileVisibleInTreeView( const std::string& filePath ) {
-	if ( !mFileSystemMatcher || !mFileSystemMatcher->matcherReady() )
+	if ( !appInstance || mDestroyingApp || !mFileSystemMatcher ||
+		 !mFileSystemMatcher->matcherReady() )
 		return true;
 	auto fpath( filePath );
 	FileSystem::filePathRemoveBasePath( mCurrentProject, fpath );
@@ -3115,7 +3124,7 @@ void App::loadFolder( std::string path ) {
 											   [this]( const std::string& filePath ) -> bool {
 												   return isFileVisibleInTreeView( filePath );
 											   } },
-											 &mUISceneNode->getTranslator() );
+											 &mUISceneNode->getTranslator(), mThreadPool );
 
 	if ( mProjectTreeView )
 		mProjectTreeView->setModel( mFileSystemModel );
