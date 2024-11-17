@@ -191,7 +191,10 @@ bool FileSystemModel::Node::refresh( const FileSystemModel& model ) {
 	Node* node = nullptr;
 
 	for ( auto& file : files ) {
-		node = childWithPathExists( file.getFilepath() );
+		{
+			Lock l( model.mResourceLock );
+			node = childWithPathExists( file.getFilepath() );
+		}
 
 		if ( !isAcceptedExtension( displayCfg.acceptedExtensions, file ) )
 			continue;
@@ -393,7 +396,11 @@ FileSystemModel::Node* FileSystemModel::getNodeFromPath( std::string path, bool 
 	if ( !folders.empty() ) {
 		for ( size_t i = 0; i < folders.size(); i++ ) {
 			auto& part = folders[i];
-			if ( ( foundNode = curNode->findChildName( part, *this, invalidateTree ) ) ) {
+			{
+				Lock l( mResourceLock );
+				foundNode = curNode->findChildName( part, *this, invalidateTree );
+			}
+			if ( foundNode ) {
 				curNode = foundNode;
 			} else {
 				return nullptr;
@@ -696,10 +703,13 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 
 			beginInsertRows( parent->index( *this, 0 ), pos, pos );
 
-			if ( pos >= parent->mChildren.size() ) {
-				parent->mChildren.emplace_back( childNode );
-			} else {
-				parent->mChildren.insert( parent->mChildren.begin() + pos, childNode );
+			{
+				Lock l( mResourceLock );
+				if ( pos >= parent->mChildren.size() ) {
+					parent->mChildren.emplace_back( childNode );
+				} else {
+					parent->mChildren.insert( parent->mChildren.begin() + pos, childNode );
+				}
 			}
 
 			endInsertRows();
@@ -752,8 +762,11 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 			} );
 
 			if ( beginDeleteRows( index.parent(), index.row(), index.row() ) ) {
-				eeDelete( parent->mChildren[index.row()] );
-				parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+				{
+					Lock l( mResourceLock );
+					eeDelete( parent->mChildren[index.row()] );
+					parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+				}
 				endDeleteRows();
 			}
 
@@ -812,8 +825,11 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 			}
 
 			Node* childNode = parent->mChildren[index.row()];
-			childNode->rename( file );
-			parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+			{
+				Lock l( mResourceLock );
+				childNode->rename( file );
+				parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+			}
 
 			size_t pos = getFileIndex( node->getParent(), file );
 
@@ -844,10 +860,13 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 
 			beginMoveRows( index.parent(), index.row(), index.row(), index.parent(), pos );
 
-			if ( pos >= parent->mChildren.size() ) {
-				parent->mChildren.emplace_back( childNode );
-			} else {
-				parent->mChildren.insert( parent->mChildren.begin() + pos, childNode );
+			{
+				Lock l( mResourceLock );
+				if ( pos >= parent->mChildren.size() ) {
+					parent->mChildren.emplace_back( childNode );
+				} else {
+					parent->mChildren.insert( parent->mChildren.begin() + pos, childNode );
+				}
 			}
 
 			endMoveRows();
@@ -857,7 +876,11 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 				std::vector<ModelIndex> newIndexes = keptSelections[view];
 				int i = 0;
 				for ( const auto& name : names ) {
-					Int64 row = parent->findChildRowFromName( name, *this );
+					Int64 row = -1;
+					{
+						Lock l( mResourceLock );
+						row = parent->findChildRowFromName( name, *this );
+					}
 					if ( row >= 0 ) {
 						newIndexes.emplace_back(
 							this->index( row, prevSelectionsModelIndex[view][i].column(),
