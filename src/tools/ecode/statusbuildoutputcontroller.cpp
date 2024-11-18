@@ -393,6 +393,13 @@ void StatusBuildOutputController::setHeaderWidth() {
 	mTableIssues->setColumnWidth( 2, col3 );
 }
 
+static void removeRelativeSubPaths( std::string& path ) {
+	while ( String::startsWith( path, "../" ) || String::startsWith( path, "..\\" ) )
+		path = path.substr( 3 );
+	while ( String::startsWith( path, "./" ) || String::startsWith( path, ".\\" ) )
+		path = path.substr( 2 );
+}
+
 void StatusBuildOutputController::createContainer() {
 	if ( mContainer )
 		return;
@@ -461,6 +468,7 @@ void StatusBuildOutputController::createContainer() {
 							} );
 					} else {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
+						removeRelativeSubPaths( path );
 						mApp->getDirTree()->asyncMatchTree(
 							ProjectDirectoryTree::MatchType::Fuzzy, path, 1,
 							[this, colNum, lineNum]( std::shared_ptr<FileListModel> res ) {
@@ -470,16 +478,19 @@ void StatusBuildOutputController::createContainer() {
 								if ( !data.isValid() )
 									return;
 								std::string path = data.toString();
-								UITab* tab = mSplitter->isDocumentOpen( path );
-								if ( !tab ) {
-									mApp->loadFileFromPath( path, true, nullptr,
-															[this, lineNum, colNum]( auto, auto ) {
-																onLoadDone( lineNum, colNum );
-															} );
-								} else {
-									tab->getTabWidget()->setTabSelected( tab );
-									onLoadDone( lineNum, colNum );
-								}
+								mUISceneNode->runOnMainThread( [this, path, lineNum, colNum] {
+									UITab* tab = mSplitter->isDocumentOpen( path );
+									if ( !tab ) {
+										mApp->loadFileFromPath(
+											path, true, nullptr,
+											[this, lineNum, colNum]( auto, auto ) {
+												onLoadDone( lineNum, colNum );
+											} );
+									} else {
+										tab->getTabWidget()->setTabSelected( tab );
+										onLoadDone( lineNum, colNum );
+									}
+								} );
 							} );
 #endif
 					}
