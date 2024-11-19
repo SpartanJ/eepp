@@ -2,7 +2,7 @@
   "ecode-linux": {
     "build": [
       {
-        "args": "--with-debug-symbols --with-text-shaper gmake",
+        "args": "--with-debug-symbols --disable-static-build --with-text-shaper gmake",
         "command": "premake4",
         "working_dir": "${project_root}"
       },
