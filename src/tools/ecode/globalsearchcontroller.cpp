@@ -656,7 +656,7 @@ void GlobalSearchController::doGlobalSearch( String text, String filter, bool ca
 		loader->setParent( mGlobalSearchLayout->getParent() );
 		loader->setPosition( mGlobalSearchLayout->getPosition() +
 							 mGlobalSearchLayout->getSize() * 0.5f - loader->getSize() * 0.5f );
-		Clock* clock = eeNew( Clock, () );
+		Clock clock;
 		if ( escapeSequence )
 			text.unescape();
 		std::string search( text.toUtf8() );
@@ -672,9 +672,8 @@ void GlobalSearchController::doGlobalSearch( String text, String filter, bool ca
 #endif
 			[this, clock, search, loader, searchReplace, searchAgain, escapeSequence, searchType,
 			 filter]( const ProjectSearch::Result& res ) {
-				Log::info( "Global search for \"%s\" took %.2fms", search.c_str(),
-						   clock->getElapsedTime().asMilliseconds() );
-				eeDelete( clock );
+				Log::info( "Global search for \"%s\" took %s", search.c_str(),
+						   clock.getElapsedTime().toString() );
 				mUISceneNode->runOnMainThread( [this, loader, res, search, searchReplace,
 												searchAgain, escapeSequence, searchType, filter] {
 					auto model = ProjectSearch::asModel( res );

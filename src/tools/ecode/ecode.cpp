@@ -2554,7 +2554,7 @@ void App::removeFolderWatches() {
 }
 
 void App::loadDirTree( const std::string& path ) {
-	Clock* clock = eeNew( Clock, () );
+	Clock clock;
 	mDirTreeReady = false;
 	mDirTree = std::make_shared<ProjectDirectoryTree>(
 		path, mThreadPool, mPluginManager.get(),
@@ -2562,9 +2562,8 @@ void App::loadDirTree( const std::string& path ) {
 	Log::info( "Loading DirTree: %s", path );
 	mDirTree->scan(
 		[this, clock]( ProjectDirectoryTree& dirTree ) {
-			Log::info( "DirTree read in: %.2fms. Found %ld files.",
-					   clock->getElapsedTime().asMilliseconds(), dirTree.getFilesCount() );
-			eeDelete( clock );
+			Log::info( "DirTree read in: %s. Found %ld files.", clock.getElapsedTime().toString(),
+					   dirTree.getFilesCount() );
 			mDirTreeReady = true;
 			mUISceneNode->runOnMainThread( [this] {
 				mUniversalLocator->updateFilesTable();

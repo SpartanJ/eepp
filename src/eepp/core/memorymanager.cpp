@@ -9,10 +9,11 @@
 using namespace EE::System;
 using namespace EE::Window;
 
-#ifdef EE_MEMORY_MANAGER
+// #ifdef EE_DEBUG
+// #define EE_OVERRIDE_NEW_DELETE
+// #endif
 
-static bool sHasInit = false;
-/*
+#ifdef EE_OVERRIDE_NEW_DELETE
 void* operator new( std::size_t n ) {
 	return malloc( n );
 }
@@ -20,7 +21,10 @@ void* operator new( std::size_t n ) {
 void operator delete( void* p ) throw() {
 	free( p );
 }
-*/
+#endif
+
+#ifdef EE_MEMORY_MANAGER
+static bool sHasInit = false;
 #else
 static bool sHasInit = true;
 #endif

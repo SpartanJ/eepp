@@ -1,5 +1,5 @@
-#ifndef EECLOG_H
-#define EECLOG_H
+#ifndef EE_SYSTEM_LOG_H
+#define EE_SYSTEM_LOG_H
 
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/mutex.hpp>
@@ -233,4 +233,5 @@ class EE_API Log : protected Mutex {
 };
 
 }} // namespace EE::System
+
 #endif
