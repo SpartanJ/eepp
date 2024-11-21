@@ -1585,21 +1585,21 @@ void Node::clearActions() {
 }
 
 void Node::runOnMainThread( Actions::Runnable::RunnableFunc runnable, const Time& delay,
-							const Uint32& uniqueIdentifier ) {
+							const Action::UniqueID& uniqueIdentifier ) {
 	Action* action = Actions::Runnable::New( std::move( runnable ), delay );
 	action->setTag( uniqueIdentifier );
 	runAction( action );
 }
 
 void Node::setTimeout( Actions::Runnable::RunnableFunc runnable, const Time& delay,
-					   const Uint32& uniqueIdentifier ) {
+					   const Action::UniqueID& uniqueIdentifier ) {
 	Action* action = Actions::Runnable::New( std::move( runnable ), delay );
 	action->setTag( uniqueIdentifier );
 	runAction( action );
 }
 
 void Node::debounce( Actions::Runnable::RunnableFunc runnable, const Time& delay,
-					 const Uint32& uniqueIdentifier ) {
+					 const Action::UniqueID& uniqueIdentifier ) {
 	Action* prevAction =
 		getActionManager()->getActionByTagFromTarget( this, uniqueIdentifier, true );
 	if ( prevAction ) {
@@ -1612,7 +1612,7 @@ void Node::debounce( Actions::Runnable::RunnableFunc runnable, const Time& delay
 }
 
 void Node::setInterval( Actions::Runnable::RunnableFunc runnable, const Time& interval,
-						const Uint32& uniqueIdentifier ) {
+						const Action::UniqueID& uniqueIdentifier ) {
 	Action* action = Actions::Runnable::New( std::move( runnable ), interval, true );
 	action->setTag( uniqueIdentifier );
 	runAction( action );

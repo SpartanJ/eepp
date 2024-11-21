@@ -405,16 +405,17 @@ class EE_API Node : public Transformable {
 	Uint32 getNodeOfTypeIndex() const;
 
 	void runOnMainThread( Actions::Runnable::RunnableFunc runnable,
-						  const Time& delay = Seconds( 0 ), const Uint32& uniqueIdentifier = 0 );
+						  const Time& delay = Seconds( 0 ),
+						  const Action::UniqueID& uniqueIdentifier = 0 );
 
 	void setTimeout( Actions::Runnable::RunnableFunc runnable, const Time& delay = Seconds( 0 ),
-					 const Uint32& uniqueIdentifier = 0 );
+					 const Action::UniqueID& uniqueIdentifier = 0 );
 
 	void debounce( Actions::Runnable::RunnableFunc runnable, const Time& delay,
-				   const Uint32& uniqueIdentifier );
+				   const Action::UniqueID& uniqueIdentifier );
 
 	void setInterval( Actions::Runnable::RunnableFunc runnable, const Time& interval,
-					  const Uint32& uniqueIdentifier = 0 );
+					  const Action::UniqueID& uniqueIdentifier = 0 );
 
 	bool isChild( Node* child ) const;
 

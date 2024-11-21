@@ -18,6 +18,7 @@
 #include <eepp/window/input.hpp>
 #include <eepp/window/window.hpp>
 #include <nlohmann/json.hpp>
+#include <utf8cpp/utf8/unchecked.h>
 
 using namespace EE::Window;
 using json = nlohmann::json;
@@ -1815,11 +1816,11 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 		tryHideTooltip( editor, position );
 		return false;
 	}
-	String::HashType tag =
-		String::hash( "LSPClientPlugin::onMouseMove-" + editor->getDocument().getFilePath() );
-	editor->removeActionsByTag( tag );
+
+	String::HashType tag = hashCombine( String::hash( "LSPClientPlugin::onMouseMove-" ),
+										String::hash( editor->getDocument().getFilePath() ) );
 	mEditorsTags[editor].insert( tag );
-	editor->runOnMainThread(
+	editor->debounce(
 		[this, editor, position, tag]() {
 			mEditorsTags[editor].erase( tag );
 			if ( !editorExists( editor ) )
@@ -1905,21 +1906,31 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 
 	Float fontSize = editor->getUISceneNode()->getUIThemeManager()->getDefaultFontSize();
 
-	bool isPath = !editor->getDocument().getFilePath().empty();
-	std::string path( !isPath ? editor->getDocument().getFilename()
-							  : editor->getDocument().getFilePath() );
+	// Avoid heap allocating
+	static constexpr auto MAX_PATH_SIZE = 512;
+	String::StringBaseType filePath[MAX_PATH_SIZE];
+	std::memset( filePath, 0, MAX_PATH_SIZE * sizeof( String::StringBaseType ) );
+
+	const auto& workspace = getManager()->getWorkspaceFolder();
+	std::string_view path( editor->getDocument().getFilePath() );
+	if ( !workspace.empty() && String::startsWith( path, workspace ) )
+		path = path.substr( workspace.size() );
+	if ( path.size() > MAX_PATH_SIZE )
+		path = path.substr( path.size() - MAX_PATH_SIZE );
+
+	size_t pp = 0;
+	const char* c = path.data();
+	while ( *c != '\0' && pp < MAX_PATH_SIZE )
+		filePath[pp++] = utf8::unchecked::next( c );
 
 	Color textColor( editor->getColorScheme().getEditorColor(
 		mHoveringBreadcrumb == editor ? SyntaxStyleTypes::Text : SyntaxStyleTypes::LineNumber2 ) );
-	const auto& workspace = getManager()->getWorkspaceFolder();
-	if ( isPath && !workspace.empty() && String::startsWith( path, workspace ) )
-		path = path.substr( workspace.size() );
 	Float textOffsetY = eefloor( ( size.getHeight() - font->getLineSpacing( fontSize ) ) * 0.5f );
 
 	Vector2f pos( screenStart.x + eefloor( PixelDensity::dpToPx( 8 ) ),
 				  screenStart.y + textOffsetY );
 
-	auto drawn = Text::draw( String::fromUtf8( path ), pos, font, fontSize, textColor );
+	auto drawn = Text::draw( String::View( filePath ), pos, font, fontSize, textColor );
 
 	Lock l( mDocCurrentSymbolsMutex );
 	auto symbolsInfoIt = mDocCurrentSymbols.find( editor->getDocument().getURI() );
@@ -1927,14 +1938,17 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 		return;
 
 	pos.x += drawn.getWidth();
-	UIIcon* icon = getUISceneNode()->findIcon( "chevron-right" );
+	if ( mDrawSepIcon == nullptr )
+		mDrawSepIcon = getUISceneNode()->findIcon( "chevron-right" );
 	Float textHeight = drawn.getHeight();
 
-	const auto drawSep = [&pos, textHeight, icon, textColor, &drawn, &screenStart, textOffsetY]() {
-		if ( icon ) {
+	const auto& symbolsInfo = symbolsInfoIt->second;
+
+	for ( const auto& info : symbolsInfo ) {
+		if ( mDrawSepIcon ) {
 			pos.x += eefloor( PixelDensity::dpToPx( 8 ) );
 			Float iconSize = PixelDensity::dpToPxI( drawn.getHeight() * 0.5f );
-			auto iconDrawable = icon->getSize( iconSize );
+			auto iconDrawable = mDrawSepIcon->getSize( iconSize );
 			Color c = iconDrawable->getColor();
 			iconDrawable->setColor( textColor );
 			Float iconHeight = iconDrawable->getPixelsSize().getHeight();
@@ -1947,12 +1961,7 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 		} else {
 			pos.x += eefloor( PixelDensity::dpToPx( 16 ) );
 		}
-	};
 
-	const auto& symbolsInfo = symbolsInfoIt->second;
-
-	for ( const auto& info : symbolsInfo ) {
-		drawSep();
 		UIIcon* iconKind = getUISceneNode()->findIcon( info.icon );
 		if ( iconKind ) {
 			auto iconDrawable = iconKind->getSize( fontSize );
@@ -1965,7 +1974,7 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 			iconDrawable->setColor( c );
 		}
 
-		drawn = Text::draw( String::fromUtf8( info.name ), pos, font, fontSize, textColor );
+		drawn = Text::draw( info.name, pos, font, fontSize, textColor );
 		pos.x += drawn.getWidth();
 	}
 }
