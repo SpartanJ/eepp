@@ -3668,6 +3668,10 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mSplitter = UICodeEditorSplitter::New( this, mUISceneNode, mThreadPool, colorSchemes,
 											   mInitColorScheme );
 		mSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
+		mSplitter->setOnTabWidgetCreateCb( [this]( UITabWidget* tabWidget ) {
+			tabWidget->getTabBar()->onDoubleClick(
+				[this]( const MouseEvent* event ) { mSplitter->createEditorInNewTab(); } );
+		} );
 		mPluginManager->setSplitter( mSplitter );
 
 		Log::info( "Base UI took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );

@@ -661,6 +661,8 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 	tabWidget->addEventListener( Event::OnTabClosed, [this]( const Event* event ) {
 		onTabClosed( static_cast<const TabEvent*>( event ) );
 	} );
+	if ( mOnTabWidgetCreateCb )
+		mOnTabWidgetCreateCb( tabWidget );
 	auto editorData = createCodeEditorInTabWidget( tabWidget );
 	if ( editorData.first == nullptr || editorData.second == nullptr ) {
 		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
@@ -1657,6 +1659,10 @@ void UICodeEditorSplitter::onTabClosed( const TabEvent* tabEvent ) {
 	if ( tabEvent->getTab()->getOwnedWidget() == mCurEditor )
 		focusSomeEditor( nullptr );
 	eeASSERT( curWidgetExists() );
+}
+
+void UICodeEditorSplitter::setOnTabWidgetCreateCb( std::function<void( UITabWidget* )> cb ) {
+	mOnTabWidgetCreateCb = std::move( cb );
 }
 
 }}} // namespace EE::UI::Tools

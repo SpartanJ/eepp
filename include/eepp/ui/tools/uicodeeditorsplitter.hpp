@@ -353,6 +353,8 @@ class EE_API UICodeEditorSplitter {
 
 	bool checkWidgetExists( UIWidget* ) const;
 
+	void setOnTabWidgetCreateCb( std::function<void( UITabWidget* )> cb );
+
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
@@ -375,6 +377,7 @@ class EE_API UICodeEditorSplitter {
 	size_t mNavigationHistoryMaxSize{ 100 };
 	std::vector<NavigationRecord> mNavigationHistory;
 	size_t mNavigationHistoryPos{ std::numeric_limits<size_t>::max() };
+	std::function<void( UITabWidget* )> mOnTabWidgetCreateCb;
 
 	UICodeEditorSplitter( UICodeEditorSplitter::Client* client, UISceneNode* sceneNode,
 						  std::shared_ptr<ThreadPool> threadPool,

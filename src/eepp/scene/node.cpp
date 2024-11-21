@@ -1190,6 +1190,15 @@ Uint32 Node::onClick( const std::function<void( const MouseEvent* )>& callback,
 	} );
 }
 
+Uint32 Node::onDoubleClick( const std::function<void( const MouseEvent* )>& callback,
+							const MouseButton& button ) {
+	return on( Event::MouseDoubleClick, [callback, button]( const Event* event ) {
+		if ( event->asMouseEvent()->getFlags() & ( EE_BUTTON_MASK( button ) ) ) {
+			callback( event->asMouseEvent() );
+		}
+	} );
+}
+
 bool Node::hasEventsOfType( const Uint32& eventType ) const {
 	return mEvents.find( eventType ) != mEvents.end();
 }

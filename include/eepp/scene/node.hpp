@@ -198,6 +198,9 @@ class EE_API Node : public Transformable {
 	Uint32 onClick( const std::function<void( const MouseEvent* )>& callback,
 					const MouseButton& button = MouseButton::EE_BUTTON_LEFT );
 
+	Uint32 onDoubleClick( const std::function<void( const MouseEvent* )>& callback,
+						  const MouseButton& button = MouseButton::EE_BUTTON_LEFT );
+
 	void removeEventsOfType( const Uint32& eventType );
 
 	void removeEventListener( const Uint32& callbackId );
