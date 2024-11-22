@@ -1452,7 +1452,7 @@ String String::fromUtf8( const std::string_view& utf8String ) {
 	return String( utf32 );
 }
 
-#define iscont( p ) ( ( *( p ) & 0xC0 ) == 0x80 )
+#define iscont( p ) ( ( *(p)&0xC0 ) == 0x80 )
 
 static inline const char* utf8_next( const char* s, const char* e ) {
 	while ( s < e && iscont( s + 1 ) )
@@ -1962,6 +1962,16 @@ bool String::isWholeWord( const String& haystack, const String& needle, const In
 	return ( 0 == startPos || !( isAlphaNum( haystack[startPos - 1] ) ) ) &&
 		   ( startPos + needle.size() >= haystack.size() ||
 			 !( isAlphaNum( haystack[startPos + needle.size()] ) ) );
+}
+
+size_t String::toUtf32( std::string_view utf8str, String::StringBaseType* buffer,
+					  size_t bufferSize ) {
+	auto start = utf8str.data();
+	auto end = start + utf8str.size();
+	size_t pos = 0;
+	while ( start < end && pos < bufferSize )
+		buffer[pos++] = utf8::unchecked::next( start );
+	return pos;
 }
 
 } // namespace EE

@@ -415,6 +415,13 @@ class EE_API String {
 	/** @return The next character in a utf8 null terminated string */
 	static Uint32 utf8Next( char*& utf8String );
 
+	/** Converts an UTF-8 string view into an UTF-32 by using a currently allocated buffer (usefull
+	 * for stack allocated buffers)
+	 * @return The number of elements written into the buffer (the string length)
+	 **/
+	static size_t toUtf32( std::string_view utf8str, String::StringBaseType* buffer,
+						   size_t bufferSize );
+
 	/** glob matches a string against a glob
 	** @return True if matches
 	*/

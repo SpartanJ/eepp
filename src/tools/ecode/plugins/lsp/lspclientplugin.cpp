@@ -1908,8 +1908,8 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 
 	// Avoid heap allocating
 	static constexpr auto MAX_PATH_SIZE = 512;
-	String::StringBaseType filePath[MAX_PATH_SIZE];
-	std::memset( filePath, 0, MAX_PATH_SIZE * sizeof( String::StringBaseType ) );
+	String::StringBaseType utf32Path[MAX_PATH_SIZE];
+	std::memset( utf32Path, 0, MAX_PATH_SIZE * sizeof( String::StringBaseType ) );
 
 	const auto& workspace = getManager()->getWorkspaceFolder();
 	std::string_view path( editor->getDocument().getFilePath() );
@@ -1918,10 +1918,7 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 	if ( path.size() > MAX_PATH_SIZE )
 		path = path.substr( path.size() - MAX_PATH_SIZE );
 
-	size_t pp = 0;
-	const char* c = path.data();
-	while ( *c != '\0' && pp < MAX_PATH_SIZE )
-		filePath[pp++] = utf8::unchecked::next( c );
+	size_t pathLen = String::toUtf32( path, &utf32Path[0], MAX_PATH_SIZE );
 
 	Color textColor( editor->getColorScheme().getEditorColor(
 		mHoveringBreadcrumb == editor ? SyntaxStyleTypes::Text : SyntaxStyleTypes::LineNumber2 ) );
@@ -1930,7 +1927,7 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 	Vector2f pos( screenStart.x + eefloor( PixelDensity::dpToPx( 8 ) ),
 				  screenStart.y + textOffsetY );
 
-	auto drawn = Text::draw( String::View( filePath ), pos, font, fontSize, textColor );
+	auto drawn = Text::draw( String::View( utf32Path, pathLen ), pos, font, fontSize, textColor );
 
 	Lock l( mDocCurrentSymbolsMutex );
 	auto symbolsInfoIt = mDocCurrentSymbols.find( editor->getDocument().getURI() );
