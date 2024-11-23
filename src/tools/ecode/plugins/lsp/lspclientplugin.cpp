@@ -308,11 +308,14 @@ static LSPURIAndServer getServerURIFromTextDocumentURI( LSPClientServerManager& 
 }
 
 static void sanitizeCommand( std::string& cmd, const std::string& workspaceFolder ) {
-	std::string cpucount( String::toString( Sys::getCPUCount() ) );
+	static std::string cpucount( String::toString( Sys::getCPUCount() ) );
+	static std::string userdir = Sys::getUserDirectory();
 	String::replaceAll( cmd, "$NPROC", cpucount );
 	String::replaceAll( cmd, "${nproc}", cpucount );
 	String::replaceAll( cmd, "$PROJECTPATH", workspaceFolder );
 	String::replaceAll( cmd, "${project_root}", workspaceFolder );
+	String::replaceAll( cmd, "$HOME", userdir );
+	String::replaceAll( cmd, "${home}", userdir );
 }
 
 LSPPositionAndServer getLSPLocationFromJSON( LSPClientServerManager& manager, const json& data ) {

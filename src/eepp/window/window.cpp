@@ -464,20 +464,18 @@ void Window::sendVideoResizeCb() {
 }
 
 void Window::logSuccessfulInit( const std::string& BackendName ) {
-	std::string msg(
-		"Engine Initialized Succesfully.\n\tVersion: " + Version::getVersionName() +
-		" (codename: \"" + Version::getCodename() + "\")" +
-		"\n\tBuild time: " + Version::getBuildTime() + "\n\tPlatform: " + Sys::getPlatform() +
-		"\n\tOS: " + Sys::getOSName( true ) + "\n\tArch: " + Sys::getOSArchitecture() +
-		"\n\tCPU Cores: " + String::toString( Sys::getCPUCount() ) +
-		"\n\tProcess Path: " + Sys::getProcessPath() + "\n\tCurrent Working Directory: " +
-		FileSystem::getCurrentWorkingDirectory() + "\n\tDisk Free Space: " +
-		FileSystem::sizeToString( FileSystem::getDiskFreeSpace( Sys::getProcessPath() ) ) +
-		"\n\tWindow/Input Backend: " + BackendName + "\n\tGL Backend: " + GLi->versionStr() +
-		"\n\tGL Vendor: " + GLi->getVendor() + "\n\tGL Renderer: " + GLi->getRenderer() +
-		"\n\tGL Version: " + GLi->getVersion() + "\n\tGL Shading Language Version: " +
-		GLi->getShadingLanguageVersion() + "\n\tResolution: " + String::toString( getWidth() ) +
-		"x" + String::toString( getHeight() ) );
+	std::string msg( String::format(
+		"Engine Initialized Succesfully.\n\tVersion: %s (codename: \"%s\")\n\tBuild time: "
+		"%s\n\tPlatform: %s\n\tOS: %s\n\tArch: %s\n\tCPU Cores: %d\n\tProcess Path: %s\n\tCurrent "
+		"Working Directory: %s\n\tHome Directory: %s\n\tDisk Free Space: %s\n\tWindow/Input "
+		"Backend: %s\n\tGL Backend: %s\n\tGL Vendor: %s\n\tGL Renderer: %s\n\tGL Version: "
+		"%s\n\tGL Shading Language Version: %s\n\tResolution: %dx%d",
+		Version::getVersionName(), Version::getCodename(), Version::getBuildTime(),
+		Sys::getPlatform(), Sys::getOSName( true ), Sys::getOSArchitecture(), Sys::getCPUCount(),
+		Sys::getProcessPath(), FileSystem::getCurrentWorkingDirectory(), Sys::getUserDirectory(),
+		FileSystem::sizeToString( FileSystem::getDiskFreeSpace( Sys::getProcessPath() ) ),
+		BackendName, GLi->versionStr(), GLi->getVendor(), GLi->getRenderer(), GLi->getVersion(),
+		GLi->getShadingLanguageVersion(), getWidth(), getHeight() ) );
 
 #ifndef EE_SILENT
 	Log::info( msg );

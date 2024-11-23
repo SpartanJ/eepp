@@ -106,7 +106,7 @@ Process::~Process() {
 bool Process::create( const std::string& command, Uint32 options,
 					  const std::unordered_map<std::string, std::string>& environment,
 					  const std::string& workingDirectory ) {
-	std::vector<std::string> cmdArr = String::split( command, " ", "", "\"", true );
+	std::vector<std::string> cmdArr = parseArgs( command );
 	if ( cmdArr.empty() )
 		return false;
 	std::string cmd( cmdArr[0] );

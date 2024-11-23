@@ -1619,4 +1619,24 @@ std::string Sys::getShortcutTarget( const std::string& lnkFilePath ) {
 	return "";
 }
 
+std::string Sys::getUserDirectory() {
+#ifdef _WIN32
+	// On Windows, use USERPROFILE or HOMEDRIVE + HOMEPATH
+	const char* userProfile = std::getenv( "USERPROFILE" );
+	if ( userProfile ) {
+		return std::string( userProfile );
+	} else {
+		// Fallback to HOMEDRIVE + HOMEPATH
+		const char* homeDrive = std::getenv( "HOMEDRIVE" );
+		const char* homePath = std::getenv( "HOMEPATH" );
+		if ( homeDrive && homePath )
+			return std::string( homeDrive ) + homePath;
+	}
+	return "";
+#else
+	// On Unix-based systems, use HOME
+	return std::string{ std::getenv( "HOME" ) };
+#endif
+}
+
 }} // namespace EE::System

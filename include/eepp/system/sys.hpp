@@ -133,6 +133,9 @@ class EE_API Sys {
 
 	/** @returns The target destination of a windows shortcut path (.lnk files) */
 	static std::string getShortcutTarget( const std::string& lnkFilePath );
+
+	/** @returns The user home directory */
+	static std::string getUserDirectory();
 };
 
 }} // namespace EE::System

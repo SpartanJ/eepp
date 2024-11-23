@@ -360,6 +360,13 @@
       "url": "https://github.com/ocaml/ocaml-lsp",
       "command": "ocamllsp",
       "file_patterns": ["%.ml$", "%.mli$"]
+    },
+    {
+      "language": "julia",
+      "name": "LanguageServer.jl",
+      "url": "https://github.com/julia-vscode/LanguageServer.jl",
+      "command": "julia --project=\"$HOME/.julia/packages/LanguageServer/Fwm1f/src/LanguageServer.jl\" -e \"using LanguageServer; runserver()\"",
+      "file_patterns": ["%.jl"]
     }
   ]
 }
