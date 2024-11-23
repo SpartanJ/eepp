@@ -838,6 +838,66 @@ std::vector<std::string> String::split( const std::string& str, const std::strin
 	return tokens;
 }
 
+void String::splitCb( std::function<bool( std::string_view )> fnCb, const std::string& str,
+					  const std::string& delims, const std::string& delimsPreserve,
+					  const std::string& quote, const bool& removeQuotes ) {
+	if ( str.empty() || ( delims.empty() && delimsPreserve.empty() ) )
+		return;
+
+	std::string allDelims = delims + delimsPreserve + quote;
+
+	std::string::size_type tokenStart = 0;
+	std::string::size_type tokenEnd = str.find_first_of( allDelims, tokenStart );
+	std::string::size_type tokenLen = 0;
+	std::string_view token;
+	while ( true ) {
+		bool fromQuote = false;
+		while ( tokenEnd != std::string::npos &&
+				quote.find_first_of( str[tokenEnd] ) != std::string::npos ) {
+			if ( str[tokenEnd] == '(' ) {
+				tokenEnd = findCloseBracket( str, tokenEnd, '(', ')' );
+			} else if ( str[tokenEnd] == '[' ) {
+				tokenEnd = findCloseBracket( str, tokenEnd, '[', ']' );
+			} else if ( str[tokenEnd] == '{' ) {
+				tokenEnd = findCloseBracket( str, tokenEnd, '{', '}' );
+			} else {
+				fromQuote = true;
+				tokenEnd = str.find_first_of( str[tokenEnd], tokenEnd + 1 );
+			}
+			if ( tokenEnd != std::string::npos ) {
+				tokenEnd = str.find_first_of( allDelims, tokenEnd + 1 );
+			}
+		}
+
+		if ( tokenEnd == std::string::npos ) {
+			tokenLen = std::string::npos;
+		} else {
+			tokenLen = tokenEnd - tokenStart;
+		}
+
+		token = std::string_view{ str }.substr( tokenStart, tokenLen );
+		if ( !token.empty() ) {
+			if ( fromQuote && removeQuotes && token.size() > 2 )
+				token = token.substr( 1, token.size() - 2 );
+			if ( !fnCb( token ) )
+				return;
+		}
+		if ( tokenEnd != std::string::npos && !delimsPreserve.empty() &&
+			 delimsPreserve.find_first_of( str[tokenEnd] ) != std::string::npos ) {
+			if ( !fnCb( std::string_view{ str }.substr( tokenEnd, 1 ) ) )
+				return;
+		}
+
+		tokenStart = tokenEnd;
+		if ( tokenStart == std::string::npos )
+			break;
+		tokenStart++;
+		if ( tokenStart == str.length() )
+			break;
+		tokenEnd = str.find_first_of( allDelims, tokenStart );
+	}
+}
+
 std::string String::join( const std::vector<std::string>& strArray, const Int8& joinchar,
 						  const bool& appendLastJoinChar ) {
 	size_t s = strArray.size();
@@ -1452,7 +1512,7 @@ String String::fromUtf8( const std::string_view& utf8String ) {
 	return String( utf32 );
 }
 
-#define iscont( p ) ( ( *(p)&0xC0 ) == 0x80 )
+#define iscont( p ) ( ( *( p ) & 0xC0 ) == 0x80 )
 
 static inline const char* utf8_next( const char* s, const char* e ) {
 	while ( s < e && iscont( s + 1 ) )
@@ -1965,7 +2025,7 @@ bool String::isWholeWord( const String& haystack, const String& needle, const In
 }
 
 size_t String::toUtf32( std::string_view utf8str, String::StringBaseType* buffer,
-					  size_t bufferSize ) {
+						size_t bufferSize ) {
 	auto start = utf8str.data();
 	auto end = start + utf8str.size();
 	size_t pos = 0;

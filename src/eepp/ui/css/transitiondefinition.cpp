@@ -22,49 +22,52 @@ UnorderedMap<std::string, TransitionDefinition> TransitionDefinition::parseTrans
 		const PropertyDefinition* propDef = prop->getPropertyDefinition();
 
 		if ( propDef->getPropertyId() == PropertyId::Transition ) {
-			auto strTransitions = String::split( prop->getValue(), ",", ",", "()" );
+			String::splitCb(
+				[&transitions, prop]( std::string_view str ) {
+					auto strTransition = String::trim( str );
+					auto splitTransition =
+						String::split( std::string{ strTransition }, " ", "", "()" );
 
-			for ( auto tit = strTransitions.begin(); tit != strTransitions.end(); ++tit ) {
-				auto strTransition = String::trim( *tit );
-				auto splitTransition = String::split( strTransition, " ", "", "()" );
+					if ( !splitTransition.empty() ) {
+						TransitionDefinition transitionDef;
 
-				if ( !splitTransition.empty() ) {
-					TransitionDefinition transitionDef;
+						if ( splitTransition.size() >= 2 ) {
+							std::string property = String::trim( splitTransition[0] );
+							String::toLowerInPlace( property );
 
-					if ( splitTransition.size() >= 2 ) {
-						std::string property = String::trim( splitTransition[0] );
-						String::toLowerInPlace( property );
+							Time duration =
+								StyleSheetProperty( prop->getName(),
+													String::toLower( splitTransition[1] ) )
+									.asTime();
 
-						Time duration = StyleSheetProperty( prop->getName(),
-															String::toLower( splitTransition[1] ) )
+							transitionDef.property = property;
+							transitionDef.duration = duration;
+
+							if ( splitTransition.size() >= 3 ) {
+								TimingFunction tf( TimingFunction::parse( splitTransition[2] ) );
+								transitionDef.timingFunction = std::move( tf.interpolation );
+								transitionDef.timingFunctionParameters = std::move( tf.parameters );
+
+								if ( transitionDef.timingFunction == Ease::None &&
+									 splitTransition.size() == 3 ) {
+									transitionDef.delay =
+										StyleSheetProperty( prop->getName(),
+															String::toLower( splitTransition[2] ) )
 											.asTime();
-
-						transitionDef.property = property;
-						transitionDef.duration = duration;
-
-						if ( splitTransition.size() >= 3 ) {
-							TimingFunction tf( TimingFunction::parse( splitTransition[2] ) );
-							transitionDef.timingFunction = std::move( tf.interpolation );
-							transitionDef.timingFunctionParameters = std::move( tf.parameters );
-
-							if ( transitionDef.timingFunction == Ease::None &&
-								 splitTransition.size() == 3 ) {
-								transitionDef.delay =
-									StyleSheetProperty( prop->getName(),
-														String::toLower( splitTransition[2] ) )
-										.asTime();
-							} else if ( splitTransition.size() >= 4 ) {
-								transitionDef.delay =
-									StyleSheetProperty( prop->getName(),
-														String::toLower( splitTransition[3] ) )
-										.asTime();
+								} else if ( splitTransition.size() >= 4 ) {
+									transitionDef.delay =
+										StyleSheetProperty( prop->getName(),
+															String::toLower( splitTransition[3] ) )
+											.asTime();
+								}
 							}
-						}
 
-						transitions[transitionDef.getProperty()] = transitionDef;
+							transitions[transitionDef.getProperty()] = transitionDef;
+						}
 					}
-				}
-			}
+					return true;
+				},
+				prop->getValue(), ",", ",", "()" );
 		} else if ( propDef->getPropertyId() == PropertyId::TransitionDuration ) {
 			auto strDurations = String::split( prop->getValue(), ',' );
 

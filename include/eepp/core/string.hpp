@@ -5,6 +5,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -145,6 +146,15 @@ class EE_API String {
 										   const std::string& delimsPreserve = "",
 										   const std::string& quote = "\"",
 										   const bool& removeQuotes = false );
+
+	/** Split a string and hold it on a vector. This function is meant to be used for code
+	 * splitting, detects functions, arrays, braces and quotes for the splitting.
+	 * It does not heap allocate. */
+	static void splitCb( std::function<bool( std::string_view )>
+							 fnCb /* returns true to continue, false to stop iterating */,
+						 const std::string& str, const std::string& delims,
+						 const std::string& delimsPreserve = "", const std::string& quote = "\"",
+						 const bool& removeQuotes = false );
 
 	/** Joins a string vector into a single string */
 	static std::string join( const std::vector<std::string>& strArray, const Int8& joinchar = ' ',

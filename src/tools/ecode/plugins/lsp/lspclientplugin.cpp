@@ -31,6 +31,11 @@ namespace ecode {
 #define LSPCLIENT_THREADED 0
 #endif
 
+static Action::UniqueID getMouseMoveHash( UICodeEditor* editor ) {
+	return hashCombine( String::hash( "LSPClientPlugin::onMouseMove-" ),
+						reinterpret_cast<Action::UniqueID>( editor ) );
+}
+
 static json getURIAndPositionJSON( UICodeEditor* editor ) {
 	json data;
 	auto doc = editor->getDocumentRef();
@@ -256,25 +261,22 @@ LSPClientPlugin::~LSPClientPlugin() {
 	{
 		Lock l( mDocMutex );
 		for ( const auto& editor : mEditors ) {
+			UICodeEditor* codeEditor = editor.first;
 			for ( auto& kb : mKeyBindings ) {
-				editor.first->getKeyBindings().removeCommandKeybind( kb.first );
-				if ( editor.first->hasDocument() )
-					editor.first->getDocument().removeCommand( kb.first );
+				codeEditor->getKeyBindings().removeCommandKeybind( kb.first );
+				if ( codeEditor->hasDocument() )
+					codeEditor->getDocument().removeCommand( kb.first );
 			}
 			for ( auto listener : editor.second )
-				editor.first->removeEventListener( listener );
+				codeEditor->removeEventListener( listener );
 			if ( mBreadcrumb )
-				editor.first->unregisterTopSpace( this );
-			editor.first->unregisterPlugin( this );
+				codeEditor->unregisterTopSpace( this );
+			codeEditor->unregisterPlugin( this );
+			if ( mManager->getSplitter()->editorExists( codeEditor ) )
+				codeEditor->removeActionsByTag( getMouseMoveHash( codeEditor ) );
 		}
 		if ( nullptr == mManager->getSplitter() )
 			return;
-		for ( const auto& editor : mEditorsTags ) {
-			if ( mManager->getSplitter()->editorExists( editor.first ) ) {
-				for ( const auto& tag : editor.second )
-					editor.first->removeActionsByTag( tag );
-			}
-		}
 	}
 }
 
@@ -1511,7 +1513,6 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 	}
 
 	mEditors.insert( { editor, listeners } );
-	mEditorsTags.insert( { editor, UnorderedSet<String::HashType>{} } );
 	mEditorDocs[editor] = editor->getDocumentRef().get();
 
 	if ( mReady && editor->hasDocument() && editor->getDocument().hasFilepath() )
@@ -1603,7 +1604,6 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 			editor->unregisterTopSpace( this );
 
 		mEditors.erase( editor );
-		mEditorsTags.erase( editor );
 		mEditorDocs.erase( editor );
 		for ( const auto& ieditor : mEditorDocs ) {
 			if ( ieditor.second == doc )
@@ -1817,12 +1817,8 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 		return false;
 	}
 
-	String::HashType tag = hashCombine( String::hash( "LSPClientPlugin::onMouseMove-" ),
-										String::hash( editor->getDocument().getFilePath() ) );
-	mEditorsTags[editor].insert( tag );
 	editor->debounce(
-		[this, editor, position, tag]() {
-			mEditorsTags[editor].erase( tag );
+		[this, editor]() {
 			if ( !editorExists( editor ) )
 				return;
 			auto server = mClientManager.getOneLSPClientServer( editor );
@@ -1830,22 +1826,20 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 				return;
 			server->documentHover(
 				editor->getDocument().getURI(), currentMouseTextPosition( editor ),
-				[this, editor, position]( const Int64&, const LSPHover& resp ) {
+				[this, editor]( const Int64&, const LSPHover& resp ) {
 					if ( editorExists( editor ) && !resp.contents.empty() &&
 						 !resp.contents[0].value.empty() ) {
-						editor->runOnMainThread( [editor, resp, position, this]() {
-							if ( !editor->getScreenRect().contains( editor->getUISceneNode()
-																		->getWindow()
-																		->getInput()
-																		->getMousePos()
-																		.asFloat() ) )
+						editor->runOnMainThread( [editor, resp, this]() {
+							auto mousePos =
+								editor->getUISceneNode()->getWindow()->getInput()->getMousePos();
+							if ( !editor->getScreenRect().contains( mousePos.asFloat() ) )
 								return;
-							tryDisplayTooltip( editor, resp, position );
+							tryDisplayTooltip( editor, resp, mousePos );
 						} );
 					}
 				} );
 		},
-		mHoverDelay, tag );
+		mHoverDelay, getMouseMoveHash( editor ) );
 	tryHideTooltip( editor, position );
 	return editor->getTooltip() && editor->getTooltip()->isVisible() && mSymbolInfoShowing;
 }

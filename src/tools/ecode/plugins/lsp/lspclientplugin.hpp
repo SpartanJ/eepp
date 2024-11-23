@@ -110,7 +110,6 @@ class LSPClientPlugin : public Plugin {
 	Mutex mDocSymbolsMutex;
 	Mutex mDocCurrentSymbolsMutex;
 	UnorderedMap<UICodeEditor*, std::vector<Uint32>> mEditors;
-	UnorderedMap<UICodeEditor*, UnorderedSet<String::HashType>> mEditorsTags;
 	UnorderedSet<TextDocument*> mDocs;
 	UnorderedMap<URI, LSPSymbolInformationList> mDocSymbols;
 	UnorderedMap<URI, LSPSymbolInformationList> mDocFlatSymbols;

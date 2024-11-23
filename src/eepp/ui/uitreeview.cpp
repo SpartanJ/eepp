@@ -383,6 +383,13 @@ void UITreeView::drawChilds() {
 		mVScroll->nodeDraw();
 }
 
+struct OverFindTraverseTreeVars {
+	UITreeView* tree;
+	int realIndex;
+	Vector2f point;
+	Float rowHeight;
+};
+
 Node* UITreeView::overFind( const Vector2f& point ) {
 	ScopedOp op( [this] { mUISceneNode->setIsLoading( true ); },
 				 [this] { mUISceneNode->setIsLoading( false ); } );
@@ -400,18 +407,19 @@ Node* UITreeView::overFind( const Vector2f& point ) {
 				return pOver;
 			int realIndex = 0;
 			Float rowHeight = getRowHeight();
-			traverseTree( [this, &pOver, &realIndex, point, rowHeight](
-							  int, const ModelIndex& index, const size_t&, const Float& yOffset ) {
-				if ( yOffset - mScrollOffset.y > mSize.getHeight() )
-					return IterationDecision::Stop;
-				if ( yOffset - mScrollOffset.y + rowHeight < 0 )
+			OverFindTraverseTreeVars v{ this, realIndex, point, rowHeight };
+			traverseTree(
+				[&v, &pOver]( int, const ModelIndex& index, const size_t&, const Float& yOffset ) {
+					if ( yOffset - v.tree->mScrollOffset.y > v.tree->mSize.getHeight() )
+						return IterationDecision::Stop;
+					if ( yOffset - v.tree->mScrollOffset.y + v.rowHeight < 0 )
+						return IterationDecision::Continue;
+					pOver = v.tree->updateRow( v.realIndex, index, yOffset )->overFind( v.point );
+					v.realIndex++;
+					if ( pOver )
+						return IterationDecision::Stop;
 					return IterationDecision::Continue;
-				pOver = updateRow( realIndex, index, yOffset )->overFind( point );
-				realIndex++;
-				if ( pOver )
-					return IterationDecision::Stop;
-				return IterationDecision::Continue;
-			} );
+				} );
 			if ( !pOver )
 				pOver = this;
 		}
