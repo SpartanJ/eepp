@@ -2138,7 +2138,9 @@ void App::loadImageFromMedium( const std::string& path, bool isMemory ) {
 				IOStream* stream = isMemory
 									   ? (IOStream*)new IOStreamMemory( path.c_str(), path.size() )
 									   : (IOStream*)new IOStreamFile( path );
-				image = Sprite::fromGif( *stream );
+				Sprite* sprite = Sprite::fromGif( *stream );
+				sprite->setAutoAnimate( false );
+				image = sprite;
 				delete stream;
 			}
 
