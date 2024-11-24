@@ -1056,7 +1056,7 @@ std::pair<std::vector<Image>, int> Image::loadGif( IOStream& stream ) {
 	auto delay = delays[0];
 	free( data );
 	free( delays );
-	return { std::move( gif ), delay };
+	return { std::move( gif ), delay ? delay : 100 };
 }
 
 }} // namespace EE::Graphics
