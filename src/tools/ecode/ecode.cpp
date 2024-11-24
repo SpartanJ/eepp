@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <args/args.hxx>
 #include <eepp/graphics/fontfamily.hpp>
+#include <eepp/system/iostreammemory.hpp>
 #include <filesystem>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -2118,10 +2119,29 @@ void App::loadImageFromMedium( const std::string& path, bool isMemory ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		mThreadPool->run( [this, imageView, loaderView, path, isMemory]() {
 #endif
-			Texture* image =
-				isMemory ? TextureFactory::instance()->loadFromMemory(
-							   reinterpret_cast<const unsigned char*>( path.c_str() ), path.size() )
-						 : TextureFactory::instance()->loadFromFile( path );
+			Image::Format format =
+				isMemory ? Image::getFormat( reinterpret_cast<const unsigned char*>( path.c_str() ),
+											 path.size() )
+						 : Image::getFormat( path );
+
+			if ( format == Image::Format::Unknown )
+				return;
+
+			Drawable* image = nullptr;
+
+			if ( format != Image::Format::GIF ) {
+				image = isMemory ? TextureFactory::instance()->loadFromMemory(
+									   reinterpret_cast<const unsigned char*>( path.c_str() ),
+									   path.size() )
+								 : TextureFactory::instance()->loadFromFile( path );
+			} else {
+				IOStream* stream = isMemory
+									   ? (IOStream*)new IOStreamMemory( path.c_str(), path.size() )
+									   : (IOStream*)new IOStreamFile( path );
+				image = Sprite::fromGif( *stream );
+				delete stream;
+			}
+
 			if ( mImageLayout->isVisible() ) {
 				imageView->runOnMainThread( [this, imageView, loaderView, image]() {
 					mImageLayout->setFocus();
@@ -2129,7 +2149,7 @@ void App::loadImageFromMedium( const std::string& path, bool isMemory ) {
 					loaderView->setVisible( false );
 				} );
 			} else {
-				TextureFactory::instance()->remove( image );
+				eeSAFE_DELETE( image );
 				imageView->setDrawable( nullptr );
 				loaderView->setVisible( false );
 			}
@@ -2980,18 +3000,14 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 }
 
 void App::initImageView() {
-	mImageLayout->on( Event::MouseClick, [this]( const Event* ) {
+	const auto onCloseImage = [this]( const Event* ) {
 		mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE )->setDrawable( nullptr );
 		mImageLayout->setEnabled( false )->setVisible( false );
-	} );
-	mImageLayout->on( Event::KeyDown, [this]( const Event* event ) {
-		if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE ) {
-			mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE )->setDrawable( nullptr );
-			mImageLayout->setEnabled( false )->setVisible( false );
-			if ( mSplitter->getCurWidget() )
-				mSplitter->getCurWidget()->setFocus();
-		}
-	} );
+		if ( mSplitter->getCurWidget() )
+			mSplitter->getCurWidget()->setFocus();
+	};
+	mImageLayout->on( Event::MouseClick, onCloseImage );
+	mImageLayout->on( Event::KeyDown, onCloseImage );
 }
 
 bool App::isFileVisibleInTreeView( const std::string& filePath ) {
@@ -3670,7 +3686,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
 		mSplitter->setOnTabWidgetCreateCb( [this]( UITabWidget* tabWidget ) {
 			tabWidget->getTabBar()->onDoubleClick(
-				[this]( const MouseEvent* event ) { mSplitter->createEditorInNewTab(); } );
+				[this]( const MouseEvent* ) { mSplitter->createEditorInNewTab(); } );
 		} );
 		mPluginManager->setSplitter( mSplitter );
 

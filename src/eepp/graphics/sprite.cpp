@@ -28,6 +28,22 @@ Sprite* Sprite::New( const Uint32& TexId, const Sizef& DestSize, const Vector2i&
 	return eeNew( Sprite, ( TexId, DestSize, offset, TexSector ) );
 }
 
+Sprite* Sprite::fromGif( IOStream& stream ) {
+	auto [gif, delay] = Image::loadGif( stream );
+	Sprite* sprite = Sprite::New();
+
+	for ( const auto& i : gif ) {
+		auto texId = TextureFactory::instance()->loadFromPixels( i.getPixels(), i.getWidth(),
+																 i.getHeight(), i.getChannels() );
+		sprite->addFrame( texId );
+	}
+
+	sprite->setAnimationSpeed( 1000.f / (float)delay );
+	sprite->setAsTextureRegionOwner( true );
+	sprite->setAsTextureOwner( true );
+	return sprite;
+}
+
 Sprite::Sprite() : Drawable( Drawable::SPRITE ) {}
 
 Sprite::Sprite( const std::string& name, const std::string& extension,
@@ -47,6 +63,7 @@ Sprite::Sprite( const Uint32& TexId, const Sizef& DestSize, const Vector2i& Offs
 }
 
 Sprite::~Sprite() {
+	cleanUpResources();
 	eeSAFE_DELETE_ARRAY( mVertexColors );
 }
 
@@ -67,7 +84,8 @@ Sprite& Sprite::operator=( const Sprite& Other ) {
 	mCurrentSubFrame = Other.mCurrentSubFrame;
 	mSubFrames = Other.mSubFrames;
 	mAnimTo = Other.mAnimTo;
-	mCb = Other.mCb;
+	mCallbacks = Other.mCallbacks;
+	mNumCallBacks = Other.mNumCallBacks;
 
 	if ( NULL != Other.mVertexColors ) {
 		mVertexColors = eeNewArray( Color, 4 );
@@ -101,8 +119,8 @@ Sprite Sprite::clone() {
 	Spr.mCurrentSubFrame = mCurrentSubFrame;
 	Spr.mSubFrames = mSubFrames;
 	Spr.mAnimTo = mAnimTo;
-	Spr.mCb = mCb;
-	Spr.mUserData = mUserData;
+	Spr.mCallbacks = mCallbacks;
+	Spr.mNumCallBacks = mNumCallBacks;
 
 	if ( NULL != mVertexColors ) {
 		Spr.mVertexColors = eeNewArray( Color, 4 );
@@ -124,7 +142,29 @@ void Sprite::clearFrame() {
 	mFrames.clear();
 }
 
+void Sprite::cleanUpResources() {
+	if ( isTextureRegionOwner() || isTextureOwner() ) {
+		size_t frames = getNumFrames();
+
+		for ( size_t i = 0; i < frames; i++ ) {
+			for ( size_t f = 0; f < mFrames[i].Spr.size(); f++ ) {
+				TextureRegion* region = mFrames[i].Spr[f];
+				Texture* texture = region->getTexture();
+
+				if ( isTextureOwner() && texture &&
+					 TextureFactory::instance()->exists( texture ) ) {
+					eeSAFE_DELETE( texture );
+				}
+
+				if ( isTextureRegionOwner() )
+					GlobalTextureAtlas::instance()->remove( region );
+			}
+		}
+	}
+}
+
 void Sprite::reset() {
+	cleanUpResources();
 	clearFrame();
 
 	mFlags = SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED;
@@ -146,11 +186,15 @@ void Sprite::reset() {
 	mAnimTo = 0;
 
 	disableVertexColors();
+
+	fireEvent( SPRITE_EVENT_NEW_FRAME );
 }
 
 void Sprite::setCurrentFrame( unsigned int CurFrame ) {
 	if ( CurFrame )
 		CurFrame--;
+
+	bool changed = mCurrentFrame != CurFrame;
 
 	mfCurrentFrame = CurFrame;
 	mCurrentFrame = (unsigned int)CurFrame;
@@ -164,11 +208,16 @@ void Sprite::setCurrentFrame( unsigned int CurFrame ) {
 		mfCurrentFrame = 0.0f;
 		mCurrentFrame = 0;
 	}
+
+	if ( changed )
+		fireEvent( SPRITE_EVENT_NEW_FRAME );
 }
 
 void Sprite::setCurrentSubFrame( const unsigned int& CurSubFrame ) {
-	if ( CurSubFrame < mSubFrames )
+	if ( CurSubFrame < mSubFrames && mCurrentSubFrame != CurSubFrame ) {
 		mCurrentSubFrame = CurSubFrame;
+		fireEvent( SPRITE_EVENT_NEW_FRAME );
+	}
 }
 
 Quad2f Sprite::getQuad() {
@@ -465,79 +514,85 @@ void Sprite::update() {
 }
 
 void Sprite::update( const Time& ElapsedTime ) {
-	if ( mFrames.size() > 1 && !SPR_FGET( SPRITE_FLAG_ANIM_PAUSED ) && Time::Zero != ElapsedTime ) {
-		unsigned int Size = (unsigned int)mFrames.size() - 1;
+	if ( !( mFrames.size() > 1 && !SPR_FGET( SPRITE_FLAG_ANIM_PAUSED ) &&
+			Time::Zero != ElapsedTime ) )
+		return;
 
-		if ( mRepetitions == 0 )
+	unsigned int Size = (unsigned int)mFrames.size() - 1;
+
+	if ( mRepetitions == 0 )
+		return;
+
+	if ( !SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) )
+		mfCurrentFrame += mAnimSpeed * ElapsedTime.asSeconds();
+	else
+		mfCurrentFrame -= mAnimSpeed * ElapsedTime.asSeconds();
+
+	auto lastFrame = mCurrentFrame;
+	mCurrentFrame = (unsigned int)mfCurrentFrame;
+
+	if ( SPR_FGET( SPRITE_FLAG_ANIM_TO_FRAME_AND_STOP ) ) {
+		if ( mAnimTo == mCurrentFrame ) {
+			mFlags &= ~SPRITE_FLAG_ANIM_TO_FRAME_AND_STOP;
+
+			goToAndStop( mAnimTo );
+
+			fireEvent( SPRITE_EVENT_END_ANIM_TO );
+
 			return;
-
-		if ( !SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) )
-			mfCurrentFrame += mAnimSpeed * ElapsedTime.asSeconds();
-		else
-			mfCurrentFrame -= mAnimSpeed * ElapsedTime.asSeconds();
-
-		mCurrentFrame = (unsigned int)mfCurrentFrame;
-
-		if ( SPR_FGET( SPRITE_FLAG_ANIM_TO_FRAME_AND_STOP ) ) {
-			if ( mAnimTo == mCurrentFrame ) {
-				mFlags &= ~SPRITE_FLAG_ANIM_TO_FRAME_AND_STOP;
-
-				goToAndStop( mAnimTo );
-
-				fireEvent( SPRITE_EVENT_END_ANIM_TO );
-
-				return;
-			}
 		}
+	}
 
-		if ( !SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) && mfCurrentFrame >= Size + 1.0f ) {
-			if ( mRepetitions < 0 ) {
-				mfCurrentFrame = 0.0f;
-				mCurrentFrame = 0;
-				fireEvent( SPRITE_EVENT_FIRST_FRAME );
-			} else {
-				if ( mRepetitions == 0 ) {
-					mfCurrentFrame = (Float)Size;
-					mCurrentFrame = Size;
-					fireEvent( SPRITE_EVENT_LAST_FRAME );
-				} else {
-					mfCurrentFrame = 0.0f;
-					mCurrentFrame = 0;
-					mRepetitions--;
-					fireEvent( SPRITE_EVENT_FIRST_FRAME );
-				}
-			}
-		} else if ( SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) && mfCurrentFrame < 0.0f ) {
-			if ( mRepetitions < 0 ) {
-				mfCurrentFrame = Size + 1.0f;
+	if ( !SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) && mfCurrentFrame >= Size + 1.0f ) {
+		if ( mRepetitions < 0 ) {
+			mfCurrentFrame = 0.0f;
+			mCurrentFrame = 0;
+			fireEvent( SPRITE_EVENT_FIRST_FRAME );
+		} else {
+			if ( mRepetitions == 0 ) {
+				mfCurrentFrame = (Float)Size;
 				mCurrentFrame = Size;
 				fireEvent( SPRITE_EVENT_LAST_FRAME );
 			} else {
-				if ( mRepetitions == 0 ) {
-					mfCurrentFrame = 0.0f;
-					mCurrentFrame = 0;
-					fireEvent( SPRITE_EVENT_FIRST_FRAME );
-				} else {
-					mfCurrentFrame = Size + 1.0f;
-					mCurrentFrame = Size;
-					mRepetitions--;
-					fireEvent( SPRITE_EVENT_LAST_FRAME );
-				}
+				mfCurrentFrame = 0.0f;
+				mCurrentFrame = 0;
+				mRepetitions--;
+				fireEvent( SPRITE_EVENT_FIRST_FRAME );
 			}
 		}
-
-		if ( mfCurrentFrame < 0.0f ) {
-			if ( SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) ) {
+	} else if ( SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) && mfCurrentFrame < 0.0f ) {
+		if ( mRepetitions < 0 ) {
+			mfCurrentFrame = Size + 1.0f;
+			mCurrentFrame = Size;
+			fireEvent( SPRITE_EVENT_LAST_FRAME );
+		} else {
+			if ( mRepetitions == 0 ) {
 				mfCurrentFrame = 0.0f;
 				mCurrentFrame = 0;
 				fireEvent( SPRITE_EVENT_FIRST_FRAME );
 			} else {
-				mfCurrentFrame = (Float)Size;
+				mfCurrentFrame = Size + 1.0f;
 				mCurrentFrame = Size;
+				mRepetitions--;
 				fireEvent( SPRITE_EVENT_LAST_FRAME );
 			}
 		}
 	}
+
+	if ( mfCurrentFrame < 0.0f ) {
+		if ( SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) ) {
+			mfCurrentFrame = 0.0f;
+			mCurrentFrame = 0;
+			fireEvent( SPRITE_EVENT_FIRST_FRAME );
+		} else {
+			mfCurrentFrame = (Float)Size;
+			mCurrentFrame = Size;
+			fireEvent( SPRITE_EVENT_LAST_FRAME );
+		}
+	}
+
+	if ( lastFrame != mCurrentFrame )
+		fireEvent( SPRITE_EVENT_NEW_FRAME );
 }
 
 unsigned int Sprite::getEndFrame() {
@@ -554,8 +609,12 @@ void Sprite::setReverseFromStart() {
 
 	unsigned int Size = (unsigned int)mFrames.size() - 1;
 
-	mfCurrentFrame = (Float)Size;
-	mCurrentFrame = Size;
+	if ( mCurrentFrame != Size ) {
+		mfCurrentFrame = (Float)Size;
+		mCurrentFrame = Size;
+
+		fireEvent( SPRITE_EVENT_NEW_FRAME );
+	}
 }
 
 void Sprite::draw( const BlendMode& Blend, const RenderMode& Effect ) {
@@ -804,8 +863,11 @@ void Sprite::goToAndPlay( Uint32 GoTo ) {
 		GoTo--;
 
 	if ( GoTo < mFrames.size() ) {
-		mCurrentFrame = GoTo;
-		mfCurrentFrame = (Float)GoTo;
+		if ( mCurrentFrame != GoTo ) {
+			mCurrentFrame = GoTo;
+			mfCurrentFrame = (Float)GoTo;
+			fireEvent( SPRITE_EVENT_NEW_FRAME );
+		}
 
 		setAnimationPaused( false );
 	}
@@ -829,19 +891,49 @@ void Sprite::animToFrameAndStop( Uint32 GoTo ) {
 	}
 }
 
-void Sprite::setEventsCallback( const SpriteCallback& Cb, void* UserData ) {
-	mCb = Cb;
-	mUserData = UserData;
+Uint32 Sprite::pushEventsCallback( const SpriteCallback& cb, void* UserData ) {
+	mCallbacks[++mNumCallBacks] = SpriteCbData{ cb, UserData };
+	return mNumCallBacks;
 }
 
-void Sprite::clearCallback() {
-	mCb = nullptr;
+bool Sprite::popEventsCallback( const Uint32& callbackId ) {
+	return mCallbacks.erase( callbackId ) > 0;
+}
+
+void Sprite::setEventsCallback( const SpriteCallback& cb, void* UserData ) {
+	pushEventsCallback( cb, UserData );
 }
 
 void Sprite::fireEvent( const Uint32& Event ) {
-	if ( SPR_FGET( SPRITE_FLAG_EVENTS_ENABLED ) && mCb ) {
-		mCb( Event, this, mUserData );
+	if ( SPR_FGET( SPRITE_FLAG_EVENTS_ENABLED ) ) {
+		for ( const auto& cb : mCallbacks ) {
+			cb.second.cb( Event, this, cb.second.userData );
+		}
 	}
+}
+
+Sprite& Sprite::setAsTextureRegionOwner( bool set ) {
+	if ( set )
+		mFlags |= SPRITE_FLAG_TEXTURE_REGION_OWNER;
+	else
+		mFlags &= ~SPRITE_FLAG_TEXTURE_REGION_OWNER;
+	return *this;
+}
+
+bool Sprite::isTextureRegionOwner() const {
+	return mFlags & SPRITE_FLAG_TEXTURE_REGION_OWNER;
+}
+
+Sprite& Sprite::setAsTextureOwner( bool set ) {
+	if ( set )
+		mFlags |= SPRITE_FLAG_TEXTURE_OWNER;
+	else
+		mFlags &= ~SPRITE_FLAG_TEXTURE_OWNER;
+	return *this;
+}
+
+bool Sprite::isTextureOwner() const {
+	return mFlags & SPRITE_FLAG_TEXTURE_OWNER;
 }
 
 void Sprite::setOrigin( const OriginPoint& origin ) {

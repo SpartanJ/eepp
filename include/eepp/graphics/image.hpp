@@ -24,6 +24,24 @@ namespace EE { namespace Graphics {
 /** @brief A simple image class to manipulate them. */
 class EE_API Image {
   public:
+	enum class Format {
+		Unknown = 0,
+		JPEG = 1,
+		PNG = 2,
+		BMP = 3,
+		GIF = 4,
+		TGA = 5,
+		PSD = 6,
+		PIC = 7,
+		PNM = 8,
+		DDS = 9,
+		PVR = 10,
+		PKM = 11,
+		HDR = 12,
+		QOI = 13,
+		SVG = 14,
+	};
+
 	/** @enum PixelFormat Format Pixel formats to write into a texture image. */
 	enum PixelFormat {
 		PIXEL_FORMAT_RED,
@@ -89,6 +107,9 @@ class EE_API Image {
 		Uint32 mJpegSaveQuality;
 	};
 
+	/* @return an array of images and the delay of the first frame */
+	static std::pair<std::vector<Image>, int> loadGif( IOStream& stream );
+
 	/** @return The File Extension of a Save Type */
 	static std::string saveTypeToExtension( const Int32& Format );
 
@@ -129,6 +150,22 @@ class EE_API Image {
 	 * @param path the image path
 	 */
 	static bool isImage( const std::string& path );
+
+	/** @return True if the file is a valid image ( reads the file header to know if the file is an
+	 * image file format supported )
+	 * @param path the image path
+	 */
+	static bool isImage( const unsigned char* data, const size_t& dataSize );
+
+	/** @return The image format if valid
+	 * @param path the image path
+	 */
+	static Image::Format getFormat( const std::string& path );
+
+	/** @return The image format if valid
+	 * @param path the image path
+	 */
+	static Image::Format getFormat( const unsigned char* data, const size_t& dataSize );
 
 	/** @return If the path or file name has a supported image file extension
 	 *   @param path the image path or file name
@@ -248,6 +285,8 @@ class EE_API Image {
 	/** @return A pointer to the first pixel of the image. */
 	virtual const Uint8* getPixelsPtr();
 
+	virtual const Uint8* getPixelsPtr() const;
+
 	/** Return the pointer to the array containing the image */
 	Uint8* getPixels() const;
 
@@ -279,7 +318,7 @@ class EE_API Image {
 	Sizei getSize();
 
 	/** Save the Image to a new File in a specific format */
-	virtual bool saveToFile( const std::string& filepath, const SaveType& Format );
+	virtual bool saveToFile( const std::string& filepath, const SaveType& Format ) const;
 
 	/** Create an Alpha mask from a Color */
 	virtual void createMaskFromColor( const Color& ColorKey, Uint8 Alpha );

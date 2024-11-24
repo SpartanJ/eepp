@@ -262,6 +262,7 @@ void TextureFactory::setCurrentTexture( const int& TexId, const Uint32& TextureU
 
 std::vector<Texture*> TextureFactory::getTextures() {
 	std::vector<Texture*> textures;
+	textures.reserve( mTextures.size() );
 
 	for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
 		Texture* Tex = getTexture( i );
@@ -320,6 +321,10 @@ unsigned int TextureFactory::getValidTextureSize( const unsigned int& Size ) {
 
 bool TextureFactory::existsId( const Uint32& TexId ) {
 	return ( TexId < mTextures.size() && TexId > 0 && NULL != mTextures[TexId] );
+}
+
+bool TextureFactory::exists( const Texture* tex ) {
+	return std::find( mTextures.begin(), mTextures.end(), tex ) != mTextures.end();
 }
 
 Texture* TextureFactory::getTexture( const Uint32& TexId ) {

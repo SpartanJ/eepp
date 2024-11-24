@@ -29,10 +29,9 @@ UIScrollView::UIScrollView() :
 	mContainer->setFlags( UI_OWNS_CHILDS_POSITION );
 	mContainer->enableReportSizeChangeToChilds();
 
-	mVScroll->addEventListener( Event::OnValueChange,
-								[this] ( auto event ) { onValueChangeCb( event ); } );
-	mHScroll->addEventListener( Event::OnValueChange,
-								[this] ( auto event ) { onValueChangeCb( event ); } );
+	mContainer->on( Event::OnSizeChange, [this]( auto ) { containerUpdate(); } );
+	mVScroll->on( Event::OnValueChange, [this]( auto event ) { onValueChangeCb( event ); } );
+	mHScroll->on( Event::OnValueChange, [this]( auto event ) { onValueChangeCb( event ); } );
 
 	applyDefaultTheme();
 }
@@ -75,10 +74,11 @@ void UIScrollView::onChildCountChange( Node* child, const bool& removed ) {
 
 		mScrollView = child;
 		mScrollView->setParent( mContainer );
-		mSizeChangeCb = mScrollView->addEventListener(
-			Event::OnSizeChange, [this] ( auto event ) { onScrollViewSizeChange( event ); } );
-		mPosChangeCb = mScrollView->addEventListener(
-			Event::OnPositionChange, [this] ( auto event ) { onScrollViewPositionChange( event ); } );
+		mSizeChangeCb = mScrollView->on(
+			Event::OnSizeChange, [this]( auto event ) { onScrollViewSizeChange( event ); } );
+		mPosChangeCb = mScrollView->on( Event::OnPositionChange, [this]( auto event ) {
+			onScrollViewPositionChange( event );
+		} );
 
 		containerUpdate();
 	}

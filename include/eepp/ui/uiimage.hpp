@@ -40,6 +40,8 @@ class EE_API UIImage : public UIWidget {
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 ) const;
 
+	virtual void scheduledUpdate( const Time& time );
+
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
 	const UIScaleType& getScaleType() const;

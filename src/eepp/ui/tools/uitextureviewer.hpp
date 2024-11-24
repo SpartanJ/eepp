@@ -2,13 +2,12 @@
 #define EE_UITEXTUREVIEWER_HPP
 
 #include <eepp/ui/uirelativelayout.hpp>
-#include <set>
 
 using namespace EE::UI;
 
 namespace EE { namespace UI {
 
-class UIGridLayout;;
+class UIGridLayout;
 
 namespace Tools {
 

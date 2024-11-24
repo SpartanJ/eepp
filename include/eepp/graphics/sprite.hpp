@@ -22,6 +22,7 @@ class EE_API Sprite : public Drawable {
 		SPRITE_EVENT_LAST_FRAME,
 		SPRITE_EVENT_FIRST_FRAME,
 		SPRITE_EVENT_END_ANIM_TO,
+		SPRITE_EVENT_NEW_FRAME,
 		SPRITE_EVENT_USER // User vents
 	};
 
@@ -35,6 +36,8 @@ class EE_API Sprite : public Drawable {
 	static Sprite* New( const Uint32& TexId, const Sizef& DestSize = Sizef( 0, 0 ),
 						const Vector2i& offset = Vector2i( 0, 0 ),
 						const Rect& TexSector = Rect( 0, 0, 0, 0 ) );
+
+	static Sprite* fromGif( IOStream& gif );
 
 	/** Instanciate an empty sprite */
 	Sprite();
@@ -366,10 +369,15 @@ class EE_API Sprite : public Drawable {
 	void animToFrameAndStop( Uint32 GoTo );
 
 	/** Set the sprite events callback */
-	void setEventsCallback( const SpriteCallback& Cb, void* UserData = NULL );
+	void setEventsCallback( const SpriteCallback& Cb, void* UserData = nullptr );
 
-	/** Removes the current callback */
-	void clearCallback();
+	/** Push a new event callback.
+	 * @return The Callback Id
+	 */
+	Uint32 pushEventsCallback( const SpriteCallback& cb, void* UserData = nullptr );
+
+	/** Pop the event callback id indicated. */
+	bool popEventsCallback( const Uint32& callbackId );
 
 	/** Creates a copy of the current sprite and returns it */
 	Sprite clone();
@@ -383,13 +391,23 @@ class EE_API Sprite : public Drawable {
 	/** Fire a User Event in the sprite */
 	void fireEvent( const Uint32& Event );
 
+	Sprite& setAsTextureRegionOwner( bool set );
+
+	bool isTextureRegionOwner() const;
+
+	Sprite& setAsTextureOwner( bool set );
+
+	bool isTextureOwner() const;
+
   protected:
 	enum SpriteFlags {
 		SPRITE_FLAG_AUTO_ANIM = ( 1 << 0 ),
 		SPRITE_FLAG_REVERSE_ANIM = ( 1 << 1 ),
 		SPRITE_FLAG_ANIM_PAUSED = ( 1 << 2 ),
 		SPRITE_FLAG_ANIM_TO_FRAME_AND_STOP = ( 1 << 3 ),
-		SPRITE_FLAG_EVENTS_ENABLED = ( 1 << 4 )
+		SPRITE_FLAG_EVENTS_ENABLED = ( 1 << 4 ),
+		SPRITE_FLAG_TEXTURE_OWNER = ( 1 << 5 ),
+		SPRITE_FLAG_TEXTURE_REGION_OWNER = ( 1 << 6 ),
 	};
 
 	Uint32 mFlags{ SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED };
@@ -397,6 +415,7 @@ class EE_API Sprite : public Drawable {
 	Float mRotation{ 0.f };
 	Vector2f mScale{ 1.f, 1.f };
 	Float mAnimSpeed{ 16.f };
+	Uint32 mNumCallBacks{ 0 };
 
 	Color* mVertexColors{ nullptr };
 
@@ -412,11 +431,13 @@ class EE_API Sprite : public Drawable {
 	unsigned int mSubFrames{ 1 };
 	unsigned int mAnimTo{ 0 };
 
-	SpriteCallback mCb;
-	void* mUserData{ nullptr };
+	struct SpriteCbData {
+		SpriteCallback cb;
+		void* userData{ nullptr };
+	};
+	UnorderedMap<Uint32, SpriteCbData> mCallbacks;
 
-	class Frame {
-	  public:
+	struct Frame {
 		std::vector<TextureRegion*> Spr;
 	};
 	std::vector<Frame> mFrames;
@@ -424,6 +445,8 @@ class EE_API Sprite : public Drawable {
 	unsigned int framePos();
 
 	void clearFrame();
+
+	void cleanUpResources();
 
 	unsigned int getFrame( const unsigned int& FrameNum );
 
