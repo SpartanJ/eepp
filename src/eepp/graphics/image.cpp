@@ -801,34 +801,53 @@ void Image::replaceColor( const Color& ColorKey, const Color& NewColor ) {
 
 	unsigned int size = mWidth * mHeight;
 
-	for ( unsigned int i = 0; i < size; i++ ) {
-		Pos = i * mChannels;
-
-		if ( 4 == mChannels ) {
-			if ( mPixels[Pos] == ColorKey.r && mPixels[Pos + 1] == ColorKey.g &&
-				 mPixels[Pos + 2] == ColorKey.b && mPixels[Pos + 3] == ColorKey.a ) {
-				mPixels[Pos] = NewColor.r;
-				mPixels[Pos + 1] = NewColor.g;
-				mPixels[Pos + 2] = NewColor.b;
-				mPixels[Pos + 3] = NewColor.a;
+	switch ( mChannels ) {
+		case 4: {
+			for ( unsigned int i = 0; i < size; i++ ) {
+				Pos = i * mChannels;
+				if ( mPixels[Pos] == ColorKey.r && mPixels[Pos + 1] == ColorKey.g &&
+					 mPixels[Pos + 2] == ColorKey.b && mPixels[Pos + 3] == ColorKey.a ) {
+					mPixels[Pos] = NewColor.r;
+					mPixels[Pos + 1] = NewColor.g;
+					mPixels[Pos + 2] = NewColor.b;
+					mPixels[Pos + 3] = NewColor.a;
+				}
 			}
-		} else if ( 3 == mChannels ) {
-			if ( mPixels[Pos] == ColorKey.r && mPixels[Pos + 1] == ColorKey.g &&
-				 mPixels[Pos + 2] == ColorKey.b ) {
-				mPixels[Pos] = NewColor.r;
-				mPixels[Pos + 1] = NewColor.g;
-				mPixels[Pos + 2] = NewColor.b;
-			}
-		} else if ( 2 == mChannels ) {
-			if ( mPixels[Pos] == ColorKey.r && mPixels[Pos + 1] == ColorKey.g ) {
-				mPixels[Pos] = NewColor.r;
-				mPixels[Pos + 1] = NewColor.g;
-			}
-		} else if ( 1 == mChannels ) {
-			if ( mPixels[Pos] == ColorKey.r ) {
-				mPixels[Pos] = NewColor.r;
-			}
+			break;
 		}
+		case 3: {
+			for ( unsigned int i = 0; i < size; i++ ) {
+				Pos = i * mChannels;
+				if ( mPixels[Pos] == ColorKey.r && mPixels[Pos + 1] == ColorKey.g &&
+					 mPixels[Pos + 2] == ColorKey.b ) {
+					mPixels[Pos] = NewColor.r;
+					mPixels[Pos + 1] = NewColor.g;
+					mPixels[Pos + 2] = NewColor.b;
+				}
+			}
+			break;
+		}
+		case 2: {
+			for ( unsigned int i = 0; i < size; i++ ) {
+				Pos = i * mChannels;
+				if ( mPixels[Pos] == ColorKey.r && mPixels[Pos + 1] == ColorKey.g ) {
+					mPixels[Pos] = NewColor.r;
+					mPixels[Pos + 1] = NewColor.g;
+				}
+			}
+			break;
+		}
+		case 1: {
+			for ( unsigned int i = 0; i < size; i++ ) {
+				Pos = i * mChannels;
+				if ( mPixels[Pos] == ColorKey.r ) {
+					mPixels[Pos] = NewColor.r;
+				}
+			}
+			break;
+		}
+		default:
+			break;
 	}
 }
 
@@ -844,19 +863,38 @@ void Image::fillWithColor( const Color& Color ) {
 	if ( NULL == mPixels )
 		return;
 
-	unsigned int z;
-	unsigned int size = mWidth * mHeight;
+	Uint64 size = mWidth * mHeight;
 
-	for ( unsigned int i = 0; i < size; i += mChannels ) {
-		for ( z = 0; z < mChannels; z++ ) {
-			if ( 0 == z )
-				mPixels[i + z] = Color.r;
-			else if ( 1 == z )
-				mPixels[i + z] = Color.g;
-			else if ( 2 == z )
-				mPixels[i + z] = Color.b;
-			else if ( 3 == z )
-				mPixels[i + z] = Color.a;
+	switch ( mChannels ) {
+		case 4: {
+			for ( Uint64 i = 0; i < size; i += mChannels ) {
+				mPixels[i + 0] = Color.r;
+				mPixels[i + 1] = Color.g;
+				mPixels[i + 2] = Color.b;
+				mPixels[i + 3] = Color.a;
+			}
+			break;
+		}
+		case 3: {
+			for ( Uint64 i = 0; i < size; i += mChannels ) {
+				mPixels[i + 0] = Color.r;
+				mPixels[i + 1] = Color.g;
+				mPixels[i + 2] = Color.b;
+			}
+			break;
+		}
+		case 2: {
+			for ( Uint64 i = 0; i < size; i += mChannels ) {
+				mPixels[i + 0] = Color.r;
+				mPixels[i + 1] = Color.g;
+			}
+			break;
+		}
+		case 1: {
+			for ( Uint64 i = 0; i < size; i += mChannels ) {
+				mPixels[i] = Color.r;
+			}
+			break;
 		}
 	}
 }
