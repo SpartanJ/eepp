@@ -1092,6 +1092,14 @@ std::pair<std::vector<Image>, int> Image::loadGif( IOStream& stream ) {
 	}
 
 	auto delay = delays[0];
+	if ( delay == 0 ) {
+		for ( int i = 0; i < frames; i++ ) {
+			if ( delays[i] != 0 ) {
+				delay = delays[i];
+				break;
+			}
+		}
+	}
 	free( data );
 	free( delays );
 	return { std::move( gif ), delay ? delay : 100 };

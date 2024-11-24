@@ -717,11 +717,15 @@ Sizef Sprite::setSize( const unsigned int& FrameNum, const unsigned int& SubFram
 }
 
 Sizef Sprite::getSize() {
-	return mFrames[mCurrentFrame].Spr[mCurrentSubFrame]->getSize();
+	return mCurrentFrame < mFrames.size() && mCurrentSubFrame < mFrames[mCurrentFrame].Spr.size()
+			   ? mFrames[mCurrentFrame].Spr[mCurrentSubFrame]->getSize()
+			   : Sizef::Zero;
 }
 
 Sizef Sprite::getPixelsSize() {
-	return mFrames[mCurrentFrame].Spr[mCurrentSubFrame]->getPixelsSize();
+	return mCurrentFrame < mFrames.size() && mCurrentSubFrame < mFrames[mCurrentFrame].Spr.size()
+			   ? mFrames[mCurrentFrame].Spr[mCurrentSubFrame]->getPixelsSize()
+			   : Sizef::Zero;
 }
 
 void Sprite::setRepetitions( const int& Repeations ) {
