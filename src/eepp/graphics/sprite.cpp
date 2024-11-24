@@ -29,14 +29,11 @@ Sprite* Sprite::New( const Uint32& TexId, const Sizef& DestSize, const Vector2i&
 }
 
 Sprite* Sprite::fromGif( IOStream& stream ) {
-	auto [gif, delay] = Image::loadGif( stream );
+	auto [gif, delay] = Texture::loadGif( stream );
 	Sprite* sprite = Sprite::New();
 
-	for ( const auto& i : gif ) {
-		auto texId = TextureFactory::instance()->loadFromPixels( i.getPixels(), i.getWidth(),
-																 i.getHeight(), i.getChannels() );
-		sprite->addFrame( texId );
-	}
+	for ( const auto& texture : gif )
+		sprite->addFrame( texture );
 
 	sprite->setAnimationSpeed( 1000.f / (float)delay );
 	sprite->setAsTextureRegionOwner( true );
