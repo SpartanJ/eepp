@@ -90,7 +90,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	const Filter& getFilter() const;
 
 	/** Save the Texture to a new File */
-	bool saveToFile( const std::string& filepath, const Image::SaveType& Format );
+	virtual bool saveToFile( const std::string& filepath, const Image::SaveType& Format );
 
 	/** Replace a color on the texture */
 	void replaceColor( const Color& ColorKey, const Color& NewColor );

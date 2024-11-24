@@ -770,7 +770,7 @@ unsigned int Image::getChannels() const {
 	return mChannels;
 }
 
-bool Image::saveToFile( const std::string& filepath, const SaveType& Format ) const {
+bool Image::saveToFile( const std::string& filepath, const SaveType& Format ) {
 	bool Res = false;
 
 	std::string fpath( FileSystem::fileRemoveFileName( filepath ) );

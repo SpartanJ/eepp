@@ -318,7 +318,7 @@ class EE_API Image {
 	Sizei getSize();
 
 	/** Save the Image to a new File in a specific format */
-	virtual bool saveToFile( const std::string& filepath, const SaveType& Format ) const;
+	virtual bool saveToFile( const std::string& filepath, const SaveType& Format );
 
 	/** Create an Alpha mask from a Color */
 	virtual void createMaskFromColor( const Color& ColorKey, Uint8 Alpha );
