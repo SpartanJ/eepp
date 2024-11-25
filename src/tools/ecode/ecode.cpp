@@ -801,24 +801,26 @@ void App::onFileDropped( std::string file ) {
 
 	if ( !node )
 		node = widget;
+
+	bool willLoadAnImage =
+		Image::isImageExtension( file ) && FileSystem::fileExtension( file ) != "svg";
 	if ( node && node->isType( UI_TYPE_CODEEDITOR ) ) {
 		codeEditor = node->asType<UICodeEditor>();
 		if ( ( codeEditor->getDocument().isLoading() || !codeEditor->getDocument().isEmpty() ) &&
-			 ( !Image::isImageExtension( file ) || FileSystem::fileExtension( file ) == "svg" ) ) {
+			 !willLoadAnImage ) {
 			auto d = mSplitter->createCodeEditorInTabWidget(
 				mSplitter->tabWidgetFromEditor( codeEditor ) );
 			codeEditor = d.second;
 			tab = d.first;
 		}
 	} else if ( widget && widget->isType( UI_TYPE_TERMINAL ) ) {
-		if ( !Image::isImageExtension( file ) &&
-			 ( !Image::isImageExtension( file ) || FileSystem::fileExtension( file ) == "svg" ) ) {
+		if ( !Image::isImageExtension( file ) && !willLoadAnImage ) {
 			auto d =
 				mSplitter->createCodeEditorInTabWidget( mSplitter->tabWidgetFromWidget( widget ) );
 			codeEditor = d.second;
 			tab = d.first;
 		}
-	} else {
+	} else if ( !willLoadAnImage ) {
 		auto d = mSplitter->createEditorInNewTab();
 		codeEditor = d.second;
 		tab = d.first;
@@ -3002,14 +3004,20 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 }
 
 void App::initImageView() {
-	const auto onCloseImage = [this]( const Event* ) {
+	mImageLayout->on( Event::MouseClick, [this]( const Event* ) {
 		mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE )->setDrawable( nullptr );
 		mImageLayout->setEnabled( false )->setVisible( false );
 		if ( mSplitter->getCurWidget() )
 			mSplitter->getCurWidget()->setFocus();
-	};
-	mImageLayout->on( Event::MouseClick, onCloseImage );
-	mImageLayout->on( Event::KeyDown, onCloseImage );
+	} );
+	mImageLayout->on( Event::KeyDown, [this]( const Event* event ) {
+		if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE ) {
+			mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE )->setDrawable( nullptr );
+			mImageLayout->setEnabled( false )->setVisible( false );
+			if ( mSplitter->getCurWidget() )
+				mSplitter->getCurWidget()->setFocus();
+		}
+	} );
 }
 
 bool App::isFileVisibleInTreeView( const std::string& filePath ) {
