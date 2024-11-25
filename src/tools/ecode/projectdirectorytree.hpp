@@ -24,7 +24,7 @@ namespace ecode {
 
 class FileListModel : public Model {
   public:
-	FileListModel( const std::vector<std::string>& files, const std::vector<std::string>& names ) :
+	FileListModel( std::vector<std::string>&& files, std::vector<std::string>&& names ) :
 		mFiles( files ), mNames( names ), mIcons( mNames.size(), nullptr ) {}
 
 	virtual size_t rowCount( const ModelIndex& ) const { return mNames.size(); }
@@ -140,9 +140,10 @@ class ProjectDirectoryTree {
 		UIIcon* icon{ nullptr };
 	};
 
-	std::shared_ptr<FileListModel> asModel( const size_t& max,
-											const std::vector<CommandInfo>& prependCommands = {},
-											const std::string& basePath = "" ) const;
+	std::shared_ptr<FileListModel>
+	asModel( const size_t& max, const std::vector<CommandInfo>& prependCommands = {},
+			 const std::string& basePath = "",
+			 const std::vector<std::string>& skipExtensions = {} ) const;
 
 	static std::shared_ptr<FileListModel>
 	emptyModel( const std::vector<CommandInfo>& prependCommands = {},

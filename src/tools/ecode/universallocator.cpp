@@ -381,7 +381,8 @@ void UniversalLocator::updateFilesTable( bool useGlob ) {
 #endif
 	} else {
 		mLocateTable->setModel( mApp->getDirTree()->asModel(
-			LOCATEBAR_MAX_RESULTS, getLocatorCommands(), mApp->getCurrentProject() ) );
+			LOCATEBAR_MAX_RESULTS, getLocatorCommands(), mApp->getCurrentProject(),
+			Image::getImageExtensionsSupported() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	}
 }
@@ -654,7 +655,8 @@ void UniversalLocator::showLocateBar( bool useGlob ) {
 
 	if ( mApp->getDirTree() && !mLocateTable->getModel() ) {
 		mLocateTable->setModel( mApp->getDirTree()->asModel(
-			LOCATEBAR_MAX_RESULTS, getLocatorCommands(), mApp->getCurrentProject() ) );
+			LOCATEBAR_MAX_RESULTS, getLocatorCommands(), mApp->getCurrentProject(),
+			Image::getImageExtensionsSupported() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	} else if ( !mLocateTable->getModel() ) {
 		mLocateTable->setModel(
@@ -727,6 +729,8 @@ std::shared_ptr<FileListModel> UniversalLocator::openDocumentsModel( const std::
 
 	std::vector<std::string> files;
 	std::vector<std::string> names;
+	files.reserve( docs.size() );
+	names.reserve( docs.size() );
 
 	for ( const auto& doc : docs ) {
 		names.emplace_back( FileSystem::fileNameFromPath( doc ) );
@@ -734,7 +738,7 @@ std::shared_ptr<FileListModel> UniversalLocator::openDocumentsModel( const std::
 	}
 
 	if ( match.empty() )
-		return std::make_shared<FileListModel>( files, names );
+		return std::make_shared<FileListModel>( std::move( files ), std::move( names ) );
 
 	std::multimap<int, int, std::greater<int>> matchesMap;
 
@@ -746,13 +750,15 @@ std::shared_ptr<FileListModel> UniversalLocator::openDocumentsModel( const std::
 
 	std::vector<std::string> ffiles;
 	std::vector<std::string> fnames;
+	ffiles.reserve( matchesMap.size() );
+	fnames.reserve( matchesMap.size() );
 
 	for ( auto& res : matchesMap ) {
 		fnames.emplace_back( std::move( names[res.second] ) );
 		ffiles.emplace_back( std::move( files[res.second] ) );
 	}
 
-	return std::make_shared<FileListModel>( ffiles, fnames );
+	return std::make_shared<FileListModel>( std::move( ffiles ), std::move( fnames ) );
 }
 
 void UniversalLocator::focusOrLoadFile( const std::string& path, const TextRange& range ) {

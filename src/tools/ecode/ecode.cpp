@@ -2584,6 +2584,15 @@ void App::loadDirTree( const std::string& path ) {
 		path, mThreadPool, mPluginManager.get(),
 		[this]( auto path ) { loadFileFromPathOrFocus( path ); } );
 	Log::info( "Loading DirTree: %s", path );
+	std::vector<std::string> supportedExts(
+		SyntaxDefinitionManager::instance()->getExtensionsPatternsSupported() );
+	auto imgExts( Image::getImageExtensionsSupported() );
+	supportedExts.reserve( supportedExts.size() + imgExts.size() );
+	for ( auto& ext : imgExts ) {
+		ext.insert( 0, "%." );
+		ext += "$";
+		supportedExts.push_back( ext );
+	}
 	mDirTree->scan(
 		[this, clock]( ProjectDirectoryTree& dirTree ) {
 			Log::info( "DirTree read in: %s. Found %ld files.", clock.getElapsedTime().toString(),
@@ -2605,7 +2614,7 @@ void App::loadDirTree( const std::string& path ) {
 			}
 			mFileSystemListener->setDirTree( mDirTree );
 		},
-		SyntaxDefinitionManager::instance()->getExtensionsPatternsSupported() );
+		supportedExts );
 }
 
 UIMessageBox* App::errorMsgBox( const String& msg ) {

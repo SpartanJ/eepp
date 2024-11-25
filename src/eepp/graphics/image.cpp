@@ -413,6 +413,11 @@ bool Image::isImageExtension( const std::string& path ) {
 			 ext == "pvr" || ext == "pkm" || ext == "svg" || ext == "qoi" );
 }
 
+std::vector<std::string> Image::getImageExtensionsSupported() {
+	return std::vector<std::string>{ "png", "tga", "bmp", "jpg", "gif", "jpeg", "dds",
+									 "psd", "hdr", "pic", "pvr", "pkm", "svg",	"qoi" };
+}
+
 std::string Image::getLastFailureReason() {
 	return std::string( stbi_failure_reason() );
 }

@@ -172,6 +172,9 @@ class EE_API Image {
 	 */
 	static bool isImageExtension( const std::string& path );
 
+	/** @return A list of all supported extensions by the decoder */
+	static std::vector<std::string> getImageExtensionsSupported();
+
 	/** @return The last failure image loading/info reason */
 	static std::string getLastFailureReason();
 

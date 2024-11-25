@@ -459,6 +459,7 @@ std::vector<std::string> SyntaxDefinitionManager::getLanguageNames() const {
 
 std::vector<std::string> SyntaxDefinitionManager::getExtensionsPatternsSupported() const {
 	std::vector<std::string> exts;
+	exts.reserve( mDefinitions.size() );
 	for ( auto& style : mDefinitions )
 		for ( auto& pattern : style.getFiles() )
 			exts.emplace_back( pattern );
