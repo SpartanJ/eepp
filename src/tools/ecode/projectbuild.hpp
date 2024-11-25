@@ -348,6 +348,7 @@ class ProjectBuildManager {
 	UITab* mTab{ nullptr };
 	App* mApp{ nullptr };
 	std::unique_ptr<Process> mProcess;
+	std::unique_ptr<Process> mProcessRun;
 	ProjectBuild mNewBuild;
 	bool mLoadedWithBuilds{ false };
 	bool mLoading{ false };

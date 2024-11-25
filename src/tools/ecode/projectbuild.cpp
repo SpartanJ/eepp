@@ -707,9 +707,9 @@ void ProjectBuildManager::cancelBuild() {
 
 void ProjectBuildManager::cancelRun() {
 	mCancelRun = true;
-	if ( mProcess ) {
-		mProcess->destroy();
-		mProcess->kill();
+	if ( mProcessRun ) {
+		mProcessRun->destroy();
+		mProcessRun->kill();
 	}
 }
 
@@ -891,6 +891,8 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 
 	for ( const auto& cmd : res.cmds ) {
 		int progress = c > 0 ? c / (Float)totSteps : 0;
+		if ( mProcess )
+			mProcess->kill();
 		mProcess = std::make_unique<Process>();
 		auto options = Process::SearchUserPath | Process::NoWindow | Process::CombinedStdoutStderr;
 		if ( !cmd.config.clearSysEnv )
@@ -1001,7 +1003,9 @@ void ProjectBuildManager::runApp( const ProjectBuildCommand& cmd, const ProjectB
 		}
 	};
 
-	mProcess = std::make_unique<Process>();
+	if ( mProcessRun )
+		mProcessRun->kill();
+	mProcessRun = std::make_unique<Process>();
 
 	auto options = Process::SearchUserPath | Process::CombinedStdoutStderr | Process::NoWindow;
 	if ( !cmd.config.clearSysEnv )
@@ -1023,21 +1027,21 @@ void ProjectBuildManager::runApp( const ProjectBuildCommand& cmd, const ProjectB
 			nullptr );
 	}
 
-	if ( mProcess->create( cmd.cmd, cmd.args, options, toUnorderedMap( res.envs ),
-						   cmd.workingDir ) ) {
+	if ( mProcessRun->create( cmd.cmd, cmd.args, options, toUnorderedMap( res.envs ),
+							  cmd.workingDir ) ) {
 		std::string buffer( 4096, '\0' );
 		unsigned bytesRead = 0;
 		int returnCode = 0;
 		do {
-			bytesRead = mProcess->readStdOut( buffer );
+			bytesRead = mProcessRun->readStdOut( buffer );
 			std::string data( buffer.substr( 0, bytesRead ) );
 			if ( progressFn )
 				progressFn( 0, std::move( data ), &cmd );
-		} while ( bytesRead != 0 && mProcess->isAlive() && !mShuttingDown && !mCancelRun );
+		} while ( bytesRead != 0 && mProcessRun->isAlive() && !mShuttingDown && !mCancelRun );
 
 		if ( mShuttingDown || mCancelRun ) {
-			if ( mProcess )
-				mProcess->kill();
+			if ( mProcessRun )
+				mProcessRun->kill();
 			mCancelRun = false;
 			printElapsed();
 			if ( doneFn )
@@ -1045,9 +1049,9 @@ void ProjectBuildManager::runApp( const ProjectBuildCommand& cmd, const ProjectB
 			return;
 		}
 
-		if ( mProcess ) {
-			mProcess->join( &returnCode );
-			mProcess->destroy();
+		if ( mProcessRun ) {
+			mProcessRun->join( &returnCode );
+			mProcessRun->destroy();
 		}
 
 		if ( returnCode != EXIT_SUCCESS ) {
