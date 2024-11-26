@@ -43,7 +43,9 @@ Uint64 Version::getVersionNumFromTag( const std::string& tag ) {
 				 String::fromString( ver.minor, versionPart[1] ) &&
 				 String::fromString( ver.patch, versionPart[2] ) ) {
 				return ECODE_VERSIONNUM( ver.major, ver.minor, ver.patch,
-										 0 /* tags don't count commits */ );
+										 /* tags don't count commits, all stable releases will
+											always have 9999 as commit number */
+										 9999 );
 			}
 		}
 	}
