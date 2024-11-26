@@ -133,6 +133,11 @@ struct LSPCodeLensOptions {
 	bool resolveProvider = false;
 };
 
+struct LSPDiagnosticOptions {
+	bool interFileDependencies = false;
+	bool workspaceDiagnostics = false;
+};
+
 struct LSPServerCapabilities {
 	bool ready = false;
 	std::vector<std::string> languages;
@@ -154,6 +159,7 @@ struct LSPServerCapabilities {
 	bool foldingRangeProvider = false;
 	LSPCodeLensOptions codeLensProvider;
 	bool workspaceSymbolProvider = false;
+	LSPDiagnosticOptions diagnosticProvider;
 	LSPDocumentOnTypeFormattingOptions documentOnTypeFormattingProvider;
 	bool renameProvider = false;
 	// CodeActionOptions not useful/considered at present
@@ -621,6 +627,27 @@ struct LSPFoldingRange {
 	unsigned int startLine;
 	unsigned int endLine;
 	LSPFoldingRangeKind kind{ LSPFoldingRangeKind::Region };
+};
+
+struct LSPPreviousResultId {
+	URI uri;
+	std::string value;
+};
+
+using LSPPreviousResultIds = std::vector<LSPPreviousResultId>;
+
+static constexpr auto LSPDocumentDiagnosticReportKindFull = "full";
+static constexpr auto LSPDocumentDiagnosticReportKindUnchanged= "unchanged";
+
+struct LSPFullDocumentDiagnosticReport {
+	URI uri;
+	std::string kind;
+	std::string resultId;
+	std::vector<LSPDiagnostic> items;
+};
+
+struct LSPWorkspaceDiagnosticReport {
+	std::unordered_map<URI, LSPFullDocumentDiagnosticReport> items;
 };
 
 } // namespace ecode

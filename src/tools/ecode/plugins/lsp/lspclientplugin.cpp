@@ -434,6 +434,31 @@ PluginRequestHandle LSPClientPlugin::processWorkspaceSymbol( const PluginMessage
 	return hdl;
 }
 
+PluginRequestHandle LSPClientPlugin::processWorkspaceDiagnostic( const PluginMessage& msg ) {
+	if ( !( ( msg.isBroadcast() && msg.type == PluginMessageType::LanguageServerReady && msg.data &&
+			  msg.format == PluginMessageFormat::LSPClientServer ) ||
+			( msg.isRequest() && msg.type == PluginMessageType::WorkspaceDiagnostic &&
+			  msg.format == PluginMessageFormat::LSPClientServer ) ) )
+		return {};
+/* NOTE: I couldn't find a single LSP server supporting this feature so I cannot test it.
+ * I'll leave the current implementation here to continue with it later in the future.
+ * Since I started implementing it assuming it was commonly supported...
+
+	LSPClientServer* server =
+		const_cast<LSPClientServer*>( reinterpret_cast<const LSPClientServer*>( msg.data ) );
+
+	if ( !server->getCapabilities().diagnosticProvider.workspaceDiagnostics )
+		return {};
+
+	server->workspaceDiagnosticAsync(
+		[this]( const PluginIDType&, LSPWorkspaceDiagnosticReport&& report ) {
+			mManager->sendBroadcast( this, PluginMessageType::WorkspaceDiagnostic,
+									 PluginMessageFormat::WorkspaceDiagnosticReport, &report );
+		} );
+*/
+	return PluginRequestHandle::broadcast();
+}
+
 PluginRequestHandle LSPClientPlugin::processTextDocumentSymbol( const PluginMessage& msg ) {
 	if ( !msg.isRequest() ||
 		 ( msg.type != PluginMessageType::TextDocumentSymbol &&
@@ -936,6 +961,11 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 		}
 		case PluginMessageType::FoldingRanges: {
 			processFoldingRanges( msg );
+			break;
+		}
+		case PluginMessageType::WorkspaceDiagnostic:
+		case PluginMessageType::LanguageServerReady: {
+			processWorkspaceDiagnostic( msg );
 			break;
 		}
 		default:

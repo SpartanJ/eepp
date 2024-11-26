@@ -488,6 +488,11 @@ void LSPClientServerManager::didChangeWorkspaceFolders( const std::string& folde
 	Lock l( mClientsMutex );
 	for ( auto& server : mClients ) {
 		server.second->didChangeWorkspaceFolders( newWorkspaceFolder, oldLSPWorkspaceFolder, true );
+		if ( server.second->getCapabilities().diagnosticProvider.workspaceDiagnostics ) {
+			mPlugin->getManager()->sendRequest( PluginMessageType::WorkspaceDiagnostic,
+												PluginMessageFormat::LSPClientServer,
+												server.second.get() );
+		}
 		// If there's a workspace folder change, but the server don't support it, we need to close
 		// the server because the current workspace will be broken if we don't reopen the server in
 		// the correct rootUri/rootPath

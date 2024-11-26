@@ -47,6 +47,7 @@ class LSPClientServer {
 	using TextEditArrayHandler = ReplyHandler<std::vector<LSPTextEdit>>;
 	using WorkspaceEditHandler = ReplyHandler<LSPWorkspaceEdit>;
 	using SemanticTokensDeltaHandler = WReplyHandler<LSPSemanticTokensDelta>;
+	using WorkspaceDiagnosticHandler = WReplyHandler<LSPWorkspaceDiagnosticReport>;
 
 	class LSPRequestHandle : public PluginRequestHandle {
 	  public:
@@ -198,6 +199,10 @@ class LSPClientServer {
 	LSPRequestHandle workspaceSymbol( const std::string& querySymbol,
 									  const SymbolInformationHandler& h,
 									  const size_t& limit = 100 );
+
+	void workspaceDiagnosticAsync( const JsonReplyHandler& h );
+
+	void workspaceDiagnosticAsync( const WorkspaceDiagnosticHandler& h );
 
 	LSPRequestHandle selectionRange( const URI& document,
 									 const std::vector<TextPosition>& positions,

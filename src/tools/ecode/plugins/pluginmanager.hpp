@@ -93,6 +93,8 @@ enum class PluginMessageType {
 	UIReady,			   // Informs the Plugins that the UI is ready to be used
 	UIThemeReloaded,	   // Informs the plugins that the UI theme has been reloaded
 	FoldingRanges,		   // Request to the LSP server the folding ranges of a document
+	WorkspaceDiagnostic,   // Informs the current workspace diagnostic
+	LanguageServerReady,   // Informs that an LSP server is ready
 	Undefined
 };
 
@@ -108,7 +110,9 @@ enum class PluginMessageFormat {
 	ShowDocument,
 	SymbolInformation,
 	DiagnosticsCodeAction,
-	FoldingRanges
+	FoldingRanges,
+	WorkspaceDiagnosticReport,
+	LSPClientServer,
 };
 
 class PluginIDType {
@@ -204,6 +208,10 @@ struct PluginMessage {
 
 	const LSPDiagnosticsCodeAction& asDiasnosticsCodeAction() const {
 		return *static_cast<const LSPDiagnosticsCodeAction*>( data );
+	}
+
+	const LSPWorkspaceDiagnosticReport& asLSPWorkspaceDiagnosticReport() const {
+		return *static_cast<const LSPWorkspaceDiagnosticReport*>( data );
 	}
 
 	const PluginIDType& asPluginID() const { return *static_cast<const PluginIDType*>( data ); }

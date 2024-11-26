@@ -222,7 +222,7 @@ void PluginManager::sendBroadcast( Plugin* pluginWho, PluginMessageType type,
 		subscribedPlugins = mSubscribedPlugins;
 	}
 	for ( const auto& plugin : subscribedPlugins )
-		if ( pluginWho->getId() != plugin.first )
+		if ( nullptr == pluginWho || pluginWho->getId() != plugin.first )
 			plugin.second( { type, format, data, -1 } );
 }
 

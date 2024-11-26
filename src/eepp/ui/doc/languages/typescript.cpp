@@ -103,7 +103,6 @@ void addTypeScript() {
 				 "//" } )
 		.setSymbols( ts.getSymbols() )
 		.setLSPName( "typescriptreact" )
-		.setAutoCloseXMLTags( true )
 		.setFoldRangeType( FoldRangeType::Braces )
 		.setFoldBraces( { { '{', '}' } } );
 	;

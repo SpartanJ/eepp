@@ -55,6 +55,7 @@ static const char* MEMBER_QUERY = "query";
 static const char* MEMBER_SUCCESS = "success";
 static const char* MEMBER_LIMIT = "limit";
 static const char* MEMBER_OPTIONS = "options";
+static const char* MEMBER_PREVIOUS_RESULT_IDS = "previousResultIds";
 
 static json newRequest( const std::string& method, const json& params = json{} ) {
 	json j;
@@ -366,6 +367,11 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 	caps.documentHighlightProvider = toBoolOrObject( json, "documentHighlightProvider" );
 	caps.documentFormattingProvider = toBoolOrObject( json, "documentFormattingProvider" );
 	caps.workspaceSymbolProvider = toBoolOrObject( json, "workspaceSymbolProvider" );
+	if ( json.contains( "diagnosticProvider" ) ) {
+		caps.diagnosticProvider.workspaceDiagnostics = json.value( "workspaceDiagnostics", false );
+		caps.diagnosticProvider.interFileDependencies =
+			json.value( "interFileDependencies", false );
+	}
 	caps.foldingRangeProvider = toBoolOrObject( json, "foldingRangeProvider" );
 	if ( json.contains( "documentRangeFormattingProvider" ) )
 		caps.documentRangeFormattingProvider =
@@ -1041,6 +1047,24 @@ static std::vector<LSPFoldingRange> parseFoldingRange( const json& result ) {
 	return ranges;
 }
 
+static LSPWorkspaceDiagnosticReport parseWorkspaceDiagnosticReport( const json& res ) {
+	LSPWorkspaceDiagnosticReport report;
+	if ( res.contains( "items" ) ) {
+		for ( const auto& item : res["items"] ) {
+			if ( item.contains( "kind" ) && item.contains( "uri" ) ) {
+				LSPFullDocumentDiagnosticReport docReport;
+				URI uri = item.at( "uri" ).get<std::string>();
+				docReport.uri = uri;
+				docReport.kind = item.at( "kind" ).get<std::string>();
+				docReport.resultId = item.value<std::string>( "resultId", "" );
+				docReport.items = parseDiagnostics( item["item"] );
+				report.items[uri] = std::move( docReport );
+			}
+		}
+	}
+	return report;
+}
+
 void LSPClientServer::registerCapabilities( const json& jcap ) {
 	if ( !jcap.is_object() || !jcap.contains( "registrations" ) ||
 		 !jcap["registrations"].is_array() )
@@ -1194,6 +1218,10 @@ void LSPClientServer::initialize() {
 			mManager->getPluginManager()->sendBroadcast(
 				mManager->getPlugin(), PluginMessageType::LanguageServerCapabilities,
 				PluginMessageFormat::LanguageServerCapabilities, &mCapabilities );
+
+			mManager->getPluginManager()->sendBroadcast(
+				nullptr, PluginMessageType::LanguageServerReady,
+				PluginMessageFormat::LSPClientServer, this );
 		},
 		[]( const IdType&, const json& ) {} );
 }
@@ -1718,6 +1746,18 @@ LSPClientServer::workspaceSymbol( const std::string& querySymbol, const SymbolIn
 				h( id, parseWorkspaceSymbols( json ) );
 		},
 		limit );
+}
+
+void LSPClientServer::workspaceDiagnosticAsync( const JsonReplyHandler& h ) {
+	auto params = json{ { MEMBER_PREVIOUS_RESULT_IDS, json::array() } };
+	sendAsync( newRequest( "workspace/diagnostic", params ), h );
+}
+
+void LSPClientServer::workspaceDiagnosticAsync( const WorkspaceDiagnosticHandler& h ) {
+	workspaceDiagnosticAsync( [h]( const IdType& id, const json& json ) {
+		if ( h )
+			h( id, parseWorkspaceDiagnosticReport( json ) );
+	} );
 }
 
 void fromJson( LSPWorkDoneProgressValue& value, const json& data ) {

@@ -55,7 +55,6 @@ void addJSX() {
 					 { "NaN", "keyword2" },		  { "this", "keyword2" },
 				 },
 				 "//" } )
-		.setAutoCloseXMLTags( true )
 		.setLSPName( "javascriptreact" );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
