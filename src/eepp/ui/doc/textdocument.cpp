@@ -1177,22 +1177,35 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 	}
 
 	if ( mSelection.size() > 1 ) {
+		auto lastNL = text.find_last_of( L'\n' );
+		Int64 newCols = lastNL != String::InvalidPos ? text.size() - 1 - lastNL : text.size();
+		size_t curIdx = 0;
 		for ( auto& sel : mSelection ) {
 			auto selNorm( sel.normalized() );
-			if ( selNorm.start().line() < position.line() )
+			if ( selNorm.start().line() < position.line() ) {
+				curIdx++;
 				continue;
+			}
 			Int64 addLines = position.line() < selNorm.start().line() ||
 									 position.column() < selNorm.start().column()
 								 ? linesAdd
 								 : 0;
+			if ( lastNL != String::InvalidPos && lastNL != text.size() && curIdx != cursorIdx ) {
+				if ( position.line() == sel.start().line() &&
+					 position.column() < sel.start().column() )
+					sel.start().setColumn( sel.start().column() - position.column() );
+				if ( position.line() == sel.end().line() && position.column() < sel.end().column() )
+					sel.end().setColumn( sel.end().column() - position.column() );
+			}
 			sel.start().setLine( sel.start().line() + addLines );
 			sel.end().setLine( sel.end().line() + addLines );
-			if ( selNorm.start().line() == position.line() &&
+			if ( newCols != 0 && selNorm.start().line() == position.line() &&
 				 selNorm.start().column() >= position.column() ) {
-				sel.start().setColumn( positionOffset( sel.start(), text.size() ).column() );
-				sel.end().setColumn( positionOffset( sel.end(), text.size() ).column() );
+				sel.start().setColumn( positionOffset( sel.start(), newCols ).column() );
+				sel.end().setColumn( positionOffset( sel.end(), newCols ).column() );
 			}
 			sel = sanitizeRange( sel );
+			curIdx++;
 		}
 	}
 
