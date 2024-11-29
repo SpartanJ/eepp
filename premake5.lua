@@ -1224,6 +1224,22 @@ workspace "eepp"
 		filter { "action:export-compile-commands", "system:macosx" }
 			buildoptions { "-std=c++17" }
 
+	project "languages-syntax-highlighting-static"
+		kind "StaticLib"
+		language "C++"
+		cppdialect "C++17"
+		incdirs { "include", "src/modules/languages-syntax-highlighting/src" }
+		files { "src/modules/languages-syntax-highlighting/src/**.cpp" }
+		if _OPTIONS["with-static-eepp"] then
+			defines { "EE_STATIC" }
+		end
+		build_base_cpp_configuration( "languages-syntax-highlighting" )
+		target_dir_lib("")
+		filter "action:not vs*"
+			buildoptions { "-Wall" }
+		filter { "action:export-compile-commands", "system:macosx" }
+			buildoptions { "-std=c++17" }
+
 	-- Library
 	if not _OPTIONS["disable-static-build"] then
 	project "eepp-static"
@@ -1395,8 +1411,8 @@ workspace "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tools/ecode/**.cpp" }
-		incdirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/" }
-		links { "efsw-static", "eterm-static" }
+		incdirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
+		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static" }
 		build_link_configuration( "ecode", false )
 		filter { "system:windows", "action:not vs*" }
 			buildoptions{ "-Wa,-mbig-obj" }

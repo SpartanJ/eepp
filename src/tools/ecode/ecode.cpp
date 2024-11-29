@@ -18,9 +18,11 @@
 #include <args/args.hxx>
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/system/iostreammemory.hpp>
+#include <eepp/ui/doc/languagessyntaxhighlighting.hpp>
 #include <filesystem>
 #include <iostream>
 #include <nlohmann/json.hpp>
+
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 // For malloc_trim, which is a GNU extension
 extern "C" {
@@ -3643,7 +3645,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		IconManager::init( mUISceneNode, iconFont, mimeIconFont, codIconFont );
 
 		Clock defClock;
-		SyntaxDefinitionManager::createSingleton();
+		SyntaxDefinitionManager::createSingleton( 104 );
+		Language::LanguagesSyntaxHighlighting::load();
 		SyntaxDefinitionManager::instance()->setLanguageExtensionsPriority(
 			mConfig.languagesExtensions.priorities );
 		Log::info( "Syntax definitions loaded in %.2f ms.",

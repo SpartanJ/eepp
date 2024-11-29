@@ -1371,6 +1371,22 @@ solution "eepp"
 		end
 		build_base_cpp_configuration( "eterm" )
 
+	project "languages-syntax-highlighting-static"
+		kind "StaticLib"
+		language "C++"
+		set_targetdir("libs/" .. os.get_real() .. "/")
+		includedirs { "include", "src/modules/languages-syntax-highlighting/src" }
+		files { "src/modules/languages-syntax-highlighting/src/**.cpp" }
+		if _OPTIONS["with-static-eepp"] then
+			defines { "EE_STATIC" }
+		end
+		if not is_vs() then
+			buildoptions{ "-std=c++17" }
+		else
+			buildoptions{ "/std:c++17" }
+		end
+		build_base_cpp_configuration( "languages-syntax-highlighting" )
+
 	-- Library
 	if not _OPTIONS["disable-static-build"] then
 	project "eepp-static"
@@ -1549,8 +1565,8 @@ solution "eepp"
 		set_kind()
 		language "C++"
 		files { "src/tools/ecode/**.cpp" }
-		includedirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/" }
-		links { "efsw-static", "eterm-static" }
+		includedirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
+		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static" }
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }
 		end
