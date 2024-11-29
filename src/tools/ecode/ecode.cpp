@@ -3339,6 +3339,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 	if ( health ) {
 		Sys::windowAttachConsole();
+		Language::LanguagesSyntaxHighlighting::load();
 		FeaturesHealth::doHealth( mPluginManager.get(), healthLang, healthFormat );
 		return;
 	}
