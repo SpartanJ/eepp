@@ -117,6 +117,18 @@ void Http::Request::setBody( const std::string& body ) {
 	mBody = body;
 }
 
+void Http::Request::setBody( std::string&& body ) {
+	mBody = std::move( body );
+}
+
+void Http::Request::appendBody( const std::string& body ) {
+	mBody.append( body );
+}
+
+void Http::Request::appendBody( std::string&& body ) {
+	mBody.append( std::move( body ) );
+}
+
 const std::string& Http::Request::getUri() const {
 	return mUri;
 }
@@ -265,8 +277,11 @@ const std::string& Http::Request::getField( const std::string& field ) const {
 }
 
 URI Http::getEnvProxyURI() {
-	char* http_proxy = getenv( "http_proxy" );
+	const char* http_proxy = getenv( "http_proxy" );
 	URI proxy;
+
+	if ( NULL == http_proxy )
+		http_proxy = getenv( "HTTP_PROXY" );
 
 	if ( NULL != http_proxy ) {
 		std::string httpProxy;
@@ -1192,10 +1207,11 @@ Http::Request Http::prepareFields( const Http::Request& request ) {
 	if ( !toSend.hasField( "Accept" ) )
 		toSend.setField( "Accept", "*/*" );
 
-	if ( !toSend.hasField( "Host" ) )
+	if ( !toSend.hasField( "Host" ) ) {
 		toSend.setField(
 			"Host",
 			mHostName + ( mPort != 80 && mPort != 443 ? ":" + String::toString( mPort ) : "" ) );
+	}
 
 	if ( !toSend.hasField( "Content-Length" ) && toSend.mBody.size() > 0 ) {
 		std::ostringstream out;

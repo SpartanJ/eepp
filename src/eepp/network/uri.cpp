@@ -455,9 +455,9 @@ void URI::encode( const std::string& str, const std::string& reserved, std::stri
 	}
 }
 
-void URI::decode( const std::string& str, std::string& decodedStr ) {
-	std::string::const_iterator it = str.begin();
-	std::string::const_iterator end = str.end();
+void URI::decode( const std::string_view& str, std::string& decodedStr ) {
+	auto it = str.begin();
+	auto end = str.end();
 	while ( it != end ) {
 		char c = *it++;
 		if ( c == '%' ) {
@@ -497,9 +497,9 @@ void URI::decode( const std::string& str, std::string& decodedStr ) {
 	}
 }
 
-std::string URI::encode( const std::string& str ) {
+std::string URI::encode( const std::string_view& str ) {
 	std::string uri;
-	for ( std::string::const_iterator it = str.begin(); it != str.end(); ++it ) {
+	for ( auto it = str.begin(); it != str.end(); ++it ) {
 		char c = *it;
 		if ( ( c >= 'a' && c <= 'z' ) || ( c >= 'A' && c <= 'Z' ) || ( c >= '0' && c <= '9' ) ||
 			 c == '-' || c == '_' || c == '.' || c == '~' ) {
@@ -512,7 +512,7 @@ std::string URI::encode( const std::string& str ) {
 	return uri;
 }
 
-std::string URI::decode( const std::string& str ) {
+std::string URI::decode( const std::string_view& str ) {
 	std::string uri;
 	decode( str, uri );
 	return uri;

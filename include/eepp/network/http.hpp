@@ -261,6 +261,13 @@ class EE_API Http : NonCopyable {
 		**  @param body Content of the body */
 		void setBody( const std::string& body );
 
+		/** @see setBody */
+		void setBody( std::string&& body );
+
+		/** @see setBody */
+		void appendBody( const std::string& body );
+		void appendBody( std::string&& body );
+
 		/** @return The request Uri */
 		const std::string& getUri() const;
 
