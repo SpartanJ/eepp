@@ -367,6 +367,14 @@
       "url": "https://github.com/julia-vscode/LanguageServer.jl",
       "command": "julia --project=\"$HOME/.julia/packages/LanguageServer/Fwm1f/src/LanguageServer.jl\" -e \"using LanguageServer; runserver()\"",
       "file_patterns": ["%.jl"]
+    },
+    {
+      "language": "fortran",
+      "name": "fortls",
+      "url": "https://github.com/fortran-lang/fortls",
+      "command": "fortls --hover_signature --hover_language fortran --use_signature_help --incremental_sync",
+      "file_patterns": ["%.f$", "%.f90$", "%.f95$"],
+      "rootIndicationFileNames": [".fortls"]
     }
   ]
 }

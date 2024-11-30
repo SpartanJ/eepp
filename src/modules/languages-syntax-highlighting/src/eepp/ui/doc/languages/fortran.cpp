@@ -28,31 +28,39 @@ void addFortran() {
 			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
-		  {
-			  { "then", "keyword" },	  { "public", "keyword" },	   { "allocatable", "keyword" },
-			  { "private", "keyword" },	  { "concurrent", "keyword" }, { "only", "keyword" },
-			  { "none", "keyword2" },	  { ".or.", "keyword2" },	   { "cycle", "keyword" },
-			  { "len", "keyword2" },	  { ".le.", "keyword2" },	   { ".not.", "keyword2" },
-			  { "sequence", "keyword" },  { ".false.", "keyword2" },   { ".eq.", "keyword2" },
-			  { ".lt.", "keyword2" },	  { "end", "keyword" },		   { "subroutine", "keyword" },
-			  { "extends", "keyword" },	  { ".neqv.", "keyword2" },	   { "complex", "keyword" },
-			  { "module", "keyword" },	  { "result", "keyword" },	   { "call", "keyword" },
-			  { ".true.", "keyword2" },	  { "function", "keyword" },   { "logical", "keyword" },
-			  { "else", "keyword" },	  { ".ge", "keyword2" },	   { "parameter", "keyword" },
-			  { "contains", "keyword" },  { "print", "keyword" },	   { "write", "keyword" },
-			  { ".eqv.", "keyword2" },	  { ".and.", "keyword2" },	   { "struct", "keyword" },
-			  { "character", "keyword" }, { "integer", "keyword" },	   { ".ne.", "keyword2" },
-			  { "real", "keyword" },	  { "use", "keyword" },		   { "if", "keyword" },
-			  { "protected", "keyword" }, { "do", "keyword" },		   { ".gt.", "keyword2" },
-			  { "program", "keyword" },	  { "implicit", "keyword" },   { "stop", "keyword" },
-			  { "type", "keyword" },
+		  { { "then", "keyword" },		  { "public", "keyword" },
+			{ "allocatable", "keyword" }, { "private", "keyword" },
+			{ "concurrent", "keyword" },  { "only", "keyword" },
+			{ "none", "keyword2" },		  { ".or.", "keyword2" },
+			{ "cycle", "keyword" },		  { "len", "keyword2" },
+			{ ".le.", "keyword2" },		  { ".not.", "keyword2" },
+			{ "sequence", "keyword" },	  { ".false.", "keyword2" },
+			{ ".eq.", "keyword2" },		  { ".lt.", "keyword2" },
+			{ "end", "keyword" },		  { "subroutine", "keyword" },
+			{ "extends", "keyword" },	  { ".neqv.", "keyword2" },
+			{ "complex", "keyword" },	  { "module", "keyword" },
+			{ "result", "keyword" },	  { "call", "keyword" },
+			{ ".true.", "keyword2" },	  { "function", "keyword" },
+			{ "logical", "keyword" },	  { "else", "keyword" },
+			{ ".ge", "keyword2" },		  { "parameter", "keyword" },
+			{ "contains", "keyword" },	  { "print", "keyword" },
+			{ "write", "keyword" },		  { ".eqv.", "keyword2" },
+			{ ".and.", "keyword2" },	  { "struct", "keyword" },
+			{ "character", "keyword" },	  { "integer", "keyword" },
+			{ ".ne.", "keyword2" },		  { "real", "keyword" },
+			{ "use", "keyword" },		  { "if", "keyword" },
+			{ "protected", "keyword" },	  { "do", "keyword" },
+			{ ".gt.", "keyword2" },		  { "program", "keyword" },
+			{ "implicit", "keyword" },	  { "stop", "keyword" },
+			{ "type", "keyword" },		  { "endif", "keyword" },
+			{ "enddo", "keyword" }
 
 		  },
 		  "!",
 		  {}
 
 		} );
-
+	sd.setCaseInsensitive( true );
 	sd.setFoldRangeType( FoldRangeType::Indentation );
 }
 
