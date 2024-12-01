@@ -375,6 +375,13 @@
       "command": "fortls --hover_signature --hover_language fortran --use_signature_help --incremental_sync",
       "file_patterns": ["%.f$", "%.f90$", "%.f95$"],
       "rootIndicationFileNames": [".fortls"]
+    },
+    {
+      "language": "perl",
+      "name": "PerlNavigator",
+      "url": "https://github.com/bscan/PerlNavigator",
+      "command": "perlnavigator",
+      "file_patterns": ["%.pm$", "%.pl$"]
     }
   ]
 }
