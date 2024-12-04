@@ -1910,6 +1910,12 @@ void TextDocument::deleteToNextChar() {
 	mergeSelection();
 }
 
+void TextDocument::deleteToEndOfLine() {
+	for ( size_t i = 0; i < mSelection.size(); ++i )
+		deleteTo( i, endOfLine( getSelectionIndex( i ).start() ));
+	mergeSelection();
+}
+
 void TextDocument::deleteToPreviousWord() {
 	for ( size_t i = 0; i < mSelection.size(); ++i )
 		deleteTo( i, previousWordBoundary( getSelectionIndex( i ).start() ) );
@@ -3540,6 +3546,7 @@ void TextDocument::initializeCommands() {
 	mCommands["delete-to-next-word"] = [this] { deleteToNextWord(); };
 	mCommands["delete-to-next-char"] = [this] { deleteToNextChar(); };
 	mCommands["delete-current-line"] = [this] { deleteCurrentLine(); };
+	mCommands["delete-to-end-of-line"] = [this] { deleteToEndOfLine(); };
 	mCommands["delete-selection"] = [this] { deleteSelection(); };
 	mCommands["delete-word"] = [this] { deleteWord(); };
 	mCommands["move-to-previous-char"] = [this] { moveToPreviousChar(); };
