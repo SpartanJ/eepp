@@ -222,11 +222,21 @@ class EE_API TextRanges : public std::vector<TextRange> {
 		if ( !mIsSorted )
 			sort();
 
-		auto it = std::unique( begin(), end(),
-							   []( const TextRange& a, const TextRange& b ) { return a == b; } );
+		auto itUnique = std::unique(
+			begin(), end(), []( const TextRange& a, const TextRange& b ) { return a == b; } );
 
-		bool merged = it != end();
-		erase( it, end() );
+		bool merged = itUnique != end();
+		erase( itUnique, end() );
+
+		auto it = begin();
+		while ( it != end() ) {
+			auto next = std::next( it );
+			while ( next != end() && it != end() && next->contains( *it ) ) {
+				erase( it );
+				it = std::prev( next );
+			}
+			it = next;
+		}
 
 		return merged;
 	}

@@ -1305,25 +1305,41 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 		mLines.emplace_back( String( "\n" ) );
 
 	if ( mSelection.size() > 1 ) {
-		for ( auto& sel : mSelection ) {
-			auto selNorm( sel.normalized() );
-			auto ranNorm( originalRange.normalized() );
+		auto ranNorm( originalRange.normalized() );
+		Int64 lineRem = ranNorm.end().line() - ranNorm.start().line();
+		size_t curIdx = 0;
 
-			if ( selNorm.start().line() < ranNorm.end().line() )
+		Int64 colRem = ranNorm.start().line() == ranNorm.end().line()
+						   ? ranNorm.end().column() - ranNorm.start().column()
+						   : ranNorm.end().column();
+
+		for ( auto& sel : mSelection ) {
+			if ( curIdx == cursorIdx ) {
+				curIdx++;
 				continue;
-			Int64 lineRem = ranNorm.end().line() - ranNorm.start().line();
-			Int64 colRem = 0;
-			if ( selNorm.end().line() == ranNorm.end().line() &&
-				 ranNorm.end().column() < selNorm.start().column() ) {
-				colRem = ranNorm.start().line() == ranNorm.end().line()
-							 ? ranNorm.end().column() - ranNorm.start().column()
-							 : ranNorm.end().column();
 			}
-			sel.start().setLine( sel.start().line() - lineRem );
-			sel.start().setColumn( sel.start().column() - colRem );
-			sel.end().setLine( sel.end().line() - lineRem );
-			sel.end().setColumn( sel.end().column() - colRem );
+
+			auto selNorm( sel.normalized() );
+
+			if ( selNorm.start().line() < ranNorm.end().line() ) {
+				curIdx++;
+				continue;
+			}
+
+			if ( lineRem != 0 ) {
+				sel.start().setLine( sel.start().line() - lineRem );
+				sel.end().setLine( sel.end().line() - lineRem );
+
+				sel.start().setColumn( ranNorm.start().column() + sel.start().column() - colRem );
+				sel.end().setColumn( ranNorm.start().column() + sel.end().column() - colRem );
+			} else if ( selNorm.end().line() == ranNorm.end().line() &&
+				 ranNorm.end().column() <= selNorm.start().column() ) {
+				sel.start().setColumn( sel.start().column() - colRem );
+				sel.end().setColumn( sel.end().column() - colRem );
+			}
+
 			sel = sanitizeRange( sel );
+			curIdx++;
 		}
 	}
 
