@@ -306,7 +306,7 @@ void LSPClientServerManager::updateDirty() {
 	{
 		Lock l( mClientsMutex );
 		for ( auto& server : mClients ) {
-			if ( !server.second->hasDocuments() &&
+			if ( server.second && !server.second->hasDocuments() &&
 				 mLSPsToClose.find( server.first ) == mLSPsToClose.end() )
 				mLSPsToClose.insert( { server.first, std::make_unique<Clock>() } );
 		}
@@ -514,7 +514,7 @@ LSPClientServerManager::getLSPClientServers( const std::shared_ptr<TextDocument>
 	std::vector<LSPClientServer*> servers;
 	Lock l( mClientsMutex );
 	for ( auto& server : mClients ) {
-		if ( server.second->hasDocument( doc.get() ) )
+		if ( server.second && server.second->hasDocument( doc.get() ) )
 			servers.push_back( server.second.get() );
 	}
 	return servers;
@@ -524,7 +524,7 @@ std::vector<LSPClientServer*> LSPClientServerManager::getLSPClientServers( const
 	std::vector<LSPClientServer*> servers;
 	Lock l( mClientsMutex );
 	for ( auto& server : mClients ) {
-		if ( server.second->hasDocument( uri ) )
+		if ( server.second && server.second->hasDocument( uri ) )
 			servers.push_back( server.second.get() );
 	}
 	return servers;
@@ -538,7 +538,7 @@ LSPClientServer*
 LSPClientServerManager::getOneLSPClientServer( const std::shared_ptr<TextDocument>& doc ) {
 	Lock l( mClientsMutex );
 	for ( auto& server : mClients ) {
-		if ( server.second->hasDocument( doc.get() ) )
+		if ( server.second && server.second->hasDocument( doc.get() ) )
 			return server.second.get();
 	}
 	return nullptr;
@@ -547,7 +547,7 @@ LSPClientServerManager::getOneLSPClientServer( const std::shared_ptr<TextDocumen
 LSPClientServer* LSPClientServerManager::getOneLSPClientServer( const URI& uri ) {
 	Lock l( mClientsMutex );
 	for ( auto& server : mClients ) {
-		if ( server.second->hasDocument( uri ) )
+		if ( server.second && server.second->hasDocument( uri ) )
 			return server.second.get();
 	}
 	return nullptr;
@@ -556,7 +556,7 @@ LSPClientServer* LSPClientServerManager::getOneLSPClientServer( const URI& uri )
 LSPClientServer* LSPClientServerManager::getOneLSPClientServer( const std::string& language ) {
 	Lock l( mClientsMutex );
 	for ( auto& server : mClients ) {
-		if ( server.second->supportsLanguage( language ) )
+		if ( server.second && server.second->supportsLanguage( language ) )
 			return server.second.get();
 	}
 	return nullptr;

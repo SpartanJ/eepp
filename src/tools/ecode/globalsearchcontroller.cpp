@@ -1,5 +1,5 @@
-#include "globalsearchcontroller.hpp"
 #include "ecode.hpp"
+#include "globalsearchcontroller.hpp"
 #include "uitreeviewglobalsearch.hpp"
 
 namespace ecode {
@@ -664,6 +664,23 @@ void GlobalSearchController::doGlobalSearch( String text, String filter, bool ca
 		std::vector<std::shared_ptr<TextDocument>> openDocs;
 		mSplitter->forEachDocSharedPtr(
 			[&openDocs]( auto doc ) { openDocs.emplace_back( std::move( doc ) ); } );
+		auto filters = parseGlobMatches( filter );
+		auto imageExts = Image::getImageExtensionsSupported();
+		imageExts.erase( std::remove_if( imageExts.begin(), imageExts.end(),
+										 []( const std::string& ext ) { return ext == "svg"; } ),
+						 imageExts.end() );
+		filters.reserve( filters.size() + imageExts.size() );
+		for ( const auto& ext : imageExts ) {
+			// If user explicitly requested to filter some extension, respect it and do not add the
+			// ignore for it.
+			std::string extGlob( "*." + ext );
+			if ( std::find_if( filters.begin(), filters.end(),
+							   [&extGlob]( const std::pair<std::string, bool>& filter ) {
+								   return filter.first == extGlob;
+							   } ) != filters.end() )
+				continue;
+			filters.emplace_back( extGlob, true );
+		}
 
 		ProjectSearch::find(
 			mApp->getDirTree()->getFiles(), search,
@@ -685,8 +702,7 @@ void GlobalSearchController::doGlobalSearch( String text, String filter, bool ca
 					loader->close();
 				} );
 			},
-			caseSensitive, wholeWord, searchType, parseGlobMatches( filter ),
-			mApp->getCurrentProject(), openDocs );
+			caseSensitive, wholeWord, searchType, filters, mApp->getCurrentProject(), openDocs );
 	}
 }
 

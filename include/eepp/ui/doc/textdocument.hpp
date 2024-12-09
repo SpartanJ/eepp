@@ -313,6 +313,8 @@ class EE_API TextDocument {
 
 	void deleteToNextChar();
 
+	void deleteToEndOfLine();
+
 	void deleteToPreviousWord();
 
 	void deleteToNextWord();
