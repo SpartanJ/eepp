@@ -3,8 +3,11 @@
 
 namespace ecode {
 
-BusSocket::BusSocket( const Connection& connection ) {
-	mSocket.connect( IpAddress( connection.host ), connection.port );
+BusSocket::BusSocket( const Connection& connection ) : mConnection( connection ) {}
+
+bool BusSocket::start() {
+	return mSocket.connect( IpAddress( mConnection.host ), mConnection.port ) ==
+		   Socket::Status::Done;
 }
 
 void BusSocket::startAsyncRead( ReadFn readFn ) {

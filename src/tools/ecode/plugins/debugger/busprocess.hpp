@@ -9,11 +9,14 @@ class BusProcess : public Bus {
   public:
 	BusProcess( const Command& command );
 
-	virtual void startAsyncRead( ReadFn readFn );
+	bool start() override;
 
-	virtual size_t write( const char* buffer, const size_t& size );
+	void startAsyncRead( ReadFn readFn ) override;
+
+	size_t write( const char* buffer, const size_t& size ) override;
 
   protected:
+	Command mCommand;
 	Process mProcess;
 };
 

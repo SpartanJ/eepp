@@ -2,11 +2,14 @@
 
 namespace ecode {
 
-BusProcess::BusProcess( const Command& command ) :
-	mProcess( command.command, command.arguments,
-			  Process::getDefaultOptions() | Process::Options::EnableAsync |
-				  Process::Options::CombinedStdoutStderr,
-			  command.environment ) {}
+BusProcess::BusProcess( const Command& command ) : mCommand( command ), mProcess() {}
+
+bool BusProcess::start() {
+	return mProcess.create( mCommand.command, mCommand.arguments,
+							Process::getDefaultOptions() | Process::Options::EnableAsync |
+								Process::Options::CombinedStdoutStderr,
+							mCommand.environment );
+}
 
 void BusProcess::startAsyncRead( ReadFn readFn ) {
 	mProcess.startAsyncRead( readFn, readFn );

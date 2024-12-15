@@ -9,11 +9,14 @@ class BusSocket : public Bus {
   public:
 	BusSocket( const Connection& connection );
 
-	void startAsyncRead( ReadFn readFn );
+	bool start() override;
 
-	size_t write( const char* buffer, const size_t& size );
+	void startAsyncRead( ReadFn readFn ) override;
+
+	size_t write( const char* buffer, const size_t& size ) override;
 
   protected:
+    Connection mConnection;
 	TcpSocket mSocket;
 };
 
