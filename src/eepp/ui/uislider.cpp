@@ -369,26 +369,30 @@ const Float& UISlider::getValue() const {
 	return mValue;
 }
 
-void UISlider::setMinValue( const Float& MinVal ) {
-	mMinValue = MinVal;
+void UISlider::setMinValue( const Float& minVal ) {
+	if ( minVal != mMinValue ) {
+		mMinValue = minVal;
 
-	if ( mValue < mMinValue )
-		mValue = mMinValue;
+		if ( mValue < mMinValue )
+			mValue = mMinValue;
 
-	fixSliderPos();
+		fixSliderPos();
+	}
 }
 
 const Float& UISlider::getMinValue() const {
 	return mMinValue;
 }
 
-void UISlider::setMaxValue( const Float& MaxVal ) {
-	mMaxValue = MaxVal;
+void UISlider::setMaxValue( const Float& maxVal ) {
+	if ( maxVal != mMaxValue ) {
+		mMaxValue = maxVal;
 
-	if ( mValue > mMaxValue )
-		mValue = mMaxValue;
+		if ( mValue > mMaxValue )
+			mValue = mMaxValue;
 
-	fixSliderPos();
+		fixSliderPos();
+	}
 }
 
 const Float& UISlider::getMaxValue() const {

@@ -176,10 +176,8 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 			exit( 1 );
 		}
 
-		// Make sure all non stdio file descriptors are closed before exec
-		int fdlimit = (int)sysconf( _SC_OPEN_MAX );
-		for ( int i = 3; i < fdlimit; i++ )
-			close( i );
+		if ( (int)pseudoTerminal.mSlave > 2 )
+			close( (int)pseudoTerminal.mSlave );
 
 #ifdef __OpenBSD__
 		if ( pledge( "stdio getpw proc exec", NULL ) == -1 ) {

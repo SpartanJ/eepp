@@ -34,11 +34,11 @@ class EE_API UISlider : public UIWidget {
 
 	const Float& getValue() const;
 
-	virtual void setMinValue( const Float& MinVal );
+	virtual void setMinValue( const Float& minVal );
 
 	const Float& getMinValue() const;
 
-	virtual void setMaxValue( const Float& MaxVal );
+	virtual void setMaxValue( const Float& maxVal );
 
 	const Float& getMaxValue() const;
 

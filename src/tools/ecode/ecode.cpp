@@ -244,9 +244,9 @@ void App::updateEditorTabTitle( UICodeEditor* editor ) {
 	if ( editor->getData() ) {
 		UITab* tab = (UITab*)editor->getData();
 		auto doc = editor->getDocumentRef();
-		tab->setText( doc->getFilename() );
+		std::string fileName( doc->getFilename() );
 
-		if ( tab->getText() != doc->getDefaultFileName() && !isUniqueTabTitle( tab ) ) {
+		if ( fileName != doc->getDefaultFileName() && !isUniqueTabTitle( tab ) ) {
 			auto tabsTitles = getUniqueNameForTabs( getTabWithSameTitle( tab ) );
 			for ( auto [ntab, title] : tabsTitles ) {
 				ntab->setText( title );
@@ -255,6 +255,7 @@ void App::updateEditorTabTitle( UICodeEditor* editor ) {
 			}
 		} else if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
 			tab->getOwnedWidget()->asType<UICodeEditor>()->removeClass( NOT_UNIQUE_FILENAME );
+			tab->setText( fileName );
 		}
 
 		bool dirty = doc->isDirty();

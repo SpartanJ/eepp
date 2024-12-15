@@ -440,22 +440,22 @@ PluginRequestHandle LSPClientPlugin::processWorkspaceDiagnostic( const PluginMes
 			( msg.isRequest() && msg.type == PluginMessageType::WorkspaceDiagnostic &&
 			  msg.format == PluginMessageFormat::LSPClientServer ) ) )
 		return {};
-/* NOTE: I couldn't find a single LSP server supporting this feature so I cannot test it.
- * I'll leave the current implementation here to continue with it later in the future.
- * Since I started implementing it assuming it was commonly supported...
+	/* NOTE: I couldn't find a single LSP server supporting this feature so I cannot test it.
+	 * I'll leave the current implementation here to continue with it later in the future.
+	 * Since I started implementing it assuming it was commonly supported...
 
-	LSPClientServer* server =
-		const_cast<LSPClientServer*>( reinterpret_cast<const LSPClientServer*>( msg.data ) );
+		LSPClientServer* server =
+			const_cast<LSPClientServer*>( reinterpret_cast<const LSPClientServer*>( msg.data ) );
 
-	if ( !server->getCapabilities().diagnosticProvider.workspaceDiagnostics )
-		return {};
+		if ( !server->getCapabilities().diagnosticProvider.workspaceDiagnostics )
+			return {};
 
-	server->workspaceDiagnosticAsync(
-		[this]( const PluginIDType&, LSPWorkspaceDiagnosticReport&& report ) {
-			mManager->sendBroadcast( this, PluginMessageType::WorkspaceDiagnostic,
-									 PluginMessageFormat::WorkspaceDiagnosticReport, &report );
-		} );
-*/
+		server->workspaceDiagnosticAsync(
+			[this]( const PluginIDType&, LSPWorkspaceDiagnosticReport&& report ) {
+				mManager->sendBroadcast( this, PluginMessageType::WorkspaceDiagnostic,
+										 PluginMessageFormat::WorkspaceDiagnosticReport, &report );
+			} );
+	*/
 	return PluginRequestHandle::broadcast();
 }
 
@@ -1181,7 +1181,8 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 					  "lsp-rename-symbol-under-cursor",
 					  "lsp-refresh-semantic-highlighting",
 					  "lsp-format-range",
-					  "lsp-plugin-restart" };
+					  "lsp-plugin-restart",
+					  "lsp-show-document-symbols" };
 		for ( const auto& key : list ) {
 			if ( kb.contains( key ) ) {
 				if ( !kb[key].empty() )
