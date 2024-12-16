@@ -2,8 +2,12 @@
 
 #include "../bus.hpp"
 #include "../debuggerclient.hpp"
+#include <atomic>
+#include <eepp/config.hpp>
 
-namespace ecode {
+using namespace EE;
+
+namespace ecode::dap {
 
 class DebuggerClientDap : public DebuggerClient {
   public:
@@ -21,13 +25,19 @@ class DebuggerClientDap : public DebuggerClient {
 
 	bool started() const;
 
-	bool cont();
+	bool cont( int threadId );
 
-	bool stepInto();
+	bool pause( int threadId ) = 0;
 
-	bool stepOver();
+	bool next( int threadId ) = 0;
 
-	bool stepOut();
+	bool goTo( int threadId, int targetId ) = 0;
+
+	bool stepInto( int threadId );
+
+	bool stepOver( int threadId );
+
+	bool stepOut( int threadId );
 
 	bool halt();
 
@@ -39,6 +49,30 @@ class DebuggerClientDap : public DebuggerClient {
 
   protected:
 	std::unique_ptr<Bus> mBus;
+	UnorderedMap<std::string, UnorderedSet<int>> mBreakpoints;
+	std::atomic<Uint64> mIdx{ 1 };
+	Uint64 mThreadId{ 1 };
+	bool mDebug{ true };
+	bool mStarted{ false };
+	UnorderedMap<Uint64, std::function<void()>> mCommandQueue;
+	std::string mBuffer;
+
+	void makeRequest( const std::string& command, const nlohmann::json& arguments,
+					  std::function<void()> onFinish = nullptr );
+
+	void asyncRead( const char* bytes, size_t n );
+
+	void processProtocolMessage( const nlohmann::json& msg );
+
+	void processResponse( const nlohmann::json& msg );
+
+	void processEvent( const nlohmann::json& msg );
+
+	struct HeaderInfo {
+		Uint64 payloadStart;
+		Uint64 payloadLength;
+	};
+	std::optional<HeaderInfo> readHeader();
 };
 
-} // namespace ecode
+} // namespace ecode::dap

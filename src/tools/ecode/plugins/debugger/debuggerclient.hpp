@@ -18,13 +18,19 @@ class DebuggerClient {
 
 	virtual bool started() const = 0;
 
-	virtual bool cont() = 0;
+	virtual bool cont( int threadId ) = 0;
 
-	virtual bool stepInto() = 0;
+	virtual bool pause( int threadId ) = 0;
 
-	virtual bool stepOver() = 0;
+	virtual bool next( int threadId ) = 0;
 
-	virtual bool stepOut() = 0;
+	virtual bool goTo( int threadId, int targetId ) = 0;
+
+	virtual bool stepInto( int threadId ) = 0;
+
+	virtual bool stepOver( int threadId ) = 0;
+
+	virtual bool stepOut( int threadId ) = 0;
 
 	virtual bool halt() = 0;
 
