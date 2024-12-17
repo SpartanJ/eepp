@@ -2,6 +2,7 @@
 
 #include "../bus.hpp"
 #include "../debuggerclient.hpp"
+#include "protocol.hpp"
 #include <atomic>
 #include <eepp/config.hpp>
 
@@ -11,6 +12,8 @@ namespace ecode::dap {
 
 class DebuggerClientDap : public DebuggerClient {
   public:
+	typedef std::function<void( const Response&, const nlohmann::json& )> ResponseHandler;
+
 	DebuggerClientDap( std::unique_ptr<Bus>&& bus );
 
 	bool hasBreakpoint( const std::string& path, size_t line );
@@ -54,11 +57,19 @@ class DebuggerClientDap : public DebuggerClient {
 	Uint64 mThreadId{ 1 };
 	bool mDebug{ true };
 	bool mStarted{ false };
-	UnorderedMap<Uint64, std::function<void()>> mCommandQueue;
+	struct Request {
+		std::string command;
+		nlohmann::json arguments;
+		ResponseHandler handler;
+	};
+	std::unordered_map<Uint64, Request> mRequests;
 	std::string mBuffer;
+	ProtocolSettings mProtocol;
+	Capabilities mAdapterCapabilities;
+	std::string mLaunchCommand;
 
-	void makeRequest( const std::string& command, const nlohmann::json& arguments,
-					  std::function<void()> onFinish = nullptr );
+	void makeRequest( const std::string_view& command, const nlohmann::json& arguments,
+					  ResponseHandler onFinish = nullptr );
 
 	void asyncRead( const char* bytes, size_t n );
 
@@ -72,7 +83,38 @@ class DebuggerClientDap : public DebuggerClient {
 		Uint64 payloadStart;
 		Uint64 payloadLength;
 	};
+
 	std::optional<HeaderInfo> readHeader();
+
+	void errorResponse( const std::string& summary, const std::optional<Message>& message );
+
+	void processEventInitialized();
+
+	void processEventTerminated();
+
+	void processEventExited( const nlohmann::json& body );
+
+	void processEventOutput( const nlohmann::json& body );
+
+	void processEventProcess( const nlohmann::json& body );
+
+	void processEventThread( const nlohmann::json& body );
+
+	void processEventStopped( const nlohmann::json& body );
+
+	void processEventModule( const nlohmann::json& body );
+
+	void processEventContinued( const nlohmann::json& body );
+
+	void processEventBreakpoint( const nlohmann::json& body );
+
+	void requestInitialize();
+
+	void requestLaunchCommand();
+
+	void processResponseInitialize( const Response& response, const nlohmann::json& );
+
+	void processResponseLaunch( const Response& response, const nlohmann::json& );
 };
 
 } // namespace ecode::dap

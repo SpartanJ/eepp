@@ -7,6 +7,8 @@
 
 #include <nlohmann/json.hpp>
 
+using namespace std::literals;
+
 using json = nlohmann::json;
 
 using namespace EE;
@@ -33,6 +35,10 @@ struct BusSettings {
 	bool hasConnection() const;
 };
 
+static const auto REQUEST = "request"sv;
+static const auto REDIRECT_STDERR = "redirectStderr"sv;
+static const auto REDIRECT_STDOUT = "redirectStdout"sv;
+
 struct ProtocolSettings {
 	bool linesStartAt1;
 	bool columnsStartAt1;
@@ -42,6 +48,25 @@ struct ProtocolSettings {
 	bool supportsSourceRequest;
 	json launchRequest;
 	std::string locale;
+
+	ProtocolSettings() :
+		linesStartAt1( true ),
+		columnsStartAt1( true ),
+		pathFormatURI( false ),
+		redirectStderr( false ),
+		redirectStdout( false ),
+		supportsSourceRequest( true ),
+		locale( "en-US" ) {}
+
+	ProtocolSettings( const nlohmann::json& configuration ) :
+		linesStartAt1( true ),
+		columnsStartAt1( true ),
+		pathFormatURI( false ),
+		redirectStderr( configuration.value( REDIRECT_STDERR, false ) ),
+		redirectStdout( configuration.value( REDIRECT_STDOUT, false ) ),
+		supportsSourceRequest( configuration.value( "supportsSourceRequest", true ) ),
+		launchRequest( configuration[REQUEST] ),
+		locale( "en-US" ) {}
 };
 
 } // namespace ecode

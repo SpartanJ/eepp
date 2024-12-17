@@ -19,6 +19,8 @@ static const auto DAP_ARGUMENTS = "arguments"sv;
 static const auto DAP_BODY = "body"sv;
 
 // capabilities
+static const auto DAP_CLIENT_ID = "clientID"sv;
+static const auto DAP_CLIENT_NAME = "clientName"sv;
 static const auto DAP_ADAPTER_ID = "adapterID"sv;
 static const auto DAP_LINES_START_AT1 = "linesStartAt1"sv;
 static const auto DAP_COLUMNS_START_AT2 = "columnsStartAt1"sv;
