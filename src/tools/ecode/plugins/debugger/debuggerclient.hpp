@@ -11,7 +11,7 @@ class DebuggerClient {
   public:
 	enum class State { None, Initializing, Initialized, Running, Terminated, Failed };
 
-	class Observer {
+	class Client {
 	  public:
 		virtual void stateChanged( State ) = 0;
 		virtual void initialized() = 0;
@@ -60,29 +60,27 @@ class DebuggerClient {
 
 	virtual bool attach() = 0;
 
-	virtual bool started() const = 0;
-
-	virtual bool cont( int threadId ) = 0;
+	virtual bool cont( int threadId, bool singleThread = false ) = 0;
 
 	virtual bool pause( int threadId ) = 0;
 
-	virtual bool next( int threadId ) = 0;
+	virtual bool next( int threadId, bool singleThread = false ) = 0;
 
 	virtual bool goTo( int threadId, int targetId ) = 0;
 
-	virtual bool stepInto( int threadId ) = 0;
+	virtual bool stepInto( int threadId, bool singleThread = false ) = 0;
 
-	virtual bool stepOver( int threadId ) = 0;
+	virtual bool stepOut( int threadId, bool singleThread = false ) = 0;
 
-	virtual bool stepOut( int threadId ) = 0;
+	virtual bool terminate( bool restart ) = 0;
 
-	virtual bool halt() = 0;
+	virtual bool disconnect( bool restart = false ) = 0;
 
-	virtual bool terminate() = 0;
+	virtual bool threads() = 0;
 
-	virtual bool stopped() = 0;
+	virtual bool stackTrace( int threadId, int startFrame, int levels ) = 0;
 
-	virtual bool completed() = 0;
+	virtual bool isServerConnected() const = 0;
 
   protected:
 	void setState( const State& state );
@@ -90,7 +88,7 @@ class DebuggerClient {
 	State mState{ State::None };
 	bool mLaunched{ false };
 	bool mConfigured{ false };
-	Observer* mObserver{ nullptr };
+	std::vector<Client*> mClients;
 
 	void checkRunning();
 

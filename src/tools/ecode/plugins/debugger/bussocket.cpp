@@ -6,8 +6,21 @@ namespace ecode {
 BusSocket::BusSocket( const Connection& connection ) : mConnection( connection ) {}
 
 bool BusSocket::start() {
-	return mSocket.connect( IpAddress( mConnection.host ), mConnection.port ) ==
-		   Socket::Status::Done;
+	bool res =
+		mSocket.connect( IpAddress( mConnection.host ), mConnection.port ) == Socket::Status::Done;
+	if ( res )
+		setState( State::Running );
+	return res;
+}
+
+bool BusSocket::close() {
+	if ( mState == State::Running ) {
+		mSocket.disconnect();
+		setState( State::Closed );
+		return true;
+	}
+
+	return false;
 }
 
 void BusSocket::startAsyncRead( ReadFn readFn ) {

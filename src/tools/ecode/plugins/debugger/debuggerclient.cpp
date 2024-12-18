@@ -3,28 +3,28 @@
 namespace ecode {
 
 void DebuggerClient::stateChanged( State state ) {
-	if ( mObserver )
-		mObserver->stateChanged( state );
+	for ( auto client : mClients )
+		client->stateChanged( state );
 }
 
 void DebuggerClient::initialized() {
-	if ( mObserver )
-		mObserver->initialized();
+	for ( auto client : mClients )
+		client->initialized();
 }
 
 void DebuggerClient::debuggeeRunning() {
-	if ( mObserver )
-		mObserver->debuggeeRunning();
+	for ( auto client : mClients )
+		client->debuggeeRunning();
 }
 
 void DebuggerClient::debuggeeTerminated() {
-	if ( mObserver )
-		mObserver->debuggeeRunning();
+	for ( auto client : mClients )
+		client->debuggeeRunning();
 }
 
 void DebuggerClient::failed() {
-	if ( mObserver )
-		mObserver->failed();
+	for ( auto client : mClients )
+		client->failed();
 }
 
 void DebuggerClient::setState( const State& state ) {

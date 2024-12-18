@@ -1,4 +1,5 @@
 #include "bus.hpp"
+#include "config.hpp"
 #include <eepp/system/process.hpp>
 
 using namespace EE::System;
@@ -10,6 +11,8 @@ class BusProcess : public Bus {
 	BusProcess( const Command& command );
 
 	bool start() override;
+
+	bool close() override;
 
 	void startAsyncRead( ReadFn readFn ) override;
 

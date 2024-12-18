@@ -1,10 +1,12 @@
 #pragma once
 
 #include "../bus.hpp"
+#include "../config.hpp"
 #include "../debuggerclient.hpp"
 #include "protocol.hpp"
 #include <atomic>
 #include <eepp/config.hpp>
+#include <eepp/core.hpp>
 
 using namespace EE;
 
@@ -16,39 +18,37 @@ class DebuggerClientDap : public DebuggerClient {
 
 	DebuggerClientDap( std::unique_ptr<Bus>&& bus );
 
-	bool hasBreakpoint( const std::string& path, size_t line );
+	bool hasBreakpoint( const std::string& path, size_t line ) override;
 
-	bool addBreakpoint( const std::string& path, size_t line );
+	bool addBreakpoint( const std::string& path, size_t line ) override;
 
-	bool removeBreakpoint( const std::string& path, size_t line );
+	bool removeBreakpoint( const std::string& path, size_t line ) override;
 
-	bool start();
+	bool start() override;
 
-	bool attach();
+	bool attach() override;
 
-	bool started() const;
+	bool cont( int threadId, bool singleThread = false ) override;
 
-	bool cont( int threadId );
+	bool pause( int threadId ) override;
 
-	bool pause( int threadId ) = 0;
+	bool next( int threadId, bool singleThread = false ) override;
 
-	bool next( int threadId ) = 0;
+	bool goTo( int threadId, int targetId ) override;
 
-	bool goTo( int threadId, int targetId ) = 0;
+	bool stepInto( int threadId, bool singleThread = false ) override;
 
-	bool stepInto( int threadId );
+	bool stepOut( int threadId, bool singleThread = false ) override;
 
-	bool stepOver( int threadId );
+	bool terminate( bool restart ) override;
 
-	bool stepOut( int threadId );
+	bool disconnect( bool restart = false ) override;
 
-	bool halt();
+	bool threads() override;
 
-	bool terminate();
+	bool stackTrace( int threadId, int startFrame, int levels ) override;
 
-	bool stopped();
-
-	bool completed();
+	bool isServerConnected() const override;
 
   protected:
 	std::unique_ptr<Bus> mBus;
@@ -113,8 +113,7 @@ class DebuggerClientDap : public DebuggerClient {
 	void requestLaunchCommand();
 
 	void processResponseInitialize( const Response& response, const nlohmann::json& );
-
-	void processResponseLaunch( const Response& response, const nlohmann::json& );
+	void processResponseNext( const Response& response, const nlohmann::json& request );
 };
 
 } // namespace ecode::dap
