@@ -3313,7 +3313,7 @@ bool App::needsRedirectToRunningProcess( std::string file ) {
 
 void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 				const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
-				const std::string& css, bool health, const std::string& healthLang,
+				std::string css, bool health, const std::string& healthLang,
 				FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen,
 				bool stdOutLogs, bool disableFileLogs, bool openClean, bool portable,
 				std::string language ) {
@@ -3608,7 +3608,10 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		setTheme( getThemePath() );
 
-		if ( !css.empty() && FileSystem::fileExists( css ) ) {
+		if ( css.empty() )
+			css = mConfigPath + "style.css";
+
+		if ( FileSystem::fileExists( css ) ) {
 			CSS::StyleSheetParser parser;
 			if ( parser.loadFromFile( css ) )
 				mUISceneNode->combineStyleSheet( parser.getStyleSheet(), false );
