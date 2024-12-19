@@ -43,7 +43,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 			   const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
-			   const std::string& css, bool health, const std::string& healthLang,
+			   std::string css, bool health, const std::string& healthLang,
 			   ecode::FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen,
 			   bool stdOutLogs, bool disableFileLogs, bool openClean, bool portable,
 			   std::string language );
