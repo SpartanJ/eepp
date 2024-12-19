@@ -18,12 +18,6 @@ class DebuggerClientDap : public DebuggerClient {
 
 	DebuggerClientDap( std::unique_ptr<Bus>&& bus );
 
-	bool hasBreakpoint( const std::string& path, size_t line ) override;
-
-	bool addBreakpoint( const std::string& path, size_t line ) override;
-
-	bool removeBreakpoint( const std::string& path, size_t line ) override;
-
 	bool start() override;
 
 	bool attach() override;
@@ -48,7 +42,21 @@ class DebuggerClientDap : public DebuggerClient {
 
 	bool stackTrace( int threadId, int startFrame, int levels ) override;
 
+	bool scopes( int frameId ) override;
+
+	bool variables( int variablesReference, Variable::Type filter, int start, int count );
+
 	bool isServerConnected() const override;
+
+	bool supportsTerminate() const override;
+
+	bool setBreakpoints( const std::string& path,
+								 const std::vector<dap::SourceBreakpoint> breakpoints,
+								 bool sourceModified = false ) override;
+
+	bool setBreakpoints( const dap::Source& source,
+								 const std::vector<dap::SourceBreakpoint> breakpoints,
+								 bool sourceModified = false ) override;
 
   protected:
 	std::unique_ptr<Bus> mBus;

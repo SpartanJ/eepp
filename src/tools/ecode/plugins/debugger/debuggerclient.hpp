@@ -1,6 +1,5 @@
 #pragma once
 #include "dap/protocol.hpp"
-#include <cstddef>
 #include <string>
 
 namespace ecode {
@@ -50,12 +49,6 @@ class DebuggerClient {
 
 	State state() const { return mState; }
 
-	virtual bool hasBreakpoint( const std::string& path, size_t line ) = 0;
-
-	virtual bool addBreakpoint( const std::string& path, size_t line ) = 0;
-
-	virtual bool removeBreakpoint( const std::string& path, size_t line ) = 0;
-
 	virtual bool start() = 0;
 
 	virtual bool attach() = 0;
@@ -80,7 +73,19 @@ class DebuggerClient {
 
 	virtual bool stackTrace( int threadId, int startFrame, int levels ) = 0;
 
+	virtual bool scopes( int frameId ) = 0;
+
 	virtual bool isServerConnected() const = 0;
+
+	virtual bool supportsTerminate() const = 0;
+
+	virtual bool setBreakpoints( const std::string& path,
+								 const std::vector<dap::SourceBreakpoint> breakpoints,
+								 bool sourceModified = false ) = 0;
+
+	virtual bool setBreakpoints( const dap::Source& source,
+								 const std::vector<dap::SourceBreakpoint> breakpoints,
+								 bool sourceModified = false ) = 0;
 
   protected:
 	void setState( const State& state );
