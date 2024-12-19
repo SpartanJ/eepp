@@ -1053,14 +1053,17 @@ UIMenu* SettingsMenu::createEditMenu() {
 
 UIMenu* SettingsMenu::createWindowMenu() {
 	mWindowMenu = UIPopUpMenu::New();
+	auto shouldCloseCb = []( UIMenuItem* ) -> bool { return false; };
 	UIPopUpMenu* colorsMenu = UIPopUpMenu::New();
 	colorsMenu
 		->addRadioButton( i18n( "light", "Light" ),
 						  mApp->getUIColorScheme() == ColorSchemePreference::Light )
+  	  ->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "light" );
 	colorsMenu
 		->addRadioButton( i18n( "dark", "Dark" ),
 						  mApp->getUIColorScheme() == ColorSchemePreference::Dark )
+		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "dark" );
 	colorsMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
