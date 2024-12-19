@@ -1129,7 +1129,7 @@ String App::i18n( const std::string& key, const String& def ) {
 }
 
 std::string App::getCurrentWorkingDir() const {
-	if ( !mCurrentProject.empty() )
+	if ( !mCurrentProject.empty() && mCurrentProject != mPlaygroundPath )
 		return mCurrentProject;
 
 	if ( mSplitter && mSplitter->curEditorIsNotNull() && mSplitter->curEditorExists() &&
