@@ -8,7 +8,7 @@ void addJSON() {
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "JSON",
-		  { "%.json$", "%.cson$", "%.webmanifest" },
+		  { "%.json$", "%.cson$", "%.webmanifest$" },
 		  {
 			  { { "(%b\"\")(:)" }, { "normal", "keyword", "operator" } },
 			  { { "\"", "\"", "\\" }, "string" },
