@@ -8,7 +8,7 @@ void addRuby() {
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Ruby",
-		  { "%.rb", "%.gemspec", "%.ruby" },
+		  { "%.rb$", "%.gemspec$", "%.ruby$" },
 		  {
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },

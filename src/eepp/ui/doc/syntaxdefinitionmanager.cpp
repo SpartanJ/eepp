@@ -37,7 +37,8 @@ SyntaxDefinitionManager::createSingleton( std::size_t reserveSpaceForLanguages )
 }
 
 static void addPlainText() {
-	SyntaxDefinitionManager::instance()->add( { "Plain Text", {}, {}, {}, "", {}, "plaintext" } );
+	SyntaxDefinitionManager::instance()->add(
+		{ "Plain Text", { "%.txt$" }, {}, {}, "", {}, "plaintext" } );
 }
 
 // Syntax definitions can be directly converted from the lite (https://github.com/rxi/lite) and

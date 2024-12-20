@@ -34,13 +34,13 @@
     },
     {
       "language": "rust",
-      "file_patterns": ["%.rs"],
+      "file_patterns": ["%.rs$"],
       "command": "rustfmt --emit stdout --color never $FILENAME",
       "url": "https://rust-lang.github.io/rustfmt/"
     },
     {
       "language": "go",
-      "file_patterns": ["%.go"],
+      "file_patterns": ["%.go$"],
       "command": "gopls format $FILENAME",
       "url": "https://pkg.go.dev/golang.org/x/tools/gopls"
     },
@@ -53,21 +53,21 @@
     },
     {
       "language": [ "xml" ],
-      "file_patterns": ["%.xml"],
+      "file_patterns": ["%.xml$"],
       "command": "xml",
       "type": "native",
       "url": "#native"
     },
     {
       "language": "css",
-      "file_patterns": ["%.css"],
+      "file_patterns": ["%.css$"],
       "command": "css",
       "type": "native",
       "url": "#native"
     },
     {
       "language": "zig",
-      "file_patterns": ["%.zig"],
+      "file_patterns": ["%.zig$"],
       "command": "zig fmt $FILENAME",
       "type": "inplace",
       "url": "https://ziglang.org"

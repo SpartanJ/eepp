@@ -3130,6 +3130,7 @@ void UICodeEditor::selectToPreviousLine() {
 		TextPosition position = mDoc->getSelectionIndex( i ).start();
 		mDoc->selectTo( i, moveToLineOffset( position, -1 ) );
 	}
+	mDoc->mergeSelection();
 }
 
 void UICodeEditor::selectToNextLine() {
@@ -3141,6 +3142,7 @@ void UICodeEditor::selectToNextLine() {
 			mDoc->selectTo( i, moveToLineOffset( position, 1 ) );
 		}
 	}
+	mDoc->mergeSelection();
 }
 
 void UICodeEditor::moveScrollUp() {

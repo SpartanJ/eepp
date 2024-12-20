@@ -1127,6 +1127,7 @@
 ../../src/eepp/ui/doc/syntaxtokenizer.cpp
 ../../src/eepp/ui/doc/textdocument.cpp
 ../../src/eepp/ui/doc/textformat.cpp
+../../src/eepp/ui/doc/textrange.cpp
 ../../src/eepp/ui/doc/textundostack.cpp
 ../../src/eepp/ui/doc/documentview.cpp
 ../../src/eepp/ui/keyboardshortcut.cpp

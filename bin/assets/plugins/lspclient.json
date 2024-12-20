@@ -132,21 +132,21 @@
       "name": "lua-language-server",
       "url": "https://github.com/sumneko/lua-language-server",
       "command": "lua-language-server",
-      "file_patterns": ["%.lua"]
+      "file_patterns": ["%.lua$"]
     },
     {
       "language": "kotlin",
       "name": "kotlin-language-server",
       "url": "https://github.com/fwcd/kotlin-language-server",
       "command": "kotlin-language-server",
-      "file_patterns": ["%.kt"]
+      "file_patterns": ["%.kt$"]
     },
     {
       "language": "nim",
       "name": "nimlsp",
       "url": "https://github.com/PMunch/nimlsp",
       "command": "nimlsp",
-      "file_patterns": ["%.nim"]
+      "file_patterns": ["%.nim$"]
     },
     {
       "language": "ruby",
@@ -154,28 +154,28 @@
       "url": "https://solargraph.org",
       "command": "solargraph stdio",
       "rootIndicationFileNames": ["Gemfile", "Gemfile.lock", "gems.rb", "gems.lock", "Rakefile"],
-      "file_patterns": ["%.rb"]
+      "file_patterns": ["%.rb$"]
     },
     {
       "language": "yaml",
       "name": "yaml-language-server",
       "url": "https://github.com/redhat-developer/yaml-language-server",
       "command": "yaml-language-server --stdio",
-      "file_patterns": ["%.yaml", "%.yml"]
+      "file_patterns": ["%.yaml$", "%.yml$"]
     },
     {
       "language": "dart",
       "name": "dart language-server",
       "url": "https://github.com/dart-lang/sdk/blob/main/pkg/analysis_server/tool/lsp_spec",
       "command": "dart language-server --client-id ecode",
-      "file_patterns": ["%.dart"]
+      "file_patterns": ["%.dart$"]
     },
     {
       "language": "shellscript",
       "name": "bash-language-server",
       "url": "https://github.com/bash-lsp/bash-language-server",
       "command": "bash-language-server start",
-      "file_patterns": ["%.sh", "%.bash"]
+      "file_patterns": ["%.sh$", "%.bash$"]
     },
     {
       "language": "html",
@@ -317,7 +317,7 @@
       "name": "glsl_analyzer",
       "url": "https://github.com/nolanderc/glsl_analyzer",
       "command": "glsl_analyzer",
-      "file_patterns": ["%.glsl$", "%.frag$", "%.vert$", "%.fs$", "%.vs$", "%.tesc", "%.tese"]
+      "file_patterns": ["%.glsl$", "%.frag$", "%.vert$", "%.fs$", "%.vs$", "%.tesc$", "%.tese$"]
     },
     {
       "language": "vala",
@@ -366,7 +366,7 @@
       "name": "LanguageServer.jl",
       "url": "https://github.com/julia-vscode/LanguageServer.jl",
       "command": "julia --project=\"$HOME/.julia/packages/LanguageServer/Fwm1f/src/LanguageServer.jl\" -e \"using LanguageServer; runserver()\"",
-      "file_patterns": ["%.jl"]
+      "file_patterns": ["%.jl$"]
     },
     {
       "language": "fortran",

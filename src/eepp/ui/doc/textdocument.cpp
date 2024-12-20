@@ -59,7 +59,9 @@ TextDocument::~TextDocument() {
 		Lock l( mLoadingMutex );
 	}
 
-	{ Lock l( mClientsMutex ); }
+	{
+		Lock l( mClientsMutex );
+	}
 
 	// Loading has been stopped
 	while ( mLoadingAsync ) {
@@ -1305,13 +1307,13 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 		mLines.emplace_back( String( "\n" ) );
 
 	if ( mSelection.size() > 1 ) {
-		auto ranNorm( originalRange.normalized() );
-		Int64 lineRem = ranNorm.end().line() - ranNorm.start().line();
+		auto oriNm( originalRange.normalized() );
+		Int64 lineRem = oriNm.end().line() - oriNm.start().line();
 		size_t curIdx = 0;
 
-		Int64 colRem = ranNorm.start().line() == ranNorm.end().line()
-						   ? ranNorm.end().column() - ranNorm.start().column()
-						   : ranNorm.end().column();
+		Int64 colRem = oriNm.start().line() == oriNm.end().line()
+						   ? oriNm.end().column() - oriNm.start().column()
+						   : oriNm.end().column();
 
 		for ( auto& sel : mSelection ) {
 			if ( curIdx == cursorIdx ) {
@@ -1319,9 +1321,10 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 				continue;
 			}
 
-			auto selNorm( sel.normalized() );
+			auto selNm( sel.normalized() );
+			auto selOri( sel );
 
-			if ( selNorm.start().line() < ranNorm.end().line() ) {
+			if ( selNm.start().line() < oriNm.end().line() ) {
 				curIdx++;
 				continue;
 			}
@@ -1329,13 +1332,22 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 			if ( lineRem != 0 ) {
 				sel.start().setLine( sel.start().line() - lineRem );
 				sel.end().setLine( sel.end().line() - lineRem );
+			}
 
-				sel.start().setColumn( ranNorm.start().column() + sel.start().column() - colRem );
-				sel.end().setColumn( ranNorm.start().column() + sel.end().column() - colRem );
-			} else if ( selNorm.end().line() == ranNorm.end().line() &&
-				 ranNorm.end().column() <= selNorm.start().column() ) {
-				sel.start().setColumn( sel.start().column() - colRem );
-				sel.end().setColumn( sel.end().column() - colRem );
+			if ( selOri.start().line() == oriNm.end().line() &&
+				 selOri.start().column() >= oriNm.end().column() ) {
+				if ( sel.start().line() != selOri.start().line() )
+					sel.start().setColumn( oriNm.start().column() + sel.start().column() - colRem );
+				else
+					sel.start().setColumn( sel.start().column() - colRem );
+			}
+
+			if ( selOri.end().line() == oriNm.end().line() &&
+				 selOri.end().column() >= oriNm.end().column() ) {
+				if ( selOri.end().line() != sel.end().line() )
+					sel.end().setColumn( oriNm.start().column() + sel.end().column() - colRem );
+				else
+					sel.end().setColumn( sel.end().column() - colRem );
 			}
 
 			sel = sanitizeRange( sel );
@@ -1912,7 +1924,7 @@ void TextDocument::deleteToNextChar() {
 
 void TextDocument::deleteToEndOfLine() {
 	for ( size_t i = 0; i < mSelection.size(); ++i )
-		deleteTo( i, endOfLine( getSelectionIndex( i ).start() ));
+		deleteTo( i, endOfLine( getSelectionIndex( i ).start() ) );
 	mergeSelection();
 }
 
