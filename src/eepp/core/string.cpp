@@ -934,6 +934,24 @@ String String::join( const std::vector<String>& strArray, const Int8& joinchar,
 	return str;
 }
 
+std::string String::join( const std::vector<const char*>& strArray, const Int8& joinchar,
+						  const bool& appendLastJoinChar ) {
+	size_t s = strArray.size();
+	std::string str;
+
+	if ( s > 0 ) {
+		for ( size_t i = 0; i < s; i++ ) {
+			str += strArray[i];
+
+			if ( joinchar >= 0 && ( i != s - 1 || appendLastJoinChar ) ) {
+				str += joinchar;
+			}
+		}
+	}
+
+	return str;
+}
+
 std::string String::lTrim( const std::string& str, char character ) {
 	std::string::size_type pos1 = str.find_first_not_of( character );
 	return ( pos1 == std::string::npos ) ? str : str.substr( pos1 );

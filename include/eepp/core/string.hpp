@@ -164,6 +164,9 @@ class EE_API String {
 	static String join( const std::vector<String>& strArray, const Int8& joinchar = ' ',
 						const bool& appendLastJoinChar = false );
 
+	static std::string join( const std::vector<const char*>& strArray, const Int8& joinchar = ' ',
+							 const bool& appendLastJoinChar = false );
+
 	/** Removes the trailing prefix. */
 	static std::string lTrim( const std::string& str, char character = ' ' );
 

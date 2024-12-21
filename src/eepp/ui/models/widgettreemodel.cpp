@@ -44,8 +44,8 @@ Variant WidgetTreeModel::data( const ModelIndex& index, ModelRole role ) const {
 		switch ( index.column() ) {
 			case Column::PseudoClasses: {
 				if ( node->isWidget() ) {
-					return Variant(
-						String::join( node->asType<UIWidget>()->getStyleSheetPseudoClasses() ) );
+					return Variant( String::join(
+						node->asType<UIWidget>()->getStyleSheetPseudoClassesStrings() ) );
 				}
 				break;
 			}

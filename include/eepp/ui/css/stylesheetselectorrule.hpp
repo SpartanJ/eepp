@@ -13,6 +13,18 @@ namespace EE { namespace UI { namespace CSS {
 
 class EE_API StyleSheetSelectorRule {
   public:
+	enum PseudoClasses {
+		None = 0,
+		Focus = ( 1 << 0 ),
+		Selected = ( 1 << 1 ),
+		Hover = ( 1 << 2 ),
+		Pressed = ( 1 << 3 ),
+		Disabled = ( 1 << 4 ),
+		FocusWithin = ( 1 << 5 ),
+	};
+
+	static constexpr auto PseudoClassesTotal = 6;
+
 	enum TypeIdentifier {
 		TAG = 0,
 		GLOBAL = '*',
@@ -50,6 +62,10 @@ class EE_API StyleSheetSelectorRule {
 		PREVIOUS_SIBLING = '|',
 	};
 
+	static PseudoClasses toPseudoClass( std::string_view cls );
+
+	static std::vector<const char*> fromPseudoClass( Uint32 cls );
+
 	StyleSheetSelectorRule( const std::string& selectorFragment, PatternMatch mPatternMatch );
 
 	void pushSelectorTypeIdentifier( TypeIdentifier selectorTypeIdentifier, std::string name );
@@ -68,7 +84,7 @@ class EE_API StyleSheetSelectorRule {
 
 	bool hasPseudoClass( const std::string& cls ) const;
 
-	const std::vector<std::string>& getPseudoClasses() const;
+	Uint32 getPseudoClasses() const;
 
 	bool hasStructuralPseudoClasses() const;
 
@@ -81,15 +97,15 @@ class EE_API StyleSheetSelectorRule {
 	const std::string& getId() const;
 
   protected:
-	int mSpecificity;
+	int mSpecificity{ 0 };
 	PatternMatch mPatternMatch;
 	std::string mTagName;
 	std::string mId;
 	std::vector<std::string> mClasses;
-	std::vector<std::string> mPseudoClasses;
 	std::vector<std::string> mStructuralPseudoClasses;
 	std::vector<StructuralSelector> mStructuralSelectors;
-	Uint32 mRequirementFlags;
+	Uint32 mPseudoClasses{ 0 };
+	Uint32 mRequirementFlags{ 0 };
 };
 
 }}} // namespace EE::UI::CSS
