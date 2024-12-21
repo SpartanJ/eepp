@@ -151,7 +151,7 @@ class EE_API UIWidget : public UINode {
 
 	const std::string& getStyleSheetId() const;
 
-	const std::vector<std::string>& getStyleSheetClasses() const;
+	inline const std::vector<std::string>& getStyleSheetClasses() const { return mClasses; }
 
 	UIWidget* getStyleSheetParentElement() const;
 
@@ -159,7 +159,9 @@ class EE_API UIWidget : public UINode {
 
 	UIWidget* getStyleSheetNextSiblingElement() const;
 
-	const std::vector<std::string>& getStyleSheetPseudoClasses() const;
+	Uint32 getStyleSheetPseudoClasses() const { return mPseudoClasses; }
+
+	std::vector<const char*> getStyleSheetPseudoClassesStrings() const;
 
 	UIWidget* resetClass();
 
@@ -187,7 +189,7 @@ class EE_API UIWidget : public UINode {
 
 	const std::vector<std::string>& getClasses() const;
 
-	const std::string& getElementTag() const;
+	inline const std::string& getElementTag() const { return mTag; }
 
 	virtual void pushState( const Uint32& State, bool emitEvent = true );
 
@@ -306,7 +308,7 @@ class EE_API UIWidget : public UINode {
 	int mAttributesTransactionCount;
 	std::string mSkinName;
 	std::vector<std::string> mClasses;
-	std::vector<std::string> mPseudoClasses;
+	Uint32 mPseudoClasses{ 0 };
 	String mTooltipText;
 
 	explicit UIWidget( const std::string& tag );

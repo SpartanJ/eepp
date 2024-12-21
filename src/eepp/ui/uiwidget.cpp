@@ -786,10 +786,6 @@ const std::string& UIWidget::getStyleSheetTag() const {
 	return mTag;
 }
 
-const std::vector<std::string>& UIWidget::getStyleSheetClasses() const {
-	return mClasses;
-}
-
 UIWidget* UIWidget::getStyleSheetParentElement() const {
 	return NULL != mParentNode && mParentNode->isWidget() ? mParentNode->asType<UIWidget>() : NULL;
 }
@@ -802,30 +798,30 @@ UIWidget* UIWidget::getStyleSheetNextSiblingElement() const {
 	return NULL != mNext && mNext->isWidget() ? mNext->asType<UIWidget>() : NULL;
 }
 
-const std::vector<std::string>& UIWidget::getStyleSheetPseudoClasses() const {
-	return mPseudoClasses;
+std::vector<const char*> UIWidget::getStyleSheetPseudoClassesStrings() const {
+	return StyleSheetSelectorRule::fromPseudoClass( mPseudoClasses );
 }
 
 void UIWidget::updatePseudoClasses() {
-	mPseudoClasses.clear();
+	mPseudoClasses = 0;
 
 	if ( mState & UIState::StateFlagHover )
-		mPseudoClasses.push_back( "hover" );
+		mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::Hover;
 
 	if ( mState & UIState::StateFlagFocus )
-		mPseudoClasses.push_back( "focus" );
+		mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::Focus;
 
 	if ( mState & UIState::StateFlagFocusWithin )
-		mPseudoClasses.push_back( "focus-within" );
+		mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::FocusWithin;
 
 	if ( mState & UIState::StateFlagSelected )
-		mPseudoClasses.push_back( "selected" );
+		mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::Selected;
 
 	if ( mState & UIState::StateFlagPressed )
-		mPseudoClasses.push_back( "pressed" );
+		mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::Pressed;
 
 	if ( mState & UIState::StateFlagDisabled )
-		mPseudoClasses.push_back( "disabled" );
+		mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::Disabled;
 
 	invalidateDraw();
 }
@@ -982,8 +978,7 @@ void UIWidget::toggleClass( const std::string& cls ) {
 }
 
 bool UIWidget::hasPseudoClass( const std::string& pseudoCls ) const {
-	return std::find( mPseudoClasses.begin(), mPseudoClasses.end(), pseudoCls ) !=
-		   mPseudoClasses.end();
+	return ( mPseudoClasses & StyleSheetSelectorRule::toPseudoClass( pseudoCls ) ) != 0;
 }
 
 bool UIWidget::isTooltipEnabled() const {
@@ -1015,10 +1010,6 @@ void UIWidget::setElementTag( const std::string& tag ) {
 
 const std::vector<std::string>& UIWidget::getClasses() const {
 	return mClasses;
-}
-
-const std::string& UIWidget::getElementTag() const {
-	return mTag;
 }
 
 void UIWidget::pushState( const Uint32& State, bool emitEvent ) {

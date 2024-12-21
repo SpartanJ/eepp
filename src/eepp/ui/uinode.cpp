@@ -605,9 +605,9 @@ void UINode::updateDebugData() {
 			text += "Classes: " + String::join( widget->getStyleSheetClasses(), ' ' ) + "\n";
 		}
 
-		if ( !widget->getStyleSheetPseudoClasses().empty() ) {
-			text += "Pseudo Classes: " + String::join( widget->getStyleSheetPseudoClasses(), ' ' ) +
-					"\n";
+		if ( widget->getStyleSheetPseudoClasses() ) {
+			text += "Pseudo Classes: " +
+					String::join( widget->getStyleSheetPseudoClassesStrings(), ' ' ) + "\n";
 		}
 
 		text += String::format(
