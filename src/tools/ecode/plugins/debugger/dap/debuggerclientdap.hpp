@@ -16,17 +16,15 @@ class DebuggerClientDap : public DebuggerClient {
   public:
 	typedef std::function<void( const Response&, const nlohmann::json& )> ResponseHandler;
 
-	DebuggerClientDap( std::unique_ptr<Bus>&& bus );
+	DebuggerClientDap( const ProtocolSettings& protocolSettings, std::unique_ptr<Bus>&& bus );
 
 	bool start() override;
 
-	bool attach() override;
-
-	bool cont( int threadId, bool singleThread = false ) override;
+	bool resume( int threadId, bool singleThread = false ) override;
 
 	bool pause( int threadId ) override;
 
-	bool next( int threadId, bool singleThread = false ) override;
+	bool stepOver( int threadId, bool singleThread = false ) override;
 
 	bool goTo( int threadId, int targetId ) override;
 
@@ -44,19 +42,32 @@ class DebuggerClientDap : public DebuggerClient {
 
 	bool scopes( int frameId ) override;
 
-	bool variables( int variablesReference, Variable::Type filter, int start, int count );
+	bool variables( int variablesReference, Variable::Type filter, int start, int count ) override;
+
+	bool modules( int start, int count ) override;
+
+	bool evaluate( const std::string& expression, const std::string& context,
+				   std::optional<int> frameId ) override;
 
 	bool isServerConnected() const override;
 
 	bool supportsTerminate() const override;
 
 	bool setBreakpoints( const std::string& path,
-								 const std::vector<dap::SourceBreakpoint> breakpoints,
-								 bool sourceModified = false ) override;
+						 const std::vector<dap::SourceBreakpoint> breakpoints,
+						 bool sourceModified = false ) override;
 
 	bool setBreakpoints( const dap::Source& source,
-								 const std::vector<dap::SourceBreakpoint> breakpoints,
-								 bool sourceModified = false ) override;
+						 const std::vector<dap::SourceBreakpoint> breakpoints,
+						 bool sourceModified = false ) override;
+
+	bool gotoTargets( const std::string& path, const int line,
+					  const std::optional<int> column = std::nullopt ) override;
+
+	bool gotoTargets( const dap::Source& source, const int line,
+					  const std::optional<int> column = std::nullopt ) override;
+
+	bool watch( const std::string& expression, std::optional<int> frameId ) override;
 
   protected:
 	std::unique_ptr<Bus> mBus;

@@ -18,7 +18,21 @@ makeResponseHandler( void ( T::*member )( const Response& response, const nlohma
 	};
 }
 
-DebuggerClientDap::DebuggerClientDap( std::unique_ptr<Bus>&& bus ) : mBus( std::move( bus ) ) {}
+static std::string extractCommand( const nlohmann::json& launchRequest ) {
+	auto command = launchRequest.value( DAP_COMMAND, "" );
+	if ( ( command != DAP_LAUNCH ) && ( command != DAP_ATTACH ) ) {
+		Log::warning( "DebuggerClientDap::extractCommand unsupported request command: %s",
+					  command );
+		return "";
+	}
+	return command;
+}
+
+DebuggerClientDap::DebuggerClientDap( const ProtocolSettings& protocolSettings,
+									  std::unique_ptr<Bus>&& bus ) :
+	mBus( std::move( bus ) ),
+	mProtocol( protocolSettings ),
+	mLaunchCommand( extractCommand( protocolSettings.launchRequest ) ) {}
 
 void DebuggerClientDap::makeRequest( const std::string_view& command,
 									 const nlohmann::json& arguments, ResponseHandler onFinish ) {
@@ -61,6 +75,7 @@ bool DebuggerClientDap::start() {
 		Log::warning( "DebuggerClientDap::start: trying to re-start has no effect" );
 		return false;
 	}
+	requestInitialize();
 	return started;
 }
 
@@ -93,7 +108,6 @@ void DebuggerClientDap::processResponseInitialize( const Response& response,
 }
 
 void DebuggerClientDap::requestLaunchCommand() {
-
 	if ( mState != State::Initializing ) {
 		Log::warning(
 			"DebuggerClientDap::requestLaunchCommand: trying to launch in an unexpected state" );
@@ -111,6 +125,10 @@ void DebuggerClientDap::requestLaunchCommand() {
 							 client->launched();
 						 checkRunning();
 					 } else {
+						 if ( response.errorBody ) {
+							 Log::warning( "DebuggerClientDap::requestLaunchCommand: error %ld %s",
+										   response.errorBody->id, response.errorBody->format );
+						 }
 						 setState( State::Failed );
 					 }
 				 } );
@@ -368,11 +386,7 @@ std::optional<DebuggerClientDap::HeaderInfo> DebuggerClientDap::readHeader() {
 	return HeaderInfo{ end, length };
 }
 
-bool DebuggerClientDap::attach() {
-	return false;
-}
-
-bool DebuggerClientDap::cont( int threadId, bool singleThread ) {
+bool DebuggerClientDap::resume( int threadId, bool singleThread ) {
 	nlohmann::json arguments{ { DAP_THREAD_ID, threadId } };
 	if ( singleThread )
 		arguments[DAP_SINGLE_THREAD] = true;
@@ -405,7 +419,7 @@ void DebuggerClientDap::processResponseNext( const Response& response,
 	}
 }
 
-bool DebuggerClientDap::next( int threadId, bool singleThread ) {
+bool DebuggerClientDap::stepOver( int threadId, bool singleThread ) {
 	nlohmann::json arguments{ { DAP_THREAD_ID, threadId } };
 	if ( singleThread )
 		arguments[DAP_SINGLE_THREAD] = true;
@@ -552,6 +566,46 @@ bool DebuggerClientDap::variables( int variablesReference, Variable::Type filter
 	return true;
 }
 
+bool DebuggerClientDap::modules( int start, int count ) {
+	makeRequest( DAP_MODULES, { { DAP_START, start }, { DAP_COUNT, count } },
+				 [this]( const auto& response, const auto& request ) {
+					 if ( response.success ) {
+						 ModulesInfo info( response.body );
+						 for ( auto client : mClients )
+							 client->modules( info );
+					 } else {
+						 ModulesInfo info;
+						 for ( auto client : mClients )
+							 client->modules( info );
+					 }
+				 } );
+	return true;
+}
+
+bool DebuggerClientDap::evaluate( const std::string& expression, const std::string& context,
+								  std::optional<int> frameId ) {
+	nlohmann::json arguments{ { DAP_EXPRESSION, expression } };
+	if ( !context.empty() )
+		arguments[DAP_CONTEXT] = context;
+	if ( frameId )
+		arguments[DAP_FRAME_ID] = *frameId;
+
+	makeRequest( "evaluate", arguments, [this]( const auto& response, const auto& request ) {
+		auto expression = request.value( DAP_EXPRESSION, "" );
+		if ( response.success ) {
+			EvaluateInfo info( response.body );
+
+			for ( auto client : mClients )
+				client->expressionEvaluated( expression, info );
+		} else {
+			for ( auto client : mClients )
+				client->expressionEvaluated( expression, std::nullopt );
+		}
+	} );
+
+	return true;
+}
+
 bool DebuggerClientDap::setBreakpoints( const std::string& path,
 										const std::vector<dap::SourceBreakpoint> breakpoints,
 										bool sourceModified ) {
@@ -603,6 +657,38 @@ bool DebuggerClientDap::setBreakpoints( const dap::Source& source,
 				 } );
 
 	return true;
+}
+
+bool DebuggerClientDap::gotoTargets( const std::string& path, const int line,
+									 const std::optional<int> column ) {
+	return gotoTargets( Source( path ), line, column );
+}
+
+bool DebuggerClientDap::gotoTargets( const Source& source, const int line,
+									 const std::optional<int> column ) {
+	nlohmann::json arguments{ { DAP_SOURCE, source.toJson() }, { DAP_LINE, line } };
+	if ( column )
+		arguments[DAP_COLUMN] = *column;
+
+	makeRequest( "gotoTargets", arguments, [this]( const auto& response, const auto& req ) {
+		const auto source = Source( req[DAP_SOURCE] );
+		const int line = req.value( DAP_LINE, 1 );
+		if ( response.success ) {
+			auto list = GotoTarget::parseList( response.body["targets"] );
+			for ( auto client : mClients )
+				client->gotoTargets( source, line, list );
+		} else {
+			std::vector<GotoTarget> list;
+			for ( auto client : mClients )
+				client->gotoTargets( source, line, list );
+		}
+	} );
+
+	return true;
+}
+
+bool DebuggerClientDap::watch( const std::string& expression, std::optional<int> frameId ) {
+	return evaluate( expression, "watch", frameId );
 }
 
 } // namespace ecode::dap

@@ -53,11 +53,11 @@ class DebuggerClient {
 
 	virtual bool attach() = 0;
 
-	virtual bool cont( int threadId, bool singleThread = false ) = 0;
+	virtual bool resume( int threadId, bool singleThread = false ) = 0;
 
 	virtual bool pause( int threadId ) = 0;
 
-	virtual bool next( int threadId, bool singleThread = false ) = 0;
+	virtual bool stepOver( int threadId, bool singleThread = false ) = 0;
 
 	virtual bool goTo( int threadId, int targetId ) = 0;
 
@@ -75,6 +75,14 @@ class DebuggerClient {
 
 	virtual bool scopes( int frameId ) = 0;
 
+	virtual bool modules( int start, int count ) = 0;
+
+	virtual bool variables( int variablesReference, Variable::Type filter, int start,
+							int count ) = 0;
+
+	virtual bool evaluate( const std::string& expression, const std::string& context,
+						   std::optional<int> frameId ) = 0;
+
 	virtual bool isServerConnected() const = 0;
 
 	virtual bool supportsTerminate() const = 0;
@@ -86,6 +94,14 @@ class DebuggerClient {
 	virtual bool setBreakpoints( const dap::Source& source,
 								 const std::vector<dap::SourceBreakpoint> breakpoints,
 								 bool sourceModified = false ) = 0;
+
+	virtual bool gotoTargets( const std::string& path, const int line,
+							  const std::optional<int> column = std::nullopt ) = 0;
+
+	virtual bool gotoTargets( const dap::Source& source, const int line,
+							  const std::optional<int> column = std::nullopt ) = 0;
+
+	virtual bool watch( const std::string& expression, std::optional<int> frameId ) = 0;
 
   protected:
 	void setState( const State& state );
