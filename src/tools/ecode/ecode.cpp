@@ -342,6 +342,8 @@ std::string App::getLastUsedFolder() {
 }
 
 void App::insertRecentFolder( const std::string& rpath ) {
+	if ( mIncognito )
+		return;
 	auto found = std::find( mRecentFolders.begin(), mRecentFolders.end(), rpath );
 	if ( found != mRecentFolders.end() )
 		mRecentFolders.erase( found );
@@ -1630,6 +1632,8 @@ bool App::dirInFolderWatches( const std::string& dir ) {
 }
 
 void App::insertRecentFile( const std::string& path ) {
+	if ( mIncognito )
+		return;
 	auto found = std::find( mRecentFiles.begin(), mRecentFiles.end(), path );
 	if ( found != mRecentFiles.end() )
 		mRecentFiles.erase( found );
@@ -1723,50 +1727,51 @@ std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	return {
 		{ { KEY_RETURN, KEYMOD_LALT | KEYMOD_LCTRL }, "fullscreen-toggle" },
-		{ { KEY_F3, KEYMOD_NONE }, "repeat-find" },
-		{ { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
-		{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
-		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
-		{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
-		{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
-		{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
-		{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
-		{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
-		{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
-		{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
-		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
-		{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
+			{ { KEY_F3, KEYMOD_NONE }, "repeat-find" }, { { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
+			{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
+			{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
+			{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
+			{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
+			{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
+			{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
+			{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
+			{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
+			{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
+			{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
+			{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-		{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
+			{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
 #else
-		{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
+			{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
 #endif
-		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
-		{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
-		{ { KEY_J, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-		  "terminal-split-left" },
-		{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-		  "terminal-split-right" },
-		{ { KEY_I, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-		  "terminal-split-top" },
-		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-		  "terminal-split-bottom" },
-		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-		  "terminal-split-swap" },
-		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-		  "reopen-closed-tab" },
-		{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
-		{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
-		{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
-		{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
-		{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
-		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
-		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
-		{ { KEY_F5, KEYMOD_NONE }, "project-build-and-run" },
-		{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
-		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-workspace-symbol-search" },
-		{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-document-symbol-search" },
-		{ { KEY_N, KEYMOD_SHIFT | KEYMOD_LALT }, "create-new-window" },
+			{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
+			{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
+			{ { KEY_J, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-left" },
+			{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-right" },
+			{ { KEY_I, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-top" },
+			{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-bottom" },
+			{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-swap" },
+			{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "reopen-closed-tab" },
+			{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
+			{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
+			{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
+			{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
+			{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
+			{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
+			{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
+			{ { KEY_F5, KEYMOD_NONE }, "project-build-and-run" },
+			{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
+			{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
+			  "open-workspace-symbol-search" },
+			{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
+			  "open-document-symbol-search" },
+			{ { KEY_N, KEYMOD_SHIFT | KEYMOD_LALT }, "create-new-window" },
 	};
 }
 
@@ -1775,15 +1780,15 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 std::map<std::string, std::string> App::getMigrateKeybindings() {
 	return {
 		{ "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
-		{ "switch-to-tab-2", "alt+2" },		   { "switch-to-tab-3", "alt+3" },
-		{ "switch-to-tab-4", "alt+4" },		   { "switch-to-tab-5", "alt+5" },
-		{ "switch-to-tab-6", "alt+6" },		   { "switch-to-tab-7", "alt+7" },
-		{ "switch-to-tab-8", "alt+8" },		   { "switch-to-tab-9", "alt+9" },
-		{ "switch-to-last-tab", "alt+0" },
+			{ "switch-to-tab-2", "alt+2" }, { "switch-to-tab-3", "alt+3" },
+			{ "switch-to-tab-4", "alt+4" }, { "switch-to-tab-5", "alt+5" },
+			{ "switch-to-tab-6", "alt+6" }, { "switch-to-tab-7", "alt+7" },
+			{ "switch-to-tab-8", "alt+8" }, { "switch-to-tab-9", "alt+9" },
+			{ "switch-to-last-tab", "alt+0" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-		{ "menu-toggle", "mod+shift+m" },
+			{ "menu-toggle", "mod+shift+m" },
 #endif
-		{ "lock-toggle", "mod+shift+l" },
+			{ "lock-toggle", "mod+shift+l" },
 	};
 }
 
@@ -3316,10 +3321,11 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 				std::string css, bool health, const std::string& healthLang,
 				FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen,
 				bool stdOutLogs, bool disableFileLogs, bool openClean, bool portable,
-				std::string language ) {
+				std::string language, bool incognito ) {
 	Http::setThreadPool( mThreadPool );
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
+	mIncognito = incognito;
 	mPortableMode = portable;
 	mDisplayDPI = currentDisplay->getDPI();
 	mUseFrameBuffer = frameBuffer;
@@ -3468,6 +3474,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		if ( mConfig.windowState.maximized ) {
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 			mThreadPool->run( [this] { mWindow->maximize(); } );
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+			// Do no maximize since the result is not exactly maximized
 #else
 			mWindow->maximize();
 #endif
@@ -3965,6 +3973,10 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		parser, "portable",
 		"Portable Mode (it will save the configuration files within the ecode main folder)",
 		{ 'p', "portable" } );
+	args::Flag incognito(
+		parser, "incognito",
+		"It will stop keeping track of the opened files or folders during the session",
+		{ 'i', "incognito" } );
 	args::ValueFlag<size_t> jobs(
 		parser, "jobs",
 		"Sets the number of background jobs that the application will spawn "
@@ -4081,7 +4093,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),
 					   benchmarkMode.Get(), css.Get(), health || healthLang, healthLang.Get(),
 					   healthFormat.Get(), file.Get(), verbose.Get(), disableFileLogs.Get(),
-					   openClean.Get(), portable.Get(), language.Get() );
+					   openClean.Get(), portable.Get(), language.Get(), incognito.Get() );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();

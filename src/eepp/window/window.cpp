@@ -57,11 +57,17 @@ Window::~Window() {
 	eeSAFE_DELETE( mCursorManager );
 }
 
-Sizei Window::getSize() {
+Sizei Window::getSize() const {
 	return Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 }
 
-Vector2f Window::getCenter() {
+Sizei Window::getSizeInScreenCoordinates() const {
+	Float scale = getScale();
+	return Sizei{ static_cast<int>( mWindow.WindowConfig.Width / scale ),
+				  static_cast<int>( mWindow.WindowConfig.Height / scale ) };
+}
+
+Vector2f Window::getCenter() const {
 	return Sizef( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height ) * 0.5f;
 }
 
@@ -73,7 +79,7 @@ const Uint32& Window::getHeight() const {
 	return mWindow.WindowConfig.Height;
 }
 
-const Sizei& Window::getDesktopResolution() {
+const Sizei& Window::getDesktopResolution() const {
 	return mWindow.DesktopResolution;
 }
 
@@ -107,11 +113,11 @@ void Window::setProjection( const Transform& transform ) {
 	GLi->loadIdentity();
 }
 
-Vector2f Window::mapPixelToCoords( const Vector2i& point ) {
+Vector2f Window::mapPixelToCoords( const Vector2i& point ) const {
 	return mapPixelToCoords( point, getView() );
 }
 
-Vector2f Window::mapPixelToCoords( const Vector2i& point, const View& view ) {
+Vector2f Window::mapPixelToCoords( const Vector2i& point, const View& view ) const {
 	// First, convert from viewport coordinates to homogeneous coordinates
 	Vector2f normalized;
 	Rect viewport = getViewport( view );
@@ -122,11 +128,11 @@ Vector2f Window::mapPixelToCoords( const Vector2i& point, const View& view ) {
 	return view.getInverseTransform().transformPoint( normalized );
 }
 
-Vector2i Window::mapCoordsToPixel( const Vector2f& point ) {
+Vector2i Window::mapCoordsToPixel( const Vector2f& point ) const {
 	return mapCoordsToPixel( point, getView() );
 }
 
-Vector2i Window::mapCoordsToPixel( const Vector2f& point, const View& view ) {
+Vector2i Window::mapCoordsToPixel( const Vector2f& point, const View& view ) const {
 	// First, transform the point by the view matrix
 	Vector2f normalized = view.getTransform().transformPoint( point );
 
@@ -152,7 +158,7 @@ void Window::setViewport( const Int32& x, const Int32& y, const Uint32& Width,
 	GLi->viewport( x, getHeight() - ( y + Height ), Width, Height );
 }
 
-Rect Window::getViewport( const View& view ) {
+Rect Window::getViewport( const View& view ) const {
 	float width = static_cast<float>( getSize().getWidth() );
 	float height = static_cast<float>( getSize().getHeight() );
 	const Rectf& viewport = view.getViewport();
@@ -314,7 +320,7 @@ void Window::setFrameRateLimit( const Uint32& FrameRateLimit ) {
 	mFrameData.FPS.Limit = (Float)FrameRateLimit;
 }
 
-Uint32 Window::getFrameRateLimit() {
+Uint32 Window::getFrameRateLimit() const {
 	return static_cast<Uint32>( mFrameData.FPS.Limit );
 }
 
@@ -346,11 +352,21 @@ const Sizei& Window::getLastWindowedSize() const {
 	return mLastWindowedSize;
 }
 
+Sizei Window::getLastWindowedSizeInScreenCoordinates() const {
+	Float scale = getScale();
+	return Sizei{ static_cast<int>( mLastWindowedSize.getWidth() / scale ),
+				  static_cast<int>( mLastWindowedSize.getHeight() / scale ) };
+}
+
 bool Window::showMessageBox( const MessageBoxType&, const std::string&, const std::string& ) {
 	return false;
 }
 
 InputMethod& Window::getIME() {
+	return mIME;
+}
+
+const InputMethod& Window::getIME() const {
 	return mIME;
 }
 
@@ -469,13 +485,13 @@ void Window::logSuccessfulInit( const std::string& BackendName ) {
 		"%s\n\tPlatform: %s\n\tOS: %s\n\tArch: %s\n\tCPU Cores: %d\n\tProcess Path: %s\n\tCurrent "
 		"Working Directory: %s\n\tHome Directory: %s\n\tDisk Free Space: %s\n\tWindow/Input "
 		"Backend: %s\n\tGL Backend: %s\n\tGL Vendor: %s\n\tGL Renderer: %s\n\tGL Version: "
-		"%s\n\tGL Shading Language Version: %s\n\tResolution: %dx%d",
+		"%s\n\tGL Shading Language Version: %s\n\tResolution: %dx%d\n\tWindow scale: %.2f",
 		Version::getVersionName(), Version::getCodename(), Version::getBuildTime(),
 		Sys::getPlatform(), Sys::getOSName( true ), Sys::getOSArchitecture(), Sys::getCPUCount(),
 		Sys::getProcessPath(), FileSystem::getCurrentWorkingDirectory(), Sys::getUserDirectory(),
 		FileSystem::sizeToString( FileSystem::getDiskFreeSpace( Sys::getProcessPath() ) ),
 		BackendName, GLi->versionStr(), GLi->getVendor(), GLi->getRenderer(), GLi->getVersion(),
-		GLi->getShadingLanguageVersion(), getWidth(), getHeight() ) );
+		GLi->getShadingLanguageVersion(), getWidth(), getHeight(), getScale() ) );
 
 #ifndef EE_SILENT
 	Log::info( msg );
@@ -501,7 +517,7 @@ void Window::onQuit() {
 		mQuitCallback( this );
 }
 
-std::string Window::getTitle() {
+const std::string& Window::getTitle() const {
 	return mWindow.WindowConfig.Title;
 }
 
@@ -527,11 +543,11 @@ void Window::minimize() {}
 
 void Window::maximize() {}
 
-bool Window::isMaximized() {
+bool Window::isMaximized() const {
 	return false;
 }
 
-bool Window::isMinimized() {
+bool Window::isMinimized() const {
 	return false;
 }
 
@@ -547,7 +563,7 @@ void Window::show() {}
 
 void Window::setPosition( int, int ) {}
 
-Vector2i Window::getPosition() {
+Vector2i Window::getPosition() const {
 	return Vector2i::Zero;
 }
 
@@ -562,11 +578,11 @@ void Window::centerToDisplay() {
 	}
 }
 
-Rect Window::getBorderSize() {
+Rect Window::getBorderSize() const {
 	return Rect();
 }
 
-Float Window::getScale() {
+Float Window::getScale() const {
 	return 1.f;
 }
 
@@ -582,15 +598,15 @@ void Window::setTextInputRect( const Rect& ) {}
 
 void Window::clearComposition() {}
 
-bool Window::hasScreenKeyboardSupport() {
+bool Window::hasScreenKeyboardSupport() const {
 	return false;
 }
 
-bool Window::isScreenKeyboardShown() {
+bool Window::isScreenKeyboardShown() const {
 	return false;
 }
 
-bool Window::isThreadedGLContext() {
+bool Window::isThreadedGLContext() const {
 	return false;
 }
 
@@ -620,8 +636,12 @@ void Window::runMainLoop( std::function<void()> func, int fps ) {
 #endif
 }
 
-int Window::getCurrentDisplayIndex() {
+int Window::getCurrentDisplayIndex() const {
 	return 0;
+}
+
+const std::function<void()>& Window::getMainLoop() const {
+	return mMainLoop;
 }
 
 }} // namespace EE::Window

@@ -238,7 +238,9 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	}
 
 	editor.colorScheme = colorSchemeName;
-	windowState.size = win->getLastWindowedSize();
+	windowState.size = Sys::getPlatformType() == Sys::PlatformType::macOS
+						   ? win->getSizeInScreenCoordinates()
+						   : win->getLastWindowedSizeInScreenCoordinates();
 	windowState.maximized = win->isMaximized();
 	windowState.displayIndex = win->getCurrentDisplayIndex();
 	windowState.position = win->getPosition();

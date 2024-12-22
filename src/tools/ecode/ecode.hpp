@@ -46,7 +46,7 @@ class App : public UICodeEditorSplitter::Client {
 			   std::string css, bool health, const std::string& healthLang,
 			   ecode::FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen,
 			   bool stdOutLogs, bool disableFileLogs, bool openClean, bool portable,
-			   std::string language );
+			   std::string language, bool incognito );
 
 	void createWidgetInspector();
 
@@ -522,6 +522,7 @@ class App : public UICodeEditorSplitter::Client {
 	bool mPortableModeFailed{ false };
 	bool mDestroyingApp{ false };
 	Time mFrameTime{ Time::Zero };
+	bool mIncognito{ false };
 	Clock mLastRender;
 	Clock mSecondsCounter;
 	ProjectDocumentConfig mProjectDocConfig;

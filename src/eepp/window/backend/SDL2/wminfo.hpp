@@ -13,10 +13,10 @@ class EE_API WMInfo {
 	~WMInfo();
 
 #if defined( EE_X11_PLATFORM )
-	X11Window getWindow();
+	X11Window getWindow() const;
 #endif
 
-	eeWindowHandle getWindowHandler();
+	eeWindowHandle getWindowHandler() const;
 
   protected:
 	void* mWMInfo;

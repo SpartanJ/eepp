@@ -420,7 +420,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	return true;
 }
 
-Uint32 WindowSDL::getWindowID() {
+Uint32 WindowSDL::getWindowID() const {
 	return mID;
 }
 
@@ -440,7 +440,7 @@ void WindowSDL::setCurrent() {
 	makeCurrent();
 }
 
-bool WindowSDL::isThreadedGLContext() {
+bool WindowSDL::isThreadedGLContext() const {
 #ifdef SDL2_THREADED_GLCONTEXT
 	return mWindow.ContextConfig.SharedGLContext;
 #else
@@ -458,7 +458,7 @@ void WindowSDL::unsetGLContextThread() {
 	mGLContextMutex.unlock();
 }
 
-int WindowSDL::getCurrentDisplayIndex() {
+int WindowSDL::getCurrentDisplayIndex() const {
 	int index = SDL_GetWindowDisplayIndex( mSDLWindow );
 
 	if ( index < 0 ) {
@@ -529,26 +529,26 @@ void WindowSDL::setTitle( const std::string& title ) {
 	}
 }
 
-bool WindowSDL::isActive() {
+bool WindowSDL::isActive() const {
 	Uint32 flags = SDL_GetWindowFlags( mSDLWindow );
 	return 0 != ( ( flags & SDL_WINDOW_INPUT_FOCUS ) && ( flags & SDL_WINDOW_MOUSE_FOCUS ) );
 }
 
-bool WindowSDL::isVisible() {
+bool WindowSDL::isVisible() const {
 	Uint32 flags = SDL_GetWindowFlags( mSDLWindow );
 	return 0 != ( ( flags & SDL_WINDOW_SHOWN ) && !( flags & SDL_WINDOW_MINIMIZED ) );
 }
 
-bool WindowSDL::hasFocus() {
+bool WindowSDL::hasFocus() const {
 	return 0 != ( SDL_GetWindowFlags( mSDLWindow ) &
 				  ( SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS ) );
 }
 
-bool WindowSDL::hasInputFocus() {
+bool WindowSDL::hasInputFocus() const {
 	return 0 != ( SDL_GetWindowFlags( mSDLWindow ) & ( SDL_WINDOW_INPUT_FOCUS ) );
 }
 
-bool WindowSDL::hasMouseFocus() {
+bool WindowSDL::hasMouseFocus() const {
 	return 0 != ( SDL_GetWindowFlags( mSDLWindow ) & ( SDL_WINDOW_MOUSE_FOCUS ) );
 }
 
@@ -693,7 +693,7 @@ void WindowSDL::setGamma( Float Red, Float Green, Float Blue ) {
 	SDL_SetWindowGammaRamp( mSDLWindow, red_ramp, green_ramp, blue_ramp );
 }
 
-eeWindowHandle WindowSDL::getWindowHandler() {
+eeWindowHandle WindowSDL::getWindowHandler() const {
 #ifdef EE_USE_WMINFO
 	if ( NULL != mWMinfo ) {
 		return mWMinfo->getWindowHandler();
@@ -773,11 +773,11 @@ void WindowSDL::maximize() {
 	SDL_MaximizeWindow( mSDLWindow );
 }
 
-bool WindowSDL::isMaximized() {
+bool WindowSDL::isMaximized() const {
 	return SDL_GetWindowFlags( mSDLWindow ) & SDL_WINDOW_MAXIMIZED;
 }
 
-bool WindowSDL::isMinimized() {
+bool WindowSDL::isMinimized() const {
 	return SDL_GetWindowFlags( mSDLWindow ) & SDL_WINDOW_MINIMIZED;
 }
 
@@ -814,7 +814,7 @@ void WindowSDL::setPosition( int Left, int Top ) {
 	SDL_SetWindowPosition( mSDLWindow, Left, Top );
 }
 
-Vector2i WindowSDL::getPosition() {
+Vector2i WindowSDL::getPosition() const {
 	Vector2i p;
 
 	SDL_GetWindowPosition( mSDLWindow, &p.x, &p.y );
@@ -822,26 +822,26 @@ Vector2i WindowSDL::getPosition() {
 	return p;
 }
 
-void WindowSDL::updateDesktopResolution() {
+void WindowSDL::updateDesktopResolution() const {
 	SDL_DisplayMode dpm;
 	SDL_GetDesktopDisplayMode( SDL_GetWindowDisplayIndex( mSDLWindow ), &dpm );
 
 	mWindow.DesktopResolution = Sizei( dpm.w, dpm.h );
 }
 
-const Sizei& WindowSDL::getDesktopResolution() {
+const Sizei& WindowSDL::getDesktopResolution() const {
 	updateDesktopResolution();
 	return Window::getDesktopResolution();
 }
 
-Rect WindowSDL::getBorderSize() {
+Rect WindowSDL::getBorderSize() const {
 	Rect bordersSize;
 	SDL_GetWindowBordersSize( mSDLWindow, &bordersSize.Top, &bordersSize.Left, &bordersSize.Bottom,
 							  &bordersSize.Right );
 	return bordersSize;
 }
 
-Float WindowSDL::getScale() {
+Float WindowSDL::getScale() const {
 	int realX, realY;
 	int scaledX, scaledY;
 	SDL_GL_GetDrawableSize( mSDLWindow, &realX, &realY );
@@ -939,11 +939,11 @@ void WindowSDL::clearComposition() {
 #endif
 }
 
-bool WindowSDL::hasScreenKeyboardSupport() {
+bool WindowSDL::hasScreenKeyboardSupport() const {
 	return SDL_TRUE == SDL_HasScreenKeyboardSupport();
 }
 
-bool WindowSDL::isScreenKeyboardShown() {
+bool WindowSDL::isScreenKeyboardShown() const {
 	return SDL_TRUE == SDL_IsScreenKeyboardShown( mSDLWindow );
 }
 
