@@ -70,8 +70,8 @@ class WindowSettings {
 		UseScreenKeyboard( EE_SCREEN_KEYBOARD_ENABLED ) {}
 
 	Uint32 Style;
-	Uint32 Width;
-	Uint32 Height;
+	Uint32 Width;  //! In screen coordinates (pixels * scale)
+	Uint32 Height; //! In screen coordinates (pixels * scale)
 	Uint32 BitsPerPixel;
 	std::string Icon;
 	std::string Title;
@@ -246,8 +246,13 @@ class EE_API Window {
 	 */
 	virtual void setSize( Uint32 Width, Uint32 Height, bool isWindowed ) = 0;
 
-	/** @return The window size */
+	/** @return The window size in pixels */
 	virtual Sizei getSize();
+
+	/** @return The window size in screen coordinates (screen coordinates is size in pixels /
+	 * scale).
+	 */
+	virtual Sizei getSizeInScreenCoordinates();
 
 	/** @return The window center point */
 	Vector2f getCenter();
@@ -306,7 +311,7 @@ class EE_API Window {
 	virtual Rect getBorderSize();
 
 	/** @return The size of the pixel in screen coordinates. This is the device scale factor. */
-	virtual Float getScale();
+	virtual Float getScale() const;
 
 	/** @return If the aplication is running returns true ( If you Init correctly the window and is
 	 * running ). */
@@ -493,8 +498,11 @@ class EE_API Window {
 	 * per second. */
 	const System::Time& getRenderTimePerSecond() const;
 
-	/** @return The last windowed size of the window */
+	/** @return The last windowed size of the window in pixels */
 	const Sizei& getLastWindowedSize() const;
+
+	/** @return The last windowed size of the window in screen coordinates */
+	Sizei getLastWindowedSizeInScreenCoordinates() const;
 
 	/** @return True if implements native message boxes */
 	virtual bool hasNativeMessageBox() const { return false; };

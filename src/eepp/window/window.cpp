@@ -61,6 +61,12 @@ Sizei Window::getSize() {
 	return Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 }
 
+Sizei Window::getSizeInScreenCoordinates() {
+	Float scale = getScale();
+	return Sizei{ static_cast<int>( mWindow.WindowConfig.Width / scale ),
+				  static_cast<int>( mWindow.WindowConfig.Height / scale ) };
+}
+
 Vector2f Window::getCenter() {
 	return Sizef( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height ) * 0.5f;
 }
@@ -346,6 +352,12 @@ const Sizei& Window::getLastWindowedSize() const {
 	return mLastWindowedSize;
 }
 
+Sizei Window::getLastWindowedSizeInScreenCoordinates() const {
+	Float scale = getScale();
+	return Sizei{ static_cast<int>( mLastWindowedSize.getWidth() / scale ),
+				  static_cast<int>( mLastWindowedSize.getHeight() / scale ) };
+}
+
 bool Window::showMessageBox( const MessageBoxType&, const std::string&, const std::string& ) {
 	return false;
 }
@@ -469,13 +481,13 @@ void Window::logSuccessfulInit( const std::string& BackendName ) {
 		"%s\n\tPlatform: %s\n\tOS: %s\n\tArch: %s\n\tCPU Cores: %d\n\tProcess Path: %s\n\tCurrent "
 		"Working Directory: %s\n\tHome Directory: %s\n\tDisk Free Space: %s\n\tWindow/Input "
 		"Backend: %s\n\tGL Backend: %s\n\tGL Vendor: %s\n\tGL Renderer: %s\n\tGL Version: "
-		"%s\n\tGL Shading Language Version: %s\n\tResolution: %dx%d",
+		"%s\n\tGL Shading Language Version: %s\n\tResolution: %dx%d\n\tWindow scale: %.2f",
 		Version::getVersionName(), Version::getCodename(), Version::getBuildTime(),
 		Sys::getPlatform(), Sys::getOSName( true ), Sys::getOSArchitecture(), Sys::getCPUCount(),
 		Sys::getProcessPath(), FileSystem::getCurrentWorkingDirectory(), Sys::getUserDirectory(),
 		FileSystem::sizeToString( FileSystem::getDiskFreeSpace( Sys::getProcessPath() ) ),
 		BackendName, GLi->versionStr(), GLi->getVendor(), GLi->getRenderer(), GLi->getVersion(),
-		GLi->getShadingLanguageVersion(), getWidth(), getHeight() ) );
+		GLi->getShadingLanguageVersion(), getWidth(), getHeight(), getScale() ) );
 
 #ifndef EE_SILENT
 	Log::info( msg );
@@ -566,7 +578,7 @@ Rect Window::getBorderSize() {
 	return Rect();
 }
 
-Float Window::getScale() {
+Float Window::getScale() const {
 	return 1.f;
 }
 

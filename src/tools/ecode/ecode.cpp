@@ -693,8 +693,6 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 }
 
 void App::saveConfig() {
-	if ( mIncognito )
-		return;
 	mConfig.save( mRecentFiles, mRecentFolders,
 				  mProjectSplitter ? mProjectSplitter->getSplitPartition().toString() : "15%",
 				  mMainSplitter ? mMainSplitter->getSplitPartition().toString() : "85%", mWindow,
@@ -1866,7 +1864,7 @@ bool App::isUnlockedCommand( const std::string& command ) {
 }
 
 void App::saveProject( bool onlyIfNeeded, bool sessionSnapshotEnabled ) {
-	if ( !mIncognito && !mCurrentProject.empty() ) {
+	if ( !mCurrentProject.empty() ) {
 		mConfig.saveProject(
 			mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
 			mProjectBuildManager ? mProjectBuildManager->getConfig() : ProjectBuildConfiguration(),
@@ -3476,6 +3474,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		if ( mConfig.windowState.maximized ) {
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 			mThreadPool->run( [this] { mWindow->maximize(); } );
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+			// Do no maximize since the result is not exactly maximized
 #else
 			mWindow->maximize();
 #endif
@@ -3973,10 +3973,10 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		parser, "portable",
 		"Portable Mode (it will save the configuration files within the ecode main folder)",
 		{ 'p', "portable" } );
-	args::Flag incognito( parser, "incognito",
-						  "Disables saving any settings from this session (opened files and "
-						  "folders, folders/project settings and editor settings)",
-						  { 'i', "incognito" } );
+	args::Flag incognito(
+		parser, "incognito",
+		"It will stop keeping track of the opened files or folders during the session",
+		{ 'i', "incognito" } );
 	args::ValueFlag<size_t> jobs(
 		parser, "jobs",
 		"Sets the number of background jobs that the application will spawn "

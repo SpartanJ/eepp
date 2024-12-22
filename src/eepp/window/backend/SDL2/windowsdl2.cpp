@@ -841,7 +841,7 @@ Rect WindowSDL::getBorderSize() {
 	return bordersSize;
 }
 
-Float WindowSDL::getScale() {
+Float WindowSDL::getScale() const {
 	int realX, realY;
 	int scaledX, scaledY;
 	SDL_GL_GetDrawableSize( mSDLWindow, &realX, &realY );
