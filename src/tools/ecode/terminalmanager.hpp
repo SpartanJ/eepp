@@ -36,7 +36,7 @@ class TerminalManager {
 
 	void setTerminalColorSchemesPath( const std::string& terminalColorSchemesPath );
 
-	UIMenu* createColorSchemeMenu();
+	UIMenu* createColorSchemeMenu( bool emptyMenu = false );
 
 	void updateMenuColorScheme( UIMenuSubMenu* colorSchemeMenu );
 

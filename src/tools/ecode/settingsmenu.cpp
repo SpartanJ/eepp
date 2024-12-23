@@ -204,8 +204,8 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 	Log::info( "Settings Menu took: %s", clock.getElapsedTime().toString() );
 }
 
-UIMenu* SettingsMenu::createFileTypeMenu() {
-	mFileTypeMenuesCreatedWithHeight = mUISceneNode->getPixelsSize().getHeight();
+UIMenu* SettingsMenu::createFileTypeMenu( bool emptyMenu ) {
+	mFileTypeMenuesCreatedWithHeight = emptyMenu ? 0 : mUISceneNode->getPixelsSize().getHeight();
 	size_t maxItems = 19;
 	auto* dM = SyntaxDefinitionManager::instance();
 	auto names = dM->getLanguageNames();
@@ -222,6 +222,9 @@ UIMenu* SettingsMenu::createFileTypeMenu() {
 	menu->on( Event::OnItemClicked, cb );
 	mFileTypeMenues.push_back( menu );
 	size_t total = 0;
+
+	if ( emptyMenu )
+		return mFileTypeMenues[0];
 
 	for ( const auto& name : names ) {
 		menu->addRadioButton(
@@ -249,8 +252,8 @@ UIMenu* SettingsMenu::createFileTypeMenu() {
 	return mFileTypeMenues[0];
 }
 
-UIMenu* SettingsMenu::createColorSchemeMenu() {
-	mColorSchemeMenuesCreatedWithHeight = mUISceneNode->getPixelsSize().getHeight();
+UIMenu* SettingsMenu::createColorSchemeMenu( bool emptyMenu ) {
+	mColorSchemeMenuesCreatedWithHeight = emptyMenu ? 0 : mUISceneNode->getPixelsSize().getHeight();
 	size_t maxItems = 19;
 	auto cb = [this]( const Event* event ) {
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -263,6 +266,9 @@ UIMenu* SettingsMenu::createColorSchemeMenu() {
 	mColorSchemeMenues.push_back( menu );
 	size_t total = 0;
 	const auto& colorSchemes = mSplitter->getColorSchemes();
+
+	if ( emptyMenu )
+		return mColorSchemeMenues[0];
 
 	for ( auto& colorScheme : colorSchemes ) {
 		menu->addRadioButton( colorScheme.first,
@@ -305,7 +311,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		->setId( "auto_indent_cur" );
 
 	UIMenuSubMenu* fileTypeMenu = mDocMenu->addSubMenu(
-		i18n( "file_type", "File Type" ), findIcon( "file-code" ), createFileTypeMenu() );
+		i18n( "file_type", "File Type" ), findIcon( "file-code" ), createFileTypeMenu( true ) );
 
 	fileTypeMenu->on( Event::OnMenuShow, [this, fileTypeMenu]( const Event* ) {
 		if ( mFileTypeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
@@ -468,7 +474,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 
 	UIMenuSubMenu* colorSchemeMenu =
 		mDocMenu->addSubMenu( i18n( "syntax_color_scheme", "Syntax Color Scheme" ),
-							  findIcon( "palette" ), createColorSchemeMenu() );
+							  findIcon( "palette" ), createColorSchemeMenu( true ) );
 	colorSchemeMenu->on( Event::OnMenuShow, [this, colorSchemeMenu]( const Event* ) {
 		if ( mColorSchemeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
 			for ( UIPopUpMenu* menu : mColorSchemeMenues )
@@ -912,7 +918,7 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	UIMenuSubMenu* termColorSchemeMenu = mTerminalMenu->addSubMenu(
 		i18n( "terminal_color_scheme", "Terminal Color Scheme" ), findIcon( "palette" ),
-		mApp->getTerminalManager()->createColorSchemeMenu() );
+		mApp->getTerminalManager()->createColorSchemeMenu( true ) );
 	termColorSchemeMenu->on( Event::OnMenuShow, [this, termColorSchemeMenu]( const Event* ) {
 		mApp->getTerminalManager()->updateMenuColorScheme( termColorSchemeMenu );
 	} );
@@ -1058,7 +1064,7 @@ UIMenu* SettingsMenu::createWindowMenu() {
 	colorsMenu
 		->addRadioButton( i18n( "light", "Light" ),
 						  mApp->getUIColorScheme() == ColorSchemePreference::Light )
-  	  ->setOnShouldCloseCb( shouldCloseCb )
+		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "light" );
 	colorsMenu
 		->addRadioButton( i18n( "dark", "Dark" ),
