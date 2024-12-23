@@ -561,6 +561,10 @@ class App : public UICodeEditorSplitter::Client {
 	std::unique_ptr<SettingsActions> mSettingsActions;
 	std::vector<std::string> mPathsToLoad;
 	Uint64 mIpcListenerId{ 0 };
+	std::mutex mAsyncResourcesLoadMutex;
+	std::condition_variable mAsyncResourcesLoadCond;
+	std::vector<SyntaxColorScheme> mColorSchemes;
+	bool mAsyncResourcesLoaded{ false };
 
 	void saveAllProcess();
 

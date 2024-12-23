@@ -30,7 +30,7 @@ SINGLETON_DECLARE_IMPLEMENTATION( SyntaxDefinitionManager )
 SyntaxDefinitionManager*
 SyntaxDefinitionManager::createSingleton( std::size_t reserveSpaceForLanguages ) {
 	if ( NULL == ms_singleton ) {
-		ms_singleton = eeNew( SyntaxDefinitionManager, () );
+		ms_singleton = eeNew( SyntaxDefinitionManager, ( reserveSpaceForLanguages ) );
 	}
 
 	return ms_singleton;

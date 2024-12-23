@@ -241,8 +241,9 @@ void TerminalManager::configureTerminalScrollback() {
 	} );
 }
 
-UIMenu* TerminalManager::createColorSchemeMenu() {
-	mColorSchemeMenuesCreatedWithHeight = mApp->uiSceneNode()->getPixelsSize().getHeight();
+UIMenu* TerminalManager::createColorSchemeMenu( bool emptyMenu ) {
+	mColorSchemeMenuesCreatedWithHeight =
+		emptyMenu ? 0 : mApp->uiSceneNode()->getPixelsSize().getHeight();
 	size_t maxItems = 19;
 	auto cb = [this]( const Event* event ) {
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -255,6 +256,9 @@ UIMenu* TerminalManager::createColorSchemeMenu() {
 	mColorSchemeMenues.push_back( menu );
 	size_t total = 0;
 	const auto& colorSchemes = mTerminalColorSchemes;
+
+	if ( emptyMenu )
+		return mColorSchemeMenues[0];
 
 	for ( auto& colorScheme : colorSchemes ) {
 		menu->addRadioButton( colorScheme.first, mTerminalCurrentColorScheme == colorScheme.first );

@@ -1727,51 +1727,50 @@ std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	return {
 		{ { KEY_RETURN, KEYMOD_LALT | KEYMOD_LCTRL }, "fullscreen-toggle" },
-			{ { KEY_F3, KEYMOD_NONE }, "repeat-find" }, { { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
-			{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
-			{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
-			{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
-			{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
-			{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
-			{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
-			{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
-			{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
-			{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
-			{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
-			{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
+		{ { KEY_F3, KEYMOD_NONE }, "repeat-find" },
+		{ { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
+		{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
+		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
+		{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
+		{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
+		{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
+		{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
+		{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
+		{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
+		{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
+		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
+		{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-			{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
+		{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
 #else
-			{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
+		{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
 #endif
-			{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
-			{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
-			{ { KEY_J, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-			  "terminal-split-left" },
-			{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-			  "terminal-split-right" },
-			{ { KEY_I, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-			  "terminal-split-top" },
-			{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-			  "terminal-split-bottom" },
-			{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-			  "terminal-split-swap" },
-			{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-			  "reopen-closed-tab" },
-			{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
-			{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
-			{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
-			{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
-			{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
-			{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
-			{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
-			{ { KEY_F5, KEYMOD_NONE }, "project-build-and-run" },
-			{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
-			{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
-			  "open-workspace-symbol-search" },
-			{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
-			  "open-document-symbol-search" },
-			{ { KEY_N, KEYMOD_SHIFT | KEYMOD_LALT }, "create-new-window" },
+		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
+		{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
+		{ { KEY_J, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		  "terminal-split-left" },
+		{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		  "terminal-split-right" },
+		{ { KEY_I, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		  "terminal-split-top" },
+		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		  "terminal-split-bottom" },
+		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		  "terminal-split-swap" },
+		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+		  "reopen-closed-tab" },
+		{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
+		{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
+		{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
+		{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
+		{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
+		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
+		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
+		{ { KEY_F5, KEYMOD_NONE }, "project-build-and-run" },
+		{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
+		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-workspace-symbol-search" },
+		{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-document-symbol-search" },
+		{ { KEY_N, KEYMOD_SHIFT | KEYMOD_LALT }, "create-new-window" },
 	};
 }
 
@@ -1780,15 +1779,15 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 std::map<std::string, std::string> App::getMigrateKeybindings() {
 	return {
 		{ "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
-			{ "switch-to-tab-2", "alt+2" }, { "switch-to-tab-3", "alt+3" },
-			{ "switch-to-tab-4", "alt+4" }, { "switch-to-tab-5", "alt+5" },
-			{ "switch-to-tab-6", "alt+6" }, { "switch-to-tab-7", "alt+7" },
-			{ "switch-to-tab-8", "alt+8" }, { "switch-to-tab-9", "alt+9" },
-			{ "switch-to-last-tab", "alt+0" },
+		{ "switch-to-tab-2", "alt+2" },		   { "switch-to-tab-3", "alt+3" },
+		{ "switch-to-tab-4", "alt+4" },		   { "switch-to-tab-5", "alt+5" },
+		{ "switch-to-tab-6", "alt+6" },		   { "switch-to-tab-7", "alt+7" },
+		{ "switch-to-tab-8", "alt+8" },		   { "switch-to-tab-9", "alt+9" },
+		{ "switch-to-last-tab", "alt+0" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-			{ "menu-toggle", "mod+shift+m" },
+		{ "menu-toggle", "mod+shift+m" },
 #endif
-			{ "lock-toggle", "mod+shift+l" },
+		{ "lock-toggle", "mod+shift+l" },
 	};
 }
 
@@ -3402,6 +3401,44 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 	mConfig.context.SharedGLContext = true;
 
+	mThreadPool->run( [this] {
+		// Load language definitions
+		Clock defClock;
+		SyntaxDefinitionManager::createSingleton( 104 );
+		Language::LanguagesSyntaxHighlighting::load();
+		SyntaxDefinitionManager::instance()->setLanguageExtensionsPriority(
+			mConfig.languagesExtensions.priorities );
+		Log::info( "Syntax definitions loaded in %s.",
+				   defClock.getElapsedTimeAndReset().toString() );
+
+		// Load user defined languages definitions
+		Clock customLangsClock;
+		SyntaxDefinitionManager::instance()->loadFromFolder( mLanguagesPath );
+		Log::info( "SyntaxDefinitionManager loaded custom languages in: %s.",
+				   customLangsClock.getElapsedTime().toString() );
+
+		// Load editor color schemes
+		mColorSchemes =
+			( SyntaxColorScheme::loadFromFile( mResPath + "colorschemes/colorschemes.conf" ) );
+		if ( FileSystem::isDirectory( mColorSchemesPath ) ) {
+			auto colorSchemesFiles = FileSystem::filesGetInPath( mColorSchemesPath );
+			for ( const auto& curFile : colorSchemesFiles ) {
+				auto colorSchemesInFile =
+					SyntaxColorScheme::loadFromFile( mColorSchemesPath + curFile );
+				for ( auto& colorScheme : colorSchemesInFile )
+					mColorSchemes.emplace_back( colorScheme );
+			}
+		} else {
+			FileSystem::makeDir( mColorSchemesPath, true );
+		}
+
+		// Load terminal color schemes
+		mTerminalManager->loadTerminalColorSchemes();
+
+		mAsyncResourcesLoaded = true;
+		mAsyncResourcesLoadCond.notify_all();
+	} );
+
 	mWindow = engine->createWindow( winSettings, mConfig.context );
 	Log::info( "%s (codename: \"%s\") initializing", ecode::Version::getVersionFullName(),
 			   ecode::Version::getCodename() );
@@ -3657,14 +3694,6 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mMenuIconSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
 		IconManager::init( mUISceneNode, iconFont, mimeIconFont, codIconFont );
 
-		Clock defClock;
-		SyntaxDefinitionManager::createSingleton( 104 );
-		Language::LanguagesSyntaxHighlighting::load();
-		SyntaxDefinitionManager::instance()->setLanguageExtensionsPriority(
-			mConfig.languagesExtensions.priorities );
-		Log::info( "Syntax definitions loaded in %.2f ms.",
-				   defClock.getElapsedTimeAndReset().asMilliseconds() );
-
 		UIWidgetCreator::registerWidget( "searchbar", UISearchBar::New );
 		UIWidgetCreator::registerWidget( "locatebar", UILocateBar::New );
 		UIWidgetCreator::registerWidget( "globalsearchbar", UIGlobalSearchBar::New );
@@ -3695,28 +3724,13 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		if ( !mConfig.ui.showSidePanel )
 			showSidePanel( mConfig.ui.showSidePanel );
 
-		auto colorSchemes(
-			SyntaxColorScheme::loadFromFile( mResPath + "colorschemes/colorschemes.conf" ) );
-		if ( FileSystem::isDirectory( mColorSchemesPath ) ) {
-			auto colorSchemesFiles = FileSystem::filesGetInPath( mColorSchemesPath );
-			for ( const auto& curFile : colorSchemesFiles ) {
-				auto colorSchemesInFile =
-					SyntaxColorScheme::loadFromFile( mColorSchemesPath + curFile );
-				for ( auto& coloScheme : colorSchemesInFile )
-					colorSchemes.emplace_back( coloScheme );
-			}
-		} else {
-			FileSystem::makeDir( mColorSchemesPath, true );
+		if ( !mAsyncResourcesLoaded ) {
+			std::unique_lock<std::mutex> syntaxLanguagesLock( mAsyncResourcesLoadMutex );
+			mAsyncResourcesLoadCond.wait( syntaxLanguagesLock,
+										  [this]() { return mAsyncResourcesLoaded; } );
 		}
 
-		Clock customLangsClock;
-		SyntaxDefinitionManager::instance()->loadFromFolder( mLanguagesPath );
-		Log::info( "SyntaxDefinitionManager loaded custom languages in: %.2f ms",
-				   customLangsClock.getElapsedTime().asMilliseconds() );
-
-		mTerminalManager->loadTerminalColorSchemes();
-
-		mSplitter = UICodeEditorSplitter::New( this, mUISceneNode, mThreadPool, colorSchemes,
+		mSplitter = UICodeEditorSplitter::New( this, mUISceneNode, mThreadPool, mColorSchemes,
 											   mInitColorScheme );
 		mSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
 		mSplitter->setOnTabWidgetCreateCb( [this]( UITabWidget* tabWidget ) {
