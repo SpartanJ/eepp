@@ -146,6 +146,8 @@ class EE_API FontTrueType : public Font {
 
 	void clearCache();
 
+	void updateMonospaceState();
+
   protected:
 	friend class Text;
 
@@ -186,9 +188,8 @@ class EE_API FontTrueType : public Font {
 						   Float outlineThickness, Page& page, const Float& maxWidth ) const;
 
 	GlyphDrawable* getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex, unsigned int characterSize,
-												   bool bold, bool italic,
-												   Float outlineThickness, Page& page,
-												   const Float& maxWidth = 0 ) const;
+												   bool bold, bool italic, Float outlineThickness,
+												   Page& page, const Float& maxWidth = 0 ) const;
 
 	Uint32 getGlyphIndex( const Uint32& codePoint ) const;
 
@@ -243,8 +244,6 @@ class EE_API FontTrueType : public Font {
 	void updateFontInternalId();
 
 	bool setFontFace( void* face );
-
-	void updateMonospaceState();
 };
 
 }} // namespace EE::Graphics

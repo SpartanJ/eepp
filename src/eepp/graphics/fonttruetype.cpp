@@ -1424,6 +1424,8 @@ void FontTrueType::setBoldAdvanceSameAsRegular( bool boldAdvanceSameAsRegular ) 
 
 void FontTrueType::updateMonospaceState() {
 	mIsMonospaceComplete = mIsMonospace && !mUsingFallback;
+	if ( !Engine::isEngineRunning() )
+		return;
 	if ( mIsMonospaceComplete && mFontBold != nullptr ) {
 		mIsMonospaceComplete = mIsMonospaceComplete && mFontBold->isMonospace() &&
 							   getGlyph( ' ', 10, false, false ).advance ==
