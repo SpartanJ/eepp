@@ -533,6 +533,9 @@ class App : public UICodeEditorSplitter::Client {
 	FontTrueType* mFontMono{ nullptr };
 	FontTrueType* mTerminalFont{ nullptr };
 	FontTrueType* mFallbackFont{ nullptr };
+	FontTrueType* mIconFont{ nullptr };
+	FontTrueType* mMimeIconFont{ nullptr };
+	FontTrueType* mCodIconFont{ nullptr };
 	efsw::FileWatcher* mFileWatcher{ nullptr };
 	FileSystemListener* mFileSystemListener{ nullptr };
 	Mutex mWatchesLock;

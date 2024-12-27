@@ -1403,6 +1403,8 @@ bool FontTrueType::isColorEmojiFont() const {
 }
 
 bool FontTrueType::isMonospace() const {
+	if ( mIsMonospaceCompletePending )
+		updateMonospaceState();
 	return mIsMonospaceComplete;
 }
 
@@ -1422,8 +1424,13 @@ void FontTrueType::setBoldAdvanceSameAsRegular( bool boldAdvanceSameAsRegular ) 
 	mBoldAdvanceSameAsRegular = boldAdvanceSameAsRegular;
 }
 
-void FontTrueType::updateMonospaceState() {
+void FontTrueType::updateMonospaceState() const {
 	mIsMonospaceComplete = mIsMonospace && !mUsingFallback;
+	if ( !Engine::isEngineRunning() || !Engine::instance()->isMainThread() ) {
+		mIsMonospaceCompletePending = true;
+		return;
+	}
+	mIsMonospaceCompletePending = false;
 	if ( mIsMonospaceComplete && mFontBold != nullptr ) {
 		mIsMonospaceComplete = mIsMonospaceComplete && mFontBold->isMonospace() &&
 							   getGlyph( ' ', 10, false, false ).advance ==

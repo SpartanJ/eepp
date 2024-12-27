@@ -3435,6 +3435,49 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		// Load terminal color schemes
 		mTerminalManager->loadTerminalColorSchemes();
 
+		// Load fonts
+		Clock fontsClock;
+
+		mFont = loadFont( "sans-serif", mConfig.ui.serifFont, "fonts/NotoSans-Regular.ttf" );
+		FontFamily::loadFromRegular( mFont );
+
+		mFontMono = loadFont( "monospace", mConfig.ui.monospaceFont, "fonts/DejaVuSansMono.ttf" );
+		if ( mFontMono ) {
+			mFontMono->setEnableDynamicMonospace( true );
+			mFontMono->setBoldAdvanceSameAsRegular( true );
+			FontFamily::loadFromRegular( mFontMono );
+		}
+
+		loadFont( "NotoEmoji-Regular", "fonts/NotoEmoji-Regular.ttf" );
+
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+		loadFont( "NotoColorEmoji", "fonts/NotoColorEmoji.ttf" );
+#endif
+
+		mIconFont = loadFont( "icon", "fonts/remixicon.ttf" );
+		mMimeIconFont = loadFont( "nonicons", "fonts/nonicons.ttf" );
+		mCodIconFont = loadFont( "codicon", "fonts/codicon.ttf" );
+
+		mTerminalFont = loadFont( "monospace-nerdfont", mConfig.ui.terminalFont,
+								  "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
+
+		if ( ( nullptr != mTerminalFont && mTerminalFont->getInfo().family == "DejaVuSansMono NF" &&
+			   mFontMono->getInfo().family == "DejaVu Sans Mono" ) ||
+			 ( nullptr != mTerminalFont &&
+			   mTerminalFont->getInfo().family == mFontMono->getInfo().family ) ) {
+			mTerminalFont->setBoldFont( mFontMono->getBoldFont() );
+			mTerminalFont->setItalicFont( mFontMono->getItalicFont() );
+			mTerminalFont->setBoldItalicFont( mFontMono->getBoldItalicFont() );
+		} else {
+			FontFamily::loadFromRegular( mTerminalFont );
+		}
+
+		mFallbackFont = loadFont( "fallback-font", "fonts/DroidSansFallbackFull.ttf" );
+		if ( mFallbackFont )
+			FontManager::instance()->addFallbackFont( mFallbackFont );
+
+		Log::info( "Fonts loaded in: %s", fontsClock.getElapsedTime().toString() );
+
 		mAsyncResourcesLoaded = true;
 		mAsyncResourcesLoadCond.notify_all();
 	} );
@@ -3606,48 +3649,17 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		}
 		mUISceneNode->setColorSchemePreference( mUIColorScheme );
 
-		mFont = loadFont( "sans-serif", mConfig.ui.serifFont, "fonts/NotoSans-Regular.ttf" );
-		FontFamily::loadFromRegular( mFont );
-
-		mFontMono = loadFont( "monospace", mConfig.ui.monospaceFont, "fonts/DejaVuSansMono.ttf" );
-		if ( mFontMono ) {
-			mFontMono->setEnableDynamicMonospace( true );
-			mFontMono->setBoldAdvanceSameAsRegular( true );
-			FontFamily::loadFromRegular( mFontMono );
+		if ( !mAsyncResourcesLoaded ) {
+			std::unique_lock<std::mutex> syntaxLanguagesLock( mAsyncResourcesLoadMutex );
+			mAsyncResourcesLoadCond.wait( syntaxLanguagesLock,
+										  [this]() { return mAsyncResourcesLoaded; } );
 		}
 
-		loadFont( "NotoEmoji-Regular", "fonts/NotoEmoji-Regular.ttf" );
-
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-		loadFont( "NotoColorEmoji", "fonts/NotoColorEmoji.ttf" );
-#endif
-
-		FontTrueType* iconFont = loadFont( "icon", "fonts/remixicon.ttf" );
-		FontTrueType* mimeIconFont = loadFont( "nonicons", "fonts/nonicons.ttf" );
-		FontTrueType* codIconFont = loadFont( "codicon", "fonts/codicon.ttf" );
-
-		if ( !mFont || !mFontMono || !iconFont || !mimeIconFont || !codIconFont ) {
+		if ( !mFont || !mFontMono || !mIconFont || !mMimeIconFont || !mCodIconFont ) {
 			printf( "Font not found!" );
 			Log::error( "Font not found!" );
 			return;
 		}
-
-		mTerminalFont = loadFont( "monospace-nerdfont", mConfig.ui.terminalFont,
-								  "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
-		if ( ( nullptr != mTerminalFont && mTerminalFont->getInfo().family == "DejaVuSansMono NF" &&
-			   mFontMono->getInfo().family == "DejaVu Sans Mono" ) ||
-			 ( nullptr != mTerminalFont &&
-			   mTerminalFont->getInfo().family == mFontMono->getInfo().family ) ) {
-			mTerminalFont->setBoldFont( mFontMono->getBoldFont() );
-			mTerminalFont->setItalicFont( mFontMono->getItalicFont() );
-			mTerminalFont->setBoldItalicFont( mFontMono->getBoldItalicFont() );
-		} else {
-			FontFamily::loadFromRegular( mTerminalFont );
-		}
-
-		mFallbackFont = loadFont( "fallback-font", "fonts/DroidSansFallbackFull.ttf" );
-		if ( mFallbackFont )
-			FontManager::instance()->addFallbackFont( mFallbackFont );
 
 		SceneManager::instance()->add( mUISceneNode );
 
@@ -3692,7 +3704,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		);
 
 		mMenuIconSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
-		IconManager::init( mUISceneNode, iconFont, mimeIconFont, codIconFont );
+		IconManager::init( mUISceneNode, mIconFont, mMimeIconFont, mCodIconFont );
 
 		UIWidgetCreator::registerWidget( "searchbar", UISearchBar::New );
 		UIWidgetCreator::registerWidget( "locatebar", UILocateBar::New );
@@ -3723,12 +3735,6 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		if ( !mConfig.ui.showSidePanel )
 			showSidePanel( mConfig.ui.showSidePanel );
-
-		if ( !mAsyncResourcesLoaded ) {
-			std::unique_lock<std::mutex> syntaxLanguagesLock( mAsyncResourcesLoadMutex );
-			mAsyncResourcesLoadCond.wait( syntaxLanguagesLock,
-										  [this]() { return mAsyncResourcesLoaded; } );
-		}
 
 		mSplitter = UICodeEditorSplitter::New( this, mUISceneNode, mThreadPool, mColorSchemes,
 											   mInitColorScheme );
