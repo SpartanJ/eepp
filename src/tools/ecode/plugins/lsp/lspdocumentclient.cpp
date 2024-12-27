@@ -378,7 +378,7 @@ void LSPDocumentClient::highlight() {
 			[this, firstLine, lastLine]( UICodeEditor* editor ) {
 				if ( editor->isVisible() && &editor->getDocument() == mDoc &&
 					 editor->getVisibleRange().intersectsLineRange( firstLine, lastLine ) ) {
-					editor->invalidateDraw();
+					editor->runOnMainThread( [editor] { editor->invalidateDraw(); } );
 				}
 			} );
 	}

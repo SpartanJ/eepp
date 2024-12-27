@@ -3661,11 +3661,6 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			return;
 		}
 
-		FontManager::instance()->each( []( auto& font ) {
-			if ( font.second->getType() == FontType::TTF )
-				static_cast<FontTrueType*>( font.second )->updateMonospaceState();
-		} );
-
 		SceneManager::instance()->add( mUISceneNode );
 
 		setTheme( getThemePath() );

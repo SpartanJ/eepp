@@ -146,8 +146,6 @@ class EE_API FontTrueType : public Font {
 
 	void clearCache();
 
-	void updateMonospaceState();
-
   protected:
 	friend class Text;
 
@@ -229,6 +227,7 @@ class EE_API FontTrueType : public Font {
 	bool mEnableDynamicMonospace{ false };
 	bool mIsBold{ false };
 	bool mIsItalic{ false };
+	mutable bool mIsMonospaceCompletePending{ false };
 	mutable UnorderedMap<unsigned int, unsigned int> mClosestCharacterSize;
 	mutable UnorderedMap<Uint32, Uint32> mCodePointIndexCache;
 	mutable UnorderedMap<Uint32, std::tuple<Uint32, Uint32, bool>> mKeyCache;
@@ -244,6 +243,8 @@ class EE_API FontTrueType : public Font {
 	void updateFontInternalId();
 
 	bool setFontFace( void* face );
+
+	void updateMonospaceState() const;
 };
 
 }} // namespace EE::Graphics
