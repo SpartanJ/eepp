@@ -24,7 +24,7 @@ namespace {
 // helper class that divides the string into lines and font runs.
 class TextShapeRun {
   public:
-	TextShapeRun( const String& str, FontTrueType* font, Uint32 characterSize, Uint32 style,
+	TextShapeRun( String::View str, FontTrueType* font, Uint32 characterSize, Uint32 style,
 				  Float outlineThickness ) :
 		mString( str ),
 		mFont( font ),
@@ -35,9 +35,7 @@ class TextShapeRun {
 		findNextEnd();
 	}
 
-	String::View curRun() const {
-		return mString.view().substr( mIndex, mIsNewLine ? mLen - 1 : mLen );
-	}
+	String::View curRun() const { return mString.substr( mIndex, mIsNewLine ? mLen - 1 : mLen ); }
 
 	bool hasNext() const { return mIndex < mString.size(); }
 
@@ -76,7 +74,7 @@ class TextShapeRun {
 		mLen = idx;
 	}
 
-	const String& mString;
+	String::View mString;
 	std::size_t mIndex{ 0 };
 	std::size_t mLen{ 0 };
 	Font* mFont{ nullptr };
@@ -89,12 +87,13 @@ class TextShapeRun {
 };
 
 #ifdef EE_TEXT_SHAPER_ENABLED
-static bool shapeAndRun( const String& string, FontTrueType* font, Uint32 characterSize,
-						 Uint32 style, Float outlineThickness,
-						 const std::function<bool( hb_glyph_info_t*, hb_glyph_position_t*, Uint32,
-												   TextShapeRun& )>& cb ) {
+static bool
+shapeAndRun( const String& string, FontTrueType* font, Uint32 characterSize, Uint32 style,
+			 Float outlineThickness,
+			 const std::function<bool( hb_glyph_info_t*, hb_glyph_position_t*, Uint32,
+									   const hb_segment_properties_t&, TextShapeRun& )>& cb ) {
 	hb_buffer_t* hbBuffer = hb_buffer_create();
-	TextShapeRun run( string, font, characterSize, style, outlineThickness );
+	TextShapeRun run( string.view(), font, characterSize, style, outlineThickness );
 	bool completeRun = true;
 
 	while ( run.hasNext() ) {
@@ -108,6 +107,8 @@ static bool shapeAndRun( const String& string, FontTrueType* font, Uint32 charac
 		hb_buffer_reset( hbBuffer );
 		hb_buffer_add_utf32( hbBuffer, (Uint32*)curRun.data(), curRun.size(), 0, curRun.size() );
 		hb_buffer_guess_segment_properties( hbBuffer );
+		hb_segment_properties_t props;
+		hb_buffer_get_segment_properties( hbBuffer, &props );
 
 		// We use our own kerning algo
 		static const hb_feature_t features[] = {
@@ -131,7 +132,7 @@ static bool shapeAndRun( const String& string, FontTrueType* font, Uint32 charac
 		hb_glyph_info_t* glyphInfo = hb_buffer_get_glyph_infos( hbBuffer, &glyphCount );
 		hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( hbBuffer, &glyphCount );
 
-		if ( cb( glyphInfo, glyphPos, glyphCount, run ) )
+		if ( cb( glyphInfo, glyphPos, glyphCount, props, run ) )
 			run.next();
 		else {
 			completeRun = false;
@@ -143,9 +144,10 @@ static bool shapeAndRun( const String& string, FontTrueType* font, Uint32 charac
 	return completeRun;
 }
 
-static bool shapeAndRun( const String& string, const FontStyleConfig& config,
-						 const std::function<bool( hb_glyph_info_t*, hb_glyph_position_t*, Uint32,
-												   TextShapeRun& )>& cb ) {
+static bool
+shapeAndRun( const String& string, const FontStyleConfig& config,
+			 const std::function<bool( hb_glyph_info_t*, hb_glyph_position_t*, Uint32,
+									   const hb_segment_properties_t&, TextShapeRun& )>& cb ) {
 	return shapeAndRun( string, static_cast<FontTrueType*>( config.Font ), config.CharacterSize,
 						config.Style, config.OutlineThickness, cb );
 }
@@ -397,7 +399,7 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 		FontTrueType* rFont = static_cast<FontTrueType*>( font );
 		shapeAndRun( string, rFont, fontSize, style, outlineThickness,
 					 [&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t*, Uint32 glyphCount,
-						  TextShapeRun& run ) {
+						  const hb_segment_properties_t&, TextShapeRun& run ) {
 						 FontTrueType* font = run.font();
 						 Uint32 prevGlyphIndex = 0;
 						 Uint32 cluster = 0;
@@ -965,7 +967,7 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 		FontTrueType* rFont = static_cast<FontTrueType*>( font );
 		shapeAndRun( string, rFont, fontSize, style, outlineThickness,
 					 [&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t*, Uint32 glyphCount,
-						  TextShapeRun& run ) {
+						  const hb_segment_properties_t&, TextShapeRun& run ) {
 						 FontTrueType* font = run.font();
 						 Uint32 prevGlyphIndex = 0;
 						 for ( std::size_t i = 0; i < glyphCount; ++i ) {
@@ -1043,7 +1045,7 @@ std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSiz
 		bool completeRun = shapeAndRun(
 			string, rFont, fontSize, style, outlineThickness,
 			[&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t*, Uint32 glyphCount,
-				 TextShapeRun& run ) {
+				 const hb_segment_properties_t&, TextShapeRun& run ) {
 				FontTrueType* font = run.font();
 				Uint32 prevGlyphIndex = 0;
 
@@ -1133,7 +1135,7 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 		std::size_t curPos = 0;
 		shapeAndRun( string, rFont, fontSize, style, outlineThickness,
 					 [&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t*, Uint32 glyphCount,
-						  TextShapeRun& run ) {
+						  const hb_segment_properties_t&, TextShapeRun& run ) {
 						 curPos = run.pos();
 
 						 if ( index == curPos )
@@ -1256,7 +1258,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 		bool completeRun = shapeAndRun(
 			string, rFont, fontSize, style, outlineThickness,
 			[&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t*, Uint32 glyphCount,
-				 TextShapeRun& run ) {
+				 const hb_segment_properties_t&, TextShapeRun& run ) {
 				FontTrueType* font = run.font();
 				Uint32 prevGlyphIndex = 0;
 
@@ -1435,7 +1437,7 @@ void Text::updateWidthCache() {
 		FontTrueType* rFont = static_cast<FontTrueType*>( mFontStyleConfig.Font );
 		shapeAndRun( mString, mFontStyleConfig,
 					 [&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t*, Uint32 glyphCount,
-						  TextShapeRun& run ) {
+						  const hb_segment_properties_t&, TextShapeRun& run ) {
 						 FontTrueType* font = run.font();
 						 Uint32 prevGlyphIndex = 0;
 
@@ -1799,7 +1801,7 @@ void Text::ensureGeometryUpdate() {
 		shapeAndRun(
 			mString, mFontStyleConfig,
 			[&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t* glyphPos, Uint32 glyphCount,
-				 TextShapeRun& run ) {
+				 const hb_segment_properties_t&, TextShapeRun& run ) {
 				FontTrueType* font = run.font();
 				Uint32 prevGlyphIndex = 0;
 
