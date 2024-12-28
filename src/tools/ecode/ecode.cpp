@@ -3,12 +3,6 @@
 #include "iconmanager.hpp"
 #include "keybindingshelper.hpp"
 #include "pathhelper.hpp"
-#include "plugins/autocomplete/autocompleteplugin.hpp"
-#include "plugins/formatter/formatterplugin.hpp"
-#include "plugins/git/gitplugin.hpp"
-#include "plugins/linter/linterplugin.hpp"
-#include "plugins/lsp/lspclientplugin.hpp"
-#include "plugins/xmltools/xmltoolsplugin.hpp"
 #include "settingsactions.hpp"
 #include "settingsmenu.hpp"
 #include "uibuildsettings.hpp"
@@ -22,6 +16,15 @@
 #include <filesystem>
 #include <iostream>
 #include <nlohmann/json.hpp>
+
+//! Plugins
+#include "plugins/autocomplete/autocompleteplugin.hpp"
+#include "plugins/formatter/formatterplugin.hpp"
+#include "plugins/debugger/debuggerplugin.hpp"
+#include "plugins/git/gitplugin.hpp"
+#include "plugins/linter/linterplugin.hpp"
+#include "plugins/lsp/lspclientplugin.hpp"
+#include "plugins/xmltools/xmltoolsplugin.hpp"
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 // For malloc_trim, which is a GNU extension
@@ -572,6 +575,7 @@ void App::initPluginManager() {
 			} );
 		}
 	};
+	mPluginManager->registerPlugin( DebuggerPlugin::Definition() );
 	mPluginManager->registerPlugin( LinterPlugin::Definition() );
 	mPluginManager->registerPlugin( FormatterPlugin::Definition() );
 	mPluginManager->registerPlugin( AutoCompletePlugin::Definition() );

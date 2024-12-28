@@ -1,0 +1,44 @@
+{
+  "dap": [
+    {
+      "name": "gdb",
+      "url": "https://www.gnu.org/software/gdb",
+      "run": {
+        "command": "gdb --interpreter=dap"
+      },
+      "configurations": [
+        {
+          "name": "launch binary",
+          "command": "launch",
+          "arguments": {
+              "program": "${file}",
+              "args": "${args}",
+              "cwd": "${cwd}",
+              "env": "${env}",
+              "stopOnEntry": "${stopOnEntry}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "lldb-dab",
+      "url": "https://github.com/llvm/llvm-project/blob/main/lldb/tools/lldb-dap/README.md",
+      "run": {
+        "command": "lldb-dap"
+      },
+      "configurations": [
+        {
+          "name": "launch binary",
+          "command": "launch",
+          "arguments": {
+              "program": "${file}",
+              "args": "${args}",
+              "cwd": "${cwd}",
+              "env": "${env}",
+              "stopOnEntry": "${stopOnEntry}"
+          }
+        }
+      ]
+    }
+  ]
+}
