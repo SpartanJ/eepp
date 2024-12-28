@@ -27,6 +27,7 @@ namespace ecode {
 class PluginManager;
 class Plugin;
 class FileSystemListener;
+class ProjectBuildManager;
 
 typedef std::function<Plugin*( PluginManager* pluginManager )> PluginCreatorFn;
 
@@ -273,7 +274,8 @@ class PluginManager {
 	using OnLoadFileCb = std::function<void( const std::string&, const OnFileLoadedCb& )>;
 
 	PluginManager( const std::string& resourcesPath, const std::string& pluginsPath,
-				   std::shared_ptr<ThreadPool> pool, const OnLoadFileCb& loadFileCb );
+				   std::shared_ptr<ThreadPool> pool, const OnLoadFileCb& loadFileCb,
+				   const std::function<ProjectBuildManager*()>& getPBM );
 
 	~PluginManager();
 
@@ -360,6 +362,8 @@ class PluginManager {
 
 	bool isClosing() const;
 
+	ProjectBuildManager* getProjectBuildManager() const { return mProjectBuildManagerFn(); };
+
   protected:
 	using SubscribedPlugins =
 		std::map<std::string, std::function<PluginRequestHandle( const PluginMessage& )>>;
@@ -382,6 +386,7 @@ class PluginManager {
 	UnorderedSet<Plugin*> mPluginsFSSubs;
 	bool mClosing{ false };
 	bool mPluginReloadEnabled{ false };
+	std::function<ProjectBuildManager*()> mProjectBuildManagerFn;
 
 	bool hasDefinition( const std::string& id );
 

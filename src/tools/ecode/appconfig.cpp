@@ -214,7 +214,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 			ini.getValueB( "plugins", creator.first,
 						   "autocomplete" == creator.first || "linter" == creator.first ||
 							   "autoformatter" == creator.first || "lspclient" == creator.first ||
-							   "git" == creator.first );
+							   "git" == creator.first || "debugger" == creator.first );
 	}
 	pluginManager->setPluginsEnabled( pluginsEnabled, sync );
 

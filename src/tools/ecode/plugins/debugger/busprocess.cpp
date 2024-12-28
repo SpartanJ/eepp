@@ -4,11 +4,20 @@ namespace ecode {
 
 BusProcess::BusProcess( const Command& command ) : mCommand( command ), mProcess() {}
 
+BusProcess::~BusProcess() {
+	close();
+}
+
 bool BusProcess::start() {
-	bool res = mProcess.create( mCommand.command, mCommand.arguments,
-								Process::getDefaultOptions() | Process::Options::EnableAsync |
-									Process::Options::CombinedStdoutStderr,
-								mCommand.environment );
+	bool res = mCommand.arguments.empty()
+				   ? mProcess.create( mCommand.command,
+									  Process::getDefaultOptions() | Process::Options::EnableAsync |
+										  Process::Options::CombinedStdoutStderr,
+									  mCommand.environment )
+				   : mProcess.create( mCommand.command, mCommand.arguments,
+									  Process::getDefaultOptions() | Process::Options::EnableAsync |
+										  Process::Options::CombinedStdoutStderr,
+									  mCommand.environment );
 	if ( res )
 		setState( State::Running );
 

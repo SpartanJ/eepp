@@ -10,6 +10,8 @@ class BusProcess : public Bus {
   public:
 	BusProcess( const Command& command );
 
+	virtual ~BusProcess();
+
 	bool start() override;
 
 	bool close() override;

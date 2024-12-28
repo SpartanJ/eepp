@@ -5,6 +5,10 @@ namespace ecode {
 
 BusSocket::BusSocket( const Connection& connection ) : mConnection( connection ) {}
 
+BusSocket::~BusSocket() {
+	close();
+}
+
 bool BusSocket::start() {
 	bool res =
 		mSocket.connect( IpAddress( mConnection.host ), mConnection.port ) == Socket::Status::Done;

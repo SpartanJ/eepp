@@ -3,28 +3,28 @@
 namespace ecode {
 
 void DebuggerClient::stateChanged( State state ) {
-	for ( auto client : mClients )
-		client->stateChanged( state );
+	for ( auto listener : mListeners )
+		listener->stateChanged( state );
 }
 
 void DebuggerClient::initialized() {
-	for ( auto client : mClients )
-		client->initialized();
+	for ( auto listener : mListeners )
+		listener->initialized();
 }
 
 void DebuggerClient::debuggeeRunning() {
-	for ( auto client : mClients )
-		client->debuggeeRunning();
+	for ( auto listener : mListeners )
+		listener->debuggeeRunning();
 }
 
 void DebuggerClient::debuggeeTerminated() {
-	for ( auto client : mClients )
-		client->debuggeeRunning();
+	for ( auto listener : mListeners )
+		listener->debuggeeRunning();
 }
 
 void DebuggerClient::failed() {
-	for ( auto client : mClients )
-		client->failed();
+	for ( auto listener : mListeners )
+		listener->failed();
 }
 
 void DebuggerClient::setState( const State& state ) {
@@ -55,6 +55,14 @@ void DebuggerClient::checkRunning() {
 	if ( mLaunched && mConfigured && mState == State::Initialized ) {
 		setState( State::Running );
 	}
+}
+
+void DebuggerClient::addListener( Listener* listener ) {
+	mListeners.emplace_back( listener );
+}
+
+void DebuggerClient::removeListener( Listener* listener ) {
+	mListeners.erase( std::find( mListeners.begin(), mListeners.end(), listener ) );
 }
 
 } // namespace ecode

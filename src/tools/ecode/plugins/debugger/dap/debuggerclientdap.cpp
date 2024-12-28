@@ -18,21 +18,9 @@ makeResponseHandler( void ( T::*member )( const Response& response, const nlohma
 	};
 }
 
-static std::string extractCommand( const nlohmann::json& launchRequest ) {
-	auto command = launchRequest.value( DAP_COMMAND, "" );
-	if ( ( command != DAP_LAUNCH ) && ( command != DAP_ATTACH ) ) {
-		Log::warning( "DebuggerClientDap::extractCommand unsupported request command: %s",
-					  command );
-		return "";
-	}
-	return command;
-}
-
 DebuggerClientDap::DebuggerClientDap( const ProtocolSettings& protocolSettings,
 									  std::unique_ptr<Bus>&& bus ) :
-	mBus( std::move( bus ) ),
-	mProtocol( protocolSettings ),
-	mLaunchCommand( extractCommand( protocolSettings.launchRequest ) ) {}
+	mBus( std::move( bus ) ), mProtocol( protocolSettings ) {}
 
 void DebuggerClientDap::makeRequest( const std::string_view& command,
 									 const nlohmann::json& arguments, ResponseHandler onFinish ) {
@@ -68,6 +56,10 @@ bool DebuggerClientDap::start() {
 	bool started = mBus->start();
 	if ( started )
 		mBus->startAsyncRead( [this]( const char* bytes, size_t n ) { asyncRead( bytes, n ); } );
+	else {
+		Log::warning( "DebuggerClientDap::start: could not initialize the debugger" );
+		return false;
+	}
 	mStarted = started;
 	mLaunched = false;
 	mConfigured = false;
@@ -101,8 +93,8 @@ void DebuggerClientDap::processResponseInitialize( const Response& response,
 
 	// get server capabilities
 	mAdapterCapabilities = Capabilities( response.body );
-	for ( auto client : mClients )
-		client->capabilitiesReceived( mAdapterCapabilities );
+	for ( auto listener : mListeners )
+		listener->capabilitiesReceived( mAdapterCapabilities );
 
 	requestLaunchCommand();
 }
@@ -114,15 +106,15 @@ void DebuggerClientDap::requestLaunchCommand() {
 		return;
 	}
 
-	if ( mLaunchCommand.empty() )
+	if ( mProtocol.launchCommand.empty() )
 		return;
 
-	makeRequest( mLaunchCommand, mProtocol.launchRequest,
-				 [this]( const Response& response, const auto& body ) {
+	makeRequest( mProtocol.launchCommand, mProtocol.launchRequest,
+				 [this]( const Response& response, const auto& ) {
 					 if ( response.success ) {
 						 mLaunched = true;
-						 for ( auto client : mClients )
-							 client->launched();
+						 for ( auto listener : mListeners )
+							 listener->launched();
 						 checkRunning();
 					 } else {
 						 if ( response.errorBody ) {
@@ -231,8 +223,8 @@ void DebuggerClientDap::processResponse( const nlohmann::json& msg ) {
 
 void DebuggerClientDap::errorResponse( const std::string& summary,
 									   const std::optional<Message>& message ) {
-	for ( auto client : mClients )
-		client->errorResponse( summary, message );
+	for ( auto listener : mListeners )
+		listener->errorResponse( summary, message );
 }
 
 void DebuggerClientDap::processEvent( const nlohmann::json& msg ) {
@@ -278,50 +270,50 @@ void DebuggerClientDap::processEventTerminated() {
 
 void DebuggerClientDap::processEventExited( const nlohmann::json& body ) {
 	const int exitCode = body.value( "exitCode", -1 );
-	for ( auto client : mClients )
-		client->debuggeeExited( exitCode );
+	for ( auto listener : mListeners )
+		listener->debuggeeExited( exitCode );
 }
 
 void DebuggerClientDap::processEventOutput( const nlohmann::json& body ) {
 	Output output( body );
-	for ( auto client : mClients )
-		client->outputProduced( output );
+	for ( auto listener : mListeners )
+		listener->outputProduced( output );
 }
 
 void DebuggerClientDap::processEventProcess( const nlohmann::json& body ) {
 	ProcessInfo processInfo( body );
-	for ( auto client : mClients )
-		client->debuggingProcess( processInfo );
+	for ( auto listener : mListeners )
+		listener->debuggingProcess( processInfo );
 }
 
 void DebuggerClientDap::processEventThread( const nlohmann::json& body ) {
 	ThreadEvent threadEvent( body );
-	for ( auto client : mClients )
-		client->threadChanged( threadEvent );
+	for ( auto listener : mListeners )
+		listener->threadChanged( threadEvent );
 }
 
 void DebuggerClientDap::processEventStopped( const nlohmann::json& body ) {
 	StoppedEvent stoppedEvent( body );
-	for ( auto client : mClients )
-		client->debuggeeStopped( stoppedEvent );
+	for ( auto listener : mListeners )
+		listener->debuggeeStopped( stoppedEvent );
 }
 
 void DebuggerClientDap::processEventModule( const nlohmann::json& body ) {
 	ModuleEvent moduleEvent( body );
-	for ( auto client : mClients )
-		client->moduleChanged( moduleEvent );
+	for ( auto listener : mListeners )
+		listener->moduleChanged( moduleEvent );
 }
 
 void DebuggerClientDap::processEventContinued( const nlohmann::json& body ) {
 	ContinuedEvent continuedEvent( body );
-	for ( auto client : mClients )
-		client->debuggeeContinued( continuedEvent );
+	for ( auto listener : mListeners )
+		listener->debuggeeContinued( continuedEvent );
 }
 
 void DebuggerClientDap::processEventBreakpoint( const nlohmann::json& body ) {
 	BreakpointEvent breakpointEvent( body );
-	for ( auto client : mClients )
-		client->breakpointChanged( breakpointEvent );
+	for ( auto listener : mListeners )
+		listener->breakpointChanged( breakpointEvent );
 }
 
 std::optional<DebuggerClientDap::HeaderInfo> DebuggerClientDap::readHeader() {
@@ -369,6 +361,7 @@ std::optional<DebuggerClientDap::HeaderInfo> DebuggerClientDap::readHeader() {
 		// parse content-length
 		if ( String::startsWith( header, DAP_CONTENT_LENGTH ) ) {
 			std::string lengthStr( header.substr( sep + 1, header.size() - sep ) );
+			String::trimInPlace( lengthStr );
 			Uint64 length;
 			if ( !String::fromString( length, lengthStr ) ) {
 				Log::error( "DebuggerClientDap::readHeader invalid value: ", header );
@@ -396,8 +389,8 @@ bool DebuggerClientDap::resume( int threadId, bool singleThread ) {
 						 ContinuedEvent continuedEvent(
 							 request.value( DAP_THREAD_ID, 1 ),
 							 response.body.value( DAP_ALL_THREADS_CONTINUED, true ) );
-						 for ( auto client : mClients )
-							 client->debuggeeContinued( continuedEvent );
+						 for ( auto listener : mListeners )
+							 listener->debuggeeContinued( continuedEvent );
 					 }
 				 } );
 	return true;
@@ -414,8 +407,8 @@ void DebuggerClientDap::processResponseNext( const Response& response,
 	if ( response.success ) {
 		ContinuedEvent continuedEvent( request.value( DAP_THREAD_ID, 1 ),
 									   !response.body.value( DAP_SINGLE_THREAD, false ) );
-		for ( auto client : mClients )
-			client->debuggeeContinued( continuedEvent );
+		for ( auto listener : mListeners )
+			listener->debuggeeContinued( continuedEvent );
 	}
 }
 
@@ -467,27 +460,26 @@ bool DebuggerClientDap::disconnect( bool restart ) {
 		arguments["restart"] = true;
 
 	makeRequest( "disconnect", arguments,
-				 [this]( const Response& response, const nlohmann::json& request ) {
+				 [this]( const Response& response, const nlohmann::json& ) {
 					 if ( response.success ) {
-						 for ( auto client : mClients )
-							 client->serverDisconnected();
+						 for ( auto listener : mListeners )
+							 listener->serverDisconnected();
 					 }
 				 } );
 	return true;
 }
 
 bool DebuggerClientDap::threads() {
-	makeRequest( DAP_THREADS, {},
-				 [this]( const Response& response, const nlohmann::json& request ) {
-					 if ( response.success ) {
-						 auto threads( Thread::parseList( response.body[DAP_THREADS] ) );
-						 for ( auto client : mClients )
-							 client->threads( threads );
-					 } else {
-						 for ( auto client : mClients )
-							 client->threads( {} );
-					 }
-				 } );
+	makeRequest( DAP_THREADS, {}, [this]( const Response& response, const nlohmann::json& ) {
+		if ( response.success ) {
+			auto threads( Thread::parseList( response.body[DAP_THREADS] ) );
+			for ( auto listener : mListeners )
+				listener->threads( threads );
+		} else {
+			for ( auto listener : mListeners )
+				listener->threads( {} );
+		}
+	} );
 	return true;
 }
 
@@ -500,12 +492,12 @@ bool DebuggerClientDap::stackTrace( int threadId, int startFrame, int levels ) {
 					 const int threadId = request.value( DAP_THREAD_ID, 1 );
 					 if ( response.success ) {
 						 StackTraceInfo stackTraceInfo( response.body );
-						 for ( auto client : mClients )
-							 client->stackTrace( threadId, stackTraceInfo );
+						 for ( auto listener : mListeners )
+							 listener->stackTrace( threadId, stackTraceInfo );
 					 } else {
 						 StackTraceInfo stackTraceInfo;
-						 for ( auto client : mClients )
-							 client->stackTrace( threadId, stackTraceInfo );
+						 for ( auto listener : mListeners )
+							 listener->stackTrace( threadId, stackTraceInfo );
 					 }
 				 } );
 	return true;
@@ -518,12 +510,12 @@ bool DebuggerClientDap::scopes( int frameId ) {
 					 const int frameId = request.value( DAP_FRAME_ID, 1 );
 					 if ( response.success ) {
 						 auto scopes( Scope::parseList( response.body[DAP_SCOPES] ) );
-						 for ( auto client : mClients )
-							 client->scopes( frameId, scopes );
+						 for ( auto listener : mListeners )
+							 listener->scopes( frameId, scopes );
 					 } else {
 						 std::vector<Scope> scopes;
-						 for ( auto client : mClients )
-							 client->scopes( frameId, scopes );
+						 for ( auto listener : mListeners )
+							 listener->scopes( frameId, scopes );
 					 }
 				 } );
 	return true;
@@ -554,12 +546,12 @@ bool DebuggerClientDap::variables( int variablesReference, Variable::Type filter
 
 					 if ( response.success ) {
 						 auto variableList( Variable::parseList( response.body[DAP_VARIABLES] ) );
-						 for ( auto client : mClients )
-							 client->variables( variablesReference, variableList );
+						 for ( auto listener : mListeners )
+							 listener->variables( variablesReference, variableList );
 					 } else {
 						 std::vector<Variable> variableList;
-						 for ( auto client : mClients )
-							 client->variables( variablesReference, variableList );
+						 for ( auto listener : mListeners )
+							 listener->variables( variablesReference, variableList );
 					 }
 				 } );
 
@@ -568,15 +560,15 @@ bool DebuggerClientDap::variables( int variablesReference, Variable::Type filter
 
 bool DebuggerClientDap::modules( int start, int count ) {
 	makeRequest( DAP_MODULES, { { DAP_START, start }, { DAP_COUNT, count } },
-				 [this]( const auto& response, const auto& request ) {
+				 [this]( const auto& response, const auto& ) {
 					 if ( response.success ) {
 						 ModulesInfo info( response.body );
-						 for ( auto client : mClients )
-							 client->modules( info );
+						 for ( auto listener : mListeners )
+							 listener->modules( info );
 					 } else {
 						 ModulesInfo info;
-						 for ( auto client : mClients )
-							 client->modules( info );
+						 for ( auto listener : mListeners )
+							 listener->modules( info );
 					 }
 				 } );
 	return true;
@@ -595,11 +587,11 @@ bool DebuggerClientDap::evaluate( const std::string& expression, const std::stri
 		if ( response.success ) {
 			EvaluateInfo info( response.body );
 
-			for ( auto client : mClients )
-				client->expressionEvaluated( expression, info );
+			for ( auto listener : mListeners )
+				listener->expressionEvaluated( expression, info );
 		} else {
-			for ( auto client : mClients )
-				client->expressionEvaluated( expression, std::nullopt );
+			for ( auto listener : mListeners )
+				listener->expressionEvaluated( expression, std::nullopt );
 		}
 	} );
 
@@ -634,24 +626,24 @@ bool DebuggerClientDap::setBreakpoints( const dap::Source& source,
 							 for ( const auto& item : resp[DAP_BREAKPOINTS] )
 								 breakpoints.emplace_back( item );
 
-							 for ( auto client : mClients )
-								 client->sourceBreakpoints( source.path,
-															source.sourceReference.value_or( 0 ),
-															breakpoints );
+							 for ( auto listener : mListeners )
+								 listener->sourceBreakpoints( source.path,
+															  source.sourceReference.value_or( 0 ),
+															  breakpoints );
 						 } else {
 							 std::vector<Breakpoint> breakpoints;
 							 breakpoints.reserve( resp[DAP_LINES].size() );
 							 for ( const auto& item : resp[DAP_LINES] )
 								 breakpoints.emplace_back( item.get<int>() );
 
-							 for ( auto client : mClients )
-								 client->sourceBreakpoints( source.path,
-															source.sourceReference.value_or( 0 ),
-															breakpoints );
+							 for ( auto listener : mListeners )
+								 listener->sourceBreakpoints( source.path,
+															  source.sourceReference.value_or( 0 ),
+															  breakpoints );
 						 }
 					 } else {
-						 for ( auto client : mClients )
-							 client->sourceBreakpoints(
+						 for ( auto listener : mListeners )
+							 listener->sourceBreakpoints(
 								 source.path, source.sourceReference.value_or( 0 ), std::nullopt );
 					 }
 				 } );
@@ -675,12 +667,12 @@ bool DebuggerClientDap::gotoTargets( const Source& source, const int line,
 		const int line = req.value( DAP_LINE, 1 );
 		if ( response.success ) {
 			auto list = GotoTarget::parseList( response.body["targets"] );
-			for ( auto client : mClients )
-				client->gotoTargets( source, line, list );
+			for ( auto listener : mListeners )
+				listener->gotoTargets( source, line, list );
 		} else {
 			std::vector<GotoTarget> list;
-			for ( auto client : mClients )
-				client->gotoTargets( source, line, list );
+			for ( auto listener : mListeners )
+				listener->gotoTargets( source, line, list );
 		}
 	} );
 

@@ -85,7 +85,6 @@ class DebuggerClientDap : public DebuggerClient {
 	std::string mBuffer;
 	ProtocolSettings mProtocol;
 	Capabilities mAdapterCapabilities;
-	std::string mLaunchCommand;
 
 	void makeRequest( const std::string_view& command, const nlohmann::json& arguments,
 					  ResponseHandler onFinish = nullptr );

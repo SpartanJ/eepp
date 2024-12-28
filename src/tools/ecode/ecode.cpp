@@ -19,8 +19,8 @@
 
 //! Plugins
 #include "plugins/autocomplete/autocompleteplugin.hpp"
-#include "plugins/formatter/formatterplugin.hpp"
 #include "plugins/debugger/debuggerplugin.hpp"
+#include "plugins/formatter/formatterplugin.hpp"
 #include "plugins/git/gitplugin.hpp"
 #include "plugins/linter/linterplugin.hpp"
 #include "plugins/lsp/lspclientplugin.hpp"
@@ -554,7 +554,8 @@ void App::onPluginEnabled( Plugin* plugin ) {
 
 void App::initPluginManager() {
 	mPluginManager = std::make_unique<PluginManager>(
-		mResPath, mPluginsPath, mThreadPool, [this]( const std::string& path, const auto& cb ) {
+		mResPath, mPluginsPath, mThreadPool,
+		[this]( const std::string& path, const auto& cb ) {
 			UITab* tab = mSplitter->isDocumentOpen( path );
 			if ( !tab ) {
 				loadFileFromPath( path, true, nullptr, cb );
@@ -562,7 +563,8 @@ void App::initPluginManager() {
 				tab->getTabWidget()->setTabSelected( tab );
 				cb( tab->getOwnedWidget()->asType<UICodeEditor>(), path );
 			}
-		} );
+		},
+		[this] { return getProjectBuildManager(); } );
 	mPluginManager->onPluginEnabled = [this]( Plugin* plugin ) {
 		if ( nullptr == mUISceneNode || plugin->isReady() ) {
 			onPluginEnabled( plugin );

@@ -10,6 +10,8 @@ class BusSocket : public Bus {
   public:
 	BusSocket( const Connection& connection );
 
+	virtual ~BusSocket();
+
 	bool start() override;
 
 	bool close() override;

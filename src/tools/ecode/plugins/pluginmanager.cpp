@@ -1,6 +1,6 @@
-#include "pluginmanager.hpp"
 #include "../filesystemlistener.hpp"
 #include "plugin.hpp"
+#include "pluginmanager.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uitableview.hpp>
@@ -11,11 +11,13 @@ using json = nlohmann::json;
 namespace ecode {
 
 PluginManager::PluginManager( const std::string& resourcesPath, const std::string& pluginsPath,
-							  std::shared_ptr<ThreadPool> pool, const OnLoadFileCb& loadFileCb ) :
+							  std::shared_ptr<ThreadPool> pool, const OnLoadFileCb& loadFileCb,
+							  const std::function<ProjectBuildManager*()>& getPBM ) :
 	mResourcesPath( resourcesPath ),
 	mPluginsPath( pluginsPath ),
 	mThreadPool( pool ),
-	mLoadFileFn( loadFileCb ) {}
+	mLoadFileFn( loadFileCb ),
+	mProjectBuildManagerFn( getPBM ) {}
 
 PluginManager::~PluginManager() {
 	mClosing = true;

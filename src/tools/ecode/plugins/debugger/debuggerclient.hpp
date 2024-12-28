@@ -10,7 +10,7 @@ class DebuggerClient {
   public:
 	enum class State { None, Initializing, Initialized, Running, Terminated, Failed };
 
-	class Client {
+	class Listener {
 	  public:
 		virtual void stateChanged( State ) = 0;
 		virtual void initialized() = 0;
@@ -50,8 +50,6 @@ class DebuggerClient {
 	State state() const { return mState; }
 
 	virtual bool start() = 0;
-
-	virtual bool attach() = 0;
 
 	virtual bool resume( int threadId, bool singleThread = false ) = 0;
 
@@ -103,13 +101,17 @@ class DebuggerClient {
 
 	virtual bool watch( const std::string& expression, std::optional<int> frameId ) = 0;
 
+	void addListener( Listener* listener );
+
+	void removeListener( Listener* listener );
+
   protected:
 	void setState( const State& state );
 
 	State mState{ State::None };
 	bool mLaunched{ false };
 	bool mConfigured{ false };
-	std::vector<Client*> mClients;
+	std::vector<Listener*> mListeners;
 
 	void checkRunning();
 
