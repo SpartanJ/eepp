@@ -18,6 +18,8 @@ class DebuggerClientDap : public DebuggerClient {
 
 	DebuggerClientDap( const ProtocolSettings& protocolSettings, std::unique_ptr<Bus>&& bus );
 
+	virtual ~DebuggerClientDap();
+
 	bool start() override;
 
 	bool resume( int threadId, bool singleThread = false ) override;
@@ -38,11 +40,12 @@ class DebuggerClientDap : public DebuggerClient {
 
 	bool threads() override;
 
-	bool stackTrace( int threadId, int startFrame, int levels ) override;
+	bool stackTrace( int threadId, int startFrame = 0, int levels = 0 ) override;
 
 	bool scopes( int frameId ) override;
 
-	bool variables( int variablesReference, Variable::Type filter, int start, int count ) override;
+	bool variables( int variablesReference, Variable::Type filter = Variable::Type::Both,
+					int start = 0, int count = 0 ) override;
 
 	bool modules( int start, int count ) override;
 
@@ -68,6 +71,8 @@ class DebuggerClientDap : public DebuggerClient {
 					  const std::optional<int> column = std::nullopt ) override;
 
 	bool watch( const std::string& expression, std::optional<int> frameId ) override;
+
+	bool configurationDone() override;
 
   protected:
 	std::unique_ptr<Bus> mBus;
@@ -131,6 +136,7 @@ class DebuggerClientDap : public DebuggerClient {
 	void requestLaunchCommand();
 
 	void processResponseInitialize( const Response& response, const nlohmann::json& );
+
 	void processResponseNext( const Response& response, const nlohmann::json& request );
 };
 

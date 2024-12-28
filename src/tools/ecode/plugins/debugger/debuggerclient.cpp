@@ -19,7 +19,7 @@ void DebuggerClient::debuggeeRunning() {
 
 void DebuggerClient::debuggeeTerminated() {
 	for ( auto listener : mListeners )
-		listener->debuggeeRunning();
+		listener->debuggeeTerminated();
 }
 
 void DebuggerClient::failed() {

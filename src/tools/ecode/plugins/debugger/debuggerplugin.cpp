@@ -1,4 +1,5 @@
 #include "debuggerplugin.hpp"
+#include "../../projectbuild.hpp"
 #include "busprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
 #include <eepp/system/filesystem.hpp>
@@ -48,6 +49,9 @@ DebuggerPlugin::~DebuggerPlugin() {
 
 	if ( mSidePanel && mTab )
 		mSidePanel->removeTab( mTab );
+
+	mDebugger.reset();
+	mListener.reset();
 }
 
 void DebuggerPlugin::load( PluginManager* pluginManager ) {
@@ -256,10 +260,10 @@ void DebuggerPlugin::updateSidePanelTab() {
 
 	updateDebuggerConfigurationList();
 
-	UIPushButton* runButton = mTabContents->find<UIPushButton>( "run_button" );
+	mRunButton = mTabContents->find<UIPushButton>( "run_button" );
 
-	if ( !runButton->hasEventsOfType( Event::MouseClick ) ) {
-		runButton->onClick( [this]( auto ) {
+	if ( !mRunButton->hasEventsOfType( Event::MouseClick ) ) {
+		mRunButton->onClick( [this]( auto ) {
 			runConfig( mUIDebuggerList->getListBox()->getItemSelectedText().toUtf8(),
 					   mUIDebuggerConfList->getListBox()->getItemSelectedText().toUtf8() );
 		} );
@@ -293,6 +297,38 @@ void DebuggerPlugin::updateDebuggerConfigurationList() {
 		mUIDebuggerConfList->getListBox()->setSelected( 0L );
 }
 
+void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json ) {
+	static constexpr auto KEY_FILE = "${file}";
+	static constexpr auto KEY_ARGS = "${args}";
+	static constexpr auto KEY_CWD = "${cwd}";
+	static constexpr auto KEY_ENV = "${env}";
+	static constexpr auto KEY_STOPONENTRY = "${stopOnEntry}";
+	auto runConfig = getManager()->getProjectBuildManager()->getCurrentRunConfig();
+
+	for ( auto& j : json ) {
+		if ( j.is_object() ) {
+			replaceKeysInJson( j );
+		} else if ( j.is_string() ) {
+			std::string val( j.get<std::string>() );
+			if ( runConfig && !runConfig->cmd.empty() && val == KEY_FILE ) {
+				j = runConfig->cmd;
+			} else if ( runConfig && !runConfig->args.empty() && val == KEY_ARGS ) {
+				auto argsArr = nlohmann::json::array();
+				auto args = Process::parseArgs( runConfig->args );
+				for ( const auto& arg : args )
+					argsArr.push_back( arg );
+				j = argsArr;
+			} else if ( runConfig && val == KEY_CWD ) {
+				j = runConfig->workingDir;
+			} else if ( runConfig && val == KEY_ENV ) {
+				j = nlohmann::json{};
+			} else if ( val == KEY_STOPONENTRY ) {
+				j = false;
+			}
+		}
+	}
+}
+
 void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& configuration ) {
 	auto debuggerIt = std::find_if( mDaps.begin(), mDaps.end(), [&debugger]( const DapTool& dap ) {
 		return dap.name == debugger;
@@ -312,17 +348,41 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 
 	ProtocolSettings protocolSettings;
 	protocolSettings.launchCommand = configIt->command;
-	protocolSettings.launchRequest = configIt->args;
+	auto args = configIt->args;
+	replaceKeysInJson( args );
+	protocolSettings.launchRequest = args;
 
 	Command cmd;
 	cmd.command = debuggerIt->run.command;
 	cmd.arguments = debuggerIt->run.args;
+
 	auto bus = std::make_unique<BusProcess>( cmd );
 
 	mDebugger = std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
-	mListener = std::make_unique<DebuggerClientListener>();
+	mListener = std::make_unique<DebuggerClientListener>( mDebugger.get(), this );
 	mDebugger->addListener( mListener.get() );
-	mDebugger->start();
+
+	mRunButton->setEnabled( false );
+
+	mThreadPool->run(
+		[this] { mDebugger->start(); },
+		[this]( const Uint64& ) {
+			if ( !mDebugger || mDebugger->state() != DebuggerClient::State::Running ) {
+				mRunButton->runOnMainThread( [this] { mRunButton->setEnabled( false ); } );
+			}
+		} );
+}
+
+void DebuggerPlugin::exitDebugger() {
+	if ( mDebugger && mListener )
+		mDebugger->removeListener( mListener.get() );
+	mThreadPool->run( [this] {
+		mDebugger.reset();
+		mListener.reset();
+	} );
+	if ( getUISceneNode() ) {
+		getUISceneNode()->runOnMainThread( [this] { mRunButton->setEnabled( true ); } );
+	}
 }
 
 void DebuggerPlugin::hideSidePanel() {

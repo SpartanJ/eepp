@@ -42,7 +42,7 @@ static bool isFlatpakEnv() {
 
 #define PROCESS_PTR ( static_cast<struct subprocess_s*>( mProcess ) )
 
-static std::vector<std::string> parseArgs( const std::string& str ) {
+std::vector<std::string> Process::parseArgs( const std::string& str ) {
 	bool inquote = false;
 	char quoteChar = 0;
 	std::vector<std::string> res;

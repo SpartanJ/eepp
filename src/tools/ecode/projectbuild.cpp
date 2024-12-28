@@ -767,7 +767,7 @@ void ProjectBuildManager::runCurrentConfig( StatusAppOutputController* saoc, boo
 	}
 }
 
-bool ProjectBuildManager::hasBuildConfig() {
+bool ProjectBuildManager::hasBuildConfig() const {
 	return !getBuilds().empty() && !mConfig.buildName.empty();
 }
 
@@ -777,6 +777,20 @@ bool ProjectBuildManager::hasRunConfig() {
 		return build != nullptr && build->hasRun();
 	}
 	return false;
+}
+
+std::optional<ProjectBuildStep> ProjectBuildManager::getCurrentRunConfig() {
+	if ( hasBuildConfig() ) {
+		auto build = getBuild( mConfig.buildName );
+		if ( build != nullptr && build->hasRun() ) {
+			for ( const auto& crun : build->mRun ) {
+				if ( crun->name == mConfig.runName || mConfig.runName.empty() ) {
+					return build->replaceVars( *crun.get() );
+				}
+			}
+		}
+	}
+	return {};
 }
 
 void ProjectBuildManager::runConfig( StatusAppOutputController* saoc ) {

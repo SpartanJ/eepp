@@ -15,6 +15,7 @@ class DebuggerClient {
 		virtual void stateChanged( State ) = 0;
 		virtual void initialized() = 0;
 		virtual void launched() = 0;
+		virtual void configured() = 0;
 		virtual void failed() = 0;
 		virtual void debuggeeRunning() = 0;
 		virtual void debuggeeTerminated() = 0;
@@ -69,14 +70,14 @@ class DebuggerClient {
 
 	virtual bool threads() = 0;
 
-	virtual bool stackTrace( int threadId, int startFrame, int levels ) = 0;
+	virtual bool stackTrace( int threadId, int startFrame = 0, int levels = 0 ) = 0;
 
 	virtual bool scopes( int frameId ) = 0;
 
 	virtual bool modules( int start, int count ) = 0;
 
-	virtual bool variables( int variablesReference, Variable::Type filter, int start,
-							int count ) = 0;
+	virtual bool variables( int variablesReference, Variable::Type filter = Variable::Type::Both,
+							int start = 0, int count = 0 ) = 0;
 
 	virtual bool evaluate( const std::string& expression, const std::string& context,
 						   std::optional<int> frameId ) = 0;
@@ -101,9 +102,13 @@ class DebuggerClient {
 
 	virtual bool watch( const std::string& expression, std::optional<int> frameId ) = 0;
 
+	virtual bool configurationDone() = 0;
+
 	void addListener( Listener* listener );
 
 	void removeListener( Listener* listener );
+
+	virtual ~DebuggerClient() {}
 
   protected:
 	void setState( const State& state );

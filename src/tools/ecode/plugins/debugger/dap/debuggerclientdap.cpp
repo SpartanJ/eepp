@@ -22,6 +22,10 @@ DebuggerClientDap::DebuggerClientDap( const ProtocolSettings& protocolSettings,
 									  std::unique_ptr<Bus>&& bus ) :
 	mBus( std::move( bus ) ), mProtocol( protocolSettings ) {}
 
+DebuggerClientDap::~DebuggerClientDap() {
+	mBus.reset();
+}
+
 void DebuggerClientDap::makeRequest( const std::string_view& command,
 									 const nlohmann::json& arguments, ResponseHandler onFinish ) {
 	nlohmann::json jsonCmd = {
@@ -31,10 +35,12 @@ void DebuggerClientDap::makeRequest( const std::string_view& command,
 		{ "arguments", arguments.empty() ? nlohmann::json::object() : arguments } };
 
 	std::string cmd = jsonCmd.dump();
-
-	Log::instance()->writel( mDebug ? LogLevel::Info : LogLevel::Debug, cmd );
-
 	std::string msg( String::format( "Content-Length: %zu\r\n\r\n%s", cmd.size(), cmd ) );
+
+	Log::instance()->writel( mDebug ? LogLevel::Info : LogLevel::Debug,
+							 "DebuggerClientDap::makeRequest:" );
+	Log::instance()->writel( mDebug ? LogLevel::Info : LogLevel::Debug, msg );
+
 	mBus->write( msg.data(), msg.size() );
 
 	mRequests[mIdx] = { std::string{ command }, arguments, onFinish };
@@ -113,9 +119,9 @@ void DebuggerClientDap::requestLaunchCommand() {
 				 [this]( const Response& response, const auto& ) {
 					 if ( response.success ) {
 						 mLaunched = true;
+						 checkRunning();
 						 for ( auto listener : mListeners )
 							 listener->launched();
-						 checkRunning();
 					 } else {
 						 if ( response.errorBody ) {
 							 Log::warning( "DebuggerClientDap::requestLaunchCommand: error %ld %s",
@@ -131,7 +137,7 @@ void DebuggerClientDap::requestInitialize() {
 		{ DAP_CLIENT_ID, "ecode-dap" },
 		{ DAP_CLIENT_NAME, "ecode dap" },
 		{ "locale", mProtocol.locale },
-		{ DAP_ADAPTER_ID, "qdap" },
+		{ DAP_ADAPTER_ID, "ecode-dap" },
 		{ DAP_LINES_START_AT1, mProtocol.linesStartAt1 },
 		{ DAP_COLUMNS_START_AT2, mProtocol.columnsStartAt1 },
 		{ DAP_PATH, ( mProtocol.pathFormatURI ? DAP_URI : DAP_PATH ) },
@@ -166,8 +172,10 @@ void DebuggerClientDap::asyncRead( const char* bytes, size_t n ) {
 #endif
 			auto message = json::parse( data );
 
-			if ( mDebug )
+			if ( mDebug ) {
+				Log::debug( "DebuggerClientDap::asyncRead:" );
 				Log::debug( message.dump() );
+			}
 
 			processProtocolMessage( message );
 #ifndef EE_DEBUG
@@ -229,7 +237,7 @@ void DebuggerClientDap::errorResponse( const std::string& summary,
 
 void DebuggerClientDap::processEvent( const nlohmann::json& msg ) {
 	const std::string event = msg.value( DAP_EVENT, "" );
-	const auto body = msg[DAP_BODY];
+	const auto body = msg.contains( DAP_BODY ) ? msg[DAP_BODY] : nlohmann::json{};
 
 	if ( "initialized"sv == event ) {
 		processEventInitialized();
@@ -262,6 +270,8 @@ void DebuggerClientDap::processEventInitialized() {
 		return;
 	}
 	setState( State::Initialized );
+
+	configurationDone();
 }
 
 void DebuggerClientDap::processEventTerminated() {
@@ -337,7 +347,8 @@ std::optional<DebuggerClientDap::HeaderInfo> DebuggerClientDap::readHeader() {
 		}
 
 		const auto header = mBuffer.substr( start, end - start );
-		end += DAP_SEP_SIZE;
+		while ( std::string_view{ mBuffer }.substr( end, 2 ) == DAP_SEP )
+			end += DAP_SEP_SIZE;
 
 		// header block separator
 		if ( header.size() == 0 ) {
@@ -362,18 +373,19 @@ std::optional<DebuggerClientDap::HeaderInfo> DebuggerClientDap::readHeader() {
 		if ( String::startsWith( header, DAP_CONTENT_LENGTH ) ) {
 			std::string lengthStr( header.substr( sep + 1, header.size() - sep ) );
 			String::trimInPlace( lengthStr );
-			Uint64 length;
 			if ( !String::fromString( length, lengthStr ) ) {
 				Log::error( "DebuggerClientDap::readHeader invalid value: ", header );
 				discardExploredBuffer();
 				continue; // CONTINUE HEADER
+			} else {
+				break;
 			}
 		}
 
 		start = end;
 	}
 
-	if ( length < 0 )
+	if ( length < 0 || length == std::string::npos )
 		return std::nullopt;
 
 	return HeaderInfo{ end, length };
@@ -681,6 +693,32 @@ bool DebuggerClientDap::gotoTargets( const Source& source, const int line,
 
 bool DebuggerClientDap::watch( const std::string& expression, std::optional<int> frameId ) {
 	return evaluate( expression, "watch", frameId );
+}
+
+bool DebuggerClientDap::configurationDone() {
+	if ( mState != State::Initialized ) {
+		Log::warning( "DebuggerClientDap::requestConfigurationDone: trying to configure in an "
+					  "unexpected status" );
+		return false;
+	}
+
+	if ( !mAdapterCapabilities.supportsConfigurationDoneRequest ) {
+		for ( auto listener : mListeners )
+			listener->configured();
+		return true;
+	}
+
+	makeRequest( "configurationDone", nlohmann::json{},
+				 [this]( const auto& response, const auto& ) {
+					 if ( response.success ) {
+						 mConfigured = true;
+						 checkRunning();
+						 for ( auto listener : mListeners )
+							 listener->configured();
+					 }
+				 } );
+
+	return true;
 }
 
 } // namespace ecode::dap

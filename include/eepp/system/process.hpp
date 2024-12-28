@@ -44,6 +44,8 @@ class EE_API Process {
 
 	typedef std::function<void( const char* bytes, size_t n )> ReadFn;
 
+	static std::vector<std::string> parseArgs( const std::string& str );
+
 	Process();
 
 	/** @brief Create a process.

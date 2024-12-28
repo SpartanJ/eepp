@@ -38,7 +38,7 @@ class DebuggerPlugin : public PluginBase {
 
 	static Plugin* NewSync( PluginManager* pluginManager );
 
-	~DebuggerPlugin();
+	virtual ~DebuggerPlugin();
 
 	std::string getId() override { return Definition().id; }
 
@@ -47,6 +47,8 @@ class DebuggerPlugin : public PluginBase {
 	std::string getDescription() override { return Definition().description; }
 
   protected:
+	friend class DebuggerClientListener;
+
 	std::vector<DapTool> mDaps;
 	std::unique_ptr<DebuggerClient> mDebugger;
 	std::unique_ptr<DebuggerClientListener> mListener;
@@ -57,6 +59,7 @@ class DebuggerPlugin : public PluginBase {
 	UIWidget* mTabContents{ nullptr };
 	UIDropDownList* mUIDebuggerList{ nullptr };
 	UIDropDownList* mUIDebuggerConfList{ nullptr };
+	UIPushButton* mRunButton{ nullptr };
 
 	DebuggerPlugin( PluginManager* pluginManager, bool sync );
 
@@ -77,6 +80,10 @@ class DebuggerPlugin : public PluginBase {
 	void loadDAPConfig( const std::string& path, bool updateConfigFile );
 
 	void runConfig( const std::string& debugger, const std::string& configuration );
+
+	void exitDebugger();
+
+	void replaceKeysInJson( nlohmann::json& json );
 };
 
 } // namespace ecode

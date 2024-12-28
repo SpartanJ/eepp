@@ -396,6 +396,10 @@ void UIConsole::setMaxLogLines( const Uint32& maxLogLines ) {
 
 void UIConsole::privPushText( String&& str ) {
 	Lock l( mMutex );
+	if ( str.find_first_of( '\r' ) != String::InvalidPos )
+		String::replaceAll( str, "\r", "" );
+	if ( str.empty() )
+		return;
 	mCmdLog.push_back( { std::move( str ), String::hash( str ) } );
 	if ( mVisible )
 		invalidateDraw();

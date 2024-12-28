@@ -15,7 +15,8 @@
               "args": "${args}",
               "cwd": "${cwd}",
               "env": "${env}",
-              "stopOnEntry": "${stopOnEntry}"
+              "stopOnEntry": "${stopOnEntry}",
+              "stopAtBeginningOfMainSubprogram": false
           }
         }
       ]
