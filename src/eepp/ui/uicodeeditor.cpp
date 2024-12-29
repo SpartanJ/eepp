@@ -2234,6 +2234,8 @@ Vector2d UICodeEditor::getTextPositionOffset( const TextPosition& position,
 													 : 0.f );
 		double offsetY = mDocView.getLineYOffset( info.visibleIndex, lh );
 		if ( isNotMonospace() ) {
+			if ( !info.range.isValid() )
+				return {};
 			const auto& line = mDoc->line( position.line() ).getText();
 			auto partialLine =
 				line.view().substr( info.range.start().column(), info.range.end().column() );
@@ -3379,6 +3381,9 @@ void UICodeEditor::drawMatchingBrackets( const Vector2f& startScroll, const Floa
 		primitive.setForceDraw( false );
 		primitive.setColor( Color( mMatchingBracketColor ).blendAlpha( mAlpha ) );
 		auto drawBracket = [&]( const TextPosition& pos ) {
+			auto info = mDocView.getVisibleLineRange( pos );
+			if ( !info.range.isValid() )
+				return;
 			auto offset = getTextPositionOffset( pos, lineHeight );
 			primitive.drawRectangle(
 				Rectf( Vector2f( startScroll.x + offset.x, startScroll.y + offset.y ),
