@@ -341,8 +341,9 @@ DocumentView::VisibleLineRange DocumentView::getVisibleLineRange( const TextPosi
 	}
 	eeASSERT( toIdx >= 0 );
 	info.visibleIndex = static_cast<VisibleIndex>( toIdx );
-	info.range = { { pos.line(), mVisibleLines[toIdx].column() },
-				   mDoc->endOfLine( { pos.line(), 0ll } ) };
+	if ( info.visibleIndex != VisibleIndex::invalid )
+		info.range = { { pos.line(), mVisibleLines[toIdx].column() },
+					   mDoc->endOfLine( { pos.line(), 0ll } ) };
 	return info;
 }
 
