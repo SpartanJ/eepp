@@ -574,7 +574,7 @@ class EE_API Node : public Transformable {
 
 	void childRemove( Node* node );
 
-	Rectf getScreenBounds();
+	Rectf getScreenBounds() const;
 
 	void setInternalPosition( const Vector2f& Pos );
 

@@ -42,15 +42,13 @@ UITerminal* TerminalManager::createTerminalInSplitter( const std::string& workin
 		switch ( config.term.newTerminalOrientation ) {
 			case NewTerminalOrientation::Vertical: {
 				auto cwd = workingDir.empty() ? mApp->getCurrentWorkingDir() : workingDir;
-				splitter->split( UICodeEditorSplitter::SplitDirection::Right,
-								 splitter->getCurWidget(), false );
+				splitter->split( SplitDirection::Right, splitter->getCurWidget(), false );
 				term = createNewTerminal( "", nullptr, cwd, "", {}, fallback );
 				break;
 			}
 			case NewTerminalOrientation::Horizontal: {
 				auto cwd = workingDir.empty() ? mApp->getCurrentWorkingDir() : workingDir;
-				splitter->split( UICodeEditorSplitter::SplitDirection::Bottom,
-								 splitter->getCurWidget(), false );
+				splitter->split( SplitDirection::Bottom, splitter->getCurWidget(), false );
 				term = createNewTerminal( "", nullptr, cwd, "", {}, fallback );
 				break;
 			}

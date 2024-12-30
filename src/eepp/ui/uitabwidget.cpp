@@ -174,7 +174,7 @@ std::string UITabWidget::getPropertyString( const PropertyDefinition* propertyDe
 		case PropertyId::TabBarAllowRearrange:
 			return getAllowRearrangeTabs() ? "true" : "false";
 		case PropertyId::TabBarAllowDragAndDrop:
-			return getAllowDragAndDropTabs() ? "true" : "false";
+			return allowDragAndDropTabs() ? "true" : "false";
 		case PropertyId::TabAllowSwitchTabsInEmptySpaces:
 			return getAllowSwitchTabsInEmptySpaces() ? "true" : "false";
 		case PropertyId::TabCloseButtonVisible:
@@ -833,7 +833,7 @@ void UITabWidget::setAllowRearrangeTabs( bool allowRearrangeTabs ) {
 	}
 }
 
-bool UITabWidget::getAllowDragAndDropTabs() const {
+bool UITabWidget::allowDragAndDropTabs() const {
 	return mAllowDragAndDropTabs;
 }
 
@@ -859,7 +859,8 @@ void UITabWidget::setAllowSwitchTabsInEmptySpaces( bool allowSwitchTabsInEmptySp
 
 bool UITabWidget::acceptsDropOfWidget( const UIWidget* widget ) {
 	return mAllowDragAndDropTabs && widget && UI_TYPE_TAB == widget->getType() &&
-		   !isParentOf( widget ) && widget->asConstType<UITab>()->getTabWidget() != this;
+		   !isParentOf( widget ) &&
+		   ( mSplitFn || widget->asConstType<UITab>()->getTabWidget() != this );
 }
 
 const Color& UITabWidget::getDroppableHoveringColor() const {
@@ -931,6 +932,11 @@ void UITabWidget::swapTabs( UITab* left, UITab* right ) {
 		posTabs();
 		zorderTabs();
 	}
+}
+
+void UITabWidget::setSplitFunction( SplitFunctionCb cb, Float splitEdgePercent ) {
+	mSplitFn = std::move( cb );
+	mSplitEdgePercent = splitEdgePercent;
 }
 
 void UITabWidget::selectPreviousTab() {
@@ -1009,10 +1015,19 @@ Uint32 UITabWidget::onMessage( const NodeMessage* msg ) {
 		const NodeDropMessage* dropMsg = static_cast<const NodeDropMessage*>( msg );
 		if ( dropMsg->getDroppedNode()->isType( UI_TYPE_TAB ) ) {
 			UITab* tab = dropMsg->getDroppedNode()->asType<UITab>();
-			if ( tab->getTabWidget() != this && tab->getTabWidget()->getAllowDragAndDropTabs() ) {
+			auto dir = getDropDirection();
+			if ( !mSplitFn || !dir ) {
+				if ( tab->getTabWidget() != this && tab->getTabWidget()->allowDragAndDropTabs() ) {
+					tab->getTabWidget()->removeTab( tab, false, false, false );
+					add( tab );
+					setTabSelected( tab );
+					return 1;
+				}
+			} else if ( dir && tab->getTabWidget()->allowDragAndDropTabs() ) {
 				tab->getTabWidget()->removeTab( tab, false, false, false );
-				add( tab );
-				setTabSelected( tab );
+				auto tabWidget = mSplitFn( *dir, this );
+				tabWidget->add( tab );
+				tabWidget->setTabSelected( tab );
 				return 1;
 			}
 		}
@@ -1028,6 +1043,65 @@ Uint32 UITabWidget::onMessage( const NodeMessage* msg ) {
 		}
 	}
 	return 0;
+}
+
+std::optional<SplitDirection> UITabWidget::getDropDirection() const {
+	Vector2f mousePos( getEventDispatcher()->getMousePosf() );
+	mousePos = convertToNodeSpace( mousePos );
+
+	if ( mTabBar->isVisible() && mousePos.y <= mTabBar->getPixelsSize().y )
+		return {};
+
+	if ( mousePos.y <= mSize.y * mSplitEdgePercent ) {
+		return SplitDirection::Top;
+	} else if ( mousePos.y >= mSize.y - mSize.y * mSplitEdgePercent ) {
+		return SplitDirection::Bottom;
+	} else if ( mousePos.x <= mSize.x * mSplitEdgePercent ) {
+		return SplitDirection::Left;
+	} else if ( mousePos.x >= mSize.x - mSize.x * mSplitEdgePercent ) {
+		return SplitDirection::Right;
+	}
+
+	return {};
+}
+
+void UITabWidget::drawDroppableHovering() {
+	if ( mSplitFn ) {
+		auto dir = getDropDirection();
+		auto rect( getScreenBounds() );
+		if ( mTabBar->isVisible() )
+			rect.Top += mTabBar->getPixelsSize().getHeight();
+
+		if ( dir ) {
+			constexpr auto splitSize = 0.5f;
+			switch ( *dir ) {
+				case SplitDirection::Top:
+					rect.Bottom = rect.Top + mSize.y * splitSize;
+					break;
+				case SplitDirection::Bottom:
+					rect.Top = rect.Bottom - mSize.y * splitSize;
+					break;
+				case SplitDirection::Left:
+					rect.Right = rect.Left + mSize.x * splitSize;
+					break;
+				case SplitDirection::Right:
+					rect.Left = rect.Right - mSize.x * splitSize;
+					break;
+			}
+		} else if ( std::any_of( mTabs.begin(), mTabs.end(),
+								 []( const UITab* tab ) { return tab->isDragging(); } ) ) {
+			return;
+		}
+
+		Primitives P;
+		P.setFillMode( DRAW_FILL );
+		P.setBlendMode( getBlendMode() );
+		P.setColor( UINode::getDroppableHoveringColor() );
+		P.setLineWidth( PixelDensity::dpToPxI( 1 ) );
+		P.drawRectangle( rect );
+	} else {
+		UIWidget::drawDroppableHovering();
+	}
 }
 
 void UITabWidget::applyThemeToTabs() {

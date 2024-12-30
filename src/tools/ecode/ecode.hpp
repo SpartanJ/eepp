@@ -201,26 +201,22 @@ class App : public UICodeEditorSplitter::Client {
 					  [this] { mTerminalManager->createTerminalInSplitter(); } );
 		t.setCommand( "terminal-split-right", [this] {
 			auto cwd = getCurrentWorkingDir();
-			mSplitter->split( UICodeEditorSplitter::SplitDirection::Right,
-							  mSplitter->getCurWidget(), false );
+			mSplitter->split( SplitDirection::Right, mSplitter->getCurWidget(), false );
 			mTerminalManager->createNewTerminal( "", nullptr, cwd );
 		} );
 		t.setCommand( "terminal-split-bottom", [this] {
 			auto cwd = getCurrentWorkingDir();
-			mSplitter->split( UICodeEditorSplitter::SplitDirection::Bottom,
-							  mSplitter->getCurWidget(), false );
+			mSplitter->split( SplitDirection::Bottom, mSplitter->getCurWidget(), false );
 			mTerminalManager->createNewTerminal( "", nullptr, cwd );
 		} );
 		t.setCommand( "terminal-split-left", [this] {
 			auto cwd = getCurrentWorkingDir();
-			mSplitter->split( UICodeEditorSplitter::SplitDirection::Left, mSplitter->getCurWidget(),
-							  false );
+			mSplitter->split( SplitDirection::Left, mSplitter->getCurWidget(), false );
 			mTerminalManager->createNewTerminal( "", nullptr, cwd );
 		} );
 		t.setCommand( "terminal-split-top", [this] {
 			auto cwd = getCurrentWorkingDir();
-			mSplitter->split( UICodeEditorSplitter::SplitDirection::Top, mSplitter->getCurWidget(),
-							  false );
+			mSplitter->split( SplitDirection::Top, mSplitter->getCurWidget(), false );
 			mTerminalManager->createNewTerminal( "", nullptr, cwd );
 		} );
 		t.setCommand( "reopen-closed-tab", [this] { reopenClosedTab(); } );

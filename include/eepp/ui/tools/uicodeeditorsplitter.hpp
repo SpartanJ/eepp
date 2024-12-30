@@ -1,6 +1,7 @@
 #ifndef EE_UI_TOOLS_UICODEEDITORSPLITTER_HPP
 #define EE_UI_TOOLS_UICODEEDITORSPLITTER_HPP
 
+#include <eepp/ui/splitdirection.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -18,8 +19,6 @@ class EE_API UICodeEditorSplitter {
 	static const std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings();
 
 	static const std::map<KeyBindings::Shortcut, std::string> getLocalDefaultKeybindings();
-
-	enum class SplitDirection { Left, Right, Top, Bottom };
 
 	class EE_API Client {
 	  public:
@@ -355,6 +354,12 @@ class EE_API UICodeEditorSplitter {
 
 	void setOnTabWidgetCreateCb( std::function<void( UITabWidget* )> cb );
 
+	bool getVisualSplitting() const;
+	void setVisualSplitting( bool visualSplitting );
+
+	Float getVisualSplitEdgePercent() const;
+	void setVisualSplitEdgePercent( Float visualSplitEdgePercent );
+
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
@@ -367,6 +372,7 @@ class EE_API UICodeEditorSplitter {
 	Client* mClient;
 	bool mHideTabBarOnSingleTab{ true };
 	bool mFirstCodeEditor{ true };
+	bool mVisualSplitting{ true };
 	UICodeEditor* mAboutToAddEditor{ nullptr };
 	UIMessageBox* mTryCloseMsgBox{ nullptr };
 	Mutex mTabWidgetMutex;
@@ -378,6 +384,7 @@ class EE_API UICodeEditorSplitter {
 	std::vector<NavigationRecord> mNavigationHistory;
 	size_t mNavigationHistoryPos{ std::numeric_limits<size_t>::max() };
 	std::function<void( UITabWidget* )> mOnTabWidgetCreateCb;
+	Float mVisualSplitEdgePercent{ 0.1 };
 
 	UICodeEditorSplitter( UICodeEditorSplitter::Client* client, UISceneNode* sceneNode,
 						  std::shared_ptr<ThreadPool> threadPool,
@@ -387,6 +394,12 @@ class EE_API UICodeEditorSplitter {
 	virtual void onTabClosed( const TabEvent* tabEvent );
 
 	void closeAllTabs( std::vector<UITab*> tabs, UITabWidget::FocusTabBehavior focusTabBehavior );
+
+	UITabWidget* createTabWidget( Node* parent );
+
+	UITabWidget* splitTabWidget( SplitDirection, UITabWidget* );
+
+	void updateTabWidgetVisualSplitting();
 };
 
 }}} // namespace EE::UI::Tools
