@@ -626,11 +626,7 @@ void UICodeEditorSplitter::removeUnusedTab( UITabWidget* tabWidget, bool destroy
 	}
 }
 
-UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool openCurEditor ) {
-	eeASSERT( curWidgetExists() );
-	if ( nullptr == mBaseLayout )
-		mBaseLayout = parent;
-	UICodeEditor* prevCurEditor = mCurEditor;
+UITabWidget* UICodeEditorSplitter::createTabWidget( Node* parent ) {
 	UITabWidget* tabWidget = UITabWidget::New();
 	tabWidget->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 	tabWidget->setParent( parent );
@@ -641,6 +637,13 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 	tabWidget->setAllowSwitchTabsInEmptySpaces( true );
 	tabWidget->setEnabledCreateContextMenu( true );
 	tabWidget->setFocusTabBehavior( UITabWidget::FocusTabBehavior::FocusOrder );
+	if ( mVisualSplitting ) {
+		tabWidget->setSplitFunction(
+			[this]( SplitDirection dir, UITabWidget* widget ) -> UITabWidget* {
+				return splitTabWidget( dir, widget );
+			},
+			mVisualSplitEdgePercent );
+	}
 	tabWidget->addEventListener( Event::OnTabSelected, [this]( const Event* event ) {
 		UITabWidget* tabWidget = event->getNode()->asType<UITabWidget>();
 		if ( tabWidget->getTabSelected()->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
@@ -663,6 +666,17 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 	} );
 	if ( mOnTabWidgetCreateCb )
 		mOnTabWidgetCreateCb( tabWidget );
+	Lock l( mTabWidgetMutex );
+	mTabWidgets.push_back( tabWidget );
+	return tabWidget;
+}
+
+UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool openCurEditor ) {
+	eeASSERT( curWidgetExists() );
+	if ( nullptr == mBaseLayout )
+		mBaseLayout = parent;
+	UICodeEditor* prevCurEditor = mCurEditor;
+	UITabWidget* tabWidget = createTabWidget( parent );
 	auto editorData = createCodeEditorInTabWidget( tabWidget );
 	if ( editorData.first == nullptr || editorData.second == nullptr ) {
 		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
@@ -684,8 +698,6 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 			editorData.first->setTooltipText( path );
 	}
 	mAboutToAddEditor = nullptr;
-	Lock l( mTabWidgetMutex );
-	mTabWidgets.push_back( tabWidget );
 	return tabWidget;
 }
 
@@ -1205,6 +1217,51 @@ UISplitter* UICodeEditorSplitter::split( const SplitDirection& direction, UIWidg
 	return splitter;
 }
 
+UITabWidget* UICodeEditorSplitter::splitTabWidget( SplitDirection direction,
+												   UITabWidget* tabWidget ) {
+	if ( !tabWidget )
+		return nullptr;
+	UIOrientation orientation =
+		direction == SplitDirection::Left || direction == SplitDirection::Right
+			? UIOrientation::Horizontal
+			: UIOrientation::Vertical;
+	Node* parent = tabWidget->getParent();
+	UISplitter* parentSplitter = nullptr;
+	bool wasFirst = true;
+
+	if ( parent->isType( UI_TYPE_SPLITTER ) ) {
+		parentSplitter = parent->asType<UISplitter>();
+		wasFirst = parentSplitter->getFirstWidget() == tabWidget;
+		if ( !parentSplitter->isFull() ) {
+			parentSplitter->setOrientation( orientation );
+			UITabWidget* newTabWidget = createTabWidget( parentSplitter );
+			if ( direction == SplitDirection::Left || direction == SplitDirection::Top )
+				parentSplitter->swap();
+			return newTabWidget;
+		}
+	}
+
+	UISplitter* splitter = UISplitter::New();
+	splitter->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+	splitter->setOrientation( orientation );
+	tabWidget->detach();
+	splitter->setParent( parent );
+	tabWidget->setParent( splitter );
+	UITabWidget* newTabWidget = createTabWidget( splitter );
+	if ( direction == SplitDirection::Left || direction == SplitDirection::Top )
+		splitter->swap();
+
+	if ( parentSplitter ) {
+		if ( wasFirst && parentSplitter->getFirstWidget() != splitter ) {
+			parentSplitter->swap();
+		} else if ( !wasFirst && parentSplitter->getLastWidget() != splitter ) {
+			parentSplitter->swap();
+		}
+	}
+
+	return newTabWidget;
+}
+
 void UICodeEditorSplitter::switchToTab( Int32 index ) {
 	UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
 	if ( tabWidget ) {
@@ -1663,6 +1720,42 @@ void UICodeEditorSplitter::onTabClosed( const TabEvent* tabEvent ) {
 
 void UICodeEditorSplitter::setOnTabWidgetCreateCb( std::function<void( UITabWidget* )> cb ) {
 	mOnTabWidgetCreateCb = std::move( cb );
+}
+
+bool UICodeEditorSplitter::getVisualSplitting() const {
+	return mVisualSplitting;
+}
+
+void UICodeEditorSplitter::setVisualSplitting( bool visualSplitting ) {
+	if ( mVisualSplitting != visualSplitting ) {
+		mVisualSplitting = visualSplitting;
+		updateTabWidgetVisualSplitting();
+	}
+}
+
+Float UICodeEditorSplitter::getVisualSplitEdgePercent() const {
+	return mVisualSplitEdgePercent;
+}
+
+void UICodeEditorSplitter::setVisualSplitEdgePercent( Float visualSplitEdgePercent ) {
+	if ( mVisualSplitEdgePercent != visualSplitEdgePercent ) {
+		mVisualSplitEdgePercent = visualSplitEdgePercent;
+		updateTabWidgetVisualSplitting();
+	}
+}
+
+void UICodeEditorSplitter::updateTabWidgetVisualSplitting() {
+	for ( UITabWidget* tabWidget : mTabWidgets ) {
+		if ( mVisualSplitting ) {
+			tabWidget->setSplitFunction(
+				[this]( SplitDirection dir, UITabWidget* widget ) -> UITabWidget* {
+					return splitTabWidget( dir, widget );
+				},
+				mVisualSplitEdgePercent );
+		} else {
+			tabWidget->setSplitFunction( nullptr, mVisualSplitEdgePercent );
+		}
+	}
 }
 
 }}} // namespace EE::UI::Tools

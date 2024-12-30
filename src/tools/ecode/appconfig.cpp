@@ -651,8 +651,7 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 		}
 	} else if ( j["type"] == "splitter" ) {
 		UISplitter* splitter = editorSplitter->split(
-			j["orientation"] == "horizontal" ? UICodeEditorSplitter::SplitDirection::Right
-											 : UICodeEditorSplitter::SplitDirection::Bottom,
+			j["orientation"] == "horizontal" ? SplitDirection::Right : SplitDirection::Bottom,
 			curTabWidget->getTabSelected()->getOwnedWidget()->asType<UICodeEditor>(), false );
 
 		if ( nullptr == splitter )

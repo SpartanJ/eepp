@@ -510,7 +510,7 @@ void Node::onSizeChange() {
 	invalidateDraw();
 }
 
-Rectf Node::getScreenBounds() {
+Rectf Node::getScreenBounds() const {
 	return Rectf( Vector2f( mScreenPosi.x, mScreenPosi.y ),
 				  Sizef( (Float)(int)mSize.getWidth(), (Float)(int)mSize.getHeight() ) );
 }
