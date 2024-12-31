@@ -11,11 +11,12 @@ using namespace EE::UI;
 
 namespace ecode {
 
-class App;
+class PluginContextProvider;
 
 class StatusBarElement {
   public:
-	StatusBarElement( UISplitter* mainSplitter, UISceneNode* uiSceneNode, App* app );
+	StatusBarElement( UISplitter* mainSplitter, UISceneNode* uiSceneNode,
+					  PluginContextProvider* app );
 
 	virtual void toggle();
 
@@ -30,7 +31,7 @@ class StatusBarElement {
   protected:
 	UISplitter* mMainSplitter;
 	UISceneNode* mUISceneNode;
-	App* mApp;
+	PluginContextProvider* mContext;
 	Tools::UICodeEditorSplitter* mSplitter;
 };
 
@@ -42,13 +43,21 @@ class UIStatusBar : public UILinearLayout, public WidgetCommandExecuter {
 
 	void updateState();
 
+	UIPushButton* insertStatusBarElement( std::string id, const String& text,
+										  const std::string& icon,
+										  std::shared_ptr<StatusBarElement> element );
+
+	void removeStatusBarElement( const std::string& id );
+
+	void setPluginContextProvider( PluginContextProvider* app );
+
   protected:
-	friend class App;
+	UnorderedMap<std::string, std::pair<UIPushButton*, std::shared_ptr<StatusBarElement>>>
+		mElements;
+
 	virtual Uint32 onMessage( const NodeMessage* msg );
 
-	void setApp( App* app );
-
-	App* mApp{ nullptr };
+	PluginContextProvider* mContext{ nullptr };
 
 	virtual void onVisibilityChange();
 

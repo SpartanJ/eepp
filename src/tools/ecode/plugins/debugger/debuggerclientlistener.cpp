@@ -1,4 +1,5 @@
 #include "debuggerclientlistener.hpp"
+#include "../../statusappoutputcontroller.hpp"
 #include "debuggerplugin.hpp"
 
 namespace ecode {
@@ -8,7 +9,16 @@ DebuggerClientListener::DebuggerClientListener( DebuggerClient* client, Debugger
 	eeASSERT( mClient && mPlugin );
 }
 
-void DebuggerClientListener::stateChanged( DebuggerClient::State ) {}
+void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
+	if ( state == DebuggerClient::State::Initializing ) {
+		mPlugin->getManager()->getUISceneNode()->runOnMainThread( [this] {
+			mPlugin->getManager()
+				->getPluginContext()
+				->getStatusAppOutputController()
+				->initNewOutput( {} );
+		} );
+	}
+}
 
 void DebuggerClientListener::initialized() {
 	// mClient->setBreakpoints( "/home/programming/eepp/src/tools/ecode/ecode.cpp",
@@ -40,7 +50,13 @@ void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
 
 void DebuggerClientListener::debuggeeContinued( const ContinuedEvent& ) {}
 
-void DebuggerClientListener::outputProduced( const Output& ) {}
+void DebuggerClientListener::outputProduced( const Output& output ) {
+	if ( Output::Category::Stdout == output.category ||
+		 Output::Category::Stderr == output.category ) {
+		mPlugin->getManager()->getPluginContext()->getStatusAppOutputController()->insertBuffer(
+			output.output );
+	}
+}
 
 void DebuggerClientListener::debuggingProcess( const ProcessInfo& ) {}
 

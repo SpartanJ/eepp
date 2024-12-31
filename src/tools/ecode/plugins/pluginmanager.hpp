@@ -3,6 +3,7 @@
 
 #include "../projectsearch.hpp"
 #include "lsp/lspprotocol.hpp"
+#include "plugincontextprovider.hpp"
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/models/model.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
@@ -275,7 +276,7 @@ class PluginManager {
 
 	PluginManager( const std::string& resourcesPath, const std::string& pluginsPath,
 				   std::shared_ptr<ThreadPool> pool, const OnLoadFileCb& loadFileCb,
-				   const std::function<ProjectBuildManager*()>& getPBM );
+				   PluginContextProvider* context );
 
 	~PluginManager();
 
@@ -362,7 +363,7 @@ class PluginManager {
 
 	bool isClosing() const;
 
-	ProjectBuildManager* getProjectBuildManager() const { return mProjectBuildManagerFn(); };
+	PluginContextProvider* getPluginContext() const { return mPluginContext; }
 
   protected:
 	using SubscribedPlugins =
@@ -378,6 +379,7 @@ class PluginManager {
 	UICodeEditorSplitter* mSplitter{ nullptr };
 	UISplitter* mMainSplitter{ nullptr };
 	FileSystemListener* mFileSystemListener{ nullptr };
+	PluginContextProvider* mPluginContext{ nullptr };
 	Mutex mSubscribedPluginsMutex;
 	Mutex mPluginsFSSubsMutex;
 	SubscribedPlugins mSubscribedPlugins;
@@ -386,7 +388,6 @@ class PluginManager {
 	UnorderedSet<Plugin*> mPluginsFSSubs;
 	bool mClosing{ false };
 	bool mPluginReloadEnabled{ false };
-	std::function<ProjectBuildManager*()> mProjectBuildManagerFn;
 
 	bool hasDefinition( const std::string& id );
 

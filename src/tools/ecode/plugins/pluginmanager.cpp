@@ -12,12 +12,12 @@ namespace ecode {
 
 PluginManager::PluginManager( const std::string& resourcesPath, const std::string& pluginsPath,
 							  std::shared_ptr<ThreadPool> pool, const OnLoadFileCb& loadFileCb,
-							  const std::function<ProjectBuildManager*()>& getPBM ) :
+							  PluginContextProvider* context ) :
 	mResourcesPath( resourcesPath ),
 	mPluginsPath( pluginsPath ),
 	mThreadPool( pool ),
-	mLoadFileFn( loadFileCb ),
-	mProjectBuildManagerFn( getPBM ) {}
+	mPluginContext( context ),
+	mLoadFileFn( loadFileCb ) {}
 
 PluginManager::~PluginManager() {
 	mClosing = true;

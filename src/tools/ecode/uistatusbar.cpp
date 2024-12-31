@@ -1,15 +1,21 @@
-#include "ecode.hpp"
 #include "uistatusbar.hpp"
+#include "globalsearchcontroller.hpp"
+#include "plugins/plugincontextprovider.hpp"
+#include "statusappoutputcontroller.hpp"
+#include "statusbuildoutputcontroller.hpp"
+#include "statusterminalcontroller.hpp"
+#include "universallocator.hpp"
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/window.hpp>
 
 namespace ecode {
 
-StatusBarElement::StatusBarElement( UISplitter* mainSplitter, UISceneNode* uiSceneNode, App* app ) :
+StatusBarElement::StatusBarElement( UISplitter* mainSplitter, UISceneNode* uiSceneNode,
+									PluginContextProvider* app ) :
 	mMainSplitter( mainSplitter ),
 	mUISceneNode( uiSceneNode ),
-	mApp( app ),
-	mSplitter( mApp->getSplitter() ) {}
+	mContext( app ),
+	mSplitter( mContext->getSplitter() ) {}
 
 void StatusBarElement::toggle() {
 	if ( nullptr == getWidget() ) {
@@ -32,7 +38,7 @@ void StatusBarElement::hide() {
 	if ( getWidget() && getWidget()->isVisible() ) {
 		getWidget()->setParent( mUISceneNode );
 		getWidget()->setVisible( false );
-		mApp->getStatusBar()->updateState();
+		mContext->getStatusBar()->updateState();
 		if ( mSplitter->getCurWidget() )
 			mSplitter->getCurWidget()->setFocus();
 	}
@@ -48,9 +54,9 @@ void StatusBarElement::show() {
 	}
 
 	if ( !getWidget()->isVisible() ) {
-		mApp->hideLocateBar();
-		mApp->hideSearchBar();
-		mApp->hideGlobalSearchBar();
+		mContext->hideLocateBar();
+		mContext->hideSearchBar();
+		mContext->hideGlobalSearchBar();
 		if ( mMainSplitter->getLastWidget() != nullptr ) {
 			mMainSplitter->getLastWidget()->setVisible( false );
 			mMainSplitter->getLastWidget()->setParent( mUISceneNode );
@@ -58,7 +64,7 @@ void StatusBarElement::show() {
 		getWidget()->setParent( mMainSplitter );
 		getWidget()->setVisible( true );
 		getWidget()->setFocus();
-		mApp->getStatusBar()->updateState();
+		mContext->getStatusBar()->updateState();
 	}
 }
 
@@ -78,7 +84,7 @@ void UIStatusBar::updateState() {
 			if ( nullptr == widget->getTooltip() ) {
 				std::string name( widget->getId() );
 				String::replaceAll( name, "_", "-" );
-				auto kb = mApp->getKeybind( "toggle-" + name );
+				auto kb = mContext->getKeybind( "toggle-" + name );
 				if ( !kb.empty() )
 					widget->setTooltipText( kb );
 			}
@@ -96,8 +102,8 @@ void UIStatusBar::updateState() {
 		}
 	} );
 
-	if ( mApp->getMainSplitter() && mApp->getMainSplitter()->getLastWidget() ) {
-		UIWidget* widget = mApp->getMainSplitter()->getLastWidget();
+	if ( mContext->getMainSplitter() && mContext->getMainSplitter()->getLastWidget() ) {
+		UIWidget* widget = mContext->getMainSplitter()->getLastWidget();
 		UIWidget* but = find<UIWidget>( "status_" + widget->getId() );
 		if ( but && but != this ) {
 			if ( widget->isVisible() ) {
@@ -110,7 +116,7 @@ void UIStatusBar::updateState() {
 }
 
 Uint32 UIStatusBar::onMessage( const NodeMessage* msg ) {
-	if ( !isVisible() || nullptr == mApp || msg->getMsg() != NodeMessage::MouseClick ||
+	if ( !isVisible() || nullptr == mContext || msg->getMsg() != NodeMessage::MouseClick ||
 		 0 == ( msg->getFlags() & EE_BUTTON_LMASK ) || !msg->getSender()->isWidget() )
 		return 0;
 
@@ -122,19 +128,26 @@ Uint32 UIStatusBar::onMessage( const NodeMessage* msg ) {
 	int ret = 0;
 
 	if ( widget->getId() == "status_locate_bar" ) {
-		mApp->getUniversalLocator()->toggleLocateBar();
+		mContext->getUniversalLocator()->toggleLocateBar();
 		ret = 1;
 	} else if ( widget->getId() == "status_global_search_bar" ) {
-		mApp->getGlobalSearchController()->toggleGlobalSearchBar();
+		mContext->getGlobalSearchController()->toggleGlobalSearchBar();
 		ret = 1;
 	} else if ( widget->getId() == "status_terminal" ) {
-		mApp->getStatusTerminalController()->toggle();
+		mContext->getStatusTerminalController()->toggle();
 		ret = 1;
 	} else if ( widget->getId() == "status_build_output" ) {
-		mApp->getStatusBuildOutputController()->toggle();
+		mContext->getStatusBuildOutputController()->toggle();
 		ret = 1;
 	} else if ( widget->getId() == "status_app_output" ) {
-		mApp->getStatusAppOutputController()->toggle();
+		mContext->getStatusAppOutputController()->toggle();
+		ret = 1;
+	} else {
+		auto elemIt = mElements.find( widget->getId() );
+		if ( elemIt != mElements.end() ) {
+			elemIt->second.second->toggle();
+			ret = 1;
+		}
 	}
 
 	if ( ret )
@@ -142,8 +155,8 @@ Uint32 UIStatusBar::onMessage( const NodeMessage* msg ) {
 	return ret;
 }
 
-void UIStatusBar::setApp( App* app ) {
-	mApp = app;
+void UIStatusBar::setPluginContextProvider( PluginContextProvider* app ) {
+	mContext = app;
 	updateState();
 }
 
@@ -155,8 +168,37 @@ void UIStatusBar::onVisibilityChange() {
 
 void UIStatusBar::onChildCountChange( Node* node, const bool& removed ) {
 	UILinearLayout::onChildCountChange( node, removed );
-	if ( mApp )
+	if ( mContext )
 		updateState();
+}
+
+UIPushButton* UIStatusBar::insertStatusBarElement( std::string id, const String& text,
+												   const std::string& icon,
+												   std::shared_ptr<StatusBarElement> element ) {
+	auto elemIt = mElements.find( id );
+	UIPushButton* button = nullptr;
+	if ( elemIt != mElements.end() ) {
+		button = elemIt->second.first;
+		mElements.erase( elemIt );
+	} else {
+		button = UIPushButton::New();
+		button->beginAttributesTransaction();
+		button->setText( text );
+		button->setParent( this )->setId( id );
+		UIWidget* statusSep = findByClass( "status_sep" );
+		if ( statusSep )
+			button->toPosition( statusSep->getNodeIndex() );
+		button->applyProperty(
+			StyleSheetProperty( "icon", icon, false, StyleSheetSelectorRule::SpecificityInline ) );
+		button->endAttributesTransaction();
+	}
+
+	mElements[id] = { button, element };
+	return button;
+}
+
+void UIStatusBar::removeStatusBarElement( const std::string& id ) {
+	mElements.erase( id );
 }
 
 } // namespace ecode

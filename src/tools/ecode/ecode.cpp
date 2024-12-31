@@ -564,7 +564,7 @@ void App::initPluginManager() {
 				cb( tab->getOwnedWidget()->asType<UICodeEditor>(), path );
 			}
 		},
-		[this] { return getProjectBuildManager(); } );
+		this );
 	mPluginManager->onPluginEnabled = [this]( Plugin* plugin ) {
 		if ( nullptr == mUISceneNode || plugin->isReady() ) {
 			onPluginEnabled( plugin );
@@ -3829,7 +3829,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		initImageView();
 
-		mStatusBar->setApp( this );
+		mStatusBar->setPluginContextProvider( this );
 
 		mSettings = std::make_unique<SettingsMenu>();
 		mSettings->createSettingsMenu( this, mMenuBar );

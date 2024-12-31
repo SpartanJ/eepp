@@ -30,6 +30,8 @@ class StatusTerminalController : public StatusBarElement {
 	UITerminal* getUITerminal();
 
   protected:
+	App* mApp;
+
 	UITerminal* mUITerminal{ nullptr };
 
 	UITerminal* createTerminal( const std::string& workingDir = "", std::string program = "",

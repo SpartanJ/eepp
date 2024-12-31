@@ -22,11 +22,16 @@ class App;
 
 class StatusAppOutputController : public StatusBarElement {
   public:
-	StatusAppOutputController( UISplitter* mainSplitter, UISceneNode* uiSceneNode, App* app );
+	StatusAppOutputController( UISplitter* mainSplitter, UISceneNode* uiSceneNode,
+							   PluginContextProvider* pluginContext );
 
-	virtual ~StatusAppOutputController(){};
+	virtual ~StatusAppOutputController() {};
+
+	void initNewOutput( const ProjectBuildOutputParser& outputParser );
 
 	void run( const ProjectBuildCommand& runData, const ProjectBuildOutputParser& outputParser );
+
+	void insertBuffer( const std::string& buffer );
 
 	UIWidget* getWidget();
 
@@ -34,7 +39,9 @@ class StatusAppOutputController : public StatusBarElement {
 
 	UICodeEditor* getContainer();
 
-	UIPushButton* getRunButton( App* app );
+	UIPushButton* getRunButton();
+
+	void updateRunButton();
 
   protected:
 	UILinearLayout* mContainer{ nullptr };

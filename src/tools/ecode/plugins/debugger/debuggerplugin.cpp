@@ -1,7 +1,7 @@
-#include "debuggerplugin.hpp"
 #include "../../projectbuild.hpp"
 #include "busprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
+#include "debuggerplugin.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
@@ -303,7 +303,8 @@ void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json ) {
 	static constexpr auto KEY_CWD = "${cwd}";
 	static constexpr auto KEY_ENV = "${env}";
 	static constexpr auto KEY_STOPONENTRY = "${stopOnEntry}";
-	auto runConfig = getManager()->getProjectBuildManager()->getCurrentRunConfig();
+	auto runConfig =
+		getManager()->getPluginContext()->getProjectBuildManager()->getCurrentRunConfig();
 
 	for ( auto& j : json ) {
 		if ( j.is_object() ) {

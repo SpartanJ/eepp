@@ -7,6 +7,7 @@
 #include "filesystemlistener.hpp"
 #include "globalsearchcontroller.hpp"
 #include "notificationcenter.hpp"
+#include "plugins/plugincontextprovider.hpp"
 #include "plugins/pluginmanager.hpp"
 #include "projectbuild.hpp"
 #include "projectdirectorytree.hpp"
@@ -35,7 +36,7 @@ class LinterPlugin;
 class FormatterPlugin;
 class SettingsMenu;
 
-class App : public UICodeEditorSplitter::Client {
+class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
   public:
 	explicit App( const size_t& jobs = 0, const std::vector<std::string>& args = {} );
 
