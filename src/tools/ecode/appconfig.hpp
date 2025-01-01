@@ -54,6 +54,7 @@ struct WindowStateConfig {
 	int displayIndex{ 0 };
 	Vector2i position{ -1, -1 };
 	Uint32 lastRunVersion{ 0 };
+	std::vector<std::string> sidePanelTabsOrder;
 };
 
 struct CodeEditorConfig {

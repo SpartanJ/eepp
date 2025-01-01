@@ -566,6 +566,10 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::vector<SyntaxColorScheme> mColorSchemes;
 	bool mAsyncResourcesLoaded{ false };
 
+	void sortSidePanel();
+
+	void saveSidePanelTabsOrder();
+
 	void saveAllProcess();
 
 	void initLocateBar();

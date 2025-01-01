@@ -74,6 +74,8 @@ class DebuggerClientDap : public DebuggerClient {
 
 	bool configurationDone() override;
 
+	bool started() const override;
+
   protected:
 	std::unique_ptr<Bus> mBus;
 	UnorderedMap<std::string, UnorderedSet<int>> mBreakpoints;

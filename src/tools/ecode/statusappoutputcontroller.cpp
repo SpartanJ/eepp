@@ -31,7 +31,8 @@ UIPushButton* StatusAppOutputController::getRunButton() {
 	return nullptr;
 }
 
-void StatusAppOutputController::initNewOutput( const ProjectBuildOutputParser& outputParser ) {
+void StatusAppOutputController::initNewOutput( const ProjectBuildOutputParser& outputParser,
+											   bool fromBuildPanel ) {
 	show();
 	mAppOutput->getDocument().reset();
 	mAppOutput->invalidateLongestLineWidth();
@@ -66,10 +67,12 @@ void StatusAppOutputController::initNewOutput( const ProjectBuildOutputParser& o
 	mAppOutput->setLineWrapMode( LineWrapMode::Word );
 	mScrollLocked = true;
 
-	UIPushButton* runButton = getRunButton();
+	if ( fromBuildPanel ) {
+		UIPushButton* runButton = getRunButton();
 
-	if ( runButton )
-		runButton->setText( mContext->i18n( "cancel_run", "Cancel Run" ) );
+		if ( runButton )
+			runButton->setText( mContext->i18n( "cancel_run", "Cancel Run" ) );
+	}
 
 	mRunButton->setEnabled( false );
 	mStopButton->setEnabled( true );

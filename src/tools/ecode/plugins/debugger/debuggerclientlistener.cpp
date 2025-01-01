@@ -15,7 +15,7 @@ void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
 			mPlugin->getManager()
 				->getPluginContext()
 				->getStatusAppOutputController()
-				->initNewOutput( {} );
+				->initNewOutput( {}, false );
 		} );
 	}
 }

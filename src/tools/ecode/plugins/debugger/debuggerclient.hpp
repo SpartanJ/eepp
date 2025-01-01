@@ -52,6 +52,8 @@ class DebuggerClient {
 
 	virtual bool start() = 0;
 
+	virtual bool started() const = 0;
+
 	virtual bool resume( int threadId, bool singleThread = false ) = 0;
 
 	virtual bool pause( int threadId ) = 0;

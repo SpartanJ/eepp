@@ -102,6 +102,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	windowState.position.x = iniState.getValueI( "window", "x", -1 );
 	windowState.position.y = iniState.getValueI( "window", "y", -1 );
 	windowState.lastRunVersion = iniState.getValueU( "editor", "last_run_version", 0 );
+	windowState.sidePanelTabsOrder =
+		String::split( iniState.getValue( "ui", "side_panel_tabs_order", "" ), ',' );
 	editor.showLineNumbers = ini.getValueB( "editor", "show_line_numbers", true );
 	editor.showWhiteSpaces = ini.getValueB( "editor", "show_white_spaces", true );
 	editor.showLineEndings = ini.getValueB( "editor", "show_line_endings", false );
@@ -262,6 +264,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	iniState.setValue( "folders", "recentfolders",
 					   String::join( urlEncode( recentFolders ), ';' ) );
 	iniState.setValueU( "editor", "last_run_version", ecode::Version::getVersionNum() );
+	iniState.setValue( "ui", "side_panel_tabs_order",
+					   String::join( windowState.sidePanelTabsOrder, ',' ) );
 	ini.setValueB( "editor", "show_line_numbers", editor.showLineNumbers );
 	ini.setValueB( "editor", "show_white_spaces", editor.showWhiteSpaces );
 	ini.setValueB( "editor", "show_indentation_guides", editor.showIndentationGuides );

@@ -699,6 +699,9 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 }
 
 void App::saveConfig() {
+	if ( !mCurrentProject.empty() )
+		saveSidePanelTabsOrder();
+
 	mConfig.save( mRecentFiles, mRecentFolders,
 				  mProjectSplitter ? mProjectSplitter->getSplitPartition().toString() : "15%",
 				  mMainSplitter ? mMainSplitter->getSplitPartition().toString() : "85%", mWindow,
@@ -1927,6 +1930,8 @@ void App::closeFolder() {
 	if ( mCurrentProject.empty() )
 		return;
 
+	saveSidePanelTabsOrder();
+
 	saveProject( true );
 
 	if ( mProjectBuildManager )
@@ -3119,6 +3124,13 @@ void App::cleanUpRecentFolders() {
 		mRecentFolders = recentFolders;
 }
 
+void App::saveSidePanelTabsOrder() {
+	mConfig.windowState.sidePanelTabsOrder.clear();
+	mConfig.windowState.sidePanelTabsOrder.reserve( mSidePanel->getTabCount() );
+	for ( Uint32 i = 0; i < mSidePanel->getTabCount(); i++ )
+		mConfig.windowState.sidePanelTabsOrder.emplace_back( mSidePanel->getTab( i )->getId() );
+}
+
 void App::loadFolder( std::string path ) {
 	Clock dirTreeClock;
 
@@ -3133,7 +3145,10 @@ void App::loadFolder( std::string path ) {
 			return;
 	}
 
-	if ( !mCurrentProject.empty() ) {
+	bool projectWasLoaded = !mCurrentProject.empty();
+	if ( projectWasLoaded ) {
+		saveSidePanelTabsOrder();
+
 		closeEditors();
 	} else {
 		mSplitter->removeTabWithOwnedWidgetId( "welcome_ecode" );
@@ -3195,6 +3210,25 @@ void App::loadFolder( std::string path ) {
 	mPluginManager->setWorkspaceFolder( rpath );
 
 	saveProject( true, false );
+
+	if ( projectWasLoaded || !mConfig.windowState.sidePanelTabsOrder.empty() )
+		mSidePanel->runOnMainThread( [this] { sortSidePanel(); } );
+}
+
+void App::sortSidePanel() {
+	mConfig.windowState.sidePanelTabsOrder.erase(
+		std::remove_if(
+			mConfig.windowState.sidePanelTabsOrder.begin(),
+			mConfig.windowState.sidePanelTabsOrder.end(),
+			[this]( const std::string& id ) { return mSidePanel->getTabById( id ) == nullptr; } ),
+		mConfig.windowState.sidePanelTabsOrder.end() );
+
+	for ( size_t i = 0; i < mConfig.windowState.sidePanelTabsOrder.size(); ++i ) {
+		UITab* targetTab = mSidePanel->getTabById( mConfig.windowState.sidePanelTabsOrder[i] );
+		UITab* currentTab = mSidePanel->getTab( i );
+		if ( targetTab && currentTab != targetTab )
+			mSidePanel->swapTabs( currentTab, targetTab );
+	}
 }
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS

@@ -1134,13 +1134,6 @@ void ProjectBuildManager::buildSidePanelTab() {
 	mTab->setId( "build_tab" );
 	mTab->setTextAsFallback( true );
 
-	auto tabIndex = mSidePanel->getTabIndex( mTab );
-	if ( tabIndex > 0 ) {
-		auto prevTab = mSidePanel->getTab( tabIndex - 1 );
-		if ( prevTab && prevTab->getId() != "treeview_tab" )
-			mSidePanel->swapTabs( mTab, prevTab );
-	}
-
 	updateSidePanelTab();
 }
 

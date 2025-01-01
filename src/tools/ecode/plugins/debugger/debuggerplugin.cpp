@@ -1,8 +1,8 @@
+#include "debuggerplugin.hpp"
 #include "../../projectbuild.hpp"
 #include "../../uistatusbar.hpp"
 #include "busprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
-#include "debuggerplugin.hpp"
 #include "statusdebuggercontroller.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/scopedop.hpp>
@@ -227,7 +227,7 @@ void DebuggerPlugin::buildSidePanelTab() {
 		UIIcon* icon = findIcon( "debug" );
 		mTab = mSidePanel->add( i18n( "debugger", "Debugger" ), mTabContents,
 								icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
-		mTab->setId( "debugger" );
+		mTab->setId( "debugger_tab" );
 		mTab->setTextAsFallback( true );
 
 		updateSidePanelTab();
@@ -245,7 +245,7 @@ void DebuggerPlugin::buildSidePanelTab() {
 			<DropDownList id="debugger_list" layout_width="mp" layout_height="wrap_content" margin-top="2dp" />
 			<TextView text="@string(debugger_configuration, Debugger Configuration)" focusable="false" margin-top="8dp" />
 			<DropDownList id="debugger_conf_list" layout_width="mp" layout_height="wrap_content" margin-top="2dp" />
-			<PushButton id="run_button" lw="mp" lh="wc" text="@string(run, Run)" margin-top="8dp" icon="icon(play, 12dp)" />
+			<PushButton id="debugger_run_button" lw="mp" lh="wc" text="@string(run, Run)" margin-top="8dp" icon="icon(play, 12dp)" />
 		</vbox>
 	</vbox>
 	)html";
@@ -307,12 +307,16 @@ void DebuggerPlugin::updateSidePanelTab() {
 
 	updateDebuggerConfigurationList();
 
-	mRunButton = mTabContents->find<UIPushButton>( "run_button" );
+	mRunButton = mTabContents->find<UIPushButton>( "debugger_run_button" );
 
 	if ( !mRunButton->hasEventsOfType( Event::MouseClick ) ) {
 		mRunButton->onClick( [this]( auto ) {
-			runConfig( mUIDebuggerList->getListBox()->getItemSelectedText().toUtf8(),
-					   mUIDebuggerConfList->getListBox()->getItemSelectedText().toUtf8() );
+			if ( mDebugger && mDebugger->started() ) {
+				exitDebugger();
+			} else {
+				runConfig( mUIDebuggerList->getListBox()->getItemSelectedText().toUtf8(),
+						   mUIDebuggerConfList->getListBox()->getItemSelectedText().toUtf8() );
+			}
 		} );
 	}
 }
@@ -358,9 +362,9 @@ void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json ) {
 			replaceKeysInJson( j );
 		} else if ( j.is_string() ) {
 			std::string val( j.get<std::string>() );
-			if ( runConfig && !runConfig->cmd.empty() && val == KEY_FILE ) {
+			if ( runConfig && val == KEY_FILE ) {
 				j = runConfig->cmd;
-			} else if ( runConfig && !runConfig->args.empty() && val == KEY_ARGS ) {
+			} else if ( runConfig && val == KEY_ARGS ) {
 				auto argsArr = nlohmann::json::array();
 				auto args = Process::parseArgs( runConfig->args );
 				for ( const auto& arg : args )
@@ -412,13 +416,17 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 
 	mRunButton->setEnabled( false );
 
-	mThreadPool->run(
-		[this] { mDebugger->start(); },
-		[this]( const Uint64& ) {
-			if ( !mDebugger || mDebugger->state() != DebuggerClient::State::Running ) {
-				mRunButton->runOnMainThread( [this] { mRunButton->setEnabled( false ); } );
-			}
-		} );
+	mThreadPool->run( [this] { mDebugger->start(); },
+					  [this]( const Uint64& ) {
+						  if ( !mDebugger || !mDebugger->started() ) {
+							  exitDebugger();
+						  } else {
+							  mRunButton->runOnMainThread( [this] {
+								  mRunButton->setEnabled( true );
+								  mRunButton->setText( i18n( "cancel_run", "Cancel Run" ) );
+							  } );
+						  }
+					  } );
 }
 
 void DebuggerPlugin::exitDebugger() {
@@ -428,8 +436,11 @@ void DebuggerPlugin::exitDebugger() {
 		mDebugger.reset();
 		mListener.reset();
 	} );
-	if ( getUISceneNode() ) {
-		getUISceneNode()->runOnMainThread( [this] { mRunButton->setEnabled( true ); } );
+	if ( getUISceneNode() && mRunButton ) {
+		mRunButton->runOnMainThread( [this] {
+			mRunButton->setText( i18n( "run", "Run" ) );
+			mRunButton->setEnabled( true );
+		} );
 	}
 }
 

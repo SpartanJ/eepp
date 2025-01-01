@@ -565,6 +565,17 @@ UITab* UITabWidget::getTab( const String& text ) {
 	return NULL;
 }
 
+UITab* UITabWidget::getTabById( const std::string& text ) {
+	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
+		if ( mTabs[i]->isType( UI_TYPE_TAB ) ) {
+			UITab* tTab = mTabs[i]->asType<UITab>();
+			if ( tTab->getId() == text )
+				return tTab;
+		}
+	}
+	return nullptr;
+}
+
 Uint32 UITabWidget::getTabIndex( UITab* tab ) {
 	for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
 		if ( mTabs[i] == tab )

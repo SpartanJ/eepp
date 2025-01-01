@@ -721,4 +721,8 @@ bool DebuggerClientDap::configurationDone() {
 	return true;
 }
 
+bool DebuggerClientDap::started() const {
+	return mStarted;
+}
+
 } // namespace ecode::dap

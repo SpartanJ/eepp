@@ -68,6 +68,8 @@ class EE_API UITabWidget : public UIWidget {
 
 	UITab* getTab( const String& text );
 
+	UITab* getTabById( const std::string& text );
+
 	Uint32 getTabIndex( UITab* tab );
 
 	Uint32 getTabCount() const;

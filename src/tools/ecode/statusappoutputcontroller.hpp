@@ -25,7 +25,7 @@ class StatusAppOutputController : public StatusBarElement {
 
 	virtual ~StatusAppOutputController() {};
 
-	void initNewOutput( const ProjectBuildOutputParser& outputParser );
+	void initNewOutput( const ProjectBuildOutputParser& outputParser, bool fromBuildPanel = true );
 
 	void run( const ProjectBuildCommand& runData, const ProjectBuildOutputParser& outputParser );
 
