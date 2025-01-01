@@ -18,8 +18,6 @@ using namespace EE::UI::Tools;
 
 namespace ecode {
 
-class App;
-
 class StatusAppOutputController : public StatusBarElement {
   public:
 	StatusAppOutputController( UISplitter* mainSplitter, UISceneNode* uiSceneNode,

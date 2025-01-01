@@ -49,6 +49,9 @@ class DebuggerPlugin : public PluginBase {
   protected:
 	friend class DebuggerClientListener;
 
+	bool mInitialized{ false };
+	std::string mProjectPath;
+
 	std::vector<DapTool> mDaps;
 	std::unique_ptr<DebuggerClient> mDebugger;
 	std::unique_ptr<DebuggerClientListener> mListener;
@@ -71,11 +74,15 @@ class DebuggerPlugin : public PluginBase {
 
 	void buildSidePanelTab();
 
+	void buildStatusBar();
+
 	void updateSidePanelTab();
 
 	void updateDebuggerConfigurationList();
 
 	void hideSidePanel();
+
+	void hideStatusBarElement();
 
 	void loadDAPConfig( const std::string& path, bool updateConfigFile );
 

@@ -1,5 +1,5 @@
-#include "lspclientplugin.hpp"
 #include "../../version.hpp"
+#include "lspclientplugin.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
@@ -642,11 +642,12 @@ bool LSPClientPlugin::onMouseClick( UICodeEditor* editor, const Vector2i& pos,
 	const bool breadcrumbClick = mBreadcrumb && ( flags & EE_BUTTON_LMASK );
 	const Vector2f localPos( breadcrumbClick ? editor->convertToNodeSpace( pos.asFloat() )
 											 : Vector2f::Zero );
-	if ( breadcrumbClick && localPos.y < mPluginTopSpace &&
+	if ( breadcrumbClick && localPos.y >= 0 && localPos.y < mPluginTopSpace &&
 		 localPos.x < editor->getTopAreaWidth() ) {
 		const Vector2f downLocalPos( editor->convertToNodeSpace(
 			editor->getEventDispatcher()->getMouseDownPos().asFloat() ) );
-		if ( downLocalPos.y < mPluginTopSpace && downLocalPos.x < editor->getTopAreaWidth() ) {
+		if ( downLocalPos.y >= 0 && downLocalPos.y < mPluginTopSpace &&
+			 downLocalPos.x < editor->getTopAreaWidth() ) {
 			editor->getDocument().execute( "lsp-show-document-symbols", editor );
 			return true;
 		}

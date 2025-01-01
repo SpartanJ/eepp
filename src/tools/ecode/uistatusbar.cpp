@@ -1,9 +1,9 @@
-#include "uistatusbar.hpp"
 #include "globalsearchcontroller.hpp"
 #include "plugins/plugincontextprovider.hpp"
 #include "statusappoutputcontroller.hpp"
 #include "statusbuildoutputcontroller.hpp"
 #include "statusterminalcontroller.hpp"
+#include "uistatusbar.hpp"
 #include "universallocator.hpp"
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/window.hpp>
@@ -185,6 +185,7 @@ UIPushButton* UIStatusBar::insertStatusBarElement( std::string id, const String&
 		button->beginAttributesTransaction();
 		button->setText( text );
 		button->setParent( this )->setId( id );
+		button->setClass( "status_but" );
 		UIWidget* statusSep = findByClass( "status_sep" );
 		if ( statusSep )
 			button->toPosition( statusSep->getNodeIndex() );
@@ -198,7 +199,11 @@ UIPushButton* UIStatusBar::insertStatusBarElement( std::string id, const String&
 }
 
 void UIStatusBar::removeStatusBarElement( const std::string& id ) {
-	mElements.erase( id );
+	auto elemIt = mElements.find( id );
+	if ( elemIt != mElements.end() ) {
+		elemIt->second.first->close();
+		mElements.erase( elemIt );
+	}
 }
 
 } // namespace ecode

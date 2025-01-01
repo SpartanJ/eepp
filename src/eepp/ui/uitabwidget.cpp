@@ -1,3 +1,4 @@
+#include "eepp/ui/uiscenenode.hpp"
 #include <algorithm>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/primitives.hpp>
@@ -1051,6 +1052,13 @@ std::optional<SplitDirection> UITabWidget::getDropDirection() const {
 
 	if ( mTabBar->isVisible() && mousePos.y <= mTabBar->getPixelsSize().y )
 		return {};
+
+	// Tab still attached to parent?
+	Node* nodeDragging = getUISceneNode()->getEventDispatcher()->getNodeDragging();
+	if ( nodeDragging && nodeDragging->isType( UI_TYPE_TAB ) &&
+		 !( nodeDragging->asType<UINode>()->getFlags() & UI_DRAG_VERTICAL ) ) {
+		return {};
+	}
 
 	if ( mousePos.y <= mSize.y * mSplitEdgePercent ) {
 		return SplitDirection::Top;

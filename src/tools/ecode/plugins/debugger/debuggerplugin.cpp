@@ -1,7 +1,9 @@
 #include "../../projectbuild.hpp"
+#include "../../uistatusbar.hpp"
 #include "busprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
 #include "debuggerplugin.hpp"
+#include "statusdebuggercontroller.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
@@ -49,6 +51,11 @@ DebuggerPlugin::~DebuggerPlugin() {
 
 	if ( mSidePanel && mTab )
 		mSidePanel->removeTab( mTab );
+
+	if ( getManager()->getPluginContext()->getStatusBar() ) {
+		getManager()->getPluginContext()->getStatusBar()->removeStatusBarElement(
+			"status_app_debugger" );
+	}
 
 	mDebugger.reset();
 	mListener.reset();
@@ -180,11 +187,21 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 PluginRequestHandle DebuggerPlugin::processMessage( const PluginMessage& msg ) {
 	switch ( msg.type ) {
 		case PluginMessageType::WorkspaceFolderChanged: {
+			mProjectPath = msg.asJSON()["folder"];
 
+			if ( getUISceneNode() && mSidePanel )
+				getUISceneNode()->runOnMainThread( [this] {
+					if ( mProjectPath.empty() )
+						hideSidePanel();
+				} );
+
+			updateUI();
+			mInitialized = true;
 			break;
 		}
 		case ecode::PluginMessageType::UIReady: {
-			updateUI();
+			if ( !mInitialized )
+				updateUI();
 			break;
 		}
 		default:
@@ -197,16 +214,23 @@ void DebuggerPlugin::updateUI() {
 	if ( !getUISceneNode() )
 		return;
 
-	getUISceneNode()->runOnMainThread( [this] { buildSidePanelTab(); } );
+	getUISceneNode()->runOnMainThread( [this] {
+		buildSidePanelTab();
+		buildStatusBar();
+	} );
 }
 
 void DebuggerPlugin::buildSidePanelTab() {
 	if ( mTabContents && !mTab ) {
+		if ( mProjectPath.empty() )
+			return;
 		UIIcon* icon = findIcon( "debug" );
 		mTab = mSidePanel->add( i18n( "debugger", "Debugger" ), mTabContents,
 								icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
 		mTab->setId( "debugger" );
 		mTab->setTextAsFallback( true );
+
+		updateSidePanelTab();
 		return;
 	}
 	if ( mTab )
@@ -229,13 +253,36 @@ void DebuggerPlugin::buildSidePanelTab() {
 	mTabContents = getUISceneNode()->loadLayoutFromString( STYLE );
 	mTab = mSidePanel->add( i18n( "debugger", "Debugger" ), mTabContents,
 							icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
-	mTab->setId( "source_control" );
+	mTab->setId( "debugger_tab" );
 	mTab->setTextAsFallback( true );
 
 	mTabContents->bind( "debugger_list", mUIDebuggerList );
 	mTabContents->bind( "debugger_conf_list", mUIDebuggerConfList );
 
 	updateSidePanelTab();
+}
+
+void DebuggerPlugin::buildStatusBar() {
+	if ( mProjectPath.empty() ) {
+		hideStatusBarElement();
+		return;
+	}
+	if ( getManager()->getPluginContext()->getStatusBar() ) {
+		auto but = getManager()->getPluginContext()->getStatusBar()->find( "status_app_debugger" );
+		if ( but ) {
+			but->setVisible( true );
+			return;
+		}
+	}
+
+	auto context = getManager()->getPluginContext();
+	UIStatusBar* statusBar = context->getStatusBar();
+
+	auto debuggerStatusElem = std::make_shared<StatusDebuggerController>(
+		context->getMainSplitter(), getUISceneNode(), context );
+
+	statusBar->insertStatusBarElement( "status_app_debugger", i18n( "debugger", "Debugger" ),
+									   "icon(debug, 11dp)", debuggerStatusElem );
 }
 
 void DebuggerPlugin::updateSidePanelTab() {
@@ -390,6 +437,14 @@ void DebuggerPlugin::hideSidePanel() {
 	if ( mSidePanel && mTab ) {
 		mSidePanel->removeTab( mTab, false );
 		mTab = nullptr;
+	}
+}
+
+void DebuggerPlugin::hideStatusBarElement() {
+	if ( getManager()->getPluginContext()->getStatusBar() ) {
+		auto but = getManager()->getPluginContext()->getStatusBar()->find( "status_app_debugger" );
+		if ( but )
+			but->setVisible( false );
 	}
 }
 
