@@ -6,6 +6,7 @@
       "run": {
         "command": "gdb --interpreter=dap"
       },
+      "languages": [ "cpp", "c", "d", "go", "objectivec", "fortran", "pascal", "rust" ],
       "configurations": [
         {
           "name": "launch binary",
@@ -27,6 +28,7 @@
       "run": {
         "command": "lldb-dap"
       },
+      "languages": [ "cpp", "c", "odin", "rust", "zig" ],
       "configurations": [
         {
           "name": "launch binary",

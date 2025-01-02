@@ -118,11 +118,14 @@ void EventDispatcher::update( const Time& time ) {
 	if ( NULL != mNodeDragging )
 		mNodeDragging->onCalculateDrag( mMousePos, mInput->getPressTrigger() );
 
+	mJustPressed = false;
+
 	if ( mInput->getPressTrigger() ) {
 		if ( !mFirstPress ) {
 			mDownNode = mOverNode;
 			mMouseDownPos = mMousePosi;
 			mFirstPress = true;
+			mJustPressed = true;
 		}
 
 		if ( NULL != mOverNode ) {
@@ -142,6 +145,7 @@ void EventDispatcher::update( const Time& time ) {
 			mDownNode = mOverNode;
 			mMouseDownPos = mMousePosi;
 			mFirstPress = true;
+			mJustPressed = true;
 		}
 		mOverNode->onMouseDown( mMousePosi, mInput->getReleaseTrigger() );
 		sendMsg( mOverNode, NodeMessage::MouseDown, mInput->getReleaseTrigger() );
@@ -322,6 +326,10 @@ Node* EventDispatcher::getLastFocusNode() const {
 
 void EventDispatcher::setLastFocusNode( Node* lastFocusNode ) {
 	mLastFocusNode = lastFocusNode;
+}
+
+bool EventDispatcher::isFirstPress() const {
+	return mJustPressed;
 }
 
 Node* EventDispatcher::getMouseDownNode() const {

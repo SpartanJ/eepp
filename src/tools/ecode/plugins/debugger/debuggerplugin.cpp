@@ -4,6 +4,7 @@
 #include "busprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
 #include "statusdebuggercontroller.hpp"
+#include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
@@ -151,6 +152,16 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 					dapTool.configurations.emplace_back( std::move( dapConfig ) );
 				}
 			}
+
+			if ( dap.contains( "languages" ) && dap["languages"].is_array() ) {
+				auto& languages = dap["languages"];
+				dapTool.languagesSupported.reserve( languages.size() );
+				for ( const auto& lang : languages ) {
+					if ( lang.is_string() )
+						dapTool.languagesSupported.emplace_back( lang.get<std::string>() );
+				}
+			}
+
 			mDaps.emplace_back( std::move( dapTool ) );
 		}
 	}
@@ -379,6 +390,101 @@ void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json ) {
 			}
 		}
 	}
+}
+
+void DebuggerPlugin::onRegisterEditor( UICodeEditor* editor ) {
+	editor->registerGutterSpace( this, PixelDensity::dpToPx( 8 ), 0 );
+}
+
+void DebuggerPlugin::onUnregisterEditor( UICodeEditor* editor ) {
+	editor->unregisterGutterSpace( this );
+}
+
+void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
+											const DocumentLineRange& lineRange,
+											const Vector2f& startScroll,
+											const Vector2f& screenStart, const Float& lineHeight,
+											const Float&, const int&, const Float& ) {
+	if ( !editor->getDocument().hasFilepath() )
+		return;
+	auto docIt = mBreakpoints.find( editor->getDocument().getFilePath() );
+	if ( docIt == mBreakpoints.end() || docIt->second.empty() )
+		return;
+	const auto& breakpoints = docIt->second;
+	Primitives p;
+	Float lineOffset = editor->getLineOffset();
+	p.setColor( Color( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::Error ) )
+					.blendAlpha( editor->getAlpha() ) );
+	Float gutterSpace = editor->getGutterSpace( this );
+	Float radius = PixelDensity::dpToPx( 3 );
+	Float offset = editor->getGutterLocalStartOffset( this );
+
+	for ( const SourceBreakpoint& breakpoint : breakpoints ) {
+		if ( breakpoint.line >= lineRange.first && breakpoint.line <= lineRange.second ) {
+			if ( !editor->getDocumentView().isLineVisible( breakpoint.line ) )
+				continue;
+
+			auto lnPos( Vector2f(
+				screenStart.x - editor->getPluginsGutterSpace() + offset,
+				startScroll.y +
+					editor->getDocumentView().getLineYOffset( breakpoint.line, lineHeight ) +
+					lineOffset ) );
+
+			// p.setColor( Color::Gray );
+			// p.drawRectangle( { lnPos, Sizef{ gutterSpace, lineHeight } } );
+
+			p.setColor( Color( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::Error ) )
+							.blendAlpha( editor->getAlpha() ) );
+
+			p.drawCircle( { lnPos.x + radius + eefloor( ( gutterSpace - radius ) * 0.5f ),
+							lnPos.y + lineHeight * 0.5f },
+						  radius );
+		}
+	}
+}
+
+bool DebuggerPlugin::onLineNumberClick( UICodeEditor* editor, Uint32 lineNumber ) {
+	if ( !editor->getDocument().hasFilepath() )
+		return false;
+	if ( !isSupportedByAnyDebugger( editor->getDocument().getSyntaxDefinition().getLSPName() ) )
+		return false;
+	Lock l( mBreakpointsMutex );
+	auto& breakpoints = mBreakpoints[editor->getDocument().getFilePath()];
+	auto breakpointIt = breakpoints.find( SourceBreakpoint( lineNumber ) );
+	if ( breakpointIt != breakpoints.end() ) {
+		breakpoints.erase( breakpointIt );
+	} else {
+		breakpoints.insert( SourceBreakpoint( lineNumber ) );
+	}
+	editor->invalidateDraw();
+	return true;
+}
+
+bool DebuggerPlugin::onMouseDown( UICodeEditor* editor, const Vector2i& position,
+								  const Uint32& flags ) {
+	if ( !( flags & EE_BUTTON_LMASK ) )
+		return false;
+	Float offset = editor->getGutterLocalStartOffset( this );
+	Vector2f localPos( editor->convertToNodeSpace( position.asFloat() ) );
+	if ( localPos.x >= editor->getPixelsPadding().Left + offset &&
+		 localPos.x < editor->getPixelsPadding().Left + offset + editor->getGutterSpace( this ) &&
+		 localPos.y > editor->getPluginsTopSpace() ) {
+		if ( editor->getUISceneNode()->getEventDispatcher()->isFirstPress() ) {
+			auto cursorPos( editor->resolveScreenPosition( position.asFloat() ) );
+			onLineNumberClick( editor, cursorPos.line() );
+		}
+		return true;
+	}
+	return false;
+}
+
+bool DebuggerPlugin::isSupportedByAnyDebugger( const std::string& language ) {
+	for ( const auto& dap : mDaps ) {
+		if ( std::any_of( dap.languagesSupported.begin(), dap.languagesSupported.end(),
+						  [&language]( const auto& l ) { return l == language; } ) )
+			return true;
+	}
+	return false;
 }
 
 void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& configuration ) {

@@ -118,6 +118,8 @@ class EE_API EventDispatcher {
 
 	void setLastFocusNode( Node* lastFocusNode );
 
+	bool isFirstPress() const;
+
   protected:
 	EE::Window::Window* mWindow;
 	Input* mInput;
@@ -134,7 +136,8 @@ class EE_API EventDispatcher {
 	Vector2i mClickPos;
 	Int32 mCbId;
 	Uint32 mIMECbId;
-	bool mFirstPress;
+	bool mFirstPress{ false };
+	bool mJustPressed{ false };
 	bool mDisableMousePress{ false };
 	bool mJustDisabledMousePress{ false };
 	Node* mNodeWasDragging;

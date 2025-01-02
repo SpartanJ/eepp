@@ -170,6 +170,8 @@ void PluginBase::onRegister( UICodeEditor* editor ) {
 		onRegisterDocument( editor->getDocumentRef().get() );
 	}
 	mEditorDocs[editor] = editor->getDocumentRef().get();
+
+	onRegisterEditor( editor );
 }
 
 void PluginBase::onUnregister( UICodeEditor* editor ) {

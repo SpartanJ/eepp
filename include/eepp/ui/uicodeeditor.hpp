@@ -107,6 +107,18 @@ class UICodeEditorPlugin {
 	virtual void drawTop( UICodeEditor* /*editor*/, const Vector2f& /*screenStart*/,
 						  const Sizef& /*size*/, const Float& /*fontSize*/ ) {};
 
+	virtual void
+	drawLineNumbersBefore( UICodeEditor* /*editor*/, const DocumentLineRange& /*lineRange*/,
+						   const Vector2f& /*startScroll*/, const Vector2f& /*screenStart*/,
+						   const Float& /*lineHeight*/, const Float& /*lineNumberWidth*/,
+						   const int& /*lineNumberDigits*/, const Float& /*fontSize*/ ) {}
+
+	virtual void
+	drawLineNumbersAfter( UICodeEditor* /*editor*/, const DocumentLineRange& /*lineRange*/,
+						  const Vector2f& /*startScroll*/, const Vector2f& /*screenStart*/,
+						  const Float& /*lineHeight*/, const Float& /*lineNumberWidth*/,
+						  const int& /*lineNumberDigits*/, const Float& /*fontSize*/ ) {}
+
 	Uint32 addOnReadyCallback( const OnReadyCb& cb ) {
 		mOnReadyCallbacks[mReadyCbNum++] = cb;
 		return mReadyCbNum;
@@ -752,6 +764,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	CharacterAlignment getTabIndentAlignment() const { return mTabIndentAlignment; }
 
 	void setTabIndentAlignment( CharacterAlignment alignment );
+
+	const DocumentView& getDocumentView() const { return mDocView; }
+
+	Float getGutterLocalStartOffset( UICodeEditorPlugin* plugin ) const;
+
+	Float getGutterSpace( UICodeEditorPlugin* plugin ) const;
+
+	Float getPluginsGutterSpace() const;
 
   protected:
 	struct LastXOffset {

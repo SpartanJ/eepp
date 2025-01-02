@@ -1,8 +1,8 @@
 #pragma once
 
+#include <eepp/core/containers.hpp>
 #include <optional>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include <nlohmann/json.hpp>
@@ -169,6 +169,8 @@ struct SourceBreakpoint {
 	SourceBreakpoint( const int line );
 
 	json toJson() const;
+
+	bool operator==( const SourceBreakpoint& other ) const { return line == other.line; }
 };
 
 struct Breakpoint {
@@ -474,4 +476,16 @@ struct GotoTarget {
 	static std::vector<GotoTarget> parseList( const json& variables );
 };
 
-} // namespace dap
+} // namespace ecode::dap
+
+template <> struct std::hash<ecode::dap::SourceBreakpoint> {
+	std::size_t operator()( ecode::dap::SourceBreakpoint const& breakpoint ) const noexcept {
+		size_t h1 = std::hash<int>()( breakpoint.line );
+		size_t h2 = breakpoint.column ? std::hash<int>()( *breakpoint.column ) : 0;
+		size_t h3 = breakpoint.condition ? std::hash<std::string>()( *breakpoint.condition ) : 0;
+		size_t h4 =
+			breakpoint.hitCondition ? std::hash<std::string>()( *breakpoint.hitCondition ) : 0;
+		size_t h5 = breakpoint.logMessage ? std::hash<std::string>()( *breakpoint.logMessage ) : 0;
+		return hashCombine( h1, h2, h3, h4, h5 );
+	}
+};

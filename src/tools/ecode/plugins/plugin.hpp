@@ -104,6 +104,8 @@ class PluginBase : public Plugin {
 
 	virtual void onRegisterDocument( TextDocument* ) {};
 
+	virtual void onRegisterEditor( UICodeEditor* ) {};
+
 	virtual void onUnregisterEditor( UICodeEditor* ) {};
 
 	//! Usually used to unregister commands in a document

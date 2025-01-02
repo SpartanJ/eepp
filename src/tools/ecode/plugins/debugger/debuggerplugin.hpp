@@ -23,6 +23,7 @@ struct DapConfig {
 struct DapTool {
 	std::string name;
 	std::string url;
+	std::vector<std::string> languagesSupported;
 	DapRunConfig run;
 	std::vector<DapConfig> configurations;
 };
@@ -63,6 +64,8 @@ class DebuggerPlugin : public PluginBase {
 	UIDropDownList* mUIDebuggerList{ nullptr };
 	UIDropDownList* mUIDebuggerConfList{ nullptr };
 	UIPushButton* mRunButton{ nullptr };
+	UnorderedMap<std::string, UnorderedSet<SourceBreakpoint>> mBreakpoints;
+	Mutex mBreakpointsMutex;
 
 	DebuggerPlugin( PluginManager* pluginManager, bool sync );
 
@@ -91,6 +94,21 @@ class DebuggerPlugin : public PluginBase {
 	void exitDebugger();
 
 	void replaceKeysInJson( nlohmann::json& json );
+
+	void onRegisterEditor( UICodeEditor* ) override;
+
+	void onUnregisterEditor( UICodeEditor* ) override;
+
+	void drawLineNumbersBefore( UICodeEditor* editor, const DocumentLineRange& lineRange,
+								const Vector2f& startScroll, const Vector2f& screenStart,
+								const Float& lineHeight, const Float& lineNumberWidth,
+								const int& lineNumberDigits, const Float& fontSize ) override;
+
+	bool onLineNumberClick( UICodeEditor* editor, Uint32 lineNumber );
+
+	bool onMouseDown( UICodeEditor*, const Vector2i&, const Uint32& flags ) override;
+
+	bool isSupportedByAnyDebugger( const std::string& language );
 };
 
 } // namespace ecode
