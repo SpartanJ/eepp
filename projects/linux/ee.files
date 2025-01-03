@@ -1588,6 +1588,8 @@
 ../../src/tools/ecode/plugins/debugger/debuggerclientlistener.hpp
 ../../src/tools/ecode/plugins/debugger/debuggerplugin.cpp
 ../../src/tools/ecode/plugins/debugger/debuggerplugin.hpp
+../../src/tools/ecode/plugins/debugger/statusdebuggercontroller.cpp
+../../src/tools/ecode/plugins/debugger/statusdebuggercontroller.hpp
 ../../src/tools/ecode/plugins/formatter/formatterplugin.cpp
 ../../src/tools/ecode/plugins/formatter/formatterplugin.hpp
 ../../src/tools/ecode/notificationcenter.cpp

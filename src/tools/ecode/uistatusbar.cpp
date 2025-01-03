@@ -1,9 +1,9 @@
+#include "uistatusbar.hpp"
 #include "globalsearchcontroller.hpp"
 #include "plugins/plugincontextprovider.hpp"
 #include "statusappoutputcontroller.hpp"
 #include "statusbuildoutputcontroller.hpp"
 #include "statusterminalcontroller.hpp"
-#include "uistatusbar.hpp"
 #include "universallocator.hpp"
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/window.hpp>
@@ -158,6 +158,13 @@ Uint32 UIStatusBar::onMessage( const NodeMessage* msg ) {
 void UIStatusBar::setPluginContextProvider( PluginContextProvider* app ) {
 	mContext = app;
 	updateState();
+}
+
+std::shared_ptr<StatusBarElement> UIStatusBar::getStatusBarElement( const std::string& id ) const {
+	auto elemIt = mElements.find( id );
+	if ( elemIt != mElements.end() )
+		return elemIt->second.second;
+	return {};
 }
 
 void UIStatusBar::onVisibilityChange() {

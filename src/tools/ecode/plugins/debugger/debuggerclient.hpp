@@ -89,11 +89,11 @@ class DebuggerClient {
 	virtual bool supportsTerminate() const = 0;
 
 	virtual bool setBreakpoints( const std::string& path,
-								 const std::vector<dap::SourceBreakpoint> breakpoints,
+								 const std::vector<dap::SourceBreakpoint>& breakpoints,
 								 bool sourceModified = false ) = 0;
 
 	virtual bool setBreakpoints( const dap::Source& source,
-								 const std::vector<dap::SourceBreakpoint> breakpoints,
+								 const std::vector<dap::SourceBreakpoint>& breakpoints,
 								 bool sourceModified = false ) = 0;
 
 	virtual bool gotoTargets( const std::string& path, const int line,

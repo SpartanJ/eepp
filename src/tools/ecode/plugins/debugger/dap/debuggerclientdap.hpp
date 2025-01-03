@@ -57,11 +57,11 @@ class DebuggerClientDap : public DebuggerClient {
 	bool supportsTerminate() const override;
 
 	bool setBreakpoints( const std::string& path,
-						 const std::vector<dap::SourceBreakpoint> breakpoints,
+						 const std::vector<dap::SourceBreakpoint>& breakpoints,
 						 bool sourceModified = false ) override;
 
 	bool setBreakpoints( const dap::Source& source,
-						 const std::vector<dap::SourceBreakpoint> breakpoints,
+						 const std::vector<dap::SourceBreakpoint>& breakpoints,
 						 bool sourceModified = false ) override;
 
 	bool gotoTargets( const std::string& path, const int line,

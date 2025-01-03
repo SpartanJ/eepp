@@ -173,6 +173,16 @@ struct SourceBreakpoint {
 	bool operator==( const SourceBreakpoint& other ) const { return line == other.line; }
 };
 
+struct SourceBreakpointStateful : public SourceBreakpoint {
+	bool enabled{ true };
+
+	SourceBreakpointStateful() = default;
+	SourceBreakpointStateful( const json& body ) : SourceBreakpoint( body ) {}
+	SourceBreakpointStateful( const int line ) : SourceBreakpoint( line ) {}
+
+	bool operator==( const SourceBreakpointStateful& other ) const { return line == other.line; }
+};
+
 struct Breakpoint {
 	/**
 	 * An optional identifier for the breakpoint. It is needed if breakpoint
@@ -487,5 +497,18 @@ template <> struct std::hash<ecode::dap::SourceBreakpoint> {
 			breakpoint.hitCondition ? std::hash<std::string>()( *breakpoint.hitCondition ) : 0;
 		size_t h5 = breakpoint.logMessage ? std::hash<std::string>()( *breakpoint.logMessage ) : 0;
 		return hashCombine( h1, h2, h3, h4, h5 );
+	}
+};
+
+template <> struct std::hash<ecode::dap::SourceBreakpointStateful> {
+	std::size_t operator()( ecode::dap::SourceBreakpointStateful const& breakpoint ) const noexcept {
+		size_t h1 = std::hash<int>()( breakpoint.line );
+		size_t h2 = breakpoint.column ? std::hash<int>()( *breakpoint.column ) : 0;
+		size_t h3 = breakpoint.condition ? std::hash<std::string>()( *breakpoint.condition ) : 0;
+		size_t h4 =
+			breakpoint.hitCondition ? std::hash<std::string>()( *breakpoint.hitCondition ) : 0;
+		size_t h5 = breakpoint.logMessage ? std::hash<std::string>()( *breakpoint.logMessage ) : 0;
+		size_t h6 = std::hash<bool>()( breakpoint.enabled );
+		return hashCombine( h1, h2, h3, h4, h5, h6 );
 	}
 };

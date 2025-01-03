@@ -64,7 +64,7 @@ class DebuggerPlugin : public PluginBase {
 	UIDropDownList* mUIDebuggerList{ nullptr };
 	UIDropDownList* mUIDebuggerConfList{ nullptr };
 	UIPushButton* mRunButton{ nullptr };
-	UnorderedMap<std::string, UnorderedSet<SourceBreakpoint>> mBreakpoints;
+	UnorderedMap<std::string, UnorderedSet<SourceBreakpointStateful>> mBreakpoints;
 	Mutex mBreakpointsMutex;
 
 	DebuggerPlugin( PluginManager* pluginManager, bool sync );

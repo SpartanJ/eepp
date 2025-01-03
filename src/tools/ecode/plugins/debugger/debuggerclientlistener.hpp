@@ -1,5 +1,6 @@
 #pragma once
 #include "debuggerclient.hpp"
+#include "statusdebuggercontroller.hpp"
 
 namespace ecode {
 
@@ -44,6 +45,8 @@ class DebuggerClientListener : public DebuggerClient::Listener {
   protected:
 	DebuggerClient* mClient{ nullptr };
 	DebuggerPlugin* mPlugin{ nullptr };
+
+	StatusDebuggerController* getStatusDebuggerController() const;
 };
 
 } // namespace ecode

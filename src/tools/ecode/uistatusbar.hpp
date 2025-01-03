@@ -51,6 +51,8 @@ class UIStatusBar : public UILinearLayout, public WidgetCommandExecuter {
 
 	void setPluginContextProvider( PluginContextProvider* app );
 
+	std::shared_ptr<StatusBarElement> getStatusBarElement( const std::string& id ) const;
+
   protected:
 	UnorderedMap<std::string, std::pair<UIPushButton*, std::shared_ptr<StatusBarElement>>>
 		mElements;

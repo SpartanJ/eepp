@@ -27,8 +27,17 @@ class StatusDebuggerController : public StatusBarElement {
 
 	UIWidget* createWidget();
 
+	UITableView* getUIThreads();
+
+	UITableView* getUIStack();
+
+	UITableView* getUIBreakpoints();
+
   protected:
 	UILinearLayout* mContainer{ nullptr };
+	UITableView* mUIThreads{ nullptr };
+	UITableView* mUIStack{ nullptr };
+	UITableView* mUIBreakpoints{ nullptr };
 
 	void createContainer();
 };

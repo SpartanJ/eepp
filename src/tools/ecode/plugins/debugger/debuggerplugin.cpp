@@ -450,11 +450,11 @@ bool DebuggerPlugin::onLineNumberClick( UICodeEditor* editor, Uint32 lineNumber 
 		return false;
 	Lock l( mBreakpointsMutex );
 	auto& breakpoints = mBreakpoints[editor->getDocument().getFilePath()];
-	auto breakpointIt = breakpoints.find( SourceBreakpoint( lineNumber ) );
+	auto breakpointIt = breakpoints.find( SourceBreakpointStateful( lineNumber ) );
 	if ( breakpointIt != breakpoints.end() ) {
 		breakpoints.erase( breakpointIt );
 	} else {
-		breakpoints.insert( SourceBreakpoint( lineNumber ) );
+		breakpoints.insert( SourceBreakpointStateful( lineNumber ) );
 	}
 	editor->invalidateDraw();
 	return true;

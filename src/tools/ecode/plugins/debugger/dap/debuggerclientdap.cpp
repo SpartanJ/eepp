@@ -611,13 +611,13 @@ bool DebuggerClientDap::evaluate( const std::string& expression, const std::stri
 }
 
 bool DebuggerClientDap::setBreakpoints( const std::string& path,
-										const std::vector<dap::SourceBreakpoint> breakpoints,
+										const std::vector<dap::SourceBreakpoint>& breakpoints,
 										bool sourceModified ) {
 	return setBreakpoints( Source( path ), breakpoints, sourceModified );
 }
 
 bool DebuggerClientDap::setBreakpoints( const dap::Source& source,
-										const std::vector<dap::SourceBreakpoint> breakpoints,
+										const std::vector<dap::SourceBreakpoint>& breakpoints,
 										bool sourceModified ) {
 	nlohmann::json bpoints = nlohmann::json::array();
 	for ( const auto& item : breakpoints )
