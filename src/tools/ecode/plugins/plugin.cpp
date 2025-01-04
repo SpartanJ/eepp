@@ -195,4 +195,21 @@ void PluginBase::onUnregister( UICodeEditor* editor ) {
 	mDocs.erase( doc );
 }
 
+void PluginBase::onBeforeUnregister( UICodeEditor* editor ) {
+	for ( auto& kb : mKeyBindings )
+		editor->getKeyBindings().removeCommandKeybind( kb.first );
+}
+
+void PluginBase::onRegisterEditor( UICodeEditor* editor ) {
+	for ( auto& kb : mKeyBindings ) {
+		if ( !kb.second.empty() )
+			editor->getKeyBindings().addKeybindString( kb.second, kb.first );
+	}
+}
+
+void PluginBase::onUnregisterDocument( TextDocument* doc ) {
+	for ( auto& kb : mKeyBindings )
+		doc->removeCommand( kb.first );
+}
+
 } // namespace ecode

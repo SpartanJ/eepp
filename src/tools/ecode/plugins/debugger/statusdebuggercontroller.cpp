@@ -56,6 +56,20 @@ void StatusDebuggerController::createContainer() {
 	mContainer->bind( "debugger_threads", mUIThreads );
 	mContainer->bind( "debugger_stack", mUIStack );
 	mContainer->bind( "debugger_breakpoints", mUIBreakpoints );
+
+	mContainer->runOnMainThread( [this] {
+		const Float width = mContainer->getPixelsSize().getWidth();
+
+		mUIThreads->setColumnWidth( 0, width * 0.1 );
+		mUIThreads->setColumnWidth( 1, eefloor( width * 0.88 ) );
+
+		mUIStack->setColumnWidth( 0, width * 0.05 );
+		mUIStack->setColumnWidth( 1, width * 0.3 );
+		mUIStack->setColumnWidth( 2, width * 0.15 );
+		mUIStack->setColumnWidth( 3, eefloor( width * 0.3 ) );
+		mUIStack->setColumnWidth( 4, width * 0.08 );
+		mUIStack->setColumnWidth( 5, width * 0.08 );
+	} );
 }
 
 } // namespace ecode

@@ -501,7 +501,8 @@ template <> struct std::hash<ecode::dap::SourceBreakpoint> {
 };
 
 template <> struct std::hash<ecode::dap::SourceBreakpointStateful> {
-	std::size_t operator()( ecode::dap::SourceBreakpointStateful const& breakpoint ) const noexcept {
+	std::size_t
+	operator()( ecode::dap::SourceBreakpointStateful const& breakpoint ) const noexcept {
 		size_t h1 = std::hash<int>()( breakpoint.line );
 		size_t h2 = breakpoint.column ? std::hash<int>()( *breakpoint.column ) : 0;
 		size_t h3 = breakpoint.condition ? std::hash<std::string>()( *breakpoint.condition ) : 0;

@@ -147,10 +147,6 @@ class GitPlugin : public PluginBase {
 
 	void onRegisterListeners( UICodeEditor*, std::vector<Uint32>& listeners ) override;
 
-	void onBeforeUnregister( UICodeEditor* ) override;
-
-	void onUnregisterDocument( TextDocument* ) override;
-
 	Color getVarColor( const std::string& var );
 
 	void blame( UICodeEditor* editor );

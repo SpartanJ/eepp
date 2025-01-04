@@ -170,11 +170,12 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 	}
 
 	if ( mKeyBindings.empty() ) {
+		mKeyBindings["debugger-continue-interrupt"] = "f5";
 	}
 
 	if ( j.contains( "keybindings" ) ) {
 		auto& kb = j["keybindings"];
-		std::initializer_list<std::string> list = {};
+		std::initializer_list<std::string> list = { "debugger-continue-interrupt" };
 		for ( const auto& key : list ) {
 			if ( kb.contains( key ) ) {
 				if ( !kb[key].empty() )
@@ -325,11 +326,43 @@ void DebuggerPlugin::updateSidePanelTab() {
 			if ( mDebugger && mDebugger->started() ) {
 				exitDebugger();
 			} else {
-				runConfig( mUIDebuggerList->getListBox()->getItemSelectedText().toUtf8(),
-						   mUIDebuggerConfList->getListBox()->getItemSelectedText().toUtf8() );
+				runCurrentConfig();
 			}
 		} );
 	}
+}
+
+void DebuggerPlugin::runCurrentConfig() {
+	runConfig( mUIDebuggerList->getListBox()->getItemSelectedText().toUtf8(),
+			   mUIDebuggerConfList->getListBox()->getItemSelectedText().toUtf8() );
+}
+
+void DebuggerPlugin::sendPendingBreakpoints() {
+	for ( const auto& pbp : mPendingBreakpoints )
+		sendFileBreakpoints( pbp );
+	mPendingBreakpoints.clear();
+	if ( mDebugger )
+		mDebugger->resume( 1 );
+}
+
+void DebuggerPlugin::sendFileBreakpoints( const std::string& filePath ) {
+	if ( !mDebugger || !mListener || !mDebugger->isServerConnected() )
+		return;
+
+	if ( !mListener->isStopped() ) {
+		mPendingBreakpoints.insert( filePath );
+		mListener->setPausedToRefreshBreakpoints();
+		mDebugger->pause( 1 );
+		return;
+	}
+
+	Lock l( mBreakpointsMutex );
+	auto fileBps = mBreakpoints.find( filePath );
+	if ( fileBps == mBreakpoints.end() )
+		return;
+	for ( const auto& fileBps : mBreakpoints )
+		mDebugger->setBreakpoints( fileBps.first,
+								   DebuggerClientListener::fromSet( fileBps.second ) );
 }
 
 void DebuggerPlugin::updateDebuggerConfigurationList() {
@@ -392,8 +425,26 @@ void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json ) {
 	}
 }
 
+void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
+	doc->setCommand( "debugger-continue-interrupt", [this]() {
+		if ( mDebugger && mListener ) {
+			if ( mListener->isStopped() ) {
+				mDebugger->resume( mListener->getStoppedData()->threadId
+									   ? *mListener->getStoppedData()->threadId
+									   : 1 );
+			} else {
+				mDebugger->pause( 1 );
+			}
+		} else {
+			runCurrentConfig();
+		}
+	} );
+}
+
 void DebuggerPlugin::onRegisterEditor( UICodeEditor* editor ) {
 	editor->registerGutterSpace( this, PixelDensity::dpToPx( 8 ), 0 );
+
+	PluginBase::onRegisterEditor( editor );
 }
 
 void DebuggerPlugin::onUnregisterEditor( UICodeEditor* editor ) {
@@ -441,9 +492,11 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 						  radius );
 		}
 	}
+
+
 }
 
-bool DebuggerPlugin::onLineNumberClick( UICodeEditor* editor, Uint32 lineNumber ) {
+bool DebuggerPlugin::setBreakpoint( UICodeEditor* editor, Uint32 lineNumber ) {
 	if ( !editor->getDocument().hasFilepath() )
 		return false;
 	if ( !isSupportedByAnyDebugger( editor->getDocument().getSyntaxDefinition().getLSPName() ) )
@@ -456,6 +509,8 @@ bool DebuggerPlugin::onLineNumberClick( UICodeEditor* editor, Uint32 lineNumber 
 	} else {
 		breakpoints.insert( SourceBreakpointStateful( lineNumber ) );
 	}
+	mThreadPool->run(
+		[this, editor] { sendFileBreakpoints( editor->getDocument().getFilePath() ); } );
 	editor->invalidateDraw();
 	return true;
 }
@@ -471,7 +526,7 @@ bool DebuggerPlugin::onMouseDown( UICodeEditor* editor, const Vector2i& position
 		 localPos.y > editor->getPluginsTopSpace() ) {
 		if ( editor->getUISceneNode()->getEventDispatcher()->isFirstPress() ) {
 			auto cursorPos( editor->resolveScreenPosition( position.asFloat() ) );
-			onLineNumberClick( editor, cursorPos.line() );
+			setBreakpoint( editor, cursorPos.line() );
 		}
 		return true;
 	}

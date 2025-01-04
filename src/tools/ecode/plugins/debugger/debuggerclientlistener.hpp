@@ -6,8 +6,17 @@ namespace ecode {
 
 class DebuggerPlugin;
 
+struct ModelScope {
+	std::string name;
+	int variablesReference;
+	std::vector<Variable> variables;
+};
+
 class DebuggerClientListener : public DebuggerClient::Listener {
   public:
+		static std::vector<SourceBreakpoint>
+		fromSet( const EE::UnorderedSet<SourceBreakpointStateful>& set );
+
 	DebuggerClientListener( DebuggerClient* client, DebuggerPlugin* plugin );
 
 	void stateChanged( DebuggerClient::State );
@@ -42,9 +51,18 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 	void gotoTargets( const Source& source, const int line,
 					  const std::vector<GotoTarget>& targets );
 
+	bool isStopped() const;
+
+	std::optional<StoppedEvent> getStoppedData() const;
+
+	void setPausedToRefreshBreakpoints() { mPausedToRefreshBreakpoints = true; }
+
   protected:
 	DebuggerClient* mClient{ nullptr };
 	DebuggerPlugin* mPlugin{ nullptr };
+	std::optional<StoppedEvent> mStoppedData;
+	std::vector<ModelScope> mScope;
+	bool mPausedToRefreshBreakpoints{ false };
 
 	StatusDebuggerController* getStatusDebuggerController() const;
 };

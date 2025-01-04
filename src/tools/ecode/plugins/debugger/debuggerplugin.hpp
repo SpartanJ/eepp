@@ -65,6 +65,7 @@ class DebuggerPlugin : public PluginBase {
 	UIDropDownList* mUIDebuggerConfList{ nullptr };
 	UIPushButton* mRunButton{ nullptr };
 	UnorderedMap<std::string, UnorderedSet<SourceBreakpointStateful>> mBreakpoints;
+	UnorderedSet<std::string> mPendingBreakpoints;
 	Mutex mBreakpointsMutex;
 
 	DebuggerPlugin( PluginManager* pluginManager, bool sync );
@@ -99,16 +100,23 @@ class DebuggerPlugin : public PluginBase {
 
 	void onUnregisterEditor( UICodeEditor* ) override;
 
+	void onRegisterDocument( TextDocument* doc ) override;
+
 	void drawLineNumbersBefore( UICodeEditor* editor, const DocumentLineRange& lineRange,
 								const Vector2f& startScroll, const Vector2f& screenStart,
 								const Float& lineHeight, const Float& lineNumberWidth,
 								const int& lineNumberDigits, const Float& fontSize ) override;
 
-	bool onLineNumberClick( UICodeEditor* editor, Uint32 lineNumber );
+	bool setBreakpoint( UICodeEditor* editor, Uint32 lineNumber );
 
 	bool onMouseDown( UICodeEditor*, const Vector2i&, const Uint32& flags ) override;
 
 	bool isSupportedByAnyDebugger( const std::string& language );
+
+	void runCurrentConfig();
+
+	void sendFileBreakpoints( const std::string& filePath );
+	void sendPendingBreakpoints();
 };
 
 } // namespace ecode

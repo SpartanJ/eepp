@@ -635,16 +635,6 @@ void GitPlugin::onRegisterListeners( UICodeEditor* editor, std::vector<Uint32>& 
 		} ) );
 }
 
-void GitPlugin::onBeforeUnregister( UICodeEditor* editor ) {
-	for ( auto& kb : mKeyBindings )
-		editor->getKeyBindings().removeCommandKeybind( kb.first );
-}
-
-void GitPlugin::onUnregisterDocument( TextDocument* doc ) {
-	for ( auto& kb : mKeyBindings )
-		doc->removeCommand( kb.first );
-}
-
 Color GitPlugin::getVarColor( const std::string& var ) {
 	return Color::fromString(
 		getUISceneNode()->getRoot()->getUIStyle()->getVariable( var ).getValue() );

@@ -4,7 +4,8 @@
 
 namespace ecode {
 
-static std::vector<SourceBreakpoint> fromSet( const UnorderedSet<SourceBreakpointStateful>& set ) {
+std::vector<SourceBreakpoint>
+DebuggerClientListener::fromSet( const EE::UnorderedSet<SourceBreakpointStateful>& set ) {
 	std::vector<SourceBreakpoint> bps;
 	bps.reserve( set.size() );
 	for ( const auto& bp : set )
@@ -12,72 +13,6 @@ static std::vector<SourceBreakpoint> fromSet( const UnorderedSet<SourceBreakpoin
 			bps.emplace_back( bp );
 	return bps;
 }
-
-DebuggerClientListener::DebuggerClientListener( DebuggerClient* client, DebuggerPlugin* plugin ) :
-	mClient( client ), mPlugin( plugin ) {
-	eeASSERT( mClient && mPlugin );
-}
-
-void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
-	if ( state == DebuggerClient::State::Initializing ) {
-		mPlugin->getManager()->getUISceneNode()->runOnMainThread( [this] {
-			getStatusDebuggerController()->createWidget();
-
-			mPlugin->getManager()
-				->getPluginContext()
-				->getStatusAppOutputController()
-				->initNewOutput( {}, false );
-		} );
-	}
-}
-
-void DebuggerClientListener::initialized() {
-	Lock l( mPlugin->mBreakpointsMutex );
-	for ( const auto& fileBps : mPlugin->mBreakpoints )
-		mClient->setBreakpoints( fileBps.first, fromSet( fileBps.second ) );
-}
-
-void DebuggerClientListener::launched() {}
-
-void DebuggerClientListener::configured() {}
-
-void DebuggerClientListener::failed() {}
-
-void DebuggerClientListener::debuggeeRunning() {}
-
-void DebuggerClientListener::debuggeeTerminated() {}
-
-void DebuggerClientListener::capabilitiesReceived( const Capabilities& /*capabilities*/ ) {}
-
-void DebuggerClientListener::debuggeeExited( int /*exitCode*/ ) {
-	mPlugin->exitDebugger();
-}
-
-void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
-	Log::debug( "DebuggerClientListener::debuggeeStopped: reason %s", event.reason );
-	mClient->threads();
-	if ( event.threadId )
-		mClient->stackTrace( *event.threadId );
-}
-
-void DebuggerClientListener::debuggeeContinued( const ContinuedEvent& ) {}
-
-void DebuggerClientListener::outputProduced( const Output& output ) {
-	if ( Output::Category::Stdout == output.category ||
-		 Output::Category::Stderr == output.category ) {
-		mPlugin->getManager()->getPluginContext()->getStatusAppOutputController()->insertBuffer(
-			output.output );
-	}
-}
-
-void DebuggerClientListener::debuggingProcess( const ProcessInfo& ) {}
-
-void DebuggerClientListener::errorResponse( const std::string& /*summary*/,
-											const std::optional<Message>& /*message*/ ) {}
-
-void DebuggerClientListener::threadChanged( const ThreadEvent& ) {}
-
-void DebuggerClientListener::moduleChanged( const ModuleEvent& ) {}
 
 class ThreadsModel : public Model {
   public:
@@ -102,16 +37,11 @@ class ThreadsModel : public Model {
 	std::vector<Thread> mThreads;
 };
 
-void DebuggerClientListener::threads( const std::vector<Thread>& threads ) {
-	getStatusDebuggerController()->getUIThreads()->setModel(
-		std::make_shared<ThreadsModel>( threads ) );
-}
-
 class StackModel : public Model {
   public:
 	StackModel( const StackTraceInfo& stack ) : mStack( stack ) {}
 	virtual size_t rowCount( const ModelIndex& ) const { return mStack.stackFrames.size(); }
-	virtual size_t columnCount( const ModelIndex& ) const { return 5; }
+	virtual size_t columnCount( const ModelIndex& ) const { return 6; }
 
 	virtual std::string columnName( const size_t& colIdx ) const {
 		switch ( colIdx ) {
@@ -160,6 +90,99 @@ class StackModel : public Model {
 	StackTraceInfo mStack;
 };
 
+DebuggerClientListener::DebuggerClientListener( DebuggerClient* client, DebuggerPlugin* plugin ) :
+	mClient( client ), mPlugin( plugin ) {
+	eeASSERT( mClient && mPlugin );
+}
+
+void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
+	if ( state == DebuggerClient::State::Initializing ) {
+		mPlugin->getManager()->getUISceneNode()->runOnMainThread( [this] {
+			getStatusDebuggerController()->createWidget();
+
+			mPlugin->getManager()
+				->getPluginContext()
+				->getStatusAppOutputController()
+				->initNewOutput( {}, false );
+		} );
+	}
+}
+
+void DebuggerClientListener::initialized() {
+	Lock l( mPlugin->mBreakpointsMutex );
+	for ( const auto& fileBps : mPlugin->mBreakpoints )
+		mClient->setBreakpoints( fileBps.first, fromSet( fileBps.second ) );
+}
+
+void DebuggerClientListener::launched() {}
+
+void DebuggerClientListener::configured() {}
+
+void DebuggerClientListener::failed() {}
+
+void DebuggerClientListener::debuggeeRunning() {}
+
+void DebuggerClientListener::debuggeeTerminated() {}
+
+void DebuggerClientListener::capabilitiesReceived( const Capabilities& /*capabilities*/ ) {}
+
+void DebuggerClientListener::debuggeeExited( int /*exitCode*/ ) {
+	mPlugin->exitDebugger();
+}
+
+void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
+	Log::debug( "DebuggerClientListener::debuggeeStopped: reason %s", event.reason );
+
+	mStoppedData = event;
+
+	if ( mPausedToRefreshBreakpoints ) {
+		mPlugin->sendPendingBreakpoints();
+		mClient->resume( 1 );
+		mPausedToRefreshBreakpoints = false;
+		return;
+	}
+
+	mClient->threads();
+
+	if ( event.threadId )
+		mClient->stackTrace( *event.threadId );
+}
+
+void DebuggerClientListener::debuggeeContinued( const ContinuedEvent& ) {
+	mStoppedData = {};
+
+	// Reset models
+	mScope.clear();
+
+	getStatusDebuggerController()->getUIThreads()->setModel(
+		std::make_shared<ThreadsModel>( std::vector<Thread>{} ) );
+
+	getStatusDebuggerController()->getUIStack()->setModel(
+		std::make_shared<StackModel>( StackTraceInfo{} ) );
+}
+
+void DebuggerClientListener::outputProduced( const Output& output ) {
+	if ( Output::Category::Stdout == output.category ||
+		 Output::Category::Stderr == output.category ) {
+		mPlugin->getManager()->getPluginContext()->getStatusAppOutputController()->insertBuffer(
+			output.output );
+	}
+}
+
+void DebuggerClientListener::debuggingProcess( const ProcessInfo& ) {}
+
+void DebuggerClientListener::errorResponse( const std::string& /*summary*/,
+											const std::optional<Message>& /*message*/ ) {}
+
+void DebuggerClientListener::threadChanged( const ThreadEvent& ) {}
+
+void DebuggerClientListener::moduleChanged( const ModuleEvent& ) {}
+
+void DebuggerClientListener::threads( const std::vector<Thread>& threads ) {
+	getStatusDebuggerController()->getUIThreads()->setModel(
+		std::make_shared<ThreadsModel>( threads ) );
+}
+
 void DebuggerClientListener::stackTrace( const int /*threadId*/, const StackTraceInfo& stack ) {
 	getStatusDebuggerController()->getUIStack()->setModel( std::make_shared<StackModel>( stack ) );
 
@@ -168,17 +191,27 @@ void DebuggerClientListener::stackTrace( const int /*threadId*/, const StackTrac
 	}
 }
 
-void DebuggerClientListener::scopes( const int /*frameId**/, const std::vector<Scope>& scopes ) {
-	// if ( !scopes.empty() ) {
-	// 	mClient->variables( scopes[0].variablesReference );
-	// }
+void DebuggerClientListener::scopes( const int /*frameId*/, const std::vector<Scope>& scopes ) {
+	if ( !scopes.empty() ) {
+		for ( const auto& scope : scopes ) {
+			ModelScope mscope;
+			mscope.name = scope.name;
+			mscope.variablesReference = scope.variablesReference;
+			mScope.emplace_back( std::move( mscope ) );
+			mClient->variables( scope.variablesReference );
+		}
+	}
 }
 
-void DebuggerClientListener::variables( const int /*variablesReference*/,
+void DebuggerClientListener::variables( const int variablesReference,
 										const std::vector<Variable>& vars ) {
-	// if ( !vars.empty() ) {
-	// 	mClient->resume( 1 );
-	// }
+	auto scopeIt =
+		std::find_if( mScope.begin(), mScope.end(), [variablesReference]( const ModelScope& cur ) {
+			return cur.variablesReference == variablesReference;
+		} );
+	if ( scopeIt == mScope.end() )
+		return;
+	scopeIt->variables = vars;
 }
 
 void DebuggerClientListener::modules( const ModulesInfo& ) {}
@@ -199,14 +232,19 @@ void DebuggerClientListener::expressionEvaluated( const std::string& /*expressio
 void DebuggerClientListener::gotoTargets( const Source& /*source*/, const int /*line*/,
 										  const std::vector<GotoTarget>& /*targets*/ ) {}
 
-StatusDebuggerController* DebuggerClientListener::getStatusDebuggerController() const {
+bool DebuggerClientListener::isStopped() const {
+	return mStoppedData ? true : false;
+}
 
+std::optional<StoppedEvent> DebuggerClientListener::getStoppedData() const {
+	return mStoppedData;
+}
+
+StatusDebuggerController* DebuggerClientListener::getStatusDebuggerController() const {
 	auto debuggerElement =
 		mPlugin->getManager()->getPluginContext()->getStatusBar()->getStatusBarElement(
 			"status_app_debugger" );
-
-	if ( !debuggerElement )
-		return nullptr;
+	eeASSERT( debuggerElement );
 	return static_cast<StatusDebuggerController*>( debuggerElement.get() );
 }
 
