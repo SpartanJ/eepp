@@ -1,6 +1,7 @@
 #pragma once
 
 #include <eepp/core/string.hpp>
+#include <eepp/ui/doc/textrange.hpp>
 #include <string>
 
 namespace EE {
@@ -33,6 +34,7 @@ using namespace EE;
 using namespace EE::Graphics;
 using namespace EE::UI;
 using namespace EE::UI::Tools;
+using namespace EE::UI::Doc;
 
 namespace ecode {
 
@@ -50,7 +52,6 @@ class TerminalConfig;
 
 class PluginContextProvider {
   public:
-
 	virtual UIStatusBar* getStatusBar() const = 0;
 
 	virtual UISplitter* getMainSplitter() const = 0;
@@ -115,6 +116,8 @@ class PluginContextProvider {
 	virtual const std::string& getCurrentProject() const = 0;
 
 	virtual std::string getCurrentWorkingDir() const = 0;
+
+	virtual void focusOrLoadFile( const std::string& path, const TextRange& range = {} ) = 0;
 };
 
 } // namespace ecode

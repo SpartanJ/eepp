@@ -25,6 +25,51 @@ using json = nlohmann::json;
 
 namespace ecode {
 
+class BreakpointsModel : public Model {
+  public:
+	BreakpointsModel(
+		const UnorderedMap<std::string, UnorderedSet<SourceBreakpointStateful>>& breakpoints ) {
+		for ( const auto& bpf : breakpoints )
+			for ( const auto& bp : bpf.second )
+				mBreakpoints.emplace_back( bpf.first, bp );
+	}
+
+	virtual size_t rowCount( const ModelIndex& ) const { return mBreakpoints.size(); }
+
+	virtual size_t columnCount( const ModelIndex& ) const { return 3; }
+
+	virtual std::string columnName( const size_t& index ) const {
+		switch ( index ) {
+			case 0:
+				return "Enabled";
+			case 1:
+				return "Source Path";
+			case 2:
+				return "Line";
+		}
+		return "";
+	}
+
+	virtual Variant data( const ModelIndex& modelIndex, ModelRole role ) const {
+		if ( role != ModelRole::Display )
+			return {};
+
+		switch ( modelIndex.column() ) {
+			case 0:
+				return Variant( mBreakpoints[modelIndex.row()].second.enabled ? "Enabled" : "" );
+			case 1:
+				return Variant( mBreakpoints[modelIndex.row()].first.c_str() );
+			case 2:
+				return Variant( String::toString( mBreakpoints[modelIndex.row()].second.line ) );
+		}
+
+		return {};
+	}
+
+  protected:
+	std::vector<std::pair<std::string, SourceBreakpointStateful>> mBreakpoints;
+};
+
 Plugin* DebuggerPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( DebuggerPlugin, ( pluginManager, false ) );
 }
@@ -53,9 +98,14 @@ DebuggerPlugin::~DebuggerPlugin() {
 	if ( mSidePanel && mTab )
 		mSidePanel->removeTab( mTab );
 
-	if ( getManager()->getPluginContext()->getStatusBar() ) {
-		getManager()->getPluginContext()->getStatusBar()->removeStatusBarElement(
-			"status_app_debugger" );
+	if ( getPluginContext()->getStatusBar() )
+		getPluginContext()->getStatusBar()->removeStatusBarElement( "status_app_debugger" );
+
+	mManager->unsubscribeMessages( this );
+
+	for ( auto editor : mEditors ) {
+		onBeforeUnregister( editor.first );
+		onUnregisterEditor( editor.first );
 	}
 
 	mDebugger.reset();
@@ -171,11 +221,23 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 
 	if ( mKeyBindings.empty() ) {
 		mKeyBindings["debugger-continue-interrupt"] = "f5";
+		mKeyBindings["debugger-breakpoint-toggle"] = "f9";
+		mKeyBindings["debugger-breakpoint-enable-toggle"] = "mod+f9";
+		mKeyBindings["debugger-step-over"] = "f10";
+		mKeyBindings["debugger-step-into"] = "f11";
+		mKeyBindings["debugger-step-out"] = "shift+f11";
+		mKeyBindings["toggle-status-app-debugger"] = "alt+6";
 	}
 
 	if ( j.contains( "keybindings" ) ) {
 		auto& kb = j["keybindings"];
-		std::initializer_list<std::string> list = { "debugger-continue-interrupt" };
+		std::initializer_list<std::string> list = { "debugger-continue-interrupt",
+													"debugger-breakpoint-toggle",
+													"debugger-breakpoint-enable-toggle",
+													"debugger-step-over",
+													"debugger-step-into",
+													"debugger-step-out",
+													"toggle-status-app-debugger" };
 		for ( const auto& key : list ) {
 			if ( kb.contains( key ) ) {
 				if ( !kb[key].empty() )
@@ -279,15 +341,15 @@ void DebuggerPlugin::buildStatusBar() {
 		hideStatusBarElement();
 		return;
 	}
-	if ( getManager()->getPluginContext()->getStatusBar() ) {
-		auto but = getManager()->getPluginContext()->getStatusBar()->find( "status_app_debugger" );
+	if ( getPluginContext()->getStatusBar() ) {
+		auto but = getPluginContext()->getStatusBar()->find( "status_app_debugger" );
 		if ( but ) {
 			but->setVisible( true );
 			return;
 		}
 	}
 
-	auto context = getManager()->getPluginContext();
+	auto context = getPluginContext();
 	UIStatusBar* statusBar = context->getStatusBar();
 
 	auto debuggerStatusElem = std::make_shared<StatusDebuggerController>(
@@ -398,8 +460,7 @@ void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json ) {
 	static constexpr auto KEY_CWD = "${cwd}";
 	static constexpr auto KEY_ENV = "${env}";
 	static constexpr auto KEY_STOPONENTRY = "${stopOnEntry}";
-	auto runConfig =
-		getManager()->getPluginContext()->getProjectBuildManager()->getCurrentRunConfig();
+	auto runConfig = getPluginContext()->getProjectBuildManager()->getCurrentRunConfig();
 
 	for ( auto& j : json ) {
 		if ( j.is_object() ) {
@@ -426,12 +487,10 @@ void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json ) {
 }
 
 void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
-	doc->setCommand( "debugger-continue-interrupt", [this]() {
+	doc->setCommand( "debugger-continue-interrupt", [this] {
 		if ( mDebugger && mListener ) {
 			if ( mListener->isStopped() ) {
-				mDebugger->resume( mListener->getStoppedData()->threadId
-									   ? *mListener->getStoppedData()->threadId
-									   : 1 );
+				mDebugger->resume( mListener->getCurrentThreadId() );
 			} else {
 				mDebugger->pause( 1 );
 			}
@@ -439,15 +498,53 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 			runCurrentConfig();
 		}
 	} );
+
+	doc->setCommand( "debugger-breakpoint-toggle", [doc, this] {
+		if ( setBreakpoint( doc, doc->getSelection().start().line() ) )
+			getUISceneNode()->invalidateDraw();
+	} );
+
+	doc->setCommand( "debugger-breakpoint-enable-toggle", [this, doc] {
+		if ( breakpointToggleEnabled( doc, doc->getSelection().start().line() + 1 ) )
+			getUISceneNode()->invalidateDraw();
+	} );
+
+	doc->setCommand( "debugger-step-over", [this] {
+		if ( mDebugger && mListener && mListener->isStopped() )
+			mDebugger->stepOver( mListener->getCurrentThreadId() );
+	} );
+
+	doc->setCommand( "debugger-step-into", [this] {
+		if ( mDebugger && mListener && mListener->isStopped() )
+			mDebugger->stepInto( mListener->getCurrentThreadId() );
+	} );
+
+	doc->setCommand( "debugger-step-out", [this] {
+		if ( mDebugger && mListener && mListener->isStopped() )
+			mDebugger->stepOut( mListener->getCurrentThreadId() );
+	} );
+
+	doc->setCommand( "toggle-status-app-debugger", [this] {
+		if ( getStatusDebuggerController() )
+			getStatusDebuggerController()->toggle();
+	} );
 }
 
 void DebuggerPlugin::onRegisterEditor( UICodeEditor* editor ) {
 	editor->registerGutterSpace( this, PixelDensity::dpToPx( 8 ), 0 );
 
+	editor->addUnlockedCommands( { "debugger-continue-interrupt",
+								   "debugger-breakpoint-enable-toggle",
+								   "toggle-status-app-debugger" } );
+
 	PluginBase::onRegisterEditor( editor );
 }
 
 void DebuggerPlugin::onUnregisterEditor( UICodeEditor* editor ) {
+	editor->removeUnlockedCommands( { "debugger-continue-interrupt",
+									  "debugger-breakpoint-enable-toggle",
+									  "toggle-status-app-debugger" } );
+
 	editor->unregisterGutterSpace( this );
 }
 
@@ -456,62 +553,116 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 											const Vector2f& startScroll,
 											const Vector2f& screenStart, const Float& lineHeight,
 											const Float&, const int&, const Float& ) {
-	if ( !editor->getDocument().hasFilepath() )
-		return;
-	auto docIt = mBreakpoints.find( editor->getDocument().getFilePath() );
-	if ( docIt == mBreakpoints.end() || docIt->second.empty() )
-		return;
-	const auto& breakpoints = docIt->second;
 	Primitives p;
+	Float radius = PixelDensity::dpToPx( 4 );
 	Float lineOffset = editor->getLineOffset();
-	p.setColor( Color( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::Error ) )
-					.blendAlpha( editor->getAlpha() ) );
-	Float gutterSpace = editor->getGutterSpace( this );
-	Float radius = PixelDensity::dpToPx( 3 );
 	Float offset = editor->getGutterLocalStartOffset( this );
 
-	for ( const SourceBreakpoint& breakpoint : breakpoints ) {
-		if ( breakpoint.line >= lineRange.first && breakpoint.line <= lineRange.second ) {
-			if ( !editor->getDocumentView().isLineVisible( breakpoint.line ) )
-				continue;
-
-			auto lnPos( Vector2f(
-				screenStart.x - editor->getPluginsGutterSpace() + offset,
-				startScroll.y +
-					editor->getDocumentView().getLineYOffset( breakpoint.line, lineHeight ) +
-					lineOffset ) );
-
-			// p.setColor( Color::Gray );
-			// p.drawRectangle( { lnPos, Sizef{ gutterSpace, lineHeight } } );
+	if ( editor->getDocument().hasFilepath() ) {
+		auto docIt = mBreakpoints.find( editor->getDocument().getFilePath() );
+		if ( docIt != mBreakpoints.end() && !docIt->second.empty() ) {
+			const auto& breakpoints = docIt->second;
 
 			p.setColor( Color( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::Error ) )
 							.blendAlpha( editor->getAlpha() ) );
+			Float gutterSpace = editor->getGutterSpace( this );
 
-			p.drawCircle( { lnPos.x + radius + eefloor( ( gutterSpace - radius ) * 0.5f ),
-							lnPos.y + lineHeight * 0.5f },
-						  radius );
+			for ( const SourceBreakpoint& breakpoint : breakpoints ) {
+				int line = breakpoint.line - 1; // Breakpoints start at 1
+				if ( line >= 0 && line >= lineRange.first && line <= lineRange.second ) {
+					if ( !editor->getDocumentView().isLineVisible( line ) )
+						continue;
+
+					auto lnPos(
+						Vector2f( screenStart.x - editor->getPluginsGutterSpace() + offset,
+								  startScroll.y +
+									  editor->getDocumentView().getLineYOffset( line, lineHeight ) +
+									  lineOffset ) );
+
+					p.setColor(
+						Color( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::Error ) )
+							.blendAlpha( editor->getAlpha() ) );
+
+					p.drawCircle( { lnPos.x + radius + eefloor( ( gutterSpace - radius ) * 0.5f ),
+									lnPos.y + lineHeight * 0.5f },
+								  radius );
+				}
+			}
 		}
 	}
 
+	if ( mDebugger && mListener && mListener->isStopped() && mListener->getCurrentScopePos() &&
+		 editor->getDocument().getFilePath() == mListener->getCurrentScopePos()->first ) {
+		int line = mListener->getCurrentScopePos()->second - 1;
+		if ( line >= 0 && line >= lineRange.first && line <= lineRange.second &&
+			 editor->getDocumentView().isLineVisible( line ) ) {
+			auto lnPos( Vector2f( screenStart.x - editor->getPluginsGutterSpace() + offset,
+								  startScroll.y +
+									  editor->getDocumentView().getLineYOffset( line, lineHeight ) +
+									  lineOffset ) );
 
+			p.setColor(
+				Color( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::Warning ) )
+					.blendAlpha( editor->getAlpha() ) );
+
+			Float dim = radius * 2;
+			Float gutterSpace = editor->getGutterSpace( this );
+			lnPos.x += ( gutterSpace - dim ) * 0.5f;
+			lnPos.y += ( lineHeight - dim ) * 0.5f;
+
+			Triangle2f tri;
+			tri.V[0] = lnPos + Vector2f{ 0, 0 };
+			tri.V[1] = lnPos + Vector2f{ 0, dim };
+			tri.V[2] = lnPos + Vector2f{ dim, dim * 0.5f };
+			p.drawTriangle( tri );
+		}
+	}
 }
 
-bool DebuggerPlugin::setBreakpoint( UICodeEditor* editor, Uint32 lineNumber ) {
-	if ( !editor->getDocument().hasFilepath() )
+bool DebuggerPlugin::setBreakpoint( TextDocument* doc, Uint32 lineNumber ) {
+	if ( !doc->hasFilepath() )
 		return false;
-	if ( !isSupportedByAnyDebugger( editor->getDocument().getSyntaxDefinition().getLSPName() ) )
+	if ( !isSupportedByAnyDebugger( doc->getSyntaxDefinition().getLSPName() ) )
 		return false;
 	Lock l( mBreakpointsMutex );
-	auto& breakpoints = mBreakpoints[editor->getDocument().getFilePath()];
+	auto& breakpoints = mBreakpoints[doc->getFilePath()];
 	auto breakpointIt = breakpoints.find( SourceBreakpointStateful( lineNumber ) );
 	if ( breakpointIt != breakpoints.end() ) {
 		breakpoints.erase( breakpointIt );
 	} else {
 		breakpoints.insert( SourceBreakpointStateful( lineNumber ) );
 	}
-	mThreadPool->run(
-		[this, editor] { sendFileBreakpoints( editor->getDocument().getFilePath() ); } );
-	editor->invalidateDraw();
+	mThreadPool->run( [this, doc] { sendFileBreakpoints( doc->getFilePath() ); } );
+
+	if ( getStatusDebuggerController()->getWidget() == nullptr ) {
+		getStatusDebuggerController()->show();
+		getStatusDebuggerController()->hide();
+	}
+
+	getStatusDebuggerController()->getUIBreakpoints()->setModel(
+		std::make_shared<BreakpointsModel>( mBreakpoints ) );
+
+	return true;
+}
+
+bool DebuggerPlugin::breakpointToggleEnabled( TextDocument* doc, Uint32 lineNumber ) {
+	if ( !doc->hasFilepath() )
+		return false;
+	if ( !isSupportedByAnyDebugger( doc->getSyntaxDefinition().getLSPName() ) )
+		return false;
+	Lock l( mBreakpointsMutex );
+	auto& breakpoints = mBreakpoints[doc->getFilePath()];
+	auto breakpointIt = breakpoints.find( SourceBreakpointStateful( lineNumber ) );
+	if ( breakpointIt != breakpoints.end() ) {
+		breakpointIt->enabled = !breakpointIt->enabled;
+		return true;
+	}
+	return false;
+}
+
+bool DebuggerPlugin::setBreakpoint( UICodeEditor* editor, Uint32 lineNumber ) {
+	if ( setBreakpoint( &editor->getDocument(), lineNumber ) )
+		editor->invalidateDraw();
 	return true;
 }
 
@@ -526,7 +677,7 @@ bool DebuggerPlugin::onMouseDown( UICodeEditor* editor, const Vector2i& position
 		 localPos.y > editor->getPluginsTopSpace() ) {
 		if ( editor->getUISceneNode()->getEventDispatcher()->isFirstPress() ) {
 			auto cursorPos( editor->resolveScreenPosition( position.asFloat() ) );
-			setBreakpoint( editor, cursorPos.line() );
+			setBreakpoint( editor, cursorPos.line() + 1 );
 		}
 		return true;
 	}
@@ -613,11 +764,17 @@ void DebuggerPlugin::hideSidePanel() {
 }
 
 void DebuggerPlugin::hideStatusBarElement() {
-	if ( getManager()->getPluginContext()->getStatusBar() ) {
-		auto but = getManager()->getPluginContext()->getStatusBar()->find( "status_app_debugger" );
+	if ( getPluginContext()->getStatusBar() ) {
+		auto but = getPluginContext()->getStatusBar()->find( "status_app_debugger" );
 		if ( but )
 			but->setVisible( false );
 	}
 }
 
+StatusDebuggerController* DebuggerPlugin::getStatusDebuggerController() const {
+	auto debuggerElement =
+		getPluginContext()->getStatusBar()->getStatusBarElement( "status_app_debugger" );
+	eeASSERT( debuggerElement );
+	return static_cast<StatusDebuggerController*>( debuggerElement.get() );
+}
 } // namespace ecode

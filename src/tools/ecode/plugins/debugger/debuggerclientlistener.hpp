@@ -5,6 +5,8 @@
 namespace ecode {
 
 class DebuggerPlugin;
+class ThreadsModel;
+class StackModel;
 
 struct ModelScope {
 	std::string name;
@@ -14,10 +16,12 @@ struct ModelScope {
 
 class DebuggerClientListener : public DebuggerClient::Listener {
   public:
-		static std::vector<SourceBreakpoint>
-		fromSet( const EE::UnorderedSet<SourceBreakpointStateful>& set );
+	static std::vector<SourceBreakpoint>
+	fromSet( const EE::UnorderedSet<SourceBreakpointStateful>& set );
 
 	DebuggerClientListener( DebuggerClient* client, DebuggerPlugin* plugin );
+
+	virtual ~DebuggerClientListener();
 
 	void stateChanged( DebuggerClient::State );
 	void initialized();
@@ -36,11 +40,11 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 	void errorResponse( const std::string& summary, const std::optional<Message>& message );
 	void threadChanged( const ThreadEvent& );
 	void moduleChanged( const ModuleEvent& );
-	void threads( const std::vector<Thread>& );
-	void stackTrace( const int threadId, const StackTraceInfo& );
-	void scopes( const int frameId, const std::vector<Scope>& );
-	void variables( const int variablesReference, const std::vector<Variable>& );
-	void modules( const ModulesInfo& );
+	void threads( std::vector<Thread>&& );
+	void stackTrace( const int threadId, StackTraceInfo&& );
+	void scopes( const int frameId, std::vector<Scope>&& );
+	void variables( const int variablesReference, std::vector<Variable>&& );
+	void modules( ModulesInfo&& );
 	void serverDisconnected();
 	void sourceContent( const std::string& path, int reference,
 						const SourceContent& content = SourceContent() );
@@ -57,14 +61,24 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 
 	void setPausedToRefreshBreakpoints() { mPausedToRefreshBreakpoints = true; }
 
+	int getCurrentThreadId() const;
+
+	std::optional<std::pair<std::string, int>> getCurrentScopePos() const;
+
   protected:
 	DebuggerClient* mClient{ nullptr };
 	DebuggerPlugin* mPlugin{ nullptr };
 	std::optional<StoppedEvent> mStoppedData;
+	std::optional<std::pair<std::string, int>> mCurrentScopePos;
 	std::vector<ModelScope> mScope;
 	bool mPausedToRefreshBreakpoints{ false };
+	int mCurrentThreadId{ 1 };
+	std::shared_ptr<ThreadsModel> mThreadsModel;
+	std::shared_ptr<StackModel> mStackModel;
 
 	StatusDebuggerController* getStatusDebuggerController() const;
+
+	void resetState();
 };
 
 } // namespace ecode

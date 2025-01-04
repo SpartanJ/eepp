@@ -384,7 +384,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void addUnlockedCommand( const std::string& command );
 
+	void removeUnlockedCommand( const std::string& command );
+
 	void addUnlockedCommands( const std::vector<std::string>& commands );
+
+	void removeUnlockedCommands( const std::vector<std::string>& commands );
 
 	bool isUnlockedCommand( const std::string& command );
 

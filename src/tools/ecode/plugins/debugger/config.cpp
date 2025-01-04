@@ -23,8 +23,8 @@ bool BusSettings::hasConnection() const {
 }
 
 ProtocolSettings::ProtocolSettings( const nlohmann::json& configuration ) :
-	linesStartAt1( false ),
-	columnsStartAt1( false ),
+	linesStartAt1( true ),
+	columnsStartAt1( true ),
 	pathFormatURI( false ),
 	redirectStderr( configuration.value( REDIRECT_STDERR, false ) ),
 	redirectStdout( configuration.value( REDIRECT_STDOUT, false ) ),

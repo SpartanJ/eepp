@@ -34,7 +34,7 @@ void StatusDebuggerController::createContainer() {
 	if ( mContainer )
 		return;
 	const auto XML = R"xml(
-	<TabWidget layout_width="match_parent" layout_height="0dp" layout_weight="1">
+	<TabWidget id="app_debugger" layout_width="match_parent" layout_height="0dp" layout_weight="1">
 		<TableView id="debugger_stack" layout_width="mp" layout_height="mp" />
 		<TableView id="debugger_threads" layout_width="mp" layout_height="mp" />
 		<TableView id="debugger_breakpoints" layout_width="mp" layout_height="mp" />
@@ -57,7 +57,10 @@ void StatusDebuggerController::createContainer() {
 	mContainer->bind( "debugger_stack", mUIStack );
 	mContainer->bind( "debugger_breakpoints", mUIBreakpoints );
 
-	mContainer->runOnMainThread( [this] {
+	mContainer->on( Event::OnSizeChange, [this]( const Event* event ) {
+		if ( !mContainer->isVisible() || mContainer->getSize().getWidth() == 0.f )
+			return;
+
 		const Float width = mContainer->getPixelsSize().getWidth();
 
 		mUIThreads->setColumnWidth( 0, width * 0.1 );
@@ -69,6 +72,12 @@ void StatusDebuggerController::createContainer() {
 		mUIStack->setColumnWidth( 3, eefloor( width * 0.3 ) );
 		mUIStack->setColumnWidth( 4, width * 0.08 );
 		mUIStack->setColumnWidth( 5, width * 0.08 );
+
+		mUIBreakpoints->setColumnWidth( 0, width * 0.1 );
+		mUIBreakpoints->setColumnWidth( 1, eefloor( width * 0.7 ) );
+		mUIBreakpoints->setColumnWidth( 2, eefloor( width * 0.1 ) );
+
+		mContainer->removeEventListener( event->getCallbackId() );
 	} );
 }
 

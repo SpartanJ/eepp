@@ -2468,8 +2468,17 @@ void UICodeEditor::addUnlockedCommand( const std::string& command ) {
 	mUnlockedCmd.insert( command );
 }
 
+void UICodeEditor::removeUnlockedCommand( const std::string& command ) {
+	mUnlockedCmd.erase( command );
+}
+
 void UICodeEditor::addUnlockedCommands( const std::vector<std::string>& commands ) {
 	mUnlockedCmd.insert( commands.begin(), commands.end() );
+}
+
+void UICodeEditor::removeUnlockedCommands( const std::vector<std::string>& commands ) {
+	for ( const auto& cmd : commands )
+		removeUnlockedCommand( cmd );
 }
 
 bool UICodeEditor::isUnlockedCommand( const std::string& command ) {

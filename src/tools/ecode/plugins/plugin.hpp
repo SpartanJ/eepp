@@ -12,6 +12,7 @@ using namespace EE::UI::Models;
 namespace ecode {
 
 class PluginManager;
+class PluginContextProvider;
 
 class Plugin : public UICodeEditorPlugin {
   public:
@@ -32,6 +33,8 @@ class Plugin : public UICodeEditorPlugin {
 	virtual std::string getFileConfigPath();
 
 	PluginManager* getManager() const;
+
+	PluginContextProvider* getPluginContext() const;
 
 	UISceneNode* getUISceneNode() const;
 

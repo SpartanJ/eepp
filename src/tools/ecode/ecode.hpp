@@ -78,8 +78,6 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	std::vector<std::string> getUnlockedCommands();
 
-	bool isUnlockedCommand( const std::string& command );
-
 	void saveAll();
 
 	ProjectDirectoryTree* getDirTree() const;
@@ -330,6 +328,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 							 UICodeEditor* codeEditor = nullptr,
 							 std::function<void( UICodeEditor*, const std::string& )> onLoaded =
 								 std::function<void( UICodeEditor*, const std::string& )>() );
+
+	void focusOrLoadFile( const std::string& path, const TextRange& range = {} );
 
 	UISceneNode* getUISceneNode() const { return mUISceneNode; }
 

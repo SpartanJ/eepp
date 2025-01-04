@@ -1185,6 +1185,27 @@ void App::loadFileFromPathOrFocus(
 	}
 }
 
+void App::focusOrLoadFile( const std::string& path, const TextRange& range ) {
+	UITab* tab = mSplitter->isDocumentOpen( path, true );
+	if ( !tab ) {
+		FileInfo fileInfo( path );
+		if ( fileInfo.exists() && fileInfo.isRegularFile() )
+			loadFileFromPath( path, true, nullptr, [this, range]( UICodeEditor* editor, auto ) {
+				if ( range.isValid() ) {
+					editor->goToLine( range.start() );
+					mSplitter->addEditorPositionToNavigationHistory( editor );
+				}
+			} );
+	} else {
+		tab->getTabWidget()->setTabSelected( tab );
+		if ( range.isValid() ) {
+			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+			editor->goToLine( range.start() );
+			mSplitter->addEditorPositionToNavigationHistory( editor );
+		}
+	}
+}
+
 void App::createPluginManagerUI() {
 	UIPluginManager::New( mUISceneNode, mPluginManager.get(), [this]( const std::string& path ) {
 		loadFileFromPathOrFocus( path );
@@ -1747,7 +1768,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
 		{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
 		{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
-		{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
+		{ { KEY_F11, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "debug-widget-tree-view" },
 		{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
 		{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
 		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
@@ -1789,18 +1810,16 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 // Old keybindings will be rebinded to the new keybindings of they are still set to the old
 // keybindind
 std::map<std::string, std::string> App::getMigrateKeybindings() {
-	return {
-		{ "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
-		{ "switch-to-tab-2", "alt+2" },		   { "switch-to-tab-3", "alt+3" },
-		{ "switch-to-tab-4", "alt+4" },		   { "switch-to-tab-5", "alt+5" },
-		{ "switch-to-tab-6", "alt+6" },		   { "switch-to-tab-7", "alt+7" },
-		{ "switch-to-tab-8", "alt+8" },		   { "switch-to-tab-9", "alt+9" },
-		{ "switch-to-last-tab", "alt+0" },
+	return { { "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
+			 { "switch-to-tab-2", "alt+2" },		{ "switch-to-tab-3", "alt+3" },
+			 { "switch-to-tab-4", "alt+4" },		{ "switch-to-tab-5", "alt+5" },
+			 { "switch-to-tab-6", "alt+6" },		{ "switch-to-tab-7", "alt+7" },
+			 { "switch-to-tab-8", "alt+8" },		{ "switch-to-tab-9", "alt+9" },
+			 { "switch-to-last-tab", "alt+0" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-		{ "menu-toggle", "mod+shift+m" },
+			 { "menu-toggle", "mod+shift+m" },
 #endif
-		{ "lock-toggle", "mod+shift+l" },
-	};
+			 { "lock-toggle", "mod+shift+l" },		{ "debug-widget-tree-view", "f11" } };
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
@@ -1867,11 +1886,6 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "show-folder-treeview-tab",
 			 "show-build-tab",
 			 "create-new-window" };
-}
-
-bool App::isUnlockedCommand( const std::string& command ) {
-	auto cmds = getUnlockedCommands();
-	return std::find( cmds.begin(), cmds.end(), command ) != cmds.end();
 }
 
 void App::saveProject( bool onlyIfNeeded, bool sessionSnapshotEnabled ) {

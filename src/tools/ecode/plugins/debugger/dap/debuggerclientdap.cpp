@@ -417,8 +417,11 @@ bool DebuggerClientDap::pause( int threadId ) {
 void DebuggerClientDap::processResponseNext( const Response& response,
 											 const nlohmann::json& request ) {
 	if ( response.success ) {
-		ContinuedEvent continuedEvent( request.value( DAP_THREAD_ID, 1 ),
-									   !response.body.value( DAP_SINGLE_THREAD, false ) );
+		bool all = false;
+		if ( response.body.is_object() && response.body.contains( DAP_ALL_THREADS_CONTINUED ) )
+			all = response.body.value( DAP_ALL_THREADS_CONTINUED, false );
+
+		ContinuedEvent continuedEvent( request.value( DAP_THREAD_ID, 1 ), all );
 		for ( auto listener : mListeners )
 			listener->debuggeeContinued( continuedEvent );
 	}
@@ -484,9 +487,9 @@ bool DebuggerClientDap::disconnect( bool restart ) {
 bool DebuggerClientDap::threads() {
 	makeRequest( DAP_THREADS, {}, [this]( const Response& response, const nlohmann::json& ) {
 		if ( response.success ) {
-			auto threads( Thread::parseList( response.body[DAP_THREADS] ) );
+			std::vector<Thread> threads( Thread::parseList( response.body[DAP_THREADS] ) );
 			for ( auto listener : mListeners )
-				listener->threads( threads );
+				listener->threads( std::move( threads ) );
 		} else {
 			for ( auto listener : mListeners )
 				listener->threads( {} );
@@ -505,11 +508,11 @@ bool DebuggerClientDap::stackTrace( int threadId, int startFrame, int levels ) {
 					 if ( response.success ) {
 						 StackTraceInfo stackTraceInfo( response.body );
 						 for ( auto listener : mListeners )
-							 listener->stackTrace( threadId, stackTraceInfo );
+							 listener->stackTrace( threadId, std::move( stackTraceInfo ) );
 					 } else {
 						 StackTraceInfo stackTraceInfo;
 						 for ( auto listener : mListeners )
-							 listener->stackTrace( threadId, stackTraceInfo );
+							 listener->stackTrace( threadId, std::move( stackTraceInfo ) );
 					 }
 				 } );
 	return true;
@@ -523,11 +526,11 @@ bool DebuggerClientDap::scopes( int frameId ) {
 					 if ( response.success ) {
 						 auto scopes( Scope::parseList( response.body[DAP_SCOPES] ) );
 						 for ( auto listener : mListeners )
-							 listener->scopes( frameId, scopes );
+							 listener->scopes( frameId, std::move( scopes ) );
 					 } else {
 						 std::vector<Scope> scopes;
 						 for ( auto listener : mListeners )
-							 listener->scopes( frameId, scopes );
+							 listener->scopes( frameId, std::move( scopes ) );
 					 }
 				 } );
 	return true;
@@ -559,11 +562,11 @@ bool DebuggerClientDap::variables( int variablesReference, Variable::Type filter
 					 if ( response.success ) {
 						 auto variableList( Variable::parseList( response.body[DAP_VARIABLES] ) );
 						 for ( auto listener : mListeners )
-							 listener->variables( variablesReference, variableList );
+							 listener->variables( variablesReference, std::move( variableList ) );
 					 } else {
 						 std::vector<Variable> variableList;
 						 for ( auto listener : mListeners )
-							 listener->variables( variablesReference, variableList );
+							 listener->variables( variablesReference, std::move( variableList ) );
 					 }
 				 } );
 
@@ -576,11 +579,11 @@ bool DebuggerClientDap::modules( int start, int count ) {
 					 if ( response.success ) {
 						 ModulesInfo info( response.body );
 						 for ( auto listener : mListeners )
-							 listener->modules( info );
+							 listener->modules( std::move( info ) );
 					 } else {
 						 ModulesInfo info;
 						 for ( auto listener : mListeners )
-							 listener->modules( info );
+							 listener->modules( std::move( info ) );
 					 }
 				 } );
 	return true;

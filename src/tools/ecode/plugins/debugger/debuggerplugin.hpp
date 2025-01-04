@@ -109,6 +109,10 @@ class DebuggerPlugin : public PluginBase {
 
 	bool setBreakpoint( UICodeEditor* editor, Uint32 lineNumber );
 
+	bool setBreakpoint( TextDocument* doc, Uint32 lineNumber );
+
+	bool breakpointToggleEnabled( TextDocument* doc, Uint32 lineNumber );
+
 	bool onMouseDown( UICodeEditor*, const Vector2i&, const Uint32& flags ) override;
 
 	bool isSupportedByAnyDebugger( const std::string& language );
@@ -116,7 +120,10 @@ class DebuggerPlugin : public PluginBase {
 	void runCurrentConfig();
 
 	void sendFileBreakpoints( const std::string& filePath );
+
 	void sendPendingBreakpoints();
+
+	StatusDebuggerController* getStatusDebuggerController() const;
 };
 
 } // namespace ecode

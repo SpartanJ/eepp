@@ -45,6 +45,10 @@ PluginManager* Plugin::getManager() const {
 	return mManager;
 }
 
+PluginContextProvider* Plugin::getPluginContext() const {
+	return mManager ? mManager->getPluginContext() : nullptr;
+}
+
 UISceneNode* Plugin::getUISceneNode() const {
 	return mManager->getUISceneNode();
 }
@@ -117,8 +121,8 @@ void Plugin::setReady( Time loadTime ) {
 PluginBase::~PluginBase() {
 	mShuttingDown = true;
 	unsubscribeFileSystemListener();
+
 	for ( auto editor : mEditors ) {
-		onBeforeUnregister( editor.first );
 		for ( auto listener : editor.second )
 			editor.first->removeEventListener( listener );
 		editor.first->unregisterPlugin( this );
