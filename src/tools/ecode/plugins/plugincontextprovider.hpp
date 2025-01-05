@@ -118,6 +118,8 @@ class PluginContextProvider {
 	virtual std::string getCurrentWorkingDir() const = 0;
 
 	virtual void focusOrLoadFile( const std::string& path, const TextRange& range = {} ) = 0;
+
+	virtual void runCommand( const std::string& command ) = 0;
 };
 
 } // namespace ecode

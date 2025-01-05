@@ -151,6 +151,17 @@ void DebuggerPlugin::load( PluginManager* pluginManager ) {
 	setReady( clock.getElapsedTime() );
 }
 
+static std::initializer_list<std::string> DebuggerCommandList = {
+	"debugger-continue-interrupt",
+	"debugger-breakpoint-toggle",
+	"debugger-breakpoint-enable-toggle",
+	"debugger-stop",
+	"debugger-step-over",
+	"debugger-step-into",
+	"debugger-step-out",
+	"toggle-status-app-debugger",
+};
+
 void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFile ) {
 	std::string data;
 	if ( !FileSystem::fileGet( path, data ) )
@@ -183,12 +194,16 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 				auto& run = dap["run"];
 				dapTool.run.command = run.value( "command", "" );
 				dapTool.fallbackCommand = run.value( "command_fallback", "" );
-				if ( run.contains( "command_arguments" ) && run["command_arguments"].is_array() ) {
-					auto& args = run["command_arguments"];
-					dapTool.run.args.reserve( args.size() );
-					for ( auto& arg : args ) {
-						if ( args.is_string() )
-							dapTool.run.args.emplace_back( arg.get<std::string>() );
+				if ( run.contains( "command_arguments" ) ) {
+					if ( run["command_arguments"].is_array() ) {
+						auto& args = run["command_arguments"];
+						dapTool.run.args.reserve( args.size() );
+						for ( auto& arg : args ) {
+							if ( args.is_string() )
+								dapTool.run.args.emplace_back( arg.get<std::string>() );
+						}
+					} else if ( run["command_arguments"].is_string() ) {
+						dapTool.run.args.push_back( run["command_arguments"].get<std::string>() );
 					}
 				}
 			}
@@ -243,14 +258,7 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 
 	if ( j.contains( "keybindings" ) ) {
 		auto& kb = j["keybindings"];
-		std::initializer_list<std::string> list = { "debugger-continue-interrupt",
-													"debugger-breakpoint-toggle",
-													"debugger-breakpoint-enable-toggle",
-													"debugger-step-over",
-													"debugger-step-into",
-													"debugger-step-out",
-													"toggle-status-app-debugger" };
-		for ( const auto& key : list ) {
+		for ( const auto& key : DebuggerCommandList ) {
 			if ( kb.contains( key ) ) {
 				if ( !kb[key].empty() )
 					mKeyBindings[key] = kb[key];
@@ -511,6 +519,8 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 		}
 	} );
 
+	doc->setCommand( "debugger-stop", [this] { exitDebugger(); } );
+
 	doc->setCommand( "debugger-breakpoint-toggle", [doc, this] {
 		if ( setBreakpoint( doc, doc->getSelection().start().line() ) )
 			getUISceneNode()->invalidateDraw();
@@ -545,17 +555,13 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 void DebuggerPlugin::onRegisterEditor( UICodeEditor* editor ) {
 	editor->registerGutterSpace( this, PixelDensity::dpToPx( 8 ), 0 );
 
-	editor->addUnlockedCommands( { "debugger-continue-interrupt",
-								   "debugger-breakpoint-enable-toggle",
-								   "toggle-status-app-debugger" } );
+	editor->addUnlockedCommands( DebuggerCommandList );
 
 	PluginBase::onRegisterEditor( editor );
 }
 
 void DebuggerPlugin::onUnregisterEditor( UICodeEditor* editor ) {
-	editor->removeUnlockedCommands( { "debugger-continue-interrupt",
-									  "debugger-breakpoint-enable-toggle",
-									  "toggle-status-app-debugger" } );
+	editor->removeUnlockedCommands( DebuggerCommandList );
 
 	editor->unregisterGutterSpace( this );
 }
@@ -814,6 +820,9 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 		[this]( const Uint64& ) {
 			if ( !mDebugger || !mDebugger->started() ) {
 				exitDebugger();
+
+				getManager()->getPluginContext()->getNotificationCenter()->addNotification(
+					i18n( "debugger_init_failed", "Failed to initialize debugger." ) );
 			} else {
 				mRunButton->runOnMainThread( [this] {
 					mRunButton->setEnabled( true );
@@ -836,6 +845,8 @@ void DebuggerPlugin::exitDebugger() {
 			mRunButton->setEnabled( true );
 		} );
 	}
+
+	setUIDebuggingState( StatusDebuggerController::State::NotStarted );
 }
 
 void DebuggerPlugin::hideSidePanel() {
@@ -858,4 +869,11 @@ StatusDebuggerController* DebuggerPlugin::getStatusDebuggerController() const {
 		getPluginContext()->getStatusBar()->getStatusBarElement( "status_app_debugger" );
 	return static_cast<StatusDebuggerController*>( debuggerElement.get() );
 }
+
+void DebuggerPlugin::setUIDebuggingState( StatusDebuggerController::State state ) {
+	auto ctrl = getStatusDebuggerController();
+	if ( ctrl )
+		ctrl->setDebuggingState( state );
+}
+
 } // namespace ecode

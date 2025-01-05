@@ -173,6 +173,7 @@ DebuggerClientListener::~DebuggerClientListener() {
 			sdc->getUIThreads()->removeEventsOfType( Event::OnModelEvent );
 		if ( sdc->getUIStack() )
 			sdc->getUIStack()->removeEventsOfType( Event::OnModelEvent );
+		mPlugin->setUIDebuggingState( StatusDebuggerController::State::NotStarted );
 	}
 }
 
@@ -223,6 +224,8 @@ void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
 					changeScope( stack );
 				}
 			} );
+
+			mPlugin->setUIDebuggingState( StatusDebuggerController::State::Running );
 		} );
 	}
 }
@@ -278,6 +281,8 @@ void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
 
 	UISceneNode* sceneNode = mPlugin->getUISceneNode();
 	sceneNode->runOnMainThread( [sceneNode] { sceneNode->getWindow()->raise(); } );
+
+	mPlugin->setUIDebuggingState( StatusDebuggerController::State::Paused );
 }
 
 void DebuggerClientListener::debuggeeContinued( const ContinuedEvent& ) {
@@ -285,6 +290,8 @@ void DebuggerClientListener::debuggeeContinued( const ContinuedEvent& ) {
 
 	UISceneNode* sceneNode = mPlugin->getUISceneNode();
 	sceneNode->runOnMainThread( [sceneNode] { sceneNode->invalidateDraw(); } );
+
+	mPlugin->setUIDebuggingState( StatusDebuggerController::State::Running );
 }
 
 void DebuggerClientListener::outputProduced( const Output& output ) {

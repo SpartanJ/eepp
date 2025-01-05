@@ -252,7 +252,15 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 			{ "bug", 0xeaaf },
 			{ "debug", 0xead8 },
 			{ "debug-alt", 0xeb91 },
-		};
+			{ "debug-continue", 0xeacf },
+			{ "debug-disconnect", 0xead0 },
+			{ "debug-pause", 0xead1 },
+			{ "debug-restart", 0xead2 },
+			{ "debug-start", 0xead3 },
+			{ "debug-step-into", 0xead4 },
+			{ "debug-step-out", 0xead5 },
+			{ "debug-step-over", 0xead6 },
+			{ "debug-stop", 0xead7 } };
 
 		for ( const auto& icon : codIcons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );

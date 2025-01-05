@@ -126,6 +126,8 @@ class DebuggerPlugin : public PluginBase {
 	void sendPendingBreakpoints();
 
 	StatusDebuggerController* getStatusDebuggerController() const;
+
+	void setUIDebuggingState( StatusDebuggerController::State state );
 };
 
 } // namespace ecode

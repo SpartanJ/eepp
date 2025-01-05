@@ -18,6 +18,8 @@ namespace ecode {
 
 class StatusDebuggerController : public StatusBarElement {
   public:
+	enum class State { NotStarted, Running, Paused };
+
 	StatusDebuggerController( UISplitter* mainSplitter, UISceneNode* uiSceneNode,
 							  PluginContextProvider* pluginContext );
 
@@ -33,12 +35,21 @@ class StatusDebuggerController : public StatusBarElement {
 
 	UITableView* getUIBreakpoints();
 
+	void setDebuggingState( State state );
+
   protected:
 	UILinearLayout* mContainer{ nullptr };
 	UITableView* mUIThreads{ nullptr };
 	UITableView* mUIStack{ nullptr };
 	UITableView* mUIBreakpoints{ nullptr };
 	UISplitter* mUIThreadsSplitter{ nullptr };
+	UIPushButton* mUIButStart{ nullptr };
+	UIPushButton* mUIButStop{ nullptr };
+	UIPushButton* mUIButContinue{ nullptr };
+	UIPushButton* mUIButPause{ nullptr };
+	UIPushButton* mUIButStepInto{ nullptr };
+	UIPushButton* mUIButStepOver{ nullptr };
+	UIPushButton* mUIButStepOut{ nullptr };
 
 	void createContainer();
 };
