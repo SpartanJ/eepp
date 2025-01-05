@@ -5,7 +5,6 @@
 #include "../../widgetcommandexecuter.hpp"
 #include "busprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
-#include "debuggerclientlistener.hpp"
 #include "statusdebuggercontroller.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>

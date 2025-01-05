@@ -2,18 +2,12 @@
 
 #include "../plugin.hpp"
 #include "../pluginmanager.hpp"
-#include "statusdebuggercontroller.hpp"
+#include "debuggerclientlistener.hpp"
 
 using namespace EE::UI::Models;
 using namespace EE::UI;
 
 namespace ecode {
-
-class DebuggerClient;
-class DebuggerClientListener;
-namespace dap {
-class SourceBreakpointStateful;
-}
 
 struct DapRunConfig {
 	std::string command;
@@ -72,7 +66,7 @@ class DebuggerPlugin : public PluginBase {
 	UIDropDownList* mUIDebuggerList{ nullptr };
 	UIDropDownList* mUIDebuggerConfList{ nullptr };
 	UIPushButton* mRunButton{ nullptr };
-	UnorderedMap<std::string, UnorderedSet<dap::SourceBreakpointStateful>> mBreakpoints;
+	UnorderedMap<std::string, UnorderedSet<SourceBreakpointStateful>> mBreakpoints;
 	UnorderedSet<std::string> mPendingBreakpoints;
 	Mutex mBreakpointsMutex;
 
