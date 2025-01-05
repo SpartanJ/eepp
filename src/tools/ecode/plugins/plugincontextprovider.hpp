@@ -49,6 +49,7 @@ class ProjectBuildManager;
 class NotificationCenter;
 class ProjectDirectoryTree;
 struct TerminalConfig;
+class UIMainLayout;
 
 class PluginContextProvider {
   public:
@@ -120,6 +121,9 @@ class PluginContextProvider {
 	virtual void focusOrLoadFile( const std::string& path, const TextRange& range = {} ) = 0;
 
 	virtual void runCommand( const std::string& command ) = 0;
+
+	virtual UIMainLayout* getMainLayout() const = 0;
+
 };
 
 } // namespace ecode

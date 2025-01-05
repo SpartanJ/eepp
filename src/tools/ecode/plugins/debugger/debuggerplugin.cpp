@@ -2,8 +2,10 @@
 #include "../../notificationcenter.hpp"
 #include "../../projectbuild.hpp"
 #include "../../uistatusbar.hpp"
+#include "../../widgetcommandexecuter.hpp"
 #include "busprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
+#include "debuggerclientlistener.hpp"
 #include "statusdebuggercontroller.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -111,6 +113,11 @@ DebuggerPlugin::~DebuggerPlugin() {
 
 	mDebugger.reset();
 	mListener.reset();
+
+	if ( !isShuttingDown() && getPluginContext()->getMainLayout() ) {
+		for ( const auto& kb : mKeyBindings )
+			getPluginContext()->getMainLayout()->getKeyBindings().removeCommandKeybind( kb.first );
+	}
 }
 
 void DebuggerPlugin::load( PluginManager* pluginManager ) {
@@ -294,8 +301,14 @@ PluginRequestHandle DebuggerPlugin::processMessage( const PluginMessage& msg ) {
 			break;
 		}
 		case ecode::PluginMessageType::UIReady: {
+			for ( const auto& kb : mKeyBindings ) {
+				getPluginContext()->getMainLayout()->getKeyBindings().addKeybindString( kb.second,
+																						kb.first );
+			}
+
 			if ( !mInitialized )
 				updateUI();
+
 			break;
 		}
 		default:

@@ -15,7 +15,6 @@
 #include <eepp/ui/doc/languagessyntaxhighlighting.hpp>
 #include <filesystem>
 #include <iostream>
-#include <nlohmann/json.hpp>
 
 //! Plugins
 #include "plugins/autocomplete/autocompleteplugin.hpp"
@@ -715,7 +714,7 @@ std::string App::getKeybind( const std::string& command ) {
 	auto it = mKeybindingsInvert.find( command );
 	if ( it != mKeybindingsInvert.end() )
 		return KeyBindings::keybindFormat( it->second );
-	return "";
+	return mMainLayout->getKeyBindings().getCommandKeybindString( command );
 }
 
 ProjectDirectoryTree* App::getDirTree() const {
