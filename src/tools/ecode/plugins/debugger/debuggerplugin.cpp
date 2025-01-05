@@ -607,7 +607,7 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 
 			Float dim = radius * 2;
 			Float gutterSpace = editor->getGutterSpace( this );
-			lnPos.x += ( gutterSpace - dim ) * 0.5f;
+			lnPos.x += editor->getLineNumberPaddingLeft() + ( gutterSpace - dim ) * 0.5f;
 			lnPos.y += ( lineHeight - dim ) * 0.5f;
 
 			Triangle2f tri;
@@ -774,7 +774,6 @@ void DebuggerPlugin::hideStatusBarElement() {
 StatusDebuggerController* DebuggerPlugin::getStatusDebuggerController() const {
 	auto debuggerElement =
 		getPluginContext()->getStatusBar()->getStatusBarElement( "status_app_debugger" );
-	eeASSERT( debuggerElement );
 	return static_cast<StatusDebuggerController*>( debuggerElement.get() );
 }
 } // namespace ecode

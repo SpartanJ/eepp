@@ -22,23 +22,20 @@ class ThreadsModel : public Model {
 		mThreads( threads ), mi18nFn( std::move( fn ) ) {}
 
 	virtual size_t rowCount( const ModelIndex& ) const { return mThreads.size(); }
-	virtual size_t columnCount( const ModelIndex& ) const { return 2; }
+	virtual size_t columnCount( const ModelIndex& ) const { return 1; }
 
 	virtual std::string columnName( const size_t& colIdx ) const {
 		switch ( colIdx ) {
 			case 0:
-				return mi18nFn( "id", "ID" );
-			case 1:
-				return mi18nFn( "name", "Name" );
+				return mi18nFn( "thread_id", "Thread ID" );
 		}
 		return "";
 	}
 
 	virtual Variant data( const ModelIndex& modelIndex, ModelRole role ) const {
-		if ( role == ModelRole::Display ) {
-			return modelIndex.column() == 0
-					   ? Variant( String::toString( mThreads[modelIndex.row()].id ) )
-					   : Variant( mThreads[modelIndex.row()].name.c_str() );
+		if ( role == ModelRole::Display && modelIndex.column() == 0 ) {
+			return Variant( String::format( "#%d (%s)", mThreads[modelIndex.row()].id,
+											mThreads[modelIndex.row()].name.c_str() ) );
 		}
 		return {};
 	}
@@ -58,6 +55,22 @@ class ThreadsModel : public Model {
 			mThreads = {};
 		}
 		invalidate();
+	}
+
+	const Thread& getThread( size_t index ) const {
+		Lock l( mResourceLock );
+		eeASSERT( index < mThreads.size() );
+		return mThreads[index];
+	}
+
+	ModelIndex fromThreadId( int id ) {
+		Lock l( mResourceLock );
+		for ( size_t i = 0; i < mThreads.size(); i++ ) {
+			const Thread& thread = mThreads[i];
+			if ( thread.id == id )
+				return index( i );
+		}
+		return {};
 	}
 
   protected:
@@ -136,6 +149,12 @@ class StackModel : public Model {
 		invalidate();
 	}
 
+	const StackFrame& getStack( size_t index ) const {
+		Lock l( mResourceLock );
+		eeASSERT( index < mStack.stackFrames.size() );
+		return mStack.stackFrames[index];
+	}
+
   protected:
 	StackTraceInfo mStack;
 	i18nFn mi18nFn;
@@ -148,6 +167,10 @@ DebuggerClientListener::DebuggerClientListener( DebuggerClient* client, Debugger
 
 DebuggerClientListener::~DebuggerClientListener() {
 	resetState();
+	if ( !mPlugin->isShuttingDown() && getStatusDebuggerController() ) {
+		getStatusDebuggerController()->getUIThreads()->removeEventsOfType( Event::OnModelEvent );
+		getStatusDebuggerController()->getUIStack()->removeEventsOfType( Event::OnModelEvent );
+	}
 }
 
 void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
@@ -174,8 +197,27 @@ void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
 					} );
 			}
 
-			getStatusDebuggerController()->getUIThreads()->setModel( mThreadsModel );
-			getStatusDebuggerController()->getUIStack()->setModel( mStackModel );
+			UITableView* uiThreads = getStatusDebuggerController()->getUIThreads();
+			uiThreads->setModel( mThreadsModel );
+
+			uiThreads->removeEventsOfType( Event::OnModelEvent );
+			uiThreads->onModelEvent( [this]( const ModelEvent* modelEvent ) {
+				if ( modelEvent->getModelEventType() == Abstract::ModelEventType::Open ) {
+					auto model = static_cast<const ThreadsModel*>( modelEvent->getModel() );
+					mClient->stackTrace( model->getThread( modelEvent->getModelIndex().row() ).id );
+				}
+			} );
+
+			UITableView* uiStack = getStatusDebuggerController()->getUIStack();
+			uiStack->setModel( mStackModel );
+			uiStack->removeEventsOfType( Event::OnModelEvent );
+			uiStack->onModelEvent( [this]( const ModelEvent* modelEvent ) {
+				if ( modelEvent->getModelEventType() == Abstract::ModelEventType::Open ) {
+					auto model = static_cast<const StackModel*>( modelEvent->getModel() );
+					const auto& stack = model->getStack( modelEvent->getModelIndex().row() );
+					changeScope( stack );
+				}
+			} );
 		} );
 	}
 }
@@ -199,8 +241,11 @@ void DebuggerClientListener::debuggeeTerminated() {}
 void DebuggerClientListener::capabilitiesReceived( const Capabilities& /*capabilities*/ ) {}
 
 void DebuggerClientListener::resetState() {
+	mStoppedData = {};
+	mCurrentScopePos = {};
 	mThreadsModel->resetThreads();
 	mStackModel->resetStack();
+	mScope.clear();
 }
 
 void DebuggerClientListener::debuggeeExited( int /*exitCode*/ ) {
@@ -212,7 +257,7 @@ void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
 	Log::debug( "DebuggerClientListener::debuggeeStopped: reason %s", event.reason );
 
 	mStoppedData = event;
-	mCurrentThreadId = mStoppedData->threadId ? *mStoppedData->threadId : 1;
+	changeThread( mStoppedData->threadId ? *mStoppedData->threadId : 1 );
 
 	if ( mPausedToRefreshBreakpoints ) {
 		mPlugin->sendPendingBreakpoints();
@@ -229,12 +274,6 @@ void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
 }
 
 void DebuggerClientListener::debuggeeContinued( const ContinuedEvent& ) {
-	mStoppedData = {};
-	mCurrentScopePos = {};
-
-	// Reset models
-	mScope.clear();
-
 	resetState();
 
 	UISceneNode* sceneNode = mPlugin->getUISceneNode();
@@ -261,21 +300,40 @@ void DebuggerClientListener::threads( std::vector<Thread>&& threads ) {
 	mThreadsModel->setThreads( std::move( threads ) );
 }
 
-void DebuggerClientListener::stackTrace( const int /*threadId*/, StackTraceInfo&& stack ) {
-	if ( !stack.stackFrames.empty() ) {
-		auto& f = stack.stackFrames[0];
+void DebuggerClientListener::changeScope( const StackFrame& f ) {
+	mClient->scopes( f.id );
 
-		// mClient->scopes( f.id );
+	if ( !f.source )
+		return;
 
+	TextRange range{ { f.line - 1, f.column }, { f.line - 1, f.column } };
+	std::string path( f.source->path );
+
+	mPlugin->getUISceneNode()->runOnMainThread(
+		[this, path, range] { mPlugin->getPluginContext()->focusOrLoadFile( path, range ); } );
+
+	mCurrentScopePos = { f.source->path, f.line };
+
+	if ( getStatusDebuggerController() && getStatusDebuggerController()->getUIStack() )
+		getStatusDebuggerController()->getUIStack()->setSelection( mStackModel->index( f.id ) );
+}
+
+void DebuggerClientListener::changeThread( int id ) {
+	mCurrentThreadId = id;
+	if ( getStatusDebuggerController() && getStatusDebuggerController()->getUIThreads() ) {
+		getStatusDebuggerController()->getUIThreads()->setSelection(
+			mThreadsModel->fromThreadId( id ) );
+	}
+}
+
+void DebuggerClientListener::stackTrace( const int threadId, StackTraceInfo&& stack ) {
+	changeThread( threadId );
+
+	for ( const auto& f : stack.stackFrames ) {
+		// Jump to the first stack frame that can be read
 		if ( f.source ) {
-			TextRange range{ { f.line - 1, f.column }, { f.line - 1, f.column } };
-			std::string path( f.source->path );
-
-			mPlugin->getUISceneNode()->runOnMainThread( [this, path, range] {
-				mPlugin->getPluginContext()->focusOrLoadFile( path, range );
-			} );
-
-			mCurrentScopePos = { f.source->path, f.line };
+			changeScope( f );
+			break;
 		}
 	}
 

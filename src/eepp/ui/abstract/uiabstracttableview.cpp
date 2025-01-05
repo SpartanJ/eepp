@@ -281,7 +281,8 @@ void UIAbstractTableView::updateHeaderSize() {
 	Float totalWidth = 0;
 	for ( size_t i = 0; i < count; i++ ) {
 		const ColumnData& col = columnData( i );
-		totalWidth += col.width;
+		if ( col.visible )
+			totalWidth += col.width;
 	}
 	mHeader->setPixelsSize( totalWidth, getHeaderHeight() );
 }

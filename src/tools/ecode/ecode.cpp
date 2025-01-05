@@ -578,9 +578,7 @@ void App::initPluginManager() {
 		}
 	};
 
-#ifdef EE_DEBUG
 	mPluginManager->registerPlugin( DebuggerPlugin::Definition() );
-#endif
 	mPluginManager->registerPlugin( LinterPlugin::Definition() );
 	mPluginManager->registerPlugin( FormatterPlugin::Definition() );
 	mPluginManager->registerPlugin( AutoCompletePlugin::Definition() );

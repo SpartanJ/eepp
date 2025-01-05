@@ -79,6 +79,10 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 	StatusDebuggerController* getStatusDebuggerController() const;
 
 	void resetState();
+
+	void changeScope( const StackFrame& f );
+
+	void changeThread( int id );
 };
 
 } // namespace ecode

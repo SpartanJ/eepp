@@ -38,6 +38,7 @@ class StatusDebuggerController : public StatusBarElement {
 	UITableView* mUIThreads{ nullptr };
 	UITableView* mUIStack{ nullptr };
 	UITableView* mUIBreakpoints{ nullptr };
+	UISplitter* mUIThreadsSplitter{ nullptr };
 
 	void createContainer();
 };
