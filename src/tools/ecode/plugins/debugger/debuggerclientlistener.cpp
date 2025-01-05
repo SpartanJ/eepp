@@ -167,9 +167,12 @@ DebuggerClientListener::DebuggerClientListener( DebuggerClient* client, Debugger
 
 DebuggerClientListener::~DebuggerClientListener() {
 	resetState();
-	if ( !mPlugin->isShuttingDown() && getStatusDebuggerController() ) {
-		getStatusDebuggerController()->getUIThreads()->removeEventsOfType( Event::OnModelEvent );
-		getStatusDebuggerController()->getUIStack()->removeEventsOfType( Event::OnModelEvent );
+	auto sdc = getStatusDebuggerController();
+	if ( !mPlugin->isShuttingDown() && sdc ) {
+		if ( sdc->getUIThreads() )
+			sdc->getUIThreads()->removeEventsOfType( Event::OnModelEvent );
+		if ( sdc->getUIStack() )
+			sdc->getUIStack()->removeEventsOfType( Event::OnModelEvent );
 	}
 }
 
@@ -183,17 +186,19 @@ void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
 				->getStatusAppOutputController()
 				->initNewOutput( {}, false );
 
+			UISceneNode* sceneNode = mPlugin->getUISceneNode();
+
 			if ( !mThreadsModel ) {
 				mThreadsModel = std::make_shared<ThreadsModel>(
-					std::vector<Thread>{}, [this]( const auto& key, const auto& val ) {
-						return mPlugin->i18n( key, val );
+					std::vector<Thread>{}, [sceneNode]( const auto& key, const auto& val ) {
+						return sceneNode->i18n( key, val );
 					} );
 			}
 
 			if ( !mStackModel ) {
 				mStackModel = std::make_shared<StackModel>(
-					StackTraceInfo{}, [this]( const auto& key, const auto& val ) {
-						return mPlugin->i18n( key, val );
+					StackTraceInfo{}, [sceneNode]( const auto& key, const auto& val ) {
+						return sceneNode->i18n( key, val );
 					} );
 			}
 
@@ -243,8 +248,10 @@ void DebuggerClientListener::capabilitiesReceived( const Capabilities& /*capabil
 void DebuggerClientListener::resetState() {
 	mStoppedData = {};
 	mCurrentScopePos = {};
-	mThreadsModel->resetThreads();
-	mStackModel->resetStack();
+	if ( mThreadsModel )
+		mThreadsModel->resetThreads();
+	if ( mStackModel )
+		mStackModel->resetStack();
 	mScope.clear();
 }
 

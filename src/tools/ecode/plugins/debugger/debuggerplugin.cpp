@@ -1,4 +1,5 @@
 #include "debuggerplugin.hpp"
+#include "../../notificationcenter.hpp"
 #include "../../projectbuild.hpp"
 #include "../../uistatusbar.hpp"
 #include "busprocess.hpp"
@@ -177,9 +178,11 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 			DapTool dapTool;
 			dapTool.name = dap.value( "name", "" );
 			dapTool.url = dap.value( "url", "" );
+
 			if ( dap.contains( "run" ) ) {
 				auto& run = dap["run"];
 				dapTool.run.command = run.value( "command", "" );
+				dapTool.fallbackCommand = run.value( "command_fallback", "" );
 				if ( run.contains( "command_arguments" ) && run["command_arguments"].is_array() ) {
 					auto& args = run["command_arguments"];
 					dapTool.run.args.reserve( args.size() );
@@ -189,6 +192,7 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 					}
 				}
 			}
+
 			if ( dap.contains( "configurations" ) ) {
 				auto& configs = dap["configurations"];
 				dapTool.configurations.reserve( configs.size() );
@@ -209,6 +213,14 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 				for ( const auto& lang : languages ) {
 					if ( lang.is_string() )
 						dapTool.languagesSupported.emplace_back( lang.get<std::string>() );
+				}
+			}
+
+			if ( dap.contains( "find" ) && dap["find"].is_object() ) {
+				auto find = dap["find"].items();
+				for ( const auto& [key, val] : find ) {
+					if ( val.is_string() )
+						dapTool.findBinary[key] = String::toLower( val.get<std::string>() );
 				}
 			}
 
@@ -693,7 +705,33 @@ bool DebuggerPlugin::isSupportedByAnyDebugger( const std::string& language ) {
 	return false;
 }
 
+static std::string findCommand( const std::string& findBinary, const std::string& cmd ) {
+	std::string findCmd = findBinary;
+	String::replaceAll( findCmd, "${command}", cmd );
+	Process p;
+	p.create( findCmd );
+	std::string path;
+	p.readAllStdOut( path, Seconds( 5 ) );
+	int retCode = -1;
+	p.join( &retCode );
+	if ( retCode == 0 && !path.empty() ) {
+		String::trimInPlace( path, '\n' );
+		return path;
+	}
+	return "";
+}
+
 void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& configuration ) {
+	auto runConfig = getPluginContext()->getProjectBuildManager()->getCurrentRunConfig();
+	if ( !runConfig ) {
+		auto msg =
+			i18n( "no_run_config",
+				  "You must first have a \"Run Target\" configured and selected. Go to \"Build "
+				  "Settings\" and create a new build and run setting (build step is optional)." );
+		mManager->getPluginContext()->getNotificationCenter()->addNotification( msg, Seconds( 5 ) );
+		return;
+	}
+
 	auto debuggerIt = std::find_if( mDaps.begin(), mDaps.end(), [&debugger]( const DapTool& dap ) {
 		return dap.name == debugger;
 	} );
@@ -720,25 +758,69 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 	cmd.command = debuggerIt->run.command;
 	cmd.arguments = debuggerIt->run.args;
 
-	auto bus = std::make_unique<BusProcess>( cmd );
-
-	mDebugger = std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
-	mListener = std::make_unique<DebuggerClientListener>( mDebugger.get(), this );
-	mDebugger->addListener( mListener.get() );
-
 	mRunButton->setEnabled( false );
 
-	mThreadPool->run( [this] { mDebugger->start(); },
-					  [this]( const Uint64& ) {
-						  if ( !mDebugger || !mDebugger->started() ) {
-							  exitDebugger();
-						  } else {
-							  mRunButton->runOnMainThread( [this] {
-								  mRunButton->setEnabled( true );
-								  mRunButton->setText( i18n( "cancel_run", "Cancel Run" ) );
-							  } );
-						  }
-					  } );
+	std::string findBinary;
+	auto findBinaryIt = debuggerIt->findBinary.find( String::toLower( Sys::getPlatform() ) );
+	if ( findBinaryIt != debuggerIt->findBinary.end() )
+		findBinary = findBinaryIt->second;
+
+	std::string fallbackCommand = debuggerIt->fallbackCommand;
+
+	mThreadPool->run(
+		[this, cmd = std::move( cmd ), protocolSettings = std::move( protocolSettings ),
+		 findBinary = std::move( findBinary ),
+		 fallbackCommand = std::move( fallbackCommand )]() mutable {
+			if ( !findBinary.empty() && Sys::which( cmd.command ).empty() ) {
+				auto foundCmd = findCommand( findBinary, cmd.command );
+				if ( !foundCmd.empty() ) {
+					cmd.command = std::move( foundCmd );
+				} else if ( !fallbackCommand.empty() ) {
+					foundCmd = findCommand( findBinary, fallbackCommand );
+					if ( !foundCmd.empty() )
+						cmd.command = std::move( foundCmd );
+				}
+			}
+
+			if ( !FileSystem::fileExists( cmd.command ) && Sys::which( cmd.command ).empty() ) {
+				auto args = Process::parseArgs( cmd.command );
+				if ( args.size() <= 1 ||
+					 ( !FileSystem::fileExists( args[0] ) && Sys::which( args[0] ).empty() ) ) {
+					if ( fallbackCommand.empty() || ( !FileSystem::fileExists( fallbackCommand ) &&
+													  Sys::which( fallbackCommand ).empty() ) ) {
+						auto msg = String::format(
+							i18n( "debugger_binary_not_found",
+								  "Debugger binary not found. Binary \"%s\" must be installed." )
+								.toUtf8(),
+							cmd.command );
+
+						mManager->getPluginContext()->getNotificationCenter()->addNotification(
+							msg );
+						return;
+					} else {
+						cmd.command = std::move( fallbackCommand );
+					}
+				}
+			}
+
+			auto bus = std::make_unique<BusProcess>( cmd );
+
+			mDebugger = std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
+			mListener = std::make_unique<DebuggerClientListener>( mDebugger.get(), this );
+			mDebugger->addListener( mListener.get() );
+
+			mDebugger->start();
+		},
+		[this]( const Uint64& ) {
+			if ( !mDebugger || !mDebugger->started() ) {
+				exitDebugger();
+			} else {
+				mRunButton->runOnMainThread( [this] {
+					mRunButton->setEnabled( true );
+					mRunButton->setText( i18n( "cancel_run", "Cancel Run" ) );
+				} );
+			}
+		} );
 }
 
 void DebuggerPlugin::exitDebugger() {

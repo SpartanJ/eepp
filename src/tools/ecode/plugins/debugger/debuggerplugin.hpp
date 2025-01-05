@@ -26,6 +26,8 @@ struct DapTool {
 	std::vector<std::string> languagesSupported;
 	DapRunConfig run;
 	std::vector<DapConfig> configurations;
+	std::unordered_map<std::string, std::string> findBinary;
+	std::string fallbackCommand;
 };
 
 class DebuggerPlugin : public PluginBase {

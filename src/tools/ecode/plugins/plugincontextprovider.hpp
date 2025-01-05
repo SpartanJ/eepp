@@ -48,7 +48,7 @@ class StatusAppOutputController;
 class ProjectBuildManager;
 class NotificationCenter;
 class ProjectDirectoryTree;
-class TerminalConfig;
+struct TerminalConfig;
 
 class PluginContextProvider {
   public:

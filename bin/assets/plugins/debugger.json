@@ -4,7 +4,8 @@
       "name": "gdb",
       "url": "https://www.gnu.org/software/gdb",
       "run": {
-        "command": "gdb --interpreter=dap"
+        "command": "gdb",
+        "command_arguments": "--interpreter=dap"
       },
       "languages": [ "cpp", "c", "d", "go", "objectivec", "fortran", "pascal", "rust" ],
       "configurations": [
@@ -23,10 +24,14 @@
       ]
     },
     {
-      "name": "lldb-dab",
+      "name": "lldb-dap",
       "url": "https://github.com/llvm/llvm-project/blob/main/lldb/tools/lldb-dap/README.md",
       "run": {
-        "command": "lldb-dap"
+        "command": "lldb-dap",
+        "command_fallback": "lldb-vscode"
+      },
+      "find": {
+        "macos": "xcrun -f ${command}"
       },
       "languages": [ "cpp", "c", "odin", "rust", "zig" ],
       "configurations": [
