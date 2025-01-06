@@ -7,12 +7,8 @@ namespace ecode {
 class DebuggerPlugin;
 class ThreadsModel;
 class StackModel;
-
-struct ModelScope {
-	std::string name;
-	int variablesReference;
-	std::vector<Variable> variables;
-};
+class VariablesModel;
+struct ModelVariableNode;
 
 class DebuggerClientListener : public DebuggerClient::Listener {
   public:
@@ -70,11 +66,12 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 	DebuggerPlugin* mPlugin{ nullptr };
 	std::optional<StoppedEvent> mStoppedData;
 	std::optional<std::pair<std::string, int>> mCurrentScopePos;
-	std::vector<ModelScope> mScope;
 	bool mPausedToRefreshBreakpoints{ false };
 	int mCurrentThreadId{ 1 };
 	std::shared_ptr<ThreadsModel> mThreadsModel;
 	std::shared_ptr<StackModel> mStackModel;
+	std::shared_ptr<VariablesModel> mVariablesModel;
+	std::shared_ptr<ModelVariableNode> mVariablesRoot;
 
 	StatusDebuggerController* getStatusDebuggerController() const;
 

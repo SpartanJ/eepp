@@ -122,6 +122,8 @@ class PluginContextProvider {
 
 	virtual void runCommand( const std::string& command ) = 0;
 
+	virtual bool commandExists( const std::string& command ) const = 0;
+
 	virtual UIMainLayout* getMainLayout() const = 0;
 
 };

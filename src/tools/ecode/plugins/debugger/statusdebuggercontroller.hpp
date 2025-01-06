@@ -9,6 +9,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uisplitter.hpp>
 #include <eepp/ui/uitableview.hpp>
+#include <eepp/ui/uitreeview.hpp>
 
 using namespace EE;
 using namespace EE::UI;
@@ -35,6 +36,8 @@ class StatusDebuggerController : public StatusBarElement {
 
 	UITableView* getUIBreakpoints();
 
+	UITreeView* getUIVariables() const;
+
 	void setDebuggingState( State state );
 
   protected:
@@ -42,6 +45,7 @@ class StatusDebuggerController : public StatusBarElement {
 	UITableView* mUIThreads{ nullptr };
 	UITableView* mUIStack{ nullptr };
 	UITableView* mUIBreakpoints{ nullptr };
+	UITreeView* mUIVariables{ nullptr };
 	UISplitter* mUIThreadsSplitter{ nullptr };
 	UIPushButton* mUIButStart{ nullptr };
 	UIPushButton* mUIButStop{ nullptr };

@@ -16,6 +16,163 @@ DebuggerClientListener::fromSet( const EE::UnorderedSet<SourceBreakpointStateful
 
 using i18nFn = std::function<String( const std::string&, const String& )>;
 
+struct ModelVariableNode : public std::enable_shared_from_this<ModelVariableNode> {
+	using NodePtr = std::shared_ptr<ModelVariableNode>;
+
+	static std::unordered_map<int, NodePtr> nodeMap;
+
+	static NodePtr getNodeByReference( int variablesReference ) {
+		auto it = nodeMap.find( variablesReference );
+		return ( it != nodeMap.end() ) ? it->second : nullptr;
+	}
+
+	ModelVariableNode( Variable&& var, NodePtr parent ) :
+		parent( parent ), var( std::move( var ) ) {}
+
+	ModelVariableNode( const std::string& name, int variablesReference, NodePtr parent = nullptr ) :
+		parent( parent ) {
+		var.name = name;
+		var.variablesReference = variablesReference;
+	}
+
+	virtual ~ModelVariableNode() {}
+
+	const std::vector<NodePtr>& getChildren() const { return children; }
+
+	const std::string& getName() const { return var.name; }
+
+	int getVariablesReference() const { return var.variablesReference; }
+
+	void clear() { children.clear(); }
+
+	std::optional<NodePtr> getChild( const std::string& name ) {
+		auto found =
+			std::find_if( children.begin(), children.end(),
+						  [&name]( const NodePtr& child ) { return child->var.name == name; } );
+		return ( found != children.end() ) ? *found : std::optional<NodePtr>{};
+	}
+
+	std::optional<NodePtr> getChild( int variablesReference ) {
+		auto found = std::find_if( children.begin(), children.end(),
+								   [variablesReference]( const NodePtr& child ) {
+									   return child->var.variablesReference == variablesReference;
+								   } );
+		return ( found != children.end() ) ? *found : std::optional<NodePtr>{};
+	}
+
+	void addChild( NodePtr child ) { children.emplace_back( child ); }
+
+	NodePtr getParent() const { return parent; }
+
+	NodePtr parent{ nullptr };
+	Variable var;
+	std::vector<NodePtr> children;
+};
+
+std::unordered_map<int, ModelVariableNode::NodePtr> ModelVariableNode::nodeMap =
+	std::unordered_map<int, ModelVariableNode::NodePtr>();
+
+class VariablesModel : public Model {
+  public:
+	VariablesModel( ModelVariableNode::NodePtr rootNode, i18nFn fn ) :
+		rootNode( rootNode ), mi18nFn( fn ) {}
+
+	ModelIndex index( int row, int column,
+					  const ModelIndex& parent = ModelIndex() ) const override {
+		ModelVariableNode* parentNode =
+			parent.isValid() ? static_cast<ModelVariableNode*>( parent.internalData() )
+							 : rootNode.get();
+
+		if ( row >= 0 && row < static_cast<int>( parentNode->getChildren().size() ) ) {
+			ModelVariableNode::NodePtr childNode = parentNode->getChildren()[row];
+			return createIndex( row, column, childNode.get() );
+		}
+
+		return ModelIndex();
+	}
+
+	ModelIndex parentIndex( const ModelIndex& index ) const override {
+		if ( !index.isValid() )
+			return ModelIndex();
+
+		ModelVariableNode* childNode = static_cast<ModelVariableNode*>( index.internalData() );
+		ModelVariableNode::NodePtr parentNode = childNode->getParent();
+
+		if ( parentNode == nullptr || parentNode == rootNode )
+			return ModelIndex();
+
+		ModelVariableNode::NodePtr grandParentNode = parentNode->getParent();
+		if ( grandParentNode == nullptr )
+			grandParentNode = rootNode;
+
+		int row = std::distance( grandParentNode->getChildren().begin(),
+								 std::find_if( grandParentNode->getChildren().begin(),
+											   grandParentNode->getChildren().end(),
+											   [parentNode]( ModelVariableNode::NodePtr node ) {
+												   return node.get() == parentNode.get();
+											   } ) );
+
+		return createIndex( row, 0, parentNode.get() );
+	}
+
+	size_t rowCount( const ModelIndex& index = ModelIndex() ) const override {
+		ModelVariableNode* parentNode =
+			index.isValid() ? static_cast<ModelVariableNode*>( index.internalData() )
+							: rootNode.get();
+
+		return static_cast<int>( parentNode->getChildren().size() );
+	}
+
+	bool hasChilds( const ModelIndex& index = ModelIndex() ) const override {
+		if ( !index.isValid() )
+			return !rootNode->children.empty();
+		ModelVariableNode* node = static_cast<ModelVariableNode*>( index.internalData() );
+		return !node->children.empty() ||
+			   ( node->var.namedVariables ? *node->var.namedVariables : 0 ) +
+					   ( node->var.indexedVariables ? *node->var.indexedVariables : 0 ) >
+				   0;
+	}
+
+	size_t columnCount( const ModelIndex& ) const override { return 3; }
+
+	std::string columnName( const size_t& colIdx ) const override {
+		switch ( colIdx ) {
+			case 0:
+				return mi18nFn( "variable_name", "Variable Name" );
+			case 1:
+				return mi18nFn( "value", "Value" );
+			case 2:
+				return mi18nFn( "type", "Type" );
+		}
+		return "";
+	}
+
+	Variant data( const ModelIndex& index, ModelRole role ) const override {
+		static const char* EMPTY = "";
+		if ( !index.isValid() )
+			return EMPTY;
+
+		ModelVariableNode* node = static_cast<ModelVariableNode*>( index.internalData() );
+
+		if ( role == ModelRole::Display ) {
+			switch ( index.column() ) {
+				case 0:
+					return Variant( node->var.name.c_str() );
+				case 1:
+					return Variant( node->var.value.c_str() );
+				case 2:
+					return Variant( node->var.type ? node->var.type->c_str() : EMPTY );
+			}
+		}
+
+		return EMPTY;
+	}
+
+  protected:
+	ModelVariableNode::NodePtr rootNode;
+	i18nFn mi18nFn;
+};
+
 class ThreadsModel : public Model {
   public:
 	ThreadsModel( const std::vector<Thread>& threads, i18nFn fn ) :
@@ -161,7 +318,10 @@ class StackModel : public Model {
 };
 
 DebuggerClientListener::DebuggerClientListener( DebuggerClient* client, DebuggerPlugin* plugin ) :
-	mClient( client ), mPlugin( plugin ) {
+	mClient( client ),
+	mPlugin( plugin ),
+	mVariablesRoot( std::make_shared<ModelVariableNode>( "Root", 0 ) ) {
+	ModelVariableNode::nodeMap[0] = mVariablesRoot;
 	eeASSERT( mClient && mPlugin );
 }
 
@@ -203,6 +363,13 @@ void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
 					} );
 			}
 
+			if ( !mVariablesModel ) {
+				mVariablesModel = std::make_shared<VariablesModel>(
+					mVariablesRoot, [sceneNode]( const auto& key, const auto& val ) {
+						return sceneNode->i18n( key, val );
+					} );
+			}
+
 			UITableView* uiThreads = getStatusDebuggerController()->getUIThreads();
 			uiThreads->setModel( mThreadsModel );
 
@@ -222,6 +389,17 @@ void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
 					auto model = static_cast<const StackModel*>( modelEvent->getModel() );
 					const auto& stack = model->getStack( modelEvent->getModelIndex().row() );
 					changeScope( stack );
+				}
+			} );
+
+			UITreeView* uiVariables = getStatusDebuggerController()->getUIVariables();
+			uiVariables->setModel( mVariablesModel );
+			uiVariables->removeEventsOfType( Event::OnModelEvent );
+			uiVariables->onModelEvent( [this]( const ModelEvent* modelEvent ) {
+				if ( modelEvent->getModelEventType() == Abstract::ModelEventType::OpenTree ) {
+					ModelVariableNode* node = static_cast<ModelVariableNode*>(
+						modelEvent->getModelIndex().internalData() );
+					mClient->variables( node->var.variablesReference );
 				}
 			} );
 
@@ -255,7 +433,7 @@ void DebuggerClientListener::resetState() {
 		mThreadsModel->resetThreads();
 	if ( mStackModel )
 		mStackModel->resetStack();
-	mScope.clear();
+	mVariablesRoot->clear();
 }
 
 void DebuggerClientListener::debuggeeExited( int /*exitCode*/ ) {
@@ -355,26 +533,48 @@ void DebuggerClientListener::stackTrace( const int threadId, StackTraceInfo&& st
 }
 
 void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&& scopes ) {
-	if ( !scopes.empty() ) {
-		for ( const auto& scope : scopes ) {
-			ModelScope mscope;
-			mscope.name = scope.name;
-			mscope.variablesReference = scope.variablesReference;
-			mScope.emplace_back( std::move( mscope ) );
-			mClient->variables( scope.variablesReference );
-		}
+	if ( scopes.empty() )
+		return;
+
+	mVariablesRoot->clear();
+
+	for ( const auto& scope : scopes ) {
+		auto child = std::make_shared<ModelVariableNode>( scope.name, scope.variablesReference );
+		mVariablesRoot->addChild( child );
+		ModelVariableNode::nodeMap[child->var.variablesReference] = child;
+
+		mClient->variables( scope.variablesReference );
 	}
+
+	if ( !getStatusDebuggerController() )
+		return;
+	auto uiVars = getStatusDebuggerController()->getUIVariables();
+	if ( uiVars )
+		uiVars->runOnMainThread( [uiVars] { uiVars->expandAll(); } );
 }
 
 void DebuggerClientListener::variables( const int variablesReference,
 										std::vector<Variable>&& vars ) {
-	auto scopeIt =
-		std::find_if( mScope.begin(), mScope.end(), [variablesReference]( const ModelScope& cur ) {
-			return cur.variablesReference == variablesReference;
-		} );
-	if ( scopeIt == mScope.end() )
+	auto parentNode = ModelVariableNode::getNodeByReference( variablesReference );
+	if ( !parentNode )
 		return;
-	scopeIt->variables = vars;
+
+	for ( auto& var : vars ) {
+		if ( var.name.empty() )
+			continue;
+
+		auto found = parentNode->getChild( var.name );
+		if ( found ) {
+			( *found )->var = std::move( var );
+			continue;
+		}
+
+		auto child = std::make_shared<ModelVariableNode>( std::move( var ), parentNode );
+		parentNode->addChild( child );
+
+		if ( child->var.variablesReference != 0 )
+			ModelVariableNode::nodeMap[child->var.variablesReference] = child;
+	}
 }
 
 void DebuggerClientListener::modules( ModulesInfo&& ) {}

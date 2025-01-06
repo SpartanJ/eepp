@@ -69,6 +69,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void runCommand( const std::string& command );
 
+	bool commandExists( const std::string& command ) const;
+
 	bool loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync, bool stdOutLogs,
 					 bool disableFileLogs );
 

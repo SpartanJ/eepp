@@ -539,6 +539,15 @@ void App::runCommand( const std::string& command ) {
 	}
 }
 
+bool App::commandExists( const std::string& command ) const {
+	if ( mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+		UICodeEditor* editor = mSplitter->getCurWidget()->asType<UICodeEditor>();
+		if ( editor->getDocument().hasCommand( command ) )
+			return true;
+	}
+	return mMainLayout->getKeyBindings().hasCommand( command );
+}
+
 void App::onPluginEnabled( Plugin* plugin ) {
 	if ( mSplitter ) {
 		mSplitter->forEachEditor(
