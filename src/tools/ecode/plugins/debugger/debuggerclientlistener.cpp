@@ -45,6 +45,18 @@ struct ModelVariableNode : public std::enable_shared_from_this<ModelVariableNode
 
 	void clear() { children.clear(); }
 
+	std::optional<NodePtr> getChildRecursive( int variablesReference ) {
+		if ( var.variablesReference == variablesReference )
+			return shared_from_this();
+
+		for ( const auto& child : children ) {
+			auto found = child->getChild( variablesReference );
+			if ( found )
+				return found;
+		}
+		return {};
+	}
+
 	std::optional<NodePtr> getChild( const std::string& name ) {
 		auto found =
 			std::find_if( children.begin(), children.end(),
@@ -127,10 +139,7 @@ class VariablesModel : public Model {
 		if ( !index.isValid() )
 			return !rootNode->children.empty();
 		ModelVariableNode* node = static_cast<ModelVariableNode*>( index.internalData() );
-		return !node->children.empty() ||
-			   ( node->var.namedVariables ? *node->var.namedVariables : 0 ) +
-					   ( node->var.indexedVariables ? *node->var.indexedVariables : 0 ) >
-				   0;
+		return !node->children.empty() || node->var.variablesReference > 0;
 	}
 
 	size_t columnCount( const ModelIndex& ) const override { return 3; }
@@ -461,6 +470,13 @@ void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
 	sceneNode->runOnMainThread( [sceneNode] { sceneNode->getWindow()->raise(); } );
 
 	mPlugin->setUIDebuggingState( StatusDebuggerController::State::Paused );
+
+	auto sdc = getStatusDebuggerController();
+	if ( sdc ) {
+		sdc->getWidget()->runOnMainThread( [sdc] {
+			sdc->show();
+		} );
+	}
 }
 
 void DebuggerClientListener::debuggeeContinued( const ContinuedEvent& ) {
@@ -549,15 +565,24 @@ void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&&
 	if ( !getStatusDebuggerController() )
 		return;
 	auto uiVars = getStatusDebuggerController()->getUIVariables();
-	if ( uiVars )
-		uiVars->runOnMainThread( [uiVars] { uiVars->expandAll(); } );
+	if ( uiVars ) {
+		uiVars->runOnMainThread( [uiVars] {
+			auto model = uiVars->getModel();
+			for ( size_t i = 0; i < model->rowCount(); i++ )
+				uiVars->setExpanded( model->index( i, 0 ), true );
+		} );
+	}
 }
 
 void DebuggerClientListener::variables( const int variablesReference,
 										std::vector<Variable>&& vars ) {
 	auto parentNode = ModelVariableNode::getNodeByReference( variablesReference );
-	if ( !parentNode )
-		return;
+	if ( !parentNode ) {
+		auto node = mVariablesRoot->getChildRecursive( variablesReference );
+		if ( !node )
+			return;
+		parentNode = *node;
+	}
 
 	for ( auto& var : vars ) {
 		if ( var.name.empty() )
@@ -566,6 +591,9 @@ void DebuggerClientListener::variables( const int variablesReference,
 		auto found = parentNode->getChild( var.name );
 		if ( found ) {
 			( *found )->var = std::move( var );
+			mVariablesModel->invalidate( Model::UpdateFlag::DontInvalidateIndexes );
+			if ( ( *found )->var.variablesReference != 0 )
+				ModelVariableNode::nodeMap[( *found )->var.variablesReference] = *found;
 			continue;
 		}
 

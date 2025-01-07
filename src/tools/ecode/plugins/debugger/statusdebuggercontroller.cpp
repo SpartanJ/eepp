@@ -34,6 +34,10 @@ UITreeView* StatusDebuggerController::getUIVariables() const {
 	return mUIVariables;
 }
 
+UITabWidget* StatusDebuggerController::getUITabWidget() const {
+	return mUITabWidget;
+}
+
 void StatusDebuggerController::setDebuggingState( State state ) {
 	if ( !mContainer )
 		return;
@@ -66,16 +70,16 @@ void StatusDebuggerController::createContainer() {
 	}
 	</style>
 	<hbox id="app_debugger" class="vertical_bar" lw="mp" lh="mp" visible="false">
-		<TabWidget lw="0" lw8="1" lh="mp">
+		<TabWidget id="app_debugger_tab_widget" lw="0" lw8="1" lh="mp">
 			<Splitter id="debugger_threads_and_stack" layout_width="mp" lh="mp" splitter-partition="15%">
 				<TableView id="debugger_threads" layout_width="mp" layout_height="mp" />
 				<TableView id="debugger_stack" layout_width="mp" layout_height="mp" />
 			</Splitter>
 			<TableView id="debugger_breakpoints" layout_width="mp" layout_height="mp" />
 			<TreeView id="debugger_variables" layout_width="mp" layout_height="mp" />
-			<Tab text="@string(threads_and_stack, Threads & Stack)" owns="debugger_threads_and_stack" />
-			<Tab text="@string(variables, Variables)" owns="debugger_variables" />
-			<Tab text="@string(breakpoints, Breakpoints)" owns="debugger_breakpoints" />
+			<Tab id="debugger_tab_threads_and_stack" text="@string(threads_and_stack, Threads & Stack)" owns="debugger_threads_and_stack" />
+			<Tab id="debugger_tab_variables" text="@string(variables, Variables)" owns="debugger_variables" />
+			<Tab id="debugger_tab_breakpoints" text="@string(breakpoints, Breakpoints)" owns="debugger_breakpoints" />
 		</TabWidget>
 		<vbox id="app_debugger_buttons" lw="16dp" lh="mp">
 			<PushButton id="app_debugger_start" lw="mp" icon="icon(debug-start, 12dp)" tooltip="@string(start, Start)" />
@@ -98,6 +102,7 @@ void StatusDebuggerController::createContainer() {
 					 ->loadLayoutFromString( XML, mMainSplitter )
 					 ->asType<UILinearLayout>();
 
+	mContainer->bind( "app_debugger_tab_widget", mUITabWidget );
 	mContainer->bind( "debugger_threads_and_stack", mUIThreadsSplitter );
 	mContainer->bind( "debugger_threads", mUIThreads );
 	mContainer->bind( "debugger_stack", mUIStack );

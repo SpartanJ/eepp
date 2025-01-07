@@ -38,6 +38,8 @@ class StatusDebuggerController : public StatusBarElement {
 
 	UITreeView* getUIVariables() const;
 
+	UITabWidget* getUITabWidget() const;
+
 	void setDebuggingState( State state );
 
   protected:
@@ -54,6 +56,7 @@ class StatusDebuggerController : public StatusBarElement {
 	UIPushButton* mUIButStepInto{ nullptr };
 	UIPushButton* mUIButStepOver{ nullptr };
 	UIPushButton* mUIButStepOut{ nullptr };
+	UITabWidget* mUITabWidget{ nullptr };
 
 	void createContainer();
 };

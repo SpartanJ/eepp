@@ -382,7 +382,7 @@ void App::openFolderDialog() {
 	dialog->show();
 }
 
-void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
+void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool terminalFont ) {
 	std::string absoluteFontPath( fontPath );
 	if ( FileSystem::isRelativePath( absoluteFontPath ) )
 		absoluteFontPath = mResPath + fontPath;
@@ -402,7 +402,8 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
 			mSplitter->getCurWidget()->setFocus();
 	} );
-	dialog->on( Event::OpenFile, [this, &fontPath, loadingMonoFont]( const Event* event ) {
+	dialog->on( Event::OpenFile, [this, &fontPath, loadingMonoFont,
+								  terminalFont]( const Event* event ) {
 		auto newPath = event->getNode()->asType<UIFileDialog>()->getFullPath();
 		if ( String::startsWith( newPath, mResPath ) )
 			newPath = newPath.substr( mResPath.size() );
@@ -415,15 +416,23 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 				FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( newPath ) );
 			FontTrueType* fontMono = loadFont( fontName, newPath );
 			if ( fontMono ) {
-				auto loadMonoFont = [this, &fontPath, newPath]( FontTrueType* fontMono ) {
+				auto loadMonoFont = [this, &fontPath, newPath,
+									 terminalFont]( FontTrueType* fontMono ) {
 					fontPath = newPath;
 					mFontMono = fontMono;
 					mFontMono->setEnableDynamicMonospace( true );
 					mFontMono->setBoldAdvanceSameAsRegular( true );
 					FontFamily::loadFromRegular( mFontMono );
 					if ( mSplitter ) {
-						mSplitter->forEachEditor(
-							[this]( UICodeEditor* editor ) { editor->setFont( mFontMono ); } );
+						if ( terminalFont ) {
+							mSplitter->forEachWidgetType(
+								UI_TYPE_TERMINAL, [this]( UIWidget* term ) {
+									term->asType<UITerminal>()->setFont( mFontMono );
+								} );
+						} else {
+							mSplitter->forEachEditor(
+								[this]( UICodeEditor* editor ) { editor->setFont( mFontMono ); } );
+						}
 					}
 				};
 				if ( !fontMono->isMonospace() ) {

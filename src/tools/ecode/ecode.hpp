@@ -57,7 +57,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void openFolderDialog();
 
-	void openFontDialog( std::string& fontPath, bool loadingMonoFont );
+	void openFontDialog( std::string& fontPath, bool loadingMonoFont, bool terminalFont = false );
 
 	void downloadFileWeb( const std::string& url );
 
@@ -297,7 +297,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		t.setCommand( "monospace-font",
 					  [this] { openFontDialog( mConfig.ui.monospaceFont, true ); } );
 		t.setCommand( "terminal-font",
-					  [this] { openFontDialog( mConfig.ui.terminalFont, false ); } );
+					  [this] { openFontDialog( mConfig.ui.terminalFont, true, true ); } );
 		t.setCommand( "fallback-font",
 					  [this] { openFontDialog( mConfig.ui.fallbackFont, false ); } );
 		t.setCommand( "tree-view-configure-ignore-files",
