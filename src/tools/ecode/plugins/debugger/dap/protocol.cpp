@@ -255,13 +255,13 @@ StoppedEvent::StoppedEvent( const json& body ) :
 	allThreadsStopped( parseOptionalBool( body, "allThreadsStopped" ) ),
 	hitBreakpointsIds( parseOptionalIntList( body, "hitBreakpointsIds" ) ) {}
 
-Thread::Thread( const json& body ) :
+DapThread::DapThread( const json& body ) :
 	id( body[DAP_ID].get<int>() ), name( body[DAP_NAME].get<std::string>() ) {}
 
-Thread::Thread( const int id ) : id( id ), name( std::string() ) {}
+DapThread::DapThread( const int id ) : id( id ), name( std::string() ) {}
 
-std::vector<Thread> Thread::parseList( const json& threads ) {
-	return parseObjectList<Thread>( threads );
+std::vector<DapThread> DapThread::parseList( const json& threads ) {
+	return parseObjectList<DapThread>( threads );
 }
 
 StackFrame::StackFrame( const json& body ) :

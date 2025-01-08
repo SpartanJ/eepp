@@ -1,7 +1,66 @@
 #include "statusdebuggercontroller.hpp"
 #include "../plugincontextprovider.hpp"
+#include "eepp/ui/uiwidgetcreator.hpp"
+#include <eepp/ui/uicheckbox.hpp>
 
 namespace ecode {
+
+std::function<UITextView*( UIPushButton* )>
+UIBreakpointsTableView::getCheckBoxFn( const ModelIndex& index, const BreakpointsModel* model ) {
+	return [index, model, this]( UIPushButton* ) -> UITextView* {
+		UICheckBox* chk = UICheckBox::New();
+		bool enabled =
+			model->data( model->index( index.row(), BreakpointsModel::Enabled ), ModelRole::Data )
+				.asBool();
+		chk->setChecked( enabled );
+		chk->setCheckMode( UICheckBox::Button );
+		chk->on( Event::OnValueChange, [this, index, model, chk]( const Event* ) {
+			bool checked = chk->isChecked();
+			if ( !onBreakpointEnabledChange )
+				return;
+
+			std::string filePath(
+				model
+					->data( model->index( index.row(), BreakpointsModel::SourcePath ),
+							ModelRole::Data )
+					.asCStr() );
+			int line(
+				model->data( model->index( index.row(), BreakpointsModel::Line ), ModelRole::Data )
+					.asInt() );
+			onBreakpointEnabledChange( filePath, line, checked );
+		} );
+		return chk;
+	};
+}
+
+UIWidget* UIBreakpointsTableView::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
+	if ( index.column() == BreakpointsModel::Enabled ) {
+		UITableCell* widget = UITableCell::NewWithOpt(
+			mTag + "::cell", getCheckBoxFn( index, (const BreakpointsModel*)getModel() ) );
+		widget->getTextBox()->setEnabled( true );
+		widget->setDontAutoHideEmptyTextBox( true );
+		return setupCell( widget, rowWidget, index );
+	} else if ( index.column() == BreakpointsModel::Remove ) {
+		auto cell = UITableView::createCell( rowWidget, index );
+		auto model = (const BreakpointsModel*)getModel();
+		cell->onClick( [model, index, this]( auto ) {
+			if ( onBreakpointRemove ) {
+				std::string filePath(
+					model
+						->data( model->index( index.row(), BreakpointsModel::SourcePath ),
+								ModelRole::Data )
+						.asCStr() );
+				int line( model
+							  ->data( model->index( index.row(), BreakpointsModel::Line ),
+									  ModelRole::Data )
+							  .asInt() );
+				onBreakpointRemove( filePath, line );
+			}
+		} );
+		return cell;
+	}
+	return UITableView::createCell( rowWidget, index );
+}
 
 StatusDebuggerController::StatusDebuggerController( UISplitter* mainSplitter,
 													UISceneNode* uiSceneNode,
@@ -26,7 +85,7 @@ UITableView* StatusDebuggerController::getUIStack() {
 	return mUIStack;
 }
 
-UITableView* StatusDebuggerController::getUIBreakpoints() {
+UIBreakpointsTableView* StatusDebuggerController::getUIBreakpoints() {
 	return mUIBreakpoints;
 }
 
@@ -75,7 +134,7 @@ void StatusDebuggerController::createContainer() {
 				<TableView id="debugger_threads" layout_width="mp" layout_height="mp" />
 				<TableView id="debugger_stack" layout_width="mp" layout_height="mp" />
 			</Splitter>
-			<TableView id="debugger_breakpoints" layout_width="mp" layout_height="mp" />
+			<BreakpointsTableView id="debugger_breakpoints" layout_width="mp" layout_height="mp" />
 			<TreeView id="debugger_variables" layout_width="mp" layout_height="mp" />
 			<Tab id="debugger_tab_threads_and_stack" text="@string(threads_and_stack, Threads & Stack)" owns="debugger_threads_and_stack" />
 			<Tab id="debugger_tab_variables" text="@string(variables, Variables)" owns="debugger_variables" />
@@ -92,6 +151,8 @@ void StatusDebuggerController::createContainer() {
 		</vbox>
 	</hbox>
 	)xml";
+
+	UIWidgetCreator::registerWidget( "BreakpointsTableView", UIBreakpointsTableView::New );
 
 	if ( mMainSplitter->getLastWidget() != nullptr ) {
 		mMainSplitter->getLastWidget()->setVisible( false );
@@ -138,11 +199,14 @@ void StatusDebuggerController::createContainer() {
 	mUIThreads->setAutoExpandOnSingleColumn( true );
 
 	mUIStack->setAutoColumnsWidth( true );
+	mUIStack->setFitAllColumnsToWidget( true );
 	mUIStack->setMainColumn( 1 );
 
 	mUIVariables->setAutoColumnsWidth( true );
+	mUIVariables->setFitAllColumnsToWidget( true );
 
 	mUIBreakpoints->setAutoColumnsWidth( true );
+	mUIBreakpoints->setFitAllColumnsToWidget( true );
 	mUIBreakpoints->setMainColumn( 1 );
 }
 

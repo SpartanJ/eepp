@@ -132,7 +132,8 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 				  mApp->runCommand( cmd );
 				  if ( mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) &&
 					   mSplitter->curEditorIsNotNull() &&
-					   mSplitter->getCurEditor()->getDocument().hasCommand( cmd ) )
+					   mSplitter->getCurEditor()->getDocument().hasCommand( cmd ) &&
+					   !mUISceneNode->getRoot()->getLastChild()->isType( UI_TYPE_WINDOW ) )
 					  mSplitter->getCurEditor()->setFocus();
 				  if ( cmd != "open-locatebar" && cmd != "open-workspace-symbol-search" &&
 					   cmd != "open-document-symbol-search" && cmd != "go-to-line" &&
@@ -760,7 +761,6 @@ std::shared_ptr<FileListModel> UniversalLocator::openDocumentsModel( const std::
 
 	return std::make_shared<FileListModel>( std::move( ffiles ), std::move( fnames ) );
 }
-
 
 void UniversalLocator::updateOpenDocumentsTable() {
 	mLocateTable->setModel(

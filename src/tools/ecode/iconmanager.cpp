@@ -260,7 +260,8 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 			{ "debug-step-into", 0xead4 },
 			{ "debug-step-out", 0xead5 },
 			{ "debug-step-over", 0xead6 },
-			{ "debug-stop", 0xead7 } };
+			{ "debug-stop", 0xead7 },
+			{ "chrome-close", 0xeab8 } };
 
 		for ( const auto& icon : codIcons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );

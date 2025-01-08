@@ -2,6 +2,7 @@
 #define ECODE_STATUSDEBUGGERCONTROLLER_HPP
 
 #include "../../uistatusbar.hpp"
+#include "models/breakpointsmodel.hpp"
 #include <eepp/system/luapattern.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
@@ -16,6 +17,23 @@ using namespace EE::UI;
 using namespace EE::UI::Tools;
 
 namespace ecode {
+
+class UIBreakpointsTableView : public UITableView {
+  public:
+	static UIWidget* New() { return eeNew( UIBreakpointsTableView, () ); }
+
+	UIBreakpointsTableView() : UITableView() {}
+
+	std::function<void( const std::string& file, int line, bool enabled )>
+		onBreakpointEnabledChange;
+
+	std::function<void( const std::string& file, int line )> onBreakpointRemove;
+
+	std::function<UITextView*( UIPushButton* )> getCheckBoxFn( const ModelIndex& index,
+															   const BreakpointsModel* model );
+
+	UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index );
+};
 
 class StatusDebuggerController : public StatusBarElement {
   public:
@@ -34,7 +52,7 @@ class StatusDebuggerController : public StatusBarElement {
 
 	UITableView* getUIStack();
 
-	UITableView* getUIBreakpoints();
+	UIBreakpointsTableView* getUIBreakpoints();
 
 	UITreeView* getUIVariables() const;
 
@@ -46,7 +64,7 @@ class StatusDebuggerController : public StatusBarElement {
 	UILinearLayout* mContainer{ nullptr };
 	UITableView* mUIThreads{ nullptr };
 	UITableView* mUIStack{ nullptr };
-	UITableView* mUIBreakpoints{ nullptr };
+	UIBreakpointsTableView* mUIBreakpoints{ nullptr };
 	UITreeView* mUIVariables{ nullptr };
 	UISplitter* mUIThreadsSplitter{ nullptr };
 	UIPushButton* mUIButStart{ nullptr };

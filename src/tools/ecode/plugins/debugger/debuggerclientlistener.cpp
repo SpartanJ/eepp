@@ -86,8 +86,8 @@ std::unordered_map<int, ModelVariableNode::NodePtr> ModelVariableNode::nodeMap =
 
 class VariablesModel : public Model {
   public:
-	VariablesModel( ModelVariableNode::NodePtr rootNode, i18nFn fn ) :
-		rootNode( rootNode ), mi18nFn( fn ) {}
+	VariablesModel( ModelVariableNode::NodePtr rootNode, UISceneNode* sceneNode ) :
+		rootNode( rootNode ), mSceneNode( sceneNode ) {}
 
 	ModelIndex index( int row, int column,
 					  const ModelIndex& parent = ModelIndex() ) const override {
@@ -147,11 +147,11 @@ class VariablesModel : public Model {
 	std::string columnName( const size_t& colIdx ) const override {
 		switch ( colIdx ) {
 			case 0:
-				return mi18nFn( "variable_name", "Variable Name" );
+				return mSceneNode->i18n( "variable_name", "Variable Name" );
 			case 1:
-				return mi18nFn( "value", "Value" );
+				return mSceneNode->i18n( "value", "Value" );
 			case 2:
-				return mi18nFn( "type", "Type" );
+				return mSceneNode->i18n( "type", "Type" );
 		}
 		return "";
 	}
@@ -179,13 +179,13 @@ class VariablesModel : public Model {
 
   protected:
 	ModelVariableNode::NodePtr rootNode;
-	i18nFn mi18nFn;
+	UISceneNode* mSceneNode;
 };
 
 class ThreadsModel : public Model {
   public:
-	ThreadsModel( const std::vector<Thread>& threads, i18nFn fn ) :
-		mThreads( threads ), mi18nFn( std::move( fn ) ) {}
+	ThreadsModel( const std::vector<DapThread>& threads, UISceneNode* sceneNode ) :
+		mThreads( threads ), mSceneNode( sceneNode ) {}
 
 	virtual size_t rowCount( const ModelIndex& ) const { return mThreads.size(); }
 	virtual size_t columnCount( const ModelIndex& ) const { return 1; }
@@ -193,7 +193,7 @@ class ThreadsModel : public Model {
 	virtual std::string columnName( const size_t& colIdx ) const {
 		switch ( colIdx ) {
 			case 0:
-				return mi18nFn( "thread_id", "Thread ID" );
+				return mSceneNode->i18n( "thread_id", "Thread ID" );
 		}
 		return "";
 	}
@@ -202,11 +202,15 @@ class ThreadsModel : public Model {
 		if ( role == ModelRole::Display && modelIndex.column() == 0 ) {
 			return Variant( String::format( "#%d (%s)", mThreads[modelIndex.row()].id,
 											mThreads[modelIndex.row()].name.c_str() ) );
+		} else if ( role == ModelRole::Icon && modelIndex.column() == 0 &&
+					mThreads[modelIndex.row()].id == mCurrentThreadId ) {
+			static UIIcon* circleFilled = mSceneNode->findIcon( "circle-filled" );
+			return Variant( circleFilled );
 		}
 		return {};
 	}
 
-	void setThreads( std::vector<Thread>&& threads ) {
+	void setThreads( std::vector<DapThread>&& threads ) {
 		{
 			Lock l( mResourceLock );
 			mThreads = std::move( threads );
@@ -223,7 +227,7 @@ class ThreadsModel : public Model {
 		invalidate();
 	}
 
-	const Thread& getThread( size_t index ) const {
+	const DapThread& getThread( size_t index ) const {
 		Lock l( mResourceLock );
 		eeASSERT( index < mThreads.size() );
 		return mThreads[index];
@@ -232,22 +236,30 @@ class ThreadsModel : public Model {
 	ModelIndex fromThreadId( int id ) {
 		Lock l( mResourceLock );
 		for ( size_t i = 0; i < mThreads.size(); i++ ) {
-			const Thread& thread = mThreads[i];
+			const DapThread& thread = mThreads[i];
 			if ( thread.id == id )
 				return index( i );
 		}
 		return {};
 	}
 
+	void setCurrentThreadId( int id ) {
+		if ( mCurrentThreadId != id ) {
+			mCurrentThreadId = id;
+			invalidate( Model::UpdateFlag::DontInvalidateIndexes );
+		}
+	}
+
   protected:
-	std::vector<Thread> mThreads;
-	i18nFn mi18nFn;
+	std::vector<DapThread> mThreads;
+	UISceneNode* mSceneNode{ nullptr };
+	int mCurrentThreadId{ 1 };
 };
 
 class StackModel : public Model {
   public:
-	StackModel( StackTraceInfo&& stack, i18nFn fn ) :
-		mStack( std::move( stack ) ), mi18nFn( std::move( fn ) ) {}
+	StackModel( StackTraceInfo&& stack, UISceneNode* sceneNode ) :
+		mStack( std::move( stack ) ), mSceneNode( sceneNode ) {}
 
 	virtual size_t rowCount( const ModelIndex& ) const {
 		Lock l( mResourceLock );
@@ -259,15 +271,15 @@ class StackModel : public Model {
 	virtual std::string columnName( const size_t& colIdx ) const {
 		switch ( colIdx ) {
 			case 0:
-				return mi18nFn( "id", "ID" );
+				return mSceneNode->i18n( "id", "ID" );
 			case 1:
-				return mi18nFn( "name", "Name" );
+				return mSceneNode->i18n( "name", "Name" );
 			case 2:
-				return mi18nFn( "source_name", "Source Name" );
+				return mSceneNode->i18n( "source_name", "Source Name" );
 			case 3:
-				return mi18nFn( "source_path", "Source Path" );
+				return mSceneNode->i18n( "source_path", "Source Path" );
 			case 4:
-				return mi18nFn( "line", "Line" );
+				return mSceneNode->i18n( "line", "Line" );
 		}
 		return "";
 	}
@@ -294,6 +306,10 @@ class StackModel : public Model {
 					return Variant(
 						String::toString( mStack.stackFrames[modelIndex.row()].column ) );
 			}
+		} else if ( role == ModelRole::Icon && modelIndex.column() == 1 &&
+					mCurrentScopeId == mStack.stackFrames[modelIndex.row()].id ) {
+			static UIIcon* circleFilled = mSceneNode->findIcon( "circle-filled" );
+			return Variant( circleFilled );
 		}
 		return {};
 	}
@@ -321,9 +337,17 @@ class StackModel : public Model {
 		return mStack.stackFrames[index];
 	}
 
+	void setCurrentScopeId( int scope ) {
+		if ( mCurrentScopeId != scope ) {
+			mCurrentScopeId = scope;
+			invalidate( Model::UpdateFlag::DontInvalidateIndexes );
+		}
+	}
+
   protected:
 	StackTraceInfo mStack;
-	i18nFn mi18nFn;
+	UISceneNode* mSceneNode{ nullptr };
+	int mCurrentScopeId{ 0 };
 };
 
 DebuggerClientListener::DebuggerClientListener( DebuggerClient* client, DebuggerPlugin* plugin ) :
@@ -359,24 +383,17 @@ void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
 			UISceneNode* sceneNode = mPlugin->getUISceneNode();
 
 			if ( !mThreadsModel ) {
-				mThreadsModel = std::make_shared<ThreadsModel>(
-					std::vector<Thread>{}, [sceneNode]( const auto& key, const auto& val ) {
-						return sceneNode->i18n( key, val );
-					} );
+				mThreadsModel =
+					std::make_shared<ThreadsModel>( std::vector<DapThread>{}, sceneNode );
+				mThreadsModel->setCurrentThreadId( mCurrentThreadId );
 			}
 
 			if ( !mStackModel ) {
-				mStackModel = std::make_shared<StackModel>(
-					StackTraceInfo{}, [sceneNode]( const auto& key, const auto& val ) {
-						return sceneNode->i18n( key, val );
-					} );
+				mStackModel = std::make_shared<StackModel>( StackTraceInfo{}, sceneNode );
 			}
 
 			if ( !mVariablesModel ) {
-				mVariablesModel = std::make_shared<VariablesModel>(
-					mVariablesRoot, [sceneNode]( const auto& key, const auto& val ) {
-						return sceneNode->i18n( key, val );
-					} );
+				mVariablesModel = std::make_shared<VariablesModel>( mVariablesRoot, sceneNode );
 			}
 
 			UITableView* uiThreads = getStatusDebuggerController()->getUIThreads();
@@ -473,9 +490,7 @@ void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
 
 	auto sdc = getStatusDebuggerController();
 	if ( sdc ) {
-		sdc->getWidget()->runOnMainThread( [sdc] {
-			sdc->show();
-		} );
+		sdc->getWidget()->runOnMainThread( [sdc] { sdc->show(); } );
 	}
 }
 
@@ -504,12 +519,18 @@ void DebuggerClientListener::threadChanged( const ThreadEvent& ) {}
 
 void DebuggerClientListener::moduleChanged( const ModuleEvent& ) {}
 
-void DebuggerClientListener::threads( std::vector<Thread>&& threads ) {
+void DebuggerClientListener::threads( std::vector<DapThread>&& threads ) {
+	std::sort( threads.begin(), threads.end(),
+			   []( const DapThread& a, const DapThread& b ) { return a.id < b.id; } );
+
 	mThreadsModel->setThreads( std::move( threads ) );
 }
 
 void DebuggerClientListener::changeScope( const StackFrame& f ) {
 	mClient->scopes( f.id );
+
+	if ( mStackModel )
+		mStackModel->setCurrentScopeId( f.id );
 
 	if ( !f.source )
 		return;
@@ -528,6 +549,8 @@ void DebuggerClientListener::changeScope( const StackFrame& f ) {
 
 void DebuggerClientListener::changeThread( int id ) {
 	mCurrentThreadId = id;
+	if ( mThreadsModel )
+		mThreadsModel->setCurrentThreadId( id );
 	if ( getStatusDebuggerController() && getStatusDebuggerController()->getUIThreads() ) {
 		getStatusDebuggerController()->getUIThreads()->setSelection(
 			mThreadsModel->fromThreadId( id ) );
@@ -584,6 +607,8 @@ void DebuggerClientListener::variables( const int variablesReference,
 		parentNode = *node;
 	}
 
+	bool invalidateIndexes = false;
+
 	for ( auto& var : vars ) {
 		if ( var.name.empty() )
 			continue;
@@ -591,11 +616,13 @@ void DebuggerClientListener::variables( const int variablesReference,
 		auto found = parentNode->getChild( var.name );
 		if ( found ) {
 			( *found )->var = std::move( var );
-			mVariablesModel->invalidate( Model::UpdateFlag::DontInvalidateIndexes );
+
 			if ( ( *found )->var.variablesReference != 0 )
 				ModelVariableNode::nodeMap[( *found )->var.variablesReference] = *found;
 			continue;
 		}
+
+		invalidateIndexes = true;
 
 		auto child = std::make_shared<ModelVariableNode>( std::move( var ), parentNode );
 		parentNode->addChild( child );
@@ -603,6 +630,9 @@ void DebuggerClientListener::variables( const int variablesReference,
 		if ( child->var.variablesReference != 0 )
 			ModelVariableNode::nodeMap[child->var.variablesReference] = child;
 	}
+
+	mVariablesModel->invalidate( invalidateIndexes ? Model::UpdateFlag::InvalidateAllIndexes
+												   : Model::UpdateFlag::DontInvalidateIndexes );
 }
 
 void DebuggerClientListener::modules( ModulesInfo&& ) {}

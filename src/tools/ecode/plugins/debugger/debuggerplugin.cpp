@@ -5,6 +5,7 @@
 #include "../../widgetcommandexecuter.hpp"
 #include "busprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
+#include "models/breakpointsmodel.hpp"
 #include "statusdebuggercontroller.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -26,51 +27,6 @@ using json = nlohmann::json;
 #endif
 
 namespace ecode {
-
-class BreakpointsModel : public Model {
-  public:
-	BreakpointsModel(
-		const UnorderedMap<std::string, UnorderedSet<SourceBreakpointStateful>>& breakpoints ) {
-		for ( const auto& bpf : breakpoints )
-			for ( const auto& bp : bpf.second )
-				mBreakpoints.emplace_back( bpf.first, bp );
-	}
-
-	virtual size_t rowCount( const ModelIndex& ) const { return mBreakpoints.size(); }
-
-	virtual size_t columnCount( const ModelIndex& ) const { return 3; }
-
-	virtual std::string columnName( const size_t& index ) const {
-		switch ( index ) {
-			case 0:
-				return "Enabled";
-			case 1:
-				return "Source Path";
-			case 2:
-				return "Line";
-		}
-		return "";
-	}
-
-	virtual Variant data( const ModelIndex& modelIndex, ModelRole role ) const {
-		if ( role != ModelRole::Display )
-			return {};
-
-		switch ( modelIndex.column() ) {
-			case 0:
-				return Variant( mBreakpoints[modelIndex.row()].second.enabled ? "Enabled" : "" );
-			case 1:
-				return Variant( mBreakpoints[modelIndex.row()].first.c_str() );
-			case 2:
-				return Variant( String::toString( mBreakpoints[modelIndex.row()].second.line ) );
-		}
-
-		return {};
-	}
-
-  protected:
-	std::vector<std::pair<std::string, SourceBreakpointStateful>> mBreakpoints;
-};
 
 Plugin* DebuggerPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( DebuggerPlugin, ( pluginManager, false ) );
@@ -289,12 +245,14 @@ PluginRequestHandle DebuggerPlugin::processMessage( const PluginMessage& msg ) {
 		case PluginMessageType::WorkspaceFolderChanged: {
 			mProjectPath = msg.asJSON()["folder"];
 
-			if ( getUISceneNode() && mSidePanel )
+			if ( getUISceneNode() && mSidePanel ) {
 				getUISceneNode()->runOnMainThread( [this] {
 					if ( mProjectPath.empty() )
 						hideSidePanel();
 				} );
+			}
 
+			mBreakpointsModel.reset();
 			updateUI();
 			mInitialized = true;
 			break;
@@ -454,9 +412,10 @@ void DebuggerPlugin::sendFileBreakpoints( const std::string& filePath ) {
 	auto fileBps = mBreakpoints.find( filePath );
 	if ( fileBps == mBreakpoints.end() )
 		return;
-	for ( const auto& fileBps : mBreakpoints )
+	for ( const auto& fileBps : mBreakpoints ) {
 		mDebugger->setBreakpoints( fileBps.first,
 								   DebuggerClientListener::fromSet( fileBps.second ) );
+	}
 }
 
 void DebuggerPlugin::updateDebuggerConfigurationList() {
@@ -597,7 +556,7 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 							.blendAlpha( editor->getAlpha() ) );
 			Float gutterSpace = editor->getGutterSpace( this );
 
-			for ( const SourceBreakpoint& breakpoint : breakpoints ) {
+			for ( const SourceBreakpointStateful& breakpoint : breakpoints ) {
 				int line = breakpoint.line - 1; // Breakpoints start at 1
 				if ( line >= 0 && line >= lineRange.first && line <= lineRange.second ) {
 					if ( !editor->getDocumentView().isLineVisible( line ) )
@@ -609,9 +568,10 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 									  editor->getDocumentView().getLineYOffset( line, lineHeight ) +
 									  lineOffset ) );
 
-					p.setColor(
-						Color( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::Error ) )
-							.blendAlpha( editor->getAlpha() ) );
+					p.setColor( Color( editor->getColorScheme().getEditorColor(
+										   breakpoint.enabled ? SyntaxStyleTypes::Error
+															  : SyntaxStyleTypes::LineNumber2 ) )
+									.blendAlpha( editor->getAlpha() ) );
 
 					p.drawCircle( { lnPos.x + radius + eefloor( ( gutterSpace - radius ) * 0.5f ),
 									lnPos.y + lineHeight * 0.5f },
@@ -649,30 +609,79 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 	}
 }
 
+bool DebuggerPlugin::setBreakpoint( const std::string& doc, Uint32 lineNumber ) {
+	Lock l( mBreakpointsMutex );
+
+	auto sdc = getStatusDebuggerController();
+	if ( sdc && sdc->getWidget() == nullptr ) {
+		sdc->show();
+		sdc->hide();
+		sdc->getUIBreakpoints()->onBreakpointEnabledChange = [this]( const std::string& filePath,
+																	 int line, bool enabled ) {
+			breakpointSetEnabled( filePath, line, enabled );
+		};
+		sdc->getUIBreakpoints()->onBreakpointRemove =
+			[this]( const std::string& filePath, int line ) { setBreakpoint( filePath, line ); };
+	}
+
+	if ( !mBreakpointsModel )
+		mBreakpointsModel = std::make_shared<BreakpointsModel>( mBreakpoints, getUISceneNode() );
+
+	if ( sdc && sdc->getUIBreakpoints()->getModel() == nullptr )
+		sdc->getUIBreakpoints()->setModel( mBreakpointsModel );
+
+	auto& breakpoints = mBreakpoints[doc];
+	auto breakpointIt = breakpoints.find( SourceBreakpointStateful( lineNumber ) );
+	if ( breakpointIt != breakpoints.end() ) {
+		breakpoints.erase( breakpointIt );
+		mBreakpointsModel->erase( doc, lineNumber );
+	} else {
+		breakpoints.insert( SourceBreakpointStateful( lineNumber ) );
+		mBreakpointsModel->insert( doc, lineNumber );
+	}
+
+	mThreadPool->run( [this, doc] { sendFileBreakpoints( doc ); } );
+
+	getUISceneNode()->invalidateDraw();
+
+	return true;
+}
+
 bool DebuggerPlugin::setBreakpoint( TextDocument* doc, Uint32 lineNumber ) {
 	if ( !doc->hasFilepath() )
 		return false;
 	if ( !isSupportedByAnyDebugger( doc->getSyntaxDefinition().getLSPName() ) )
 		return false;
+	return setBreakpoint( doc->getFilePath(), lineNumber );
+}
+
+bool DebuggerPlugin::setBreakpoint( UICodeEditor* editor, Uint32 lineNumber ) {
+	if ( setBreakpoint( &editor->getDocument(), lineNumber ) )
+		editor->invalidateDraw();
+	return true;
+}
+
+bool DebuggerPlugin::breakpointSetEnabled( const std::string& doc, Uint32 lineNumber,
+										   bool enabled ) {
 	Lock l( mBreakpointsMutex );
-	auto& breakpoints = mBreakpoints[doc->getFilePath()];
+	auto& breakpoints = mBreakpoints[doc];
 	auto breakpointIt = breakpoints.find( SourceBreakpointStateful( lineNumber ) );
 	if ( breakpointIt != breakpoints.end() ) {
-		breakpoints.erase( breakpointIt );
-	} else {
-		breakpoints.insert( SourceBreakpointStateful( lineNumber ) );
+		breakpointIt->enabled = enabled;
+		mBreakpointsModel->enable( doc, lineNumber, breakpointIt->enabled );
+		getUISceneNode()->invalidateDraw();
+		return true;
 	}
-	mThreadPool->run( [this, doc] { sendFileBreakpoints( doc->getFilePath() ); } );
+	return false;
+}
 
-	if ( getStatusDebuggerController()->getWidget() == nullptr ) {
-		getStatusDebuggerController()->show();
-		getStatusDebuggerController()->hide();
-	}
-
-	getStatusDebuggerController()->getUIBreakpoints()->setModel(
-		std::make_shared<BreakpointsModel>( mBreakpoints ) );
-
-	return true;
+bool DebuggerPlugin::breakpointToggleEnabled( const std::string& doc, Uint32 lineNumber ) {
+	Lock l( mBreakpointsMutex );
+	auto& breakpoints = mBreakpoints[doc];
+	auto breakpointIt = breakpoints.find( SourceBreakpointStateful( lineNumber ) );
+	if ( breakpointIt != breakpoints.end() )
+		return breakpointSetEnabled( doc, lineNumber, !breakpointIt->enabled );
+	return false;
 }
 
 bool DebuggerPlugin::breakpointToggleEnabled( TextDocument* doc, Uint32 lineNumber ) {
@@ -680,20 +689,7 @@ bool DebuggerPlugin::breakpointToggleEnabled( TextDocument* doc, Uint32 lineNumb
 		return false;
 	if ( !isSupportedByAnyDebugger( doc->getSyntaxDefinition().getLSPName() ) )
 		return false;
-	Lock l( mBreakpointsMutex );
-	auto& breakpoints = mBreakpoints[doc->getFilePath()];
-	auto breakpointIt = breakpoints.find( SourceBreakpointStateful( lineNumber ) );
-	if ( breakpointIt != breakpoints.end() ) {
-		breakpointIt->enabled = !breakpointIt->enabled;
-		return true;
-	}
-	return false;
-}
-
-bool DebuggerPlugin::setBreakpoint( UICodeEditor* editor, Uint32 lineNumber ) {
-	if ( setBreakpoint( &editor->getDocument(), lineNumber ) )
-		editor->invalidateDraw();
-	return true;
+	return breakpointToggleEnabled( doc->getFilePath(), lineNumber );
 }
 
 bool DebuggerPlugin::onMouseDown( UICodeEditor* editor, const Vector2i& position,

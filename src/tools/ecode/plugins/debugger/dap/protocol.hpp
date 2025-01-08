@@ -360,15 +360,15 @@ struct BreakpointEvent {
 	BreakpointEvent( const json& body );
 };
 
-struct Thread {
+struct DapThread {
 	int id;
 	std::string name;
 
-	Thread() = default;
-	Thread( const json& body );
-	explicit Thread( const int id );
+	DapThread() = default;
+	DapThread( const json& body );
+	explicit DapThread( const int id );
 
-	static std::vector<Thread> parseList( const json& threads );
+	static std::vector<DapThread> parseList( const json& threads );
 };
 
 struct StackFrame {

@@ -487,7 +487,7 @@ bool DebuggerClientDap::disconnect( bool restart ) {
 bool DebuggerClientDap::threads() {
 	makeRequest( DAP_THREADS, {}, [this]( const Response& response, const nlohmann::json& ) {
 		if ( response.success ) {
-			std::vector<Thread> threads( Thread::parseList( response.body[DAP_THREADS] ) );
+			std::vector<DapThread> threads( DapThread::parseList( response.body[DAP_THREADS] ) );
 			for ( auto listener : mListeners )
 				listener->threads( std::move( threads ) );
 		} else {

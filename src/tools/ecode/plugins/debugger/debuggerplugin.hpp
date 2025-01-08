@@ -3,6 +3,7 @@
 #include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include "debuggerclientlistener.hpp"
+#include "models/breakpointsmodel.hpp"
 
 using namespace EE::UI::Models;
 using namespace EE::UI;
@@ -68,6 +69,7 @@ class DebuggerPlugin : public PluginBase {
 	UIPushButton* mRunButton{ nullptr };
 	UnorderedMap<std::string, UnorderedSet<SourceBreakpointStateful>> mBreakpoints;
 	UnorderedSet<std::string> mPendingBreakpoints;
+	std::shared_ptr<BreakpointsModel> mBreakpointsModel;
 	Mutex mBreakpointsMutex;
 
 	DebuggerPlugin( PluginManager* pluginManager, bool sync );
@@ -114,6 +116,12 @@ class DebuggerPlugin : public PluginBase {
 	bool setBreakpoint( TextDocument* doc, Uint32 lineNumber );
 
 	bool breakpointToggleEnabled( TextDocument* doc, Uint32 lineNumber );
+
+	bool setBreakpoint( const std::string& doc, Uint32 lineNumber );
+
+	bool breakpointToggleEnabled( const std::string& doc, Uint32 lineNumber );
+
+	bool breakpointSetEnabled( const std::string& doc, Uint32 lineNumber, bool enabled );
 
 	bool onMouseDown( UICodeEditor*, const Vector2i&, const Uint32& flags ) override;
 

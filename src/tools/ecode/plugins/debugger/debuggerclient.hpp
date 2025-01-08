@@ -30,7 +30,7 @@ class DebuggerClient {
 									const std::optional<Message>& message ) = 0;
 		virtual void threadChanged( const ThreadEvent& ) = 0;
 		virtual void moduleChanged( const ModuleEvent& ) = 0;
-		virtual void threads( std::vector<Thread>&& ) = 0;
+		virtual void threads( std::vector<DapThread>&& ) = 0;
 		virtual void stackTrace( const int threadId, StackTraceInfo&& ) = 0;
 		virtual void scopes( const int frameId, std::vector<Scope>&& ) = 0;
 		virtual void variables( const int variablesReference, std::vector<Variable>&& ) = 0;

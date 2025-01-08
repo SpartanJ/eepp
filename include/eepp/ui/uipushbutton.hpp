@@ -81,12 +81,17 @@ class EE_API UIPushButton : public UIWidget {
 
 	void setTextAsFallback( bool textAsFallback );
 
+	bool dontAutoHideEmptyTextBox() const;
+
+	void setDontAutoHideEmptyTextBox( bool dontAutoHideEmptyTextBox );
+
   protected:
 	UIImage* mIcon;
 	UITextView* mTextBox;
 	Sizei mIconMinSize;
 	InnerWidgetOrientation mInnerWidgetOrientation{ InnerWidgetOrientation::IconTextBoxWidget };
 	bool mTextAsFallback{ false };
+	bool mDontAutoHideEmptyTextBox{ false };
 
 	UIPushButton();
 
@@ -122,6 +127,8 @@ class EE_API UIPushButton : public UIWidget {
 	Vector2f packLayout( const std::array<UIWidget*, 3>& widgets, const Rectf& padding );
 
 	Vector2f calcLayoutSize( const std::array<UIWidget*, 3>& widgets, const Rectf& padding ) const;
+
+	bool mustBeVisible() const;
 };
 
 }} // namespace EE::UI

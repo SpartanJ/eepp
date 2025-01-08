@@ -1,6 +1,7 @@
 #include "statusappoutputcontroller.hpp"
 #include "notificationcenter.hpp"
 #include "plugins/plugincontextprovider.hpp"
+#include <eepp/ui/tools/uidocfindreplace.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 
 namespace ecode {

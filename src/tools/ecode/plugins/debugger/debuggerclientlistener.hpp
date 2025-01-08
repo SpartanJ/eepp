@@ -36,7 +36,7 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 	void errorResponse( const std::string& summary, const std::optional<Message>& message );
 	void threadChanged( const ThreadEvent& );
 	void moduleChanged( const ModuleEvent& );
-	void threads( std::vector<Thread>&& );
+	void threads( std::vector<DapThread>&& );
 	void stackTrace( const int threadId, StackTraceInfo&& );
 	void scopes( const int frameId, std::vector<Scope>&& );
 	void variables( const int variablesReference, std::vector<Variable>&& );
