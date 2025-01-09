@@ -59,6 +59,8 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 
 	int getCurrentThreadId() const;
 
+	int getCurrentFrameId() const;
+
 	std::optional<std::pair<std::string, int>> getCurrentScopePos() const;
 
   protected:
@@ -68,6 +70,7 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 	std::optional<std::pair<std::string, int>> mCurrentScopePos;
 	bool mPausedToRefreshBreakpoints{ false };
 	int mCurrentThreadId{ 1 };
+	int mCurrentFrameId{ 0 };
 	std::shared_ptr<ThreadsModel> mThreadsModel;
 	std::shared_ptr<StackModel> mStackModel;
 	std::shared_ptr<VariablesModel> mVariablesModel;

@@ -81,8 +81,10 @@ class DebuggerClient {
 	virtual bool variables( int variablesReference, Variable::Type filter = Variable::Type::Both,
 							int start = 0, int count = 0 ) = 0;
 
-	virtual bool evaluate( const std::string& expression, const std::string& context,
-						   std::optional<int> frameId ) = 0;
+	virtual bool evaluate(
+		const std::string& expression, const std::string& context, std::optional<int> frameId,
+		std::function<void( const std::string& expression, const std::optional<EvaluateInfo>& )>
+			cb = {} ) = 0;
 
 	virtual bool isServerConnected() const = 0;
 

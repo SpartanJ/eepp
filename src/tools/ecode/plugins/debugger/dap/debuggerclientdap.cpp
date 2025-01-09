@@ -589,26 +589,34 @@ bool DebuggerClientDap::modules( int start, int count ) {
 	return true;
 }
 
-bool DebuggerClientDap::evaluate( const std::string& expression, const std::string& context,
-								  std::optional<int> frameId ) {
+bool DebuggerClientDap::evaluate(
+	const std::string& expression, const std::string& context, std::optional<int> frameId,
+	std::function<void( const std::string&, const std::optional<EvaluateInfo>& )> cb ) {
 	nlohmann::json arguments{ { DAP_EXPRESSION, expression } };
 	if ( !context.empty() )
 		arguments[DAP_CONTEXT] = context;
 	if ( frameId )
 		arguments[DAP_FRAME_ID] = *frameId;
 
-	makeRequest( "evaluate", arguments, [this]( const auto& response, const auto& request ) {
-		auto expression = request.value( DAP_EXPRESSION, "" );
-		if ( response.success ) {
-			EvaluateInfo info( response.body );
+	makeRequest( "evaluate", arguments,
+				 [this, cb = std::move( cb )]( const auto& response, const auto& request ) {
+					 auto expression = request.value( DAP_EXPRESSION, "" );
+					 if ( response.success ) {
+						 EvaluateInfo info( response.body );
 
-			for ( auto listener : mListeners )
-				listener->expressionEvaluated( expression, info );
-		} else {
-			for ( auto listener : mListeners )
-				listener->expressionEvaluated( expression, std::nullopt );
-		}
-	} );
+						 for ( auto listener : mListeners )
+							 listener->expressionEvaluated( expression, info );
+
+						 if ( cb )
+							 cb( expression, info );
+					 } else {
+						 for ( auto listener : mListeners )
+							 listener->expressionEvaluated( expression, std::nullopt );
+
+						 if ( cb )
+							 cb( expression, std::nullopt );
+					 }
+				 } );
 
 	return true;
 }

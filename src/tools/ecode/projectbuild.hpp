@@ -337,6 +337,8 @@ class ProjectBuildManager {
 
 	void selectTab();
 
+	bool hasBuildConfigWithBuildSteps();
+
 	std::optional<ProjectBuildStep> getCurrentRunConfig();
 
   protected:

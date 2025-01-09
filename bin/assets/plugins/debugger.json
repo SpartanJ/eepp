@@ -5,7 +5,8 @@
       "url": "https://www.gnu.org/software/gdb",
       "run": {
         "command": "gdb",
-        "command_arguments": "--interpreter=dap"
+        "command_arguments": "--interpreter=dap",
+        "type": "cppdbg"
       },
       "languages": [ "cpp", "c", "d", "go", "objectivec", "fortran", "pascal", "rust" ],
       "configurations": [
@@ -17,8 +18,7 @@
               "args": "${args}",
               "cwd": "${cwd}",
               "env": "${env}",
-              "stopOnEntry": "${stopOnEntry}",
-              "stopAtBeginningOfMainSubprogram": false
+              "stopOnEntry": "${stopOnEntry}"
           }
         }
       ]
@@ -28,7 +28,8 @@
       "url": "https://github.com/llvm/llvm-project/blob/main/lldb/tools/lldb-dap/README.md",
       "run": {
         "command": "lldb-dap",
-        "command_fallback": "lldb-vscode"
+        "command_fallback": "lldb-vscode",
+        "type": "cppdbg"
       },
       "find": {
         "macos": "xcrun -f ${command}"

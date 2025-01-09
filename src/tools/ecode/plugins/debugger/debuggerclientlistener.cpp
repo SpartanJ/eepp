@@ -455,6 +455,7 @@ void DebuggerClientListener::capabilitiesReceived( const Capabilities& /*capabil
 void DebuggerClientListener::resetState() {
 	mStoppedData = {};
 	mCurrentScopePos = {};
+	mCurrentFrameId = 0;
 	if ( mThreadsModel )
 		mThreadsModel->resetThreads();
 	if ( mStackModel )
@@ -527,6 +528,7 @@ void DebuggerClientListener::threads( std::vector<DapThread>&& threads ) {
 }
 
 void DebuggerClientListener::changeScope( const StackFrame& f ) {
+	mCurrentFrameId = f.id;
 	mClient->scopes( f.id );
 
 	if ( mStackModel )
@@ -663,6 +665,10 @@ std::optional<StoppedEvent> DebuggerClientListener::getStoppedData() const {
 
 int DebuggerClientListener::getCurrentThreadId() const {
 	return mCurrentThreadId;
+}
+
+int DebuggerClientListener::getCurrentFrameId() const {
+	return mCurrentFrameId;
 }
 
 std::optional<std::pair<std::string, int>> DebuggerClientListener::getCurrentScopePos() const {

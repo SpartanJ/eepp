@@ -936,11 +936,11 @@ Sizef Texture::getPixelsSize() {
 }
 
 void Texture::draw() {
-	drawFast( mPosition.x, mPosition.y );
+	drawFast( mPosition.x, mPosition.y, 0, Vector2f::One, mColor );
 }
 
 void Texture::draw( const Vector2f& position ) {
-	drawFast( position.x, position.y );
+	drawFast( position.x, position.y, 0, Vector2f::One, mColor );
 }
 
 void Texture::draw( const Vector2f& position, const Sizef& size ) {

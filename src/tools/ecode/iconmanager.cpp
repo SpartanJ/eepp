@@ -281,6 +281,14 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 		"1.7539-1.7263-0.020368-2.8161-1.765-2.6954-3.3595 0.15881-2.0986 2.0205-3.6297 "
 		"4.0363-3.8406'/></g></svg>" ) );
 
+	iconTheme->add( UISVGIcon::New(
+		"debug-stackframe", "<svg fill='#fff' viewBox='0 0 16 16'><path d='M14.5 7.15l-4.26-4.74L9.31 2H4.25L3 "
+							"3.25v9.48l1.25 1.25h5.06l.93-.42 4.26-4.74V7.15zm-5.19 "
+							"5.58H4.25V3.25h5.06l4.26 4.73-4.26 4.75z' /></svg>" ) );
+
+	iconTheme->add( UISVGIcon::New(
+		"circle-perfect", "<svg fill='#fff' viewBox='0 0 16 16'><circle cx='8' cy='8' r='7' /></svg>" ) );
+
 	sceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 }
 

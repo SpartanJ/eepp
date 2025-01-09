@@ -1,16 +1,17 @@
-#include "debuggerplugin.hpp"
 #include "../../notificationcenter.hpp"
 #include "../../projectbuild.hpp"
 #include "../../uistatusbar.hpp"
 #include "../../widgetcommandexecuter.hpp"
 #include "busprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
+#include "debuggerplugin.hpp"
 #include "models/breakpointsmodel.hpp"
 #include "statusdebuggercontroller.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uitooltip.hpp>
 #include <nlohmann/json.hpp>
 
 using namespace EE::UI;
@@ -451,6 +452,7 @@ void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json ) {
 	static constexpr auto KEY_CWD = "${cwd}";
 	static constexpr auto KEY_ENV = "${env}";
 	static constexpr auto KEY_STOPONENTRY = "${stopOnEntry}";
+	static constexpr auto KEY_WORKSPACEFOLDER = "${workspaceFolder}";
 	auto runConfig = getPluginContext()->getProjectBuildManager()->getCurrentRunConfig();
 
 	for ( auto& j : json ) {
@@ -470,6 +472,8 @@ void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json ) {
 				j = runConfig->workingDir;
 			} else if ( runConfig && val == KEY_ENV ) {
 				j = nlohmann::json{};
+			} else if ( runConfig && val == KEY_WORKSPACEFOLDER ) {
+				j = mProjectPath;
 			} else if ( val == KEY_STOPONENTRY ) {
 				j = false;
 			}
@@ -486,20 +490,41 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 				mDebugger->pause( 1 );
 			}
 		} else {
-			runCurrentConfig();
+			auto pbm = getPluginContext()->getProjectBuildManager();
+			if ( !pbm )
+				return;
+			if ( !pbm->hasBuildConfigWithBuildSteps() ) {
+				runCurrentConfig();
+				return;
+			}
+			pbm->buildCurrentConfig(
+				getPluginContext()->getStatusBuildOutputController(), [this]( int exitCode ) {
+					if ( exitCode == 0 ) {
+						runCurrentConfig();
+					} else {
+						auto msgBox =
+							UIMessageBox::New( UIMessageBox::YES_NO,
+											   i18n( "build_failed_debug_anyways",
+													 "Building the project failed, do you want to "
+													 "debug the binary anyways?" ) );
+						msgBox->setTitle( i18n( "build_failed", "Build Failed" ) );
+						msgBox->on( Event::OnConfirm, [this]( auto ) { runCurrentConfig(); } );
+						msgBox->showWhenReady();
+					}
+				} );
 		}
 	} );
 
 	doc->setCommand( "debugger-stop", [this] { exitDebugger(); } );
 
 	doc->setCommand( "debugger-breakpoint-toggle", [doc, this] {
-		if ( setBreakpoint( doc, doc->getSelection().start().line() ) )
-			getUISceneNode()->invalidateDraw();
+		if ( setBreakpoint( doc, doc->getSelection().start().line() + 1 ) )
+			getUISceneNode()->getRoot()->invalidateDraw();
 	} );
 
 	doc->setCommand( "debugger-breakpoint-enable-toggle", [this, doc] {
 		if ( breakpointToggleEnabled( doc, doc->getSelection().start().line() + 1 ) )
-			getUISceneNode()->invalidateDraw();
+			getUISceneNode()->getRoot()->invalidateDraw();
 	} );
 
 	doc->setCommand( "debugger-step-over", [this] {
@@ -543,7 +568,8 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 											const Vector2f& screenStart, const Float& lineHeight,
 											const Float&, const int&, const Float& ) {
 	Primitives p;
-	Float radius = PixelDensity::dpToPx( 4 );
+	Float gutterSpace = editor->getGutterSpace( this );
+	Float radius = lineHeight * 0.5f;
 	Float lineOffset = editor->getLineOffset();
 	Float offset = editor->getGutterLocalStartOffset( this );
 
@@ -554,7 +580,6 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 
 			p.setColor( Color( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::Error ) )
 							.blendAlpha( editor->getAlpha() ) );
-			Float gutterSpace = editor->getGutterSpace( this );
 
 			for ( const SourceBreakpointStateful& breakpoint : breakpoints ) {
 				int line = breakpoint.line - 1; // Breakpoints start at 1
@@ -562,20 +587,38 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 					if ( !editor->getDocumentView().isLineVisible( line ) )
 						continue;
 
-					auto lnPos(
-						Vector2f( screenStart.x - editor->getPluginsGutterSpace() + offset,
-								  startScroll.y +
-									  editor->getDocumentView().getLineYOffset( line, lineHeight ) +
-									  lineOffset ) );
+					Vector2f lnPos(
+						screenStart.x - editor->getPluginsGutterSpace() + offset,
+						startScroll.y +
+							editor->getDocumentView().getLineYOffset( line, lineHeight ) +
+							lineOffset );
 
-					p.setColor( Color( editor->getColorScheme().getEditorColor(
-										   breakpoint.enabled ? SyntaxStyleTypes::Error
-															  : SyntaxStyleTypes::LineNumber2 ) )
-									.blendAlpha( editor->getAlpha() ) );
+					Color color( Color( editor->getColorScheme().getEditorColor(
+											breakpoint.enabled ? SyntaxStyleTypes::Error
+															   : SyntaxStyleTypes::LineNumber2 ) )
+									 .blendAlpha( editor->getAlpha() ) );
 
-					p.drawCircle( { lnPos.x + radius + eefloor( ( gutterSpace - radius ) * 0.5f ),
-									lnPos.y + lineHeight * 0.5f },
-								  radius );
+					static UIIcon* circleFilled = getUISceneNode()->findIcon( "circle-perfect" );
+
+					if ( circleFilled ) {
+						Float finalHeight = eefloor( radius * 1.75f );
+						Drawable* drawable = circleFilled->getSize( finalHeight );
+						if ( drawable ) {
+							Color oldColor = drawable->getColor();
+							drawable->setColor( color );
+							drawable->draw(
+								Sizef{ lnPos.x, lnPos.y + ( lineHeight - finalHeight ) * 0.5f }
+									.floor() );
+							drawable->setColor( oldColor );
+						}
+					} else {
+						p.setColor( color );
+
+						p.drawCircle( Sizef{ lnPos.x + radius + ( gutterSpace - radius ) * 0.5f,
+											 lnPos.y + lineHeight * 0.5f }
+										  .floor(),
+									  radius );
+					}
 				}
 			}
 		}
@@ -586,19 +629,32 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 		int line = mListener->getCurrentScopePos()->second - 1;
 		if ( line >= 0 && line >= lineRange.first && line <= lineRange.second &&
 			 editor->getDocumentView().isLineVisible( line ) ) {
-			auto lnPos( Vector2f( screenStart.x - editor->getPluginsGutterSpace() + offset,
-								  startScroll.y +
-									  editor->getDocumentView().getLineYOffset( line, lineHeight ) +
-									  lineOffset ) );
 
-			p.setColor(
+			Color color(
 				Color( editor->getColorScheme().getEditorColor( SyntaxStyleTypes::Warning ) )
 					.blendAlpha( editor->getAlpha() ) );
 
+			Vector2f lnPos( screenStart.x - editor->getPluginsGutterSpace() + offset,
+							startScroll.y +
+								editor->getDocumentView().getLineYOffset( line, lineHeight ) +
+								lineOffset );
+
 			Float dim = radius * 2;
 			Float gutterSpace = editor->getGutterSpace( this );
+
+			static UIIcon* sfIcon = getUISceneNode()->findIcon( "debug-stackframe" );
+			if ( sfIcon ) {
+				Drawable* drawable = sfIcon->getSize( lineHeight );
+				if ( drawable ) {
+					drawable->setColor( color );
+					drawable->draw( lnPos.floor() );
+					return;
+				}
+			}
+
 			lnPos.x += editor->getLineNumberPaddingLeft() + ( gutterSpace - dim ) * 0.5f;
 			lnPos.y += ( lineHeight - dim ) * 0.5f;
+			p.setColor( color );
 
 			Triangle2f tri;
 			tri.V[0] = lnPos + Vector2f{ 0, 0 };
@@ -642,7 +698,7 @@ bool DebuggerPlugin::setBreakpoint( const std::string& doc, Uint32 lineNumber ) 
 
 	mThreadPool->run( [this, doc] { sendFileBreakpoints( doc ); } );
 
-	getUISceneNode()->invalidateDraw();
+	getUISceneNode()->getRoot()->invalidateDraw();
 
 	return true;
 }
@@ -669,7 +725,7 @@ bool DebuggerPlugin::breakpointSetEnabled( const std::string& doc, Uint32 lineNu
 	if ( breakpointIt != breakpoints.end() ) {
 		breakpointIt->enabled = enabled;
 		mBreakpointsModel->enable( doc, lineNumber, breakpointIt->enabled );
-		getUISceneNode()->invalidateDraw();
+		getUISceneNode()->getRoot()->invalidateDraw();
 		return true;
 	}
 	return false;
@@ -699,7 +755,8 @@ bool DebuggerPlugin::onMouseDown( UICodeEditor* editor, const Vector2i& position
 	Float offset = editor->getGutterLocalStartOffset( this );
 	Vector2f localPos( editor->convertToNodeSpace( position.asFloat() ) );
 	if ( localPos.x >= editor->getPixelsPadding().Left + offset &&
-		 localPos.x < editor->getPixelsPadding().Left + offset + editor->getGutterSpace( this ) &&
+		 localPos.x < editor->getPixelsPadding().Left + offset + editor->getGutterSpace( this ) +
+						  editor->getLineNumberPaddingLeft() &&
 		 localPos.y > editor->getPluginsTopSpace() ) {
 		if ( editor->getUISceneNode()->getEventDispatcher()->isFirstPress() ) {
 			auto cursorPos( editor->resolveScreenPosition( position.asFloat() ) );
@@ -879,9 +936,138 @@ StatusDebuggerController* DebuggerPlugin::getStatusDebuggerController() const {
 }
 
 void DebuggerPlugin::setUIDebuggingState( StatusDebuggerController::State state ) {
+	mDebuggingState = state;
 	auto ctrl = getStatusDebuggerController();
 	if ( ctrl )
 		ctrl->setDebuggingState( state );
+}
+
+// Mouse Hover Tooltip
+static Action::UniqueID getMouseMoveHash( UICodeEditor* editor ) {
+	return hashCombine( String::hash( "DebuggerPlugin::onMouseMove-" ),
+						reinterpret_cast<Action::UniqueID>( editor ) );
+}
+
+void DebuggerPlugin::hideTooltip( UICodeEditor* editor ) {
+	UITooltip* tooltip = nullptr;
+	if ( editor && ( tooltip = editor->getTooltip() ) && tooltip->isVisible() &&
+		 tooltip->getData() == String::hash( "debugger" ) ) {
+		editor->setTooltipText( "" );
+		tooltip->hide();
+		// Restore old tooltip state
+		tooltip->setData( 0 );
+		tooltip->setFontStyle( mOldTextStyle );
+		tooltip->setHorizontalAlign( mOldTextAlign );
+		tooltip->setUsingCustomStyling( mOldUsingCustomStyling );
+		tooltip->setDontAutoHideOnMouseMove( mOldDontAutoHideOnMouseMove );
+		tooltip->setBackgroundColor( mOldBackgroundColor );
+		tooltip->setWordWrap( mOldWordWrap );
+		tooltip->setMaxWidthEq( mOldMaxWidth );
+	}
+}
+
+void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const EvaluateInfo& resp,
+									 const Vector2f& position ) {
+	// HACK: Gets the old font style to restore it when the tooltip is hidden
+	UITooltip* tooltip = editor->createTooltip();
+	if ( tooltip == nullptr )
+		return;
+	mOldWordWrap = tooltip->isWordWrap();
+	mOldMaxWidth = tooltip->getMaxWidthEq();
+	tooltip->setWordWrap( true );
+	tooltip->setMaxWidthEq( "50vw" );
+	editor->setTooltipText( resp.result );
+	mOldTextStyle = tooltip->getFontStyle();
+	mOldTextAlign = tooltip->getHorizontalAlign();
+	mOldDontAutoHideOnMouseMove = tooltip->dontAutoHideOnMouseMove();
+	mOldUsingCustomStyling = tooltip->getUsingCustomStyling();
+	mOldBackgroundColor = tooltip->getBackgroundColor();
+	if ( Color::Transparent == mOldBackgroundColor ) {
+		tooltip->reloadStyle( true, true, true, true );
+		mOldBackgroundColor = tooltip->getBackgroundColor();
+	}
+	tooltip->setHorizontalAlign( UI_HALIGN_LEFT );
+	tooltip->setPixelsPosition( tooltip->getTooltipPosition( position ) );
+	tooltip->setDontAutoHideOnMouseMove( true );
+	tooltip->setUsingCustomStyling( true );
+	tooltip->setFontStyle( Text::Regular );
+	tooltip->setData( String::hash( "debugger" ) );
+	tooltip->setBackgroundColor( editor->getColorScheme().getEditorColor( "background"_sst ) );
+	tooltip->getUIStyle()->setStyleSheetProperty( StyleSheetProperty(
+		"background-color",
+		editor->getColorScheme().getEditorColor( "background"_sst ).toHexString(), true,
+		StyleSheetSelectorRule::SpecificityImportant ) );
+
+	if ( tooltip->getText().empty() )
+		return;
+
+	tooltip->notifyTextChangedFromTextCache();
+
+	if ( editor->hasFocus() && !tooltip->isVisible() &&
+		 !tooltip->getTextCache()->getString().empty() )
+		tooltip->show();
+}
+
+void DebuggerPlugin::tryHideTooltip( UICodeEditor* editor, const Vector2i& position ) {
+	if ( !mCurrentHover.isValid() ||
+		 ( mCurrentHover.isValid() &&
+		   !mCurrentHover.contains( editor->resolveScreenPosition( position.asFloat() ) ) ) )
+		hideTooltip( editor );
+}
+
+bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position,
+								  const Uint32& flags ) {
+
+	if ( !mDebugger || !mListener || !mDebugger->isServerConnected() ||
+		 mDebuggingState != StatusDebuggerController::State::Paused ) {
+		tryHideTooltip( editor, position );
+		return false;
+	}
+
+	if ( flags != 0 ) {
+		tryHideTooltip( editor, position );
+		return false;
+	}
+
+	editor->debounce(
+		[this, editor, position]() {
+			if ( !mManager->getSplitter()->editorExists( editor ) )
+				return;
+			auto docPos = editor->resolveScreenPosition( position.asFloat() );
+			auto range = editor->getDocument().getWordRangeInPosition( docPos, true );
+			auto expression = editor->getDocument().getWordInPosition( docPos, true ).toUtf8();
+
+			if ( !range.isValid() || expression.empty() )
+				return;
+
+			mCurrentHover = range;
+
+			mDebugger->evaluate(
+				expression, "hover", mListener->getCurrentFrameId(),
+				[this, editor]( const std::string&, const std::optional<EvaluateInfo>& info ) {
+					if ( info && mManager->getSplitter()->editorExists( editor ) &&
+						 !info->result.empty() ) {
+						editor->runOnMainThread( [this, editor, info = std::move( *info )]() {
+							auto mousePos =
+								editor->getUISceneNode()->getWindow()->getInput()->getMousePos();
+							if ( !editor->getScreenRect().contains( mousePos.asFloat() ) )
+								return;
+
+							auto docPos = editor->resolveScreenPosition( mousePos.asFloat() );
+							auto range =
+								editor->getDocument().getWordRangeInPosition( docPos, true );
+
+							if ( mCurrentHover.contains( range ) ) {
+								mCurrentHover = range;
+								displayTooltip( editor, info, mousePos.asFloat() );
+							}
+						} );
+					}
+				} );
+		},
+		mHoverDelay, getMouseMoveHash( editor ) );
+	tryHideTooltip( editor, position );
+	return true;
 }
 
 } // namespace ecode

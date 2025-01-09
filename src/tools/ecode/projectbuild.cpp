@@ -779,6 +779,14 @@ bool ProjectBuildManager::hasRunConfig() {
 	return false;
 }
 
+bool ProjectBuildManager::hasBuildConfigWithBuildSteps() {
+	if ( hasBuildConfig() ) {
+		auto build = getBuild( mConfig.buildName );
+		return build != nullptr && build->hasBuild();
+	}
+	return {};
+}
+
 std::optional<ProjectBuildStep> ProjectBuildManager::getCurrentRunConfig() {
 	if ( hasBuildConfig() ) {
 		auto build = getBuild( mConfig.buildName );

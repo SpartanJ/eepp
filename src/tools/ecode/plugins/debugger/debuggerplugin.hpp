@@ -71,6 +71,20 @@ class DebuggerPlugin : public PluginBase {
 	UnorderedSet<std::string> mPendingBreakpoints;
 	std::shared_ptr<BreakpointsModel> mBreakpointsModel;
 	Mutex mBreakpointsMutex;
+	StatusDebuggerController::State mDebuggingState{ StatusDebuggerController::State::NotStarted };
+
+	// Begin Hover Stuff
+	Uint32 mHoverWaitCb{ 0 };
+	TextRange mCurrentHover;
+	Time mHoverDelay{ Seconds( 1.f ) };
+	bool mOldDontAutoHideOnMouseMove{ false };
+	bool mOldUsingCustomStyling{ false };
+	bool mOldWordWrap{ false };
+	Uint32 mOldTextStyle{ 0 };
+	Uint32 mOldTextAlign{ 0 };
+	Color mOldBackgroundColor;
+	std::string mOldMaxWidth;
+	// End hover stuff
 
 	DebuggerPlugin( PluginManager* pluginManager, bool sync );
 
@@ -136,6 +150,15 @@ class DebuggerPlugin : public PluginBase {
 	StatusDebuggerController* getStatusDebuggerController() const;
 
 	void setUIDebuggingState( StatusDebuggerController::State state );
+
+	void hideTooltip( UICodeEditor* editor );
+
+	void displayTooltip( UICodeEditor* editor, const EvaluateInfo& resp, const Vector2f& position );
+
+	void tryHideTooltip( UICodeEditor* editor, const Vector2i& position );
+
+	bool onMouseMove( UICodeEditor* editor, const Vector2i& position,
+					  const Uint32& flags ) override;
 };
 
 } // namespace ecode

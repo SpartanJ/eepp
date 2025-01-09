@@ -49,8 +49,10 @@ class DebuggerClientDap : public DebuggerClient {
 
 	bool modules( int start, int count ) override;
 
-	bool evaluate( const std::string& expression, const std::string& context,
-				   std::optional<int> frameId ) override;
+	bool evaluate(
+		const std::string& expression, const std::string& context, std::optional<int> frameId,
+		std::function<void( const std::string& expression, const std::optional<EvaluateInfo>& )>
+			cb = {} ) override;
 
 	bool isServerConnected() const override;
 

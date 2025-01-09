@@ -1430,8 +1430,10 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 			} else if ( !downOverGutter &&
 						mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
 				mDoc->selectLine();
-			} else if ( !downOverGutter ) {
+			} else {
 				mDoc->setSelection( textScreenPos );
+				if ( downOverGutter )
+					mDoc->selectLine();
 			}
 		} else if ( !mDoc->hasSelection() ) {
 			mDoc->setSelection( textScreenPos );
