@@ -141,13 +141,13 @@ void StatusDebuggerController::createContainer() {
 			<Tab id="debugger_tab_breakpoints" text="@string(breakpoints, Breakpoints)" owns="debugger_breakpoints" />
 		</TabWidget>
 		<vbox id="app_debugger_buttons" lw="16dp" lh="mp">
-			<PushButton id="app_debugger_start" lw="mp" icon="icon(debug-start, 12dp)" tooltip="@string(start, Start)" />
-			<PushButton id="app_debugger_stop" lw="mp" icon="icon(debug-stop, 12dp)" tooltip="@string(stop, Stop)" />
-			<PushButton id="app_debugger_continue" lw="mp" icon="icon(debug-continue, 12dp)" tooltip="@string(continue, Continue)" />
-			<PushButton id="app_debugger_pause" lw="mp" icon="icon(debug-pause, 12dp)" tooltip="@string(pause, Pause)" />
-			<PushButton id="app_debugger_step_over" lw="mp" icon="icon(debug-step-over, 12dp)" tooltip="@string(step_over, Step Over)" />
-			<PushButton id="app_debugger_step_into" lw="mp" icon="icon(debug-step-into, 12dp)" tooltip="@string(step_into, Step Into)" />
-			<PushButton id="app_debugger_step_out" lw="mp" icon="icon(debug-step-out, 12dp)" tooltip="@string(step_out, Step Out)" />
+			<PushButton id="app_debugger_start" class="debugger_start" lw="mp" icon="icon(debug-start, 12dp)" tooltip="@string(start, Start)" />
+			<PushButton id="app_debugger_stop" class="debugger_stop" lw="mp" icon="icon(debug-stop, 12dp)" tooltip="@string(stop, Stop)" />
+			<PushButton id="app_debugger_continue" class="debugger_continue" lw="mp" icon="icon(debug-continue, 12dp)" tooltip="@string(continue, Continue)" />
+			<PushButton id="app_debugger_pause" class="debugger_pause" lw="mp" icon="icon(debug-pause, 12dp)" tooltip="@string(pause, Pause)" />
+			<PushButton id="app_debugger_step_over" class="debugger_step_over" lw="mp" icon="icon(debug-step-over, 12dp)" tooltip="@string(step_over, Step Over)" />
+			<PushButton id="app_debugger_step_into" class="debugger_step_into" lw="mp" icon="icon(debug-step-into, 12dp)" tooltip="@string(step_into, Step Into)" />
+			<PushButton id="app_debugger_step_out" class="debugger_step_out" lw="mp" icon="icon(debug-step-out, 12dp)" tooltip="@string(step_out, Step Out)" />
 		</vbox>
 	</hbox>
 	)xml";

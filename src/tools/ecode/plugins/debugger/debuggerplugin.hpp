@@ -24,6 +24,7 @@ struct DapConfig {
 struct DapTool {
 	std::string name;
 	std::string url;
+	std::string type;
 	std::vector<std::string> languagesSupported;
 	DapRunConfig run;
 	std::vector<DapConfig> configurations;
@@ -57,6 +58,7 @@ class DebuggerPlugin : public PluginBase {
 	std::string mProjectPath;
 
 	std::vector<DapTool> mDaps;
+	std::vector<DapConfig> mDapConfigs;
 	std::unique_ptr<DebuggerClient> mDebugger;
 	std::unique_ptr<DebuggerClientListener> mListener;
 
@@ -70,6 +72,7 @@ class DebuggerPlugin : public PluginBase {
 	UnorderedMap<std::string, UnorderedSet<SourceBreakpointStateful>> mBreakpoints;
 	UnorderedSet<std::string> mPendingBreakpoints;
 	std::shared_ptr<BreakpointsModel> mBreakpointsModel;
+	Mutex mDapsMutex;
 	Mutex mBreakpointsMutex;
 	StatusDebuggerController::State mDebuggingState{ StatusDebuggerController::State::NotStarted };
 
@@ -85,6 +88,16 @@ class DebuggerPlugin : public PluginBase {
 	Color mOldBackgroundColor;
 	std::string mOldMaxWidth;
 	// End hover stuff
+
+	struct PanelBoxButtons {
+		UILinearLayout* box{ nullptr };
+		UIPushButton* resume{ nullptr };
+		UIPushButton* pause{ nullptr };
+		UIPushButton* stepOver{ nullptr };
+		UIPushButton* stepInto{ nullptr };
+		UIPushButton* stepOut{ nullptr };
+	};
+	PanelBoxButtons mPanelBoxButtons;
 
 	DebuggerPlugin( PluginManager* pluginManager, bool sync );
 
@@ -151,6 +164,8 @@ class DebuggerPlugin : public PluginBase {
 
 	void setUIDebuggingState( StatusDebuggerController::State state );
 
+	void updatePanelUIState( StatusDebuggerController::State state );
+
 	void hideTooltip( UICodeEditor* editor );
 
 	void displayTooltip( UICodeEditor* editor, const EvaluateInfo& resp, const Vector2f& position );
@@ -159,6 +174,10 @@ class DebuggerPlugin : public PluginBase {
 
 	bool onMouseMove( UICodeEditor* editor, const Vector2i& position,
 					  const Uint32& flags ) override;
+
+	void loadProjectConfiguration( const std::string& path );
+
+	void loadProjectConfigurations();
 };
 
 } // namespace ecode

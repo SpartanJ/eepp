@@ -86,6 +86,8 @@ std::unordered_map<int, ModelVariableNode::NodePtr> ModelVariableNode::nodeMap =
 
 class VariablesModel : public Model {
   public:
+	enum Columns { Name, Value, Type };
+
 	VariablesModel( ModelVariableNode::NodePtr rootNode, UISceneNode* sceneNode ) :
 		rootNode( rootNode ), mSceneNode( sceneNode ) {}
 
@@ -124,7 +126,7 @@ class VariablesModel : public Model {
 												   return node.get() == parentNode.get();
 											   } ) );
 
-		return createIndex( row, 0, parentNode.get() );
+		return createIndex( row, Columns::Name, parentNode.get() );
 	}
 
 	size_t rowCount( const ModelIndex& index = ModelIndex() ) const override {
@@ -146,11 +148,11 @@ class VariablesModel : public Model {
 
 	std::string columnName( const size_t& colIdx ) const override {
 		switch ( colIdx ) {
-			case 0:
+			case Columns::Name:
 				return mSceneNode->i18n( "variable_name", "Variable Name" );
-			case 1:
+			case Columns::Value:
 				return mSceneNode->i18n( "value", "Value" );
-			case 2:
+			case Columns::Type:
 				return mSceneNode->i18n( "type", "Type" );
 		}
 		return "";
@@ -184,6 +186,8 @@ class VariablesModel : public Model {
 
 class ThreadsModel : public Model {
   public:
+	enum Columns { ID };
+
 	ThreadsModel( const std::vector<DapThread>& threads, UISceneNode* sceneNode ) :
 		mThreads( threads ), mSceneNode( sceneNode ) {}
 
@@ -192,17 +196,17 @@ class ThreadsModel : public Model {
 
 	virtual std::string columnName( const size_t& colIdx ) const {
 		switch ( colIdx ) {
-			case 0:
+			case Columns::ID:
 				return mSceneNode->i18n( "thread_id", "Thread ID" );
 		}
 		return "";
 	}
 
 	virtual Variant data( const ModelIndex& modelIndex, ModelRole role ) const {
-		if ( role == ModelRole::Display && modelIndex.column() == 0 ) {
+		if ( role == ModelRole::Display && modelIndex.column() == Columns::ID ) {
 			return Variant( String::format( "#%d (%s)", mThreads[modelIndex.row()].id,
 											mThreads[modelIndex.row()].name.c_str() ) );
-		} else if ( role == ModelRole::Icon && modelIndex.column() == 0 &&
+		} else if ( role == ModelRole::Icon && modelIndex.column() == Columns::ID &&
 					mThreads[modelIndex.row()].id == mCurrentThreadId ) {
 			static UIIcon* circleFilled = mSceneNode->findIcon( "circle-filled" );
 			return Variant( circleFilled );
@@ -258,6 +262,8 @@ class ThreadsModel : public Model {
 
 class StackModel : public Model {
   public:
+	enum Columns { ID, Name, SourceName, SourcePath, Line, Column };
+
 	StackModel( StackTraceInfo&& stack, UISceneNode* sceneNode ) :
 		mStack( std::move( stack ) ), mSceneNode( sceneNode ) {}
 
@@ -270,15 +276,15 @@ class StackModel : public Model {
 
 	virtual std::string columnName( const size_t& colIdx ) const {
 		switch ( colIdx ) {
-			case 0:
+			case Columns::ID:
 				return mSceneNode->i18n( "id", "ID" );
-			case 1:
+			case Columns::Name:
 				return mSceneNode->i18n( "name", "Name" );
-			case 2:
+			case Columns::SourceName:
 				return mSceneNode->i18n( "source_name", "Source Name" );
-			case 3:
+			case Columns::SourcePath:
 				return mSceneNode->i18n( "source_path", "Source Path" );
-			case 4:
+			case Columns::Line:
 				return mSceneNode->i18n( "line", "Line" );
 		}
 		return "";
@@ -288,25 +294,25 @@ class StackModel : public Model {
 		Lock l( mResourceLock );
 		if ( role == ModelRole::Display ) {
 			switch ( modelIndex.column() ) {
-				case 0:
+				case Columns::ID:
 					return Variant( String::toString( mStack.stackFrames[modelIndex.row()].id ) );
-				case 1:
+				case Columns::Name:
 					return Variant( mStack.stackFrames[modelIndex.row()].name.c_str() );
-				case 2:
+				case Columns::SourceName:
 					return mStack.stackFrames[modelIndex.row()].source
 							   ? Variant( mStack.stackFrames[modelIndex.row()].source->name )
 							   : Variant();
-				case 3:
+				case Columns::SourcePath:
 					return mStack.stackFrames[modelIndex.row()].source
 							   ? Variant( mStack.stackFrames[modelIndex.row()].source->path )
 							   : Variant();
-				case 4:
+				case Columns::Line:
 					return Variant( String::toString( mStack.stackFrames[modelIndex.row()].line ) );
-				case 5:
+				case Columns::Column:
 					return Variant(
 						String::toString( mStack.stackFrames[modelIndex.row()].column ) );
 			}
-		} else if ( role == ModelRole::Icon && modelIndex.column() == 1 &&
+		} else if ( role == ModelRole::Icon && modelIndex.column() == Columns::Name &&
 					mCurrentScopeId == mStack.stackFrames[modelIndex.row()].id ) {
 			static UIIcon* circleFilled = mSceneNode->findIcon( "circle-filled" );
 			return Variant( circleFilled );

@@ -3,10 +3,10 @@
     {
       "name": "gdb",
       "url": "https://www.gnu.org/software/gdb",
+      "type": "cppdbg",
       "run": {
         "command": "gdb",
-        "command_arguments": "--interpreter=dap",
-        "type": "cppdbg"
+        "command_arguments": "--interpreter=dap"
       },
       "languages": [ "cpp", "c", "d", "go", "objectivec", "fortran", "pascal", "rust" ],
       "configurations": [
@@ -26,10 +26,10 @@
     {
       "name": "lldb-dap",
       "url": "https://github.com/llvm/llvm-project/blob/main/lldb/tools/lldb-dap/README.md",
+      "type": "cppdbg",
       "run": {
         "command": "lldb-dap",
-        "command_fallback": "lldb-vscode",
-        "type": "cppdbg"
+        "command_fallback": "lldb-vscode"
       },
       "find": {
         "macos": "xcrun -f ${command}"

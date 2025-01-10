@@ -151,6 +151,7 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 		for ( const auto& dap : dapArr ) {
 			DapTool dapTool;
 			dapTool.name = dap.value( "name", "" );
+			dapTool.type = dap.value( "type", "" );
 			dapTool.url = dap.value( "url", "" );
 
 			if ( dap.contains( "run" ) ) {
@@ -241,6 +242,67 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 	}
 }
 
+void DebuggerPlugin::loadProjectConfiguration( const std::string& path ) {
+	std::string data;
+	if ( !FileSystem::fileGet( path, data ) )
+		return;
+
+	json j;
+	try {
+		j = json::parse( data, nullptr, true, true );
+	} catch ( const json::exception& e ) {
+		Log::error( "DebuggerPlugin::loadProjectConfiguration - Error parsing config from path %s, "
+					"error: %s, config "
+					"file content:\n%s",
+					path.c_str(), e.what(), data.c_str() );
+		return;
+	}
+
+	if ( !j.contains( "configurations" ) || !j["configurations"].is_array() ) {
+		Log::warning( "DebuggerPlugin::loadProjectConfiguration: wrong format in %s", path );
+		return;
+	}
+
+	auto& confs = j["configurations"];
+
+	for ( const auto& conf : confs ) {
+		DapConfig dapConfig;
+		auto type = conf.value( "type", "" );
+		if ( type != "cppdbg" )
+			continue;
+		dapConfig.name = conf.value( "name", "" );
+		if ( dapConfig.name.empty() )
+			continue;
+		dapConfig.command = conf.value( "request", "" );
+		if ( dapConfig.command != "launch" && dapConfig.command != "attach" )
+			continue;
+		dapConfig.args = std::move( conf );
+
+		{
+			Lock l( mDapsMutex );
+			mDapConfigs.emplace_back( std::move( dapConfig ) );
+		}
+	}
+}
+
+void DebuggerPlugin::loadProjectConfigurations() {
+	{
+		Lock l( mDapsMutex );
+		mDapConfigs.clear();
+	}
+
+	mThreadPool->run( [this] {
+		std::string config = mProjectPath + ".vscode/launch.json";
+		if ( FileSystem::fileExists( config ) )
+			loadProjectConfiguration( config );
+		config = mProjectPath + ".ecode/launch.json";
+		if ( FileSystem::fileExists( config ) )
+			loadProjectConfiguration( config );
+
+		getUISceneNode()->runOnMainThread( [this] { updateDebuggerConfigurationList(); } );
+	} );
+}
+
 PluginRequestHandle DebuggerPlugin::processMessage( const PluginMessage& msg ) {
 	switch ( msg.type ) {
 		case PluginMessageType::WorkspaceFolderChanged: {
@@ -248,10 +310,15 @@ PluginRequestHandle DebuggerPlugin::processMessage( const PluginMessage& msg ) {
 
 			if ( getUISceneNode() && mSidePanel ) {
 				getUISceneNode()->runOnMainThread( [this] {
-					if ( mProjectPath.empty() )
+					if ( mProjectPath.empty() ) {
 						hideSidePanel();
+						Lock l( mDapsMutex );
+						mDapConfigs.clear();
+					}
 				} );
 			}
+
+			loadProjectConfigurations();
 
 			mBreakpointsModel.reset();
 			updateUI();
@@ -304,6 +371,21 @@ void DebuggerPlugin::buildSidePanelTab() {
 		getUISceneNode()->bind( "panel", mSidePanel );
 
 	static constexpr auto STYLE = R"html(
+	<style>
+	#panel_debugger_buttons > PushButton {
+		clip: none;
+		border-radius: 0;
+		transition-delay: 0s;
+	}
+	#panel_debugger_buttons > PushButton:first-of-type {
+		border-top-left-radius: var(--button-radius);
+		border-bottom-left-radius: var(--button-radius);
+	}
+	#panel_debugger_buttons > PushButton:last-of-type {
+		border-top-right-radius: var(--button-radius);
+		border-bottom-right-radius: var(--button-radius);
+	}
+	</style>
 	<vbox id="debugger_panel" lw="mp" lh="wc" padding="4dp">
 		<vbox id="debugger_config_view" lw="mp" lh="wc">
 			<TextView text="@string(debugger, Debugger)" font-size="15dp" focusable="false" />
@@ -311,6 +393,13 @@ void DebuggerPlugin::buildSidePanelTab() {
 			<TextView text="@string(debugger_configuration, Debugger Configuration)" focusable="false" margin-top="8dp" />
 			<DropDownList id="debugger_conf_list" layout_width="mp" layout_height="wrap_content" margin-top="2dp" />
 			<PushButton id="debugger_run_button" lw="mp" lh="wc" text="@string(run, Run)" margin-top="8dp" icon="icon(play, 12dp)" />
+			<hbox id="panel_debugger_buttons" lw="wc" lh="wc" layout_gravity="center_horizontal" visible="false" clip="none" margin-top="8dp">
+				<PushButton id="panel_debugger_continue" class="debugger_continue" lw="24dp" lh="24dp" icon="icon(debug-continue, 12dp)" tooltip="@string(continue, Continue)" />
+				<PushButton id="panel_debugger_pause" class="debugger_pause" lw="24dp" lh="24dp" icon="icon(debug-pause, 12dp)" tooltip="@string(pause, Pause)" />
+				<PushButton id="panel_debugger_step_over" class="debugger_step_over" lw="24dp" lh="24dp" icon="icon(debug-step-over, 12dp)" tooltip="@string(step_over, Step Over)" />
+				<PushButton id="panel_debugger_step_into" class="debugger_step_into" lw="24dp" lh="24dp" icon="icon(debug-step-into, 12dp)" tooltip="@string(step_into, Step Into)" />
+				<PushButton id="panel_debugger_step_out" class="debugger_step_out" lw="24dp" lh="24dp" icon="icon(debug-step-out, 12dp)" tooltip="@string(step_out, Step Out)" />
+			</hbox>
 		</vbox>
 	</vbox>
 	)html";
@@ -323,6 +412,30 @@ void DebuggerPlugin::buildSidePanelTab() {
 
 	mTabContents->bind( "debugger_list", mUIDebuggerList );
 	mTabContents->bind( "debugger_conf_list", mUIDebuggerConfList );
+
+	mTabContents->bind( "panel_debugger_buttons", mPanelBoxButtons.box );
+	mTabContents->bind( "panel_debugger_continue", mPanelBoxButtons.resume );
+	mTabContents->bind( "panel_debugger_pause", mPanelBoxButtons.pause );
+	mTabContents->bind( "panel_debugger_step_over", mPanelBoxButtons.stepOver );
+	mTabContents->bind( "panel_debugger_step_into", mPanelBoxButtons.stepInto );
+	mTabContents->bind( "panel_debugger_step_out", mPanelBoxButtons.stepOut );
+
+	mPanelBoxButtons.resume->onClick(
+		[this]( auto ) { getPluginContext()->runCommand( "debugger-continue-interrupt" ); } );
+
+	mPanelBoxButtons.pause->onClick(
+		[this]( auto ) { getPluginContext()->runCommand( "debugger-continue-interrupt" ); } );
+
+	mPanelBoxButtons.stepOver->onClick(
+		[this]( auto ) { getPluginContext()->runCommand( "debugger-step-over" ); } );
+
+	mPanelBoxButtons.stepInto->onClick(
+		[this]( auto ) { getPluginContext()->runCommand( "debugger-step-into" ); } );
+
+	mPanelBoxButtons.stepOut->onClick(
+		[this]( auto ) { getPluginContext()->runCommand( "debugger-step-out" ); } );
+
+	setUIDebuggingState( StatusDebuggerController::State::NotStarted );
 
 	updateSidePanelTab();
 }
@@ -438,6 +551,17 @@ void DebuggerPlugin::updateDebuggerConfigurationList() {
 	confNames.reserve( mDaps.size() );
 	for ( const auto& conf : debuggerIt->configurations )
 		confNames.emplace_back( conf.name );
+
+	{
+		Lock l( mDapsMutex );
+		for ( const auto& conf : mDapConfigs ) {
+			if ( conf.args.value( "type", "" ) != debuggerIt->type )
+				continue;
+
+			confNames.emplace_back( conf.name );
+		}
+	}
+
 	std::sort( confNames.begin(), confNames.end() );
 	mUIDebuggerConfList->getListBox()->addListBoxItems( confNames );
 	bool empty = mUIDebuggerConfList->getListBox()->isEmpty();
@@ -453,6 +577,7 @@ void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json ) {
 	static constexpr auto KEY_ENV = "${env}";
 	static constexpr auto KEY_STOPONENTRY = "${stopOnEntry}";
 	static constexpr auto KEY_WORKSPACEFOLDER = "${workspaceFolder}";
+	static constexpr auto KEY_FILEDIRNAME = "${fileDirname}";
 	auto runConfig = getPluginContext()->getProjectBuildManager()->getCurrentRunConfig();
 
 	for ( auto& j : json ) {
@@ -460,22 +585,24 @@ void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json ) {
 			replaceKeysInJson( j );
 		} else if ( j.is_string() ) {
 			std::string val( j.get<std::string>() );
-			if ( runConfig && val == KEY_FILE ) {
-				j = runConfig->cmd;
-			} else if ( runConfig && val == KEY_ARGS ) {
+
+			if ( runConfig && val == KEY_ARGS ) {
 				auto argsArr = nlohmann::json::array();
 				auto args = Process::parseArgs( runConfig->args );
 				for ( const auto& arg : args )
 					argsArr.push_back( arg );
-				j = argsArr;
-			} else if ( runConfig && val == KEY_CWD ) {
-				j = runConfig->workingDir;
+				j = std::move( argsArr );
+				continue;
 			} else if ( runConfig && val == KEY_ENV ) {
 				j = nlohmann::json{};
-			} else if ( runConfig && val == KEY_WORKSPACEFOLDER ) {
-				j = mProjectPath;
 			} else if ( val == KEY_STOPONENTRY ) {
 				j = false;
+			} else if ( runConfig ) {
+				String::replaceAll( val, KEY_FILE, runConfig->cmd );
+				String::replaceAll( val, KEY_CWD, runConfig->workingDir );
+				String::replaceAll( val, KEY_FILEDIRNAME, runConfig->workingDir );
+				String::replaceAll( val, KEY_WORKSPACEFOLDER, mProjectPath );
+				j = std::move( val );
 			}
 		}
 	}
@@ -816,7 +943,12 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 		[&configuration]( const DapConfig& conf ) { return conf.name == configuration; } );
 
 	if ( configIt == debuggerIt->configurations.end() ) {
-		return;
+		configIt = std::find_if(
+			mDapConfigs.begin(), mDapConfigs.end(),
+			[&configuration]( const DapConfig& conf ) { return conf.name == configuration; } );
+
+		if ( configIt == debuggerIt->configurations.end() )
+			return;
 	}
 
 	ProtocolSettings protocolSettings;
@@ -935,11 +1067,34 @@ StatusDebuggerController* DebuggerPlugin::getStatusDebuggerController() const {
 	return static_cast<StatusDebuggerController*>( debuggerElement.get() );
 }
 
+void DebuggerPlugin::updatePanelUIState( StatusDebuggerController::State state ) {
+	mPanelBoxButtons.box->setVisible( state != StatusDebuggerController::State::NotStarted );
+	mPanelBoxButtons.resume->setVisible( state != StatusDebuggerController::State::NotStarted )
+		->setEnabled( state == StatusDebuggerController::State::Paused );
+	mPanelBoxButtons.pause->setVisible( state != StatusDebuggerController::State::NotStarted )
+		->setEnabled( state == StatusDebuggerController::State::Running );
+	mPanelBoxButtons.stepOver->setVisible( state != StatusDebuggerController::State::NotStarted )
+		->setEnabled( state == StatusDebuggerController::State::Paused );
+	mPanelBoxButtons.stepInto->setVisible( state != StatusDebuggerController::State::NotStarted )
+		->setEnabled( state == StatusDebuggerController::State::Paused );
+	mPanelBoxButtons.stepOut->setVisible( state != StatusDebuggerController::State::NotStarted )
+		->setEnabled( state == StatusDebuggerController::State::Paused );
+}
+
 void DebuggerPlugin::setUIDebuggingState( StatusDebuggerController::State state ) {
 	mDebuggingState = state;
+
 	auto ctrl = getStatusDebuggerController();
-	if ( ctrl )
+	if ( ctrl ) {
 		ctrl->setDebuggingState( state );
+	}
+
+	if ( mPanelBoxButtons.box ) {
+		if ( Engine::isRunninMainThread() )
+			updatePanelUIState( state );
+		else
+			mPanelBoxButtons.box->runOnMainThread( [this, state] { updatePanelUIState( state ); } );
+	}
 }
 
 // Mouse Hover Tooltip
