@@ -1742,7 +1742,7 @@ std::vector<std::pair<Uint64, std::string>> Sys::listProcesses() {
 	int32 cookie = 0;
 	team_info teamInfo;
 	while ( get_next_team_info( &cookie, &teamInfo ) == B_OK ) {
-		pids.push_back( teamInfo.team, std::string{ teamInfo.name } );
+		pids.emplace_back( teamInfo.team, std::string{ teamInfo.name } );
 	}
 	return pids;
 #else
