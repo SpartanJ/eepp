@@ -16,6 +16,12 @@ class DebuggerClientDap : public DebuggerClient {
   public:
 	typedef std::function<void( const Response&, const nlohmann::json& )> ResponseHandler;
 
+	std::function<void( bool isIntegrated, std::string cmd,
+						const std::vector<std::string>& args, const std::string& cwd,
+						const std::unordered_map<std::string, std::string>& env,
+						std::function<void( int )> doneFn )>
+		runInTerminalCb;
+
 	DebuggerClientDap( const ProtocolSettings& protocolSettings, std::unique_ptr<Bus>&& bus );
 
 	virtual ~DebuggerClientDap();
@@ -98,6 +104,9 @@ class DebuggerClientDap : public DebuggerClient {
 	void makeRequest( const std::string_view& command, const nlohmann::json& arguments,
 					  ResponseHandler onFinish = nullptr );
 
+	void makeResponse( int reqSeq, bool success, const std::string& command,
+					   const nlohmann::json& body );
+
 	void asyncRead( const char* bytes, size_t n );
 
 	void processProtocolMessage( const nlohmann::json& msg );
@@ -105,6 +114,8 @@ class DebuggerClientDap : public DebuggerClient {
 	void processResponse( const nlohmann::json& msg );
 
 	void processEvent( const nlohmann::json& msg );
+
+	void processRequest( const nlohmann::json& msg );
 
 	struct HeaderInfo {
 		Uint64 payloadStart;

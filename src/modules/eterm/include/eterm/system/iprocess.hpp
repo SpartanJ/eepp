@@ -49,6 +49,8 @@ class IProcess {
 	virtual void terminate() = 0;
 
 	virtual void waitForExit() = 0;
+
+	virtual int pid() = 0;
 };
 
 }} // namespace EE::System

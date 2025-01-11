@@ -2,6 +2,7 @@
 #include "messages.hpp"
 #include <eepp/core/string.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/system/process.hpp>
 
 using namespace EE::System;
 
@@ -46,6 +47,23 @@ void DebuggerClientDap::makeRequest( const std::string_view& command,
 	mRequests[mIdx] = { std::string{ command }, arguments, onFinish };
 
 	mIdx.fetch_add( 1, std::memory_order_relaxed );
+}
+
+void DebuggerClientDap::makeResponse( int reqSeq, bool success, const std::string& command,
+									  const nlohmann::json& body ) {
+	nlohmann::json jsonCmd = { { "seq", reqSeq },
+							   { "success", success },
+							   { "command", command },
+							   { "body", body.empty() ? nlohmann::json::object() : body } };
+
+	std::string cmd = jsonCmd.dump();
+	std::string msg( String::format( "Content-Length: %zu\r\n\r\n%s", cmd.size(), cmd ) );
+
+	Log::instance()->writel( mDebug ? LogLevel::Info : LogLevel::Debug,
+							 "DebuggerClientDap::makeResponse:" );
+	Log::instance()->writel( mDebug ? LogLevel::Info : LogLevel::Debug, msg );
+
+	mBus->write( msg.data(), msg.size() );
 }
 
 bool DebuggerClientDap::isServerConnected() const {
@@ -136,14 +154,14 @@ void DebuggerClientDap::requestInitialize() {
 	const nlohmann::json capabilities{
 		{ DAP_CLIENT_ID, "ecode-dap" },
 		{ DAP_CLIENT_NAME, "ecode dap" },
-		{ "locale", mProtocol.locale },
+		{ DAP_LOCALE, mProtocol.locale },
 		{ DAP_ADAPTER_ID, "ecode-dap" },
 		{ DAP_LINES_START_AT1, mProtocol.linesStartAt1 },
 		{ DAP_COLUMNS_START_AT2, mProtocol.columnsStartAt1 },
 		{ DAP_PATH, ( mProtocol.pathFormatURI ? DAP_URI : DAP_PATH ) },
 		{ DAP_SUPPORTS_VARIABLE_TYPE, true },
 		{ DAP_SUPPORTS_VARIABLE_PAGING, false },
-		{ DAP_SUPPORTS_RUN_IN_TERMINAL_REQUEST, false },
+		{ DAP_SUPPORTS_RUN_IN_TERMINAL_REQUEST, true },
 		{ DAP_SUPPORTS_MEMORY_REFERENCES, false },
 		{ DAP_SUPPORTS_PROGRESS_REPORTING, false },
 		{ DAP_SUPPORTS_INVALIDATED_EVENT, false },
@@ -193,10 +211,52 @@ void DebuggerClientDap::processProtocolMessage( const nlohmann::json& msg ) {
 		processResponse( msg );
 	} else if ( DAP_EVENT == type ) {
 		processEvent( msg );
+	} else if ( DAP_REQUEST == type ) {
+		processRequest( msg );
 	} else {
 		Log::warning( "DebuggerClientDap::processProtocolMessage: unknown, empty or unexpected "
 					  "ProtocolMessage::%s (%s)",
 					  DAP_TYPE, type );
+	}
+}
+
+void DebuggerClientDap::processRequest( const nlohmann::json& msg ) {
+	const auto seq = msg.value( DAP_SEQ, 0 );
+	if ( seq == 0 )
+		return;
+	const auto command = msg.value( DAP_COMMAND, "" );
+	const auto args = msg.contains( DAP_ARGUMENTS ) ? msg[DAP_ARGUMENTS] : nlohmann::json{};
+
+	if ( DAP_RUN_IN_TERMINAL == command ) {
+		if ( !runInTerminalCb )
+			return;
+		bool isIntegrated = args.value( "kind", "integrated" ) == "integrated";
+		std::vector<std::string> largs;
+		if ( args.contains( "args" ) && args["args"].is_array() ) {
+			auto& jargs = args["args"];
+
+			for ( const auto& jarg : jargs ) {
+				if ( jarg.is_string() )
+					largs.emplace_back( jarg.get<std::string>() );
+			}
+		}
+		std::unordered_map<std::string, std::string> lenv;
+
+		if ( args.contains( "env" ) && args["env"].is_object() ) {
+			for ( auto& [key, value] : args["env"].items() ) {
+				if ( value.is_string() )
+					lenv.emplace( key, value.get<std::string>() );
+			}
+		}
+
+		std::string cwd = args.value( "cwd", "" );
+		if ( !largs.empty() ) {
+			std::string cmd = std::move( largs.front() );
+			largs.erase( largs.begin() );
+			runInTerminalCb( isIntegrated, cmd, largs, cwd, lenv, [this, seq, command]( int pid ) {
+				makeResponse( seq, pid != 0, command, nlohmann::json{ { "processId", pid } } );
+			} );
+		}
 	}
 }
 

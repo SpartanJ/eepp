@@ -1,4 +1,5 @@
 #include "debuggerclientlistener.hpp"
+#include "../../notificationcenter.hpp"
 #include "../../statusappoutputcontroller.hpp"
 #include "debuggerplugin.hpp"
 
@@ -519,8 +520,10 @@ void DebuggerClientListener::outputProduced( const Output& output ) {
 
 void DebuggerClientListener::debuggingProcess( const ProcessInfo& ) {}
 
-void DebuggerClientListener::errorResponse( const std::string& /*summary*/,
-											const std::optional<Message>& /*message*/ ) {}
+void DebuggerClientListener::errorResponse( const std::string& summary,
+											const std::optional<Message>& /*message*/ ) {
+	mPlugin->getPluginContext()->getNotificationCenter()->addNotification( summary, Seconds( 5 ) );
+}
 
 void DebuggerClientListener::threadChanged( const ThreadEvent& ) {}
 

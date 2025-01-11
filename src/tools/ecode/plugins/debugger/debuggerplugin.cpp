@@ -1,10 +1,13 @@
+#include "debuggerplugin.hpp"
 #include "../../notificationcenter.hpp"
 #include "../../projectbuild.hpp"
+#include "../../terminalmanager.hpp"
 #include "../../uistatusbar.hpp"
 #include "../../widgetcommandexecuter.hpp"
 #include "busprocess.hpp"
+#include "bussocket.hpp"
+#include "bussocketprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
-#include "debuggerplugin.hpp"
 #include "models/breakpointsmodel.hpp"
 #include "statusdebuggercontroller.hpp"
 #include <eepp/graphics/primitives.hpp>
@@ -20,6 +23,9 @@ using namespace EE::UI::Doc;
 using namespace std::literals;
 
 using json = nlohmann::json;
+
+static constexpr auto REQUEST_TYPE_LAUNCH = "launch";
+static constexpr auto REQUEST_TYPE_ATTACH = "attach";
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 #define DEBUGGER_THREADED 1
@@ -157,6 +163,9 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 			if ( dap.contains( "run" ) ) {
 				auto& run = dap["run"];
 				dapTool.run.command = run.value( "command", "" );
+				dapTool.redirectStdout = run.value( "redirectStdout", false );
+				dapTool.redirectStderr = run.value( "redirectStderr", false );
+				dapTool.supportsSourceRequest = run.value( "supportsSourceRequest", true );
 				dapTool.fallbackCommand = run.value( "command_fallback", "" );
 				if ( run.contains( "command_arguments" ) ) {
 					if ( run["command_arguments"].is_array() ) {
@@ -179,8 +188,21 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 					DapConfig dapConfig;
 					dapConfig.name = config.value( "name", "" );
 					if ( !dapConfig.name.empty() ) {
-						dapConfig.command = config.value( "command", "launch" );
+						dapConfig.request = config.value( "request", REQUEST_TYPE_LAUNCH );
 						dapConfig.args = config["arguments"];
+					}
+					if ( config.contains( "command_arguments" ) ) {
+						if ( config["command_arguments"].is_array() ) {
+							auto& args = config["command_arguments"];
+							dapConfig.cmdArgs.reserve( args.size() );
+							for ( auto& arg : args ) {
+								if ( args.is_string() )
+									dapConfig.cmdArgs.emplace_back( arg.get<std::string>() );
+							}
+						} else if ( config["command_arguments"].is_string() ) {
+							dapConfig.cmdArgs.push_back(
+								config["command_arguments"].get<std::string>() );
+						}
 					}
 					dapTool.configurations.emplace_back( std::move( dapConfig ) );
 				}
@@ -268,13 +290,16 @@ void DebuggerPlugin::loadProjectConfiguration( const std::string& path ) {
 	for ( const auto& conf : confs ) {
 		DapConfig dapConfig;
 		auto type = conf.value( "type", "" );
-		if ( type != "cppdbg" )
+
+		if ( !std::any_of( mDaps.begin(), mDaps.end(),
+						   [&type]( const DapTool& dap ) { return dap.type == type; } ) )
 			continue;
+
 		dapConfig.name = conf.value( "name", "" );
 		if ( dapConfig.name.empty() )
 			continue;
-		dapConfig.command = conf.value( "request", "" );
-		if ( dapConfig.command != "launch" && dapConfig.command != "attach" )
+		dapConfig.request = conf.value( "request", "" );
+		if ( dapConfig.request != REQUEST_TYPE_LAUNCH && dapConfig.request != REQUEST_TYPE_ATTACH )
 			continue;
 		dapConfig.args = std::move( conf );
 
@@ -570,7 +595,7 @@ void DebuggerPlugin::updateDebuggerConfigurationList() {
 		mUIDebuggerConfList->getListBox()->setSelected( 0L );
 }
 
-void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json ) {
+void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json, int randomPort ) {
 	static constexpr auto KEY_FILE = "${file}";
 	static constexpr auto KEY_ARGS = "${args}";
 	static constexpr auto KEY_CWD = "${cwd}";
@@ -578,11 +603,14 @@ void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json ) {
 	static constexpr auto KEY_STOPONENTRY = "${stopOnEntry}";
 	static constexpr auto KEY_WORKSPACEFOLDER = "${workspaceFolder}";
 	static constexpr auto KEY_FILEDIRNAME = "${fileDirname}";
+	static constexpr auto KEY_RANDPORT = "${randPort}";
+	static constexpr auto KEY_PID = "${pid}";
 	auto runConfig = getPluginContext()->getProjectBuildManager()->getCurrentRunConfig();
+	auto buildConfig = getPluginContext()->getProjectBuildManager()->getCurrentBuild();
 
 	for ( auto& j : json ) {
 		if ( j.is_object() ) {
-			replaceKeysInJson( j );
+			replaceKeysInJson( j, randomPort );
 		} else if ( j.is_string() ) {
 			std::string val( j.get<std::string>() );
 
@@ -593,8 +621,10 @@ void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json ) {
 					argsArr.push_back( arg );
 				j = std::move( argsArr );
 				continue;
-			} else if ( runConfig && val == KEY_ENV ) {
+			} else if ( runConfig && val == KEY_ENV && buildConfig ) {
 				j = nlohmann::json{};
+				for ( const auto& env : buildConfig->envs() )
+					j[env.first] = env.second;
 			} else if ( val == KEY_STOPONENTRY ) {
 				j = false;
 			} else if ( runConfig ) {
@@ -602,6 +632,25 @@ void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json ) {
 				String::replaceAll( val, KEY_CWD, runConfig->workingDir );
 				String::replaceAll( val, KEY_FILEDIRNAME, runConfig->workingDir );
 				String::replaceAll( val, KEY_WORKSPACEFOLDER, mProjectPath );
+				if ( String::contains( val, KEY_RANDPORT ) )
+					String::replaceAll( val, KEY_RANDPORT, String::toString( randomPort ) );
+
+				bool containsPid = false;
+				if ( ( val == KEY_PID || ( containsPid = String::contains( val, KEY_PID ) ) ) &&
+					 json.contains( "program" ) && json["program"].is_string() ) {
+					auto programName(
+						FileSystem::fileNameFromPath( json["program"].get<std::string>() ) );
+					auto pids = Sys::pidof( programName );
+					if ( !pids.empty() ) {
+						if ( containsPid ) {
+							String::replaceAll( val, KEY_PID, String::toString( pids[0] ) );
+						} else {
+							j = pids[0];
+							continue;
+						}
+					}
+				}
+
 				j = std::move( val );
 			}
 		}
@@ -920,16 +969,6 @@ static std::string findCommand( const std::string& findBinary, const std::string
 }
 
 void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& configuration ) {
-	auto runConfig = getPluginContext()->getProjectBuildManager()->getCurrentRunConfig();
-	if ( !runConfig ) {
-		auto msg =
-			i18n( "no_run_config",
-				  "You must first have a \"Run Target\" configured and selected. Go to \"Build "
-				  "Settings\" and create a new build and run setting (build step is optional)." );
-		mManager->getPluginContext()->getNotificationCenter()->addNotification( msg, Seconds( 5 ) );
-		return;
-	}
-
 	auto debuggerIt = std::find_if( mDaps.begin(), mDaps.end(), [&debugger]( const DapTool& dap ) {
 		return dap.name == debugger;
 	} );
@@ -942,6 +981,7 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 		debuggerIt->configurations.begin(), debuggerIt->configurations.end(),
 		[&configuration]( const DapConfig& conf ) { return conf.name == configuration; } );
 
+	bool usingExternalConfig = false;
 	if ( configIt == debuggerIt->configurations.end() ) {
 		configIt = std::find_if(
 			mDapConfigs.begin(), mDapConfigs.end(),
@@ -949,19 +989,34 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 
 		if ( configIt == debuggerIt->configurations.end() )
 			return;
+
+		usingExternalConfig = true;
 	}
 
+	auto runConfig = debuggerIt->run;
+
+	if ( !usingExternalConfig && configIt->request == REQUEST_TYPE_LAUNCH &&
+		 !getPluginContext()->getProjectBuildManager()->getCurrentRunConfig() ) {
+		auto msg =
+			i18n( "no_run_config",
+				  "You must first have a \"Run Target\" configured and selected. Go to \"Build "
+				  "Settings\" and create a new build and run setting (build step is optional)." );
+		mManager->getPluginContext()->getNotificationCenter()->addNotification( msg, Seconds( 5 ) );
+		return;
+	}
+
+	int randomPort = Math::randi( 44000, 45000 );
 	ProtocolSettings protocolSettings;
-	protocolSettings.launchCommand = configIt->command;
+	protocolSettings.launchCommand = configIt->request;
 	auto args = configIt->args;
-	replaceKeysInJson( args );
+	replaceKeysInJson( args, randomPort );
 	protocolSettings.launchRequest = args;
+	protocolSettings.redirectStdout = debuggerIt->redirectStdout;
+	protocolSettings.redirectStderr = debuggerIt->redirectStderr;
+	protocolSettings.supportsSourceRequest = debuggerIt->supportsSourceRequest;
 
-	Command cmd;
-	cmd.command = debuggerIt->run.command;
-	cmd.arguments = debuggerIt->run.args;
-
-	mRunButton->setEnabled( false );
+	for ( const std::string& cmdArg : configIt->cmdArgs )
+		runConfig.args.emplace_back( cmdArg );
 
 	std::string findBinary;
 	auto findBinaryIt = debuggerIt->findBinary.find( String::toLower( Sys::getPlatform() ) );
@@ -970,49 +1025,14 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 
 	std::string fallbackCommand = debuggerIt->fallbackCommand;
 
+	mRunButton->setEnabled( false );
+
 	mThreadPool->run(
-		[this, cmd = std::move( cmd ), protocolSettings = std::move( protocolSettings ),
-		 findBinary = std::move( findBinary ),
-		 fallbackCommand = std::move( fallbackCommand )]() mutable {
-			if ( !findBinary.empty() && Sys::which( cmd.command ).empty() ) {
-				auto foundCmd = findCommand( findBinary, cmd.command );
-				if ( !foundCmd.empty() ) {
-					cmd.command = std::move( foundCmd );
-				} else if ( !fallbackCommand.empty() ) {
-					foundCmd = findCommand( findBinary, fallbackCommand );
-					if ( !foundCmd.empty() )
-						cmd.command = std::move( foundCmd );
-				}
-			}
-
-			if ( !FileSystem::fileExists( cmd.command ) && Sys::which( cmd.command ).empty() ) {
-				auto args = Process::parseArgs( cmd.command );
-				if ( args.size() <= 1 ||
-					 ( !FileSystem::fileExists( args[0] ) && Sys::which( args[0] ).empty() ) ) {
-					if ( fallbackCommand.empty() || ( !FileSystem::fileExists( fallbackCommand ) &&
-													  Sys::which( fallbackCommand ).empty() ) ) {
-						auto msg = String::format(
-							i18n( "debugger_binary_not_found",
-								  "Debugger binary not found. Binary \"%s\" must be installed." )
-								.toUtf8(),
-							cmd.command );
-
-						mManager->getPluginContext()->getNotificationCenter()->addNotification(
-							msg );
-						return;
-					} else {
-						cmd.command = std::move( fallbackCommand );
-					}
-				}
-			}
-
-			auto bus = std::make_unique<BusProcess>( cmd );
-
-			mDebugger = std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
-			mListener = std::make_unique<DebuggerClientListener>( mDebugger.get(), this );
-			mDebugger->addListener( mListener.get() );
-
-			mDebugger->start();
+		[this, protocolSettings = std::move( protocolSettings ),
+		 runSettings = std::move( runConfig ), findBinary = std::move( findBinary ),
+		 fallbackCommand = std::move( fallbackCommand ), randomPort]() mutable {
+			run( std::move( protocolSettings ), std::move( runSettings ), std::move( findBinary ),
+				 std::move( fallbackCommand ), randomPort );
 		},
 		[this]( const Uint64& ) {
 			if ( !mDebugger || !mDebugger->started() ) {
@@ -1027,6 +1047,119 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 				} );
 			}
 		} );
+}
+
+void DebuggerPlugin::run( ProtocolSettings&& protocolSettings, DapRunConfig&& runConfig,
+						  std::string&& findBinary, std::string&& fallbackCommand,
+						  int /*randPort*/ ) {
+	Command cmd;
+	cmd.command = std::move( runConfig.command );
+	cmd.arguments = std::move( runConfig.args );
+
+	if ( !findBinary.empty() && Sys::which( cmd.command ).empty() ) {
+		auto foundCmd = findCommand( findBinary, cmd.command );
+		if ( !foundCmd.empty() ) {
+			cmd.command = std::move( foundCmd );
+		} else if ( !fallbackCommand.empty() ) {
+			foundCmd = findCommand( findBinary, fallbackCommand );
+			if ( !foundCmd.empty() )
+				cmd.command = std::move( foundCmd );
+		}
+	}
+
+	if ( protocolSettings.launchCommand == REQUEST_TYPE_LAUNCH && !cmd.command.empty() &&
+		 !FileSystem::fileExists( cmd.command ) && Sys::which( cmd.command ).empty() ) {
+		auto args = Process::parseArgs( cmd.command );
+		if ( args.size() <= 1 ||
+			 ( !FileSystem::fileExists( args[0] ) && Sys::which( args[0] ).empty() ) ) {
+			if ( fallbackCommand.empty() || ( !FileSystem::fileExists( fallbackCommand ) &&
+											  Sys::which( fallbackCommand ).empty() ) ) {
+				auto msg = String::format(
+					i18n( "debugger_binary_not_found",
+						  "Debugger binary not found. Binary \"%s\" must be installed." )
+						.toUtf8(),
+					cmd.command );
+
+				mManager->getPluginContext()->getNotificationCenter()->addNotification( msg );
+				return;
+			} else {
+				cmd.command = std::move( fallbackCommand );
+			}
+		}
+	}
+
+	if ( protocolSettings.launchCommand == REQUEST_TYPE_LAUNCH ) {
+		auto bus = std::make_unique<BusProcess>( cmd );
+		mDebugger = std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
+	} else if ( protocolSettings.launchCommand == REQUEST_TYPE_ATTACH ) {
+		auto mode = protocolSettings.launchRequest.value( "mode", "" );
+
+		Connection con;
+		con.host = protocolSettings.launchRequest.value( "host", "localhost" );
+		con.port = protocolSettings.launchRequest.value( "port", 0 );
+		bool useSocket = !con.host.empty() && con.port != 0;
+		if ( ( protocolSettings.launchRequest.contains( "host" ) ||
+			   protocolSettings.launchRequest.contains( "port" ) ) &&
+			 !useSocket ) {
+			getManager()->getPluginContext()->getNotificationCenter()->addNotification(
+				i18n( "host_port_required", "No host or port has been specified." ) );
+			return;
+		}
+
+		if ( mode == "local" ) {
+			if ( useSocket ) {
+				auto bus = std::make_unique<BusSocketProcess>( cmd, con );
+				mDebugger =
+					std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
+			} else {
+				// Unsuported
+			}
+		} else if ( mode == "remote" ) {
+			auto bus = std::make_unique<BusSocket>( con );
+			mDebugger = std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
+		}
+	} else {
+		getManager()->getPluginContext()->getNotificationCenter()->addNotification( String::format(
+			i18n( "unknown_request_type", "Unknown request type: %s" ).toUtf8().c_str(),
+			cmd.command ) );
+		return;
+	}
+
+	if ( !mDebugger ) {
+		getManager()->getPluginContext()->getNotificationCenter()->addNotification( i18n(
+			"debugger_configuration_not_supported", "Debugger configuration not supported." ) );
+		return;
+	}
+
+	mListener = std::make_unique<DebuggerClientListener>( mDebugger.get(), this );
+	mDebugger->addListener( mListener.get() );
+
+	DebuggerClientDap* dap = static_cast<DebuggerClientDap*>( mDebugger.get() );
+	dap->runInTerminalCb = [this]( bool isIntegrated, std::string cmd,
+								   const std::vector<std::string>& args, const std::string& cwd,
+								   const std::unordered_map<std::string, std::string>& /*env*/,
+								   std::function<void( int )> doneFn ) {
+		if ( !FileSystem::fileExists( cmd ) )
+			cmd = FileSystem::fileNameFromPath( cmd );
+		getUISceneNode()->runOnMainThread( [=] {
+			if ( isIntegrated ) {
+				UITerminal* term =
+					getPluginContext()->getTerminalManager()->createTerminalInSplitter(
+						cwd, cmd, args, false );
+
+				doneFn( term && term->getTerm() && term->getTerm()->getTerminal() &&
+								term->getTerm()->getTerminal()->getProcess()
+							? term->getTerm()->getTerminal()->getProcess()->pid()
+							: 0 );
+			} else {
+				std::string fcmd = cmd + ( !args.empty() ? " " : "" ) + String::join( args, ' ' );
+				doneFn(
+					getPluginContext()->getTerminalManager()->openInExternalTerminal( fcmd, cwd ) );
+			}
+		} );
+	};
+
+	mDebugger->start();
 }
 
 void DebuggerPlugin::exitDebugger() {

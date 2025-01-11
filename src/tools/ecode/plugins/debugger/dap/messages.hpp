@@ -22,6 +22,7 @@ static const auto DAP_BODY = "body"sv;
 static const auto DAP_CLIENT_ID = "clientID"sv;
 static const auto DAP_CLIENT_NAME = "clientName"sv;
 static const auto DAP_ADAPTER_ID = "adapterID"sv;
+static const auto DAP_LOCALE = "locale"sv;
 static const auto DAP_LINES_START_AT1 = "linesStartAt1"sv;
 static const auto DAP_COLUMNS_START_AT2 = "columnsStartAt1"sv;
 static const auto DAP_PATH_FORMAT = "pathFormat"sv;
@@ -50,6 +51,9 @@ static const auto DAP_MODULES = "modules"sv;
 static const auto DAP_VARIABLES = "variables"sv;
 static const auto DAP_SCOPES = "scopes"sv;
 static const auto DAP_THREADS = "threads"sv;
+
+// request commands
+static const auto DAP_RUN_IN_TERMINAL = "runInTerminal";
 
 // event values
 static const auto DAP_OUTPUT = "output"sv;

@@ -94,6 +94,10 @@ void Process::waitForExit() {
 	mExitCode = WEXITSTATUS( status );
 }
 
+int Process::pid() {
+	return mPID;
+}
+
 bool Process::hasExited() const {
 	return mStatus == ProcessStatus::EXITED;
 }

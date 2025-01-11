@@ -2,6 +2,7 @@
 
 #include "../plugin.hpp"
 #include "../pluginmanager.hpp"
+#include "config.hpp"
 #include "debuggerclientlistener.hpp"
 #include "models/breakpointsmodel.hpp"
 
@@ -17,7 +18,8 @@ struct DapRunConfig {
 
 struct DapConfig {
 	std::string name;
-	std::string command;
+	std::string request;
+	std::vector<std::string> cmdArgs;
 	nlohmann::json args;
 };
 
@@ -30,6 +32,9 @@ struct DapTool {
 	std::vector<DapConfig> configurations;
 	std::unordered_map<std::string, std::string> findBinary;
 	std::string fallbackCommand;
+	bool redirectStdout{ false };
+	bool redirectStderr{ false };
+	bool supportsSourceRequest{ false };
 };
 
 class DebuggerPlugin : public PluginBase {
@@ -123,9 +128,12 @@ class DebuggerPlugin : public PluginBase {
 
 	void runConfig( const std::string& debugger, const std::string& configuration );
 
+	void run( ProtocolSettings&& protocolSettings, DapRunConfig&& runConfig,
+			  std::string&& findBinary, std::string&& fallbackCommand, int randPort );
+
 	void exitDebugger();
 
-	void replaceKeysInJson( nlohmann::json& json );
+	void replaceKeysInJson( nlohmann::json& json, int randomPort );
 
 	void onRegisterEditor( UICodeEditor* ) override;
 

@@ -341,6 +341,8 @@ class ProjectBuildManager {
 
 	std::optional<ProjectBuildStep> getCurrentRunConfig();
 
+	ProjectBuild* getCurrentBuild();
+
   protected:
 	std::string mProjectRoot;
 	std::string mProjectFile;
