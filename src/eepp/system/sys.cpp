@@ -1523,7 +1523,7 @@ std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
 	std::vector<Uint64> pids;
 
-	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PROC, 0 };
+	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0 };
 	size_t len;
 
 	if ( sysctl( mib, 4, NULL, &len, NULL, 0 ) == -1 ) {
@@ -1680,7 +1680,7 @@ std::vector<std::pair<Uint64, std::string>> Sys::listProcesses() {
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
 	std::vector<std::pair<Uint64, std::string>> pids;
 
-	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PROC, 0 };
+	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0 };
 	size_t len;
 
 	if ( sysctl( mib, 4, NULL, &len, NULL, 0 ) == -1 ) {
