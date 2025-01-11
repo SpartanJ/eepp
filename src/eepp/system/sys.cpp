@@ -1256,7 +1256,7 @@ static int windowsSystem( const std::string& programPath, const std::string& wor
 
 int Sys::execute( const std::string& cmd, const std::string& workingDir ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	windowsSystem( cmd, workingDir );
+	return windowsSystem( cmd, workingDir );
 #elif EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	pid_t pid = fork();
 	if ( pid == 0 ) {
