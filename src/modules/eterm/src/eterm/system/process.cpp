@@ -474,6 +474,10 @@ fail:
 	return std::unique_ptr<Process>();
 }
 
+int Process::pid() {
+	return mPID;
+}
+
 }} // namespace eterm::System
 
 #endif
