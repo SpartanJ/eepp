@@ -66,6 +66,7 @@ class StatusDebuggerController : public StatusBarElement {
 	UITableView* mUIStack{ nullptr };
 	UIBreakpointsTableView* mUIBreakpoints{ nullptr };
 	UITreeView* mUIVariables{ nullptr };
+	UITreeView* mUIExpressions{ nullptr };
 	UISplitter* mUIThreadsSplitter{ nullptr };
 	UIPushButton* mUIButStart{ nullptr };
 	UIPushButton* mUIButStop{ nullptr };

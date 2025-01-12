@@ -10,6 +10,9 @@ class DebuggerClient {
   public:
 	enum class State { None, Initializing, Initialized, Running, Terminated, Failed };
 
+	using VariablesResponseCb =
+		std::function<void( const int variablesReference, std::vector<Variable>&& vars )>;
+
 	class Listener {
 	  public:
 		virtual void stateChanged( State ) = 0;
@@ -26,7 +29,7 @@ class DebuggerClient {
 		virtual void debuggeeContinued( const ContinuedEvent& ) = 0;
 		virtual void outputProduced( const Output& ) = 0;
 		virtual void debuggingProcess( const ProcessInfo& ) = 0;
-		virtual void errorResponse( const std::string& summary,
+		virtual void errorResponse( const std::string& command, const std::string& summary,
 									const std::optional<Message>& message ) = 0;
 		virtual void threadChanged( const ThreadEvent& ) = 0;
 		virtual void moduleChanged( const ModuleEvent& ) = 0;
@@ -78,8 +81,10 @@ class DebuggerClient {
 
 	virtual bool modules( int start, int count ) = 0;
 
+	/** if responseCb is provided, response will not be sent to listeners */
 	virtual bool variables( int variablesReference, Variable::Type filter = Variable::Type::Both,
-							int start = 0, int count = 0 ) = 0;
+							VariablesResponseCb responseCb = nullptr, int start = 0,
+							int count = 0 ) = 0;
 
 	virtual bool evaluate(
 		const std::string& expression, const std::string& context, std::optional<int> frameId,

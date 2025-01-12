@@ -16,8 +16,8 @@ class DebuggerClientDap : public DebuggerClient {
   public:
 	typedef std::function<void( const Response&, const nlohmann::json& )> ResponseHandler;
 
-	std::function<void( bool isIntegrated, std::string cmd,
-						const std::vector<std::string>& args, const std::string& cwd,
+	std::function<void( bool isIntegrated, std::string cmd, const std::vector<std::string>& args,
+						const std::string& cwd,
 						const std::unordered_map<std::string, std::string>& env,
 						std::function<void( int )> doneFn )>
 		runInTerminalCb;
@@ -51,7 +51,8 @@ class DebuggerClientDap : public DebuggerClient {
 	bool scopes( int frameId ) override;
 
 	bool variables( int variablesReference, Variable::Type filter = Variable::Type::Both,
-					int start = 0, int count = 0 ) override;
+					DebuggerClient::VariablesResponseCb responseCb = nullptr, int start = 0,
+					int count = 0 ) override;
 
 	bool modules( int start, int count ) override;
 
@@ -124,7 +125,8 @@ class DebuggerClientDap : public DebuggerClient {
 
 	std::optional<HeaderInfo> readHeader();
 
-	void errorResponse( const std::string& summary, const std::optional<Message>& message );
+	void errorResponse( const std::string& command, const std::string& summary,
+						const std::optional<Message>& message );
 
 	void processEventInitialized();
 

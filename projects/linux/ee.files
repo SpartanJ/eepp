@@ -1590,6 +1590,12 @@
 ../../src/tools/ecode/plugins/debugger/debuggerplugin.hpp
 ../../src/tools/ecode/plugins/debugger/models/breakpointsmodel.cpp
 ../../src/tools/ecode/plugins/debugger/models/breakpointsmodel.hpp
+../../src/tools/ecode/plugins/debugger/models/stackmodel.cpp
+../../src/tools/ecode/plugins/debugger/models/stackmodel.hpp
+../../src/tools/ecode/plugins/debugger/models/threadsmodel.cpp
+../../src/tools/ecode/plugins/debugger/models/threadsmodel.hpp
+../../src/tools/ecode/plugins/debugger/models/variablesmodel.cpp
+../../src/tools/ecode/plugins/debugger/models/variablesmodel.hpp
 ../../src/tools/ecode/plugins/debugger/statusdebuggercontroller.cpp
 ../../src/tools/ecode/plugins/debugger/statusdebuggercontroller.hpp
 ../../src/tools/ecode/plugins/formatter/formatterplugin.cpp

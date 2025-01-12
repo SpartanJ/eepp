@@ -8,6 +8,7 @@ class DebuggerPlugin;
 class ThreadsModel;
 class StackModel;
 class VariablesModel;
+class VariablesHolder;
 struct ModelVariableNode;
 
 class DebuggerClientListener : public DebuggerClient::Listener {
@@ -33,7 +34,8 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 	void debuggeeContinued( const ContinuedEvent& );
 	void outputProduced( const Output& );
 	void debuggingProcess( const ProcessInfo& );
-	void errorResponse( const std::string& summary, const std::optional<Message>& message );
+	void errorResponse( const std::string& command, const std::string& summary,
+						const std::optional<Message>& message );
 	void threadChanged( const ThreadEvent& );
 	void moduleChanged( const ModuleEvent& );
 	void threads( std::vector<DapThread>&& );
@@ -73,8 +75,7 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 	int mCurrentFrameId{ 0 };
 	std::shared_ptr<ThreadsModel> mThreadsModel;
 	std::shared_ptr<StackModel> mStackModel;
-	std::shared_ptr<VariablesModel> mVariablesModel;
-	std::shared_ptr<ModelVariableNode> mVariablesRoot;
+	std::shared_ptr<VariablesHolder> mVariablesHolder;
 
 	StatusDebuggerController* getStatusDebuggerController() const;
 

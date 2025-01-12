@@ -282,17 +282,17 @@ void DebuggerClientDap::processResponse( const nlohmann::json& msg ) {
 		Log::debug( "DebuggerClientDap::processResponse: request cancelled: %s", response.command );
 
 	if ( !response.success )
-		return errorResponse( response.message, response.errorBody );
+		return errorResponse( response.command, response.message, response.errorBody );
 
 	if ( request.handler ) {
 		request.handler( response, request.arguments );
 	}
 }
 
-void DebuggerClientDap::errorResponse( const std::string& summary,
+void DebuggerClientDap::errorResponse( const std::string& command, const std::string& summary,
 									   const std::optional<Message>& message ) {
 	for ( auto listener : mListeners )
-		listener->errorResponse( summary, message );
+		listener->errorResponse( command, summary, message );
 }
 
 void DebuggerClientDap::processEvent( const nlohmann::json& msg ) {
@@ -596,7 +596,8 @@ bool DebuggerClientDap::scopes( int frameId ) {
 	return true;
 }
 
-bool DebuggerClientDap::variables( int variablesReference, Variable::Type filter, int start,
+bool DebuggerClientDap::variables( int variablesReference, Variable::Type filter,
+								   DebuggerClient::VariablesResponseCb responseCb, int start,
 								   int count ) {
 	nlohmann::json arguments{
 		{ DAP_VARIABLES_REFERENCE, variablesReference },
@@ -615,20 +616,30 @@ bool DebuggerClientDap::variables( int variablesReference, Variable::Type filter
 			break;
 	}
 
-	makeRequest( DAP_VARIABLES, arguments,
-				 [this]( const Response& response, const nlohmann::json& request ) {
-					 const int variablesReference = request.value( DAP_VARIABLES_REFERENCE, 0 );
+	makeRequest(
+		DAP_VARIABLES, arguments,
+		[this, responseCb = std::move( responseCb )]( const Response& response,
+													  const nlohmann::json& request ) {
+			const int variablesReference = request.value( DAP_VARIABLES_REFERENCE, 0 );
 
-					 if ( response.success ) {
-						 auto variableList( Variable::parseList( response.body[DAP_VARIABLES] ) );
-						 for ( auto listener : mListeners )
-							 listener->variables( variablesReference, std::move( variableList ) );
-					 } else {
-						 std::vector<Variable> variableList;
-						 for ( auto listener : mListeners )
-							 listener->variables( variablesReference, std::move( variableList ) );
-					 }
-				 } );
+			if ( response.success ) {
+				auto variableList( Variable::parseList( response.body[DAP_VARIABLES] ) );
+				if ( responseCb ) {
+					responseCb( variablesReference, std::move( variableList ) );
+				} else {
+					for ( auto listener : mListeners )
+						listener->variables( variablesReference, std::move( variableList ) );
+				}
+			} else {
+				std::vector<Variable> variableList;
+				if ( responseCb ) {
+					responseCb( variablesReference, std::move( variableList ) );
+				} else {
+					for ( auto listener : mListeners )
+						listener->variables( variablesReference, std::move( variableList ) );
+				}
+			}
+		} );
 
 	return true;
 }

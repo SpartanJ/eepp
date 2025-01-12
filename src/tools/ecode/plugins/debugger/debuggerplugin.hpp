@@ -80,6 +80,7 @@ class DebuggerPlugin : public PluginBase {
 	Mutex mDapsMutex;
 	Mutex mBreakpointsMutex;
 	StatusDebuggerController::State mDebuggingState{ StatusDebuggerController::State::NotStarted };
+	std::vector<std::string> mExpressions;
 
 	// Begin Hover Stuff
 	Uint32 mHoverWaitCb{ 0 };

@@ -2,6 +2,9 @@
 #include "../../notificationcenter.hpp"
 #include "../../statusappoutputcontroller.hpp"
 #include "debuggerplugin.hpp"
+#include "models/stackmodel.hpp"
+#include "models/threadsmodel.hpp"
+#include "models/variablesmodel.hpp"
 
 namespace ecode {
 
@@ -15,353 +18,10 @@ DebuggerClientListener::fromSet( const EE::UnorderedSet<SourceBreakpointStateful
 	return bps;
 }
 
-using i18nFn = std::function<String( const std::string&, const String& )>;
-
-struct ModelVariableNode : public std::enable_shared_from_this<ModelVariableNode> {
-	using NodePtr = std::shared_ptr<ModelVariableNode>;
-
-	static std::unordered_map<int, NodePtr> nodeMap;
-
-	static NodePtr getNodeByReference( int variablesReference ) {
-		auto it = nodeMap.find( variablesReference );
-		return ( it != nodeMap.end() ) ? it->second : nullptr;
-	}
-
-	ModelVariableNode( Variable&& var, NodePtr parent ) :
-		parent( parent ), var( std::move( var ) ) {}
-
-	ModelVariableNode( const std::string& name, int variablesReference, NodePtr parent = nullptr ) :
-		parent( parent ) {
-		var.name = name;
-		var.variablesReference = variablesReference;
-	}
-
-	virtual ~ModelVariableNode() {}
-
-	const std::vector<NodePtr>& getChildren() const { return children; }
-
-	const std::string& getName() const { return var.name; }
-
-	int getVariablesReference() const { return var.variablesReference; }
-
-	void clear() { children.clear(); }
-
-	std::optional<NodePtr> getChildRecursive( int variablesReference ) {
-		if ( var.variablesReference == variablesReference )
-			return shared_from_this();
-
-		for ( const auto& child : children ) {
-			auto found = child->getChild( variablesReference );
-			if ( found )
-				return found;
-		}
-		return {};
-	}
-
-	std::optional<NodePtr> getChild( const std::string& name ) {
-		auto found =
-			std::find_if( children.begin(), children.end(),
-						  [&name]( const NodePtr& child ) { return child->var.name == name; } );
-		return ( found != children.end() ) ? *found : std::optional<NodePtr>{};
-	}
-
-	std::optional<NodePtr> getChild( int variablesReference ) {
-		auto found = std::find_if( children.begin(), children.end(),
-								   [variablesReference]( const NodePtr& child ) {
-									   return child->var.variablesReference == variablesReference;
-								   } );
-		return ( found != children.end() ) ? *found : std::optional<NodePtr>{};
-	}
-
-	void addChild( NodePtr child ) { children.emplace_back( child ); }
-
-	NodePtr getParent() const { return parent; }
-
-	NodePtr parent{ nullptr };
-	Variable var;
-	std::vector<NodePtr> children;
-};
-
-std::unordered_map<int, ModelVariableNode::NodePtr> ModelVariableNode::nodeMap =
-	std::unordered_map<int, ModelVariableNode::NodePtr>();
-
-class VariablesModel : public Model {
-  public:
-	enum Columns { Name, Value, Type };
-
-	VariablesModel( ModelVariableNode::NodePtr rootNode, UISceneNode* sceneNode ) :
-		rootNode( rootNode ), mSceneNode( sceneNode ) {}
-
-	ModelIndex index( int row, int column,
-					  const ModelIndex& parent = ModelIndex() ) const override {
-		ModelVariableNode* parentNode =
-			parent.isValid() ? static_cast<ModelVariableNode*>( parent.internalData() )
-							 : rootNode.get();
-
-		if ( row >= 0 && row < static_cast<int>( parentNode->getChildren().size() ) ) {
-			ModelVariableNode::NodePtr childNode = parentNode->getChildren()[row];
-			return createIndex( row, column, childNode.get() );
-		}
-
-		return ModelIndex();
-	}
-
-	ModelIndex parentIndex( const ModelIndex& index ) const override {
-		if ( !index.isValid() )
-			return ModelIndex();
-
-		ModelVariableNode* childNode = static_cast<ModelVariableNode*>( index.internalData() );
-		ModelVariableNode::NodePtr parentNode = childNode->getParent();
-
-		if ( parentNode == nullptr || parentNode == rootNode )
-			return ModelIndex();
-
-		ModelVariableNode::NodePtr grandParentNode = parentNode->getParent();
-		if ( grandParentNode == nullptr )
-			grandParentNode = rootNode;
-
-		int row = std::distance( grandParentNode->getChildren().begin(),
-								 std::find_if( grandParentNode->getChildren().begin(),
-											   grandParentNode->getChildren().end(),
-											   [parentNode]( ModelVariableNode::NodePtr node ) {
-												   return node.get() == parentNode.get();
-											   } ) );
-
-		return createIndex( row, Columns::Name, parentNode.get() );
-	}
-
-	size_t rowCount( const ModelIndex& index = ModelIndex() ) const override {
-		ModelVariableNode* parentNode =
-			index.isValid() ? static_cast<ModelVariableNode*>( index.internalData() )
-							: rootNode.get();
-
-		return static_cast<int>( parentNode->getChildren().size() );
-	}
-
-	bool hasChilds( const ModelIndex& index = ModelIndex() ) const override {
-		if ( !index.isValid() )
-			return !rootNode->children.empty();
-		ModelVariableNode* node = static_cast<ModelVariableNode*>( index.internalData() );
-		return !node->children.empty() || node->var.variablesReference > 0;
-	}
-
-	size_t columnCount( const ModelIndex& ) const override { return 3; }
-
-	std::string columnName( const size_t& colIdx ) const override {
-		switch ( colIdx ) {
-			case Columns::Name:
-				return mSceneNode->i18n( "variable_name", "Variable Name" );
-			case Columns::Value:
-				return mSceneNode->i18n( "value", "Value" );
-			case Columns::Type:
-				return mSceneNode->i18n( "type", "Type" );
-		}
-		return "";
-	}
-
-	Variant data( const ModelIndex& index, ModelRole role ) const override {
-		static const char* EMPTY = "";
-		if ( !index.isValid() )
-			return EMPTY;
-
-		ModelVariableNode* node = static_cast<ModelVariableNode*>( index.internalData() );
-
-		if ( role == ModelRole::Display ) {
-			switch ( index.column() ) {
-				case 0:
-					return Variant( node->var.name.c_str() );
-				case 1:
-					return Variant( node->var.value.c_str() );
-				case 2:
-					return Variant( node->var.type ? node->var.type->c_str() : EMPTY );
-			}
-		}
-
-		return EMPTY;
-	}
-
-  protected:
-	ModelVariableNode::NodePtr rootNode;
-	UISceneNode* mSceneNode;
-};
-
-class ThreadsModel : public Model {
-  public:
-	enum Columns { ID };
-
-	ThreadsModel( const std::vector<DapThread>& threads, UISceneNode* sceneNode ) :
-		mThreads( threads ), mSceneNode( sceneNode ) {}
-
-	virtual size_t rowCount( const ModelIndex& ) const { return mThreads.size(); }
-	virtual size_t columnCount( const ModelIndex& ) const { return 1; }
-
-	virtual std::string columnName( const size_t& colIdx ) const {
-		switch ( colIdx ) {
-			case Columns::ID:
-				return mSceneNode->i18n( "thread_id", "Thread ID" );
-		}
-		return "";
-	}
-
-	virtual Variant data( const ModelIndex& modelIndex, ModelRole role ) const {
-		if ( role == ModelRole::Display && modelIndex.column() == Columns::ID ) {
-			return Variant( String::format( "#%d (%s)", mThreads[modelIndex.row()].id,
-											mThreads[modelIndex.row()].name.c_str() ) );
-		} else if ( role == ModelRole::Icon && modelIndex.column() == Columns::ID &&
-					mThreads[modelIndex.row()].id == mCurrentThreadId ) {
-			static UIIcon* circleFilled = mSceneNode->findIcon( "circle-filled" );
-			return Variant( circleFilled );
-		}
-		return {};
-	}
-
-	void setThreads( std::vector<DapThread>&& threads ) {
-		{
-			Lock l( mResourceLock );
-			mThreads = std::move( threads );
-		}
-		invalidate();
-	}
-
-	void resetThreads() {
-
-		{
-			Lock l( mResourceLock );
-			mThreads = {};
-		}
-		invalidate();
-	}
-
-	const DapThread& getThread( size_t index ) const {
-		Lock l( mResourceLock );
-		eeASSERT( index < mThreads.size() );
-		return mThreads[index];
-	}
-
-	ModelIndex fromThreadId( int id ) {
-		Lock l( mResourceLock );
-		for ( size_t i = 0; i < mThreads.size(); i++ ) {
-			const DapThread& thread = mThreads[i];
-			if ( thread.id == id )
-				return index( i );
-		}
-		return {};
-	}
-
-	void setCurrentThreadId( int id ) {
-		if ( mCurrentThreadId != id ) {
-			mCurrentThreadId = id;
-			invalidate( Model::UpdateFlag::DontInvalidateIndexes );
-		}
-	}
-
-  protected:
-	std::vector<DapThread> mThreads;
-	UISceneNode* mSceneNode{ nullptr };
-	int mCurrentThreadId{ 1 };
-};
-
-class StackModel : public Model {
-  public:
-	enum Columns { ID, Name, SourceName, SourcePath, Line, Column };
-
-	StackModel( StackTraceInfo&& stack, UISceneNode* sceneNode ) :
-		mStack( std::move( stack ) ), mSceneNode( sceneNode ) {}
-
-	virtual size_t rowCount( const ModelIndex& ) const {
-		Lock l( mResourceLock );
-		return mStack.stackFrames.size();
-	}
-
-	virtual size_t columnCount( const ModelIndex& ) const { return 5; }
-
-	virtual std::string columnName( const size_t& colIdx ) const {
-		switch ( colIdx ) {
-			case Columns::ID:
-				return mSceneNode->i18n( "id", "ID" );
-			case Columns::Name:
-				return mSceneNode->i18n( "name", "Name" );
-			case Columns::SourceName:
-				return mSceneNode->i18n( "source_name", "Source Name" );
-			case Columns::SourcePath:
-				return mSceneNode->i18n( "source_path", "Source Path" );
-			case Columns::Line:
-				return mSceneNode->i18n( "line", "Line" );
-		}
-		return "";
-	}
-
-	virtual Variant data( const ModelIndex& modelIndex, ModelRole role ) const {
-		Lock l( mResourceLock );
-		if ( role == ModelRole::Display ) {
-			switch ( modelIndex.column() ) {
-				case Columns::ID:
-					return Variant( String::toString( mStack.stackFrames[modelIndex.row()].id ) );
-				case Columns::Name:
-					return Variant( mStack.stackFrames[modelIndex.row()].name.c_str() );
-				case Columns::SourceName:
-					return mStack.stackFrames[modelIndex.row()].source
-							   ? Variant( mStack.stackFrames[modelIndex.row()].source->name )
-							   : Variant();
-				case Columns::SourcePath:
-					return mStack.stackFrames[modelIndex.row()].source
-							   ? Variant( mStack.stackFrames[modelIndex.row()].source->path )
-							   : Variant();
-				case Columns::Line:
-					return Variant( String::toString( mStack.stackFrames[modelIndex.row()].line ) );
-				case Columns::Column:
-					return Variant(
-						String::toString( mStack.stackFrames[modelIndex.row()].column ) );
-			}
-		} else if ( role == ModelRole::Icon && modelIndex.column() == Columns::Name &&
-					mCurrentScopeId == mStack.stackFrames[modelIndex.row()].id ) {
-			static UIIcon* circleFilled = mSceneNode->findIcon( "circle-filled" );
-			return Variant( circleFilled );
-		}
-		return {};
-	}
-
-	void setStack( StackTraceInfo&& stack ) {
-		{
-			Lock l( mResourceLock );
-			mStack = std::move( stack );
-		}
-		invalidate();
-	}
-
-	void resetStack() {
-
-		{
-			Lock l( mResourceLock );
-			mStack = {};
-		}
-		invalidate();
-	}
-
-	const StackFrame& getStack( size_t index ) const {
-		Lock l( mResourceLock );
-		eeASSERT( index < mStack.stackFrames.size() );
-		return mStack.stackFrames[index];
-	}
-
-	void setCurrentScopeId( int scope ) {
-		if ( mCurrentScopeId != scope ) {
-			mCurrentScopeId = scope;
-			invalidate( Model::UpdateFlag::DontInvalidateIndexes );
-		}
-	}
-
-  protected:
-	StackTraceInfo mStack;
-	UISceneNode* mSceneNode{ nullptr };
-	int mCurrentScopeId{ 0 };
-};
-
 DebuggerClientListener::DebuggerClientListener( DebuggerClient* client, DebuggerPlugin* plugin ) :
 	mClient( client ),
 	mPlugin( plugin ),
-	mVariablesRoot( std::make_shared<ModelVariableNode>( "Root", 0 ) ) {
-	ModelVariableNode::nodeMap[0] = mVariablesRoot;
+	mVariablesHolder( std::make_shared<VariablesHolder>( plugin->getUISceneNode() ) ) {
 	eeASSERT( mClient && mPlugin );
 }
 
@@ -399,10 +59,6 @@ void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
 				mStackModel = std::make_shared<StackModel>( StackTraceInfo{}, sceneNode );
 			}
 
-			if ( !mVariablesModel ) {
-				mVariablesModel = std::make_shared<VariablesModel>( mVariablesRoot, sceneNode );
-			}
-
 			UITableView* uiThreads = getStatusDebuggerController()->getUIThreads();
 			uiThreads->setModel( mThreadsModel );
 
@@ -426,7 +82,7 @@ void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
 			} );
 
 			UITreeView* uiVariables = getStatusDebuggerController()->getUIVariables();
-			uiVariables->setModel( mVariablesModel );
+			uiVariables->setModel( mVariablesHolder->model );
 			uiVariables->removeEventsOfType( Event::OnModelEvent );
 			uiVariables->onModelEvent( [this]( const ModelEvent* modelEvent ) {
 				if ( modelEvent->getModelEventType() == Abstract::ModelEventType::OpenTree ) {
@@ -467,7 +123,7 @@ void DebuggerClientListener::resetState() {
 		mThreadsModel->resetThreads();
 	if ( mStackModel )
 		mStackModel->resetStack();
-	mVariablesRoot->clear();
+	mVariablesHolder->clear();
 }
 
 void DebuggerClientListener::debuggeeExited( int /*exitCode*/ ) {
@@ -520,9 +176,12 @@ void DebuggerClientListener::outputProduced( const Output& output ) {
 
 void DebuggerClientListener::debuggingProcess( const ProcessInfo& ) {}
 
-void DebuggerClientListener::errorResponse( const std::string& summary,
+void DebuggerClientListener::errorResponse( const std::string& command, const std::string& summary,
 											const std::optional<Message>& /*message*/ ) {
-	mPlugin->getPluginContext()->getNotificationCenter()->addNotification( summary, Seconds( 5 ) );
+	if ( command != "evaluate" ) {
+		mPlugin->getPluginContext()->getNotificationCenter()->addNotification( summary,
+																			   Seconds( 5 ) );
+	}
 }
 
 void DebuggerClientListener::threadChanged( const ThreadEvent& ) {}
@@ -586,13 +245,11 @@ void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&&
 	if ( scopes.empty() )
 		return;
 
-	mVariablesRoot->clear();
+	mVariablesHolder->clear();
 
 	for ( const auto& scope : scopes ) {
 		auto child = std::make_shared<ModelVariableNode>( scope.name, scope.variablesReference );
-		mVariablesRoot->addChild( child );
-		ModelVariableNode::nodeMap[child->var.variablesReference] = child;
-
+		mVariablesHolder->addChild( child );
 		mClient->variables( scope.variablesReference );
 	}
 
@@ -610,40 +267,7 @@ void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&&
 
 void DebuggerClientListener::variables( const int variablesReference,
 										std::vector<Variable>&& vars ) {
-	auto parentNode = ModelVariableNode::getNodeByReference( variablesReference );
-	if ( !parentNode ) {
-		auto node = mVariablesRoot->getChildRecursive( variablesReference );
-		if ( !node )
-			return;
-		parentNode = *node;
-	}
-
-	bool invalidateIndexes = false;
-
-	for ( auto& var : vars ) {
-		if ( var.name.empty() )
-			continue;
-
-		auto found = parentNode->getChild( var.name );
-		if ( found ) {
-			( *found )->var = std::move( var );
-
-			if ( ( *found )->var.variablesReference != 0 )
-				ModelVariableNode::nodeMap[( *found )->var.variablesReference] = *found;
-			continue;
-		}
-
-		invalidateIndexes = true;
-
-		auto child = std::make_shared<ModelVariableNode>( std::move( var ), parentNode );
-		parentNode->addChild( child );
-
-		if ( child->var.variablesReference != 0 )
-			ModelVariableNode::nodeMap[child->var.variablesReference] = child;
-	}
-
-	mVariablesModel->invalidate( invalidateIndexes ? Model::UpdateFlag::InvalidateAllIndexes
-												   : Model::UpdateFlag::DontInvalidateIndexes );
+	mVariablesHolder->addVariables( variablesReference, std::move( vars ) );
 }
 
 void DebuggerClientListener::modules( ModulesInfo&& ) {}

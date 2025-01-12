@@ -134,10 +134,12 @@ void StatusDebuggerController::createContainer() {
 				<TableView id="debugger_threads" layout_width="mp" layout_height="mp" />
 				<TableView id="debugger_stack" layout_width="mp" layout_height="mp" />
 			</Splitter>
-			<BreakpointsTableView id="debugger_breakpoints" layout_width="mp" layout_height="mp" />
 			<TreeView id="debugger_variables" layout_width="mp" layout_height="mp" />
+			<TreeView id="debugger_expressions" layout_width="mp" layout_height="mp" />
+			<BreakpointsTableView id="debugger_breakpoints" layout_width="mp" layout_height="mp" />
 			<Tab id="debugger_tab_threads_and_stack" text="@string(threads_and_stack, Threads & Stack)" owns="debugger_threads_and_stack" />
 			<Tab id="debugger_tab_variables" text="@string(variables, Variables)" owns="debugger_variables" />
+			<Tab id="debugger_tab_expressions" text="@string(expressions, Expressions)" owns="debugger_expressions" />
 			<Tab id="debugger_tab_breakpoints" text="@string(breakpoints, Breakpoints)" owns="debugger_breakpoints" />
 		</TabWidget>
 		<vbox id="app_debugger_buttons" lw="16dp" lh="mp">
@@ -169,6 +171,7 @@ void StatusDebuggerController::createContainer() {
 	mContainer->bind( "debugger_stack", mUIStack );
 	mContainer->bind( "debugger_breakpoints", mUIBreakpoints );
 	mContainer->bind( "debugger_variables", mUIVariables );
+	mContainer->bind( "debugger_expressions", mUIExpressions );
 	mContainer->bind( "app_debugger_start", mUIButStart );
 	mContainer->bind( "app_debugger_stop", mUIButStop );
 	mContainer->bind( "app_debugger_pause", mUIButPause );
@@ -208,6 +211,9 @@ void StatusDebuggerController::createContainer() {
 	mUIBreakpoints->setAutoColumnsWidth( true );
 	mUIBreakpoints->setFitAllColumnsToWidget( true );
 	mUIBreakpoints->setMainColumn( 1 );
+
+	mUIExpressions->setAutoColumnsWidth( true );
+	mUIExpressions->setFitAllColumnsToWidget( true );
 }
 
 } // namespace ecode
