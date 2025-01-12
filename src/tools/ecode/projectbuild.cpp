@@ -28,6 +28,7 @@ static const char* VAR_ARCH = "${arch}";
 static const char* VAR_NPROC = "${nproc}";
 static const char* VAR_CURRENT_DOC = "${current_doc}";
 static const char* VAR_CURRENT_DOC_NAME = "${current_doc_name}";
+static const char* VAR_CURRENT_DOC_DIR = "${current_doc_dir}";
 
 static void replaceVar( ProjectBuildStep& s, const std::string& var, const std::string& val ) {
 	static std::string slashDup = FileSystem::getOSSlash() + FileSystem::getOSSlash();
@@ -382,11 +383,13 @@ void ProjectBuildManager::replaceDynamicVars( ProjectBuildCommand& cmd ) {
 	std::string curDoc = getCurrentDocument();
 	std::string curDocName =
 		FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( curDoc ) );
+	std::string curDocDir = FileSystem::fileRemoveFileName( curDoc );
 	replaceVar( cmd, VAR_OS, currentOS );
 	replaceVar( cmd, VAR_ARCH, Sys::getOSArchitecture() );
 	replaceVar( cmd, VAR_NPROC, nproc );
 	replaceVar( cmd, VAR_CURRENT_DOC, curDoc );
 	replaceVar( cmd, VAR_CURRENT_DOC_NAME, curDocName );
+	replaceVar( cmd, VAR_CURRENT_DOC_DIR, curDocDir );
 	if ( cmd.workingDir.empty() )
 		cmd.workingDir = mProjectRoot;
 }
