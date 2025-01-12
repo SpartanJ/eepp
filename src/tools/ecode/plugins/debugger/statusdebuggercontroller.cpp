@@ -42,8 +42,8 @@ UIWidget* UIBreakpointsTableView::createCell( UIWidget* rowWidget, const ModelIn
 		return setupCell( widget, rowWidget, index );
 	} else if ( index.column() == BreakpointsModel::Remove ) {
 		auto cell = UITableView::createCell( rowWidget, index );
-		auto model = (const BreakpointsModel*)getModel();
-		cell->onClick( [model, index, this]( auto ) {
+		cell->onClick( [index, this]( auto ) {
+			auto model = getModel();
 			if ( onBreakpointRemove ) {
 				std::string filePath(
 					model
@@ -72,8 +72,11 @@ UIWidget* StatusDebuggerController::getWidget() {
 }
 
 UIWidget* StatusDebuggerController::createWidget() {
-	if ( nullptr == mContainer )
+	if ( nullptr == mContainer ) {
 		createContainer();
+		if ( onWidgetCreated )
+			onWidgetCreated( this, mContainer );
+	}
 	return mContainer;
 }
 
@@ -91,6 +94,10 @@ UIBreakpointsTableView* StatusDebuggerController::getUIBreakpoints() {
 
 UITreeView* StatusDebuggerController::getUIVariables() const {
 	return mUIVariables;
+}
+
+UITreeView* StatusDebuggerController::getUIExpressions() const {
+	return mUIExpressions;
 }
 
 UITabWidget* StatusDebuggerController::getUITabWidget() const {
@@ -214,6 +221,7 @@ void StatusDebuggerController::createContainer() {
 
 	mUIExpressions->setAutoColumnsWidth( true );
 	mUIExpressions->setFitAllColumnsToWidget( true );
+	mUIExpressions->setMainColumn( 1 );
 }
 
 } // namespace ecode

@@ -1908,7 +1908,7 @@ void App::saveProject( bool onlyIfNeeded, bool sessionSnapshotEnabled ) {
 		mConfig.saveProject(
 			mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
 			mProjectBuildManager ? mProjectBuildManager->getConfig() : ProjectBuildConfiguration(),
-			onlyIfNeeded, sessionSnapshotEnabled && mConfig.workspace.sessionSnapshot );
+			onlyIfNeeded, sessionSnapshotEnabled && mConfig.workspace.sessionSnapshot, mPluginManager.get() );
 	}
 }
 
@@ -3205,7 +3205,7 @@ void App::loadFolder( std::string path ) {
 	mProjectBuildManager =
 		std::make_unique<ProjectBuildManager>( rpath, mThreadPool, mSidePanel, this );
 	mConfig.loadProject( rpath, mSplitter, mConfigPath, mProjectDocConfig, this,
-						 mConfig.workspace.sessionSnapshot );
+						 mConfig.workspace.sessionSnapshot, mPluginManager.get() );
 	Log::info( "Load project took: %.2f ms", projClock.getElapsedTime().asMilliseconds() );
 
 	loadFileSystemMatcher( rpath );

@@ -5,6 +5,8 @@
 #include "models/stackmodel.hpp"
 #include "models/threadsmodel.hpp"
 #include "models/variablesmodel.hpp"
+#include <eepp/ui/uipopupmenu.hpp>
+#include <eepp/window/input.hpp>
 
 namespace ecode {
 
@@ -37,63 +39,64 @@ DebuggerClientListener::~DebuggerClientListener() {
 	}
 }
 
+void DebuggerClientListener::initUI() {
+	auto sdc = getStatusDebuggerController();
+
+	sdc->createWidget();
+
+	mPlugin->getManager()->getPluginContext()->getStatusAppOutputController()->initNewOutput(
+		{}, false );
+
+	UISceneNode* sceneNode = mPlugin->getUISceneNode();
+
+	if ( !mThreadsModel ) {
+		mThreadsModel = std::make_shared<ThreadsModel>( std::vector<DapThread>{}, sceneNode );
+		mThreadsModel->setCurrentThreadId( mCurrentThreadId );
+	}
+
+	if ( !mStackModel ) {
+		mStackModel = std::make_shared<StackModel>( StackTraceInfo{}, sceneNode );
+	}
+
+	UITableView* uiThreads = sdc->getUIThreads();
+	uiThreads->setModel( mThreadsModel );
+
+	uiThreads->removeEventsOfType( Event::OnModelEvent );
+	uiThreads->onModelEvent( [this]( const ModelEvent* modelEvent ) {
+		if ( modelEvent->getModelEventType() == Abstract::ModelEventType::Open ) {
+			auto model = static_cast<const ThreadsModel*>( modelEvent->getModel() );
+			mClient->stackTrace( model->getThread( modelEvent->getModelIndex().row() ).id );
+		}
+	} );
+
+	UITableView* uiStack = sdc->getUIStack();
+	uiStack->setModel( mStackModel );
+	uiStack->removeEventsOfType( Event::OnModelEvent );
+	uiStack->onModelEvent( [this]( const ModelEvent* modelEvent ) {
+		if ( modelEvent->getModelEventType() == Abstract::ModelEventType::Open ) {
+			auto model = static_cast<const StackModel*>( modelEvent->getModel() );
+			const auto& stack = model->getStack( modelEvent->getModelIndex().row() );
+			changeScope( stack );
+		}
+	} );
+
+	UITreeView* uiVariables = sdc->getUIVariables();
+	uiVariables->setModel( mVariablesHolder->model );
+	uiVariables->removeEventsOfType( Event::OnModelEvent );
+	uiVariables->onModelEvent( [this]( const ModelEvent* modelEvent ) {
+		if ( modelEvent->getModelEventType() == Abstract::ModelEventType::OpenTree ) {
+			ModelVariableNode* node =
+				static_cast<ModelVariableNode*>( modelEvent->getModelIndex().internalData() );
+			mClient->variables( node->var.variablesReference );
+		}
+	} );
+
+	mPlugin->setUIDebuggingState( StatusDebuggerController::State::Running );
+}
+
 void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
 	if ( state == DebuggerClient::State::Initializing ) {
-		mPlugin->getManager()->getUISceneNode()->runOnMainThread( [this] {
-			getStatusDebuggerController()->createWidget();
-
-			mPlugin->getManager()
-				->getPluginContext()
-				->getStatusAppOutputController()
-				->initNewOutput( {}, false );
-
-			UISceneNode* sceneNode = mPlugin->getUISceneNode();
-
-			if ( !mThreadsModel ) {
-				mThreadsModel =
-					std::make_shared<ThreadsModel>( std::vector<DapThread>{}, sceneNode );
-				mThreadsModel->setCurrentThreadId( mCurrentThreadId );
-			}
-
-			if ( !mStackModel ) {
-				mStackModel = std::make_shared<StackModel>( StackTraceInfo{}, sceneNode );
-			}
-
-			UITableView* uiThreads = getStatusDebuggerController()->getUIThreads();
-			uiThreads->setModel( mThreadsModel );
-
-			uiThreads->removeEventsOfType( Event::OnModelEvent );
-			uiThreads->onModelEvent( [this]( const ModelEvent* modelEvent ) {
-				if ( modelEvent->getModelEventType() == Abstract::ModelEventType::Open ) {
-					auto model = static_cast<const ThreadsModel*>( modelEvent->getModel() );
-					mClient->stackTrace( model->getThread( modelEvent->getModelIndex().row() ).id );
-				}
-			} );
-
-			UITableView* uiStack = getStatusDebuggerController()->getUIStack();
-			uiStack->setModel( mStackModel );
-			uiStack->removeEventsOfType( Event::OnModelEvent );
-			uiStack->onModelEvent( [this]( const ModelEvent* modelEvent ) {
-				if ( modelEvent->getModelEventType() == Abstract::ModelEventType::Open ) {
-					auto model = static_cast<const StackModel*>( modelEvent->getModel() );
-					const auto& stack = model->getStack( modelEvent->getModelIndex().row() );
-					changeScope( stack );
-				}
-			} );
-
-			UITreeView* uiVariables = getStatusDebuggerController()->getUIVariables();
-			uiVariables->setModel( mVariablesHolder->model );
-			uiVariables->removeEventsOfType( Event::OnModelEvent );
-			uiVariables->onModelEvent( [this]( const ModelEvent* modelEvent ) {
-				if ( modelEvent->getModelEventType() == Abstract::ModelEventType::OpenTree ) {
-					ModelVariableNode* node = static_cast<ModelVariableNode*>(
-						modelEvent->getModelIndex().internalData() );
-					mClient->variables( node->var.variablesReference );
-				}
-			} );
-
-			mPlugin->setUIDebuggingState( StatusDebuggerController::State::Running );
-		} );
+		mPlugin->getManager()->getUISceneNode()->runOnMainThread( [this] { initUI(); } );
 	}
 }
 
@@ -162,7 +165,7 @@ void DebuggerClientListener::debuggeeContinued( const ContinuedEvent& ) {
 	resetState();
 
 	UISceneNode* sceneNode = mPlugin->getUISceneNode();
-	sceneNode->runOnMainThread( [sceneNode] { sceneNode->invalidateDraw(); } );
+	sceneNode->runOnMainThread( [sceneNode] { sceneNode->getRoot()->invalidateDraw(); } );
 
 	mPlugin->setUIDebuggingState( StatusDebuggerController::State::Running );
 }
@@ -239,6 +242,25 @@ void DebuggerClientListener::stackTrace( const int threadId, StackTraceInfo&& st
 	}
 
 	mStackModel->setStack( std::move( stack ) );
+
+	for ( const auto& expression : mPlugin->mExpressions ) {
+		mClient->evaluate(
+			expression, "watch", getCurrentFrameId(),
+			[this, expression]( const std::string&, const std::optional<EvaluateInfo>& info ) {
+				Variable var;
+				var.evaluateName = expression;
+				var.name = std::move( expression );
+				if ( info ) {
+					var.value = info->result;
+					var.type = info->type;
+					var.variablesReference = info->variablesReference;
+					var.indexedVariables = info->indexedVariables;
+					var.namedVariables = info->namedVariables;
+					var.memoryReference = info->memoryReference;
+				}
+				mPlugin->mExpressionsHolder->upsertRootChild( std::move( var ) );
+			} );
+	}
 }
 
 void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&& scopes ) {

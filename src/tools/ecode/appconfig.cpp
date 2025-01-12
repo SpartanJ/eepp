@@ -1,5 +1,6 @@
 #include "appconfig.hpp"
 #include "ecode.hpp"
+#include "plugins/plugin.hpp"
 #include "plugins/pluginmanager.hpp"
 #include "version.hpp"
 #include <eepp/network/uri.hpp>
@@ -443,7 +444,7 @@ json saveNode( Node* node ) {
 void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, const ProjectDocumentConfig& docConfig,
 							 const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
-							 bool sessionSnapshot ) {
+							 bool sessionSnapshot, PluginManager* pluginManager ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	if ( !FileSystem::fileExists( projectsPath ) )
@@ -481,8 +482,27 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	} else {
 		cfg.writeFile();
 	}
+
+	if ( pluginManager ) {
+		std::string pluginsStatePath( projectsPath + "plugins_state" );
+		if ( !FileSystem::fileExists( pluginsStatePath ) &&
+			 !FileSystem::makeDir( pluginsStatePath ) )
+			return;
+		std::string projectPluginsStatePath( pluginsStatePath + FileSystem::getOSSlash() +
+											 hash.toHexString() );
+		if ( !FileSystem::fileExists( projectPluginsStatePath ) &&
+			 !FileSystem::makeDir( projectPluginsStatePath ) )
+			return;
+		FileSystem::dirAddSlashAtEnd( projectPluginsStatePath );
+		pluginManager->forEachPlugin(
+			[&projectFolder, &projectPluginsStatePath, onlyIfNeeded]( Plugin* plugin ) {
+				plugin->onSaveProject( projectFolder, projectPluginsStatePath, onlyIfNeeded );
+			} );
+	}
+
 	if ( !sessionSnapshot )
 		return;
+
 	std::string statePath( projectsPath + "state" );
 	if ( !FileSystem::fileExists( statePath ) && !FileSystem::makeDir( statePath ) )
 		return;
@@ -490,6 +510,7 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	if ( !FileSystem::fileExists( projectStatePath ) && !FileSystem::makeDir( projectStatePath ) )
 		return;
 	FileSystem::dirAddSlashAtEnd( projectStatePath );
+
 	nlohmann::json j = nlohmann::json::array();
 	std::vector<std::string> fileNames;
 	editorSplitter->forEachDocSharedPtr(
@@ -671,7 +692,7 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 
 void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, ProjectDocumentConfig& docConfig,
-							 ecode::App* app, bool sessionSnapshot ) {
+							 ecode::App* app, bool sessionSnapshot, PluginManager* pluginManager ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	MD5::Result hash = MD5::fromString( projectFolder );
@@ -709,11 +730,12 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 	std::vector<SessionSnapshotFile> sessionSnapshotFiles;
 	if ( sessionSnapshot ) {
 		std::string projectStatePath( projectsPath + "state" + FileSystem::getOSSlash() +
-									  hash.toHexString() + FileSystem::getOSSlash() +
-									  "state.json" );
-		if ( FileSystem::fileExists( projectStatePath ) ) {
+									  hash.toHexString() + FileSystem::getOSSlash() );
+
+		std::string projectStateFilePath( projectStatePath + "state.json" );
+		if ( FileSystem::fileExists( projectStateFilePath ) ) {
 			std::string stateStr;
-			FileSystem::fileGet( projectStatePath, stateStr );
+			FileSystem::fileGet( projectStateFilePath, stateStr );
 			json j;
 			try {
 				j = json::parse( stateStr );
@@ -775,6 +797,16 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 				editor->scrollToCursor();
 			},
 			curTabWidget );
+	}
+
+	if ( pluginManager ) {
+		std::string projectPluginsStatePath( projectsPath + "plugins_state" +
+											 FileSystem::getOSSlash() + hash.toHexString() +
+											 FileSystem::getOSSlash() );
+
+		pluginManager->forEachPlugin( [&projectFolder, &projectPluginsStatePath]( Plugin* plugin ) {
+			plugin->onLoadProject( projectFolder, projectPluginsStatePath );
+		} );
 	}
 }
 

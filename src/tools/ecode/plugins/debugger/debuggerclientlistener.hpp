@@ -84,6 +84,9 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 	void changeScope( const StackFrame& f );
 
 	void changeThread( int id );
+
+	void initUI();
+
 };
 
 } // namespace ecode

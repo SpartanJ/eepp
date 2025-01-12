@@ -365,6 +365,8 @@ class PluginManager {
 
 	PluginContextProvider* getPluginContext() const { return mPluginContext; }
 
+	void forEachPlugin( std::function<void( Plugin* )> fn );
+
   protected:
 	using SubscribedPlugins =
 		std::map<std::string, std::function<PluginRequestHandle( const PluginMessage& )>>;

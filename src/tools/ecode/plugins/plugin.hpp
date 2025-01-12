@@ -53,6 +53,13 @@ class Plugin : public UICodeEditorPlugin {
 	void showMessage( LSPMessageType type, const std::string& message,
 					  const std::string& title = "" );
 
+	virtual void onSaveProject( const std::string& /*projectFolder*/,
+								const std::string& /*projectStatePath*/,
+								bool /*rewriteStateOnlyIfNeeded*/ ) {}
+
+	virtual void onLoadProject( const std::string& /*projectFolder*/,
+								const std::string& /*projectStatePath*/ ) {}
+
   protected:
 	PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;

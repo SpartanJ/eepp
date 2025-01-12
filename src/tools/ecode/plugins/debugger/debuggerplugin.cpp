@@ -9,6 +9,7 @@
 #include "bussocketprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
 #include "models/breakpointsmodel.hpp"
+#include "models/variablesmodel.hpp"
 #include "statusdebuggercontroller.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -79,6 +80,160 @@ DebuggerPlugin::~DebuggerPlugin() {
 	if ( !isShuttingDown() && getPluginContext()->getMainLayout() ) {
 		for ( const auto& kb : mKeyBindings )
 			getPluginContext()->getMainLayout()->getKeyBindings().removeCommandKeybind( kb.first );
+	}
+}
+
+void DebuggerPlugin::onSaveProject( const std::string& /*projectFolder*/,
+									const std::string& projectStatePath,
+									bool rewriteStateOnlyIfNeeded ) {
+	std::string debugger( mCurDebugger );
+	std::string configuration( mCurConfiguration );
+	auto expressions( mExpressions );
+	UnorderedMap<std::string, UnorderedSet<SourceBreakpointStateful>> breakpoints;
+	{
+		Lock l( mBreakpointsMutex );
+		breakpoints = mBreakpoints;
+	}
+	mThreadPool->run(
+		[this, debugger = std::move( debugger ), configuration = std::move( configuration ),
+		 expressions = std::move( expressions ), breakpoints = std::move( breakpoints ),
+		 projectStatePath, rewriteStateOnlyIfNeeded] {
+			nlohmann::json j;
+			auto& config = j["config"];
+			config["debugger"] = std::move( debugger );
+			config["configuration"] = std::move( configuration );
+			auto expArr = nlohmann::json::array();
+			for ( auto& expression : expressions )
+				expArr.push_back( expression );
+			config["expressions"] = std::move( expArr );
+
+			nlohmann::json bpsArr;
+			for ( auto& bpSet : breakpoints ) {
+				auto bpArr = nlohmann::json::array();
+				for ( auto& bp : bpSet.second ) {
+					nlohmann::json jbp;
+					jbp["line"] = bp.line;
+					jbp["enabled"] = bp.enabled;
+					bpArr.push_back( jbp );
+				}
+				bpsArr[bpSet.first] = std::move( bpArr );
+			}
+			config["breakpoints"] = std::move( bpsArr );
+
+			std::string stateString( j.dump() );
+			if ( stateString == mLastStateJsonDump )
+				return;
+
+			std::string debuggerStatePath( projectStatePath + "debugger.json" );
+			if ( rewriteStateOnlyIfNeeded && FileSystem::fileExists( debuggerStatePath ) &&
+				 MD5::fromFile( debuggerStatePath ) == MD5::fromString( stateString ) )
+				return;
+			FileSystem::fileWrite( debuggerStatePath, stateString );
+			mLastStateJsonDump = stateString;
+		} );
+}
+
+void DebuggerPlugin::onLoadProject( const std::string& projectFolder,
+									const std::string& projectStatePath ) {
+	mProjectPath = projectFolder;
+
+	ScopedOp op( [this] { closeProject(); },
+				 [this] {
+					 auto sdc = getStatusDebuggerController();
+					 if ( sdc && sdc->getUIBreakpoints() ) {
+						 sdc->getUIBreakpoints()->runOnMainThread( [this, sdc] {
+							 sdc->getUIBreakpoints()->setModel( mBreakpointsModel );
+						 } );
+					 }
+				 } );
+
+	std::string debuggerStatePath( projectStatePath + "debugger.json" );
+	std::string data;
+	if ( !FileSystem::fileGet( debuggerStatePath, data ) )
+		return;
+
+	json j;
+	try {
+		j = json::parse( data, nullptr, true, true );
+		if ( j.contains( "config" ) && j["config"].is_object() ) {
+			auto& config = j["config"];
+			mCurDebugger = config.value( "debugger", "" );
+			mCurConfiguration = config.value( "configuration", "" );
+			mExpressions.clear();
+			if ( config.contains( "expressions" ) && config["expressions"].is_array() ) {
+				auto& exps = config["expressions"];
+				if ( mExpressionsHolder )
+					mExpressionsHolder->clear( true );
+				for ( const auto& expression : exps ) {
+					if ( expression.is_string() ) {
+						mExpressions.push_back( expression.get<std::string>() );
+						if ( mExpressionsHolder ) {
+							mExpressionsHolder->addChild(
+								std::make_shared<ModelVariableNode>( expression, 0 ) );
+						}
+					}
+				}
+			}
+
+			if ( config.contains( "breakpoints" ) && config["breakpoints"].is_object() ) {
+				UnorderedMap<std::string, UnorderedSet<SourceBreakpointStateful>> breakpoints;
+				for ( auto& [key, value] : config["breakpoints"].items() ) {
+					auto& bps = breakpoints[key];
+					if ( value.is_array() ) {
+						for ( auto& jbp : value ) {
+							SourceBreakpointStateful bp;
+							bp.line = jbp.value( "line", 1 );
+							bp.enabled = jbp.value( "enabled", true );
+							bps.insert( std::move( bp ) );
+						}
+					}
+				}
+
+				{
+					Lock l( mBreakpointsMutex );
+					mBreakpoints = std::move( breakpoints );
+					mBreakpointsModel =
+						std::make_shared<BreakpointsModel>( mBreakpoints, getUISceneNode() );
+				}
+			}
+		}
+	} catch ( const json::exception& e ) {
+		Log::error(
+			"DebuggerPlugin::onLoadProject - Error parsing config from path %s, error: %s, config "
+			"file content:\n%s",
+			debuggerStatePath.c_str(), e.what(), data.c_str() );
+	}
+}
+
+void DebuggerPlugin::resetExpressions() {
+	if ( !mExpressionsHolder )
+		return;
+	mExpressionsHolder->clear( true );
+	for ( const auto& expression : mExpressions )
+		mExpressionsHolder->addChild( std::make_shared<ModelVariableNode>( expression, 0 ) );
+}
+
+void DebuggerPlugin::closeProject() {
+	exitDebugger();
+
+	mExpressions.clear();
+	if ( mExpressionsHolder )
+		mExpressionsHolder->clear( true );
+
+	{
+		Lock l( mBreakpointsMutex );
+		mBreakpointsModel.reset();
+		mPendingBreakpoints.clear();
+		mBreakpoints.clear();
+	}
+
+	auto sdc = getStatusDebuggerController();
+	if ( sdc && sdc->getWidget() ) {
+		sdc->getUIBreakpoints()->setModel( nullptr );
+		sdc->getUIExpressions()->setModel( nullptr );
+		sdc->getUIStack()->setModel( nullptr );
+		sdc->getUIThreads()->setModel( nullptr );
+		sdc->getUIVariables()->setModel( nullptr );
 	}
 }
 
@@ -311,6 +466,9 @@ void DebuggerPlugin::loadProjectConfiguration( const std::string& path ) {
 }
 
 void DebuggerPlugin::loadProjectConfigurations() {
+	if ( mProjectPath.empty() )
+		return;
+
 	{
 		Lock l( mDapsMutex );
 		mDapConfigs.clear();
@@ -324,7 +482,10 @@ void DebuggerPlugin::loadProjectConfigurations() {
 		if ( FileSystem::fileExists( config ) )
 			loadProjectConfiguration( config );
 
-		getUISceneNode()->runOnMainThread( [this] { updateDebuggerConfigurationList(); } );
+		getUISceneNode()->runOnMainThread( [this] {
+			updateDebuggerConfigurationList();
+			updateSelectedDebugConfig();
+		} );
 	} );
 }
 
@@ -345,7 +506,6 @@ PluginRequestHandle DebuggerPlugin::processMessage( const PluginMessage& msg ) {
 
 			loadProjectConfigurations();
 
-			mBreakpointsModel.reset();
 			updateUI();
 			mInitialized = true;
 			break;
@@ -438,6 +598,14 @@ void DebuggerPlugin::buildSidePanelTab() {
 	mTabContents->bind( "debugger_list", mUIDebuggerList );
 	mTabContents->bind( "debugger_conf_list", mUIDebuggerConfList );
 
+	mUIDebuggerList->on( Event::OnValueChange, [this]( const Event* event ) {
+		mCurDebugger = event->getNode()->asType<UIDropDownList>()->getText().toUtf8();
+	} );
+
+	mUIDebuggerConfList->on( Event::OnValueChange, [this]( const Event* event ) {
+		mCurConfiguration = event->getNode()->asType<UIDropDownList>()->getText().toUtf8();
+	} );
+
 	mTabContents->bind( "panel_debugger_buttons", mPanelBoxButtons.box );
 	mTabContents->bind( "panel_debugger_continue", mPanelBoxButtons.resume );
 	mTabContents->bind( "panel_debugger_pause", mPanelBoxButtons.pause );
@@ -460,11 +628,98 @@ void DebuggerPlugin::buildSidePanelTab() {
 	mPanelBoxButtons.stepOut->onClick(
 		[this]( auto ) { getPluginContext()->runCommand( "debugger-step-out" ); } );
 
+	mTabContents->bind( "debugger_run_button", mRunButton );
+
+	mRunButton->onClick( [this]( auto ) {
+		if ( mDebugger && mDebugger->started() ) {
+			exitDebugger();
+		} else {
+			runCurrentConfig();
+		}
+	} );
+
 	setUIDebuggingState( StatusDebuggerController::State::NotStarted );
 
 	updateSidePanelTab();
+
+	updateSelectedDebugConfig();
 }
 
+void DebuggerPlugin::updateSelectedDebugConfig() {
+	if ( mUIDebuggerList && mUIDebuggerConfList && !mCurDebugger.empty() ) {
+		mUIDebuggerList->runOnMainThread( [this] {
+			mUIDebuggerList->getListBox()->setSelected( mCurDebugger );
+			mUIDebuggerConfList->getListBox()->setSelected( mCurConfiguration );
+		} );
+	}
+}
+
+void DebuggerPlugin::removeExpression( const std::string& name ) {
+	auto expIt = std::find( mExpressions.begin(), mExpressions.end(), name );
+	if ( expIt == mExpressions.end() )
+		return;
+
+	mExpressions.erase( expIt );
+	resetExpressions();
+}
+
+void DebuggerPlugin::openExpressionMenu( UITreeView* uiExpressions, ModelIndex idx,
+										 bool fromMouseClick ) {
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+	auto context = getPluginContext();
+
+	if ( idx.isValid() ) {
+		menu->add( context->i18n( "debugger_remove_expression", "Remove Expression" ),
+				   context->findIcon( "remove" ) )
+			->setId( "debugger_remove_expression" );
+	}
+
+	menu->add( context->i18n( "debugger_add_expression", "Add Expression..." ),
+			   context->findIcon( "add" ) )
+		->setId( "debugger_add_expression" );
+
+	menu->on( Event::OnItemClicked, [this, context, idx]( const Event* event ) {
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		std::string id( item->getId() );
+		if ( id == "debugger_remove_expression" ) {
+			ModelVariableNode* node = static_cast<ModelVariableNode*>( idx.internalData() );
+			if ( mExpressionsHolder && node->getParent() == nullptr )
+				removeExpression( node->var.name );
+		} else if ( id == "debugger_add_expression" ) {
+			auto msgBox =
+				UIMessageBox::New( UIMessageBox::INPUT, context->i18n( "debugger_add_expression",
+																	   "Add Expression..." ) );
+
+			msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+			msgBox->showWhenReady();
+			msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
+				std::string expression( msgBox->getTextInput()->getText().toUtf8() );
+				if ( std::find( mExpressions.begin(), mExpressions.end(), expression ) ==
+					 mExpressions.end() ) {
+					mExpressions.push_back( expression );
+					mExpressionsHolder->addChild(
+						std::make_shared<ModelVariableNode>( expression, 0 ) );
+					msgBox->closeWindow();
+				}
+			} );
+		}
+	} );
+
+	UITableCell* cell = uiExpressions->getCellFromIndex( idx );
+	if ( fromMouseClick || cell == nullptr ) {
+		Vector2f pos( context->getWindow()->getInput()->getMousePos().asFloat() );
+		menu->nodeToWorldTranslation( pos );
+		UIMenu::findBestMenuPos( pos, menu );
+		menu->setPixelsPosition( pos );
+	} else {
+		Vector2f pos( 0, cell->getPixelsSize().getHeight() );
+		cell->nodeToWorldTranslation( pos );
+		UIMenu::findBestMenuPos( pos, menu );
+		menu->setPixelsPosition( pos );
+	}
+
+	menu->show();
+}
 void DebuggerPlugin::buildStatusBar() {
 	if ( mProjectPath.empty() ) {
 		hideStatusBarElement();
@@ -486,6 +741,69 @@ void DebuggerPlugin::buildStatusBar() {
 
 	statusBar->insertStatusBarElement( "status_app_debugger", i18n( "debugger", "Debugger" ),
 									   "icon(debug, 11dp)", debuggerStatusElem );
+
+	debuggerStatusElem->onWidgetCreated = [this]( StatusDebuggerController* sdc, UIWidget* ) {
+		UITreeView* uiExpressions = sdc->getUIExpressions();
+		uiExpressions->setModel( mExpressionsHolder->model );
+		uiExpressions->removeEventsOfType( Event::OnModelEvent );
+		uiExpressions->onModelEvent( [this, uiExpressions]( const ModelEvent* modelEvent ) {
+			if ( modelEvent->getModelEventType() == Abstract::ModelEventType::OpenMenu ) {
+				openExpressionMenu( uiExpressions, modelEvent->getModelIndex(), true );
+			} else if ( mDebugger && mListener &&
+						modelEvent->getModelEventType() == Abstract::ModelEventType::OpenTree ) {
+				ModelVariableNode* node =
+					static_cast<ModelVariableNode*>( modelEvent->getModelIndex().internalData() );
+				mDebugger->variables(
+					node->var.variablesReference, Variable::Type::Both,
+					[this]( const int variablesReference, std::vector<Variable>&& vars ) {
+						mExpressionsHolder->addVariables( variablesReference, std::move( vars ) );
+					} );
+			}
+		} );
+		uiExpressions->removeEventsOfType( Event::MouseClick );
+		uiExpressions->onClick(
+			[this, uiExpressions]( const MouseEvent* ) {
+				openExpressionMenu( uiExpressions, {}, true );
+			},
+			MouseButton::EE_BUTTON_RIGHT );
+
+		auto uiBreakpoints = sdc->getUIBreakpoints();
+		if ( nullptr == uiBreakpoints->onBreakpointEnabledChange ) {
+			uiBreakpoints->onBreakpointEnabledChange = [this]( const std::string& filePath,
+															   int line, bool enabled ) {
+				breakpointSetEnabled( filePath, line, enabled );
+			};
+		}
+
+		if ( nullptr == uiBreakpoints->onBreakpointRemove ) {
+			uiBreakpoints->onBreakpointRemove = [this]( const std::string& filePath, int line ) {
+				setBreakpoint( filePath, line );
+			};
+		}
+
+		uiBreakpoints->setModel( mBreakpointsModel );
+
+		uiBreakpoints->onModelEvent( [this]( const ModelEvent* modelEvent ) {
+			if ( modelEvent->getModelEventType() == Abstract::ModelEventType::OpenMenu ) {
+				// Implement
+			} else if ( modelEvent->getModelEventType() == Abstract::ModelEventType::Open ) {
+				auto idx( modelEvent->getModelIndex() );
+				auto srcIdx( modelEvent->getModel()->index(
+					idx.row(), BreakpointsModel::Columns::SourcePath, idx.parent() ) );
+				auto lineIdx( modelEvent->getModel()->index(
+					idx.row(), BreakpointsModel::Columns::Line, idx.parent() ) );
+				Variant sourcePathVar( modelEvent->getModel()->data( srcIdx, ModelRole::Data ) );
+				Variant lineVar( modelEvent->getModel()->data( lineIdx, ModelRole::Data ) );
+				TextPosition pos( lineVar.asInt() - 1, 0 );
+				getPluginContext()->focusOrLoadFile( sourcePathVar.toString(), { pos, pos } );
+			}
+		} );
+	};
+
+	if ( !mExpressionsHolder ) {
+		mExpressionsHolder = std::make_shared<VariablesHolder>( getUISceneNode() );
+		resetExpressions();
+	}
 }
 
 void DebuggerPlugin::updateSidePanelTab() {
@@ -505,27 +823,18 @@ void DebuggerPlugin::updateSidePanelTab() {
 							 [this]( const Event* ) { updateDebuggerConfigurationList(); } );
 	}
 
-	if ( !empty )
-		mUIDebuggerList->getListBox()->setSelected( 0L );
+	if ( !empty ) {
+		if ( !mCurDebugger.empty() )
+			mUIDebuggerList->getListBox()->setSelected( mCurDebugger );
+		else
+			mUIDebuggerList->getListBox()->setSelected( 0L );
+	}
 
 	updateDebuggerConfigurationList();
-
-	mRunButton = mTabContents->find<UIPushButton>( "debugger_run_button" );
-
-	if ( !mRunButton->hasEventsOfType( Event::MouseClick ) ) {
-		mRunButton->onClick( [this]( auto ) {
-			if ( mDebugger && mDebugger->started() ) {
-				exitDebugger();
-			} else {
-				runCurrentConfig();
-			}
-		} );
-	}
 }
 
 void DebuggerPlugin::runCurrentConfig() {
-	runConfig( mUIDebuggerList->getListBox()->getItemSelectedText().toUtf8(),
-			   mUIDebuggerConfList->getListBox()->getItemSelectedText().toUtf8() );
+	runConfig( mCurDebugger, mCurConfiguration );
 }
 
 void DebuggerPlugin::sendPendingBreakpoints() {
@@ -558,7 +867,12 @@ void DebuggerPlugin::sendFileBreakpoints( const std::string& filePath ) {
 }
 
 void DebuggerPlugin::updateDebuggerConfigurationList() {
+	if ( nullptr == mUIDebuggerConfList )
+		return;
+
+	std::string curConfig( mCurConfiguration );
 	mUIDebuggerConfList->getListBox()->clear();
+	mCurConfiguration = curConfig;
 
 	std::string debuggerSelected = mUIDebuggerList->getListBox()->getItemSelectedText().toUtf8();
 
@@ -591,8 +905,12 @@ void DebuggerPlugin::updateDebuggerConfigurationList() {
 	mUIDebuggerConfList->getListBox()->addListBoxItems( confNames );
 	bool empty = mUIDebuggerConfList->getListBox()->isEmpty();
 	mUIDebuggerConfList->setEnabled( !empty );
-	if ( !empty )
-		mUIDebuggerConfList->getListBox()->setSelected( 0L );
+	if ( !empty ) {
+		if ( !mCurConfiguration.empty() )
+			mUIDebuggerConfList->getListBox()->setSelected( mCurConfiguration );
+		else
+			mUIDebuggerConfList->getListBox()->setSelected( 0L );
+	}
 }
 
 void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json, int randomPort ) {
@@ -848,12 +1166,6 @@ bool DebuggerPlugin::setBreakpoint( const std::string& doc, Uint32 lineNumber ) 
 	if ( sdc && sdc->getWidget() == nullptr ) {
 		sdc->show();
 		sdc->hide();
-		sdc->getUIBreakpoints()->onBreakpointEnabledChange = [this]( const std::string& filePath,
-																	 int line, bool enabled ) {
-			breakpointSetEnabled( filePath, line, enabled );
-		};
-		sdc->getUIBreakpoints()->onBreakpointRemove =
-			[this]( const std::string& filePath, int line ) { setBreakpoint( filePath, line ); };
 	}
 
 	if ( !mBreakpointsModel )
@@ -1040,11 +1352,6 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 
 				getManager()->getPluginContext()->getNotificationCenter()->addNotification(
 					i18n( "debugger_init_failed", "Failed to initialize debugger." ) );
-			} else {
-				mRunButton->runOnMainThread( [this] {
-					mRunButton->setEnabled( true );
-					mRunButton->setText( i18n( "cancel_run", "Cancel Run" ) );
-				} );
 			}
 		} );
 }
@@ -1165,17 +1472,12 @@ void DebuggerPlugin::run( ProtocolSettings&& protocolSettings, DapRunConfig&& ru
 void DebuggerPlugin::exitDebugger() {
 	if ( mDebugger && mListener )
 		mDebugger->removeListener( mListener.get() );
-	mThreadPool->run( [this] {
-		mDebugger.reset();
-		mListener.reset();
-	} );
-	if ( getUISceneNode() && mRunButton ) {
-		mRunButton->runOnMainThread( [this] {
-			mRunButton->setText( i18n( "run", "Run" ) );
-			mRunButton->setEnabled( true );
+	if ( mDebugger || mListener ) {
+		mThreadPool->run( [this] {
+			mDebugger.reset();
+			mListener.reset();
 		} );
 	}
-
 	setUIDebuggingState( StatusDebuggerController::State::NotStarted );
 }
 
@@ -1201,17 +1503,22 @@ StatusDebuggerController* DebuggerPlugin::getStatusDebuggerController() const {
 }
 
 void DebuggerPlugin::updatePanelUIState( StatusDebuggerController::State state ) {
-	mPanelBoxButtons.box->setVisible( state != StatusDebuggerController::State::NotStarted );
-	mPanelBoxButtons.resume->setVisible( state != StatusDebuggerController::State::NotStarted )
+	auto isDebugging = state != StatusDebuggerController::State::NotStarted;
+
+	mPanelBoxButtons.box->setVisible( isDebugging );
+	mPanelBoxButtons.resume->setVisible( isDebugging )
 		->setEnabled( state == StatusDebuggerController::State::Paused );
-	mPanelBoxButtons.pause->setVisible( state != StatusDebuggerController::State::NotStarted )
+	mPanelBoxButtons.pause->setVisible( isDebugging )
 		->setEnabled( state == StatusDebuggerController::State::Running );
-	mPanelBoxButtons.stepOver->setVisible( state != StatusDebuggerController::State::NotStarted )
+	mPanelBoxButtons.stepOver->setVisible( isDebugging )
 		->setEnabled( state == StatusDebuggerController::State::Paused );
-	mPanelBoxButtons.stepInto->setVisible( state != StatusDebuggerController::State::NotStarted )
+	mPanelBoxButtons.stepInto->setVisible( isDebugging )
 		->setEnabled( state == StatusDebuggerController::State::Paused );
-	mPanelBoxButtons.stepOut->setVisible( state != StatusDebuggerController::State::NotStarted )
+	mPanelBoxButtons.stepOut->setVisible( isDebugging )
 		->setEnabled( state == StatusDebuggerController::State::Paused );
+
+	mRunButton->setText( isDebugging ? i18n( "Stop Debugging", "Stop Debugging" )
+									 : i18n( "debug", "Debug" ) );
 }
 
 void DebuggerPlugin::setUIDebuggingState( StatusDebuggerController::State state ) {
@@ -1227,6 +1534,11 @@ void DebuggerPlugin::setUIDebuggingState( StatusDebuggerController::State state 
 			updatePanelUIState( state );
 		else
 			mPanelBoxButtons.box->runOnMainThread( [this, state] { updatePanelUIState( state ); } );
+	}
+
+	if ( state == StatusDebuggerController::State::NotStarted ||
+		 state == StatusDebuggerController::State::Running ) {
+		resetExpressions();
 	}
 }
 

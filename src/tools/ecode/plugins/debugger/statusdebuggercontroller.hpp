@@ -56,9 +56,13 @@ class StatusDebuggerController : public StatusBarElement {
 
 	UITreeView* getUIVariables() const;
 
+	UITreeView* getUIExpressions() const;
+
 	UITabWidget* getUITabWidget() const;
 
 	void setDebuggingState( State state );
+
+	std::function<void( StatusDebuggerController*, UIWidget* )> onWidgetCreated{ nullptr };
 
   protected:
 	UILinearLayout* mContainer{ nullptr };

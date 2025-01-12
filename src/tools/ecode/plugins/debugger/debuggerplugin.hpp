@@ -56,6 +56,12 @@ class DebuggerPlugin : public PluginBase {
 
 	std::string getDescription() override { return Definition().description; }
 
+	void onSaveProject( const std::string& projectFolder, const std::string& projectStatePath,
+						bool rewriteStateOnlyIfNeeded ) override;
+
+	void onLoadProject( const std::string& projectFolder,
+						const std::string& projectStatePath ) override;
+
   protected:
 	friend class DebuggerClientListener;
 
@@ -81,6 +87,7 @@ class DebuggerPlugin : public PluginBase {
 	Mutex mBreakpointsMutex;
 	StatusDebuggerController::State mDebuggingState{ StatusDebuggerController::State::NotStarted };
 	std::vector<std::string> mExpressions;
+	std::shared_ptr<VariablesHolder> mExpressionsHolder;
 
 	// Begin Hover Stuff
 	Uint32 mHoverWaitCb{ 0 };
@@ -104,6 +111,9 @@ class DebuggerPlugin : public PluginBase {
 		UIPushButton* stepOut{ nullptr };
 	};
 	PanelBoxButtons mPanelBoxButtons;
+	std::string mLastStateJsonDump;
+	std::string mCurDebugger;
+	std::string mCurConfiguration;
 
 	DebuggerPlugin( PluginManager* pluginManager, bool sync );
 
@@ -187,6 +197,16 @@ class DebuggerPlugin : public PluginBase {
 	void loadProjectConfiguration( const std::string& path );
 
 	void loadProjectConfigurations();
+
+	void openExpressionMenu( UITreeView* uiExpressions, ModelIndex idx, bool fromMouseClick );
+
+	void updateSelectedDebugConfig();
+
+	void removeExpression( const std::string& name );
+
+	void resetExpressions();
+
+	void closeProject();
 };
 
 } // namespace ecode

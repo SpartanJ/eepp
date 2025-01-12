@@ -165,6 +165,7 @@ VariablesHolder::VariablesHolder( UISceneNode* sceneNode ) :
 }
 
 void VariablesHolder::addVariables( const int variablesReference, std::vector<Variable>&& vars ) {
+	Lock l( mutex );
 	auto parentNode = getNodeByReference( variablesReference );
 	if ( !parentNode ) {
 		auto node = rootNode->getChildRecursive( variablesReference );
@@ -202,13 +203,34 @@ void VariablesHolder::addVariables( const int variablesReference, std::vector<Va
 }
 
 void VariablesHolder::addChild( ModelVariableNode::NodePtr child ) {
+	Lock l( mutex );
 	rootNode->addChild( child );
 	nodeMap[child->var.variablesReference] = child;
+	model->invalidate( Model::UpdateFlag::InvalidateAllIndexes );
 }
 
-void VariablesHolder::clear() {
+void VariablesHolder::upsertRootChild( Variable&& var ) {
+	Lock l( mutex );
+	for ( size_t i = 0; i < rootNode->children.size(); i++ ) {
+		auto child = rootNode->children[i];
+		if ( child->getName() == var.name ) {
+			auto newChild = std::make_shared<ModelVariableNode>( std::move( var ), rootNode );
+			nodeMap[newChild->var.variablesReference] = newChild;
+			rootNode->children[i] = std::move( newChild );
+			model->invalidate( Model::UpdateFlag::DontInvalidateIndexes );
+			return;
+		}
+	}
+	auto newChild = std::make_shared<ModelVariableNode>( std::move( var ), rootNode );
+	addChild( newChild );
+}
+
+void VariablesHolder::clear( bool all ) {
+	Lock l( mutex );
 	rootNode->clear();
-	// modelMap.clear();
+	if ( all ) {
+		nodeMap.clear();
+	}
 }
 
 ModelVariableNode::NodePtr VariablesHolder::getNodeByReference( int variablesReference ) {

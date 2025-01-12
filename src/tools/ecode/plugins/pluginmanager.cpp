@@ -1,6 +1,6 @@
+#include "pluginmanager.hpp"
 #include "../filesystemlistener.hpp"
 #include "plugin.hpp"
-#include "pluginmanager.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uitableview.hpp>
@@ -328,6 +328,11 @@ void PluginManager::sendBroadcast( const PluginMessageType& notification,
 
 bool PluginManager::hasDefinition( const std::string& id ) {
 	return mDefinitions.find( id ) != mDefinitions.end();
+}
+
+void PluginManager::forEachPlugin( std::function<void( Plugin* )> fn ) {
+	for ( auto& plugin : mPlugins )
+		fn( plugin.second );
 }
 
 std::shared_ptr<PluginsModel> PluginsModel::New( PluginManager* manager ) {

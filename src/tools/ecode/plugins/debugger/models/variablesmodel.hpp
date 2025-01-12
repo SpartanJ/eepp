@@ -79,10 +79,13 @@ struct VariablesHolder {
 
 	void addChild( ModelVariableNode::NodePtr child );
 
-	void clear();
+	void upsertRootChild( Variable&& );
+
+	void clear( bool all = false );
 
 	ModelVariableNode::NodePtr getNodeByReference( int variablesReference );
 
+	Mutex mutex;
 	std::shared_ptr<ModelVariableNode> rootNode;
 	std::shared_ptr<VariablesModel> model;
 	std::unordered_map<int, ModelVariableNode::NodePtr> nodeMap;
