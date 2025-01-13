@@ -156,9 +156,8 @@ void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
 	mPlugin->setUIDebuggingState( StatusDebuggerController::State::Paused );
 
 	auto sdc = getStatusDebuggerController();
-	if ( sdc ) {
+	if ( sdc )
 		sdc->getWidget()->runOnMainThread( [sdc] { sdc->show(); } );
-	}
 }
 
 void DebuggerClientListener::debuggeeContinued( const ContinuedEvent& ) {
@@ -216,18 +215,19 @@ void DebuggerClientListener::changeScope( const StackFrame& f ) {
 
 	mCurrentScopePos = { f.source->path, f.line };
 
-	if ( getStatusDebuggerController() && getStatusDebuggerController()->getUIStack() )
-		getStatusDebuggerController()->getUIStack()->setSelection( mStackModel->index( f.id ) );
+	auto sdc = getStatusDebuggerController();
+	if ( sdc && sdc->getUIStack() )
+		sdc->getUIStack()->setSelection( mStackModel->index( f.id ) );
 }
 
 void DebuggerClientListener::changeThread( int id ) {
 	mCurrentThreadId = id;
 	if ( mThreadsModel )
 		mThreadsModel->setCurrentThreadId( id );
-	if ( getStatusDebuggerController() && getStatusDebuggerController()->getUIThreads() ) {
-		getStatusDebuggerController()->getUIThreads()->setSelection(
-			mThreadsModel->fromThreadId( id ) );
-	}
+
+	auto sdc = getStatusDebuggerController();
+	if ( sdc && sdc->getUIThreads() )
+		sdc->getUIThreads()->setSelection( mThreadsModel->fromThreadId( id ) );
 }
 
 void DebuggerClientListener::stackTrace( const int threadId, StackTraceInfo&& stack ) {
@@ -270,14 +270,17 @@ void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&&
 	mVariablesHolder->clear();
 
 	for ( const auto& scope : scopes ) {
+		if ( !mPlugin->mDisplayRegisters && scope.name == "Registers" )
+			continue;
 		auto child = std::make_shared<ModelVariableNode>( scope.name, scope.variablesReference );
 		mVariablesHolder->addChild( child );
 		mClient->variables( scope.variablesReference );
 	}
 
-	if ( !getStatusDebuggerController() )
+	auto sdc = getStatusDebuggerController();
+	if ( nullptr == sdc )
 		return;
-	auto uiVars = getStatusDebuggerController()->getUIVariables();
+	auto uiVars = sdc->getUIVariables();
 	if ( uiVars ) {
 		uiVars->runOnMainThread( [uiVars] {
 			auto model = uiVars->getModel();
@@ -307,6 +310,7 @@ void DebuggerClientListener::breakpointChanged( const BreakpointEvent& ) {}
 
 void DebuggerClientListener::expressionEvaluated( const std::string& /*expression*/,
 												  const std::optional<EvaluateInfo>& ) {}
+
 void DebuggerClientListener::gotoTargets( const Source& /*source*/, const int /*line*/,
 										  const std::vector<GotoTarget>& /*targets*/ ) {}
 

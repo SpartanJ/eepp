@@ -205,6 +205,17 @@ void DebuggerPlugin::onLoadProject( const std::string& projectFolder,
 	}
 }
 
+std::vector<DapTool> DebuggerPlugin::getDebuggersForLang( const std::string& language ) {
+	std::vector<DapTool> tools;
+	for ( const auto& dap : mDaps ) {
+		auto found = std::find_if( dap.languagesSupported.begin(), dap.languagesSupported.end(),
+								   [&language]( const auto& l ) { return l == language; } );
+		if ( found != dap.languagesSupported.end() )
+			tools.push_back( dap );
+	}
+	return tools;
+}
+
 void DebuggerPlugin::resetExpressions() {
 	if ( !mExpressionsHolder )
 		return;
@@ -304,6 +315,14 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 		// Recreate it
 		j = json::parse( "{\n  \"config\":{},\n  \"dap\":{},\n  \"keybindings\":{},\n}\n", nullptr,
 						 true, true );
+	}
+
+	if ( j.contains( "config" ) ) {
+		auto& config = j["config"];
+		if ( config.contains( "display_registers" ) )
+			mDisplayRegisters = config.value( "display_registers", false );
+		else if ( updateConfigFile )
+			config["display_registers"] = mDisplayRegisters;
 	}
 
 	if ( j.contains( "dap" ) ) {
@@ -577,7 +596,7 @@ void DebuggerPlugin::buildSidePanelTab() {
 			<DropDownList id="debugger_list" layout_width="mp" layout_height="wrap_content" margin-top="2dp" />
 			<TextView text="@string(debugger_configuration, Debugger Configuration)" focusable="false" margin-top="8dp" />
 			<DropDownList id="debugger_conf_list" layout_width="mp" layout_height="wrap_content" margin-top="2dp" />
-			<PushButton id="debugger_run_button" lw="mp" lh="wc" text="@string(run, Run)" margin-top="8dp" icon="icon(play, 12dp)" />
+			<PushButton id="debugger_run_button" lw="mp" lh="wc" text="@string(run, Run)" margin-top="8dp" icon="icon(debug-alt, 12dp)" />
 			<hbox id="panel_debugger_buttons" lw="wc" lh="wc" layout_gravity="center_horizontal" visible="false" clip="none" margin-top="8dp">
 				<PushButton id="panel_debugger_continue" class="debugger_continue" lw="24dp" lh="24dp" icon="icon(debug-continue, 12dp)" tooltip="@string(continue, Continue)" />
 				<PushButton id="panel_debugger_pause" class="debugger_pause" lw="24dp" lh="24dp" icon="icon(debug-pause, 12dp)" tooltip="@string(pause, Pause)" />
@@ -1337,8 +1356,6 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 
 	std::string fallbackCommand = debuggerIt->fallbackCommand;
 
-	mRunButton->setEnabled( false );
-
 	mThreadPool->run(
 		[this, protocolSettings = std::move( protocolSettings ),
 		 runSettings = std::move( runConfig ), findBinary = std::move( findBinary ),
@@ -1517,7 +1534,7 @@ void DebuggerPlugin::updatePanelUIState( StatusDebuggerController::State state )
 	mPanelBoxButtons.stepOut->setVisible( isDebugging )
 		->setEnabled( state == StatusDebuggerController::State::Paused );
 
-	mRunButton->setText( isDebugging ? i18n( "Stop Debugging", "Stop Debugging" )
+	mRunButton->setText( isDebugging ? i18n( "Stop Debugger", "Stop Debugger" )
 									 : i18n( "debug", "Debug" ) );
 }
 
@@ -1629,6 +1646,10 @@ bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position
 		return false;
 	}
 
+	auto localPos( editor->convertToNodeSpace( position.asFloat() ) );
+	if ( localPos.x <= editor->getGutterWidth() )
+		return false;
+
 	editor->debounce(
 		[this, editor, position]() {
 			if ( !mManager->getSplitter()->editorExists( editor ) )
@@ -1637,7 +1658,8 @@ bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position
 			auto range = editor->getDocument().getWordRangeInPosition( docPos, true );
 			auto expression = editor->getDocument().getWordInPosition( docPos, true ).toUtf8();
 
-			if ( !range.isValid() || expression.empty() )
+			if ( !range.isValid() || expression.empty() ||
+				 LuaPattern::hasMatches( expression, "^[%p%s]+$" ) )
 				return;
 
 			mCurrentHover = range;
@@ -1667,6 +1689,7 @@ bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position
 		},
 		mHoverDelay, getMouseMoveHash( editor ) );
 	tryHideTooltip( editor, position );
+	editor->updateMouseCursor( position.asFloat() );
 	return true;
 }
 

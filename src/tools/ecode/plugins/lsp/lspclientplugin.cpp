@@ -1830,8 +1830,11 @@ void LSPClientPlugin::tryDisplayTooltip( UICodeEditor* editor, const LSPHover& r
 
 bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position,
 								   const Uint32& flags ) {
+	auto localPos( editor->convertToNodeSpace( position.asFloat() ) );
+	if ( localPos.x <= editor->getGutterWidth() )
+		return false;
+
 	if ( mBreadcrumb ) {
-		auto localPos( editor->convertToNodeSpace( position.asFloat() ) );
 		if ( localPos.y < mPluginTopSpace && localPos.x < editor->getTopAreaWidth() &&
 			 localPos.x >= 0 ) {
 			if ( !mHoveringBreadcrumb ) {

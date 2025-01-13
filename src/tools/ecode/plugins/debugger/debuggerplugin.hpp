@@ -62,10 +62,13 @@ class DebuggerPlugin : public PluginBase {
 	void onLoadProject( const std::string& projectFolder,
 						const std::string& projectStatePath ) override;
 
+	std::vector<DapTool> getDebuggersForLang( const std::string& lang );
+
   protected:
 	friend class DebuggerClientListener;
 
 	bool mInitialized{ false };
+	bool mDisplayRegisters{ false };
 	std::string mProjectPath;
 
 	std::vector<DapTool> mDaps;

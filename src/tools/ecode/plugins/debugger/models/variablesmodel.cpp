@@ -182,10 +182,12 @@ void VariablesHolder::addVariables( const int variablesReference, std::vector<Va
 
 		auto found = parentNode->getChild( var.name );
 		if ( found ) {
-			( *found )->var = std::move( var );
+			ModelVariableNode::NodePtr child = *found;
+			child->var = std::move( var );
 
-			if ( ( *found )->var.variablesReference != 0 )
-				nodeMap[( *found )->var.variablesReference] = *found;
+			if ( child->var.variablesReference != 0 )
+				nodeMap[child->var.variablesReference] = *found;
+
 			continue;
 		}
 
