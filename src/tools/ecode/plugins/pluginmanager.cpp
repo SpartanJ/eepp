@@ -2,6 +2,7 @@
 #include "../filesystemlistener.hpp"
 #include "plugin.hpp"
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/md5.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
@@ -11,10 +12,11 @@ using json = nlohmann::json;
 namespace ecode {
 
 PluginManager::PluginManager( const std::string& resourcesPath, const std::string& pluginsPath,
-							  std::shared_ptr<ThreadPool> pool, const OnLoadFileCb& loadFileCb,
-							  PluginContextProvider* context ) :
+							  const std::string& configPath, std::shared_ptr<ThreadPool> pool,
+							  const OnLoadFileCb& loadFileCb, PluginContextProvider* context ) :
 	mResourcesPath( resourcesPath ),
 	mPluginsPath( pluginsPath ),
+	mConfigPath( configPath ),
 	mThreadPool( pool ),
 	mPluginContext( context ),
 	mLoadFileFn( loadFileCb ) {}
@@ -262,6 +264,14 @@ void PluginManager::setPluginReloadEnabled( bool pluginReloadEnabled ) {
 
 void PluginManager::subscribeMessages(
 	Plugin* plugin, std::function<PluginRequestHandle( const PluginMessage& )> cb ) {
+	if ( plugin && !mWorkspaceFolder.empty() ) {
+		std::string projectsPath( mConfigPath + "projects" + FileSystem::getOSSlash() );
+		MD5::Result hash = MD5::fromString( mWorkspaceFolder );
+		std::string projectPluginsStatePath( projectsPath + "plugins_state" +
+											 FileSystem::getOSSlash() + hash.toHexString() +
+											 FileSystem::getOSSlash() );
+		plugin->onLoadProject( mWorkspaceFolder, projectPluginsStatePath );
+	}
 	subscribeMessages( plugin->getId(), cb );
 }
 

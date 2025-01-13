@@ -571,7 +571,7 @@ void App::onPluginEnabled( Plugin* plugin ) {
 
 void App::initPluginManager() {
 	mPluginManager = std::make_unique<PluginManager>(
-		mResPath, mPluginsPath, mThreadPool,
+		mResPath, mPluginsPath, mConfigPath, mThreadPool,
 		[this]( const std::string& path, const auto& cb ) {
 			UITab* tab = mSplitter->isDocumentOpen( path );
 			if ( !tab ) {

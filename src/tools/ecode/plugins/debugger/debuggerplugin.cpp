@@ -61,8 +61,15 @@ DebuggerPlugin::~DebuggerPlugin() {
 	waitUntilLoaded();
 	mShuttingDown = true;
 
-	if ( mSidePanel && mTab )
-		mSidePanel->removeTab( mTab );
+	if ( mSidePanel && mTab ) {
+		if ( Engine::isRunninMainThread() )
+			mSidePanel->removeTab( mTab );
+		else {
+			auto sidePanel = mSidePanel;
+			auto tab = mTab;
+			mSidePanel->runOnMainThread( [sidePanel, tab] { sidePanel->removeTab( tab ); } );
+		}
+	}
 
 	if ( getPluginContext()->getStatusBar() )
 		getPluginContext()->getStatusBar()->removeStatusBarElement( "status_app_debugger" );
@@ -619,6 +626,7 @@ void DebuggerPlugin::buildSidePanelTab() {
 
 	mUIDebuggerList->on( Event::OnValueChange, [this]( const Event* event ) {
 		mCurDebugger = event->getNode()->asType<UIDropDownList>()->getText().toUtf8();
+		mCurConfiguration = "";
 	} );
 
 	mUIDebuggerConfList->on( Event::OnValueChange, [this]( const Event* event ) {
@@ -667,8 +675,9 @@ void DebuggerPlugin::buildSidePanelTab() {
 void DebuggerPlugin::updateSelectedDebugConfig() {
 	if ( mUIDebuggerList && mUIDebuggerConfList && !mCurDebugger.empty() ) {
 		mUIDebuggerList->runOnMainThread( [this] {
+			auto curConfig = mCurConfiguration;
 			mUIDebuggerList->getListBox()->setSelected( mCurDebugger );
-			mUIDebuggerConfList->getListBox()->setSelected( mCurConfiguration );
+			mUIDebuggerConfList->getListBox()->setSelected( curConfig );
 		} );
 	}
 }
@@ -843,9 +852,11 @@ void DebuggerPlugin::updateSidePanelTab() {
 	}
 
 	if ( !empty ) {
-		if ( !mCurDebugger.empty() )
+		if ( !mCurDebugger.empty() ) {
+			auto curConfig = mCurConfiguration;
 			mUIDebuggerList->getListBox()->setSelected( mCurDebugger );
-		else
+			mCurConfiguration = std::move( curConfig );
+		} else
 			mUIDebuggerList->getListBox()->setSelected( 0L );
 	}
 
@@ -891,7 +902,7 @@ void DebuggerPlugin::updateDebuggerConfigurationList() {
 
 	std::string curConfig( mCurConfiguration );
 	mUIDebuggerConfList->getListBox()->clear();
-	mCurConfiguration = curConfig;
+	mCurConfiguration = std::move( curConfig );
 
 	std::string debuggerSelected = mUIDebuggerList->getListBox()->getItemSelectedText().toUtf8();
 

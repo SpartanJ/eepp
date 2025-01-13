@@ -275,6 +275,7 @@ class PluginManager {
 	using OnLoadFileCb = std::function<void( const std::string&, const OnFileLoadedCb& )>;
 
 	PluginManager( const std::string& resourcesPath, const std::string& pluginsPath,
+				   const std::string& configPath,
 				   std::shared_ptr<ThreadPool> pool, const OnLoadFileCb& loadFileCb,
 				   PluginContextProvider* context );
 
@@ -373,6 +374,7 @@ class PluginManager {
 	friend class App;
 	std::string mResourcesPath;
 	std::string mPluginsPath;
+	std::string mConfigPath;
 	std::string mWorkspaceFolder;
 	std::map<std::string, Plugin*> mPlugins;
 	std::map<std::string, bool> mPluginsEnabled;

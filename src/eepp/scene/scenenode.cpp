@@ -247,7 +247,7 @@ void SceneNode::checkClose() {
 		mCloseList.clear();
 
 		for ( Node* node : closeListCopy )
-			eeDelete( node );
+			eeSAFE_DELETE( node );
 	}
 }
 
