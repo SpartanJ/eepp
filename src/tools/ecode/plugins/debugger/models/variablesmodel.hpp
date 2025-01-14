@@ -9,7 +9,8 @@ using namespace EE::UI::Models;
 
 namespace EE::UI {
 class UISceneNode;
-}
+class UITreeView;
+} // namespace EE::UI
 
 namespace ecode {
 
@@ -17,27 +18,16 @@ using namespace dap;
 
 class DebuggerClient;
 
-struct VariablePath {
-	std::string scopeName;
-	std::string variableName;
-	std::vector<std::string> childPath;
-
-	bool operator==( const VariablePath& other ) const {
-		return scopeName == other.scopeName && variableName == other.variableName &&
-			   childPath == other.childPath;
-	}
-};
+using VariablePath = std::vector<std::string>;
 
 } // namespace ecode
 
 namespace std {
 template <> struct hash<ecode::VariablePath> {
 	size_t operator()( const ecode::VariablePath& path ) const {
-		size_t h = std::hash<std::string>{}( path.scopeName );
-		h ^= std::hash<std::string>{}( path.variableName ) + 0x9e3779b9 + ( h << 6 ) + ( h >> 2 );
-		for ( const auto& child : path.childPath ) {
-			h ^= std::hash<std::string>{}( child ) + 0x9e3779b9 + ( h << 6 ) + ( h >> 2 );
-		}
+		size_t h = 0;
+		for ( const auto& child : path )
+			h = hashCombine( h, std::hash<std::string>{}( child ) );
 		return h;
 	}
 };
@@ -133,7 +123,8 @@ class VariablesModel : public Model {
 	UISceneNode* mSceneNode;
 };
 
-struct VariablesHolder {
+class VariablesHolder {
+  public:
 	VariablesHolder( UISceneNode* sceneNode );
 
 	void addVariables( const int variablesReference, std::vector<Variable>&& vars );
@@ -144,19 +135,27 @@ struct VariablesHolder {
 
 	void clear( bool all = false );
 
+	void saveExpandedState( const ModelIndex& index );
+
+	void restoreExpandedState( const ExpandedState::Location& location, DebuggerClient* client,
+							   UITreeView* uiVariables );
+
+	std::shared_ptr<VariablesModel> getModel() { return mModel; }
+
+  protected:
+	Mutex mutex;
+	std::shared_ptr<ModelVariableNode> mRootNode;
+	std::shared_ptr<VariablesModel> mModel;
+	std::unordered_map<int, ModelVariableNode::NodePtr> mNodeMap;
+	std::optional<ExpandedState::Location> mCurrentLocation;
+	std::unordered_map<ExpandedState::Location, std::unordered_set<VariablePath>> mExpandedStates;
+
 	ModelVariableNode::NodePtr getNodeByReference( int variablesReference );
 
-	Mutex mutex;
-	std::shared_ptr<ModelVariableNode> rootNode;
-	std::shared_ptr<VariablesModel> model;
-	std::unordered_map<int, ModelVariableNode::NodePtr> nodeMap;
-
-	std::unordered_map<ExpandedState::Location, std::unordered_set<VariablePath>> expandedStates;
-	std::optional<ExpandedState::Location> currentLocation;
-
 	VariablePath buildVariablePath( ModelVariableNode* node ) const;
-	void saveExpandedState( const ModelIndex& index );
-	void restoreExpandedState( const ExpandedState::Location& location, DebuggerClient* client );
+
+	void resolvePath( std::vector<std::string> path, DebuggerClient* client,
+					  UITreeView* uiVariables, ModelVariableNode::NodePtr parentNode, int pathPos );
 };
 
 } // namespace ecode

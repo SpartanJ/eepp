@@ -57,7 +57,7 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 
 	std::optional<StoppedEvent> getStoppedData() const;
 
-	void setPausedToRefreshBreakpoints() { mPausedToRefreshBreakpoints = true; }
+	void setPausedToRefreshBreakpoints();
 
 	int getCurrentThreadId() const;
 
@@ -87,7 +87,6 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 	void changeThread( int id );
 
 	void initUI();
-
 };
 
 } // namespace ecode

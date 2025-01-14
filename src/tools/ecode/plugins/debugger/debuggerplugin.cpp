@@ -772,7 +772,7 @@ void DebuggerPlugin::buildStatusBar() {
 
 	debuggerStatusElem->onWidgetCreated = [this]( StatusDebuggerController* sdc, UIWidget* ) {
 		UITreeView* uiExpressions = sdc->getUIExpressions();
-		uiExpressions->setModel( mExpressionsHolder->model );
+		uiExpressions->setModel( mExpressionsHolder->getModel() );
 		uiExpressions->removeEventsOfType( Event::OnModelEvent );
 		uiExpressions->onModelEvent( [this, uiExpressions]( const ModelEvent* modelEvent ) {
 			if ( modelEvent->getModelEventType() == Abstract::ModelEventType::OpenMenu ) {

@@ -2100,6 +2100,7 @@ void LSPClientPlugin::showDocumentSymbols( UICodeEditor* editor ) {
 		if ( symbolsIt != mDocCurrentSymbols.end() ) {
 			auto docSymbols = symbolsIt->second;
 			std::vector<std::string> path;
+			path.reserve( docSymbols.size() );
 			for ( const auto& sym : docSymbols )
 				path.emplace_back( sym.name );
 			tv->selectRowWithPath( path );

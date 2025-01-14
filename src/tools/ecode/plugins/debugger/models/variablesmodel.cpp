@@ -1,6 +1,7 @@
 #include "variablesmodel.hpp"
 #include "../debuggerclient.hpp"
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uitreeview.hpp>
 
 namespace ecode {
 
@@ -160,16 +161,16 @@ Variant VariablesModel::data( const ModelIndex& index, ModelRole role ) const {
 }
 
 VariablesHolder::VariablesHolder( UISceneNode* sceneNode ) :
-	rootNode( std::make_shared<ModelVariableNode>( "Root", 0 ) ),
-	model( std::make_shared<VariablesModel>( rootNode, sceneNode ) ) {
-	nodeMap[0] = rootNode;
+	mRootNode( std::make_shared<ModelVariableNode>( "Root", 0 ) ),
+	mModel( std::make_shared<VariablesModel>( mRootNode, sceneNode ) ) {
+	mNodeMap[0] = mRootNode;
 }
 
 void VariablesHolder::addVariables( const int variablesReference, std::vector<Variable>&& vars ) {
 	Lock l( mutex );
 	auto parentNode = getNodeByReference( variablesReference );
 	if ( !parentNode ) {
-		auto node = rootNode->getChildRecursive( variablesReference );
+		auto node = mRootNode->getChildRecursive( variablesReference );
 		if ( !node )
 			return;
 		parentNode = *node;
@@ -187,7 +188,7 @@ void VariablesHolder::addVariables( const int variablesReference, std::vector<Va
 			child->var = std::move( var );
 
 			if ( child->var.variablesReference != 0 )
-				nodeMap[child->var.variablesReference] = *found;
+				mNodeMap[child->var.variablesReference] = *found;
 
 			continue;
 		}
@@ -198,72 +199,63 @@ void VariablesHolder::addVariables( const int variablesReference, std::vector<Va
 		parentNode->addChild( child );
 
 		if ( child->var.variablesReference != 0 )
-			nodeMap[child->var.variablesReference] = child;
+			mNodeMap[child->var.variablesReference] = child;
 	}
 
-	model->invalidate( invalidateIndexes ? Model::UpdateFlag::InvalidateAllIndexes
-										 : Model::UpdateFlag::DontInvalidateIndexes );
+	mModel->invalidate( invalidateIndexes ? Model::UpdateFlag::InvalidateAllIndexes
+										  : Model::UpdateFlag::DontInvalidateIndexes );
 }
 
 void VariablesHolder::addChild( ModelVariableNode::NodePtr child ) {
 	Lock l( mutex );
-	rootNode->addChild( child );
-	nodeMap[child->var.variablesReference] = child;
-	model->invalidate( Model::UpdateFlag::InvalidateAllIndexes );
+	mRootNode->addChild( child );
+	mNodeMap[child->var.variablesReference] = child;
+	mModel->invalidate( Model::UpdateFlag::InvalidateAllIndexes );
 }
 
 void VariablesHolder::upsertRootChild( Variable&& var ) {
 	Lock l( mutex );
-	for ( size_t i = 0; i < rootNode->children.size(); i++ ) {
-		auto child = rootNode->children[i];
+	for ( size_t i = 0; i < mRootNode->children.size(); i++ ) {
+		auto child = mRootNode->children[i];
 		if ( child->getName() == var.name ) {
-			auto newChild = std::make_shared<ModelVariableNode>( std::move( var ), rootNode );
-			nodeMap[newChild->var.variablesReference] = newChild;
-			rootNode->children[i] = std::move( newChild );
-			model->invalidate( Model::UpdateFlag::DontInvalidateIndexes );
+			auto newChild = std::make_shared<ModelVariableNode>( std::move( var ), mRootNode );
+			mNodeMap[newChild->var.variablesReference] = newChild;
+			mRootNode->children[i] = std::move( newChild );
+			mModel->invalidate( Model::UpdateFlag::DontInvalidateIndexes );
 			return;
 		}
 	}
-	auto newChild = std::make_shared<ModelVariableNode>( std::move( var ), rootNode );
+	auto newChild = std::make_shared<ModelVariableNode>( std::move( var ), mRootNode );
 	addChild( newChild );
 }
 
 void VariablesHolder::clear( bool all ) {
 	Lock l( mutex );
-	rootNode->clear();
+	mRootNode->clear();
 	if ( all ) {
-		nodeMap.clear();
+		mNodeMap.clear();
+		mExpandedStates.clear();
+		mCurrentLocation = {};
 	}
 }
 
 ModelVariableNode::NodePtr VariablesHolder::getNodeByReference( int variablesReference ) {
-	auto it = nodeMap.find( variablesReference );
-	return ( it != nodeMap.end() ) ? it->second : nullptr;
+	auto it = mNodeMap.find( variablesReference );
+	return ( it != mNodeMap.end() ) ? it->second : nullptr;
 }
 
 VariablePath VariablesHolder::buildVariablePath( ModelVariableNode* node ) const {
 	VariablePath path;
-	std::vector<std::string> reversePath;
-
-	// Build the path from node to root
-	while ( node && node != rootNode.get() ) {
-		reversePath.push_back( node->getName() );
+	while ( node && node != mRootNode.get() ) {
+		path.push_back( node->getName() );
 		node = node->parent ? node->parent.get() : nullptr;
 	}
-
-	if ( reversePath.size() >= 2 ) {
-		path.scopeName = reversePath.back();					 // The scope name is at the root
-		path.variableName = reversePath[reversePath.size() - 2]; // The variable name is next
-
-		// Add any remaining path components as child path
-		path.childPath.assign( reversePath.begin(), reversePath.end() - 2 );
-	}
-
+	std::reverse( path.begin(), path.end() );
 	return path;
 }
 
 void VariablesHolder::saveExpandedState( const ModelIndex& index ) {
-	if ( !currentLocation )
+	if ( !mCurrentLocation )
 		return;
 
 	ModelVariableNode* node = static_cast<ModelVariableNode*>( index.internalData() );
@@ -271,58 +263,51 @@ void VariablesHolder::saveExpandedState( const ModelIndex& index ) {
 		return;
 
 	auto nodePath = buildVariablePath( node );
-	expandedStates[*currentLocation].insert( std::move( nodePath ) );
+	mExpandedStates[*mCurrentLocation].insert( std::move( nodePath ) );
+}
+
+void VariablesHolder::resolvePath( std::vector<std::string> path, DebuggerClient* client,
+								   UITreeView* uiVariables, ModelVariableNode::NodePtr parentNode,
+								   int pathPos ) {
+	if ( path.empty() || !parentNode )
+		return;
+
+	auto currentNodeOpt = parentNode->getChild( path[pathPos] );
+	if ( !currentNodeOpt )
+		return;
+
+	auto currentNode = *currentNodeOpt;
+
+	if ( currentNode->getVariablesReference() > 0 ) {
+		const auto onVariablesRecieved = [this, uiVariables, path, currentNode, pathPos,
+										  client]( const int variablesReference,
+												   std::vector<Variable>&& vars ) {
+			addVariables( variablesReference, std::move( vars ) );
+
+			uiVariables->runOnMainThread(
+				[uiVariables, path] { uiVariables->selectRowWithPath( path ); } );
+
+			auto nextPos = pathPos + 1;
+			if ( nextPos < static_cast<Int64>( path.size() ) ) {
+				resolvePath( path, client, uiVariables, currentNode, nextPos );
+			}
+		};
+
+		client->variables( currentNode->getVariablesReference(), Variable::Type::Both,
+						   onVariablesRecieved );
+	}
 }
 
 void VariablesHolder::restoreExpandedState( const ExpandedState::Location& location,
-											DebuggerClient* client ) {
-	currentLocation = location;
+											DebuggerClient* client, UITreeView* uiVariables ) {
+	mCurrentLocation = location;
 
-	auto it = expandedStates.find( location );
-	if ( it == expandedStates.end() )
+	auto it = mExpandedStates.find( location );
+	if ( it == mExpandedStates.end() )
 		return;
 
-	const auto& paths = it->second;
-
-	for ( const auto& path : paths ) {
-		// Find the scope node
-		auto scopeNode = [this, &path]() -> ModelVariableNode::NodePtr {
-			for ( const auto& child : rootNode->children ) {
-				if ( child->getName() == path.scopeName ) {
-					return child;
-				}
-			}
-			return nullptr;
-		}();
-
-		if ( !scopeNode )
-			continue;
-
-		// Find the variable node
-		auto currentNode = [&path, scopeNode]() -> ModelVariableNode::NodePtr {
-			for ( const auto& child : scopeNode->children ) {
-				if ( child->getName() == path.variableName ) {
-					return child;
-				}
-			}
-			return nullptr;
-		}();
-
-		if ( !currentNode )
-			continue;
-
-		if ( currentNode->getVariablesReference() > 0 )
-			client->variables( currentNode->getVariablesReference() );
-
-		for ( const auto& childName : path.childPath ) {
-			auto childOpt = currentNode->getChild( childName );
-			if ( !childOpt )
-				break;
-
-			currentNode = *childOpt;
-			if ( currentNode->getVariablesReference() > 0 )
-				client->variables( currentNode->getVariablesReference() );
-		}
-	}
+	for ( const VariablePath& path : it->second )
+		resolvePath( path, client, uiVariables, mRootNode, 0 );
 }
+
 } // namespace ecode

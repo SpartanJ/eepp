@@ -81,7 +81,7 @@ void DebuggerClientListener::initUI() {
 	} );
 
 	UITreeView* uiVariables = sdc->getUIVariables();
-	uiVariables->setModel( mVariablesHolder->model );
+	uiVariables->setModel( mVariablesHolder->getModel() );
 	uiVariables->removeEventsOfType( Event::OnModelEvent );
 	uiVariables->onModelEvent( [this]( const ModelEvent* modelEvent ) {
 		if ( modelEvent->getModelEventType() == Abstract::ModelEventType::OpenTree ) {
@@ -138,15 +138,17 @@ void DebuggerClientListener::debuggeeExited( int /*exitCode*/ ) {
 void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
 	Log::debug( "DebuggerClientListener::debuggeeStopped: reason %s", event.reason );
 
+	int threadId = mStoppedData->threadId ? *mStoppedData->threadId : 1;
 	mStoppedData = event;
-	changeThread( mStoppedData->threadId ? *mStoppedData->threadId : 1 );
 
 	if ( mPausedToRefreshBreakpoints ) {
 		mPlugin->sendPendingBreakpoints();
-		mClient->resume( 1 );
+		mClient->resume( threadId );
 		mPausedToRefreshBreakpoints = false;
 		return;
 	}
+
+	changeThread( mStoppedData->threadId ? *mStoppedData->threadId : 1 );
 
 	mClient->threads();
 	mClient->stackTrace( mCurrentThreadId );
@@ -302,7 +304,8 @@ void DebuggerClientListener::variables( const int variablesReference,
 	if ( mCurrentScopePos && scopeIt != mScopeRef.end() ) {
 		ExpandedState::Location location{ mCurrentScopePos->first, mCurrentScopePos->second,
 										  mCurrentFrameId };
-		mVariablesHolder->restoreExpandedState( location, mClient );
+		mVariablesHolder->restoreExpandedState( location, mClient,
+												getStatusDebuggerController()->getUIVariables() );
 	}
 }
 
@@ -331,6 +334,10 @@ bool DebuggerClientListener::isStopped() const {
 
 std::optional<StoppedEvent> DebuggerClientListener::getStoppedData() const {
 	return mStoppedData;
+}
+
+void DebuggerClientListener::setPausedToRefreshBreakpoints() {
+	mPausedToRefreshBreakpoints = true;
 }
 
 int DebuggerClientListener::getCurrentThreadId() const {
