@@ -15,6 +15,67 @@ namespace ecode {
 
 using namespace dap;
 
+class DebuggerClient;
+
+struct VariablePath {
+	std::string scopeName;
+	std::string variableName;
+	std::vector<std::string> childPath;
+
+	bool operator==( const VariablePath& other ) const {
+		return scopeName == other.scopeName && variableName == other.variableName &&
+			   childPath == other.childPath;
+	}
+};
+
+} // namespace ecode
+
+namespace std {
+template <> struct hash<ecode::VariablePath> {
+	size_t operator()( const ecode::VariablePath& path ) const {
+		size_t h = std::hash<std::string>{}( path.scopeName );
+		h ^= std::hash<std::string>{}( path.variableName ) + 0x9e3779b9 + ( h << 6 ) + ( h >> 2 );
+		for ( const auto& child : path.childPath ) {
+			h ^= std::hash<std::string>{}( child ) + 0x9e3779b9 + ( h << 6 ) + ( h >> 2 );
+		}
+		return h;
+	}
+};
+
+} // namespace std
+
+namespace ecode {
+
+struct ExpandedState {
+	struct Location {
+		std::string filePath;
+		int lineNumber{};
+		int frameIndex{};
+
+		bool operator==( const Location& other ) const {
+			return filePath == other.filePath && lineNumber == other.lineNumber &&
+				   frameIndex == other.frameIndex;
+		}
+	};
+
+	Location location;
+	std::unordered_set<VariablePath> expandedPaths;
+};
+
+} // namespace ecode
+
+namespace std {
+template <> struct hash<ecode::ExpandedState::Location> {
+	size_t operator()( const ecode::ExpandedState::Location& loc ) const {
+		return hashCombine( std::hash<std::string>{}( loc.filePath ),
+							std::hash<int>{}( loc.lineNumber ),
+							std::hash<int>{}( loc.frameIndex ) );
+	}
+};
+} // namespace std
+
+namespace ecode {
+
 struct ModelVariableNode : public std::enable_shared_from_this<ModelVariableNode> {
 	using NodePtr = std::shared_ptr<ModelVariableNode>;
 
@@ -89,6 +150,13 @@ struct VariablesHolder {
 	std::shared_ptr<ModelVariableNode> rootNode;
 	std::shared_ptr<VariablesModel> model;
 	std::unordered_map<int, ModelVariableNode::NodePtr> nodeMap;
+
+	std::unordered_map<ExpandedState::Location, std::unordered_set<VariablePath>> expandedStates;
+	std::optional<ExpandedState::Location> currentLocation;
+
+	VariablePath buildVariablePath( ModelVariableNode* node ) const;
+	void saveExpandedState( const ModelIndex& index );
+	void restoreExpandedState( const ExpandedState::Location& location, DebuggerClient* client );
 };
 
 } // namespace ecode

@@ -1,4 +1,5 @@
 #include "variablesmodel.hpp"
+#include "../debuggerclient.hpp"
 #include <eepp/ui/uiscenenode.hpp>
 
 namespace ecode {
@@ -240,4 +241,88 @@ ModelVariableNode::NodePtr VariablesHolder::getNodeByReference( int variablesRef
 	return ( it != nodeMap.end() ) ? it->second : nullptr;
 }
 
+VariablePath VariablesHolder::buildVariablePath( ModelVariableNode* node ) const {
+	VariablePath path;
+	std::vector<std::string> reversePath;
+
+	// Build the path from node to root
+	while ( node && node != rootNode.get() ) {
+		reversePath.push_back( node->getName() );
+		node = node->parent ? node->parent.get() : nullptr;
+	}
+
+	if ( reversePath.size() >= 2 ) {
+		path.scopeName = reversePath.back();					 // The scope name is at the root
+		path.variableName = reversePath[reversePath.size() - 2]; // The variable name is next
+
+		// Add any remaining path components as child path
+		path.childPath.assign( reversePath.begin(), reversePath.end() - 2 );
+	}
+
+	return path;
+}
+
+void VariablesHolder::saveExpandedState( const ModelIndex& index ) {
+	if ( !currentLocation )
+		return;
+
+	ModelVariableNode* node = static_cast<ModelVariableNode*>( index.internalData() );
+	if ( !node )
+		return;
+
+	auto nodePath = buildVariablePath( node );
+	expandedStates[*currentLocation].insert( std::move( nodePath ) );
+}
+
+void VariablesHolder::restoreExpandedState( const ExpandedState::Location& location,
+											DebuggerClient* client ) {
+	currentLocation = location;
+
+	auto it = expandedStates.find( location );
+	if ( it == expandedStates.end() )
+		return;
+
+	const auto& paths = it->second;
+
+	for ( const auto& path : paths ) {
+		// Find the scope node
+		auto scopeNode = [this, &path]() -> ModelVariableNode::NodePtr {
+			for ( const auto& child : rootNode->children ) {
+				if ( child->getName() == path.scopeName ) {
+					return child;
+				}
+			}
+			return nullptr;
+		}();
+
+		if ( !scopeNode )
+			continue;
+
+		// Find the variable node
+		auto currentNode = [&path, scopeNode]() -> ModelVariableNode::NodePtr {
+			for ( const auto& child : scopeNode->children ) {
+				if ( child->getName() == path.variableName ) {
+					return child;
+				}
+			}
+			return nullptr;
+		}();
+
+		if ( !currentNode )
+			continue;
+
+		if ( currentNode->getVariablesReference() > 0 )
+			client->variables( currentNode->getVariablesReference() );
+
+		for ( const auto& childName : path.childPath ) {
+			auto childOpt = currentNode->getChild( childName );
+			if ( !childOpt )
+				break;
+
+			currentNode = *childOpt;
+			if ( currentNode->getVariablesReference() > 0 )
+				client->variables( currentNode->getVariablesReference() );
+		}
+	}
+}
 } // namespace ecode

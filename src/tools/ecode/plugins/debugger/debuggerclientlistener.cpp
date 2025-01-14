@@ -88,6 +88,7 @@ void DebuggerClientListener::initUI() {
 			ModelVariableNode* node =
 				static_cast<ModelVariableNode*>( modelEvent->getModelIndex().internalData() );
 			mClient->variables( node->var.variablesReference );
+			mVariablesHolder->saveExpandedState( modelEvent->getModelIndex() );
 		}
 	} );
 
@@ -277,6 +278,9 @@ void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&&
 		mClient->variables( scope.variablesReference );
 	}
 
+	for ( auto& scope : scopes )
+		mScopeRef[scope.variablesReference] = std::move( scope );
+
 	auto sdc = getStatusDebuggerController();
 	if ( nullptr == sdc )
 		return;
@@ -293,6 +297,13 @@ void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&&
 void DebuggerClientListener::variables( const int variablesReference,
 										std::vector<Variable>&& vars ) {
 	mVariablesHolder->addVariables( variablesReference, std::move( vars ) );
+
+	auto scopeIt = mScopeRef.find( variablesReference );
+	if ( mCurrentScopePos && scopeIt != mScopeRef.end() ) {
+		ExpandedState::Location location{ mCurrentScopePos->first, mCurrentScopePos->second,
+										  mCurrentFrameId };
+		mVariablesHolder->restoreExpandedState( location, mClient );
+	}
 }
 
 void DebuggerClientListener::modules( ModulesInfo&& ) {}

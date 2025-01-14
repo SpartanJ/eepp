@@ -76,6 +76,7 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 	std::shared_ptr<ThreadsModel> mThreadsModel;
 	std::shared_ptr<StackModel> mStackModel;
 	std::shared_ptr<VariablesHolder> mVariablesHolder;
+	std::unordered_map<int, Scope> mScopeRef;
 
 	StatusDebuggerController* getStatusDebuggerController() const;
 

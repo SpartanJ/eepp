@@ -3407,6 +3407,7 @@ bool UICodeEditor::getVerticalScrollBarEnabled() const {
 void UICodeEditor::setVerticalScrollBarEnabled( const bool& verticalScrollBarEnabled ) {
 	if ( verticalScrollBarEnabled != mVerticalScrollBarEnabled ) {
 		mVerticalScrollBarEnabled = verticalScrollBarEnabled;
+		invalidateLongestLineWidth();
 		updateScrollBar();
 	}
 }
