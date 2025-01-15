@@ -625,8 +625,11 @@ void DebuggerPlugin::buildSidePanelTab() {
 	mTabContents->bind( "debugger_conf_list", mUIDebuggerConfList );
 
 	mUIDebuggerList->on( Event::OnValueChange, [this]( const Event* event ) {
-		mCurDebugger = event->getNode()->asType<UIDropDownList>()->getText().toUtf8();
-		mCurConfiguration = "";
+		auto cur = event->getNode()->asType<UIDropDownList>()->getText().toUtf8();
+		if ( cur != mCurDebugger ) {
+			mCurDebugger = std::move( cur );
+			mCurConfiguration = "";
+		}
 	} );
 
 	mUIDebuggerConfList->on( Event::OnValueChange, [this]( const Event* event ) {
@@ -886,14 +889,13 @@ void DebuggerPlugin::sendFileBreakpoints( const std::string& filePath ) {
 		return;
 	}
 
-	Lock l( mBreakpointsMutex );
-	auto fileBps = mBreakpoints.find( filePath );
-	if ( fileBps == mBreakpoints.end() )
-		return;
-	for ( const auto& fileBps : mBreakpoints ) {
-		mDebugger->setBreakpoints( fileBps.first,
-								   DebuggerClientListener::fromSet( fileBps.second ) );
+	{
+		Lock l( mBreakpointsMutex );
+		auto fileBps = mBreakpoints.find( filePath );
+		if ( fileBps == mBreakpoints.end() )
+			return;
 	}
+	mListener->sendBreakpoints();
 }
 
 void DebuggerPlugin::updateDebuggerConfigurationList() {
@@ -1360,19 +1362,10 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 	for ( const std::string& cmdArg : configIt->cmdArgs )
 		runConfig.args.emplace_back( cmdArg );
 
-	std::string findBinary;
-	auto findBinaryIt = debuggerIt->findBinary.find( String::toLower( Sys::getPlatform() ) );
-	if ( findBinaryIt != debuggerIt->findBinary.end() )
-		findBinary = findBinaryIt->second;
-
-	std::string fallbackCommand = debuggerIt->fallbackCommand;
-
 	mThreadPool->run(
 		[this, protocolSettings = std::move( protocolSettings ),
-		 runSettings = std::move( runConfig ), findBinary = std::move( findBinary ),
-		 fallbackCommand = std::move( fallbackCommand ), randomPort]() mutable {
-			run( std::move( protocolSettings ), std::move( runSettings ), std::move( findBinary ),
-				 std::move( fallbackCommand ), randomPort );
+		 runSettings = std::move( runConfig ), randomPort, debugger]() mutable {
+			run( debugger, std::move( protocolSettings ), std::move( runSettings ), randomPort );
 		},
 		[this]( const Uint64& ) {
 			if ( !mDebugger || !mDebugger->started() ) {
@@ -1384,12 +1377,27 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 		} );
 }
 
-void DebuggerPlugin::run( ProtocolSettings&& protocolSettings, DapRunConfig&& runConfig,
-						  std::string&& findBinary, std::string&& fallbackCommand,
-						  int /*randPort*/ ) {
+std::optional<Command>
+DebuggerPlugin::debuggerBinaryExists( const std::string& debugger,
+									  std::optional<DapRunConfig> optRunConfig ) {
+	auto debuggerIt = std::find_if( mDaps.begin(), mDaps.end(), [&debugger]( const DapTool& dap ) {
+		return dap.name == debugger;
+	} );
+
+	if ( debuggerIt == mDaps.end() )
+		return {};
+
+	DapRunConfig runConfig = optRunConfig ? *optRunConfig : debuggerIt->run;
 	Command cmd;
 	cmd.command = std::move( runConfig.command );
 	cmd.arguments = std::move( runConfig.args );
+
+	std::string findBinary;
+	auto findBinaryIt = debuggerIt->findBinary.find( String::toLower( Sys::getPlatform() ) );
+	if ( findBinaryIt != debuggerIt->findBinary.end() )
+		findBinary = findBinaryIt->second;
+
+	std::string fallbackCommand = debuggerIt->fallbackCommand;
 
 	if ( !findBinary.empty() && Sys::which( cmd.command ).empty() ) {
 		auto foundCmd = findCommand( findBinary, cmd.command );
@@ -1402,26 +1410,42 @@ void DebuggerPlugin::run( ProtocolSettings&& protocolSettings, DapRunConfig&& ru
 		}
 	}
 
-	if ( protocolSettings.launchCommand == REQUEST_TYPE_LAUNCH && !cmd.command.empty() &&
-		 !FileSystem::fileExists( cmd.command ) && Sys::which( cmd.command ).empty() ) {
+	if ( !cmd.command.empty() && !FileSystem::fileExists( cmd.command ) &&
+		 Sys::which( cmd.command ).empty() ) {
 		auto args = Process::parseArgs( cmd.command );
-		if ( args.size() <= 1 ||
+		if ( args.empty() ||
 			 ( !FileSystem::fileExists( args[0] ) && Sys::which( args[0] ).empty() ) ) {
 			if ( fallbackCommand.empty() || ( !FileSystem::fileExists( fallbackCommand ) &&
 											  Sys::which( fallbackCommand ).empty() ) ) {
-				auto msg = String::format(
-					i18n( "debugger_binary_not_found",
-						  "Debugger binary not found. Binary \"%s\" must be installed." )
-						.toUtf8(),
-					cmd.command );
-
-				mManager->getPluginContext()->getNotificationCenter()->addNotification( msg );
-				return;
+				return {};
 			} else {
 				cmd.command = std::move( fallbackCommand );
 			}
 		}
 	}
+
+	return cmd;
+}
+
+void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protocolSettings,
+						  DapRunConfig&& runConfig, int /*randPort*/ ) {
+	std::optional<Command> cmdOpt = debuggerBinaryExists( debugger, runConfig );
+
+	if ( !cmdOpt && ( protocolSettings.launchCommand == REQUEST_TYPE_LAUNCH ||
+					  ( protocolSettings.launchCommand == REQUEST_TYPE_ATTACH &&
+						protocolSettings.launchRequest.value( "mode", "" ) == "local" ) ) ) {
+		auto msg =
+			String::format( i18n( "debugger_binary_not_found",
+								  "Debugger binary not found. Binary \"%s\" must be installed." )
+								.toUtf8(),
+							runConfig.command );
+
+		mManager->getPluginContext()->getNotificationCenter()->addNotification( msg );
+		return;
+	}
+
+	Command cmd = std::move( *cmdOpt );
+	bool isRemote = false;
 
 	if ( protocolSettings.launchCommand == REQUEST_TYPE_LAUNCH ) {
 		auto bus = std::make_unique<BusProcess>( cmd );
@@ -1452,6 +1476,7 @@ void DebuggerPlugin::run( ProtocolSettings&& protocolSettings, DapRunConfig&& ru
 		} else if ( mode == "remote" ) {
 			auto bus = std::make_unique<BusSocket>( con );
 			mDebugger = std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
+			isRemote = true;
 		}
 	} else {
 		getManager()->getPluginContext()->getNotificationCenter()->addNotification( String::format(
@@ -1461,12 +1486,14 @@ void DebuggerPlugin::run( ProtocolSettings&& protocolSettings, DapRunConfig&& ru
 	}
 
 	if ( !mDebugger ) {
-		getManager()->getPluginContext()->getNotificationCenter()->addNotification( i18n(
-			"debugger_configuration_not_supported", "Debugger configuration not supported." ) );
+		getManager()->getPluginContext()->getNotificationCenter()->addNotification(
+			i18n( "debugger_configuration_not_supported",
+				  "Debugger configuration currently not supported." ) );
 		return;
 	}
 
 	mListener = std::make_unique<DebuggerClientListener>( mDebugger.get(), this );
+	mListener->setIsRemote( isRemote );
 	mDebugger->addListener( mListener.get() );
 
 	DebuggerClientDap* dap = static_cast<DebuggerClientDap*>( mDebugger.get() );

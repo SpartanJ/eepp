@@ -53,6 +53,8 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 	void gotoTargets( const Source& source, const int line,
 					  const std::vector<GotoTarget>& targets );
 
+	bool isRemote() const;
+
 	bool isStopped() const;
 
 	std::optional<StoppedEvent> getStoppedData() const;
@@ -65,12 +67,17 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 
 	std::optional<std::pair<std::string, int>> getCurrentScopePos() const;
 
+	void setIsRemote( bool isRemote );
+
+	void sendBreakpoints();
+
   protected:
 	DebuggerClient* mClient{ nullptr };
 	DebuggerPlugin* mPlugin{ nullptr };
 	std::optional<StoppedEvent> mStoppedData;
 	std::optional<std::pair<std::string, int>> mCurrentScopePos;
 	bool mPausedToRefreshBreakpoints{ false };
+	bool mIsRemote{ false };
 	int mCurrentThreadId{ 1 };
 	int mCurrentFrameId{ 0 };
 	std::shared_ptr<ThreadsModel> mThreadsModel;

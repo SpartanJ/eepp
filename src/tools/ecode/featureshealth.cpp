@@ -109,12 +109,13 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 		if ( debugger ) {
 			std::vector<DapTool> found = debugger->getDebuggersForLang( def.getLSPName() );
 			for ( const auto& dbg : found ) {
-				FeatureStatus debugger;
-				debugger.name = dbg.name;
-				debugger.url = dbg.url;
-				debugger.path = Sys::which( dbg.run.command );
-				debugger.found = !debugger.path.empty();
-				lang.debugger.emplace_back( std::move( debugger ) );
+				FeatureStatus fdbg;
+				fdbg.name = dbg.name;
+				fdbg.url = dbg.url;
+				auto debuggerBin = debugger->debuggerBinaryExists( dbg.name );
+				fdbg.path = debuggerBin ? debuggerBin->command : "";
+				fdbg.found = !fdbg.path.empty();
+				lang.debugger.emplace_back( std::move( fdbg ) );
 			}
 		}
 

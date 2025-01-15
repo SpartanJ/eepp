@@ -5,6 +5,7 @@
 #include "models/stackmodel.hpp"
 #include "models/threadsmodel.hpp"
 #include "models/variablesmodel.hpp"
+#include <eepp/system/filesystem.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/window/input.hpp>
 
@@ -101,17 +102,30 @@ void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
 	}
 }
 
-void DebuggerClientListener::initialized() {
+void DebuggerClientListener::sendBreakpoints() {
 	Lock l( mPlugin->mBreakpointsMutex );
-	for ( const auto& fileBps : mPlugin->mBreakpoints )
-		mClient->setBreakpoints( fileBps.first, fromSet( fileBps.second ) );
+	for ( const auto& fileBps : mPlugin->mBreakpoints ) {
+		std::string path( fileBps.first );
+		if ( isRemote() ) {
+			FileSystem::filePathRemoveBasePath( mPlugin->mProjectPath, path );
+			path = "/" + path;
+		}
+		mClient->setBreakpoints( path, fromSet( fileBps.second ) );
+	}
+}
+
+void DebuggerClientListener::initialized() {
+	sendBreakpoints();
 }
 
 void DebuggerClientListener::launched() {}
 
 void DebuggerClientListener::configured() {}
 
-void DebuggerClientListener::failed() {}
+void DebuggerClientListener::failed() {
+	mPlugin->exitDebugger();
+	resetState();
+}
 
 void DebuggerClientListener::debuggeeRunning() {}
 
@@ -184,6 +198,10 @@ void DebuggerClientListener::debuggingProcess( const ProcessInfo& ) {}
 void DebuggerClientListener::errorResponse( const std::string& command, const std::string& summary,
 											const std::optional<Message>& /*message*/ ) {
 	if ( command != "evaluate" ) {
+		if ( command == "launch" ) {
+			failed();
+		}
+
 		mPlugin->getPluginContext()->getNotificationCenter()->addNotification( summary,
 																			   Seconds( 5 ) );
 	}
@@ -328,6 +346,10 @@ void DebuggerClientListener::expressionEvaluated( const std::string& /*expressio
 void DebuggerClientListener::gotoTargets( const Source& /*source*/, const int /*line*/,
 										  const std::vector<GotoTarget>& /*targets*/ ) {}
 
+bool DebuggerClientListener::isRemote() const {
+	return mIsRemote;
+}
+
 bool DebuggerClientListener::isStopped() const {
 	return mStoppedData ? true : false;
 }
@@ -350,6 +372,10 @@ int DebuggerClientListener::getCurrentFrameId() const {
 
 std::optional<std::pair<std::string, int>> DebuggerClientListener::getCurrentScopePos() const {
 	return mCurrentScopePos;
+}
+
+void DebuggerClientListener::setIsRemote( bool isRemote ) {
+	mIsRemote = isRemote;
 }
 
 StatusDebuggerController* DebuggerClientListener::getStatusDebuggerController() const {

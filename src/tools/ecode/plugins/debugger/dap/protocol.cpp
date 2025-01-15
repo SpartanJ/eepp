@@ -249,7 +249,7 @@ ThreadEvent::ThreadEvent( const json& body ) :
 StoppedEvent::StoppedEvent( const json& body ) :
 	reason( body[DAP_REASON].get<std::string>() ),
 	description( parseOptionalString( body, "description" ) ),
-	threadId( body[DAP_THREAD_ID].get<int>() ),
+	threadId( body.value( DAP_THREAD_ID, 1 ) ),
 	preserveFocusHint( parseOptionalBool( body, "preserveFocusHint" ) ),
 	text( parseOptionalString( body, "text" ) ),
 	allThreadsStopped( parseOptionalBool( body, "allThreadsStopped" ) ),

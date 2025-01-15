@@ -1814,7 +1814,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
 		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
 		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
-		{ { KEY_F5, KEYMOD_NONE }, "project-build-and-run" },
+		{ { KEY_R, KeyMod::getDefaultModifier() }, "project-build-and-run" },
 		{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
 		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-workspace-symbol-search" },
 		{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-document-symbol-search" },
@@ -1822,7 +1822,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	};
 }
 
-// Old keybindings will be rebinded to the new keybindings of they are still set to the old
+// Old keybindings will be rebinded to the new keybindings when they are still set to the old
 // keybindind
 std::map<std::string, std::string> App::getMigrateKeybindings() {
 	return { { "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
@@ -1834,7 +1834,8 @@ std::map<std::string, std::string> App::getMigrateKeybindings() {
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 			 { "menu-toggle", "mod+shift+m" },
 #endif
-			 { "lock-toggle", "mod+shift+l" },		{ "debug-widget-tree-view", "f11" } };
+			 { "lock-toggle", "mod+shift+l" },		{ "debug-widget-tree-view", "f11" },
+			 { "project-build-and-run", "f5" } };
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
@@ -1908,7 +1909,8 @@ void App::saveProject( bool onlyIfNeeded, bool sessionSnapshotEnabled ) {
 		mConfig.saveProject(
 			mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
 			mProjectBuildManager ? mProjectBuildManager->getConfig() : ProjectBuildConfiguration(),
-			onlyIfNeeded, sessionSnapshotEnabled && mConfig.workspace.sessionSnapshot, mPluginManager.get() );
+			onlyIfNeeded, sessionSnapshotEnabled && mConfig.workspace.sessionSnapshot,
+			mPluginManager.get() );
 	}
 }
 

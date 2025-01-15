@@ -64,6 +64,9 @@ class DebuggerPlugin : public PluginBase {
 
 	std::vector<DapTool> getDebuggersForLang( const std::string& lang );
 
+	std::optional<Command> debuggerBinaryExists( const std::string& debugger,
+												 std::optional<DapRunConfig> runConfig = {} );
+
   protected:
 	friend class DebuggerClientListener;
 
@@ -142,8 +145,8 @@ class DebuggerPlugin : public PluginBase {
 
 	void runConfig( const std::string& debugger, const std::string& configuration );
 
-	void run( ProtocolSettings&& protocolSettings, DapRunConfig&& runConfig,
-			  std::string&& findBinary, std::string&& fallbackCommand, int randPort );
+	void run( const std::string& debugger, ProtocolSettings&& protocolSettings,
+			  DapRunConfig&& runConfig, int randPort );
 
 	void exitDebugger();
 
