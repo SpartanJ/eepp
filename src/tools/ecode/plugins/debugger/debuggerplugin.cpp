@@ -875,7 +875,7 @@ void DebuggerPlugin::sendPendingBreakpoints() {
 		sendFileBreakpoints( pbp );
 	mPendingBreakpoints.clear();
 	if ( mDebugger )
-		mDebugger->resume( 1 );
+		mDebugger->resume( mListener->getCurrentThreadId() );
 }
 
 void DebuggerPlugin::sendFileBreakpoints( const std::string& filePath ) {
@@ -1194,15 +1194,12 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 bool DebuggerPlugin::setBreakpoint( const std::string& doc, Uint32 lineNumber ) {
 	Lock l( mBreakpointsMutex );
 
-	auto sdc = getStatusDebuggerController();
-	if ( sdc && sdc->getWidget() == nullptr ) {
-		sdc->show();
-		sdc->hide();
-	}
+	initStatusDebuggerController();
 
 	if ( !mBreakpointsModel )
 		mBreakpointsModel = std::make_shared<BreakpointsModel>( mBreakpoints, getUISceneNode() );
 
+	auto sdc = getStatusDebuggerController();
 	if ( sdc && sdc->getUIBreakpoints()->getModel() == nullptr )
 		sdc->getUIBreakpoints()->setModel( mBreakpointsModel );
 
@@ -1425,6 +1422,14 @@ DebuggerPlugin::debuggerBinaryExists( const std::string& debugger,
 	}
 
 	return cmd;
+}
+
+void DebuggerPlugin::initStatusDebuggerController() {
+	auto sdc = getStatusDebuggerController();
+	if ( sdc && sdc->getWidget() == nullptr ) {
+		sdc->show();
+		sdc->hide();
+	}
 }
 
 void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protocolSettings,

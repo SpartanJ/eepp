@@ -67,6 +67,8 @@ class DebuggerPlugin : public PluginBase {
 	std::optional<Command> debuggerBinaryExists( const std::string& debugger,
 												 std::optional<DapRunConfig> runConfig = {} );
 
+	void initStatusDebuggerController();
+
   protected:
 	friend class DebuggerClientListener;
 

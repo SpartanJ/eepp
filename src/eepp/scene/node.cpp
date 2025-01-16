@@ -6,6 +6,7 @@
 #include <eepp/scene/node.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/window/engine.hpp>
 
 namespace EE { namespace Scene {
 
@@ -1589,6 +1590,19 @@ void Node::runOnMainThread( Actions::Runnable::RunnableFunc runnable, const Time
 	Action* action = Actions::Runnable::New( std::move( runnable ), delay );
 	action->setTag( uniqueIdentifier );
 	runAction( action );
+}
+
+bool Node::ensureMainThread( Actions::Runnable::RunnableFunc runnable,
+							 const Action::UniqueID& uniqueIdentifier ) {
+	if ( Engine::isRunninMainThread() ) {
+		runnable();
+		return true;
+	} else {
+		Action* action = Actions::Runnable::New( std::move( runnable ) );
+		action->setTag( uniqueIdentifier );
+		runAction( action );
+	}
+	return false;
 }
 
 void Node::setTimeout( Actions::Runnable::RunnableFunc runnable, const Time& delay,

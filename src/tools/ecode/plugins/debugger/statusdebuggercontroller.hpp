@@ -60,6 +60,14 @@ class StatusDebuggerController : public StatusBarElement {
 
 	UITabWidget* getUITabWidget() const;
 
+	UICodeEditor* getUIConsole() const;
+
+	bool getConsoleScrollLocked() const { return mScrollLocked; }
+
+	void insertConsoleBuffer( std::string&& buffer );
+
+	void clearConsoleBuffer();
+
 	void setDebuggingState( State state );
 
 	std::function<void( StatusDebuggerController*, UIWidget* )> onWidgetCreated{ nullptr };
@@ -72,6 +80,7 @@ class StatusDebuggerController : public StatusBarElement {
 	UITreeView* mUIVariables{ nullptr };
 	UITreeView* mUIExpressions{ nullptr };
 	UISplitter* mUIThreadsSplitter{ nullptr };
+	UICodeEditor* mUIConsole{ nullptr };
 	UIPushButton* mUIButStart{ nullptr };
 	UIPushButton* mUIButStop{ nullptr };
 	UIPushButton* mUIButContinue{ nullptr };
@@ -80,6 +89,7 @@ class StatusDebuggerController : public StatusBarElement {
 	UIPushButton* mUIButStepOver{ nullptr };
 	UIPushButton* mUIButStepOut{ nullptr };
 	UITabWidget* mUITabWidget{ nullptr };
+	bool mScrollLocked{ true };
 
 	void createContainer();
 };

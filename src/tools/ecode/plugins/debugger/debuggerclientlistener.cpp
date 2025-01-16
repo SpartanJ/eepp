@@ -48,6 +48,8 @@ void DebuggerClientListener::initUI() {
 	mPlugin->getManager()->getPluginContext()->getStatusAppOutputController()->initNewOutput(
 		{}, false );
 
+	sdc->clearConsoleBuffer();
+
 	UISceneNode* sceneNode = mPlugin->getUISceneNode();
 
 	if ( !mThreadsModel ) {
@@ -152,12 +154,11 @@ void DebuggerClientListener::debuggeeExited( int /*exitCode*/ ) {
 void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
 	Log::debug( "DebuggerClientListener::debuggeeStopped: reason %s", event.reason );
 
-	int threadId = mStoppedData->threadId ? *mStoppedData->threadId : 1;
+	mCurrentThreadId = mStoppedData->threadId ? *mStoppedData->threadId : 1;
 	mStoppedData = event;
 
 	if ( mPausedToRefreshBreakpoints ) {
 		mPlugin->sendPendingBreakpoints();
-		mClient->resume( threadId );
 		mPausedToRefreshBreakpoints = false;
 		return;
 	}
@@ -190,6 +191,20 @@ void DebuggerClientListener::outputProduced( const Output& output ) {
 	if ( Output::Category::Stdout == output.category ||
 		 Output::Category::Stderr == output.category ) {
 		mPlugin->getPluginContext()->getStatusAppOutputController()->insertBuffer( output.output );
+	} else if ( Output::Category::Console == output.category ) {
+		auto buffer = output.output;
+		auto sdc = getStatusDebuggerController();
+		if ( sdc == nullptr || sdc->getUIConsole() == nullptr ) {
+			mPlugin->getUISceneNode()->runOnMainThread(
+				[this, buffer = std::move( buffer )]() mutable {
+					mPlugin->initStatusDebuggerController();
+					auto sdc = getStatusDebuggerController();
+					sdc->insertConsoleBuffer( std::move( buffer ) );
+				} );
+			return;
+		} else {
+			sdc->insertConsoleBuffer( std::move( buffer ) );
+		}
 	}
 }
 

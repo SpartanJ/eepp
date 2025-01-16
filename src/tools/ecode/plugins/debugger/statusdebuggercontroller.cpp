@@ -104,6 +104,21 @@ UITabWidget* StatusDebuggerController::getUITabWidget() const {
 	return mUITabWidget;
 }
 
+UICodeEditor* StatusDebuggerController::getUIConsole() const {
+	return mUIConsole;
+}
+
+void StatusDebuggerController::insertConsoleBuffer( std::string&& buffer ) {
+	auto console = getUIConsole();
+	if ( console == nullptr )
+		return;
+	console->runOnMainThread( [console, this, buffer = std::move( buffer )]() {
+		console->getDocument().insert( 0, console->getDocument().endOfDoc(), buffer );
+		if ( getConsoleScrollLocked() )
+			console->setScrollY( console->getMaxScroll().y );
+	} );
+}
+
 void StatusDebuggerController::setDebuggingState( State state ) {
 	if ( !mContainer )
 		return;
@@ -126,6 +141,16 @@ void StatusDebuggerController::setDebuggingState( State state ) {
 	} );
 }
 
+void StatusDebuggerController::clearConsoleBuffer() {
+	if ( mUIConsole == nullptr )
+		return;
+	mUIConsole->runOnMainThread( [this] {
+		mUIConsole->getDocument().reset();
+		mUIConsole->invalidateLongestLineWidth();
+		mUIConsole->setScrollY( mUIConsole->getMaxScroll().y );
+	} );
+}
+
 void StatusDebuggerController::createContainer() {
 	if ( mContainer )
 		return;
@@ -144,10 +169,12 @@ void StatusDebuggerController::createContainer() {
 			<TreeView id="debugger_variables" layout_width="mp" layout_height="mp" />
 			<TreeView id="debugger_expressions" layout_width="mp" layout_height="mp" />
 			<BreakpointsTableView id="debugger_breakpoints" layout_width="mp" layout_height="mp" />
+			<CodeEditor id="debugger_console" layout_width="mp" layout_height="mp" />
 			<Tab id="debugger_tab_threads_and_stack" text="@string(threads_and_stack, Threads & Stack)" owns="debugger_threads_and_stack" />
 			<Tab id="debugger_tab_variables" text="@string(variables, Variables)" owns="debugger_variables" />
 			<Tab id="debugger_tab_expressions" text="@string(expressions, Expressions)" owns="debugger_expressions" />
 			<Tab id="debugger_tab_breakpoints" text="@string(breakpoints, Breakpoints)" owns="debugger_breakpoints" />
+			<Tab id="debugger_tab_console" text="@string(console_output, Console Output)" owns="debugger_console" />
 		</TabWidget>
 		<vbox id="app_debugger_buttons" lw="16dp" lh="mp">
 			<PushButton id="app_debugger_start" class="debugger_start" lw="mp" icon="icon(debug-start, 12dp)" tooltip="@string(start, Start)" />
@@ -179,6 +206,7 @@ void StatusDebuggerController::createContainer() {
 	mContainer->bind( "debugger_breakpoints", mUIBreakpoints );
 	mContainer->bind( "debugger_variables", mUIVariables );
 	mContainer->bind( "debugger_expressions", mUIExpressions );
+	mContainer->bind( "debugger_console", mUIConsole );
 	mContainer->bind( "app_debugger_start", mUIButStart );
 	mContainer->bind( "app_debugger_stop", mUIButStop );
 	mContainer->bind( "app_debugger_pause", mUIButPause );
@@ -222,6 +250,15 @@ void StatusDebuggerController::createContainer() {
 	mUIExpressions->setAutoColumnsWidth( true );
 	mUIExpressions->setFitAllColumnsToWidget( true );
 	mUIExpressions->setMainColumn( 1 );
+
+	mUIConsole->setLocked( true );
+	mUIConsole->setLineBreakingColumn( 0 );
+	mUIConsole->setShowLineNumber( false );
+	mUIConsole->getDocument().reset();
+	mUIConsole->setScrollY( mUIConsole->getMaxScroll().y );
+	mUIConsole->on( Event::OnScrollChange, [this]( auto ) {
+		mScrollLocked = mUIConsole->getMaxScroll().y == mUIConsole->getScroll().y;
+	} );
 }
 
 } // namespace ecode
