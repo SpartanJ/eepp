@@ -470,6 +470,8 @@ void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 				computeLineBreaks( *mDoc, i, mFontStyle, mMaxWidth, mConfig.mode,
 								   mConfig.keepIndentation, mConfig.tabWidth, mWhiteSpaceWidth );
 
+			mVisibleLinesOffset.insert( mVisibleLinesOffset.begin() + i, lb.paddingStart );
+
 			std::vector<TextPosition> newWraps;
 			newWraps.reserve( lb.wraps.size() );
 			for ( const auto& col : lb.wraps )
