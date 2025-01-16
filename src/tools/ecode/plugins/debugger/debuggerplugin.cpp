@@ -1,4 +1,3 @@
-#include "debuggerplugin.hpp"
 #include "../../notificationcenter.hpp"
 #include "../../projectbuild.hpp"
 #include "../../terminalmanager.hpp"
@@ -8,6 +7,7 @@
 #include "bussocket.hpp"
 #include "bussocketprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
+#include "debuggerplugin.hpp"
 #include "models/breakpointsmodel.hpp"
 #include "models/variablesmodel.hpp"
 #include "statusdebuggercontroller.hpp"
@@ -1410,7 +1410,6 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 		return;
 	}
 
-
 	auto args = configIt->args;
 	// needsToResolveInputs( args );
 
@@ -1774,6 +1773,9 @@ bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position
 				return;
 
 			mCurrentHover = range;
+
+			if ( !mDebugger )
+				return;
 
 			mDebugger->evaluate(
 				expression, "hover", mListener->getCurrentFrameId(),
