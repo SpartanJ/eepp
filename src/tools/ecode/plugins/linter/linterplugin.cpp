@@ -1296,6 +1296,9 @@ bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 		return false;
 	}
 
+	if ( editor->hasDocument() && editor->getDocument().isLoading() )
+		return false;
+
 	Vector2f localPos( editor->convertToNodeSpace( pos.asFloat() ) );
 	TextPosition cursorPosition = editor->resolveScreenPosition( pos.asFloat() );
 	if ( localPos.x <= editor->getGutterWidth() )

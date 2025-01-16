@@ -1664,7 +1664,8 @@ void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const EvaluateInfo& r
 }
 
 void DebuggerPlugin::tryHideTooltip( UICodeEditor* editor, const Vector2i& position ) {
-	if ( !mCurrentHover.isValid() ||
+	if ( ( editor->hasDocument() && editor->getDocument().isLoading() ) ||
+		 !mCurrentHover.isValid() ||
 		 ( mCurrentHover.isValid() &&
 		   !mCurrentHover.contains( editor->resolveScreenPosition( position.asFloat() ) ) ) )
 		hideTooltip( editor );

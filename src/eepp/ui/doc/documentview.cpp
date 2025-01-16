@@ -469,11 +469,16 @@ void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 			auto lb =
 				computeLineBreaks( *mDoc, i, mFontStyle, mMaxWidth, mConfig.mode,
 								   mConfig.keepIndentation, mConfig.tabWidth, mWhiteSpaceWidth );
-			mVisibleLinesOffset.insert( mVisibleLinesOffset.begin() + i, lb.paddingStart );
-			for ( const auto& col : lb.wraps ) {
-				mVisibleLines.insert( mVisibleLines.begin() + idxOffset, { i, col } );
-				idxOffset++;
-			}
+
+			std::vector<TextPosition> newWraps;
+			newWraps.reserve( lb.wraps.size() );
+			for ( const auto& col : lb.wraps )
+				newWraps.push_back( { i, col } );
+
+			mVisibleLines.insert( mVisibleLines.begin() + idxOffset, newWraps.begin(),
+								  newWraps.end() );
+
+			idxOffset += lb.wraps.size();
 		}
 	}
 

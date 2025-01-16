@@ -1,5 +1,5 @@
-#include "../../version.hpp"
 #include "lspclientplugin.hpp"
+#include "../../version.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
@@ -1760,7 +1760,8 @@ TextPosition currentMouseTextPosition( UICodeEditor* editor ) {
 }
 
 void LSPClientPlugin::tryHideTooltip( UICodeEditor* editor, const Vector2i& position ) {
-	if ( !mCurrentHover.range.isValid() ||
+	if ( ( editor->hasDocument() && editor->getDocument().isLoading() ) ||
+		 !mCurrentHover.range.isValid() ||
 		 ( mCurrentHover.range.isValid() &&
 		   !mCurrentHover.range.contains( editor->resolveScreenPosition( position.asFloat() ) ) ) )
 		hideTooltip( editor );
