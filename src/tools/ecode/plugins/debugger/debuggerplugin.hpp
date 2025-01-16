@@ -37,6 +37,14 @@ struct DapTool {
 	bool supportsSourceRequest{ false };
 };
 
+struct DapConfigurationInput {
+	std::string id;
+	std::string description;
+	std::string type;
+	std::string defaultValue;
+	std::vector<std::string> options;
+};
+
 class DebuggerPlugin : public PluginBase {
   public:
 	static PluginDefinition Definition() {
@@ -96,6 +104,7 @@ class DebuggerPlugin : public PluginBase {
 	StatusDebuggerController::State mDebuggingState{ StatusDebuggerController::State::NotStarted };
 	std::vector<std::string> mExpressions;
 	std::shared_ptr<VariablesHolder> mExpressionsHolder;
+	UnorderedMap<std::string, DapConfigurationInput> mDapInputs;
 
 	// Begin Hover Stuff
 	Uint32 mHoverWaitCb{ 0 };
@@ -215,6 +224,9 @@ class DebuggerPlugin : public PluginBase {
 	void resetExpressions();
 
 	void closeProject();
+
+	std::unordered_map<std::string, DapConfigurationInput>
+	needsToResolveInputs( nlohmann::json& json );
 };
 
 } // namespace ecode

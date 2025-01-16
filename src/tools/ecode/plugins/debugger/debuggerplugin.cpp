@@ -234,6 +234,7 @@ void DebuggerPlugin::resetExpressions() {
 void DebuggerPlugin::closeProject() {
 	exitDebugger();
 
+	mDapInputs.clear();
 	mExpressions.clear();
 	if ( mExpressionsHolder )
 		mExpressionsHolder->clear( true );
@@ -488,6 +489,35 @@ void DebuggerPlugin::loadProjectConfiguration( const std::string& path ) {
 			Lock l( mDapsMutex );
 			mDapConfigs.emplace_back( std::move( dapConfig ) );
 		}
+	}
+
+	if ( !j.contains( "inputs" ) )
+		return;
+
+	auto& inputs = j["inputs"];
+
+	for ( const auto& input : inputs ) {
+		if ( !input.is_object() )
+			continue;
+		DapConfigurationInput in;
+		std::string id = input.value( "id", "" );
+		in.id = id;
+		if ( in.id.empty() )
+			continue;
+		in.type = input.value( "type", "" );
+		String::toLowerInPlace( in.type );
+		if ( "promptstring" != in.type && "pickstring" != in.type )
+			continue;
+		in.description = input.value( "description", "" );
+		in.defaultValue = input.value( "default", "" );
+		if ( input.contains( "options" ) && input["options"].is_array() ) {
+			auto& opts = input["options"];
+			for ( const auto& opt : opts ) {
+				if ( opt.is_string() )
+					in.options.push_back( opt );
+			}
+		}
+		mDapInputs[id] = std::move( in );
 	}
 }
 
@@ -1007,6 +1037,40 @@ void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json, int randomPort ) {
 	}
 }
 
+std::unordered_map<std::string, DapConfigurationInput>
+DebuggerPlugin::needsToResolveInputs( nlohmann::json& json ) {
+	std::unordered_map<std::string, DapConfigurationInput> inputs;
+
+	const auto matchString = [this, &inputs]( nlohmann::json& e ) {
+		static LuaPattern ptrn( "%$%{input%:([%w_]+)%}"sv );
+		if ( e.is_string() ) {
+			std::string val( e );
+			PatternMatcher::Range matches[4];
+			if ( ptrn.matches( val, matches ) ) {
+				std::string id( val.substr( matches[1].start, matches[1].end - matches[1].start ) );
+				auto it = mDapInputs.find( id );
+				if ( it != mDapInputs.end() )
+					inputs[it->first] = it->second;
+			}
+		}
+	};
+
+	for ( auto& j : json ) {
+		if ( j.is_object() ) {
+			auto rinputs = needsToResolveInputs( j );
+			for ( auto& i : rinputs )
+				inputs[std::move( i.first )] = std::move( i.second );
+		} else if ( j.is_array() ) {
+			for ( auto& e : j )
+				matchString( e );
+		} else if ( j.is_string() ) {
+			matchString( j );
+		}
+	}
+
+	return inputs;
+}
+
 void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 	doc->setCommand( "debugger-continue-interrupt", [this] {
 		if ( mDebugger && mListener ) {
@@ -1346,10 +1410,13 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 		return;
 	}
 
+
+	auto args = configIt->args;
+	// needsToResolveInputs( args );
+
 	int randomPort = Math::randi( 44000, 45000 );
 	ProtocolSettings protocolSettings;
 	protocolSettings.launchCommand = configIt->request;
-	auto args = configIt->args;
 	replaceKeysInJson( args, randomPort );
 	protocolSettings.launchRequest = args;
 	protocolSettings.redirectStdout = debuggerIt->redirectStdout;

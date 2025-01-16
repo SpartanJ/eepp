@@ -61,7 +61,7 @@
     {
       "name": "lldb-dap",
       "url": "https://github.com/llvm/llvm-project/blob/main/lldb/tools/lldb-dap/README.md",
-      "type": "cppdbg",
+      "type": "lldb",
       "run": {
         "command": "lldb-dap",
         "command_fallback": "lldb-vscode"
