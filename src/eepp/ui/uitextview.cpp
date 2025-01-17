@@ -308,7 +308,7 @@ UITextView* UITextView::setSelectionBackColor( const Color& color ) {
 
 void UITextView::autoWrap() {
 	if ( mFlags & UI_WORD_WRAP ) {
-		wrapText( mSize.getWidth() );
+		wrapText( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right );
 	}
 }
 
@@ -444,6 +444,11 @@ void UITextView::onAlphaChange() {
 	mTextCache->setOutlineColor( newColor );
 
 	invalidateDraw();
+}
+
+void UITextView::onPaddingChange() {
+	autoWrap();
+	UIWidget::onPaddingChange();
 }
 
 void UITextView::setTheme( UITheme* Theme ) {

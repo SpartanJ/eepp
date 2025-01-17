@@ -162,6 +162,8 @@ class EE_API UITextView : public UIWidget {
 
 	virtual void onAlphaChange();
 
+	virtual void onPaddingChange();
+
 	virtual Uint32 onFocusLoss();
 
 	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
