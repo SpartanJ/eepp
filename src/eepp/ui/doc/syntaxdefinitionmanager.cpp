@@ -612,6 +612,9 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByExtension( const std::stri
 
 	if ( !extension.empty() ) {
 		for ( const auto& style : mDefinitions ) {
+			if ( &style == &mDefinitions[0] ) // Ignore Plain text
+				continue;
+
 			for ( const auto& ext : style.getFiles() ) {
 				if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
 					 String::endsWith( ext, "$" ) ) {
