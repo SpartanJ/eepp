@@ -131,7 +131,10 @@ void DebuggerClientListener::failed() {
 
 void DebuggerClientListener::debuggeeRunning() {}
 
-void DebuggerClientListener::debuggeeTerminated() {}
+void DebuggerClientListener::debuggeeTerminated() {
+	mPlugin->exitDebugger();
+	resetState();
+}
 
 void DebuggerClientListener::capabilitiesReceived( const Capabilities& /*capabilities*/ ) {}
 

@@ -13,7 +13,7 @@ void Bus::setState( State state ) {
 	onStateChanged( state );
 }
 
-void Bus::onStateChanged( State state ) {
+void Bus::onStateChanged( State ) {
 }
 
 } // namespace ecode

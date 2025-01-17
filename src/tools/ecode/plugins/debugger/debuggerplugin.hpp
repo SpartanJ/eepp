@@ -161,7 +161,8 @@ class DebuggerPlugin : public PluginBase {
 
 	void exitDebugger();
 
-	void replaceKeysInJson( nlohmann::json& json, int randomPort );
+	void replaceKeysInJson( nlohmann::json& json, int randomPort,
+							const std::unordered_map<std::string, std::string>& solvedInputs );
 
 	void onRegisterEditor( UICodeEditor* ) override;
 
@@ -227,6 +228,13 @@ class DebuggerPlugin : public PluginBase {
 
 	std::unordered_map<std::string, DapConfigurationInput>
 	needsToResolveInputs( nlohmann::json& json );
+
+	void resolveInputsBeforeRun( std::unordered_map<std::string, DapConfigurationInput> inputs,
+								 DapTool debugger, DapConfig config,
+								 std::unordered_map<std::string, std::string> solvedInputs = {} );
+
+	void prepareAndRun( DapTool debugger, DapConfig config,
+						std::unordered_map<std::string, std::string> solvedInputs );
 };
 
 } // namespace ecode

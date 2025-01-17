@@ -36,6 +36,8 @@ static constexpr auto REQUEST_TYPE_ATTACH = "attach";
 
 namespace ecode {
 
+static constexpr auto INPUT_PATTERN = "%$%{input%:([%w_]+)%}"sv;
+
 Plugin* DebuggerPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( DebuggerPlugin, ( pluginManager, false ) );
 }
@@ -750,7 +752,6 @@ void DebuggerPlugin::openExpressionMenu( UITreeView* uiExpressions, ModelIndex i
 			auto msgBox =
 				UIMessageBox::New( UIMessageBox::INPUT, context->i18n( "debugger_add_expression",
 																	   "Add Expression..." ) );
-
 			msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 			msgBox->showWhenReady();
 			msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
@@ -975,7 +976,10 @@ void DebuggerPlugin::updateDebuggerConfigurationList() {
 	}
 }
 
-void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json, int randomPort ) {
+void DebuggerPlugin::replaceKeysInJson(
+	nlohmann::json& json, int randomPort,
+	const std::unordered_map<std::string, std::string>& solvedInputs ) {
+	static LuaPattern inputPtrn( INPUT_PATTERN );
 	static constexpr auto KEY_FILE = "${file}";
 	static constexpr auto KEY_ARGS = "${args}";
 	static constexpr auto KEY_CWD = "${cwd}";
@@ -988,17 +992,46 @@ void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json, int randomPort ) {
 	auto runConfig = getPluginContext()->getProjectBuildManager()->getCurrentRunConfig();
 	auto buildConfig = getPluginContext()->getProjectBuildManager()->getCurrentBuild();
 
+	const auto replaceVal = [this, &solvedInputs, &runConfig, randomPort]( std::string& val ) {
+		if ( runConfig ) {
+			String::replaceAll( val, KEY_FILE, runConfig->cmd );
+			String::replaceAll( val, KEY_CWD, runConfig->workingDir );
+			String::replaceAll( val, KEY_FILEDIRNAME, runConfig->workingDir );
+		}
+		String::replaceAll( val, KEY_WORKSPACEFOLDER, mProjectPath );
+		if ( String::contains( val, KEY_RANDPORT ) )
+			String::replaceAll( val, KEY_RANDPORT, String::toString( randomPort ) );
+
+		LuaPattern::Range matches[4];
+		if ( inputPtrn.matches( val, matches ) ) {
+			std::string id( val.substr( matches[1].start, matches[1].end - matches[1].start ) );
+			auto solvedIdIt = solvedInputs.find( id );
+			if ( solvedIdIt != solvedInputs.end() )
+				String::replaceAll( val, String::format( "${input:%s}", id ), solvedIdIt->second );
+		}
+	};
+
 	for ( auto& j : json ) {
 		if ( j.is_object() ) {
-			replaceKeysInJson( j, randomPort );
+			replaceKeysInJson( j, randomPort, solvedInputs );
+		} else if ( j.is_array() ) {
+			for ( auto& e : j ) {
+				if ( e.is_string() ) {
+					std::string val( e.get<std::string>() );
+					replaceVal( val );
+					e = std::move( val );
+				}
+			}
 		} else if ( j.is_string() ) {
 			std::string val( j.get<std::string>() );
 
 			if ( runConfig && val == KEY_ARGS ) {
 				auto argsArr = nlohmann::json::array();
 				auto args = Process::parseArgs( runConfig->args );
-				for ( const auto& arg : args )
+				for ( auto arg : args ) {
+					replaceVal( arg );
 					argsArr.push_back( arg );
+				}
 				j = std::move( argsArr );
 				continue;
 			} else if ( runConfig && val == KEY_ENV && buildConfig ) {
@@ -1007,14 +1040,7 @@ void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json, int randomPort ) {
 					j[env.first] = env.second;
 			} else if ( val == KEY_STOPONENTRY ) {
 				j = false;
-			} else if ( runConfig ) {
-				String::replaceAll( val, KEY_FILE, runConfig->cmd );
-				String::replaceAll( val, KEY_CWD, runConfig->workingDir );
-				String::replaceAll( val, KEY_FILEDIRNAME, runConfig->workingDir );
-				String::replaceAll( val, KEY_WORKSPACEFOLDER, mProjectPath );
-				if ( String::contains( val, KEY_RANDPORT ) )
-					String::replaceAll( val, KEY_RANDPORT, String::toString( randomPort ) );
-
+			} else {
 				bool containsPid = false;
 				if ( ( val == KEY_PID || ( containsPid = String::contains( val, KEY_PID ) ) ) &&
 					 json.contains( "program" ) && json["program"].is_string() ) {
@@ -1030,7 +1056,7 @@ void DebuggerPlugin::replaceKeysInJson( nlohmann::json& json, int randomPort ) {
 						}
 					}
 				}
-
+				replaceVal( val );
 				j = std::move( val );
 			}
 		}
@@ -1042,7 +1068,7 @@ DebuggerPlugin::needsToResolveInputs( nlohmann::json& json ) {
 	std::unordered_map<std::string, DapConfigurationInput> inputs;
 
 	const auto matchString = [this, &inputs]( nlohmann::json& e ) {
-		static LuaPattern ptrn( "%$%{input%:([%w_]+)%}"sv );
+		static LuaPattern ptrn( INPUT_PATTERN );
 		if ( e.is_string() ) {
 			std::string val( e );
 			PatternMatcher::Range matches[4];
@@ -1098,6 +1124,7 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 													 "Building the project failed, do you want to "
 													 "debug the binary anyways?" ) );
 						msgBox->setTitle( i18n( "build_failed", "Build Failed" ) );
+						msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 						msgBox->on( Event::OnConfirm, [this]( auto ) { runCurrentConfig(); } );
 						msgBox->showWhenReady();
 					}
@@ -1410,25 +1437,70 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 		return;
 	}
 
-	auto args = configIt->args;
-	// needsToResolveInputs( args );
+	auto inputs = needsToResolveInputs( configIt->args );
+	if ( !inputs.empty() ) {
+		resolveInputsBeforeRun( inputs, *debuggerIt, *configIt );
+		return;
+	}
 
+	prepareAndRun( *debuggerIt, *configIt, {} );
+}
+
+void DebuggerPlugin::resolveInputsBeforeRun(
+	std::unordered_map<std::string, DapConfigurationInput> inputs, DapTool debugger,
+	DapConfig config, std::unordered_map<std::string, std::string> solvedInputs ) {
+	if ( !inputs.empty() ) {
+		auto input = inputs.begin()->second;
+		bool isPick = input.type == "pickstring";
+		UIMessageBox* msgBox = UIMessageBox::New(
+			isPick ? UIMessageBox::DROPDOWNLIST : UIMessageBox::INPUT, input.description );
+		msgBox->setTitle( input.id );
+		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+		msgBox->center();
+		if ( isPick ) {
+			auto listBox = msgBox->getDropDownList()->getListBox();
+			std::vector<String> ioptions;
+			ioptions.reserve( input.options.size() );
+			for ( const auto& option : input.options )
+				ioptions.push_back( option );
+			listBox->addListBoxItems( ioptions );
+		}
+		msgBox->showWhenReady();
+		msgBox->on( Event::OnConfirm, [inputs, msgBox, isPick, debugger, config, solvedInputs,
+									   this]( const Event* event ) mutable {
+			std::string inputData( isPick ? msgBox->getDropDownList()->getText().toUtf8()
+										  : msgBox->getTextInput()->getText().toUtf8() );
+			solvedInputs[inputs.begin()->second.id] = inputData;
+			inputs.erase( inputs.begin() );
+			resolveInputsBeforeRun( inputs, debugger, config, solvedInputs );
+			msgBox->closeWindow();
+		} );
+		return;
+	}
+
+	prepareAndRun( debugger, config, solvedInputs );
+}
+
+void DebuggerPlugin::prepareAndRun( DapTool debugger, DapConfig config,
+									std::unordered_map<std::string, std::string> solvedInputs ) {
 	int randomPort = Math::randi( 44000, 45000 );
 	ProtocolSettings protocolSettings;
-	protocolSettings.launchCommand = configIt->request;
-	replaceKeysInJson( args, randomPort );
+	protocolSettings.launchCommand = config.request;
+	auto args = config.args;
+	replaceKeysInJson( args, randomPort, solvedInputs );
 	protocolSettings.launchRequest = args;
-	protocolSettings.redirectStdout = debuggerIt->redirectStdout;
-	protocolSettings.redirectStderr = debuggerIt->redirectStderr;
-	protocolSettings.supportsSourceRequest = debuggerIt->supportsSourceRequest;
+	protocolSettings.redirectStdout = debugger.redirectStdout;
+	protocolSettings.redirectStderr = debugger.redirectStderr;
+	protocolSettings.supportsSourceRequest = debugger.supportsSourceRequest;
 
-	for ( const std::string& cmdArg : configIt->cmdArgs )
-		runConfig.args.emplace_back( cmdArg );
+	for ( const std::string& cmdArg : config.cmdArgs )
+		debugger.run.args.emplace_back( cmdArg );
 
 	mThreadPool->run(
-		[this, protocolSettings = std::move( protocolSettings ),
-		 runSettings = std::move( runConfig ), randomPort, debugger]() mutable {
-			run( debugger, std::move( protocolSettings ), std::move( runSettings ), randomPort );
+		[this, protocolSettings = std::move( protocolSettings ), randomPort,
+		 debugger = std::move( debugger )]() mutable {
+			run( debugger.name, std::move( protocolSettings ), std::move( debugger.run ),
+				 randomPort );
 		},
 		[this]( const Uint64& ) {
 			if ( !mDebugger || !mDebugger->started() ) {
