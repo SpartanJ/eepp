@@ -8,7 +8,7 @@ void addTeal() {
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Teal",
-		  { "%.tl$", "%.d.tl$" },
+		  { "%.tl$", "%.d%.tl$" },
 		  {
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },

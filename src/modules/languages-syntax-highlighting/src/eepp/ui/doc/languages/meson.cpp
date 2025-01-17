@@ -8,7 +8,7 @@ void addMeson() {
 	SyntaxDefinitionManager::instance()->add(
 
 		{ "Meson",
-		  { "meson.build$", "^meson_options.txt$" },
+		  { "meson%.build$", "^meson_options%.txt$" },
 		  {
 			  { { "#", "\n" }, "comment" },
 			  { { "\"", "\"", "\\" }, "string" },

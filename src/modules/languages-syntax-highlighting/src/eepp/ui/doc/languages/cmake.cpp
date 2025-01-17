@@ -8,7 +8,7 @@ void addCMake() {
 	SyntaxDefinitionManager::instance()->add(
 
 		{ "CMake",
-		  { "%.cmake$", "CMakeLists.txt$" },
+		  { "%.cmake$", "CMakeLists%.txt$" },
 		  {
 			  { { "#", "\n" }, "comment" },
 			  { { "\"", "\"", "\\" }, "string" },

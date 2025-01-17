@@ -8,7 +8,7 @@ void addTypeScript() {
 	SyntaxDefinition& ts = SyntaxDefinitionManager::instance()->add(
 
 		{ "TypeScript",
-		  { "%.ts$", "%.d.ts$" },
+		  { "%.ts$", "%.d%.ts$" },
 		  {
 			  { { "//.-\n" }, "comment" },
 			  { { "/%*", "%*/" }, "comment" },
