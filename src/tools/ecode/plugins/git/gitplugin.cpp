@@ -830,6 +830,8 @@ void GitPlugin::commit( const std::string& repoPath ) {
 											  i18n( "git_commit_message", "Commit Message:" ) );
 
 	UITextEdit* txtEdit = msgBox->getTextEdit();
+	txtEdit->setLineWrapType( LineWrapType::Viewport );
+	txtEdit->setLineWrapMode( LineWrapMode::Letter );
 	txtEdit->setText( mLastCommitMsg );
 
 	UICheckBox* chkAmmend = UICheckBox::New();
