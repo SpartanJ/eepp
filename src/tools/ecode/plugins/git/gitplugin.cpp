@@ -1,5 +1,5 @@
-#include "gitplugin.hpp"
 #include "gitbranchmodel.hpp"
+#include "gitplugin.hpp"
 #include "gitstatusmodel.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/scene/scenemanager.hpp>
@@ -361,6 +361,10 @@ void GitPlugin::updateStatusBarSync() {
 				mPanelSwicher->getListBox()->setSelected( 1 );
 		} );
 	}
+
+	if ( mStatusBar->getChildCount() >= 2 &&
+		 mStatusButton->getNodeIndex() != mStatusBar->getChildCount() - 2 )
+		mStatusButton->toPosition( mStatusBar->getChildCount() - 2 );
 
 	mStatusButton->setVisible( !mGit->getGitFolder().empty() );
 
