@@ -37,7 +37,7 @@
     },
     "run": [
       {
-        "args": "",
+        "args": "-v",
         "command": "ecode-debug",
         "name": "ecode-debug",
         "working_dir": "${project_root}/bin"
@@ -46,6 +46,20 @@
         "args": "",
         "command": "ecode",
         "name": "ecode-release",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "eehttp-debug",
+        "name": "eehttp-debug",
+        "run_in_terminal": true,
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "eepp-sound",
+        "name": "eepp-sound",
+        "run_in_terminal": true,
         "working_dir": "${project_root}/bin"
       }
     ],
@@ -191,39 +205,39 @@
     "run": [
       {
         "args": "-v",
-        "command": "ecode-debug",
+        "command": "${project_root}/bin/ecode-debug",
         "name": "ecode-debug",
         "working_dir": "${project_root}/bin"
       },
       {
         "args": "-x",
-        "command": "ecode",
+        "command": "${project_root}/bin/ecode",
         "name": "ecode-release",
         "working_dir": "${project_root}/bin"
       },
       {
         "args": "",
-        "command": "eepp-unit_tests-debug",
+        "command": "${project_root}/bin/eepp-unit-tests-debug",
         "name": "eepp-unit_tests-debug",
         "run_in_terminal": true,
-        "working_dir": "${project_root}/bin/unit_tests"
+        "working_dir": "${project_root}/bin/unit_tests/"
       },
       {
         "args": "",
-        "command": "eepp-unit_tests",
+        "command": "${project_root}/bin/eepp-unit_tests",
         "name": "eepp-unit_tests",
         "run_in_terminal": true,
         "working_dir": "${project_root}/bin/unit_tests"
       },
       {
         "args": "",
-        "command": "eepp-empty-window-debug",
+        "command": "${project_root}/bin/eepp-empty-window-debug",
         "name": "eepp-empty_window-debug",
         "working_dir": "${project_root}/bin"
       },
       {
         "args": "",
-        "command": "eepp-empty-window",
+        "command": "${project_root}/bin/eepp-empty-window",
         "name": "eepp-empty_window",
         "working_dir": "${project_root}/bin"
       }

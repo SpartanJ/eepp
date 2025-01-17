@@ -310,6 +310,17 @@ void UIPushButton::setTextAsFallback( bool textAsFallback ) {
 	}
 }
 
+bool UIPushButton::dontAutoHideEmptyTextBox() const {
+	return mDontAutoHideEmptyTextBox;
+}
+
+void UIPushButton::setDontAutoHideEmptyTextBox( bool dontAutoHideEmptyTextBox ) {
+	if ( mDontAutoHideEmptyTextBox != dontAutoHideEmptyTextBox ) {
+		mDontAutoHideEmptyTextBox = dontAutoHideEmptyTextBox;
+		updateTextBox();
+	}
+}
+
 void UIPushButton::onPaddingChange() {
 	onSizeChange();
 
@@ -339,9 +350,13 @@ void UIPushButton::onThemeLoaded() {
 	UIWidget::onThemeLoaded();
 }
 
+bool UIPushButton::mustBeVisible() const {
+	return ( ( !getText().empty() || mDontAutoHideEmptyTextBox ) && !mTextAsFallback ) ||
+		   nullptr == mIcon || nullptr == mIcon->getDrawable();
+}
+
 void UIPushButton::updateTextBox() {
-	bool mustBeVisible = ( !getText().empty() && !mTextAsFallback ) ||
-						 ( nullptr == mIcon || nullptr == mIcon->getDrawable() );
+	bool mustBeVisible = this->mustBeVisible();
 	if ( mTextBox->isVisible() != mustBeVisible ) {
 		mTextBox->setVisible( mustBeVisible );
 		onAutoSize();
@@ -393,8 +408,8 @@ bool UIPushButton::hasIcon() const {
 
 UIPushButton* UIPushButton::setText( const String& text ) {
 	if ( text != mTextBox->getText() ) {
-		mTextBox->setVisible( !text.empty() );
 		mTextBox->setText( text );
+		mTextBox->setVisible( mustBeVisible() );
 		onAutoSize();
 		updateLayout();
 	}

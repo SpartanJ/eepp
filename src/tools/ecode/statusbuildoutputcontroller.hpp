@@ -17,7 +17,6 @@ using namespace EE::UI::Tools;
 
 namespace ecode {
 
-class App;
 class UIRelativeLayoutCommandExecuter;
 
 struct StatusMessage {
@@ -37,9 +36,10 @@ struct PatternHolder {
 
 class StatusBuildOutputController : public StatusBarElement {
   public:
-	StatusBuildOutputController( UISplitter* mainSplitter, UISceneNode* uiSceneNode, App* app );
+	StatusBuildOutputController( UISplitter* mainSplitter, UISceneNode* uiSceneNode,
+								 PluginContextProvider* pluginContext );
 
-	virtual ~StatusBuildOutputController(){};
+	virtual ~StatusBuildOutputController() {};
 
 	void runBuild( const std::string& buildName, const std::string& buildType,
 				   const ProjectBuildOutputParser& outputParser = {}, bool isClean = false,
@@ -75,9 +75,9 @@ class StatusBuildOutputController : public StatusBarElement {
 
 	void createContainer();
 
-	UIPushButton* getBuildButton( App* app );
+	UIPushButton* getBuildButton();
 
-	UIPushButton* getCleanButton( App* app );
+	UIPushButton* getCleanButton();
 
 	bool searchFindAndAddStatusResult( const std::vector<PatternHolder>& patterns,
 									   const std::string& text, const ProjectBuildCommand* cmd );

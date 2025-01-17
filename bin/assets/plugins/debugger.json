@@ -1,0 +1,165 @@
+{
+  "dap": [
+    {
+      "name": "gdb",
+      "url": "https://www.gnu.org/software/gdb",
+      "type": "cppdbg",
+      "run": {
+        "command": "gdb",
+        "command_arguments": "--interpreter=dap"
+      },
+      "languages": [ "cpp", "c", "d", "go", "objectivec", "fortran", "pascal", "rust" ],
+      "configurations": [
+        {
+          "name": "Launch binary",
+          "request": "launch",
+          "arguments": {
+              "program": "${file}",
+              "args": "${args}",
+              "cwd": "${cwd}",
+              "env": "${env}",
+              "stopOnEntry": "${stopOnEntry}"
+          }
+        },
+        {
+          "name": "Launch binary in Terminal",
+          "request": "launch",
+          "arguments": {
+              "program": "${file}",
+              "args": "${args}",
+              "cwd": "${cwd}",
+              "env": "${env}",
+              "stopOnEntry": "${stopOnEntry}",
+              "runInTerminal": true
+          }
+        },
+        {
+          "name": "Attach to Name",
+          "request": "attach",
+          "arguments": {
+            "program": "${file}"
+          }
+        },
+        {
+          "name": "Attach to Name (wait)",
+          "request": "attach",
+          "arguments": {
+            "program": "${file}",
+            "waitFor": true
+          }
+        },
+        {
+          "name": "Attach to PID",
+          "request": "attach",
+          "arguments": {
+            "program": "${file}",
+            "pid": "${pid}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "lldb-dap",
+      "url": "https://github.com/llvm/llvm-project/blob/main/lldb/tools/lldb-dap/README.md",
+      "type": "lldb",
+      "run": {
+        "command": "lldb-dap",
+        "command_fallback": "lldb-vscode"
+      },
+      "find": {
+        "macos": "xcrun -f ${command}"
+      },
+      "languages": [ "cpp", "c", "odin", "rust", "zig" ],
+      "configurations": [
+        {
+          "name": "Launch binary",
+          "request": "launch",
+          "arguments": {
+              "program": "${file}",
+              "args": "${args}",
+              "cwd": "${cwd}",
+              "env": "${env}",
+              "stopOnEntry": "${stopOnEntry}"
+          }
+        },
+        {
+          "name": "Launch binary in Terminal",
+          "request": "launch",
+          "arguments": {
+              "program": "${file}",
+              "args": "${args}",
+              "cwd": "${cwd}",
+              "env": "${env}",
+              "stopOnEntry": "${stopOnEntry}",
+              "runInTerminal": true
+          }
+        },
+        {
+          "name": "Attach to Name",
+          "request": "attach",
+          "arguments": {
+            "program": "${file}"
+          }
+        },
+        {
+          "name": "Attach to Name (wait)",
+          "request": "attach",
+          "arguments": {
+            "program": "${file}",
+            "waitFor": true
+          }
+        },
+        {
+          "name": "Attach to PID",
+          "request": "attach",
+          "arguments": {
+            "program": "${file}",
+            "pid": "${pid}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "delve",
+      "url": "https://github.com/go-delve/delve",
+      "type": "go",
+      "run": {
+        "command": "dlv",
+        "command_arguments": ["dap", "--listen", "127.0.0.1:${randPort}"],
+        "redirectStderr": true,
+        "redirectStdout": true,
+        "supportsSourceRequest": false
+      },
+      "languages": [ "go" ],
+      "configurations": [
+        {
+          "name": "Launch (debug)",
+          "request": "launch",
+          "arguments": {
+            "mode": "debug",
+            "program": "${file}",
+            "args": "${args}"
+          }
+        },
+        {
+          "name": "Launch (test)",
+          "request": "launch",
+          "arguments": {
+            "mode": "test",
+            "program": "${file}",
+            "args": "${args}"
+          }
+        },
+        {
+          "name": "Launch (exec)",
+          "request": "launch",
+          "arguments": {
+            "mode": "exec",
+            "program": "${file}",
+            "args": "${args}"
+          }
+        }
+      ]
+    }
+  ]
+}

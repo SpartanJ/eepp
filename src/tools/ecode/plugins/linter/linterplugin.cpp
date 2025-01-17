@@ -1,5 +1,5 @@
-﻿#include "../../stringhelper.hpp"
-#include "linterplugin.hpp"
+﻿#include "linterplugin.hpp"
+#include "../../stringhelper.hpp"
 #include <algorithm>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
@@ -1295,11 +1295,18 @@ bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 		tryHideHoveringMatch( editor );
 		return false;
 	}
+
+	if ( editor->hasDocument() && editor->getDocument().isLoading() )
+		return false;
+
+	Vector2f localPos( editor->convertToNodeSpace( pos.asFloat() ) );
+	TextPosition cursorPosition = editor->resolveScreenPosition( pos.asFloat() );
+	if ( localPos.x <= editor->getGutterWidth() )
+		return false;
+
 	Lock l( mMatchesMutex );
 	auto it = mMatches.find( editor->getDocumentRef().get() );
 	if ( it != mMatches.end() ) {
-		Vector2f localPos( editor->convertToNodeSpace( pos.asFloat() ) );
-		TextPosition cursorPosition = editor->resolveScreenPosition( pos.asFloat() );
 		auto matchIt = it->second.find( cursorPosition.line() );
 		if ( matchIt != it->second.end() ) {
 			auto& matches = matchIt->second;

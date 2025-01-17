@@ -3,12 +3,6 @@
 #include "iconmanager.hpp"
 #include "keybindingshelper.hpp"
 #include "pathhelper.hpp"
-#include "plugins/autocomplete/autocompleteplugin.hpp"
-#include "plugins/formatter/formatterplugin.hpp"
-#include "plugins/git/gitplugin.hpp"
-#include "plugins/linter/linterplugin.hpp"
-#include "plugins/lsp/lspclientplugin.hpp"
-#include "plugins/xmltools/xmltoolsplugin.hpp"
 #include "settingsactions.hpp"
 #include "settingsmenu.hpp"
 #include "uibuildsettings.hpp"
@@ -21,7 +15,15 @@
 #include <eepp/ui/doc/languagessyntaxhighlighting.hpp>
 #include <filesystem>
 #include <iostream>
-#include <nlohmann/json.hpp>
+
+//! Plugins
+#include "plugins/autocomplete/autocompleteplugin.hpp"
+#include "plugins/debugger/debuggerplugin.hpp"
+#include "plugins/formatter/formatterplugin.hpp"
+#include "plugins/git/gitplugin.hpp"
+#include "plugins/linter/linterplugin.hpp"
+#include "plugins/lsp/lspclientplugin.hpp"
+#include "plugins/xmltools/xmltoolsplugin.hpp"
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 // For malloc_trim, which is a GNU extension
@@ -380,7 +382,7 @@ void App::openFolderDialog() {
 	dialog->show();
 }
 
-void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
+void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool terminalFont ) {
 	std::string absoluteFontPath( fontPath );
 	if ( FileSystem::isRelativePath( absoluteFontPath ) )
 		absoluteFontPath = mResPath + fontPath;
@@ -400,7 +402,8 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
 			mSplitter->getCurWidget()->setFocus();
 	} );
-	dialog->on( Event::OpenFile, [this, &fontPath, loadingMonoFont]( const Event* event ) {
+	dialog->on( Event::OpenFile, [this, &fontPath, loadingMonoFont,
+								  terminalFont]( const Event* event ) {
 		auto newPath = event->getNode()->asType<UIFileDialog>()->getFullPath();
 		if ( String::startsWith( newPath, mResPath ) )
 			newPath = newPath.substr( mResPath.size() );
@@ -413,15 +416,23 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 				FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( newPath ) );
 			FontTrueType* fontMono = loadFont( fontName, newPath );
 			if ( fontMono ) {
-				auto loadMonoFont = [this, &fontPath, newPath]( FontTrueType* fontMono ) {
+				auto loadMonoFont = [this, &fontPath, newPath,
+									 terminalFont]( FontTrueType* fontMono ) {
 					fontPath = newPath;
 					mFontMono = fontMono;
 					mFontMono->setEnableDynamicMonospace( true );
 					mFontMono->setBoldAdvanceSameAsRegular( true );
 					FontFamily::loadFromRegular( mFontMono );
 					if ( mSplitter ) {
-						mSplitter->forEachEditor(
-							[this]( UICodeEditor* editor ) { editor->setFont( mFontMono ); } );
+						if ( terminalFont ) {
+							mSplitter->forEachWidgetType(
+								UI_TYPE_TERMINAL, [this]( UIWidget* term ) {
+									term->asType<UITerminal>()->setFont( mFontMono );
+								} );
+						} else {
+							mSplitter->forEachEditor(
+								[this]( UICodeEditor* editor ) { editor->setFont( mFontMono ); } );
+						}
 					}
 				};
 				if ( !fontMono->isMonospace() ) {
@@ -537,6 +548,15 @@ void App::runCommand( const std::string& command ) {
 	}
 }
 
+bool App::commandExists( const std::string& command ) const {
+	if ( mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+		UICodeEditor* editor = mSplitter->getCurWidget()->asType<UICodeEditor>();
+		if ( editor->getDocument().hasCommand( command ) )
+			return true;
+	}
+	return mMainLayout->getKeyBindings().hasCommand( command );
+}
+
 void App::onPluginEnabled( Plugin* plugin ) {
 	if ( mSplitter ) {
 		mSplitter->forEachEditor(
@@ -551,7 +571,8 @@ void App::onPluginEnabled( Plugin* plugin ) {
 
 void App::initPluginManager() {
 	mPluginManager = std::make_unique<PluginManager>(
-		mResPath, mPluginsPath, mThreadPool, [this]( const std::string& path, const auto& cb ) {
+		mResPath, mPluginsPath, mConfigPath, mThreadPool,
+		[this]( const std::string& path, const auto& cb ) {
 			UITab* tab = mSplitter->isDocumentOpen( path );
 			if ( !tab ) {
 				loadFileFromPath( path, true, nullptr, cb );
@@ -559,7 +580,8 @@ void App::initPluginManager() {
 				tab->getTabWidget()->setTabSelected( tab );
 				cb( tab->getOwnedWidget()->asType<UICodeEditor>(), path );
 			}
-		} );
+		},
+		this );
 	mPluginManager->onPluginEnabled = [this]( Plugin* plugin ) {
 		if ( nullptr == mUISceneNode || plugin->isReady() ) {
 			onPluginEnabled( plugin );
@@ -572,6 +594,8 @@ void App::initPluginManager() {
 			} );
 		}
 	};
+
+	mPluginManager->registerPlugin( DebuggerPlugin::Definition() );
 	mPluginManager->registerPlugin( LinterPlugin::Definition() );
 	mPluginManager->registerPlugin( FormatterPlugin::Definition() );
 	mPluginManager->registerPlugin( AutoCompletePlugin::Definition() );
@@ -693,6 +717,9 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 }
 
 void App::saveConfig() {
+	if ( !mCurrentProject.empty() )
+		saveSidePanelTabsOrder();
+
 	mConfig.save( mRecentFiles, mRecentFolders,
 				  mProjectSplitter ? mProjectSplitter->getSplitPartition().toString() : "15%",
 				  mMainSplitter ? mMainSplitter->getSplitPartition().toString() : "85%", mWindow,
@@ -705,7 +732,7 @@ std::string App::getKeybind( const std::string& command ) {
 	auto it = mKeybindingsInvert.find( command );
 	if ( it != mKeybindingsInvert.end() )
 		return KeyBindings::keybindFormat( it->second );
-	return "";
+	return mMainLayout->getKeyBindings().getCommandKeybindString( command );
 }
 
 ProjectDirectoryTree* App::getDirTree() const {
@@ -1170,6 +1197,27 @@ void App::loadFileFromPathOrFocus(
 		loadFileFromPath( path, inNewTab, codeEditor, onLoaded );
 	} else {
 		tab->getTabWidget()->setTabSelected( tab );
+	}
+}
+
+void App::focusOrLoadFile( const std::string& path, const TextRange& range ) {
+	UITab* tab = mSplitter->isDocumentOpen( path, true );
+	if ( !tab ) {
+		FileInfo fileInfo( path );
+		if ( fileInfo.exists() && fileInfo.isRegularFile() )
+			loadFileFromPath( path, true, nullptr, [this, range]( UICodeEditor* editor, auto ) {
+				if ( range.isValid() ) {
+					editor->goToLine( range.start() );
+					mSplitter->addEditorPositionToNavigationHistory( editor );
+				}
+			} );
+	} else {
+		tab->getTabWidget()->setTabSelected( tab );
+		if ( range.isValid() ) {
+			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+			editor->goToLine( range.start() );
+			mSplitter->addEditorPositionToNavigationHistory( editor );
+		}
 	}
 }
 
@@ -1735,7 +1783,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
 		{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
 		{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
-		{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
+		{ { KEY_F11, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "debug-widget-tree-view" },
 		{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
 		{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
 		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
@@ -1766,7 +1814,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
 		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
 		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
-		{ { KEY_F5, KEYMOD_NONE }, "project-build-and-run" },
+		{ { KEY_R, KeyMod::getDefaultModifier() }, "project-build-and-run" },
 		{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
 		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-workspace-symbol-search" },
 		{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-document-symbol-search" },
@@ -1774,21 +1822,20 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	};
 }
 
-// Old keybindings will be rebinded to the new keybindings of they are still set to the old
+// Old keybindings will be rebinded to the new keybindings when they are still set to the old
 // keybindind
 std::map<std::string, std::string> App::getMigrateKeybindings() {
-	return {
-		{ "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
-		{ "switch-to-tab-2", "alt+2" },		   { "switch-to-tab-3", "alt+3" },
-		{ "switch-to-tab-4", "alt+4" },		   { "switch-to-tab-5", "alt+5" },
-		{ "switch-to-tab-6", "alt+6" },		   { "switch-to-tab-7", "alt+7" },
-		{ "switch-to-tab-8", "alt+8" },		   { "switch-to-tab-9", "alt+9" },
-		{ "switch-to-last-tab", "alt+0" },
+	return { { "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
+			 { "switch-to-tab-2", "alt+2" },		{ "switch-to-tab-3", "alt+3" },
+			 { "switch-to-tab-4", "alt+4" },		{ "switch-to-tab-5", "alt+5" },
+			 { "switch-to-tab-6", "alt+6" },		{ "switch-to-tab-7", "alt+7" },
+			 { "switch-to-tab-8", "alt+8" },		{ "switch-to-tab-9", "alt+9" },
+			 { "switch-to-last-tab", "alt+0" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-		{ "menu-toggle", "mod+shift+m" },
+			 { "menu-toggle", "mod+shift+m" },
 #endif
-		{ "lock-toggle", "mod+shift+l" },
-	};
+			 { "lock-toggle", "mod+shift+l" },		{ "debug-widget-tree-view", "f11" },
+			 { "project-build-and-run", "f5" } };
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
@@ -1857,17 +1904,13 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "create-new-window" };
 }
 
-bool App::isUnlockedCommand( const std::string& command ) {
-	auto cmds = getUnlockedCommands();
-	return std::find( cmds.begin(), cmds.end(), command ) != cmds.end();
-}
-
 void App::saveProject( bool onlyIfNeeded, bool sessionSnapshotEnabled ) {
 	if ( !mCurrentProject.empty() ) {
 		mConfig.saveProject(
 			mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
 			mProjectBuildManager ? mProjectBuildManager->getConfig() : ProjectBuildConfiguration(),
-			onlyIfNeeded, sessionSnapshotEnabled && mConfig.workspace.sessionSnapshot );
+			onlyIfNeeded, sessionSnapshotEnabled && mConfig.workspace.sessionSnapshot,
+			mPluginManager.get() );
 	}
 }
 
@@ -1920,6 +1963,8 @@ void App::closeEditors() {
 void App::closeFolder() {
 	if ( mCurrentProject.empty() )
 		return;
+
+	saveSidePanelTabsOrder();
 
 	saveProject( true );
 
@@ -3113,6 +3158,13 @@ void App::cleanUpRecentFolders() {
 		mRecentFolders = recentFolders;
 }
 
+void App::saveSidePanelTabsOrder() {
+	mConfig.windowState.sidePanelTabsOrder.clear();
+	mConfig.windowState.sidePanelTabsOrder.reserve( mSidePanel->getTabCount() );
+	for ( Uint32 i = 0; i < mSidePanel->getTabCount(); i++ )
+		mConfig.windowState.sidePanelTabsOrder.emplace_back( mSidePanel->getTab( i )->getId() );
+}
+
 void App::loadFolder( std::string path ) {
 	Clock dirTreeClock;
 
@@ -3127,7 +3179,10 @@ void App::loadFolder( std::string path ) {
 			return;
 	}
 
-	if ( !mCurrentProject.empty() ) {
+	bool projectWasLoaded = !mCurrentProject.empty();
+	if ( projectWasLoaded ) {
+		saveSidePanelTabsOrder();
+
 		closeEditors();
 	} else {
 		mSplitter->removeTabWithOwnedWidgetId( "welcome_ecode" );
@@ -3152,7 +3207,7 @@ void App::loadFolder( std::string path ) {
 	mProjectBuildManager =
 		std::make_unique<ProjectBuildManager>( rpath, mThreadPool, mSidePanel, this );
 	mConfig.loadProject( rpath, mSplitter, mConfigPath, mProjectDocConfig, this,
-						 mConfig.workspace.sessionSnapshot );
+						 mConfig.workspace.sessionSnapshot, mPluginManager.get() );
 	Log::info( "Load project took: %.2f ms", projClock.getElapsedTime().asMilliseconds() );
 
 	loadFileSystemMatcher( rpath );
@@ -3189,6 +3244,25 @@ void App::loadFolder( std::string path ) {
 	mPluginManager->setWorkspaceFolder( rpath );
 
 	saveProject( true, false );
+
+	if ( projectWasLoaded || !mConfig.windowState.sidePanelTabsOrder.empty() )
+		mSidePanel->runOnMainThread( [this] { sortSidePanel(); } );
+}
+
+void App::sortSidePanel() {
+	mConfig.windowState.sidePanelTabsOrder.erase(
+		std::remove_if(
+			mConfig.windowState.sidePanelTabsOrder.begin(),
+			mConfig.windowState.sidePanelTabsOrder.end(),
+			[this]( const std::string& id ) { return mSidePanel->getTabById( id ) == nullptr; } ),
+		mConfig.windowState.sidePanelTabsOrder.end() );
+
+	for ( size_t i = 0; i < mConfig.windowState.sidePanelTabsOrder.size(); ++i ) {
+		UITab* targetTab = mSidePanel->getTabById( mConfig.windowState.sidePanelTabsOrder[i] );
+		UITab* currentTab = mSidePanel->getTab( i );
+		if ( targetTab && currentTab != targetTab )
+			mSidePanel->swapTabs( currentTab, targetTab );
+	}
 }
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS
@@ -3823,7 +3897,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		initImageView();
 
-		mStatusBar->setApp( this );
+		mStatusBar->setPluginContextProvider( this );
 
 		mSettings = std::make_unique<SettingsMenu>();
 		mSettings->createSettingsMenu( this, mMenuBar );

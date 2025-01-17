@@ -404,18 +404,32 @@ class EE_API Node : public Transformable {
 
 	Uint32 getNodeOfTypeIndex() const;
 
+	//! Enqueues the runnable to be executed on the main thread (during the scene node update).
+	//! It will always be equeued to the main thread execution queue (a.k.a. actions).
 	void runOnMainThread( Actions::Runnable::RunnableFunc runnable,
 						  const Time& delay = Seconds( 0 ),
 						  const Action::UniqueID& uniqueIdentifier = 0 );
 
+	//! Does the same as runOnMainThread if called from a none main thread, otherwise it will be
+	//! executed inmediatelly.
+	//! @return True if runnable was inmediatelly executed.
+	bool ensureMainThread( Actions::Runnable::RunnableFunc runnable,
+						   const Action::UniqueID& uniqueIdentifier = 0 );
+
+	//! Enqueues the runnable to be run after delay time.
 	void setTimeout( Actions::Runnable::RunnableFunc runnable, const Time& delay = Seconds( 0 ),
 					 const Action::UniqueID& uniqueIdentifier = 0 );
 
-	void debounce( Actions::Runnable::RunnableFunc runnable, const Time& delay,
-				   const Action::UniqueID& uniqueIdentifier );
-
+	//! Repeatedly calls executes the runnable, with a fixed time delay between each call.
 	void setInterval( Actions::Runnable::RunnableFunc runnable, const Time& interval,
 					  const Action::UniqueID& uniqueIdentifier = 0 );
+
+	//! Enqueues a runnable to be executed in delay time with a unique identifier, if a new runnable
+	//! is provided before the delay passed, previous enqueue runnable will be removed and the new
+	//! one will be enqueued, if no other runnable with the same identifier is enqueued until delay
+	//! passed, the last runnable will be executed.
+	void debounce( Actions::Runnable::RunnableFunc runnable, const Time& delay,
+				   const Action::UniqueID& uniqueIdentifier );
 
 	bool isChild( Node* child ) const;
 

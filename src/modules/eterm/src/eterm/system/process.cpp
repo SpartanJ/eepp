@@ -94,6 +94,10 @@ void Process::waitForExit() {
 	mExitCode = WEXITSTATUS( status );
 }
 
+int Process::pid() {
+	return mPID;
+}
+
 bool Process::hasExited() const {
 	return mStatus == ProcessStatus::EXITED;
 }
@@ -468,6 +472,10 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 		new Process( std::move( hProcess ), startupInfo.lpAttributeList, piClient.dwProcessId ) );
 fail:
 	return std::unique_ptr<Process>();
+}
+
+int Process::pid() {
+	return mPID;
 }
 
 }} // namespace eterm::System

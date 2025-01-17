@@ -52,6 +52,8 @@ class Process final : public IProcess {
 
 	virtual void waitForExit() override;
 
+	virtual int pid() override;
+
 	static std::unique_ptr<Process> createWithPipe( const std::string& program,
 													const std::vector<std::string>& args,
 													const std::string& workingDirectory,

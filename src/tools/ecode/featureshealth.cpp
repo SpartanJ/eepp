@@ -1,4 +1,5 @@
 #include "featureshealth.hpp"
+#include "plugins/debugger/debuggerplugin.hpp"
 #include "plugins/formatter/formatterplugin.hpp"
 #include "plugins/linter/linterplugin.hpp"
 #include "plugins/lsp/lspclientplugin.hpp"
@@ -28,6 +29,7 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 	bool ownsLinter = false;
 	bool ownsFormatter = false;
 	bool ownsLSP = false;
+	bool ownsDebugger = false;
 
 	const auto& definitions = SyntaxDefinitionManager::instance()->getDefinitions();
 
@@ -37,6 +39,8 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 		static_cast<FormatterPlugin*>( pluginManager->get( "autoformatter" ) );
 
 	LSPClientPlugin* lsp = static_cast<LSPClientPlugin*>( pluginManager->get( "lspclient" ) );
+
+	DebuggerPlugin* debugger = static_cast<DebuggerPlugin*>( pluginManager->get( "debugger" ) );
 
 	if ( !linter ) {
 		ownsLinter = true;
@@ -50,6 +54,11 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 	if ( !lsp ) {
 		ownsLSP = true;
 		lsp = static_cast<LSPClientPlugin*>( LSPClientPlugin::NewSync( pluginManager ) );
+	}
+
+	if ( !debugger ) {
+		ownsDebugger = true;
+		debugger = static_cast<DebuggerPlugin*>( DebuggerPlugin::NewSync( pluginManager ) );
 	}
 
 	for ( const auto& def : definitions ) {
@@ -97,6 +106,19 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 			}
 		}
 
+		if ( debugger ) {
+			std::vector<DapTool> found = debugger->getDebuggersForLang( def.getLSPName() );
+			for ( const auto& dbg : found ) {
+				FeatureStatus fdbg;
+				fdbg.name = dbg.name;
+				fdbg.url = dbg.url;
+				auto debuggerBin = debugger->debuggerBinaryExists( dbg.name );
+				fdbg.path = debuggerBin ? debuggerBin->command : "";
+				fdbg.found = !fdbg.path.empty();
+				lang.debugger.emplace_back( std::move( fdbg ) );
+			}
+		}
+
 		langs.emplace_back( std::move( lang ) );
 	}
 
@@ -108,6 +130,9 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 
 	if ( ownsLSP )
 		eeSAFE_DELETE( lsp );
+
+	if ( ownsDebugger )
+		eeSAFE_DELETE( debugger );
 
 	std::sort( langs.begin(), langs.end(), sortKey );
 
@@ -121,9 +146,9 @@ std::string FeaturesHealth::generateHealthStatus( PluginManager* pluginManager,
 	table.format().border_top( "" ).border_bottom( "" ).border_left( "" ).border_right( "" ).corner(
 		"" );
 
-	size_t numRows = 5;
+	size_t numRows = 6;
 
-	table.add_row( { "Language", "Highlight", "LSP", "Linter", "Formatter" } );
+	table.add_row( { "Language", "Highlight", "LSP", "Linter", "Formatter", "Debugger" } );
 
 	for ( size_t i = 0; i < numRows; ++i ) {
 		table[0][i]
@@ -155,7 +180,23 @@ std::string FeaturesHealth::generateHealthStatus( PluginManager* pluginManager,
 			formatterName = "[" + ht.formatter.name + "](" + ht.formatter.url + ")";
 		}
 
-		table.add_row( { ht.lang, check, lspName, linterName, formatterName } );
+		std::string debuggerName =
+			ht.debugger.empty()
+				? "None"
+				: std::accumulate( ht.debugger.begin(), ht.debugger.end(), std::string{},
+								   []( const std::string& acc, const FeatureStatus& item ) {
+									   return acc.empty() ? item.name : acc + " / " + item.name;
+								   } );
+		if ( OutputFormat::Markdown == format && !ht.debugger.empty() ) {
+			debuggerName = std::accumulate(
+				ht.debugger.begin(), ht.debugger.end(), std::string{},
+				[]( const std::string& acc, const FeatureStatus& item ) {
+					return acc.empty() ? "[" + item.name + "](" + item.url + ")"
+									   : acc + " / " + "[" + item.name + "](" + item.url + ")";
+				} );
+		}
+
+		table.add_row( { ht.lang, check, lspName, linterName, formatterName, debuggerName } );
 
 		auto& row = table[table.size() - 1];
 
@@ -180,6 +221,16 @@ std::string FeaturesHealth::generateHealthStatus( PluginManager* pluginManager,
 														   : tabulate::Color::red );
 		} else {
 			row[4].format().font_color( tabulate::Color::yellow );
+		}
+
+		if ( !ht.debugger.empty() ) {
+			row[5].format().font_color(
+				std::any_of( ht.debugger.begin(), ht.debugger.end(),
+							 []( const FeatureStatus& item ) { return item.found; } )
+					? tabulate::Color::green
+					: tabulate::Color::red );
+		} else {
+			row[5].format().font_color( tabulate::Color::yellow );
 		}
 	}
 
@@ -239,6 +290,21 @@ void FeaturesHealth::doHealth( PluginManager* pluginManager, const std::string& 
 		std::cout << "Configured formatter: " << formatterName << "\n\033[00m";
 		if ( !hr.formatter.name.empty() )
 			std::cout << "Binary for formatter: " << formatterBinary << "\n\033[00m";
+
+		if ( !hr.debugger.empty() ) {
+			for ( const auto& dbg : hr.debugger ) {
+				std::string debuggerName =
+					hr.debugger.empty() ? "\033[33mNone" : "\033[32m" + dbg.name;
+				std::string debuggerBinary =
+					dbg.found ? "\033[32m" + dbg.path : "\033[31m" + notFound;
+
+				std::cout << "Configured debugger: " << debuggerName << "\n\033[00m";
+				if ( !dbg.name.empty() )
+					std::cout << "Binary for debugger: " << debuggerBinary << "\n\033[00m";
+			}
+		} else {
+			std::cout << "Configured debugger: " << "\033[31m" + notFound << "\n\033[00m";
+		}
 	}
 }
 
@@ -254,11 +320,11 @@ class HealthModel : public Model {
 
 	virtual size_t rowCount( const ModelIndex& ) const { return mData.size(); }
 
-	virtual size_t columnCount( const ModelIndex& ) const { return 5; }
+	virtual size_t columnCount( const ModelIndex& ) const { return 6; }
 
 	virtual std::string columnName( const size_t& idx ) const {
-		static const std::vector<std::string> columns = { "language", "highlight", "LSP", "linter",
-														  "formatter" };
+		static const std::vector<std::string> columns = { "language", "highlight", "LSP",
+														  "linter",	  "formatter", "debugger" };
 		if ( idx < columns.size() )
 			return mSceneNode->i18n( columns[idx], String::capitalize( columns[idx] ) );
 		return "";
@@ -297,6 +363,16 @@ class HealthModel : public Model {
 						return Variant( lang.linter.name.empty() ? none : lang.linter.name );
 					case 4:
 						return Variant( lang.formatter.name.empty() ? none : lang.formatter.name );
+					case 5:
+						return Variant(
+							lang.debugger.empty()
+								? none
+								: std::accumulate(
+									  lang.debugger.begin(), lang.debugger.end(), std::string{},
+									  []( const std::string& acc,
+										  const FeaturesHealth::FeatureStatus& item ) {
+										  return acc.empty() ? item.name : acc + " / " + item.name;
+									  } ) );
 					default: {
 					}
 				}
@@ -321,6 +397,18 @@ class HealthModel : public Model {
 					case 4:
 						if ( !lang.formatter.name.empty() )
 							return Variant( lang.formatter.found ? HEALTH_SUCCESS : HEALTH_ERROR );
+						else
+							return Variant( HEALTH_NONE );
+						break;
+					case 5:
+						if ( !lang.debugger.empty() )
+							return Variant(
+								std::any_of( lang.debugger.begin(), lang.debugger.end(),
+											 []( const FeaturesHealth::FeatureStatus& item ) {
+												 return item.found;
+											 } )
+									? HEALTH_SUCCESS
+									: HEALTH_ERROR );
 						else
 							return Variant( HEALTH_NONE );
 						break;
@@ -461,6 +549,25 @@ void FeaturesHealth::displayHealth( PluginManager* pluginManager, UISceneNode* s
 								 lang.formatter.path.empty() ? notFound : lang.formatter.path,
 								 !lang.formatter.path.empty() ? "success" : "error",
 								 lang.formatter.path.empty() ? patherr : "" );
+		}
+
+		for ( const auto& debugger : lang.debugger ) {
+			type = debugger.url.empty() ? "TextView"
+										: String::format( "Anchor href='%s'", debugger.url );
+			l += String::format( "<hbox><TextView text='%s: ' /><%s text='%s' class='%s' /></hbox>",
+								 I18N( "configured_debugger", "Configured debugger" ), type,
+								 debugger.name.empty() ? none : debugger.name,
+								 debugger.found ? "success"
+												: ( debugger.name.empty() ? "none" : "error" ) );
+
+			if ( !debugger.name.empty() ) {
+				l += String::format( "<hbox><TextView text='%s: ' /><TextView text='%s' class='%s' "
+									 "tooltip='%s' /></hbox>",
+									 I18N( "binary_for_debugger", "Binary for debugger" ),
+									 debugger.path.empty() ? notFound : debugger.path,
+									 !debugger.path.empty() ? "success" : "error",
+									 debugger.path.empty() ? patherr : "" );
+			}
 		}
 
 		sceneNode->loadLayoutFromString( l, healthLangInfo );

@@ -132,7 +132,8 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 				  mApp->runCommand( cmd );
 				  if ( mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) &&
 					   mSplitter->curEditorIsNotNull() &&
-					   mSplitter->getCurEditor()->getDocument().hasCommand( cmd ) )
+					   mSplitter->getCurEditor()->getDocument().hasCommand( cmd ) &&
+					   !mUISceneNode->getRoot()->getLastChild()->isType( UI_TYPE_WINDOW ) )
 					  mSplitter->getCurEditor()->setFocus();
 				  if ( cmd != "open-locatebar" && cmd != "open-workspace-symbol-search" &&
 					   cmd != "open-document-symbol-search" && cmd != "go-to-line" &&
@@ -590,7 +591,7 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 				range = { pathAndPos.second, pathAndPos.second };
 			}
 
-			focusOrLoadFile( path, range );
+			mApp->focusOrLoadFile( path, range );
 			mLocateBarLayout->execute( "close-locatebar" );
 		}
 	} );
@@ -759,28 +760,6 @@ std::shared_ptr<FileListModel> UniversalLocator::openDocumentsModel( const std::
 	}
 
 	return std::make_shared<FileListModel>( std::move( ffiles ), std::move( fnames ) );
-}
-
-void UniversalLocator::focusOrLoadFile( const std::string& path, const TextRange& range ) {
-	UITab* tab = mSplitter->isDocumentOpen( path, true );
-	if ( !tab ) {
-		FileInfo fileInfo( path );
-		if ( fileInfo.exists() && fileInfo.isRegularFile() )
-			mApp->loadFileFromPath(
-				path, true, nullptr, [this, range]( UICodeEditor* editor, auto ) {
-					if ( range.isValid() ) {
-						editor->goToLine( range.start() );
-						mSplitter->addEditorPositionToNavigationHistory( editor );
-					}
-				} );
-	} else {
-		tab->getTabWidget()->setTabSelected( tab );
-		if ( range.isValid() ) {
-			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
-			editor->goToLine( range.start() );
-			mSplitter->addEditorPositionToNavigationHistory( editor );
-		}
-	}
 }
 
 void UniversalLocator::updateOpenDocumentsTable() {

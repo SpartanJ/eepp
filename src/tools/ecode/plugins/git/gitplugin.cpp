@@ -96,10 +96,18 @@ GitPlugin::~GitPlugin() {
 	if ( getUISceneNode() )
 		getUISceneNode()->removeActionsByTag( GIT_STATUS_UPDATE_TAG );
 
-	{ Lock l( mGitBranchMutex ); }
-	{ Lock l( mGitStatusMutex ); }
-	{ Lock l( mRepoMutex ); }
-	{ Lock l( mReposMutex ); }
+	{
+		Lock l( mGitBranchMutex );
+	}
+	{
+		Lock l( mGitStatusMutex );
+	}
+	{
+		Lock l( mRepoMutex );
+	}
+	{
+		Lock l( mReposMutex );
+	}
 
 	// TODO: Add a signal for these waits
 	while ( mRunningUpdateStatus )
@@ -293,6 +301,9 @@ void GitPlugin::updateUINow( bool force ) {
 	if ( !mGit || !getUISceneNode() )
 		return;
 
+	if ( !mProjectPath.empty() )
+		getUISceneNode()->runOnMainThread( [this] { buildSidePanelTab(); } );
+
 	updateStatus( force );
 	updateBranches();
 }
@@ -339,9 +350,6 @@ void GitPlugin::updateStatusBarSync() {
 		mStatusButton->setIcon( iconDrawable( "source-control", 10 ) );
 		mStatusButton->reloadStyle( true, true );
 		mStatusButton->getTextBox()->setUsingCustomStyling( true );
-		auto childCount = mStatusBar->getChildCount();
-		if ( childCount > 2 )
-			mStatusButton->toPosition( mStatusBar->getChildCount() - 2 );
 
 		mStatusButton->on( Event::MouseClick, [this]( const Event* event ) {
 			if ( nullptr == mTab )
@@ -398,6 +406,12 @@ void GitPlugin::updateStatusBarSync() {
 void GitPlugin::updateStatus( bool force ) {
 	if ( !mGit || !mGitFound || mRunningUpdateStatus )
 		return;
+
+	if ( !mGit || mGit->getGitFolder().empty() ) {
+		getUISceneNode()->runOnMainThread( [this] { updateStatusBarSync(); } );
+		return;
+	}
+
 	mRunningUpdateStatus++;
 	mThreadPool->run(
 		[this, force] {
@@ -621,16 +635,6 @@ void GitPlugin::onRegisterListeners( UICodeEditor* editor, std::vector<Uint32>& 
 		} ) );
 }
 
-void GitPlugin::onBeforeUnregister( UICodeEditor* editor ) {
-	for ( auto& kb : mKeyBindings )
-		editor->getKeyBindings().removeCommandKeybind( kb.first );
-}
-
-void GitPlugin::onUnregisterDocument( TextDocument* doc ) {
-	for ( auto& kb : mKeyBindings )
-		doc->removeCommand( kb.first );
-}
-
 Color GitPlugin::getVarColor( const std::string& var ) {
 	return Color::fromString(
 		getUISceneNode()->getRoot()->getUIStyle()->getVariable( var ).getValue() );
@@ -826,6 +830,8 @@ void GitPlugin::commit( const std::string& repoPath ) {
 											  i18n( "git_commit_message", "Commit Message:" ) );
 
 	UITextEdit* txtEdit = msgBox->getTextEdit();
+	txtEdit->setLineWrapType( LineWrapType::Viewport );
+	txtEdit->setLineWrapMode( LineWrapMode::Letter );
 	txtEdit->setText( mLastCommitMsg );
 
 	UICheckBox* chkAmmend = UICheckBox::New();
@@ -1311,6 +1317,11 @@ void GitPlugin::updateBranches( bool force ) {
 	if ( !mGit || !mGitFound || ( mRunningUpdateBranches && !force ) )
 		return;
 
+	if ( !mGit || mGit->getGitFolder().empty() ) {
+		getUISceneNode()->runOnMainThread( [this] { updateBranchesUI( nullptr ); } );
+		return;
+	}
+
 	mRunningUpdateBranches++;
 	mThreadPool->run(
 		[this] {
@@ -1401,7 +1412,7 @@ void GitPlugin::buildSidePanelTab() {
 		UIIcon* icon = findIcon( "source-control" );
 		mTab = mSidePanel->add( i18n( "source_control", "Source Control" ), mTabContents,
 								icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
-		mTab->setId( "source_control" );
+		mTab->setId( "source_control_tab" );
 		mTab->setTextAsFallback( true );
 		return;
 	}
@@ -1471,7 +1482,7 @@ void GitPlugin::buildSidePanelTab() {
 	mTabContents = getUISceneNode()->loadLayoutFromString( String::format( STYLE, color, color ) );
 	mTab = mSidePanel->add( i18n( "source_control", "Source Control" ), mTabContents,
 							icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
-	mTab->setId( "source_control" );
+	mTab->setId( "source_control_tab" );
 	mTab->setTextAsFallback( true );
 
 	mTabContents->bind( "git_panel_switcher", mPanelSwicher );

@@ -117,7 +117,7 @@ class EE_API Sys {
 	static bool windowAttachConsole();
 
 	/** Executes a command */
-	static void execute( const std::string& cmd, const std::string& workingDir = "" );
+	static int execute( const std::string& cmd, const std::string& workingDir = "" );
 
 	/** @return True if current running platform / os is a mobile one */
 	static bool isMobile();
@@ -127,6 +127,9 @@ class EE_API Sys {
 
 	/** @return The process ids found with the correspoding process / binary / executable name */
 	static std::vector<Uint64> pidof( const std::string& processName );
+
+	/** @return A list of the current running processes */
+	static std::vector<std::pair<Uint64, std::string>> listProcesses();
 
 	/** @returns The unix timestamp of the process creation time */
 	static Int64 getProcessCreationTime( Uint64 pid );

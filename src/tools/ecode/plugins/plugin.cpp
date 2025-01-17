@@ -45,6 +45,10 @@ PluginManager* Plugin::getManager() const {
 	return mManager;
 }
 
+PluginContextProvider* Plugin::getPluginContext() const {
+	return mManager ? mManager->getPluginContext() : nullptr;
+}
+
 UISceneNode* Plugin::getUISceneNode() const {
 	return mManager->getUISceneNode();
 }
@@ -117,8 +121,8 @@ void Plugin::setReady( Time loadTime ) {
 PluginBase::~PluginBase() {
 	mShuttingDown = true;
 	unsubscribeFileSystemListener();
+
 	for ( auto editor : mEditors ) {
-		onBeforeUnregister( editor.first );
 		for ( auto listener : editor.second )
 			editor.first->removeEventListener( listener );
 		editor.first->unregisterPlugin( this );
@@ -170,6 +174,8 @@ void PluginBase::onRegister( UICodeEditor* editor ) {
 		onRegisterDocument( editor->getDocumentRef().get() );
 	}
 	mEditorDocs[editor] = editor->getDocumentRef().get();
+
+	onRegisterEditor( editor );
 }
 
 void PluginBase::onUnregister( UICodeEditor* editor ) {
@@ -191,6 +197,23 @@ void PluginBase::onUnregister( UICodeEditor* editor ) {
 	onUnregisterDocument( doc );
 
 	mDocs.erase( doc );
+}
+
+void PluginBase::onBeforeUnregister( UICodeEditor* editor ) {
+	for ( auto& kb : mKeyBindings )
+		editor->getKeyBindings().removeCommandKeybind( kb.first );
+}
+
+void PluginBase::onRegisterEditor( UICodeEditor* editor ) {
+	for ( auto& kb : mKeyBindings ) {
+		if ( !kb.second.empty() )
+			editor->getKeyBindings().addKeybindString( kb.second, kb.first );
+	}
+}
+
+void PluginBase::onUnregisterDocument( TextDocument* doc ) {
+	for ( auto& kb : mKeyBindings )
+		doc->removeCommand( kb.first );
 }
 
 } // namespace ecode

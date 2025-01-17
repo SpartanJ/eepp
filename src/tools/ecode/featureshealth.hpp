@@ -38,6 +38,7 @@ class FeaturesHealth {
 		FeatureStatus linter;
 		FeatureStatus formatter;
 		FeatureStatus lsp;
+		std::vector<FeatureStatus> debugger;
 	};
 
 	static std::vector<LangHealth> getHealth( PluginManager* pluginManager,

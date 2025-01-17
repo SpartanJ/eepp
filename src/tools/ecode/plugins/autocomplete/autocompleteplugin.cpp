@@ -1226,6 +1226,10 @@ bool AutoCompletePlugin::onMouseMove( UICodeEditor* editor, const Vector2i& posi
 		return false;
 
 	Vector2f localPos( editor->convertToNodeSpace( position.asFloat() ) );
+
+	if ( localPos.x <= editor->getGutterWidth() )
+		return false;
+
 	if ( mBoxRect.contains( localPos ) ) {
 		editor->getUISceneNode()->setCursor( Cursor::Hand );
 		return true;

@@ -132,8 +132,6 @@ class UniversalLocator {
 
 	std::shared_ptr<FileListModel> openDocumentsModel( const std::string& match );
 
-	void focusOrLoadFile( const std::string& path, const TextRange& range = {} );
-
 	std::shared_ptr<ItemListOwnerModel<std::string>> openBuildModel( const std::string& match );
 
 	std::shared_ptr<ItemListOwnerModel<std::string>> openBuildTypeModel( const std::string& match );

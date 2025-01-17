@@ -642,11 +642,12 @@ bool LSPClientPlugin::onMouseClick( UICodeEditor* editor, const Vector2i& pos,
 	const bool breadcrumbClick = mBreadcrumb && ( flags & EE_BUTTON_LMASK );
 	const Vector2f localPos( breadcrumbClick ? editor->convertToNodeSpace( pos.asFloat() )
 											 : Vector2f::Zero );
-	if ( breadcrumbClick && localPos.y < mPluginTopSpace &&
+	if ( breadcrumbClick && localPos.y >= 0 && localPos.y < mPluginTopSpace &&
 		 localPos.x < editor->getTopAreaWidth() ) {
 		const Vector2f downLocalPos( editor->convertToNodeSpace(
 			editor->getEventDispatcher()->getMouseDownPos().asFloat() ) );
-		if ( downLocalPos.y < mPluginTopSpace && downLocalPos.x < editor->getTopAreaWidth() ) {
+		if ( downLocalPos.y >= 0 && downLocalPos.y < mPluginTopSpace &&
+			 downLocalPos.x < editor->getTopAreaWidth() ) {
 			editor->getDocument().execute( "lsp-show-document-symbols", editor );
 			return true;
 		}
@@ -1759,7 +1760,8 @@ TextPosition currentMouseTextPosition( UICodeEditor* editor ) {
 }
 
 void LSPClientPlugin::tryHideTooltip( UICodeEditor* editor, const Vector2i& position ) {
-	if ( !mCurrentHover.range.isValid() ||
+	if ( ( editor->hasDocument() && editor->getDocument().isLoading() ) ||
+		 !mCurrentHover.range.isValid() ||
 		 ( mCurrentHover.range.isValid() &&
 		   !mCurrentHover.range.contains( editor->resolveScreenPosition( position.asFloat() ) ) ) )
 		hideTooltip( editor );
@@ -1829,8 +1831,11 @@ void LSPClientPlugin::tryDisplayTooltip( UICodeEditor* editor, const LSPHover& r
 
 bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position,
 								   const Uint32& flags ) {
+	auto localPos( editor->convertToNodeSpace( position.asFloat() ) );
+	if ( localPos.x <= editor->getGutterWidth() )
+		return false;
+
 	if ( mBreadcrumb ) {
-		auto localPos( editor->convertToNodeSpace( position.asFloat() ) );
 		if ( localPos.y < mPluginTopSpace && localPos.x < editor->getTopAreaWidth() &&
 			 localPos.x >= 0 ) {
 			if ( !mHoveringBreadcrumb ) {
@@ -2096,6 +2101,7 @@ void LSPClientPlugin::showDocumentSymbols( UICodeEditor* editor ) {
 		if ( symbolsIt != mDocCurrentSymbols.end() ) {
 			auto docSymbols = symbolsIt->second;
 			std::vector<std::string> path;
+			path.reserve( docSymbols.size() );
 			for ( const auto& sym : docSymbols )
 				path.emplace_back( sym.name );
 			tv->selectRowWithPath( path );

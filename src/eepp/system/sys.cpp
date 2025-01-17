@@ -1232,7 +1232,7 @@ bool Sys::windowAttachConsole() {
 }
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-static void windowsSystem( const std::string& programPath, const std::string& workingDirectory ) {
+static int windowsSystem( const std::string& programPath, const std::string& workingDirectory ) {
 	STARTUPINFOW si;
 	PROCESS_INFORMATION pi;
 	ZeroMemory( &si, sizeof( si ) );
@@ -1244,15 +1244,19 @@ static void windowsSystem( const std::string& programPath, const std::string& wo
 	if ( CreateProcessW( NULL, (LPWSTR)String( programPath ).toWideString().c_str(), NULL, NULL,
 						 FALSE, 0, NULL, workingDir.empty() ? NULL : workingDir.c_str(), &si,
 						 &pi ) ) {
+		int pid = static_cast<int>( pi.dwProcessId );
 		CloseHandle( pi.hProcess );
 		CloseHandle( pi.hThread );
+		return pid;
 	}
+
+	return 0;
 }
 #endif
 
-void Sys::execute( const std::string& cmd, const std::string& workingDir ) {
+int Sys::execute( const std::string& cmd, const std::string& workingDir ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	windowsSystem( cmd, workingDir );
+	return windowsSystem( cmd, workingDir );
 #elif EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	pid_t pid = fork();
 	if ( pid == 0 ) {
@@ -1268,6 +1272,7 @@ void Sys::execute( const std::string& cmd, const std::string& workingDir ) {
 		execvp( strings[0], (char* const*)strings.data() );
 		exit( 0 );
 	}
+	return pid;
 #endif
 }
 
@@ -1486,8 +1491,8 @@ std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 
 	FreeLibrary( hPsapi );
 	return pids;
-#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID || \
-	EE_PLATFORM == EE_PLATFORM_MACOS
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
+
 	std::vector<Uint64> pids;
 	DIR* dir = opendir( "/proc" );
 	if ( !dir ) {
@@ -1514,6 +1519,37 @@ std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 	}
 
 	closedir( dir );
+	return pids;
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+	std::vector<Uint64> pids;
+
+	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0 };
+	size_t len;
+
+	if ( sysctl( mib, 4, NULL, &len, NULL, 0 ) == -1 ) {
+		return pids;
+	}
+
+	struct kinfo_proc* procs = (struct kinfo_proc*)malloc( len );
+	if ( !procs ) {
+		return pids;
+	}
+
+	if ( sysctl( mib, 4, procs, &len, NULL, 0 ) == -1 ) {
+		free( procs );
+		return pids;
+	}
+
+	int proc_count = len / sizeof( struct kinfo_proc );
+
+	for ( int i = 0; i < proc_count; i++ ) {
+		std::string name( procs[i].kp_proc.p_comm );
+		if ( name == processName ) {
+			pids.push_back( procs[i].kp_proc.p_pid );
+		}
+	}
+
+	free( procs );
 	return pids;
 #elif EE_PLATFORM == EE_PLATFORM_BSD
 	std::vector<Uint64> pids;
@@ -1553,6 +1589,160 @@ std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 	while ( get_next_team_info( &cookie, &teamInfo ) == B_OK ) {
 		if ( std::string_view{ teamInfo.name } == std::string_view{ processName } )
 			pids.push_back( teamInfo.team );
+	}
+	return pids;
+#else
+#warning Platform not supported
+	return {};
+#endif
+}
+
+std::vector<std::pair<Uint64, std::string>> Sys::listProcesses() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	std::vector<std::pair<Uint64, std::string>> pids;
+	std::vector<std::string> extensions = getEnvSplitted( "PATHEXT" );
+
+	HMODULE hPsapi = LoadLibrary( TEXT( "psapi.dll" ) );
+	if ( !hPsapi )
+		return pids;
+
+	EnumProcesses_t EnumProcesses = (EnumProcesses_t)GetProcAddress( hPsapi, "EnumProcesses" );
+	EnumProcessModules_t EnumProcessModules =
+		(EnumProcessModules_t)GetProcAddress( hPsapi, "EnumProcessModules" );
+	GetModuleBaseName_t GetModuleBaseName =
+		(GetModuleBaseName_t)GetProcAddress( hPsapi, "GetModuleBaseNameA" );
+
+	if ( !EnumProcesses || !EnumProcessModules || !GetModuleBaseName ) {
+		FreeLibrary( hPsapi );
+		eePRINTL( "EnumProcesses or EnumProcessModules or GetModuleBaseName failed" );
+		return pids;
+	}
+
+	DWORD processIds[1024], cbNeeded;
+	if ( !EnumProcesses( processIds, sizeof( processIds ), &cbNeeded ) ) {
+		FreeLibrary( hPsapi );
+		eePRINTL( "EnumProcesses failed" );
+		return pids;
+	}
+
+	DWORD numProcesses = cbNeeded / sizeof( DWORD );
+	pids.reserve( numProcesses );
+
+	for ( DWORD i = 0; i < numProcesses; ++i ) {
+		if ( processIds[i] == 0 )
+			continue;
+
+		HANDLE hProcess =
+			OpenProcess( PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processIds[i] );
+		if ( hProcess ) {
+			HMODULE hMod;
+			DWORD cbNeededMod;
+			if ( EnumProcessModules( hProcess, &hMod, sizeof( hMod ), &cbNeededMod ) ) {
+				char szProcessName[MAX_PATH];
+				if ( GetModuleBaseName( hProcess, hMod, szProcessName,
+										sizeof( szProcessName ) / sizeof( char ) ) ) {
+					std::string actualName( szProcessName, std::strlen( szProcessName ) );
+					pids.emplace_back( processIds[i], std::move( actualName ) );
+				}
+			}
+			CloseHandle( hProcess );
+		}
+	}
+
+	FreeLibrary( hPsapi );
+	return pids;
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
+	std::vector<std::pair<Uint64, std::string>> pids;
+	DIR* dir = opendir( "/proc" );
+	if ( !dir ) {
+		return pids;
+	}
+
+	struct dirent* entry;
+	while ( ( entry = readdir( dir ) ) != NULL ) {
+		if ( entry->d_type == DT_DIR && isdigit( entry->d_name[0] ) ) {
+			std::string pidDir = "/proc/" + std::string( entry->d_name );
+			std::string cmdPath = pidDir + "/comm";
+			FILE* cmdFile = fopen( cmdPath.c_str(), "r" );
+			if ( cmdFile ) {
+				char cmdline[256];
+				if ( fgets( cmdline, sizeof( cmdline ), cmdFile ) != NULL ) {
+					cmdline[strcspn( cmdline, "\n" )] = 0; // Remove newline
+					pids.emplace_back( atoi( entry->d_name ), std::string{ cmdline } );
+				}
+				fclose( cmdFile );
+			}
+		}
+	}
+
+	closedir( dir );
+	return pids;
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+	std::vector<std::pair<Uint64, std::string>> pids;
+
+	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0 };
+	size_t len;
+
+	if ( sysctl( mib, 4, NULL, &len, NULL, 0 ) == -1 ) {
+		return pids;
+	}
+
+	struct kinfo_proc* procs = (struct kinfo_proc*)malloc( len );
+	if ( !procs ) {
+		return pids;
+	}
+
+	if ( sysctl( mib, 4, procs, &len, NULL, 0 ) == -1 ) {
+		free( procs );
+		return pids;
+	}
+
+	int proc_count = len / sizeof( struct kinfo_proc );
+	pids.reserve( proc_count );
+
+	for ( int i = 0; i < proc_count; i++ ) {
+		std::string name( procs[i].kp_proc.p_comm );
+		pids.emplace_back( procs[i].kp_proc.p_pid, name );
+	}
+
+	free( procs );
+	return pids;
+#elif EE_PLATFORM == EE_PLATFORM_BSD
+	std::vector<std::pair<Uint64, std::string>> pids;
+
+	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PROC, 0 };
+	size_t len;
+
+	if ( sysctl( mib, 4, NULL, &len, NULL, 0 ) == -1 ) {
+		return pids;
+	}
+
+	struct kinfo_proc* procs = (struct kinfo_proc*)malloc( len );
+	if ( !procs ) {
+		return pids;
+	}
+
+	if ( sysctl( mib, 4, procs, &len, NULL, 0 ) == -1 ) {
+		free( procs );
+		return pids;
+	}
+
+	int proc_count = len / sizeof( struct kinfo_proc );
+	pids.reserve( proc_count );
+
+	for ( int i = 0; i < proc_count; i++ ) {
+		std::string name( procs[i].ki_comm );
+		pids.emplace_back( procs[i].ki_pid, name );
+	}
+
+	free( procs );
+	return pids;
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+	std::vector<std::pair<Uint64, std::string>> pids;
+	int32 cookie = 0;
+	team_info teamInfo;
+	while ( get_next_team_info( &cookie, &teamInfo ) == B_OK ) {
+		pids.emplace_back( teamInfo.team, std::string{ teamInfo.name } );
 	}
 	return pids;
 #else

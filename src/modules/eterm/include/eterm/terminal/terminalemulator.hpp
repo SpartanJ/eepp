@@ -227,6 +227,8 @@ class TerminalEmulator final {
 
 	Vector2i getSize() const;
 
+	System::IProcess* getProcess() const;
+
   private:
 	DpyPtr mDpy;
 	PtyPtr mPty;

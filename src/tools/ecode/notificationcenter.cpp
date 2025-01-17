@@ -1,4 +1,10 @@
 #include "notificationcenter.hpp"
+#include <eepp/scene/action.hpp>
+#include <eepp/scene/actions/actions.hpp>
+#include <eepp/ui/uilinearlayout.hpp>
+#include <eepp/window/engine.hpp>
+
+using namespace EE::Scene;
 
 namespace ecode {
 

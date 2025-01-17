@@ -7,6 +7,7 @@
 #include "filesystemlistener.hpp"
 #include "globalsearchcontroller.hpp"
 #include "notificationcenter.hpp"
+#include "plugins/plugincontextprovider.hpp"
 #include "plugins/pluginmanager.hpp"
 #include "projectbuild.hpp"
 #include "projectdirectorytree.hpp"
@@ -35,7 +36,7 @@ class LinterPlugin;
 class FormatterPlugin;
 class SettingsMenu;
 
-class App : public UICodeEditorSplitter::Client {
+class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
   public:
 	explicit App( const size_t& jobs = 0, const std::vector<std::string>& args = {} );
 
@@ -56,7 +57,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void openFolderDialog();
 
-	void openFontDialog( std::string& fontPath, bool loadingMonoFont );
+	void openFontDialog( std::string& fontPath, bool loadingMonoFont, bool terminalFont = false );
 
 	void downloadFileWeb( const std::string& url );
 
@@ -68,6 +69,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void runCommand( const std::string& command );
 
+	bool commandExists( const std::string& command ) const;
+
 	bool loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync, bool stdOutLogs,
 					 bool disableFileLogs );
 
@@ -76,8 +79,6 @@ class App : public UICodeEditorSplitter::Client {
 	std::string getKeybind( const std::string& command );
 
 	std::vector<std::string> getUnlockedCommands();
-
-	bool isUnlockedCommand( const std::string& command );
 
 	void saveAll();
 
@@ -296,7 +297,7 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "monospace-font",
 					  [this] { openFontDialog( mConfig.ui.monospaceFont, true ); } );
 		t.setCommand( "terminal-font",
-					  [this] { openFontDialog( mConfig.ui.terminalFont, false ); } );
+					  [this] { openFontDialog( mConfig.ui.terminalFont, true, true ); } );
 		t.setCommand( "fallback-font",
 					  [this] { openFontDialog( mConfig.ui.fallbackFont, false ); } );
 		t.setCommand( "tree-view-configure-ignore-files",
@@ -329,6 +330,8 @@ class App : public UICodeEditorSplitter::Client {
 							 UICodeEditor* codeEditor = nullptr,
 							 std::function<void( UICodeEditor*, const std::string& )> onLoaded =
 								 std::function<void( UICodeEditor*, const std::string& )>() );
+
+	void focusOrLoadFile( const std::string& path, const TextRange& range = {} );
 
 	UISceneNode* getUISceneNode() const { return mUISceneNode; }
 
@@ -564,6 +567,10 @@ class App : public UICodeEditorSplitter::Client {
 	std::condition_variable mAsyncResourcesLoadCond;
 	std::vector<SyntaxColorScheme> mColorSchemes;
 	bool mAsyncResourcesLoaded{ false };
+
+	void sortSidePanel();
+
+	void saveSidePanelTabsOrder();
 
 	void saveAllProcess();
 

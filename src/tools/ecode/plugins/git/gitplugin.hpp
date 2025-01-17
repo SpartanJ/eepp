@@ -37,7 +37,7 @@ static constexpr const char* GIT_STASH_TOOLTIP_CLASS = "git-stash-tooltip";
 class GitPlugin : public PluginBase {
   public:
 	static PluginDefinition Definition() {
-		return { "git", "Git", "Git integration", GitPlugin::New, { 0, 1, 1 }, GitPlugin::NewSync };
+		return { "git", "Git", "Git integration", GitPlugin::New, { 0, 1, 2 }, GitPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
@@ -146,10 +146,6 @@ class GitPlugin : public PluginBase {
 	void hideTooltip( UICodeEditor* editor );
 
 	void onRegisterListeners( UICodeEditor*, std::vector<Uint32>& listeners ) override;
-
-	void onBeforeUnregister( UICodeEditor* ) override;
-
-	void onUnregisterDocument( TextDocument* ) override;
 
 	Color getVarColor( const std::string& var );
 

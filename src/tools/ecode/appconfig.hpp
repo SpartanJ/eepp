@@ -54,6 +54,7 @@ struct WindowStateConfig {
 	int displayIndex{ 0 };
 	Vector2i position{ -1, -1 };
 	Uint32 lastRunVersion{ 0 };
+	std::vector<std::string> sidePanelTabsOrder;
 };
 
 struct CodeEditorConfig {
@@ -219,11 +220,11 @@ class AppConfig {
 	void saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, const ProjectDocumentConfig& docConfig,
 					  const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
-					  bool sessionSnapshot );
+					  bool sessionSnapshot, PluginManager* );
 
 	void loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, ProjectDocumentConfig& docConfig,
-					  ecode::App* app, bool sessionSnapshot );
+					  ecode::App* app, bool sessionSnapshot, PluginManager* pluginManager );
 
   protected:
 	Int64 editorsToLoad{ 0 };

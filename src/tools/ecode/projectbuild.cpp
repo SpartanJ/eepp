@@ -737,10 +737,14 @@ void ProjectBuildManager::setConfig( const ProjectBuildConfiguration& config ) {
 	}
 }
 
+ProjectBuild* ProjectBuildManager::getCurrentBuild() {
+	return getBuild( mConfig.buildName );
+}
+
 void ProjectBuildManager::buildCurrentConfig( StatusBuildOutputController* sboc,
 											  std::function<void( int exitStatus )> doneFn ) {
 	if ( sboc && !isBuilding() && !getBuilds().empty() ) {
-		const ProjectBuild* build = getBuild( mConfig.buildName );
+		const ProjectBuild* build = getCurrentBuild();
 		if ( build ) {
 			mApp->saveAll();
 			sboc->runBuild( build->getName(), mConfig.buildType,
@@ -751,7 +755,7 @@ void ProjectBuildManager::buildCurrentConfig( StatusBuildOutputController* sboc,
 
 void ProjectBuildManager::cleanCurrentConfig( StatusBuildOutputController* sboc ) {
 	if ( sboc && !isBuilding() && !getBuilds().empty() ) {
-		const ProjectBuild* build = getBuild( mConfig.buildName );
+		const ProjectBuild* build = getCurrentBuild();
 		if ( build )
 			sboc->runBuild( build->getName(), mConfig.buildType,
 							getOutputParser( build->getName() ), true );
@@ -770,22 +774,44 @@ void ProjectBuildManager::runCurrentConfig( StatusAppOutputController* saoc, boo
 	}
 }
 
-bool ProjectBuildManager::hasBuildConfig() {
+bool ProjectBuildManager::hasBuildConfig() const {
 	return !getBuilds().empty() && !mConfig.buildName.empty();
 }
 
 bool ProjectBuildManager::hasRunConfig() {
 	if ( hasBuildConfig() ) {
-		auto build = getBuild( mConfig.buildName );
+		auto build = getCurrentBuild();
 		return build != nullptr && build->hasRun();
 	}
 	return false;
 }
 
+bool ProjectBuildManager::hasBuildConfigWithBuildSteps() {
+	if ( hasBuildConfig() ) {
+		auto build = getCurrentBuild();
+		return build != nullptr && build->hasBuild();
+	}
+	return {};
+}
+
+std::optional<ProjectBuildStep> ProjectBuildManager::getCurrentRunConfig() {
+	if ( hasBuildConfig() ) {
+		auto build = getCurrentBuild();
+		if ( build != nullptr && build->hasRun() ) {
+			for ( const auto& crun : build->mRun ) {
+				if ( crun->name == mConfig.runName || mConfig.runName.empty() ) {
+					return build->replaceVars( *crun.get() );
+				}
+			}
+		}
+	}
+	return {};
+}
+
 void ProjectBuildManager::runConfig( StatusAppOutputController* saoc ) {
 	if ( !isRunningApp() && !getBuilds().empty() ) {
 		BoolScopedOp op( mRunning, true );
-		const ProjectBuild* build = getBuild( mConfig.buildName );
+		const ProjectBuild* build = getCurrentBuild();
 
 		if ( nullptr == build || !build->hasRun() )
 			return;
@@ -815,7 +841,8 @@ void ProjectBuildManager::runConfig( StatusAppOutputController* saoc ) {
 		auto cmd = finalBuild.cmd + " " + finalBuild.args;
 		if ( finalBuild.runInTerminal ) {
 			UITerminal* term = mApp->getTerminalManager()->createTerminalInSplitter(
-				finalBuild.workingDir, false );
+				finalBuild.workingDir, "", {}, false );
+
 			Log::info( "Running \"%s\" in terminal", cmd );
 			if ( term == nullptr || term->getTerm() == nullptr ) {
 				mApp->getTerminalManager()->openInExternalTerminal( cmd, finalBuild.workingDir );
@@ -1122,13 +1149,6 @@ void ProjectBuildManager::buildSidePanelTab() {
 							icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
 	mTab->setId( "build_tab" );
 	mTab->setTextAsFallback( true );
-
-	auto tabIndex = mSidePanel->getTabIndex( mTab );
-	if ( tabIndex > 0 ) {
-		auto prevTab = mSidePanel->getTab( tabIndex - 1 );
-		if ( prevTab && prevTab->getId() != "treeview_tab" )
-			mSidePanel->swapTabs( mTab, prevTab );
-	}
 
 	updateSidePanelTab();
 }

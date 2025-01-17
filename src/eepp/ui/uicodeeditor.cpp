@@ -1398,8 +1398,10 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		if ( localPos.y < mPluginsTopSpace )
 			return UIWidget::onMouseDown( position, flags );
 
+		bool downOverGutter = localPos.x < mPaddingPx.Left + getGutterWidth();
+
 		if ( flags & EE_BUTTON_LMASK ) {
-			if ( localPos.x < mPaddingPx.Left + getGutterWidth() ) {
+			if ( localPos.x > mPaddingPx.Left + getLineNumberWidth() && downOverGutter ) {
 				if ( mDoc->getFoldRangeService().isFoldingRegionInLine( textScreenPos.line() ) ) {
 					if ( mDocView.isFolded( textScreenPos.line() ) ) {
 						mDocView.unfoldRegion( textScreenPos.line() );
@@ -1407,7 +1409,7 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 						mDocView.foldRegion( textScreenPos.line() );
 					}
 				}
-			} else if ( input->isModState( KEYMOD_LALT | KEYMOD_SHIFT ) ) {
+			} else if ( !downOverGutter && input->isModState( KEYMOD_LALT | KEYMOD_SHIFT ) ) {
 				TextRange range( mDoc->getSelection().start(), textScreenPos );
 				range = mDoc->sanitizeRange( range );
 				TextRange nrange = range.normalized();
@@ -1418,17 +1420,20 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 					ranges.push_back( TextRange{ pos, pos } );
 				}
 				mDoc->addSelections( std::move( ranges ) );
-			} else if ( input->isModState( KEYMOD_SHIFT ) ) {
+			} else if ( !downOverGutter && input->isModState( KEYMOD_SHIFT ) ) {
 				mDoc->selectTo( textScreenPos );
-			} else if ( input->isModState( KEYMOD_CTRL ) &&
+			} else if ( !downOverGutter && input->isModState( KEYMOD_CTRL ) &&
 						checkMouseOverLink( position ).empty() ) {
 				TextPosition pos( textScreenPos );
 				if ( !mDoc->selectionExists( pos ) )
 					mDoc->addSelection( { pos, pos } );
-			} else if ( mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
+			} else if ( !downOverGutter &&
+						mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
 				mDoc->selectLine();
 			} else {
 				mDoc->setSelection( textScreenPos );
+				if ( downOverGutter )
+					mDoc->selectLine();
 			}
 		} else if ( !mDoc->hasSelection() ) {
 			mDoc->setSelection( textScreenPos );
@@ -2465,8 +2470,17 @@ void UICodeEditor::addUnlockedCommand( const std::string& command ) {
 	mUnlockedCmd.insert( command );
 }
 
+void UICodeEditor::removeUnlockedCommand( const std::string& command ) {
+	mUnlockedCmd.erase( command );
+}
+
 void UICodeEditor::addUnlockedCommands( const std::vector<std::string>& commands ) {
 	mUnlockedCmd.insert( commands.begin(), commands.end() );
+}
+
+void UICodeEditor::removeUnlockedCommands( const std::vector<std::string>& commands ) {
+	for ( const auto& cmd : commands )
+		removeUnlockedCommand( cmd );
 }
 
 bool UICodeEditor::isUnlockedCommand( const std::string& command ) {
@@ -2897,6 +2911,28 @@ bool UICodeEditor::gutterSpaceExists( UICodeEditorPlugin* plugin ) const {
 			return true;
 	}
 	return false;
+}
+
+Float UICodeEditor::getGutterLocalStartOffset( UICodeEditorPlugin* plugin ) const {
+	Float offset = 0;
+	for ( const auto& space : mPluginGutterSpaces ) {
+		if ( space.plugin == plugin )
+			return offset;
+		offset += space.space;
+	}
+	return offset;
+}
+
+Float UICodeEditor::getGutterSpace( UICodeEditorPlugin* plugin ) const {
+	for ( const auto& space : mPluginGutterSpaces ) {
+		if ( space.plugin == plugin )
+			return space.space;
+	}
+	return 0;
+}
+
+Float UICodeEditor::getPluginsGutterSpace() const {
+	return mPluginsGutterSpace;
 }
 
 bool UICodeEditor::topSpaceExists( UICodeEditorPlugin* plugin ) const {
@@ -3371,6 +3407,7 @@ bool UICodeEditor::getVerticalScrollBarEnabled() const {
 void UICodeEditor::setVerticalScrollBarEnabled( const bool& verticalScrollBarEnabled ) {
 	if ( verticalScrollBarEnabled != mVerticalScrollBarEnabled ) {
 		mVerticalScrollBarEnabled = verticalScrollBarEnabled;
+		invalidateLongestLineWidth();
 		updateScrollBar();
 	}
 }
@@ -3846,6 +3883,11 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 	TextRange selection = mDoc->getSelection( true );
 	Float lineOffset = getLineOffset();
 
+	for ( auto plugin : mPlugins ) {
+		plugin->drawLineNumbersBefore( this, lineRange, startScroll, screenStart, lineHeight,
+									   lineNumberWidth, lineNumberDigits, fontSize );
+	}
+
 	for ( int i = lineRange.first; i <= lineRange.second; i++ ) {
 		if ( !mDocView.isLineVisible( i ) )
 			continue;
@@ -3947,6 +3989,11 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 					  { startScroll.x + getViewportWidth(), offset.y + lineHeight } } );
 			}
 		}
+	}
+
+	for ( auto plugin : mPlugins ) {
+		plugin->drawLineNumbersAfter( this, lineRange, startScroll, screenStart, lineHeight,
+									  lineNumberWidth, lineNumberDigits, fontSize );
 	}
 }
 

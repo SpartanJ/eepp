@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Models {
 
-enum class ModelRole { Display, Icon, Sort, Class, Tooltip, TooltipClass, Custom };
+enum class ModelRole { Display, Icon, Sort, Class, Tooltip, TooltipClass, Data, Custom };
 
 }}} // namespace EE::UI::Models
 

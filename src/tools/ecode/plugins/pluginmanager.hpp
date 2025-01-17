@@ -3,6 +3,7 @@
 
 #include "../projectsearch.hpp"
 #include "lsp/lspprotocol.hpp"
+#include "plugincontextprovider.hpp"
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/models/model.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
@@ -27,6 +28,7 @@ namespace ecode {
 class PluginManager;
 class Plugin;
 class FileSystemListener;
+class ProjectBuildManager;
 
 typedef std::function<Plugin*( PluginManager* pluginManager )> PluginCreatorFn;
 
@@ -273,7 +275,9 @@ class PluginManager {
 	using OnLoadFileCb = std::function<void( const std::string&, const OnFileLoadedCb& )>;
 
 	PluginManager( const std::string& resourcesPath, const std::string& pluginsPath,
-				   std::shared_ptr<ThreadPool> pool, const OnLoadFileCb& loadFileCb );
+				   const std::string& configPath,
+				   std::shared_ptr<ThreadPool> pool, const OnLoadFileCb& loadFileCb,
+				   PluginContextProvider* context );
 
 	~PluginManager();
 
@@ -360,12 +364,17 @@ class PluginManager {
 
 	bool isClosing() const;
 
+	PluginContextProvider* getPluginContext() const { return mPluginContext; }
+
+	void forEachPlugin( std::function<void( Plugin* )> fn );
+
   protected:
 	using SubscribedPlugins =
 		std::map<std::string, std::function<PluginRequestHandle( const PluginMessage& )>>;
 	friend class App;
 	std::string mResourcesPath;
 	std::string mPluginsPath;
+	std::string mConfigPath;
 	std::string mWorkspaceFolder;
 	std::map<std::string, Plugin*> mPlugins;
 	std::map<std::string, bool> mPluginsEnabled;
@@ -374,6 +383,7 @@ class PluginManager {
 	UICodeEditorSplitter* mSplitter{ nullptr };
 	UISplitter* mMainSplitter{ nullptr };
 	FileSystemListener* mFileSystemListener{ nullptr };
+	PluginContextProvider* mPluginContext{ nullptr };
 	Mutex mSubscribedPluginsMutex;
 	Mutex mPluginsFSSubsMutex;
 	SubscribedPlugins mSubscribedPlugins;

@@ -44,12 +44,23 @@ class EE_API Process {
 
 	typedef std::function<void( const char* bytes, size_t n )> ReadFn;
 
+	static std::vector<std::string> parseArgs( const std::string& str );
+
 	Process();
 
 	/** @brief Create a process.
 	 ** @param command Command line to execute for this process.
 	 ** @param options A bit field of Options's to pass. */
 	Process( const std::string& command, Uint32 options = getDefaultOptions(),
+			 const std::unordered_map<std::string, std::string>& environment = {},
+			 const std::string& workingDirectory = "", const size_t& bufferSize = 132072 );
+
+	/** @brief Create a process.
+	 ** @param command Command line to execute for this process.
+	 ** @param args Command line arguments
+	 ** @param options A bit field of Options's to pass. */
+	Process( const std::string& command, const std::vector<std::string>& args,
+			 Uint32 options = getDefaultOptions(),
 			 const std::unordered_map<std::string, std::string>& environment = {},
 			 const std::string& workingDirectory = "", const size_t& bufferSize = 132072 );
 

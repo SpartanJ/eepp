@@ -1,5 +1,6 @@
 #include "appconfig.hpp"
 #include "ecode.hpp"
+#include "plugins/plugin.hpp"
 #include "plugins/pluginmanager.hpp"
 #include "version.hpp"
 #include <eepp/network/uri.hpp>
@@ -102,6 +103,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	windowState.position.x = iniState.getValueI( "window", "x", -1 );
 	windowState.position.y = iniState.getValueI( "window", "y", -1 );
 	windowState.lastRunVersion = iniState.getValueU( "editor", "last_run_version", 0 );
+	windowState.sidePanelTabsOrder =
+		String::split( iniState.getValue( "ui", "side_panel_tabs_order", "" ), ',' );
 	editor.showLineNumbers = ini.getValueB( "editor", "show_line_numbers", true );
 	editor.showWhiteSpaces = ini.getValueB( "editor", "show_white_spaces", true );
 	editor.showLineEndings = ini.getValueB( "editor", "show_line_endings", false );
@@ -214,7 +217,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 			ini.getValueB( "plugins", creator.first,
 						   "autocomplete" == creator.first || "linter" == creator.first ||
 							   "autoformatter" == creator.first || "lspclient" == creator.first ||
-							   "git" == creator.first );
+							   "git" == creator.first || "debugger" == creator.first );
 	}
 	pluginManager->setPluginsEnabled( pluginsEnabled, sync );
 
@@ -262,6 +265,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	iniState.setValue( "folders", "recentfolders",
 					   String::join( urlEncode( recentFolders ), ';' ) );
 	iniState.setValueU( "editor", "last_run_version", ecode::Version::getVersionNum() );
+	iniState.setValue( "ui", "side_panel_tabs_order",
+					   String::join( windowState.sidePanelTabsOrder, ',' ) );
 	ini.setValueB( "editor", "show_line_numbers", editor.showLineNumbers );
 	ini.setValueB( "editor", "show_white_spaces", editor.showWhiteSpaces );
 	ini.setValueB( "editor", "show_indentation_guides", editor.showIndentationGuides );
@@ -439,7 +444,7 @@ json saveNode( Node* node ) {
 void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, const ProjectDocumentConfig& docConfig,
 							 const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
-							 bool sessionSnapshot ) {
+							 bool sessionSnapshot, PluginManager* pluginManager ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	if ( !FileSystem::fileExists( projectsPath ) )
@@ -477,8 +482,27 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	} else {
 		cfg.writeFile();
 	}
+
+	if ( pluginManager ) {
+		std::string pluginsStatePath( projectsPath + "plugins_state" );
+		if ( !FileSystem::fileExists( pluginsStatePath ) &&
+			 !FileSystem::makeDir( pluginsStatePath ) )
+			return;
+		std::string projectPluginsStatePath( pluginsStatePath + FileSystem::getOSSlash() +
+											 hash.toHexString() );
+		if ( !FileSystem::fileExists( projectPluginsStatePath ) &&
+			 !FileSystem::makeDir( projectPluginsStatePath ) )
+			return;
+		FileSystem::dirAddSlashAtEnd( projectPluginsStatePath );
+		pluginManager->forEachPlugin(
+			[&projectFolder, &projectPluginsStatePath, onlyIfNeeded]( Plugin* plugin ) {
+				plugin->onSaveProject( projectFolder, projectPluginsStatePath, onlyIfNeeded );
+			} );
+	}
+
 	if ( !sessionSnapshot )
 		return;
+
 	std::string statePath( projectsPath + "state" );
 	if ( !FileSystem::fileExists( statePath ) && !FileSystem::makeDir( statePath ) )
 		return;
@@ -486,6 +510,7 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	if ( !FileSystem::fileExists( projectStatePath ) && !FileSystem::makeDir( projectStatePath ) )
 		return;
 	FileSystem::dirAddSlashAtEnd( projectStatePath );
+
 	nlohmann::json j = nlohmann::json::array();
 	std::vector<std::string> fileNames;
 	editorSplitter->forEachDocSharedPtr(
@@ -667,7 +692,7 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 
 void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, ProjectDocumentConfig& docConfig,
-							 ecode::App* app, bool sessionSnapshot ) {
+							 ecode::App* app, bool sessionSnapshot, PluginManager* pluginManager ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	MD5::Result hash = MD5::fromString( projectFolder );
@@ -705,11 +730,12 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 	std::vector<SessionSnapshotFile> sessionSnapshotFiles;
 	if ( sessionSnapshot ) {
 		std::string projectStatePath( projectsPath + "state" + FileSystem::getOSSlash() +
-									  hash.toHexString() + FileSystem::getOSSlash() +
-									  "state.json" );
-		if ( FileSystem::fileExists( projectStatePath ) ) {
+									  hash.toHexString() + FileSystem::getOSSlash() );
+
+		std::string projectStateFilePath( projectStatePath + "state.json" );
+		if ( FileSystem::fileExists( projectStateFilePath ) ) {
 			std::string stateStr;
-			FileSystem::fileGet( projectStatePath, stateStr );
+			FileSystem::fileGet( projectStateFilePath, stateStr );
 			json j;
 			try {
 				j = json::parse( stateStr );
@@ -771,6 +797,16 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 				editor->scrollToCursor();
 			},
 			curTabWidget );
+	}
+
+	if ( pluginManager ) {
+		std::string projectPluginsStatePath( projectsPath + "plugins_state" +
+											 FileSystem::getOSSlash() + hash.toHexString() +
+											 FileSystem::getOSSlash() );
+
+		pluginManager->forEachPlugin( [&projectFolder, &projectPluginsStatePath]( Plugin* plugin ) {
+			plugin->onLoadProject( projectFolder, projectPluginsStatePath );
+		} );
 	}
 }
 

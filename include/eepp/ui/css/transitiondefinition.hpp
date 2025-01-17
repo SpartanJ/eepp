@@ -4,7 +4,6 @@
 #include <eepp/math/ease.hpp>
 #include <eepp/system/time.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
-#include <map>
 #include <vector>
 
 using namespace EE::Math;

@@ -333,9 +333,15 @@ class ProjectBuildManager {
 
 	bool hasRunConfig();
 
-	bool hasBuildConfig();
+	bool hasBuildConfig() const;
 
 	void selectTab();
+
+	bool hasBuildConfigWithBuildSteps();
+
+	std::optional<ProjectBuildStep> getCurrentRunConfig();
+
+	ProjectBuild* getCurrentBuild();
 
   protected:
 	std::string mProjectRoot;
