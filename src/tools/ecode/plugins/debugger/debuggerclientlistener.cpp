@@ -309,10 +309,11 @@ void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&&
 	mVariablesHolder->clear();
 
 	for ( const auto& scope : scopes ) {
-		if ( !mPlugin->mDisplayRegisters && scope.name == "Registers" )
-			continue;
 		auto child = std::make_shared<ModelVariableNode>( scope.name, scope.variablesReference );
 		mVariablesHolder->addChild( child );
+		if ( ( !mPlugin->mFetchRegisters && scope.name == "Registers" ) ||
+			 ( !mPlugin->mFetchGlobals && scope.name == "Globals" ) )
+			continue;
 		mClient->variables( scope.variablesReference );
 	}
 
@@ -324,10 +325,17 @@ void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&&
 		return;
 	auto uiVars = sdc->getUIVariables();
 	if ( uiVars ) {
-		uiVars->runOnMainThread( [uiVars] {
+		uiVars->runOnMainThread( [this, uiVars] {
 			auto model = uiVars->getModel();
-			for ( size_t i = 0; i < model->rowCount(); i++ )
-				uiVars->setExpanded( model->index( i, 0 ), true );
+			size_t total = model->rowCount();
+			for ( size_t i = 0; i < total; i++ ) {
+				auto index = model->index( i, uiVars->getMainColumn() );
+				ModelVariableNode* node = static_cast<ModelVariableNode*>( index.internalData() );
+				if ( ( !mPlugin->mFetchRegisters && node->var.name == "Registers" ) ||
+					 ( !mPlugin->mFetchGlobals && node->var.name == "Globals" ) )
+					continue;
+				uiVars->tryOpenModelIndex( index );
+			}
 		} );
 	}
 }

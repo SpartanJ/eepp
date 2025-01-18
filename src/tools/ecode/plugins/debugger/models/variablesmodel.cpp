@@ -167,7 +167,7 @@ VariablesHolder::VariablesHolder( UISceneNode* sceneNode ) :
 }
 
 void VariablesHolder::addVariables( const int variablesReference, std::vector<Variable>&& vars ) {
-	Lock l( mutex );
+	Lock l( mMutex );
 	auto parentNode = getNodeByReference( variablesReference );
 	if ( !parentNode ) {
 		auto node = mRootNode->getChildRecursive( variablesReference );
@@ -207,14 +207,14 @@ void VariablesHolder::addVariables( const int variablesReference, std::vector<Va
 }
 
 void VariablesHolder::addChild( ModelVariableNode::NodePtr child ) {
-	Lock l( mutex );
+	Lock l( mMutex );
 	mRootNode->addChild( child );
 	mNodeMap[child->var.variablesReference] = child;
 	mModel->invalidate( Model::UpdateFlag::InvalidateAllIndexes );
 }
 
 void VariablesHolder::upsertRootChild( Variable&& var ) {
-	Lock l( mutex );
+	Lock l( mMutex );
 	for ( size_t i = 0; i < mRootNode->children.size(); i++ ) {
 		auto child = mRootNode->children[i];
 		if ( child->getName() == var.name ) {
@@ -230,7 +230,7 @@ void VariablesHolder::upsertRootChild( Variable&& var ) {
 }
 
 void VariablesHolder::clear( bool all ) {
-	Lock l( mutex );
+	Lock l( mMutex );
 	mRootNode->clear();
 	if ( all ) {
 		mNodeMap.clear();
@@ -266,15 +266,15 @@ void VariablesHolder::saveExpandedState( const ModelIndex& index ) {
 	mExpandedStates[*mCurrentLocation].insert( std::move( nodePath ) );
 }
 
-void VariablesHolder::resolvePath( std::vector<std::string> path, DebuggerClient* client,
+bool VariablesHolder::resolvePath( std::vector<std::string> path, DebuggerClient* client,
 								   UITreeView* uiVariables, ModelVariableNode::NodePtr parentNode,
 								   int pathPos ) {
 	if ( path.empty() || !parentNode )
-		return;
+		return false;
 
 	auto currentNodeOpt = parentNode->getChild( path[pathPos] );
 	if ( !currentNodeOpt )
-		return;
+		return false;
 
 	auto currentNode = *currentNodeOpt;
 
@@ -285,7 +285,7 @@ void VariablesHolder::resolvePath( std::vector<std::string> path, DebuggerClient
 			addVariables( variablesReference, std::move( vars ) );
 
 			uiVariables->runOnMainThread(
-				[uiVariables, path] { uiVariables->selectRowWithPath( path ); } );
+				[uiVariables, path] { uiVariables->openRowWithPath( path, false ); } );
 
 			auto nextPos = pathPos + 1;
 			if ( nextPos < static_cast<Int64>( path.size() ) ) {
@@ -295,19 +295,55 @@ void VariablesHolder::resolvePath( std::vector<std::string> path, DebuggerClient
 
 		client->variables( currentNode->getVariablesReference(), Variable::Type::Both,
 						   onVariablesRecieved );
+
+		return true;
 	}
+
+	return false;
+}
+static int getLocationDistance( const ExpandedState::Location& loc1,
+								const ExpandedState::Location& loc2 ) {
+	if ( loc1.filePath != loc2.filePath )
+		return std::numeric_limits<int>::max();
+
+	if ( loc1.frameIndex != loc2.frameIndex ) {
+		return std::numeric_limits<int>::max() /
+			   2; // Different frame but same file is better than different file
+	}
+
+	return std::abs( loc1.lineNumber - loc2.lineNumber );
 }
 
-void VariablesHolder::restoreExpandedState( const ExpandedState::Location& location,
+bool VariablesHolder::restoreExpandedState( const ExpandedState::Location& location,
 											DebuggerClient* client, UITreeView* uiVariables ) {
 	mCurrentLocation = location;
 
 	auto it = mExpandedStates.find( location );
-	if ( it == mExpandedStates.end() )
-		return;
+	if ( it == mExpandedStates.end() ) {
+		// Find the nearest expanded state
+		const ExpandedState::Location* nearestLoc = nullptr;
+		int minDistance = std::numeric_limits<int>::max();
 
+		for ( const auto& state : mExpandedStates ) {
+			int distance = getLocationDistance( location, state.first );
+			if ( distance < minDistance ) {
+				minDistance = distance;
+				nearestLoc = &state.first;
+			}
+		}
+
+		// If we found a nearby location within reasonable distance
+		if ( nearestLoc != nullptr && minDistance < 1000 ) {
+			it = mExpandedStates.find( *nearestLoc );
+		} else {
+			return false; // No nearby expanded state found
+		}
+	}
+
+	bool res = true;
 	for ( const VariablePath& path : it->second )
-		resolvePath( path, client, uiVariables, mRootNode, 0 );
+		res |= resolvePath( path, client, uiVariables, mRootNode, 0 );
+	return res;
 }
 
 } // namespace ecode

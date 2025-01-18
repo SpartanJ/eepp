@@ -81,7 +81,8 @@ class DebuggerPlugin : public PluginBase {
 	friend class DebuggerClientListener;
 
 	bool mInitialized{ false };
-	bool mDisplayRegisters{ false };
+	bool mFetchRegisters{ false };
+	bool mFetchGlobals{ false };
 	std::string mProjectPath;
 
 	std::vector<DapTool> mDaps;

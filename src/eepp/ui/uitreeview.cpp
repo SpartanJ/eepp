@@ -155,13 +155,13 @@ void UITreeView::bindNavigationClick( UIWidget* widget ) {
 }
 
 bool UITreeView::tryOpenModelIndex( const ModelIndex& index, bool forceUpdate ) {
-	size_t rowCount = 0;
+	bool hasChilds = false;
 	{
 		ConditionalLock l( getModel() != nullptr,
 						   getModel() ? &getModel()->resourceMutex() : nullptr );
-		rowCount = getModel()->rowCount( index );
+		hasChilds = getModel()->hasChilds( index );
 	}
-	if ( rowCount ) {
+	if ( hasChilds ) {
 		auto& data = getIndexMetadata( index );
 		if ( !data.open ) {
 			data.open = true;
@@ -768,7 +768,8 @@ ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& cas
 	return foundIndex;
 }
 
-ModelIndex UITreeView::selectRowWithPath( const std::vector<std::string>& pathTree ) {
+ModelIndex UITreeView::openRowWithPath( const std::vector<std::string>& pathTree,
+										bool selectOpenedRow ) {
 	const Model* model = getModel();
 	if ( !model || !model->hasChilds() )
 		return {};
@@ -798,19 +799,20 @@ ModelIndex UITreeView::selectRowWithPath( const std::vector<std::string>& pathTr
 		parentIndex = foundIndex;
 
 		if ( i == pathTree.size() - 1 ) {
-			setSelection( foundIndex );
+			if ( selectOpenedRow )
+				setSelection( foundIndex );
 			return foundIndex;
 		}
 	}
 	return {};
 }
 
-ModelIndex UITreeView::selectRowWithPath( std::string path ) {
+ModelIndex UITreeView::openRowWithPath( std::string path, bool selectOpenedRow ) {
 	String::replaceAll( path, "\\", "/" );
 	auto pathTree = String::split( path, "/" );
 	if ( pathTree.empty() )
 		return {};
-	return selectRowWithPath( pathTree );
+	return openRowWithPath( pathTree, selectOpenedRow );
 }
 
 void UITreeView::setSelection( const ModelIndex& index, bool scrollToSelection,

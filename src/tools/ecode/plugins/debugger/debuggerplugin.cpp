@@ -330,10 +330,15 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];
-		if ( config.contains( "display_registers" ) )
-			mDisplayRegisters = config.value( "display_registers", false );
+		if ( config.contains( "fetch_registers" ) )
+			mFetchRegisters = config.value( "fetch_registers", false );
 		else if ( updateConfigFile )
-			config["display_registers"] = mDisplayRegisters;
+			config["fetch_registers"] = mFetchRegisters;
+
+		if ( config.contains( "fetch_globals" ) )
+			mFetchGlobals = config.value( "fetch_globals", false );
+		else if ( updateConfigFile )
+			config["fetch_globals"] = mFetchGlobals;
 	}
 
 	if ( j.contains( "dap" ) ) {

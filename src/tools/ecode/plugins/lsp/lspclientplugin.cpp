@@ -2104,7 +2104,7 @@ void LSPClientPlugin::showDocumentSymbols( UICodeEditor* editor ) {
 			path.reserve( docSymbols.size() );
 			for ( const auto& sym : docSymbols )
 				path.emplace_back( sym.name );
-			tv->selectRowWithPath( path );
+			tv->openRowWithPath( path );
 		}
 	}
 

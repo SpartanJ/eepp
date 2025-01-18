@@ -1382,9 +1382,9 @@ void App::syncProjectTreeWithEditor( UICodeEditor* editor ) {
 		std::string path = !loadingPath.empty() ? loadingPath : editor->getDocument().getFilePath();
 		mProjectTreeView->setFocusOnSelection( false );
 		if ( !mCurrentProject.empty() && String::startsWith( path, mCurrentProject ) ) {
-			mProjectTreeView->selectRowWithPath( path.substr( mCurrentProject.size() ) );
+			mProjectTreeView->openRowWithPath( path.substr( mCurrentProject.size() ) );
 		} else {
-			mProjectTreeView->selectRowWithPath( FileSystem::fileNameFromPath( path ) );
+			mProjectTreeView->openRowWithPath( FileSystem::fileNameFromPath( path ) );
 		}
 		mProjectTreeView->setFocusOnSelection( true );
 	}
@@ -2828,7 +2828,7 @@ void App::newFolder( const FileInfo& file ) {
 							return;
 						std::string nfp( newFolderPath );
 						FileSystem::filePathRemoveBasePath( mFileSystemModel->getRootPath(), nfp );
-						mProjectTreeView->selectRowWithPath( nfp );
+						mProjectTreeView->openRowWithPath( nfp );
 					},
 					Milliseconds( 100 ) );
 			}

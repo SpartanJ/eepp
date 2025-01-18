@@ -137,13 +137,13 @@ class VariablesHolder {
 
 	void saveExpandedState( const ModelIndex& index );
 
-	void restoreExpandedState( const ExpandedState::Location& location, DebuggerClient* client,
+	bool restoreExpandedState( const ExpandedState::Location& location, DebuggerClient* client,
 							   UITreeView* uiVariables );
 
 	std::shared_ptr<VariablesModel> getModel() { return mModel; }
 
   protected:
-	Mutex mutex;
+	Mutex mMutex;
 	std::shared_ptr<ModelVariableNode> mRootNode;
 	std::shared_ptr<VariablesModel> mModel;
 	std::unordered_map<int, ModelVariableNode::NodePtr> mNodeMap;
@@ -154,7 +154,7 @@ class VariablesHolder {
 
 	VariablePath buildVariablePath( ModelVariableNode* node ) const;
 
-	void resolvePath( std::vector<std::string> path, DebuggerClient* client,
+	bool resolvePath( std::vector<std::string> path, DebuggerClient* client,
 					  UITreeView* uiVariables, ModelVariableNode::NodePtr parentNode, int pathPos );
 };
 
