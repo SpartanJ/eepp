@@ -1,3 +1,4 @@
+#include "debuggerplugin.hpp"
 #include "../../notificationcenter.hpp"
 #include "../../projectbuild.hpp"
 #include "../../terminalmanager.hpp"
@@ -7,7 +8,6 @@
 #include "bussocket.hpp"
 #include "bussocketprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
-#include "debuggerplugin.hpp"
 #include "models/breakpointsmodel.hpp"
 #include "models/variablesmodel.hpp"
 #include "statusdebuggercontroller.hpp"
@@ -300,6 +300,7 @@ static std::initializer_list<std::string> DebuggerCommandList = {
 	"debugger-continue-interrupt",
 	"debugger-breakpoint-toggle",
 	"debugger-breakpoint-enable-toggle",
+	"debugger-start",
 	"debugger-stop",
 	"debugger-step-over",
 	"debugger-step-into",
@@ -411,9 +412,6 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 
 			mDaps.emplace_back( std::move( dapTool ) );
 		}
-	}
-
-	if ( j.contains( "config" ) ) {
 	}
 
 	if ( mKeyBindings.empty() ) {
@@ -674,6 +672,20 @@ void DebuggerPlugin::buildSidePanelTab() {
 	mTabContents->bind( "panel_debugger_step_over", mPanelBoxButtons.stepOver );
 	mTabContents->bind( "panel_debugger_step_into", mPanelBoxButtons.stepInto );
 	mTabContents->bind( "panel_debugger_step_out", mPanelBoxButtons.stepOut );
+
+	const auto addKb = [this]( UIPushButton* but, const std::string& cmd ) {
+		auto ctx = mManager->getPluginContext();
+		auto kb = ctx->getKeybind( cmd );
+		if ( !kb.empty() ) {
+			auto tt( but->getTooltipText() );
+			but->setTooltipText( tt.empty() ? String{ kb } : String{ tt + " ( " + kb + " )" } );
+		}
+	};
+	addKb( mPanelBoxButtons.resume, "debugger-continue-interrupt" );
+	addKb( mPanelBoxButtons.pause, "debugger-continue-interrupt" );
+	addKb( mPanelBoxButtons.stepOver, "debugger-step-over" );
+	addKb( mPanelBoxButtons.stepInto, "debugger-step-into" );
+	addKb( mPanelBoxButtons.stepOut, "debugger-step-out" );
 
 	mPanelBoxButtons.resume->onClick(
 		[this]( auto ) { getPluginContext()->runCommand( "debugger-continue-interrupt" ); } );
@@ -1132,6 +1144,8 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 		}
 	} );
 
+	doc->setCommand( "debugger-start", [this] { runCurrentConfig(); } );
+
 	doc->setCommand( "debugger-stop", [this] { exitDebugger(); } );
 
 	doc->setCommand( "debugger-breakpoint-toggle", [doc, this] {
@@ -1467,7 +1481,7 @@ void DebuggerPlugin::resolveInputsBeforeRun(
 		}
 		msgBox->showWhenReady();
 		msgBox->on( Event::OnConfirm, [inputs, msgBox, isPick, debugger, config, solvedInputs,
-									   this]( const Event* event ) mutable {
+									   this]( const Event* ) mutable {
 			std::string inputData( isPick ? msgBox->getDropDownList()->getText().toUtf8()
 										  : msgBox->getTextInput()->getText().toUtf8() );
 			solvedInputs[inputs.begin()->second.id] = inputData;
