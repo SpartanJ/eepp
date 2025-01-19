@@ -46,7 +46,10 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 			Lock l( mFilesMutex );
 			mRunning = true;
 			mIgnoreHidden = ignoreHidden;
-			mDirectories.push_back( mPath );
+			{
+				Lock ld( mDirectoriesMutex );
+				mDirectories.push_back( mPath );
+			}
 
 			if ( !mAllowedMatcher && FileSystem::fileExists( mPath + PRJ_ALLOWED_PATH ) )
 				mAllowedMatcher =
@@ -293,20 +296,26 @@ size_t ProjectDirectoryTree::getFilesCount() const {
 	return mFiles.size();
 }
 
-const std::vector<std::string>& ProjectDirectoryTree::getFiles() const {
+std::vector<std::string> ProjectDirectoryTree::getFiles() const {
 	Lock l( mFilesMutex );
 	return mFiles;
 }
 
-const std::vector<std::string>& ProjectDirectoryTree::getDirectories() const {
+std::vector<std::string> ProjectDirectoryTree::getDirectories() const {
+	Lock l( mDirectoriesMutex );
 	return mDirectories;
 }
 
 bool ProjectDirectoryTree::isFileInTree( const std::string& filePath ) const {
+	Lock l( mFilesMutex );
 	return std::find( mFiles.begin(), mFiles.end(), filePath ) != mFiles.end();
 }
 
 bool ProjectDirectoryTree::isDirInTree( const std::string& dirTree ) const {
+	if ( mRunning ) {
+		return String::startsWith( dirTree, mPath );
+	}
+	Lock l( mDirectoriesMutex );
 	std::string dir( FileSystem::fileRemoveFileName( dirTree ) );
 	FileSystem::dirAddSlashAtEnd( dir );
 	return std::find( mDirectories.begin(), mDirectories.end(), dir ) != mDirectories.end();
@@ -340,11 +349,15 @@ void ProjectDirectoryTree::getDirectoryFiles(
 				FileSystem::dirAddSlashAtEnd( fullpath );
 				if ( currentDirs.find( fullpath ) == currentDirs.end() )
 					continue;
-				if ( std::find( mDirectories.begin(), mDirectories.end(), fullpath ) !=
-					 mDirectories.end() )
-					continue;
-				mDirectories.push_back( fullpath );
+				{
+					Lock ld( mDirectoriesMutex );
+					if ( std::find( mDirectories.begin(), mDirectories.end(), fullpath ) !=
+						 mDirectories.end() )
+						continue;
+					mDirectories.push_back( fullpath );
+				}
 			} else {
+				Lock ld( mDirectoriesMutex );
 				mDirectories.push_back( fullpath );
 			}
 			IgnoreMatcherManager dirMatcher( fullpath );
@@ -463,6 +476,8 @@ void ProjectDirectoryTree::moveFile( const FileInfo& file, const std::string& ol
 		FileSystem::dirAddSlashAtEnd( oldDir );
 		std::vector<std::string> files;
 		std::vector<std::string> names;
+		files.reserve( mFiles.size() );
+		names.reserve( mFiles.size() );
 		for ( size_t i = 0; i < mFiles.size(); i++ ) {
 			if ( !String::startsWith( mFiles[i], oldDir ) ) {
 				files.emplace_back( mFiles[i] );
@@ -473,12 +488,15 @@ void ProjectDirectoryTree::moveFile( const FileInfo& file, const std::string& ol
 				names.emplace_back( FileSystem::fileNameFromPath( newDir ) );
 			}
 		}
-		mFiles = files;
-		mNames = names;
-		auto wasDirIt = std::find( mDirectories.begin(), mDirectories.end(), oldDir );
-		if ( wasDirIt != mDirectories.end() )
-			mDirectories.erase( wasDirIt );
-		mDirectories.emplace_back( std::move( dir ) );
+		mFiles = std::move( files );
+		mNames = std::move( names );
+		{
+			Lock ld( mDirectoriesMutex );
+			auto wasDirIt = std::find( mDirectories.begin(), mDirectories.end(), oldDir );
+			if ( wasDirIt != mDirectories.end() )
+				mDirectories.erase( wasDirIt );
+			mDirectories.emplace_back( std::move( dir ) );
+		}
 	} else {
 		std::string dir( file.getDirectoryPath() );
 		FileSystem::dirAddSlashAtEnd( dir );
@@ -500,25 +518,40 @@ void ProjectDirectoryTree::moveFile( const FileInfo& file, const std::string& ol
 }
 
 void ProjectDirectoryTree::removeFile( const FileInfo& file ) {
-	Lock l( mFilesMutex );
 	std::string removedDir( file.getFilepath() );
 	FileSystem::dirAddSlashAtEnd( removedDir );
-	auto wasDirIt = std::find( mDirectories.begin(), mDirectories.end(), removedDir );
-	if ( wasDirIt != mDirectories.end() ) {
+
+	bool wasDir = false;
+	{
+		Lock ld( mDirectoriesMutex );
+		auto wasDirIt = std::find( mDirectories.begin(), mDirectories.end(), removedDir );
+		wasDir = wasDirIt != mDirectories.end();
+	}
+
+	if ( wasDir ) {
 		std::vector<std::string> files;
 		std::vector<std::string> names;
+		files.reserve( mFiles.size() );
+		names.reserve( mNames.size() );
 		for ( size_t i = 0; i < mFiles.size(); i++ ) {
 			if ( !String::startsWith( mFiles[i], removedDir ) ) {
 				files.emplace_back( mFiles[i] );
 				names.emplace_back( mNames[i] );
 			}
 		}
-		mFiles = files;
-		mNames = names;
-		mDirectories.erase( wasDirIt );
+
+		{
+			Lock l( mFilesMutex );
+			mFiles = std::move( files );
+			mNames = std::move( names );
+		}
+
+		Lock ld2( mDirectoriesMutex );
+		mDirectories.erase( std::find( mDirectories.begin(), mDirectories.end(), removedDir ) );
 	} else {
 		size_t index = findFileIndex( file.getFilepath() );
 		if ( index != std::string::npos ) {
+			Lock l( mFilesMutex );
 			mFiles.erase( mFiles.begin() + index );
 			mNames.erase( mNames.begin() + index );
 		}

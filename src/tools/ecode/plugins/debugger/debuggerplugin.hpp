@@ -236,6 +236,8 @@ class DebuggerPlugin : public PluginBase {
 
 	void prepareAndRun( DapTool debugger, DapConfig config,
 						std::unordered_map<std::string, std::string> solvedInputs );
+
+	UIWidget* processIdPicker();
 };
 
 } // namespace ecode

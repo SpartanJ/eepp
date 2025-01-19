@@ -1590,6 +1590,8 @@
 ../../src/tools/ecode/plugins/debugger/debuggerplugin.hpp
 ../../src/tools/ecode/plugins/debugger/models/breakpointsmodel.cpp
 ../../src/tools/ecode/plugins/debugger/models/breakpointsmodel.hpp
+../../src/tools/ecode/plugins/debugger/models/processesmodel.cpp
+../../src/tools/ecode/plugins/debugger/models/processesmodel.hpp
 ../../src/tools/ecode/plugins/debugger/models/stackmodel.cpp
 ../../src/tools/ecode/plugins/debugger/models/stackmodel.hpp
 ../../src/tools/ecode/plugins/debugger/models/threadsmodel.cpp

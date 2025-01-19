@@ -151,9 +151,9 @@ class ProjectDirectoryTree {
 
 	size_t getFilesCount() const;
 
-	const std::vector<std::string>& getFiles() const;
+	std::vector<std::string> getFiles() const;
 
-	const std::vector<std::string>& getDirectories() const;
+	std::vector<std::string> getDirectories() const;
 
 	bool isFileInTree( const std::string& filePath ) const;
 
@@ -164,6 +164,8 @@ class ProjectDirectoryTree {
 	const std::string& getPath() const { return mPath; }
 
 	void resetPluginManager();
+
+	bool isRunning() const { return mRunning; }
 
   protected:
 	std::string mPath;
@@ -178,6 +180,7 @@ class ProjectDirectoryTree {
 	bool mIgnoreHidden;
 	bool mClosing;
 	mutable Mutex mFilesMutex;
+	mutable Mutex mDirectoriesMutex;
 	mutable Mutex mMatchingMutex;
 	Mutex mDoneMutex;
 	IgnoreMatcherManager mIgnoreMatcher;

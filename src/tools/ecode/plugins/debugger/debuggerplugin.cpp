@@ -1094,6 +1094,9 @@ DebuggerPlugin::needsToResolveInputs( nlohmann::json& json ) {
 				auto it = mDapInputs.find( id );
 				if ( it != mDapInputs.end() )
 					inputs[it->first] = it->second;
+			} else if ( String::contains( val, "${pid}" ) ) {
+				DapConfigurationInput dci{ "pid", "Process ID", "pid", "", {} };
+				inputs["pid"] = dci;
 			}
 		}
 	};
@@ -1529,6 +1532,29 @@ void DebuggerPlugin::prepareAndRun( DapTool debugger, DapConfig config,
 					i18n( "debugger_init_failed", "Failed to initialize debugger." ) );
 			}
 		} );
+}
+
+UIWidget* DebuggerPlugin::processIdPicker() {
+	static constexpr auto PROCESS_PICKER_LAYOUT = R"html(
+<window id="process_picker" lw="450dp" lh="450dp" padding="4dp" window-title="@string(list_of_processes, List of Processes)">
+	<vbox lw="mp" lh="mp">
+		<hbox lw="mp" lh="wc" margin-bottom="4dp">
+			<TextView text="@string(filter_semicolon, Filter:)" lh="mp" />
+			<TextInput lw="0dp" lw8="1" />
+		</hbox>
+		<TableView lw="mp" lh="0dp" lw8="1" />
+		<hbox class="buttons" lw="mp" lh="wc" margin-top="4dp">
+			<PushButton id="attach_to_process" text="@string(attach_to_process, Attach to Process)" />
+			<PushButton id="update_process_list" text="@string(update_list, Update List)" margin-left="4dp" />
+			<Widget lw="0dp" lw8="1" />
+			<PushButton id="cancel_pick" text="@string(cancel, Cancel)" />
+		</hbox>
+	</vbox>
+</window>
+	)html";
+	UIWidget* widget = getUISceneNode()->loadLayoutFromString( PROCESS_PICKER_LAYOUT );
+
+	return widget;
 }
 
 std::optional<Command>
