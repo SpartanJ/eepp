@@ -107,7 +107,7 @@ Process::~Process() {
 		mStdOutThread.join();
 	if ( mStdErrThread.joinable() )
 		mStdErrThread.join();
-	eeFree( mProcess );
+	eeSAFE_FREE( mProcess );
 }
 
 bool Process::create( const std::string& command, Uint32 options,

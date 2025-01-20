@@ -1581,10 +1581,13 @@
 ../../src/tools/ecode/plugins/debugger/busprocess.hpp
 ../../src/tools/ecode/plugins/debugger/bussocket.cpp
 ../../src/tools/ecode/plugins/debugger/bussocket.hpp
+../../src/tools/ecode/plugins/debugger/bussocketprocess.cpp
+../../src/tools/ecode/plugins/debugger/bussocketprocess.hpp
 ../../src/tools/ecode/plugins/debugger/config.cpp
 ../../src/tools/ecode/plugins/debugger/config.hpp
 ../../src/tools/ecode/plugins/debugger/debuggerclient.cpp
 ../../src/tools/ecode/plugins/debugger/debuggerclient.hpp
+../../src/tools/ecode/plugins/debugger/debuggerclientlistener.cpp
 ../../src/tools/ecode/plugins/debugger/debuggerclientlistener.hpp
 ../../src/tools/ecode/plugins/debugger/debuggerplugin.cpp
 ../../src/tools/ecode/plugins/debugger/debuggerplugin.hpp

@@ -29,7 +29,7 @@ ProtocolSettings::ProtocolSettings( const nlohmann::json& configuration ) :
 	redirectStderr( configuration.value( REDIRECT_STDERR, false ) ),
 	redirectStdout( configuration.value( REDIRECT_STDOUT, false ) ),
 	supportsSourceRequest( configuration.value( "supportsSourceRequest", true ) ),
-	launchRequest( configuration[REQUEST] ),
+	launchArgs( configuration[REQUEST] ),
 	locale( "en-US" ) {}
 
 } // namespace ecode

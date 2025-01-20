@@ -48,8 +48,8 @@ struct ProtocolSettings {
 	bool redirectStderr{ false };
 	bool redirectStdout{ false };
 	bool supportsSourceRequest{ true };
-	std::string launchCommand{ "launch" };
-	json launchRequest;
+	std::string launchRequestType{ "launch" };
+	json launchArgs;
 	std::string locale{ "en-US" };
 
 	ProtocolSettings() = default;

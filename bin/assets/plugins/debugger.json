@@ -17,8 +17,7 @@
               "program": "${file}",
               "args": "${args}",
               "cwd": "${cwd}",
-              "env": "${env}",
-              "stopOnEntry": "${stopOnEntry}"
+              "env": "${env}"
           }
         },
         {
@@ -29,7 +28,6 @@
               "args": "${args}",
               "cwd": "${cwd}",
               "env": "${env}",
-              "stopOnEntry": "${stopOnEntry}",
               "runInTerminal": true
           }
         },
@@ -52,8 +50,7 @@
           "name": "Attach to PID",
           "request": "attach",
           "arguments": {
-            "program": "${file}",
-            "pid": "${command:PickProcess}"
+            "pid": "${command:pickProcess}"
           }
         }
       ]
@@ -78,8 +75,7 @@
               "program": "${file}",
               "args": "${args}",
               "cwd": "${cwd}",
-              "env": "${env}",
-              "stopOnEntry": "${stopOnEntry}"
+              "env": "${env}"
           }
         },
         {
@@ -90,7 +86,6 @@
               "args": "${args}",
               "cwd": "${cwd}",
               "env": "${env}",
-              "stopOnEntry": "${stopOnEntry}",
               "runInTerminal": true
           }
         },
@@ -113,8 +108,7 @@
           "name": "Attach to PID",
           "request": "attach",
           "arguments": {
-            "program": "${file}",
-            "pid": "${command:PickProcess}"
+            "pid": "${command:pickProcess}"
           }
         }
       ]
@@ -157,6 +151,54 @@
             "mode": "exec",
             "program": "${file}",
             "args": "${args}"
+          }
+        },
+        {
+          "name": "Attach to PID",
+          "request": "attach",
+          "arguments": {
+            "mode": "local",
+            "processId": "${command:pickProcess}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "debugpy",
+      "url": "https://github.com/microsoft/debugpy",
+      "type": "python",
+      "languages": [ "python" ],
+      "run": {
+        "command": "python3",
+        "command_arguments": ["-m", "debugpy", "--listen", "${randPort}"],
+        "supportsSourceRequest": false
+      },
+      "configurations": [
+        {
+          "name": "Launch",
+          "command_arguments": ["--wait-for-client", "${file}", "${args}"],
+          "request": "attach",
+          "arguments": {
+            "stopOnEntry": true,
+            "redirectOutput": true
+          }
+        },
+        {
+          "name": "Launch module",
+          "command_arguments": ["--wait-for-client", "-m", "${command:pickString"],
+          "request": "attach",
+          "arguments": {
+            "stopOnEntry": true,
+            "redirectOutput": true
+          }
+        },
+        {
+          "name": "Attach",
+          "command_arguments": ["--pid", "${command:pickProcess}"],
+          "request": "attach",
+          "arguments": {
+              "stopOnEntry": true,
+              "redirectOutput": true
           }
         }
       ]

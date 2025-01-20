@@ -1,6 +1,6 @@
-#include "debuggerclientlistener.hpp"
 #include "../../notificationcenter.hpp"
 #include "../../statusappoutputcontroller.hpp"
+#include "debuggerclientlistener.hpp"
 #include "debuggerplugin.hpp"
 #include "models/stackmodel.hpp"
 #include "models/threadsmodel.hpp"
@@ -160,8 +160,17 @@ void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
 	Log::debug( "DebuggerClientListener::debuggeeStopped: reason %s", event.reason );
 
 	if ( "exception" == event.reason ) {
-		mPlugin->getPluginContext()->getNotificationCenter()->addNotification(
-			mPlugin->i18n( "debuggee_exception_triggered", "Debuggee triggered an exception" ) );
+		if ( event.description ) {
+			mPlugin->getPluginContext()->getNotificationCenter()->addNotification(
+				String::format( mPlugin
+									->i18n( "debuggee_exception_triggered_desc",
+											"Debuggee triggered an exception: %s" )
+									.toUtf8(),
+								*event.description ) );
+		} else {
+			mPlugin->getPluginContext()->getNotificationCenter()->addNotification( mPlugin->i18n(
+				"debuggee_exception_triggered", "Debuggee triggered an exception" ) );
+		}
 	}
 
 	mCurrentThreadId = mStoppedData->threadId ? *mStoppedData->threadId : 1;

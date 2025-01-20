@@ -158,12 +158,16 @@ class DebuggerPlugin : public PluginBase {
 	void runConfig( const std::string& debugger, const std::string& configuration );
 
 	void run( const std::string& debugger, ProtocolSettings&& protocolSettings,
-			  DapRunConfig&& runConfig, int randPort );
+			  DapRunConfig&& runConfig, int randPort, bool forceUseProgram, bool usesPorts );
 
-	void exitDebugger();
+	void exitDebugger( bool requestDisconnect = false );
 
 	void replaceKeysInJson( nlohmann::json& json, int randomPort,
 							const std::unordered_map<std::string, std::string>& solvedInputs );
+
+	std::vector<std::string>
+	replaceKeyInString( std::string val, int randomPort,
+						const std::unordered_map<std::string, std::string>& solvedInputs );
 
 	void onRegisterEditor( UICodeEditor* ) override;
 
@@ -228,7 +232,7 @@ class DebuggerPlugin : public PluginBase {
 	void closeProject();
 
 	std::unordered_map<std::string, DapConfigurationInput>
-	needsToResolveInputs( nlohmann::json& json );
+	needsToResolveInputs( nlohmann::json& json, const std::vector<std::string>& cmdArgs );
 
 	void resolveInputsBeforeRun( std::unordered_map<std::string, DapConfigurationInput> inputs,
 								 DapTool debugger, DapConfig config,

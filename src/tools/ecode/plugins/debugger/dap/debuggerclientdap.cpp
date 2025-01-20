@@ -72,8 +72,7 @@ bool DebuggerClientDap::isServerConnected() const {
 }
 
 bool DebuggerClientDap::supportsTerminate() const {
-	return mAdapterCapabilities.supportsTerminateRequest &&
-		   ( mProtocol.launchRequest.value( DAP_COMMAND, "" ) == DAP_LAUNCH );
+	return mAdapterCapabilities.supportsTerminateRequest;
 }
 
 bool DebuggerClientDap::start() {
@@ -130,10 +129,10 @@ void DebuggerClientDap::requestLaunchCommand() {
 		return;
 	}
 
-	if ( mProtocol.launchCommand.empty() )
+	if ( mProtocol.launchRequestType.empty() )
 		return;
 
-	makeRequest( mProtocol.launchCommand, mProtocol.launchRequest,
+	makeRequest( mProtocol.launchRequestType, mProtocol.launchArgs,
 				 [this]( const Response& response, const auto& ) {
 					 if ( response.success ) {
 						 mLaunched = true;

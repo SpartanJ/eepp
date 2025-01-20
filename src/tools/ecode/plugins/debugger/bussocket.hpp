@@ -20,6 +20,8 @@ class BusSocket : public Bus {
 
 	size_t write( const char* buffer, const size_t& size ) override;
 
+	bool hasProcess() override { return false; }
+
   protected:
 	Connection mConnection;
 	TcpSocket mSocket;

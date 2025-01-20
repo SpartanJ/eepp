@@ -20,6 +20,8 @@ class BusSocketProcess : public Bus {
 
 	size_t write( const char* buffer, const size_t& size ) override;
 
+	bool hasProcess() override { return true; }
+
   protected:
 	Command mCommand;
 	Connection mConnection;

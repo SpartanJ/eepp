@@ -1,5 +1,7 @@
 #include "bussocket.hpp"
 #include <eepp/network/ipaddress.hpp>
+#include <eepp/system/clock.hpp>
+#include <eepp/system/sys.hpp>
 
 namespace ecode {
 
@@ -10,11 +12,18 @@ BusSocket::~BusSocket() {
 }
 
 bool BusSocket::start() {
-	bool res =
-		mSocket.connect( IpAddress( mConnection.host ), mConnection.port ) == Socket::Status::Done;
-	if ( res )
-		setState( State::Running );
-	return res;
+	Clock clock;
+	while ( clock.getElapsedTime() < Seconds( 3 ) ) {
+		bool res = mSocket.connect( IpAddress( mConnection.host ), mConnection.port,
+									Seconds( 1 ) ) == Socket::Status::Done;
+		if ( res ) {
+			setState( State::Running );
+			return res;
+		} else {
+			Sys::sleep( Milliseconds( 50 ) );
+		}
+	}
+	return false;
 }
 
 bool BusSocket::close() {

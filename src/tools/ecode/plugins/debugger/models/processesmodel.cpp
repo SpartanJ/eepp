@@ -39,13 +39,6 @@ Variant ProcessesModel::data( const ModelIndex& modelIndex, ModelRole role ) con
 	return {};
 }
 
-bool containsIgnoreCase( std::string_view str, std::string_view substr ) {
-	return std::search( str.begin(), str.end(), substr.begin(), substr.end(),
-						[]( char ch1, char ch2 ) {
-							return std::tolower( ch1 ) == std::tolower( ch2 );
-						} ) != str.end();
-}
-
 void ProcessesModel::setFilter( const std::string& filter ) {
 	if ( filter == mFilter )
 		return;
@@ -53,7 +46,7 @@ void ProcessesModel::setFilter( const std::string& filter ) {
 	mFilter = filter;
 	mProcessesFiltered.clear();
 	for ( const auto& process : mProcesses ) {
-		if ( containsIgnoreCase( process.second, filter ) )
+		if ( String::icontains( process.second, filter ) )
 			mProcessesFiltered.emplace_back( process.first, process.second );
 	}
 	invalidate();

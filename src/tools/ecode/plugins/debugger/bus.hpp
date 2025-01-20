@@ -20,6 +20,8 @@ class Bus {
 
 	virtual size_t write( const char* buffer, const size_t& size ) = 0;
 
+	virtual bool hasProcess() { return false; }
+
 	virtual ~Bus() {}
 
   protected:
