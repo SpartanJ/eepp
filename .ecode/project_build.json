@@ -217,14 +217,14 @@
       },
       {
         "args": "",
-        "command": "${project_root}/bin/eepp-unit-tests-debug",
+        "command": "${project_root}/bin/unit_tests/eepp-unit-tests-debug",
         "name": "eepp-unit_tests-debug",
         "run_in_terminal": true,
         "working_dir": "${project_root}/bin/unit_tests/"
       },
       {
         "args": "",
-        "command": "${project_root}/bin/eepp-unit_tests",
+        "command": "${project_root}/bin/unit_tests/eepp-unit_tests",
         "name": "eepp-unit_tests",
         "run_in_terminal": true,
         "working_dir": "${project_root}/bin/unit_tests"

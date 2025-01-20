@@ -60,6 +60,7 @@ static const auto DAP_OUTPUT = "output"sv;
 
 // fields
 static const auto DAP_NAME = "name"sv;
+static const auto DAP_VALUE = "value"sv;
 static const auto DAP_SYSTEM_PROCESS_ID = "systemProcessId"sv;
 static const auto DAP_IS_LOCAL_PROCESS = "isLocalProcess"sv;
 static const auto DAP_POINTER_SIZE = "pointerSize"sv;

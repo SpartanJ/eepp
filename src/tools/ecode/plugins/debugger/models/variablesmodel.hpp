@@ -135,10 +135,12 @@ class VariablesHolder {
 
 	void clear( bool all = false );
 
-	void saveExpandedState( const ModelIndex& index );
+	void saveExpandedState( const ModelIndex& index, bool uniqueLocation = false );
+
+	void removeExpandedState( const ModelIndex& index, bool uniqueLocation = false );
 
 	bool restoreExpandedState( const ExpandedState::Location& location, DebuggerClient* client,
-							   UITreeView* uiVariables );
+							   UITreeView* uiVariables, bool uniqueLocation = false );
 
 	std::shared_ptr<VariablesModel> getModel() { return mModel; }
 

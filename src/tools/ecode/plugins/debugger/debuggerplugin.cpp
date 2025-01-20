@@ -9,6 +9,7 @@
 #include "bussocketprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
 #include "models/breakpointsmodel.hpp"
+#include "models/processesmodel.hpp"
 #include "models/variablesmodel.hpp"
 #include "statusdebuggercontroller.hpp"
 #include <eepp/graphics/primitives.hpp>
@@ -37,6 +38,8 @@ static constexpr auto REQUEST_TYPE_ATTACH = "attach";
 namespace ecode {
 
 static constexpr auto INPUT_PATTERN = "%$%{input%:([%w_]+)%}"sv;
+static constexpr auto COMMAND_PATTERN = "%$%{command%:([%w_]+)%}"sv;
+static constexpr auto CMD_PICK_PROCESS = "${command:PickProcess}"sv;
 
 Plugin* DebuggerPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( DebuggerPlugin, ( pluginManager, false ) );
@@ -837,6 +840,10 @@ void DebuggerPlugin::buildStatusBar() {
 					[this]( const int variablesReference, std::vector<Variable>&& vars ) {
 						mExpressionsHolder->addVariables( variablesReference, std::move( vars ) );
 					} );
+				mExpressionsHolder->saveExpandedState( modelEvent->getModelIndex(), true );
+			} else if ( mDebugger && mListener &&
+						modelEvent->getModelEventType() == Abstract::ModelEventType::CloseTree ) {
+				mExpressionsHolder->removeExpandedState( modelEvent->getModelIndex(), true );
 			}
 		} );
 		uiExpressions->removeEventsOfType( Event::MouseClick );
@@ -997,6 +1004,7 @@ void DebuggerPlugin::replaceKeysInJson(
 	nlohmann::json& json, int randomPort,
 	const std::unordered_map<std::string, std::string>& solvedInputs ) {
 	static LuaPattern inputPtrn( INPUT_PATTERN );
+	static LuaPattern commandPtrn( COMMAND_PATTERN );
 	static constexpr auto KEY_FILE = "${file}";
 	static constexpr auto KEY_ARGS = "${args}";
 	static constexpr auto KEY_CWD = "${cwd}";
@@ -1009,23 +1017,40 @@ void DebuggerPlugin::replaceKeysInJson(
 	auto runConfig = getPluginContext()->getProjectBuildManager()->getCurrentRunConfig();
 	auto buildConfig = getPluginContext()->getProjectBuildManager()->getCurrentBuild();
 
-	const auto replaceVal = [this, &solvedInputs, &runConfig, randomPort]( std::string& val ) {
+	const auto replaceVal = [this, &solvedInputs, &runConfig,
+							 randomPort]( nlohmann::json& j, std::string& val ) -> bool {
 		if ( runConfig ) {
 			String::replaceAll( val, KEY_FILE, runConfig->cmd );
 			String::replaceAll( val, KEY_CWD, runConfig->workingDir );
 			String::replaceAll( val, KEY_FILEDIRNAME, runConfig->workingDir );
 		}
+
 		String::replaceAll( val, KEY_WORKSPACEFOLDER, mProjectPath );
+
 		if ( String::contains( val, KEY_RANDPORT ) )
 			String::replaceAll( val, KEY_RANDPORT, String::toString( randomPort ) );
 
-		LuaPattern::Range matches[4];
+		LuaPattern::Range matches[2];
 		if ( inputPtrn.matches( val, matches ) ) {
 			std::string id( val.substr( matches[1].start, matches[1].end - matches[1].start ) );
 			auto solvedIdIt = solvedInputs.find( id );
 			if ( solvedIdIt != solvedInputs.end() )
 				String::replaceAll( val, String::format( "${input:%s}", id ), solvedIdIt->second );
 		}
+
+		LuaPattern::Range matches2[2];
+		if ( commandPtrn.matches( val, matches2 ) ) {
+			auto solvedIdIt = solvedInputs.find( "pid" );
+			if ( solvedIdIt != solvedInputs.end() ) {
+				int pid = 0;
+				if ( String::fromString( pid, solvedIdIt->second ) ) {
+					j = pid;
+					return false;
+				}
+			}
+		}
+
+		return true;
 	};
 
 	for ( auto& j : json ) {
@@ -1035,7 +1060,7 @@ void DebuggerPlugin::replaceKeysInJson(
 			for ( auto& e : j ) {
 				if ( e.is_string() ) {
 					std::string val( e.get<std::string>() );
-					replaceVal( val );
+					replaceVal( e, val );
 					e = std::move( val );
 				}
 			}
@@ -1046,7 +1071,7 @@ void DebuggerPlugin::replaceKeysInJson(
 				auto argsArr = nlohmann::json::array();
 				auto args = Process::parseArgs( runConfig->args );
 				for ( auto arg : args ) {
-					replaceVal( arg );
+					replaceVal( j, arg );
 					argsArr.push_back( arg );
 				}
 				j = std::move( argsArr );
@@ -1073,8 +1098,8 @@ void DebuggerPlugin::replaceKeysInJson(
 						}
 					}
 				}
-				replaceVal( val );
-				j = std::move( val );
+				if ( replaceVal( j, val ) )
+					j = std::move( val );
 			}
 		}
 	}
@@ -1094,9 +1119,9 @@ DebuggerPlugin::needsToResolveInputs( nlohmann::json& json ) {
 				auto it = mDapInputs.find( id );
 				if ( it != mDapInputs.end() )
 					inputs[it->first] = it->second;
-			} else if ( String::contains( val, "${pid}" ) ) {
-				DapConfigurationInput dci{ "pid", "Process ID", "pid", "", {} };
-				inputs["pid"] = dci;
+			} else if ( String::contains( val, CMD_PICK_PROCESS ) ) {
+				DapConfigurationInput dci{ "pid", "Process ID", "pickprocess", "", {} };
+				inputs[std::string{ CMD_PICK_PROCESS }] = dci;
 			}
 		}
 	};
@@ -1473,6 +1498,26 @@ void DebuggerPlugin::resolveInputsBeforeRun(
 	DapConfig config, std::unordered_map<std::string, std::string> solvedInputs ) {
 	if ( !inputs.empty() ) {
 		auto input = inputs.begin()->second;
+		if ( input.type == "pickprocess"sv ) {
+			UIWindow* win = processPicker();
+			win->setTitle( i18n( "pick_process", "Pick Process" ) );
+			win->center();
+			win->showWhenReady();
+			win->on( Event::OnConfirm, [inputs, win, debugger, config, solvedInputs,
+										this]( const Event* ) mutable {
+				UITableView* uiTableView = win->find( "processes_list" )->asType<UITableView>();
+				auto model = static_cast<ProcessesModel*>( uiTableView->getModel() );
+				std::string inputData(
+					model->data( uiTableView->getSelection().first(), ModelRole::Display )
+						.toString() );
+				std::string id( inputs.begin()->second.id );
+				solvedInputs[id] = inputData;
+				inputs.erase( inputs.begin() );
+				resolveInputsBeforeRun( inputs, debugger, config, solvedInputs );
+				win->closeWindow();
+			} );
+			return;
+		}
 		bool isPick = input.type == "pickstring";
 		UIMessageBox* msgBox = UIMessageBox::New(
 			isPick ? UIMessageBox::DROPDOWNLIST : UIMessageBox::INPUT, input.description );
@@ -1534,17 +1579,17 @@ void DebuggerPlugin::prepareAndRun( DapTool debugger, DapConfig config,
 		} );
 }
 
-UIWidget* DebuggerPlugin::processIdPicker() {
+UIWindow* DebuggerPlugin::processPicker() {
 	static constexpr auto PROCESS_PICKER_LAYOUT = R"html(
 <window id="process_picker" lw="450dp" lh="450dp" padding="4dp" window-title="@string(list_of_processes, List of Processes)">
 	<vbox lw="mp" lh="mp">
 		<hbox lw="mp" lh="wc" margin-bottom="4dp">
-			<TextView text="@string(filter_semicolon, Filter:)" lh="mp" />
-			<TextInput lw="0dp" lw8="1" />
+			<TextView text="@string(filter_semicolon, Filter:)" lh="mp" margin-right="8dp" />
+			<TextInput id="processes_filter" lw="0dp" lw8="1" />
 		</hbox>
-		<TableView lw="mp" lh="0dp" lw8="1" />
+		<TableView id="processes_list" lw="mp" lh="0dp" lw8="1" />
 		<hbox class="buttons" lw="mp" lh="wc" margin-top="4dp">
-			<PushButton id="attach_to_process" text="@string(attach_to_process, Attach to Process)" />
+			<PushButton id="pick_process" text="@string(pick_process, Pick Process)" enabled="false" />
 			<PushButton id="update_process_list" text="@string(update_list, Update List)" margin-left="4dp" />
 			<Widget lw="0dp" lw8="1" />
 			<PushButton id="cancel_pick" text="@string(cancel, Cancel)" />
@@ -1552,9 +1597,47 @@ UIWidget* DebuggerPlugin::processIdPicker() {
 	</vbox>
 </window>
 	)html";
-	UIWidget* widget = getUISceneNode()->loadLayoutFromString( PROCESS_PICKER_LAYOUT );
-
-	return widget;
+	UIWindow* win =
+		getUISceneNode()->loadLayoutFromString( PROCESS_PICKER_LAYOUT )->asType<UIWindow>();
+	UITextInput* uiFilter = win->find( "processes_filter" )->asType<UITextInput>();
+	UITableView* uiTableView = win->find( "processes_list" )->asType<UITableView>();
+	UIPushButton* uiPickBut = win->find( "pick_process" )->asType<UIPushButton>();
+	UIPushButton* uiUpdateList = win->find( "update_process_list" )->asType<UIPushButton>();
+	UIPushButton* uiCancel = win->find( "cancel_pick" )->asType<UIPushButton>();
+	auto model = std::make_shared<ProcessesModel>( std::vector<std::pair<Uint64, std::string>>{},
+												   getUISceneNode() );
+	uiTableView->setAutoColumnsWidth( true );
+	uiTableView->setFitAllColumnsToWidget( true );
+	uiTableView->setMainColumn( 1 );
+	uiTableView->setModel( model );
+	uiTableView->onModelEvent( [win]( const ModelEvent* event ) {
+		if ( event->getModelEventType() == ModelEventType::Open )
+			win->sendCommonEvent( Event::OnConfirm );
+	} );
+	uiTableView->setOnSelectionChange( [uiTableView, uiPickBut]() {
+		uiPickBut->setEnabled( !uiTableView->getSelection().isEmpty() );
+	} );
+	uiFilter->on( Event::OnValueChange, [uiFilter, uiTableView, model]( auto ) {
+		model->setFilter( uiFilter->getText() );
+		uiTableView->setSelection( model->index( 0 ) );
+	} );
+	uiFilter->on( Event::OnPressEnter, [uiTableView, win]( auto ) {
+		if ( !uiTableView->getSelection().isEmpty() )
+			win->sendCommonEvent( Event::OnConfirm );
+	} );
+	uiUpdateList->onClick( [this, model]( auto ) {
+		mThreadPool->run( [model] { model->setProcesses( Sys::listProcesses() ); } );
+	} );
+	mThreadPool->run( [model, uiTableView] {
+		model->setProcesses( Sys::listProcesses() );
+		uiTableView->scrollToBottom();
+	} );
+	uiCancel->onClick( [win]( auto ) { win->closeWindow(); } );
+	uiPickBut->onClick( [win]( auto ) { win->sendCommonEvent( Event::OnConfirm ); } );
+	win->on( Event::OnWindowReady, [uiFilter]( auto ) { uiFilter->setFocus(); } );
+	win->setKeyBindingCommand( "close-window", [win]() { win->closeWindow(); } );
+	win->addKeyBinding( { KEY_ESCAPE }, "close-window" );
+	return win;
 }
 
 std::optional<Command>
@@ -1621,7 +1704,8 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 
 	if ( !cmdOpt && ( protocolSettings.launchCommand == REQUEST_TYPE_LAUNCH ||
 					  ( protocolSettings.launchCommand == REQUEST_TYPE_ATTACH &&
-						protocolSettings.launchRequest.value( "mode", "" ) == "local" ) ) ) {
+						protocolSettings.launchRequest.value( "mode", "" ) == "local" &&
+						protocolSettings.launchRequest.contains( "program" ) ) ) ) {
 		auto msg =
 			String::format( i18n( "debugger_binary_not_found",
 								  "Debugger binary not found. Binary \"%s\" must be installed." )
@@ -1640,6 +1724,8 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 		mDebugger = std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
 	} else if ( protocolSettings.launchCommand == REQUEST_TYPE_ATTACH ) {
 		auto mode = protocolSettings.launchRequest.value( "mode", "" );
+		if ( mode.empty() )
+			mode = "local";
 
 		Connection con;
 		con.host = protocolSettings.launchRequest.value( "host", "localhost" );
@@ -1653,9 +1739,21 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 			return;
 		}
 
+		bool useProcessId = protocolSettings.launchRequest.contains( "pid" ) &&
+							protocolSettings.launchRequest["pid"].is_number() &&
+							protocolSettings.launchRequest.value( "pid", 0 ) != 0;
+
+		bool useProgram = protocolSettings.launchRequest.contains( "program" ) &&
+						  protocolSettings.launchRequest["program"].is_string() &&
+						  !protocolSettings.launchRequest.value( "program", "" ).empty();
+
 		if ( mode == "local" ) {
 			if ( useSocket ) {
 				auto bus = std::make_unique<BusSocketProcess>( cmd, con );
+				mDebugger =
+					std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
+			} else if ( useProcessId || useProgram ) {
+				auto bus = std::make_unique<BusProcess>( cmd );
 				mDebugger =
 					std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
 			} else {

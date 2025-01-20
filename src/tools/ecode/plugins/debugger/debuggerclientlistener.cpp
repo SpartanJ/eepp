@@ -92,6 +92,8 @@ void DebuggerClientListener::initUI() {
 				static_cast<ModelVariableNode*>( modelEvent->getModelIndex().internalData() );
 			mClient->variables( node->var.variablesReference );
 			mVariablesHolder->saveExpandedState( modelEvent->getModelIndex() );
+		} else if ( modelEvent->getModelEventType() == Abstract::ModelEventType::CloseTree ) {
+			mVariablesHolder->removeExpandedState( modelEvent->getModelIndex() );
 		}
 	} );
 
@@ -157,6 +159,11 @@ void DebuggerClientListener::debuggeeExited( int /*exitCode*/ ) {
 void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
 	Log::debug( "DebuggerClientListener::debuggeeStopped: reason %s", event.reason );
 
+	if ( "exception" == event.reason ) {
+		mPlugin->getPluginContext()->getNotificationCenter()->addNotification(
+			mPlugin->i18n( "debuggee_exception_triggered", "Debuggee triggered an exception" ) );
+	}
+
 	mCurrentThreadId = mStoppedData->threadId ? *mStoppedData->threadId : 1;
 	mStoppedData = event;
 
@@ -215,14 +222,14 @@ void DebuggerClientListener::debuggingProcess( const ProcessInfo& ) {}
 
 void DebuggerClientListener::errorResponse( const std::string& command, const std::string& summary,
 											const std::optional<Message>& /*message*/ ) {
-	if ( command != "evaluate" ) {
-		if ( command == "launch" ) {
-			failed();
-		}
+	if ( command == "evaluate" )
+		return;
 
-		mPlugin->getPluginContext()->getNotificationCenter()->addNotification( summary,
-																			   Seconds( 5 ) );
-	}
+	if ( command == "launch" )
+		failed();
+
+	mPlugin->getPluginContext()->getNotificationCenter()->addNotification( summary, Seconds( 5 ),
+																		   true );
 }
 
 void DebuggerClientListener::threadChanged( const ThreadEvent& ) {}
@@ -298,6 +305,10 @@ void DebuggerClientListener::stackTrace( const int threadId, StackTraceInfo&& st
 					var.memoryReference = info->memoryReference;
 				}
 				mPlugin->mExpressionsHolder->upsertRootChild( std::move( var ) );
+				ExpandedState::Location location{ mCurrentScopePos->first, mCurrentScopePos->second,
+												  mCurrentFrameId };
+				mPlugin->mExpressionsHolder->restoreExpandedState(
+					location, mClient, getStatusDebuggerController()->getUIExpressions(), true );
 			} );
 	}
 }

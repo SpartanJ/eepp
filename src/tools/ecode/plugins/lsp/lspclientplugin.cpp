@@ -2070,7 +2070,8 @@ void LSPClientPlugin::showDocumentSymbols( UICodeEditor* editor ) {
 		return;
 
 	getUISceneNode()->getRoot()->setFocus();
-	UIWindow* win = UIWindow::NewOpt( UIMessageBox::WindowBaseContainerType::LINEAR_LAYOUT );
+	UIWindow* win =
+		UIWindow::NewOpt( UIMessageBox::WindowBaseContainerType::VERTICAL_LINEAR_LAYOUT );
 	win->setMinWindowSize( 400, getUISceneNode()->getSize().getHeight() * 0.7f );
 	win->setKeyBindingCommand( "closeWindow", [win, editor] {
 		win->closeWindow();

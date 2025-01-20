@@ -86,8 +86,8 @@ template <typename T> json toJsonArray( const std::vector<T>& items ) {
 namespace ecode::dap {
 
 Message::Message( const json& body ) :
-	id( body[DAP_ID].get<int>() ),
-	format( body["format"].get<std::string>() ),
+	id( body.value( DAP_ID, 0 ) ),
+	format( body.value( "format", "" ) ),
 	variables( parseOptionalStringMap( body, "variables" ) ),
 	sendTelemetry( parseOptionalBool( body, "sendTelemetry" ) ),
 	showUser( parseOptionalBool( body, "showUser" ) ),
@@ -123,7 +123,7 @@ Output::Output( const json& body ) :
 	column( parseOptionalInt( body, DAP_COLUMN ) ),
 	data( body.contains( DAP_DATA ) ? body[DAP_DATA] : nlohmann::json{} ) {
 	if ( body.contains( DAP_GROUP ) ) {
-		const auto value = body[DAP_GROUP].get<std::string>();
+		const auto value = body.value( DAP_GROUP, "" );
 		if ( DAP_START == value ) {
 			group = Group::Start;
 		} else if ( "startCollapsed" == value ) {
@@ -133,7 +133,7 @@ Output::Output( const json& body ) :
 		}
 	}
 	if ( body.contains( DAP_CATEGORY ) ) {
-		const auto value = body[DAP_CATEGORY].get<std::string>();
+		const auto value = body.value( DAP_CATEGORY, "" );
 		if ( "console" == value ) {
 			category = Category::Console;
 		} else if ( "important" == value ) {
@@ -222,8 +222,7 @@ json Source::toJson() const {
 }
 
 Checksum::Checksum( const json& body ) :
-	checksum( body[DAP_CHECKSUM].get<std::string>() ),
-	algorithm( body[DAP_ALGORITHM].get<std::string>() ) {}
+	checksum( body.value( DAP_CHECKSUM, "" ) ), algorithm( body.value( DAP_ALGORITHM, "" ) ) {}
 
 json Checksum::toJson() const {
 	json out;
@@ -244,10 +243,10 @@ Capabilities::Capabilities( const json& body ) :
 	supportsGotoTargetsRequest( body.value( "supportsGotoTargetsRequest", false ) ) {}
 
 ThreadEvent::ThreadEvent( const json& body ) :
-	reason( body[DAP_REASON].get<std::string>() ), threadId( body[DAP_THREAD_ID].get<int>() ) {}
+	reason( body.value( DAP_REASON, "" ) ), threadId( body.value( DAP_THREAD_ID, 0 ) ) {}
 
 StoppedEvent::StoppedEvent( const json& body ) :
-	reason( body[DAP_REASON].get<std::string>() ),
+	reason( body.value( DAP_REASON, "" ) ),
 	description( parseOptionalString( body, "description" ) ),
 	threadId( body.value( DAP_THREAD_ID, 1 ) ),
 	preserveFocusHint( parseOptionalBool( body, "preserveFocusHint" ) ),
@@ -256,7 +255,7 @@ StoppedEvent::StoppedEvent( const json& body ) :
 	hitBreakpointsIds( parseOptionalIntList( body, "hitBreakpointsIds" ) ) {}
 
 DapThread::DapThread( const json& body ) :
-	id( body[DAP_ID].get<int>() ), name( body[DAP_NAME].get<std::string>() ) {}
+	id( body.value( DAP_ID, 1 ) ), name( body.value( DAP_NAME, "" ) ) {}
 
 DapThread::DapThread( const int id ) : id( id ), name( std::string() ) {}
 
@@ -265,11 +264,11 @@ std::vector<DapThread> DapThread::parseList( const json& threads ) {
 }
 
 StackFrame::StackFrame( const json& body ) :
-	id( body[DAP_ID].get<int>() ),
-	name( body[DAP_NAME].get<std::string>() ),
+	id( body.value( DAP_ID, 0 ) ),
+	name( body.value( DAP_NAME, "" ) ),
 	source( parseOptionalObject<Source>( body, DAP_SOURCE ) ),
-	line( body[DAP_LINE].get<int>() ),
-	column( body[DAP_COLUMN].get<int>() ),
+	line( body.value( DAP_LINE, 0 ) ),
+	column( body.value( DAP_COLUMN, 0 ) ),
 	endLine( parseOptionalInt( body, "endLine" ) ),
 	canRestart( parseOptionalBool( body, "canRestart" ) ),
 	instructionPointerReference( parseOptionalString( body, "instructionPointerReference" ) ),
@@ -284,7 +283,7 @@ StackTraceInfo::StackTraceInfo( const json& body ) :
 Module::Module( const json& body ) :
 	id_int( parseOptionalInt( body, DAP_ID ) ),
 	id_str( parseOptionalString( body, DAP_ID ) ),
-	name( body[DAP_NAME].get<std::string>() ),
+	name( body.value( DAP_NAME, "" ) ),
 	path( parseOptionalString( body, DAP_PATH ) ),
 	isOptimized( parseOptionalBool( body, "isOptimized" ) ),
 	isUserCode( parseOptionalBool( body, "isUserCode" ) ),
@@ -295,12 +294,12 @@ Module::Module( const json& body ) :
 	addressRange( parseOptionalString( body, "addressRange" ) ) {}
 
 ModuleEvent::ModuleEvent( const json& body ) :
-	reason( body[DAP_REASON].get<std::string>() ), module( Module( body["module"] ) ) {}
+	reason( body.value( DAP_REASON, "" ) ), module( Module( body["module"] ) ) {}
 
 Scope::Scope( const json& body ) :
-	name( body[DAP_NAME].get<std::string>() ),
+	name( body.value( DAP_NAME, "" ) ),
 	presentationHint( parseOptionalString( body, DAP_PRESENTATION_HINT ) ),
-	variablesReference( body[DAP_VARIABLES_REFERENCE].get<int>() ),
+	variablesReference( body.value( DAP_VARIABLES_REFERENCE, 0 ) ),
 	namedVariables( parseOptionalInt( body, "namedVariables" ) ),
 	indexedVariables( parseOptionalInt( body, "indexedVariables" ) ),
 	expensive( parseOptionalBool( body, "expensive" ) ),
@@ -318,11 +317,11 @@ std::vector<Scope> Scope::parseList( const json& scopes ) {
 }
 
 Variable::Variable( const json& body ) :
-	name( body[DAP_NAME].get<std::string>() ),
-	value( body["value"].get<std::string>() ),
+	name( body.value( DAP_NAME, "" ) ),
+	value( body.value( DAP_VALUE, "" ) ),
 	type( parseOptionalString( body, DAP_TYPE ) ),
 	evaluateName( parseOptionalString( body, "evaluateName" ) ),
-	variablesReference( body[DAP_VARIABLES_REFERENCE].get<int>() ),
+	variablesReference( body.value( DAP_VARIABLES_REFERENCE, 0 ) ),
 	namedVariables( parseOptionalInt( body, "namedVariables" ) ),
 	indexedVariables( parseOptionalInt( body, "indexedVariables" ) ),
 	memoryReference( parseOptionalString( body, "memoryReference" ) ) {}
@@ -339,15 +338,14 @@ ModulesInfo::ModulesInfo( const json& body ) :
 	totalModules( parseOptionalInt( body, "totalModules" ) ) {}
 
 ContinuedEvent::ContinuedEvent( const json& body ) :
-	threadId( body[DAP_THREAD_ID].get<int>() ),
+	threadId( body.value( DAP_THREAD_ID, 1 ) ),
 	allThreadsContinued( parseOptionalBool( body, DAP_ALL_THREADS_CONTINUED ) ) {}
 
 ContinuedEvent::ContinuedEvent( int threadId, bool allThreadsContinued ) :
 	threadId( threadId ), allThreadsContinued( allThreadsContinued ) {}
 
 SourceContent::SourceContent( const json& body ) :
-	content( body["content"].get<std::string>() ),
-	mimeType( parseOptionalString( body, "mimeType" ) ) {}
+	content( body.value( "content", "" ) ), mimeType( parseOptionalString( body, "mimeType" ) ) {}
 
 SourceContent::SourceContent( const std::string& path ) {
 	const FileInfo file( path );
@@ -358,7 +356,7 @@ SourceContent::SourceContent( const std::string& path ) {
 }
 
 SourceBreakpoint::SourceBreakpoint( const json& body ) :
-	line( body[DAP_LINE].get<int>() ),
+	line( body.value( DAP_LINE, 0 ) ),
 	column( parseOptionalInt( body, DAP_COLUMN ) ),
 	condition( parseOptionalString( body, DAP_CONDITION ) ),
 	hitCondition( parseOptionalString( body, DAP_HIT_CONDITION ) ),
@@ -399,21 +397,20 @@ Breakpoint::Breakpoint( const json& body ) :
 Breakpoint::Breakpoint( const int line ) : line( line ) {}
 
 BreakpointEvent::BreakpointEvent( const json& body ) :
-	reason( body[DAP_REASON].get<std::string>() ),
-	breakpoint( Breakpoint( body[DAP_BREAKPOINT] ) ) {}
+	reason( body.value( DAP_REASON, "" ) ), breakpoint( Breakpoint( body[DAP_BREAKPOINT] ) ) {}
 
 EvaluateInfo::EvaluateInfo( const json& body ) :
-	result( body[DAP_RESULT].get<std::string>() ),
+	result( body.value( DAP_RESULT, "" ) ),
 	type( parseOptionalString( body, DAP_TYPE ) ),
-	variablesReference( body[DAP_VARIABLES_REFERENCE].get<int>() ),
+	variablesReference( body.value( DAP_VARIABLES_REFERENCE, 0 ) ),
 	namedVariables( parseOptionalInt( body, "namedVariables" ) ),
 	indexedVariables( parseOptionalInt( body, "indexedVariables" ) ),
 	memoryReference( parseOptionalString( body, "memoryReference" ) ) {}
 
 GotoTarget::GotoTarget( const json& body ) :
-	id( body[DAP_ID].get<int>() ),
-	label( body["label"].get<std::string>() ),
-	line( body[DAP_LINE].get<int>() ),
+	id( body.value( DAP_ID, 0 ) ),
+	label( body.value( "label", "" ) ),
+	line( body.value( DAP_LINE, 0 ) ),
 	column( parseOptionalInt( body, DAP_COLUMN ) ),
 	endLine( parseOptionalInt( body, DAP_END_LINE ) ),
 	endColumn( parseOptionalInt( body, DAP_END_COLUMN ) ),

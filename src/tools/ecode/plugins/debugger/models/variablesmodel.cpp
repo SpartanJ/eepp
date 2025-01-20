@@ -234,7 +234,6 @@ void VariablesHolder::clear( bool all ) {
 	mRootNode->clear();
 	if ( all ) {
 		mNodeMap.clear();
-		mExpandedStates.clear();
 		mCurrentLocation = {};
 	}
 }
@@ -254,8 +253,8 @@ VariablePath VariablesHolder::buildVariablePath( ModelVariableNode* node ) const
 	return path;
 }
 
-void VariablesHolder::saveExpandedState( const ModelIndex& index ) {
-	if ( !mCurrentLocation )
+void VariablesHolder::saveExpandedState( const ModelIndex& index, bool uniqueLocation ) {
+	if ( !mCurrentLocation && !uniqueLocation )
 		return;
 
 	ModelVariableNode* node = static_cast<ModelVariableNode*>( index.internalData() );
@@ -263,7 +262,33 @@ void VariablesHolder::saveExpandedState( const ModelIndex& index ) {
 		return;
 
 	auto nodePath = buildVariablePath( node );
-	mExpandedStates[*mCurrentLocation].insert( std::move( nodePath ) );
+
+	ExpandedState::Location location =
+		uniqueLocation ? ExpandedState::Location{} : *mCurrentLocation;
+
+	mExpandedStates[location].insert( std::move( nodePath ) );
+}
+
+void VariablesHolder::removeExpandedState( const ModelIndex& index, bool uniqueLocation ) {
+	if ( !mCurrentLocation && !uniqueLocation )
+		return;
+
+	ExpandedState::Location location =
+		uniqueLocation ? ExpandedState::Location{} : *mCurrentLocation;
+
+	auto locIt = mExpandedStates.find( location );
+	if ( locIt == mExpandedStates.end() )
+		return;
+
+	ModelVariableNode* node = static_cast<ModelVariableNode*>( index.internalData() );
+	if ( !node )
+		return;
+
+	auto nodePath = buildVariablePath( node );
+
+	auto stateIt = locIt->second.find( nodePath );
+	if ( stateIt != locIt->second.end() )
+		locIt->second.erase( stateIt );
 }
 
 bool VariablesHolder::resolvePath( std::vector<std::string> path, DebuggerClient* client,
@@ -315,10 +340,11 @@ static int getLocationDistance( const ExpandedState::Location& loc1,
 }
 
 bool VariablesHolder::restoreExpandedState( const ExpandedState::Location& location,
-											DebuggerClient* client, UITreeView* uiVariables ) {
+											DebuggerClient* client, UITreeView* uiVariables,
+											bool uniqueLocation ) {
 	mCurrentLocation = location;
 
-	auto it = mExpandedStates.find( location );
+	auto it = uniqueLocation ? mExpandedStates.begin() : mExpandedStates.find( location );
 	if ( it == mExpandedStates.end() ) {
 		// Find the nearest expanded state
 		const ExpandedState::Location* nearestLoc = nullptr;

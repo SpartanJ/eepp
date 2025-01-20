@@ -53,7 +53,7 @@
           "request": "attach",
           "arguments": {
             "program": "${file}",
-            "pid": "${pid}"
+            "pid": "${command:PickProcess}"
           }
         }
       ]
@@ -114,7 +114,7 @@
           "request": "attach",
           "arguments": {
             "program": "${file}",
-            "pid": "${pid}"
+            "pid": "${command:PickProcess}"
           }
         }
       ]

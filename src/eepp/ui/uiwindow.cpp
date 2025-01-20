@@ -32,6 +32,18 @@ UIWindow* UIWindow::New() {
 	return eeNew( UIWindow, ( SIMPLE_LAYOUT ) );
 }
 
+UIWindow* UIWindow::NewVBox() {
+	return eeNew( UIWindow, ( VERTICAL_LINEAR_LAYOUT ) );
+}
+
+UIWindow* UIWindow::NewHBox() {
+	return eeNew( UIWindow, ( HORIZONTAL_LINEAR_LAYOUT ) );
+}
+
+UIWindow* UIWindow::NewRelLay() {
+	return eeNew( UIWindow, ( RELATIVE_LAYOUT ) );
+}
+
 UIWindow::UIWindow( UIWindow::WindowBaseContainerType type ) : UIWindow( type, StyleConfig() ) {}
 
 UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& windowStyleConfig ) :
@@ -65,8 +77,12 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 		getUISceneNode()->windowAdd( this );
 
 	switch ( type ) {
-		case LINEAR_LAYOUT:
+		case VERTICAL_LINEAR_LAYOUT:
 			mContainer = UILinearLayout::NewWithTag( "window::container", UIOrientation::Vertical );
+			break;
+		case HORIZONTAL_LINEAR_LAYOUT:
+			mContainer =
+				UILinearLayout::NewWithTag( "window::container", UIOrientation::Horizontal );
 			break;
 		case RELATIVE_LAYOUT:
 			mContainer = UIRelativeLayout::NewWithTag( "window::container" );

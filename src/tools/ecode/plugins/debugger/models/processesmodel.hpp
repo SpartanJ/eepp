@@ -27,8 +27,16 @@ class ProcessesModel : public Model {
 
 	virtual Variant data( const ModelIndex& modelIndex, ModelRole role ) const;
 
+	void setFilter( const std::string& filter );
+
+	void setProcesses( std::vector<std::pair<Uint64, std::string>>&& processes );
+
+	std::pair<Uint64, std::string> getProcess( const ModelIndex& index ) const;
+
   protected:
 	std::vector<std::pair<Uint64, std::string>> mProcesses;
+	std::vector<std::pair<Uint64, std::string_view>> mProcessesFiltered;
+	std::string mFilter;
 	UISceneNode* mSceneNode{ nullptr };
 };
 
