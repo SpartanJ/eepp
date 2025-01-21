@@ -40,7 +40,8 @@ namespace ecode {
 static constexpr auto INPUT_PATTERN = "%$%{input%:([%w_]+)%}"sv;
 static constexpr auto COMMAND_PATTERN = "%$%{command%:([%w_]+)%}"sv;
 static constexpr auto CMD_PICK_PROCESS = "${command:pickProcess}"sv;
-static constexpr auto CMD_PICK_STRING = "${command:pickString}"sv;
+static constexpr auto CMD_PROMPT_STRING = "${command:promptString}"sv;
+static constexpr auto CMD_PICK_FILE = "${command:pickFile}"sv;
 
 static LuaPattern inputPtrn( INPUT_PATTERN );
 static LuaPattern commandPtrn( COMMAND_PATTERN );
@@ -1180,11 +1181,17 @@ DebuggerPlugin::needsToResolveInputs( nlohmann::json& json,
 			if ( it != mDapInputs.end() )
 				inputs[it->first] = it->second;
 		} else if ( String::icontains( val, CMD_PICK_PROCESS ) ) {
-			DapConfigurationInput dci{ "pickprocess", "Process ID", "pickprocess", "", {} };
+			DapConfigurationInput dci{
+				"pickprocess", i18n( "process_id", "Process ID" ), "pickprocess", "", {} };
 			inputs[std::string{ CMD_PICK_PROCESS }] = dci;
-		} else if ( String::icontains( val, CMD_PICK_STRING ) ) {
-			DapConfigurationInput dci{ "pickstring", "Name", "pickstring", "", {} };
-			inputs[std::string{ CMD_PICK_STRING }] = dci;
+		} else if ( String::icontains( val, CMD_PROMPT_STRING ) ) {
+			DapConfigurationInput dci{
+				"promptstring", i18n( "name", "Name" ), "promptstring", "", {} };
+			inputs[std::string{ CMD_PROMPT_STRING }] = dci;
+		} else if ( String::icontains( val, CMD_PICK_FILE ) ) {
+			DapConfigurationInput dci{
+				"pickfile", i18n( "file_path", "File Path" ), "pickfile", "", {} };
+			inputs[std::string{ CMD_PICK_FILE }] = dci;
 		}
 	};
 
@@ -1567,28 +1574,55 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 void DebuggerPlugin::resolveInputsBeforeRun(
 	std::unordered_map<std::string, DapConfigurationInput> inputs, DapTool debugger,
 	DapConfig config, std::unordered_map<std::string, std::string> solvedInputs ) {
-	if ( !inputs.empty() ) {
-		auto input = inputs.begin()->second;
-		if ( input.type == "pickprocess"sv ) {
-			UIWindow* win = processPicker();
-			win->setTitle( i18n( "pick_process", "Pick Process" ) );
-			win->center();
-			win->showWhenReady();
-			win->on( Event::OnConfirm, [inputs, win, debugger, config, solvedInputs,
-										this]( const Event* ) mutable {
-				UITableView* uiTableView = win->find( "processes_list" )->asType<UITableView>();
-				auto model = static_cast<ProcessesModel*>( uiTableView->getModel() );
-				std::string inputData(
-					model->data( uiTableView->getSelection().first(), ModelRole::Display )
-						.toString() );
-				std::string id( inputs.begin()->second.id );
-				solvedInputs[id] = inputData;
-				inputs.erase( inputs.begin() );
-				resolveInputsBeforeRun( inputs, debugger, config, solvedInputs );
-				win->closeWindow();
-			} );
-			return;
-		}
+	if ( inputs.empty() ) {
+		prepareAndRun( debugger, config, solvedInputs );
+		return;
+	}
+
+	auto input = inputs.begin()->second;
+	if ( input.type == "pickprocess"sv ) {
+		UIWindow* win = processPicker();
+		win->setTitle( i18n( "pick_process", "Pick Process" ) );
+		win->center();
+		win->showWhenReady();
+		win->on( Event::OnConfirm, [inputs, win, debugger, config, solvedInputs,
+									this]( const Event* ) mutable {
+			UITableView* uiTableView = win->find( "processes_list" )->asType<UITableView>();
+			auto model = static_cast<ProcessesModel*>( uiTableView->getModel() );
+			std::string inputData(
+				model->data( uiTableView->getSelection().first(), ModelRole::Display ).toString() );
+			std::string id( inputs.begin()->second.id );
+			solvedInputs[id] = inputData;
+			inputs.erase( inputs.begin() );
+			resolveInputsBeforeRun( inputs, debugger, config, solvedInputs );
+			win->closeWindow();
+		} );
+	} else if ( input.type == "pickfile" ) {
+		UIFileDialog* dialog = UIFileDialog::New(
+			UIFileDialog::DefaultFlags, "*", getPluginContext()->getDefaultFileDialogFolder() );
+		dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
+		dialog->setTitle( i18n( "open_file", "Open File" ) );
+		dialog->setCloseShortcut( KEY_ESCAPE );
+		dialog->setSingleClickNavigation(
+			getPluginContext()->getConfig().editor.singleClickNavigation );
+		dialog->setAllowsMultiFileSelect( false );
+		dialog->on( Event::OpenFile, [this, dialog, inputs, solvedInputs, debugger,
+									  config]( const Event* event ) mutable {
+			auto file = event->getNode()->asType<UIFileDialog>()->getFullPath();
+			solvedInputs[inputs.begin()->second.id] = file;
+			inputs.erase( inputs.begin() );
+			resolveInputsBeforeRun( inputs, debugger, config, solvedInputs );
+			dialog->closeWindow();
+		} );
+		dialog->on( Event::OnWindowClose, [this]( const Event* ) {
+			if ( getPluginContext()->getSplitter() &&
+				 getPluginContext()->getSplitter()->getCurWidget() &&
+				 !SceneManager::instance()->isShuttingDown() )
+				getPluginContext()->getSplitter()->getCurWidget()->setFocus();
+		} );
+		dialog->center();
+		dialog->show();
+	} else {
 		bool isPick = input.type == "pickstring";
 		UIMessageBox* msgBox = UIMessageBox::New(
 			isPick ? UIMessageBox::DROPDOWNLIST : UIMessageBox::INPUT, input.description );
@@ -1613,10 +1647,7 @@ void DebuggerPlugin::resolveInputsBeforeRun(
 			resolveInputsBeforeRun( inputs, debugger, config, solvedInputs );
 			msgBox->closeWindow();
 		} );
-		return;
 	}
-
-	prepareAndRun( debugger, config, solvedInputs );
 }
 
 void DebuggerPlugin::prepareAndRun( DapTool debugger, DapConfig config,
@@ -1644,7 +1675,7 @@ void DebuggerPlugin::prepareAndRun( DapTool debugger, DapConfig config,
 
 	for ( const std::string& cmdArg : config.cmdArgs ) {
 		if ( cmdArg == KEY_FILE || cmdArg == KEY_ARGS || cmdArg == CMD_PICK_PROCESS ||
-			 cmdArg == CMD_PICK_STRING )
+			 cmdArg == CMD_PROMPT_STRING )
 			forceUseProgram = true;
 		auto args = replaceKeyInString( cmdArg, randomPort, solvedInputs );
 		for ( const auto& arg : args )

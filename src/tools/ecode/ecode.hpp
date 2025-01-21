@@ -55,6 +55,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void openFileDialog();
 
+	std::string getDefaultFileDialogFolder() const;
+
 	void openFolderDialog();
 
 	void openFontDialog( std::string& fontPath, bool loadingMonoFont, bool terminalFont = false );
@@ -344,6 +346,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	const CodeEditorConfig& getCodeEditorConfig() const;
 
 	AppConfig& getConfig();
+
+	const AppConfig& getConfig() const;
 
 	void updateDocInfo( TextDocument& doc );
 
@@ -653,7 +657,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void onPluginEnabled( Plugin* plugin );
 
-	std::string getLastUsedFolder();
+	std::string getLastUsedFolder() const;
 
 	void insertRecentFolder( const std::string& rpath );
 

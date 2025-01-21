@@ -38,6 +38,7 @@ using namespace EE::UI::Doc;
 
 namespace ecode {
 
+class AppConfig;
 class UIStatusBar;
 class TerminalManager;
 class UniversalLocator;
@@ -126,6 +127,9 @@ class PluginContextProvider {
 
 	virtual UIMainLayout* getMainLayout() const = 0;
 
+	virtual std::string getDefaultFileDialogFolder() const = 0;
+
+	virtual const AppConfig& getConfig() const = 0;
 };
 
 } // namespace ecode

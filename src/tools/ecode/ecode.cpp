@@ -313,8 +313,7 @@ void App::onDocumentUndoRedo( UICodeEditor* editor, TextDocument& doc ) {
 
 void App::openFileDialog() {
 	UIFileDialog* dialog =
-		UIFileDialog::New( UIFileDialog::DefaultFlags, "*",
-						   mLastFileFolder.empty() ? getLastUsedFolder() : mLastFileFolder );
+		UIFileDialog::New( UIFileDialog::DefaultFlags, "*", getDefaultFileDialogFolder() );
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "open_file", "Open File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
@@ -335,7 +334,11 @@ void App::openFileDialog() {
 	dialog->show();
 }
 
-std::string App::getLastUsedFolder() {
+std::string App::getDefaultFileDialogFolder() const {
+	return mLastFileFolder.empty() ? getLastUsedFolder() : mLastFileFolder;
+}
+
+std::string App::getLastUsedFolder() const {
 	if ( !mCurrentProject.empty() && mCurrentProject != getPlaygroundPath() )
 		return mCurrentProject;
 	if ( !mRecentFolders.empty() )
@@ -1748,6 +1751,10 @@ const CodeEditorConfig& App::getCodeEditorConfig() const {
 }
 
 AppConfig& App::getConfig() {
+	return mConfig;
+}
+
+const AppConfig& App::getConfig() const {
 	return mConfig;
 }
 

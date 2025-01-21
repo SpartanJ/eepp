@@ -52,6 +52,14 @@
           "arguments": {
             "pid": "${command:pickProcess}"
           }
+        },
+        {
+          "name": "Load coredump",
+          "request": "attach",
+          "arguments": {
+            "coreFile": "${command:pickFile}",
+            "program": "${file}"
+          }
         }
       ]
     },
@@ -109,6 +117,14 @@
           "request": "attach",
           "arguments": {
             "pid": "${command:pickProcess}"
+          }
+        },
+        {
+          "name": "Load coredump",
+          "request": "attach",
+          "arguments": {
+            "coreFile": "${command:pickFile}",
+            "program": "${file}"
           }
         }
       ]
@@ -175,7 +191,7 @@
       },
       "configurations": [
         {
-          "name": "Launch",
+          "name": "Launch script",
           "command_arguments": ["--wait-for-client", "${file}", "${args}"],
           "request": "attach",
           "arguments": {
@@ -185,7 +201,7 @@
         },
         {
           "name": "Launch module",
-          "command_arguments": ["--wait-for-client", "-m", "${command:pickString"],
+          "command_arguments": ["--wait-for-client", "-m", "${command:promptString}"],
           "request": "attach",
           "arguments": {
             "stopOnEntry": true,
@@ -199,6 +215,51 @@
           "arguments": {
               "stopOnEntry": true,
               "redirectOutput": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "dart",
+      "type": "dart",
+      "languages": [ "dart" ],
+      "url": "https://github.com/dart-lang/sdk/blob/main/third_party/pkg/dap/tool/README.md",
+      "run": {
+        "command": "dart",
+        "command_arguments": ["debug_adapter"]
+      },
+      "configurations": [
+        {
+          "name": "Launch (debug)",
+          "request": "launch",
+          "arguments": {
+            "mode": "debug",
+            "program": "${file}",
+            "args": "${args}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "perl-ls",
+      "url": "https://github.com/richterger/Perl-LanguageServer",
+      "type": "perl",
+      "languages": [ "perl" ],
+      "run": {
+        "command": "perl",
+        "command_arguments": ["-MPerl::LanguageServer", "-e", "Perl::LanguageServer::run", "--", "--port", "${randPort}"],
+        "redirectStderr": false,
+        "redirectStdout": true,
+        "supportsSourceRequest": false
+      },
+      "configurations": [
+        {
+          "name": "Launch",
+          "request": "launch",
+          "arguments": {
+            "program": "${file}",
+            "args": "${args}",
+            "stopOnEntry": true
           }
         }
       ]
