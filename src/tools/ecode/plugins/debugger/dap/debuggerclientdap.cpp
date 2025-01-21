@@ -151,8 +151,8 @@ void DebuggerClientDap::requestLaunchCommand() {
 
 void DebuggerClientDap::requestInitialize() {
 	const nlohmann::json capabilities{
-		{ DAP_CLIENT_ID, "ecode-dap" },
-		{ DAP_CLIENT_NAME, "ecode dap" },
+		{ DAP_CLIENT_ID, "ecode" },
+		{ DAP_CLIENT_NAME, "ecode" },
 		{ DAP_LOCALE, mProtocol.locale },
 		{ DAP_ADAPTER_ID, "ecode-dap" },
 		{ DAP_LINES_START_AT1, mProtocol.linesStartAt1 },

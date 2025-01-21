@@ -904,6 +904,10 @@ void DebuggerPlugin::buildStatusBar() {
 		mExpressionsHolder = std::make_shared<VariablesHolder>( getUISceneNode() );
 		resetExpressions();
 	}
+
+	if ( !mHoverExpressionsHolder ) {
+		mHoverExpressionsHolder = std::make_shared<VariablesHolder>( getUISceneNode() );
+	}
 }
 
 void DebuggerPlugin::updateSidePanelTab() {
@@ -2021,64 +2025,77 @@ static Action::UniqueID getMouseMoveHash( UICodeEditor* editor ) {
 						reinterpret_cast<Action::UniqueID>( editor ) );
 }
 
-void DebuggerPlugin::hideTooltip( UICodeEditor* editor ) {
-	UITooltip* tooltip = nullptr;
-	if ( editor && ( tooltip = editor->getTooltip() ) && tooltip->isVisible() &&
-		 tooltip->getData() == String::hash( "debugger" ) ) {
-		editor->setTooltipText( "" );
-		tooltip->hide();
-		// Restore old tooltip state
-		tooltip->setData( 0 );
-		tooltip->setFontStyle( mOldTextStyle );
-		tooltip->setHorizontalAlign( mOldTextAlign );
-		tooltip->setUsingCustomStyling( mOldUsingCustomStyling );
-		tooltip->setDontAutoHideOnMouseMove( mOldDontAutoHideOnMouseMove );
-		tooltip->setBackgroundColor( mOldBackgroundColor );
-		tooltip->setWordWrap( mOldWordWrap );
-		tooltip->setMaxWidthEq( mOldMaxWidth );
-	}
+void DebuggerPlugin::hideTooltip( UICodeEditor* ) {
+	// if ( mHoverTooltip ) {
+	// 	mHoverTooltip->hide();
+	// }
 }
 
-void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const EvaluateInfo& resp,
-									 const Vector2f& position ) {
-	// HACK: Gets the old font style to restore it when the tooltip is hidden
-	UITooltip* tooltip = editor->createTooltip();
-	if ( tooltip == nullptr )
-		return;
-	mOldWordWrap = tooltip->isWordWrap();
-	mOldMaxWidth = tooltip->getMaxWidthEq();
-	tooltip->setWordWrap( true );
-	tooltip->setMaxWidthEq( "50vw" );
-	editor->setTooltipText( resp.result );
-	mOldTextStyle = tooltip->getFontStyle();
-	mOldTextAlign = tooltip->getHorizontalAlign();
-	mOldDontAutoHideOnMouseMove = tooltip->dontAutoHideOnMouseMove();
-	mOldUsingCustomStyling = tooltip->getUsingCustomStyling();
-	mOldBackgroundColor = tooltip->getBackgroundColor();
-	if ( Color::Transparent == mOldBackgroundColor ) {
-		tooltip->reloadStyle( true, true, true, true );
-		mOldBackgroundColor = tooltip->getBackgroundColor();
+void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const std::string& expression,
+									 const EvaluateInfo& info, const Vector2f& position ) {
+	if ( mHoverTooltip == nullptr ) {
+		UIWindow* win =
+			UIWindow::NewOpt( UIMessageBox::WindowBaseContainerType::VERTICAL_LINEAR_LAYOUT );
+		win->setMinWindowSize( 400, 250 );
+		win->setKeyBindingCommand( "closeWindow", [this, win, editor] {
+			win->closeWindow();
+			if ( getPluginContext()->getSplitter() &&
+				 getPluginContext()->getSplitter()->editorExists( editor ) )
+				editor->setFocus();
+		} );
+		win->getKeyBindings().addKeybind( { KEY_ESCAPE }, "closeWindow" );
+		win->setWindowFlags( UI_WIN_NO_DECORATION | UI_WIN_SHADOW | UI_WIN_EPHEMERAL );
+		win->center();
+		win->on( Event::OnWindowClose, [this]( auto ) { mHoverTooltip = nullptr; } );
+		win->on( Event::OnWindowReady, [win]( auto ) { win->setFocus(); } );
+
+		UITreeView* tv = UITreeView::New();
+		tv->setHeadersVisible( false );
+		tv->setAutoExpandOnSingleColumn( true );
+		tv->setAutoColumnsWidth( true );
+		tv->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed );
+		tv->setLayoutWeight( 1 );
+		tv->setParent( win->getContainer() );
+		tv->setModel( mHoverExpressionsHolder->getModel() );
+		tv->expandAll();
+		tv->setFocusOnSelection( false );
+
+		tv->on( Event::OnModelEvent, [this]( const Event* event ) {
+			const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
+			if ( mDebugger && mListener &&
+				 modelEvent->getModelEventType() == Abstract::ModelEventType::OpenTree ) {
+				ModelVariableNode* node =
+					static_cast<ModelVariableNode*>( modelEvent->getModelIndex().internalData() );
+				mDebugger->variables(
+					node->var.variablesReference, Variable::Type::Both,
+					[this]( const int variablesReference, std::vector<Variable>&& vars ) {
+						mHoverExpressionsHolder->addVariables( variablesReference,
+															   std::move( vars ) );
+					} );
+			}
+		} );
+
+		mHoverTooltip = win;
 	}
-	tooltip->setHorizontalAlign( UI_HALIGN_LEFT );
-	tooltip->setPixelsPosition( tooltip->getTooltipPosition( position ) );
-	tooltip->setDontAutoHideOnMouseMove( true );
-	tooltip->setUsingCustomStyling( true );
-	tooltip->setFontStyle( Text::Regular );
-	tooltip->setData( String::hash( "debugger" ) );
-	tooltip->setBackgroundColor( editor->getColorScheme().getEditorColor( "background"_sst ) );
-	tooltip->getUIStyle()->setStyleSheetProperty( StyleSheetProperty(
-		"background-color",
-		editor->getColorScheme().getEditorColor( "background"_sst ).toHexString(), true,
-		StyleSheetSelectorRule::SpecificityImportant ) );
 
-	if ( tooltip->getText().empty() )
-		return;
+	mHoverExpressionsHolder->clear( true );
 
-	tooltip->notifyTextChangedFromTextCache();
+	Variable var;
+	var.evaluateName = expression;
+	var.name = std::move( expression );
+	var.value = info.result;
+	var.type = info.type;
+	var.variablesReference = info.variablesReference;
+	var.indexedVariables = info.indexedVariables;
+	var.namedVariables = info.namedVariables;
+	var.memoryReference = info.memoryReference;
+	mHoverExpressionsHolder->upsertRootChild( std::move( var ) );
 
-	if ( editor->hasFocus() && !tooltip->isVisible() &&
-		 !tooltip->getTextCache()->getString().empty() )
-		tooltip->show();
+	mHoverTooltip->setData( String::hash( "debugger" ) );
+	mHoverTooltip->setPixelsPosition( UITooltip::getTooltipPosition( mHoverTooltip, position ) );
+
+	if ( editor->hasFocus() && !mHoverTooltip->isVisible() )
+		mHoverTooltip->showWhenReady();
 }
 
 void DebuggerPlugin::tryHideTooltip( UICodeEditor* editor, const Vector2i& position ) {
@@ -2126,10 +2143,12 @@ bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position
 
 			mDebugger->evaluate(
 				expression, "hover", mListener->getCurrentFrameId(),
-				[this, editor]( const std::string&, const std::optional<EvaluateInfo>& info ) {
+				[this, editor, expression]( const std::string&,
+											const std::optional<EvaluateInfo>& info ) {
 					if ( info && mManager->getSplitter()->editorExists( editor ) &&
 						 !info->result.empty() ) {
-						editor->runOnMainThread( [this, editor, info = std::move( *info )]() {
+						editor->runOnMainThread( [this, editor, info = std::move( *info ),
+												  expression]() {
 							auto mousePos =
 								editor->getUISceneNode()->getWindow()->getInput()->getMousePos();
 							if ( !editor->getScreenRect().contains( mousePos.asFloat() ) )
@@ -2141,7 +2160,7 @@ bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position
 
 							if ( mCurrentHover.contains( range ) ) {
 								mCurrentHover = range;
-								displayTooltip( editor, info, mousePos.asFloat() );
+								displayTooltip( editor, expression, info, mousePos.asFloat() );
 							}
 						} );
 					}

@@ -16,7 +16,7 @@ class EE_API UITooltip : public UIWidget {
   public:
 	static UITooltip* New();
 
-	static Vector2f getTooltipPosition( UITooltip* toolip, const Vector2f& requestedPosition );
+	static Vector2f getTooltipPosition( UIWidget* toolip, const Vector2f& requestedPosition );
 
 	UITooltip();
 

@@ -14,7 +14,7 @@ UITooltip* UITooltip::New() {
 	return eeNew( UITooltip, () );
 }
 
-Vector2f UITooltip::getTooltipPosition( UITooltip* toolip, const Vector2f& requestedPosition ) {
+Vector2f UITooltip::getTooltipPosition( UIWidget* toolip, const Vector2f& requestedPosition ) {
 	UISceneNode* uiSceneNode = toolip->getUISceneNode();
 
 	if ( NULL == uiSceneNode )
@@ -259,7 +259,8 @@ void UITooltip::onAutoSize() {
 }
 
 void UITooltip::autoAlign() {
-	if ( mTextCache == nullptr ) return;
+	if ( mTextCache == nullptr )
+		return;
 
 	Uint32 Width = mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right;
 	Uint32 Height = mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom;

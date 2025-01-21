@@ -105,19 +105,14 @@ class DebuggerPlugin : public PluginBase {
 	StatusDebuggerController::State mDebuggingState{ StatusDebuggerController::State::NotStarted };
 	std::vector<std::string> mExpressions;
 	std::shared_ptr<VariablesHolder> mExpressionsHolder;
+	std::shared_ptr<VariablesHolder> mHoverExpressionsHolder;
 	UnorderedMap<std::string, DapConfigurationInput> mDapInputs;
 
 	// Begin Hover Stuff
 	Uint32 mHoverWaitCb{ 0 };
 	TextRange mCurrentHover;
 	Time mHoverDelay{ Seconds( 1.f ) };
-	bool mOldDontAutoHideOnMouseMove{ false };
-	bool mOldUsingCustomStyling{ false };
-	bool mOldWordWrap{ false };
-	Uint32 mOldTextStyle{ 0 };
-	Uint32 mOldTextAlign{ 0 };
-	Color mOldBackgroundColor;
-	std::string mOldMaxWidth;
+	UIWindow* mHoverTooltip{ nullptr };
 	// End hover stuff
 
 	struct PanelBoxButtons {
@@ -210,7 +205,8 @@ class DebuggerPlugin : public PluginBase {
 
 	void hideTooltip( UICodeEditor* editor );
 
-	void displayTooltip( UICodeEditor* editor, const EvaluateInfo& resp, const Vector2f& position );
+	void displayTooltip( UICodeEditor* editor, const std::string& expression,
+						 const EvaluateInfo& info, const Vector2f& position );
 
 	void tryHideTooltip( UICodeEditor* editor, const Vector2i& position );
 
