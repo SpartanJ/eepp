@@ -178,6 +178,8 @@ void DebuggerPlugin::onLoadProject( const std::string& projectFolder,
 	if ( !FileSystem::fileGet( debuggerStatePath, data ) )
 		return;
 
+	auto sdc = getStatusDebuggerController();
+
 	json j;
 	try {
 		j = json::parse( data, nullptr, true, true );
@@ -199,6 +201,9 @@ void DebuggerPlugin::onLoadProject( const std::string& projectFolder,
 						}
 					}
 				}
+
+				if ( sdc && sdc->getWidget() && sdc->getUIExpressions() )
+					sdc->getUIExpressions()->setModel( mExpressionsHolder->getModel() );
 			}
 
 			if ( config.contains( "breakpoints" ) && config["breakpoints"].is_object() ) {
@@ -221,13 +226,16 @@ void DebuggerPlugin::onLoadProject( const std::string& projectFolder,
 					mBreakpointsModel =
 						std::make_shared<BreakpointsModel>( mBreakpoints, getUISceneNode() );
 				}
+
+				if ( sdc && sdc->getWidget() && sdc->getUIBreakpoints() )
+					sdc->getUIBreakpoints()->setModel( mBreakpointsModel );
 			}
 		}
 	} catch ( const json::exception& e ) {
 		Log::error(
 			"DebuggerPlugin::onLoadProject - Error parsing config from path %s, error: %s, config "
 			"file content:\n%s",
-			debuggerStatePath.c_str(), e.what(), data.c_str() );
+			debuggerStatePath, e.what(), data );
 	}
 }
 
@@ -246,8 +254,11 @@ void DebuggerPlugin::resetExpressions() {
 	if ( !mExpressionsHolder )
 		return;
 	mExpressionsHolder->clear( true );
+	std::vector<ModelVariableNode::NodePtr> childs;
+	childs.reserve( mExpressions.size() );
 	for ( const auto& expression : mExpressions )
-		mExpressionsHolder->addChild( std::make_shared<ModelVariableNode>( expression, 0 ) );
+		childs.emplace_back( std::make_shared<ModelVariableNode>( expression, 0 ) );
+	mExpressionsHolder->addChilds( childs );
 }
 
 void DebuggerPlugin::closeProject() {
@@ -760,8 +771,7 @@ void DebuggerPlugin::removeExpression( const std::string& name ) {
 	resetExpressions();
 }
 
-void DebuggerPlugin::openExpressionMenu( UITreeView* uiExpressions, ModelIndex idx,
-										 bool fromMouseClick ) {
+void DebuggerPlugin::openExpressionMenu( ModelIndex idx ) {
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 	auto context = getPluginContext();
 
@@ -801,19 +811,10 @@ void DebuggerPlugin::openExpressionMenu( UITreeView* uiExpressions, ModelIndex i
 		}
 	} );
 
-	UITableCell* cell = uiExpressions->getCellFromIndex( idx );
-	if ( fromMouseClick || cell == nullptr ) {
-		Vector2f pos( context->getWindow()->getInput()->getMousePos().asFloat() );
-		menu->nodeToWorldTranslation( pos );
-		UIMenu::findBestMenuPos( pos, menu );
-		menu->setPixelsPosition( pos );
-	} else {
-		Vector2f pos( 0, cell->getPixelsSize().getHeight() );
-		cell->nodeToWorldTranslation( pos );
-		UIMenu::findBestMenuPos( pos, menu );
-		menu->setPixelsPosition( pos );
-	}
-
+	Vector2f pos( context->getWindow()->getInput()->getMousePos().asFloat() );
+	menu->nodeToWorldTranslation( pos );
+	UIMenu::findBestMenuPos( pos, menu );
+	menu->setPixelsPosition( pos );
 	menu->show();
 }
 void DebuggerPlugin::buildStatusBar() {
@@ -842,9 +843,9 @@ void DebuggerPlugin::buildStatusBar() {
 		UITreeView* uiExpressions = sdc->getUIExpressions();
 		uiExpressions->setModel( mExpressionsHolder->getModel() );
 		uiExpressions->removeEventsOfType( Event::OnModelEvent );
-		uiExpressions->onModelEvent( [this, uiExpressions]( const ModelEvent* modelEvent ) {
+		uiExpressions->onModelEvent( [this]( const ModelEvent* modelEvent ) {
 			if ( modelEvent->getModelEventType() == Abstract::ModelEventType::OpenMenu ) {
-				openExpressionMenu( uiExpressions, modelEvent->getModelIndex(), true );
+				openExpressionMenu( modelEvent->getModelIndex() );
 			} else if ( mDebugger && mListener &&
 						modelEvent->getModelEventType() == Abstract::ModelEventType::OpenTree ) {
 				ModelVariableNode* node =
@@ -861,11 +862,8 @@ void DebuggerPlugin::buildStatusBar() {
 			}
 		} );
 		uiExpressions->removeEventsOfType( Event::MouseClick );
-		uiExpressions->onClick(
-			[this, uiExpressions]( const MouseEvent* ) {
-				openExpressionMenu( uiExpressions, {}, true );
-			},
-			MouseButton::EE_BUTTON_RIGHT );
+		uiExpressions->onClick( [this]( const MouseEvent* ) { openExpressionMenu( {} ); },
+								MouseButton::EE_BUTTON_RIGHT );
 
 		auto uiBreakpoints = sdc->getUIBreakpoints();
 		if ( nullptr == uiBreakpoints->onBreakpointEnabledChange ) {
@@ -947,8 +945,7 @@ void DebuggerPlugin::sendPendingBreakpoints() {
 	for ( const auto& pbp : mPendingBreakpoints )
 		sendFileBreakpoints( pbp );
 	mPendingBreakpoints.clear();
-	if ( mDebugger )
-		mDebugger->resume( mListener->getCurrentThreadId() );
+	resume( mListener->getCurrentThreadId() );
 }
 
 void DebuggerPlugin::sendFileBreakpoints( const std::string& filePath ) {
@@ -1227,7 +1224,7 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 	doc->setCommand( "debugger-continue-interrupt", [this] {
 		if ( mDebugger && mListener ) {
 			if ( mListener->isStopped() ) {
-				mDebugger->resume( mListener->getCurrentThreadId() );
+				resume( mListener->getCurrentThreadId() );
 			} else {
 				mDebugger->pause( 1 );
 			}
@@ -1763,6 +1760,18 @@ UIWindow* DebuggerPlugin::processPicker() {
 	return win;
 }
 
+bool DebuggerPlugin::resume( int threadId, bool singleThread ) {
+	mHoverExpressionsHolder->clear( true );
+
+	if ( mHoverTooltip && mHoverTooltip->isVisible() )
+		mHoverTooltip->hide();
+
+	if ( !mDebugger )
+		return false;
+
+	return mDebugger->resume( threadId, singleThread );
+}
+
 std::optional<Command>
 DebuggerPlugin::debuggerBinaryExists( const std::string& debugger,
 									  std::optional<DapRunConfig> optRunConfig ) {
@@ -2025,17 +2034,11 @@ static Action::UniqueID getMouseMoveHash( UICodeEditor* editor ) {
 						reinterpret_cast<Action::UniqueID>( editor ) );
 }
 
-void DebuggerPlugin::hideTooltip( UICodeEditor* ) {
-	// if ( mHoverTooltip ) {
-	// 	mHoverTooltip->hide();
-	// }
-}
-
 void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const std::string& expression,
 									 const EvaluateInfo& info, const Vector2f& position ) {
 	if ( mHoverTooltip == nullptr ) {
-		UIWindow* win =
-			UIWindow::NewOpt( UIMessageBox::WindowBaseContainerType::VERTICAL_LINEAR_LAYOUT );
+		UIWindow* win = UIWindow::New();
+		win->setId( "debugger_hover_window" );
 		win->setMinWindowSize( 400, 250 );
 		win->setKeyBindingCommand( "closeWindow", [this, win, editor] {
 			win->closeWindow();
@@ -2044,20 +2047,26 @@ void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const std::string& ex
 				editor->setFocus();
 		} );
 		win->getKeyBindings().addKeybind( { KEY_ESCAPE }, "closeWindow" );
-		win->setWindowFlags( UI_WIN_NO_DECORATION | UI_WIN_SHADOW | UI_WIN_EPHEMERAL );
+		win->setWindowFlags( UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS |
+							 UI_WIN_SHADOW | UI_WIN_EPHEMERAL | UI_WIN_RESIZEABLE |
+							 UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHARE_ALPHA_WITH_CHILDS );
 		win->center();
 		win->on( Event::OnWindowClose, [this]( auto ) { mHoverTooltip = nullptr; } );
 		win->on( Event::OnWindowReady, [win]( auto ) { win->setFocus(); } );
 
+		UILinearLayout* vbox = UILinearLayout::NewVertical();
+		vbox->setParent( win->getContainer() );
+		vbox->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+
 		UITreeView* tv = UITreeView::New();
+		tv->setId( "debugger_hover_treeview" );
 		tv->setHeadersVisible( false );
-		tv->setAutoExpandOnSingleColumn( true );
 		tv->setAutoColumnsWidth( true );
+		tv->setFitAllColumnsToWidget( true );
 		tv->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed );
 		tv->setLayoutWeight( 1 );
-		tv->setParent( win->getContainer() );
+		tv->setParent( vbox );
 		tv->setModel( mHoverExpressionsHolder->getModel() );
-		tv->expandAll();
 		tv->setFocusOnSelection( false );
 
 		tv->on( Event::OnModelEvent, [this]( const Event* event ) {
@@ -2078,6 +2087,10 @@ void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const std::string& ex
 		mHoverTooltip = win;
 	}
 
+	if ( editor->getTooltip() )
+		editor->getTooltip()->hide();
+
+	mHoverTooltip->find( "debugger_hover_treeview" )->asType<UITreeView>()->clearViewMetadata();
 	mHoverExpressionsHolder->clear( true );
 
 	Variable var;
@@ -2098,25 +2111,11 @@ void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const std::string& ex
 		mHoverTooltip->showWhenReady();
 }
 
-void DebuggerPlugin::tryHideTooltip( UICodeEditor* editor, const Vector2i& position ) {
-	if ( ( editor->hasDocument() && editor->getDocument().isLoading() ) ||
-		 !mCurrentHover.isValid() ||
-		 ( mCurrentHover.isValid() &&
-		   !mCurrentHover.contains( editor->resolveScreenPosition( position.asFloat() ) ) ) )
-		hideTooltip( editor );
-}
-
 bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position,
 								  const Uint32& flags ) {
 
 	if ( !mDebugger || !mListener || !mDebugger->isServerConnected() ||
-		 mDebuggingState != StatusDebuggerController::State::Paused ) {
-		tryHideTooltip( editor, position );
-		return false;
-	}
-
-	if ( flags != 0 ) {
-		tryHideTooltip( editor, position );
+		 mDebuggingState != StatusDebuggerController::State::Paused || flags != 0 ) {
 		return false;
 	}
 
@@ -2167,7 +2166,6 @@ bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position
 				} );
 		},
 		mHoverDelay, getMouseMoveHash( editor ) );
-	tryHideTooltip( editor, position );
 	editor->updateMouseCursor( position.asFloat() );
 	return true;
 }

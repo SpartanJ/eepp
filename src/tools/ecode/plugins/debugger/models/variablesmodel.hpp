@@ -131,6 +131,8 @@ class VariablesHolder {
 
 	void addChild( ModelVariableNode::NodePtr child );
 
+	void addChilds( const std::vector<ModelVariableNode::NodePtr>& childs );
+
 	void upsertRootChild( Variable&& );
 
 	void clear( bool all = false );

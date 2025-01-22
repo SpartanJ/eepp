@@ -88,10 +88,10 @@ void UITreeView::traverseTree( TreeViewCallback callback ) const {
 }
 
 void UITreeView::createOrUpdateColumns( bool resetColumnData ) {
-	updateContentSize();
 	if ( !getModel() )
 		return;
 	UIAbstractTableView::createOrUpdateColumns( resetColumnData );
+	updateContentSize();
 }
 
 size_t UITreeView::getItemCount() const {
@@ -184,8 +184,8 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 	widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	widget->setTextAlign( UI_HALIGN_LEFT );
 	widget->setCurIndex( index );
+	bindNavigationClick( widget );
 	if ( index.column() == (Int64)getModel()->treeColumn() ) {
-		bindNavigationClick( widget );
 		widget->onClick( [this]( const MouseEvent* mouseEvent ) {
 			if ( mSingleClickNavigation )
 				return;
@@ -738,6 +738,10 @@ bool UITreeView::getDisableCellClipping() const {
 
 void UITreeView::setDisableCellClipping( bool disableCellClipping ) {
 	mDisableCellClipping = disableCellClipping;
+}
+
+void UITreeView::clearViewMetadata() {
+	mViewMetadata.clear();
 }
 
 void UITreeView::onSortColumn( const size_t& ) {

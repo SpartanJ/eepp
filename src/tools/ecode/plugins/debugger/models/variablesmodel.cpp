@@ -213,6 +213,15 @@ void VariablesHolder::addChild( ModelVariableNode::NodePtr child ) {
 	mModel->invalidate( Model::UpdateFlag::InvalidateAllIndexes );
 }
 
+void VariablesHolder::addChilds( const std::vector<ModelVariableNode::NodePtr>& childs ) {
+	Lock l( mMutex );
+	for ( auto& child : childs) {
+		mRootNode->addChild( child );
+		mNodeMap[child->var.variablesReference] = child;
+	}
+	mModel->invalidate( Model::UpdateFlag::InvalidateAllIndexes );
+}
+
 void VariablesHolder::upsertRootChild( Variable&& var ) {
 	Lock l( mMutex );
 	for ( size_t i = 0; i < mRootNode->children.size(); i++ ) {

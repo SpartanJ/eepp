@@ -159,8 +159,11 @@ void StatusDebuggerController::createContainer() {
 	#app_debugger_buttons > PushButton:disabled {
 		tint: var(--disabled-color);
 	}
+	#app_debugger.vertical_bar {
+		background-color: none;
+	}
 	</style>
-	<hbox id="app_debugger" class="vertical_bar" lw="mp" lh="mp" visible="false">
+	<hbox id="app_debugger" lw="mp" lh="mp" visible="false">
 		<TabWidget id="app_debugger_tab_widget" lw="0" lw8="1" lh="mp">
 			<Splitter id="debugger_threads_and_stack" layout_width="mp" lh="mp" splitter-partition="15%">
 				<TableView id="debugger_threads" layout_width="mp" layout_height="mp" />
@@ -176,7 +179,7 @@ void StatusDebuggerController::createContainer() {
 			<Tab id="debugger_tab_breakpoints" text="@string(breakpoints, Breakpoints)" owns="debugger_breakpoints" />
 			<Tab id="debugger_tab_console" text="@string(console_output, Console Output)" owns="debugger_console" />
 		</TabWidget>
-		<vbox id="app_debugger_buttons" lw="16dp" lh="mp">
+		<vbox id="app_debugger_buttons" class="vertical_bar" lw="16dp" lh="mp">
 			<PushButton id="app_debugger_start" class="debugger_start" lw="mp" icon="icon(debug-start, 12dp)" tooltip="@string(start, Start)" />
 			<PushButton id="app_debugger_stop" class="debugger_stop" lw="mp" icon="icon(debug-stop, 12dp)" tooltip="@string(stop, Stop)" />
 			<PushButton id="app_debugger_continue" class="debugger_continue" lw="mp" icon="icon(debug-continue, 12dp)" tooltip="@string(continue, Continue)" />

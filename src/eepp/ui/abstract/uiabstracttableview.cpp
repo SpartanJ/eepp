@@ -333,6 +333,11 @@ void UIAbstractTableView::updateColumnsWidth() {
 			if ( columnData( col ).width != width ) {
 				columnData( col ).width = width;
 				updateHeaderSize();
+
+				ColumnData& colData = columnData( col );
+				if ( colData.widget )
+					colData.widget->setPixelsSize( colData.width, getHeaderHeight() );
+
 				onColumnSizeChange( col );
 			}
 		}

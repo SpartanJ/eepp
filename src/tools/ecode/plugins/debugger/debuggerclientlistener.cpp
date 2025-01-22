@@ -1,7 +1,8 @@
+#include "debuggerclientlistener.hpp"
 #include "../../notificationcenter.hpp"
 #include "../../statusappoutputcontroller.hpp"
-#include "debuggerclientlistener.hpp"
 #include "debuggerplugin.hpp"
+#include "eepp/window/clipboard.hpp"
 #include "models/stackmodel.hpp"
 #include "models/threadsmodel.hpp"
 #include "models/variablesmodel.hpp"
@@ -87,13 +88,73 @@ void DebuggerClientListener::initUI() {
 	uiVariables->setModel( mVariablesHolder->getModel() );
 	uiVariables->removeEventsOfType( Event::OnModelEvent );
 	uiVariables->onModelEvent( [this]( const ModelEvent* modelEvent ) {
+		auto idx( modelEvent->getModelIndex() );
 		if ( modelEvent->getModelEventType() == Abstract::ModelEventType::OpenTree ) {
-			ModelVariableNode* node =
-				static_cast<ModelVariableNode*>( modelEvent->getModelIndex().internalData() );
+			ModelVariableNode* node = static_cast<ModelVariableNode*>( idx.internalData() );
 			mClient->variables( node->var.variablesReference );
-			mVariablesHolder->saveExpandedState( modelEvent->getModelIndex() );
+			mVariablesHolder->saveExpandedState( idx );
 		} else if ( modelEvent->getModelEventType() == Abstract::ModelEventType::CloseTree ) {
-			mVariablesHolder->removeExpandedState( modelEvent->getModelIndex() );
+			mVariablesHolder->removeExpandedState( idx );
+		} else if ( modelEvent->getModelEventType() == Abstract::ModelEventType::OpenMenu &&
+					idx.isValid() ) {
+
+			auto context = mPlugin->getPluginContext();
+			UIPopUpMenu* menu = UIPopUpMenu::New();
+
+			ModelVariableNode* node = static_cast<ModelVariableNode*>( idx.internalData() );
+			Variable var( node->var );
+
+			menu->add( context->i18n( "debugger_copy_variable_value", "Copy Value" ),
+					   context->findIcon( "copy" ) )
+				->setId( "debugger_copy_variable_value" );
+
+			menu->add( context->i18n( "debugger_copy_variable_name", "Copy Name" ),
+					   context->findIcon( "copy" ) )
+				->setId( "debugger_copy_variable_name" );
+
+			if ( var.type ) {
+				menu->add( context->i18n( "debugger_copy_variable_type", "Copy Type" ),
+						   context->findIcon( "copy" ) )
+					->setId( "debugger_copy_variable_type" );
+			}
+
+			if ( var.evaluateName ) {
+				menu->add( context->i18n( "debugger_copy_variable_evaluate_name",
+										  "Copy Evaluate Name" ),
+						   context->findIcon( "copy" ) )
+					->setId( "debugger_copy_variable_evaluate_name" );
+			}
+
+			if ( var.memoryReference ) {
+				menu->add( context->i18n( "debugger_copy_variable_memory_reference",
+										  "Copy Memory Reference" ),
+						   context->findIcon( "copy" ) )
+					->setId( "debugger_copy_variable_memory_reference" );
+			}
+
+			menu->on( Event::OnItemClicked, [this, var = std::move( var )]( const Event* event ) {
+				UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+				std::string id( item->getId() );
+				if ( id == "debugger_copy_variable_value" ) {
+					mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( var.value );
+				} else if ( id == "debugger_copy_variable_name" ) {
+					mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( var.name );
+				} else if ( id == "debugger_copy_variable_type" ) {
+					mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( *var.type );
+				} else if ( id == "debugger_copy_variable_evaluate_name" ) {
+					mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText(
+						*var.evaluateName );
+				} else if ( id == "debugger_copy_variable_memory_reference" ) {
+					mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText(
+						*var.memoryReference );
+				}
+			} );
+
+			Vector2f pos( context->getWindow()->getInput()->getMousePos().asFloat() );
+			menu->nodeToWorldTranslation( pos );
+			UIMenu::findBestMenuPos( pos, menu );
+			menu->setPixelsPosition( pos );
+			menu->show();
 		}
 	} );
 

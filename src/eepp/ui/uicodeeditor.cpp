@@ -1573,7 +1573,9 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 	} else if ( flags & EE_BUTTON_WLMASK ) {
 		setScrollX( mScroll.x - mMouseWheelScroll );
 	} else if ( !minimapHover && ( flags & EE_BUTTON_RMASK ) ) {
-		onCreateContextMenu( position, flags );
+		Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
+		if ( localPos.x >= mPaddingPx.Left + getGutterWidth() && localPos.y >= mPluginsTopSpace )
+			onCreateContextMenu( position, flags );
 	}
 
 	return UIWidget::onMouseUp( position, flags );

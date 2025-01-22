@@ -203,12 +203,8 @@ class DebuggerPlugin : public PluginBase {
 
 	void updatePanelUIState( StatusDebuggerController::State state );
 
-	void hideTooltip( UICodeEditor* editor );
-
 	void displayTooltip( UICodeEditor* editor, const std::string& expression,
 						 const EvaluateInfo& info, const Vector2f& position );
-
-	void tryHideTooltip( UICodeEditor* editor, const Vector2i& position );
 
 	bool onMouseMove( UICodeEditor* editor, const Vector2i& position,
 					  const Uint32& flags ) override;
@@ -217,7 +213,7 @@ class DebuggerPlugin : public PluginBase {
 
 	void loadProjectConfigurations();
 
-	void openExpressionMenu( UITreeView* uiExpressions, ModelIndex idx, bool fromMouseClick );
+	void openExpressionMenu( ModelIndex idx );
 
 	void updateSelectedDebugConfig();
 
@@ -238,6 +234,8 @@ class DebuggerPlugin : public PluginBase {
 						std::unordered_map<std::string, std::string> solvedInputs );
 
 	UIWindow* processPicker();
+
+	bool resume( int threadId, bool singleThread = false );
 };
 
 } // namespace ecode

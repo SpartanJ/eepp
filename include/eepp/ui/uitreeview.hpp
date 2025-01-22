@@ -113,6 +113,8 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	void setDisableCellClipping( bool disableCellCliping );
 
+	void clearViewMetadata();
+
   protected:
 	enum class IterationDecision {
 		Continue,
