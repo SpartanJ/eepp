@@ -4,10 +4,10 @@
 	author: 'NullPlane'
 	author_link: 'github.com/NullPlane'
 	collaborators: [ 'SpartanJ', 'NullPlane' ]
-	version: 0.31
-	version_ecode: 0.6.1
+	version: 0.32
+	version_ecode: 0.6.4
 	created: 2024-02-08
-	updated: 2024-10-22
+	updated: 2025-01-23
 	language: 'de'
 	format: 'xml'
 	file: de.xml
@@ -171,7 +171,7 @@ Dateipfad: </string>
 	<string name="custom_variables">Angepasste Variablen</string>
 	<string name="custom_variables_desc">Angepasste Variablen erlauben das Vereinfachen von Build-Befehlsschritten durch Hinzufügen eigener Variablen, die über die Build-Einstellungen in Befehlen, Argumenten und Arbeitsverzeichnissen angewendet werden können.</string>
 	<string name="custom_variables_desc_2">Angepasste Variablen können mit ${variable_name} in beliebigen Befehlen aufgerufen werden.</string>
-	<string name="custom_variables_desc_3">Es gibt bereits vordefinierte angepasste Variablen zur Nutzung:&amp;#10;${project_root}: Ordner-/Projekt-Root-Verzeichnis.&amp;#10;${build_type}: Ausgewählter Build-Typ zur Projekterstellung.&amp;#10;${os}: Name des aktuellen Betriebssystems.&amp;#10;${nproc}: Anzahl logischer Prozessoreinheiten.&amp;#10;${current_doc}: Letzter oder aktueller Dokumentenpfad.&amp;#10;${current_doc_name}: Letzter oder aktueller Name fokussierten Dokuments (ohne Erweiterung)</string>
+	<string name="custom_variables_desc_3">Es gibt bereits vordefinierte angepasste Variablen zur Nutzung:&#10;${project_root}: Ordner-/Projekt-Root-Verzeichnis.&#10;${build_type}: Ausgewählter Build-Typ zur Projekterstellung.&#10;${os}: Name des aktuellen Betriebssystems.&#10;${arch}: Architektur des aktuellen Betriebssystems.&#10;${nproc}: Anzahl logischer Prozessoreinheiten.&#10;${current_doc}: Letzter oder aktueller Dokumentenpfad.&#10;${current_doc_name}: Letzter oder aktueller Name fokussierten Dokuments (ohne Erweiterung)&#10;${current_doc_dir}: Letztes oder gegenwärtig fokussiertes Projektverzeichnis.</string>	
 	<string name="cut">Ausschneiden</string>
 	<string name="dark">Dunkel</string>
 	<string name="date">Datum</string>
