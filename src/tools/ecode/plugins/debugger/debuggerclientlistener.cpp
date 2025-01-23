@@ -44,6 +44,9 @@ DebuggerClientListener::~DebuggerClientListener() {
 void DebuggerClientListener::initUI() {
 	auto sdc = getStatusDebuggerController();
 
+	if ( sdc == nullptr )
+		return;
+
 	sdc->createWidget();
 
 	mPlugin->getManager()->getPluginContext()->getStatusAppOutputController()->initNewOutput(

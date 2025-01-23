@@ -989,9 +989,9 @@ TextRanges TextDocument::getSelectionsSorted() const {
 	return selections;
 }
 
-const TextRange& TextDocument::getSelectionIndex( const size_t& index ) const {
+TextRange TextDocument::getSelectionIndex( const size_t& index, bool sort ) const {
 	eeASSERT( index < mSelection.size() );
-	return mSelection[index];
+	return sort ? mSelection[index].normalized() : mSelection[index];
 }
 
 const TextRange& TextDocument::getSelection() const {
@@ -2170,23 +2170,26 @@ void TextDocument::newLineAbove() {
 	}
 }
 
-void TextDocument::insertAtStartOfSelectedLines( const String& text, bool skipEmpty ) {
+void TextDocument::insertAtStartOfSelectedLines( const String& text, bool skipEmpty,
+												 Int64 startFrom, std::size_t cursorIndex ) {
 	BoolScopedOpOptional op( !mDoingTextInput, mDoingTextInput, true );
 	TextPosition prevStart = getSelection().start();
-	TextRange range = getSelection( true );
+	TextRange range = getSelectionIndex( cursorIndex, true );
 	bool swap = prevStart != range.start();
 	for ( auto i = range.start().line(); i <= range.end().line(); i++ ) {
 		const String& line = this->line( i ).getText();
-		if ( !skipEmpty || line.length() != 1 ) {
-			insert( 0, { i, 0 }, text );
+		if ( ( !skipEmpty || line.length() != 1 ) && startFrom >= 0 &&
+			 startFrom <= static_cast<Int64>( line.length() ) ) {
+			insert( 0, { i, startFrom }, text );
 		}
 	}
-	setSelection( TextPosition( range.start().line(), range.start().column() + text.size() ),
+	setSelection( cursorIndex,
+				  TextPosition( range.start().line(), range.start().column() + text.size() ),
 				  TextPosition( range.end().line(), range.end().column() + text.size() ), swap );
 }
 
 void TextDocument::removeFromStartOfSelectedLines( const String& text, bool skipEmpty,
-												   bool removeExtraSpaces ) {
+												   bool removeExtraSpaces, Int64 startFrom ) {
 	BoolScopedOpOptional op( !mDoingTextInput, mDoingTextInput, true );
 	TextPosition prevStart = getSelection().start();
 	TextRange range = getSelection( true );
@@ -2197,8 +2200,11 @@ void TextDocument::removeFromStartOfSelectedLines( const String& text, bool skip
 	for ( auto i = range.start().line(); i <= range.end().line(); i++ ) {
 		const String& line = this->line( i ).getText();
 		if ( !skipEmpty || line.length() > 1 ) {
-			if ( line.substr( 0, text.length() ) == text ) {
-				remove( 0, { { i, 0 }, { i, static_cast<Int64>( text.length() ) } } );
+			if ( startFrom < 0 || startFrom > static_cast<Int64>( line.length() ) )
+				continue;
+			if ( line.substr( startFrom, text.length() ) == text ) {
+				remove( 0, { { i, startFrom },
+							 { i, static_cast<Int64>( startFrom + text.length() ) } } );
 				if ( i == range.start().line() ) {
 					startRemoved = text.size();
 				} else if ( i == range.end().line() ) {
@@ -3403,20 +3409,51 @@ void TextDocument::toggleLineComments() {
 	std::string comment = mSyntaxDefinition.getComment();
 	if ( comment.empty() )
 		return;
-	std::string commentText = comment + " ";
-	TextRange selection = getSelection( true );
-	bool uncomment = true;
-	for ( Int64 i = selection.start().line(); i <= selection.end().line(); i++ ) {
-		const String& text = mLines[i].getText();
-		if ( text.find_first_not_of( " \t\n" ) != std::string::npos &&
-			 text.find( commentText ) == std::string::npos ) {
-			uncomment = false;
+	const std::string commentText = comment + " ";
+	Int64 commentLength = static_cast<Int64>( commentText.size() );
+
+	BoolScopedOpOptional op( !mDoingTextInput, mDoingTextInput, true );
+
+	for ( size_t cursorIdx = 0; cursorIdx < mSelection.size(); cursorIdx++ ) {
+		TextRange selection = getSelectionIndex( cursorIdx, true );
+		bool uncomment = false;
+
+		std::size_t startSpaces = std::string::npos;
+		for ( Int64 i = selection.start().line(); i <= selection.end().line(); i++ ) {
+			const String& text = mLines[i].getText();
+			auto firstNonSpace = text.find_first_not_of( " \t\n" );
+			if ( firstNonSpace != std::string::npos && text[firstNonSpace] != '\n' ) {
+				startSpaces = eemin( startSpaces, firstNonSpace );
+				if ( text.find( commentText, firstNonSpace ) != std::string::npos ) {
+					uncomment = true;
+					break;
+				}
+			}
 		}
-	}
-	if ( uncomment ) {
-		removeFromStartOfSelectedLines( commentText, true );
-	} else {
-		insertAtStartOfSelectedLines( commentText, true );
+
+		if ( startSpaces == std::string::npos )
+			startSpaces = 0;
+
+		if ( uncomment ) {
+			TextPosition prevStart = getSelectionIndex( cursorIdx ).start();
+			TextRange range = getSelectionIndex( cursorIdx, true );
+			bool swap = prevStart != range.start();
+			for ( Int64 lineIdx = selection.start().line(); lineIdx <= selection.end().line();
+				  lineIdx++ ) {
+				const String& text = mLines[lineIdx].getText();
+				auto pos = text.find( commentText, startSpaces );
+				if ( pos != std::string::npos ) {
+					remove( cursorIdx, { { lineIdx, static_cast<Int64>( pos ) },
+										 { lineIdx, static_cast<Int64>( pos + commentLength ) } } );
+				}
+			}
+			setSelection(
+				cursorIdx,
+				TextPosition( range.start().line(), range.start().column() - commentLength ),
+				TextPosition( range.end().line(), range.end().column() - commentLength ), swap );
+		} else {
+			insertAtStartOfSelectedLines( commentText, true, startSpaces, cursorIdx );
+		}
 	}
 }
 

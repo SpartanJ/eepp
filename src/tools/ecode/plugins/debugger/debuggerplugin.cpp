@@ -1,4 +1,3 @@
-#include "debuggerplugin.hpp"
 #include "../../notificationcenter.hpp"
 #include "../../projectbuild.hpp"
 #include "../../terminalmanager.hpp"
@@ -8,6 +7,7 @@
 #include "bussocket.hpp"
 #include "bussocketprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
+#include "debuggerplugin.hpp"
 #include "models/breakpointsmodel.hpp"
 #include "models/processesmodel.hpp"
 #include "models/variablesmodel.hpp"
@@ -750,6 +750,9 @@ void DebuggerPlugin::buildSidePanelTab() {
 	updateSidePanelTab();
 
 	updateSelectedDebugConfig();
+
+	if ( mProjectPath.empty() )
+		hideSidePanel();
 }
 
 void DebuggerPlugin::updateSelectedDebugConfig() {
@@ -1018,7 +1021,8 @@ void DebuggerPlugin::updateDebuggerConfigurationList() {
 std::vector<std::string> DebuggerPlugin::replaceKeyInString(
 	std::string val, int randomPort,
 	const std::unordered_map<std::string, std::string>& solvedInputs ) {
-	auto runConfig = getPluginContext()->getProjectBuildManager()->getCurrentRunConfig();
+	auto pbm = getPluginContext()->getProjectBuildManager();
+	auto runConfig = pbm ? pbm->getCurrentRunConfig() : std::optional<ProjectBuildStep>{};
 
 	const auto replaceVal = [this, &runConfig, &solvedInputs, randomPort]( std::string& val ) {
 		if ( runConfig ) {
@@ -1068,8 +1072,9 @@ std::vector<std::string> DebuggerPlugin::replaceKeyInString(
 void DebuggerPlugin::replaceKeysInJson(
 	nlohmann::json& json, int randomPort,
 	const std::unordered_map<std::string, std::string>& solvedInputs ) {
-	auto runConfig = getPluginContext()->getProjectBuildManager()->getCurrentRunConfig();
-	auto buildConfig = getPluginContext()->getProjectBuildManager()->getCurrentBuild();
+	auto pbm = getPluginContext()->getProjectBuildManager();
+	auto runConfig = pbm ? pbm->getCurrentRunConfig() : std::optional<ProjectBuildStep>{};
+	auto buildConfig = pbm ? pbm->getCurrentBuild() : nullptr;
 
 	const auto replaceVal = [this, &solvedInputs, &runConfig,
 							 randomPort]( nlohmann::json& j, std::string& val ) -> bool {
@@ -1554,6 +1559,7 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 	auto runConfig = debuggerIt->run;
 
 	if ( !usingExternalConfig && configIt->request == REQUEST_TYPE_LAUNCH &&
+		 getPluginContext()->getProjectBuildManager() &&
 		 !getPluginContext()->getProjectBuildManager()->getCurrentRunConfig() ) {
 		auto msg =
 			i18n( "no_run_config",

@@ -175,7 +175,7 @@ class EE_API TextDocument {
 
 	const TextRange& getSelection() const;
 
-	const TextRange& getSelectionIndex( const size_t& index ) const;
+	TextRange getSelectionIndex( const size_t& index, bool sort = false ) const;
 
 	TextDocumentLine& line( const size_t& index );
 
@@ -745,10 +745,11 @@ class EE_API TextDocument {
 
 	void notifyFoldRegionsUpdated( size_t oldCount, size_t newCount );
 
-	void insertAtStartOfSelectedLines( const String& text, bool skipEmpty );
+	void insertAtStartOfSelectedLines( const String& text, bool skipEmpty, Int64 startFrom = 0,
+									   std::size_t cursorIndex = 0 );
 
 	void removeFromStartOfSelectedLines( const String& text, bool skipEmpty,
-										 bool removeExtraSpaces = false );
+										 bool removeExtraSpaces = false, Int64 startFrom = 0 );
 
 	/** @return The number of lines removed (complete lines, not modified lines) */
 	size_t remove( const size_t& cursorIdx, TextRange range, UndoStackContainer& undoStack,
