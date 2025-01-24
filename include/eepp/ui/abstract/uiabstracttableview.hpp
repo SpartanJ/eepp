@@ -55,8 +55,12 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	/** In pixels. */
 	void setColumnWidth( const size_t& colIndex, const Float& width );
 
+	void setColumnMaxWidth( const size_t& colIndex, const Float& width );
+
 	/** In pixels. */
 	void setColumnsWidth( const Float& width );
+
+	void setColumnsMaxWidth( const Float& width );
 
 	const Float& getColumnWidth( const size_t& colIndex ) const;
 
@@ -138,6 +142,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	struct ColumnData {
 		Float minWidth{ 0 };
 		Float minHeight{ 0 };
+		Float maxWidth{ 0 };
 		Float width{ 0 };
 		bool visible{ true };
 		UIPushButton* widget{ nullptr };

@@ -58,6 +58,17 @@ void UIAbstractTableView::setColumnWidth( const size_t& colIndex, const Float& w
 	}
 }
 
+void UIAbstractTableView::setColumnMaxWidth( const size_t& colIndex, const Float& width ) {
+	if ( columnData( colIndex ).maxWidth != width ) {
+		columnData( colIndex ).maxWidth = width;
+		if ( columnData( colIndex ).width > width ) {
+			updateHeaderSize();
+			onColumnSizeChange( colIndex );
+			createOrUpdateColumns( false );
+		}
+	}
+}
+
 void UIAbstractTableView::setColumnsWidth( const Float& width ) {
 	if ( !getModel() )
 		return;
@@ -67,6 +78,22 @@ void UIAbstractTableView::setColumnsWidth( const Float& width ) {
 	}
 	updateHeaderSize();
 	createOrUpdateColumns( false );
+}
+
+void UIAbstractTableView::setColumnsMaxWidth( const Float& width ) {
+	if ( !getModel() )
+		return;
+	bool needsRefresh = false;
+	for ( size_t i = 0; i < getModel()->columnCount(); i++ ) {
+		if ( columnData( i ).width > width )
+			needsRefresh = true;
+		columnData( i ).maxWidth = width;
+		onColumnSizeChange( i );
+	}
+	if ( needsRefresh ) {
+		updateHeaderSize();
+		createOrUpdateColumns( false );
+	}
 }
 
 const Float& UIAbstractTableView::getColumnWidth( const size_t& colIndex ) const {
@@ -111,6 +138,7 @@ void UIAbstractTableView::resetColumnData() {
 	for ( size_t i = 0; i < count; i++ ) {
 		ColumnData& col = columnData( i );
 		col.minWidth = 0;
+		col.maxWidth = 0;
 	}
 }
 
@@ -145,7 +173,8 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 			col.minWidth = col.widget->getPixelsSize().getWidth();
 			col.minHeight = col.widget->getPixelsSize().getHeight();
 		}
-		col.width = eeceil( eemax( col.width, col.minWidth ) );
+		col.width = eeceil( col.maxWidth != 0 ? eeclamp( col.width, col.minWidth, col.maxWidth )
+											  : eemax( col.width, col.minWidth ) );
 		col.widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 		col.widget->setPixelsSize( col.width, getHeaderHeight() );
 	}
@@ -198,7 +227,8 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 		ColumnData& col = columnData( i );
 		if ( !col.visible )
 			continue;
-		col.width = eeceil( eemax( col.width, col.minWidth ) );
+		col.width = eeceil( col.maxWidth != 0 ? eeclamp( col.width, col.minWidth, col.maxWidth )
+											  : eemax( col.width, col.minWidth ) );
 		col.widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 		col.widget->setPixelsSize( col.width, getHeaderHeight() );
 		totalWidth += col.width;

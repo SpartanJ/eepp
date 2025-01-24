@@ -448,6 +448,7 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 	}
 
 	if ( mKeyBindings.empty() ) {
+		mKeyBindings["debugger-start"] = "mod+f5";
 		mKeyBindings["debugger-continue-interrupt"] = "f5";
 		mKeyBindings["debugger-breakpoint-toggle"] = "f9";
 		mKeyBindings["debugger-breakpoint-enable-toggle"] = "mod+f9";
