@@ -34,14 +34,8 @@ class EE_API PropertySpecification {
   protected:
 	friend class PropertyDefinition;
 
-// Investigate why robin_hood::unordered_flat_map fails with wasm build!
-#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	std::unordered_map<Uint32, std::shared_ptr<PropertyDefinition>> mProperties;
 	std::unordered_map<Uint32, std::shared_ptr<ShorthandDefinition>> mShorthands;
-#else
-	UnorderedMap<Uint32, std::shared_ptr<PropertyDefinition>> mProperties;
-	UnorderedMap<Uint32, std::shared_ptr<ShorthandDefinition>> mShorthands;
-#endif
 
 	const PropertyDefinition* addPropertyAlias( Uint32 aliasId, const PropertyDefinition* propDef );
 };
