@@ -509,7 +509,7 @@ template <> struct std::hash<ecode::dap::SourceBreakpointStateful> {
 		size_t h4 =
 			breakpoint.hitCondition ? std::hash<std::string>()( *breakpoint.hitCondition ) : 0;
 		size_t h5 = breakpoint.logMessage ? std::hash<std::string>()( *breakpoint.logMessage ) : 0;
-		size_t h6 = std::hash<bool>()( breakpoint.enabled );
-		return hashCombine( h1, h2, h3, h4, h5, h6 );
+		// size_t h6 = std::hash<bool>()( breakpoint.enabled );
+		return hashCombine( h1, h2, h3, h4, h5/*, h6*/ );
 	}
 };

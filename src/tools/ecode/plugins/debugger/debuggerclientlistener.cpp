@@ -13,7 +13,7 @@
 namespace ecode {
 
 std::vector<SourceBreakpoint>
-DebuggerClientListener::fromSet( const EE::UnorderedSet<SourceBreakpointStateful>& set ) {
+DebuggerClientListener::fromSet( const UnorderedSet<SourceBreakpointStateful>& set ) {
 	std::vector<SourceBreakpoint> bps;
 	bps.reserve( set.size() );
 	for ( const auto& bp : set )
@@ -326,7 +326,7 @@ void DebuggerClientListener::changeScope( const StackFrame& f ) {
 	if ( !f.source )
 		return;
 
-	TextRange range{ { f.line - 1, f.column }, { f.line - 1, f.column } };
+	TextRange range{ { f.line - 1, f.column - 1 }, { f.line - 1, f.column - 1 } };
 	std::string path( f.source->path );
 
 	mPlugin->getUISceneNode()->runOnMainThread(

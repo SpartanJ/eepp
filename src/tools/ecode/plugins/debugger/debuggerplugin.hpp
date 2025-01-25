@@ -187,6 +187,8 @@ class DebuggerPlugin : public PluginBase {
 
 	bool breakpointSetEnabled( const std::string& doc, Uint32 lineNumber, bool enabled );
 
+	bool hasBreakpoint( const std::string& doc, Uint32 lineNumber );
+
 	bool onMouseDown( UICodeEditor*, const Vector2i&, const Uint32& flags ) override;
 
 	bool isSupportedByAnyDebugger( const std::string& language );

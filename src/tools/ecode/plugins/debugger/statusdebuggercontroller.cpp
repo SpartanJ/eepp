@@ -1,6 +1,6 @@
-#include "statusdebuggercontroller.hpp"
 #include "../plugincontextprovider.hpp"
 #include "eepp/ui/uiwidgetcreator.hpp"
+#include "statusdebuggercontroller.hpp"
 #include <eepp/ui/uicheckbox.hpp>
 
 namespace ecode {
@@ -33,9 +33,32 @@ UIBreakpointsTableView::getCheckBoxFn( const ModelIndex& index, const Breakpoint
 	};
 }
 
+class UIBreakpointsTableCell : public UITableCell {
+  public:
+	static UIBreakpointsTableCell*
+	New( const std::string& tag,
+		 const std::function<UITextView*( UIPushButton* )>& newTextViewCb ) {
+		return eeNew( UIBreakpointsTableCell, ( tag, newTextViewCb ) );
+	}
+
+	UIBreakpointsTableCell( const std::string& tag,
+							const std::function<UITextView*( UIPushButton* )>& newTextViewCb ) :
+		UITableCell( tag, newTextViewCb ) {}
+
+	virtual void updateCell( Model* model ) {
+		if ( !mTextBox->isType( UI_TYPE_CHECKBOX ) )
+			return;
+		auto bpModel = static_cast<BreakpointsModel*>( model );
+		auto cur = bpModel->get( getCurIndex() );
+		if ( cur.first.empty() )
+			return;
+		mTextBox->asType<UICheckBox>()->setChecked( cur.second.enabled );
+	}
+};
+
 UIWidget* UIBreakpointsTableView::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
 	if ( index.column() == BreakpointsModel::Enabled ) {
-		UITableCell* widget = UITableCell::NewWithOpt(
+		UIBreakpointsTableCell* widget = UIBreakpointsTableCell::New(
 			mTag + "::cell", getCheckBoxFn( index, (const BreakpointsModel*)getModel() ) );
 		widget->getTextBox()->setEnabled( true );
 		widget->setDontAutoHideEmptyTextBox( true );

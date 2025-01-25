@@ -106,4 +106,11 @@ void BreakpointsModel::enable( const std::string& filePath,
 	}
 }
 
+const std::pair<std::string, SourceBreakpointStateful>& BreakpointsModel::get( ModelIndex index ) {
+	static std::pair<std::string, SourceBreakpointStateful> EMPTY = {};
+	if ( !index.isValid() || index.row() >= static_cast<Int64>( mBreakpoints.size() ) )
+		return EMPTY;
+	return mBreakpoints[index.row()];
+}
+
 } // namespace ecode

@@ -14,7 +14,7 @@ struct ModelVariableNode;
 class DebuggerClientListener : public DebuggerClient::Listener {
   public:
 	static std::vector<SourceBreakpoint>
-	fromSet( const EE::UnorderedSet<SourceBreakpointStateful>& set );
+	fromSet( const UnorderedSet<SourceBreakpointStateful>& set );
 
 	DebuggerClientListener( DebuggerClient* client, DebuggerPlugin* plugin );
 

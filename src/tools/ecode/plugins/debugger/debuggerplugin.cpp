@@ -1,3 +1,4 @@
+#include "debuggerplugin.hpp"
 #include "../../notificationcenter.hpp"
 #include "../../projectbuild.hpp"
 #include "../../terminalmanager.hpp"
@@ -7,7 +8,6 @@
 #include "bussocket.hpp"
 #include "bussocketprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
-#include "debuggerplugin.hpp"
 #include "models/breakpointsmodel.hpp"
 #include "models/processesmodel.hpp"
 #include "models/variablesmodel.hpp"
@@ -1460,12 +1460,15 @@ bool DebuggerPlugin::breakpointSetEnabled( const std::string& doc, Uint32 lineNu
 										   bool enabled ) {
 	Lock l( mBreakpointsMutex );
 	auto& breakpoints = mBreakpoints[doc];
-	auto breakpointIt = breakpoints.find( SourceBreakpointStateful( lineNumber ) );
+	SourceBreakpointStateful sb( lineNumber );
+	auto breakpointIt = breakpoints.find( sb );
 	if ( breakpointIt != breakpoints.end() ) {
-		breakpointIt->enabled = enabled;
-		mBreakpointsModel->enable( doc, lineNumber, breakpointIt->enabled );
-		mThreadPool->run( [this, doc] { sendFileBreakpoints( doc ); } );
-		getUISceneNode()->getRoot()->invalidateDraw();
+		if ( enabled != breakpointIt->enabled ) {
+			breakpointIt->enabled = enabled;
+			mBreakpointsModel->enable( doc, lineNumber, enabled );
+			mThreadPool->run( [this, doc] { sendFileBreakpoints( doc ); } );
+			getUISceneNode()->getRoot()->invalidateDraw();
+		}
 		return true;
 	}
 	return false;
@@ -1488,9 +1491,16 @@ bool DebuggerPlugin::breakpointToggleEnabled( TextDocument* doc, Uint32 lineNumb
 	return breakpointToggleEnabled( doc->getFilePath(), lineNumber );
 }
 
+bool DebuggerPlugin::hasBreakpoint( const std::string& doc, Uint32 lineNumber ) {
+	Lock l( mBreakpointsMutex );
+	auto& breakpoints = mBreakpoints[doc];
+	auto breakpointIt = breakpoints.find( SourceBreakpointStateful( lineNumber ) );
+	return breakpointIt != breakpoints.end();
+}
+
 bool DebuggerPlugin::onMouseDown( UICodeEditor* editor, const Vector2i& position,
 								  const Uint32& flags ) {
-	if ( !( flags & EE_BUTTON_LMASK ) )
+	if ( !( flags & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) )
 		return false;
 	Float offset = editor->getGutterLocalStartOffset( this );
 	Vector2f localPos( editor->convertToNodeSpace( position.asFloat() ) );
@@ -1500,7 +1510,12 @@ bool DebuggerPlugin::onMouseDown( UICodeEditor* editor, const Vector2i& position
 		 localPos.y > editor->getPluginsTopSpace() ) {
 		if ( editor->getUISceneNode()->getEventDispatcher()->isFirstPress() ) {
 			auto cursorPos( editor->resolveScreenPosition( position.asFloat() ) );
-			setBreakpoint( editor, cursorPos.line() + 1 );
+			if ( ( flags & EE_BUTTON_RMASK ) &&
+				 hasBreakpoint( editor->getDocument().getFilePath(), cursorPos.line() + 1 ) ) {
+				breakpointToggleEnabled( &editor->getDocument(), cursorPos.line() + 1 );
+			} else {
+				setBreakpoint( editor, cursorPos.line() + 1 );
+			}
 		}
 		return true;
 	}

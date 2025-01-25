@@ -1009,6 +1009,8 @@ void UIAbstractTableView::recalculateColumnsWidth() {
 }
 
 UITableCell* UIAbstractTableView::getCellFromIndex( const ModelIndex& index ) const {
+	if ( !index.isValid() )
+		return nullptr;
 	for ( const auto& row : mWidgets ) {
 		for ( const auto& widget : row ) {
 			if ( widget.second->isType( UI_TYPE_TABLECELL ) &&

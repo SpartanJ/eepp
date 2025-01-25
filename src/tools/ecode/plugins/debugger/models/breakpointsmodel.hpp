@@ -38,6 +38,7 @@ class BreakpointsModel : public Model {
 	void enable( const std::string& filePath, const SourceBreakpointStateful& breakpoint,
 				 bool enable );
 
+	const std::pair<std::string, SourceBreakpointStateful>& get( ModelIndex index );
   protected:
 	std::vector<std::pair<std::string, SourceBreakpointStateful>> mBreakpoints;
 	UISceneNode* mSceneNode{ nullptr };
