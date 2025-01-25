@@ -150,41 +150,42 @@ int hideOSK() {
 }
 
 bool isDarkModeEnabled() {
-    HKEY hKey;
-    DWORD value = 1; // Default to light theme
-    DWORD valueSize = sizeof(value);
+	HKEY hKey;
+	DWORD value = 1; // Default to light theme
+	DWORD valueSize = sizeof( value );
 
-    if (RegOpenKeyEx(HKEY_CURRENT_USER,
-                     "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
-                     0, KEY_READ, &hKey) == ERROR_SUCCESS) {
-        RegQueryValueEx(hKey, "AppsUseLightTheme", nullptr, nullptr, reinterpret_cast<LPBYTE>(&value), &valueSize);
-        RegCloseKey(hKey);
-    }
+	if ( RegOpenKeyExA( HKEY_CURRENT_USER,
+						"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", 0,
+						KEY_READ, &hKey ) == ERROR_SUCCESS ) {
+		RegQueryValueExA( hKey, "AppsUseLightTheme", nullptr, nullptr,
+						  reinterpret_cast<LPBYTE>( &value ), &valueSize );
+		RegCloseKey( hKey );
+	}
 
-    return value == 0; // 0 means dark theme is enabled
+	return value == 0; // 0 means dark theme is enabled
 }
 
-typedef HRESULT(WINAPI *DwmSetWindowAttributeFunc)(HWND, DWORD, LPCVOID, DWORD);
+typedef HRESULT( WINAPI* DwmSetWindowAttributeFunc )( HWND, DWORD, LPCVOID, DWORD );
 
 constexpr DWORD DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
 
-void setUserTheme(HWND hwnd) {
-    HMODULE hDwmapi = LoadLibrary("dwmapi.dll");
-    if (!hDwmapi) {
-        return;
-    }
+void setUserTheme( HWND hwnd ) {
+	HMODULE hDwmapi = LoadLibraryA( "dwmapi.dll" );
+	if ( !hDwmapi ) {
+		return;
+	}
 
-    auto DwmSetWindowAttribute = reinterpret_cast<DwmSetWindowAttributeFunc>(
-        GetProcAddress(hDwmapi, "DwmSetWindowAttribute"));
-    if (!DwmSetWindowAttribute) {
-        FreeLibrary(hDwmapi);
-        return;
-    }
+	auto DwmSetWindowAttribute = reinterpret_cast<DwmSetWindowAttributeFunc>(
+		GetProcAddress( hDwmapi, "DwmSetWindowAttribute" ) );
+	if ( !DwmSetWindowAttribute ) {
+		FreeLibrary( hDwmapi );
+		return;
+	}
 
-    BOOL darkMode = isDarkModeEnabled() ? TRUE : FALSE;
-    DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkMode, sizeof(darkMode));
+	BOOL darkMode = isDarkModeEnabled() ? TRUE : FALSE;
+	DwmSetWindowAttribute( hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkMode, sizeof( darkMode ) );
 
-    FreeLibrary(hDwmapi);
+	FreeLibrary( hDwmapi );
 }
 #elif defined( EE_X11_PLATFORM )
 #include <signal.h>
