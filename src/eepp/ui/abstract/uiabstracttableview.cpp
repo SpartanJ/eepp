@@ -633,6 +633,9 @@ UIWidget* UIAbstractTableView::updateCell( const Vector2<Int64>& posIndex, const
 			cell->getIcon()->setVisible( isVisible );
 
 		cell->updateCell( getModel() );
+
+		if ( mOnUpdateCellCb )
+			mOnUpdateCellCb( cell, getModel() );
 	}
 
 	if ( isCellSelection() ) {
@@ -767,6 +770,15 @@ void UIAbstractTableView::setRowHeaderWidth( Float rowHeaderWidth ) {
 	mRowHeaderWidth = rowHeaderWidth;
 	onScrollChange();
 	buildRowHeader();
+}
+
+bool UIAbstractTableView::hasOnUpdateCellCb() {
+	return mOnUpdateCellCb != nullptr;
+}
+
+void UIAbstractTableView::setOnUpdateCellCb(
+	const std::function<void( UITableCell*, Model* )>& onUpdateCellCb ) {
+	mOnUpdateCellCb = onUpdateCellCb;
 }
 
 void UIAbstractTableView::buildRowHeader() {

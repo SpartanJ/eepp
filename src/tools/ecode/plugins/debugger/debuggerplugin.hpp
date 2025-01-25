@@ -83,6 +83,7 @@ class DebuggerPlugin : public PluginBase {
 	bool mInitialized{ false };
 	bool mFetchRegisters{ false };
 	bool mFetchGlobals{ false };
+	bool mChangingBreakpoint{ false };
 	std::string mProjectPath;
 
 	std::vector<DapTool> mDaps;

@@ -136,6 +136,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void setRowHeaderWidth( Float rowHeaderWidth );
 
+	bool hasOnUpdateCellCb();
+
+	void setOnUpdateCellCb( const std::function<void( UITableCell*, Model* )>& onUpdateCellCb );
+
   protected:
 	friend class EE::UI::UITableHeaderColumn;
 
@@ -167,6 +171,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	std::string mSearchText;
 	size_t mMainColumn{ 0 };
 	std::unordered_map<UIWidget*, std::vector<Uint32>> mWidgetsClickCbId;
+	std::function<void( UITableCell*, Model* )> mOnUpdateCellCb;
 	Float mRowHeaderWidth{ 0 };
 
 	virtual ~UIAbstractTableView();

@@ -3,6 +3,7 @@
 #include "plugin.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/md5.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
@@ -395,8 +396,25 @@ PluginManager* PluginsModel::getManager() const {
 class UIPluginManagerTable : public UITableView {
   public:
 	std::map<std::string, Uint32> readyCbs;
+	bool mUpdatingEnabled{ false };
 
-	UIPluginManagerTable() : UITableView() {}
+	UIPluginManagerTable() : UITableView() {
+		setOnUpdateCellCb( [this]( UITableCell* cell, Model* model ) {
+			if ( mUpdatingEnabled )
+				return;
+			if ( !cell->getTextBox()->isType( UI_TYPE_CHECKBOX ) )
+				return;
+			UICheckBox* chk = cell->getTextBox()->asType<UICheckBox>();
+			PluginsModel* pModel = static_cast<PluginsModel*>( model );
+			bool enabled = pModel
+							   ->data( model->index( cell->getCurIndex().row(),
+													 PluginsModel::Columns::Enabled ),
+									   ModelRole::Display )
+							   .asBool();
+			if ( enabled != chk->isChecked() )
+				chk->setChecked( enabled );
+		} );
+	}
 
 	std::function<void( const std::string&, bool )> onModelEnabledChange;
 
@@ -407,7 +425,15 @@ class UIPluginManagerTable : public UITableView {
 			chk->setChecked(
 				model->data( model->index( index.row(), PluginsModel::Enabled ) ).asBool() );
 			chk->setCheckMode( UICheckBox::Button );
-			chk->on( Event::OnValueChange, [this, index, model, chk]( const Event* ) {
+			chk->on( Event::OnValueChange, [this, chk]( const Event* ) {
+				if ( mUpdatingEnabled )
+					return;
+				BoolScopedOp op( mUpdatingEnabled, true );
+				UITableCell* parent = chk->getParent()->asType<UITableCell>();
+				auto index = parent->getCurIndex();
+				UIPluginManagerTable* tableView =
+					parent->getParent()->getParent()->asType<UIPluginManagerTable>();
+				auto model = static_cast<PluginsModel*>( tableView->getModel() );
 				bool checked = chk->isChecked();
 				std::string id(
 					model->data( model->index( index.row(), PluginsModel::Id ) ).asCStr() );
@@ -440,11 +466,11 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 						->loadLayoutFromString( R"xml(
 	<window
 		id="plugin-manager-window"
-		lw="800dp" lh="400dp"
+		lw="800dp" lh="50dp"
 		padding="8dp"
 		window-title="@string(plugin_manager, Plugin Manager)"
 		window-flags="default|maximize|shadow"
-		window-min-size="300dp 300dp">
+		window-min-size="300dp 50dp">
 		<vbox lw="mp" lh="mp">
 			<UIPluginManagerTable id="plugin-manager-table" lw="mp" lh="fixed" layout_weight="1" />
 			<vbox lw="mp" lh="wc">

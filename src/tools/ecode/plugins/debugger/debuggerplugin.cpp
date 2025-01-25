@@ -1458,6 +1458,9 @@ bool DebuggerPlugin::setBreakpoint( UICodeEditor* editor, Uint32 lineNumber ) {
 
 bool DebuggerPlugin::breakpointSetEnabled( const std::string& doc, Uint32 lineNumber,
 										   bool enabled ) {
+	if ( mChangingBreakpoint )
+		return false;
+	BoolScopedOp changing( mChangingBreakpoint, true );
 	Lock l( mBreakpointsMutex );
 	auto& breakpoints = mBreakpoints[doc];
 	SourceBreakpointStateful sb( lineNumber );

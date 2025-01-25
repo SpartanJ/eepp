@@ -146,6 +146,9 @@ void UICheckBox::switchState() {
 }
 
 UICheckBox* UICheckBox::setChecked( const bool& checked ) {
+	if ( checked == mChecked )
+		return this;
+
 	if ( !checked ) {
 		mActiveButton->setVisible( false );
 		mInactiveButton->setVisible( true );

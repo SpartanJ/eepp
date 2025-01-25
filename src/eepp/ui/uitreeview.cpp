@@ -297,6 +297,9 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 			cell->getIcon()->setVisible( isVisible );
 
 		cell->updateCell( getModel() );
+
+		if ( mOnUpdateCellCb )
+			mOnUpdateCellCb( cell, getModel() );
 	}
 
 	if ( isCellSelection() ) {

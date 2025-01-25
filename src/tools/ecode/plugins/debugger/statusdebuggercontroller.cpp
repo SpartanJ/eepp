@@ -1,49 +1,53 @@
+#include "statusdebuggercontroller.hpp"
 #include "../plugincontextprovider.hpp"
 #include "eepp/ui/uiwidgetcreator.hpp"
-#include "statusdebuggercontroller.hpp"
 #include <eepp/ui/uicheckbox.hpp>
 
 namespace ecode {
 
-std::function<UITextView*( UIPushButton* )>
-UIBreakpointsTableView::getCheckBoxFn( const ModelIndex& index, const BreakpointsModel* model ) {
-	return [index, model, this]( UIPushButton* ) -> UITextView* {
-		UICheckBox* chk = UICheckBox::New();
-		bool enabled =
-			model->data( model->index( index.row(), BreakpointsModel::Enabled ), ModelRole::Data )
-				.asBool();
-		chk->setChecked( enabled );
-		chk->setCheckMode( UICheckBox::Button );
-		chk->on( Event::OnValueChange, [this, index, model, chk]( const Event* ) {
-			bool checked = chk->isChecked();
-			if ( !onBreakpointEnabledChange )
-				return;
-
-			std::string filePath(
-				model
-					->data( model->index( index.row(), BreakpointsModel::SourcePath ),
-							ModelRole::Data )
-					.asCStr() );
-			int line(
-				model->data( model->index( index.row(), BreakpointsModel::Line ), ModelRole::Data )
-					.asInt() );
-			onBreakpointEnabledChange( filePath, line, checked );
-		} );
-		return chk;
-	};
-}
-
 class UIBreakpointsTableCell : public UITableCell {
   public:
-	static UIBreakpointsTableCell*
-	New( const std::string& tag,
-		 const std::function<UITextView*( UIPushButton* )>& newTextViewCb ) {
-		return eeNew( UIBreakpointsTableCell, ( tag, newTextViewCb ) );
+	static UIBreakpointsTableCell* New( const std::string& tag, const BreakpointsModel* model,
+										ModelIndex curIndex ) {
+		return eeNew( UIBreakpointsTableCell, ( tag, model, curIndex ) );
 	}
 
-	UIBreakpointsTableCell( const std::string& tag,
-							const std::function<UITextView*( UIPushButton* )>& newTextViewCb ) :
-		UITableCell( tag, newTextViewCb ) {}
+	UIBreakpointsTableCell( const std::string& tag, const BreakpointsModel* model,
+							ModelIndex curIndex ) :
+		UITableCell( tag, getCheckBoxFn( model, curIndex ) ) {}
+
+	std::function<UITextView*( UIPushButton* )> getCheckBoxFn( const BreakpointsModel* model,
+															   ModelIndex index ) {
+		return [index, model, this]( UIPushButton* ) -> UITextView* {
+			UICheckBox* chk = UICheckBox::New();
+			bool enabled = model
+							   ->data( model->index( index.row(), BreakpointsModel::Enabled ),
+									   ModelRole::Data )
+							   .asBool();
+			chk->setChecked( enabled );
+			chk->setCheckMode( UICheckBox::Button );
+			chk->on( Event::OnValueChange, [this, chk]( const Event* ) {
+				auto parent = static_cast<UIBreakpointsTableView*>( getParent()->getParent() );
+				auto model = parent->getModel();
+				auto index = getCurIndex();
+				bool checked = chk->isChecked();
+				if ( !parent->onBreakpointEnabledChange )
+					return;
+
+				std::string filePath(
+					model
+						->data( model->index( index.row(), BreakpointsModel::SourcePath ),
+								ModelRole::Data )
+						.asCStr() );
+				int line( model
+							  ->data( model->index( index.row(), BreakpointsModel::Line ),
+									  ModelRole::Data )
+							  .asInt() );
+				parent->onBreakpointEnabledChange( filePath, line, checked );
+			} );
+			return chk;
+		};
+	}
 
 	virtual void updateCell( Model* model ) {
 		if ( !mTextBox->isType( UI_TYPE_CHECKBOX ) )
@@ -59,7 +63,7 @@ class UIBreakpointsTableCell : public UITableCell {
 UIWidget* UIBreakpointsTableView::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
 	if ( index.column() == BreakpointsModel::Enabled ) {
 		UIBreakpointsTableCell* widget = UIBreakpointsTableCell::New(
-			mTag + "::cell", getCheckBoxFn( index, (const BreakpointsModel*)getModel() ) );
+			mTag + "::cell", (const BreakpointsModel*)getModel(), index );
 		widget->getTextBox()->setEnabled( true );
 		widget->setDontAutoHideEmptyTextBox( true );
 		return setupCell( widget, rowWidget, index );

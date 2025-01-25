@@ -29,9 +29,6 @@ class UIBreakpointsTableView : public UITableView {
 
 	std::function<void( const std::string& file, int line )> onBreakpointRemove;
 
-	std::function<UITextView*( UIPushButton* )> getCheckBoxFn( const ModelIndex& index,
-															   const BreakpointsModel* model );
-
 	UIWidget* createCell( UIWidget* rowWidget, const ModelIndex& index );
 };
 
