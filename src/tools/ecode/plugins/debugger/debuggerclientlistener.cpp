@@ -260,7 +260,7 @@ void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
 		}
 	}
 
-	mCurrentThreadId = mStoppedData->threadId ? *mStoppedData->threadId : 1;
+	mCurrentThreadId = mStoppedData ? *mStoppedData->threadId : 1;
 	mStoppedData = event;
 
 	if ( mPausedToRefreshBreakpoints ) {
@@ -269,7 +269,7 @@ void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
 		return;
 	}
 
-	changeThread( mStoppedData->threadId ? *mStoppedData->threadId : 1 );
+	changeThread( mStoppedData ? *mStoppedData->threadId : 1 );
 
 	mClient->threads();
 	mClient->stackTrace( mCurrentThreadId );
