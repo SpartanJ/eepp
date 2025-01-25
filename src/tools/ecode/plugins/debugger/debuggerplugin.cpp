@@ -2140,13 +2140,16 @@ bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position
 								  const Uint32& flags ) {
 
 	if ( !mDebugger || !mListener || !mDebugger->isServerConnected() ||
-		 mDebuggingState != StatusDebuggerController::State::Paused || flags != 0 ) {
+		 mDebuggingState != StatusDebuggerController::State::Paused ) {
 		return false;
 	}
 
 	auto localPos( editor->convertToNodeSpace( position.asFloat() ) );
 	if ( localPos.x <= editor->getGutterWidth() )
 		return false;
+
+	if ( editor->getTooltip() )
+		editor->getTooltip()->hide();
 
 	editor->debounce(
 		[this, editor, position]() {
