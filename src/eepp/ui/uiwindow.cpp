@@ -1599,6 +1599,8 @@ std::string UIWindow::getWindowFlagsString() const {
 		flags.push_back( "framebuffer" );
 	if ( getWinFlags() & UI_WIN_COLOR_BUFFER )
 		flags.push_back( "colorbuffer" );
+	if ( getWinFlags() & UI_WIN_EPHEMERAL )
+		flags.push_back( "ephemeral" );
 	return String::join( flags, '|' );
 }
 
@@ -1719,6 +1721,8 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 						winflags |= UI_WIN_FRAME_BUFFER;
 					else if ( "colorbuffer" == cur )
 						winflags |= UI_WIN_COLOR_BUFFER;
+					else if ( "ephemeral" == cur )
+						winflags |= UI_WIN_EPHEMERAL;
 				}
 
 				/// TODO: WinFlags should replace old winFlags

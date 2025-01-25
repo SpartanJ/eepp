@@ -1294,6 +1294,11 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 		if ( getStatusDebuggerController() )
 			getStatusDebuggerController()->toggle();
 	} );
+
+	doc->setCommand( "show-debugger-tab", [this]() {
+		if ( mTab )
+			mTab->setTabSelected();
+	} );
 }
 
 void DebuggerPlugin::onRegisterEditor( UICodeEditor* editor ) {
@@ -2136,8 +2141,7 @@ void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const std::string& ex
 		mHoverTooltip->showWhenReady();
 }
 
-bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position,
-								  const Uint32& flags ) {
+bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position, const Uint32& ) {
 
 	if ( !mDebugger || !mListener || !mDebugger->isServerConnected() ||
 		 mDebuggingState != StatusDebuggerController::State::Paused ) {

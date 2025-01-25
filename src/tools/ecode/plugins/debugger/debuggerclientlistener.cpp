@@ -2,12 +2,14 @@
 #include "../../notificationcenter.hpp"
 #include "../../statusappoutputcontroller.hpp"
 #include "debuggerplugin.hpp"
-#include "eepp/window/clipboard.hpp"
 #include "models/stackmodel.hpp"
 #include "models/threadsmodel.hpp"
 #include "models/variablesmodel.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
+#include <eepp/ui/uitextedit.hpp>
+#include <eepp/ui/uitooltip.hpp>
+#include <eepp/window/clipboard.hpp>
 #include <eepp/window/input.hpp>
 
 namespace ecode {
@@ -135,6 +137,10 @@ void DebuggerClientListener::initUI() {
 					->setId( "debugger_copy_variable_memory_reference" );
 			}
 
+			menu->add( context->i18n( "debugger_value_viewer", "Value Viewer" ),
+					   context->findIcon( "eye" ) )
+				->setId( "debugger_value_viewer" );
+
 			menu->on( Event::OnItemClicked, [this, var = std::move( var )]( const Event* event ) {
 				UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 				std::string id( item->getId() );
@@ -150,14 +156,26 @@ void DebuggerClientListener::initUI() {
 				} else if ( id == "debugger_copy_variable_memory_reference" ) {
 					mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText(
 						*var.memoryReference );
+				} else if ( id == "debugger_value_viewer" ) {
+					static constexpr auto VALUE_VIEWER_LAYOUT = R"html(
+					<window id="process_picker" lw="250dp" lh="250dp" padding="4dp" window-flags="default|ephemeral">
+						<vbox lw="mp" lh="mp">
+							<TextEdit id="value_input" lw="mp" lh="0dp" lw8="1" wordwrap="true" />
+						</vbox>
+					</window>
+					)html";
+					UIWindow* win = mPlugin->getUISceneNode()
+										->loadLayoutFromString( VALUE_VIEWER_LAYOUT )
+										->asType<UIWindow>();
+					win->setTitle( String::format( "%s:", var.name ) );
+					UITextEdit* input = win->find( "value_input" )->asType<UITextEdit>();
+					input->setText( var.value );
+					win->center();
+					win->showWhenReady();
 				}
 			} );
 
-			Vector2f pos( context->getWindow()->getInput()->getMousePos().asFloat() );
-			menu->nodeToWorldTranslation( pos );
-			UIMenu::findBestMenuPos( pos, menu );
-			menu->setPixelsPosition( pos );
-			menu->show();
+			menu->showOverMouseCursor();
 		}
 	} );
 
@@ -222,6 +240,11 @@ void DebuggerClientListener::debuggeeExited( int /*exitCode*/ ) {
 
 void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
 	Log::debug( "DebuggerClientListener::debuggeeStopped: reason %s", event.reason );
+
+	for ( auto& [editor, _] : mPlugin->mEditors ) {
+		if ( editor->getTooltip() )
+			editor->getTooltip()->hide();
+	}
 
 	if ( "exception" == event.reason ) {
 		if ( event.description ) {

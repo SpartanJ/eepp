@@ -1,5 +1,5 @@
-#include "gitbranchmodel.hpp"
 #include "gitplugin.hpp"
+#include "gitbranchmodel.hpp"
 #include "gitstatusmodel.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/scene/scenemanager.hpp>
@@ -1609,9 +1609,10 @@ void GitPlugin::buildSidePanelTab() {
 			switch ( modelEvent->getModelEventType() ) {
 				case ModelEventType::OpenMenu: {
 					const auto* status = model->statusType( modelEvent->getModelIndex() );
-					if ( status->type == Git::GitStatusType::Staged ||
-						 status->type == Git::GitStatusType::Untracked ||
-						 status->type == Git::GitStatusType::Changed ) {
+					auto type = status->type;
+					if ( type == Git::GitStatusType::Staged ||
+						 type == Git::GitStatusType::Untracked ||
+						 type == Git::GitStatusType::Changed ) {
 						std::string repoPath;
 						if ( !status->files.empty() )
 							repoPath = mGit->repoPath( status->files.front().file );
@@ -1619,27 +1620,28 @@ void GitPlugin::buildSidePanelTab() {
 						UIPopUpMenu* menu = UIPopUpMenu::New();
 						menu->setId( "git_status_type_menu" );
 
-						if ( status->type == Git::GitStatusType::Staged ) {
+						if ( type == Git::GitStatusType::Staged ) {
 							menuAdd( menu, "git-commit", i18n( "git_commit", "Commit" ),
 									 "git-commit" );
 							menuAdd( menu, "git-diff-staged",
 									 i18n( "git_diff_staged", "Diff Staged" ), "diff-multiple" );
 							menuAdd( menu, "git-unstage-all",
-									 i18n( "git_unstage_all", "Unstage All" ) );
+									 i18n( "git_unstage_all", "Unstage All" ), "diff-removed" );
 						}
 
-						if ( status->type == Git::GitStatusType::Untracked ||
-							 status->type == Git::GitStatusType::Changed )
-							menuAdd( menu, "git-stage-all", i18n( "git_stage_all", "Stage All" ) );
+						if ( type == Git::GitStatusType::Untracked ||
+							 type == Git::GitStatusType::Changed )
+							menuAdd( menu, "git-stage-all", i18n( "git_stage_all", "Stage All" ),
+									 "diff-added" );
 
-						if ( status->type == Git::GitStatusType::Changed ) {
+						if ( type == Git::GitStatusType::Changed ) {
 							menu->addSeparator();
 							menuAdd( menu, "git-discard-all",
 									 i18n( "git_discard_all", "Discard All" ) );
 						}
 
-						menu->on( Event::OnItemClicked, [this, model,
-														 repoPath]( const Event* event ) {
+						menu->on( Event::OnItemClicked, [this, model, repoPath,
+														 type]( const Event* event ) {
 							if ( !mGit )
 								return;
 							UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -1648,8 +1650,7 @@ void GitPlugin::buildSidePanelTab() {
 								commit( repoPath );
 							} else if ( id == "git-stage-all" ) {
 								stage( model->getFiles( repoFullName( repoPath ),
-														(Uint32)Git::GitStatusType::Untracked |
-															(Uint32)Git::GitStatusType::Changed ) );
+														static_cast<Uint32>( type ) ) );
 							} else if ( id == "git-unstage-all" ) {
 								unstage( model->getFiles( repoFullName( repoPath ),
 														  (Uint32)Git::GitStatusType::Staged ) );
@@ -1693,7 +1694,8 @@ void GitPlugin::buildSidePanelTab() {
 					}
 
 					if ( repo->hasStatusType( Git::GitStatusType::Untracked ) ) {
-						menuAdd( menu, "git-stage-all", i18n( "git_stage_all", "Stage All" ) );
+						menuAdd( menu, "git-stage-all", i18n( "git_stage_all", "Stage All" ),
+								 "diff-added" );
 					}
 
 					menuAdd( menu, "git-fetch", i18n( "git_fetch", "Fetch" ), "repo-fetch" );
@@ -1836,9 +1838,9 @@ void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
 	menuAdd( menu, "git-diff", i18n( "git_open_diff", "Open Diff" ), "diff-single" );
 
 	if ( file.report.type != Git::GitStatusType::Staged ) {
-		menuAdd( menu, "git-stage", i18n( "git_stage", "Stage" ) );
+		menuAdd( menu, "git-stage", i18n( "git_stage", "Stage" ), "diff-added" );
 	} else {
-		menuAdd( menu, "git-unstage", i18n( "git_unstage", "Unstage" ) );
+		menuAdd( menu, "git-unstage", i18n( "git_unstage", "Unstage" ), "diff-removed" );
 	}
 
 	menu->addSeparator();

@@ -239,6 +239,7 @@ class DebuggerPlugin : public PluginBase {
 	UIWindow* processPicker();
 
 	bool resume( int threadId, bool singleThread = false );
+
 };
 
 } // namespace ecode
