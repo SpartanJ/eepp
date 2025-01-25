@@ -466,11 +466,11 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 						->loadLayoutFromString( R"xml(
 	<window
 		id="plugin-manager-window"
-		lw="800dp" lh="50dp"
+		lw="800dp" lh="400dp"
 		padding="8dp"
 		window-title="@string(plugin_manager, Plugin Manager)"
 		window-flags="default|maximize|shadow"
-		window-min-size="300dp 50dp">
+		window-min-size="300dp 300dp">
 		<vbox lw="mp" lh="mp">
 			<UIPluginManagerTable id="plugin-manager-table" lw="mp" lh="fixed" layout_weight="1" />
 			<vbox lw="mp" lh="wc">
