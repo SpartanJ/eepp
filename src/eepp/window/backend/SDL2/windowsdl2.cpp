@@ -148,6 +148,44 @@ int hideOSK() {
 	WIN_OSK_VISIBLE = false;
 	return PostMessage( GetDesktopWindow(), WM_SYSCOMMAND, (int)SC_CLOSE, 0 );
 }
+
+bool isDarkModeEnabled() {
+    HKEY hKey;
+    DWORD value = 1; // Default to light theme
+    DWORD valueSize = sizeof(value);
+
+    if (RegOpenKeyEx(HKEY_CURRENT_USER,
+                     "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+                     0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+        RegQueryValueEx(hKey, "AppsUseLightTheme", nullptr, nullptr, reinterpret_cast<LPBYTE>(&value), &valueSize);
+        RegCloseKey(hKey);
+    }
+
+    return value == 0; // 0 means dark theme is enabled
+}
+
+typedef HRESULT(WINAPI *DwmSetWindowAttributeFunc)(HWND, DWORD, LPCVOID, DWORD);
+
+constexpr DWORD DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+
+void setUserTheme(HWND hwnd) {
+    HMODULE hDwmapi = LoadLibrary("dwmapi.dll");
+    if (!hDwmapi) {
+        return;
+    }
+
+    auto DwmSetWindowAttribute = reinterpret_cast<DwmSetWindowAttributeFunc>(
+        GetProcAddress(hDwmapi, "DwmSetWindowAttribute"));
+    if (!DwmSetWindowAttribute) {
+        FreeLibrary(hDwmapi);
+        return;
+    }
+
+    BOOL darkMode = isDarkModeEnabled() ? TRUE : FALSE;
+    DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkMode, sizeof(darkMode));
+
+    FreeLibrary(hDwmapi);
+}
 #elif defined( EE_X11_PLATFORM )
 #include <signal.h>
 #include <unistd.h>
@@ -414,6 +452,10 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	static_cast<InputSDL*>( mInput )->init();
 
 	mCursorManager->set( Cursor::SysArrow );
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	setUserTheme( (HWND)getWindowHandler() );
+#endif
 
 	logSuccessfulInit( getVersion() );
 
