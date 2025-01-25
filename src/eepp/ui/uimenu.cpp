@@ -418,7 +418,7 @@ void UIMenu::safeHide() {
 }
 
 void UIMenu::unselectSelected() {
-	if ( nullptr != mItemSelected )
+	if ( nullptr != mItemSelected && isChild( mItemSelected ) )
 		mItemSelected->popState( UIState::StateSelected );
 	mItemSelected = nullptr;
 	mItemSelectedIndex = eeINDEX_NOT_FOUND;
