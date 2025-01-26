@@ -468,7 +468,7 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 		id="plugin-manager-window"
 		lw="800dp" lh="400dp"
 		padding="8dp"
-		window-title="@string(plugin_manager, Plugin Manager)"
+		window-title="@string(plugin_manager, Plugins Manager)"
 		window-flags="default|maximize|shadow"
 		window-min-size="300dp 300dp">
 		<vbox lw="mp" lh="mp">

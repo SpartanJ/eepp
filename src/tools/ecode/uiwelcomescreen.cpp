@@ -118,7 +118,7 @@ static const auto LAYOUT = R"xml(
 			<button id="open-file" text="@string(open_a_file, Open a File)" />
 			<button id="recent-folders" text="@string(recent_folders_ellipsis, Recent Folders...)" />
 			<button id="recent-files" text="@string(recent_files_ellipsis, Recent Files...)" />
-			<button id="plugin-manager-open" text="@string(plugin_manager, Plugin Manager)" />
+			<button id="plugin-manager-open" text="@string(plugin_manager, Plugins Manager)" />
 			<button id="keybindings" text="@string(keybindings, Keybindings)" />
 			<widget class="separator" lw="mp" lh="32dp" />
 			<tv class="bold" text="@string(for_help_please_visit, For help, please visit:)" lg="center" />

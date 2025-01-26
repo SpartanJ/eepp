@@ -52,10 +52,7 @@ void NotificationCenter::addNotification( const String& text, const Time& delay,
 		Log::info( "Displayed notification:\n%s", text.toUtf8() );
 	};
 
-	if ( Engine::isRunninMainThread() )
-		action();
-	else
-		mLayout->runOnMainThread( action );
+	mLayout->ensureMainThread( action );
 }
 
 void NotificationCenter::addShowRequest( const String& uri, const String& actionText,
@@ -87,10 +84,48 @@ void NotificationCenter::addShowRequest( const String& uri, const String& action
 		lay->runAction( sequence );
 	};
 
-	if ( Engine::isRunninMainThread() )
-		action();
-	else
-		mLayout->runOnMainThread( action );
+	mLayout->ensureMainThread( action );
+}
+
+void NotificationCenter::addInteractiveNotification( String text, String actionText,
+													 std::function<void()> onInteraction,
+													 const Time& delay, bool allowCopy ) {
+	auto action = [this, text = std::move( text ), actionText = std::move( actionText ), delay,
+				   allowCopy, onInteraction = std::move( onInteraction )]() {
+		static const auto layout = R"xml(
+	<vbox lw="mp" class="notification">
+		<TextView lw="mp" wordwrap="true" />
+		<hbox lg="right">
+			<PushButton />
+		</hbox>
+	</vbox>
+	)xml";
+		UILinearLayout* lay = mLayout->getUISceneNode()
+								  ->loadLayoutFromString( layout, mLayout )
+								  ->asType<UILinearLayout>();
+		UITextView* tv = lay->findByType( UI_TYPE_TEXTVIEW )->asType<UITextView>();
+		tv->setText( text );
+		tv->setTextSelection( allowCopy );
+		tv->on( Event::MouseClick, [allowCopy, lay]( const Event* event ) {
+			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
+			if ( mouseEvent->getFlags() &
+				 ( allowCopy ? EE_BUTTON_MMASK : ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) )
+				lay->close();
+		} );
+		UIPushButton* pb = lay->findByType( UI_TYPE_PUSHBUTTON )->asType<UIPushButton>();
+		pb->setText( actionText );
+		pb->onClick(
+			[actionText, onInteraction = std::move( onInteraction )]( const MouseEvent* event ) {
+				if ( onInteraction )
+					onInteraction();
+			} );
+		Action* sequence = Actions::Sequence::New(
+			{ Actions::FadeIn::New( Seconds( 0.125 ) ), Actions::Delay::New( delay ),
+			  Actions::FadeOut::New( Seconds( 0.125 ) ), Actions::Close::New() } );
+		lay->runAction( sequence );
+	};
+
+	mLayout->ensureMainThread( action );
 }
 
 } // namespace ecode

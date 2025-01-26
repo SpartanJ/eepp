@@ -190,7 +190,19 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	SettingsMenu* getSettingsMenu() const { return mSettings.get(); }
 
 	template <typename T> void registerUnlockedCommands( T& t ) {
-		t.setCommand( "keybindings", [this] { loadFileFromPath( mKeybindingsPath ); } );
+		t.setCommand( "keybindings", [this] {
+			loadFileFromPath( mKeybindingsPath );
+
+			if ( mNotificationCenter ) {
+				mNotificationCenter->addInteractiveNotification(
+					i18n( "keybindings_clarification",
+						  "More keybindings can be set for each active plugin at the Plugins "
+						  "Manager.\nBe aware that many of the core keybindings can be found "
+						  "there." ),
+					i18n( "plugin_manager_open", "Open Plugins Manager" ),
+					[this] { runCommand( "plugin-manager-open" ); }, Seconds( 10 ) );
+			}
+		} );
 		t.setCommand( "debug-draw-boxes-toggle", [this] { debugDrawBoxesToggle(); } );
 		t.setCommand( "debug-draw-highlight-toggle", [this] { debugDrawHighlightToggle(); } );
 		t.setCommand( "debug-draw-debug-data", [this] { debugDrawData(); } );

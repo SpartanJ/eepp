@@ -15,6 +15,10 @@ class NotificationCenter {
 	void addShowRequest( const String& uri, const String& actionText,
 						 const Time& delay = Seconds( 2.5 ) );
 
+	void addInteractiveNotification( String text, String actionText,
+									 std::function<void()> onInteraction,
+									 const Time& delay = Seconds( 7.5 ), bool allowCopy = false );
+
   protected:
 	UILayout* mLayout{ nullptr };
 	PluginManager* mPluginManager{ nullptr };

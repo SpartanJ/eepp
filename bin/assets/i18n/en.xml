@@ -500,8 +500,8 @@ controls whether a new window is created or not.</string>
 	<string name="pattern">Pattern</string>
 	<string name="pick_widget">Pick Widget</string>
 	<string name="please_enter_file_url_ellipsis">Please enter the file URL...</string>
-	<string name="plugin_manager">Plugin Manager</string>
-	<string name="plugin_manager_open">Plugin Manager Open</string>
+	<string name="plugin_manager">Plugins Manager</string>
+	<string name="plugin_manager_open">Open Plugins Manager</string>
 	<string name="pluginsmodel_description">Description</string>
 	<string name="pluginsmodel_enabled">Enabled</string>
 	<string name="pluginsmodel_id">Id</string>

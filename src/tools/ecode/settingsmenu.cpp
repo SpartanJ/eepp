@@ -1669,7 +1669,7 @@ UIMenu* SettingsMenu::createViewMenu() {
 UIPopUpMenu* SettingsMenu::createToolsMenu() {
 	mToolsMenu = UIPopUpMenu::New();
 
-	mToolsMenu->add( i18n( "plugin_manager", "Plugin Manager" ), findIcon( "extensions" ) )
+	mToolsMenu->add( i18n( "plugin_manager", "Plugins Manager" ), findIcon( "extensions" ) )
 		->setId( "plugin-manager-open" );
 
 	mToolsMenu->addSeparator();
