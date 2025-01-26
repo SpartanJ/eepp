@@ -1,3 +1,4 @@
+#include <eepp/ui/doc/languages/ada.hpp>
 #include <eepp/ui/doc/languages/adept.hpp>
 #include <eepp/ui/doc/languages/angelscript.hpp>
 #include <eepp/ui/doc/languages/awkscript.hpp>
@@ -89,6 +90,7 @@
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void LanguagesSyntaxHighlighting::load() {
+	addAda();
 	addAdept();
 	addAngelScript();
 	addAwkScript();

@@ -382,6 +382,13 @@
       "url": "https://github.com/bscan/PerlNavigator",
       "command": "perlnavigator",
       "file_patterns": ["%.pm$", "%.pl$"]
+    },
+    {
+      "language": "ada",
+      "name": "ada_language_server",
+      "url": "https://github.com/AdaCore/ada_language_server",
+      "command": "ada_language_server",
+      "file_patterns": ["%.adb$", "%.ads$", "%.ada$"]
     }
   ]
 }
