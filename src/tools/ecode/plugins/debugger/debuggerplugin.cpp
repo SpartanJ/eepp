@@ -1,4 +1,3 @@
-#include "debuggerplugin.hpp"
 #include "../../notificationcenter.hpp"
 #include "../../projectbuild.hpp"
 #include "../../terminalmanager.hpp"
@@ -8,6 +7,7 @@
 #include "bussocket.hpp"
 #include "bussocketprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
+#include "debuggerplugin.hpp"
 #include "models/breakpointsmodel.hpp"
 #include "models/processesmodel.hpp"
 #include "models/variablesmodel.hpp"
@@ -1261,7 +1261,11 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 		}
 	} );
 
-	doc->setCommand( "debugger-start", [this] { runCurrentConfig(); } );
+	doc->setCommand( "debugger-start", [this] {
+		if ( mDebugger )
+			exitDebugger( true );
+		runCurrentConfig();
+	} );
 
 	doc->setCommand( "debugger-stop", [this] { exitDebugger( true ); } );
 

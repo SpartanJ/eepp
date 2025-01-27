@@ -1,5 +1,5 @@
-#include "gitplugin.hpp"
 #include "gitbranchmodel.hpp"
+#include "gitplugin.hpp"
 #include "gitstatusmodel.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/scene/scenemanager.hpp>
@@ -1583,10 +1583,10 @@ void GitPlugin::buildSidePanelTab() {
 	} );
 	mStatusTree->on( Event::OnModelEvent, [this]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
-		if ( modelEvent->getModel() == nullptr )
+		auto modelShared = mStatusTree->getModelShared();
+		if ( !modelShared )
 			return;
-
-		auto model = static_cast<const GitStatusModel*>( modelEvent->getModel() );
+		auto model = static_cast<GitStatusModel*>( modelShared.get() );
 
 		if ( modelEvent->getModelIndex().internalId() == GitStatusModel::GitFile ) {
 			const Git::DiffFile* file = model->file( modelEvent->getModelIndex() );
@@ -1640,10 +1640,11 @@ void GitPlugin::buildSidePanelTab() {
 									 i18n( "git_discard_all", "Discard All" ) );
 						}
 
-						menu->on( Event::OnItemClicked, [this, model, repoPath,
+						menu->on( Event::OnItemClicked, [this, modelShared, repoPath,
 														 type]( const Event* event ) {
-							if ( !mGit )
+							if ( !mGit || !modelShared )
 								return;
+							auto model = static_cast<GitStatusModel*>( modelShared.get() );
 							UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 							std::string id( item->getId() );
 							if ( id == "git-commit" ) {
