@@ -1261,18 +1261,18 @@ bool String::isAscii() const {
 	size_t len = mString.size();
 	size_t i = 0;
 
-#ifdef EE_STD_SIMD
-	using simd_type = simd::native_simd<char32_t>;
-	constexpr size_t simd_size = simd_type::size();
-	const simd_type ascii_limit = 127;
-	for ( ; i + simd_size - 1 < len; i += simd_size ) {
-		simd_type chunk;
-		chunk.copy_from( &data[i], simd::element_aligned );
-		auto mask = chunk > ascii_limit;
-		if ( simd::any_of( mask ) )
-			return false;
-	}
-#endif
+// #ifdef EE_STD_SIMD
+// 	using simd_type = simd::native_simd<char32_t>;
+// 	constexpr size_t simd_size = simd_type::size();
+// 	const simd_type ascii_limit = 127;
+// 	for ( ; i + simd_size - 1 < len; i += simd_size ) {
+// 		simd_type chunk;
+// 		chunk.copy_from( &data[i], simd::element_aligned );
+// 		auto mask = chunk > ascii_limit;
+// 		if ( simd::any_of( mask ) )
+// 			return false;
+// 	}
+// #endif
 
 	for ( ; i < len; ++i )
 		if ( data[i] > 127 )
