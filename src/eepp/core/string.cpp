@@ -1,6 +1,6 @@
 #include <eepp/core/string.hpp>
 #include <eepp/core/utf.hpp>
-#include <eepp/core/simd.hpp>
+// #include <eepp/core/simd.hpp>
 
 #include <thirdparty/fast_float/include/fast_float/fast_float.h>
 #include <thirdparty/utf8cpp/utf8.h>
