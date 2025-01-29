@@ -985,6 +985,8 @@ class EE_API String {
 		return buffer;
 	}
 
+	const StringType& getString() const { return mString; }
+
   private:
 	friend EE_API bool operator==( const String& left, const String& right );
 	friend EE_API bool operator<( const String& left, const String& right );

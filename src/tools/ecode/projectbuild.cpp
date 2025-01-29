@@ -800,7 +800,9 @@ std::optional<ProjectBuildStep> ProjectBuildManager::getCurrentRunConfig() {
 		if ( build != nullptr && build->hasRun() ) {
 			for ( const auto& crun : build->mRun ) {
 				if ( crun->name == mConfig.runName || mConfig.runName.empty() ) {
-					return build->replaceVars( *crun.get() );
+					ProjectBuildCommand res( build->replaceVars( *crun.get() ) );
+					replaceDynamicVars( res );
+					return res;
 				}
 			}
 		}
