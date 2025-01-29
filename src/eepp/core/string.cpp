@@ -1,5 +1,6 @@
 #include <eepp/core/string.hpp>
 #include <eepp/core/utf.hpp>
+#include <eepp/core/simd.hpp>
 
 #include <thirdparty/fast_float/include/fast_float/fast_float.h>
 #include <thirdparty/utf8cpp/utf8.h>
@@ -1256,9 +1257,27 @@ bool String::contains( const String& needle ) const {
 }
 
 bool String::isAscii() const {
-	for ( const auto& ch : mString )
-		if ( ch > 127 )
+	auto data = mString.data();
+	size_t len = mString.size();
+	size_t i = 0;
+
+#ifdef EE_STD_SIMD
+	using simd_type = simd::native_simd<char32_t>;
+	constexpr size_t simd_size = simd_type::size();
+	const simd_type ascii_limit = 127;
+	for ( ; i + simd_size - 1 < len; i += simd_size ) {
+		simd_type chunk;
+		chunk.copy_from( &data[i], simd::element_aligned );
+		auto mask = chunk > ascii_limit;
+		if ( simd::any_of( mask ) )
 			return false;
+	}
+#endif
+
+	for ( ; i < len; ++i )
+		if ( data[i] > 127 )
+			return false;
+
 	return true;
 }
 
