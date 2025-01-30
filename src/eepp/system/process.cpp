@@ -228,6 +228,7 @@ size_t Process::readStdErr( char* const buffer, const size_t& size ) {
 
 size_t Process::write( const char* buffer, const size_t& size ) {
 	eeASSERT( mProcess != nullptr );
+	eeASSERT( isAlive()  );
 	if ( mShuttingDown )
 		return 0;
 	Lock l( mStdInMutex );

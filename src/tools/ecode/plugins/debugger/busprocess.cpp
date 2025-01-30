@@ -38,7 +38,16 @@ void BusProcess::startAsyncRead( ReadFn readFn ) {
 }
 
 size_t BusProcess::write( const char* buffer, const size_t& size ) {
-	return mProcess.write( buffer, size );
+	if ( mState == State::Running ) {
+		if ( !mProcess.isAlive() ) {
+			setState( State::Closed );
+			return 0;
+		}
+
+		return mProcess.write( buffer, size );
+	}
+
+	return 0;
 }
 
 } // namespace ecode

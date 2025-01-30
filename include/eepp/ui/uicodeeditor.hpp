@@ -516,7 +516,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual Vector2d getTextPositionOffset( const TextPosition& pos,
 											std::optional<Float> lineHeight = {},
-											bool allowVisualLineEnd = false ) const;
+											bool allowVisualLineEnd = false,
+											bool visualizeNewLine = false ) const;
 
 	Vector2d getTextPositionOffsetSanitized( TextPosition pos,
 											 std::optional<Float> lineHeight = {} ) const;
@@ -529,7 +530,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 							std::optional<Float> lineHeight = {},
 							/* if passed it will clip rectangles against the visual line range */
 							std::optional<DocumentViewLineRange> visibleLineRange =
-								std::optional<DocumentViewLineRange>() );
+								std::optional<DocumentViewLineRange>(),
+							bool visualizeNewLines = false );
 
 	virtual Float getLineWidth( const Int64& docLine );
 

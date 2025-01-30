@@ -2827,6 +2827,7 @@ TextDocument::SearchResult TextDocument::find( const String& text, TextPosition 
 							  TextPosition( initPos.line(), curSearch.size() ) );
 		if ( foundRange.end().column() == (Int64)mLines[foundRange.end().line()].size() )
 			foundRange.setEnd( positionOffset( foundRange.end(), 1 ) );
+		range.result = foundRange;
 		return range;
 	} else {
 		return find( text, range.result.end(), caseSensitive, wholeWord, type, restrictRange );
