@@ -24,6 +24,7 @@
 #include "plugins/linter/linterplugin.hpp"
 #include "plugins/lsp/lspclientplugin.hpp"
 #include "plugins/xmltools/xmltoolsplugin.hpp"
+#include "plugins/discordRPC/discordRPCplugin.hpp"
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 // For malloc_trim, which is a GNU extension
@@ -605,6 +606,7 @@ void App::initPluginManager() {
 	mPluginManager->registerPlugin( LSPClientPlugin::Definition() );
 	mPluginManager->registerPlugin( XMLToolsPlugin::Definition() );
 	mPluginManager->registerPlugin( GitPlugin::Definition() );
+	mPluginManager->registerPlugin( DiscordRPCplugin::Definition() );
 }
 
 std::pair<bool, std::string> App::generateConfigPath() {
