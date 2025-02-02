@@ -357,10 +357,9 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			}
 		} else if ( mShortcuts["autocomplete-next-signature-help"] == eventShortcut ) {
 			if ( mSignatureHelp.signatures.size() > 1 ) {
-				mSignatureHelpSelected =
-					mSignatureHelpSelected == (int)mSignatureHelp.signatures.size() - 1
-						? mSignatureHelp.signatures.size() - 1
-						: 0;
+				mSignatureHelpSelected = mSignatureHelpSelected <= 0
+											 ? mSignatureHelp.signatures.size()
+											 : mSignatureHelpSelected;
 				--mSignatureHelpSelected;
 				mSignatureHelpSelected = mSignatureHelpSelected % mSignatureHelp.signatures.size();
 				editor->invalidateDraw();
@@ -818,9 +817,68 @@ AutoCompletePlugin::processSignatureHelp( const LSPSignatureHelp& signatureHelp 
 	}
 	if ( !editor )
 		return {};
-	editor->runOnMainThread( [this, editor, signatureHelp] {
+
+	// Convert the LSP Signature Help into our own object:
+	// We will convert the UTF-8 label to UTF-32, then we will remove any new lines and extra spaces
+	// This guarantees that we always display a single line signature help
+	SignatureHelp signatures;
+	signatures.activeSignature = signatureHelp.activeSignature;
+	signatures.activeParameter = signatureHelp.activeParameter;
+	signatures.signatures.reserve( signatureHelp.signatures.size() );
+
+	TextDocument doc;
+	for ( const auto& sig : signatureHelp.signatures ) {
+		String initialLabel( sig.label );
+		SignatureInformation nsig;
+		nsig.documentation = sig.documentation;
+
+		doc.reset();
+		doc.textInput( initialLabel );
+		std::vector<String> parameters;
+		parameters.reserve( sig.parameters.size() );
+
+		for ( size_t i = 0; i < sig.parameters.size(); i++ ) {
+			auto start = String::utf8ToCodepointPosition( sig.label, sig.parameters[i].start );
+			auto end = String::utf8ToCodepointPosition( sig.label, sig.parameters[i].end );
+			auto sel = TextRange::convertToLineColumn( initialLabel.view(), start, end );
+
+			if ( i == 0 )
+				doc.setSelection( i, sel );
+			else
+				doc.addSelection( sel );
+
+			parameters.emplace_back( doc.getSelectedText( i ) );
+		}
+
+		auto selections( doc.getSelections() );
+		nsig.parameters.reserve( selections.size() );
+
+		if ( 0 != doc.replaceAll( "\n", "" ) ) {
+			while ( 0 != doc.replaceAll( "  ", " " ) )
+				;
+
+			nsig.label = doc.line( 0 ).getTextWithoutNewLine();
+
+			for ( const auto& param : parameters ) {
+				auto res = doc.find( param );
+				if ( res.isValid() )
+					nsig.parameters.emplace_back( res.result );
+			}
+		} else {
+			nsig.label = std::move( initialLabel );
+
+			if ( !sig.parameters.empty() ) {
+				for ( auto& sel : selections )
+					nsig.parameters.emplace_back( sel );
+			}
+		}
+
+		signatures.signatures.emplace_back( nsig );
+	}
+
+	editor->runOnMainThread( [this, editor, signatures = std::move( signatures )] {
 		mSignatureHelpVisible = true;
-		mSignatureHelp = signatureHelp;
+		mSignatureHelp = signatures;
 		if ( mSignatureHelp.signatures.empty() )
 			resetSignatureHelp();
 		editor->invalidateDraw();
@@ -942,7 +1000,7 @@ void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f
 	primitives.setColor( Color( selectedStyle.background ).blendAlpha( editor->getAlpha() ) );
 	String str;
 	if ( mSignatureHelp.signatures.size() > 1 ) {
-		str = String::format( "%s (%d of %zu)", curSig.label.c_str(),
+		str = String::format( "%s (%d of %zu)", curSig.label.toUtf8(),
 							  mSignatureHelpSelected == -1 ? 1 : mSignatureHelpSelected + 1,
 							  mSignatureHelp.signatures.size() );
 	} else {
@@ -962,38 +1020,42 @@ void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f
 	}
 
 	bool hasParams = !curSig.parameters.empty();
-	LSPParameterInformation curParam =
+	TextRange curParam =
 		hasParams ? curSig.parameters[mSignatureHelp.activeParameter % curSig.parameters.size()]
-				  : LSPParameterInformation{ -1, -1 };
+				  : TextRange{};
 	Rectf curParamRect;
 	if ( hasParams ) {
 		curParamRect = Rectf(
 			{ { boxRect.getPosition().x + mBoxPadding.Left +
-					curParam.start * editor->getGlyphWidth(),
+					curParam.start().column() * editor->getGlyphWidth(),
 				boxRect.getPosition().y },
-			  { ( curParam.end - curParam.start ) * editor->getGlyphWidth(), mRowHeight } } );
+			  { ( curParam.end().column() - curParam.start().column() ) * editor->getGlyphWidth(),
+				mRowHeight } } );
 
 		if ( !editor->getScreenRect().contains(
 				 Rectf{ { curParamRect.getPosition().x +
-							  ( curParam.end - curParam.start ) * editor->getGlyphWidth(),
+							  ( curParam.end().column() - curParam.start().column() ) *
+								  editor->getGlyphWidth(),
 						  curParamRect.getPosition().y },
 						curParamRect.getSize() } ) ) {
 			auto offset = editor->getTextPositionOffset( mSignatureHelpPosition );
-			pos = { static_cast<Float>( startScroll.x - curParam.start * editor->getGlyphWidth() +
+			pos = { static_cast<Float>( startScroll.x -
+										curParam.start().column() * editor->getGlyphWidth() +
 										offset.x ),
 					static_cast<Float>( startScroll.y + offset.y + vdiff ) };
 
 			boxRect.setPosition( pos );
 
 			curParamRect.setPosition( { boxRect.getPosition().x + mBoxPadding.Left +
-											curParam.start * editor->getGlyphWidth(),
+											curParam.start().column() * editor->getGlyphWidth(),
 										boxRect.getPosition().y } );
 		}
 	}
 
 	primitives.drawRoundedRectangle( boxRect, 0.f, Vector2f::One, 6 );
 
-	if ( hasParams && curParam.end - curParam.start > 0 && curParam.end < (int)str.size() ) {
+	if ( hasParams && curParam.end() != curParam.start() &&
+		 curParam.end().column() < (int)str.size() ) {
 		primitives.setColor( matchingSelection.color );
 		primitives.drawRoundedRectangle( curParamRect, 0.f, Vector2f::One, 6 );
 	}
@@ -1112,10 +1174,13 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 			LSPCompletionItemHelper::toIconString( suggestion.kind ), PixelDensity::dpToPxI( 12 ) );
 
 		if ( icon ) {
+			Color iconColor( icon->getColor() );
+			icon->setColor( mSuggestionIndex == (int)i ? selectedStyle.color : normalStyle.color );
 			Vector2f padding(
 				eefloor( ( iconSpace.getWidth() - icon->getSize().getWidth() ) * 0.5f ),
 				eefloor( ( iconSpace.getHeight() - icon->getSize().getHeight() ) * 0.5f ) );
 			icon->draw( { cursorPos.x + padding.x, cursorPos.y + mRowHeight * count + padding.y } );
+			icon->setColor( iconColor );
 		}
 
 		if ( mSuggestionIndex == (int)i && !suggestion.documentation.value.empty() ) {

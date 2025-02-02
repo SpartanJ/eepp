@@ -637,7 +637,7 @@ struct LSPPreviousResultId {
 using LSPPreviousResultIds = std::vector<LSPPreviousResultId>;
 
 static constexpr auto LSPDocumentDiagnosticReportKindFull = "full";
-static constexpr auto LSPDocumentDiagnosticReportKindUnchanged= "unchanged";
+static constexpr auto LSPDocumentDiagnosticReportKindUnchanged = "unchanged";
 
 struct LSPFullDocumentDiagnosticReport {
 	URI uri;

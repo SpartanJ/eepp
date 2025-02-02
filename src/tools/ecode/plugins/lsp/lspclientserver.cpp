@@ -1,5 +1,5 @@
-#include "lspclientserver.hpp"
 #include "lspclientplugin.hpp"
+#include "lspclientserver.hpp"
 #include "lspclientservermanager.hpp"
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
@@ -1201,6 +1201,10 @@ void LSPClientServer::initialize() {
 			try {
 #endif
 				fromJson( mCapabilities, resp["capabilities"] );
+
+				for ( const auto& ch : mLSP.extraTriggerChars )
+					if ( !ch.empty() )
+						mCapabilities.signatureHelpProvider.triggerCharacters.push_back( ch[0] );
 #ifndef EE_DEBUG
 			} catch ( const json::exception& e ) {
 				Log::warning(

@@ -30,6 +30,7 @@ struct LSPDefinition {
 	std::string usesLSP;
 	bool shareProcessWithOtherDefinition{ false };
 	bool disabled{ false };
+	std::vector<std::string> extraTriggerChars;
 
 	bool commandAvailable() const {
 		auto cmdp( String::split( command, ' ' ) );

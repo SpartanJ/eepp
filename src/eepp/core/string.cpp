@@ -1261,18 +1261,18 @@ bool String::isAscii() const {
 	size_t len = mString.size();
 	size_t i = 0;
 
-// #ifdef EE_STD_SIMD
-// 	using simd_type = simd::native_simd<char32_t>;
-// 	constexpr size_t simd_size = simd_type::size();
-// 	const simd_type ascii_limit = 127;
-// 	for ( ; i + simd_size - 1 < len; i += simd_size ) {
-// 		simd_type chunk;
-// 		chunk.copy_from( &data[i], simd::element_aligned );
-// 		auto mask = chunk > ascii_limit;
-// 		if ( simd::any_of( mask ) )
-// 			return false;
-// 	}
-// #endif
+	// #ifdef EE_STD_SIMD
+	// 	using simd_type = simd::native_simd<char32_t>;
+	// 	constexpr size_t simd_size = simd_type::size();
+	// 	const simd_type ascii_limit = 127;
+	// 	for ( ; i + simd_size - 1 < len; i += simd_size ) {
+	// 		simd_type chunk;
+	// 		chunk.copy_from( &data[i], simd::element_aligned );
+	// 		auto mask = chunk > ascii_limit;
+	// 		if ( simd::any_of( mask ) )
+	// 			return false;
+	// 	}
+	// #endif
 
 	for ( ; i < len; ++i )
 		if ( data[i] > 127 )
@@ -1588,6 +1588,44 @@ size_t String::utf8Length( const std::string_view& utf8String ) {
 
 Uint32 String::utf8Next( char*& utf8String ) {
 	return utf8::unchecked::next( utf8String );
+}
+
+size_t String::utf8ToCodepointPosition( const std::string_view& utf8Text, size_t utf8Pos ) {
+	size_t codepointPos = 0;
+	size_t bytePos = 0;
+
+	while ( bytePos < utf8Pos && bytePos < utf8Text.length() ) {
+		unsigned char c = utf8Text[bytePos];
+
+		// Skip continuation bytes (10xxxxxx)
+		if ( ( c & 0xC0 ) == 0x80 ) {
+			bytePos++;
+			continue;
+		}
+
+		// Count this as one codepoint
+		codepointPos++;
+
+		// Move to the next character
+		if ( c < 0x80 )
+			bytePos += 1; // ASCII
+		else if ( c < 0xE0 )
+			bytePos += 2; // 2-byte sequence
+		else if ( c < 0xF0 )
+			bytePos += 3; // 3-byte sequence
+		else
+			bytePos += 4; // 4-byte sequence
+
+		// Handle potential truncated sequences
+		if ( bytePos > utf8Text.length() )
+			break;
+	}
+
+	// If we're in the middle of a character, return the previous complete character position
+	if ( utf8Pos > bytePos )
+		codepointPos--;
+
+	return codepointPos;
 }
 
 String::operator std::string() const {

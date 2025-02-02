@@ -330,6 +330,7 @@ static std::initializer_list<std::string> DebuggerCommandList = {
 	"debugger-breakpoint-enable-toggle",
 	"debugger-start",
 	"debugger-stop",
+	"debugger-start-stop",
 	"debugger-step-over",
 	"debugger-step-into",
 	"debugger-step-out",
@@ -448,7 +449,7 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 	}
 
 	if ( mKeyBindings.empty() ) {
-		mKeyBindings["debugger-start"] = "mod+f5";
+		mKeyBindings["debugger-start-stop"] = "mod+f5";
 		mKeyBindings["debugger-continue-interrupt"] = "f5";
 		mKeyBindings["debugger-breakpoint-toggle"] = "f9";
 		mKeyBindings["debugger-breakpoint-enable-toggle"] = "mod+f9";
@@ -1268,6 +1269,13 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 	} );
 
 	doc->setCommand( "debugger-stop", [this] { exitDebugger( true ); } );
+
+	doc->setCommand( "debugger-start-stop", [this] {
+		if ( mDebugger )
+			exitDebugger( true );
+		else
+			runCurrentConfig();
+	} );
 
 	doc->setCommand( "debugger-breakpoint-toggle", [doc, this] {
 		if ( setBreakpoint( doc, doc->getSelection().start().line() + 1 ) )

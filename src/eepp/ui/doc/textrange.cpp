@@ -101,6 +101,68 @@ TextRange TextRange::fromString( const std::string& range ) {
 	return {};
 }
 
+template <typename StringType>
+TextRange TextRange::convertToLineColumn( const StringType& text, Int64 startOffset,
+										  Int64 endOffset ) {
+	if ( startOffset < 0 || endOffset < 0 || startOffset > static_cast<Int64>( text.length() ) ||
+		 endOffset > static_cast<Int64>( text.length() ) || startOffset > endOffset ) {
+		return {};
+	}
+
+	TextRange result;
+	Int64 currentLine = 0;
+	Int64 currentCol = 0;
+	Int64 currentPos = 0;
+	bool foundStart = false;
+	bool foundEnd = false;
+	size_t len = text.length();
+
+	for ( size_t i = 0; i < len; i++ ) {
+		if ( currentPos == startOffset ) {
+			result.setStart( { currentLine, currentCol } );
+			foundStart = true;
+		}
+
+		if ( currentPos == endOffset ) {
+			result.setEnd( { currentLine, currentCol } );
+			foundEnd = true;
+		}
+
+		if ( foundStart && foundEnd )
+			break;
+
+		if ( i == text.length() )
+			break;
+
+		if ( text[i] == '\n' ) {
+			currentLine++;
+			currentCol = 0;
+		} else {
+			currentCol++;
+		}
+
+		currentPos++;
+	}
+
+	if ( currentPos == startOffset )
+		result.setStart( { currentLine, currentCol } );
+
+	if ( currentPos == endOffset )
+		result.setEnd( { currentLine, currentCol } );
+
+	return result;
+}
+
+TextRange TextRange::convertToLineColumn( const String::View& text, Int64 startOffset,
+										  Int64 endOffset ) {
+	return convertToLineColumn<String>( text, startOffset, endOffset );
+}
+
+TextRange TextRange::convertToLineColumn( const std::string_view& text, Int64 startOffset,
+										  Int64 endOffset ) {
+	return convertToLineColumn<std::string_view>( text, startOffset, endOffset );
+}
+
 TextRanges::TextRanges() {}
 
 TextRanges::TextRanges( const std::vector<TextRange>& ranges ) : std::vector<TextRange>( ranges ) {}

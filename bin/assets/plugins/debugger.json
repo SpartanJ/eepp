@@ -21,17 +21,6 @@
           }
         },
         {
-          "name": "Launch binary in Terminal",
-          "request": "launch",
-          "arguments": {
-              "program": "${file}",
-              "args": "${args}",
-              "cwd": "${cwd}",
-              "env": "${env}",
-              "runInTerminal": true
-          }
-        },
-        {
           "name": "Attach to Name",
           "request": "attach",
           "arguments": {
@@ -258,8 +247,7 @@
           "request": "launch",
           "arguments": {
             "program": "${file}",
-            "args": "${args}",
-            "stopOnEntry": true
+            "args": "${args}"
           }
         }
       ]
