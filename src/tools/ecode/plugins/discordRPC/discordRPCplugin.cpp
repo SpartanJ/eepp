@@ -1,5 +1,7 @@
 #include "discordRPCplugin.hpp"
 
+#include "sdk/ipc.hpp"
+
 using json = nlohmann::json;
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined ( __EMSCRIPTEN_PTHREADS__ )
 #define dcRPC_THREADED 1
@@ -79,6 +81,9 @@ void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 			mConfigHash = String::hash( newData );
 		}
 	}
+	
+	DiscordIPC ipc;
+	ipc.tryConnect();
 	
 	mReady = true;
 	fireReadyCbs();
