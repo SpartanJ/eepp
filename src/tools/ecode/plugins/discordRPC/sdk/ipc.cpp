@@ -3,7 +3,13 @@
 #include <eepp/system/log.hpp>
 using namespace EE::System;
 
+using json = nlohmann::json;
+
 DiscordIPC::DiscordIPC() {
+	mPID = Sys::getProcessID(); // Before we get to live testing stage, I assume plugin thread PID is fine
+	
+	mcClientID = "133573039394874989"; // TODO: Implement actual config reading
+	
 	#if defined(__unix__) || defined(_APPLE__)
 		mSocket = -1;
 	#endif
@@ -14,7 +20,7 @@ bool DiscordIPC::tryConnect() {
 		// TODO
 		return false;
 	#elif defined(__unix__) || defined(_APPLE__)
-		// Pipe path can be in any of the following directories:
+		// Socket path can be in any of the following directories:
 	    // * `XDG_RUNTIME_DIR`
 	    // * `TMPDIR`
 	    // * `TMP`
@@ -90,6 +96,48 @@ bool DiscordIPC::tryConnect() {
    	 }		
 	#endif
 	return false; // Discord not supported by other OS (if it is, TBA)
+}
+
+void DiscordIPC::doHandshake() {
+	json j;
+	
+	j = json{
+		{"v", 1},
+		{"client_id", mcClientID}
+	};
+	
+	sendPacket(DiscordIPCOpcodes::Handshake, j);
+}
+
+void DiscordIPC::clearActivity() {
+	json j;
+	
+	j = json{
+		{"cmd", "SET_ACTIVITY"},
+		{"args", {
+			{"pid",0},
+			{"activity", NULL}
+		},
+		{"nonce", "-"} // TODO: Null nonce for dev purposes, change to UUIDV4 in finished product
+	}};
+	
+	sendPacket(DiscordIPCOpcodes::Frame, j);
+}
+
+void DiscordIPC::setActivity( DiscordIPCActivity a ) {
+	json j;
+	
+	// TODO, map out the request json
+	
+	sendPacket(DiscordIPCOpcodes::Frame, j);
+}
+
+void DiscordIPC::sendPacket(DiscordIPCOpcodes opcode, json j) {
+	// TODO
+}
+
+void DiscordIPC::reconnect() {
+	// TODO. Might change the API here!!
 }
 
 DiscordIPC::~DiscordIPC() {
