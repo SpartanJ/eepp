@@ -80,6 +80,12 @@ DebuggerPlugin::~DebuggerPlugin() {
 	waitUntilLoaded();
 	mShuttingDown = true;
 
+	{
+		Lock l( mClientsMutex );
+		for ( const auto& client : mClients )
+			client.first->unregisterClient( client.second.get() );
+	}
+
 	if ( mSidePanel && mTab ) {
 		if ( Engine::isRunninMainThread() )
 			mSidePanel->removeTab( mTab );
@@ -1311,6 +1317,16 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 		if ( mTab )
 			mTab->setTabSelected();
 	} );
+
+	Lock l( mClientsMutex );
+	mClients[doc] = std::make_unique<DebuggerPluginClient>( this, doc );
+	doc->registerClient( mClients[doc].get() );
+}
+
+void DebuggerPlugin::onUnregisterDocument( TextDocument* doc ) {
+	Lock l( mClientsMutex );
+	doc->unregisterClient( mClients[doc].get() );
+	mClients.erase( doc );
 }
 
 void DebuggerPlugin::onRegisterEditor( UICodeEditor* editor ) {
@@ -2212,6 +2228,37 @@ bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position
 		mHoverDelay, getMouseMoveHash( editor ) );
 	editor->updateMouseCursor( position.asFloat() );
 	return true;
+}
+
+void DebuggerPlugin::onDocumentLineMove( TextDocument* doc, const Int64& fromLine,
+										 const Int64& toLine, const Int64& numLines ) {
+	Lock l( mBreakpointsMutex );
+
+	auto& breakpoints = mBreakpoints[doc->getFilePath()];
+
+	if ( breakpoints.empty() )
+		return;
+
+	std::vector<SourceBreakpointStateful> bpToModify;
+
+	for ( auto& bp : breakpoints ) {
+		// bp line numbers start at 1
+		if ( bp.line - 1 >= fromLine ) {
+			bpToModify.push_back( bp );
+			break;
+		}
+	}
+
+	for ( const auto& bp : bpToModify )
+		breakpoints.erase( bp );
+
+	for ( auto&& bp : bpToModify ) {
+		bp.line += numLines;
+		breakpoints.insert( std::move( bp ) );
+	}
+
+	if ( mBreakpointsModel )
+		mBreakpointsModel->move( doc->getFilePath(), fromLine, toLine, numLines );
 }
 
 } // namespace ecode
