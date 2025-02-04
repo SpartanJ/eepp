@@ -990,7 +990,7 @@ Uint32 UIAnchor::onKeyDown( const KeyEvent& event ) {
 		}
 	}
 
-	return 0;
+	return UIWidget::onKeyDown( event );
 }
 
 std::string UIAnchor::getPropertyString( const PropertyDefinition* propertyDef,

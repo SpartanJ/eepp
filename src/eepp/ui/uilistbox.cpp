@@ -890,7 +890,7 @@ void UIListBox::selectNext() {
 }
 
 Uint32 UIListBox::onKeyDown( const KeyEvent& event ) {
-	UINode::onKeyDown( event );
+	Uint32 ret = UINode::onKeyDown( event );
 
 	if ( mFlags & UI_MULTI_SELECT )
 		return 0;
@@ -961,7 +961,7 @@ Uint32 UIListBox::onKeyDown( const KeyEvent& event ) {
 
 	itemKeyEvent( event );
 
-	return 1;
+	return ret;
 }
 
 Uint32 UIListBox::onMessage( const NodeMessage* Msg ) {

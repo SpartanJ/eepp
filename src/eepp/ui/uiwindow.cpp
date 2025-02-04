@@ -1783,7 +1783,7 @@ Uint32 UIWindow::onKeyDown( const KeyEvent& event ) {
 	std::string cmd = mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
 	if ( !cmd.empty() ) {
 		executeKeyBindingCommand( cmd );
-		return 0;
+		return 1;
 	}
 	return UIWidget::onKeyDown( event );
 }
