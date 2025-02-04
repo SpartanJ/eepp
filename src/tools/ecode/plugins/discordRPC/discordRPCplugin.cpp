@@ -1,7 +1,5 @@
 #include "discordRPCplugin.hpp"
 
-#include "sdk/ipc.hpp"
-
 using json = nlohmann::json;
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined ( __EMSCRIPTEN_PTHREADS__ )
 #define dcRPC_THREADED 1
@@ -35,6 +33,11 @@ DiscordRPCplugin::DiscordRPCplugin( PluginManager* pluginManager, bool sync ) :
 DiscordRPCplugin::~DiscordRPCplugin() {
 	waitUntilLoaded();
 	mShuttingDown = true;
+	{
+		Lock l( mClientsMutex );
+		for ( const auto& client : mClients )
+			client.first->unregisterClient( client.second.get() );
+	}
 
 }
 void DiscordRPCplugin::load( PluginManager* pluginManager ) {
@@ -82,12 +85,53 @@ void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 		}
 	}
 	
-	DiscordIPC ipc;
-	ipc.tryConnect();
+	mIPC.tryConnect();
+	DiscordIPCActivity* a = mIPC.getActivity();
+	a->largeImage = "https://github.com/SpartanJ/eepp/blob/develop/bin/assets/icon/ecode.png?raw=true";
+	a->state = "Loading...";
+	
+	mIPC.setActivity(*a);
 	
 	mReady = true;
 	fireReadyCbs();
 	setReady( clock.getElapsedTime() );
 }
+
+// Functiality impl starts here
+void DiscordRPCplugin::onRegisterDocument( TextDocument* doc ) {
+	Lock l( mClientsMutex );
+	mClients[doc] = std::make_unique<DiscordRPCpluginClient>( this, doc );
+	doc->registerClient( mClients[doc].get() );
+}
+void DiscordRPCplugin::onUnregisterDocument( TextDocument* doc ) {
+	Lock l( mClientsMutex );
+	doc->unregisterClient( mClients[doc].get() );
+	mClients.erase( doc );
+}
+
+void DiscordRPCplugin::DiscordRPCpluginClient::onDocumentCursorChange( const TextPosition& t) {
+	if (mDoc->isUntitledEmpty()) { return ;}
+	std::string filename = mDoc->getFilename();
+	
+	if (filename != mParent->mLastFile) {
+		
+		Lock l( mParent->mLastFileMutex );
+		mParent->mLastFile = filename;
+		
+		Log::debug("Activity in new file. lang = %s", mDoc->getSyntaxDefinition().getLanguageName());
+		
+		Lock ipc( mParent->mIPCmutex );
+		DiscordIPCActivity* a = mParent->mIPC.getActivity();
+		
+		a->state = "Editing " + filename + ", a " + mDoc->getSyntaxDefinition().getLanguageName() + " file";
+		a->start = time( nullptr ); // Time spent in this specific file
+		
+		mParent->mIPC.setActivity(*a);
+	} 
+	
+}
+
+
+
 
 } // namespace ecode
