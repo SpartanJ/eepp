@@ -33,16 +33,16 @@ DiscordRPCplugin::DiscordRPCplugin( PluginManager* pluginManager, bool sync ) :
 DiscordRPCplugin::~DiscordRPCplugin() {
 	waitUntilLoaded();
 	mShuttingDown = true;
-	{
-		Lock l( mClientsMutex );
-		for ( const auto& client : mClients )
-			client.first->unregisterClient( client.second.get() );
-	}
 
 }
 void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 	Clock clock;
 	AtomicBoolScopedOp loading( mLoading, true );
+	
+	pluginManager->subscribeMessages( this,
+									  [this]( const auto& notification ) -> PluginRequestHandle {
+										  return processMessage( notification );
+									  } );
 									  
 	std::vector<std::string> paths;
 	std::string path( pluginManager->getResourcesPath() + "plugins/discordRPC.json" );
@@ -97,39 +97,50 @@ void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 	setReady( clock.getElapsedTime() );
 }
 
-// Functiality impl starts here
-void DiscordRPCplugin::onRegisterDocument( TextDocument* doc ) {
-	Lock l( mClientsMutex );
-	mClients[doc] = std::make_unique<DiscordRPCpluginClient>( this, doc );
-	doc->registerClient( mClients[doc].get() );
-}
-void DiscordRPCplugin::onUnregisterDocument( TextDocument* doc ) {
-	Lock l( mClientsMutex );
-	doc->unregisterClient( mClients[doc].get() );
-	mClients.erase( doc );
+PluginRequestHandle DiscordRPCplugin::processMessage( const PluginMessage& msg ) {
+	switch ( msg.type ) {
+		case PluginMessageType::WorkspaceFolderChanged: {
+			std::string rpath = FileSystem::getRealPath( msg.asJSON()["folder"] );
+			FileSystem::dirAddSlashAtEnd( rpath );
+			mProjectName = FileSystem::fileNameFromPath( rpath );
+			Log::debug("Loaded new workspace: %s ; %s", rpath, mProjectName);
+		}
+		default:
+			break;
+	}
+	
+	return PluginRequestHandle::empty();
 }
 
-void DiscordRPCplugin::DiscordRPCpluginClient::onDocumentCursorChange( const TextPosition& t) {
-	if (mDoc->isUntitledEmpty()) { return ;}
-	std::string filename = mDoc->getFilename();
-	
-	if (filename != mParent->mLastFile) {
+void DiscordRPCplugin::onRegisterListeners( UICodeEditor* editor, std::vector<Uint32>& listeners ) {
+	listeners.push_back( editor->on( Event::OnFocus, [this, editor]( const Event* ) {
+		// `this` in the scope of the lambda is the parent `DiscordRPCplugin`
 		
-		Lock l( mParent->mLastFileMutex );
-		mParent->mLastFile = filename;
+		auto& doc = editor->getDocument();
+		if (!doc.hasFilepath()) { return; }
 		
-		Log::debug("Activity in new file. lang = %s", mDoc->getSyntaxDefinition().getLanguageName());
+		auto filename = doc.getFilename();
 		
-		Lock ipc( mParent->mIPCmutex );
-		DiscordIPCActivity* a = mParent->mIPC.getActivity();
+		if ( filename != mLastFile ) {
+			this->mLastFile = filename;
+
+			Log::debug( "Activity in new file. lang = %s",
+						doc.getSyntaxDefinition().getLanguageName() );
+
+			DiscordIPCActivity* a = this->mIPC.getActivity();
+
+			if (!mProjectName.empty())
+				a->details = String::format("Working on %s", mProjectName);
+			a->state = String::format("Editing %s, a %s file", filename, doc.getSyntaxDefinition().getLanguageName());
+			a->start = time( nullptr ); // Time spent in this specific file
+
+			this->mIPC.setActivity( *a );
+		}
 		
-		a->state = "Editing " + filename + ", a " + mDoc->getSyntaxDefinition().getLanguageName() + " file";
-		a->start = time( nullptr ); // Time spent in this specific file
-		
-		mParent->mIPC.setActivity(*a);
-	} 
-	
+	} ) );
 }
+
+
 
 
 

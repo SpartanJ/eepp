@@ -14,22 +14,22 @@ enum DiscordIPCActivityTypes {
 };
 
 struct DiscordIPCActivityButton {
-    std::string label = "";
-    std::string url = "";
+    std::string label;
+    std::string url;
 };
 
 struct DiscordIPCActivity {
     DiscordIPCActivityTypes type = DiscordIPCActivityTypes::Playing;
-    std::string state = "";
-    std::string details = "";
+    std::string state;
+    std::string details;
     
     time_t start = 0;
     time_t end = 0;
     
-    std::string largeImage = "";
-    std::string largeText = "";
-    std::string smallImage = "";
-    std::string smallText = "";
+    std::string largeImage;
+    std::string largeText;
+    std::string smallImage;
+    std::string smallText;
     
     DiscordIPCActivityButton buttons[2];
 };

@@ -46,44 +46,15 @@ class DiscordRPCplugin : public PluginBase {
 		std::string getDescription() override { return Definition().description; }
 		
 	protected:
-		class DiscordRPCpluginClient : public TextDocument::Client {
-			public:
-				explicit DiscordRPCpluginClient( DiscordRPCplugin* parent, TextDocument* doc) :
-					mDoc( doc ), mParent( parent ) {}
-				
-				// Obligatory definitions, empty behavior
-				virtual void onDocumentTextChanged( const DocumentContentChange& ) override {};
-				virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& ) override {};
-				virtual void onDocumentCursorChange( const TextPosition& ) override;
-				virtual void onDocumentInterestingCursorChange( const TextPosition& ) override {};
-				virtual void onDocumentSelectionChange( const TextRange& ) override {};
-				virtual void onDocumentLineCountChange( const size_t&, const size_t& ) override {};
-				virtual void onDocumentLineChanged( const Int64& ) override {};
-				virtual void onDocumentSaved( TextDocument* ) override {};
-				virtual void onDocumentClosed( TextDocument* doc ) override {};
-				virtual void onDocumentDirtyOnFileSystem( TextDocument* ) override {};
-				virtual void onDocumentMoved( TextDocument* ) override {};
-				virtual void onDocumentReset( TextDocument* ) override {};
-				
-					
-			protected:
-				TextDocument* mDoc{ nullptr };
-				DiscordRPCplugin* mParent{ nullptr };
-		};
 		DiscordIPC mIPC;
-		Mutex mIPCmutex;
-		
-		using ClientsMap = std::unordered_map<TextDocument*, std::unique_ptr<DiscordRPCpluginClient>>;
-		ClientsMap mClients;
-		Mutex mClientsMutex;
 		std::string mLastFile;
-		Mutex mLastFileMutex;
-		
+		std::string mProjectName;
 		
 		void load ( PluginManager* pluginManager );
 		
-		virtual void onRegisterDocument( TextDocument* doc ) override;
-		virtual void onUnregisterDocument( TextDocument* doc ) override;
+		PluginRequestHandle processMessage( const PluginMessage& msg );
+		
+		virtual void onRegisterListeners(UICodeEditor* editor, std::vector<Uint32>& listeners ) override;
 		
 		DiscordRPCplugin( PluginManager* pluginManager, bool sync );
 };
