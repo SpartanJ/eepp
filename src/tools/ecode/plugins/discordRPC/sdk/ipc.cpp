@@ -1,7 +1,13 @@
 #include "ipc.hpp"
 
 #include <eepp/system/log.hpp>
-#include <netinet/in.h>
+
+#if defined( EE_PLATFORM_POSIX )
+    #include <sys/socket.h>
+	#include <netinet/in.h>
+    #include <sys/un.h>
+#endif
+
 using namespace EE::System;
 
 using json = nlohmann::json;
@@ -11,16 +17,16 @@ DiscordIPC::DiscordIPC() {
 	
 	mcClientID = "1335730393948749898"; // TODO: Implement actual config reading
 	
-	#if defined(__unix__) || defined(_APPLE__)
+	#if defined( EE_PLATFORM_POSIX )
 		mSocket = -1;
 	#endif
 }
 
 bool DiscordIPC::tryConnect() {
-	#if defined(_WIN32) || defined(_WIN64)
+	#if EE_PLATFORM == EE_PLATFORM_WIN
 		// TODO
 		return false;
-	#elif defined(__unix__) || defined(_APPLE__)
+	#elif defined(EE_PLATFORM_POSIX)
 		// Socket path can be in any of the following directories:
 	    // * `XDG_RUNTIME_DIR`
 	    // * `TMPDIR`
@@ -188,7 +194,7 @@ void DiscordIPC::setActivity( DiscordIPCActivity a ) {
 
 void DiscordIPC::sendPacket(DiscordIPCOpcodes opcode, json j) {
 	Log::debug("Packet is: %s", j.dump(4)); // Packet json logging before we start sending to ipc
-    #if defined(__unix__) || defined(_APPLE__)
+    #if defined( EE_PLATFORM_POSIX )
         const std::string packet = j.dump();
         std::vector<uint8_t> data;
 		
@@ -237,7 +243,7 @@ void DiscordIPC::reconnect() {
 }
 
 DiscordIPC::~DiscordIPC() {
-	#if defined(__unix__) || defined(_APPLE__) // Windows apparently uses named pipes. TODO
+	#if defined( EE_PLATFORM_POSIX ) // Windows apparently uses named pipes. TODO
 		close(mSocket);
 	#endif
 }

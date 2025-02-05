@@ -6,11 +6,6 @@
 
 #include <nlohmann/json.hpp>
 
-#if defined(__unix__) || defined(_APPLE__)
-    #include <sys/socket.h>
-    #include <sys/un.h>
-#endif
-
 enum DiscordIPCActivityTypes {
     Playing = 0,
     Listening = 2,
@@ -70,7 +65,7 @@ class DiscordIPC {
         //Configurables
         std::string mcClientID;
         
-        #if defined(__unix__) || defined(_APPLE__)
+        #if defined( EE_PLATFORM_POSIX )
             int mSocket;
         #endif        
         
