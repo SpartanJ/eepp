@@ -693,7 +693,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Vector2f getScreenScroll() const;
 
-	Float getViewportWidth( const bool& forceVScroll = false ) const;
+	Float getViewportWidth( bool forceVScroll = false, bool includeMinimap = false ) const;
 
 	Float getTopAreaWidth() const;
 

@@ -1,9 +1,9 @@
-#include "uistatusbar.hpp"
 #include "globalsearchcontroller.hpp"
 #include "plugins/plugincontextprovider.hpp"
 #include "statusappoutputcontroller.hpp"
 #include "statusbuildoutputcontroller.hpp"
 #include "statusterminalcontroller.hpp"
+#include "uistatusbar.hpp"
 #include "universallocator.hpp"
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/window.hpp>
@@ -211,6 +211,11 @@ void UIStatusBar::removeStatusBarElement( const std::string& id ) {
 		elemIt->second.first->close();
 		mElements.erase( elemIt );
 	}
+}
+
+void UIStatusBar::hideAllElements() {
+	for ( auto& [_, el] : mElements )
+		el.second->hide();
 }
 
 } // namespace ecode

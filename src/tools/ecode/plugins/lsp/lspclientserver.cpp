@@ -504,9 +504,11 @@ static LSPSymbolInformationList parseDocumentSymbols( const json& result, bool i
 	for ( const auto& r : ret )
 		rret.push_back( LSPSymbolInformationTmp::fromTmp( r ) );
 
-	if ( isSilent )
+	if ( !isSilent ) {
 		Log::debug( "LSPClientServer - parseDocumentSymbols took: %.2fms",
 					clock.getElapsedTimeAndReset().asMilliseconds() );
+	}
+
 	return rret;
 }
 

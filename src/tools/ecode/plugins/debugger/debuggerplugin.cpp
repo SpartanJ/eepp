@@ -374,6 +374,11 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 			mFetchGlobals = config.value( "fetch_globals", false );
 		else if ( updateConfigFile )
 			config["fetch_globals"] = mFetchGlobals;
+
+		if ( config.contains( "silent" ) )
+			mSilence = config.value( "silent", true );
+		else if ( updateConfigFile )
+			config["silent"] = mSilence;
 	}
 
 	if ( j.contains( "dap" ) ) {
@@ -1446,6 +1451,23 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 	}
 }
 
+void DebuggerPlugin::drawBeforeLineText( UICodeEditor* editor, const Int64& index,
+										 Vector2f position, const Float& /*fontSize*/,
+										 const Float& lineHeight ) {
+	if ( !mDebugger || !mListener || !mListener->isStopped() || !mListener->getCurrentScopePos() ||
+		 editor->getDocument().getFilePath() != mListener->getCurrentScopePos()->first ||
+		 mListener->getCurrentScopePos()->second - 1 != index ||
+		 !editor->getDocumentView().isLineVisible( index ) )
+		return;
+
+	Primitives p;
+	Color color( editor->getColorScheme().getEditorSyntaxStyle( "warning"_sst ).color );
+	Color blendedColor( Color( color, 20 ).blendAlpha( editor->getAlpha() ) );
+	p.setColor( blendedColor );
+	p.drawRectangle(
+		Rectf( position, Sizef( editor->getViewportWidth( false, true ), lineHeight ) ) );
+}
+
 bool DebuggerPlugin::setBreakpoint( const std::string& doc, Uint32 lineNumber ) {
 	Lock l( mBreakpointsMutex );
 
@@ -1978,6 +2000,7 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 	mListener = std::make_unique<DebuggerClientListener>( mDebugger.get(), this );
 	mListener->setIsRemote( isRemote );
 	mDebugger->addListener( mListener.get() );
+	mDebugger->setSilent( mSilence );
 
 	DebuggerClientDap* dap = static_cast<DebuggerClientDap*>( mDebugger.get() );
 	dap->runInTerminalCb = [this]( bool isIntegrated, std::string cmd,
@@ -2012,7 +2035,7 @@ void DebuggerPlugin::exitDebugger( bool requestDisconnect ) {
 		mDebugger->removeListener( mListener.get() );
 
 	if ( requestDisconnect && mDebugger )
-		mDebugger->disconnect( false );
+		mDebugger->disconnect( true, false );
 
 	if ( mDebugger || mListener ) {
 		mThreadPool->run( [this] {
@@ -2170,7 +2193,6 @@ void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const std::string& ex
 }
 
 bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position, const Uint32& ) {
-
 	if ( !mDebugger || !mListener || !mDebugger->isServerConnected() ||
 		 mDebuggingState != StatusDebuggerController::State::Paused ) {
 		return false;
@@ -2227,7 +2249,7 @@ bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position
 		},
 		mHoverDelay, getMouseMoveHash( editor ) );
 	editor->updateMouseCursor( position.asFloat() );
-	return true;
+	return false;
 }
 
 void DebuggerPlugin::onDocumentLineMove( TextDocument* doc, const Int64& fromLine,

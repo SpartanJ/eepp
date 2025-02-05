@@ -188,6 +188,8 @@ void DocSearchController::initSearchBar(
 void DocSearchController::showFindView() {
 	mApp->hideLocateBar();
 	mApp->hideGlobalSearchBar();
+	mApp->getStatusBar()->hideAllElements();
+
 	if ( !mSplitter->curEditorExistsAndFocused() )
 		return;
 

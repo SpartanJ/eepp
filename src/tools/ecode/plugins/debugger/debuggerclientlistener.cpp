@@ -310,7 +310,9 @@ void DebuggerClientListener::outputProduced( const Output& output ) {
 	}
 }
 
-void DebuggerClientListener::debuggingProcess( const ProcessInfo& ) {}
+void DebuggerClientListener::debuggingProcess( const ProcessInfo& info ) {
+	mProcessInfo = info;
+}
 
 void DebuggerClientListener::errorResponse( const std::string& command, const std::string& summary,
 											const std::optional<Message>& /*message*/ ) {

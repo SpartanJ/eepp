@@ -38,9 +38,10 @@ void DebuggerClientDap::makeRequest( const std::string_view& command,
 	std::string cmd = jsonCmd.dump();
 	std::string msg( String::format( "Content-Length: %zu\r\n\r\n%s", cmd.size(), cmd ) );
 
-	Log::instance()->writel( mDebug ? LogLevel::Info : LogLevel::Debug,
-							 "DebuggerClientDap::makeRequest:" );
-	Log::instance()->writel( mDebug ? LogLevel::Info : LogLevel::Debug, msg );
+	if ( mDebug ) {
+		Log::debug( "DebuggerClientDap::makeRequest:" );
+		Log::debug( msg );
+	}
 
 	mBus->write( msg.data(), msg.size() );
 
@@ -59,9 +60,10 @@ void DebuggerClientDap::makeResponse( int reqSeq, bool success, const std::strin
 	std::string cmd = jsonCmd.dump();
 	std::string msg( String::format( "Content-Length: %zu\r\n\r\n%s", cmd.size(), cmd ) );
 
-	Log::instance()->writel( mDebug ? LogLevel::Info : LogLevel::Debug,
-							 "DebuggerClientDap::makeResponse:" );
-	Log::instance()->writel( mDebug ? LogLevel::Info : LogLevel::Debug, msg );
+	if ( mDebug ) {
+		Log::debug( "DebuggerClientDap::makeResponse:" );
+		Log::debug( msg );
+	}
 
 	mBus->write( msg.data(), msg.size() );
 }
@@ -71,8 +73,12 @@ bool DebuggerClientDap::isServerConnected() const {
 		   ( mBus->state() == Bus::State::Running );
 }
 
-bool DebuggerClientDap::supportsTerminate() const {
+bool DebuggerClientDap::supportsTerminateRequest() const {
 	return mAdapterCapabilities.supportsTerminateRequest;
+}
+
+bool DebuggerClientDap::supportsTerminateDebuggee() const {
+	return mAdapterCapabilities.supportTerminateDebuggee;
 }
 
 bool DebuggerClientDap::start() {
@@ -528,8 +534,11 @@ bool DebuggerClientDap::terminate( bool restart ) {
 	return true;
 }
 
-bool DebuggerClientDap::disconnect( bool restart ) {
+bool DebuggerClientDap::disconnect( bool terminateDebuggee, bool restart ) {
 	nlohmann::json arguments;
+	if ( mAdapterCapabilities.supportTerminateDebuggee && terminateDebuggee )
+		arguments["terminateDebuggee"] = true;
+
 	if ( restart )
 		arguments["restart"] = true;
 

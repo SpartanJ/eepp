@@ -693,10 +693,10 @@ void UICodeEditor::disableEditorFeatures() {
 	mUseDefaultStyle = true;
 }
 
-Float UICodeEditor::getViewportWidth( const bool& forceVScroll ) const {
+Float UICodeEditor::getViewportWidth( bool forceVScroll, bool includeMinimap ) const {
 	Float vScrollWidth =
 		mVScrollBar->isVisible() || forceVScroll ? mVScrollBar->getPixelsSize().getWidth() : 0.f;
-	if ( mMinimapEnabled )
+	if ( mMinimapEnabled && !includeMinimap )
 		vScrollWidth += getMinimapWidth();
 	Float viewWidth = eefloor( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
 							   getGutterWidth() - vScrollWidth );

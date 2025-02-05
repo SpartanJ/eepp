@@ -71,6 +71,8 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 
 	void sendBreakpoints();
 
+	const ProcessInfo& getProcessInfo() const { return mProcessInfo; }
+
   protected:
 	DebuggerClient* mClient{ nullptr };
 	DebuggerPlugin* mPlugin{ nullptr };
@@ -84,6 +86,7 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 	std::shared_ptr<StackModel> mStackModel;
 	std::shared_ptr<VariablesHolder> mVariablesHolder;
 	std::unordered_map<int, Scope> mScopeRef;
+	ProcessInfo mProcessInfo;
 
 	StatusDebuggerController* getStatusDebuggerController() const;
 

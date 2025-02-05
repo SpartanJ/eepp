@@ -77,6 +77,8 @@ class DebuggerPlugin : public PluginBase {
 
 	void initStatusDebuggerController();
 
+	bool isSilent() const { return mSilence; }
+
   protected:
 	friend class DebuggerClientListener;
 
@@ -84,6 +86,7 @@ class DebuggerPlugin : public PluginBase {
 	bool mFetchRegisters{ false };
 	bool mFetchGlobals{ false };
 	bool mChangingBreakpoint{ false };
+	bool mSilence{ true };
 	std::string mProjectPath;
 
 	std::vector<DapTool> mDaps;
@@ -206,6 +209,9 @@ class DebuggerPlugin : public PluginBase {
 								const Vector2f& startScroll, const Vector2f& screenStart,
 								const Float& lineHeight, const Float& lineNumberWidth,
 								const int& lineNumberDigits, const Float& fontSize ) override;
+
+	void drawBeforeLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
+							 const Float& /*fontSize*/, const Float& lineHeight ) override;
 
 	bool setBreakpoint( UICodeEditor* editor, Uint32 lineNumber );
 
