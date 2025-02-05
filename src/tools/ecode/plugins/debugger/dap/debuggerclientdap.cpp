@@ -153,6 +153,13 @@ void DebuggerClientDap::requestLaunchCommand() {
 						 setState( State::Failed );
 					 }
 				 } );
+
+	if ( mProtocol.runTarget && runTargetCb ) {
+		if ( !mProtocol.launchArgs.contains( "waitFor" ) )
+			runTargetCb();
+		else
+			mWaitingToAttach = true;
+	}
 }
 
 void DebuggerClientDap::requestInitialize() {
@@ -353,6 +360,11 @@ void DebuggerClientDap::processEventOutput( const nlohmann::json& body ) {
 	Output output( body );
 	for ( auto listener : mListeners )
 		listener->outputProduced( output );
+
+	if ( mWaitingToAttach && mProtocol.runTarget && runTargetCb ) {
+		runTargetCb();
+		mWaitingToAttach = false;
+	}
 }
 
 void DebuggerClientDap::processEventProcess( const nlohmann::json& body ) {

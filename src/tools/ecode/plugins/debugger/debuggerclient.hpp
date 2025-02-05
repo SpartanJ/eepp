@@ -129,6 +129,7 @@ class DebuggerClient {
 	State mState{ State::None };
 	bool mLaunched{ false };
 	bool mConfigured{ false };
+	bool mWaitingToAttach{ false };
 	std::vector<Listener*> mListeners;
 
 	void checkRunning();

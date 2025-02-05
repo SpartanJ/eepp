@@ -22,6 +22,8 @@ class DebuggerClientDap : public DebuggerClient {
 						std::function<void( int )> doneFn )>
 		runInTerminalCb;
 
+	std::function<void()> runTargetCb;
+
 	DebuggerClientDap( const ProtocolSettings& protocolSettings, std::unique_ptr<Bus>&& bus );
 
 	virtual ~DebuggerClientDap();

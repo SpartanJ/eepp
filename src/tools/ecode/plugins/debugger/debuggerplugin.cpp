@@ -419,6 +419,7 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 					dapConfig.name = config.value( "name", "" );
 					if ( !dapConfig.name.empty() ) {
 						dapConfig.request = config.value( "request", REQUEST_TYPE_LAUNCH );
+						dapConfig.runTarget = config.value( "runTarget", false );
 						dapConfig.args = config["arguments"];
 					}
 					if ( config.contains( "command_arguments" ) ) {
@@ -1736,6 +1737,7 @@ void DebuggerPlugin::prepareAndRun( DapTool debugger, DapConfig config,
 	int randomPort = Math::randi( 44000, 45000 );
 	ProtocolSettings protocolSettings;
 	protocolSettings.launchRequestType = config.request;
+	protocolSettings.runTarget = config.runTarget;
 	auto args = config.args;
 	replaceKeysInJson( args, randomPort, solvedInputs );
 	protocolSettings.launchArgs = args;
@@ -2025,6 +2027,11 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 					getPluginContext()->getTerminalManager()->openInExternalTerminal( fcmd, cwd ) );
 			}
 		} );
+	};
+
+	dap->runTargetCb = [this] {
+		getUISceneNode()->runOnMainThread(
+			[this] { getPluginContext()->runCommand( "project-run-executable" ); } );
 	};
 
 	mDebugger->start();

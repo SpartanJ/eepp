@@ -21,21 +21,6 @@
           }
         },
         {
-          "name": "Attach to Name",
-          "request": "attach",
-          "arguments": {
-            "program": "${file}"
-          }
-        },
-        {
-          "name": "Attach to Name (wait)",
-          "request": "attach",
-          "arguments": {
-            "program": "${file}",
-            "waitFor": true
-          }
-        },
-        {
           "name": "Attach to PID",
           "request": "attach",
           "arguments": {
@@ -87,15 +72,17 @@
           }
         },
         {
-          "name": "Attach to Name",
+          "name": "Attach to binary",
           "request": "attach",
+          "runTarget": true,
           "arguments": {
             "program": "${file}"
           }
         },
         {
-          "name": "Attach to Name (wait)",
+          "name": "Attach to binary (wait)",
           "request": "attach",
+          "runTarget": true,
           "arguments": {
             "program": "${file}",
             "waitFor": true
@@ -198,7 +185,7 @@
           }
         },
         {
-          "name": "Attach",
+          "name": "Attach to PID",
           "command_arguments": ["--pid", "${command:pickProcess}"],
           "request": "attach",
           "arguments": {

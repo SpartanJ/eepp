@@ -21,6 +21,7 @@ struct DapConfig {
 	std::string request;
 	std::vector<std::string> cmdArgs;
 	nlohmann::json args;
+	bool runTarget{ false };
 };
 
 struct DapTool {
