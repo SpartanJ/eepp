@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../projectbuild.hpp"
 #include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include "config.hpp"
@@ -282,6 +283,9 @@ class DebuggerPlugin : public PluginBase {
 
 	void onDocumentLineMove( TextDocument* doc, const Int64& fromLine, const Int64& toLine,
 							 const Int64& numLines );
+
+	void replaceInVal( std::string& val, const std::optional<ProjectBuildStep>& runConfig,
+					   ProjectBuild* buildConfig, int randomPort );
 };
 
 } // namespace ecode

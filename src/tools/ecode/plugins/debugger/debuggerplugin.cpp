@@ -1,5 +1,4 @@
 #include "../../notificationcenter.hpp"
-#include "../../projectbuild.hpp"
 #include "../../terminalmanager.hpp"
 #include "../../uistatusbar.hpp"
 #include "../../widgetcommandexecuter.hpp"
@@ -55,6 +54,46 @@ static constexpr auto KEY_FILEDIRNAME = "${fileDirname}";
 static constexpr auto KEY_RANDPORT = "${randPort}";
 static constexpr auto KEY_PID = "${pid}";
 
+static constexpr auto KEY_USER_HOME = "${userHome}";
+static constexpr auto KEY_WORKSPACEFOLDER_BASENAME = "${workspaceFolderBasename}";
+static constexpr auto KEY_FILE_WORKSPACEFOLDER = "${fileWorkspaceFolder}";
+static constexpr auto KEY_RELATIVE_FILE = "${relativeFile}";
+static constexpr auto KEY_RELATIVE_FILE_DIRNAME = "${relativeFileDirname}";
+static constexpr auto KEY_FILE_BASENAME = "${fileBasename}";
+static constexpr auto KEY_FILE_BASENAME_NOEXTENSION = "${fileBasenameNoExtension}";
+static constexpr auto KEY_FILE_EXTNAME = "${fileExtname}";
+static constexpr auto KEY_FILE_DIRNAME_BASENAME = "${fileDirnameBasename}";
+static constexpr auto KEY_LINE_NUMBER = "${lineNumber}";
+static constexpr auto KEY_SELECTED_TEXT = "${selectedText}";
+static constexpr auto KEY_EXEC_PATH = "${execPath}";
+static constexpr auto KEY_DEFAULT_BUILD_TASK = "${defaultBuildTask}";
+static constexpr auto KEY_PATH_SEPARATOR = "${pathSeparator}";
+static constexpr auto KEY_PATH_SEPARATOR_ABBR = "${/}";
+
+/*
+
+- **${userHome}** - the path of the user's home folder
+- **${workspaceFolder}** - the path of the folder opened in VS Code
+- **${workspaceFolderBasename}** - the name of the folder opened in VS Code without any slashes (/)
+- **${file}** - the current opened file
+- **${fileWorkspaceFolder}** - the current opened file's workspace folder
+- **${relativeFile}** - the current opened file relative to `workspaceFolder`
+- **${relativeFileDirname}** - the current opened file's dirname relative to `workspaceFolder`
+- **${fileBasename}** - the current opened file's basename
+- **${fileBasenameNoExtension}** - the current opened file's basename with no file extension
+- **${fileExtname}** - the current opened file's extension
+- **${fileDirname}** - the current opened file's folder path
+- **${fileDirnameBasename}** - the current opened file's folder name
+- **${cwd}** - the task runner's current working directory upon the startup of VS Code
+- **${lineNumber}** - the current selected line number in the active file
+- **${selectedText}** - the current selected text in the active file
+- **${execPath}** - the path to the running VS Code executable
+- **${defaultBuildTask}** - the name of the default build task
+- **${pathSeparator}** - the character used by the operating system to separate components in file
+paths
+- **${/}** - shorthand for **${pathSeparator}**
+
+*/
 Plugin* DebuggerPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( DebuggerPlugin, ( pluginManager, false ) );
 }
@@ -1042,23 +1081,66 @@ void DebuggerPlugin::updateDebuggerConfigurationList() {
 	}
 }
 
+void DebuggerPlugin::replaceInVal( std::string& val,
+								   const std::optional<ProjectBuildStep>& runConfig,
+								   ProjectBuild* buildConfig, int randomPort ) {
+
+	if ( runConfig ) {
+		String::replaceAll( val, KEY_FILE, runConfig->cmd );
+		String::replaceAll( val, KEY_CWD, runConfig->workingDir );
+		String::replaceAll( val, KEY_FILEDIRNAME, runConfig->workingDir );
+		std::string fileRelativePath( runConfig->cmd );
+		FileSystem::filePathRemoveBasePath( mProjectPath, fileRelativePath );
+		String::replaceAll( val, KEY_RELATIVE_FILE, fileRelativePath );
+		std::string fileDirName( FileSystem::fileRemoveFileName( fileRelativePath ) );
+		FileSystem::dirRemoveSlashAtEnd( fileDirName );
+		String::replaceAll( val, KEY_RELATIVE_FILE_DIRNAME, fileDirName );
+		String::replaceAll( val, KEY_FILE_BASENAME,
+							FileSystem::fileNameFromPath( fileRelativePath ) );
+		String::replaceAll(
+			val, KEY_FILE_BASENAME_NOEXTENSION,
+			FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( fileRelativePath ) ) );
+		String::replaceAll( val, KEY_FILE_EXTNAME, FileSystem::fileExtension( fileRelativePath ) );
+		String::replaceAll( val, KEY_FILE_DIRNAME_BASENAME,
+							FileSystem::fileNameFromPath( fileDirName ) );
+	}
+
+	if ( buildConfig ) {
+		String::replaceAll( val, KEY_DEFAULT_BUILD_TASK, buildConfig->getName() );
+	}
+
+	String::replaceAll( val, KEY_WORKSPACEFOLDER, mProjectPath );
+	String::replaceAll( val, KEY_USER_HOME, Sys::getUserDirectory() );
+	String::replaceAll( val, KEY_WORKSPACEFOLDER_BASENAME,
+						FileSystem::fileNameFromPath( mProjectPath ) );
+	String::replaceAll( val, KEY_FILE_WORKSPACEFOLDER, mProjectPath );
+	String::replaceAll( val, KEY_EXEC_PATH, Sys::getProcessFilePath() );
+	String::replaceAll( val, KEY_PATH_SEPARATOR, FileSystem::getOSSlash() );
+	String::replaceAll( val, KEY_PATH_SEPARATOR_ABBR, FileSystem::getOSSlash() );
+
+	auto* editor = getPluginContext()->getSplitter()->getCurEditor();
+	if ( getPluginContext()->getSplitter()->getCurEditor() ) {
+		String::replaceAll(
+			val, KEY_LINE_NUMBER,
+			String::toString( editor->getDocument().getSelection().start().line() ) );
+		String::replaceAll( val, KEY_SELECTED_TEXT,
+							editor->getDocument().getSelectedText().toUtf8() );
+	}
+
+	if ( String::contains( val, KEY_RANDPORT ) )
+		String::replaceAll( val, KEY_RANDPORT, String::toString( randomPort ) );
+}
+
 std::vector<std::string> DebuggerPlugin::replaceKeyInString(
 	std::string val, int randomPort,
 	const std::unordered_map<std::string, std::string>& solvedInputs ) {
 	auto pbm = getPluginContext()->getProjectBuildManager();
 	auto runConfig = pbm ? pbm->getCurrentRunConfig() : std::optional<ProjectBuildStep>{};
+	auto buildConfig = pbm ? pbm->getCurrentBuild() : nullptr;
 
-	const auto replaceVal = [this, &runConfig, &solvedInputs, randomPort]( std::string& val ) {
-		if ( runConfig ) {
-			String::replaceAll( val, KEY_FILE, runConfig->cmd );
-			String::replaceAll( val, KEY_CWD, runConfig->workingDir );
-			String::replaceAll( val, KEY_FILEDIRNAME, runConfig->workingDir );
-		}
-
-		String::replaceAll( val, KEY_WORKSPACEFOLDER, mProjectPath );
-
-		if ( String::contains( val, KEY_RANDPORT ) )
-			String::replaceAll( val, KEY_RANDPORT, String::toString( randomPort ) );
+	const auto replaceVal = [this, &runConfig, &buildConfig, &solvedInputs,
+							 randomPort]( std::string& val ) {
+		replaceInVal( val, runConfig, buildConfig, randomPort );
 
 		LuaPattern::Range matches[2];
 		if ( inputPtrn.matches( val, matches ) ) {
@@ -1100,18 +1182,9 @@ void DebuggerPlugin::replaceKeysInJson(
 	auto runConfig = pbm ? pbm->getCurrentRunConfig() : std::optional<ProjectBuildStep>{};
 	auto buildConfig = pbm ? pbm->getCurrentBuild() : nullptr;
 
-	const auto replaceVal = [this, &solvedInputs, &runConfig,
+	const auto replaceVal = [this, &solvedInputs, &runConfig, &buildConfig,
 							 randomPort]( nlohmann::json& j, std::string& val ) -> bool {
-		if ( runConfig ) {
-			String::replaceAll( val, KEY_FILE, runConfig->cmd );
-			String::replaceAll( val, KEY_CWD, runConfig->workingDir );
-			String::replaceAll( val, KEY_FILEDIRNAME, runConfig->workingDir );
-		}
-
-		String::replaceAll( val, KEY_WORKSPACEFOLDER, mProjectPath );
-
-		if ( String::contains( val, KEY_RANDPORT ) )
-			String::replaceAll( val, KEY_RANDPORT, String::toString( randomPort ) );
+		replaceInVal( val, runConfig, buildConfig, randomPort );
 
 		LuaPattern::Range matches[2];
 		if ( inputPtrn.matches( val, matches ) ) {
