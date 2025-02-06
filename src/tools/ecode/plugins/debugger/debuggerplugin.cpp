@@ -673,6 +673,15 @@ void DebuggerPlugin::buildSidePanelTab() {
 		border-top-right-radius: var(--button-radius);
 		border-bottom-right-radius: var(--button-radius);
 	}
+	#panel_debugger_help {
+		color: var(--primary);
+		text-decoration: none;
+		text-align: center;
+		margin-top: 32dp;
+	}
+	#panel_debugger_help:hover {
+		text-decoration: underline;
+	}
 	</style>
 	<vbox id="debugger_panel" lw="mp" lh="wc" padding="4dp">
 		<vbox id="debugger_config_view" lw="mp" lh="wc">
@@ -688,6 +697,7 @@ void DebuggerPlugin::buildSidePanelTab() {
 				<PushButton id="panel_debugger_step_into" class="debugger_step_into" lw="24dp" lh="24dp" icon="icon(debug-step-into, 12dp)" tooltip="@string(step_into, Step Into)" />
 				<PushButton id="panel_debugger_step_out" class="debugger_step_out" lw="24dp" lh="24dp" icon="icon(debug-step-out, 12dp)" tooltip="@string(step_out, Step Out)" />
 			</hbox>
+			<Anchor id="panel_debugger_help" lw="mp" text="@string(documentation, Documentation)" href="https://github.com/SpartanJ/ecode/blob/develop/docs/debugger.md" />
 		</vbox>
 	</vbox>
 	)html";
