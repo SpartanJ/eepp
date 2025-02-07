@@ -4,6 +4,9 @@
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
+#include <eepp/scene/actions/close.hpp>
+#include <eepp/scene/actions/scale.hpp>
+#include <eepp/scene/actions/sequence.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/scopedop.hpp>
@@ -128,9 +131,9 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mLineNumberPaddingLeft( PixelDensity::dpToPx( 6 ) ),
 	mLineNumberPaddingRight( PixelDensity::dpToPx( 6 ) ),
 	mFoldRegionWidth( PixelDensity::dpToPx( 12 ) ),
+	mPreviewColor( Color::Transparent ),
 	mKeyBindings( getUISceneNode()->getWindow()->getInput() ),
-	mFindLongestLineWidthUpdateFrequency( Seconds( 1 ) ),
-	mPreviewColor( Color::Transparent ) {
+	mFindLongestLineWidthUpdateFrequency( Seconds( 1 ) ) {
 	mFlags |= UI_TAB_STOP | UI_OWNS_CHILDS_POSITION | UI_SCROLLABLE;
 	setTextSelection( true );
 	setColorScheme( SyntaxColorScheme::getDefault() );
@@ -1107,6 +1110,28 @@ Uint32 UICodeEditor::onTextEditing( const TextEditingEvent& event ) {
 	return 1;
 }
 
+void UICodeEditor::flashCursor() {
+	Vector2f screenStart( getScreenStart() );
+	Vector2f start( screenStart.x + getGutterWidth(), screenStart.y + getPluginsTopSpace() );
+	Vector2f startScroll( start - mScroll );
+	auto offset = getTextPositionOffset( mDoc->getSelection().start(), getLineHeight() );
+	Vector2f cursorPos( startScroll.x + offset.x - getFontHeight() * 0.5f,
+						startScroll.y + offset.y );
+	UIWidget* widget = UIWidget::New();
+	widget->setBorderColor( Color( mCaretColor ).blendAlpha( 100 ).blendAlpha( mAlpha ) );
+	widget->setPixelsPosition( cursorPos.floor() );
+	widget->setBorderWidth( PixelDensity::dpToPx( 2 ) );
+	widget->setPixelsSize( Sizef( getFontHeight(), getFontHeight() ) );
+	widget->setEnabled( false );
+
+	Float scale = eemax( getUISceneNode()->getPixelsSize().getWidth() / getFontHeight(),
+						 getUISceneNode()->getPixelsSize().getHeight() / getFontHeight() );
+
+	widget->runAction( Actions::Sequence::New(
+		Actions::Scale::New( { scale, scale }, { 1, 1 }, Milliseconds( 250 ), Ease::Linear ),
+		Actions::Close::New() ) );
+}
+
 Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 	if ( getUISceneNode()->getWindow()->getIME().isEditing() )
 		return 0;
@@ -1129,6 +1154,23 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 			return 1;
 		}
 	}
+
+	if ( isEnabledFlashCursor() && event.getSanitizedMod() == KeyMod::getDefaultModifier() ) {
+		if ( mModDownCount == 0 )
+			mModDownClock.restart();
+
+		if ( mModDownClock.getElapsedTime() < Milliseconds( 250 ) ) {
+			mModDownCount++;
+			if ( mModDownCount == 5 ) {
+				mModDownCount = 0;
+				flashCursor();
+			}
+		} else
+			mModDownCount = 0;
+
+		mModDownClock.restart();
+	}
+
 	return 0;
 }
 
@@ -4221,6 +4263,7 @@ void UICodeEditor::registerCommands() {
 	mDoc->setCommand( "copy-file-path-and-position", [this] { copyFilePath( true ); } );
 	mDoc->setCommand( "find-replace", [this] { showFindReplace(); } );
 	mDoc->setCommand( "open-context-menu", [this] { createContextMenu(); } );
+	mDoc->setCommand( "flash-cursor", [this] { flashCursor(); } );
 	mUnlockedCmd.insert( { "copy", "select-all", "open-containing-folder",
 						   "copy-containing-folder-path", "copy-file-path",
 						   "copy-file-path-and-position", "open-context-menu", "find-replace" } );

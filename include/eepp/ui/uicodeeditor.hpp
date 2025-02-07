@@ -779,6 +779,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Float getPluginsGutterSpace() const;
 
+	void setEnableFlashCursor( bool enable ) { mEnableFlashCursor = enable; }
+
+	bool isEnabledFlashCursor() { return mEnableFlashCursor; }
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -826,10 +830,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mFoldsAlwaysVisible{ false };
 	bool mFoldsVisible{ false };
 	bool mFoldsIsFirst{ true };
+	bool mEnableFlashCursor{ false };
+	Uint32 mTabWidth;
 	std::atomic<size_t> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;
 	String mLink;
-	Uint32 mTabWidth;
 	Vector2f mScroll;
 	Float mMouseWheelScroll;
 	Float mFontSize;
@@ -854,6 +859,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Color mMinimapHoverColor;
 	Color mMinimapSelectionColor;
 	Color mMinimapHighlightColor;
+	Color mPreviewColor;
 	SyntaxColorScheme mColorScheme;
 	UIScrollBar* mVScrollBar;
 	UIScrollBar* mHScrollBar;
@@ -872,7 +878,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	TextRanges mHighlightWordCache;
 	Mutex mHighlightWordCacheMutex;
 	TextRange mHighlightTextRange;
-	Color mPreviewColor;
 	TextRange mPreviewColorRange;
 	std::vector<UICodeEditorPlugin*> mPlugins;
 	UILoader* mLoader{ nullptr };
@@ -903,6 +908,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	String::HashType mTagFoldRange{ 0 };
 	Uint32 mTabIndentCharacter{ 187 /*'»'*/ };
 	CharacterAlignment mTabIndentAlignment{ CharacterAlignment::Center };
+	Uint32 mModDownCount{ 0 };
+	Clock mModDownClock;
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
@@ -1104,6 +1111,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void refreshTag();
 
 	bool isNotMonospace() const;
+
+	void flashCursor();
 };
 
 }} // namespace EE::UI
