@@ -1,10 +1,17 @@
-#include <iostream>
-#include <filesystem>
-#include <vector>
-#include <unistd.h>
-#include <ctime>
+#include <eepp/config.hpp>
+
+#if defined( EE_PLATFORM_POSIX ) 
+    #include <sys/socket.h>
+    #include <sys/un.h>
+    #include <unistd.h>
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+    #include <windows.h>
+#endif
 
 #include <nlohmann/json.hpp>
+
+// 2^8 = 256s ~4.3min
+#define DISCORDIPC_BACKOFF_MAX 8 
 
 enum DiscordIPCActivityTypes {
     Playing = 0,
@@ -56,18 +63,25 @@ class DiscordIPC {
         DiscordIPCActivity *getActivity() { return &mActivity; }
         void clearActivity();
             
+        bool mUIReady;
+        bool mIsReconnectScheduled = false; // If we fail to load bofore UI initialises we call reconnect after init
     protected:
         std::string mIpcPath;
         int mPID;
+        
+        int mBackoffIndex;
+        int mReconnectLock = false; // Not quite a mutex because I want to lock any attempts if one is already waiting
         
         DiscordIPCActivity mActivity;
         
         //Configurables
         std::string mcClientID;
         
-        #if defined( EE_PLATFORM_POSIX )
+         #if defined( EE_PLATFORM_POSIX ) 
             int mSocket;
-        #endif        
+         #elif EE_PLATFORM == EE_PLATFORM_WIN
+             HANDLE mSocket;
+         #endif
         
         void doHandshake();
         void reconnect();

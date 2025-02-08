@@ -1,14 +1,14 @@
 #include "ipc.hpp"
 
-#include <eepp/system/log.hpp>
+#include <filesystem>
+#include <vector>
 
-#if defined( EE_PLATFORM_POSIX )
-    #include <sys/socket.h>
-	#include <netinet/in.h>
-    #include <sys/un.h>
-#endif
+#include <eepp/system/log.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 
 using namespace EE::System;
+using namespace EE::UI;
 
 using json = nlohmann::json;
 
@@ -16,17 +16,33 @@ DiscordIPC::DiscordIPC() {
 	mPID = Sys::getProcessID();
 	
 	mcClientID = "1335730393948749898"; // TODO: Implement actual config reading
-	
-	#if defined( EE_PLATFORM_POSIX )
-		mSocket = -1;
-	#endif
 }
 
 bool DiscordIPC::tryConnect() {
 	#if EE_PLATFORM == EE_PLATFORM_WIN
-		// TODO
+		std::string basePath = "\\\\.\\pipe\\";
+		
+		for (int i = 0; i < 10; ++i) {
+	            std::string ipcPath = basePath + "discord-ipc-" + std::to_string(i);
+		
+				// Check if exists
+				DWORD attributes = GetFileAttributes(ipcPath.c_str());
+	    		if (attributes != INVALID_FILE_ATTRIBUTES) {
+	                Log::debug("dcIPC: IPC path found! - %s", ipcPath);
+	                mIpcPath = ipcPath;
+	    		
+	    			mSocket = CreateFile(mIpcPath.c_str(), GENERIC_READ | GENERIC_WRITE,
+	    			 0, nullptr, OPEN_EXISTING, 0, nullptr);
+	    			 
+	    			doHandshake();
+	    			return true;
+	        	}
+		}
+		
+		reconnect();
 		return false;
-	#elif defined(EE_PLATFORM_POSIX)
+	
+	#elif defined(EE_PLATFORM_POSIX) 
 		// Socket path can be in any of the following directories:
 	    // * `XDG_RUNTIME_DIR`
 	    // * `TMPDIR`
@@ -69,18 +85,18 @@ bool DiscordIPC::tryConnect() {
 		}
 		checkPaths.insert(checkPaths.end(), validPaths.begin(), validPaths.end());
 		
-		for (const auto& basePath : validPaths) {
+		for (const auto& basePath : checkPaths) {
 	        if (!std::filesystem::exists(basePath)) { continue; }
 	        for (int i = 0; i < 10; ++i) {
 	            std::string ipcPath = basePath + "/discord-ipc-" + std::to_string(i);
 	            
 	            if (std::filesystem::exists(ipcPath)) {
-	                Log::info("IPC path found! - %s", ipcPath);
+	                Log::debug("dcIPC: IPC path found! - %s", ipcPath);
 	                mIpcPath = ipcPath;
 	                
 	                mSocket = socket(AF_UNIX, SOCK_STREAM, 0);
 	                if (mSocket == -1) {
-	                	Log::error("Discord IPC socket cold not be opened: %s", mIpcPath);
+	                	Log::error("dcIPC: Discord IPC socket cold not be opened: %s", mIpcPath);
 	                	mIpcPath = "";
 	                	continue;
 	                }
@@ -100,7 +116,8 @@ bool DiscordIPC::tryConnect() {
 	                return true;
             	}
         	}
-        	return false;
+    		reconnect(); 
+    		return false;
    	 }		
 	#endif
 	return false; // Discord not supported by other OS (if it is, TBA)
@@ -188,39 +205,52 @@ void DiscordIPC::setActivity( DiscordIPCActivity a ) {
     {"nonce", "-"}
 	};
 	
-	sendPacket(DiscordIPCOpcodes::Frame, j);
 	mActivity = a;
+	sendPacket(DiscordIPCOpcodes::Frame, j);
 }
 
 void DiscordIPC::sendPacket(DiscordIPCOpcodes opcode, json j) {
-	Log::debug("Packet is: %s", j.dump(4)); // Packet json logging before we start sending to ipc
+    if (!std::filesystem::exists(mIpcPath)) { reconnect(); return; }
+    
+    const std::string packet = j.dump();
+    std::vector<uint8_t> data;
+	
+	// Add correct ammount of padding for the protocol
+    union {
+        uint32_t value;
+        uint8_t bytes[4];
+    } bytes;
+
+    bytes.value = opcode;
+    for (int i = 0; i <= 3; ++i) {
+        data.push_back(bytes.bytes[i]);
+    }
+
+    bytes.value = packet.length();
+    for (int i = 0; i <= 3; ++i) {
+        data.push_back(bytes.bytes[i]);
+    }
+
+    for (char c : packet) {
+        data.push_back(static_cast<uint8_t>(c));
+    }
+    
+// 	Log::debug("Packet is: %s (%u)", j.dump(4), data.size());
+    
+//     std::stringstream ss;
+//     for (uint8_t byte : data) {
+//         ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte) << " ";
+//     }
+
+//     Log::debug(ss.str());
+    
     #if defined( EE_PLATFORM_POSIX )
-        const std::string packet = j.dump();
-        std::vector<uint8_t> data;
-		
-		// Conversion to little endian
-        union {
-            uint32_t value;
-            uint8_t bytes[4];
-        } bytes;
-
-        bytes.value = htonl(opcode);
-        for (int i = 3; i >= 0; --i) {
-            data.push_back(bytes.bytes[i]);
-        }
-
-        bytes.value = htonl(packet.length());
-        for (int i = 3; i >= 0; --i) {
-            data.push_back(bytes.bytes[i]);
-        }
-
-        for (char c : packet) {
-            data.push_back(static_cast<uint8_t>(c));
-        }
         
-        long unsigned int bytesSent = send(mSocket, data.data(), data.size(), 0);
+        ssize_t bytesSent = send(mSocket, data.data(), data.size(), 0);
         if (bytesSent != data.size()) {
-            Log::error("Failed to send all data to Unix socket: %zu bytes sent, %zu bytes expected", bytesSent, data.size());
+            Log::error("dcIPC: Failed to send all data to Unix socket: %zu bytes sent, %zu bytes expected", bytesSent, data.size());
+            reconnect();
+            return;
         }
 
         
@@ -232,18 +262,60 @@ void DiscordIPC::sendPacket(DiscordIPCOpcodes opcode, json j) {
         char buffer[1024];
 		ssize_t bytesRead = recv(mSocket, buffer, sizeof(buffer), 0);
 		
+// 		Log::debug("dcIPC: RECV: %s", buffer);
+		
 		// TODO: Implement nonce checking? (does it even really matter?)
 		
 		//return bytesRead;
+	#elif EE_PLATFORM == EE_PLATFORM_WIN
+		DWORD bytesSent;
+		if ( !WriteFile(mSocket, data.data(), data.size(), &bytesSent, nullptr) ) {
+			Log::error("dcIPC: Error writing to pipe!!");
+			reconnect();
+			return;
+		} else if (bytesSent != data.size()) {
+			Log::error("dcIPC: Incorrect ammount of data written: %zu bytes sent, %zu bytes expected", 
+				bytesSent, data.size());
+			reconnect();
+			return;
+		}
+		
+		DWORD bytesRead;
+		char buffer[1024];
+		if ( !ReadFile(mSocket, buffer, 1024, &bytesRead, nullptr ) ) {
+			Log::error("dcIPC: Error reading pipe!!");
+			reconnect();
+			return;
+		}
+		
+// 		Log::debug("dcIPC: RECV: %s", buffer);
+
     #endif
 }
 
 void DiscordIPC::reconnect() {
-	// TODO. Might change the API here!!
+	if (mReconnectLock) {Log::warning("dcIPC: Tried to call reconnect while locked"); return;}
+	if (!mUIReady) { Log::debug("dcIPC: Scheduled a reconnect"); mIsReconnectScheduled = true; return; }
+	if (mBackoffIndex < DISCORDIPC_BACKOFF_MAX) { mBackoffIndex++; }
+	int delay = 5 + pow(2, mBackoffIndex);
+	mReconnectLock = true;
+	
+	Log::warning("dcIPC: Waiting for reconnect delay of %us (%u/%u)", delay, mBackoffIndex, DISCORDIPC_BACKOFF_MAX);
+	EE::Scene::SceneManager::instance()->getUISceneNode()
+		->setTimeout( [this] {
+			EE::Scene::SceneManager::instance()->getUISceneNode()
+				->getThreadPool()->run( [this]{
+					Log::info("dcIPC: Reconnecting...");
+					mReconnectLock = false;
+					if(tryConnect()){ mBackoffIndex = 0; }
+				});
+		}, Seconds(delay));
 }
 
 DiscordIPC::~DiscordIPC() {
-	#if defined( EE_PLATFORM_POSIX ) // Windows apparently uses named pipes. TODO
+	#if defined( EE_PLATFORM_POSIX )
 		close(mSocket);
+	#elif EE_PLATFORM == EE_PLATFORM_WIN
+		CloseHandle(mSocket);
 	#endif
 }

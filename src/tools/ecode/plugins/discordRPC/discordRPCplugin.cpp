@@ -50,7 +50,7 @@ void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 		paths.emplace_back( path );
 	path = pluginManager->getPluginsPath() + "discordRPC.json";
 	if ( FileSystem::fileExists( path ) ||
-		 FileSystem::fileWrite(path, "{\n\"config\":{},\n\"keybindings\":{}\n}\n") ) {
+		 FileSystem::fileWrite(path, "{\n  \"config\":{},\n  \"keybindings\":{}\n}\n") ) {
 	   mConfigPath = path;
 	   paths.emplace_back( path );	 	
     }
@@ -104,6 +104,14 @@ PluginRequestHandle DiscordRPCplugin::processMessage( const PluginMessage& msg )
 			FileSystem::dirAddSlashAtEnd( rpath );
 			mProjectName = FileSystem::fileNameFromPath( rpath );
 			Log::debug("Loaded new workspace: %s ; %s", rpath, mProjectName);
+		}
+		case PluginMessageType::UIReady: {
+			mIPC.mUIReady = true;
+			Log::debug("dcPlugin: UI is ready!");
+			if (mIPC.mIsReconnectScheduled) {
+				Log::debug("Running scheduled reconnect");
+				mIPC.tryConnect();
+			}
 		}
 		default:
 			break;
