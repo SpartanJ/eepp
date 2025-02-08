@@ -7,8 +7,18 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 
+#if defined( EE_PLATFORM_POSIX ) 
+    #include <sys/socket.h>
+    #include <sys/un.h>
+    #include <unistd.h>
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+    #ifndef WIN32LEAN_AND_MEAN
+    #define WIN32_LEAN_AND_MEAN
+    #endif
+    #include <windows.h>
+#endif
+
 using namespace EE::System;
-using namespace EE::UI;
 
 using json = nlohmann::json;
 

@@ -1,13 +1,5 @@
 #include <eepp/config.hpp>
 
-#if defined( EE_PLATFORM_POSIX ) 
-    #include <sys/socket.h>
-    #include <sys/un.h>
-    #include <unistd.h>
-#elif EE_PLATFORM == EE_PLATFORM_WIN
-    #include <windows.h>
-#endif
-
 #include <nlohmann/json.hpp>
 
 // 2^8 = 256s ~4.3min
@@ -80,7 +72,7 @@ class DiscordIPC {
          #if defined( EE_PLATFORM_POSIX ) 
             int mSocket;
          #elif EE_PLATFORM == EE_PLATFORM_WIN
-             HANDLE mSocket;
+             void* mSocket;
          #endif
         
         void doHandshake();
