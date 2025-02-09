@@ -81,6 +81,10 @@ class EE_API TextPosition {
 		return {};
 	}
 
+	Int64 distance( const TextPosition& other ) const {
+		return std::abs( mLine - other.mLine ) + std::abs( mColumn - other.mColumn );
+	}
+
   private:
 	Int64 mLine{ 0xffffffff };
 	Int64 mColumn{ 0xffffffff };

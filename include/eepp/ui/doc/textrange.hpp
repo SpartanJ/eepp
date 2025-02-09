@@ -120,6 +120,8 @@ class EE_API TextRange {
 	static TextRange convertToLineColumn( const std::string_view& text, Int64 startOffset,
 										  Int64 endOffset );
 
+    Int64 minimumDistance(const TextRange& other) const;
+
   private:
 	TextPosition mStart;
 	TextPosition mEnd;

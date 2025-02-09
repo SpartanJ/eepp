@@ -1,5 +1,6 @@
 #include <eepp/core/debug.hpp>
 #include <eepp/ui/doc/textrange.hpp>
+#include <limits>
 
 namespace EE { namespace UI { namespace Doc {
 
@@ -161,6 +162,25 @@ TextRange TextRange::convertToLineColumn( const String::View& text, Int64 startO
 TextRange TextRange::convertToLineColumn( const std::string_view& text, Int64 startOffset,
 										  Int64 endOffset ) {
 	return convertToLineColumn<std::string_view>( text, startOffset, endOffset );
+}
+
+Int64 TextRange::minimumDistance( const TextRange& other ) const {
+	if ( intersects( other ) )
+		return 0;
+
+	auto minDist = std::numeric_limits<Int64>::max();
+
+	const TextPosition corners1[] = { mStart, mEnd };
+	const TextPosition corners2[] = { other.start(), other.end() };
+
+	for ( const auto& c1 : corners1 ) {
+		for ( const auto& c2 : corners2 ) {
+			auto dist = c1.distance( c2 );
+			minDist = std::min( minDist, dist );
+		}
+	}
+
+	return minDist;
 }
 
 TextRanges::TextRanges() {}
