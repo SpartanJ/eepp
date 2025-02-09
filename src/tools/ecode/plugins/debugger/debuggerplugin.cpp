@@ -736,7 +736,7 @@ void DebuggerPlugin::buildSidePanelTab() {
 				<PushButton id="panel_debugger_step_into" class="debugger_step_into" lw="24dp" lh="24dp" icon="icon(debug-step-into, 12dp)" tooltip="@string(step_into, Step Into)" />
 				<PushButton id="panel_debugger_step_out" class="debugger_step_out" lw="24dp" lh="24dp" icon="icon(debug-step-out, 12dp)" tooltip="@string(step_out, Step Out)" />
 			</hbox>
-			<Anchor id="panel_debugger_help" lw="mp" text="@string(documentation, Documentation)" href="https://github.com/SpartanJ/ecode/blob/develop/docs/debugger.md" />
+			<Anchor id="panel_debugger_help" lw="mp" text="@string(documentation, Documentation)" href="https://github.com/SpartanJ/ecode/blob/main/docs/debugger.md" />
 		</vbox>
 	</vbox>
 	)html";
