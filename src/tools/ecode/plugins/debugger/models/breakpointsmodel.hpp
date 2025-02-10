@@ -38,6 +38,8 @@ class BreakpointsModel : public Model {
 	void enable( const std::string& filePath, const SourceBreakpointStateful& breakpoint,
 				 bool enable );
 
+	void move( const std::string& doc, Int64 fromLine, Int64 toLine, Int64 numLines );
+
 	const std::pair<std::string, SourceBreakpointStateful>& get( ModelIndex index );
   protected:
 	std::vector<std::pair<std::string, SourceBreakpointStateful>> mBreakpoints;

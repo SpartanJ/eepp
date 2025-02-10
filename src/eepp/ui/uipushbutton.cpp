@@ -449,15 +449,15 @@ void UIPushButton::onAlignChange() {
 	mTextBox->setVerticalAlign( getVerticalAlign() );
 }
 
-Uint32 UIPushButton::onKeyDown( const KeyEvent& Event ) {
-	if ( Event.getKeyCode() == KEY_RETURN ) {
+Uint32 UIPushButton::onKeyDown( const KeyEvent& event ) {
+	if ( event.getKeyCode() == KEY_RETURN || event.getKeyCode() == Window::KEY_KP_ENTER ) {
 		NodeMessage Msg( this, NodeMessage::MouseClick, EE_BUTTON_LMASK );
 		messagePost( &Msg );
 		onMouseClick( Vector2i( 0, 0 ), EE_BUTTON_LMASK );
 		pushState( UIState::StatePressed );
 	}
 
-	return UIWidget::onKeyDown( Event );
+	return UIWidget::onKeyDown( event );
 }
 
 Uint32 UIPushButton::onKeyUp( const KeyEvent& Event ) {

@@ -114,6 +114,14 @@ class EE_API TextRange {
 
 	bool isNormalized() const { return mStart <= mEnd; }
 
+	static TextRange convertToLineColumn( const String::View& text, Int64 startOffset,
+										  Int64 endOffset );
+
+	static TextRange convertToLineColumn( const std::string_view& text, Int64 startOffset,
+										  Int64 endOffset );
+
+    Int64 minimumDistance(const TextRange& other) const;
+
   private:
 	TextPosition mStart;
 	TextPosition mEnd;
@@ -121,6 +129,10 @@ class EE_API TextRange {
 	TextPosition normalizedStart() const { return mStart < mEnd ? mStart : mEnd; }
 
 	TextPosition normalizedEnd() const { return mStart < mEnd ? mEnd : mStart; }
+
+	template <typename StringType>
+	static TextRange convertToLineColumn( const StringType& text, Int64 startOffset,
+										  Int64 endOffset );
 };
 
 class EE_API TextRanges : public std::vector<TextRange> {

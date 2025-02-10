@@ -21,32 +21,6 @@
           }
         },
         {
-          "name": "Launch binary in Terminal",
-          "request": "launch",
-          "arguments": {
-              "program": "${file}",
-              "args": "${args}",
-              "cwd": "${cwd}",
-              "env": "${env}",
-              "runInTerminal": true
-          }
-        },
-        {
-          "name": "Attach to Name",
-          "request": "attach",
-          "arguments": {
-            "program": "${file}"
-          }
-        },
-        {
-          "name": "Attach to Name (wait)",
-          "request": "attach",
-          "arguments": {
-            "program": "${file}",
-            "waitFor": true
-          }
-        },
-        {
           "name": "Attach to PID",
           "request": "attach",
           "arguments": {
@@ -98,15 +72,17 @@
           }
         },
         {
-          "name": "Attach to Name",
+          "name": "Attach to binary",
           "request": "attach",
+          "runTarget": true,
           "arguments": {
             "program": "${file}"
           }
         },
         {
-          "name": "Attach to Name (wait)",
+          "name": "Attach to binary (wait)",
           "request": "attach",
+          "runTarget": true,
           "arguments": {
             "program": "${file}",
             "waitFor": true
@@ -182,7 +158,7 @@
     {
       "name": "debugpy",
       "url": "https://github.com/microsoft/debugpy",
-      "type": "python",
+      "type": "debugpy",
       "languages": [ "python" ],
       "run": {
         "command": "python3",
@@ -209,7 +185,7 @@
           }
         },
         {
-          "name": "Attach",
+          "name": "Attach to PID",
           "command_arguments": ["--pid", "${command:pickProcess}"],
           "request": "attach",
           "arguments": {
@@ -258,8 +234,7 @@
           "request": "launch",
           "arguments": {
             "program": "${file}",
-            "args": "${args}",
-            "stopOnEntry": true
+            "args": "${args}"
           }
         }
       ]

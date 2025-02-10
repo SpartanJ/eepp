@@ -1,5 +1,4 @@
 #include "../../notificationcenter.hpp"
-#include "../../projectbuild.hpp"
 #include "../../terminalmanager.hpp"
 #include "../../uistatusbar.hpp"
 #include "../../widgetcommandexecuter.hpp"
@@ -55,6 +54,46 @@ static constexpr auto KEY_FILEDIRNAME = "${fileDirname}";
 static constexpr auto KEY_RANDPORT = "${randPort}";
 static constexpr auto KEY_PID = "${pid}";
 
+static constexpr auto KEY_USER_HOME = "${userHome}";
+static constexpr auto KEY_WORKSPACEFOLDER_BASENAME = "${workspaceFolderBasename}";
+static constexpr auto KEY_FILE_WORKSPACEFOLDER = "${fileWorkspaceFolder}";
+static constexpr auto KEY_RELATIVE_FILE = "${relativeFile}";
+static constexpr auto KEY_RELATIVE_FILE_DIRNAME = "${relativeFileDirname}";
+static constexpr auto KEY_FILE_BASENAME = "${fileBasename}";
+static constexpr auto KEY_FILE_BASENAME_NOEXTENSION = "${fileBasenameNoExtension}";
+static constexpr auto KEY_FILE_EXTNAME = "${fileExtname}";
+static constexpr auto KEY_FILE_DIRNAME_BASENAME = "${fileDirnameBasename}";
+static constexpr auto KEY_LINE_NUMBER = "${lineNumber}";
+static constexpr auto KEY_SELECTED_TEXT = "${selectedText}";
+static constexpr auto KEY_EXEC_PATH = "${execPath}";
+static constexpr auto KEY_DEFAULT_BUILD_TASK = "${defaultBuildTask}";
+static constexpr auto KEY_PATH_SEPARATOR = "${pathSeparator}";
+static constexpr auto KEY_PATH_SEPARATOR_ABBR = "${/}";
+
+/*
+
+- **${userHome}** - the path of the user's home folder
+- **${workspaceFolder}** - the path of the folder opened in VS Code
+- **${workspaceFolderBasename}** - the name of the folder opened in VS Code without any slashes (/)
+- **${file}** - the current opened file
+- **${fileWorkspaceFolder}** - the current opened file's workspace folder
+- **${relativeFile}** - the current opened file relative to `workspaceFolder`
+- **${relativeFileDirname}** - the current opened file's dirname relative to `workspaceFolder`
+- **${fileBasename}** - the current opened file's basename
+- **${fileBasenameNoExtension}** - the current opened file's basename with no file extension
+- **${fileExtname}** - the current opened file's extension
+- **${fileDirname}** - the current opened file's folder path
+- **${fileDirnameBasename}** - the current opened file's folder name
+- **${cwd}** - the task runner's current working directory upon the startup of VS Code
+- **${lineNumber}** - the current selected line number in the active file
+- **${selectedText}** - the current selected text in the active file
+- **${execPath}** - the path to the running VS Code executable
+- **${defaultBuildTask}** - the name of the default build task
+- **${pathSeparator}** - the character used by the operating system to separate components in file
+paths
+- **${/}** - shorthand for **${pathSeparator}**
+
+*/
 Plugin* DebuggerPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( DebuggerPlugin, ( pluginManager, false ) );
 }
@@ -79,6 +118,12 @@ DebuggerPlugin::DebuggerPlugin( PluginManager* pluginManager, bool sync ) :
 DebuggerPlugin::~DebuggerPlugin() {
 	waitUntilLoaded();
 	mShuttingDown = true;
+
+	{
+		Lock l( mClientsMutex );
+		for ( const auto& client : mClients )
+			client.first->unregisterClient( client.second.get() );
+	}
 
 	if ( mSidePanel && mTab ) {
 		if ( Engine::isRunninMainThread() )
@@ -330,6 +375,7 @@ static std::initializer_list<std::string> DebuggerCommandList = {
 	"debugger-breakpoint-enable-toggle",
 	"debugger-start",
 	"debugger-stop",
+	"debugger-start-stop",
 	"debugger-step-over",
 	"debugger-step-into",
 	"debugger-step-out",
@@ -367,6 +413,11 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 			mFetchGlobals = config.value( "fetch_globals", false );
 		else if ( updateConfigFile )
 			config["fetch_globals"] = mFetchGlobals;
+
+		if ( config.contains( "silent" ) )
+			mSilence = config.value( "silent", true );
+		else if ( updateConfigFile )
+			config["silent"] = mSilence;
 	}
 
 	if ( j.contains( "dap" ) ) {
@@ -407,6 +458,7 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 					dapConfig.name = config.value( "name", "" );
 					if ( !dapConfig.name.empty() ) {
 						dapConfig.request = config.value( "request", REQUEST_TYPE_LAUNCH );
+						dapConfig.runTarget = config.value( "runTarget", false );
 						dapConfig.args = config["arguments"];
 					}
 					if ( config.contains( "command_arguments" ) ) {
@@ -448,7 +500,7 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 	}
 
 	if ( mKeyBindings.empty() ) {
-		mKeyBindings["debugger-start"] = "mod+f5";
+		mKeyBindings["debugger-start-stop"] = "mod+f5";
 		mKeyBindings["debugger-continue-interrupt"] = "f5";
 		mKeyBindings["debugger-breakpoint-toggle"] = "f9";
 		mKeyBindings["debugger-breakpoint-enable-toggle"] = "mod+f9";
@@ -660,6 +712,15 @@ void DebuggerPlugin::buildSidePanelTab() {
 		border-top-right-radius: var(--button-radius);
 		border-bottom-right-radius: var(--button-radius);
 	}
+	#panel_debugger_help {
+		color: var(--primary);
+		text-decoration: none;
+		text-align: center;
+		margin-top: 32dp;
+	}
+	#panel_debugger_help:hover {
+		text-decoration: underline;
+	}
 	</style>
 	<vbox id="debugger_panel" lw="mp" lh="wc" padding="4dp">
 		<vbox id="debugger_config_view" lw="mp" lh="wc">
@@ -675,6 +736,7 @@ void DebuggerPlugin::buildSidePanelTab() {
 				<PushButton id="panel_debugger_step_into" class="debugger_step_into" lw="24dp" lh="24dp" icon="icon(debug-step-into, 12dp)" tooltip="@string(step_into, Step Into)" />
 				<PushButton id="panel_debugger_step_out" class="debugger_step_out" lw="24dp" lh="24dp" icon="icon(debug-step-out, 12dp)" tooltip="@string(step_out, Step Out)" />
 			</hbox>
+			<Anchor id="panel_debugger_help" lw="mp" text="@string(documentation, Documentation)" href="https://github.com/SpartanJ/ecode/blob/main/docs/debugger.md" />
 		</vbox>
 	</vbox>
 	)html";
@@ -1019,23 +1081,66 @@ void DebuggerPlugin::updateDebuggerConfigurationList() {
 	}
 }
 
+void DebuggerPlugin::replaceInVal( std::string& val,
+								   const std::optional<ProjectBuildStep>& runConfig,
+								   ProjectBuild* buildConfig, int randomPort ) {
+
+	if ( runConfig ) {
+		String::replaceAll( val, KEY_FILE, runConfig->cmd );
+		String::replaceAll( val, KEY_CWD, runConfig->workingDir );
+		String::replaceAll( val, KEY_FILEDIRNAME, runConfig->workingDir );
+		std::string fileRelativePath( runConfig->cmd );
+		FileSystem::filePathRemoveBasePath( mProjectPath, fileRelativePath );
+		String::replaceAll( val, KEY_RELATIVE_FILE, fileRelativePath );
+		std::string fileDirName( FileSystem::fileRemoveFileName( fileRelativePath ) );
+		FileSystem::dirRemoveSlashAtEnd( fileDirName );
+		String::replaceAll( val, KEY_RELATIVE_FILE_DIRNAME, fileDirName );
+		String::replaceAll( val, KEY_FILE_BASENAME,
+							FileSystem::fileNameFromPath( fileRelativePath ) );
+		String::replaceAll(
+			val, KEY_FILE_BASENAME_NOEXTENSION,
+			FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( fileRelativePath ) ) );
+		String::replaceAll( val, KEY_FILE_EXTNAME, FileSystem::fileExtension( fileRelativePath ) );
+		String::replaceAll( val, KEY_FILE_DIRNAME_BASENAME,
+							FileSystem::fileNameFromPath( fileDirName ) );
+	}
+
+	if ( buildConfig ) {
+		String::replaceAll( val, KEY_DEFAULT_BUILD_TASK, buildConfig->getName() );
+	}
+
+	String::replaceAll( val, KEY_WORKSPACEFOLDER, mProjectPath );
+	String::replaceAll( val, KEY_USER_HOME, Sys::getUserDirectory() );
+	String::replaceAll( val, KEY_WORKSPACEFOLDER_BASENAME,
+						FileSystem::fileNameFromPath( mProjectPath ) );
+	String::replaceAll( val, KEY_FILE_WORKSPACEFOLDER, mProjectPath );
+	String::replaceAll( val, KEY_EXEC_PATH, Sys::getProcessFilePath() );
+	String::replaceAll( val, KEY_PATH_SEPARATOR, FileSystem::getOSSlash() );
+	String::replaceAll( val, KEY_PATH_SEPARATOR_ABBR, FileSystem::getOSSlash() );
+
+	auto* editor = getPluginContext()->getSplitter()->getCurEditor();
+	if ( getPluginContext()->getSplitter()->getCurEditor() ) {
+		String::replaceAll(
+			val, KEY_LINE_NUMBER,
+			String::toString( editor->getDocument().getSelection().start().line() ) );
+		String::replaceAll( val, KEY_SELECTED_TEXT,
+							editor->getDocument().getSelectedText().toUtf8() );
+	}
+
+	if ( String::contains( val, KEY_RANDPORT ) )
+		String::replaceAll( val, KEY_RANDPORT, String::toString( randomPort ) );
+}
+
 std::vector<std::string> DebuggerPlugin::replaceKeyInString(
 	std::string val, int randomPort,
 	const std::unordered_map<std::string, std::string>& solvedInputs ) {
 	auto pbm = getPluginContext()->getProjectBuildManager();
 	auto runConfig = pbm ? pbm->getCurrentRunConfig() : std::optional<ProjectBuildStep>{};
+	auto buildConfig = pbm ? pbm->getCurrentBuild() : nullptr;
 
-	const auto replaceVal = [this, &runConfig, &solvedInputs, randomPort]( std::string& val ) {
-		if ( runConfig ) {
-			String::replaceAll( val, KEY_FILE, runConfig->cmd );
-			String::replaceAll( val, KEY_CWD, runConfig->workingDir );
-			String::replaceAll( val, KEY_FILEDIRNAME, runConfig->workingDir );
-		}
-
-		String::replaceAll( val, KEY_WORKSPACEFOLDER, mProjectPath );
-
-		if ( String::contains( val, KEY_RANDPORT ) )
-			String::replaceAll( val, KEY_RANDPORT, String::toString( randomPort ) );
+	const auto replaceVal = [this, &runConfig, &buildConfig, &solvedInputs,
+							 randomPort]( std::string& val ) {
+		replaceInVal( val, runConfig, buildConfig, randomPort );
 
 		LuaPattern::Range matches[2];
 		if ( inputPtrn.matches( val, matches ) ) {
@@ -1077,18 +1182,9 @@ void DebuggerPlugin::replaceKeysInJson(
 	auto runConfig = pbm ? pbm->getCurrentRunConfig() : std::optional<ProjectBuildStep>{};
 	auto buildConfig = pbm ? pbm->getCurrentBuild() : nullptr;
 
-	const auto replaceVal = [this, &solvedInputs, &runConfig,
+	const auto replaceVal = [this, &solvedInputs, &runConfig, &buildConfig,
 							 randomPort]( nlohmann::json& j, std::string& val ) -> bool {
-		if ( runConfig ) {
-			String::replaceAll( val, KEY_FILE, runConfig->cmd );
-			String::replaceAll( val, KEY_CWD, runConfig->workingDir );
-			String::replaceAll( val, KEY_FILEDIRNAME, runConfig->workingDir );
-		}
-
-		String::replaceAll( val, KEY_WORKSPACEFOLDER, mProjectPath );
-
-		if ( String::contains( val, KEY_RANDPORT ) )
-			String::replaceAll( val, KEY_RANDPORT, String::toString( randomPort ) );
+		replaceInVal( val, runConfig, buildConfig, randomPort );
 
 		LuaPattern::Range matches[2];
 		if ( inputPtrn.matches( val, matches ) ) {
@@ -1269,6 +1365,13 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 
 	doc->setCommand( "debugger-stop", [this] { exitDebugger( true ); } );
 
+	doc->setCommand( "debugger-start-stop", [this] {
+		if ( mDebugger )
+			exitDebugger( true );
+		else
+			runCurrentConfig();
+	} );
+
 	doc->setCommand( "debugger-breakpoint-toggle", [doc, this] {
 		if ( setBreakpoint( doc, doc->getSelection().start().line() + 1 ) )
 			getUISceneNode()->getRoot()->invalidateDraw();
@@ -1303,6 +1406,16 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 		if ( mTab )
 			mTab->setTabSelected();
 	} );
+
+	Lock l( mClientsMutex );
+	mClients[doc] = std::make_unique<DebuggerPluginClient>( this, doc );
+	doc->registerClient( mClients[doc].get() );
+}
+
+void DebuggerPlugin::onUnregisterDocument( TextDocument* doc ) {
+	Lock l( mClientsMutex );
+	doc->unregisterClient( mClients[doc].get() );
+	mClients.erase( doc );
 }
 
 void DebuggerPlugin::onRegisterEditor( UICodeEditor* editor ) {
@@ -1420,6 +1533,23 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 			p.drawTriangle( tri );
 		}
 	}
+}
+
+void DebuggerPlugin::drawBeforeLineText( UICodeEditor* editor, const Int64& index,
+										 Vector2f position, const Float& /*fontSize*/,
+										 const Float& lineHeight ) {
+	if ( !mDebugger || !mListener || !mListener->isStopped() || !mListener->getCurrentScopePos() ||
+		 editor->getDocument().getFilePath() != mListener->getCurrentScopePos()->first ||
+		 mListener->getCurrentScopePos()->second - 1 != index ||
+		 !editor->getDocumentView().isLineVisible( index ) )
+		return;
+
+	Primitives p;
+	Color color( editor->getColorScheme().getEditorSyntaxStyle( "warning"_sst ).color );
+	Color blendedColor( Color( color, 20 ).blendAlpha( editor->getAlpha() ) );
+	p.setColor( blendedColor );
+	p.drawRectangle(
+		Rectf( position, Sizef( editor->getViewportWidth( false, true ), lineHeight ) ) );
 }
 
 bool DebuggerPlugin::setBreakpoint( const std::string& doc, Uint32 lineNumber ) {
@@ -1690,6 +1820,7 @@ void DebuggerPlugin::prepareAndRun( DapTool debugger, DapConfig config,
 	int randomPort = Math::randi( 44000, 45000 );
 	ProtocolSettings protocolSettings;
 	protocolSettings.launchRequestType = config.request;
+	protocolSettings.runTarget = config.runTarget;
 	auto args = config.args;
 	replaceKeysInJson( args, randomPort, solvedInputs );
 	protocolSettings.launchArgs = args;
@@ -1954,6 +2085,7 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 	mListener = std::make_unique<DebuggerClientListener>( mDebugger.get(), this );
 	mListener->setIsRemote( isRemote );
 	mDebugger->addListener( mListener.get() );
+	mDebugger->setSilent( mSilence );
 
 	DebuggerClientDap* dap = static_cast<DebuggerClientDap*>( mDebugger.get() );
 	dap->runInTerminalCb = [this]( bool isIntegrated, std::string cmd,
@@ -1980,6 +2112,11 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 		} );
 	};
 
+	dap->runTargetCb = [this] {
+		getUISceneNode()->runOnMainThread(
+			[this] { getPluginContext()->runCommand( "project-run-executable" ); } );
+	};
+
 	mDebugger->start();
 }
 
@@ -1988,7 +2125,7 @@ void DebuggerPlugin::exitDebugger( bool requestDisconnect ) {
 		mDebugger->removeListener( mListener.get() );
 
 	if ( requestDisconnect && mDebugger )
-		mDebugger->disconnect( false );
+		mDebugger->disconnect( true, false );
 
 	if ( mDebugger || mListener ) {
 		mThreadPool->run( [this] {
@@ -2146,7 +2283,6 @@ void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const std::string& ex
 }
 
 bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position, const Uint32& ) {
-
 	if ( !mDebugger || !mListener || !mDebugger->isServerConnected() ||
 		 mDebuggingState != StatusDebuggerController::State::Paused ) {
 		return false;
@@ -2203,7 +2339,38 @@ bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position
 		},
 		mHoverDelay, getMouseMoveHash( editor ) );
 	editor->updateMouseCursor( position.asFloat() );
-	return true;
+	return false;
+}
+
+void DebuggerPlugin::onDocumentLineMove( TextDocument* doc, const Int64& fromLine,
+										 const Int64& toLine, const Int64& numLines ) {
+	Lock l( mBreakpointsMutex );
+
+	auto& breakpoints = mBreakpoints[doc->getFilePath()];
+
+	if ( breakpoints.empty() )
+		return;
+
+	std::vector<SourceBreakpointStateful> bpToModify;
+
+	for ( auto& bp : breakpoints ) {
+		// bp line numbers start at 1
+		if ( bp.line - 1 >= fromLine ) {
+			bpToModify.push_back( bp );
+			break;
+		}
+	}
+
+	for ( const auto& bp : bpToModify )
+		breakpoints.erase( bp );
+
+	for ( auto&& bp : bpToModify ) {
+		bp.line += numLines;
+		breakpoints.insert( std::move( bp ) );
+	}
+
+	if ( mBreakpointsModel )
+		mBreakpointsModel->move( doc->getFilePath(), fromLine, toLine, numLines );
 }
 
 } // namespace ecode

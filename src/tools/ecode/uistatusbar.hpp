@@ -53,6 +53,8 @@ class UIStatusBar : public UILinearLayout, public WidgetCommandExecuter {
 
 	std::shared_ptr<StatusBarElement> getStatusBarElement( const std::string& id ) const;
 
+	void hideAllElements();
+
   protected:
 	UnorderedMap<std::string, std::pair<UIPushButton*, std::shared_ptr<StatusBarElement>>>
 		mElements;

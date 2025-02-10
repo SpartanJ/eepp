@@ -289,18 +289,20 @@ bool UICheckBox::applyProperty( const StyleSheetProperty& attribute ) {
 	return true;
 }
 
-Uint32 UICheckBox::onKeyDown( const KeyEvent& Event ) {
-	UITextView::onKeyDown( Event );
+Uint32 UICheckBox::onKeyDown( const KeyEvent& event ) {
+	UITextView::onKeyDown( event );
 
-	if ( Event.getKeyCode() == KEY_SPACE ) {
+	if ( event.getKeyCode() == KEY_SPACE ) {
 		if ( Sys::getTicks() - mLastTick > 250 ) {
 			mLastTick = Sys::getTicks();
 
 			setChecked( !mChecked );
+
+			return 1;
 		}
 	}
 
-	return 1;
+	return UITextView::onKeyDown( event );
 }
 
 void UICheckBox::onAlphaChange() {

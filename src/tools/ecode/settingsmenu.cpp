@@ -658,6 +658,17 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 				  "before exiting the program." ) )
 		->setId( "session_snapshot" );
 
+	mGlobalMenu
+		->addCheckBox( i18n( "allow_flash_cursor", "Allow Flashing Cursor" ),
+					   mApp->getConfig().editor.flashCursor )
+		->setTooltipText( i18n(
+			"allow_flash_cursor_desc",
+			"When enabled, pressing the default modifier key 5 times within 1.5 seconds will\n"
+			"trigger a visual effect that highlights the current cursor position. A large,\n"
+			"transparent rectangle will briefly animate, shrinking down to the cursor, making it\n"
+			"easier to locate when it's hard to see." ) )
+		->setId( "allow_flash_cursor" );
+
 	mGlobalMenu->addSeparator();
 
 	mGlobalMenu->add( i18n( "line_breaking_column", "Line Breaking Column" ) )
@@ -716,6 +727,8 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 				mApp->getConfig().editor.autoReloadOnDiskChange = item->isActive();
 			} else if ( "session_snapshot" == id ) {
 				mApp->getConfig().workspace.sessionSnapshot = item->isActive();
+			} else if ( "allow_flash_cursor" == id ) {
+				mApp->getConfig().editor.flashCursor = item->isActive();
 			}
 		} else if ( "line_breaking_column" == id ) {
 			mApp->getSettingsActions()->setLineBreakingColumn();

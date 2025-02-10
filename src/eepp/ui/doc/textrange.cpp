@@ -1,5 +1,6 @@
 #include <eepp/core/debug.hpp>
 #include <eepp/ui/doc/textrange.hpp>
+#include <limits>
 
 namespace EE { namespace UI { namespace Doc {
 
@@ -99,6 +100,87 @@ TextRange TextRange::fromString( const std::string& range ) {
 				 TextPosition::fromString( String::trim( split[1] ) ) };
 	}
 	return {};
+}
+
+template <typename StringType>
+TextRange TextRange::convertToLineColumn( const StringType& text, Int64 startOffset,
+										  Int64 endOffset ) {
+	if ( startOffset < 0 || endOffset < 0 || startOffset > static_cast<Int64>( text.length() ) ||
+		 endOffset > static_cast<Int64>( text.length() ) || startOffset > endOffset ) {
+		return {};
+	}
+
+	TextRange result;
+	Int64 currentLine = 0;
+	Int64 currentCol = 0;
+	Int64 currentPos = 0;
+	bool foundStart = false;
+	bool foundEnd = false;
+	size_t len = text.length();
+
+	for ( size_t i = 0; i < len; i++ ) {
+		if ( currentPos == startOffset ) {
+			result.setStart( { currentLine, currentCol } );
+			foundStart = true;
+		}
+
+		if ( currentPos == endOffset ) {
+			result.setEnd( { currentLine, currentCol } );
+			foundEnd = true;
+		}
+
+		if ( foundStart && foundEnd )
+			break;
+
+		if ( i == text.length() )
+			break;
+
+		if ( text[i] == '\n' ) {
+			currentLine++;
+			currentCol = 0;
+		} else {
+			currentCol++;
+		}
+
+		currentPos++;
+	}
+
+	if ( currentPos == startOffset )
+		result.setStart( { currentLine, currentCol } );
+
+	if ( currentPos == endOffset )
+		result.setEnd( { currentLine, currentCol } );
+
+	return result;
+}
+
+TextRange TextRange::convertToLineColumn( const String::View& text, Int64 startOffset,
+										  Int64 endOffset ) {
+	return convertToLineColumn<String>( text, startOffset, endOffset );
+}
+
+TextRange TextRange::convertToLineColumn( const std::string_view& text, Int64 startOffset,
+										  Int64 endOffset ) {
+	return convertToLineColumn<std::string_view>( text, startOffset, endOffset );
+}
+
+Int64 TextRange::minimumDistance( const TextRange& other ) const {
+	if ( intersects( other ) )
+		return 0;
+
+	auto minDist = std::numeric_limits<Int64>::max();
+
+	const TextPosition corners1[] = { mStart, mEnd };
+	const TextPosition corners2[] = { other.start(), other.end() };
+
+	for ( const auto& c1 : corners1 ) {
+		for ( const auto& c2 : corners2 ) {
+			auto dist = c1.distance( c2 );
+			minDist = std::min( minDist, dist );
+		}
+	}
+
+	return minDist;
 }
 
 TextRanges::TextRanges() {}

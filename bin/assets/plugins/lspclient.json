@@ -103,7 +103,8 @@
       "name": "zls",
       "url": "https://github.com/zigtools/zls",
       "command": "zls",
-      "file_patterns": ["%.zig$"]
+      "file_patterns": ["%.zig$"],
+      "extra_trigger_chars": [ "," ]
     },
     {
       "language": "odin",

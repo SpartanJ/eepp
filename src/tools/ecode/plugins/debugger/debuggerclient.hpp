@@ -71,7 +71,7 @@ class DebuggerClient {
 
 	virtual bool terminate( bool restart ) = 0;
 
-	virtual bool disconnect( bool restart = false ) = 0;
+	virtual bool disconnect( bool terminateDebuggee, bool restart = false ) = 0;
 
 	virtual bool threads() = 0;
 
@@ -93,7 +93,9 @@ class DebuggerClient {
 
 	virtual bool isServerConnected() const = 0;
 
-	virtual bool supportsTerminate() const = 0;
+	virtual bool supportsTerminateRequest() const = 0;
+
+	virtual bool supportsTerminateDebuggee() const = 0;
 
 	virtual bool setBreakpoints( const std::string& path,
 								 const std::vector<dap::SourceBreakpoint>& breakpoints,
@@ -113,6 +115,8 @@ class DebuggerClient {
 
 	virtual bool configurationDone() = 0;
 
+	virtual void setSilent( bool silent ) = 0;
+
 	void addListener( Listener* listener );
 
 	void removeListener( Listener* listener );
@@ -125,6 +129,7 @@ class DebuggerClient {
 	State mState{ State::None };
 	bool mLaunched{ false };
 	bool mConfigured{ false };
+	bool mWaitingToAttach{ false };
 	std::vector<Listener*> mListeners;
 
 	void checkRunning();

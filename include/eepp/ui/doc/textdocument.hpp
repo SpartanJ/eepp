@@ -91,15 +91,20 @@ class EE_API TextDocument {
 		virtual void onDocumentClosed( TextDocument* ) = 0;
 		virtual void onDocumentDirtyOnFileSystem( TextDocument* ) = 0;
 		virtual void onDocumentMoved( TextDocument* ) = 0;
+		virtual void onDocumentReset( TextDocument* ) = 0;
+
 		virtual void onDocumentReloaded( TextDocument* doc ) {
 			onDocumentClosed( doc );
 			onDocumentLoaded( doc );
 		}
-		virtual void onDocumentReset( TextDocument* ) = 0;
+
 		virtual void onDocumentSyntaxDefinitionChange( const SyntaxDefinition& ) {}
+
 		virtual void onDocumentLineMove( const Int64& /*fromLine*/, const Int64& /*toLine*/,
 										 const Int64& /*numLines*/ ) {}
+
 		virtual TextRange getVisibleRange() const { return {}; };
+
 		virtual void onFoldRegionsUpdated( size_t /*oldCount*/, size_t /*newCount*/ ) {}
 	};
 

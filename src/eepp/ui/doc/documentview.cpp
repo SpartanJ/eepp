@@ -324,26 +324,67 @@ DocumentView::VisibleLineRange DocumentView::getVisibleLineRange( const TextPosi
 		info.range = mDoc->getLineRange( pos.line() );
 		return info;
 	}
+
 	Int64 fromIdx = static_cast<Int64>( toVisibleIndex( pos.line() ) );
 	Int64 toIdx = static_cast<Int64>( toVisibleIndex( pos.line(), true ) );
-	// TODO: Implement binary search
+
 	DocumentView::VisibleLineRange info;
-	for ( Int64 i = fromIdx; i < toIdx; i++ ) {
-		Int64 fromCol = mVisibleLines[i].column();
-		Int64 toCol = i + 1 <= toIdx
-						  ? mVisibleLines[i + 1].column() - ( allowVisualLineEnd ? 0 : 1 )
+
+	// If we have no visible lines in range, return early
+	if ( fromIdx >= toIdx ) {
+		info.visibleIndex = static_cast<VisibleIndex>( toIdx );
+		if ( info.visibleIndex != VisibleIndex::invalid ) {
+			info.range = { { pos.line(), mVisibleLines[toIdx].column() },
+						   mDoc->endOfLine( { pos.line(), 0ll } ) };
+		}
+		return info;
+	}
+
+	// Binary search implementation
+	Int64 left = fromIdx;
+	Int64 right = toIdx - 1; // Subtract 1 since we need to access [i+1] in the loop
+
+	while ( left <= right ) {
+		Int64 mid = left + ( right - left ) / 2;
+
+		Int64 fromCol = mVisibleLines[mid].column();
+		Int64 toCol = mid + 1 <= toIdx
+						  ? mVisibleLines[mid + 1].column() - ( allowVisualLineEnd ? 0 : 1 )
 						  : mDoc->line( pos.line() ).size();
+
 		if ( pos.column() >= fromCol && pos.column() <= toCol ) {
-			info.visibleIndex = static_cast<VisibleIndex>( i );
+			// If it's between the limits we must check if it fits into the previous one
+			if ( allowVisualLineEnd && pos.column() == fromCol && mid - 1 >= 0 ) {
+				Int64 fromCol = mVisibleLines[mid - 1].column();
+				Int64 toCol = mid <= toIdx
+								  ? mVisibleLines[mid].column() - ( allowVisualLineEnd ? 0 : 1 )
+								  : mDoc->line( pos.line() ).size();
+
+				info.visibleIndex = static_cast<VisibleIndex>( mid - 1 );
+				info.range = { { pos.line(), fromCol }, { pos.line(), toCol } };
+				return info;
+			}
+
+			// Found the correct range
+			info.visibleIndex = static_cast<VisibleIndex>( mid );
 			info.range = { { pos.line(), fromCol }, { pos.line(), toCol } };
 			return info;
 		}
+
+		if ( pos.column() < fromCol ) {
+			right = mid - 1;
+		} else {
+			left = mid + 1;
+		}
 	}
+
+	// If we didn't find an exact match, return the last possible range
 	eeASSERT( toIdx >= 0 );
 	info.visibleIndex = static_cast<VisibleIndex>( toIdx );
-	if ( info.visibleIndex != VisibleIndex::invalid )
+	if ( info.visibleIndex != VisibleIndex::invalid ) {
 		info.range = { { pos.line(), mVisibleLines[toIdx].column() },
 					   mDoc->endOfLine( { pos.line(), 0ll } ) };
+	}
 	return info;
 }
 

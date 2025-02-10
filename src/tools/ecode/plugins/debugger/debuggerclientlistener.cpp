@@ -192,10 +192,6 @@ void DebuggerClientListener::sendBreakpoints() {
 	Lock l( mPlugin->mBreakpointsMutex );
 	for ( const auto& fileBps : mPlugin->mBreakpoints ) {
 		std::string path( fileBps.first );
-		if ( isRemote() ) {
-			FileSystem::filePathRemoveBasePath( mPlugin->mProjectPath, path );
-			path = "/" + path;
-		}
 		mClient->setBreakpoints( path, fromSet( fileBps.second ) );
 	}
 }
@@ -314,7 +310,9 @@ void DebuggerClientListener::outputProduced( const Output& output ) {
 	}
 }
 
-void DebuggerClientListener::debuggingProcess( const ProcessInfo& ) {}
+void DebuggerClientListener::debuggingProcess( const ProcessInfo& info ) {
+	mProcessInfo = info;
+}
 
 void DebuggerClientListener::errorResponse( const std::string& command, const std::string& summary,
 											const std::optional<Message>& /*message*/ ) {

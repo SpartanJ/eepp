@@ -302,7 +302,9 @@ ListView::cell {
 }
 
 ListBox:hover,
-ListView:hover {
+ListView:hover,
+ListBox:focus,
+ListView:focus {
 	border-color: var(--primary);
 }
 
@@ -383,8 +385,8 @@ SpinBox::input {
 }
 
 SpinBox::input,
-SpinBox::input::hover,
-SpinBox::input::focus {
+SpinBox::input:hover,
+SpinBox::input:focus {
 	border-width: 0dp;
 	border-color: transparent;
 }

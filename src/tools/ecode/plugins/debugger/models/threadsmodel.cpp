@@ -24,8 +24,11 @@ std::string ThreadsModel::columnName( const size_t& colIdx ) const {
 
 Variant ThreadsModel::data( const ModelIndex& modelIndex, ModelRole role ) const {
 	if ( role == ModelRole::Display && modelIndex.column() == Columns::ID ) {
-		return Variant( String::format( "#%d (%s)", mThreads[modelIndex.row()].id,
-										mThreads[modelIndex.row()].name.c_str() ) );
+		if ( mThreads[modelIndex.row()].name.empty() )
+			return Variant( String::format( "#%d", mThreads[modelIndex.row()].id ) );
+		else
+			return Variant( String::format( "#%d (%s)", mThreads[modelIndex.row()].id,
+											mThreads[modelIndex.row()].name.c_str() ) );
 	} else if ( role == ModelRole::Icon && modelIndex.column() == Columns::ID &&
 				mThreads[modelIndex.row()].id == mCurrentThreadId ) {
 		static UIIcon* circleFilled = mSceneNode->findIcon( "circle-filled" );

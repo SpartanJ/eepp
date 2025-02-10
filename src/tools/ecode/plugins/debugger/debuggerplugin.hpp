@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../projectbuild.hpp"
 #include "../plugin.hpp"
 #include "../pluginmanager.hpp"
 #include "config.hpp"
@@ -21,6 +22,7 @@ struct DapConfig {
 	std::string request;
 	std::vector<std::string> cmdArgs;
 	nlohmann::json args;
+	bool runTarget{ false };
 };
 
 struct DapTool {
@@ -77,6 +79,8 @@ class DebuggerPlugin : public PluginBase {
 
 	void initStatusDebuggerController();
 
+	bool isSilent() const { return mSilence; }
+
   protected:
 	friend class DebuggerClientListener;
 
@@ -84,6 +88,7 @@ class DebuggerPlugin : public PluginBase {
 	bool mFetchRegisters{ false };
 	bool mFetchGlobals{ false };
 	bool mChangingBreakpoint{ false };
+	bool mSilence{ true };
 	std::string mProjectPath;
 
 	std::vector<DapTool> mDaps;
@@ -128,6 +133,37 @@ class DebuggerPlugin : public PluginBase {
 	std::string mLastStateJsonDump;
 	std::string mCurDebugger;
 	std::string mCurConfiguration;
+
+	class DebuggerPluginClient : public TextDocument::Client {
+	  public:
+		explicit DebuggerPluginClient( DebuggerPlugin* parent, TextDocument* doc ) :
+			mDoc( doc ), mParent( parent ) {}
+
+		virtual void onDocumentTextChanged( const DocumentContentChange& ) {}
+		virtual void onDocumentUndoRedo( const TextDocument::UndoRedo& ) {}
+		virtual void onDocumentCursorChange( const TextPosition& ) {}
+		virtual void onDocumentSelectionChange( const TextRange& ) {}
+		virtual void onDocumentLineCountChange( const size_t&, const size_t& ) {}
+		virtual void onDocumentLineChanged( const Int64& ) {}
+		virtual void onDocumentSaved( TextDocument* ) {}
+		virtual void onDocumentClosed( TextDocument* doc ) { onDocumentReset( doc ); }
+		virtual void onDocumentDirtyOnFileSystem( TextDocument* ) {}
+		virtual void onDocumentMoved( TextDocument* ) {}
+		virtual void onDocumentReset( TextDocument* ) {}
+
+		virtual void onDocumentLineMove( const Int64& fromLine, const Int64& toLine,
+										 const Int64& numLines ) {
+			mParent->onDocumentLineMove( mDoc, fromLine, toLine, numLines );
+		}
+
+	  protected:
+		TextDocument* mDoc{ nullptr };
+		DebuggerPlugin* mParent{ nullptr };
+	};
+
+	using ClientsMap = std::unordered_map<TextDocument*, std::unique_ptr<DebuggerPluginClient>>;
+	ClientsMap mClients;
+	Mutex mClientsMutex;
 
 	DebuggerPlugin( PluginManager* pluginManager, bool sync );
 
@@ -175,6 +211,9 @@ class DebuggerPlugin : public PluginBase {
 								const Vector2f& startScroll, const Vector2f& screenStart,
 								const Float& lineHeight, const Float& lineNumberWidth,
 								const int& lineNumberDigits, const Float& fontSize ) override;
+
+	void drawBeforeLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
+							 const Float& /*fontSize*/, const Float& lineHeight ) override;
 
 	bool setBreakpoint( UICodeEditor* editor, Uint32 lineNumber );
 
@@ -240,6 +279,13 @@ class DebuggerPlugin : public PluginBase {
 
 	bool resume( int threadId, bool singleThread = false );
 
+	virtual void onUnregisterDocument( TextDocument* doc ) override;
+
+	void onDocumentLineMove( TextDocument* doc, const Int64& fromLine, const Int64& toLine,
+							 const Int64& numLines );
+
+	void replaceInVal( std::string& val, const std::optional<ProjectBuildStep>& runConfig,
+					   ProjectBuild* buildConfig, int randomPort );
 };
 
 } // namespace ecode

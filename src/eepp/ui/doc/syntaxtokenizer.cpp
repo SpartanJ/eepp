@@ -197,6 +197,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 
 	PatternMatcher::Range matches[12];
 	int start, end;
+	const std::string_view textv{ text };
 	size_t numMatches;
 	size_t i = startIndex;
 	SyntaxState retState = state;
@@ -228,7 +229,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 					 ( range.first == -1 || rangeSubsyntax.first < range.first ) ) {
 					if ( !skipSubSyntaxSeparator ) {
 						pushToken( tokens, curState.subsyntaxInfo->types[0],
-								   text.substr( i, rangeSubsyntax.second - i ) );
+								   textv.substr( i, rangeSubsyntax.second - i ) );
 					}
 					popSubsyntax( curState, retState, syntax );
 					i = rangeSubsyntax.second;
@@ -239,16 +240,16 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 			if ( !skip ) {
 				if ( range.first != -1 ) {
 					if ( range.second > range.first && pattern.types.size() >= 3 ) {
-						pushToken( tokens, pattern.types[0], text.substr( i, range.first - i ) );
+						pushToken( tokens, pattern.types[0], textv.substr( i, range.first - i ) );
 						pushToken( tokens, pattern.types[pattern.types.size() - 1],
-								   text.substr( range.first, range.second - range.first ) );
+								   textv.substr( range.first, range.second - range.first ) );
 					} else {
-						pushToken( tokens, pattern.types[0], text.substr( i, range.second - i ) );
+						pushToken( tokens, pattern.types[0], textv.substr( i, range.second - i ) );
 					}
 					setSubsyntaxPatternIdx( curState, retState, SYNTAX_TOKENIZER_STATE_NONE );
 					i = range.second;
 				} else {
-					pushToken( tokens, pattern.types[0], text.substr( i ) );
+					pushToken( tokens, pattern.types[0], textv.substr( i ) );
 					break;
 				}
 			}
@@ -264,7 +265,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 			if ( rangeSubsyntax.first != -1 ) {
 				if ( !skipSubSyntaxSeparator ) {
 					pushToken( tokens, curState.subsyntaxInfo->types[0],
-							   text.substr( i, rangeSubsyntax.second - i ) );
+							   textv.substr( i, rangeSubsyntax.second - i ) );
 				}
 				popSubsyntax( curState, retState, syntax );
 				i = rangeSubsyntax.second;
@@ -292,7 +293,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 					int patternMatchStart = matches[0].start;
 					int patternMatchEnd = matches[0].end;
 					std::string patternFullText(
-						text.substr( patternMatchStart, patternMatchEnd - patternMatchStart ) );
+						textv.substr( patternMatchStart, patternMatchEnd - patternMatchStart ) );
 					auto patternType = pattern.types[0];
 					int lastStart = patternMatchStart;
 					int lastEnd = patternMatchEnd;
@@ -315,13 +316,13 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 						if ( curMatch == 1 && start > lastStart ) {
 							pushToken(
 								tokens, patternType,
-								text.substr( patternMatchStart, start - patternMatchStart ) );
+								textv.substr( patternMatchStart, start - patternMatchStart ) );
 						} else if ( start > lastEnd ) {
 							pushToken( tokens, patternType,
-									   text.substr( lastEnd, start - lastEnd ) );
+									   textv.substr( lastEnd, start - lastEnd ) );
 						}
 
-						patternText = text.substr( start, end - start );
+						patternText = textv.substr( start, end - start );
 						SyntaxStyleType type = curState.currentSyntax->getSymbol( patternText );
 						if ( !skipSubSyntaxSeparator || !pattern.hasSyntax() ) {
 							pushToken( tokens,
@@ -344,7 +345,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 
 						if ( curMatch == numMatches - 1 && end < patternMatchEnd ) {
 							pushToken( tokens, patternType,
-									   text.substr( end, patternMatchEnd - end ) );
+									   textv.substr( end, patternMatchEnd - end ) );
 							i = patternMatchEnd;
 						}
 
@@ -367,7 +368,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 							String::utf8Next( strEnd );
 							end = start + ( strEnd - strStart );
 						}
-						patternText = text.substr( start, end - start );
+						patternText = textv.substr( start, end - start );
 						SyntaxStyleType type = curState.currentSyntax->getSymbol( patternText );
 						if ( !skipSubSyntaxSeparator || !pattern.hasSyntax() ) {
 							pushToken( tokens,

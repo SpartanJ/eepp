@@ -63,7 +63,7 @@ class AutoCompletePlugin : public Plugin {
 				 "Auto complete shows the completion popup as you type, so you can fill "
 				 "in long words by typing only a few characters.",
 				 AutoCompletePlugin::New,
-				 { 0, 2, 6 },
+				 { 0, 2, 7 },
 				 AutoCompletePlugin::NewSync };
 	}
 
@@ -144,7 +144,20 @@ class AutoCompletePlugin : public Plugin {
 	Int32 mSuggestionsStartIndex{ 0 };
 	std::unordered_map<std::string, LSPServerCapabilities> mCapabilities;
 	Mutex mCapabilitiesMutex;
-	LSPSignatureHelp mSignatureHelp;
+
+	struct SignatureInformation {
+		String label;
+		LSPMarkupContent documentation;
+		std::vector<TextRange> parameters;
+	};
+
+	struct SignatureHelp {
+		std::vector<SignatureInformation> signatures;
+		int activeSignature{ 0 };
+		int activeParameter{ 0 };
+	};
+
+	SignatureHelp mSignatureHelp;
 	TextPosition mSignatureHelpPosition;
 	Int32 mSignatureHelpSelected{ -1 };
 	Mutex mHandlesMutex;

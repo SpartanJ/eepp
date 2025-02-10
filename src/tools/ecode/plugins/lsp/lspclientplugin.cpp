@@ -1,5 +1,5 @@
-#include "lspclientplugin.hpp"
 #include "../../version.hpp"
+#include "lspclientplugin.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
@@ -1284,6 +1284,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 					lsp.host = tlsp.host;
 					lsp.port = tlsp.port;
 					lsp.initializationOptions = tlsp.initializationOptions;
+					lsp.extraTriggerChars = tlsp.extraTriggerChars;
 					lsp.usesLSP = use;
 					if ( obj.contains( "share_process" ) && obj["share_process"].is_boolean() ) {
 						lsp.shareProcessWithOtherDefinition = obj["share_process"].get<bool>();
@@ -1320,13 +1321,22 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		auto& fp = obj["file_patterns"];
 
 		for ( auto& pattern : fp )
-			lsp.filePatterns.push_back( pattern.get<std::string>() );
+			if ( pattern.is_string() )
+				lsp.filePatterns.push_back( pattern.get<std::string>() );
 
 		if ( obj.contains( "rootIndicationFileNames" ) ) {
 			lsp.rootIndicationFileNames.clear();
 			auto& fnms = obj["rootIndicationFileNames"];
 			for ( auto& fn : fnms )
-				lsp.rootIndicationFileNames.push_back( fn );
+				if ( fn.is_string() )
+					lsp.rootIndicationFileNames.push_back( fn );
+		}
+
+		if ( obj.contains( "extra_trigger_chars" ) && obj["extra_trigger_chars"].is_array() ) {
+			for ( auto& jch : obj["extra_trigger_chars"] ) {
+				if ( jch.is_string() )
+					lsp.extraTriggerChars.push_back( jch );
+			}
 		}
 
 		sanitizeCommand( lsp.command, mManager->getWorkspaceFolder() );

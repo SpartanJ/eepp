@@ -437,6 +437,9 @@ class EE_API String {
 	/** @return The number of codepoints of the utf8 string. */
 	static size_t utf8Length( const std::string_view& utf8String );
 
+	/** Converts a character position from an utf8 string to a code point position */
+	static size_t utf8ToCodepointPosition( const std::string_view& utf8Text, size_t utf8Pos );
+
 	/** @return The next character in a utf8 null terminated string */
 	static Uint32 utf8Next( char*& utf8String );
 

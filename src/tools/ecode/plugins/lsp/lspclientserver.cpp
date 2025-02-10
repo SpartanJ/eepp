@@ -1,5 +1,5 @@
-#include "lspclientserver.hpp"
 #include "lspclientplugin.hpp"
+#include "lspclientserver.hpp"
 #include "lspclientservermanager.hpp"
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
@@ -504,9 +504,11 @@ static LSPSymbolInformationList parseDocumentSymbols( const json& result, bool i
 	for ( const auto& r : ret )
 		rret.push_back( LSPSymbolInformationTmp::fromTmp( r ) );
 
-	if ( isSilent )
+	if ( !isSilent ) {
 		Log::debug( "LSPClientServer - parseDocumentSymbols took: %.2fms",
 					clock.getElapsedTimeAndReset().asMilliseconds() );
+	}
+
 	return rret;
 }
 
@@ -1201,6 +1203,10 @@ void LSPClientServer::initialize() {
 			try {
 #endif
 				fromJson( mCapabilities, resp["capabilities"] );
+
+				for ( const auto& ch : mLSP.extraTriggerChars )
+					if ( !ch.empty() )
+						mCapabilities.signatureHelpProvider.triggerCharacters.push_back( ch[0] );
 #ifndef EE_DEBUG
 			} catch ( const json::exception& e ) {
 				Log::warning(

@@ -106,6 +106,24 @@ void BreakpointsModel::enable( const std::string& filePath,
 	}
 }
 
+void BreakpointsModel::move( const std::string& doc, Int64 fromLine, Int64 toLine,
+							 Int64 numLines ) {
+	Lock l( mResourceLock );
+	bool modified = false;
+	for ( auto& [dc, bp] : mBreakpoints ) {
+		if ( dc != doc )
+			continue;
+
+		if ( bp.line - 1 >= fromLine ) {
+			bp.line += numLines;
+			modified = true;
+		}
+	}
+
+	if ( modified )
+		invalidate( UpdateFlag::DontInvalidateIndexes );
+}
+
 const std::pair<std::string, SourceBreakpointStateful>& BreakpointsModel::get( ModelIndex index ) {
 	static std::pair<std::string, SourceBreakpointStateful> EMPTY = {};
 	if ( !index.isValid() || index.row() >= static_cast<Int64>( mBreakpoints.size() ) )

@@ -22,6 +22,8 @@ class DebuggerClientDap : public DebuggerClient {
 						std::function<void( int )> doneFn )>
 		runInTerminalCb;
 
+	std::function<void()> runTargetCb;
+
 	DebuggerClientDap( const ProtocolSettings& protocolSettings, std::unique_ptr<Bus>&& bus );
 
 	virtual ~DebuggerClientDap();
@@ -42,7 +44,7 @@ class DebuggerClientDap : public DebuggerClient {
 
 	bool terminate( bool restart ) override;
 
-	bool disconnect( bool restart = false ) override;
+	bool disconnect( bool terminateDebuggee, bool restart = false ) override;
 
 	bool threads() override;
 
@@ -63,7 +65,9 @@ class DebuggerClientDap : public DebuggerClient {
 
 	bool isServerConnected() const override;
 
-	bool supportsTerminate() const override;
+	bool supportsTerminateRequest() const override;
+
+	bool supportsTerminateDebuggee() const override;
 
 	bool setBreakpoints( const std::string& path,
 						 const std::vector<dap::SourceBreakpoint>& breakpoints,
@@ -84,6 +88,8 @@ class DebuggerClientDap : public DebuggerClient {
 	bool configurationDone() override;
 
 	bool started() const override;
+
+	void setSilent( bool silent ) override { mDebug = !silent; }
 
   protected:
 	std::unique_ptr<Bus> mBus;

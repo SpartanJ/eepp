@@ -244,24 +244,24 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 	registerSplitterCommands( doc );
 	/* Splitter commands */
 
-	editor->addEventListener( Event::OnFocus, [this]( const Event* event ) {
+	editor->on( Event::OnFocus, [this]( const Event* event ) {
 		setCurrentWidget( event->getNode()->asType<UICodeEditor>() );
 	} );
-	editor->addEventListener( Event::OnTextChanged, [this]( const Event* event ) {
+	editor->on( Event::OnTextChanged, [this]( const Event* event ) {
 		mClient->onDocumentModified( event->getNode()->asType<UICodeEditor>(),
 									 event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
-	editor->addEventListener( Event::OnSelectionChanged, [this]( const Event* event ) {
+	editor->on( Event::OnSelectionChanged, [this]( const Event* event ) {
 		mClient->onDocumentSelectionChange(
 			event->getNode()->asType<UICodeEditor>(),
 			event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
-	editor->addEventListener( Event::OnCursorPosChange, [this]( const Event* event ) {
+	editor->on( Event::OnCursorPosChange, [this]( const Event* event ) {
 		mClient->onDocumentCursorPosChange(
 			event->getNode()->asType<UICodeEditor>(),
 			event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
-	editor->addEventListener( Event::OnDocumentUndoRedo, [this]( const Event* event ) {
+	editor->on( Event::OnDocumentUndoRedo, [this]( const Event* event ) {
 		mClient->onDocumentUndoRedo( event->getNode()->asType<UICodeEditor>(),
 									 event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
@@ -526,7 +526,7 @@ UICodeEditorSplitter::createCodeEditorInTabWidget( UITabWidget* tabWidget ) {
 		return std::make_pair( (UITab*)nullptr, (UICodeEditor*)nullptr );
 	UICodeEditor* editor = createCodeEditor();
 	mAboutToAddEditor = editor;
-	editor->addEventListener( Event::OnDocumentChanged, [this]( const Event* event ) {
+	editor->on( Event::OnDocumentChanged, [this]( const Event* event ) {
 		mClient->onDocumentStateChanged( event->getNode()->asType<UICodeEditor>(),
 										 event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
@@ -568,10 +568,10 @@ UICodeEditorSplitter::createWidgetInTabWidget( UITabWidget* tabWidget, UIWidget*
 		return std::make_pair( (UITab*)nullptr, (UIWidget*)nullptr );
 	UITab* tab = tabWidget->add( tabName, widget );
 	widget->setData( (UintPtr)tab );
-	widget->addEventListener( Event::OnFocus, [this]( const Event* event ) {
+	widget->on( Event::OnFocus, [this]( const Event* event ) {
 		setCurrentWidget( event->getNode()->asType<UIWidget>() );
 	} );
-	widget->addEventListener( Event::OnTitleChange, [this]( const Event* event ) {
+	widget->on( Event::OnTitleChange, [this]( const Event* event ) {
 		const TextEvent* tevent = static_cast<const TextEvent*>( event );
 		UIWidget* widget = event->getNode()->asType<UIWidget>();
 		UITabWidget* tabWidget = tabWidgetFromWidget( widget );
@@ -644,7 +644,7 @@ UITabWidget* UICodeEditorSplitter::createTabWidget( Node* parent ) {
 			},
 			mVisualSplitEdgePercent );
 	}
-	tabWidget->addEventListener( Event::OnTabSelected, [this]( const Event* event ) {
+	tabWidget->on( Event::OnTabSelected, [this]( const Event* event ) {
 		UITabWidget* tabWidget = event->getNode()->asType<UITabWidget>();
 		if ( tabWidget->getTabSelected()->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
 			setCurrentEditor(
@@ -661,7 +661,7 @@ UITabWidget* UICodeEditorSplitter::createTabWidget( Node* parent ) {
 			}
 			return true;
 		} );
-	tabWidget->addEventListener( Event::OnTabClosed, [this]( const Event* event ) {
+	tabWidget->on( Event::OnTabClosed, [this]( const Event* event ) {
 		onTabClosed( static_cast<const TabEvent*>( event ) );
 	} );
 	if ( mOnTabWidgetCreateCb )
@@ -1007,18 +1007,17 @@ bool UICodeEditorSplitter::tryTabClose( UIWidget* widget,
 											"\"%s\" will be lost." )
 									.toUtf8(),
 								editor->getDocument().getFilename() ) );
-			mTryCloseMsgBox->addEventListener( Event::OnConfirm,
-											   [this, editor, focusTabBehavior]( const Event* ) {
-												   closeTab( editor, focusTabBehavior );
-											   } );
-			mTryCloseMsgBox->addEventListener( Event::OnClose,
-											   [this, onMsgBoxCloseCb]( const Event* ) {
-												   mTryCloseMsgBox = nullptr;
-												   if ( mCurEditor )
-													   mCurEditor->setFocus();
-												   if ( onMsgBoxCloseCb )
-													   onMsgBoxCloseCb();
-											   } );
+			mTryCloseMsgBox->on( Event::OnConfirm,
+								 [this, editor, focusTabBehavior]( const Event* ) {
+									 closeTab( editor, focusTabBehavior );
+								 } );
+			mTryCloseMsgBox->on( Event::OnClose, [this, onMsgBoxCloseCb]( const Event* ) {
+				mTryCloseMsgBox = nullptr;
+				if ( mCurEditor )
+					mCurEditor->setFocus();
+				if ( onMsgBoxCloseCb )
+					onMsgBoxCloseCb();
+			} );
 			mTryCloseMsgBox->setTitle(
 				widget->getUISceneNode()->i18n( "ask_close_tab", "Close Tab?" ) );
 			mTryCloseMsgBox->center();
