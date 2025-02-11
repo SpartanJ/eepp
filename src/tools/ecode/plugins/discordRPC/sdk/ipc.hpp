@@ -50,6 +50,7 @@ class DiscordIPC {
         // false - FileNotFound/OSNotSupported  
         // true  - Success
         bool tryConnect();
+        void reconnect();
         
         void setActivity( DiscordIPCActivity a );
         DiscordIPCActivity *getActivity() { return &mActivity; }
@@ -77,7 +78,6 @@ class DiscordIPC {
          #endif
         
         void doHandshake();
-        void reconnect();
         
         void sendPacket( DiscordIPCOpcodes opcode, nlohmann::json j );
 };

@@ -66,7 +66,7 @@
 			"objective-c": "https://github.com/vyfor/icons/raw/master/icons/onyx/c.png",
 			"ocaml": "https://github.com/vyfor/icons/raw/master/icons/onyx/ocaml.png",
 			"odin": "https://github.com/vyfor/icons/raw/master/icons/onyx/odin.png",
-			"openscad": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Openscad.svg/1024px-Openscad.svg.png"
+			"openscad": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Openscad.svg/1024px-Openscad.svg.png",
 			"pascal": "https://github.com/vyfor/icons/raw/master/icons/onyx/pascal.png",
 			"perl": "https://github.com/vyfor/icons/raw/master/icons/onyx/perl.png",
 			"php": "https://github.com/vyfor/icons/raw/master/icons/onyx/php.png",
@@ -74,7 +74,7 @@
 			"plaintext": "https://github.com/vyfor/icons/raw/master/icons/onyx/text.png",
 			"po": "https://github.com/vyfor/icons/raw/master/icons/onyx/gnu.png",
 			"pony": "https://avatars.githubusercontent.com/u/12997238",
-			"postgresql": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Postgresql_elephant.svg/1024px-Postgresql_elephant.svg.png"
+			"postgresql": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Postgresql_elephant.svg/1024px-Postgresql_elephant.svg.png",
 			"powershell": "https://github.com/vyfor/icons/raw/master/icons/onyx/powershell.png",
 			"python": "https://github.com/vyfor/icons/raw/master/icons/onyx/python.png",
 			"r": "https://github.com/vyfor/icons/raw/master/icons/onyx/r.png",
@@ -103,7 +103,7 @@
 			"xml": "https://github.com/vyfor/icons/raw/master/icons/onyx/xml.png",
 			"xtend": "https://github.com/vyfor/icons/raw/master/icons/onyx/java.png",
 			"yaml": "https://github.com/vyfor/icons/raw/master/icons/onyx/yaml.png",
-			"zig": "https://github.com/vyfor/icons/raw/master/icons/onyx/zig.png",
+			"zig": "https://github.com/vyfor/icons/raw/master/icons/onyx/zig.png"
 		}
 	},
 	"keybindings" : {

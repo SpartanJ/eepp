@@ -52,7 +52,7 @@ void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 	if ( FileSystem::fileExists( path ) ||
 		 FileSystem::fileWrite(path, "{\n  \"config\":{},\n  \"keybindings\":{}\n}\n") ) {
 	   mConfigPath = path;
-	   paths.emplace_back( path );	 	
+	   paths.emplace_back( path );
     }
     std::string data;
 	if ( !FileSystem::fileGet( path, data ) )
@@ -74,6 +74,7 @@ void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];
+		mcLangBindings = config["iconBindings"];
 		if ( config.contains( "appID" ) ) {
 			mIPC.mcClientID = config.value( "appID", "1335730393948749898" );
 		} else {
@@ -93,7 +94,7 @@ void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 	
 	mIPC.tryConnect();
 	DiscordIPCActivity* a = mIPC.getActivity();
-	a->largeImage = "https://github.com/SpartanJ/eepp/blob/develop/bin/assets/icon/ecode.png?raw=true";
+	a->largeImage = DISCORDRPC_DEFAULT_ICON;
 	
 	mIPC.setActivity(*a);
 	
@@ -125,6 +126,12 @@ PluginRequestHandle DiscordRPCplugin::processMessage( const PluginMessage& msg )
 	return PluginRequestHandle::empty();
 }
 
+void DiscordRPCplugin::onRegisterDocument( TextDocument* doc ){
+	doc->setCommand( "discordrpc-reconnect", [this] {
+		mIPC.reconnect();
+	} );
+}
+
 void DiscordRPCplugin::onRegisterListeners( UICodeEditor* editor, std::vector<Uint32>& listeners ) {
 	listeners.push_back( editor->on( Event::OnFocus, [this, editor]( const Event* ) {
 		// `this` in the scope of the lambda is the parent `DiscordRPCplugin`
@@ -137,7 +144,7 @@ void DiscordRPCplugin::onRegisterListeners( UICodeEditor* editor, std::vector<Ui
 		if ( filename != mLastFile ) {
 			this->mLastFile = filename;
 
-			Log::debug( "Activity in new file. lang = %s",
+			Log::debug( "dcIPC: Activity in new file. lang = %s",
 						doc.getSyntaxDefinition().getLanguageName() );
 
 			DiscordIPCActivity* a = this->mIPC.getActivity();
@@ -148,6 +155,11 @@ void DiscordRPCplugin::onRegisterListeners( UICodeEditor* editor, std::vector<Ui
 			a->state = String::format(i18n( "dc_editing", "Editing %s, a %s file" ).toUtf8(), 
 				filename, doc.getSyntaxDefinition().getLanguageName() );
 			a->start = time( nullptr ); // Time spent in this specific file
+			
+			std::string name = doc.getSyntaxDefinition().getLSPName();
+			if (!name.empty()) {
+				a->largeImage = mcLangBindings.value(name, DISCORDRPC_DEFAULT_ICON);
+			}
 
 			this->mIPC.setActivity( *a );
 		}
