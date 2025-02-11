@@ -57,6 +57,9 @@ class DiscordIPC {
             
         bool mUIReady;
         bool mIsReconnectScheduled = false; // If we fail to load bofore UI initialises we call reconnect after init
+        
+        //Configurables
+        std::string mcClientID;
     protected:
         std::string mIpcPath;
         int mPID;
@@ -66,8 +69,6 @@ class DiscordIPC {
         
         DiscordIPCActivity mActivity;
         
-        //Configurables
-        std::string mcClientID;
         
          #if defined( EE_PLATFORM_POSIX ) 
             int mSocket;

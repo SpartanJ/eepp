@@ -74,6 +74,12 @@ void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];
+		if ( config.contains( "appID" ) ) {
+			mIPC.mcClientID = config.value( "appID", "1335730393948749898" );
+		} else {
+			mIPC.mcClientID = "1335730393948749898";
+			updateConfigFile = true;
+		}
 		
 	}
 
@@ -88,7 +94,6 @@ void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 	mIPC.tryConnect();
 	DiscordIPCActivity* a = mIPC.getActivity();
 	a->largeImage = "https://github.com/SpartanJ/eepp/blob/develop/bin/assets/icon/ecode.png?raw=true";
-	a->state = "Loading...";
 	
 	mIPC.setActivity(*a);
 	
@@ -107,7 +112,7 @@ PluginRequestHandle DiscordRPCplugin::processMessage( const PluginMessage& msg )
 		}
 		case PluginMessageType::UIReady: {
 			mIPC.mUIReady = true;
-			Log::debug("dcPlugin: UI is ready!");
+// 			Log::debug("dcPlugin: UI is ready!");
 			if (mIPC.mIsReconnectScheduled) {
 				Log::debug("Running scheduled reconnect");
 				mIPC.tryConnect();
@@ -138,8 +143,10 @@ void DiscordRPCplugin::onRegisterListeners( UICodeEditor* editor, std::vector<Ui
 			DiscordIPCActivity* a = this->mIPC.getActivity();
 
 			if (!mProjectName.empty())
-				a->details = String::format("Working on %s", mProjectName);
-			a->state = String::format("Editing %s, a %s file", filename, doc.getSyntaxDefinition().getLanguageName());
+				a->details = String::format(i18n( "dc_workspace", "Working on %s" ).toUtf8(), 
+					mProjectName);
+			a->state = String::format(i18n( "dc_editing", "Editing %s, a %s file" ).toUtf8(), 
+				filename, doc.getSyntaxDefinition().getLanguageName() );
 			a->start = time( nullptr ); // Time spent in this specific file
 
 			this->mIPC.setActivity( *a );

@@ -24,8 +24,6 @@ using json = nlohmann::json;
 
 DiscordIPC::DiscordIPC() {
 	mPID = Sys::getProcessID();
-	
-	mcClientID = "1335730393948749898"; // TODO: Implement actual config reading
 }
 
 bool DiscordIPC::tryConnect() {
