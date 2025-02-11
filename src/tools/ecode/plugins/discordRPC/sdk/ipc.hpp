@@ -1,6 +1,9 @@
 #include <eepp/config.hpp>
+#include <eepp/system/mutex.hpp>
 
 #include <nlohmann/json.hpp>
+
+using namespace EE::System;
 
 // 2^8 = 256s ~4.3min
 #define DISCORDIPC_BACKOFF_MAX 8
@@ -68,6 +71,7 @@ class DiscordIPC {
 		false; // Not quite a mutex because I want to lock any attempts if one is already waiting
 
 	DiscordIPCActivity mActivity;
+	Mutex mActivityMutex;
 
 #if defined( EE_PLATFORM_POSIX )
 	int mSocket = -1;

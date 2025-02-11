@@ -98,16 +98,22 @@ void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 
 	if ( getUISceneNode() ) {
 		mIPC.UIReady = true;
-		if ( mIPC.tryConnect() ) {
-			DiscordIPCActivity a = mIPC.getActivity();
-			a.largeImage = DISCORDRPC_DEFAULT_ICON;
-			mIPC.setActivity( std::move( a ) );
-		}
+		initIPC();
+	} else {
+		mIPC.IsReconnectScheduled = true;
 	}
 
 	mReady = true;
 	fireReadyCbs();
 	setReady( clock.getElapsedTime() );
+}
+
+void DiscordRPCplugin::initIPC() {
+	if ( mIPC.tryConnect() ) {
+		DiscordIPCActivity a = mIPC.getActivity();
+		a.largeImage = DISCORDRPC_DEFAULT_ICON;
+		mIPC.setActivity( std::move( a ) );
+	}
 }
 
 PluginRequestHandle DiscordRPCplugin::processMessage( const PluginMessage& msg ) {
@@ -123,7 +129,8 @@ PluginRequestHandle DiscordRPCplugin::processMessage( const PluginMessage& msg )
 
 			if ( mIPC.IsReconnectScheduled ) {
 				Log::debug( "Running scheduled reconnect" );
-				mIPC.tryConnect();
+
+				getUISceneNode()->getThreadPool()->run( [this] { initIPC(); } );
 			}
 		}
 		default:
@@ -153,7 +160,7 @@ void DiscordRPCplugin::onRegisterListeners( UICodeEditor* editor, std::vector<Ui
 		auto filename = doc.getFilename();
 
 		if ( filename != mLastFile ) {
-			this->mLastFile = filename;
+			mLastFile = filename;
 
 			Log::debug( "dcIPC: Activity in new file. lang = %s",
 						doc.getSyntaxDefinition().getLanguageName() );

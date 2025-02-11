@@ -39,13 +39,13 @@ bool DiscordIPC::tryConnect() {
 		std::string ipcPath = basePath + "discord-ipc-" + std::to_string( i );
 
 		// Check if exists
-		DWORD attributes = GetFileAttributes( ipcPath.c_str() );
+		DWORD attributes = GetFileAttributesA( ipcPath.c_str() );
 		if ( attributes != INVALID_FILE_ATTRIBUTES ) {
 			Log::debug( "dcIPC: IPC path found! - %s", ipcPath );
 			mIpcPath = ipcPath;
 
-			mSocket = CreateFile( mIpcPath.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr,
-								  OPEN_EXISTING, 0, nullptr );
+			mSocket = CreateFileA( mIpcPath.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr,
+								   OPEN_EXISTING, 0, nullptr );
 
 			if ( mSocket != INVALID_HANDLE_VALUE ) {
 				doHandshake();
@@ -221,7 +221,11 @@ void DiscordIPC::setActivity( DiscordIPCActivity&& a ) {
 			  } },
 			{ "nonce", "-" } };
 
-	mActivity = std::move( a );
+	{
+		Lock l( mActivityMutex );
+		mActivity = std::move( a );
+	}
+
 	sendPacket( DiscordIPCOpcodes::Frame, j );
 }
 

@@ -63,6 +63,8 @@ class DiscordRPCplugin : public PluginBase {
 	virtual void onUnregisterEditor( UICodeEditor* editor ) override;
 
 	DiscordRPCplugin( PluginManager* pluginManager, bool sync );
+
+	void initIPC();
 };
 
 } // namespace ecode
