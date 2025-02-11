@@ -1,7 +1,7 @@
 #include "discordRPCplugin.hpp"
 
 using json = nlohmann::json;
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined ( __EMSCRIPTEN_PTHREADS__ )
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 #define dcRPC_THREADED 1
 #else
 #define dcRPC_THREADED 0
@@ -9,11 +9,11 @@ using json = nlohmann::json;
 
 namespace ecode {
 
-Plugin* DiscordRPCplugin::New( PluginManager* pluginManager) {
+Plugin* DiscordRPCplugin::New( PluginManager* pluginManager ) {
 	return eeNew( DiscordRPCplugin, ( pluginManager, false ) );
 }
 
-Plugin* DiscordRPCplugin::NewSync( PluginManager* pluginManager) {
+Plugin* DiscordRPCplugin::NewSync( PluginManager* pluginManager ) {
 	return eeNew( DiscordRPCplugin, ( pluginManager, true ) );
 }
 
@@ -33,28 +33,27 @@ DiscordRPCplugin::DiscordRPCplugin( PluginManager* pluginManager, bool sync ) :
 DiscordRPCplugin::~DiscordRPCplugin() {
 	waitUntilLoaded();
 	mShuttingDown = true;
-
 }
 void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 	Clock clock;
 	AtomicBoolScopedOp loading( mLoading, true );
-	
+
 	pluginManager->subscribeMessages( this,
 									  [this]( const auto& notification ) -> PluginRequestHandle {
 										  return processMessage( notification );
 									  } );
-									  
+
 	std::vector<std::string> paths;
 	std::string path( pluginManager->getResourcesPath() + "plugins/discordRPC.json" );
 	if ( FileSystem::fileExists( path ) )
 		paths.emplace_back( path );
 	path = pluginManager->getPluginsPath() + "discordRPC.json";
 	if ( FileSystem::fileExists( path ) ||
-		 FileSystem::fileWrite(path, "{\n  \"config\":{},\n  \"keybindings\":{}\n}\n") ) {
-	   mConfigPath = path;
-	   paths.emplace_back( path );
-    }
-    std::string data;
+		 FileSystem::fileWrite( path, "{\n  \"config\":{},\n  \"keybindings\":{}\n}\n" ) ) {
+		mConfigPath = path;
+		paths.emplace_back( path );
+	}
+	std::string data;
 	if ( !FileSystem::fileGet( path, data ) )
 		return;
 	mConfigHash = String::hash( data );
@@ -81,7 +80,12 @@ void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 			mIPC.mcClientID = "1335730393948749898";
 			updateConfigFile = true;
 		}
-		
+		if ( config.contains( "doLanguageIcons" ) ) {
+			mcDoLangIcon = config.value( "doLanguageIcons", true );
+		} else {
+			mIPC.mcClientID = true;
+			updateConfigFile = true;
+		}
 	}
 
 	if ( updateConfigFile ) {
@@ -91,13 +95,13 @@ void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 			mConfigHash = String::hash( newData );
 		}
 	}
-	
+
 	mIPC.tryConnect();
 	DiscordIPCActivity* a = mIPC.getActivity();
 	a->largeImage = DISCORDRPC_DEFAULT_ICON;
-	
-	mIPC.setActivity(*a);
-	
+
+	mIPC.setActivity( *a );
+
 	mReady = true;
 	fireReadyCbs();
 	setReady( clock.getElapsedTime() );
@@ -109,38 +113,45 @@ PluginRequestHandle DiscordRPCplugin::processMessage( const PluginMessage& msg )
 			std::string rpath = FileSystem::getRealPath( msg.asJSON()["folder"] );
 			FileSystem::dirAddSlashAtEnd( rpath );
 			mProjectName = FileSystem::fileNameFromPath( rpath );
-			Log::debug("Loaded new workspace: %s ; %s", rpath, mProjectName);
+			Log::debug( "Loaded new workspace: %s ; %s", rpath, mProjectName );
 		}
 		case PluginMessageType::UIReady: {
 			mIPC.mUIReady = true;
-// 			Log::debug("dcPlugin: UI is ready!");
-			if (mIPC.mIsReconnectScheduled) {
-				Log::debug("Running scheduled reconnect");
+			// 			Log::debug("dcPlugin: UI is ready!");
+			if ( mIPC.mIsReconnectScheduled ) {
+				Log::debug( "Running scheduled reconnect" );
 				mIPC.tryConnect();
 			}
 		}
 		default:
 			break;
 	}
-	
+
 	return PluginRequestHandle::empty();
 }
 
-void DiscordRPCplugin::onRegisterDocument( TextDocument* doc ){
-	doc->setCommand( "discordrpc-reconnect", [this] {
-		mIPC.reconnect();
-	} );
+void DiscordRPCplugin::onRegisterEditor( UICodeEditor* editor ) {
+	editor->addUnlockedCommands( { "discordrpc-reconnect" } );
+	editor->getDocument().setCommand( "discordrpc-reconnect", [this] { mIPC.reconnect(); } );
+
+	PluginBase::onRegisterEditor( editor );
+}
+
+void DiscordRPCplugin::onUnregisterEditor( UICodeEditor* editor ) {
+	editor->removeUnlockedCommands( { "discordrpc-reconnect" } );
 }
 
 void DiscordRPCplugin::onRegisterListeners( UICodeEditor* editor, std::vector<Uint32>& listeners ) {
 	listeners.push_back( editor->on( Event::OnFocus, [this, editor]( const Event* ) {
 		// `this` in the scope of the lambda is the parent `DiscordRPCplugin`
-		
+
 		auto& doc = editor->getDocument();
-		if (!doc.hasFilepath()) { return; }
-		
+		if ( !doc.hasFilepath() ) {
+			return;
+		}
+
 		auto filename = doc.getFilename();
-		
+
 		if ( filename != mLastFile ) {
 			this->mLastFile = filename;
 
@@ -149,27 +160,25 @@ void DiscordRPCplugin::onRegisterListeners( UICodeEditor* editor, std::vector<Ui
 
 			DiscordIPCActivity* a = this->mIPC.getActivity();
 
-			if (!mProjectName.empty())
-				a->details = String::format(i18n( "dc_workspace", "Working on %s" ).toUtf8(), 
-					mProjectName);
-			a->state = String::format(i18n( "dc_editing", "Editing %s, a %s file" ).toUtf8(), 
-				filename, doc.getSyntaxDefinition().getLanguageName() );
+			if ( !mProjectName.empty() )
+				a->details = String::format( i18n( "dc_workspace", "Working on %s" ).toUtf8(),
+											 mProjectName );
+			a->state = String::format( i18n( "dc_editing", "Editing %s, a %s file" ).toUtf8(),
+									   filename, doc.getSyntaxDefinition().getLanguageName() );
 			a->start = time( nullptr ); // Time spent in this specific file
-			
+
+			// TODO: Implement github/gitlab remote button (integrate with git plugin)
+			// a->buttons[0].label = "Repository";
+			// a->buttons[0].url = "https://github.com/name/repo";
+
 			std::string name = doc.getSyntaxDefinition().getLSPName();
-			if (!name.empty()) {
-				a->largeImage = mcLangBindings.value(name, DISCORDRPC_DEFAULT_ICON);
+			if ( !name.empty() && mcDoLangIcon ) {
+				a->largeImage = mcLangBindings.value( name, DISCORDRPC_DEFAULT_ICON );
 			}
 
 			this->mIPC.setActivity( *a );
 		}
-		
 	} ) );
 }
-
-
-
-
-
 
 } // namespace ecode
