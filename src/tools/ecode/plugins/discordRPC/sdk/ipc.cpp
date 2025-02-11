@@ -140,7 +140,7 @@ bool DiscordIPC::tryConnect() {
 }
 
 void DiscordIPC::doHandshake() {
-	json j = { { "v", 1 }, { "client_id", mcClientID } };
+	json j = { { "v", 1 }, { "client_id", ClientID } };
 
 	sendPacket( DiscordIPCOpcodes::Handshake, j );
 }
@@ -152,7 +152,7 @@ void DiscordIPC::clearActivity() {
 	sendPacket( DiscordIPCOpcodes::Frame, j );
 }
 
-void DiscordIPC::setActivity( DiscordIPCActivity a ) {
+void DiscordIPC::setActivity( DiscordIPCActivity&& a ) {
 	json aj = {
 		{ "type", static_cast<int>( a.type ) },
 		{ "instance", true },
@@ -212,7 +212,7 @@ void DiscordIPC::setActivity( DiscordIPCActivity a ) {
 			  } },
 			{ "nonce", "-" } };
 
-	mActivity = a;
+	mActivity = std::move( a );
 	sendPacket( DiscordIPCOpcodes::Frame, j );
 }
 
@@ -245,19 +245,10 @@ void DiscordIPC::sendPacket( DiscordIPCOpcodes opcode, json j ) {
 		data.push_back( static_cast<uint8_t>( c ) );
 	}
 
-	// 	Log::debug("Packet is: %s (%u)", j.dump(4), data.size());
-
-	//     std::stringstream ss;
-	//     for (uint8_t byte : data) {
-	//         ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte) << " ";
-	//     }
-
-	//     Log::debug(ss.str());
-
 #if defined( EE_PLATFORM_POSIX )
 
 	ssize_t bytesSent = send( mSocket, data.data(), data.size(), 0 );
-	if ( bytesSent != data.size() ) {
+	if ( bytesSent != static_cast<ssize_t>( data.size() ) ) {
 		Log::error(
 			"dcIPC: Failed to send all data to Unix socket: %zu bytes sent, %zu bytes expected",
 			bytesSent, data.size() );
@@ -270,9 +261,8 @@ void DiscordIPC::sendPacket( DiscordIPCOpcodes opcode, json j ) {
 	tv.tv_usec = 500000; // 0.5 seconds in microseconds
 	setsockopt( mSocket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof( tv ) );
 
+	char buffer[1024];
 	recv( mSocket, buffer, sizeof( buffer ), 0 );
-
-	// 		Log::debug("dcIPC: RECV: %s", buffer);
 
 	// return bytesRead;
 #elif EE_PLATFORM == EE_PLATFORM_WIN
@@ -296,8 +286,6 @@ void DiscordIPC::sendPacket( DiscordIPCOpcodes opcode, json j ) {
 		return;
 	}
 
-	// 		Log::debug("dcIPC: RECV: %s", buffer);
-
 #endif
 }
 
@@ -306,9 +294,9 @@ void DiscordIPC::reconnect() {
 		Log::warning( "dcIPC: Tried to call reconnect while locked" );
 		return;
 	}
-	if ( !mUIReady ) {
+	if ( !UIReady ) {
 		Log::debug( "dcIPC: Scheduled a reconnect" );
-		mIsReconnectScheduled = true;
+		IsReconnectScheduled = true;
 		return;
 	}
 	if ( mBackoffIndex < DISCORDIPC_BACKOFF_MAX ) {
@@ -317,11 +305,11 @@ void DiscordIPC::reconnect() {
 	int delay = 5 + pow( 2, mBackoffIndex );
 	mReconnectLock = true;
 
-	Log::warning( "dcIPC: Waiting for reconnect delay of %us (%u/%u)", delay, mBackoffIndex,
-				  DISCORDIPC_BACKOFF_MAX );
-	EE::Scene::SceneManager::instance()->getUISceneNode()->setTimeout(
+	Log::info( "dcIPC: Waiting for reconnect delay of %us (%u/%u)", delay, mBackoffIndex,
+			   DISCORDIPC_BACKOFF_MAX );
+	SceneManager::instance()->getUISceneNode()->setTimeout(
 		[this] {
-			EE::Scene::SceneManager::instance()->getUISceneNode()->getThreadPool()->run( [this] {
+			SceneManager::instance()->getUISceneNode()->getThreadPool()->run( [this] {
 				Log::info( "dcIPC: Reconnecting..." );
 				if ( tryConnect() ) {
 					mReconnectLock = false;

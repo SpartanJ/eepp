@@ -47,22 +47,22 @@ class DiscordIPC {
 	bool tryConnect();
 	void reconnect();
 
-	void setActivity( DiscordIPCActivity a );
-	DiscordIPCActivity* getActivity() { return &mActivity; }
+	void setActivity( DiscordIPCActivity&& a );
+	const DiscordIPCActivity& getActivity() { return mActivity; }
 	void clearActivity();
 
-	bool mUIReady;
-	bool mIsReconnectScheduled =
+	bool UIReady = false;
+	bool IsReconnectScheduled =
 		false; // If we fail to load bofore UI initialises we call reconnect after init
 
 	// Configurables
-	std::string mcClientID;
+	std::string ClientID;
 
   protected:
 	std::string mIpcPath;
-	int mPID;
+	int mPID = 0;
 
-	int mBackoffIndex;
+	int mBackoffIndex = 0;
 	int mReconnectLock =
 		false; // Not quite a mutex because I want to lock any attempts if one is already waiting
 

@@ -75,15 +75,15 @@ void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 		auto& config = j["config"];
 		mcLangBindings = config["iconBindings"];
 		if ( config.contains( "appID" ) ) {
-			mIPC.mcClientID = config.value( "appID", "1335730393948749898" );
+			mIPC.ClientID = config.value( "appID", "1335730393948749898" );
 		} else {
-			mIPC.mcClientID = "1335730393948749898";
+			mIPC.ClientID = "1335730393948749898";
 			updateConfigFile = true;
 		}
 		if ( config.contains( "doLanguageIcons" ) ) {
 			mcDoLangIcon = config.value( "doLanguageIcons", true );
 		} else {
-			mIPC.mcClientID = true;
+			mIPC.ClientID = true;
 			updateConfigFile = true;
 		}
 	}
@@ -96,11 +96,14 @@ void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 		}
 	}
 
-	mIPC.tryConnect();
-	DiscordIPCActivity* a = mIPC.getActivity();
-	a->largeImage = DISCORDRPC_DEFAULT_ICON;
-
-	mIPC.setActivity( *a );
+	if ( getUISceneNode() ) {
+		mIPC.UIReady = true;
+		if ( mIPC.tryConnect() ) {
+			DiscordIPCActivity a = mIPC.getActivity();
+			a.largeImage = DISCORDRPC_DEFAULT_ICON;
+			mIPC.setActivity( std::move( a ) );
+		}
+	}
 
 	mReady = true;
 	fireReadyCbs();
@@ -116,9 +119,9 @@ PluginRequestHandle DiscordRPCplugin::processMessage( const PluginMessage& msg )
 			Log::debug( "Loaded new workspace: %s ; %s", rpath, mProjectName );
 		}
 		case PluginMessageType::UIReady: {
-			mIPC.mUIReady = true;
-			// 			Log::debug("dcPlugin: UI is ready!");
-			if ( mIPC.mIsReconnectScheduled ) {
+			mIPC.UIReady = true;
+
+			if ( mIPC.IsReconnectScheduled ) {
 				Log::debug( "Running scheduled reconnect" );
 				mIPC.tryConnect();
 			}
@@ -158,25 +161,25 @@ void DiscordRPCplugin::onRegisterListeners( UICodeEditor* editor, std::vector<Ui
 			Log::debug( "dcIPC: Activity in new file. lang = %s",
 						doc.getSyntaxDefinition().getLanguageName() );
 
-			DiscordIPCActivity* a = this->mIPC.getActivity();
+			DiscordIPCActivity a = mIPC.getActivity();
 
 			if ( !mProjectName.empty() )
-				a->details = String::format( i18n( "dc_workspace", "Working on %s" ).toUtf8(),
-											 mProjectName );
-			a->state = String::format( i18n( "dc_editing", "Editing %s, a %s file" ).toUtf8(),
-									   filename, doc.getSyntaxDefinition().getLanguageName() );
-			a->start = time( nullptr ); // Time spent in this specific file
+				a.details = String::format( i18n( "dc_workspace", "Working on %s" ).toUtf8(),
+											mProjectName );
+			a.state = String::format( i18n( "dc_editing", "Editing %s, a %s file" ).toUtf8(),
+									  filename, doc.getSyntaxDefinition().getLanguageName() );
+			a.start = time( nullptr ); // Time spent in this specific file
 
 			// TODO: Implement github/gitlab remote button (integrate with git plugin)
-			// a->buttons[0].label = "Repository";
-			// a->buttons[0].url = "https://github.com/name/repo";
+			// a.buttons[0].label = "Repository";
+			// a.buttons[0].url = "https://github.com/name/repo";
 
 			std::string name = doc.getSyntaxDefinition().getLSPName();
-			if ( !name.empty() && mcDoLangIcon ) {
-				a->largeImage = mcLangBindings.value( name, DISCORDRPC_DEFAULT_ICON );
+			if ( !name.empty() && mcDoLangIcon && mcLangBindings.contains( name ) ) {
+				a.largeImage = mcLangBindings.value( name, DISCORDRPC_DEFAULT_ICON );
 			}
 
-			this->mIPC.setActivity( *a );
+			mIPC.setActivity( std::move( a ) );
 		}
 	} ) );
 }
