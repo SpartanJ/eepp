@@ -183,7 +183,8 @@ void DiscordRPCplugin::onRegisterListeners( UICodeEditor* editor, std::vector<Ui
 				a.largeImage = mcLangBindings.value( name, DISCORDRPC_DEFAULT_ICON );
 			}
 
-			mIPC.setActivity( std::move( a ) );
+			getUISceneNode()->getThreadPool()->run(
+				[this, a = std::move( a )]() mutable { mIPC.setActivity( std::move( a ) ); } );
 		}
 	} ) );
 }

@@ -90,9 +90,8 @@ bool DiscordIPC::tryConnect() {
 		validPaths.push_back( value );
 	}
 
-	validPaths.push_back( "/tmp" ); // Hard coded fallback
-
 	std::vector<std::string> checkPaths;
+	checkPaths.push_back( "/tmp" ); // Hard coded fallback
 
 	for ( const auto& basePath : validPaths ) {
 		for ( const auto& additionalPath : additionalPaths ) {
