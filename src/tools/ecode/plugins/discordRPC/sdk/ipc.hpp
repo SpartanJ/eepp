@@ -46,6 +46,7 @@ class DiscordIPC {
 	// true  - Success
 	bool tryConnect();
 	void reconnect();
+	bool isConnected() const;
 
 	void setActivity( DiscordIPCActivity&& a );
 	const DiscordIPCActivity& getActivity() { return mActivity; }
@@ -69,7 +70,7 @@ class DiscordIPC {
 	DiscordIPCActivity mActivity;
 
 #if defined( EE_PLATFORM_POSIX )
-	int mSocket;
+	int mSocket = -1;
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	void* mSocket;
 #endif

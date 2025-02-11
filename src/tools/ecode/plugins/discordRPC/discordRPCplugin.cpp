@@ -146,12 +146,9 @@ void DiscordRPCplugin::onUnregisterEditor( UICodeEditor* editor ) {
 
 void DiscordRPCplugin::onRegisterListeners( UICodeEditor* editor, std::vector<Uint32>& listeners ) {
 	listeners.push_back( editor->on( Event::OnFocus, [this, editor]( const Event* ) {
-		// `this` in the scope of the lambda is the parent `DiscordRPCplugin`
-
 		auto& doc = editor->getDocument();
-		if ( !doc.hasFilepath() ) {
+		if ( !doc.hasFilepath() )
 			return;
-		}
 
 		auto filename = doc.getFilename();
 

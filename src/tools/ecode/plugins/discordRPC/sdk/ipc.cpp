@@ -22,7 +22,12 @@ using namespace EE::System;
 
 using json = nlohmann::json;
 
-DiscordIPC::DiscordIPC() {
+DiscordIPC::DiscordIPC()
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	:
+	mSocket( INVALID_HANDLE_VALUE )
+#endif
+{
 	mPID = Sys::getProcessID();
 }
 
@@ -42,8 +47,10 @@ bool DiscordIPC::tryConnect() {
 			mSocket = CreateFile( mIpcPath.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr,
 								  OPEN_EXISTING, 0, nullptr );
 
-			doHandshake();
-			return true;
+			if ( mSocket != INVALID_HANDLE_VALUE ) {
+				doHandshake();
+				return true;
+			}
 		}
 	}
 
@@ -111,7 +118,7 @@ bool DiscordIPC::tryConnect() {
 				mSocket = socket( AF_UNIX, SOCK_STREAM, 0 );
 				if ( mSocket == -1 ) {
 					Log::error( "dcIPC: Discord IPC socket cold not be opened: %s", mIpcPath );
-					mIpcPath = "";
+					mIpcPath.clear();
 					continue;
 				}
 
@@ -125,6 +132,8 @@ bool DiscordIPC::tryConnect() {
 				if ( connect( mSocket, reinterpret_cast<struct sockaddr*>( &serverAddr ),
 							  sizeof( serverAddr ) ) == -1 ) {
 					close( mSocket );
+					mSocket = -1;
+					mIpcPath.clear();
 					return false;
 				}
 
@@ -217,7 +226,7 @@ void DiscordIPC::setActivity( DiscordIPCActivity&& a ) {
 }
 
 void DiscordIPC::sendPacket( DiscordIPCOpcodes opcode, json j ) {
-	if ( !std::filesystem::exists( mIpcPath ) ) {
+	if ( !isConnected() ) {
 		reconnect();
 		return;
 	}
@@ -325,5 +334,13 @@ DiscordIPC::~DiscordIPC() {
 	close( mSocket );
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	CloseHandle( mSocket );
+#endif
+}
+
+bool DiscordIPC::isConnected() const {
+#if defined( EE_PLATFORM_POSIX )
+	return mSocket != -1;
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+	return mSocket != INVALID_HANDLE_VALUE;
 #endif
 }
