@@ -146,11 +146,9 @@ void DiscordIPC::doHandshake() {
 }
 
 void DiscordIPC::clearActivity() {
-	json j = {
-		{ "cmd", "SET_ACTIVITY" },
-		{ "args", { { "pid", 0 }, { "activity", nullptr } } },
-		{ "nonce", "-" } // TODO: Null nonce for dev purposes, change to UUIDV4 in finished product
-	};
+	json j = { { "cmd", "SET_ACTIVITY" },
+			   { "args", { { "pid", 0 }, { "activity", nullptr } } },
+			   { "nonce", "-" } };
 	sendPacket( DiscordIPCOpcodes::Frame, j );
 }
 
@@ -272,12 +270,9 @@ void DiscordIPC::sendPacket( DiscordIPCOpcodes opcode, json j ) {
 	tv.tv_usec = 500000; // 0.5 seconds in microseconds
 	setsockopt( mSocket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof( tv ) );
 
-	char buffer[1024];
-	ssize_t bytesRead = recv( mSocket, buffer, sizeof( buffer ), 0 );
+	recv( mSocket, buffer, sizeof( buffer ), 0 );
 
 	// 		Log::debug("dcIPC: RECV: %s", buffer);
-
-	// TODO: Implement nonce checking? (does it even really matter?)
 
 	// return bytesRead;
 #elif EE_PLATFORM == EE_PLATFORM_WIN
@@ -328,8 +323,8 @@ void DiscordIPC::reconnect() {
 		[this] {
 			EE::Scene::SceneManager::instance()->getUISceneNode()->getThreadPool()->run( [this] {
 				Log::info( "dcIPC: Reconnecting..." );
-				mReconnectLock = false;
 				if ( tryConnect() ) {
+					mReconnectLock = false;
 					mBackoffIndex = 0;
 				}
 			} );
