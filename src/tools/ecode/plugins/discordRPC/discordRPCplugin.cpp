@@ -11,6 +11,9 @@ namespace ecode {
 
 static const auto DEFAULT_CLIENT_ID = "1339026777158455336";
 
+static const auto DISCORDRPC_DEFAULT_ICON =
+	"https://github.com/SpartanJ/eepp/blob/develop/bin/assets/icon/ecode.png?raw=true";
+
 Plugin* DiscordRPCplugin::New( PluginManager* pluginManager ) {
 	return eeNew( DiscordRPCplugin, ( pluginManager, false ) );
 }
@@ -105,10 +108,14 @@ void DiscordRPCplugin::loadDiscordRPCConfig( const std::string& path, bool updat
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];
 
-		if ( config.contains( "iconBindings" ) )
-			mcLangBindings = config["iconBindings"];
-		else
-			config["iconBindings"] = mcLangBindings;
+		if ( config.contains( "iconBindings" ) ) {
+			auto newConfig = config["iconBindings"];
+			if ( mLangBindings.empty() )
+				mLangBindings = std::move( newConfig );
+			else if ( !newConfig.empty() )
+				mLangBindings.update( newConfig );
+		} else
+			config["iconBindings"] = mLangBindings;
 
 		if ( config.contains( "appID" ) )
 			mIPC.ClientID = config.value( "appID", DEFAULT_CLIENT_ID );
@@ -116,7 +123,7 @@ void DiscordRPCplugin::loadDiscordRPCConfig( const std::string& path, bool updat
 			config["appID"] = DEFAULT_CLIENT_ID;
 
 		if ( config.contains( "doLanguageIcons" ) )
-			mcDoLangIcon = config.value( "doLanguageIcons", true );
+			mDoLangIcon = config.value( "doLanguageIcons", true );
 		else
 			config["doLanguageIcons"] = true;
 
@@ -177,41 +184,57 @@ void DiscordRPCplugin::onUnregisterEditor( UICodeEditor* editor ) {
 	editor->removeUnlockedCommands( { "discordrpc-reconnect" } );
 }
 
+void DiscordRPCplugin::udpateActivity( DiscordIPCActivity& a ) {
+	Lock l( mDataMutex );
+	Log::debug( "dcIPC: Activity in new file. lang = %s", mLastLang );
+
+	if ( !mProjectName.empty() ) {
+		a.details =
+			String::format( i18n( "dc_workspace", "Working on %s" ).toUtf8(), mProjectName );
+	}
+
+	a.state = String::format( i18n( "dc_editing", "Editing %s, a %s file" ).toUtf8(), mLastFile,
+							  mLastLang );
+
+	a.start = time( nullptr ); // Time spent in this specific file
+
+	// TODO: Implement github/gitlab remote button (integrate with git plugin)
+	// a.buttons[0].label = "Repository";
+	// a.buttons[0].url = "https://github.com/name/repo";
+
+	if ( !mLastLangName.empty() && mDoLangIcon && mLangBindings.contains( mLastLangName ) ) {
+		a.largeImage = mLangBindings.value( mLastLangName, DISCORDRPC_DEFAULT_ICON );
+	}
+}
+
 void DiscordRPCplugin::onRegisterListeners( UICodeEditor* editor, std::vector<Uint32>& listeners ) {
+	static const auto DebounceUniqueId = String::hash( "DiscordRPCplugin::debounce" );
+
 	listeners.push_back( editor->on( Event::OnFocus, [this, editor]( const Event* ) {
 		auto& doc = editor->getDocument();
 		if ( !doc.hasFilepath() )
 			return;
 
 		auto filename = doc.getFilename();
+		if ( filename == mLastFile )
+			return;
 
-		if ( filename != mLastFile ) {
-			mLastFile = filename;
-
-			Log::debug( "dcIPC: Activity in new file. lang = %s",
-						doc.getSyntaxDefinition().getLanguageName() );
-
-			DiscordIPCActivity a = mIPC.getActivity();
-
-			if ( !mProjectName.empty() )
-				a.details = String::format( i18n( "dc_workspace", "Working on %s" ).toUtf8(),
-											mProjectName );
-			a.state = String::format( i18n( "dc_editing", "Editing %s, a %s file" ).toUtf8(),
-									  filename, doc.getSyntaxDefinition().getLanguageName() );
-			a.start = time( nullptr ); // Time spent in this specific file
-
-			// TODO: Implement github/gitlab remote button (integrate with git plugin)
-			// a.buttons[0].label = "Repository";
-			// a.buttons[0].url = "https://github.com/name/repo";
-
-			std::string name = doc.getSyntaxDefinition().getLSPName();
-			if ( !name.empty() && mcDoLangIcon && mcLangBindings.contains( name ) ) {
-				a.largeImage = mcLangBindings.value( name, DISCORDRPC_DEFAULT_ICON );
-			}
-
-			getUISceneNode()->getThreadPool()->run(
-				[this, a = std::move( a )]() mutable { mIPC.setActivity( std::move( a ) ); } );
+		{
+			Lock l( mDataMutex );
+			mLastFile = std::move( filename );
+			mLastLang = doc.getSyntaxDefinition().getLanguageName();
+			mLastLangName = doc.getSyntaxDefinition().getLSPName();
 		}
+
+		getUISceneNode()->debounce(
+			[this] {
+				getUISceneNode()->getThreadPool()->run( [this] {
+					DiscordIPCActivity a = mIPC.getActivity();
+					udpateActivity( a );
+					mIPC.setActivity( std::move( a ) );
+				} );
+			},
+			Seconds( 2 ), DebounceUniqueId );
 	} ) );
 }
 

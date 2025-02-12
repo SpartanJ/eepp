@@ -18,9 +18,6 @@ using namespace EE::System;
 using namespace EE::UI;
 using namespace EE::UI::Doc;
 
-#define DISCORDRPC_DEFAULT_ICON \
-	"https://github.com/SpartanJ/eepp/blob/develop/bin/assets/icon/ecode.png?raw=true"
-
 namespace ecode {
 
 class DiscordRPCplugin : public PluginBase {
@@ -48,10 +45,13 @@ class DiscordRPCplugin : public PluginBase {
 
   protected:
 	DiscordIPC mIPC;
+	Mutex mDataMutex;
 	std::string mLastFile;
+	std::string mLastLang;
+	std::string mLastLangName;
 	std::string mProjectName;
-	nlohmann::json mcLangBindings;
-	bool mcDoLangIcon;
+	nlohmann::json mLangBindings;
+	bool mDoLangIcon;
 
 	void load( PluginManager* pluginManager );
 
@@ -59,7 +59,9 @@ class DiscordRPCplugin : public PluginBase {
 
 	virtual void onRegisterListeners( UICodeEditor* editor,
 									  std::vector<Uint32>& listeners ) override;
+
 	virtual void onRegisterEditor( UICodeEditor* editor ) override;
+
 	virtual void onUnregisterEditor( UICodeEditor* editor ) override;
 
 	DiscordRPCplugin( PluginManager* pluginManager, bool sync );
@@ -67,6 +69,8 @@ class DiscordRPCplugin : public PluginBase {
 	void loadDiscordRPCConfig( const std::string& path, bool updateConfigFile );
 
 	void initIPC();
+
+	void udpateActivity( DiscordIPCActivity& a );
 };
 
 } // namespace ecode

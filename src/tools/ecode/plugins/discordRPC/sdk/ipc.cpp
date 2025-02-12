@@ -18,6 +18,7 @@
 #include <windows.h>
 #endif
 
+using namespace EE;
 using namespace EE::System;
 
 using json = nlohmann::json;
@@ -218,7 +219,7 @@ void DiscordIPC::setActivity( DiscordIPCActivity&& a ) {
 				  { "pid", mPID },
 				  { "activity", aj },
 			  } },
-			{ "nonce", "-" } };
+			{ "nonce", String::toString( Sys::getSystemTime() ) } };
 
 	{
 		Lock l( mActivityMutex );
