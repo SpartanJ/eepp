@@ -63,7 +63,7 @@ void addTypeScript() {
 			  { "readonly", "keyword" },   { "case", "keyword" },
 			  { "export", "keyword" },	   { "interface", "keyword" },
 			  { "protected", "keyword" },  { "do", "keyword" },
-			  { "type", "keyword2" },
+			  { "type", "keyword2" },	   { "is", "keyword" },
 
 		  },
 		  "//",
