@@ -9,6 +9,8 @@ using json = nlohmann::json;
 
 namespace ecode {
 
+static const auto DEFAULT_CLIENT_ID = "1339026777158455336";
+
 Plugin* DiscordRPCplugin::New( PluginManager* pluginManager ) {
 	return eeNew( DiscordRPCplugin, ( pluginManager, false ) );
 }
@@ -32,8 +34,11 @@ DiscordRPCplugin::DiscordRPCplugin( PluginManager* pluginManager, bool sync ) :
 
 DiscordRPCplugin::~DiscordRPCplugin() {
 	waitUntilLoaded();
+	if ( mIPC.isConnected() )
+		mIPC.clearActivity();
 	mShuttingDown = true;
 }
+
 void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 	Clock clock;
 	AtomicBoolScopedOp loading( mLoading, true );
@@ -53,46 +58,16 @@ void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 		mConfigPath = path;
 		paths.emplace_back( path );
 	}
-	std::string data;
-	if ( !FileSystem::fileGet( path, data ) )
+
+	if ( paths.empty() )
 		return;
-	mConfigHash = String::hash( data );
 
-	json j;
-	try {
-		j = json::parse( data, nullptr, true, true );
-	} catch ( const json::exception& e ) {
-		Log::error( "DiscordRPCplugin::load - Error parsing config from path %s, error: %s, config "
-					"file content:\n%s",
-					path.c_str(), e.what(), data.c_str() );
-		// Recreate it
-		j = json::parse( "{\n  \"config\":{},\n  \"keybindings\":{},\n}\n", nullptr, true, true );
-	}
-
-	bool updateConfigFile = false;
-
-	if ( j.contains( "config" ) ) {
-		auto& config = j["config"];
-		mcLangBindings = config["iconBindings"];
-		if ( config.contains( "appID" ) ) {
-			mIPC.ClientID = config.value( "appID", "1335730393948749898" );
-		} else {
-			mIPC.ClientID = "1335730393948749898";
-			updateConfigFile = true;
-		}
-		if ( config.contains( "doLanguageIcons" ) ) {
-			mcDoLangIcon = config.value( "doLanguageIcons", true );
-		} else {
-			mIPC.ClientID = true;
-			updateConfigFile = true;
-		}
-	}
-
-	if ( updateConfigFile ) {
-		std::string newData = j.dump( 2 );
-		if ( newData != data ) {
-			FileSystem::fileWrite( path, newData );
-			mConfigHash = String::hash( newData );
+	for ( const auto& ipath : paths ) {
+		try {
+			loadDiscordRPCConfig( ipath, mConfigPath == ipath );
+		} catch ( const json::exception& e ) {
+			Log::error( "Parsing DiscordRPCplugin config \"%s\" failed:\n%s", ipath.c_str(),
+						e.what() );
 		}
 	}
 
@@ -106,6 +81,57 @@ void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 	mReady = true;
 	fireReadyCbs();
 	setReady( clock.getElapsedTime() );
+}
+
+void DiscordRPCplugin::loadDiscordRPCConfig( const std::string& path, bool updateConfigFile ) {
+	std::string data;
+	if ( !FileSystem::fileGet( path, data ) )
+		return;
+
+	if ( updateConfigFile )
+		mConfigHash = String::hash( data );
+
+	json j;
+	try {
+		j = json::parse( data, nullptr, true, true );
+	} catch ( const json::exception& e ) {
+		Log::error( "DiscordRPCplugin::load - Error parsing config from path %s, error: %s, config "
+					"file content:\n%s",
+					path.c_str(), e.what(), data.c_str() );
+		// Recreate it
+		j = json::parse( "{\n  \"config\":{},\n  \"keybindings\":{},\n}\n", nullptr, true, true );
+	}
+
+	if ( j.contains( "config" ) ) {
+		auto& config = j["config"];
+
+		if ( config.contains( "iconBindings" ) )
+			mcLangBindings = config["iconBindings"];
+		else
+			config["iconBindings"] = mcLangBindings;
+
+		if ( config.contains( "appID" ) )
+			mIPC.ClientID = config.value( "appID", DEFAULT_CLIENT_ID );
+		else
+			config["appID"] = DEFAULT_CLIENT_ID;
+
+		if ( config.contains( "doLanguageIcons" ) )
+			mcDoLangIcon = config.value( "doLanguageIcons", true );
+		else
+			config["doLanguageIcons"] = true;
+
+		if ( updateConfigFile && config.contains( "iconBindings" ) &&
+			 config["iconBindings"].is_null() )
+			config["iconBindings"] = nlohmann::json::object();
+	}
+
+	if ( updateConfigFile ) {
+		std::string newData = j.dump( 2 );
+		if ( newData != data ) {
+			FileSystem::fileWrite( path, newData );
+			mConfigHash = String::hash( newData );
+		}
+	}
 }
 
 void DiscordRPCplugin::initIPC() {

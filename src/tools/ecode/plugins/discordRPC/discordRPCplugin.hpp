@@ -64,6 +64,8 @@ class DiscordRPCplugin : public PluginBase {
 
 	DiscordRPCplugin( PluginManager* pluginManager, bool sync );
 
+	void loadDiscordRPCConfig( const std::string& path, bool updateConfigFile );
+
 	void initIPC();
 };
 

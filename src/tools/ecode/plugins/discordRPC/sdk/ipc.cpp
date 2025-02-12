@@ -244,18 +244,17 @@ void DiscordIPC::sendPacket( DiscordIPCOpcodes opcode, json j ) {
 	} bytes;
 
 	bytes.value = opcode;
-	for ( int i = 0; i <= 3; ++i ) {
+	for ( int i = 0; i <= 3; ++i )
 		data.push_back( bytes.bytes[i] );
-	}
 
 	bytes.value = packet.length();
-	for ( int i = 0; i <= 3; ++i ) {
+	for ( int i = 0; i <= 3; ++i )
 		data.push_back( bytes.bytes[i] );
-	}
 
-	for ( char c : packet ) {
+	for ( char c : packet )
 		data.push_back( static_cast<uint8_t>( c ) );
-	}
+
+	Log::debug( "dcIPC: sending packet: %s", packet );
 
 #if defined( EE_PLATFORM_POSIX )
 
@@ -276,7 +275,6 @@ void DiscordIPC::sendPacket( DiscordIPCOpcodes opcode, json j ) {
 	char buffer[1024];
 	recv( mSocket, buffer, sizeof( buffer ), 0 );
 
-	// return bytesRead;
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	DWORD bytesSent;
 	if ( !WriteFile( mSocket, data.data(), data.size(), &bytesSent, nullptr ) ) {
@@ -297,6 +295,8 @@ void DiscordIPC::sendPacket( DiscordIPCOpcodes opcode, json j ) {
 		reconnect();
 		return;
 	}
+
+	Log::debug( "dcIPC - received sendPacket response: %s", buffer );
 
 #endif
 }
