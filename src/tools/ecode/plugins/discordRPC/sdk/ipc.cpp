@@ -134,16 +134,15 @@ bool DiscordIPC::tryConnect() {
 					close( mSocket );
 					mSocket = -1;
 					mIpcPath.clear();
-					return false;
+					continue;
 				}
 
 				doHandshake();
 				return true;
 			}
 		}
-		reconnect();
-		return false;
 	}
+	return false;
 #endif
 	return false; // Discord not supported by other OS (if it is, TBA)
 }
@@ -327,6 +326,9 @@ void DiscordIPC::reconnect() {
 				if ( tryConnect() ) {
 					mReconnectLock = false;
 					mBackoffIndex = 0;
+				} else {
+					mReconnectLock = false;
+					reconnect();
 				}
 			} );
 		},
