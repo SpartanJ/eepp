@@ -10,6 +10,8 @@ using json = nlohmann::json;
 namespace ecode {
 
 static const auto DEFAULT_CLIENT_ID = "1339026777158455336";
+static const auto DebounceUniqueId = String::hash( "DiscordRPCplugin::debounce" );
+static const std::vector<std::string> DiscordRPCCommandList = { "discordrpc-reconnect" };
 
 static const auto DISCORDRPC_DEFAULT_ICON =
 	"https://github.com/SpartanJ/eepp/blob/develop/bin/assets/icon/ecode.png?raw=true";
@@ -40,6 +42,11 @@ DiscordRPCplugin::~DiscordRPCplugin() {
 	if ( mIPC.isConnected() )
 		mIPC.clearActivity();
 	mShuttingDown = true;
+
+	for ( auto editor : mEditors ) {
+		onBeforeUnregister( editor.first );
+		onUnregisterEditor( editor.first );
+	}
 }
 
 void DiscordRPCplugin::load( PluginManager* pluginManager ) {
@@ -174,14 +181,15 @@ PluginRequestHandle DiscordRPCplugin::processMessage( const PluginMessage& msg )
 }
 
 void DiscordRPCplugin::onRegisterEditor( UICodeEditor* editor ) {
-	editor->addUnlockedCommands( { "discordrpc-reconnect" } );
+	editor->addUnlockedCommands( DiscordRPCCommandList );
 	editor->getDocument().setCommand( "discordrpc-reconnect", [this] { mIPC.reconnect(); } );
 
 	PluginBase::onRegisterEditor( editor );
 }
 
 void DiscordRPCplugin::onUnregisterEditor( UICodeEditor* editor ) {
-	editor->removeUnlockedCommands( { "discordrpc-reconnect" } );
+	editor->removeUnlockedCommands( DiscordRPCCommandList );
+	editor->removeActionsByTag( DebounceUniqueId );
 }
 
 void DiscordRPCplugin::udpateActivity( DiscordIPCActivity& a ) {
@@ -208,8 +216,6 @@ void DiscordRPCplugin::udpateActivity( DiscordIPCActivity& a ) {
 }
 
 void DiscordRPCplugin::onRegisterListeners( UICodeEditor* editor, std::vector<Uint32>& listeners ) {
-	static const auto DebounceUniqueId = String::hash( "DiscordRPCplugin::debounce" );
-
 	listeners.push_back( editor->on( Event::OnFocus, [this, editor]( const Event* ) {
 		auto& doc = editor->getDocument();
 		if ( !doc.hasFilepath() )
