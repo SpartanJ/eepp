@@ -656,6 +656,14 @@ class EE_API TextDocument {
 
 	bool isHuge() const;
 
+	void escape();
+
+	void unescape();
+
+	void toBase64();
+
+	void fromBase64();
+
   protected:
 	friend class TextUndoStack;
 	friend class FoldRangeServive;

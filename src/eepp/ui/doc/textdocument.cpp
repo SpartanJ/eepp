@@ -1,6 +1,6 @@
-﻿#include <eepp/core/debug.hpp>
-#include <eepp/core/utf.hpp>
+﻿#include <eepp/core/utf.hpp>
 #include <eepp/network/uri.hpp>
+#include <eepp/system/base64.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
@@ -1065,6 +1065,9 @@ String TextDocument::getAllSelectedText() const {
 
 std::vector<std::string> TextDocument::getCommandList() const {
 	std::vector<std::string> cmds;
+	cmds.reserve( mCommands.size() + mRefCommands.size() );
+	for ( const auto& cmd : mRefCommands )
+		cmds.push_back( cmd.first );
 	for ( const auto& cmd : mCommands )
 		cmds.push_back( cmd.first );
 	return cmds;
@@ -3588,6 +3591,123 @@ void TextDocument::notifiyDocumenLineMove( const Int64& fromLine, const Int64& t
 	}
 }
 
+void TextDocument::escape() {
+	BoolScopedOpOptional op( !mDoingTextInput, mDoingTextInput, true );
+
+	if ( hasSelection() ) {
+		for ( size_t i = 0; i < mSelection.size(); ++i ) {
+			if ( !mSelection[i].hasSelection() )
+				continue;
+			String escapedSelectedText( String::escape( getText( mSelection[i] ) ) );
+			deleteTo( i, 0 );
+			setSelection( i, insert( i, getSelectionIndex( i ).start(), escapedSelectedText ) );
+		}
+	} else {
+		auto prevSels = getSelections();
+
+		resetCursor();
+
+		size_t linesCount = mLines.size();
+		for ( size_t i = 0; i < linesCount; i++ ) {
+			Int64 lineIdx = static_cast<Int64>( i );
+			String newText( String::escape( mLines[i].getTextWithoutNewLine() ) );
+			setSelection( 0, { { lineIdx, 0 }, { lineIdx, (Int64)line( i ).size() - 1 } } );
+			deleteTo( 0, 0 );
+			setSelection( 0, insert( 0, getSelectionIndex( 0 ).start(), newText ) );
+		}
+
+		setSelection( prevSels );
+	}
+}
+
+void TextDocument::unescape() {
+	BoolScopedOpOptional op( !mDoingTextInput, mDoingTextInput, true );
+
+	if ( hasSelection() ) {
+		for ( size_t i = 0; i < mSelection.size(); ++i ) {
+			if ( !mSelection[i].hasSelection() )
+				continue;
+			String unescapedSelectedText( String::unescape( getText( mSelection[i] ) ) );
+			deleteTo( i, 0 );
+			setSelection( i, insert( i, getSelectionIndex( i ).start(), unescapedSelectedText ) );
+		}
+	} else {
+		auto prevSels = getSelections();
+
+		resetCursor();
+
+		size_t linesCount = mLines.size();
+		for ( size_t i = 0; i < linesCount; i++ ) {
+			Int64 lineIdx = static_cast<Int64>( i );
+			String newText( String::unescape( mLines[i].getTextWithoutNewLine() ) );
+			setSelection( 0, { { lineIdx, 0 }, { lineIdx, (Int64)line( i ).size() - 1 } } );
+			deleteTo( 0, 0 );
+			setSelection( 0, insert( 0, getSelectionIndex( 0 ).start(), newText ) );
+		}
+
+		setSelection( prevSels );
+	}
+}
+
+void TextDocument::toBase64() {
+	BoolScopedOpOptional op( !mDoingTextInput, mDoingTextInput, true );
+
+	if ( hasSelection() ) {
+		for ( size_t i = 0; i < mSelection.size(); ++i ) {
+			if ( !mSelection[i].hasSelection() )
+				continue;
+			std::string text( getText( mSelection[i] ).toUtf8() );
+			std::string newText;
+			Base64::encode( text, newText );
+
+			deleteTo( i, 0 );
+			setSelection(
+				i, insert( i, getSelectionIndex( i ).start(), String::fromUtf8( newText ) ) );
+		}
+	} else {
+		auto prevSels = getSelections();
+
+		resetCursor();
+		selectAll();
+		const auto fullDoc = getText().toUtf8();
+		std::string newDoc;
+		Base64::encode( fullDoc, newDoc );
+		textInput( String::fromUtf8( newDoc ) );
+
+		setSelection( prevSels );
+	}
+}
+
+void TextDocument::fromBase64() {
+	BoolScopedOpOptional op( !mDoingTextInput, mDoingTextInput, true );
+
+	if ( hasSelection() ) {
+		for ( size_t i = 0; i < mSelection.size(); ++i ) {
+			if ( !mSelection[i].hasSelection() )
+				continue;
+
+			std::string text( getText( mSelection[i] ).toUtf8() );
+			std::string newText;
+			Base64::decode( text, newText );
+
+			deleteTo( i, 0 );
+			setSelection(
+				i, insert( i, getSelectionIndex( i ).start(), String::fromUtf8( newText ) ) );
+		}
+	} else {
+		auto prevSels = getSelections();
+
+		resetCursor();
+		selectAll();
+		const auto fullDoc = getText().toUtf8();
+		std::string newDoc;
+		Base64::decode( fullDoc, newDoc );
+		textInput( String::fromUtf8( newDoc ) );
+
+		setSelection( prevSels );
+	}
+}
+
 void TextDocument::initializeCommands() {
 	mCommands["reset"] = [this] { reset(); };
 	mCommands["save"] = [this] { save(); };
@@ -3646,6 +3766,10 @@ void TextDocument::initializeCommands() {
 	mCommands["add-cursor-below"] = [this] { addCursorBelow(); };
 	mCommands["cursor-undo"] = [this] { cursorUndo(); };
 	mCommands["select-all-matches"] = [this] { selectAllMatches(); };
+	mCommands["escape"] = [this] { escape(); };
+	mCommands["unescape"] = [this] { unescape(); };
+	mCommands["to-base64"] = [this] { toBase64(); };
+	mCommands["from-base64"] = [this] { fromBase64(); };
 }
 
 TextRange TextDocument::getTopMostCursor() {

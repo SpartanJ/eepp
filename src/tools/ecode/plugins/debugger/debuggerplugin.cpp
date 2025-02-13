@@ -70,30 +70,12 @@ static constexpr auto KEY_DEFAULT_BUILD_TASK = "${defaultBuildTask}";
 static constexpr auto KEY_PATH_SEPARATOR = "${pathSeparator}";
 static constexpr auto KEY_PATH_SEPARATOR_ABBR = "${/}";
 
-/*
+// Mouse Hover Tooltip
+static Action::UniqueID getMouseMoveHash( UICodeEditor* editor ) {
+	return hashCombine( String::hash( "DebuggerPlugin::onMouseMove-" ),
+						reinterpret_cast<Action::UniqueID>( editor ) );
+}
 
-- **${userHome}** - the path of the user's home folder
-- **${workspaceFolder}** - the path of the folder opened in VS Code
-- **${workspaceFolderBasename}** - the name of the folder opened in VS Code without any slashes (/)
-- **${file}** - the current opened file
-- **${fileWorkspaceFolder}** - the current opened file's workspace folder
-- **${relativeFile}** - the current opened file relative to `workspaceFolder`
-- **${relativeFileDirname}** - the current opened file's dirname relative to `workspaceFolder`
-- **${fileBasename}** - the current opened file's basename
-- **${fileBasenameNoExtension}** - the current opened file's basename with no file extension
-- **${fileExtname}** - the current opened file's extension
-- **${fileDirname}** - the current opened file's folder path
-- **${fileDirnameBasename}** - the current opened file's folder name
-- **${cwd}** - the task runner's current working directory upon the startup of VS Code
-- **${lineNumber}** - the current selected line number in the active file
-- **${selectedText}** - the current selected text in the active file
-- **${execPath}** - the path to the running VS Code executable
-- **${defaultBuildTask}** - the name of the default build task
-- **${pathSeparator}** - the character used by the operating system to separate components in file
-paths
-- **${/}** - shorthand for **${pathSeparator}**
-
-*/
 Plugin* DebuggerPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( DebuggerPlugin, ( pluginManager, false ) );
 }
@@ -1430,6 +1412,8 @@ void DebuggerPlugin::onUnregisterEditor( UICodeEditor* editor ) {
 	editor->removeUnlockedCommands( DebuggerCommandList );
 
 	editor->unregisterGutterSpace( this );
+
+	editor->removeActionsByTag( getMouseMoveHash( editor ) );
 }
 
 void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
@@ -2197,12 +2181,6 @@ void DebuggerPlugin::setUIDebuggingState( StatusDebuggerController::State state 
 		 state == StatusDebuggerController::State::Running ) {
 		resetExpressions();
 	}
-}
-
-// Mouse Hover Tooltip
-static Action::UniqueID getMouseMoveHash( UICodeEditor* editor ) {
-	return hashCombine( String::hash( "DebuggerPlugin::onMouseMove-" ),
-						reinterpret_cast<Action::UniqueID>( editor ) );
 }
 
 void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const std::string& expression,
