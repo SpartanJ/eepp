@@ -400,6 +400,7 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 					doc->textInput( data, false );
 					doc->setSelection( pos );
 					editor->setScroll( scroll );
+					doc->execute( "lsp-refresh-semantic-highlighting", editor );
 					if ( mAutoFormatOnSave && mPluginManager &&
 						 !String::startsWith( doc->getFilePath(),
 											  mPluginManager->getPluginsPath() ) ) {

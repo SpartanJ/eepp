@@ -70,6 +70,12 @@ static constexpr auto KEY_DEFAULT_BUILD_TASK = "${defaultBuildTask}";
 static constexpr auto KEY_PATH_SEPARATOR = "${pathSeparator}";
 static constexpr auto KEY_PATH_SEPARATOR_ABBR = "${/}";
 
+// Mouse Hover Tooltip
+static Action::UniqueID getMouseMoveHash( UICodeEditor* editor ) {
+	return hashCombine( String::hash( "DebuggerPlugin::onMouseMove-" ),
+						reinterpret_cast<Action::UniqueID>( editor ) );
+}
+
 Plugin* DebuggerPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( DebuggerPlugin, ( pluginManager, false ) );
 }
@@ -1406,6 +1412,8 @@ void DebuggerPlugin::onUnregisterEditor( UICodeEditor* editor ) {
 	editor->removeUnlockedCommands( DebuggerCommandList );
 
 	editor->unregisterGutterSpace( this );
+
+	editor->removeActionsByTag( getMouseMoveHash( editor ) );
 }
 
 void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
@@ -2173,12 +2181,6 @@ void DebuggerPlugin::setUIDebuggingState( StatusDebuggerController::State state 
 		 state == StatusDebuggerController::State::Running ) {
 		resetExpressions();
 	}
-}
-
-// Mouse Hover Tooltip
-static Action::UniqueID getMouseMoveHash( UICodeEditor* editor ) {
-	return hashCombine( String::hash( "DebuggerPlugin::onMouseMove-" ),
-						reinterpret_cast<Action::UniqueID>( editor ) );
 }
 
 void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const std::string& expression,

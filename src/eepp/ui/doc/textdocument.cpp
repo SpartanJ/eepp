@@ -1065,6 +1065,9 @@ String TextDocument::getAllSelectedText() const {
 
 std::vector<std::string> TextDocument::getCommandList() const {
 	std::vector<std::string> cmds;
+	cmds.reserve( mCommands.size() + mRefCommands.size() );
+	for ( const auto& cmd : mRefCommands )
+		cmds.push_back( cmd.first );
 	for ( const auto& cmd : mCommands )
 		cmds.push_back( cmd.first );
 	return cmds;
