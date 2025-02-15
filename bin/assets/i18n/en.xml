@@ -160,6 +160,8 @@ File path is: </string>
 	<string name="cut">Cut</string>
 	<string name="dark">Dark</string>
 	<string name="date">Date</string>
+	<string name="dc_editing">Editing %s, a %s file</string>
+	<string name="dc_workspace">Working on %s</string>
 	<string name="debug_draw_boxes">Draw Boxes</string>
 	<string name="debug_draw_boxes_toggle">Debug Draw Boxes Toggle</string>
 	<string name="debug_draw_debug_data">Debug Draw Debug Data</string>
