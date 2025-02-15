@@ -317,13 +317,14 @@ void DiscordIPC::reconnect() {
 	int delay = 5 + pow( 2, mBackoffIndex );
 	mReconnectLock = true;
 
-	Log::info( "dcIPC: Waiting for reconnect delay of %us (%u/%u)", delay, mBackoffIndex,
+	Log::debug( "dcIPC: Waiting for reconnect delay of %us (%u/%u)", delay, mBackoffIndex,
 			   DISCORDIPC_BACKOFF_MAX );
 	SceneManager::instance()->getUISceneNode()->setTimeout(
 		[this] {
 			SceneManager::instance()->getUISceneNode()->getThreadPool()->run( [this] {
-				Log::info( "dcIPC: Reconnecting..." );
+				Log::debug( "dcIPC: Reconnecting..." );
 				if ( tryConnect() ) {
+					Log::info( "dcIPC: Reconnected" );
 					mReconnectLock = false;
 					mBackoffIndex = 0;
 				} else {
