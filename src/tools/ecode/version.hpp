@@ -8,12 +8,12 @@ using namespace EE;
 
 #define ECODE_MAJOR_VERSION 0
 #define ECODE_MINOR_VERSION 7
-#define ECODE_PATCH_LEVEL 0
+#define ECODE_PATCH_LEVEL 1
 /* ECODE_COMMIT_NUMBER 9999 is used for official releases, nightly builds (pre-releases) will
  * contain the number of commits after the last official release
  */
 #define ECODE_COMMIT_NUMBER 9999
-#define ECODE_CODENAME "Prāpti"
+#define ECODE_CODENAME "Vastiva"
 
 /** The compiled version of the library */
 #define ECODE_VERSION( x )              \
