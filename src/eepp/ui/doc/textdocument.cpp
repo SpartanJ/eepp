@@ -3042,6 +3042,8 @@ TextPosition TextDocument::replaceSelection( const size_t& cursorIdx, const Stri
 }
 
 void TextDocument::cursorUndo() {
+	if ( mSelection.size() <= 1 )
+		return;
 	mSelection.erase( mSelection.begin() + mLastSelection );
 	mLastSelection = mSelection.size() - 1;
 	notifySelectionChanged();

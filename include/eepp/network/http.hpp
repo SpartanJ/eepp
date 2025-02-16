@@ -418,6 +418,9 @@ class EE_API Http : NonCopyable {
 	void setHost( const std::string& host, unsigned short port = 0, bool useSSL = false,
 				  URI proxy = URI() );
 
+	/** @brief Sets the host from an URI (this is the equivalent of calling setHost( uri.getHost(), uri.getPort(), uri.getScheme() == "https" ) ) */
+	void setHost( const URI& uri, URI proxy = URI() );
+
 	/** @brief Send a HTTP request and return the server's response.
 	**  You must have a valid host before sending a request (see setHost).
 	**  Any missing mandatory header field in the request will be added

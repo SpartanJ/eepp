@@ -705,6 +705,10 @@ void Http::setHost( const std::string& host, unsigned short port, bool useSSL, U
 	}
 }
 
+void Http::setHost( const URI& uri, URI proxy ) {
+	setHost( uri.getHost(), uri.getPort(), uri.getScheme() == "https" );
+}
+
 Http::Response Http::sendRequest( const Http::Request& request, Time timeout ) {
 	IOStreamString stream;
 	Response response = downloadRequest( request, stream, timeout );
