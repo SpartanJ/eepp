@@ -3054,6 +3054,8 @@ void UICodeEditor::udpateGlyphWidth() {
 	mGlyphWidth = mFont->getGlyph( '@', getCharacterSize(), false, false ).advance;
 	mMouseWheelScroll = 3 * getLineHeight();
 	invalidateLongestLineWidth();
+	if ( mFontStyleConfig.Font )
+		invalidateLineWrapMaxWidth( false );
 }
 
 Drawable* UICodeEditor::findIcon( const std::string& name ) {
