@@ -1,5 +1,4 @@
 #include "git.hpp"
-#include "../../stringhelper.hpp"
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
@@ -446,9 +445,9 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 	std::string buf;
 
 	if ( EXIT_SUCCESS == git( args, projectDir, buf ) ) {
-		branches.reserve( StringHelper::countLines( buf ) );
+		branches.reserve( String::countLines( buf ) );
 
-		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
+		String::readBySeparator( std::string_view{ buf }, [&]( std::string_view line ) {
 			auto branch = String::trim( String::trim( line, '\'' ), '\t' );
 			if ( ( ref & Head ) && String::startsWith( branch, "refs/heads/" ) ) {
 				branches.emplace_back( parseLocalBranch( branch ) );
@@ -462,11 +461,11 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 
 	if ( ( ref & RefType::Stash ) &&
 		 EXIT_SUCCESS == git( "stash list --date=format:\"%Y-%m-%d %H:%M\"", projectDir, buf ) ) {
-		branches.reserve( branches.size() + StringHelper::countLines( buf ) );
+		branches.reserve( branches.size() + String::countLines( buf ) );
 		std::string ptrn( "stash@{(.*)}:%s(.*)" );
 		LuaPattern pattern( ptrn );
 		Uint64 id = 0;
-		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
+		String::readBySeparator( std::string_view{ buf }, [&]( std::string_view line ) {
 			PatternMatcher::Range matches[3];
 			if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
 				std::string date(
@@ -493,13 +492,14 @@ std::vector<std::string> Git::fetchSubModules( const std::string& projectDir ) {
 	FileSystem::fileGet( ( !projectDir.empty() ? projectDir : mProjectPath ) + ".gitmodules", buf );
 	std::string ptrn( "^%s*path%s*=%s*(.+)" );
 	LuaPattern pattern( ptrn );
-	StringHelper::readBySeparator( buf, [&pattern, &submodules]( const std::string_view& line ) {
-		PatternMatcher::Range matches[2];
-		if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
-			submodules.emplace_back( String::trim(
-				line.substr( matches[1].start, matches[1].end - matches[1].start ), '\n' ) );
-		}
-	} );
+	String::readBySeparator(
+		std::string_view{ buf }, [&pattern, &submodules]( std::string_view line ) {
+			PatternMatcher::Range matches[2];
+			if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
+				submodules.emplace_back( String::trim(
+					line.substr( matches[1].start, matches[1].end - matches[1].start ), '\n' ) );
+			}
+		} );
 	return submodules;
 }
 
@@ -578,12 +578,12 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 		std::string subModulePath = "";
 		std::string ptrn = "^([mMARTUD?%s][mMARTUD?%s])%s(.*)";
 		LuaPattern pattern( ptrn );
-		size_t changesCount = StringHelper::countLines( buf );
+		size_t changesCount = String::countLines( buf );
 
 		if ( changesCount > 1000 )
 			return;
 
-		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
+		String::readBySeparator( std::string_view{ buf }, [&]( std::string_view line ) {
 			PatternMatcher::Range matches[3];
 			if ( subModulePattern.matches( line.data(), 0, matches, line.size() ) ) {
 				subModulePath = String::trim(
@@ -659,7 +659,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 		std::string ptrn( "(%d+)%s+(%d+)%s+(.+)" );
 		LuaPattern pattern( ptrn );
 		std::string subModulePath = "";
-		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
+		String::readBySeparator( std::string_view{ buf }, [&]( std::string_view line ) {
 			PatternMatcher::Range matches[4];
 			if ( subModulePattern.matches( line.data(), 0, matches, line.size() ) ) {
 				subModulePath = String::trim(
@@ -734,7 +734,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				std::string fileText;
 				FileSystem::fileGet( ( projectDir.empty() ? mProjectPath : projectDir ) + val.file,
 									 fileText );
-				val.inserts = StringHelper::countLines( fileText );
+				val.inserts = String::countLines( fileText );
 				s.totalInserts += val.inserts;
 			}
 		}

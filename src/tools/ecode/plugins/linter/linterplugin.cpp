@@ -1,5 +1,4 @@
 ﻿#include "linterplugin.hpp"
-#include "../../stringhelper.hpp"
 #include <algorithm>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
@@ -1425,7 +1424,7 @@ void LinterPlugin::registerNativeLinters() {
 			std::string file;
 			FileSystem::fileGet( path, file );
 			std::string_view filesv{ file };
-			Int64 line = StringHelper::countLines( filesv.substr( 0, result.offset ) );
+			Int64 line = String::countLines( filesv.substr( 0, result.offset ) );
 			Int64 offset = 0;
 			auto lastNL = filesv.substr( 0, result.offset ).find_last_of( '\n' );
 			if ( lastNL != std::string_view::npos )

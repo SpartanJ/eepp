@@ -990,6 +990,18 @@ class EE_API String {
 
 	const StringType& getString() const { return mString; }
 
+	static void readBySeparator( std::string_view buf,
+								 std::function<void( std::string_view )> onSepChunkRead,
+								 char sep = '\n' );
+
+	static void readBySeparator( String::View buf,
+								 std::function<void( String::View )> onSepChunkRead,
+								 String::StringBaseType sep = L'\n' );
+
+	static size_t countLines( std::string_view text );
+
+	static size_t countLines( String::View text );
+
   private:
 	friend EE_API bool operator==( const String& left, const String& right );
 	friend EE_API bool operator<( const String& left, const String& right );

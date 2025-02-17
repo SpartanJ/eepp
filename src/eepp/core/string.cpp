@@ -2123,4 +2123,50 @@ size_t String::toUtf32( std::string_view utf8str, String::StringBaseType* buffer
 	return pos;
 }
 
+void String::readBySeparator( std::string_view buf,
+							  std::function<void( std::string_view )> onSepChunkRead, char sep ) {
+	auto lastNL = 0;
+	auto nextNL = buf.find_first_of( sep );
+	while ( nextNL != std::string_view::npos ) {
+		onSepChunkRead( buf.substr( lastNL, nextNL - lastNL ) );
+		lastNL = nextNL + 1;
+		nextNL = buf.find_first_of( sep, nextNL + 1 );
+	}
+}
+
+size_t String::countLines( std::string_view text ) {
+	const char* startPtr = text.data();
+	const char* endPtr = text.data() + text.size();
+	size_t count = 0;
+	if ( startPtr != endPtr ) {
+		count = 1 + *startPtr == '\n' ? 1 : 0;
+		while ( ++startPtr && startPtr != endPtr )
+			count += ( '\n' == *startPtr ) ? 1 : 0;
+	}
+	return count;
+}
+
+void String::readBySeparator( String::View buf, std::function<void( String::View )> onSepChunkRead,
+							  String::StringBaseType sep ) {
+	auto lastNL = 0;
+	auto nextNL = buf.find_first_of( sep );
+	while ( nextNL != String::View::npos ) {
+		onSepChunkRead( buf.substr( lastNL, nextNL - lastNL ) );
+		lastNL = nextNL + 1;
+		nextNL = buf.find_first_of( sep, nextNL + 1 );
+	}
+}
+
+size_t String::countLines( String::View text ) {
+	const String::StringBaseType* startPtr = text.data();
+	const String::StringBaseType* endPtr = text.data() + text.size();
+	size_t count = 0;
+	if ( startPtr != endPtr ) {
+		count = 1 + *startPtr == '\n' ? 1 : 0;
+		while ( ++startPtr && startPtr != endPtr )
+			count += ( '\n' == *startPtr ) ? 1 : 0;
+	}
+	return count;
+}
+
 } // namespace EE
