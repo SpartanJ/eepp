@@ -94,7 +94,7 @@ LSPSymbolInformationList fuzzyMatchTextDocumentSymbol( const LSPSymbolInformatio
 	std::map<int, LSPSymbolInformation, std::greater<int>> matchesMap;
 
 	for ( const auto& l : list ) {
-		int matchName = String::fuzzyMatch( l.name, query );
+		int matchName = String::fuzzyMatch( l.name, query, true );
 		matchesMap.insert( { matchName, l } );
 	}
 

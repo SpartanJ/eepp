@@ -118,8 +118,8 @@ ProjectDirectoryTree::fuzzyMatchTree( const std::vector<std::string>& matches, c
 	std::vector<std::string> names;
 	for ( const auto& match : matches ) {
 		for ( size_t i = 0; i < mNames.size(); i++ ) {
-			int matchName = String::fuzzyMatch( mNames[i], match );
-			int matchPath = String::fuzzyMatch( mFiles[i], match );
+			int matchName = String::fuzzyMatch( match, mNames[i], true );
+			int matchPath = String::fuzzyMatch( match, mFiles[i], true );
 			matchesMap.insert( { std::max( matchName, matchPath ), i } );
 		}
 	}
@@ -144,8 +144,8 @@ ProjectDirectoryTree::fuzzyMatchTree( const std::string& match, const size_t& ma
 	std::vector<std::string> files;
 	std::vector<std::string> names;
 	for ( size_t i = 0; i < mNames.size(); i++ ) {
-		int matchName = String::fuzzyMatch( mNames[i], match );
-		int matchPath = String::fuzzyMatch( mFiles[i], match );
+		int matchName = String::fuzzyMatch( match, mNames[i], true );
+		int matchPath = String::fuzzyMatch( match, mFiles[i], true );
 		matchesMap.insert( { std::max( matchName, matchPath ), i } );
 	}
 	for ( auto& res : matchesMap ) {

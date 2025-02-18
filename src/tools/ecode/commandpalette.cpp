@@ -75,8 +75,8 @@ CommandPalette::fuzzyMatch( const std::vector<std::vector<std::string>>& cmdPale
 	std::vector<std::vector<std::string>> ret;
 
 	for ( size_t i = 0; i < cmdPalette.size(); i++ ) {
-		int matchName = String::fuzzyMatch( cmdPalette[i][0], match );
-		int matchKeybind = String::fuzzyMatch( cmdPalette[i][2], match );
+		int matchName = String::fuzzyMatch( cmdPalette[i][0], match, true );
+		int matchKeybind = String::fuzzyMatch( cmdPalette[i][2], match, true );
 		matchesMap.insert( { std::max( matchName, matchKeybind ), i } );
 	}
 	for ( auto& res : matchesMap ) {
