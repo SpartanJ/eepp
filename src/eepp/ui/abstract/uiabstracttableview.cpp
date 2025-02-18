@@ -11,6 +11,8 @@
 
 namespace EE { namespace UI { namespace Abstract {
 
+static constexpr String::HashType onModelUpdateTag = String::hash( "onModelUpdate" );
+
 UIAbstractTableView::UIAbstractTableView( const std::string& tag ) :
 	UIAbstractView( tag ),
 	mDragBorderDistance( PixelDensity::dpToPx( 4 ) ),
@@ -116,14 +118,13 @@ size_t UIAbstractTableView::getItemCount() const {
 
 void UIAbstractTableView::onModelUpdate( unsigned flags ) {
 	if ( !Engine::instance()->isMainThread() ) {
-		static constexpr String::HashType tag = String::hash( "onModelUpdate" );
-		removeActionsByTag( tag );
+		removeActionsByTag( onModelUpdateTag );
 		runOnMainThread(
 			[this, flags] {
 				modelUpdate( flags );
 				createOrUpdateColumns( true );
 			},
-			Time::Zero, tag );
+			Time::Zero, onModelUpdateTag );
 	} else {
 		UIAbstractView::onModelUpdate( flags );
 		createOrUpdateColumns( true );
@@ -187,19 +188,21 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 		else if ( mVScroll->isVisible() && !shouldVScrollBeVisible )
 			contentWidth += getVerticalScrollBar()->getPixelsSize().getWidth();
 		Float usedWidth = 0;
-		for ( size_t col = 0; col < count; col++ ) {
-			if ( col != mMainColumn && !isColumnHidden( col ) ) {
-				Float colWidth = getMaxColumnContentWidth( col, true );
-				colWidth = eemax( colWidth, columnData( col ).widget->getPixelsSize().getWidth() );
+		for ( size_t colIdx = 0; colIdx < count; colIdx++ ) {
+			if ( colIdx != mMainColumn && !isColumnHidden( colIdx ) ) {
+				Float colWidth = getMaxColumnContentWidth( colIdx, true );
+				auto& col = columnData( colIdx );
+				if ( col.widget )
+					colWidth = eemax( colWidth, col.widget->getPixelsSize().getWidth() );
 				usedWidth += colWidth;
-				columnData( col ).width = colWidth;
+				col.width = colWidth;
 			}
 		}
 		Float mainColMaxWidth = getMaxColumnContentWidth( mMainColumn, true );
-		columnData( mMainColumn ).width = contentWidth - usedWidth >= mainColMaxWidth
-											  ? contentWidth - usedWidth
-											  : mainColMaxWidth;
-		usedWidth += columnData( mMainColumn ).width;
+		auto& mainCol = columnData( mMainColumn );
+		mainCol.width = contentWidth - usedWidth >= mainColMaxWidth ? contentWidth - usedWidth
+																	: mainColMaxWidth;
+		usedWidth += mainCol.width;
 		if ( mFitAllColumnsToWidget && usedWidth > contentWidth ) {
 			size_t longestCol = 0;
 			Float longestColWidth = columnData( 0 ).width;
@@ -229,8 +232,10 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 			continue;
 		col.width = eeceil( col.maxWidth != 0 ? eeclamp( col.width, col.minWidth, col.maxWidth )
 											  : eemax( col.width, col.minWidth ) );
-		col.widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
-		col.widget->setPixelsSize( col.width, getHeaderHeight() );
+		if ( col.widget ) {
+			col.widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+			col.widget->setPixelsSize( col.width, getHeaderHeight() );
+		}
 		totalWidth += col.width;
 	}
 
@@ -395,7 +400,8 @@ void UIAbstractTableView::setDragBorderDistance( const Float& dragBorderDistance
 }
 
 Vector2f UIAbstractTableView::getColumnPosition( const size_t& index ) {
-	return columnData( index ).widget->getPixelsPosition();
+	const auto& col = columnData( index );
+	return col.widget ? col.widget->getPixelsPosition() : Vector2f::Zero;
 }
 
 int UIAbstractTableView::visibleColumnCount() const {

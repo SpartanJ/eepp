@@ -146,7 +146,7 @@ Variant VariablesModel::data( const ModelIndex& index, ModelRole role ) const {
 
 	ModelVariableNode* node = static_cast<ModelVariableNode*>( index.internalData() );
 
-	if ( role == ModelRole::Display ) {
+	if ( node && role == ModelRole::Display ) {
 		switch ( index.column() ) {
 			case 0:
 				return Variant( node->var.name.c_str() );
@@ -215,7 +215,7 @@ void VariablesHolder::addChild( ModelVariableNode::NodePtr child ) {
 
 void VariablesHolder::addChilds( const std::vector<ModelVariableNode::NodePtr>& childs ) {
 	Lock l( mMutex );
-	for ( auto& child : childs) {
+	for ( auto& child : childs ) {
 		mRootNode->addChild( child );
 		mNodeMap[child->var.variablesReference] = child;
 	}

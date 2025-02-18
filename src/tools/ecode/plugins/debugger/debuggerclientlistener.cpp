@@ -1,6 +1,6 @@
-#include "debuggerclientlistener.hpp"
 #include "../../notificationcenter.hpp"
 #include "../../statusappoutputcontroller.hpp"
+#include "debuggerclientlistener.hpp"
 #include "debuggerplugin.hpp"
 #include "models/stackmodel.hpp"
 #include "models/threadsmodel.hpp"
@@ -13,6 +13,8 @@
 #include <eepp/window/input.hpp>
 
 namespace ecode {
+
+static constexpr auto SCOPES_UI_HASH = String::hash( "DebuggerClientListener::scopes::ui" );
 
 std::vector<SourceBreakpoint>
 DebuggerClientListener::fromSet( const UnorderedSet<SourceBreakpointStateful>& set ) {
@@ -430,18 +432,24 @@ void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&&
 		return;
 	auto uiVars = sdc->getUIVariables();
 	if ( uiVars ) {
-		uiVars->runOnMainThread( [this, uiVars] {
-			auto model = uiVars->getModel();
-			size_t total = model->rowCount();
-			for ( size_t i = 0; i < total; i++ ) {
-				auto index = model->index( i, uiVars->getMainColumn() );
-				ModelVariableNode* node = static_cast<ModelVariableNode*>( index.internalData() );
-				if ( ( !mPlugin->mFetchRegisters && node->var.name == "Registers" ) ||
-					 ( !mPlugin->mFetchGlobals && node->var.name == "Globals" ) )
-					continue;
-				uiVars->tryOpenModelIndex( index );
-			}
-		} );
+		uiVars->removeActionsByTag( SCOPES_UI_HASH );
+		uiVars->runOnMainThread(
+			[this, uiVars] {
+				auto model = uiVars->getModel();
+				size_t total = model->rowCount();
+				for ( size_t i = 0; i < total; i++ ) {
+					auto index = model->index( i, uiVars->getMainColumn() );
+					if ( !index.isValid() )
+						continue;
+					ModelVariableNode* node =
+						static_cast<ModelVariableNode*>( index.internalData() );
+					if ( ( !mPlugin->mFetchRegisters && node->var.name == "Registers" ) ||
+						 ( !mPlugin->mFetchGlobals && node->var.name == "Globals" ) )
+						continue;
+					uiVars->tryOpenModelIndex( index );
+				}
+			},
+			Seconds( 0 ), SCOPES_UI_HASH );
 	}
 }
 
