@@ -390,6 +390,13 @@
       "url": "https://github.com/AdaCore/ada_language_server",
       "command": "ada_language_server",
       "file_patterns": ["%.adb$", "%.ads$", "%.ada$"]
+    },
+    {
+      "language": "markdown",
+      "name": "md-lsp",
+      "url": "https://github.com/matkrin/md-lsp",
+      "command": "md-lsp",
+      "file_patterns": ["%.md$"]
     }
   ]
 }
