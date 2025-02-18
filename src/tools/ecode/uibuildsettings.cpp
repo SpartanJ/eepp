@@ -634,6 +634,7 @@ UIBuildSettings::UIBuildSettings(
 				if ( panelBuildTypeDDL ) {
 					panelBuildTypeDDL->getListBox()->addListBoxItem( buildType );
 					panelBuildTypeDDL->getListBox()->setSelected( buildType );
+					panelBuildTypeDDL->setEnabled( true );
 				}
 				msgBox->closeWindow();
 			} );
@@ -655,6 +656,8 @@ UIBuildSettings::UIBuildSettings(
 			buildTypeDropDown->getListBox()->removeListBoxItem( txt );
 			if ( panelBuildTypeDDL ) {
 				panelBuildTypeDDL->getListBox()->removeListBoxItem( txt );
+				if ( panelBuildTypeDDL->getListBox()->isEmpty() )
+					panelBuildTypeDDL->setEnabled( false );
 			}
 			msgBox->closeWindow();
 		} );
