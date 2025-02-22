@@ -105,6 +105,9 @@ Variant GitBranchModel::data( const ModelIndex& index, ModelRole role ) const {
 							return Variant(
 								String::format( "%s (-%ld)", branch.name, branch.behind ) );
 						}
+					} else if ( branch.type == Git::Head && branch.gone ) {
+						return Variant( String::format(
+							"%s (%s)", branch.name, mPlugin->i18n( "gone", "gone" ).toUtf8() ) );
 					} else if ( branch.type == Git::Stash ) {
 						return Variant( String::format( "%s: %s", branch.date, branch.name ) );
 					}

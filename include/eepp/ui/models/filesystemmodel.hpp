@@ -130,6 +130,8 @@ class EE_API FileSystemModel : public Model {
 
 		void rename( const FileInfo& file );
 
+		void updateChilds( const FileInfo& oldParentFile, const FileInfo& newParentFile );
+
 		friend class FileSystemModel;
 		std::string mName;
 		String mDisplayName;

@@ -366,6 +366,10 @@ static void parseAheadBehind( std::string_view aheadBehind, Git::Branch& branch 
 	static constexpr auto AHEAD = "ahead "sv;
 	if ( aheadBehind.empty() )
 		return;
+	if ( aheadBehind == "gone" ) {
+		branch.gone = true;
+		return;
+	}
 	auto split = String::split( aheadBehind, ',' );
 	for ( auto s : split ) {
 		s = String::trim( s );

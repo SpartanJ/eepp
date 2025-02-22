@@ -132,11 +132,25 @@ FileSystemModel::Node* FileSystemModel::Node::createChild( const std::string& ch
 }
 
 void FileSystemModel::Node::rename( const FileInfo& file ) {
+	auto oldParentFile = mInfo;
 	mInfo = file;
 	mName = file.getFileName();
 	mHash = String::hash( mName );
 	mDisplayName = mName;
 	updateMimeType();
+	updateChilds( oldParentFile, mInfo );
+}
+
+void FileSystemModel::Node::updateChilds( const FileInfo& oldParentFile,
+										  const FileInfo& newParentFile ) {
+	for ( Node* child : mChildren ) {
+		if ( String::startsWith( child->mInfo.getFilepath(), oldParentFile.getFilepath() ) ) {
+			std::string newFilePath( child->mInfo.getFilepath() );
+			newFilePath.replace( 0, oldParentFile.getFilepath().size(),
+								 newParentFile.getFilepath() );
+			child->rename( FileInfo( newFilePath ) );
+		}
+	}
 }
 
 ModelIndex FileSystemModel::Node::index( const FileSystemModel& model, int column ) const {

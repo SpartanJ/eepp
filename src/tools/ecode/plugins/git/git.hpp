@@ -229,6 +229,8 @@ class Git {
 		int64_t ahead{ 0 };
 		int64_t behind{ 0 };
 
+		bool gone{ false };
+
 		const char* typeStr() const { return refTypeToString( type ); }
 	};
 
