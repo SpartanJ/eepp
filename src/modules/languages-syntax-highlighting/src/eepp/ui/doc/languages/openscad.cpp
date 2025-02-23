@@ -65,6 +65,7 @@ void addOpenSCAD() {
 			  { "hull", "keyword" },
 			  { "is_bool", "function" },
 			  { "version_num", "function" },
+			  { "parent_module", "function" },
 			  { "scale", "keyword" },
 			  { "atan2", "keyword" },
 			  { "intersection", "keyword" },

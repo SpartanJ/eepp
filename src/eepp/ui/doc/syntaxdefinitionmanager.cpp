@@ -205,8 +205,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 		buf += "{ " + join( pattern.patterns ) + ", " + join( pattern.typesNames, true, true ) +
 			   str( pattern.syntax, ", ", "", false );
 		if ( pattern.isRegEx )
-			buf += ", "
-				   ", true";
+			buf += ", \"\", true";
 		buf += " },\n";
 	}
 	buf += "\n},\n";

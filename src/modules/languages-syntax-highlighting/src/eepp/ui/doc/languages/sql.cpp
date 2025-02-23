@@ -352,6 +352,7 @@ void addSQL() {
 			  { "UUID", "keyword2" },
 			  { "at", "keyword" },
 			  { "HAVING", "keyword" },
+			  { "ADD", "keyword" },
 			  { "from", "keyword" },
 			  { "insert", "keyword" },
 			  { "table", "keyword" },
