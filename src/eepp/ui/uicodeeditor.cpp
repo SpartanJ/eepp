@@ -1102,11 +1102,11 @@ size_t UICodeEditor::getTotalVisibleLines() const {
 }
 
 Uint32 UICodeEditor::onTextEditing( const TextEditingEvent& event ) {
-	UIWidget::onTextEditing( event );
 	mLastActivity.restart();
 	mDoc->imeTextEditing( event.getText() );
 	updateIMELocation();
 	invalidateDraw();
+	UIWidget::onTextEditing( event );
 	return 1;
 }
 
@@ -1130,6 +1130,118 @@ void UICodeEditor::flashCursor() {
 	widget->runAction( Actions::Sequence::New(
 		Actions::Scale::New( { scale, scale }, { 1, 1 }, Milliseconds( 250 ), Ease::Linear ),
 		Actions::Close::New() ) );
+}
+
+void UICodeEditor::setCodeEditorFlags( std::string flags, bool enable ) {
+	String::toLowerInPlace( flags );
+	String::readBySeparator(
+		std::string_view{ flags },
+		[this, enable]( std::string_view flag ) {
+			if ( "linenumber" == flag ) {
+				mShowLineNumber = enable;
+			} else if ( "foldingregion" == flag ) {
+				mShowFoldingRegion = enable;
+			} else if ( "whitespaces" == flag ) {
+				mShowWhitespaces = enable;
+			} else if ( "lineendings" == flag ) {
+				mShowLineEndings = enable;
+			} else if ( "highlightcurrentline" == flag ) {
+				mHighlightCurrentLine = enable;
+			} else if ( "highlightmatchingbracket" == flag ) {
+				mHighlightMatchingBracket = enable;
+			} else if ( "highlightselectionmatch" == flag ) {
+				mHighlightSelectionMatch = enable;
+			} else if ( "colorpickeronselection" == flag ) {
+				mEnableColorPickerOnSelection = enable;
+			} else if ( "verticalscrollbar" == flag ) {
+				setVerticalScrollBarEnabled( enable );
+			} else if ( "colorpreview" == flag ) {
+				mColorPreview = enable;
+			} else if ( "interactivelinks" == flag ) {
+				mInteractiveLinks = enable;
+			} else if ( "displayloader" == flag ) {
+				mDisplayLoaderIfDocumentLoading = enable;
+			} else if ( "defaultcontextmenu" == flag ) {
+				mCreateDefaultContextMenuOptions = enable;
+			} else if ( "minimap" == flag ) {
+				mMinimapEnabled = enable;
+			} else if ( "autoclosexmltags" == flag ) {
+				mAutoCloseXMLTags = enable;
+			} else if ( "findreplace" == flag ) {
+				mFindReplaceEnabled = enable;
+			} else if ( "showindentationguides" == flag ) {
+				mShowIndentationGuides = enable;
+			} else if ( "linesrelativeposition" == flag ) {
+				mShowLinesRelativePosition = enable;
+			} else if ( "lockedicon" == flag ) {
+				mDisplayLockedIcon = enable;
+			} else if ( "foldsalwaysvisible" == flag ) {
+				mFoldsAlwaysVisible = enable;
+			} else if ( "foldsvisible" == flag ) {
+				mFoldsVisible = enable;
+			} else if ( "flashcursor" == flag ) {
+				mEnableFlashCursor = enable;
+			} else if ( "defaultstyle" == flag ) {
+				mUseDefaultStyle = enable;
+			} else if ( !enable && "editorfeatures" == flag ) {
+				disableEditorFeatures();
+			}
+		},
+		'|' );
+}
+
+std::string UICodeEditor::getCodeEditorFlags( bool enabled ) const {
+	std::string flags;
+	if ( mShowLineNumber == enabled )
+		flags += "linenumber|";
+	if ( mShowFoldingRegion == enabled )
+		flags += "foldingregion|";
+	if ( mShowWhitespaces == enabled )
+		flags += "whitespaces|";
+	if ( mShowLineEndings == enabled )
+		flags += "lineendings|";
+	if ( mHighlightCurrentLine == enabled )
+		flags += "highlightcurrentline|";
+	if ( mHighlightMatchingBracket == enabled )
+		flags += "highlightmatchingbracket|";
+	if ( mHighlightSelectionMatch == enabled )
+		flags += "highlightselectionmatch|";
+	if ( mEnableColorPickerOnSelection == enabled )
+		flags += "colorpickeronselection|";
+	if ( getVerticalScrollBarEnabled() == enabled )
+		flags += "verticalscrollbar|";
+	if ( mColorPreview == enabled )
+		flags += "colorpreview|";
+	if ( mInteractiveLinks == enabled )
+		flags += "interactivelinks|";
+	if ( mDisplayLoaderIfDocumentLoading == enabled )
+		flags += "displayloader|";
+	if ( mCreateDefaultContextMenuOptions == enabled )
+		flags += "defaultcontextmenu|";
+	if ( mMinimapEnabled == enabled )
+		flags += "minimap|";
+	if ( mAutoCloseXMLTags == enabled )
+		flags += "autoclosexmltags|";
+	if ( mFindReplaceEnabled == enabled )
+		flags += "findreplace|";
+	if ( mShowIndentationGuides == enabled )
+		flags += "showindentationguides|";
+	if ( mShowLinesRelativePosition == enabled )
+		flags += "linesrelativeposition|";
+	if ( mDisplayLockedIcon == enabled )
+		flags += "lockedicon|";
+	if ( mFoldsAlwaysVisible == enabled )
+		flags += "foldsalwaysvisible|";
+	if ( mFoldsVisible == enabled )
+		flags += "foldsvisible|";
+	if ( mEnableFlashCursor == enabled )
+		flags += "flashcursor|";
+	if ( mUseDefaultStyle == enabled )
+		flags += "defaultstyle|";
+
+	if ( !flags.empty() )
+		flags.pop_back();
+	return flags;
 }
 
 Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
@@ -1790,19 +1902,19 @@ void UICodeEditor::drawCursor( const Vector2f& startScroll, const Float& lineHei
 }
 
 void UICodeEditor::onSizeChange() {
-	UIWidget::onSizeChange();
 	invalidateEditor( false );
 	invalidateLineWrapMaxWidth( false );
 	if ( mDocView.isWrapEnabled() )
 		invalidateLongestLineWidth();
+	UIWidget::onSizeChange();
 }
 
 void UICodeEditor::onPaddingChange() {
-	UIWidget::onPaddingChange();
 	invalidateEditor( false );
 	invalidateLineWrapMaxWidth( false );
 	if ( mDocView.isWrapEnabled() )
 		invalidateLongestLineWidth();
+	UIWidget::onPaddingChange();
 }
 
 std::pair<size_t, Float> UICodeEditor::findLongestLineInRange( const TextRange& range ) {
@@ -1833,12 +1945,15 @@ void UICodeEditor::findLongestLine() {
 Float UICodeEditor::getLineWidth( const Int64& docLine ) {
 	if ( docLine >= (Int64)mDoc->linesCount() || !mDocView.isLineVisible( docLine ) )
 		return 0;
+
+	bool isMonospaceLine = this->isMonospaceLine( docLine );
+
 	if ( mDocView.isWrappedLine( docLine ) ) {
 		auto vline = mDocView.getVisibleLineInfo( docLine );
 		auto& line = mDoc->line( docLine ).getText();
 		Float width = 0;
 
-		if ( isNotMonospace() ) {
+		if ( !isMonospaceLine ) {
 			auto& line = mDoc->line( docLine );
 			auto found = mLinesWidthCache.find( docLine );
 			if ( found != mLinesWidthCache.end() && line.getHash() == found->second.first )
@@ -1850,18 +1965,18 @@ Float UICodeEditor::getLineWidth( const Int64& docLine ) {
 			auto len =
 				i + 1 < vline.visualLines.size() ? vline.visualLines[i + 1].column() : line.size();
 			auto vlineStr = line.view().substr( pos, len - pos );
-			auto curWidth = getTextWidth( vlineStr );
+			auto curWidth = getTextWidth( vlineStr, isMonospaceLine );
 			width = eemax( width, curWidth );
 		}
 
-		if ( isNotMonospace() ) {
+		if ( !isMonospaceLine ) {
 			mLinesWidthCache[docLine] = { line.getHash(), width };
 		}
 
 		return width;
 	}
 
-	if ( isNotMonospace() ) {
+	if ( !isMonospaceLine ) {
 		auto& line = mDoc->line( docLine );
 		auto found = mLinesWidthCache.find( docLine );
 		if ( found != mLinesWidthCache.end() && line.getHash() == found->second.first )
@@ -1870,7 +1985,8 @@ Float UICodeEditor::getLineWidth( const Int64& docLine ) {
 		mLinesWidthCache[docLine] = { line.getHash(), width };
 		return width;
 	}
-	return getTextWidth( mDoc->line( docLine ).getText() );
+
+	return getTextWidth( mDoc->line( docLine ).getText(), isMonospaceLine );
 }
 
 void UICodeEditor::updateScrollBar() {
@@ -2283,7 +2399,7 @@ Vector2d UICodeEditor::getTextPositionOffset( const TextPosition& position,
 			( info.visibleIndex != firstWrappedIndex ? mDocView.getLinePadding( position.line() )
 													 : 0.f );
 		double offsetY = mDocView.getLineYOffset( info.visibleIndex, lh );
-		if ( isNotMonospace() ) {
+		if ( !isMonospaceLine( position.line() ) ) {
 			if ( !info.range.isValid() )
 				return {};
 			const auto& line = mDoc->line( position.line() ).getText();
@@ -2317,7 +2433,7 @@ Vector2d UICodeEditor::getTextPositionOffset( const TextPosition& position,
 	}
 
 	double offsetY = mDocView.getLineYOffset( position.line(), lh );
-	if ( isNotMonospace() ) {
+	if ( !isMonospaceLine( position.line() ) ) {
 		bool isLastChar =
 			position.column() == (Int64)mDoc->line( position.line() ).getText().size();
 		Float x = Text::findCharacterPos(
@@ -2357,7 +2473,7 @@ size_t UICodeEditor::characterWidth( const String& str ) const {
 }
 
 Float UICodeEditor::getTextWidth( const String& text ) const {
-	return getTextWidth<String>( text );
+	return getTextWidth<String>( text, false );
 }
 
 size_t UICodeEditor::characterWidth( const String::View& str ) const {
@@ -2365,11 +2481,20 @@ size_t UICodeEditor::characterWidth( const String::View& str ) const {
 }
 
 Float UICodeEditor::getTextWidth( const String::View& text ) const {
-	return getTextWidth<String::View>( text );
+	return getTextWidth<String::View>( text, false );
 }
 
-template <typename StringType> Float UICodeEditor::getTextWidth( const StringType& line ) const {
-	if ( isNotMonospace() ) {
+Float UICodeEditor::getTextWidth( const String& text, bool fromMonospaceLine ) const {
+	return getTextWidth<String>( text, fromMonospaceLine );
+}
+
+Float UICodeEditor::getTextWidth( const String::View& text, bool fromMonospaceLine ) const {
+	return getTextWidth<String::View>( text, fromMonospaceLine );
+}
+
+template <typename StringType>
+Float UICodeEditor::getTextWidth( const StringType& line, bool fromMonospaceLine ) const {
+	if ( !fromMonospaceLine && isNotMonospace() ) {
 		return Text::getTextWidth( mFont, getCharacterSize(), line, mFontStyleConfig.Style,
 								   mTabWidth );
 	}
@@ -2691,6 +2816,18 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::LineSpacing:
 			setLineSpacing( attribute.asStyleSheetLength() );
 			break;
+		case PropertyId::EnableCodeEditorFlags:
+			setCodeEditorFlags( attribute.asString(), true );
+			break;
+		case PropertyId::DisableCodeEditorFlags:
+			setCodeEditorFlags( attribute.asString(), false );
+			break;
+		case PropertyId::LineWrapMode:
+			setLineWrapMode( DocumentView::toLineWrapMode( attribute.asString() ) );
+			break;
+		case PropertyId::LineWrapType:
+			setLineWrapType( DocumentView::toLineWrapType( attribute.asString() ) );
+			break;
 		default:
 			return UIWidget::applyProperty( attribute );
 	}
@@ -2731,6 +2868,14 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 			return isTextSelectionEnabled() ? "true" : "false";
 		case PropertyId::LineSpacing:
 			return getLineSpacing().toString();
+		case PropertyId::EnableCodeEditorFlags:
+			return getCodeEditorFlags( true );
+		case PropertyId::DisableCodeEditorFlags:
+			return getCodeEditorFlags( false );
+		case PropertyId::LineWrapMode:
+			return DocumentView::fromLineWrapMode( getLineWrapMode() );
+		case PropertyId::LineWrapType:
+			return DocumentView::fromLineWrapType( getLineWrapType() );
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -2738,12 +2883,23 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 
 std::vector<PropertyId> UICodeEditor::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
-	auto local = {
-		PropertyId::Locked,			  PropertyId::Color,		   PropertyId::TextShadowColor,
-		PropertyId::TextShadowOffset, PropertyId::SelectionColor,  PropertyId::SelectionBackColor,
-		PropertyId::FontFamily,		  PropertyId::FontSize,		   PropertyId::FontStyle,
-		PropertyId::TextStrokeWidth,  PropertyId::TextStrokeColor, PropertyId::TextSelection,
-		PropertyId::LineSpacing };
+	auto local = { PropertyId::Locked,
+				   PropertyId::Color,
+				   PropertyId::TextShadowColor,
+				   PropertyId::TextShadowOffset,
+				   PropertyId::SelectionColor,
+				   PropertyId::SelectionBackColor,
+				   PropertyId::FontFamily,
+				   PropertyId::FontSize,
+				   PropertyId::FontStyle,
+				   PropertyId::TextStrokeWidth,
+				   PropertyId::TextStrokeColor,
+				   PropertyId::TextSelection,
+				   PropertyId::LineSpacing,
+				   PropertyId::EnableCodeEditorFlags,
+				   PropertyId::DisableCodeEditorFlags,
+				   PropertyId::LineWrapMode,
+				   PropertyId::LineWrapType };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -2893,7 +3049,7 @@ Int64 UICodeEditor::getColFromXOffset( VisibleIndex visibleIndex, const Float& x
 						.view()
 						.substr( visibleIndexRange.start().column(), visibleIndexRange.length() );
 
-		if ( isNotMonospace() ) {
+		if ( !isMonospaceLine( pos.line() ) ) {
 			return visibleIndexRange.start().column() +
 				   Text::findCharacterFromPos( Vector2i( eemax( -xOffset + x, 0.f ), 0 ), true,
 											   mFont, getCharacterSize(), line,
@@ -2920,7 +3076,7 @@ Int64 UICodeEditor::getColFromXOffset( VisibleIndex visibleIndex, const Float& x
 		return visibleIndexRange.start().column() + static_cast<Int64>( line.size() ) - 1;
 	}
 
-	if ( isNotMonospace() ) {
+	if ( !isMonospaceLine( pos.line() ) ) {
 		return Text::findCharacterFromPos( Vector2i( x, 0 ), true, mFont, getCharacterSize(),
 										   mDoc->line( pos.line() ).getText(),
 										   mFontStyleConfig.Style, mTabWidth );
@@ -3598,16 +3754,18 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 								 const DocumentViewLineRange& visibleLineRange ) {
 	Vector2f originalPosition( position );
 	const auto& tokens = mDoc->getHighlighter()->getLine( line );
-	const String& strLine = mDoc->line( line ).getText();
+	const auto& docLine = mDoc->line( line );
+	const String& strLine = docLine.getText();
 	Primitives primitives;
 	Int64 curChar = 0;
 	Int64 maxWidth = eeceil( mSize.getWidth() / getGlyphWidth() + 1 );
-	bool isMonospace = mFont->isMonospace();
+	bool isMonospace = isMonospaceLine( line );
 	bool isFallbackFont = false;
 	bool isEmojiFallbackFont = false;
 	bool ended = false;
 	Float lineOffset = getLineOffset();
 	size_t pos = 0;
+	Uint32 drawHints = docLine.isAscii() ? Text::DrawHints::AllAscii : 0;
 	if ( mDoc->mightBeBinary() && mFont->getType() == FontType::TTF ) {
 		FontTrueType* ttf = static_cast<FontTrueType*>( mFont );
 		isFallbackFont = ttf->isFallbackFontEnabled();
@@ -3691,12 +3849,13 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 						if ( style.background != Color::Transparent ) {
 							primitives.setColor( Color( style.background ).blendAlpha( mAlpha ) );
 							primitives.drawRectangle(
-								Rectf( position, Sizef( getTextWidth( text ), lineHeight ) ) );
+								Rectf( position,
+									   Sizef( getTextWidth( text, isMonospace ), lineHeight ) ) );
 						}
 					}
 
 					position.x += Text::draw( text, { position.x, position.y + lineOffset },
-											  fontStyle, mTabWidth )
+											  fontStyle, mTabWidth, drawHints )
 									  .getWidth();
 				}
 
@@ -3732,7 +3891,7 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 			}
 			pos += token.len;
 
-			Float textWidth = isMonospace ? getTextWidth( text ) : 0;
+			Float textWidth = isMonospace ? getTextWidth( text, isMonospace ) : 0;
 			if ( !isMonospace || ( position.x + textWidth >= mScreenPos.x &&
 								   position.x <= mScreenPos.x + mSize.getWidth() ) ) {
 				Int64 curCharsWidth = text.size();
@@ -3766,18 +3925,18 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 							size = Text::draw(
 								text.substr( start, end ),
 								{ position.x + start * getGlyphWidth(), position.y + lineOffset },
-								fontStyle, mTabWidth );
+								fontStyle, mTabWidth, drawHints );
 							if ( minimumCharsToCoverScreen == end )
 								break;
 						}
 					} else {
 						size = Text::draw( text.substr( 0, eemin( curCharsWidth, maxWidth ) ),
 										   { position.x, position.y + lineOffset }, fontStyle,
-										   mTabWidth );
+										   mTabWidth, drawHints );
 					}
 				} else {
 					size = Text::draw( text, { position.x, position.y + lineOffset }, fontStyle,
-									   mTabWidth );
+									   mTabWidth, drawHints );
 				}
 
 				if ( !isMonospace )
@@ -4070,7 +4229,7 @@ void UICodeEditor::drawWhitespaces( const DocumentLineRange& lineRange, const Ve
 									const Float& lineHeight,
 									const DocumentViewLineRange& visibleLineRange ) {
 	static const String tab = "\t";
-	Float tabWidth = getTextWidth( tab );
+	Float tabWidth = getTextWidth( tab, true );
 	Float glyphW = getGlyphWidth();
 	Color color( Color( mWhitespaceColor ).blendAlpha( mAlpha ) );
 	unsigned int fontSize = getCharacterSize();
@@ -4103,7 +4262,7 @@ void UICodeEditor::drawWhitespaces( const DocumentLineRange& lineRange, const Ve
 			continue;
 
 		const auto& text = mDoc->line( index ).getText();
-		if ( mDocView.isWrappedLine( index ) || !mFont->isMonospace() ) {
+		if ( mDocView.isWrappedLine( index ) || !isMonospaceLine( index ) ) {
 			size_t startCol =
 				visibleDocRange.start().line() == index ? visibleDocRange.start().column() : 0;
 			size_t endCol = visibleDocRange.end().line() == index ? visibleDocRange.end().column()
@@ -5078,6 +5237,13 @@ void UICodeEditor::setTabIndentAlignment( CharacterAlignment alignment ) {
 		mTabIndentAlignment = alignment;
 		invalidateDraw();
 	}
+}
+
+bool UICodeEditor::isMonospaceLine( Int64 lineIndex ) const {
+	return mFont && ( mFont->isMonospace() ||
+					  ( mFont->getType() == FontType::TTF &&
+						static_cast<FontTrueType*>( mFont )->isIdentifiedAsMonospace() &&
+						mDoc->line( lineIndex ).isAscii() ) );
 }
 
 }} // namespace EE::UI

@@ -52,6 +52,13 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 	if ( font && font->getType() == FontType::TTF )
 		FontFamily::loadFromRegular( static_cast<FontTrueType*>( font ) );
 
+	Font* monospaceFont = appSettings.monospaceFont
+							  ? appSettings.monospaceFont
+							  : FontTrueType::New( "monospace", "assets/fonts/DejaVuSansMono.ttf" );
+
+	if ( monospaceFont && monospaceFont->getType() == FontType::TTF )
+		FontFamily::loadFromRegular( static_cast<FontTrueType*>( monospaceFont ) );
+
 	if ( appSettings.emojiFont == nullptr )
 		FontTrueType::New( "NotoEmoji-Regular", "assets/fonts/NotoEmoji-Regular.ttf" );
 

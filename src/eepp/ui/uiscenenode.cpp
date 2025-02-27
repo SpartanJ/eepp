@@ -524,6 +524,7 @@ void UISceneNode::setInternalSize( const Sizef& size ) {
 		mDpSize = size;
 		mSize = PixelDensity::dpToPx( size );
 		updateCenter();
+		onSizeChange();
 		sendCommonEvent( Event::OnSizeChange );
 		invalidateDraw();
 	}
@@ -534,8 +535,6 @@ Node* UISceneNode::setSize( const Sizef& Size ) {
 		Vector2f sizeChange( Size.x - mDpSize.x, Size.y - mDpSize.y );
 
 		setInternalSize( Size );
-
-		onSizeChange();
 
 		if ( reportSizeChangeToChilds() ) {
 			sendParentSizeChange( sizeChange );
@@ -558,8 +557,6 @@ UISceneNode* UISceneNode::setPixelsSize( const Sizef& size ) {
 		Vector2f sizeChange( size.x - mSize.x, size.y - mSize.y );
 
 		setInternalPixelsSize( size );
-
-		onSizeChange();
 
 		if ( reportSizeChangeToChilds() ) {
 			sendParentSizeChange( PixelDensity::pxToDp( sizeChange ) );
@@ -1009,6 +1006,7 @@ void UISceneNode::setInternalPixelsSize( const Sizef& size ) {
 		mSize = s;
 		mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
 		updateCenter();
+		onSizeChange();
 		sendCommonEvent( Event::OnSizeChange );
 		invalidateDraw();
 	}

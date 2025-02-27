@@ -414,6 +414,12 @@ void StyleSheetSpecification::registerDefaultProperties() {
 
 	registerProperty( "check-mode", "element" ).setType( PropertyType::String );
 
+	registerProperty( "enable-editor-flags", "" ).setType( PropertyType::String );
+	registerProperty( "disable-editor-flags", "" ).setType( PropertyType::String );
+
+	registerProperty( "line-wrap-mode", "nowrap" ).setType( PropertyType::String );
+	registerProperty( "line-wrap-type", "viewport" ).setType( PropertyType::String );
+
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },
 					   "box" );

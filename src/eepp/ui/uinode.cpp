@@ -151,6 +151,7 @@ void UINode::setInternalSize( const Sizef& size ) {
 		mSize = PixelDensity::dpToPx( s );
 		mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
 		updateCenter();
+		onSizeChange();
 		sendCommonEvent( Event::OnSizeChange );
 		invalidateDraw();
 	}
@@ -171,6 +172,7 @@ void UINode::setInternalPixelsSize( const Sizef& size ) {
 		mSize = s;
 		mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
 		updateCenter();
+		onSizeChange();
 		sendCommonEvent( Event::OnSizeChange );
 		invalidateDraw();
 	}
@@ -189,8 +191,6 @@ Node* UINode::setSize( const Sizef& size ) {
 		Vector2f sizeChange( s.x - mDpSize.x, s.y - mDpSize.y );
 
 		setInternalSize( s );
-
-		onSizeChange();
 
 		if ( reportSizeChangeToChilds() ) {
 			sendParentSizeChange( sizeChange );
@@ -218,8 +218,6 @@ UINode* UINode::setPixelsSize( const Sizef& size ) {
 		Vector2f sizeChange( s.x - mSize.x, s.y - mSize.y );
 
 		setInternalPixelsSize( s );
-
-		onSizeChange();
 
 		if ( reportSizeChangeToChilds() ) {
 			sendParentSizeChange( PixelDensity::pxToDp( sizeChange ) );

@@ -138,18 +138,16 @@ void Node::setInternalSize( const Sizef& size ) {
 	mSize = size;
 	mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
 	updateCenter();
+	onSizeChange();
 	sendCommonEvent( Event::OnSizeChange );
 	invalidateDraw();
 }
 
 void Node::scheduledUpdate( const Time& ) {}
 
-Node* Node::setSize( const Sizef& Size ) {
-	if ( Size != mSize ) {
-		setInternalSize( Size );
-
-		onSizeChange();
-	}
+Node* Node::setSize( const Sizef& size ) {
+	if ( size != mSize )
+		setInternalSize( size );
 
 	return this;
 }

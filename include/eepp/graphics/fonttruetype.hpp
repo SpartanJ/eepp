@@ -78,7 +78,12 @@ class EE_API FontTrueType : public Font {
 
 	bool isColorEmojiFont() const;
 
+	/** @return True if the font identifies itself as a monospace font and currently does not hold
+	 * any non-monospaced glyph (from a fallback font) */
 	bool isMonospace() const;
+
+	/** @return True if the font identifies itself as a monospace font */
+	bool isIdentifiedAsMonospace() const;
 
 	bool isScalable() const;
 

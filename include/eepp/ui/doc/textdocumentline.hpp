@@ -64,6 +64,8 @@ class EE_API TextDocumentLine {
 
 	std::string toUtf8() const { return mText.toUtf8(); }
 
+	bool isAscii() const { return ( mFlags & AllAscii ) != 0; }
+
   protected:
 	String mText;
 	String::HashType mHash;

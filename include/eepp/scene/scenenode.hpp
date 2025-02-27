@@ -4,6 +4,7 @@
 #include <eepp/scene/node.hpp>
 #include <eepp/system/translator.hpp>
 #include <eepp/window/cursor.hpp>
+#include <unordered_set>
 
 namespace EE { namespace Graphics {
 class FrameBuffer;
@@ -114,7 +115,7 @@ class EE_API SceneNode : public Node {
 
   protected:
 	friend class Node;
-	typedef UnorderedSet<Node*> CloseList;
+	typedef std::unordered_set<Node*> CloseList;
 
 	EE::Window::Window* mWindow;
 	ActionManager* mActionManager;

@@ -220,6 +220,10 @@ enum class PropertyId : Uint32 {
 	RowValign = String::hash( "row-valign" ),
 	TextOverflow = String::hash( "text-overflow" ),
 	CheckMode = String::hash( "check-mode" ),
+	EnableCodeEditorFlags = String::hash( "enable-editor-flags" ),
+	DisableCodeEditorFlags = String::hash( "disable-editor-flags" ),
+	LineWrapMode = String::hash( "line-wrap-mode" ),
+	LineWrapType = String::hash( "line-wrap-type" ),
 };
 
 enum class PropertyType : Uint32 {

@@ -2127,10 +2127,18 @@ void String::readBySeparator( std::string_view buf,
 							  std::function<void( std::string_view )> onSepChunkRead, char sep ) {
 	auto lastNL = 0;
 	auto nextNL = buf.find_first_of( sep );
-	while ( nextNL != std::string_view::npos ) {
-		onSepChunkRead( buf.substr( lastNL, nextNL - lastNL ) );
-		lastNL = nextNL + 1;
-		nextNL = buf.find_first_of( sep, nextNL + 1 );
+	if ( nextNL != std::string_view::npos ) {
+		while ( nextNL != std::string_view::npos ) {
+			onSepChunkRead( buf.substr( lastNL, nextNL - lastNL ) );
+			lastNL = nextNL + 1;
+			nextNL = buf.find_first_of( sep, nextNL + 1 );
+		}
+
+		if ( lastNL < static_cast<int>( buf.size() ) ) {
+			onSepChunkRead( buf.substr( lastNL ) );
+		}
+	} else {
+		onSepChunkRead( buf );
 	}
 }
 

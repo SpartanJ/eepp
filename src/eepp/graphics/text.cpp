@@ -241,27 +241,27 @@ Float Text::getTextWidth( const String::View& string, const FontStyleConfig& con
 Sizef Text::draw( const String& string, const Vector2f& pos, Font* font, Float fontSize,
 				  const Color& fontColor, Uint32 style, Float outlineThickness,
 				  const Color& outlineColor, const Color& shadowColor, const Vector2f& shadowOffset,
-				  const Uint32& tabWidth ) {
+				  const Uint32& tabWidth, Uint32 textDrawHints ) {
 	return draw<String>( string, pos, font, fontSize, fontColor, style, outlineThickness,
-						 outlineColor, shadowColor, shadowOffset, tabWidth );
+						 outlineColor, shadowColor, shadowOffset, tabWidth, textDrawHints );
 }
 
 Sizef Text::draw( const String& string, const Vector2f& pos, const FontStyleConfig& config,
-				  const Uint32& tabWidth ) {
-	return draw<String>( string, pos, config, tabWidth );
+				  const Uint32& tabWidth, Uint32 textDrawHints ) {
+	return draw<String>( string, pos, config, tabWidth, textDrawHints );
 }
 
 Sizef Text::draw( const String::View& string, const Vector2f& pos, Font* font, Float fontSize,
 				  const Color& fontColor, Uint32 style, Float outlineThickness,
 				  const Color& outlineColor, const Color& shadowColor, const Vector2f& shadowOffset,
-				  const Uint32& tabWidth ) {
+				  const Uint32& tabWidth, Uint32 textDrawHints ) {
 	return draw<String::View>( string, pos, font, fontSize, fontColor, style, outlineThickness,
-							   outlineColor, shadowColor, shadowOffset, tabWidth );
+							   outlineColor, shadowColor, shadowOffset, tabWidth, textDrawHints );
 }
 
 Sizef Text::draw( const String::View& string, const Vector2f& pos, const FontStyleConfig& config,
-				  const Uint32& tabWidth ) {
-	return draw<String::View>( string, pos, config, tabWidth );
+				  const Uint32& tabWidth, Uint32 textDrawHints ) {
+	return draw<String::View>( string, pos, config, tabWidth, textDrawHints );
 }
 
 Text* Text::New() {
@@ -376,12 +376,21 @@ template <typename StringType>
 Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Float fontSize,
 				  const Color& fontColor, Uint32 style, Float outlineThickness,
 				  const Color& outlineColor, const Color& shadowColor, const Vector2f& shadowOffset,
-				  const Uint32& tabWidth ) {
+				  const Uint32& tabWidth, Uint32 textDrawHints ) {
 	Vector2f cpos{ pos };
 	String::StringBaseType ch;
 	String::StringBaseType prevChar = 0;
 	bool isBold = ( style & Text::Bold ) != 0;
 	bool isItalic = ( style & Text::Italic ) != 0;
+	bool fallbacksToColorEmoji =
+		font && font->getType() == FontType::TTF &&
+		!static_cast<FontTrueType*>( font )->isColorEmojiFont() &&
+		FontManager::instance()->getColorEmojiFont() != nullptr &&
+		FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF;
+	bool isMonospace = font && ( font->isMonospace() ||
+								 ( font->getType() == FontType::TTF &&
+								   static_cast<FontTrueType*>( font )->isIdentifiedAsMonospace() &&
+								   ( textDrawHints & DrawHints::AllAscii ) != 0 ) );
 	Float kerning = 0;
 	Float width = 0;
 	Float height = font->getFontHeight( fontSize );
@@ -431,7 +440,7 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 									 curGlyph.codepoint, fontSize, isBold, isItalic, 0,
 									 rFont->getPage( fontSize ) );
 								 if ( gd ) {
-									 if ( !font->isMonospace() ) {
+									 if ( !isMonospace ) {
 										 kerning = font->getKerningFromGlyphIndex(
 											 prevGlyphIndex, curGlyph.codepoint, fontSize, isBold,
 											 isItalic, outlineThickness );
@@ -439,7 +448,12 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 										 width += kerning;
 									 }
 
-									 drawGlyph( BR, gd, cpos, fontColor, isItalic );
+									 drawGlyph( BR, gd, cpos,
+												fallbacksToColorEmoji &&
+														Font::isEmojiCodePoint( ch )
+													? Color::White
+													: fontColor,
+												isItalic );
 
 									 Float advance = font->isColorEmojiFont() && ' ' != ch
 														 ? gd->getPixelsSize().getWidth()
@@ -546,14 +560,17 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 
 		auto* gd = font->getGlyphDrawable( ch, fontSize, isBold, isItalic );
 		if ( gd ) {
-			if ( !font->isMonospace() ) {
+			if ( !isMonospace ) {
 				kerning =
 					font->getKerning( prevChar, ch, fontSize, isBold, isItalic, outlineThickness );
 				cpos.x += kerning;
 				width += kerning;
 			}
 
-			drawGlyph( BR, gd, cpos, fontColor, isItalic );
+			drawGlyph( BR, gd, cpos,
+					   fallbacksToColorEmoji && Font::isEmojiCodePoint( ch ) ? Color::White
+																			 : fontColor,
+					   isItalic );
 
 			cpos.x += gd->getAdvance();
 			width += gd->getAdvance();
@@ -581,10 +598,10 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 
 template <typename StringType>
 Sizef Text::draw( const StringType& string, const Vector2f& pos, const FontStyleConfig& config,
-				  const Uint32& tabWidth ) {
+				  const Uint32& tabWidth, Uint32 textDrawHints ) {
 	return draw<StringType>( string, pos, config.Font, config.CharacterSize, config.FontColor,
 							 config.Style, config.OutlineThickness, config.OutlineColor,
-							 config.ShadowColor, config.ShadowOffset, tabWidth );
+							 config.ShadowColor, config.ShadowOffset, tabWidth, textDrawHints );
 }
 
 template <typename StringType>

@@ -1096,7 +1096,12 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	template <typename StringType> size_t characterWidth( const StringType& str ) const;
 
-	template <typename StringType> Float getTextWidth( const StringType& text ) const;
+	template <typename StringType>
+	Float getTextWidth( const StringType& text, bool fromMonospaceLine ) const;
+
+	Float getTextWidth( const String& text, bool fromMonospaceLine ) const;
+
+	Float getTextWidth( const String::View& text, bool fromMonospaceLine ) const;
 
 	void updateIMELocation();
 
@@ -1113,6 +1118,12 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool isNotMonospace() const;
 
 	void flashCursor();
+
+	void setCodeEditorFlags( std::string flags, bool enable );
+
+	std::string getCodeEditorFlags( bool enabled ) const;
+
+	bool isMonospaceLine( Int64 lineIndex ) const;
 };
 
 }} // namespace EE::UI

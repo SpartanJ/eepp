@@ -21,6 +21,10 @@ class EE_API Text {
 		Shadow = 1 << 4			///< Draw a shadow below the text
 	};
 
+	enum DrawHints {
+		AllAscii = 1 << 0,
+	};
+
 	static std::string styleFlagToString( const Uint32& flags );
 
 	static Uint32 stringToStyleFlag( const std::string& str );
@@ -43,19 +47,22 @@ class EE_API Text {
 					   const Color& fontColor, Uint32 style = 0, Float outlineThickness = 0.f,
 					   const Color& outlineColor = Color::Black,
 					   const Color& shadowColor = Color::Black,
-					   const Vector2f& shadowOffset = { 1, 1 }, const Uint32& tabWidth = 4 );
+					   const Vector2f& shadowOffset = { 1, 1 }, const Uint32& tabWidth = 4,
+					   Uint32 textDrawHints = 0 );
 
 	static Sizef draw( const String& string, const Vector2f& pos, const FontStyleConfig& config,
-					   const Uint32& tabWidth = 4 );
+					   const Uint32& tabWidth = 4, Uint32 textDrawHints = 0 );
 
 	static Sizef draw( const String::View& string, const Vector2f& pos, Font* font, Float fontSize,
 					   const Color& fontColor, Uint32 style = 0, Float outlineThickness = 0.f,
 					   const Color& outlineColor = Color::Black,
 					   const Color& shadowColor = Color::Black,
-					   const Vector2f& shadowOffset = { 1, 1 }, const Uint32& tabWidth = 4 );
+					   const Vector2f& shadowOffset = { 1, 1 }, const Uint32& tabWidth = 4,
+					   Uint32 textDrawHints = 0 );
 
 	static Sizef draw( const String::View& string, const Vector2f& pos,
-					   const FontStyleConfig& config, const Uint32& tabWidth = 4 );
+					   const FontStyleConfig& config, const Uint32& tabWidth = 4,
+					   Uint32 textDrawHints = 0 );
 
 	static void drawUnderline( const Vector2f& pos, Float width, Font* font, Float fontSize,
 							   const Color& fontColor, const Uint32& style, Float outlineThickness,
@@ -63,9 +70,9 @@ class EE_API Text {
 							   const Vector2f& shadowOffset );
 
 	static void drawStrikeThrough( const Vector2f& pos, Float width, Font* font, Float fontSize,
-								  const Color& fontColor, const Uint32& style,
-								  Float outlineThickness, const Color& outlineColor,
-								  const Color& shadowColor, const Vector2f& shadowOffset );
+								   const Color& fontColor, const Uint32& style,
+								   Float outlineThickness, const Color& outlineColor,
+								   const Color& shadowColor, const Vector2f& shadowOffset );
 
 	static Int32 findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font* font,
 									   const Uint32& fontSize, const String& string,
@@ -312,11 +319,12 @@ class EE_API Text {
 					   const Color& fontColor, Uint32 style = 0, Float outlineThickness = 0.f,
 					   const Color& outlineColor = Color::Black,
 					   const Color& shadowColor = Color::Black,
-					   const Vector2f& shadowOffset = { 1, 1 }, const Uint32& tabWidth = 4 );
+					   const Vector2f& shadowOffset = { 1, 1 }, const Uint32& tabWidth = 4,
+					   Uint32 textDrawHints = 0 );
 
 	template <typename StringType>
 	static Sizef draw( const StringType& string, const Vector2f& pos, const FontStyleConfig& config,
-					   const Uint32& tabWidth = 4 );
+					   const Uint32& tabWidth = 4, Uint32 textDrawHints = 0 );
 
 	template <typename StringType>
 	static std::size_t findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
