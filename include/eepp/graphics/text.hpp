@@ -8,6 +8,15 @@
 
 namespace EE { namespace Graphics {
 
+enum class CharacterAlignment : Uint32 { Left = 0, Center = 1, Right = 2 };
+
+struct WhitespaceDisplayConfig {
+	String::StringBaseType spaceDisplayCharacter{ 0 };
+	String::StringBaseType tabDisplayCharacter{ 0 };
+	CharacterAlignment tabAlign{ CharacterAlignment::Center };
+	Color color;
+};
+
 class EE_API Text {
   public:
 	static bool TextShaperEnabled;
@@ -48,21 +57,25 @@ class EE_API Text {
 					   const Color& outlineColor = Color::Black,
 					   const Color& shadowColor = Color::Black,
 					   const Vector2f& shadowOffset = { 1, 1 }, const Uint32& tabWidth = 4,
-					   Uint32 textDrawHints = 0 );
+					   Uint32 textDrawHints = 0,
+					   const WhitespaceDisplayConfig& whitespaceDisplayConfig = {} );
 
 	static Sizef draw( const String& string, const Vector2f& pos, const FontStyleConfig& config,
-					   const Uint32& tabWidth = 4, Uint32 textDrawHints = 0 );
+					   const Uint32& tabWidth = 4, Uint32 textDrawHints = 0,
+					   const WhitespaceDisplayConfig& whitespaceDisplayConfig = {} );
 
 	static Sizef draw( const String::View& string, const Vector2f& pos, Font* font, Float fontSize,
 					   const Color& fontColor, Uint32 style = 0, Float outlineThickness = 0.f,
 					   const Color& outlineColor = Color::Black,
 					   const Color& shadowColor = Color::Black,
 					   const Vector2f& shadowOffset = { 1, 1 }, const Uint32& tabWidth = 4,
-					   Uint32 textDrawHints = 0 );
+					   Uint32 textDrawHints = 0,
+					   const WhitespaceDisplayConfig& whitespaceDisplayConfig = {} );
 
 	static Sizef draw( const String::View& string, const Vector2f& pos,
 					   const FontStyleConfig& config, const Uint32& tabWidth = 4,
-					   Uint32 textDrawHints = 0 );
+					   Uint32 textDrawHints = 0,
+					   const WhitespaceDisplayConfig& whitespaceDisplayConfig = {} );
 
 	static void drawUnderline( const Vector2f& pos, Float width, Font* font, Float fontSize,
 							   const Color& fontColor, const Uint32& style, Float outlineThickness,
@@ -315,16 +328,17 @@ class EE_API Text {
 							   const Float& outlineThickness = 0.f );
 
 	template <typename StringType>
-	static Sizef draw( const StringType& string, const Vector2f& pos, Font* font, Float fontSize,
-					   const Color& fontColor, Uint32 style = 0, Float outlineThickness = 0.f,
-					   const Color& outlineColor = Color::Black,
-					   const Color& shadowColor = Color::Black,
-					   const Vector2f& shadowOffset = { 1, 1 }, const Uint32& tabWidth = 4,
-					   Uint32 textDrawHints = 0 );
+	static Sizef
+	draw( const StringType& string, const Vector2f& pos, Font* font, Float fontSize,
+		  const Color& fontColor, Uint32 style = 0, Float outlineThickness = 0.f,
+		  const Color& outlineColor = Color::Black, const Color& shadowColor = Color::Black,
+		  const Vector2f& shadowOffset = { 1, 1 }, const Uint32& tabWidth = 4,
+		  Uint32 textDrawHints = 0, const WhitespaceDisplayConfig& whitespaceDisplayConfig = {} );
 
 	template <typename StringType>
 	static Sizef draw( const StringType& string, const Vector2f& pos, const FontStyleConfig& config,
-					   const Uint32& tabWidth = 4, Uint32 textDrawHints = 0 );
+					   const Uint32& tabWidth = 4, Uint32 textDrawHints = 0,
+					   const WhitespaceDisplayConfig& whitespaceDisplayConfig = {} );
 
 	template <typename StringType>
 	static std::size_t findLastCharPosWithinLength( Font* font, const Uint32& fontSize,

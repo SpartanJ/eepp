@@ -1427,6 +1427,12 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 	Float lineOffset = editor->getLineOffset();
 	Float offset = editor->getGutterLocalStartOffset( this );
 
+	p.setColor( Color( editor->getLineNumberBackgroundColor() ).blendAlpha( editor->getAlpha() ) );
+	p.drawRectangle( Rectf( { screenStart.x - editor->getPluginsGutterSpace() + offset,
+							  screenStart.y + editor->getPluginsTopSpace() },
+							Sizef( gutterSpace, editor->getPixelsSize().getHeight() -
+													editor->getPluginsTopSpace() ) ) );
+
 	if ( editor->getDocument().hasFilepath() ) {
 		auto docIt = mBreakpoints.find( editor->getDocument().getFilePath() );
 		if ( docIt != mBreakpoints.end() && !docIt->second.empty() ) {

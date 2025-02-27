@@ -326,11 +326,6 @@ void UICodeEditor::draw() {
 		drawIndentationGuides( lineRange, startScroll, lineHeight );
 	}
 
-	// Draw tab marker
-	if ( mShowWhitespaces ) {
-		drawWhitespaces( lineRange, startScroll, lineHeight, visibleLineRange );
-	}
-
 	if ( mShowLineEndings ) {
 		drawLineEndings( lineRange, startScroll, lineHeight );
 	}
@@ -1155,6 +1150,8 @@ void UICodeEditor::setCodeEditorFlags( std::string flags, bool enable ) {
 				mEnableColorPickerOnSelection = enable;
 			} else if ( "verticalscrollbar" == flag ) {
 				setVerticalScrollBarEnabled( enable );
+			} else if ( "horizontalscrollbar" == flag ) {
+				setHorizontalScrollBarEnabled( enable );
 			} else if ( "colorpreview" == flag ) {
 				mColorPreview = enable;
 			} else if ( "interactivelinks" == flag ) {
@@ -1953,7 +1950,7 @@ Float UICodeEditor::getLineWidth( const Int64& docLine ) {
 		auto& line = mDoc->line( docLine ).getText();
 		Float width = 0;
 
-		if ( !isMonospaceLine ) {
+		if ( isNotMonospace() ) {
 			auto& line = mDoc->line( docLine );
 			auto found = mLinesWidthCache.find( docLine );
 			if ( found != mLinesWidthCache.end() && line.getHash() == found->second.first )
@@ -1969,14 +1966,14 @@ Float UICodeEditor::getLineWidth( const Int64& docLine ) {
 			width = eemax( width, curWidth );
 		}
 
-		if ( !isMonospaceLine ) {
+		if ( isNotMonospace() ) {
 			mLinesWidthCache[docLine] = { line.getHash(), width };
 		}
 
 		return width;
 	}
 
-	if ( !isMonospaceLine ) {
+	if ( isNotMonospace() ) {
 		auto& line = mDoc->line( docLine );
 		auto found = mLinesWidthCache.find( docLine );
 		if ( found != mLinesWidthCache.end() && line.getHash() == found->second.first )
@@ -2008,8 +2005,8 @@ void UICodeEditor::updateScrollBar() {
 		Float viewPortWidth = getViewportWidth();
 		mHScrollBar->setPageStep( viewPortWidth / mLongestLineWidth );
 		mHScrollBar->setClickStep( 0.2f );
-		bool showHScroll = mLongestLineWidth > viewPortWidth &&
-						   !( mDocView.isWrapEnabled() && mLongestLineWidthDirty );
+		bool showHScroll = mLongestLineWidth > viewPortWidth && !mDocView.isWrapEnabled() &&
+						   !mLongestLineWidthDirty;
 		mHScrollBar->setEnabled( showHScroll );
 		mHScrollBar->setVisible( showHScroll );
 	}
@@ -3773,6 +3770,10 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 		ttf->setEnableFallbackFont( false );
 		ttf->setEnableEmojiFallback( false );
 	}
+	WhitespaceDisplayConfig whitespaceDisplayConfig =
+		mShowWhitespaces ? WhitespaceDisplayConfig{ L'·', mTabIndentCharacter, mTabIndentAlignment,
+													Color( mWhitespaceColor ).blendAlpha( mAlpha ) }
+						 : WhitespaceDisplayConfig{};
 
 	String::View buff;
 	Sizef size;
@@ -3854,9 +3855,10 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 						}
 					}
 
-					position.x += Text::draw( text, { position.x, position.y + lineOffset },
-											  fontStyle, mTabWidth, drawHints )
-									  .getWidth();
+					position.x +=
+						Text::draw( text, { position.x, position.y + lineOffset }, fontStyle,
+									mTabWidth, drawHints, whitespaceDisplayConfig )
+							.getWidth();
 				}
 
 				pos += text.size();
@@ -3925,18 +3927,18 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 							size = Text::draw(
 								text.substr( start, end ),
 								{ position.x + start * getGlyphWidth(), position.y + lineOffset },
-								fontStyle, mTabWidth, drawHints );
+								fontStyle, mTabWidth, drawHints, whitespaceDisplayConfig );
 							if ( minimumCharsToCoverScreen == end )
 								break;
 						}
 					} else {
 						size = Text::draw( text.substr( 0, eemin( curCharsWidth, maxWidth ) ),
 										   { position.x, position.y + lineOffset }, fontStyle,
-										   mTabWidth, drawHints );
+										   mTabWidth, drawHints, whitespaceDisplayConfig );
 					}
 				} else {
 					size = Text::draw( text, { position.x, position.y + lineOffset }, fontStyle,
-									   mTabWidth, drawHints );
+									   mTabWidth, drawHints, whitespaceDisplayConfig );
 				}
 
 				if ( !isMonospace )

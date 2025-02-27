@@ -542,6 +542,21 @@ Custom cursors not yet supported (but supported by the engine, only not implemen
 
 ---
 
+### disable-editor-flags
+
+Allows disabling specific behavior flags for the code editor component.
+Flags set here take precedence over [enable-editor-flags](#enable-editor-flags).
+Multiple flags are separated by `|`.
+
+* Applicable to: Any element child of a EE::UI::UICodeEditor (CodeEditor)
+* Data Type: [string-list](#string-list-data-type)
+* Value List:
+  * All flags listed in [enable-editor-flags](#enable-editor-flags) can be used here to disable their respective features.
+  * `editorfeatures`: Macro Flag - Disables line numbers, whitespace display, folding regions, current line highlight, matching bracket highlight, selection match highlight, color picker, minimap, and find/replace. Resets line breaking and forces the editor to use the default style.
+* Default value: _No value_
+
+---
+
 ### display-percent
 
 Enables/disables displaying the percentage of progress in the progress bar.
@@ -580,6 +595,41 @@ Sets if the element is enabled
 * Applicable to: Any element
 * Data Type: [boolean](#boolean-data-type)
 * Default value: `true`
+
+---
+
+### enable-editor-flags
+
+Allows enabling specific behavior flags for the code editor component. Multiple flags can be specified, separated by `|`.
+
+* Applicable to: Any element child of a EE::UI::UICodeEditor (CodeEditor)
+* Data Type: [string-list](#string-list-data-type)
+* Value List:
+  * `linenumber`: Displays line numbers in the gutter.
+  * `foldingregion`: Shows code folding regions for collapsing/expanding blocks.
+  * `whitespaces`: Renders whitespace characters (spaces, tabs) as visible symbols.
+  * `lineendings`: Displays line ending characters (e.g., CR, LF).
+  * `highlightcurrentline`: Highlights the background of the current line containing the cursor.
+  * `highlightmatchingbracket`: Highlights the bracket matching the one under the cursor.
+  * `highlightselectionmatch`: Highlights all occurrences of the selected text in the document.
+  * `colorpickeronselection`: Opens a color picker dialog when a color value is selected.
+  * `verticalscrollbar`: Enables the vertical scrollbar for scrolling through content.
+  * `horizontalscrollbar`: Enables the horizontal scrollbar for scrolling through content.
+  * `colorpreview`: Shows a color preview on mouse hover.
+  * `interactivelinks`: Enables interaction with clickable hyperlinks within the editor.
+  * `displayloader`: Displays a loading indicator while the document is loading.
+  * `defaultcontextmenu`: Provides a default context menu with standard editing options.
+  * `minimap`: Shows a minimap (overview) of the document on the right side.
+  * `autoclosexmltags`: Automatically inserts closing tags in XML/HTML documents.
+  * `findreplace`: Enables the find and replace functionality.
+  * `showindentationguides`: Displays vertical guides to indicate indentation levels.
+  * `linesrelativeposition`: Shows the relative position of lines (e.g., in a diff view).
+  * `lockedicon`: Displays a lock icon when the editor is in a locked state.
+  * `foldsalwaysvisible`: Keeps fold markers visible even when not hovered.
+  * `foldsvisible`: Makes folded code regions visible.
+  * `flashcursor`: Enables a flashing animation for the text cursor.
+  * `defaultstyle`: Applies the default styling and theme to the editor.
+* Default value: _No value_
 
 ---
 
@@ -1052,6 +1102,33 @@ Sets a extra line spacing to the line box.
 
 ---
 
+### line-wrap-mode
+
+Specifies the line wrap mode of the element.
+
+* Applicable to: Any element child of a EE::UI::UICodeEditor (CodeEditor)
+* Data Type: [string-list](#string-list-data-type)
+* Value List:
+  * `word`: Wraps against words.
+  * `letter`: Wraps against letters.
+  * `nowrap`: Does not wrap.
+* Default value: `nowrap`
+
+---
+
+### line-wrap-type
+
+Specifies if line must wrap against its viewport or the defined line breaking column.
+
+* Applicable to: Any element child of a EE::UI::UICodeEditor (CodeEditor)
+* Data Type: [string-list](#string-list-data-type)
+* Value List:
+  * `viewport`: Wrap against the element viewport.
+  * `line_breaking_column`: Wraps against the line breaking column.
+* Default value: `viewport`
+
+---
+
 ### locked
 
 Enable or disable editing on code editor elements.
@@ -1459,6 +1536,22 @@ Sets the vertical separation between each element in the grid layout.
 * Applicable to: EE::UI::UIGridLayout (GridLayout)
 * Data Type: [length](#length-data-type)
 * Default value: `0dp`
+
+---
+
+### row-valign
+
+Sets the vertical alignment of the elements in a stack layout. Elements in the same row will align
+based on the maximum element height in that row.
+
+* Applicable to: EE::UI::UIStackLayout (StackLayout)
+* Data Type: [string-list](#string-list-data-type)
+
+* Value List:
+  * `top`: Aligns to the top of the row.
+  * `bottom`: Aligns to the bottom of the row.
+  * `center`: Aligns to the center of the row.
+* Default value: `bottom`
 
 ---
 

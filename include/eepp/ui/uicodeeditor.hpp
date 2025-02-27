@@ -33,8 +33,6 @@ class UILoader;
 class UIPopUpMenu;
 class UIMenuItem;
 
-enum class CharacterAlignment : Uint32 { Left = 0, Center = 1, Right = 2 };
-
 using DocumentLineRange = std::pair<Int64, Int64>;
 using DocumentViewLineRange = std::pair<VisibleIndex, VisibleIndex>;
 

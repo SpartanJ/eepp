@@ -241,27 +241,34 @@ Float Text::getTextWidth( const String::View& string, const FontStyleConfig& con
 Sizef Text::draw( const String& string, const Vector2f& pos, Font* font, Float fontSize,
 				  const Color& fontColor, Uint32 style, Float outlineThickness,
 				  const Color& outlineColor, const Color& shadowColor, const Vector2f& shadowOffset,
-				  const Uint32& tabWidth, Uint32 textDrawHints ) {
+				  const Uint32& tabWidth, Uint32 textDrawHints,
+				  const WhitespaceDisplayConfig& whitespaceDisplayConfig ) {
 	return draw<String>( string, pos, font, fontSize, fontColor, style, outlineThickness,
-						 outlineColor, shadowColor, shadowOffset, tabWidth, textDrawHints );
+						 outlineColor, shadowColor, shadowOffset, tabWidth, textDrawHints,
+						 whitespaceDisplayConfig );
 }
 
 Sizef Text::draw( const String& string, const Vector2f& pos, const FontStyleConfig& config,
-				  const Uint32& tabWidth, Uint32 textDrawHints ) {
-	return draw<String>( string, pos, config, tabWidth, textDrawHints );
+				  const Uint32& tabWidth, Uint32 textDrawHints,
+				  const WhitespaceDisplayConfig& whitespaceDisplayConfig ) {
+	return draw<String>( string, pos, config, tabWidth, textDrawHints, whitespaceDisplayConfig );
 }
 
 Sizef Text::draw( const String::View& string, const Vector2f& pos, Font* font, Float fontSize,
 				  const Color& fontColor, Uint32 style, Float outlineThickness,
 				  const Color& outlineColor, const Color& shadowColor, const Vector2f& shadowOffset,
-				  const Uint32& tabWidth, Uint32 textDrawHints ) {
+				  const Uint32& tabWidth, Uint32 textDrawHints,
+				  const WhitespaceDisplayConfig& whitespaceDisplayConfig ) {
 	return draw<String::View>( string, pos, font, fontSize, fontColor, style, outlineThickness,
-							   outlineColor, shadowColor, shadowOffset, tabWidth, textDrawHints );
+							   outlineColor, shadowColor, shadowOffset, tabWidth, textDrawHints,
+							   whitespaceDisplayConfig );
 }
 
 Sizef Text::draw( const String::View& string, const Vector2f& pos, const FontStyleConfig& config,
-				  const Uint32& tabWidth, Uint32 textDrawHints ) {
-	return draw<String::View>( string, pos, config, tabWidth, textDrawHints );
+				  const Uint32& tabWidth, Uint32 textDrawHints,
+				  const WhitespaceDisplayConfig& whitespaceDisplayConfig ) {
+	return draw<String::View>( string, pos, config, tabWidth, textDrawHints,
+							   whitespaceDisplayConfig );
 }
 
 Text* Text::New() {
@@ -376,7 +383,8 @@ template <typename StringType>
 Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Float fontSize,
 				  const Color& fontColor, Uint32 style, Float outlineThickness,
 				  const Color& outlineColor, const Color& shadowColor, const Vector2f& shadowOffset,
-				  const Uint32& tabWidth, Uint32 textDrawHints ) {
+				  const Uint32& tabWidth, Uint32 textDrawHints,
+				  const WhitespaceDisplayConfig& whitespaceDisplayConfig ) {
 	Vector2f cpos{ pos };
 	String::StringBaseType ch;
 	String::StringBaseType prevChar = 0;
@@ -398,94 +406,124 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 	size_t ssize = string.size();
 	BatchRenderer* BR = GlobalBatchRenderer::instance();
 	Texture* fontTexture = font->getTexture( fontSize );
+	Float tabAlign = 0;
+	GlyphDrawable* spaceGlyph = nullptr;
+	GlyphDrawable* tabGlyph = nullptr;
+	Float hspace = font->getGlyph( ' ', fontSize, isBold, isItalic ).advance;
+	if ( whitespaceDisplayConfig.tabDisplayCharacter ) {
+		tabGlyph = font->getGlyphDrawable( whitespaceDisplayConfig.tabDisplayCharacter, fontSize );
+		switch ( whitespaceDisplayConfig.tabAlign ) {
+			case CharacterAlignment::Center:
+				tabAlign = ( ( tabWidth * hspace ) - tabGlyph->getPixelsSize().getWidth() ) * 0.5f;
+				break;
+			case CharacterAlignment::Right:
+				tabAlign = ( tabWidth * hspace ) - tabGlyph->getPixelsSize().getWidth();
+				break;
+			case CharacterAlignment::Left:
+				break;
+		}
+	}
+
 	BR->setBlendMode( BlendMode::Alpha() );
 	BR->quadsBegin();
 	BR->setTexture( fontTexture, fontTexture->getCoordinateType() );
 
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( TextShaperEnabled && font->getType() == FontType::TTF ) {
-		Float hspace = font->getGlyph( ' ', fontSize, isBold, isItalic ).advance;
 		FontTrueType* rFont = static_cast<FontTrueType*>( font );
-		shapeAndRun( string, rFont, fontSize, style, outlineThickness,
-					 [&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t*, Uint32 glyphCount,
-						  const hb_segment_properties_t&, TextShapeRun& run ) {
-						 FontTrueType* font = run.font();
-						 Uint32 prevGlyphIndex = 0;
-						 Uint32 cluster = 0;
-						 for ( std::size_t i = 0; i < glyphCount; ++i ) {
-							 hb_glyph_info_t curGlyph = glyphInfo[i];
-							 cluster = curGlyph.cluster;
-							 ch = string[cluster];
-							 if ( ch == '\t' ) {
-								 width += hspace * tabWidth;
-								 cpos.x += hspace * tabWidth;
-							 } else {
-								 if ( style & Text::Shadow ) {
-									 auto* gds = font->getGlyphDrawableFromGlyphIndex(
-										 curGlyph.codepoint, fontSize, isBold, isItalic,
-										 outlineThickness, rFont->getPage( fontSize ) );
-									 if ( gds )
-										 drawGlyph( BR, gds, cpos, shadowColor, isItalic );
-								 }
+		shapeAndRun(
+			string, rFont, fontSize, style, outlineThickness,
+			[&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t*, Uint32 glyphCount,
+				 const hb_segment_properties_t&, TextShapeRun& run ) {
+				FontTrueType* font = run.font();
+				Uint32 prevGlyphIndex = 0;
+				Uint32 cluster = 0;
+				for ( std::size_t i = 0; i < glyphCount; ++i ) {
+					hb_glyph_info_t curGlyph = glyphInfo[i];
+					cluster = curGlyph.cluster;
+					ch = string[cluster];
+					if ( ch == '\t' ) {
+						if ( tabGlyph ) {
+							drawGlyph( BR, tabGlyph, { cpos.x + tabAlign, cpos.y },
+									   whitespaceDisplayConfig.color, isItalic );
+						}
+						width += hspace * tabWidth;
+						cpos.x += hspace * tabWidth;
+					} else {
+						if ( style & Text::Shadow ) {
+							auto* gds = font->getGlyphDrawableFromGlyphIndex(
+								curGlyph.codepoint, fontSize, isBold, isItalic, outlineThickness,
+								rFont->getPage( fontSize ) );
+							if ( gds )
+								drawGlyph( BR, gds, cpos, shadowColor, isItalic );
+						}
 
-								 if ( outlineThickness != 0.f ) {
-									 auto* gdo = font->getGlyphDrawableFromGlyphIndex(
-										 curGlyph.codepoint, fontSize, isBold, isItalic,
-										 outlineThickness, rFont->getPage( fontSize ) );
-									 if ( gdo )
-										 drawGlyph( BR, gdo, cpos, outlineColor, isItalic );
-								 }
+						if ( outlineThickness != 0.f ) {
+							auto* gdo = font->getGlyphDrawableFromGlyphIndex(
+								curGlyph.codepoint, fontSize, isBold, isItalic, outlineThickness,
+								rFont->getPage( fontSize ) );
+							if ( gdo )
+								drawGlyph( BR, gdo, cpos, outlineColor, isItalic );
+						}
 
-								 auto* gd = font->getGlyphDrawableFromGlyphIndex(
-									 curGlyph.codepoint, fontSize, isBold, isItalic, 0,
-									 rFont->getPage( fontSize ) );
-								 if ( gd ) {
-									 if ( !isMonospace ) {
-										 kerning = font->getKerningFromGlyphIndex(
-											 prevGlyphIndex, curGlyph.codepoint, fontSize, isBold,
-											 isItalic, outlineThickness );
-										 cpos.x += kerning;
-										 width += kerning;
-									 }
+						auto* gd = font->getGlyphDrawableFromGlyphIndex(
+							curGlyph.codepoint, fontSize, isBold, isItalic, 0,
+							rFont->getPage( fontSize ) );
+						if ( gd ) {
+							if ( !isMonospace ) {
+								kerning = font->getKerningFromGlyphIndex(
+									prevGlyphIndex, curGlyph.codepoint, fontSize, isBold, isItalic,
+									outlineThickness );
+								cpos.x += kerning;
+								width += kerning;
+							}
 
-									 drawGlyph( BR, gd, cpos,
-												fallbacksToColorEmoji &&
-														Font::isEmojiCodePoint( ch )
-													? Color::White
-													: fontColor,
-												isItalic );
+							drawGlyph( BR, gd, cpos,
+									   fallbacksToColorEmoji && Font::isEmojiCodePoint( ch )
+										   ? Color::White
+										   : fontColor,
+									   isItalic );
 
-									 Float advance = font->isColorEmojiFont() && ' ' != ch
-														 ? gd->getPixelsSize().getWidth()
-														 : gd->getAdvance();
-									 cpos.x += advance;
-									 width += advance;
-								 }
-							 }
+							if ( ch == ' ' && whitespaceDisplayConfig.spaceDisplayCharacter ) {
+								if ( spaceGlyph == nullptr ) {
+									spaceGlyph = font->getGlyphDrawable(
+										whitespaceDisplayConfig.spaceDisplayCharacter, fontSize );
+								}
+								drawGlyph( BR, spaceGlyph, cpos, whitespaceDisplayConfig.color,
+										   isItalic );
+							}
 
-							 prevGlyphIndex = curGlyph.codepoint;
-						 }
+							Float advance = font->isColorEmojiFont() && ' ' != ch
+												? gd->getPixelsSize().getWidth()
+												: gd->getAdvance();
+							cpos.x += advance;
+							width += advance;
+						}
+					}
 
-						 if ( run.runIsNewLine() ) {
-							 if ( style & Text::Underlined ) {
-								 _drawUnderline( font, fontSize, fontColor, cpos, style, BR,
-												 outlineThickness, pos, width, shadowColor,
-												 shadowOffset, outlineColor );
-							 }
-							 if ( style & Text::StrikeThrough ) {
-								 _drawStrikeThrough( font, fontSize, fontColor, cpos, style, BR,
-													 outlineThickness, pos, width, shadowColor,
-													 shadowOffset, outlineColor );
-							 }
-							 size.x = eemax( width, size.x );
-							 width = 0;
-							 cpos.x = pos.x;
-							 cpos.y += height;
-							 if ( cluster != ssize - 1 )
-								 size.y += height;
-						 }
-						 return true;
-					 } );
+					prevGlyphIndex = curGlyph.codepoint;
+				}
+
+				if ( run.runIsNewLine() ) {
+					if ( style & Text::Underlined ) {
+						_drawUnderline( font, fontSize, fontColor, cpos, style, BR,
+										outlineThickness, pos, width, shadowColor, shadowOffset,
+										outlineColor );
+					}
+					if ( style & Text::StrikeThrough ) {
+						_drawStrikeThrough( font, fontSize, fontColor, cpos, style, BR,
+											outlineThickness, pos, width, shadowColor, shadowOffset,
+											outlineColor );
+					}
+					size.x = eemax( width, size.x );
+					width = 0;
+					cpos.x = pos.x;
+					cpos.y += height;
+					if ( cluster != ssize - 1 )
+						size.y += height;
+				}
+				return true;
+			} );
 
 		if ( ( style & Text::Underlined ) && width != 0 ) {
 			_drawUnderline( font, fontSize, fontColor, cpos, style, BR, outlineThickness, pos,
@@ -512,17 +550,26 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 			case '\r':
 				continue;
 			case '\t': {
-				Float advance =
-					font->getGlyph( ' ', fontSize, isBold, isItalic ).advance * tabWidth;
+				Float advance = hspace * tabWidth;
+				if ( tabGlyph ) {
+					drawGlyph( BR, tabGlyph, { cpos.x + tabAlign, cpos.y },
+							   whitespaceDisplayConfig.color, isItalic );
+				}
 				width += advance;
 				cpos.x += advance;
 				prevChar = ch;
 				continue;
 			}
 			case ' ': {
-				Float advance = font->getGlyph( ' ', fontSize, isBold, isItalic ).advance;
-				width += advance;
-				cpos.x += advance;
+				if ( whitespaceDisplayConfig.spaceDisplayCharacter ) {
+					if ( spaceGlyph == nullptr ) {
+						spaceGlyph = font->getGlyphDrawable(
+							whitespaceDisplayConfig.spaceDisplayCharacter, fontSize );
+					}
+					drawGlyph( BR, spaceGlyph, cpos, whitespaceDisplayConfig.color, isItalic );
+				}
+				width += hspace;
+				cpos.x += hspace;
 				prevChar = ch;
 				continue;
 			}
@@ -598,10 +645,12 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 
 template <typename StringType>
 Sizef Text::draw( const StringType& string, const Vector2f& pos, const FontStyleConfig& config,
-				  const Uint32& tabWidth, Uint32 textDrawHints ) {
+				  const Uint32& tabWidth, Uint32 textDrawHints,
+				  const WhitespaceDisplayConfig& whitespaceDisplayConfig ) {
 	return draw<StringType>( string, pos, config.Font, config.CharacterSize, config.FontColor,
 							 config.Style, config.OutlineThickness, config.OutlineColor,
-							 config.ShadowColor, config.ShadowOffset, tabWidth, textDrawHints );
+							 config.ShadowColor, config.ShadowOffset, tabWidth, textDrawHints,
+							 whitespaceDisplayConfig );
 }
 
 template <typename StringType>
