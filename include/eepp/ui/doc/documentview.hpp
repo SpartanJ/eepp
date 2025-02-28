@@ -18,7 +18,8 @@ enum class LineWrapType { Viewport, LineBreakingColumn };
 enum class VisibleIndex : Int64 { first = 0, invalid = std::numeric_limits<Int64>::max() };
 
 inline VisibleIndex visibleIndexOffset( VisibleIndex idx, Int64 offset ) {
-	return static_cast<VisibleIndex>( static_cast<Int64>( idx ) + offset );
+	return eemax( VisibleIndex::first,
+				  static_cast<VisibleIndex>( static_cast<Int64>( idx ) + offset ) );
 }
 
 class EE_API DocumentView {
