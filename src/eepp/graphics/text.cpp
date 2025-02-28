@@ -216,26 +216,28 @@ Uint32 Text::stringToStyleFlag( const std::string& str ) {
 
 Float Text::getTextWidth( Font* font, const Uint32& fontSize, const String& string,
 						  const Uint32& style, const Uint32& tabWidth,
-						  const Float& outlineThickness ) {
-	return getTextWidth<String>( font, fontSize, string, style, tabWidth, outlineThickness );
+						  const Float& outlineThickness, Uint32 textDrawHints ) {
+	return getTextWidth<String>( font, fontSize, string, style, tabWidth, outlineThickness,
+								 textDrawHints );
 }
 
 Float Text::getTextWidth( Font* font, const Uint32& fontSize, const String::View& string,
 						  const Uint32& style, const Uint32& tabWidth,
-						  const Float& outlineThickness ) {
-	return getTextWidth<String::View>( font, fontSize, string, style, tabWidth, outlineThickness );
+						  const Float& outlineThickness, Uint32 textDrawHints ) {
+	return getTextWidth<String::View>( font, fontSize, string, style, tabWidth, outlineThickness,
+									   textDrawHints );
 }
 
 Float Text::getTextWidth( const String& string, const FontStyleConfig& config,
-						  const Uint32& tabWidth ) {
+						  const Uint32& tabWidth, Uint32 textDrawHints ) {
 	return getTextWidth<String>( config.Font, config.CharacterSize, string, config.Style, tabWidth,
-								 config.OutlineThickness );
+								 config.OutlineThickness, textDrawHints );
 }
 
 Float Text::getTextWidth( const String::View& string, const FontStyleConfig& config,
-						  const Uint32& tabWidth ) {
+						  const Uint32& tabWidth, Uint32 textDrawHints ) {
 	return getTextWidth<String::View>( config.Font, config.CharacterSize, string, config.Style,
-									   tabWidth, config.OutlineThickness );
+									   tabWidth, config.OutlineThickness, textDrawHints );
 }
 
 Sizef Text::draw( const String& string, const Vector2f& pos, Font* font, Float fontSize,
@@ -1001,7 +1003,7 @@ void Text::findWordFromCharacterIndex( Int32 characterIndex, Int32& initCur, Int
 template <typename StringType>
 Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& string,
 						  const Uint32& style, const Uint32& tabWidth,
-						  const Float& outlineThickness ) {
+						  const Float& outlineThickness, Uint32 textDrawHints ) {
 	if ( NULL == font || string.empty() )
 		return 0;
 	Float width = 0;
@@ -1010,10 +1012,14 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 	Uint32 prevChar = 0;
 	bool bold = ( style & Text::Bold ) != 0;
 	bool italic = ( style & Text::Italic ) != 0;
+	bool isMonospace = font && ( font->isMonospace() ||
+								 ( font->getType() == FontType::TTF &&
+								   static_cast<FontTrueType*>( font )->isIdentifiedAsMonospace() &&
+								   ( textDrawHints & DrawHints::AllAscii ) != 0 ) );
 	Float hspace = static_cast<Float>(
 		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
 
-	if ( font->isMonospace() ) {
+	if ( isMonospace ) {
 		size_t len = string.length();
 		Float width = 0;
 		Float maxWidth = 0;

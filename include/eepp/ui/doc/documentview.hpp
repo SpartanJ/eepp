@@ -62,11 +62,13 @@ class EE_API DocumentView {
 	static LineWrapInfo
 	computeLineBreaks( const String::View& string, const FontStyleConfig& fontStyle, Float maxWidth,
 					   LineWrapMode mode, bool keepIndentation, Uint32 tabWidth = 4,
-					   Float whiteSpaceWidth = 0.f /* 0 = should calculate it */ );
+					   Float whiteSpaceWidth = 0.f /* 0 = should calculate it */,
+					   bool allAscii = false );
 
 	static LineWrapInfo computeLineBreaks( const String& string, const FontStyleConfig& fontStyle,
 										   Float maxWidth, LineWrapMode mode, bool keepIndentation,
-										   Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f );
+										   Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f,
+										   bool allAscii = false );
 
 	static LineWrapInfo computeLineBreaks( const TextDocument& doc, size_t line,
 										   const FontStyleConfig& fontStyle, Float maxWidth,

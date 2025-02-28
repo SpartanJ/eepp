@@ -244,7 +244,7 @@ void UICodeEditor::draw() {
 		mLoader->setVisible( false );
 	}
 
-	if ( mDoc->isLoading() )
+	if ( mDoc->isLoading() || mSize.getWidth() == 0 )
 		return;
 
 	if ( mDirtyEditor )
@@ -981,6 +981,8 @@ void UICodeEditor::setLineWrapMode( LineWrapMode mode ) {
 	mDocView.setLineWrapMode( mode );
 	if ( prevMode != mode ) {
 		scrollToCursor();
+
+		mLongestLineWidth = 0;
 		invalidateLongestLineWidth();
 	}
 }
@@ -1901,7 +1903,7 @@ void UICodeEditor::drawCursor( const Vector2f& startScroll, const Float& lineHei
 void UICodeEditor::onSizeChange() {
 	invalidateEditor( false );
 	invalidateLineWrapMaxWidth( false );
-	if ( mDocView.isWrapEnabled() )
+	if ( !mDocView.isWrapEnabled() )
 		invalidateLongestLineWidth();
 	UIWidget::onSizeChange();
 }
@@ -1909,7 +1911,7 @@ void UICodeEditor::onSizeChange() {
 void UICodeEditor::onPaddingChange() {
 	invalidateEditor( false );
 	invalidateLineWrapMaxWidth( false );
-	if ( mDocView.isWrapEnabled() )
+	if ( !mDocView.isWrapEnabled() )
 		invalidateLongestLineWidth();
 	UIWidget::onPaddingChange();
 }
@@ -1947,10 +1949,10 @@ Float UICodeEditor::getLineWidth( const Int64& docLine ) {
 
 	if ( mDocView.isWrappedLine( docLine ) ) {
 		auto vline = mDocView.getVisibleLineInfo( docLine );
-		auto& line = mDoc->line( docLine ).getText();
+		const auto& line = mDoc->line( docLine ).getText();
 		Float width = 0;
 
-		if ( isNotMonospace() ) {
+		if ( !isMonospaceLine ) {
 			auto& line = mDoc->line( docLine );
 			auto found = mLinesWidthCache.find( docLine );
 			if ( found != mLinesWidthCache.end() && line.getHash() == found->second.first )
@@ -1966,14 +1968,14 @@ Float UICodeEditor::getLineWidth( const Int64& docLine ) {
 			width = eemax( width, curWidth );
 		}
 
-		if ( isNotMonospace() ) {
+		if ( !isMonospaceLine ) {
 			mLinesWidthCache[docLine] = { line.getHash(), width };
 		}
 
 		return width;
 	}
 
-	if ( isNotMonospace() ) {
+	if ( !isMonospaceLine ) {
 		auto& line = mDoc->line( docLine );
 		auto found = mLinesWidthCache.find( docLine );
 		if ( found != mLinesWidthCache.end() && line.getHash() == found->second.first )
@@ -2005,8 +2007,7 @@ void UICodeEditor::updateScrollBar() {
 		Float viewPortWidth = getViewportWidth();
 		mHScrollBar->setPageStep( viewPortWidth / mLongestLineWidth );
 		mHScrollBar->setClickStep( 0.2f );
-		bool showHScroll = mLongestLineWidth > viewPortWidth && !mDocView.isWrapEnabled() &&
-						   !mLongestLineWidthDirty;
+		bool showHScroll = mLongestLineWidth > viewPortWidth && !mDocView.isWrapEnabled();
 		mHScrollBar->setEnabled( showHScroll );
 		mHScrollBar->setVisible( showHScroll );
 	}

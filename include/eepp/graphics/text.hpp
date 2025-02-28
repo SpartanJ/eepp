@@ -40,17 +40,17 @@ class EE_API Text {
 
 	static Float getTextWidth( Font* font, const Uint32& fontSize, const String& string,
 							   const Uint32& style, const Uint32& tabWidth = 4,
-							   const Float& outlineThickness = 0.f );
+							   const Float& outlineThickness = 0.f, Uint32 textDrawHints = 0 );
 
 	static Float getTextWidth( Font* font, const Uint32& fontSize, const String::View& string,
 							   const Uint32& style, const Uint32& tabWidth = 4,
-							   const Float& outlineThickness = 0.f );
+							   const Float& outlineThickness = 0.f, Uint32 textDrawHints = 0 );
 
 	static Float getTextWidth( const String& string, const FontStyleConfig& config,
-							   const Uint32& tabWidth = 4 );
+							   const Uint32& tabWidth = 4, Uint32 textDrawHints = 0 );
 
 	static Float getTextWidth( const String::View& string, const FontStyleConfig& config,
-							   const Uint32& tabWidth = 4 );
+							   const Uint32& tabWidth = 4, Uint32 textDrawHints = 0 );
 
 	static Sizef draw( const String& string, const Vector2f& pos, Font* font, Float fontSize,
 					   const Color& fontColor, Uint32 style = 0, Float outlineThickness = 0.f,
@@ -325,7 +325,7 @@ class EE_API Text {
 	template <typename StringType>
 	static Float getTextWidth( Font* font, const Uint32& fontSize, const StringType& string,
 							   const Uint32& style, const Uint32& tabWidth = 4,
-							   const Float& outlineThickness = 0.f );
+							   const Float& outlineThickness = 0.f, Uint32 textDrawHints = 0 );
 
 	template <typename StringType>
 	static Sizef

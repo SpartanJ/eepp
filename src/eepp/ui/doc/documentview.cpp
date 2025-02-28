@@ -1,3 +1,4 @@
+#include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
@@ -54,7 +55,8 @@ Float DocumentView::computeOffsets( const String::View& string, const FontStyleC
 	static const String sepSpaces = " \t\n\v\f\r";
 	auto nonIndentPos = string.find_first_not_of( sepSpaces.data() );
 	if ( nonIndentPos != String::View::npos ) {
-		Float w = Text::getTextWidth( string.substr( 0, nonIndentPos ), fontStyle, tabWidth );
+		Float w = Text::getTextWidth( string.substr( 0, nonIndentPos ), fontStyle, tabWidth,
+									  Text::DrawHints::AllAscii );
 		return maxWidth != 0.f ? ( w > maxWidth ? 0.f : w ) : w;
 	}
 	return 0.f;
@@ -64,7 +66,7 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String::View& 
 															const FontStyleConfig& fontStyle,
 															Float maxWidth, LineWrapMode mode,
 															bool keepIndentation, Uint32 tabWidth,
-															Float whiteSpaceWidth ) {
+															Float whiteSpaceWidth, bool allAscii ) {
 	LineWrapInfo info;
 	info.wraps.push_back( 0 );
 	if ( string.empty() || nullptr == fontStyle.Font || mode == LineWrapMode::NoWrap )
@@ -86,7 +88,11 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String::View& 
 
 	Float xoffset = 0.f;
 	Float lastWidth = 0.f;
-	bool isMonospace = fontStyle.Font->isMonospace();
+	bool isMonospace =
+		fontStyle.Font &&
+		( fontStyle.Font->isMonospace() ||
+		  ( fontStyle.Font->getType() == FontType::TTF &&
+			static_cast<FontTrueType*>( fontStyle.Font )->isIdentifiedAsMonospace() && allAscii ) );
 
 	size_t lastSpace = 0;
 	Uint32 prevChar = 0;
@@ -134,9 +140,9 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String& string
 															const FontStyleConfig& fontStyle,
 															Float maxWidth, LineWrapMode mode,
 															bool keepIndentation, Uint32 tabWidth,
-															Float whiteSpaceWidth ) {
+															Float whiteSpaceWidth, bool allAscii ) {
 	return computeLineBreaks( string.view(), fontStyle, maxWidth, mode, keepIndentation, tabWidth,
-							  whiteSpaceWidth );
+							  whiteSpaceWidth, allAscii );
 }
 
 DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const TextDocument& doc, size_t line,
@@ -144,9 +150,10 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const TextDocument& 
 															Float maxWidth, LineWrapMode mode,
 															bool keepIndentation, Uint32 tabWidth,
 															Float whiteSpaceWidth ) {
-	const auto& text = doc.line( line ).getText();
+	const auto& docLine = doc.line( line );
+	const auto& text = docLine.getText();
 	return computeLineBreaks( text.view().substr( 0, text.size() - 1 ), fontStyle, maxWidth, mode,
-							  keepIndentation, tabWidth, whiteSpaceWidth );
+							  keepIndentation, tabWidth, whiteSpaceWidth, docLine.isAscii() );
 }
 
 DocumentView::DocumentView( std::shared_ptr<TextDocument> doc, FontStyleConfig fontStyle,
