@@ -8,6 +8,8 @@ namespace EE { namespace Math {
 
 template <typename T> class tRECT {
   public:
+	static const tRECT<T> Zero;
+
 	T Left, Right, Top, Bottom;
 
 	tRECT( T left, T top, T right, T bottom );
@@ -87,6 +89,8 @@ template <typename T> class tRECT {
 
 	tRECT<int> asInt() const;
 };
+
+template <typename T> const tRECT<T> tRECT<T>::Zero = tRECT<T>( 0, 0, 0, 0 );
 
 template <typename T> tRECT<Float> tRECT<T>::asFloat() const {
 	return tRECT<Float>( Left, Top, Right, Bottom );

@@ -1122,6 +1122,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	std::string getCodeEditorFlags( bool enabled ) const;
 
 	bool isMonospaceLine( Int64 lineIndex ) const;
+
+	Float editorWidth() const;
+
+	Float editorHeight() const;
 };
 
 }} // namespace EE::UI
