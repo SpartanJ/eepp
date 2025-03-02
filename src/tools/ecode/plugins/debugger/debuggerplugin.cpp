@@ -1325,15 +1325,17 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 					if ( exitCode == 0 ) {
 						runCurrentConfig();
 					} else {
-						auto msgBox =
-							UIMessageBox::New( UIMessageBox::YES_NO,
-											   i18n( "build_failed_debug_anyways",
-													 "Building the project failed, do you want to "
-													 "debug the binary anyways?" ) );
-						msgBox->setTitle( i18n( "build_failed", "Build Failed" ) );
-						msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
-						msgBox->on( Event::OnConfirm, [this]( auto ) { runCurrentConfig(); } );
-						msgBox->showWhenReady();
+						getPluginContext()->getUISceneNode()->runOnMainThread( [this] {
+							auto msgBox = UIMessageBox::New(
+								UIMessageBox::YES_NO,
+								i18n( "build_failed_debug_anyways",
+									  "Building the project failed, do you want to "
+									  "debug the binary anyways?" ) );
+							msgBox->setTitle( i18n( "build_failed", "Build Failed" ) );
+							msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+							msgBox->on( Event::OnConfirm, [this]( auto ) { runCurrentConfig(); } );
+							msgBox->showWhenReady();
+						} );
 					}
 				} );
 		}

@@ -43,6 +43,7 @@ enum UIFlag {
 	UI_TOOLTIP_ENABLED = ( 1 << 26 ),
 	UI_SCROLLABLE = ( 1 << 27 ),
 	UI_HIGHLIGHT = ( 1 << 28 ),
+	UI_PARENT_ATTRIBUTE_CHANGED = ( 1 << 29 ),
 };
 
 enum UINodeType {

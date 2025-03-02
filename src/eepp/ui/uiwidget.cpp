@@ -100,6 +100,7 @@ UIWidget* UIWidget::setLayoutMargin( const Rectf& margin ) {
 		mLayoutMarginPx = PixelDensity::dpToPx( mLayoutMargin ).ceil();
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -111,6 +112,7 @@ UIWidget* UIWidget::setLayoutMarginLeft( const Float& marginLeft ) {
 		mLayoutMarginPx.Left = eeceil( PixelDensity::dpToPx( mLayoutMargin.Left ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -122,6 +124,7 @@ UIWidget* UIWidget::setLayoutMarginRight( const Float& marginRight ) {
 		mLayoutMarginPx.Right = eeceil( PixelDensity::dpToPx( mLayoutMargin.Right ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -133,6 +136,7 @@ UIWidget* UIWidget::setLayoutMarginTop( const Float& marginTop ) {
 		mLayoutMarginPx.Top = eeceil( PixelDensity::dpToPx( mLayoutMargin.Top ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -144,6 +148,7 @@ UIWidget* UIWidget::setLayoutMarginBottom( const Float& marginBottom ) {
 		mLayoutMarginPx.Bottom = eeceil( PixelDensity::dpToPx( mLayoutMargin.Bottom ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -155,6 +160,7 @@ UIWidget* UIWidget::setLayoutPixelsMargin( const Rectf& margin ) {
 		mLayoutMargin = PixelDensity::pxToDp( mLayoutMarginPx ).ceil();
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -166,6 +172,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginLeft( const Float& marginLeft ) {
 		mLayoutMargin.Left = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Left ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -177,6 +184,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginRight( const Float& marginRight ) {
 		mLayoutMargin.Right = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Right ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -188,6 +196,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginTop( const Float& marginTop ) {
 		mLayoutMargin.Top = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Top ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -199,6 +208,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginBottom( const Float& marginBottom ) {
 		mLayoutMargin.Bottom = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Bottom ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -558,9 +568,13 @@ void UIWidget::notifyLayoutAttrChange() {
 }
 
 void UIWidget::notifyLayoutAttrChangeParent() {
-	if ( 0 == mAttributesTransactionCount && NULL != mParentNode ) {
+	if ( NULL == mParentNode ) return;
+
+	if ( 0 == mAttributesTransactionCount ) {
 		NodeMessage msg( this, NodeMessage::LayoutAttributeChange );
 		mParentNode->messagePost( &msg );
+	} else {
+		mFlags |= UI_PARENT_ATTRIBUTE_CHANGED;
 	}
 }
 
@@ -1150,6 +1164,12 @@ void UIWidget::endAttributesTransaction() {
 			notifyLayoutAttrChange();
 
 			mFlags &= ~UI_ATTRIBUTE_CHANGED;
+		}
+
+		if ( mFlags & UI_PARENT_ATTRIBUTE_CHANGED ) {
+			notifyLayoutAttrChangeParent();
+
+			mFlags &= ~UI_PARENT_ATTRIBUTE_CHANGED;
 		}
 	}
 }

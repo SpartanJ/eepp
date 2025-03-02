@@ -416,7 +416,8 @@ void UICodeEditor::draw() {
 }
 
 void UICodeEditor::scheduledUpdate( const Time& ) {
-	if ( mLastActivity.getElapsedTime() > Seconds( 60 ) ) {
+	if ( mDisableCursorBlinkingAfterAMinuteOfInactivity &&
+		 mLastActivity.getElapsedTime() > Seconds( 60 ) ) {
 		if ( !mCursorVisible ) {
 			mCursorVisible = true;
 			invalidateDraw();
@@ -2538,11 +2539,15 @@ const bool& UICodeEditor::isLocked() const {
 void UICodeEditor::setLocked( bool locked ) {
 	if ( mLocked != locked ) {
 		mLocked = locked;
-		if ( !mLocked && hasFocus() ) {
-			resetCursor();
-			getUISceneNode()->getWindow()->startTextInput();
-			mDoc->setActiveClient( this );
-			updateIMELocation();
+		if ( !mLocked ) {
+			if ( hasFocus() ) {
+				resetCursor();
+				getUISceneNode()->getWindow()->startTextInput();
+				mDoc->setActiveClient( this );
+				updateIMELocation();
+			} else {
+				mCursorVisible = false;
+			}
 		}
 		invalidateDraw();
 	}
@@ -5279,6 +5284,26 @@ Float UICodeEditor::editorHeight() const {
 bool UICodeEditor::isScrollable() const {
 	return UIWidget::isScrollable() &&
 		   ( (Int64)getTotalVisibleLines() - (Int64)getViewPortLineCount().y > 0 );
+}
+
+void UICodeEditor::setCursorVisible( bool visible ) {
+	if ( visible != mCursorVisible ) {
+		mCursorVisible = visible;
+		invalidateDraw();
+	}
+}
+
+bool UICodeEditor::isCursorVisible() const {
+	return mCursorVisible;
+}
+
+void UICodeEditor::setDisableCursorBlinkingAfterAMinuteOfInactivity(
+	bool diableCursorBlinkingAfterAMinuteOfInactivity ) {
+	mDisableCursorBlinkingAfterAMinuteOfInactivity = diableCursorBlinkingAfterAMinuteOfInactivity;
+}
+
+bool UICodeEditor::isCursorBlinkingAfterAMinuteOfInactivityDisabled() const {
+	return mDisableCursorBlinkingAfterAMinuteOfInactivity;
 }
 
 }} // namespace EE::UI

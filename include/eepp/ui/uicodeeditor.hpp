@@ -783,6 +783,15 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	bool isEnabledFlashCursor() { return mEnableFlashCursor; }
 
+	void setCursorVisible( bool visible );
+
+	bool isCursorVisible() const;
+
+	void setDisableCursorBlinkingAfterAMinuteOfInactivity(
+		bool diableCursorBlinkingAfterAMinuteOfInactivity );
+
+	bool isCursorBlinkingAfterAMinuteOfInactivityDisabled() const;
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -831,6 +840,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mFoldsVisible{ false };
 	bool mFoldsIsFirst{ true };
 	bool mEnableFlashCursor{ false };
+	bool mDisableCursorBlinkingAfterAMinuteOfInactivity{ true };
 	Uint32 mTabWidth;
 	std::atomic<size_t> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;
