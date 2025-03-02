@@ -470,7 +470,7 @@ Float DocumentView::getWhiteSpaceWidth() const {
 }
 
 void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
-	if ( isOneToOne() )
+	if ( 0 == mMaxWidth || isOneToOne() )
 		return;
 
 	// Unfold ANY modification over a folded range

@@ -693,7 +693,7 @@ bool UIMenu::isChildOrSubMenu( Node* node ) {
 		   ( mCurrentSubMenu && mCurrentSubMenu->isChildOrSubMenu( node ) );
 }
 
-void UIMenu::findBestMenuPos( Vector2f& pos, UIMenu* menu, UIMenu* parent,
+void UIMenu::findBestMenuPos( Vector2f& pos, UIWidget* menu, UIMenu* parent,
 							  UIMenuSubMenu* subMenu ) {
 	SceneNode* sceneNode = menu->getSceneNode();
 

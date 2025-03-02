@@ -683,9 +683,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Sizef getMaxScroll() const;
 
-	void setScrollX( const Float& val, bool emmitEvent = true );
+	virtual bool isScrollable() const;
 
-	void setScrollY( const Float& val, bool emmitEvent = true );
+	bool setScrollX( const Float& val, bool emmitEvent = true );
+
+	bool setScrollY( const Float& val, bool emmitEvent = true );
 
 	Vector2f getScreenStart() const;
 

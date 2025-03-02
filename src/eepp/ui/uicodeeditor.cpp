@@ -1720,7 +1720,6 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 		} else {
 			setScrollY( mScroll.y + mMouseWheelScroll );
 		}
-		invalidateDraw();
 	} else if ( flags & EE_BUTTON_WUMASK ) {
 		if ( getUISceneNode()->getWindow()->getInput()->isKeyModPressed() ) {
 			mDoc->execute( "font-size-grow" );
@@ -1729,7 +1728,6 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 		} else {
 			setScrollY( mScroll.y - mMouseWheelScroll );
 		}
-		invalidateDraw();
 	} else if ( flags & EE_BUTTON_WRMASK ) {
 		setScrollX( mScroll.x + mMouseWheelScroll );
 	} else if ( flags & EE_BUTTON_WLMASK ) {
@@ -2370,7 +2368,7 @@ void UICodeEditor::showMinimap( bool showMinimap ) {
 	}
 }
 
-void UICodeEditor::setScrollX( const Float& val, bool emmitEvent ) {
+bool UICodeEditor::setScrollX( const Float& val, bool emmitEvent ) {
 	Float oldVal = mScroll.x;
 	mScroll.x = eefloor( eeclamp<Float>( val, 0.f, getMaxScroll().x ) );
 	if ( oldVal != mScroll.x ) {
@@ -2380,10 +2378,12 @@ void UICodeEditor::setScrollX( const Float& val, bool emmitEvent ) {
 			sendCommonEvent( Event::OnScrollChange );
 		if ( mHorizontalScrollBarEnabled && emmitEvent )
 			mHScrollBar->setValue( mScroll.x / getMaxScroll().x, false );
+		return true;
 	}
+	return false;
 }
 
-void UICodeEditor::setScrollY( const Float& val, bool emmitEvent ) {
+bool UICodeEditor::setScrollY( const Float& val, bool emmitEvent ) {
 	Float oldVal = mScroll.y;
 	mScroll.y = eefloor( eeclamp<Float>( val, 0, getMaxScroll().y ) );
 	if ( oldVal != mScroll.y ) {
@@ -2393,7 +2393,9 @@ void UICodeEditor::setScrollY( const Float& val, bool emmitEvent ) {
 			sendCommonEvent( Event::OnScrollChange );
 		if ( mVerticalScrollBarEnabled && emmitEvent )
 			mVScrollBar->setValue( mScroll.y / getMaxScroll().y, false );
+		return true;
 	}
+	return false;
 }
 
 Vector2d UICodeEditor::getTextPositionOffset( const TextPosition& position,
@@ -5272,6 +5274,11 @@ Float UICodeEditor::editorWidth() const {
 
 Float UICodeEditor::editorHeight() const {
 	return eemax( 0.f, mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
+}
+
+bool UICodeEditor::isScrollable() const {
+	return UIWidget::isScrollable() &&
+		   ( (Int64)getTotalVisibleLines() - (Int64)getViewPortLineCount().y > 0 );
 }
 
 }} // namespace EE::UI
