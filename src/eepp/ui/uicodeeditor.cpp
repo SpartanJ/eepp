@@ -138,6 +138,8 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	setTextSelection( true );
 	setColorScheme( SyntaxColorScheme::getDefault() );
 	refreshTag();
+	mDocView.setOnVisibleLineCountChange(
+		[this] { sendCommonEvent( Event::OnVisibleLinesCountChange ); } );
 	mVScrollBar = UIScrollBar::NewVertical();
 	mVScrollBar->setParent( this );
 	mVScrollBar->addEventListener( Event::OnSizeChange,
@@ -2126,8 +2128,6 @@ void UICodeEditor::updateEditor() {
 
 void UICodeEditor::onDocumentTextChanged( const DocumentContentChange& change ) {
 	invalidateDraw();
-	checkMatchingBrackets();
-	sendCommonEvent( Event::OnTextChanged );
 	mDocView.updateCache( change.range.start().line(), change.range.start().line(), 0 );
 
 	if ( !change.text.empty() && !mDocView.isWrapEnabled() ) {
@@ -2141,6 +2141,8 @@ void UICodeEditor::onDocumentTextChanged( const DocumentContentChange& change ) 
 	}
 
 	findRegionsDelayed();
+	checkMatchingBrackets();
+	sendCommonEvent( Event::OnTextChanged );
 }
 
 void UICodeEditor::onDocumentCursorChange( const Doc::TextPosition& ) {
@@ -2168,6 +2170,9 @@ void UICodeEditor::onDocumentLineCountChange( const size_t& lastCount, const siz
 
 	if ( Math::countDigits( (Int64)lastCount ) != Math::countDigits( (Int64)newCount ) )
 		invalidateLineWrapMaxWidth( false );
+
+	if ( !mDocView.isWrapEnabled() )
+		sendCommonEvent( Event::OnVisibleLinesCountChange );
 }
 
 void UICodeEditor::onDocumentLineChanged( const Int64& lineNumber ) {

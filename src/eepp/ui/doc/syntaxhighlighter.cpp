@@ -89,7 +89,8 @@ void SyntaxHighlighter::moveHighlight( const Int64& fromLine, const Int64& /*toL
 		return;
 	Int64 linesCount = mDoc->linesCount();
 	if ( numLines > 0 ) {
-		for ( Int64 i = linesCount - 1; i >= fromLine; --i ) {
+		Int64 toLine = fromLine + numLines;
+		for ( Int64 i = linesCount - 1; i >= toLine; --i ) {
 			auto lineIt = mLines.find( i - numLines );
 			if ( lineIt != mLines.end() ) {
 				const auto& line = lineIt->second;

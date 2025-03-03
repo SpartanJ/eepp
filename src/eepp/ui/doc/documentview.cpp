@@ -273,6 +273,8 @@ void DocumentView::invalidateCache() {
 
 	mPendingReconstruction = false;
 
+	onVisibleLinesCountChange();
+
 	Log::debug( "DocumentView for \"%s\" generated in %s", mDoc->getFilePath(),
 				clock.getElapsedTime().toString() );
 }
@@ -430,9 +432,12 @@ void DocumentView::setPendingReconstruction( bool pendingReconstruction ) {
 }
 
 void DocumentView::clearCache() {
+	auto visibleLines = mVisibleLines.size();
 	mVisibleLines.clear();
 	mDocLineToVisibleIndex.clear();
 	mVisibleLinesOffset.clear();
+	if ( mDoc && visibleLines != mDoc->linesCount() )
+		onVisibleLinesCountChange();
 }
 
 void DocumentView::clear() {
@@ -487,6 +492,8 @@ void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 	Int64 oldIdxFrom = static_cast<Int64>( toVisibleIndex( fromLine, false ) );
 	Int64 oldIdxTo = static_cast<Int64>( toVisibleIndex( toLine, true ) );
 
+	auto visibleLinesCount = mVisibleLines.size();
+
 	// Remove old visible lines
 	mVisibleLines.erase( mVisibleLines.begin() + oldIdxFrom, mVisibleLines.begin() + oldIdxTo + 1 );
 
@@ -535,6 +542,9 @@ void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 	recomputeDocLineToVisibleIndex( oldIdxFrom );
 
 	verifyStructuralConsistency();
+
+	if ( visibleLinesCount != mVisibleLines.size() )
+		onVisibleLinesCountChange();
 }
 
 void DocumentView::recomputeDocLineToVisibleIndex( Int64 fromVisibleIndex, bool ensureDocSize ) {
@@ -696,6 +706,8 @@ void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visi
 
 	if ( recomputeLineToVisibleIndex )
 		eeASSERT( mDocLineToVisibleIndex.size() == mDoc->linesCount() );
+
+	onVisibleLinesCountChange();
 }
 
 bool DocumentView::isFolded( Int64 docIdx, bool andNotFirstLine ) const {
@@ -790,6 +802,16 @@ void DocumentView::verifyStructuralConsistency() {
 
 	eeASSERT( mVisibleLinesOffset.size() == mDoc->linesCount() );
 #endif
+}
+
+void DocumentView::onVisibleLinesCountChange() {
+	if ( mOnVisibleLineCountChange )
+		mOnVisibleLineCountChange();
+}
+
+void DocumentView::setOnVisibleLineCountChange(
+	std::function<void()> onVisibleLinesCountChangeCb ) {
+	mOnVisibleLineCountChange = std::move( onVisibleLinesCountChangeCb );
 }
 
 }}} // namespace EE::UI::Doc

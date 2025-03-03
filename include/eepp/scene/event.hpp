@@ -116,6 +116,7 @@ class EE_API Event {
 		OnScrollChange,
 		OnModelChanged,
 		OnWindowToFront,
+		OnVisibleLinesCountChange,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 

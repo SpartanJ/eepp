@@ -155,6 +155,8 @@ class EE_API DocumentView {
 
 	void onFoldRegionsUpdated();
 
+	void setOnVisibleLineCountChange( std::function<void()> onVisibleLinesCountChangeCb );
+
   protected:
 	std::shared_ptr<TextDocument> mDoc;
 	FontStyleConfig mFontStyle;
@@ -168,6 +170,7 @@ class EE_API DocumentView {
 	bool mPendingReconstruction{ false };
 	bool mUnderConstruction{ false };
 	bool mUpdatingFoldRegions{ false };
+	std::function<void()> mOnVisibleLineCountChange;
 
 	void changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visible,
 						   bool recomputeOffset = true, bool recomputeLineToVisibleIndex = true );
@@ -184,6 +187,8 @@ class EE_API DocumentView {
 					   bool recomputeLineToVisibleIndex = true );
 
 	void moveCursorToVisibleArea();
+
+	void onVisibleLinesCountChange();
 };
 
 }}} // namespace EE::UI::Doc
