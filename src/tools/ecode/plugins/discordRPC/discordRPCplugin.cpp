@@ -115,6 +115,8 @@ void DiscordRPCplugin::loadDiscordRPCConfig( const std::string& path, bool updat
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];
 
+		// Icon bindings are being provided thanks to vyfor icons: https://github.com/vyfor/icons
+		// Icon licenses at: https://github.com/vyfor/icons/blob/master/LICENSE.md
 		if ( config.contains( "iconBindings" ) ) {
 			auto newConfig = config["iconBindings"];
 			if ( mLangBindings.empty() )
