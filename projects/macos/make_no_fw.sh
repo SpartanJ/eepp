@@ -15,7 +15,6 @@ else
 fi
 
 cd ../../make/macosx/
-sed -e "s/-Wl,-x//g" -i .make
 
 make -j$(sysctl -n hw.ncpu) $@
 
