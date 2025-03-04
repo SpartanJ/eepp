@@ -1,104 +1,107 @@
-#include "iconmanager.hpp"
+#include <eepp/ui/iconmanager.hpp>
 #include <eepp/ui/uiicontheme.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
 
-namespace ecode {
+namespace EE { namespace UI {
 
-void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrueType* mimeIconFont,
-						FontTrueType* codIconFont ) {
+UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* remixIconFont,
+								FontTrueType* noniconFont, FontTrueType* codIconFont ) {
 
-	UIIconTheme* iconTheme = UIIconTheme::New( "ecode" );
-	std::unordered_map<std::string, Uint32> icons = {
+	UIIconTheme* iconTheme = UIIconTheme::New( iconThemeName );
 
-		{ "document-new", 0xecc3 },
-		{ "document-open", 0xed70 },
-		{ "document-save", 0xf0b3 },
-		{ "document-save-as", 0xf0b3 },
-		{ "document-close", 0xeb99 },
-		{ "quit", 0xeb97 },
-		{ "undo", 0xea58 },
-		{ "redo", 0xea5a },
-		{ "cut", 0xf0c1 },
-		{ "copy", 0xecd5 },
-		{ "paste", 0xeb91 },
-		{ "edit", 0xec86 },
-		{ "split-horizontal", 0xf17a },
-		{ "split-vertical", 0xf17b },
-		{ "find-replace", 0xed2b },
-		{ "folder-add", 0xed5a },
-		{ "file-add", 0xecc9 },
-		{ "file-copy", 0xecd3 },
-		{ "file-code", 0xecd1 },
-		{ "file-edit", 0xecdb },
-		{ "font-size", 0xed8d },
-		{ "delete-bin", 0xec1e },
-		{ "delete-text", 0xec1e },
-		{ "zoom-in", 0xf2db },
-		{ "zoom-out", 0xf2dd },
-		{ "zoom-reset", 0xeb47 },
-		{ "fullscreen", 0xed9c },
-		{ "keybindings", 0xee75 },
-		{ "search", 0xf0d1 },
-		{ "go-up", 0xea78 },
-		{ "ok", 0xeb7a },
-		{ "cancel", 0xeb98 },
-		{ "color-picker", 0xf13d },
-		{ "pixel-density", 0xed8c },
-		{ "go-to-line", 0xf1f8 },
-		{ "table-view", 0xf1de },
-		{ "list-view", 0xecf1 },
-		{ "menu-unfold", 0xef40 },
-		{ "menu-fold", 0xef3d },
-		{ "download-cloud", 0xec58 },
-		{ "layout-left", 0xee94 },
-		{ "layout-right", 0xee9b },
-		{ "color-scheme", 0xebd4 },
-		{ "global-settings", 0xedcf },
-		{ "folder-user", 0xed84 },
-		{ "help", 0xf045 },
-		{ "terminal", 0xf1f6 },
-		{ "earth", 0xec7a },
-		{ "arrow-down", 0xea4c },
-		{ "arrow-up", 0xea76 },
-		{ "arrow-down-s", 0xea4e },
-		{ "arrow-up-s", 0xea78 },
-		{ "arrow-right-s", 0xea6e },
-		{ "match-case", 0xed8d },
-		{ "palette", 0xefc5 },
-		{ "file-code", 0xecd1 },
-		{ "cursor-pointer", 0xec09 },
-		{ "drive", 0xedf8 },
-		{ "refresh", 0xf064 },
-		{ "hearth-pulse", 0xee10 },
-		{ "add", 0xea12 },
-		{ "hammer", 0xedee },
-		{ "eraser", 0xec9e },
-		{ "file-search", 0xed05 },
-		{ "window", 0xf2c4 },
-		{ "file-lock-fill", 0xecf2 },
-		{ "filetype-svg", 0xF3C5 },
-		{ "filetype-png", 0xF3C5 },
-		{ "filetype-jpg", 0xF3C5 },
-		{ "filetype-jpeg", 0xF3C5 },
-		{ "filetype-tga", 0xF3C5 },
-		{ "filetype-dds", 0xF3C5 },
-		{ "filetype-qoi", 0xF3C5 },
-		{ "filetype-bmp", 0xF3C5 },
-		{ "filetype-gif", 0xF3C5 },
-		{ "filetype-psd", 0xF3C5 },
-		{ "filetype-hdr", 0xF3C5 },
-		{ "filetype-pic", 0xF3C5 },
-		{ "filetype-pvr", 0xF3C5 },
-		{ "filetype-pkm", 0xF3C5 },
-		{ "settings", 0xF0E3 },
-		{ "stop", 0xF1A0 },
-		{ "text-wrap", 0xF200 },
-	};
+	if ( remixIconFont && remixIconFont->loaded() ) {
+		std::unordered_map<std::string, Uint32> icons = {
 
-	for ( const auto& icon : icons )
-		iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
+			{ "document-new", 0xecc3 },
+			{ "document-open", 0xed70 },
+			{ "document-save", 0xf0b3 },
+			{ "document-save-as", 0xf0b3 },
+			{ "document-close", 0xeb99 },
+			{ "quit", 0xeb97 },
+			{ "undo", 0xea58 },
+			{ "redo", 0xea5a },
+			{ "cut", 0xf0c1 },
+			{ "copy", 0xecd5 },
+			{ "paste", 0xeb91 },
+			{ "edit", 0xec86 },
+			{ "split-horizontal", 0xf17a },
+			{ "split-vertical", 0xf17b },
+			{ "find-replace", 0xed2b },
+			{ "folder-add", 0xed5a },
+			{ "file-add", 0xecc9 },
+			{ "file-copy", 0xecd3 },
+			{ "file-code", 0xecd1 },
+			{ "file-edit", 0xecdb },
+			{ "font-size", 0xed8d },
+			{ "delete-bin", 0xec1e },
+			{ "delete-text", 0xec1e },
+			{ "zoom-in", 0xf2db },
+			{ "zoom-out", 0xf2dd },
+			{ "zoom-reset", 0xeb47 },
+			{ "fullscreen", 0xed9c },
+			{ "keybindings", 0xee75 },
+			{ "search", 0xf0d1 },
+			{ "go-up", 0xea78 },
+			{ "ok", 0xeb7a },
+			{ "cancel", 0xeb98 },
+			{ "color-picker", 0xf13d },
+			{ "pixel-density", 0xed8c },
+			{ "go-to-line", 0xf1f8 },
+			{ "table-view", 0xf1de },
+			{ "list-view", 0xecf1 },
+			{ "menu-unfold", 0xef40 },
+			{ "menu-fold", 0xef3d },
+			{ "download-cloud", 0xec58 },
+			{ "layout-left", 0xee94 },
+			{ "layout-right", 0xee9b },
+			{ "color-scheme", 0xebd4 },
+			{ "global-settings", 0xedcf },
+			{ "folder-user", 0xed84 },
+			{ "help", 0xf045 },
+			{ "terminal", 0xf1f6 },
+			{ "earth", 0xec7a },
+			{ "arrow-down", 0xea4c },
+			{ "arrow-up", 0xea76 },
+			{ "arrow-down-s", 0xea4e },
+			{ "arrow-up-s", 0xea78 },
+			{ "arrow-right-s", 0xea6e },
+			{ "match-case", 0xed8d },
+			{ "palette", 0xefc5 },
+			{ "file-code", 0xecd1 },
+			{ "cursor-pointer", 0xec09 },
+			{ "drive", 0xedf8 },
+			{ "refresh", 0xf064 },
+			{ "hearth-pulse", 0xee10 },
+			{ "add", 0xea12 },
+			{ "hammer", 0xedee },
+			{ "eraser", 0xec9e },
+			{ "file-search", 0xed05 },
+			{ "window", 0xf2c4 },
+			{ "file-lock-fill", 0xecf2 },
+			{ "filetype-svg", 0xF3C5 },
+			{ "filetype-png", 0xF3C5 },
+			{ "filetype-jpg", 0xF3C5 },
+			{ "filetype-jpeg", 0xF3C5 },
+			{ "filetype-tga", 0xF3C5 },
+			{ "filetype-dds", 0xF3C5 },
+			{ "filetype-qoi", 0xF3C5 },
+			{ "filetype-bmp", 0xF3C5 },
+			{ "filetype-gif", 0xF3C5 },
+			{ "filetype-psd", 0xF3C5 },
+			{ "filetype-hdr", 0xF3C5 },
+			{ "filetype-pic", 0xF3C5 },
+			{ "filetype-pvr", 0xF3C5 },
+			{ "filetype-pkm", 0xF3C5 },
+			{ "settings", 0xF0E3 },
+			{ "stop", 0xF1A0 },
+			{ "text-wrap", 0xF200 },
+		};
 
-	if ( mimeIconFont && mimeIconFont->loaded() ) {
+		for ( const auto& icon : icons )
+			iconTheme->add( UIGlyphIcon::New( icon.first, remixIconFont, icon.second ) );
+	}
+
+	if ( noniconFont && noniconFont->loaded() ) {
 		std::unordered_map<std::string, Uint32> mimeIcons =
 
 			{ { "filetype-lua", 61826 },
@@ -174,7 +177,7 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 			  { "tab-close", 61944 } };
 
 		for ( const auto& icon : mimeIcons )
-			iconTheme->add( UIGlyphIcon::New( icon.first, mimeIconFont, icon.second ) );
+			iconTheme->add( UIGlyphIcon::New( icon.first, noniconFont, icon.second ) );
 	}
 
 	if ( codIconFont && codIconFont->loaded() ) {
@@ -295,7 +298,7 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 		"circle-perfect",
 		"<svg fill='#fff' viewBox='0 0 16 16'><circle cx='8' cy='8' r='7' /></svg>" ) );
 
-	sceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
+	return iconTheme;
 }
 
-} // namespace ecode
+}} // namespace EE::UI

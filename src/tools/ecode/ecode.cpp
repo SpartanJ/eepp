@@ -1,6 +1,5 @@
 #include "ecode.hpp"
 #include "featureshealth.hpp"
-#include "iconmanager.hpp"
 #include "keybindingshelper.hpp"
 #include "pathhelper.hpp"
 #include "settingsactions.hpp"
@@ -13,18 +12,19 @@
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/ui/doc/languagessyntaxhighlighting.hpp>
+#include <eepp/ui/iconmanager.hpp>
 #include <filesystem>
 #include <iostream>
 
 //! Plugins
 #include "plugins/autocomplete/autocompleteplugin.hpp"
 #include "plugins/debugger/debuggerplugin.hpp"
+#include "plugins/discordRPC/discordRPCplugin.hpp"
 #include "plugins/formatter/formatterplugin.hpp"
 #include "plugins/git/gitplugin.hpp"
 #include "plugins/linter/linterplugin.hpp"
 #include "plugins/lsp/lspclientplugin.hpp"
 #include "plugins/xmltools/xmltoolsplugin.hpp"
-#include "plugins/discordRPC/discordRPCplugin.hpp"
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 // For malloc_trim, which is a GNU extension
@@ -3538,8 +3538,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		loadFont( "NotoColorEmoji", "fonts/NotoColorEmoji.ttf" );
 #endif
 
-		mIconFont = loadFont( "icon", "fonts/remixicon.ttf" );
-		mMimeIconFont = loadFont( "nonicons", "fonts/nonicons.ttf" );
+		mRemixIconFont = loadFont( "icon", "fonts/remixicon.ttf" );
+		mNoniconsFont = loadFont( "nonicons", "fonts/nonicons.ttf" );
 		mCodIconFont = loadFont( "codicon", "fonts/codicon.ttf" );
 
 		mTerminalFont = loadFont( "monospace-nerdfont", mConfig.ui.terminalFont,
@@ -3755,7 +3755,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 										  [this]() { return mAsyncResourcesLoaded; } );
 		}
 
-		if ( !mFont || !mFontMono || !mIconFont || !mMimeIconFont || !mCodIconFont ) {
+		if ( !mFont || !mFontMono || !mRemixIconFont || !mNoniconsFont || !mCodIconFont ) {
 			printf( "Font not found!" );
 			Log::error( "Font not found!" );
 			return;
@@ -3804,7 +3804,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		);
 
 		mMenuIconSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
-		IconManager::init( mUISceneNode, mIconFont, mMimeIconFont, mCodIconFont );
+		mUISceneNode->getUIIconThemeManager()->setCurrentTheme(
+			IconManager::init( "ecode", mRemixIconFont, mNoniconsFont, mCodIconFont ) );
 
 		UIWidgetCreator::registerWidget( "searchbar", UISearchBar::New );
 		UIWidgetCreator::registerWidget( "locatebar", UILocateBar::New );

@@ -1295,77 +1295,16 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 			colorScheme == "light" ? ColorSchemePreference::Light : ColorSchemePreference::Dark;
 		mUISceneNode->setColorSchemePreference( mUIColorScheme );
 
-		FontTrueType* iconFont = loadFont( "icon", "fonts/remixicon.ttf" );
-		UIIconTheme* iconTheme = UIIconTheme::New( "ecode" );
-		UIIconTheme* iconTheme2 = UIIconTheme::New( "ecode" );
+		FontTrueType* remixIconFont = loadFont( "icon", "fonts/remixicon.ttf" );
+		FontTrueType* noniconsFont = loadFont( "nonicons", "fonts/nonicons.ttf" );
+		FontTrueType* codIconFont = loadFont( "codicon", "fonts/codicon.ttf" );
+
+		UIIconTheme* iconTheme =
+			IconManager::init( "icons", remixIconFont, noniconsFont, codIconFont );
+		UIIconTheme* iconTheme2 =
+			IconManager::init( "icons", remixIconFont, noniconsFont, codIconFont );
 		StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 		mMenuIconSize = fontSize.asPixels( 0, Sizef(), mDisplayDPI );
-		std::unordered_map<std::string, Uint32> icons = {
-			{ "document-new", 0xecc3 },
-			{ "document-open", 0xed70 },
-			{ "document-save", 0xf0b3 },
-			{ "document-save-as", 0xf0b3 },
-			{ "document-close", 0xeb99 },
-			{ "quit", 0xeb97 },
-			{ "undo", 0xea58 },
-			{ "redo", 0xea5a },
-			{ "cut", 0xf0c1 },
-			{ "copy", 0xecd5 },
-			{ "paste", 0xeb91 },
-			{ "edit", 0xec86 },
-			{ "split-horizontal", 0xf17a },
-			{ "split-vertical", 0xf17b },
-			{ "find-replace", 0xed2b },
-			{ "folder", 0xed54 },
-			{ "folder-open", 0xed70 },
-			{ "folder-add", 0xed5a },
-			{ "file", 0xecc3 },
-			{ "file-add", 0xecc9 },
-			{ "file-copy", 0xecd3 },
-			{ "file-code", 0xecd1 },
-			{ "file-edit", 0xecdb },
-			{ "font-size", 0xed8d },
-			{ "delete-bin", 0xec1e },
-			{ "delete-text", 0xec1e },
-			{ "zoom-in", 0xf2db },
-			{ "zoom-out", 0xf2dd },
-			{ "zoom-reset", 0xeb47 },
-			{ "fullscreen", 0xed9c },
-			{ "keybindings", 0xee75 },
-			{ "tree-expanded", 0xea50 },
-			{ "tree-contracted", 0xea54 },
-			{ "search", 0xf0d1 },
-			{ "go-up", 0xea78 },
-			{ "ok", 0xeb7a },
-			{ "cancel", 0xeb98 },
-			{ "color-picker", 0xf13d },
-			{ "pixel-density", 0xed8c },
-			{ "go-to-line", 0xf1f8 },
-			{ "table-view", 0xf1de },
-			{ "list-view", 0xecf1 },
-			{ "menu-unfold", 0xef40 },
-			{ "menu-fold", 0xef3d },
-			{ "download-cloud", 0xec58 },
-			{ "layout-left", 0xee94 },
-			{ "layout-right", 0xee9b },
-			{ "color-scheme", 0xebd4 },
-			{ "global-settings", 0xedcf },
-			{ "folder-user", 0xed84 },
-			{ "help", 0xf045 },
-			{ "terminal", 0xf1f6 },
-			{ "earth", 0xec7a },
-			{ "arrow-down", 0xea4c },
-			{ "arrow-up", 0xea76 },
-			{ "arrow-down-s", 0xea4e },
-			{ "arrow-right-s", 0xea6e },
-			{ "match-case", 0xed8d },
-			{ "cursor-pointer", 0xec09 },
-		};
-		for ( const auto& icon : icons ) {
-			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
-			iconTheme2->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
-		}
-
 		mAppUISceneNode->setStyleSheet( mTheme->getStyleSheet() );
 		mAppUISceneNode->getUIThemeManager()
 			->setDefaultEffectsEnabled( true )

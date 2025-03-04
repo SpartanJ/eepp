@@ -548,8 +548,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	FontTrueType* mFontMono{ nullptr };
 	FontTrueType* mTerminalFont{ nullptr };
 	FontTrueType* mFallbackFont{ nullptr };
-	FontTrueType* mIconFont{ nullptr };
-	FontTrueType* mMimeIconFont{ nullptr };
+	FontTrueType* mRemixIconFont{ nullptr };
+	FontTrueType* mNoniconsFont{ nullptr };
 	FontTrueType* mCodIconFont{ nullptr };
 	efsw::FileWatcher* mFileWatcher{ nullptr };
 	FileSystemListener* mFileSystemListener{ nullptr };

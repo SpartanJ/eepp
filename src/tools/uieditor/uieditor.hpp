@@ -1,6 +1,7 @@
 #ifndef EE_UIEDITOR_HPP
 #define EE_UIEDITOR_HPP
 
+#include <eepp/ui/iconmanager.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 
 #include <eepp/ee.hpp>

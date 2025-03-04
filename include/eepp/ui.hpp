@@ -89,6 +89,8 @@
 
 #include <eepp/ui/undostack.hpp>
 
+#include <eepp/ui/iconmanager.hpp>
+
 #include <eepp/ui/uiapplication.hpp>
 
 #endif
