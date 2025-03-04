@@ -657,14 +657,12 @@ void Node::childAdd( Node* node ) {
 void Node::childAddAt( Node* node, Uint32 index ) {
 	eeASSERT( NULL != node );
 
-	Node* nodeLoop = mChild;
-
 	node->setParent( this );
-
 	childRemove( node );
-
 	node->mParentNode = this;
 	node->mSceneNode = node->findSceneNode();
+
+	Node* nodeLoop = mChild;
 
 	if ( nodeLoop == NULL ) {
 		mChild = node;
@@ -673,9 +671,8 @@ void Node::childAddAt( Node* node, Uint32 index ) {
 		node->mPrev = NULL;
 	} else {
 		if ( index == 0 ) {
-			if ( NULL != mChild ) {
+			if ( NULL != mChild )
 				mChild->mPrev = node;
-			}
 
 			node->mNext = mChild;
 			node->mPrev = NULL;

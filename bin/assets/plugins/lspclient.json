@@ -396,7 +396,8 @@
       "name": "md-lsp",
       "url": "https://github.com/matkrin/md-lsp",
       "command": "md-lsp",
-      "file_patterns": ["%.md$"]
+      "file_patterns": ["%.md$"],
+      "rootIndicationFileNames": [".git"]
     }
   ]
 }

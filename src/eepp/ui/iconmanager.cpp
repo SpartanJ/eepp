@@ -268,7 +268,9 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 			{ "diff-added", 0xeadc },
 			{ "diff-removed", 0xeadf },
 			{ "eye", 0xea70 },
-			{ "eye-closed", 0xeae7 } };
+			{ "eye-closed", 0xeae7 },
+			{ "settings-alt", 0xeb52 },
+			{ "attach", 0xec34 } };
 
 		for ( const auto& icon : codIcons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );
