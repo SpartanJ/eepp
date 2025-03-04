@@ -721,8 +721,6 @@ Probably deprecate the Maps module, since I will focus my efforts on the UI syst
 
 * The [FreeType Project](https://www.freetype.org/freetype2/docsindex.html)
 
-* [vyfor icons](https://github.com/vyfor/icons)
-
 * And a **lot** more people!
 
 ## Code License
