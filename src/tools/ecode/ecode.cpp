@@ -2925,7 +2925,7 @@ App::getForcePositionFn( TextPosition initialPosition ) {
 	return forcePosition;
 }
 
-void App::initProjectTreeView( std::string path, bool openClean ) {
+void App::initProjectTreeViewUI() {
 	mProjectViewEmptyCont = mUISceneNode->find<UILinearLayout>( "project_view_empty" );
 	mProjectViewEmptyCont->find<UIPushButton>( "open_folder" )
 		->on( Event::MouseClick, [this]( const Event* event ) {
@@ -2999,6 +2999,12 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 			}
 		}
 	} );
+	mProjectTreeView->setDisableCellClipping( true );
+	mProjectTreeView->setAutoExpandOnSingleColumn( true );
+}
+
+void App::initProjectTreeView( std::string path, bool openClean ) {
+	initProjectTreeViewUI();
 
 	bool hasPosition = pathHasPosition( path );
 	TextPosition initialPosition;
@@ -3069,9 +3075,6 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 			mStatusBar->setVisible( false );
 		}
 	}
-
-	mProjectTreeView->setDisableCellClipping( true );
-	mProjectTreeView->setAutoExpandOnSingleColumn( true );
 }
 
 void App::initImageView() {
@@ -3197,6 +3200,12 @@ void App::loadFolder( std::string path ) {
 	} else {
 		mSplitter->removeTabWithOwnedWidgetId( "welcome_ecode" );
 		mStatusBar->setVisible( mConfig.ui.showStatusBar );
+	}
+
+	if ( !mProjectTreeView ) {
+		showSidePanel( mConfig.ui.showSidePanel );
+		showStatusBar( mConfig.ui.showStatusBar );
+		initProjectTreeViewUI();
 	}
 
 	mProjectViewEmptyCont->setVisible( path == getPlaygroundPath() );
