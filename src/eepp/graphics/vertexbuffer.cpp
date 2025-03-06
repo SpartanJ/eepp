@@ -10,7 +10,7 @@ namespace EE { namespace Graphics {
 VertexBuffer* VertexBuffer::New( const Uint32& vertexFlags, PrimitiveType drawType,
 								 const Int32& reserveVertexSize, const Int32& reserveIndexSize,
 								 VertexBufferUsageType usageType ) {
-	if ( GLi->isExtension( EEGL_ARB_vertex_buffer_object ) )
+	if ( GLi->isExtension( EEGL_ARB_vertex_buffer_object ) || GLi->version() == GLv_3CP )
 		return eeNew( VertexBufferVBO,
 					  ( vertexFlags, drawType, reserveVertexSize, reserveIndexSize, usageType ) );
 

@@ -118,7 +118,9 @@ std::vector<GraphicsLibraryVersion> Renderer::getAvailableGraphicsLibraryVersion
 	vers.emplace_back( GLv_2 );
 #endif
 #ifdef EE_GL3_ENABLED
+#if EE_PLATFORM != EE_PLATFORM_MACOS
 	vers.emplace_back( GLv_3 );
+#endif
 	vers.emplace_back( GLv_3CP );
 	vers.emplace_back( GLv_ES2 );
 #endif
