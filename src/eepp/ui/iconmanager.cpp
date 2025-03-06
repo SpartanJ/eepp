@@ -95,6 +95,7 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 			{ "settings", 0xF0E3 },
 			{ "stop", 0xF1A0 },
 			{ "text-wrap", 0xF200 },
+			{ "play-filled", 0xF00A },
 		};
 
 		for ( const auto& icon : icons )

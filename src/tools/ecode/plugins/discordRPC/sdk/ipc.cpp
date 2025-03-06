@@ -9,6 +9,7 @@
 
 #if defined( EE_PLATFORM_POSIX )
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <sys/un.h>
 #include <unistd.h>
 #elif EE_PLATFORM == EE_PLATFORM_WIN
@@ -318,7 +319,7 @@ void DiscordIPC::reconnect() {
 	mReconnectLock = true;
 
 	Log::debug( "dcIPC: Waiting for reconnect delay of %us (%u/%u)", delay, mBackoffIndex,
-			   DISCORDIPC_BACKOFF_MAX );
+				DISCORDIPC_BACKOFF_MAX );
 	SceneManager::instance()->getUISceneNode()->setTimeout(
 		[this] {
 			SceneManager::instance()->getUISceneNode()->getThreadPool()->run( [this] {

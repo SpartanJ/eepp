@@ -334,7 +334,7 @@ void RendererGL3::vertexPointer( int size, unsigned int type, int stride, const 
 			glEnableVertexAttribArray( index );
 		}
 
-		glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, pointer );
+		glVertexAttribPointer( index, size, type, GL_FALSE, stride, pointer );
 	}
 }
 
@@ -350,9 +350,9 @@ void RendererGL3::colorPointer( int size, unsigned int type, int stride, const v
 		}
 
 		if ( type == GL_UNSIGNED_BYTE ) {
-			glVertexAttribPointerARB( index, size, type, GL_TRUE, stride, pointer );
+			glVertexAttribPointer( index, size, type, GL_TRUE, stride, pointer );
 		} else {
-			glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, pointer );
+			glVertexAttribPointer( index, size, type, GL_FALSE, stride, pointer );
 		}
 	}
 }
@@ -368,7 +368,7 @@ void RendererGL3::texCoordPointer( int size, unsigned int type, int stride, cons
 			glEnableVertexAttribArray( index );
 		}
 
-		glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, pointer );
+		glVertexAttribPointer( index, size, type, GL_FALSE, stride, pointer );
 	}
 }
 
