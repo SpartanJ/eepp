@@ -59,7 +59,7 @@ UIListBox::UIListBox( const std::string& tag ) :
 	mVScrollBar->setEnabled( false )->setVisible( false );
 	mVScrollBar->addEventListener( Event::OnSizeChange, cb );
 	mVScrollBar->addEventListener( Event::OnValueChange,
-								   [this] ( auto event ) { onScrollValueChange( event ); } );
+								   [this]( auto event ) { onScrollValueChange( event ); } );
 
 	mHScrollBar = UIScrollBar::NewHorizontal();
 	mHScrollBar->setParent( this );
@@ -68,7 +68,7 @@ UIListBox::UIListBox( const std::string& tag ) :
 	mHScrollBar->setEnabled( false )->setVisible( false );
 	mHScrollBar->addEventListener( Event::OnSizeChange, cb );
 	mHScrollBar->addEventListener( Event::OnValueChange,
-								   [this] ( auto event ) { onHScrollValueChange( event ); } );
+								   [this]( auto event ) { onHScrollValueChange( event ); } );
 
 	mDummyItem = createListBoxItem( "" );
 	mDummyItem->setSize( 0, 0 );
@@ -697,6 +697,12 @@ UIListBoxItem* UIListBox::getItem( const Uint32& Index ) const {
 	eeASSERT( Index < mItems.size() );
 
 	return mItems[Index];
+}
+
+const String& UIListBox::getItemText( const Uint32& Index ) const {
+	eeASSERT( Index < mItems.size() );
+
+	return mTexts[Index];
 }
 
 UIListBoxItem* UIListBox::getItemSelected() {

@@ -51,6 +51,8 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 
 	UIListBoxItem* getItem( const Uint32& Index ) const;
 
+	const String& getItemText( const Uint32& Index ) const;
+
 	Uint32 getItemIndex( UIListBoxItem* Item );
 
 	Uint32 getItemIndex( const String& Text );

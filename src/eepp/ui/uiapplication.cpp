@@ -56,8 +56,10 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 							  ? appSettings.monospaceFont
 							  : FontTrueType::New( "monospace", "assets/fonts/DejaVuSansMono.ttf" );
 
-	if ( monospaceFont && monospaceFont->getType() == FontType::TTF )
+	if ( monospaceFont && monospaceFont->getType() == FontType::TTF ) {
+		static_cast<FontTrueType*>( monospaceFont )->setEnableDynamicMonospace( true );
 		FontFamily::loadFromRegular( static_cast<FontTrueType*>( monospaceFont ) );
+	}
 
 	if ( appSettings.emojiFont == nullptr )
 		FontTrueType::New( "NotoEmoji-Regular", "assets/fonts/NotoEmoji-Regular.ttf" );
