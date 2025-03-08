@@ -33,7 +33,7 @@ void addXML() {
 
 			  },
 			  "",
-			  { "<%?xml" }
+			  { "^<%?xml" }
 
 			} )
 		.setAutoCloseXMLTags( true );

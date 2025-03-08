@@ -3,6 +3,8 @@
 // #include <eepp/core/simd.hpp>
 
 #include <thirdparty/fast_float/include/fast_float/fast_float.h>
+#define FTS_FUZZY_MATCH_IMPLEMENTATION
+#include <thirdparty/fts_fuzzy_match/fts_fuzzy_match.h>
 #include <thirdparty/utf8cpp/utf8.h>
 
 #include <algorithm>
@@ -1133,9 +1135,16 @@ constexpr int tFuzzyMatch( const T* str, const T* ptn, bool allowUneven, bool pe
 	return score - ( permissive ? 0 : strlen( str ) );
 }
 
-int String::fuzzyMatch( const std::string& string, const std::string& pattern, bool allowUneven,
-						bool permissive ) {
+int String::fuzzyMatchSimple( const std::string& pattern, const std::string& string,
+							  bool allowUneven, bool permissive ) {
 	return tFuzzyMatch<char>( string.c_str(), pattern.c_str(), allowUneven, permissive );
+}
+
+int String::fuzzyMatch( const std::string& pattern, const std::string& string ) {
+	int score = std::numeric_limits<int>::min();
+	uint8_t matches[256];
+	fts::fuzzy_match( pattern.c_str(), string.c_str(), score, matches, sizeof( matches ) );
+	return score;
 }
 
 std::vector<Uint8> String::stringToUint8( const std::string& str ) {

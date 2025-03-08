@@ -410,7 +410,7 @@ PluginRequestHandle LSPClientPlugin::processWorkspaceSymbol( const PluginMessage
 					if ( !query.empty() ) {
 						for ( auto& i : info ) {
 							if ( i.score == 0.f )
-								i.score = String::fuzzyMatch( i.name, query );
+								i.score = String::fuzzyMatch( query, i.name );
 						}
 					}
 					mManager->sendResponse( this, PluginMessageType::WorkspaceSymbol,
@@ -422,7 +422,7 @@ PluginRequestHandle LSPClientPlugin::processWorkspaceSymbol( const PluginMessage
 					if ( !query.empty() ) {
 						for ( auto& i : info ) {
 							if ( i.score == 0.f )
-								i.score = String::fuzzyMatch( i.name, query );
+								i.score = String::fuzzyMatch( query, i.name );
 						}
 					}
 					mManager->sendResponse( this, PluginMessageType::WorkspaceSymbol,

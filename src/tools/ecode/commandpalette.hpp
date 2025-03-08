@@ -27,10 +27,10 @@ class CommandPalette {
 	static std::shared_ptr<CommandPaletteModel>
 	asModel( const std::vector<std::string>& commandList, const EE::UI::KeyBindings& keybindings );
 
-	void asyncFuzzyMatch( const std::string& match, const size_t& max, MatchResultCb res ) const;
+	void asyncFuzzyMatch( const std::string& pattern, const size_t& max, MatchResultCb res ) const;
 
 	std::shared_ptr<CommandPaletteModel>
-	fuzzyMatch( const std::vector<std::vector<std::string>>& cmdPalette, const std::string& match,
+	fuzzyMatch( const std::vector<std::vector<std::string>>& cmdPalette, const std::string& pattern,
 				const size_t& max ) const;
 
 	void setCommandPalette( const std::vector<std::string>& commandList,

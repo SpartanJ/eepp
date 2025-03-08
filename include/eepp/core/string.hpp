@@ -309,8 +309,10 @@ class EE_API String {
 	 */
 	static bool icontains( const String& haystack, const String& needle );
 
-	static int fuzzyMatch( const std::string& string, const std::string& pattern,
+	static int fuzzyMatchSimple( const std::string& pattern, const std::string& string,
 						   bool allowUneven = false, bool permissive = false );
+
+	static int fuzzyMatch( const std::string& pattern, const std::string& string );
 
 	/** Replace all occurrences of the search string with the replacement string. */
 	static void replaceAll( std::string& target, const std::string& that, const std::string& with );

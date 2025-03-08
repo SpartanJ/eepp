@@ -48,19 +48,21 @@ static json getURIAndPositionJSON( UICodeEditor* editor ) {
 
 static AutoCompletePlugin::SymbolsList
 fuzzyMatchSymbols( const std::vector<const AutoCompletePlugin::SymbolsList*>& symbolsVec,
-				   const std::string& match, const size_t& max ) {
+				   const std::string& pattern, const size_t& max ) {
 	AutoCompletePlugin::SymbolsList matches;
 	matches.reserve( max );
 	int score = 0;
 	for ( const auto& symbols : symbolsVec ) {
 		for ( const auto& symbol : *symbols ) {
 			if ( symbol.kind == LSPCompletionItemKind::Snippet ||
-				 ( score = String::fuzzyMatch( symbol.text, match, false,
-											   symbol.kind != LSPCompletionItemKind::Text ) ) >
-					 0 ) {
+				 ( score = String::fuzzyMatch( pattern, symbol.text ) ) >
+					 std::numeric_limits<int>::min() ) {
 				if ( std::find( matches.begin(), matches.end(), symbol ) == matches.end() ) {
 					symbol.setScore( score );
 					matches.push_back( symbol );
+
+					if ( matches.size() > max )
+						break;
 				}
 			}
 		}

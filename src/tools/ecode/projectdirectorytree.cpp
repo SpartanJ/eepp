@@ -118,9 +118,11 @@ ProjectDirectoryTree::fuzzyMatchTree( const std::vector<std::string>& matches, c
 	std::vector<std::string> names;
 	for ( const auto& match : matches ) {
 		for ( size_t i = 0; i < mNames.size(); i++ ) {
-			int matchName = String::fuzzyMatch( match, mNames[i], true );
-			int matchPath = String::fuzzyMatch( match, mFiles[i], true );
-			matchesMap.insert( { std::max( matchName, matchPath ), i } );
+			int matchName = String::fuzzyMatch( match, mNames[i] );
+			int matchPath = String::fuzzyMatch( match, mFiles[i] );
+			int matchScore = std::max( matchName, matchPath );
+			if ( matchScore > std::numeric_limits<int>::min() )
+				matchesMap.insert( { matchScore, i } );
 		}
 	}
 	for ( auto& res : matchesMap ) {
@@ -144,12 +146,14 @@ ProjectDirectoryTree::fuzzyMatchTree( const std::string& match, const size_t& ma
 	std::vector<std::string> files;
 	std::vector<std::string> names;
 	for ( size_t i = 0; i < mNames.size(); i++ ) {
-		int matchName = String::fuzzyMatch( match, mNames[i], true );
-		int matchPath = String::fuzzyMatch( match, mFiles[i], true );
-		matchesMap.insert( { std::max( matchName, matchPath ), i } );
+		int matchName = String::fuzzyMatch( match, mNames[i] );
+		int matchPath = String::fuzzyMatch( match, mFiles[i] );
+		int matchScore = std::max( matchName, matchPath );
+		if ( matchScore > std::numeric_limits<int>::min() )
+			matchesMap.insert( { matchScore, i } );
 	}
 	for ( auto& res : matchesMap ) {
-		if ( names.size() < max ) {
+		if ( names.size() < max && res.first > std::numeric_limits<int>::min() ) {
 			names.emplace_back( mNames[res.second] );
 			files.emplace_back( mFiles[res.second] );
 		} else {
@@ -627,7 +631,7 @@ PluginRequestHandle ProjectDirectoryTree::processMessage( const PluginMessage& m
 				std::string closestDataPath;
 				int max{ std::numeric_limits<int>::min() };
 				for ( const auto& paths : tentativePaths ) {
-					int res = String::fuzzyMatch( filePath.c_str(), paths.c_str(), true );
+					int res = String::fuzzyMatch( filePath.c_str(), paths.c_str() );
 					if ( res > max ) {
 						closestDataPath = filePath;
 						max = res;

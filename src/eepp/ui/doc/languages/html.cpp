@@ -46,7 +46,7 @@ void addHTML() {
 
 			  },
 			  "",
-			  { "<html", "<![Dd][Oo][Cc][Tt][Yy][Pp][Ee]%s[Hh][Tt][Mm][Ll]>" }
+			  { "^<html", "^<![Dd][Oo][Cc][Tt][Yy][Pp][Ee]%s[Hh][Tt][Mm][Ll]>" }
 
 			} )
 		.setAutoCloseXMLTags( true );

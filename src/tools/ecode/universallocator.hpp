@@ -130,15 +130,18 @@ class UniversalLocator {
 		const LSPSymbolInformationList& list, const std::string& query, const size_t& limit,
 		std::function<void( std::shared_ptr<LSPSymbolInfoModel> )> cb );
 
-	std::shared_ptr<FileListModel> openDocumentsModel( const std::string& match );
+	std::shared_ptr<FileListModel> openDocumentsModel( const std::string& pattern );
 
-	std::shared_ptr<ItemListOwnerModel<std::string>> openBuildModel( const std::string& match );
+	std::shared_ptr<ItemListOwnerModel<std::string>> openBuildModel( const std::string& pattern );
 
-	std::shared_ptr<ItemListOwnerModel<std::string>> openBuildTypeModel( const std::string& match );
+	std::shared_ptr<ItemListOwnerModel<std::string>>
+	openBuildTypeModel( const std::string& pattern );
 
-	std::shared_ptr<ItemListOwnerModel<std::string>> openRunTargetModel( const std::string& match );
+	std::shared_ptr<ItemListOwnerModel<std::string>>
+	openRunTargetModel( const std::string& pattern );
 
-	std::shared_ptr<ItemListOwnerModel<std::string>> openFileTypeModel( const std::string& match );
+	std::shared_ptr<ItemListOwnerModel<std::string>>
+	openFileTypeModel( const std::string& pattern );
 
 	bool findCapability( PluginCapability );
 
