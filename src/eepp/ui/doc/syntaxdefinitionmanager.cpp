@@ -159,7 +159,8 @@ static std::string str( std::string s, const std::string& prepend = "",
 }
 
 static std::string join( std::vector<std::string> const& vec, bool createCont = true,
-						 bool allowReduce = false, std::string delim = ", " ) {
+						 bool allowReduce = false, bool setType = false,
+						 std::string delim = ", " ) {
 	if ( vec.empty() )
 		return "{}";
 	if ( vec.size() == 1 && allowReduce )
@@ -167,7 +168,9 @@ static std::string join( std::vector<std::string> const& vec, bool createCont = 
 	std::string accum = std::accumulate(
 		vec.begin() + 1, vec.end(), str( vec[0] ),
 		[&delim]( const std::string& a, const std::string& b ) { return a + delim + str( b ); } );
-	return createCont ? "{ " + accum + " }" : accum;
+	return createCont
+			   ? ( std::string( setType ? "std::vector<std::string>" : "" ) + "{ " + accum + " }" )
+			   : accum;
 }
 
 static std::string funcName( std::string name ) {
@@ -202,10 +205,13 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 	// patterns
 	buf += "{\n";
 	for ( const auto& pattern : def.getPatterns() ) {
-		buf += "{ " + join( pattern.patterns ) + ", " + join( pattern.typesNames, true, true ) +
+		buf += "{ " + join( pattern.patterns ) + ", " +
+			   join( pattern.typesNames, true, true, pattern.isRegEx ) +
 			   str( pattern.syntax, ", ", "", false );
-		if ( pattern.isRegEx )
+		if ( pattern.isRegEx && pattern.syntax.empty() )
 			buf += ", \"\", true";
+		else if ( pattern.isRegEx )
+			buf += ", true";
 		buf += " },\n";
 	}
 	buf += "\n},\n";

@@ -41,7 +41,7 @@ void addSvelte() {
 					"",
 					true },
 				  { { "{(#if|#each|#await|#key)", "}", "\\" },
-					{ "keyword", "keyword2", "normal" },
+					std::vector<std::string>{ "keyword", "keyword2", "normal" },
 					"JavaScript",
 					true },
 				  { { "{", "}", "\\" }, "keyword", "JavaScript" },
