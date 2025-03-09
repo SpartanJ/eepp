@@ -713,6 +713,7 @@ class EE_API TextDocument {
 	Client* mActiveClient{ nullptr };
 	mutable Mutex mLoadingMutex;
 	mutable Mutex mLoadingFilePathMutex;
+	mutable Mutex mSyntaxDefinitionMutex;
 	size_t mLastSelection{ 0 };
 	std::unique_ptr<SyntaxHighlighter> mHighlighter;
 	Mutex mStopFlagsMutex;

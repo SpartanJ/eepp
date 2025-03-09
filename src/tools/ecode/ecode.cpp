@@ -2767,6 +2767,33 @@ void App::renameFile( const FileInfo& file ) {
 	} );
 }
 
+void App::openAllFilesInFolder( const FileInfo& folder ) {
+	auto files =
+		FileSystem::filesInfoGetInPath( folder.getDirectoryPath(), true, false, true,
+										getFileSystemModel()->getDisplayConfig().ignoreHidden );
+
+	std::vector<std::string> supportedExts(
+		SyntaxDefinitionManager::instance()->getExtensionsPatternsSupported() );
+	std::vector<LuaPatternStorage> acceptedPatterns;
+	acceptedPatterns.reserve( supportedExts.size() );
+	for ( const auto& strPattern : supportedExts )
+		acceptedPatterns.emplace_back( std::string{ strPattern } );
+
+	for ( const auto& file : files ) {
+		if ( file.isRegularFile() ) {
+			bool foundPattern = acceptedPatterns.empty();
+			for ( auto& pattern : acceptedPatterns ) {
+				if ( pattern.matches( file.getFilepath() ) ) {
+					foundPattern = true;
+					break;
+				}
+			}
+			if ( foundPattern )
+				loadFileFromPath( file.getFilepath() );
+		}
+	}
+}
+
 void App::toggleHiddenFiles() {
 	mFileSystemModel = FileSystemModel::New( mFileSystemModel->getRootPath(),
 											 FileSystemModel::Mode::FilesAndDirectories,
@@ -3497,7 +3524,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	mThreadPool->run( [this] {
 		// Load language definitions
 		Clock defClock;
-		SyntaxDefinitionManager::createSingleton( 107 );
+		SyntaxDefinitionManager::createSingleton( 108 );
 		Language::LanguagesSyntaxHighlighting::load();
 		SyntaxDefinitionManager::instance()->setLanguageExtensionsPriority(
 			mConfig.languagesExtensions.priorities );

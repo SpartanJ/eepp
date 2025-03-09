@@ -2153,6 +2153,10 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 		mProjectTreeMenu
 			->add( i18n( "open_folder_ellipsis", "Open Folder..." ), findIcon( "folder-open" ) )
 			->setId( "open_folder" );
+		mProjectTreeMenu
+			->add( i18n( "open_all_files_in_folder", "Open All Files in Folder" ),
+				   findIcon( "folder-open" ) )
+			->setId( "open_all_files_in_folder" );
 	} else {
 		if ( file.isRegularFile() ) {
 			auto curDir( mApp->getCurrentWorkingDir() );
@@ -2260,6 +2264,8 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 			Engine::instance()->openURI( file.getDirectoryPath() );
 		} else if ( "open_folder" == id ) {
 			Engine::instance()->openURI( file.getFilepath() );
+		} else if ( "open_all_files_in_folder" == id ) {
+			mApp->openAllFilesInFolder( file );
 		} else if ( "show-hidden-files" == id ) {
 			mApp->toggleHiddenFiles();
 		} else if ( "execute_in_terminal" == id ) {

@@ -100,7 +100,10 @@ void TextDocument::reset() {
 	mLastSelection = 0;
 	mLines.clear();
 	mLines.emplace_back( String( "\n" ) );
-	mSyntaxDefinition = SyntaxDefinitionManager::instance()->getPlainDefinition();
+	{
+		Lock l( mSyntaxDefinitionMutex );
+		mSyntaxDefinition = SyntaxDefinitionManager::instance()->getPlainDefinition();
+	}
 	mUndoStack.clear();
 	cleanChangeId();
 	notifySyntaxDefinitionChange();
@@ -403,6 +406,7 @@ void TextDocument::mergeSelection() {
 }
 
 bool TextDocument::hasSyntaxDefinition() const {
+	Lock l( mSyntaxDefinitionMutex );
 	return !mSyntaxDefinition.getPatterns().empty();
 }
 
@@ -414,7 +418,10 @@ const SyntaxDefinition& TextDocument::guessSyntax() const {
 void TextDocument::resetSyntax() {
 	String header( getText( { { 0, 0 }, positionOffset( { 0, 0 }, 128 ) } ) );
 	std::string oldDef = mSyntaxDefinition.getLSPName();
-	mSyntaxDefinition = SyntaxDefinitionManager::instance()->find( mFilePath, header, mHAsCpp );
+	{
+		Lock l( mSyntaxDefinitionMutex );
+		mSyntaxDefinition = SyntaxDefinitionManager::instance()->find( mFilePath, header, mHAsCpp );
+	}
 	if ( mSyntaxDefinition.getLSPName() != oldDef )
 		notifySyntaxDefinitionChange();
 }
@@ -2421,12 +2428,16 @@ void TextDocument::redo() {
 }
 
 const SyntaxDefinition& TextDocument::getSyntaxDefinition() const {
+	Lock l( mSyntaxDefinitionMutex );
 	return mSyntaxDefinition;
 }
 
 void TextDocument::setSyntaxDefinition( const SyntaxDefinition& definition ) {
 	if ( mSyntaxDefinition.getLSPName() != definition.getLSPName() ) {
-		mSyntaxDefinition = definition;
+		{
+			Lock l( mSyntaxDefinitionMutex );
+			mSyntaxDefinition = definition;
+		}
 		notifySyntaxDefinitionChange();
 	}
 }

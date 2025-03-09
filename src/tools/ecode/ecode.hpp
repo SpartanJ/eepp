@@ -390,6 +390,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void renameFile( const FileInfo& file );
 
+	void openAllFilesInFolder( const FileInfo& folder );
+
 	UIMessageBox* newInputMsgBox( const String& title, const String& msg );
 
 	std::string getNewFilePath( const FileInfo& file, UIMessageBox* msgBox, bool keepDir = true );

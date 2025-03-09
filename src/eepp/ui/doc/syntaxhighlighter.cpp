@@ -199,8 +199,8 @@ Int64 SyntaxHighlighter::getMaxWantedLine() const {
 }
 
 bool SyntaxHighlighter::updateDirty( int visibleLinesCount ) {
-	if ( visibleLinesCount <= 0 )
-		return 0;
+	if ( visibleLinesCount <= 0 || mTokenizeAsync )
+		return false;
 	if ( mFirstInvalidLine > mMaxWantedLine ) {
 		mMaxWantedLine = 0;
 	} else {
