@@ -10,6 +10,19 @@ namespace EE { namespace System {
 #define MAX_DEFAULT_MATCHES 12
 
 bool PatternMatcher::find( const char* stringSearch, int& startMatch, int& endMatch,
+						   int stringStartOffset, int stringLength, int returnMatchIndex,
+						   PatternMatcher::Range* matchesBuffer ) const {
+	if ( matches( stringSearch, stringStartOffset, matchesBuffer, stringLength ) ) {
+		range( returnMatchIndex, startMatch, endMatch, matchesBuffer );
+		return true;
+	} else {
+		startMatch = -1;
+		endMatch = -1;
+		return false;
+	}
+}
+
+bool PatternMatcher::find( const char* stringSearch, int& startMatch, int& endMatch,
 						   int stringStartOffset, int stringLength, int returnMatchIndex ) const {
 	PatternMatcher::Range matchesBuffer[MAX_DEFAULT_MATCHES];
 	if ( matches( stringSearch, stringStartOffset, matchesBuffer, stringLength ) ) {
@@ -20,6 +33,12 @@ bool PatternMatcher::find( const char* stringSearch, int& startMatch, int& endMa
 		endMatch = -1;
 		return false;
 	}
+}
+
+bool PatternMatcher::find( const std::string& s, int& startMatch, int& endMatch, int offset,
+						   int returnedMatchIndex, PatternMatcher::Range* matchesBuffer ) const {
+	return find( s.c_str(), startMatch, endMatch, offset, s.size(), returnedMatchIndex,
+				 matchesBuffer );
 }
 
 bool PatternMatcher::find( const std::string& s, int& startMatch, int& endMatch, int offset,

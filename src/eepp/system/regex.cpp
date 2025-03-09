@@ -88,13 +88,13 @@ bool RegEx::matches( const char* stringSearch, int stringStartOffset,
 
 	PCRE2_SPTR subject = reinterpret_cast<PCRE2_SPTR>( stringSearch );
 
-	int rc = pcre2_match( compiledPattern,	 // the compiled pattern
-						  subject,			 // the subject string
-						  stringLength,		 // the length of the subject
-						  stringStartOffset, // start at offset in the subject
-						  0,				 // default options
-						  match_data,		 // match data
-						  NULL				 // match context
+	int rc = pcre2_match( compiledPattern,					// the compiled pattern
+						  subject + stringStartOffset,		// the subject string
+						  stringLength - stringStartOffset, // the length of the subject
+						  0,								// start at offset in the subject
+						  0,								// default options
+						  match_data,						// match data
+						  NULL								// match context
 	);
 
 	if ( rc < 0 ) {
@@ -111,8 +111,8 @@ bool RegEx::matches( const char* stringSearch, int stringStartOffset,
 	if ( matchList != nullptr ) {
 		PCRE2_SIZE* ovector = pcre2_get_ovector_pointer( match_data );
 		for ( size_t i = 0; i < static_cast<size_t>( rc ); ++i ) {
-			matchList[i].start = static_cast<int>( ovector[2 * i] );
-			matchList[i].end = static_cast<int>( ovector[2 * i + 1] );
+			matchList[i].start = stringStartOffset + static_cast<int>( ovector[2 * i] );
+			matchList[i].end = stringStartOffset + static_cast<int>( ovector[2 * i + 1] );
 			if ( matchList[i].start >= matchList[i].end ) {
 				matchList[i].start = matchList[i].end = -1;
 				mMatchNum--;

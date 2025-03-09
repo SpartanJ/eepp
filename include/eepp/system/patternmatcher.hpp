@@ -114,6 +114,12 @@ class EE_API PatternMatcher {
 	bool find( const char* stringSearch, int& startMatch, int& endMatch, int stringStartOffset = 0,
 			   int stringLength = 0, int returnMatchIndex = 0 ) const;
 
+	bool find( const std::string& s, int& startMatch, int& endMatch, int offset,
+			   int returnedMatchIndex, PatternMatcher::Range* matchesBuffer ) const;
+
+	bool find( const char* stringSearch, int& startMatch, int& endMatch, int stringStartOffset,
+			   int stringLength, int returnMatchIndex, PatternMatcher::Range* matchesBuffer ) const;
+
 	std::string gsub( const char* text, const char* replace );
 
 	std::string gsub( const std::string& text, const std::string& replace );

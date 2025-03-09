@@ -98,26 +98,36 @@ static bool isScaped( const std::string& text, const size_t& startIndex,
 	return count % 2 == 1;
 }
 
-static std::pair<int, int> findNonEscaped( const std::string& text, const std::string& pattern,
-										   int offset, const std::string& escapeStr,
-										   bool isRegEx ) {
+struct NonEscapedMatch {
+	std::pair<int, int> range{ -1, -1 };
+	PatternMatcher::Range matches[6];
+	int numMatches{ 0 };
+};
+
+static NonEscapedMatch findNonEscaped( const std::string& text, const std::string& pattern,
+									   int offset, const std::string& escapeStr, bool isRegEx ) {
 	eeASSERT( !pattern.empty() );
 	if ( pattern.empty() )
-		return std::make_pair( -1, -1 );
+		return {};
 	std::variant<RegEx, LuaPattern> wordsVar =
 		isRegEx ? std::variant<RegEx, LuaPattern>( RegEx( pattern ) )
 				: std::variant<RegEx, LuaPattern>( LuaPattern( pattern ) );
 	PatternMatcher& words =
 		std::visit( []( auto& patternType ) -> PatternMatcher& { return patternType; }, wordsVar );
 	int start, end;
-	while ( words.find( text, start, end, offset ) ) {
+	PatternMatcher::Range matches[6];
+	while ( words.find( text, start, end, offset, 0, matches ) ) {
 		if ( !escapeStr.empty() && isScaped( text, start, escapeStr ) ) {
 			offset = end;
 		} else {
-			return std::make_pair( start, end );
+			NonEscapedMatch res;
+			res.range = { start, end };
+			res.numMatches = words.getNumMatches();
+			std::memcpy( res.matches, matches, sizeof( matches ) );
+			return res;
 		}
 	}
-	return std::make_pair( -1, -1 );
+	return {};
 }
 
 SyntaxStateRestored SyntaxTokenizer::retrieveSyntaxState( const SyntaxDefinition& syntax,
@@ -185,6 +195,55 @@ static inline void popSubsyntax( SyntaxStateRestored& curState, SyntaxState& ret
 };
 
 template <typename T>
+static inline void
+pushTokensToOpenCloseSubsyntax( int i, std::string_view textv, const SyntaxPattern* subsyntaxInfo,
+								const NonEscapedMatch& rangeSubsyntax, std::vector<T>& tokens ) {
+	if ( rangeSubsyntax.numMatches > 1 ) {
+		int patternMatchStart = rangeSubsyntax.matches[0].start;
+		int patternMatchEnd = rangeSubsyntax.matches[0].end;
+		auto patternType = subsyntaxInfo->types[0];
+		int lastStart = patternMatchStart;
+		int lastEnd = patternMatchEnd;
+
+		if ( i < patternMatchStart )
+			pushToken( tokens, patternType, textv.substr( i, patternMatchStart - i ) );
+
+		int start;
+		int end;
+
+		for ( int sidx = 1; sidx < rangeSubsyntax.numMatches; sidx++ ) {
+			start = rangeSubsyntax.matches[sidx].start;
+			end = rangeSubsyntax.matches[sidx].end;
+
+			if ( sidx == 1 && start > lastStart ) {
+				pushToken( tokens, patternType,
+						   textv.substr( patternMatchStart, start - patternMatchStart ) );
+			} else if ( start > lastEnd ) {
+				pushToken( tokens, patternType, textv.substr( lastEnd, start - lastEnd ) );
+			}
+
+			auto ss{ textv.substr( start, end - start ) };
+
+			pushToken( tokens,
+					   sidx < static_cast<int>( subsyntaxInfo->types.size() )
+						   ? subsyntaxInfo->types[sidx]
+						   : subsyntaxInfo->types[0],
+					   ss );
+
+			if ( sidx == rangeSubsyntax.numMatches - 1 && end < patternMatchEnd ) {
+				pushToken( tokens, patternType, textv.substr( end, patternMatchEnd - end ) );
+			}
+
+			lastStart = start;
+			lastEnd = end;
+		}
+	} else {
+		pushToken( tokens, subsyntaxInfo->types[0],
+				   textv.substr( i, rangeSubsyntax.range.second - i ) );
+	}
+}
+
+template <typename T>
 static inline std::pair<std::vector<T>, SyntaxState>
 _tokenize( const SyntaxDefinition& syntax, const std::string& text, const SyntaxState& state,
 		   const size_t& startIndex, bool skipSubSyntaxSeparator ) {
@@ -211,28 +270,29 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 		if ( curState.currentPatternIdx != SYNTAX_TOKENIZER_STATE_NONE ) {
 			const SyntaxPattern& pattern =
 				curState.currentSyntax->getPatterns()[curState.currentPatternIdx - 1];
-			std::pair<int, int> range = findNonEscaped(
-				text, pattern.patterns[1], i,
-				pattern.patterns.size() >= 3 ? pattern.patterns[2] : "", pattern.isRegEx );
+			auto range = findNonEscaped( text, pattern.patterns[1], i,
+										 pattern.patterns.size() >= 3 ? pattern.patterns[2] : "",
+										 pattern.isRegEx )
+							 .range;
 
 			bool skip = false;
 
-			if ( curState.subsyntaxInfo != nullptr ) {
-				std::pair<int, int> rangeSubsyntax =
-					findNonEscaped( text, curState.subsyntaxInfo->patterns[1], i,
-									curState.subsyntaxInfo->patterns.size() >= 3
-										? curState.subsyntaxInfo->patterns[2]
-										: "",
-									pattern.isRegEx );
+			if ( curState.subsyntaxInfo != nullptr &&
+				 curState.subsyntaxInfo->patterns.size() > 1 ) {
+				auto rangeSubsyntax = findNonEscaped( text, curState.subsyntaxInfo->patterns[1], i,
+													  curState.subsyntaxInfo->patterns.size() >= 3
+														  ? curState.subsyntaxInfo->patterns[2]
+														  : "",
+													  pattern.isRegEx );
 
-				if ( rangeSubsyntax.first != -1 &&
-					 ( range.first == -1 || rangeSubsyntax.first < range.first ) ) {
+				if ( rangeSubsyntax.range.first != -1 &&
+					 ( range.first == -1 || rangeSubsyntax.range.first < range.first ) ) {
 					if ( !skipSubSyntaxSeparator ) {
-						pushToken( tokens, curState.subsyntaxInfo->types[0],
-								   textv.substr( i, rangeSubsyntax.second - i ) );
+						pushTokensToOpenCloseSubsyntax( i, textv, curState.subsyntaxInfo,
+														rangeSubsyntax, tokens );
 					}
 					popSubsyntax( curState, retState, syntax );
-					i = rangeSubsyntax.second;
+					i = rangeSubsyntax.range.second;
 					skip = true;
 				}
 			}
@@ -255,20 +315,20 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 			}
 		}
 
-		if ( curState.subsyntaxInfo != nullptr ) {
-			std::pair<int, int> rangeSubsyntax = findNonEscaped(
+		if ( curState.subsyntaxInfo != nullptr && curState.subsyntaxInfo->patterns.size() > 1 ) {
+			auto rangeSubsyntax = findNonEscaped(
 				text, "^" + curState.subsyntaxInfo->patterns[1], i,
 				curState.subsyntaxInfo->patterns.size() >= 3 ? curState.subsyntaxInfo->patterns[2]
 															 : "",
 				curState.subsyntaxInfo->isRegEx );
 
-			if ( rangeSubsyntax.first != -1 ) {
+			if ( rangeSubsyntax.range.first != -1 ) {
 				if ( !skipSubSyntaxSeparator ) {
-					pushToken( tokens, curState.subsyntaxInfo->types[0],
-							   textv.substr( i, rangeSubsyntax.second - i ) );
+					pushTokensToOpenCloseSubsyntax( i, textv, curState.subsyntaxInfo,
+													rangeSubsyntax, tokens );
 				}
 				popSubsyntax( curState, retState, syntax );
-				i = rangeSubsyntax.second;
+				i = rangeSubsyntax.range.second;
 			}
 		}
 
@@ -334,7 +394,8 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 									   patternText );
 						}
 
-						if ( pattern.hasSyntax() ) {
+						if ( pattern.hasSyntax() && curMatch == numMatches - 1 &&
+							 end == patternMatchEnd ) {
 							pushSubsyntax( curState, retState, pattern, patternIndex + 1,
 										   patternStr );
 						} else if ( pattern.patterns.size() > 1 ) {
@@ -347,6 +408,11 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 							pushToken( tokens, patternType,
 									   textv.substr( end, patternMatchEnd - end ) );
 							i = patternMatchEnd;
+
+							if ( pattern.hasSyntax() && curMatch == numMatches - 1 ) {
+								pushSubsyntax( curState, retState, pattern, patternIndex + 1,
+											   patternStr );
+							}
 						}
 
 						matched = true;
