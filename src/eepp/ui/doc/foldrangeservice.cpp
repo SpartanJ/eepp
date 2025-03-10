@@ -99,6 +99,99 @@ static std::vector<TextRange> findFoldingRangesIndentation( TextDocument* doc ) 
 	return regions;
 }
 
+static std::vector<TextRange> findFoldingRangesMarkdown( TextDocument* doc ) {
+	Clock c; // For performance logging, consistent with existing functions
+	std::vector<TextRange> regions;
+
+	// Early return for small documents, as in other folding functions
+	if ( doc->linesCount() <= 2 )
+		return regions;
+
+	// Stack to track open heading sections: (line number, heading level)
+	std::vector<std::pair<Int64, int>> sectionStack;
+
+	// State for code blocks
+	bool inCodeBlock = false;
+	Int64 codeBlockStart = -1;
+
+	// Process each line
+	for ( size_t lineIdx = 0; lineIdx < doc->linesCount(); lineIdx++ ) {
+		const String& lineText = doc->line( lineIdx ).getText();
+		String::View trimmed =
+			String::trim( lineText.view() ); // Remove leading and trailing whitespace
+
+		if ( inCodeBlock ) {
+			// Check for code block end
+			if ( String::startsWith( trimmed, "```" ) ) {
+				// Ensure there's content to fold between start and end
+				if ( codeBlockStart != -1 && codeBlockStart <= static_cast<Int64>( lineIdx ) - 1 ) {
+					regions.emplace_back( TextPosition( codeBlockStart, 0 ), // Start at opening ```
+										  TextPosition( lineIdx - 1, 0 ) // End before closing ```
+					);
+				}
+				inCodeBlock = false;
+				codeBlockStart = -1;
+			}
+			// Continue to next line if still in code block
+		} else {
+			if ( String::startsWith( trimmed, "```" ) ) {
+				// Start a new code block
+				inCodeBlock = true;
+				codeBlockStart = static_cast<Int64>( lineIdx );
+			} else if ( String::startsWith( trimmed, "#" ) ) {
+				// Check if it's a valid heading
+				size_t hashCount = 0;
+				while ( hashCount < trimmed.size() && trimmed[hashCount] == '#' )
+					hashCount++;
+				// Valid heading: 1-6 # symbols followed by a space
+				if ( hashCount <= 6 && hashCount < trimmed.size() && trimmed[hashCount] == ' ' ) {
+					int level = static_cast<int>( hashCount );
+
+					// Close sections with equal or greater level
+					while ( !sectionStack.empty() && sectionStack.back().second >= level ) {
+						auto [headingLine, _] = sectionStack.back();
+						sectionStack.pop_back();
+						// Create folding range if there's content to fold
+						if ( headingLine < static_cast<Int64>( lineIdx ) ) {
+							regions.emplace_back(
+								TextPosition( headingLine, 0 ), // Start at heading
+								TextPosition( lineIdx - 1, 0 )	// End before next heading
+							);
+						}
+					}
+					// Open new section
+					sectionStack.emplace_back( static_cast<Int64>( lineIdx ), level );
+				}
+			}
+		}
+	}
+
+	// Close remaining open heading sections
+	while ( !sectionStack.empty() ) {
+		auto [headingLine, _] = sectionStack.back();
+		sectionStack.pop_back();
+		if ( headingLine < static_cast<Int64>( doc->linesCount() ) ) {
+			regions.emplace_back( TextPosition( headingLine, 0 ),		   // Start at heading
+								  TextPosition( doc->linesCount() - 1, 0 ) // End at document end
+			);
+		}
+	}
+
+	// Close any unterminated code block
+	if ( inCodeBlock && codeBlockStart != -1 &&
+		 codeBlockStart < static_cast<Int64>( doc->linesCount() ) ) {
+		regions.emplace_back( TextPosition( codeBlockStart, 0 ),	   // Start at opening ```
+							  TextPosition( doc->linesCount() - 1, 0 ) // End at document end
+		);
+	}
+
+	// Log performance, matching style of existing functions
+	Log::debug( "findFoldingRangesMarkdown for \"%s\" took %s", doc->getFilePath(),
+				c.getElapsedTime().toString() );
+
+	return regions;
+}
+
 FoldRangeServive::FoldRangeServive( TextDocument* doc ) : mDoc( doc ) {}
 
 bool FoldRangeServive::canFold() const {
@@ -107,14 +200,15 @@ bool FoldRangeServive::canFold() const {
 	if ( mProvider && mProvider->foldingRangeProvider() )
 		return true;
 	auto type = mDoc->getSyntaxDefinition().getFoldRangeType();
-	return type == FoldRangeType::Braces || type == FoldRangeType::Indentation;
+	return type == FoldRangeType::Braces || type == FoldRangeType::Indentation ||
+		   type == FoldRangeType::Markdown;
 }
 
 void FoldRangeServive::findRegions() {
 	if ( !mEnabled || mDoc == nullptr || !canFold() )
 		return;
 
-	if ( mProvider && mProvider->foldingRangeProvider() ){
+	if ( mProvider && mProvider->foldingRangeProvider() ) {
 		mProvider->requestFoldRange();
 		return;
 	}
@@ -125,6 +219,8 @@ void FoldRangeServive::findRegions() {
 			break;
 		case FoldRangeType::Indentation:
 			setFoldingRegions( findFoldingRangesIndentation( mDoc ) );
+		case FoldRangeType::Markdown:
+			setFoldingRegions( findFoldingRangesMarkdown( mDoc ) );
 		case FoldRangeType::Tag:
 		case FoldRangeType::Undefined:
 			break;

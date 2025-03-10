@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc {
 
-enum class FoldRangeType { Braces, Indentation, Tag, Undefined };
+enum class FoldRangeType { Braces, Indentation, Tag, Markdown, Undefined };
 
 }}} // namespace EE::UI::Doc
 

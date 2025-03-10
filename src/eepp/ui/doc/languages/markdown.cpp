@@ -12,7 +12,7 @@ void addMarkdown() {
 		return SyntaxDefinitionManager::instance()->findFromString( lang ).getLanguageName();
 	};
 
-	SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Markdown",
 		  { "%.md$", "%.markdown$" },
@@ -54,6 +54,8 @@ void addMarkdown() {
 		  {}
 
 		} );
+
+	sd.setFoldRangeType( FoldRangeType::Markdown );
 }
 
 }}}} // namespace EE::UI::Doc::Language

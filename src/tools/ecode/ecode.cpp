@@ -3524,7 +3524,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	mThreadPool->run( [this] {
 		// Load language definitions
 		Clock defClock;
-		SyntaxDefinitionManager::createSingleton( 108 );
+		SyntaxDefinitionManager::createSingleton( 109 );
 		Language::LanguagesSyntaxHighlighting::load();
 		SyntaxDefinitionManager::instance()->setLanguageExtensionsPriority(
 			mConfig.languagesExtensions.priorities );

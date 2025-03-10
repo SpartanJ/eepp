@@ -5,7 +5,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addAda() {
 
-	auto sd = SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Ada",
 		  { "%.adb$", "%.ads$", "%.ada$" },
