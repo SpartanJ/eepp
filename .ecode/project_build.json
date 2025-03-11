@@ -204,7 +204,7 @@
     },
     "run": [
       {
-        "args": "-v",
+        "args": "",
         "command": "${project_root}/bin/ecode-debug",
         "name": "ecode-debug",
         "working_dir": "${project_root}/bin"
@@ -239,6 +239,18 @@
         "args": "",
         "command": "${project_root}/bin/eepp-empty-window",
         "name": "eepp-empty_window",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "-u",
+        "command": "${project_root}/bin/eepp-UIEditor-debug",
+        "name": "eepp-UIEditor-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-7guis-cells-debug",
+        "name": "eepp-7guis-cells-debug",
         "working_dir": "${project_root}/bin"
       }
     ],

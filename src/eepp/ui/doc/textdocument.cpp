@@ -31,6 +31,7 @@ bool TextDocument::isNonWord( String::StringBaseType ch ) const {
 }
 
 TextDocument::TextDocument( bool verbose ) :
+	mUUID( true ),
 	mUndoStack( this ),
 	mVerbose( verbose ),
 	mAutoCloseBracketsPairs(
@@ -3831,6 +3832,10 @@ TextDocument::Client::~Client() {}
 
 bool TextSearchParams::isEmpty() {
 	return text.empty();
+}
+
+const UUID& TextDocument::getUUID() const {
+	return mUUID;
 }
 
 }}} // namespace EE::UI::Doc

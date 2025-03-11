@@ -37,6 +37,10 @@ SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
 	mHeaders( std::move( headers ) ),
 	mLSPName( lspName.empty() ? String::toLower( mLanguageName ) : lspName ) {
 	mSymbols.reserve( mSymbolNames.size() );
+	if ( !mPatterns.empty() ) {
+		mPatterns.emplace( mPatterns.begin(), SyntaxPattern{ { "%s+" }, "normal" } );
+		mPatterns.emplace_back( SyntaxPattern{ { "%w+%f[%s]" }, "normal" } );
+	}
 	for ( const auto& symbol : mSymbolNames )
 		mSymbols.insert( { symbol.first, toSyntaxStyleType( symbol.second ) } );
 }

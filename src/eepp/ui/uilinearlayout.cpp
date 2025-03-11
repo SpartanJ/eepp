@@ -210,7 +210,12 @@ void UILinearLayout::packVertical() {
 			Vector2f pos( mPaddingPx.Left, curY );
 
 			if ( widget->getLayoutWeight() != 0 ) {
-				Float totSize = getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom;
+				Float totSize =
+					( getLayoutHeightPolicy() == SizePolicy::MatchParent ||
+					  getLayoutHeightPolicy() == SizePolicy::Fixed )
+						? getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom
+						: getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Bottom -
+							  mLayoutMarginPx.Top - mPaddingPx.Top - mPaddingPx.Bottom;
 				Float newSize = eemax(
 					eeceil( totSize - freeSize.getHeight() ) * widget->getLayoutWeight(), 0.f );
 
@@ -336,7 +341,12 @@ void UILinearLayout::packHorizontal() {
 			Vector2f pos( curX, mPaddingPx.Top );
 
 			if ( widget->getLayoutWeight() != 0 ) {
-				Float totSize = getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right;
+				Float totSize =
+					( getLayoutWidthPolicy() == SizePolicy::MatchParent ||
+					  getLayoutWidthPolicy() == SizePolicy::Fixed )
+						? getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right
+						: getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Right -
+							  mLayoutMarginPx.Left - mPaddingPx.Left - mPaddingPx.Right;
 				Float newSize = eemax(
 					eeceil( totSize - freeSize.getWidth() ) * widget->getLayoutWeight(), 0.f );
 

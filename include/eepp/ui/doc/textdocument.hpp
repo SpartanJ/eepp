@@ -12,6 +12,7 @@
 #include <eepp/system/pack.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/system/time.hpp>
+#include <eepp/system/uuid.hpp>
 #include <eepp/ui/doc/foldrangeservice.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <eepp/ui/doc/textdocumentline.hpp>
@@ -156,6 +157,8 @@ class EE_API TextDocument {
 						   const Http::Request::ProgressCallback& progressCallback = nullptr );
 
 	LoadStatus reload();
+
+	const UUID& getUUID() const;
 
 	bool save();
 
@@ -668,6 +671,7 @@ class EE_API TextDocument {
 	friend class TextUndoStack;
 	friend class FoldRangeServive;
 
+	UUID mUUID;
 	Uint64 mModificationId{ 0 };
 	TextUndoStack mUndoStack;
 	std::string mFilePath;

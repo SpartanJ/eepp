@@ -185,8 +185,6 @@ UICodeEditor::~UICodeEditor() {
 		getUISceneNode()->getThreadPool()->removeWithTag( tag );
 	}
 
-	getUISceneNode()->removeActionsByTag( mTagFoldRange );
-
 	if ( mCurrentMenu ) {
 		mCurrentMenu->clearEventListener();
 		mCurrentMenu = nullptr;
@@ -205,6 +203,8 @@ UICodeEditor::~UICodeEditor() {
 
 	mDocView.setDocument( nullptr );
 	if ( mDoc.use_count() == 1 ) {
+		getUISceneNode()->removeActionsByTag( mTagFoldRange );
+
 		DocEvent event( this, mDoc.get(), Event::OnDocumentClosed );
 		sendEvent( &event );
 		mDoc->unregisterClient( this );
@@ -2200,6 +2200,7 @@ void UICodeEditor::onDocumentMoved( TextDocument* doc ) {
 }
 
 void UICodeEditor::onDocumentClosed( TextDocument* doc ) {
+	getUISceneNode()->removeActionsByTag( mTagFoldRange );
 	DocEvent event( this, doc, Event::OnDocumentClosed );
 	sendEvent( &event );
 }
@@ -5233,15 +5234,17 @@ void UICodeEditor::findRegionsDelayed() {
 		return;
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( sceneNode ) {
-		sceneNode->debounce( [this]() { mDoc->getFoldRangeService().findRegions(); },
+		TextDocument* doc = mDoc.get();
+		sceneNode->debounce( [doc]() { doc->getFoldRangeService().findRegions(); },
 							 mFoldsIsFirst ? Milliseconds( 100 ) : mFoldsRefreshTime,
 							 mTagFoldRange );
+
 		mFoldsIsFirst = false;
 	}
 }
 
 void UICodeEditor::refreshTag() {
-	mTagFoldRange = String::hash( mDoc->getURI().toString() + ":foldrange" );
+	mTagFoldRange = String::hash( mDoc->getUUID().toString() + ":foldrange" );
 }
 
 bool UICodeEditor::isNotMonospace() const {
