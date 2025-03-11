@@ -1,3 +1,14 @@
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <tabulate/tabulate.hpp>
+#ifdef UUID
+#undef UUID
+#endif
+#ifdef KEY_EXECUTE
+#undef KEY_EXECUTE
+#endif
+
 #include "featureshealth.hpp"
 #include "plugins/debugger/debuggerplugin.hpp"
 #include "plugins/formatter/formatterplugin.hpp"
@@ -9,12 +20,10 @@
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitableview.hpp>
-#include <tabulate/tabulate.hpp>
 
 using namespace EE::System;
 using namespace EE::UI::Doc;
 using namespace EE::UI;
-using namespace tabulate;
 
 namespace ecode {
 
@@ -142,7 +151,7 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 std::string FeaturesHealth::generateHealthStatus( PluginManager* pluginManager,
 												  OutputFormat format ) {
 	auto status( getHealth( pluginManager ) );
-	Table table;
+	tabulate::Table table;
 	table.format().border_top( "" ).border_bottom( "" ).border_left( "" ).border_right( "" ).corner(
 		"" );
 
@@ -154,8 +163,8 @@ std::string FeaturesHealth::generateHealthStatus( PluginManager* pluginManager,
 		table[0][i]
 			.format()
 			.font_color( tabulate::Color::white )
-			.font_align( FontAlign::center )
-			.font_style( { FontStyle::bold } );
+			.font_align( tabulate::FontAlign::center )
+			.font_style( { tabulate::FontStyle::bold } );
 	}
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -235,10 +244,10 @@ std::string FeaturesHealth::generateHealthStatus( PluginManager* pluginManager,
 	}
 
 	if ( OutputFormat::Markdown == format ) {
-		MarkdownExporter exporter;
+		tabulate::MarkdownExporter exporter;
 		return exporter.dump( table );
 	} else if ( OutputFormat::AsciiDoc == format ) {
-		AsciiDocExporter exporter;
+		tabulate::AsciiDocExporter exporter;
 		return exporter.dump( table );
 	} else if ( OutputFormat::Terminal == format ) {
 		std::cout << table << "\n";
