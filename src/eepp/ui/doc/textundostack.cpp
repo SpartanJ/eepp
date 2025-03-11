@@ -367,7 +367,7 @@ void TextUndoStack::fromJSON( const std::string& jsonString ) {
 					break;
 			}
 		}
-	} catch ( const json::exception& e ) {
+	} catch ( const json::exception& ) {
 		Log::error( "TextUndoStack::fromJSON - Error parsing json string:\n%s", jsonString );
 	}
 }

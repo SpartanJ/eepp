@@ -86,14 +86,14 @@ bool LuaPattern::matches( const char* stringSearch, int stringStartOffset,
 		try {
 			mMatchNum = lua_str_match( stringSearch, stringStartOffset, stringLength,
 									   mPattern.data(), (LuaMatch*)matchesBuffer );
-		} catch ( const std::string& patternError ) {
+		} catch ( const std::string& ) {
 			mMatchNum = 0;
 		}
 	} else {
 		try {
 			mMatchNum = lua_str_match( stringSearch, stringStartOffset, stringLength,
 									   mPattern.data(), (LuaMatch*)matchList );
-		} catch ( const std::string& patternError ) {
+		} catch ( const std::string& ) {
 			mMatchNum = 0;
 		}
 	}

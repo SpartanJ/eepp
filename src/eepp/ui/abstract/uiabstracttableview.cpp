@@ -449,11 +449,11 @@ void UIAbstractTableView::setColumnsVisible( const std::vector<size_t>& columns 
 			Uint64 newColFlags = 0;
 			for ( size_t i = 0; i < mColumn.size(); ++i ) {
 				if ( mColumn[i].visible )
-					colFlags |= 1 << i;
+					colFlags |= 1ll << i;
 			}
 
 			for ( auto col : columns )
-				newColFlags |= 1 << col;
+				newColFlags |= 1ll << col;
 
 			if ( colFlags == newColFlags )
 				return;
