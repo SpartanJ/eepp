@@ -978,7 +978,7 @@ std::shared_ptr<LSPSymbolInfoModel> UniversalLocator::emptyModel( const String& 
 }
 
 bool UniversalLocator::findCapability( PluginCapability capability ) {
-	json capa;
+	nlohmann::json capa;
 	capa["capability"] = capability;
 	capa["uri"] = getCurDocURI();
 	PluginRequestHandle resp = mApp->getPluginManager()->sendRequest(
@@ -996,7 +996,7 @@ String UniversalLocator::getDefQueryText( PluginCapability capability ) {
 }
 
 nlohmann::json UniversalLocator::pluginID( const PluginIDType& id ) {
-	json r;
+	nlohmann::json r;
 	r["uri"] = getCurDocURI();
 	if ( id.isInteger() )
 		r["id"] = id.asInt();
@@ -1019,13 +1019,13 @@ void UniversalLocator::requestWorkspaceSymbol() {
 		mLocateTable->setModel( mWorkspaceSymbolModel );
 
 		if ( mQueryWorkspaceLastId.isValid() ) {
-			json r( pluginID( mQueryWorkspaceLastId ) );
+			nlohmann::json r( pluginID( mQueryWorkspaceLastId ) );
 			mApp->getPluginManager()->sendBroadcast( PluginMessageType::CancelRequest,
 													 PluginMessageFormat::JSON, &r );
 		}
 
 		mApp->getThreadPool()->run( [this] {
-			json j;
+			nlohmann::json j;
 			j["query"] = mWorkspaceSymbolQuery;
 			auto hdl = mApp->getPluginManager()->sendRequest( PluginMessageType::WorkspaceSymbol,
 															  PluginMessageFormat::JSON, &j );
@@ -1070,7 +1070,7 @@ void UniversalLocator::requestDocumentSymbol() {
 				emptyModel( getDefQueryText( PluginCapability::TextDocumentSymbol ) );
 			mLocateTable->setModel( mTextDocumentSymbolModel );
 
-			json j;
+			nlohmann::json j;
 			j["uri"] = mCurDocURI = getCurDocURI();
 			auto hdl = mApp->getPluginManager()->sendRequest(
 				PluginMessageType::TextDocumentFlattenSymbol, PluginMessageFormat::JSON, &j );

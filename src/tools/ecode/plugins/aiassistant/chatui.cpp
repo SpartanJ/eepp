@@ -118,7 +118,7 @@ PushButton.llm_button.primary {
 	text-as-fallback: false;
 }
 </style>
-<vbox class="llm_chatui"  lw="mp" lh="mp">
+<vbox class="llm_chatui" lw="mp" lh="mp">
 	<hbox class="llm_topbar" lw="mp" lh="wc">
 		<TextView text="@string(llm_model, LLM Model:)" margin-right="4dp" />
 		<DropDownList class="model_ui" lw="350dp" selected-index="0"></DropDownList>
@@ -146,8 +146,8 @@ static const char* DEFAULT_CHAT_GLOBE = R"xml(
 <vbox class="llm_conversation" lw="mp" lh="wc">
 	<hbox class="llm_conversation_opt">
 		<DropDownList class="role_ui" lw="150dp" selected-index="1">
-			<item>@string(User, user)</item>
-			<item>@string(Assistant, assistant)</item>
+			<item>@string(user, User)</item>
+			<item>@string(assistant, Assistant)</item>
 			<item>@string(system, System)</item>
 		</DropDownList>
 		<PushButton class="move_up" text="@string(move_up, Move Up)" icon="icon(arrow-up-s, 12dp)" tooltip="@string(move_up, Move Up)" />
@@ -162,6 +162,9 @@ ChatUI::ChatUI( UISceneNode* ui, LLMProviders providers ) {
 	setProviders( std::move( providers ) );
 
 	mChatUI = ui->loadLayoutFromString( DEFAULT_LAYOUT );
+
+	mChatUI->on( Event::OnFocus, [this]( auto ) { mChatInput->setFocus(); } );
+
 	mChatsList = mChatUI->findByClass( "llm_chats" );
 	mModelDDL = mChatUI->findByClass<UIDropDownList>( "model_ui" );
 
@@ -173,6 +176,7 @@ ChatUI::ChatUI( UISceneNode* ui, LLMProviders providers ) {
 	mChatScrollView->getVerticalScrollBar()->setValue( 1 );
 
 	mChatInput = mChatUI->findByClass<UICodeEditor>( "llm_chat_input" );
+	mChatInput->setData( reinterpret_cast<UintPtr>( this ) );
 	mChatInput->getKeyBindings().addKeybindString( "mod+return", "prompt" );
 	mChatInput->getKeyBindings().addKeybindString( "mod+keypad enter", "prompt" );
 
@@ -362,7 +366,7 @@ void ChatUI::resizeToFit( UICodeEditor* editor ) {
 	editor->setPixelsSize( editor->getPixelsSize().getWidth(), height );
 }
 
-nlohmann::json ChatUI::chatToJson( const std::string& /*provider*/ ) {
+nlohmann::json ChatUI::chatToJson() {
 	auto j = nlohmann::json::array();
 	auto chats = mChatUI->findAllByClass( "llm_conversation" );
 	for ( const auto& chat : chats ) {
@@ -380,10 +384,9 @@ nlohmann::json ChatUI::chatToJson( const std::string& /*provider*/ ) {
 	return j;
 }
 
-nlohmann::json ChatUI::serialize( const std::string& /*provider*/ ) {
-	nlohmann::json j = { { "model", mCurModel.name },
-						 { "stream", true },
-						 { "messages", chatToJson( mCurModel.provider ) } };
+nlohmann::json ChatUI::serialize() {
+	nlohmann::json j = {
+		{ "model", mCurModel.name }, { "stream", true }, { "messages", chatToJson() } };
 	if ( mCurModel.maxOutputTokens )
 		j["max_tokens"] = *mCurModel.maxOutputTokens;
 	return j;
@@ -446,8 +449,7 @@ void ChatUI::doRequest() {
 
 	auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
 	mRequest = std::make_unique<LLMChatCompletionRequest>( prepareApiUrl( apiKeyStr ), apiKeyStr,
-														   serialize( mCurModel.provider ).dump(),
-														   mCurModel.provider );
+														   serialize().dump(), mCurModel.provider );
 	mRequest->streamedResponseCb = [this, editor]( const std::string& chunk ) {
 		auto conversation = chunk;
 		editor->runOnMainThread( [this, conversation = std::move( conversation ), editor] {

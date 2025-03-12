@@ -215,9 +215,9 @@ class ProjectBuild {
 
 	ProjectBuildSteps replaceVars( const ProjectBuildSteps& steps ) const;
 
-	static json serialize( const ProjectBuild::Map& builds );
+	static nlohmann::json serialize( const ProjectBuild::Map& builds );
 
-	static ProjectBuild::Map deserialize( const json& j, const std::string& projectRoot );
+	static ProjectBuild::Map deserialize( const nlohmann::json& j, const std::string& projectRoot );
 
   protected:
 	friend class ProjectBuildManager;

@@ -2,6 +2,7 @@
 #include "chatui.hpp"
 #include "protocol.hpp"
 
+#include "../../appconfig.hpp"
 #include "../../widgetcommandexecuter.hpp"
 
 #include <eepp/system/filesystem.hpp>
@@ -109,6 +110,10 @@ AIAssistantPlugin::AIAssistantPlugin( PluginManager* pluginManager, bool sync ) 
 AIAssistantPlugin::~AIAssistantPlugin() {
 	waitUntilLoaded();
 	mShuttingDown = true;
+	if ( mStatusButton )
+		mStatusButton->close();
+
+	getPluginContext()->getConfig().removeTabWidgetType( "llm_chatui" );
 }
 
 void AIAssistantPlugin::load( PluginManager* pluginManager ) {
@@ -142,6 +147,18 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 
 	subscribeFileSystemListener();
 	mReady = !mProviders.empty();
+
+	TabWidgetCbs config;
+	config.onLoad = [this]( const nlohmann::json& j ) {
+		return ( eeNew( ChatUI, ( getUISceneNode(), mProviders ) ) )->getChatUI();
+	};
+	config.onSave = []( UIWidget* widget ) {
+		nlohmann::json j;
+		return j;
+	};
+
+	getPluginContext()->getConfig().addTabWidgetType( "llm_chatui", config );
+
 	if ( mReady ) {
 		fireReadyCbs();
 		setReady( clock.getElapsedTime() );
@@ -206,16 +223,23 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 		for ( const auto& [key, value] : providers )
 			mProviders.insert_or_assign( key, value );
 	}
+
+	if ( getUISceneNode() )
+		initUI();
+}
+
+void AIAssistantPlugin::newAIAssistant() {
+	auto splitter = getPluginContext()->getSplitter();
+	auto chatUI = eeNew( ChatUI, ( getUISceneNode(), mProviders ) );
+	auto tabName( i18n( "ai_assistant", "AI Assistant" ) );
+	UITabWidget* tabWidget = splitter->getTabWidgets()[splitter->getTabWidgets().size() - 1];
+	if ( !splitter->hasSplit() )
+		tabWidget = splitter->splitTabWidget( SplitDirection::Right, tabWidget );
+	splitter->createWidgetInTabWidget( tabWidget, chatUI->getChatUI(), tabName );
 }
 
 void AIAssistantPlugin::onRegisterDocument( TextDocument* doc ) {
-	doc->setCommand( "new-ai-assistant", [this] {
-		auto splitter = getPluginContext()->getSplitter();
-		auto chatUI = eeNew( ChatUI, ( getPluginContext()->getUISceneNode(), mProviders ) );
-		if ( !splitter->hasSplit() )
-			splitter->split( SplitDirection::Right, splitter->getCurWidget(), false );
-		splitter->createWidget( chatUI->getChatUI(), i18n( "ai_assistant", "AI Assistant" ) );
-	} );
+	doc->setCommand( "new-ai-assistant", [this] { newAIAssistant(); } );
 }
 
 void AIAssistantPlugin::onRegisterEditor( UICodeEditor* editor ) {
@@ -235,8 +259,8 @@ PluginRequestHandle AIAssistantPlugin::processMessage( const PluginMessage& msg 
 																						kb.first );
 			}
 
-			// if ( !mInitialized )
-			// 	updateUI();
+			if ( !mUIInit )
+				initUI();
 
 			break;
 		}
@@ -244,6 +268,29 @@ PluginRequestHandle AIAssistantPlugin::processMessage( const PluginMessage& msg 
 			break;
 	}
 	return PluginRequestHandle::empty();
+}
+
+void AIAssistantPlugin::initUI() {
+	mUIInit = true;
+
+	getPluginContext()->getMainLayout()->setCommand( "new-ai-assistant",
+													 [this] { newAIAssistant(); } );
+
+	if ( !mStatusBar )
+		getUISceneNode()->bind( "status_bar", mStatusBar );
+	if ( !mStatusBar )
+		return;
+
+	if ( !mStatusButton ) {
+		mStatusButton = UIPushButton::New();
+		mStatusButton->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent );
+		mStatusButton->setParent( mStatusBar );
+		mStatusButton->setId( "ai_assistant_but" );
+		mStatusButton->setClass( "status_but" );
+		mStatusButton->setIcon( iconDrawable( "code-ai", 14 ) );
+		mStatusButton->setTooltipText( i18n( "ai_assistant", "AI Assistant" ) );
+		mStatusButton->on( Event::MouseClick, [this]( const Event* event ) { newAIAssistant(); } );
+	}
 }
 
 } // namespace ecode

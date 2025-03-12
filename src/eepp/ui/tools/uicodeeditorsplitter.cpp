@@ -856,6 +856,12 @@ void UICodeEditorSplitter::forEachTabWidgetStoppable(
 			return;
 }
 
+void UICodeEditorSplitter::forEachTab( std::function<void( UITab* )> run ) const {
+	for ( auto tabWidget : mTabWidgets )
+		for ( size_t i = 0; i < tabWidget->getTabCount(); i++ )
+			run( tabWidget->getTab( i ) );
+}
+
 void UICodeEditorSplitter::forEachEditorStoppable(
 	std::function<bool( UICodeEditor* )> run ) const {
 	for ( auto tabWidget : mTabWidgets ) {
@@ -1336,7 +1342,9 @@ void UICodeEditorSplitter::focusSomeEditor( Node* searchFrom ) {
 							: nullptr );
 
 	UITabWidget* tabW = nullptr;
-	if ( editor && ( tabW = tabWidgetFromEditor( editor ) ) && !tabW->isClosing() &&
+	if ( editor && editor->getParent() && editor->getParent()->getParent() &&
+		 editor->getParent()->getParent()->isType( UI_TYPE_TABWIDGET ) &&
+		 ( tabW = tabWidgetFromEditor( editor ) ) && !tabW->isClosing() &&
 		 tabW->getTabCount() > 1 ) {
 		if ( tabW && tabW->getTabSelected()->getOwnedWidget() != editor ) {
 			tabW->setTabSelected( tabW->getTabSelected() );

@@ -43,9 +43,9 @@ void SettingsActions::checkForUpdatesResponse( Http::Response response, bool fro
 		} );
 	};
 
-	json j;
+	nlohmann::json j;
 	try {
-		j = json::parse( response.getBody(), nullptr, true, true );
+		j = nlohmann::json::parse( response.getBody(), nullptr, true, true );
 
 		if ( j.contains( "tag_name" ) ) {
 			auto tagName( j["tag_name"].get<std::string>() );

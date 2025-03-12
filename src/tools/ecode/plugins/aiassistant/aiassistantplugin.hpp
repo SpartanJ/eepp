@@ -27,6 +27,9 @@ class AIAssistantPlugin : public PluginBase {
 
   protected:
 	LLMProviders mProviders;
+	bool mUIInit{ false };
+	UIWidget* mStatusBar{ nullptr };
+	UIPushButton* mStatusButton{ nullptr };
 
 	AIAssistantPlugin( PluginManager* pluginManager, bool sync );
 
@@ -41,6 +44,10 @@ class AIAssistantPlugin : public PluginBase {
 	void onUnregisterEditor( UICodeEditor* editor ) override;
 
 	void onRegisterDocument( TextDocument* doc ) override;
+
+	void initUI();
+
+	void newAIAssistant();
 };
 
 } // namespace ecode

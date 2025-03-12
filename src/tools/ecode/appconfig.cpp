@@ -9,6 +9,8 @@
 #include <eepp/system/sys.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
+#include <nlohmann/json.hpp>
+
 using namespace EE::Network;
 using namespace eterm::UI;
 using json = nlohmann::json;
@@ -397,7 +399,7 @@ struct ProjectPath {
 	}
 };
 
-json saveNode( Node* node ) {
+json AppConfig::saveNode( Node* node ) {
 	json res;
 	if ( node->isType( UI_TYPE_SPLITTER ) ) {
 		UISplitter* splitter = node->asType<UISplitter>();
@@ -435,6 +437,18 @@ json saveNode( Node* node ) {
 				if ( term->isUsingCustomTitle() )
 					f["title"] = term->getTitle();
 				files.emplace_back( f );
+			} else if ( node->isWidget() ) {
+				UIWidget* widget = ownedWidget->asType<UIWidget>();
+				if ( widget->getClasses().size() == 1 ) {
+					auto found = tabWidgetTypes.find( widget->getClasses()[0] );
+					if ( found != tabWidgetTypes.end() ) {
+						auto f = found->second.onSave( widget );
+						f["type"] = found->first;
+						if ( !f.contains( "title" ) || !f["title"].is_string() )
+							f["title"] = tabWidget->getTab( i )->getText();
+						files.emplace_back( f );
+					}
+				}
 			}
 		}
 		res["type"] = "tabwidget";
@@ -675,6 +689,19 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 				if ( curTabWidget->getTabCount() == totalToLoad )
 					curTabWidget->setTabSelected(
 						eeclamp<Int32>( currentPage, 0, curTabWidget->getTabCount() - 1 ) );
+			} else {
+				auto found = tabWidgetTypes.find( file["type"] );
+				if ( found != tabWidgetTypes.end() ) {
+					auto widget = found->second.onLoad( file );
+
+					editorSplitter->createWidgetInTabWidget(
+						curTabWidget, widget, file.contains( "title" ) ? file["title"] : "" );
+					editorSplitter->removeUnusedTab( curTabWidget, true, false );
+
+					if ( curTabWidget->getTabCount() == totalToLoad )
+						curTabWidget->setTabSelected(
+							eeclamp<Int32>( currentPage, 0, curTabWidget->getTabCount() - 1 ) );
+				}
 			}
 		}
 	} else if ( j["type"] == "splitter" ) {

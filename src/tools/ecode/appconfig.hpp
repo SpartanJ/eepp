@@ -9,8 +9,7 @@
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/window/window.hpp>
 
-#include <nlohmann/json.hpp>
-using json = nlohmann::json;
+#include <nlohmann/json_fwd.hpp>
 
 using namespace EE;
 using namespace EE::Math;
@@ -189,6 +188,11 @@ struct SessionSnapshotFile {
 	std::string selection;
 };
 
+struct TabWidgetCbs {
+	std::function<nlohmann::json( UIWidget* )> onSave;
+	std::function<UIWidget*( const nlohmann::json& )> onLoad;
+};
+
 class AppConfig {
   public:
 	WindowStateConfig windowState;
@@ -227,14 +231,29 @@ class AppConfig {
 					  const std::string& configPath, ProjectDocumentConfig& docConfig,
 					  ecode::App* app, bool sessionSnapshot, PluginManager* pluginManager );
 
+	void addTabWidgetType( const std::string& type, TabWidgetCbs tabWidget ) {
+		Lock l( tabWidgetTypesMutex );
+		tabWidgetTypes[type] = tabWidget;
+	}
+
+	void removeTabWidgetType( const std::string& type ) {
+		Lock l( tabWidgetTypesMutex );
+		tabWidgetTypes.erase( type );
+	}
+
   protected:
 	Int64 editorsToLoad{ 0 };
 
-	void loadDocuments( UICodeEditorSplitter* editorSplitter, json j, UITabWidget* curTabWidget,
-						ecode::App* app,
+	void loadDocuments( UICodeEditorSplitter* editorSplitter, nlohmann::json j,
+						UITabWidget* curTabWidget, ecode::App* app,
 						const std::vector<SessionSnapshotFile>& sessionSnapshotFiles );
 
 	void editorLoadedCounter( ecode::App* app );
+
+	nlohmann::json saveNode( Node* node );
+
+	Mutex tabWidgetTypesMutex;
+	std::unordered_map<std::string, TabWidgetCbs> tabWidgetTypes;
 };
 
 } // namespace ecode

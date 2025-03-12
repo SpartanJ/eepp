@@ -129,7 +129,7 @@ class PluginContextProvider {
 
 	virtual std::string getDefaultFileDialogFolder() const = 0;
 
-	virtual const AppConfig& getConfig() const = 0;
+	virtual AppConfig& getConfig() = 0;
 };
 
 } // namespace ecode

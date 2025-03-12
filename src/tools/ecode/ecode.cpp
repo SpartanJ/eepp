@@ -1959,6 +1959,8 @@ void App::closeEditors() {
 		widget->asType<UIBuildSettings>()->getTab()->removeTab( true, true );
 	} );
 
+	mSplitter->forEachTab( []( UITab* tab ) { tab->removeTab( true, true ); } );
+
 	mCurrentProject = "";
 	mCurrentProjectName = "";
 	mDirTree = nullptr;

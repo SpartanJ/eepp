@@ -42,7 +42,7 @@ class ChatUI {
   public:
 	ChatUI( UISceneNode* ui, LLMProviders providers );
 
-	nlohmann::json serialize( const std::string& /*provider*/ );
+	nlohmann::json serialize();
 
 	void unserialize( const nlohmann::json& /*payload*/ );
 
@@ -66,7 +66,7 @@ class ChatUI {
 
 	void showMsg( String msg );
 
-	nlohmann::json chatToJson( const std::string& /*provider*/ );
+	nlohmann::json chatToJson();
 
 	std::string prepareApiUrl( const std::string& apiKey );
 
