@@ -1107,8 +1107,12 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 		}
 
 		// Close the connection
-		if ( !mConnection->isKeepAlive() )
+		if ( !mConnection->isKeepAlive() ) {
 			mConnection->disconnect();
+			HttpConnection* connection = mConnection;
+			eeSAFE_DELETE( connection );
+			mConnection = NULL;
+		}
 	}
 
 	return received;

@@ -17,6 +17,7 @@
 #include <iostream>
 
 //! Plugins
+#include "plugins/aiassistant/aiassistantplugin.hpp"
 #include "plugins/autocomplete/autocompleteplugin.hpp"
 #include "plugins/debugger/debuggerplugin.hpp"
 #include "plugins/discordRPC/discordRPCplugin.hpp"
@@ -606,6 +607,7 @@ void App::initPluginManager() {
 	mPluginManager->registerPlugin( LSPClientPlugin::Definition() );
 	mPluginManager->registerPlugin( XMLToolsPlugin::Definition() );
 	mPluginManager->registerPlugin( GitPlugin::Definition() );
+	mPluginManager->registerPlugin( AIAssistantPlugin::Definition() );
 	mPluginManager->registerPlugin( DiscordRPCplugin::Definition() );
 }
 

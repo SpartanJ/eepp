@@ -1,0 +1,249 @@
+#include "aiassistantplugin.hpp"
+#include "chatui.hpp"
+#include "protocol.hpp"
+
+#include "../../widgetcommandexecuter.hpp"
+
+#include <eepp/system/filesystem.hpp>
+#include <eepp/system/scopedop.hpp>
+
+using json = nlohmann::json;
+
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
+#define AIASSISTANT_THREADED 1
+#else
+#define AIASSISTANT_THREADED 0
+#endif
+
+namespace ecode {
+
+static std::initializer_list<std::string> AIAssistantCommandList = {
+	"new-ai-assistant",
+};
+
+static std::map<std::string, LLMProvider> parseLLMProviders( const nlohmann::json& j ) {
+	std::map<std::string, LLMProvider> providers;
+	for ( const auto& item : j.items() ) {
+		std::string providerName = item.key();
+		const auto& providerJson = item.value();
+
+		LLMProvider provider;
+		provider.name = providerName;
+		provider.enabled = providerJson.value( "enabled", true );
+		provider.openApi = providerJson.value( "open_api", false );
+
+		if ( providerJson.contains( "display_name" ) )
+			provider.displayName = providerJson["display_name"].get<std::string>();
+
+		provider.apiUrl = providerJson["api_url"].get<std::string>();
+
+		if ( providerJson.contains( "fetch_models_url" ) ) {
+			provider.fetchModelsUrl = providerJson["fetch_models_url"].get<std::string>();
+		}
+
+		if ( providerJson.contains( "version" ) ) {
+			provider.version = providerJson["version"].get<int>();
+		}
+
+		if ( providerJson.contains( "models" ) ) {
+			const auto& modelsJson = providerJson["models"];
+			for ( const auto& modelJson : modelsJson ) {
+				LLMModel model;
+				model.name = modelJson["name"].get<std::string>();
+				model.provider = providerName;
+
+				// Optional fields for the model
+				if ( modelJson.contains( "display_name" ) ) {
+					model.displayName = modelJson["display_name"].get<std::string>();
+				}
+				if ( modelJson.contains( "max_tokens" ) ) {
+					model.maxTokens = modelJson["max_tokens"].get<std::size_t>();
+				}
+				if ( modelJson.contains( "max_output_tokens" ) ) {
+					model.maxOutputTokens = modelJson["max_output_tokens"].get<std::size_t>();
+				}
+				if ( modelJson.contains( "default_temperature" ) ) {
+					model.defaultTemperature = modelJson["default_temperature"].get<double>();
+				}
+				if ( modelJson.contains( "cache_configuration" ) &&
+					 !modelJson["cache_configuration"].is_null() ) {
+					const auto& cacheJson = modelJson["cache_configuration"];
+					LLMCacheConfiguration cache;
+					cache.maxCacheAnchors = cacheJson["max_cache_anchors"].get<int>();
+					cache.minTotalToken = cacheJson["min_total_token"].get<int>();
+					cache.shouldSpeculate = cacheJson["should_speculate"].get<bool>();
+					model.cacheConfiguration = cache;
+				}
+
+				provider.models.push_back( model );
+			}
+		}
+
+		providers[providerName] = provider;
+	}
+
+	return providers;
+}
+
+Plugin* AIAssistantPlugin::New( PluginManager* pluginManager ) {
+	return eeNew( AIAssistantPlugin, ( pluginManager, false ) );
+}
+
+Plugin* AIAssistantPlugin::NewSync( PluginManager* pluginManager ) {
+	return eeNew( AIAssistantPlugin, ( pluginManager, true ) );
+}
+
+AIAssistantPlugin::AIAssistantPlugin( PluginManager* pluginManager, bool sync ) :
+	PluginBase( pluginManager ) {
+	if ( sync ) {
+		load( pluginManager );
+	} else {
+#if defined( AIASSISTANT_THREADED ) && AIASSISTANT_THREADED == 1
+		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
+#else
+		load( pluginManager );
+#endif
+	}
+}
+
+AIAssistantPlugin::~AIAssistantPlugin() {
+	waitUntilLoaded();
+	mShuttingDown = true;
+}
+
+void AIAssistantPlugin::load( PluginManager* pluginManager ) {
+	Clock clock;
+	AtomicBoolScopedOp loading( mLoading, true );
+	pluginManager->subscribeMessages( this,
+									  [this]( const auto& notification ) -> PluginRequestHandle {
+										  return processMessage( notification );
+									  } );
+
+	std::vector<std::string> paths;
+	std::string path( pluginManager->getResourcesPath() + "plugins/aiassistant.json" );
+	if ( FileSystem::fileExists( path ) )
+		paths.emplace_back( path );
+	path = pluginManager->getPluginsPath() + "aiassistant.json";
+	if ( FileSystem::fileExists( path ) ||
+		 FileSystem::fileWrite(
+			 path, "{\n\"config\":{},\n  \"keybindings\":{},\n\"providers\":[]\n}\n" ) ) {
+		mConfigPath = path;
+		paths.emplace_back( path );
+	}
+	if ( paths.empty() )
+		return;
+	for ( const auto& tpath : paths ) {
+		try {
+			loadAIAssistantConfig( tpath, mConfigPath == tpath );
+		} catch ( const json::exception& e ) {
+			Log::error( "Parsing linter \"%s\" failed:\n%s", tpath.c_str(), e.what() );
+		}
+	}
+
+	subscribeFileSystemListener();
+	mReady = !mProviders.empty();
+	if ( mReady ) {
+		fireReadyCbs();
+		setReady( clock.getElapsedTime() );
+	}
+}
+
+void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool updateConfigFile ) {
+	std::string data;
+	if ( !FileSystem::fileGet( path, data ) )
+		return;
+	json j;
+	try {
+		j = json::parse( data, nullptr, true, true );
+	} catch ( const json::exception& e ) {
+		Log::error(
+			"AIAssistantPlugin::loadAIAssistantConfig - Error parsing AI assistant config from "
+			"path %s, error: %s, config file content:\n%s",
+			path.c_str(), e.what(), data.c_str() );
+		if ( !updateConfigFile )
+			return;
+		// Recreate it
+		j = json::parse( "{\n\"config\":{},\n  \"keybindings\":{},\n\"providers\":[]\n}\n", nullptr,
+						 true, true );
+	}
+
+	if ( updateConfigFile ) {
+		mConfigHash = String::hash( data );
+	}
+
+	if ( j.contains( "config" ) ) {
+		// auto& config = j["config"];
+	}
+
+	if ( mKeyBindings.empty() ) {
+		// mKeyBindings["new-ai-assistant"] = "mod+shift+n";
+	}
+
+	auto& kb = j["keybindings"];
+	for ( const auto& key : AIAssistantCommandList ) {
+		if ( kb.contains( key ) ) {
+			if ( !kb[key].empty() )
+				mKeyBindings[key] = kb[key];
+		} else if ( updateConfigFile )
+			kb[key] = mKeyBindings[key];
+	}
+
+	if ( updateConfigFile ) {
+		std::string newData( j.dump( 2 ) );
+		if ( newData != data ) {
+			FileSystem::fileWrite( path, newData );
+			mConfigHash = String::hash( newData );
+		}
+	}
+
+	if ( !j.contains( "providers" ) )
+		return;
+
+	auto providers = parseLLMProviders( j["providers"] );
+	if ( mProviders.empty() ) {
+		mProviders = std::move( providers );
+	} else {
+		for ( const auto& [key, value] : providers )
+			mProviders.insert_or_assign( key, value );
+	}
+}
+
+void AIAssistantPlugin::onRegisterDocument( TextDocument* doc ) {
+	doc->setCommand( "new-ai-assistant", [this] {
+		auto splitter = getPluginContext()->getSplitter();
+		auto chatUI = eeNew( ChatUI, ( getPluginContext()->getUISceneNode(), mProviders ) );
+		if ( !splitter->hasSplit() )
+			splitter->split( SplitDirection::Right, splitter->getCurWidget(), false );
+		splitter->createWidget( chatUI->getChatUI(), i18n( "ai_assistant", "AI Assistant" ) );
+	} );
+}
+
+void AIAssistantPlugin::onRegisterEditor( UICodeEditor* editor ) {
+	editor->addUnlockedCommands( AIAssistantCommandList );
+	PluginBase::onRegisterEditor( editor );
+}
+
+void AIAssistantPlugin::onUnregisterEditor( UICodeEditor* editor ) {
+	editor->removeUnlockedCommands( AIAssistantCommandList );
+}
+
+PluginRequestHandle AIAssistantPlugin::processMessage( const PluginMessage& msg ) {
+	switch ( msg.type ) {
+		case ecode::PluginMessageType::UIReady: {
+			for ( const auto& kb : mKeyBindings ) {
+				getPluginContext()->getMainLayout()->getKeyBindings().addKeybindString( kb.second,
+																						kb.first );
+			}
+
+			// if ( !mInitialized )
+			// 	updateUI();
+
+			break;
+		}
+		default:
+			break;
+	}
+	return PluginRequestHandle::empty();
+}
+
+} // namespace ecode
