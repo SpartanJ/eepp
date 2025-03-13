@@ -745,9 +745,11 @@ void UISceneNode::invalidateLayout( UILayout* node ) {
 		return;
 
 	if ( node->getParent()->isLayout() ) {
-		for ( auto& dirtyNode : mDirtyLayouts )
-			if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) )
+		for ( auto& dirtyNode : mDirtyLayouts ) {
+			if ( NULL != dirtyNode && dirtyNode == node->getParent() ) {
 				return;
+			}
+		}
 
 		std::vector<UILayout*> eraseList;
 
