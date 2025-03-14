@@ -254,13 +254,14 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 			auto providerIt = mProviders.find( key );
 			if ( providerIt != mProviders.end() ) {
 				auto& provider = providerIt->second;
-				provider.apiUrl = value.apiUrl;
-				provider.name = value.name;
-				provider.displayName = value.displayName;
-				provider.enabled = value.enabled;
-				provider.fetchModelsUrl = value.fetchModelsUrl;
-				provider.openApi = value.openApi;
-				provider.models = value.models;
+				if ( !value.apiUrl.empty() )
+					provider.apiUrl = value.apiUrl;
+				if ( !value.name.empty() )
+					provider.name = value.name;
+				if ( value.displayName )
+					provider.displayName = value.displayName;
+				if ( value.fetchModelsUrl )
+					provider.fetchModelsUrl = value.fetchModelsUrl;
 				// Add model if not exists
 				for ( auto& model : value.models ) {
 					if ( std::find_if( provider.models.begin(), provider.models.end(),

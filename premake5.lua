@@ -889,7 +889,6 @@ workspace "eepp"
 	parse_args()
 	location("./make/" .. os.target() .. "/")
 	objdir("obj/" .. os.target() .. "/")
-	disablewarnings{ "4305", "4146", "4996", "4244", "4267" }
 
 	filter "platforms:x86"
 		architecture "x86"
@@ -925,6 +924,7 @@ workspace "eepp"
 
 	filter { "system:windows", "action:vs*" }
 		flags { "MultiProcessorCompile" }
+		disablewarnings{ "4305", "4146", "4996", "4244", "4267" }
 
 	filter "system:bsd"
 		syslibdirs { "/usr/local/lib" }

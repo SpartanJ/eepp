@@ -748,7 +748,7 @@ std::shared_ptr<FileListModel> UniversalLocator::openDocumentsModel( const std::
 	for ( size_t i = 0; i < names.size(); i++ ) {
 		int matchName = String::fuzzyMatch( pattern, names[i] );
 		int matchPath = String::fuzzyMatch( pattern, files[i] );
-		int matchScore = std::max( matchName, matchScore );
+		int matchScore = std::max( matchName, matchPath );
 		if ( matchScore > std::numeric_limits<int>::min() )
 			matchesMap.insert( { std::max( matchName, matchPath ), i } );
 	}
