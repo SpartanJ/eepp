@@ -65,7 +65,7 @@ StatusBar > #doc_info {
 	margin-right: 0dp;
 	border-radius: 0dp;
 	border: 0dp solid transparent;
-	padding: 0dp 4dp 0dp 4dp;
+	padding: 0dp 6dp 0dp 6dp;
 	opacity: 1;
 	layout-gravity: center;
 	layout-height: match_parent;
@@ -73,6 +73,11 @@ StatusBar > #doc_info {
 }
 #doc_info {
 	color: var(--font);
+	border-right-color: transparent;
+}
+.status_but + #doc_info {
+	border-right-width: 1dp;
+	border-right-color: var(--tab-line);
 }
 #search_find.error,
 #search_replace.error {
@@ -179,6 +184,9 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 }
 #status_bar > .status_but.selected {
 	background-color: var(--primary);
+}
+#status_bar > .status_but:last-child {
+	border-right-color: transparent;
 }
 .vertical_bar {
 	background-color: var(--list-back);

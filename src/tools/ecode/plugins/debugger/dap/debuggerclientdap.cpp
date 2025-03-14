@@ -721,6 +721,9 @@ bool DebuggerClientDap::setBreakpoints( const std::string& path,
 bool DebuggerClientDap::setBreakpoints( const dap::Source& source,
 										const std::vector<dap::SourceBreakpoint>& breakpoints,
 										bool sourceModified ) {
+	if ( breakpoints.empty() )
+		return false;
+
 	nlohmann::json bpoints = nlohmann::json::array();
 	for ( const auto& item : breakpoints )
 		bpoints.push_back( item.toJson() );

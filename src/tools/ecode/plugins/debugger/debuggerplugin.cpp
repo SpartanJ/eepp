@@ -1,3 +1,4 @@
+#include "debuggerplugin.hpp"
 #include "../../notificationcenter.hpp"
 #include "../../terminalmanager.hpp"
 #include "../../uistatusbar.hpp"
@@ -6,7 +7,6 @@
 #include "bussocket.hpp"
 #include "bussocketprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
-#include "debuggerplugin.hpp"
 #include "models/breakpointsmodel.hpp"
 #include "models/processesmodel.hpp"
 #include "models/variablesmodel.hpp"
@@ -142,7 +142,7 @@ void DebuggerPlugin::onSaveProject( const std::string& /*projectFolder*/,
 	std::string debugger( mCurDebugger );
 	std::string configuration( mCurConfiguration );
 	auto expressions( mExpressions );
-	UnorderedMap<std::string, UnorderedSet<SourceBreakpointStateful>> breakpoints;
+	BreakpointsHolder breakpoints;
 	{
 		Lock l( mBreakpointsMutex );
 		breakpoints = mBreakpoints;
@@ -169,7 +169,8 @@ void DebuggerPlugin::onSaveProject( const std::string& /*projectFolder*/,
 					jbp["enabled"] = bp.enabled;
 					bpArr.push_back( jbp );
 				}
-				bpsArr[bpSet.first] = std::move( bpArr );
+				if ( !bpArr.empty() )
+					bpsArr[bpSet.first] = std::move( bpArr );
 			}
 			config["breakpoints"] = std::move( bpsArr );
 
@@ -234,16 +235,18 @@ void DebuggerPlugin::onLoadProject( const std::string& projectFolder,
 			}
 
 			if ( config.contains( "breakpoints" ) && config["breakpoints"].is_object() ) {
-				UnorderedMap<std::string, UnorderedSet<SourceBreakpointStateful>> breakpoints;
+				BreakpointsHolder breakpoints;
 				for ( auto& [key, value] : config["breakpoints"].items() ) {
-					auto& bps = breakpoints[key];
 					if ( value.is_array() ) {
+						BreakpointsSet set;
 						for ( auto& jbp : value ) {
 							SourceBreakpointStateful bp;
 							bp.line = jbp.value( "line", 1 );
 							bp.enabled = jbp.value( "enabled", true );
-							bps.insert( std::move( bp ) );
+							set.insert( std::move( bp ) );
 						}
+						if ( !set.empty() )
+							breakpoints[key] = std::move( set );
 					}
 				}
 

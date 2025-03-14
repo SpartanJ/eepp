@@ -486,6 +486,10 @@ struct GotoTarget {
 	static std::vector<GotoTarget> parseList( const json& variables );
 };
 
+using BreakpointsSet = EE::UnorderedSet<SourceBreakpointStateful>;
+
+using BreakpointsHolder = EE::UnorderedMap<std::string, BreakpointsSet>;
+
 } // namespace ecode::dap
 
 template <> struct std::hash<ecode::dap::SourceBreakpoint> {
@@ -510,6 +514,6 @@ template <> struct std::hash<ecode::dap::SourceBreakpointStateful> {
 			breakpoint.hitCondition ? std::hash<std::string>()( *breakpoint.hitCondition ) : 0;
 		size_t h5 = breakpoint.logMessage ? std::hash<std::string>()( *breakpoint.logMessage ) : 0;
 		// size_t h6 = std::hash<bool>()( breakpoint.enabled );
-		return hashCombine( h1, h2, h3, h4, h5/*, h6*/ );
+		return hashCombine( h1, h2, h3, h4, h5 /*, h6*/ );
 	}
 };

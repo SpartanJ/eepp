@@ -1,6 +1,6 @@
+#include "debuggerclientlistener.hpp"
 #include "../../notificationcenter.hpp"
 #include "../../statusappoutputcontroller.hpp"
-#include "debuggerclientlistener.hpp"
 #include "debuggerplugin.hpp"
 #include "models/stackmodel.hpp"
 #include "models/threadsmodel.hpp"
@@ -193,8 +193,8 @@ void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
 void DebuggerClientListener::sendBreakpoints() {
 	Lock l( mPlugin->mBreakpointsMutex );
 	for ( const auto& fileBps : mPlugin->mBreakpoints ) {
-		std::string path( fileBps.first );
-		mClient->setBreakpoints( path, fromSet( fileBps.second ) );
+		if ( !fileBps.second.empty() )
+			mClient->setBreakpoints( fileBps.first, fromSet( fileBps.second ) );
 	}
 }
 

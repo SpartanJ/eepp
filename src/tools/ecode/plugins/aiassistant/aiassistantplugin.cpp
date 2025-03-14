@@ -189,11 +189,41 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 	}
 
 	if ( j.contains( "config" ) ) {
-		// auto& config = j["config"];
+		auto& config = j["config"];
+
+		if ( config.contains( "openai_api_key" ) )
+			mApiKeys["openai"] = config.value( "openai_api_key", "" );
+		else if ( updateConfigFile )
+			config["openai_api_key"] = mApiKeys["openai"];
+
+		if ( config.contains( "anthropic_api_key" ) )
+			mApiKeys["anthropic"] = config.value( "anthropic_api_key", "" );
+		else if ( updateConfigFile )
+			config["anthropic_api_key"] = mApiKeys["anthropic"];
+
+		if ( config.contains( "google_ai_api_key" ) )
+			mApiKeys["google_ai"] = config.value( "google_ai_api_key", "" );
+		else if ( updateConfigFile )
+			config["google_ai_api_key"] = mApiKeys["google_ai"];
+
+		if ( config.contains( "deepseek_api_key" ) )
+			mApiKeys["deepseek"] = config.value( "deepseek_api_key", "" );
+		else if ( updateConfigFile )
+			config["deepseek_api_key"] = mApiKeys["deepseek"];
+
+		if ( config.contains( "mistral_api_key" ) )
+			mApiKeys["mistral"] = config.value( "mistral_api_key", "" );
+		else if ( updateConfigFile )
+			config["mistral_api_key"] = mApiKeys["mistral"];
+
+		if ( config.contains( "xai_api_key" ) )
+			mApiKeys["xai"] = config.value( "xai_api_key", "" );
+		else if ( updateConfigFile )
+			config["xai_api_key"] = mApiKeys["xai"];
 	}
 
 	if ( mKeyBindings.empty() ) {
-		// mKeyBindings["new-ai-assistant"] = "mod+shift+n";
+		mKeyBindings["new-ai-assistant"] = "mod+shift+n";
 	}
 
 	auto& kb = j["keybindings"];
@@ -220,8 +250,31 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 	if ( mProviders.empty() ) {
 		mProviders = std::move( providers );
 	} else {
-		for ( const auto& [key, value] : providers )
-			mProviders.insert_or_assign( key, value );
+		for ( const auto& [key, value] : providers ) {
+			auto providerIt = mProviders.find( key );
+			if ( providerIt != mProviders.end() ) {
+				auto& provider = providerIt->second;
+				provider.apiUrl = value.apiUrl;
+				provider.name = value.name;
+				provider.displayName = value.displayName;
+				provider.enabled = value.enabled;
+				provider.fetchModelsUrl = value.fetchModelsUrl;
+				provider.openApi = value.openApi;
+				provider.models = value.models;
+				// Add model if not exists
+				for ( auto& model : value.models ) {
+					if ( std::find_if( provider.models.begin(), provider.models.end(),
+									   [&model]( const LLMModel& cmodel ) {
+										   return cmodel.provider == model.provider &&
+												  cmodel.name == model.name;
+									   } ) == provider.models.end() ) {
+						provider.models.emplace_back( std::move( model ) );
+					}
+				}
+			} else {
+				mProviders.insert( { key, std::move( value ) } );
+			}
+		}
 	}
 
 	if ( getUISceneNode() )

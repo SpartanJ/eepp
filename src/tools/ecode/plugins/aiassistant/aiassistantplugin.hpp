@@ -30,6 +30,7 @@ class AIAssistantPlugin : public PluginBase {
 	bool mUIInit{ false };
 	UIWidget* mStatusBar{ nullptr };
 	UIPushButton* mStatusButton{ nullptr };
+	UnorderedMap<std::string, std::string> mApiKeys;
 
 	AIAssistantPlugin( PluginManager* pluginManager, bool sync );
 

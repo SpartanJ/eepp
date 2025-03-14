@@ -51,7 +51,7 @@ class DebuggerPlugin : public PluginBase {
   public:
 	static PluginDefinition Definition() {
 		return { "debugger",		  "Debugger",  "Debugger integration",
-				 DebuggerPlugin::New, { 0, 0, 1 }, DebuggerPlugin::NewSync };
+				 DebuggerPlugin::New, { 0, 0, 2 }, DebuggerPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
@@ -103,7 +103,7 @@ class DebuggerPlugin : public PluginBase {
 	UIDropDownList* mUIDebuggerList{ nullptr };
 	UIDropDownList* mUIDebuggerConfList{ nullptr };
 	UIPushButton* mRunButton{ nullptr };
-	UnorderedMap<std::string, UnorderedSet<SourceBreakpointStateful>> mBreakpoints;
+	BreakpointsHolder mBreakpoints;
 	UnorderedSet<std::string> mPendingBreakpoints;
 	std::shared_ptr<BreakpointsModel> mBreakpointsModel;
 	Mutex mDapsMutex;
