@@ -5,6 +5,7 @@
 #include <eepp/ui/doc/languages/batchscript.hpp>
 #include <eepp/ui/doc/languages/bazel.hpp>
 #include <eepp/ui/doc/languages/bend.hpp>
+#include <eepp/ui/doc/languages/blade.hpp>
 #include <eepp/ui/doc/languages/blueprint.hpp>
 #include <eepp/ui/doc/languages/brainfuck.hpp>
 #include <eepp/ui/doc/languages/buzz.hpp>
@@ -100,6 +101,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addBatchScript();
 	addBazel();
 	addBend();
+	addBlade();
 	addBlueprint();
 	addBrainfuck();
 	addBuzz();
