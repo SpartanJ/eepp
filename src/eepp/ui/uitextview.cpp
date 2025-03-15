@@ -448,6 +448,7 @@ void UITextView::onAlphaChange() {
 
 void UITextView::onPaddingChange() {
 	autoWrap();
+	alignFix();
 	UIWidget::onPaddingChange();
 }
 

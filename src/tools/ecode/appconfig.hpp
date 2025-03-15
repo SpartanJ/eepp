@@ -188,9 +188,15 @@ struct SessionSnapshotFile {
 	std::string selection;
 };
 
+struct TabWidgetData {
+	UIWidget* widget{ nullptr };
+	Drawable* icon{ nullptr };
+	std::string title;
+};
+
 struct TabWidgetCbs {
 	std::function<nlohmann::json( UIWidget* )> onSave;
-	std::function<UIWidget*( const nlohmann::json& )> onLoad;
+	std::function<TabWidgetData( const nlohmann::json& )> onLoad;
 };
 
 class AppConfig {

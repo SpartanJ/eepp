@@ -692,11 +692,14 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 			} else {
 				auto found = tabWidgetTypes.find( file["type"] );
 				if ( found != tabWidgetTypes.end() ) {
-					auto widget = found->second.onLoad( file );
+					auto [widget, icon, title] = found->second.onLoad( file );
 
-					editorSplitter->createWidgetInTabWidget(
-						curTabWidget, widget, file.contains( "title" ) ? file["title"] : "" );
+					auto [tab, _] = editorSplitter->createWidgetInTabWidget(
+						curTabWidget, widget, !title.empty() ? title : file.value( "title", "" ) );
 					editorSplitter->removeUnusedTab( curTabWidget, true, false );
+
+					if ( icon )
+						tab->setIcon( icon );
 
 					if ( curTabWidget->getTabCount() == totalToLoad )
 						curTabWidget->setTabSelected(

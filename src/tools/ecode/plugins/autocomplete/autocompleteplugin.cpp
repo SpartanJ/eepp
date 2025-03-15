@@ -58,7 +58,8 @@ fuzzyMatchSymbols( const std::vector<const AutoCompletePlugin::SymbolsList*>& sy
 				 ( score = String::fuzzyMatch( pattern, symbol.text ) ) >
 					 std::numeric_limits<int>::min() ) {
 				if ( std::find( matches.begin(), matches.end(), symbol ) == matches.end() ) {
-					symbol.setScore( score );
+					symbol.setScore( score +
+									 ( symbol.kind != LSPCompletionItemKind::Text ? 100 : 0 ) );
 					matches.push_back( symbol );
 
 					if ( matches.size() > max )
@@ -71,11 +72,10 @@ fuzzyMatchSymbols( const std::vector<const AutoCompletePlugin::SymbolsList*>& sy
 			break;
 	}
 
-	std::sort( matches.begin(), matches.end(),
-			   []( const AutoCompletePlugin::Suggestion& left,
-				   const AutoCompletePlugin::Suggestion& right ) {
-				   return left.score > right.score && left.kind != LSPCompletionItemKind::Text;
-			   } );
+	std::sort(
+		matches.begin(), matches.end(),
+		[]( const AutoCompletePlugin::Suggestion& left,
+			const AutoCompletePlugin::Suggestion& right ) { return left.score > right.score; } );
 
 	return matches;
 }

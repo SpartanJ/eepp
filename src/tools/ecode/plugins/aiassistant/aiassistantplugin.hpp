@@ -19,11 +19,16 @@ class AIAssistantPlugin : public PluginBase {
 
 	virtual ~AIAssistantPlugin();
 
+	static std::optional<std::string> getApiKeyFromProvider( const std::string& provider,
+															 AIAssistantPlugin* instance );
+
 	std::string getId() override { return Definition().id; }
 
 	std::string getTitle() override { return Definition().name; }
 
 	std::string getDescription() override { return Definition().description; }
+
+	const LLMProviders& getProviders() { return mProviders; }
 
   protected:
 	LLMProviders mProviders;

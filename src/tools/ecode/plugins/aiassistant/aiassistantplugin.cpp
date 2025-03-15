@@ -150,7 +150,8 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 
 	TabWidgetCbs config;
 	config.onLoad = [this]( const nlohmann::json& j ) {
-		return ( eeNew( ChatUI, ( getUISceneNode(), mProviders ) ) )->getChatUI();
+		return TabWidgetData{ LLMChatUI::New( mManager ), getPluginContext()->findIcon( "code-ai" ),
+							  i18n( "ai_assistant", "AI Assistant" ) };
 	};
 	config.onSave = []( UIWidget* widget ) {
 		nlohmann::json j;
@@ -158,6 +159,11 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 	};
 
 	getPluginContext()->getConfig().addTabWidgetType( "llm_chatui", config );
+
+	if ( getUISceneNode() ) {
+		UIWidgetCreator::registerWidget( "llmchatui",
+										 [this] { return LLMChatUI::New( mManager ); } );
+	}
 
 	if ( mReady ) {
 		fireReadyCbs();
@@ -223,7 +229,7 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 	}
 
 	if ( mKeyBindings.empty() ) {
-		mKeyBindings["new-ai-assistant"] = "mod+shift+n";
+		mKeyBindings["new-ai-assistant"] = "mod+shift+m";
 	}
 
 	auto& kb = j["keybindings"];
@@ -284,12 +290,15 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 
 void AIAssistantPlugin::newAIAssistant() {
 	auto splitter = getPluginContext()->getSplitter();
-	auto chatUI = eeNew( ChatUI, ( getUISceneNode(), mProviders ) );
+	auto chatUI = LLMChatUI::New( mManager );
 	auto tabName( i18n( "ai_assistant", "AI Assistant" ) );
 	UITabWidget* tabWidget = splitter->getTabWidgets()[splitter->getTabWidgets().size() - 1];
 	if ( !splitter->hasSplit() )
 		tabWidget = splitter->splitTabWidget( SplitDirection::Right, tabWidget );
-	splitter->createWidgetInTabWidget( tabWidget, chatUI->getChatUI(), tabName );
+	auto [tab, _] = splitter->createWidgetInTabWidget( tabWidget, chatUI, tabName );
+	auto icon = getPluginContext()->findIcon( "code-ai" );
+	if ( icon )
+		tab->setIcon( icon );
 }
 
 void AIAssistantPlugin::onRegisterDocument( TextDocument* doc ) {
@@ -345,6 +354,45 @@ void AIAssistantPlugin::initUI() {
 		mStatusButton->setTooltipText( i18n( "ai_assistant", "AI Assistant" ) );
 		mStatusButton->on( Event::MouseClick, [this]( const Event* event ) { newAIAssistant(); } );
 	}
+}
+
+std::optional<std::string> AIAssistantPlugin::getApiKeyFromProvider( const std::string& provider,
+																	 AIAssistantPlugin* instance ) {
+	static const char* OPEN_API_KEY = "";
+	const char* ret = nullptr;
+	if ( provider == "openai" ) {
+		ret = getenv( "OPENAI_API_KEY" );
+	} else if ( provider == "anthropic" ) {
+		ret = getenv( "ANTHROPIC_API_KEY" );
+	} else if ( provider == "google" ) {
+		const char* apiKey = getenv( "GOOGLE_AI_API_KEY" );
+		if ( apiKey != nullptr )
+			ret = apiKey;
+		else
+			ret = getenv( "GEMINI_API_KEY" );
+	} else if ( provider == "deepseek" ) {
+		ret = getenv( "DEEPSEEK_API_KEY" );
+	} else if ( provider == "mistral" ) {
+		ret = getenv( "MISTRAL_API_KEY" );
+	} else if ( provider == "lmstudio" || provider == "ollama" ) {
+		ret = OPEN_API_KEY;
+	} else if ( provider == "xai" ) {
+		const char* apiKey = getenv( "XAI_API_KEY" );
+		if ( apiKey != nullptr )
+			ret = apiKey;
+		else
+			ret = getenv( "GROK_API_KEY" );
+	}
+	if ( ret )
+		return std::string{ ret };
+
+	if ( instance ) {
+		auto providerIt = instance->mApiKeys.find( provider );
+		if ( providerIt != instance->mApiKeys.end() )
+			return providerIt->second;
+	}
+
+	return {};
 }
 
 } // namespace ecode

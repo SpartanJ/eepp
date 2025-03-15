@@ -1,4 +1,3 @@
-#include "debuggerplugin.hpp"
 #include "../../notificationcenter.hpp"
 #include "../../terminalmanager.hpp"
 #include "../../uistatusbar.hpp"
@@ -7,6 +6,7 @@
 #include "bussocket.hpp"
 #include "bussocketprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
+#include "debuggerplugin.hpp"
 #include "models/breakpointsmodel.hpp"
 #include "models/processesmodel.hpp"
 #include "models/variablesmodel.hpp"
@@ -243,7 +243,8 @@ void DebuggerPlugin::onLoadProject( const std::string& projectFolder,
 							SourceBreakpointStateful bp;
 							bp.line = jbp.value( "line", 1 );
 							bp.enabled = jbp.value( "enabled", true );
-							set.insert( std::move( bp ) );
+							if ( bp.line > 0 )
+								set.insert( std::move( bp ) );
 						}
 						if ( !set.empty() )
 							breakpoints[key] = std::move( set );

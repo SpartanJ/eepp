@@ -3,6 +3,9 @@
 #include "llmchatcompletionrequest.hpp"
 #include "protocol.hpp"
 
+#include "../pluginmanager.hpp"
+#include <eepp/ui/uilinearlayout.hpp>
+
 #include "nlohmann/json_fwd.hpp"
 
 namespace EE { namespace UI {
@@ -24,6 +27,8 @@ using namespace EE::Graphics;
 
 namespace ecode {
 
+class AIAssistantPlugin;
+
 class LLMChat {
   public:
 	enum class Role {
@@ -38,20 +43,17 @@ class LLMChat {
 	static LLMChat::Role stringToRole( UIPushButton* userBut );
 };
 
-class ChatUI {
+class LLMChatUI : public UILinearLayout {
   public:
-	ChatUI( UISceneNode* ui, LLMProviders providers );
+	static LLMChatUI* New( PluginManager* manager ) { return eeNew( LLMChatUI, ( manager ) ); }
 
 	nlohmann::json serialize();
 
 	void unserialize( const nlohmann::json& /*payload*/ );
 
-	const char* getApiKeyFromProvider( const std::string& provider );
-
-	UIWidget* getChatUI();
-
   protected:
-	UIWidget* mChatUI{ nullptr };
+	UUID mUUID;
+	PluginManager* mManager{ nullptr };
 	UIWidget* mChatsList{ nullptr };
 	UICodeEditor* mChatInput{ nullptr };
 	UIPushButton* mChatUserRole{ nullptr };
@@ -64,7 +66,13 @@ class ChatUI {
 	LLMModel mCurModel;
 	std::unordered_map<String::HashType, LLMModel> mModelsMap;
 
+	LLMChatUI( PluginManager* manager );
+
+	AIAssistantPlugin* getPlugin();
+
 	void showMsg( String msg );
+
+	nlohmann::json serializeChat();
 
 	nlohmann::json chatToJson();
 
@@ -91,6 +99,8 @@ class ChatUI {
 	void removeLastChat();
 
 	void setProviders( LLMProviders&& providers );
+
+	virtual Uint32 onMessage( const NodeMessage* );
 };
 
 } // namespace ecode

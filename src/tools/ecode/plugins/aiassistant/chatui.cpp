@@ -1,3 +1,4 @@
+#include "aiassistantplugin.hpp"
 #include "chatui.hpp"
 
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
@@ -45,20 +46,11 @@ LLMChat::Role LLMChat::stringToRole( UIPushButton* userBut ) {
 static const char* DEFAULT_LAYOUT = R"xml(
 <style>
 .llm_chatui DropDownList {
-	lh: 16dp;
-	padding-top: 0dp;
-	padding-bottom: 0dp;
 	border: 0;
 	background-color: var(--tab-back);
 }
-.llm_chatui .llm_topbar > * {
-	layout-gravity: center;
-}
-.llm_chatui .settings_but {
+.llm_chatui #settings_but {
 	tint: var(--floating-icon);
-}
-.llm_chatui .llm_topbar PushButton {
-	margin-bottom: 1dp;
 }
 .llm_conversation {
 	margin-bottom: 8dp;
@@ -108,44 +100,45 @@ CodeEditor.llm_chat_input {
 .llm_button {
 	text-as-fallback: true;
 }
-.llm_chatui > .llm_topbar {
-	border-bottom: 1dp var(--tab-line);
-	margin-bottom: 4dp;
-	padding-left: 4dp;
-	padding-right: 4dp;
-}
 PushButton.llm_button.primary {
 	text-as-fallback: false;
 }
+DropDownList.role_ui {
+	gravity: left|center_vertical;
+}
 </style>
-<vbox class="llm_chatui" lw="mp" lh="mp">
-	<hbox class="llm_topbar" lw="mp" lh="wc">
-		<TextView text="@string(llm_model, LLM Model:)" margin-right="4dp" />
-		<DropDownList class="model_ui" lw="350dp" selected-index="0"></DropDownList>
-		<PushButton id="refresh_model_ui" text="@string(refresh_model_ui, Refresh)" icon="icon(refresh, 14dp)" />
-		<Widget lw="0" lw8="1" />
-		<PushButton class="settings_but" text="@string(settings, Settings)" icon="icon(settings, 14dp)" tooltip="@string(settings, Settings)" />
-	</hbox>
-	<Splitter lw="mp" lh="0" lw8="1" orientation="vertical" splitter-partition="80%" padding="4dp">
-		<ScrollView lw="mp" class="llm_chat_scrollview">
-			<vbox lw="mp" class="llm_chats"></vbox>
+<Splitter lw="mp" lh="mp" orientation="vertical" splitter-partition="75%" padding="4dp">
+	<RelativeLayout lw="mp">
+		<ScrollView lw="mp" lh="mp" class="llm_chat_scrollview">
+			<vbox lw="mp" lh="wc" class="llm_chats"></vbox>
 		</ScrollView>
-		<RelativeLayout lw="mp" class="llm_controls">
-			<CodeEditor class="llm_chat_input" lw="mp" lh="mp" />
-			<PushButton id="llm_user" class="llm_button" text="@string(user, User)" min-width="60dp" layout_gravity="bottom|left" layout_margin="8dp" />
-			<PushButton class="llm_button" text="@string(attach, Attach)" icon="icon(attach, 14dp)" min-width="32dp" layout_gravity="bottom|left" layout-to-right-of="llm_user" />
-			<PushButton id="llm_run" class="llm_button primary" text="@string(run, Run)" icon="icon(play-filled, 14dp)" layout_gravity="bottom|right" layout-margin="8dp" />
-			<PushButton id="llm_add_chat" class="llm_button" text="@string(add, Add)" icon="icon(add, 15dp)" min-width="32dp" layout-to-left-of="llm_run" />
-			<PushButton id="llm_stop" class="llm_button primary" text="@string(stop, Stop)" icon="icon(stop, 12dp)" layout_gravity="bottom|right" layout-margin="8dp" visible="false" enabled="false" />
-		</RelativeLayout>
-	</Splitter>
-</vbox>
+		<vbox id="chat_presentation" lw="wc" lh="wc" layout-gravity="center" gravity="center">
+			<Image lw="wc" lh="wc" icon="icon(robot-2, 96dp)" gravity="center" layout-gravity="center" />
+			<TextView text="@string(ai_llm_presentation, What can I help with?)" font-size="24dp" />
+		</vbox>
+	</RelativeLayout>
+	<RelativeLayout lw="mp" class="llm_controls">
+		<CodeEditor class="llm_chat_input" lw="mp" lh="mp" />
+		<hbox lw="mp" lh="wc" layout_gravity="bottom|left" layout_margin="8dp" clip="false">
+			<PushButton id="llm_user" class="llm_button" text="@string(user, User)" min-width="60dp" layout-margin-right="8dp" />
+			<PushButton class="llm_button" text="@string(attach, Attach)" icon="icon(attach, 14dp)" min-width="32dp" />
+			<hbox lw="0" lw8="1" lh="mp" layout_gravity="center" padding-left="8dp" padding-right="8dp">
+				<PushButton id="settings_but" text="@string(settings, Settings)" icon="icon(settings, 14dp)" tooltip="@string(settings, Settings)" margin-right="8dp" />
+				<DropDownList class="model_ui" lw="0" lw8="1" selected-index="0"></DropDownList>
+				<PushButton id="refresh_model_ui" text="@string(refresh_model_ui, Refresh)" icon="icon(refresh, 14dp)" />
+			</hbox>
+			<PushButton id="llm_add_chat" class="llm_button" text="@string(add, Add)" icon="icon(add, 15dp)" min-width="32dp" layout-margin-right="8dp" />
+			<PushButton id="llm_run" class="llm_button primary" text="@string(run, Run)" icon="icon(play-filled, 14dp)" />
+			<PushButton id="llm_stop" class="llm_button primary" text="@string(stop, Stop)" icon="icon(stop, 12dp)" visible="false" enabled="false" />
+		</hbox>
+	</RelativeLayout>
+</Splitter>
 )xml";
 
 static const char* DEFAULT_CHAT_GLOBE = R"xml(
 <vbox class="llm_conversation" lw="mp" lh="wc">
 	<hbox class="llm_conversation_opt">
-		<DropDownList class="role_ui" lw="150dp" selected-index="1">
+		<DropDownList class="role_ui" lw="150dp" lh="16dp" selected-index="1">
 			<item>@string(user, User)</item>
 			<item>@string(assistant, Assistant)</item>
 			<item>@string(system, System)</item>
@@ -158,25 +151,33 @@ static const char* DEFAULT_CHAT_GLOBE = R"xml(
 </vbox>
 )xml";
 
-ChatUI::ChatUI( UISceneNode* ui, LLMProviders providers ) {
-	setProviders( std::move( providers ) );
+LLMChatUI::LLMChatUI( PluginManager* manager ) : UILinearLayout(), mManager( manager ) {
+	setClass( "llm_chatui" );
+	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 
-	mChatUI = ui->loadLayoutFromString( DEFAULT_LAYOUT );
+	getUISceneNode()->loadLayoutFromString( DEFAULT_LAYOUT, this );
 
-	mChatUI->on( Event::OnFocus, [this]( auto ) { mChatInput->setFocus(); } );
+	mChatsList = findByClass( "llm_chats" );
+	mModelDDL = findByClass<UIDropDownList>( "model_ui" );
 
-	mChatsList = mChatUI->findByClass( "llm_chats" );
-	mModelDDL = mChatUI->findByClass<UIDropDownList>( "model_ui" );
+	find( "refresh_model_ui" )->onClick( [this]( auto ) { fillApiModels( mModelDDL ); } );
 
-	mChatUI->find( "refresh_model_ui" )->onClick( [this]( auto ) { fillApiModels( mModelDDL ); } );
+	find( "settings_but" )->onClick( [this]( auto ) {
+		if ( getPlugin() )
+			getPlugin()->getPluginContext()->focusOrLoadFile( getPlugin()->getFileConfigPath() );
+	} );
 
-	fillModelDropDownList( mModelDDL );
-
-	mChatScrollView = mChatUI->findByClass( "llm_chat_scrollview" )->asType<UIScrollView>();
+	mChatScrollView = findByClass( "llm_chat_scrollview" )->asType<UIScrollView>();
 	mChatScrollView->getVerticalScrollBar()->setValue( 1 );
 
-	mChatInput = mChatUI->findByClass<UICodeEditor>( "llm_chat_input" );
-	mChatInput->setData( reinterpret_cast<UintPtr>( this ) );
+	mChatInput = findByClass<UICodeEditor>( "llm_chat_input" );
+
+	on( Event::OnFocus, [this]( auto ) { mChatInput->setFocus(); } );
+
+	if ( getPlugin() ) {
+		mChatInput->setColorScheme(
+			getPlugin()->getPluginContext()->getSplitter()->getCurrentColorScheme() );
+	}
 	mChatInput->getKeyBindings().addKeybindString( "mod+return", "prompt" );
 	mChatInput->getKeyBindings().addKeybindString( "mod+keypad enter", "prompt" );
 
@@ -195,7 +196,7 @@ ChatUI::ChatUI( UISceneNode* ui, LLMProviders providers ) {
 	} );
 
 	mChatInput->getDocument().setCommand( "prompt", [this] {
-		auto chats = mChatUI->findAllByClass( "llm_conversation" );
+		auto chats = findAllByClass( "llm_conversation" );
 
 		if ( chats.empty() && mChatInput->getDocument().isEmpty() )
 			return;
@@ -209,7 +210,7 @@ ChatUI::ChatUI( UISceneNode* ui, LLMProviders providers ) {
 					 ->asType<UIDropDownList>()
 					 ->getListBox()
 					 ->getItemSelectedIndex() != 0 ) {
-				showMsg( mChatUI->getUISceneNode()->i18n(
+				showMsg( getUISceneNode()->i18n(
 					"llm_last_message_must_be_from_user",
 					"The last chat message must be from a \"User\" role" ) );
 			}
@@ -224,7 +225,7 @@ ChatUI::ChatUI( UISceneNode* ui, LLMProviders providers ) {
 			mRequest->cancel();
 	} );
 
-	mChatUI->find( "llm_add_chat" )->onClick( [this]( auto ) {
+	find( "llm_add_chat" )->onClick( [this]( auto ) {
 		mChatInput->getDocument().execute( "add_chat" );
 	} );
 
@@ -236,13 +237,13 @@ ChatUI::ChatUI( UISceneNode* ui, LLMProviders providers ) {
 
 	mChatInput->setSyntaxDefinition( markdown );
 
-	mChatRun = mChatUI->find<UIPushButton>( "llm_run" );
+	mChatRun = find<UIPushButton>( "llm_run" );
 	mChatRun->onClick( [this]( auto ) { mChatInput->getDocument().execute( "prompt" ); } );
 
-	mChatStop = mChatUI->find<UIPushButton>( "llm_stop" );
+	mChatStop = find<UIPushButton>( "llm_stop" );
 	mChatStop->onClick( [this]( auto ) { mChatInput->getDocument().execute( "prompt-stop" ); } );
 
-	mChatUserRole = mChatUI->find<UIPushButton>( "llm_user" );
+	mChatUserRole = find<UIPushButton>( "llm_user" );
 	mChatUserRole->onClick( [this]( auto ) {
 		if ( mChatUserRole->getText() == mChatUserRole->i18n( "user", "User" ) ) {
 			mChatUserRole->setText( mChatUserRole->i18n( "assistant", "Assistant" ) );
@@ -253,10 +254,16 @@ ChatUI::ChatUI( UISceneNode* ui, LLMProviders providers ) {
 		}
 	} );
 
-	mChatUI->on( Event::OnClose, [this]( auto ) { eeDelete( this ); } );
+	if ( getPlugin() == nullptr )
+		return;
+
+	auto providers = getPlugin()->getProviders();
+	setProviders( std::move( providers ) );
+
+	fillModelDropDownList( mModelDDL );
 }
 
-void ChatUI::fillApiModels( UIDropDownList* modelDDL ) {
+void LLMChatUI::fillApiModels( UIDropDownList* modelDDL ) {
 	for ( auto& [name, data] : mProviders ) {
 		if ( !data.enabled || !data.fetchModelsUrl )
 			continue;
@@ -325,7 +332,7 @@ void ChatUI::fillApiModels( UIDropDownList* modelDDL ) {
 	}
 }
 
-void ChatUI::fillModelDropDownList( UIDropDownList* modelDDL ) {
+void LLMChatUI::fillModelDropDownList( UIDropDownList* modelDDL ) {
 	std::vector<String> models;
 	std::size_t selectedIndex = 0;
 	for ( const auto& [name, data] : mProviders ) {
@@ -358,7 +365,7 @@ void ChatUI::fillModelDropDownList( UIDropDownList* modelDDL ) {
 		[this, modelDDL] { fillApiModels( modelDDL ); } );
 }
 
-void ChatUI::resizeToFit( UICodeEditor* editor ) {
+void LLMChatUI::resizeToFit( UICodeEditor* editor ) {
 	Float visibleLineCount = editor->getDocumentView().getVisibleLinesCount();
 	Float lineHeight = editor->getLineHeight();
 	Float height = lineHeight * visibleLineCount + editor->getPixelsPadding().Top +
@@ -366,9 +373,9 @@ void ChatUI::resizeToFit( UICodeEditor* editor ) {
 	editor->setPixelsSize( editor->getPixelsSize().getWidth(), height );
 }
 
-nlohmann::json ChatUI::chatToJson() {
+nlohmann::json LLMChatUI::chatToJson() {
 	auto j = nlohmann::json::array();
-	auto chats = mChatUI->findAllByClass( "llm_conversation" );
+	auto chats = findAllByClass( "llm_conversation" );
 	for ( const auto& chat : chats ) {
 		UIDropDownList* roleDDL = chat->findByClass<UIDropDownList>( "role_ui" );
 		UICodeEditor* codeEditor = chat->findByClass<UICodeEditor>( "data_ui" );
@@ -384,7 +391,14 @@ nlohmann::json ChatUI::chatToJson() {
 	return j;
 }
 
-nlohmann::json ChatUI::serialize() {
+Uint32 LLMChatUI::onMessage( const NodeMessage* msg ) {
+	if ( msg->getMsg() == NodeMessage::Focus ) {
+		getPlugin()->getPluginContext()->getSplitter()->setCurrentWidget( this );
+	}
+	return 0;
+}
+
+nlohmann::json LLMChatUI::serializeChat() {
 	nlohmann::json j = {
 		{ "model", mCurModel.name }, { "stream", true }, { "messages", chatToJson() } };
 	if ( mCurModel.maxOutputTokens )
@@ -392,36 +406,16 @@ nlohmann::json ChatUI::serialize() {
 	return j;
 }
 
-void unserialize( const nlohmann::json& /*payload*/ ) {}
-
-const char* ChatUI::getApiKeyFromProvider( const std::string& provider ) {
-	static const char* OPEN_API_KEY = "";
-	if ( provider == "openai" )
-		return getenv( "OPENAI_API_KEY" );
-	if ( provider == "anthropic" )
-		return getenv( "ANTHROPIC_API_KEY" );
-	if ( provider == "google" ) {
-		const char* apiKey = getenv( "GOOGLE_AI_API_KEY" );
-		if ( apiKey != nullptr )
-			return apiKey;
-		return getenv( "GEMINI_API_KEY" );
-	}
-	if ( provider == "deepseek" )
-		return getenv( "DEEPSEEK_API_KEY" );
-	if ( provider == "mistral" )
-		return getenv( "MISTRAL_API_KEY" );
-	if ( provider == "lmstudio" || provider == "ollama" )
-		return OPEN_API_KEY;
-	if ( provider == "xai" ) {
-		const char* apiKey = getenv( "XAI_API_KEY" );
-		if ( apiKey != nullptr )
-			return apiKey;
-		return getenv( "GROK_API_KEY" );
-	}
-	return nullptr;
+nlohmann::json LLMChatUI::serialize() {
+	nlohmann::json j;
+	j["uuid"] = mUUID.toString();
+	j["chat"] = serializeChat();
+	return j;
 }
 
-std::string ChatUI::prepareApiUrl( const std::string& apiKey ) {
+void unserialize( const nlohmann::json& /*payload*/ ) {}
+
+std::string LLMChatUI::prepareApiUrl( const std::string& apiKey ) {
 	const auto& provider = mProviders[mCurModel.provider];
 	std::string url = provider.apiUrl;
 	String::replaceAll( url, "${model}", mCurModel.name );
@@ -429,17 +423,17 @@ std::string ChatUI::prepareApiUrl( const std::string& apiKey ) {
 	return url;
 }
 
-void ChatUI::doRequest() {
+void LLMChatUI::doRequest() {
 	if ( mRequest )
 		return;
 
-	const char* apiKey = getApiKeyFromProvider( mCurModel.provider );
-	if ( apiKey == nullptr ) {
-		showMsg( mChatUI->getUISceneNode()->i18n(
-			"configure_api_key", "You must first configure your provider api key." ) );
+	auto apiKey = AIAssistantPlugin::getApiKeyFromProvider( mCurModel.provider, getPlugin() );
+	if ( !apiKey ) {
+		showMsg( getUISceneNode()->i18n( "configure_api_key",
+										 "You must first configure your provider api key." ) );
 		return;
 	}
-	std::string apiKeyStr{ apiKey };
+	std::string apiKeyStr{ *apiKey };
 
 	mChatRun->setVisible( false )->setEnabled( false );
 	mChatStop->setVisible( true )->setEnabled( true );
@@ -448,8 +442,8 @@ void ChatUI::doRequest() {
 	toggleEnableChats( false );
 
 	auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
-	mRequest = std::make_unique<LLMChatCompletionRequest>( prepareApiUrl( apiKeyStr ), apiKeyStr,
-														   serialize().dump(), mCurModel.provider );
+	mRequest = std::make_unique<LLMChatCompletionRequest>(
+		prepareApiUrl( apiKeyStr ), apiKeyStr, serializeChat().dump(), mCurModel.provider );
 	mRequest->streamedResponseCb = [this, editor]( const std::string& chunk ) {
 		auto conversation = chunk;
 		editor->runOnMainThread( [this, conversation = std::move( conversation ), editor] {
@@ -462,7 +456,7 @@ void ChatUI::doRequest() {
 		auto status = response.getStatus();
 		auto statusDesc = response.getStatusDescription();
 
-		mChatUI->runOnMainThread( [this, editor, status, statusDesc] {
+		runOnMainThread( [this, editor, status, statusDesc] {
 			if ( status != Http::Response::Ok ) {
 				auto resp = nlohmann::json::parse( mRequest->getStream(), nullptr, false );
 				if ( resp.contains( "error" ) && resp["error"].contains( "message" ) ) {
@@ -488,7 +482,7 @@ void ChatUI::doRequest() {
 	mRequest->requestAsync();
 }
 
-void ChatUI::toggleEnableChat( UIWidget* chat, bool enabled ) {
+void LLMChatUI::toggleEnableChat( UIWidget* chat, bool enabled ) {
 	chat->findByClass( "role_ui" )->setEnabled( enabled );
 	UICodeEditor* editor = chat->findByClass( "data_ui" )->asType<UICodeEditor>();
 	editor->setEnabled( enabled );
@@ -498,22 +492,24 @@ void ChatUI::toggleEnableChat( UIWidget* chat, bool enabled ) {
 	chat->findByClass( "move_down" )->setEnabled( enabled );
 }
 
-void ChatUI::toggleEnableChats( bool enabled ) {
+void LLMChatUI::toggleEnableChats( bool enabled ) {
 	auto chats = mChatsList->findAllByClass( "llm_conversation" );
 	for ( auto chat : chats )
 		toggleEnableChat( chat, enabled );
 }
 
-Drawable* ChatUI::findIcon( const std::string& name, const size_t iconSize ) {
+Drawable* LLMChatUI::findIcon( const std::string& name, const size_t iconSize ) {
 	if ( name.empty() )
 		return nullptr;
-	UIIcon* icon = mChatUI->getUISceneNode()->findIcon( name );
+	UIIcon* icon = getUISceneNode()->findIcon( name );
 	if ( icon )
 		return icon->getSize( iconSize );
 	return nullptr;
 }
 
-UIWidget* ChatUI::addChatUI( LLMChat::Role role ) {
+UIWidget* LLMChatUI::addChatUI( LLMChat::Role role ) {
+	find( "chat_presentation" )->setVisible( false );
+
 	UIWidget* chat =
 		mChatsList->getUISceneNode()->loadLayoutFromString( DEFAULT_CHAT_GLOBE, mChatsList );
 	auto* roleDDL = chat->findByClass( "role_ui" )->asType<UIDropDownList>();
@@ -549,10 +545,20 @@ UIWidget* ChatUI::addChatUI( LLMChat::Role role ) {
 	editor->setFoldDrawable( findIcon( "chevron-down", PixelDensity::dpToPxI( 12 ) ) );
 	editor->setFoldedDrawable( findIcon( "chevron-right", PixelDensity::dpToPxI( 12 ) ) );
 
+	if ( getPlugin() ) {
+		editor->setColorScheme(
+			getPlugin()->getPluginContext()->getSplitter()->getCurrentColorScheme() );
+	}
+
 	editor->on( Event::OnSizeChange, [editor, this]( auto ) { resizeToFit( editor ); } );
 	editor->on( Event::OnVisibleLinesCountChange,
 				[editor, this]( auto ) { resizeToFit( editor ); } );
-	chat->findByClass( "erase_but" )->onClick( [chat]( auto ) { chat->close(); } );
+	chat->findByClass( "erase_but" )->onClick( [chat, this]( auto ) {
+		chat->close();
+		auto chats = findAllByClass( "llm_conversation" );
+		if ( chats.empty() )
+			find( "chat_presentation" )->setVisible( true );
+	} );
 	chat->findByClass( "move_up" )->onClick( [chat]( auto ) {
 		if ( chat->getNodeIndex() > 0 )
 			chat->toPosition( chat->getNodeIndex() - 1 );
@@ -565,7 +571,7 @@ UIWidget* ChatUI::addChatUI( LLMChat::Role role ) {
 	return chat;
 }
 
-void ChatUI::addChat( LLMChat::Role role, std::string conversation ) {
+void LLMChatUI::addChat( LLMChat::Role role, std::string conversation ) {
 	UIWidget* chat = addChatUI( role );
 	auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
 	editor->getDocument().textInput( String::fromUtf8( conversation ) );
@@ -573,7 +579,7 @@ void ChatUI::addChat( LLMChat::Role role, std::string conversation ) {
 	resizeToFit( editor );
 }
 
-void ChatUI::removeLastChat() {
+void LLMChatUI::removeLastChat() {
 	auto chats = mChatsList->findAllByClass( "llm_conversation" );
 	if ( !chats.empty() ) {
 		auto* chat = chats[chats.size() - 1];
@@ -583,15 +589,11 @@ void ChatUI::removeLastChat() {
 	}
 }
 
-void ChatUI::setProviders( LLMProviders&& providers ) {
+void LLMChatUI::setProviders( LLMProviders&& providers ) {
 	mProviders = std::move( providers );
 }
 
-UIWidget* ChatUI::getChatUI() {
-	return mChatUI;
-}
-
-void ChatUI::showMsg( String msg ) {
+void LLMChatUI::showMsg( String msg ) {
 	auto msgBox = UIMessageBox::New( UIMessageBox::OK, msg );
 	msgBox->getTextBox()->setTextSelection( true );
 	msgBox->getTextBox()->onClick(
@@ -601,6 +603,13 @@ void ChatUI::showMsg( String msg ) {
 		},
 		EE_BUTTON_RIGHT );
 	msgBox->showWhenReady();
+}
+
+AIAssistantPlugin* LLMChatUI::getPlugin() {
+	auto plugin = mManager->get( "aiassistant" );
+	if ( plugin )
+		return reinterpret_cast<AIAssistantPlugin*>( plugin );
+	return nullptr;
 }
 
 } // namespace ecode

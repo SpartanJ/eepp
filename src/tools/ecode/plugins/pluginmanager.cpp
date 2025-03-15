@@ -1,6 +1,6 @@
-#include "pluginmanager.hpp"
 #include "../filesystemlistener.hpp"
 #include "plugin.hpp"
+#include "pluginmanager.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/scopedop.hpp>
@@ -495,9 +495,8 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 	tv->setAutoColumnsWidth( true );
 	tv->setFitAllColumnsToWidget( true );
 	tv->setMainColumn( PluginsModel::Description );
-	prefs->addEventListener( Event::MouseClick, [tv, manager, loadFileCb]( const Event* event ) {
-		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK &&
-			 !tv->getSelection().isEmpty() ) {
+	prefs->onClick( [tv, manager, loadFileCb]( const MouseEvent* event ) {
+		if ( !tv->getSelection().isEmpty() ) {
 			const PluginDefinition* def =
 				manager->getDefinitionIndex( tv->getSelection().first().row() );
 			if ( def == nullptr || !manager->isEnabled( def->id ) )

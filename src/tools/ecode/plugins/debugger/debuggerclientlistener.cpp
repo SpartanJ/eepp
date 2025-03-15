@@ -193,8 +193,7 @@ void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
 void DebuggerClientListener::sendBreakpoints() {
 	Lock l( mPlugin->mBreakpointsMutex );
 	for ( const auto& fileBps : mPlugin->mBreakpoints ) {
-		if ( !fileBps.second.empty() )
-			mClient->setBreakpoints( fileBps.first, fromSet( fileBps.second ) );
+		mClient->setBreakpoints( fileBps.first, fromSet( fileBps.second ) );
 	}
 }
 
