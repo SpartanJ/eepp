@@ -103,7 +103,7 @@ void LLMChatCompletionRequest::cancel() {
 	mCancel = true;
 }
 
-const std::string& LLMChatCompletionRequest::getStream() {
+const std::string& LLMChatCompletionRequest::getStream() const {
 	return mStream.getStream();
 }
 

@@ -1109,9 +1109,12 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 		// Close the connection
 		if ( !mConnection->isKeepAlive() ) {
 			mConnection->disconnect();
-			HttpConnection* connection = mConnection;
-			eeSAFE_DELETE( connection );
-			mConnection = NULL;
+
+			if ( mConnection ) {
+				HttpConnection* connection = mConnection;
+				eeSAFE_DELETE( connection );
+				mConnection = NULL;
+			}
 		}
 	}
 
@@ -1177,9 +1180,11 @@ void Http::AsyncRequest::run() {
 	}
 
 	// The Async Request destroys the socket used to create the request
-	HttpConnection* connection = mHttp->mConnection;
-	eeSAFE_DELETE( connection );
-	mHttp->mConnection = NULL;
+	if ( mHttp->mConnection ) {
+		HttpConnection* connection = mHttp->mConnection;
+		eeSAFE_DELETE( connection );
+		mHttp->mConnection = NULL;
+	}
 
 	mRunning = false;
 }

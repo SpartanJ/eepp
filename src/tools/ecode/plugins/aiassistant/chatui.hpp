@@ -53,6 +53,7 @@ class LLMChatUI : public UILinearLayout {
 
   protected:
 	UUID mUUID;
+	std::string mSummary;
 	PluginManager* mManager{ nullptr };
 	UIWidget* mChatsList{ nullptr };
 	UICodeEditor* mChatInput{ nullptr };
@@ -62,6 +63,7 @@ class LLMChatUI : public UILinearLayout {
 	UIScrollView* mChatScrollView{ nullptr };
 	UIDropDownList* mModelDDL{ nullptr };
 	std::unique_ptr<LLMChatCompletionRequest> mRequest;
+	std::unique_ptr<LLMChatCompletionRequest> mSummaryRequest;
 	LLMProviders mProviders;
 	LLMModel mCurModel;
 	std::unordered_map<String::HashType, LLMModel> mModelsMap;
@@ -72,7 +74,7 @@ class LLMChatUI : public UILinearLayout {
 
 	void showMsg( String msg );
 
-	nlohmann::json serializeChat();
+	nlohmann::json serializeChat( const LLMModel& model );
 
 	nlohmann::json chatToJson();
 
@@ -101,6 +103,10 @@ class LLMChatUI : public UILinearLayout {
 	void setProviders( LLMProviders&& providers );
 
 	virtual Uint32 onMessage( const NodeMessage* );
+
+	const LLMModel& getCheapestModelFromCurrentProvider() const;
+
+	void saveChat();
 };
 
 } // namespace ecode

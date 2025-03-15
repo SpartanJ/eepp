@@ -22,6 +22,7 @@ struct LLMModel {
 	std::optional<double> defaultTemperature;
 	std::optional<LLMCacheConfiguration> cacheConfiguration;
 	bool isEphemeral{ false };
+	bool cheapest{ false };
 };
 
 struct LLMProvider {

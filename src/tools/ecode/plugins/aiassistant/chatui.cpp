@@ -1,6 +1,7 @@
 #include "aiassistantplugin.hpp"
 #include "chatui.hpp"
 
+#include <eepp/system/filesystem.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
@@ -14,6 +15,7 @@
 
 #include <nlohmann/json.hpp>
 
+using namespace EE::System;
 using namespace EE::Window;
 
 namespace ecode {
@@ -398,22 +400,36 @@ Uint32 LLMChatUI::onMessage( const NodeMessage* msg ) {
 	return 0;
 }
 
-nlohmann::json LLMChatUI::serializeChat() {
+nlohmann::json LLMChatUI::serializeChat( const LLMModel& model ) {
 	nlohmann::json j = {
-		{ "model", mCurModel.name }, { "stream", true }, { "messages", chatToJson() } };
-	if ( mCurModel.maxOutputTokens )
-		j["max_tokens"] = *mCurModel.maxOutputTokens;
+		{ "model", model.name }, { "stream", true }, { "messages", chatToJson() } };
+	if ( model.maxOutputTokens )
+		j["max_tokens"] = *model.maxOutputTokens;
 	return j;
 }
 
 nlohmann::json LLMChatUI::serialize() {
 	nlohmann::json j;
 	j["uuid"] = mUUID.toString();
-	j["chat"] = serializeChat();
+	j["chat"] = serializeChat( mCurModel );
 	return j;
 }
 
-void unserialize( const nlohmann::json& /*payload*/ ) {}
+void LLMChatUI::unserialize( const nlohmann::json& /*payload*/ ) {}
+
+void LLMChatUI::saveChat() {
+	auto plugin = getPlugin();
+	if ( plugin == nullptr )
+		return;
+
+	std::string pluginsStatePath( plugin->getManager()->getPluginsPath() + "plugins_state" +
+								  FileSystem::getOSSlash() + "aiassistant" +
+								  FileSystem::getOSSlash() );
+	if ( !FileSystem::fileExists( pluginsStatePath ) )
+		FileSystem::makeDir( pluginsStatePath, true );
+	std::string path( pluginsStatePath + mSummary + ".json" );
+	FileSystem::fileWrite( path, serialize().dump( 2 ) );
+}
 
 std::string LLMChatUI::prepareApiUrl( const std::string& apiKey ) {
 	const auto& provider = mProviders[mCurModel.provider];
@@ -441,9 +457,11 @@ void LLMChatUI::doRequest() {
 	UIWidget* chat = addChatUI( LLMChat::Role::Assistant );
 	toggleEnableChats( false );
 
+	auto model = mCurModel;
 	auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
+	std::string apiUrl( prepareApiUrl( apiKeyStr ) );
 	mRequest = std::make_unique<LLMChatCompletionRequest>(
-		prepareApiUrl( apiKeyStr ), apiKeyStr, serializeChat().dump(), mCurModel.provider );
+		apiUrl, apiKeyStr, serializeChat( model ).dump(), model.provider );
 	mRequest->streamedResponseCb = [this, editor]( const std::string& chunk ) {
 		auto conversation = chunk;
 		editor->runOnMainThread( [this, conversation = std::move( conversation ), editor] {
@@ -452,11 +470,14 @@ void LLMChatUI::doRequest() {
 			resizeToFit( editor );
 		} );
 	};
-	mRequest->doneCb = [this, editor]( const LLMChatCompletionRequest&, Http::Response& response ) {
+	mRequest->doneCb = [this, editor, apiUrl = std::move( apiUrl ),
+						apiKeyStr = std::move( apiKeyStr ), model = std::move( model )](
+						   const LLMChatCompletionRequest&, Http::Response& response ) {
 		auto status = response.getStatus();
 		auto statusDesc = response.getStatusDescription();
 
-		runOnMainThread( [this, editor, status, statusDesc] {
+		runOnMainThread( [this, editor, status, statusDesc, apiUrl = std::move( apiUrl ),
+						  apiKeyStr = std::move( apiKeyStr ), model = std::move( model )] {
 			if ( status != Http::Response::Ok ) {
 				auto resp = nlohmann::json::parse( mRequest->getStream(), nullptr, false );
 				if ( resp.contains( "error" ) && resp["error"].contains( "message" ) ) {
@@ -477,6 +498,38 @@ void LLMChatUI::doRequest() {
 
 			if ( editor->hasFocus() )
 				mChatInput->setFocus();
+
+			if ( !mSummaryRequest && mSummary.empty() && status == Http::Response::Ok ) {
+				static const std::string SummaryPrompt =
+					"Generate a concise 3-7 word title for this conversation, omitting "
+					"punctuation. Go "
+					"straight to the title, without any preamble and prefix like `Here's a concise "
+					"suggestion:...` or `Title:`. Ignore this message for the summary generation.";
+
+				auto jchat = serializeChat( getCheapestModelFromCurrentProvider() );
+
+				jchat["messages"].push_back(
+					{ { "role", LLMChat::roleToString( LLMChat::Role::User ) },
+					  { "content", SummaryPrompt } } );
+
+				auto chatstr = jchat.dump();
+
+				mSummaryRequest = std::make_unique<LLMChatCompletionRequest>(
+					apiUrl, apiKeyStr, chatstr, model.provider );
+
+				mSummaryRequest->doneCb = [this]( const LLMChatCompletionRequest& req,
+												  Http::Response& response ) {
+					auto status = response.getStatus();
+					if ( status == Http::Response::Ok ) {
+						mSummary = req.getResponse();
+						saveChat();
+					}
+					runOnMainThread( [this] { mSummaryRequest.reset(); } );
+				};
+				mSummaryRequest->requestAsync();
+			} else {
+				saveChat();
+			}
 		} );
 	};
 	mRequest->requestAsync();
@@ -610,6 +663,16 @@ AIAssistantPlugin* LLMChatUI::getPlugin() {
 	if ( plugin )
 		return reinterpret_cast<AIAssistantPlugin*>( plugin );
 	return nullptr;
+}
+
+const LLMModel& LLMChatUI::getCheapestModelFromCurrentProvider() const {
+	auto providerIt = mProviders.find( mCurModel.provider );
+	if ( providerIt != mProviders.end() ) {
+		for ( const auto& model : providerIt->second.models )
+			if ( model.cheapest )
+				return model;
+	}
+	return mCurModel;
 }
 
 } // namespace ecode

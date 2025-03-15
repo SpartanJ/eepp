@@ -57,15 +57,23 @@ static std::map<std::string, LLMProvider> parseLLMProviders( const nlohmann::jso
 				if ( modelJson.contains( "display_name" ) ) {
 					model.displayName = modelJson["display_name"].get<std::string>();
 				}
+
 				if ( modelJson.contains( "max_tokens" ) ) {
 					model.maxTokens = modelJson["max_tokens"].get<std::size_t>();
 				}
+
 				if ( modelJson.contains( "max_output_tokens" ) ) {
 					model.maxOutputTokens = modelJson["max_output_tokens"].get<std::size_t>();
 				}
+
 				if ( modelJson.contains( "default_temperature" ) ) {
 					model.defaultTemperature = modelJson["default_temperature"].get<double>();
 				}
+
+				if ( modelJson.contains( "cheapest" ) ) {
+					model.cheapest = modelJson.value( "cheapest", false );
+				}
+
 				if ( modelJson.contains( "cache_configuration" ) &&
 					 !modelJson["cache_configuration"].is_null() ) {
 					const auto& cacheJson = modelJson["cache_configuration"];

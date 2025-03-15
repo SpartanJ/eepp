@@ -38,7 +38,8 @@
           "display_name": "Claude 3.5 Haiku",
           "max_output_tokens": 8192,
           "max_tokens": 200000,
-          "name": "claude-3-5-haiku-latest"
+          "name": "claude-3-5-haiku-latest",
+          "cheapest": true
         },
         {
           "cache_configuration": null,
@@ -79,7 +80,8 @@
           "display_name": "DeepSeek Chat",
           "max_output_tokens": 8192,
           "max_tokens": 64000,
-          "name": "deepseek-chat"
+          "name": "deepseek-chat",
+          "cheapest": true
         },
         {
           "display_name": "DeepSeek Reasoner",
@@ -121,7 +123,8 @@
         {
           "display_name": "Gemini 2.0 Flash Lite",
           "max_tokens": 1000000,
-          "name": "gemini-2.0-flash-lite-preview"
+          "name": "gemini-2.0-flash-lite-preview",
+          "cheapest": true
         }
       ]
     },
@@ -148,7 +151,8 @@
         {
           "display_name": "mistral-small-latest",
           "max_tokens": 32000,
-          "name": "mistral-small-latest"
+          "name": "mistral-small-latest",
+          "cheapest": true
         },
         {
           "display_name": "open-mistral-nemo",
@@ -190,7 +194,8 @@
         },
         {
           "max_tokens": 128000,
-          "name": "gpt-4o-mini"
+          "name": "gpt-4o-mini",
+          "cheapest": true
         },
         {
           "max_tokens": 200000,
@@ -216,7 +221,8 @@
       "display_name": "xAI",
       "models": [
         {
-          "name": "grok-2-latest"
+          "name": "grok-2-latest",
+          "cheapest": true
         },
         {
           "name": "grok-3-latest"

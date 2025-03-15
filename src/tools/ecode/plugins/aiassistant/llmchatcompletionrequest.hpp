@@ -32,7 +32,9 @@ class LLMChatCompletionRequest {
 
 	void cancel();
 
-	const std::string& getStream();
+	const std::string& getStream() const;
+
+	const std::string& getResponse() const { return mResponse; }
 
   protected:
 	URI mUrl;
