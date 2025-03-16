@@ -124,6 +124,15 @@ AIAssistantPlugin::~AIAssistantPlugin() {
 	getPluginContext()->getConfig().removeTabWidgetType( "llm_chatui" );
 }
 
+std::string AIAssistantPlugin::getPluginStatePath() const {
+	return getManager()->getPluginsPath() + "state" + FileSystem::getOSSlash() + "aiassistant" +
+		   FileSystem::getOSSlash();
+}
+
+std::string AIAssistantPlugin::getConversationsPath() const {
+	return getPluginStatePath() + "chats" + FileSystem::getOSSlash();
+}
+
 void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 	Clock clock;
 	AtomicBoolScopedOp loading( mLoading, true );

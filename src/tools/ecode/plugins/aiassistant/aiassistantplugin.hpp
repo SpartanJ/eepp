@@ -30,6 +30,10 @@ class AIAssistantPlugin : public PluginBase {
 
 	const LLMProviders& getProviders() { return mProviders; }
 
+	std::string getPluginStatePath() const;
+
+	std::string getConversationsPath() const;
+
   protected:
 	LLMProviders mProviders;
 	bool mUIInit{ false };

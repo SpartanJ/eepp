@@ -13,6 +13,7 @@
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/window.hpp>
 
+#include <chrono>
 #include <nlohmann/json.hpp>
 
 using namespace EE::System;
@@ -412,6 +413,9 @@ nlohmann::json LLMChatUI::serialize() {
 	nlohmann::json j;
 	j["uuid"] = mUUID.toString();
 	j["chat"] = serializeChat( mCurModel );
+	j["provider"] = mCurModel.provider;
+	j["timestamp"] = std::chrono::system_clock::to_time_t( std::chrono::system_clock::now() );
+	j["summary"] = mSummary;
 	return j;
 }
 
@@ -421,13 +425,10 @@ void LLMChatUI::saveChat() {
 	auto plugin = getPlugin();
 	if ( plugin == nullptr )
 		return;
-
-	std::string pluginsStatePath( plugin->getManager()->getPluginsPath() + "plugins_state" +
-								  FileSystem::getOSSlash() + "aiassistant" +
-								  FileSystem::getOSSlash() );
-	if ( !FileSystem::fileExists( pluginsStatePath ) )
-		FileSystem::makeDir( pluginsStatePath, true );
-	std::string path( pluginsStatePath + mSummary + ".json" );
+	std::string conversationsPath = plugin->getConversationsPath();
+	if ( !FileSystem::fileExists( conversationsPath ) )
+		FileSystem::makeDir( conversationsPath, true );
+	std::string path( conversationsPath + mUUID.toString() + " - " + mSummary + ".json" );
 	FileSystem::fileWrite( path, serialize().dump( 2 ) );
 }
 
