@@ -1739,6 +1739,9 @@ void App::onRealDocumentLoaded( UICodeEditor* editor, const std::string& path ) 
 }
 
 void App::onDocumentLoaded( UICodeEditor* editor, const std::string& path ) {
+	if ( editor->getData() == 0 )
+		return;
+
 	onRealDocumentLoaded( editor, path );
 
 	// Check if other editor is using the same document and needs to receive the same notification
