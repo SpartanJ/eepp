@@ -101,7 +101,7 @@ UICodeEditorSplitter::UICodeEditorSplitter( UICodeEditorSplitter::Client* client
 UICodeEditorSplitter::~UICodeEditorSplitter() {}
 
 UITabWidget* UICodeEditorSplitter::tabWidgetFromEditor( UICodeEditor* editor ) const {
-	if ( editor )
+	if ( editor && editor->getData() != 0 )
 		return ( (UITab*)editor->getData() )->getTabWidget();
 	return nullptr;
 }
