@@ -62,6 +62,7 @@
 #include <eepp/ui/doc/languages/postgresql.hpp>
 #include <eepp/ui/doc/languages/powershell.hpp>
 #include <eepp/ui/doc/languages/r.hpp>
+#include <eepp/ui/doc/languages/rave.hpp>
 #include <eepp/ui/doc/languages/ring.hpp>
 #include <eepp/ui/doc/languages/ruby.hpp>
 #include <eepp/ui/doc/languages/rust.hpp>
@@ -160,6 +161,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addPostgreSQL();
 	addPowerShell();
 	addR();
+	addRave();
 	addRuby();
 	addRust();
 	addSass();
