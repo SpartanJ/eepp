@@ -35,6 +35,7 @@ void addRave() {
 			  { "foreach", "keyword" },
 			  { "switch", "keyword" },
 			  { "case", "keyword" },
+			  { "default", "keyword" },
 			  { "cast", "keyword" },
 			  { "while", "keyword" },
 			  { "for", "keyword" },
