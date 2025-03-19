@@ -12,7 +12,7 @@ class EE_API WMInfo {
 
 	~WMInfo();
 
-#if defined( EE_X11_PLATFORM )
+#if defined( SDL_VIDEO_DRIVER_X11 ) && defined( EE_X11_PLATFORM )
 	X11Window getWindow() const;
 #endif
 

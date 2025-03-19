@@ -64,7 +64,8 @@
 	defined( __OpenBSD__ ) || defined( __NetBSD__ ) || defined( __DragonFly__ ) || \
 	defined( __SVR4 ) || defined( __sun )
 
-#if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
+#if !defined( EE_GLES1 ) && !defined( EE_GLES2 ) && defined( __has_include ) && \
+	__has_include( <X11/Xlib.h> )
 #define EE_X11_PLATFORM
 #endif
 
