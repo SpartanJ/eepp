@@ -39,6 +39,7 @@
 #include <eepp/ui/doc/languages/jai.hpp>
 #include <eepp/ui/doc/languages/java.hpp>
 #include <eepp/ui/doc/languages/jsx.hpp>
+#include <eepp/ui/doc/languages/jule.hpp>
 #include <eepp/ui/doc/languages/julia.hpp>
 #include <eepp/ui/doc/languages/kotlin.hpp>
 #include <eepp/ui/doc/languages/latex.hpp>
@@ -138,6 +139,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addIgnoreFile();
 	addJai();
 	addJava();
+	addJule();
 	addJulia();
 	addJSX();
 	addKotlin();
