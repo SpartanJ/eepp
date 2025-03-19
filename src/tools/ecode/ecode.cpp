@@ -4059,6 +4059,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 }
 
 static void exportLanguages( const std::string& path, const std::string& langs ) {
+	Language::LanguagesSyntaxHighlighting::load();
 	SyntaxDefinitionManager* sdm = SyntaxDefinitionManager::instance();
 	std::vector<SyntaxDefinition> defs;
 
@@ -4070,14 +4071,14 @@ static void exportLanguages( const std::string& path, const std::string& langs )
 			for ( const auto& l : langss ) {
 				const auto& sd = sdm->getByLSPName( l );
 
-				if ( !sd.getLanguageName().empty() ) {
+				if ( !sd.getPatterns().empty() ) {
 					defs.push_back( sd );
 					continue;
 				}
 
-				const auto& sd2 = sdm->getByLanguageName( l );
+				const auto& sd2 = sdm->getByLanguageNameInsensitive( l );
 
-				if ( !sd2.getLanguageName().empty() )
+				if ( !sd2.getPatterns().empty() )
 					defs.push_back( sd2 );
 			}
 		}
