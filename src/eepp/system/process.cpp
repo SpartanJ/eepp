@@ -228,7 +228,7 @@ size_t Process::readStdErr( char* const buffer, const size_t& size ) {
 
 size_t Process::write( const char* buffer, const size_t& size ) {
 	eeASSERT( mProcess != nullptr );
-	eeASSERT( isAlive()  );
+	eeASSERT( isAlive() );
 	if ( mShuttingDown )
 		return 0;
 	Lock l( mStdInMutex );
@@ -301,13 +301,13 @@ size_t Process::readAll( std::string& buffer, bool readErr, Time timeout ) {
 	size_t totalBytesRead = 0;
 	Clock clock;
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	while ( !mShuttingDown && isAlive() ) {
+	while ( !mShuttingDown ) {
 		unsigned n =
 			readErr
 				? subprocess_read_stderr( PROCESS_PTR, buffer.data() + totalBytesRead, CHUNK_SIZE )
 				: subprocess_read_stdout( PROCESS_PTR, buffer.data() + totalBytesRead, CHUNK_SIZE );
 		if ( n == 0 ) {
-			if ( timeout != Time::Zero && clock.getElapsedTime() >= timeout )
+			if ( !isAlive() || ( timeout != Time::Zero && clock.getElapsedTime() >= timeout ) )
 				break;
 			continue;
 		}
@@ -317,8 +317,6 @@ size_t Process::readAll( std::string& buffer, bool readErr, Time timeout ) {
 		clock.restart();
 	}
 #elif defined( EE_PLATFORM_POSIX )
-	if ( !isAlive() )
-		return 0;
 	auto stdOutFd = fileno( readErr ? PROCESS_PTR->stderr_file : PROCESS_PTR->stdout_file );
 	pollfd pollfd = {};
 	pollfd.fd =
@@ -327,7 +325,7 @@ size_t Process::readAll( std::string& buffer, bool readErr, Time timeout ) {
 	buffer.resize( mBufferSize );
 	bool anyOpen = pollfd.fd != -1;
 	ssize_t n = 0;
-	while ( anyOpen && !mShuttingDown && isAlive() ) {
+	while ( anyOpen && !mShuttingDown ) {
 		int res = poll( &pollfd, static_cast<nfds_t>( 1 ), 100 );
 		if ( res <= 0 ) {
 			if ( ( timeout != Time::Zero && clock.getElapsedTime() >= timeout ) ||

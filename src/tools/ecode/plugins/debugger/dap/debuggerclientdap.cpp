@@ -82,8 +82,8 @@ bool DebuggerClientDap::supportsTerminateDebuggee() const {
 }
 
 bool DebuggerClientDap::start() {
-	bool started = mBus->start();
-	if ( started )
+	bool started = false;
+	if ( mBus && ( started = mBus->start() ) )
 		mBus->startAsyncRead( [this]( const char* bytes, size_t n ) { asyncRead( bytes, n ); } );
 	else {
 		Log::warning( "DebuggerClientDap::start: could not initialize the debugger" );
