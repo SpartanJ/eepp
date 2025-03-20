@@ -35,6 +35,17 @@ const char* LLMChat::roleToString( Role role ) {
 	return "";
 }
 
+LLMChat::Role LLMChat::stringToRole( const std::string& roleStr ) {
+	if ( roleStr == "user" ) {
+		return Role::User;
+	} else if ( roleStr == "assistant" ) {
+		return Role::Assistant;
+	} else if ( roleStr == "system" ) {
+		return Role::System;
+	}
+	return Role::User;
+}
+
 LLMChat::Role LLMChat::stringToRole( UIPushButton* userBut ) {
 	if ( userBut->getText() == userBut->i18n( "user", "User" ) ) {
 		return Role::User;
@@ -262,11 +273,13 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) : UILinearLayout(), mManager( man
 
 	auto providers = getPlugin()->getProviders();
 	setProviders( std::move( providers ) );
+	mCurModel = getDefaultModel();
 
 	fillModelDropDownList( mModelDDL );
 }
 
 void LLMChatUI::fillApiModels( UIDropDownList* modelDDL ) {
+	mPendingModelsToLoad = 0;
 	for ( auto& [name, data] : mProviders ) {
 		if ( !data.enabled || !data.fetchModelsUrl )
 			continue;
@@ -307,6 +320,8 @@ void LLMChatUI::fillApiModels( UIDropDownList* modelDDL ) {
 			data.models.emplace_back( model );
 		}
 
+		mPendingModelsToLoad++;
+
 		std::string pname = name;
 		modelDDL->runOnMainThread( [pname = std::move( pname ), modelDDL, this] {
 			String providerName( pname );
@@ -331,8 +346,35 @@ void LLMChatUI::fillApiModels( UIDropDownList* modelDDL ) {
 			}
 
 			modelDDL->getListBox()->addListBoxItems( newModels );
+
+			mPendingModelsToLoad--;
+
+			if ( mPendingModelsToLoad == 0 )
+				onInit();
 		} );
 	}
+
+	if ( mPendingModelsToLoad == 0 )
+		onInit();
+}
+
+String LLMChatUI::getModelDisplayName( const LLMModel& model ) const {
+	auto providerIt = mProviders.find( model.provider );
+	if ( providerIt == mProviders.end() )
+		return "";
+	const auto& data = providerIt->second;
+	return String::format( "%s (%s)", model.displayName ? *model.displayName : model.name,
+						   data.displayName ? *data.displayName : String::capitalize( data.name ) );
+}
+
+bool LLMChatUI::selectModel( UIDropDownList* modelDDL, const LLMModel& model ) {
+	auto modelName = getModelDisplayName( model );
+	auto index = modelDDL->getListBox()->getItemIndex( modelName );
+	if ( index != eeINDEX_NOT_FOUND ){
+		modelDDL->getListBox()->setSelected( index );
+		return true;
+	}
+	return false;
 }
 
 void LLMChatUI::fillModelDropDownList( UIDropDownList* modelDDL ) {
@@ -347,13 +389,12 @@ void LLMChatUI::fillModelDropDownList( UIDropDownList* modelDDL ) {
 				"%s (%s)", model.displayName ? *model.displayName : model.name,
 				data.displayName ? *data.displayName : String::capitalize( data.name ) ) );
 			mModelsMap[modelName.getHash()] = model;
-			if ( model.provider == "openai" && model.name == "gpt-4o" ) {
-				mCurModel = model;
+			if ( model.provider == mCurModel.provider && model.name == mCurModel.name )
 				selectedIndex = models.size();
-			}
 			models.push_back( std::move( modelName ) );
 		}
 	}
+	modelDDL->getListBox()->clear();
 	modelDDL->getListBox()->addListBoxItems( std::move( models ) );
 	modelDDL->getListBox()->setSelected( selectedIndex );
 	modelDDL->on( Event::OnValueChange, [this, modelDDL]( auto ) {
@@ -419,7 +460,52 @@ nlohmann::json LLMChatUI::serialize() {
 	return j;
 }
 
-void LLMChatUI::unserialize( const nlohmann::json& /*payload*/ ) {}
+void LLMChatUI::unserialize( const nlohmann::json& payload ) {
+	auto uuid = UUID::fromString( payload.value( "uuid", "" ) );
+	if ( uuid )
+		mUUID = *uuid;
+	mTimestamp = payload.value( "timestamp", 0 );
+	mSummary = payload.value( "summary", "" );
+
+	std::string provider = payload.value( "provider", "" );
+	if ( payload.contains( "chat" ) && payload["chat"].is_object() ) {
+		std::string model = payload.value( "model", "" );
+		mCurModel = findModel( provider, model );
+	}
+
+	if ( mCurModel.name.empty() )
+		return;
+
+	if ( !selectModel( mModelDDL, mCurModel ) )
+		fillModelDropDownList( mModelDDL );
+
+	if ( payload.contains( "messages" ) && payload["messages"].is_array() ) {
+		const auto& messages = payload["messages"];
+		for ( const auto& chat : messages ) {
+			addChat( LLMChat::stringToRole( chat.value( "role", "" ) ),
+					 chat.value( "content", "" ) );
+		}
+	}
+}
+
+LLMModel LLMChatUI::findModel( const std::string& provider, const std::string& model ) {
+	auto providerIt = mProviders.find( provider );
+	if ( providerIt != mProviders.end() ) {
+		auto modelIt =
+			std::find_if( providerIt->second.models.begin(), providerIt->second.models.end(),
+						  [&model]( const LLMModel& cmodel ) { return cmodel.name == model; } );
+		if ( modelIt != providerIt->second.models.end() ) {
+			return *modelIt;
+		}
+	}
+	if ( provider == "openai" && model == "gpt-4o" )
+		return mCurModel; // Do not stack-overflow if something is really wrong
+	return getDefaultModel();
+}
+
+LLMModel LLMChatUI::getDefaultModel() {
+	return findModel( "openai", "gpt-4o" );
+}
 
 void LLMChatUI::saveChat() {
 	auto plugin = getPlugin();
@@ -674,6 +760,13 @@ const LLMModel& LLMChatUI::getCheapestModelFromCurrentProvider() const {
 				return model;
 	}
 	return mCurModel;
+}
+
+void LLMChatUI::onInit() {
+	if ( !mModelDDL )
+		return;
+	if ( getModelDisplayName( mCurModel ) != mModelDDL->getListBox()->getItemSelectedText() )
+		selectModel( mModelDDL, mCurModel );
 }
 
 } // namespace ecode

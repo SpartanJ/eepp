@@ -40,6 +40,8 @@ class LLMChat {
 
 	static const char* roleToString( Role role );
 
+	static LLMChat::Role stringToRole( const std::string& roleStr );
+
 	static LLMChat::Role stringToRole( UIPushButton* userBut );
 };
 
@@ -49,11 +51,12 @@ class LLMChatUI : public UILinearLayout {
 
 	nlohmann::json serialize();
 
-	void unserialize( const nlohmann::json& /*payload*/ );
+	void unserialize( const nlohmann::json& payload );
 
   protected:
 	UUID mUUID;
 	std::string mSummary;
+	long mTimestamp;
 	PluginManager* mManager{ nullptr };
 	UIWidget* mChatsList{ nullptr };
 	UICodeEditor* mChatInput{ nullptr };
@@ -67,6 +70,11 @@ class LLMChatUI : public UILinearLayout {
 	LLMProviders mProviders;
 	LLMModel mCurModel;
 	std::unordered_map<String::HashType, LLMModel> mModelsMap;
+	int mPendingModelsToLoad{ 0 };
+
+	LLMModel findModel( const std::string& provider, const std::string& model );
+
+	LLMModel getDefaultModel();
 
 	LLMChatUI( PluginManager* manager );
 
@@ -92,6 +100,10 @@ class LLMChatUI : public UILinearLayout {
 
 	void fillApiModels( UIDropDownList* modelDDL );
 
+	String getModelDisplayName( const LLMModel& model ) const;
+
+	bool selectModel( UIDropDownList* modelDDL, const LLMModel& model );
+
 	void fillModelDropDownList( UIDropDownList* modelDDL );
 
 	void resizeToFit( UICodeEditor* editor );
@@ -107,6 +119,8 @@ class LLMChatUI : public UILinearLayout {
 	const LLMModel& getCheapestModelFromCurrentProvider() const;
 
 	void saveChat();
+
+	void onInit();
 };
 
 } // namespace ecode
