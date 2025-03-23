@@ -98,6 +98,7 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 			{ "play-filled", 0xF00A },
 			{ "code-ai", 0xF56F },
 			{ "robot-2", 0xF3D9 },
+			{ "chat-history", 0xEB61 },
 		};
 
 		for ( const auto& icon : icons )

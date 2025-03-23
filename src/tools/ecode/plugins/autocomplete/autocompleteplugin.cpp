@@ -55,20 +55,21 @@ fuzzyMatchSymbols( const std::vector<const AutoCompletePlugin::SymbolsList*>& sy
 	for ( const auto& symbols : symbolsVec ) {
 		for ( const auto& symbol : *symbols ) {
 			if ( symbol.kind == LSPCompletionItemKind::Snippet ||
-				 ( score = String::fuzzyMatch( pattern, symbol.text ) ) >
-					 std::numeric_limits<int>::min() ) {
+				 ( score = String::fuzzyMatchSimple(
+					   pattern, symbol.text, false, symbol.kind != LSPCompletionItemKind::Text ) ) >
+					 0 ) {
 				if ( std::find( matches.begin(), matches.end(), symbol ) == matches.end() ) {
 					symbol.setScore( score +
-									 ( symbol.kind != LSPCompletionItemKind::Text ? 100 : 0 ) );
+									 ( symbol.kind != LSPCompletionItemKind::Text ? score : 0 ) );
 					matches.push_back( symbol );
 
-					if ( matches.size() > max )
+					if ( matches.size() >= max )
 						break;
 				}
 			}
 		}
 
-		if ( matches.size() > max )
+		if ( matches.size() >= max )
 			break;
 	}
 

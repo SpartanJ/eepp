@@ -1,5 +1,7 @@
 #include "aiassistantplugin.hpp"
+#include "chathistory.hpp"
 #include "chatui.hpp"
+#include "eepp/ui/uiloader.hpp"
 
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
@@ -10,6 +12,7 @@
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollview.hpp>
+#include <eepp/ui/uitableview.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/window.hpp>
 
@@ -63,7 +66,7 @@ static const char* DEFAULT_LAYOUT = R"xml(
 	border: 0;
 	background-color: var(--tab-back);
 }
-.llm_chatui #settings_but {
+.llm_chatui #llm_settings_but {
 	tint: var(--floating-icon);
 }
 .llm_conversation {
@@ -136,8 +139,9 @@ DropDownList.role_ui {
 		<hbox lw="mp" lh="wc" layout_gravity="bottom|left" layout_margin="8dp" clip="false">
 			<PushButton id="llm_user" class="llm_button" text="@string(user, User)" min-width="60dp" layout-margin-right="8dp" />
 			<PushButton class="llm_button" text="@string(attach, Attach)" icon="icon(attach, 14dp)" min-width="32dp" />
+			<PushButton id="llm_chat_history" class="llm_button" text="@string(chat_history, Chat History)" icon="icon(chat-history, 14dp)" min-width="32dp" />
+			<PushButton id="llm_settings_but" text="@string(settings, Settings)" icon="icon(settings, 14dp)" tooltip="@string(settings, Settings)" margin-right="8dp" />
 			<hbox lw="0" lw8="1" lh="mp" layout_gravity="center" padding-left="8dp" padding-right="8dp">
-				<PushButton id="settings_but" text="@string(settings, Settings)" icon="icon(settings, 14dp)" tooltip="@string(settings, Settings)" margin-right="8dp" />
 				<DropDownList class="model_ui" lw="0" lw8="1" selected-index="0"></DropDownList>
 				<PushButton id="refresh_model_ui" text="@string(refresh_model_ui, Refresh)" icon="icon(refresh, 14dp)" />
 			</hbox>
@@ -176,7 +180,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) : UILinearLayout(), mManager( man
 
 	find( "refresh_model_ui" )->onClick( [this]( auto ) { fillApiModels( mModelDDL ); } );
 
-	find( "settings_but" )->onClick( [this]( auto ) {
+	find( "llm_settings_but" )->onClick( [this]( auto ) {
 		if ( getPlugin() )
 			getPlugin()->getPluginContext()->focusOrLoadFile( getPlugin()->getFileConfigPath() );
 	} );
@@ -268,6 +272,9 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) : UILinearLayout(), mManager( man
 		}
 	} );
 
+	mChatHistory = find<UIPushButton>( "llm_chat_history" );
+	mChatHistory->onClick( [this]( auto ) { showChatHistory(); } );
+
 	if ( getPlugin() == nullptr )
 		return;
 
@@ -276,6 +283,119 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) : UILinearLayout(), mManager( man
 	mCurModel = getDefaultModel();
 
 	fillModelDropDownList( mModelDDL );
+}
+
+void LLMChatUI::showChatHistory() {
+	auto plugin = getPlugin();
+	if ( plugin == nullptr )
+		return;
+
+	UIWindow* win =
+		UIWindow::NewOpt( UIMessageBox::WindowBaseContainerType::VERTICAL_LINEAR_LAYOUT );
+	win->setMinWindowSize( mDpSize.getWidth(), getUISceneNode()->getSize().getHeight() * 0.7f );
+	win->setKeyBindingCommand( "closeWindow", [win, this] {
+		win->closeWindow();
+		setFocus();
+	} );
+	win->getKeyBindings().addKeybind( { KEY_ESCAPE }, "closeWindow" );
+	win->setWindowFlags( UI_WIN_NO_DECORATION | UI_WIN_SHADOW |
+						 UI_WIN_MODAL | UI_WIN_EPHEMERAL );
+	win->center();
+	win->setId( UUID().toString() );
+
+	UITextInput* input = UITextInput::New();
+	input->setParent( win->getContainer() );
+	input->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
+	input->setHint( i18n( "search_chat_ellipsis", "Search Chat..." ) );
+	input->setVisible( false );
+
+	UILoader* loader = UILoader::New();
+	loader->setId( "loader" );
+	loader->setRadius( 48 );
+	loader->setOutlineThickness( 6 );
+	loader->setParent( win->getContainer() );
+	loader->setIndeterminate( true );
+
+	UITableView* tv = UITableView::New();
+	tv->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed );
+	tv->setLayoutWeight( 1 );
+	tv->setParent( win->getContainer() );
+	tv->setVisible( false );
+	tv->setAutoColumnsWidth( true );
+	tv->setFitAllColumnsToWidget( true );
+	tv->setSetupCellCb( [this, tv]( UITableCell* cell ) {
+		if ( cell->getCurIndex().column() != ChatHistoryModel::Remove )
+			return;
+
+		cell->onClick( [this, tv, cell]( const MouseEvent* event ) {
+			ChatHistoryModel* model = static_cast<ChatHistoryModel*>( tv->getModel() );
+			auto summary =
+				model->data( model->index( cell->getCurIndex().row(), ChatHistoryModel::Summary ) )
+					.toString();
+			auto msgBox =
+				UIMessageBox::New( UIMessageBox::OK_CANCEL,
+								   String::format( i18n( "confirm_del_llm_chat",
+														 "Are you sure you want to remove \"%s?\"" )
+													   .toUtf8(),
+												   summary ) );
+			msgBox->showWhenReady();
+			msgBox->on( Event::OnConfirm,
+						[model, cell]( auto ) { model->remove( cell->getCurIndex() ); } );
+		} );
+	} );
+
+	input->on( Event::KeyDown, [tv, input]( const Event* event ) {
+		tv->forceKeyDown( *event->asKeyEvent() );
+		input->setFocus();
+	} );
+
+	input->on( Event::OnTextChanged, [tv, input]( const Event* ) {
+		ChatHistoryModel* model = static_cast<ChatHistoryModel*>( tv->getModel() );
+		model->setFilter( input->getText().toUtf8() );
+	} );
+
+	input->on( Event::OnPressEnter,
+			   [win]( const Event* ) { win->executeKeyBindingCommand( "closeWindow" ); } );
+
+	tv->on( Event::OnModelEvent, [win, this]( const Event* event ) {
+		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
+		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
+			if ( getPlugin() != nullptr ) {
+				auto* chatUI = getPlugin()->newAIAssistant();
+				auto* model = static_cast<const ChatHistoryModel*>( modelEvent->getModel() );
+				auto path = model->data(
+					model->index( modelEvent->getModelIndex().row(), ChatHistoryModel::Path ) );
+				std::string data;
+				FileSystem::fileGet( path.toString(), data );
+				nlohmann::json j = nlohmann::json::parse( data, nullptr, false );
+				chatUI->unserialize( j );
+			}
+			win->executeKeyBindingCommand( "closeWindow" );
+		}
+	} );
+
+	win->showWhenReady();
+
+	std::string winId = win->getId();
+	UISceneNode* uiSceneNode = getUISceneNode();
+	getUISceneNode()->getThreadPool()->run(
+		[plugin, loader, input, tv, winId = std::move( winId ), uiSceneNode] {
+			std::string conversationsPath = plugin->getConversationsPath();
+			auto model = std::make_shared<ChatHistoryModel>(
+				ChatHistory::getHistory( conversationsPath ), uiSceneNode );
+			if ( uiSceneNode->find( winId ) == nullptr ) // Window closed?
+				return;
+			tv->runOnMainThread( [tv, loader, input, model] {
+				loader->setVisible( false );
+				input->setVisible( true );
+				tv->setVisible( true );
+				tv->setModel( model );
+				tv->setMainColumn( ChatHistoryModel::Summary );
+				tv->setColumnsVisible( { ChatHistoryModel::Summary, ChatHistoryModel::DateTime,
+										 ChatHistoryModel::Remove } );
+				input->setFocus();
+			} );
+		} );
 }
 
 void LLMChatUI::fillApiModels( UIDropDownList* modelDDL ) {
@@ -370,7 +490,7 @@ String LLMChatUI::getModelDisplayName( const LLMModel& model ) const {
 bool LLMChatUI::selectModel( UIDropDownList* modelDDL, const LLMModel& model ) {
 	auto modelName = getModelDisplayName( model );
 	auto index = modelDDL->getListBox()->getItemIndex( modelName );
-	if ( index != eeINDEX_NOT_FOUND ){
+	if ( index != eeINDEX_NOT_FOUND ) {
 		modelDDL->getListBox()->setSelected( index );
 		return true;
 	}
@@ -469,7 +589,8 @@ void LLMChatUI::unserialize( const nlohmann::json& payload ) {
 
 	std::string provider = payload.value( "provider", "" );
 	if ( payload.contains( "chat" ) && payload["chat"].is_object() ) {
-		std::string model = payload.value( "model", "" );
+		const auto& chat = payload["chat"];
+		std::string model = chat.value( "model", "" );
 		mCurModel = findModel( provider, model );
 	}
 
@@ -479,13 +600,16 @@ void LLMChatUI::unserialize( const nlohmann::json& payload ) {
 	if ( !selectModel( mModelDDL, mCurModel ) )
 		fillModelDropDownList( mModelDDL );
 
-	if ( payload.contains( "messages" ) && payload["messages"].is_array() ) {
-		const auto& messages = payload["messages"];
+	if ( payload.contains( "chat" ) && payload["chat"].is_object() ) {
+		const auto& chat = payload["chat"];
+		const auto& messages = chat["messages"];
 		for ( const auto& chat : messages ) {
 			addChat( LLMChat::stringToRole( chat.value( "role", "" ) ),
 					 chat.value( "content", "" ) );
 		}
 	}
+
+	updateTabTitle();
 }
 
 LLMModel LLMChatUI::findModel( const std::string& provider, const std::string& model ) {
@@ -609,6 +733,7 @@ void LLMChatUI::doRequest() {
 					auto status = response.getStatus();
 					if ( status == Http::Response::Ok ) {
 						mSummary = req.getResponse();
+						runOnMainThread( [this] { updateTabTitle(); } );
 						saveChat();
 					}
 					runOnMainThread( [this] { mSummaryRequest.reset(); } );
@@ -767,6 +892,16 @@ void LLMChatUI::onInit() {
 		return;
 	if ( getModelDisplayName( mCurModel ) != mModelDDL->getListBox()->getItemSelectedText() )
 		selectModel( mModelDDL, mCurModel );
+}
+
+void LLMChatUI::updateTabTitle() {
+	if ( getData() == 0 )
+		return;
+	UITab* tab = reinterpret_cast<UITab*>( getData() );
+	auto title = i18n( "ai_assistant", "AI Assistant" );
+	if ( !mSummary.empty() )
+		title += " - " + mSummary;
+	tab->setText( title );
 }
 
 } // namespace ecode

@@ -177,11 +177,6 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 
 	getPluginContext()->getConfig().addTabWidgetType( "llm_chatui", config );
 
-	if ( getUISceneNode() ) {
-		UIWidgetCreator::registerWidget( "llmchatui",
-										 [this] { return LLMChatUI::New( mManager ); } );
-	}
-
 	if ( mReady ) {
 		fireReadyCbs();
 		setReady( clock.getElapsedTime() );
@@ -305,7 +300,7 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 		initUI();
 }
 
-void AIAssistantPlugin::newAIAssistant() {
+LLMChatUI* AIAssistantPlugin::newAIAssistant() {
 	auto splitter = getPluginContext()->getSplitter();
 	auto chatUI = LLMChatUI::New( mManager );
 	auto tabName( i18n( "ai_assistant", "AI Assistant" ) );
@@ -316,6 +311,7 @@ void AIAssistantPlugin::newAIAssistant() {
 	auto icon = getPluginContext()->findIcon( "code-ai" );
 	if ( icon )
 		tab->setIcon( icon );
+	return chatUI;
 }
 
 void AIAssistantPlugin::onRegisterDocument( TextDocument* doc ) {

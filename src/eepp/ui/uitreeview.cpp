@@ -206,6 +206,10 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 			}
 		} );
 	}
+
+	if ( mSetupCellCb )
+		mSetupCellCb( widget );
+
 	return widget;
 }
 

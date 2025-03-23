@@ -6,6 +6,8 @@
 
 namespace ecode {
 
+class LLMChatUI;
+
 class AIAssistantPlugin : public PluginBase {
   public:
 	static PluginDefinition Definition() {
@@ -34,6 +36,8 @@ class AIAssistantPlugin : public PluginBase {
 
 	std::string getConversationsPath() const;
 
+	LLMChatUI* newAIAssistant();
+
   protected:
 	LLMProviders mProviders;
 	bool mUIInit{ false };
@@ -57,7 +61,6 @@ class AIAssistantPlugin : public PluginBase {
 
 	void initUI();
 
-	void newAIAssistant();
 };
 
 } // namespace ecode

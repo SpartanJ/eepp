@@ -21,6 +21,7 @@ UIAbstractTableView::UIAbstractTableView( const std::string& tag ) :
 	mHeader = UILinearLayout::NewWithTag( mTag + "::header", UIOrientation::Horizontal );
 	mHeader->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	mHeader->setParent( this )->setVisible( true )->setEnabled( true );
+	mHeader->setUpdateLayoutEvenIfNotVisible( true );
 	mVScroll->on( Event::OnAlphaChange, [this]( const Event* ) {
 		if ( mVScroll->getAlpha() == 0.f || mVScroll->getAlpha() == 1.f )
 			updateColumnsWidth();
@@ -599,6 +600,10 @@ UIWidget* UIAbstractTableView::setupCell( UITableCell* widget, UIWidget* rowWidg
 	widget->setTextAlign( UI_HALIGN_LEFT );
 	widget->setCurIndex( index );
 	bindNavigationClick( widget );
+
+	if ( mSetupCellCb )
+		mSetupCellCb( widget );
+
 	return widget;
 }
 
@@ -778,13 +783,22 @@ void UIAbstractTableView::setRowHeaderWidth( Float rowHeaderWidth ) {
 	buildRowHeader();
 }
 
-bool UIAbstractTableView::hasOnUpdateCellCb() {
+bool UIAbstractTableView::hasOnUpdateCellCb() const {
 	return mOnUpdateCellCb != nullptr;
 }
 
 void UIAbstractTableView::setOnUpdateCellCb(
 	const std::function<void( UITableCell*, Model* )>& onUpdateCellCb ) {
 	mOnUpdateCellCb = onUpdateCellCb;
+}
+
+bool UIAbstractTableView::hasSetupCellCb() const {
+	return mSetupCellCb != nullptr;
+}
+
+void UIAbstractTableView::setSetupCellCb(
+	const std::function<void( UITableCell* )>& onSetupCellCb ) {
+	mSetupCellCb = onSetupCellCb;
 }
 
 void UIAbstractTableView::buildRowHeader() {
@@ -996,7 +1010,10 @@ const size_t& UIAbstractTableView::getMainColumn() const {
 }
 
 void UIAbstractTableView::setMainColumn( const size_t& mainColumn ) {
-	mMainColumn = mainColumn;
+	if ( mMainColumn != mainColumn ) {
+		mMainColumn = mainColumn;
+		createOrUpdateColumns( false );
+	}
 }
 
 bool UIAbstractTableView::getSingleClickNavigation() const {

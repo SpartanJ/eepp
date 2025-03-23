@@ -63,6 +63,7 @@ class LLMChatUI : public UILinearLayout {
 	UIPushButton* mChatUserRole{ nullptr };
 	UIPushButton* mChatRun{ nullptr };
 	UIPushButton* mChatStop{ nullptr };
+	UIPushButton* mChatHistory{ nullptr };
 	UIScrollView* mChatScrollView{ nullptr };
 	UIDropDownList* mModelDDL{ nullptr };
 	std::unique_ptr<LLMChatCompletionRequest> mRequest;
@@ -121,6 +122,11 @@ class LLMChatUI : public UILinearLayout {
 	void saveChat();
 
 	void onInit();
+
+	void showChatHistory();
+
+	void updateTabTitle();
+
 };
 
 } // namespace ecode

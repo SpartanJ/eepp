@@ -32,8 +32,13 @@ class EE_API UILinearLayout : public UILayout {
 
 	void updateLayout();
 
+	void setUpdateLayoutEvenIfNotVisible( bool update ) { mUpdateLayoutEvenIfNotVisible = update; }
+
+	bool updatesLayoutEvenIfNotVisible() const { return mUpdateLayoutEvenIfNotVisible; }
+
   protected:
 	UIOrientation mOrientation;
+	bool mUpdateLayoutEvenIfNotVisible{ false };
 
 	UILinearLayout();
 

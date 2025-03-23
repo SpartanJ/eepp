@@ -51,7 +51,7 @@ UILinearLayout* UILinearLayout::setOrientation( const UIOrientation& orientation
 }
 
 void UILinearLayout::updateLayout() {
-	if ( !mVisible ) {
+	if ( !mVisible && !mUpdateLayoutEvenIfNotVisible ) {
 		if ( mPacking )
 			return;
 		mPacking = true;
