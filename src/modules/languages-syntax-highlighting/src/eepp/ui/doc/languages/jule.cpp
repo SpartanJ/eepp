@@ -14,8 +14,12 @@ void addJule() {
 			  { { "/%*", "%*/" }, "comment" },
 			  { { "\"", "[\"\n]", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },
-			  { { "-?0x%x+" }, "number" },
-			  { { "-?0b[01]+" }, "number" },
+			  { { "`", "`", "\\" }, "string" },
+			  { { "^%s*#[%a_][%w_]*" }, "keyword" },
+			  { { "0[oO][0-7]+_?[0-7]+" }, "number" },
+			  { { "-?0x[%x_]+" }, "number" },
+			  { { "-?%d+_%d" }, "number" },
+			  { { "-?0b[01]+_?[01]+" }, "number" },
 			  { { "-?%d+[%d%.eE]*f?" }, "number" },
 			  { { "-?%.?%d+f?" }, "number" },
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
@@ -57,7 +61,5 @@ void addJule() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
-
 }
-
 }}}} // namespace EE::UI::Doc::Language
