@@ -80,6 +80,7 @@
 #include <eepp/ui/doc/languages/toml.hpp>
 #include <eepp/ui/doc/languages/typescript.hpp>
 #include <eepp/ui/doc/languages/v.hpp>
+#include <eepp/ui/doc/languages/v1.hpp>
 #include <eepp/ui/doc/languages/vala.hpp>
 #include <eepp/ui/doc/languages/vb.hpp>
 #include <eepp/ui/doc/languages/verilog.hpp>
@@ -178,6 +179,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addToml();
 	addTypeScript();
 	addV();
+	addV1();
 	addVala();
 	addVerilog();
 	addVisualBasic();
