@@ -54,7 +54,7 @@ void UIAbstractTableView::setRowHeight( const Float& rowHeight ) {
 
 void UIAbstractTableView::setColumnWidth( const size_t& colIndex, const Float& width ) {
 	if ( columnData( colIndex ).width != width ) {
-		columnData( colIndex ).width = width;
+		columnData( colIndex ).setWidth( width, true );
 		updateHeaderSize();
 		onColumnSizeChange( colIndex );
 		createOrUpdateColumns( false );
@@ -76,7 +76,7 @@ void UIAbstractTableView::setColumnsWidth( const Float& width ) {
 	if ( !getModel() )
 		return;
 	for ( size_t i = 0; i < getModel()->columnCount(); i++ ) {
-		columnData( i ).width = width;
+		columnData( i ).setWidth( width, true );
 		onColumnSizeChange( i );
 	}
 	updateHeaderSize();
@@ -141,12 +141,14 @@ void UIAbstractTableView::resetColumnData() {
 		ColumnData& col = columnData( i );
 		col.minWidth = 0;
 		col.maxWidth = 0;
+		if ( !col.manuallySet )
+			col.width = 0;
 	}
 }
 
 void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 	Model* model = getModel();
-	if ( !model )
+	if ( !model || mSize.getWidth() <= 0 )
 		return;
 
 	size_t count = model->columnCount();
@@ -175,8 +177,8 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 			col.minWidth = col.widget->getPixelsSize().getWidth();
 			col.minHeight = col.widget->getPixelsSize().getHeight();
 		}
-		col.width = eeceil( col.maxWidth != 0 ? eeclamp( col.width, col.minWidth, col.maxWidth )
-											  : eemax( col.width, col.minWidth ) );
+		col.setWidth( eeceil( col.maxWidth != 0 ? eeclamp( col.width, col.minWidth, col.maxWidth )
+												: eemax( col.width, col.minWidth ) ) );
 		col.widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 		col.widget->setPixelsSize( col.width, getHeaderHeight() );
 	}
@@ -196,13 +198,13 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 				if ( col.widget )
 					colWidth = eemax( colWidth, col.widget->getPixelsSize().getWidth() );
 				usedWidth += colWidth;
-				col.width = colWidth;
+				col.setWidth( colWidth );
 			}
 		}
 		Float mainColMaxWidth = getMaxColumnContentWidth( mMainColumn, true );
 		auto& mainCol = columnData( mMainColumn );
-		mainCol.width = contentWidth - usedWidth >= mainColMaxWidth ? contentWidth - usedWidth
-																	: mainColMaxWidth;
+		mainCol.setWidth( contentWidth - usedWidth >= mainColMaxWidth ? contentWidth - usedWidth
+																	  : mainColMaxWidth );
 		usedWidth += mainCol.width;
 		if ( mFitAllColumnsToWidget && usedWidth > contentWidth ) {
 			size_t longestCol = 0;
@@ -215,7 +217,7 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 			}
 			longestColWidth = contentWidth - ( usedWidth - longestColWidth );
 			if ( longestColWidth > 0 )
-				columnData( longestCol ).width = longestColWidth;
+				columnData( longestCol ).setWidth( longestColWidth );
 		}
 	}
 
@@ -231,8 +233,8 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 		ColumnData& col = columnData( i );
 		if ( !col.visible )
 			continue;
-		col.width = eeceil( col.maxWidth != 0 ? eeclamp( col.width, col.minWidth, col.maxWidth )
-											  : eemax( col.width, col.minWidth ) );
+		col.setWidth( eeceil( col.maxWidth != 0 ? eeclamp( col.width, col.minWidth, col.maxWidth )
+												: eemax( col.width, col.minWidth ) ) );
 		if ( col.widget ) {
 			col.widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 			col.widget->setPixelsSize( col.width, getHeaderHeight() );
@@ -306,7 +308,7 @@ Float UIAbstractTableView::getMaxColumnContentWidth( const size_t&, bool ) {
 }
 
 void UIAbstractTableView::onColumnResizeToContent( const size_t& colIndex ) {
-	columnData( colIndex ).width = getMaxColumnContentWidth( colIndex, true );
+	columnData( colIndex ).setWidth( getMaxColumnContentWidth( colIndex, true ) );
 	createOrUpdateColumns( false );
 }
 
@@ -367,7 +369,7 @@ void UIAbstractTableView::updateColumnsWidth() {
 					width += getVerticalScrollBar()->getPixelsSize().getWidth();
 			}
 			if ( columnData( col ).width != width ) {
-				columnData( col ).width = width;
+				columnData( col ).setWidth( width );
 				updateHeaderSize();
 
 				ColumnData& colData = columnData( col );
@@ -1055,6 +1057,11 @@ UITableCell* UIAbstractTableView::getCellFromIndex( const ModelIndex& index ) co
 		}
 	}
 	return nullptr;
+}
+
+void UIAbstractTableView::ColumnData::setWidth( Float w, bool manSet ) {
+	width = w;
+	manuallySet = manSet;
 }
 
 }}} // namespace EE::UI::Abstract

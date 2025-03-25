@@ -390,7 +390,6 @@ void LLMChatUI::showChatHistory() {
 				input->setVisible( true );
 				tv->setVisible( true );
 				tv->setModel( model );
-				tv->setMainColumn( ChatHistoryModel::Summary );
 				tv->setColumnsVisible( { ChatHistoryModel::Summary, ChatHistoryModel::DateTime,
 										 ChatHistoryModel::Remove } );
 				input->setFocus();

@@ -153,7 +153,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 		Float maxWidth{ 0 };
 		Float width{ 0 };
 		bool visible{ true };
+		bool manuallySet{ false };
 		UIPushButton* widget{ nullptr };
+
+		void setWidth( Float w, bool manuallySet = false );
 	};
 
 	Float mRowHeight{ 0 };
