@@ -4,6 +4,7 @@
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addRave() {
+
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 		{ "Rave",
 		  { "%.rave$" },
@@ -17,9 +18,14 @@ void addRave() {
 			  { { "-?%d+_%d" }, "number" },
 			  { { "-?%d+[%d%.eE]*f?" }, "number" },
 			  { { "-?%.?%d+f?" }, "number" },
+			  { { "(namespace)%s+([%a_][%w_]*)" }, { "keyword", "keyword", "keyword2" } },
+			  { { "%(%s*inline%s*%)" }, "keyword" },
+			  { { "%(%s*inline%,%s*nochecks%s*%)" }, "keyword" },
+			  { { "%(%s*nochecks%s*%)" }, "keyword" },
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "std%:%:[%w_]*" }, "keyword2" },
+			  { { "@[%a_][%w_]*" }, "symbol" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 		  },
 		  {
@@ -37,7 +43,7 @@ void addRave() {
 			  { "case", "keyword" },
 			  { "default", "keyword" },
 			  { "cast", "keyword" },
-			  { "null", "keyword" },
+			  { "null", "literal" },
 			  { "while", "keyword" },
 			  { "for", "keyword" },
 			  { "return", "keyword" },
@@ -70,9 +76,28 @@ void addRave() {
 			  { "float8", "keyword2" },
 			  { "true", "literal" },
 			  { "false", "literal" },
-			  { "struct", "literal" },
-			  { "namespace", "literal" },
-			  
+			  { "struct", "keyword" },
+			  { "namespace", "keyword" },
+			  { "@if", "keyword" },
+			  { "@else", "keyword" },
+			  { "@return", "keyword" },
+			  { "@compileAndLink", "function" },
+			  { "@contains", "function" },
+			  { "@aliasExists", "function" },
+			  { "@atomicTAS", "function" },
+			  { "@atomicClear", "function" },
+			  { "@getCurrArg", "function" },
+			  { "@skipArg", "function" },
+			  { "@getCurrArgType", "function" },
+			  { "@callWithBeforeArgs", "function" },
+			  { "@argsLength", "function" },
+			  { "@forEachArgs", "function" },
+			  { "@hasMethod", "function" },
+			  { "@vFrom", "function" },
+			  { "@vLoad", "function" },
+			  { "@vStore", "function" },
+			  { "@vShuffle", "function" },
+
 		  },
 		  "//" } );
 
