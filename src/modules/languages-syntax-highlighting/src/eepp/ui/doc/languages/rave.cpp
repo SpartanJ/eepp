@@ -18,8 +18,8 @@ void addRave() {
 			  { { "-?%d+[%d%.eE]*f?" }, "number" },
 			  { { "-?%.?%d+f?" }, "number" },
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
-			  { { ":=" }, "operator" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
+			  { { "std%:%:[%w_]*" }, "keyword2" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 		  },
 		  {
@@ -37,6 +37,7 @@ void addRave() {
 			  { "case", "keyword" },
 			  { "default", "keyword" },
 			  { "cast", "keyword" },
+			  { "null", "keyword" },
 			  { "while", "keyword" },
 			  { "for", "keyword" },
 			  { "return", "keyword" },
