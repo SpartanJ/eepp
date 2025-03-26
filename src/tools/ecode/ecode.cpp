@@ -3451,6 +3451,12 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	Http::setThreadPool( mThreadPool );
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
+
+	if ( currentDisplay == nullptr ) {
+		std::cerr << "Display not found, exiting" << std::endl;
+		return;
+	}
+
 	mIncognito = incognito;
 	mPortableMode = portable;
 	mDisplayDPI = currentDisplay->getDPI();
@@ -3613,7 +3619,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	Log::info( "%s (codename: \"%s\") initializing", ecode::Version::getVersionFullName(),
 			   ecode::Version::getCodename() );
 
-	if ( mWindow->isOpen() ) {
+	if ( mWindow && mWindow->isOpen() ) {
 		// Only verify GPU driver availability on Windows.
 		// macOS will have at least a fallback renderer
 		// Linux will have at least Mesa drivers with LLVM Pipe

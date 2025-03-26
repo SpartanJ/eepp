@@ -130,7 +130,7 @@ DropDownList.role_ui {
 			<vbox lw="mp" lh="wc" class="llm_chats"></vbox>
 		</ScrollView>
 		<vbox id="chat_presentation" lw="wc" lh="wc" layout-gravity="center" gravity="center">
-			<Image lw="wc" lh="wc" icon="icon(robot-2, 96dp)" gravity="center" layout-gravity="center" />
+			<Image icon="icon(robot-2, 72dp)" gravity="center" layout-gravity="center" margin-bottom="16dp" />
 			<TextView text="@string(ai_llm_presentation, What can I help with?)" font-size="24dp" />
 		</vbox>
 	</RelativeLayout>

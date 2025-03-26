@@ -88,18 +88,20 @@ UIImage* UIImage::setDrawable( Drawable* drawable, bool ownIt ) {
 
 void UIImage::onAutoSize() {
 	if ( NULL != mDrawable ) {
-		if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == getSize() )
-			setInternalSize( mDrawable->getSize().asInt().asFloat() );
+		if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == getPixelsSize() )
+			setInternalPixelsSize( mDrawable->getPixelsSize().asInt().asFloat() );
 
-		Sizef size( getSize() );
+		Sizef size( getPixelsSize() );
 
 		if ( mWidthPolicy == SizePolicy::WrapContent )
-			size.x = ( (int)mDrawable->getSize().getWidth() + mPadding.Left + mPadding.Right );
+			size.x =
+				( (int)mDrawable->getPixelsSize().getWidth() + mPaddingPx.Left + mPaddingPx.Right );
 
 		if ( mHeightPolicy == SizePolicy::WrapContent )
-			size.y = ( (int)mDrawable->getSize().getHeight() + mPadding.Top + mPadding.Bottom );
+			size.y = ( (int)mDrawable->getPixelsSize().getHeight() + mPaddingPx.Top +
+					   mPaddingPx.Bottom );
 
-		setSize( size );
+		setPixelsSize( size );
 	}
 }
 
@@ -124,7 +126,7 @@ void UIImage::calcDestSize() {
 			mDestSize = pxSize;
 		}
 	} else if ( mDrawable ) {
-		mDestSize = mDrawable->getSize();
+		mDestSize = mDrawable->getPixelsSize();
 	}
 
 	mDestSize = mDestSize.floor();

@@ -264,7 +264,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 
 	size_t size = text.size();
 	std::string patternStr;
-	std::string patternText;
+	std::string_view patternText;
 
 	while ( i < size ) {
 		if ( curState.currentPatternIdx != SYNTAX_TOKENIZER_STATE_NONE ) {
@@ -383,7 +383,11 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 						}
 
 						patternText = textv.substr( start, end - start );
-						SyntaxStyleType type = curState.currentSyntax->getSymbol( patternText );
+						SyntaxStyleType type =
+							curMatch < pattern.types.size() &&
+									pattern.types[curMatch] == SyntaxStyleTypes::Symbol
+								? curState.currentSyntax->getSymbol( std::string{ patternText } )
+								: SyntaxStyleEmpty();
 						if ( !skipSubSyntaxSeparator || !pattern.hasSyntax() ) {
 							pushToken( tokens,
 									   type == SyntaxStyleEmpty()
@@ -435,7 +439,11 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 							end = start + ( strEnd - strStart );
 						}
 						patternText = textv.substr( start, end - start );
-						SyntaxStyleType type = curState.currentSyntax->getSymbol( patternText );
+						SyntaxStyleType type =
+							curMatch < pattern.types.size() &&
+									pattern.types[curMatch] == SyntaxStyleTypes::Symbol
+								? curState.currentSyntax->getSymbol( std::string{ patternText } )
+								: SyntaxStyleEmpty();
 						if ( !skipSubSyntaxSeparator || !pattern.hasSyntax() ) {
 							pushToken( tokens,
 									   type == SyntaxStyleEmpty()
@@ -447,7 +455,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 						}
 						if ( pattern.hasSyntax() ) {
 							pushSubsyntax( curState, retState, pattern, patternIndex + 1,
-										   patternText );
+										   std::string{ patternText } );
 						} else if ( pattern.patterns.size() > 1 ) {
 							setSubsyntaxPatternIdx( curState, retState, patternIndex + 1 );
 						}

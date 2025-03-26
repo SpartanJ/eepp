@@ -37,12 +37,18 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 
 	UIWidget* getContainer() const;
 
+	Node* getScrollView() const;
+
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 ) const;
 
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
+	bool isAutoSetClipStep() const;
+
+	void setAutoSetClipStep( bool setClipStep );
 
   protected:
 	ScrollViewType mViewType;
@@ -54,6 +60,7 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 	Node* mScrollView;
 	Uint32 mSizeChangeCb;
 	Uint32 mPosChangeCb;
+	bool mAutoSetClipStep{ true };
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 

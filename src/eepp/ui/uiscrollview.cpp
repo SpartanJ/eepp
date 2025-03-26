@@ -136,6 +136,10 @@ UIWidget* UIScrollView::getContainer() const {
 	return mContainer;
 }
 
+Node* UIScrollView::getScrollView() const {
+	return mScrollView;
+}
+
 void UIScrollView::containerUpdate() {
 	if ( NULL == mScrollView )
 		return;
@@ -195,13 +199,17 @@ void UIScrollView::containerUpdate() {
 						   ( mVScroll->isVisible() ? mVScroll->getSize().getWidth() : 0 ),
 					   mHScroll->getSize().getHeight() );
 
-	if ( mVScroll->isVisible() && 0 != mScrollView->getSize().getHeight() )
-		mVScroll->setPageStep( (Float)mContainer->getSize().getHeight() /
-							   (Float)mScrollView->getSize().getHeight() );
+	if ( mVScroll->isVisible() && 0 != mScrollView->getSize().getHeight() ){
+		mVScroll->setPageStep( mContainer->getSize().getHeight() /
+							   mScrollView->getSize().getHeight() );
+
+		if ( mAutoSetClipStep )
+			mVScroll->setClickStep( mVScroll->getPageStep() / 4.f );
+	}
 
 	if ( mHScroll->isVisible() && 0 != mScrollView->getSize().getWidth() ) {
-		mHScroll->setPageStep( (Float)mContainer->getSize().getWidth() /
-							   (Float)mScrollView->getSize().getWidth() );
+		mHScroll->setPageStep( mContainer->getSize().getWidth() /
+							   mScrollView->getSize().getWidth() );
 	}
 
 	updateScroll();
@@ -363,6 +371,14 @@ Uint32 UIScrollView::onMessage( const NodeMessage* Msg ) {
 		}
 	}
 	return UITouchDraggableWidget::onMessage( Msg );
+}
+
+bool UIScrollView::isAutoSetClipStep() const {
+	return mAutoSetClipStep;
+}
+
+void UIScrollView::setAutoSetClipStep( bool setClipStep ) {
+	mAutoSetClipStep = setClipStep;
 }
 
 }} // namespace EE::UI

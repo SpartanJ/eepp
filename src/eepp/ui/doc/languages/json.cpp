@@ -24,6 +24,7 @@ void addJSON() {
 		  {
 			  { "false", "literal" },
 			  { "true", "literal" },
+			  { "null", "literal" },
 
 		  },
 		  "//",

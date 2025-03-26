@@ -141,8 +141,6 @@ void UIAbstractTableView::resetColumnData() {
 		ColumnData& col = columnData( i );
 		col.minWidth = 0;
 		col.maxWidth = 0;
-		if ( !col.manuallySet )
-			col.width = 0;
 	}
 }
 

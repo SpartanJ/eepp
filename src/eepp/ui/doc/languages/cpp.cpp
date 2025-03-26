@@ -9,7 +9,7 @@ void addCPP() {
 
 		{ "C++",
 		  { "%.cpp$", "%.cc$", "%.cxx$", "%.c++$", "%.hh$", "%.inl$", "%.hxx$", "%.hpp$", "%.h++$",
-			"%.tcc$" },
+			"%.tcc$", "%.C$", "%.H$", "%.h++$", "%.ino$", "%.cu$", "%.cuh$" },
 		  {
 			  { { "R%\"(xml)%(", "%)(xml)%\"" }, { "string", "keyword2", "keyword2" }, "XML" },
 			  { { "R%\"(css)%(", "%)(css)%\"" }, { "string", "keyword2", "keyword2" }, "CSS" },
