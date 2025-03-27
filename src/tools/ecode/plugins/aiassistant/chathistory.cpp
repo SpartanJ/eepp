@@ -68,13 +68,14 @@ std::string ChatHistoryModel::columnName( const size_t& column ) const {
 			return mUISceneNode->i18n( "datetime", "Date" );
 		case Columns::Path:
 			return mUISceneNode->i18n( "path", "Path" );
-		case Columns::Remove:
-			return mUISceneNode->i18n( "remove", "Remove" );
+		case Columns::Delete:
+			return mUISceneNode->i18n( "delete", "Delete" );
 	}
 	return "";
 }
 
 Variant ChatHistoryModel::data( const ModelIndex& index, ModelRole role ) const {
+	static const char* EMPTY = "";
 	if ( role == ModelRole::Display ) {
 		auto& item = *mCurHistory[index.row()];
 		switch ( index.column() ) {
@@ -88,12 +89,12 @@ Variant ChatHistoryModel::data( const ModelIndex& index, ModelRole role ) const 
 				return Variant( item.file.getFilepath().c_str() );
 		}
 	} else if ( role == ModelRole::Icon ) {
-		if ( index.column() == Columns::Remove ) {
+		if ( index.column() == Columns::Delete ) {
 			static UIIcon* eraseIcon = mUISceneNode->findIcon( "chrome-close" );
 			return Variant( eraseIcon );
 		}
 	}
-	return {};
+	return Variant( EMPTY );
 }
 
 void ChatHistoryModel::remove( const ModelIndex& index ) {

@@ -29,7 +29,7 @@ struct ChatHistory {
 
 class ChatHistoryModel : public Model {
   public:
-	enum Columns { Id, Summary, DateTime, Path, Remove };
+	enum Columns { Id, Summary, DateTime, Path, Delete };
 
 	ChatHistoryModel( std::vector<ChatHistory>&&, UISceneNode* );
 
@@ -44,6 +44,8 @@ class ChatHistoryModel : public Model {
 	void setFilter( const std::string& filter );
 
 	void remove( const ModelIndex& index );
+
+	const std::vector<const ChatHistory*>& getCurHistory() const { return mCurHistory; }
 
   protected:
 	std::vector<const ChatHistory*> mCurHistory;

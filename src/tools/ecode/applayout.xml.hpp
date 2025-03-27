@@ -500,6 +500,9 @@ Anchor.error:hover {
 .git-stash-tooltip {
 	text-align: left;
 }
+window::modaldialog.shadowbg {
+	background-color: #00000066;
+}
 
 @media (prefers-color-scheme: light) {
 

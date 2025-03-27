@@ -189,8 +189,11 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 			if ( !filePath.empty() ) {
 				std::string data;
 				FileSystem::fileGet( filePath, data );
-				auto j = nlohmann::json::parse( data, nullptr, false );
-				chatUI->unserialize( j );
+				if ( !data.empty() ) {
+					auto j = nlohmann::json::parse( data, nullptr, false );
+					if ( !j.empty() )
+						chatUI->unserialize( j );
+				}
 			}
 
 			chatUI->on( Event::OnDataChanged, [chatUI]( auto ) { chatUI->updateTabTitle(); } );
@@ -349,7 +352,7 @@ LLMChatUI* AIAssistantPlugin::newAIAssistant() {
 }
 
 void AIAssistantPlugin::onRegisterDocument( TextDocument* doc ) {
-	doc->setCommand( "new-ai-assistant", [this] { newAIAssistant(); } );
+	doc->setCommand( "new-ai-assistant", [this] { newAIAssistant()->setFocus(); } );
 }
 
 void AIAssistantPlugin::onRegisterEditor( UICodeEditor* editor ) {
@@ -384,7 +387,7 @@ void AIAssistantPlugin::initUI() {
 	mUIInit = true;
 
 	getPluginContext()->getMainLayout()->setCommand( "new-ai-assistant",
-													 [this] { newAIAssistant(); } );
+													 [this] { newAIAssistant()->setFocus(); } );
 
 	if ( !mStatusBar )
 		getUISceneNode()->bind( "status_bar", mStatusBar );
@@ -399,7 +402,8 @@ void AIAssistantPlugin::initUI() {
 		mStatusButton->setClass( "status_but" );
 		mStatusButton->setIcon( iconDrawable( "code-ai", 14 ) );
 		mStatusButton->setTooltipText( i18n( "ai_assistant", "AI Assistant" ) );
-		mStatusButton->on( Event::MouseClick, [this]( const Event* ) { newAIAssistant(); } );
+		mStatusButton->on( Event::MouseClick,
+						   [this]( const Event* ) { newAIAssistant()->setFocus(); } );
 	}
 }
 

@@ -82,6 +82,13 @@ static json toJson( const SyntaxDefinition& def ) {
 		for ( const auto& ptrn : def.getPatterns() ) {
 			json pattern;
 			auto ptrnType = ptrn.matchType == SyntaxPatternMatchType::RegEx ? "regex" : "pattern";
+
+			// Do not export injected patterns
+			if ( ptrn.matchType == SyntaxPatternMatchType::LuaPattern &&
+				 ptrn.patterns.size() == 1 &&
+				 ( ptrn.patterns[0] == "%s+" || ptrn.patterns[0] == "%w+%f[%s]" ) )
+				continue;
+
 			if ( ptrn.patterns.size() == 1 ) {
 				pattern[ptrnType] = ptrn.patterns[0];
 			} else {

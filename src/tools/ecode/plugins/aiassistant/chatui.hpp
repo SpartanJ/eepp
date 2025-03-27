@@ -79,11 +79,14 @@ class LLMChatUI : public UILinearLayout {
 	UISplitter* mChatSplitter{ nullptr };
 	UIWidget* mChatsList{ nullptr };
 	UICodeEditor* mChatInput{ nullptr };
+	UIPushButton* mChatAdd{ nullptr };
+	UIPushButton* mChatSettings{ nullptr };
 	UIPushButton* mChatUserRole{ nullptr };
 	UIPushButton* mChatRun{ nullptr };
 	UIPushButton* mChatStop{ nullptr };
 	UIPushButton* mChatHistory{ nullptr };
 	UIPushButton* mChatClone{ nullptr };
+	UIPushButton* mRefreshModels{ nullptr };
 	UISelectButton* mChatPrivate{ nullptr };
 	UIScrollView* mChatScrollView{ nullptr };
 	UIDropDownList* mModelDDL{ nullptr };
