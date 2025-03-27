@@ -9,6 +9,10 @@ using namespace EE;
 using namespace EE::UI;
 using namespace EE::UI::Models;
 
+namespace EE::System {
+class IniFile;
+}
+
 namespace ecode {
 
 class PluginManager;
@@ -52,6 +56,8 @@ class Plugin : public UICodeEditorPlugin {
 
 	void showMessage( LSPMessageType type, const std::string& message,
 					  const std::string& title = "" );
+
+	virtual void onSaveState( IniFile* state ) {}
 
 	virtual void onSaveProject( const std::string& /*projectFolder*/,
 								const std::string& /*projectStatePath*/,

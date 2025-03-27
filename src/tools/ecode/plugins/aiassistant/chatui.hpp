@@ -53,17 +53,38 @@ class LLMChatUI : public UILinearLayout {
 
 	void unserialize( const nlohmann::json& payload );
 
+	UISplitter* getSplitter() const;
+
+	const LLMModel& getCurModel() const;
+
+	const UUID& getUUID() const { return mUUID; }
+
+	const std::string& getSummary() const { return mSummary; }
+
+	long getTimestamp() const { return mTimestamp; }
+
+	bool hasChat() const { return getTimestamp() && !getSummary().empty(); }
+
+	std::string getNewFilePath( const std::string& uuid, const std::string& summary ) const;
+
+	std::string getFilePath() const;
+
+	void updateTabTitle();
+
   protected:
 	UUID mUUID;
 	std::string mSummary;
-	long mTimestamp;
+	long mTimestamp{ 0 };
 	PluginManager* mManager{ nullptr };
+	UISplitter* mChatSplitter{ nullptr };
 	UIWidget* mChatsList{ nullptr };
 	UICodeEditor* mChatInput{ nullptr };
 	UIPushButton* mChatUserRole{ nullptr };
 	UIPushButton* mChatRun{ nullptr };
 	UIPushButton* mChatStop{ nullptr };
 	UIPushButton* mChatHistory{ nullptr };
+	UIPushButton* mChatClone{ nullptr };
+	UISelectButton* mChatPrivate{ nullptr };
 	UIScrollView* mChatScrollView{ nullptr };
 	UIDropDownList* mModelDDL{ nullptr };
 	std::unique_ptr<LLMChatCompletionRequest> mRequest;
@@ -72,6 +93,7 @@ class LLMChatUI : public UILinearLayout {
 	LLMModel mCurModel;
 	std::unordered_map<String::HashType, LLMModel> mModelsMap;
 	int mPendingModelsToLoad{ 0 };
+	bool mChatIsPrivate{ false };
 
 	LLMModel findModel( const std::string& provider, const std::string& model );
 
@@ -79,7 +101,7 @@ class LLMChatUI : public UILinearLayout {
 
 	LLMChatUI( PluginManager* manager );
 
-	AIAssistantPlugin* getPlugin();
+	AIAssistantPlugin* getPlugin() const;
 
 	void showMsg( String msg );
 
@@ -119,14 +141,13 @@ class LLMChatUI : public UILinearLayout {
 
 	const LLMModel& getCheapestModelFromCurrentProvider() const;
 
+	std::optional<LLMModel> getModel( const std::string& provider, const std::string& modelName );
+
 	void saveChat();
 
 	void onInit();
 
 	void showChatHistory();
-
-	void updateTabTitle();
-
 };
 
 } // namespace ecode

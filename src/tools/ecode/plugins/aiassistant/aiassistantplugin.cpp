@@ -167,11 +167,45 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 
 	TabWidgetCbs config;
 	config.onLoad = [this]( const nlohmann::json& j ) {
-		return TabWidgetData{ LLMChatUI::New( mManager ), getPluginContext()->findIcon( "code-ai" ),
+		LLMChatUI* chatUI = LLMChatUI::New( mManager );
+
+		if ( j.contains( "uuid" ) && j.contains( "summary" ) ) {
+			auto uuid = j.value( "uuid", "" );
+			auto filePath = chatUI->getNewFilePath( uuid, j.value( "summary", "" ) );
+			if ( filePath.empty() || !FileSystem::fileExists( filePath ) ) {
+				auto conversationsPath = getConversationsPath();
+				FileSystem::dirAddSlashAtEnd( conversationsPath );
+				auto conversations = FileSystem::filesGetInPath( conversationsPath );
+
+				auto foundIt = std::find_if( conversations.begin(), conversations.end(),
+											 [&uuid]( const std::string& path ) {
+												 return String::startsWith( path, uuid );
+											 } );
+
+				if ( foundIt != conversations.end() )
+					filePath = conversationsPath + *foundIt;
+			}
+
+			if ( !filePath.empty() ) {
+				std::string data;
+				FileSystem::fileGet( filePath, data );
+				auto j = nlohmann::json::parse( data, nullptr, false );
+				chatUI->unserialize( j );
+			}
+
+			chatUI->on( Event::OnDataChanged, [chatUI]( auto ) { chatUI->updateTabTitle(); } );
+		}
+
+		return TabWidgetData{ chatUI, getPluginContext()->findIcon( "code-ai" ),
 							  i18n( "ai_assistant", "AI Assistant" ) };
 	};
 	config.onSave = []( UIWidget* widget ) {
+		LLMChatUI* chatUI = static_cast<LLMChatUI*>( widget );
 		nlohmann::json j;
+		if ( chatUI->hasChat() ) {
+			j["uuid"] = chatUI->getUUID().toString();
+			j["summary"] = chatUI->getSummary();
+		}
 		return j;
 	};
 
@@ -365,7 +399,7 @@ void AIAssistantPlugin::initUI() {
 		mStatusButton->setClass( "status_but" );
 		mStatusButton->setIcon( iconDrawable( "code-ai", 14 ) );
 		mStatusButton->setTooltipText( i18n( "ai_assistant", "AI Assistant" ) );
-		mStatusButton->on( Event::MouseClick, [this]( const Event* event ) { newAIAssistant(); } );
+		mStatusButton->on( Event::MouseClick, [this]( const Event* ) { newAIAssistant(); } );
 	}
 }
 
@@ -406,6 +440,34 @@ std::optional<std::string> AIAssistantPlugin::getApiKeyFromProvider( const std::
 	}
 
 	return {};
+}
+
+void AIAssistantPlugin::onSaveState( IniFile* state ) {
+	std::vector<LLMChatUI*> chats;
+	LLMChatUI* mainChat{ nullptr };
+
+	getPluginContext()->getSplitter()->forEachWidgetClass(
+		"llm_chatui", [&chats, &mainChat]( UIWidget* widget ) {
+			LLMChatUI* chat = static_cast<LLMChatUI*>( widget );
+			chats.emplace_back( chat );
+			if ( widget->isVisible() && mainChat == nullptr )
+				mainChat = chat;
+		} );
+
+	if ( mainChat == nullptr && !chats.empty() )
+		mainChat = chats[chats.size() - 1];
+
+	if ( mainChat == nullptr )
+		return;
+
+	auto partition = mainChat->getSplitter()->getSplitPartition();
+	auto modelProvider = mainChat->getCurModel().provider;
+	auto modelName = mainChat->getCurModel().name;
+
+	const std::string keyname = "aiassistant";
+	state->setValue( keyname, "split_partition", partition.toString() );
+	state->setValue( keyname, "default_provider", modelProvider );
+	state->setValue( keyname, "default_model", modelName );
 }
 
 } // namespace ecode

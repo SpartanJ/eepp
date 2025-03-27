@@ -441,7 +441,10 @@ Node* Node::getNextNodeLoop() const {
 }
 
 Node* Node::setData( const UintPtr& data ) {
-	mData = data;
+	if ( data != mData ) {
+		mData = data;
+		sendCommonEvent( Event::OnDataChanged );
+	}
 	return this;
 }
 

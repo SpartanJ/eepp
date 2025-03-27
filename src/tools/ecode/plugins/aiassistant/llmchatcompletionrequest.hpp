@@ -14,14 +14,18 @@ namespace ecode {
 
 class LLMChatCompletionRequest {
   public:
-	using StreamedResponseCb = std::function<void( const std::string& chunk )>;
+	using StreamedResponseCb = std::function<void( const std::string& chunk, bool fromReasoning )>;
 
 	using StreamedResponseDoneCb =
 		std::function<void( const LLMChatCompletionRequest& request, Http::Response& )>;
 
+	using StreamedResponseCancelCb = std::function<void( const LLMChatCompletionRequest& request )>;
+
 	StreamedResponseCb streamedResponseCb;
 
 	StreamedResponseDoneCb doneCb;
+
+	StreamedResponseCancelCb cancelCb;
 
 	LLMChatCompletionRequest( const std::string& uri, const std::string& auth,
 							  const std::string& reqBody, const std::string& provider );

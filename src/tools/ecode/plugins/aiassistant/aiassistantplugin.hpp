@@ -38,6 +38,8 @@ class AIAssistantPlugin : public PluginBase {
 
 	LLMChatUI* newAIAssistant();
 
+	void onSaveState( IniFile* state ) override;
+
   protected:
 	LLMProviders mProviders;
 	bool mUIInit{ false };

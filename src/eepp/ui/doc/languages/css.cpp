@@ -21,6 +21,7 @@ void addCSS() {
 			  { { "#[%a%_%-][%w%_%-]*" }, "keyword2" },
 			  { { "%-%-%a[%w%-%_]*" }, "keyword2" },
 			  { { "-?%d+[%d%.]*p[xt]" }, "number" },
+			  { { "-?%d+[%d%.]*dp" }, "number" },
 			  { { "-?%d+[%d%.]*deg" }, "number" },
 			  { { "-?%d+[%d%.]*" }, "number" },
 			  { { "@[%a][%w%_%-]*" }, "keyword2" },

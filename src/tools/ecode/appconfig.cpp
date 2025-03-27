@@ -223,11 +223,12 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 							   "git" == creator.first || "debugger" == creator.first ||
 							   "aiassistant" == creator.first );
 	}
-	pluginManager->setPluginsEnabled( pluginsEnabled, sync );
 
 	languagesExtensions.priorities = ini.getKeyMap( "languages_extensions" );
 
 	iniInfo = FileInfo( ini.path() );
+
+	pluginManager->setPluginsEnabled( pluginsEnabled, sync );
 }
 
 void AppConfig::save( const std::vector<std::string>& recentFiles,
@@ -371,6 +372,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 
 	for ( const auto& langExt : languagesExtensions.priorities )
 		ini.setValue( "languages_extensions", langExt.first, langExt.second );
+
+	pluginManager->forEachPlugin( [this]( Plugin* plugin ) { plugin->onSaveState( &iniState ); } );
 
 	ini.writeFile();
 	iniState.writeFile();

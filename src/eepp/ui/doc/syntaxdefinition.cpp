@@ -259,44 +259,44 @@ const String::HashType& SyntaxDefinition::getLanguageId() const {
 }
 
 SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
-							  const std::string& _syntax, bool isRegEx ) :
+							  const std::string& _syntax, SyntaxPatternMatchType matchType ) :
 	patterns( std::move( _patterns ) ),
 	types( toSyntaxStyleTypeV( std::vector<std::string>{ _type } ) ),
 	typesNames( { _type } ),
 	syntax( _syntax ),
-	isRegEx( isRegEx ) {
+	matchType( matchType ) {
 	updateCache<SyntaxStyleType>( *this );
 }
 
 SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
 							  std::vector<std::string>&& _types, const std::string& _syntax,
-							  bool isRegEx ) :
+							  SyntaxPatternMatchType matchType ) :
 	patterns( std::move( _patterns ) ),
 	types( toSyntaxStyleTypeV( _types ) ),
 	typesNames( std::move( _types ) ),
 	syntax( _syntax ),
-	isRegEx( isRegEx ) {
+	matchType( matchType ) {
 	updateCache<SyntaxStyleType>( *this );
 }
 
 SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
-							  DynamicSyntax&& _syntax, bool isRegEx ) :
+							  DynamicSyntax&& _syntax, SyntaxPatternMatchType matchType ) :
 	patterns( std::move( _patterns ) ),
 	types( toSyntaxStyleTypeV( std::vector<std::string>{ _type } ) ),
 	typesNames( { _type } ),
 	dynSyntax( std::move( _syntax ) ),
-	isRegEx( isRegEx ) {
+	matchType( matchType ) {
 	updateCache<SyntaxStyleType>( *this );
 }
 
 SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
 							  std::vector<std::string>&& _types, DynamicSyntax&& _syntax,
-							  bool isRegEx ) :
+							  SyntaxPatternMatchType matchType ) :
 	patterns( std::move( _patterns ) ),
 	types( toSyntaxStyleTypeV( _types ) ),
 	typesNames( std::move( _types ) ),
 	dynSyntax( std::move( _syntax ) ),
-	isRegEx( isRegEx ) {
+	matchType( matchType ) {
 	updateCache<SyntaxStyleType>( *this );
 }
 

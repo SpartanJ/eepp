@@ -1036,6 +1036,8 @@ Uint32 UITabWidget::onMessage( const NodeMessage* msg ) {
 					return 1;
 				}
 			} else if ( dir && tab->getTabWidget()->allowDragAndDropTabs() ) {
+				if ( tab->getTabWidget() == this && tab->getTabWidget()->getTabCount() <= 1 )
+					return 0;
 				tab->getTabWidget()->removeTab( tab, false, false, false );
 				auto tabWidget = mSplitFn( *dir, this );
 				tabWidget->add( tab );

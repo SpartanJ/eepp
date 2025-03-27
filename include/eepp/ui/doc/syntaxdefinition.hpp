@@ -26,6 +26,8 @@ template <typename T> static auto toSyntaxStyleTypeV( const std::vector<T>& s ) 
 		return std::vector<SyntaxStyleType>{};
 }
 
+enum class SyntaxPatternMatchType { LuaPattern, RegEx };
+
 struct EE_API SyntaxPattern {
 	static UnorderedMap<SyntaxStyleType, std::string> SyntaxStyleTypeCache;
 
@@ -37,19 +39,23 @@ struct EE_API SyntaxPattern {
 	std::vector<std::string> typesNames;
 	std::string syntax{ "" };
 	DynamicSyntax dynSyntax;
-	bool isRegEx{ false };
+	SyntaxPatternMatchType matchType{ SyntaxPatternMatchType::LuaPattern };
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
-				   const std::string& _syntax = "", bool isRegEx = false );
+				   const std::string& _syntax = "",
+				   SyntaxPatternMatchType matchType = SyntaxPatternMatchType::LuaPattern );
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
-				   const std::string& _syntax = "", bool isRegEx = false );
+				   const std::string& _syntax = "",
+				   SyntaxPatternMatchType matchType = SyntaxPatternMatchType::LuaPattern );
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
-				   DynamicSyntax&& _syntax, bool isRegEx = false );
+				   DynamicSyntax&& _syntax,
+				   SyntaxPatternMatchType matchType = SyntaxPatternMatchType::LuaPattern );
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
-				   DynamicSyntax&& _syntax, bool isRegEx = false );
+				   DynamicSyntax&& _syntax,
+				   SyntaxPatternMatchType matchType = SyntaxPatternMatchType::LuaPattern );
 
 	bool hasSyntax() const { return !syntax.empty() || dynSyntax; }
 };

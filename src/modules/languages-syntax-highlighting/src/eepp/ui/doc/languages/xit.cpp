@@ -4,12 +4,20 @@
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addXit() {
+	auto dynSyntax = []( const SyntaxPattern&, const std::string_view& match ) -> std::string {
+		std::string lang = String::toLower( std::string{ match.substr( 3 ) } );
+		String::trimInPlace( lang );
+		if ( !lang.empty() && lang[lang.size() - 1] == '\n' )
+			lang.pop_back();
+		return SyntaxDefinitionManager::instance()->findFromString( lang ).getLanguageName();
+	};
 
 	SyntaxDefinitionManager::instance()->add(
 
 		{ "[x]it!",
 		  { "%.xit$" },
 		  {
+			  { { "```[%w%s+-#]+", "```" }, "function", dynSyntax },
 			  { { "%f[^%s%(]%-%>%s%d%d%d%d%-%d%d%-%d%d%f[\n%s%!%?%)]" }, "number" },
 			  { { "%f[^%s%(]%-%>%s%d%d%d%d%/%d%d%/%d%d%f[\n%s%!%?%)]" }, "number" },
 			  { { "%f[^%s%(]%-%>%s%d%d%d%d%-[wWqQ]?%d%d?%f[\n%s%!%?%)]" }, "number" },

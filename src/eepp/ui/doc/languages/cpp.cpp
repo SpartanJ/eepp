@@ -34,6 +34,8 @@ void addCPP() {
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "std%:%:[%w_]*" }, "keyword2" },
+			  { { "(%[)(%[)(%a[%w_]+)(%])(%])" },
+				{ "normal", "keyword", "keyword3", "keyword2", "keyword3", "keyword" } },
 			  { { "[%a_][%w_]*" }, "symbol" },
 
 		  },

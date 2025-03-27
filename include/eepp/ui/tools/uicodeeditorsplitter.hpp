@@ -161,6 +161,9 @@ class EE_API UICodeEditorSplitter {
 	void forEachWidgetClass( const std::string& className,
 							 std::function<void( UIWidget* )> run ) const;
 
+	void forEachWidgetClassStoppable( const std::string& className,
+									  std::function<bool( UIWidget* )> run ) const;
+
 	void forEachWidgetType( const UINodeType& nodeType,
 							std::function<void( UIWidget* )> run ) const;
 

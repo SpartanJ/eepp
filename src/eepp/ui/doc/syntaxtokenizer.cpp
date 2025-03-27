@@ -105,13 +105,15 @@ struct NonEscapedMatch {
 };
 
 static NonEscapedMatch findNonEscaped( const std::string& text, const std::string& pattern,
-									   int offset, const std::string& escapeStr, bool isRegEx ) {
+									   int offset, const std::string& escapeStr,
+									   SyntaxPatternMatchType matchType ) {
 	eeASSERT( !pattern.empty() );
 	if ( pattern.empty() )
 		return {};
 	std::variant<RegEx, LuaPattern> wordsVar =
-		isRegEx ? std::variant<RegEx, LuaPattern>( RegEx( pattern ) )
-				: std::variant<RegEx, LuaPattern>( LuaPattern( pattern ) );
+		matchType == SyntaxPatternMatchType::RegEx
+			? std::variant<RegEx, LuaPattern>( RegEx( pattern ) )
+			: std::variant<RegEx, LuaPattern>( LuaPattern( pattern ) );
 	PatternMatcher& words =
 		std::visit( []( auto& patternType ) -> PatternMatcher& { return patternType; }, wordsVar );
 	int start, end;
@@ -272,7 +274,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 				curState.currentSyntax->getPatterns()[curState.currentPatternIdx - 1];
 			auto range = findNonEscaped( text, pattern.patterns[1], i,
 										 pattern.patterns.size() >= 3 ? pattern.patterns[2] : "",
-										 pattern.isRegEx )
+										 pattern.matchType )
 							 .range;
 
 			bool skip = false;
@@ -283,7 +285,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 													  curState.subsyntaxInfo->patterns.size() >= 3
 														  ? curState.subsyntaxInfo->patterns[2]
 														  : "",
-													  pattern.isRegEx );
+													  pattern.matchType );
 
 				if ( rangeSubsyntax.range.first != -1 &&
 					 ( range.first == -1 || rangeSubsyntax.range.first < range.first ) ) {
@@ -320,7 +322,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 				text, "^" + curState.subsyntaxInfo->patterns[1], i,
 				curState.subsyntaxInfo->patterns.size() >= 3 ? curState.subsyntaxInfo->patterns[2]
 															 : "",
-				curState.subsyntaxInfo->isRegEx );
+				curState.subsyntaxInfo->matchType );
 
 			if ( rangeSubsyntax.range.first != -1 ) {
 				if ( !skipSubSyntaxSeparator ) {
@@ -342,8 +344,9 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 			patternStr =
 				pattern.patterns[0][0] == '^' ? pattern.patterns[0] : "^" + pattern.patterns[0];
 			std::variant<RegEx, LuaPattern> wordsVar =
-				pattern.isRegEx ? std::variant<RegEx, LuaPattern>( RegEx( patternStr ) )
-								: std::variant<RegEx, LuaPattern>( LuaPattern( patternStr ) );
+				pattern.matchType == SyntaxPatternMatchType::RegEx
+					? std::variant<RegEx, LuaPattern>( RegEx( patternStr ) )
+					: std::variant<RegEx, LuaPattern>( LuaPattern( patternStr ) );
 			PatternMatcher& words = std::visit(
 				[]( auto& patternType ) -> PatternMatcher& { return patternType; }, wordsVar );
 			if ( !words.isValid() ) // Skip invalid patterns

@@ -81,7 +81,7 @@ static json toJson( const SyntaxDefinition& def ) {
 		j["patterns"] = json::array();
 		for ( const auto& ptrn : def.getPatterns() ) {
 			json pattern;
-			auto ptrnType = ptrn.isRegEx ? "regex" : "pattern";
+			auto ptrnType = ptrn.matchType == SyntaxPatternMatchType::RegEx ? "regex" : "pattern";
 			if ( ptrn.patterns.size() == 1 ) {
 				pattern[ptrnType] = ptrn.patterns[0];
 			} else {
@@ -206,12 +206,13 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 	buf += "{\n";
 	for ( const auto& pattern : def.getPatterns() ) {
 		buf += "{ " + join( pattern.patterns ) + ", " +
-			   join( pattern.typesNames, true, true, pattern.isRegEx ) +
+			   join( pattern.typesNames, true, true,
+					 pattern.matchType == SyntaxPatternMatchType::RegEx ) +
 			   str( pattern.syntax, ", ", "", false );
-		if ( pattern.isRegEx && pattern.syntax.empty() )
-			buf += ", \"\", true";
-		else if ( pattern.isRegEx )
-			buf += ", true";
+		if ( pattern.matchType == SyntaxPatternMatchType::RegEx && pattern.syntax.empty() )
+			buf += ", \"\", SyntaxPatternMatchType::RegEx";
+		else if ( pattern.matchType == SyntaxPatternMatchType::RegEx )
+			buf += ", SyntaxPatternMatchType::RegEx";
 		buf += " },\n";
 	}
 	buf += "\n},\n";
@@ -400,8 +401,9 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 						ptrns.emplace_back( pattern["regex"] );
 					}
 				}
-				def.addPattern(
-					SyntaxPattern( std::move( ptrns ), std::move( type ), syntax, isRegEx ) );
+				def.addPattern( SyntaxPattern( std::move( ptrns ), std::move( type ), syntax,
+											   isRegEx ? SyntaxPatternMatchType::RegEx
+													   : SyntaxPatternMatchType::LuaPattern ) );
 			}
 		}
 		if ( json.contains( "symbols" ) ) {

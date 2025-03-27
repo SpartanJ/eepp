@@ -24,6 +24,8 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 										  const Http::Request::Status& status, size_t, size_t ) {
 		if ( mCancel ) {
 			mRequest.cancel();
+			if ( cancelCb )
+				cancelCb( *this );
 			return false;
 		}
 		if ( status != Http::Request::ContentReceived )
@@ -47,7 +49,7 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 						if ( delta.empty() )
 							return;
 						if ( streamedResponseCb )
-							streamedResponseCb( delta );
+							streamedResponseCb( delta, false );
 						mResponse += std::move( delta );
 					}
 				}
@@ -64,10 +66,14 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 				nlohmann::json& choices = data["choices"];
 
 				for ( const auto& choice : choices ) {
-					if ( choice["delta"].contains( "content" ) ) {
+					if ( choice["delta"].contains( "reasoning_content" ) ) {
+						std::string delta = choice["delta"]["reasoning_content"];
+						if ( streamedResponseCb )
+							streamedResponseCb( delta, true );
+					} else if ( choice["delta"].contains( "content" ) ) {
 						std::string delta = choice["delta"]["content"];
 						if ( streamedResponseCb )
-							streamedResponseCb( delta );
+							streamedResponseCb( delta, false );
 						mResponse += std::move( delta );
 					}
 				}
@@ -76,7 +82,7 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 						data["delta"].value( "type", "" ) == "text_delta" ) {
 				std::string delta = data["delta"]["text"];
 				if ( streamedResponseCb )
-					streamedResponseCb( delta );
+					streamedResponseCb( delta, false );
 				mResponse += std::move( delta );
 			}
 		} );
