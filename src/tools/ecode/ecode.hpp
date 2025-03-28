@@ -59,7 +59,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void openFolderDialog();
 
-	void openFontDialog( std::string& fontPath, bool loadingMonoFont, bool terminalFont = false );
+	void openFontDialog( std::string& fontPath, bool loadingMonoFont, bool terminalFont = false,
+						 std::function<void()> onFinish = {} );
 
 	void downloadFileWeb( const std::string& url );
 
@@ -312,8 +313,15 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 					  [this] { openFontDialog( mConfig.ui.monospaceFont, true ); } );
 		t.setCommand( "terminal-font",
 					  [this] { openFontDialog( mConfig.ui.terminalFont, true, true ); } );
-		t.setCommand( "fallback-font",
-					  [this] { openFontDialog( mConfig.ui.fallbackFont, false ); } );
+		t.setCommand( "fallback-font", [this] {
+			openFontDialog( mConfig.ui.fallbackFont, false, false, [this] {
+				UIMessageBox::New( UIMessageBox::OK,
+								   i18n( "new_fallback_font_requires_restart",
+										 "New fallback font has been set. Application must be "
+										 "restarted in order to see the changes." ) )
+					->showWhenReady();
+			} );
+		} );
 		t.setCommand( "tree-view-configure-ignore-files",
 					  [this] { treeViewConfigureIgnoreFiles(); } );
 		t.setCommand( "check-languages-health", [this] { checkLanguagesHealth(); } );

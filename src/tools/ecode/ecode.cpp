@@ -387,7 +387,8 @@ void App::openFolderDialog() {
 	dialog->show();
 }
 
-void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool terminalFont ) {
+void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool terminalFont,
+						  std::function<void()> onFinish ) {
 	std::string absoluteFontPath( fontPath );
 	if ( FileSystem::isRelativePath( absoluteFontPath ) )
 		absoluteFontPath = mResPath + fontPath;
@@ -407,14 +408,16 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool term
 		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
 			mSplitter->getCurWidget()->setFocus();
 	} );
-	dialog->on( Event::OpenFile, [this, &fontPath, loadingMonoFont,
-								  terminalFont]( const Event* event ) {
+	dialog->on( Event::OpenFile, [this, &fontPath, loadingMonoFont, terminalFont,
+								  onFinish]( const Event* event ) {
 		auto newPath = event->getNode()->asType<UIFileDialog>()->getFullPath();
 		if ( String::startsWith( newPath, mResPath ) )
 			newPath = newPath.substr( mResPath.size() );
 		if ( fontPath != newPath ) {
 			if ( !loadingMonoFont ) {
 				fontPath = newPath;
+				if ( onFinish )
+					onFinish();
 				return;
 			}
 			auto fontName =
