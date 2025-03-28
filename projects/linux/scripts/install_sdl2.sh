@@ -30,8 +30,7 @@ install_dependencies() {
                             libxss-dev \
                             libxt-dev \
                             libxv-dev \
-                            libxxf86vm-dev \
-                            libdecor-0-dev || exit
+                            libxxf86vm-dev || exit
 }
 
 # Function to install cross-compile dependencies for aarch64

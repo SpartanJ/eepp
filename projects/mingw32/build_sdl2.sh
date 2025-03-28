@@ -29,12 +29,12 @@ echo "Building SDL2 for arch $(uname -m)"
 HOST=
 fi
 
-SDLVER=$(grep "remote_sdl2_version =" ../../premake5.lua | awk '{print $3}' | tr -d '"')
+SDLVER=$(grep "remote_sdl2_version_number =" ../../premake5.lua | awk '{print $3}' | tr -d '"')
 
 echo "SDL2 version $SDLVER"
 echo "$PATH"
 
-cd "../../src/thirdparty/$SDLVER/" || exit 1
+cd "../../src/thirdparty/SDL2-$SDLVER/" || exit 1
 
 echo "SDL2 running autogen"
 ./autogen.sh || exit 1
