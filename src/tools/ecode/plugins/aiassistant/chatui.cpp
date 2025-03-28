@@ -146,6 +146,7 @@ DropDownList.role_ui {
 			<PushButton id="llm_chat_history" class="llm_button" text="@string(chat_history, Chat History)" tooltip="@string(chat_history, Chat History)" icon="icon(chat-history, 14dp)" min-width="32dp" />
 			<PushButton id="llm_settings_but" class="llm_button" text="@string(settings, Settings)" tooltip="@string(settings, Settings)" icon="icon(settings, 14dp)" min-width="32dp" />
 			<PushButton id="llm_clone_chat" class="llm_button" text="@string(clone_current_conversation, Clone Current Conversation)" tooltip="@string(clone_current_chat, Clone Current Chat)" icon="icon(file-copy, 12dp)" min-width="32dp" />
+			<PushButton id="llm_save_but" class="llm_button" tooltip="@string(save_conversation, Save Conversation)" icon="icon(document-save, 14dp)" min-width="32dp" />
 			<hbox lw="0" lw8="1" lh="mp" layout_gravity="center" padding-left="8dp" padding-right="8dp">
 				<DropDownList class="model_ui" lw="0" lw8="1" selected-index="0"></DropDownList>
 				<PushButton id="refresh_model_ui" text="@string(refresh_model_ui, Refresh)" icon="icon(refresh, 14dp)" />
@@ -177,7 +178,10 @@ static const char* DEFAULT_CHAT_GLOBE = R"xml(
 </vbox>
 )xml";
 
-LLMChatUI::LLMChatUI( PluginManager* manager ) : UILinearLayout(), mManager( manager ) {
+LLMChatUI::LLMChatUI( PluginManager* manager ) :
+	UILinearLayout(),
+	WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ),
+	mManager( manager ) {
 	setClass( "llm_chatui" );
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 
@@ -190,9 +194,11 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) : UILinearLayout(), mManager( man
 	mRefreshModels = find<UIPushButton>( "refresh_model_ui" );
 	mRefreshModels->onClick( [this]( auto ) { fillApiModels( mModelDDL ); } );
 
+	mChatSave = find<UIPushButton>( "llm_save_but" );
+	mChatSave->onClick( [this]( auto ) { execute( "ai-save-chat" ); } );
+
 	mChatSettings = find<UIPushButton>( "llm_settings_but" );
-	mChatSettings->onClick(
-		[this]( auto ) { mChatInput->getDocument().execute( "ai-settings" ); } );
+	mChatSettings->onClick( [this]( auto ) { execute( "ai-settings" ); } );
 
 	mChatScrollView = findByClass( "llm_chat_scrollview" )->asType<UIScrollView>();
 	mChatScrollView->getVerticalScrollBar()->setValue( 1 );
@@ -206,12 +212,49 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) : UILinearLayout(), mManager( man
 			getPlugin()->getPluginContext()->getSplitter()->getCurrentColorScheme() );
 	}
 
-	mChatInput->getDocument().setCommand( "ai-settings", [this] {
+	mChatAdd = find<UIPushButton>( "llm_add_chat" );
+	mChatAdd->onClick( [this]( auto ) { execute( "ai-add-chat" ); } );
+
+	const auto& markdown = SyntaxDefinitionManager::instance()->getByLSPName( "markdown" );
+	mChatInput->setShowFoldingRegion( true );
+	mChatInput->getDocument().getFoldRangeService().setEnabled( true );
+	mChatInput->setFoldDrawable( findIcon( "chevron-down", PixelDensity::dpToPxI( 12 ) ) );
+	mChatInput->setFoldedDrawable( findIcon( "chevron-right", PixelDensity::dpToPxI( 12 ) ) );
+
+	mChatInput->setSyntaxDefinition( markdown );
+
+	mChatRun = find<UIPushButton>( "llm_run" );
+	mChatRun->onClick( [this]( auto ) { execute( "ai-prompt" ); } );
+
+	mChatStop = find<UIPushButton>( "llm_stop" );
+	mChatStop->onClick( [this]( auto ) { execute( "ai-prompt-stop" ); } );
+
+	mChatUserRole = find<UIPushButton>( "llm_user" );
+	mChatUserRole->onClick( [this]( auto ) {
+		if ( mChatUserRole->getText() == mChatUserRole->i18n( "user", "User" ) ) {
+			mChatUserRole->setText( mChatUserRole->i18n( "assistant", "Assistant" ) );
+		} else if ( mChatUserRole->getText() == mChatUserRole->i18n( "assistant", "Assistant" ) ) {
+			mChatUserRole->setText( mChatUserRole->i18n( "system", "System" ) );
+		} else if ( mChatUserRole->getText() == mChatUserRole->i18n( "system", "System" ) ) {
+			mChatUserRole->setText( mChatUserRole->i18n( "user", "User" ) );
+		}
+	} );
+
+	mChatPrivate = find<UISelectButton>( "llm_private_chat" );
+	mChatPrivate->on( Event::OnValueChange,
+					  [this]( auto ) { mChatIsPrivate = mChatPrivate->isSelected(); } );
+
+	auto setCmd = [this]( const std::string& name, const CommandCallback& cb ) {
+		setCommand( name, cb );
+		mChatInput->getDocument().setCommand( name, cb );
+	};
+
+	setCmd( "ai-settings", [this] {
 		if ( getPlugin() )
 			getPlugin()->getPluginContext()->focusOrLoadFile( getPlugin()->getFileConfigPath() );
 	} );
 
-	mChatInput->getDocument().setCommand( "ai-add-chat", [this] {
+	setCmd( "ai-add-chat", [this] {
 		if ( mChatInput->getDocument().isEmpty() )
 			return;
 
@@ -222,7 +265,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) : UILinearLayout(), mManager( man
 		mChatInput->setFocus();
 	} );
 
-	mChatInput->getDocument().setCommand( "ai-prompt", [this] {
+	setCmd( "ai-prompt", [this] {
 		// "ai-prompt-stop"
 		if ( mRequest ) {
 			mRequest->cancel();
@@ -249,16 +292,16 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) : UILinearLayout(), mManager( man
 			}
 		}
 
-		mChatInput->getDocument().execute( "ai-add-chat" );
+		execute( "ai-add-chat" );
 		doRequest();
 	} );
 
-	mChatInput->getDocument().setCommand( "ai-prompt-stop", [this] {
+	setCmd( "ai-prompt-stop", [this] {
 		if ( mRequest )
 			mRequest->cancel();
 	} );
 
-	mChatInput->getDocument().setCommand( "ai-clone-chat", [this] {
+	setCmd( "ai-clone-chat", [this] {
 		if ( getPlugin() == nullptr )
 			return;
 		auto chats = findAllByClass( "llm_conversation" );
@@ -275,45 +318,33 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) : UILinearLayout(), mManager( man
 		chatUI->setFocus();
 	} );
 
-	mChatInput->getDocument().setCommand( "ai-chat-history", [this] { showChatHistory(); } );
+	setCmd( "ai-save-chat", [this] { saveChat(); } );
 
-	mChatAdd = find<UIPushButton>( "llm_add_chat" );
-	mChatAdd->onClick( [this]( auto ) { mChatInput->getDocument().execute( "ai-add-chat" ); } );
+	setCmd( "ai-chat-history", [this] { showChatHistory(); } );
 
-	const auto& markdown = SyntaxDefinitionManager::instance()->getByLSPName( "markdown" );
-	mChatInput->setShowFoldingRegion( true );
-	mChatInput->getDocument().getFoldRangeService().setEnabled( true );
-	mChatInput->setFoldDrawable( findIcon( "chevron-down", PixelDensity::dpToPxI( 12 ) ) );
-	mChatInput->setFoldedDrawable( findIcon( "chevron-right", PixelDensity::dpToPxI( 12 ) ) );
+	setCmd( "ai-toggle-private-chat", [this] { mChatPrivate->toggleSelection(); } );
 
-	mChatInput->setSyntaxDefinition( markdown );
-
-	mChatRun = find<UIPushButton>( "llm_run" );
-	mChatRun->onClick( [this]( auto ) { mChatInput->getDocument().execute( "ai-prompt" ); } );
-
-	mChatStop = find<UIPushButton>( "llm_stop" );
-	mChatStop->onClick( [this]( auto ) { mChatInput->getDocument().execute( "ai-prompt-stop" ); } );
-
-	mChatUserRole = find<UIPushButton>( "llm_user" );
-	mChatUserRole->onClick( [this]( auto ) {
-		if ( mChatUserRole->getText() == mChatUserRole->i18n( "user", "User" ) ) {
-			mChatUserRole->setText( mChatUserRole->i18n( "assistant", "Assistant" ) );
-		} else if ( mChatUserRole->getText() == mChatUserRole->i18n( "assistant", "Assistant" ) ) {
-			mChatUserRole->setText( mChatUserRole->i18n( "system", "System" ) );
-		} else if ( mChatUserRole->getText() == mChatUserRole->i18n( "system", "System" ) ) {
-			mChatUserRole->setText( mChatUserRole->i18n( "user", "User" ) );
-		}
+	setCmd( "ai-rename-chat", [this] {
+		UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::INPUT,
+												  i18n( "ai_rename_chat", "Rename Conversation" ) );
+		msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
+			std::string newName( msgBox->getTextInput()->getText().toUtf8() );
+			if ( newName.empty() || mSummary == newName )
+				return;
+			msgBox->closeWindow();
+			renameChat( newName );
+		} );
+		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+		msgBox->center();
+		auto summary = mSummary;
+		String::replaceAll( summary, "\n", " " );
+		String::trimInPlace( summary );
+		msgBox->getTextInput()->setText( summary );
+		msgBox->showWhenReady();
 	} );
 
-	mChatPrivate = find<UISelectButton>( "llm_private_chat" );
-	mChatPrivate->on( Event::OnValueChange,
-					  [this]( auto ) { mChatIsPrivate = mChatPrivate->isSelected(); } );
-
-	mChatInput->getDocument().setCommand( "ai-toggle-private-chat",
-										  [this] { mChatPrivate->toggleSelection(); } );
-
 	mChatClone = find<UIPushButton>( "llm_clone_chat" );
-	mChatClone->onClick( [this]( auto ) { mChatInput->getDocument().execute( "ai-clone-chat" ); } );
+	mChatClone->onClick( [this]( auto ) { execute( "ai-clone-chat" ); } );
 
 	mChatHistory = find<UIPushButton>( "llm_chat_history" );
 	mChatHistory->onClick( [this]( auto ) { showChatHistory(); } );
@@ -344,18 +375,25 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) : UILinearLayout(), mManager( man
 	fillModelDropDownList( mModelDDL );
 
 	const auto appendShortcutToTooltip = [this]( UIPushButton* but, const std::string& cmd ) {
-		auto kb = mChatInput->getKeyBindings().getCommandKeybindString( cmd );
+		auto kb = getKeyBindings().getCommandKeybindString( cmd );
 		if ( kb.empty() )
 			return;
 		but->setTooltipText( but->getTooltipText() + " (" + kb + ")" );
 	};
 
-	mChatInput->getKeyBindings().addKeybindString( "mod+return", "ai-prompt" );
-	mChatInput->getKeyBindings().addKeybindString( "mod+shift+return", "ai-add-chat" );
-	mChatInput->getKeyBindings().addKeybindString( "mod+h", "ai-chat-history" );
-	mChatInput->getKeyBindings().addKeybindString( "mod+shift+c", "ai-clone-chat" );
-	mChatInput->getKeyBindings().addKeybindString( "mod+shift+s", "ai-settings" );
-	mChatInput->getKeyBindings().addKeybindString( "mod+shift+p", "ai-toggle-private-chat" );
+	const auto addKb = [this]( const std::string& kb, const std::string& cmd ) {
+		getKeyBindings().addKeybindString( kb, cmd );
+		mChatInput->addKeyBindingString( kb, cmd );
+	};
+
+	addKb( "mod+return", "ai-prompt" );
+	addKb( "mod+shift+return", "ai-add-chat" );
+	addKb( "mod+h", "ai-chat-history" );
+	addKb( "mod+shift+c", "ai-clone-chat" );
+	addKb( "mod+shift+s", "ai-settings" );
+	addKb( "mod+shift+p", "ai-toggle-private-chat" );
+	addKb( "mod+s", "ai-save-chat" );
+	addKb( "f2", "ai-rename-chat" );
 
 	appendShortcutToTooltip( mChatHistory, "ai-chat-history" );
 	appendShortcutToTooltip( mChatRun, "ai-prompt" );
@@ -364,9 +402,10 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) : UILinearLayout(), mManager( man
 	appendShortcutToTooltip( mChatClone, "ai-clone-chat" );
 	appendShortcutToTooltip( mChatSettings, "ai-settings" );
 	appendShortcutToTooltip( mChatPrivate, "ai-toggle-private-chat" );
+	appendShortcutToTooltip( mChatSave, "ai-save-chat" );
 
-	mChatInput->getKeyBindings().addKeybindString( "mod+keypad enter", "ai-prompt" );
-	mChatInput->getKeyBindings().addKeybindString( "mod+shift+keypad enter", "ai-add-chat" );
+	addKb( "mod+keypad enter", "ai-prompt" );
+	addKb( "mod+shift+keypad enter", "ai-add-chat" );
 }
 
 std::optional<LLMModel> LLMChatUI::getModel( const std::string& provider,
@@ -886,6 +925,8 @@ void LLMChatUI::doRequest() {
 					auto status = response.getStatus();
 					if ( status == Http::Response::Ok ) {
 						mSummary = req.getResponse();
+						String::trimInPlace( mSummary, '\n' );
+						String::trimInPlace( mSummary, ' ' );
 						runOnMainThread( [this] { updateTabTitle(); } );
 						saveChat();
 					}
@@ -1055,6 +1096,31 @@ void LLMChatUI::updateTabTitle() {
 	if ( !mSummary.empty() )
 		title += " - " + mSummary;
 	tab->setText( title );
+}
+
+static bool fsRenameFile( const std::string& fpath, const std::string& newFilePath ) {
+	try {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		std::filesystem::rename( String( fpath ).toWideString(),
+								 String( newFilePath ).toWideString() );
+#else
+		std::filesystem::rename( fpath, newFilePath );
+#endif
+	} catch ( const std::filesystem::filesystem_error& ) {
+		return false;
+	}
+
+	return true;
+}
+
+void LLMChatUI::renameChat( const std::string& newName ) {
+	auto oldPath = getNewFilePath( mUUID.toString(), mSummary );
+	auto newPath = getNewFilePath( mUUID.toString(), newName );
+	if ( fsRenameFile( oldPath, newPath ) ) {
+		mSummary = newName;
+		saveChat();
+		updateTabTitle();
+	}
 }
 
 UISplitter* LLMChatUI::getSplitter() const {

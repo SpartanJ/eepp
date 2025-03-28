@@ -1,5 +1,6 @@
 #include <cstring>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/system/parsermatcher.hpp>
 #include <eepp/system/patternmatcher.hpp>
 #include <eepp/system/regex.hpp>
 
@@ -76,6 +77,9 @@ PatternMatcher::State::State( PatternMatcher* pattern, bool ownPattern ) :
 				break;
 			case PatternType::PCRE:
 				mPattern = new RegEx( pattern->getPattern() );
+				break;
+			case PatternType::Parser:
+				mPattern = new ParserMatcher( pattern->getPattern() );
 				break;
 		}
 	} else {

@@ -11,7 +11,7 @@ namespace EE { namespace System {
 
 class EE_API PatternMatcher {
   public:
-	enum class PatternType { LuaPattern, PCRE };
+	enum class PatternType { LuaPattern, PCRE, Parser };
 
 	struct EE_API Range {
 		int start{ -1 };

@@ -1,12 +1,13 @@
 #pragma once
 
+#include "../pluginmanager.hpp"
 #include "llmchatcompletionrequest.hpp"
 #include "protocol.hpp"
 
-#include "../pluginmanager.hpp"
 #include <eepp/ui/uilinearlayout.hpp>
+#include <eepp/ui/widgetcommandexecuter.hpp>
 
-#include "nlohmann/json_fwd.hpp"
+#include <nlohmann/json_fwd.hpp>
 
 namespace EE { namespace UI {
 class UIWidget;
@@ -45,7 +46,7 @@ class LLMChat {
 	static LLMChat::Role stringToRole( UIPushButton* userBut );
 };
 
-class LLMChatUI : public UILinearLayout {
+class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
   public:
 	static LLMChatUI* New( PluginManager* manager ) { return eeNew( LLMChatUI, ( manager ) ); }
 
@@ -71,6 +72,12 @@ class LLMChatUI : public UILinearLayout {
 
 	void updateTabTitle();
 
+	void renameChat( const std::string& newName );
+
+	virtual Uint32 onKeyDown( const KeyEvent& event ) {
+		return WidgetCommandExecuter::onKeyDown( event );
+	}
+
   protected:
 	UUID mUUID;
 	std::string mSummary;
@@ -86,6 +93,7 @@ class LLMChatUI : public UILinearLayout {
 	UIPushButton* mChatStop{ nullptr };
 	UIPushButton* mChatHistory{ nullptr };
 	UIPushButton* mChatClone{ nullptr };
+	UIPushButton* mChatSave{ nullptr };
 	UIPushButton* mRefreshModels{ nullptr };
 	UISelectButton* mChatPrivate{ nullptr };
 	UIScrollView* mChatScrollView{ nullptr };

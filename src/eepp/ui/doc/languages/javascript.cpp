@@ -1,3 +1,4 @@
+#include <eepp/system/parsermatcher.hpp>
 #include <eepp/ui/doc/languages/javascript.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 
@@ -18,9 +19,7 @@ void addJavaScript() {
 			  { { "/[%+%-%*%^%!%=%&%|%?%:%;%,%(%[%{%<%>%\\%\"].*%f[/]",
 				  "/[igmsuyd\n]?[igmsuyd\n]?[igmsuyd\n]?", "\\" },
 				"string" },
-			  { { "0x[%da-fA-F]+" }, "number" },
-			  { { "-?%d+[%d%.eE]*" }, "number" },
-			  { { "-?%.?%d+" }, "number" },
+			  { { "js_number_parser" }, "number", "", SyntaxPatternMatchType::Parser },
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
 			  { { "([%w_][%w_]+)%.([%w_][%w%d_]*)%s*(=)%s*(function)" },
 				{ "normal", "keyword2", "function", "operator", "keyword" } },

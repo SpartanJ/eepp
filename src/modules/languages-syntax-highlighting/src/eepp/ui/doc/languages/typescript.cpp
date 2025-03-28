@@ -1,3 +1,4 @@
+#include <eepp/system/parsermatcher.hpp>
 #include <eepp/ui/doc/languages/typescript.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 
@@ -18,9 +19,7 @@ void addTypeScript() {
 			  { { "/[%+%-%*%^%!%=%&%|%?%:%;%,%(%[%{%<%>%\\%\"].*%f[/]",
 				  "/[igmsuyd\n]?[igmsuyd\n]?[igmsuyd\n]?", "\\" },
 				"string" },
-			  { { "0x[%da-fA-F]+" }, "number" },
-			  { { "-?%d+[%d%.eE]*" }, "number" },
-			  { { "-?%.?%d+" }, "number" },
+			  { { "js_number_parser" }, "number", "", SyntaxPatternMatchType::Parser },
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
 			  { { "(interface%s)([%a_][%w_]*)" }, { "normal", "keyword", "keyword2" } },
 			  { { "(type%s)([%a_][%w_]*)" }, { "normal", "keyword", "keyword2" } },

@@ -236,15 +236,26 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 
 			for ( const auto& filter : pathFilters ) {
 				bool matches = String::globMatch( fsv, filter.first );
-				if ( ( matches && filter.second ) || ( !matches && !filter.second ) ) {
+
+				// if it's inverted and the file matches with the glob it must be ignored/excluded
+				if ( filter.second && matches ) {
 					skip = true;
 					break;
 				}
+
+				// if the file is not inverted and the file matches with the glob, then it must be
+				// not skiped
+				if ( !filter.second && matches ) {
+					skip = false;
+					break;
+				}
 			}
+
 			if ( skip ) {
 				search[pos++] = false;
 				continue;
 			}
+
 			search[pos++] = true;
 			count++;
 		}

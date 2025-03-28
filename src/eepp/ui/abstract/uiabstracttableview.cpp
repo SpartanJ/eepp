@@ -146,7 +146,7 @@ void UIAbstractTableView::resetColumnData() {
 
 void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 	Model* model = getModel();
-	if ( !model || mSize.getWidth() <= 0 )
+	if ( !model )
 		return;
 
 	size_t count = model->columnCount();

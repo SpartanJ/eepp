@@ -1,5 +1,6 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/system/parsermatcher.hpp>
 #include <eepp/system/regex.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/syntaxtokenizer.hpp>
@@ -110,10 +111,12 @@ static NonEscapedMatch findNonEscaped( const std::string& text, const std::strin
 	eeASSERT( !pattern.empty() );
 	if ( pattern.empty() )
 		return {};
-	std::variant<RegEx, LuaPattern> wordsVar =
-		matchType == SyntaxPatternMatchType::RegEx
-			? std::variant<RegEx, LuaPattern>( RegEx( pattern ) )
-			: std::variant<RegEx, LuaPattern>( LuaPattern( pattern ) );
+	std::variant<RegEx, LuaPattern, ParserMatcher> wordsVar =
+		matchType == SyntaxPatternMatchType::LuaPattern
+			? std::variant<RegEx, LuaPattern, ParserMatcher>( LuaPattern( pattern ) )
+			: ( matchType == SyntaxPatternMatchType::RegEx
+					? std::variant<RegEx, LuaPattern, ParserMatcher>( RegEx( pattern ) )
+					: std::variant<RegEx, LuaPattern, ParserMatcher>( ParserMatcher( pattern ) ) );
 	PatternMatcher& words =
 		std::visit( []( auto& patternType ) -> PatternMatcher& { return patternType; }, wordsVar );
 	int start, end;
@@ -341,12 +344,17 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 			const SyntaxPattern& pattern = curState.currentSyntax->getPatterns()[patternIndex];
 			if ( i != 0 && pattern.patterns[0][0] == '^' )
 				continue;
-			patternStr =
-				pattern.patterns[0][0] == '^' ? pattern.patterns[0] : "^" + pattern.patterns[0];
-			std::variant<RegEx, LuaPattern> wordsVar =
-				pattern.matchType == SyntaxPatternMatchType::RegEx
-					? std::variant<RegEx, LuaPattern>( RegEx( patternStr ) )
-					: std::variant<RegEx, LuaPattern>( LuaPattern( patternStr ) );
+			patternStr = pattern.matchType != SyntaxPatternMatchType::Parser
+							 ? pattern.patterns[0][0] == '^' ? pattern.patterns[0]
+															 : "^" + pattern.patterns[0]
+							 : pattern.patterns[0];
+			std::variant<RegEx, LuaPattern, ParserMatcher> wordsVar =
+				pattern.matchType == SyntaxPatternMatchType::LuaPattern
+					? std::variant<RegEx, LuaPattern, ParserMatcher>( LuaPattern( patternStr ) )
+					: ( pattern.matchType == SyntaxPatternMatchType::RegEx
+							? std::variant<RegEx, LuaPattern, ParserMatcher>( RegEx( patternStr ) )
+							: std::variant<RegEx, LuaPattern, ParserMatcher>(
+								  ParserMatcher( patternStr ) ) );
 			PatternMatcher& words = std::visit(
 				[]( auto& patternType ) -> PatternMatcher& { return patternType; }, wordsVar );
 			if ( !words.isValid() ) // Skip invalid patterns

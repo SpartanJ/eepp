@@ -1,9 +1,11 @@
+#include <eepp/system/parsermatcher.hpp>
 #include <eepp/ui/doc/languages/cpp.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addCPP() {
+	ParserMatcherManager::instance()->registerBaseParsers();
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -23,19 +25,13 @@ void addCPP() {
 			  { { "'", "'", "\\" }, "string" },
 			  { { "^%s*(#include)%s+([<%\"][%w%d%.%\\%/%_%-]+[>%\"])" },
 				{ "keyword", "keyword", "literal" } },
-			  { { "^%s*(#e?l?n?d?ifn?d?e?f?)%s+" }, { "keyword", "keyword", "literal" } },
-			  { { "^%s*(#define)%s*" }, { "keyword", "keyword", "literal" } },
-			  { { "^%s*(#else)%s*" }, { "keyword", "keyword", "literal" } },
-			  { { "^%s*#", "[^\\]\n" }, "comment" },
-			  { { "-?0x%x+" }, "number" },
-			  { { "-?0b[01]+" }, "number" },
-			  { { "-?%d+[%d%.eE]*f?" }, "number" },
-			  { { "-?%.?%d+f?" }, "number" },
+			  { { "cpp_number_parser" }, "number", "", SyntaxPatternMatchType::Parser },
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "std%:%:[%w_]*" }, "keyword2" },
 			  { { "(%[)(%[)(%a[%w_]+)(%])(%])" },
 				{ "normal", "keyword", "keyword3", "keyword2", "keyword3", "keyword" } },
+			  { { "^%s*#[%a_][%w_]*" }, "symbol" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 
 		  },
@@ -98,6 +94,15 @@ void addCPP() {
 			  { "bitor", "keyword" },		 { "thread_local", "keyword" },
 			  { "uint64_t", "keyword2" },	 { "char32_t", "keyword2" },
 			  { "alignas", "keyword" },		 { "export", "keyword" },
+
+			  { "#if", "keyword" },			 { "#ifdef", "keyword" },
+			  { "#ifndef", "keyword" },		 { "#else", "keyword" },
+			  { "#elif", "keyword" },		 { "#elifdef", "keyword" }, // C++23
+			  { "#elifndef", "keyword" },								// C++23
+			  { "#endif", "keyword" },		 { "#include", "keyword" },
+			  { "#define", "keyword" },		 { "#undef", "keyword" },
+			  { "#line", "keyword" },		 { "#error", "keyword" },
+			  { "#pragma", "keyword" },
 
 		  },
 		  "//",

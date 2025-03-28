@@ -1,9 +1,11 @@
+#include <eepp/system/parsermatcher.hpp>
 #include <eepp/ui/doc/languages/c.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addC() {
+	ParserMatcherManager::instance()->registerBaseParsers();
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -14,17 +16,12 @@ void addC() {
 			  { { "/%*", "%*/" }, "comment" },
 			  { { "^%s*(#include)%s+([<%\"][%w%d%.%\\%/%_%-]+[>%\"])" },
 				{ "keyword", "keyword", "literal" } },
-			  { { "^%s*(#e?l?n?d?ifn?d?e?f?)%s+" }, { "keyword", "keyword", "literal" } },
-			  { { "^%s*(#define)%s*" }, { "keyword", "keyword", "literal" } },
-			  { { "^%s*(#else)%s*" }, { "keyword", "keyword", "literal" } },
-			  { { "^%s*#", "[^\\]\n" }, "comment" },
 			  { { "\"", "[\"\n]", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },
-			  { { "-?0x%x+" }, "number" },
-			  { { "-?%d+[%d%.eE]*f?" }, "number" },
-			  { { "-?%.?%d+f?" }, "number" },
+			  { { "c_number_parser" }, "number", "", SyntaxPatternMatchType::Parser },
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
+			  { { "^%s*#[%a_][%w_]*" }, "symbol" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 
 		  },
@@ -45,6 +42,11 @@ void addC() {
 			  { "uint8_t", "keyword2" },  { "uint64_t", "keyword2" }, { "case", "keyword" },
 			  { "if", "keyword" },		  { "do", "keyword" },
 
+			  { "#if", "keyword" },		  { "#ifdef", "keyword" },	  { "#ifndef", "keyword" },
+			  { "#elif", "keyword" },	  { "#else", "keyword" },	  { "#endif", "keyword" },
+			  { "#define", "keyword" },	  { "#undef", "keyword" },	  { "#include", "keyword" },
+			  { "#line", "keyword" },	  { "#error", "keyword" },	  { "#pragma", "keyword" },
+			  { "#warning ", "keyword" }, { "#elifdef ", "keyword" }, { "#elifndef ", "keyword" },
 		  },
 		  "//",
 		  {}

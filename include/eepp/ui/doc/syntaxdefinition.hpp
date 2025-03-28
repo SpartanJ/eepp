@@ -26,7 +26,7 @@ template <typename T> static auto toSyntaxStyleTypeV( const std::vector<T>& s ) 
 		return std::vector<SyntaxStyleType>{};
 }
 
-enum class SyntaxPatternMatchType { LuaPattern, RegEx };
+enum class SyntaxPatternMatchType { LuaPattern, RegEx, Parser };
 
 struct EE_API SyntaxPattern {
 	static UnorderedMap<SyntaxStyleType, std::string> SyntaxStyleTypeCache;
