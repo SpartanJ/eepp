@@ -3609,6 +3609,12 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		if ( mFallbackFont )
 			FontManager::instance()->addFallbackFont( mFallbackFont );
 
+		if ( mConfig.ui.fallbackFont != "fonts/DroidSansFallbackFull.ttf" ) {
+			mUserFallbackFont = loadFont( "fallback-font", mConfig.ui.fallbackFont );
+			if ( mUserFallbackFont )
+				FontManager::instance()->addFallbackFont( mUserFallbackFont );
+		}
+
 		Log::info( "Fonts loaded in: %s", fontsClock.getElapsedTime().toString() );
 
 		mAsyncResourcesLoaded = true;

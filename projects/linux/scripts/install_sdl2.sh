@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define SDL version and download URL
-SDL_VERSION="2.30.9"
+SDL_VERSION="2.32.2"
 SDL_URL="https://libsdl.org/release/SDL2-${SDL_VERSION}.zip"
 ARCH="x86_64" # Default architecture for host
 
@@ -30,7 +30,8 @@ install_dependencies() {
                             libxss-dev \
                             libxt-dev \
                             libxv-dev \
-                            libxxf86vm-dev || exit
+                            libxxf86vm-dev \
+                            libdecor-0-dev || exit
 }
 
 # Function to install cross-compile dependencies for aarch64
@@ -57,7 +58,8 @@ install_cross_dependencies() {
                             libxss-dev:arm64 \
                             libxt-dev:arm64 \
                             libxv-dev:arm64 \
-                            libxxf86vm-dev:arm64 || exit
+                            libxxf86vm-dev:arm64 \
+                            libdecor-0-dev:arm64 || exit
 }
 
 # Function to configure for cross-compilation
@@ -67,7 +69,7 @@ configure_for_aarch64() {
     export AR=aarch64-linux-gnu-ar
     export RANLIB=aarch64-linux-gnu-ranlib
     export STRIP=aarch64-linux-gnu-strip
-    ./configure --host=aarch64-linux-gnu --prefix=/usr --enable-video-x11 --enable-video-wayland --enable-wayland-shared || exit
+    ./configure --host=aarch64-linux-gnu --prefix=/usr --enable-video-x11 --enable-video-wayland --enable-wayland-shared --enable-libdecor --enable-libdecor-shared || exit
 }
 
 # Parse options
@@ -100,7 +102,7 @@ if [ "$ARCH" == "aarch64" ]; then
     configure_for_aarch64
 else
     echo "Configuring SDL2 for host system..."
-    ./configure --enable-video-x11 --enable-video-wayland --enable-wayland-shared || exit
+    ./configure --enable-video-x11 --enable-video-wayland --enable-wayland-shared --enable-libdecor --enable-libdecor-shared || exit
 fi
 
 # Build and install SDL2

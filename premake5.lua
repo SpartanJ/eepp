@@ -152,10 +152,12 @@ os_links = { }
 backends = { }
 static_backends = { }
 backend_selected = false
-remote_sdl2_version = "SDL2-2.30.9"
-remote_sdl2_devel_src_url = "https://libsdl.org/release/SDL2-2.30.9.zip"
-remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-2.30.9-VC.zip"
-remote_sdl2_devel_mingw_url = "https://www.libsdl.org/release/SDL2-devel-2.30.9-mingw.zip"
+remote_sdl2_version_number = "2.32.2"
+remote_sdl2_version = "SDL2-" .. remote_sdl2_version_number
+remote_sdl2_devel_src_url = "https://libsdl.org/release/" .. remote_sdl2_version .. ".zip"
+remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-" .. remote_sdl2_version_number .. "-VC.zip"
+remote_sdl2_devel_mingw_url = "https://www.libsdl.org/release/SDL2-devel-" .. remote_sdl2_version_number .. "-mingw.zip"
+
 remote_sdl2_arm64_cross_tools_path = "/usr/local/cross-tools/aarch64-w64-mingw32"
 
 function incdirs( dirs )
