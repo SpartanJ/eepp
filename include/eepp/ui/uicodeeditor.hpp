@@ -792,6 +792,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	bool isCursorBlinkingAfterAMinuteOfInactivityDisabled() const;
 
+	void setAllowSelectingTextFromGutter( bool allow );
+
+	bool allowSelectingTextFromGutter() const;
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -841,6 +845,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mFoldsIsFirst{ true };
 	bool mEnableFlashCursor{ false };
 	bool mDisableCursorBlinkingAfterAMinuteOfInactivity{ true };
+	bool mAllowSelectingTextFromGutter{ true };
 	Uint32 mTabWidth;
 	std::atomic<size_t> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;

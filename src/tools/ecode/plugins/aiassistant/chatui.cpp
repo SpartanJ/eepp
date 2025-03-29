@@ -138,7 +138,7 @@ DropDownList.role_ui {
 			<TextView text="@string(ai_llm_presentation, What can I help with?)" font-size="24dp" />
 		</vbox>
 	</RelativeLayout>
-	<RelativeLayout lw="mp" class="llm_controls">
+	<RelativeLayout lw="mp" class="llm_controls" clip="true">
 		<CodeEditor class="llm_chat_input" lw="mp" lh="mp" />
 		<hbox lw="mp" lh="wc" layout_gravity="bottom|left" layout_margin="8dp" clip="false">
 			<PushButton id="llm_user" class="llm_button" text="@string(user, User)" min-width="60dp" margin-right="8dp" />
@@ -220,6 +220,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mChatInput->getDocument().getFoldRangeService().setEnabled( true );
 	mChatInput->setFoldDrawable( findIcon( "chevron-down", PixelDensity::dpToPxI( 12 ) ) );
 	mChatInput->setFoldedDrawable( findIcon( "chevron-right", PixelDensity::dpToPxI( 12 ) ) );
+	mChatInput->setAllowSelectingTextFromGutter( false );
 
 	mChatInput->setSyntaxDefinition( markdown );
 
@@ -311,10 +312,12 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 			return;
 		}
 		auto* chatUI = getPlugin()->newAIAssistant();
-		chatUI->unserialize( serialize() );
+		auto input = chatUI->unserialize( serialize() );
 		chatUI->mUUID = UUID();
 		chatUI->mSummary += i18n( "chat_cloned", " (cloned)" );
-		updateTabTitle();
+		if ( !input.empty() )
+			chatUI->mChatInput->getDocument().textInput( input );
+		chatUI->updateTabTitle();
 		chatUI->setFocus();
 	} );
 
@@ -517,7 +520,9 @@ void LLMChatUI::showChatHistory() {
 		std::string data;
 		FileSystem::fileGet( path.toString(), data );
 		nlohmann::json j = nlohmann::json::parse( data, nullptr, false );
-		chatUI->unserialize( j );
+		auto input = chatUI->unserialize( j );
+		if ( !input.empty() )
+			chatUI->mChatInput->getDocument().textInput( input );
 		chatUI->setFocus();
 	};
 
@@ -737,10 +742,12 @@ nlohmann::json LLMChatUI::serialize() {
 	j["provider"] = mCurModel.provider;
 	j["timestamp"] = mTimestamp;
 	j["summary"] = mSummary;
+	std::string inputText( mChatInput->getDocument().getText().toUtf8() );
+	j["input"] = std::move( inputText );
 	return j;
 }
 
-void LLMChatUI::unserialize( const nlohmann::json& payload ) {
+std::string LLMChatUI::unserialize( const nlohmann::json& payload ) {
 	auto uuid = UUID::fromString( payload.value( "uuid", "" ) );
 	if ( uuid )
 		mUUID = *uuid;
@@ -755,7 +762,7 @@ void LLMChatUI::unserialize( const nlohmann::json& payload ) {
 	}
 
 	if ( mCurModel.name.empty() )
-		return;
+		return payload.value( "input", "" );
 
 	if ( !selectModel( mModelDDL, mCurModel ) )
 		fillModelDropDownList( mModelDDL );
@@ -770,6 +777,8 @@ void LLMChatUI::unserialize( const nlohmann::json& payload ) {
 	}
 
 	updateTabTitle();
+
+	return payload.value( "input", "" );
 }
 
 LLMModel LLMChatUI::findModel( const std::string& provider, const std::string& model ) {
@@ -843,7 +852,7 @@ void LLMChatUI::doRequest() {
 	auto* thinking = editor->findByClass<UIImage>( "thinking" );
 	auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
 	thinking->setVisible( true );
-	thinking->setPosition( { PixelDensity::dpToPx( 16 ), PixelDensity::dpToPx( 4 ) } );
+	thinking->setPosition( { PixelDensity::dpToPx( 8 ), PixelDensity::dpToPx( 4 ) } );
 	thinking->setInterval( [thinking] { thinking->rotate( 360 / 32 ); }, Seconds( 0.125 ),
 						   thinkingID );
 
@@ -1035,6 +1044,7 @@ void LLMChatUI::addChat( LLMChat::Role role, std::string conversation ) {
 	auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
 	editor->getDocument().textInput( String::fromUtf8( conversation ) );
 	editor->setCursorVisible( false );
+	editor->setAllowSelectingTextFromGutter( false );
 	resizeToFit( editor );
 }
 

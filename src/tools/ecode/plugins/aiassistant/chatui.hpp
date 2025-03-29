@@ -52,7 +52,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	nlohmann::json serialize();
 
-	void unserialize( const nlohmann::json& payload );
+	std::string unserialize( const nlohmann::json& payload ); // returns the input value
 
 	UISplitter* getSplitter() const;
 
@@ -77,6 +77,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	virtual Uint32 onKeyDown( const KeyEvent& event ) {
 		return WidgetCommandExecuter::onKeyDown( event );
 	}
+
+	UICodeEditor* getChatInput() const { return mChatInput; }
 
   protected:
 	UUID mUUID;

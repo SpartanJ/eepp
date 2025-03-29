@@ -140,6 +140,8 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	refreshTag();
 	mDocView.setOnVisibleLineCountChange(
 		[this] { sendCommonEvent( Event::OnVisibleLinesCountChange ); } );
+	mDocView.setOnFoldUnfoldCb(
+		[this]( auto, auto ) { sendCommonEvent( Event::OnFoldUnfoldRange ); } );
 	mVScrollBar = UIScrollBar::NewVertical();
 	mVScrollBar->setParent( this );
 	mVScrollBar->addEventListener( Event::OnSizeChange,
@@ -338,6 +340,13 @@ void UICodeEditor::draw() {
 		drawLineEndings( lineRange, startScroll, lineHeight );
 	}
 
+	const bool canCull = !isMeOrParentTreeScaledOrRotated();
+	const auto maxScreenY = isClipped()
+								? eemin( getUISceneNode()->getPixelsSize().getHeight(),
+										 mScreenPos.y + mSize.getHeight() ) +
+									  lineHeight
+								: getUISceneNode()->getPixelsSize().getHeight() + lineHeight;
+
 	for ( auto i = lineRange.first; i <= lineRange.second; i++ ) {
 		if ( !mDocView.isLineVisible( i ) )
 			continue;
@@ -345,6 +354,14 @@ void UICodeEditor::draw() {
 		Vector2f curScroll(
 			{ startScroll.x,
 			  static_cast<Float>( startScroll.y + mDocView.getLineYOffset( i, lineHeight ) ) } );
+
+		if ( canCull ) {
+			if ( curScroll.y < -lineHeight && !mDocView.isWrappedLine( i ) )
+				continue;
+
+			if ( curScroll.y > maxScreenY )
+				break;
+		}
 
 		for ( auto& plugin : mPlugins )
 			plugin->drawBeforeLineText( this, i, curScroll, charSize, lineHeight );
@@ -1597,8 +1614,9 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 						mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
 				mDoc->selectLine();
 			} else {
-				mDoc->setSelection( textScreenPos );
-				if ( downOverGutter )
+				if ( !downOverGutter || mAllowSelectingTextFromGutter )
+					mDoc->setSelection( textScreenPos );
+				if ( downOverGutter && mAllowSelectingTextFromGutter )
 					mDoc->selectLine();
 			}
 		} else if ( !mDoc->hasSelection() ) {
@@ -1662,10 +1680,11 @@ Uint32 UICodeEditor::onMouseMove( const Vector2i& position, const Uint32& flags 
 	}
 
 	Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
+	bool downOverGutter = localPos.x < mPaddingPx.Left + getGutterWidth();
 
 	if ( !mMouseDownMinimap && isTextSelectionEnabled() &&
-		 !getUISceneNode()->getEventDispatcher()->isNodeDragging() && NULL != mFont &&
-		 mMouseDown ) {
+		 !getUISceneNode()->getEventDispatcher()->isNodeDragging() && NULL != mFont && mMouseDown &&
+		 ( !downOverGutter || mAllowSelectingTextFromGutter ) ) {
 		TextRange selection = mDoc->getSelection();
 		selection.setStart( resolveScreenPosition( position.asFloat() ) );
 		mDoc->setSelection( selection );
@@ -1794,7 +1813,9 @@ Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i& position, const Uint32&
 			return 1;
 	}
 
-	if ( isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) ) {
+	Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
+	if ( isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) &&
+		 localPos.x >= mPaddingPx.Left + getGutterWidth() && localPos.y >= mPluginsTopSpace ) {
 		mDoc->selectWord( false );
 		mLastDoubleClick.restart();
 		checkColorPickerAction();
@@ -5254,7 +5275,8 @@ bool UICodeEditor::isNotMonospace() const {
 void UICodeEditor::updateMouseCursor( const Vector2f& position ) {
 	if ( getScreenBounds().contains( position ) ) {
 		auto localPos( convertToNodeSpace( position ) );
-		bool overGutterOrTop = localPos.x < getGutterWidth() || localPos.y < mPluginsTopSpace;
+		bool overGutterOrTop =
+			localPos.x < mPaddingPx.Left + getGutterWidth() || localPos.y < mPluginsTopSpace;
 		getUISceneNode()->setCursor(
 			mHandShown ? Cursor::Hand
 					   : ( !overGutterOrTop && !mLocked ? Cursor::IBeam : Cursor::Arrow ) );
@@ -5313,6 +5335,14 @@ void UICodeEditor::setDisableCursorBlinkingAfterAMinuteOfInactivity(
 
 bool UICodeEditor::isCursorBlinkingAfterAMinuteOfInactivityDisabled() const {
 	return mDisableCursorBlinkingAfterAMinuteOfInactivity;
+}
+
+void UICodeEditor::setAllowSelectingTextFromGutter( bool allow ) {
+	mAllowSelectingTextFromGutter = allow;
+}
+
+bool UICodeEditor::allowSelectingTextFromGutter() const {
+	return mAllowSelectingTextFromGutter;
 }
 
 }} // namespace EE::UI

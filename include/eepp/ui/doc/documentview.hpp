@@ -157,6 +157,8 @@ class EE_API DocumentView {
 
 	void setOnVisibleLineCountChange( std::function<void()> onVisibleLinesCountChangeCb );
 
+	void setOnFoldUnfoldCb( std::function<void(Int64 docIdx, bool unfolded)> onFoldUnfoldCb );
+
   protected:
 	std::shared_ptr<TextDocument> mDoc;
 	FontStyleConfig mFontStyle;
@@ -171,6 +173,7 @@ class EE_API DocumentView {
 	bool mUnderConstruction{ false };
 	bool mUpdatingFoldRegions{ false };
 	std::function<void()> mOnVisibleLineCountChange;
+	std::function<void(Int64 docIdx, bool unfolded)> mOnFoldUnfoldCb;
 
 	void changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visible,
 						   bool recomputeOffset = true, bool recomputeLineToVisibleIndex = true );

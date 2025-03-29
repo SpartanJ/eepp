@@ -814,4 +814,9 @@ void DocumentView::setOnVisibleLineCountChange(
 	mOnVisibleLineCountChange = std::move( onVisibleLinesCountChangeCb );
 }
 
+void DocumentView::setOnFoldUnfoldCb(
+	std::function<void( Int64 docIdx, bool unfolded )> onFoldUnfoldCb ) {
+	mOnFoldUnfoldCb = std::move( onFoldUnfoldCb );
+}
+
 }}} // namespace EE::UI::Doc

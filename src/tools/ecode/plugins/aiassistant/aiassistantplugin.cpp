@@ -186,17 +186,23 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 					filePath = conversationsPath + *foundIt;
 			}
 
+			std::string inputText;
 			if ( !filePath.empty() ) {
 				std::string data;
 				FileSystem::fileGet( filePath, data );
 				if ( !data.empty() ) {
 					auto j = nlohmann::json::parse( data, nullptr, false );
-					if ( !j.empty() )
-						chatUI->unserialize( j );
+					if ( !j.empty() ){
+						inputText = chatUI->unserialize( j );
+					}
 				}
 			}
 
-			chatUI->on( Event::OnDataChanged, [chatUI]( auto ) { chatUI->updateTabTitle(); } );
+			chatUI->on( Event::OnDataChanged, [chatUI, inputText = std::move( inputText )]( auto ) {
+				chatUI->updateTabTitle();
+				if ( chatUI->getChatInput() )
+					chatUI->getChatInput()->getDocument().textInput( inputText );
+			} );
 		}
 
 		return TabWidgetData{ chatUI, getPluginContext()->findIcon( "code-ai" ),
