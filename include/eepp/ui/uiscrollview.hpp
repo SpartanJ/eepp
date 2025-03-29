@@ -50,6 +50,10 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 
 	void setAutoSetClipStep( bool setClipStep );
 
+	bool isScrollAnchored() const;
+
+	void setAnchorScroll( bool anchor );
+
   protected:
 	ScrollViewType mViewType;
 	ScrollBarMode mVScrollMode;
@@ -61,6 +65,8 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 	Uint32 mSizeChangeCb;
 	Uint32 mPosChangeCb;
 	bool mAutoSetClipStep{ true };
+	bool mAnchorScroll{ false };
+	Sizef mLastScrollViewSize;
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 

@@ -79,6 +79,7 @@ void UIScrollView::onChildCountChange( Node* child, const bool& removed ) {
 		mPosChangeCb = mScrollView->on( Event::OnPositionChange, [this]( auto event ) {
 			onScrollViewPositionChange( event );
 		} );
+		mLastScrollViewSize = mScrollView->getPixelsSize();
 
 		containerUpdate();
 	}
@@ -199,7 +200,7 @@ void UIScrollView::containerUpdate() {
 						   ( mVScroll->isVisible() ? mVScroll->getSize().getWidth() : 0 ),
 					   mHScroll->getSize().getHeight() );
 
-	if ( mVScroll->isVisible() && 0 != mScrollView->getSize().getHeight() ){
+	if ( mVScroll->isVisible() && 0 != mScrollView->getSize().getHeight() ) {
 		mVScroll->setPageStep( mContainer->getSize().getHeight() /
 							   mScrollView->getSize().getHeight() );
 
@@ -237,7 +238,28 @@ void UIScrollView::onValueChangeCb( const Event* ) {
 }
 
 void UIScrollView::onScrollViewSizeChange( const Event* ) {
+	Float lastScrollWidth =
+		eemax( 0.f, mLastScrollViewSize.getWidth() - mContainer->getSize().getWidth() );
+	Float lastScrollHeight =
+		eemax( 0.f, mLastScrollViewSize.getHeight() - mContainer->getSize().getHeight() );
+	Float lastScrollX = mHScroll->getValue() * lastScrollWidth;
+	Float lastScrollY = mVScroll->getValue() * lastScrollHeight;
+
 	containerUpdate();
+
+	if ( mAnchorScroll ) {
+		Float scrollHeight = eemax( 0.f, mScrollView->getPixelsSize().getHeight() -
+											 mContainer->getSize().getHeight() );
+		Float valY = lastScrollY / scrollHeight;
+		mVScroll->setValue( valY );
+
+		Float scrollWidth = eemax( 0.f, mScrollView->getPixelsSize().getWidth() -
+											mContainer->getSize().getWidth() );
+		Float valX = lastScrollX / scrollWidth;
+		mHScroll->setValue( valX );
+	}
+
+	mLastScrollViewSize = mScrollView->getPixelsSize();
 }
 
 void UIScrollView::onScrollViewPositionChange( const Event* ) {
@@ -379,6 +401,14 @@ bool UIScrollView::isAutoSetClipStep() const {
 
 void UIScrollView::setAutoSetClipStep( bool setClipStep ) {
 	mAutoSetClipStep = setClipStep;
+}
+
+bool UIScrollView::isScrollAnchored() const {
+	return mAnchorScroll;
+}
+
+void UIScrollView::setAnchorScroll( bool anchor ) {
+	mAnchorScroll = anchor;
 }
 
 }} // namespace EE::UI

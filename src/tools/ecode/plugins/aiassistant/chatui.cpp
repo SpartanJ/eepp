@@ -3,8 +3,9 @@
 #include "../../notificationcenter.hpp"
 #include "aiassistantplugin.hpp"
 #include "chathistory.hpp"
-#include "eepp/ui/uiloader.hpp"
 
+#include <eepp/ui/uiloader.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
@@ -145,11 +146,10 @@ DropDownList.role_ui {
 			<!-- <PushButton class="llm_button" text="@string(attach, Attach)" tooltip="@string(attach, Attach)" icon="icon(attach, 14dp)" min-width="32dp" /> -->
 			<PushButton id="llm_chat_history" class="llm_button" text="@string(chat_history, Chat History)" tooltip="@string(chat_history, Chat History)" icon="icon(chat-history, 14dp)" min-width="32dp" />
 			<PushButton id="llm_settings_but" class="llm_button" text="@string(settings, Settings)" tooltip="@string(settings, Settings)" icon="icon(settings, 14dp)" min-width="32dp" />
-			<PushButton id="llm_clone_chat" class="llm_button" text="@string(clone_current_conversation, Clone Current Conversation)" tooltip="@string(clone_current_chat, Clone Current Chat)" icon="icon(file-copy, 12dp)" min-width="32dp" />
-			<PushButton id="llm_save_but" class="llm_button" tooltip="@string(save_conversation, Save Conversation)" icon="icon(document-save, 14dp)" min-width="32dp" />
+			<PushButton id="llm_more" class="llm_button" icon="icon(more-fill, 14dp)" min-width="32dp" />
 			<hbox lw="0" lw8="1" lh="mp" layout_gravity="center" padding-left="8dp" padding-right="8dp">
 				<DropDownList class="model_ui" lw="0" lw8="1" selected-index="0"></DropDownList>
-				<PushButton id="refresh_model_ui" text="@string(refresh_model_ui, Refresh)" icon="icon(refresh, 14dp)" />
+				<PushButton id="refresh_model_ui" tooltip="@string(refresh_model_ui, Refresh Local Models)" icon="icon(refresh, 14dp)" />
 			</hbox>
 			<SelectButton id="llm_private_chat" class="llm_button" tooltip="@string(private_chat, Toggle Private Chat)" icon="icon(chat-private, 14dp)" min-width="32dp" margin-right="8dp" select-on-click="true" />
 			<PushButton id="llm_add_chat" class="llm_button" text="@string(add, Add)" tooltip="@string(add_message, Add Message)" icon="icon(add, 15dp)" min-width="32dp" layout-margin-right="8dp" />
@@ -194,14 +194,15 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mRefreshModels = find<UIPushButton>( "refresh_model_ui" );
 	mRefreshModels->onClick( [this]( auto ) { fillApiModels( mModelDDL ); } );
 
-	mChatSave = find<UIPushButton>( "llm_save_but" );
-	mChatSave->onClick( [this]( auto ) { execute( "ai-save-chat" ); } );
+	mChatMore = find<UIPushButton>( "llm_more" );
+	mChatMore->onClick( [this]( auto ) { execute( "ai-show-menu" ); } );
 
 	mChatSettings = find<UIPushButton>( "llm_settings_but" );
 	mChatSettings->onClick( [this]( auto ) { execute( "ai-settings" ); } );
 
 	mChatScrollView = findByClass( "llm_chat_scrollview" )->asType<UIScrollView>();
 	mChatScrollView->getVerticalScrollBar()->setValue( 1 );
+	mChatScrollView->setAnchorScroll( true );
 
 	mChatInput = findByClass<UICodeEditor>( "llm_chat_input" );
 
@@ -346,8 +347,37 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		msgBox->showWhenReady();
 	} );
 
-	mChatClone = find<UIPushButton>( "llm_clone_chat" );
-	mChatClone->onClick( [this]( auto ) { execute( "ai-clone-chat" ); } );
+	setCmd( "ai-show-menu", [this] {
+		UIPopUpMenu* menu = UIPopUpMenu::New();
+
+		menu->add(
+				i18n( "save_conversation", "Save Conversation" ),
+				getUISceneNode()->findIconDrawable( "document-save", PixelDensity::dpToPxI( 12 ) ),
+				getKeyBindings().getCommandKeybindString( "ai-save-chat" ) )
+			->setId( "ai-save-chat" );
+
+		menu->add( i18n( "rename_conversation", "Rename Conversation" ),
+				   getUISceneNode()->findIconDrawable( "file-edit", PixelDensity::dpToPxI( 12 ) ),
+				   getKeyBindings().getCommandKeybindString( "ai-rename-chat" ) )
+			->setId( "ai-rename-chat" );
+
+		menu->add( i18n( "clone_current_conversation", "Clone Current Conversation" ),
+				   getUISceneNode()->findIconDrawable( "file-copy", PixelDensity::dpToPxI( 12 ) ),
+				   getKeyBindings().getCommandKeybindString( "ai-clone-chat" ) )
+			->setId( "ai-clone-chat" );
+
+		menu->on( Event::OnItemClicked, [this]( const Event* event ) {
+			UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+			std::string id( item->getId() );
+			execute( id );
+		} );
+
+		menu->runOnMainThread( [this, menu] {
+			auto pos( mChatMore->getScreenPos() );
+			UIMenu::findBestMenuPos( pos, menu );
+			menu->showAtScreenPosition( pos );
+		} );
+	} );
 
 	mChatHistory = find<UIPushButton>( "llm_chat_history" );
 	mChatHistory->onClick( [this]( auto ) { showChatHistory(); } );
@@ -402,10 +432,8 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	appendShortcutToTooltip( mChatRun, "ai-prompt" );
 	appendShortcutToTooltip( mChatStop, "ai-prompt" );
 	appendShortcutToTooltip( mChatAdd, "ai-add-chat" );
-	appendShortcutToTooltip( mChatClone, "ai-clone-chat" );
 	appendShortcutToTooltip( mChatSettings, "ai-settings" );
 	appendShortcutToTooltip( mChatPrivate, "ai-toggle-private-chat" );
-	appendShortcutToTooltip( mChatSave, "ai-save-chat" );
 
 	addKb( "mod+keypad enter", "ai-prompt" );
 	addKb( "mod+shift+keypad enter", "ai-add-chat" );

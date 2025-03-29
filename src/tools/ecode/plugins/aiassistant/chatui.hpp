@@ -94,8 +94,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	UIPushButton* mChatRun{ nullptr };
 	UIPushButton* mChatStop{ nullptr };
 	UIPushButton* mChatHistory{ nullptr };
-	UIPushButton* mChatClone{ nullptr };
-	UIPushButton* mChatSave{ nullptr };
+	UIPushButton* mChatMore{ nullptr };
 	UIPushButton* mRefreshModels{ nullptr };
 	UISelectButton* mChatPrivate{ nullptr };
 	UIScrollView* mChatScrollView{ nullptr };

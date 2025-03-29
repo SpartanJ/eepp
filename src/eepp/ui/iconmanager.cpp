@@ -101,6 +101,7 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 			{ "chat-history", 0xEB61 },
 			{ "chat-private", 0xEB69 },
 			{ "loader-2", 0xEEC2 },
+			{ "more-fill", 0xEF78 },
 		};
 
 		for ( const auto& icon : icons )
