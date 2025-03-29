@@ -3,7 +3,7 @@ CANONPATH=$(readlink -f "$0")
 DIRPATH="$(dirname "$CANONPATH")"
 cd "$DIRPATH" || exit
 cd ../../../ || exit
-premake5 gmake2
+premake5 --with-text-shaper gmake2
 cd make/haiku || exit
 make -j"$(nproc)" config=release_x86_64 ecode
 cd "$DIRPATH" || exit

@@ -38,11 +38,11 @@ fi
 CONFIG_NAME=
 if command -v premake4 &> /dev/null
 then
-    premake4 $DEBUG_SYMBOLS gmake || exit
+    premake4 $DEBUG_SYMBOLS --with-text-shaper gmake || exit
     CONFIG_NAME=release
 elif command -v premake5 &> /dev/null
 then
-    premake5 $DEBUG_SYMBOLS gmake2 || exit
+    premake5 $DEBUG_SYMBOLS --with-text-shaper gmake2 || exit
     CONFIG_NAME=release_"$ARCH"
 else
     echo "Neither premake5 nor premake4 is available. Please install one."
