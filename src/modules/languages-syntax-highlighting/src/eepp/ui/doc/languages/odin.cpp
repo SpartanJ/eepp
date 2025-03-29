@@ -28,8 +28,6 @@ void addOdin() {
 			  { { "[#@][%a_][%w_]*" }, "keyword2" },
 			  { { "[#@]%b()" }, "keyword2" },
 			  { { "[%a_][%w_]*" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

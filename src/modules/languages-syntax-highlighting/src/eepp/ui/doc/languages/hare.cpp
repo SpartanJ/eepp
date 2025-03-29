@@ -20,8 +20,6 @@ void addHare() {
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 			  { { "^@" }, "keyword" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

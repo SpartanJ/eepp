@@ -18,8 +18,6 @@ void addPostgreSQL() {
 			  { { "[%+%-=/%*%%<>!~|&@%?$#]" }, "operator" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

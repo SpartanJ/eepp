@@ -28,8 +28,6 @@ void addShellScript() {
 			  { { "$[%d$%a_@*][%w_]*" }, "keyword2" },
 			  { { "[%a_%-][%w_%-]*[%s]*%f[(]" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

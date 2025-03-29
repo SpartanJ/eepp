@@ -17,8 +17,6 @@ void addAda() {
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "-?%d+[%d%.eE_]*" }, "number" },
 			  { { "[%a_][%w_]*" }, "normal" },
-			  { { "%s+" }, "normal" },
-			  { { "[%a_][%w_]*" }, "symbol" },
 
 		  },
 		  {

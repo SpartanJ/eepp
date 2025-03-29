@@ -17,8 +17,6 @@ void addFennel() {
 			  { { "-?%.?%d+" }, "number" },
 			  { { "%f[^(][^()'%s\"]+" }, "function" },
 			  { { "[^()'%s\"]+" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

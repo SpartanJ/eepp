@@ -17,8 +17,6 @@ void addBazel() {
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "-?%d+[%d%.eE_]*" }, "number" },
 			  { { "[%a_][%w_]*" }, "normal" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

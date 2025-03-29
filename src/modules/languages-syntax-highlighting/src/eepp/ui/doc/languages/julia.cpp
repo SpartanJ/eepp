@@ -35,8 +35,6 @@ void addJulia() {
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "%g*!" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

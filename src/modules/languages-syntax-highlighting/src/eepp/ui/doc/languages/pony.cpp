@@ -21,12 +21,10 @@ void addPony() {
 			  { { "0b[%da-fA-F]+" }, "number" },
 			  { { "-?%d+[%d%_.eE]*" }, "number" },
 			  { { "-?%.?[%d]+" }, "number" },
-			  { { "^[0-9]{1,3}((_[0-9]{3})+)?$" }, "number" },
+			  { { "[0-9]{1,3}((_[0-9]{3})+)?" }, "number", "", SyntaxPatternMatchType::RegEx },
 			  { { "[%+%-=/%*%^%%<>!~|&?]" }, "operator" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

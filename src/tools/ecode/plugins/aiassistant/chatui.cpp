@@ -222,6 +222,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mChatInput->setFoldDrawable( findIcon( "chevron-down", PixelDensity::dpToPxI( 12 ) ) );
 	mChatInput->setFoldedDrawable( findIcon( "chevron-right", PixelDensity::dpToPxI( 12 ) ) );
 	mChatInput->setAllowSelectingTextFromGutter( false );
+	mChatInput->setFindReplaceEnabled( true );
 
 	mChatInput->setSyntaxDefinition( markdown );
 
@@ -905,7 +906,7 @@ void LLMChatUI::doRequest() {
 	auto* thinking = editor->findByClass<UIImage>( "thinking" );
 	auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
 	thinking->setVisible( true );
-	thinking->setPosition( { PixelDensity::dpToPx( 8 ), PixelDensity::dpToPx( 4 ) } );
+	thinking->setPosition( { PixelDensity::dpToPx( 8 ), PixelDensity::dpToPx( 3 ) } );
 	thinking->setInterval( [thinking] { thinking->rotate( 360 / 32 ); }, Seconds( 0.125 ),
 						   thinkingID );
 

@@ -26,8 +26,6 @@ void addCrystal() {
 			  { { ":[%w_]*" }, "symbol" },
 			  { { "[%a_][%w_]*:[^:]" }, "keyword2" },
 			  { { "[%a_][%w_]*" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

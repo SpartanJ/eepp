@@ -22,8 +22,6 @@ void addGraphQL() {
 			  { { "(mutation%s*)([%a_][%w_]*[(])" }, { "normal", "keyword", "function" } },
 			  { { "(:%s*%[*)([%a_,%s][%w_,%s]*)(%]*)([!]*)" },
 				{ "normal", "symbol", "literal", "symbol", "operator" } },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

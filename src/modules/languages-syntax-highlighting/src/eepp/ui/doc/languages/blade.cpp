@@ -22,8 +22,6 @@ void addBlade() {
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "%a[%w_]+" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

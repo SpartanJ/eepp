@@ -22,8 +22,6 @@ void addBlueprint() {
 			  { { "([%w_-%.]+%s*)({)" }, { "normal", "keyword2", "normal" } },
 			  { { "([%w_-%.]+%s*)([%w_-]+%s*{)" }, { "normal", "keyword2", "normal" } },
 			  { { "[%w-_]+" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

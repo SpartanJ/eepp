@@ -23,8 +23,6 @@ void addX86Assembly() {
 			  { { "[%a_][%w_]*:%W" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 			  { { "%.%.%a+" }, "normal" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

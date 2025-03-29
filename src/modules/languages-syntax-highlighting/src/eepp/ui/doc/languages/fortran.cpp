@@ -24,8 +24,6 @@ void addFortran() {
 			  { { "-?%d+[%d%.eE_]*" }, "number" },
 			  { { "-?%.?%d+" }, "number" },
 			  { { "[%a_][%w_]*" }, "normal" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  { { "then", "keyword" },		  { "public", "keyword" },

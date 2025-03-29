@@ -29,8 +29,6 @@ void addRing() {
 			  { { "[%a_][%w_]*" }, "symbol" },
 			  { { "%?" }, "keyword" },
 			  { { ":[%a_][%w_]*" }, "literal" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

@@ -26,8 +26,6 @@ void addPICO8() {
 			  { { "[%a_][%w_]*%s*%f[(\"{]" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 			  { { "::[%a_][%w_]*::" }, "function" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

@@ -18,8 +18,6 @@ void addFstab() {
 			  { { "%d+%.%d+%.%d+%.%d+" }, "string" },
 			  { { " %d+ " }, "number" },
 			  { { "[%w_]+" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

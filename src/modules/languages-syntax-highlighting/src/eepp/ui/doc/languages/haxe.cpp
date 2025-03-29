@@ -12,8 +12,6 @@ void addHaxe() {
 			  { { "#.*" }, "comment" },
 			  { { "%-[%-%w_]*" }, "keyword" },
 			  { { "(%.)(%u[%w_]*)" }, { "normal", "normal", "keyword2" } },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 		  },
 		  {},
 		  "#" } );
@@ -25,8 +23,6 @@ void addHaxe() {
 					 { { "%${", "}", "\\" }, "keyword", ".hx" },
 					 { { "%$", "%s", "\\" }, "keyword", ".hx" },
 					 { { "[^ ]" }, "string" },
-					 { { "%s+" }, "normal" },
-					 { { "%w+%f[%s]" }, "normal" },
 				 },
 				 {} } )
 		.setVisible( false );
@@ -37,8 +33,6 @@ void addHaxe() {
 				 {
 					 { { "[%[%]%(%)]" }, "string" },
 					 { { "[%.%*%+%?%^%$%|%-]" }, "operator" },
-					 { { "%s+" }, "normal" },
-					 { { "%w+%f[%s]" }, "normal" },
 				 },
 				 {} } )
 		.setVisible( false );
@@ -72,8 +66,6 @@ void addHaxe() {
 			  { { "(:)(%u[%a_][%w_]*)" }, { "normal", "normal", "keyword2" } },
 			  { { "@:[%a_][%w_]*%f[(]" }, "keyword" },
 			  { { "%$type" }, "keyword" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 		  },
 		  {
 			  { "using", "keyword2" },	  { "true", "literal" },	 { "trace", "keyword" },

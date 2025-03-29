@@ -19,8 +19,6 @@ void addR() {
 			  { { "0x[%da-fA-F]+" }, "number" },
 			  { { "-?%d+[%d%.eE]*" }, "number" },
 			  { { "-?%.?%d+" }, "number" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

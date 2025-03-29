@@ -36,8 +36,7 @@ void addHtaccessFile() {
 			  { { "%f[^%s!]%S*%$" }, "literal" },
 			  { { "%f[^%s!]%b()" }, "literal" },
 			  { { "[%a_][%w_-]*" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
+
 		  },
 		  {
 			  { "xml2EncDefault", "keyword" },

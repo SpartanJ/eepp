@@ -28,8 +28,6 @@ void addAwkScript() {
 			  { { "%$[%d%$%a_@*][%w_]*" }, "keyword2" },
 			  { { "([%a_%-][%w_%-]*)(%s*%f[(])" }, { "normal", "function", "normal" } },
 			  { { "[%a_][%w_]*" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

@@ -13,8 +13,6 @@ void addYueScript() {
 			  {
 				  { { "#{", "}", "\\" }, "keyword", "YueScript" },
 				  { { "[^ ]" }, "string" },
-				  { { "%s+" }, "normal" },
-				  { { "%w+%f[%s]" }, "normal" },
 
 			  },
 			  {
@@ -91,8 +89,6 @@ void addYueScript() {
 			  { { "%[=*%[", "%]=*%]" }, "string" },
 			  { { "[&<>%+-%*/=#%[%]!|?:~%%%.%^]+" }, "operator" },
 			  { { "\\" }, "operator" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

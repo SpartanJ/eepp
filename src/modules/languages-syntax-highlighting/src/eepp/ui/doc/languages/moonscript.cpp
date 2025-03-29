@@ -27,8 +27,6 @@ void addMoonscript() {
 			  { { "@", "[%a_][%w_]*" }, "keyword2" },
 			  { { "!" }, "keyword2" },
 			  { { "[%p]" }, "keyword" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

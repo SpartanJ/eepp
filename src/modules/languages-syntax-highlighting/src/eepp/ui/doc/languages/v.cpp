@@ -28,8 +28,6 @@ void addV() {
 			  { { "[%a_][%w_]*" }, "symbol" },
 			  { { "%$%s?[%a_][%w_]*" }, "keyword2" },
 			  { { "%@%s?[%a_][%w_]*" }, "keyword2" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

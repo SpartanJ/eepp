@@ -28,8 +28,6 @@ void addToml() {
 			  { { "[%-+]?nan" }, "number" },
 			  { { "[%-+]?inf" }, "number" },
 			  { { "[a-z]+" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

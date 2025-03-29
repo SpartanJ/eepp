@@ -19,8 +19,6 @@ void addBrainfuck() {
 			  { { "," }, "literal" },
 			  { { "%." }, "string" },
 			  { { "[^%-%.<>%+,%[%]]+" }, "comment" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

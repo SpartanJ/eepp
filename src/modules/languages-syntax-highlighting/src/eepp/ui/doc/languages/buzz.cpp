@@ -20,8 +20,6 @@ void addBuzz() {
 			  { { "-?%d+[%d%.eE_]*" }, "number" },
 			  { { "-?%.?%d+" }, "number" },
 			  { { "[%a_][%w_]*" }, "normal" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

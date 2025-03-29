@@ -29,8 +29,6 @@ void addGroovy() {
 			  { { "[A-Z]+_?[A-Z]+" }, "keyword2" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 			  { { "[a-zA-Z]+%.+" }, "function" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {
