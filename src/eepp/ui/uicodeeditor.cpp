@@ -1585,13 +1585,7 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 
 		if ( flags & EE_BUTTON_LMASK ) {
 			if ( localPos.x > mPaddingPx.Left + getLineNumberWidth() && downOverGutter ) {
-				if ( mDoc->getFoldRangeService().isFoldingRegionInLine( textScreenPos.line() ) ) {
-					if ( mDocView.isFolded( textScreenPos.line() ) ) {
-						mDocView.unfoldRegion( textScreenPos.line() );
-					} else {
-						mDocView.foldRegion( textScreenPos.line() );
-					}
-				}
+				toggleFoldUnfold( textScreenPos.line() );
 			} else if ( !downOverGutter && input->isModState( KEYMOD_LALT | KEYMOD_SHIFT ) ) {
 				TextRange range( mDoc->getSelection().start(), textScreenPos );
 				range = mDoc->sanitizeRange( range );
@@ -1624,6 +1618,19 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		}
 	}
 	return UIWidget::onMouseDown( position, flags );
+}
+
+bool UICodeEditor::toggleFoldUnfold( Int64 docLineIdx ) {
+	if ( mDoc->getFoldRangeService().isFoldingRegionInLine( docLineIdx ) ) {
+		sendCommonEvent( Event::OnBeforeFoldUnfoldRange );
+		if ( mDocView.isFolded( docLineIdx ) ) {
+			mDocView.unfoldRegion( docLineIdx );
+		} else {
+			mDocView.foldRegion( docLineIdx );
+		}
+		return true;
+	}
+	return false;
 }
 
 void UICodeEditor::updateMipmapHover( const Vector2f& position ) {

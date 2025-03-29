@@ -1,17 +1,18 @@
-#include "chatui.hpp"
 #include "../../appconfig.hpp"
 #include "../../notificationcenter.hpp"
+#include "../../widgetcommandexecuter.hpp"
 #include "aiassistantplugin.hpp"
 #include "chathistory.hpp"
+#include "chatui.hpp"
 
-#include <eepp/ui/uiloader.hpp>
-#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uiicon.hpp>
+#include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uimessagebox.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollview.hpp>
@@ -142,11 +143,11 @@ DropDownList.role_ui {
 	<RelativeLayout lw="mp" class="llm_controls" clip="true">
 		<CodeEditor class="llm_chat_input" lw="mp" lh="mp" />
 		<hbox lw="mp" lh="wc" layout_gravity="bottom|left" layout_margin="8dp" clip="false">
-			<PushButton id="llm_user" class="llm_button" text="@string(user, User)" min-width="60dp" margin-right="8dp" />
+			<PushButton id="llm_user" class="llm_button" text="@string(user, User)" tooltip="@string(change_role, Change Role)" min-width="60dp" margin-right="8dp" />
 			<!-- <PushButton class="llm_button" text="@string(attach, Attach)" tooltip="@string(attach, Attach)" icon="icon(attach, 14dp)" min-width="32dp" /> -->
 			<PushButton id="llm_chat_history" class="llm_button" text="@string(chat_history, Chat History)" tooltip="@string(chat_history, Chat History)" icon="icon(chat-history, 14dp)" min-width="32dp" />
 			<PushButton id="llm_settings_but" class="llm_button" text="@string(settings, Settings)" tooltip="@string(settings, Settings)" icon="icon(settings, 14dp)" min-width="32dp" />
-			<PushButton id="llm_more" class="llm_button" icon="icon(more-fill, 14dp)" min-width="32dp" />
+			<PushButton id="llm_more" class="llm_button" tooltip="@string(more_options, More Options)" icon="icon(more-fill, 14dp)" min-width="32dp" />
 			<hbox lw="0" lw8="1" lh="mp" layout_gravity="center" padding-left="8dp" padding-right="8dp">
 				<DropDownList class="model_ui" lw="0" lw8="1" selected-index="0"></DropDownList>
 				<PushButton id="refresh_model_ui" tooltip="@string(refresh_model_ui, Refresh Local Models)" icon="icon(refresh, 14dp)" />
@@ -192,7 +193,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mModelDDL = findByClass<UIDropDownList>( "model_ui" );
 
 	mRefreshModels = find<UIPushButton>( "refresh_model_ui" );
-	mRefreshModels->onClick( [this]( auto ) { fillApiModels( mModelDDL ); } );
+	mRefreshModels->onClick( [this]( auto ) { execute( "ai-refresh-local-models" ); } );
 
 	mChatMore = find<UIPushButton>( "llm_more" );
 	mChatMore->onClick( [this]( auto ) { execute( "ai-show-menu" ); } );
@@ -202,7 +203,6 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 
 	mChatScrollView = findByClass( "llm_chat_scrollview" )->asType<UIScrollView>();
 	mChatScrollView->getVerticalScrollBar()->setValue( 1 );
-	mChatScrollView->setAnchorScroll( true );
 
 	mChatInput = findByClass<UICodeEditor>( "llm_chat_input" );
 
@@ -232,15 +232,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mChatStop->onClick( [this]( auto ) { execute( "ai-prompt-stop" ); } );
 
 	mChatUserRole = find<UIPushButton>( "llm_user" );
-	mChatUserRole->onClick( [this]( auto ) {
-		if ( mChatUserRole->getText() == mChatUserRole->i18n( "user", "User" ) ) {
-			mChatUserRole->setText( mChatUserRole->i18n( "assistant", "Assistant" ) );
-		} else if ( mChatUserRole->getText() == mChatUserRole->i18n( "assistant", "Assistant" ) ) {
-			mChatUserRole->setText( mChatUserRole->i18n( "system", "System" ) );
-		} else if ( mChatUserRole->getText() == mChatUserRole->i18n( "system", "System" ) ) {
-			mChatUserRole->setText( mChatUserRole->i18n( "user", "User" ) );
-		}
-	} );
+	mChatUserRole->onClick( [this]( auto ) { execute( "ai-chat-toggle-role" ); } );
 
 	mChatPrivate = find<UISelectButton>( "llm_private_chat" );
 	mChatPrivate->on( Event::OnValueChange,
@@ -250,6 +242,16 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		setCommand( name, cb );
 		mChatInput->getDocument().setCommand( name, cb );
 	};
+
+	setCmd( "ai-chat-toggle-role", [this] {
+		if ( mChatUserRole->getText() == mChatUserRole->i18n( "user", "User" ) ) {
+			mChatUserRole->setText( mChatUserRole->i18n( "assistant", "Assistant" ) );
+		} else if ( mChatUserRole->getText() == mChatUserRole->i18n( "assistant", "Assistant" ) ) {
+			mChatUserRole->setText( mChatUserRole->i18n( "system", "System" ) );
+		} else if ( mChatUserRole->getText() == mChatUserRole->i18n( "system", "System" ) ) {
+			mChatUserRole->setText( mChatUserRole->i18n( "user", "User" ) );
+		}
+	} );
 
 	setCmd( "ai-settings", [this] {
 		if ( getPlugin() )
@@ -347,8 +349,23 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		msgBox->showWhenReady();
 	} );
 
+	setCmd( "new-ai-assistant", [this] {
+		if ( getPlugin() == nullptr )
+			return;
+		getPlugin()->newAIAssistant()->setFocus();
+	} );
+
 	setCmd( "ai-show-menu", [this] {
 		UIPopUpMenu* menu = UIPopUpMenu::New();
+
+		menu->add( i18n( "new_conversation", "New Conversation" ),
+				   getUISceneNode()->findIconDrawable( "code-ai", PixelDensity::dpToPxI( 12 ) ),
+				   getPlugin()
+					   ->getPluginContext()
+					   ->getMainLayout()
+					   ->getKeyBindings()
+					   .getCommandKeybindString( "new-ai-assistant" ) )
+			->setId( "new-ai-assistant" );
 
 		menu->add(
 				i18n( "save_conversation", "Save Conversation" ),
@@ -378,6 +395,8 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 			menu->showAtScreenPosition( pos );
 		} );
 	} );
+
+	setCmd( "ai-refresh-local-models", [this] { fillApiModels( mModelDDL ); } );
 
 	mChatHistory = find<UIPushButton>( "llm_chat_history" );
 	mChatHistory->onClick( [this]( auto ) { showChatHistory(); } );
@@ -427,6 +446,9 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	addKb( "mod+shift+p", "ai-toggle-private-chat" );
 	addKb( "mod+s", "ai-save-chat" );
 	addKb( "f2", "ai-rename-chat" );
+	addKb( "mod+m", "ai-show-menu" );
+	addKb( "mod+shift+r", "ai-chat-toggle-role" );
+	addKb( "mod+shift+l", "ai-refresh-local-models" );
 
 	appendShortcutToTooltip( mChatHistory, "ai-chat-history" );
 	appendShortcutToTooltip( mChatRun, "ai-prompt" );
@@ -434,6 +456,9 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	appendShortcutToTooltip( mChatAdd, "ai-add-chat" );
 	appendShortcutToTooltip( mChatSettings, "ai-settings" );
 	appendShortcutToTooltip( mChatPrivate, "ai-toggle-private-chat" );
+	appendShortcutToTooltip( mChatMore, "ai-show-menu" );
+	appendShortcutToTooltip( mChatUserRole, "ai-chat-toggle-role" );
+	appendShortcutToTooltip( mRefreshModels, "ai-refresh-local-models" );
 
 	addKb( "mod+keypad enter", "ai-prompt" );
 	addKb( "mod+shift+keypad enter", "ai-add-chat" );
@@ -1049,6 +1074,10 @@ UIWidget* LLMChatUI::addChatUI( LLMChat::Role role ) {
 	editor->on( Event::OnSizeChange, [editor, this]( auto ) { resizeToFit( editor ); } );
 	editor->on( Event::OnVisibleLinesCountChange,
 				[editor, this]( auto ) { resizeToFit( editor ); } );
+	editor->on( Event::OnBeforeFoldUnfoldRange,
+				[this]( auto ) { mChatScrollView->setAnchorScroll( true ); } );
+	editor->on( Event::OnFoldUnfoldRange,
+				[this]( auto ) { mChatScrollView->setAnchorScroll( false ); } );
 	chat->findByClass( "erase_but" )->onClick( [chat, this]( auto ) {
 		chat->close();
 		auto chats = findAllByClass( "llm_conversation" );

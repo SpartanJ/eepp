@@ -796,6 +796,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	bool allowSelectingTextFromGutter() const;
 
+	bool toggleFoldUnfold( Int64 docLineIdx );
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };

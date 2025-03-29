@@ -118,6 +118,7 @@ class EE_API Event {
 		OnWindowToFront,
 		OnVisibleLinesCountChange,
 		OnDataChanged,
+		OnBeforeFoldUnfoldRange,
 		OnFoldUnfoldRange,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
