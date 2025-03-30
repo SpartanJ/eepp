@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-extern void addCovscript();
+extern void addCovScript();
 
 }}}}
 
