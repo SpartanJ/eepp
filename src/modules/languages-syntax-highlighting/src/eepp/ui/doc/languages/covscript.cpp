@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addCovscript() {
+void addCovScript() {
 
 SyntaxDefinitionManager::instance()->add(
 
