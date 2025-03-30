@@ -3834,7 +3834,7 @@ bool TextSearchParams::isEmpty() {
 	return text.empty();
 }
 
-const UUID& TextDocument::getUUID() const {
+const EE::System::UUID& TextDocument::getUUID() const {
 	return mUUID;
 }
 

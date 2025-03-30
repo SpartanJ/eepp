@@ -1,3 +1,18 @@
+#include <eepp/config.hpp>
+
+#ifdef ECODE_USE_BACKWARD
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+#define BACKWARD_HAS_DW 1
+#endif
+#include <backward-cpp/backward.hpp>
+#ifdef UUID
+#undef UUID
+#endif
+#ifdef KEY_EXECUTE
+#undef KEY_EXECUTE
+#endif
+#endif
+
 #include "ecode.hpp"
 #include "featureshealth.hpp"
 #include "keybindingshelper.hpp"
@@ -39,12 +54,6 @@ using namespace std::literals;
 namespace fs = std::filesystem;
 using json = nlohmann::json;
 
-#ifdef ECODE_USE_BACKWARD
-#if EE_PLATFORM == EE_PLATFORM_LINUX
-#define BACKWARD_HAS_DW 1
-#endif
-#include <backward-cpp/backward.hpp>
-#endif
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 #include "macos/macos.hpp"
 #endif

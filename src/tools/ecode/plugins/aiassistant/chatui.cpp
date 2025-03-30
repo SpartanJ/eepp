@@ -268,6 +268,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		mChatInput->getDocument().selectAll();
 		mChatInput->getDocument().textInput( String{} );
 		mChatInput->setFocus();
+		mChatScrollView->getVerticalScrollBar()->setValue( 1 );
 	} );
 
 	setCmd( "ai-prompt", [this] {

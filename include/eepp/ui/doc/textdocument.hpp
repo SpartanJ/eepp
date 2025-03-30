@@ -158,7 +158,7 @@ class EE_API TextDocument {
 
 	LoadStatus reload();
 
-	const UUID& getUUID() const;
+	const EE::System::UUID& getUUID() const;
 
 	bool save();
 
@@ -671,7 +671,7 @@ class EE_API TextDocument {
 	friend class TextUndoStack;
 	friend class FoldRangeServive;
 
-	UUID mUUID;
+	EE::System::UUID mUUID;
 	Uint64 mModificationId{ 0 };
 	TextUndoStack mUndoStack;
 	std::string mFilePath;

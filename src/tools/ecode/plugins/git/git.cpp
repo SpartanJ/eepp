@@ -454,11 +454,17 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 		String::readBySeparator( std::string_view{ buf }, [&]( std::string_view line ) {
 			auto branch = String::trim( String::trim( line, '\'' ), '\t' );
 			if ( ( ref & Head ) && String::startsWith( branch, "refs/heads/" ) ) {
-				branches.emplace_back( parseLocalBranch( branch ) );
+				auto parsedBranch = parseLocalBranch( branch );
+				if ( !parsedBranch.isEmpty() )
+					branches.emplace_back( std::move( parsedBranch ) );
 			} else if ( ( ref & Remote ) && String::startsWith( branch, "refs/remotes/" ) ) {
-				branches.emplace_back( parseRemoteBranch( branch ) );
+				auto parsedBranch = parseRemoteBranch( branch );
+				if ( !parsedBranch.isEmpty() )
+					branches.emplace_back( std::move( parsedBranch ) );
 			} else if ( ( ref & Tag ) && String::startsWith( branch, "refs/tags/" ) ) {
-				branches.emplace_back( parseTag( branch ) );
+				auto parsedBranch = parseTag( branch );
+				if ( !parsedBranch.isEmpty() )
+					branches.emplace_back( std::move( parsedBranch ) );
 			}
 		} );
 	}
@@ -481,7 +487,8 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 				newBranch.name = std::move( name );
 				newBranch.remote = String::format( "stash@{%llu}", id );
 				newBranch.date = date;
-				branches.emplace_back( std::move( newBranch ) );
+				if ( !newBranch.isEmpty() )
+					branches.emplace_back( std::move( newBranch ) );
 				id++;
 			}
 		} );

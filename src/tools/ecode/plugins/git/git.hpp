@@ -232,6 +232,8 @@ class Git {
 		bool gone{ false };
 
 		const char* typeStr() const { return refTypeToString( type ); }
+
+		bool isEmpty() const { return name.empty(); }
 	};
 
 	enum DiffMode { DiffHead, DiffStaged };

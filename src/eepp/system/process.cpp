@@ -306,7 +306,7 @@ size_t Process::readAll( std::string& buffer, bool readErr, Time timeout ) {
 			readErr
 				? subprocess_read_stderr( PROCESS_PTR, buffer.data() + totalBytesRead, CHUNK_SIZE )
 				: subprocess_read_stdout( PROCESS_PTR, buffer.data() + totalBytesRead, CHUNK_SIZE );
-		if ( n == 0 ) {
+		if ( n <= 0 ) {
 			if ( !isAlive() || ( timeout != Time::Zero && clock.getElapsedTime() >= timeout ) )
 				break;
 			continue;
@@ -348,6 +348,14 @@ size_t Process::readAll( std::string& buffer, bool readErr, Time timeout ) {
 			}
 		}
 		if ( pollfd.revents & ( POLLERR | POLLHUP | POLLNVAL ) ) {
+			if ( pollfd.revents & POLLHUP ) {
+				while ( ( n = read( pollfd.fd, buffer.data() + totalBytesRead, CHUNK_SIZE ) ) >
+						0 ) {
+					totalBytesRead += n;
+					if ( totalBytesRead + CHUNK_SIZE > buffer.size() )
+						buffer.resize( totalBytesRead + CHUNK_SIZE );
+				}
+			}
 			pollfd.fd = -1;
 			continue;
 		}
@@ -392,7 +400,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 			while ( !mShuttingDown ) {
 				n = subprocess_read_stderr( PROCESS_PTR, static_cast<char* const>( &buffer[0] ),
 											mBufferSize );
-				if ( n == 0 )
+				if ( n <= 0 )
 					break;
 				if ( n < mBufferSize - 1 )
 					buffer[n] = '\0';
@@ -448,6 +456,18 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 							}
 						}
 						if ( pollfds[i].revents & ( POLLERR | POLLHUP | POLLNVAL ) ) {
+							if ( pollfds[i].revents & POLLHUP ) {
+								ssize_t n = 0;
+								while ( ( n = read( pollfds[i].fd, &buffer[0], mBufferSize ) ) >
+										0 ) {
+									if ( n < static_cast<long>( mBufferSize - 1 ) )
+										buffer[n] = '\0';
+									if ( fdIsStdOut[i] )
+										mReadStdOutFn( buffer.c_str(), static_cast<size_t>( n ) );
+									else
+										mReadStdErrFn( buffer.c_str(), static_cast<size_t>( n ) );
+								}
+							}
 							pollfds[i].fd = -1;
 							continue;
 						}
