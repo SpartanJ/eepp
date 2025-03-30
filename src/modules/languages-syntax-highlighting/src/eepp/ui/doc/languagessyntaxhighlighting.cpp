@@ -13,6 +13,7 @@
 #include <eepp/ui/doc/languages/clojure.hpp>
 #include <eepp/ui/doc/languages/cmake.hpp>
 #include <eepp/ui/doc/languages/containerfile.hpp>
+#include <eepp/ui/doc/languages/covscript.hpp>
 #include <eepp/ui/doc/languages/crystal.hpp>
 #include <eepp/ui/doc/languages/csharp.hpp>
 #include <eepp/ui/doc/languages/d.hpp>
@@ -111,6 +112,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addBuzz();
 	addCarbon();
 	addContainerFile();
+	addCovScript();
 	addClojure();
 	addCMake();
 	addCrystal();
