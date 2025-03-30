@@ -21,7 +21,7 @@ void addBatchScript() {
 			  { { "[!=()%>&%^/\\@]" }, "operator" },
 			  { { "-?%.?%d+f?" }, "number" },
 			  { { "\"", "\"", "\\" }, "string" },
-			  { { "[%a_][%w_]*" }, "normal" },
+			  { { "[%a_][%w_]*" }, "symbol" },
 			  { { ":eof" }, "keyword" },
 
 		  },

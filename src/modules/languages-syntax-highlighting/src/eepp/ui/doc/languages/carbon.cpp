@@ -26,7 +26,7 @@ void addCarbon() {
 			  { { "(package)(%s+)([%a_][%w_]*)" }, { "normal", "keyword", "normal", "literal" } },
 			  { { "-?%d+[%d%.eE_]*" }, "number" },
 			  { { "-?%.?%d+" }, "number" },
-			  { { "[%a_][%w_]*" }, "normal" },
+			  { { "[%a_][%w_]*" }, "symbol" },
 
 		  },
 		  {
