@@ -123,6 +123,7 @@ Tooltip,
 MenuBar::button,
 Window::title,
 ListView::cell,
+table::cell::text,
 tableview::cell::text,
 treeview::cell::text,
 listview::cell::text {
@@ -199,6 +200,7 @@ checkbox:disabled {
 
 PushButton::icon,
 SelectButton::icon,
+table::cell::icon,
 TableView::cell::icon,
 TreeView::cell::icon,
 TreeView::cell::expander,
@@ -975,6 +977,7 @@ treeview.selection_type_cell tableview::cell:selected {
 	background-color: var(--primary);
 }
 
+table::cell,
 tableview::cell,
 treeview::cell {
 	padding-left: 4dp;

@@ -214,8 +214,9 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 }
 
 UIWidget* UITreeView::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
-	UITableCell* widget = index.column() == (Int64)getModel()->treeColumn() ? UITreeViewCell::New()
-																			: UITableCell::New();
+	UITableCell* widget = index.column() == (Int64)getModel()->treeColumn()
+							  ? UITreeViewCell::New()
+							  : UITableCell::New( mTag + "::cell" );
 	return setupCell( widget, rowWidget, index );
 }
 
