@@ -48,6 +48,7 @@
 #include <eepp/ui/doc/languages/lobster.hpp>
 #include <eepp/ui/doc/languages/makefile.hpp>
 #include <eepp/ui/doc/languages/meson.hpp>
+#include <eepp/ui/doc/languages/modula2.hpp>
 #include <eepp/ui/doc/languages/moonscript.hpp>
 #include <eepp/ui/doc/languages/nelua.hpp>
 #include <eepp/ui/doc/languages/nim.hpp>
@@ -152,6 +153,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addLobster();
 	addMakefile();
 	addMeson();
+	addModula2();
 	addMoonscript();
 	addNelua();
 	addNim();
