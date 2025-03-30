@@ -228,8 +228,12 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 		search.resize( files.size() );
 		size_t pos = 0;
 		size_t count = 0;
+		bool hasPositiveFilter =
+			std::find_if( pathFilters.begin(), pathFilters.end(),
+						  []( auto filter ) { return !filter.second; } ) != pathFilters.end();
+
 		for ( const auto& file : files ) {
-			bool skip = false;
+			bool skip = hasPositiveFilter;
 			std::string_view fsv( file );
 			if ( !basePath.empty() && String::startsWith( file, basePath ) )
 				fsv = fsv.substr( basePath.size() );
