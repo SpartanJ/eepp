@@ -79,7 +79,7 @@ class EE_API FileSystemModel : public Model {
 
 	struct EE_API Node {
 	  public:
-		Node( const std::string& rootPath, const FileSystemModel& model,
+		Node( const std::string& rootPath, FileSystemModel& model,
 			  const std::shared_ptr<ThreadPool>& threadPool = {} );
 
 		Node( FileInfo&& info, Node* parent );

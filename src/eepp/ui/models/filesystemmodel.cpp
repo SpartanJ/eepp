@@ -15,7 +15,7 @@ using namespace EE::Scene;
 
 namespace EE { namespace UI { namespace Models {
 
-FileSystemModel::Node::Node( const std::string& rootPath, const FileSystemModel& model,
+FileSystemModel::Node::Node( const std::string& rootPath, FileSystemModel& model,
 							 const std::shared_ptr<ThreadPool>& threadPool ) :
 	mInfo( FileSystem::getRealPath( rootPath ) ) {
 	mInfoDirty = false;
@@ -25,9 +25,12 @@ FileSystemModel::Node::Node( const std::string& rootPath, const FileSystemModel&
 	mDisplayName = mName;
 	if ( threadPool ) {
 		mQueuedForTraversal = true;
-		threadPool->run( [this, &model] {
+		threadPool->run( [this, &model]() {
+			auto rowCount = model.rowCount();
 			traverseIfNeeded( model );
 			model.refreshView();
+			if ( rowCount != model.rowCount() )
+				model.invalidate( Model::DontInvalidateIndexes );
 		} );
 	} else {
 		traverseIfNeeded( model );

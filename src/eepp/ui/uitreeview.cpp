@@ -88,8 +88,10 @@ void UITreeView::traverseTree( TreeViewCallback callback ) const {
 }
 
 void UITreeView::createOrUpdateColumns( bool resetColumnData ) {
-	if ( !getModel() )
+	if ( !getModel() ) {
+		updateContentSize();
 		return;
+	}
 	UIAbstractTableView::createOrUpdateColumns( resetColumnData );
 	updateContentSize();
 }

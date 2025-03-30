@@ -62,7 +62,6 @@ class AIAssistantPlugin : public PluginBase {
 	void onRegisterDocument( TextDocument* doc ) override;
 
 	void initUI();
-
 };
 
 } // namespace ecode
