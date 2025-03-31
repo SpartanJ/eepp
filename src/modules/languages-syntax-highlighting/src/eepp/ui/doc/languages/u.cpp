@@ -21,7 +21,6 @@ void addU() {
 			  { { "cpp_number_parser" }, "number", "", SyntaxPatternMatchType::Parser },
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
-			  { { "pretty_main" }, "function" },
 			  { { "ust%:%:[%w_]*" }, "keyword2" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 
