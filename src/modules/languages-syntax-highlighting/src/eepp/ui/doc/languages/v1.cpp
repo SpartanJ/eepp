@@ -54,7 +54,7 @@ void addV1() {
 					 { { "-?%d+[%d%.eE]*" }, "number" },
 					 { { "-?%.?%d+" }, "number" },
 					 { { "[%.%+%-=/%*%^%%<>!~|&]" }, "operator" },
-					 { { "[%a_][%w_]*%f[(]" }, "function" },
+					 { { "[%a_][%w_]*%s*%f[(]" }, "function" },
 					 { { "[%a_][%w_]*" }, "symbol" },
 				 },
 				 { { "return", "keyword" },		 { "if", "keyword" },
