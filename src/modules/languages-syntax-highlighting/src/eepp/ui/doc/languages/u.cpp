@@ -9,7 +9,7 @@ void addU() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
-		{ "U",
+		{ "Ü",
 		  { "%.u$", "%.uh$" },
 		  {
 			  { { "//.-\n" }, "comment" },
