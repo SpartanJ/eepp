@@ -23,7 +23,6 @@ void addU() {
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "pretty_main" }, "function" },
 			  { { "ust%:%:[%w_]*" }, "keyword2" },
-			  { { "^%s*#[%a_][%w_]*" }, "symbol" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 
 		  },
