@@ -15,7 +15,7 @@ void addFlow() {
 			  { { "\"", "[\"\n]", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },
 			  { { "(import)%s+(%a+[%w/_]+)" }, { "normal", "keyword", "literal" } },
-			  { { "c_number_parser" }, "number", "", SyntaxPatternMatchType::Parser },
+			  { { "common_number_parser" }, "number", "", SyntaxPatternMatchType::Parser },
 			  { { "[%+%-=/%*%^%%<>!~|&\\]" }, "operator" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },

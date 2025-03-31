@@ -53,6 +53,7 @@ inline bool isValidDigitChar( char c, int base ) {
 	length        - total length of input.
 	base          - numeric base (2, 8, 10, or 16).
 	requireDigits - if true, at least one digit is required.
+	underscoreSeparatorSupported - if true, '_' separators are enabled
 
   Returns:
 	true if a valid sequence according to the rules was consumed, false otherwise.
@@ -60,7 +61,7 @@ inline bool isValidDigitChar( char c, int base ) {
 	On failure, the value of pos is undefined/unreliable.
 */
 inline bool consumeDigitsWithSep( const char* input, int& pos, int length, int base,
-								  bool requireDigits ) {
+								  bool requireDigits, bool underscoreSeparatorSupported ) {
 	int currentPos = pos; // Use temporary position to avoid altering pos on failure
 	int startPos = currentPos;
 	int digitCount = 0;
@@ -72,7 +73,7 @@ inline bool consumeDigitsWithSep( const char* input, int& pos, int length, int b
 			// Invalid if:
 			// 1. It's the first character being consumed in this sequence.
 			// 2. The immediately preceding character was not a digit.
-			if ( currentPos == startPos || !lastWasDigit ) {
+			if ( !underscoreSeparatorSupported || currentPos == startPos || !lastWasDigit ) {
 				return false; // Invalid underscore placement (start or consecutive)
 			}
 			// Valid underscore position, consume it.
@@ -114,8 +115,9 @@ inline bool consumeDigitsWithSep( const char* input, int& pos, int length, int b
 } // anonymous namespace
 
 /**
-  isNumberLiteralJS checks if a substring (starting at stringStartOffset)
-  in the given C-string is a valid JavaScript/TypeScript number literal.
+  isNumberLiteralBase checks if a substring (starting at stringStartOffset)
+  in the given C-string is a valid JavaScript/TypeScript number literal (which supports the most
+  common cases in many languages).
 
   It supports:
 	- Decimal literal, including fractional parts and exponent.
@@ -128,8 +130,10 @@ inline bool consumeDigitsWithSep( const char* input, int& pos, int length, int b
   (zero-based positions into stringSearch) to matchList, and returns 1.
   If no valid number literal is found at the offset, the function returns 0.
 */
-inline size_t isNumberLiteralJS( const char* stringSearch, int stringStartOffset,
-								 PatternMatcher::Range* matchList, size_t stringLength ) {
+inline size_t isNumberLiteralBase( const char* stringSearch, int stringStartOffset,
+								   PatternMatcher::Range* matchList, size_t stringLength,
+								   bool underscoreSeparatorSupported, bool supportsOctal,
+								   bool supportsBinary ) {
 	if ( stringStartOffset < 0 || (size_t)stringStartOffset >= stringLength )
 		return 0;
 
@@ -178,22 +182,28 @@ inline size_t isNumberLiteralJS( const char* stringSearch, int stringStartOffset
 
 			if ( next == 'x' || next == 'X' )
 				base = 16;
-			else if ( next == 'b' || next == 'B' )
+			else if ( next == 'b' || next == 'B' ) {
 				base = 2;
-			else if ( next == 'o' || next == 'O' )
+				if ( !supportsBinary )
+					return 0;
+			} else if ( next == 'o' || next == 'O' ) {
 				base = 8;
-
+				if ( !supportsOctal )
+					return 0;
+			}
 			if ( base != 0 ) { // Hex, Bin, Octal (0x, 0b, 0o)
 				pos++;		   // Consume 'x'/'b'/'o'
 				// Cannot have underscore right after prefix
 				if ( pos < (int)stringLength && stringSearch[pos] == '_' )
 					return 0;
-				if ( !consumeDigitsWithSep( stringSearch, pos, stringLength, base, true ) )
+				if ( !consumeDigitsWithSep( stringSearch, pos, stringLength, base, true,
+											underscoreSeparatorSupported ) )
 					return 0; // Must have digits & valid separators
 							  // No fractional or exponent allowed for these bases
 			} else {		  // Decimal starting with '0' (e.g., 0, 0123, 0.5, 0e1)
 				// Check for more digits (e.g. 0123) or invalid things like 0_...
-				if ( !consumeDigitsWithSep( stringSearch, pos, stringLength, 10, false ) ) {
+				if ( !consumeDigitsWithSep( stringSearch, pos, stringLength, 10, false,
+											underscoreSeparatorSupported ) ) {
 					// Failed immediately after '0', likely invalid separator like "0_1"
 					return 0;
 				}
@@ -212,7 +222,8 @@ inline size_t isNumberLiteralJS( const char* stringSearch, int stringStartOffset
 						return 0;
 
 					// Digits after dot are optional if we started with '0'. e.g. "0." is valid
-					if ( !consumeDigitsWithSep( stringSearch, pos, stringLength, 10, false ) )
+					if ( !consumeDigitsWithSep( stringSearch, pos, stringLength, 10, false,
+												underscoreSeparatorSupported ) )
 						return 0; // Check separators
 				}
 
@@ -239,7 +250,8 @@ inline size_t isNumberLiteralJS( const char* stringSearch, int stringStartOffset
 						return 0;
 
 					// Exponent *must* have digits
-					if ( !consumeDigitsWithSep( stringSearch, pos, stringLength, 10, true ) )
+					if ( !consumeDigitsWithSep( stringSearch, pos, stringLength, 10, true,
+												underscoreSeparatorSupported ) )
 						return 0;
 				}
 				// If we got here, it's a valid decimal form starting with 0.
@@ -252,7 +264,8 @@ inline size_t isNumberLiteralJS( const char* stringSearch, int stringStartOffset
 	} else if ( std::isdigit( stringSearch[afterSignPos] ) ) {
 		// Decimal starting with 1-9 (potentially signed)
 		pos = afterSignPos; // Start consuming from the first digit
-		if ( !consumeDigitsWithSep( stringSearch, pos, stringLength, 10, true ) )
+		if ( !consumeDigitsWithSep( stringSearch, pos, stringLength, 10, true,
+									underscoreSeparatorSupported ) )
 			return 0; // Must have digits & valid separators
 		consumedSomethingAfterSign = true;
 
@@ -271,7 +284,8 @@ inline size_t isNumberLiteralJS( const char* stringSearch, int stringStartOffset
 				return 0;
 
 			// Fractional digits are optional if integer part exists (e.g., "123.")
-			if ( !consumeDigitsWithSep( stringSearch, pos, stringLength, 10, false ) )
+			if ( !consumeDigitsWithSep( stringSearch, pos, stringLength, 10, false,
+										underscoreSeparatorSupported ) )
 				return 0; // Check separators
 		}
 
@@ -297,7 +311,8 @@ inline size_t isNumberLiteralJS( const char* stringSearch, int stringStartOffset
 				return 0;
 
 			// Exponent *must* have digits
-			if ( !consumeDigitsWithSep( stringSearch, pos, stringLength, 10, true ) )
+			if ( !consumeDigitsWithSep( stringSearch, pos, stringLength, 10, true,
+										underscoreSeparatorSupported ) )
 				return 0;
 		}
 
@@ -313,7 +328,8 @@ inline size_t isNumberLiteralJS( const char* stringSearch, int stringStartOffset
 			return 0;
 
 		// Must have digits *after* the dot if it's the start (e.g., ".5", "+.5")
-		if ( !consumeDigitsWithSep( stringSearch, pos, stringLength, 10, true ) )
+		if ( !consumeDigitsWithSep( stringSearch, pos, stringLength, 10, true,
+									underscoreSeparatorSupported ) )
 			return 0; // Require digits & valid separators
 
 		// Optional exponent part.
@@ -338,7 +354,8 @@ inline size_t isNumberLiteralJS( const char* stringSearch, int stringStartOffset
 				return 0;
 
 			// Exponent *must* have digits
-			if ( !consumeDigitsWithSep( stringSearch, pos, stringLength, 10, true ) )
+			if ( !consumeDigitsWithSep( stringSearch, pos, stringLength, 10, true,
+										underscoreSeparatorSupported ) )
 				return 0;
 		}
 	} else {
@@ -828,11 +845,33 @@ void ParserMatcherManager::registerBaseParsers() {
 								LanguageStandard::LANG_C );
 	} );
 
-	registerParser( "js_number_parser", []( const char* stringSearch, int stringStartOffset,
-											PatternMatcher::Range* matchList,
-											size_t stringLength ) {
-		return isNumberLiteralJS( stringSearch, stringStartOffset, matchList, stringLength );
-	} );
+	registerParser( "common_number_parser",
+					[]( const char* stringSearch, int stringStartOffset,
+						PatternMatcher::Range* matchList, size_t stringLength ) {
+						return isNumberLiteralBase( stringSearch, stringStartOffset, matchList,
+													stringLength, false, false, false );
+					} );
+
+	registerParser( "common_number_parser_o",
+					[]( const char* stringSearch, int stringStartOffset,
+						PatternMatcher::Range* matchList, size_t stringLength ) {
+						return isNumberLiteralBase( stringSearch, stringStartOffset, matchList,
+													stringLength, false, true, false );
+					} );
+
+	registerParser( "common_number_parser_ob",
+					[]( const char* stringSearch, int stringStartOffset,
+						PatternMatcher::Range* matchList, size_t stringLength ) {
+						return isNumberLiteralBase( stringSearch, stringStartOffset, matchList,
+													stringLength, false, true, true );
+					} );
+
+	registerParser( "js_number_parser",
+					[]( const char* stringSearch, int stringStartOffset,
+						PatternMatcher::Range* matchList, size_t stringLength ) {
+						return isNumberLiteralBase( stringSearch, stringStartOffset, matchList,
+													stringLength, true, true, true );
+					} );
 }
 
 void ParserMatcherManager::registerParser( std::string_view parserName, ParserMatcherFn fn ) {
