@@ -150,13 +150,3 @@ void addV1() {
 }
 
 }}}} // namespace EE::UI::Doc::Language
-
-				 "//",
-				 {},
-				 "v1" } )
-		.setVisible( false );
-
-	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
-}
-
-}}}} // namespace EE::UI::Doc::Language
