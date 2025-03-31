@@ -7,7 +7,7 @@ void addModula3() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
-		{ "Ada",
+		{ "Modula3",
 		  { "%.m3$", "%.i3$", "%.mg$", "%.ig$" },
 		  {
 			  { { "\"", "\"", "\\" }, "string" },
