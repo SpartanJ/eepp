@@ -12,12 +12,6 @@ void addU() {
 		{ "U",
 		  { "%.u$", "%.uh$" },
 		  {
-			  { { "R%\"(xml)%(", "%)(xml)%\"" }, { "string", "keyword2", "keyword2" }, "XML" },
-			  { { "R%\"(css)%(", "%)(css)%\"" }, { "string", "keyword2", "keyword2" }, "CSS" },
-			  { { "R%\"(html)%(", "%)(html)%\"" }, { "string", "keyword2", "keyword2" }, "HTML" },
-			  { { "R%\"(json)%(", "%)(json)%\"" }, { "string", "keyword2", "keyword2" }, "JSON" },
-			  { { "R\"[%a-\"]+%(", "%)[%a-\"]+%\"" }, "string" },
-			  { { "R\"%(", "%)\"" }, "string" },
 			  { { "//.-\n" }, "comment" },
 			  { { "/%*", "%*/" }, "comment" },
 			  { { "\"", "[\"\n]", "\\" }, "string" },
