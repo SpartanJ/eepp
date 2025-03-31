@@ -48,7 +48,7 @@ using namespace EE::System;
 inline void PrintErrorResult( HRESULT hr ) {
 	_com_error err( hr );
 	LPCTSTR errMsg = err.ErrorMessage();
-	std::string errStr( String::fromWide( errMsg ).toUtf8() );
+	std::string errStr( String( errMsg ).toUtf8() );
 	std::cerr << "ERROR: " << errStr << std::endl;
 	Log::error( "ERROR: %s", errStr );
 }
