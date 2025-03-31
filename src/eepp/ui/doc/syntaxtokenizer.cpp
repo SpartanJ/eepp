@@ -397,7 +397,8 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 						patternText = textv.substr( start, end - start );
 						SyntaxStyleType type =
 							curMatch < pattern.types.size() &&
-									pattern.types[curMatch] == SyntaxStyleTypes::Symbol
+									( pattern.types[curMatch] == SyntaxStyleTypes::Symbol ||
+									  pattern.types[curMatch] == SyntaxStyleTypes::Normal )
 								? curState.currentSyntax->getSymbol(
 									  ( patternTextStr = patternText ) )
 								: SyntaxStyleEmpty();
@@ -454,7 +455,8 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 						patternText = textv.substr( start, end - start );
 						SyntaxStyleType type =
 							curMatch < pattern.types.size() &&
-									pattern.types[curMatch] == SyntaxStyleTypes::Symbol
+									( pattern.types[curMatch] == SyntaxStyleTypes::Symbol ||
+									  pattern.types[curMatch] == SyntaxStyleTypes::Normal )
 								? curState.currentSyntax->getSymbol(
 									  ( patternTextStr = patternText ) )
 								: SyntaxStyleEmpty();

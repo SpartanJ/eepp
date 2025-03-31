@@ -45,6 +45,7 @@
 #include <eepp/ui/doc/languages/julia.hpp>
 #include <eepp/ui/doc/languages/kotlin.hpp>
 #include <eepp/ui/doc/languages/latex.hpp>
+#include <eepp/ui/doc/languages/lisp.hpp>
 #include <eepp/ui/doc/languages/lobster.hpp>
 #include <eepp/ui/doc/languages/makefile.hpp>
 #include <eepp/ui/doc/languages/meson.hpp>
@@ -152,6 +153,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addJSX();
 	addKotlin();
 	addLatex();
+	addLisp();
 	addLobster();
 	addMakefile();
 	addMeson();
