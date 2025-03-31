@@ -22,7 +22,9 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
 #ifdef _WIN32
+#include <eepp/core/string.hpp>
 #include <eepp/system/log.hpp>
+using namespace EE;
 using namespace EE::System;
 
 #define NTDDI_VERSION NTDDI_WIN10_RS5
@@ -46,8 +48,9 @@ using namespace EE::System;
 inline void PrintErrorResult( HRESULT hr ) {
 	_com_error err( hr );
 	LPCTSTR errMsg = err.ErrorMessage();
-	std::cerr << "ERROR: " << errMsg << std::endl;
-	Log::error( "ERROR: %s", errMsg );
+	std::string errStr( String::fromWide( errMsg ).toUtf8() );
+	std::cerr << "ERROR: " << errStr << std::endl;
+	Log::error( "ERROR: %s", errStr );
 }
 
 static void PrintWinApiError( DWORD error ) {
