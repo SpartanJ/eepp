@@ -1484,6 +1484,19 @@ String::String( const std::string& utf8String ) {
 	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( mString ) );
 }
 
+String::String( const std::basic_string<char8_t>& utf8String ) {
+	mString.reserve( utf8String.length() + 1 );
+
+	int skip = 0;
+	// Skip BOM
+	if ( utf8String.size() >= 3 && (char8_t)0xef == utf8String[0] &&
+		 (char8_t)0xbb == utf8String[1] && (char8_t)0xbf == utf8String[2] ) {
+		skip = 3;
+	}
+
+	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( mString ) );
+}
+
 String::String( const std::string_view& utf8String ) {
 	mString.reserve( utf8String.length() + 1 );
 

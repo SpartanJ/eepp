@@ -2090,7 +2090,8 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 								   std::function<void( int )> doneFn ) {
 		if ( !FileSystem::fileExists( cmd ) )
 			cmd = FileSystem::fileNameFromPath( cmd );
-		getUISceneNode()->runOnMainThread( [=] {
+		getUISceneNode()->runOnMainThread( [this, isIntegrated, cmd = std::move( cmd ), cwd, args,
+											doneFn = std::move( doneFn )] {
 			if ( isIntegrated ) {
 				UITerminal* term =
 					getPluginContext()->getTerminalManager()->createTerminalInSplitter(

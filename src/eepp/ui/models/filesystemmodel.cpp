@@ -202,7 +202,7 @@ bool FileSystemModel::Node::refresh( const FileSystemModel& model ) {
 	auto files = FileSystem::filesInfoGetInPath(
 		mInfo.getFilepath(), false, displayCfg.sortByName, displayCfg.foldersFirst,
 		displayCfg.ignoreHidden,
-		[&model] { return model.mShutingDown.load( std::memory_order::memory_order_relaxed ); } );
+		[&model] { return model.mShutingDown.load( std::memory_order_relaxed ); } );
 
 	std::vector<Node*> newChildren;
 	Node* node = nullptr;
@@ -263,7 +263,7 @@ bool FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 	auto files = FileSystem::filesInfoGetInPath(
 		mInfo.getFilepath(), false, displayCfg.sortByName, displayCfg.foldersFirst,
 		displayCfg.ignoreHidden,
-		[&model] { return model.mShutingDown.load( std::memory_order::memory_order_relaxed ); } );
+		[&model] { return model.mShutingDown.load( std::memory_order_relaxed ); } );
 
 	const auto& patterns = displayCfg.acceptedExtensions;
 	bool accepted;

@@ -144,7 +144,7 @@ function set_kind()
 	else
 		kind("WindowedApp")
 	end
-	cppdialect "C++17"
+	cppdialect "C++20"
 end
 
 link_list = { }
@@ -290,10 +290,10 @@ function build_base_cpp_configuration( package_name )
 	end
 
 	filter "action:vs*"
-		buildoptions{ "/std:c++17", "/utf-8" }
+		buildoptions{ "/std:c++20", "/utf-8" }
 
 	filter "action:not vs*"
-		cppdialect "C++17"
+		cppdialect "C++20"
 		buildoptions { "-Wall" }
 
 	filter "configurations:debug*"
@@ -380,7 +380,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		defines { "EE_TEXT_SHAPER_ENABLED" }
 	end
 
-	cppdialect "C++17"
+	cppdialect "C++20"
 	set_ios_config()
 	set_apple_config()
 	build_arch_configuration()
@@ -412,7 +412,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 
 	filter "action:vs*"
-		buildoptions{ "/std:c++17", "/utf-8", "/bigobj" }
+		buildoptions{ "/std:c++20", "/utf-8", "/bigobj" }
 
 	filter "action:not vs*"
 		buildoptions { "-Wall" }
@@ -475,7 +475,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 
 	filter { "action:export-compile-commands", "system:macosx" }
-		buildoptions { "-std=c++17" }
+		buildoptions { "-std=c++20" }
 
 	filter {}
 end
@@ -793,7 +793,7 @@ function build_eepp( build_name )
 		table.insert( link_list, get_backend_link_name( "freetype" ) )
 	end
 
-	cppdialect "C++17"
+	cppdialect "C++20"
 
 	filter "options:use-frameworks"
 		defines { "EE_USE_FRAMEWORKS" }
@@ -833,10 +833,10 @@ function build_eepp( build_name )
 
 	filter "action:vs*"
 		incdirs { "src/thirdparty/libzip/vs" }
-		buildoptions{ "/std:c++17", "/utf-8", "/bigobj" }
+		buildoptions{ "/std:c++20", "/utf-8", "/bigobj" }
 
 	filter { "action:export-compile-commands", "system:macosx" }
-		buildoptions { "-std=c++17" }
+		buildoptions { "-std=c++20" }
 
 	filter {}
 end
@@ -1107,7 +1107,7 @@ workspace "eepp"
 	project "efsw-static"
 		kind "StaticLib"
 		language "C++"
-		cppdialect "C++17"
+		cppdialect "C++20"
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
 		files { "src/thirdparty/efsw/src/efsw/*.cpp" }
 		build_base_cpp_configuration( "efsw" )
@@ -1153,7 +1153,7 @@ workspace "eepp"
 	project "eepp-maps-static"
 		kind "StaticLib"
 		language "C++"
-		cppdialect "C++17"
+		cppdialect "C++20"
 		incdirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
 		files { "src/modules/maps/src/**.cpp" }
 		defines { "EE_MAPS_STATIC" }
@@ -1168,7 +1168,7 @@ workspace "eepp"
 	project "eepp-maps"
 		kind "SharedLib"
 		language "C++"
-		cppdialect "C++17"
+		cppdialect "C++20"
 		incdirs { "include", "src/modules/maps/include/","src/modules/maps/src/" }
 		files { "src/modules/maps/src/**.cpp" }
 		links { "eepp-shared" }
@@ -1182,7 +1182,7 @@ workspace "eepp"
 	project "eepp-physics-static"
 		kind "StaticLib"
 		language "C++"
-		cppdialect "C++17"
+		cppdialect "C++20"
 		incdirs { "include", "src/modules/physics/include/","src/modules/physics/src/" }
 		files { "src/modules/physics/src/**.cpp", "src/eepp/physics/constraints/*.cpp" }
 		defines { "EE_PHYSICS_STATIC" }
@@ -1197,7 +1197,7 @@ workspace "eepp"
 	project "eepp-physics"
 		kind "SharedLib"
 		language "C++"
-		cppdialect "C++17"
+		cppdialect "C++20"
 		incdirs { "include", "src/modules/physics/include/","src/modules/physics/src/" }
 		files { "src/modules/physics/src/**.cpp", "src/eepp/physics/constraints/*.cpp" }
 		links { "chipmunk-static", "eepp-shared" }
@@ -1211,7 +1211,7 @@ workspace "eepp"
 	project "eterm-static"
 		kind "StaticLib"
 		language "C++"
-		cppdialect "C++17"
+		cppdialect "C++20"
 		incdirs { "include", "src/modules/eterm/include/","src/modules/eterm/src/" }
 		files { "src/modules/eterm/src/**.cpp" }
 		if _OPTIONS["with-static-eepp"] then
@@ -1225,12 +1225,12 @@ workspace "eepp"
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 		filter { "action:export-compile-commands", "system:macosx" }
-			buildoptions { "-std=c++17" }
+			buildoptions { "-std=c++20" }
 
 	project "languages-syntax-highlighting-static"
 		kind "StaticLib"
 		language "C++"
-		cppdialect "C++17"
+		cppdialect "C++20"
 		incdirs { "include", "src/modules/languages-syntax-highlighting/src" }
 		files { "src/modules/languages-syntax-highlighting/src/**.cpp" }
 		if _OPTIONS["with-static-eepp"] then
@@ -1241,7 +1241,7 @@ workspace "eepp"
 		filter "action:not vs*"
 			buildoptions { "-Wall" }
 		filter { "action:export-compile-commands", "system:macosx" }
-			buildoptions { "-std=c++17" }
+			buildoptions { "-std=c++20" }
 
 	-- Library
 	if not _OPTIONS["disable-static-build"] then

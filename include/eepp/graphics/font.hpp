@@ -22,14 +22,14 @@ struct EE_API Glyph {
 
 enum class FontType { TTF, BMF, Sprite };
 
-enum FontHorizontalAlign {
+enum FontHorizontalAlign : Uint32 {
 	TEXT_ALIGN_LEFT = ( 0 << 0 ),
 	TEXT_ALIGN_RIGHT = ( 1 << 0 ),
 	TEXT_ALIGN_CENTER = ( 2 << 0 ),
 	TEXT_HALIGN_MASK = ( 3 << 0 )
 };
 
-enum FontVerticalAlign {
+enum FontVerticalAlign : Uint32 {
 	TEXT_ALIGN_TOP = ( 0 << 2 ),
 	TEXT_ALIGN_BOTTOM = ( 1 << 2 ),
 	TEXT_ALIGN_MIDDLE = ( 2 << 2 ),

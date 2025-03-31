@@ -899,12 +899,13 @@ void UITextView::updateTextOverflow() {
 }
 
 UITextView* UITextView::setTextOverflow( const std::string_view& textOverflow ) {
+	static String EllipsisChar( u8"…"s ); // U+2026
 	if ( textOverflow == mTextOverflow ||
-		 ( mTextOverflow == u8"…" && textOverflow == "ellipsis"sv ) )
+		 ( mTextOverflow == EllipsisChar && textOverflow == "ellipsis"sv ) )
 		return this;
 
 	if ( "ellipsis"sv == textOverflow ) {
-		mTextOverflow = u8"…"; // U+2026
+		mTextOverflow = EllipsisChar;
 	} else {
 		mTextOverflow = textOverflow;
 	}

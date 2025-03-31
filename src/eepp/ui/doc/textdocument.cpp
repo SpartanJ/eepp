@@ -626,7 +626,8 @@ bool TextDocument::loadAsyncFromURL( const std::string& url,
 	mLoadingAsync = true;
 
 	Http::getAsync(
-		[=]( const Http&, Http::Request&, Http::Response& response ) {
+		[this, onLoaded = std::move( onLoaded ),
+		 uri = std::move( uri )]( const Http&, Http::Request&, Http::Response& response ) {
 			if ( response.getStatus() <= Http::Response::Ok ) {
 				std::string path( getTempPathFromURI( uri ) );
 				FileSystem::fileWrite( path, (const Uint8*)response.getBody().c_str(),
@@ -2959,7 +2960,7 @@ TextDocument::SearchResults TextDocument::findAll( const String& text, bool case
 	do {
 		found = find( text, from, caseSensitive, wholeWord, type, restrictRange );
 		if ( found.isValid() ) {
-			if ( !all.empty() && all.back() == found )
+			if ( !all.empty() && all.back().operator==(found) )
 				break;
 			from = found.result.end();
 			all.push_back( found );

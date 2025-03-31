@@ -94,6 +94,7 @@ void addCPP() {
 			  { "bitor", "keyword" },		 { "thread_local", "keyword" },
 			  { "uint64_t", "keyword2" },	 { "char32_t", "keyword2" },
 			  { "alignas", "keyword" },		 { "export", "keyword" },
+			  { "ssize_t", "keyword2" },
 
 			  { "#if", "keyword" },			 { "#ifdef", "keyword" },
 			  { "#ifndef", "keyword" },		 { "#else", "keyword" },

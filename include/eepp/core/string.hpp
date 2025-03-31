@@ -7,6 +7,7 @@
 #include <cstring>
 #include <functional>
 #include <string>
+#include <uchar.h>
 #include <vector>
 
 namespace EE {
@@ -319,7 +320,7 @@ class EE_API String {
 	static bool icontains( const String& haystack, const String& needle );
 
 	static int fuzzyMatchSimple( const std::string& pattern, const std::string& string,
-						   bool allowUneven = false, bool permissive = false );
+								 bool allowUneven = false, bool permissive = false );
 
 	static int fuzzyMatch( const std::string& pattern, const std::string& string );
 
@@ -409,18 +410,33 @@ class EE_API String {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat-security"
 #elif defined( __GNUC__ )
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-		int size =
+
+		int reqSize =
 			std::snprintf( nullptr, 0, format.data(),
-						   FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... ) +
-			1;
-		std::string result( size, 0 );
-		if ( size > 0 ) {
-			std::snprintf( &result[0], size, format.data(),
 						   FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
-			result.resize( size - 1 );
+
+		if ( reqSize < 0 )
+			return "";
+
+		std::size_t bufSize = static_cast<std::size_t>( reqSize ) + 1;
+		std::string result( bufSize, '\0' );
+
+		int writtenChars =
+			std::snprintf( &result[0], bufSize, format.data(),
+						   FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
+
+		if ( writtenChars < 0 )
+			return "";
+
+		if ( static_cast<std::size_t>( writtenChars ) < bufSize ) {
+			result.resize( static_cast<std::size_t>( writtenChars ) );
+		} else {
+			result.resize( bufSize - 1 );
 		}
+
 #ifdef __clang__
 #pragma clang diagnostic pop
 #elif defined( __GNUC__ )
@@ -509,6 +525,11 @@ class EE_API String {
 	** @param utf8String UTF-8 string to convert
 	**/
 	String( const std::string& utf8String );
+
+	/** @brief Construct from an UTF-8 string to UTF-32 according
+	** @param utf8String UTF-8 string to convert
+	**/
+	String( const std::basic_string<char8_t>& utf8String );
 
 	/** @brief Construct from an UTF-8 string to UTF-32 according
 	** @param utf8String UTF-8 string to convert

@@ -2,6 +2,8 @@
 #include "ecode.hpp"
 #include "version.hpp"
 
+using namespace std::string_literals;
+
 namespace ecode {
 
 void SettingsActions::checkForUpdatesResponse( Http::Response response, bool fromStartup ) {
@@ -206,11 +208,11 @@ void SettingsActions::setIndentTabCharacter() {
 	UIComboBox* comboBox = msgBox->getComboBox();
 	UIListBox* listBox = msgBox->getComboBox()->getDropDownList()->getListBox();
 	listBox->addClass( "indent_tab_listbox_item" );
-	listBox->addListBoxItems( { u8"»", u8"→", u8"⇒", u8"↪", u8"⇢", u8"↣" } );
+	listBox->addListBoxItems( { u8"»"s, u8"→"s, u8"⇒"s, u8"↪"s, u8"⇢"s, u8"↣"s } );
 	msgBox->getComboBox()->setText(
-		String::fromUtf8( mApp->getConfig().editor.tabIndentCharacter.empty()
-							  ? u8"»"
-							  : mApp->getConfig().editor.tabIndentCharacter ) );
+		mApp->getConfig().editor.tabIndentCharacter.empty()
+			? String( u8"»"s )
+			: String::fromUtf8( mApp->getConfig().editor.tabIndentCharacter ) );
 	msgBox->showWhenReady();
 	comboBox->on( Event::OnValueChange, [this, comboBox]( const Event* ) {
 		if ( comboBox->getText().size() != 1 )

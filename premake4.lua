@@ -406,9 +406,9 @@ function build_base_cpp_configuration( package_name )
 	end
 
 	if not is_vs() then
-		buildoptions{ "-std=c++17" }
+		buildoptions{ "-std=c++20" }
 	else
-		buildoptions{ "/std:c++17", "/utf-8" }
+		buildoptions{ "/std:c++20", "/utf-8" }
 	end
 
 	set_ios_config()
@@ -510,9 +510,9 @@ function build_link_configuration( package_name, use_ee_icon )
 	end
 
 	if not is_vs() then
-		buildoptions{ "-std=c++17" }
+		buildoptions{ "-std=c++20" }
 	else
-		buildoptions{ "/std:c++17", "/utf-8", "/bigobj" }
+		buildoptions{ "/std:c++20", "/utf-8", "/bigobj" }
 	end
 
 	if package_name ~= "eepp" and package_name ~= "eepp-static" then
@@ -976,9 +976,9 @@ function build_eepp( build_name )
 	end
 
 	if not is_vs() then
-		buildoptions{ "-std=c++17" }
+		buildoptions{ "-std=c++20" }
 	else
-		buildoptions{ "/std:c++17", "/utf-8", "/bigobj" }
+		buildoptions{ "/std:c++20", "/utf-8", "/bigobj" }
 	end
 
 	if os.is_real("mingw32") or os.is_real("mingw64") or os.is_real("windows") then
@@ -1235,9 +1235,9 @@ solution "eepp"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
 		if not is_vs() then
-			buildoptions{ "-std=c++17" }
+			buildoptions{ "-std=c++20" }
 		else
-			buildoptions{ "/std:c++17" }
+			buildoptions{ "/std:c++20" }
 		end
 
 		if os.is("windows") then
@@ -1297,9 +1297,9 @@ solution "eepp"
 			defines { "EE_STATIC" }
 		end
 		if not is_vs() then
-			buildoptions{ "-std=c++17" }
+			buildoptions{ "-std=c++20" }
 		else
-			buildoptions{ "/std:c++17" }
+			buildoptions{ "/std:c++20" }
 		end
 		build_base_cpp_configuration( "eepp-maps-static" )
 
@@ -1315,9 +1315,9 @@ solution "eepp"
 			defines { "EE_STATIC" }
 		end
 		if not is_vs() then
-			buildoptions{ "-std=c++17" }
+			buildoptions{ "-std=c++20" }
 		else
-			buildoptions{ "/std:c++17" }
+			buildoptions{ "/std:c++20" }
 		end
 		build_base_cpp_configuration( "eepp-maps" )
 		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp-maps" )
@@ -1330,9 +1330,9 @@ solution "eepp"
 		files { "src/modules/physics/src/**.cpp", "src/eepp/physics/constraints/*.cpp" }
 		defines { "EE_PHYSICS_STATIC" }
 		if not is_vs() then
-			buildoptions{ "-std=c++17" }
+			buildoptions{ "-std=c++20" }
 		else
-			buildoptions{ "/std:c++17" }
+			buildoptions{ "/std:c++20" }
 		end
 		build_base_cpp_configuration( "eepp-physics-static" )
 
@@ -1345,9 +1345,9 @@ solution "eepp"
 		links { "chipmunk-static", "eepp-shared" }
 		defines { "EE_PHYSICS_EXPORTS" }
 		if not is_vs() then
-			buildoptions{ "-std=c++17" }
+			buildoptions{ "-std=c++20" }
 		else
-			buildoptions{ "/std:c++17" }
+			buildoptions{ "/std:c++20" }
 		end
 		build_base_cpp_configuration( "eepp-physics" )
 		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp-physics" )
@@ -1365,9 +1365,9 @@ solution "eepp"
 			defines { "WINVER=0x0602" }
 		end
 		if not is_vs() then
-			buildoptions{ "-std=c++17" }
+			buildoptions{ "-std=c++20" }
 		else
-			buildoptions{ "/std:c++17" }
+			buildoptions{ "/std:c++20" }
 		end
 		build_base_cpp_configuration( "eterm" )
 
@@ -1381,9 +1381,9 @@ solution "eepp"
 			defines { "EE_STATIC" }
 		end
 		if not is_vs() then
-			buildoptions{ "-std=c++17" }
+			buildoptions{ "-std=c++20" }
 		else
-			buildoptions{ "/std:c++17" }
+			buildoptions{ "/std:c++20" }
 		end
 		build_base_cpp_configuration( "languages-syntax-highlighting" )
 

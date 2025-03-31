@@ -1,3 +1,4 @@
+#include <eepp/system/log.hpp>
 #include <eepp/system/regex.hpp>
 #include <pcre2.h>
 
@@ -54,9 +55,9 @@ RegEx::RegEx( const std::string_view& pattern, Options options, bool useCache ) 
 		PCRE2_UCHAR buffer[256];
 		pcre2_get_error_message( errornumber, buffer, sizeof( buffer ) );
 		mValid = false;
-		// 		throw std::runtime_error( "PCRE2 compilation failed at offset " +
-		// 								  std::to_string( erroroffset ) + ": " +
-		// 								  reinterpret_cast<const char*>( buffer ) );
+		Log::debug( "PCRE2 compilation failed at offset " + std::to_string( erroroffset ) + ": " +
+					reinterpret_cast<const char*>( buffer ) );
+		return;
 	}
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
@@ -66,8 +67,7 @@ RegEx::RegEx( const std::string_view& pattern, Options options, bool useCache ) 
 	int rc = pcre2_pattern_info( reinterpret_cast<pcre2_code*>( mCompiledPattern ),
 								 PCRE2_INFO_CAPTURECOUNT, &mCaptureCount );
 	if ( rc != 0 ) {
-		// 		throw std::runtime_error( "PCRE2 pattern info failed with error code " +
-		// 								  std::to_string( rc ) );
+		Log::debug( "PCRE2 pattern info failed with error code " + std::to_string( rc ) );
 		mValid = false;
 	} else if ( useCache && RegExCache::instance()->isEnabled() ) {
 		RegExCache::instance()->insert( pattern, options, mCompiledPattern );

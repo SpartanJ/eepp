@@ -329,7 +329,7 @@ size_t Process::readAll( std::string& buffer, bool readErr, Time timeout ) {
 		int res = poll( &pollfd, static_cast<nfds_t>( 1 ), 100 );
 		if ( res <= 0 ) {
 			if ( ( timeout != Time::Zero && clock.getElapsedTime() >= timeout ) ||
-				 ( res < 0 && errno != EINTR ) )
+				 ( res < 0 && errno != EINTR ) || !isAlive() )
 				break;
 			continue;
 		}

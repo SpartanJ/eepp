@@ -147,9 +147,13 @@ void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
 
 				if ( !mSkipResourceLoad && NULL == tTex ) {
 					if ( NULL != mPack ) {
-						mRL.add( [=] { TextureFactory::instance()->loadFromPack( mPack, path ); } );
+						mRL.add( [this, path = std::move( path )] {
+							TextureFactory::instance()->loadFromPack( mPack, path );
+						} );
 					} else {
-						mRL.add( [=] { TextureFactory::instance()->loadFromFile( path ); } );
+						mRL.add( [path = std::move( path )] {
+							TextureFactory::instance()->loadFromFile( path );
+						} );
 					}
 				}
 

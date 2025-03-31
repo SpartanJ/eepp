@@ -1375,7 +1375,9 @@ void EETest::loadTextures() {
 		std::string name( files[i] );
 
 		if ( "jpg" == FileSystem::fileExtension( name ) ) {
-			mResLoad.add( [=] { TextureFactory::instance()->loadFromPack( PakTest, name ); } );
+			mResLoad.add( [this, name = std::move( name )] {
+				TextureFactory::instance()->loadFromPack( PakTest, name );
+			} );
 		}
 	}
 #endif
