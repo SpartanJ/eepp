@@ -54,6 +54,7 @@ void addV1() {
 					 { { "-?%d+[%d%.eE]*" }, "number" },
 					 { { "-?%.?%d+" }, "number" },
 					 { { "[%.%+%-=/%*%^%%<>!~|&]" }, "operator" },
+					 { "(if|for|while|foreach|switch)\s*(?=\()", { "normal", "keyword", "keyword" }, "", SyntaxPatternMatchType::RegEx }
 					 { { "[%a_][%w_]*%s*%f[(]" }, "function" },
 					 { { "[%a_][%w_]*" }, "symbol" },
 				 },
