@@ -5,6 +5,6 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 extern void addModula2();
 
-}}}}
+}}}} // namespace EE::UI::Doc::Language
 
 #endif
