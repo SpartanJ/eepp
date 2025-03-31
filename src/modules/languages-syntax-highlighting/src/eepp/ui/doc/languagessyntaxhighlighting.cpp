@@ -83,6 +83,7 @@
 #include <eepp/ui/doc/languages/teal.hpp>
 #include <eepp/ui/doc/languages/toml.hpp>
 #include <eepp/ui/doc/languages/typescript.hpp>
+#include <eepp/ui/doc/languages/u.hpp>
 #include <eepp/ui/doc/languages/v.hpp>
 #include <eepp/ui/doc/languages/v1.hpp>
 #include <eepp/ui/doc/languages/vala.hpp>
@@ -186,6 +187,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addTeal();
 	addToml();
 	addTypeScript();
+	addU();
 	addV();
 	addV1();
 	addVala();
