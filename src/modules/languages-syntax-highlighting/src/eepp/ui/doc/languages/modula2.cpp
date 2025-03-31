@@ -7,7 +7,7 @@ void addModula2() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
-		{ "Ada",
+		{ "Modula2",
 		  { "%.def$", "%.mod$" },
 		  {
 			  { { "\"", "\"", "\\" }, "string" },
