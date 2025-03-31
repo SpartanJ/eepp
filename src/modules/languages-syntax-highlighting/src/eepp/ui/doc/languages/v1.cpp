@@ -92,8 +92,8 @@ void addV1() {
 				   { "implements", "keyword2" }, { "instanceof", "keyword2" },
 				   { "require", "keyword2" },	 { "require_once", "keyword2" },
 				   { "include", "keyword2" },	 { "include_once", "keyword2" },
-				   { "use", "keyword2" },		 { "new", "keyword2" },
-				   { "clone", "keyword2" },
+				   { "error_reporting", "keyword2" },	 { "use", "keyword2" },
+				   { "new", "keyword2" },		 { "clone", "keyword2" },
 
 				   { "true", "literal" },		 { "false", "literal" },
 				   { "NULL", "literal" },		 { "parent", "literal" },
