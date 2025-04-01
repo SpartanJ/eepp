@@ -41,7 +41,7 @@ fi
 
 ../make.sh -e config="$BUILDTYPE"_"$ARCH" -j"$(nproc)" ecode || exit
 
-SDLVER=$(grep "remote_sdl2_version =" ../../../premake5.lua | awk '{print $3}' | tr -d '"')
+SDLVER=$(grep "remote_sdl2_version_number =" ../../../premake5.lua | awk '{print $3}' | tr -d '"')
 rm -rf ./ecode
 mkdir -p ecode/assets
 cp ../../../bin/ecode.exe ecode/
@@ -50,7 +50,7 @@ cp ../../../bin/eepp.dll ecode/
 if [[ "$ARCH_CONFIG" == "arm64" ]]; then
 cp "/usr/local/cross-tools/aarch64-w64-mingw32/bin/SDL2.dll" ecode/
 else
-cp ../../../src/thirdparty/"$SDLVER"/$ARCHI-w64-mingw32/bin/SDL2.dll ecode/
+cp ../../../src/thirdparty/"SDL2-$SDLVER"/$ARCHI-w64-mingw32/bin/SDL2.dll ecode/
 fi
 
 mkdir -p ecode/assets/colorschemes
