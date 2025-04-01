@@ -18,6 +18,12 @@ using json = nlohmann::json;
 
 namespace ecode {
 
+static std::initializer_list<std::string> AIAssistantUnlockedCommandList = {
+
+	"new-ai-assistant"
+
+};
+
 static std::initializer_list<std::string> AIAssistantCommandList = {
 
 	"ai-prompt",
@@ -386,12 +392,19 @@ void AIAssistantPlugin::onRegisterDocument( TextDocument* doc ) {
 }
 
 void AIAssistantPlugin::onRegisterEditor( UICodeEditor* editor ) {
-	editor->addUnlockedCommands( AIAssistantCommandList );
-	PluginBase::onRegisterEditor( editor );
+	editor->addUnlockedCommands( AIAssistantUnlockedCommandList );
+
+	for ( auto& kb : mKeyBindings ) {
+		if ( !kb.second.empty() && std::find( AIAssistantUnlockedCommandList.begin(),
+											  AIAssistantUnlockedCommandList.end(),
+											  kb.first ) != AIAssistantUnlockedCommandList.end() ) {
+			editor->getKeyBindings().addKeybindString( kb.second, kb.first );
+		}
+	}
 }
 
 void AIAssistantPlugin::onUnregisterEditor( UICodeEditor* editor ) {
-	editor->removeUnlockedCommands( AIAssistantCommandList );
+	editor->removeUnlockedCommands( AIAssistantUnlockedCommandList );
 }
 
 PluginRequestHandle AIAssistantPlugin::processMessage( const PluginMessage& msg ) {
