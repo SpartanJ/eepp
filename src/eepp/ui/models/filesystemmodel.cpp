@@ -26,11 +26,9 @@ FileSystemModel::Node::Node( const std::string& rootPath, FileSystemModel& model
 	if ( threadPool ) {
 		mQueuedForTraversal = true;
 		threadPool->run( [this, &model]() {
-			auto rowCount = model.rowCount();
 			traverseIfNeeded( model );
 			model.refreshView();
-			if ( rowCount != model.rowCount() )
-				model.invalidate( Model::DontInvalidateIndexes );
+			model.invalidate( Model::DontInvalidateIndexes );
 		} );
 	} else {
 		traverseIfNeeded( model );
