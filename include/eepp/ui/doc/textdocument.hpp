@@ -49,7 +49,7 @@ class EE_API TextDocument {
 		TextRange result{};
 		std::vector<TextRange> captures{};
 		bool isValid() const { return result.isValid(); }
-		bool operator==( const SearchResult& other ) {
+		bool operator==( const SearchResult& other ) const {
 			return result == other.result && captures == other.captures;
 		}
 	};

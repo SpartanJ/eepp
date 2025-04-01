@@ -237,6 +237,7 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 
 		formatter.command = obj["command"].get<std::string>();
 		formatter.url = obj.value( "url", "" );
+		formatter.preferLSPFormatter = obj.value( "prefer_lsp_formatter", false );
 
 		if ( obj.contains( "type" ) ) {
 			std::string typeStr( obj["type"].get<std::string>() );
@@ -356,7 +357,7 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 	Clock clock;
 	std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 	auto formatter = supportsFormatter( doc );
-	if ( formatter.command.empty() ) {
+	if ( formatter.preferLSPFormatter || formatter.command.empty() ) {
 		if ( supportsLSPFormatter( doc ) )
 			formatDocWithLSP( doc );
 		return;

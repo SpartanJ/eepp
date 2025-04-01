@@ -19,7 +19,20 @@ using json = nlohmann::json;
 namespace ecode {
 
 static std::initializer_list<std::string> AIAssistantCommandList = {
-	"new-ai-assistant",
+
+	"ai-prompt",
+	"ai-add-chat",
+	"ai-chat-history",
+	"ai-clone-chat",
+	"ai-settings",
+	"ai-toggle-private-chat",
+	"ai-save-chat",
+	"ai-rename-chat",
+	"ai-show-menu",
+	"ai-chat-toggle-role",
+	"ai-refresh-local-models",
+	"new-ai-assistant"
+
 };
 
 static std::map<std::string, LLMProvider> parseLLMProviders( const nlohmann::json& j ) {
@@ -192,7 +205,7 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 				FileSystem::fileGet( filePath, data );
 				if ( !data.empty() ) {
 					auto j = nlohmann::json::parse( data, nullptr, false );
-					if ( !j.empty() ){
+					if ( !j.empty() ) {
 						inputText = chatUI->unserialize( j );
 					}
 				}
@@ -285,6 +298,17 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 
 	if ( mKeyBindings.empty() ) {
 		mKeyBindings["new-ai-assistant"] = "mod+shift+m";
+		mKeyBindings["ai-prompt"] = "mod+return";
+		mKeyBindings["ai-add-chat"] = "mod+shift+return";
+		mKeyBindings["ai-chat-history"] = "mod+h";
+		mKeyBindings["ai-clone-chat"] = "mod+shift+c";
+		mKeyBindings["ai-settings"] = "mod+shift+s";
+		mKeyBindings["ai-toggle-private-chat"] = "mod+shift+p";
+		mKeyBindings["ai-save-chat"] = "mod+s";
+		mKeyBindings["ai-rename-chat"] = "f2";
+		mKeyBindings["ai-show-menu"] = "mod+m";
+		mKeyBindings["ai-chat-toggle-role"] = "mod+shift+r";
+		mKeyBindings["ai-refresh-local-models"] = "mod+shift+l";
 	}
 
 	auto& kb = j["keybindings"];
@@ -374,8 +398,10 @@ PluginRequestHandle AIAssistantPlugin::processMessage( const PluginMessage& msg 
 	switch ( msg.type ) {
 		case ecode::PluginMessageType::UIReady: {
 			for ( const auto& kb : mKeyBindings ) {
-				getPluginContext()->getMainLayout()->getKeyBindings().addKeybindString( kb.second,
-																						kb.first );
+				if ( !String::startsWith( kb.first, "ai-" ) ) {
+					getPluginContext()->getMainLayout()->getKeyBindings().addKeybindString(
+						kb.second, kb.first );
+				}
 			}
 
 			if ( !mUIInit )

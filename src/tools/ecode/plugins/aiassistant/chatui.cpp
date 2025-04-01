@@ -435,7 +435,12 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		but->setTooltipText( but->getTooltipText() + " (" + kb + ")" );
 	};
 
-	const auto addKb = [this]( const std::string& kb, const std::string& cmd ) {
+	const auto addKb = [this]( std::string kb, const std::string& cmd, bool searchDefined = true ) {
+		if ( searchDefined && getPlugin() ) {
+			const auto& find = getPlugin()->getKeybindings().find( cmd );
+			if ( find != getPlugin()->getKeybindings().end() && !find->second.empty() )
+				kb = find->second;
+		}
 		getKeyBindings().addKeybindString( kb, cmd );
 		mChatInput->addKeyBindingString( kb, cmd );
 	};
@@ -462,8 +467,8 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	appendShortcutToTooltip( mChatUserRole, "ai-chat-toggle-role" );
 	appendShortcutToTooltip( mRefreshModels, "ai-refresh-local-models" );
 
-	addKb( "mod+keypad enter", "ai-prompt" );
-	addKb( "mod+shift+keypad enter", "ai-add-chat" );
+	addKb( "mod+keypad enter", "ai-prompt", false );
+	addKb( "mod+shift+keypad enter", "ai-add-chat", false );
 }
 
 std::optional<LLMModel> LLMChatUI::getModel( const std::string& provider,

@@ -16,7 +16,8 @@
       "language": ["c", "cpp", "objective-c", "java"],
       "file_patterns": ["%.inl$", "%.cpp$", "%.hpp$", "%.cc$", "%.cxx$", "%.c++$", "%.hh$", "%.hxx$", "%.h++$", "%.objcpp$", "%.m$", "%.java$"],
       "command": "clang-format --style=file $FILENAME",
-      "url": "https://clang.llvm.org/docs/ClangFormat.html"
+      "url": "https://clang.llvm.org/docs/ClangFormat.html",
+      "prefer_lsp_formatter": true
     },
     {
       "language": "python",
@@ -70,7 +71,8 @@
       "file_patterns": ["%.zig$"],
       "command": "zig fmt $FILENAME",
       "type": "inplace",
-      "url": "https://ziglang.org"
+      "url": "https://ziglang.org",
+      "prefer_lsp_formatter": true
     },
     {
       "language": "haskell",

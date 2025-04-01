@@ -93,6 +93,8 @@ class PluginBase : public Plugin {
 
 	virtual String::HashType getConfigFileHash() override { return mConfigHash; }
 
+	const std::map<std::string, std::string>& getKeybindings() { return mKeyBindings; }
+
   protected:
 	//! Keep track of the registered editors + all the listeners registered to each editor
 	UnorderedMap<UICodeEditor*, std::vector<Uint32>> mEditors;

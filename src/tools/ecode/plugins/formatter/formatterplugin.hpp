@@ -29,12 +29,13 @@ class FormatterPlugin : public Plugin {
 		FormatterType type{ FormatterType::Output };
 		std::vector<std::string> languages{};
 		std::string url;
+		bool preferLSPFormatter{ false };
 	};
 
 	static PluginDefinition Definition() {
 		return {
 			"autoformatter",	  "Auto Formatter", "Enables the code formatter/prettifier plugin.",
-			FormatterPlugin::New, { 0, 2, 5 },		FormatterPlugin::NewSync };
+			FormatterPlugin::New, { 0, 2, 6 },		FormatterPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
