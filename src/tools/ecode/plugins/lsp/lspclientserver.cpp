@@ -1,5 +1,5 @@
-#include "lspclientplugin.hpp"
 #include "lspclientserver.hpp"
+#include "lspclientplugin.hpp"
 #include "lspclientservermanager.hpp"
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
@@ -752,7 +752,7 @@ static LSPMarkupContent parseMarkupContent( const json& v ) {
 
 static LSPHover parseHover( const json& result ) {
 	LSPHover ret;
-	if ( result.is_null() )
+	if ( result.is_null() || !result.contains( "contains" ) )
 		return ret;
 
 	if ( result.contains( MEMBER_RANGE ) )

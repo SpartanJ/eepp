@@ -195,8 +195,8 @@ void LSPDocumentClient::requestSemanticHighlightingDelayed( bool reqFull ) {
 	if ( sceneNode ) {
 		mWaitingSemanticTokensResponse = true;
 		sceneNode->removeActionsByTag( mTagSemanticTokens );
-		sceneNode->runOnMainThread( [this, reqFull]() { requestSemanticHighlighting( reqFull ); },
-									Seconds( 0.5f ), mTagSemanticTokens );
+		sceneNode->debounce( [this, reqFull]() { requestSemanticHighlighting( reqFull ); },
+							 Seconds( 0.5f ), mTagSemanticTokens );
 	}
 }
 
@@ -451,7 +451,7 @@ void LSPDocumentClient::requestSymbolsDelayed() {
 		LSPDocumentClient* docClient = this;
 		URI uri = mDoc->getURI();
 		LSPClientServer* server = mServer;
-		sceneNode->runOnMainThread(
+		sceneNode->debounce(
 			[docClient, server, uri]() {
 				if ( server->hasDocument( uri ) )
 					docClient->requestSymbols();

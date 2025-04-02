@@ -2417,9 +2417,12 @@ void TextDocument::setIndentType( const IndentType& indentType ) {
 
 void TextDocument::undo() {
 	setRunningTransaction( true );
+	bool stackWasFull = mUndoStack.getMaxStackSize() == mUndoStack.getUndoStackContainer().size();
 	mUndoStack.undo();
 	setRunningTransaction( false );
 	notifyUndoRedo( UndoRedo::Undo );
+	if ( stackWasFull )
+		setDirtyUntilSave();
 }
 
 void TextDocument::redo() {
@@ -2960,7 +2963,7 @@ TextDocument::SearchResults TextDocument::findAll( const String& text, bool case
 	do {
 		found = find( text, from, caseSensitive, wholeWord, type, restrictRange );
 		if ( found.isValid() ) {
-			if ( !all.empty() && all.back().operator==(found) )
+			if ( !all.empty() && all.back().operator==( found ) )
 				break;
 			from = found.result.end();
 			all.push_back( found );

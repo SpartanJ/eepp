@@ -1,5 +1,5 @@
-#include "../../version.hpp"
 #include "lspclientplugin.hpp"
+#include "../../version.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
@@ -562,11 +562,12 @@ bool LSPClientPlugin::processDocumentFormattingResponse( const URI& uri,
 
 	auto doc = mManager->getSplitter()->findDocFromURI( uri );
 	if ( !doc ) {
-		mManager->getLoadFileFn()( uri.getFSPath(), [this, edits]( UICodeEditor* editor, auto ) {
-			auto documentRef = editor->getDocumentRef();
-			mManager->getSplitter()->getUISceneNode()->runOnMainThread(
-				[documentRef, edits]() { processFormattingResponse( documentRef, edits ); } );
-		} );
+		mManager->getLoadFileFn()(
+			uri.getFSPath(), [this, edits = std::move( edits )]( UICodeEditor* editor, auto ) {
+				auto documentRef = editor->getDocumentRef();
+				mManager->getSplitter()->getUISceneNode()->runOnMainThread(
+					[documentRef, edits]() { processFormattingResponse( documentRef, edits ); } );
+			} );
 		return false;
 	}
 
