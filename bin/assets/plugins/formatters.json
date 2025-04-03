@@ -85,6 +85,12 @@
       "file_patterns": ["%.v$"],
       "command": "v fmt $FILENAME",
       "url": "https://vlang.io"
+    },
+    {
+      "language": "lisp",
+      "file_patterns": ["%.lisp$", "%.cl$", "%.el$"],
+      "command": "ros fmt $FILENAME",
+      "url": "https://github.com/roswell/roswell"
     }
   ]
 }

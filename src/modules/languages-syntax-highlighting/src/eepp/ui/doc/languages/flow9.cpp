@@ -1,13 +1,13 @@
-#include <eepp/ui/doc/languages/flow.hpp>
+#include <eepp/ui/doc/languages/flow9.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addFlow() {
+void addFlow9() {
 
 	SyntaxDefinitionManager::instance()->add(
 
-		{ "Flow",
+		{ "Flow9",
 		  { "%.flow$" },
 		  {
 			  { { "//.-\n" }, "comment" },
