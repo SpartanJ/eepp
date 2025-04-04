@@ -1,11 +1,15 @@
 #ifndef EE_UI_DOC_TEXTUNDOSTACK_HPP
 #define EE_UI_DOC_TEXTUNDOSTACK_HPP
 
-#include <deque>
 #include <eepp/config.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/system/time.hpp>
 #include <eepp/ui/doc/textrange.hpp>
+
+#include <nlohmann/json_fwd.hpp>
+
+#include <deque>
+#include <variant>
 
 using namespace EE::System;
 
@@ -16,11 +20,93 @@ class TextUndoCommand;
 
 enum class TextUndoCommandType { Insert = 1, Remove = 2, Selection = 3 };
 
-using UndoStackContainer = std::deque<TextUndoCommand*>;
+class TextUndoCommand {
+  public:
+	TextUndoCommand( const Uint64& id, const TextUndoCommandType& type, const Time& timestamp );
+
+	virtual ~TextUndoCommand();
+
+	const Uint64& getId() const;
+
+	const TextUndoCommandType& getType() const;
+
+	const Time& getTimestamp() const;
+
+	virtual nlohmann::json toJSON() const = 0;
+
+  protected:
+	Uint64 mId;
+	TextUndoCommandType mType;
+	Time mTimestamp;
+
+	nlohmann::json baseJSON() const;
+};
+
+class TextUndoCommandInsert : public TextUndoCommand {
+  public:
+	TextUndoCommandInsert( const Uint64& id, const size_t& cursorIdx, const String& text,
+						   const TextPosition& position, const Time& timestamp );
+
+	const String& getText() const;
+
+	const TextPosition& getPosition() const;
+
+	size_t getCursorIdx() const;
+
+	nlohmann::json toJSON() const;
+
+	static TextUndoCommandInsert fromJSON( nlohmann::json j, Uint64 id );
+
+  protected:
+	String mText;
+	TextPosition mPosition;
+	size_t mCursorIdx;
+};
+
+class TextUndoCommandRemove : public TextUndoCommand {
+  public:
+	TextUndoCommandRemove( const Uint64& id, const size_t& cursorIdx, const TextRange& range,
+						   const Time& timestamp );
+
+	const TextRange& getRange() const;
+
+	size_t getCursorIdx() const;
+
+	nlohmann::json toJSON() const;
+
+	static TextUndoCommandRemove fromJSON( nlohmann::json j, Uint64 id );
+
+  protected:
+	TextRange mRange;
+	size_t mCursorIdx;
+};
+
+class TextUndoCommandSelection : public TextUndoCommand {
+  public:
+	TextUndoCommandSelection( const Uint64& id, const size_t& cursorIdx,
+							  const TextRanges& selection, const Time& timestamp );
+
+	const TextRanges& getSelection() const;
+
+	size_t getCursorIdx() const;
+
+	nlohmann::json toJSON() const;
+
+	static TextUndoCommandSelection fromJSON( nlohmann::json j, Uint64 id );
+
+  protected:
+	TextRanges mSelection;
+	size_t mCursorIdx;
+};
+
+using UndoCommandVariant =
+	std::variant<TextUndoCommandInsert, TextUndoCommandRemove, TextUndoCommandSelection>;
+
+using UndoStackContainer = std::deque<UndoCommandVariant>;
 
 class EE_API TextUndoStack {
   public:
-	TextUndoStack( TextDocument* owner, const Uint32& maxStackSize = 10000 );
+	TextUndoStack( TextDocument* owner, const Uint32& maxStackSize = 20000 );
 
 	~TextUndoStack();
 
@@ -60,7 +146,7 @@ class EE_API TextUndoStack {
 	UndoStackContainer mRedoStack;
 	Time mMergeTimeout;
 
-	void pushUndo( UndoStackContainer& undoStack, TextUndoCommand* cmd );
+	void pushUndo( UndoStackContainer& undoStack, UndoCommandVariant&& cmd );
 
 	void pushInsert( UndoStackContainer& undoStack, const String& string, const size_t& cursorIdx,
 					 const TextPosition& position, const Time& time );
@@ -76,6 +162,8 @@ class EE_API TextUndoStack {
 	UndoStackContainer& getRedoStackContainer();
 
 	void popUndo( UndoStackContainer& undoStack, UndoStackContainer& redoStack );
+
+	void limitStackSize( UndoStackContainer& stack );
 };
 
 }}} // namespace EE::UI::Doc

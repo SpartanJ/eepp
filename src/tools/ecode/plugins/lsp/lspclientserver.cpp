@@ -752,7 +752,7 @@ static LSPMarkupContent parseMarkupContent( const json& v ) {
 
 static LSPHover parseHover( const json& result ) {
 	LSPHover ret;
-	if ( result.is_null() || !result.contains( "contains" ) )
+	if ( result.is_null() || result.empty() )
 		return ret;
 
 	if ( result.contains( MEMBER_RANGE ) )

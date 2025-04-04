@@ -104,7 +104,8 @@ class EE_API SyntaxDefinition {
 	SyntaxDefinition& addSymbols( const std::vector<std::string>& symbolNames,
 								  const std::string& typeName );
 
-	SyntaxDefinition& setSymbols( const UnorderedMap<std::string, SyntaxStyleType>& symbols );
+	SyntaxDefinition& setSymbols( const UnorderedMap<std::string, SyntaxStyleType>& symbols,
+								  const UnorderedMap<std::string, std::string>& symbolNames );
 
 	/** Sets the comment string used for auto-comment functionality. */
 	SyntaxDefinition& setComment( const std::string& comment );

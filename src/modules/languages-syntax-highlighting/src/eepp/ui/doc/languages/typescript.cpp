@@ -98,7 +98,7 @@ void addTypeScript() {
 				 },
 				 {},
 				 "//" } )
-		.setSymbols( ts.getSymbols() )
+		.setSymbols( ts.getSymbols(), ts.getSymbolNames() )
 		.setLSPName( "typescriptreact" )
 		.setFoldRangeType( FoldRangeType::Braces )
 		.setFoldBraces( { { '{', '}' } } );

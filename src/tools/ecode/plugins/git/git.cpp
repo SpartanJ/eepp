@@ -52,7 +52,8 @@ int Git::git( const std::string& args, const std::string& projectDir, std::strin
 		Log::instance()->writef( mLogLevel, "GitPlugin cmd in %s (%d): %s %s",
 								 clock.getElapsedTime().toString(), retCode, mGitPath, args );
 	}
-	Log::debug( "%s", buf );
+	if ( !mSilent )
+		Log::debug( "%s", buf );
 	return retCode;
 }
 

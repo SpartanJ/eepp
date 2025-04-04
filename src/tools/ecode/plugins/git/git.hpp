@@ -353,6 +353,10 @@ class Git {
 
 	LogLevel getLogLevel() const { return mLogLevel; }
 
+	void setSilent( bool set ) { mSilent = set; }
+
+	bool isSilent() const { return mSilent; }
+
 	Result stashPush( std::vector<std::string> files, const std::string& name, bool keepIndex,
 					  const std::string& projectDir = "" );
 
@@ -369,6 +373,7 @@ class Git {
 	LogLevel mLogLevel{ LogLevel::Error };
 	Mutex mSubModulesMutex;
 	bool mSubModulesUpdated{ false };
+	bool mSilent{ false };
 };
 
 } // namespace ecode

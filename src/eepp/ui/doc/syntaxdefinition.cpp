@@ -176,8 +176,10 @@ SyntaxDefinition& SyntaxDefinition::addSymbols( const std::vector<std::string>& 
 }
 
 SyntaxDefinition&
-SyntaxDefinition::setSymbols( const UnorderedMap<std::string, SyntaxStyleType>& symbols ) {
+SyntaxDefinition::setSymbols( const UnorderedMap<std::string, SyntaxStyleType>& symbols,
+							  const UnorderedMap<std::string, std::string>& symbolNames ) {
 	mSymbols = symbols;
+	mSymbolNames = symbolNames;
 	return *this;
 }
 

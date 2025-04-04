@@ -75,7 +75,7 @@ class GitPlugin : public PluginBase {
 
 	void updateRepos();
 
-	bool isSilent() const { return mSilence; }
+	bool isSilent() const { return mSilent; }
 
   protected:
 	std::unique_ptr<Git> mGit;
@@ -97,7 +97,7 @@ class GitPlugin : public PluginBase {
 	bool mOldDontAutoHideOnMouseMove{ false };
 	bool mOldUsingCustomStyling{ false };
 	bool mInitialized{ false };
-	bool mSilence{ true };
+	bool mSilent{ true };
 	Uint32 mOldTextStyle{ 0 };
 	Uint32 mOldTextAlign{ 0 };
 	Color mOldBackgroundColor;

@@ -482,7 +482,7 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 	buffer.resize( stream.getSize() );
 	stream.read( buffer.data(), buffer.size() );
 
-	nlohmann::json j = nlohmann::json::parse( buffer );
+	nlohmann::json j = nlohmann::json::parse( buffer, nullptr, false, true );
 
 	if ( j.is_array() ) {
 		for ( const auto& lang : j ) {

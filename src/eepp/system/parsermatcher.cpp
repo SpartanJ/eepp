@@ -133,7 +133,7 @@ inline bool consumeDigitsWithSep( const char* input, int& pos, int length, int b
 inline size_t isNumberLiteralBase( const char* stringSearch, int stringStartOffset,
 								   PatternMatcher::Range* matchList, size_t stringLength,
 								   bool underscoreSeparatorSupported, bool supportsOctal,
-								   bool supportsBinary ) {
+								   bool supportsBinary, bool supportsBigInt ) {
 	if ( stringStartOffset < 0 || (size_t)stringStartOffset >= stringLength )
 		return 0;
 
@@ -380,7 +380,8 @@ inline size_t isNumberLiteralBase( const char* stringSearch, int stringStartOffs
 		if ( pos > start && stringSearch[pos - 1] == '_' ) {
 			return 0;
 		}
-		pos++; // Consume 'n'
+		if ( supportsBigInt )
+			pos++; // Consume 'n'
 	}
 
 	// Final check: Ensure we actually consumed something valid beyond just a sign
@@ -849,28 +850,28 @@ void ParserMatcherManager::registerBaseParsers() {
 					[]( const char* stringSearch, int stringStartOffset,
 						PatternMatcher::Range* matchList, size_t stringLength ) {
 						return isNumberLiteralBase( stringSearch, stringStartOffset, matchList,
-													stringLength, false, false, false );
+													stringLength, false, false, false, false );
 					} );
 
 	registerParser( "common_number_parser_o",
 					[]( const char* stringSearch, int stringStartOffset,
 						PatternMatcher::Range* matchList, size_t stringLength ) {
 						return isNumberLiteralBase( stringSearch, stringStartOffset, matchList,
-													stringLength, false, true, false );
+													stringLength, false, true, false, false );
 					} );
 
 	registerParser( "common_number_parser_ob",
 					[]( const char* stringSearch, int stringStartOffset,
 						PatternMatcher::Range* matchList, size_t stringLength ) {
 						return isNumberLiteralBase( stringSearch, stringStartOffset, matchList,
-													stringLength, false, true, true );
+													stringLength, false, true, true, false );
 					} );
 
 	registerParser( "js_number_parser",
 					[]( const char* stringSearch, int stringStartOffset,
 						PatternMatcher::Range* matchList, size_t stringLength ) {
 						return isNumberLiteralBase( stringSearch, stringStartOffset, matchList,
-													stringLength, true, true, true );
+													stringLength, true, true, true, true );
 					} );
 }
 

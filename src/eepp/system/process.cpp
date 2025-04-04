@@ -296,6 +296,10 @@ bool Process::isShuttingDown() const {
 
 size_t Process::readAll( std::string& buffer, bool readErr, Time timeout ) {
 	eeASSERT( mProcess != nullptr );
+	if ( ( readErr && PROCESS_PTR->stderr_file == nullptr ) ||
+		 ( !readErr && PROCESS_PTR->stdout_file == nullptr ) ) {
+		return 0;
+	}
 	if ( buffer.empty() || buffer.size() < CHUNK_SIZE )
 		buffer.resize( CHUNK_SIZE );
 	size_t totalBytesRead = 0;

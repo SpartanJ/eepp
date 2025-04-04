@@ -16,6 +16,11 @@ void addU() {
 			  { { "/%*", "%*/" }, "comment" },
 			  { { "\"", "[\"\n]", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },
+			  { { "(class|template|namespace|enum)\\s+([A-Za-z]\\w*)" },
+				{ "keyword", "keyword", "keyword2" },
+				"",
+				SyntaxPatternMatchType::RegEx },
+			  { { "$%(([%a_]%w*)%)" }, { "operator", "keyword2", "keyword2" } },
 			  { { "^%s*(import)%s+([<%\"][%w%d%.%\\%/%_%-]+[>%\"])" },
 				{ "keyword", "keyword", "literal" } },
 			  { { "cpp_number_parser" }, "number", "", SyntaxPatternMatchType::Parser },
@@ -26,6 +31,8 @@ void addU() {
 
 		  },
 		  {
+
+			  { "pretty_main", "function" },
 			  { "fn", "keyword" },
 			  { "op", "keyword" },
 			  { "var", "keyword" },
@@ -155,8 +162,7 @@ void addU() {
 			  { "byte2048", "keyword2" },
 			  { "byte4096", "keyword2" },
 			  { "size_type", "keyword2" },
-			  { "ssize_type", "keyword2" }
-		  },
+			  { "ssize_type", "keyword2" } },
 		  "//",
 		  {},
 		  "u" } );

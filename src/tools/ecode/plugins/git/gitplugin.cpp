@@ -196,9 +196,9 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 		}
 
 		if ( config.contains( "silent" ) )
-			mSilence = config.value( "silent", true );
+			mSilent = config.value( "silent", true );
 		else {
-			config["silent"] = mSilence;
+			config["silent"] = mSilent;
 			updateConfigFile = true;
 		}
 	}
@@ -230,7 +230,8 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 	}
 
 	mGit = std::make_unique<Git>( pluginManager->getWorkspaceFolder() );
-	mGit->setLogLevel( mSilence ? LogLevel::Warning : LogLevel::Info );
+	mGit->setLogLevel( Log::instance()->getLogLevelThreshold() );
+	mGit->setSilent( mSilent );
 	mGitFound = !mGit->getGitPath().empty();
 	mProjectPath = mRepoSelected = mGit->getProjectPath();
 

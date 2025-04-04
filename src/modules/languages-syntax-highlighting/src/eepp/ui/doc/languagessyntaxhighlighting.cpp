@@ -9,6 +9,7 @@
 #include <eepp/ui/doc/languages/blueprint.hpp>
 #include <eepp/ui/doc/languages/brainfuck.hpp>
 #include <eepp/ui/doc/languages/buzz.hpp>
+#include <eepp/ui/doc/languages/c3.hpp>
 #include <eepp/ui/doc/languages/carbon.hpp>
 #include <eepp/ui/doc/languages/clojure.hpp>
 #include <eepp/ui/doc/languages/cmake.hpp>
@@ -114,6 +115,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addBlueprint();
 	addBrainfuck();
 	addBuzz();
+	addC3();
 	addCarbon();
 	addContainerFile();
 	addCovScript();
