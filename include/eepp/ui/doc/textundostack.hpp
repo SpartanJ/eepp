@@ -6,7 +6,7 @@
 #include <eepp/system/time.hpp>
 #include <eepp/ui/doc/textrange.hpp>
 
-#include <nlohmann/json_fwd.hpp>
+#include <eepp/thirdparty/nlohmann/json_fwd.hpp>
 
 #include <deque>
 #include <variant>
