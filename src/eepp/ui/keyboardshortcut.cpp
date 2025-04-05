@@ -107,6 +107,10 @@ void KeyBindings::removeKeybind( const KeyBindings::Shortcut& keys ) {
 	}
 }
 
+void KeyBindings::removeKeybind( const std::string& kb ) {
+	removeKeybind( getShortcutFromString( kb ) );
+}
+
 bool KeyBindings::existsKeybind( const KeyBindings::Shortcut& keys ) {
 	return mShortcuts.find( keys.toUint64() ) != mShortcuts.end();
 }

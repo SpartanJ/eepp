@@ -20,10 +20,19 @@ std::vector<ChatHistory> ChatHistory::getHistory( const std::string& historyFold
 		if ( !uuid )
 			continue;
 		auto summary = filename.substr( secondSpace + 1 );
-		if ( !String::endsWith( summary, ".json" ) || summary.size() < 5 )
+		size_t finalPartSize = 5; // std::strlen( ".json" )
+
+		if ( !String::endsWith( summary, ".json" ) || summary.size() < finalPartSize )
 			continue;
-		summary = summary.substr( 0, summary.size() - 5 );
-		history.emplace_back( std::move( *uuid ), std::move( summary ), std::move( file ) );
+
+		bool locked = false;
+		if ( String::endsWith( summary, ".locked.json" ) ) {
+			finalPartSize = 12;
+			locked = true;
+		}
+
+		summary = summary.substr( 0, summary.size() - finalPartSize );
+		history.emplace_back( std::move( *uuid ), std::move( summary ), std::move( file ), locked );
 	}
 
 	std::sort( history.begin(), history.end(), []( const ChatHistory& a, const ChatHistory& b ) {
@@ -76,8 +85,8 @@ std::string ChatHistoryModel::columnName( const size_t& column ) const {
 
 Variant ChatHistoryModel::data( const ModelIndex& index, ModelRole role ) const {
 	static const char* EMPTY = "";
+	auto& item = *mCurHistory[index.row()];
 	if ( role == ModelRole::Display ) {
-		auto& item = *mCurHistory[index.row()];
 		switch ( index.column() ) {
 			case Columns::Id:
 				return Variant( item.uuid.toString() );
@@ -92,6 +101,9 @@ Variant ChatHistoryModel::data( const ModelIndex& index, ModelRole role ) const 
 		if ( index.column() == Columns::Delete ) {
 			static UIIcon* eraseIcon = mUISceneNode->findIcon( "chrome-close" );
 			return Variant( eraseIcon );
+		} else if ( index.column() == Columns::Summary && item.locked ) {
+			static UIIcon* lockIcon = mUISceneNode->findIcon( "file-lock-fill" );
+			return Variant( lockIcon );
 		}
 	}
 	return Variant( EMPTY );

@@ -66,19 +66,22 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	bool hasChat() const { return getTimestamp() && !getSummary().empty(); }
 
-	std::string getNewFilePath( const std::string& uuid, const std::string& summary ) const;
+	std::string getNewFilePath( const std::string& uuid, const std::string& summary,
+								bool isLocked ) const;
 
 	std::string getFilePath() const;
 
 	void updateTabTitle();
 
-	void renameChat( const std::string& newName );
+	void renameChat( const std::string& newName, bool invertLockedState = false );
 
 	virtual Uint32 onKeyDown( const KeyEvent& event ) {
 		return WidgetCommandExecuter::onKeyDown( event );
 	}
 
 	UICodeEditor* getChatInput() const { return mChatInput; }
+
+	bool isLocked() const { return mChatLocked; }
 
   protected:
 	UUID mUUID;
@@ -106,6 +109,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	std::unordered_map<String::HashType, LLMModel> mModelsMap;
 	int mPendingModelsToLoad{ 0 };
 	bool mChatIsPrivate{ false };
+	bool mChatLocked{ false };
 
 	LLMModel findModel( const std::string& provider, const std::string& model );
 
@@ -160,6 +164,13 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	void onInit();
 
 	void showChatHistory();
+
+	void bindCmds( UICodeEditor* editor, bool bindToChatUI );
+
+	void addKb( UICodeEditor* editor, std::string kb, const std::string& cmd,
+				bool bindToChatUI = false, bool searchDefined = true );
+
+	void deleteOldConversations( int days );
 };
 
 } // namespace ecode

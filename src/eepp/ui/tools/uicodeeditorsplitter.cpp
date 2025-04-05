@@ -1362,7 +1362,8 @@ void UICodeEditorSplitter::focusSomeEditor( Node* searchFrom ) {
 		 editor->getParent()->getParent()->isType( UI_TYPE_TABWIDGET ) &&
 		 ( tabW = tabWidgetFromEditor( editor ) ) && !tabW->isClosing() &&
 		 tabW->getTabCount() > 1 ) {
-		if ( tabW && tabW->getTabSelected()->getOwnedWidget() != editor ) {
+		if ( tabW && ( tabW->getTabSelected()->getOwnedWidget() != editor ||
+					   ( searchFrom == nullptr && editor != nullptr ) ) ) {
 			tabW->setTabSelected( tabW->getTabSelected() );
 			return;
 		} else if ( tabW ) {

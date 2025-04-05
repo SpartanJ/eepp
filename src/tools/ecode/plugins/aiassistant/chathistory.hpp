@@ -20,9 +20,13 @@ struct ChatHistory {
 	UUID uuid;
 	std::string summary;
 	FileInfo file;
+	bool locked{ false };
 
-	ChatHistory( UUID&& uuid, std::string&& summary, FileInfo&& file ) :
-		uuid( std::move( uuid ) ), summary( std::move( summary ) ), file( std::move( file ) ) {}
+	ChatHistory( UUID&& uuid, std::string&& summary, FileInfo&& file, bool locked ) :
+		uuid( std::move( uuid ) ),
+		summary( std::move( summary ) ),
+		file( std::move( file ) ),
+		locked( locked ) {}
 
 	static std::vector<ChatHistory> getHistory( const std::string& historyFolder );
 };

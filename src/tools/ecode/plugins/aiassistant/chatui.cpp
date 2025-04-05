@@ -1,9 +1,9 @@
+#include "chatui.hpp"
 #include "../../appconfig.hpp"
 #include "../../notificationcenter.hpp"
 #include "../../widgetcommandexecuter.hpp"
 #include "aiassistantplugin.hpp"
 #include "chathistory.hpp"
-#include "chatui.hpp"
 
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
@@ -295,6 +295,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 				showMsg( getUISceneNode()->i18n(
 					"llm_last_message_must_be_from_user",
 					"The last chat message must be from a \"User\" role" ) );
+				return;
 			}
 		}
 
@@ -331,6 +332,8 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	setCmd( "ai-chat-history", [this] { showChatHistory(); } );
 
 	setCmd( "ai-toggle-private-chat", [this] { mChatPrivate->toggleSelection(); } );
+
+	setCmd( "ai-toggle-lock-chat", [this] { renameChat( mSummary, true ); } );
 
 	setCmd( "ai-rename-chat", [this] {
 		UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::INPUT,
@@ -385,6 +388,14 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 				   getKeyBindings().getCommandKeybindString( "ai-clone-chat" ) )
 			->setId( "ai-clone-chat" );
 
+		menu->addCheckBox( i18n( "lock_chat_memory", "Lock Chat Memory" ), mChatLocked,
+						   getKeyBindings().getCommandKeybindString( "ai-toggle-lock-chat" ) )
+			->setTooltipText(
+				i18n( "lock_chat_memory_tooltip",
+					  "Lock a chat memory to avoid being deleted during memory clean-ups. Chat "
+					  "memory will only be able to be deleted manually in the chat history." ) )
+			->setId( "ai-toggle-lock-chat" );
+
 		menu->on( Event::OnItemClicked, [this]( const Event* event ) {
 			UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 			std::string id( item->getId() );
@@ -435,27 +446,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		but->setTooltipText( but->getTooltipText() + " (" + kb + ")" );
 	};
 
-	const auto addKb = [this]( std::string kb, const std::string& cmd, bool searchDefined = true ) {
-		if ( searchDefined && getPlugin() ) {
-			const auto& find = getPlugin()->getKeybindings().find( cmd );
-			if ( find != getPlugin()->getKeybindings().end() && !find->second.empty() )
-				kb = find->second;
-		}
-		getKeyBindings().addKeybindString( kb, cmd );
-		mChatInput->addKeyBindingString( kb, cmd );
-	};
-
-	addKb( "mod+return", "ai-prompt" );
-	addKb( "mod+shift+return", "ai-add-chat" );
-	addKb( "mod+h", "ai-chat-history" );
-	addKb( "mod+shift+c", "ai-clone-chat" );
-	addKb( "mod+shift+s", "ai-settings" );
-	addKb( "mod+shift+p", "ai-toggle-private-chat" );
-	addKb( "mod+s", "ai-save-chat" );
-	addKb( "f2", "ai-rename-chat" );
-	addKb( "mod+m", "ai-show-menu" );
-	addKb( "mod+shift+r", "ai-chat-toggle-role" );
-	addKb( "mod+shift+l", "ai-refresh-local-models" );
+	bindCmds( mChatInput, true );
 
 	appendShortcutToTooltip( mChatHistory, "ai-chat-history" );
 	appendShortcutToTooltip( mChatRun, "ai-prompt" );
@@ -467,8 +458,42 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	appendShortcutToTooltip( mChatUserRole, "ai-chat-toggle-role" );
 	appendShortcutToTooltip( mRefreshModels, "ai-refresh-local-models" );
 
-	addKb( "mod+keypad enter", "ai-prompt", false );
-	addKb( "mod+shift+keypad enter", "ai-add-chat", false );
+	addKb( mChatInput, "mod+keypad enter", "ai-prompt", true, false );
+	addKb( mChatInput, "mod+shift+keypad enter", "ai-add-chat", true, false );
+}
+
+void LLMChatUI::addKb( UICodeEditor* editor, std::string kb, const std::string& cmd,
+					   bool bindToChatUI, bool searchDefined ) {
+	if ( searchDefined && getPlugin() ) {
+		const auto& find = getPlugin()->getKeybindings().find( cmd );
+		if ( find != getPlugin()->getKeybindings().end() && !find->second.empty() )
+			kb = find->second;
+	}
+	if ( bindToChatUI ) {
+		getKeyBindings().addKeybindString( kb, cmd );
+		editor->addKeyBindingString( kb, cmd, true );
+	} else {
+		// Chat UI editors besides the main chat input need to actually remove the keybindings
+		// to let the parent take over the command
+		editor->removeUnlockedCommand( cmd );
+		editor->getKeyBindings().removeKeybind( kb );
+	}
+}
+
+void LLMChatUI::bindCmds( UICodeEditor* editor, bool bindToChatUI ) {
+	addKb( editor, "mod+return", "ai-prompt", bindToChatUI );
+	addKb( editor, "mod+h", "ai-chat-history", bindToChatUI );
+	addKb( editor, "mod+shift+c", "ai-clone-chat", bindToChatUI );
+	addKb( editor, "mod+shift+s", "ai-settings", bindToChatUI );
+	addKb( editor, "mod+shift+p", "ai-toggle-private-chat", bindToChatUI );
+	addKb( editor, "mod+s", "ai-save-chat", bindToChatUI );
+	addKb( editor, "f2", "ai-rename-chat", bindToChatUI );
+	addKb( editor, "mod+m", "ai-show-menu", bindToChatUI );
+	addKb( editor, "mod+shift+r", "ai-chat-toggle-role", bindToChatUI );
+	addKb( editor, "mod+shift+l", "ai-refresh-local-models", bindToChatUI );
+
+	if ( bindToChatUI )
+		addKb( editor, "mod+shift+return", "ai-add-chat", bindToChatUI );
 }
 
 std::optional<LLMModel> LLMChatUI::getModel( const std::string& provider,
@@ -491,42 +516,48 @@ void LLMChatUI::showChatHistory() {
 	if ( plugin == nullptr )
 		return;
 
-	UIWindow* win = UIWindow::New();
-	win->setMinWindowSize( mDpSize.getWidth(), getUISceneNode()->getSize().getHeight() * 0.7f );
+	static const char* CHAT_HISTORY_LAYOUT = R"xml(
+		<window window-flags="shadow|modal|ephemeral"
+				window-title="@string(ai_conversations_history, AI Conversations History)">
+			<Loader id="loader" radius="48" outline-thickness="6dp" indeterminate="true" />
+			<vbox lw="mp" lh="mp">
+				<hbox id="top_bar" lw="mp" lh="wc">
+					<TextInput lw="0dp" lw8="1" lh="wc" id="search_input" hint="@string(search_chat_ellipsis, Search Chat...)" visible="false" />
+					<PushButton lw="wc" lh="wc" id="clear_history" text="@string(ai_clear_history, Clear History...)" visible="false" margin-left="4dp" />
+				</hbox>
+				<hbox id="delete_history_cont" lw="mp" lh="wc" visible="false">
+					<TextView text="@string(delete_history_older_than_ellipsis, Delete Conversations Older Than...)" layout-gravity="center_vertical" />
+					<TextInput id="days_num" lw="0dp" lw8="1" lh="wc" hint="@string(number_of_days, Number of Days)" margin-left="4dp" margin-right="4dp" layout-gravity="center_vertical" numeric="true" />
+					<PushButton id="delete_but" text="@string(delete, Delete)" layout-gravity="center_vertical" />
+				</hbox>
+				<TableView id="table" lw="mp" lh="0" lw8="1" visible="false" />
+			</vbox>
+		</window>
+	)xml";
+
+	UIWindow* win =
+		getUISceneNode()->loadLayoutFromString( CHAT_HISTORY_LAYOUT )->asType<UIWindow>();
+	UITextInput* input = win->find( "search_input" )->asType<UITextInput>();
+	UILoader* loader = win->find( "loader" )->asType<UILoader>();
+	UITableView* tv = win->find( "table" )->asType<UITableView>();
+	UIPushButton* clearHistory = win->find( "clear_history" )->asType<UIPushButton>();
+	UILinearLayout* deleteCont = win->find( "delete_history_cont" )->asType<UILinearLayout>();
+	UITextInput* daysNum = win->find( "days_num" )->asType<UITextInput>();
+	UIPushButton* deleteChatsBut = win->find( "delete_but" )->asType<UIPushButton>();
+
+	win->setMinWindowSize( getUISceneNode()->getSize().getWidth() * 0.5f,
+						   getUISceneNode()->getSize().getHeight() * 0.7f );
 	win->setKeyBindingCommand( "closeWindow", [win, this] {
 		win->closeWindow();
 		setFocus();
 	} );
 	win->getKeyBindings().addKeybind( { KEY_ESCAPE }, "closeWindow" );
-	win->setWindowFlags( UI_WIN_SHADOW | UI_WIN_MODAL | UI_WIN_EPHEMERAL );
-	win->setTitle( i18n( "ai_conversations_history", "AI Conversations History" ) );
 	win->center();
 	win->getModalWidget()->addClass( "shadowbg" );
 	win->setId( UUID().toString() );
 
-	UILinearLayout* layout = UILinearLayout::NewVertical();
-	layout->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
-	layout->setParent( win->getContainer() );
-
-	UILoader* loader = UILoader::New();
-	loader->setId( "loader" );
-	loader->setRadius( 48 );
-	loader->setOutlineThickness( 6 );
-	loader->setParent( win->getContainer() );
-	loader->setIndeterminate( true );
 	loader->center();
 
-	UITextInput* input = UITextInput::New();
-	input->setParent( layout );
-	input->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
-	input->setHint( i18n( "search_chat_ellipsis", "Search Chat..." ) );
-	input->setVisible( false );
-
-	UITableView* tv = UITableView::New();
-	tv->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed );
-	tv->setLayoutWeight( 1 );
-	tv->setParent( layout );
-	tv->setVisible( false );
 	tv->setAutoColumnsWidth( true );
 	tv->setFitAllColumnsToWidget( true );
 	tv->setSetupCellCb( [this, tv, win, input]( UITableCell* cell ) {
@@ -599,27 +630,51 @@ void LLMChatUI::showChatHistory() {
 		}
 	} );
 
-	win->showWhenReady();
+	clearHistory->onClick(
+		[deleteCont]( auto ) { deleteCont->setVisible( !deleteCont->isVisible() ); } );
 
 	std::string winId = win->getId();
 	UISceneNode* uiSceneNode = getUISceneNode();
 	getUISceneNode()->getThreadPool()->run(
-		[plugin, loader, input, tv, winId = std::move( winId ), uiSceneNode] {
+		[plugin, loader, input, tv, winId = std::move( winId ), uiSceneNode, clearHistory] {
 			std::string conversationsPath = plugin->getConversationsPath();
 			auto model = std::make_shared<ChatHistoryModel>(
 				ChatHistory::getHistory( conversationsPath ), uiSceneNode );
 			if ( uiSceneNode->find( winId ) == nullptr ) // Window closed?
 				return;
-			tv->runOnMainThread( [tv, loader, input, model] {
+			tv->runOnMainThread( [tv, loader, input, model, clearHistory] {
 				loader->setVisible( false );
 				input->setVisible( true );
 				tv->setVisible( true );
+				clearHistory->setVisible( true );
 				tv->setModel( model );
 				tv->setColumnsVisible( { ChatHistoryModel::Summary, ChatHistoryModel::DateTime,
 										 ChatHistoryModel::Delete } );
 				input->setFocus();
 			} );
 		} );
+
+	deleteChatsBut->onClick( [this, daysNum]( auto ) {
+		int days = 0;
+		if ( daysNum->getText().empty() || !String::fromString( days, daysNum->getText() ) ||
+			 days < 0 )
+			return;
+		auto msgBox = UIMessageBox::New(
+			UIMessageBox::OK_CANCEL,
+			String::format( i18n( "ai_confirm_delete_chats",
+								  "Are you sure you want to delete the conversations older than %d "
+								  "days?\nThis operation cannot be reverted!" )
+								.toUtf8(),
+							days ) );
+
+		msgBox->on( Event::OnConfirm, [this, days]( auto ) {
+			deleteOldConversations( days );
+			showChatHistory();
+		} );
+
+		msgBox->center();
+		msgBox->showWhenReady();
+	} );
 }
 
 void LLMChatUI::fillApiModels( UIDropDownList* modelDDL ) {
@@ -804,6 +859,7 @@ nlohmann::json LLMChatUI::serialize() {
 	j["summary"] = mSummary;
 	std::string inputText( mChatInput->getDocument().getText().toUtf8() );
 	j["input"] = std::move( inputText );
+	j["locked"] = mChatLocked;
 	return j;
 }
 
@@ -813,6 +869,7 @@ std::string LLMChatUI::unserialize( const nlohmann::json& payload ) {
 		mUUID = *uuid;
 	mTimestamp = payload.value( "timestamp", 0 );
 	mSummary = payload.value( "summary", "" );
+	mChatLocked = payload.value( "locked", false );
 
 	std::string provider = payload.value( "provider", "" );
 	if ( payload.contains( "chat" ) && payload["chat"].is_object() ) {
@@ -860,18 +917,19 @@ LLMModel LLMChatUI::getDefaultModel() {
 	return findModel( "openai", "gpt-4o" );
 }
 
-std::string LLMChatUI::getNewFilePath( const std::string& uuid, const std::string& summary ) const {
+std::string LLMChatUI::getNewFilePath( const std::string& uuid, const std::string& summary,
+									   bool isLocked ) const {
 	auto plugin = getPlugin();
 	if ( plugin == nullptr || mChatIsPrivate )
 		return "";
 	std::string conversationsPath = plugin->getConversationsPath();
 	if ( !FileSystem::fileExists( conversationsPath ) )
 		FileSystem::makeDir( conversationsPath, true );
-	return conversationsPath + uuid + " - " + summary + ".json";
+	return conversationsPath + uuid + " - " + summary + ( isLocked ? ".locked" : "" ) + ".json";
 }
 
 std::string LLMChatUI::getFilePath() const {
-	return getNewFilePath( mUUID.toString(), mSummary );
+	return getNewFilePath( mUUID.toString(), mSummary, mChatLocked );
 }
 
 void LLMChatUI::saveChat() {
@@ -993,9 +1051,10 @@ void LLMChatUI::doRequest() {
 												  Http::Response& response ) {
 					auto status = response.getStatus();
 					if ( status == Http::Response::Ok ) {
-						mSummary = req.getResponse();
+						mSummary = String::trim( req.getResponse() );
 						String::trimInPlace( mSummary, '\n' );
 						String::trimInPlace( mSummary, ' ' );
+						String::trimInPlace( mSummary, '"' );
 						runOnMainThread( [this] { updateTabTitle(); } );
 						saveChat();
 					}
@@ -1109,6 +1168,7 @@ void LLMChatUI::addChat( LLMChat::Role role, std::string conversation ) {
 	editor->getDocument().textInput( String::fromUtf8( conversation ) );
 	editor->setCursorVisible( false );
 	editor->setAllowSelectingTextFromGutter( false );
+	bindCmds( editor, false );
 	resizeToFit( editor );
 }
 
@@ -1187,11 +1247,14 @@ static bool fsRenameFile( const std::string& fpath, const std::string& newFilePa
 	return true;
 }
 
-void LLMChatUI::renameChat( const std::string& newName ) {
-	auto oldPath = getNewFilePath( mUUID.toString(), mSummary );
-	auto newPath = getNewFilePath( mUUID.toString(), newName );
+void LLMChatUI::renameChat( const std::string& newName, bool invertLockedState ) {
+	auto oldPath = getNewFilePath( mUUID.toString(), mSummary, mChatLocked );
+	auto newPath =
+		getNewFilePath( mUUID.toString(), newName, invertLockedState ? !mChatLocked : mChatLocked );
 	if ( fsRenameFile( oldPath, newPath ) ) {
 		mSummary = newName;
+		if ( invertLockedState )
+			mChatLocked = !mChatLocked;
 		saveChat();
 		updateTabTitle();
 	}
@@ -1203,6 +1266,21 @@ UISplitter* LLMChatUI::getSplitter() const {
 
 const LLMModel& LLMChatUI::getCurModel() const {
 	return mCurModel;
+}
+
+void LLMChatUI::deleteOldConversations( int days ) {
+	auto plugin = getPlugin();
+	if ( plugin == nullptr )
+		return;
+	std::string conversationsPath = plugin->getConversationsPath();
+	auto history = ChatHistory::getHistory( conversationsPath );
+
+	Int64 olderThanTime = std::chrono::system_clock::to_time_t( std::chrono::system_clock::now() ) -
+						  ( 60 * 60 * 24 * days );
+
+	for ( const auto& chat : history )
+		if ( !chat.locked && chat.file.getModificationTime() < olderThanTime )
+			FileSystem::fileRemove( chat.file.getFilepath() );
 }
 
 } // namespace ecode

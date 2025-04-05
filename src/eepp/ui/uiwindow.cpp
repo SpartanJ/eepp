@@ -1772,7 +1772,7 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 void UIWindow::loadFromXmlNode( const pugi::xml_node& node ) {
 	UIWidget::loadFromXmlNode( node );
 
-	show();
+	showWhenReady();
 }
 
 void UIWindow::preDraw() {}

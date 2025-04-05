@@ -190,7 +190,8 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 
 		if ( j.contains( "uuid" ) && j.contains( "summary" ) ) {
 			auto uuid = j.value( "uuid", "" );
-			auto filePath = chatUI->getNewFilePath( uuid, j.value( "summary", "" ) );
+			auto filePath = chatUI->getNewFilePath( uuid, j.value( "summary", "" ),
+													j.value( "locked", false ) );
 			if ( filePath.empty() || !FileSystem::fileExists( filePath ) ) {
 				auto conversationsPath = getConversationsPath();
 				FileSystem::dirAddSlashAtEnd( conversationsPath );
@@ -233,6 +234,7 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 		if ( chatUI->hasChat() ) {
 			j["uuid"] = chatUI->getUUID().toString();
 			j["summary"] = chatUI->getSummary();
+			j["locked"] = chatUI->isLocked();
 		}
 		return j;
 	};
