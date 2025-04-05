@@ -294,7 +294,7 @@ void ProjectBuildManager::editBuild( std::string buildName, UIWidget* buildTab )
 	UIWidget* widget = nullptr;
 	if ( ( widget = buildTab->getUISceneNode()->getRoot()->querySelector( "#build_settings_" +
 																		  hashName ) ) ) {
-		widget->asType<UITab>()->select();
+		widget->asType<UITab>()->getTabWidget()->setTabSelected( widget->asType<UITab>() );
 		return;
 	}
 	auto ret = mApp->getSplitter()->createWidget(
