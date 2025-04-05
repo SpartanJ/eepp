@@ -1585,9 +1585,6 @@ solution "eepp"
 		end
 		if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
 			links { "dbghelp", "psapi" }
-			if os.is_real("mingw32") or os.is_real("mingw64") then
-				links { "msvcr90" }
-			end
 		end
 		if os.is("haiku") then
 			links { "bsd" }

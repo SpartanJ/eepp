@@ -1440,8 +1440,6 @@ workspace "eepp"
 			end
 		filter { "system:windows" }
 			links { "dbghelp", "psapi" }
-		filter { "system:windows", "options:cc=mingw" }
-			links { "msvcr90" }
 		filter "system:haiku"
 			links { "bsd" }
 		filter "system:bsd"
