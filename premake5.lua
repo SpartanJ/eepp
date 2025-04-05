@@ -1438,12 +1438,10 @@ workspace "eepp"
 				links { "dw" }
 				defines { "ECODE_HAS_DW" }
 			end
-		filter { "system:windows", "options:with-debug-symbols" }
+		filter { "system:windows" }
 			links { "dbghelp", "psapi" }
-		filter { "system:windows", "options:with-debug-symbols", "options:cc=mingw" }
+		filter { "system:windows", "options:cc=mingw" }
 			links { "msvcr90" }
-		filter { "system:linux", "options:with-debug-symbols" }
-			links { "bfd", "dw", "dl" }
 		filter "system:haiku"
 			links { "bsd" }
 		filter "system:bsd"

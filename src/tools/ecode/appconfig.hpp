@@ -182,7 +182,7 @@ struct LanguagesExtensions {
 struct SessionSnapshotFile {
 	std::string cachePath;
 	std::string fspath;
-	Uint64 fsmtime{ 0 };
+	Int64 fsmtime{ 0 };
 	std::string fshash;
 	std::string name;
 	std::string selection;

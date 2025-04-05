@@ -1575,11 +1575,7 @@ solution "eepp"
 			links { "ecode-macos-helper-static" }
 		end
 		if os.is_real("linux") then
-			if _OPTIONS["with-debug-symbols"] then
-				links { "util", "bfd", "dw", "dl", "stdc++fs" }
-			else
-				links { "util", "stdc++fs" }
-			end
+			links { "util", "stdc++fs" }
 
 			if os_findlib("dw") then
 				print("Found dw")
@@ -1587,7 +1583,7 @@ solution "eepp"
 				defines { "ECODE_HAS_DW" }
 			end
 		end
-		if (os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64")) and _OPTIONS["with-debug-symbols"] then
+		if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
 			links { "dbghelp", "psapi" }
 			if os.is_real("mingw32") or os.is_real("mingw64") then
 				links { "msvcr90" }

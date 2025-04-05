@@ -26,7 +26,7 @@ class StatusAppOutputController;
   "ecode": {
 	"build": [
 	  {
-		"args": "--with-debug-symbols gmake",
+		"args": "gmake",
 		"command": "premake4",
 		"working_dir": "${project_root}"
 	  },
