@@ -1432,7 +1432,7 @@ workspace "eepp"
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 		filter "system:linux"
-			links { "util", "stdc++fs", "dw" }
+			links { "util", "stdc++fs" }
 			if os_findlib("dw") then
 				print("Found dw")
 				links { "dw" }
