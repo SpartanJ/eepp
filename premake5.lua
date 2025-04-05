@@ -1426,15 +1426,18 @@ workspace "eepp"
 			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/ecode.res" }
 		filter { "system:windows", "action:not vs*", "architecture:x86_64" }
 			linkoptions { _MAIN_SCRIPT_DIR .. "/bin/assets/icon/ecode.x64.res" }
-		filter "options:with-debug-symbols"
-			defines { "ECODE_USE_BACKWARD" }
 		filter "system:macosx"
 			links { "CoreFoundation.framework", "CoreServices.framework", "Cocoa.framework" }
 			links { "ecode-macos-helper-static" }
 		filter { "system:not windows", "system:not haiku" }
 			links { "pthread" }
 		filter "system:linux"
-			links { "util", "stdc++fs" }
+			links { "util", "stdc++fs", "dw" }
+			if os_findlib("dw") then
+				print("Found dw")
+				links { "dw" }
+				defines { "ECODE_HAS_DW" }
+			end
 		filter { "system:windows", "options:with-debug-symbols" }
 			links { "dbghelp", "psapi" }
 		filter { "system:windows", "options:with-debug-symbols", "options:cc=mingw" }

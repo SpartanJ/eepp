@@ -1,18 +1,3 @@
-#include <eepp/config.hpp>
-
-#ifdef ECODE_USE_BACKWARD
-#if EE_PLATFORM == EE_PLATFORM_LINUX
-#define BACKWARD_HAS_DW 1
-#endif
-#include <backward-cpp/backward.hpp>
-#ifdef UUID
-#undef UUID
-#endif
-#ifdef KEY_EXECUTE
-#undef KEY_EXECUTE
-#endif
-#endif
-
 #include "ecode.hpp"
 #include "featureshealth.hpp"
 #include "keybindingshelper.hpp"
@@ -4120,9 +4105,6 @@ static void exportLanguages( const std::string& path, const std::string& langs )
 using namespace ecode;
 
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
-#ifdef ECODE_USE_BACKWARD
-	backward::SignalHandling sh;
-#endif
 	args::ArgumentParser parser( "ecode" );
 	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', '?', "help" } );
 	args::Positional<std::string> fileOrFolderPos( parser, "file_or_folder",

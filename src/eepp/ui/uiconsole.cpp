@@ -603,6 +603,7 @@ void UIConsole::createDefaultCommands() {
 		for ( const auto& line : lines )
 			privPushText( line );
 	} );
+	addCommand( "crash_application_for_real", []( const auto& ) { std::terminate(); } );
 }
 
 void UIConsole::cmdClear() {
