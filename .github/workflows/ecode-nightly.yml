@@ -142,7 +142,7 @@ jobs:
           sudo dpkg --add-architecture arm64
       - name: Install dependencies
         run: |
-          sudo apt-get install -y premake4 libfuse2 fuse gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libdw-dev
+          sudo apt-get install -y premake4 libfuse2 fuse gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
           bash projects/linux/scripts/install_sdl2.sh --aarch64
       - name: Build ecode
         run: |

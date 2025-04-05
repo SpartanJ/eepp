@@ -4366,7 +4366,10 @@ public:
     SetUnhandledExceptionFilter(crash_handler);
 
     signal(SIGABRT, signal_handler);
+
+#if ( defined( _MSCVER ) || defined( _MSC_VER ) )
     _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+#endif
 
     std::set_terminate(&terminator);
 #ifndef BACKWARD_ATLEAST_CXX17
