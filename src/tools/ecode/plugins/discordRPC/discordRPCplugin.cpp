@@ -1,5 +1,8 @@
 #include "discordRPCplugin.hpp"
 
+#include "../git/git.hpp"
+#include <regex>
+
 using json = nlohmann::json;
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 #define dcRPC_THREADED 1
@@ -52,6 +55,8 @@ DiscordRPCplugin::~DiscordRPCplugin() {
 void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 	Clock clock;
 	AtomicBoolScopedOp loading( mLoading, true );
+
+	mPluginManager = pluginManager;
 
 	pluginManager->subscribeMessages( this,
 									  [this]( const auto& notification ) -> PluginRequestHandle {
@@ -136,6 +141,11 @@ void DiscordRPCplugin::loadDiscordRPCConfig( const std::string& path, bool updat
 		else
 			config["doLanguageIcons"] = true;
 
+		if ( config.contains( "doGitIntegration" ) )
+			mDoGitIntegration = config.value( "doGitIntegration", true );
+		else
+			config["doGitIntegration"] = true;
+
 		if ( updateConfigFile && config.contains( "iconBindings" ) &&
 			 config["iconBindings"].is_null() )
 			config["iconBindings"] = nlohmann::json::object();
@@ -164,6 +174,7 @@ PluginRequestHandle DiscordRPCplugin::processMessage( const PluginMessage& msg )
 			std::string rpath = FileSystem::getRealPath( msg.asJSON()["folder"] );
 			FileSystem::dirAddSlashAtEnd( rpath );
 			mProjectName = FileSystem::fileNameFromPath( rpath );
+			mProjectPath = rpath;
 			Log::debug( "Loaded new workspace: %s ; %s", rpath, mProjectName );
 		}
 		case PluginMessageType::UIReady: {
@@ -194,7 +205,7 @@ void DiscordRPCplugin::onUnregisterEditor( UICodeEditor* editor ) {
 	editor->removeActionsByTag( DebounceUniqueId );
 }
 
-void DiscordRPCplugin::udpateActivity( DiscordIPCActivity& a ) {
+void DiscordRPCplugin::updateActivity( DiscordIPCActivity& a ) {
 	Lock l( mDataMutex );
 	Log::debug( "dcIPC: Activity in new file. lang = %s", mLastLang );
 
@@ -208,9 +219,39 @@ void DiscordRPCplugin::udpateActivity( DiscordIPCActivity& a ) {
 
 	a.start = time( nullptr ); // Time spent in this specific file
 
-	// TODO: Implement github/gitlab remote button (integrate with git plugin)
-	// a.buttons[0].label = "Repository";
-	// a.buttons[0].url = "https://github.com/name/repo";
+	if ( mDoGitIntegration && mPluginManager->isEnabled( "git" ) ) {
+		if ( !mGitPlugin ) {
+			mGitPlugin = (GitPlugin*)mPluginManager->get( "git" );
+		}
+
+		if ( mGitPlugin->mGitFound ) {
+			std::string buf;
+			std::string url;
+			if ( 2 != mGitPlugin->mGit->git( "remote get-url origin", mProjectPath, buf ) ) {
+				// Matches the url with .git stripped for both http(s) and ssh scenarios
+				// SSH urls look like: git@hostname.tld:user/repo.git
+				// HTTP(S): http(s)://hostname.tld/user/repo
+				std::regex urlRegex( R"((?:@|\/{2})(.*)\.git)" );
+				std::smatch match;
+
+				if ( std::regex_search( buf, match, urlRegex ) ) {
+					url = match.str( 1 );
+				}
+
+				if ( !url.empty() ) {
+					size_t colonPos = url.find( ':' );
+					if ( colonPos != std::string::npos ) {
+						url.replace( colonPos, 1, "/" );
+					}
+
+					a.buttons[0].label = "Repository";
+					// Most services/browsers automatically switch to TLS when available but not the
+					// other way. Thus we use http://
+					a.buttons[0].url = "http://" + url;
+				}
+			}
+		}
+	}
 
 	if ( !mLastLangName.empty() && mDoLangIcon && mLangBindings.contains( mLastLangName ) ) {
 		a.largeImage = mLangBindings.value( mLastLangName, DISCORDRPC_DEFAULT_ICON );
@@ -238,7 +279,7 @@ void DiscordRPCplugin::onRegisterListeners( UICodeEditor* editor, std::vector<Ui
 			[this] {
 				getUISceneNode()->getThreadPool()->run( [this] {
 					DiscordIPCActivity a = mIPC.getActivity();
-					udpateActivity( a );
+					updateActivity( a );
 					mIPC.setActivity( std::move( a ) );
 				} );
 			},
