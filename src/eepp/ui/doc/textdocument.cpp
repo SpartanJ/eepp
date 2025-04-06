@@ -1760,7 +1760,8 @@ void TextDocument::pasteText( String&& text ) {
 	if ( text.find_first_of( '\r' ) != String::InvalidPos )
 		String::replaceAll( text, "\r", "" );
 
-	if ( std::count( text.begin(), text.end(), '\n' ) ==
+	if ( !text.empty() &&
+		 std::count( text.begin(), text.end(), '\n' ) ==
 			 static_cast<Int64>( mSelection.size() ) - 1 &&
 		 text.back() != '\n' ) {
 		std::vector<String> textLines = text.split( '\n', true, false );
