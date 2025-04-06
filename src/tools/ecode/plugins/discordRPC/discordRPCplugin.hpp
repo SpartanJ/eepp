@@ -28,7 +28,7 @@ class DiscordRPCplugin : public PluginBase {
 				 "Discord Rich Presence",
 				 "Show your friends what you are up to through the discord Rich Presence system",
 				 DiscordRPCplugin::New,
-				 { 0, 0, 1 },
+				 { 0, 0, 2 },
 				 DiscordRPCplugin::NewSync };
 	}
 

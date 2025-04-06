@@ -82,7 +82,6 @@ class GitPlugin : public PluginBase {
 
   protected:
 	std::unordered_map<std::string, std::string> mGitBranches;
-	bool mInitialized{ false };
 	Git::Status mGitStatus;
 	std::vector<std::pair<std::string, std::string>> mRepos;
 	UnorderedSet<std::string> mGitStatusFilesCache;
@@ -98,6 +97,7 @@ class GitPlugin : public PluginBase {
 	bool mFileTreeHighlightChanges{ true };
 	bool mOldDontAutoHideOnMouseMove{ false };
 	bool mOldUsingCustomStyling{ false };
+	bool mInitialized{ false };
 	bool mSilent{ true };
 	Uint32 mOldTextStyle{ 0 };
 	Uint32 mOldTextAlign{ 0 };
