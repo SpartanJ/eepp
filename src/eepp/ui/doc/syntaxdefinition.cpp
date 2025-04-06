@@ -1,5 +1,6 @@
 #include <eepp/core/memorymanager.hpp>
 #include <eepp/core/string.hpp>
+#include <eepp/system/parsermatcher.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 
 using namespace std::literals;
@@ -40,6 +41,12 @@ SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
 	mLSPName( lspName.empty() ? String::toLower( mLanguageName ) : lspName ) {
 	mSymbols.reserve( mSymbolNames.size() );
 	if ( !mPatterns.empty() ) {
+		if ( !ParserMatcherManager::instance()->registeredBaseParsers() &&
+			 std::any_of( mPatterns.begin(), mPatterns.end(), []( const SyntaxPattern& pattern ) {
+				 return pattern.matchType == SyntaxPatternMatchType::Parser;
+			 } ) )
+			ParserMatcherManager::instance()->registerBaseParsers();
+
 		if ( std::find_if( mPatterns.begin(), mPatterns.end(), []( const SyntaxPattern& pattern ) {
 				 return !pattern.patterns.empty() &&
 						( ( ( pattern.matchType == SyntaxPatternMatchType::LuaPattern &&

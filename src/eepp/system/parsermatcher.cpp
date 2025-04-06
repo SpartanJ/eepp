@@ -873,6 +873,12 @@ void ParserMatcherManager::registerBaseParsers() {
 						return isNumberLiteralBase( stringSearch, stringStartOffset, matchList,
 													stringLength, true, true, true, true );
 					} );
+
+	mRegisteredBaseParsers = true;
+}
+
+bool ParserMatcherManager::registeredBaseParsers() const {
+	return mRegisteredBaseParsers;
 }
 
 void ParserMatcherManager::registerParser( std::string_view parserName, ParserMatcherFn fn ) {

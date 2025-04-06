@@ -357,6 +357,10 @@ class EE_API String {
 	static int valueIndex( const std::string& val, const std::string& strings, int defValue = -1,
 						   char delim = ';' );
 
+	static bool iequals( std::string_view str1, std::string_view str2 );
+
+	static bool iequals( String::View str1, String::View str2 );
+
 	/** Creates a random string using the dictionary characters. */
 	static std::string randString(
 		size_t len,

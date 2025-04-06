@@ -2216,4 +2216,19 @@ size_t String::countLines( String::View text ) {
 	return count;
 }
 
+bool String::iequals( std::string_view str1, std::string_view str2 ) {
+	return str1.length() == str2.length() &&
+		   std::equal( str1.begin(), str1.end(), str2.begin(), []( char c1, char c2 ) {
+			   return std::tolower( c1 ) == std::tolower( c2 );
+		   } );
+}
+
+bool String::iequals( String::View str1, String::View str2 ) {
+	return str1.length() == str2.length() &&
+		   std::equal( str1.begin(), str1.end(), str2.begin(),
+					   []( String::StringBaseType c1, String::StringBaseType c2 ) {
+						   return std::tolower( c1 ) == std::tolower( c2 );
+					   } );
+}
+
 } // namespace EE

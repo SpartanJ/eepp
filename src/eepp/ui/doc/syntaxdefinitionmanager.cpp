@@ -122,6 +122,20 @@ static json toJson( const SyntaxDefinition& def ) {
 	if ( !def.isVisible() )
 		j["visible"] = false;
 
+	if ( def.getFoldRangeType() != FoldRangeType::Undefined )
+		j["fold_range_type"] = FoldRangeTypeUtil::toString( def.getFoldRangeType() );
+
+	if ( !def.getFoldBraces().empty() ) {
+		j["fold_braces"] = json::array();
+
+		for ( const auto& fb : def.getFoldBraces() ) {
+			json braces;
+			braces["start"] = fb.first;
+			braces["end"] = fb.second;
+			j["fold_braces"].push_back( braces );
+		}
+	}
+
 	return j;
 }
 
@@ -224,8 +238,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 				buf += ", \"\", SyntaxPatternMatchType::RegEx";
 			else if ( pattern.matchType == SyntaxPatternMatchType::Parser )
 				buf += ", \"\", SyntaxPatternMatchType::Parser";
-		}
-		else if ( pattern.matchType != SyntaxPatternMatchType::LuaPattern ){
+		} else if ( pattern.matchType != SyntaxPatternMatchType::LuaPattern ) {
 			if ( pattern.matchType == SyntaxPatternMatchType::RegEx )
 				buf += ", SyntaxPatternMatchType::RegEx";
 			else if ( pattern.matchType == SyntaxPatternMatchType::Parser )
@@ -251,9 +264,26 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 	buf += "\n}";
 	buf += ")";
 	if ( !def.isVisible() )
-		buf += ".setVisible( false )";
+		buf += ".setVisible( false )\n";
 	if ( def.getAutoCloseXMLTags() )
-		buf += ".setAutoCloseXMLTags( true )";
+		buf += ".setAutoCloseXMLTags( true )\n";
+
+	if ( def.getFoldRangeType() != FoldRangeType::Undefined ) {
+		buf += String::format( ".setFoldRangeType( \"%s\" )\n",
+							   FoldRangeTypeUtil::toString( def.getFoldRangeType() ) );
+	}
+
+	if ( !def.getFoldBraces().empty() ) {
+		buf += ".setFoldBraces( { ";
+		for ( const auto& brace : def.getFoldBraces() ) {
+			buf += String::format(
+				"{ '%s', '%s' }",
+				String( static_cast<String::StringBaseType>( brace.first ) ).toUtf8(),
+				String( static_cast<String::StringBaseType>( brace.second ) ).toUtf8() );
+		}
+		buf += " } );";
+	}
+
 	buf += ";\n}\n";
 	buf += "\n}}}} // namespace EE::UI::Doc::Language\n";
 	return std::make_pair( std::move( header ), std::move( buf ) );
@@ -468,6 +498,27 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 			def.setExtensionPriority( json["extension_priority"].get<bool>() );
 		if ( json.contains( "case_insensitive" ) && json["case_insensitive"].is_boolean() )
 			def.setCaseInsensitive( json["case_insensitive"].get<bool>() );
+
+		if ( json.contains( "fold_range_type" ) && json["fold_range_type"].is_string() ) {
+			def.setFoldRangeType(
+				FoldRangeTypeUtil::fromString( json["fold_range_type"].get<std::string>() ) );
+		}
+
+		if ( json.contains( "fold_braces" ) && json["fold_braces"].is_array() ) {
+			const auto& foldBraces = json["fold_braces"];
+			std::vector<std::pair<Int64, Int64>> folds;
+
+			for ( const auto& fold : foldBraces ) {
+				if ( fold.is_object() && fold.contains( "start" ) && fold.contains( "end" ) ) {
+					auto start = String::fromUtf8( fold.value( "start", "" ) );
+					auto end = String::fromUtf8( fold.value( "end", "" ) );
+					if ( !start.empty() && !end.empty() )
+						folds.emplace_back( start[0], end[0] );
+				}
+			}
+
+			def.setFoldBraces( folds );
+		}
 	} catch ( const json::exception& e ) {
 		Log::error( "SyntaxDefinition loadLanguage failed:\n%s", e.what() );
 	}
