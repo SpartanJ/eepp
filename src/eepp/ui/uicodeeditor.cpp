@@ -3822,7 +3822,7 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 	bool ended = false;
 	Float lineOffset = getLineOffset();
 	size_t pos = 0;
-	Uint32 drawHints = docLine.isAscii() ? Text::DrawHints::AllAscii : 0;
+	Uint32 drawHints = docLine.getTextHints();
 	if ( mDoc->mightBeBinary() && mFont->getType() == FontType::TTF ) {
 		FontTrueType* ttf = static_cast<FontTrueType*>( mFont );
 		isFallbackFont = ttf->isFallbackFontEnabled();

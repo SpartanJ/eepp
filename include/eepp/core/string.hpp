@@ -1097,6 +1097,13 @@ EE_API bool operator>=( const String& left, const String& right );
 **/
 EE_API String operator+( const String& left, const String& right );
 
+struct TextHints {
+	enum Hints {
+		None = 0,
+		AllAscii = 1 << 0,
+	};
+};
+
 } // namespace EE
 
 #endif

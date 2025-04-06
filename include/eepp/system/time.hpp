@@ -1,6 +1,5 @@
-
-#ifndef EE_SYSTEMCTIME_HPP
-#define EE_SYSTEMCTIME_HPP
+#ifndef EE_SYSTEM_TIME_HPP
+#define EE_SYSTEM_TIME_HPP
 
 #include <eepp/config.hpp>
 #include <string>

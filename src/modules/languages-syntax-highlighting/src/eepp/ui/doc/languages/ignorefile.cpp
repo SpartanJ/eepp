@@ -10,7 +10,7 @@ void addIgnoreFile() {
 		{ ".ignore file",
 		  { "%..*ignore$" },
 		  {
-			  { { "^%s*#.*$" }, "comment" },
+			  { { "#.*$" }, "comment" },
 			  { { "^%!.*$" }, "keyword" },
 		  },
 		  {},

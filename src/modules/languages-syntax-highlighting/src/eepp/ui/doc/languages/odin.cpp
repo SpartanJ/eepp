@@ -11,7 +11,7 @@ void addOdin() {
 		  { "%.odin$" },
 		  {
 			  { { "//.-\n" }, "comment" },
-			  { { "^%s*#.-\n" }, "comment" },
+			  { { "#.-\n" }, "comment" },
 			  { { "/%*", "%*/" }, "comment" },
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },

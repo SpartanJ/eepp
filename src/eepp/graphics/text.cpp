@@ -400,7 +400,7 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 	bool isMonospace = font && ( font->isMonospace() ||
 								 ( font->getType() == FontType::TTF &&
 								   static_cast<FontTrueType*>( font )->isIdentifiedAsMonospace() &&
-								   ( textDrawHints & DrawHints::AllAscii ) != 0 ) );
+								   ( textDrawHints & TextHints::AllAscii ) != 0 ) );
 	Float kerning = 0;
 	Float width = 0;
 	Float height = font->getFontHeight( fontSize );
@@ -1015,7 +1015,7 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 	bool isMonospace = font && ( font->isMonospace() ||
 								 ( font->getType() == FontType::TTF &&
 								   static_cast<FontTrueType*>( font )->isIdentifiedAsMonospace() &&
-								   ( textDrawHints & DrawHints::AllAscii ) != 0 ) );
+								   ( textDrawHints & TextHints::AllAscii ) != 0 ) );
 	Float hspace = static_cast<Float>(
 		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
 

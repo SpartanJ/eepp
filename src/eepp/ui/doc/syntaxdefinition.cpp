@@ -2,6 +2,8 @@
 #include <eepp/core/string.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 
+using namespace std::literals;
+
 namespace EE { namespace UI { namespace Doc {
 
 UnorderedMap<SyntaxStyleType, std::string> SyntaxPattern::SyntaxStyleTypeCache = {};
@@ -38,7 +40,17 @@ SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
 	mLSPName( lspName.empty() ? String::toLower( mLanguageName ) : lspName ) {
 	mSymbols.reserve( mSymbolNames.size() );
 	if ( !mPatterns.empty() ) {
-		mPatterns.emplace( mPatterns.begin(), SyntaxPattern{ { "%s+" }, "normal" } );
+		if ( std::find_if( mPatterns.begin(), mPatterns.end(), []( const SyntaxPattern& pattern ) {
+				 return !pattern.patterns.empty() &&
+						( ( ( pattern.matchType == SyntaxPatternMatchType::LuaPattern &&
+							  String::startsWith( std::string_view{ pattern.patterns[0] },
+												  "^%s*"sv ) ) ||
+							( pattern.matchType == SyntaxPatternMatchType::RegEx &&
+							  String::startsWith( std::string_view{ pattern.patterns[0] },
+												  "^\\s*"sv ) ) ) );
+			 } ) == mPatterns.end() ) {
+			mPatterns.emplace( mPatterns.begin(), SyntaxPattern{ { "%s+" }, "normal" } );
+		}
 		mPatterns.emplace_back( SyntaxPattern{ { "%w+%f[%s]" }, "normal" } );
 	}
 	for ( const auto& symbol : mSymbolNames )

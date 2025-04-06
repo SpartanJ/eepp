@@ -11,8 +11,8 @@ void addConfigFile() {
 		  { "%.ini$", "%.conf$", "%.desktop$", "%.service$", "%.cfg$", "%.properties$", "%.wrap$",
 			"Doxyfile" },
 		  {
-			  { { "%s?#%x%x%x%x%x%x%x%x" }, "string" },
-			  { { "%s?#%x%x%x%x%x%x" }, "string" },
+			  { { "%s*#%x%x%x%x%x%x%x%x" }, "string" },
+			  { { "%s*#%x%x%x%x%x%x" }, "string" },
 			  { { "^#.-\n" }, "comment" },
 			  { { "^;.-\n" }, "comment" },
 			  { { "%s#.-\n" }, "comment" },

@@ -30,10 +30,6 @@ class EE_API Text {
 		Shadow = 1 << 4			///< Draw a shadow below the text
 	};
 
-	enum DrawHints {
-		AllAscii = 1 << 0,
-	};
-
 	static std::string styleFlagToString( const Uint32& flags );
 
 	static Uint32 stringToStyleFlag( const std::string& str );

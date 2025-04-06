@@ -10,8 +10,7 @@ void addEnvironmentFile() {
 		{ "Environment File",
 		  { "%.env$", "%.env.[%w%-%_]*$" },
 		  {
-			  { { "^#.-\n" }, "comment" },
-			  { { "%s#.-\n" }, "comment" },
+			  { { "#.-\n" }, "comment" },
 			  { { "\\[nrtfb\\\"']" }, "literal" },
 			  { { "'?\\u%x%x%x%x'?" }, "literal" },
 			  { { "(%${)([%w]+[%w_]*)(})" }, { "keyword", "keyword", "keyword2", "keyword" } },

@@ -13,7 +13,7 @@ void addCrystal() {
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "'", "'" }, "string" },
 			  { { "-?0x%x+" }, "number" },
-			  { { "%#.-\n" }, "comment" },
+			  { { "#.-\n" }, "comment" },
 			  { { " : [%w_| :]*" }, "comment" },
 			  { { "-?%d+[%d%.eE]*%f[^eE]" }, "number" },
 			  { { "-?%.?%d+f?" }, "number" },

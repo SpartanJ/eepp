@@ -64,17 +64,19 @@ class EE_API DocumentView {
 	computeLineBreaks( const String::View& string, const FontStyleConfig& fontStyle, Float maxWidth,
 					   LineWrapMode mode, bool keepIndentation, Uint32 tabWidth = 4,
 					   Float whiteSpaceWidth = 0.f /* 0 = should calculate it */,
-					   bool allAscii = false );
+					   Uint32 textHints = TextHints::None, Float initialXOffset = 0.f );
 
 	static LineWrapInfo computeLineBreaks( const String& string, const FontStyleConfig& fontStyle,
 										   Float maxWidth, LineWrapMode mode, bool keepIndentation,
 										   Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f,
-										   bool allAscii = false );
+										   Uint32 textHints = TextHints::None,
+										   Float initialXOffset = 0.f );
 
 	static LineWrapInfo computeLineBreaks( const TextDocument& doc, size_t line,
 										   const FontStyleConfig& fontStyle, Float maxWidth,
 										   LineWrapMode mode, bool keepIndentation,
-										   Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f );
+										   Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f,
+										   Float initialXOffset = 0.f );
 
 	static Float computeOffsets( const String::View& string, const FontStyleConfig& fontStyle,
 								 Uint32 tabWidth, Float maxWidth = 0.f );
@@ -157,7 +159,7 @@ class EE_API DocumentView {
 
 	void setOnVisibleLineCountChange( std::function<void()> onVisibleLinesCountChangeCb );
 
-	void setOnFoldUnfoldCb( std::function<void(Int64 docIdx, bool unfolded)> onFoldUnfoldCb );
+	void setOnFoldUnfoldCb( std::function<void( Int64 docIdx, bool unfolded )> onFoldUnfoldCb );
 
   protected:
 	std::shared_ptr<TextDocument> mDoc;
@@ -173,7 +175,7 @@ class EE_API DocumentView {
 	bool mUnderConstruction{ false };
 	bool mUpdatingFoldRegions{ false };
 	std::function<void()> mOnVisibleLineCountChange;
-	std::function<void(Int64 docIdx, bool unfolded)> mOnFoldUnfoldCb;
+	std::function<void( Int64 docIdx, bool unfolded )> mOnFoldUnfoldCb;
 
 	void changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visible,
 						   bool recomputeOffset = true, bool recomputeLineToVisibleIndex = true );

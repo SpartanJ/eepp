@@ -79,6 +79,7 @@
 #include <eepp/ui/doc/languages/smallbasic.hpp>
 #include <eepp/ui/doc/languages/solidity.hpp>
 #include <eepp/ui/doc/languages/sql.hpp>
+#include <eepp/ui/doc/languages/squirrel.hpp>
 #include <eepp/ui/doc/languages/svelte.hpp>
 #include <eepp/ui/doc/languages/swift.hpp>
 #include <eepp/ui/doc/languages/tcl.hpp>
@@ -186,6 +187,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addSmallBASIC();
 	addSolidity();
 	addSQL();
+	addSquirrel();
 	addSvelte();
 	addSwift();
 	addTeal();

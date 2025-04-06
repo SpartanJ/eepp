@@ -10,7 +10,7 @@ void addPerl() {
 		{ "Perl",
 		  { "%.pm$", "%.pl$" },
 		  {
-			  { { "%#.-\n" }, "comment" },
+			  { { "#.-\n" }, "comment" },
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },
 			  { { "-?%d+[%d%.eE]*" }, "number" },

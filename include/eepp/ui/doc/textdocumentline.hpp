@@ -7,8 +7,6 @@ namespace EE { namespace UI { namespace Doc {
 
 class EE_API TextDocumentLine {
   public:
-	enum Flags { AllAscii = 1 << 0 };
-
 	TextDocumentLine( const String& text ) : mText( text ) { updateState(); }
 
 	void setText( String&& text ) {
@@ -64,7 +62,9 @@ class EE_API TextDocumentLine {
 
 	std::string toUtf8() const { return mText.toUtf8(); }
 
-	bool isAscii() const { return ( mFlags & AllAscii ) != 0; }
+	bool isAscii() const { return ( mFlags & TextHints::AllAscii ) != 0; }
+
+	Uint32 getTextHints() const { return mFlags; }
 
   protected:
 	String mText;
@@ -73,7 +73,7 @@ class EE_API TextDocumentLine {
 
 	void updateState() {
 		mHash = mText.getHash();
-		mFlags = mText.isAscii() ? AllAscii : 0;
+		mFlags = mText.isAscii() ? TextHints::AllAscii : 0;
 	}
 };
 

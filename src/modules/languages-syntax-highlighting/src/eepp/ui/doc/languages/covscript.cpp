@@ -15,7 +15,7 @@ void addCovScript() {
 			  { { "-?%.?%d+" }, "number" },
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
 			  { { "(import)%s+(%a+[%w/_]+)" }, { "normal", "keyword", "literal" } },
-			  { { "^%s*(@[A-Za-z_]%w*)%s*(%:%s*%w+%s*)$" }, { "normal", "keyword", "keyword2" } },
+			  { { "(@[A-Za-z_]%w*)%s*(%:%s*%w+%s*)$" }, { "normal", "keyword", "keyword2" } },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 
