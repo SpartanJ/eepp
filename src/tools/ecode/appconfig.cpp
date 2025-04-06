@@ -184,7 +184,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.tabIndentAlignment = characterAlignmentFromString(
 		ini.getValue( "editor", "tab_indent_alignment",
 					  characterAlignmentToString( CharacterAlignment::Center ) ) );
-	editor.flashCursor = ini.getValueB( "editor", "flash_cursor", true );
+	editor.flashCursor = ini.getValueB( "editor", "flash_cursor", false );
 
 	searchBarConfig.caseSensitive = ini.getValueB( "search_bar", "case_sensitive", false );
 	searchBarConfig.luaPattern = ini.getValueB( "search_bar", "lua_pattern", false );
