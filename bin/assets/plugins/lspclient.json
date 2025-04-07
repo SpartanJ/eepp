@@ -406,6 +406,14 @@
       "command": "c3lsp",
       "file_patterns": ["%.c3$"],
       "rootIndicationFileNames": [".git"]
+    },
+    {
+      "language": "ü",
+      "name": "Ü language server",
+      "url": "https://github.com/Panzerschrek/U-00DC-Sprache",
+      "command": "u.._language_server",
+      "file_patterns": ["%.u$", "%.uh$"],
+      "rootIndicationFileNames": [".git"]
     }
   ]
 }

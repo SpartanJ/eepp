@@ -163,7 +163,7 @@ void addU() {
 			  { "ssize_type", "keyword2" } },
 		  "//",
 		  {},
-		  "u" } );
+		  "ü" } );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
 }
