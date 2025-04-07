@@ -76,11 +76,9 @@ class GitPlugin : public PluginBase {
 	void updateRepos();
 
 	bool isSilent() const { return mSilent; }
-	
-	std::unique_ptr<Git> mGit;
-	bool mGitFound{ false };
 
   protected:
+	std::unique_ptr<Git> mGit;
 	std::unordered_map<std::string, std::string> mGitBranches;
 	Git::Status mGitStatus;
 	std::vector<std::pair<std::string, std::string>> mRepos;
@@ -90,6 +88,7 @@ class GitPlugin : public PluginBase {
 	std::string mHighlightStyleColor;
 
 	Time mRefreshFreq{ Seconds( 5 ) };
+	bool mGitFound{ false };
 	bool mTooltipInfoShowing{ false };
 	bool mStatusBarDisplayBranch{ true };
 	bool mStatusBarDisplayModifications{ true };
