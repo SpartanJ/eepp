@@ -172,7 +172,7 @@ class EE_API String {
 	static std::string lTrim( const std::string& str, char character = ' ' );
 
 	/** Removes the trailing suffix. */
-	static std::string rTrim( const std::string& str, char character );
+	static std::string rTrim( const std::string& str, char character = ' ' );
 
 	/** Removes all spaces ( or the specified character ) on the string */
 	static std::string trim( const std::string& str, char character = ' ' );
@@ -209,6 +209,48 @@ class EE_API String {
 
 	/** Removes all spaces ( or the specified character ) on the string */
 	static void trimInPlace( String& str, char character = ' ' );
+
+	/** Removes the trailing prefix. */
+	static std::string lTrim( const std::string& str, std::string_view characters );
+
+	/** Removes the trailing suffix. */
+	static std::string rTrim( const std::string& str, std::string_view characters );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static std::string trim( const std::string& str, std::string_view characters );
+
+	/** Removes the trailing prefix. */
+	static std::string_view lTrim( const std::string_view& str, std::string_view characters );
+
+	/** Removes the trailing suffix. */
+	static std::string_view rTrim( const std::string_view& str, std::string_view characters );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static std::string_view trim( const std::string_view& str, std::string_view characters );
+
+	/** Removes the trailing prefix. */
+	static String::View lTrim( const String::View& str, String::View characters );
+
+	/** Removes the trailing suffix. */
+	static String::View rTrim( const String::View& str, String::View characters );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static String::View trim( const String::View& str, String::View characters );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static void trimInPlace( std::string& str, std::string_view characters );
+
+	/** Removes the trailing prefix. */
+	static String lTrim( const String& str, std::string_view characters );
+
+	/** Removes the trailing suffix. */
+	static String rTrim( const String& str, std::string_view characters );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static String trim( const String& str, std::string_view characters );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static void trimInPlace( String& str, std::string_view characters );
 
 	/** Convert the string into upper case string */
 	static void toUpperInPlace( std::string& str );
@@ -356,6 +398,10 @@ class EE_API String {
 	 * searched value */
 	static int valueIndex( const std::string& val, const std::string& strings, int defValue = -1,
 						   char delim = ';' );
+
+	static bool iequals( std::string_view str1, std::string_view str2 );
+
+	static bool iequals( String::View str1, String::View str2 );
 
 	/** Creates a random string using the dictionary characters. */
 	static std::string randString(

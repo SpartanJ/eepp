@@ -5,11 +5,9 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addMarkdown() {
 	auto dynSyntax = []( const SyntaxPattern&, const std::string_view& match ) -> std::string {
-		std::string lang = String::toLower( std::string{ match.substr( 3 ) } );
-		String::trimInPlace( lang );
-		if ( !lang.empty() && lang[lang.size() - 1] == '\n' )
-			lang.pop_back();
-		return SyntaxDefinitionManager::instance()->findFromString( lang ).getLanguageName();
+		return SyntaxDefinitionManager::instance()
+			->findFromString( String::trim( match.substr( 3 ) ) )
+			.getLanguageName();
 	};
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
@@ -18,7 +16,7 @@ void addMarkdown() {
 		  { "%.md$", "%.markdown$" },
 		  {
 			  { { "\\." }, "normal" },
-			  { { "```[%w%s+-#]+", "```" }, "function", dynSyntax },
+			  { { "```[%w \t%+%-#]+", "```" }, "function", dynSyntax },
 			  { { "<!%-%-", "%-%->" }, "comment" },
 			  { { "```", "```" }, "string" },
 			  { { "``", "``" }, "string" },

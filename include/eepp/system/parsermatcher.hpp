@@ -18,7 +18,9 @@ class EE_API ParserMatcherManager {
 	SINGLETON_DECLARE_HEADERS( ParserMatcherManager );
 
   public:
-    void registerBaseParsers();
+	void registerBaseParsers();
+
+	bool registeredBaseParsers() const;
 
 	void registerParser( std::string_view parserName, ParserMatcherFn fn );
 
@@ -29,6 +31,7 @@ class EE_API ParserMatcherManager {
 
   protected:
 	UnorderedMap<std::size_t, ParserMatcherFn> mFns;
+	bool mRegisteredBaseParsers{ false };
 };
 
 class EE_API ParserMatcher : public PatternMatcher {

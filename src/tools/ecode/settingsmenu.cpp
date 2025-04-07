@@ -213,7 +213,8 @@ UIMenu* SettingsMenu::createFileTypeMenu( bool emptyMenu ) {
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		const String& name = item->getText();
 		if ( mSplitter->curEditorExistsAndFocused() ) {
-			mSplitter->getCurEditor()->setSyntaxDefinition( dM->getByLanguageName( name ) );
+			mSplitter->getCurEditor()->setSyntaxDefinition(
+				dM->getByLanguageName( name.toUtf8() ) );
 			updateCurrentFileType();
 		}
 	};

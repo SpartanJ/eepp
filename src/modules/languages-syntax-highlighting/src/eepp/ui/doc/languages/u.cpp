@@ -1,11 +1,9 @@
-#include <eepp/system/parsermatcher.hpp>
 #include <eepp/ui/doc/languages/u.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addU() {
-	ParserMatcherManager::instance()->registerBaseParsers();
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 

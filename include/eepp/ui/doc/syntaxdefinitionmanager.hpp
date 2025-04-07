@@ -41,17 +41,17 @@ class EE_API SyntaxDefinitionManager {
 	const SyntaxDefinition& find( const std::string& filePath, const std::string& header,
 								  bool hFileAsCPP = false );
 
-	const SyntaxDefinition& findFromString( const std::string& str ) const;
+	const SyntaxDefinition& findFromString( const std::string_view& str ) const;
 
 	SyntaxDefinition& getByExtensionRef( const std::string& filePath );
 
-	const SyntaxDefinition& getByLanguageName( const std::string& name ) const;
+	const SyntaxDefinition& getByLanguageName( const std::string_view& name ) const;
 
 	const SyntaxDefinition& getByLanguageIndex( const Uint32& index ) const;
 
-	const SyntaxDefinition& getByLanguageNameInsensitive( std::string name ) const;
+	const SyntaxDefinition& getByLanguageNameInsensitive( const std::string_view& name ) const;
 
-	const SyntaxDefinition& getByLSPName( const std::string& name ) const;
+	const SyntaxDefinition& getByLSPName( const std::string_view& name ) const;
 
 	const SyntaxDefinition& getByLanguageId( const String::HashType& id ) const;
 

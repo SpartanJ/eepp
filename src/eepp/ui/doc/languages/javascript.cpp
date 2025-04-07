@@ -1,4 +1,3 @@
-#include <eepp/system/parsermatcher.hpp>
 #include <eepp/ui/doc/languages/javascript.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 

@@ -1013,6 +1013,12 @@ void LLMChatUI::doRequest() {
 					showMsg( resp["error"].value( "message", "" ) );
 				} else if ( resp.contains( "error" ) && resp["error"].is_string() ) {
 					showMsg( URI::decode( resp.value( "error", "" ) ) );
+				} else if ( resp.is_array() && !resp.empty() ) {
+					const auto& first = resp.at( 0 );
+					if ( first.contains( "error" ) && first["error"].contains( "message" ) )
+						showMsg( first["error"].value( "message", "" ) );
+					else
+						showMsg( statusDesc );
 				} else {
 					showMsg( statusDesc );
 				}
@@ -1188,6 +1194,10 @@ void LLMChatUI::setProviders( LLMProviders&& providers ) {
 
 void LLMChatUI::showMsg( String msg ) {
 	auto msgBox = UIMessageBox::New( UIMessageBox::OK, msg );
+	msgBox->getTextBox()->setLayoutWidthPolicy( SizePolicy::Fixed );
+	msgBox->getTextBox()->setPixelsSize(
+		{ PixelDensity::dpToPx( 600 ), msgBox->getTextBox()->getPixelsSize().getHeight() } );
+	msgBox->getTextBox()->setWordWrap( true );
 	msgBox->getTextBox()->setTextSelection( true );
 	msgBox->getTextBox()->onClick(
 		[]( const MouseEvent* event ) {

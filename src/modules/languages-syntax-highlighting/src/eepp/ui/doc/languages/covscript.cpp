@@ -5,7 +5,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addCovScript() {
 
-	SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "CovScript",
 		  { "%.csc$", "%.csp$", "%.ecs$" },
@@ -47,6 +47,8 @@ void addCovScript() {
 		  { "^#!.*[ /]covscript", "^#!.*[ /]cs" }
 
 		} );
+
+	sd.setFoldRangeType( FoldRangeType::Indentation );
 }
 
 }}}} // namespace EE::UI::Doc::Language
