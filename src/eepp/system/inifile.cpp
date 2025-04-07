@@ -126,7 +126,7 @@ bool IniFile::readFile() {
 
 		// Check that the user hasn't openned a binary file by checking the first
 		// character of each line!
-		if ( !line.empty() && line[0] != '\0' && !isprint( line[0] ) ) {
+		if ( !line.empty() && line[0] != '\0' && !isprint( line[0] ) && !isspace( line[0] ) ) {
 			Log::error( "IniFile::readFile(): Failing on char %d.", line[0] );
 			return false;
 		}
@@ -141,10 +141,10 @@ bool IniFile::readFile() {
 					}
 					break;
 				case '=':
-					valuename = String::trim(
-						line.substr( 0, pLeft ) ); // Remove the extra space between valuename
-												   // and = . No spaced valuename permited.
-					value = String::lTrim( line.substr( pLeft + 1 ) );
+					valuename = String::trim( line.substr( 0, pLeft ),
+											  "\t " ); // Remove the extra space between valuename
+													   // and = . No spaced valuename permited.
+					value = String::lTrim( line.substr( pLeft + 1 ), "\t " );
 					setValue( keyname, valuename, value );
 					break;
 				case ';':
