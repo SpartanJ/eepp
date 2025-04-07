@@ -1757,6 +1757,9 @@ void TextDocument::textInput( const String& text, bool mightBeInteresting ) {
 }
 
 void TextDocument::pasteText( String&& text ) {
+	if ( text.empty() )
+		return;
+
 	if ( text.find_first_of( '\r' ) != String::InvalidPos )
 		String::replaceAll( text, "\r", "" );
 

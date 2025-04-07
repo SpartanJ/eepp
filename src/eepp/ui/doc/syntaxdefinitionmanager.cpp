@@ -304,7 +304,7 @@ SyntaxDefinition& SyntaxDefinitionManager::getByExtensionRef( const std::string&
 }
 
 const SyntaxDefinition&
-SyntaxDefinitionManager::getByLanguageName( const std::string& name ) const {
+SyntaxDefinitionManager::getByLanguageName( const std::string_view& name ) const {
 	for ( auto& style : mDefinitions ) {
 		if ( style.getLanguageName() == name )
 			return style;
@@ -318,16 +318,16 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByLanguageIndex( const Uint3
 }
 
 const SyntaxDefinition&
-SyntaxDefinitionManager::getByLanguageNameInsensitive( std::string name ) const {
-	String::toLowerInPlace( name );
+SyntaxDefinitionManager::getByLanguageNameInsensitive( const std::string_view& name ) const {
 	for ( auto& style : mDefinitions ) {
-		if ( String::toLower( style.getLanguageName() ) == name )
+		if ( String::iequals( style.getLanguageName(), name ) )
 			return style;
 	}
 	return mDefinitions[0];
 }
 
-const SyntaxDefinition& SyntaxDefinitionManager::getByLSPName( const std::string& name ) const {
+const SyntaxDefinition&
+SyntaxDefinitionManager::getByLSPName( const std::string_view& name ) const {
 	for ( auto& style : mDefinitions ) {
 		if ( style.getLSPName() == name )
 			return style;
@@ -758,7 +758,8 @@ const SyntaxDefinition& SyntaxDefinitionManager::find( const std::string& filePa
 	return def;
 }
 
-const SyntaxDefinition& SyntaxDefinitionManager::findFromString( const std::string& lang ) const {
+const SyntaxDefinition&
+SyntaxDefinitionManager::findFromString( const std::string_view& lang ) const {
 	const auto& syn = getByLSPName( lang );
 	if ( syn.getLSPName() != getPlainDefinition().getLSPName() )
 		return syn;

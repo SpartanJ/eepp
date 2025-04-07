@@ -706,6 +706,7 @@ bool Text::wrapText( Font* font, const Uint32& fontSize, StringType& string, con
 				if ( NULL != tLastSpace ) {
 					*tLastSpace = '\n';
 					tChar = tLastSpace + 1;
+					wrapped = true;
 				} else { // The word is larger than the current possible width
 					*tChar = '\n';
 					wrapped = true;

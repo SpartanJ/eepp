@@ -46,18 +46,7 @@ SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
 				 return pattern.matchType == SyntaxPatternMatchType::Parser;
 			 } ) )
 			ParserMatcherManager::instance()->registerBaseParsers();
-
-		if ( std::find_if( mPatterns.begin(), mPatterns.end(), []( const SyntaxPattern& pattern ) {
-				 return !pattern.patterns.empty() &&
-						( ( ( pattern.matchType == SyntaxPatternMatchType::LuaPattern &&
-							  String::startsWith( std::string_view{ pattern.patterns[0] },
-												  "^%s*"sv ) ) ||
-							( pattern.matchType == SyntaxPatternMatchType::RegEx &&
-							  String::startsWith( std::string_view{ pattern.patterns[0] },
-												  "^\\s*"sv ) ) ) );
-			 } ) == mPatterns.end() ) {
-			mPatterns.emplace( mPatterns.begin(), SyntaxPattern{ { "%s+" }, "normal" } );
-		}
+		mPatterns.emplace_back( SyntaxPattern{ { "%s+" }, "normal" } );
 		mPatterns.emplace_back( SyntaxPattern{ { "%w+%f[%s]" }, "normal" } );
 	}
 	for ( const auto& symbol : mSymbolNames )
