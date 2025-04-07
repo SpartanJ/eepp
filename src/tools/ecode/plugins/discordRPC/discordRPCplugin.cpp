@@ -1,8 +1,5 @@
 #include "discordRPCplugin.hpp"
 
-#include "../git/git.hpp"
-#include <regex>
-
 using json = nlohmann::json;
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 #define dcRPC_THREADED 1
@@ -55,8 +52,6 @@ DiscordRPCplugin::~DiscordRPCplugin() {
 void DiscordRPCplugin::load( PluginManager* pluginManager ) {
 	Clock clock;
 	AtomicBoolScopedOp loading( mLoading, true );
-
-	mPluginManager = pluginManager;
 
 	pluginManager->subscribeMessages( this,
 									  [this]( const auto& notification ) -> PluginRequestHandle {
@@ -174,7 +169,7 @@ PluginRequestHandle DiscordRPCplugin::processMessage( const PluginMessage& msg )
 			std::string rpath = FileSystem::getRealPath( msg.asJSON()["folder"] );
 			FileSystem::dirAddSlashAtEnd( rpath );
 			mProjectName = FileSystem::fileNameFromPath( rpath );
-			mProjectPath = rpath;
+			mProjectPath = std::move( rpath );
 			Log::debug( "Loaded new workspace: %s ; %s", rpath, mProjectName );
 		}
 		case PluginMessageType::UIReady: {
@@ -212,6 +207,31 @@ void DiscordRPCplugin::updateActivity( DiscordIPCActivity& a ) {
 	if ( !mProjectName.empty() ) {
 		a.details =
 			String::format( i18n( "dc_workspace", "Working on %s" ).toUtf8(), mProjectName );
+
+		if ( mDoGitIntegration ) {
+			std::string url = getGitOriginUrl();
+
+			if ( !url.empty() ) {
+				if ( String::startsWith( url, "http" ) ) {
+					a.buttons[0].url = String::rTrim( url, ".git" );
+				} else {
+					RegEx regex( R"(@(.*)\.git)" );
+					PatternMatcher::Range matches[1];
+					regex.matches( url, matches );
+
+					if ( matches[0].isValid() ) {
+						std::string giturl =
+							url.substr( matches[0].start + 1, matches[0].end - matches[0].start );
+						String::replaceAll( giturl, ":", "/" );
+
+						// Most services/browsers automatically switch to TLS when available but not
+						// the other way. Thus we use http://
+						a.buttons[0].url = "http://" + String::rTrim( giturl, ".git" );
+					}
+				}
+				a.buttons[0].label = "Repository";
+			}
+		}
 	}
 
 	a.state = String::format( i18n( "dc_editing", "Editing %s, a %s file" ).toUtf8(), mLastFile,
@@ -219,43 +239,14 @@ void DiscordRPCplugin::updateActivity( DiscordIPCActivity& a ) {
 
 	a.start = time( nullptr ); // Time spent in this specific file
 
-	if ( mDoGitIntegration && mPluginManager->isEnabled( "git" ) ) {
-		if ( !mGitPlugin ) {
-			mGitPlugin = (GitPlugin*)mPluginManager->get( "git" );
-		}
-
-		if ( mGitPlugin->mGitFound ) {
-			std::string buf;
-			std::string url;
-			if ( 2 != mGitPlugin->mGit->git( "remote get-url origin", mProjectPath, buf ) ) {
-				// Matches the url with .git stripped for both http(s) and ssh scenarios
-				// SSH urls look like: git@hostname.tld:user/repo.git
-				// HTTP(S): http(s)://hostname.tld/user/repo
-				std::regex urlRegex( R"((?:@|\/{2})(.*)\.git)" );
-				std::smatch match;
-
-				if ( std::regex_search( buf, match, urlRegex ) ) {
-					url = match.str( 1 );
-				}
-
-				if ( !url.empty() ) {
-					size_t colonPos = url.find( ':' );
-					if ( colonPos != std::string::npos ) {
-						url.replace( colonPos, 1, "/" );
-					}
-
-					a.buttons[0].label = "Repository";
-					// Most services/browsers automatically switch to TLS when available but not the
-					// other way. Thus we use http://
-					a.buttons[0].url = "http://" + url;
-				}
-			}
-		}
-	}
-
 	if ( !mLastLangName.empty() && mDoLangIcon && mLangBindings.contains( mLastLangName ) ) {
 		a.largeImage = mLangBindings.value( mLastLangName, DISCORDRPC_DEFAULT_ICON );
 	}
+}
+
+std::string DiscordRPCplugin::getGitOriginUrl() {
+	IniFile Ini( mProjectPath + ".git/config" );
+	return Ini.getValue( "remote \"origin\"", "url", "" );
 }
 
 void DiscordRPCplugin::onRegisterListeners( UICodeEditor* editor, std::vector<Uint32>& listeners ) {

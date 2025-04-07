@@ -3,10 +3,11 @@
 
 #include "../plugin.hpp"
 #include "../pluginmanager.hpp"
-#include "../git/gitplugin.hpp"
 
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/inifile.hpp>
 #include <eepp/system/mutex.hpp>
+#include <eepp/system/regex.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/system/threadpool.hpp>
 
@@ -47,7 +48,6 @@ class DiscordRPCplugin : public PluginBase {
   protected:
 	DiscordIPC mIPC;
 	Mutex mDataMutex;
-	GitPlugin* mGitPlugin{ nullptr };
 
 	std::string mLastFile;
 	std::string mLastLang;
@@ -55,7 +55,6 @@ class DiscordRPCplugin : public PluginBase {
 	std::string mProjectName;
 	std::string mProjectPath;
 	nlohmann::json mLangBindings;
-	PluginManager* mPluginManager{ nullptr };
 	bool mDoLangIcon;
 	bool mDoGitIntegration;
 
@@ -77,6 +76,8 @@ class DiscordRPCplugin : public PluginBase {
 	void initIPC();
 
 	void updateActivity( DiscordIPCActivity& a );
+
+	std::string getGitOriginUrl();
 };
 
 } // namespace ecode
