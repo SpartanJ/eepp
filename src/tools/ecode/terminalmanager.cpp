@@ -572,7 +572,7 @@ void TerminalManager::setKeybindings( UITerminal* term ) {
 		  "debug-draw-boxes-toggle", "debug-draw-debug-data", "debug-widget-tree-view",
 		  "open-locatebar", "open-command-palette", "open-global-search", "menu-toggle",
 		  "console-toggle", "go-to-line", "editor-go-back", "editor-go-forward",
-		  "project-run-executable" } );
+		  "project-run-executable", "project-build-and-run" } );
 }
 
 } // namespace ecode
