@@ -136,6 +136,11 @@ void DiscordRPCplugin::loadDiscordRPCConfig( const std::string& path, bool updat
 		else
 			config["doLanguageIcons"] = true;
 
+		if ( config.contains( "doGitIntegration" ) )
+			mDoGitIntegration = config.value( "doGitIntegration", true );
+		else
+			config["doGitIntegration"] = true;
+
 		if ( updateConfigFile && config.contains( "iconBindings" ) &&
 			 config["iconBindings"].is_null() )
 			config["iconBindings"] = nlohmann::json::object();
@@ -164,7 +169,8 @@ PluginRequestHandle DiscordRPCplugin::processMessage( const PluginMessage& msg )
 			std::string rpath = FileSystem::getRealPath( msg.asJSON()["folder"] );
 			FileSystem::dirAddSlashAtEnd( rpath );
 			mProjectName = FileSystem::fileNameFromPath( rpath );
-			Log::debug( "Loaded new workspace: %s ; %s", rpath, mProjectName );
+			mProjectPath = std::move( rpath );
+			Log::debug( "Loaded new workspace: %s ; %s", mProjectPath, mProjectName );
 		}
 		case PluginMessageType::UIReady: {
 			mIPC.UIReady = true;
@@ -194,13 +200,35 @@ void DiscordRPCplugin::onUnregisterEditor( UICodeEditor* editor ) {
 	editor->removeActionsByTag( DebounceUniqueId );
 }
 
-void DiscordRPCplugin::udpateActivity( DiscordIPCActivity& a ) {
+void DiscordRPCplugin::updateActivity( DiscordIPCActivity& a ) {
 	Lock l( mDataMutex );
 	Log::debug( "dcIPC: Activity in new file. lang = %s", mLastLang );
 
 	if ( !mProjectName.empty() ) {
 		a.details =
 			String::format( i18n( "dc_workspace", "Working on %s" ).toUtf8(), mProjectName );
+
+		if ( mDoGitIntegration ) {
+			std::string url = getGitOriginUrl();
+
+			if ( !url.empty() ) {
+				if ( String::startsWith( url, "http" ) ) {
+					a.buttons[0].url =
+						String::endsWith( url, ".git" ) ? url.substr( 0, url.size() - 4 ) : url;
+				} else {
+					RegEx regex( "@(.*)\\.git" );
+					PatternMatcher::Range matches[2];
+					if ( regex.matches( url, matches ) ) {
+						std::string giturl =
+							url.substr( matches[1].start, matches[1].end - matches[1].start );
+						String::replaceAll( giturl, ":", "/" );
+
+						a.buttons[0].url = "https://" + giturl;
+					}
+				}
+				a.buttons[0].label = i18n( "repository", "Repository" );
+			}
+		}
 	}
 
 	a.state = String::format( i18n( "dc_editing", "Editing %s, a %s file" ).toUtf8(), mLastFile,
@@ -208,13 +236,14 @@ void DiscordRPCplugin::udpateActivity( DiscordIPCActivity& a ) {
 
 	a.start = time( nullptr ); // Time spent in this specific file
 
-	// TODO: Implement github/gitlab remote button (integrate with git plugin)
-	// a.buttons[0].label = "Repository";
-	// a.buttons[0].url = "https://github.com/name/repo";
-
 	if ( !mLastLangName.empty() && mDoLangIcon && mLangBindings.contains( mLastLangName ) ) {
 		a.largeImage = mLangBindings.value( mLastLangName, DISCORDRPC_DEFAULT_ICON );
 	}
+}
+
+std::string DiscordRPCplugin::getGitOriginUrl() {
+	IniFile Ini( mProjectPath + ".git/config" );
+	return Ini.getValue( "remote \"origin\"", "url", "" );
 }
 
 void DiscordRPCplugin::onRegisterListeners( UICodeEditor* editor, std::vector<Uint32>& listeners ) {
@@ -238,7 +267,7 @@ void DiscordRPCplugin::onRegisterListeners( UICodeEditor* editor, std::vector<Ui
 			[this] {
 				getUISceneNode()->getThreadPool()->run( [this] {
 					DiscordIPCActivity a = mIPC.getActivity();
-					udpateActivity( a );
+					updateActivity( a );
 					mIPC.setActivity( std::move( a ) );
 				} );
 			},

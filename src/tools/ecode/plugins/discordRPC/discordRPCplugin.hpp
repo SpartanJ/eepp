@@ -5,7 +5,9 @@
 #include "../pluginmanager.hpp"
 
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/inifile.hpp>
 #include <eepp/system/mutex.hpp>
+#include <eepp/system/regex.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/system/threadpool.hpp>
 
@@ -27,7 +29,7 @@ class DiscordRPCplugin : public PluginBase {
 				 "Discord Rich Presence",
 				 "Show your friends what you are up to through the discord Rich Presence system",
 				 DiscordRPCplugin::New,
-				 { 0, 0, 1 },
+				 { 0, 0, 2 },
 				 DiscordRPCplugin::NewSync };
 	}
 
@@ -46,12 +48,15 @@ class DiscordRPCplugin : public PluginBase {
   protected:
 	DiscordIPC mIPC;
 	Mutex mDataMutex;
+
 	std::string mLastFile;
 	std::string mLastLang;
 	std::string mLastLangName;
 	std::string mProjectName;
+	std::string mProjectPath;
 	nlohmann::json mLangBindings;
 	bool mDoLangIcon;
+	bool mDoGitIntegration;
 
 	void load( PluginManager* pluginManager );
 
@@ -70,7 +75,9 @@ class DiscordRPCplugin : public PluginBase {
 
 	void initIPC();
 
-	void udpateActivity( DiscordIPCActivity& a );
+	void updateActivity( DiscordIPCActivity& a );
+
+	std::string getGitOriginUrl();
 };
 
 } // namespace ecode
