@@ -4,13 +4,12 @@
 	author: 'NullPlane'
 	author_link: 'github.com/NullPlane'
 	collaborators: [ 'SpartanJ', 'NullPlane' ]
-	version: 0.32
-	version_ecode: 0.6.4
+	version: '0.7.0_r00'
 	created: 2024-02-08
-	updated: 2025-01-23
+	updated: 2025-04-08
 	language: 'de'
 	format: 'xml'
-	file: de.xml
+	file: 'de.xml'
 	source: 'github.com/SpartanJ/eepp/tree/develop/bin/assets/i18n'
 	credits: 'i18n/en.xml'
 	license: 'MIT (respective)'
@@ -79,6 +78,7 @@
 	<string name="change_whole_word">Ganzes Wort ändern</string>
 	<string name="check_for_new_updates_at_startup">Bei Programmstart nach Aktualisierungen suchen</string>
 	<string name="check_for_updates">Prüfe auf Aktualisierungen</string>
+	<string name="check_for_updates_ellipsis">Prüfe auf Aktualisierungen...</string>
 	<string name="check_languages_health">Sprachenintegrität prüfen</string>
 	<string name="clean">Bereinigen</string>
 	<string name="clean_failed">In der Bereinigung traten Fehler auf
@@ -175,6 +175,8 @@ Dateipfad: </string>
 	<string name="cut">Ausschneiden</string>
 	<string name="dark">Dunkel</string>
 	<string name="date">Datum</string>
+	<string name="dc_editing">Bearbeite %s, Dateiart %s </string>
+	<string name="dc_workspace">Arbeiten an %s</string>
 	<string name="debug_draw_boxes">Boxen zeigen</string>
 	<string name="debug_draw_boxes_toggle">Debug-Umschaltung: Boxen zeigen</string>
 	<string name="debug_draw_debug_data">Debug-Daten zeigen</string>
@@ -192,6 +194,7 @@ Dateipfad: </string>
 	<string name="disable_welcome_screen">Willkommensbildschirm deaktivieren</string>
 	<string name="document">Dokument</string>
 	<string name="document_symbol_find_ellipsis">Symbole im Dokument finden...</string>
+	<string name="documentation">Dokumentation</string>
 	<string name="documents_settings">Dokumenteneinstellungen</string>
 	<string name="double_quotes">Doppelte Anführungszeichen ""</string>
 	<string name="download_file_web">Datei aus dem Netz herunterladen</string>
@@ -199,6 +202,7 @@ Dateipfad: </string>
 	<string name="duplicate_file_ellipsis">Datei duplizieren...</string>
 	<string name="ecode_no_updates_available">Gegenwärtig steht keine Aktualisierung an.</string>
 	<string name="ecode_source">ecode-Quelltext</string>
+	<string name="ecode_source_ellipsis">ecode-Quelltext...</string>
 	<string name="ecode_unreleased_version">Sie führen eine unveröffentlichte Version von ecode aus.
 Gegenwärtige Version: </string>
 	<string name="ecode_updates_available"> verfügbar!
@@ -232,9 +236,8 @@ auf farbenrepräsentierende Wörter.</string>
 	<string name="error_checking_version">Aktualisierungssuche fehlgeschlagen.</string>
 	<string name="error_copying_file">Fehler beim Kopieren der Datei.</string>
 	<string name="error_renaming_file">Fehler beim Umbenennen der Datei.</string>
-	<string name="escape_sequence_tooltip">Unicode-Zeichen \, 	,
-,
- und ( ersetzen</string>
+	<string name="escape_sequence_tooltip">Unicode-Zeichen \, \t, \n, \r und ( ersetzen</string>
+	<string name="escape_sequences">Escape-Sequenzen</string>
 	<string name="exclusive_mode">Exklusivmodus</string>
 	<string name="executable_to_run">Auszuführende Programmdatei</string>
 	<string name="execute_dir_in_terminal">Verzeichnis in Konsole öffnen</string>
@@ -243,7 +246,8 @@ auf farbenrepräsentierende Wörter.</string>
 	<string name="fallback_font">Reserve-Schriftart</string>
 	<string name="fallback_font_ellipsis">Reserve-Schriftart...</string>
 	<string name="feature_not_supported_in_emscripten">Diese Funktion wird nur in der ecode-Desktopversion unterstützt.</string>
-	<string name="feature_not_supported_in_os">Diese Funktion wird vom derzeitigen Betriebssystem nicht unterstützt. ecode versucht, externes Terminal zu öffnen.</string>
+	<string name="feature_not_supported_in_os">Diese Funktion wird vom derzeitigen Betriebssystem nicht unterstützt.
+ecode versucht, externes Terminal zu öffnen.</string>
 	<string name="file">Datei</string>
 	<string name="file_already_exists">Diese Datei existiert bereits!</string>
 	<string name="file_encoding">Dateikodierung</string>
@@ -260,9 +264,11 @@ auf farbenrepräsentierende Wörter.</string>
 	<string name="font_size_grow">Schriftgröße erhöhen</string>
 	<string name="font_size_reset">Schriftgröße zurücksetzen</string>
 	<string name="font_size_shrink">Schriftgröße verringern</string>
+	<string name="for_help_please_visit">Hilfematerial unter:</string>
 	<string name="force_new_line_at_end_of_file">Neuzeile am Dokumentende erzwingen</string>
 	<string name="format_doc">Dok. formatieren</string>
 	<string name="formatter_format_document">Dokument formatieren</string>
+	<string name="forum">Forum</string>
 	<string name="frame_rate_limit">Bildwiederholratenbegrenzung</string>
 	<string name="frame_rate_limit_applied">Bildwiederholratenbegrenzung angewendet</string>
 	<string name="fullscreen_mode">Vollbildmodus</string>
@@ -291,7 +297,10 @@ auf farbenrepräsentierende Wörter.</string>
 Zweignamen eingeben:</string>
 	<string name="git_create_local_branch">Lokalen Zweig erstellen?</string>
 	<string name="git_delete_branch">Löschen</string>
+	<string name="git_diff_head">HEAD-Diff</string>
+	<string name="git_diff_staged">Stage-Diff</string>
 	<string name="git_discard">Verwerfen</string>
+	<string name="git_discard_all">Alles verwerfen</string>
 	<string name="git_drop_stash">Stash fallen lassen</string>
 	<string name="git_drop_stash_title">Stash fallen lassen</string>
 	<string name="git_fast_forward_merge">Fast-Forward-Vereinigung</string>
@@ -326,6 +335,7 @@ Stash benennen (optional):</string>
 	<string name="git_tags">Tags</string>
 	<string name="git_unmerged">Unvereinigt</string>
 	<string name="git_unstage">Entstagen</string>
+	<string name="git_unstage_all">Alles entstagen</string>
 	<string name="git_untracked">Unverfolgt</string>
 	<string name="global_search">Globale Suche</string>
 	<string name="global_search_clear_history">Globalen Suchverlauf bereinigen</string>
@@ -402,6 +412,9 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="lsp_symbol_info">LSP: Symbolinformationen</string>
 	<string name="lsp_symbol_references">LSP: Symbolreferenzen</string>
 	<string name="lua_pattern">Lua-Schema</string>
+	<string name="lua_pattern_match">Lua-Schemenabgleich</string>
+	<string name="main_menu">Hauptmenü</string>
+	<string name="match_case">Groß-/Kleinschreibung vergleichen</string>
 	<string name="match_whole_word">Ganzes Wort vergleichen</string>
 	<string name="menu_hold_shift_hint">Zum Offenhalten "UMSCHALT" halten</string>
 	<string name="menu_hold_shift_hint_desc">"UMSCHALT" beim Ändern jeglicher Optionen gedrückt zu halten hält das Menü offen.</string>
@@ -492,7 +505,7 @@ in einem neuen Fenster geöffnet werden.</string>
 	<string name="open_locatebar_glob_search">Globale Suchleiste öffnen</string>
 	<string name="open_recent_folder_ellipsis">Letzte Ordner öffnen...</string>
 	<string name="open_workspace_symbol_search">Arbeitsbereichssymbolsuche öffnen</string>
-	<string name="output">Ausgabe</string>
+	<string name="output_capitalized">Ausgabe</string>
 	<string name="output_parser">Ausgabe-Parser</string>
 	<string name="output_parser_desc">Angepasste Ausgabe-Parser prüfen auf der Kommandozeile auf benutzerdefinierte Fehlerschemata, um Einträge unter Build-Probleme zu erstellen und diese im Build-Output zu markieren</string>
 	<string name="output_parser_preset">Es gibt generische Output-Parser-Voreinstellungen, die hierunter ausgewählt werden können. Standardmäßig wird eine "generische" Voreinstellung gewählt:</string>
@@ -713,6 +726,7 @@ Datei im Verzeichnisbaum.</string>
 	<string name="terminal_split_right">Konsolenkachelung rechts</string>
 	<string name="terminal_split_top">Konsolenkachelung am Kopfende</string>
 	<string name="texture_viewer">Texturenbetrachter</string>
+	<string name="the_ecode_nbsp">ecode-</string>
 	<string name="toggle_lua_pattern">Lua-Schema umschalten</string>
 	<string name="toggle_menu_bar">Menüleiste umschalten</string>
 	<string name="toggle_regex">Regex umschalten</string>
