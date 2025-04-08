@@ -1042,6 +1042,7 @@ void LLMChatUI::doRequest() {
 					"straight to the title, without any preamble and prefix like `Here's a concise "
 					"suggestion:...` or `Title:`. Ignore this message for the summary generation.";
 
+				// TODO: Implement stripping the serialized chat for summary (remove code-blocks)
 				auto jchat = serializeChat( getCheapestModelFromCurrentProvider() );
 
 				jchat["messages"].push_back(
@@ -1061,10 +1062,16 @@ void LLMChatUI::doRequest() {
 						String::trimInPlace( mSummary, '\n' );
 						String::trimInPlace( mSummary, ' ' );
 						String::trimInPlace( mSummary, '"' );
-						runOnMainThread( [this] { updateTabTitle(); } );
-						saveChat();
+					} else {
+						// TODO: Implement generating a summary base on the user prompt (take the
+						// first few words)
+						mSummary = i18n( "untitled_conversation", "Untitled Conversation" );
 					}
-					runOnMainThread( [this] { mSummaryRequest.reset(); } );
+					saveChat();
+					runOnMainThread( [this] {
+						updateTabTitle();
+						mSummaryRequest.reset();
+					} );
 				};
 				mSummaryRequest->requestAsync();
 			} else {
