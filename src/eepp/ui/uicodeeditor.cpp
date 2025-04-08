@@ -3840,46 +3840,6 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 	FontStyleConfig fontStyle( mFontStyleConfig );
 	fontStyle.CharacterSize = fontSize;
 
-	const auto drawHandDown = [this, &fontStyle, &lineHeight, &visibleLineRange]() {
-		auto rects = getTextRangeRectangles( mLinkPosition, getScreenScroll(), {}, lineHeight,
-											 visibleLineRange );
-		auto screenBounds = getScreenBounds();
-		if ( !std::any_of( rects.begin(), rects.end(), [&screenBounds]( const Rectf& rect ) {
-				 return screenBounds.intersect( rect );
-			 } ) ) {
-			return;
-		}
-
-		if ( !mUseDefaultStyle ) {
-			auto tokenType = mDoc->getHighlighter()->getTokenTypeAt( mLinkPosition.start() );
-			const SyntaxColorScheme::Style& style = mColorScheme.getSyntaxStyle( tokenType );
-			SyntaxColorScheme::Style linkStyle = style;
-
-			fontStyle.Style = style.style;
-			fontStyle.FontColor = Color( style.color ).blendAlpha( mAlpha );
-			fontStyle.OutlineThickness = style.outlineThickness;
-			if ( fontStyle.OutlineThickness )
-				fontStyle.OutlineColor = style.outlineColor;
-
-			if ( mColorScheme.hasSyntaxStyle( "link_hover"_sst ) ) {
-				linkStyle = mColorScheme.getSyntaxStyle( "link_hover"_sst );
-				if ( linkStyle.color != Color::Transparent ) {
-					fontStyle.FontColor = Color( linkStyle.color ).blendAlpha( mAlpha );
-				}
-				fontStyle.Style = linkStyle.style;
-			}
-		}
-
-		for ( auto& rect : rects ) {
-			if ( screenBounds.intersect( rect ) ) {
-				Text::drawUnderline( rect.getPosition(), rect.getWidth(), fontStyle.Font,
-									 fontStyle.CharacterSize, fontStyle.FontColor, fontStyle.Style,
-									 fontStyle.OutlineThickness, fontStyle.OutlineColor,
-									 fontStyle.ShadowColor, fontStyle.ShadowOffset );
-			}
-		}
-	};
-
 	if ( mDocView.isWrappedLine( line ) ) {
 		auto vline = mDocView.getVisibleLineInfo( line );
 		size_t curvline = 1;
@@ -4014,7 +3974,47 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 
 	if ( mHandShown && mLinkPosition.isValid() && mLinkPosition.inSameLine() &&
 		 mLinkPosition.start().line() == line ) {
-		drawHandDown();
+		bool skipUnderlining = false;
+		auto rects = getTextRangeRectangles( mLinkPosition, getScreenScroll(), {}, lineHeight,
+											 visibleLineRange );
+		auto screenBounds = getScreenBounds();
+		if ( !std::any_of( rects.begin(), rects.end(), [&screenBounds]( const Rectf& rect ) {
+				 return screenBounds.intersect( rect );
+			 } ) ) {
+			skipUnderlining = true;
+		}
+
+		if ( !mUseDefaultStyle && !skipUnderlining ) {
+			auto tokenType = mDoc->getHighlighter()->getTokenTypeAt( mLinkPosition.start() );
+			const SyntaxColorScheme::Style& style = mColorScheme.getSyntaxStyle( tokenType );
+			SyntaxColorScheme::Style linkStyle = style;
+
+			fontStyle.Style = style.style;
+			fontStyle.FontColor = Color( style.color ).blendAlpha( mAlpha );
+			fontStyle.OutlineThickness = style.outlineThickness;
+			if ( fontStyle.OutlineThickness )
+				fontStyle.OutlineColor = style.outlineColor;
+
+			if ( mColorScheme.hasSyntaxStyle( "link_hover"_sst ) ) {
+				linkStyle = mColorScheme.getSyntaxStyle( "link_hover"_sst );
+				if ( linkStyle.color != Color::Transparent ) {
+					fontStyle.FontColor = Color( linkStyle.color ).blendAlpha( mAlpha );
+				}
+				fontStyle.Style = linkStyle.style;
+			}
+		}
+
+		if ( !skipUnderlining ) {
+			for ( auto& rect : rects ) {
+				if ( screenBounds.intersect( rect ) ) {
+					Text::drawUnderline( rect.getPosition(), rect.getWidth(), fontStyle.Font,
+										 fontStyle.CharacterSize, fontStyle.FontColor,
+										 fontStyle.Style, fontStyle.OutlineThickness,
+										 fontStyle.OutlineColor, fontStyle.ShadowColor,
+										 fontStyle.ShadowOffset );
+				}
+			}
+		}
 	}
 
 	if ( mDoc->mightBeBinary() && mFont->getType() == FontType::TTF ) {

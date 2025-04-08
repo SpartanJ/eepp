@@ -47,13 +47,11 @@ int Git::git( const std::string& args, const std::string& projectDir, std::strin
 	p.readAllStdOut( buf );
 	int retCode = 0;
 	p.join( &retCode );
-	if ( mLogLevel == LogLevel::Info ||
-		 ( mLogLevel >= LogLevel::Warning && retCode != EXIT_SUCCESS ) ) {
-		Log::instance()->writef( mLogLevel, "GitPlugin cmd in %s (%d): %s %s",
+	if ( !mSilent || retCode != EXIT_SUCCESS ) {
+		Log::instance()->writef( retCode != EXIT_SUCCESS ? LogLevel::Info : LogLevel::Debug,
+								 "GitPlugin cmd in %s (%d): %s %s",
 								 clock.getElapsedTime().toString(), retCode, mGitPath, args );
 	}
-	if ( !mSilent )
-		Log::debug( "%s", buf );
 	return retCode;
 }
 

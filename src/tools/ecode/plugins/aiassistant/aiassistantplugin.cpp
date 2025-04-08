@@ -284,9 +284,9 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 			config["anthropic_api_key"] = mApiKeys["anthropic"];
 
 		if ( config.contains( "google_ai_api_key" ) )
-			mApiKeys["google_ai"] = config.value( "google_ai_api_key", "" );
+			mApiKeys["google"] = config.value( "google_ai_api_key", "" );
 		else if ( updateConfigFile )
-			config["google_ai_api_key"] = mApiKeys["google_ai"];
+			config["google_ai_api_key"] = mApiKeys["google"];
 
 		if ( config.contains( "deepseek_api_key" ) )
 			mApiKeys["deepseek"] = config.value( "deepseek_api_key", "" );
