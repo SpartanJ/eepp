@@ -194,7 +194,6 @@ void LSPDocumentClient::requestSemanticHighlightingDelayed( bool reqFull ) {
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( sceneNode ) {
 		mWaitingSemanticTokensResponse = true;
-		sceneNode->removeActionsByTag( mTagSemanticTokens );
 		sceneNode->debounce( [this, reqFull]() { requestSemanticHighlighting( reqFull ); },
 							 Seconds( 0.5f ), mTagSemanticTokens );
 	}
@@ -447,7 +446,6 @@ void LSPDocumentClient::requestSymbolsDelayed() {
 		return;
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( sceneNode ) {
-		sceneNode->removeActionsByTag( mTag );
 		LSPDocumentClient* docClient = this;
 		URI uri = mDoc->getURI();
 		LSPClientServer* server = mServer;

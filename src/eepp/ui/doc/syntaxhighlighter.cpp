@@ -292,7 +292,7 @@ SyntaxTokenPosition SyntaxHighlighter::getTokenPositionAt( const TextPosition& p
 	for ( const auto& token : tokens ) {
 		col += token.len;
 		if ( col > pos.column() )
-			return { token.type, static_cast<SyntaxStyleType>( col - token.len ), token.len };
+			return { token.type, static_cast<SyntaxTokenLen>( col - token.len ), token.len };
 	}
 	return { SyntaxStyleTypes::Normal, 0, 0 };
 }
