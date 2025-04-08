@@ -130,8 +130,8 @@ static json toJson( const SyntaxDefinition& def ) {
 
 		for ( const auto& fb : def.getFoldBraces() ) {
 			json braces;
-			braces["start"] = fb.first;
-			braces["end"] = fb.second;
+			braces["start"] = String( static_cast<String::StringBaseType>( fb.first ) ).toUtf8();
+			braces["end"] = String( static_cast<String::StringBaseType>( fb.second ) ).toUtf8();
 			j["fold_braces"].push_back( braces );
 		}
 	}
@@ -269,8 +269,21 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 		buf += ".setAutoCloseXMLTags( true )\n";
 
 	if ( def.getFoldRangeType() != FoldRangeType::Undefined ) {
-		buf += String::format( ".setFoldRangeType( \"%s\" )\n",
-							   FoldRangeTypeUtil::toString( def.getFoldRangeType() ) );
+		std::string fdtn;
+		switch ( def.getFoldRangeType() ) {
+			case FoldRangeType::Braces:
+				fdtn = "FoldRangeType::Braces";
+			case FoldRangeType::Indentation:
+				fdtn = "FoldRangeType::Indentation";
+			case FoldRangeType::Tag:
+				fdtn = "FoldRangeType::Tag";
+			case FoldRangeType::Markdown:
+				fdtn = "FoldRangeType::Markdown";
+			case FoldRangeType::Undefined:
+				break;
+		}
+		if ( !fdtn.empty() )
+			buf += String::format( ".setFoldRangeType( \"%s\" )\n", fdtn );
 	}
 
 	if ( !def.getFoldBraces().empty() ) {

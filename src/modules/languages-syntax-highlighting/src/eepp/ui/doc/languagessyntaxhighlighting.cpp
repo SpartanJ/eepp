@@ -99,6 +99,7 @@
 #include <eepp/ui/doc/languages/xtend.hpp>
 #include <eepp/ui/doc/languages/yaml.hpp>
 #include <eepp/ui/doc/languages/yuescript.hpp>
+#include <eepp/ui/doc/languages/zephir.hpp>
 #include <eepp/ui/doc/languages/zig.hpp>
 #include <eepp/ui/doc/languagessyntaxhighlighting.hpp>
 
@@ -206,6 +207,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addXtend();
 	addYAML();
 	addYueScript();
+	addZephir();
 	addZig();
 }
 
