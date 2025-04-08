@@ -169,8 +169,8 @@ PluginRequestHandle DiscordRPCplugin::processMessage( const PluginMessage& msg )
 			std::string rpath = FileSystem::getRealPath( msg.asJSON()["folder"] );
 			FileSystem::dirAddSlashAtEnd( rpath );
 			mProjectName = FileSystem::fileNameFromPath( rpath );
-			mProjectPath = rpath;
-			Log::debug( "Loaded new workspace: %s ; %s", rpath, mProjectName );
+			mProjectPath = std::move( rpath );
+			Log::debug( "Loaded new workspace: %s ; %s", mProjectPath, mProjectName );
 		}
 		case PluginMessageType::UIReady: {
 			mIPC.UIReady = true;
@@ -213,7 +213,8 @@ void DiscordRPCplugin::updateActivity( DiscordIPCActivity& a ) {
 
 			if ( !url.empty() ) {
 				if ( String::startsWith( url, "http" ) ) {
-					a.buttons[0].url = String::rTrim( url, ".git" );
+					a.buttons[0].url =
+						String::endsWith( url, ".git" ) ? url.substr( 0, url.size() - 4 ) : url;
 				} else {
 					RegEx regex( "@(.*)\\.git" );
 					PatternMatcher::Range matches[2];
@@ -222,9 +223,7 @@ void DiscordRPCplugin::updateActivity( DiscordIPCActivity& a ) {
 							url.substr( matches[1].start, matches[1].end - matches[1].start );
 						String::replaceAll( giturl, ":", "/" );
 
-						// Most services/browsers automatically switch to TLS when available but not
-						// the other way. Thus we use http://
-						a.buttons[0].url = "http://" + giturl;
+						a.buttons[0].url = "https://" + giturl;
 					}
 				}
 				a.buttons[0].label = i18n( "repository", "Repository" );
