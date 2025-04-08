@@ -349,10 +349,6 @@ class Git {
 
 	GitStatusReport statusFromShortStatusStr( const std::string_view& statusStr );
 
-	void setLogLevel( LogLevel logLevel ) { mLogLevel = logLevel; }
-
-	LogLevel getLogLevel() const { return mLogLevel; }
-
 	void setSilent( bool set ) { mSilent = set; }
 
 	bool isSilent() const { return mSilent; }
@@ -370,7 +366,6 @@ class Git {
 	std::string mProjectPath;
 	std::string mGitFolder;
 	std::vector<std::string> mSubModules;
-	LogLevel mLogLevel{ LogLevel::Error };
 	Mutex mSubModulesMutex;
 	bool mSubModulesUpdated{ false };
 	bool mSilent{ false };

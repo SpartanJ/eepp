@@ -230,7 +230,6 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 	}
 
 	mGit = std::make_unique<Git>( pluginManager->getWorkspaceFolder() );
-	mGit->setLogLevel( Log::instance()->getLogLevelThreshold() );
 	mGit->setSilent( mSilent );
 	mGitFound = !mGit->getGitPath().empty();
 	mProjectPath = mRepoSelected = mGit->getProjectPath();
