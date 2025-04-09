@@ -8,7 +8,7 @@
         "command": "gdb",
         "command_arguments": "--interpreter=dap"
       },
-      "languages": [ "cpp", "c", "d", "go", "objectivec", "fortran", "pascal", "rust" ],
+      "languages": [ "cpp", "c", "d", "go", "objectivec", "fortran", "pascal", "rust", "ü" ],
       "configurations": [
         {
           "name": "Launch binary",
@@ -48,7 +48,7 @@
       "find": {
         "macos": "xcrun -f ${command}"
       },
-      "languages": [ "cpp", "c", "odin", "rust", "zig" ],
+      "languages": [ "cpp", "c", "odin", "rust", "zig", "ü" ],
       "configurations": [
         {
           "name": "Launch binary",
