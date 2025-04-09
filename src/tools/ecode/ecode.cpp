@@ -3511,6 +3511,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	Engine* engine = Engine::instance();
 
 	WindowSettings winSettings = engine->createWindowSettings( &mConfig.iniState, "window" );
+	winSettings.Title = "ecode";
 	winSettings.PixelDensity = 1;
 	winSettings.Width = mConfig.windowState.size.getWidth();
 	winSettings.Height = mConfig.windowState.size.getHeight();
