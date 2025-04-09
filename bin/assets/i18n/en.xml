@@ -189,7 +189,7 @@ File path is: </string>
 	<string name="custom_variables">Custom Variables</string>
 	<string name="custom_variables_desc">Custom Variables allow to simplify the build commands steps adding custom variables that can be used over the build settings in commands, arguments, and working directories.</string>
 	<string name="custom_variables_desc_2">Custom Variables can be invoked using ${variable_name} in any of the commands.</string>
-	<string name="custom_variables_desc_3">There are predefined custom variables available to use:&amp;#10;${project_root}: The folder / project root directory.&amp;#10;${build_type}: The build type selected to build the project.&amp;#10;${os}: The current operating system name.&amp;#10;${arch}: The current operating architecture.&amp;#10;${nproc}: The number of logical processing units.&amp;#10;${current_doc}: The last or current focused document path.&amp;#10;${current_doc_name}: The last or current focused document name (without extension</string>
+	<string name="custom_variables_desc_3">There are predefined custom variables available to use:&#10;${project_root}: The folder / project root directory.&#10;${build_type}: The build type selected to build the project.&#10;${os}: The current operating system name.&#10;${arch}: The current operating architecture.&#10;${nproc}: The number of logical processing units.&#10;${current_doc}: The last or current focused document path.&#10;${current_doc_name}: The last or current focused document name without extension.&#10;${current_doc_dir}: The last or current focused document directory.</string>
 	<string name="cut">Cut</string>
 	<string name="dark">Dark</string>
 	<string name="date">Date</string>

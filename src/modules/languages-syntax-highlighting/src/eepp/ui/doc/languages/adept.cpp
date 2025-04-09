@@ -98,6 +98,7 @@ void addAdept() {
 			  { "this", "keyword" },
 			  { "it", "keyword" },
 			  { "idx", "keyword" },
+			  { "volatile", "keyword" },
 			  { "bool", "keyword2" },
 			  { "ptr", "keyword2" },
 			  { "byte", "keyword2" },
