@@ -283,6 +283,10 @@ class EE_API Text {
 
 	bool hasSameFontStyleConfig( const FontStyleConfig& styleConfig );
 
+	void setTabStops( bool enabled );
+
+	bool hasTabStops() const { return mTabStops; }
+
   protected:
 	struct VertexCoords {
 		Vector2f texCoords;
@@ -298,6 +302,7 @@ class EE_API Text {
 	mutable bool mCachedWidthNeedUpdate{ false };
 	mutable bool mColorsNeedUpdate{ false };
 	mutable bool mContainsColorEmoji{ false };
+	bool mTabStops{ false };
 
 	Float mCachedWidth{ 0 };
 	Uint32 mAlign{ TEXT_ALIGN_LEFT };

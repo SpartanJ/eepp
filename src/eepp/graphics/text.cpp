@@ -935,6 +935,14 @@ void Text::setOutlineThickness( Float thickness ) {
 	}
 }
 
+void Text::setTabStops( bool enabled ) {
+	if ( mTabStops != enabled ) {
+		mTabStops = enabled;
+		mGeometryNeedUpdate = true;
+		mCachedWidthNeedUpdate = true;
+	}
+}
+
 void Text::transformText( const TextTransform::Value& transform ) {
 	switch ( transform ) {
 		case TextTransform::LowerCase:
@@ -1585,7 +1593,8 @@ void Text::updateWidthCache() {
 							 auto curChar = mString[curGlyph.cluster];
 
 							 if ( curChar == '\t' ) {
-								 width += hspace * mTabWidth;
+								 width += tabAdvance( hspace, mTabWidth,
+													  mTabStops ? width : std::optional<Float>{} );
 							 } else {
 								 const Glyph& glyph = font->getGlyphByIndex(
 									 curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold,
@@ -1641,7 +1650,7 @@ void Text::updateWidthCache() {
 														italic, mFontStyleConfig.OutlineThickness );
 			width += glyph.advance;
 		} else if ( codepoint == '\t' ) {
-			width += hspace * mTabWidth;
+			width += tabAdvance( hspace, mTabWidth, mTabStops ? width : std::optional<Float>{} );
 		}
 
 		if ( codepoint == '\n' ) {
@@ -1956,7 +1965,8 @@ void Text::ensureGeometryUpdate() {
 					if ( curChar == '\t' ) {
 						minX = std::min( minX, x );
 
-						x += hspace * mTabWidth;
+						x +=
+							tabAdvance( hspace, mTabWidth, mTabStops ? x : std::optional<Float>{} );
 
 						maxX = std::max( maxX, x );
 
@@ -2157,7 +2167,7 @@ void Text::ensureGeometryUpdate() {
 					x += hspace;
 					break;
 				case '\t':
-					x += hspace * mTabWidth;
+					x += tabAdvance( hspace, mTabWidth, mTabStops ? x : std::optional<Float>{} );
 					break;
 				case '\n':
 					y += vspace;
