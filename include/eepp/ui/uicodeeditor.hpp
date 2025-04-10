@@ -535,11 +535,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	size_t characterWidth( const String& str ) const;
 
-	Float getTextWidth( const String& text ) const;
+	Float getTextWidth( const String& text, std::optional<Float> tabOffset = {} ) const;
 
 	size_t characterWidth( const String::View& str ) const;
 
-	Float getTextWidth( const String::View& text ) const;
+	Float getTextWidth( const String::View& text, std::optional<Float> tabOffset ) const;
 
 	Float getLineHeight() const;
 
@@ -798,6 +798,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	bool toggleFoldUnfold( Int64 docLineIdx );
 
+	void setTabStops( bool enabled );
+
+	bool usesTabStops() { return mTabStops; }
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -806,10 +810,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Font* mFont;
 	UIFontStyleConfig mFontStyleConfig;
 	std::shared_ptr<Doc::TextDocument> mDoc;
-	DocumentView mDocView;
-	Clock mBlinkTimer;
-	Time mBlinkTime;
-	Time mFoldsRefreshTime;
 	bool mDirtyEditor{ false };
 	bool mDirtyScroll{ false };
 	bool mCursorVisible{ false };
@@ -848,6 +848,11 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mEnableFlashCursor{ false };
 	bool mDisableCursorBlinkingAfterAMinuteOfInactivity{ true };
 	bool mAllowSelectingTextFromGutter{ true };
+	bool mTabStops{ false };
+	DocumentView mDocView;
+	Clock mBlinkTimer;
+	Time mBlinkTime;
+	Time mFoldsRefreshTime;
 	Uint32 mTabWidth;
 	std::atomic<size_t> mHighlightWordProcessing{ false };
 	TextRange mLinkPosition;
@@ -1114,11 +1119,14 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	template <typename StringType> size_t characterWidth( const StringType& str ) const;
 
 	template <typename StringType>
-	Float getTextWidth( const StringType& text, bool fromMonospaceLine ) const;
+	Float getTextWidth( const StringType& text, bool fromMonospaceLine,
+						std::optional<Float> tabOffset ) const;
 
-	Float getTextWidth( const String& text, bool fromMonospaceLine ) const;
+	Float getTextWidth( const String& text, bool fromMonospaceLine,
+						std::optional<Float> tabOffset ) const;
 
-	Float getTextWidth( const String::View& text, bool fromMonospaceLine ) const;
+	Float getTextWidth( const String::View& text, bool fromMonospaceLine,
+						std::optional<Float> tabOffset ) const;
 
 	void updateIMELocation();
 

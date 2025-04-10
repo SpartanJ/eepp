@@ -156,6 +156,18 @@ shapeAndRun( const String& string, const FontStyleConfig& config,
 
 } // namespace
 
+Float Text::tabAdvance( Float hspace, Uint32 tabWidth, std::optional<Float> tabOffset ) {
+	Float advance = hspace * tabWidth;
+	if ( tabOffset ) {
+		Float offset = fmodf( *tabOffset, advance );
+		advance = advance - offset;
+		// If there is not enough space until the next stop, skip it
+		if ( advance < hspace )
+			advance += hspace * tabWidth;
+	}
+	return advance;
+}
+
 bool Text::TextShaperEnabled = false;
 
 std::string Text::styleFlagToString( const Uint32& flags ) {
@@ -216,28 +228,33 @@ Uint32 Text::stringToStyleFlag( const std::string& str ) {
 
 Float Text::getTextWidth( Font* font, const Uint32& fontSize, const String& string,
 						  const Uint32& style, const Uint32& tabWidth,
-						  const Float& outlineThickness, Uint32 textDrawHints ) {
+						  const Float& outlineThickness, Uint32 textDrawHints,
+						  std::optional<Float> tabOffset ) {
 	return getTextWidth<String>( font, fontSize, string, style, tabWidth, outlineThickness,
-								 textDrawHints );
+								 textDrawHints, tabOffset );
 }
 
 Float Text::getTextWidth( Font* font, const Uint32& fontSize, const String::View& string,
 						  const Uint32& style, const Uint32& tabWidth,
-						  const Float& outlineThickness, Uint32 textDrawHints ) {
+						  const Float& outlineThickness, Uint32 textDrawHints,
+						  std::optional<Float> tabOffset ) {
 	return getTextWidth<String::View>( font, fontSize, string, style, tabWidth, outlineThickness,
-									   textDrawHints );
+									   textDrawHints, tabOffset );
 }
 
 Float Text::getTextWidth( const String& string, const FontStyleConfig& config,
-						  const Uint32& tabWidth, Uint32 textDrawHints ) {
+						  const Uint32& tabWidth, Uint32 textDrawHints,
+						  std::optional<Float> tabOffset ) {
 	return getTextWidth<String>( config.Font, config.CharacterSize, string, config.Style, tabWidth,
-								 config.OutlineThickness, textDrawHints );
+								 config.OutlineThickness, textDrawHints, tabOffset );
 }
 
 Float Text::getTextWidth( const String::View& string, const FontStyleConfig& config,
-						  const Uint32& tabWidth, Uint32 textDrawHints ) {
+						  const Uint32& tabWidth, Uint32 textDrawHints,
+						  std::optional<Float> tabOffset ) {
 	return getTextWidth<String::View>( config.Font, config.CharacterSize, string, config.Style,
-									   tabWidth, config.OutlineThickness, textDrawHints );
+									   tabWidth, config.OutlineThickness, textDrawHints,
+									   tabOffset );
 }
 
 Sizef Text::draw( const String& string, const Vector2f& pos, Font* font, Float fontSize,
@@ -412,19 +429,9 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 	GlyphDrawable* spaceGlyph = nullptr;
 	GlyphDrawable* tabGlyph = nullptr;
 	Float hspace = font->getGlyph( ' ', fontSize, isBold, isItalic ).advance;
-	if ( whitespaceDisplayConfig.tabDisplayCharacter ) {
+	std::optional<Float> tabOffset{ whitespaceDisplayConfig.tabOffset };
+	if ( whitespaceDisplayConfig.tabDisplayCharacter )
 		tabGlyph = font->getGlyphDrawable( whitespaceDisplayConfig.tabDisplayCharacter, fontSize );
-		switch ( whitespaceDisplayConfig.tabAlign ) {
-			case CharacterAlignment::Center:
-				tabAlign = ( ( tabWidth * hspace ) - tabGlyph->getPixelsSize().getWidth() ) * 0.5f;
-				break;
-			case CharacterAlignment::Right:
-				tabAlign = ( tabWidth * hspace ) - tabGlyph->getPixelsSize().getWidth();
-				break;
-			case CharacterAlignment::Left:
-				break;
-		}
-	}
 
 	BR->setBlendMode( BlendMode::Alpha() );
 	BR->quadsBegin();
@@ -445,12 +452,30 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 					cluster = curGlyph.cluster;
 					ch = string[cluster];
 					if ( ch == '\t' ) {
+						Float advance = tabAdvance( hspace, tabWidth,
+													tabOffset ? cpos.x - pos.x + *tabOffset
+															  : std::optional<Float>{} );
+
+						if ( whitespaceDisplayConfig.tabDisplayCharacter ) {
+							switch ( whitespaceDisplayConfig.tabAlign ) {
+								case CharacterAlignment::Center:
+									tabAlign =
+										( advance - tabGlyph->getPixelsSize().getWidth() ) * 0.5f;
+									break;
+								case CharacterAlignment::Right:
+									tabAlign = advance - tabGlyph->getPixelsSize().getWidth();
+									break;
+								case CharacterAlignment::Left:
+									break;
+							}
+						}
+
 						if ( tabGlyph ) {
 							drawGlyph( BR, tabGlyph, { cpos.x + tabAlign, cpos.y },
 									   whitespaceDisplayConfig.color, isItalic );
 						}
-						width += hspace * tabWidth;
-						cpos.x += hspace * tabWidth;
+						width += advance;
+						cpos.x += advance;
 					} else {
 						if ( style & Text::Shadow ) {
 							auto* gds = font->getGlyphDrawableFromGlyphIndex(
@@ -552,7 +577,23 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 			case '\r':
 				continue;
 			case '\t': {
-				Float advance = hspace * tabWidth;
+				Float advance =
+					tabAdvance( hspace, tabWidth,
+								tabOffset ? cpos.x - pos.x + *tabOffset : std::optional<Float>{} );
+
+				if ( whitespaceDisplayConfig.tabDisplayCharacter ) {
+					switch ( whitespaceDisplayConfig.tabAlign ) {
+						case CharacterAlignment::Center:
+							tabAlign = ( advance - tabGlyph->getPixelsSize().getWidth() ) * 0.5f;
+							break;
+						case CharacterAlignment::Right:
+							tabAlign = advance - tabGlyph->getPixelsSize().getWidth();
+							break;
+						case CharacterAlignment::Left:
+							break;
+					}
+				}
+
 				if ( tabGlyph ) {
 					drawGlyph( BR, tabGlyph, { cpos.x + tabAlign, cpos.y },
 							   whitespaceDisplayConfig.color, isItalic );
@@ -657,10 +698,12 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, const FontStyle
 
 template <typename StringType>
 bool Text::wrapText( Font* font, const Uint32& fontSize, StringType& string, const Float& maxWidth,
-					 const Uint32& style, const Uint32& tabWidth, const Float& outlineThickness ) {
+					 const Uint32& style, const Uint32& tabWidth, const Float& outlineThickness,
+					 std::optional<Float> tabOffset ) {
 	if ( string.empty() || NULL == font )
 		return false;
 
+	Float x = 0.f;
 	Float tCurWidth = 0.f;
 	Float tWordWidth = 0.f;
 	auto tChar = &string[0];
@@ -680,12 +723,13 @@ bool Text::wrapText( Font* font, const Uint32& fontSize, StringType& string, con
 		Float fCharWidth = (Float)pChar.advance;
 
 		if ( ( *tChar ) == '\t' )
-			fCharWidth = hspace * tabWidth;
+			fCharWidth = tabAdvance( hspace, tabWidth, tabOffset ? ( *tabOffset + x ) : tabOffset );
 		else if ( ( *tChar ) == '\r' )
 			fCharWidth = 0;
 
 		// Add the new char width to the current word width
 		tWordWidth += fCharWidth;
+		x += fCharWidth;
 
 		if ( *tChar != '\r' ) {
 			tWordWidth +=
@@ -707,9 +751,11 @@ bool Text::wrapText( Font* font, const Uint32& fontSize, StringType& string, con
 					*tLastSpace = '\n';
 					tChar = tLastSpace + 1;
 					wrapped = true;
+					x = 0.f;
 				} else { // The word is larger than the current possible width
 					*tChar = '\n';
 					wrapped = true;
+					x = 0.f;
 				}
 
 				if ( tChar == tLastChar )
@@ -727,6 +773,7 @@ bool Text::wrapText( Font* font, const Uint32& fontSize, StringType& string, con
 		} else if ( '\n' == *tChar ) {
 			tWordWidth = 0.f;
 			tCurWidth = 0.f;
+			x = 0.f;
 			tLastSpace = NULL;
 			tChar++;
 		} else {
@@ -739,19 +786,21 @@ bool Text::wrapText( Font* font, const Uint32& fontSize, StringType& string, con
 
 template <typename StringType>
 bool Text::wrapText( StringType& string, const Float& maxWidth, const FontStyleConfig& config,
-					 const Uint32& tabWidth ) {
+					 const Uint32& tabWidth, std::optional<Float> tabOffset ) {
 	return wrapText<StringType>( config.Font, config.CharacterSize, string, maxWidth, config.Style,
-								 tabWidth, config.OutlineThickness );
+								 tabWidth, config.OutlineThickness, tabOffset );
 }
 
 bool Text::wrapText( Font* font, const Uint32& fontSize, String& string, const Float& maxWidth,
-					 const Uint32& style, const Uint32& tabWidth, const Float& outlineThickness ) {
-	return wrapText<String>( font, fontSize, string, maxWidth, style, tabWidth, outlineThickness );
+					 const Uint32& style, const Uint32& tabWidth, const Float& outlineThickness,
+					 std::optional<Float> tabOffset ) {
+	return wrapText<String>( font, fontSize, string, maxWidth, style, tabWidth, outlineThickness,
+							 tabOffset );
 }
 
 bool Text::wrapText( String& string, const Float& maxWidth, const FontStyleConfig& config,
-					 const Uint32& tabWidth ) {
-	return wrapText<String>( string, maxWidth, config, tabWidth );
+					 const Uint32& tabWidth, std::optional<Float> tabOffset ) {
+	return wrapText<String>( string, maxWidth, config, tabWidth, tabOffset );
 }
 
 Text::Text() {}
@@ -1004,7 +1053,8 @@ void Text::findWordFromCharacterIndex( Int32 characterIndex, Int32& initCur, Int
 template <typename StringType>
 Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& string,
 						  const Uint32& style, const Uint32& tabWidth,
-						  const Float& outlineThickness, Uint32 textDrawHints ) {
+						  const Float& outlineThickness, Uint32 textDrawHints,
+						  std::optional<Float> tabOffset ) {
 	if ( NULL == font || string.empty() )
 		return 0;
 	Float width = 0;
@@ -1028,7 +1078,10 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 			if ( string[i] == '\n' ) {
 				width = 0;
 			} else {
-				width += ( string[i] == '\t' ) ? hspace * tabWidth : hspace;
+				width +=
+					( string[i] == '\t' )
+						? tabAdvance( hspace, tabWidth, tabOffset ? *tabOffset + width : tabOffset )
+						: hspace;
 			}
 			maxWidth = eemax( width, maxWidth );
 		}
@@ -1047,7 +1100,8 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 							 hb_glyph_info_t curGlyph = glyphInfo[i];
 							 auto curChar = string[curGlyph.cluster];
 							 if ( curChar == '\t' ) {
-								 width += hspace * tabWidth;
+								 width += tabAdvance( hspace, tabWidth,
+													  tabOffset ? *tabOffset + width : tabOffset );
 							 } else {
 								 const Glyph& glyph = font->getGlyphByIndex(
 									 curGlyph.codepoint, fontSize, bold, italic, outlineThickness,
@@ -1081,7 +1135,7 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 		codepoint = string.at( i );
 		Glyph glyph = font->getGlyph( codepoint, fontSize, bold, italic, outlineThickness );
 		if ( codepoint == '\t' ) {
-			width += hspace * tabWidth;
+			width += tabAdvance( hspace, tabWidth, tabOffset ? *tabOffset + width : tabOffset );
 		} else if ( codepoint == '\n' ) {
 			width = 0;
 		} else if ( codepoint != '\r' ) {
@@ -1096,10 +1150,10 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 }
 
 template <typename StringType>
-std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
-											   const StringType& string, Float maxWidth,
-											   const Uint32& style, const Uint32& tabWidth,
-											   const Float& outlineThickness ) {
+std::size_t
+Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize, const StringType& string,
+								   Float maxWidth, const Uint32& style, const Uint32& tabWidth,
+								   const Float& outlineThickness, std::optional<Float> tabOffset ) {
 	if ( NULL == font || string.empty() )
 		return 0;
 	String::StringBaseType codepoint;
@@ -1127,7 +1181,8 @@ std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSiz
 					auto curChar = string[curGlyph.cluster];
 
 					if ( curChar == '\t' ) {
-						width += hspace * tabWidth;
+						width += tabAdvance( hspace, tabWidth,
+											 tabOffset ? *tabOffset + width : tabOffset );
 					} else {
 						const Glyph& glyph = font->getGlyphByIndex(
 							curGlyph.codepoint, fontSize, bold, italic, outlineThickness,
@@ -1170,7 +1225,7 @@ std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSiz
 				font->getKerning( prevChar, codepoint, fontSize, bold, italic, outlineThickness );
 			width += glyph.advance;
 		} else if ( codepoint == '\t' )
-			width += hspace * tabWidth;
+			width += tabAdvance( hspace, tabWidth, tabOffset ? *tabOffset + width : tabOffset );
 
 		if ( width > maxWidth )
 			return i > 0 ? i - 1 : 0;
@@ -1183,7 +1238,8 @@ std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSiz
 
 Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
 								 const String& string, const Uint32& style, const Uint32& tabWidth,
-								 const Float& outlineThickness, bool allowNewLine ) {
+								 const Float& outlineThickness, std::optional<Float> tabOffset,
+								 bool allowNewLine ) {
 	// Make sure that we have a valid font
 	if ( !font )
 		return Vector2f();
@@ -1227,7 +1283,9 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 							 auto curChar = string[curGlyph.cluster];
 
 							 if ( curChar == '\t' ) {
-								 position.x += hspace * tabWidth;
+								 position.x +=
+									 tabAdvance( hspace, tabWidth,
+												 tabOffset ? *tabOffset + position.x : tabOffset );
 							 } else {
 								 const Glyph& glyph = font->getGlyphByIndex(
 									 curGlyph.codepoint, fontSize, bold, italic, outlineThickness,
@@ -1281,7 +1339,8 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 				position.x += hspace;
 				continue;
 			case '\t':
-				position.x += hspace * tabWidth;
+				position.x +=
+					tabAdvance( hspace, tabWidth, tabOffset ? *tabOffset + position.x : tabOffset );
 				continue;
 			case '\n':
 				if ( allowNewLine ) {
@@ -1306,7 +1365,8 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 
 Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font* font,
 								  const Uint32& fontSize, const String& string, const Uint32& style,
-								  const Uint32& tabWidth, const Float& outlineThickness ) {
+								  const Uint32& tabWidth, const Float& outlineThickness,
+								  std::optional<Float> tabOffset ) {
 	if ( NULL == font )
 		return 0;
 
@@ -1341,7 +1401,8 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 					lWidth = width;
 
 					if ( curChar == '\t' ) {
-						width += hspace * tabWidth;
+						width += tabAdvance( hspace, tabWidth,
+											 tabOffset ? *tabOffset + width : tabOffset );
 					} else {
 						const Glyph& glyph = font->getGlyphByIndex(
 							curGlyph.codepoint, fontSize, bold, italic, outlineThickness,
@@ -1419,7 +1480,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 			prevChar = codepoint;
 			width += glyph.advance;
 		} else if ( codepoint == '\t' ) {
-			width += hspace * tabWidth;
+			width += tabAdvance( hspace, tabWidth, tabOffset ? *tabOffset + width : tabOffset );
 		}
 		if ( codepoint == '\n' ) {
 			lWidth = 0;
@@ -1462,32 +1523,37 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
 											   const String& string, Float maxWidth,
 											   const Uint32& style, const Uint32& tabWidth,
-											   const Float& outlineThickness ) {
+											   const Float& outlineThickness,
+											   std::optional<Float> tabOffset ) {
 	return findLastCharPosWithinLength<String>( font, fontSize, string, maxWidth, style, tabWidth,
-												outlineThickness );
+												outlineThickness, tabOffset );
 }
 
 std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
 											   const String::View& string, Float maxWidth,
 											   const Uint32& style, const Uint32& tabWidth,
-											   const Float& outlineThickness ) {
+											   const Float& outlineThickness,
+											   std::optional<Float> tabOffset ) {
 	return findLastCharPosWithinLength<String::View>( font, fontSize, string, maxWidth, style,
-													  tabWidth, outlineThickness );
+													  tabWidth, outlineThickness, tabOffset );
 }
 
 std::size_t Text::findLastCharPosWithinLength( const String& string, Float maxWidth,
 											   const FontStyleConfig& config,
-											   const Uint32& tabWidth ) {
+											   const Uint32& tabWidth,
+											   std::optional<Float> tabOffset ) {
 	return findLastCharPosWithinLength<String>( config.Font, config.CharacterSize, string, maxWidth,
-												config.Style, tabWidth, config.OutlineThickness );
+												config.Style, tabWidth, config.OutlineThickness,
+												tabOffset );
 }
 
 std::size_t Text::findLastCharPosWithinLength( const String::View& string, Float maxWidth,
 											   const FontStyleConfig& config,
-											   const Uint32& tabWidth ) {
+											   const Uint32& tabWidth,
+											   std::optional<Float> tabOffset ) {
 	return findLastCharPosWithinLength<String::View>( config.Font, config.CharacterSize, string,
 													  maxWidth, config.Style, tabWidth,
-													  config.OutlineThickness );
+													  config.OutlineThickness, tabOffset );
 }
 
 void Text::updateWidthCache() {

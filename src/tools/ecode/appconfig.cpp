@@ -141,6 +141,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	doc.writeUnicodeBOM = ini.getValueB( "document", "write_bom", false );
 	doc.indentWidth = ini.getValueI( "document", "indent_width", 4 );
 	doc.indentSpaces = ini.getValueB( "document", "indent_spaces", false );
+	doc.tabStops = ini.getValueB( "document", "tab_stops", false );
 	doc.lineEndings =
 		TextFormat::stringToLineEnding( ini.getValue( "document", "line_endings", "LF" ) );
 	// Migrate old data
@@ -303,6 +304,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "document", "auto_detect_indent_type", doc.autoDetectIndentType );
 	ini.setValueB( "document", "write_bom", doc.writeUnicodeBOM );
 	ini.setValueI( "document", "indent_width", doc.indentWidth );
+	ini.setValueB( "document", "tab_stops", doc.tabStops );
 	ini.setValueB( "document", "indent_spaces", doc.indentSpaces );
 	ini.setValue( "document", "line_endings", TextFormat::lineEndingToString( doc.lineEndings ) );
 	ini.setValueI( "document", "tab_width", doc.tabWidth );

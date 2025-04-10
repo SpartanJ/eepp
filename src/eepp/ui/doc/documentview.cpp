@@ -50,13 +50,12 @@ std::string DocumentView::fromLineWrapType( LineWrapType type ) {
 }
 
 Float DocumentView::computeOffsets( const String::View& string, const FontStyleConfig& fontStyle,
-									Uint32 tabWidth, Float maxWidth ) {
-
+									Uint32 tabWidth, Float maxWidth, bool tabStops ) {
 	static const String sepSpaces = " \t\n\v\f\r";
 	auto nonIndentPos = string.find_first_not_of( sepSpaces.data() );
 	if ( nonIndentPos != String::View::npos ) {
 		Float w = Text::getTextWidth( string.substr( 0, nonIndentPos ), fontStyle, tabWidth,
-									  TextHints::AllAscii );
+									  TextHints::AllAscii, tabStops ? 0 : std::optional<Float>{} );
 		return maxWidth != 0.f ? ( w > maxWidth ? 0.f : w ) : w;
 	}
 	return 0.f;
@@ -67,7 +66,7 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String::View& 
 															Float maxWidth, LineWrapMode mode,
 															bool keepIndentation, Uint32 tabWidth,
 															Float whiteSpaceWidth, Uint32 textHints,
-															Float initialXOffset ) {
+															bool tabStops, Float initialXOffset ) {
 	LineWrapInfo info;
 	info.wraps.push_back( 0 );
 	if ( string.empty() || nullptr == fontStyle.Font || mode == LineWrapMode::NoWrap )
@@ -83,8 +82,8 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String::View& 
 										  : whiteSpaceWidth;
 
 	if ( keepIndentation ) {
-		info.paddingStart =
-			computeOffsets( string, fontStyle, tabWidth, eemax( maxWidth - hspace, hspace ) );
+		info.paddingStart = computeOffsets( string, fontStyle, tabWidth,
+											eemax( maxWidth - hspace, hspace ), tabStops );
 	}
 
 	Float xoffset = initialXOffset;
@@ -108,7 +107,7 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String::View& 
 							   : hspace;
 
 		if ( curChar == '\t' )
-			w = hspace * tabWidth;
+			w = Text::tabAdvance( hspace, tabWidth, tabStops ? w : std::optional<Float>{} );
 
 		if ( !isMonospace && curChar != '\r' ) {
 			w += fontStyle.Font->getKerning( prevChar, curChar, fontStyle.CharacterSize, bold,
@@ -143,22 +142,22 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String& string
 															Float maxWidth, LineWrapMode mode,
 															bool keepIndentation, Uint32 tabWidth,
 															Float whiteSpaceWidth, Uint32 textHints,
-															Float initialXOffset ) {
+															bool tabStops, Float initialXOffset ) {
 	return computeLineBreaks( string.view(), fontStyle, maxWidth, mode, keepIndentation, tabWidth,
-							  whiteSpaceWidth, textHints, initialXOffset );
+							  whiteSpaceWidth, textHints, tabStops, initialXOffset );
 }
 
 DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const TextDocument& doc, size_t line,
 															const FontStyleConfig& fontStyle,
 															Float maxWidth, LineWrapMode mode,
 															bool keepIndentation, Uint32 tabWidth,
-															Float whiteSpaceWidth,
+															Float whiteSpaceWidth, bool tabStops,
 															Float initialXOffset ) {
 	const auto& docLine = doc.line( line );
 	const auto& text = docLine.getText();
 	return computeLineBreaks( text.view().substr( 0, text.size() - 1 ), fontStyle, maxWidth, mode,
 							  keepIndentation, tabWidth, whiteSpaceWidth, docLine.getTextHints(),
-							  initialXOffset );
+							  tabStops, initialXOffset );
 }
 
 DocumentView::DocumentView( std::shared_ptr<TextDocument> doc, FontStyleConfig fontStyle,
@@ -260,7 +259,7 @@ void DocumentView::invalidateCache() {
 		} else {
 			auto lb = wrap ? computeLineBreaks( *mDoc, i, mFontStyle, mMaxWidth, mConfig.mode,
 												mConfig.keepIndentation, mConfig.tabWidth,
-												mWhiteSpaceWidth )
+												mWhiteSpaceWidth, mConfig.tabStops )
 						   : LineWrapInfo{ { 0 }, 0.f };
 			mVisibleLinesOffset.emplace_back( lb.paddingStart );
 			bool first = true;
@@ -526,9 +525,9 @@ void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 								eemax( mMaxWidth - mWhiteSpaceWidth, mWhiteSpaceWidth ) ) );
 			mDocLineToVisibleIndex[i] = static_cast<Int64>( VisibleIndex::invalid );
 		} else {
-			auto lb =
-				computeLineBreaks( *mDoc, i, mFontStyle, mMaxWidth, mConfig.mode,
-								   mConfig.keepIndentation, mConfig.tabWidth, mWhiteSpaceWidth );
+			auto lb = computeLineBreaks( *mDoc, i, mFontStyle, mMaxWidth, mConfig.mode,
+										 mConfig.keepIndentation, mConfig.tabWidth,
+										 mWhiteSpaceWidth, mConfig.tabStops );
 
 			mVisibleLinesOffset.insert( mVisibleLinesOffset.begin() + i, lb.paddingStart );
 
@@ -680,10 +679,11 @@ void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visi
 				}
 				continue;
 			}
-			auto lb = isWrapEnabled() ? computeLineBreaks( *mDoc, i, mFontStyle, mMaxWidth,
-														   mConfig.mode, mConfig.keepIndentation,
-														   mConfig.tabWidth, mWhiteSpaceWidth )
-									  : LineWrapInfo{ { 0 }, 0 };
+			auto lb = isWrapEnabled()
+						  ? computeLineBreaks( *mDoc, i, mFontStyle, mMaxWidth, mConfig.mode,
+											   mConfig.keepIndentation, mConfig.tabWidth,
+											   mWhiteSpaceWidth, mConfig.tabStops )
+						  : LineWrapInfo{ { 0 }, 0 };
 			if ( recomputeOffset )
 				mVisibleLinesOffset[i] = lb.paddingStart;
 			for ( const auto& col : lb.wraps ) {
@@ -822,6 +822,13 @@ void DocumentView::setOnVisibleLineCountChange(
 void DocumentView::setOnFoldUnfoldCb(
 	std::function<void( Int64 docIdx, bool unfolded )> onFoldUnfoldCb ) {
 	mOnFoldUnfoldCb = std::move( onFoldUnfoldCb );
+}
+
+void DocumentView::setTabStops( bool enabled ) {
+	if ( enabled != mConfig.tabStops ) {
+		mConfig.tabStops = enabled;
+		invalidateCache();
+	}
 }
 
 }}} // namespace EE::UI::Doc

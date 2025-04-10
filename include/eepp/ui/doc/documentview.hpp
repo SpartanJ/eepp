@@ -37,6 +37,7 @@ class EE_API DocumentView {
 		bool keepIndentation{ true };
 		Uint32 tabWidth{ 4 };
 		std::optional<Uint32> maxCharactersWidth;
+		bool tabStops{ false };
 		bool operator==( const Config& other ) {
 			return mode == other.mode && keepIndentation == other.keepIndentation &&
 				   tabWidth == other.tabWidth && maxCharactersWidth == other.maxCharactersWidth;
@@ -64,22 +65,23 @@ class EE_API DocumentView {
 	computeLineBreaks( const String::View& string, const FontStyleConfig& fontStyle, Float maxWidth,
 					   LineWrapMode mode, bool keepIndentation, Uint32 tabWidth = 4,
 					   Float whiteSpaceWidth = 0.f /* 0 = should calculate it */,
-					   Uint32 textHints = TextHints::None, Float initialXOffset = 0.f );
+					   Uint32 textHints = TextHints::None, bool tabStops = false,
+					   Float initialXOffset = 0.f );
 
 	static LineWrapInfo computeLineBreaks( const String& string, const FontStyleConfig& fontStyle,
 										   Float maxWidth, LineWrapMode mode, bool keepIndentation,
 										   Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f,
 										   Uint32 textHints = TextHints::None,
-										   Float initialXOffset = 0.f );
+										   bool tabStops = false, Float initialXOffset = 0.f );
 
 	static LineWrapInfo computeLineBreaks( const TextDocument& doc, size_t line,
 										   const FontStyleConfig& fontStyle, Float maxWidth,
 										   LineWrapMode mode, bool keepIndentation,
 										   Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f,
-										   Float initialXOffset = 0.f );
+										   bool tabStops = false, Float initialXOffset = 0.f );
 
 	static Float computeOffsets( const String::View& string, const FontStyleConfig& fontStyle,
-								 Uint32 tabWidth, Float maxWidth = 0.f );
+								 Uint32 tabWidth, Float maxWidth = 0.f, bool tabStops = false );
 
 	DocumentView( std::shared_ptr<TextDocument> doc, FontStyleConfig fontStyle, Config config );
 
@@ -160,6 +162,10 @@ class EE_API DocumentView {
 	void setOnVisibleLineCountChange( std::function<void()> onVisibleLinesCountChangeCb );
 
 	void setOnFoldUnfoldCb( std::function<void( Int64 docIdx, bool unfolded )> onFoldUnfoldCb );
+
+	void setTabStops( bool enabled );
+
+	bool usesTabStops() const { return mConfig.tabStops; }
 
   protected:
 	std::shared_ptr<TextDocument> mDoc;

@@ -6,6 +6,8 @@
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/texttransform.hpp>
 
+#include <optional>
+
 namespace EE { namespace Graphics {
 
 enum class CharacterAlignment : Uint32 { Left = 0, Center = 1, Right = 2 };
@@ -15,6 +17,7 @@ struct WhitespaceDisplayConfig {
 	String::StringBaseType tabDisplayCharacter{ 0 };
 	CharacterAlignment tabAlign{ CharacterAlignment::Center };
 	Color color;
+	std::optional<Float> tabOffset;
 };
 
 class EE_API Text {
@@ -30,23 +33,30 @@ class EE_API Text {
 		Shadow = 1 << 4			///< Draw a shadow below the text
 	};
 
+	static Float tabAdvance( Float spaceHorizontalAdvance, Uint32 tabLength,
+							 std::optional<Float> tabOffset );
+
 	static std::string styleFlagToString( const Uint32& flags );
 
 	static Uint32 stringToStyleFlag( const std::string& str );
 
 	static Float getTextWidth( Font* font, const Uint32& fontSize, const String& string,
 							   const Uint32& style, const Uint32& tabWidth = 4,
-							   const Float& outlineThickness = 0.f, Uint32 textDrawHints = 0 );
+							   const Float& outlineThickness = 0.f, Uint32 textDrawHints = 0,
+							   std::optional<Float> tabOffset = {} );
 
 	static Float getTextWidth( Font* font, const Uint32& fontSize, const String::View& string,
 							   const Uint32& style, const Uint32& tabWidth = 4,
-							   const Float& outlineThickness = 0.f, Uint32 textDrawHints = 0 );
+							   const Float& outlineThickness = 0.f, Uint32 textDrawHints = 0,
+							   std::optional<Float> tabOffset = {} );
 
 	static Float getTextWidth( const String& string, const FontStyleConfig& config,
-							   const Uint32& tabWidth = 4, Uint32 textDrawHints = 0 );
+							   const Uint32& tabWidth = 4, Uint32 textDrawHints = 0,
+							   std::optional<Float> tabOffset = {} );
 
 	static Float getTextWidth( const String::View& string, const FontStyleConfig& config,
-							   const Uint32& tabWidth = 4, Uint32 textDrawHints = 0 );
+							   const Uint32& tabWidth = 4, Uint32 textDrawHints = 0,
+							   std::optional<Float> tabOffset = {} );
 
 	static Sizef draw( const String& string, const Vector2f& pos, Font* font, Float fontSize,
 					   const Color& fontColor, Uint32 style = 0, Float outlineThickness = 0.f,
@@ -86,38 +96,45 @@ class EE_API Text {
 	static Int32 findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font* font,
 									   const Uint32& fontSize, const String& string,
 									   const Uint32& style, const Uint32& tabWidth = 4,
-									   const Float& outlineThickness = 0.f );
+									   const Float& outlineThickness = 0.f,
+									   std::optional<Float> tabOffset = {} );
 
 	static Vector2f findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
 									  const String& string, const Uint32& style,
 									  const Uint32& tabWidth = 4,
 									  const Float& outlineThickness = 0.f,
+									  std::optional<Float> tabOffset = {},
 									  bool allowNewLine = true );
 
 	static std::size_t findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
 													const String& string, Float maxWidth,
 													const Uint32& style, const Uint32& tabWidth = 4,
-													const Float& outlineThickness = 0.f );
+													const Float& outlineThickness = 0.f,
+													std::optional<Float> tabOffset = {} );
 
 	static std::size_t findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
 													const String::View& string, Float maxWidth,
 													const Uint32& style, const Uint32& tabWidth = 4,
-													const Float& outlineThickness = 0.f );
+													const Float& outlineThickness = 0.f,
+													std::optional<Float> tabOffset = {} );
 
 	static std::size_t findLastCharPosWithinLength( const String& string, Float maxWidth,
 													const FontStyleConfig& config,
-													const Uint32& tabWidth = 4 );
+													const Uint32& tabWidth = 4,
+													std::optional<Float> tabOffset = {} );
 
 	static std::size_t findLastCharPosWithinLength( const String::View& string, Float maxWidth,
 													const FontStyleConfig& config,
-													const Uint32& tabWidth = 4 );
+													const Uint32& tabWidth = 4,
+													std::optional<Float> tabOffset = {} );
 
 	static bool wrapText( Font* font, const Uint32& fontSize, String& string, const Float& maxWidth,
 						  const Uint32& style, const Uint32& tabWidth = 4,
-						  const Float& outlineThickness = 0.f );
+						  const Float& outlineThickness = 0.f,
+						  std::optional<Float> tabOffset = {} );
 
 	static bool wrapText( String& string, const Float& maxWidth, const FontStyleConfig& config,
-						  const Uint32& tabWidth = 4 );
+						  const Uint32& tabWidth = 4, std::optional<Float> tabOffset = {} );
 
 	static Text* New();
 
@@ -321,7 +338,8 @@ class EE_API Text {
 	template <typename StringType>
 	static Float getTextWidth( Font* font, const Uint32& fontSize, const StringType& string,
 							   const Uint32& style, const Uint32& tabWidth = 4,
-							   const Float& outlineThickness = 0.f, Uint32 textDrawHints = 0 );
+							   const Float& outlineThickness = 0.f, Uint32 textDrawHints = 0,
+							   std::optional<Float> tabOffset = {} );
 
 	template <typename StringType>
 	static Sizef
@@ -340,16 +358,18 @@ class EE_API Text {
 	static std::size_t findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
 													const StringType& string, Float width,
 													const Uint32& style, const Uint32& tabWidth = 4,
-													const Float& outlineThickness = 0.f );
+													const Float& outlineThickness = 0.f,
+													std::optional<Float> tabOffset = {} );
 
 	template <typename StringType>
 	static bool wrapText( Font* font, const Uint32& fontSize, StringType& string,
 						  const Float& maxWidth, const Uint32& style, const Uint32& tabWidth = 4,
-						  const Float& outlineThickness = 0.f );
+						  const Float& outlineThickness = 0.f,
+						  std::optional<Float> tabOffset = {} );
 
 	template <typename StringType>
 	static bool wrapText( StringType& string, const Float& maxWidth, const FontStyleConfig& config,
-						  const Uint32& tabWidth = 4 );
+						  const Uint32& tabWidth = 4, std::optional<Float> tabOffset = {} );
 };
 
 }} // namespace EE::Graphics

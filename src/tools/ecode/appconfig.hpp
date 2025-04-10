@@ -98,6 +98,7 @@ struct DocumentConfig {
 	bool autoDetectIndentType{ true };
 	bool writeUnicodeBOM{ false };
 	bool indentSpaces{ false };
+	bool tabStops{ false };
 	TextFormat::LineEnding lineEndings{ TextFormat::LineEnding::LF };
 	int indentWidth{ 4 };
 	int tabWidth{ 4 };

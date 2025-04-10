@@ -634,6 +634,9 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 					   mApp->getConfig().doc.trimTrailingWhitespaces )
 		->setId( "trim_whitespaces" );
 
+	mGlobalMenu->addCheckBox( i18n( "tab_stops", "Tab Stops" ), mApp->getConfig().doc.tabStops )
+		->setId( "tab_stops" );
+
 	mGlobalMenu
 		->addCheckBox( i18n( "force_new_line_at_end_of_file", "Force New Line at End of File" ),
 					   mApp->getConfig().doc.forceNewLineAtEndOfFile )
@@ -730,6 +733,11 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 				mApp->getConfig().workspace.sessionSnapshot = item->isActive();
 			} else if ( "allow_flash_cursor" == id ) {
 				mApp->getConfig().editor.flashCursor = item->isActive();
+			} else if ( "tab_stops" == id ) {
+				mApp->getConfig().doc.tabStops = item->isActive();
+				mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
+					editor->setTabStops( mApp->getConfig().doc.tabStops );
+				} );
 			}
 		} else if ( "line_breaking_column" == id ) {
 			mApp->getSettingsActions()->setLineBreakingColumn();
