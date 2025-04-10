@@ -17,6 +17,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uitableview.hpp>
+#include <eepp/ui/uitooltip.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/window.hpp>
 
@@ -214,7 +215,11 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	}
 
 	mChatAdd = find<UIPushButton>( "llm_add_chat" );
-	mChatAdd->onClick( [this]( auto ) { execute( "ai-add-chat" ); } );
+	mChatAdd->onClick( [this]( auto ) {
+		execute( "ai-add-chat" );
+		if ( mChatAdd->getTooltip() && mChatAdd->getTooltip()->isVisible() )
+			mChatAdd->getTooltip()->hide();
+	} );
 
 	const auto& markdown = SyntaxDefinitionManager::instance()->getByLSPName( "markdown" );
 	mChatInput->setShowFoldingRegion( true );
@@ -227,10 +232,18 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mChatInput->setSyntaxDefinition( markdown );
 
 	mChatRun = find<UIPushButton>( "llm_run" );
-	mChatRun->onClick( [this]( auto ) { execute( "ai-prompt" ); } );
+	mChatRun->onClick( [this]( auto ) {
+		execute( "ai-prompt" );
+		if ( mChatRun->getTooltip() && mChatRun->getTooltip()->isVisible() )
+			mChatRun->getTooltip()->hide();
+	} );
 
 	mChatStop = find<UIPushButton>( "llm_stop" );
-	mChatStop->onClick( [this]( auto ) { execute( "ai-prompt-stop" ); } );
+	mChatStop->onClick( [this]( auto ) {
+		execute( "ai-prompt-stop" );
+		if ( mChatStop->getTooltip() && mChatStop->getTooltip()->isVisible() )
+			mChatStop->getTooltip()->hide();
+	} );
 
 	mChatUserRole = find<UIPushButton>( "llm_user" );
 	mChatUserRole->onClick( [this]( auto ) { execute( "ai-chat-toggle-role" ); } );

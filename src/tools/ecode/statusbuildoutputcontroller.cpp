@@ -1,7 +1,7 @@
+#include "statusbuildoutputcontroller.hpp"
 #include "notificationcenter.hpp"
 #include "plugins/plugincontextprovider.hpp"
 #include "projectdirectorytree.hpp"
-#include "statusbuildoutputcontroller.hpp"
 #include "widgetcommandexecuter.hpp"
 #include <eepp/ui/uicodeeditor.hpp>
 
@@ -141,10 +141,11 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 		}
 	}
 
-	patterns.emplace_back(
-		SyntaxPattern( { "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:.*error.*[^\n]+" }, "error" ) );
 	patterns.emplace_back( SyntaxPattern(
-		{ "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:.*warning.*[^\n]+" }, "warning" ) );
+		{ "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:.*[Ee][Rr][Rr][Oo][Rr].*[^\n]+" }, "error" ) );
+	patterns.emplace_back( SyntaxPattern(
+		{ "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:.*[Ww][Aa][Rr][Nn][Ii][Nn][Gg].*[^\n]+" },
+		"warning" ) );
 	patterns.emplace_back(
 		SyntaxPattern( { "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:[^\n]+" }, "notice" ) );
 

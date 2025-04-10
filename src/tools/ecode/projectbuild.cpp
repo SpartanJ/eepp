@@ -936,19 +936,31 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 		}
 
 		if ( progressFn ) {
-			progressFn(
-				progress,
-				Sys::getDateTimeStr() + ": " +
-					String::format( i18n( "starting_process", "Starting %s %s\n" ).toUtf8().c_str(),
-									cmd.cmd.c_str(), cmd.args.c_str() ),
-				nullptr );
+			progressFn( progress,
+						Sys::getDateTimeStr() + ": " +
+							String::format( i18n( "starting_process", "Starting %s %s\n" ).toUtf8(),
+											cmd.cmd, cmd.args ),
+						nullptr );
 
-			progressFn(
-				progress,
-				Sys::getDateTimeStr() + ": " +
-					String::format( i18n( "working_dir_at", "Working Dir %s\n" ).toUtf8().c_str(),
-									cmd.workingDir.c_str() ),
-				nullptr );
+			if ( FileSystem::fileExists( cmd.workingDir ) ) {
+				progressFn(
+					progress,
+					Sys::getDateTimeStr() + ": " +
+						String::format( i18n( "working_dir_at", "Working Dir %s\n" ).toUtf8(),
+										cmd.workingDir ),
+					nullptr );
+			} else {
+				progressFn(
+					progress,
+					Sys::getDateTimeStr() + ": " +
+						String::format(
+							i18n(
+								"working_dir_at_does_not_exists",
+								"WARNING: Working Dir is set to \"%s\" but it does not exists!\n" )
+								.toUtf8(),
+							cmd.workingDir ),
+					nullptr );
+			}
 		}
 
 		if ( mProcess->create( cmd.cmd, cmd.args, options, toUnorderedMap( res.envs ),
