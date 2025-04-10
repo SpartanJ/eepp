@@ -635,6 +635,11 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		->setId( "trim_whitespaces" );
 
 	mGlobalMenu->addCheckBox( i18n( "tab_stops", "Tab Stops" ), mApp->getConfig().doc.tabStops )
+		->setTooltipText(
+			i18n( "tab_stops_desc",
+				  "Enabling \"Tab Stops\" ensures that tabs align text at consistent column "
+				  "positions according to the tab grid,\nwhile disabling them makes tabs behave "
+				  "like a fixed number of spaces regardless of their position." ) )
 		->setId( "tab_stops" );
 
 	mGlobalMenu

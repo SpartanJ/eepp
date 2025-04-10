@@ -12,15 +12,26 @@ void addCovScript() {
 		  {
 			  { { "#.-\n" }, "comment" },
 			  { { "\"", "\"", "\\" }, "string" },
-			  { { "-?%.?%d+" }, "number" },
+			  { { "'", "'", "\\" }, "string" },
+			  { { "(import)%s+([%a_][%w/_]+)(%s+as%s+)([%a_][%w_]*)" },
+				{ "normal", "keyword", "literal", "keyword", "keyword2" } },
+			  { { "(import)%s+([%a_][%w/_]+)" }, { "keyword", "keyword", "literal" } },
+			  { { "(class)%s+([%a_][%w_]+)(%s+extends%s+)([%a_][%w_]+)" },
+				{ "keyword", "keyword", "keyword2", "keyword", "keyword2" } },
+			  { { "(class)%s+([%a_][%w_]+)" }, { "keyword", "keyword", "keyword2" } },
+			  { { "(struct)%s+([%a_][%w_]+)" }, { "keyword", "keyword", "keyword2" } },
+			  { { "(package)%s+([%a_][%w_]+)" }, { "keyword", "keyword", "literal" } },
+			  { { "(using)%s+([%a_][%w_]+)" }, { "keyword", "keyword", "literal" } },
+			  { { "common_number_parser" }, "number", "", SyntaxPatternMatchType::Parser },
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
-			  { { "(import)%s+(%a+[%w/_]+)" }, { "normal", "keyword", "literal" } },
 			  { { "(@[A-Za-z_]%w*)%s*(%:%s*%w+%s*)$" }, { "normal", "keyword", "keyword2" } },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
+			  { { "@[%a_][%w_]*" }, "symbol" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 
 		  },
 		  {
+
 			  { "new", "keyword" },		   { "continue", "keyword" },	{ "default", "keyword" },
 			  { "finalize", "keyword" },   { "this", "keyword" },		{ "loop", "keyword" },
 			  { "foreach", "keyword" },	   { "namespace", "keyword" },	{ "duplicate", "keyword" },
@@ -40,7 +51,8 @@ void addCovScript() {
 			  { "package", "keyword" },	   { "override", "keyword" },	{ "not", "keyword" },
 			  { "initialize", "keyword" }, { "local", "keyword" },		{ "move", "keyword" },
 			  { "case", "keyword" },	   { "clone", "keyword" },		{ "do", "keyword" },
-			  { "type", "keyword" },
+			  { "type", "keyword" },	   { "@begin", "keyword" },		{ "@end", "keyword" },
+			  { "array", "keyword2" },	   { "string", "keyword2" },	{ "hash_map", "keyword2" },
 
 		  },
 		  "//",
