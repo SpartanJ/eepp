@@ -421,7 +421,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		buildoptions{ "-Wno-long-long" }
 
 	filter { "configurations:release*", "action:not vs*" }
-		buildoptions { "-fno-strict-aliasing -ffast-math" }
+		buildoptions { "-fno-strict-aliasing" }
 
 	filter "configurations:debug*"
 		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }

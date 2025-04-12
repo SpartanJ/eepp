@@ -7,6 +7,8 @@
 #include <eepp/system/log.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 
+#include <nlohmann/json.hpp>
+
 #if defined( EE_PLATFORM_POSIX )
 #include <sys/socket.h>
 #include <sys/time.h>

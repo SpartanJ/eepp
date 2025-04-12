@@ -1,7 +1,7 @@
 #include <eepp/config.hpp>
 #include <eepp/system/mutex.hpp>
 
-#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 
 using namespace EE::System;
 

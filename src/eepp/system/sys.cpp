@@ -1308,10 +1308,13 @@ std::string Sys::getProcessFilePath() {
 	/* use realpath to resolve a symlink if the process was launched from one.
 	** This happens when Homebrew installs a cack and creates a symlink in
 	** /usr/loca/bin for launching the executable from the command line. */
+	char exepath[PATH_MAX];
 	unsigned size = PATH_MAX;
-	char exepath[size];
-	_NSGetExecutablePath( exepath, &size );
-	realpath( exepath, exename );
+	int rv = _NSGetExecutablePath( exepath, &size );
+	if ( rv != 0 )
+		return "";
+	if ( realpath( exepath, exename ) == nullptr )
+		return "";
 #elif EE_PLATFORM == EE_PLATFORM_BSD
 	size_t len = PATH_MAX;
 	const int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1 };

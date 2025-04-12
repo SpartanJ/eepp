@@ -627,7 +627,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 
 		if not is_vs() and not os.is_real("emscripten") then
-			buildoptions { "-fno-strict-aliasing -ffast-math" }
+			buildoptions { "-fno-strict-aliasing" }
 		end
 
 		fix_shared_lib_linking_path( package_name, "libeepp" )
