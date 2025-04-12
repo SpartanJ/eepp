@@ -283,14 +283,14 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 				break;
 		}
 		if ( !fdtn.empty() )
-			buf += String::format( ".setFoldRangeType( \"%s\" )\n", fdtn );
+			buf += String::format( ".setFoldRangeType( %s )\n", fdtn );
 	}
 
 	if ( !def.getFoldBraces().empty() ) {
 		buf += ".setFoldBraces( { ";
 		for ( const auto& brace : def.getFoldBraces() ) {
 			buf += String::format(
-				"{ '%s', '%s' }",
+				"{ '%s', '%s' },",
 				String( static_cast<String::StringBaseType>( brace.first ) ).toUtf8(),
 				String( static_cast<String::StringBaseType>( brace.second ) ).toUtf8() );
 		}

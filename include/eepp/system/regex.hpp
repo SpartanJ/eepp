@@ -58,9 +58,12 @@ class EE_API RegEx : public PatternMatcher {
 		ExtendedMore = 0x01000000u,		 // C
 		Literal = 0x02000000u,			 // C
 		MatchInvalidUtf = 0x04000000u,	 // J M D
+		FilterOutCaptures =
+			0x08000000u, // It will filter out repeated captures and same range captures
 	};
 
-	RegEx( const std::string_view& pattern, Options options = Options::Utf, bool useCache = true );
+	RegEx( const std::string_view& pattern,
+		   Uint32 options = Options::Utf | Options::FilterOutCaptures, bool useCache = true );
 
 	virtual ~RegEx();
 
@@ -83,6 +86,7 @@ class EE_API RegEx : public PatternMatcher {
 	int mCaptureCount;
 	bool mValid{ false };
 	bool mCached{ false };
+	bool mFilterOutCaptures{ false };
 };
 
 }} // namespace EE::System

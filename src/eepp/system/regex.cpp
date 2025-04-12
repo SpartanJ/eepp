@@ -25,16 +25,20 @@ void RegExCache::clear() {
 	mCache.clear();
 }
 
-RegEx::RegEx( const std::string_view& pattern, Options options, bool useCache ) :
+RegEx::RegEx( const std::string_view& pattern, Uint32 options, bool useCache ) :
 	PatternMatcher( PatternType::PCRE ),
 	mPattern( pattern ),
 	mMatchNum( 0 ),
 	mCompiledPattern( nullptr ),
 	mCaptureCount( 0 ),
-	mValid( true ) {
+	mValid( true ),
+	mFilterOutCaptures( ( options & Options::FilterOutCaptures ) != 0 ) {
 	int errornumber;
 	PCRE2_SIZE erroroffset;
 	PCRE2_SPTR pattern_sptr = reinterpret_cast<PCRE2_SPTR>( pattern.data() );
+
+	if ( mFilterOutCaptures )
+		options &= ~Options::FilterOutCaptures;
 
 	if ( useCache && RegExCache::instance()->isEnabled() &&
 		 ( mCompiledPattern = RegExCache::instance()->find( pattern, options ) ) ) {
@@ -108,17 +112,23 @@ bool RegEx::matches( const char* stringSearch, int stringStartOffset,
 
 	mMatchNum = rc;
 
-	if ( matchList != nullptr ) {
+	if ( matchList != nullptr && mMatchNum > 0 ) {
 		PCRE2_SIZE* ovector = pcre2_get_ovector_pointer( match_data );
+		int curCap = 0;
 		for ( size_t i = 0; i < static_cast<size_t>( rc ); ++i ) {
-			matchList[i].start = stringStartOffset + static_cast<int>( ovector[2 * i] );
-			matchList[i].end = stringStartOffset + static_cast<int>( ovector[2 * i + 1] );
-			if ( matchList[i].start >= matchList[i].end ) {
-				matchList[i].start = matchList[i].end = -1;
-				mMatchNum--;
-				break;
+			int start = stringStartOffset + static_cast<int>( ovector[2 * i] );
+			int end = stringStartOffset + static_cast<int>( ovector[2 * i + 1] );
+			if ( !mFilterOutCaptures ||
+				 ( !( start == 0 && end == 0 ) && start != end &&
+				   ( curCap == 0 || !( matchList[curCap - 1].start == start &&
+									   matchList[curCap - 1].end == end ) ) ) ) {
+				matchList[curCap].start = start;
+				matchList[curCap].end = end;
+				curCap++;
 			}
 		}
+
+		mMatchNum = curCap;
 	}
 
 	pcre2_match_data_free( match_data );

@@ -40,6 +40,7 @@
 #include <eepp/ui/doc/languages/htaccess.hpp>
 #include <eepp/ui/doc/languages/ignorefile.hpp>
 #include <eepp/ui/doc/languages/jai.hpp>
+#include <eepp/ui/doc/languages/janet.hpp>
 #include <eepp/ui/doc/languages/java.hpp>
 #include <eepp/ui/doc/languages/jsx.hpp>
 #include <eepp/ui/doc/languages/jule.hpp>
@@ -151,6 +152,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addHtaccessFile();
 	addIgnoreFile();
 	addJai();
+	addJanet();
 	addJava();
 	addJule();
 	addJulia();
