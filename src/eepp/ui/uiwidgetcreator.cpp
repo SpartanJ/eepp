@@ -80,6 +80,9 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["loader"] = UILoader::New;
 		registeredWidget["selectbutton"] = UISelectButton::New;
 		registeredWidget["window"] = UIWindow::New;
+		registeredWidget["windowvbox"] = UIWindow::NewVBox;
+		registeredWidget["windowhbox"] = UIWindow::NewHBox;
+		registeredWidget["windowrellay"] = UIWindow::NewRelLay;
 		registeredWidget["scrollview"] = UIScrollView::New;
 		registeredWidget["textureregion"] = UITextureRegion::New;
 		registeredWidget["touchdraggable"] = UITouchDraggableWidget::New;

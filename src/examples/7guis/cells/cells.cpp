@@ -3,7 +3,7 @@
 
 // Referece https://eugenkiss.github.io/7guis/tasks/#cells
 EE_MAIN_FUNC int main( int, char** ) {
-	UIApplication app( { 1024, 768, "eepp - 7GUIs - Cells" } );
+	UIApplication app( { 1280, 768, "eepp - 7GUIs - Cells" } );
 	UIWidget* rlay = app.getUI()->loadLayoutFromString( R"xml(
 	<style>
 		.font_theme_normal { color: var(--font); }
@@ -15,6 +15,7 @@ EE_MAIN_FUNC int main( int, char** ) {
 			border-right: 1dprd solid var(--button-border);
 			border-bottom: 1dprd solid var(--button-border);
 		}
+		#sheet tableview::header::column { text-align: center; }
 	</style>
 	<RelativeLayout layout_width="match_parent" layout_height="match_parent">
 		<TableView id="sheet" layout_width="match_parent" layout_height="match_parent" />

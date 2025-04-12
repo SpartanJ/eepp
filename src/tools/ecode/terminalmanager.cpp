@@ -9,12 +9,14 @@ namespace ecode {
 TerminalManager::TerminalManager( App* app ) : mApp( app ) {}
 
 UITerminal* TerminalManager::createTerminalInSplitter( const std::string& workingDir,
+													   std::string program,
+													   const std::vector<std::string>& args,
 													   bool fallback ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	std::string os = Sys::getOSName( true );
-	if ( !LuaPattern::matches( os, "Windows 1%d"sv ) &&
-		 !LuaPattern::matches( os, "Windows Server 201[69]"sv ) &&
-		 !LuaPattern::matches( os, "Windows Server 202%d"sv ) )
+	if ( !LuaPattern::hasMatches( os, "Windows 1%d"sv ) &&
+		 !LuaPattern::hasMatches( os, "Windows Server 201[69]"sv ) &&
+		 !LuaPattern::hasMatches( os, "Windows Server 202%d"sv ) )
 		return nullptr;
 #endif
 
@@ -26,36 +28,34 @@ UITerminal* TerminalManager::createTerminalInSplitter( const std::string& workin
 			UIOrientation orientation = splitter->getMainSplitOrientation();
 			if ( config.term.newTerminalOrientation == NewTerminalOrientation::Vertical &&
 				 orientation == UIOrientation::Horizontal ) {
-				term = createNewTerminal( "", splitter->getTabWidgets()[1], workingDir, "", {},
-										  fallback );
+				term = createNewTerminal( "", splitter->getTabWidgets()[1], workingDir, program,
+										  args, fallback );
 			} else if ( config.term.newTerminalOrientation == NewTerminalOrientation::Horizontal &&
 						orientation == UIOrientation::Vertical ) {
-				term = createNewTerminal( "", splitter->getTabWidgets()[1], workingDir, "", {},
-										  fallback );
+				term = createNewTerminal( "", splitter->getTabWidgets()[1], workingDir, program,
+										  args, fallback );
 			} else {
-				term = createNewTerminal( "", nullptr, workingDir );
+				term = createNewTerminal( "", nullptr, workingDir, program, args );
 			}
 		} else {
-			term = createNewTerminal();
+			term = createNewTerminal( "", nullptr, workingDir, program, args );
 		}
 	} else if ( splitter ) {
 		switch ( config.term.newTerminalOrientation ) {
 			case NewTerminalOrientation::Vertical: {
 				auto cwd = workingDir.empty() ? mApp->getCurrentWorkingDir() : workingDir;
-				splitter->split( UICodeEditorSplitter::SplitDirection::Right,
-								 splitter->getCurWidget(), false );
-				term = createNewTerminal( "", nullptr, cwd, "", {}, fallback );
+				splitter->split( SplitDirection::Right, splitter->getCurWidget(), false );
+				term = createNewTerminal( "", nullptr, cwd, program, args, fallback );
 				break;
 			}
 			case NewTerminalOrientation::Horizontal: {
 				auto cwd = workingDir.empty() ? mApp->getCurrentWorkingDir() : workingDir;
-				splitter->split( UICodeEditorSplitter::SplitDirection::Bottom,
-								 splitter->getCurWidget(), false );
-				term = createNewTerminal( "", nullptr, cwd, "", {}, fallback );
+				splitter->split( SplitDirection::Bottom, splitter->getCurWidget(), false );
+				term = createNewTerminal( "", nullptr, cwd, program, args, fallback );
 				break;
 			}
 			case NewTerminalOrientation::Same: {
-				term = createNewTerminal( "", nullptr, "", "", {}, fallback );
+				term = createNewTerminal( "", nullptr, "", program, args, fallback );
 				break;
 			}
 		}
@@ -241,8 +241,9 @@ void TerminalManager::configureTerminalScrollback() {
 	} );
 }
 
-UIMenu* TerminalManager::createColorSchemeMenu() {
-	mColorSchemeMenuesCreatedWithHeight = mApp->uiSceneNode()->getPixelsSize().getHeight();
+UIMenu* TerminalManager::createColorSchemeMenu( bool emptyMenu ) {
+	mColorSchemeMenuesCreatedWithHeight =
+		emptyMenu ? 0 : mApp->uiSceneNode()->getPixelsSize().getHeight();
 	size_t maxItems = 19;
 	auto cb = [this]( const Event* event ) {
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -255,6 +256,9 @@ UIMenu* TerminalManager::createColorSchemeMenu() {
 	mColorSchemeMenues.push_back( menu );
 	size_t total = 0;
 	const auto& colorSchemes = mTerminalColorSchemes;
+
+	if ( emptyMenu )
+		return mColorSchemeMenues[0];
 
 	for ( auto& colorScheme : colorSchemes ) {
 		menu->addRadioButton( colorScheme.first, mTerminalCurrentColorScheme == colorScheme.first );
@@ -302,7 +306,7 @@ std::string quoteString( std::string str ) {
 	return escapedStr;
 }
 
-static void openExternal( const std::string& defShell, const std::string& cmd,
+static int openExternal( const std::string& defShell, const std::string& cmd,
 						  const std::string& scriptsPath, const std::string& workingDir ) {
 	// This is an utility bat script based in the Geany utility script called "geany-run-helper"
 	static const std::string RUN_HELPER =
@@ -352,8 +356,7 @@ if not %autoclose%==1 pause
 			auto fcmd = "cmd.exe /q /c " + quoteString( "\"" + runHelperPath + "\" \"" + cmdDir +
 														"\" 0 \"" + cmdFile + "\"" );
 			Log::info( "Running: %s", fcmd );
-			Sys::execute( fcmd, workingDir );
-			return;
+			return Sys::execute( fcmd, workingDir );
 		} else {
 			Log::info( "Couldn't write runHelperPath %s", runHelperPath );
 		}
@@ -370,28 +373,27 @@ if not %autoclose%==1 pause
 			if ( !cmd.empty() ) {
 				auto fcmd = externalShell + " /q /c " + quoteString( "\"" + cmd + "\"" );
 				Log::info( "Running: %s", fcmd );
-				Sys::execute( fcmd, workingDir );
-				return;
+				return Sys::execute( fcmd, workingDir );
 			} else {
-				Sys::execute( externalShell, workingDir );
-				return;
+				return Sys::execute( externalShell, workingDir );
 			}
 		}
 	}
+	return 0;
 }
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
-static void openExternal( const std::string&, const std::string& cmd, const std::string&,
+static int openExternal( const std::string&, const std::string& cmd, const std::string&,
 						  const std::string& workingDir ) {
 	static const std::string externalShell = "open -a terminal";
 	if ( !cmd.empty() ) {
 		std::string fcmd = externalShell + " \"" + cmd + "\"";
 		Log::info( "Running: %s", fcmd );
-		Sys::execute( fcmd, workingDir );
-	} else
-		Sys::execute( externalShell, workingDir );
+		return Sys::execute( fcmd, workingDir );
+	}
+	return Sys::execute( externalShell, workingDir );
 }
 #else
-static void openExternal( const std::string&, const std::string& cmd, const std::string&,
+static int openExternal( const std::string&, const std::string& cmd, const std::string&,
 						  const std::string& workingDir ) {
 	std::vector<std::string> options = { "gnome-terminal", "konsole", "xterm", "st" };
 	for ( const auto& option : options ) {
@@ -400,21 +402,20 @@ static void openExternal( const std::string&, const std::string& cmd, const std:
 			if ( !cmd.empty() ) {
 				auto fcmd = externalShell + " -e \"" + cmd + "\"";
 				Log::info( "Running: %s", fcmd );
-				Sys::execute( fcmd, workingDir );
-				return;
+				return Sys::execute( fcmd, workingDir );
 			} else {
-				Sys::execute( externalShell, workingDir );
-				return;
+				return Sys::execute( externalShell, workingDir );
 			}
 		}
 	}
+	return 0;
 }
 #endif
 
-void TerminalManager::openInExternalTerminal( const std::string& cmd,
+int TerminalManager::openInExternalTerminal( const std::string& cmd,
 											  const std::string& workingDir ) {
 	Log::info( "Trying to open in external terminal: %s %s", cmd, workingDir );
-	openExternal( mApp->termConfig().shell, cmd, mApp->getScriptsPath(), workingDir );
+	return openExternal( mApp->termConfig().shell, cmd, mApp->getScriptsPath(), workingDir );
 }
 
 void TerminalManager::displayError( const std::string& workingDir ) {
@@ -571,7 +572,7 @@ void TerminalManager::setKeybindings( UITerminal* term ) {
 		  "debug-draw-boxes-toggle", "debug-draw-debug-data", "debug-widget-tree-view",
 		  "open-locatebar", "open-command-palette", "open-global-search", "menu-toggle",
 		  "console-toggle", "go-to-line", "editor-go-back", "editor-go-forward",
-		  "project-run-executable", "project-build-and-run" } );
+		  "project-run-executable" } );
 }
 
 } // namespace ecode

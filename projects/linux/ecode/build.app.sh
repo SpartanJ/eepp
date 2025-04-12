@@ -4,13 +4,25 @@ DIRPATH="$(dirname "$CANONPATH")"
 cd "$DIRPATH" || exit
 cd ../../../ || exit
 DEBUG_SYMBOLS=
+VERSION=
+ARCH=$(arch)
 for i in "$@"; do
 	case $i in
 		--with-debug-symbols)
 			DEBUG_SYMBOLS="--with-debug-symbols"
 			shift
 			;;
-		-*|--*)
+		--version)
+			if [[ -n $2 ]]; then VERSION="$2"; fi
+			shift
+			shift
+			;;
+		--arch)
+			if [[ -n $2 ]]; then ARCH="$2"; fi
+			shift
+			shift
+			;;
+		-*)
 			echo "Unknown option $i"
 			exit 1
 			;;
@@ -18,9 +30,27 @@ for i in "$@"; do
 			;;
 	esac
 done
-premake4 $DEBUG_SYMBOLS gmake || exit
+
+if [ "$ARCH" = "aarch64" ]; then
+	ARCH="arm64"
+fi
+
+CONFIG_NAME=
+if command -v premake4 &> /dev/null
+then
+    premake4 $DEBUG_SYMBOLS gmake || exit
+    CONFIG_NAME=release
+elif command -v premake5 &> /dev/null
+then
+    premake5 $DEBUG_SYMBOLS gmake2 || exit
+    CONFIG_NAME=release_"$ARCH"
+else
+    echo "Neither premake5 nor premake4 is available. Please install one."
+    exit 1
+fi
+
 cd make/linux || exit
-make -j"$(nproc)" config=release ecode || exit
+make -j"$(nproc)" config="$CONFIG_NAME" ecode || exit
 cd "$DIRPATH" || exit
 rm -rf ./ecode.app
 mkdir -p ecode.app/assets
@@ -31,8 +61,8 @@ cp ecode.desktop ecode.app/
 cp ../../../bin/assets/icon/ecode.png ecode.app/ecode.png
 cp ../../../libs/linux/libeepp.so ecode.app/libs/
 cp ../../../bin/ecode ecode.app/ecode.bin
-cp -L "$(whereis libSDL2-2.0.so.0 | awk '{print $NF}')" ecode.app/libs/
-strip ecode.app/libs/libSDL2-2.0.so.0
+cp -L "$(bash ../scripts/find_most_recent_sdl2.sh)" ecode.app/libs/ || exit
+${STRIP:-strip} ecode.app/libs/libSDL2-2.0.so.0
 mkdir -p ecode.app/assets/colorschemes
 mkdir -p ecode.app/assets/fonts
 mkdir -p ecode.app/assets/i18n
@@ -60,10 +90,16 @@ mkdir ecode.app/assets/ui
 cp ../../../bin/assets/ui/breeze.css ecode.app/assets/ui/
 cp ../../../bin/assets/ca-bundle.pem ecode.app/assets/ca-bundle.pem
 
+if [ -n "$VERSION" ];
+then
+ECODE_VERSION="$VERSION"
+else
 VERSIONPATH=../../../src/tools/ecode/version.hpp
 ECODE_MAJOR_VERSION=$(grep "define ECODE_MAJOR_VERSION" $VERSIONPATH | awk '{print $3}')
 ECODE_MINOR_VERSION=$(grep "define ECODE_MINOR_VERSION" $VERSIONPATH | awk '{print $3}')
 ECODE_PATCH_LEVEL=$(grep "define ECODE_PATCH_LEVEL" $VERSIONPATH | awk '{print $3}')
+ECODE_VERSION="$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH_LEVEL"
+fi
 
 export APPIMAGETOOL="appimagetool"
 
@@ -74,7 +110,7 @@ then
 	chmod +x "$APPIMAGETOOL"
 fi
 
-ECODE_NAME=ecode-linux-"$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH_LEVEL"-"$(arch)"
+ECODE_NAME=ecode-linux-"$ECODE_VERSION"-"$ARCH"
 
 if [ -n "$DEBUG_SYMBOLS" ];
 then
@@ -87,13 +123,14 @@ then
 	objcopy -S ecode.app/libs/libeepp.so ecode.app/libs/libeepp.so
 fi
 
+echo "Generating $ECODE_NAME.AppImage"
 $APPIMAGETOOL ecode.app "$ECODE_NAME".AppImage
 
 rm ecode.app/.DirIcon
 mv ecode.app/AppRun ecode.app/ecode
 mv ecode.app ecode
 
+echo "Generating $ECODE_NAME.tar.gz"
 tar -czf "$ECODE_NAME".tar.gz ecode
 
 mv ecode ecode.app
-

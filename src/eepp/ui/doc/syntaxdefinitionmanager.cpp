@@ -4,98 +4,17 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/packmanager.hpp>
-#include <eepp/ui/doc/languages/adept.hpp>
-#include <eepp/ui/doc/languages/angelscript.hpp>
-#include <eepp/ui/doc/languages/awkscript.hpp>
-#include <eepp/ui/doc/languages/batchscript.hpp>
-#include <eepp/ui/doc/languages/bend.hpp>
-#include <eepp/ui/doc/languages/blueprint.hpp>
-#include <eepp/ui/doc/languages/brainfuck.hpp>
-#include <eepp/ui/doc/languages/buzz.hpp>
 #include <eepp/ui/doc/languages/c.hpp>
-#include <eepp/ui/doc/languages/carbon.hpp>
-#include <eepp/ui/doc/languages/clojure.hpp>
-#include <eepp/ui/doc/languages/cmake.hpp>
 #include <eepp/ui/doc/languages/configfile.hpp>
-#include <eepp/ui/doc/languages/containerfile.hpp>
 #include <eepp/ui/doc/languages/cpp.hpp>
-#include <eepp/ui/doc/languages/crystal.hpp>
-#include <eepp/ui/doc/languages/csharp.hpp>
 #include <eepp/ui/doc/languages/css.hpp>
-#include <eepp/ui/doc/languages/d.hpp>
-#include <eepp/ui/doc/languages/dart.hpp>
-#include <eepp/ui/doc/languages/difffile.hpp>
-#include <eepp/ui/doc/languages/elixir.hpp>
-#include <eepp/ui/doc/languages/elm.hpp>
-#include <eepp/ui/doc/languages/environmentfile.hpp>
-#include <eepp/ui/doc/languages/fantom.hpp>
-#include <eepp/ui/doc/languages/fortran.hpp>
-#include <eepp/ui/doc/languages/fstab.hpp>
-#include <eepp/ui/doc/languages/gdscript.hpp>
-#include <eepp/ui/doc/languages/glsl.hpp>
-#include <eepp/ui/doc/languages/go.hpp>
-#include <eepp/ui/doc/languages/graphql.hpp>
-#include <eepp/ui/doc/languages/groovy.hpp>
-#include <eepp/ui/doc/languages/hare.hpp>
-#include <eepp/ui/doc/languages/haskell.hpp>
-#include <eepp/ui/doc/languages/haxe.hpp>
-#include <eepp/ui/doc/languages/hlsl.hpp>
-#include <eepp/ui/doc/languages/htaccess.hpp>
 #include <eepp/ui/doc/languages/html.hpp>
-#include <eepp/ui/doc/languages/ignorefile.hpp>
-#include <eepp/ui/doc/languages/jai.hpp>
-#include <eepp/ui/doc/languages/java.hpp>
 #include <eepp/ui/doc/languages/javascript.hpp>
 #include <eepp/ui/doc/languages/json.hpp>
-#include <eepp/ui/doc/languages/jsx.hpp>
-#include <eepp/ui/doc/languages/julia.hpp>
-#include <eepp/ui/doc/languages/kotlin.hpp>
-#include <eepp/ui/doc/languages/latex.hpp>
-#include <eepp/ui/doc/languages/lobster.hpp>
 #include <eepp/ui/doc/languages/lua.hpp>
-#include <eepp/ui/doc/languages/makefile.hpp>
 #include <eepp/ui/doc/languages/markdown.hpp>
-#include <eepp/ui/doc/languages/meson.hpp>
-#include <eepp/ui/doc/languages/moonscript.hpp>
-#include <eepp/ui/doc/languages/nelua.hpp>
-#include <eepp/ui/doc/languages/nim.hpp>
-#include <eepp/ui/doc/languages/objeck.hpp>
-#include <eepp/ui/doc/languages/objective-c.hpp>
-#include <eepp/ui/doc/languages/odin.hpp>
-#include <eepp/ui/doc/languages/pascal.hpp>
-#include <eepp/ui/doc/languages/perl.hpp>
-#include <eepp/ui/doc/languages/php.hpp>
-#include <eepp/ui/doc/languages/pico-8.hpp>
-#include <eepp/ui/doc/languages/po.hpp>
-#include <eepp/ui/doc/languages/pony.hpp>
-#include <eepp/ui/doc/languages/postgresql.hpp>
-#include <eepp/ui/doc/languages/powershell.hpp>
 #include <eepp/ui/doc/languages/python.hpp>
-#include <eepp/ui/doc/languages/r.hpp>
-#include <eepp/ui/doc/languages/ruby.hpp>
-#include <eepp/ui/doc/languages/rust.hpp>
-#include <eepp/ui/doc/languages/sass.hpp>
-#include <eepp/ui/doc/languages/scala.hpp>
-#include <eepp/ui/doc/languages/shellscript.hpp>
-#include <eepp/ui/doc/languages/smallbasic.hpp>
-#include <eepp/ui/doc/languages/solidity.hpp>
-#include <eepp/ui/doc/languages/sql.hpp>
-#include <eepp/ui/doc/languages/swift.hpp>
-#include <eepp/ui/doc/languages/teal.hpp>
-#include <eepp/ui/doc/languages/toml.hpp>
-#include <eepp/ui/doc/languages/typescript.hpp>
-#include <eepp/ui/doc/languages/v.hpp>
-#include <eepp/ui/doc/languages/vala.hpp>
-#include <eepp/ui/doc/languages/vb.hpp>
-#include <eepp/ui/doc/languages/verilog.hpp>
-#include <eepp/ui/doc/languages/vue.hpp>
-#include <eepp/ui/doc/languages/wren.hpp>
-#include <eepp/ui/doc/languages/x86assembly.hpp>
-#include <eepp/ui/doc/languages/xit.hpp>
 #include <eepp/ui/doc/languages/xml.hpp>
-#include <eepp/ui/doc/languages/xtend.hpp>
-#include <eepp/ui/doc/languages/yaml.hpp>
-#include <eepp/ui/doc/languages/zig.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <nlohmann/json.hpp>
 
@@ -108,113 +27,42 @@ namespace EE { namespace UI { namespace Doc {
 
 SINGLETON_DECLARE_IMPLEMENTATION( SyntaxDefinitionManager )
 
+SyntaxDefinitionManager*
+SyntaxDefinitionManager::createSingleton( std::size_t reserveSpaceForLanguages ) {
+	if ( NULL == ms_singleton ) {
+		ms_singleton = eeNew( SyntaxDefinitionManager, ( reserveSpaceForLanguages ) );
+	}
+
+	return ms_singleton;
+}
+
 static void addPlainText() {
-	SyntaxDefinitionManager::instance()->add( { "Plain Text", {}, {}, {}, "", {}, "plaintext" } );
+	SyntaxDefinitionManager::instance()->add(
+		{ "Plain Text", { "%.txt$" }, {}, {}, "", {}, "plaintext" } );
 }
 
 // Syntax definitions can be directly converted from the lite (https://github.com/rxi/lite) and
 // lite-plugins (https://github.com/rxi/lite-plugins) supported languages.
 
-SyntaxDefinitionManager::SyntaxDefinitionManager() {
+SyntaxDefinitionManager::SyntaxDefinitionManager( std::size_t reserveSpaceForLanguages ) {
 	if ( ms_singleton == nullptr )
 		ms_singleton = this;
 
-	mDefinitions.reserve( 99 );
+	mDefinitions.reserve( reserveSpaceForLanguages );
 
 	// Register some languages support.
 	addPlainText();
-	addAdept();
-	addAngelScript();
-	addAwkScript();
-	addBatchScript();
-	addBend();
-	addBlueprint();
-	addBrainfuck();
-	addBuzz();
 	addC();
-	addCarbon();
-	addCMake();
-	addContainerFile();
 	addConfigFile();
 	addCPP();
-	addClojure();
-	addCrystal();
-	addCSharp();
 	addCSS();
-	addD();
-	addDart();
-	addDiff();
-	addElixir();
-	addElm();
-	addEnvironmentFile();
-	addFantom();
-	addFortran();
-	addFstab();
-	addGDScript();
-	addGLSL();
-	addGo();
-	addGraphQL();
-	addGroovy();
-	addHaskell();
-	addHare();
-	addHaxe();
-	addHLSL();
-	addHtaccessFile();
 	addHTML();
-	addIgnoreFile();
-	addJai();
-	addJava();
 	addJavaScript();
-	addJulia();
 	addJSON();
-	addJSX();
-	addKotlin();
-	addLatex();
-	addLobster();
 	addLua();
-	addMakefile();
 	addMarkdown();
-	addMeson();
-	addMoonscript();
-	addNelua();
-	addNim();
-	addObjeck();
-	addObjectiveC();
-	addOdin();
-	addPascal();
-	addPerl();
-	addPICO8();
-	addPHP();
-	addPO();
-	addPony();
-	addPostgreSQL();
-	addPowerShell();
 	addPython();
-	addR();
-	addRuby();
-	addRust();
-	addSass();
-	addScala();
-	addShellScript();
-	addSmallBASIC();
-	addSolidity();
-	addSQL();
-	addSwift();
-	addTeal();
-	addToml();
-	addTypeScript();
-	addV();
-	addVala();
-	addVerilog();
-	addVisualBasic();
-	addVue();
-	addWren();
-	addX86Assembly();
-	addXit();
 	addXML();
-	addXtend();
-	addYAML();
-	addZig();
 }
 
 const std::vector<SyntaxDefinition>& SyntaxDefinitionManager::getDefinitions() const {
@@ -233,10 +81,11 @@ static json toJson( const SyntaxDefinition& def ) {
 		j["patterns"] = json::array();
 		for ( const auto& ptrn : def.getPatterns() ) {
 			json pattern;
+			auto ptrnType = ptrn.isRegEx ? "regex" : "pattern";
 			if ( ptrn.patterns.size() == 1 ) {
-				pattern["pattern"] = ptrn.patterns[0];
+				pattern[ptrnType] = ptrn.patterns[0];
 			} else {
-				pattern["pattern"] = ptrn.patterns;
+				pattern[ptrnType] = ptrn.patterns;
 			}
 			if ( ptrn.typesNames.size() == 1 ) {
 				pattern["type"] = ptrn.typesNames[0];
@@ -352,9 +201,14 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 	buf += join( def.getFiles() ) + ",\n";
 	// patterns
 	buf += "{\n";
-	for ( const auto& pattern : def.getPatterns() )
+	for ( const auto& pattern : def.getPatterns() ) {
 		buf += "{ " + join( pattern.patterns ) + ", " + join( pattern.typesNames, true, true ) +
-			   str( pattern.syntax, ", ", "", false ) + " },\n";
+			   str( pattern.syntax, ", ", "", false );
+		if ( pattern.isRegEx )
+			buf += ", "
+				   ", true";
+		buf += " },\n";
+	}
 	buf += "\n},\n";
 	// symbols
 	buf += "{\n";
@@ -452,6 +306,7 @@ std::vector<std::string> SyntaxDefinitionManager::getLanguageNames() const {
 
 std::vector<std::string> SyntaxDefinitionManager::getExtensionsPatternsSupported() const {
 	std::vector<std::string> exts;
+	exts.reserve( mDefinitions.size() );
 	for ( auto& style : mDefinitions )
 		for ( auto& pattern : style.getFiles() )
 			exts.emplace_back( pattern );
@@ -521,6 +376,7 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 								  ? ""
 								  : pattern.value( "syntax", "" );
 				std::vector<std::string> ptrns;
+				bool isRegEx = false;
 				if ( pattern.contains( "pattern" ) ) {
 					if ( pattern["pattern"].is_array() ) {
 						const auto& ptrnIt = pattern["pattern"];
@@ -529,8 +385,18 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 					} else if ( pattern["pattern"].is_string() ) {
 						ptrns.emplace_back( pattern["pattern"] );
 					}
+				} else if ( pattern.contains( "regex" ) ) {
+					isRegEx = true;
+					if ( pattern["regex"].is_array() ) {
+						const auto& ptrnIt = pattern["regex"];
+						for ( const auto& ptrn : ptrnIt )
+							ptrns.emplace_back( ptrn );
+					} else if ( pattern["regex"].is_string() ) {
+						ptrns.emplace_back( pattern["regex"] );
+					}
 				}
-				def.addPattern( SyntaxPattern( std::move( ptrns ), std::move( type ), syntax ) );
+				def.addPattern(
+					SyntaxPattern( std::move( ptrns ), std::move( type ), syntax, isRegEx ) );
 			}
 		}
 		if ( json.contains( "symbols" ) ) {
@@ -746,6 +612,9 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByExtension( const std::stri
 
 	if ( !extension.empty() ) {
 		for ( const auto& style : mDefinitions ) {
+			if ( &style == &mDefinitions[0] ) // Ignore Plain text
+				continue;
+
 			for ( const auto& ext : style.getFiles() ) {
 				if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
 					 String::endsWith( ext, "$" ) ) {
@@ -816,6 +685,18 @@ const SyntaxDefinition& SyntaxDefinitionManager::findFromString( const std::stri
 	if ( syn3.getLSPName() != getPlainDefinition().getLSPName() )
 		return syn3;
 	return getPlainDefinition();
+}
+
+const std::map<std::string, std::string>& SyntaxDefinitionManager::getLanguageExtensionsPriority() {
+	return mPriorities;
+}
+
+std::size_t SyntaxDefinitionManager::count() const {
+	return mDefinitions.size();
+}
+
+void SyntaxDefinitionManager::reserveSpaceForLanguages( std::size_t totalLangs ) {
+	mDefinitions.reserve( totalLangs );
 }
 
 }}} // namespace EE::UI::Doc

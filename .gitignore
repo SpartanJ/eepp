@@ -20,6 +20,7 @@ projects/android-project-ant/data
 projects/android-project-ant/gen
 projects/android-project-ant/assets
 projects/android-project-ant/libs
+projects/mingw32/llvm*
 src/examples/strobe
 src/thirdparty/SDL2-*
 *.dll
@@ -68,3 +69,4 @@ ecode.dmg
 /compile_commands.json
 /bin/unit_tests/eepp*
 /bin/unit_tests/lib*
+

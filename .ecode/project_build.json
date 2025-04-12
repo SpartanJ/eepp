@@ -2,7 +2,7 @@
   "ecode-linux": {
     "build": [
       {
-        "args": "--with-debug-symbols gmake",
+        "args": "--with-debug-symbols --disable-static-build --with-text-shaper gmake",
         "command": "premake4",
         "working_dir": "${project_root}"
       },
@@ -35,6 +35,34 @@
         "relative_file_paths": true
       }
     },
+    "run": [
+      {
+        "args": "-v",
+        "command": "ecode-debug",
+        "name": "ecode-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "ecode",
+        "name": "ecode-release",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "eehttp-debug",
+        "name": "eehttp-debug",
+        "run_in_terminal": true,
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "eepp-sound",
+        "name": "eepp-sound",
+        "run_in_terminal": true,
+        "working_dir": "${project_root}/bin"
+      }
+    ],
     "var": {
       "build_dir": "${project_root}/make/${os}"
     }
@@ -122,7 +150,21 @@
       "config": {
         "relative_file_paths": true
       }
-    }
+    },
+    "run": [
+      {
+        "args": "",
+        "command": "ecode-debug.exe",
+        "name": "ecode-debug",
+        "working_dir": "${project_root}/bin/"
+      },
+      {
+        "args": "",
+        "command": "ecode.exe",
+        "name": "ecode-release",
+        "working_dir": "${project_root}/bin/"
+      }
+    ]
   },
   "eepp-linux": {
     "build": [
@@ -133,6 +175,91 @@
       },
       {
         "args": "-j${nproc} config=${build_type}",
+        "command": "make",
+        "working_dir": "${build_dir}"
+      }
+    ],
+    "build_types": [
+      "debug",
+      "release"
+    ],
+    "clean": [
+      {
+        "args": "config=${build_type} clean",
+        "command": "make",
+        "working_dir": "${build_dir}"
+      }
+    ],
+    "config": {
+      "clear_sys_env": false
+    },
+    "os": [
+      "linux"
+    ],
+    "output_parser": {
+      "config": {
+        "preset": "generic",
+        "relative_file_paths": true
+      }
+    },
+    "run": [
+      {
+        "args": "-v",
+        "command": "${project_root}/bin/ecode-debug",
+        "name": "ecode-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "-x",
+        "command": "${project_root}/bin/ecode",
+        "name": "ecode-release",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/unit_tests/eepp-unit-tests-debug",
+        "name": "eepp-unit_tests-debug",
+        "run_in_terminal": true,
+        "working_dir": "${project_root}/bin/unit_tests/"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/unit_tests/eepp-unit_tests",
+        "name": "eepp-unit_tests",
+        "run_in_terminal": true,
+        "working_dir": "${project_root}/bin/unit_tests"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-empty-window-debug",
+        "name": "eepp-empty_window-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-empty-window",
+        "name": "eepp-empty_window",
+        "working_dir": "${project_root}/bin"
+      }
+    ],
+    "var": {
+      "build_dir": "${project_root}/make/${os}"
+    }
+  },
+  "eepp-linux-cmake": {
+    "build": [
+      {
+        "args": "--with-debug-symbols --disable-static-build --with-text-shaper cmake",
+        "command": "premake5",
+        "working_dir": "${project_root}"
+      },
+      {
+        "args": "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON CMakeLists.txt",
+        "command": "cmake",
+        "working_dir": "${build_dir}"
+      },
+      {
+        "args": "-j${nproc} config=${build_type}_x86_64",
         "command": "make",
         "working_dir": "${build_dir}"
       }
@@ -186,10 +313,102 @@
         "name": "eepp-unit_tests",
         "run_in_terminal": true,
         "working_dir": "${project_root}/bin/unit_tests"
+      },
+      {
+        "args": "",
+        "command": "eepp-empty-window-debug",
+        "name": "eepp-empty_window-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "eepp-empty-window",
+        "name": "eepp-empty_window",
+        "working_dir": "${project_root}/bin"
       }
     ],
     "var": {
-      "build_dir": "${project_root}/make/${os}"
+      "build_dir": "${project_root}/make/${os}/"
+    }
+  },
+  "eepp-linux-ninja": {
+    "build": [
+      {
+        "args": "--with-debug-symbols --disable-static-build --with-text-shaper ninja",
+        "command": "premake5",
+        "working_dir": "${project_root}"
+      },
+      {
+        "args": "${build_type}",
+        "command": "ninja",
+        "working_dir": "${build_dir}"
+      }
+    ],
+    "build_types": [
+      "debug",
+      "release"
+    ],
+    "clean": [
+      {
+        "args": "config=${build_type} clean",
+        "command": "make",
+        "working_dir": "${build_dir}"
+      }
+    ],
+    "config": {
+      "clear_sys_env": false
+    },
+    "os": [
+      "linux"
+    ],
+    "output_parser": {
+      "config": {
+        "preset": "generic",
+        "relative_file_paths": true
+      }
+    },
+    "run": [
+      {
+        "args": "-v",
+        "command": "ecode-debug",
+        "name": "ecode-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "-x",
+        "command": "ecode",
+        "name": "ecode-release",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "eepp-unit_tests-debug",
+        "name": "eepp-unit_tests-debug",
+        "run_in_terminal": true,
+        "working_dir": "${project_root}/bin/unit_tests"
+      },
+      {
+        "args": "",
+        "command": "eepp-unit_tests",
+        "name": "eepp-unit_tests",
+        "run_in_terminal": true,
+        "working_dir": "${project_root}/bin/unit_tests"
+      },
+      {
+        "args": "",
+        "command": "eepp-empty-window-debug",
+        "name": "eepp-empty_window-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "eepp-empty-window",
+        "name": "eepp-empty_window",
+        "working_dir": "${project_root}/bin"
+      }
+    ],
+    "var": {
+      "build_dir": "${project_root}/make/${os}/"
     }
   },
   "eepp-macos": {
@@ -275,6 +494,20 @@
       "config": {
         "relative_file_paths": true
       }
-    }
+    },
+    "run": [
+      {
+        "args": "",
+        "command": "ecode-debug.exe",
+        "name": "ecode-debug",
+        "working_dir": "${project_root}/bin/"
+      },
+      {
+        "args": "",
+        "command": "ecode.exe",
+        "name": "ecode-release",
+        "working_dir": "${project_root}/bin/"
+      }
+    ]
   }
 }

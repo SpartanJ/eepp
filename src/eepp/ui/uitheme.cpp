@@ -104,10 +104,10 @@ UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, Graphics::TextureAtlas*
 				int l = 0, t = 0, r = 0, b = 0;
 
 				if ( srcRect.size() == 4 ) {
-					String::fromString<int>( l, srcRect[0] );
-					String::fromString<int>( t, srcRect[1] );
-					String::fromString<int>( r, srcRect[2] );
-					String::fromString<int>( b, srcRect[3] );
+					String::fromString( l, srcRect[0] );
+					String::fromString( t, srcRect[1] );
+					String::fromString( r, srcRect[2] );
+					String::fromString( b, srcRect[3] );
 				}
 
 				std::string skinName( elemNameFromSkin( nameParts ) );
@@ -203,10 +203,10 @@ UITheme* UITheme::loadFromDirectroy( UITheme* tTheme, const std::string& Path,
 					int l = 0, t = 0, r = 0, b = 0;
 
 					if ( srcRect.size() == 4 ) {
-						String::fromString<int>( l, srcRect[0] );
-						String::fromString<int>( t, srcRect[1] );
-						String::fromString<int>( r, srcRect[2] );
-						String::fromString<int>( b, srcRect[3] );
+						String::fromString( l, srcRect[0] );
+						String::fromString( t, srcRect[1] );
+						String::fromString( r, srcRect[2] );
+						String::fromString( b, srcRect[3] );
 					}
 
 					std::string skinName( elemNameFromSkin( nameParts ) );

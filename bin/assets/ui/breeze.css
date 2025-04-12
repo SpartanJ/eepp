@@ -27,6 +27,7 @@
 	--tab-hover: #334e5e;
 	--tab-close: #909396;
 	--tab-close-hover: #863d47;
+	--tab-font-inactive: #c0c5cc;
 	--icon: #b6bbc2;
 	--icon-active: white;
 	--icon-back-hover: #eff0f1;
@@ -108,7 +109,6 @@ DropDownList::ListBox::item,
 ListBox::item,
 Menu::item::text,
 Menu::item::shortcut,
-Menu::SubMenu,
 PushButton,
 RadioButton,
 SelectButton,
@@ -302,7 +302,9 @@ ListView::cell {
 }
 
 ListBox:hover,
-ListView:hover {
+ListView:hover,
+ListBox:focus,
+ListView:focus {
 	border-color: var(--primary);
 }
 
@@ -383,8 +385,8 @@ SpinBox::input {
 }
 
 SpinBox::input,
-SpinBox::input::hover,
-SpinBox::input::focus {
+SpinBox::input:hover,
+SpinBox::input:focus {
 	border-width: 0dp;
 	border-color: transparent;
 }
@@ -559,6 +561,7 @@ Tab {
 	foreground-image: linear-gradient( to top, var(--tab-line), var(--tab-back));
 	foreground-size: 1dprd 80%;
 	foreground-position: right bottom;
+	color: var(--tab-font-inactive);
 }
 
 Tab.prev {
@@ -568,6 +571,7 @@ Tab.prev {
 Tab:hover {
 	background-color: var(--tab-hover);
 	foreground-image: none;
+	color: var(--font);
 }
 
 Tab::text {
@@ -589,6 +593,7 @@ Tab:selected {
 	border-top-left-radius: 2dp;
 	border-top-right-radius: 2dp;
 	foreground-image: none;
+	color: var(--font);
 }
 
 Tab:selected:hover {
@@ -1114,6 +1119,7 @@ TextInput.table_cell_edit {
 	--tab-hover: #93cee9;
 	--tab-close: #e6e6e6;
 	--tab-close-hover: #e49aa2;
+	--tab-font-inactive: #444;
 	--icon: #232627;
 	--icon-active: #3daee9;
 	--icon-back-hover: #e6e6e6;

@@ -28,7 +28,55 @@
 
 namespace EE { namespace System {
 
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+static bool isFlatpakEnv() {
+	static bool sChecked = false;
+	static bool sIsFlatpak = false;
+	if ( !sChecked ) {
+		sIsFlatpak = getenv( "FLATPAK_ID" ) != NULL;
+		sChecked = true;
+	}
+	return sIsFlatpak;
+}
+#endif
+
 #define PROCESS_PTR ( static_cast<struct subprocess_s*>( mProcess ) )
+
+std::vector<std::string> Process::parseArgs( const std::string& str ) {
+	bool inquote = false;
+	char quoteChar = 0;
+	std::vector<std::string> res;
+	std::string curstr;
+
+	for ( size_t i = 0; i < str.size(); ++i ) {
+		char c = str[i];
+		if ( inquote ) {
+			if ( c == quoteChar ) {
+				inquote = false;
+			} else if ( c == '\\' && i + 1 < str.size() && str[i + 1] == quoteChar ) {
+				curstr += quoteChar;
+				++i;
+			} else {
+				curstr += c;
+			}
+		} else if ( c == ' ' || c == '\t' ) {
+			if ( !curstr.empty() ) {
+				res.push_back( curstr );
+				curstr.clear();
+			}
+		} else if ( c == '\'' || c == '"' ) {
+			inquote = true;
+			quoteChar = c;
+		} else {
+			curstr += c;
+		}
+	}
+
+	if ( !curstr.empty() )
+		res.push_back( curstr );
+
+	return res;
+}
 
 Process::Process() {}
 
@@ -39,21 +87,33 @@ Process::Process( const std::string& command, Uint32 options,
 	create( command, options, environment, workingDirectory );
 }
 
+Process::Process( const std::string& command, const std::vector<std::string>& args, Uint32 options,
+				  const std::unordered_map<std::string, std::string>& environment,
+				  const std::string& workingDirectory, const size_t& bufferSize ) :
+	mBufferSize( bufferSize ) {
+	create( command, args, options, environment, workingDirectory );
+}
+
 Process::~Process() {
 	mShuttingDown = true;
-	if ( mProcess && isAlive() )
-		kill();
+	if ( mProcess ) {
+		if ( isAlive() ) {
+			kill();
+		} else {
+			destroy();
+		}
+	}
 	if ( mStdOutThread.joinable() )
 		mStdOutThread.join();
 	if ( mStdErrThread.joinable() )
 		mStdErrThread.join();
-	eeFree( mProcess );
+	eeSAFE_FREE( mProcess );
 }
 
 bool Process::create( const std::string& command, Uint32 options,
 					  const std::unordered_map<std::string, std::string>& environment,
 					  const std::string& workingDirectory ) {
-	std::vector<std::string> cmdArr = String::split( command, " ", "", "\"", true );
+	std::vector<std::string> cmdArr = parseArgs( command );
 	if ( cmdArr.empty() )
 		return false;
 	std::string cmd( cmdArr[0] );
@@ -64,8 +124,7 @@ bool Process::create( const std::string& command, Uint32 options,
 bool Process::create( const std::string& command, const std::string& args, Uint32 options,
 					  const std::unordered_map<std::string, std::string>& environment,
 					  const std::string& workingDirectory ) {
-	return create( command, String::split( args, " ", "", "\"", true ), options, environment,
-				   workingDirectory );
+	return create( command, parseArgs( args ), options, environment, workingDirectory );
 }
 
 bool Process::create( const std::string& command, const std::vector<std::string>& cmdArr,
@@ -93,10 +152,19 @@ bool Process::create( const std::string& command, const std::vector<std::string>
 			envVars = Sys::getEnvironmentVariables();
 			options &= ~Process::InheritEnvironment;
 		}
+		std::size_t deltaExtra = 0;
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+		deltaExtra = isFlatpakEnv() ? 2 : 0;
+#endif
 		envArr.reserve( environment.size() + envVars.size() );
-		strings.reserve( cmdArr.size() + 1 );
+		strings.reserve( cmdArr.size() + 1 + deltaExtra );
 		envStrings.reserve( envArr.size() + 1 );
-
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+		if ( isFlatpakEnv() ) {
+			strings.push_back( "/usr/bin/flatpak-spawn" );
+			strings.push_back( "--host" );
+		}
+#endif
 		strings.push_back( rcommand.c_str() );
 		for ( size_t i = 0; i < cmdArr.size(); ++i )
 			strings.push_back( cmdArr[i].c_str() );
@@ -160,6 +228,7 @@ size_t Process::readStdErr( char* const buffer, const size_t& size ) {
 
 size_t Process::write( const char* buffer, const size_t& size ) {
 	eeASSERT( mProcess != nullptr );
+	eeASSERT( isAlive()  );
 	if ( mShuttingDown )
 		return 0;
 	Lock l( mStdInMutex );
@@ -258,10 +327,11 @@ size_t Process::readAll( std::string& buffer, bool readErr, Time timeout ) {
 	buffer.resize( mBufferSize );
 	bool anyOpen = pollfd.fd != -1;
 	ssize_t n = 0;
-	while ( anyOpen && !mShuttingDown && isAlive() && errno != EINTR ) {
+	while ( anyOpen && !mShuttingDown && isAlive() ) {
 		int res = poll( &pollfd, static_cast<nfds_t>( 1 ), 100 );
 		if ( res <= 0 ) {
-			if ( timeout != Time::Zero && clock.getElapsedTime() >= timeout )
+			if ( ( timeout != Time::Zero && clock.getElapsedTime() >= timeout ) ||
+				 ( res < 0 && errno != EINTR ) )
 				break;
 			continue;
 		}
@@ -358,7 +428,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 		std::string buffer;
 		buffer.resize( mBufferSize );
 		bool anyOpen = !pollfds.empty();
-		while ( anyOpen && !mShuttingDown && errno != EINTR ) {
+		while ( anyOpen && !mShuttingDown ) {
 			int res = poll( pollfds.data(), static_cast<nfds_t>( pollfds.size() ), 100 );
 			if ( res > 0 ) {
 				anyOpen = false;
@@ -386,7 +456,8 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 						anyOpen = true;
 					}
 				}
-			}
+			} else if ( res < 0 && errno != EINTR )
+				break;
 		}
 	} );
 #endif

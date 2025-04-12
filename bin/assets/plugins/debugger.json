@@ -1,0 +1,243 @@
+{
+  "dap": [
+    {
+      "name": "gdb",
+      "url": "https://www.gnu.org/software/gdb",
+      "type": "cppdbg",
+      "run": {
+        "command": "gdb",
+        "command_arguments": "--interpreter=dap"
+      },
+      "languages": [ "cpp", "c", "d", "go", "objectivec", "fortran", "pascal", "rust" ],
+      "configurations": [
+        {
+          "name": "Launch binary",
+          "request": "launch",
+          "arguments": {
+              "program": "${file}",
+              "args": "${args}",
+              "cwd": "${cwd}",
+              "env": "${env}"
+          }
+        },
+        {
+          "name": "Attach to PID",
+          "request": "attach",
+          "arguments": {
+            "pid": "${command:pickProcess}"
+          }
+        },
+        {
+          "name": "Load coredump",
+          "request": "attach",
+          "arguments": {
+            "coreFile": "${command:pickFile}",
+            "program": "${file}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "lldb-dap",
+      "url": "https://github.com/llvm/llvm-project/blob/main/lldb/tools/lldb-dap/README.md",
+      "type": "lldb",
+      "run": {
+        "command": "lldb-dap",
+        "command_fallback": "lldb-vscode"
+      },
+      "find": {
+        "macos": "xcrun -f ${command}"
+      },
+      "languages": [ "cpp", "c", "odin", "rust", "zig" ],
+      "configurations": [
+        {
+          "name": "Launch binary",
+          "request": "launch",
+          "arguments": {
+              "program": "${file}",
+              "args": "${args}",
+              "cwd": "${cwd}",
+              "env": "${env}"
+          }
+        },
+        {
+          "name": "Launch binary in Terminal",
+          "request": "launch",
+          "arguments": {
+              "program": "${file}",
+              "args": "${args}",
+              "cwd": "${cwd}",
+              "env": "${env}",
+              "runInTerminal": true
+          }
+        },
+        {
+          "name": "Attach to binary",
+          "request": "attach",
+          "runTarget": true,
+          "arguments": {
+            "program": "${file}"
+          }
+        },
+        {
+          "name": "Attach to binary (wait)",
+          "request": "attach",
+          "runTarget": true,
+          "arguments": {
+            "program": "${file}",
+            "waitFor": true
+          }
+        },
+        {
+          "name": "Attach to PID",
+          "request": "attach",
+          "arguments": {
+            "pid": "${command:pickProcess}"
+          }
+        },
+        {
+          "name": "Load coredump",
+          "request": "attach",
+          "arguments": {
+            "coreFile": "${command:pickFile}",
+            "program": "${file}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "delve",
+      "url": "https://github.com/go-delve/delve",
+      "type": "go",
+      "run": {
+        "command": "dlv",
+        "command_arguments": ["dap", "--listen", "127.0.0.1:${randPort}"],
+        "redirectStderr": true,
+        "redirectStdout": true,
+        "supportsSourceRequest": false
+      },
+      "languages": [ "go" ],
+      "configurations": [
+        {
+          "name": "Launch (debug)",
+          "request": "launch",
+          "arguments": {
+            "mode": "debug",
+            "program": "${file}",
+            "args": "${args}"
+          }
+        },
+        {
+          "name": "Launch (test)",
+          "request": "launch",
+          "arguments": {
+            "mode": "test",
+            "program": "${file}",
+            "args": "${args}"
+          }
+        },
+        {
+          "name": "Launch (exec)",
+          "request": "launch",
+          "arguments": {
+            "mode": "exec",
+            "program": "${file}",
+            "args": "${args}"
+          }
+        },
+        {
+          "name": "Attach to PID",
+          "request": "attach",
+          "arguments": {
+            "mode": "local",
+            "processId": "${command:pickProcess}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "debugpy",
+      "url": "https://github.com/microsoft/debugpy",
+      "type": "debugpy",
+      "languages": [ "python" ],
+      "run": {
+        "command": "python3",
+        "command_arguments": ["-m", "debugpy", "--listen", "${randPort}"],
+        "supportsSourceRequest": false
+      },
+      "configurations": [
+        {
+          "name": "Launch script",
+          "command_arguments": ["--wait-for-client", "${file}", "${args}"],
+          "request": "attach",
+          "arguments": {
+            "stopOnEntry": true,
+            "redirectOutput": true
+          }
+        },
+        {
+          "name": "Launch module",
+          "command_arguments": ["--wait-for-client", "-m", "${command:promptString}"],
+          "request": "attach",
+          "arguments": {
+            "stopOnEntry": true,
+            "redirectOutput": true
+          }
+        },
+        {
+          "name": "Attach to PID",
+          "command_arguments": ["--pid", "${command:pickProcess}"],
+          "request": "attach",
+          "arguments": {
+              "stopOnEntry": true,
+              "redirectOutput": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "dart",
+      "type": "dart",
+      "languages": [ "dart" ],
+      "url": "https://github.com/dart-lang/sdk/blob/main/third_party/pkg/dap/tool/README.md",
+      "run": {
+        "command": "dart",
+        "command_arguments": ["debug_adapter"]
+      },
+      "configurations": [
+        {
+          "name": "Launch (debug)",
+          "request": "launch",
+          "arguments": {
+            "mode": "debug",
+            "program": "${file}",
+            "args": "${args}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "perl-ls",
+      "url": "https://github.com/richterger/Perl-LanguageServer",
+      "type": "perl",
+      "languages": [ "perl" ],
+      "run": {
+        "command": "perl",
+        "command_arguments": ["-MPerl::LanguageServer", "-e", "Perl::LanguageServer::run", "--", "--port", "${randPort}"],
+        "redirectStderr": false,
+        "redirectStdout": true,
+        "supportsSourceRequest": false
+      },
+      "configurations": [
+        {
+          "name": "Launch",
+          "request": "launch",
+          "arguments": {
+            "program": "${file}",
+            "args": "${args}"
+          }
+        }
+      ]
+    }
+  ]
+}

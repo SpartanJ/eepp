@@ -76,7 +76,7 @@ Uint32 UITab::onDrag( const Vector2f& pos, const Uint32&, const Sizef& dragDiff 
 			tabW->swapTabs( tab, this );
 	}
 
-	if ( tabW->getAllowDragAndDropTabs() && !( mFlags & UI_DRAG_VERTICAL ) ) {
+	if ( tabW->allowDragAndDropTabs() && !( mFlags & UI_DRAG_VERTICAL ) ) {
 		mDragTotalDiff += mDragPoint.y - pos.y;
 		if ( eeabs( mDragTotalDiff ) >= tabW->getTabVerticalDragResistance() ) {
 			setFlags( UI_DRAG_VERTICAL );
@@ -90,7 +90,7 @@ Uint32 UITab::onDrag( const Vector2f& pos, const Uint32&, const Sizef& dragDiff 
 		}
 	}
 
-	if ( tabW->getAllowDragAndDropTabs() ) {
+	if ( tabW->allowDragAndDropTabs() ) {
 		setEnabled( false );
 		Node* overFind = getUISceneNode()->overFind( pos );
 		setEnabled( true );
@@ -435,7 +435,7 @@ void UITab::updateTab() {
 		} else {
 			UIPushButton::setText( mText );
 		}
-		setDragEnabled( tTabW->getAllowRearrangeTabs() || tTabW->getAllowDragAndDropTabs() );
+		setDragEnabled( tTabW->getAllowRearrangeTabs() || tTabW->allowDragAndDropTabs() );
 		onAutoSize();
 	}
 }

@@ -132,11 +132,12 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 				  mApp->runCommand( cmd );
 				  if ( mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) &&
 					   mSplitter->curEditorIsNotNull() &&
-					   mSplitter->getCurEditor()->getDocument().hasCommand( cmd ) )
+					   mSplitter->getCurEditor()->getDocument().hasCommand( cmd ) &&
+					   !mUISceneNode->getRoot()->getLastChild()->isType( UI_TYPE_WINDOW ) )
 					  mSplitter->getCurEditor()->setFocus();
 				  if ( cmd != "open-locatebar" && cmd != "open-workspace-symbol-search" &&
 					   cmd != "open-document-symbol-search" && cmd != "go-to-line" &&
-					   cmd != "show-open-documents" ) {
+					   cmd != "show-open-documents" && cmd != "open-locatebar-glob-search" ) {
 					  hideLocateBar();
 				  } else {
 					  mLocateInput->setFocus();
@@ -226,6 +227,15 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 								   },
 								   nullptr, nullptr, false } );
 
+	mLocatorProviders.push_back(
+		{ "g",
+		  mUISceneNode->i18n( "search_files_with_glob_match", "Search files with glob matching" ),
+		  [this]( auto ) {
+			  showLocateTableGlob();
+			  return true;
+		  },
+		  nullptr, nullptr, false } );
+
 	// clang-format off
 	mLocatorProviders.push_back( { "sb", mUISceneNode->i18n( "switch_build", "Switch Build" ),
 		   [this](auto) {
@@ -282,10 +292,11 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 			  auto build = pbm->getBuild( cfg.buildName );
 			  if ( build != nullptr ) {
 				  std::string runTarget = vName.toString();
-				  auto it = std::find_if( build->runConfigs().begin(), build->runConfigs().end(),
-										  [&runTarget]( const ProjectBuildStep& run ) {
-											  return run.name == runTarget;
-										  } );
+				  auto it =
+					  std::find_if( build->runConfigs().begin(), build->runConfigs().end(),
+									[&runTarget]( const std::unique_ptr<ProjectBuildStep>& run ) {
+										return run->name == runTarget;
+									} );
 				  if ( it != build->runConfigs().end() ) {
 					  cfg.runName = runTarget;
 					  pbm->setConfig( cfg );
@@ -330,7 +341,7 @@ void UniversalLocator::toggleLocateBar() {
 	}
 }
 
-void UniversalLocator::updateFilesTable() {
+void UniversalLocator::updateFilesTable( bool useGlob ) {
 	auto text = mLocateInput->getText();
 
 	if ( pathHasPosition( text ) ) {
@@ -338,13 +349,18 @@ void UniversalLocator::updateFilesTable() {
 		text = pathAndPos.first;
 	}
 
+	if ( useGlob && String::startsWith( text, "g " ) )
+		text = text.substr( 2 );
+
 	if ( !mApp->isDirTreeReady() ) {
 		mLocateTable->setModel(
 			ProjectDirectoryTree::emptyModel( getLocatorCommands(), mApp->getCurrentProject() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	} else if ( !mLocateInput->getText().empty() ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-		mApp->getDirTree()->asyncFuzzyMatchTree(
+		mApp->getDirTree()->asyncMatchTree(
+			useGlob ? ProjectDirectoryTree::MatchType::Glob
+					: ProjectDirectoryTree::MatchType::Fuzzy,
 			text, LOCATEBAR_MAX_RESULTS,
 			[this, text]( auto res ) {
 				mUISceneNode->runOnMainThread( [this, res] {
@@ -356,14 +372,18 @@ void UniversalLocator::updateFilesTable() {
 			},
 			mApp->getCurrentProject() );
 #else
-		mLocateTable->setModel( mApp->getDirTree()->fuzzyMatchTree( text, LOCATEBAR_MAX_RESULTS,
-																	mApp->getCurrentProject() ) );
+		mLocateTable->setModel(
+			useGlob ? mApp->getDirTree()->globMatchTree( text, LOCATEBAR_MAX_RESULTS,
+														 mApp->getCurrentProject() )
+					: mApp->getDirTree()->fuzzyMatchTree( text, LOCATEBAR_MAX_RESULTS,
+														  mApp->getCurrentProject() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 		mLocateTable->scrollToTop();
 #endif
 	} else {
 		mLocateTable->setModel( mApp->getDirTree()->asModel(
-			LOCATEBAR_MAX_RESULTS, getLocatorCommands(), mApp->getCurrentProject() ) );
+			LOCATEBAR_MAX_RESULTS, getLocatorCommands(), mApp->getCurrentProject(),
+			Image::getImageExtensionsSupported() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	}
 }
@@ -386,7 +406,7 @@ void UniversalLocator::updateCommandPaletteTable() {
 
 	if ( txt.size() > 1 ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-		mCommandPalette.asyncFuzzyMatch( txt.substr( 1 ), 1000, [this]( auto res ) {
+		mCommandPalette.asyncFuzzyMatch( txt.substr( 1 ).trim(), 10000, [this]( auto res ) {
 			mUISceneNode->runOnMainThread( [this, res] {
 				mLocateTable->setModel( res );
 				mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
@@ -394,7 +414,7 @@ void UniversalLocator::updateCommandPaletteTable() {
 			} );
 		} );
 #else
-		mLocateTable->setModel( mCommandPalette.fuzzyMatch( txt.substr(), 1000 ) );
+		mLocateTable->setModel( mCommandPalette.fuzzyMatch( txt.substr( 1 ).trim(), 10000 ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 		mLocateTable->scrollToTop();
 #endif
@@ -410,6 +430,14 @@ void UniversalLocator::showLocateTable() {
 	pos.y -= mLocateTable->getPixelsSize().getHeight();
 	mLocateTable->setPixelsPosition( pos );
 	updateFilesTable();
+}
+
+void UniversalLocator::showLocateTableGlob() {
+	mLocateTable->setVisible( true );
+	Vector2f pos( mLocateInput->convertToWorldSpace( { 0, 0 } ) );
+	pos.y -= mLocateTable->getPixelsSize().getHeight();
+	mLocateTable->setPixelsPosition( pos );
+	updateFilesTable( true );
 }
 
 void UniversalLocator::goToLine() {
@@ -563,7 +591,7 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 				range = { pathAndPos.second, pathAndPos.second };
 			}
 
-			focusOrLoadFile( path, range );
+			mApp->focusOrLoadFile( path, range );
 			mLocateBarLayout->execute( "close-locatebar" );
 		}
 	} );
@@ -602,6 +630,7 @@ void UniversalLocator::showBar() {
 	mApp->hideStatusTerminal();
 	mApp->hideStatusBuildOutput();
 	mApp->hideStatusAppOutput();
+	mApp->getStatusBar()->hideAllElements();
 
 	mLocateBarLayout->setVisible( true );
 	mLocateInput->setFocus();
@@ -620,15 +649,16 @@ void UniversalLocator::showBar() {
 	mLocateInput->on( Event::OnSizeChange, [this]( const Event* ) { updateLocateBar(); } );
 }
 
-void UniversalLocator::showLocateBar() {
+void UniversalLocator::showLocateBar( bool useGlob ) {
 	showBar();
 
 	if ( isLocator( mLocateInput->getText() ) )
-		mLocateInput->setText( "" );
+		mLocateInput->setText( useGlob ? "g " : "" );
 
 	if ( mApp->getDirTree() && !mLocateTable->getModel() ) {
 		mLocateTable->setModel( mApp->getDirTree()->asModel(
-			LOCATEBAR_MAX_RESULTS, getLocatorCommands(), mApp->getCurrentProject() ) );
+			LOCATEBAR_MAX_RESULTS, getLocatorCommands(), mApp->getCurrentProject(),
+			Image::getImageExtensionsSupported() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	} else if ( !mLocateTable->getModel() ) {
 		mLocateTable->setModel(
@@ -701,6 +731,8 @@ std::shared_ptr<FileListModel> UniversalLocator::openDocumentsModel( const std::
 
 	std::vector<std::string> files;
 	std::vector<std::string> names;
+	files.reserve( docs.size() );
+	names.reserve( docs.size() );
 
 	for ( const auto& doc : docs ) {
 		names.emplace_back( FileSystem::fileNameFromPath( doc ) );
@@ -708,7 +740,7 @@ std::shared_ptr<FileListModel> UniversalLocator::openDocumentsModel( const std::
 	}
 
 	if ( match.empty() )
-		return std::make_shared<FileListModel>( files, names );
+		return std::make_shared<FileListModel>( std::move( files ), std::move( names ) );
 
 	std::multimap<int, int, std::greater<int>> matchesMap;
 
@@ -720,41 +752,21 @@ std::shared_ptr<FileListModel> UniversalLocator::openDocumentsModel( const std::
 
 	std::vector<std::string> ffiles;
 	std::vector<std::string> fnames;
+	ffiles.reserve( matchesMap.size() );
+	fnames.reserve( matchesMap.size() );
 
 	for ( auto& res : matchesMap ) {
 		fnames.emplace_back( std::move( names[res.second] ) );
 		ffiles.emplace_back( std::move( files[res.second] ) );
 	}
 
-	return std::make_shared<FileListModel>( ffiles, fnames );
-}
-
-void UniversalLocator::focusOrLoadFile( const std::string& path, const TextRange& range ) {
-	UITab* tab = mSplitter->isDocumentOpen( path, true );
-	if ( !tab ) {
-		FileInfo fileInfo( path );
-		if ( fileInfo.exists() && fileInfo.isRegularFile() )
-			mApp->loadFileFromPath(
-				path, true, nullptr, [this, range]( UICodeEditor* editor, auto ) {
-					if ( range.isValid() ) {
-						editor->goToLine( range.start() );
-						mSplitter->addEditorPositionToNavigationHistory( editor );
-					}
-				} );
-	} else {
-		tab->getTabWidget()->setTabSelected( tab );
-		if ( range.isValid() ) {
-			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
-			editor->goToLine( range.start() );
-			mSplitter->addEditorPositionToNavigationHistory( editor );
-		}
-	}
+	return std::make_shared<FileListModel>( std::move( ffiles ), std::move( fnames ) );
 }
 
 void UniversalLocator::updateOpenDocumentsTable() {
 	mLocateTable->setModel(
 		openDocumentsModel( mLocateInput->getText().substr( 2 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->rowCount() > 0 )
+	if ( mLocateTable->getModel()->hasChilds() )
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	mLocateTable->scrollToTop();
 }
@@ -791,7 +803,7 @@ UniversalLocator::openBuildModel( const std::string& match ) {
 
 void UniversalLocator::updateSwitchBuildTable() {
 	mLocateTable->setModel( openBuildModel( mLocateInput->getText().substr( 3 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->rowCount() > 0 ) {
+	if ( mLocateTable->getModel()->hasChilds() ) {
 		ModelIndex idx =
 			mLocateTable->findRowWithText( mApp->getProjectBuildManager()->getConfig().buildName );
 		mLocateTable->getSelection().set( idx.isValid() ? idx
@@ -868,8 +880,8 @@ UniversalLocator::openRunTargetModel( const std::string& match ) {
 	runTargetNames.reserve( runs.size() );
 	for ( const auto& run : runs ) {
 		if ( match.empty() ||
-			 String::startsWith( String::toLower( run.name ), String::toLower( match ) ) )
-			runTargetNames.push_back( run.name );
+			 String::startsWith( String::toLower( run->name ), String::toLower( match ) ) )
+			runTargetNames.push_back( run->name );
 	}
 	std::sort( runTargetNames.begin(), runTargetNames.end() );
 	return ItemListOwnerModel<std::string>::create( runTargetNames );
@@ -878,7 +890,7 @@ UniversalLocator::openRunTargetModel( const std::string& match ) {
 void UniversalLocator::updateSwitchBuildTypeTable() {
 	mLocateTable->setModel(
 		openBuildTypeModel( mLocateInput->getText().substr( 4 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->rowCount() > 0 && nullptr != mApp->getProjectBuildManager() ) {
+	if ( mLocateTable->getModel()->hasChilds() && nullptr != mApp->getProjectBuildManager() ) {
 		ModelIndex idx =
 			mLocateTable->findRowWithText( mApp->getProjectBuildManager()->getConfig().buildType );
 		mLocateTable->getSelection().set( idx.isValid() ? idx
@@ -891,7 +903,7 @@ void UniversalLocator::updateSwitchBuildTypeTable() {
 void UniversalLocator::updateSwitchRunTargetTable() {
 	mLocateTable->setModel(
 		openRunTargetModel( mLocateInput->getText().substr( 4 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->rowCount() > 0 && nullptr != mApp->getProjectBuildManager() ) {
+	if ( mLocateTable->getModel()->hasChilds() && nullptr != mApp->getProjectBuildManager() ) {
 		ModelIndex idx =
 			mLocateTable->findRowWithText( mApp->getProjectBuildManager()->getConfig().runName );
 		mLocateTable->getSelection().set( idx.isValid() ? idx
@@ -932,7 +944,7 @@ UniversalLocator::openFileTypeModel( const std::string& match ) {
 void UniversalLocator::updateSwitchFileTypeTable() {
 	mLocateTable->setModel(
 		openFileTypeModel( mLocateInput->getText().substr( 3 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->rowCount() > 0 && mApp->getSplitter()->getCurEditor() ) {
+	if ( mLocateTable->getModel()->hasChilds() && mApp->getSplitter()->getCurEditor() ) {
 		ModelIndex idx = mLocateTable->findRowWithText( mApp->getSplitter()
 															->getCurEditor()
 															->getDocumentRef()

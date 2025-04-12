@@ -16,7 +16,13 @@ namespace EE { namespace UI { namespace Doc {
 class EE_API SyntaxDefinitionManager {
 	SINGLETON_DECLARE_HEADERS( SyntaxDefinitionManager )
   public:
+	static SyntaxDefinitionManager* createSingleton( std::size_t reserveSpaceForLanguages );
+
 	static std::pair<std::string, std::string> toCPP( const SyntaxDefinition& def );
+
+	std::size_t count() const;
+
+	void reserveSpaceForLanguages( std::size_t totalLangs );
 
 	SyntaxDefinition& add( SyntaxDefinition&& syntaxStyle );
 
@@ -80,12 +86,10 @@ class EE_API SyntaxDefinitionManager {
 
 	void setLanguageExtensionsPriority( const std::map<std::string, std::string>& priorities );
 
-	const std::map<std::string, std::string>& getLanguageExtensionsPriority() {
-		return mPriorities;
-	}
+	const std::map<std::string, std::string>& getLanguageExtensionsPriority();
 
   protected:
-	SyntaxDefinitionManager();
+	SyntaxDefinitionManager( std::size_t reserveSpaceForLanguages = 12 );
 
 	std::vector<SyntaxDefinition> mDefinitions;
 	std::map<std::string, std::string> mPriorities;

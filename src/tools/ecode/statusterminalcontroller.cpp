@@ -4,8 +4,9 @@
 namespace ecode {
 
 StatusTerminalController::StatusTerminalController( UISplitter* mainSplitter,
-													UISceneNode* uiSceneNode, App* app ) :
-	StatusBarElement( mainSplitter, uiSceneNode, app ) {}
+													UISceneNode* uiSceneNode,
+													App* app ) :
+	StatusBarElement( mainSplitter, uiSceneNode, app ), mApp( app ) {}
 
 UIWidget* StatusTerminalController::getWidget() {
 	return mUITerminal;
@@ -25,54 +26,55 @@ UITerminal* StatusTerminalController::createTerminal( const std::string& working
 													  std::string program,
 													  const std::vector<std::string>& args ) {
 	Sizef initialSize( 16, 16 );
-	if ( program.empty() && !mApp->termConfig().shell.empty() )
-		program = mApp->termConfig().shell;
+	if ( program.empty() && !mContext->termConfig().shell.empty() )
+		program = mContext->termConfig().shell;
 
 	UITerminal* term = UITerminal::New(
-		mApp->getTerminalFont() ? mApp->getTerminalFont() : mApp->getFontMono(),
-		mApp->termConfig().fontSize.asPixels( 0, Sizef(), mApp->getDisplayDPI() ), initialSize,
-		program, args, !workingDir.empty() ? workingDir : mApp->getCurrentWorkingDir(), 10000,
-		nullptr, false );
+		mContext->getTerminalFont() ? mContext->getTerminalFont() : mContext->getFontMono(),
+		mContext->termConfig().fontSize.asPixels( 0, Sizef(), mContext->getDisplayDPI() ),
+		initialSize, program, args,
+		!workingDir.empty() ? workingDir : mContext->getCurrentWorkingDir(), 10000, nullptr,
+		false );
 
 	if ( term == nullptr || term->getTerm() == nullptr ) {
-		mApp->getTerminalManager()->displayError( workingDir );
+		mContext->getTerminalManager()->displayError( workingDir );
 		return nullptr;
 	}
 
-	const auto& terminalColorSchemes = mApp->getTerminalManager()->getTerminalColorSchemes();
+	const auto& terminalColorSchemes = mContext->getTerminalManager()->getTerminalColorSchemes();
 	const auto& currentTerminalColorScheme =
-		mApp->getTerminalManager()->getTerminalCurrentColorScheme();
+		mContext->getTerminalManager()->getTerminalCurrentColorScheme();
 	auto csIt = terminalColorSchemes.find( currentTerminalColorScheme );
 	term->getTerm()->getTerminal()->setAllowMemoryTrimnming( true );
 	term->setColorScheme( csIt != terminalColorSchemes.end()
 							  ? terminalColorSchemes.at( currentTerminalColorScheme )
 							  : TerminalColorScheme::getDefault() );
-	mApp->getTerminalManager()->setKeybindings( term );
+	mContext->getTerminalManager()->setKeybindings( term );
 	term->setCommand( "switch-to-previous-colorscheme", [this] {
-		auto it = mApp->getTerminalManager()->getTerminalColorSchemes().find(
-			mApp->getTerminalManager()->getTerminalCurrentColorScheme() );
+		auto it = mContext->getTerminalManager()->getTerminalColorSchemes().find(
+			mContext->getTerminalManager()->getTerminalCurrentColorScheme() );
 		auto prev = std::prev( it, 1 );
-		if ( prev != mApp->getTerminalManager()->getTerminalColorSchemes().end() ) {
-			mApp->getTerminalManager()->setTerminalColorScheme( prev->first );
+		if ( prev != mContext->getTerminalManager()->getTerminalColorSchemes().end() ) {
+			mContext->getTerminalManager()->setTerminalColorScheme( prev->first );
 		} else {
-			mApp->getTerminalManager()->setTerminalColorScheme(
-				mApp->getTerminalManager()->getTerminalColorSchemes().rbegin()->first );
+			mContext->getTerminalManager()->setTerminalColorScheme(
+				mContext->getTerminalManager()->getTerminalColorSchemes().rbegin()->first );
 		}
 	} );
 	term->setCommand( "switch-to-next-colorscheme", [this] {
-		auto it = mApp->getTerminalManager()->getTerminalColorSchemes().find(
-			mApp->getTerminalManager()->getTerminalCurrentColorScheme() );
-		mApp->getTerminalManager()->setTerminalColorScheme(
-			++it != mApp->getTerminalManager()->getTerminalColorSchemes().end()
+		auto it = mContext->getTerminalManager()->getTerminalColorSchemes().find(
+			mContext->getTerminalManager()->getTerminalCurrentColorScheme() );
+		mContext->getTerminalManager()->setTerminalColorScheme(
+			++it != mContext->getTerminalManager()->getTerminalColorSchemes().end()
 				? it->first
-				: mApp->getTerminalManager()->getTerminalColorSchemes().begin()->first );
+				: mContext->getTerminalManager()->getTerminalColorSchemes().begin()->first );
 	} );
 	term->setCommand( UITerminal::getExclusiveModeToggleCommandName(), [term, this] {
 		term->setExclusiveMode( !term->getExclusiveMode() );
 		mApp->updateTerminalMenu();
 	} );
 	mApp->registerUnlockedCommands( *term );
-	mApp->getSplitter()->registerSplitterCommands( *term );
+	mContext->getSplitter()->registerSplitterCommands( *term );
 	term->setFocus();
 	term->setId( "terminal" );
 	return term;

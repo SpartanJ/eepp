@@ -77,7 +77,7 @@ class EE_API StyleSheetProperty {
 
 	template <typename Type> Type asType( Type defaultValue ) const {
 		Type val = defaultValue;
-		return String::fromString<Type>( val, mValue ) ? val : defaultValue;
+		return String::fromString( val, mValue ) ? val : defaultValue;
 	}
 
 	int asInt( int defaultValue = 0 ) const;

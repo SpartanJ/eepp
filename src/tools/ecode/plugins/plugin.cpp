@@ -45,6 +45,10 @@ PluginManager* Plugin::getManager() const {
 	return mManager;
 }
 
+PluginContextProvider* Plugin::getPluginContext() const {
+	return mManager ? mManager->getPluginContext() : nullptr;
+}
+
 UISceneNode* Plugin::getUISceneNode() const {
 	return mManager->getUISceneNode();
 }
@@ -69,6 +73,11 @@ void Plugin::showMessage( LSPMessageType type, const std::string& message,
 	LSPShowMessageParams msgReq{ type, message, { { title } } };
 	mManager->sendBroadcast( PluginMessageType::ShowMessage, PluginMessageFormat::ShowMessage,
 							 &msgReq );
+}
+
+void Plugin::waitUntilLoaded() {
+	while ( mLoading )
+		Sys::sleep( Milliseconds( 1 ) );
 }
 
 void Plugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {
@@ -98,18 +107,22 @@ void Plugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {
 	}
 }
 
-void Plugin::setReady() {
+void Plugin::setReady( Time loadTime ) {
 	if ( mReady ) {
-		Log::info( "Plugin: %s loaded and ready from process %u", getTitle().c_str(),
-				   Sys::getProcessID() );
+		if ( loadTime != Time::Zero ) {
+			Log::info( "Plugin: %s (PID %u) loaded in %s", getTitle(), Sys::getProcessID(),
+					   loadTime.toString() );
+		} else {
+			Log::info( "Plugin: %s (PID %u) loaded", getTitle(), Sys::getProcessID() );
+		}
 	}
 }
 
 PluginBase::~PluginBase() {
 	mShuttingDown = true;
 	unsubscribeFileSystemListener();
+
 	for ( auto editor : mEditors ) {
-		onBeforeUnregister( editor.first );
 		for ( auto listener : editor.second )
 			editor.first->removeEventListener( listener );
 		editor.first->unregisterPlugin( this );
@@ -161,6 +174,8 @@ void PluginBase::onRegister( UICodeEditor* editor ) {
 		onRegisterDocument( editor->getDocumentRef().get() );
 	}
 	mEditorDocs[editor] = editor->getDocumentRef().get();
+
+	onRegisterEditor( editor );
 }
 
 void PluginBase::onUnregister( UICodeEditor* editor ) {
@@ -182,6 +197,23 @@ void PluginBase::onUnregister( UICodeEditor* editor ) {
 	onUnregisterDocument( doc );
 
 	mDocs.erase( doc );
+}
+
+void PluginBase::onBeforeUnregister( UICodeEditor* editor ) {
+	for ( auto& kb : mKeyBindings )
+		editor->getKeyBindings().removeCommandKeybind( kb.first );
+}
+
+void PluginBase::onRegisterEditor( UICodeEditor* editor ) {
+	for ( auto& kb : mKeyBindings ) {
+		if ( !kb.second.empty() )
+			editor->getKeyBindings().addKeybindString( kb.second, kb.first );
+	}
+}
+
+void PluginBase::onUnregisterDocument( TextDocument* doc ) {
+	for ( auto& kb : mKeyBindings )
+		doc->removeCommand( kb.first );
 }
 
 } // namespace ecode

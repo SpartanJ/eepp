@@ -2,6 +2,8 @@
 #include "../filesystemlistener.hpp"
 #include "plugin.hpp"
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/md5.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uitableview.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
@@ -11,10 +13,13 @@ using json = nlohmann::json;
 namespace ecode {
 
 PluginManager::PluginManager( const std::string& resourcesPath, const std::string& pluginsPath,
-							  std::shared_ptr<ThreadPool> pool, const OnLoadFileCb& loadFileCb ) :
+							  const std::string& configPath, std::shared_ptr<ThreadPool> pool,
+							  const OnLoadFileCb& loadFileCb, PluginContextProvider* context ) :
 	mResourcesPath( resourcesPath ),
 	mPluginsPath( pluginsPath ),
+	mConfigPath( configPath ),
 	mThreadPool( pool ),
+	mPluginContext( context ),
 	mLoadFileFn( loadFileCb ) {}
 
 PluginManager::~PluginManager() {
@@ -222,7 +227,7 @@ void PluginManager::sendBroadcast( Plugin* pluginWho, PluginMessageType type,
 		subscribedPlugins = mSubscribedPlugins;
 	}
 	for ( const auto& plugin : subscribedPlugins )
-		if ( pluginWho->getId() != plugin.first )
+		if ( nullptr == pluginWho || pluginWho->getId() != plugin.first )
 			plugin.second( { type, format, data, -1 } );
 }
 
@@ -260,6 +265,14 @@ void PluginManager::setPluginReloadEnabled( bool pluginReloadEnabled ) {
 
 void PluginManager::subscribeMessages(
 	Plugin* plugin, std::function<PluginRequestHandle( const PluginMessage& )> cb ) {
+	if ( plugin && !mWorkspaceFolder.empty() ) {
+		std::string projectsPath( mConfigPath + "projects" + FileSystem::getOSSlash() );
+		MD5::Result hash = MD5::fromString( mWorkspaceFolder );
+		std::string projectPluginsStatePath( projectsPath + "plugins_state" +
+											 FileSystem::getOSSlash() + hash.toHexString() +
+											 FileSystem::getOSSlash() );
+		plugin->onLoadProject( mWorkspaceFolder, projectPluginsStatePath );
+	}
 	subscribeMessages( plugin->getId(), cb );
 }
 
@@ -328,6 +341,11 @@ bool PluginManager::hasDefinition( const std::string& id ) {
 	return mDefinitions.find( id ) != mDefinitions.end();
 }
 
+void PluginManager::forEachPlugin( std::function<void( Plugin* )> fn ) {
+	for ( auto& plugin : mPlugins )
+		fn( plugin.second );
+}
+
 std::shared_ptr<PluginsModel> PluginsModel::New( PluginManager* manager ) {
 	return std::make_shared<PluginsModel>( manager );
 }
@@ -378,8 +396,25 @@ PluginManager* PluginsModel::getManager() const {
 class UIPluginManagerTable : public UITableView {
   public:
 	std::map<std::string, Uint32> readyCbs;
+	bool mUpdatingEnabled{ false };
 
-	UIPluginManagerTable() : UITableView() {}
+	UIPluginManagerTable() : UITableView() {
+		setOnUpdateCellCb( [this]( UITableCell* cell, Model* model ) {
+			if ( mUpdatingEnabled )
+				return;
+			if ( !cell->getTextBox()->isType( UI_TYPE_CHECKBOX ) )
+				return;
+			UICheckBox* chk = cell->getTextBox()->asType<UICheckBox>();
+			PluginsModel* pModel = static_cast<PluginsModel*>( model );
+			bool enabled = pModel
+							   ->data( model->index( cell->getCurIndex().row(),
+													 PluginsModel::Columns::Enabled ),
+									   ModelRole::Display )
+							   .asBool();
+			if ( enabled != chk->isChecked() )
+				chk->setChecked( enabled );
+		} );
+	}
 
 	std::function<void( const std::string&, bool )> onModelEnabledChange;
 
@@ -390,7 +425,15 @@ class UIPluginManagerTable : public UITableView {
 			chk->setChecked(
 				model->data( model->index( index.row(), PluginsModel::Enabled ) ).asBool() );
 			chk->setCheckMode( UICheckBox::Button );
-			chk->on( Event::OnValueChange, [this, index, model, chk]( const Event* ) {
+			chk->on( Event::OnValueChange, [this, chk]( const Event* ) {
+				if ( mUpdatingEnabled )
+					return;
+				BoolScopedOp op( mUpdatingEnabled, true );
+				UITableCell* parent = chk->getParent()->asType<UITableCell>();
+				auto index = parent->getCurIndex();
+				UIPluginManagerTable* tableView =
+					parent->getParent()->getParent()->asType<UIPluginManagerTable>();
+				auto model = static_cast<PluginsModel*>( tableView->getModel() );
 				bool checked = chk->isChecked();
 				std::string id(
 					model->data( model->index( index.row(), PluginsModel::Id ) ).asCStr() );
@@ -425,7 +468,7 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 		id="plugin-manager-window"
 		lw="800dp" lh="400dp"
 		padding="8dp"
-		window-title="@string(plugin_manager, Plugin Manager)"
+		window-title="@string(plugin_manager, Plugins Manager)"
 		window-flags="default|maximize|shadow"
 		window-min-size="300dp 300dp">
 		<vbox lw="mp" lh="mp">

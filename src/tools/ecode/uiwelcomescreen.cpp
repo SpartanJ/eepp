@@ -118,7 +118,7 @@ static const auto LAYOUT = R"xml(
 			<button id="open-file" text="@string(open_a_file, Open a File)" />
 			<button id="recent-folders" text="@string(recent_folders_ellipsis, Recent Folders...)" />
 			<button id="recent-files" text="@string(recent_files_ellipsis, Recent Files...)" />
-			<button id="plugin-manager-open" text="@string(plugin_manager, Plugin Manager)" />
+			<button id="plugin-manager-open" text="@string(plugin_manager, Plugins Manager)" />
 			<button id="keybindings" text="@string(keybindings, Keybindings)" />
 			<widget class="separator" lw="mp" lh="32dp" />
 			<tv class="bold" text="@string(for_help_please_visit, For help, please visit:)" lg="center" />
@@ -177,11 +177,20 @@ UIWelcomeScreen* UIWelcomeScreen::New( App* app ) {
 	return eeNew( UIWelcomeScreen, ( app ) );
 }
 
+Uint32 UIWelcomeScreen::getType() const {
+	return static_cast<Uint32>( CustomWidgets::UI_TYPE_WELCOME_TAB );
+}
+
+bool UIWelcomeScreen::isType( const Uint32& type ) const {
+	return UIWelcomeScreen::getType() == type ? true : UIRelativeLayout::isType( type );
+}
+
 UIWelcomeScreen::UIWelcomeScreen( App* app ) :
 	UIRelativeLayout(),
 	WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ),
 	mApp( app ) {
 	setId( "welcome_ecode" );
+	addClass( "welcome_tab" );
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 	app->registerUnlockedCommands( *this );
 	getUISceneNode()->loadLayoutFromString( LAYOUT, this, String::hash( "UIWelcomeScreen" ) );
@@ -192,8 +201,7 @@ UIWelcomeScreen::UIWelcomeScreen( App* app ) :
 			return;
 		node->setTooltipText( getKeyBindings().getCommandKeybindString( id ) );
 		node->onClick(
-			[this]( const MouseEvent* event ) { mApp->runCommand( event->getNode()->getId() ); },
-			EE_BUTTON_LEFT );
+			[this]( const MouseEvent* event ) { mApp->runCommand( event->getNode()->getId() ); } );
 	};
 
 	auto bindBtns = [bindBtn]( const std::initializer_list<std::string> ids ) {
@@ -205,26 +213,14 @@ UIWelcomeScreen::UIWelcomeScreen( App* app ) :
 				"check-for-updates", "plugin-manager-open", "keybindings" } );
 
 	auto recentFolders = find( "recent-folders" );
-	if ( !mApp->getRecentFolders().empty() ) {
-		recentFolders->onClick(
-			[this]( const MouseEvent* event ) {
-				mApp->createAndShowRecentFolderPopUpMenu( event->getNode() );
-			},
-			EE_BUTTON_LEFT );
-	} else {
-		recentFolders->setEnabled( false );
-	}
+	recentFolders->onClick( [this]( const MouseEvent* event ) {
+		mApp->createAndShowRecentFolderPopUpMenu( event->getNode() );
+	} );
 
 	auto recentFiles = find( "recent-files" );
-	if ( !mApp->getRecentFiles().empty() ) {
-		recentFiles->onClick(
-			[this]( const MouseEvent* event ) {
-				mApp->createAndShowRecentFilesPopUpMenu( event->getNode() );
-			},
-			EE_BUTTON_LEFT );
-	} else {
-		recentFiles->setEnabled( false );
-	}
+	recentFiles->onClick( [this]( const MouseEvent* event ) {
+		mApp->createAndShowRecentFilesPopUpMenu( event->getNode() );
+	} );
 
 	find<UITextView>( "main_menu_shortcut" )->setText( mApp->getKeybind( "menu-toggle" ) );
 
@@ -244,6 +240,15 @@ UIWelcomeScreen::UIWelcomeScreen( App* app ) :
 	welcomeDisabledChk->on( Event::OnValueChange, [welcomeDisabledChk, this]( auto ) {
 		mApp->getConfig().ui.welcomeScreen = !welcomeDisabledChk->isChecked();
 	} );
+
+	refresh();
+}
+
+void UIWelcomeScreen::refresh() {
+	auto recentFolders = find( "recent-folders" );
+	auto recentFiles = find( "recent-files" );
+	recentFolders->setEnabled( !mApp->getRecentFolders().empty() );
+	recentFiles->setEnabled( !mApp->getRecentFiles().empty() );
 }
 
 } // namespace ecode

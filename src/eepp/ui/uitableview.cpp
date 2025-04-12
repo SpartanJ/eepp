@@ -133,7 +133,7 @@ Node* UITableView::overFind( const Vector2f& point ) {
 Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGuess ) {
 	Float lWidth = 0;
 	ConditionalLock l( getModel() != nullptr, getModel() ? &getModel()->resourceMutex() : nullptr );
-	if ( nullptr == getModel() || getModel()->rowCount() == 0 )
+	if ( nullptr == getModel() || !getModel()->hasChilds() )
 		return lWidth;
 	ScopedOp op( [this] { mUISceneNode->setIsLoading( true ); },
 				 [this] { mUISceneNode->setIsLoading( false ); } );
@@ -385,7 +385,7 @@ ModelIndex UITableView::findRowWithText( const std::string& text, const bool& ca
 	const Model* model = getModel();
 	ConditionalLock l( getModel() != nullptr,
 					   getModel() ? &const_cast<Model*>( getModel() )->resourceMutex() : nullptr );
-	if ( !model || model->rowCount() == 0 )
+	if ( !model || !model->hasChilds() )
 		return {};
 	size_t rc = model->rowCount();
 	for ( size_t i = 0; i < rc; i++ ) {

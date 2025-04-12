@@ -31,7 +31,9 @@ ProjectDirectoryTree::~ProjectDirectoryTree() {
 		mRunning = false;
 		Lock l( mFilesMutex );
 	}
-	{ Lock l( mDoneMutex ); }
+	{
+		Lock l( mDoneMutex );
+	}
 }
 
 void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& scanComplete,
@@ -44,7 +46,10 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 			Lock l( mFilesMutex );
 			mRunning = true;
 			mIgnoreHidden = ignoreHidden;
-			mDirectories.push_back( mPath );
+			{
+				Lock ld( mDirectoriesMutex );
+				mDirectories.push_back( mPath );
+			}
 
 			if ( !mAllowedMatcher && FileSystem::fileExists( mPath + PRJ_ALLOWED_PATH ) )
 				mAllowedMatcher =
@@ -122,9 +127,11 @@ ProjectDirectoryTree::fuzzyMatchTree( const std::vector<std::string>& matches, c
 		if ( names.size() < max ) {
 			names.emplace_back( mNames[res.second] );
 			files.emplace_back( mFiles[res.second] );
+		} else {
+			break;
 		}
 	}
-	auto model = std::make_shared<FileListModel>( files, names );
+	auto model = std::make_shared<FileListModel>( std::move( files ), std::move( names ) );
 	model->setBasePath( basePath );
 	return model;
 }
@@ -145,9 +152,11 @@ ProjectDirectoryTree::fuzzyMatchTree( const std::string& match, const size_t& ma
 		if ( names.size() < max ) {
 			names.emplace_back( mNames[res.second] );
 			files.emplace_back( mFiles[res.second] );
+		} else {
+			break;
 		}
 	}
-	auto model = std::make_shared<FileListModel>( files, names );
+	auto model = std::make_shared<FileListModel>( std::move( files ), std::move( names ) );
 	model->setBasePath( basePath );
 	return model;
 }
@@ -164,36 +173,78 @@ ProjectDirectoryTree::matchTree( const std::string& match, const size_t& max,
 			names.emplace_back( mNames[i] );
 			files.emplace_back( mFiles[i] );
 			if ( max == names.size() )
-				return std::make_shared<FileListModel>( files, names );
+				break;
 		}
 	}
-	auto model = std::make_shared<FileListModel>( files, names );
+	auto model = std::make_shared<FileListModel>( std::move( files ), std::move( names ) );
 	model->setBasePath( basePath );
 	return model;
 }
 
-void ProjectDirectoryTree::asyncFuzzyMatchTree( const std::string& match, const size_t& max,
-												ProjectDirectoryTree::MatchResultCb res,
-												const std::string& basePath ) const {
-	mPool->run(
-		[this, match, max, res, basePath]() { res( fuzzyMatchTree( match, max, basePath ) ); } );
+std::shared_ptr<FileListModel>
+ProjectDirectoryTree::globMatchTree( const std::string& match, const size_t& max,
+									 const std::string& basePath ) const {
+	Lock rl( mMatchingMutex );
+	std::vector<std::string> files;
+	std::vector<std::string> names;
+	for ( size_t i = 0; i < mNames.size(); i++ ) {
+		std::string_view file( mFiles[i] );
+		if ( !match.empty() && !basePath.empty() && file.size() >= basePath.size() &&
+			 String::startsWith( file, std::string_view{ basePath } ) ) {
+			file = file.substr( basePath.size() );
+		}
+
+		if ( match.empty() || String::globMatch( file, match ) ) {
+			names.emplace_back( mNames[i] );
+			files.emplace_back( mFiles[i] );
+			if ( max == names.size() )
+				break;
+		}
+	}
+	auto model = std::make_shared<FileListModel>( std::move( files ), std::move( names ) );
+	model->setBasePath( basePath );
+	return model;
 }
 
-void ProjectDirectoryTree::asyncMatchTree( const std::string& match, const size_t& max,
-										   ProjectDirectoryTree::MatchResultCb res,
+void ProjectDirectoryTree::asyncMatchTree( MatchType type, const std::string& match,
+										   const size_t& max, MatchResultCb res,
 										   const std::string& basePath ) const {
-	mPool->run( [this, match, max, res, basePath]() { res( matchTree( match, max, basePath ) ); } );
+	mPool->run( [this, match, max, res, basePath, type]() {
+		std::shared_ptr<FileListModel> result;
+		switch ( type ) {
+			case MatchType::Substring:
+				result = matchTree( match, max, basePath );
+				break;
+			case MatchType::Fuzzy:
+				result = fuzzyMatchTree( match, max, basePath );
+				break;
+			case MatchType::Glob:
+				result = globMatchTree( match, max, basePath );
+				break;
+		}
+		res( result );
+	} );
 }
 
 std::shared_ptr<FileListModel>
 ProjectDirectoryTree::asModel( const size_t& max, const std::vector<CommandInfo>& prependCommands,
-							   const std::string& basePath ) const {
-	size_t rmax = eemin( mNames.size(), max );
-	std::vector<std::string> files( rmax );
-	std::vector<std::string> names( rmax );
-	for ( size_t i = 0; i < rmax; i++ ) {
-		files[i] = mFiles[i];
-		names[i] = mNames[i];
+							   const std::string& basePath,
+							   const std::vector<std::string>& skipExtensions ) const {
+	size_t namesSize = mNames.size();
+	size_t rmax = eemin( namesSize, max );
+	std::vector<std::string> files;
+	std::vector<std::string> names;
+	files.reserve( rmax + prependCommands.size() );
+	names.reserve( rmax + prependCommands.size() );
+	for ( size_t i = 0; i < namesSize; i++ ) {
+		if ( skipExtensions.empty() ||
+			 std::find( skipExtensions.begin(), skipExtensions.end(),
+						FileSystem::fileExtension( mFiles[i] ) ) == skipExtensions.end() ) {
+			files.emplace_back( mFiles[i] );
+			names.emplace_back( mNames[i] );
+			if ( files.size() >= rmax )
+				break;
+		}
 	}
 	if ( !prependCommands.empty() ) {
 		int count = 0;
@@ -203,7 +254,7 @@ ProjectDirectoryTree::asModel( const size_t& max, const std::vector<CommandInfo>
 			count++;
 		}
 	}
-	auto model = std::make_shared<FileListModel>( files, names );
+	auto model = std::make_shared<FileListModel>( std::move( files ), std::move( names ) );
 	model->setBasePath( basePath );
 
 	if ( !prependCommands.empty() ) {
@@ -220,6 +271,8 @@ ProjectDirectoryTree::emptyModel( const std::vector<CommandInfo>& prependCommand
 	std::vector<std::string> files;
 	std::vector<std::string> names;
 	if ( !prependCommands.empty() ) {
+		files.reserve( prependCommands.size() );
+		names.reserve( prependCommands.size() );
 		int count = 0;
 		for ( const auto& cmd : prependCommands ) {
 			names.insert( names.begin() + count, cmd.name );
@@ -227,7 +280,7 @@ ProjectDirectoryTree::emptyModel( const std::vector<CommandInfo>& prependCommand
 			count++;
 		}
 	}
-	auto model = std::make_shared<FileListModel>( files, names );
+	auto model = std::make_shared<FileListModel>( std::move( files ), std::move( names ) );
 	model->setBasePath( basePath );
 
 	if ( !prependCommands.empty() ) {
@@ -243,20 +296,26 @@ size_t ProjectDirectoryTree::getFilesCount() const {
 	return mFiles.size();
 }
 
-const std::vector<std::string>& ProjectDirectoryTree::getFiles() const {
+std::vector<std::string> ProjectDirectoryTree::getFiles() const {
 	Lock l( mFilesMutex );
 	return mFiles;
 }
 
-const std::vector<std::string>& ProjectDirectoryTree::getDirectories() const {
+std::vector<std::string> ProjectDirectoryTree::getDirectories() const {
+	Lock l( mDirectoriesMutex );
 	return mDirectories;
 }
 
 bool ProjectDirectoryTree::isFileInTree( const std::string& filePath ) const {
+	Lock l( mFilesMutex );
 	return std::find( mFiles.begin(), mFiles.end(), filePath ) != mFiles.end();
 }
 
 bool ProjectDirectoryTree::isDirInTree( const std::string& dirTree ) const {
+	if ( mRunning ) {
+		return String::startsWith( dirTree, mPath );
+	}
+	Lock l( mDirectoriesMutex );
 	std::string dir( FileSystem::fileRemoveFileName( dirTree ) );
 	FileSystem::dirAddSlashAtEnd( dir );
 	return std::find( mDirectories.begin(), mDirectories.end(), dir ) != mDirectories.end();
@@ -290,11 +349,15 @@ void ProjectDirectoryTree::getDirectoryFiles(
 				FileSystem::dirAddSlashAtEnd( fullpath );
 				if ( currentDirs.find( fullpath ) == currentDirs.end() )
 					continue;
-				if ( std::find( mDirectories.begin(), mDirectories.end(), fullpath ) !=
-					 mDirectories.end() )
-					continue;
-				mDirectories.push_back( fullpath );
+				{
+					Lock ld( mDirectoriesMutex );
+					if ( std::find( mDirectories.begin(), mDirectories.end(), fullpath ) !=
+						 mDirectories.end() )
+						continue;
+					mDirectories.push_back( fullpath );
+				}
 			} else {
+				Lock ld( mDirectoriesMutex );
 				mDirectories.push_back( fullpath );
 			}
 			IgnoreMatcherManager dirMatcher( fullpath );
@@ -413,6 +476,8 @@ void ProjectDirectoryTree::moveFile( const FileInfo& file, const std::string& ol
 		FileSystem::dirAddSlashAtEnd( oldDir );
 		std::vector<std::string> files;
 		std::vector<std::string> names;
+		files.reserve( mFiles.size() );
+		names.reserve( mFiles.size() );
 		for ( size_t i = 0; i < mFiles.size(); i++ ) {
 			if ( !String::startsWith( mFiles[i], oldDir ) ) {
 				files.emplace_back( mFiles[i] );
@@ -423,12 +488,15 @@ void ProjectDirectoryTree::moveFile( const FileInfo& file, const std::string& ol
 				names.emplace_back( FileSystem::fileNameFromPath( newDir ) );
 			}
 		}
-		mFiles = files;
-		mNames = names;
-		auto wasDirIt = std::find( mDirectories.begin(), mDirectories.end(), oldDir );
-		if ( wasDirIt != mDirectories.end() )
-			mDirectories.erase( wasDirIt );
-		mDirectories.emplace_back( std::move( dir ) );
+		mFiles = std::move( files );
+		mNames = std::move( names );
+		{
+			Lock ld( mDirectoriesMutex );
+			auto wasDirIt = std::find( mDirectories.begin(), mDirectories.end(), oldDir );
+			if ( wasDirIt != mDirectories.end() )
+				mDirectories.erase( wasDirIt );
+			mDirectories.emplace_back( std::move( dir ) );
+		}
 	} else {
 		std::string dir( file.getDirectoryPath() );
 		FileSystem::dirAddSlashAtEnd( dir );
@@ -450,25 +518,40 @@ void ProjectDirectoryTree::moveFile( const FileInfo& file, const std::string& ol
 }
 
 void ProjectDirectoryTree::removeFile( const FileInfo& file ) {
-	Lock l( mFilesMutex );
 	std::string removedDir( file.getFilepath() );
 	FileSystem::dirAddSlashAtEnd( removedDir );
-	auto wasDirIt = std::find( mDirectories.begin(), mDirectories.end(), removedDir );
-	if ( wasDirIt != mDirectories.end() ) {
+
+	bool wasDir = false;
+	{
+		Lock ld( mDirectoriesMutex );
+		auto wasDirIt = std::find( mDirectories.begin(), mDirectories.end(), removedDir );
+		wasDir = wasDirIt != mDirectories.end();
+	}
+
+	if ( wasDir ) {
 		std::vector<std::string> files;
 		std::vector<std::string> names;
+		files.reserve( mFiles.size() );
+		names.reserve( mNames.size() );
 		for ( size_t i = 0; i < mFiles.size(); i++ ) {
 			if ( !String::startsWith( mFiles[i], removedDir ) ) {
 				files.emplace_back( mFiles[i] );
 				names.emplace_back( mNames[i] );
 			}
 		}
-		mFiles = files;
-		mNames = names;
-		mDirectories.erase( wasDirIt );
+
+		{
+			Lock l( mFilesMutex );
+			mFiles = std::move( files );
+			mNames = std::move( names );
+		}
+
+		Lock ld2( mDirectoriesMutex );
+		mDirectories.erase( std::find( mDirectories.begin(), mDirectories.end(), removedDir ) );
 	} else {
 		size_t index = findFileIndex( file.getFilepath() );
 		if ( index != std::string::npos ) {
+			Lock l( mFilesMutex );
 			mFiles.erase( mFiles.begin() + index );
 			mNames.erase( mNames.begin() + index );
 		}

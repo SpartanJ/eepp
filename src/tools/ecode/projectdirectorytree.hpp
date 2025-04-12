@@ -24,7 +24,7 @@ namespace ecode {
 
 class FileListModel : public Model {
   public:
-	FileListModel( const std::vector<std::string>& files, const std::vector<std::string>& names ) :
+	FileListModel( std::vector<std::string>&& files, std::vector<std::string>&& names ) :
 		mFiles( files ), mNames( names ), mIcons( mNames.size(), nullptr ) {}
 
 	virtual size_t rowCount( const ModelIndex& ) const { return mNames.size(); }
@@ -126,11 +126,13 @@ class ProjectDirectoryTree {
 	std::shared_ptr<FileListModel> matchTree( const std::string& match, const size_t& max,
 											  const std::string& basePath = "" ) const;
 
-	void asyncFuzzyMatchTree( const std::string& match, const size_t& max, MatchResultCb res,
-							  const std::string& basePath = "" ) const;
+	std::shared_ptr<FileListModel> globMatchTree( const std::string& match, const size_t& max,
+												  const std::string& basePath = "" ) const;
 
-	void asyncMatchTree( const std::string& match, const size_t& max, MatchResultCb res,
-						 const std::string& basePath = "" ) const;
+	enum class MatchType { Substring, Fuzzy, Glob };
+
+	void asyncMatchTree( MatchType type, const std::string& match, const size_t& max,
+						 MatchResultCb res, const std::string& basePath = "" ) const;
 
 	struct CommandInfo {
 		std::string name;
@@ -138,9 +140,10 @@ class ProjectDirectoryTree {
 		UIIcon* icon{ nullptr };
 	};
 
-	std::shared_ptr<FileListModel> asModel( const size_t& max,
-											const std::vector<CommandInfo>& prependCommands = {},
-											const std::string& basePath = "" ) const;
+	std::shared_ptr<FileListModel>
+	asModel( const size_t& max, const std::vector<CommandInfo>& prependCommands = {},
+			 const std::string& basePath = "",
+			 const std::vector<std::string>& skipExtensions = {} ) const;
 
 	static std::shared_ptr<FileListModel>
 	emptyModel( const std::vector<CommandInfo>& prependCommands = {},
@@ -148,9 +151,9 @@ class ProjectDirectoryTree {
 
 	size_t getFilesCount() const;
 
-	const std::vector<std::string>& getFiles() const;
+	std::vector<std::string> getFiles() const;
 
-	const std::vector<std::string>& getDirectories() const;
+	std::vector<std::string> getDirectories() const;
 
 	bool isFileInTree( const std::string& filePath ) const;
 
@@ -161,6 +164,8 @@ class ProjectDirectoryTree {
 	const std::string& getPath() const { return mPath; }
 
 	void resetPluginManager();
+
+	bool isRunning() const { return mRunning; }
 
   protected:
 	std::string mPath;
@@ -175,6 +180,7 @@ class ProjectDirectoryTree {
 	bool mIgnoreHidden;
 	bool mClosing;
 	mutable Mutex mFilesMutex;
+	mutable Mutex mDirectoriesMutex;
 	mutable Mutex mMatchingMutex;
 	Mutex mDoneMutex;
 	IgnoreMatcherManager mIgnoreMatcher;

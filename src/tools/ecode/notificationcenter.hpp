@@ -2,7 +2,6 @@
 #define ECODE_NOTIFICATIONCENTER_HPP
 
 #include "plugins/pluginmanager.hpp"
-#include <eepp/ee.hpp>
 
 namespace ecode {
 
@@ -10,10 +9,15 @@ class NotificationCenter {
   public:
 	NotificationCenter( UILayout* layout, PluginManager* pluginManager );
 
-	void addNotification( const String& text, const Time& delay = Seconds( 2.5 ), bool allowCopy = false );
+	void addNotification( const String& text, const Time& delay = Seconds( 2.5 ),
+						  bool allowCopy = false );
 
 	void addShowRequest( const String& uri, const String& actionText,
 						 const Time& delay = Seconds( 2.5 ) );
+
+	void addInteractiveNotification( String text, String actionText,
+									 std::function<void()> onInteraction,
+									 const Time& delay = Seconds( 7.5 ), bool allowCopy = false );
 
   protected:
 	UILayout* mLayout{ nullptr };

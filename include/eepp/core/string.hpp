@@ -1,14 +1,12 @@
 #ifndef EE_STRING_HPP
 #define EE_STRING_HPP
 
+#include <eepp/config.hpp>
+
 #include <cstdlib>
 #include <cstring>
-#include <eepp/config.hpp>
-#include <eepp/core/utf.hpp>
-#include <locale>
-#include <sstream>
+#include <functional>
 #include <string>
-#include <string_view>
 #include <vector>
 
 namespace EE {
@@ -149,6 +147,15 @@ class EE_API String {
 										   const std::string& quote = "\"",
 										   const bool& removeQuotes = false );
 
+	/** Split a string and hold it on a vector. This function is meant to be used for code
+	 * splitting, detects functions, arrays, braces and quotes for the splitting.
+	 * It does not heap allocate. */
+	static void splitCb( std::function<bool( std::string_view )>
+							 fnCb /* returns true to continue, false to stop iterating */,
+						 const std::string& str, const std::string& delims,
+						 const std::string& delimsPreserve = "", const std::string& quote = "\"",
+						 const bool& removeQuotes = false );
+
 	/** Joins a string vector into a single string */
 	static std::string join( const std::vector<std::string>& strArray, const Int8& joinchar = ' ',
 							 const bool& appendLastJoinChar = false );
@@ -156,6 +163,9 @@ class EE_API String {
 	/** Joins a string vector into a single string */
 	static String join( const std::vector<String>& strArray, const Int8& joinchar = ' ',
 						const bool& appendLastJoinChar = false );
+
+	static std::string join( const std::vector<const char*>& strArray, const Int8& joinchar = ' ',
+							 const bool& appendLastJoinChar = false );
 
 	/** Removes the trailing prefix. */
 	static std::string lTrim( const std::string& str, char character = ' ' );
@@ -254,6 +264,13 @@ class EE_API String {
 	 */
 	static bool startsWith( const char* haystack, const char* needle );
 
+	/** Compare two strings from its beginning.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
+	static bool startsWith( std::string_view haystack, std::string_view needle );
+
 	/** Compare two strings from its end.
 	 * @param haystack The string to search in.
 	 * @param needle The searched string.
@@ -279,6 +296,18 @@ class EE_API String {
 	 * @param needle The searched string.
 	 */
 	static bool contains( const String& haystack, const String& needle );
+
+	/** @return True if a string contains a substring. Case-insensitive check.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 */
+	static bool icontains( const std::string& haystack, const std::string& needle );
+
+	/** @return True if a string contains a substring. Case-insensitive check.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 */
+	static bool icontains( const String& haystack, const String& needle );
 
 	static int fuzzyMatch( const std::string& string, const std::string& pattern,
 						   bool allowUneven = false, bool permissive = false );
@@ -322,11 +351,16 @@ class EE_API String {
 		std::string dictionary = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" );
 
 	/** Converts from any basic type to std::string */
-	template <class T> static std::string toString( const T& i ) {
-		std::ostringstream ss;
-		ss << std::fixed << i;
-		return ss.str();
-	}
+	static std::string toString( const Int8& i );
+	static std::string toString( const Int16& i );
+	static std::string toString( const Int32& i );
+	static std::string toString( const Int64& i );
+	static std::string toString( const Uint8& i );
+	static std::string toString( const Uint16& i );
+	static std::string toString( const Uint32& i );
+	static std::string toString( const Uint64& i );
+	static std::string toString( const float& i );
+	static std::string toString( const double& i );
 
 	static std::string fromFloat( const Float& value, const std::string& append = "",
 								  const std::string& prepend = "", size_t digitsAfterComma = 2 );
@@ -335,20 +369,28 @@ class EE_API String {
 								   const std::string& prepend = "", size_t digitsAfterComma = 2 );
 
 	/** Converts from a string to type */
-	template <class T>
-	static bool fromString( T& t, const std::string& s,
-							std::ios_base& ( *f )( std::ios_base& ) = std::dec ) {
-		std::istringstream iss( s );
-		return !( iss >> f >> t ).fail();
-	}
+	static bool fromString( Int8& t, const std::string& s, int base = 10 );
+	static bool fromString( Int16& t, const std::string& s, int base = 10 );
+	static bool fromString( Int32& t, const std::string& s, int base = 10 );
+	static bool fromString( Int64& t, const std::string& s, int base = 10 );
+	static bool fromString( Uint8& t, const std::string& s, int base = 10 );
+	static bool fromString( Uint16& t, const std::string& s, int base = 10 );
+	static bool fromString( Uint32& t, const std::string& s, int base = 10 );
+	static bool fromString( Uint64& t, const std::string& s, int base = 10 );
+	static bool fromString( float& t, const std::string& s );
+	static bool fromString( double& t, const std::string& s );
 
 	/** Converts from a String to type */
-	template <class T>
-	static bool fromString( T& t, const String& s,
-							std::ios_base& ( *f )( std::ios_base& ) = std::dec ) {
-		std::istringstream iss( s.toUtf8() );
-		return !( iss >> f >> t ).fail();
-	}
+	static bool fromString( Int8& t, const String& s, int base = 10 );
+	static bool fromString( Int16& t, const String& s, int base = 10 );
+	static bool fromString( Int32& t, const String& s, int base = 10 );
+	static bool fromString( Int64& t, const String& s, int base = 10 );
+	static bool fromString( Uint8& t, const String& s, int base = 10 );
+	static bool fromString( Uint16& t, const String& s, int base = 10 );
+	static bool fromString( Uint32& t, const String& s, int base = 10 );
+	static bool fromString( Uint64& t, const String& s, int base = 10 );
+	static bool fromString( float& t, const String& s );
+	static bool fromString( double& t, const String& s );
 
 	template <typename... Args>
 	static std::string format( std::string_view format, Args&&... args ) {
@@ -395,8 +437,18 @@ class EE_API String {
 	/** @return The number of codepoints of the utf8 string. */
 	static size_t utf8Length( const std::string_view& utf8String );
 
+	/** Converts a character position from an utf8 string to a code point position */
+	static size_t utf8ToCodepointPosition( const std::string_view& utf8Text, size_t utf8Pos );
+
 	/** @return The next character in a utf8 null terminated string */
 	static Uint32 utf8Next( char*& utf8String );
+
+	/** Converts an UTF-8 string view into an UTF-32 by using a currently allocated buffer (usefull
+	 * for stack allocated buffers)
+	 * @return The number of elements written into the buffer (the string length)
+	 **/
+	static size_t toUtf32( std::string_view utf8str, String::StringBaseType* buffer,
+						   size_t bufferSize );
 
 	/** glob matches a string against a glob
 	** @return True if matches
@@ -415,14 +467,10 @@ class EE_API String {
 	**/
 	String();
 
-	/** @brief Construct from a single ANSI character and a locale
-	** The source character is converted to UTF-32 according
-	** to the given locale. If you want to use the current global
-	** locale, rather use the other constructor.
+	/** @brief Construct from a single ANSI character
 	** @param ansiChar ANSI character to convert
-	** @param locale   Locale to use for conversion
 	**/
-	String( char ansiChar, const std::locale& locale = std::locale() );
+	String( char ansiChar );
 
 #ifndef EE_NO_WIDECHAR
 	/** @brief Construct from single wide character
@@ -455,24 +503,6 @@ class EE_API String {
 	** @param utf8String UTF-8 string to convert
 	**/
 	String( const std::string_view& utf8String );
-
-	/** @brief Construct from a null-terminated C-style ANSI string and a locale
-	** The source string is converted to UTF-32 according
-	** to the given locale. If you want to use the current global
-	** locale, rather use the other constructor.
-	** @param ansiString ANSI string to convert
-	** @param locale     Locale to use for conversion
-	**/
-	String( const char* ansiString, const std::locale& locale );
-
-	/** @brief Construct from an ANSI string and a locale
-	** The source string is converted to UTF-32 according
-	** to the given locale. If you want to use the current global
-	** locale, rather use the other constructor.
-	** @param ansiString ANSI string to convert
-	** @param locale     Locale to use for conversion
-	**/
-	String( const std::string& ansiString, const std::locale& locale );
 
 #ifndef EE_NO_WIDECHAR
 	/** @brief Construct from null-terminated C-style wide string
@@ -513,39 +543,6 @@ class EE_API String {
 
 	static String fromLatin1( const char* string, const size_t& stringSize );
 
-	/** @brief Create a new String from a UTF-8 encoded string
-	**  @param begin Forward iterator to the begining of the UTF-8 sequence
-	**  @param end   Forward iterator to the end of the UTF-8 sequence
-	**  @return A String containing the source string
-	**  @see FromUtf16, FromUtf32 */
-	template <typename T> static String fromUtf8( T begin, T end ) {
-		String string;
-		Utf8::toUtf32( begin, end, std::back_inserter( string.mString ) );
-		return string;
-	}
-
-	/** @brief Create a new String from a UTF-16 encoded string
-	**  @param begin Forward iterator to the begining of the UTF-16 sequence
-	**  @param end   Forward iterator to the end of the UTF-16 sequence
-	**  @return A String containing the source string
-	**  @see FromUtf8, FromUtf32 */
-	template <typename T> static String fromUtf16( T begin, T end ) {
-		String string;
-		Utf16::toUtf32( begin, end, std::back_inserter( string.mString ) );
-		return string;
-	}
-
-	/** @brief Create a new String from a UTF-32 encoded string
-	**  @param begin Forward iterator to the begining of the UTF-32 sequence
-	**  @param end   Forward iterator to the end of the UTF-32 sequence
-	**  @return A String containing the source string
-	**  @see FromUtf8, FromUtf32 */
-	template <typename T> static String fromUtf32( T begin, T end ) {
-		String string;
-		Utf32::toUtf32( begin, end, std::back_inserter( string.mString ) );
-		return string;
-	}
-
 	/** @brief Implicit cast operator to std::string (ANSI string)
 	** The current global locale is used for conversion. If you
 	** want to explicitely specify a locale, see toAnsiString.
@@ -557,19 +554,6 @@ class EE_API String {
 	** @see toAnsiString, operator String
 	**/
 	operator std::string() const;
-
-	/** @brief Convert the unicode string to an ANSI string
-	** The UTF-32 string is converted to an ANSI string in
-	** the encoding defined by \a locale. If you want to use
-	** the current global locale, see the other overload
-	** of toAnsiString.
-	** Characters that do not fit in the target encoding are
-	** discarded from the returned string.
-	** @param locale Locale to use for conversion
-	** @return Converted ANSI string
-	** @see toWideString, operator std::string
-	**/
-	std::string toAnsiString( const std::locale& locale = std::locale() ) const;
 
 #ifndef EE_NO_WIDECHAR
 	/** @brief Convert the unicode string to a wide string
@@ -585,7 +569,7 @@ class EE_API String {
 	std::string toUtf8() const;
 
 	/** Convert the string to a UTF-16 string */
-	std::basic_string<Uint16> toUtf16() const;
+	std::basic_string<char16_t> toUtf16() const;
 
 	/** @return The hash code of the String */
 	HashType getHash() const;
@@ -950,6 +934,62 @@ class EE_API String {
 
 	String::View view() const;
 
+	// No allocation int to str
+	template <typename IntType, typename StrType>
+	static const StrType* intToStrBuf( IntType value, StrType* buffer, size_t bufferSize,
+									   size_t padding, StrType padChar ) {
+		static_assert( std::is_integral<IntType>::value, "Type must be an integer" );
+
+		if ( bufferSize <= 1 ) {
+			if ( bufferSize == 1 )
+				*buffer = '\0';
+			return buffer;
+		}
+
+		StrType* ptr = buffer;
+		StrType* endPtr = buffer + bufferSize - 1;
+
+		if constexpr ( std::is_signed<IntType>::value ) {
+			if ( value < 0 ) {
+				if ( ptr == endPtr ) {
+					*buffer = '\0';
+					return buffer;
+				}
+				*ptr++ = '-';
+				value = -value;
+				padding--;
+			}
+		}
+
+		StrType* start = ptr;
+		do {
+			if ( ptr == endPtr ) { // Out of buffer space
+				*buffer = '\0';
+				return buffer;
+			}
+			*ptr++ = '0' + ( value % 10 );
+			value /= 10;
+			padding--;
+		} while ( value > 0 );
+
+		while ( padding-- > 0 ) {
+			if ( ptr == endPtr ) {
+				*buffer = '\0';
+				return buffer;
+			}
+			*ptr++ = padChar;
+		}
+
+		StrType* reverseEnd = ptr - 1;
+		while ( start < reverseEnd )
+			std::swap( *start++, *reverseEnd-- );
+
+		*ptr = '\0';
+		return buffer;
+	}
+
+	const StringType& getString() const { return mString; }
+
   private:
 	friend EE_API bool operator==( const String& left, const String& right );
 	friend EE_API bool operator<( const String& left, const String& right );
@@ -1023,27 +1063,18 @@ EE::String is a utility string class defined mainly for
 convenience. It is a Unicode string (implemented using
 UTF-32), thus it can store any character in the world
 (european, chinese, arabic, hebrew, etc.).
-It automatically handles conversions from/to ANSI and
+It automatically handles conversions from/to UTF-8 and
 wide strings, so that you can work with standard string
 classes and still be compatible with functions taking a
 EE::String.
 @code
 EE::String s;
-std::string s1 = s;  // automatically converted to ANSI string
+std::string s1 = s;  // automatically converted to UTF-8 string
 String s2 = s; // automatically converted to wide string
-s = "hello";         // automatically converted from ANSI string
+s = "hello";         // automatically converted from UTF-8 string
 s = L"hello";        // automatically converted from wide string
-s += 'a';            // automatically converted from ANSI string
+s += 'a';            // automatically converted from UTF-8 string
 s += L'a';           // automatically converted from wide string
-@endcode
-Conversions involving ANSI strings use the default user locale. However
-it is possible to use a custom locale if necessary:
-@code
-std::locale locale;
-EE::String s;
-...
-std::string s1 = s.toAnsiString(locale);
-s = EE::String("hello", locale);
 @endcode
 
 EE::String defines the most important functions of the

@@ -1,5 +1,6 @@
 #include "appconfig.hpp"
 #include "ecode.hpp"
+#include "plugins/plugin.hpp"
 #include "plugins/pluginmanager.hpp"
 #include "version.hpp"
 #include <eepp/network/uri.hpp>
@@ -102,6 +103,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	windowState.position.x = iniState.getValueI( "window", "x", -1 );
 	windowState.position.y = iniState.getValueI( "window", "y", -1 );
 	windowState.lastRunVersion = iniState.getValueU( "editor", "last_run_version", 0 );
+	windowState.sidePanelTabsOrder =
+		String::split( iniState.getValue( "ui", "side_panel_tabs_order", "" ), ',' );
 	editor.showLineNumbers = ini.getValueB( "editor", "show_line_numbers", true );
 	editor.showWhiteSpaces = ini.getValueB( "editor", "show_white_spaces", true );
 	editor.showLineEndings = ini.getValueB( "editor", "show_line_endings", false );
@@ -117,6 +120,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	ui.showStatusBar = ini.getValueB( "ui", "show_status_bar", true );
 	ui.showMenuBar = ini.getValueB( "ui", "show_menu_bar", false );
 	ui.welcomeScreen = ini.getValueB( "ui", "welcome_screen", true );
+	ui.openFilesInNewWindow = ini.getValueB( "ui", "open_files_in_new_window", false );
 	ui.panelPosition = panelPositionFromString( ini.getValue( "ui", "panel_position", "left" ) );
 	ui.serifFont = ini.getValue( "ui", "serif_font", "fonts/NotoSans-Regular.ttf" );
 	ui.monospaceFont = ini.getValue( "ui", "monospace_font", "fonts/DejaVuSansMono.ttf" );
@@ -178,15 +182,18 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.tabIndentAlignment = characterAlignmentFromString(
 		ini.getValue( "editor", "tab_indent_alignment",
 					  characterAlignmentToString( CharacterAlignment::Center ) ) );
+	editor.flashCursor = ini.getValueB( "editor", "flash_cursor", true );
 
 	searchBarConfig.caseSensitive = ini.getValueB( "search_bar", "case_sensitive", false );
 	searchBarConfig.luaPattern = ini.getValueB( "search_bar", "lua_pattern", false );
+	searchBarConfig.regex = ini.getValueB( "search_bar", "regex", false );
 	searchBarConfig.wholeWord = ini.getValueB( "search_bar", "whole_word", false );
 	searchBarConfig.escapeSequence = ini.getValueB( "search_bar", "escape_sequence", false );
 
 	globalSearchBarConfig.caseSensitive =
 		ini.getValueB( "global_search_bar", "case_sensitive", false );
 	globalSearchBarConfig.luaPattern = ini.getValueB( "global_search_bar", "lua_pattern", false );
+	globalSearchBarConfig.regex = ini.getValueB( "global_search_bar", "regex", false );
 	globalSearchBarConfig.wholeWord = ini.getValueB( "global_search_bar", "whole_word", false );
 	globalSearchBarConfig.escapeSequence =
 		ini.getValueB( "global_search_bar", "escape_sequence", false );
@@ -211,7 +218,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 			ini.getValueB( "plugins", creator.first,
 						   "autocomplete" == creator.first || "linter" == creator.first ||
 							   "autoformatter" == creator.first || "lspclient" == creator.first ||
-							   "git" == creator.first );
+							   "git" == creator.first || "debugger" == creator.first );
 	}
 	pluginManager->setPluginsEnabled( pluginsEnabled, sync );
 
@@ -235,7 +242,9 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	}
 
 	editor.colorScheme = colorSchemeName;
-	windowState.size = win->getLastWindowedSize();
+	windowState.size = Sys::getPlatformType() == Sys::PlatformType::macOS
+						   ? win->getSizeInScreenCoordinates()
+						   : win->getLastWindowedSizeInScreenCoordinates();
 	windowState.maximized = win->isMaximized();
 	windowState.displayIndex = win->getCurrentDisplayIndex();
 	windowState.position = win->getPosition();
@@ -257,6 +266,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	iniState.setValue( "folders", "recentfolders",
 					   String::join( urlEncode( recentFolders ), ';' ) );
 	iniState.setValueU( "editor", "last_run_version", ecode::Version::getVersionNum() );
+	iniState.setValue( "ui", "side_panel_tabs_order",
+					   String::join( windowState.sidePanelTabsOrder, ',' ) );
 	ini.setValueB( "editor", "show_line_numbers", editor.showLineNumbers );
 	ini.setValueB( "editor", "show_white_spaces", editor.showWhiteSpaces );
 	ini.setValueB( "editor", "show_indentation_guides", editor.showIndentationGuides );
@@ -272,6 +283,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "ui", "show_status_bar", ui.showStatusBar );
 	ini.setValueB( "ui", "show_menu_bar", ui.showMenuBar );
 	ini.setValueB( "ui", "welcome_screen", ui.welcomeScreen );
+	ini.setValueB( "ui", "open_files_in_new_window", ui.openFilesInNewWindow );
 	ini.setValue( "ui", "panel_position", panelPositionToString( ui.panelPosition ) );
 	ini.setValue( "ui", "serif_font", ui.serifFont );
 	ini.setValue( "ui", "monospace_font", ui.monospaceFont );
@@ -317,14 +329,17 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "editor", "tab_indent_character", editor.tabIndentCharacter );
 	ini.setValue( "editor", "tab_indent_alignment",
 				  characterAlignmentToString( editor.tabIndentAlignment ) );
+	ini.setValueB( "editor", "flash_cursor", editor.flashCursor );
 
 	ini.setValueB( "search_bar", "case_sensitive", searchBarConfig.caseSensitive );
 	ini.setValueB( "search_bar", "lua_pattern", searchBarConfig.luaPattern );
+	ini.setValueB( "search_bar", "regex", searchBarConfig.regex );
 	ini.setValueB( "search_bar", "whole_word", searchBarConfig.wholeWord );
 	ini.setValueB( "search_bar", "escape_sequence", searchBarConfig.escapeSequence );
 
 	ini.setValueB( "global_search_bar", "case_sensitive", globalSearchBarConfig.caseSensitive );
 	ini.setValueB( "global_search_bar", "lua_pattern", globalSearchBarConfig.luaPattern );
+	ini.setValueB( "global_search_bar", "regex", globalSearchBarConfig.regex );
 	ini.setValueB( "global_search_bar", "whole_word", globalSearchBarConfig.wholeWord );
 	ini.setValueB( "global_search_bar", "escape_sequence", globalSearchBarConfig.escapeSequence );
 
@@ -431,7 +446,7 @@ json saveNode( Node* node ) {
 void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, const ProjectDocumentConfig& docConfig,
 							 const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
-							 bool sessionSnapshot ) {
+							 bool sessionSnapshot, PluginManager* pluginManager ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	if ( !FileSystem::fileExists( projectsPath ) )
@@ -469,8 +484,27 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	} else {
 		cfg.writeFile();
 	}
+
+	if ( pluginManager ) {
+		std::string pluginsStatePath( projectsPath + "plugins_state" );
+		if ( !FileSystem::fileExists( pluginsStatePath ) &&
+			 !FileSystem::makeDir( pluginsStatePath ) )
+			return;
+		std::string projectPluginsStatePath( pluginsStatePath + FileSystem::getOSSlash() +
+											 hash.toHexString() );
+		if ( !FileSystem::fileExists( projectPluginsStatePath ) &&
+			 !FileSystem::makeDir( projectPluginsStatePath ) )
+			return;
+		FileSystem::dirAddSlashAtEnd( projectPluginsStatePath );
+		pluginManager->forEachPlugin(
+			[&projectFolder, &projectPluginsStatePath, onlyIfNeeded]( Plugin* plugin ) {
+				plugin->onSaveProject( projectFolder, projectPluginsStatePath, onlyIfNeeded );
+			} );
+	}
+
 	if ( !sessionSnapshot )
 		return;
+
 	std::string statePath( projectsPath + "state" );
 	if ( !FileSystem::fileExists( statePath ) && !FileSystem::makeDir( statePath ) )
 		return;
@@ -478,6 +512,7 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	if ( !FileSystem::fileExists( projectStatePath ) && !FileSystem::makeDir( projectStatePath ) )
 		return;
 	FileSystem::dirAddSlashAtEnd( projectStatePath );
+
 	nlohmann::json j = nlohmann::json::array();
 	std::vector<std::string> fileNames;
 	editorSplitter->forEachDocSharedPtr(
@@ -643,8 +678,7 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 		}
 	} else if ( j["type"] == "splitter" ) {
 		UISplitter* splitter = editorSplitter->split(
-			j["orientation"] == "horizontal" ? UICodeEditorSplitter::SplitDirection::Right
-											 : UICodeEditorSplitter::SplitDirection::Bottom,
+			j["orientation"] == "horizontal" ? SplitDirection::Right : SplitDirection::Bottom,
 			curTabWidget->getTabSelected()->getOwnedWidget()->asType<UICodeEditor>(), false );
 
 		if ( nullptr == splitter )
@@ -660,7 +694,7 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 
 void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 							 const std::string& configPath, ProjectDocumentConfig& docConfig,
-							 ecode::App* app, bool sessionSnapshot ) {
+							 ecode::App* app, bool sessionSnapshot, PluginManager* pluginManager ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
 	MD5::Result hash = MD5::fromString( projectFolder );
@@ -698,11 +732,12 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 	std::vector<SessionSnapshotFile> sessionSnapshotFiles;
 	if ( sessionSnapshot ) {
 		std::string projectStatePath( projectsPath + "state" + FileSystem::getOSSlash() +
-									  hash.toHexString() + FileSystem::getOSSlash() +
-									  "state.json" );
-		if ( FileSystem::fileExists( projectStatePath ) ) {
+									  hash.toHexString() + FileSystem::getOSSlash() );
+
+		std::string projectStateFilePath( projectStatePath + "state.json" );
+		if ( FileSystem::fileExists( projectStateFilePath ) ) {
 			std::string stateStr;
-			FileSystem::fileGet( projectStatePath, stateStr );
+			FileSystem::fileGet( projectStateFilePath, stateStr );
 			json j;
 			try {
 				j = json::parse( stateStr );
@@ -749,7 +784,10 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 
 		editorSplitter->loadAsyncFileFromPathInNewTab(
 			snapshotFile.cachePath,
-			[snapshotFile]( UICodeEditor* editor, const std::string& ) {
+			[snapshotFile, editorSplitter]( UICodeEditor* editor, const std::string& ) {
+				// Editor could have been closed right after load
+				if ( !editorSplitter->editorExists( editor ) )
+					return;
 				TextDocument& doc = editor->getDocument();
 				auto selection = TextRange::fromString( snapshotFile.selection );
 				doc.setDefaultFileName( snapshotFile.name );
@@ -761,6 +799,16 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 				editor->scrollToCursor();
 			},
 			curTabWidget );
+	}
+
+	if ( pluginManager ) {
+		std::string projectPluginsStatePath( projectsPath + "plugins_state" +
+											 FileSystem::getOSSlash() + hash.toHexString() +
+											 FileSystem::getOSSlash() );
+
+		pluginManager->forEachPlugin( [&projectFolder, &projectPluginsStatePath]( Plugin* plugin ) {
+			plugin->onLoadProject( projectFolder, projectPluginsStatePath );
+		} );
 	}
 }
 

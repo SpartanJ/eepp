@@ -14,6 +14,7 @@
 #include <eepp/system/inifile.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/regex.hpp>
 #include <eepp/system/thread.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
@@ -106,6 +107,8 @@ Engine::~Engine() {
 	eeSAFE_DELETE( mDisplayManager );
 
 	eeSAFE_DELETE( mBackend );
+
+	RegExCache::destroySingleton();
 
 	Log::destroySingleton();
 }
@@ -274,7 +277,7 @@ WindowSettings Engine::createWindowSettings( IniFile* ini, std::string iniKeyNam
 			pixelDensity = currentDisplay->getPixelDensity();
 		} else {
 			float pd = 1;
-			bool res = String::fromString<float>( pd, pixelDensityStr );
+			bool res = String::fromString( pd, pixelDensityStr );
 
 			if ( res )
 				pixelDensity = pd;
@@ -396,7 +399,7 @@ bool Engine::openURI( const std::string& url ) {
 	if ( nullptr == getPlatformHelper() )
 		return false;
 
-	if ( !LuaPattern::matches( url, "^%w+://" ) )
+	if ( !LuaPattern::hasMatches( url, "^%w+://" ) )
 		return openURI( "file://" + url );
 
 	if ( String::startsWith( url, "file://" ) ) {

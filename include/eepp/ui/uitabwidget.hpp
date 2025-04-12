@@ -2,8 +2,10 @@
 #define EE_UI_UITABWIDGET_HPP
 
 #include <deque>
+#include <eepp/ui/splitdirection.hpp>
 #include <eepp/ui/uitab.hpp>
 #include <eepp/ui/uiwidget.hpp>
+#include <optional>
 
 namespace EE { namespace UI {
 
@@ -26,6 +28,8 @@ class EE_API TabEvent : public Event {
 
 class EE_API UITabWidget : public UIWidget {
   public:
+	using SplitFunctionCb = std::function<UITabWidget*( SplitDirection, UITabWidget* )>;
+
 	enum class FocusTabBehavior { Closest, FocusOrder, Default };
 
 	class StyleConfig {
@@ -63,6 +67,8 @@ class EE_API UITabWidget : public UIWidget {
 	UITab* getTab( const Uint32& index );
 
 	UITab* getTab( const String& text );
+
+	UITab* getTabById( const std::string& text );
 
 	Uint32 getTabIndex( UITab* tab );
 
@@ -157,7 +163,7 @@ class EE_API UITabWidget : public UIWidget {
 
 	void setAllowRearrangeTabs( bool allowRearrangeTabs );
 
-	bool getAllowDragAndDropTabs() const;
+	bool allowDragAndDropTabs() const;
 
 	void setAllowDragAndDropTabs( bool allowDragAndDropTabs );
 
@@ -187,6 +193,8 @@ class EE_API UITabWidget : public UIWidget {
 
 	void swapTabs( UITab* left, UITab* right );
 
+	void setSplitFunction( SplitFunctionCb cb, Float splitEdgePercent = 0.1 );
+
   protected:
 	friend class UITab;
 
@@ -209,6 +217,8 @@ class EE_API UITabWidget : public UIWidget {
 	FocusTabBehavior mFocusTabBehavior{ FocusTabBehavior::Closest };
 	std::deque<UITab*> mFocusHistory;
 	UIPopUpMenu* mCurrentMenu{ nullptr };
+	SplitFunctionCb mSplitFn;
+	Float mSplitEdgePercent{ 0.1 };
 
 	void onThemeLoaded();
 
@@ -228,6 +238,8 @@ class EE_API UITabWidget : public UIWidget {
 	virtual void onPaddingChange();
 
 	virtual Uint32 onMessage( const NodeMessage* msg );
+
+	virtual void drawDroppableHovering();
 
 	void setContainerSize();
 
@@ -254,6 +266,8 @@ class EE_API UITabWidget : public UIWidget {
 	void insertFocusHistory( UITab* tab );
 
 	void eraseFocusHistory( UITab* tab );
+
+	std::optional<SplitDirection> getDropDirection() const;
 };
 
 }} // namespace EE::UI

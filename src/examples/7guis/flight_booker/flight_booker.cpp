@@ -1,5 +1,6 @@
 #include <eepp/ee.hpp>
 #include <iomanip>
+#include <sstream>
 
 // Reference https://eugenkiss.github.io/7guis/tasks#flight
 EE_MAIN_FUNC int main( int, char** ) {

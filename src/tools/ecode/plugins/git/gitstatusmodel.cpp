@@ -215,7 +215,6 @@ std::vector<std::string> GitStatusModel::getFiles( const std::string& repo,
 				if ( static_cast<uint32_t>( type.type ) & statusType ) {
 					for ( const auto& file : type.files )
 						files.push_back( file.file );
-					break;
 				}
 			}
 			break;

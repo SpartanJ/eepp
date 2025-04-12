@@ -312,7 +312,7 @@ bool Image::getInfo( const std::string& path, int* width, int* height, int* chan
 	bool res = stbi_info( path.c_str(), width, height, channels ) != 0;
 
 	if ( !res && svg_test( path ) ) {
-		NSVGimage* image = nsvgParseFromFile( path.c_str(), "px", 96.0f );
+		NSVGimage* image = nsvgParseFromFile( path.c_str(), "px", 96.0f, 0xFFFFFFFF );
 
 		if ( NULL != image ) {
 			*width = image->width * imageFormatConfiguration.svgScale();
@@ -340,7 +340,7 @@ bool Image::getInfo( const std::string& path, int* width, int* height, int* chan
 				memcpy( data.get(), buffer.get(), buffer.length() );
 				data[buffer.length()] = '\0';
 
-				NSVGimage* image = nsvgParse( (char*)data.get(), "px", 96.0f );
+				NSVGimage* image = nsvgParse( (char*)data.get(), "px", 96.0f, 0xFFFFFFFF );
 
 				if ( NULL != image ) {
 					*width = image->width * imageFormatConfiguration.svgScale();
@@ -367,7 +367,7 @@ bool Image::getInfoFromMemory( const unsigned char* data, const size_t& dataSize
 		ScopedBuffer sdata( dataSize + 1 );
 		memcpy( sdata.get(), data, dataSize );
 		sdata[dataSize] = '\0';
-		NSVGimage* image = nsvgParse( (char*)sdata.get(), "px", 96.0f );
+		NSVGimage* image = nsvgParse( (char*)sdata.get(), "px", 96.0f, 0xFFFFFFFF );
 
 		if ( NULL != image ) {
 			*width = image->width * imageFormatConfiguration.svgScale();
@@ -387,11 +387,35 @@ bool Image::isImage( const std::string& path ) {
 	return STBI_unknown != stbi_test( path.c_str() ) || svg_test( path );
 }
 
+bool Image::isImage( const unsigned char* data, const size_t& dataSize ) {
+	return STBI_unknown != stbi_test_from_memory( data, dataSize ) ||
+		   svg_test_from_memory( data, dataSize );
+}
+
+Image::Format Image::getFormat( const std::string& path ) {
+	auto format = stbi_test( path.c_str() );
+	if ( format == STBI_unknown )
+		return svg_test( path ) ? Image::Format::SVG : Image::Format::Unknown;
+	return static_cast<Image::Format>( format );
+}
+
+Image::Format Image::getFormat( const unsigned char* data, const size_t& dataSize ) {
+	auto format = stbi_test_from_memory( data, dataSize );
+	if ( format == STBI_unknown )
+		return svg_test_from_memory( data, dataSize ) ? Image::Format::SVG : Image::Format::Unknown;
+	return static_cast<Image::Format>( format );
+}
+
 bool Image::isImageExtension( const std::string& path ) {
 	const std::string ext( FileSystem::fileExtension( path ) );
 	return ( ext == "png" || ext == "tga" || ext == "bmp" || ext == "jpg" || ext == "gif" ||
 			 ext == "jpeg" || ext == "dds" || ext == "psd" || ext == "hdr" || ext == "pic" ||
 			 ext == "pvr" || ext == "pkm" || ext == "svg" || ext == "qoi" );
+}
+
+std::vector<std::string> Image::getImageExtensionsSupported() {
+	return std::vector<std::string>{ "png", "tga", "bmp", "jpg", "gif", "jpeg", "dds",
+									 "psd", "hdr", "pic", "pvr", "pkm", "svg",	"qoi" };
 }
 
 std::string Image::getLastFailureReason() {
@@ -478,7 +502,7 @@ Image::Image( std::string Path, const unsigned int& forceChannels,
 
 		mLoadedFromStbi = true;
 	} else if ( svg_test( Path ) ) {
-		svgLoad( nsvgParseFromFile( Path.c_str(), "px", 96.0f ) );
+		svgLoad( nsvgParseFromFile( Path.c_str(), "px", 96.0f, 0xFFFFFFFF ) );
 	} else if ( PackManager::instance()->isFallbackToPacksActive() &&
 				NULL != ( tPack = PackManager::instance()->exists( Path ) ) ) {
 		loadFromPack( tPack, Path );
@@ -515,7 +539,7 @@ Image::Image( const Uint8* imageData, const unsigned int& imageDataSize,
 		ScopedBuffer data( imageDataSize + 1 );
 		memcpy( data.get(), imageData, imageDataSize );
 		data[imageDataSize] = '\0';
-		svgLoad( nsvgParse( (char*)data.get(), "px", 96.0f ) );
+		svgLoad( nsvgParse( (char*)data.get(), "px", 96.0f, 0xFFFFFFFF ) );
 	} else {
 		std::string reason = ".";
 
@@ -578,7 +602,7 @@ Image::Image( IOStream& stream, const unsigned int& forceChannels,
 
 			data[data.length() - 1] = '\0';
 
-			svgLoad( nsvgParse( (char*)data.get(), "px", 96.0f ) );
+			svgLoad( nsvgParse( (char*)data.get(), "px", 96.0f, 0xFFFFFFFF ) );
 		} else {
 			Log::error( "Failed to load image. Reason: %s", stbi_failure_reason() );
 		}
@@ -647,7 +671,7 @@ void Image::loadFromPack( Pack* Pack, const std::string& FilePackPath ) {
 			ScopedBuffer data( buffer.length() + 1 );
 			memcpy( data.get(), buffer.get(), buffer.length() );
 			data[buffer.length()] = '\0';
-			svgLoad( nsvgParse( (char*)data.get(), "px", 96.0f ) );
+			svgLoad( nsvgParse( (char*)data.get(), "px", 96.0f, 0xFFFFFFFF ) );
 		} else {
 			Log::error( "Failed to load image %s. Reason: %s", FilePackPath.c_str(),
 						stbi_failure_reason() );
@@ -667,6 +691,10 @@ void Image::setPixels( const Uint8* data ) {
 }
 
 const Uint8* Image::getPixelsPtr() {
+	return reinterpret_cast<const Uint8*>( &mPixels[0] );
+}
+
+const Uint8* Image::getPixelsPtr() const {
 	return reinterpret_cast<const Uint8*>( &mPixels[0] );
 }
 
@@ -778,34 +806,53 @@ void Image::replaceColor( const Color& ColorKey, const Color& NewColor ) {
 
 	unsigned int size = mWidth * mHeight;
 
-	for ( unsigned int i = 0; i < size; i++ ) {
-		Pos = i * mChannels;
-
-		if ( 4 == mChannels ) {
-			if ( mPixels[Pos] == ColorKey.r && mPixels[Pos + 1] == ColorKey.g &&
-				 mPixels[Pos + 2] == ColorKey.b && mPixels[Pos + 3] == ColorKey.a ) {
-				mPixels[Pos] = NewColor.r;
-				mPixels[Pos + 1] = NewColor.g;
-				mPixels[Pos + 2] = NewColor.b;
-				mPixels[Pos + 3] = NewColor.a;
+	switch ( mChannels ) {
+		case 4: {
+			for ( unsigned int i = 0; i < size; i++ ) {
+				Pos = i * mChannels;
+				if ( mPixels[Pos] == ColorKey.r && mPixels[Pos + 1] == ColorKey.g &&
+					 mPixels[Pos + 2] == ColorKey.b && mPixels[Pos + 3] == ColorKey.a ) {
+					mPixels[Pos] = NewColor.r;
+					mPixels[Pos + 1] = NewColor.g;
+					mPixels[Pos + 2] = NewColor.b;
+					mPixels[Pos + 3] = NewColor.a;
+				}
 			}
-		} else if ( 3 == mChannels ) {
-			if ( mPixels[Pos] == ColorKey.r && mPixels[Pos + 1] == ColorKey.g &&
-				 mPixels[Pos + 2] == ColorKey.b ) {
-				mPixels[Pos] = NewColor.r;
-				mPixels[Pos + 1] = NewColor.g;
-				mPixels[Pos + 2] = NewColor.b;
-			}
-		} else if ( 2 == mChannels ) {
-			if ( mPixels[Pos] == ColorKey.r && mPixels[Pos + 1] == ColorKey.g ) {
-				mPixels[Pos] = NewColor.r;
-				mPixels[Pos + 1] = NewColor.g;
-			}
-		} else if ( 1 == mChannels ) {
-			if ( mPixels[Pos] == ColorKey.r ) {
-				mPixels[Pos] = NewColor.r;
-			}
+			break;
 		}
+		case 3: {
+			for ( unsigned int i = 0; i < size; i++ ) {
+				Pos = i * mChannels;
+				if ( mPixels[Pos] == ColorKey.r && mPixels[Pos + 1] == ColorKey.g &&
+					 mPixels[Pos + 2] == ColorKey.b ) {
+					mPixels[Pos] = NewColor.r;
+					mPixels[Pos + 1] = NewColor.g;
+					mPixels[Pos + 2] = NewColor.b;
+				}
+			}
+			break;
+		}
+		case 2: {
+			for ( unsigned int i = 0; i < size; i++ ) {
+				Pos = i * mChannels;
+				if ( mPixels[Pos] == ColorKey.r && mPixels[Pos + 1] == ColorKey.g ) {
+					mPixels[Pos] = NewColor.r;
+					mPixels[Pos + 1] = NewColor.g;
+				}
+			}
+			break;
+		}
+		case 1: {
+			for ( unsigned int i = 0; i < size; i++ ) {
+				Pos = i * mChannels;
+				if ( mPixels[Pos] == ColorKey.r ) {
+					mPixels[Pos] = NewColor.r;
+				}
+			}
+			break;
+		}
+		default:
+			break;
 	}
 }
 
@@ -821,19 +868,38 @@ void Image::fillWithColor( const Color& Color ) {
 	if ( NULL == mPixels )
 		return;
 
-	unsigned int z;
-	unsigned int size = mWidth * mHeight;
+	Uint64 size = mWidth * mHeight;
 
-	for ( unsigned int i = 0; i < size; i += mChannels ) {
-		for ( z = 0; z < mChannels; z++ ) {
-			if ( 0 == z )
-				mPixels[i + z] = Color.r;
-			else if ( 1 == z )
-				mPixels[i + z] = Color.g;
-			else if ( 2 == z )
-				mPixels[i + z] = Color.b;
-			else if ( 3 == z )
-				mPixels[i + z] = Color.a;
+	switch ( mChannels ) {
+		case 4: {
+			for ( Uint64 i = 0; i < size; i += mChannels ) {
+				mPixels[i + 0] = Color.r;
+				mPixels[i + 1] = Color.g;
+				mPixels[i + 2] = Color.b;
+				mPixels[i + 3] = Color.a;
+			}
+			break;
+		}
+		case 3: {
+			for ( Uint64 i = 0; i < size; i += mChannels ) {
+				mPixels[i + 0] = Color.r;
+				mPixels[i + 1] = Color.g;
+				mPixels[i + 2] = Color.b;
+			}
+			break;
+		}
+		case 2: {
+			for ( Uint64 i = 0; i < size; i += mChannels ) {
+				mPixels[i + 0] = Color.r;
+				mPixels[i + 1] = Color.g;
+			}
+			break;
+		}
+		case 1: {
+			for ( Uint64 i = 0; i < size; i += mChannels ) {
+				mPixels[i] = Color.r;
+			}
+			break;
 		}
 	}
 }
@@ -998,6 +1064,50 @@ void Image::setImageFormatConfiguration(
 
 const Image::FormatConfiguration& Image::getImageFormatConfiguration() const {
 	return mFormatConfiguration;
+}
+
+std::pair<std::vector<Image>, int> Image::loadGif( IOStream& stream ) {
+	stbi_io_callbacks callbacks;
+	callbacks.read = &IOCb::read;
+	callbacks.skip = &IOCb::skip;
+	callbacks.eof = &IOCb::eof;
+	stream.seek( 0 );
+	auto type = stbi_test_from_callbacks( &callbacks, &stream );
+	if ( type != STBI_gif )
+		return {};
+	stream.seek( 0 );
+	std::vector<Image> gif;
+	ScopedBuffer buf( stream.getSize() );
+	stream.read( (char*)buf.get(), buf.size() );
+	int width, height, frames, comp;
+	int* delays = NULL;
+	unsigned char* data = stbi_load_gif_from_memory( buf.get(), buf.size(), &delays, &width,
+													 &height, &frames, &comp, 0 );
+
+	if ( data == nullptr )
+		return {};
+
+	gif.reserve( frames );
+
+	unsigned char* start = data;
+	size_t frame_size = width * height * sizeof( unsigned char ) * comp;
+	for ( int i = 0; i < frames; ++i ) {
+		gif.emplace_back( (const Uint8*)start, width, height, comp );
+		start += frame_size;
+	}
+
+	auto delay = delays[0];
+	if ( delay == 0 ) {
+		for ( int i = 0; i < frames; i++ ) {
+			if ( delays[i] != 0 ) {
+				delay = delays[i];
+				break;
+			}
+		}
+	}
+	free( data );
+	free( delays );
+	return { std::move( gif ), delay ? delay : 100 };
 }
 
 }} // namespace EE::Graphics

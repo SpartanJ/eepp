@@ -8,7 +8,7 @@ size_t GitBranchModel::hashBranches( const std::vector<Git::Branch>& branches ) 
 	for ( const auto& branch : branches )
 		hash = hashCombine( hash, String::hash( branch.name ), String::hash( branch.remote ),
 							String::hash( branch.lastCommit ), branch.type, branch.ahead,
-							branch.behind );
+							branch.behind, String::hash( branch.date ) );
 	return hash;
 }
 
@@ -105,6 +105,8 @@ Variant GitBranchModel::data( const ModelIndex& index, ModelRole role ) const {
 							return Variant(
 								String::format( "%s (-%ld)", branch.name, branch.behind ) );
 						}
+					} else if ( branch.type == Git::Stash ) {
+						return Variant( String::format( "%s: %s", branch.date, branch.name ) );
 					}
 					return Variant( branch.name.c_str() );
 				}
@@ -127,6 +129,32 @@ Variant GitBranchModel::data( const ModelIndex& index, ModelRole role ) const {
 		}
 		case ModelRole::Icon: {
 			return iconFor( index );
+		}
+		case ModelRole::Tooltip: {
+			if ( index.internalId() != -1 ) {
+				const Git::Branch& branch = mBranches[index.internalId()].data[index.row()];
+				switch ( index.column() ) {
+					case Column::Name: {
+						if ( branch.type == Git::Stash ) {
+							return Variant( String::format( "%s:\n%s", branch.date, branch.name ) );
+						}
+					}
+				}
+			}
+			return Variant( GIT_EMPTY );
+		}
+		case ModelRole::TooltipClass: {
+			if ( index.internalId() != -1 ) {
+				const Git::Branch& branch = mBranches[index.internalId()].data[index.row()];
+				switch ( index.column() ) {
+					case Column::Name: {
+						if ( branch.type == Git::Stash ) {
+							return Variant( GIT_STASH_TOOLTIP_CLASS );
+						}
+					}
+				}
+			}
+			return Variant( GIT_EMPTY );
 		}
 		default:
 			break;

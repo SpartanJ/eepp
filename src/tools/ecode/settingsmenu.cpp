@@ -204,8 +204,8 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 	Log::info( "Settings Menu took: %s", clock.getElapsedTime().toString() );
 }
 
-UIMenu* SettingsMenu::createFileTypeMenu() {
-	mFileTypeMenuesCreatedWithHeight = mUISceneNode->getPixelsSize().getHeight();
+UIMenu* SettingsMenu::createFileTypeMenu( bool emptyMenu ) {
+	mFileTypeMenuesCreatedWithHeight = emptyMenu ? 0 : mUISceneNode->getPixelsSize().getHeight();
 	size_t maxItems = 19;
 	auto* dM = SyntaxDefinitionManager::instance();
 	auto names = dM->getLanguageNames();
@@ -222,6 +222,9 @@ UIMenu* SettingsMenu::createFileTypeMenu() {
 	menu->on( Event::OnItemClicked, cb );
 	mFileTypeMenues.push_back( menu );
 	size_t total = 0;
+
+	if ( emptyMenu )
+		return mFileTypeMenues[0];
 
 	for ( const auto& name : names ) {
 		menu->addRadioButton(
@@ -249,8 +252,8 @@ UIMenu* SettingsMenu::createFileTypeMenu() {
 	return mFileTypeMenues[0];
 }
 
-UIMenu* SettingsMenu::createColorSchemeMenu() {
-	mColorSchemeMenuesCreatedWithHeight = mUISceneNode->getPixelsSize().getHeight();
+UIMenu* SettingsMenu::createColorSchemeMenu( bool emptyMenu ) {
+	mColorSchemeMenuesCreatedWithHeight = emptyMenu ? 0 : mUISceneNode->getPixelsSize().getHeight();
 	size_t maxItems = 19;
 	auto cb = [this]( const Event* event ) {
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -263,6 +266,9 @@ UIMenu* SettingsMenu::createColorSchemeMenu() {
 	mColorSchemeMenues.push_back( menu );
 	size_t total = 0;
 	const auto& colorSchemes = mSplitter->getColorSchemes();
+
+	if ( emptyMenu )
+		return mColorSchemeMenues[0];
 
 	for ( auto& colorScheme : colorSchemes ) {
 		menu->addRadioButton( colorScheme.first,
@@ -305,7 +311,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		->setId( "auto_indent_cur" );
 
 	UIMenuSubMenu* fileTypeMenu = mDocMenu->addSubMenu(
-		i18n( "file_type", "File Type" ), findIcon( "file-code" ), createFileTypeMenu() );
+		i18n( "file_type", "File Type" ), findIcon( "file-code" ), createFileTypeMenu( true ) );
 
 	fileTypeMenu->on( Event::OnMenuShow, [this, fileTypeMenu]( const Event* ) {
 		if ( mFileTypeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
@@ -364,7 +370,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	UIPopUpMenu* indentWidthMenu = UIPopUpMenu::New();
 	for ( size_t w = 2; w <= 12; w++ )
 		indentWidthMenu
-			->addRadioButton( String::toString( w ),
+			->addRadioButton( String::toString( (Uint64)w ),
 							  mSplitter->curEditorExistsAndFocused() &&
 								  mSplitter->getCurEditor()->getDocument().getIndentWidth() == w )
 			->setId( String::format( "indent_width_%zu", w ) )
@@ -381,7 +387,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	UIPopUpMenu* tabWidthMenu = UIPopUpMenu::New();
 	for ( size_t w = 2; w <= 12; w++ )
 		tabWidthMenu
-			->addRadioButton( String::toString( w ),
+			->addRadioButton( String::toString( (Uint64)w ),
 							  mSplitter->curEditorExistsAndFocused() &&
 								  mSplitter->getCurEditor()->getTabWidth() == w )
 			->setId( String::format( "tab_width_%zu", w ) )
@@ -468,7 +474,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 
 	UIMenuSubMenu* colorSchemeMenu =
 		mDocMenu->addSubMenu( i18n( "syntax_color_scheme", "Syntax Color Scheme" ),
-							  findIcon( "palette" ), createColorSchemeMenu() );
+							  findIcon( "palette" ), createColorSchemeMenu( true ) );
 	colorSchemeMenu->on( Event::OnMenuShow, [this, colorSchemeMenu]( const Event* ) {
 		if ( mColorSchemeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
 			for ( UIPopUpMenu* menu : mColorSchemeMenues )
@@ -652,6 +658,17 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 				  "before exiting the program." ) )
 		->setId( "session_snapshot" );
 
+	mGlobalMenu
+		->addCheckBox( i18n( "allow_flash_cursor", "Allow Flashing Cursor" ),
+					   mApp->getConfig().editor.flashCursor )
+		->setTooltipText( i18n(
+			"allow_flash_cursor_desc",
+			"When enabled, pressing the default modifier key 5 times within 1.5 seconds will\n"
+			"trigger a visual effect that highlights the current cursor position. A large,\n"
+			"transparent rectangle will briefly animate, shrinking down to the cursor, making it\n"
+			"easier to locate when it's hard to see." ) )
+		->setId( "allow_flash_cursor" );
+
 	mGlobalMenu->addSeparator();
 
 	mGlobalMenu->add( i18n( "line_breaking_column", "Line Breaking Column" ) )
@@ -710,6 +727,8 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 				mApp->getConfig().editor.autoReloadOnDiskChange = item->isActive();
 			} else if ( "session_snapshot" == id ) {
 				mApp->getConfig().workspace.sessionSnapshot = item->isActive();
+			} else if ( "allow_flash_cursor" == id ) {
+				mApp->getConfig().editor.flashCursor = item->isActive();
 			}
 		} else if ( "line_breaking_column" == id ) {
 			mApp->getSettingsActions()->setLineBreakingColumn();
@@ -912,7 +931,7 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	UIMenuSubMenu* termColorSchemeMenu = mTerminalMenu->addSubMenu(
 		i18n( "terminal_color_scheme", "Terminal Color Scheme" ), findIcon( "palette" ),
-		mApp->getTerminalManager()->createColorSchemeMenu() );
+		mApp->getTerminalManager()->createColorSchemeMenu( true ) );
 	termColorSchemeMenu->on( Event::OnMenuShow, [this, termColorSchemeMenu]( const Event* ) {
 		mApp->getTerminalManager()->updateMenuColorScheme( termColorSchemeMenu );
 	} );
@@ -1053,14 +1072,17 @@ UIMenu* SettingsMenu::createEditMenu() {
 
 UIMenu* SettingsMenu::createWindowMenu() {
 	mWindowMenu = UIPopUpMenu::New();
+	auto shouldCloseCb = []( UIMenuItem* ) -> bool { return false; };
 	UIPopUpMenu* colorsMenu = UIPopUpMenu::New();
 	colorsMenu
 		->addRadioButton( i18n( "light", "Light" ),
 						  mApp->getUIColorScheme() == ColorSchemePreference::Light )
+		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "light" );
 	colorsMenu
 		->addRadioButton( i18n( "dark", "Dark" ),
 						  mApp->getUIColorScheme() == ColorSchemePreference::Dark )
+		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "dark" );
 	colorsMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
@@ -1170,6 +1192,13 @@ UIMenu* SettingsMenu::createWindowMenu() {
 
 	mWindowMenu->addSeparator();
 	mWindowMenu
+		->addCheckBox( i18n( "open_files_in_new_window_enable", "Open Files in New Window" ),
+					   mApp->getConfig().ui.openFilesInNewWindow )
+		->setTooltipText( i18n( "open_files_in_new_window_desc",
+								"When files are opened from a file explorer or from the command "
+								"line, this\ncontrols whether a new window is created or not." ) )
+		->setId( "open-files-in-new-window-enable" );
+	mWindowMenu
 		->addCheckBox( i18n( "welcome_screen_enable", "Enable Welcome Screen" ),
 					   mApp->getConfig().ui.welcomeScreen )
 		->setId( "welcome-screen-enable" );
@@ -1187,6 +1216,10 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		} else if ( "welcome-screen-enable" == item->getId() ) {
 			bool active = item->asType<UIMenuCheckBox>()->isActive();
 			mApp->getConfig().ui.welcomeScreen = active;
+		} else if ( "open-files-in-new-window-enable" == item->getId() ) {
+			bool active = item->asType<UIMenuCheckBox>()->isActive();
+			mApp->getConfig().ui.openFilesInNewWindow = active;
+			mApp->saveConfig();
 		} else {
 			String text = String( event->getNode()->asType<UIMenuItem>()->getId() ).toLower();
 			String::replaceAll( text, " ", "-" );
@@ -1649,7 +1682,7 @@ UIMenu* SettingsMenu::createViewMenu() {
 UIPopUpMenu* SettingsMenu::createToolsMenu() {
 	mToolsMenu = UIPopUpMenu::New();
 
-	mToolsMenu->add( i18n( "plugin_manager", "Plugin Manager" ), findIcon( "extensions" ) )
+	mToolsMenu->add( i18n( "plugin_manager", "Plugins Manager" ), findIcon( "extensions" ) )
 		->setId( "plugin-manager-open" );
 
 	mToolsMenu->addSeparator();
@@ -1733,10 +1766,12 @@ UIMenu* SettingsMenu::createHelpMenu() {
 UIMenu* SettingsMenu::createThemesMenu() {
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 
+	auto shouldCloseCb = []( UIMenuItem* ) -> bool { return false; };
 	const std::string& curTheme = mApp->getConfig().ui.theme;
 
 	menu->addRadioButton( i18n( "default_theme", "Default Theme" ),
 						  curTheme.empty() || "default_theme" == curTheme )
+		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "default_theme" );
 
 	auto files = FileSystem::filesInfoGetInPath( mApp->getThemesPath(), true, true, true );
@@ -1745,7 +1780,9 @@ UIMenu* SettingsMenu::createThemesMenu() {
 		if ( file.getExtension() != "css" )
 			continue;
 		auto name( FileSystem::fileRemoveExtension( file.getFileName() ) );
-		menu->addRadioButton( name, curTheme == name )->setId( name );
+		menu->addRadioButton( name, curTheme == name )
+			->setOnShouldCloseCb( shouldCloseCb )
+			->setId( name );
 	}
 
 	menu->on( Event::OnItemClicked, [this]( const Event* event ) {
@@ -1780,7 +1817,7 @@ UIMenu* SettingsMenu::createLanguagesMenu() {
 			FileSystem::fileGet( file.getFilepath(), data );
 			std::string lptrn( "title=\"(.-)\"" );
 			LuaPattern pattern( lptrn );
-			LuaPattern::Range matches[2];
+			PatternMatcher::Range matches[2];
 			if ( pattern.matches( data, matches ) ) {
 				std::string title(
 					data.substr( matches[1].start, matches[1].end - matches[1].start ) );

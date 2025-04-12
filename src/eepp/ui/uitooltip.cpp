@@ -14,7 +14,7 @@ UITooltip* UITooltip::New() {
 	return eeNew( UITooltip, () );
 }
 
-Vector2f UITooltip::getTooltipPosition( UITooltip* toolip, const Vector2f& requestedPosition ) {
+Vector2f UITooltip::getTooltipPosition( UIWidget* toolip, const Vector2f& requestedPosition ) {
 	UISceneNode* uiSceneNode = toolip->getUISceneNode();
 
 	if ( NULL == uiSceneNode )
@@ -62,10 +62,11 @@ Vector2f UITooltip::getTooltipPosition( UITooltip* toolip, const Vector2f& reque
 
 UITooltip::UITooltip() :
 	UIWidget( "tooltip" ), mAlignOffset( 0.f, 0.f ), mTooltipTime( Time::Zero ), mTooltipOf() {
-	setFlags( UI_NODE_DEFAULT_FLAGS_CENTERED | UI_AUTO_PADDING | UI_AUTO_SIZE );
 
 	mTextCache = Text::New();
 	mEnabled = false;
+
+	setFlags( UI_NODE_DEFAULT_FLAGS_CENTERED | UI_AUTO_PADDING | UI_AUTO_SIZE );
 
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
@@ -258,6 +259,9 @@ void UITooltip::onAutoSize() {
 }
 
 void UITooltip::autoAlign() {
+	if ( mTextCache == nullptr )
+		return;
+
 	Uint32 Width = mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right;
 	Uint32 Height = mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom;
 
@@ -576,11 +580,11 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::TextAlign: {
 			std::string align = String::toLower( attribute.value() );
 			if ( align == "center" )
-				setFlags( UI_HALIGN_CENTER );
+				setHorizontalAlign( UI_HALIGN_CENTER );
 			else if ( align == "left" )
-				setFlags( UI_HALIGN_LEFT );
+				setHorizontalAlign( UI_HALIGN_LEFT );
 			else if ( align == "right" )
-				setFlags( UI_HALIGN_RIGHT );
+				setHorizontalAlign( UI_HALIGN_RIGHT );
 			break;
 		}
 		default:
@@ -588,6 +592,11 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 	}
 
 	return true;
+}
+
+void UITooltip::onAlignChange() {
+	UIWidget::onAlignChange();
+	autoAlign();
 }
 
 void UITooltip::onAlphaChange() {

@@ -1,13 +1,17 @@
 #include <cerrno>
 #include <climits>
 #include <cstdlib>
+#include <cstring>
 #include <ctime>
 #include <ctype.h>
+#include <eepp/core/string.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/sys.hpp>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 
 // This taints the System module!
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
@@ -15,8 +19,10 @@
 #endif
 
 #if defined( EE_PLATFORM_POSIX )
+#include <dirent.h>
 #include <dlfcn.h>
 #include <sys/utsname.h>
+#include <unistd.h>
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS
@@ -31,12 +37,24 @@
 #include <windows.h>
 #undef GetDiskFreeSpace
 #undef GetTempPath
+
+// clang-format off
+#include <psapi.h>
+#include <tlhelp32.h>
+// clang-format on
+
+// Dynamically load PSAPI functions for Windows
+typedef BOOL( WINAPI* EnumProcesses_t )( DWORD*, DWORD, DWORD* );
+typedef BOOL( WINAPI* EnumProcessModules_t )( HANDLE, HMODULE*, DWORD, LPDWORD );
+typedef DWORD( WINAPI* GetModuleBaseName_t )( HANDLE, HMODULE, LPSTR, DWORD );
+
 #elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
 #include <libgen.h>
 #include <mntent.h>
-#include <unistd.h>
+#include <sys/sysinfo.h>
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
 #include <Directory.h>
+#include <OS.h>
 #include <Path.h>
 #include <Volume.h>
 #include <VolumeRoster.h>
@@ -47,10 +65,13 @@
 #elif EE_PLATFORM == EE_PLATFORM_SOLARIS
 #include <stdlib.h>
 #elif EE_PLATFORM == EE_PLATFORM_BSD
-#include <unistd.h>
+#include <sys/sysctl.h>
+#include <sys/types.h>
+#include <sys/user.h>
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
+#include <libproc.h>
 #include <mach-o/dyld.h>
 #include <spawn.h>
 #endif
@@ -191,14 +212,15 @@ static std::string GetWindowsArch() {
 		GetSystemInfo( &si );
 	}
 
-	if ( osvi.dwMajorVersion >= 6 ) {
-		if ( si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64 ) {
-			arch = "x64";
-		} else if ( si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL ) {
-			arch = "x86";
-		}
-	} else {
+	if ( si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64 ||
+		 si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64 ) {
+		arch = "x86_64";
+	} else if ( si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL ) {
 		arch = "x86";
+	} else if ( si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM64 ) {
+		arch = "arm64";
+	} else if ( si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM ) {
+		arch = "arm";
 	}
 
 	return arch;
@@ -1210,7 +1232,7 @@ bool Sys::windowAttachConsole() {
 }
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-static void windowsSystem( const std::string& programPath, const std::string& workingDirectory ) {
+static int windowsSystem( const std::string& programPath, const std::string& workingDirectory ) {
 	STARTUPINFOW si;
 	PROCESS_INFORMATION pi;
 	ZeroMemory( &si, sizeof( si ) );
@@ -1222,15 +1244,19 @@ static void windowsSystem( const std::string& programPath, const std::string& wo
 	if ( CreateProcessW( NULL, (LPWSTR)String( programPath ).toWideString().c_str(), NULL, NULL,
 						 FALSE, 0, NULL, workingDir.empty() ? NULL : workingDir.c_str(), &si,
 						 &pi ) ) {
+		int pid = static_cast<int>( pi.dwProcessId );
 		CloseHandle( pi.hProcess );
 		CloseHandle( pi.hThread );
+		return pid;
 	}
+
+	return 0;
 }
 #endif
 
-void Sys::execute( const std::string& cmd, const std::string& workingDir ) {
+int Sys::execute( const std::string& cmd, const std::string& workingDir ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	windowsSystem( cmd, workingDir );
+	return windowsSystem( cmd, workingDir );
 #elif EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	pid_t pid = fork();
 	if ( pid == 0 ) {
@@ -1246,6 +1272,7 @@ void Sys::execute( const std::string& cmd, const std::string& workingDir ) {
 		execvp( strings[0], (char* const*)strings.data() );
 		exit( 0 );
 	}
+	return pid;
 #endif
 }
 
@@ -1268,7 +1295,9 @@ std::string Sys::getProcessFilePath() {
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	std::wstring exename( _MAX_DIR, 0 );
-	GetModuleFileNameW( 0, &exename[0], _MAX_PATH );
+	DWORD size = GetModuleFileNameW( 0, &exename[0], _MAX_PATH );
+	if ( size > 0 && size < _MAX_PATH )
+		exename.resize( size ); // Resize to actual size without extra null characters
 	return String( exename ).toUtf8();
 #elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
 	char path[] = "/proc/self/exe";
@@ -1289,14 +1318,514 @@ std::string Sys::getProcessFilePath() {
 	sysctl( mib, 4, exename, &len, NULL, 0 );
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
 	image_info info;
-	get_image_info( 0, &info );
-	strncpy( exename, info.name, sizeof( exename ) );
+	int32 cookie = 0;
+
+	while ( B_OK == get_next_image_info( 0, &cookie, &info ) ) {
+		if ( info.type == B_APP_IMAGE )
+			break;
+	}
+
+	return FileSystem::fileNameFromPath( std::string( info.name ) );
 #else
 	*exename = 0;
 #endif
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
 	return std::string( exename );
+#endif
+}
+
+Int64 Sys::getProcessCreationTime( Uint64 pid ) {
+	Int64 creationTime = -1;
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	int rpid = static_cast<int>( pid );
+	HANDLE hProcess = OpenProcess( PROCESS_QUERY_INFORMATION, FALSE, rpid );
+	if ( hProcess == NULL ) {
+		return -1;
+	}
+
+	FILETIME creationFileTime, exitFileTime, kernelFileTime, userFileTime;
+	if ( GetProcessTimes( hProcess, &creationFileTime, &exitFileTime, &kernelFileTime,
+						  &userFileTime ) ) {
+		ULARGE_INTEGER ull;
+		ull.LowPart = creationFileTime.dwLowDateTime;
+		ull.HighPart = creationFileTime.dwHighDateTime;
+
+		// Convert from Windows file time to Unix timestamp
+		creationTime =
+			static_cast<time_t>( ( ull.QuadPart - 116444736000000000ULL ) / 10000000ULL );
+	} else {
+		creationTime = -1;
+	}
+
+	CloseHandle( hProcess );
+
+#elif EE_PLATFORM == EE_PLATFORM_LINUX
+	std::ifstream statFile( "/proc/" + std::to_string( pid ) + "/stat" );
+	if ( !statFile.is_open() ) {
+		return -1;
+	}
+
+	std::string token;
+	long startTimeTicks = 0;
+	int field = 1;
+	while ( statFile >> token ) {
+		if ( field == 22 ) { // The 22nd field is the start time in clock ticks
+			startTimeTicks = std::stol( token );
+			break;
+		}
+		field++;
+	}
+
+	struct sysinfo sysInfo;
+	sysinfo( &sysInfo );
+	long uptime = sysInfo.uptime;
+
+	long clockTicksPerSecond = sysconf( _SC_CLK_TCK );
+	creationTime = time( NULL ) - uptime + ( startTimeTicks / clockTicksPerSecond );
+
+	statFile.close();
+
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+	struct proc_bsdinfo procInfo;
+	int rpid = static_cast<int>( pid );
+	int status = proc_pidinfo( rpid, PROC_PIDTBSDINFO, 0, &procInfo, sizeof( procInfo ) );
+	if ( status <= 0 ) {
+		return -1;
+	}
+
+	creationTime = procInfo.pbi_start_tvsec;
+
+#elif EE_PLATFORM == EE_PLATFORM_BSD
+	struct kinfo_proc proc;
+	int rpid = static_cast<int>( pid );
+	size_t procLen = sizeof( proc );
+	int mib[] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, rpid };
+
+	if ( sysctl( mib, 4, &proc, &procLen, NULL, 0 ) < 0 ) {
+		return -1;
+	}
+
+	creationTime = proc.ki_start.tv_sec;
+
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+	int rpid = static_cast<int>( pid );
+	int32 cookie = 0;
+	team_info teamInfo;
+	while ( get_next_team_info( &cookie, &teamInfo ) == B_OK ) {
+		if ( teamInfo.team != rpid )
+			continue;
+		return teamInfo.start_time;
+	}
+#endif
+
+	return creationTime;
+}
+
+std::vector<Uint64> Sys::pidof( const std::string& processName ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	std::vector<Uint64> pids;
+	std::vector<std::string> extensions = getEnvSplitted( "PATHEXT" );
+
+	HMODULE hPsapi = LoadLibrary( TEXT( "psapi.dll" ) );
+	if ( !hPsapi )
+		return pids;
+
+	EnumProcesses_t EnumProcesses = (EnumProcesses_t)GetProcAddress( hPsapi, "EnumProcesses" );
+	EnumProcessModules_t EnumProcessModules =
+		(EnumProcessModules_t)GetProcAddress( hPsapi, "EnumProcessModules" );
+	GetModuleBaseName_t GetModuleBaseName =
+		(GetModuleBaseName_t)GetProcAddress( hPsapi, "GetModuleBaseNameA" );
+
+	if ( !EnumProcesses || !EnumProcessModules || !GetModuleBaseName ) {
+		FreeLibrary( hPsapi );
+		eePRINTL( "EnumProcesses or EnumProcessModules or GetModuleBaseName failed" );
+		return pids;
+	}
+
+	DWORD processIds[1024], cbNeeded;
+	if ( !EnumProcesses( processIds, sizeof( processIds ), &cbNeeded ) ) {
+		FreeLibrary( hPsapi );
+		eePRINTL( "EnumProcesses failed" );
+		return pids;
+	}
+
+	DWORD numProcesses = cbNeeded / sizeof( DWORD );
+
+	for ( DWORD i = 0; i < numProcesses; ++i ) {
+		if ( processIds[i] == 0 )
+			continue;
+
+		HANDLE hProcess =
+			OpenProcess( PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processIds[i] );
+		if ( hProcess ) {
+			HMODULE hMod;
+			DWORD cbNeededMod;
+			if ( EnumProcessModules( hProcess, &hMod, sizeof( hMod ), &cbNeededMod ) ) {
+				char szProcessName[MAX_PATH];
+				if ( GetModuleBaseName( hProcess, hMod, szProcessName,
+										sizeof( szProcessName ) / sizeof( char ) ) ) {
+					std::string actualName( szProcessName, std::strlen( szProcessName ) );
+
+					// Check if the process name matches the input name with or without extensions
+					if ( actualName == processName ) {
+						pids.push_back( processIds[i] );
+					} else {
+						for ( const auto& ext : extensions ) {
+							std::string extName = processName + ext;
+							if ( actualName == extName ) {
+								pids.push_back( processIds[i] );
+								break;
+							}
+						}
+					}
+				}
+			}
+			CloseHandle( hProcess );
+		}
+	}
+
+	for ( auto pid : pids )
+		eePRINTL( "Found pid %d", pid );
+
+	FreeLibrary( hPsapi );
+	return pids;
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
+
+	std::vector<Uint64> pids;
+	DIR* dir = opendir( "/proc" );
+	if ( !dir ) {
+		return pids;
+	}
+
+	struct dirent* entry;
+	while ( ( entry = readdir( dir ) ) != NULL ) {
+		if ( entry->d_type == DT_DIR && isdigit( entry->d_name[0] ) ) {
+			std::string pidDir = "/proc/" + std::string( entry->d_name );
+			std::string cmdPath = pidDir + "/comm";
+			FILE* cmdFile = fopen( cmdPath.c_str(), "r" );
+			if ( cmdFile ) {
+				char cmdline[256];
+				if ( fgets( cmdline, sizeof( cmdline ), cmdFile ) != NULL ) {
+					cmdline[strcspn( cmdline, "\n" )] = 0; // Remove newline
+					if ( processName == cmdline ) {
+						pids.push_back( atoi( entry->d_name ) );
+					}
+				}
+				fclose( cmdFile );
+			}
+		}
+	}
+
+	closedir( dir );
+	return pids;
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+	std::vector<Uint64> pids;
+
+	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0 };
+	size_t len;
+
+	if ( sysctl( mib, 4, NULL, &len, NULL, 0 ) == -1 ) {
+		return pids;
+	}
+
+	struct kinfo_proc* procs = (struct kinfo_proc*)malloc( len );
+	if ( !procs ) {
+		return pids;
+	}
+
+	if ( sysctl( mib, 4, procs, &len, NULL, 0 ) == -1 ) {
+		free( procs );
+		return pids;
+	}
+
+	int proc_count = len / sizeof( struct kinfo_proc );
+
+	for ( int i = 0; i < proc_count; i++ ) {
+		std::string name( procs[i].kp_proc.p_comm );
+		if ( name == processName ) {
+			pids.push_back( procs[i].kp_proc.p_pid );
+		}
+	}
+
+	free( procs );
+	return pids;
+#elif EE_PLATFORM == EE_PLATFORM_BSD
+	std::vector<Uint64> pids;
+
+	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PROC, 0 };
+	size_t len;
+
+	if ( sysctl( mib, 4, NULL, &len, NULL, 0 ) == -1 ) {
+		return pids;
+	}
+
+	struct kinfo_proc* procs = (struct kinfo_proc*)malloc( len );
+	if ( !procs ) {
+		return pids;
+	}
+
+	if ( sysctl( mib, 4, procs, &len, NULL, 0 ) == -1 ) {
+		free( procs );
+		return pids;
+	}
+
+	int proc_count = len / sizeof( struct kinfo_proc );
+
+	for ( int i = 0; i < proc_count; i++ ) {
+		std::string name( procs[i].ki_comm );
+		if ( name == processName ) {
+			pids.push_back( procs[i].ki_pid );
+		}
+	}
+
+	free( procs );
+	return pids;
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+	std::vector<Uint64> pids;
+	int32 cookie = 0;
+	team_info teamInfo;
+	while ( get_next_team_info( &cookie, &teamInfo ) == B_OK ) {
+		if ( std::string_view{ teamInfo.name } == std::string_view{ processName } )
+			pids.push_back( teamInfo.team );
+	}
+	return pids;
+#else
+#warning Platform not supported
+	return {};
+#endif
+}
+
+std::vector<std::pair<Uint64, std::string>> Sys::listProcesses() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	std::vector<std::pair<Uint64, std::string>> pids;
+	std::vector<std::string> extensions = getEnvSplitted( "PATHEXT" );
+
+	HMODULE hPsapi = LoadLibrary( TEXT( "psapi.dll" ) );
+	if ( !hPsapi )
+		return pids;
+
+	EnumProcesses_t EnumProcesses = (EnumProcesses_t)GetProcAddress( hPsapi, "EnumProcesses" );
+	EnumProcessModules_t EnumProcessModules =
+		(EnumProcessModules_t)GetProcAddress( hPsapi, "EnumProcessModules" );
+	GetModuleBaseName_t GetModuleBaseName =
+		(GetModuleBaseName_t)GetProcAddress( hPsapi, "GetModuleBaseNameA" );
+
+	if ( !EnumProcesses || !EnumProcessModules || !GetModuleBaseName ) {
+		FreeLibrary( hPsapi );
+		eePRINTL( "EnumProcesses or EnumProcessModules or GetModuleBaseName failed" );
+		return pids;
+	}
+
+	DWORD processIds[1024], cbNeeded;
+	if ( !EnumProcesses( processIds, sizeof( processIds ), &cbNeeded ) ) {
+		FreeLibrary( hPsapi );
+		eePRINTL( "EnumProcesses failed" );
+		return pids;
+	}
+
+	DWORD numProcesses = cbNeeded / sizeof( DWORD );
+	pids.reserve( numProcesses );
+
+	for ( DWORD i = 0; i < numProcesses; ++i ) {
+		if ( processIds[i] == 0 )
+			continue;
+
+		HANDLE hProcess =
+			OpenProcess( PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processIds[i] );
+		if ( hProcess ) {
+			HMODULE hMod;
+			DWORD cbNeededMod;
+			if ( EnumProcessModules( hProcess, &hMod, sizeof( hMod ), &cbNeededMod ) ) {
+				char szProcessName[MAX_PATH];
+				if ( GetModuleBaseName( hProcess, hMod, szProcessName,
+										sizeof( szProcessName ) / sizeof( char ) ) ) {
+					std::string actualName( szProcessName, std::strlen( szProcessName ) );
+					pids.emplace_back( processIds[i], std::move( actualName ) );
+				}
+			}
+			CloseHandle( hProcess );
+		}
+	}
+
+	FreeLibrary( hPsapi );
+	return pids;
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
+	std::vector<std::pair<Uint64, std::string>> pids;
+	DIR* dir = opendir( "/proc" );
+	if ( !dir ) {
+		return pids;
+	}
+
+	struct dirent* entry;
+	while ( ( entry = readdir( dir ) ) != NULL ) {
+		if ( entry->d_type == DT_DIR && isdigit( entry->d_name[0] ) ) {
+			std::string pidDir = "/proc/" + std::string( entry->d_name );
+			std::string cmdPath = pidDir + "/comm";
+			FILE* cmdFile = fopen( cmdPath.c_str(), "r" );
+			if ( cmdFile ) {
+				char cmdline[256];
+				if ( fgets( cmdline, sizeof( cmdline ), cmdFile ) != NULL ) {
+					cmdline[strcspn( cmdline, "\n" )] = 0; // Remove newline
+					pids.emplace_back( atoi( entry->d_name ), std::string{ cmdline } );
+				}
+				fclose( cmdFile );
+			}
+		}
+	}
+
+	closedir( dir );
+	return pids;
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+	std::vector<std::pair<Uint64, std::string>> pids;
+
+	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0 };
+	size_t len;
+
+	if ( sysctl( mib, 4, NULL, &len, NULL, 0 ) == -1 ) {
+		return pids;
+	}
+
+	struct kinfo_proc* procs = (struct kinfo_proc*)malloc( len );
+	if ( !procs ) {
+		return pids;
+	}
+
+	if ( sysctl( mib, 4, procs, &len, NULL, 0 ) == -1 ) {
+		free( procs );
+		return pids;
+	}
+
+	int proc_count = len / sizeof( struct kinfo_proc );
+	pids.reserve( proc_count );
+
+	for ( int i = 0; i < proc_count; i++ ) {
+		std::string name( procs[i].kp_proc.p_comm );
+		pids.emplace_back( procs[i].kp_proc.p_pid, name );
+	}
+
+	free( procs );
+	return pids;
+#elif EE_PLATFORM == EE_PLATFORM_BSD
+	std::vector<std::pair<Uint64, std::string>> pids;
+
+	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PROC, 0 };
+	size_t len;
+
+	if ( sysctl( mib, 4, NULL, &len, NULL, 0 ) == -1 ) {
+		return pids;
+	}
+
+	struct kinfo_proc* procs = (struct kinfo_proc*)malloc( len );
+	if ( !procs ) {
+		return pids;
+	}
+
+	if ( sysctl( mib, 4, procs, &len, NULL, 0 ) == -1 ) {
+		free( procs );
+		return pids;
+	}
+
+	int proc_count = len / sizeof( struct kinfo_proc );
+	pids.reserve( proc_count );
+
+	for ( int i = 0; i < proc_count; i++ ) {
+		std::string name( procs[i].ki_comm );
+		pids.emplace_back( procs[i].ki_pid, name );
+	}
+
+	free( procs );
+	return pids;
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+	std::vector<std::pair<Uint64, std::string>> pids;
+	int32 cookie = 0;
+	team_info teamInfo;
+	while ( get_next_team_info( &cookie, &teamInfo ) == B_OK ) {
+		pids.emplace_back( teamInfo.team, std::string{ teamInfo.name } );
+	}
+	return pids;
+#else
+#warning Platform not supported
+	return {};
+#endif
+}
+
+#pragma pack( push, 1 )
+
+// Basic structure of the Shell Link Header (size = 76 bytes)
+struct ShellLinkHeader {
+	uint32_t headerSize;
+	uint8_t guid[16];
+	uint32_t linkFlags;
+	uint32_t fileAttributes;
+	uint64_t creationTime;
+	uint64_t accessTime;
+	uint64_t writeTime;
+	uint32_t fileSize;
+	uint32_t iconIndex;
+	uint32_t showCommand;
+	uint16_t hotKey;
+	uint16_t reserved1;
+	uint32_t reserved2;
+	uint32_t reserved3;
+};
+
+#pragma pack( pop )
+
+std::string Sys::getShortcutTarget( const std::string& lnkFilePath ) {
+	if ( FileSystem::fileExtension( lnkFilePath ) != "lnk" )
+		return "";
+
+	std::vector<Uint8> data;
+	FileSystem::fileGet( lnkFilePath, data );
+
+	ShellLinkHeader* header = reinterpret_cast<ShellLinkHeader*>( data.data() );
+
+	if ( header->headerSize != 76 )
+		return "";
+
+	size_t offset = sizeof( ShellLinkHeader );
+
+	if ( header->linkFlags & 0x01 ) {
+		uint16_t idListSize = *reinterpret_cast<uint16_t*>( &data[offset] );
+		offset += 2 + idListSize; // Skip the IDList section
+	}
+
+	if ( header->linkFlags & 0x02 ) {
+		uint32_t linkInfoSize = *reinterpret_cast<uint32_t*>( &data[offset] );
+
+		if ( linkInfoSize > 0 ) {
+			uint32_t localBasePathOffset = *reinterpret_cast<uint32_t*>( &data[offset + 16] );
+
+			if ( localBasePathOffset != 0 && ( offset + localBasePathOffset ) < data.size() ) {
+				std::string targetPath(
+					reinterpret_cast<char*>( &data[offset + localBasePathOffset] ) );
+				return targetPath;
+			}
+		}
+	}
+
+	return "";
+}
+
+std::string Sys::getUserDirectory() {
+#ifdef _WIN32
+	// On Windows, use USERPROFILE or HOMEDRIVE + HOMEPATH
+	const char* userProfile = std::getenv( "USERPROFILE" );
+	if ( userProfile ) {
+		return std::string( userProfile );
+	} else {
+		// Fallback to HOMEDRIVE + HOMEPATH
+		const char* homeDrive = std::getenv( "HOMEDRIVE" );
+		const char* homePath = std::getenv( "HOMEPATH" );
+		if ( homeDrive && homePath )
+			return std::string( homeDrive ) + homePath;
+	}
+	return "";
+#else
+	// On Unix-based systems, use HOME
+	return std::string{ std::getenv( "HOME" ) };
 #endif
 }
 

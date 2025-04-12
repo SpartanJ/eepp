@@ -249,7 +249,23 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 			{ "play", 0xeb2c },
 			{ "output", 0xeb9d },
 			{ "fold", 0xeaf5 },
-		};
+			{ "bug", 0xeaaf },
+			{ "debug", 0xead8 },
+			{ "debug-alt", 0xeb91 },
+			{ "debug-continue", 0xeacf },
+			{ "debug-disconnect", 0xead0 },
+			{ "debug-pause", 0xead1 },
+			{ "debug-restart", 0xead2 },
+			{ "debug-start", 0xead3 },
+			{ "debug-step-into", 0xead4 },
+			{ "debug-step-out", 0xead5 },
+			{ "debug-step-over", 0xead6 },
+			{ "debug-stop", 0xead7 },
+			{ "chrome-close", 0xeab8 },
+			{ "diff-added", 0xeadc },
+			{ "diff-removed", 0xeadf },
+			{ "eye", 0xea70 },
+			{ "eye-closed", 0xeae7 } };
 
 		for ( const auto& icon : codIcons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );
@@ -268,6 +284,16 @@ void IconManager::init( UISceneNode* sceneNode, FontTrueType* iconFont, FontTrue
 		"0.54289-0.15532 0.96335 0.42061 1.0068 0.89674 0.096424 1.0555-0.97349 1.7652-1.9275 "
 		"1.7539-1.7263-0.020368-2.8161-1.765-2.6954-3.3595 0.15881-2.0986 2.0205-3.6297 "
 		"4.0363-3.8406'/></g></svg>" ) );
+
+	iconTheme->add( UISVGIcon::New(
+		"debug-stackframe",
+		"<svg fill='#fff' viewBox='0 0 16 16'><path d='M14.5 7.15l-4.26-4.74L9.31 2H4.25L3 "
+		"3.25v9.48l1.25 1.25h5.06l.93-.42 4.26-4.74V7.15zm-5.19 "
+		"5.58H4.25V3.25h5.06l4.26 4.73-4.26 4.75z' /></svg>" ) );
+
+	iconTheme->add( UISVGIcon::New(
+		"circle-perfect",
+		"<svg fill='#fff' viewBox='0 0 16 16'><circle cx='8' cy='8' r='7' /></svg>" ) );
 
 	sceneNode->getUIIconThemeManager()->setCurrentTheme( iconTheme );
 }

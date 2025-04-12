@@ -89,9 +89,10 @@ class EE_API UITreeView : public UIAbstractTableView {
 	virtual ModelIndex findRowWithText( const std::string& text, const bool& caseSensitive = false,
 										const bool& exactMatch = false ) const;
 
-	ModelIndex selectRowWithPath( std::string path );
+	ModelIndex openRowWithPath( std::string path, bool selectOpenedRow = true );
 
-	virtual ModelIndex selectRowWithPath( const std::vector<std::string>& pathTree );
+	virtual ModelIndex openRowWithPath( const std::vector<std::string>& pathTree,
+										bool selectOpenedRow = true );
 
 	virtual void setSelection( const ModelIndex& index, bool scrollToSelection = true,
 							   bool openModelIndexTree = true );
@@ -111,6 +112,8 @@ class EE_API UITreeView : public UIAbstractTableView {
 	bool getDisableCellClipping() const;
 
 	void setDisableCellClipping( bool disableCellCliping );
+
+	void clearViewMetadata();
 
   protected:
 	enum class IterationDecision {
@@ -141,8 +144,6 @@ class EE_API UITreeView : public UIAbstractTableView {
 											 const Float& )>
 		TreeViewCallback;
 
-	void traverseTree( TreeViewCallback ) const;
-
 	mutable std::unordered_map<void*, MetadataForIndex> mViewMetadata;
 
 	virtual size_t getItemCount() const;
@@ -168,6 +169,19 @@ class EE_API UITreeView : public UIAbstractTableView {
 	virtual void onModelSelectionChange();
 
 	virtual void bindNavigationClick( UIWidget* widget );
+
+	struct TraverseTreeVars {
+		UITreeView::TreeViewCallback callback;
+		const Model& model;
+		int indentLevel = 0;
+		Float yOffset = 0;
+		int rowIndex = -1;
+		Float rowHeight = 0;
+	};
+
+	IterationDecision traverseIndex( TraverseTreeVars& v, const ModelIndex& index ) const;
+
+	void traverseTree( TreeViewCallback ) const;
 };
 
 }} // namespace EE::UI

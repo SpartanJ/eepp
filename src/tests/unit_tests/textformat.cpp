@@ -85,7 +85,7 @@ UTEST( TextFormat, autodetectProject ) {
 			if ( "a" == extension || "zip" == extension || "dll" == extension ||
 				 "dat" == extension || "cur" == extension || "icns" == extension ||
 				 "wav" == extension || Image::isImageExtension( file.getFilepath() ) ||
-				 LuaPattern::matches( file.getFilepath(), "SDL2%-%d+%.%d+%.%d+" ) )
+				 LuaPattern::hasMatches( file.getFilepath(), "SDL2%-%d+%.%d+%.%d+" ) )
 				continue;
 			IOStreamFile stream( file.getFilepath() );
 			auto expectedEncoding = getEncoding( file.getFileName() );

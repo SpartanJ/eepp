@@ -58,7 +58,7 @@ class EE_API FileInfo {
 
 	const std::string& getFilepath() const;
 
-	std::string getFileName() const;
+	const std::string& getFileName() const;
 
 	std::string getDirectoryPath() const;
 

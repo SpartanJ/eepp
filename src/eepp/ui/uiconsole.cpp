@@ -396,6 +396,10 @@ void UIConsole::setMaxLogLines( const Uint32& maxLogLines ) {
 
 void UIConsole::privPushText( String&& str ) {
 	Lock l( mMutex );
+	if ( str.find_first_of( '\r' ) != String::InvalidPos )
+		String::replaceAll( str, "\r", "" );
+	if ( str.empty() )
+		return;
 	mCmdLog.push_back( { std::move( str ), String::hash( str ) } );
 	if ( mVisible )
 		invalidateDraw();
@@ -621,7 +625,7 @@ void UIConsole::cmdShowCursor( const std::vector<String>& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
-		bool Res = String::fromString<Int32>( tInt, params[1] );
+		bool Res = String::fromString( tInt, params[1] );
 
 		if ( Res && ( tInt == 0 || tInt == 1 ) ) {
 			getUISceneNode()->getWindow()->getCursorManager()->setVisible( 0 != tInt );
@@ -636,7 +640,7 @@ void UIConsole::cmdFrameLimit( const std::vector<String>& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
-		bool Res = String::fromString<Int32>( tInt, params[1] );
+		bool Res = String::fromString( tInt, params[1] );
 
 		if ( Res && ( tInt >= 0 && tInt <= 10000 ) ) {
 			getUISceneNode()->getWindow()->setFrameRateLimit( tInt );
@@ -648,8 +652,7 @@ void UIConsole::cmdFrameLimit( const std::vector<String>& params ) {
 }
 
 void UIConsole::cmdGetLog() {
-	std::vector<String> tvec =
-		String::split( String( String::toString( Log::instance()->getBuffer() ) ) );
+	std::vector<String> tvec = String::split( String::fromUtf8( Log::instance()->getBuffer() ) );
 	if ( tvec.size() > 0 ) {
 		for ( unsigned int i = 0; i < tvec.size(); i++ )
 			privPushText( std::move( tvec[i] ) );
@@ -687,7 +690,7 @@ void UIConsole::cmdGrep( const std::vector<String>& params ) {
 void UIConsole::cmdSetGamma( const std::vector<String>& params ) {
 	if ( params.size() >= 2 ) {
 		Float tFloat = 0.f;
-		bool Res = String::fromString<Float>( tFloat, params[1] );
+		bool Res = String::fromString( tFloat, params[1] );
 
 		if ( Res && ( tFloat > 0.1f && tFloat <= 10.0f ) ) {
 			getUISceneNode()->getWindow()->setGamma( tFloat, tFloat, tFloat );
@@ -702,7 +705,7 @@ void UIConsole::cmdSetVolume( const std::vector<String>& params ) {
 	if ( params.size() >= 2 ) {
 		Float tFloat = 0.f;
 
-		bool Res = String::fromString<Float>( tFloat, params[1] );
+		bool Res = String::fromString( tFloat, params[1] );
 
 		if ( Res && ( tFloat >= 0.0f && tFloat <= 100.0f ) ) {
 			EE::Audio::Listener::setGlobalVolume( tFloat );
@@ -775,7 +778,7 @@ void UIConsole::cmdShowFps( const std::vector<String>& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
-		bool res = String::fromString<Int32>( tInt, params[1] );
+		bool res = String::fromString( tInt, params[1] );
 
 		if ( res && ( tInt == 0 || tInt == 1 ) ) {
 			mShowFps = 0 != tInt;

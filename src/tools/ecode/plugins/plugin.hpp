@@ -12,6 +12,7 @@ using namespace EE::UI::Models;
 namespace ecode {
 
 class PluginManager;
+class PluginContextProvider;
 
 class Plugin : public UICodeEditorPlugin {
   public:
@@ -33,6 +34,8 @@ class Plugin : public UICodeEditorPlugin {
 
 	PluginManager* getManager() const;
 
+	PluginContextProvider* getPluginContext() const;
+
 	UISceneNode* getUISceneNode() const;
 
 	virtual String::HashType getConfigFileHash() { return 0; }
@@ -50,6 +53,13 @@ class Plugin : public UICodeEditorPlugin {
 	void showMessage( LSPMessageType type, const std::string& message,
 					  const std::string& title = "" );
 
+	virtual void onSaveProject( const std::string& /*projectFolder*/,
+								const std::string& /*projectStatePath*/,
+								bool /*rewriteStateOnlyIfNeeded*/ ) {}
+
+	virtual void onLoadProject( const std::string& /*projectFolder*/,
+								const std::string& /*projectStatePath*/ ) {}
+
   protected:
 	PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
@@ -60,7 +70,9 @@ class Plugin : public UICodeEditorPlugin {
 	std::atomic<bool> mLoading{ false };
 	std::atomic<bool> mShuttingDown{ false };
 
-	void setReady();
+	void setReady( Time loadTime = Seconds( 0 ) );
+
+	void waitUntilLoaded();
 };
 
 class PluginBase : public Plugin {
@@ -89,23 +101,26 @@ class PluginBase : public Plugin {
 	//! If the configuration is stored in a file, keep track of the config hash
 	String::HashType mConfigHash{ 0 };
 
-	virtual void onDocumentLoaded( TextDocument* ){};
+	virtual void onDocumentLoaded( TextDocument* ) {}
 
-	virtual void onDocumentClosed( TextDocument* ){};
+	virtual void onDocumentClosed( TextDocument* ) {}
 
-	virtual void onDocumentChanged( UICodeEditor*, TextDocument* /*oldDoc*/ ){};
+	virtual void onDocumentChanged( UICodeEditor*, TextDocument* /*oldDoc*/ ) {};
 
-	virtual void onRegisterListeners( UICodeEditor*, std::vector<Uint32>& /*listeners*/ ){};
+	virtual void onRegisterListeners( UICodeEditor*, std::vector<Uint32>& /*listeners*/ ) {};
 
 	//! Usually used to remove keybindings in an editor
-	virtual void onBeforeUnregister( UICodeEditor* ){};
+	virtual void onBeforeUnregister( UICodeEditor* );
 
-	virtual void onRegisterDocument( TextDocument* ){};
+	virtual void onRegisterDocument( TextDocument* ) {}
 
-	virtual void onUnregisterEditor( UICodeEditor* ){};
+	virtual void onRegisterEditor( UICodeEditor* );
+
+	virtual void onUnregisterEditor( UICodeEditor* ) {}
 
 	//! Usually used to unregister commands in a document
-	virtual void onUnregisterDocument( TextDocument* ){};
+	virtual void onUnregisterDocument( TextDocument* );
+	;
 };
 
 } // namespace ecode

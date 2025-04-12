@@ -117,6 +117,18 @@ void Http::Request::setBody( const std::string& body ) {
 	mBody = body;
 }
 
+void Http::Request::setBody( std::string&& body ) {
+	mBody = std::move( body );
+}
+
+void Http::Request::appendBody( const std::string& body ) {
+	mBody.append( body );
+}
+
+void Http::Request::appendBody( std::string&& body ) {
+	mBody.append( std::move( body ) );
+}
+
 const std::string& Http::Request::getUri() const {
 	return mUri;
 }
@@ -265,8 +277,11 @@ const std::string& Http::Request::getField( const std::string& field ) const {
 }
 
 URI Http::getEnvProxyURI() {
-	char* http_proxy = getenv( "http_proxy" );
+	const char* http_proxy = getenv( "http_proxy" );
 	URI proxy;
+
+	if ( NULL == http_proxy )
+		http_proxy = getenv( "HTTP_PROXY" );
 
 	if ( NULL != http_proxy ) {
 		std::string httpProxy;
@@ -494,10 +509,9 @@ void Http::Response::parse( const std::string& data ) {
 	std::string version;
 
 	if ( in >> version ) {
-		std::locale loc;
 		if ( ( version.size() >= 8 ) && ( version[6] == '.' ) &&
 			 ( String::toLower( version.substr( 0, 5 ) ) == "http/" ) &&
-			 std::isdigit( version[5], loc ) && std::isdigit( version[7], loc ) ) {
+			 std::isdigit( version[5] ) && std::isdigit( version[7] ) ) {
 			mMajorVersion = version[5] - '0';
 			mMinorVersion = version[7] - '0';
 		} else {
@@ -841,7 +855,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 				requestHead.setContinue( false );
 				requestHead.setMethod( Request::Head );
 				Response responseHead = downloadRequest( requestHead, responseHeadBody );
-				std::size_t contentLength = 0;
+				Uint64 contentLength = 0;
 
 				if ( responseHead.hasField( "Accept-Ranges" ) &&
 					 responseHead.hasField( "Content-Length" ) &&
@@ -887,7 +901,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 				bool isnheader = false;
 				bool chunked = false;
 				bool compressed = false;
-				std::size_t contentLength = 0;
+				Uint64 contentLength = 0;
 				std::string headerBuffer;
 				HttpStreamChunked* chunkedStream = NULL;
 				IOStreamInflate* inflateStream = NULL;
@@ -1193,10 +1207,11 @@ Http::Request Http::prepareFields( const Http::Request& request ) {
 	if ( !toSend.hasField( "Accept" ) )
 		toSend.setField( "Accept", "*/*" );
 
-	if ( !toSend.hasField( "Host" ) )
+	if ( !toSend.hasField( "Host" ) ) {
 		toSend.setField(
 			"Host",
 			mHostName + ( mPort != 80 && mPort != 443 ? ":" + String::toString( mPort ) : "" ) );
+	}
 
 	if ( !toSend.hasField( "Content-Length" ) && toSend.mBody.size() > 0 ) {
 		std::ostringstream out;

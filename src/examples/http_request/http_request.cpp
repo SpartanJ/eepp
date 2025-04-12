@@ -24,8 +24,15 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::Flag resume( parser, "continue", "Resume getting a partially-downloaded file",
 					   { 'c', "continue" } );
 	args::Flag compressed( parser, "compressed", "Request compressed response", { "compressed" } );
-	args::ValueFlag<std::string> postData( parser, "data", "HTTP POST data",
-										   { 'd', "data", "data-raw" } );
+	args::ValueFlagList<std::string> postData( parser, "data", "HTTP POST data",
+											   { 'd', "data", "data-raw" } );
+	args::ValueFlagList<std::string> postDataRaw( parser, "data-raw", "HTTP POST data RAW",
+												  { "data-raw" } );
+	args::ValueFlagList<std::string> postUrlEncode(
+		parser, "data-urlencode",
+		"Post data, similar to the other -d, --data options with the exception that this performs "
+		"URL-encoding.",
+		{ "data-urlencode" } );
 	args::ValueFlagList<std::string> multipartData(
 		parser, "multipart-data", "Specify multipart MIME data", { 'F', "form" } );
 	args::ValueFlagList<std::string> headers( parser, "header", "Pass custom header(s) to server",
@@ -105,10 +112,64 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 				}
 			}
 
-			// Set the post data / body
+			// Set the post data
 			if ( postData ) {
+				std::string body;
+				for ( auto& data : args::get( postData ) ) {
+					if ( !data.empty() && data[0] == '@' ) {
+						std::string path( data.substr( 1 ) );
+						String::trimInPlace( path, '"' );
+						if ( FileSystem::fileExists( path ) ) {
+							std::string readData;
+							FileSystem::fileGet( path, readData );
+							body += std::move( readData );
+						}
+					} else {
+						String::trimInPlace( data, '"' );
+						body += std::move( data );
+					}
+					body += "&";
+				}
+				if ( !body.empty() )
+					body.pop_back();
 				request.setMethod( Http::Request::Method::Post );
-				request.setBody( postData.Get() );
+				request.setBody( std::move( body ) );
+			}
+
+			// Set the post data URL encoded
+			if ( postUrlEncode ) {
+				std::string body;
+				for ( auto& data : args::get( postUrlEncode ) ) {
+					String::trimInPlace( data, '"' );
+					auto keyLen = data.find_first_of( '=' );
+					if ( keyLen != std::string::npos ) {
+						body += data.substr( 0, keyLen );
+						body += '=';
+						body += URI::encode( std::string_view{ data }.substr( keyLen + 1 ) );
+					} else {
+						body += std::move( data );
+						body += '=';
+					}
+					body += "&";
+				}
+				if ( !body.empty() )
+					body.pop_back();
+				request.setMethod( Http::Request::Method::Post );
+				request.setBody( std::move( body ) );
+			}
+
+			// Set the post raw data
+			if ( postDataRaw ) {
+				std::string body;
+				for ( auto& data : args::get( postDataRaw ) ) {
+					String::trimInPlace( data, '"' );
+					body += std::move( data );
+					body += "&";
+				}
+				if ( !body.empty() )
+					body.pop_back();
+				request.setMethod( Http::Request::Method::Post );
+				request.setBody( std::move( body ) );
 			}
 
 			// Set the multipart data

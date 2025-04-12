@@ -727,7 +727,7 @@ void TexturePacker::saveTextureRegions() {
 
 		if ( tTextureRegionsHdr.size() )
 			fs.write( reinterpret_cast<const char*>( &tTextureRegionsHdr[0] ),
-					  sizeof( sTextureRegionHdr ) * (std::streamsize)tTextureRegionsHdr.size() );
+					  sizeof( sTextureRegionHdr ) * tTextureRegionsHdr.size() );
 	}
 }
 

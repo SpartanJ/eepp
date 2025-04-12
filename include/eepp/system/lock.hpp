@@ -8,7 +8,7 @@ namespace EE { namespace System {
 
 class Mutex;
 
-/** @brief Automatic wrapper for locking and unlocking mutexes */
+/** @brief Automatic wrapper for locking and unlocking recursive mutexes */
 class EE_API Lock : NonCopyable {
   public:
 	/** @brief Construct the lock with a target mutex

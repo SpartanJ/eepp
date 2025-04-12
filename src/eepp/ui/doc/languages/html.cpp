@@ -9,7 +9,7 @@ void addHTML() {
 		->add(
 
 			{ "HTML",
-			  { "%.[mp]?html?$", "%.handlebars" },
+			  { "%.[mp]?html?$", "%.handlebars$" },
 			  {
 				  { { "<%s*[sS][cC][rR][iI][pP][tT]%s+[tT][yY][pP][eE]%s*=%s*['\"]%a+/"
 					  "[jJ][aA][vV][aA][sS][cC][rR][iI][pP][tT]['\"]%s*>",

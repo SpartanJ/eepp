@@ -40,7 +40,7 @@ class EE_API TextDocument {
 
 	enum class IndentType { IndentSpaces, IndentTabs };
 
-	enum class FindReplaceType { Normal, LuaPattern };
+	enum class FindReplaceType { Normal, LuaPattern, RegEx };
 
 	enum class LoadStatus { Loaded, Interrupted, Failed };
 
@@ -91,15 +91,20 @@ class EE_API TextDocument {
 		virtual void onDocumentClosed( TextDocument* ) = 0;
 		virtual void onDocumentDirtyOnFileSystem( TextDocument* ) = 0;
 		virtual void onDocumentMoved( TextDocument* ) = 0;
+		virtual void onDocumentReset( TextDocument* ) = 0;
+
 		virtual void onDocumentReloaded( TextDocument* doc ) {
 			onDocumentClosed( doc );
 			onDocumentLoaded( doc );
 		}
-		virtual void onDocumentReset( TextDocument* ) = 0;
+
 		virtual void onDocumentSyntaxDefinitionChange( const SyntaxDefinition& ) {}
+
 		virtual void onDocumentLineMove( const Int64& /*fromLine*/, const Int64& /*toLine*/,
 										 const Int64& /*numLines*/ ) {}
+
 		virtual TextRange getVisibleRange() const { return {}; };
+
 		virtual void onFoldRegionsUpdated( size_t /*oldCount*/, size_t /*newCount*/ ) {}
 	};
 
@@ -175,7 +180,7 @@ class EE_API TextDocument {
 
 	const TextRange& getSelection() const;
 
-	const TextRange& getSelectionIndex( const size_t& index ) const;
+	TextRange getSelectionIndex( const size_t& index, bool sort = false ) const;
 
 	TextDocumentLine& line( const size_t& index );
 
@@ -226,14 +231,20 @@ class EE_API TextDocument {
 
 	TextPosition previousChar( TextPosition position ) const;
 
-	TextPosition previousWordBoundary( TextPosition position,
-									   bool ignoreFirstNonWord = true ) const;
+	TextPosition previousWordBoundary( TextPosition position, bool ignoreFirstNonWord = true,
+									   std::size_t maxSeekChars = 1024,
+									   bool returnInvalidOnMaxSeek = false ) const;
 
-	TextPosition nextWordBoundary( TextPosition position, bool ignoreFirstNonWord = true ) const;
+	TextPosition nextWordBoundary( TextPosition position, bool ignoreFirstNonWord = true,
+								   std::size_t maxSeekChars = 1024,
+								   bool returnInvalidOnMaxSeek = false ) const;
 
-	TextPosition previousSpaceBoundaryInLine( TextPosition position ) const;
+	TextPosition previousSpaceBoundaryInLine( TextPosition position,
+											  std::size_t maxSeekChars = 1024,
+											  bool returnInvalidOnMaxSeek = false ) const;
 
-	TextPosition nextSpaceBoundaryInLine( TextPosition position ) const;
+	TextPosition nextSpaceBoundaryInLine( TextPosition position, std::size_t maxSeekChars = 1024,
+										  bool returnInvalidOnMaxSeek = false ) const;
 
 	TextPosition startOfWord( TextPosition position ) const;
 
@@ -307,6 +318,8 @@ class EE_API TextDocument {
 
 	void deleteToNextChar();
 
+	void deleteToEndOfLine();
+
 	void deleteToPreviousWord();
 
 	void deleteToNextWord();
@@ -326,6 +339,8 @@ class EE_API TextDocument {
 	void selectAllWords();
 
 	void selectLine();
+
+	void selectSingleLine();
 
 	void selectToNextWord();
 
@@ -516,9 +531,9 @@ class EE_API TextDocument {
 
 	void toLowerSelection();
 
-	const std::string& getLoadingFilePath() const;
+	std::string getLoadingFilePath() const;
 
-	const URI& getLoadingFileURI() const;
+	URI getLoadingFileURI() const;
 
 	void setSelection( const TextRanges& selection );
 
@@ -735,10 +750,11 @@ class EE_API TextDocument {
 
 	void notifyFoldRegionsUpdated( size_t oldCount, size_t newCount );
 
-	void insertAtStartOfSelectedLines( const String& text, bool skipEmpty );
+	void insertAtStartOfSelectedLines( const String& text, bool skipEmpty, Int64 startFrom = 0,
+									   std::size_t cursorIndex = 0 );
 
 	void removeFromStartOfSelectedLines( const String& text, bool skipEmpty,
-										 bool removeExtraSpaces = false );
+										 bool removeExtraSpaces = false, Int64 startFrom = 0 );
 
 	/** @return The number of lines removed (complete lines, not modified lines) */
 	size_t remove( const size_t& cursorIdx, TextRange range, UndoStackContainer& undoStack,

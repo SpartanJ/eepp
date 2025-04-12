@@ -151,6 +151,8 @@ template <typename T> class UIDataBind {
 
 	std::function<void( const T& newVal )> onValueChangeCb;
 
+	const std::set<UIWidget*>& getWidgets() const { return widgets; }
+
   protected:
 	T* data{ nullptr };
 	std::set<UIWidget*> widgets;

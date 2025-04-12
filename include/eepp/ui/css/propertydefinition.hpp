@@ -259,9 +259,6 @@ enum class PropertyRelativeTarget : Uint32 {
 
 class EE_API PropertyDefinition {
   public:
-	static PropertyDefinition* New( const std::string& name, const std::string& defaultValue,
-									const bool& inherited = false );
-
 	PropertyDefinition( const std::string& name, const std::string& defaultValue,
 						const bool& inherited = false );
 

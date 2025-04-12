@@ -53,12 +53,23 @@ class EE_API UIWindow : public UIWidget {
 		bool BorderAutoSize = true;
 	};
 
-	enum WindowBaseContainerType { SIMPLE_LAYOUT, LINEAR_LAYOUT, RELATIVE_LAYOUT };
+	enum WindowBaseContainerType {
+		SIMPLE_LAYOUT,
+		VERTICAL_LINEAR_LAYOUT,
+		HORIZONTAL_LINEAR_LAYOUT,
+		RELATIVE_LAYOUT
+	};
 
 	static UIWindow* NewOpt( WindowBaseContainerType type,
 							 const StyleConfig& windowStyleConfig = StyleConfig() );
 
 	static UIWindow* New();
+
+	static UIWindow* NewVBox();
+
+	static UIWindow* NewHBox();
+
+	static UIWindow* NewRelLay();
 
 	explicit UIWindow( WindowBaseContainerType type, const StyleConfig& windowStyleConfig );
 

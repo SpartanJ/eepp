@@ -42,7 +42,7 @@ class UniversalLocator {
 
 	void initLocateBar( UILocateBar* locateBar, UITextInput* locateInput );
 
-	void showLocateBar();
+	void showLocateBar( bool useGlob = false );
 
 	void hideLocateBar();
 
@@ -52,11 +52,13 @@ class UniversalLocator {
 
 	void goToLine();
 
-	void updateFilesTable();
+	void updateFilesTable( bool useGlob = false );
 
 	void updateCommandPaletteTable();
 
 	void showLocateTable();
+
+	void showLocateTableGlob();
 
 	void showWorkspaceSymbol();
 
@@ -129,8 +131,6 @@ class UniversalLocator {
 		std::function<void( std::shared_ptr<LSPSymbolInfoModel> )> cb );
 
 	std::shared_ptr<FileListModel> openDocumentsModel( const std::string& match );
-
-	void focusOrLoadFile( const std::string& path, const TextRange& range = {} );
 
 	std::shared_ptr<ItemListOwnerModel<std::string>> openBuildModel( const std::string& match );
 

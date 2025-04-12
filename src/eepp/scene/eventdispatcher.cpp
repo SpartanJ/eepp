@@ -118,11 +118,14 @@ void EventDispatcher::update( const Time& time ) {
 	if ( NULL != mNodeDragging )
 		mNodeDragging->onCalculateDrag( mMousePos, mInput->getPressTrigger() );
 
+	mJustPressed = false;
+
 	if ( mInput->getPressTrigger() ) {
 		if ( !mFirstPress ) {
 			mDownNode = mOverNode;
 			mMouseDownPos = mMousePosi;
 			mFirstPress = true;
+			mJustPressed = true;
 		}
 
 		if ( NULL != mOverNode ) {
@@ -142,6 +145,7 @@ void EventDispatcher::update( const Time& time ) {
 			mDownNode = mOverNode;
 			mMouseDownPos = mMousePosi;
 			mFirstPress = true;
+			mJustPressed = true;
 		}
 		mOverNode->onMouseDown( mMousePosi, mInput->getReleaseTrigger() );
 		sendMsg( mOverNode, NodeMessage::MouseDown, mInput->getReleaseTrigger() );
@@ -230,6 +234,8 @@ void EventDispatcher::sendTextInput( const Uint32& textChar, const Uint32& times
 void EventDispatcher::sendTextEditing( const String& text, const Int32& start,
 									   const Int32& length ) {
 	mWindow->getIME().onTextEditing( text, start, length );
+	if ( !mWindow->getIME().isEditing() && length <= 0 )
+		return;
 	TextEditingEvent textEditingEvent =
 		TextEditingEvent( mFocusNode, Event::TextInput, text, start, length );
 	Node* node = mFocusNode;
@@ -320,6 +326,10 @@ Node* EventDispatcher::getLastFocusNode() const {
 
 void EventDispatcher::setLastFocusNode( Node* lastFocusNode ) {
 	mLastFocusNode = lastFocusNode;
+}
+
+bool EventDispatcher::isFirstPress() const {
+	return mJustPressed;
 }
 
 Node* EventDispatcher::getMouseDownNode() const {

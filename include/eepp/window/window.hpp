@@ -70,8 +70,8 @@ class WindowSettings {
 		UseScreenKeyboard( EE_SCREEN_KEYBOARD_ENABLED ) {}
 
 	Uint32 Style;
-	Uint32 Width;
-	Uint32 Height;
+	Uint32 Width;  //! In screen coordinates (pixels * scale)
+	Uint32 Height; //! In screen coordinates (pixels * scale)
 	Uint32 BitsPerPixel;
 	std::string Icon;
 	std::string Title;
@@ -170,7 +170,7 @@ class EE_API Window {
 	/** Bind the OpenGL context to the current window */
 	virtual void makeCurrent() = 0;
 
-	virtual Uint32 getWindowID() = 0;
+	virtual Uint32 getWindowID() const = 0;
 
 	/** Toogle the screen to Fullscreen, if it's in fullscreen toogle to windowed mode. */
 	virtual void toggleFullscreen() = 0;
@@ -179,7 +179,7 @@ class EE_API Window {
 	virtual void setTitle( const std::string& title ) = 0;
 
 	/** @return The window title*/
-	virtual std::string getTitle();
+	virtual const std::string& getTitle() const;
 
 	/** Set the Window icon */
 	virtual bool setIcon( const std::string& path ) = 0;
@@ -191,13 +191,19 @@ class EE_API Window {
 	virtual void maximize();
 
 	/** @return true if the window is maximized */
-	virtual bool isMaximized();
+	virtual bool isMaximized() const;
+
+	/** @return true if the window is minimized */
+	virtual bool isMinimized() const;
 
 	/** This will attempt to hide the window */
 	virtual void hide();
 
 	/** This will attempt to raise the window */
 	virtual void raise();
+
+	/** This will attempt to restore the window */
+	virtual void restore();
 
 	/** Request a window to demand attention from the user. */
 	virtual void flash( WindowFlashOperation op );
@@ -209,26 +215,26 @@ class EE_API Window {
 	virtual void setPosition( int Left, int Top );
 
 	/** @return The Current Window Position */
-	virtual Vector2i getPosition();
+	virtual Vector2i getPosition() const;
 
 	/** Set as current context the default context ( the context used for the window creation ) */
 	virtual void setDefaultContext();
 
 	/** @return If the current window is active. This means that the window hasInputFocus() and
 	 * hasMouseFocus(). */
-	virtual bool isActive() = 0;
+	virtual bool isActive() const = 0;
 
 	/** @return If the current window is visible */
-	virtual bool isVisible() = 0;
+	virtual bool isVisible() const = 0;
 
 	/** @return If the current window has focus (same as hasInputFocus() or(||) hasMouseFocus()) */
-	virtual bool hasFocus() = 0;
+	virtual bool hasFocus() const = 0;
 
 	/** @return If the current window has input focus */
-	virtual bool hasInputFocus() = 0;
+	virtual bool hasInputFocus() const = 0;
 
 	/** @return If the current window has input focus */
-	virtual bool hasMouseFocus() = 0;
+	virtual bool hasMouseFocus() const = 0;
 
 	/** Set the size of the window for a windowed window */
 	virtual void setSize( Uint32 Width, Uint32 Height );
@@ -240,11 +246,16 @@ class EE_API Window {
 	 */
 	virtual void setSize( Uint32 Width, Uint32 Height, bool isWindowed ) = 0;
 
-	/** @return The window size */
-	virtual Sizei getSize();
+	/** @return The window size in pixels */
+	virtual Sizei getSize() const;
+
+	/** @return The window size in screen coordinates (screen coordinates is size in pixels /
+	 * scale).
+	 */
+	virtual Sizei getSizeInScreenCoordinates() const;
 
 	/** @return The window center point */
-	Vector2f getCenter();
+	Vector2f getCenter() const;
 
 	/** @return The resolutions that support the video card */
 	virtual std::vector<DisplayMode> getDisplayModes() const = 0;
@@ -259,7 +270,7 @@ class EE_API Window {
 	virtual eeWindowContex getContext() const;
 
 	/** @return The window handler */
-	virtual eeWindowHandle getWindowHandler() = 0;
+	virtual eeWindowHandle getWindowHandler() const = 0;
 
 	/** @brief Clear the window back buffer
 	This function is usually called once every frame, to clear the previous frame content.
@@ -291,16 +302,16 @@ class EE_API Window {
 	virtual const Uint32& getHeight() const;
 
 	/** @return The current desktop resolution */
-	virtual const Sizei& getDesktopResolution();
+	virtual const Sizei& getDesktopResolution() const;
 
 	/** Center the window to the desktop ( if windowed ) */
 	virtual void centerToDisplay();
 
 	/** @return The window borders size */
-	virtual Rect getBorderSize();
+	virtual Rect getBorderSize() const;
 
 	/** @return The size of the pixel in screen coordinates. This is the device scale factor. */
-	virtual Float getScale();
+	virtual Float getScale() const;
 
 	/** @return If the aplication is running returns true ( If you Init correctly the window and is
 	 * running ). */
@@ -337,7 +348,7 @@ class EE_API Window {
 	void setViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
 
 	/** @return The viewport in pixels of the view */
-	Rect getViewport( const View& view );
+	Rect getViewport( const View& view ) const;
 
 	/** Set the window background color */
 	void setClearColor( const RGB& Color );
@@ -362,7 +373,7 @@ class EE_API Window {
 	void setFrameRateLimit( const Uint32& setFrameRateLimit );
 
 	/** Get a frame per second limit. */
-	Uint32 getFrameRateLimit();
+	Uint32 getFrameRateLimit() const;
 
 	/** @return The clipboard manager */
 	Clipboard* getClipboard() const;
@@ -438,7 +449,7 @@ class EE_API Window {
 	 *
 	 * @sa isScreenKeyboardShown()
 	 */
-	virtual bool hasScreenKeyboardSupport();
+	virtual bool hasScreenKeyboardSupport() const;
 
 	/**
 	 * @brief Returns whether the screen keyboard is shown for given window.
@@ -446,12 +457,12 @@ class EE_API Window {
 	 *
 	 * @sa hasScreenKeyboardSupport()
 	 */
-	virtual bool isScreenKeyboardShown();
+	virtual bool isScreenKeyboardShown() const;
 
 	/** @return True if the current window support a threaded GL Context. This means that supports
 	 *OpenGL Shared Contexts ( multithreaded opengl contexts ). *	Only supported with SDL2
 	 *backend.*/
-	virtual bool isThreadedGLContext();
+	virtual bool isThreadedGLContext() const;
 
 	/** Activates the shared GL context in the current thread. */
 	virtual void setGLContextThread();
@@ -465,15 +476,15 @@ class EE_API Window {
 	void runMainLoop( std::function<void()> func, int fps = -1 );
 
 	/** @return The current display index. */
-	virtual int getCurrentDisplayIndex();
+	virtual int getCurrentDisplayIndex() const;
 
-	Vector2f mapPixelToCoords( const Vector2i& point );
+	Vector2f mapPixelToCoords( const Vector2i& point ) const;
 
-	Vector2f mapPixelToCoords( const Vector2i& point, const View& view );
+	Vector2f mapPixelToCoords( const Vector2i& point, const View& view ) const;
 
-	Vector2i mapCoordsToPixel( const Vector2f& point );
+	Vector2i mapCoordsToPixel( const Vector2f& point ) const;
 
-	Vector2i mapCoordsToPixel( const Vector2f& point, const View& view );
+	Vector2i mapCoordsToPixel( const Vector2f& point, const View& view ) const;
 
 	void setCloseRequestCallback( const WindowRequestCloseCallback& closeRequestCallback );
 
@@ -487,8 +498,11 @@ class EE_API Window {
 	 * per second. */
 	const System::Time& getRenderTimePerSecond() const;
 
-	/** @return The last windowed size of the window */
+	/** @return The last windowed size of the window in pixels */
 	const Sizei& getLastWindowedSize() const;
+
+	/** @return The last windowed size of the window in screen coordinates */
+	Sizei getLastWindowedSizeInScreenCoordinates() const;
 
 	/** @return True if implements native message boxes */
 	virtual bool hasNativeMessageBox() const { return false; };
@@ -504,13 +518,15 @@ class EE_API Window {
 
 	InputMethod& getIME();
 
-	const std::function<void()>& getMainLoop() { return mMainLoop; }
+	const InputMethod& getIME() const;
+
+	const std::function<void()>& getMainLoop() const;
 
   protected:
 	friend class Engine;
 	friend class Input;
 
-	WindowInfo mWindow;
+	mutable WindowInfo mWindow;
 	Clipboard* mClipboard;
 	Input* mInput;
 	CursorManager* mCursorManager;

@@ -370,8 +370,8 @@ std::string FileSystem::getRealPath( const std::string& path ) {
 }
 
 std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& sortByName,
-												const bool& foldersFirst,
-												const bool& ignoreHidden ) {
+												const bool& foldersFirst, const bool& ignoreHidden,
+												const std::function<bool()> shouldAbort ) {
 	std::vector<String> files;
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -392,7 +392,7 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 		if ( tmpstr != "." && tmpstr != ".." )
 			files.push_back( tmpstr );
 
-		while ( FindNextFileW( hFind, &findFileData ) ) {
+		while ( FindNextFileW( hFind, &findFileData ) && ( !shouldAbort || !shouldAbort() ) ) {
 			tmpstr = String( findFileData.cFileName );
 
 			if ( tmpstr != "." && tmpstr != ".." )
@@ -408,7 +408,7 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 	if ( ( dp = opendir( path.toUtf8().c_str() ) ) == NULL )
 		return files;
 
-	while ( ( dirp = readdir( dp ) ) != NULL ) {
+	while ( ( dirp = readdir( dp ) ) != NULL && ( !shouldAbort || !shouldAbort() ) ) {
 #if EE_PLATFORM != EE_PLATFORM_HAIKU
 		if ( strncmp( dirp->d_name, "..", sizeof( dirp->d_name ) ) != 0 &&
 			 strncmp( dirp->d_name, ".", sizeof( dirp->d_name ) ) != 0 ) {
@@ -431,31 +431,20 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 		String fpath( path );
 		if ( fpath[fpath.size() - 1] != '/' && fpath[fpath.size() - 1] != '\\' )
 			fpath += getOSSlash();
-		std::vector<String> folders;
-		std::vector<String> file;
-		for ( size_t i = 0; i < files.size(); i++ ) {
-			if ( FileSystem::isDirectory( fpath + files[i] ) ) {
-				folders.push_back( files[i] );
-			} else {
-				file.push_back( files[i] );
-			}
-		}
-		files.clear();
-		for ( auto& folder : folders )
-			files.push_back( folder );
-		for ( auto& f : file )
-			files.push_back( f );
+		std::stable_partition( files.begin(), files.end(), [&fpath]( const String& file ) {
+			return FileSystem::isDirectory( fpath + file );
+		} );
 	}
 
 	if ( ignoreHidden ) {
 		String fpath( path );
 		if ( fpath[fpath.size() - 1] != '/' && fpath[fpath.size() - 1] != '\\' )
 			fpath += getOSSlash();
-		std::vector<String> filtered;
-		for ( size_t i = 0; i < files.size(); i++ )
-			if ( !FileSystem::fileIsHidden( fpath + files[i] ) )
-				filtered.push_back( files[i] );
-		return filtered;
+		files.erase( std::remove_if( files.begin(), files.end(),
+									 [&fpath]( const String& file ) {
+										 return FileSystem::fileIsHidden( fpath + file );
+									 } ),
+					 files.end() );
 	}
 
 	return files;
@@ -464,10 +453,12 @@ std::vector<String> FileSystem::filesGetInPath( const String& path, const bool& 
 std::vector<FileInfo> FileSystem::filesInfoGetInPath( std::string path, bool linkInfo,
 													  const bool& sortByName,
 													  const bool& foldersFirst,
-													  const bool& ignoreHidden ) {
+													  const bool& ignoreHidden,
+													  const std::function<bool()> shouldAbort ) {
 	dirAddSlashAtEnd( path );
 	std::vector<FileInfo> fileInfo;
-	auto files = filesGetInPath( path, sortByName, foldersFirst, ignoreHidden );
+	auto files = filesGetInPath( path, sortByName, foldersFirst, ignoreHidden, shouldAbort );
+	fileInfo.reserve( files.size() );
 	for ( const auto& file : files )
 		fileInfo.emplace_back( FileInfo( path + file, linkInfo ) );
 	return fileInfo;
@@ -476,7 +467,8 @@ std::vector<FileInfo> FileSystem::filesInfoGetInPath( std::string path, bool lin
 std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 													 const bool& sortByName,
 													 const bool& foldersFirst,
-													 const bool& ignoreHidden ) {
+													 const bool& ignoreHidden,
+													 const std::function<bool()> shouldAbort ) {
 	std::vector<std::string> files;
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -497,7 +489,7 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 		if ( tmpstr != "." && tmpstr != ".." )
 			files.push_back( tmpstr.toUtf8() );
 
-		while ( FindNextFileW( hFind, &findFileData ) ) {
+		while ( FindNextFileW( hFind, &findFileData ) && ( !shouldAbort || !shouldAbort() ) ) {
 			tmpstr = String( findFileData.cFileName );
 
 			if ( tmpstr != "." && tmpstr != ".." )
@@ -513,7 +505,7 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 	if ( ( dp = opendir( path.c_str() ) ) == NULL )
 		return files;
 
-	while ( ( dirp = readdir( dp ) ) != NULL ) {
+	while ( ( dirp = readdir( dp ) ) != NULL && ( !shouldAbort || !shouldAbort() ) ) {
 #if EE_PLATFORM != EE_PLATFORM_HAIKU
 		if ( strncmp( dirp->d_name, "..", sizeof( dirp->d_name ) ) != 0 &&
 			 strncmp( dirp->d_name, ".", sizeof( dirp->d_name ) ) != 0 )
@@ -533,30 +525,19 @@ std::vector<std::string> FileSystem::filesGetInPath( const std::string& path,
 	if ( foldersFirst ) {
 		std::string fpath( path );
 		dirAddSlashAtEnd( fpath );
-		std::vector<std::string> folders;
-		std::vector<std::string> file;
-		for ( size_t i = 0; i < files.size(); i++ ) {
-			if ( FileSystem::isDirectory( fpath + files[i] ) ) {
-				folders.push_back( files[i] );
-			} else {
-				file.push_back( files[i] );
-			}
-		}
-		files.clear();
-		for ( auto& folder : folders )
-			files.push_back( folder );
-		for ( auto& f : file )
-			files.push_back( f );
+		std::stable_partition( files.begin(), files.end(), [&fpath]( const std::string& file ) {
+			return FileSystem::isDirectory( fpath + file );
+		} );
 	}
 
 	if ( ignoreHidden ) {
 		std::string fpath( path );
 		dirAddSlashAtEnd( fpath );
-		std::vector<std::string> filtered;
-		for ( size_t i = 0; i < files.size(); i++ )
-			if ( !FileSystem::fileIsHidden( fpath + files[i] ) )
-				filtered.push_back( files[i] );
-		return filtered;
+		files.erase( std::remove_if( files.begin(), files.end(),
+									 [&fpath]( const std::string& file ) {
+										 return FileSystem::fileIsHidden( fpath + file );
+									 } ),
+					 files.end() );
 	}
 
 	return files;

@@ -165,7 +165,7 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 					false, name );
 
 				Http::getAsync(
-					[=]( const Http&, Http::Request&, Http::Response& response ) {
+					[texture]( const Http&, Http::Request&, Http::Response& response ) {
 						if ( !response.getBody().empty() ) {
 							Image image( (const Uint8*)&response.getBody()[0],
 										 response.getBody().size() );

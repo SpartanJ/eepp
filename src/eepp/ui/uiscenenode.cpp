@@ -352,11 +352,13 @@ UIWidget* UISceneNode::loadLayoutNodes( pugi::xml_node node, Node* parent, const
 	return widgets.empty() ? NULL : widgets[0];
 }
 
-void UISceneNode::setStyleSheet( const CSS::StyleSheet& styleSheet ) {
+void UISceneNode::setStyleSheet( const CSS::StyleSheet& styleSheet, bool loadStyle ) {
 	mStyleSheet = styleSheet;
 	processStyleSheetAtRules( styleSheet );
-	onMediaChanged();
-	reloadStyle();
+	if ( loadStyle ) {
+		onMediaChanged();
+		reloadStyle();
+	}
 }
 
 void UISceneNode::setStyleSheet( const std::string& inlineStyleSheet ) {
@@ -670,6 +672,7 @@ void UISceneNode::invalidateStyle( UIWidget* node, bool tryReinsert ) {
 	if ( node->isClosing() )
 		return;
 
+	// Already invalidated?
 	if ( mDirtyStyle.count( node ) > 0 ) {
 		if ( !tryReinsert )
 			return;
@@ -677,12 +680,17 @@ void UISceneNode::invalidateStyle( UIWidget* node, bool tryReinsert ) {
 			mDirtyStyle.erase( node );
 	}
 
-	for ( auto& dirtyNode : mDirtyStyle )
-		if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) )
+	// Any parent dirty?
+	Node* parent = node->getParent();
+	while ( parent != nullptr ) {
+		if ( parent->isWidget() && mDirtyStyle.count( parent->asType<UIWidget>() ) > 0 )
 			return;
+		parent = parent->getParent();
+	}
 
 	std::vector<UIWidget*> eraseList;
 
+	// Any child in list? remove it
 	for ( auto widget : mDirtyStyle )
 		if ( NULL == widget || node->isParentOf( widget ) )
 			eraseList.push_back( widget );
@@ -700,6 +708,7 @@ void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimation
 	if ( node->isClosing() )
 		return;
 
+	// Already invalidated?
 	if ( mDirtyStyleState.count( node ) > 0 ) {
 		if ( !tryReinsert )
 			return;
@@ -707,12 +716,17 @@ void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimation
 			mDirtyStyleState.erase( node );
 	}
 
-	for ( auto& dirtyNode : mDirtyStyleState )
-		if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) )
+	// Any parent dirty?
+	Node* parent = node->getParent();
+	while ( parent != nullptr ) {
+		if ( parent->isWidget() && mDirtyStyleState.count( parent->asType<UIWidget>() ) > 0 )
 			return;
+		parent = parent->getParent();
+	}
 
 	std::vector<UIWidget*> eraseList;
 
+	// Any child in list? remove it
 	for ( auto widget : mDirtyStyleState )
 		if ( NULL == widget || node->isParentOf( widget ) )
 			eraseList.push_back( widget );
@@ -889,7 +903,7 @@ void UISceneNode::loadGlyphIcon( const StyleSheetStyleVector& styles ) {
 			std::string buffer( glyphProp.asString() );
 			Uint32 value;
 			if ( String::startsWith( buffer, "0x" ) ) {
-				if ( String::fromString( value, buffer, std::hex ) )
+				if ( String::fromString( value, buffer, 16 ) )
 					codePoint = value;
 			} else if ( String::fromString( value, buffer ) ) {
 				codePoint = value;

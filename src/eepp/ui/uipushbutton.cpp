@@ -160,7 +160,7 @@ void UIPushButton::onAutoSize() {
 	}
 }
 
-Vector2f UIPushButton::calcLayoutSize( const std::vector<UIWidget*>& widgets,
+Vector2f UIPushButton::calcLayoutSize( const std::array<UIWidget*, 3>& widgets,
 									   const Rectf& padding ) const {
 	Vector2f totSize{ padding.Left, padding.Top + padding.Bottom };
 	UIWidget* widget;
@@ -182,8 +182,8 @@ Vector2f UIPushButton::calcLayoutSize( const std::vector<UIWidget*>& widgets,
 	return totSize;
 }
 
-Vector2f UIPushButton::packLayout( const std::vector<UIWidget*>& widgets, const Rectf& padding ) {
-	std::vector<Vector2f> pos( widgets.size() );
+Vector2f UIPushButton::packLayout( const std::array<UIWidget*, 3>& widgets, const Rectf& padding ) {
+	std::array<Vector2f, 3> pos;
 	Vector2f totSize{ padding.Left, padding.Top + padding.Bottom };
 	UIWidget* widget;
 	for ( size_t i = 0; i < widgets.size(); i++ ) {
@@ -295,6 +295,7 @@ Sizef UIPushButton::updateLayout() {
 			size = packLayout( { mTextBox, getExtraInnerWidget(), mIcon }, autoPadding );
 			break;
 	}
+	onLayoutUpdate();
 	return size.ceil();
 }
 
@@ -309,11 +310,24 @@ void UIPushButton::setTextAsFallback( bool textAsFallback ) {
 	}
 }
 
+bool UIPushButton::dontAutoHideEmptyTextBox() const {
+	return mDontAutoHideEmptyTextBox;
+}
+
+void UIPushButton::setDontAutoHideEmptyTextBox( bool dontAutoHideEmptyTextBox ) {
+	if ( mDontAutoHideEmptyTextBox != dontAutoHideEmptyTextBox ) {
+		mDontAutoHideEmptyTextBox = dontAutoHideEmptyTextBox;
+		updateTextBox();
+	}
+}
+
 void UIPushButton::onPaddingChange() {
 	onSizeChange();
 
 	UIWidget::onPaddingChange();
 }
+
+void UIPushButton::onLayoutUpdate() {}
 
 void UIPushButton::onSizeChange() {
 	onAutoSize();
@@ -336,9 +350,13 @@ void UIPushButton::onThemeLoaded() {
 	UIWidget::onThemeLoaded();
 }
 
+bool UIPushButton::mustBeVisible() const {
+	return ( ( !getText().empty() || mDontAutoHideEmptyTextBox ) && !mTextAsFallback ) ||
+		   nullptr == mIcon || nullptr == mIcon->getDrawable();
+}
+
 void UIPushButton::updateTextBox() {
-	bool mustBeVisible = ( !getText().empty() && !mTextAsFallback ) ||
-						 ( nullptr == mIcon || nullptr == mIcon->getDrawable() );
+	bool mustBeVisible = this->mustBeVisible();
 	if ( mTextBox->isVisible() != mustBeVisible ) {
 		mTextBox->setVisible( mustBeVisible );
 		onAutoSize();
@@ -390,8 +408,8 @@ bool UIPushButton::hasIcon() const {
 
 UIPushButton* UIPushButton::setText( const String& text ) {
 	if ( text != mTextBox->getText() ) {
-		mTextBox->setVisible( !text.empty() );
 		mTextBox->setText( text );
+		mTextBox->setVisible( mustBeVisible() );
 		onAutoSize();
 		updateLayout();
 	}
@@ -431,15 +449,15 @@ void UIPushButton::onAlignChange() {
 	mTextBox->setVerticalAlign( getVerticalAlign() );
 }
 
-Uint32 UIPushButton::onKeyDown( const KeyEvent& Event ) {
-	if ( Event.getKeyCode() == KEY_RETURN ) {
+Uint32 UIPushButton::onKeyDown( const KeyEvent& event ) {
+	if ( event.getKeyCode() == KEY_RETURN || event.getKeyCode() == Window::KEY_KP_ENTER ) {
 		NodeMessage Msg( this, NodeMessage::MouseClick, EE_BUTTON_LMASK );
 		messagePost( &Msg );
 		onMouseClick( Vector2i( 0, 0 ), EE_BUTTON_LMASK );
 		pushState( UIState::StatePressed );
 	}
 
-	return UIWidget::onKeyDown( Event );
+	return UIWidget::onKeyDown( event );
 }
 
 Uint32 UIPushButton::onKeyUp( const KeyEvent& Event ) {
@@ -625,7 +643,7 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::MinIconSize:
-			setIconMinimumSize( attribute.asSizei() );
+			setIconMinimumSize( attribute.asDpDimensionSizei() );
 			break;
 		case PropertyId::TextAlign: {
 			std::string align = String::toLower( attribute.value() );

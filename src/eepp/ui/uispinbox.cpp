@@ -194,7 +194,7 @@ void UISpinBox::onBufferChange( const Event* ) {
 			if ( pos != mInput->getText().size() - 1 )
 				mInput->setText( mInput->getText().substr( 0, mInput->getText().size() - 1 ) );
 		} else {
-			bool res = String::fromString<double>( val, mInput->getText() );
+			bool res = String::fromString( val, mInput->getText() );
 			if ( res && val != mValue )
 				setValue( val );
 		}

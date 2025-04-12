@@ -2,23 +2,19 @@
 #define EE_UI_DOC_TEXTRANGE_HPP
 
 #include <algorithm>
-#include <eepp/core/debug.hpp>
 #include <eepp/ui/doc/textposition.hpp>
 
 namespace EE { namespace UI { namespace Doc {
 
 class EE_API TextRange {
   public:
-	TextRange() {}
-	TextRange( const TextPosition& start, const TextPosition& end ) :
-		mStart( start ), mEnd( end ) {}
+	TextRange();
 
-	bool isValid() const { return mStart.isValid() && mEnd.isValid(); }
+	TextRange( const TextPosition& start, const TextPosition& end );
 
-	void clear() {
-		mStart = {};
-		mEnd = {};
-	}
+	bool isValid() const;
+
+	void clear();
 
 	TextPosition& start() { return mStart; }
 
@@ -28,14 +24,9 @@ class EE_API TextRange {
 
 	const TextPosition& end() const { return mEnd; }
 
-	TextRange normalized() const { return TextRange( normalizedStart(), normalizedEnd() ); }
+	TextRange normalized() const;
 
-	TextRange& normalize() {
-		auto normalize( normalized() );
-		mStart = normalize.start();
-		mEnd = normalize.end();
-		return *this;
-	}
+	TextRange& normalize();
 
 	void reverse() { std::swap( mEnd, mStart ); }
 
@@ -45,10 +36,7 @@ class EE_API TextRange {
 
 	void setEnd( const TextPosition& position ) { mEnd = position; }
 
-	void set( const TextPosition& start, const TextPosition& end ) {
-		mStart = start;
-		mEnd = end;
-	}
+	void set( const TextPosition& start, const TextPosition& end );
 
 	bool operator==( const TextRange& other ) const {
 		return mStart == other.mStart && mEnd == other.mEnd;
@@ -90,21 +78,9 @@ class EE_API TextRange {
 		return TextRange( mStart - other.mStart, mEnd - other.mEnd );
 	}
 
-	bool contains( const TextPosition& position ) const {
-		if ( !( position.line() > mStart.line() ||
-				( position.line() == mStart.line() && position.column() >= mStart.column() ) ) )
-			return false;
-		if ( !( position.line() < mEnd.line() ||
-				( position.line() == mEnd.line() && position.column() <= mEnd.column() ) ) )
-			return false;
-		return true;
-	}
+	bool contains( const TextPosition& position ) const;
 
-	bool intersectsLineRange( const TextRange& range ) const {
-		eeASSERT( range.isNormalized() );
-		return mStart.line() <= static_cast<Int64>( range.end().line() ) &&
-			   static_cast<Int64>( range.start().line() ) <= mEnd.line();
-	}
+	bool intersectsLineRange( const TextRange& range ) const;
 
 	template <typename T> bool intersectsLineRange( T fromLine, T toLine ) const {
 		return mStart.line() <= static_cast<Int64>( toLine ) &&
@@ -116,46 +92,35 @@ class EE_API TextRange {
 			   static_cast<Int64>( range.first ) <= mEnd.line();
 	}
 
-	bool containsLine( const Int64& line ) const {
-		return line >= mStart.line() && line <= mEnd.line();
-	}
+	bool containsLine( const Int64& line ) const;
 
-	bool contains( const TextRange& range ) const {
-		return range.start() >= start() && range.end() <= end();
-	}
+	bool contains( const TextRange& range ) const;
+
+	bool intersects( const TextRange& range ) const;
+
+	TextRange merge( const TextRange& range ) const;
 
 	bool hasSelection() const { return isValid() && mStart != mEnd; }
 
 	bool inSameLine() const { return isValid() && mStart.line() == mEnd.line(); }
 
-	Int64 height() const {
-		if ( mEnd.line() > mStart.line() )
-			return mEnd.line() - mStart.line() + 1;
-		return mStart.line() - mStart.line() + 1;
-	}
+	Int64 height() const;
 
-	Int64 length() const {
-		if ( !inSameLine() )
-			return 0;
-		if ( mEnd.column() > mStart.column() )
-			return mEnd.column() - mStart.column();
-		return mStart.column() - mEnd.column();
-	}
+	Int64 length() const;
 
-	std::string toString() const {
-		return String::format( "%s - %s", mStart.toString().c_str(), mEnd.toString().c_str() );
-	}
+	std::string toString() const;
 
-	static TextRange fromString( const std::string& range ) {
-		auto split = String::split( range, "-" );
-		if ( split.size() == 2 ) {
-			return { TextPosition::fromString( String::trim( split[0] ) ),
-					 TextPosition::fromString( String::trim( split[1] ) ) };
-		}
-		return {};
-	}
+	static TextRange fromString( const std::string& range );
 
 	bool isNormalized() const { return mStart <= mEnd; }
+
+	static TextRange convertToLineColumn( const String::View& text, Int64 startOffset,
+										  Int64 endOffset );
+
+	static TextRange convertToLineColumn( const std::string_view& text, Int64 startOffset,
+										  Int64 endOffset );
+
+    Int64 minimumDistance(const TextRange& other) const;
 
   private:
 	TextPosition mStart;
@@ -164,86 +129,39 @@ class EE_API TextRange {
 	TextPosition normalizedStart() const { return mStart < mEnd ? mStart : mEnd; }
 
 	TextPosition normalizedEnd() const { return mStart < mEnd ? mEnd : mStart; }
+
+	template <typename StringType>
+	static TextRange convertToLineColumn( const StringType& text, Int64 startOffset,
+										  Int64 endOffset );
 };
 
 class EE_API TextRanges : public std::vector<TextRange> {
   public:
-	TextRanges() {}
+	TextRanges();
 
-	TextRanges( const std::vector<TextRange>& ranges ) : std::vector<TextRange>( ranges ) {}
+	TextRanges( const std::vector<TextRange>& ranges );
 
-	TextRanges( const TextRange& ranges ) : std::vector<TextRange>( { ranges } ) {}
+	TextRanges( const TextRange& ranges );
 
-	bool isSorted() const { return mIsSorted; }
+	bool isSorted() const;
 
-	bool isValid() const {
-		for ( const auto& selection : *this ) {
-			if ( !selection.isValid() )
-				return false;
-		}
-		return true;
-	}
+	bool isValid() const;
 
-	bool exists( const TextRange& range ) const {
-		for ( const auto& r : *this )
-			if ( range == r )
-				return true;
-		return false;
-	}
+	bool exists( const TextRange& range ) const;
 
-	size_t findIndex( const TextRange& range ) const {
-		for ( size_t i = 0; i < size(); ++i ) {
-			if ( ( *this )[i] == range )
-				return i;
-		}
-		return 0;
-	}
+	size_t findIndex( const TextRange& range ) const;
 
-	bool hasSelection() const {
-		for ( const auto& r : *this )
-			if ( r.hasSelection() )
-				return true;
-		return false;
-	}
+	bool hasSelection() const;
 
-	void sort() {
-		std::sort( begin(), end() );
-		setSorted();
-	}
+	void sort();
 
-	void setSorted() { mIsSorted = true; }
+	void setSorted();
 
-	bool merge() {
-		if ( size() <= 1 )
-			return false;
-		size_t oldSize = size();
-		TextRanges newRanges;
-		newRanges.emplace_back( ( *this )[0] );
-		for ( size_t i = 1; i < size(); ++i )
-			if ( !newRanges.exists( ( *this )[i] ) )
-				newRanges.emplace_back( ( *this )[i] );
-		*this = newRanges;
-		sort();
-		return oldSize != size();
-	}
+	bool merge();
 
-	std::string toString() const {
-		std::string str;
-		for ( size_t i = 0; i < size(); ++i ) {
-			str += ( *this )[i].toString();
-			if ( i != size() - 1 )
-				str += ";";
-		}
-		return str;
-	}
+	std::string toString() const;
 
-	static TextRanges fromString( const std::string& str ) {
-		auto rangesStr = String::split( str, ';' );
-		TextRanges ranges;
-		for ( const auto& rangeStr : rangesStr )
-			ranges.emplace_back( TextRange::fromString( rangeStr ) );
-		return ranges;
-	}
+	static TextRanges fromString( const std::string& str );
 
   protected:
 	bool mIsSorted{ false };

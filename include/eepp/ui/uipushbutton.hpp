@@ -5,6 +5,8 @@
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
+#include <array>
+
 namespace EE { namespace UI {
 
 enum class InnerWidgetOrientation {
@@ -79,12 +81,17 @@ class EE_API UIPushButton : public UIWidget {
 
 	void setTextAsFallback( bool textAsFallback );
 
+	bool dontAutoHideEmptyTextBox() const;
+
+	void setDontAutoHideEmptyTextBox( bool dontAutoHideEmptyTextBox );
+
   protected:
 	UIImage* mIcon;
 	UITextView* mTextBox;
 	Sizei mIconMinSize;
 	InnerWidgetOrientation mInnerWidgetOrientation{ InnerWidgetOrientation::IconTextBoxWidget };
 	bool mTextAsFallback{ false };
+	bool mDontAutoHideEmptyTextBox{ false };
 
 	UIPushButton();
 
@@ -109,15 +116,19 @@ class EE_API UIPushButton : public UIWidget {
 
 	virtual void onPaddingChange();
 
+	virtual void onLayoutUpdate();
+
 	virtual Uint32 onKeyDown( const KeyEvent& Event );
 
 	virtual Uint32 onKeyUp( const KeyEvent& Event );
 
 	void updateTextBox();
 
-	Vector2f packLayout( const std::vector<UIWidget*>& widgets, const Rectf& padding );
+	Vector2f packLayout( const std::array<UIWidget*, 3>& widgets, const Rectf& padding );
 
-	Vector2f calcLayoutSize( const std::vector<UIWidget*>& widgets, const Rectf& padding ) const;
+	Vector2f calcLayoutSize( const std::array<UIWidget*, 3>& widgets, const Rectf& padding ) const;
+
+	bool mustBeVisible() const;
 };
 
 }} // namespace EE::UI

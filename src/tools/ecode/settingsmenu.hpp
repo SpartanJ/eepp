@@ -18,9 +18,9 @@ class SettingsMenu {
 
 	void runCommand( const std::string& command );
 
-	UIMenu* createFileTypeMenu();
+	UIMenu* createFileTypeMenu( bool emptyMenu = false );
 
-	UIMenu* createColorSchemeMenu();
+	UIMenu* createColorSchemeMenu( bool emptyMenu = false );
 
 	UIMenu* createDocumentMenu();
 

@@ -1,12 +1,16 @@
+#include "notificationcenter.hpp"
+#include "plugins/plugincontextprovider.hpp"
+#include "projectdirectorytree.hpp"
 #include "statusbuildoutputcontroller.hpp"
-#include "ecode.hpp"
 #include "widgetcommandexecuter.hpp"
+#include <eepp/ui/uicodeeditor.hpp>
 
 namespace ecode {
 
 StatusBuildOutputController::StatusBuildOutputController( UISplitter* mainSplitter,
-														  UISceneNode* uiSceneNode, App* app ) :
-	StatusBarElement( mainSplitter, uiSceneNode, app ) {}
+														  UISceneNode* uiSceneNode,
+														  PluginContextProvider* pluginContext ) :
+	StatusBarElement( mainSplitter, uiSceneNode, pluginContext ) {}
 
 static std::string getProjectOutputParserTypeToString( const ProjectOutputParserTypes& type ) {
 	switch ( type ) {
@@ -20,18 +24,18 @@ static std::string getProjectOutputParserTypeToString( const ProjectOutputParser
 	return "notice";
 }
 
-UIPushButton* StatusBuildOutputController::getBuildButton( App* app ) {
-	if ( app->getSidePanel() ) {
-		UIWidget* tab = app->getSidePanel()->find<UIWidget>( "build_tab_view" );
+UIPushButton* StatusBuildOutputController::getBuildButton() {
+	if ( mContext->getSidePanel() ) {
+		UIWidget* tab = mContext->getSidePanel()->find<UIWidget>( "build_tab_view" );
 		if ( tab )
 			return tab->find<UIPushButton>( "build_button" );
 	}
 	return nullptr;
 }
 
-UIPushButton* StatusBuildOutputController::getCleanButton( App* app ) {
-	if ( app->getSidePanel() ) {
-		UIWidget* tab = app->getSidePanel()->find<UIWidget>( "build_tab_view" );
+UIPushButton* StatusBuildOutputController::getCleanButton() {
+	if ( mContext->getSidePanel() ) {
+		UIWidget* tab = mContext->getSidePanel()->find<UIWidget>( "build_tab_view" );
 		if ( tab )
 			return tab->find<UIPushButton>( "clean_button" );
 	}
@@ -41,7 +45,7 @@ UIPushButton* StatusBuildOutputController::getCleanButton( App* app ) {
 bool StatusBuildOutputController::searchFindAndAddStatusResult(
 	const std::vector<PatternHolder>& patterns, const std::string& text,
 	const ProjectBuildCommand* cmd ) {
-	LuaPattern::Range matches[12];
+	PatternMatcher::Range matches[12];
 	for ( const auto& pattern : patterns ) {
 		if ( pattern.pattern.matches( text, matches ) ) {
 			StatusMessage status;
@@ -56,7 +60,8 @@ bool StatusBuildOutputController::searchFindAndAddStatusResult(
 					continue;
 				}
 
-				std::string subtxt = text.substr( matches[i].start, matches[i].end );
+				std::string subtxt =
+					text.substr( matches[i].start, matches[i].end - matches[i].start );
 				if ( pattern.config.patternOrder.message == i ) {
 					auto nl = subtxt.find_first_of( '\n' );
 					if ( nl == std::string::npos ) {
@@ -104,10 +109,10 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 											const ProjectBuildOutputParser& outputParser,
 											bool isClean,
 											std::function<void( int exitStatus )> doneFn ) {
-	if ( nullptr == mApp->getProjectBuildManager() )
+	if ( nullptr == mContext->getProjectBuildManager() )
 		return;
 
-	auto pbm = mApp->getProjectBuildManager();
+	auto pbm = mContext->getProjectBuildManager();
 
 	show();
 	showBuildOutput();
@@ -152,8 +157,8 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 
 	mScrollLocked = true;
 
-	UIPushButton* buildButton = getBuildButton( mApp );
-	UIPushButton* cleanButton = getCleanButton( mApp );
+	UIPushButton* buildButton = getBuildButton();
+	UIPushButton* cleanButton = getCleanButton();
 
 	bool enableBuildButton = false;
 	bool enableCleanButton = false;
@@ -170,27 +175,29 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 
 	if ( isClean ) {
 		if ( cleanButton )
-			cleanButton->setText( mApp->i18n( "cancel_clean", "Cancel Clean" ) );
+			cleanButton->setText( mContext->i18n( "cancel_clean", "Cancel Clean" ) );
 	} else {
 		if ( buildButton )
-			buildButton->setText( mApp->i18n( "cancel_build", "Cancel Build" ) );
+			buildButton->setText( mContext->i18n( "cancel_build", "Cancel Build" ) );
 	}
 
 	mBuildButton->setEnabled( false );
 	mStopButton->setEnabled( true );
 
 	const auto updateBuildButton = [this, isClean, enableBuildButton, enableCleanButton]() {
-		UIPushButton* buildButton = getBuildButton( mApp );
-		UIPushButton* cleanButton = getCleanButton( mApp );
+		UIPushButton* buildButton = getBuildButton();
+		UIPushButton* cleanButton = getCleanButton();
 
 		if ( !isClean && buildButton ) {
-			buildButton->runOnMainThread(
-				[this, buildButton] { buildButton->setText( mApp->i18n( "build", "Build" ) ); } );
+			buildButton->runOnMainThread( [this, buildButton] {
+				buildButton->setText( mContext->i18n( "build", "Build" ) );
+			} );
 		}
 
 		if ( isClean && cleanButton ) {
-			cleanButton->runOnMainThread(
-				[this, cleanButton] { cleanButton->setText( mApp->i18n( "clean", "Clean" ) ); } );
+			cleanButton->runOnMainThread( [this, cleanButton] {
+				cleanButton->setText( mContext->i18n( "clean", "Clean" ) );
+			} );
 		}
 
 		if ( enableBuildButton && buildButton )
@@ -204,7 +211,8 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 	};
 
 	auto res = pbm->build(
-		buildName, [this]( const auto& key, const auto& def ) { return mApp->i18n( key, def ); },
+		buildName,
+		[this]( const auto& key, const auto& def ) { return mContext->i18n( key, def ); },
 		buildType,
 		[this]( auto, std::string buffer, const ProjectBuildCommand* cmd ) {
 			mBuildOutput->runOnMainThread( [this, buffer]() {
@@ -236,13 +244,14 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 			String buffer;
 
 			if ( EXIT_SUCCESS == exitCode ) {
-				buffer = Sys::getDateTimeStr() + ": " +
-						 ( isClean ? mApp->i18n( "clean_successful", "Clean run successfully\n" )
-								   : mApp->i18n( "build_successful", "Build run successfully\n" ) );
+				buffer =
+					Sys::getDateTimeStr() + ": " +
+					( isClean ? mContext->i18n( "clean_successful", "Clean run successfully\n" )
+							  : mContext->i18n( "build_successful", "Build run successfully\n" ) );
 			} else {
 				buffer = Sys::getDateTimeStr() + ": " +
-						 ( isClean ? mApp->i18n( "clean_failed", "Clean run with errors\n" )
-								   : mApp->i18n( "build_failed", "Build run with errors\n" ) );
+						 ( isClean ? mContext->i18n( "clean_failed", "Clean run with errors\n" )
+								   : mContext->i18n( "build_failed", "Build run with errors\n" ) );
 			}
 
 			mBuildOutput->runOnMainThread( [this, buffer]() {
@@ -253,8 +262,11 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 
 			updateBuildButton();
 
-			if ( !mApp->getWindow()->hasFocus() )
-				mApp->getWindow()->flash( WindowFlashOperation::UntilFocused );
+			if ( !mContext->getWindow()->hasFocus() ) {
+				mContext->getUISceneNode()->runOnMainThread( [this] {
+					mContext->getWindow()->flash( WindowFlashOperation::UntilFocused );
+				} );
+			}
 
 			if ( doneFn )
 				doneFn( exitCode );
@@ -262,7 +274,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 		isClean );
 
 	if ( !res.isValid() ) {
-		mApp->getNotificationCenter()->addNotification( res.errorMsg );
+		mContext->getNotificationCenter()->addNotification( res.errorMsg );
 		updateBuildButton();
 		if ( doneFn )
 			doneFn( EXIT_FAILURE );
@@ -377,16 +389,24 @@ void StatusBuildOutputController::onLoadDone( const Variant& lineNum, const Vari
 }
 
 void StatusBuildOutputController::setHeaderWidth() {
-	auto totWidth = eefloor( mTableIssues->getPixelsSize().getWidth() -
-					( mTableIssues->getVerticalScrollBar()->isVisible()
-						  ? mTableIssues->getVerticalScrollBar()->getPixelsSize().getWidth()
-						  : 0.f ) );
+	auto totWidth =
+		eefloor( mTableIssues->getPixelsSize().getWidth() -
+				 ( mTableIssues->getVerticalScrollBar()->isVisible()
+					   ? mTableIssues->getVerticalScrollBar()->getPixelsSize().getWidth()
+					   : 0.f ) );
 	Float col1 = eefloor( totWidth * 0.80f );
 	Float col2 = eefloor( totWidth * 0.15f );
 	Float col3 = totWidth - col1 - col2;
 	mTableIssues->setColumnWidth( 0, col1 );
 	mTableIssues->setColumnWidth( 1, col2 );
 	mTableIssues->setColumnWidth( 2, col3 );
+}
+
+static void removeRelativeSubPaths( std::string& path ) {
+	while ( String::startsWith( path, "../" ) || String::startsWith( path, "..\\" ) )
+		path = path.substr( 3 );
+	while ( String::startsWith( path, "./" ) || String::startsWith( path, ".\\" ) )
+		path = path.substr( 2 );
 }
 
 void StatusBuildOutputController::createContainer() {
@@ -415,7 +435,7 @@ void StatusBuildOutputController::createContainer() {
 		mMainSplitter->getLastWidget()->setParent( mUISceneNode );
 	}
 
-	mContainer = mApp->getUISceneNode()
+	mContainer = mContext->getUISceneNode()
 					 ->loadLayoutFromString( XML, mMainSplitter )
 					 ->asType<UILinearLayout>();
 	mRelLayCE = mContainer->find( "build_output_command_executer" )
@@ -425,14 +445,15 @@ void StatusBuildOutputController::createContainer() {
 	editor->setLineBreakingColumn( 0 );
 	editor->setShowLineNumber( false );
 	editor->getDocument().reset();
-	editor->getDocument().textInput( mApp->i18n( "no_build_has_been_run", "No build has been run" ),
-									 false );
+	editor->getDocument().textInput(
+		mContext->i18n( "no_build_has_been_run", "No build has been run" ), false );
 	editor->setScrollY( editor->getMaxScroll().y );
 	mButOutput = mContainer->find<UISelectButton>( "but_build_output_output" );
 	mButIssues = mContainer->find<UISelectButton>( "but_build_output_issues" );
 	mTableIssues = mContainer->find<UITableView>( "build_output_issues" );
 	mTableIssues->setHeadersVisible( true );
-	mTableIssues->setModel( StatusMessageModel::create( mStatusResults, mApp->getUISceneNode() ) );
+	mTableIssues->setModel(
+		StatusMessageModel::create( mStatusResults, mContext->getUISceneNode() ) );
 	setHeaderWidth();
 	mTableIssues->on( Event::OnSizeChange, [this]( auto ) { setHeaderWidth(); } );
 	mTableIssues->onModelEvent( [this]( const ModelEvent* modelEvent ) {
@@ -450,31 +471,36 @@ void StatusBuildOutputController::createContainer() {
 				if ( !tab ) {
 					FileInfo fileInfo( path );
 					if ( fileInfo.exists() && fileInfo.isRegularFile() ) {
-						mApp->loadFileFromPath(
+						mContext->loadFileFromPath(
 							path, true, nullptr,
 							[this, lineNum, colNum]( UICodeEditor*, const std::string& ) {
 								onLoadDone( lineNum, colNum );
 							} );
 					} else {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-						mApp->getDirTree()->asyncFuzzyMatchTree(
-							path, 1, [this, colNum, lineNum]( std::shared_ptr<FileListModel> res ) {
+						removeRelativeSubPaths( path );
+						mContext->getDirTree()->asyncMatchTree(
+							ProjectDirectoryTree::MatchType::Fuzzy, path, 1,
+							[this, colNum, lineNum]( std::shared_ptr<FileListModel> res ) {
 								if ( res->rowCount( {} ) == 0 )
 									return;
 								auto data = res->data( res->index( 0, 1 ) );
 								if ( !data.isValid() )
 									return;
 								std::string path = data.toString();
-								UITab* tab = mSplitter->isDocumentOpen( path );
-								if ( !tab ) {
-									mApp->loadFileFromPath( path, true, nullptr,
-															[this, lineNum, colNum]( auto, auto ) {
-																onLoadDone( lineNum, colNum );
-															} );
-								} else {
-									tab->getTabWidget()->setTabSelected( tab );
-									onLoadDone( lineNum, colNum );
-								}
+								mUISceneNode->runOnMainThread( [this, path, lineNum, colNum] {
+									UITab* tab = mSplitter->isDocumentOpen( path );
+									if ( !tab ) {
+										mContext->loadFileFromPath(
+											path, true, nullptr,
+											[this, lineNum, colNum]( auto, auto ) {
+												onLoadDone( lineNum, colNum );
+											} );
+									} else {
+										tab->getTabWidget()->setTabSelected( tab );
+										onLoadDone( lineNum, colNum );
+									}
+								} );
 							} );
 #endif
 					}
@@ -485,26 +511,27 @@ void StatusBuildOutputController::createContainer() {
 			}
 		} else if ( modelEvent->getModelEventType() == ModelEventType::OpenMenu ) {
 			UIPopUpMenu* menu = UIPopUpMenu::New();
-			menu->add( mApp->i18n( "copy_error_message", "Copy Error Message" ),
-					   mApp->findIcon( "copy" ) )
+			menu->add( mContext->i18n( "copy_error_message", "Copy Error Message" ),
+					   mContext->findIcon( "copy" ) )
 				->setId( "copy-error-message" );
-			menu->add( mApp->i18n( "copy_file_path", "Copy File Path" ), mApp->findIcon( "copy" ) )
+			menu->add( mContext->i18n( "copy_file_path", "Copy File Path" ),
+					   mContext->findIcon( "copy" ) )
 				->setId( "copy-file-path" );
 			menu->on( Event::OnItemClicked, [this, model, idx]( const Event* event ) {
 				UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 				std::string id( item->getId() );
 				if ( id == "copy-error-message" ) {
 					Variant msg( model->data( model->index( idx.row(), 0 ), ModelRole::Display ) );
-					mApp->getWindow()->getClipboard()->setText( msg.toString() );
+					mContext->getWindow()->getClipboard()->setText( msg.toString() );
 				} else if ( id == "copy-file-path" ) {
 					Variant msg( model->data( idx, ModelRole::Custom ) );
-					mApp->getWindow()->getClipboard()->setText( msg.toString() );
+					mContext->getWindow()->getClipboard()->setText( msg.toString() );
 				}
 			} );
 			UITableCell* cell = mTableIssues->getCellFromIndex( idx );
 			if ( modelEvent->getTriggerEvent()->getType() == Event::MouseClick ||
 				 cell == nullptr ) {
-				Vector2f pos( mApp->getWindow()->getInput()->getMousePos().asFloat() );
+				Vector2f pos( mContext->getWindow()->getInput()->getMousePos().asFloat() );
 				menu->nodeToWorldTranslation( pos );
 				UIMenu::findBestMenuPos( pos, menu );
 				menu->setPixelsPosition( pos );
@@ -549,18 +576,18 @@ void StatusBuildOutputController::createContainer() {
 	} );
 
 	mBuildButton->onClick( [this]( auto ) {
-		auto pbm = mApp->getProjectBuildManager();
+		auto pbm = mContext->getProjectBuildManager();
 		if ( nullptr == pbm )
 			return;
 		if ( !pbm->hasBuildConfig() ) {
 			UIMessageBox::New( UIMessageBox::OK,
-							   mApp->i18n( "must_configure_build_config",
-										   "You must first add a build configuration" ) )
+							   mContext->i18n( "must_configure_build_config",
+											   "You must first add a build configuration" ) )
 				->setCloseShortcut( { KEY_ESCAPE } )
-				->setTitle( mApp->getWindowTitle() )
+				->setTitle( mContext->getWindowTitle() )
 				->showWhenReady()
 				->on( Event::OnConfirm, [this]( auto ) {
-					auto pbm = mApp->getProjectBuildManager();
+					auto pbm = mContext->getProjectBuildManager();
 					if ( nullptr != pbm )
 						pbm->selectTab();
 				} );
@@ -570,7 +597,7 @@ void StatusBuildOutputController::createContainer() {
 	} );
 
 	mStopButton->onClick( [this]( auto ) {
-		auto pbm = mApp->getProjectBuildManager();
+		auto pbm = mContext->getProjectBuildManager();
 		if ( nullptr == pbm )
 			return;
 		pbm->cancelBuild();
@@ -587,7 +614,7 @@ void StatusBuildOutputController::createContainer() {
 	} );
 
 	mConfigureButton->onClick( [this]( auto ) {
-		auto pbm = mApp->getProjectBuildManager();
+		auto pbm = mContext->getProjectBuildManager();
 		if ( nullptr == pbm )
 			return;
 		pbm->editCurrentBuild();

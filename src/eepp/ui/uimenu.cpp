@@ -418,7 +418,7 @@ void UIMenu::safeHide() {
 }
 
 void UIMenu::unselectSelected() {
-	if ( nullptr != mItemSelected )
+	if ( nullptr != mItemSelected && isChild( mItemSelected ) )
 		mItemSelected->popState( UIState::StateSelected );
 	mItemSelected = nullptr;
 	mItemSelectedIndex = eeINDEX_NOT_FOUND;
@@ -632,7 +632,7 @@ bool UIMenu::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::MinIconSize:
-			setIconMinimumSize( attribute.asSizei() );
+			setIconMinimumSize( attribute.asDpDimensionSizei() );
 			break;
 		default:
 			return UIWidget::applyProperty( attribute );

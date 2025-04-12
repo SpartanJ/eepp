@@ -148,6 +148,45 @@ int hideOSK() {
 	WIN_OSK_VISIBLE = false;
 	return PostMessage( GetDesktopWindow(), WM_SYSCOMMAND, (int)SC_CLOSE, 0 );
 }
+
+bool isDarkModeEnabled() {
+	HKEY hKey;
+	DWORD value = 1; // Default to light theme
+	DWORD valueSize = sizeof( value );
+
+	if ( RegOpenKeyExA( HKEY_CURRENT_USER,
+						"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", 0,
+						KEY_READ, &hKey ) == ERROR_SUCCESS ) {
+		RegQueryValueExA( hKey, "AppsUseLightTheme", nullptr, nullptr,
+						  reinterpret_cast<LPBYTE>( &value ), &valueSize );
+		RegCloseKey( hKey );
+	}
+
+	return value == 0; // 0 means dark theme is enabled
+}
+
+typedef HRESULT( WINAPI* DwmSetWindowAttributeFunc )( HWND, DWORD, LPCVOID, DWORD );
+
+constexpr DWORD DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+
+void setUserTheme( HWND hwnd ) {
+	HMODULE hDwmapi = LoadLibraryA( "dwmapi.dll" );
+	if ( !hDwmapi ) {
+		return;
+	}
+
+	auto DwmSetWindowAttribute = reinterpret_cast<DwmSetWindowAttributeFunc>(
+		GetProcAddress( hDwmapi, "DwmSetWindowAttribute" ) );
+	if ( !DwmSetWindowAttribute ) {
+		FreeLibrary( hDwmapi );
+		return;
+	}
+
+	BOOL darkMode = isDarkModeEnabled() ? TRUE : FALSE;
+	DwmSetWindowAttribute( hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkMode, sizeof( darkMode ) );
+
+	FreeLibrary( hDwmapi );
+}
 #elif defined( EE_X11_PLATFORM )
 #include <signal.h>
 #include <unistd.h>
@@ -415,12 +454,16 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 	mCursorManager->set( Cursor::SysArrow );
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	setUserTheme( (HWND)getWindowHandler() );
+#endif
+
 	logSuccessfulInit( getVersion() );
 
 	return true;
 }
 
-Uint32 WindowSDL::getWindowID() {
+Uint32 WindowSDL::getWindowID() const {
 	return mID;
 }
 
@@ -440,7 +483,7 @@ void WindowSDL::setCurrent() {
 	makeCurrent();
 }
 
-bool WindowSDL::isThreadedGLContext() {
+bool WindowSDL::isThreadedGLContext() const {
 #ifdef SDL2_THREADED_GLCONTEXT
 	return mWindow.ContextConfig.SharedGLContext;
 #else
@@ -458,7 +501,7 @@ void WindowSDL::unsetGLContextThread() {
 	mGLContextMutex.unlock();
 }
 
-int WindowSDL::getCurrentDisplayIndex() {
+int WindowSDL::getCurrentDisplayIndex() const {
 	int index = SDL_GetWindowDisplayIndex( mSDLWindow );
 
 	if ( index < 0 ) {
@@ -529,26 +572,26 @@ void WindowSDL::setTitle( const std::string& title ) {
 	}
 }
 
-bool WindowSDL::isActive() {
+bool WindowSDL::isActive() const {
 	Uint32 flags = SDL_GetWindowFlags( mSDLWindow );
 	return 0 != ( ( flags & SDL_WINDOW_INPUT_FOCUS ) && ( flags & SDL_WINDOW_MOUSE_FOCUS ) );
 }
 
-bool WindowSDL::isVisible() {
+bool WindowSDL::isVisible() const {
 	Uint32 flags = SDL_GetWindowFlags( mSDLWindow );
 	return 0 != ( ( flags & SDL_WINDOW_SHOWN ) && !( flags & SDL_WINDOW_MINIMIZED ) );
 }
 
-bool WindowSDL::hasFocus() {
+bool WindowSDL::hasFocus() const {
 	return 0 != ( SDL_GetWindowFlags( mSDLWindow ) &
 				  ( SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS ) );
 }
 
-bool WindowSDL::hasInputFocus() {
+bool WindowSDL::hasInputFocus() const {
 	return 0 != ( SDL_GetWindowFlags( mSDLWindow ) & ( SDL_WINDOW_INPUT_FOCUS ) );
 }
 
-bool WindowSDL::hasMouseFocus() {
+bool WindowSDL::hasMouseFocus() const {
 	return 0 != ( SDL_GetWindowFlags( mSDLWindow ) & ( SDL_WINDOW_MOUSE_FOCUS ) );
 }
 
@@ -693,7 +736,7 @@ void WindowSDL::setGamma( Float Red, Float Green, Float Blue ) {
 	SDL_SetWindowGammaRamp( mSDLWindow, red_ramp, green_ramp, blue_ramp );
 }
 
-eeWindowHandle WindowSDL::getWindowHandler() {
+eeWindowHandle WindowSDL::getWindowHandler() const {
 #ifdef EE_USE_WMINFO
 	if ( NULL != mWMinfo ) {
 		return mWMinfo->getWindowHandler();
@@ -773,8 +816,12 @@ void WindowSDL::maximize() {
 	SDL_MaximizeWindow( mSDLWindow );
 }
 
-bool WindowSDL::isMaximized() {
+bool WindowSDL::isMaximized() const {
 	return SDL_GetWindowFlags( mSDLWindow ) & SDL_WINDOW_MAXIMIZED;
+}
+
+bool WindowSDL::isMinimized() const {
+	return SDL_GetWindowFlags( mSDLWindow ) & SDL_WINDOW_MINIMIZED;
 }
 
 void WindowSDL::hide() {
@@ -783,6 +830,10 @@ void WindowSDL::hide() {
 
 void WindowSDL::raise() {
 	SDL_RaiseWindow( mSDLWindow );
+}
+
+void WindowSDL::restore() {
+	SDL_RestoreWindow( mSDLWindow );
 }
 
 void WindowSDL::flash( WindowFlashOperation op ) {
@@ -806,7 +857,7 @@ void WindowSDL::setPosition( int Left, int Top ) {
 	SDL_SetWindowPosition( mSDLWindow, Left, Top );
 }
 
-Vector2i WindowSDL::getPosition() {
+Vector2i WindowSDL::getPosition() const {
 	Vector2i p;
 
 	SDL_GetWindowPosition( mSDLWindow, &p.x, &p.y );
@@ -814,26 +865,26 @@ Vector2i WindowSDL::getPosition() {
 	return p;
 }
 
-void WindowSDL::updateDesktopResolution() {
+void WindowSDL::updateDesktopResolution() const {
 	SDL_DisplayMode dpm;
 	SDL_GetDesktopDisplayMode( SDL_GetWindowDisplayIndex( mSDLWindow ), &dpm );
 
 	mWindow.DesktopResolution = Sizei( dpm.w, dpm.h );
 }
 
-const Sizei& WindowSDL::getDesktopResolution() {
+const Sizei& WindowSDL::getDesktopResolution() const {
 	updateDesktopResolution();
 	return Window::getDesktopResolution();
 }
 
-Rect WindowSDL::getBorderSize() {
+Rect WindowSDL::getBorderSize() const {
 	Rect bordersSize;
 	SDL_GetWindowBordersSize( mSDLWindow, &bordersSize.Top, &bordersSize.Left, &bordersSize.Bottom,
 							  &bordersSize.Right );
 	return bordersSize;
 }
 
-Float WindowSDL::getScale() {
+Float WindowSDL::getScale() const {
 	int realX, realY;
 	int scaledX, scaledY;
 	SDL_GL_GetDrawableSize( mSDLWindow, &realX, &realY );
@@ -931,11 +982,11 @@ void WindowSDL::clearComposition() {
 #endif
 }
 
-bool WindowSDL::hasScreenKeyboardSupport() {
+bool WindowSDL::hasScreenKeyboardSupport() const {
 	return SDL_TRUE == SDL_HasScreenKeyboardSupport();
 }
 
-bool WindowSDL::isScreenKeyboardShown() {
+bool WindowSDL::isScreenKeyboardShown() const {
 	return SDL_TRUE == SDL_IsScreenKeyboardShown( mSDLWindow );
 }
 

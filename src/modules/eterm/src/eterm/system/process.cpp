@@ -94,6 +94,10 @@ void Process::waitForExit() {
 	mExitCode = WEXITSTATUS( status );
 }
 
+int Process::pid() {
+	return mPID;
+}
+
 bool Process::hasExited() const {
 	return mStatus == ProcessStatus::EXITED;
 }
@@ -176,10 +180,8 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 			exit( 1 );
 		}
 
-		// Make sure all non stdio file descriptors are closed before exec
-		int fdlimit = (int)sysconf( _SC_OPEN_MAX );
-		for ( int i = 3; i < fdlimit; i++ )
-			close( i );
+		if ( (int)pseudoTerminal.mSlave > 2 )
+			close( (int)pseudoTerminal.mSlave );
 
 #ifdef __OpenBSD__
 		if ( pledge( "stdio getpw proc exec", NULL ) == -1 ) {
@@ -212,6 +214,18 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 #include <iomanip>
 #include <sstream>
 #define NTDDI_VERSION NTDDI_WIN10_RS5
+#ifdef _WIN32_WINDOWS
+#undef _WIN32_WINDOWS
+#endif
+#ifdef _WIN32_WINNT
+#undef _WIN32_WINNT
+#endif
+#ifdef WINVER
+#undef WINVER
+#endif
+#define _WIN32_WINDOWS 0x0602
+#define _WIN32_WINNT 0x0602
+#define WINVER 0x0602
 #include <windows.h>
 
 using namespace EE;
@@ -458,6 +472,10 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 		new Process( std::move( hProcess ), startupInfo.lpAttributeList, piClient.dwProcessId ) );
 fail:
 	return std::unique_ptr<Process>();
+}
+
+int Process::pid() {
+	return mPID;
 }
 
 }} // namespace eterm::System

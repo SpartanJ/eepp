@@ -1,5 +1,5 @@
-#include "globalsearchcontroller.hpp"
 #include "ecode.hpp"
+#include "globalsearchcontroller.hpp"
 #include "uitreeviewglobalsearch.hpp"
 
 namespace ecode {
@@ -63,7 +63,7 @@ size_t GlobalSearchController::replaceInFiles( const std::string& replaceText,
 
 	const ProjectSearch::Result& res = model->getResult();
 	bool hasCaptures =
-		model->isResultFromLuaPattern() && LuaPattern::find( replaceText, "$%d+" ).isValid();
+		model->isResultFromPatternMatch() && LuaPattern::hasMatches( replaceText, "$%d+" );
 
 	if ( hasCaptures ) {
 		for ( const auto& fileResult : res ) {
@@ -166,6 +166,9 @@ void GlobalSearchController::initGlobalSearchBar(
 	UICheckBox* wholeWordChk = mGlobalSearchBarLayout->find<UICheckBox>( "whole_word" );
 	wholeWordChk->setTooltipText( kbind.getCommandKeybindString( "change-whole-word" ) );
 
+	UICheckBox* regexChk = mGlobalSearchBarLayout->find<UICheckBox>( "regex" );
+	regexChk->setTooltipText( kbind.getCommandKeybindString( "toggle-regex" ) );
+
 	UICheckBox* luaPatternChk = mGlobalSearchBarLayout->find<UICheckBox>( "lua_pattern" );
 	luaPatternChk->setTooltipText( kbind.getCommandKeybindString( "toggle-lua-pattern" ) );
 
@@ -178,6 +181,7 @@ void GlobalSearchController::initGlobalSearchBar(
 	UIWidget* searchBarClose = mGlobalSearchBarLayout->find<UIWidget>( "global_searchbar_close" );
 
 	caseSensitiveChk->setChecked( globalSearchBarConfig.caseSensitive );
+	regexChk->setChecked( globalSearchBarConfig.regex );
 	luaPatternChk->setChecked( globalSearchBarConfig.luaPattern );
 	wholeWordChk->setChecked( globalSearchBarConfig.wholeWord );
 	escapeSequenceChk->setChecked( globalSearchBarConfig.escapeSequence );
@@ -188,24 +192,34 @@ void GlobalSearchController::initGlobalSearchBar(
 	mGlobalSearchHistoryList =
 		mGlobalSearchBarLayout->find<UIDropDownList>( "global_search_history" );
 	mGlobalSearchBarLayout->setCommand( "global-search-clear-history", [this] { clearHistory(); } );
-	mGlobalSearchBarLayout->setCommand( "search-in-files", [this, caseSensitiveChk, wholeWordChk,
-															luaPatternChk, escapeSequenceChk] {
-		doGlobalSearch( mGlobalSearchInput->getText(), mGlobalSearchWhereInput->getText(),
-						caseSensitiveChk->isChecked(), wholeWordChk->isChecked(),
-						luaPatternChk->isChecked(), escapeSequenceChk->isChecked(), false );
-	} );
 	mGlobalSearchBarLayout->setCommand(
-		"search-again", [this, caseSensitiveChk, wholeWordChk, luaPatternChk, escapeSequenceChk] {
-			auto listBox = mGlobalSearchHistoryList->getListBox();
-			if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
-				const auto& item = mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 -
-														listBox->getItemSelectedIndex()];
-				doGlobalSearch( item.search, item.filter, caseSensitiveChk->isChecked(),
-								wholeWordChk->isChecked(), luaPatternChk->isChecked(),
-								escapeSequenceChk->isChecked(),
-								mGlobalSearchTreeReplace == mGlobalSearchTree, true );
-			}
+		"search-in-files",
+		[this, caseSensitiveChk, wholeWordChk, luaPatternChk, escapeSequenceChk, regexChk] {
+			doGlobalSearch( mGlobalSearchInput->getText(), mGlobalSearchWhereInput->getText(),
+							caseSensitiveChk->isChecked(), wholeWordChk->isChecked(),
+							luaPatternChk->isChecked()
+								? TextDocument::FindReplaceType::LuaPattern
+								: ( regexChk->isChecked() ? TextDocument::FindReplaceType::RegEx
+														  : TextDocument::FindReplaceType::Normal ),
+							escapeSequenceChk->isChecked(), false );
 		} );
+	mGlobalSearchBarLayout->setCommand( "search-again", [this, caseSensitiveChk, wholeWordChk,
+														 luaPatternChk, escapeSequenceChk,
+														 regexChk] {
+		auto listBox = mGlobalSearchHistoryList->getListBox();
+		if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
+			const auto& item = mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 -
+													listBox->getItemSelectedIndex()];
+			doGlobalSearch( item.search, item.filter, caseSensitiveChk->isChecked(),
+							wholeWordChk->isChecked(),
+							luaPatternChk->isChecked()
+								? TextDocument::FindReplaceType::LuaPattern
+								: ( regexChk->isChecked() ? TextDocument::FindReplaceType::RegEx
+														  : TextDocument::FindReplaceType::Normal ),
+							escapeSequenceChk->isChecked(),
+							mGlobalSearchTreeReplace == mGlobalSearchTree, true );
+		}
+	} );
 	mGlobalSearchBarLayout->setCommand( "search-set-string", [this] {
 		auto listBox = mGlobalSearchHistoryList->getListBox();
 		const auto& item =
@@ -232,6 +246,8 @@ void GlobalSearchController::initGlobalSearchBar(
 	mGlobalSearchBarLayout->setCommand( "change-whole-word", [wholeWordChk] {
 		wholeWordChk->setChecked( !wholeWordChk->isChecked() );
 	} );
+	mGlobalSearchBarLayout->setCommand(
+		"toggle-regex", [regexChk] { regexChk->setChecked( !regexChk->isChecked() ); } );
 	mGlobalSearchBarLayout->setCommand( "toggle-lua-pattern", [luaPatternChk] {
 		luaPatternChk->setChecked( !luaPatternChk->isChecked() );
 	} );
@@ -248,6 +264,22 @@ void GlobalSearchController::initGlobalSearchBar(
 			mGlobalSearchTree->forceKeyDown( keyEvent );
 		}
 	};
+
+	luaPatternChk->on( Event::OnValueChange, [this, luaPatternChk, regexChk]( const Event* ) {
+		if ( mValueChanging )
+			return;
+		BoolScopedOp op( mValueChanging, true );
+		if ( luaPatternChk->isChecked() && regexChk->isChecked() )
+			regexChk->setChecked( false );
+	} );
+	regexChk->on( Event::OnValueChange, [this, luaPatternChk, regexChk]( const Event* ) {
+		if ( mValueChanging )
+			return;
+		BoolScopedOp op( mValueChanging, true );
+		if ( regexChk->isChecked() && luaPatternChk->isChecked() )
+			luaPatternChk->setChecked( false );
+	} );
+
 	mGlobalSearchInput->setSelectAllDocOnTabNavigate( false );
 	mGlobalSearchWhereInput->setSelectAllDocOnTabNavigate( false );
 	mGlobalSearchInput->on( Event::OnPressEnter, pressEnterCb );
@@ -330,28 +362,33 @@ void GlobalSearchController::initGlobalSearchBar(
 		}
 		mGlobalSearchBarLayout->forceKeyDown( *keyEvent );
 	} );
-	mGlobalSearchBarLayout->setCommand(
-		"search-replace-in-files",
-		[this, caseSensitiveChk, wholeWordChk, luaPatternChk, escapeSequenceChk, replaceInput] {
-			if ( mGlobalSearchTreeReplace == mGlobalSearchTree ) {
-				replaceInput->setFocus();
-				replaceInput->getDocument().selectAll();
-				return;
-			}
+	mGlobalSearchBarLayout->setCommand( "search-replace-in-files", [this, caseSensitiveChk,
+																	wholeWordChk, luaPatternChk,
+																	escapeSequenceChk, replaceInput,
+																	regexChk] {
+		if ( mGlobalSearchTreeReplace == mGlobalSearchTree ) {
+			replaceInput->setFocus();
+			replaceInput->getDocument().selectAll();
+			return;
+		}
 
-			// TODO Implement replacement from result from symbol reference
-			/*if ( mGlobalSearchHistory.back().second->isResultFromSymbolReference() ) {
-				mGlobalSearchTreeReplace->setModel( mGlobalSearchHistory.back().second );
-				showGlobalSearch( true );
-				updateGlobalSearchBarResults( mGlobalSearchHistory.back().first,
-											  mGlobalSearchHistory.back().second, true, false );
-			} else*/
-			{
-				doGlobalSearch( mGlobalSearchInput->getText(), mGlobalSearchWhereInput->getText(),
-								caseSensitiveChk->isChecked(), wholeWordChk->isChecked(),
-								luaPatternChk->isChecked(), escapeSequenceChk->isChecked(), true );
-			}
-		} );
+		// TODO Implement replacement from result from symbol reference
+		/*if ( mGlobalSearchHistory.back().second->isResultFromSymbolReference() ) {
+			mGlobalSearchTreeReplace->setModel( mGlobalSearchHistory.back().second );
+			showGlobalSearch( true );
+			updateGlobalSearchBarResults( mGlobalSearchHistory.back().first,
+										  mGlobalSearchHistory.back().second, true, false );
+		} else*/
+		{
+			doGlobalSearch( mGlobalSearchInput->getText(), mGlobalSearchWhereInput->getText(),
+							caseSensitiveChk->isChecked(), wholeWordChk->isChecked(),
+							luaPatternChk->isChecked()
+								? TextDocument::FindReplaceType::LuaPattern
+								: ( regexChk->isChecked() ? TextDocument::FindReplaceType::RegEx
+														  : TextDocument::FindReplaceType::Normal ),
+							escapeSequenceChk->isChecked(), true );
+		}
+	} );
 	mGlobalSearchBarLayout->setCommand(
 		"replace-in-files", [this, replaceInput, escapeSequenceChk] {
 			auto listBox = mGlobalSearchHistoryList->getListBox();
@@ -419,6 +456,7 @@ void GlobalSearchController::showGlobalSearch( bool searchReplace ) {
 	mApp->hideStatusTerminal();
 	mApp->hideStatusBuildOutput();
 	mApp->hideStatusAppOutput();
+	mApp->getStatusBar()->hideAllElements();
 
 	bool wasReplaceTree = mGlobalSearchTreeReplace == mGlobalSearchTree;
 	mGlobalSearchTree = searchReplace ? mGlobalSearchTreeReplace : mGlobalSearchTreeSearch;
@@ -482,10 +520,12 @@ void GlobalSearchController::clearHistory() {
 GlobalSearchBarConfig GlobalSearchController::getGlobalSearchBarConfig() const {
 	UICheckBox* caseSensitiveChk = mGlobalSearchBarLayout->find<UICheckBox>( "case_sensitive" );
 	UICheckBox* wholeWordChk = mGlobalSearchBarLayout->find<UICheckBox>( "whole_word" );
+	UICheckBox* regexChk = mGlobalSearchBarLayout->find<UICheckBox>( "regex" );
 	UICheckBox* luaPatternChk = mGlobalSearchBarLayout->find<UICheckBox>( "lua_pattern" );
 	UICheckBox* escapeSequenceChk = mGlobalSearchBarLayout->find<UICheckBox>( "escape_sequence" );
 	GlobalSearchBarConfig globalSeachBarConfig;
 	globalSeachBarConfig.caseSensitive = caseSensitiveChk->isChecked();
+	globalSeachBarConfig.regex = regexChk->isChecked();
 	globalSeachBarConfig.luaPattern = luaPatternChk->isChecked();
 	globalSeachBarConfig.wholeWord = wholeWordChk->isChecked();
 	globalSeachBarConfig.escapeSequence = escapeSequenceChk->isChecked();
@@ -599,8 +639,10 @@ std::vector<GlobMatch> GlobalSearchController::parseGlobMatches( const String& s
 }
 
 void GlobalSearchController::doGlobalSearch( String text, String filter, bool caseSensitive,
-											 bool wholeWord, bool luaPattern, bool escapeSequence,
-											 bool searchReplace, bool searchAgain ) {
+											 bool wholeWord,
+											 TextDocument::FindReplaceType searchType,
+											 bool escapeSequence, bool searchReplace,
+											 bool searchAgain ) {
 	if ( mApp->getDirTree() && mApp->getDirTree()->getFilesCount() > 0 && !text.empty() ) {
 		mGlobalSearchTree = searchReplace ? mGlobalSearchTreeReplace : mGlobalSearchTreeSearch;
 		mGlobalSearchTreeSearch->setVisible( !searchReplace );
@@ -615,7 +657,7 @@ void GlobalSearchController::doGlobalSearch( String text, String filter, bool ca
 		loader->setParent( mGlobalSearchLayout->getParent() );
 		loader->setPosition( mGlobalSearchLayout->getPosition() +
 							 mGlobalSearchLayout->getSize() * 0.5f - loader->getSize() * 0.5f );
-		Clock* clock = eeNew( Clock, () );
+		Clock clock;
 		if ( escapeSequence )
 			text.unescape();
 		std::string search( text.toUtf8() );
@@ -623,21 +665,37 @@ void GlobalSearchController::doGlobalSearch( String text, String filter, bool ca
 		std::vector<std::shared_ptr<TextDocument>> openDocs;
 		mSplitter->forEachDocSharedPtr(
 			[&openDocs]( auto doc ) { openDocs.emplace_back( std::move( doc ) ); } );
+		auto filters = parseGlobMatches( filter );
+		auto imageExts = Image::getImageExtensionsSupported();
+		imageExts.erase( std::remove_if( imageExts.begin(), imageExts.end(),
+										 []( const std::string& ext ) { return ext == "svg"; } ),
+						 imageExts.end() );
+		filters.reserve( filters.size() + imageExts.size() );
+		for ( const auto& ext : imageExts ) {
+			// If user explicitly requested to filter some extension, respect it and do not add the
+			// ignore for it.
+			std::string extGlob( "*." + ext );
+			if ( std::find_if( filters.begin(), filters.end(),
+							   [&extGlob]( const std::pair<std::string, bool>& filter ) {
+								   return filter.first == extGlob;
+							   } ) != filters.end() )
+				continue;
+			filters.emplace_back( extGlob, true );
+		}
 
 		ProjectSearch::find(
 			mApp->getDirTree()->getFiles(), search,
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 			mApp->getThreadPool(),
 #endif
-			[this, clock, search, loader, searchReplace, searchAgain, escapeSequence, luaPattern,
+			[this, clock, search, loader, searchReplace, searchAgain, escapeSequence, searchType,
 			 filter]( const ProjectSearch::Result& res ) {
-				Log::info( "Global search for \"%s\" took %.2fms", search.c_str(),
-						   clock->getElapsedTime().asMilliseconds() );
-				eeDelete( clock );
+				Log::info( "Global search for \"%s\" took %s", search.c_str(),
+						   clock.getElapsedTime().toString() );
 				mUISceneNode->runOnMainThread( [this, loader, res, search, searchReplace,
-												searchAgain, escapeSequence, luaPattern, filter] {
+												searchAgain, escapeSequence, searchType, filter] {
 					auto model = ProjectSearch::asModel( res );
-					model->setResultFromLuaPattern( luaPattern );
+					model->setOpType( searchType );
 					updateGlobalSearchHistory( model, search, filter, searchReplace, searchAgain,
 											   escapeSequence );
 					updateGlobalSearchBarResults( search, model, searchReplace, escapeSequence );
@@ -645,10 +703,7 @@ void GlobalSearchController::doGlobalSearch( String text, String filter, bool ca
 					loader->close();
 				} );
 			},
-			caseSensitive, wholeWord,
-			luaPattern ? TextDocument::FindReplaceType::LuaPattern
-					   : TextDocument::FindReplaceType::Normal,
-			parseGlobMatches( filter ), mApp->getCurrentProject(), openDocs );
+			caseSensitive, wholeWord, searchType, filters, mApp->getCurrentProject(), openDocs );
 	}
 }
 

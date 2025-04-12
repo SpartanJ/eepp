@@ -54,11 +54,27 @@ UIImage* UIImage::setDrawable( Drawable* drawable, bool ownIt ) {
 	mDrawableOwner = ownIt;
 	sendCommonEvent( Event::OnResourceChange );
 
-	if ( NULL != mDrawable && mDrawable->isDrawableResource() ) {
-		mResourceChangeCb = static_cast<DrawableResource*>( mDrawable )
-								->pushResourceChangeCallback( [this]( auto, auto event, auto res ) {
-									onDrawableResourceEvent( event, res );
-								} );
+	if ( mDrawable ) {
+		if ( mDrawable->getDrawableType() == Drawable::SPRITE ) {
+			if ( !isSubscribedForScheduledUpdate() )
+				subscribeScheduledUpdate();
+
+			mResourceChangeCb =
+				static_cast<Sprite*>( mDrawable )->pushEventsCallback( [this]( auto, auto, auto ) {
+					invalidateDraw();
+				} );
+		} else {
+			if ( mDrawable->isDrawableResource() ) {
+				mResourceChangeCb =
+					static_cast<DrawableResource*>( mDrawable )
+						->pushResourceChangeCallback( [this]( auto, auto event, auto res ) {
+							onDrawableResourceEvent( event, res );
+						} );
+			}
+
+			if ( isSubscribedForScheduledUpdate() )
+				unsubscribeScheduledUpdate();
+		}
 	}
 
 	onAutoSize();
@@ -176,12 +192,14 @@ void UIImage::autoAlign() {
 }
 
 void UIImage::safeDeleteDrawable() {
-	if ( NULL != mDrawable && mDrawable->isDrawableResource() ) {
+	if ( mDrawable && mDrawable->getDrawableType() == Drawable::SPRITE ) {
+		static_cast<Sprite*>( mDrawable )->popEventsCallback( mResourceChangeCb );
+	} else if ( mDrawable && mDrawable->isDrawableResource() ) {
 		static_cast<DrawableResource*>( mDrawable )->popResourceChangeCallback( mResourceChangeCb );
 		mResourceChangeCb = 0;
 	}
 
-	if ( NULL != mDrawable && mDrawableOwner ) {
+	if ( mDrawable && mDrawableOwner ) {
 		eeSAFE_DELETE( mDrawable );
 
 		mDrawableOwner = false;
@@ -233,6 +251,11 @@ std::string UIImage::getPropertyString( const PropertyDefinition* propertyDef,
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
+}
+
+void UIImage::scheduledUpdate( const Time& time ) {
+	if ( mDrawable && mDrawable->getDrawableType() == Drawable::SPRITE )
+		static_cast<Sprite*>( mDrawable )->update( time );
 }
 
 std::vector<PropertyId> UIImage::getPropertiesImplemented() const {

@@ -308,7 +308,7 @@ UITextView* UITextView::setSelectionBackColor( const Color& color ) {
 
 void UITextView::autoWrap() {
 	if ( mFlags & UI_WORD_WRAP ) {
-		wrapText( mSize.getWidth() );
+		wrapText( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right );
 	}
 }
 
@@ -444,6 +444,11 @@ void UITextView::onAlphaChange() {
 	mTextCache->setOutlineColor( newColor );
 
 	invalidateDraw();
+}
+
+void UITextView::onPaddingChange() {
+	autoWrap();
+	UIWidget::onPaddingChange();
 }
 
 void UITextView::setTheme( UITheme* Theme ) {
@@ -985,7 +990,7 @@ Uint32 UIAnchor::onKeyDown( const KeyEvent& event ) {
 		}
 	}
 
-	return 0;
+	return UIWidget::onKeyDown( event );
 }
 
 std::string UIAnchor::getPropertyString( const PropertyDefinition* propertyDef,

@@ -5,7 +5,12 @@
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
-#include <eepp/system/platform/win/muteximpl.hpp>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+
+#include <eepp/system/mutex.hpp>
 
 namespace EE { namespace System { namespace Platform {
 
@@ -38,7 +43,7 @@ class ConditionImpl {
 	int mConditionnedVar;
 
 	HANDLE mCond;
-	MutexImpl mMutex;
+	Mutex mMutex;
 };
 
 }}} // namespace EE::System::Platform

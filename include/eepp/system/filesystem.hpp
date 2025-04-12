@@ -105,18 +105,21 @@ class EE_API FileSystem {
 	static std::vector<std::string> filesGetInPath( const std::string& path,
 													const bool& sortByName = false,
 													const bool& foldersFirst = false,
-													const bool& ignoreHidden = false );
+													const bool& ignoreHidden = false,
+													const std::function<bool()> shouldAbort = {} );
 
 	/** @return The files and sub directories contained by a directory */
 	static std::vector<String> filesGetInPath( const String& path, const bool& sortByName = false,
 											   const bool& foldersFirst = false,
-											   const bool& ignoreHidden = false );
+											   const bool& ignoreHidden = false,
+											   const std::function<bool()> shouldAbort = {} );
 
 	/** @return The file info of the files and sub directories contained in the directory path. */
 	static std::vector<FileInfo> filesInfoGetInPath( std::string path, bool linkInfo = false,
 													 const bool& sortByName = false,
 													 const bool& foldersFirst = false,
-													 const bool& ignoreHidden = false );
+													 const bool& ignoreHidden = false,
+													 const std::function<bool()> shouldAbort = {} );
 
 	/** @return The size of a file */
 	static Uint64 fileSize( const std::string& Filepath );

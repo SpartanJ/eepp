@@ -62,7 +62,11 @@ class EE_API Model {
 		InvalidateAllIndexes = 1 << 0,
 	};
 
-	virtual ~Model(){};
+	virtual ~Model() {};
+
+	virtual bool hasChilds( const ModelIndex& modelIndex = ModelIndex() ) const {
+		return rowCount( modelIndex ) > 0;
+	}
 
 	virtual size_t rowCount( const ModelIndex& = ModelIndex() ) const = 0;
 
@@ -112,6 +116,8 @@ class EE_API Model {
 
 	virtual bool classModelRoleEnabled() { return false; }
 
+	virtual bool tooltipModelRoleEnabled() { return false; }
+
 	void registerView( UIAbstractView* );
 
 	void unregisterView( UIAbstractView* );
@@ -120,7 +126,7 @@ class EE_API Model {
 
 	void unregisterClient( Client* );
 
-	void refreshView();
+	void refreshView() const;
 
 	void setOnUpdate( const std::function<void()>& onUpdate );
 
@@ -155,9 +161,9 @@ class EE_API Model {
 	void unsubsribeModelStyler( Uint32 id );
 
   protected:
-	Model(){};
+	Model() {};
 
-	void forEachView( std::function<void( UIAbstractView* )> );
+	void forEachView( std::function<void( UIAbstractView* )> ) const;
 
 	void onModelUpdate( unsigned flags = UpdateFlag::InvalidateAllIndexes );
 
@@ -215,7 +221,7 @@ class EE_API Model {
 	std::unordered_set<UIAbstractView*> mViews;
 	std::unordered_set<Client*> mClients;
 	std::function<void()> mOnUpdate;
-	Mutex mResourceLock;
+	mutable Mutex mResourceLock;
 	Uint32 mLastStylerId{ 0 };
 	std::unordered_map<Uint32, ModelStyler> mStylers;
 };

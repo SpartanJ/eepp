@@ -25,7 +25,7 @@ class EE_API WindowSDL : public Window {
 
 	bool create( WindowSettings Settings, ContextSettings Context );
 
-	Uint32 getWindowID();
+	Uint32 getWindowID() const;
 
 	void makeCurrent();
 
@@ -39,15 +39,15 @@ class EE_API WindowSDL : public Window {
 
 	bool setIcon( const std::string& Path );
 
-	bool isActive();
+	bool isActive() const;
 
-	bool isVisible();
+	bool isVisible() const;
 
-	bool hasFocus();
+	bool hasFocus() const;
 
-	bool hasInputFocus();
+	bool hasInputFocus() const;
 
-	bool hasMouseFocus();
+	bool hasMouseFocus() const;
 
 	void setSize( Uint32 width, Uint32 height, bool windowed );
 
@@ -55,17 +55,21 @@ class EE_API WindowSDL : public Window {
 
 	void setGamma( Float Red, Float Green, Float Blue );
 
-	eeWindowHandle getWindowHandler();
+	eeWindowHandle getWindowHandler() const;
 
 	virtual void minimize();
 
 	virtual void maximize();
 
-	virtual bool isMaximized();
+	virtual bool isMaximized() const;
+
+	virtual bool isMinimized() const;
 
 	virtual void hide();
 
 	virtual void raise();
+
+	virtual void restore();
 
 	virtual void flash( WindowFlashOperation op );
 
@@ -73,13 +77,13 @@ class EE_API WindowSDL : public Window {
 
 	virtual void setPosition( int Left, int Top );
 
-	virtual Vector2i getPosition();
+	virtual Vector2i getPosition() const;
 
-	const Sizei& getDesktopResolution();
+	const Sizei& getDesktopResolution() const;
 
-	virtual Rect getBorderSize();
+	virtual Rect getBorderSize() const;
 
-	virtual Float getScale();
+	virtual Float getScale() const;
 
 	virtual bool hasNativeMessageBox() const;
 
@@ -104,17 +108,17 @@ class EE_API WindowSDL : public Window {
 
 	void clearComposition();
 
-	bool hasScreenKeyboardSupport();
+	bool hasScreenKeyboardSupport() const;
 
-	bool isScreenKeyboardShown();
+	bool isScreenKeyboardShown() const;
 
-	bool isThreadedGLContext();
+	bool isThreadedGLContext() const;
 
 	void setGLContextThread();
 
 	void unsetGLContextThread();
 
-	int getCurrentDisplayIndex();
+	int getCurrentDisplayIndex() const;
 
   protected:
 	friend class ClipboardSDL;
@@ -137,7 +141,7 @@ class EE_API WindowSDL : public Window {
 
 	std::string getVersion();
 
-	void updateDesktopResolution();
+	void updateDesktopResolution() const;
 
 	void onWindowResize( Uint32 width, Uint32 height );
 };

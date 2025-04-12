@@ -1,5 +1,5 @@
-#include "gitplugin.hpp"
 #include "gitbranchmodel.hpp"
+#include "gitplugin.hpp"
 #include "gitstatusmodel.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/scene/scenemanager.hpp>
@@ -83,6 +83,7 @@ GitPlugin::GitPlugin( PluginManager* pluginManager, bool sync ) :
 }
 
 GitPlugin::~GitPlugin() {
+	waitUntilLoaded();
 	mShuttingDown = true;
 	if ( mStatusButton )
 		mStatusButton->close();
@@ -95,10 +96,18 @@ GitPlugin::~GitPlugin() {
 	if ( getUISceneNode() )
 		getUISceneNode()->removeActionsByTag( GIT_STATUS_UPDATE_TAG );
 
-	{ Lock l( mGitBranchMutex ); }
-	{ Lock l( mGitStatusMutex ); }
-	{ Lock l( mRepoMutex ); }
-	{ Lock l( mReposMutex ); }
+	{
+		Lock l( mGitBranchMutex );
+	}
+	{
+		Lock l( mGitStatusMutex );
+	}
+	{
+		Lock l( mRepoMutex );
+	}
+	{
+		Lock l( mReposMutex );
+	}
 
 	// TODO: Add a signal for these waits
 	while ( mRunningUpdateStatus )
@@ -109,6 +118,7 @@ GitPlugin::~GitPlugin() {
 }
 
 void GitPlugin::load( PluginManager* pluginManager ) {
+	Clock clock;
 	AtomicBoolScopedOp loading( mLoading, true );
 	pluginManager->subscribeMessages( this,
 									  [this]( const auto& notification ) -> PluginRequestHandle {
@@ -233,7 +243,7 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 	subscribeFileSystemListener();
 	mReady = true;
 	fireReadyCbs();
-	setReady();
+	setReady( clock.getElapsedTime() );
 }
 
 void GitPlugin::initModelStyler() {
@@ -256,8 +266,11 @@ void GitPlugin::initModelStyler() {
 			auto model = static_cast<const FileSystemModel*>( index.model() );
 			auto node = static_cast<const FileSystemModel::Node*>( data );
 			Lock l( mGitStatusFileCacheMutex );
-			auto found =
-				mGitStatusFilesCache.find( std::string{ model->getNodeRelativePath( node ) } );
+			std::string_view nodePath = model->getNodeRelativePath( node );
+			auto found = std::find_if( mGitStatusFilesCache.begin(), mGitStatusFilesCache.end(),
+									   [&nodePath]( const std::string& key ) {
+										   return std::string_view{ key } == nodePath;
+									   } );
 			if ( found != mGitStatusFilesCache.end() )
 				return Variant( STYLE_MODIFIED );
 			return Variant( STYLE_NONE );
@@ -287,6 +300,9 @@ void GitPlugin::endModelStyler() {
 void GitPlugin::updateUINow( bool force ) {
 	if ( !mGit || !getUISceneNode() )
 		return;
+
+	if ( !mProjectPath.empty() )
+		getUISceneNode()->runOnMainThread( [this] { buildSidePanelTab(); } );
 
 	updateStatus( force );
 	updateBranches();
@@ -334,9 +350,6 @@ void GitPlugin::updateStatusBarSync() {
 		mStatusButton->setIcon( iconDrawable( "source-control", 10 ) );
 		mStatusButton->reloadStyle( true, true );
 		mStatusButton->getTextBox()->setUsingCustomStyling( true );
-		auto childCount = mStatusBar->getChildCount();
-		if ( childCount > 2 )
-			mStatusButton->toPosition( mStatusBar->getChildCount() - 2 );
 
 		mStatusButton->on( Event::MouseClick, [this]( const Event* event ) {
 			if ( nullptr == mTab )
@@ -348,6 +361,10 @@ void GitPlugin::updateStatusBarSync() {
 				mPanelSwicher->getListBox()->setSelected( 1 );
 		} );
 	}
+
+	if ( mStatusBar->getChildCount() >= 2 &&
+		 mStatusButton->getNodeIndex() != mStatusBar->getChildCount() - 2 )
+		mStatusButton->toPosition( mStatusBar->getChildCount() - 2 );
 
 	mStatusButton->setVisible( !mGit->getGitFolder().empty() );
 
@@ -393,6 +410,12 @@ void GitPlugin::updateStatusBarSync() {
 void GitPlugin::updateStatus( bool force ) {
 	if ( !mGit || !mGitFound || mRunningUpdateStatus )
 		return;
+
+	if ( !mGit || mGit->getGitFolder().empty() ) {
+		getUISceneNode()->runOnMainThread( [this] { updateStatusBarSync(); } );
+		return;
+	}
+
 	mRunningUpdateStatus++;
 	mThreadPool->run(
 		[this, force] {
@@ -501,8 +524,15 @@ void GitPlugin::onFileSystemEvent( const FileEvent& ev, const FileInfo& file ) {
 	if ( mShuttingDown || isLoading() )
 		return;
 
-	if ( String::startsWith( file.getFilepath(), mGit->getGitFolder() ) &&
-		 ( file.getExtension() == "lock" || file.isDirectory() ) )
+	if ( file.isDirectory() )
+		return;
+
+	auto inGitFolder = file.getFilepath().find( "/.git/" ) != std::string::npos;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	inGitFolder |= file.getFilepath().find( "\\.git\\" ) != std::string::npos;
+#endif
+
+	if ( inGitFolder && file.getExtension() == "lock" )
 		return;
 
 	updateUI();
@@ -607,16 +637,6 @@ void GitPlugin::onRegisterListeners( UICodeEditor* editor, std::vector<Uint32>& 
 			if ( mTooltipInfoShowing )
 				hideTooltip( editor );
 		} ) );
-}
-
-void GitPlugin::onBeforeUnregister( UICodeEditor* editor ) {
-	for ( auto& kb : mKeyBindings )
-		editor->getKeyBindings().removeCommandKeybind( kb.first );
-}
-
-void GitPlugin::onUnregisterDocument( TextDocument* doc ) {
-	for ( auto& kb : mKeyBindings )
-		doc->removeCommand( kb.first );
 }
 
 Color GitPlugin::getVarColor( const std::string& var ) {
@@ -814,6 +834,8 @@ void GitPlugin::commit( const std::string& repoPath ) {
 											  i18n( "git_commit_message", "Commit Message:" ) );
 
 	UITextEdit* txtEdit = msgBox->getTextEdit();
+	txtEdit->setLineWrapType( LineWrapType::Viewport );
+	txtEdit->setLineWrapMode( LineWrapMode::Letter );
 	txtEdit->setText( mLastCommitMsg );
 
 	UICheckBox* chkAmmend = UICheckBox::New();
@@ -934,7 +956,7 @@ static bool isPath( const std::string& file ) {
 	bool ret = !file.empty() && file[0] == '/';
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	if ( !ret )
-		ret = LuaPattern::matches( file, "%w:[\\/][\\/]" );
+		ret = LuaPattern::hasMatches( file, "%w:[\\/][\\/]" );
 #endif
 	return ret;
 }
@@ -1299,6 +1321,11 @@ void GitPlugin::updateBranches( bool force ) {
 	if ( !mGit || !mGitFound || ( mRunningUpdateBranches && !force ) )
 		return;
 
+	if ( !mGit || mGit->getGitFolder().empty() ) {
+		getUISceneNode()->runOnMainThread( [this] { updateBranchesUI( nullptr ); } );
+		return;
+	}
+
 	mRunningUpdateBranches++;
 	mThreadPool->run(
 		[this] {
@@ -1389,7 +1416,7 @@ void GitPlugin::buildSidePanelTab() {
 		UIIcon* icon = findIcon( "source-control" );
 		mTab = mSidePanel->add( i18n( "source_control", "Source Control" ), mTabContents,
 								icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
-		mTab->setId( "source_control" );
+		mTab->setId( "source_control_tab" );
 		mTab->setTextAsFallback( true );
 		return;
 	}
@@ -1459,7 +1486,7 @@ void GitPlugin::buildSidePanelTab() {
 	mTabContents = getUISceneNode()->loadLayoutFromString( String::format( STYLE, color, color ) );
 	mTab = mSidePanel->add( i18n( "source_control", "Source Control" ), mTabContents,
 							icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
-	mTab->setId( "source_control" );
+	mTab->setId( "source_control_tab" );
 	mTab->setTextAsFallback( true );
 
 	mTabContents->bind( "git_panel_switcher", mPanelSwicher );
@@ -1556,10 +1583,10 @@ void GitPlugin::buildSidePanelTab() {
 	} );
 	mStatusTree->on( Event::OnModelEvent, [this]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
-		if ( modelEvent->getModel() == nullptr )
+		auto modelShared = mStatusTree->getModelShared();
+		if ( !modelShared )
 			return;
-
-		auto model = static_cast<const GitStatusModel*>( modelEvent->getModel() );
+		auto model = static_cast<GitStatusModel*>( modelShared.get() );
 
 		if ( modelEvent->getModelIndex().internalId() == GitStatusModel::GitFile ) {
 			const Git::DiffFile* file = model->file( modelEvent->getModelIndex() );
@@ -1582,9 +1609,10 @@ void GitPlugin::buildSidePanelTab() {
 			switch ( modelEvent->getModelEventType() ) {
 				case ModelEventType::OpenMenu: {
 					const auto* status = model->statusType( modelEvent->getModelIndex() );
-					if ( status->type == Git::GitStatusType::Staged ||
-						 status->type == Git::GitStatusType::Untracked ||
-						 status->type == Git::GitStatusType::Changed ) {
+					auto type = status->type;
+					if ( type == Git::GitStatusType::Staged ||
+						 type == Git::GitStatusType::Untracked ||
+						 type == Git::GitStatusType::Changed ) {
 						std::string repoPath;
 						if ( !status->files.empty() )
 							repoPath = mGit->repoPath( status->files.front().file );
@@ -1592,37 +1620,38 @@ void GitPlugin::buildSidePanelTab() {
 						UIPopUpMenu* menu = UIPopUpMenu::New();
 						menu->setId( "git_status_type_menu" );
 
-						if ( status->type == Git::GitStatusType::Staged ) {
+						if ( type == Git::GitStatusType::Staged ) {
 							menuAdd( menu, "git-commit", i18n( "git_commit", "Commit" ),
 									 "git-commit" );
 							menuAdd( menu, "git-diff-staged",
 									 i18n( "git_diff_staged", "Diff Staged" ), "diff-multiple" );
 							menuAdd( menu, "git-unstage-all",
-									 i18n( "git_unstage_all", "Unstage All" ) );
+									 i18n( "git_unstage_all", "Unstage All" ), "diff-removed" );
 						}
 
-						if ( status->type == Git::GitStatusType::Untracked ||
-							 status->type == Git::GitStatusType::Changed )
-							menuAdd( menu, "git-stage-all", i18n( "git_stage_all", "Stage All" ) );
+						if ( type == Git::GitStatusType::Untracked ||
+							 type == Git::GitStatusType::Changed )
+							menuAdd( menu, "git-stage-all", i18n( "git_stage_all", "Stage All" ),
+									 "diff-added" );
 
-						if ( status->type == Git::GitStatusType::Changed ) {
+						if ( type == Git::GitStatusType::Changed ) {
 							menu->addSeparator();
 							menuAdd( menu, "git-discard-all",
 									 i18n( "git_discard_all", "Discard All" ) );
 						}
 
-						menu->on( Event::OnItemClicked, [this, model,
-														 repoPath]( const Event* event ) {
-							if ( !mGit )
+						menu->on( Event::OnItemClicked, [this, modelShared, repoPath,
+														 type]( const Event* event ) {
+							if ( !mGit || !modelShared )
 								return;
+							auto model = static_cast<GitStatusModel*>( modelShared.get() );
 							UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 							std::string id( item->getId() );
 							if ( id == "git-commit" ) {
 								commit( repoPath );
 							} else if ( id == "git-stage-all" ) {
 								stage( model->getFiles( repoFullName( repoPath ),
-														(Uint32)Git::GitStatusType::Untracked |
-															(Uint32)Git::GitStatusType::Changed ) );
+														static_cast<Uint32>( type ) ) );
 							} else if ( id == "git-unstage-all" ) {
 								unstage( model->getFiles( repoFullName( repoPath ),
 														  (Uint32)Git::GitStatusType::Staged ) );
@@ -1666,7 +1695,8 @@ void GitPlugin::buildSidePanelTab() {
 					}
 
 					if ( repo->hasStatusType( Git::GitStatusType::Untracked ) ) {
-						menuAdd( menu, "git-stage-all", i18n( "git_stage_all", "Stage All" ) );
+						menuAdd( menu, "git-stage-all", i18n( "git_stage_all", "Stage All" ),
+								 "diff-added" );
 					}
 
 					menuAdd( menu, "git-fetch", i18n( "git_fetch", "Fetch" ), "repo-fetch" );
@@ -1809,9 +1839,9 @@ void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
 	menuAdd( menu, "git-diff", i18n( "git_open_diff", "Open Diff" ), "diff-single" );
 
 	if ( file.report.type != Git::GitStatusType::Staged ) {
-		menuAdd( menu, "git-stage", i18n( "git_stage", "Stage" ) );
+		menuAdd( menu, "git-stage", i18n( "git_stage", "Stage" ), "diff-added" );
 	} else {
-		menuAdd( menu, "git-unstage", i18n( "git_unstage", "Unstage" ) );
+		menuAdd( menu, "git-unstage", i18n( "git_unstage", "Unstage" ), "diff-removed" );
 	}
 
 	menu->addSeparator();

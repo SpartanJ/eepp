@@ -32,6 +32,18 @@ UIWindow* UIWindow::New() {
 	return eeNew( UIWindow, ( SIMPLE_LAYOUT ) );
 }
 
+UIWindow* UIWindow::NewVBox() {
+	return eeNew( UIWindow, ( VERTICAL_LINEAR_LAYOUT ) );
+}
+
+UIWindow* UIWindow::NewHBox() {
+	return eeNew( UIWindow, ( HORIZONTAL_LINEAR_LAYOUT ) );
+}
+
+UIWindow* UIWindow::NewRelLay() {
+	return eeNew( UIWindow, ( RELATIVE_LAYOUT ) );
+}
+
 UIWindow::UIWindow( UIWindow::WindowBaseContainerType type ) : UIWindow( type, StyleConfig() ) {}
 
 UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& windowStyleConfig ) :
@@ -65,8 +77,12 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 		getUISceneNode()->windowAdd( this );
 
 	switch ( type ) {
-		case LINEAR_LAYOUT:
+		case VERTICAL_LINEAR_LAYOUT:
 			mContainer = UILinearLayout::NewWithTag( "window::container", UIOrientation::Vertical );
+			break;
+		case HORIZONTAL_LINEAR_LAYOUT:
+			mContainer =
+				UILinearLayout::NewWithTag( "window::container", UIOrientation::Horizontal );
 			break;
 		case RELATIVE_LAYOUT:
 			mContainer = UIRelativeLayout::NewWithTag( "window::container" );
@@ -1583,6 +1599,8 @@ std::string UIWindow::getWindowFlagsString() const {
 		flags.push_back( "framebuffer" );
 	if ( getWinFlags() & UI_WIN_COLOR_BUFFER )
 		flags.push_back( "colorbuffer" );
+	if ( getWinFlags() & UI_WIN_EPHEMERAL )
+		flags.push_back( "ephemeral" );
 	return String::join( flags, '|' );
 }
 
@@ -1703,6 +1721,8 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 						winflags |= UI_WIN_FRAME_BUFFER;
 					else if ( "colorbuffer" == cur )
 						winflags |= UI_WIN_COLOR_BUFFER;
+					else if ( "ephemeral" == cur )
+						winflags |= UI_WIN_EPHEMERAL;
 				}
 
 				/// TODO: WinFlags should replace old winFlags
@@ -1763,7 +1783,7 @@ Uint32 UIWindow::onKeyDown( const KeyEvent& event ) {
 	std::string cmd = mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
 	if ( !cmd.empty() ) {
 		executeKeyBindingCommand( cmd );
-		return 0;
+		return 1;
 	}
 	return UIWidget::onKeyDown( event );
 }

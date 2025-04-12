@@ -28,6 +28,9 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 
 	static Uint32 getMaximumSize();
 
+	/* @return an array of Textures and the delay of the first frame */
+	static std::pair<std::vector<Texture*>, int> loadGif( IOStream& stream );
+
 	/** Set the OpenGL Texture Id (texture handle) */
 	void setHandle( const int& texture ) { mTexture = texture; }
 
@@ -90,7 +93,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	const Filter& getFilter() const;
 
 	/** Save the Texture to a new File */
-	bool saveToFile( const std::string& filepath, const Image::SaveType& Format );
+	virtual bool saveToFile( const std::string& filepath, const Image::SaveType& Format );
 
 	/** Replace a color on the texture */
 	void replaceColor( const Color& ColorKey, const Color& NewColor );

@@ -4,6 +4,15 @@
 
 namespace EE { namespace UI { namespace CSS {
 
+static int numberOfSetBits( Uint32 i ) {
+	i = i - ( ( i >> 1 ) & 0x55555555 );				  // add pairs of bits
+	i = ( i & 0x33333333 ) + ( ( i >> 2 ) & 0x33333333 ); // quads
+	i = ( i + ( i >> 4 ) ) & 0x0F0F0F0F;				  // groups of 8
+	i *= 0x01010101;									  // horizontal sum of bytes
+	return i >> 24; // return just that top byte (after truncating to 32-bit even when int is wider
+					// than uint32_t)
+}
+
 static const char* StatePseudoClasses[] = { "focus",	"selected",		"hover", "pressed",
 											"disabled", "focus-within", "active" };
 
@@ -28,6 +37,24 @@ static bool isStructuralPseudoClass( const std::string& pseudoClass ) {
 	}
 
 	return false;
+}
+
+StyleSheetSelectorRule::PseudoClasses
+StyleSheetSelectorRule::toPseudoClass( std::string_view cls ) {
+	if ( "focus" == cls )
+		return StyleSheetSelectorRule::PseudoClasses::Focus;
+	if ( "selected" == cls )
+		return StyleSheetSelectorRule::PseudoClasses::Selected;
+	if ( "hover" == cls )
+		return StyleSheetSelectorRule::PseudoClasses::Hover;
+	if ( "pressed" == cls || "active" == cls )
+		return StyleSheetSelectorRule::PseudoClasses::Pressed;
+	if ( "disabled" == cls )
+		return StyleSheetSelectorRule::PseudoClasses::Disabled;
+	if ( "focus-within" == cls )
+		return StyleSheetSelectorRule::PseudoClasses::FocusWithin;
+	eeASSERT( false );
+	return StyleSheetSelectorRule::PseudoClasses::None;
 }
 
 static void splitSelectorPseudoClass( const std::string& selector, std::string& realSelector,
@@ -78,6 +105,15 @@ static void splitSelectorPseudoClass( const std::string& selector, std::string& 
 	}
 }
 
+std::vector<const char*> StyleSheetSelectorRule::fromPseudoClass( Uint32 cls ) {
+	std::vector<const char*> ret;
+	ret.reserve( numberOfSetBits( cls ) );
+	for ( Uint32 i = 0; i < PseudoClassesTotal; i++ )
+		if ( cls & ( 1 << i ) )
+			ret.push_back( StatePseudoClasses[i] );
+	return ret;
+}
+
 StyleSheetSelectorRule::StyleSheetSelectorRule( const std::string& selectorFragment,
 												PatternMatch patternMatch ) :
 	mSpecificity( 0 ), mPatternMatch( patternMatch ), mRequirementFlags( 0 ) {
@@ -122,7 +158,7 @@ void StyleSheetSelectorRule::parseFragment( const std::string& selectorFragment 
 
 			if ( !pseudoClass.empty() ) {
 				if ( isPseudoClassState( pseudoClass ) ) {
-					mPseudoClasses.push_back( pseudoClass == "active" ? "pressed" : pseudoClass );
+					mPseudoClasses |= toPseudoClass( pseudoClass );
 				} else if ( isStructuralPseudoClass( pseudoClass ) ) {
 					mStructuralPseudoClasses.push_back( pseudoClass );
 
@@ -189,9 +225,9 @@ void StyleSheetSelectorRule::parseFragment( const std::string& selectorFragment 
 	if ( !mClasses.empty() )
 		mRequirementFlags |= Class;
 
-	if ( !mPseudoClasses.empty() ) {
+	if ( mPseudoClasses ) {
 		mRequirementFlags |= PseudoClass;
-		mSpecificity += SpecificityPseudoClass * mPseudoClasses.size();
+		mSpecificity += SpecificityPseudoClass * numberOfSetBits( mPseudoClasses );
 	}
 
 	if ( !mStructuralPseudoClasses.empty() ) {
@@ -205,14 +241,14 @@ bool StyleSheetSelectorRule::hasClass( const std::string& cls ) const {
 }
 
 bool StyleSheetSelectorRule::hasPseudoClasses() const {
-	return !mPseudoClasses.empty();
+	return mPseudoClasses != 0;
 }
 
 bool StyleSheetSelectorRule::hasPseudoClass( const std::string& cls ) const {
-	return std::find( mPseudoClasses.begin(), mPseudoClasses.end(), cls ) != mPseudoClasses.end();
+	return mPseudoClasses & toPseudoClass( cls );
 }
 
-const std::vector<std::string>& StyleSheetSelectorRule::getPseudoClasses() const {
+Uint32 StyleSheetSelectorRule::getPseudoClasses() const {
 	return mPseudoClasses;
 }
 
@@ -264,9 +300,9 @@ bool StyleSheetSelectorRule::matches( UIWidget* element, const bool& applyPseudo
 		}
 	}
 
-	if ( !mClasses.empty() && !element->getStyleSheetClasses().empty() ) {
+	const std::vector<std::string>& elClasses = element->getStyleSheetClasses();
+	if ( !mClasses.empty() && !elClasses.empty() ) {
 		bool hasClasses = true;
-		const std::vector<std::string>& elClasses = element->getStyleSheetClasses();
 
 		for ( const auto& cls : mClasses ) {
 			if ( std::find( elClasses.begin(), elClasses.end(), cls ) == elClasses.end() ) {
@@ -281,11 +317,13 @@ bool StyleSheetSelectorRule::matches( UIWidget* element, const bool& applyPseudo
 	}
 
 	if ( applyPseudo ) {
-		if ( !mPseudoClasses.empty() && !element->getStyleSheetPseudoClasses().empty() ) {
+		if ( mPseudoClasses && element->getStyleSheetPseudoClasses() ) {
 			bool hasPseudoClasses = true;
 
-			for ( const auto& cls : mPseudoClasses ) {
-				if ( !element->hasPseudoClass( cls ) ) {
+			for ( Uint32 i = 0; i < PseudoClassesTotal; i++ ) {
+				Uint32 pcls = ( 1 << i );
+				if ( ( mPseudoClasses & pcls ) &&
+					 !( element->getStyleSheetPseudoClasses() & pcls ) ) {
 					hasPseudoClasses = false;
 					break;
 				}

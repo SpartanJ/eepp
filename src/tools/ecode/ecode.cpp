@@ -3,12 +3,6 @@
 #include "iconmanager.hpp"
 #include "keybindingshelper.hpp"
 #include "pathhelper.hpp"
-#include "plugins/autocomplete/autocompleteplugin.hpp"
-#include "plugins/formatter/formatterplugin.hpp"
-#include "plugins/git/gitplugin.hpp"
-#include "plugins/linter/linterplugin.hpp"
-#include "plugins/lsp/lspclientplugin.hpp"
-#include "plugins/xmltools/xmltoolsplugin.hpp"
 #include "settingsactions.hpp"
 #include "settingsmenu.hpp"
 #include "uibuildsettings.hpp"
@@ -17,9 +11,20 @@
 #include <algorithm>
 #include <args/args.hxx>
 #include <eepp/graphics/fontfamily.hpp>
+#include <eepp/system/iostreammemory.hpp>
+#include <eepp/ui/doc/languagessyntaxhighlighting.hpp>
 #include <filesystem>
 #include <iostream>
-#include <nlohmann/json.hpp>
+
+//! Plugins
+#include "plugins/autocomplete/autocompleteplugin.hpp"
+#include "plugins/debugger/debuggerplugin.hpp"
+#include "plugins/formatter/formatterplugin.hpp"
+#include "plugins/git/gitplugin.hpp"
+#include "plugins/linter/linterplugin.hpp"
+#include "plugins/lsp/lspclientplugin.hpp"
+#include "plugins/xmltools/xmltoolsplugin.hpp"
+
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 // For malloc_trim, which is a GNU extension
 extern "C" {
@@ -50,6 +55,7 @@ bool firstUpdate = true;
 App* appInstance = nullptr;
 
 static const Uint32 APP_LAYOUT_STYLE_MARKER = String::hash( "app_layout_style" );
+static const auto NOT_UNIQUE_FILENAME = "not_unique";
 
 void appLoop() {
 	appInstance->mainLoop();
@@ -152,14 +158,109 @@ std::string App::titleFromEditor( UICodeEditor* editor ) {
 	return editor->getDocument().isDirty() ? title + "*" : title;
 }
 
+void App::updateNonUniqueTabTitles() {
+	if ( mSplitter == nullptr )
+		return;
+	mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
+		if ( editor->hasClass( NOT_UNIQUE_FILENAME ) )
+			updateEditorTabTitle( editor );
+	} );
+}
+
 void App::updateEditorTabTitle( UICodeEditor* editor ) {
+	const auto isUniqueTabTitle = [this]( UITab* tab ) -> bool {
+		bool unique = true;
+		auto doc = tab->getOwnedWidget()->asType<UICodeEditor>()->getDocumentRef();
+		auto fileName = doc->getFilename();
+		mSplitter->forEachTabWidgetStoppable( [tab, &unique, &fileName,
+											   &doc]( UITabWidget* tabWidget ) {
+			for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
+				UITab* curTab = tabWidget->getTab( i );
+				if ( !curTab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) )
+					continue;
+				auto curDoc = curTab->getOwnedWidget()->asType<UICodeEditor>()->getDocumentRef();
+				if ( curDoc && tab != curTab && fileName == curDoc->getFilename() &&
+					 doc->getFilePath() != curDoc->getFilePath() ) {
+					unique = false;
+					return true;
+				}
+			}
+			return false;
+		} );
+		return unique;
+	};
+
+	const auto getTabWithSameTitle = [this]( UITab* tab ) -> std::vector<UITab*> {
+		std::vector<UITab*> tabs{ tab };
+		auto doc = tab->getOwnedWidget()->asType<UICodeEditor>()->getDocumentRef();
+		const auto& fileName = doc->getFilename();
+		mSplitter->forEachTabWidget( [tab, &tabs, &fileName]( UITabWidget* tabWidget ) {
+			for ( size_t i = 0; i < tabWidget->getTabCount(); i++ ) {
+				UITab* curTab = tabWidget->getTab( i );
+				if ( !curTab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) )
+					continue;
+				auto curDoc = curTab->getOwnedWidget()->asType<UICodeEditor>()->getDocumentRef();
+				if ( curDoc && tab != curTab && fileName == curDoc->getFilename() )
+					tabs.push_back( curTab );
+			}
+		} );
+		return tabs;
+	};
+
+	const auto getUniqueNameForTabs =
+		[]( const std::vector<UITab*>& tabs ) -> std::unordered_map<UITab*, String> {
+		std::unordered_map<UITab*, String> uniqueTitles;
+
+		size_t subFoldersDisplayed = 1;
+		String firstTitle;
+		do {
+			for ( UITab* tab : tabs ) {
+				auto doc = tab->getOwnedWidget()->asType<UICodeEditor>()->getDocumentRef();
+				auto path = doc->getFilePath();
+				std::string fileName = FileSystem::fileNameFromPath( path );
+				std::string containingFolder = FileSystem::fileRemoveFileName( path );
+				std::vector<std::string> displayedFolders;
+
+				for ( size_t i = 0; i < subFoldersDisplayed; i++ ) {
+					FileSystem::dirRemoveSlashAtEnd( containingFolder );
+					displayedFolders.insert( displayedFolders.begin(),
+											 FileSystem::fileNameFromPath( containingFolder ) );
+					containingFolder = FileSystem::fileRemoveFileName( containingFolder );
+				}
+
+				uniqueTitles[tab] = fileName + " - " + String::join( displayedFolders, '/' );
+			}
+
+			subFoldersDisplayed++;
+			firstTitle = uniqueTitles.begin()->second;
+		} while ( std::all_of( ++uniqueTitles.begin(), uniqueTitles.end(),
+							   [&firstTitle]( const std::pair<UITab*, String>& title ) {
+								   return title.second == firstTitle;
+							   } ) );
+
+		return uniqueTitles;
+	};
+
 	if ( editor == nullptr )
 		return;
 	if ( editor->getData() ) {
 		UITab* tab = (UITab*)editor->getData();
-		tab->setText( editor->getDocument().getFilename() );
+		auto doc = editor->getDocumentRef();
+		std::string fileName( doc->getFilename() );
 
-		bool dirty = editor->getDocument().isDirty();
+		if ( fileName != doc->getDefaultFileName() && !isUniqueTabTitle( tab ) ) {
+			auto tabsTitles = getUniqueNameForTabs( getTabWithSameTitle( tab ) );
+			for ( auto [ntab, title] : tabsTitles ) {
+				ntab->setText( title );
+				if ( ntab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) )
+					ntab->getOwnedWidget()->asType<UICodeEditor>()->addClass( NOT_UNIQUE_FILENAME );
+			}
+		} else if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+			tab->getOwnedWidget()->asType<UICodeEditor>()->removeClass( NOT_UNIQUE_FILENAME );
+			tab->setText( fileName );
+		}
+
+		bool dirty = doc->isDirty();
 		tab->removeClass( dirty ? "tab_clear" : "tab_modified" );
 		tab->addClass( dirty ? "tab_modified" : "tab_clear" );
 	}
@@ -212,8 +313,7 @@ void App::onDocumentUndoRedo( UICodeEditor* editor, TextDocument& doc ) {
 
 void App::openFileDialog() {
 	UIFileDialog* dialog =
-		UIFileDialog::New( UIFileDialog::DefaultFlags, "*",
-						   mLastFileFolder.empty() ? getLastUsedFolder() : mLastFileFolder );
+		UIFileDialog::New( UIFileDialog::DefaultFlags, "*", getDefaultFileDialogFolder() );
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "open_file", "Open File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
@@ -234,7 +334,11 @@ void App::openFileDialog() {
 	dialog->show();
 }
 
-std::string App::getLastUsedFolder() {
+std::string App::getDefaultFileDialogFolder() const {
+	return mLastFileFolder.empty() ? getLastUsedFolder() : mLastFileFolder;
+}
+
+std::string App::getLastUsedFolder() const {
 	if ( !mCurrentProject.empty() && mCurrentProject != getPlaygroundPath() )
 		return mCurrentProject;
 	if ( !mRecentFolders.empty() )
@@ -243,6 +347,8 @@ std::string App::getLastUsedFolder() {
 }
 
 void App::insertRecentFolder( const std::string& rpath ) {
+	if ( mIncognito )
+		return;
 	auto found = std::find( mRecentFolders.begin(), mRecentFolders.end(), rpath );
 	if ( found != mRecentFolders.end() )
 		mRecentFolders.erase( found );
@@ -279,7 +385,7 @@ void App::openFolderDialog() {
 	dialog->show();
 }
 
-void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
+void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool terminalFont ) {
 	std::string absoluteFontPath( fontPath );
 	if ( FileSystem::isRelativePath( absoluteFontPath ) )
 		absoluteFontPath = mResPath + fontPath;
@@ -299,7 +405,8 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
 			mSplitter->getCurWidget()->setFocus();
 	} );
-	dialog->on( Event::OpenFile, [this, &fontPath, loadingMonoFont]( const Event* event ) {
+	dialog->on( Event::OpenFile, [this, &fontPath, loadingMonoFont,
+								  terminalFont]( const Event* event ) {
 		auto newPath = event->getNode()->asType<UIFileDialog>()->getFullPath();
 		if ( String::startsWith( newPath, mResPath ) )
 			newPath = newPath.substr( mResPath.size() );
@@ -312,15 +419,23 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont ) {
 				FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( newPath ) );
 			FontTrueType* fontMono = loadFont( fontName, newPath );
 			if ( fontMono ) {
-				auto loadMonoFont = [this, &fontPath, newPath]( FontTrueType* fontMono ) {
+				auto loadMonoFont = [this, &fontPath, newPath,
+									 terminalFont]( FontTrueType* fontMono ) {
 					fontPath = newPath;
 					mFontMono = fontMono;
 					mFontMono->setEnableDynamicMonospace( true );
 					mFontMono->setBoldAdvanceSameAsRegular( true );
 					FontFamily::loadFromRegular( mFontMono );
 					if ( mSplitter ) {
-						mSplitter->forEachEditor(
-							[this]( UICodeEditor* editor ) { editor->setFont( mFontMono ); } );
+						if ( terminalFont ) {
+							mSplitter->forEachWidgetType(
+								UI_TYPE_TERMINAL, [this]( UIWidget* term ) {
+									term->asType<UITerminal>()->setFont( mFontMono );
+								} );
+						} else {
+							mSplitter->forEachEditor(
+								[this]( UICodeEditor* editor ) { editor->setFont( mFontMono ); } );
+						}
 					}
 				};
 				if ( !fontMono->isMonospace() ) {
@@ -436,6 +551,15 @@ void App::runCommand( const std::string& command ) {
 	}
 }
 
+bool App::commandExists( const std::string& command ) const {
+	if ( mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+		UICodeEditor* editor = mSplitter->getCurWidget()->asType<UICodeEditor>();
+		if ( editor->getDocument().hasCommand( command ) )
+			return true;
+	}
+	return mMainLayout->getKeyBindings().hasCommand( command );
+}
+
 void App::onPluginEnabled( Plugin* plugin ) {
 	if ( mSplitter ) {
 		mSplitter->forEachEditor(
@@ -450,7 +574,8 @@ void App::onPluginEnabled( Plugin* plugin ) {
 
 void App::initPluginManager() {
 	mPluginManager = std::make_unique<PluginManager>(
-		mResPath, mPluginsPath, mThreadPool, [this]( const std::string& path, const auto& cb ) {
+		mResPath, mPluginsPath, mConfigPath, mThreadPool,
+		[this]( const std::string& path, const auto& cb ) {
 			UITab* tab = mSplitter->isDocumentOpen( path );
 			if ( !tab ) {
 				loadFileFromPath( path, true, nullptr, cb );
@@ -458,7 +583,8 @@ void App::initPluginManager() {
 				tab->getTabWidget()->setTabSelected( tab );
 				cb( tab->getOwnedWidget()->asType<UICodeEditor>(), path );
 			}
-		} );
+		},
+		this );
 	mPluginManager->onPluginEnabled = [this]( Plugin* plugin ) {
 		if ( nullptr == mUISceneNode || plugin->isReady() ) {
 			onPluginEnabled( plugin );
@@ -471,6 +597,8 @@ void App::initPluginManager() {
 			} );
 		}
 	};
+
+	mPluginManager->registerPlugin( DebuggerPlugin::Definition() );
 	mPluginManager->registerPlugin( LinterPlugin::Definition() );
 	mPluginManager->registerPlugin( FormatterPlugin::Definition() );
 	mPluginManager->registerPlugin( AutoCompletePlugin::Definition() );
@@ -529,6 +657,7 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 	mThemesPath = mConfigPath + "themes";
 	mScriptsPath = mConfigPath + "scripts";
 	mPlaygroundPath = mConfigPath + "playground";
+	mIpcPath = mConfigPath + "ipc";
 	mColorSchemesPath = mConfigPath + "editor" + FileSystem::getOSSlash() + "colorschemes" +
 						FileSystem::getOSSlash();
 	mTerminalManager = std::make_unique<TerminalManager>( this );
@@ -557,6 +686,16 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 		FileSystem::makeDir( mPlaygroundPath );
 	FileSystem::dirAddSlashAtEnd( mPlaygroundPath );
 
+	if ( !FileSystem::fileExists( mIpcPath ) )
+		FileSystem::makeDir( mIpcPath );
+	FileSystem::dirAddSlashAtEnd( mIpcPath );
+
+	Uint64 pid = Sys::getProcessID();
+	mPidPath = mIpcPath + String::toString( pid );
+	FileSystem::dirAddSlashAtEnd( mPidPath );
+	if ( !FileSystem::fileExists( mPidPath ) )
+		FileSystem::makeDir( mPidPath );
+
 	mLogsPath = mConfigPath + "ecode.log";
 
 #ifndef EE_DEBUG
@@ -581,6 +720,9 @@ bool App::loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool s
 }
 
 void App::saveConfig() {
+	if ( !mCurrentProject.empty() )
+		saveSidePanelTabsOrder();
+
 	mConfig.save( mRecentFiles, mRecentFolders,
 				  mProjectSplitter ? mProjectSplitter->getSplitPartition().toString() : "15%",
 				  mMainSplitter ? mMainSplitter->getSplitPartition().toString() : "85%", mWindow,
@@ -593,7 +735,7 @@ std::string App::getKeybind( const std::string& command ) {
 	auto it = mKeybindingsInvert.find( command );
 	if ( it != mKeybindingsInvert.end() )
 		return KeyBindings::keybindFormat( it->second );
-	return "";
+	return mMainLayout->getKeyBindings().getCommandKeybindString( command );
 }
 
 ProjectDirectoryTree* App::getDirTree() const {
@@ -687,31 +829,33 @@ void App::onFileDropped( std::string file ) {
 	UITab* tab = mSplitter->isDocumentOpen( file );
 	UICodeEditor* codeEditor = nullptr;
 
-	if ( tab ) {
+	if ( tab && tab->getTabWidget() ) {
 		tab->getTabWidget()->setTabSelected( tab );
 		return;
 	}
 
 	if ( !node )
 		node = widget;
+
+	bool willLoadAnImage =
+		Image::isImageExtension( file ) && FileSystem::fileExtension( file ) != "svg";
 	if ( node && node->isType( UI_TYPE_CODEEDITOR ) ) {
 		codeEditor = node->asType<UICodeEditor>();
 		if ( ( codeEditor->getDocument().isLoading() || !codeEditor->getDocument().isEmpty() ) &&
-			 ( !Image::isImageExtension( file ) || FileSystem::fileExtension( file ) == "svg" ) ) {
+			 !willLoadAnImage ) {
 			auto d = mSplitter->createCodeEditorInTabWidget(
 				mSplitter->tabWidgetFromEditor( codeEditor ) );
 			codeEditor = d.second;
 			tab = d.first;
 		}
 	} else if ( widget && widget->isType( UI_TYPE_TERMINAL ) ) {
-		if ( !Image::isImageExtension( file ) &&
-			 ( !Image::isImageExtension( file ) || FileSystem::fileExtension( file ) == "svg" ) ) {
+		if ( !Image::isImageExtension( file ) && !willLoadAnImage ) {
 			auto d =
 				mSplitter->createCodeEditorInTabWidget( mSplitter->tabWidgetFromWidget( widget ) );
 			codeEditor = d.second;
 			tab = d.first;
 		}
-	} else {
+	} else if ( !willLoadAnImage ) {
 		auto d = mSplitter->createEditorInNewTab();
 		codeEditor = d.second;
 		tab = d.first;
@@ -754,7 +898,16 @@ App::App( const size_t& jobs, const std::vector<std::string>& args ) :
 	mSettingsActions( std::make_unique<SettingsActions>( this ) ) {
 }
 
+static void fsRemoveAll( const std::string& fpath ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	fs::remove_all( std::filesystem::path( String( fpath ).toWideString() ) );
+#else
+	fs::remove_all( fpath );
+#endif
+}
+
 App::~App() {
+	mDestroyingApp = true;
 	if ( mProjectBuildManager )
 		mProjectBuildManager.reset();
 
@@ -772,10 +925,26 @@ App::~App() {
 	eeSAFE_DELETE( mSplitter );
 
 	if ( mFileSystemListener ) {
+		if ( mIpcListenerId )
+			mFileSystemListener->removeListener( mIpcListenerId );
 		delete mFileSystemListener;
 		mFileSystemListener = nullptr;
 	}
 	mDirTree.reset();
+
+	fsRemoveAll( mPidPath );
+}
+
+void App::updateRecentButtons() {
+	updateOpenRecentFolderBtn();
+
+	if ( mSplitter ) {
+		mSplitter->forEachWidgetType(
+			static_cast<UINodeType>( CustomWidgets::UI_TYPE_WELCOME_TAB ), []( UIWidget* widget ) {
+				UIWelcomeScreen* welcomeTab = static_cast<UIWelcomeScreen*>( widget );
+				welcomeTab->refresh();
+			} );
+	}
 }
 
 void App::updateRecentFiles() {
@@ -807,6 +976,7 @@ void App::updateRecentFiles() {
 			} else if ( id == "clear-menu" ) {
 				mRecentFiles.clear();
 				updateRecentFiles();
+				updateRecentButtons();
 			} else {
 				const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
 				std::string path( txt.toUtf8() );
@@ -847,6 +1017,7 @@ void App::updateRecentFolders() {
 			if ( id == "clear-menu" ) {
 				mRecentFolders.clear();
 				updateRecentFolders();
+				updateRecentButtons();
 			} else if ( id == "restore-last-session-at-startup" ) {
 				mConfig.workspace.restoreLastSession =
 					event->getNode()->asType<UIMenuCheckBox>()->isActive();
@@ -990,7 +1161,7 @@ String App::i18n( const std::string& key, const String& def ) {
 }
 
 std::string App::getCurrentWorkingDir() const {
-	if ( !mCurrentProject.empty() )
+	if ( !mCurrentProject.empty() && mCurrentProject != mPlaygroundPath )
 		return mCurrentProject;
 
 	if ( mSplitter && mSplitter->curEditorIsNotNull() && mSplitter->curEditorExists() &&
@@ -1021,12 +1192,35 @@ const std::string& App::getWindowTitle() const {
 	return mWindowTitle;
 }
 
-void App::loadFileFromPathOrFocus( const std::string& path ) {
+void App::loadFileFromPathOrFocus(
+	const std::string& path, bool inNewTab, UICodeEditor* codeEditor,
+	std::function<void( UICodeEditor*, const std::string& )> onLoaded ) {
 	UITab* tab = mSplitter->isDocumentOpen( path );
 	if ( !tab ) {
-		loadFileFromPath( path );
+		loadFileFromPath( path, inNewTab, codeEditor, onLoaded );
 	} else {
 		tab->getTabWidget()->setTabSelected( tab );
+	}
+}
+
+void App::focusOrLoadFile( const std::string& path, const TextRange& range ) {
+	UITab* tab = mSplitter->isDocumentOpen( path, true );
+	if ( !tab ) {
+		FileInfo fileInfo( path );
+		if ( fileInfo.exists() && fileInfo.isRegularFile() )
+			loadFileFromPath( path, true, nullptr, [this, range]( UICodeEditor* editor, auto ) {
+				if ( range.isValid() ) {
+					editor->goToLine( range.start() );
+					mSplitter->addEditorPositionToNavigationHistory( editor );
+				}
+			} );
+	} else {
+		tab->getTabWidget()->setTabSelected( tab );
+		if ( range.isValid() ) {
+			UICodeEditor* editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+			editor->goToLine( range.start() );
+			mSplitter->addEditorPositionToNavigationHistory( editor );
+		}
 	}
 }
 
@@ -1189,12 +1383,13 @@ void App::syncProjectTreeWithEditor( UICodeEditor* editor ) {
 		   !editor->getDocument().getLoadingFilePath().empty() ) ) {
 		std::string loadingPath( editor->getDocument().getLoadingFilePath() );
 		std::string path = !loadingPath.empty() ? loadingPath : editor->getDocument().getFilePath();
-		if ( path.size() >= mCurrentProject.size() ) {
-			path = path.substr( mCurrentProject.size() );
-			mProjectTreeView->setFocusOnSelection( false );
-			mProjectTreeView->selectRowWithPath( path );
-			mProjectTreeView->setFocusOnSelection( true );
+		mProjectTreeView->setFocusOnSelection( false );
+		if ( !mCurrentProject.empty() && String::startsWith( path, mCurrentProject ) ) {
+			mProjectTreeView->openRowWithPath( path.substr( mCurrentProject.size() ) );
+		} else {
+			mProjectTreeView->openRowWithPath( FileSystem::fileNameFromPath( path ) );
 		}
+		mProjectTreeView->setFocusOnSelection( true );
 	}
 }
 
@@ -1446,10 +1641,15 @@ void App::setTheme( const std::string& path ) {
 		}
 	}
 
-	mUISceneNode->setStyleSheet( theme->getStyleSheet() );
+	theme->getStyleSheet().invalidateCache();
+	mAppStyleSheet.invalidateCache();
+
+	mUISceneNode->setStyleSheet( theme->getStyleSheet(), false );
 
 	if ( !mAppStyleSheet.isEmpty() )
 		mUISceneNode->getStyleSheet().combineStyleSheet( mAppStyleSheet );
+
+	mUISceneNode->getStyleSheet().updateMediaLists( mUISceneNode->getMediaFeatures() );
 
 	mUISceneNode
 		->getUIThemeManager()
@@ -1469,6 +1669,7 @@ void App::setTheme( const std::string& path ) {
 	mTheme = theme;
 
 	mUISceneNode->reloadStyle( true, true );
+
 	if ( !firstFrame )
 		mPluginManager->setUIThemeReloaded();
 }
@@ -1482,6 +1683,8 @@ bool App::dirInFolderWatches( const std::string& dir ) {
 }
 
 void App::insertRecentFile( const std::string& path ) {
+	if ( mIncognito )
+		return;
 	auto found = std::find( mRecentFiles.begin(), mRecentFiles.end(), path );
 	if ( found != mRecentFiles.end() )
 		mRecentFiles.erase( found );
@@ -1551,6 +1754,10 @@ AppConfig& App::getConfig() {
 	return mConfig;
 }
 
+const AppConfig& App::getConfig() const {
+	return mConfig;
+}
+
 const std::map<KeyBindings::Shortcut, std::string>& App::getRealDefaultKeybindings() {
 	if ( mRealDefaultKeybindings.empty() ) {
 		mRealDefaultKeybindings.insert( mRealLocalKeybindings.begin(),
@@ -1583,7 +1790,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
 		{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
 		{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
-		{ { KEY_F11, KEYMOD_NONE }, "debug-widget-tree-view" },
+		{ { KEY_F11, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "debug-widget-tree-view" },
 		{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
 		{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
 		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
@@ -1614,7 +1821,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
 		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
 		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
-		{ { KEY_F5, KEYMOD_NONE }, "project-build-and-run" },
+		{ { KEY_R, KeyMod::getDefaultModifier() }, "project-build-and-run" },
 		{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
 		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-workspace-symbol-search" },
 		{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-document-symbol-search" },
@@ -1622,21 +1829,20 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	};
 }
 
-// Old keybindings will be rebinded to the new keybindings of they are still set to the old
+// Old keybindings will be rebinded to the new keybindings when they are still set to the old
 // keybindind
 std::map<std::string, std::string> App::getMigrateKeybindings() {
-	return {
-		{ "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
-		{ "switch-to-tab-2", "alt+2" },		   { "switch-to-tab-3", "alt+3" },
-		{ "switch-to-tab-4", "alt+4" },		   { "switch-to-tab-5", "alt+5" },
-		{ "switch-to-tab-6", "alt+6" },		   { "switch-to-tab-7", "alt+7" },
-		{ "switch-to-tab-8", "alt+8" },		   { "switch-to-tab-9", "alt+9" },
-		{ "switch-to-last-tab", "alt+0" },
+	return { { "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
+			 { "switch-to-tab-2", "alt+2" },		{ "switch-to-tab-3", "alt+3" },
+			 { "switch-to-tab-4", "alt+4" },		{ "switch-to-tab-5", "alt+5" },
+			 { "switch-to-tab-6", "alt+6" },		{ "switch-to-tab-7", "alt+7" },
+			 { "switch-to-tab-8", "alt+8" },		{ "switch-to-tab-9", "alt+9" },
+			 { "switch-to-last-tab", "alt+0" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-		{ "menu-toggle", "mod+shift+m" },
+			 { "menu-toggle", "mod+shift+m" },
 #endif
-		{ "lock-toggle", "mod+shift+l" },
-	};
+			 { "lock-toggle", "mod+shift+l" },		{ "debug-widget-tree-view", "f11" },
+			 { "project-build-and-run", "f5" } };
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
@@ -1650,6 +1856,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "console-toggle",
 			 "close-app",
 			 "open-locatebar",
+			 "open-locatebar-glob-search",
 			 "open-command-palette",
 			 "open-global-search",
 			 "project-build-start",
@@ -1704,17 +1911,13 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "create-new-window" };
 }
 
-bool App::isUnlockedCommand( const std::string& command ) {
-	auto cmds = getUnlockedCommands();
-	return std::find( cmds.begin(), cmds.end(), command ) != cmds.end();
-}
-
 void App::saveProject( bool onlyIfNeeded, bool sessionSnapshotEnabled ) {
 	if ( !mCurrentProject.empty() ) {
 		mConfig.saveProject(
 			mCurrentProject, mSplitter, mConfigPath, mProjectDocConfig,
 			mProjectBuildManager ? mProjectBuildManager->getConfig() : ProjectBuildConfiguration(),
-			onlyIfNeeded, sessionSnapshotEnabled && mConfig.workspace.sessionSnapshot );
+			onlyIfNeeded, sessionSnapshotEnabled && mConfig.workspace.sessionSnapshot,
+			mPluginManager.get() );
 	}
 }
 
@@ -1767,6 +1970,8 @@ void App::closeEditors() {
 void App::closeFolder() {
 	if ( mCurrentProject.empty() )
 		return;
+
+	saveSidePanelTabsOrder();
 
 	saveProject( true );
 
@@ -1975,10 +2180,31 @@ void App::loadImageFromMedium( const std::string& path, bool isMemory ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		mThreadPool->run( [this, imageView, loaderView, path, isMemory]() {
 #endif
-			Texture* image =
-				isMemory ? TextureFactory::instance()->loadFromMemory(
-							   reinterpret_cast<const unsigned char*>( path.c_str() ), path.size() )
-						 : TextureFactory::instance()->loadFromFile( path );
+			Image::Format format =
+				isMemory ? Image::getFormat( reinterpret_cast<const unsigned char*>( path.c_str() ),
+											 path.size() )
+						 : Image::getFormat( path );
+
+			if ( format == Image::Format::Unknown )
+				return;
+
+			Drawable* image = nullptr;
+
+			if ( format != Image::Format::GIF ) {
+				image = isMemory ? TextureFactory::instance()->loadFromMemory(
+									   reinterpret_cast<const unsigned char*>( path.c_str() ),
+									   path.size() )
+								 : TextureFactory::instance()->loadFromFile( path );
+			} else {
+				IOStream* stream = isMemory
+									   ? (IOStream*)new IOStreamMemory( path.c_str(), path.size() )
+									   : (IOStream*)new IOStreamFile( path );
+				Sprite* sprite = Sprite::fromGif( *stream );
+				sprite->setAutoAnimate( false );
+				image = sprite;
+				delete stream;
+			}
+
 			if ( mImageLayout->isVisible() ) {
 				imageView->runOnMainThread( [this, imageView, loaderView, image]() {
 					mImageLayout->setFocus();
@@ -1986,7 +2212,7 @@ void App::loadImageFromMedium( const std::string& path, bool isMemory ) {
 					loaderView->setVisible( false );
 				} );
 			} else {
-				TextureFactory::instance()->remove( image );
+				eeSAFE_DELETE( image );
 				imageView->setDrawable( nullptr );
 				loaderView->setVisible( false );
 			}
@@ -2004,9 +2230,21 @@ void App::loadImageFromPath( const std::string& path ) {
 	loadImageFromMedium( path, false );
 }
 
-void App::loadFileFromPath(
-	const std::string& path, bool inNewTab, UICodeEditor* codeEditor,
+bool App::loadFileFromPath(
+	std::string path, bool inNewTab, UICodeEditor* codeEditor,
 	std::function<void( UICodeEditor* codeEditor, const std::string& path )> onLoaded ) {
+
+	if ( FileSystem::fileExtension( path ) == "lnk" ) {
+		auto target = Sys::getShortcutTarget( path );
+		if ( !target.empty() ) {
+			if ( FileSystem::fileExists( target ) )
+				path = target;
+			else
+				return false;
+		} else if ( !FileSystem::fileExists( path ) )
+			return false;
+	}
+
 	if ( Image::isImageExtension( path ) && Image::isImage( path ) &&
 		 FileSystem::fileExtension( path ) != "svg" ) {
 		loadImageFromPath( path );
@@ -2030,6 +2268,8 @@ void App::loadFileFromPath(
 			}
 		}
 	}
+
+	return true;
 }
 
 void App::hideGlobalSearchBar() {
@@ -2121,6 +2361,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setLineWrapType( config.wrapType );
 	editor->setFoldDrawable( findIcon( "chevron-down", PixelDensity::dpToPxI( 12 ) ) );
 	editor->setFoldedDrawable( findIcon( "chevron-right", PixelDensity::dpToPxI( 12 ) ) );
+	editor->setEnableFlashCursor( config.flashCursor );
 
 	doc.setAutoCloseBrackets( !mConfig.editor.autoCloseBrackets.empty() );
 	doc.setAutoCloseBracketsPairs( makeAutoClosePairs( mConfig.editor.autoCloseBrackets ) );
@@ -2186,7 +2427,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			return;
 		std::string processPath = Sys::getProcessFilePath();
 		if ( !processPath.empty() ) {
-			std::string cmd( processPath + " \"" + editor->getDocumentRef()->getFilePath() + "\"" );
+			auto cmd( processPath + " -x \"" + editor->getDocumentRef()->getFilePath() + "\"" );
 			Sys::execute( cmd );
 		}
 	} );
@@ -2230,6 +2471,11 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		editor->getKeyBindings().reset();
 		editor->getKeyBindings().addKeybindsStringUnordered( mKeybindings );
 	}
+
+	editor->on( Event::OnClose, [this, editor]( auto ) {
+		if ( editor->hasClass( NOT_UNIQUE_FILENAME ) )
+			updateNonUniqueTabTitles();
+	} );
 
 	editor->on( Event::OnDocumentClosed, [this]( const Event* event ) {
 		if ( !appInstance )
@@ -2392,17 +2638,25 @@ void App::removeFolderWatches() {
 }
 
 void App::loadDirTree( const std::string& path ) {
-	Clock* clock = eeNew( Clock, () );
+	Clock clock;
 	mDirTreeReady = false;
 	mDirTree = std::make_shared<ProjectDirectoryTree>(
 		path, mThreadPool, mPluginManager.get(),
 		[this]( auto path ) { loadFileFromPathOrFocus( path ); } );
 	Log::info( "Loading DirTree: %s", path );
+	std::vector<std::string> supportedExts(
+		SyntaxDefinitionManager::instance()->getExtensionsPatternsSupported() );
+	auto imgExts( Image::getImageExtensionsSupported() );
+	supportedExts.reserve( supportedExts.size() + imgExts.size() );
+	for ( auto& ext : imgExts ) {
+		ext.insert( 0, "%." );
+		ext += "$";
+		supportedExts.push_back( ext );
+	}
 	mDirTree->scan(
 		[this, clock]( ProjectDirectoryTree& dirTree ) {
-			Log::info( "DirTree read in: %.2fms. Found %ld files.",
-					   clock->getElapsedTime().asMilliseconds(), dirTree.getFilesCount() );
-			eeDelete( clock );
+			Log::info( "DirTree read in: %s. Found %ld files.", clock.getElapsedTime().toString(),
+					   dirTree.getFilesCount() );
 			mDirTreeReady = true;
 			mUISceneNode->runOnMainThread( [this] {
 				mUniversalLocator->updateFilesTable();
@@ -2420,7 +2674,7 @@ void App::loadDirTree( const std::string& path ) {
 			}
 			mFileSystemListener->setDirTree( mDirTree );
 		},
-		SyntaxDefinitionManager::instance()->getExtensionsPatternsSupported() );
+		supportedExts );
 }
 
 UIMessageBox* App::errorMsgBox( const String& msg ) {
@@ -2521,7 +2775,7 @@ void App::toggleHiddenFiles() {
 											   [this]( const std::string& filePath ) -> bool {
 												   return isFileVisibleInTreeView( filePath );
 											   } },
-											 &mUISceneNode->getTranslator() );
+											 &mUISceneNode->getTranslator(), mThreadPool );
 	if ( mProjectTreeView )
 		mProjectTreeView->setModel( mFileSystemModel );
 	if ( mFileSystemListener )
@@ -2582,7 +2836,7 @@ void App::newFolder( const FileInfo& file ) {
 							return;
 						std::string nfp( newFolderPath );
 						FileSystem::filePathRemoveBasePath( mFileSystemModel->getRootPath(), nfp );
-						mProjectTreeView->selectRowWithPath( nfp );
+						mProjectTreeView->openRowWithPath( nfp );
 					},
 					Milliseconds( 100 ) );
 			}
@@ -2653,6 +2907,20 @@ void App::consoleToggle() {
 	mSplitter->forEachEditor( [lock]( UICodeEditor* editor ) { editor->setLocked( lock ); } );
 	if ( !lock && mSplitter->getCurWidget() )
 		mSplitter->getCurWidget()->setFocus();
+}
+
+std::function<void( UICodeEditor* codeEditor, const std::string& path )>
+App::getForcePositionFn( TextPosition initialPosition ) {
+	std::function<void( UICodeEditor * codeEditor, const std::string& path )> forcePosition;
+	if ( initialPosition.isValid() ) {
+		forcePosition = [this, initialPosition]( UICodeEditor* editor, const auto& ) {
+			editor->runOnMainThread( [this, initialPosition, editor] {
+				editor->goToLine( initialPosition );
+				mSplitter->addEditorPositionToNavigationHistory( editor );
+			} );
+		};
+	}
+	return forcePosition;
 }
 
 void App::initProjectTreeView( std::string path, bool openClean ) {
@@ -2761,7 +3029,7 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 											[this]( const std::string& filePath ) -> bool {
 												return isFileVisibleInTreeView( filePath );
 											} },
-										  &mUISceneNode->getTranslator() );
+										  &mUISceneNode->getTranslator(), mThreadPool );
 
 				mProjectTreeView->setModel( mFileSystemModel );
 				mProjectViewEmptyCont->setVisible( false );
@@ -2769,21 +3037,18 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 				if ( mFileSystemListener )
 					mFileSystemListener->setFileSystemModel( mFileSystemModel );
 
-				std::function<void( UICodeEditor * codeEditor, const std::string& path )>
-					forcePosition;
-				if ( initialPosition.isValid() ) {
-					forcePosition = [this, initialPosition]( UICodeEditor* editor, const auto& ) {
-						editor->runOnMainThread( [this, initialPosition, editor] {
-							editor->goToLine( initialPosition );
-							mSplitter->addEditorPositionToNavigationHistory( editor );
-						} );
-					};
-				}
+				auto forcePosition = getForcePositionFn( initialPosition );
+				auto onLoaded = [this, forcePosition]( UICodeEditor* codeEditor,
+													   const std::string& path ) {
+					if ( forcePosition )
+						forcePosition( codeEditor, path );
+					syncProjectTreeWithEditor( mSplitter->getCurEditor() );
+				};
 
 				if ( FileSystem::fileExists( rpath ) ) {
-					loadFileFromPath( rpath, false, nullptr, forcePosition );
+					loadFileFromPath( rpath, false, nullptr, onLoaded );
 				} else if ( FileSystem::fileWrite( path, "" ) ) {
-					loadFileFromPath( path, false, nullptr, forcePosition );
+					loadFileFromPath( path, false, nullptr, onLoaded );
 				}
 
 				mSettings->updateProjectSettingsMenu();
@@ -2811,6 +3076,8 @@ void App::initImageView() {
 	mImageLayout->on( Event::MouseClick, [this]( const Event* ) {
 		mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE )->setDrawable( nullptr );
 		mImageLayout->setEnabled( false )->setVisible( false );
+		if ( mSplitter->getCurWidget() )
+			mSplitter->getCurWidget()->setFocus();
 	} );
 	mImageLayout->on( Event::KeyDown, [this]( const Event* event ) {
 		if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE ) {
@@ -2823,7 +3090,8 @@ void App::initImageView() {
 }
 
 bool App::isFileVisibleInTreeView( const std::string& filePath ) {
-	if ( !mFileSystemMatcher || !mFileSystemMatcher->matcherReady() )
+	if ( !appInstance || mDestroyingApp || !mFileSystemMatcher ||
+		 !mFileSystemMatcher->matcherReady() )
 		return true;
 	auto fpath( filePath );
 	FileSystem::filePathRemoveBasePath( mCurrentProject, fpath );
@@ -2898,9 +3166,31 @@ void App::cleanUpRecentFolders() {
 		mRecentFolders = recentFolders;
 }
 
-void App::loadFolder( const std::string& path ) {
+void App::saveSidePanelTabsOrder() {
+	mConfig.windowState.sidePanelTabsOrder.clear();
+	mConfig.windowState.sidePanelTabsOrder.reserve( mSidePanel->getTabCount() );
+	for ( Uint32 i = 0; i < mSidePanel->getTabCount(); i++ )
+		mConfig.windowState.sidePanelTabsOrder.emplace_back( mSidePanel->getTab( i )->getId() );
+}
+
+void App::loadFolder( std::string path ) {
 	Clock dirTreeClock;
-	if ( !mCurrentProject.empty() ) {
+
+	if ( FileSystem::fileExtension( path ) == "lnk" ) {
+		auto target = Sys::getShortcutTarget( path );
+		if ( !target.empty() ) {
+			if ( FileSystem::fileExists( target ) )
+				path = target;
+			else
+				return;
+		} else if ( !FileSystem::fileExists( path ) )
+			return;
+	}
+
+	bool projectWasLoaded = !mCurrentProject.empty();
+	if ( projectWasLoaded ) {
+		saveSidePanelTabsOrder();
+
 		closeEditors();
 	} else {
 		mSplitter->removeTabWithOwnedWidgetId( "welcome_ecode" );
@@ -2925,7 +3215,7 @@ void App::loadFolder( const std::string& path ) {
 	mProjectBuildManager =
 		std::make_unique<ProjectBuildManager>( rpath, mThreadPool, mSidePanel, this );
 	mConfig.loadProject( rpath, mSplitter, mConfigPath, mProjectDocConfig, this,
-						 mConfig.workspace.sessionSnapshot );
+						 mConfig.workspace.sessionSnapshot, mPluginManager.get() );
 	Log::info( "Load project took: %.2f ms", projClock.getElapsedTime().asMilliseconds() );
 
 	loadFileSystemMatcher( rpath );
@@ -2938,7 +3228,7 @@ void App::loadFolder( const std::string& path ) {
 											   [this]( const std::string& filePath ) -> bool {
 												   return isFileVisibleInTreeView( filePath );
 											   } },
-											 &mUISceneNode->getTranslator() );
+											 &mUISceneNode->getTranslator(), mThreadPool );
 
 	if ( mProjectTreeView )
 		mProjectTreeView->setModel( mFileSystemModel );
@@ -2962,6 +3252,25 @@ void App::loadFolder( const std::string& path ) {
 	mPluginManager->setWorkspaceFolder( rpath );
 
 	saveProject( true, false );
+
+	if ( projectWasLoaded || !mConfig.windowState.sidePanelTabsOrder.empty() )
+		mSidePanel->runOnMainThread( [this] { sortSidePanel(); } );
+}
+
+void App::sortSidePanel() {
+	mConfig.windowState.sidePanelTabsOrder.erase(
+		std::remove_if(
+			mConfig.windowState.sidePanelTabsOrder.begin(),
+			mConfig.windowState.sidePanelTabsOrder.end(),
+			[this]( const std::string& id ) { return mSidePanel->getTabById( id ) == nullptr; } ),
+		mConfig.windowState.sidePanelTabsOrder.end() );
+
+	for ( size_t i = 0; i < mConfig.windowState.sidePanelTabsOrder.size(); ++i ) {
+		UITab* targetTab = mSidePanel->getTabById( mConfig.windowState.sidePanelTabsOrder[i] );
+		UITab* currentTab = mSidePanel->getTab( i );
+		if ( targetTab && currentTab != targetTab )
+			mSidePanel->swapTabs( currentTab, targetTab );
+	}
 }
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS
@@ -3038,15 +3347,66 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 	return nullptr;
 }
 
+bool App::needsRedirectToRunningProcess( std::string file ) {
+	if ( mConfig.ui.openFilesInNewWindow || file.empty() )
+		return false;
+
+	bool hasPosition = pathHasPosition( file );
+	TextPosition position;
+	if ( hasPosition ) {
+		auto pathAndPosition = getPathAndPosition( file );
+		file = pathAndPosition.first;
+		position = pathAndPosition.second;
+	}
+
+	std::string rpath( FileSystem::getRealPath( file ) );
+	FileInfo finfo( rpath );
+
+	if ( !finfo.exists() || finfo.isDirectory() )
+		return false;
+
+	std::string processName( FileSystem::fileNameFromPath( Sys::getProcessFilePath() ) );
+	auto pids = Sys::pidof( processName );
+	if ( pids.size() <= 1 )
+		return false;
+
+	Uint64 processPid = Sys::getProcessID();
+	Uint64 latestPid = processPid;
+	Uint64 lastCreationTime = 0;
+
+	for ( const auto pid : pids ) {
+		if ( pid != Sys::getProcessID() ) {
+			Uint64 creationTime = Sys::getProcessCreationTime( pid );
+			if ( creationTime >= lastCreationTime ) {
+				latestPid = pid;
+				lastCreationTime = creationTime;
+			}
+		}
+	}
+
+	if ( latestPid == processPid )
+		return false;
+
+	std::string pidPath = mIpcPath + String::toString( latestPid );
+	if ( !FileSystem::isDirectory( pidPath ) )
+		return false;
+	FileSystem::dirAddSlashAtEnd( pidPath );
+	FileSystem::fileWrite( pidPath + MD5::fromString( finfo.getFilepath() ).toHexString(),
+						   finfo.getFilepath() +
+							   ( position.isValid() ? position.toPositionString() : "" ) );
+	return true;
+}
+
 void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 				const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
-				const std::string& css, bool health, const std::string& healthLang,
+				std::string css, bool health, const std::string& healthLang,
 				FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen,
 				bool stdOutLogs, bool disableFileLogs, bool openClean, bool portable,
-				std::string language ) {
+				std::string language, bool incognito ) {
 	Http::setThreadPool( mThreadPool );
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
+	mIncognito = incognito;
 	mPortableMode = portable;
 	mDisplayDPI = currentDisplay->getDPI();
 	mUseFrameBuffer = frameBuffer;
@@ -3067,9 +3427,13 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 	if ( health ) {
 		Sys::windowAttachConsole();
+		Language::LanguagesSyntaxHighlighting::load();
 		FeaturesHealth::doHealth( mPluginManager.get(), healthLang, healthFormat );
 		return;
 	}
+
+	if ( !openClean && needsRedirectToRunningProcess( file ) )
+		return;
 
 	currentDisplay = displayManager->getDisplayIndex( mConfig.windowState.displayIndex <
 															  displayManager->getDisplayCount()
@@ -3119,6 +3483,87 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 	mConfig.context.SharedGLContext = true;
 
+	mThreadPool->run( [this] {
+		// Load language definitions
+		Clock defClock;
+		SyntaxDefinitionManager::createSingleton( 105 );
+		Language::LanguagesSyntaxHighlighting::load();
+		SyntaxDefinitionManager::instance()->setLanguageExtensionsPriority(
+			mConfig.languagesExtensions.priorities );
+		Log::info( "Syntax definitions loaded in %s.",
+				   defClock.getElapsedTimeAndReset().toString() );
+
+		// Load user defined languages definitions
+		Clock customLangsClock;
+		SyntaxDefinitionManager::instance()->loadFromFolder( mLanguagesPath );
+		Log::info( "SyntaxDefinitionManager loaded custom languages in: %s.",
+				   customLangsClock.getElapsedTime().toString() );
+
+		// Load editor color schemes
+		mColorSchemes =
+			( SyntaxColorScheme::loadFromFile( mResPath + "colorschemes/colorschemes.conf" ) );
+		if ( FileSystem::isDirectory( mColorSchemesPath ) ) {
+			auto colorSchemesFiles = FileSystem::filesGetInPath( mColorSchemesPath );
+			for ( const auto& curFile : colorSchemesFiles ) {
+				auto colorSchemesInFile =
+					SyntaxColorScheme::loadFromFile( mColorSchemesPath + curFile );
+				for ( auto& colorScheme : colorSchemesInFile )
+					mColorSchemes.emplace_back( colorScheme );
+			}
+		} else {
+			FileSystem::makeDir( mColorSchemesPath, true );
+		}
+
+		// Load terminal color schemes
+		mTerminalManager->loadTerminalColorSchemes();
+
+		// Load fonts
+		Clock fontsClock;
+
+		mFont = loadFont( "sans-serif", mConfig.ui.serifFont, "fonts/NotoSans-Regular.ttf" );
+		FontFamily::loadFromRegular( mFont );
+
+		mFontMono = loadFont( "monospace", mConfig.ui.monospaceFont, "fonts/DejaVuSansMono.ttf" );
+		if ( mFontMono ) {
+			mFontMono->setEnableDynamicMonospace( true );
+			mFontMono->setBoldAdvanceSameAsRegular( true );
+			FontFamily::loadFromRegular( mFontMono );
+		}
+
+		loadFont( "NotoEmoji-Regular", "fonts/NotoEmoji-Regular.ttf" );
+
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+		loadFont( "NotoColorEmoji", "fonts/NotoColorEmoji.ttf" );
+#endif
+
+		mIconFont = loadFont( "icon", "fonts/remixicon.ttf" );
+		mMimeIconFont = loadFont( "nonicons", "fonts/nonicons.ttf" );
+		mCodIconFont = loadFont( "codicon", "fonts/codicon.ttf" );
+
+		mTerminalFont = loadFont( "monospace-nerdfont", mConfig.ui.terminalFont,
+								  "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
+
+		if ( ( nullptr != mTerminalFont && mTerminalFont->getInfo().family == "DejaVuSansMono NF" &&
+			   mFontMono->getInfo().family == "DejaVu Sans Mono" ) ||
+			 ( nullptr != mTerminalFont &&
+			   mTerminalFont->getInfo().family == mFontMono->getInfo().family ) ) {
+			mTerminalFont->setBoldFont( mFontMono->getBoldFont() );
+			mTerminalFont->setItalicFont( mFontMono->getItalicFont() );
+			mTerminalFont->setBoldItalicFont( mFontMono->getBoldItalicFont() );
+		} else {
+			FontFamily::loadFromRegular( mTerminalFont );
+		}
+
+		mFallbackFont = loadFont( "fallback-font", "fonts/DroidSansFallbackFull.ttf" );
+		if ( mFallbackFont )
+			FontManager::instance()->addFallbackFont( mFallbackFont );
+
+		Log::info( "Fonts loaded in: %s", fontsClock.getElapsedTime().toString() );
+
+		mAsyncResourcesLoaded = true;
+		mAsyncResourcesLoadCond.notify_all();
+	} );
+
 	mWindow = engine->createWindow( winSettings, mConfig.context );
 	Log::info( "%s (codename: \"%s\") initializing", ecode::Version::getVersionFullName(),
 			   ecode::Version::getCodename() );
@@ -3148,20 +3593,36 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			// that the environment is more friendly for any new user
 			std::string path( Sys::getEnv( "PATH" ) );
 			std::string shellPath( getShellEnv( "PATH", mConfig.term.shell ) );
+			std::vector<std::string> paths;
+			auto pathSpl = String::split( path, ':' );
 			if ( !shellPath.empty() && String::hash( path ) != String::hash( shellPath ) ) {
-				auto pathSpl = String::split( path, ':' );
 				auto shellPathSpl = String::split( shellPath, ':' );
-				std::vector<std::string> paths;
 				for ( auto& path : pathSpl )
 					paths.emplace_back( std::move( path ) );
 				for ( auto& shellPath : shellPathSpl ) {
 					if ( std::find( paths.begin(), paths.end(), shellPath ) == paths.end() )
 						paths.emplace_back( std::move( shellPath ) );
 				}
-				if ( pathSpl.size() != paths.size() ) {
-					std::string newPath = String::join( paths, ':' );
-					setenv( "PATH", newPath.c_str(), 1 );
+			}
+
+			// Small hack to also add the xcode binaries path (provides git, lldb-dap and more)
+			{
+				std::string lldbPath;
+				Process p;
+				p.create( "xcrun -f lldb" );
+				p.readAllStdOut( lldbPath, Seconds( 5 ) );
+				int retCode = -1;
+				p.join( &retCode );
+				if ( retCode == 0 && !lldbPath.empty() ) {
+					String::trimInPlace( lldbPath, '\n' );
+					if ( std::find( paths.begin(), paths.end(), lldbPath ) == paths.end() )
+						paths.emplace_back( lldbPath );
 				}
+			}
+
+			if ( pathSpl.size() != paths.size() ) {
+				std::string newPath = String::join( paths, ':' );
+				setenv( "PATH", newPath.c_str(), 1 );
 			}
 		} );
 #endif
@@ -3191,6 +3652,8 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		if ( mConfig.windowState.maximized ) {
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 			mThreadPool->run( [this] { mWindow->maximize(); } );
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+			// Do no maximize since the result is not exactly maximized
 #else
 			mWindow->maximize();
 #endif
@@ -3206,15 +3669,58 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		} );
 
 		mWindow->getInput()->pushCallback( [this]( InputEvent* event ) {
-			if ( event->Type == InputEvent::FileDropped ) {
-				std::string file( event->file.file );
+			switch ( event->Type ) {
+				case InputEvent::FileDropped: {
+					std::string file( event->file.file );
+					if ( FileSystem::fileExtension( file ) == "lnk" ) {
+						auto target = Sys::getShortcutTarget( file );
+						if ( !target.empty() ) {
+							if ( FileSystem::fileExists( target ) )
+								file = target;
+							else
+								return;
+						}
+					}
+					mPathsToLoad.emplace_back( std::move( file ) );
+					break;
+				}
+				case InputEvent::TextDropped: {
+					onTextDropped( event->textdrop.text );
+					break;
+				}
+				case InputEvent::EventsSent: {
+					if ( mPathsToLoad.empty() )
+						break;
 
-				if ( FileSystem::isDirectory( file ) )
-					loadFolder( file );
-				else
-					onFileDropped( file );
-			} else if ( event->Type == InputEvent::TextDropped ) {
-				onTextDropped( event->textdrop.text );
+					std::size_t dirCount = 0;
+					std::size_t lastDirIdx = std::numeric_limits<std::size_t>::max();
+					std::size_t idx = 0;
+					for ( const auto& file : mPathsToLoad ) {
+						if ( FileSystem::isDirectory( file ) ) {
+							dirCount++;
+							lastDirIdx = idx;
+						}
+						idx++;
+					}
+
+					bool onlyDirectories = dirCount == mPathsToLoad.size();
+
+					// If only directories has been dropped, just load the last directory dropped
+					if ( onlyDirectories ) {
+						loadFolder( mPathsToLoad[lastDirIdx] );
+					} else {
+						// Load only files even if there are directories
+						for ( const auto& file : mPathsToLoad ) {
+							if ( !FileSystem::isDirectory( file ) )
+								onFileDropped( file );
+						}
+					}
+
+					mPathsToLoad.clear();
+					break;
+				}
+				default:
+					break;
 			}
 		} );
 
@@ -3241,54 +3747,26 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		}
 		mUISceneNode->setColorSchemePreference( mUIColorScheme );
 
-		mFont = loadFont( "sans-serif", mConfig.ui.serifFont, "fonts/NotoSans-Regular.ttf" );
-		FontFamily::loadFromRegular( mFont );
-
-		mFontMono = loadFont( "monospace", mConfig.ui.monospaceFont, "fonts/DejaVuSansMono.ttf" );
-		if ( mFontMono ) {
-			mFontMono->setEnableDynamicMonospace( true );
-			mFontMono->setBoldAdvanceSameAsRegular( true );
-			FontFamily::loadFromRegular( mFontMono );
+		if ( !mAsyncResourcesLoaded ) {
+			std::unique_lock<std::mutex> syntaxLanguagesLock( mAsyncResourcesLoadMutex );
+			mAsyncResourcesLoadCond.wait( syntaxLanguagesLock,
+										  [this]() { return mAsyncResourcesLoaded; } );
 		}
 
-		loadFont( "NotoEmoji-Regular", "fonts/NotoEmoji-Regular.ttf" );
-
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-		loadFont( "NotoColorEmoji", "fonts/NotoColorEmoji.ttf" );
-#endif
-
-		FontTrueType* iconFont = loadFont( "icon", "fonts/remixicon.ttf" );
-		FontTrueType* mimeIconFont = loadFont( "nonicons", "fonts/nonicons.ttf" );
-		FontTrueType* codIconFont = loadFont( "codicon", "fonts/codicon.ttf" );
-
-		if ( !mFont || !mFontMono || !iconFont || !mimeIconFont || !codIconFont ) {
+		if ( !mFont || !mFontMono || !mIconFont || !mMimeIconFont || !mCodIconFont ) {
 			printf( "Font not found!" );
 			Log::error( "Font not found!" );
 			return;
 		}
 
-		mTerminalFont = loadFont( "monospace-nerdfont", mConfig.ui.terminalFont,
-								  "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
-		if ( ( nullptr != mTerminalFont && mTerminalFont->getInfo().family == "DejaVuSansMono NF" &&
-			   mFontMono->getInfo().family == "DejaVu Sans Mono" ) ||
-			 ( nullptr != mTerminalFont &&
-			   mTerminalFont->getInfo().family == mFontMono->getInfo().family ) ) {
-			mTerminalFont->setBoldFont( mFontMono->getBoldFont() );
-			mTerminalFont->setItalicFont( mFontMono->getItalicFont() );
-			mTerminalFont->setBoldItalicFont( mFontMono->getBoldItalicFont() );
-		} else {
-			FontFamily::loadFromRegular( mTerminalFont );
-		}
-
-		mFallbackFont = loadFont( "fallback-font", "fonts/DroidSansFallbackFull.ttf" );
-		if ( mFallbackFont )
-			FontManager::instance()->addFallbackFont( mFallbackFont );
-
 		SceneManager::instance()->add( mUISceneNode );
 
 		setTheme( getThemePath() );
 
-		if ( !css.empty() && FileSystem::fileExists( css ) ) {
+		if ( css.empty() )
+			css = mConfigPath + "style.css";
+
+		if ( FileSystem::fileExists( css ) ) {
 			CSS::StyleSheetParser parser;
 			if ( parser.loadFromFile( css ) )
 				mUISceneNode->combineStyleSheet( parser.getStyleSheet(), false );
@@ -3324,14 +3802,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		);
 
 		mMenuIconSize = mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI );
-		IconManager::init( mUISceneNode, iconFont, mimeIconFont, codIconFont );
-
-		Clock defClock;
-		SyntaxDefinitionManager::createSingleton();
-		SyntaxDefinitionManager::instance()->setLanguageExtensionsPriority(
-			mConfig.languagesExtensions.priorities );
-		Log::info( "Syntax definitions loaded in %.2f ms.",
-				   defClock.getElapsedTimeAndReset().asMilliseconds() );
+		IconManager::init( mUISceneNode, mIconFont, mMimeIconFont, mCodIconFont );
 
 		UIWidgetCreator::registerWidget( "searchbar", UISearchBar::New );
 		UIWidgetCreator::registerWidget( "locatebar", UILocateBar::New );
@@ -3363,30 +3834,13 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		if ( !mConfig.ui.showSidePanel )
 			showSidePanel( mConfig.ui.showSidePanel );
 
-		auto colorSchemes(
-			SyntaxColorScheme::loadFromFile( mResPath + "colorschemes/colorschemes.conf" ) );
-		if ( FileSystem::isDirectory( mColorSchemesPath ) ) {
-			auto colorSchemesFiles = FileSystem::filesGetInPath( mColorSchemesPath );
-			for ( const auto& curFile : colorSchemesFiles ) {
-				auto colorSchemesInFile =
-					SyntaxColorScheme::loadFromFile( mColorSchemesPath + curFile );
-				for ( auto& coloScheme : colorSchemesInFile )
-					colorSchemes.emplace_back( coloScheme );
-			}
-		} else {
-			FileSystem::makeDir( mColorSchemesPath, true );
-		}
-
-		Clock customLangsClock;
-		SyntaxDefinitionManager::instance()->loadFromFolder( mLanguagesPath );
-		Log::info( "SyntaxDefinitionManager loaded custom languages in: %.2f ms",
-				   customLangsClock.getElapsedTime().asMilliseconds() );
-
-		mTerminalManager->loadTerminalColorSchemes();
-
-		mSplitter = UICodeEditorSplitter::New( this, mUISceneNode, mThreadPool, colorSchemes,
+		mSplitter = UICodeEditorSplitter::New( this, mUISceneNode, mThreadPool, mColorSchemes,
 											   mInitColorScheme );
 		mSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
+		mSplitter->setOnTabWidgetCreateCb( [this]( UITabWidget* tabWidget ) {
+			tabWidget->getTabBar()->onDoubleClick(
+				[this]( const MouseEvent* ) { mSplitter->createEditorInNewTab(); } );
+		} );
 		mPluginManager->setSplitter( mSplitter );
 
 		Log::info( "Base UI took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
@@ -3401,8 +3855,42 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mFileWatcher = new efsw::FileWatcher();
 		mFileSystemListener = new FileSystemListener( mSplitter, mFileSystemModel, { mLogsPath } );
 		mFileWatcher->addWatch( mPluginsPath, mFileSystemListener );
+		mFileWatcher->addWatch( mPidPath, mFileSystemListener );
 		mFileWatcher->watch();
 		mPluginManager->setFileSystemListener( mFileSystemListener );
+		mIpcListenerId =
+			mFileSystemListener->addListener( [this]( const FileEvent& fe, const FileInfo& fi ) {
+				if ( !( ( fe.type == FileSystemEventType::Add ||
+						  fe.type == FileSystemEventType::Modified ) &&
+						fe.directory == mPidPath ) )
+					return;
+				std::string path;
+				FileSystem::fileGet( fi.getFilepath(), path );
+				String::trimInPlace( path, ' ' );
+				String::trimInPlace( path, '\n' );
+
+				bool hasPosition = pathHasPosition( path );
+				TextPosition initialPosition;
+				if ( hasPosition ) {
+					auto pathAndPosition = getPathAndPosition( path );
+					path = pathAndPosition.first;
+					initialPosition = pathAndPosition.second;
+				}
+
+				if ( FileSystem::fileExists( path ) ) {
+					mUISceneNode->runOnMainThread( [path, initialPosition, this] {
+						loadFileFromPathOrFocus( path, true, nullptr,
+												 getForcePositionFn( initialPosition ) );
+
+						if ( !mWindow->hasFocus() ) {
+							if ( mWindow->isMinimized() )
+								mWindow->restore();
+							mWindow->raise();
+						}
+					} );
+				}
+				FileSystem::fileRemove( fi.getFilepath() );
+			} );
 #endif
 
 		mNotificationCenter = std::make_unique<NotificationCenter>(
@@ -3433,7 +3921,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		initImageView();
 
-		mStatusBar->setApp( this );
+		mStatusBar->setPluginContextProvider( this );
 
 		mSettings = std::make_unique<SettingsMenu>();
 		mSettings->createSettingsMenu( this, mMenuBar );
@@ -3603,6 +4091,10 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		parser, "portable",
 		"Portable Mode (it will save the configuration files within the ecode main folder)",
 		{ 'p', "portable" } );
+	args::Flag incognito(
+		parser, "incognito",
+		"It will stop keeping track of the opened files or folders during the session",
+		{ 'i', "incognito" } );
 	args::ValueFlag<size_t> jobs(
 		parser, "jobs",
 		"Sets the number of background jobs that the application will spawn "
@@ -3719,7 +4211,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),
 					   benchmarkMode.Get(), css.Get(), health || healthLang, healthLang.Get(),
 					   healthFormat.Get(), file.Get(), verbose.Get(), disableFileLogs.Get(),
-					   openClean.Get(), portable.Get(), language.Get() );
+					   openClean.Get(), portable.Get(), language.Get(), incognito.Get() );
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();

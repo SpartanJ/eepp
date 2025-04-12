@@ -56,6 +56,8 @@ class EE_API ActionManager {
 	std::vector<Action*> mActionsRemoveList;
 	mutable Mutex mMutex;
 	std::atomic<bool> mUpdating;
+
+	void update( const Time& time, Action** actions, size_t count );
 };
 
 }} // namespace EE::Scene

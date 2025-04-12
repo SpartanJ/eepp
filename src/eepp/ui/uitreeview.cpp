@@ -7,6 +7,7 @@
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
+#include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uitreeview.hpp>
 #include <stack>
 
@@ -43,55 +44,54 @@ UITreeView::MetadataForIndex& UITreeView::getIndexMetadata( const ModelIndex& in
 	return mViewMetadata[index.internalData()];
 }
 
+UITreeView::IterationDecision UITreeView::traverseIndex( TraverseTreeVars& v,
+														 const ModelIndex& index ) const {
+	if ( index.isValid() ) {
+		const auto& metadata = getIndexMetadata( index );
+		v.rowIndex++;
+		IterationDecision decision = v.callback( v.rowIndex, index, v.indentLevel, v.yOffset );
+		if ( decision == IterationDecision::Break || decision == IterationDecision::Stop )
+			return decision;
+		v.yOffset += v.rowHeight;
+		if ( !metadata.open ) {
+			return IterationDecision::Continue;
+		}
+	}
+	if ( v.indentLevel >= 0 && !index.isValid() )
+		return IterationDecision::Continue;
+	++v.indentLevel;
+	int rowCount = v.model.rowCount( index );
+	for ( int i = 0; i < rowCount; ++i ) {
+		IterationDecision decision =
+			traverseIndex( v, v.model.index( i, v.model.treeColumn(), index ) );
+		if ( decision == IterationDecision::Break || decision == IterationDecision::Stop )
+			return decision;
+	}
+	--v.indentLevel;
+	return IterationDecision::Continue;
+}
+
 void UITreeView::traverseTree( TreeViewCallback callback ) const {
 	if ( !getModel() )
 		return;
 	Lock l( const_cast<Model*>( getModel() )->resourceMutex() );
-	auto& model = *getModel();
-	int indentLevel = 0;
-	Float yOffset = getHeaderHeight();
-	int rowIndex = -1;
-	Float rowHeight = getRowHeight();
-	std::function<IterationDecision( const ModelIndex& )> traverseIndex =
-		[&]( const ModelIndex& index ) {
-			if ( index.isValid() ) {
-				const auto& metadata = getIndexMetadata( index );
-				rowIndex++;
-				IterationDecision decision = callback( rowIndex, index, indentLevel, yOffset );
-				if ( decision == IterationDecision::Break || decision == IterationDecision::Stop )
-					return decision;
-				yOffset += rowHeight;
-				if ( !metadata.open ) {
-					return IterationDecision::Continue;
-				}
-			}
-			if ( indentLevel >= 0 && !index.isValid() )
-				return IterationDecision::Continue;
-			++indentLevel;
-			int rowCount = model.rowCount( index );
-			for ( int i = 0; i < rowCount; ++i ) {
-				IterationDecision decision =
-					traverseIndex( model.index( i, model.treeColumn(), index ) );
-				if ( decision == IterationDecision::Break || decision == IterationDecision::Stop )
-					return decision;
-			}
-			--indentLevel;
-			return IterationDecision::Continue;
-		};
-	int rootCount = model.rowCount();
+	TraverseTreeVars v{
+		std::move( callback ), *getModel(), 0, getHeaderHeight(), -1, getRowHeight(),
+	};
+	int rootCount = v.model.rowCount();
 	for ( int rootIndex = 0; rootIndex < rootCount; ++rootIndex ) {
 		IterationDecision decision =
-			traverseIndex( model.index( rootIndex, model.treeColumn(), ModelIndex() ) );
+			traverseIndex( v, v.model.index( rootIndex, v.model.treeColumn(), ModelIndex() ) );
 		if ( decision == IterationDecision::Break || decision == IterationDecision::Stop )
 			break;
 	}
 }
 
 void UITreeView::createOrUpdateColumns( bool resetColumnData ) {
-	updateContentSize();
 	if ( !getModel() )
 		return;
 	UIAbstractTableView::createOrUpdateColumns( resetColumnData );
+	updateContentSize();
 }
 
 size_t UITreeView::getItemCount() const {
@@ -155,13 +155,13 @@ void UITreeView::bindNavigationClick( UIWidget* widget ) {
 }
 
 bool UITreeView::tryOpenModelIndex( const ModelIndex& index, bool forceUpdate ) {
-	size_t rowCount = 0;
+	bool hasChilds = false;
 	{
 		ConditionalLock l( getModel() != nullptr,
 						   getModel() ? &getModel()->resourceMutex() : nullptr );
-		rowCount = getModel()->rowCount( index );
+		hasChilds = getModel()->hasChilds( index );
 	}
-	if ( rowCount ) {
+	if ( hasChilds ) {
 		auto& data = getIndexMetadata( index );
 		if ( !data.open ) {
 			data.open = true;
@@ -176,14 +176,16 @@ bool UITreeView::tryOpenModelIndex( const ModelIndex& index, bool forceUpdate ) 
 
 UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 								 const ModelIndex& index ) {
+	mUISceneNode->invalidateStyle( this );
+	mUISceneNode->invalidateStyleState( this, true );
 	widget->setParent( rowWidget );
 	widget->unsetFlags( UI_AUTO_SIZE );
 	widget->setClipType( mDisableCellClipping ? ClipType::None : ClipType::ContentBox );
 	widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 	widget->setTextAlign( UI_HALIGN_LEFT );
 	widget->setCurIndex( index );
+	bindNavigationClick( widget );
 	if ( index.column() == (Int64)getModel()->treeColumn() ) {
-		bindNavigationClick( widget );
 		widget->onClick( [this]( const MouseEvent* mouseEvent ) {
 			if ( mSingleClickNavigation )
 				return;
@@ -195,7 +197,7 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 				ConditionalLock l( getModel() != nullptr,
 								   getModel() ? &getModel()->resourceMutex() : nullptr );
 				auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
-				if ( getModel()->rowCount( idx ) ) {
+				if ( getModel()->hasChilds( idx ) ) {
 					auto& data = getIndexMetadata( idx );
 					data.open = !data.open;
 					createOrUpdateColumns( false );
@@ -235,35 +237,7 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 	widget->setPixelsPosition( { getColumnPosition( index.column() ).x, 0 } );
 	if ( widget->isType( UI_TYPE_TABLECELL ) ) {
 		UITableCell* cell = widget->asType<UITableCell>();
-		cell->setCurIndex( index );
-
-		if ( getModel()->classModelRoleEnabled() ) {
-			bool needsReloadStyle = false;
-			Variant cls( getModel()->data( index, ModelRole::Class ) );
-			cell->setLoadingState( true );
-			if ( cls.isValid() ) {
-				std::string clsStr( cls.toString() );
-				needsReloadStyle = cell->getClasses().empty() || cell->getClasses().size() != 1 ||
-								   clsStr != cell->getClasses()[0];
-				cell->setClass( clsStr );
-			} else {
-				needsReloadStyle = !cell->getClasses().empty();
-				cell->resetClass();
-			}
-			cell->setLoadingState( false );
-			if ( needsReloadStyle )
-				cell->reportStyleStateChangeRecursive();
-		}
-
-		Variant txt( getModel()->data( index, ModelRole::Display ) );
-		if ( txt.isValid() ) {
-			if ( txt.is( Variant::Type::String ) )
-				cell->setText( txt.asString() );
-			else if ( txt.is( Variant::Type::StringPtr ) )
-				cell->setText( txt.asStringPtr() );
-			else
-				cell->setText( txt.toString() );
-		}
+		updateTableCellData( cell, index );
 
 		bool hasChilds = false;
 
@@ -283,7 +257,7 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 
 			Float indentation = minIndent + getIndentWidth() * indentLevel;
 
-			hasChilds = getModel()->rowCount( index ) > 0;
+			hasChilds = getModel()->hasChilds( index );
 
 			if ( hasChilds ) {
 				UIIcon* icon = getIndexMetadata( index ).open ? mExpandIcon : mContractIcon;
@@ -323,6 +297,9 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 			cell->getIcon()->setVisible( isVisible );
 
 		cell->updateCell( getModel() );
+
+		if ( mOnUpdateCellCb )
+			mOnUpdateCellCb( cell, getModel() );
 	}
 
 	if ( isCellSelection() ) {
@@ -351,22 +328,26 @@ Sizef UITreeView::getContentSize() const {
 	return mContentSize;
 }
 
-void UITreeView::drawChilds() {
+struct DrawTraverseTreeVars {
+	UITreeView* tree;
 	int realRowIndex = 0;
 	int realColIndex = 0;
-	Float rowHeight = getRowHeight();
+	Float rowHeight = 0;
+};
 
-	traverseTree( [this, &realRowIndex, &realColIndex,
-				   rowHeight]( const int&, const ModelIndex& index, const size_t& indentLevel,
-							   const Float& yOffset ) {
+void UITreeView::drawChilds() {
+	DrawTraverseTreeVars v{ this, 0, 0, getRowHeight() }; // To avoid allocating the lambda
+
+	traverseTree( [this, &v]( const int&, const ModelIndex& index, const size_t& indentLevel,
+							  const Float& yOffset ) {
 		if ( yOffset - mScrollOffset.y > mSize.getHeight() )
 			return IterationDecision::Stop;
-		if ( yOffset - mScrollOffset.y + rowHeight < 0 )
+		if ( yOffset - mScrollOffset.y + v.rowHeight < 0 )
 			return IterationDecision::Continue;
 		Float xOffset = 0;
-		UITableRow* rowNode = updateRow( realRowIndex, index, yOffset );
+		UITableRow* rowNode = updateRow( v.realRowIndex, index, yOffset );
 		rowNode->setChildsVisibility( false, false );
-		realColIndex = 0;
+		v.realColIndex = 0;
 		for ( size_t colIndex = 0; colIndex < getModel()->columnCount(); colIndex++ ) {
 			auto& colData = columnData( colIndex );
 			if ( !colData.visible || ( xOffset + colData.width ) - mScrollOffset.x < 0 ) {
@@ -378,22 +359,22 @@ void UITreeView::drawChilds() {
 				break;
 			xOffset += colData.width;
 			if ( (Int64)colIndex != index.column() ) {
-				updateCell( { realColIndex, realRowIndex },
+				updateCell( { v.realColIndex, v.realRowIndex },
 							getModel()->index( index.row(), colIndex, index.parent() ), indentLevel,
 							yOffset );
 			} else {
 				auto* cell =
-					updateCell( { realColIndex, realRowIndex }, index, indentLevel, yOffset );
+					updateCell( { v.realColIndex, v.realRowIndex }, index, indentLevel, yOffset );
 
 				if ( mFocusSelectionDirty && index == getSelection().first() ) {
 					cell->setFocus();
 					mFocusSelectionDirty = false;
 				}
 			}
-			realColIndex++;
+			v.realColIndex++;
 		}
 		rowNode->nodeDraw();
-		realRowIndex++;
+		v.realRowIndex++;
 		return IterationDecision::Continue;
 	} );
 
@@ -404,6 +385,13 @@ void UITreeView::drawChilds() {
 	if ( mVScroll->isVisible() )
 		mVScroll->nodeDraw();
 }
+
+struct OverFindTraverseTreeVars {
+	UITreeView* tree;
+	int realIndex;
+	Vector2f point;
+	Float rowHeight;
+};
 
 Node* UITreeView::overFind( const Vector2f& point ) {
 	ScopedOp op( [this] { mUISceneNode->setIsLoading( true ); },
@@ -422,18 +410,19 @@ Node* UITreeView::overFind( const Vector2f& point ) {
 				return pOver;
 			int realIndex = 0;
 			Float rowHeight = getRowHeight();
-			traverseTree( [this, &pOver, &realIndex, point, rowHeight](
-							  int, const ModelIndex& index, const size_t&, const Float& yOffset ) {
-				if ( yOffset - mScrollOffset.y > mSize.getHeight() )
-					return IterationDecision::Stop;
-				if ( yOffset - mScrollOffset.y + rowHeight < 0 )
+			OverFindTraverseTreeVars v{ this, realIndex, point, rowHeight };
+			traverseTree(
+				[&v, &pOver]( int, const ModelIndex& index, const size_t&, const Float& yOffset ) {
+					if ( yOffset - v.tree->mScrollOffset.y > v.tree->mSize.getHeight() )
+						return IterationDecision::Stop;
+					if ( yOffset - v.tree->mScrollOffset.y + v.rowHeight < 0 )
+						return IterationDecision::Continue;
+					pOver = v.tree->updateRow( v.realIndex, index, yOffset )->overFind( v.point );
+					v.realIndex++;
+					if ( pOver )
+						return IterationDecision::Stop;
 					return IterationDecision::Continue;
-				pOver = updateRow( realIndex, index, yOffset )->overFind( point );
-				realIndex++;
-				if ( pOver )
-					return IterationDecision::Stop;
-				return IterationDecision::Continue;
-			} );
+				} );
 			if ( !pOver )
 				pOver = this;
 		}
@@ -469,7 +458,7 @@ void UITreeView::setAllExpanded( const ModelIndex& index, bool expanded ) {
 	for ( size_t i = 0; i < count; i++ ) {
 		auto curIndex = model.index( i, model.treeColumn(), index );
 		getIndexMetadata( curIndex ).open = expanded;
-		if ( model.rowCount( curIndex ) > 0 )
+		if ( model.hasChilds( curIndex ) )
 			setAllExpanded( curIndex, expanded );
 	}
 }
@@ -558,7 +547,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 		return UIAbstractTableView::onKeyDown( event );
 	auto curIndex = getSelection().first();
 
-	if ( nullptr == getModel() || getModel()->rowCount() == 0 )
+	if ( nullptr == getModel() || !getModel()->hasChilds() )
 		return UIAbstractTableView::onKeyDown( event );
 
 	switch ( event.getKeyCode() ) {
@@ -754,6 +743,10 @@ void UITreeView::setDisableCellClipping( bool disableCellClipping ) {
 	mDisableCellClipping = disableCellClipping;
 }
 
+void UITreeView::clearViewMetadata() {
+	mViewMetadata.clear();
+}
+
 void UITreeView::onSortColumn( const size_t& ) {
 	// Do nothing.
 	return;
@@ -764,7 +757,7 @@ ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& cas
 	const Model* model = getModel();
 	ConditionalLock l( getModel() != nullptr,
 					   getModel() ? &const_cast<Model*>( getModel() )->resourceMutex() : nullptr );
-	if ( !model || model->rowCount() == 0 )
+	if ( !model || !model->hasChilds() )
 		return {};
 	ModelIndex foundIndex = {};
 	traverseTree( [&]( const int&, const ModelIndex& index, const size_t&, const Float& ) {
@@ -782,9 +775,10 @@ ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& cas
 	return foundIndex;
 }
 
-ModelIndex UITreeView::selectRowWithPath( const std::vector<std::string>& pathTree ) {
+ModelIndex UITreeView::openRowWithPath( const std::vector<std::string>& pathTree,
+										bool selectOpenedRow ) {
 	const Model* model = getModel();
-	if ( !model || model->rowCount() == 0 )
+	if ( !model || !model->hasChilds() )
 		return {};
 	ModelIndex parentIndex = {};
 	for ( size_t i = 0; i < pathTree.size(); i++ ) {
@@ -812,19 +806,20 @@ ModelIndex UITreeView::selectRowWithPath( const std::vector<std::string>& pathTr
 		parentIndex = foundIndex;
 
 		if ( i == pathTree.size() - 1 ) {
-			setSelection( foundIndex );
+			if ( selectOpenedRow )
+				setSelection( foundIndex );
 			return foundIndex;
 		}
 	}
 	return {};
 }
 
-ModelIndex UITreeView::selectRowWithPath( std::string path ) {
+ModelIndex UITreeView::openRowWithPath( std::string path, bool selectOpenedRow ) {
 	String::replaceAll( path, "\\", "/" );
 	auto pathTree = String::split( path, "/" );
 	if ( pathTree.empty() )
 		return {};
-	return selectRowWithPath( pathTree );
+	return openRowWithPath( pathTree, selectOpenedRow );
 }
 
 void UITreeView::setSelection( const ModelIndex& index, bool scrollToSelection,
@@ -859,9 +854,10 @@ void UITreeView::setSelection( const ModelIndex& index, bool scrollToSelection,
 			if ( curY < mScrollOffset.y + getHeaderHeight() + getRowHeight() ||
 				 curY > mScrollOffset.y + getPixelsSize().getHeight() - mPaddingPx.Top -
 							mPaddingPx.Bottom - getRowHeight() ) {
-				curY -= getHeaderHeight() + getRowHeight();
-				mVScroll->setValue( eemin<Float>(
-					1.f, eemax<Float>( 0.f, curY / getScrollableArea().getHeight() ) ) );
+				runOnMainThread( [this, curY] {
+					scrollToPosition( { { mScrollOffset.x, curY },
+										{ getPixelsSize().getWidth(), getRowHeight() } } );
+				} );
 			}
 		}
 	}

@@ -1,5 +1,8 @@
 #include "statusappoutputcontroller.hpp"
-#include "ecode.hpp"
+#include "notificationcenter.hpp"
+#include "plugins/plugincontextprovider.hpp"
+#include <eepp/ui/tools/uidocfindreplace.hpp>
+#include <eepp/ui/uiscrollbar.hpp>
 
 namespace ecode {
 
@@ -16,29 +19,21 @@ static std::string getProjectOutputParserTypeToString( const ProjectOutputParser
 }
 
 StatusAppOutputController::StatusAppOutputController( UISplitter* mainSplitter,
-													  UISceneNode* uiSceneNode, App* app ) :
-	StatusBarElement( mainSplitter, uiSceneNode, app ) {}
+													  UISceneNode* uiSceneNode,
+													  PluginContextProvider* pluginContext ) :
+	StatusBarElement( mainSplitter, uiSceneNode, pluginContext ) {}
 
-static void safeInsertBuffer( TextDocument& doc, const std::string& buffer ) {
-	doc.insert( 0, doc.endOfDoc(), buffer );
-}
-
-UIPushButton* StatusAppOutputController::getRunButton( App* app ) {
-	if ( app->getSidePanel() ) {
-		UIWidget* tab = app->getSidePanel()->find<UIWidget>( "build_tab_view" );
+UIPushButton* StatusAppOutputController::getRunButton() {
+	if ( mContext->getSidePanel() ) {
+		UIWidget* tab = mContext->getSidePanel()->find<UIWidget>( "build_tab_view" );
 		if ( tab )
 			return tab->find<UIPushButton>( "run_button" );
 	}
 	return nullptr;
 }
 
-void StatusAppOutputController::run( const ProjectBuildCommand& runData,
-									 const ProjectBuildOutputParser& outputParser ) {
-	if ( nullptr == mApp->getProjectBuildManager() )
-		return;
-
-	auto pbm = mApp->getProjectBuildManager();
-
+void StatusAppOutputController::initNewOutput( const ProjectBuildOutputParser& outputParser,
+											   bool fromBuildPanel ) {
 	show();
 	mAppOutput->getDocument().reset();
 	mAppOutput->invalidateLongestLineWidth();
@@ -73,55 +68,55 @@ void StatusAppOutputController::run( const ProjectBuildCommand& runData,
 	mAppOutput->setLineWrapMode( LineWrapMode::Word );
 	mScrollLocked = true;
 
-	UIPushButton* runButton = getRunButton( mApp );
+	if ( fromBuildPanel ) {
+		UIPushButton* runButton = getRunButton();
 
-	if ( runButton )
-		runButton->setText( mApp->i18n( "cancel_run", "Cancel Run" ) );
+		if ( runButton )
+			runButton->setText( mContext->i18n( "cancel_run", "Cancel Run" ) );
+	}
 
 	mRunButton->setEnabled( false );
 	mStopButton->setEnabled( true );
+}
 
-	const auto updateRunButton = [this]() {
-		UIPushButton* runButton = getRunButton( mApp );
-		if ( runButton ) {
-			runButton->runOnMainThread(
-				[this, runButton] { runButton->setText( mApp->i18n( "run", "Run" ) ); } );
-		}
-		mRunButton->setEnabled( true );
-		mStopButton->setEnabled( false );
-	};
+void StatusAppOutputController::insertBuffer( const std::string& buffer ) {
+	if ( mAppOutput == nullptr )
+		return;
+	mAppOutput->runOnMainThread( [this, buffer]() {
+		mAppOutput->getDocument().insert( 0, mAppOutput->getDocument().endOfDoc(), buffer );
+		if ( mScrollLocked )
+			mAppOutput->setScrollY( mAppOutput->getMaxScroll().y );
+	} );
+}
 
-	auto res = pbm->run(
-		runData, [this]( const auto& key, const auto& def ) { return mApp->i18n( key, def ); },
-		[this]( auto, std::string buffer, const ProjectBuildCommand* ) {
-			mAppOutput->runOnMainThread( [this, buffer]() {
-				safeInsertBuffer( mAppOutput->getDocument(), buffer );
-				if ( mScrollLocked )
-					mAppOutput->setScrollY( mAppOutput->getMaxScroll().y );
-			} );
-		},
-		[this, updateRunButton]( auto exitCode, const ProjectBuildCommand* ) {
+void StatusAppOutputController::run( const ProjectBuildCommand& runData,
+									 const ProjectBuildOutputParser& outputParser ) {
+	if ( nullptr == mContext->getProjectBuildManager() )
+		return;
+
+	initNewOutput( outputParser );
+
+	auto res = mContext->getProjectBuildManager()->run(
+		runData, [this]( const auto& key, const auto& def ) { return mContext->i18n( key, def ); },
+		[this]( auto, std::string buffer, const ProjectBuildCommand* ) { insertBuffer( buffer ); },
+		[this]( auto exitCode, const ProjectBuildCommand* ) {
 			String buffer;
 
 			if ( EXIT_SUCCESS == exitCode ) {
 				buffer = Sys::getDateTimeStr() + ": " +
-						 mApp->i18n( "run_successful", "Run successfully\n" );
+						 mContext->i18n( "run_successful", "Run successfully\n" );
 			} else {
-				buffer =
-					Sys::getDateTimeStr() + ": " + mApp->i18n( "run_failed", "Run with errors\n" );
+				buffer = Sys::getDateTimeStr() + ": " +
+						 mContext->i18n( "run_failed", "Run with errors\n" );
 			}
 
-			mAppOutput->runOnMainThread( [this, buffer]() {
-				safeInsertBuffer( mAppOutput->getDocument(), buffer );
-				if ( mScrollLocked )
-					mAppOutput->setScrollY( mAppOutput->getMaxScroll().y );
-			} );
+			insertBuffer( buffer );
 
 			updateRunButton();
 		} );
 
 	if ( !res.isValid() ) {
-		mApp->getNotificationCenter()->addNotification( res.errorMsg );
+		mContext->getNotificationCenter()->addNotification( res.errorMsg );
 
 		updateRunButton();
 	}
@@ -164,7 +159,7 @@ void StatusAppOutputController::createContainer() {
 		mMainSplitter->getLastWidget()->setParent( mUISceneNode );
 	}
 
-	mContainer = mApp->getUISceneNode()
+	mContainer = mContext->getUISceneNode()
 					 ->loadLayoutFromString( XML, mMainSplitter )
 					 ->asType<UILinearLayout>();
 	auto editor = mContainer->find<UICodeEditor>( "app_output_output" );
@@ -192,18 +187,19 @@ void StatusAppOutputController::createContainer() {
 	} );
 
 	mRunButton->onClick( [this]( auto ) {
-		auto pbm = mApp->getProjectBuildManager();
+		auto pbm = mContext->getProjectBuildManager();
 		if ( nullptr == pbm )
 			return;
 		if ( !pbm->hasRunConfig() ) {
-			UIMessageBox::New( UIMessageBox::OK,
-							   mApp->i18n( "must_configure_build_and_run_config",
-										   "You must first add a build and run configuration" ) )
+			UIMessageBox::New(
+				UIMessageBox::OK,
+				mContext->i18n( "must_configure_build_and_run_config",
+								"You must first add a build and run configuration" ) )
 				->setCloseShortcut( { KEY_ESCAPE } )
-				->setTitle( mApp->getWindowTitle() )
+				->setTitle( mContext->getWindowTitle() )
 				->showWhenReady()
 				->on( Event::OnConfirm, [this]( auto ) {
-					auto pbm = mApp->getProjectBuildManager();
+					auto pbm = mContext->getProjectBuildManager();
 					if ( nullptr != pbm )
 						pbm->selectTab();
 				} );
@@ -213,7 +209,7 @@ void StatusAppOutputController::createContainer() {
 	} );
 
 	mStopButton->onClick( [this]( auto ) {
-		auto pbm = mApp->getProjectBuildManager();
+		auto pbm = mContext->getProjectBuildManager();
 		if ( nullptr == pbm )
 			return;
 		pbm->cancelRun();
@@ -229,12 +225,22 @@ void StatusAppOutputController::createContainer() {
 	} );
 
 	mConfigureButton->onClick( [this]( auto ) {
-		auto pbm = mApp->getProjectBuildManager();
+		auto pbm = mContext->getProjectBuildManager();
 		if ( nullptr == pbm )
 			return;
 		pbm->editCurrentBuild();
 		hide();
 	} );
+}
+
+void StatusAppOutputController::updateRunButton() {
+	UIPushButton* runButton = getRunButton();
+	if ( runButton ) {
+		runButton->runOnMainThread(
+			[this, runButton] { runButton->setText( mContext->i18n( "run", "Run" ) ); } );
+	}
+	mRunButton->setEnabled( true );
+	mStopButton->setEnabled( false );
 }
 
 } // namespace ecode

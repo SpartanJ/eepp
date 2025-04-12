@@ -126,10 +126,9 @@ class UITerminal : public UIWidget {
 	int mScrollOffset;
 	bool mScrollByBar{ false };
 	Clock mMouseClock;
+	std::shared_ptr<TerminalDisplay> mTerm;
 
 	UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay );
-
-	std::shared_ptr<TerminalDisplay> mTerm;
 
 	virtual Uint32 onTextInput( const TextInputEvent& event );
 

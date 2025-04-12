@@ -9,6 +9,26 @@
 using namespace EE::System;
 using namespace EE::Window;
 
+// #ifdef EE_DEBUG
+// #define EE_OVERRIDE_NEW_DELETE
+// #endif
+
+#ifdef EE_OVERRIDE_NEW_DELETE
+void* operator new( std::size_t n ) {
+	return malloc( n );
+}
+
+void operator delete( void* p ) throw() {
+	free( p );
+}
+#endif
+
+#ifdef EE_MEMORY_MANAGER
+static bool sHasInit = false;
+#else
+static bool sHasInit = true;
+#endif
+
 namespace EE {
 
 static AllocatedPointerMap sMapPointers;
@@ -26,9 +46,13 @@ AllocatedPointer::AllocatedPointer( void* data, const std::string& file, int lin
 	mTrack = track;
 }
 
-void* MemoryManager::allocate( size_t size ) { return malloc( size ); }
+void* MemoryManager::allocate( size_t size ) {
+	return malloc( size );
+}
 
-void* MemoryManager::reallocate( void* ptr, size_t size ) { return realloc( ptr, size ); }
+void* MemoryManager::reallocate( void* ptr, size_t size ) {
+	return realloc( ptr, size );
+}
 
 void* MemoryManager::addPointerInPlace( void* place, const AllocatedPointer& aAllocatedPointer ) {
 	AllocatedPointerMapIt it = sMapPointers.find( place );
@@ -41,7 +65,7 @@ void* MemoryManager::addPointerInPlace( void* place, const AllocatedPointer& aAl
 }
 
 void* MemoryManager::addPointer( const AllocatedPointer& aAllocatedPointer ) {
-	Lock l( sAlloMutex );
+	ConditionalLock l( sHasInit, &sAlloMutex );
 
 	sMapPointers.insert(
 		AllocatedPointerMap::value_type( aAllocatedPointer.mData, aAllocatedPointer ) );
@@ -59,6 +83,10 @@ void* MemoryManager::addPointer( const AllocatedPointer& aAllocatedPointer ) {
 	if ( aAllocatedPointer.mTrack )
 		eePRINTL( "Allocating pointer %p at '%s' %d", aAllocatedPointer.mData,
 				  aAllocatedPointer.mFile.c_str(), aAllocatedPointer.mLine );
+
+#ifdef EE_MEMORY_MANAGER
+	sHasInit = true;
+#endif
 
 	return aAllocatedPointer.mData;
 }

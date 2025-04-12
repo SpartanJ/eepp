@@ -518,11 +518,10 @@ Ftp::Response Ftp::DataChannel::setup( Ftp::TransferMode mode ) {
 			Uint8 data[6] = {0, 0, 0, 0, 0, 0};
 			std::string str = response.getMessage().substr( begin );
 			std::size_t index = 0;
-			std::locale loc;
 
 			for ( int i = 0; i < 6; ++i ) {
 				// Extract the current number
-				while ( std::isdigit( str[index], loc ) ) {
+				while ( std::isdigit( str[index] ) ) {
 					data[i] = data[i] * 10 + ( str[index] - '0' );
 					index++;
 				}

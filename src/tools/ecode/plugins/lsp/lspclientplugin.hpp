@@ -27,7 +27,7 @@ class LSPClientPlugin : public Plugin {
   public:
 	static PluginDefinition Definition() {
 		return { "lspclient",		   "LSP Client", "Language Server Protocol Client.",
-				 LSPClientPlugin::New, { 0, 2, 6 },	 LSPClientPlugin::NewSync };
+				 LSPClientPlugin::New, { 0, 2, 8 },	 LSPClientPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
@@ -110,7 +110,6 @@ class LSPClientPlugin : public Plugin {
 	Mutex mDocSymbolsMutex;
 	Mutex mDocCurrentSymbolsMutex;
 	UnorderedMap<UICodeEditor*, std::vector<Uint32>> mEditors;
-	UnorderedMap<UICodeEditor*, UnorderedSet<String::HashType>> mEditorsTags;
 	UnorderedSet<TextDocument*> mDocs;
 	UnorderedMap<URI, LSPSymbolInformationList> mDocSymbols;
 	UnorderedMap<URI, LSPSymbolInformationList> mDocFlatSymbols;
@@ -124,9 +123,9 @@ class LSPClientPlugin : public Plugin {
 	bool mSilence{ false };
 	bool mTrimLogs{ false };
 	bool mBreadcrumb{ true };
-	bool mHoveringBreadcrumb{ false };
+	UICodeEditor* mHoveringBreadcrumb{ nullptr };
 	StyleSheetLength mBreadcrumbHeight{ "20dp" };
-	UnorderedMap<std::string, std::string> mKeyBindings; /* cmd, shortcut */
+	std::unordered_map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
 	UnorderedMap<TextDocument*, std::shared_ptr<TextDocument>> mDelayedDocs;
 	Uint32 mHoverWaitCb{ 0 };
 	LSPHover mCurrentHover;
@@ -148,6 +147,7 @@ class LSPClientPlugin : public Plugin {
 		}
 	};
 	UnorderedMap<URI, std::vector<DisplaySymbolInfo>> mDocCurrentSymbols;
+	UIIcon* mDrawSepIcon{ nullptr };
 
 	LSPClientPlugin( PluginManager* pluginManager, bool sync );
 
@@ -170,6 +170,8 @@ class LSPClientPlugin : public Plugin {
 	PluginRequestHandle processDocumentFormatting( const PluginMessage& msg );
 
 	PluginRequestHandle processWorkspaceSymbol( const PluginMessage& msg );
+
+	PluginRequestHandle processWorkspaceDiagnostic( const PluginMessage& msg );
 
 	void tryHideTooltip( UICodeEditor* editor, const Vector2i& position );
 

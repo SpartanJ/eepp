@@ -79,7 +79,7 @@ class EE_API UISceneNode : public SceneNode {
 	UIWidget* loadLayoutFromPack( Pack* pack, const std::string& FilePackPath,
 								  Node* parent = NULL );
 
-	void setStyleSheet( const CSS::StyleSheet& styleSheet );
+	void setStyleSheet( const CSS::StyleSheet& styleSheet, bool loadStyle = true );
 
 	void setStyleSheet( const std::string& inlineStyleSheet );
 
@@ -101,7 +101,8 @@ class EE_API UISceneNode : public SceneNode {
 
 	void invalidateStyle( UIWidget* widget, bool tryReinsert = false );
 
-	void invalidateStyleState( UIWidget* widget, bool disableCSSAnimations = false, bool tryReinsert = false );
+	void invalidateStyleState( UIWidget* widget, bool disableCSSAnimations = false,
+							   bool tryReinsert = false );
 
 	void invalidateLayout( UILayout* widget );
 
@@ -166,6 +167,8 @@ class EE_API UISceneNode : public SceneNode {
 
 	void setTheme( UITheme* theme );
 
+	CSS::MediaFeatures getMediaFeatures() const;
+
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
@@ -197,7 +200,7 @@ class EE_API UISceneNode : public SceneNode {
 
 	virtual void onDrawDebugDataChange();
 
-	virtual Node* setFocus( NodeFocusReason reason = NodeFocusReason::Unknown);
+	virtual Node* setFocus( NodeFocusReason reason = NodeFocusReason::Unknown );
 
 	virtual void onParentChange();
 
@@ -232,8 +235,6 @@ class EE_API UISceneNode : public SceneNode {
 	void onWidgetDelete( Node* node );
 
 	void resetTooltips( Node* node );
-
-	CSS::MediaFeatures getMediaFeatures() const;
 
 	std::vector<UIWidget*> loadNode( pugi::xml_node node, Node* parent, const Uint32& marker );
 

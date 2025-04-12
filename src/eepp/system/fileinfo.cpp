@@ -160,7 +160,7 @@ const std::string& FileInfo::getFilepath() const {
 	return mFilepath;
 }
 
-std::string FileInfo::getFileName() const {
+const std::string& FileInfo::getFileName() const {
 	return mFileName;
 }
 

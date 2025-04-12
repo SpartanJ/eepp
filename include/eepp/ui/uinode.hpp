@@ -428,6 +428,8 @@ class EE_API UINode : public Node {
 	void smartClipStart( const ClipType& reqClipType );
 
 	void smartClipEnd( const ClipType& reqClipType );
+
+	Color getDroppableHoveringColor();
 };
 
 }} // namespace EE::UI

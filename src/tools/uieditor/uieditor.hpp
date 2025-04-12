@@ -22,15 +22,16 @@ class App : public UICodeEditorSplitter::Client {
 	~App();
 
 	void init( const Float& pixelDensityConf, const bool& useAppTheme, const std::string& cssFile,
-			   const std::string& xmlFile, const std::string& projectFile );
+			   const std::string& xmlFile, const std::string& projectFile,
+			   const std::string& colorScheme );
 
 	virtual void onCodeEditorCreated( UICodeEditor*, TextDocument& );
 
 	virtual void onCodeEditorFocusChange( UICodeEditor* );
 
-	virtual void onWidgetFocusChange( UIWidget* ){};
+	virtual void onWidgetFocusChange( UIWidget* ) {};
 
-	virtual void onDocumentStateChanged( UICodeEditor*, TextDocument& ){};
+	virtual void onDocumentStateChanged( UICodeEditor*, TextDocument& ) {};
 
 	virtual void onDocumentModified( UICodeEditor*, TextDocument& );
 
@@ -38,9 +39,9 @@ class App : public UICodeEditorSplitter::Client {
 
 	virtual void onDocumentSelectionChange( UICodeEditor*, TextDocument& );
 
-	virtual void onDocumentCursorPosChange( UICodeEditor*, TextDocument& ){};
+	virtual void onDocumentCursorPosChange( UICodeEditor*, TextDocument& ) {};
 
-	virtual void onColorSchemeChanged( const std::string& ){};
+	virtual void onColorSchemeChanged( const std::string& ) {};
 
 	virtual void onDocumentLoaded( UICodeEditor*, const std::string& );
 
@@ -203,6 +204,7 @@ class App : public UICodeEditorSplitter::Client {
 	UILayout* mPreviewLayout{ nullptr };
 	UIWidget* mSidePanel{ nullptr };
 	std::unordered_set<Doc::TextDocument*> mTmpDocs;
+	ColorSchemePreference mUIColorScheme;
 
 	Drawable* findIcon( const std::string& icon );
 };

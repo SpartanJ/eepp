@@ -58,6 +58,17 @@ void UIAbstractTableView::setColumnWidth( const size_t& colIndex, const Float& w
 	}
 }
 
+void UIAbstractTableView::setColumnMaxWidth( const size_t& colIndex, const Float& width ) {
+	if ( columnData( colIndex ).maxWidth != width ) {
+		columnData( colIndex ).maxWidth = width;
+		if ( columnData( colIndex ).width > width ) {
+			updateHeaderSize();
+			onColumnSizeChange( colIndex );
+			createOrUpdateColumns( false );
+		}
+	}
+}
+
 void UIAbstractTableView::setColumnsWidth( const Float& width ) {
 	if ( !getModel() )
 		return;
@@ -67,6 +78,22 @@ void UIAbstractTableView::setColumnsWidth( const Float& width ) {
 	}
 	updateHeaderSize();
 	createOrUpdateColumns( false );
+}
+
+void UIAbstractTableView::setColumnsMaxWidth( const Float& width ) {
+	if ( !getModel() )
+		return;
+	bool needsRefresh = false;
+	for ( size_t i = 0; i < getModel()->columnCount(); i++ ) {
+		if ( columnData( i ).width > width )
+			needsRefresh = true;
+		columnData( i ).maxWidth = width;
+		onColumnSizeChange( i );
+	}
+	if ( needsRefresh ) {
+		updateHeaderSize();
+		createOrUpdateColumns( false );
+	}
 }
 
 const Float& UIAbstractTableView::getColumnWidth( const size_t& colIndex ) const {
@@ -111,6 +138,7 @@ void UIAbstractTableView::resetColumnData() {
 	for ( size_t i = 0; i < count; i++ ) {
 		ColumnData& col = columnData( i );
 		col.minWidth = 0;
+		col.maxWidth = 0;
 	}
 }
 
@@ -145,7 +173,8 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 			col.minWidth = col.widget->getPixelsSize().getWidth();
 			col.minHeight = col.widget->getPixelsSize().getHeight();
 		}
-		col.width = eeceil( eemax( col.width, col.minWidth ) );
+		col.width = eeceil( col.maxWidth != 0 ? eeclamp( col.width, col.minWidth, col.maxWidth )
+											  : eemax( col.width, col.minWidth ) );
 		col.widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 		col.widget->setPixelsSize( col.width, getHeaderHeight() );
 	}
@@ -198,7 +227,8 @@ void UIAbstractTableView::createOrUpdateColumns( bool resetColumnData ) {
 		ColumnData& col = columnData( i );
 		if ( !col.visible )
 			continue;
-		col.width = eeceil( eemax( col.width, col.minWidth ) );
+		col.width = eeceil( col.maxWidth != 0 ? eeclamp( col.width, col.minWidth, col.maxWidth )
+											  : eemax( col.width, col.minWidth ) );
 		col.widget->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
 		col.widget->setPixelsSize( col.width, getHeaderHeight() );
 		totalWidth += col.width;
@@ -281,7 +311,8 @@ void UIAbstractTableView::updateHeaderSize() {
 	Float totalWidth = 0;
 	for ( size_t i = 0; i < count; i++ ) {
 		const ColumnData& col = columnData( i );
-		totalWidth += col.width;
+		if ( col.visible )
+			totalWidth += col.width;
 	}
 	mHeader->setPixelsSize( totalWidth, getHeaderHeight() );
 }
@@ -332,6 +363,11 @@ void UIAbstractTableView::updateColumnsWidth() {
 			if ( columnData( col ).width != width ) {
 				columnData( col ).width = width;
 				updateHeaderSize();
+
+				ColumnData& colData = columnData( col );
+				if ( colData.widget )
+					colData.widget->setPixelsSize( colData.width, getHeaderHeight() );
+
 				onColumnSizeChange( col );
 			}
 		}
@@ -548,6 +584,8 @@ UIWidget* UIAbstractTableView::createCell( UIWidget* rowWidget, const ModelIndex
 
 UIWidget* UIAbstractTableView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 										  const ModelIndex& index ) {
+	mUISceneNode->invalidateStyle( this );
+	mUISceneNode->invalidateStyleState( this, true );
 	widget->setParent( rowWidget );
 	widget->unsetFlags( UI_AUTO_SIZE );
 	widget->setClipType( ClipType::ContentBox );
@@ -580,35 +618,7 @@ UIWidget* UIAbstractTableView::updateCell( const Vector2<Int64>& posIndex, const
 	widget->setPixelsPosition( { getColumnPosition( index.column() ).x, 0 } );
 	if ( widget->isType( UI_TYPE_TABLECELL ) ) {
 		UITableCell* cell = widget->asType<UITableCell>();
-		cell->setCurIndex( index );
-
-		if ( getModel()->classModelRoleEnabled() ) {
-			bool needsReloadStyle = false;
-			Variant cls( getModel()->data( index, ModelRole::Class ) );
-			cell->setLoadingState( true );
-			if ( cls.isValid() ) {
-				std::string clsStr( cls.toString() );
-				needsReloadStyle = cell->getClasses().empty() || cell->getClasses().size() != 1 ||
-								   clsStr != cell->getClasses()[0];
-				cell->setClass( clsStr );
-			} else {
-				needsReloadStyle = !cell->getClasses().empty();
-				cell->resetClass();
-			}
-			cell->setLoadingState( false );
-			if ( needsReloadStyle )
-				cell->reportStyleStateChangeRecursive();
-		}
-
-		Variant txt( getModel()->data( index, ModelRole::Display ) );
-		if ( txt.isValid() ) {
-			if ( txt.is( Variant::Type::String ) )
-				cell->setText( txt.asString() );
-			else if ( txt.is( Variant::Type::StringPtr ) )
-				cell->setText( txt.asStringPtr() );
-			else
-				cell->setText( txt.toString() );
-		}
+		updateTableCellData( cell, index );
 
 		bool isVisible = false;
 		Variant icon( getModel()->data( index, ModelRole::Icon ) );
@@ -623,6 +633,9 @@ UIWidget* UIAbstractTableView::updateCell( const Vector2<Int64>& posIndex, const
 			cell->getIcon()->setVisible( isVisible );
 
 		cell->updateCell( getModel() );
+
+		if ( mOnUpdateCellCb )
+			mOnUpdateCellCb( cell, getModel() );
 	}
 
 	if ( isCellSelection() ) {
@@ -634,6 +647,59 @@ UIWidget* UIAbstractTableView::updateCell( const Vector2<Int64>& posIndex, const
 	}
 
 	return widget;
+}
+
+void UIAbstractTableView::updateTableCellData( UITableCell* cell, const ModelIndex& index ) {
+	cell->setCurIndex( index );
+
+	if ( getModel()->classModelRoleEnabled() ) {
+		bool needsReloadStyle = false;
+		Variant cls( getModel()->data( index, ModelRole::Class ) );
+		cell->setLoadingState( true );
+		if ( cls.isValid() ) {
+			bool hasClass = false;
+
+			hasClass =
+				( cls.is( Variant::Type::cstr ) &&
+				  cell->hasClass( std::string_view{ cls.asCStr() } ) ) ||
+				( cls.is( Variant::Type::StdString ) && cell->hasClass( cls.asStdString() ) ) ||
+				cell->hasClass( cls.toString() );
+
+			needsReloadStyle =
+				cell->getClasses().empty() || cell->getClasses().size() != 1 || !hasClass;
+
+			if ( !hasClass )
+				cell->setClass( cls.toString() );
+		} else {
+			needsReloadStyle = !cell->getClasses().empty();
+			cell->resetClass();
+		}
+		cell->setLoadingState( false );
+		if ( needsReloadStyle )
+			cell->reportStyleStateChangeRecursive();
+	}
+
+	if ( getModel()->tooltipModelRoleEnabled() ) {
+		Variant tooltip( getModel()->data( index, ModelRole::Tooltip ) );
+		if ( tooltip.isValid() ) {
+			if ( tooltip.is( Variant::Type::String ) )
+				cell->setTooltipText( tooltip.asString() );
+			else if ( tooltip.is( Variant::Type::StringPtr ) )
+				cell->setTooltipText( tooltip.asStringPtr() );
+			else
+				cell->setTooltipText( tooltip.toString() );
+		}
+	}
+
+	Variant txt( getModel()->data( index, ModelRole::Display ) );
+	if ( txt.isValid() ) {
+		if ( txt.is( Variant::Type::String ) )
+			cell->setText( txt.asString() );
+		else if ( txt.is( Variant::Type::StringPtr ) )
+			cell->setText( txt.asStringPtr() );
+		else
+			cell->setText( txt.toString() );
+	}
 }
 
 void UIAbstractTableView::moveSelection( int steps ) {
@@ -704,6 +770,15 @@ void UIAbstractTableView::setRowHeaderWidth( Float rowHeaderWidth ) {
 	mRowHeaderWidth = rowHeaderWidth;
 	onScrollChange();
 	buildRowHeader();
+}
+
+bool UIAbstractTableView::hasOnUpdateCellCb() {
+	return mOnUpdateCellCb != nullptr;
+}
+
+void UIAbstractTableView::setOnUpdateCellCb(
+	const std::function<void( UITableCell*, Model* )>& onUpdateCellCb ) {
+	mOnUpdateCellCb = onUpdateCellCb;
 }
 
 void UIAbstractTableView::buildRowHeader() {
@@ -946,6 +1021,8 @@ void UIAbstractTableView::recalculateColumnsWidth() {
 }
 
 UITableCell* UIAbstractTableView::getCellFromIndex( const ModelIndex& index ) const {
+	if ( !index.isValid() )
+		return nullptr;
 	for ( const auto& row : mWidgets ) {
 		for ( const auto& widget : row ) {
 			if ( widget.second->isType( UI_TYPE_TABLECELL ) &&

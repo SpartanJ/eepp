@@ -33,6 +33,7 @@ struct UIConfig {
 	bool showStatusBar{ true };
 	bool showMenuBar{ false };
 	bool welcomeScreen{ true };
+	bool openFilesInNewWindow{ false };
 	PanelPosition panelPosition{ PanelPosition::Left };
 	std::string serifFont;
 	std::string monospaceFont;
@@ -53,6 +54,7 @@ struct WindowStateConfig {
 	int displayIndex{ 0 };
 	Vector2i position{ -1, -1 };
 	Uint32 lastRunVersion{ 0 };
+	std::vector<std::string> sidePanelTabsOrder;
 };
 
 struct CodeEditorConfig {
@@ -80,6 +82,7 @@ struct CodeEditorConfig {
 	bool autoReloadOnDiskChange{ false };
 	bool codeFoldingEnabled{ true };
 	bool codeFoldingAlwaysVisible{ false };
+	bool flashCursor{ false };
 	LineWrapMode wrapMode{ LineWrapMode::NoWrap };
 	LineWrapType wrapType{ LineWrapType::Viewport };
 	bool wrapKeepIndentation{ true };
@@ -104,6 +107,7 @@ struct DocumentConfig {
 
 struct SearchBarConfig {
 	bool caseSensitive{ false };
+	bool regex{ false };
 	bool luaPattern{ false };
 	bool wholeWord{ false };
 	bool escapeSequence{ false };
@@ -111,6 +115,7 @@ struct SearchBarConfig {
 
 struct GlobalSearchBarConfig {
 	bool caseSensitive{ false };
+	bool regex{ false };
 	bool luaPattern{ false };
 	bool wholeWord{ false };
 	bool escapeSequence{ false };
@@ -161,7 +166,7 @@ struct TerminalConfig {
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 	NewTerminalOrientation::Orientation newTerminalOrientation{
 		NewTerminalOrientation::Horizontal };
-	size_t scrollback{ 10000 };
+	Uint64 scrollback{ 10000 };
 	bool unsupportedOSWarnDisabled{ false };
 };
 
@@ -216,11 +221,11 @@ class AppConfig {
 	void saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, const ProjectDocumentConfig& docConfig,
 					  const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
-					  bool sessionSnapshot );
+					  bool sessionSnapshot, PluginManager* );
 
 	void loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, ProjectDocumentConfig& docConfig,
-					  ecode::App* app, bool sessionSnapshot );
+					  ecode::App* app, bool sessionSnapshot, PluginManager* pluginManager );
 
   protected:
 	Int64 editorsToLoad{ 0 };

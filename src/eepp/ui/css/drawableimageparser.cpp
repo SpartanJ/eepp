@@ -172,7 +172,7 @@ void DrawableImageParser::registerBaseParsers() {
 			} else {
 				int intVal = 0;
 
-				if ( String::fromString( intVal, param ) ) {
+				if ( PixelDensity::toPxFromStringI( param ) ) {
 					drawable->setCorners( intVal );
 				}
 			}
@@ -362,7 +362,7 @@ void DrawableImageParser::registerBaseParsers() {
 			if ( !unicodeChar.empty() )
 				codePoint = unicodeChar[0];
 		} else if ( String::startsWith( buffer, "0x" ) ) {
-			if ( String::fromString( value, buffer, std::hex ) )
+			if ( String::fromString( value, buffer, 16 ) )
 				codePoint = value;
 		} else if ( String::fromString( value, buffer ) ) {
 			codePoint = value;

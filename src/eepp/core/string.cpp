@@ -1,16 +1,218 @@
-#include <algorithm>
-#include <cctype>
-#include <climits>
-#include <cstdarg>
 #include <eepp/core/string.hpp>
 #include <eepp/core/utf.hpp>
+// #include <eepp/core/simd.hpp>
+
+#include <thirdparty/fast_float/include/fast_float/fast_float.h>
+#include <thirdparty/utf8cpp/utf8.h>
+
+#include <algorithm>
+#include <cctype>
+#include <charconv>
+#include <climits>
+#include <cstdarg>
 #include <iostream>
 #include <iterator>
 #include <limits>
 #include <random>
-#include <thirdparty/utf8cpp/utf8.h>
+
+#if ( __GNUC__ >= 11 || ( __clang__ && __clang_major__ >= 12 ) ) && \
+	EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+#define STD_SUPPORTS_FIXED_TO_CHARS
+#endif
+
+#ifndef STD_SUPPORTS_FIXED_TO_CHARS
+#include <sstream>
+#endif
 
 namespace EE {
+
+template <typename T> static bool _fromString( T& t, const std::string& s, int base = 10 ) {
+	const char* begin = s.data();
+	const char* end = s.data() + s.size();
+
+	if constexpr ( std::is_integral_v<T> && std::is_signed_v<T> ) {
+		long long value = 0;
+		auto result = std::from_chars( begin, end, value, base );
+		if ( result.ec == std::errc{} && result.ptr == end &&
+			 value >= std::numeric_limits<T>::min() && value <= std::numeric_limits<T>::max() ) {
+			t = static_cast<T>( value );
+			return true;
+		}
+		return false;
+	} else if constexpr ( std::is_integral_v<T> && std::is_unsigned_v<T> ) {
+		unsigned long long value = 0;
+		auto result = std::from_chars( begin, end, value, base );
+		if ( result.ec == std::errc{} && result.ptr == end &&
+			 value <= std::numeric_limits<T>::max() ) {
+			t = static_cast<T>( value );
+			return true;
+		}
+		return false;
+	} else if constexpr ( (std::is_same_v<T, float> || std::is_same_v<T, double>)) {
+		auto result = fast_float::from_chars( begin, end, t );
+		bool res = result.ec == std::errc{} && result.ptr == end;
+		return res;
+	} else {
+		T value;
+		auto result = std::from_chars( begin, end, value, base );
+		if ( result.ec == std::errc{} && result.ptr == end ) {
+			t = static_cast<T>( value );
+			return true;
+		}
+	}
+}
+
+template <class T> static std::string _toString( const T& value, size_t digitsAfterComma = 2 ) {
+	char buffer[32];
+	if constexpr ( (std::is_same_v<T, float> || std::is_same_v<T, double>)) {
+#ifdef STD_SUPPORTS_FIXED_TO_CHARS
+		auto [ptr, ec] = std::to_chars( buffer, buffer + sizeof( buffer ), value,
+										std::chars_format::fixed, digitsAfterComma );
+		return ec == std::errc() ? std::string( buffer, ptr ) : std::string{};
+#else
+		std::ostringstream ss;
+		ss << std::fixed << value;
+		return ss.str();
+#endif
+	} else {
+		auto [ptr, ec] = std::to_chars( buffer, buffer + sizeof( buffer ), value );
+		return ec == std::errc() ? std::string( buffer, ptr ) : std::string{};
+	}
+}
+
+bool String::fromString( Int8& t, const std::string& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Int16& t, const std::string& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Int32& t, const std::string& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Int64& t, const std::string& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint8& t, const std::string& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint16& t, const std::string& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint32& t, const std::string& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint64& t, const std::string& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( float& t, const std::string& s ) {
+	return _fromString<>( t, s );
+}
+
+bool String::fromString( double& t, const std::string& s ) {
+	return _fromString<>( t, s );
+}
+
+bool String::fromString( Int8& t, const String& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Int16& t, const String& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Int32& t, const String& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Int64& t, const String& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint8& t, const String& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint16& t, const String& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint32& t, const String& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( Uint64& t, const String& s, int base ) {
+	return _fromString<>( t, s, base );
+}
+
+bool String::fromString( float& t, const String& s ) {
+	return _fromString<>( t, s );
+}
+
+bool String::fromString( double& t, const String& s ) {
+	return _fromString<>( t, s );
+}
+
+std::string String::toString( const Int8& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const Int16& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const Int32& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const Int64& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const Uint8& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const Uint16& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const Uint32& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const Uint64& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const float& i ) {
+	return _toString<>( i );
+}
+
+std::string String::toString( const double& i ) {
+	return _toString<>( i );
+}
+
+std::string String::fromFloat( const Float& value, const std::string& append,
+							   const std::string& prepend, size_t digitsAfterComma ) {
+	std::string val( _toString( value, digitsAfterComma ) );
+	numberCleanInPlace( val );
+	return prepend + val + append;
+}
+
+std::string String::fromDouble( const double& value, const std::string& append,
+								const std::string& prepend, size_t digitsAfterComma ) {
+	std::string val( _toString( value, digitsAfterComma ) );
+	numberCleanInPlace( val );
+	return prepend + val + append;
+}
 
 const std::size_t String::InvalidPos = StringType::npos;
 
@@ -351,7 +553,7 @@ String String::unescape( const String& str ) {
 							}
 						if ( buffer.size() >= len ) {
 							Uint32 value;
-							if ( String::fromString( value, buffer, std::hex ) )
+							if ( String::fromString( value, buffer, 16 ) )
 								output.push_back( value );
 						}
 					}
@@ -370,7 +572,7 @@ String String::unescape( const String& str ) {
 						}
 						if ( buffer.size() == len ) {
 							Uint32 value;
-							if ( String::fromString( value, buffer, std::hex ) )
+							if ( String::fromString( value, buffer, 16 ) )
 								output.push_back( value );
 						}
 					}
@@ -396,7 +598,7 @@ String String::unescape( const String& str ) {
 					}
 					if ( buffer.size() <= 3 ) {
 						Uint32 value;
-						if ( String::fromString( value, buffer, std::oct ) )
+						if ( String::fromString( value, buffer, 8 ) )
 							output.push_back( value );
 					}
 					break;
@@ -637,6 +839,66 @@ std::vector<std::string> String::split( const std::string& str, const std::strin
 	return tokens;
 }
 
+void String::splitCb( std::function<bool( std::string_view )> fnCb, const std::string& str,
+					  const std::string& delims, const std::string& delimsPreserve,
+					  const std::string& quote, const bool& removeQuotes ) {
+	if ( str.empty() || ( delims.empty() && delimsPreserve.empty() ) )
+		return;
+
+	std::string allDelims = delims + delimsPreserve + quote;
+
+	std::string::size_type tokenStart = 0;
+	std::string::size_type tokenEnd = str.find_first_of( allDelims, tokenStart );
+	std::string::size_type tokenLen = 0;
+	std::string_view token;
+	while ( true ) {
+		bool fromQuote = false;
+		while ( tokenEnd != std::string::npos &&
+				quote.find_first_of( str[tokenEnd] ) != std::string::npos ) {
+			if ( str[tokenEnd] == '(' ) {
+				tokenEnd = findCloseBracket( str, tokenEnd, '(', ')' );
+			} else if ( str[tokenEnd] == '[' ) {
+				tokenEnd = findCloseBracket( str, tokenEnd, '[', ']' );
+			} else if ( str[tokenEnd] == '{' ) {
+				tokenEnd = findCloseBracket( str, tokenEnd, '{', '}' );
+			} else {
+				fromQuote = true;
+				tokenEnd = str.find_first_of( str[tokenEnd], tokenEnd + 1 );
+			}
+			if ( tokenEnd != std::string::npos ) {
+				tokenEnd = str.find_first_of( allDelims, tokenEnd + 1 );
+			}
+		}
+
+		if ( tokenEnd == std::string::npos ) {
+			tokenLen = std::string::npos;
+		} else {
+			tokenLen = tokenEnd - tokenStart;
+		}
+
+		token = std::string_view{ str }.substr( tokenStart, tokenLen );
+		if ( !token.empty() ) {
+			if ( fromQuote && removeQuotes && token.size() > 2 )
+				token = token.substr( 1, token.size() - 2 );
+			if ( !fnCb( token ) )
+				return;
+		}
+		if ( tokenEnd != std::string::npos && !delimsPreserve.empty() &&
+			 delimsPreserve.find_first_of( str[tokenEnd] ) != std::string::npos ) {
+			if ( !fnCb( std::string_view{ str }.substr( tokenEnd, 1 ) ) )
+				return;
+		}
+
+		tokenStart = tokenEnd;
+		if ( tokenStart == std::string::npos )
+			break;
+		tokenStart++;
+		if ( tokenStart == str.length() )
+			break;
+		tokenEnd = str.find_first_of( allDelims, tokenStart );
+	}
+}
+
 std::string String::join( const std::vector<std::string>& strArray, const Int8& joinchar,
 						  const bool& appendLastJoinChar ) {
 	size_t s = strArray.size();
@@ -659,6 +921,24 @@ String String::join( const std::vector<String>& strArray, const Int8& joinchar,
 					 const bool& appendLastJoinChar ) {
 	size_t s = strArray.size();
 	String str;
+
+	if ( s > 0 ) {
+		for ( size_t i = 0; i < s; i++ ) {
+			str += strArray[i];
+
+			if ( joinchar >= 0 && ( i != s - 1 || appendLastJoinChar ) ) {
+				str += joinchar;
+			}
+		}
+	}
+
+	return str;
+}
+
+std::string String::join( const std::vector<const char*>& strArray, const Int8& joinchar,
+						  const bool& appendLastJoinChar ) {
+	size_t s = strArray.size();
+	std::string str;
 
 	if ( s > 0 ) {
 		for ( size_t i = 0; i < s; i++ ) {
@@ -884,6 +1164,11 @@ bool String::startsWith( const char* haystack, const char* needle ) {
 	return strncmp( needle, haystack, strlen( needle ) ) == 0;
 }
 
+bool String::startsWith( std::string_view haystack, std::string_view needle ) {
+	return needle.length() <= haystack.length() &&
+		   std::equal( needle.begin(), needle.end(), haystack.begin() );
+}
+
 bool String::endsWith( const std::string& haystack, const std::string& needle ) {
 	return needle.length() <= haystack.length() &&
 		   haystack.compare( haystack.size() - needle.size(), needle.size(), needle ) == 0;
@@ -900,6 +1185,20 @@ bool String::contains( const std::string& haystack, const std::string& needle ) 
 
 bool String::contains( const String& haystack, const String& needle ) {
 	return haystack.find( needle ) != String::InvalidPos;
+}
+
+bool String::icontains( const std::string& haystack, const std::string& needle ) {
+	return std::search( haystack.begin(), haystack.end(), needle.begin(), needle.end(),
+						[]( char ch1, char ch2 ) {
+							return std::tolower( ch1 ) == std::tolower( ch2 );
+						} ) != haystack.end();
+}
+
+bool String::icontains( const String& haystack, const String& needle ) {
+	return std::search( haystack.begin(), haystack.end(), needle.begin(), needle.end(),
+						[]( String::StringBaseType ch1, String::StringBaseType ch2 ) {
+							return std::tolower( ch1 ) == std::tolower( ch2 );
+						} ) != haystack.end();
 }
 
 void String::replaceAll( std::string& target, const std::string& that, const std::string& with ) {
@@ -958,9 +1257,27 @@ bool String::contains( const String& needle ) const {
 }
 
 bool String::isAscii() const {
-	for ( const auto& ch : mString )
-		if ( ch > 127 )
+	auto data = mString.data();
+	size_t len = mString.size();
+	size_t i = 0;
+
+	// #ifdef EE_STD_SIMD
+	// 	using simd_type = simd::native_simd<char32_t>;
+	// 	constexpr size_t simd_size = simd_type::size();
+	// 	const simd_type ascii_limit = 127;
+	// 	for ( ; i + simd_size - 1 < len; i += simd_size ) {
+	// 		simd_type chunk;
+	// 		chunk.copy_from( &data[i], simd::element_aligned );
+	// 		auto mask = chunk > ascii_limit;
+	// 		if ( simd::any_of( mask ) )
+	// 			return false;
+	// 	}
+	// #endif
+
+	for ( ; i < len; ++i )
+		if ( data[i] > 127 )
 			return false;
+
 	return true;
 }
 
@@ -1069,26 +1386,6 @@ void String::numberCleanInPlace( std::string& strNumber ) {
 		strNumber.pop_back();
 }
 
-std::string String::fromFloat( const Float& value, const std::string& append,
-							   const std::string& prepend, size_t digitsAfterComma ) {
-	std::ostringstream ss;
-	ss.precision( digitsAfterComma );
-	ss << std::fixed << value;
-	std::string val( ss.str() );
-	numberCleanInPlace( val );
-	return prepend + val + append;
-}
-
-std::string String::fromDouble( const double& value, const std::string& append,
-								const std::string& prepend, size_t digitsAfterComma ) {
-	std::ostringstream ss;
-	ss.precision( digitsAfterComma );
-	ss << std::fixed << value;
-	std::string val( ss.str() );
-	numberCleanInPlace( val );
-	return prepend + val + append;
-}
-
 void String::insertChar( String& str, const unsigned int& pos, const StringBaseType& tchar ) {
 	str.insert( str.begin() + pos, tchar );
 }
@@ -1106,8 +1403,8 @@ void String::formatBuffer( char* Buffer, int BufferSize, const char* format, ...
 
 String::String() {}
 
-String::String( char ansiChar, const std::locale& locale ) {
-	mString += Utf32::decodeAnsi( ansiChar, locale );
+String::String( char ansiChar ) {
+	mString += Utf32::decodeAnsi( ansiChar, std::locale() );
 }
 
 #ifndef EE_NO_WIDECHAR
@@ -1172,22 +1469,6 @@ String::String( const std::string_view& utf8String ) {
 	}
 
 	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( mString ) );
-}
-
-String::String( const char* ansiString, const std::locale& locale ) {
-	if ( ansiString ) {
-		std::size_t length = strlen( ansiString );
-		if ( length > 0 ) {
-			mString.reserve( length + 1 );
-			Utf32::fromAnsi( ansiString, ansiString + length, std::back_inserter( mString ),
-							 locale );
-		}
-	}
-}
-
-String::String( const std::string& ansiString, const std::locale& locale ) {
-	mString.reserve( ansiString.length() + 1 );
-	Utf32::fromAnsi( ansiString.begin(), ansiString.end(), std::back_inserter( mString ), locale );
 }
 
 #ifndef EE_NO_WIDECHAR
@@ -1309,19 +1590,46 @@ Uint32 String::utf8Next( char*& utf8String ) {
 	return utf8::unchecked::next( utf8String );
 }
 
-String::operator std::string() const {
-	return toUtf8();
+size_t String::utf8ToCodepointPosition( const std::string_view& utf8Text, size_t utf8Pos ) {
+	size_t codepointPos = 0;
+	size_t bytePos = 0;
+
+	while ( bytePos < utf8Pos && bytePos < utf8Text.length() ) {
+		unsigned char c = utf8Text[bytePos];
+
+		// Skip continuation bytes (10xxxxxx)
+		if ( ( c & 0xC0 ) == 0x80 ) {
+			bytePos++;
+			continue;
+		}
+
+		// Count this as one codepoint
+		codepointPos++;
+
+		// Move to the next character
+		if ( c < 0x80 )
+			bytePos += 1; // ASCII
+		else if ( c < 0xE0 )
+			bytePos += 2; // 2-byte sequence
+		else if ( c < 0xF0 )
+			bytePos += 3; // 3-byte sequence
+		else
+			bytePos += 4; // 4-byte sequence
+
+		// Handle potential truncated sequences
+		if ( bytePos > utf8Text.length() )
+			break;
+	}
+
+	// If we're in the middle of a character, return the previous complete character position
+	if ( utf8Pos > bytePos )
+		codepointPos--;
+
+	return codepointPos;
 }
 
-std::string String::toAnsiString( const std::locale& locale ) const {
-	// Prepare the output string
-	std::string output;
-	output.reserve( mString.length() + 1 );
-
-	// Convert
-	Utf32::toAnsi( mString.begin(), mString.end(), std::back_inserter( output ), 0, locale );
-
-	return output;
+String::operator std::string() const {
+	return toUtf8();
 }
 
 #ifndef EE_NO_WIDECHAR
@@ -1348,9 +1656,9 @@ std::string String::toUtf8() const {
 	return output;
 }
 
-std::basic_string<Uint16> String::toUtf16() const {
+std::basic_string<char16_t> String::toUtf16() const {
 	// Prepare the output string
-	std::basic_string<Uint16> output;
+	std::basic_string<char16_t> output;
 	output.reserve( mString.length() );
 
 	// Convert
@@ -1803,6 +2111,16 @@ bool String::isWholeWord( const String& haystack, const String& needle, const In
 	return ( 0 == startPos || !( isAlphaNum( haystack[startPos - 1] ) ) ) &&
 		   ( startPos + needle.size() >= haystack.size() ||
 			 !( isAlphaNum( haystack[startPos + needle.size()] ) ) );
+}
+
+size_t String::toUtf32( std::string_view utf8str, String::StringBaseType* buffer,
+						size_t bufferSize ) {
+	auto start = utf8str.data();
+	auto end = start + utf8str.size();
+	size_t pos = 0;
+	while ( start < end && pos < bufferSize )
+		buffer[pos++] = utf8::unchecked::next( start );
+	return pos;
 }
 
 } // namespace EE

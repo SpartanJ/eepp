@@ -786,10 +786,6 @@ const std::string& UIWidget::getStyleSheetTag() const {
 	return mTag;
 }
 
-const std::vector<std::string>& UIWidget::getStyleSheetClasses() const {
-	return mClasses;
-}
-
 UIWidget* UIWidget::getStyleSheetParentElement() const {
 	return NULL != mParentNode && mParentNode->isWidget() ? mParentNode->asType<UIWidget>() : NULL;
 }
@@ -802,30 +798,30 @@ UIWidget* UIWidget::getStyleSheetNextSiblingElement() const {
 	return NULL != mNext && mNext->isWidget() ? mNext->asType<UIWidget>() : NULL;
 }
 
-const std::vector<std::string>& UIWidget::getStyleSheetPseudoClasses() const {
-	return mPseudoClasses;
+std::vector<const char*> UIWidget::getStyleSheetPseudoClassesStrings() const {
+	return StyleSheetSelectorRule::fromPseudoClass( mPseudoClasses );
 }
 
 void UIWidget::updatePseudoClasses() {
-	mPseudoClasses.clear();
+	mPseudoClasses = 0;
 
 	if ( mState & UIState::StateFlagHover )
-		mPseudoClasses.push_back( "hover" );
+		mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::Hover;
 
 	if ( mState & UIState::StateFlagFocus )
-		mPseudoClasses.push_back( "focus" );
+		mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::Focus;
 
 	if ( mState & UIState::StateFlagFocusWithin )
-		mPseudoClasses.push_back( "focus-within" );
+		mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::FocusWithin;
 
 	if ( mState & UIState::StateFlagSelected )
-		mPseudoClasses.push_back( "selected" );
+		mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::Selected;
 
 	if ( mState & UIState::StateFlagPressed )
-		mPseudoClasses.push_back( "pressed" );
+		mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::Pressed;
 
 	if ( mState & UIState::StateFlagDisabled )
-		mPseudoClasses.push_back( "disabled" );
+		mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::Disabled;
 
 	invalidateDraw();
 }
@@ -844,16 +840,41 @@ UIWidget* UIWidget::resetClass() {
 }
 
 UIWidget* UIWidget::setClass( const std::string& cls ) {
+	size_t oldClassesCount = mClasses.size();
 	if ( mClasses.size() != 1 || mClasses[0] != cls ) {
+		bool isSet = false;
 		mClasses.clear();
-		mClasses.push_back( cls );
+		if ( !cls.empty() ) {
+			mClasses.push_back( cls );
+			isSet = true;
 
-		if ( !isSceneNodeLoading() && !isLoadingState() ) {
-			getUISceneNode()->invalidateStyle( this );
-			getUISceneNode()->invalidateStyleState( this );
+			if ( !isSceneNodeLoading() && !isLoadingState() ) {
+				getUISceneNode()->invalidateStyle( this );
+				getUISceneNode()->invalidateStyleState( this );
+			}
 		}
+		if ( oldClassesCount != mClasses.size() || isSet )
+			onClassChange();
+	}
+	return this;
+}
 
-		onClassChange();
+UIWidget* UIWidget::setClass( std::string&& cls ) {
+	size_t oldClassesCount = mClasses.size();
+	if ( mClasses.size() != 1 || mClasses[0] != cls ) {
+		bool isSet = false;
+		mClasses.clear();
+		if ( !cls.empty() ) {
+			mClasses.emplace_back( std::move( cls ) );
+			isSet = true;
+
+			if ( !isSceneNodeLoading() && !isLoadingState() ) {
+				getUISceneNode()->invalidateStyle( this );
+				getUISceneNode()->invalidateStyleState( this );
+			}
+		}
+		if ( oldClassesCount != mClasses.size() || isSet )
+			onClassChange();
 	}
 	return this;
 }
@@ -944,7 +965,7 @@ UIWidget* UIWidget::removeClasses( const std::vector<std::string>& classes ) {
 	return this;
 }
 
-bool UIWidget::hasClass( const std::string& cls ) const {
+bool UIWidget::hasClass( const std::string_view& cls ) const {
 	return std::find( mClasses.begin(), mClasses.end(), cls ) != mClasses.end();
 }
 
@@ -957,8 +978,7 @@ void UIWidget::toggleClass( const std::string& cls ) {
 }
 
 bool UIWidget::hasPseudoClass( const std::string& pseudoCls ) const {
-	return std::find( mPseudoClasses.begin(), mPseudoClasses.end(), pseudoCls ) !=
-		   mPseudoClasses.end();
+	return ( mPseudoClasses & StyleSheetSelectorRule::toPseudoClass( pseudoCls ) ) != 0;
 }
 
 bool UIWidget::isTooltipEnabled() const {
@@ -988,12 +1008,8 @@ void UIWidget::setElementTag( const std::string& tag ) {
 	}
 }
 
-const std::vector<std::string> UIWidget::getClasses() const {
+const std::vector<std::string>& UIWidget::getClasses() const {
 	return mClasses;
-}
-
-const std::string& UIWidget::getElementTag() const {
-	return mTag;
 }
 
 void UIWidget::pushState( const Uint32& State, bool emitEvent ) {
@@ -1074,25 +1090,25 @@ void UIWidget::reloadStyle( const bool& reloadChilds, const bool& disableAnimati
 							const bool& reportStateChange, const bool& forceReApplyProperties ) {
 	createStyle();
 
-	if ( NULL != mStyle ) {
-		mStyle->load();
+	if ( NULL == mStyle )
+		return;
 
-		if ( NULL != getFirstChild() && reloadChilds ) {
-			Node* child = getFirstChild();
+	mStyle->load();
 
-			while ( NULL != child ) {
-				if ( child->isWidget() )
-					child->asType<UIWidget>()->reloadStyle( reloadChilds, disableAnimations,
-															reportStateChange,
-															forceReApplyProperties );
+	if ( NULL != getFirstChild() && reloadChilds ) {
+		Node* child = getFirstChild();
 
-				child = child->getNextNode();
-			}
+		while ( NULL != child ) {
+			if ( child->isWidget() )
+				child->asType<UIWidget>()->reloadStyle( reloadChilds, disableAnimations,
+														reportStateChange, forceReApplyProperties );
+
+			child = child->getNextNode();
 		}
-
-		if ( reportStateChange )
-			reportStyleStateChange( disableAnimations, forceReApplyProperties );
 	}
+
+	if ( reportStateChange )
+		reportStyleStateChange( disableAnimations, forceReApplyProperties );
 }
 
 void UIWidget::onPaddingChange() {

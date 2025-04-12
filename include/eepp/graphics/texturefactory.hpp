@@ -199,6 +199,9 @@ class EE_API TextureFactory : protected Mutex {
 	/** Determine if the TextureId passed exists */
 	bool existsId( const Uint32& TexId );
 
+	/** Determine if the TextureId passed exists */
+	bool exists( const Texture* tex );
+
 	/** @return A pointer to the Texture */
 	Texture* getTexture( const Uint32& TexId );
 

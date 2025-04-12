@@ -186,9 +186,8 @@ class EE_API FontTrueType : public Font {
 						   Float outlineThickness, Page& page, const Float& maxWidth ) const;
 
 	GlyphDrawable* getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex, unsigned int characterSize,
-												   bool bold, bool italic,
-												   Float outlineThickness, Page& page,
-												   const Float& maxWidth = 0 ) const;
+												   bool bold, bool italic, Float outlineThickness,
+												   Page& page, const Float& maxWidth = 0 ) const;
 
 	Uint32 getGlyphIndex( const Uint32& codePoint ) const;
 
@@ -228,6 +227,7 @@ class EE_API FontTrueType : public Font {
 	bool mEnableDynamicMonospace{ false };
 	bool mIsBold{ false };
 	bool mIsItalic{ false };
+	mutable bool mIsMonospaceCompletePending{ false };
 	mutable UnorderedMap<unsigned int, unsigned int> mClosestCharacterSize;
 	mutable UnorderedMap<Uint32, Uint32> mCodePointIndexCache;
 	mutable UnorderedMap<Uint32, std::tuple<Uint32, Uint32, bool>> mKeyCache;
@@ -244,7 +244,7 @@ class EE_API FontTrueType : public Font {
 
 	bool setFontFace( void* face );
 
-	void updateMonospaceState();
+	void updateMonospaceState() const;
 };
 
 }} // namespace EE::Graphics

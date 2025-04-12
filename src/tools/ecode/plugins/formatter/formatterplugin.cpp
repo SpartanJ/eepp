@@ -45,6 +45,7 @@ FormatterPlugin::FormatterPlugin( PluginManager* pluginManager, bool sync ) :
 }
 
 FormatterPlugin::~FormatterPlugin() {
+	waitUntilLoaded();
 	mShuttingDown = true;
 	unsubscribeFileSystemListener();
 
@@ -266,6 +267,7 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 }
 
 void FormatterPlugin::load( PluginManager* pluginManager ) {
+	Clock clock;
 	AtomicBoolScopedOp loading( mLoading, true );
 	mPluginManager = pluginManager;
 	pluginManager->subscribeMessages( this,
@@ -299,7 +301,7 @@ void FormatterPlugin::load( PluginManager* pluginManager ) {
 	mReady = !mFormatters.empty();
 	if ( mReady ) {
 		fireReadyCbs();
-		setReady();
+		setReady( clock.getElapsedTime() );
 	}
 }
 
@@ -496,7 +498,7 @@ FormatterPlugin::Formatter FormatterPlugin::supportsFormatter( std::shared_ptr<T
 
 	for ( const auto& formatter : mFormatters ) {
 		for ( const auto& ext : formatter.files ) {
-			if ( LuaPattern::matches( fileName, ext ) )
+			if ( LuaPattern::hasMatches( fileName, ext ) )
 				return formatter;
 			auto& files = def.getFiles();
 			if ( std::find( files.begin(), files.end(), ext ) != files.end() )

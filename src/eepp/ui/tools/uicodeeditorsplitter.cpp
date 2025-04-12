@@ -244,24 +244,24 @@ UICodeEditor* UICodeEditorSplitter::createCodeEditor() {
 	registerSplitterCommands( doc );
 	/* Splitter commands */
 
-	editor->addEventListener( Event::OnFocus, [this]( const Event* event ) {
+	editor->on( Event::OnFocus, [this]( const Event* event ) {
 		setCurrentWidget( event->getNode()->asType<UICodeEditor>() );
 	} );
-	editor->addEventListener( Event::OnTextChanged, [this]( const Event* event ) {
+	editor->on( Event::OnTextChanged, [this]( const Event* event ) {
 		mClient->onDocumentModified( event->getNode()->asType<UICodeEditor>(),
 									 event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
-	editor->addEventListener( Event::OnSelectionChanged, [this]( const Event* event ) {
+	editor->on( Event::OnSelectionChanged, [this]( const Event* event ) {
 		mClient->onDocumentSelectionChange(
 			event->getNode()->asType<UICodeEditor>(),
 			event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
-	editor->addEventListener( Event::OnCursorPosChange, [this]( const Event* event ) {
+	editor->on( Event::OnCursorPosChange, [this]( const Event* event ) {
 		mClient->onDocumentCursorPosChange(
 			event->getNode()->asType<UICodeEditor>(),
 			event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
-	editor->addEventListener( Event::OnDocumentUndoRedo, [this]( const Event* event ) {
+	editor->on( Event::OnDocumentUndoRedo, [this]( const Event* event ) {
 		mClient->onDocumentUndoRedo( event->getNode()->asType<UICodeEditor>(),
 									 event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
@@ -526,7 +526,7 @@ UICodeEditorSplitter::createCodeEditorInTabWidget( UITabWidget* tabWidget ) {
 		return std::make_pair( (UITab*)nullptr, (UICodeEditor*)nullptr );
 	UICodeEditor* editor = createCodeEditor();
 	mAboutToAddEditor = editor;
-	editor->addEventListener( Event::OnDocumentChanged, [this]( const Event* event ) {
+	editor->on( Event::OnDocumentChanged, [this]( const Event* event ) {
 		mClient->onDocumentStateChanged( event->getNode()->asType<UICodeEditor>(),
 										 event->getNode()->asType<UICodeEditor>()->getDocument() );
 	} );
@@ -568,10 +568,10 @@ UICodeEditorSplitter::createWidgetInTabWidget( UITabWidget* tabWidget, UIWidget*
 		return std::make_pair( (UITab*)nullptr, (UIWidget*)nullptr );
 	UITab* tab = tabWidget->add( tabName, widget );
 	widget->setData( (UintPtr)tab );
-	widget->addEventListener( Event::OnFocus, [this]( const Event* event ) {
+	widget->on( Event::OnFocus, [this]( const Event* event ) {
 		setCurrentWidget( event->getNode()->asType<UIWidget>() );
 	} );
-	widget->addEventListener( Event::OnTitleChange, [this]( const Event* event ) {
+	widget->on( Event::OnTitleChange, [this]( const Event* event ) {
 		const TextEvent* tevent = static_cast<const TextEvent*>( event );
 		UIWidget* widget = event->getNode()->asType<UIWidget>();
 		UITabWidget* tabWidget = tabWidgetFromWidget( widget );
@@ -626,11 +626,7 @@ void UICodeEditorSplitter::removeUnusedTab( UITabWidget* tabWidget, bool destroy
 	}
 }
 
-UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool openCurEditor ) {
-	eeASSERT( curWidgetExists() );
-	if ( nullptr == mBaseLayout )
-		mBaseLayout = parent;
-	UICodeEditor* prevCurEditor = mCurEditor;
+UITabWidget* UICodeEditorSplitter::createTabWidget( Node* parent ) {
 	UITabWidget* tabWidget = UITabWidget::New();
 	tabWidget->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 	tabWidget->setParent( parent );
@@ -641,7 +637,14 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 	tabWidget->setAllowSwitchTabsInEmptySpaces( true );
 	tabWidget->setEnabledCreateContextMenu( true );
 	tabWidget->setFocusTabBehavior( UITabWidget::FocusTabBehavior::FocusOrder );
-	tabWidget->addEventListener( Event::OnTabSelected, [this]( const Event* event ) {
+	if ( mVisualSplitting ) {
+		tabWidget->setSplitFunction(
+			[this]( SplitDirection dir, UITabWidget* widget ) -> UITabWidget* {
+				return splitTabWidget( dir, widget );
+			},
+			mVisualSplitEdgePercent );
+	}
+	tabWidget->on( Event::OnTabSelected, [this]( const Event* event ) {
 		UITabWidget* tabWidget = event->getNode()->asType<UITabWidget>();
 		if ( tabWidget->getTabSelected()->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
 			setCurrentEditor(
@@ -658,9 +661,22 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 			}
 			return true;
 		} );
-	tabWidget->addEventListener( Event::OnTabClosed, [this]( const Event* event ) {
+	tabWidget->on( Event::OnTabClosed, [this]( const Event* event ) {
 		onTabClosed( static_cast<const TabEvent*>( event ) );
 	} );
+	if ( mOnTabWidgetCreateCb )
+		mOnTabWidgetCreateCb( tabWidget );
+	Lock l( mTabWidgetMutex );
+	mTabWidgets.push_back( tabWidget );
+	return tabWidget;
+}
+
+UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool openCurEditor ) {
+	eeASSERT( curWidgetExists() );
+	if ( nullptr == mBaseLayout )
+		mBaseLayout = parent;
+	UICodeEditor* prevCurEditor = mCurEditor;
+	UITabWidget* tabWidget = createTabWidget( parent );
 	auto editorData = createCodeEditorInTabWidget( tabWidget );
 	if ( editorData.first == nullptr || editorData.second == nullptr ) {
 		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
@@ -682,8 +698,6 @@ UITabWidget* UICodeEditorSplitter::createEditorWithTabWidget( Node* parent, bool
 			editorData.first->setTooltipText( path );
 	}
 	mAboutToAddEditor = nullptr;
-	Lock l( mTabWidgetMutex );
-	mTabWidgets.push_back( tabWidget );
 	return tabWidget;
 }
 
@@ -833,6 +847,13 @@ void UICodeEditorSplitter::forEachDocSharedPtr(
 void UICodeEditorSplitter::forEachTabWidget( std::function<void( UITabWidget* )> run ) const {
 	for ( auto widget : mTabWidgets )
 		run( widget );
+}
+
+void UICodeEditorSplitter::forEachTabWidgetStoppable(
+	std::function<bool( UITabWidget* )> run ) const {
+	for ( auto widget : mTabWidgets )
+		if ( run( widget ) )
+			return;
 }
 
 void UICodeEditorSplitter::forEachEditorStoppable(
@@ -986,18 +1007,17 @@ bool UICodeEditorSplitter::tryTabClose( UIWidget* widget,
 											"\"%s\" will be lost." )
 									.toUtf8(),
 								editor->getDocument().getFilename() ) );
-			mTryCloseMsgBox->addEventListener( Event::OnConfirm,
-											   [this, editor, focusTabBehavior]( const Event* ) {
-												   closeTab( editor, focusTabBehavior );
-											   } );
-			mTryCloseMsgBox->addEventListener( Event::OnClose,
-											   [this, onMsgBoxCloseCb]( const Event* ) {
-												   mTryCloseMsgBox = nullptr;
-												   if ( mCurEditor )
-													   mCurEditor->setFocus();
-												   if ( onMsgBoxCloseCb )
-													   onMsgBoxCloseCb();
-											   } );
+			mTryCloseMsgBox->on( Event::OnConfirm,
+								 [this, editor, focusTabBehavior]( const Event* ) {
+									 closeTab( editor, focusTabBehavior );
+								 } );
+			mTryCloseMsgBox->on( Event::OnClose, [this, onMsgBoxCloseCb]( const Event* ) {
+				mTryCloseMsgBox = nullptr;
+				if ( mCurEditor )
+					mCurEditor->setFocus();
+				if ( onMsgBoxCloseCb )
+					onMsgBoxCloseCb();
+			} );
 			mTryCloseMsgBox->setTitle(
 				widget->getUISceneNode()->i18n( "ask_close_tab", "Close Tab?" ) );
 			mTryCloseMsgBox->center();
@@ -1194,6 +1214,51 @@ UISplitter* UICodeEditorSplitter::split( const SplitDirection& direction, UIWidg
 	}
 
 	return splitter;
+}
+
+UITabWidget* UICodeEditorSplitter::splitTabWidget( SplitDirection direction,
+												   UITabWidget* tabWidget ) {
+	if ( !tabWidget )
+		return nullptr;
+	UIOrientation orientation =
+		direction == SplitDirection::Left || direction == SplitDirection::Right
+			? UIOrientation::Horizontal
+			: UIOrientation::Vertical;
+	Node* parent = tabWidget->getParent();
+	UISplitter* parentSplitter = nullptr;
+	bool wasFirst = true;
+
+	if ( parent->isType( UI_TYPE_SPLITTER ) ) {
+		parentSplitter = parent->asType<UISplitter>();
+		wasFirst = parentSplitter->getFirstWidget() == tabWidget;
+		if ( !parentSplitter->isFull() ) {
+			parentSplitter->setOrientation( orientation );
+			UITabWidget* newTabWidget = createTabWidget( parentSplitter );
+			if ( direction == SplitDirection::Left || direction == SplitDirection::Top )
+				parentSplitter->swap();
+			return newTabWidget;
+		}
+	}
+
+	UISplitter* splitter = UISplitter::New();
+	splitter->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+	splitter->setOrientation( orientation );
+	tabWidget->detach();
+	splitter->setParent( parent );
+	tabWidget->setParent( splitter );
+	UITabWidget* newTabWidget = createTabWidget( splitter );
+	if ( direction == SplitDirection::Left || direction == SplitDirection::Top )
+		splitter->swap();
+
+	if ( parentSplitter ) {
+		if ( wasFirst && parentSplitter->getFirstWidget() != splitter ) {
+			parentSplitter->swap();
+		} else if ( !wasFirst && parentSplitter->getLastWidget() != splitter ) {
+			parentSplitter->swap();
+		}
+	}
+
+	return newTabWidget;
 }
 
 void UICodeEditorSplitter::switchToTab( Int32 index ) {
@@ -1650,6 +1715,46 @@ void UICodeEditorSplitter::onTabClosed( const TabEvent* tabEvent ) {
 	if ( tabEvent->getTab()->getOwnedWidget() == mCurEditor )
 		focusSomeEditor( nullptr );
 	eeASSERT( curWidgetExists() );
+}
+
+void UICodeEditorSplitter::setOnTabWidgetCreateCb( std::function<void( UITabWidget* )> cb ) {
+	mOnTabWidgetCreateCb = std::move( cb );
+}
+
+bool UICodeEditorSplitter::getVisualSplitting() const {
+	return mVisualSplitting;
+}
+
+void UICodeEditorSplitter::setVisualSplitting( bool visualSplitting ) {
+	if ( mVisualSplitting != visualSplitting ) {
+		mVisualSplitting = visualSplitting;
+		updateTabWidgetVisualSplitting();
+	}
+}
+
+Float UICodeEditorSplitter::getVisualSplitEdgePercent() const {
+	return mVisualSplitEdgePercent;
+}
+
+void UICodeEditorSplitter::setVisualSplitEdgePercent( Float visualSplitEdgePercent ) {
+	if ( mVisualSplitEdgePercent != visualSplitEdgePercent ) {
+		mVisualSplitEdgePercent = visualSplitEdgePercent;
+		updateTabWidgetVisualSplitting();
+	}
+}
+
+void UICodeEditorSplitter::updateTabWidgetVisualSplitting() {
+	for ( UITabWidget* tabWidget : mTabWidgets ) {
+		if ( mVisualSplitting ) {
+			tabWidget->setSplitFunction(
+				[this]( SplitDirection dir, UITabWidget* widget ) -> UITabWidget* {
+					return splitTabWidget( dir, widget );
+				},
+				mVisualSplitEdgePercent );
+		} else {
+			tabWidget->setSplitFunction( nullptr, mVisualSplitEdgePercent );
+		}
+	}
 }
 
 }}} // namespace EE::UI::Tools

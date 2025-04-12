@@ -567,25 +567,10 @@ void UINode::drawOverNode() {
 }
 
 void UINode::drawDroppableHovering() {
-	const PropertyDefinition* def =
-		StyleSheetSpecification::instance()->getProperty( "droppable-hovering-color" );
-	Color color = Color::fromString( def->getDefaultValue() );
-	if ( isWidget() ) {
-		UIWidget* widget = asType<UIWidget>();
-		std::string colorString = widget->getPropertyString( def );
-		if ( !colorString.empty() ) {
-			color = Color::fromString( colorString );
-		} else {
-			colorString = mUISceneNode->getRoot()->getPropertyString( def );
-			if ( !colorString.empty() )
-				color = Color::fromString( colorString );
-		}
-	}
-
 	Primitives P;
 	P.setFillMode( DRAW_FILL );
 	P.setBlendMode( getBlendMode() );
-	P.setColor( color );
+	P.setColor( getDroppableHoveringColor() );
 	P.setLineWidth( PixelDensity::dpToPxI( 1 ) );
 	P.drawRectangle( getScreenBounds() );
 }
@@ -605,9 +590,9 @@ void UINode::updateDebugData() {
 			text += "Classes: " + String::join( widget->getStyleSheetClasses(), ' ' ) + "\n";
 		}
 
-		if ( !widget->getStyleSheetPseudoClasses().empty() ) {
-			text += "Pseudo Classes: " + String::join( widget->getStyleSheetPseudoClasses(), ' ' ) +
-					"\n";
+		if ( widget->getStyleSheetPseudoClasses() ) {
+			text += "Pseudo Classes: " +
+					String::join( widget->getStyleSheetPseudoClassesStrings(), ' ' ) + "\n";
 		}
 
 		text += String::format(
@@ -1051,6 +1036,24 @@ void UINode::smartClipStart( const ClipType& reqClipType ) {
 
 void UINode::smartClipEnd( const ClipType& reqClipType ) {
 	smartClipEnd( reqClipType, isMeOrParentTreeScaledOrRotatedOrFrameBuffer() );
+}
+
+Color UINode::getDroppableHoveringColor() {
+	const PropertyDefinition* def =
+		StyleSheetSpecification::instance()->getProperty( "droppable-hovering-color" );
+	Color color = Color::fromString( def->getDefaultValue() );
+	if ( isWidget() ) {
+		UIWidget* widget = asType<UIWidget>();
+		std::string colorString = widget->getPropertyString( def );
+		if ( !colorString.empty() ) {
+			color = Color::fromString( colorString );
+		} else {
+			colorString = mUISceneNode->getRoot()->getPropertyString( def );
+			if ( !colorString.empty() )
+				color = Color::fromString( colorString );
+		}
+	}
+	return color;
 }
 
 void UINode::nodeDraw() {

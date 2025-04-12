@@ -1,5 +1,5 @@
-#include "lspclientserver.hpp"
 #include "lspclientplugin.hpp"
+#include "lspclientserver.hpp"
 #include "lspclientservermanager.hpp"
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
@@ -55,6 +55,7 @@ static const char* MEMBER_QUERY = "query";
 static const char* MEMBER_SUCCESS = "success";
 static const char* MEMBER_LIMIT = "limit";
 static const char* MEMBER_OPTIONS = "options";
+static const char* MEMBER_PREVIOUS_RESULT_IDS = "previousResultIds";
 
 static json newRequest( const std::string& method, const json& params = json{} ) {
 	json j;
@@ -366,6 +367,11 @@ static void fromJson( LSPServerCapabilities& caps, const json& json ) {
 	caps.documentHighlightProvider = toBoolOrObject( json, "documentHighlightProvider" );
 	caps.documentFormattingProvider = toBoolOrObject( json, "documentFormattingProvider" );
 	caps.workspaceSymbolProvider = toBoolOrObject( json, "workspaceSymbolProvider" );
+	if ( json.contains( "diagnosticProvider" ) ) {
+		caps.diagnosticProvider.workspaceDiagnostics = json.value( "workspaceDiagnostics", false );
+		caps.diagnosticProvider.interFileDependencies =
+			json.value( "interFileDependencies", false );
+	}
 	caps.foldingRangeProvider = toBoolOrObject( json, "foldingRangeProvider" );
 	if ( json.contains( "documentRangeFormattingProvider" ) )
 		caps.documentRangeFormattingProvider =
@@ -452,7 +458,7 @@ static LSPSymbolInformationList parseDocumentSymbols( const json& result, bool i
 
 			const auto& srange = symbol.contains( MEMBER_SELECTION_RANGE )
 									 ? symbol.at( MEMBER_SELECTION_RANGE )
-									 : symbol[MEMBER_LOCATION].at( MEMBER_SELECTION_RANGE );
+									 : symbol[MEMBER_LOCATION].at( MEMBER_RANGE );
 
 			auto range = parseRange( mrange );
 			auto selectionRange = parseRange( srange );
@@ -498,9 +504,11 @@ static LSPSymbolInformationList parseDocumentSymbols( const json& result, bool i
 	for ( const auto& r : ret )
 		rret.push_back( LSPSymbolInformationTmp::fromTmp( r ) );
 
-	if ( isSilent )
+	if ( !isSilent ) {
 		Log::debug( "LSPClientServer - parseDocumentSymbols took: %.2fms",
 					clock.getElapsedTimeAndReset().asMilliseconds() );
+	}
+
 	return rret;
 }
 
@@ -1041,6 +1049,24 @@ static std::vector<LSPFoldingRange> parseFoldingRange( const json& result ) {
 	return ranges;
 }
 
+static LSPWorkspaceDiagnosticReport parseWorkspaceDiagnosticReport( const json& res ) {
+	LSPWorkspaceDiagnosticReport report;
+	if ( res.contains( "items" ) ) {
+		for ( const auto& item : res["items"] ) {
+			if ( item.contains( "kind" ) && item.contains( "uri" ) ) {
+				LSPFullDocumentDiagnosticReport docReport;
+				URI uri = item.at( "uri" ).get<std::string>();
+				docReport.uri = uri;
+				docReport.kind = item.at( "kind" ).get<std::string>();
+				docReport.resultId = item.value<std::string>( "resultId", "" );
+				docReport.items = parseDiagnostics( item["item"] );
+				report.items[uri] = std::move( docReport );
+			}
+		}
+	}
+	return report;
+}
+
 void LSPClientServer::registerCapabilities( const json& jcap ) {
 	if ( !jcap.is_object() || !jcap.contains( "registrations" ) ||
 		 !jcap["registrations"].is_array() )
@@ -1177,6 +1203,10 @@ void LSPClientServer::initialize() {
 			try {
 #endif
 				fromJson( mCapabilities, resp["capabilities"] );
+
+				for ( const auto& ch : mLSP.extraTriggerChars )
+					if ( !ch.empty() )
+						mCapabilities.signatureHelpProvider.triggerCharacters.push_back( ch[0] );
 #ifndef EE_DEBUG
 			} catch ( const json::exception& e ) {
 				Log::warning(
@@ -1194,6 +1224,10 @@ void LSPClientServer::initialize() {
 			mManager->getPluginManager()->sendBroadcast(
 				mManager->getPlugin(), PluginMessageType::LanguageServerCapabilities,
 				PluginMessageFormat::LanguageServerCapabilities, &mCapabilities );
+
+			mManager->getPluginManager()->sendBroadcast(
+				nullptr, PluginMessageType::LanguageServerReady,
+				PluginMessageFormat::LSPClientServer, this );
 		},
 		[]( const IdType&, const json& ) {} );
 }
@@ -1401,7 +1435,8 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( json&& msg, const Json
 
 	try {
 		std::string sjson( msg.dump() );
-		sjson.insert( 0, "Content-Length: " + String::toString( sjson.size() ) + "\r\n\r\n" );
+		sjson.insert( 0,
+					  "Content-Length: " + String::toString( (Uint64)sjson.size() ) + "\r\n\r\n" );
 
 		if ( mReady || ( msg.contains( MEMBER_METHOD ) && msg[MEMBER_METHOD] == "initialize" ) ) {
 			if ( !isSilent() ) {
@@ -1719,6 +1754,18 @@ LSPClientServer::workspaceSymbol( const std::string& querySymbol, const SymbolIn
 		limit );
 }
 
+void LSPClientServer::workspaceDiagnosticAsync( const JsonReplyHandler& h ) {
+	auto params = json{ { MEMBER_PREVIOUS_RESULT_IDS, json::array() } };
+	sendAsync( newRequest( "workspace/diagnostic", params ), h );
+}
+
+void LSPClientServer::workspaceDiagnosticAsync( const WorkspaceDiagnosticHandler& h ) {
+	workspaceDiagnosticAsync( [h]( const IdType& id, const json& json ) {
+		if ( h )
+			h( id, parseWorkspaceDiagnosticReport( json ) );
+	} );
+}
+
 void fromJson( LSPWorkDoneProgressValue& value, const json& data ) {
 	if ( !data.empty() ) {
 		json ob = data;
@@ -1902,7 +1949,7 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 			break;
 		}
 
-		index += strlen( CONTENT_LENGTH_HEADER );
+		index += std::strlen( CONTENT_LENGTH_HEADER );
 		auto endindex = buffer.find( "\r\n", index );
 		auto msgstart = buffer.find( "\r\n\r\n", index );
 		if ( endindex == std::string::npos || msgstart == std::string::npos )
@@ -1910,7 +1957,10 @@ void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
 
 		msgstart += 4;
 		int length = 0;
-		bool ok = String::fromString( length, buffer.substr( index, endindex - index ) );
+		std::string lengthStr( buffer.substr( index, endindex - index ) );
+		String::trimInPlace( lengthStr );
+		bool ok = String::fromString( length, lengthStr );
+
 		// FIXME perhaps detect if no reply for some time
 		// then again possibly better left to user to restart in such case
 		if ( !ok ) {

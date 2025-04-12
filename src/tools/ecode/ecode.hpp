@@ -7,6 +7,7 @@
 #include "filesystemlistener.hpp"
 #include "globalsearchcontroller.hpp"
 #include "notificationcenter.hpp"
+#include "plugins/plugincontextprovider.hpp"
 #include "plugins/pluginmanager.hpp"
 #include "projectbuild.hpp"
 #include "projectdirectorytree.hpp"
@@ -24,6 +25,10 @@
 
 using namespace eterm::UI;
 
+enum class CustomWidgets {
+	UI_TYPE_WELCOME_TAB = UI_TYPE_USER + 1,
+};
+
 namespace ecode {
 
 class AutoCompletePlugin;
@@ -31,7 +36,7 @@ class LinterPlugin;
 class FormatterPlugin;
 class SettingsMenu;
 
-class App : public UICodeEditorSplitter::Client {
+class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
   public:
 	explicit App( const size_t& jobs = 0, const std::vector<std::string>& args = {} );
 
@@ -39,10 +44,10 @@ class App : public UICodeEditorSplitter::Client {
 
 	void init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 			   const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
-			   const std::string& css, bool health, const std::string& healthLang,
+			   std::string css, bool health, const std::string& healthLang,
 			   ecode::FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen,
 			   bool stdOutLogs, bool disableFileLogs, bool openClean, bool portable,
-			   std::string language );
+			   std::string language, bool incognito );
 
 	void createWidgetInspector();
 
@@ -50,9 +55,11 @@ class App : public UICodeEditorSplitter::Client {
 
 	void openFileDialog();
 
+	std::string getDefaultFileDialogFolder() const;
+
 	void openFolderDialog();
 
-	void openFontDialog( std::string& fontPath, bool loadingMonoFont );
+	void openFontDialog( std::string& fontPath, bool loadingMonoFont, bool terminalFont = false );
 
 	void downloadFileWeb( const std::string& url );
 
@@ -64,6 +71,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void runCommand( const std::string& command );
 
+	bool commandExists( const std::string& command ) const;
+
 	bool loadConfig( const LogLevel& logLevel, const Sizeu& displaySize, bool sync, bool stdOutLogs,
 					 bool disableFileLogs );
 
@@ -73,15 +82,13 @@ class App : public UICodeEditorSplitter::Client {
 
 	std::vector<std::string> getUnlockedCommands();
 
-	bool isUnlockedCommand( const std::string& command );
-
 	void saveAll();
 
 	ProjectDirectoryTree* getDirTree() const;
 
 	std::shared_ptr<ThreadPool> getThreadPool() const;
 
-	void loadFileFromPath( const std::string& path, bool inNewTab = true,
+	bool loadFileFromPath( std::string path, bool inNewTab = true,
 						   UICodeEditor* codeEditor = nullptr,
 						   std::function<void( UICodeEditor*, const std::string& )> onLoaded =
 							   std::function<void( UICodeEditor*, const std::string& )>() );
@@ -183,7 +190,19 @@ class App : public UICodeEditorSplitter::Client {
 	SettingsMenu* getSettingsMenu() const { return mSettings.get(); }
 
 	template <typename T> void registerUnlockedCommands( T& t ) {
-		t.setCommand( "keybindings", [this] { loadFileFromPath( mKeybindingsPath ); } );
+		t.setCommand( "keybindings", [this] {
+			loadFileFromPath( mKeybindingsPath );
+
+			if ( mNotificationCenter ) {
+				mNotificationCenter->addInteractiveNotification(
+					i18n( "keybindings_clarification",
+						  "More keybindings can be set for each active plugin at the Plugins "
+						  "Manager.\nBe aware that many of the core keybindings can be found "
+						  "there." ),
+					i18n( "plugin_manager_open", "Open Plugins Manager" ),
+					[this] { runCommand( "plugin-manager-open" ); }, Seconds( 10 ) );
+			}
+		} );
 		t.setCommand( "debug-draw-boxes-toggle", [this] { debugDrawBoxesToggle(); } );
 		t.setCommand( "debug-draw-highlight-toggle", [this] { debugDrawHighlightToggle(); } );
 		t.setCommand( "debug-draw-debug-data", [this] { debugDrawData(); } );
@@ -197,26 +216,22 @@ class App : public UICodeEditorSplitter::Client {
 					  [this] { mTerminalManager->createTerminalInSplitter(); } );
 		t.setCommand( "terminal-split-right", [this] {
 			auto cwd = getCurrentWorkingDir();
-			mSplitter->split( UICodeEditorSplitter::SplitDirection::Right,
-							  mSplitter->getCurWidget(), false );
+			mSplitter->split( SplitDirection::Right, mSplitter->getCurWidget(), false );
 			mTerminalManager->createNewTerminal( "", nullptr, cwd );
 		} );
 		t.setCommand( "terminal-split-bottom", [this] {
 			auto cwd = getCurrentWorkingDir();
-			mSplitter->split( UICodeEditorSplitter::SplitDirection::Bottom,
-							  mSplitter->getCurWidget(), false );
+			mSplitter->split( SplitDirection::Bottom, mSplitter->getCurWidget(), false );
 			mTerminalManager->createNewTerminal( "", nullptr, cwd );
 		} );
 		t.setCommand( "terminal-split-left", [this] {
 			auto cwd = getCurrentWorkingDir();
-			mSplitter->split( UICodeEditorSplitter::SplitDirection::Left, mSplitter->getCurWidget(),
-							  false );
+			mSplitter->split( SplitDirection::Left, mSplitter->getCurWidget(), false );
 			mTerminalManager->createNewTerminal( "", nullptr, cwd );
 		} );
 		t.setCommand( "terminal-split-top", [this] {
 			auto cwd = getCurrentWorkingDir();
-			mSplitter->split( UICodeEditorSplitter::SplitDirection::Top, mSplitter->getCurWidget(),
-							  false );
+			mSplitter->split( SplitDirection::Top, mSplitter->getCurWidget(), false );
 			mTerminalManager->createNewTerminal( "", nullptr, cwd );
 		} );
 		t.setCommand( "reopen-closed-tab", [this] { reopenClosedTab(); } );
@@ -236,6 +251,8 @@ class App : public UICodeEditorSplitter::Client {
 					  [this] { mStatusAppOutputController->toggle(); } );
 		t.setCommand( "toggle-status-terminal", [this] { mStatusTerminalController->toggle(); } );
 		t.setCommand( "open-locatebar", [this] { mUniversalLocator->showLocateBar(); } );
+		t.setCommand( "open-locatebar-glob-search",
+					  [this] { mUniversalLocator->showLocateBar( true ); } );
 		t.setCommand( "toggle-status-locate-bar",
 					  [this] { mUniversalLocator->toggleLocateBar(); } );
 		t.setCommand( "open-command-palette", [this] { mUniversalLocator->showCommandPalette(); } );
@@ -294,7 +311,7 @@ class App : public UICodeEditorSplitter::Client {
 		t.setCommand( "monospace-font",
 					  [this] { openFontDialog( mConfig.ui.monospaceFont, true ); } );
 		t.setCommand( "terminal-font",
-					  [this] { openFontDialog( mConfig.ui.terminalFont, false ); } );
+					  [this] { openFontDialog( mConfig.ui.terminalFont, true, true ); } );
 		t.setCommand( "fallback-font",
 					  [this] { openFontDialog( mConfig.ui.fallbackFont, false ); } );
 		t.setCommand( "tree-view-configure-ignore-files",
@@ -322,7 +339,13 @@ class App : public UICodeEditorSplitter::Client {
 
 	PluginManager* getPluginManager() const;
 
-	void loadFileFromPathOrFocus( const std::string& path );
+	void
+	loadFileFromPathOrFocus( const std::string& path, bool inNewTab = true,
+							 UICodeEditor* codeEditor = nullptr,
+							 std::function<void( UICodeEditor*, const std::string& )> onLoaded =
+								 std::function<void( UICodeEditor*, const std::string& )>() );
+
+	void focusOrLoadFile( const std::string& path, const TextRange& range = {} );
 
 	UISceneNode* getUISceneNode() const { return mUISceneNode; }
 
@@ -330,9 +353,13 @@ class App : public UICodeEditorSplitter::Client {
 
 	void updateRecentFolders();
 
+	void updateRecentButtons();
+
 	const CodeEditorConfig& getCodeEditorConfig() const;
 
 	AppConfig& getConfig();
+
+	const AppConfig& getConfig() const;
 
 	void updateDocInfo( TextDocument& doc );
 
@@ -493,6 +520,8 @@ class App : public UICodeEditorSplitter::Client {
 	std::string mi18nPath;
 	std::string mScriptsPath;
 	std::string mPlaygroundPath;
+	std::string mIpcPath;
+	std::string mPidPath;
 	Float mDisplayDPI{ 96 };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;
@@ -506,7 +535,9 @@ class App : public UICodeEditorSplitter::Client {
 	bool mBenchmarkMode{ false };
 	bool mPortableMode{ false };
 	bool mPortableModeFailed{ false };
+	bool mDestroyingApp{ false };
 	Time mFrameTime{ Time::Zero };
+	bool mIncognito{ false };
 	Clock mLastRender;
 	Clock mSecondsCounter;
 	ProjectDocumentConfig mProjectDocConfig;
@@ -517,6 +548,9 @@ class App : public UICodeEditorSplitter::Client {
 	FontTrueType* mFontMono{ nullptr };
 	FontTrueType* mTerminalFont{ nullptr };
 	FontTrueType* mFallbackFont{ nullptr };
+	FontTrueType* mIconFont{ nullptr };
+	FontTrueType* mMimeIconFont{ nullptr };
+	FontTrueType* mCodIconFont{ nullptr };
 	efsw::FileWatcher* mFileWatcher{ nullptr };
 	FileSystemListener* mFileSystemListener{ nullptr };
 	Mutex mWatchesLock;
@@ -543,6 +577,16 @@ class App : public UICodeEditorSplitter::Client {
 	UIMessageBox* mCloseMsgBox{ nullptr };
 	UIMenuBar* mMenuBar{ nullptr };
 	std::unique_ptr<SettingsActions> mSettingsActions;
+	std::vector<std::string> mPathsToLoad;
+	Uint64 mIpcListenerId{ 0 };
+	std::mutex mAsyncResourcesLoadMutex;
+	std::condition_variable mAsyncResourcesLoadCond;
+	std::vector<SyntaxColorScheme> mColorSchemes;
+	bool mAsyncResourcesLoaded{ false };
+
+	void sortSidePanel();
+
+	void saveSidePanelTabsOrder();
 
 	void saveAllProcess();
 
@@ -564,6 +608,8 @@ class App : public UICodeEditorSplitter::Client {
 
 	void updateEditorTabTitle( UICodeEditor* editor );
 
+	void updateNonUniqueTabTitles();
+
 	std::string titleFromEditor( UICodeEditor* editor );
 
 	bool onCloseRequestCallback( EE::Window::Window* );
@@ -574,7 +620,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void saveDoc();
 
-	void loadFolder( const std::string& path );
+	void loadFolder( std::string path );
 
 	void loadKeybindings();
 
@@ -623,7 +669,7 @@ class App : public UICodeEditorSplitter::Client {
 
 	void onPluginEnabled( Plugin* plugin );
 
-	std::string getLastUsedFolder();
+	std::string getLastUsedFolder() const;
 
 	void insertRecentFolder( const std::string& rpath );
 
@@ -644,6 +690,11 @@ class App : public UICodeEditorSplitter::Client {
 	void insertRecentFileAndUpdateUI( const std::string& path );
 
 	void createWelcomeTab();
+
+	bool needsRedirectToRunningProcess( std::string file );
+
+	std::function<void( UICodeEditor*, const std::string& )>
+	getForcePositionFn( TextPosition initialPosition );
 };
 
 } // namespace ecode

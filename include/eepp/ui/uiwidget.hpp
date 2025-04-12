@@ -151,7 +151,7 @@ class EE_API UIWidget : public UINode {
 
 	const std::string& getStyleSheetId() const;
 
-	const std::vector<std::string>& getStyleSheetClasses() const;
+	inline const std::vector<std::string>& getStyleSheetClasses() const { return mClasses; }
 
 	UIWidget* getStyleSheetParentElement() const;
 
@@ -159,12 +159,16 @@ class EE_API UIWidget : public UINode {
 
 	UIWidget* getStyleSheetNextSiblingElement() const;
 
-	const std::vector<std::string>& getStyleSheetPseudoClasses() const;
+	Uint32 getStyleSheetPseudoClasses() const { return mPseudoClasses; }
+
+	std::vector<const char*> getStyleSheetPseudoClassesStrings() const;
 
 	UIWidget* resetClass();
 
 	/** Resets all classes and assign a class */
 	UIWidget* setClass( const std::string& cls );
+
+	UIWidget* setClass( std::string&& cls );
 
 	/** Resets all classes and assign vector of classes */
 	UIWidget* setClasses( const std::vector<std::string>& classes );
@@ -177,15 +181,15 @@ class EE_API UIWidget : public UINode {
 
 	UIWidget* removeClasses( const std::vector<std::string>& classes );
 
-	bool hasClass( const std::string& cls ) const;
+	bool hasClass( const std::string_view& cls ) const;
 
 	void toggleClass( const std::string& cls );
 
 	void setElementTag( const std::string& tag );
 
-	const std::vector<std::string> getClasses() const;
+	const std::vector<std::string>& getClasses() const;
 
-	const std::string& getElementTag() const;
+	inline const std::string& getElementTag() const { return mTag; }
 
 	virtual void pushState( const Uint32& State, bool emitEvent = true );
 
@@ -304,7 +308,7 @@ class EE_API UIWidget : public UINode {
 	int mAttributesTransactionCount;
 	std::string mSkinName;
 	std::vector<std::string> mClasses;
-	std::vector<std::string> mPseudoClasses;
+	Uint32 mPseudoClasses{ 0 };
 	String mTooltipText;
 
 	explicit UIWidget( const std::string& tag );

@@ -161,7 +161,7 @@ Float PixelDensity::toDpFromString( const std::string& str ) {
 
 	if ( !num.empty() ) {
 		Float val = 0;
-		bool res = String::fromString<Float>( val, num );
+		bool res = String::fromString( val, num );
 
 		if ( res ) {
 			if ( unit == "dp" || unit == "dip" ) {
@@ -179,6 +179,40 @@ Float PixelDensity::toDpFromString( const std::string& str ) {
 
 Float PixelDensity::toDpFromStringI( const std::string& str ) {
 	return (Int32)toDpFromString( str );
+}
+
+Float PixelDensity::toPxFromString( const std::string& str ) {
+	std::string num;
+	std::string unit;
+
+	for ( std::size_t i = 0; i < str.size(); i++ ) {
+		if ( String::isNumber( str[i], true ) || ( '-' == str[i] && i == 0 ) ||
+			 ( '+' == str[i] && i == 0 ) ) {
+			num += str[i];
+		} else {
+			unit = str.substr( i );
+			break;
+		}
+	}
+
+	if ( !num.empty() ) {
+		Float val = 0;
+		bool res = String::fromString( val, num );
+
+		if ( res ) {
+			if ( unit == "dp" || unit == "dip" ) {
+				return dpToPx( val );
+			} else {
+				return val;
+			}
+		}
+	}
+
+	return 0;
+}
+
+Float PixelDensity::toPxFromStringI( const std::string& str ) {
+	return (Int32)toPxFromString( str );
 }
 
 }} // namespace EE::Graphics

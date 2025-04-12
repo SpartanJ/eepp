@@ -48,6 +48,7 @@ LinterPlugin::LinterPlugin( PluginManager* pluginManager, bool sync ) : Plugin( 
 }
 
 LinterPlugin::~LinterPlugin() {
+	waitUntilLoaded();
 	mShuttingDown = true;
 	mManager->unsubscribeMessages( this );
 	unsubscribeFileSystemListener();
@@ -574,6 +575,7 @@ TextDocument* LinterPlugin::getDocumentFromURI( const URI& uri ) {
 }
 
 void LinterPlugin::load( PluginManager* pluginManager ) {
+	Clock clock;
 	AtomicBoolScopedOp loading( mLoading, true );
 	pluginManager->subscribeMessages( this,
 									  [this]( const auto& notification ) -> PluginRequestHandle {
@@ -605,7 +607,7 @@ void LinterPlugin::load( PluginManager* pluginManager ) {
 	mReady = !mLinters.empty();
 	if ( mReady ) {
 		fireReadyCbs();
-		setReady();
+		setReady( clock.getElapsedTime() );
 	}
 }
 
@@ -1050,21 +1052,25 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		line.setStyleConfig( editor->getFontStyleConfig() );
 		line.setColor( color );
 
-		Int64 strSize = match.range.end().column() - match.range.start().column();
-		Vector2f pos = { static_cast<Float>(
-							 position.x + editor->getTextPositionOffset( match.range.start() ).x ),
-						 position.y };
-		if ( strSize <= 0 ) {
-			strSize = 1;
-			pos = { position.x, position.y };
-		}
+		auto rects = editor->getTextRangeRectangles( { match.range }, editor->getScreenScroll(), {},
+													 lineHeight );
+		if ( !rects.empty() ) {
+			Int64 strSize = match.range.end().column() - match.range.start().column();
+			Vector2f pos = rects[0].getPosition();
 
-		std::string str( strSize, '~' );
-		String string( str );
-		line.setString( string );
-		Rectf box( pos - editor->getScreenPos(), { editor->getTextWidth( string ), lineHeight } );
-		match.box[editor] = box;
-		line.draw( pos.x, pos.y + lineHeight * 0.5f );
+			if ( strSize <= 0 ) {
+				strSize = 1;
+				pos = { position.x, position.y };
+			}
+
+			std::string str( strSize, '~' );
+			String string( str );
+			line.setString( string );
+			Rectf box( pos - editor->getScreenPos(),
+					   { editor->getTextWidth( string ), lineHeight } );
+			match.box[editor] = box;
+			line.draw( pos.x, pos.y + lineHeight * 0.5f );
+		}
 
 		Float rLineWidth = 0;
 
@@ -1289,11 +1295,18 @@ bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 		tryHideHoveringMatch( editor );
 		return false;
 	}
+
+	if ( editor->hasDocument() && editor->getDocument().isLoading() )
+		return false;
+
+	Vector2f localPos( editor->convertToNodeSpace( pos.asFloat() ) );
+	TextPosition cursorPosition = editor->resolveScreenPosition( pos.asFloat() );
+	if ( localPos.x <= editor->getGutterWidth() )
+		return false;
+
 	Lock l( mMatchesMutex );
 	auto it = mMatches.find( editor->getDocumentRef().get() );
 	if ( it != mMatches.end() ) {
-		Vector2f localPos( editor->convertToNodeSpace( pos.asFloat() ) );
-		TextPosition cursorPosition = editor->resolveScreenPosition( pos.asFloat() );
 		auto matchIt = it->second.find( cursorPosition.line() );
 		if ( matchIt != it->second.end() ) {
 			auto& matches = matchIt->second;
@@ -1335,7 +1348,7 @@ Linter LinterPlugin::supportsLinter( std::shared_ptr<TextDocument> doc ) {
 
 	for ( auto& linter : mLinters ) {
 		for ( auto& ext : linter.files ) {
-			if ( LuaPattern::find( fileName, ext ).isValid() )
+			if ( LuaPattern::hasMatches( fileName, ext ) )
 				return linter;
 			auto& files = def.getFiles();
 			if ( std::find( files.begin(), files.end(), ext ) != files.end() ) {

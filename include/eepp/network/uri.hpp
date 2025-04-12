@@ -242,13 +242,13 @@ class EE_API URI {
 	/** URI-decodes the given string by replacing percent-encoded
 	 * characters with the actual character. The decoded string
 	 * is appended to decodedStr. */
-	static void decode( const std::string& str, std::string& decodedStr );
+	static void decode( const std::string_view& str, std::string& decodedStr );
 
 	/** URI encodes the string.  */
-	static std::string encode( const std::string& str );
+	static std::string encode( const std::string_view& str );
 
 	/** URI decodes the string. */
-	static std::string decode( const std::string& str );
+	static std::string decode( const std::string_view& str );
 
   protected:
 	/** @returns true if both uri's are equivalent. */

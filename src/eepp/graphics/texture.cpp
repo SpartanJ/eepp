@@ -1,9 +1,11 @@
 #include <SOIL2/src/SOIL2/SOIL2.h>
+#include <SOIL2/src/SOIL2/stb_image.h>
 #include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/renderer/openglext.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/scopedtexture.hpp>
+#include <eepp/graphics/stbi_iocb.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/math/polygon2.hpp>
@@ -934,15 +936,61 @@ Sizef Texture::getPixelsSize() {
 }
 
 void Texture::draw() {
-	drawFast( mPosition.x, mPosition.y );
+	drawFast( mPosition.x, mPosition.y, 0, Vector2f::One, mColor );
 }
 
 void Texture::draw( const Vector2f& position ) {
-	drawFast( position.x, position.y );
+	drawFast( position.x, position.y, 0, Vector2f::One, mColor );
 }
 
 void Texture::draw( const Vector2f& position, const Sizef& size ) {
-	drawFast( position.x, position.y, 0, Vector2f::One, mColor, BlendMode::Alpha(), size.x, size.y );
+	drawFast( position.x, position.y, 0, Vector2f::One, mColor, BlendMode::Alpha(), size.x,
+			  size.y );
+}
+
+std::pair<std::vector<Texture*>, int> Texture::loadGif( IOStream& stream ) {
+	stbi_io_callbacks callbacks;
+	callbacks.read = &IOCb::read;
+	callbacks.skip = &IOCb::skip;
+	callbacks.eof = &IOCb::eof;
+	stream.seek( 0 );
+	auto type = stbi_test_from_callbacks( &callbacks, &stream );
+	if ( type != STBI_gif )
+		return {};
+	stream.seek( 0 );
+	std::vector<Texture*> gif;
+	ScopedBuffer buf( stream.getSize() );
+	stream.read( (char*)buf.get(), buf.size() );
+	int width, height, frames, comp;
+	int* delays = NULL;
+	unsigned char* data = stbi_load_gif_from_memory( buf.get(), buf.size(), &delays, &width,
+													 &height, &frames, &comp, 0 );
+
+	if ( data == nullptr )
+		return {};
+
+	gif.reserve( frames );
+
+	unsigned char* start = data;
+	size_t frame_size = width * height * sizeof( unsigned char ) * comp;
+	for ( int i = 0; i < frames; ++i ) {
+		gif.emplace_back( TextureFactory::instance()->loadFromPixels( (const Uint8*)start, width,
+																	  height, comp ) );
+		start += frame_size;
+	}
+
+	auto delay = delays[0];
+	if ( delay == 0 ) {
+		for ( int i = 0; i < frames; i++ ) {
+			if ( delays[i] != 0 ) {
+				delay = delays[i];
+				break;
+			}
+		}
+	}
+	free( data );
+	free( delays );
+	return { std::move( gif ), delay ? delay : 100 };
 }
 
 }} // namespace EE::Graphics

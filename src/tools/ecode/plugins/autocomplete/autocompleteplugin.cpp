@@ -106,6 +106,7 @@ AutoCompletePlugin::AutoCompletePlugin( PluginManager* pluginManager, bool sync 
 }
 
 AutoCompletePlugin::~AutoCompletePlugin() {
+	waitUntilLoaded();
 	mShuttingDown = true;
 	mManager->unsubscribeMessages( this );
 	unsubscribeFileSystemListener();
@@ -134,6 +135,7 @@ AutoCompletePlugin::~AutoCompletePlugin() {
 }
 
 void AutoCompletePlugin::load( PluginManager* pluginManager ) {
+	Clock clock;
 	AtomicBoolScopedOp loading( mLoading, true );
 	std::string path = pluginManager->getPluginsPath() + "autocomplete.json";
 	if ( FileSystem::fileExists( path ) ||
@@ -175,6 +177,54 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 		}
 	}
 
+	if ( mKeyBindings.empty() ) {
+		mKeyBindings["autocomplete-close-suggestion"] = "escape";
+		mKeyBindings["autocomplete-prev-suggestion"] = "up";
+		mKeyBindings["autocomplete-next-suggestion"] = "down";
+		mKeyBindings["autocomplete-first-suggestion"] = "home";
+		mKeyBindings["autocomplete-last-suggestion"] = "end";
+		mKeyBindings["autocomplete-prev-suggestion-page"] = "pageup";
+		mKeyBindings["autocomplete-next-suggestion-page"] = "pagedown";
+		mKeyBindings["autocomplete-pick-suggestion"] = "tab";
+		mKeyBindings["autocomplete-pick-suggestion-alt"] = "enter";
+		mKeyBindings["autocomplete-pick-suggestion-alt-2"] = "return";
+		mKeyBindings["autocomplete-update-suggestions"] = "mod+space";
+		mKeyBindings["autocomplete-close-signature-help"] = "escape";
+		mKeyBindings["autocomplete-prev-signature-help"] = "up";
+		mKeyBindings["autocomplete-next-signature-help"] = "down";
+	}
+
+	if ( j.contains( "keybindings" ) ) {
+		auto& kb = j["keybindings"];
+		// clang-format off
+		auto list = {
+			"autocomplete-close-suggestion",
+			"autocomplete-prev-suggestion",
+			"autocomplete-next-suggestion",
+			"autocomplete-first-suggestion",
+			"autocomplete-last-suggestion",
+			"autocomplete-prev-suggestion-page",
+			"autocomplete-next-suggestion-page",
+			"autocomplete-pick-suggestion",
+			"autocomplete-pick-suggestion-alt",
+			"autocomplete-pick-suggestion-alt-2",
+			"autocomplete-update-suggestions",
+			"autocomplete-close-signature-help",
+			"autocomplete-prev-signature-help",
+			"autocomplete-next-signature-help",
+		};
+		// clang-format on
+		for ( const auto& key : list ) {
+			if ( kb.contains( key ) ) {
+				if ( !kb[key].empty() )
+					mKeyBindings[key] = kb[key];
+			} else {
+				kb[key] = mKeyBindings[key];
+				updateConfigFile = true;
+			}
+		}
+	}
+
 	if ( updateConfigFile ) {
 		std::string newData = j.dump( 2 );
 		if ( newData != data ) {
@@ -183,10 +233,14 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 		}
 	}
 
+	if ( getUISceneNode() ) {
+		updateShortcuts();
+	}
+
 	subscribeFileSystemListener();
 	mReady = true;
 	fireReadyCbs();
-	setReady();
+	setReady( clock.getElapsedTime() );
 }
 
 void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
@@ -284,12 +338,13 @@ void AutoCompletePlugin::onUnregister( UICodeEditor* editor ) {
 }
 
 bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event ) {
+	KeyBindings::Shortcut eventShortcut( event.getKeyCode(), event.getSanitizedMod() );
 	if ( mSignatureHelpVisible ) {
-		if ( event.getKeyCode() == KEY_ESCAPE ) {
+		if ( mShortcuts["autocomplete-close-signature-help"] == eventShortcut ) {
 			resetSignatureHelp();
 			editor->invalidateDraw();
 			return true;
-		} else if ( event.getKeyCode() == KEY_UP ) {
+		} else if ( mShortcuts["autocomplete-prev-signature-help"] == eventShortcut ) {
 			if ( mSignatureHelp.signatures.size() > 1 ) {
 				mSignatureHelpSelected = mSignatureHelpSelected == -1 ? 0 : mSignatureHelpSelected;
 				++mSignatureHelpSelected;
@@ -300,12 +355,11 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			} else if ( mSuggestions.empty() ) {
 				resetSignatureHelp();
 			}
-		} else if ( event.getKeyCode() == KEY_DOWN ) {
+		} else if ( mShortcuts["autocomplete-next-signature-help"] == eventShortcut ) {
 			if ( mSignatureHelp.signatures.size() > 1 ) {
-				mSignatureHelpSelected =
-					mSignatureHelpSelected == (int)mSignatureHelp.signatures.size() - 1
-						? mSignatureHelp.signatures.size() - 1
-						: 0;
+				mSignatureHelpSelected = mSignatureHelpSelected <= 0
+											 ? mSignatureHelp.signatures.size()
+											 : mSignatureHelpSelected;
 				--mSignatureHelpSelected;
 				mSignatureHelpSelected = mSignatureHelpSelected % mSignatureHelp.signatures.size();
 				editor->invalidateDraw();
@@ -329,8 +383,9 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			}
 		}
 	}
+
 	if ( !mSuggestions.empty() ) {
-		if ( event.getKeyCode() == KEY_DOWN ) {
+		if ( mShortcuts["autocomplete-next-suggestion"] == eventShortcut ) {
 			if ( mSuggestionIndex + 1 < (int)mSuggestions.size() ) {
 				mSuggestionIndex++;
 				if ( mSuggestionIndex < mSuggestionsStartIndex )
@@ -345,7 +400,7 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			}
 			editor->invalidateDraw();
 			return true;
-		} else if ( event.getKeyCode() == KEY_UP ) {
+		} else if ( mShortcuts["autocomplete-prev-suggestion"] == eventShortcut ) {
 			if ( mSuggestionIndex - 1 < 0 ) {
 				mSuggestionIndex = mSuggestions.size() - 1;
 				mSuggestionsStartIndex =
@@ -357,22 +412,22 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 				mSuggestionsStartIndex = mSuggestionIndex;
 			editor->invalidateDraw();
 			return true;
-		} else if ( event.getKeyCode() == KEY_ESCAPE ) {
+		} else if ( mShortcuts["autocomplete-close-suggestion"] == eventShortcut ) {
 			resetSuggestions( editor );
 			resetSignatureHelp();
 			editor->invalidateDraw();
 			return true;
-		} else if ( event.getKeyCode() == KEY_HOME ) {
+		} else if ( mShortcuts["autocomplete-first-suggestion"] == eventShortcut ) {
 			mSuggestionIndex = 0;
 			mSuggestionsStartIndex = 0;
 			editor->invalidateDraw();
 			return true;
-		} else if ( event.getKeyCode() == KEY_END ) {
+		} else if ( mShortcuts["autocomplete-last-suggestion"] == eventShortcut ) {
 			mSuggestionIndex = mSuggestions.size() - 1;
 			mSuggestionsStartIndex = eemax( 0, (int)mSuggestions.size() - mSuggestionsMaxVisible );
 			editor->invalidateDraw();
 			return true;
-		} else if ( event.getKeyCode() == KEY_PAGEUP ) {
+		} else if ( mShortcuts["autocomplete-prev-suggestion-page"] == eventShortcut ) {
 			if ( mSuggestionIndex - (int)( mSuggestionsMaxVisible - 1 ) >= 0 ) {
 				mSuggestionIndex -= ( mSuggestionsMaxVisible - 1 );
 				if ( mSuggestionIndex < mSuggestionsStartIndex )
@@ -383,7 +438,7 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 			}
 			editor->invalidateDraw();
 			return true;
-		} else if ( event.getKeyCode() == KEY_PAGEDOWN ) {
+		} else if ( mShortcuts["autocomplete-next-suggestion-page"] == eventShortcut ) {
 			if ( mSuggestionIndex + mSuggestionsMaxVisible < (int)mSuggestions.size() ) {
 				mSuggestionIndex += mSuggestionsMaxVisible - 1;
 			} else {
@@ -393,13 +448,13 @@ bool AutoCompletePlugin::onKeyDown( UICodeEditor* editor, const KeyEvent& event 
 				eemax<int>( 0, mSuggestionIndex - ( mSuggestionsMaxVisible - 1 ) );
 			editor->invalidateDraw();
 			return true;
-		} else if ( event.getKeyCode() == KEY_TAB || event.getKeyCode() == KEY_RETURN ||
-					event.getKeyCode() == KEY_KP_ENTER ) {
+		} else if ( mShortcuts["autocomplete-pick-suggestion"] == eventShortcut ||
+					mShortcuts["autocomplete-pick-suggestion-alt"] == eventShortcut ||
+					mShortcuts["autocomplete-pick-suggestion-alt-2"] == eventShortcut ) {
 			pickSuggestion( editor );
 			return true;
 		}
-	} else if ( event.getKeyCode() == KEY_SPACE &&
-				( event.getMod() & KeyMod::getDefaultModifier() ) ) {
+	} else if ( mShortcuts["autocomplete-update-suggestions"] == eventShortcut ) {
 		std::string partialSymbol( getPartialSymbol( &editor->getDocument() ) );
 		updateSuggestions( partialSymbol, editor );
 		return true;
@@ -672,9 +727,9 @@ void AutoCompletePlugin::tryStartSnippetNav( const Suggestion& suggestion, UICod
 bool AutoCompletePlugin::hasCompleteSteps( const Suggestion& suggestion ) {
 	if ( suggestion.kind != LSPCompletionItemKind::Snippet )
 		return false;
-	if ( LuaPattern::matches( suggestion.insertText, SNIPPET_PTRN1 ) ||
-		 LuaPattern::matches( suggestion.insertText, SNIPPET_PTRN2 ) ||
-		 LuaPattern::matches( suggestion.insertText, SNIPPET_PTRN3 ) ) {
+	if ( LuaPattern::hasMatches( suggestion.insertText, SNIPPET_PTRN1 ) ||
+		 LuaPattern::hasMatches( suggestion.insertText, SNIPPET_PTRN2 ) ||
+		 LuaPattern::hasMatches( suggestion.insertText, SNIPPET_PTRN3 ) ) {
 		return true;
 	}
 	return false;
@@ -762,9 +817,68 @@ AutoCompletePlugin::processSignatureHelp( const LSPSignatureHelp& signatureHelp 
 	}
 	if ( !editor )
 		return {};
-	editor->runOnMainThread( [this, editor, signatureHelp] {
+
+	// Convert the LSP Signature Help into our own object:
+	// We will convert the UTF-8 label to UTF-32, then we will remove any new lines and extra spaces
+	// This guarantees that we always display a single line signature help
+	SignatureHelp signatures;
+	signatures.activeSignature = signatureHelp.activeSignature;
+	signatures.activeParameter = signatureHelp.activeParameter;
+	signatures.signatures.reserve( signatureHelp.signatures.size() );
+
+	TextDocument doc;
+	for ( const auto& sig : signatureHelp.signatures ) {
+		String initialLabel( sig.label );
+		SignatureInformation nsig;
+		nsig.documentation = sig.documentation;
+
+		doc.reset();
+		doc.textInput( initialLabel );
+		std::vector<String> parameters;
+		parameters.reserve( sig.parameters.size() );
+
+		for ( size_t i = 0; i < sig.parameters.size(); i++ ) {
+			auto start = String::utf8ToCodepointPosition( sig.label, sig.parameters[i].start );
+			auto end = String::utf8ToCodepointPosition( sig.label, sig.parameters[i].end );
+			auto sel = TextRange::convertToLineColumn( initialLabel.view(), start, end );
+
+			if ( i == 0 )
+				doc.setSelection( i, sel );
+			else
+				doc.addSelection( sel );
+
+			parameters.emplace_back( doc.getSelectedText( i ) );
+		}
+
+		auto selections( doc.getSelections() );
+		nsig.parameters.reserve( selections.size() );
+
+		if ( 0 != doc.replaceAll( "\n", "" ) ) {
+			while ( 0 != doc.replaceAll( "  ", " " ) )
+				;
+
+			nsig.label = doc.line( 0 ).getTextWithoutNewLine();
+
+			for ( const auto& param : parameters ) {
+				auto res = doc.find( param );
+				if ( res.isValid() )
+					nsig.parameters.emplace_back( res.result );
+			}
+		} else {
+			nsig.label = std::move( initialLabel );
+
+			if ( !sig.parameters.empty() ) {
+				for ( auto& sel : selections )
+					nsig.parameters.emplace_back( sel );
+			}
+		}
+
+		signatures.signatures.emplace_back( nsig );
+	}
+
+	editor->runOnMainThread( [this, editor, signatures = std::move( signatures )] {
 		mSignatureHelpVisible = true;
-		mSignatureHelp = signatureHelp;
+		mSignatureHelp = signatures;
 		if ( mSignatureHelp.signatures.empty() )
 			resetSignatureHelp();
 		editor->invalidateDraw();
@@ -773,8 +887,20 @@ AutoCompletePlugin::processSignatureHelp( const LSPSignatureHelp& signatureHelp 
 	return {};
 }
 
+void AutoCompletePlugin::updateShortcuts() {
+	const auto toShortcut = [this]( const std::string& keys ) {
+		return KeyBindings::toShortcut(
+			getManager()->getUISceneNode()->getEventDispatcher()->getInput(), keys );
+	};
+
+	for ( const auto& kb : mKeyBindings )
+		mShortcuts[kb.first] = toShortcut( kb.second );
+}
+
 PluginRequestHandle AutoCompletePlugin::processResponse( const PluginMessage& msg ) {
-	if ( msg.isResponse() && msg.type == PluginMessageType::CodeCompletion ) {
+	if ( msg.type == PluginMessageType::UIReady ) {
+		updateShortcuts();
+	} else if ( msg.isResponse() && msg.type == PluginMessageType::CodeCompletion ) {
 		if ( msg.responseID ) {
 			Lock l( mHandlesMutex );
 			for ( auto& handle : mHandles ) {
@@ -874,7 +1000,7 @@ void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f
 	primitives.setColor( Color( selectedStyle.background ).blendAlpha( editor->getAlpha() ) );
 	String str;
 	if ( mSignatureHelp.signatures.size() > 1 ) {
-		str = String::format( "%s (%d of %zu)", curSig.label.c_str(),
+		str = String::format( "%s (%d of %zu)", curSig.label.toUtf8(),
 							  mSignatureHelpSelected == -1 ? 1 : mSignatureHelpSelected + 1,
 							  mSignatureHelp.signatures.size() );
 	} else {
@@ -894,38 +1020,42 @@ void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f
 	}
 
 	bool hasParams = !curSig.parameters.empty();
-	LSPParameterInformation curParam =
+	TextRange curParam =
 		hasParams ? curSig.parameters[mSignatureHelp.activeParameter % curSig.parameters.size()]
-				  : LSPParameterInformation{ -1, -1 };
+				  : TextRange{};
 	Rectf curParamRect;
 	if ( hasParams ) {
 		curParamRect = Rectf(
 			{ { boxRect.getPosition().x + mBoxPadding.Left +
-					curParam.start * editor->getGlyphWidth(),
+					curParam.start().column() * editor->getGlyphWidth(),
 				boxRect.getPosition().y },
-			  { ( curParam.end - curParam.start ) * editor->getGlyphWidth(), mRowHeight } } );
+			  { ( curParam.end().column() - curParam.start().column() ) * editor->getGlyphWidth(),
+				mRowHeight } } );
 
 		if ( !editor->getScreenRect().contains(
 				 Rectf{ { curParamRect.getPosition().x +
-							  ( curParam.end - curParam.start ) * editor->getGlyphWidth(),
+							  ( curParam.end().column() - curParam.start().column() ) *
+								  editor->getGlyphWidth(),
 						  curParamRect.getPosition().y },
 						curParamRect.getSize() } ) ) {
 			auto offset = editor->getTextPositionOffset( mSignatureHelpPosition );
-			pos = { static_cast<Float>( startScroll.x - curParam.start * editor->getGlyphWidth() +
+			pos = { static_cast<Float>( startScroll.x -
+										curParam.start().column() * editor->getGlyphWidth() +
 										offset.x ),
 					static_cast<Float>( startScroll.y + offset.y + vdiff ) };
 
 			boxRect.setPosition( pos );
 
 			curParamRect.setPosition( { boxRect.getPosition().x + mBoxPadding.Left +
-											curParam.start * editor->getGlyphWidth(),
+											curParam.start().column() * editor->getGlyphWidth(),
 										boxRect.getPosition().y } );
 		}
 	}
 
 	primitives.drawRoundedRectangle( boxRect, 0.f, Vector2f::One, 6 );
 
-	if ( hasParams && curParam.end - curParam.start > 0 && curParam.end < (int)str.size() ) {
+	if ( hasParams && curParam.end() != curParam.start() &&
+		 curParam.end().column() < (int)str.size() ) {
 		primitives.setColor( matchingSelection.color );
 		primitives.drawRoundedRectangle( curParamRect, 0.f, Vector2f::One, 6 );
 	}
@@ -1044,10 +1174,13 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 			LSPCompletionItemHelper::toIconString( suggestion.kind ), PixelDensity::dpToPxI( 12 ) );
 
 		if ( icon ) {
+			Color iconColor( icon->getColor() );
+			icon->setColor( mSuggestionIndex == (int)i ? selectedStyle.color : normalStyle.color );
 			Vector2f padding(
 				eefloor( ( iconSpace.getWidth() - icon->getSize().getWidth() ) * 0.5f ),
 				eefloor( ( iconSpace.getHeight() - icon->getSize().getHeight() ) * 0.5f ) );
 			icon->draw( { cursorPos.x + padding.x, cursorPos.y + mRowHeight * count + padding.y } );
+			icon->setColor( iconColor );
 		}
 
 		if ( mSuggestionIndex == (int)i && !suggestion.documentation.value.empty() ) {
@@ -1158,6 +1291,10 @@ bool AutoCompletePlugin::onMouseMove( UICodeEditor* editor, const Vector2i& posi
 		return false;
 
 	Vector2f localPos( editor->convertToNodeSpace( position.asFloat() ) );
+
+	if ( localPos.x <= editor->getGutterWidth() )
+		return false;
+
 	if ( mBoxRect.contains( localPos ) ) {
 		editor->getUISceneNode()->setCursor( Cursor::Hand );
 		return true;
@@ -1233,6 +1370,7 @@ void AutoCompletePlugin::resetSignatureHelp() {
 }
 
 AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocument* doc ) {
+	static constexpr auto MAX_LINE_LENGTH = EE_1KB * 10;
 	LuaPattern pattern( mSymbolPattern );
 	AutoCompletePlugin::SymbolsList symbols;
 	if ( doc->linesCount() == 0 || doc->isHuge() || mShuttingDown )
@@ -1240,7 +1378,10 @@ AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocu
 	std::string current( getPartialSymbol( doc ) );
 	TextPosition end = doc->getSelection().end();
 	for ( Int64 i = 0; i < static_cast<Int64>( doc->linesCount() ); i++ ) {
-		auto string = doc->line( i ).toUtf8();
+		const auto& line = doc->line( i );
+		if ( line.size() > MAX_LINE_LENGTH )
+			continue;
+		auto string = line.toUtf8();
 		for ( auto& match : pattern.gmatch( string ) ) {
 			std::string matchStr( match[0] );
 			// Ignore the symbol if is actually the current symbol being written

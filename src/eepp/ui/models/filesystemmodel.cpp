@@ -1,5 +1,6 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/abstract/uiabstractview.hpp>
 #include <eepp/ui/models/filesystemmodel.hpp>
@@ -14,14 +15,23 @@ using namespace EE::Scene;
 
 namespace EE { namespace UI { namespace Models {
 
-FileSystemModel::Node::Node( const std::string& rootPath, const FileSystemModel& model ) :
+FileSystemModel::Node::Node( const std::string& rootPath, const FileSystemModel& model,
+							 const std::shared_ptr<ThreadPool>& threadPool ) :
 	mInfo( FileSystem::getRealPath( rootPath ) ) {
 	mInfoDirty = false;
 	mName = FileSystem::fileNameFromPath( mInfo.getFilepath() );
 	mMimeType = "";
 	mHash = String::hash( mName );
 	mDisplayName = mName;
-	traverseIfNeeded( model );
+	if ( threadPool ) {
+		mQueuedForTraversal = true;
+		threadPool->run( [this, &model] {
+			traverseIfNeeded( model );
+			model.refreshView();
+		} );
+	} else {
+		traverseIfNeeded( model );
+	}
 }
 
 FileSystemModel::Node::Node( FileInfo&& info, FileSystemModel::Node* parent ) :
@@ -96,6 +106,8 @@ Int64 FileSystemModel::Node::findChildRowFromName( const std::string& name,
 }
 
 FileSystemModel::Node::~Node() {
+	while ( mIsTraversing )
+		Sys::sleep( Milliseconds( 1 ) );
 	cleanChildren();
 }
 
@@ -157,22 +169,32 @@ static bool isAcceptedExtension( const std::vector<std::string>& acceptedExtensi
 	return true;
 }
 
-void FileSystemModel::Node::refresh( const FileSystemModel& model ) {
+bool FileSystemModel::Node::refresh( const FileSystemModel& model ) {
 	if ( !mInfo.isDirectory() )
-		return;
+		return false;
 
-	auto oldFiles = mChildren;
+	std::vector<Node*> oldFiles;
+
+	{
+		Lock l( model.mResourceLock );
+		oldFiles = mChildren;
+	}
 
 	const auto& displayCfg = model.getDisplayConfig();
 
-	auto files = FileSystem::filesInfoGetInPath( mInfo.getFilepath(), false, displayCfg.sortByName,
-												 displayCfg.foldersFirst, displayCfg.ignoreHidden );
+	auto files = FileSystem::filesInfoGetInPath(
+		mInfo.getFilepath(), false, displayCfg.sortByName, displayCfg.foldersFirst,
+		displayCfg.ignoreHidden,
+		[&model] { return model.mShutingDown.load( std::memory_order::memory_order_relaxed ); } );
 
 	std::vector<Node*> newChildren;
 	Node* node = nullptr;
 
-	for ( auto file : files ) {
-		node = childWithPathExists( file.getFilepath() );
+	for ( auto& file : files ) {
+		{
+			Lock l( model.mResourceLock );
+			node = childWithPathExists( file.getFilepath() );
+		}
 
 		if ( !isAcceptedExtension( displayCfg.acceptedExtensions, file ) )
 			continue;
@@ -194,32 +216,44 @@ void FileSystemModel::Node::refresh( const FileSystemModel& model ) {
 		}
 	}
 
+	Lock l( model.mResourceLock );
+
 	for ( Node* oldNode : oldFiles )
 		eeDelete( oldNode );
 
-	mChildren = newChildren;
+	mChildren = std::move( newChildren );
+	return true;
 }
 
 void FileSystemModel::Node::cleanChildren() {
-	for ( size_t i = 0; i < mChildren.size(); ++i )
+	size_t size = mChildren.size();
+	for ( size_t i = 0; i < size; ++i )
 		eeDelete( mChildren[i] );
 	mChildren.clear();
 }
 
-void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
-	if ( !mInfo.isDirectory() || mHasTraversed )
-		return;
-	mHasTraversed = true;
-	cleanChildren();
+bool FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
+	if ( !mInfo.isDirectory() || mHasTraversed || mIsTraversing )
+		return false;
+	BoolScopedOp op( mIsTraversing, true );
+
+	{
+		Lock l( model.mResourceLock );
+		cleanChildren();
+	}
 
 	const auto& displayCfg = model.getDisplayConfig();
-
-	auto files = FileSystem::filesInfoGetInPath( mInfo.getFilepath(), false, displayCfg.sortByName,
-												 displayCfg.foldersFirst, displayCfg.ignoreHidden );
+	auto files = FileSystem::filesInfoGetInPath(
+		mInfo.getFilepath(), false, displayCfg.sortByName, displayCfg.foldersFirst,
+		displayCfg.ignoreHidden,
+		[&model] { return model.mShutingDown.load( std::memory_order::memory_order_relaxed ); } );
 
 	const auto& patterns = displayCfg.acceptedExtensions;
 	bool accepted;
-	for ( auto file : files ) {
+	std::vector<Node*> newChildren;
+	newChildren.reserve( files.size() );
+
+	for ( auto& file : files ) {
 		if ( ( model.getMode() == Mode::DirectoriesOnly &&
 			   ( file.isDirectory() || file.linksToDirectory() ) ) ||
 			 model.getMode() == Mode::FilesAndDirectories ) {
@@ -227,12 +261,14 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 				if ( displayCfg.fileIsVisibleFn &&
 					 !displayCfg.fileIsVisibleFn( file.getFilepath() ) )
 					continue;
-				mChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
+				newChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
 			} else {
 				accepted = false;
-				if ( patterns.size() ) {
-					for ( size_t z = 0; z < patterns.size(); z++ ) {
-						if ( patterns[z] == FileSystem::fileExtension( file.getFilepath() ) ) {
+				size_t psize = patterns.size();
+				if ( psize ) {
+					auto ext( FileSystem::fileExtension( file.getFilepath() ) );
+					for ( size_t z = 0; z < psize; z++ ) {
+						if ( patterns[z] == ext ) {
 							accepted = true;
 							break;
 						}
@@ -247,16 +283,38 @@ void FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 				}
 
 				if ( accepted )
-					mChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
+					newChildren.emplace_back( eeNew( Node, ( std::move( file ), this ) ) );
 			}
 		}
 	}
+
+	{
+		Lock l( model.mResourceLock );
+		mChildren = std::move( newChildren );
+	}
+
+	mHasTraversed = true;
+	mQueuedForTraversal = false;
+	return true;
 }
 
-void FileSystemModel::Node::refreshIfNeeded( const FileSystemModel& model ) {
-	traverseIfNeeded( model );
+bool FileSystemModel::Node::refreshIfNeeded( const FileSystemModel& model,
+											 const std::shared_ptr<ThreadPool>& threadPool ) {
+	bool res = false;
+	if ( threadPool ) {
+		if ( !mInfo.isDirectory() || mHasTraversed || mIsTraversing || mQueuedForTraversal )
+			return false;
+		threadPool->run( [this, &model] {
+			traverseIfNeeded( model );
+			model.refreshView();
+		} );
+		return true;
+	} else {
+		res = traverseIfNeeded( model );
+	}
 	if ( mInfoDirty )
 		fetchData( fullPath() );
+	return res;
 }
 
 bool FileSystemModel::Node::fetchData( const String& fullPath ) {
@@ -281,25 +339,30 @@ void FileSystemModel::Node::updateMimeType() {
 std::shared_ptr<FileSystemModel> FileSystemModel::New( const std::string& rootPath,
 													   const FileSystemModel::Mode& mode,
 													   const DisplayConfig& displayConfig,
-													   Translator* translator ) {
+													   Translator* translator,
+													   std::shared_ptr<ThreadPool> threadPool ) {
 	return std::shared_ptr<FileSystemModel>(
-		new FileSystemModel( rootPath, mode, displayConfig, translator ) );
+		new FileSystemModel( rootPath, mode, displayConfig, translator, threadPool ) );
 }
 
 FileSystemModel::FileSystemModel( const std::string& rootPath, const FileSystemModel::Mode& mode,
-								  const DisplayConfig& displayConfig, Translator* translator ) :
+								  const DisplayConfig& displayConfig, Translator* translator,
+								  std::shared_ptr<ThreadPool> threadPool ) :
 	mRootPath( rootPath ),
 	mRealRootPath( FileSystem::getRealPath( rootPath ) ),
 	mMode( mode ),
-	mDisplayConfig( displayConfig ) {
-	mRoot = std::make_unique<Node>( mRootPath, *this );
+	mDisplayConfig( displayConfig ),
+	mThreadPool( threadPool ) {
+	mRoot = std::make_unique<Node>( mRootPath, *this, threadPool );
 	mInitOK = true;
 	setupColumnNames( translator );
 	invalidate();
 }
 
 FileSystemModel::~FileSystemModel() {
+	mShutingDown = true;
 	mInitOK = false;
+	mRoot.reset();
 }
 
 const std::string& FileSystemModel::getRootPath() const {
@@ -333,7 +396,11 @@ FileSystemModel::Node* FileSystemModel::getNodeFromPath( std::string path, bool 
 	if ( !folders.empty() ) {
 		for ( size_t i = 0; i < folders.size(); i++ ) {
 			auto& part = folders[i];
-			if ( ( foundNode = curNode->findChildName( part, *this, invalidateTree ) ) ) {
+			{
+				Lock l( mResourceLock );
+				foundNode = curNode->findChildName( part, *this, invalidateTree );
+			}
+			if ( foundNode ) {
 				curNode = foundNode;
 			} else {
 				return nullptr;
@@ -356,13 +423,15 @@ void FileSystemModel::reload() {
 }
 
 void FileSystemModel::refresh() {
-	Lock l( resourceMutex() );
-	mRoot->refresh( *this );
+	{
+		Lock l( resourceMutex() );
+		mRoot->refresh( *this );
+	}
 	invalidate();
 }
 
 void FileSystemModel::update() {
-	mRoot = std::make_unique<Node>( mRootPath, *this );
+	mRoot = std::make_unique<Node>( mRootPath, *this, mThreadPool );
 	invalidate();
 }
 
@@ -379,7 +448,12 @@ FileSystemModel::Node& FileSystemModel::nodeRef( const ModelIndex& index ) const
 
 size_t FileSystemModel::rowCount( const ModelIndex& index ) const {
 	Node& node = const_cast<Node&>( this->node( index ) );
-	node.refreshIfNeeded( *this );
+	if ( node.mIsTraversing )
+		return 0;
+	bool isThreaded = mThreadPool && &node == mRoot.get();
+	bool res = node.refreshIfNeeded( *this, isThreaded ? mThreadPool : nullptr );
+	if ( isThreaded && res )
+		return 0;
 	if ( node.info().isDirectory() )
 		return node.mChildren.size();
 	return 0;
@@ -387,6 +461,13 @@ size_t FileSystemModel::rowCount( const ModelIndex& index ) const {
 
 size_t FileSystemModel::columnCount( const ModelIndex& ) const {
 	return Column::Count;
+}
+
+bool FileSystemModel::hasChilds( const ModelIndex& index ) const {
+	Node& node = const_cast<Node&>( this->node( index ) );
+	if ( node.mInfoDirty )
+		node.fetchData( node.fullPath() );
+	return node.mInfo.isDirectory();
 }
 
 std::string FileSystemModel::columnName( const size_t& column ) const {
@@ -498,7 +579,11 @@ ModelIndex FileSystemModel::index( int row, int column, const ModelIndex& parent
 	if ( row < 0 || column < 0 )
 		return {};
 	auto& node = this->node( parent );
-	const_cast<Node&>( node ).refreshIfNeeded( *this );
+	bool isThreaded = mThreadPool && &node == mRoot.get();
+	bool res =
+		const_cast<Node&>( node ).refreshIfNeeded( *this, isThreaded ? mThreadPool : nullptr );
+	if ( isThreaded && res )
+		return {};
 	if ( static_cast<size_t>( row ) >= node.mChildren.size() )
 		return {};
 	return createIndex( row, column, node.mChildren[row] );
@@ -543,6 +628,7 @@ void FileSystemModel::setPreviouslySelectedIndex( const ModelIndex& previouslySe
 
 size_t FileSystemModel::getFileIndex( Node* parent, const FileInfo& file ) {
 	std::vector<FileInfo> files;
+	files.reserve( parent->mChildren.size() + 1 );
 
 	for ( Node* nodeFile : parent->mChildren ) {
 		files.emplace_back( nodeFile->info() );
@@ -553,26 +639,14 @@ size_t FileSystemModel::getFileIndex( Node* parent, const FileInfo& file ) {
 
 	files.emplace_back( file );
 
-	std::sort( files.begin(), files.end(), []( FileInfo a, FileInfo b ) {
+	std::sort( files.begin(), files.end(), []( const FileInfo& a, const FileInfo& b ) {
 		return std::strncmp( a.getFileName().c_str(), b.getFileName().c_str(),
 							 a.getFileName().size() ) < 0;
 	} );
 
 	if ( getDisplayConfig().foldersFirst ) {
-		std::vector<FileInfo> folders;
-		std::vector<FileInfo> file;
-		for ( size_t i = 0; i < files.size(); i++ ) {
-			if ( files[i].isDirectory() ) {
-				folders.push_back( files[i] );
-			} else {
-				file.push_back( files[i] );
-			}
-		}
-		files.clear();
-		for ( auto& folder : folders )
-			files.push_back( folder );
-		for ( auto& f : file )
-			files.push_back( f );
+		std::stable_partition( files.begin(), files.end(),
+							   []( const FileInfo& info ) { return info.isDirectory(); } );
 	}
 
 	size_t pos = parent->childCount();
@@ -629,10 +703,13 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 
 			beginInsertRows( parent->index( *this, 0 ), pos, pos );
 
-			if ( pos >= parent->mChildren.size() ) {
-				parent->mChildren.emplace_back( childNode );
-			} else {
-				parent->mChildren.insert( parent->mChildren.begin() + pos, childNode );
+			{
+				Lock l( mResourceLock );
+				if ( pos >= parent->mChildren.size() ) {
+					parent->mChildren.emplace_back( childNode );
+				} else {
+					parent->mChildren.insert( parent->mChildren.begin() + pos, childNode );
+				}
 			}
 
 			endInsertRows();
@@ -685,8 +762,11 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 			} );
 
 			if ( beginDeleteRows( index.parent(), index.row(), index.row() ) ) {
-				eeDelete( parent->mChildren[index.row()] );
-				parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+				{
+					Lock l( mResourceLock );
+					eeDelete( parent->mChildren[index.row()] );
+					parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+				}
 				endDeleteRows();
 			}
 
@@ -745,8 +825,11 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 			}
 
 			Node* childNode = parent->mChildren[index.row()];
-			childNode->rename( file );
-			parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+			{
+				Lock l( mResourceLock );
+				childNode->rename( file );
+				parent->mChildren.erase( parent->mChildren.begin() + index.row() );
+			}
 
 			size_t pos = getFileIndex( node->getParent(), file );
 
@@ -777,10 +860,13 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 
 			beginMoveRows( index.parent(), index.row(), index.row(), index.parent(), pos );
 
-			if ( pos >= parent->mChildren.size() ) {
-				parent->mChildren.emplace_back( childNode );
-			} else {
-				parent->mChildren.insert( parent->mChildren.begin() + pos, childNode );
+			{
+				Lock l( mResourceLock );
+				if ( pos >= parent->mChildren.size() ) {
+					parent->mChildren.emplace_back( childNode );
+				} else {
+					parent->mChildren.insert( parent->mChildren.begin() + pos, childNode );
+				}
 			}
 
 			endMoveRows();
@@ -790,7 +876,11 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 				std::vector<ModelIndex> newIndexes = keptSelections[view];
 				int i = 0;
 				for ( const auto& name : names ) {
-					Int64 row = parent->findChildRowFromName( name, *this );
+					Int64 row = -1;
+					{
+						Lock l( mResourceLock );
+						row = parent->findChildRowFromName( name, *this );
+					}
 					if ( row >= 0 ) {
 						newIndexes.emplace_back(
 							this->index( row, prevSelectionsModelIndex[view][i].column(),

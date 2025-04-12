@@ -1,22 +1,21 @@
 #include <eepp/system/clock.hpp>
-#include <eepp/system/platform/platformimpl.hpp>
 
 namespace EE { namespace System {
 
-Clock::Clock() : mClockImpl( new Platform::ClockImpl() ) {
+Clock::Clock() {
 	restart();
 }
 
-Clock::~Clock() {
-	delete mClockImpl;
-}
+Clock::~Clock() {}
 
 void Clock::restart() {
-	mClockImpl->restart();
+	mRefPoint = ClockImpl::now();
 }
 
 Time Clock::getElapsedTime() const {
-	return Microseconds( mClockImpl->getElapsedTime() );
+	return Microseconds(
+		std::chrono::duration_cast<std::chrono::microseconds>( ClockImpl::now() - mRefPoint )
+			.count() );
 }
 
 Time Clock::getElapsedTimeAndReset() {

@@ -105,23 +105,15 @@ bool ActionManager::removeActionsByTagFromTarget( Node* target, const Action::Un
 	return !removeList.empty();
 }
 
-void ActionManager::update( const Time& time ) {
-	if ( isEmpty() )
-		return;
-
+void ActionManager::update( const Time& time, Action** actions, size_t count ) {
 	std::vector<Action*> removeList;
 
-	mUpdating = true;
+	for ( size_t i = 0; i < count; i++ ) {
+		Action* action = actions[i];
 
-	// Actions can be added during action updates, we need to only iterate the current actions
-	std::vector<Action*> actions;
-	{
-		Lock l( mMutex );
-		actions = mActions;
-	}
-
-	for ( auto it = actions.begin(); it != actions.end(); ++it ) {
-		Action* action = *it;
+		if ( std::find( mActionsRemoveList.begin(), mActionsRemoveList.end(), action ) !=
+			 mActionsRemoveList.end() )
+			continue;
 
 		action->update( time );
 
@@ -141,6 +133,44 @@ void ActionManager::update( const Time& time ) {
 
 	for ( auto it = removeList.begin(); it != removeList.end(); ++it )
 		removeAction( *it );
+}
+
+void ActionManager::update( const Time& time ) {
+	if ( isEmpty() )
+		return;
+
+	mUpdating = true;
+	size_t size;
+
+	{
+		Lock l( mMutex );
+		size = mActions.size();
+	}
+
+	// Micro-optimization to avoid heap allocations during updates (which are done usually at 60 hz)
+	if ( size <= 8 ) {
+		Action* actions[8];
+		{
+			Lock l( mMutex );
+			std::copy( mActions.begin(), mActions.end(), actions );
+		}
+		update( time, actions, size );
+	} else if ( size <= 16 ) {
+		Action* actions[16];
+		{
+			Lock l( mMutex );
+			std::copy( mActions.begin(), mActions.end(), actions );
+		}
+		update( time, actions, size );
+	} else {
+		// Actions can be added during action updates, we need to only iterate the current actions
+		std::vector<Action*> actions;
+		{
+			Lock l( mMutex );
+			actions = mActions;
+		}
+		update( time, actions.data(), size );
+	}
 }
 
 std::size_t ActionManager::count() const {
@@ -177,7 +207,8 @@ bool ActionManager::removeAction( Action* action ) {
 
 				eeSAFE_DELETE( action );
 			}
-		} else {
+		} else if ( std::find( mActionsRemoveList.begin(), mActionsRemoveList.end(), action ) ==
+					mActionsRemoveList.end() ) {
 			mActionsRemoveList.emplace_back( action );
 		}
 

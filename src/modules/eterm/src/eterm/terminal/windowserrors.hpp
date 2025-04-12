@@ -26,6 +26,18 @@
 using namespace EE::System;
 
 #define NTDDI_VERSION NTDDI_WIN10_RS5
+#ifdef _WIN32_WINDOWS
+#undef _WIN32_WINDOWS
+#endif
+#ifdef _WIN32_WINNT
+#undef _WIN32_WINNT
+#endif
+#ifdef WINVER
+#undef WINVER
+#endif
+#define _WIN32_WINDOWS 0x0602
+#define _WIN32_WINNT 0x0602
+#define WINVER 0x0602
 #include <comdef.h>
 #include <iostream>
 #include <string>

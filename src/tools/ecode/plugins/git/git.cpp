@@ -323,8 +323,8 @@ Git::CountResult Git::branchHistoryPosition( const std::string& localBranch,
 		String::trimInPlace( buf );
 		auto results = String::split( buf, '\t' );
 		if ( results.size() == 2 ) {
-			int64_t behind = 0;
-			int64_t ahead = 0;
+			Int64 behind = 0;
+			Int64 ahead = 0;
 			if ( String::fromString( ahead, results[0] ) &&
 				 String::fromString( behind, results[1] ) ) {
 				res.ahead = ahead;
@@ -372,12 +372,12 @@ static void parseAheadBehind( std::string_view aheadBehind, Git::Branch& branch 
 		s = String::trim( s );
 		if ( String::startsWith( s, BEHIND ) ) {
 			std::string numStr = std::string{ s.substr( BEHIND.size() ) };
-			int64_t val = 0;
+			Int64 val = 0;
 			if ( String::fromString( val, numStr ) )
 				branch.behind = val;
 		} else if ( String::startsWith( s, AHEAD ) ) {
 			std::string numStr = std::string{ s.substr( AHEAD.size() ) };
-			int64_t val = 0;
+			Int64 val = 0;
 			if ( String::fromString( val, numStr ) )
 				branch.ahead = val;
 		}
@@ -392,7 +392,7 @@ Git::Branch parseLocalBranch( const std::string_view& raw ) {
 	std::string remote( std::string{ split[2] } );
 	std::string commitHash( std::string{ split[3] } );
 	auto ret = Git::Branch{ std::move( name ), std::move( remote ), Git::RefType::Head,
-							std::move( commitHash ) };
+							std::move( commitHash ), "" };
 	if ( split.size() > 4 )
 		parseAheadBehind( split[4], ret );
 	return ret;
@@ -406,7 +406,7 @@ static Git::Branch parseRemoteBranch( std::string_view raw ) {
 	std::string remote( std::string{ split[1] } );
 	std::string commitHash( std::string{ split[3] } );
 	auto ret = Git::Branch{ std::move( name ), std::move( remote ), Git::RefType::Remote,
-							std::move( commitHash ) };
+							std::move( commitHash ), "" };
 	if ( split.size() > 4 )
 		parseAheadBehind( split[4], ret );
 	return ret;
@@ -460,22 +460,26 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 		} );
 	}
 
-	if ( ( ref & RefType::Stash ) && EXIT_SUCCESS == git( "stash list", projectDir, buf ) ) {
+	if ( ( ref & RefType::Stash ) &&
+		 EXIT_SUCCESS == git( "stash list --date=format:\"%Y-%m-%d %H:%M\"", projectDir, buf ) ) {
 		branches.reserve( branches.size() + StringHelper::countLines( buf ) );
-		std::string ptrn( "(stash@{%d+}):%s(.*)" );
+		std::string ptrn( "stash@{(.*)}:%s(.*)" );
 		LuaPattern pattern( ptrn );
+		Uint64 id = 0;
 		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
-			LuaPattern::Range matches[3];
+			PatternMatcher::Range matches[3];
 			if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
-				std::string id(
+				std::string date(
 					line.substr( matches[1].start, matches[1].end - matches[1].start ) );
 				std::string name(
 					line.substr( matches[2].start, matches[2].end - matches[2].start ) );
 				Git::Branch newBranch;
 				newBranch.type = RefType::Stash;
 				newBranch.name = std::move( name );
-				newBranch.remote = std::move( id );
+				newBranch.remote = String::format( "stash@{%llu}", id );
+				newBranch.date = date;
 				branches.emplace_back( std::move( newBranch ) );
+				id++;
 			}
 		} );
 	}
@@ -490,7 +494,7 @@ std::vector<std::string> Git::fetchSubModules( const std::string& projectDir ) {
 	std::string ptrn( "^%s*path%s*=%s*(.+)" );
 	LuaPattern pattern( ptrn );
 	StringHelper::readBySeparator( buf, [&pattern, &submodules]( const std::string_view& line ) {
-		LuaPattern::Range matches[2];
+		PatternMatcher::Range matches[2];
 		if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
 			submodules.emplace_back( String::trim(
 				line.substr( matches[1].start, matches[1].end - matches[1].start ), '\n' ) );
@@ -580,7 +584,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 			return;
 
 		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
-			LuaPattern::Range matches[3];
+			PatternMatcher::Range matches[3];
 			if ( subModulePattern.matches( line.data(), 0, matches, line.size() ) ) {
 				subModulePath = String::trim(
 					line.substr( matches[1].start, matches[1].end - matches[1].start ) );
@@ -610,7 +614,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				if ( status.symbol == GitStatusChar::Renamed ) {
 					std::string rptrn( ".*%s%-%>%s(.*)" );
 					LuaPattern rpattern( rptrn );
-					LuaPattern::Range rranges[2];
+					PatternMatcher::Range rranges[2];
 					if ( rpattern.matches( file.data(), 0, rranges, file.size() ) )
 						file = file.substr( rranges[1].start, rranges[1].end - rranges[1].start );
 				}
@@ -656,7 +660,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 		LuaPattern pattern( ptrn );
 		std::string subModulePath = "";
 		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
-			LuaPattern::Range matches[4];
+			PatternMatcher::Range matches[4];
 			if ( subModulePattern.matches( line.data(), 0, matches, line.size() ) ) {
 				subModulePath = String::trim(
 					line.substr( matches[1].start, matches[1].end - matches[1].start ) );

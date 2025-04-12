@@ -3,20 +3,14 @@
 
 #include <eepp/core.hpp>
 #include <eepp/core/noncopyable.hpp>
+#include <mutex>
 
 namespace EE { namespace System {
 
-namespace Platform {
-class MutexImpl;
-}
-
-/** @brief Blocks concurrent access to shared resources from multiple threads */
+/** @brief Blocks concurrent access to shared resources from multiple threads. This class is being
+ * kept for historical reasons. */
 class EE_API Mutex : NonCopyable {
   public:
-	Mutex();
-
-	~Mutex();
-
 	/** @brief Lock the mutex
 	**	If the mutex is already locked in another thread,
 	**	this call will block the execution until the mutex
@@ -27,10 +21,10 @@ class EE_API Mutex : NonCopyable {
 	void unlock();
 
 	/** @brief Tries to lock de mutex if possible */
-	int tryLock();
+	bool tryLock();
 
   private:
-	Platform::MutexImpl* mMutexImpl;
+	std::recursive_mutex mMutexImpl;
 };
 
 }} // namespace EE::System

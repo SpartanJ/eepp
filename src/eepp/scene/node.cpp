@@ -6,6 +6,7 @@
 #include <eepp/scene/node.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
+#include <eepp/window/engine.hpp>
 
 namespace EE { namespace Scene {
 
@@ -510,7 +511,7 @@ void Node::onSizeChange() {
 	invalidateDraw();
 }
 
-Rectf Node::getScreenBounds() {
+Rectf Node::getScreenBounds() const {
 	return Rectf( Vector2f( mScreenPosi.x, mScreenPosi.y ),
 				  Sizef( (Float)(int)mSize.getWidth(), (Float)(int)mSize.getHeight() ) );
 }
@@ -1190,6 +1191,15 @@ Uint32 Node::onClick( const std::function<void( const MouseEvent* )>& callback,
 	} );
 }
 
+Uint32 Node::onDoubleClick( const std::function<void( const MouseEvent* )>& callback,
+							const MouseButton& button ) {
+	return on( Event::MouseDoubleClick, [callback, button]( const Event* event ) {
+		if ( event->asMouseEvent()->getFlags() & ( EE_BUTTON_MASK( button ) ) ) {
+			callback( event->asMouseEvent() );
+		}
+	} );
+}
+
 bool Node::hasEventsOfType( const Uint32& eventType ) const {
 	return mEvents.find( eventType ) != mEvents.end();
 }
@@ -1227,7 +1237,7 @@ void Node::clearEventListener() {
 
 void Node::sendEvent( const Event* event ) {
 	if ( 0 != mEvents.count( event->getType() ) ) {
-		std::map<Uint32, EventCallback> eventMap = mEvents[event->getType()];
+		auto eventMap = mEvents[event->getType()];
 		if ( eventMap.begin() != eventMap.end() ) {
 			std::map<Uint32, EventCallback>::iterator it;
 			for ( it = eventMap.begin(); it != eventMap.end(); ++it ) {
@@ -1576,21 +1586,34 @@ void Node::clearActions() {
 }
 
 void Node::runOnMainThread( Actions::Runnable::RunnableFunc runnable, const Time& delay,
-							const Uint32& uniqueIdentifier ) {
+							const Action::UniqueID& uniqueIdentifier ) {
 	Action* action = Actions::Runnable::New( std::move( runnable ), delay );
 	action->setTag( uniqueIdentifier );
 	runAction( action );
 }
 
+bool Node::ensureMainThread( Actions::Runnable::RunnableFunc runnable,
+							 const Action::UniqueID& uniqueIdentifier ) {
+	if ( Engine::isRunninMainThread() ) {
+		runnable();
+		return true;
+	} else {
+		Action* action = Actions::Runnable::New( std::move( runnable ) );
+		action->setTag( uniqueIdentifier );
+		runAction( action );
+	}
+	return false;
+}
+
 void Node::setTimeout( Actions::Runnable::RunnableFunc runnable, const Time& delay,
-					   const Uint32& uniqueIdentifier ) {
+					   const Action::UniqueID& uniqueIdentifier ) {
 	Action* action = Actions::Runnable::New( std::move( runnable ), delay );
 	action->setTag( uniqueIdentifier );
 	runAction( action );
 }
 
 void Node::debounce( Actions::Runnable::RunnableFunc runnable, const Time& delay,
-					 const Uint32& uniqueIdentifier ) {
+					 const Action::UniqueID& uniqueIdentifier ) {
 	Action* prevAction =
 		getActionManager()->getActionByTagFromTarget( this, uniqueIdentifier, true );
 	if ( prevAction ) {
@@ -1603,7 +1626,7 @@ void Node::debounce( Actions::Runnable::RunnableFunc runnable, const Time& delay
 }
 
 void Node::setInterval( Actions::Runnable::RunnableFunc runnable, const Time& interval,
-						const Uint32& uniqueIdentifier ) {
+						const Action::UniqueID& uniqueIdentifier ) {
 	Action* action = Actions::Runnable::New( std::move( runnable ), interval, true );
 	action->setTag( uniqueIdentifier );
 	runAction( action );
