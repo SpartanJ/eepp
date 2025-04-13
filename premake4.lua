@@ -1587,7 +1587,7 @@ solution "eepp"
 			links { "dbghelp", "psapi" }
 		end
 		if os.is("haiku") then
-			links { "bsd" }
+			links { "bsd", "network" }
 		end
 		if os.is("windows") and not is_vs() then
 			if os.is64bit() then

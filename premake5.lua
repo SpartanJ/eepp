@@ -1441,7 +1441,7 @@ workspace "eepp"
 		filter { "system:windows" }
 			links { "dbghelp", "psapi" }
 		filter "system:haiku"
-			links { "bsd" }
+			links { "bsd", "network" }
 		filter "system:bsd"
 			links { "util" }
 
