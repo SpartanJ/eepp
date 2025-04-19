@@ -2779,7 +2779,8 @@ TextDocument::SearchResult TextDocument::findTextLast( String text, TextPosition
 TextDocument::SearchResult TextDocument::find( const String& text, TextPosition from,
 											   bool caseSensitive, bool wholeWord,
 											   FindReplaceType type, TextRange restrictRange ) {
-	std::vector<String> textLines = text.split( '\n', true, true );
+	std::vector<String> textLines = type == FindReplaceType::Normal ? text.split( '\n', true, true )
+																	: std::vector<String>{ text };
 
 	if ( textLines.empty() || textLines.size() > mLines.size() )
 		return {};

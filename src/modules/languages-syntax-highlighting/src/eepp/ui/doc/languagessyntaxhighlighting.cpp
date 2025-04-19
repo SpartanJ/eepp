@@ -39,6 +39,7 @@
 #include <eepp/ui/doc/languages/hlsl.hpp>
 #include <eepp/ui/doc/languages/htaccess.hpp>
 #include <eepp/ui/doc/languages/ignorefile.hpp>
+#include <eepp/ui/doc/languages/ispc.hpp>
 #include <eepp/ui/doc/languages/jai.hpp>
 #include <eepp/ui/doc/languages/janet.hpp>
 #include <eepp/ui/doc/languages/java.hpp>
@@ -151,6 +152,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addHLSL();
 	addHtaccessFile();
 	addIgnoreFile();
+	addISPC();
 	addJai();
 	addJanet();
 	addJava();
