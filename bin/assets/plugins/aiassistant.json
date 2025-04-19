@@ -130,6 +130,11 @@
           "name": "gemini-2.5-pro-exp-03-25",
           "display_name": "Gemini 2.5 Pro Experimental",
           "max_tokens": 1000000
+        },
+        {
+          "name": "gemini-2.5-flash-preview-04-17",
+          "display_name": "Gemini 2.5 Flash Preview",
+          "max_tokens": 1000000
         }
       ]
     },
@@ -217,6 +222,27 @@
         {
           "max_tokens": 200000,
           "name": "o3-mini"
+        },
+        {
+          "name": "gpt-4.1-nano"
+        },
+        {
+          "name": "gpt-4.1-mini"
+        },
+        {
+          "name": "gpt-4.1"
+        },
+        {
+          "name": "o4-mini"
+        },
+        {
+          "name": "o3"
+        },
+        {
+          "name": "o1-pro"
+        },
+        {
+          "name": "gpt-4.5-preview"
         }
       ],
       "version": 1

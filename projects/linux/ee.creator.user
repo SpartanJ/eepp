@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 16.0.0, 2025-04-12T17:50:49. -->
+<!-- Written by QtCreator 16.0.0, 2025-04-12T23:39:59. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -244,7 +244,7 @@
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
-      <value type="QString" key="ProjectExplorer.ProcessStep.Arguments">--with-debug-symbols --with-text-shaper gmake</value>
+      <value type="QString" key="ProjectExplorer.ProcessStep.Arguments">--with-debug-symbols --disable-static-build --with-text-shaper gmake</value>
       <value type="QString" key="ProjectExplorer.ProcessStep.Command">premake4</value>
       <value type="QString" key="ProjectExplorer.ProcessStep.WorkingDirectory">%{buildDir}../../../</value>
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.ProcessStep</value>
@@ -1199,7 +1199,6 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey"></value>
     <value type="bool" key="ProjectExplorer.RunConfiguration.Customized">true</value>
-    <value type="QString" key="RunConfiguration.Arguments">/home/downloads/files/svn/janet</value>
     <value type="int" key="RunConfiguration.UseCppDebugger">0</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">false</value>
     <value type="int" key="RunConfiguration.UseQmlDebugger">1</value>
