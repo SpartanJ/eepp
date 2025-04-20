@@ -72,6 +72,7 @@
 #include <eepp/ui/doc/languages/powershell.hpp>
 #include <eepp/ui/doc/languages/r.hpp>
 #include <eepp/ui/doc/languages/rave.hpp>
+#include <eepp/ui/doc/languages/rescript.hpp>
 #include <eepp/ui/doc/languages/ring.hpp>
 #include <eepp/ui/doc/languages/ruby.hpp>
 #include <eepp/ui/doc/languages/rust.hpp>
@@ -184,6 +185,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addPowerShell();
 	addR();
 	addRave();
+	addRescript();
 	addRuby();
 	addRust();
 	addSass();

@@ -64,7 +64,7 @@ void addPony() {
 			  { "iftype", "keyword" },
 			  { "struct", "keyword" },
 			  { "break", "keyword2" },
-			  { "is", "keyword2" },
+			  { "is", "keyword" },
 			  { "use", "keyword" },
 			  { "or", "keyword2" },
 			  { "until", "keyword" },
