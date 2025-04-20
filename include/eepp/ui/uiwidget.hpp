@@ -197,9 +197,9 @@ class EE_API UIWidget : public UINode {
 
 	UIStyle* getUIStyle() const;
 
-	void reloadStyle( const bool& reloadChilds = true, const bool& disableAnimations = false,
-					  const bool& reportStateChange = true,
-					  const bool& forceReApplyProperties = false );
+	void reloadStyle( bool reloadChilds = true, bool disableAnimations = false,
+					  bool reportStateChange = true, bool forceReApplyProperties = false,
+					  bool resetPropertyCache = false );
 
 	void beginAttributesTransaction();
 

@@ -768,6 +768,14 @@ void UIMenu::findBestMenuPos( Vector2f& pos, UIWidget* menu, UIMenu* parent,
 						pos.x = 0;
 					if ( pos.y < 0 )
 						pos.y = 0;
+
+					qPos.Left = qParent.Right;
+					qPos.Top = pos.y;
+					qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
+					qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+					if ( qScreen.contains( qPos ) && ( !clipMenu || !qPrevMenu.overlap( qPos ) ) ) {
+						pos.x = qPos.Left;
+					}
 				}
 			}
 		}

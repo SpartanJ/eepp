@@ -233,9 +233,11 @@ UIMenu* SettingsMenu::createFileTypeMenu( bool emptyMenu ) {
 					  mSplitter->getCurEditor()->getSyntaxDefinition().getLanguageName() == name );
 
 		if ( mFileTypeMenues.size() == 1 && menu->getCount() == 1 ) {
+			auto menuBar = mUISceneNode->findByType( UI_TYPE_MENUBAR );
 			menu->reloadStyle( true, true );
 			Float height = menu->getPixelsSize().getHeight();
-			Float tHeight = mUISceneNode->getPixelsSize().getHeight();
+			Float tHeight = mUISceneNode->getPixelsSize().getHeight() -
+							( menuBar ? menuBar->getPixelsSize().getHeight() : 0 );
 			maxItems = (int)eeceil( tHeight / height ) - 2;
 		}
 
@@ -276,9 +278,11 @@ UIMenu* SettingsMenu::createColorSchemeMenu( bool emptyMenu ) {
 							  mSplitter->getCurrentColorSchemeName() == colorScheme.first );
 
 		if ( mColorSchemeMenues.size() == 1 && menu->getCount() == 1 ) {
+			auto menuBar = mUISceneNode->findByType( UI_TYPE_MENUBAR );
 			menu->reloadStyle( true, true );
 			Float height = menu->getPixelsSize().getHeight();
-			Float tHeight = mUISceneNode->getPixelsSize().getHeight();
+			Float tHeight = mUISceneNode->getPixelsSize().getHeight() -
+							( menuBar ? menuBar->getPixelsSize().getHeight() : 0 );
 			maxItems = (int)eeceil( tHeight / height ) - 2;
 		}
 

@@ -35,7 +35,8 @@ class EE_API StyleSheetProperty {
 	StyleSheetProperty();
 
 	explicit StyleSheetProperty( const PropertyDefinition* definition, const std::string& value,
-								 const Uint32& index = 0, bool trimValue = true );
+								 const Uint32& index = 0, bool trimValue = true,
+								 bool cachedProperty = false );
 
 	explicit StyleSheetProperty( const std::string& name, const std::string& value,
 								 const bool& trimValue = true, const Uint32& specificity = 0,
@@ -177,6 +178,10 @@ class EE_API StyleSheetProperty {
 
 	const std::vector<VariableFunctionCache>& getVarCache() const;
 
+	StyleSheetProperty& setCachedProperty( bool cached );
+
+	bool isCachedProperty() const;
+
   protected:
 	std::string mName;
 	String::HashType mNameHash;
@@ -187,6 +192,7 @@ class EE_API StyleSheetProperty {
 	bool mVolatile;
 	bool mImportant;
 	bool mIsVarValue;
+	bool mCachedProperty{ false };
 	const PropertyDefinition* mPropertyDefinition;
 	const ShorthandDefinition* mShorthandDefinition;
 	std::vector<StyleSheetProperty> mIndexedProperty;

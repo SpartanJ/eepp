@@ -157,7 +157,8 @@ class EE_API UISceneNode : public SceneNode {
 
 	void nodeToWorldTranslation( Vector2f& Pos ) const;
 
-	void reloadStyle( bool disableAnimations = false, bool forceReApplyProperties = false );
+	void reloadStyle( bool disableAnimations = false, bool forceReApplyProperties = false,
+					  bool resetPropertiesCache = false );
 
 	bool hasThreadPool() const;
 

@@ -39,6 +39,8 @@ class EE_API StyleSheetStyle {
 
 	void clearProperties();
 
+	void clearCachedProperties();
+
 	bool hasProperties() const;
 
 	bool hasProperty( PropertyId id ) const;

@@ -68,6 +68,10 @@ void UIStyle::resetGlobalDefinition() {
 	mLoadedVersion = stylesheet.getVersion();
 }
 
+void UIStyle::resetCachedProperties() {
+	mElementStyle->clearCachedProperties();
+}
+
 void UIStyle::load() {
 	removeStructurallyVolatileWidgetFromParent();
 
@@ -423,8 +427,8 @@ void UIStyle::applyStyleSheetProperty( const StyleSheetProperty& property,
 			std::string value(
 				mWidget->getPropertyString( propertyDefinition, property.getIndex() ) );
 			if ( !value.empty() ) {
-				setStyleSheetProperty(
-					StyleSheetProperty( propertyDefinition, value, property.getIndex() ) );
+				setStyleSheetProperty( StyleSheetProperty( propertyDefinition, value,
+														   property.getIndex(), true, true ) );
 			}
 		}
 	}

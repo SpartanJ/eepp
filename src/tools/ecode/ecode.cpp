@@ -1669,7 +1669,7 @@ void App::setTheme( const std::string& path ) {
 
 	mTheme = theme;
 
-	mUISceneNode->reloadStyle( true, true );
+	mUISceneNode->reloadStyle( true, true, true );
 
 	if ( !firstFrame )
 		mPluginManager->setUIThemeReloaded();

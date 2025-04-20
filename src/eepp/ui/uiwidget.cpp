@@ -568,7 +568,8 @@ void UIWidget::notifyLayoutAttrChange() {
 }
 
 void UIWidget::notifyLayoutAttrChangeParent() {
-	if ( NULL == mParentNode ) return;
+	if ( NULL == mParentNode )
+		return;
 
 	if ( 0 == mAttributesTransactionCount ) {
 		NodeMessage msg( this, NodeMessage::LayoutAttributeChange );
@@ -1100,8 +1101,8 @@ UIStyle* UIWidget::getUIStyle() const {
 	return mStyle;
 }
 
-void UIWidget::reloadStyle( const bool& reloadChilds, const bool& disableAnimations,
-							const bool& reportStateChange, const bool& forceReApplyProperties ) {
+void UIWidget::reloadStyle( bool reloadChilds, bool disableAnimations, bool reportStateChange,
+							bool forceReApplyProperties, bool resetPropertyCache ) {
 	createStyle();
 
 	if ( NULL == mStyle )
@@ -1109,13 +1110,17 @@ void UIWidget::reloadStyle( const bool& reloadChilds, const bool& disableAnimati
 
 	mStyle->load();
 
+	if ( resetPropertyCache )
+		mStyle->resetCachedProperties();
+
 	if ( NULL != getFirstChild() && reloadChilds ) {
 		Node* child = getFirstChild();
 
 		while ( NULL != child ) {
 			if ( child->isWidget() )
 				child->asType<UIWidget>()->reloadStyle( reloadChilds, disableAnimations,
-														reportStateChange, forceReApplyProperties );
+														reportStateChange, forceReApplyProperties,
+														resetPropertyCache );
 
 			child = child->getNextNode();
 		}
