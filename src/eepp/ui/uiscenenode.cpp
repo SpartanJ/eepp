@@ -1085,7 +1085,7 @@ void UISceneNode::setColorSchemePreference( const ColorSchemePreference& colorSc
 		if ( !mStyleSheet.isMediaQueryListEmpty() ) {
 			if ( mStyleSheet.updateMediaLists( getMediaFeatures() ) ) {
 				mStyleSheet.invalidateCache();
-				mRoot->reloadStyle( true, true, true, true );
+				mRoot->reloadStyle( true, true, true, true, true );
 			}
 		}
 	}
