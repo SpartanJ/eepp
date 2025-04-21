@@ -25,6 +25,7 @@
 #include <eepp/ui/doc/languages/environmentfile.hpp>
 #include <eepp/ui/doc/languages/fantom.hpp>
 #include <eepp/ui/doc/languages/fennel.hpp>
+#include <eepp/ui/doc/languages/fixscript.hpp>
 #include <eepp/ui/doc/languages/flow9.hpp>
 #include <eepp/ui/doc/languages/fortran.hpp>
 #include <eepp/ui/doc/languages/fstab.hpp>
@@ -139,6 +140,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addEnvironmentFile();
 	addFantom();
 	addFennel();
+	addFixScript();
 	addFlow9();
 	addFortran();
 	addFstab();
