@@ -4028,7 +4028,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 					 mWindow->getInput()->getElapsedSinceLastKeyboardOrMouseEvent().asSeconds() <
 						 60.f ) {
 					saveProject( true );
-#if EE_PLATFORM == EE_PLATFORM_LINUX
+#if EE_PLATFORM == EE_PLATFORM_LINUX && defined( __GLIBC__ )
 					mThreadPool->run( [] { malloc_trim( 0 ); } );
 #endif
 				}

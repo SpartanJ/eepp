@@ -1033,10 +1033,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 								bool ignoreSelectionMatch = false,
 								const DocumentViewLineRange& visibleLineRange = {} );
 
-	virtual void drawWhitespaces( const DocumentLineRange& lineRange, const Vector2f& startScroll,
-								  const Float& lineHeight,
-								  const DocumentViewLineRange& visibleLineRange );
-
 	virtual void drawIndentationGuides( const DocumentLineRange& lineRange,
 										const Vector2f& startScroll, const Float& lineHeight );
 

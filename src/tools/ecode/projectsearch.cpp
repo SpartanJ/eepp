@@ -296,7 +296,7 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 				if ( count == 0 ) {
 					result( findData->res );
 					eeDelete( findData );
-#if EE_PLATFORM == EE_PLATFORM_LINUX
+#if EE_PLATFORM == EE_PLATFORM_LINUX && defined( __GLIBC__ )
 					malloc_trim( 0 );
 #endif
 				}

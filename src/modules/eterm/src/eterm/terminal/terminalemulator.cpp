@@ -710,7 +710,7 @@ int TerminalEmulator::rowCount() const {
 }
 
 void TerminalEmulator::trimMemory() {
-#if EE_PLATFORM == EE_PLATFORM_LINUX
+#if EE_PLATFORM == EE_PLATFORM_LINUX && defined( __GLIBC__ )
 	if ( mAllowMemoryTrimnming ) {
 		malloc_trim( 0 );
 	}
