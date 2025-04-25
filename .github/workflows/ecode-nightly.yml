@@ -83,12 +83,12 @@ jobs:
           sudo update-alternatives --set c++ /usr/bin/g++
           sudo update-alternatives --config gcc
           sudo update-alternatives --config g++
-          sudo apt-get install -y libfuse2 fuse premake4 mesa-common-dev libgl1-mesa-dev
+          sudo apt-get install -y libfuse2 fuse premake4 mesa-common-dev libgl1-mesa-dev ninja-build
           bash projects/linux/scripts/install_sdl2.sh
       - name: Build ecode
         run: |
           bash projects/scripts/patch_commit_number.sh
-          bash projects/linux/ecode/build.app.sh --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }}
+          bash projects/linux/ecode/build.app.sh --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }} --patch-glibc
       - name: Upload Files
         uses: softprops/action-gh-release@v2
         with:
