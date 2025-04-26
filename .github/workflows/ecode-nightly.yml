@@ -71,10 +71,22 @@ jobs:
           sudo apt-get update
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          submodules: 'recursive'
-          set-safe-directory: true
+        with: { fetch-depth: 0, submodules: 'recursive', set-safe-directory: true }
+      - name: Configure Git Safe Directory and Verify
+        run: |
+          echo "--- Git Safe Directory Debug ---"
+          echo "Workspace: ${{ github.workspace }}"
+          echo "User: $(whoami)"
+          echo "Workspace Owner:"
+          ls -ld "${{ github.workspace }}"
+          echo "Git Directory Owner:"
+          ls -ld "${{ github.workspace }}/.git"
+          echo "Current Git Global Config:"
+          git config --global --list || echo "No global config yet"
+          echo "Adding safe directory: ${{ github.workspace }}"
+          git config --global --add safe.directory "${{ github.workspace }}"
+          echo "New Git Global Config:"
+          git config --global --list
       - name: Set Environment Variables
         run: |
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
