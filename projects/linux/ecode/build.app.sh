@@ -4,12 +4,17 @@ DIRPATH="$(dirname "$CANONPATH")"
 cd "$DIRPATH" || exit
 cd ../../../ || exit
 DEBUG_SYMBOLS=
+STATIC_CPP=
 VERSION=
 ARCH=$(arch)
 for i in "$@"; do
     case $i in
         --with-debug-symbols)
             DEBUG_SYMBOLS="--with-debug-symbols"
+            shift
+            ;;
+        --with-static-cpp)
+            STATIC_CPP="--with-static-cpp"
             shift
             ;;
         --version)
@@ -20,10 +25,6 @@ for i in "$@"; do
         --arch)
             if [[ -n $2 ]]; then ARCH="$2"; fi
             shift
-            shift
-            ;;
-        --patch-glibc)
-            PATCH_GLIBC=1
             shift
             ;;
         -*)
@@ -42,11 +43,11 @@ fi
 CONFIG_NAME=
 if command -v premake4 &> /dev/null
 then
-    premake4 $DEBUG_SYMBOLS --with-text-shaper gmake || exit
+    premake4 $DEBUG_SYMBOLS --with-text-shaper $STATIC_CPP gmake || exit
     CONFIG_NAME=release
 elif command -v premake5 &> /dev/null
 then
-    premake5 $DEBUG_SYMBOLS --with-text-shaper gmake2 || exit
+    premake5 $DEBUG_SYMBOLS --with-text-shaper $STATIC_CPP gmake2 || exit
     CONFIG_NAME=release_"$ARCH"
 else
     echo "Neither premake5 nor premake4 is available. Please install one."
@@ -65,48 +66,6 @@ cp ecode.desktop ecode.app/
 cp ../../../bin/assets/icon/ecode.png ecode.app/ecode.png
 cp ../../../libs/linux/libeepp.so ecode.app/libs/
 cp ../../../bin/ecode ecode.app/ecode.bin
-
-if [ "$PATCH_GLIBC" = "1" ]; then
-    # Check if ninja is installed
-    if ! command -v ninja &> /dev/null; then
-        echo "Ninja not found. Attempting to install ninja-build..."
-
-        # Try to detect the distro and install ninja
-        DISTRO_ID=""
-        if [ -r /etc/os-release ]; then
-            . /etc/os-release
-            DISTRO_ID=${ID,,}
-        fi
-
-        case "$DISTRO_ID" in
-            ubuntu|debian)
-                sudo apt-get update
-                sudo apt-get install -y ninja-build
-                ;;
-            fedora)
-                sudo dnf install -y ninja-build
-                ;;
-            centos|rhel)
-                sudo yum install -y ninja-build
-                ;;
-            arch)
-                sudo pacman -Sy --noconfirm ninja
-                ;;
-            *)
-                echo "Could not detect distribution or unsupported distro. Please install ninja manually."
-                exit 1
-                ;;
-        esac
-    fi
-
-    git clone https://github.com/corsix/polyfill-glibc.git
-    cd polyfill-glibc || exit
-    ninja polyfill-glibc
-    echo "Patching ecode.bin"
-    ./polyfill-glibc --target-glibc=2.34 ../ecode.app/ecode.bin
-    cd ..
-fi
-
 cp -L "$(bash ../scripts/find_most_recent_sdl2.sh)" ecode.app/libs/ || exit
 ${STRIP:-strip} ecode.app/libs/libSDL2-2.0.so.0
 mkdir -p ecode.app/assets/colorschemes

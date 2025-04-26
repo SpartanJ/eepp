@@ -28,6 +28,7 @@ newoption {
 	}
 }
 newoption { trigger = "arch", description = "Used exclusively to indicate premake the architecture of the dependencies that need to be downloaded" }
+newoption { trigger = "with-static-cpp", description = "Builds statically libstdc++" }
 
 function get_dll_extension()
 	if os.target() == "macosx" then
@@ -378,6 +379,10 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	if _OPTIONS["with-text-shaper"] then
 		defines { "EE_TEXT_SHAPER_ENABLED" }
+	end
+
+	if _OPTIONS["with-static-cpp"] then
+		linkoptions { "-static-libgcc -static-libstdc++" }
 	end
 
 	cppdialect "C++20"

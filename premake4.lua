@@ -175,6 +175,7 @@ newoption {
 		{ "SDL2",  "SDL2" }
 	}
 }
+newoption { trigger = "with-static-cpp", description = "Builds statically libstdc++" }
 
 function explode(div,str)
 	if (div=='') then return false end
@@ -589,6 +590,10 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	if _OPTIONS["with-text-shaper"] then
 		defines { "EE_TEXT_SHAPER_ENABLED" }
+	end
+
+	if _OPTIONS["with-static-cpp"] then
+		linkoptions { "-static-libgcc -static-libstdc++" }
 	end
 
 	set_ios_config()

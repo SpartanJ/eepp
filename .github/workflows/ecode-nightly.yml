@@ -51,6 +51,9 @@ jobs:
           - arch: x86_64
             container: ubuntu-22.04
     runs-on: ${{ matrix.config.container }}
+    container:
+      image: ubuntu:20.04
+      options: --device /dev/fuse --cap-add SYS_ADMIN
     env:
       CC: gcc
       CXX: g++
@@ -68,6 +71,11 @@ jobs:
           echo $(gcc --version)
       - name: Update Packages
         run: |
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get install -y --no-install-recommends software-properties-common build-essential git ca-certificates sudo curl libfuse2 fuse
+          curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+          sudo apt-get install -y nodejs
           sudo add-apt-repository -y universe
           sudo add-apt-repository -y multiverse
           sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
@@ -83,12 +91,12 @@ jobs:
           sudo update-alternatives --set c++ /usr/bin/g++
           sudo update-alternatives --config gcc
           sudo update-alternatives --config g++
-          sudo apt-get install -y libfuse2 fuse premake4 mesa-common-dev libgl1-mesa-dev ninja-build
+          sudo apt-get install -y libfuse2 fuse premake4 mesa-common-dev libgl1-mesa-dev
           bash projects/linux/scripts/install_sdl2.sh
       - name: Build ecode
         run: |
           bash projects/scripts/patch_commit_number.sh
-          bash projects/linux/ecode/build.app.sh --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }} --patch-glibc
+          bash projects/linux/ecode/build.app.sh --with-static-cpp --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }}
       - name: Upload Files
         uses: softprops/action-gh-release@v2
         with:
