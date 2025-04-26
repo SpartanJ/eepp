@@ -389,5 +389,4 @@ jobs:
           draft: false
           prerelease: true
           files: |
-            projects/freebsd/ecode/ecode-freebsd-${{ env.INSTALL_REF }}-x86_64.AppImage
             projects/freebsd/ecode/ecode-freebsd-${{ env.INSTALL_REF }}-x86_64.tar.gz
