@@ -373,6 +373,8 @@ jobs:
           prepare: |
             pkg install -y bash git sdl2 curl premake5 gsed gmake
           run: |
+            export CC=clang
+            export CXX=clang++
             git config --global --add safe.directory "$GITHUB_WORKSPACE"
             bash projects/scripts/patch_commit_number.sh
             sh projects/freebsd/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
