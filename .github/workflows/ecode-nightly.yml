@@ -361,6 +361,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with: { fetch-depth: 0, submodules: 'recursive' }
+      - name: Set Environment Variables
+        run: |
+          echo "INSTALL_REF=${{ needs.release.outputs.version }}" >> "$GITHUB_ENV"
+          echo "RARCH=$(uname -m)" >> "$GITHUB_ENV"
       - uses: vmactions/freebsd-vm@v1
         env:
           INSTALL_REF: ${{ needs.release.outputs.version }}
