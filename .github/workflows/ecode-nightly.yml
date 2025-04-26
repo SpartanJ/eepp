@@ -373,15 +373,7 @@ jobs:
           prepare: |
             pkg install -y bash git sdl2 curl premake5 gsed gmake
           run: |
-            pwd
-            ls -lah
-            whoami
-            env
-            freebsd-version
-            sysctl hw.model
-            sysctl hw.ncpu
-            sysctl hw.physmem
-            sysctl hw.usermem
+            git config --global --add safe.directory "$GITHUB_WORKSPACE"
             bash projects/scripts/patch_commit_number.sh
             sh projects/freebsd/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
       - name: Upload Files
