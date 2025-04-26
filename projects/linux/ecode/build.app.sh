@@ -110,9 +110,10 @@ export APPIMAGETOOL="appimagetool"
 
 if ! command -v appimagetool &> /dev/null
 then
-    wget -nc "https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-$(arch).AppImage"
-    APPIMAGETOOL="./appimagetool-$(arch).AppImage"
-    chmod +x "$APPIMAGETOOL"
+    wget -nc "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$(arch).AppImage"
+    chmod +x "./appimagetool-$(arch).AppImage"
+    ./appimagetool-"$(arch)".AppImage --appimage-extract
+    APPIMAGETOOL="./squashfs-root/AppRun"
 fi
 
 ECODE_NAME=ecode-linux-"$ECODE_VERSION"-"$ARCH"
@@ -131,9 +132,10 @@ fi
 echo "Generating $ECODE_NAME.AppImage"
 $APPIMAGETOOL ecode.app "$ECODE_NAME".AppImage
 
-rm ecode.app/.DirIcon
+rm -f ecode.app/.DirIcon
 mv ecode.app/AppRun ecode.app/ecode
 mv ecode.app ecode
+rm -rf ./squashfs-root
 
 echo "Generating $ECODE_NAME.tar.gz"
 tar -czf "$ECODE_NAME".tar.gz ecode

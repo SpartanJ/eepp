@@ -79,7 +79,7 @@ jobs:
           bash projects/scripts/patch_commit_number.sh
       - name: Install dependencies
         run: |
-          apt-get install -y curl libfuse2 fuse premake4 mesa-common-dev libgl1-mesa-dev sudo
+          apt-get install -y curl libfuse2 fuse premake4 mesa-common-dev libgl1-mesa-dev sudo file appstream
           curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
           apt-get install -y nodejs
           add-apt-repository -y universe
