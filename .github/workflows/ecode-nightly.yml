@@ -85,9 +85,12 @@ jobs:
           echo "INSTALL_REF=${{ needs.release.outputs.version }}" >> "$GITHUB_ENV"
           echo "RARCH=$(uname -m)" >> "$GITHUB_ENV"
           echo $(ldd --version)
+      - name: Patch commit number
+        run: |
+          bash projects/scripts/patch_commit_number.sh
       - name: Install dependencies
         run: |
-          apt-get install -y curl libfuse2 fuse premake4 mesa-common-dev libgl1-mesa-dev
+          apt-get install -y curl libfuse2 fuse premake4 mesa-common-dev libgl1-mesa-dev sudo
           curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
           apt-get install -y nodejs
           add-apt-repository -y universe
@@ -106,7 +109,6 @@ jobs:
           bash projects/linux/scripts/install_sdl2.sh
       - name: Build ecode
         run: |
-          bash projects/scripts/patch_commit_number.sh
           bash projects/linux/ecode/build.app.sh --with-static-cpp --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }}
       - name: Upload Files
         uses: softprops/action-gh-release@v2
