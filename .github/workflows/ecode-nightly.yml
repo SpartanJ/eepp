@@ -66,25 +66,14 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with: { fetch-depth: 0, submodules: 'recursive', set-safe-directory: true }
-      - name: Configure Git Safe Directory and Verify
-        run: |
-          echo "--- Git Safe Directory Debug ---"
-          CONTAINER_WORKSPACE="/github/workspace"
-          echo "Workspace: ${{ github.workspace }}"
-          echo "Adding safe directory: ${{ github.workspace }}"
-          git config --global --add safe.directory "${{ github.workspace }}"
-          echo "Adding safe directory: ${CONTAINER_WORKSPACE}"
-          git config --global --add safe.directory "${CONTAINER_WORKSPACE}"
-          echo "New Git Global Config:"
-          git config --global --list
-          echo "Verifying safe directory setting:"
-          git config --global --get-all safe.directory
       - name: Set Environment Variables
         run: |
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           echo "INSTALL_REF=${{ needs.release.outputs.version }}" >> "$GITHUB_ENV"
           echo "RARCH=$(uname -m)" >> "$GITHUB_ENV"
           echo $(ldd --version)
+      - name: Mark Git directory as safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Patch commit number
         run: |
           bash projects/scripts/patch_commit_number.sh
