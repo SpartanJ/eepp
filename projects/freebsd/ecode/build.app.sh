@@ -3,6 +3,34 @@ CANONPATH=$(readlink -f "$0")
 DIRPATH="$(dirname "$CANONPATH")"
 cd "$DIRPATH" || exit
 cd ../../../ || exit
+VERSION=
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --version)
+            if [ -n "$2" ]; then
+                VERSION="$2"
+                shift
+            else
+                echo "Error: --version requires an argument." >&2
+                exit 1
+            fi
+            ;;
+        --)
+            shift
+            break
+            ;;
+        -*)
+            echo "Unknown option: $1" >&2
+            exit 1
+            ;;
+        *)
+            break
+            ;;
+    esac
+    shift
+done
+
 premake5 --with-text-shaper gmake2 || exit
 cd make/bsd || exit
 gmake -j"$(nproc)" config=release_x86_64 ecode || exit
@@ -45,15 +73,23 @@ mkdir ecode.app/assets/ui
 cp ../../../bin/assets/ui/breeze.css ecode.app/assets/ui/
 cp ../../../bin/assets/ca-bundle.pem ecode.app/assets/ca-bundle.pem
 
+if [ -n "$VERSION" ];
+then
+ECODE_VERSION="$VERSION"
+else
 VERSIONPATH=../../../src/tools/ecode/version.hpp
 ECODE_MAJOR_VERSION=$(grep "define ECODE_MAJOR_VERSION" $VERSIONPATH | awk '{print $3}')
 ECODE_MINOR_VERSION=$(grep "define ECODE_MINOR_VERSION" $VERSIONPATH | awk '{print $3}')
 ECODE_PATCH_LEVEL=$(grep "define ECODE_PATCH_LEVEL" $VERSIONPATH | awk '{print $3}')
-ECODE_NAME=ecode-freebsd-"$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH_LEVEL"-x86_64
+ECODE_VERSION="$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH_LEVEL"
+fi
+
+ECODE_NAME=ecode-freebsd-"$ECODE_VERSION"-x86_64
 
 mv ecode.app/AppRun ecode.app/ecode
 mv ecode.app ecode
 
+echo "Generating $ECODE_NAME.tar.gz"
 tar -czf "$ECODE_NAME".tar.gz ecode
 
 mv ecode ecode.app
