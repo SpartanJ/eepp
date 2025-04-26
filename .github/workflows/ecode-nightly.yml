@@ -71,7 +71,10 @@ jobs:
           sudo apt-get update
       - name: Checkout Code
         uses: actions/checkout@v4
-        with: { fetch-depth: 0, submodules: 'recursive' }
+        with:
+          fetch-depth: 0
+          submodules: 'recursive'
+          set-safe-directory: true
       - name: Set Environment Variables
         run: |
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
