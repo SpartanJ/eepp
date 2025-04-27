@@ -132,9 +132,25 @@ AIAssistantPlugin::AIAssistantPlugin( PluginManager* pluginManager, bool sync ) 
 		load( pluginManager );
 #endif
 	}
+
+	if ( getUISceneNode() ) {
+		getPluginContext()->getSplitter()->forEachWidgetClass(
+			"llm_chatui", [this]( UIWidget* widget ) {
+				LLMChatUI* chat = static_cast<LLMChatUI*>( widget );
+				chat->setManager( getManager() );
+			} );
+	}
 }
 
 AIAssistantPlugin::~AIAssistantPlugin() {
+	if ( SceneManager::existsSingleton() && !SceneManager::instance()->isShuttingDown() ) {
+		getPluginContext()->getSplitter()->forEachWidgetClass(
+			"llm_chatui", []( UIWidget* widget ) {
+				LLMChatUI* chat = static_cast<LLMChatUI*>( widget );
+				chat->setManager( nullptr );
+			} );
+	}
+
 	waitUntilLoaded();
 	mShuttingDown = true;
 	if ( mStatusButton )
@@ -508,17 +524,24 @@ void AIAssistantPlugin::onSaveState( IniFile* state ) {
 	if ( mainChat == nullptr && !chats.empty() )
 		mainChat = chats[chats.size() - 1];
 
-	if ( mainChat == nullptr )
+	AIAssistantConfig config;
+
+	if ( mainChat != nullptr ) {
+		config.partition = mainChat->getSplitter()->getSplitPartition();
+		config.modelProvider = mainChat->getCurModel().provider;
+		config.modelName = mainChat->getCurModel().name;
+	} else {
+		config = mConfig;
+	}
+
+	if ( mConfig.modelName.empty() || mConfig.modelProvider.empty() ||
+		 mConfig.partition.getValue() == 0 )
 		return;
 
-	auto partition = mainChat->getSplitter()->getSplitPartition();
-	auto modelProvider = mainChat->getCurModel().provider;
-	auto modelName = mainChat->getCurModel().name;
-
 	const std::string keyname = "aiassistant";
-	state->setValue( keyname, "split_partition", partition.toString() );
-	state->setValue( keyname, "default_provider", modelProvider );
-	state->setValue( keyname, "default_model", modelName );
+	state->setValue( keyname, "split_partition", config.partition.toString() );
+	state->setValue( keyname, "default_provider", config.modelProvider );
+	state->setValue( keyname, "default_model", config.modelName );
 }
 
 } // namespace ecode

@@ -475,6 +475,16 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	addKb( mChatInput, "mod+shift+keypad enter", "ai-add-chat", true, false );
 }
 
+LLMChatUI::~LLMChatUI() {
+	if ( getPlugin() ) {
+		AIAssistantPlugin::AIAssistantConfig config;
+		config.partition = getSplitter()->getSplitPartition();
+		config.modelProvider = getCurModel().provider;
+		config.modelName = getCurModel().name;
+		getPlugin()->setConfig( std::move( config ) );
+	}
+}
+
 void LLMChatUI::addKb( UICodeEditor* editor, std::string kb, const std::string& cmd,
 					   bool bindToChatUI, bool searchDefined ) {
 	if ( searchDefined && getPlugin() ) {
@@ -1229,9 +1239,11 @@ void LLMChatUI::showMsg( String msg ) {
 }
 
 AIAssistantPlugin* LLMChatUI::getPlugin() const {
-	auto plugin = mManager->get( "aiassistant" );
-	if ( plugin )
-		return reinterpret_cast<AIAssistantPlugin*>( plugin );
+	if ( mManager != nullptr ) {
+		auto plugin = mManager->get( "aiassistant" );
+		if ( plugin )
+			return reinterpret_cast<AIAssistantPlugin*>( plugin );
+	}
 	return nullptr;
 }
 

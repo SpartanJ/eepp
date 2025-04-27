@@ -1187,6 +1187,9 @@ void LinterPlugin::goToNextError( UICodeEditor* editor ) {
 						break;
 					}
 				}
+
+				if ( matched )
+					break;
 			} else {
 				matched = &match.second.front();
 				break;
@@ -1197,6 +1200,7 @@ void LinterPlugin::goToNextError( UICodeEditor* editor ) {
 	if ( matched != nullptr ) {
 		editor->goToLine( matched->range.start() );
 		mManager->getSplitter()->addCurrentPositionToNavigationHistory();
+		return;
 	} else {
 		if ( mGoToIgnoreWarnings ) {
 			for ( const auto& m : matches ) {
@@ -1205,7 +1209,7 @@ void LinterPlugin::goToNextError( UICodeEditor* editor ) {
 						if ( lm.type == LinterType::Error ) {
 							editor->goToLine( lm.range.start() );
 							mManager->getSplitter()->addCurrentPositionToNavigationHistory();
-							break;
+							return;
 						}
 					}
 				} else {
@@ -1215,7 +1219,14 @@ void LinterPlugin::goToNextError( UICodeEditor* editor ) {
 		} else if ( matches.begin()->second.front().range.start().line() != pos.line() ) {
 			editor->goToLine( matches.begin()->second.front().range.start() );
 			mManager->getSplitter()->addCurrentPositionToNavigationHistory();
+			return;
 		}
+	}
+
+	if ( mGoToIgnoreWarnings ) {
+		mGoToIgnoreWarnings = false;
+		goToNextError( editor );
+		mGoToIgnoreWarnings = true;
 	}
 }
 
@@ -1243,6 +1254,9 @@ void LinterPlugin::goToPrevError( UICodeEditor* editor ) {
 						break;
 					}
 				}
+
+				if ( matched )
+					break;
 			} else {
 				matched = &match->second.front();
 				break;
@@ -1253,6 +1267,7 @@ void LinterPlugin::goToPrevError( UICodeEditor* editor ) {
 	if ( matched != nullptr ) {
 		editor->goToLine( matched->range.start() );
 		mManager->getSplitter()->addCurrentPositionToNavigationHistory();
+		return;
 	} else {
 		if ( mGoToIgnoreWarnings ) {
 			for ( auto m = matches.rbegin(); m != matches.rend(); ++m ) {
@@ -1261,7 +1276,7 @@ void LinterPlugin::goToPrevError( UICodeEditor* editor ) {
 						if ( lm.type == LinterType::Error ) {
 							editor->goToLine( lm.range.start() );
 							mManager->getSplitter()->addCurrentPositionToNavigationHistory();
-							break;
+							return;
 						}
 					}
 				} else {
@@ -1271,7 +1286,14 @@ void LinterPlugin::goToPrevError( UICodeEditor* editor ) {
 		} else if ( matches.rbegin()->second.front().range.start().line() != pos.line() ) {
 			editor->goToLine( matches.rbegin()->second.front().range.start() );
 			mManager->getSplitter()->addCurrentPositionToNavigationHistory();
+			return;
 		}
+	}
+
+	if ( mGoToIgnoreWarnings ) {
+		mGoToIgnoreWarnings = false;
+		goToPrevError( editor );
+		mGoToIgnoreWarnings = true;
 	}
 }
 

@@ -50,6 +50,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
   public:
 	static LLMChatUI* New( PluginManager* manager ) { return eeNew( LLMChatUI, ( manager ) ); }
 
+	virtual ~LLMChatUI();
+
 	nlohmann::json serialize();
 
 	std::string unserialize( const nlohmann::json& payload ); // returns the input value
@@ -82,6 +84,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	UICodeEditor* getChatInput() const { return mChatInput; }
 
 	bool isLocked() const { return mChatLocked; }
+
+	void setManager( PluginManager* manager ) { mManager = manager; }
 
   protected:
 	UUID mUUID;

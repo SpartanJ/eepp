@@ -1,3 +1,4 @@
+#include "debuggerplugin.hpp"
 #include "../../notificationcenter.hpp"
 #include "../../terminalmanager.hpp"
 #include "../../uistatusbar.hpp"
@@ -6,7 +7,6 @@
 #include "bussocket.hpp"
 #include "bussocketprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
-#include "debuggerplugin.hpp"
 #include "models/breakpointsmodel.hpp"
 #include "models/processesmodel.hpp"
 #include "models/variablesmodel.hpp"
@@ -130,7 +130,8 @@ DebuggerPlugin::~DebuggerPlugin() {
 	mDebugger.reset();
 	mListener.reset();
 
-	if ( !isShuttingDown() && getPluginContext()->getMainLayout() ) {
+	if ( SceneManager::existsSingleton() && !SceneManager::instance()->isShuttingDown() &&
+		 getPluginContext() && getPluginContext()->getMainLayout() ) {
 		for ( const auto& kb : mKeyBindings )
 			getPluginContext()->getMainLayout()->getKeyBindings().removeCommandKeybind( kb.first );
 	}

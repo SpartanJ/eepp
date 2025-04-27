@@ -452,11 +452,10 @@ void FeaturesHealth::displayHealth( PluginManager* pluginManager, UISceneNode* s
 	<window
 		id="health-window"
 		lw="600dp" lh="600dp"
-		padding="8dp"
 		window-title="@string(languages_health, Languages Health)"
 		window-flags="default|maximize|shadow"
 		window-min-size="300dp 300dp">
-		<RelativeLayout lw="mp" lh="mp">
+		<RelativeLayout lw="mp" lh="mp" margin="8dp">
 			<vbox id="health_container" lw="mp" lh="mp" visible="false">
 				<TableView id="health_table" lw="mp" lh="0" lw8="1" />
 				<vbox id="health_lang_info" lw="mp" lh="wc" min-height="118dp" visible="false"></vbox>

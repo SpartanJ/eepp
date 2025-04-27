@@ -10,9 +10,15 @@ class LLMChatUI;
 
 class AIAssistantPlugin : public PluginBase {
   public:
+	struct AIAssistantConfig {
+		StyleSheetLength partition;
+		std::string modelProvider;
+		std::string modelName;
+	};
+
 	static PluginDefinition Definition() {
 		return { "aiassistant",			 "AI Assistant", "Chat with your favorite AI assistant",
-				 AIAssistantPlugin::New, { 0, 0, 1 },	 AIAssistantPlugin::NewSync };
+				 AIAssistantPlugin::New, { 0, 0, 2 },	 AIAssistantPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
@@ -40,12 +46,15 @@ class AIAssistantPlugin : public PluginBase {
 
 	void onSaveState( IniFile* state ) override;
 
+	void setConfig( AIAssistantConfig config ) { mConfig = std::move( config ); }
+
   protected:
 	LLMProviders mProviders;
 	bool mUIInit{ false };
 	UIWidget* mStatusBar{ nullptr };
 	UIPushButton* mStatusButton{ nullptr };
 	UnorderedMap<std::string, std::string> mApiKeys;
+	AIAssistantConfig mConfig;
 
 	AIAssistantPlugin( PluginManager* pluginManager, bool sync );
 
