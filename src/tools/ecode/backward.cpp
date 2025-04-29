@@ -35,6 +35,8 @@
 
 #include <eepp/config.hpp>
 
+#if EE_PLATFORM != EE_PLATFORM_ANDROID && EE_PLATFORM != EE_PLATFORM_IOS
+
 #if EE_PLATFORM == EE_PLATFORM_LINUX && defined( ECODE_HAS_DW )
 #define BACKWARD_HAS_DW 1
 #endif
@@ -46,3 +48,5 @@ namespace backward {
 backward::SignalHandling sh;
 
 } // namespace backward
+
+#endif

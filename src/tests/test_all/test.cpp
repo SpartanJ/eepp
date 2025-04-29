@@ -569,12 +569,10 @@ void EETest::createBaseUI() {
 
 #ifdef EE_PLATFORM_TOUCH
 	UISkin nSkin( "button-te" );
-	nSkin.setStateDrawable(
-		UIState::getStateNumber( "normal" ),
-		TF->getTexture( TF->loadFromFile( MyPath + "sprites/button-te_normal.png" ) ) );
-	nSkin.setStateDrawable(
-		UIState::getStateNumber( "pressed" ),
-		TF->getTexture( TF->loadFromFile( MyPath + "sprites/button-te_mdown.png" ) ) );
+	nSkin.setStateDrawable( UIState::getStateNumber( "normal" ),
+							TF->loadFromFile( MyPath + "sprites/button-te_normal.png" ) );
+	nSkin.setStateDrawable( UIState::getStateNumber( "pressed" ),
+							TF->loadFromFile( MyPath + "sprites/button-te_mdown.png" ) );
 	Sizef screenSize = SceneManager::instance()->getUISceneNode()->getSize();
 
 	mShowMenu = UIPushButton::New();

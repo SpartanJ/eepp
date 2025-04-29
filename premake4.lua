@@ -1580,7 +1580,7 @@ solution "eepp"
 			links { "ecode-macos-helper-static" }
 		end
 		if os.is_real("linux") then
-			links { "util", "stdc++fs" }
+			links { "util" }
 
 			if os_findlib("dw") then
 				print("Found dw")

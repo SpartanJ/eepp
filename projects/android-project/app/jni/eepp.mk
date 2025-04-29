@@ -30,7 +30,8 @@ EEPP_C_INCLUDES			:= \
 	$(EEPP_BASE_PATH)/modules/maps/src \
 	$(EEPP_BASE_PATH)/modules/physics/include \
 	$(EEPP_BASE_PATH)/modules/physics/src \
-	$(EEPP_BASE_PATH)/modules/physics/include/eepp/thirdparty/chipmunk/
+	$(EEPP_BASE_PATH)/modules/physics/include/eepp/thirdparty/chipmunk \
+	$(EEPP_BASE_PATH)/modules/languages-syntax-highlighting/src
 
 EEPP_C_FLAGS				:= \
 	-Wl,--undefined=Java_org_libsdl_app_SDLActivity_nativeInit \
@@ -414,3 +415,22 @@ LOCAL_SRC_FILES			:= $(foreach F, $(LIBETERM_SRCS), $(addprefix $(dir $(F)),$(no
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** ETERM ***************
+
+#*************** LANGUAGES SYNTAX HIGHLIGHTING ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_MODULES_PATH)
+
+LOCAL_MODULE			:= languages-syntax-highlighting
+
+LIBETERM_SRCS			:=  \
+	languages-syntax-highlighting/src/eepp/ui/doc/*.cpp \
+	languages-syntax-highlighting/src/eepp/ui/doc/languages/*.cpp
+
+LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES) $(EEPP_INC_PATH)
+LOCAL_CFLAGS			:= -Os
+
+LOCAL_SRC_FILES			:= $(foreach F, $(LIBETERM_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** LANGUAGES SYNTAX HIGHLIGHTING ***************

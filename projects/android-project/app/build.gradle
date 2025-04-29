@@ -27,7 +27,7 @@ android {
         externalNativeBuild {
             ndkBuild {
                 arguments "APP_LDLIBS=-llog -lGLESv2 -lGLESv1_CM -lm -lz -lOpenSLES -lEGL -landroid"
-                arguments "APP_PLATFORM=android-19"
+                arguments "APP_PLATFORM=android-21"
                 arguments getProcessesCountArg()
             }
         }
@@ -76,7 +76,7 @@ android {
             externalNativeBuild {
                 ndkBuild {
                     arguments "APP_CFLAGS=-g -DDEBUG -DEE_DEBUG"
-                    arguments "APP_CPPFLAGS=-std=c++17 -frtti -fexceptions"
+                    arguments "APP_CPPFLAGS=-std=c++20 -frtti -fexceptions"
                     arguments "APP_OPTIM=debug"
                 }
             }
@@ -84,8 +84,8 @@ android {
         release {
             externalNativeBuild {
                 ndkBuild {
-                    arguments "APP_CFLAGS=-fno-strict-aliasing -O3 -s -DNDEBUG -ffast-math"
-                    arguments "APP_CPPFLAGS=-std=c++17 -frtti -fexceptions"
+                    arguments "APP_CFLAGS=-fno-strict-aliasing -O3 -s -DNDEBUG"
+                    arguments "APP_CPPFLAGS=-std=c++20 -frtti -fexceptions"
                 }
             }
             minifyEnabled false
@@ -104,7 +104,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
-    ndkVersion "27.2.12479018"
+    ndkVersion "28.1.13356709"
     lint {
         abortOnError false
     }

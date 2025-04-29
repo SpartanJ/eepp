@@ -406,7 +406,7 @@ need to add the parameter `--without-mojoal` to any `premake` call
 In a Ubuntu system it would be something like ( also you will need gcc but it
 will be installed anyways ):
 
-`sudo apt-get install premake5 libsdl2-2.0-0 libsdl2-dev libopenal1 libopenal-dev`
+`sudo apt-get install premake5 libsdl2-2.0-0 libsdl2-dev`
 
 Clone the repository and run on the repository root directory:
 
@@ -418,7 +418,13 @@ or if you have premake4 installed you can run:
 
 Then just build the library:
 
-`make -C make/linux`
+if `premake4` was used:
+
+`make -C make/linux config=release` (`config=debug` for debug build)
+
+if `premake5` was used:
+
+`make -C make/linux config=release_x86_64` (`debug_x86_64` for debug build, or `release_arm64`/`debug_arm64` if building from arm64)
 
 That's it. That will build the whole project.
 
@@ -502,7 +508,7 @@ Generate the project:
 
 And build it:
 
-`make -C make/macosx`
+`make -C make/macosx config=release_x86_64` (or `config=debug_x86_64` for a debug build)
 
 ##### Using premake4
 
