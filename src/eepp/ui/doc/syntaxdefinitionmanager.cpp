@@ -546,11 +546,28 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 	buffer.resize( stream.getSize() );
 	stream.read( buffer.data(), buffer.size() );
 
-	nlohmann::json j = nlohmann::json::parse( buffer, nullptr, false, true );
+	try {
+		auto j = nlohmann::json::parse( buffer, nullptr, true, true );
 
-	if ( j.is_array() ) {
-		for ( const auto& lang : j ) {
-			auto res = loadLanguage( lang );
+		if ( j.is_array() ) {
+			for ( const auto& lang : j ) {
+				auto res = loadLanguage( lang );
+				if ( !res.getLanguageName().empty() ) {
+					auto pos = getLanguageIndex( res.getLanguageName() );
+					if ( pos.has_value() ) {
+						if ( addedLangs )
+							addedLangs->push_back( res.getLanguageName() );
+						mDefinitions[pos.value()] = std::move( res );
+					} else {
+						if ( addedLangs )
+							addedLangs->push_back( res.getLanguageName() );
+						res.mLanguageIndex = mDefinitions.size();
+						mDefinitions.emplace_back( std::move( res ) );
+					}
+				}
+			}
+		} else {
+			auto res = loadLanguage( j );
 			if ( !res.getLanguageName().empty() ) {
 				auto pos = getLanguageIndex( res.getLanguageName() );
 				if ( pos.has_value() ) {
@@ -565,21 +582,9 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 				}
 			}
 		}
-	} else {
-		auto res = loadLanguage( j );
-		if ( !res.getLanguageName().empty() ) {
-			auto pos = getLanguageIndex( res.getLanguageName() );
-			if ( pos.has_value() ) {
-				if ( addedLangs )
-					addedLangs->push_back( res.getLanguageName() );
-				mDefinitions[pos.value()] = std::move( res );
-			} else {
-				if ( addedLangs )
-					addedLangs->push_back( res.getLanguageName() );
-				res.mLanguageIndex = mDefinitions.size();
-				mDefinitions.emplace_back( std::move( res ) );
-			}
-		}
+	} catch ( const nlohmann::json::exception& e ) {
+		Log::error( "SyntaxDefinition load failed:\n%s", e.what() );
+		return false;
 	}
 
 	return true;

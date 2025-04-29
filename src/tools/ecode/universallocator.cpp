@@ -936,6 +936,8 @@ UniversalLocator::openFileTypeModel( const std::string& pattern ) {
 	std::vector<std::string> fileTypeNames;
 	fileTypeNames.reserve( defs.size() );
 	for ( const auto& def : defs ) {
+		if ( !def.isVisible() )
+			continue;
 		if ( pattern.empty() || String::startsWith( String::toLower( def.getLanguageName() ),
 													String::toLower( pattern ) ) )
 			fileTypeNames.push_back( def.getLanguageName() );
