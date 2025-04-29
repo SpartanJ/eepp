@@ -36,7 +36,7 @@ class EE_API DocumentView {
 		LineWrapMode mode{ LineWrapMode::NoWrap };
 		bool keepIndentation{ true };
 		Uint32 tabWidth{ 4 };
-		std::optional<Uint32> maxCharactersWidth;
+		std::optional<Uint32> maxCharactersWidth{};
 		bool tabStops{ false };
 		bool operator==( const Config& other ) {
 			return mode == other.mode && keepIndentation == other.keepIndentation &&

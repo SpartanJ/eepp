@@ -1093,7 +1093,7 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 }
 
 void UICodeEditor::updateIMELocation() {
-	if ( mDoc->getActiveClient() != this || !Engine::isRunninMainThread() ||
+	if ( mDoc->isLoading() || mDoc->getActiveClient() != this || !Engine::isRunninMainThread() ||
 		 mDocView.isFolded( mDoc->getSelection( true ).start().line() ) )
 		return;
 	Rectf r( getScreenPosition( mDoc->getSelection( true ).start() ) );
