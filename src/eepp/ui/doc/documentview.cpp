@@ -107,7 +107,7 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String::View& 
 							   : hspace;
 
 		if ( curChar == '\t' )
-			w = Text::tabAdvance( hspace, tabWidth, tabStops ? w : std::optional<Float>{} );
+			w = Text::tabAdvance( hspace, tabWidth, tabStops ? xoffset : std::optional<Float>{} );
 
 		if ( !isMonospace && curChar != '\r' ) {
 			w += fontStyle.Font->getKerning( prevChar, curChar, fontStyle.CharacterSize, bold,
