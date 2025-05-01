@@ -200,13 +200,16 @@ static inline void popSubsyntax( SyntaxStateRestored& curState, SyntaxState& ret
 };
 
 template <typename T>
-static inline void
-pushTokensToOpenCloseSubsyntax( int i, std::string_view textv, const SyntaxPattern* subsyntaxInfo,
-								const NonEscapedMatch& rangeSubsyntax, std::vector<T>& tokens ) {
+static inline void pushTokensToOpenCloseSubsyntax( int i, std::string_view textv,
+												   const SyntaxPattern* subsyntaxInfo,
+												   const NonEscapedMatch& rangeSubsyntax,
+												   std::vector<T>& tokens, bool isClose = false ) {
+	const auto& types = isClose && !subsyntaxInfo->endTypes.empty() ? subsyntaxInfo->endTypes
+																	: subsyntaxInfo->types;
 	if ( rangeSubsyntax.numMatches > 1 ) {
 		int patternMatchStart = rangeSubsyntax.matches[0].start;
 		int patternMatchEnd = rangeSubsyntax.matches[0].end;
-		auto patternType = subsyntaxInfo->types[0];
+		auto patternType = types[0];
 		int lastStart = patternMatchStart;
 		int lastEnd = patternMatchEnd;
 
@@ -229,10 +232,7 @@ pushTokensToOpenCloseSubsyntax( int i, std::string_view textv, const SyntaxPatte
 
 			auto ss{ textv.substr( start, end - start ) };
 
-			pushToken( tokens,
-					   sidx < static_cast<int>( subsyntaxInfo->types.size() )
-						   ? subsyntaxInfo->types[sidx]
-						   : subsyntaxInfo->types[0],
+			pushToken( tokens, sidx < static_cast<int>( types.size() ) ? types[sidx] : types[0],
 					   ss );
 
 			if ( sidx == rangeSubsyntax.numMatches - 1 && end < patternMatchEnd ) {
@@ -243,8 +243,7 @@ pushTokensToOpenCloseSubsyntax( int i, std::string_view textv, const SyntaxPatte
 			lastEnd = end;
 		}
 	} else {
-		pushToken( tokens, subsyntaxInfo->types[0],
-				   textv.substr( i, rangeSubsyntax.range.second - i ) );
+		pushToken( tokens, types[0], textv.substr( i, rangeSubsyntax.range.second - i ) );
 	}
 }
 
@@ -295,7 +294,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 					 ( range.first == -1 || rangeSubsyntax.range.first < range.first ) ) {
 					if ( !skipSubSyntaxSeparator ) {
 						pushTokensToOpenCloseSubsyntax( i, textv, curState.subsyntaxInfo,
-														rangeSubsyntax, tokens );
+														rangeSubsyntax, tokens, true );
 					}
 					popSubsyntax( curState, retState, syntax );
 					i = rangeSubsyntax.range.second;

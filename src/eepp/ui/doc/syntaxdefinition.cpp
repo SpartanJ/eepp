@@ -20,6 +20,14 @@ template <typename SyntaxStyleType> void updateCache( const SyntaxPattern& ptrn 
 					SyntaxPattern::SyntaxStyleTypeCache[ptrn.types[i]] = ptrn.typesNames[i];
 			}
 		}
+
+		for ( size_t i = 0; i < ptrn.endTypesNames.size(); i++ ) {
+			if ( SyntaxStyleTypes::needsToBeCached( ptrn.endTypes[i] ) ) {
+				auto it = SyntaxPattern::SyntaxStyleTypeCache.find( ptrn.endTypes[i] );
+				if ( it == SyntaxPattern::SyntaxStyleTypeCache.end() )
+					SyntaxPattern::SyntaxStyleTypeCache[ptrn.endTypes[i]] = ptrn.endTypesNames[i];
+			}
+		}
 	}
 }
 
@@ -284,6 +292,20 @@ SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
 	patterns( std::move( _patterns ) ),
 	types( toSyntaxStyleTypeV( _types ) ),
 	typesNames( std::move( _types ) ),
+	syntax( _syntax ),
+	matchType( matchType ) {
+	updateCache<SyntaxStyleType>( *this );
+}
+
+SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
+							  std::vector<std::string>&& _types,
+							  std::vector<std::string>&& _endTypes, const std::string& _syntax,
+							  SyntaxPatternMatchType matchType ) :
+	patterns( std::move( _patterns ) ),
+	types( toSyntaxStyleTypeV( _types ) ),
+	endTypes( toSyntaxStyleTypeV( _endTypes ) ),
+	typesNames( std::move( _types ) ),
+	endTypesNames( std::move( _endTypes ) ),
 	syntax( _syntax ),
 	matchType( matchType ) {
 	updateCache<SyntaxStyleType>( *this );

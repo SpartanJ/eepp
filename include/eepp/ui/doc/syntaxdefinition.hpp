@@ -36,7 +36,9 @@ struct EE_API SyntaxPattern {
 
 	std::vector<std::string> patterns;
 	std::vector<SyntaxStyleType> types;
+	std::vector<SyntaxStyleType> endTypes;
 	std::vector<std::string> typesNames;
+	std::vector<std::string> endTypesNames;
 	std::string syntax{ "" };
 	DynamicSyntax dynSyntax;
 	SyntaxPatternMatchType matchType{ SyntaxPatternMatchType::LuaPattern };
@@ -47,6 +49,10 @@ struct EE_API SyntaxPattern {
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
 				   const std::string& _syntax = "",
+				   SyntaxPatternMatchType matchType = SyntaxPatternMatchType::LuaPattern );
+
+	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
+				   std::vector<std::string>&& _endTypes, const std::string& _syntax = "",
 				   SyntaxPatternMatchType matchType = SyntaxPatternMatchType::LuaPattern );
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,

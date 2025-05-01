@@ -102,6 +102,11 @@ static json toJson( const SyntaxDefinition& def ) {
 			} else {
 				pattern["type"] = ptrn.typesNames;
 			}
+			if ( ptrn.endTypesNames.size() == 1 ) {
+				pattern["end_type"] = ptrn.endTypesNames[0];
+			} else {
+				pattern["end_type"] = ptrn.endTypesNames;
+			}
 			if ( !ptrn.syntax.empty() )
 				pattern["syntax"] = ptrn.syntax;
 			j["patterns"].emplace_back( std::move( pattern ) );
@@ -182,19 +187,20 @@ static std::string str( std::string s, const std::string& prepend = "",
 	return prepend + "\"" + String::escape( s ) + "\"" + append;
 }
 
-static std::string join( std::vector<std::string> const& vec, bool createCont = true,
-						 bool allowReduce = false, bool setType = false,
-						 std::string delim = ", " ) {
+static std::string join( const std::vector<std::string>& vec, bool createCont = true,
+						 bool allowReduce = false, bool setType = false, bool allowSkip = false,
+						 bool addSep = false, const std::string& delim = ", " ) {
+	std::string sep = addSep ? ", " : "";
 	if ( vec.empty() )
-		return "{}";
+		return allowSkip ? "" : ( sep + "{}" );
 	if ( vec.size() == 1 && allowReduce )
-		return str( vec[0] );
+		return sep + str( vec[0] );
 	std::string accum = std::accumulate(
 		vec.begin() + 1, vec.end(), str( vec[0] ),
 		[&delim]( const std::string& a, const std::string& b ) { return a + delim + str( b ); } );
-	return createCont
-			   ? ( std::string( setType ? "std::vector<std::string>" : "" ) + "{ " + accum + " }" )
-			   : accum;
+	return sep + ( createCont ? ( std::string( setType ? "std::vector<std::string>" : "" ) + "{ " +
+								  accum + " }" )
+							  : accum );
 }
 
 static std::string funcName( std::string name ) {
@@ -232,6 +238,8 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 		buf += "{ " + join( pattern.patterns ) + ", " +
 			   join( pattern.typesNames, true, true,
 					 pattern.matchType != SyntaxPatternMatchType::LuaPattern ) +
+			   join( pattern.endTypesNames, true, true,
+					 pattern.matchType != SyntaxPatternMatchType::LuaPattern, true, true ) +
 			   str( pattern.syntax, ", ", "", false );
 		if ( pattern.matchType != SyntaxPatternMatchType::LuaPattern && pattern.syntax.empty() ) {
 			if ( pattern.matchType == SyntaxPatternMatchType::RegEx )
@@ -427,6 +435,8 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 			const auto& patterns = json["patterns"];
 			for ( const auto& pattern : patterns ) {
 				std::vector<std::string> type;
+				std::vector<std::string> endType;
+
 				if ( pattern.contains( "type" ) ) {
 					if ( pattern["type"].is_array() ) {
 						for ( const auto& t : pattern["type"] ) {
@@ -439,6 +449,18 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 				} else {
 					type.push_back( "normal" );
 				}
+
+				if ( pattern.contains( "end_type" ) ) {
+					if ( pattern["end_type"].is_array() ) {
+						for ( const auto& t : pattern["end_type"] ) {
+							if ( t.is_string() )
+								endType.push_back( t.get<std::string>() );
+						}
+					} else if ( pattern["end_type"].is_string() ) {
+						endType.push_back( pattern["end_type"] );
+					}
+				}
+
 				auto syntax = !pattern.contains( "syntax" ) || !pattern["syntax"].is_string()
 								  ? ""
 								  : pattern.value( "syntax", "" );
@@ -471,8 +493,8 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 						ptrns.emplace_back( pattern["parser"] );
 					}
 				}
-				def.addPattern(
-					SyntaxPattern( std::move( ptrns ), std::move( type ), syntax, ctype ) );
+				def.addPattern( SyntaxPattern( std::move( ptrns ), std::move( type ),
+											   std::move( endType ), syntax, ctype ) );
 			}
 		}
 		if ( json.contains( "symbols" ) ) {
