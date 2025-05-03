@@ -162,6 +162,15 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition& setFoldBraces( const std::vector<std::pair<Int64, Int64>>& foldBraces );
 
+	SyntaxDefinition& setRepository( const std::string& name,
+									 std::vector<SyntaxPattern>&& patterns );
+
+	const std::vector<SyntaxPattern>& getRepository( const std::string& name ) const;
+
+	SyntaxDefinition& addAlternativeName( const std::string& name );
+
+	const std::vector<std::string>& getAlternativeNames() const;
+
   protected:
 	friend class SyntaxDefinitionManager;
 
@@ -181,6 +190,8 @@ class EE_API SyntaxDefinition {
 	bool mVisible{ true };
 	bool mHasExtensionPriority{ false };
 	bool mCaseInsensitive{ false };
+	UnorderedMap<std::string, std::vector<SyntaxPattern>> mRepository;
+	std::vector<std::string> mLanguageAlternativeNames;
 };
 
 }}} // namespace EE::UI::Doc

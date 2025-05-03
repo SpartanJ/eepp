@@ -210,7 +210,7 @@
         "working_dir": "${project_root}/bin"
       },
       {
-        "args": "-x",
+        "args": "",
         "command": "${project_root}/bin/ecode",
         "name": "ecode-release",
         "working_dir": "${project_root}/bin"

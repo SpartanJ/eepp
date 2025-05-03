@@ -332,4 +332,25 @@ SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
 	updateCache<SyntaxStyleType>( *this );
 }
 
+SyntaxDefinition& SyntaxDefinition::setRepository( const std::string& name,
+												   std::vector<SyntaxPattern>&& patterns ) {
+	mRepository[name] = std::move( patterns );
+	return *this;
+}
+
+const std::vector<SyntaxPattern>& SyntaxDefinition::getRepository( const std::string& name ) const {
+	static std::vector<SyntaxPattern> EMPTY = {};
+	auto found = mRepository.find( name );
+	return found != mRepository.end() ? found->second : EMPTY;
+}
+
+SyntaxDefinition& SyntaxDefinition::addAlternativeName( const std::string& name ) {
+	mLanguageAlternativeNames.emplace_back( name );
+	return *this;
+}
+
+const std::vector<std::string>& SyntaxDefinition::getAlternativeNames() const {
+	return mLanguageAlternativeNames;
+}
+
 }}} // namespace EE::UI::Doc
