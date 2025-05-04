@@ -20,6 +20,7 @@
 #include <eepp/ui/doc/languages/d.hpp>
 #include <eepp/ui/doc/languages/dart.hpp>
 #include <eepp/ui/doc/languages/difffile.hpp>
+#include <eepp/ui/doc/languages/elena.hpp>
 #include <eepp/ui/doc/languages/elixir.hpp>
 #include <eepp/ui/doc/languages/elm.hpp>
 #include <eepp/ui/doc/languages/environmentfile.hpp>
@@ -135,6 +136,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addD();
 	addDart();
 	addDiff();
+	addElena();
 	addElixir();
 	addElm();
 	addEnvironmentFile();
