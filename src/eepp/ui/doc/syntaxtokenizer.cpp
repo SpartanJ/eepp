@@ -142,7 +142,7 @@ SyntaxStateRestored SyntaxTokenizer::retrieveSyntaxState( const SyntaxDefinition
 		 ( state.state[1] > 0 ||
 		   ( state.state[0] < syntaxState.currentSyntax->getPatterns().size() &&
 			 syntaxState.currentSyntax->getPatterns()[state.state[0] - 1].hasSyntax() ) ) ) {
-		for ( size_t i = 0; i <= 2; ++i ) {
+		for ( size_t i = 0; i < MAX_SUB_SYNTAXS - 1; ++i ) {
 			Uint32 target = state.state[i];
 			if ( target != SYNTAX_TOKENIZER_STATE_NONE ) {
 				if ( target < syntaxState.currentSyntax->getPatterns().size() &&
@@ -363,6 +363,21 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 					int lastStart = patternMatchStart;
 					int lastEnd = patternMatchEnd;
 
+					if ( shouldCloseSubSyntax ) {
+						if ( shouldCloseSubSyntax->range.second >= patternMatchEnd ) {
+							if ( !skipSubSyntaxSeparator ) {
+								pushTokensToOpenCloseSubsyntax( i, textv, curState.subsyntaxInfo,
+																*shouldCloseSubSyntax, tokens );
+							}
+							popSubsyntax( curState, retState, syntax );
+							i = shouldCloseSubSyntax->range.second;
+							matched = true;
+							shouldCloseSubSyntax = {};
+							break;
+						}
+						shouldCloseSubSyntax = {};
+					}
+
 					for ( size_t curMatch = 1; curMatch < numMatches; curMatch++ ) {
 						start = matches[curMatch].start;
 						end = matches[curMatch].end;
@@ -395,22 +410,6 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 								? curState.currentSyntax->getSymbol(
 									  ( patternTextStr = patternText ) )
 								: SyntaxStyleEmpty();
-
-						if ( shouldCloseSubSyntax ) {
-							if ( shouldCloseSubSyntax->range.second >= end ) {
-								if ( !skipSubSyntaxSeparator ) {
-									pushTokensToOpenCloseSubsyntax( i, textv,
-																	curState.subsyntaxInfo,
-																	*shouldCloseSubSyntax, tokens );
-								}
-								popSubsyntax( curState, retState, syntax );
-								i = shouldCloseSubSyntax->range.second;
-								matched = true;
-								shouldCloseSubSyntax = {};
-								break;
-							}
-							shouldCloseSubSyntax = {};
-						}
 
 						if ( !skipSubSyntaxSeparator || !pattern.hasSyntax() ) {
 							pushToken( tokens,

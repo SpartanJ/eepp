@@ -332,6 +332,20 @@ SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
 	updateCache<SyntaxStyleType>( *this );
 }
 
+SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
+							  std::vector<std::string>&& _types,
+							  std::vector<std::string>&& _endTypes, DynamicSyntax&& _syntax,
+							  SyntaxPatternMatchType matchType ) :
+	patterns( std::move( _patterns ) ),
+	types( toSyntaxStyleTypeV( _types ) ),
+	endTypes( toSyntaxStyleTypeV( _endTypes ) ),
+	typesNames( std::move( _types ) ),
+	endTypesNames( std::move( _endTypes ) ),
+	dynSyntax( std::move( _syntax ) ),
+	matchType( matchType ) {
+	updateCache<SyntaxStyleType>( *this );
+}
+
 SyntaxDefinition& SyntaxDefinition::setRepository( const std::string& name,
 												   std::vector<SyntaxPattern>&& patterns ) {
 	mRepository[name] = std::move( patterns );

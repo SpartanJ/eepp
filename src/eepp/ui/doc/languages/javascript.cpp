@@ -59,6 +59,7 @@ void addJavaScript() {
 
 		} );
 
+	sd.addAlternativeName( "js" );
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
 }
 

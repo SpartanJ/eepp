@@ -71,6 +71,7 @@ void addTypeScript() {
 		} );
 
 	ts.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	ts.addAlternativeName( "ts" );
 
 	SyntaxDefinitionManager::instance()
 		->add( { "TSX",

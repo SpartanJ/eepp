@@ -48,21 +48,20 @@ struct SyntaxStateRestored {
 	Uint32 currentLevel{ 0 };
 };
 
-#define MAX_SUB_SYNTAXS 4
+#define MAX_SUB_SYNTAXS 8
 
 struct SyntaxState {
-	// 8 bits per pattern - max 4 sub-languages - max 254 patterns per language
-	Uint8 state[MAX_SUB_SYNTAXS]{ SYNTAX_TOKENIZER_STATE_NONE, SYNTAX_TOKENIZER_STATE_NONE,
-								  SYNTAX_TOKENIZER_STATE_NONE, SYNTAX_TOKENIZER_STATE_NONE };
+	// 8 bits per pattern - max 4 sub-languages - max 65k patterns per language
+	Uint16 state[MAX_SUB_SYNTAXS]{};
 
 	// 16 bits per language (language index) - max 4 sub-languages - max 65k languages
-	Uint16 langStack[MAX_SUB_SYNTAXS]{ 0, 0, 0, 0 };
+	Uint16 langStack[MAX_SUB_SYNTAXS]{};
 
-	bool operator==( const SyntaxState& other ) {
+	bool operator==( const SyntaxState& other ) const {
 		return memcmp( this, &other, sizeof( SyntaxState ) ) == 0;
 	}
 
-	bool operator!=( const SyntaxState& other ) { return !( *this == other ); }
+	bool operator!=( const SyntaxState& other ) const { return !( *this == other ); }
 };
 
 class EE_API SyntaxTokenizer {

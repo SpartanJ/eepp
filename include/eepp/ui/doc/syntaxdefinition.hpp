@@ -63,6 +63,10 @@ struct EE_API SyntaxPattern {
 				   DynamicSyntax&& _syntax,
 				   SyntaxPatternMatchType matchType = SyntaxPatternMatchType::LuaPattern );
 
+	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
+				   std::vector<std::string>&& _endTypes, DynamicSyntax&& _syntax,
+				   SyntaxPatternMatchType matchType = SyntaxPatternMatchType::LuaPattern );
+
 	bool hasSyntax() const { return !syntax.empty() || dynSyntax; }
 };
 
