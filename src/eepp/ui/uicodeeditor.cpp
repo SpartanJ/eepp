@@ -5203,9 +5203,14 @@ void UICodeEditor::findRegionsDelayed() {
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( sceneNode ) {
 		TextDocument* doc = mDoc.get();
-		sceneNode->debounce( [doc]() { doc->getFoldRangeService().findRegions(); },
-							 mFoldsIsFirst ? Milliseconds( 100 ) : mFoldsRefreshTime,
-							 mTagFoldRange );
+		sceneNode->debounce(
+			[this, doc]() {
+				if ( doc->getHighlighter()->isTokenizingAsync() )
+					findRegionsDelayed();
+				else
+					doc->getFoldRangeService().findRegions();
+			},
+			mFoldsIsFirst ? Milliseconds( 100 ) : mFoldsRefreshTime, mTagFoldRange );
 
 		mFoldsIsFirst = false;
 	}

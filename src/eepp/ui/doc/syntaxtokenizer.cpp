@@ -395,14 +395,11 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 						while ( currentBytePos < fullMatchEnd ) {
 							size_t currentCaptureIndex =
 								priorityMap[currentBytePos - fullMatchStart];
-							SyntaxStyleType currentType = SyntaxStyleEmpty();
-
-							if ( currentCaptureIndex < pattern.types.size() ) {
-								currentType = pattern.types[currentCaptureIndex];
-							} else {
-								currentType = pattern.types.empty() ? SyntaxStyleTypes::Normal
-																	: pattern.types[0];
-							}
+							SyntaxStyleType currentType =
+								currentCaptureIndex < pattern.types.size()
+									? pattern.types[currentCaptureIndex]
+									: ( pattern.types.empty() ? SyntaxStyleTypes::Normal
+															  : pattern.types[0] );
 
 							int segmentEndBytePos = currentBytePos + 1;
 							while ( segmentEndBytePos < fullMatchEnd &&
@@ -416,9 +413,8 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 
 							if ( currentType == SyntaxStyleTypes::Symbol ||
 								 currentType == SyntaxStyleTypes::Normal ) {
-								patternTextStr = segmentText; // Need a std::string for lookup
-								SyntaxStyleType symbolType =
-									curState.currentSyntax->getSymbol( patternTextStr );
+								SyntaxStyleType symbolType = curState.currentSyntax->getSymbol(
+									( patternTextStr = segmentText ) );
 								if ( symbolType != SyntaxStyleEmpty() ) {
 									currentType = symbolType;
 								} else if ( currentType == SyntaxStyleTypes::Symbol ) {
@@ -426,20 +422,17 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 								}
 							}
 
-							bool skipThisToken = skipSubSyntaxSeparator && pattern.hasSyntax();
-
-							if ( !skipThisToken )
+							if ( !( skipSubSyntaxSeparator && pattern.hasSyntax() ) )
 								pushToken( tokens, currentType, segmentText );
 
 							currentBytePos = segmentEndBytePos;
 						}
 
-						patternTextStr =
-							textv.substr( fullMatchStart, fullMatchEnd - fullMatchStart );
-
 						if ( pattern.hasSyntax() ) {
 							pushSubsyntax( curState, retState, pattern, patternIndex + 1,
-										   patternTextStr );
+										   ( patternTextStr =
+												 textv.substr( fullMatchStart,
+															   fullMatchEnd - fullMatchStart ) ) );
 						} else if ( pattern.patterns.size() > 1 ) {
 							setSubsyntaxPatternIdx( curState, retState, patternIndex + 1 );
 						}
