@@ -8,7 +8,7 @@ void addC3() {
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "C3",
-		  { "%.c3$" },
+		  { "%.c3t?$" },
 		  {
 			  { { "//.-\n" }, "comment" },
 			  { { "/%*", "%*/" }, "comment" },

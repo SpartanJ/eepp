@@ -18,8 +18,17 @@ void addVala() {
 			  { { "'", "'" }, "string" },
 			  { { "-?0x%x+" }, "number" },
 			  { { "-?%.?%d+[uUlLfFdDmM]?" }, "number" },
+			  { { "(class|interface|struct)\\s+([A-Za-z]\\w*)" },
+				{ "keyword", "keyword", "keyword2" },
+				"",
+				SyntaxPatternMatchType::RegEx },
+			  { { "(class|interface|struct)\\s+([A-Za-z]\\w*)\\s*:\\s*([A-Za-z]\\w*)" },
+				{ "keyword", "keyword", "keyword2", "keyword2" },
+				"",
+				SyntaxPatternMatchType::RegEx },
 			  { { "-?%d+[%d%.eE]*f?" }, "number" },
 			  { { "[%+%-/%*%<>!=%^&|?~:;%.%(%)%[%]{}]" }, "operator" },
+			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 		  },
 		  {
@@ -37,7 +46,7 @@ void addVala() {
 			  { "as", "keyword" },			{ "base", "keyword" },		{ "break", "keyword" },
 			  { "case", "keyword" },		{ "catch", "keyword" },		{ "construct", "keyword" },
 			  { "continue", "keyword" },	{ "default", "keyword" },	{ "delete", "keyword" },
-			  { "do", "keyword" },
+			  { "do", "keyword" },			{ "owned", "keyword" },		{ "yield", "keyword" },
 
 			  { "else", "keyword" },		{ "ensures", "keyword" },	{ "finally", "keyword" },
 			  { "for", "keyword" },			{ "foreach", "keyword" },	{ "get", "keyword" },
@@ -50,7 +59,7 @@ void addVala() {
 			  { "typeof", "keyword" },
 
 			  { "value", "keyword" },		{ "var", "keyword" },		{ "void", "keyword" },
-			  { "while", "keyword" },
+			  { "while", "keyword" },		{ "async", "keyword" },		{ "internal", "keyword" },
 
 			  { "null", "keyword" },		{ "true", "keyword" },		{ "false", "keyword" },
 
@@ -62,9 +71,9 @@ void addVala() {
 			  { "size_t", "keyword2" },		{ "ssize_t", "keyword2" },	{ "string", "keyword2" },
 			  { "uchar", "keyword2" },		{ "uint", "keyword2" },		{ "uint8", "keyword2" },
 			  { "uint16", "keyword2" },		{ "uint32", "keyword2" },	{ "uint64", "keyword2" },
-			  { "ulong", "keyword2" },
+			  { "ulong", "keyword2" },		{ "IOError", "keyword2" },	{ "Object", "keyword2" },
 
-			  { "unichar", "keyword2" },	{ "ushort", "keyword2" },
+			  { "unichar", "keyword2" },	{ "ushort", "keyword2" },	{ "Error", "keyword2" },
 
 		  },
 		  "//",
