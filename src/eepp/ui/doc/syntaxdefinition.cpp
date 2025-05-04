@@ -31,6 +31,17 @@ template <typename SyntaxStyleType> void updateCache( const SyntaxPattern& ptrn 
 	}
 }
 
+static void updatePatternRefs( const SyntaxDefinition& def, SyntaxPattern& ptrn ) {
+	ptrn.def = &def;
+	if ( ptrn.syntax == "$self" )
+		ptrn.syntax = def.getLanguageName();
+}
+
+static void updatePatternRefs( const SyntaxDefinition& def, std::vector<SyntaxPattern>& ptrns ) {
+	for ( auto& ptrn : ptrns )
+		updatePatternRefs( def, ptrn );
+}
+
 SyntaxDefinition::SyntaxDefinition() {}
 
 SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
@@ -54,6 +65,7 @@ SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
 				 return pattern.matchType == SyntaxPatternMatchType::Parser;
 			 } ) )
 			ParserMatcherManager::instance()->registerBaseParsers();
+		updatePatternRefs( *this, mPatterns );
 		mPatterns.emplace_back( SyntaxPattern{ { "%s+" }, "normal" } );
 		mPatterns.emplace_back( SyntaxPattern{ { "%w+%f[%s]" }, "normal" } );
 	}
@@ -348,6 +360,7 @@ SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
 
 SyntaxDefinition& SyntaxDefinition::setRepository( const std::string& name,
 												   std::vector<SyntaxPattern>&& patterns ) {
+	updatePatternRefs( *this, patterns );
 	mRepository[name] = std::move( patterns );
 	return *this;
 }

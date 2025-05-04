@@ -28,6 +28,8 @@ template <typename T> static auto toSyntaxStyleTypeV( const std::vector<T>& s ) 
 
 enum class SyntaxPatternMatchType { LuaPattern, RegEx, Parser };
 
+class SyntaxDefinition;
+
 struct EE_API SyntaxPattern {
 	static UnorderedMap<SyntaxStyleType, std::string> SyntaxStyleTypeCache;
 
@@ -42,6 +44,7 @@ struct EE_API SyntaxPattern {
 	std::string syntax{ "" };
 	DynamicSyntax dynSyntax;
 	SyntaxPatternMatchType matchType{ SyntaxPatternMatchType::LuaPattern };
+	const SyntaxDefinition* def{ nullptr };
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
 				   const std::string& _syntax = "",
@@ -66,6 +69,17 @@ struct EE_API SyntaxPattern {
 	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
 				   std::vector<std::string>&& _endTypes, DynamicSyntax&& _syntax,
 				   SyntaxPatternMatchType matchType = SyntaxPatternMatchType::LuaPattern );
+
+	bool isIncludePattern() const {
+		return patterns.size() == 2 && patterns[0] == "include" && !patterns[1].empty() &&
+			   ( patterns[1][0] == '#' || patterns[1][0] == '$' );
+	}
+
+	bool isRangedMatch() const { return !isIncludePattern() && patterns.size() >= 2; }
+
+	bool isRootSelfInclude() const { return isIncludePattern() && patterns[1] == "$self"; }
+
+	bool isRepositoryInclude() const { return isIncludePattern() && patterns[1][0] == '#'; }
 
 	bool hasSyntax() const { return !syntax.empty() || dynSyntax; }
 };
