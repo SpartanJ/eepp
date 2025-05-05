@@ -4,6 +4,8 @@
 #include <eepp/system/regex.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/syntaxtokenizer.hpp>
+
+#include <array>
 #include <variant>
 
 using namespace EE::System;

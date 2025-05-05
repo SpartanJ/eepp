@@ -709,8 +709,10 @@ void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visi
 		}
 	}
 
+#ifdef EE_DEBUG
 	if ( recomputeLineToVisibleIndex )
 		eeASSERT( mDocLineToVisibleIndex.size() == mDoc->linesCount() );
+#endif
 
 	onVisibleLinesCountChange();
 }
