@@ -5,6 +5,8 @@
 #include <eepp/core/string.hpp>
 #include <eepp/ui/doc/foldrangetype.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
+#include <eepp/ui/doc/syntaxtokenizer.hpp>
+
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -31,6 +33,15 @@ enum class SyntaxPatternMatchType { LuaPattern, RegEx, Parser };
 class SyntaxDefinition;
 
 struct EE_API SyntaxPattern {
+	enum Flags {
+		IsPure = 1 << 0,
+		IsInclude = 1 << 1,
+		IsRepositoryInclude = 1 << 2,
+		IsRootSelfInclude = 1 << 3,
+		IsInherited = 1 << 4,
+		IsRangedMatch = 1 << 5,
+	};
+
 	static UnorderedMap<SyntaxStyleType, std::string> SyntaxStyleTypeCache;
 
 	using DynamicSyntax =
@@ -45,6 +56,8 @@ struct EE_API SyntaxPattern {
 	DynamicSyntax dynSyntax;
 	SyntaxPatternMatchType matchType{ SyntaxPatternMatchType::LuaPattern };
 	const SyntaxDefinition* def{ nullptr };
+	Uint16 flags{ 0 };
+	Uint16 repositoryIdx{ 0 };
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
 				   const std::string& _syntax = "",
@@ -70,18 +83,41 @@ struct EE_API SyntaxPattern {
 				   std::vector<std::string>&& _endTypes, DynamicSyntax&& _syntax,
 				   SyntaxPatternMatchType matchType = SyntaxPatternMatchType::LuaPattern );
 
-	bool isIncludePattern() const {
+	inline bool hasSyntax() const { return !syntax.empty() || dynSyntax; }
+
+	inline bool isPure() const { return flags & Flags::IsPure; }
+
+	inline bool isInclude() const { return flags & Flags::IsInclude; }
+
+	inline bool isRepositoryInclude() const { return flags & Flags::IsRepositoryInclude; }
+
+	inline bool isRootSelfInclude() const { return flags & Flags::IsRootSelfInclude; }
+
+	inline bool isInherited() const { return flags & Flags::IsInherited; }
+
+	inline bool isRangedMatch() const { return flags & Flags::IsRangedMatch; }
+
+	std::string_view getRepositoryName() const {
+		eeASSERT( isRepositoryInclude() );
+		return std::string_view{ patterns[1] }.substr( 1 );
+	}
+
+	inline bool checkIsIncludePattern() const {
 		return patterns.size() == 2 && patterns[0] == "include" && !patterns[1].empty() &&
 			   ( patterns[1][0] == '#' || patterns[1][0] == '$' );
 	}
 
-	bool isRangedMatch() const { return !isIncludePattern() && patterns.size() >= 2; }
+	inline bool checkIsRangedMatch() const {
+		return !checkIsIncludePattern() && patterns.size() >= 2;
+	}
 
-	bool isRootSelfInclude() const { return isIncludePattern() && patterns[1] == "$self"; }
+	inline bool checkIsRootSelfInclude() const {
+		return checkIsIncludePattern() && patterns[1] == "$self";
+	}
 
-	bool isRepositoryInclude() const { return isIncludePattern() && patterns[1][0] == '#'; }
-
-	bool hasSyntax() const { return !syntax.empty() || dynSyntax; }
+	inline bool checkIsRepositoryInclude() const {
+		return checkIsIncludePattern() && patterns[1][0] == '#';
+	}
 };
 
 class EE_API SyntaxDefinition {
@@ -183,11 +219,21 @@ class EE_API SyntaxDefinition {
 	SyntaxDefinition& setRepository( const std::string& name,
 									 std::vector<SyntaxPattern>&& patterns );
 
-	const std::vector<SyntaxPattern>& getRepository( const std::string& name ) const;
+	const std::vector<SyntaxPattern>& getRepository( String::HashType hash ) const;
+
+	const std::vector<SyntaxPattern>& getRepository( std::string_view name ) const;
+
+	Uint32 getRepositoryIndex( String::HashType hash ) const;
+
+	Uint32 getRepositoryIndex( std::string_view name ) const;
+
+	String::HashType getRepositoryHash( Uint32 index ) const;
 
 	SyntaxDefinition& addAlternativeName( const std::string& name );
 
 	const std::vector<std::string>& getAlternativeNames() const;
+
+	const SyntaxPattern* getPatternFromState( const SyntaxStateType& state ) const;
 
   protected:
 	friend class SyntaxDefinitionManager;
@@ -208,8 +254,11 @@ class EE_API SyntaxDefinition {
 	bool mVisible{ true };
 	bool mHasExtensionPriority{ false };
 	bool mCaseInsensitive{ false };
-	UnorderedMap<std::string, std::vector<SyntaxPattern>> mRepository;
+	UnorderedMap<String::HashType, std::vector<SyntaxPattern>> mRepository;
+	UnorderedMap<String::HashType, Uint32> mRepositoryIndex;
+	UnorderedMap<Uint32, String::HashType> mRepositoryIndexInvert;
 	std::vector<std::string> mLanguageAlternativeNames;
+	Uint32 mRepositoryIndexCounter{ 0 };
 };
 
 }}} // namespace EE::UI::Doc

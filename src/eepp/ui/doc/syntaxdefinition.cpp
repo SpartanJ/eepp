@@ -2,6 +2,7 @@
 #include <eepp/core/string.hpp>
 #include <eepp/system/parsermatcher.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
+#include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 
 using namespace std::literals;
 
@@ -37,9 +38,33 @@ static void updatePatternRefs( const SyntaxDefinition& def, SyntaxPattern& ptrn 
 		ptrn.syntax = def.getLanguageName();
 }
 
-static void updatePatternRefs( const SyntaxDefinition& def, std::vector<SyntaxPattern>& ptrns ) {
-	for ( auto& ptrn : ptrns )
+static void updatePatternState( SyntaxDefinition& def, std::vector<SyntaxPattern>& ptrns ) {
+	for ( auto& ptrn : ptrns ) {
+		if ( ptrn.checkIsRangedMatch() )
+			ptrn.flags |= SyntaxPattern::IsRangedMatch;
+
+		if ( ptrn.checkIsIncludePattern() ) {
+			ptrn.flags |= SyntaxPattern::IsInclude;
+
+			if ( ptrn.checkIsRepositoryInclude() ) {
+				ptrn.flags |= SyntaxPattern::IsRepositoryInclude;
+				ptrn.repositoryIdx = def.getRepositoryIndex( ptrn.getRepositoryName() );
+			}
+
+			if ( ptrn.checkIsRootSelfInclude() )
+				ptrn.flags |= SyntaxPattern::IsRootSelfInclude;
+		} else {
+			ptrn.flags |= SyntaxPattern::IsPure;
+		}
+
 		updatePatternRefs( def, ptrn );
+	}
+}
+
+static void updateRepoIndexState( SyntaxDefinition& def, std::vector<SyntaxPattern>& ptrns ) {
+	for ( auto& ptrn : ptrns )
+		if ( ptrn.isRepositoryInclude() )
+			ptrn.repositoryIdx = def.getRepositoryIndex( ptrn.getRepositoryName() );
 }
 
 SyntaxDefinition::SyntaxDefinition() {}
@@ -65,7 +90,7 @@ SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
 				 return pattern.matchType == SyntaxPatternMatchType::Parser;
 			 } ) )
 			ParserMatcherManager::instance()->registerBaseParsers();
-		updatePatternRefs( *this, mPatterns );
+		updatePatternState( *this, mPatterns );
 		mPatterns.emplace_back( SyntaxPattern{ { "%s+" }, "normal" } );
 		mPatterns.emplace_back( SyntaxPattern{ { "%w+%f[%s]" }, "normal" } );
 	}
@@ -360,15 +385,37 @@ SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
 
 SyntaxDefinition& SyntaxDefinition::setRepository( const std::string& name,
 												   std::vector<SyntaxPattern>&& patterns ) {
-	updatePatternRefs( *this, patterns );
-	mRepository[name] = std::move( patterns );
+	updatePatternState( *this, patterns );
+	updateRepoIndexState( *this, mPatterns );
+	auto hash = String::hash( name );
+	mRepository[hash] = std::move( patterns );
+	mRepositoryIndex[hash] = ++mRepositoryIndexCounter;
+	mRepositoryIndexInvert[mRepositoryIndexCounter] = hash;
 	return *this;
 }
 
-const std::vector<SyntaxPattern>& SyntaxDefinition::getRepository( const std::string& name ) const {
+const std::vector<SyntaxPattern>& SyntaxDefinition::getRepository( String::HashType hash ) const {
 	static std::vector<SyntaxPattern> EMPTY = {};
-	auto found = mRepository.find( name );
+	auto found = mRepository.find( hash );
 	return found != mRepository.end() ? found->second : EMPTY;
+}
+
+const std::vector<SyntaxPattern>& SyntaxDefinition::getRepository( std::string_view name ) const {
+	return getRepository( String::hash( name ) );
+}
+
+Uint32 SyntaxDefinition::getRepositoryIndex( String::HashType hash ) const {
+	auto it = mRepositoryIndex.find( hash );
+	return it != mRepositoryIndex.end() ? it->second : 0;
+}
+
+Uint32 SyntaxDefinition::getRepositoryIndex( std::string_view name ) const {
+	return getRepositoryIndex( String::hash( name ) );
+}
+
+String::HashType SyntaxDefinition::getRepositoryHash( Uint32 index ) const {
+	auto it = mRepositoryIndexInvert.find( index );
+	return it != mRepositoryIndexInvert.end() ? it->second : 0;
 }
 
 SyntaxDefinition& SyntaxDefinition::addAlternativeName( const std::string& name ) {
@@ -378,6 +425,23 @@ SyntaxDefinition& SyntaxDefinition::addAlternativeName( const std::string& name 
 
 const std::vector<std::string>& SyntaxDefinition::getAlternativeNames() const {
 	return mLanguageAlternativeNames;
+}
+
+const SyntaxPattern* SyntaxDefinition::getPatternFromState( const SyntaxStateType& state ) const {
+	if ( state.repositoryIdx == 0 && state.state > 0 &&
+		 state.state - 1 < static_cast<int>( mPatterns.size() ) ) {
+		return &mPatterns[state.state - 1];
+	} else if ( state.repositoryIdx != 0 ) {
+		auto hash = getRepositoryHash( state.repositoryIdx );
+		if ( hash ) {
+			const auto& repo = mRepository.find( hash );
+			if ( repo != mRepository.end() && state.state > 0 &&
+				 state.state - 1 < static_cast<int>( repo->second.size() ) ) {
+				return &repo->second[state.state - 1];
+			}
+		}
+	}
+	return nullptr;
 }
 
 }}} // namespace EE::UI::Doc

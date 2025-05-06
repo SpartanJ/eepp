@@ -624,6 +624,10 @@ String::HashType String::hash( const std::string& str ) {
 	return String::hash( str.c_str() );
 }
 
+String::HashType String::hash( const std::string_view& str ) {
+	return String::hash( str.data(), str.length() );
+}
+
 String::HashType String::hash( const String& str ) {
 	return String::hash( reinterpret_cast<const char*>( str.mString.data() ),
 						 str.size() * sizeof( String::StringBaseType ) );

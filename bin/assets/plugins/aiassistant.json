@@ -128,7 +128,12 @@
         },
         {
           "name": "gemini-2.5-pro-exp-03-25",
-          "display_name": "Gemini 2.5 Pro Experimental",
+          "display_name": "Gemini 2.5 Pro Experimental (03-25)",
+          "max_tokens": 1000000
+        },
+        {
+          "name": "gemini-2.5-pro-preview-05-06",
+          "display_name": "Gemini 2.5 Pro Preview (05-06)",
           "max_tokens": 1000000
         },
         {

@@ -97,6 +97,9 @@ class EE_API String {
 	/** @return string hash */
 	static String::HashType hash( const std::string& str );
 
+	/** @return string hash */
+	static String::HashType hash( const std::string_view& str );
+
 	/** @return string hash. Note: String::hash( std::string( "text" ) ) is != to String::hash(
 	 * String( "text" ) ) */
 	static String::HashType hash( const String& str );
