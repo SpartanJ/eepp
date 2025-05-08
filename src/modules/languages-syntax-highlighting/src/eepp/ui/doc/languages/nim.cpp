@@ -5,7 +5,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 void addNim() {
 	std::vector<SyntaxPattern> nim_patterns;
-	UnorderedMap<std::string, std::string> nim_symbols;
+	SyntaxDefMap<std::string, std::string> nim_symbols;
 
 	const std::vector<std::string> nim_number_patterns = {
 		"0[bB][01][01_]*",	  "0o[0-7][0-7_]*",

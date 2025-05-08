@@ -41,7 +41,7 @@
       "language": "python",
       "file_patterns": ["%.py$"],
       "warning_pattern": "[^:]:(%d+):(%d+):%s([^\n]+)",
-      "command": "ruff $FILENAME",
+      "command": "ruff check $FILENAME",
       "url": "https://ruff.rs"
     },
     {

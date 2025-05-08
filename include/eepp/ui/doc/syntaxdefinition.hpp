@@ -32,17 +32,18 @@ enum class SyntaxPatternMatchType { LuaPattern, RegEx, Parser };
 
 class SyntaxDefinition;
 
+template <typename Key, typename Value> using SyntaxDefMap = UnorderedMap<Key, Value>;
+
 struct EE_API SyntaxPattern {
 	enum Flags {
 		IsPure = 1 << 0,
 		IsInclude = 1 << 1,
 		IsRepositoryInclude = 1 << 2,
 		IsRootSelfInclude = 1 << 3,
-		IsInherited = 1 << 4,
 		IsRangedMatch = 1 << 5,
 	};
 
-	static UnorderedMap<SyntaxStyleType, std::string> SyntaxStyleTypeCache;
+	static SyntaxDefMap<SyntaxStyleType, std::string> SyntaxStyleTypeCache;
 
 	using DynamicSyntax =
 		std::function<std::string( const SyntaxPattern&, const std::string_view& )>;
@@ -93,8 +94,6 @@ struct EE_API SyntaxPattern {
 
 	inline bool isRootSelfInclude() const { return flags & Flags::IsRootSelfInclude; }
 
-	inline bool isInherited() const { return flags & Flags::IsInherited; }
-
 	inline bool isRangedMatch() const { return flags & Flags::IsRangedMatch; }
 
 	std::string_view getRepositoryName() const {
@@ -126,7 +125,7 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition( const std::string& languageName, std::vector<std::string>&& files,
 					  std::vector<SyntaxPattern>&& patterns,
-					  UnorderedMap<std::string, std::string>&& symbols = {},
+					  SyntaxDefMap<std::string, std::string>&& symbols = {},
 					  const std::string& comment = "", std::vector<std::string>&& headers = {},
 					  const std::string& lspName = "" );
 
@@ -144,7 +143,7 @@ class EE_API SyntaxDefinition {
 
 	const std::string& getComment() const;
 
-	const UnorderedMap<std::string, SyntaxStyleType>& getSymbols() const;
+	const SyntaxDefMap<std::string, SyntaxStyleType>& getSymbols() const;
 
 	SyntaxStyleType getSymbol( const std::string& symbol ) const;
 
@@ -164,8 +163,8 @@ class EE_API SyntaxDefinition {
 	SyntaxDefinition& addSymbols( const std::vector<std::string>& symbolNames,
 								  const std::string& typeName );
 
-	SyntaxDefinition& setSymbols( const UnorderedMap<std::string, SyntaxStyleType>& symbols,
-								  const UnorderedMap<std::string, std::string>& symbolNames );
+	SyntaxDefinition& setSymbols( const SyntaxDefMap<std::string, SyntaxStyleType>& symbols,
+								  const SyntaxDefMap<std::string, std::string>& symbolNames );
 
 	/** Sets the comment string used for auto-comment functionality. */
 	SyntaxDefinition& setComment( const std::string& comment );
@@ -200,7 +199,7 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition& setExtensionPriority( bool hasExtensionPriority );
 
-	UnorderedMap<std::string, std::string> getSymbolNames() const;
+	SyntaxDefMap<std::string, std::string> getSymbolNames() const;
 
 	const Uint16& getLanguageIndex() const { return mLanguageIndex; }
 
@@ -216,7 +215,7 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition& setFoldBraces( const std::vector<std::pair<Int64, Int64>>& foldBraces );
 
-	SyntaxDefinition& setRepository( const std::string& name,
+	SyntaxDefinition& addRepository( const std::string& name,
 									 std::vector<SyntaxPattern>&& patterns );
 
 	const std::vector<SyntaxPattern>& getRepository( String::HashType hash ) const;
@@ -228,6 +227,12 @@ class EE_API SyntaxDefinition {
 	Uint32 getRepositoryIndex( std::string_view name ) const;
 
 	String::HashType getRepositoryHash( Uint32 index ) const;
+
+	std::string getRepositoryName( String::HashType hash ) const;
+
+	const SyntaxDefMap<String::HashType, std::vector<SyntaxPattern>>& getRepositories() const;
+
+	const SyntaxDefMap<String::HashType, std::string>& getRepositoriesNames() const;
 
 	SyntaxDefinition& addAlternativeName( const std::string& name );
 
@@ -242,8 +247,8 @@ class EE_API SyntaxDefinition {
 	String::HashType mLanguageId;
 	std::vector<std::string> mFiles;
 	std::vector<SyntaxPattern> mPatterns;
-	UnorderedMap<std::string, SyntaxStyleType> mSymbols;
-	UnorderedMap<std::string, std::string> mSymbolNames;
+	SyntaxDefMap<std::string, SyntaxStyleType> mSymbols;
+	SyntaxDefMap<std::string, std::string> mSymbolNames;
 	std::string mComment;
 	std::vector<std::string> mHeaders;
 	std::string mLSPName;
@@ -254,9 +259,10 @@ class EE_API SyntaxDefinition {
 	bool mVisible{ true };
 	bool mHasExtensionPriority{ false };
 	bool mCaseInsensitive{ false };
-	UnorderedMap<String::HashType, std::vector<SyntaxPattern>> mRepository;
-	UnorderedMap<String::HashType, Uint32> mRepositoryIndex;
-	UnorderedMap<Uint32, String::HashType> mRepositoryIndexInvert;
+	SyntaxDefMap<String::HashType, std::vector<SyntaxPattern>> mRepository;
+	SyntaxDefMap<String::HashType, Uint32> mRepositoryIndex;
+	SyntaxDefMap<String::HashType, std::string> mRepositoryNames;
+	SyntaxDefMap<Uint32, String::HashType> mRepositoryIndexInvert;
 	std::vector<std::string> mLanguageAlternativeNames;
 	Uint32 mRepositoryIndexCounter{ 0 };
 };

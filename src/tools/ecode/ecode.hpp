@@ -44,10 +44,9 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 			   const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
-			   std::string css, bool health, const std::string& healthLang,
-			   ecode::FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen,
-			   bool stdOutLogs, bool disableFileLogs, bool openClean, bool portable,
-			   std::string language, bool incognito );
+			   std::string css, const std::string& fileToOpen, bool stdOutLogs,
+			   bool disableFileLogs, bool openClean, bool portable, std::string language,
+			   bool incognito, bool prematureExit );
 
 	void createWidgetInspector();
 
@@ -491,6 +490,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	void createDocDoesNotExistsInFSAlert( UICodeEditor* editor );
 
 	SettingsActions* getSettingsActions() { return mSettingsActions.get(); }
+
+	const std::string& getLanguagesPath() const { return mLanguagesPath; }
 
   protected:
 	std::vector<std::string> mArgs;

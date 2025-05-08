@@ -25,6 +25,97 @@ using json = nlohmann::json;
 
 namespace EE { namespace UI { namespace Doc {
 
+class TextMateScopeMapper {
+  private:
+	// Define the mapping from TM scope prefixes to ecode types.
+	// Use string_view for efficiency.
+	// **IMPORTANT**: This vector MUST be sorted by the length of the TM prefix
+	//                in DESCENDING order to ensure more specific matches are
+	//                checked first (e.g., "keyword.control" before "keyword").
+	//                We initialize it sorted here.
+	inline static const std::vector<std::pair<std::string_view, std::string_view>> scope_map_ = {
+		// -- Most Specific --
+		{ "markup.underline.link", "link" },	   // Specific markup
+		{ "constant.character.escape", "string" }, // Escapes within strings
+		{ "variable.parameter", "keyword3" },	   // Function parameters
+		{ "variable.language", "literal" },		 // Language constants like 'this', 'self', 'null'?
+		{ "storage.type", "keyword2" },			 // Class, struct, int, bool etc. (declaration)
+		{ "entity.name.function", "function" },	 // Function definition name
+		{ "entity.name.type", "keyword2" },		 // Type name (class, struct, etc.) in definition
+		{ "entity.name.class", "keyword2" },	 // Class name in definition
+		{ "entity.name.struct", "keyword2" },	 // Struct name in definition
+		{ "entity.name.interface", "keyword2" }, // Interface name in definition
+		{ "entity.name.tag", "keyword2" },		 // HTML/XML tag name
+		{ "keyword.control", "keyword" },		 // if, else, for, while, return etc.
+		{ "keyword.operator", "operator" },		 // +, -, =, and, or, etc.
+		{ "punctuation.definition.tag", "operator" }, // <, >, </ in HTML/XML
+		{ "support.function", "function" },			  // Built-in functions (print, len)
+		{ "support.type", "keyword2" },				  // Built-in types (string, list)
+		{ "support.class", "keyword2" },			  // Built-in classes
+		{ "storage.modifier", "keyword" },			  // public, private, static, const etc.
+		{ "constant.numeric", "number" },			  // Numbers
+		{ "constant.language", "literal" },			  // true, false, null etc.
+		{ "comment.unused", "normal" },				  // unused comments pattern
+
+		// -- General Categories --
+		{ "comment", "comment" },	   // Comments
+		{ "string", "string" },		   // Strings
+		{ "keyword", "keyword" },	   // Any other keyword
+		{ "storage", "keyword" },	   // Fallback for storage (like storage.type)
+		{ "operator", "operator" },	   // Fallback for operators (less common)
+		{ "punctuation", "operator" }, // General punctuation -> operator is often suitable
+		{ "constant", "literal" },	   // Any other constant (fallback)
+		{ "entity", "normal" },		   // General entities (fallback, often unstyled)
+		{ "variable", "normal" },	   // General variables (fallback, often unstyled)
+		{ "support", "normal" },	   // General support scopes (fallback)
+		{ "markup", "normal" }		   // General markup (fallback)
+		// "meta" scopes are intentionally left out. They define structure,
+		// not usually the token type itself. If no inner scope matches,
+		// it will eventually fall back to "normal".
+	};
+
+  public:
+	/**
+	 * @brief Maps a TextMate scope string to an ecode syntax highlighting type.
+	 *
+	 * This function takes a full TextMate scope string (e.g., "keyword.control.if.python")
+	 * and finds the most specific matching prefix in its internal mapping table
+	 * to determine the appropriate ecode type (e.g., "keyword").
+	 *
+	 * The matching prioritizes longer prefixes (more specific rules) over shorter ones.
+	 * For example, "keyword.control.if" will match "keyword.control" -> "keyword"
+	 * before it could match "keyword" -> "keyword".
+	 *
+	 * Scopes starting with "meta." generally describe code structure and do not
+	 * directly map to a type themselves, unless a more specific inner rule matches.
+	 * If no specific rule matches, the default type "normal" is returned.
+	 *
+	 * @param scopeName The TextMate scope string to map.
+	 * @return The corresponding ecode type string (e.g., "keyword", "string", "comment", "normal").
+	 */
+	static std::string scopeToType( const std::string_view scopeName ) {
+		if ( scopeName.empty() ) {
+			return "normal"; // Default for empty scope
+		}
+
+		// Iterate through the pre-sorted map (longest prefix first)
+		for ( const auto& mapping : scope_map_ ) {
+			const std::string_view tmPrefix = mapping.first;
+			// Check if scopeName starts with tmPrefix
+			if ( scopeName.starts_with( tmPrefix ) ) {
+				// Make sure it's either the full scope or followed by a '.'
+				// (prevents "stringBuffer" matching "string")
+				if ( scopeName.size() == tmPrefix.size() || scopeName[tmPrefix.size()] == '.' ) {
+					return std::string( mapping.second ); // Return the corresponding ecode type
+				}
+			}
+		}
+
+		// If no prefix matched, return the default type
+		return "normal";
+	}
+};
+
 SINGLETON_DECLARE_IMPLEMENTATION( SyntaxDefinitionManager )
 
 SyntaxDefinitionManager*
@@ -70,6 +161,46 @@ const std::vector<SyntaxDefinition>& SyntaxDefinitionManager::getDefinitions() c
 }
 
 static json toJson( const SyntaxDefinition& def ) {
+	const auto serializePattern =
+		[&def]( const SyntaxPattern& ptrn ) -> std::optional<nlohmann::json> {
+		json pattern;
+		auto ptrnType =
+			ptrn.matchType == SyntaxPatternMatchType::RegEx
+				? "regex"
+				: ( ptrn.matchType == SyntaxPatternMatchType::Parser ? "parser" : "pattern" );
+
+		// Do not export injected patterns
+		if ( ptrn.matchType == SyntaxPatternMatchType::LuaPattern && ptrn.patterns.size() == 1 &&
+			 ( ptrn.patterns[0] == "%s+" || ptrn.patterns[0] == "%w+%f[%s]" ) )
+			return {};
+
+		bool hasInclude = false;
+		if ( ptrn.patterns.size() == 2 && ptrn.patterns[0] == "include" ) {
+			hasInclude = true;
+			pattern["include"] = ptrn.patterns[1];
+		} else if ( ptrn.patterns.size() == 1 ) {
+			pattern[ptrnType] = ptrn.patterns[0];
+		} else if ( ptrn.patterns.size() ) {
+			pattern[ptrnType] = ptrn.patterns;
+		}
+
+		if ( !hasInclude ) {
+			if ( ptrn.typesNames.size() == 1 ) {
+				pattern["type"] = ptrn.typesNames[0];
+			} else if ( ptrn.typesNames.size() ) {
+				pattern["type"] = ptrn.typesNames;
+			}
+			if ( ptrn.endTypesNames.size() == 1 ) {
+				pattern["end_type"] = ptrn.endTypesNames[0];
+			} else if ( ptrn.endTypesNames.size() ) {
+				pattern["end_type"] = ptrn.endTypesNames;
+			}
+			if ( !ptrn.syntax.empty() )
+				pattern["syntax"] = ptrn.syntax == def.getLanguageName() ? "$self" : ptrn.syntax;
+		}
+		return pattern;
+	};
+
 	json j;
 	j["name"] = def.getLanguageName();
 	if ( def.getLSPName() != String::toLower( def.getLanguageName() ) )
@@ -80,36 +211,9 @@ static json toJson( const SyntaxDefinition& def ) {
 	if ( !def.getPatterns().empty() ) {
 		j["patterns"] = json::array();
 		for ( const auto& ptrn : def.getPatterns() ) {
-			json pattern;
-			auto ptrnType =
-				ptrn.matchType == SyntaxPatternMatchType::RegEx
-					? "regex"
-					: ( ptrn.matchType == SyntaxPatternMatchType::Parser ? "parser" : "pattern" );
-
-			// Do not export injected patterns
-			if ( ptrn.matchType == SyntaxPatternMatchType::LuaPattern &&
-				 ptrn.patterns.size() == 1 &&
-				 ( ptrn.patterns[0] == "%s+" || ptrn.patterns[0] == "%w+%f[%s]" ) )
-				continue;
-
-			if ( ptrn.patterns.size() == 1 ) {
-				pattern[ptrnType] = ptrn.patterns[0];
-			} else {
-				pattern[ptrnType] = ptrn.patterns;
-			}
-			if ( ptrn.typesNames.size() == 1 ) {
-				pattern["type"] = ptrn.typesNames[0];
-			} else {
-				pattern["type"] = ptrn.typesNames;
-			}
-			if ( ptrn.endTypesNames.size() == 1 ) {
-				pattern["end_type"] = ptrn.endTypesNames[0];
-			} else {
-				pattern["end_type"] = ptrn.endTypesNames;
-			}
-			if ( !ptrn.syntax.empty() )
-				pattern["syntax"] = ptrn.syntax;
-			j["patterns"].emplace_back( std::move( pattern ) );
+			auto pattern = serializePattern( ptrn );
+			if ( pattern )
+				j["patterns"].emplace_back( std::move( *pattern ) );
 		}
 	}
 	if ( !def.getSymbols().empty() ) {
@@ -138,6 +242,22 @@ static json toJson( const SyntaxDefinition& def ) {
 			braces["start"] = String( static_cast<String::StringBaseType>( fb.first ) ).toUtf8();
 			braces["end"] = String( static_cast<String::StringBaseType>( fb.second ) ).toUtf8();
 			j["fold_braces"].push_back( braces );
+		}
+	}
+
+	if ( !def.getRepositories().empty() ) {
+		j["repository"] = json::object();
+		auto& repository = j["repository"];
+
+		for ( const auto& [hash, patterns] : def.getRepositories() ) {
+			std::string name = def.getRepositoryName( hash );
+			nlohmann::json repo;
+			for ( const auto& pattern : patterns ) {
+				auto ojptrn = serializePattern( pattern );
+				if ( ojptrn )
+					repo.emplace_back( std::move( *ojptrn ) );
+			}
+			repository.emplace( name, std::move( repo ) );
 		}
 	}
 
@@ -423,12 +543,196 @@ SyntaxDefinitionManager::getPtrByLanguageId( const String::HashType& id ) const 
 	return nullptr;
 }
 
+static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
+	std::vector<std::string> type;
+	std::vector<std::string> endType;
+	std::vector<std::string> ptrns;
+	auto ctype = SyntaxPatternMatchType::LuaPattern;
+	std::string syntax;
+
+	const auto fillTypes = []( const nlohmann::json& captures, std::vector<std::string>& type ) {
+		Uint64 totalCaptures = 0;
+		for ( const auto& [capNumStr, _] : captures.items() ) {
+			Uint64 num;
+			if ( String::fromString( num, capNumStr ) )
+				totalCaptures = eemax( totalCaptures, num + 1 );
+		}
+
+		for ( Uint64 i = 0; i < totalCaptures; i++ ) {
+			auto capNumStr = String::toString( i );
+			if ( captures.contains( capNumStr ) && captures[capNumStr].contains( "name" ) ) {
+				type.emplace_back(
+					TextMateScopeMapper::scopeToType( captures[capNumStr].value( "name", "" ) ) );
+			} else {
+				type.emplace_back( "normal" );
+			}
+		}
+	};
+
+	// Assume TextMate pattern
+	if ( pattern.contains( "name" ) || pattern.contains( "begin" ) ) {
+		ctype = SyntaxPatternMatchType::RegEx;
+
+		if ( pattern.contains( "beginCaptures" ) )
+			fillTypes( pattern["beginCaptures"], type );
+
+		if ( pattern.contains( "endCaptures" ) )
+			fillTypes( pattern["endCaptures"], endType );
+
+		if ( type.empty() && pattern.contains( "captures" ) )
+			fillTypes( pattern["captures"], type );
+
+		if ( type.empty() && pattern.contains( "name" ) ) {
+			type.emplace_back( TextMateScopeMapper::scopeToType( pattern.value( "name", "" ) ) );
+		}
+
+		if ( pattern.contains( "match" ) && pattern["match"].is_string() ) {
+			ptrns.emplace_back( pattern.value( "match", "" ) );
+		} else if ( pattern.contains( "include" ) ) {
+			ptrns.emplace_back( "include" );
+			ptrns.emplace_back( pattern.value( "include", "" ) );
+		}
+
+		if ( pattern.contains( "begin" ) )
+			ptrns.emplace_back( pattern.value( "begin", "" ) );
+
+		if ( pattern.contains( "end" ) )
+			ptrns.emplace_back( pattern.value( "end", "" ) );
+
+		// Sub-languages?
+		if ( pattern.contains( "patterns" ) && !pattern["patterns"].empty() ) {
+			const auto& patterns = pattern["patterns"];
+			if ( patterns.size() == 1 && patterns[0].is_object() ) {
+				if ( patterns[0].contains( "include" ) &&
+					 patterns[0].value( "include", "" ) == "$self" ) {
+					syntax = "$self";
+				}
+
+				if ( patterns[0].contains( "name" ) && patterns[0].contains( "match" ) &&
+					 patterns[0].value( "name", "" ).starts_with( "constant.character.escape" ) ) {
+					ptrns.emplace_back( patterns[0].value( "match", "" ) );
+				}
+			}
+		}
+
+	} else {
+		if ( pattern.contains( "syntax" ) && pattern["syntax"].is_string() )
+			syntax = pattern.value( "syntax", "" );
+
+		if ( pattern.contains( "type" ) ) {
+			if ( pattern["type"].is_array() ) {
+				for ( const auto& t : pattern["type"] ) {
+					if ( t.is_string() )
+						type.emplace_back( t.get<std::string>() );
+				}
+			} else if ( pattern["type"].is_string() ) {
+				type.emplace_back( pattern["type"] );
+			}
+		} else {
+			type.emplace_back( "normal" );
+		}
+
+		if ( pattern.contains( "end_type" ) ) {
+			if ( pattern["end_type"].is_array() ) {
+				for ( const auto& t : pattern["end_type"] ) {
+					if ( t.is_string() )
+						endType.emplace_back( t.get<std::string>() );
+				}
+			} else if ( pattern["end_type"].is_string() ) {
+				endType.emplace_back( pattern["end_type"] );
+			}
+		}
+
+		if ( pattern.contains( "include" ) ) {
+			ptrns.emplace_back( "include" );
+			ptrns.emplace_back( pattern.value( "include", "" ) );
+		} else if ( pattern.contains( "pattern" ) ) {
+			if ( pattern["pattern"].is_array() ) {
+				const auto& ptrnIt = pattern["pattern"];
+				for ( const auto& ptrn : ptrnIt )
+					ptrns.emplace_back( ptrn );
+			} else if ( pattern["pattern"].is_string() ) {
+				ptrns.emplace_back( pattern["pattern"] );
+			}
+		} else if ( pattern.contains( "regex" ) ) {
+			ctype = SyntaxPatternMatchType::RegEx;
+			if ( pattern["regex"].is_array() ) {
+				const auto& ptrnIt = pattern["regex"];
+				for ( const auto& ptrn : ptrnIt )
+					ptrns.emplace_back( ptrn );
+			} else if ( pattern["regex"].is_string() ) {
+				ptrns.emplace_back( pattern["regex"] );
+			}
+		} else if ( pattern.contains( "parser" ) ) {
+			ctype = SyntaxPatternMatchType::Parser;
+			if ( pattern["parser"].is_array() ) {
+				const auto& ptrnIt = pattern["parser"];
+				for ( const auto& ptrn : ptrnIt )
+					ptrns.emplace_back( ptrn );
+			} else if ( pattern["parser"].is_string() ) {
+				ptrns.emplace_back( pattern["parser"] );
+			}
+		}
+	}
+
+	eeASSERT( !ptrns.empty() );
+
+	return SyntaxPattern( std::move( ptrns ), std::move( type ), std::move( endType ), syntax,
+						  ctype );
+}
+
+static SyntaxDefinition loadTextMateLanguage( const nlohmann::json& json, SyntaxDefinition& def ) {
+	if ( json.contains( "fileTypes" ) && json["fileTypes"].is_array() ) {
+		const auto& files = json["fileTypes"];
+		for ( const auto& file : files )
+			if ( file.is_string() ) {
+				auto ext( file.get<std::string>() );
+				def.addFileType( ( !String::contains( ext, "." ) ? "%." : "" ) + ext + "$" );
+			}
+	} else if ( json.contains( "scopeName" ) && json["scopeName"].is_string() ) {
+		const auto& scopeName = json.value( "scopeName", "" );
+		def.addFileType( "%." + FileSystem::fileExtension( scopeName ) + "$" );
+	}
+	return def;
+}
+
 static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 	SyntaxDefinition def;
+
 	try {
 		def.setLanguageName( json.value( "name", "" ) );
+
+		if ( json.contains( "patterns" ) && json["patterns"].is_array() ) {
+			const auto& patterns = json["patterns"];
+			for ( const auto& pattern : patterns )
+				def.addPattern( parsePattern( pattern ) );
+		}
+
+		if ( json.contains( "repository" ) && json["repository"].is_object() ) {
+			const auto& repository = json["repository"];
+			for ( const auto& [name, repository] : repository.items() ) {
+				std::vector<SyntaxPattern> ptrns;
+				if ( repository.contains( "match" ) || repository.contains( "begin" ) ) {
+					ptrns.emplace_back( parsePattern( repository ) );
+				} else if ( repository.contains( "patterns" ) &&
+							repository["patterns"].is_array() ) {
+					const auto& patterns = repository["patterns"];
+					for ( const auto& pattern : patterns )
+						ptrns.emplace_back( parsePattern( pattern ) );
+				}
+				def.addRepository( name, std::move( ptrns ) );
+			}
+		}
+
+		if ( ( json.contains( "$schema" ) && json["$schema"].is_string() &&
+			   String::contains( json.value( "$schema", "" ), "tmlanguage.json" ) ) ||
+			 json.contains( "scopeName" ) /* assume tmlanguage */ ) {
+			return loadTextMateLanguage( json, def );
+		}
+
 		if ( json.contains( "lsp_name" ) && json["lsp_name"].is_string() )
 			def.setLSPName( json["lsp_name"].get<std::string>() );
+
 		if ( json.contains( "files" ) ) {
 			if ( json["files"].is_array() ) {
 				const auto& files = json["files"];
@@ -439,73 +743,9 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 				def.addFileType( json["files"].get<std::string>() );
 			}
 		}
+
 		def.setComment( json.value( "comment", "" ) );
-		if ( json.contains( "patterns" ) && json["patterns"].is_array() ) {
-			const auto& patterns = json["patterns"];
-			for ( const auto& pattern : patterns ) {
-				std::vector<std::string> type;
-				std::vector<std::string> endType;
 
-				if ( pattern.contains( "type" ) ) {
-					if ( pattern["type"].is_array() ) {
-						for ( const auto& t : pattern["type"] ) {
-							if ( t.is_string() )
-								type.push_back( t.get<std::string>() );
-						}
-					} else if ( pattern["type"].is_string() ) {
-						type.push_back( pattern["type"] );
-					}
-				} else {
-					type.push_back( "normal" );
-				}
-
-				if ( pattern.contains( "end_type" ) ) {
-					if ( pattern["end_type"].is_array() ) {
-						for ( const auto& t : pattern["end_type"] ) {
-							if ( t.is_string() )
-								endType.push_back( t.get<std::string>() );
-						}
-					} else if ( pattern["end_type"].is_string() ) {
-						endType.push_back( pattern["end_type"] );
-					}
-				}
-
-				auto syntax = !pattern.contains( "syntax" ) || !pattern["syntax"].is_string()
-								  ? ""
-								  : pattern.value( "syntax", "" );
-				std::vector<std::string> ptrns;
-				auto ctype = SyntaxPatternMatchType::LuaPattern;
-				if ( pattern.contains( "pattern" ) ) {
-					if ( pattern["pattern"].is_array() ) {
-						const auto& ptrnIt = pattern["pattern"];
-						for ( const auto& ptrn : ptrnIt )
-							ptrns.emplace_back( ptrn );
-					} else if ( pattern["pattern"].is_string() ) {
-						ptrns.emplace_back( pattern["pattern"] );
-					}
-				} else if ( pattern.contains( "regex" ) ) {
-					ctype = SyntaxPatternMatchType::RegEx;
-					if ( pattern["regex"].is_array() ) {
-						const auto& ptrnIt = pattern["regex"];
-						for ( const auto& ptrn : ptrnIt )
-							ptrns.emplace_back( ptrn );
-					} else if ( pattern["regex"].is_string() ) {
-						ptrns.emplace_back( pattern["regex"] );
-					}
-				} else if ( pattern.contains( "parser" ) ) {
-					ctype = SyntaxPatternMatchType::Parser;
-					if ( pattern["parser"].is_array() ) {
-						const auto& ptrnIt = pattern["parser"];
-						for ( const auto& ptrn : ptrnIt )
-							ptrns.emplace_back( ptrn );
-					} else if ( pattern["parser"].is_string() ) {
-						ptrns.emplace_back( pattern["parser"] );
-					}
-				}
-				def.addPattern( SyntaxPattern( std::move( ptrns ), std::move( type ),
-											   std::move( endType ), syntax, ctype ) );
-			}
-		}
 		if ( json.contains( "symbols" ) ) {
 			if ( json["symbols"].is_array() ) {
 				const auto& symbols = json["symbols"];
@@ -520,6 +760,7 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 				}
 			}
 		}
+
 		if ( json.contains( "headers" ) && json["headers"].is_array() ) {
 			const auto& headers = json["headers"];
 			std::vector<std::string> hds;
@@ -529,17 +770,21 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 						hds.emplace_back( header.get<std::string>() );
 				}
 			} else if ( headers.is_string() ) {
-				hds.push_back( headers.get<std::string>() );
+				hds.emplace_back( headers.get<std::string>() );
 			}
 			if ( !hds.empty() )
 				def.setHeaders( hds );
 		}
+
 		if ( json.contains( "visible" ) && json["visible"].is_boolean() )
 			def.setVisible( json["visible"].get<bool>() );
+
 		if ( json.contains( "auto_close_xml_tags" ) && json["auto_close_xml_tags"].is_boolean() )
 			def.setAutoCloseXMLTags( json["auto_close_xml_tags"].get<bool>() );
+
 		if ( json.contains( "extension_priority" ) && json["extension_priority"].is_boolean() )
 			def.setExtensionPriority( json["extension_priority"].get<bool>() );
+
 		if ( json.contains( "case_insensitive" ) && json["case_insensitive"].is_boolean() )
 			def.setCaseInsensitive( json["case_insensitive"].get<bool>() );
 
@@ -566,6 +811,7 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 	} catch ( const json::exception& e ) {
 		Log::error( "SyntaxDefinition loadLanguage failed:\n%s", e.what() );
 	}
+
 	return def;
 }
 

@@ -22,7 +22,7 @@
     {
       "language": "python",
       "file_patterns": ["%.py$", "%.pyw$"],
-      "command": "black $FILENAME",
+      "command": "ruff format $FILENAME",
       "type": "inplace",
       "url": "https://black.readthedocs.io/en/stable/"
     },

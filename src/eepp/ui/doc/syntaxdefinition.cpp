@@ -1,5 +1,6 @@
 #include <eepp/core/memorymanager.hpp>
 #include <eepp/core/string.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/parsermatcher.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
@@ -8,7 +9,7 @@ using namespace std::literals;
 
 namespace EE { namespace UI { namespace Doc {
 
-UnorderedMap<SyntaxStyleType, std::string> SyntaxPattern::SyntaxStyleTypeCache = {};
+SyntaxDefMap<SyntaxStyleType, std::string> SyntaxPattern::SyntaxStyleTypeCache = {};
 
 template <typename SyntaxStyleType> void updateCache( const SyntaxPattern& ptrn ) {
 	if constexpr ( std::is_same_v<SyntaxStyleType, std::string> ) {
@@ -38,27 +39,32 @@ static void updatePatternRefs( const SyntaxDefinition& def, SyntaxPattern& ptrn 
 		ptrn.syntax = def.getLanguageName();
 }
 
-static void updatePatternState( SyntaxDefinition& def, std::vector<SyntaxPattern>& ptrns ) {
-	for ( auto& ptrn : ptrns ) {
-		if ( ptrn.checkIsRangedMatch() )
-			ptrn.flags |= SyntaxPattern::IsRangedMatch;
+static void updatePatternState( SyntaxDefinition& def, SyntaxPattern& ptrn ) {
+	if ( ptrn.checkIsRangedMatch() )
+		ptrn.flags |= SyntaxPattern::IsRangedMatch;
 
-		if ( ptrn.checkIsIncludePattern() ) {
-			ptrn.flags |= SyntaxPattern::IsInclude;
+	if ( ptrn.checkIsIncludePattern() ) {
+		ptrn.flags |= SyntaxPattern::IsInclude;
 
-			if ( ptrn.checkIsRepositoryInclude() ) {
-				ptrn.flags |= SyntaxPattern::IsRepositoryInclude;
-				ptrn.repositoryIdx = def.getRepositoryIndex( ptrn.getRepositoryName() );
-			}
-
-			if ( ptrn.checkIsRootSelfInclude() )
-				ptrn.flags |= SyntaxPattern::IsRootSelfInclude;
+		if ( ptrn.checkIsRepositoryInclude() ) {
+			ptrn.flags |= SyntaxPattern::IsRepositoryInclude;
+			ptrn.repositoryIdx = def.getRepositoryIndex( ptrn.getRepositoryName() );
+		} else if ( ptrn.checkIsRootSelfInclude() ) {
+			ptrn.flags |= SyntaxPattern::IsRootSelfInclude;
 		} else {
-			ptrn.flags |= SyntaxPattern::IsPure;
+			Log::warning( "updatePatternState unknown include directive: %s", ptrn.patterns[1] );
+			ptrn.flags &= ~SyntaxPattern::IsInclude;
 		}
-
-		updatePatternRefs( def, ptrn );
+	} else {
+		ptrn.flags |= SyntaxPattern::IsPure;
 	}
+
+	updatePatternRefs( def, ptrn );
+}
+
+static void updatePatternsState( SyntaxDefinition& def, std::vector<SyntaxPattern>& ptrns ) {
+	for ( auto& ptrn : ptrns )
+		updatePatternState( def, ptrn );
 }
 
 static void updateRepoIndexState( SyntaxDefinition& def, std::vector<SyntaxPattern>& ptrns ) {
@@ -72,7 +78,7 @@ SyntaxDefinition::SyntaxDefinition() {}
 SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
 									std::vector<std::string>&& files,
 									std::vector<SyntaxPattern>&& patterns,
-									UnorderedMap<std::string, std::string>&& symbols,
+									SyntaxDefMap<std::string, std::string>&& symbols,
 									const std::string& comment, std::vector<std::string>&& headers,
 									const std::string& lspName ) :
 	mLanguageName( languageName ),
@@ -90,7 +96,7 @@ SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
 				 return pattern.matchType == SyntaxPatternMatchType::Parser;
 			 } ) )
 			ParserMatcherManager::instance()->registerBaseParsers();
-		updatePatternState( *this, mPatterns );
+		updatePatternsState( *this, mPatterns );
 		mPatterns.emplace_back( SyntaxPattern{ { "%s+" }, "normal" } );
 		mPatterns.emplace_back( SyntaxPattern{ { "%w+%f[%s]" }, "normal" } );
 	}
@@ -137,7 +143,7 @@ SyntaxDefinition& SyntaxDefinition::setExtensionPriority( bool hasExtensionPrior
 	return *this;
 }
 
-UnorderedMap<std::string, std::string> SyntaxDefinition::getSymbolNames() const {
+SyntaxDefMap<std::string, std::string> SyntaxDefinition::getSymbolNames() const {
 	return mSymbolNames;
 }
 
@@ -177,7 +183,7 @@ const std::string& SyntaxDefinition::getComment() const {
 	return mComment;
 }
 
-const UnorderedMap<std::string, SyntaxStyleType>& SyntaxDefinition::getSymbols() const {
+const SyntaxDefMap<std::string, SyntaxStyleType>& SyntaxDefinition::getSymbols() const {
 	return mSymbols;
 }
 
@@ -195,6 +201,7 @@ SyntaxDefinition& SyntaxDefinition::addFileType( const std::string& fileType ) {
 
 SyntaxDefinition& SyntaxDefinition::addPattern( const SyntaxPattern& pattern ) {
 	mPatterns.push_back( pattern );
+	updatePatternState( *this, mPatterns[mPatterns.size() - 1] );
 	return *this;
 }
 
@@ -229,8 +236,8 @@ SyntaxDefinition& SyntaxDefinition::addSymbols( const std::vector<std::string>& 
 }
 
 SyntaxDefinition&
-SyntaxDefinition::setSymbols( const UnorderedMap<std::string, SyntaxStyleType>& symbols,
-							  const UnorderedMap<std::string, std::string>& symbolNames ) {
+SyntaxDefinition::setSymbols( const SyntaxDefMap<std::string, SyntaxStyleType>& symbols,
+							  const SyntaxDefMap<std::string, std::string>& symbolNames ) {
 	mSymbols = symbols;
 	mSymbolNames = symbolNames;
 	return *this;
@@ -383,14 +390,15 @@ SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
 	updateCache<SyntaxStyleType>( *this );
 }
 
-SyntaxDefinition& SyntaxDefinition::setRepository( const std::string& name,
+SyntaxDefinition& SyntaxDefinition::addRepository( const std::string& name,
 												   std::vector<SyntaxPattern>&& patterns ) {
-	updatePatternState( *this, patterns );
-	updateRepoIndexState( *this, mPatterns );
 	auto hash = String::hash( name );
-	mRepository[hash] = std::move( patterns );
 	mRepositoryIndex[hash] = ++mRepositoryIndexCounter;
+	mRepositoryNames[hash] = name;
 	mRepositoryIndexInvert[mRepositoryIndexCounter] = hash;
+	updatePatternsState( *this, patterns );
+	mRepository[hash] = std::move( patterns );
+	updateRepoIndexState( *this, mPatterns );
 	return *this;
 }
 
@@ -442,6 +450,20 @@ const SyntaxPattern* SyntaxDefinition::getPatternFromState( const SyntaxStateTyp
 		}
 	}
 	return nullptr;
+}
+
+const SyntaxDefMap<String::HashType, std::vector<SyntaxPattern>>&
+SyntaxDefinition::getRepositories() const {
+	return mRepository;
+}
+
+const SyntaxDefMap<String::HashType, std::string>& SyntaxDefinition::getRepositoriesNames() const {
+	return mRepositoryNames;
+}
+
+std::string SyntaxDefinition::getRepositoryName( String::HashType hash ) const {
+	auto it = mRepositoryNames.find( hash );
+	return it != mRepositoryNames.end() ? it->second : "";
 }
 
 }}} // namespace EE::UI::Doc

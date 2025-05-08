@@ -3442,10 +3442,9 @@ bool App::needsRedirectToRunningProcess( std::string file ) {
 
 void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
 				const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
-				std::string css, bool health, const std::string& healthLang,
-				FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen,
-				bool stdOutLogs, bool disableFileLogs, bool openClean, bool portable,
-				std::string language, bool incognito ) {
+				std::string css, const std::string& fileToOpen, bool stdOutLogs,
+				bool disableFileLogs, bool openClean, bool portable, std::string language,
+				bool incognito, bool prematureExit ) {
 	Http::setThreadPool( mThreadPool );
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
@@ -3471,15 +3470,11 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	mResPath += "assets";
 	FileSystem::dirAddSlashAtEnd( mResPath );
 
-	bool firstRun =
-		loadConfig( logLevel, currentDisplay->getSize(), health, stdOutLogs, disableFileLogs );
+	bool firstRun = loadConfig( logLevel, currentDisplay->getSize(), prematureExit, stdOutLogs,
+								disableFileLogs );
 
-	if ( health ) {
-		Sys::windowAttachConsole();
-		Language::LanguagesSyntaxHighlighting::load();
-		FeaturesHealth::doHealth( mPluginManager.get(), healthLang, healthFormat );
+	if ( prematureExit )
 		return;
-	}
 
 	if ( !openClean && needsRedirectToRunningProcess( file ) )
 		return;
@@ -4069,9 +4064,11 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	}
 }
 
-static void exportLanguages( const std::string& path, const std::string& langs ) {
+static void exportLanguages( const std::string& path, const std::string& langs,
+							 const std::string& langsPath ) {
 	Language::LanguagesSyntaxHighlighting::load();
 	SyntaxDefinitionManager* sdm = SyntaxDefinitionManager::instance();
+	SyntaxDefinitionManager::instance()->loadFromFolder( langsPath );
 	std::vector<SyntaxDefinition> defs;
 
 	if ( !langs.empty() ) {
@@ -4243,12 +4240,6 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		return EXIT_SUCCESS;
 	}
 
-	if ( exportLangPath && !exportLangPath.Get().empty() ) {
-		Sys::windowAttachConsole();
-		exportLanguages( exportLangPath.Get(), exportLang.Get() );
-		return EXIT_SUCCESS;
-	}
-
 	if ( version.Get() ) {
 		Sys::windowAttachConsole();
 		std::cout << ecode::Version::getVersionFullName() << '\n';
@@ -4264,9 +4255,26 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	appInstance->init( logLevel.Get(), folder ? folder.Get() : fileOrFolderPos.Get(),
 					   pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
 					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),
-					   benchmarkMode.Get(), css.Get(), health || healthLang, healthLang.Get(),
-					   healthFormat.Get(), file.Get(), verbose.Get(), disableFileLogs.Get(),
-					   openClean.Get(), portable.Get(), language.Get(), incognito.Get() );
+					   benchmarkMode.Get(), css.Get(), file.Get(), verbose.Get(),
+					   disableFileLogs.Get(), openClean.Get(), portable.Get(), language.Get(),
+					   incognito.Get(),
+					   health || ( exportLangPath && !exportLangPath.Get().empty() ) );
+
+	if ( exportLangPath && !exportLangPath.Get().empty() ) {
+		Sys::windowAttachConsole();
+		exportLanguages( exportLangPath.Get(), exportLang.Get(), appInstance->getLanguagesPath() );
+		return EXIT_SUCCESS;
+	}
+
+	if ( health ) {
+		Sys::windowAttachConsole();
+		Language::LanguagesSyntaxHighlighting::load();
+		SyntaxDefinitionManager::instance()->loadFromFolder( appInstance->getLanguagesPath() );
+		FeaturesHealth::doHealth( appInstance->getPluginManager(), healthLang.Get(),
+								  healthFormat.Get() );
+		return EXIT_SUCCESS;
+	}
+
 	eeSAFE_DELETE( appInstance );
 
 	Engine::destroySingleton();

@@ -6,11 +6,18 @@
 #include <eepp/ui/doc/syntaxtokenizer.hpp>
 
 #include <array>
+#include <memory_resource>
 #include <variant>
 
 using namespace EE::System;
 
 namespace EE { namespace UI { namespace Doc {
+
+struct PatternStackItem {
+	const std::vector<SyntaxPattern>* patterns{ nullptr };
+	size_t index = 0;
+	Uint8 repositoryIdx = 0;
+};
 
 // This tokenizer was a direct conversion to C++ from the lite (https://github.com/rxi/lite)
 // tokenizer. This allows eepp to support the same color schemes and syntax definitions from
@@ -22,6 +29,8 @@ namespace EE { namespace UI { namespace Doc {
 #define MAX_TOKEN_SIZE ( 512 )
 
 #define MAX_MATCHES ( 12 )
+
+#define MAX_PATTERN_STACK_SIZE ( 16 )
 
 static int isInMultiByteCodePoint( const char* text, const size_t& textSize, const size_t& pos ) {
 	// current char is a multybyte codepoint
@@ -293,7 +302,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 		if ( !words.isValid() ) // Skip invalid patterns
 			return false;
 		if ( words.matches( text, matches.data(), startIdx ) &&
-			 ( numMatches = words.getNumMatches() ) > 0 ) {
+			 ( numMatches = words.getNumMatches() ) > 0 && matches[0].start != matches[0].end ) {
 			if ( shouldCloseSubSyntax ) {
 				if ( shouldCloseSubSyntax->range.second >= matches[0].end ) {
 					if ( !skipSubSyntaxSeparator ) {
@@ -488,6 +497,13 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 	size_t size = text.size();
 	size_t startIdx = startIndex;
 
+	static constexpr auto PATTERN_STACK_BUFFER =
+		MAX_PATTERN_STACK_SIZE * sizeof( PatternStackItem );
+	std::array<std::byte, PATTERN_STACK_BUFFER> patternStackBuffer;
+	std::pmr::monotonic_buffer_resource patternStackRes(
+		patternStackBuffer.data(), patternStackBuffer.size(), std::pmr::null_memory_resource() );
+	std::pmr::vector<PatternStackItem> patternStack( &patternStackRes );
+
 	while ( startIdx < size ) {
 		if ( curState.currentPatternIdx.state != SYNTAX_TOKENIZER_STATE_NONE ) {
 			const SyntaxPattern& pattern =
@@ -499,8 +515,8 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 
 			bool skip = false;
 
-			if ( curState.subsyntaxInfo != nullptr &&
-				 curState.subsyntaxInfo->patterns.size() > 1 ) {
+			if ( curState.subsyntaxInfo != nullptr && curState.subsyntaxInfo->patterns.size() > 1 &&
+				 curState.currentSyntax->getLanguageIndex() != syntax.getLanguageIndex() ) {
 				auto rangeSubsyntax =
 					findNonEscaped( text, curState.subsyntaxInfo->patterns[1], startIdx,
 									curState.subsyntaxInfo->patterns.size() >= 3
@@ -552,38 +568,43 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 			}
 		}
 
+		patternStack.clear();
+		patternStack.push_back( { &curState.currentSyntax->getPatterns(), 0, 0 } );
 		bool matched = false;
-		size_t patternsCount = curState.currentSyntax->getPatterns().size();
 
-		for ( size_t patternIndex = 0; patternIndex < patternsCount; patternIndex++ ) {
-			const SyntaxPattern& pattern = curState.currentSyntax->getPatterns()[patternIndex];
-			if ( startIdx != 0 && pattern.patterns[0][0] == '^' )
+		while ( !patternStack.empty() && !matched ) {
+			PatternStackItem& current = patternStack.back();
+			if ( current.index >= current.patterns->size() ) {
+				patternStack.pop_back();
 				continue;
+			}
+			const SyntaxPattern* pattern = &current.patterns->data()[current.index];
+			current.index++;
 
-			/*
-			if ( pattern.isRepositoryInclude() ) {
+			if ( pattern->isRepositoryInclude() ) {
+				if ( patternStack.size() + 1 >= MAX_PATTERN_STACK_SIZE )
+					break;
+
 				const auto& repo =
-					curState.currentSyntax->getRepository( pattern.getRepositoryName() );
-				size_t repoPatternCount = repo.size();
-				for ( size_t repoPatternIndex = 0; repoPatternIndex < repoPatternCount;
-					  repoPatternIndex++ ) {
+					curState.currentSyntax->getRepository( pattern->getRepositoryName() );
+				patternStack.push_back(
+					{ &repo, 0, static_cast<Uint8>( pattern->repositoryIdx ) } );
+			} else if ( pattern->isRootSelfInclude() ) {
+				if ( patternStack.size() + 1 >= MAX_PATTERN_STACK_SIZE )
+					break;
 
-					if ( startIdx != 0 && repo[repoPatternIndex].patterns[0][0] == '^' )
-						continue;
+				patternStack.push_back( { &curState.currentSyntax->getPatterns(), 0, 0 } );
+			} else {
+				if ( startIdx != 0 && pattern->patterns[0][0] == '^' )
+					continue;
 
-					if ( repo[repoPatternIndex].isPure() &&
-						 ( matched =
-							   matchPattern( repo[repoPatternIndex], startIdx,
-											 { static_cast<Uint8>( repoPatternIndex + 1 ),
-											   static_cast<Uint8>( pattern.repositoryIdx ) } ) ) )
-						break;
+				SyntaxStateType patternIndex = { static_cast<Uint8>( current.index ),
+												 current.repositoryIdx };
+				if ( matchPattern( *pattern, startIdx, patternIndex ) ) {
+					matched = true;
+					break;
 				}
 			}
-			*/
-
-			if ( ( matched = matchPattern( pattern, startIdx,
-										   { static_cast<Uint8>( patternIndex + 1 ), 0 } ) ) )
-				break;
 		}
 
 		if ( !matched && shouldCloseSubSyntax ) {
