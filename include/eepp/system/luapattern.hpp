@@ -21,7 +21,7 @@ class EE_API LuaPattern : public PatternMatcher {
 
 	static bool hasMatches( const std::string& string, const std::string_view& pattern );
 
-	LuaPattern( const std::string_view& pattern );
+	LuaPattern( std::string_view pattern );
 
 	virtual bool matches( const char* stringSearch, int stringStartOffset,
 						  PatternMatcher::Range* matchList, size_t stringLength ) const;

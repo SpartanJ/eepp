@@ -547,6 +547,7 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 	std::vector<std::string> type;
 	std::vector<std::string> endType;
 	std::vector<std::string> ptrns;
+	std::vector<SyntaxPattern> subPatterns;
 	auto ctype = SyntaxPatternMatchType::LuaPattern;
 	std::string syntax;
 
@@ -599,19 +600,24 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 		if ( pattern.contains( "end" ) )
 			ptrns.emplace_back( pattern.value( "end", "" ) );
 
-		// Sub-languages?
-		if ( pattern.contains( "patterns" ) && !pattern["patterns"].empty() ) {
+		// Sub-languages / Sub patterns?
+		if ( pattern.contains( "patterns" ) && !pattern["patterns"].empty() &&
+			 pattern["patterns"].is_array() ) {
 			const auto& patterns = pattern["patterns"];
 			if ( patterns.size() == 1 && patterns[0].is_object() ) {
 				if ( patterns[0].contains( "include" ) &&
 					 patterns[0].value( "include", "" ) == "$self" ) {
 					syntax = "$self";
-				}
-
-				if ( patterns[0].contains( "name" ) && patterns[0].contains( "match" ) &&
+				} else if ( patterns[0].contains( "name" ) && patterns[0].contains( "match" ) &&
 					 patterns[0].value( "name", "" ).starts_with( "constant.character.escape" ) ) {
 					ptrns.emplace_back( patterns[0].value( "match", "" ) );
+				} else {
+					subPatterns.push_back( parsePattern( patterns[0] ) );
 				}
+			} else {
+				subPatterns.reserve( patterns.size() );
+				for ( const auto& subPattern : patterns )
+					subPatterns.push_back( parsePattern( subPattern ) );
 			}
 		}
 
@@ -678,7 +684,7 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 	eeASSERT( !ptrns.empty() );
 
 	return SyntaxPattern( std::move( ptrns ), std::move( type ), std::move( endType ), syntax,
-						  ctype );
+						  ctype, std::move( subPatterns ) );
 }
 
 static SyntaxDefinition loadTextMateLanguage( const nlohmann::json& json, SyntaxDefinition& def ) {

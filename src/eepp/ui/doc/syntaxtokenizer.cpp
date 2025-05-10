@@ -332,6 +332,9 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 							 capStart >= capEnd )
 							continue;
 
+						if ( captureIndex >= pattern.types.size() )
+							break;
+
 						for ( int k = capStart; k < capEnd; ++k )
 							priorityMap[k - fullMatchStart] = captureIndex;
 					}
@@ -505,6 +508,9 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 	std::pmr::vector<PatternStackItem> patternStack( &patternStackRes );
 
 	while ( startIdx < size ) {
+		bool matched = false;
+		patternStack.clear();
+
 		if ( curState.currentPatternIdx.state != SYNTAX_TOKENIZER_STATE_NONE ) {
 			const SyntaxPattern& pattern =
 				*curState.currentSyntax->getPatternFromState( curState.currentPatternIdx );
@@ -568,9 +574,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 			}
 		}
 
-		patternStack.clear();
 		patternStack.push_back( { &curState.currentSyntax->getPatterns(), 0, 0 } );
-		bool matched = false;
 
 		while ( !patternStack.empty() && !matched ) {
 			PatternStackItem& current = patternStack.back();

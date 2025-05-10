@@ -25,7 +25,7 @@ void RegExCache::clear() {
 	mCache.clear();
 }
 
-RegEx::RegEx( const std::string_view& pattern, Uint32 options, bool useCache ) :
+RegEx::RegEx( std::string_view pattern, Uint32 options, bool useCache ) :
 	PatternMatcher( PatternType::PCRE ),
 	mPattern( pattern ),
 	mMatchNum( 0 ),

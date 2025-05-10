@@ -62,7 +62,7 @@ class EE_API RegEx : public PatternMatcher {
 			0x08000000u, // It will filter out repeated captures and same range captures
 	};
 
-	RegEx( const std::string_view& pattern, Uint32 options = Options::Utf, bool useCache = true );
+	RegEx( std::string_view pattern, Uint32 options = Options::Utf, bool useCache = true );
 
 	virtual ~RegEx();
 

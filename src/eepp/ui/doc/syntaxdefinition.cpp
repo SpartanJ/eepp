@@ -63,8 +63,12 @@ static void updatePatternState( SyntaxDefinition& def, SyntaxPattern& ptrn ) {
 }
 
 static void updatePatternsState( SyntaxDefinition& def, std::vector<SyntaxPattern>& ptrns ) {
-	for ( auto& ptrn : ptrns )
+	for ( auto& ptrn : ptrns ) {
 		updatePatternState( def, ptrn );
+
+		for ( auto& subPattern : ptrn.subPatterns )
+			updatePatternState( def, subPattern );
+	}
 }
 
 static void updateRepoIndexState( SyntaxDefinition& def, std::vector<SyntaxPattern>& ptrns ) {
@@ -338,6 +342,22 @@ SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
 	typesNames( std::move( _types ) ),
 	syntax( _syntax ),
 	matchType( matchType ) {
+	updateCache<SyntaxStyleType>( *this );
+}
+
+SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
+							  std::vector<std::string>&& _types,
+							  std::vector<std::string>&& _endTypes, const std::string& _syntax,
+							  SyntaxPatternMatchType matchType,
+							  std::vector<SyntaxPattern>&& _subPatterns ) :
+	patterns( std::move( _patterns ) ),
+	types( toSyntaxStyleTypeV( _types ) ),
+	endTypes( toSyntaxStyleTypeV( _endTypes ) ),
+	typesNames( std::move( _types ) ),
+	endTypesNames( std::move( _endTypes ) ),
+	syntax( _syntax ),
+	matchType( matchType ),
+	subPatterns( std::move( _subPatterns ) ) {
 	updateCache<SyntaxStyleType>( *this );
 }
 

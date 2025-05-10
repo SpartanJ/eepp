@@ -59,6 +59,7 @@ struct EE_API SyntaxPattern {
 	const SyntaxDefinition* def{ nullptr };
 	Uint16 flags{ 0 };
 	Uint16 repositoryIdx{ 0 };
+	std::vector<SyntaxPattern> subPatterns;
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
 				   const std::string& _syntax = "",
@@ -71,6 +72,10 @@ struct EE_API SyntaxPattern {
 	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
 				   std::vector<std::string>&& _endTypes, const std::string& _syntax = "",
 				   SyntaxPatternMatchType matchType = SyntaxPatternMatchType::LuaPattern );
+
+	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
+				   std::vector<std::string>&& _endTypes, const std::string& _syntax,
+				   SyntaxPatternMatchType matchType, std::vector<SyntaxPattern>&& _subPatterns );
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
 				   DynamicSyntax&& _syntax,

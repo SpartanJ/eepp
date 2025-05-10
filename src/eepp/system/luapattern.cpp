@@ -68,7 +68,7 @@ bool LuaPattern::hasMatches( const std::string& string, const std::string_view& 
 	return LuaPattern::firstMatch( string, pattern ).isValid();
 }
 
-LuaPattern::LuaPattern( const std::string_view& pattern ) :
+LuaPattern::LuaPattern( std::string_view pattern ) :
 	PatternMatcher( PatternType::LuaPattern ), mPattern( pattern ), mMatchNum( 0 ) {
 	if ( !sFailHandlerInitialized ) {
 		sFailHandlerInitialized = true;

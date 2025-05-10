@@ -36,7 +36,7 @@ class EE_API ParserMatcherManager {
 
 class EE_API ParserMatcher : public PatternMatcher {
   public:
-	ParserMatcher( const std::string_view& parserName );
+	ParserMatcher( std::string_view parserName );
 
 	virtual ~ParserMatcher() override;
 

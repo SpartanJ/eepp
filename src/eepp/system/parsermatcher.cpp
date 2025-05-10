@@ -898,7 +898,7 @@ size_t ParserMatcherManager::matches( std::string_view parserName, const char* s
 	return 0;
 }
 
-ParserMatcher::ParserMatcher( const std::string_view& parserName ) :
+ParserMatcher::ParserMatcher( std::string_view parserName ) :
 	PatternMatcher( PatternType::Parser ), mParserName( parserName ), mMatchNum( 0 ) {}
 
 ParserMatcher::~ParserMatcher() {}
