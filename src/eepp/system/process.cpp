@@ -134,10 +134,10 @@ bool Process::create( const std::string& command, const std::vector<std::string>
 	if ( mProcess )
 		return false;
 	std::vector<const char*> strings;
+	std::string rcommand;
 	mProcess = eeMalloc( sizeof( subprocess_s ) );
 	memset( mProcess, 0, sizeof( subprocess_s ) );
 	if ( !environment.empty() ) {
-		std::string rcommand;
 		if ( FileSystem::fileExists( command ) ) {
 			rcommand = command;
 		} else {
@@ -188,7 +188,16 @@ bool Process::create( const std::string& command, const std::vector<std::string>
 		return ret;
 	}
 
-	strings.push_back( command.c_str() );
+	if ( ( options & UseAbsolutePath ) && command.find_first_of( "\\/" ) == std::string::npos ) {
+		rcommand = Sys::which( command );
+		if ( !rcommand.empty() )
+			strings.push_back( rcommand.c_str() );
+		else
+			strings.push_back( command.c_str() );
+	} else {
+		strings.push_back( command.c_str() );
+	}
+
 	for ( size_t i = 0; i < cmdArr.size(); ++i )
 		strings.push_back( cmdArr[i].c_str() );
 	strings.push_back( NULL );

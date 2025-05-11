@@ -1310,8 +1310,11 @@ bool LSPClientServer::start() {
 	}
 
 	if ( !cmd.empty() ) {
-		bool ret = mProcess.create( cmd, Process::getDefaultOptions() | Process::EnableAsync,
-									mLSP.env, mRootPath );
+		auto flags = Process::getDefaultOptions() | Process::EnableAsync;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		flags |= Process::UseAbsolutePath;
+#endif
+		bool ret = mProcess.create( cmd, flags, mLSP.env, mRootPath );
 		if ( ret ) {
 			if ( mProcess.isAlive() ) {
 				mUsingProcess = true;

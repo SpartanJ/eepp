@@ -30,7 +30,11 @@ class EE_API Process {
 		// Search for program names in the PATH variable. Always enabled on Windows.
 		// Note: this will **not** search for paths in any provided custom environment
 		// and instead uses the PATH of the spawning process.
-		SearchUserPath = 0x10
+		SearchUserPath = 0x10,
+
+		// If command path is not absolute it will try to resolve the absolute path
+		// and use that.
+		UseAbsolutePath = 0x20
 	};
 
 	static inline constexpr Uint32 getDefaultOptions() {
