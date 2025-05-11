@@ -59,7 +59,9 @@ struct EE_API SyntaxPattern {
 	const SyntaxDefinition* def{ nullptr };
 	Uint16 flags{ 0 };
 	Uint16 repositoryIdx{ 0 };
-	std::vector<SyntaxPattern> subPatterns;
+	std::vector<SyntaxPattern> contentPatterns;
+	String::HashType contentScopeRepoHash{
+		0 }; // Hash of the repository containing this rule's content patterns
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
 				   const std::string& _syntax = "",
@@ -122,6 +124,8 @@ struct EE_API SyntaxPattern {
 	inline bool checkIsRepositoryInclude() const {
 		return checkIsIncludePattern() && patterns[1][0] == '#';
 	}
+
+	inline bool hasContentScope() const { return contentScopeRepoHash != 0; }
 };
 
 class EE_API SyntaxDefinition {
@@ -244,6 +248,8 @@ class EE_API SyntaxDefinition {
 	const std::vector<std::string>& getAlternativeNames() const;
 
 	const SyntaxPattern* getPatternFromState( const SyntaxStateType& state ) const;
+
+	void compile();
 
   protected:
 	friend class SyntaxDefinitionManager;

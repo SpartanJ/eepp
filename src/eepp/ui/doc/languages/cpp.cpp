@@ -101,7 +101,7 @@ void addCPP() {
 			  { "#endif", "keyword" },		 { "#include", "keyword" },
 			  { "#define", "keyword" },		 { "#undef", "keyword" },
 			  { "#line", "keyword" },		 { "#error", "keyword" },
-			  { "#pragma", "keyword" },
+			  { "#pragma", "keyword" },		 { "signed", "keyword2" },
 
 		  },
 		  "//",

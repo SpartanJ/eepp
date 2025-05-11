@@ -11,6 +11,27 @@ namespace EE { namespace UI { namespace Doc {
 
 SyntaxDefMap<SyntaxStyleType, std::string> SyntaxPattern::SyntaxStyleTypeCache = {};
 
+static void liftContentPatternsRecursive( SyntaxDefinition& def, SyntaxPattern& pattern,
+										  std::string_view namePrefixSeed,
+										  Uint64& uniqueIdCounter ) {
+	for ( Uint64 i = 0; i < pattern.contentPatterns.size(); ++i ) {
+		// Pass a new prefix seed for children to ensure unique names
+		std::string childPrefixSeed = namePrefixSeed + "_cp" + String::toString( i );
+		liftContentPatternsRecursive( def, pattern.contentPatterns[i], childPrefixSeed,
+									  uniqueIdCounter );
+	}
+
+	if ( !pattern.contentPatterns.empty() ) {
+		// Generate a unique repository name for this pattern's content scope
+		std::string contentRepoName = "$CONTENT_" + def.getLanguageNameForFileSystem() + "_" +
+									  namePrefixSeed + "_uid" +
+									  String::toString( uniqueIdCounter++ );
+
+		def.addRepository( contentRepoName, std::move( pattern.contentPatterns ) );
+		pattern.contentScopeRepoHash = String::hash( contentRepoName );
+	}
+}
+
 template <typename SyntaxStyleType> void updateCache( const SyntaxPattern& ptrn ) {
 	if constexpr ( std::is_same_v<SyntaxStyleType, std::string> ) {
 		return;
@@ -66,7 +87,7 @@ static void updatePatternsState( SyntaxDefinition& def, std::vector<SyntaxPatter
 	for ( auto& ptrn : ptrns ) {
 		updatePatternState( def, ptrn );
 
-		for ( auto& subPattern : ptrn.subPatterns )
+		for ( auto& subPattern : ptrn.contentPatterns )
 			updatePatternState( def, subPattern );
 	}
 }
@@ -357,7 +378,8 @@ SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
 	endTypesNames( std::move( _endTypes ) ),
 	syntax( _syntax ),
 	matchType( matchType ),
-	subPatterns( std::move( _subPatterns ) ) {
+	contentPatterns( std::move( _subPatterns ) ) {
+	eeASSERT( patterns.size() < std::numeric_limits<Uint8>::max() - 1 );
 	updateCache<SyntaxStyleType>( *this );
 }
 
@@ -372,6 +394,7 @@ SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
 	endTypesNames( std::move( _endTypes ) ),
 	syntax( _syntax ),
 	matchType( matchType ) {
+	eeASSERT( patterns.size() < std::numeric_limits<Uint8>::max() - 1 );
 	updateCache<SyntaxStyleType>( *this );
 }
 
@@ -382,6 +405,7 @@ SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns, const std::s
 	typesNames( { _type } ),
 	dynSyntax( std::move( _syntax ) ),
 	matchType( matchType ) {
+	eeASSERT( patterns.size() < std::numeric_limits<Uint8>::max() - 1 );
 	updateCache<SyntaxStyleType>( *this );
 }
 
@@ -393,6 +417,7 @@ SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
 	typesNames( std::move( _types ) ),
 	dynSyntax( std::move( _syntax ) ),
 	matchType( matchType ) {
+	eeASSERT( patterns.size() < std::numeric_limits<Uint8>::max() - 1 );
 	updateCache<SyntaxStyleType>( *this );
 }
 
@@ -407,11 +432,13 @@ SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
 	endTypesNames( std::move( _endTypes ) ),
 	dynSyntax( std::move( _syntax ) ),
 	matchType( matchType ) {
+	eeASSERT( patterns.size() < std::numeric_limits<Uint8>::max() - 1 );
 	updateCache<SyntaxStyleType>( *this );
 }
 
 SyntaxDefinition& SyntaxDefinition::addRepository( const std::string& name,
 												   std::vector<SyntaxPattern>&& patterns ) {
+	eeASSERT( patterns.size() < std::numeric_limits<Uint8>::max() - 1 );
 	auto hash = String::hash( name );
 	mRepositoryIndex[hash] = ++mRepositoryIndexCounter;
 	mRepositoryNames[hash] = name;
@@ -484,6 +511,19 @@ const SyntaxDefMap<String::HashType, std::string>& SyntaxDefinition::getReposito
 std::string SyntaxDefinition::getRepositoryName( String::HashType hash ) const {
 	auto it = mRepositoryNames.find( hash );
 	return it != mRepositoryNames.end() ? it->second : "";
+}
+
+void SyntaxDefinition::compile() {
+	Uint64 uniqueIdCounter = 0;
+	for ( SyntaxPattern& p : mPatterns )
+		liftContentPatternsRecursive( *this, p, "root", uniqueIdCounter );
+
+	for ( auto& repoPair : mRepository ) {
+		for ( SyntaxPattern& p : repoPair.second ) {
+			liftContentPatternsRecursive( *this, p, mRepositoryNames[repoPair.first],
+										  uniqueIdCounter );
+		}
+	}
 }
 
 }}} // namespace EE::UI::Doc

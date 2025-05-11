@@ -58,6 +58,9 @@ class EE_API RegEx : public PatternMatcher {
 		ExtendedMore = 0x01000000u,		 // C
 		Literal = 0x02000000u,			 // C
 		MatchInvalidUtf = 0x04000000u,	 // J M D
+		Anchored = 0x80000000u,
+		NoUtfCheck = 0x40000000u,
+		Endanchored = 0x20000000u,
 		FilterOutCaptures =
 			0x08000000u, // It will filter out repeated captures and same range captures
 	};
@@ -83,9 +86,10 @@ class EE_API RegEx : public PatternMatcher {
 	mutable size_t mMatchNum;
 	void* mCompiledPattern;
 	int mCaptureCount;
-	bool mValid{ false };
-	bool mCached{ false };
-	bool mFilterOutCaptures{ false };
+	bool mValid : 1 { false };
+	bool mCached : 1 { false };
+	bool mFilterOutCaptures : 1 { false };
+	bool mAnchored : 1 { false };
 };
 
 }} // namespace EE::System

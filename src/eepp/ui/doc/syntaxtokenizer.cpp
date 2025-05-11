@@ -28,7 +28,7 @@ struct PatternStackItem {
 // large line. This will help the editor to cull the rendering only for the visible tokens
 #define MAX_TOKEN_SIZE ( 512 )
 
-#define MAX_MATCHES ( 12 )
+#define MAX_MATCHES ( 64 )
 
 #define MAX_PATTERN_STACK_SIZE ( 16 )
 
@@ -284,17 +284,19 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 	std::optional<NonEscapedMatch> shouldCloseSubSyntax;
 
 	const auto matchPattern = [&]( const SyntaxPattern& pattern, size_t& startIdx,
-								   SyntaxStateType patternIndex ) -> bool {
+								   SyntaxStateType patternIndex,
+								   NonEscapedMatch* endRange = nullptr ) -> bool {
 		int start = 0, end = 0;
 		patternStr =
-			pattern.matchType != SyntaxPatternMatchType::Parser
+			pattern.matchType == SyntaxPatternMatchType::LuaPattern
 				? pattern.patterns[0][0] == '^' ? pattern.patterns[0] : "^" + pattern.patterns[0]
 				: pattern.patterns[0];
 		std::variant<RegEx, LuaPattern, ParserMatcher> wordsVar =
 			pattern.matchType == SyntaxPatternMatchType::LuaPattern
 				? std::variant<RegEx, LuaPattern, ParserMatcher>( LuaPattern( patternStr ) )
 				: ( pattern.matchType == SyntaxPatternMatchType::RegEx
-						? std::variant<RegEx, LuaPattern, ParserMatcher>( RegEx( patternStr ) )
+						? std::variant<RegEx, LuaPattern, ParserMatcher>(
+							  RegEx( patternStr, RegEx::Options::Utf | RegEx::Options::Anchored ) )
 						: std::variant<RegEx, LuaPattern, ParserMatcher>(
 							  ParserMatcher( patternStr ) ) );
 		PatternMatcher& words = std::visit(
@@ -317,9 +319,16 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 				shouldCloseSubSyntax = {};
 			}
 
+			if ( numMatches > MAX_MATCHES )
+				numMatches = MAX_MATCHES;
+
 			if ( numMatches > 1 ) {
 				int fullMatchStart = matches[0].start;
 				int fullMatchEnd = matches[0].end;
+
+				if ( endRange && fullMatchEnd >= endRange->range.first )
+					fullMatchEnd = endRange->range.first;
+
 				if ( pattern.matchType == SyntaxPatternMatchType::RegEx ) {
 					priorityMap.clear();
 					priorityMap.resize( fullMatchEnd - fullMatchStart, 0 );
@@ -327,6 +336,10 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 					for ( size_t captureIndex = 1; captureIndex < numMatches; ++captureIndex ) {
 						int capStart = matches[captureIndex].start;
 						int capEnd = matches[captureIndex].end;
+
+						if ( endRange && capEnd >= endRange->range.first ) {
+							capEnd = endRange->range.first;
+						}
 
 						if ( capStart < fullMatchStart || capEnd > fullMatchEnd ||
 							 capStart >= capEnd )
@@ -473,6 +486,13 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 					String::utf8Next( strEnd );
 					end = start + ( strEnd - strStart );
 				}
+
+				if ( endRange && end >= endRange->range.first ) {
+					end = endRange->range.first;
+					if ( start == end )
+						return false;
+				}
+
 				patternText = textv.substr( start, end - start );
 				SyntaxStyleType type =
 					( pattern.types[0] == SyntaxStyleTypes::Symbol ||
@@ -499,6 +519,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 
 	size_t size = text.size();
 	size_t startIdx = startIndex;
+	const SyntaxPattern* activePattern = nullptr;
 
 	static constexpr auto PATTERN_STACK_BUFFER =
 		MAX_PATTERN_STACK_SIZE * sizeof( PatternStackItem );
@@ -510,54 +531,129 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 	while ( startIdx < size ) {
 		bool matched = false;
 		patternStack.clear();
+		activePattern = nullptr;
 
 		if ( curState.currentPatternIdx.state != SYNTAX_TOKENIZER_STATE_NONE ) {
-			const SyntaxPattern& pattern =
-				*curState.currentSyntax->getPatternFromState( curState.currentPatternIdx );
-			auto range = findNonEscaped( text, pattern.patterns[1], startIdx,
-										 pattern.patterns.size() >= 3 ? pattern.patterns[2] : "",
-										 pattern.matchType )
-							 .range;
+			activePattern =
+				curState.currentSyntax->getPatternFromState( curState.currentPatternIdx );
+			eeASSERT( activePattern );
+		}
 
-			bool skip = false;
+		if ( activePattern ) {
+			auto endRange = findNonEscaped(
+				text, activePattern->patterns[1], startIdx,
+				activePattern->patterns.size() >= 3 ? activePattern->patterns[2] : "",
+				activePattern->matchType );
 
-			if ( curState.subsyntaxInfo != nullptr && curState.subsyntaxInfo->patterns.size() > 1 &&
-				 curState.currentSyntax->getLanguageIndex() != syntax.getLanguageIndex() ) {
-				auto rangeSubsyntax =
-					findNonEscaped( text, curState.subsyntaxInfo->patterns[1], startIdx,
-									curState.subsyntaxInfo->patterns.size() >= 3
-										? curState.subsyntaxInfo->patterns[2]
-										: "",
-									pattern.matchType );
-
-				if ( rangeSubsyntax.range.first != -1 &&
-					 ( range.first == -1 || rangeSubsyntax.range.first < range.first ) ) {
-					if ( !skipSubSyntaxSeparator ) {
-						pushTokensToOpenCloseSubsyntax( startIdx, textv, curState.subsyntaxInfo,
-														rangeSubsyntax, tokens, true );
-					}
-					popSubsyntax( curState, retState, syntax );
-					startIdx = rangeSubsyntax.range.second;
-					skip = true;
-				}
-			}
-
-			if ( !skip ) {
-				if ( range.first != -1 ) {
-					if ( range.second > range.first && pattern.types.size() >= 3 ) {
-						pushToken( tokens, pattern.types[0],
-								   textv.substr( startIdx, range.first - startIdx ) );
-						pushToken( tokens, pattern.types[pattern.types.size() - 1],
-								   textv.substr( range.first, range.second - range.first ) );
-					} else {
-						pushToken( tokens, pattern.types[0],
-								   textv.substr( startIdx, range.second - startIdx ) );
-					}
+			if ( activePattern->hasContentScope() ) {
+				if ( endRange.range.first == static_cast<Int64>( startIdx ) ) {
+					pushTokensToOpenCloseSubsyntax( startIdx, textv, activePattern, endRange,
+													tokens, true );
 					setSubsyntaxPatternIdx( curState, retState, SyntaxStateType{} );
-					startIdx = range.second;
-				} else {
-					pushToken( tokens, pattern.types[0], textv.substr( startIdx ) );
-					break;
+					startIdx = endRange.range.second;
+					continue;
+				}
+
+				const auto& contentScopePatterns =
+					curState.currentSyntax->getRepository( activePattern->contentScopeRepoHash );
+
+				auto contentScopeRepoGlobalIndex = curState.currentSyntax->getRepositoryIndex(
+					activePattern->contentScopeRepoHash );
+
+				patternStack.push_back( { &contentScopePatterns, 0,
+										  static_cast<Uint8>( contentScopeRepoGlobalIndex ) } );
+
+				while ( !patternStack.empty() && !matched ) {
+					PatternStackItem& current = patternStack.back();
+					if ( current.index >= current.patterns->size() ) {
+						patternStack.pop_back();
+						continue;
+					}
+					const SyntaxPattern* innerPtrn = &current.patterns->data()[current.index];
+					SyntaxStateType patternState = { static_cast<Uint8>( current.index + 1 ),
+													 current.repositoryIdx };
+					current.index++;
+
+					if ( innerPtrn->isRepositoryInclude() ) {
+						if ( patternStack.size() + 1 >= MAX_PATTERN_STACK_SIZE )
+							break;
+						const auto& targetRepo =
+							curState.currentSyntax->getRepository( innerPtrn->getRepositoryName() );
+						patternStack.push_back(
+							{ &targetRepo, 0, static_cast<Uint8>( innerPtrn->repositoryIdx ) } );
+						continue;
+					} else if ( innerPtrn->isRootSelfInclude() ) {
+						if ( patternStack.size() + 1 >= MAX_PATTERN_STACK_SIZE )
+							break;
+						patternStack.push_back( { &curState.currentSyntax->getPatterns(), 0, 0 } );
+						continue;
+					}
+
+					if ( startIdx != 0 &&
+						 innerPtrn->matchType == SyntaxPatternMatchType::LuaPattern &&
+						 innerPtrn->patterns[0][0] == '^' )
+						continue;
+
+					if ( matchPattern( *innerPtrn, startIdx, patternState,
+									   endRange.numMatches ? &endRange : nullptr ) ) {
+						matched = true;
+					}
+				}
+
+				if ( matched )
+					continue;
+
+				if ( !matched && startIdx < text.size() ) {
+					char* strStart = const_cast<char*>( text.c_str() + startIdx );
+					char* strEnd = strStart;
+					String::utf8Next( strEnd );
+					int dist = strEnd - strStart;
+					if ( dist > 0 ) {
+						pushToken( tokens, activePattern->types[0], text.substr( startIdx, dist ) );
+						startIdx += dist;
+					} else {
+						Log::error( "Error parsing \"%s\" using syntax: %s", text.c_str(),
+									syntax.getLSPName().c_str() );
+						break;
+					}
+					continue;
+				}
+			} else {
+				bool skip = false;
+
+				if ( curState.subsyntaxInfo != nullptr &&
+					 curState.subsyntaxInfo->patterns.size() > 1 &&
+					 curState.currentSyntax->getLanguageIndex() != syntax.getLanguageIndex() ) {
+					auto rangeSubsyntax =
+						findNonEscaped( text, curState.subsyntaxInfo->patterns[1], startIdx,
+										curState.subsyntaxInfo->patterns.size() >= 3
+											? curState.subsyntaxInfo->patterns[2]
+											: "",
+										activePattern->matchType );
+
+					if ( rangeSubsyntax.range.first != -1 &&
+						 ( endRange.range.first == -1 ||
+						   rangeSubsyntax.range.first < endRange.range.first ) ) {
+						if ( !skipSubSyntaxSeparator ) {
+							pushTokensToOpenCloseSubsyntax( startIdx, textv, curState.subsyntaxInfo,
+															rangeSubsyntax, tokens, true );
+						}
+						popSubsyntax( curState, retState, syntax );
+						startIdx = rangeSubsyntax.range.second;
+						skip = true;
+					}
+				}
+
+				if ( !skip ) {
+					if ( endRange.range.first != -1 ) {
+						pushTokensToOpenCloseSubsyntax( startIdx, textv, activePattern, endRange,
+														tokens, true );
+						setSubsyntaxPatternIdx( curState, retState, SyntaxStateType{} );
+						startIdx = endRange.range.second;
+					} else {
+						pushToken( tokens, activePattern->types[0], textv.substr( startIdx ) );
+						break;
+					}
 				}
 			}
 		}
@@ -599,7 +695,8 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 
 				patternStack.push_back( { &curState.currentSyntax->getPatterns(), 0, 0 } );
 			} else {
-				if ( startIdx != 0 && pattern->patterns[0][0] == '^' )
+				if ( startIdx != 0 && pattern->matchType == SyntaxPatternMatchType::LuaPattern &&
+					 pattern->patterns[0][0] == '^' )
 					continue;
 
 				SyntaxStateType patternIndex = { static_cast<Uint8>( current.index ),
