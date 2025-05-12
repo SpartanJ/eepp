@@ -596,12 +596,12 @@ void UIConsole::createDefaultCommands() {
 		executeArr.erase( executeArr.begin() );
 		std::string execute = String::join( executeArr );
 		Process p;
-		p.create( execute, Process::CombinedStdoutStderr | Process::getDefaultOptions() );
-		std::string buffer;
-		p.readAllStdOut( buffer, Seconds( 1 ) );
-		auto lines = String::split( buffer );
-		for ( const auto& line : lines )
-			privPushText( line );
+		if ( p.create( execute, Process::CombinedStdoutStderr | Process::getDefaultOptions() ) ) {
+			std::string buffer;
+			p.readAllStdOut( buffer, Seconds( 1 ) );
+			String::readBySeparator( std::string_view{ buffer },
+									 [this]( std::string_view line ) { privPushText( line ); } );
+		}
 	} );
 	addCommand( "crash_application_for_real", []( const auto& ) { std::terminate(); } );
 }
