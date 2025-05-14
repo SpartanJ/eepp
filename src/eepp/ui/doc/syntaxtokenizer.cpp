@@ -128,7 +128,8 @@ static NonEscapedMatch findNonEscaped( const std::string& text, const std::strin
 		matchType == SyntaxPatternMatchType::LuaPattern
 			? std::variant<RegEx, LuaPattern, ParserMatcher>( LuaPattern( pattern ) )
 			: ( matchType == SyntaxPatternMatchType::RegEx
-					? std::variant<RegEx, LuaPattern, ParserMatcher>( RegEx( pattern ) )
+					? std::variant<RegEx, LuaPattern, ParserMatcher>(
+						  RegEx( pattern, RegEx::Options::Utf | RegEx::Options::AllowFallback ) )
 					: std::variant<RegEx, LuaPattern, ParserMatcher>( ParserMatcher( pattern ) ) );
 	PatternMatcher& words =
 		std::visit( []( auto& patternType ) -> PatternMatcher& { return patternType; }, wordsVar );
@@ -295,8 +296,9 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 			pattern.matchType == SyntaxPatternMatchType::LuaPattern
 				? std::variant<RegEx, LuaPattern, ParserMatcher>( LuaPattern( patternStr ) )
 				: ( pattern.matchType == SyntaxPatternMatchType::RegEx
-						? std::variant<RegEx, LuaPattern, ParserMatcher>(
-							  RegEx( patternStr, RegEx::Options::Utf | RegEx::Options::Anchored ) )
+						? std::variant<RegEx, LuaPattern, ParserMatcher>( RegEx(
+							  patternStr, RegEx::Options::Utf | RegEx::Options::AllowFallback |
+											  RegEx::Options::Anchored ) )
 						: std::variant<RegEx, LuaPattern, ParserMatcher>(
 							  ParserMatcher( patternStr ) ) );
 		PatternMatcher& words = std::visit(
@@ -319,6 +321,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 				shouldCloseSubSyntax = {};
 			}
 
+			eeASSERT( numMatches <= MAX_MATCHES );
 			if ( numMatches > MAX_MATCHES )
 				numMatches = MAX_MATCHES;
 
@@ -579,6 +582,11 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 							break;
 						const auto& targetRepo =
 							curState.currentSyntax->getRepository( innerPtrn->getRepositoryName() );
+#ifdef EE_DEBUG
+						const auto repoIndex = curState.currentSyntax->getRepositoryIndex(
+							innerPtrn->getRepositoryName() );
+						eeASSERT( repoIndex == innerPtrn->repositoryIdx );
+#endif
 						patternStack.push_back(
 							{ &targetRepo, 0, static_cast<Uint8>( innerPtrn->repositoryIdx ) } );
 						continue;
@@ -650,6 +658,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 														tokens, true );
 						setSubsyntaxPatternIdx( curState, retState, SyntaxStateType{} );
 						startIdx = endRange.range.second;
+						continue;
 					} else {
 						pushToken( tokens, activePattern->types[0], textv.substr( startIdx ) );
 						break;
