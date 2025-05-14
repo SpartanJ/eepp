@@ -38,7 +38,8 @@ class TextMateScopeMapper {
 		{ "markup.underline.link", "link" },	   // Specific markup
 		{ "constant.character.escape", "string" }, // Escapes within strings
 		{ "variable.parameter", "keyword3" },	   // Function parameters
-		{ "variable.language", "literal" },		 // Language constants like 'this', 'self', 'null'?
+		{ "variable.language", "literal" }, // Language constants like 'this', 'self', 'null'?
+		{ "variable.identifier", "keyword2" },
 		{ "storage.type", "keyword2" },			 // Class, struct, int, bool etc. (declaration)
 		{ "entity.name.function", "function" },	 // Function definition name
 		{ "entity.name.type", "keyword2" },		 // Type name (class, struct, etc.) in definition

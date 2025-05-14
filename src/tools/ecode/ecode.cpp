@@ -3660,14 +3660,15 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			{
 				std::string lldbPath;
 				Process p;
-				p.create( "xcrun -f lldb" );
-				p.readAllStdOut( lldbPath, Seconds( 5 ) );
-				int retCode = -1;
-				p.join( &retCode );
-				if ( retCode == 0 && !lldbPath.empty() ) {
-					String::trimInPlace( lldbPath, '\n' );
-					if ( std::find( paths.begin(), paths.end(), lldbPath ) == paths.end() )
-						paths.emplace_back( lldbPath );
+				if ( p.create( "xcrun -f lldb" ) ) {
+					p.readAllStdOut( lldbPath, Seconds( 5 ) );
+					int retCode = -1;
+					p.join( &retCode );
+					if ( retCode == 0 && !lldbPath.empty() ) {
+						String::trimInPlace( lldbPath, '\n' );
+						if ( std::find( paths.begin(), paths.end(), lldbPath ) == paths.end() )
+							paths.emplace_back( lldbPath );
+					}
 				}
 			}
 
