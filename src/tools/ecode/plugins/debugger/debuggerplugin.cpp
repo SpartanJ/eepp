@@ -1674,14 +1674,15 @@ static std::string findCommand( const std::string& findBinary, const std::string
 	std::string findCmd = findBinary;
 	String::replaceAll( findCmd, "${command}", cmd );
 	Process p;
-	p.create( findCmd );
-	std::string path;
-	p.readAllStdOut( path, Seconds( 5 ) );
-	int retCode = -1;
-	p.join( &retCode );
-	if ( retCode == 0 && !path.empty() ) {
-		String::trimInPlace( path, '\n' );
-		return path;
+	if ( p.create( findCmd ) ) {
+		std::string path;
+		p.readAllStdOut( path, Seconds( 5 ) );
+		int retCode = -1;
+		p.join( &retCode );
+		if ( retCode == 0 && !path.empty() ) {
+			String::trimInPlace( path, '\n' );
+			return path;
+		}
 	}
 	return "";
 }
