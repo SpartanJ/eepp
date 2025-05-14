@@ -26,7 +26,6 @@ static void liftContentPatternsRecursive( SyntaxDefinition& def, SyntaxPattern& 
 		std::string contentRepoName = "$CONTENT_" + def.getLanguageNameForFileSystem() + "_" +
 									  namePrefixSeed + "_uid" +
 									  String::toString( uniqueIdCounter++ );
-
 		def.addRepository( contentRepoName, std::move( pattern.contentPatterns ) );
 		pattern.contentScopeRepoHash = String::hash( contentRepoName );
 	}
@@ -443,6 +442,8 @@ SyntaxDefinition& SyntaxDefinition::addRepository( const std::string& name,
 	mRepositoryIndex[hash] = ++mRepositoryIndexCounter;
 	mRepositoryNames[hash] = name;
 	mRepositoryIndexInvert[mRepositoryIndexCounter] = hash;
+	for ( auto& ptrn : patterns )
+		ptrn.repositoryIdx = mRepositoryIndexCounter;
 	updatePatternsState( *this, patterns );
 	mRepository[hash] = std::move( patterns );
 	updateRepoIndexState( *this, mPatterns );
@@ -518,12 +519,23 @@ void SyntaxDefinition::compile() {
 	for ( SyntaxPattern& p : mPatterns )
 		liftContentPatternsRecursive( *this, p, "root", uniqueIdCounter );
 
-	for ( auto& repoPair : mRepository ) {
-		for ( SyntaxPattern& p : repoPair.second ) {
-			liftContentPatternsRecursive( *this, p, mRepositoryNames[repoPair.first],
-										  uniqueIdCounter );
+	if ( mRepository.empty() )
+		return;
+
+	std::vector<std::pair<String::HashType, std::vector<SyntaxPattern>*>> curRepos;
+	curRepos.reserve( mRepository.size() );
+	for ( auto& repoPair : mRepository )
+		curRepos.emplace_back( repoPair.first, &repoPair.second );
+
+	for ( auto& repoPair : curRepos ) {
+		const auto& name = mRepositoryNames[repoPair.first];
+		for ( SyntaxPattern& p : *repoPair.second ) {
+			liftContentPatternsRecursive( *this, p, name, uniqueIdCounter );
 		}
 	}
+
+	for ( auto& repoPair : curRepos )
+		updateRepoIndexState( *this, *repoPair.second );
 }
 
 }}} // namespace EE::UI::Doc

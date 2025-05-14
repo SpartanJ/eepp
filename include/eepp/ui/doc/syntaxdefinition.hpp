@@ -32,7 +32,7 @@ enum class SyntaxPatternMatchType { LuaPattern, RegEx, Parser };
 
 class SyntaxDefinition;
 
-template <typename Key, typename Value> using SyntaxDefMap = UnorderedMap<Key, Value>;
+template <typename Key, typename Value> using SyntaxDefMap = std::unordered_map<Key, Value>;
 
 struct EE_API SyntaxPattern {
 	enum Flags {
@@ -92,6 +92,8 @@ struct EE_API SyntaxPattern {
 				   SyntaxPatternMatchType matchType = SyntaxPatternMatchType::LuaPattern );
 
 	inline bool hasSyntax() const { return !syntax.empty() || dynSyntax; }
+
+	inline bool hasSyntaxOrContentScope() const { return hasSyntax() || hasContentScope(); }
 
 	inline bool isPure() const { return flags & Flags::IsPure; }
 
