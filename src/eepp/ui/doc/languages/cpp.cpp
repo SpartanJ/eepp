@@ -25,6 +25,10 @@ void addCPP() {
 				{ "keyword", "keyword", "literal" } },
 			  { { "cpp_number_parser" }, "number", "", SyntaxPatternMatchType::Parser },
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
+			  { { "(if|for|while|switch|catch|sizeof|typeid|defined)\\s*(?=\\()" },
+				{ "normal", "keyword", "keyword" },
+				"",
+				SyntaxPatternMatchType::RegEx },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "std%:%:[%w_]*" }, "keyword2" },
 			  { { "(%[)(%[)(%a[%w_]+)(%])(%])" },
@@ -92,7 +96,7 @@ void addCPP() {
 			  { "bitor", "keyword" },		 { "thread_local", "keyword" },
 			  { "uint64_t", "keyword2" },	 { "char32_t", "keyword2" },
 			  { "alignas", "keyword" },		 { "export", "keyword" },
-			  { "ssize_t", "keyword2" },
+			  { "ssize_t", "keyword2" },	 { "signed", "keyword2" },
 
 			  { "#if", "keyword" },			 { "#ifdef", "keyword" },
 			  { "#ifndef", "keyword" },		 { "#else", "keyword" },
@@ -101,7 +105,7 @@ void addCPP() {
 			  { "#endif", "keyword" },		 { "#include", "keyword" },
 			  { "#define", "keyword" },		 { "#undef", "keyword" },
 			  { "#line", "keyword" },		 { "#error", "keyword" },
-			  { "#pragma", "keyword" },		 { "signed", "keyword2" },
+			  { "#pragma", "keyword" },		 { "#warning", "keyword" },
 
 		  },
 		  "//",

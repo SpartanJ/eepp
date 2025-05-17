@@ -23,6 +23,10 @@ void addTypeScript() {
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
 			  { { "(interface%s)([%a_][%w_]*)" }, { "normal", "keyword", "keyword2" } },
 			  { { "(type%s)([%a_][%w_]*)" }, { "normal", "keyword", "keyword2" } },
+			  { { "(if|for|while|switch|catch|with)\\s*(?=\\()" },
+				{ "normal", "keyword", "keyword" },
+				"",
+				SyntaxPatternMatchType::RegEx },
 			  { { "[%a_][%w_$]*%f[(]" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 
