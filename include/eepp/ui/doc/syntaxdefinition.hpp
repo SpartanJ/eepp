@@ -105,6 +105,10 @@ struct EE_API SyntaxPattern {
 
 	inline bool isRangedMatch() const { return flags & Flags::IsRangedMatch; }
 
+	inline bool isSimpleRangedMatch() const {
+		return isRangedMatch() && !hasContentScope() && !hasSyntax();
+	}
+
 	std::string_view getRepositoryName() const {
 		eeASSERT( isRepositoryInclude() );
 		return std::string_view{ patterns[1] }.substr( 1 );

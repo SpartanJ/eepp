@@ -131,6 +131,7 @@ void SyntaxHighlighter::setMaxTokenizationLength( const Int64& maxTokenizationLe
 
 void SyntaxHighlighter::tokenizeAsync( std::shared_ptr<ThreadPool> pool,
 									   const std::function<void()>& onDone ) {
+	#warning SyntaxHighlighter::tokenizeAsync is disabled
 	return;
 	if ( mTokenizeAsync )
 		return;
