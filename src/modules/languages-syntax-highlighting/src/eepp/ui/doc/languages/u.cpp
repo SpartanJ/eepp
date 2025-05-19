@@ -10,27 +10,16 @@ void addU() {
 		{ "Ü",
 		  { "%.u$", "%.uh$" },
 		  {
-			  { { "//.-\n" }, "comment" },
-			  { { "/%*", "%*/" }, "comment" },
-			  { { "\"", "[\"\n]", "\\" }, "string" },
-			  { { "'", "'", "\\" }, "string" },
-			  { { "(class|template|namespace|enum)\\s+([A-Za-z]\\w*)" },
-				{ "keyword", "keyword", "keyword2" },
-				"",
-				SyntaxPatternMatchType::RegEx },
-			  { { "$%(([%a_]%w*)%)" }, { "operator", "keyword2", "keyword2" } },
-			  { { "^%s*(import)%s+([<%\"][%w%d%.%\\%/%_%-]+[>%\"])" },
-				{ "keyword", "keyword", "literal" } },
-			  { { "cpp_number_parser" }, "number", "", SyntaxPatternMatchType::Parser },
-			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
-			  { { "[%a_][%w_]*%f[(]" }, "function" },
-			  { { "ust%:%:[%w_]*" }, "keyword2" },
-			  { { "[%a_][%w_]*" }, "symbol" },
-
+			  { { "//.-\n" }, "comment" }, // Single-line comments.
+			  { { "/%*", "%*/" }, "comment" }, // Multi-line comments.
+			  { { "\"", "[\"\n]", "\\" }, "string" }, // String literals.
+			  { { "'", "'", "\\" }, "string" }, // Char literals.
+			  { { "cpp_number_parser" }, "number", "", SyntaxPatternMatchType::Parser }, // Numbers. TODO - support Ü-specific formats.
+			  { { "[%+%-=/%*%^%%<>!~|&$:.@?]" }, "operator" }, // Various operators.
+			  { { "[%a_][%w_]*" }, "symbol" }, // Regular identifiers.
 		  },
 		  {
-
-			  { "pretty_main", "function" },
+			  // Keywords.
 			  { "fn", "keyword" },
 			  { "op", "keyword" },
 			  { "var", "keyword" },
@@ -119,6 +108,7 @@ void addU() {
 			  { "cast_ref_unsafe", "keyword" },
 			  { "cast_mut", "keyword" },
 			  { "uninitialized", "keyword" },
+			  // Built-in type keywords.
 			  { "void", "keyword2" },
 			  { "bool", "keyword2" },
 			  { "i8", "keyword2" },
