@@ -4,9 +4,9 @@
 	author: 'NullPlane'
 	author_link: 'github.com/NullPlane'
 	collaborators: [ 'SpartanJ', 'NullPlane' ]
-	version: '0.7.1_r00'
+	version: '0.7.1_r01'
 	created: 2024-02-08
-	updated: 2025-04-15
+	updated: 2025-05-17
 	language: 'de'
 	format: 'xml'
 	file: 'de.xml'
@@ -568,7 +568,7 @@ Bitte die Anwendung neu starten.</string>
 	<string name="open_containing_folder_ellipsis">Ordner aktueller Datei öffnen...</string>
 	<string name="open_context_menu">Kontextmenü öffnen</string>
 	<string name="open_document_symbol_search">Dokumentsymbolsuche öffnen</string>
-	<string name="open_documents">Dokumente öffnen</string>
+	<string name="open_documents">Geöffnete Dokumente</string>
 	<string name="open_file">Datei öffnen</string>
 	<string name="open_file_ellipsis">Datei öffnen...</string>
 	<string name="open_file_from_web_ellipsis">Datei aus dem Netz öffnen...</string>
