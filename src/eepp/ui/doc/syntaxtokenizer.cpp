@@ -153,35 +153,29 @@ SyntaxStateRestored SyntaxTokenizer::retrieveSyntaxState( const SyntaxDefinition
 														  const SyntaxState& state ) {
 	SyntaxStateRestored syntaxState{ &syntax, nullptr, state.state[0], 0 };
 	const SyntaxPattern* curPattern = nullptr;
-	if ( state.state[0].state > 0 &&
-		 ( state.state[1].state > 0 ||
-		   ( ( curPattern = syntax.getPatternFromState( state.state[0] ) ) &&
-			 curPattern->hasSyntaxOrContentScope() ) ) ) {
-		for ( size_t i = 0; i < MAX_SUB_SYNTAXS - 1; ++i ) {
-			if ( i != 0 || curPattern == nullptr )
-				curPattern = syntaxState.currentSyntax->getPatternFromState( state.state[i] );
-			if ( curPattern && state.state[i].state != SYNTAX_TOKENIZER_STATE_NONE ) {
-				if ( curPattern->hasSyntaxOrContentScope() ) {
-					syntaxState.subsyntaxInfo = curPattern;
-					auto langIndex = state.langStack[i];
-					syntaxState.currentSyntax =
-						langIndex != 0
-							? &SyntaxDefinitionManager::instance()->getByLanguageIndex( langIndex )
-							: &SyntaxDefinitionManager::instance()->getByLanguageName(
-								  syntaxState.subsyntaxInfo->syntax );
-					if ( curPattern->hasContentScope() ) {
-						syntaxState.currentPatternIdx = state.state[i];
-						syntaxState.currentLevel = i;
-					} else {
-						syntaxState.currentPatternIdx = {};
-						syntaxState.currentLevel++;
-					}
-				} else {
+	for ( size_t i = 0; i < MAX_SUB_SYNTAXS - 1; ++i ) {
+		curPattern = syntaxState.currentSyntax->getPatternFromState( state.state[i] );
+		if ( curPattern && state.state[i].state != SYNTAX_TOKENIZER_STATE_NONE ) {
+			if ( curPattern->hasSyntaxOrContentScope() ) {
+				syntaxState.subsyntaxInfo = curPattern;
+				auto langIndex = state.langStack[i];
+				syntaxState.currentSyntax =
+					langIndex != 0
+						? &SyntaxDefinitionManager::instance()->getByLanguageIndex( langIndex )
+						: &SyntaxDefinitionManager::instance()->getByLanguageName(
+							  syntaxState.subsyntaxInfo->syntax );
+				if ( curPattern->hasContentScope() ) {
 					syntaxState.currentPatternIdx = state.state[i];
+					syntaxState.currentLevel = i;
+				} else {
+					syntaxState.currentPatternIdx = {};
+					syntaxState.currentLevel++;
 				}
 			} else {
-				break;
+				syntaxState.currentPatternIdx = state.state[i];
 			}
+		} else {
+			break;
 		}
 	}
 	return syntaxState;
@@ -234,12 +228,14 @@ static inline void popStack( SyntaxStateRestored& curState, SyntaxState& retStat
 		return;
 	}
 
+	retState.langStack[curState.currentLevel] = 0;
 	setSubsyntaxPatternIdx( curState, retState, SyntaxStateType{} );
 
-	if ( fromPattern.isSimpleRangedMatch() )
+	if ( fromPattern.isSimpleRangedMatch() ) {
+		curState = SyntaxTokenizer::retrieveSyntaxState( syntax, retState );
 		return;
+	}
 
-	retState.langStack[curState.currentLevel] = 0;
 	if ( curState.currentLevel > 0 )
 		curState.currentLevel--;
 
