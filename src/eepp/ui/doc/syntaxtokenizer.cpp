@@ -159,11 +159,15 @@ SyntaxStateRestored SyntaxTokenizer::retrieveSyntaxState( const SyntaxDefinition
 			if ( curPattern->hasSyntaxOrContentScope() ) {
 				syntaxState.subsyntaxInfo = curPattern;
 				auto langIndex = state.langStack[i];
-				syntaxState.currentSyntax =
-					langIndex != 0
-						? &SyntaxDefinitionManager::instance()->getByLanguageIndex( langIndex )
-						: &SyntaxDefinitionManager::instance()->getByLanguageName(
-							  syntaxState.subsyntaxInfo->syntax );
+
+				if ( langIndex ) {
+					syntaxState.currentSyntax =
+						langIndex != 0
+							? &SyntaxDefinitionManager::instance()->getByLanguageIndex( langIndex )
+							: &SyntaxDefinitionManager::instance()->getByLanguageName(
+								  syntaxState.subsyntaxInfo->syntax );
+				}
+
 				if ( curPattern->hasContentScope() ) {
 					syntaxState.currentPatternIdx = state.state[i];
 					syntaxState.currentLevel = i;

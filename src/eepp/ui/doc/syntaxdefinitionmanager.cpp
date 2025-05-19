@@ -39,7 +39,7 @@ class TextMateScopeMapper {
 		{ "constant.character.escape", "string" }, // Escapes within strings
 		{ "variable.parameter", "keyword3" },	   // Function parameters
 		{ "variable.language", "literal" }, // Language constants like 'this', 'self', 'null'?
-		{ "variable.identifier", "keyword2" },
+		{ "variable.identifier", "normal" },
 		{ "storage.type", "keyword2" },			 // Class, struct, int, bool etc. (declaration)
 		{ "entity.name.function", "function" },	 // Function definition name
 		{ "entity.name.type", "keyword2" },		 // Type name (class, struct, etc.) in definition
@@ -372,7 +372,51 @@ static std::string funcName( std::string name ) {
 	return name;
 }
 
+static void patternToCPP( std::string& buf, const SyntaxPattern& pattern,
+						  const SyntaxDefinition& def ) {
+	bool allowReduce = pattern.patterns.size() == 1 && pattern.typesNames.size() <= 1 &&
+					   pattern.endTypesNames.empty();
+	bool setType = allowReduce && pattern.matchType != SyntaxPatternMatchType::LuaPattern;
+	bool addPatternType = pattern.matchType != SyntaxPatternMatchType::LuaPattern ||
+						  ( pattern.patterns.size() == 2 && pattern.patterns[0] == "include" );
+	bool allowSkip = allowReduce;
+	buf += "{ " + join( pattern.patterns ) + ", " +
+		   join( pattern.typesNames, true, allowReduce, setType ) +
+		   join( pattern.endTypesNames, true, false, setType, allowSkip, true ) +
+		   str( pattern.syntax, ", ", "", false );
+	if ( addPatternType && pattern.syntax.empty() ) {
+		if ( pattern.matchType == SyntaxPatternMatchType::RegEx )
+			buf += ", \"\", SyntaxPatternMatchType::RegEx";
+		else if ( pattern.matchType == SyntaxPatternMatchType::Parser )
+			buf += ", \"\", SyntaxPatternMatchType::Parser";
+		else if ( pattern.matchType == SyntaxPatternMatchType::LuaPattern )
+			buf += ", \"\", SyntaxPatternMatchType::LuaPattern";
+	} else if ( addPatternType ) {
+		if ( pattern.matchType == SyntaxPatternMatchType::RegEx )
+			buf += ", SyntaxPatternMatchType::RegEx";
+		else if ( pattern.matchType == SyntaxPatternMatchType::Parser )
+			buf += ", SyntaxPatternMatchType::Parser";
+		else if ( pattern.matchType == SyntaxPatternMatchType::LuaPattern )
+			buf += ", SyntaxPatternMatchType::LuaPattern";
+	}
+	if ( pattern.hasContentScope() ) {
+		const auto& patterns = def.getRepository( pattern.contentScopeRepoHash );
+		buf += "{\n";
+		for ( const auto& ptrn : patterns )
+			patternToCPP( buf, ptrn, def );
+		buf += "\n}";
+	}
+	buf += " },\n";
+}
+
 std::pair<std::string, std::string> SyntaxDefinitionManager::toCPP( const SyntaxDefinition& def ) {
+	const auto patternsToCPP = [&]( std::string& buf, const std::vector<SyntaxPattern>& patterns ) {
+		buf += "{\n";
+		for ( const auto& pattern : patterns )
+			patternToCPP( buf, pattern, def );
+		buf += "\n}";
+	};
+
 	std::string lang( def.getLanguageNameForFileSystem() );
 	std::string func( funcName( lang ) );
 	std::string header = "#ifndef EE_UI_DOC_" + func + "\n#define EE_UI_DOC_" + func +
@@ -392,28 +436,8 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 	// file types
 	buf += join( def.getFiles() ) + ",\n";
 	// patterns
-	buf += "{\n";
-	for ( const auto& pattern : def.getPatterns() ) {
-		buf += "{ " + join( pattern.patterns ) + ", " +
-			   join( pattern.typesNames, true, true,
-					 pattern.matchType != SyntaxPatternMatchType::LuaPattern ) +
-			   join( pattern.endTypesNames, true, true,
-					 pattern.matchType != SyntaxPatternMatchType::LuaPattern, true, true ) +
-			   str( pattern.syntax, ", ", "", false );
-		if ( pattern.matchType != SyntaxPatternMatchType::LuaPattern && pattern.syntax.empty() ) {
-			if ( pattern.matchType == SyntaxPatternMatchType::RegEx )
-				buf += ", \"\", SyntaxPatternMatchType::RegEx";
-			else if ( pattern.matchType == SyntaxPatternMatchType::Parser )
-				buf += ", \"\", SyntaxPatternMatchType::Parser";
-		} else if ( pattern.matchType != SyntaxPatternMatchType::LuaPattern ) {
-			if ( pattern.matchType == SyntaxPatternMatchType::RegEx )
-				buf += ", SyntaxPatternMatchType::RegEx";
-			else if ( pattern.matchType == SyntaxPatternMatchType::Parser )
-				buf += ", SyntaxPatternMatchType::Parser";
-		}
-		buf += " },\n";
-	}
-	buf += "\n},\n";
+	patternsToCPP( buf, def.getPatterns() );
+	buf += ",\n";
 	// symbols
 	buf += "{\n";
 	for ( const auto& symbol : def.getSymbolNames() )
@@ -463,6 +487,18 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 		}
 		buf += " } );";
 	}
+
+	for ( const auto& repo : def.getRepositories() ) {
+		std::string name = def.getRepositoryName( repo.first );
+		if ( name.starts_with( "$CONTENT_" ) )
+			continue;
+		buf += ".addRepository( \"" + name + "\",\n\t\t";
+		patternsToCPP( buf, repo.second );
+		buf += "\n)";
+	}
+
+	if ( !def.getRepositories().empty() )
+		buf += ".compile()";
 
 	buf += ";\n}\n";
 	buf += "\n}}}} // namespace EE::UI::Doc::Language\n";
@@ -614,8 +650,8 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 	};
 
 	// Assume TextMate pattern
-	if ( pattern.contains( "name" ) || pattern.contains( "begin" ) ||
-		 pattern.contains( "match" ) ) {
+	if ( pattern.contains( "name" ) || pattern.contains( "contentName" ) ||
+		 pattern.contains( "begin" ) || pattern.contains( "match" ) ) {
 		ctype = SyntaxPatternMatchType::RegEx;
 
 		if ( pattern.contains( "beginCaptures" ) )
@@ -629,6 +665,11 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 
 		if ( type.empty() && pattern.contains( "name" ) ) {
 			type.emplace_back( TextMateScopeMapper::scopeToType( pattern.value( "name", "" ) ) );
+		}
+
+		if ( type.empty() && pattern.contains( "contentName" ) ) {
+			type.emplace_back(
+				TextMateScopeMapper::scopeToType( pattern.value( "contentName", "" ) ) );
 		}
 
 		if ( pattern.contains( "match" ) && pattern["match"].is_string() ) {
@@ -649,13 +690,8 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 			 pattern["patterns"].is_array() ) {
 			const auto& patterns = pattern["patterns"];
 			if ( patterns.size() == 1 && patterns[0].is_object() ) {
-				if ( patterns[0].contains( "include" ) &&
-					 patterns[0].value( "include", "" ) == "$self" ) {
-					syntax = "$self";
-				} else if ( patterns[0].contains( "name" ) && patterns[0].contains( "match" ) &&
-							patterns[0]
-								.value( "name", "" )
-								.starts_with( "constant.character.escape" ) ) {
+				if ( patterns[0].contains( "name" ) && patterns[0].contains( "match" ) &&
+					 patterns[0].value( "name", "" ).starts_with( "constant.character.escape" ) ) {
 					ptrns.emplace_back( patterns[0].value( "match", "" ) );
 				} else {
 					subPatterns.push_back( parsePattern( patterns[0] ) );
@@ -776,6 +812,9 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 					const auto& patterns = repository["patterns"];
 					for ( const auto& pattern : patterns )
 						ptrns.emplace_back( parsePattern( pattern ) );
+				} else if ( repository.is_array() ) {
+					for ( const auto& pattern : repository )
+						ptrns.emplace_back( parsePattern( pattern ) );
 				}
 				def.addRepository( name, std::move( ptrns ) );
 			}
@@ -893,6 +932,7 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 					if ( pos.has_value() ) {
 						if ( addedLangs )
 							addedLangs->push_back( res.getLanguageName() );
+						res.mLanguageIndex = *pos;
 						mDefinitions[pos.value()] = std::move( res );
 					} else {
 						if ( addedLangs )
@@ -909,6 +949,7 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 				if ( pos.has_value() ) {
 					if ( addedLangs )
 						addedLangs->push_back( res.getLanguageName() );
+					res.mLanguageIndex = *pos;
 					mDefinitions[pos.value()] = std::move( res );
 				} else {
 					if ( addedLangs )

@@ -496,6 +496,7 @@ const SyntaxPattern* SyntaxDefinition::getPatternFromState( const SyntaxStateTyp
 				return &repo->second[state.state - 1];
 			}
 		}
+		eeASSERT( false );
 	}
 	return nullptr;
 }
