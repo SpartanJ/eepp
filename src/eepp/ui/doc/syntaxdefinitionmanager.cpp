@@ -16,6 +16,7 @@
 #include <eepp/ui/doc/languages/python.hpp>
 #include <eepp/ui/doc/languages/xml.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+
 #include <nlohmann/json.hpp>
 
 using namespace EE::System;
@@ -401,7 +402,7 @@ static void patternToCPP( std::string& buf, const SyntaxPattern& pattern,
 	}
 	if ( pattern.hasContentScope() ) {
 		const auto& patterns = def.getRepository( pattern.contentScopeRepoHash );
-		buf += "{\n";
+		buf += ", {\n";
 		for ( const auto& ptrn : patterns )
 			patternToCPP( buf, ptrn, def );
 		buf += "\n}";
@@ -452,6 +453,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 	buf += join( def.getHeaders() ) + ( lspName.empty() ? "" : "," ) + "\n";
 	// lsp
 	buf += lspName.empty() ? "" : str( def.getLSPName() );
+
 	buf += "\n}";
 	buf += ")";
 	if ( !def.isVisible() )
@@ -485,20 +487,21 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 				String( static_cast<String::StringBaseType>( brace.first ) ).toUtf8(),
 				String( static_cast<String::StringBaseType>( brace.second ) ).toUtf8() );
 		}
-		buf += " } );";
+		buf += " } )";
 	}
 
-	for ( const auto& repo : def.getRepositories() ) {
-		std::string name = def.getRepositoryName( repo.first );
-		if ( name.starts_with( "$CONTENT_" ) )
-			continue;
-		buf += ".addRepository( \"" + name + "\",\n\t\t";
-		patternsToCPP( buf, repo.second );
-		buf += "\n)";
+	if ( !def.getRepositories().empty() ) {
+		buf += ".addRepositories( {\n";
+		for ( const auto& repo : def.getRepositories() ) {
+			std::string name = def.getRepositoryName( repo.first );
+			if ( name.starts_with( "$CONTENT_" ) )
+				continue;
+			buf += "\n{ \"" + name + "\", ";
+			patternsToCPP( buf, repo.second );
+			buf += "\n}, ";
+		}
+		buf += "\n} )";
 	}
-
-	if ( !def.getRepositories().empty() )
-		buf += ".compile()";
 
 	buf += ";\n}\n";
 	buf += "\n}}}} // namespace EE::UI::Doc::Language\n";
@@ -765,6 +768,19 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 				ptrns.emplace_back( pattern["parser"] );
 			}
 		}
+
+		// Sub-languages / Sub patterns?
+		if ( pattern.contains( "patterns" ) && !pattern["patterns"].empty() &&
+			 pattern["patterns"].is_array() ) {
+			const auto& patterns = pattern["patterns"];
+			subPatterns.reserve( patterns.size() );
+			for ( const auto& subPattern : patterns )
+				subPatterns.push_back( parsePattern( subPattern ) );
+		}
+
+		if ( type.empty() && ( pattern.contains( "name" ) || pattern.contains( "begin" ) ) ) {
+			type.emplace_back( "normal" );
+		}
 	}
 
 	eeASSERT( !ptrns.empty() );
@@ -816,7 +832,8 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 					for ( const auto& pattern : repository )
 						ptrns.emplace_back( parsePattern( pattern ) );
 				}
-				def.addRepository( name, std::move( ptrns ) );
+				auto rname( name );
+				def.addRepository( std::move( rname ), std::move( ptrns ) );
 			}
 		}
 

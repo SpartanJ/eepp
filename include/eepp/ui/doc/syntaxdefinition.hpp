@@ -138,11 +138,12 @@ class EE_API SyntaxDefinition {
   public:
 	SyntaxDefinition();
 
-	SyntaxDefinition( const std::string& languageName, std::vector<std::string>&& files,
-					  std::vector<SyntaxPattern>&& patterns,
-					  SyntaxDefMap<std::string, std::string>&& symbols = {},
-					  const std::string& comment = "", std::vector<std::string>&& headers = {},
-					  const std::string& lspName = "" );
+	SyntaxDefinition(
+		const std::string& languageName, std::vector<std::string>&& files,
+		std::vector<SyntaxPattern>&& patterns,
+		SyntaxDefMap<std::string, std::string>&& symbols = {}, const std::string& comment = "",
+		std::vector<std::string>&& headers = {}, const std::string& lspName = "",
+		std::vector<std::pair<std::string, std::vector<SyntaxPattern>>>&& repositories = {} );
 
 	const std::string& getLanguageName() const;
 
@@ -230,8 +231,10 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition& setFoldBraces( const std::vector<std::pair<Int64, Int64>>& foldBraces );
 
-	SyntaxDefinition& addRepository( const std::string& name,
-									 std::vector<SyntaxPattern>&& patterns );
+	SyntaxDefinition& addRepository( std::string&& name, std::vector<SyntaxPattern>&& patterns );
+
+	SyntaxDefinition& addRepositories(
+		std::vector<std::pair<std::string, std::vector<SyntaxPattern>>>&& repositories );
 
 	const std::vector<SyntaxPattern>& getRepository( String::HashType hash ) const;
 

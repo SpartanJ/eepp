@@ -26,8 +26,8 @@ static void liftContentPatternsRecursive( SyntaxDefinition& def, SyntaxPattern& 
 		std::string contentRepoName = "$CONTENT_" + def.getLanguageNameForFileSystem() + "_" +
 									  namePrefixSeed + "_uid" +
 									  String::toString( uniqueIdCounter++ );
-		def.addRepository( contentRepoName, std::move( pattern.contentPatterns ) );
 		pattern.contentScopeRepoHash = String::hash( contentRepoName );
+		def.addRepository( std::move( contentRepoName ), std::move( pattern.contentPatterns ) );
 	}
 }
 
@@ -99,12 +99,11 @@ static void updateRepoIndexState( SyntaxDefinition& def, std::vector<SyntaxPatte
 
 SyntaxDefinition::SyntaxDefinition() {}
 
-SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
-									std::vector<std::string>&& files,
-									std::vector<SyntaxPattern>&& patterns,
-									SyntaxDefMap<std::string, std::string>&& symbols,
-									const std::string& comment, std::vector<std::string>&& headers,
-									const std::string& lspName ) :
+SyntaxDefinition::SyntaxDefinition(
+	const std::string& languageName, std::vector<std::string>&& files,
+	std::vector<SyntaxPattern>&& patterns, SyntaxDefMap<std::string, std::string>&& symbols,
+	const std::string& comment, std::vector<std::string>&& headers, const std::string& lspName,
+	std::vector<std::pair<std::string, std::vector<SyntaxPattern>>>&& repositories ) :
 	mLanguageName( languageName ),
 	mLanguageId( String::hash( String::toLower( languageName ) ) ),
 	mFiles( std::move( files ) ),
@@ -126,6 +125,7 @@ SyntaxDefinition::SyntaxDefinition( const std::string& languageName,
 	}
 	for ( const auto& symbol : mSymbolNames )
 		mSymbols.insert( { symbol.first, toSyntaxStyleType( symbol.second ) } );
+	addRepositories( std::move( repositories ) );
 }
 
 const std::vector<std::string>& SyntaxDefinition::getFiles() const {
@@ -435,18 +435,29 @@ SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
 	updateCache<SyntaxStyleType>( *this );
 }
 
-SyntaxDefinition& SyntaxDefinition::addRepository( const std::string& name,
+SyntaxDefinition& SyntaxDefinition::addRepository( std::string&& name,
 												   std::vector<SyntaxPattern>&& patterns ) {
+
 	eeASSERT( patterns.size() < std::numeric_limits<Uint8>::max() - 1 );
 	auto hash = String::hash( name );
 	mRepositoryIndex[hash] = ++mRepositoryIndexCounter;
-	mRepositoryNames[hash] = name;
 	mRepositoryIndexInvert[mRepositoryIndexCounter] = hash;
 	for ( auto& ptrn : patterns )
 		ptrn.repositoryIdx = mRepositoryIndexCounter;
 	updatePatternsState( *this, patterns );
 	mRepository[hash] = std::move( patterns );
 	updateRepoIndexState( *this, mPatterns );
+	mRepositoryNames[hash] = std::move( name );
+	return *this;
+}
+
+SyntaxDefinition& SyntaxDefinition::addRepositories(
+	std::vector<std::pair<std::string, std::vector<SyntaxPattern>>>&& repositories ) {
+	if ( !repositories.empty() ) {
+		for ( auto& ptrn : repositories )
+			addRepository( std::move( ptrn.first ), std::move( ptrn.second ) );
+		compile();
+	}
 	return *this;
 }
 
