@@ -759,7 +759,8 @@ function add_static_links()
 			"imageresampler-static",
 			"pugixml-static",
 			"vorbis-static",
-			"pcre2-8-static"
+			"pcre2-8-static",
+			"oniguruma-static"
 	}
 
 	if not _OPTIONS["without-mojoal"] then
@@ -960,10 +961,11 @@ function build_eepp( build_name )
 		"src/thirdparty/libogg/include",
 		"src/thirdparty/libvorbis/include",
 		"src/thirdparty/mbedtls/include",
-		"src/thirdparty/pcre2/src"
+		"src/thirdparty/pcre2/src",
+		"src/thirdparty/oniguruma"
 	}
 
-	defines { "PCRE2_STATIC", "PCRE2_CODE_UNIT_WIDTH=8" }
+	defines { "PCRE2_STATIC", "PCRE2_CODE_UNIT_WIDTH=8", "ONIG_STATIC" }
 
 	if not _OPTIONS["without-mojoal"] then
 		defines( "AL_LIBTYPE_STATIC" )
@@ -1179,6 +1181,67 @@ solution "eepp"
 		end
 		includedirs { "src/thirdparty/pcre2/src" }
 		build_base_configuration( "pcre2-8" )
+
+	project "oniguruma-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files {
+			'src/thirdparty/oniguruma/regcomp.c',
+			'src/thirdparty/oniguruma/regenc.c',
+			'src/thirdparty/oniguruma/regerror.c',
+			'src/thirdparty/oniguruma/regext.c',
+			'src/thirdparty/oniguruma/regexec.c',
+			'src/thirdparty/oniguruma/regparse.c',
+			'src/thirdparty/oniguruma/regsyntax.c',
+			'src/thirdparty/oniguruma/regtrav.c',
+			'src/thirdparty/oniguruma/regversion.c',
+			'src/thirdparty/oniguruma/st.c',
+			'src/thirdparty/oniguruma/reggnu.c',
+			'src/thirdparty/oniguruma/regposerr.c',
+			'src/thirdparty/oniguruma/regposix.c',
+			'src/thirdparty/oniguruma/mktable.c',
+			'src/thirdparty/oniguruma/ascii.c',
+			'src/thirdparty/oniguruma/euc_jp.c',
+			'src/thirdparty/oniguruma/euc_tw.c',
+			'src/thirdparty/oniguruma/euc_kr.c',
+			'src/thirdparty/oniguruma/sjis.c',
+			'src/thirdparty/oniguruma/big5.c',
+			'src/thirdparty/oniguruma/gb18030.c',
+			'src/thirdparty/oniguruma/koi8.c',
+			'src/thirdparty/oniguruma/koi8_r.c',
+			'src/thirdparty/oniguruma/cp1251.c',
+			'src/thirdparty/oniguruma/iso8859_1.c',
+			'src/thirdparty/oniguruma/iso8859_2.c',
+			'src/thirdparty/oniguruma/iso8859_3.c',
+			'src/thirdparty/oniguruma/iso8859_4.c',
+			'src/thirdparty/oniguruma/iso8859_5.c',
+			'src/thirdparty/oniguruma/iso8859_6.c',
+			'src/thirdparty/oniguruma/iso8859_7.c',
+			'src/thirdparty/oniguruma/iso8859_8.c',
+			'src/thirdparty/oniguruma/iso8859_9.c',
+			'src/thirdparty/oniguruma/iso8859_10.c',
+			'src/thirdparty/oniguruma/iso8859_11.c',
+			'src/thirdparty/oniguruma/iso8859_13.c',
+			'src/thirdparty/oniguruma/iso8859_14.c',
+			'src/thirdparty/oniguruma/iso8859_15.c',
+			'src/thirdparty/oniguruma/iso8859_16.c',
+			'src/thirdparty/oniguruma/utf8.c',
+			'src/thirdparty/oniguruma/utf16_be.c',
+			'src/thirdparty/oniguruma/utf16_le.c',
+			'src/thirdparty/oniguruma/utf32_be.c',
+			'src/thirdparty/oniguruma/utf32_le.c',
+			'src/thirdparty/oniguruma/unicode.c',
+			'src/thirdparty/oniguruma/unicode_fold_data.c',
+			'src/thirdparty/oniguruma/unicode_fold1_key.c',
+			'src/thirdparty/oniguruma/unicode_fold2_key.c',
+			'src/thirdparty/oniguruma/unicode_fold3_key.c',
+			'src/thirdparty/oniguruma/onig_init.c',
+			'src/thirdparty/oniguruma/unicode_unfold_key.c',
+		}
+		defines { "ONIG_STATIC" }
+		includedirs { "src/thirdparty/oniguruma" }
+		build_base_configuration( "oniguruma" )
 
 	if _OPTIONS["with-text-shaper"] then
 		project "harfbuzz-static"

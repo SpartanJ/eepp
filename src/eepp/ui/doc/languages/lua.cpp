@@ -8,7 +8,7 @@ void addLua() {
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Lua",
-		  { "%.lua$" },
+		  { "%.lua$", "%.rockspec$" },
 		  {
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },

@@ -1,8 +1,21 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/regex.hpp>
+
+#include <oniguruma/oniguruma.h>
 #include <pcre2.h>
 
 namespace EE { namespace System {
+
+namespace {
+
+struct OnigInitializer {
+	OnigInitializer() { onig_init(); }
+	~OnigInitializer() { onig_end(); }
+};
+
+static OnigInitializer globalOnigInitializer;
+
+} // namespace
 
 SINGLETON_DECLARE_IMPLEMENTATION( RegExCache )
 
@@ -11,7 +24,9 @@ RegExCache::~RegExCache() {
 }
 
 void RegExCache::insert( std::string_view key, Uint32 options, void* cache ) {
-	mCache.insert( { hashCombine( String::hash( key ), options ), cache } );
+	auto hash = hashCombine( String::hash( key ), options );
+	mCache.insert( { hash, cache } );
+	mCacheOpt.insert( { hash, options } );
 }
 
 void* RegExCache::find( const std::string_view& key, Uint32 options ) {
@@ -20,8 +35,13 @@ void* RegExCache::find( const std::string_view& key, Uint32 options ) {
 }
 
 void RegExCache::clear() {
-	for ( auto& cache : mCache )
-		pcre2_code_free( reinterpret_cast<pcre2_code*>( cache.second ) );
+	for ( auto& cache : mCache ) {
+		auto opt = mCacheOpt.find( cache.first );
+		if ( opt->second & RegEx::Options::UseOnigmo )
+			onig_free( static_cast<OnigRegex>( cache.second ) );
+		else
+			pcre2_code_free( reinterpret_cast<pcre2_code*>( cache.second ) );
+	}
 	mCache.clear();
 }
 
@@ -31,21 +51,33 @@ RegEx::RegEx( std::string_view pattern, Uint32 options, bool useCache ) :
 	mMatchNum( 0 ),
 	mCompiledPattern( nullptr ),
 	mCaptureCount( 0 ),
+	mOptions( options ),
 	mValid( true ),
-	mFilterOutCaptures( ( options & Options::FilterOutCaptures ) != 0 ) {
+	mFilterOutCaptures( ( mOptions & Options::FilterOutCaptures ) != 0 ) {
 	int errornumber;
 	PCRE2_SIZE erroroffset;
 	PCRE2_SPTR pattern_sptr = reinterpret_cast<PCRE2_SPTR>( pattern.data() );
 
-	if ( mFilterOutCaptures )
-		options &= ~Options::FilterOutCaptures;
-
 	if ( useCache && RegExCache::instance()->isEnabled() &&
-		 ( mCompiledPattern = RegExCache::instance()->find( pattern, options ) ) ) {
+		 ( mCompiledPattern = RegExCache::instance()->find( pattern, mOptions ) ) ) {
 		mValid = true;
 		mCached = true;
 		return;
 	}
+
+	if ( mOptions & Options::UseOnigmo ) {
+		initWithOnigmo( pattern, useCache );
+		return;
+	}
+
+	if ( mFilterOutCaptures )
+		options &= ~Options::FilterOutCaptures;
+
+	if ( options & Options::AllowFallback )
+		options &= ~Options::AllowFallback;
+
+	if ( options & Options::UseOnigmo )
+		options &= ~Options::UseOnigmo;
 
 	mCompiledPattern = pcre2_compile( pattern_sptr,	  // the pattern
 									  pattern.size(), // the length of the pattern
@@ -59,8 +91,12 @@ RegEx::RegEx( std::string_view pattern, Uint32 options, bool useCache ) :
 		PCRE2_UCHAR buffer[256];
 		pcre2_get_error_message( errornumber, buffer, sizeof( buffer ) );
 		mValid = false;
-		Log::debug( "PCRE2 compilation failed at offset " + std::to_string( erroroffset ) + ": " +
-					reinterpret_cast<const char*>( buffer ) );
+		if ( mOptions & Options::AllowFallback ) {
+			initWithOnigmo( pattern, useCache );
+		} else {
+			Log::debug( "PCRE2 compilation failed at offset " + std::to_string( erroroffset ) +
+						": " + reinterpret_cast<const char*>( buffer ) );
+		}
 		return;
 	}
 
@@ -74,7 +110,7 @@ RegEx::RegEx( std::string_view pattern, Uint32 options, bool useCache ) :
 		Log::debug( "PCRE2 pattern info failed with error code " + std::to_string( rc ) );
 		mValid = false;
 	} else if ( useCache && RegExCache::instance()->isEnabled() ) {
-		RegExCache::instance()->insert( pattern, options, mCompiledPattern );
+		RegExCache::instance()->insert( pattern, mOptions, mCompiledPattern );
 		mCached = true;
 	}
 }
@@ -87,6 +123,74 @@ RegEx::~RegEx() {
 
 bool RegEx::matches( const char* stringSearch, int stringStartOffset,
 					 PatternMatcher::Range* matchList, size_t stringLength ) const {
+	if ( !mValid || !mCompiledPattern ) {
+		mMatchNum = 0;
+		return false;
+	}
+
+	if ( mOptions & Options::UseOnigmo ) {
+		OnigRegion* region = onig_region_new();
+		if ( !region ) {
+			Log::error( "Onigmo: onig_region_new() failed." );
+			mMatchNum = 0;
+			return false;
+		}
+
+		const UChar* subjectPtr = reinterpret_cast<const UChar*>( stringSearch );
+		const UChar* subjectStart = subjectPtr + stringStartOffset;
+		const UChar* subjectEnd = subjectPtr + stringLength;
+
+		OnigOptionType searchOpt = ONIG_OPTION_NONE;
+
+		if ( stringStartOffset > static_cast<int>( stringLength ) ) {
+			onig_region_free( region, 1 );
+			mMatchNum = 0;
+			return false;
+		}
+
+		int ret = ( mOptions & Options::Anchored )
+					  ? onig_match( static_cast<OnigRegex>( mCompiledPattern ), subjectPtr,
+									subjectEnd, subjectStart, region, searchOpt )
+					  : onig_search( static_cast<OnigRegex>( mCompiledPattern ), subjectPtr,
+									 subjectEnd, subjectStart, subjectEnd, region, searchOpt );
+
+		if ( ret >= 0 ) {
+			mMatchNum = region->num_regs;
+
+			if ( matchList != nullptr && mMatchNum > 0 ) {
+				int curCap = 0;
+				for ( int i = 0; i < region->num_regs; ++i ) {
+					int start = static_cast<int>( region->beg[i] );
+					int end = static_cast<int>( region->end[i] );
+					if ( !mFilterOutCaptures ||
+						 ( !( start == 0 && end == 0 ) && start != end &&
+						   ( curCap == 0 || !( matchList[curCap - 1].start == start &&
+											   matchList[curCap - 1].end == end ) ) ) ) {
+						matchList[curCap].start = start;
+						matchList[curCap].end = end;
+						curCap++;
+					}
+				}
+				mMatchNum = curCap;
+			}
+
+			onig_region_free( region, 1 );
+			return mMatchNum > 0;
+
+		} else if ( ret == ONIG_MISMATCH ) { // No match
+			onig_region_free( region, 1 );
+			mMatchNum = 0;
+			return false;
+		} else { // Error
+			UChar errBuf[ONIG_MAX_ERROR_MESSAGE_LEN];
+			onig_error_code_to_str( errBuf, ret );
+			Log::debug( "Onigmo search error: %s", reinterpret_cast<const char*>( errBuf ) );
+			onig_region_free( region, 1 );
+			mMatchNum = 0;
+			return false;
+		}
+	}
+
 	auto* compiledPattern = reinterpret_cast<pcre2_code*>( mCompiledPattern );
 	pcre2_match_data* match_data = pcre2_match_data_create_from_pattern( compiledPattern, NULL );
 
@@ -142,6 +246,48 @@ bool RegEx::matches( const std::string& str, PatternMatcher::Range* matchList,
 
 const size_t& RegEx::getNumMatches() const {
 	return mMatchNum;
+}
+
+bool RegEx::initWithOnigmo( std::string_view pattern, bool useCache ) {
+	OnigOptionType opt = ONIG_OPTION_NONE;
+
+	if ( mOptions & Options::Caseless )
+		opt |= ONIG_OPTION_IGNORECASE;
+
+	if ( mOptions & Options::Multiline )
+		opt |= ONIG_OPTION_MULTILINE;
+
+	OnigEncoding enc = mOptions & Options::Utf ? ONIG_ENCODING_UTF8 : ONIG_ENCODING_ASCII;
+	OnigErrorInfo err;
+	const UChar* patternPtr = reinterpret_cast<const UChar*>( pattern.data() );
+	const UChar* patternEnd = patternPtr + pattern.size();
+	OnigRegex regex;
+
+	int ret = onig_new( &regex, patternPtr, patternEnd, opt, enc, ONIG_SYNTAX_DEFAULT, &err );
+
+	if ( ret != ONIG_NORMAL ) {
+		UChar errBuf[ONIG_MAX_ERROR_MESSAGE_LEN];
+		onig_error_code_to_str( errBuf, ret, &err );
+		Log::info( "Onigmo compilation failed: %s", reinterpret_cast<const char*>( errBuf ) );
+		mValid = false;
+		if ( mCompiledPattern ) {
+			onig_free( regex );
+			mCompiledPattern = nullptr;
+		}
+		return false;
+	}
+
+	mCompiledPattern = regex;
+	mValid = true;
+	mOptions |= Options::UseOnigmo;
+	mCaptureCount = onig_number_of_captures( static_cast<OnigRegex>( mCompiledPattern ) );
+
+	if ( useCache && RegExCache::instance()->isEnabled() ) {
+		RegExCache::instance()->insert( pattern, mOptions, mCompiledPattern );
+		mCached = true;
+	}
+
+	return false;
 }
 
 }} // namespace EE::System

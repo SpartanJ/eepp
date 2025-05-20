@@ -699,7 +699,7 @@ void LSPClientPlugin::setTrimLogs( bool trimLogs ) {
 }
 
 bool LSPClientPlugin::editorExists( UICodeEditor* editor ) {
-	return mManager->getSplitter()->editorExists( editor );
+	return mManager->getSplitter() && mManager->getSplitter()->editorExists( editor );
 }
 
 void LSPClientPlugin::createListView( UICodeEditor* editor, const std::shared_ptr<Model>& model,
