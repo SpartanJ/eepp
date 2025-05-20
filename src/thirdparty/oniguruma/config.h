@@ -8,7 +8,8 @@
 #define HAVE_ALLOCA 1
 
 /* Define to 1 if <alloca.h> works. */
-#if !(defined( __WIN32__ ) || defined( _WIN32 ) || defined( _WIN64 ))
+#if !( defined( __WIN32__ ) || defined( _WIN32 ) || defined( _WIN64 ) || defined( __OpenBSD__ ) || \
+	   defined( __NetBSD__ ) || defined( __DragonFly__ ) )
 #define HAVE_ALLOCA_H 1
 #endif
 
