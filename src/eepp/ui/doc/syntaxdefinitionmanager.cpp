@@ -58,9 +58,19 @@ class TextMateScopeMapper {
 		{ "storage.modifier", "keyword" },			   // public, private, static, const etc.
 		{ "constant.numeric", "number" },			   // Numbers
 		{ "constant.language", "literal" },			   // true, false, null etc.
-		{ "comment.unused", "normal" },				   // unused comments pattern
+		{ "constant.character", "string" },
+		{ "constant.character.escape", "string" },
+		{ "constant.other", "literal" },
+		{ "constant.regexp", "string" },
+
+		{ "comment.unused", "normal" }, // unused comments pattern
 		{ "declaration.package", "literal" },
 		{ "declaration.import", "literal" },
+		{ "markup.heading", "keyword" },
+		{ "markup.bold", "operator" },
+		{ "markup.italic", "operator" },
+		{ "markup.underline.link", "link" },
+		{ "markup.quote", "string" },
 
 		// -- General Categories --
 		{ "declaration", "literal" },
@@ -657,15 +667,6 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 		 pattern.contains( "begin" ) || pattern.contains( "match" ) ) {
 		ctype = SyntaxPatternMatchType::RegEx;
 
-		if ( pattern.contains( "beginCaptures" ) )
-			fillTypes( pattern["beginCaptures"], type, pattern );
-
-		if ( pattern.contains( "endCaptures" ) )
-			fillTypes( pattern["endCaptures"], endType, pattern );
-
-		if ( type.empty() && pattern.contains( "captures" ) )
-			fillTypes( pattern["captures"], type, pattern );
-
 		if ( type.empty() && pattern.contains( "name" ) ) {
 			type.emplace_back( TextMateScopeMapper::scopeToType( pattern.value( "name", "" ) ) );
 		}
@@ -674,6 +675,15 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 			type.emplace_back(
 				TextMateScopeMapper::scopeToType( pattern.value( "contentName", "" ) ) );
 		}
+
+		if ( pattern.contains( "beginCaptures" ) )
+			fillTypes( pattern["beginCaptures"], type, pattern );
+
+		if ( pattern.contains( "endCaptures" ) )
+			fillTypes( pattern["endCaptures"], endType, pattern );
+
+		if ( type.empty() && pattern.contains( "captures" ) )
+			fillTypes( pattern["captures"], type, pattern );
 
 		if ( pattern.contains( "match" ) && pattern["match"].is_string() ) {
 			ptrns.emplace_back( pattern.value( "match", "" ) );

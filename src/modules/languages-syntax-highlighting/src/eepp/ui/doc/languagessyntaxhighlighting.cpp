@@ -31,6 +31,7 @@
 #include <eepp/ui/doc/languages/fortran.hpp>
 #include <eepp/ui/doc/languages/fstab.hpp>
 #include <eepp/ui/doc/languages/gdscript.hpp>
+#include <eepp/ui/doc/languages/gleam.hpp>
 #include <eepp/ui/doc/languages/glsl.hpp>
 #include <eepp/ui/doc/languages/go.hpp>
 #include <eepp/ui/doc/languages/graphql.hpp>
@@ -50,6 +51,7 @@
 #include <eepp/ui/doc/languages/julia.hpp>
 #include <eepp/ui/doc/languages/kotlin.hpp>
 #include <eepp/ui/doc/languages/latex.hpp>
+#include <eepp/ui/doc/languages/lbstanza.hpp>
 #include <eepp/ui/doc/languages/lisp.hpp>
 #include <eepp/ui/doc/languages/lobster.hpp>
 #include <eepp/ui/doc/languages/makefile.hpp>
@@ -91,6 +93,7 @@
 #include <eepp/ui/doc/languages/teal.hpp>
 #include <eepp/ui/doc/languages/toml.hpp>
 #include <eepp/ui/doc/languages/typescript.hpp>
+#include <eepp/ui/doc/languages/typst.hpp>
 #include <eepp/ui/doc/languages/u.hpp>
 #include <eepp/ui/doc/languages/v.hpp>
 #include <eepp/ui/doc/languages/v1.hpp>
@@ -147,6 +150,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addFortran();
 	addFstab();
 	addGDScript();
+	addGleam();
 	addGLSL();
 	addGo();
 	addGraphQL();
@@ -166,6 +170,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addJSX();
 	addKotlin();
 	addLatex();
+	addLbstanza();
 	addLisp();
 	addLobster();
 	addMakefile();
@@ -204,6 +209,7 @@ void LanguagesSyntaxHighlighting::load() {
 	addTeal();
 	addToml();
 	addTypeScript();
+	addTypst();
 	addU();
 	addV();
 	addV1();
