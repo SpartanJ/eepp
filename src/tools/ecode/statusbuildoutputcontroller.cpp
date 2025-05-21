@@ -33,6 +33,15 @@ UIPushButton* StatusBuildOutputController::getBuildButton() {
 	return nullptr;
 }
 
+UIPushButton* StatusBuildOutputController::getBuildAndRunButton() {
+	if ( mContext->getSidePanel() ) {
+		UIWidget* tab = mContext->getSidePanel()->find<UIWidget>( "build_tab_view" );
+		if ( tab )
+			return tab->find<UIPushButton>( "build_and_run_button" );
+	}
+	return nullptr;
+}
+
 UIPushButton* StatusBuildOutputController::getCleanButton() {
 	if ( mContext->getSidePanel() ) {
 		UIWidget* tab = mContext->getSidePanel()->find<UIWidget>( "build_tab_view" );
@@ -159,6 +168,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 	mScrollLocked = true;
 
 	UIPushButton* buildButton = getBuildButton();
+	UIPushButton* buildAndRunButton = getBuildAndRunButton();
 	UIPushButton* cleanButton = getCleanButton();
 
 	bool enableBuildButton = false;
@@ -182,11 +192,15 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 			buildButton->setText( mContext->i18n( "cancel_build", "Cancel Build" ) );
 	}
 
+	buildAndRunButton->setEnabled( false );
+
 	mBuildButton->setEnabled( false );
+
 	mStopButton->setEnabled( true );
 
 	const auto updateBuildButton = [this, isClean, enableBuildButton, enableCleanButton]() {
 		UIPushButton* buildButton = getBuildButton();
+		UIPushButton* buildAndRunButton = getBuildAndRunButton();
 		UIPushButton* cleanButton = getCleanButton();
 
 		if ( !isClean && buildButton ) {
@@ -207,6 +221,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 		if ( enableCleanButton && cleanButton )
 			cleanButton->runOnMainThread( [cleanButton] { cleanButton->setEnabled( true ); } );
 
+		buildAndRunButton->setEnabled( true );
 		mBuildButton->setEnabled( true );
 		mStopButton->setEnabled( false );
 	};

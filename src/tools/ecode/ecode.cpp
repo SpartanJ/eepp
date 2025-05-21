@@ -1823,7 +1823,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
 		{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
 		{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
-		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start" },
+		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start-cancel" },
 		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
 		{ { KEY_R, KeyMod::getDefaultModifier() }, "project-build-and-run" },
 		{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
@@ -1846,7 +1846,7 @@ std::map<std::string, std::string> App::getMigrateKeybindings() {
 			 { "menu-toggle", "mod+shift+m" },
 #endif
 			 { "lock-toggle", "mod+shift+l" },		{ "debug-widget-tree-view", "f11" },
-			 { "project-build-and-run", "f5" } };
+			 { "project-build-and-run", "f5" },		{ "project-build-start", "mod+shift+b" } };
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
@@ -1864,7 +1864,9 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "open-command-palette",
 			 "open-global-search",
 			 "project-build-start",
+			 "project-build-start-cancel",
 			 "project-build-cancel",
+			 "project-build-clean",
 			 "project-build-and-run",
 			 "project-run-executable",
 			 "toggle-status-locate-bar",

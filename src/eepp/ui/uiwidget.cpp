@@ -437,6 +437,12 @@ UIWidget* UIWidget::setTooltipText( const String& text ) {
 	return this;
 }
 
+UIWidget* UIWidget::setTooltipTextIfNotEmpty( const String& text ) {
+	if ( !text.empty() )
+		setTooltipText( text );
+	return this;
+}
+
 String UIWidget::getTooltipText() {
 	return mTooltipText;
 }

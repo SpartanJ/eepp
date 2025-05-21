@@ -59,6 +59,8 @@ class EE_API UIWidget : public UINode {
 
 	UIWidget* setTooltipText( const String& text );
 
+	UIWidget* setTooltipTextIfNotEmpty( const String& text );
+
 	String getTooltipText();
 
 	void updateAnchorsDistances();

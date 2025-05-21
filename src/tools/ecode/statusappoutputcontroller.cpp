@@ -32,6 +32,15 @@ UIPushButton* StatusAppOutputController::getRunButton() {
 	return nullptr;
 }
 
+UIPushButton* StatusAppOutputController::getBuildAndRunButton() {
+	if ( mContext->getSidePanel() ) {
+		UIWidget* tab = mContext->getSidePanel()->find<UIWidget>( "build_tab_view" );
+		if ( tab )
+			return tab->find<UIPushButton>( "build_and_run_button" );
+	}
+	return nullptr;
+}
+
 void StatusAppOutputController::initNewOutput( const ProjectBuildOutputParser& outputParser,
 											   bool fromBuildPanel ) {
 	show();
@@ -73,6 +82,11 @@ void StatusAppOutputController::initNewOutput( const ProjectBuildOutputParser& o
 
 		if ( runButton )
 			runButton->setText( mContext->i18n( "cancel_run", "Cancel Run" ) );
+
+		UIPushButton* buildAndRunButton = getBuildAndRunButton();
+
+		if ( buildAndRunButton )
+			buildAndRunButton->setEnabled( false );
 	}
 
 	mRunButton->setEnabled( false );
@@ -239,6 +253,12 @@ void StatusAppOutputController::updateRunButton() {
 		runButton->runOnMainThread(
 			[this, runButton] { runButton->setText( mContext->i18n( "run", "Run" ) ); } );
 	}
+
+	UIPushButton* buildAndRunButton = getBuildAndRunButton();
+
+	if ( buildAndRunButton )
+		buildAndRunButton->setEnabled( true );
+
 	mRunButton->setEnabled( true );
 	mStopButton->setEnabled( false );
 }

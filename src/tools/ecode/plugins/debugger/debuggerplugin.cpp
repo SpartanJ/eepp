@@ -715,7 +715,8 @@ void DebuggerPlugin::buildSidePanelTab() {
 			<DropDownList id="debugger_list" layout_width="mp" layout_height="wrap_content" margin-top="2dp" />
 			<TextView text="@string(debugger_configuration, Debugger Configuration)" focusable="false" margin-top="8dp" />
 			<DropDownList id="debugger_conf_list" layout_width="mp" layout_height="wrap_content" margin-top="2dp" />
-			<PushButton id="debugger_run_button" lw="mp" lh="wc" text="@string(run, Run)" margin-top="8dp" icon="icon(debug-alt, 12dp)" />
+			<PushButton id="debugger_run_button" lw="mp" lh="wc" text="@string(debug, Debug)" margin-top="8dp" icon="icon(debug-alt, 12dp)" />
+			<PushButton id="debugger_build_and_run_button" lw="mp" lh="wc" text="@string(build_and_debug, Build & Debug)" margin-top="8dp" icon="icon(debug-alt, 12dp)" />
 			<hbox id="panel_debugger_buttons" lw="wc" lh="wc" layout_gravity="center_horizontal" visible="false" clip="none" margin-top="8dp">
 				<PushButton id="panel_debugger_continue" class="debugger_continue" lw="24dp" lh="24dp" icon="icon(debug-continue, 12dp)" tooltip="@string(continue, Continue)" />
 				<PushButton id="panel_debugger_pause" class="debugger_pause" lw="24dp" lh="24dp" icon="icon(debug-pause, 12dp)" tooltip="@string(pause, Pause)" />
@@ -787,13 +788,18 @@ void DebuggerPlugin::buildSidePanelTab() {
 
 	mTabContents->bind( "debugger_run_button", mRunButton );
 
-	mRunButton->onClick( [this]( auto ) {
-		if ( mDebugger && mDebugger->started() ) {
-			exitDebugger( true );
-		} else {
-			runCurrentConfig();
-		}
-	} );
+	mTabContents->bind( "debugger_build_and_run_button", mBuildAndRunButton );
+
+	mRunButton->setTooltipText( getPluginContext()->getKeybind( "debugger-start-stop" ) );
+
+	mBuildAndRunButton->setTooltipText(
+		getPluginContext()->getKeybind( "debugger-continue-interrupt" ) );
+
+	mRunButton->onClick(
+		[this]( auto ) { getPluginContext()->runCommand( "debugger-start-stop" ); } );
+
+	mBuildAndRunButton->onClick(
+		[this]( auto ) { getPluginContext()->runCommand( "debugger-continue-interrupt" ); } );
 
 	setUIDebuggingState( StatusDebuggerController::State::NotStarted );
 
@@ -1355,10 +1361,11 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 	doc->setCommand( "debugger-stop", [this] { exitDebugger( true ); } );
 
 	doc->setCommand( "debugger-start-stop", [this] {
-		if ( mDebugger )
+		if ( mDebugger && mDebugger->started() ) {
 			exitDebugger( true );
-		else
+		} else {
 			runCurrentConfig();
+		}
 	} );
 
 	doc->setCommand( "debugger-breakpoint-toggle", [doc, this] {
@@ -2173,6 +2180,8 @@ void DebuggerPlugin::updatePanelUIState( StatusDebuggerController::State state )
 
 	mRunButton->setText( isDebugging ? i18n( "Stop Debugger", "Stop Debugger" )
 									 : i18n( "debug", "Debug" ) );
+
+	mBuildAndRunButton->setEnabled( !isDebugging );
 }
 
 void DebuggerPlugin::setUIDebuggingState( StatusDebuggerController::State state ) {

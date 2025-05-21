@@ -103,6 +103,7 @@ class DebuggerPlugin : public PluginBase {
 	UIDropDownList* mUIDebuggerList{ nullptr };
 	UIDropDownList* mUIDebuggerConfList{ nullptr };
 	UIPushButton* mRunButton{ nullptr };
+	UIPushButton* mBuildAndRunButton{ nullptr };
 	BreakpointsHolder mBreakpoints;
 	UnorderedSet<std::string> mPendingBreakpoints;
 	std::shared_ptr<BreakpointsModel> mBreakpointsModel;

@@ -1156,6 +1156,7 @@ void ProjectBuildManager::buildSidePanelTab() {
 					<TextView text="@string(run_target, Run Target)" margin-top="8dp" focusable="false" />
 					<DropDownList lw="mp" id="run_config_list" margin-top="2dp" />
 					<PushButton id="run_button" lw="mp" lh="wc" text="@string(run, Run)" margin-top="8dp" icon="icon(play, 12dp)" />
+					<PushButton id="build_and_run_button" lw="mp" lh="wc" text="@string(build_and_run, Build & Run)" margin-top="8dp" icon="icon(play, 12dp)" />
 				</vbox>
 			</ScrollView>
 		)html" );
@@ -1179,6 +1180,7 @@ void ProjectBuildManager::updateSidePanelTab() {
 	UIPushButton* runButton = buildTab->find<UIPushButton>( "run_button" );
 	UIPushButton* buildAdd = buildTab->find<UIPushButton>( "build_add" );
 	UIPushButton* buildEdit = buildTab->find<UIPushButton>( "build_edit" );
+	UIPushButton* buildAndRun = buildTab->find<UIPushButton>( "build_and_run_button" );
 
 	buildList->getListBox()->clear();
 
@@ -1225,6 +1227,18 @@ void ProjectBuildManager::updateSidePanelTab() {
 
 	cleanButton->setEnabled( !mConfig.buildName.empty() && hasBuild( mConfig.buildName ) &&
 							 hasCleanCommands( mConfig.buildName ) );
+
+	buildAndRun->setEnabled( !mConfig.buildName.empty() && hasBuild( mConfig.buildName ) &&
+							 hasBuildCommands( mConfig.buildName ) );
+
+	buildButton->setTooltipTextIfNotEmpty( mApp->getKeybind( "project-build-start-cancel" ) );
+	buildButton->setTooltipTextIfNotEmpty( mApp->getKeybind( "project-build-clean" ) );
+	runButton->setTooltipTextIfNotEmpty( mApp->getKeybind( "project-run-executable" ) );
+	buildAndRun->setTooltipTextIfNotEmpty( mApp->getKeybind( "project-build-and-run" ) );
+
+	if ( !buildAndRun->hasEventsOfType( Event::MouseClick ) ) {
+		buildAndRun->onClick( [this]( auto ) { mApp->runCommand( "project-build-and-run" ); } );
+	}
 
 	if ( !buildButton->hasEventsOfType( Event::MouseClick ) ) {
 		buildButton->onClick( [this]( auto ) {

@@ -77,6 +77,8 @@ class StatusBuildOutputController : public StatusBarElement {
 
 	UIPushButton* getBuildButton();
 
+	UIPushButton* getBuildAndRunButton();
+
 	UIPushButton* getCleanButton();
 
 	bool searchFindAndAddStatusResult( const std::vector<PatternHolder>& patterns,

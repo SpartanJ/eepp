@@ -265,10 +265,23 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 				mProjectBuildManager->buildCurrentConfig( mStatusBuildOutputController.get() );
 			}
 		} );
+		t.setCommand( "project-build-start-cancel", [this] {
+			if ( mProjectBuildManager && mStatusBuildOutputController ) {
+				if ( mProjectBuildManager->isBuilding() ) {
+					mProjectBuildManager->cancelBuild();
+				} else {
+					mProjectBuildManager->buildCurrentConfig( mStatusBuildOutputController.get() );
+				}
+			}
+		} );
 		t.setCommand( "project-build-cancel", [this] {
 			if ( mProjectBuildManager && mProjectBuildManager->isBuilding() ) {
 				mProjectBuildManager->cancelBuild();
 			}
+		} );
+		t.setCommand( "project-build-clean", [this] {
+			if ( mProjectBuildManager && mStatusBuildOutputController )
+				mProjectBuildManager->cleanCurrentConfig( mStatusBuildOutputController.get() );
 		} );
 		t.setCommand( "project-run-executable", [this] {
 			if ( mProjectBuildManager && mStatusAppOutputController )

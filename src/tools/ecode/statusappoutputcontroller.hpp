@@ -39,6 +39,8 @@ class StatusAppOutputController : public StatusBarElement {
 
 	UIPushButton* getRunButton();
 
+	UIPushButton* getBuildAndRunButton();
+
 	void updateRunButton();
 
   protected:
