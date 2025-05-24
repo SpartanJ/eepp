@@ -20,7 +20,8 @@ void addJavaScript() {
 				"string" },
 			  { { "js_number_parser" }, "number", "", SyntaxPatternMatchType::Parser },
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
-			  { { "(if|for|while|switch|catch|with)\\s*(?=\\()" },
+			  { { "(if|for|while|switch|catch|with|typeof|delete|void|super|await|function)\\s*(?="
+				  "\\()" },
 				{ "normal", "keyword", "keyword" },
 				"",
 				SyntaxPatternMatchType::RegEx },

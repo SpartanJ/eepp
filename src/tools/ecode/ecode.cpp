@@ -3892,6 +3892,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mSplitter = UICodeEditorSplitter::New( this, mUISceneNode, mThreadPool, mColorSchemes,
 											   mInitColorScheme );
 		mSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
+		mSplitter->setHideTabBar( mConfig.editor.hideTabBar );
 		mSplitter->setOnTabWidgetCreateCb( [this]( UITabWidget* tabWidget ) {
 			tabWidget->getTabBar()->onDoubleClick(
 				[this]( const MouseEvent* ) { mSplitter->createEditorInNewTab(); } );

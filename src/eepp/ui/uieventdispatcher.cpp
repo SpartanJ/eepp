@@ -52,7 +52,7 @@ void UIEventDispatcher::checkTabPress( const Uint32& KeyCode, const Uint32& mod 
 		if ( mFocusNode->isWidget() && NULL != win && !mJustGainedFocus ) {
 			if ( mod & KEYMOD_SHIFT ) {
 				mFocusNode->asType<UIWidget>()->onFocusPrevWidget();
-			} else {
+			} else if ( mod == 0 ) {
 				mFocusNode->asType<UIWidget>()->onFocusNextWidget();
 			}
 		}

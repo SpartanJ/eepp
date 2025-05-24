@@ -113,6 +113,7 @@ class SettingsMenu {
 	UIPopUpMenu* mHelpMenu{ nullptr };
 	UIPopUpMenu* mLineWrapMenu{ nullptr };
 	UIPopUpMenu* mCodeFoldingMenu{ nullptr };
+	UIPopUpMenu* mTabBarMenu{ nullptr };
 	UIMenuBar* mMenuBar{ nullptr };
 	std::vector<UIPopUpMenu*> mFileTypeMenues;
 	Float mFileTypeMenuesCreatedWithHeight{ 0 };

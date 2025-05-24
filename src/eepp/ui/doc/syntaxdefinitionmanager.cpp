@@ -63,6 +63,9 @@ class TextMateScopeMapper {
 		{ "constant.other", "literal" },
 		{ "constant.regexp", "string" },
 
+		{ "meta.import", "keyword" },
+		{ "meta.package", "keyword" },
+
 		{ "comment.unused", "normal" }, // unused comments pattern
 		{ "declaration.package", "literal" },
 		{ "declaration.import", "literal" },

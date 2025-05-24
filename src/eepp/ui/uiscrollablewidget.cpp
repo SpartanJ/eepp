@@ -203,7 +203,9 @@ Rectf UIScrollableWidget::getVisibleRect() const {
 
 bool UIScrollableWidget::shouldVerticalScrollBeVisible() const {
 	Float totH = getPixelsSize().getHeight() - getPixelsPadding().Top - getPixelsPadding().Bottom -
-				 mHScroll->getPixelsSize().getHeight();
+				 ( mHScrollMode == ScrollBarMode::AlwaysOff || !mHScroll->isVisible()
+					   ? 0
+					   : mHScroll->getPixelsSize().getHeight() );
 	return getContentSize().getHeight() > totH;
 }
 
@@ -390,6 +392,17 @@ Uint32 UIScrollableWidget::onMessage( const NodeMessage* Msg ) {
 
 			if ( moved )
 				return 1;
+		}
+		case NodeMessage::FocusLoss: {
+			if ( NULL != getEventDispatcher() ) {
+				Node* focusNode = getEventDispatcher()->getFocusNode();
+
+				if ( this != focusNode && !isParentOf( focusNode ) ) {
+					onWidgetFocusLoss();
+				}
+
+				return 1;
+			}
 		}
 	}
 	return UIWidget::onMessage( Msg );

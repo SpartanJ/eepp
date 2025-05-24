@@ -119,6 +119,13 @@ bool KeyBindings::hasCommand( const std::string& command ) {
 	return mKeybindingsInvert.find( command ) != mKeybindingsInvert.end();
 }
 
+KeyBindings::Shortcut KeyBindings::getShortcutFromCommand( const std::string& cmd ) const {
+	auto it = mKeybindingsInvert.find( cmd );
+	if ( it != mKeybindingsInvert.end() )
+		return it->second;
+	return {};
+}
+
 void KeyBindings::removeCommandKeybind( const std::string& command ) {
 	auto kbIt = mKeybindingsInvert.find( command );
 	if ( kbIt != mKeybindingsInvert.end() ) {

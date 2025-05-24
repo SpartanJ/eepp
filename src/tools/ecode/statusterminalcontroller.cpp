@@ -73,8 +73,8 @@ UITerminal* StatusTerminalController::createTerminal( const std::string& working
 		term->setExclusiveMode( !term->getExclusiveMode() );
 		mApp->updateTerminalMenu();
 	} );
-	mApp->registerUnlockedCommands( *term );
 	mContext->getSplitter()->registerSplitterCommands( *term );
+	mApp->registerUnlockedCommands( *term );
 	term->setFocus();
 	term->setId( "terminal" );
 	return term;

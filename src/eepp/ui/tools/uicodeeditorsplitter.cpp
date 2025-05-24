@@ -632,6 +632,7 @@ UITabWidget* UICodeEditorSplitter::createTabWidget( Node* parent ) {
 	tabWidget->setParent( parent );
 	tabWidget->setTabsClosable( true );
 	tabWidget->setHideTabBarOnSingleTab( mHideTabBarOnSingleTab );
+	tabWidget->setHideTabBar( mHideTabBar );
 	tabWidget->setAllowRearrangeTabs( true );
 	tabWidget->setAllowDragAndDropTabs( true );
 	tabWidget->setAllowSwitchTabsInEmptySpaces( true );
@@ -955,6 +956,15 @@ void UICodeEditorSplitter::setHideTabBarOnSingleTab( bool hideTabBarOnSingleTab 
 
 		for ( auto widget : mTabWidgets )
 			widget->setHideTabBarOnSingleTab( hideTabBarOnSingleTab );
+	}
+}
+
+void UICodeEditorSplitter::setHideTabBar( bool hideTabBar ) {
+	if ( hideTabBar != mHideTabBar ) {
+		mHideTabBar = hideTabBar;
+
+		for ( auto widget : mTabWidgets )
+			widget->setHideTabBar( hideTabBar );
 	}
 }
 

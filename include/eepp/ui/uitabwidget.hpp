@@ -11,6 +11,7 @@ namespace EE { namespace UI {
 
 class UIPopUpMenu;
 class UIScrollBar;
+class UIListView;
 
 class EE_API TabEvent : public Event {
   public:
@@ -31,6 +32,17 @@ class EE_API UITabWidget : public UIWidget {
 	using SplitFunctionCb = std::function<UITabWidget*( SplitDirection, UITabWidget* )>;
 
 	enum class FocusTabBehavior { Closest, FocusOrder, Default };
+
+	enum class TabJumpMode { Linear, Chronological };
+
+	static TabJumpMode tabJumpModefromString( std::string_view mode ) {
+		return String::iequals( mode, "chronological" ) ? TabJumpMode::Chronological
+														: TabJumpMode::Linear;
+	}
+
+	static std::string tabJumpModeToString( TabJumpMode mode ) {
+		return mode == TabJumpMode::Chronological ? "chronological" : "linear";
+	}
 
 	class StyleConfig {
 	  public:
@@ -151,9 +163,13 @@ class EE_API UITabWidget : public UIWidget {
 
 	UITab* setTabSelected( const Uint32& tabIndex );
 
+	const bool& getHideTabBar() const;
+
 	const bool& getHideTabBarOnSingleTab() const;
 
 	void setHideTabBarOnSingleTab( const bool& hideTabBarOnSingleTab );
+
+	void setHideTabBar( const bool& hideTabBar );
 
 	const TabTryCloseCallback& getTabTryCloseCallback() const;
 
@@ -195,6 +211,20 @@ class EE_API UITabWidget : public UIWidget {
 
 	void setSplitFunction( SplitFunctionCb cb, Float splitEdgePercent = 0.1 );
 
+	const std::deque<UITab*>& getFocusHistory() const { return mFocusHistory; }
+
+	void setEnableTabSwitcher( bool enable ) { mEnableTabSwitcher = enable; }
+
+	bool isTabSwitcherEnabled() const { return mEnableTabSwitcher; }
+
+	void focusNextTab( const std::vector<Keycode>& tabSwitcherMetaTrigger = {} );
+
+	void focusPreviousTab( const std::vector<Keycode>& tabSwitcherMetaTrigger = {} );
+
+	void setTabJumpMode( TabJumpMode mode ) { mTabJumpMode = mode; }
+
+	TabJumpMode getTabJumpMode() const { return mTabJumpMode; }
+
   protected:
 	friend class UITab;
 
@@ -207,11 +237,13 @@ class EE_API UITabWidget : public UIWidget {
 	Uint32 mTabSelectedIndex;
 	TabTryCloseCallback mTabTryCloseCallback;
 	bool mHideTabBarOnSingleTab{ false };
+	bool mHideTabBar{ false };
 	bool mAllowRearrangeTabs{ false };
 	bool mAllowDragAndDropTabs{ false };
 	bool mAllowSwitchTabsInEmptySpaces{ false };
 	bool mDroppableHoveringColorWasSet{ false };
 	bool mEnabledCreateContextMenu{ false };
+	bool mEnableTabSwitcher{ false };
 	Float mTabVerticalDragResistance;
 	Color mDroppableHoveringColor{ Color::Transparent };
 	FocusTabBehavior mFocusTabBehavior{ FocusTabBehavior::Closest };
@@ -219,6 +251,8 @@ class EE_API UITabWidget : public UIWidget {
 	UIPopUpMenu* mCurrentMenu{ nullptr };
 	SplitFunctionCb mSplitFn;
 	Float mSplitEdgePercent{ 0.1 };
+	UIListView* mTabSwitcher{ nullptr };
+	TabJumpMode mTabJumpMode{ TabJumpMode::Chronological };
 
 	void onThemeLoaded();
 
@@ -268,6 +302,11 @@ class EE_API UITabWidget : public UIWidget {
 	void eraseFocusHistory( UITab* tab );
 
 	std::optional<SplitDirection> getDropDirection() const;
+
+	void createTabSwitcher( const std::vector<Keycode>& tabSwitcherMetaTrigger,
+							bool fromPrev = false );
+
+	Uint32 getTabSelectedFocusHistoryIndex() const;
 };
 
 }} // namespace EE::UI

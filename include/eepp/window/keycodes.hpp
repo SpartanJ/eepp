@@ -712,6 +712,8 @@ class EE_API KeyMod {
 
 	static const std::map<std::string, Uint32>& getModMap();
 
+	static std::vector<Keycode> getKeyCodesFromModifier( Uint32 mod );
+
   private:
 	static Uint32 defaultModifier;
 };

@@ -160,6 +160,11 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.minimap = ini.getValueB( "editor", "minimap", true );
 	editor.showDocInfo = ini.getValueB( "editor", "show_doc_info", true );
 	editor.hideTabBarOnSingleTab = ini.getValueB( "editor", "hide_tab_bar_on_single_tab", false );
+	editor.hideTabBar = ini.getValueB( "editor", "hide_tab_bar", false );
+	editor.tabSwitcher = ini.getValueB( "editor", "tab_switcher", false );
+	editor.tabJumpMode =
+		UITabWidget::tabJumpModefromString( ini.getValue( "editor", "tab_jump_mode", "linear" ) );
+
 	editor.singleClickNavigation = ini.getValueB( "editor", "single_click_tree_navigation", false );
 	editor.syncProjectTreeWithEditor =
 		ini.getValueB( "editor", "sync_project_tree_with_editor", true );
@@ -316,6 +321,10 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "minimap", editor.minimap );
 	ini.setValueB( "editor", "show_doc_info", editor.showDocInfo );
 	ini.setValueB( "editor", "hide_tab_bar_on_single_tab", editor.hideTabBarOnSingleTab );
+	ini.setValueB( "editor", "hide_tab_bar", editor.hideTabBar );
+	ini.setValueB( "editor", "tab_switcher", editor.tabSwitcher );
+	ini.setValue( "editor", "tab_jump_mode",
+				  UITabWidget::tabJumpModeToString( editor.tabJumpMode ) );
 	ini.setValueB( "editor", "single_click_tree_navigation", editor.singleClickNavigation );
 	ini.setValueB( "editor", "sync_project_tree_with_editor", editor.syncProjectTreeWithEditor );
 	ini.setValueB( "editor", "auto_close_xml_tags", editor.autoCloseXMLTags );

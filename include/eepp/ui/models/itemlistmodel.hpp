@@ -109,6 +109,8 @@ template <typename T> class ItemListOwnerModel final : public Model {
 		return std::make_shared<ItemListOwnerModel<T>>( data );
 	}
 
+	explicit ItemListOwnerModel( std::vector<T>&& data ) : mData( std::move( data ) ) {}
+
 	explicit ItemListOwnerModel( const std::vector<T>& data ) : mData( data ) {}
 
 	virtual ~ItemListOwnerModel() {}

@@ -230,6 +230,8 @@ class EE_API UICodeEditorSplitter {
 
 	void setHideTabBarOnSingleTab( bool hideTabBarOnSingleTab );
 
+	void setHideTabBar( bool hideTabBar );
+
 	const std::vector<UITabWidget*>& getTabWidgets() const;
 
 	Node* getBaseLayout() const;
@@ -280,21 +282,13 @@ class EE_API UICodeEditorSplitter {
 		} );
 		t.setCommand( "next-tab", [this] {
 			UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
-			if ( tabWidget && tabWidget->getTabCount() > 1 ) {
-				UITab* tab = (UITab*)mCurWidget->getData();
-				Uint32 tabIndex = tabWidget->getTabIndex( tab );
-				switchToTab( ( tabIndex + 1 ) % tabWidget->getTabCount() );
-			}
+			if ( tabWidget )
+				tabWidget->focusNextTab();
 		} );
 		t.setCommand( "previous-tab", [this] {
 			UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
-			if ( tabWidget && tabWidget->getTabCount() > 1 ) {
-				UITab* tab = (UITab*)mCurWidget->getData();
-				Uint32 tabIndex = tabWidget->getTabIndex( tab );
-				Int32 newTabIndex = (Int32)tabIndex - 1;
-				switchToTab( newTabIndex < 0 ? tabWidget->getTabCount() - newTabIndex
-											 : newTabIndex );
-			}
+			if ( tabWidget )
+				tabWidget->focusPreviousTab();
 		} );
 		for ( int i = 1; i <= 10; i++ )
 			t.setCommand( String::format( "switch-to-tab-%d", i ),
@@ -379,6 +373,7 @@ class EE_API UICodeEditorSplitter {
 	std::vector<UITabWidget*> mTabWidgets;
 	Node* mBaseLayout{ nullptr };
 	Client* mClient;
+	bool mHideTabBar{ false };
 	bool mHideTabBarOnSingleTab{ true };
 	bool mFirstCodeEditor{ true };
 	bool mVisualSplitting{ true };

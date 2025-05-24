@@ -555,7 +555,6 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 		mApp->updateTerminalMenu();
 	} );
 	mApp->registerUnlockedCommands( *term );
-	mApp->getSplitter()->registerSplitterCommands( *term );
 	term->setFocus();
 	return term;
 #endif

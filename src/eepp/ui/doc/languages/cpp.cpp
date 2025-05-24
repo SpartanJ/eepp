@@ -25,7 +25,9 @@ void addCPP() {
 				{ "keyword", "keyword", "literal" } },
 			  { { "cpp_number_parser" }, "number", "", SyntaxPatternMatchType::Parser },
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
-			  { { "(if|for|while|switch|catch|sizeof|typeid|defined)\\s*(?=\\()" },
+			  { { "(if|for|while|switch|catch|sizeof|typeid|defined|return|throw|alignof|noexcept|"
+				  "new|delete)"
+				  "\\s*(?=\\()" },
 				{ "normal", "keyword", "keyword" },
 				"",
 				SyntaxPatternMatchType::RegEx },

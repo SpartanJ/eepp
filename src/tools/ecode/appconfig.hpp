@@ -74,6 +74,10 @@ struct CodeEditorConfig {
 	bool minimap{ true };
 	bool showDocInfo{ true };
 	bool hideTabBarOnSingleTab{ true };
+	bool hideTabBar{ false };
+	bool tabSwitcher{ false };
+	UITabWidget::TabJumpMode tabJumpMode{ UITabWidget::TabJumpMode::Linear };
+
 	bool singleClickNavigation{ false };
 	bool syncProjectTreeWithEditor{ true };
 	bool autoCloseXMLTags{ true };

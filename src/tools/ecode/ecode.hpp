@@ -354,7 +354,53 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 			}
 		} );
 		t.setCommand( "create-new-welcome-tab", [this] { createWelcomeTab(); } );
+
 		mSplitter->registerSplitterCommands( t );
+
+		// Overwrite it
+		t.setCommand( "next-tab", [this] {
+			UITabWidget* tabWidget =
+				getSplitter()->tabWidgetFromWidget( getSplitter()->getCurWidget() );
+			if ( tabWidget ) {
+				tabWidget->setTabJumpMode( mConfig.editor.tabJumpMode );
+				tabWidget->setEnableTabSwitcher( mConfig.editor.tabSwitcher );
+				std::vector<Keycode> triggerCodes;
+				auto kb = getKeybind( "next-tab" );
+				if ( !kb.empty() ) {
+					auto shortcut =
+						KeyBindings::toShortcut( mWindow->getInput(), getKeybind( "next-tab" ) );
+					if ( !shortcut.empty() ) {
+						if ( shortcut.mod & KeyMod::getDefaultModifier() ) {
+							triggerCodes =
+								KeyMod::getKeyCodesFromModifier( KeyMod::getDefaultModifier() );
+						}
+					}
+				}
+				tabWidget->focusNextTab( triggerCodes );
+			}
+		} );
+
+		t.setCommand( "previous-tab", [this] {
+			UITabWidget* tabWidget =
+				getSplitter()->tabWidgetFromWidget( getSplitter()->getCurWidget() );
+			if ( tabWidget ) {
+				tabWidget->setTabJumpMode( mConfig.editor.tabJumpMode );
+				tabWidget->setEnableTabSwitcher( mConfig.editor.tabSwitcher );
+				std::vector<Keycode> triggerCodes;
+				auto kb = getKeybind( "next-tab" );
+				if ( !kb.empty() ) {
+					auto shortcut =
+						KeyBindings::toShortcut( mWindow->getInput(), getKeybind( "next-tab" ) );
+					if ( !shortcut.empty() ) {
+						if ( shortcut.mod & KeyMod::getDefaultModifier() ) {
+							triggerCodes =
+								KeyMod::getKeyCodesFromModifier( KeyMod::getDefaultModifier() );
+						}
+					}
+				}
+				tabWidget->focusPreviousTab( triggerCodes );
+			}
+		} );
 	}
 
 	PluginManager* getPluginManager() const;

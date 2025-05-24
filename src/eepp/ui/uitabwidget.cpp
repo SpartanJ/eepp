@@ -1,16 +1,56 @@
-#include "eepp/ui/uiscenenode.hpp"
-#include <algorithm>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/models/itemlistmodel.hpp>
+#include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
+#include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uithememanager.hpp>
 
+#include <algorithm>
+
 namespace EE { namespace UI {
+
+class TabsModel final : public Model {
+  public:
+	static std::shared_ptr<TabsModel> create( const std::deque<UITab*>& data, bool invertView ) {
+		return std::make_shared<TabsModel>( data, invertView );
+	}
+
+	explicit TabsModel( const std::deque<UITab*>& data, bool invertView ) :
+		mData( data ), mInvertView( invertView ) {}
+
+	virtual ~TabsModel() {}
+
+	virtual size_t rowCount( const ModelIndex& ) const { return mData.size(); }
+
+	virtual size_t columnCount( const ModelIndex& ) const { return 1; }
+
+	virtual std::string columnName( const size_t& ) const { return "Data"; }
+
+	virtual ModelIndex index( int row, int column, const ModelIndex& parent = ModelIndex() ) const {
+		if ( row >= (int)rowCount( parent ) || column >= (int)columnCount( parent ) )
+			return {};
+		return Model::index( row, column, parent );
+	}
+
+	virtual Variant data( const ModelIndex& index, ModelRole role = ModelRole::Display ) const {
+		if ( role == ModelRole::Display )
+			return mInvertView ? Variant( mData[mData.size() - 1 - index.row()]->getText() )
+							   : Variant( mData[index.row()]->getText() );
+		return {};
+	}
+
+	bool invertedView() const { return mInvertView; }
+
+  private:
+	const std::deque<UITab*>& mData;
+	bool mInvertView{ false };
+};
 
 UITabWidget* UITabWidget::New() {
 	return eeNew( UITabWidget, () );
@@ -23,6 +63,7 @@ UITabWidget::UITabWidget() :
 	mTabSelected( NULL ),
 	mTabSelectedIndex( eeINDEX_NOT_FOUND ),
 	mHideTabBarOnSingleTab( false ),
+	mHideTabBar( false ),
 	mAllowRearrangeTabs( false ),
 	mAllowDragAndDropTabs( false ),
 	mAllowSwitchTabsInEmptySpaces( false ),
@@ -101,7 +142,7 @@ void UITabWidget::onThemeLoaded() {
 }
 
 void UITabWidget::setContainerSize() {
-	if ( getTabCount() < 2 && mHideTabBarOnSingleTab ) {
+	if ( mHideTabBar || ( getTabCount() < 2 && mHideTabBarOnSingleTab ) ) {
 		mTabBar->setVisible( false );
 		mTabBar->setEnabled( false );
 		mNodeContainer->setPosition( mPadding.Left, mPadding.Top );
@@ -222,7 +263,7 @@ void UITabWidget::invalidate( Node* invalidator ) {
 				mSceneNode->invalidate( this );
 			}
 		} else if ( invalidator == mNodeContainer || invalidator == mTabBar ||
-					mTabBar->inParentTreeOf( invalidator ) ) {
+					invalidator == mTabSwitcher || mTabBar->inParentTreeOf( invalidator ) ) {
 			mNodeDrawInvalidator->invalidate( mNodeContainer );
 		} else if ( invalidator->getParent() == mNodeContainer ) {
 			if ( invalidator->isVisible() )
@@ -815,6 +856,10 @@ UITab* UITabWidget::setTabSelected( const Uint32& tabIndex ) {
 	return NULL;
 }
 
+const bool& UITabWidget::getHideTabBar() const {
+	return mHideTabBar;
+}
+
 const bool& UITabWidget::getHideTabBarOnSingleTab() const {
 	return mHideTabBarOnSingleTab;
 }
@@ -822,6 +867,13 @@ const bool& UITabWidget::getHideTabBarOnSingleTab() const {
 void UITabWidget::setHideTabBarOnSingleTab( const bool& hideTabBarOnSingleTab ) {
 	if ( mHideTabBarOnSingleTab != hideTabBarOnSingleTab ) {
 		mHideTabBarOnSingleTab = hideTabBarOnSingleTab;
+		setContainerSize();
+	}
+}
+
+void UITabWidget::setHideTabBar( const bool& hideTabBar ) {
+	if ( mHideTabBar != hideTabBar ) {
+		mHideTabBar = hideTabBar;
 		setContainerSize();
 	}
 }
@@ -986,7 +1038,8 @@ void UITabWidget::onSizeChange() {
 }
 
 void UITabWidget::onChildCountChange( Node* child, const bool& removed ) {
-	if ( !removed && child != mTabBar && child != mNodeContainer && child != mTabScroll ) {
+	if ( !removed && child != mTabBar && child != mNodeContainer && child != mTabScroll &&
+		 child != mTabSwitcher ) {
 		if ( child->isType( UI_TYPE_TAB ) ) {
 			// This must be a tab that was dragging.
 			if ( std::find( mTabs.begin(), mTabs.end(), child->asType<UITab>() ) != mTabs.end() )
@@ -1190,6 +1243,161 @@ void UITabWidget::updateScroll( bool updateFocus ) {
 			mTabScroll->setValue( x );
 		}
 	}
+}
+
+void UITabWidget::createTabSwitcher( const std::vector<Keycode>& tabSwitcherMetaTrigger,
+									 bool fromPrev ) {
+	bool resetSelection = mTabSwitcher == nullptr || !mTabSwitcher->isVisible();
+	if ( mTabSwitcher == nullptr ) {
+		mTabSwitcher = UIListView::New();
+		mTabSwitcher->setParent( this );
+		mTabSwitcher->setVisible( false );
+		mTabSwitcher->setHorizontalScrollMode( ScrollBarMode::AlwaysOff );
+	}
+
+	const std::deque<UITab*>& history = mTabJumpMode == TabJumpMode::Linear ? mTabs : mFocusHistory;
+
+	if ( mTabSwitcher->getModel() == nullptr ||
+		 ( mTabJumpMode == TabJumpMode::Linear &&
+		   static_cast<TabsModel*>( mTabSwitcher->getModel() )->invertedView() ) ||
+		 ( mTabJumpMode == TabJumpMode::Chronological &&
+		   !static_cast<TabsModel*>( mTabSwitcher->getModel() )->invertedView() ) ) {
+		mTabSwitcher->setModel(
+			TabsModel::create( mTabJumpMode == TabJumpMode::Linear ? mTabs : mFocusHistory,
+							   mTabJumpMode == TabJumpMode::Chronological ) );
+		resetSelection = true;
+	}
+
+	if ( resetSelection && !history.empty() ) {
+		switch ( mTabJumpMode ) {
+			case TabJumpMode::Linear: {
+				Uint32 index =
+					fromPrev ? ( (Int32)history.size() - 1 < 0 ? history.size() - 1
+															   : ( getTabSelectedIndex() - 1 ) )
+							 : ( ( getTabSelectedIndex() + 1 ) % history.size() );
+				mTabSwitcher->setSelection( mTabSwitcher->getModel()->index( index, 0 ) );
+				break;
+			}
+			case TabJumpMode::Chronological: {
+				mTabSwitcher->setSelection( mTabSwitcher->getModel()->index(
+					fromPrev ? history.size() - 1 : ( history.size() == 1 ? 0 : 1 ), 0 ) );
+				break;
+			}
+		}
+	}
+
+	mTabSwitcher->setPixelsSize( eeceil( PixelDensity::dpToPx( 300 ) ),
+								 eeceil( mTabSwitcher->getContentSize().getHeight() +
+										 mTabSwitcher->getPixelsPadding().getHeight() ) );
+	mTabSwitcher->setMaxSizeEq( "80%", "70%" );
+	mTabSwitcher->center();
+	mTabSwitcher->toFront();
+	mTabSwitcher->removeEventsOfType( Event::OnFocusLoss );
+	mTabSwitcher->setVisible( true );
+	mTabSwitcher->setFocus();
+	mTabSwitcher->on( Event::OnWidgetFocusLoss, [this]( const Event* event ) {
+		mTabSwitcher->setVisible( false );
+		mTabSwitcher->removeEventListener( event->getCallbackId() );
+	} );
+
+	if ( !tabSwitcherMetaTrigger.empty() ) {
+		mTabSwitcher->removeEventsOfType( Event::KeyUp );
+		mTabSwitcher->on( Event::KeyUp, [this, tabSwitcherMetaTrigger]( const Event* event ) {
+			bool inverted = mTabJumpMode != TabJumpMode::Linear;
+			const std::deque<UITab*>& history =
+				mTabJumpMode == TabJumpMode::Linear ? mTabs : mFocusHistory;
+			auto keyCode = event->asKeyEvent()->getKeyCode();
+			if ( std::find( tabSwitcherMetaTrigger.begin(), tabSwitcherMetaTrigger.end(),
+							keyCode ) != tabSwitcherMetaTrigger.end() ||
+				 keyCode == KEY_RETURN ) {
+				mTabSwitcher->removeEventListener( event->getCallbackId() );
+				mTabSwitcher->setVisible( false );
+				if ( !mTabSwitcher->getSelection().isEmpty() &&
+					 mTabSwitcher->getSelection().first().row() < (Int64)history.size() ) {
+					if ( inverted ) {
+						setTabSelected( history[history.size() - 1 -
+												mTabSwitcher->getSelection().first().row()] );
+					} else {
+						setTabSelected( history[mTabSwitcher->getSelection().first().row()] );
+					}
+				}
+			} else if ( keyCode == KEY_ESCAPE ) {
+				mTabSwitcher->removeEventListener( event->getCallbackId() );
+				mTabSwitcher->setVisible( false );
+			}
+		} );
+	}
+}
+
+void UITabWidget::focusNextTab( const std::vector<Keycode>& tabSwitcherMetaTrigger ) {
+	if ( mEnableTabSwitcher ) {
+		bool wasVisible = mTabSwitcher && mTabSwitcher->isVisible();
+
+		createTabSwitcher( tabSwitcherMetaTrigger );
+
+		if ( wasVisible && !mTabSwitcher->getSelection().isEmpty() ) {
+			Int32 index = ( mTabSwitcher->getSelection().first().row() + 1 ) %
+						  mTabSwitcher->getModel()->rowCount();
+			mTabSwitcher->setSelection( mTabSwitcher->getModel()->index( index, 0 ) );
+		}
+
+		return;
+	}
+
+	if ( getTabCount() <= 1 )
+		return;
+
+	switch ( mTabJumpMode ) {
+		case TabJumpMode::Linear: {
+			Int32 index = ( getTabSelectedIndex() + 1 ) % getTabCount();
+			setTabSelected( eeclamp<Int32>( index, 0, getTabCount() - 1 ) );
+			break;
+		}
+		case TabJumpMode::Chronological: {
+			Int32 newTabIndex = (Int32)getTabSelectedFocusHistoryIndex() - 1;
+			Int32 index = newTabIndex < 0 ? mFocusHistory.size() - newTabIndex : newTabIndex;
+			setTabSelected( mFocusHistory[index] );
+			break;
+		}
+	}
+}
+
+void UITabWidget::focusPreviousTab( const std::vector<Keycode>& tabSwitcherMetaTrigger ) {
+	if ( mEnableTabSwitcher ) {
+		bool wasVisible = mTabSwitcher && mTabSwitcher->isVisible();
+
+		createTabSwitcher( tabSwitcherMetaTrigger, true );
+
+		if ( wasVisible && !mTabSwitcher->getSelection().isEmpty() ) {
+			Int32 newTabIndex = (Int32)mTabSwitcher->getSelection().first().row() - 1;
+			Int32 index = newTabIndex < 0 ? mTabSwitcher->getModel()->rowCount() - 1 : newTabIndex;
+			mTabSwitcher->setSelection( mTabSwitcher->getModel()->index( index, 0 ) );
+		}
+
+		return;
+	}
+
+	if ( getTabCount() <= 1 )
+		return;
+
+	switch ( mTabJumpMode ) {
+		case TabJumpMode::Linear: {
+			Int32 newTabIndex = (Int32)getTabSelectedIndex() - 1;
+			Int32 index = newTabIndex < 0 ? getTabCount() - newTabIndex : newTabIndex;
+			setTabSelected( eeclamp<Int32>( index, 0, getTabCount() - 1 ) );
+			break;
+		}
+		case TabJumpMode::Chronological: {
+			Int32 index = ( getTabSelectedFocusHistoryIndex() + 1 ) % mFocusHistory.size();
+			setTabSelected( mFocusHistory[index] );
+			break;
+		}
+	}
+}
+
+Uint32 UITabWidget::getTabSelectedFocusHistoryIndex() const {
+	auto it = std::find( mFocusHistory.begin(), mFocusHistory.end(), mTabSelected );
+	return it != mFocusHistory.end() ? std::distance( mFocusHistory.begin(), it ) : 0;
 }
 
 }} // namespace EE::UI

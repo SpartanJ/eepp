@@ -1492,6 +1492,116 @@ UIMenu* SettingsMenu::createViewMenu() {
 
 	mViewMenu->addSeparator();
 
+	mTabBarMenu = UIPopUpMenu::New();
+
+	const auto tabBarMenuRefresh = [this] {
+		const auto& cfg = mApp->getConfig();
+
+		mTabBarMenu->getItemId( "hide-tabbar" )
+			->asType<UIMenuCheckBox>()
+			->setActive( cfg.editor.hideTabBar );
+
+		mTabBarMenu->getItemId( "hide-tabbar-on-single-tab" )
+			->asType<UIMenuCheckBox>()
+			->setActive( cfg.editor.hideTabBarOnSingleTab );
+
+		mTabBarMenu->getItemId( "tab-switcher" )
+			->asType<UIMenuCheckBox>()
+			->setActive( cfg.editor.tabSwitcher );
+
+		auto tjmi = mTabBarMenu->getItemId( "tab_jump_mode" );
+		UIPopUpMenu* tabJumpModeMenu =
+			tjmi ? tjmi->asType<UIMenuSubMenu>()->getSubMenu()->asType<UIPopUpMenu>() : nullptr;
+		if ( tabJumpModeMenu ) {
+			tabJumpModeMenu->getItemId( "tab_jump_linear" )
+				->asType<UIMenuRadioButton>()
+				->setActive( cfg.editor.tabJumpMode == UITabWidget::TabJumpMode::Linear );
+			tabJumpModeMenu->getItemId( "tab_jump_chronological" )
+				->asType<UIMenuRadioButton>()
+				->setActive( cfg.editor.tabJumpMode == UITabWidget::TabJumpMode::Chronological );
+		}
+	};
+
+	mViewMenu->addSubMenu( i18n( "tab_bar", "Tab Bar" ), findIcon( "tabbar" ), mTabBarMenu )
+		->on( Event::OnMenuShow, [this, tabBarMenuRefresh]( auto ) {
+			if ( mTabBarMenu->getCount() == 0 ) {
+				mTabBarMenu->addCheckBox( i18n( "hide_tabbar", "Hide Tab Bar" ) )
+					->setActive( mApp->getConfig().editor.hideTabBarOnSingleTab )
+					->setTooltipText( i18n( "hide_tabbar_tooltip", "Always Hide the Tab Bar." ) )
+					->setId( "hide-tabbar" );
+
+				mTabBarMenu
+					->addCheckBox(
+						i18n( "hide_tabbar_on_single_tab", "Hide Tab Bar on single tab" ) )
+					->setActive( mApp->getConfig().editor.hideTabBarOnSingleTab )
+					->setTooltipText(
+						i18n( "hide_tabbar_on_single_tab_tooltip",
+							  "Hides the tabbar if there's only one element in the tab widget." ) )
+					->setId( "hide-tabbar-on-single-tab" );
+
+				mTabBarMenu->addCheckBox( i18n( "display_tab_switcher", "Display Tab Switcher" ) )
+					->setActive( mApp->getConfig().editor.tabSwitcher )
+					->setTooltipText(
+						i18n( "display_tab_switcher_tooltip",
+							  "Displays a tab switcher at the center of the tab widget." ) )
+					->setId( "tab-switcher" );
+
+				auto tabJumpModeMenu = UIPopUpMenu::New();
+				tabJumpModeMenu->setId( "tab-jump-mode" );
+				tabJumpModeMenu->addRadioButton( i18n( "linear", "Linear" ) )
+					->setTooltipText( i18n(
+						"jump_mode_linear_tooltip",
+						"Linear Jump Mode will switch tabs in the order they are displayed" ) )
+					->setId( "tab_jump_linear" );
+				tabJumpModeMenu->addRadioButton( i18n( "chronological", "Chronological" ) )
+					->setTooltipText( i18n( "jump_mode_chronological_tooltip",
+											"Chronological Jump Mode will switch tabs in the last "
+											"focused / visited order." ) )
+					->setId( "tab_jump_chronological" );
+
+				mTabBarMenu
+					->addSubMenu( i18n( "tab_jump_mode", "Tab Jump Mode" ), nullptr,
+								  tabJumpModeMenu )
+					->setId( "tab_jump_mode" );
+
+				tabJumpModeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+					if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+						return;
+					UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+					mApp->getConfig().editor.tabJumpMode =
+						"tab_jump_linear" != item->getId() ? UITabWidget::TabJumpMode::Chronological
+														   : UITabWidget::TabJumpMode::Linear;
+				} );
+
+				mTabBarMenu->on(
+					Event::OnItemClicked, [tabBarMenuRefresh, this]( const Event* event ) {
+						if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+							return;
+						UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+						if ( "hide-tabbar" == item->getId() ) {
+							mApp->getConfig().editor.hideTabBar =
+								item->asType<UIMenuCheckBox>()->isActive();
+							mSplitter->setHideTabBar( mApp->getConfig().editor.hideTabBar );
+							if ( mApp->getConfig().editor.hideTabBar )
+								mApp->getConfig().editor.tabSwitcher = true;
+							tabBarMenuRefresh();
+						} else if ( "hide-tabbar-on-single-tab" == item->getId() ) {
+							mApp->getConfig().editor.hideTabBarOnSingleTab =
+								item->asType<UIMenuCheckBox>()->isActive();
+							mSplitter->setHideTabBarOnSingleTab(
+								mApp->getConfig().editor.hideTabBarOnSingleTab );
+						} else if ( "tab-switcher" == item->getId() ) {
+							mApp->getConfig().editor.tabSwitcher =
+								item->asType<UIMenuCheckBox>()->isActive();
+						}
+					} );
+			}
+
+			tabBarMenuRefresh();
+		} );
+
+	mViewMenu->addSeparator();
+
 	mViewMenu->addCheckBox( i18n( "show_line_numbers", "Show Line Numbers" ) )
 		->setActive( mApp->getConfig().editor.showLineNumbers )
 		->setId( "show-line-numbers" );
