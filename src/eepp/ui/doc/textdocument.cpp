@@ -1669,7 +1669,7 @@ std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
 	for ( size_t i = 0; i < mSelection.size(); ++i ) {
 		auto& sel = mSelection[i];
 		if ( sel.hasSelection() ) {
-			replaceSelection( i, sAutoCloseBracketsPairs[pos].first + getSelectedText() +
+			replaceSelection( i, sAutoCloseBracketsPairs[pos].first + getSelectedText( i ) +
 									 sAutoCloseBracketsPairs[pos].second );
 			inserted.push_back( true );
 		} else if ( mAutoCloseBrackets ) {

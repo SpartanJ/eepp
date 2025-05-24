@@ -1585,11 +1585,6 @@ UIMenu* SettingsMenu::createViewMenu() {
 							if ( mApp->getConfig().editor.hideTabBar )
 								mApp->getConfig().editor.tabSwitcher = true;
 							tabBarMenuRefresh();
-						} else if ( "hide-tabbar-on-single-tab" == item->getId() ) {
-							mApp->getConfig().editor.hideTabBarOnSingleTab =
-								item->asType<UIMenuCheckBox>()->isActive();
-							mSplitter->setHideTabBarOnSingleTab(
-								mApp->getConfig().editor.hideTabBarOnSingleTab );
 						} else if ( "tab-switcher" == item->getId() ) {
 							mApp->getConfig().editor.tabSwitcher =
 								item->asType<UIMenuCheckBox>()->isActive();
@@ -1650,12 +1645,6 @@ UIMenu* SettingsMenu::createViewMenu() {
 								"Enables the color picker tool when a double click selection\n"
 								"is done over a word representing a color." ) )
 		->setId( "enable-color-picker" );
-	mViewMenu->addCheckBox( i18n( "hide_tabbar_on_single_tab", "Hide tabbar on single tab" ) )
-		->setActive( mApp->getConfig().editor.hideTabBarOnSingleTab )
-		->setTooltipText(
-			i18n( "hide_tabbar_on_single_tab_tooltip",
-				  "Hides the tabbar if there's only one element in the tab widget." ) )
-		->setId( "hide-tabbar-on-single-tab" );
 	mViewMenu->addCheckBox( i18n( "treeview_single_click_nav", "Single Click Navigation" ) )
 		->setActive( mApp->getConfig().editor.singleClickNavigation )
 		->setTooltipText( i18n( "treeview_single_click_nav_tooltip",

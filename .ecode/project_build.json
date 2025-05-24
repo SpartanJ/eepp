@@ -456,7 +456,7 @@
     },
     "run": [
       {
-        "args": "-x",
+        "args": "",
         "command": "${project_root}/bin/ecode-debug",
         "name": "ecode-debug",
         "working_dir": "${project_root}/bin/"
