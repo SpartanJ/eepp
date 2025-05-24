@@ -770,6 +770,7 @@ Uint32 UITextInput::onKeyDown( const KeyEvent& event ) {
 		// Allow copy selection on locked mode
 		if ( mAllowEditing ) {
 			mDoc.execute( cmd );
+			mLastCmdHash = String::hash( cmd );
 			mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
 			return 1;
 		}
@@ -788,7 +789,8 @@ Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 		 input->isMetaPressed() || ( input->isLeftAltPressed() && !input->isLeftControlPressed() ) )
 		return 0;
 
-	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() )
+	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() &&
+		 !TextDocument::isTextDocummentCommand( mLastCmdHash ) )
 		return 0;
 
 	const String& text = event.getText();

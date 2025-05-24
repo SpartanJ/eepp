@@ -742,6 +742,9 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 				mApp->getConfig().workspace.sessionSnapshot = item->isActive();
 			} else if ( "allow_flash_cursor" == id ) {
 				mApp->getConfig().editor.flashCursor = item->isActive();
+				mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
+					editor->setEnableFlashCursor( mApp->getConfig().editor.flashCursor );
+				} );
 			} else if ( "tab_stops" == id ) {
 				mApp->getConfig().doc.tabStops = item->isActive();
 				mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {

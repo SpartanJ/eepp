@@ -189,6 +189,7 @@ class EE_API UIConsole : public UIWidget,
 	Float mQuakeModeHeightPercent{ 0.6f };
 #endif
 	Uint64 mLastExecuteEventId{ 0 };
+	String::HashType mLastCmdHash{ 0 };
 	UIPopUpMenu* mCurrentMenu{ nullptr };
 	size_t mMenuIconSize{ 16 };
 

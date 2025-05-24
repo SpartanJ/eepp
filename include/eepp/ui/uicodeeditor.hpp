@@ -920,6 +920,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	std::vector<PluginRequestedSpace> mPluginTopSpaces;
 	Float mPluginsTopSpace{ 0 };
 	Uint64 mLastExecuteEventId{ 0 };
+	String::HashType mLastCmdHash{ 0 };
 	Text mLineTextCache;
 	size_t mJumpLinesLength{ 5 };
 	UIIcon* mFileLockIcon{ nullptr };

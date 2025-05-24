@@ -1786,67 +1786,73 @@ std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	return {
 		{ { KEY_RETURN, KEYMOD_LALT | KEYMOD_LCTRL }, "fullscreen-toggle" },
-		{ { KEY_F3, KEYMOD_NONE }, "repeat-find" },
-		{ { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
-		{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
-		{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
-		{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
-		{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
-		{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
-		{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
-		{ { KEY_F11, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "debug-widget-tree-view" },
-		{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
-		{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
-		{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
-		{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
+			{ { KEY_F3, KEYMOD_NONE }, "repeat-find" }, { { KEY_F3, KEYMOD_SHIFT }, "find-prev" },
+			{ { KEY_F12, KEYMOD_NONE }, "console-toggle" },
+			{ { KEY_F, KeyMod::getDefaultModifier() }, "find-replace" },
+			{ { KEY_Q, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "close-app" },
+			{ { KEY_O, KeyMod::getDefaultModifier() }, "open-file" },
+			{ { KEY_W, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "download-file-web" },
+			{ { KEY_O, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-folder" },
+			{ { KEY_F11, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "debug-widget-tree-view" },
+			{ { KEY_K, KeyMod::getDefaultModifier() }, "open-locatebar" },
+			{ { KEY_P, KeyMod::getDefaultModifier() }, "open-command-palette" },
+			{ { KEY_F, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-global-search" },
+			{ { KEY_L, KeyMod::getDefaultModifier() }, "go-to-line" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-		{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
+			{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "menu-toggle" },
 #else
-		{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
+			{ { KEY_M, KeyMod::getDefaultModifier() }, "menu-toggle" },
 #endif
-		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
-		{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
-		{ { KEY_J, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-		  "terminal-split-left" },
-		{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-		  "terminal-split-right" },
-		{ { KEY_I, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-		  "terminal-split-top" },
-		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-		  "terminal-split-bottom" },
-		{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-		  "terminal-split-swap" },
-		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
-		  "reopen-closed-tab" },
-		{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
-		{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
-		{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
-		{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
-		{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
-		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start-cancel" },
-		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
-		{ { KEY_R, KeyMod::getDefaultModifier() }, "project-build-and-run" },
-		{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
-		{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-workspace-symbol-search" },
-		{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "open-document-symbol-search" },
-		{ { KEY_N, KEYMOD_SHIFT | KEYMOD_LALT }, "create-new-window" },
+			{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "save-all" },
+			{ { KEY_F9, KEYMOD_LALT }, "switch-side-panel" },
+			{ { KEY_J, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-left" },
+			{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-right" },
+			{ { KEY_I, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-top" },
+			{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-bottom" },
+			{ { KEY_S, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "terminal-split-swap" },
+			{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
+			  "reopen-closed-tab" },
+			{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
+			{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
+			{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
+			{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
+			{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
+			{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
+			  "project-build-start-cancel" },
+			{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
+			{ { KEY_R, KeyMod::getDefaultModifier() }, "project-build-and-run" },
+			{ { KEY_O, KEYMOD_LALT | KEYMOD_SHIFT }, "show-open-documents" },
+			{ { KEY_K, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
+			  "open-workspace-symbol-search" },
+			{ { KEY_P, KeyMod::getDefaultModifier() | KEYMOD_SHIFT },
+			  "open-document-symbol-search" },
+			{ { KEY_N, KEYMOD_SHIFT | KEYMOD_LALT }, "create-new-window" },
 	};
 }
 
 // Old keybindings will be rebinded to the new keybindings when they are still set to the old
 // keybindind
 std::map<std::string, std::string> App::getMigrateKeybindings() {
-	return { { "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
-			 { "switch-to-tab-2", "alt+2" },		{ "switch-to-tab-3", "alt+3" },
-			 { "switch-to-tab-4", "alt+4" },		{ "switch-to-tab-5", "alt+5" },
-			 { "switch-to-tab-6", "alt+6" },		{ "switch-to-tab-7", "alt+7" },
-			 { "switch-to-tab-8", "alt+8" },		{ "switch-to-tab-9", "alt+9" },
-			 { "switch-to-last-tab", "alt+0" },
+	return {
+		{ "fullscreen-toggle", "alt+return" }, { "switch-to-tab-1", "alt+1" },
+			{ "switch-to-tab-2", "alt+2" }, { "switch-to-tab-3", "alt+3" },
+			{ "switch-to-tab-4", "alt+4" }, { "switch-to-tab-5", "alt+5" },
+			{ "switch-to-tab-6", "alt+6" }, { "switch-to-tab-7", "alt+7" },
+			{ "switch-to-tab-8", "alt+8" }, { "switch-to-tab-9", "alt+9" },
+			{ "switch-to-last-tab", "alt+0" },
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-			 { "menu-toggle", "mod+shift+m" },
+			{ "menu-toggle", "mod+shift+m" },
 #endif
-			 { "lock-toggle", "mod+shift+l" },		{ "debug-widget-tree-view", "f11" },
-			 { "project-build-and-run", "f5" },		{ "project-build-start", "mod+shift+b" } };
+			{ "lock-toggle", "mod+shift+l" }, { "debug-widget-tree-view", "f11" },
+			{ "project-build-and-run", "f5" }, {
+			"project-build-start", "mod+shift+b"
+		}
+	};
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
@@ -2482,7 +2488,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	}
 
 	editor->on( Event::OnClose, [this, editor]( auto ) {
-		if ( editor->hasClass( NOT_UNIQUE_FILENAME ) )
+		if ( SceneManager::existsSingleton() && !SceneManager::instance()->isShuttingDown() &&
+			 editor->hasClass( NOT_UNIQUE_FILENAME ) )
 			updateNonUniqueTabTitles();
 	} );
 
@@ -3491,9 +3498,10 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	mConfig.windowState.pixelDensity =
 		pidelDensity > 0
 			? pidelDensity
-			: ( mConfig.windowState.pixelDensity > 0	? mConfig.windowState.pixelDensity
-				: currentDisplay->getPixelDensity() > 2 ? currentDisplay->getPixelDensity() / 2
-														: currentDisplay->getPixelDensity() );
+			: ( mConfig.windowState.pixelDensity > 0
+					? mConfig.windowState.pixelDensity
+					: currentDisplay->getPixelDensity() > 2 ? currentDisplay->getPixelDensity() / 2
+															: currentDisplay->getPixelDensity() );
 #else
 	mConfig.windowState.pixelDensity =
 		pidelDensity > 0

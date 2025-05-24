@@ -920,6 +920,7 @@ Uint32 UIConsole::onKeyDown( const KeyEvent& event ) {
 	std::string cmd = mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
 	if ( !cmd.empty() ) {
 		mDoc.execute( cmd );
+		mLastCmdHash = String::hash( cmd );
 		mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
 		return 1;
 	}
@@ -935,7 +936,8 @@ Uint32 UIConsole::onTextInput( const TextInputEvent& event ) {
 		 input->isMetaPressed() || ( input->isLeftAltPressed() && !input->isLeftControlPressed() ) )
 		return 0;
 
-	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() )
+	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() &&
+		 !TextDocument::isTextDocummentCommand( mLastCmdHash ) )
 		return 0;
 
 	const String& text = event.getText();

@@ -26,6 +26,16 @@ namespace EE { namespace UI { namespace Doc {
 
 static constexpr char DEFAULT_NON_WORD_CHARS[] = " \t\n/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-";
 
+static UnorderedSet<String::HashType> TEXT_DOCUMENT_COMMANDS = {};
+
+bool TextDocument::isTextDocummentCommand( std::string_view cmd ) {
+	return TEXT_DOCUMENT_COMMANDS.contains( String::hash( cmd ) );
+}
+
+bool TextDocument::isTextDocummentCommand( String::HashType cmdHash ) {
+	return TEXT_DOCUMENT_COMMANDS.contains( cmdHash );
+}
+
 bool TextDocument::isNonWord( String::StringBaseType ch ) const {
 	return mNonWordChars.find_first_of( ch ) != String::InvalidPos;
 }
@@ -3793,6 +3803,11 @@ void TextDocument::initializeCommands() {
 	mCommands["unescape"] = [this] { unescape(); };
 	mCommands["to-base64"] = [this] { toBase64(); };
 	mCommands["from-base64"] = [this] { fromBase64(); };
+
+	if ( TEXT_DOCUMENT_COMMANDS.empty() ) {
+		for ( const auto& [cmd, _] : mCommands )
+			TEXT_DOCUMENT_COMMANDS.insert( String::hash( cmd ) );
+	}
 }
 
 TextRange TextDocument::getTopMostCursor() {

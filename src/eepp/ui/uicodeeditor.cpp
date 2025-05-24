@@ -1078,7 +1078,8 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 		 input->isMetaPressed() || ( input->isLeftAltPressed() && !input->isLeftControlPressed() ) )
 		return 0;
 
-	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() )
+	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() &&
+		 !TextDocument::isTextDocummentCommand( mLastCmdHash ) )
 		return 0;
 
 	mDoc->textInput( event.getText() );
@@ -1291,11 +1292,16 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 		// Allow copy selection on locked mode
 		if ( !mLocked || mUnlockedCmd.find( cmd ) != mUnlockedCmd.end() ) {
 			mDoc->execute( cmd, this );
+			mLastCmdHash = String::hash( cmd );
 			mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
 			return 1;
 		}
 	}
 
+	return 0;
+}
+
+Uint32 UICodeEditor::onKeyUp( const KeyEvent& event ) {
 	if ( isEnabledFlashCursor() && event.getSanitizedMod() == KeyMod::getDefaultModifier() ) {
 		if ( mModDownCount == 0 )
 			mModDownClock.restart();
@@ -1312,10 +1318,6 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 		mModDownClock.restart();
 	}
 
-	return 0;
-}
-
-Uint32 UICodeEditor::onKeyUp( const KeyEvent& event ) {
 	mLastActivity.restart();
 	for ( auto& plugin : mPlugins )
 		if ( plugin->onKeyUp( this, event ) )
