@@ -1329,13 +1329,29 @@ void UITabWidget::createTabSwitcher( const std::vector<Keycode>& tabSwitcherMeta
 	}
 }
 
+void UITabWidget::enableTabSwitcher( const std::vector<Keycode>& tabSwitcherMetaTrigger ) {
+	if ( !tabSwitcherMetaTrigger.empty() && !mTabSwitcherRunning ) {
+		mTabSwitcherRunning = true;
+		mFocusHistoryFreezed = mFocusHistory;
+		removeEventsOfType( Event::KeyUp );
+		on( Event::KeyUp, [this, tabSwitcherMetaTrigger]( const Event* event ) {
+			auto keyCode = event->asKeyEvent()->getKeyCode();
+			if ( std::find( tabSwitcherMetaTrigger.begin(), tabSwitcherMetaTrigger.end(),
+							keyCode ) != tabSwitcherMetaTrigger.end() ) {
+				removeEventListener( event->getCallbackId() );
+				mTabSwitcherRunning = false;
+			}
+		} );
+	}
+}
+
 void UITabWidget::focusNextTab( const std::vector<Keycode>& tabSwitcherMetaTrigger ) {
 	if ( mEnableTabSwitcher ) {
-		bool wasVisible = mTabSwitcher && mTabSwitcher->isVisible();
+		bool wasEnabled = mTabSwitcher && mTabSwitcher->isVisible();
 
 		createTabSwitcher( tabSwitcherMetaTrigger );
 
-		if ( wasVisible && !mTabSwitcher->getSelection().isEmpty() ) {
+		if ( wasEnabled && !mTabSwitcher->getSelection().isEmpty() ) {
 			Int32 index = ( mTabSwitcher->getSelection().first().row() + 1 ) %
 						  mTabSwitcher->getModel()->rowCount();
 			mTabSwitcher->setSelection( mTabSwitcher->getModel()->index( index, 0 ) );
@@ -1347,6 +1363,8 @@ void UITabWidget::focusNextTab( const std::vector<Keycode>& tabSwitcherMetaTrigg
 	if ( getTabCount() <= 1 )
 		return;
 
+	enableTabSwitcher( tabSwitcherMetaTrigger );
+
 	switch ( mTabJumpMode ) {
 		case TabJumpMode::Linear: {
 			Int32 index = ( getTabSelectedIndex() + 1 ) % getTabCount();
@@ -1354,9 +1372,14 @@ void UITabWidget::focusNextTab( const std::vector<Keycode>& tabSwitcherMetaTrigg
 			break;
 		}
 		case TabJumpMode::Chronological: {
-			Int32 newTabIndex = (Int32)getTabSelectedFocusHistoryIndex() - 1;
-			Int32 index = newTabIndex < 0 ? mFocusHistory.size() - newTabIndex : newTabIndex;
-			setTabSelected( mFocusHistory[index] );
+			if ( mTabSwitcherRunning ) {
+				Int32 index =
+					( getTabSelectedFocusHistoryFreezedIndex() + 1 ) % mFocusHistory.size();
+				setTabSelected( mFocusHistoryFreezed[index] );
+			} else {
+				Int32 index = ( getTabSelectedFocusHistoryIndex() + 1 ) % mFocusHistory.size();
+				setTabSelected( mFocusHistory[index] );
+			}
 			break;
 		}
 	}
@@ -1380,6 +1403,8 @@ void UITabWidget::focusPreviousTab( const std::vector<Keycode>& tabSwitcherMetaT
 	if ( getTabCount() <= 1 )
 		return;
 
+	enableTabSwitcher( tabSwitcherMetaTrigger );
+
 	switch ( mTabJumpMode ) {
 		case TabJumpMode::Linear: {
 			Int32 newTabIndex = (Int32)getTabSelectedIndex() - 1;
@@ -1388,8 +1413,16 @@ void UITabWidget::focusPreviousTab( const std::vector<Keycode>& tabSwitcherMetaT
 			break;
 		}
 		case TabJumpMode::Chronological: {
-			Int32 index = ( getTabSelectedFocusHistoryIndex() + 1 ) % mFocusHistory.size();
-			setTabSelected( mFocusHistory[index] );
+			if ( mTabSwitcherRunning ) {
+				Int32 newTabIndex = (Int32)getTabSelectedFocusHistoryFreezedIndex() - 1;
+				Int32 index =
+					newTabIndex < 0 ? mFocusHistoryFreezed.size() + newTabIndex : newTabIndex;
+				setTabSelected( mFocusHistoryFreezed[index] );
+			} else {
+				Int32 newTabIndex = (Int32)getTabSelectedFocusHistoryIndex() - 1;
+				Int32 index = newTabIndex < 0 ? mFocusHistory.size() + newTabIndex : newTabIndex;
+				setTabSelected( mFocusHistory[index] );
+			}
 			break;
 		}
 	}
@@ -1398,6 +1431,11 @@ void UITabWidget::focusPreviousTab( const std::vector<Keycode>& tabSwitcherMetaT
 Uint32 UITabWidget::getTabSelectedFocusHistoryIndex() const {
 	auto it = std::find( mFocusHistory.begin(), mFocusHistory.end(), mTabSelected );
 	return it != mFocusHistory.end() ? std::distance( mFocusHistory.begin(), it ) : 0;
+}
+
+Uint32 UITabWidget::getTabSelectedFocusHistoryFreezedIndex() const {
+	auto it = std::find( mFocusHistoryFreezed.begin(), mFocusHistoryFreezed.end(), mTabSelected );
+	return it != mFocusHistoryFreezed.end() ? std::distance( mFocusHistoryFreezed.begin(), it ) : 0;
 }
 
 }} // namespace EE::UI

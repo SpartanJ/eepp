@@ -37,7 +37,6 @@ Diese Operation kann nicht rückgängig gemacht werden!</string>
 	<string name="ai_conversations_history">KI-Unterhaltungen</string>
 	<string name="ai_llm_presentation">Womit kann ich helfen?</string>
 	<string name="ai_rename_chat">Unterhaltung umbenennen</string>
-	<string name="allow_flash_cursor">Blinkende Eingabemarke erlauben</string>
 	<string name="any_https_or_http_url">Jegliche http(s)/URLs</string>
 	<string name="any_name_ellipsis">Jeglicher Name...</string>
 	<string name="app_output">Programmrückgabe</string>
@@ -321,7 +320,6 @@ ecode versucht, externes Terminal zu öffnen.</string>
 	<string name="find_prev">Voriges finden</string>
 	<string name="find_replace">Suchen/Ersetzen</string>
 	<string name="find_text">Suchen:</string>
-	<string name="flash_cursor">Eingabemarke aufblinken</string>
 	<string name="folder_project_settings">Ordner/Projekteinstellungen</string>
 	<string name="folder_settings">Ordner/Projekteinstellungen</string>
 	<string name="folds_refresh_freq">Blockfaltungsaktualisierungsfrequenz</string>

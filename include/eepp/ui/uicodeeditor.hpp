@@ -931,8 +931,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	String::HashType mTagFoldRange{ 0 };
 	Uint32 mTabIndentCharacter{ 187 /*'»'*/ };
 	CharacterAlignment mTabIndentAlignment{ CharacterAlignment::Center };
-	Uint32 mModDownCount{ 0 };
-	Clock mModDownClock;
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
@@ -1138,8 +1136,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void refreshTag();
 
 	bool isNotMonospace() const;
-
-	void flashCursor();
 
 	void setCodeEditorFlags( std::string flags, bool enable );
 

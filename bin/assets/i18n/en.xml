@@ -22,7 +22,6 @@ This operation cannot be reverted!</string>
 	<string name="ai_conversations_history">AI Conversations History</string>
 	<string name="ai_llm_presentation">What can I help with?</string>
 	<string name="ai_rename_chat">Rename Conversation</string>
-	<string name="allow_flash_cursor">Allow Flashing Cursor</string>
 	<string name="any_https_or_http_url">Any https or http URL</string>
 	<string name="any_name_ellipsis">Any name...</string>
 	<string name="app_output">App Output</string>
@@ -306,7 +305,6 @@ ecode will try to open an external terminal.</string>
 	<string name="find_prev">Find Prev</string>
 	<string name="find_replace">Find Replace</string>
 	<string name="find_text">Find:</string>
-	<string name="flash_cursor">Flash Cursor</string>
 	<string name="folder_project_settings">Folder/Project Settings</string>
 	<string name="folder_settings">Folder/Project Settings</string>
 	<string name="folds_refresh_freq">Folds Refresh Frequency</string>

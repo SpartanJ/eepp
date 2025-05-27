@@ -190,7 +190,6 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.tabIndentAlignment = characterAlignmentFromString(
 		ini.getValue( "editor", "tab_indent_alignment",
 					  characterAlignmentToString( CharacterAlignment::Center ) ) );
-	editor.flashCursor = ini.getValueB( "editor", "flash_cursor", false );
 
 	searchBarConfig.caseSensitive = ini.getValueB( "search_bar", "case_sensitive", false );
 	searchBarConfig.luaPattern = ini.getValueB( "search_bar", "lua_pattern", false );
@@ -344,7 +343,6 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "editor", "tab_indent_character", editor.tabIndentCharacter );
 	ini.setValue( "editor", "tab_indent_alignment",
 				  characterAlignmentToString( editor.tabIndentAlignment ) );
-	ini.setValueB( "editor", "flash_cursor", editor.flashCursor );
 
 	ini.setValueB( "search_bar", "case_sensitive", searchBarConfig.caseSensitive );
 	ini.setValueB( "search_bar", "lua_pattern", searchBarConfig.luaPattern );

@@ -244,10 +244,12 @@ class EE_API UITabWidget : public UIWidget {
 	bool mDroppableHoveringColorWasSet{ false };
 	bool mEnabledCreateContextMenu{ false };
 	bool mEnableTabSwitcher{ false };
+	bool mTabSwitcherRunning{ false };
 	Float mTabVerticalDragResistance;
 	Color mDroppableHoveringColor{ Color::Transparent };
 	FocusTabBehavior mFocusTabBehavior{ FocusTabBehavior::Closest };
 	std::deque<UITab*> mFocusHistory;
+	std::deque<UITab*> mFocusHistoryFreezed;
 	UIPopUpMenu* mCurrentMenu{ nullptr };
 	SplitFunctionCb mSplitFn;
 	Float mSplitEdgePercent{ 0.1 };
@@ -306,7 +308,11 @@ class EE_API UITabWidget : public UIWidget {
 	void createTabSwitcher( const std::vector<Keycode>& tabSwitcherMetaTrigger,
 							bool fromPrev = false );
 
+	void enableTabSwitcher( const std::vector<Keycode>& tabSwitcherMetaTrigger );
+
 	Uint32 getTabSelectedFocusHistoryIndex() const;
+
+	Uint32 getTabSelectedFocusHistoryFreezedIndex() const;
 };
 
 }} // namespace EE::UI

@@ -1138,28 +1138,6 @@ Uint32 UICodeEditor::onTextEditing( const TextEditingEvent& event ) {
 	return 1;
 }
 
-void UICodeEditor::flashCursor() {
-	Vector2f screenStart( getScreenStart() );
-	Vector2f start( screenStart.x + getGutterWidth(), screenStart.y + getPluginsTopSpace() );
-	Vector2f startScroll( start - mScroll );
-	auto offset = getTextPositionOffset( mDoc->getSelection().start(), getLineHeight() );
-	Vector2f cursorPos( startScroll.x + offset.x - getFontHeight() * 0.5f,
-						startScroll.y + offset.y );
-	UIWidget* widget = UIWidget::New();
-	widget->setBorderColor( Color( mCaretColor ).blendAlpha( 100 ).blendAlpha( mAlpha ) );
-	widget->setPixelsPosition( cursorPos.floor() );
-	widget->setBorderWidth( PixelDensity::dpToPx( 2 ) );
-	widget->setPixelsSize( Sizef( getFontHeight(), getFontHeight() ) );
-	widget->setEnabled( false );
-
-	Float scale = eemax( getUISceneNode()->getPixelsSize().getWidth() / getFontHeight(),
-						 getUISceneNode()->getPixelsSize().getHeight() / getFontHeight() );
-
-	widget->runAction( Actions::Sequence::New(
-		Actions::Scale::New( { scale, scale }, { 1, 1 }, Milliseconds( 250 ), Ease::Linear ),
-		Actions::Close::New() ) );
-}
-
 void UICodeEditor::setCodeEditorFlags( std::string flags, bool enable ) {
 	String::toLowerInPlace( flags );
 	String::readBySeparator(
@@ -1302,22 +1280,6 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 }
 
 Uint32 UICodeEditor::onKeyUp( const KeyEvent& event ) {
-	if ( isEnabledFlashCursor() && event.getSanitizedMod() == KeyMod::getDefaultModifier() ) {
-		if ( mModDownCount == 0 )
-			mModDownClock.restart();
-
-		if ( mModDownClock.getElapsedTime() < Milliseconds( 250 ) ) {
-			mModDownCount++;
-			if ( mModDownCount == 5 ) {
-				mModDownCount = 0;
-				flashCursor();
-			}
-		} else
-			mModDownCount = 0;
-
-		mModDownClock.restart();
-	}
-
 	mLastActivity.restart();
 	for ( auto& plugin : mPlugins )
 		if ( plugin->onKeyUp( this, event ) )
@@ -4428,7 +4390,6 @@ void UICodeEditor::registerCommands() {
 	mDoc->setCommand( "copy-file-path-and-position", [this] { copyFilePath( true ); } );
 	mDoc->setCommand( "find-replace", [this] { showFindReplace(); } );
 	mDoc->setCommand( "open-context-menu", [this] { createContextMenu(); } );
-	mDoc->setCommand( "flash-cursor", [this] { flashCursor(); } );
 	mUnlockedCmd.insert( { "copy", "select-all", "open-containing-folder",
 						   "copy-containing-folder-path", "copy-file-path",
 						   "copy-file-path-and-position", "open-context-menu", "find-replace" } );

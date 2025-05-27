@@ -85,7 +85,6 @@ struct CodeEditorConfig {
 	bool autoReloadOnDiskChange{ false };
 	bool codeFoldingEnabled{ true };
 	bool codeFoldingAlwaysVisible{ false };
-	bool flashCursor{ false };
 	LineWrapMode wrapMode{ LineWrapMode::NoWrap };
 	LineWrapType wrapType{ LineWrapType::Viewport };
 	bool wrapKeepIndentation{ true };
