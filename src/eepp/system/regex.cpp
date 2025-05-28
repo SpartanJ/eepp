@@ -24,20 +24,20 @@ RegExCache::~RegExCache() {
 }
 
 void RegExCache::insert( std::string_view key, Uint32 options, void* cache ) {
-	auto hash = hashCombine( String::hash( key ), options );
+	auto hash = hashCombine( std::hash<std::string_view>()( key ), options );
 	mCache.insert( { hash, cache } );
 	mCacheOpt.insert( { hash, options } );
 }
 
 void* RegExCache::find( const std::string_view& key, Uint32 options ) {
-	auto it = mCache.find( hashCombine( String::hash( key ), options ) );
+	auto it = mCache.find( hashCombine( std::hash<std::string_view>()( key ), options ) );
 	return ( it != mCache.end() ) ? it->second : nullptr;
 }
 
 void RegExCache::clear() {
 	for ( auto& cache : mCache ) {
 		auto opt = mCacheOpt.find( cache.first );
-		if ( opt->second & RegEx::Options::UseOnigmo )
+		if ( opt->second & RegEx::Options::UseOniguruma )
 			onig_free( static_cast<OnigRegex>( cache.second ) );
 		else
 			pcre2_code_free( reinterpret_cast<pcre2_code*>( cache.second ) );
@@ -65,7 +65,17 @@ RegEx::RegEx( std::string_view pattern, Uint32 options, bool useCache ) :
 		return;
 	}
 
-	if ( mOptions & Options::UseOnigmo ) {
+	if ( useCache && ( mOptions & Options::AllowFallback ) &&
+		 !( mOptions & Options::UseOniguruma ) && RegExCache::instance()->isEnabled() &&
+		 ( mCompiledPattern =
+			   RegExCache::instance()->find( pattern, mOptions | Options::UseOniguruma ) ) ) {
+		mValid = true;
+		mCached = true;
+		mOptions |= Options::UseOniguruma;
+		return;
+	}
+
+	if ( mOptions & Options::UseOniguruma ) {
 		initWithOnigmo( pattern, useCache );
 		return;
 	}
@@ -76,8 +86,8 @@ RegEx::RegEx( std::string_view pattern, Uint32 options, bool useCache ) :
 	if ( options & Options::AllowFallback )
 		options &= ~Options::AllowFallback;
 
-	if ( options & Options::UseOnigmo )
-		options &= ~Options::UseOnigmo;
+	if ( options & Options::UseOniguruma )
+		options &= ~Options::UseOniguruma;
 
 	mCompiledPattern = pcre2_compile( pattern_sptr,	  // the pattern
 									  pattern.size(), // the length of the pattern
@@ -128,7 +138,7 @@ bool RegEx::matches( const char* stringSearch, int stringStartOffset,
 		return false;
 	}
 
-	if ( mOptions & Options::UseOnigmo ) {
+	if ( mOptions & Options::UseOniguruma ) {
 		OnigRegion* region = onig_region_new();
 		if ( !region ) {
 			Log::error( "Onigmo: onig_region_new() failed." );
@@ -162,6 +172,8 @@ bool RegEx::matches( const char* stringSearch, int stringStartOffset,
 				for ( int i = 0; i < region->num_regs; ++i ) {
 					int start = static_cast<int>( region->beg[i] );
 					int end = static_cast<int>( region->end[i] );
+					if ( start == -1 || end == -1 )
+						continue;
 					if ( !mFilterOutCaptures ||
 						 ( !( start == 0 && end == 0 ) && start != end &&
 						   ( curCap == 0 || !( matchList[curCap - 1].start == start &&
@@ -171,7 +183,8 @@ bool RegEx::matches( const char* stringSearch, int stringStartOffset,
 						curCap++;
 					}
 				}
-				mMatchNum = curCap;
+				if ( mMatchNum > 1 )
+					mMatchNum = curCap;
 			}
 
 			onig_region_free( region, 1 );
@@ -196,13 +209,13 @@ bool RegEx::matches( const char* stringSearch, int stringStartOffset,
 
 	PCRE2_SPTR subject = reinterpret_cast<PCRE2_SPTR>( stringSearch );
 
-	int rc = pcre2_match( compiledPattern,					// the compiled pattern
-						  subject + stringStartOffset,		// the subject string
-						  stringLength - stringStartOffset, // the length of the subject
-						  0,								// start at offset in the subject
-						  0,								// default options
-						  match_data,						// match data
-						  NULL								// match context
+	int rc = pcre2_match( compiledPattern,	 // the compiled pattern
+						  subject,			 // the subject string
+						  stringLength,		 // the length of the subject
+						  stringStartOffset, // start at offset in the subject
+						  0,				 // default options
+						  match_data,		 // match data
+						  NULL				 // match context
 	);
 
 	if ( rc < 0 ) {
@@ -220,8 +233,8 @@ bool RegEx::matches( const char* stringSearch, int stringStartOffset,
 		PCRE2_SIZE* ovector = pcre2_get_ovector_pointer( match_data );
 		int curCap = 0;
 		for ( size_t i = 0; i < static_cast<size_t>( rc ); ++i ) {
-			int start = stringStartOffset + static_cast<int>( ovector[2 * i] );
-			int end = stringStartOffset + static_cast<int>( ovector[2 * i + 1] );
+			int start = static_cast<int>( ovector[2 * i] );
+			int end = static_cast<int>( ovector[2 * i + 1] );
 			if ( !mFilterOutCaptures ||
 				 ( !( start == 0 && end == 0 ) && start != end &&
 				   ( curCap == 0 || !( matchList[curCap - 1].start == start &&
@@ -279,7 +292,7 @@ bool RegEx::initWithOnigmo( std::string_view pattern, bool useCache ) {
 
 	mCompiledPattern = regex;
 	mValid = true;
-	mOptions |= Options::UseOnigmo;
+	mOptions |= Options::UseOniguruma;
 	mCaptureCount = onig_number_of_captures( static_cast<OnigRegex>( mCompiledPattern ) );
 
 	if ( useCache && RegExCache::instance()->isEnabled() ) {

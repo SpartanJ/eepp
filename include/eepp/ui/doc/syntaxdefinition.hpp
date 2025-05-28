@@ -124,7 +124,7 @@ struct EE_API SyntaxPattern {
 	}
 
 	inline bool checkIsRootSelfInclude() const {
-		return checkIsIncludePattern() && patterns[1] == "$self";
+		return checkIsIncludePattern() && ( patterns[1] == "$self" || patterns[1] == "$base" );
 	}
 
 	inline bool checkIsRepositoryInclude() const {

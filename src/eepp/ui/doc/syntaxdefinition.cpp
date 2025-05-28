@@ -55,7 +55,7 @@ template <typename SyntaxStyleType> void updateCache( const SyntaxPattern& ptrn 
 
 static void updatePatternRefs( const SyntaxDefinition& def, SyntaxPattern& ptrn ) {
 	ptrn.def = &def;
-	if ( ptrn.syntax == "$self" )
+	if ( ptrn.syntax == "$self" || ptrn.syntax == "$base" )
 		ptrn.syntax = def.getLanguageName();
 }
 

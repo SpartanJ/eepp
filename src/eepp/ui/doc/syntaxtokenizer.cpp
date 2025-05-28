@@ -13,6 +13,8 @@ using namespace EE::System;
 
 namespace EE { namespace UI { namespace Doc {
 
+static constexpr auto REGEX_FLAGS = RegEx::Options::Utf | RegEx::Options::AllowFallback;
+
 struct PatternStackItem {
 	const std::vector<SyntaxPattern>* patterns{ nullptr };
 	size_t index = 0;
@@ -49,6 +51,8 @@ static int isInMultiByteCodePoint( const char* text, const size_t& textSize, con
 template <typename T>
 static void pushToken( std::vector<T>& tokens, const SyntaxStyleType& type,
 					   const std::string_view& text ) {
+	if ( text.empty() )
+		return;
 	if ( !tokens.empty() && ( tokens[tokens.size() - 1].type == type ) ) {
 		size_t tpos = tokens.size() - 1;
 		tokens[tpos].type = type;
@@ -129,7 +133,7 @@ static NonEscapedMatch findNonEscaped( const std::string& text, const std::strin
 			? std::variant<RegEx, LuaPattern, ParserMatcher>( LuaPattern( pattern ) )
 			: ( matchType == SyntaxPatternMatchType::RegEx
 					? std::variant<RegEx, LuaPattern, ParserMatcher>(
-						  RegEx( pattern, RegEx::Options::Utf | RegEx::Options::AllowFallback ) )
+						  RegEx( pattern, REGEX_FLAGS ) )
 					: std::variant<RegEx, LuaPattern, ParserMatcher>( ParserMatcher( pattern ) ) );
 	PatternMatcher& words =
 		std::visit( []( auto& patternType ) -> PatternMatcher& { return patternType; }, wordsVar );
@@ -275,6 +279,9 @@ static inline void pushTokensToOpenCloseSubsyntax( int i, std::string_view textv
 			start = rangeSubsyntax.matches[sidx].start;
 			end = rangeSubsyntax.matches[sidx].end;
 
+			if ( start == -1 || end == -1 )
+				continue;
+
 			if ( sidx == 1 && start > lastStart ) {
 				pushToken( tokens, patternType,
 						   textv.substr( patternMatchStart, start - patternMatchStart ) );
@@ -333,9 +340,8 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 			pattern.matchType == SyntaxPatternMatchType::LuaPattern
 				? std::variant<RegEx, LuaPattern, ParserMatcher>( LuaPattern( patternStr ) )
 				: ( pattern.matchType == SyntaxPatternMatchType::RegEx
-						? std::variant<RegEx, LuaPattern, ParserMatcher>( RegEx(
-							  patternStr, RegEx::Options::Utf | RegEx::Options::AllowFallback |
-											  RegEx::Options::Anchored ) )
+						? std::variant<RegEx, LuaPattern, ParserMatcher>(
+							  RegEx( patternStr, REGEX_FLAGS | RegEx::Options::Anchored ) )
 						: std::variant<RegEx, LuaPattern, ParserMatcher>(
 							  ParserMatcher( patternStr ) ) );
 		PatternMatcher& words = std::visit(
@@ -443,69 +449,83 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 					for ( size_t curMatch = 1; curMatch < numMatches; curMatch++ ) {
 						start = matches[curMatch].start;
 						end = matches[curMatch].end;
-						if ( start == end || start < 0 || end < 0 )
-							continue;
-						if ( pattern.patterns.size() >= 3 && startIdx > 0 &&
-							 text[startIdx - 1] == pattern.patterns[2][0] )
-							continue;
-						Uint8 lead = ( 0xff & ( text[start] ) );
-						if ( !( lead < 0x80 ) ) {
-							char* strStart = const_cast<char*>( text.c_str() + start );
-							char* strEnd = strStart;
-							String::utf8Next( strEnd );
-							end = start + ( strEnd - strStart );
-						}
-						if ( curMatch == 1 && start > lastStart ) {
-							pushToken( tokens, patternType,
-									   textv.substr( fullMatchStart, start - fullMatchStart ) );
-						} else if ( start > lastEnd ) {
-							pushToken( tokens, patternType,
-									   textv.substr( lastEnd, start - lastEnd ) );
-						}
 
-						patternText = textv.substr( start, end - start );
-						SyntaxStyleType type =
-							curMatch < pattern.types.size() &&
-									( pattern.types[curMatch] == SyntaxStyleTypes::Symbol ||
-									  pattern.types[curMatch] == SyntaxStyleTypes::Normal )
-								? curState.currentSyntax->getSymbol(
-									  ( patternTextStr = patternText ) )
-								: SyntaxStyleEmpty();
+						if ( !( start == end || start < 0 || end < 0 ) &&
+							 !( pattern.patterns.size() >= 3 && startIdx > 0 &&
+								text[startIdx - 1] == pattern.patterns[2][0] ) ) {
+							Uint8 lead = ( 0xff & ( text[start] ) );
+							if ( !( lead < 0x80 ) ) {
+								char* strStart = const_cast<char*>( text.c_str() + start );
+								char* strEnd = strStart;
+								String::utf8Next( strEnd );
+								end = start + ( strEnd - strStart );
+							}
+							if ( curMatch == 1 && start > lastStart ) {
+								pushToken( tokens, patternType,
+										   textv.substr( fullMatchStart, start - fullMatchStart ) );
+							} else if ( start > lastEnd ) {
+								pushToken( tokens, patternType,
+										   textv.substr( lastEnd, start - lastEnd ) );
+							}
 
-						if ( !skipSubSyntaxSeparator || !pattern.hasSyntaxOrContentScope() ) {
-							pushToken( tokens,
-									   type == SyntaxStyleEmpty()
-										   ? ( curMatch < pattern.types.size()
-												   ? pattern.types[curMatch]
-												   : pattern.types[0] )
-										   : type,
-									   patternText );
-						}
+							patternText = textv.substr( start, end - start );
+							SyntaxStyleType type =
+								curMatch < pattern.types.size() &&
+										( pattern.types[curMatch] == SyntaxStyleTypes::Symbol ||
+										  pattern.types[curMatch] == SyntaxStyleTypes::Normal )
+									? curState.currentSyntax->getSymbol(
+										  ( patternTextStr = patternText ) )
+									: SyntaxStyleEmpty();
 
-						if ( pattern.isRangedMatch() && curMatch == numMatches - 1 &&
-							 end == fullMatchEnd ) {
-							pushStack(
-								curState, retState, pattern, patternIndex,
-								textv.substr( fullMatchStart, fullMatchEnd - fullMatchStart ) );
-						}
+							if ( !skipSubSyntaxSeparator || !pattern.hasSyntaxOrContentScope() ) {
+								pushToken( tokens,
+										   type == SyntaxStyleEmpty()
+											   ? ( curMatch < pattern.types.size()
+													   ? pattern.types[curMatch]
+													   : pattern.types[0] )
+											   : type,
+										   patternText );
+							}
 
-						startIdx = end;
-
-						if ( curMatch == numMatches - 1 && end < fullMatchEnd ) {
-							pushToken( tokens, patternType,
-									   textv.substr( end, fullMatchEnd - end ) );
-							startIdx = fullMatchEnd;
-
-							if ( pattern.isRangedMatch() && curMatch == numMatches - 1 ) {
+							if ( pattern.isRangedMatch() && curMatch == numMatches - 1 &&
+								 end == fullMatchEnd ) {
 								pushStack(
 									curState, retState, pattern, patternIndex,
 									textv.substr( fullMatchStart, fullMatchEnd - fullMatchStart ) );
+							}
+
+							startIdx = end;
+
+							if ( curMatch == numMatches - 1 && end < fullMatchEnd ) {
+								pushToken( tokens, patternType,
+										   textv.substr( end, fullMatchEnd - end ) );
+								startIdx = fullMatchEnd;
+								end = fullMatchEnd;
+
+								if ( pattern.isRangedMatch() && curMatch == numMatches - 1 ) {
+									pushStack( curState, retState, pattern, patternIndex,
+											   textv.substr( fullMatchStart,
+															 fullMatchEnd - fullMatchStart ) );
+								}
 							}
 						}
 
 						lastStart = start;
 						lastEnd = end;
 					}
+
+					if ( lastEnd < fullMatchEnd ) {
+						pushToken( tokens, patternType,
+								   textv.substr( lastEnd, fullMatchEnd - lastEnd ) );
+						startIdx = fullMatchEnd;
+						if ( pattern.isRangedMatch() ) {
+							pushStack(
+								curState, retState, pattern, patternIndex,
+								textv.substr( fullMatchStart, fullMatchEnd - fullMatchStart ) );
+						}
+						startIdx = fullMatchEnd;
+					}
+
 					return true;
 				}
 			} else {

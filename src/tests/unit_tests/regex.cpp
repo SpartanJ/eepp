@@ -83,3 +83,17 @@ UTEST( LuaPattern, basicTest ) {
 		EXPECT_EQ( end, 16 );
 	}
 }
+
+UTEST( RegExEngines, basicTest ) {
+	std::string testStr = "                ,(render-posts a-blog)))))\n";
+	RegEx regexPCRE2( "(?<=\\))", RegEx::Options::Utf );
+	RegEx regexOniguruma( "(?<=\\))", RegEx::Options::Utf | RegEx::Options::UseOniguruma );
+	PatternMatcher::Range matchesPCRE2[10];
+	PatternMatcher::Range matchesOniguruma[10];
+	regexPCRE2.matches( testStr, matchesPCRE2, 38 );
+	regexOniguruma.matches( testStr, matchesOniguruma, 38 );
+	EXPECT_EQ( 38, matchesPCRE2[0].start );
+	EXPECT_EQ( 38, matchesPCRE2[0].end );
+	EXPECT_EQ( 38, matchesOniguruma[0].start );
+	EXPECT_EQ( 38, matchesOniguruma[0].end );
+}

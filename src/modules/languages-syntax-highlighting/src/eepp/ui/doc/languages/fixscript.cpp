@@ -32,7 +32,7 @@ void addFixScript() {
 			  { "else", "keyword" },	  { "break", "keyword" },		{ "const", "keyword" },
 			  { "while", "keyword" },	  { "import", "keyword" },		{ "return", "keyword" },
 			  { "switch", "keyword" },	  { "default", "keyword" },		{ "continue", "keyword" },
-			  { "function", "function" },
+			  { "function", "keyword" },
 
 			  { "macro", "keyword" },	  { "generate", "keyword" },	{ "output", "keyword" },
 

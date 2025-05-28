@@ -24,8 +24,8 @@ class EE_API RegExCache {
 
   protected:
 	bool mEnabled{ true };
-	UnorderedMap<String::HashType, void*> mCache;
-	UnorderedMap<String::HashType, Uint32> mCacheOpt;
+	std::unordered_map<std::size_t, void*> mCache;
+	std::unordered_map<std::size_t, Uint32> mCacheOpt;
 };
 
 class EE_API RegEx : public PatternMatcher {
@@ -65,7 +65,7 @@ class EE_API RegEx : public PatternMatcher {
 		FilterOutCaptures =
 			0x08000000u, // It will filter out repeated captures and same range captures
 		AllowFallback = 0x10000000u,
-		UseOnigmo = 0x20000000u,
+		UseOniguruma = 0x20000000u,
 	};
 
 	RegEx( std::string_view pattern, Uint32 options = Options::Utf | Options::AllowFallback,

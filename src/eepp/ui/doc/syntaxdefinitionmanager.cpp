@@ -41,7 +41,8 @@ class TextMateScopeMapper {
 		{ "variable.parameter", "keyword3" },	   // Function parameters
 		{ "variable.language", "literal" }, // Language constants like 'this', 'self', 'null'?
 		{ "variable.identifier", "normal" },
-		{ "storage.type", "keyword2" },			 // Class, struct, int, bool etc. (declaration)
+		{ "variable.function", "function" },
+		{ "storage.type", "keyword" },			 // Class, struct, int, bool etc. (declaration)
 		{ "entity.name.function", "function" },	 // Function definition name
 		{ "entity.name.type", "keyword2" },		 // Type name (class, struct, etc.) in definition
 		{ "entity.name.class", "keyword2" },	 // Class name in definition
@@ -655,10 +656,18 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 		for ( Uint64 i = 0; i < totalCaptures; i++ ) {
 			auto capNumStr = String::toString( i );
 			if ( captures.contains( capNumStr ) && captures[capNumStr].contains( "name" ) ) {
-				type.emplace_back(
-					TextMateScopeMapper::scopeToType( captures[capNumStr].value( "name", "" ) ) );
+				auto ctype =
+					TextMateScopeMapper::scopeToType( captures[capNumStr].value( "name", "" ) );
+				if ( i < type.size() )
+					type[i] = ctype;
+				else
+					type.emplace_back( ctype );
 			} else if ( parent.contains( "name" ) ) {
-				type.emplace_back( TextMateScopeMapper::scopeToType( parent.value( "name", "" ) ) );
+				auto ctype = TextMateScopeMapper::scopeToType( parent.value( "name", "" ) );
+				if ( i < type.size() )
+					type[i] = ctype;
+				else
+					type.emplace_back( ctype );
 			} else {
 				type.emplace_back( "normal" );
 			}
@@ -805,6 +814,13 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 static SyntaxDefinition loadTextMateLanguage( const nlohmann::json& json, SyntaxDefinition& def ) {
 	if ( json.contains( "fileTypes" ) && json["fileTypes"].is_array() ) {
 		const auto& files = json["fileTypes"];
+		for ( const auto& file : files )
+			if ( file.is_string() ) {
+				auto ext( file.get<std::string>() );
+				def.addFileType( ( !String::contains( ext, "." ) ? "%." : "" ) + ext + "$" );
+			}
+	} else if ( json.contains( "filetypes" ) && json["filetypes"].is_array() ) {
+		const auto& files = json["filetypes"];
 		for ( const auto& file : files )
 			if ( file.is_string() ) {
 				auto ext( file.get<std::string>() );
