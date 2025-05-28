@@ -1,3 +1,4 @@
+#include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/regex.hpp>
 
@@ -10,6 +11,7 @@ namespace {
 
 struct OnigInitializer {
 	OnigInitializer() { onig_init(); }
+
 	~OnigInitializer() { onig_end(); }
 };
 
@@ -23,18 +25,25 @@ RegExCache::~RegExCache() {
 	clear();
 }
 
+inline size_t getCacheHash( std::string_view key, Uint32 options ) {
+	return hashCombine( std::hash<std::string_view>()( key ), options );
+}
+
 void RegExCache::insert( std::string_view key, Uint32 options, void* cache ) {
-	auto hash = hashCombine( std::hash<std::string_view>()( key ), options );
+	auto hash = getCacheHash( key, options );
+	Lock l( mMutex );
 	mCache.insert( { hash, cache } );
 	mCacheOpt.insert( { hash, options } );
 }
 
-void* RegExCache::find( const std::string_view& key, Uint32 options ) {
-	auto it = mCache.find( hashCombine( std::hash<std::string_view>()( key ), options ) );
+void* RegExCache::find( std::string_view key, Uint32 options ) {
+	Lock l( mMutex );
+	auto it = mCache.find( getCacheHash( key, options ) );
 	return ( it != mCache.end() ) ? it->second : nullptr;
 }
 
 void RegExCache::clear() {
+	Lock l( mMutex );
 	for ( auto& cache : mCache ) {
 		auto opt = mCacheOpt.find( cache.first );
 		if ( opt->second & RegEx::Options::UseOniguruma )

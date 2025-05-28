@@ -372,9 +372,6 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 				int fullMatchStart = matches[0].start;
 				int fullMatchEnd = matches[0].end;
 
-				if ( endRange && fullMatchEnd >= endRange->range.first )
-					fullMatchEnd = endRange->range.first;
-
 				if ( pattern.matchType == SyntaxPatternMatchType::RegEx ) {
 					priorityMap.clear();
 					priorityMap.resize( fullMatchEnd - fullMatchStart, 0 );

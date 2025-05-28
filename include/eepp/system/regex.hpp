@@ -2,6 +2,7 @@
 #define EE_SYSTEM_REGEX
 
 #include <eepp/core/containers.hpp>
+#include <eepp/system/mutex.hpp>
 #include <eepp/system/patternmatcher.hpp>
 #include <eepp/system/singleton.hpp>
 
@@ -18,14 +19,15 @@ class EE_API RegExCache {
 
 	void insert( std::string_view, Uint32 options, void* cache );
 
-	void* find( const std::string_view&, Uint32 options );
+	void* find( std::string_view, Uint32 options );
 
 	void clear();
 
   protected:
 	bool mEnabled{ true };
-	std::unordered_map<std::size_t, void*> mCache;
-	std::unordered_map<std::size_t, Uint32> mCacheOpt;
+	std::unordered_map<size_t, void*> mCache;
+	std::unordered_map<size_t, Uint32> mCacheOpt;
+	Mutex mMutex;
 };
 
 class EE_API RegEx : public PatternMatcher {
