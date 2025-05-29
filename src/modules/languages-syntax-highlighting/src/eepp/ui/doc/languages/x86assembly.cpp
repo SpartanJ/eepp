@@ -3,8 +3,8 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addX86Assembly() {
-	SyntaxDefinitionManager::instance()->add(
+SyntaxDefinition& addX86Assembly() {
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "x86 Assembly",
 		  { "%.asm$", "%.[sS]$" },

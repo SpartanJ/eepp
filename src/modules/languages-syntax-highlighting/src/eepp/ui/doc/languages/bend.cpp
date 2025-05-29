@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addBend() {
+SyntaxDefinition& addBend() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -51,6 +51,7 @@ void addBend() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

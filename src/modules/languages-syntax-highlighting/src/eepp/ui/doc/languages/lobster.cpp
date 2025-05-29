@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addLobster() {
+SyntaxDefinition& addLobster() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Lobster",
 		  { "%.lobster$" },

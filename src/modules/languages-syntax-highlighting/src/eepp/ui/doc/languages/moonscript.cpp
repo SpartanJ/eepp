@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addMoonscript() {
+SyntaxDefinition& addMoonscript() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -49,6 +49,7 @@ void addMoonscript() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

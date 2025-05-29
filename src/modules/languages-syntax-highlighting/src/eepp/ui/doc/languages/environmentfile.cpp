@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addEnvironmentFile() {
+SyntaxDefinition& addEnvironmentFile() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Environment File",
 		  { "%.env$", "%.env.[%w%-%_]*$" },

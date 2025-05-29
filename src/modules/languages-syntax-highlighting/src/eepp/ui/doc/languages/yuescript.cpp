@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addYueScript() {
+SyntaxDefinition& addYueScript() {
 
 	SyntaxDefinitionManager::instance()
 		->add(
@@ -24,7 +24,7 @@ void addYueScript() {
 			} )
 		.setVisible( false );
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "YueScript",
 		  { "%.yue$" },

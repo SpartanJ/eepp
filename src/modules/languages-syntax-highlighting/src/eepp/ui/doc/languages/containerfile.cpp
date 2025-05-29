@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addContainerFile() {
+SyntaxDefinition& addContainerFile() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -43,6 +43,7 @@ void addContainerFile() {
 		  "dockerfile" } );
 
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

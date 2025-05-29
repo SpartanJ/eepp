@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addElena() {
+SyntaxDefinition& addElena() {
 
-	SyntaxDefinitionManager::instance()
+	return SyntaxDefinitionManager::instance()
 		->add(
 
 			{ "ELENA",

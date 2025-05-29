@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addSass() {
+SyntaxDefinition& addSass() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Sass",
 		  { "%.sass$", "%.scss$" },

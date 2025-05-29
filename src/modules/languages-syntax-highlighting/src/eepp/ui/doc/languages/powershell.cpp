@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addPowerShell() {
+SyntaxDefinition& addPowerShell() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "PowerShell",
 		  { "%.ps1$", "%.psm1$", "%.psd1$", "%.ps1xml$", "%.pssc$", "%.psrc$", "%.cdxml$" },

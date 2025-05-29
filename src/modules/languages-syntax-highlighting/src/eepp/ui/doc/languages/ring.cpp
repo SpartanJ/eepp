@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addRing() {
+SyntaxDefinition& addRing() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Ring",
 		  { "%.ring$", "%.rh$", "%.rform$" },

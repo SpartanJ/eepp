@@ -1,9 +1,11 @@
 #ifndef EE_UI_DOC_Makefile
 #define EE_UI_DOC_Makefile
 
+#include <eepp/ui/doc/syntaxdefinition.hpp>
+
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-extern void addMakefile();
+extern SyntaxDefinition& addMakefile();
 
 }}}} // namespace EE::UI::Doc::Language
 

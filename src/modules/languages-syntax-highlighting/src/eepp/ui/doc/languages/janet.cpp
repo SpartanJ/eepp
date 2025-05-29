@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addJanet() {
+SyntaxDefinition& addJanet() {
 
-	SyntaxDefinitionManager::instance()
+	return SyntaxDefinitionManager::instance()
 		->add(
 
 			{ "Janet",

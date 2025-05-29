@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addHtaccessFile() {
+SyntaxDefinition& addHtaccessFile() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 		{ ".htaccess",
 		  { "^%.htaccess$" },
 		  {

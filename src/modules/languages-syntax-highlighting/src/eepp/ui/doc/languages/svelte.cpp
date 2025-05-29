@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addSvelte() {
+SyntaxDefinition& addSvelte() {
 
-	SyntaxDefinitionManager::instance()
+	return SyntaxDefinitionManager::instance()
 		->add(
 
 			{ "Svelte",

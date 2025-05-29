@@ -22,7 +22,7 @@ class EE_API SyntaxDefinitionManager {
 
 	std::size_t count() const;
 
-	void reserveSpaceForLanguages( std::size_t totalLangs );
+	SyntaxPreDefinition& addPreDefinition( SyntaxPreDefinition&& preDefinition );
 
 	SyntaxDefinition& add( SyntaxDefinition&& syntaxStyle );
 
@@ -53,19 +53,11 @@ class EE_API SyntaxDefinitionManager {
 
 	const SyntaxDefinition& getByLSPName( const std::string_view& name ) const;
 
-	const SyntaxDefinition& getByLanguageId( const String::HashType& id ) const;
-
-	SyntaxDefinition& getByLanguageNameRef( const std::string& name );
-
 	std::vector<std::string> getLanguageNames() const;
 
 	std::vector<std::string> getExtensionsPatternsSupported() const;
 
-	const SyntaxDefinition* getPtrByLanguageName( const std::string& name ) const;
-
 	const SyntaxDefinition* getPtrByLSPName( const std::string& name ) const;
-
-	const SyntaxDefinition* getPtrByLanguageId( const String::HashType& id ) const;
 
 	bool loadFromStream( IOStream& stream, std::vector<std::string>* addedLangs );
 
@@ -81,6 +73,8 @@ class EE_API SyntaxDefinitionManager {
 
 	const std::vector<SyntaxDefinition>& getDefinitions() const;
 
+	const std::vector<SyntaxPreDefinition>& getPreDefinitions() const;
+
 	/* empty = all */
 	bool save( const std::string& path, const std::vector<SyntaxDefinition>& def = {} );
 
@@ -92,6 +86,7 @@ class EE_API SyntaxDefinitionManager {
 	SyntaxDefinitionManager( std::size_t reserveSpaceForLanguages = 12 );
 
 	std::vector<SyntaxDefinition> mDefinitions;
+	std::vector<SyntaxPreDefinition> mPreDefinitions;
 	std::map<std::string, std::string> mPriorities;
 
 	std::optional<size_t> getLanguageIndex( const std::string& langName );

@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addClojure() {
+SyntaxDefinition& addClojure() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Clojure",
 		  { "%.clj$", "%.cljs$", "%.clc$", "%.edn$" },

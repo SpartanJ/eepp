@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addAda() {
+SyntaxDefinition& addAda() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -115,6 +115,7 @@ void addAda() {
 		} );
 
 	sd.setCaseInsensitive( true );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

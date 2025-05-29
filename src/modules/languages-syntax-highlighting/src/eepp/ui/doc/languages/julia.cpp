@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addJulia() {
+SyntaxDefinition& addJulia() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -68,6 +68,7 @@ void addJulia() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

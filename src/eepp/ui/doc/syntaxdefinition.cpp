@@ -105,7 +105,6 @@ SyntaxDefinition::SyntaxDefinition(
 	const std::string& comment, std::vector<std::string>&& headers, const std::string& lspName,
 	std::vector<std::pair<std::string, std::vector<SyntaxPattern>>>&& repositories ) :
 	mLanguageName( languageName ),
-	mLanguageId( String::hash( String::toLower( languageName ) ) ),
 	mFiles( std::move( files ) ),
 	mPatterns( std::move( patterns ) ),
 	mSymbolNames( std::move( symbols ) ),
@@ -314,7 +313,6 @@ SyntaxDefinition& SyntaxDefinition::setAutoCloseXMLTags( bool autoCloseXMLTags )
 SyntaxDefinition& SyntaxDefinition::setLanguageName( const std::string& languageName ) {
 	mLanguageName = languageName;
 	mLSPName = String::toLower( languageName );
-	mLanguageId = String::hash( mLSPName );
 	return *this;
 }
 
@@ -338,10 +336,6 @@ std::string SyntaxDefinition::getLanguageNameForFileSystem() const {
 	String::replaceAll( lang, "#", "sharp" );
 	String::toLowerInPlace( lang );
 	return lang;
-}
-
-const String::HashType& SyntaxDefinition::getLanguageId() const {
-	return mLanguageId;
 }
 
 SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,

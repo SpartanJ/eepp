@@ -3,12 +3,12 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addSQL() {
+SyntaxDefinition& addSQL() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "SQL",
-		  { "%.sql$", "%.psql$" },
+		  { "%.sql$" },
 		  {
 			  { { "%-%-.-\n" }, "comment" },
 			  { { "/%*", "%*/" }, "comment" },

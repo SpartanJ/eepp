@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addSmallBASIC() {
+SyntaxDefinition& addSmallBASIC() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "SmallBASIC",
 		  { "%.bas$" },

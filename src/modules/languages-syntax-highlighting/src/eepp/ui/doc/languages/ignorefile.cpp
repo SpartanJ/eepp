@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addIgnoreFile() {
+SyntaxDefinition& addIgnoreFile() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ ".ignore file",
 		  { "%..*ignore$" },

@@ -4,7 +4,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addTypeScript() {
+SyntaxDefinition& addTypeScript() {
 
 	SyntaxDefinition& ts = SyntaxDefinitionManager::instance()->add(
 
@@ -108,7 +108,8 @@ void addTypeScript() {
 		.setLSPName( "typescriptreact" )
 		.setFoldRangeType( FoldRangeType::Braces )
 		.setFoldBraces( { { '{', '}' } } );
-	;
+
+	return ts;
 }
 
 }}}} // namespace EE::UI::Doc::Language

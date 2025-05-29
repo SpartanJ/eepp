@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addPascal() {
+SyntaxDefinition& addPascal() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Pascal",
 		  { "%.pas$", "%.dpr$", "%.dpk$" },

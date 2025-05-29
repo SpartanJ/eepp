@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addVue() {
+SyntaxDefinition& addVue() {
 
 	SyntaxDefinitionManager::instance()
 		->add( { "Vue-HTML",
@@ -30,7 +30,7 @@ void addVue() {
 		.setVisible( false )
 		.setAutoCloseXMLTags( true );
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 		{ "Vue",
 		  { "%.vue?$" },
 		  {

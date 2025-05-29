@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addJSX() {
+SyntaxDefinition& addJSX() {
 
 	auto& sd =
 		SyntaxDefinitionManager::instance()
@@ -57,6 +57,7 @@ void addJSX() {
 			.setLSPName( "javascriptreact" );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

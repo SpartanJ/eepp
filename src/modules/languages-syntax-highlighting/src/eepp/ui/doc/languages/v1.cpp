@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addV1() {
+SyntaxDefinition& addV1() {
 
-	SyntaxDefinitionManager::instance()
+	auto& v1 = SyntaxDefinitionManager::instance()
 		->add( { "V1",
 				 { "%.v1$" },
 				 {
@@ -81,6 +81,7 @@ void addV1() {
 				   .setVisible( false );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	return v1;
 }
 
 }}}} // namespace EE::UI::Doc::Language

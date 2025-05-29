@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addNim() {
+SyntaxDefinition& addNim() {
 	std::vector<SyntaxPattern> nim_patterns;
 	SyntaxDefMap<std::string, std::string> nim_symbols;
 
@@ -88,6 +88,7 @@ void addNim() {
 	} );
 
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

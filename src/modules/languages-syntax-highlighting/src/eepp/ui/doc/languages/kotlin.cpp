@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addKotlin() {
+SyntaxDefinition& addKotlin() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -72,6 +72,7 @@ void addKotlin() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

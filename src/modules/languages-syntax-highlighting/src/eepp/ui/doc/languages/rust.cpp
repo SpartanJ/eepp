@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addRust() {
+SyntaxDefinition& addRust() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -56,6 +56,7 @@ void addRust() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addOpenSCAD() {
+SyntaxDefinition& addOpenSCAD() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "OpenSCAD",
 		  { "%.scad$" },

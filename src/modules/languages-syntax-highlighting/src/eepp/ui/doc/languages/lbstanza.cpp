@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addLbstanza() {
+SyntaxDefinition& addLbstanza() {
 
-	SyntaxDefinitionManager::instance()
+	return SyntaxDefinitionManager::instance()
 		->add(
 
 			{ "L.B. Stanza",

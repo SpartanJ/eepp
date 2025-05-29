@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addCMake() {
+SyntaxDefinition& addCMake() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "CMake",
 		  { "%.cmake$", "CMakeLists%.txt$" },

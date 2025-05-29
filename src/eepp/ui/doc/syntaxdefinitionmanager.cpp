@@ -197,6 +197,10 @@ const std::vector<SyntaxDefinition>& SyntaxDefinitionManager::getDefinitions() c
 	return mDefinitions;
 }
 
+const std::vector<SyntaxPreDefinition>& SyntaxDefinitionManager::getPreDefinitions() const {
+	return mPreDefinitions;
+}
+
 static std::optional<nlohmann::json> serializePattern( const SyntaxPattern& ptrn,
 													   const SyntaxDefinition& def ) {
 	json pattern;
@@ -434,18 +438,19 @@ std::pair<std::string, std::string> SyntaxDefinitionManager::toCPP( const Syntax
 
 	std::string lang( def.getLanguageNameForFileSystem() );
 	std::string func( funcName( lang ) );
-	std::string header = "#ifndef EE_UI_DOC_" + func + "\n#define EE_UI_DOC_" + func +
-						 "\n\nnamespace EE { namespace UI { namespace "
-						 "Doc { namespace Language {\n\nextern void add" +
-						 func + "();\n\n}}}}\n\n#endif\n";
+	std::string header =
+		"#ifndef EE_UI_DOC_" + func + "\n#define EE_UI_DOC_" + func +
+		"\n#include <eepp/ui/doc/syntaxdefinition.hpp>\n\nnamespace EE { namespace UI { namespace "
+		"Doc { namespace Language {\n\nextern SyntaxDefinition& add" +
+		func + "();\n\n}}}}\n\n#endif\n";
 	std::string buf = String::format( R"cpp(#include <eepp/ui/doc/languages/%s.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 )cpp",
 									  lang.c_str() );
-	buf += "\nvoid add" + func + "() {\n";
-	buf += "\nSyntaxDefinitionManager::instance()->add(\n\n{";
+	buf += "\nSyntaxDefinition& add" + func + "() {\n";
+	buf += "\nreturn SyntaxDefinitionManager::instance()->add(\n\n{";
 	// lang name
 	buf += str( def.getLanguageName() ) + ",\n";
 	// file types
@@ -529,6 +534,12 @@ SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle )
 	return mDefinitions.back();
 }
 
+SyntaxPreDefinition&
+SyntaxDefinitionManager::addPreDefinition( SyntaxPreDefinition&& preDefinition ) {
+	mPreDefinitions.emplace_back( std::move( preDefinition ) );
+	return mPreDefinitions.back();
+}
+
 const SyntaxDefinition& SyntaxDefinitionManager::getPlainDefinition() const {
 	return mDefinitions[0];
 }
@@ -539,7 +550,7 @@ SyntaxDefinition& SyntaxDefinitionManager::getByExtensionRef( const std::string&
 
 const SyntaxDefinition&
 SyntaxDefinitionManager::getByLanguageName( const std::string_view& name ) const {
-	for ( auto& definition : mDefinitions ) {
+	for ( const auto& definition : mDefinitions ) {
 		if ( definition.getLanguageName() == name ||
 			 std::find_if( definition.getAlternativeNames().begin(),
 						   definition.getAlternativeNames().end(),
@@ -547,6 +558,17 @@ SyntaxDefinitionManager::getByLanguageName( const std::string_view& name ) const
 				 definition.getAlternativeNames().end() )
 			return definition;
 	}
+
+	for ( const auto& preDefinition : mPreDefinitions ) {
+		if ( preDefinition.name == name ||
+			 std::find_if( preDefinition.alternativeNames.begin(),
+						   preDefinition.alternativeNames.end(),
+						   [name]( const std::string& altName ) { return altName == name; } ) !=
+				 preDefinition.alternativeNames.end() ) {
+			return preDefinition.load();
+		}
+	}
+
 	return mDefinitions[0];
 }
 
@@ -557,7 +579,7 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByLanguageIndex( const Uint3
 
 const SyntaxDefinition&
 SyntaxDefinitionManager::getByLanguageNameInsensitive( const std::string_view& name ) const {
-	for ( auto& definition : mDefinitions ) {
+	for ( const auto& definition : mDefinitions ) {
 		if ( String::iequals( definition.getLanguageName(), name ) ||
 			 std::find_if( definition.getAlternativeNames().begin(),
 						   definition.getAlternativeNames().end(),
@@ -566,57 +588,66 @@ SyntaxDefinitionManager::getByLanguageNameInsensitive( const std::string_view& n
 						   } ) != definition.getAlternativeNames().end() )
 			return definition;
 	}
+
+	for ( const auto& preDefinition : mPreDefinitions ) {
+		if ( String::iequals( preDefinition.getLanguageName(), name ) ||
+			 std::find_if( preDefinition.getAlternativeNames().begin(),
+						   preDefinition.getAlternativeNames().end(),
+						   [name]( const std::string& altName ) {
+							   return String::iequals( altName, name );
+						   } ) != preDefinition.getAlternativeNames().end() )
+			return preDefinition.load();
+	}
+
 	return mDefinitions[0];
 }
 
 const SyntaxDefinition&
 SyntaxDefinitionManager::getByLSPName( const std::string_view& name ) const {
-	for ( auto& definition : mDefinitions ) {
+	for ( const auto& definition : mDefinitions ) {
 		if ( definition.getLSPName() == name )
 			return definition;
 	}
-	return mDefinitions[0];
-}
-
-const SyntaxDefinition&
-SyntaxDefinitionManager::getByLanguageId( const String::HashType& id ) const {
-	for ( auto& definition : mDefinitions ) {
-		if ( definition.getLanguageId() == id )
-			return definition;
+	for ( const auto& preDefinition : mPreDefinitions ) {
+		if ( preDefinition.getLSPName() == name )
+			return preDefinition.load();
 	}
 	return mDefinitions[0];
-}
-
-SyntaxDefinition& SyntaxDefinitionManager::getByLanguageNameRef( const std::string& name ) {
-	return const_cast<SyntaxDefinition&>( getByLanguageName( name ) );
 }
 
 std::vector<std::string> SyntaxDefinitionManager::getLanguageNames() const {
-	std::vector<std::string> names;
+	std::unordered_set<std::string> names;
 	for ( auto& definition : mDefinitions ) {
 		if ( definition.isVisible() )
-			names.push_back( definition.getLanguageName() );
+			names.insert( definition.getLanguageName() );
 	}
-	std::sort( names.begin(), names.end() );
-	return names;
+	for ( auto& preDefinition : mPreDefinitions )
+		names.insert( preDefinition.getLanguageName() );
+	std::vector<std::string> vnames;
+	vnames.reserve( names.size() );
+	for ( auto& name : names )
+		vnames.emplace_back( std::move( name ) );
+	std::sort( vnames.begin(), vnames.end() );
+	return vnames;
 }
 
 std::vector<std::string> SyntaxDefinitionManager::getExtensionsPatternsSupported() const {
-	std::vector<std::string> exts;
+	std::unordered_set<std::string> exts;
 	exts.reserve( mDefinitions.size() );
 	for ( auto& definition : mDefinitions )
 		for ( auto& pattern : definition.getFiles() )
-			exts.emplace_back( pattern );
-	return exts;
-}
+			exts.insert( pattern );
 
-const SyntaxDefinition*
-SyntaxDefinitionManager::getPtrByLanguageName( const std::string& name ) const {
-	for ( const auto& definition : mDefinitions ) {
-		if ( definition.getLanguageName() == name )
-			return &definition;
-	}
-	return nullptr;
+	for ( auto& preDefinition : mPreDefinitions )
+		for ( auto& pattern : preDefinition.getFiles() )
+			exts.insert( pattern );
+
+	std::vector<std::string> vexts;
+	vexts.reserve( exts.size() );
+	for ( auto& ext : exts )
+		vexts.emplace_back( std::move( ext ) );
+	std::sort( vexts.begin(), vexts.end() );
+	return vexts;
 }
 
 const SyntaxDefinition* SyntaxDefinitionManager::getPtrByLSPName( const std::string& name ) const {
@@ -624,14 +655,9 @@ const SyntaxDefinition* SyntaxDefinitionManager::getPtrByLSPName( const std::str
 		if ( definition.getLSPName() == name )
 			return &definition;
 	}
-	return nullptr;
-}
-
-const SyntaxDefinition*
-SyntaxDefinitionManager::getPtrByLanguageId( const String::HashType& id ) const {
-	for ( const auto& definition : mDefinitions ) {
-		if ( definition.getLanguageId() == id )
-			return &definition;
+	for ( const auto& preDefinition : mPreDefinitions ) {
+		if ( preDefinition.getLSPName() == name )
+			return &preDefinition.load();
 	}
 	return nullptr;
 }
@@ -1082,6 +1108,24 @@ SyntaxDefinitionManager::languagesThatSupportExtension( std::string extension ) 
 			}
 		}
 	}
+
+	for ( const auto& preDefinition : mPreDefinitions ) {
+		for ( const auto& ext : preDefinition.getFiles() ) {
+			if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
+				 String::endsWith( ext, "$" ) ) {
+				LuaPattern words( ext );
+				int start, end;
+				if ( words.find( extension, start, end ) ) {
+					langs.push_back( &preDefinition.load() );
+					break;
+				}
+			} else if ( extension == ext ) {
+				langs.push_back( &preDefinition.load() );
+				break;
+			}
+		}
+	}
+
 	return langs;
 }
 
@@ -1091,7 +1135,7 @@ bool SyntaxDefinitionManager::extensionCanRepresentManyLanguages( std::string ex
 	if ( extension[0] != '.' )
 		extension = '.' + extension;
 
-	int count = 0;
+	std::unordered_set<std::string> count;
 	for ( const auto& definition : mDefinitions ) {
 		for ( const auto& ext : definition.getFiles() ) {
 			if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
@@ -1099,17 +1143,41 @@ bool SyntaxDefinitionManager::extensionCanRepresentManyLanguages( std::string ex
 				LuaPattern words( ext );
 				int start, end;
 				if ( words.find( extension, start, end ) ) {
-					count++;
-					if ( count > 1 )
+					count.insert( definition.getLanguageName() );
+					if ( count.size() > 1 )
 						return true;
+					break;
 				}
 			} else if ( extension == ext ) {
-				count++;
-				if ( count > 1 )
+				count.insert( definition.getLanguageName() );
+				if ( count.size() > 1 )
 					return true;
+				break;
 			}
 		}
 	}
+
+	for ( const auto& preDefinition : mPreDefinitions ) {
+		for ( const auto& ext : preDefinition.getFiles() ) {
+			if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
+				 String::endsWith( ext, "$" ) ) {
+				LuaPattern words( ext );
+				int start, end;
+				if ( words.find( extension, start, end ) ) {
+					count.insert( preDefinition.getLanguageName() );
+					if ( count.size() > 1 )
+						return true;
+					break;
+				}
+			} else if ( extension == ext ) {
+				count.insert( preDefinition.getLanguageName() );
+				if ( count.size() > 1 )
+					return true;
+				break;
+			}
+		}
+	}
+
 	return false;
 }
 
@@ -1169,6 +1237,37 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByExtension( const std::stri
 				}
 			}
 		}
+
+		for ( const auto& preDefinition : mPreDefinitions ) {
+			for ( const auto& ext : preDefinition.getFiles() ) {
+				if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
+					 String::endsWith( ext, "$" ) ) {
+					LuaPattern words( ext );
+					int start, end;
+					if ( words.find( fileName, start, end ) ) {
+						if ( hFileAsCPP && preDefinition.getLSPName() == "c" && ext == "%.h$" )
+							return getByLSPName( "cpp" );
+
+						if ( extHasMultipleLangs && !preDefinition.hasExtensionPriority() ) {
+							def = &preDefinition.load();
+							continue;
+						}
+
+						return preDefinition.load();
+					}
+				} else if ( extension == ext ) {
+					if ( hFileAsCPP && preDefinition.getLSPName() == "c" && ext == ".h" )
+						return getByLSPName( "cpp" );
+
+					if ( extHasMultipleLangs && !preDefinition.hasExtensionPriority() ) {
+						def = &preDefinition.load();
+						continue;
+					}
+
+					return preDefinition.load();
+				}
+			}
+		}
 	}
 
 	return def != nullptr ? *def : mDefinitions[0];
@@ -1184,6 +1283,17 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( const std::string&
 				int start, end;
 				if ( words.find( header, start, end ) ) {
 					return *definition;
+				}
+			}
+		}
+
+		for ( auto preDefinition = mPreDefinitions.rbegin();
+			  preDefinition != mPreDefinitions.rend(); ++preDefinition ) {
+			for ( const auto& hdr : preDefinition->getHeaders() ) {
+				LuaPattern words( hdr );
+				int start, end;
+				if ( words.find( header, start, end ) ) {
+					return preDefinition->load();
 				}
 			}
 		}
@@ -1220,10 +1330,6 @@ const std::map<std::string, std::string>& SyntaxDefinitionManager::getLanguageEx
 
 std::size_t SyntaxDefinitionManager::count() const {
 	return mDefinitions.size();
-}
-
-void SyntaxDefinitionManager::reserveSpaceForLanguages( std::size_t totalLangs ) {
-	mDefinitions.reserve( totalLangs );
 }
 
 }}} // namespace EE::UI::Doc

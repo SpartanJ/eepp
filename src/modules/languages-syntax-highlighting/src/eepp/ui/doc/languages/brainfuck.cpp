@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addBrainfuck() {
+SyntaxDefinition& addBrainfuck() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Brainfuck",
 		  { "%.bf$" },

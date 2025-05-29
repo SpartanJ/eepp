@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addRuby() {
+SyntaxDefinition& addRuby() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -80,6 +80,7 @@ void addRuby() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

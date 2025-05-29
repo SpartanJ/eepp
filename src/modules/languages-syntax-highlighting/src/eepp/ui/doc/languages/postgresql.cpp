@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addPostgreSQL() {
+SyntaxDefinition& addPostgreSQL() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "PostgreSQL",
 		  { "%.sql$", "%.psql$" },

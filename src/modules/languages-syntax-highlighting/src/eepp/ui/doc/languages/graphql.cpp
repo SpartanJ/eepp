@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addGraphQL() {
+SyntaxDefinition& addGraphQL() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "GraphQL",
 		  { "%.graphql$", "%.gql$" },

@@ -1,9 +1,11 @@
 #ifndef EE_UI_DOC_Xit
 #define EE_UI_DOC_Xit
 
+#include <eepp/ui/doc/syntaxdefinition.hpp>
+
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-extern void addXit();
+extern SyntaxDefinition& addXit();
 
 }}}} // namespace EE::UI::Doc::Language
 

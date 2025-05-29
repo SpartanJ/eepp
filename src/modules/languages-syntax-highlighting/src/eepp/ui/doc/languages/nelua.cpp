@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addNelua() {
+SyntaxDefinition& addNelua() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -93,6 +93,7 @@ void addNelua() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

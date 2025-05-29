@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addModula3() {
+SyntaxDefinition& addModula3() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Modula3",
 		  { "%.m3$", "%.i3$", "%.mg$", "%.ig$" },

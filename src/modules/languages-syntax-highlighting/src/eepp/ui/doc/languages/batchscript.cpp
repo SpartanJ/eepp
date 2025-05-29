@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addBatchScript() {
+SyntaxDefinition& addBatchScript() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Batch Script",
 		  { "%.bat$", "%.cmd$" },

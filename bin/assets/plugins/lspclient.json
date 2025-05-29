@@ -59,8 +59,10 @@
       "initializationOptions": {
         "usePlaceholders": true,
         "semanticTokens": true,
-        "noSemanticString": true,
-        "noSemanticNumber": true
+        "semanticTokenTypes": {
+          "string": false,
+          "number": false
+        }
       }
     },
     {
@@ -413,6 +415,14 @@
       "url": "https://github.com/Panzerschrek/U-00DC-Sprache",
       "command": "u.._language_server",
       "file_patterns": ["%.u$", "%.uh$"],
+      "rootIndicationFileNames": [".git"]
+    },
+    {
+      "language": "racket",
+      "name": "racket-langserver",
+      "url": "https://github.com/jeapostrophe/racket-langserver",
+      "command": "racket -l racket-langserver",
+      "file_patterns": ["%.rkt$"],
       "rootIndicationFileNames": [".git"]
     }
   ]

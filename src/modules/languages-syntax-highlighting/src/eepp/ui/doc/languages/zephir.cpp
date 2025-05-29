@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addZephir() {
+SyntaxDefinition& addZephir() {
 
-	SyntaxDefinitionManager::instance()
+	return SyntaxDefinitionManager::instance()
 		->add(
 
 			{ "Zephir",

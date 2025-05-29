@@ -134,6 +134,41 @@ struct EE_API SyntaxPattern {
 	inline bool hasContentScope() const { return contentScopeRepoHash != 0; }
 };
 
+struct EE_API SyntaxPreDefinition {
+	std::string name;
+	std::function<SyntaxDefinition&()> load;
+	std::vector<std::string> files;
+	std::vector<std::string> headers;
+	std::string lspName;
+	std::vector<std::string> alternativeNames;
+	bool extensionPriority{ false };
+
+	SyntaxPreDefinition( const std::string& name, std::function<SyntaxDefinition&()> load,
+						 std::vector<std::string>&& files, std::vector<std::string>&& headers = {},
+						 const std::string& lspName = "",
+						 std::vector<std::string>&& alternativeNames = {},
+						 bool extensionPriority = false ) :
+		name( name ),
+		load( load ),
+		files( std::move( files ) ),
+		headers( std::move( headers ) ),
+		lspName( lspName.empty() ? String::toLower( name ) : lspName ),
+		alternativeNames( std::move( alternativeNames ) ),
+		extensionPriority( extensionPriority ) {}
+
+	const std::string& getLanguageName() const { return name; }
+
+	const std::vector<std::string>& getAlternativeNames() const { return alternativeNames; }
+
+	const std::string& getLSPName() const { return lspName; }
+
+	const std::vector<std::string>& getFiles() const { return files; }
+
+	bool hasExtensionPriority() const { return extensionPriority; }
+
+	const std::vector<std::string>& getHeaders() const { return headers; }
+};
+
 class EE_API SyntaxDefinition {
   public:
 	SyntaxDefinition();
@@ -148,8 +183,6 @@ class EE_API SyntaxDefinition {
 	const std::string& getLanguageName() const;
 
 	std::string getLanguageNameForFileSystem() const;
-
-	const String::HashType& getLanguageId() const;
 
 	const std::vector<std::string>& getFiles() const;
 
@@ -264,7 +297,6 @@ class EE_API SyntaxDefinition {
 	friend class SyntaxDefinitionManager;
 
 	std::string mLanguageName;
-	String::HashType mLanguageId;
 	std::vector<std::string> mFiles;
 	std::vector<SyntaxPattern> mPatterns;
 	SyntaxDefMap<std::string, SyntaxStyleType> mSymbols;

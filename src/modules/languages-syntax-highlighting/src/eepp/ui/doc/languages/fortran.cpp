@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addFortran() {
+SyntaxDefinition& addFortran() {
 	// Based in Lite-XL Rohan Vashisht implementation
 	// https://github.com/RohanVashisht1234/fortran_syntax_highlighter_lite-xl
 	auto& sd = SyntaxDefinitionManager::instance()->add(
@@ -60,6 +60,7 @@ void addFortran() {
 		} );
 	sd.setCaseInsensitive( true );
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

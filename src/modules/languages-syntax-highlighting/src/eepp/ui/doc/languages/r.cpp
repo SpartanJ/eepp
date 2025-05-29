@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addR() {
+SyntaxDefinition& addR() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "R",
 		  { "%.r$", "%.rds$", "%.rda$", "%.rdata$", "%.R$" },

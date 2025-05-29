@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addPHP() {
+SyntaxDefinition& addPHP() {
 
 	auto& sd = SyntaxDefinitionManager::instance()
 		->add( { "PHP",
@@ -105,6 +105,7 @@ void addPHP() {
 		.setVisible( false );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

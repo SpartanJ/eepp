@@ -3,14 +3,14 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addXit() {
+SyntaxDefinition& addXit() {
 	auto dynSyntax = []( const SyntaxPattern&, const std::string_view& match ) -> std::string {
 		return SyntaxDefinitionManager::instance()
 			->findFromString( String::trim( match.substr( 3 ) ) )
 			.getLanguageName();
 	};
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "[x]it!",
 		  { "%.xit$" },

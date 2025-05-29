@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addLisp() {
+SyntaxDefinition& addLisp() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -128,6 +128,7 @@ void addLisp() {
 
 	sd.setFoldRangeType( FoldRangeType::Braces )
 		.setFoldBraces( { { '(', ')' }, { '{', '}' }, { '[', ']' } } );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

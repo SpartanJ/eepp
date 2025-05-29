@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addBazel() {
+SyntaxDefinition& addBazel() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Bazel",
 		  { "%.bazel$", "%.bzl$", "BUILD" },

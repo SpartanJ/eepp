@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addZig() {
+SyntaxDefinition& addZig() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -122,6 +122,7 @@ void addZig() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

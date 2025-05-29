@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addCarbon() {
+SyntaxDefinition& addCarbon() {
 	// Based in Lite-XL Rohan Vashisht implementation
 	// https://github.com/RohanVashisht1234/carbon_syntax_highlighter_lite-xl
 	auto& sd = SyntaxDefinitionManager::instance()->add(
@@ -54,6 +54,7 @@ void addCarbon() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

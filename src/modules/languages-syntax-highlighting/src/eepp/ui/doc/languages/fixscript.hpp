@@ -1,9 +1,11 @@
 #ifndef EE_UI_DOC_FixScript
 #define EE_UI_DOC_FixScript
 
+#include <eepp/ui/doc/syntaxdefinition.hpp>
+
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-extern void addFixScript();
+extern SyntaxDefinition& addFixScript();
 
 }}}} // namespace EE::UI::Doc::Language
 

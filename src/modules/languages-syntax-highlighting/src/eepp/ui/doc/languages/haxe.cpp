@@ -3,18 +3,19 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addHaxe() {
+SyntaxDefinition& addHaxe() {
 
-	SyntaxDefinitionManager::instance()->add(
-		{ "Haxe Compiler Arguments",
-		  { "%.hxml$" },
-		  {
-			  { { "#.*" }, "comment" },
-			  { { "%-[%-%w_]*" }, "keyword" },
-			  { { "(%.)(%u[%w_]*)" }, { "normal", "normal", "keyword2" } },
-		  },
-		  {},
-		  "#" } );
+	SyntaxDefinitionManager::instance()
+		->add( { "Haxe Compiler Arguments",
+				 { "%.hxml$" },
+				 {
+					 { { "#.*" }, "comment" },
+					 { { "%-[%-%w_]*" }, "keyword" },
+					 { { "(%.)(%u[%w_]*)" }, { "normal", "normal", "keyword2" } },
+				 },
+				 {},
+				 "#" } )
+		.setVisible( false );
 
 	SyntaxDefinitionManager::instance()
 		->add( { "HaxeStringInterpolation",
@@ -37,7 +38,7 @@ void addHaxe() {
 				 {} } )
 		.setVisible( false );
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 		{ "Haxe",
 		  { "%.hx$" },
 		  {
