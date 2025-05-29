@@ -42,6 +42,16 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 	bool ownsDebugger = false;
 
 	const auto& definitions = SyntaxDefinitionManager::instance()->getDefinitions();
+	const auto& preDefinitions = SyntaxDefinitionManager::instance()->getPreDefinitions();
+
+	std::set<std::string> languages;
+
+	for ( const auto& def : definitions )
+		if ( def.isVisible() )
+			languages.insert( def.getLSPName() );
+
+	for ( const auto& pdef : preDefinitions )
+		languages.insert( pdef.getLSPName() );
 
 	LinterPlugin* linter = static_cast<LinterPlugin*>( pluginManager->get( "linter" ) );
 
@@ -71,19 +81,16 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 		debugger = static_cast<DebuggerPlugin*>( DebuggerPlugin::NewSync( pluginManager ) );
 	}
 
-	for ( const auto& def : definitions ) {
-		if ( !def.isVisible() )
-			continue;
-
-		if ( !langFilter.empty() && langFilter != def.getLSPName() )
+	for ( const auto& name : languages ) {
+		if ( !langFilter.empty() && langFilter != name )
 			continue;
 
 		FeaturesHealth::LangHealth lang;
-		lang.lang = def.getLSPName();
+		lang.lang = name;
 		lang.syntaxHighlighting = true;
 
 		if ( linter ) {
-			Linter found = linter->getLinterForLang( def.getLSPName() );
+			Linter found = linter->getLinterForLang( lang.lang );
 			if ( !found.command.empty() ) {
 				lang.linter.name =
 					found.isNative ? "native" : String::split( found.command, ' ' )[0];
@@ -94,7 +101,7 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 		}
 
 		if ( formatter ) {
-			FormatterPlugin::Formatter found = formatter->getFormatterForLang( def.getLSPName() );
+			FormatterPlugin::Formatter found = formatter->getFormatterForLang( lang.lang );
 			if ( !found.command.empty() ) {
 				lang.formatter.name = found.type == FormatterPlugin::FormatterType::Native
 										  ? "native"
@@ -107,7 +114,7 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 		}
 
 		if ( lsp ) {
-			LSPDefinition found = lsp->getClientManager().getLSPForLang( def.getLSPName() );
+			LSPDefinition found = lsp->getClientManager().getLSPForLang( lang.lang );
 			if ( !found.command.empty() ) {
 				lang.lsp.name = found.name;
 				lang.lsp.url = found.url;
@@ -117,7 +124,7 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 		}
 
 		if ( debugger ) {
-			std::vector<DapTool> found = debugger->getDebuggersForLang( def.getLSPName() );
+			std::vector<DapTool> found = debugger->getDebuggersForLang( lang.lang );
 			for ( const auto& dbg : found ) {
 				FeatureStatus fdbg;
 				fdbg.name = dbg.name;
