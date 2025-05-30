@@ -9,6 +9,7 @@
 #include <eepp/ui/doc/languages/blueprint.hpp>
 #include <eepp/ui/doc/languages/brainfuck.hpp>
 #include <eepp/ui/doc/languages/buzz.hpp>
+#include <eepp/ui/doc/languages/c2.hpp>
 #include <eepp/ui/doc/languages/c3.hpp>
 #include <eepp/ui/doc/languages/carbon.hpp>
 #include <eepp/ui/doc/languages/clojure.hpp>
@@ -175,6 +176,8 @@ void LanguagesSyntaxHighlighting::load() {
 
 	sdm->addPreDefinition(
 		{ "Buzz", []() -> SyntaxDefinition& { return addBuzz(); }, { "%.buzz$" } } );
+
+	sdm->addPreDefinition( { "C2", []() -> SyntaxDefinition& { return addC2(); }, { "%.c2$" } } );
 
 	sdm->addPreDefinition( { "C3", []() -> SyntaxDefinition& { return addC3(); }, { "%.c3t?$" } } );
 

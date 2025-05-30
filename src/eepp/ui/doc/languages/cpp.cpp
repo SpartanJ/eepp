@@ -35,8 +35,7 @@ void addCPP() {
 			  { { "std%:%:[%w_]*" }, "keyword2" },
 			  { { "(%[)(%[)(%a[%w_]+)(%])(%])" },
 				{ "normal", "keyword", "keyword3", "keyword2", "keyword3", "keyword" } },
-			  { { "#[%a_][%w_]*" }, "symbol" },
-			  { { "[%a_][%w_]*" }, "symbol" },
+			  { { "#?[%a_][%w_]*" }, "symbol" },
 
 		  },
 		  {

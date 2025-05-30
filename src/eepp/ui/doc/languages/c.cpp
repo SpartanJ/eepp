@@ -23,8 +23,7 @@ void addC() {
 				"",
 				SyntaxPatternMatchType::RegEx },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
-			  { { "#[%a_][%w_]*" }, "symbol" },
-			  { { "[%a_][%w_]*" }, "symbol" },
+			  { { "#?[%a_][%w_]*" }, "symbol" },
 
 		  },
 		  {
