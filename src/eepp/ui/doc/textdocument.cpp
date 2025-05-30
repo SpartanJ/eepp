@@ -2595,7 +2595,7 @@ static FindTypeResult findLastType( const String& str, const String& findStr,
 									bool caseSensitive ) {
 	switch ( type ) {
 		case TextDocument::FindReplaceType::RegEx: {
-			// TODO: Implement findLastType for Lua patterns
+			// TODO: Implement findLastType for RegEx
 			RegEx words( findStr.toUtf8(),
 						 static_cast<RegEx::Options>( RegEx::Options::Utf |
 													  ( !caseSensitive ? RegEx::Options::Caseless
@@ -2754,15 +2754,17 @@ TextDocument::SearchResult TextDocument::findTextLast( String text, TextPosition
 	for ( Int64 i = from.line(); i >= to.line(); i-- ) {
 		FindTypeResult res;
 		if ( i == from.line() ) {
-			res =
-				caseSensitive
-					? findLastType( line( i ).getText().substr(
-										from.line() == to.line() ? to.column() : 0, from.column() ),
-									text, type, realCaseSensitive )
-					: findLastType(
-						  String::toLower( line( i ).getText().substr(
-							  from.line() == to.line() ? to.column() : 0, from.column() ) ),
-						  text, type, realCaseSensitive );
+			res = caseSensitive
+					  ? findLastType( line( i ).getText().substr(
+										  from.line() == to.line() ? to.column() : 0,
+										  from.line() == to.line() ? ( from.column() - to.column() )
+																   : from.column() ),
+									  text, type, realCaseSensitive )
+					  : findLastType( String::toLower( line( i ).getText().substr(
+										  from.line() == to.line() ? to.column() : 0,
+										  from.line() == to.line() ? ( from.column() - to.column() )
+																   : from.column() ) ),
+									  text, type, realCaseSensitive );
 		} else if ( i == to.line() ) {
 			res = caseSensitive
 					  ? findLastType( line( i ).getText().substr( to.column() ), text, type,
@@ -3392,10 +3394,10 @@ TextRange TextDocument::getMatchingBracket( TextPosition start, const String& op
 							  TextDocument::FindReplaceType::Normal, { start, foundOpen.start() } )
 						.result;
 				if ( foundClose.isValid() ) {
-					start = foundClose.end();
+					start = foundClose.start();
 					changeDepth( highlighter, depth, start, 1 );
 				} else {
-					start = foundOpen.end();
+					start = foundOpen.start();
 					changeDepth( highlighter, depth, start, -1 );
 				}
 			} while ( foundClose.isValid() && lastFoundClose != foundClose );
