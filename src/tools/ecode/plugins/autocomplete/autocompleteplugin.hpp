@@ -73,25 +73,25 @@ class AutoCompletePlugin : public Plugin {
 
 	virtual ~AutoCompletePlugin();
 
-	std::string getId() { return Definition().id; }
+	std::string getId() override { return Definition().id; }
 
-	std::string getTitle() { return Definition().name; }
+	std::string getTitle() override { return Definition().name; }
 
-	std::string getDescription() { return Definition().description; }
+	std::string getDescription() override { return Definition().description; }
 
-	bool isReady() const { return true; }
+	bool isReady() const override { return true; }
 
-	void onRegister( UICodeEditor* );
-	void onUnregister( UICodeEditor* );
-	bool onKeyDown( UICodeEditor*, const KeyEvent& );
-	bool onTextInput( UICodeEditor*, const TextInputEvent& );
-	void update( UICodeEditor* );
+	void onRegister( UICodeEditor* ) override;
+	void onUnregister( UICodeEditor* ) override;
+	bool onKeyDown( UICodeEditor*, const KeyEvent& ) override;
+	bool onTextInput( UICodeEditor*, const TextInputEvent& ) override;
+	void update( UICodeEditor* ) override;
 	void postDraw( UICodeEditor*, const Vector2f& startScroll, const Float& lineHeight,
-				   const TextPosition& cursor );
-	bool onMouseDown( UICodeEditor*, const Vector2i&, const Uint32& );
-	bool onMouseUp( UICodeEditor*, const Vector2i&, const Uint32& );
-	bool onMouseDoubleClick( UICodeEditor*, const Vector2i&, const Uint32& );
-	bool onMouseMove( UICodeEditor*, const Vector2i&, const Uint32& );
+				   const TextPosition& cursor ) override;
+	bool onMouseDown( UICodeEditor*, const Vector2i&, const Uint32& ) override;
+	bool onMouseUp( UICodeEditor*, const Vector2i&, const Uint32& ) override;
+	bool onMouseDoubleClick( UICodeEditor*, const Vector2i&, const Uint32& ) override;
+	bool onMouseMove( UICodeEditor*, const Vector2i&, const Uint32& ) override;
 
 	const Rectf& getBoxPadding() const;
 
@@ -113,6 +113,9 @@ class AutoCompletePlugin : public Plugin {
 
 	void setDirty( bool dirty );
 
+	bool onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu, const Vector2i& position,
+							  const Uint32& flags ) override;
+
   protected:
 	std::string mSymbolPattern;
 	Rectf mBoxPadding;
@@ -133,6 +136,7 @@ class AutoCompletePlugin : public Plugin {
 		SymbolsList symbols;
 	};
 	std::unordered_map<TextDocument*, DocCache> mDocCache;
+	std::unordered_map<TextDocument*, bool> mDocUsesOwnSymbols;
 	std::unordered_map<std::string, SymbolsList> mLangCache;
 	std::vector<Suggestion> mSuggestions;
 	Mutex mSuggestionsEditorMutex;
@@ -144,6 +148,7 @@ class AutoCompletePlugin : public Plugin {
 	Int32 mSuggestionsStartIndex{ 0 };
 	std::unordered_map<std::string, LSPServerCapabilities> mCapabilities;
 	Mutex mCapabilitiesMutex;
+	Mutex mDocUsesOwnSymbolsMutex;
 
 	struct SignatureInformation {
 		String label;
@@ -188,7 +193,7 @@ class AutoCompletePlugin : public Plugin {
 	std::string getPartialSymbol( TextDocument* doc );
 
 	void runUpdateSuggestions( const std::string& symbol, const SymbolsList& symbols,
-							   UICodeEditor* editor );
+							   UICodeEditor* editor, bool fromDocCache );
 
 	void updateLangCache( const std::string& langName );
 

@@ -1,5 +1,4 @@
 #include "autocompleteplugin.hpp"
-#include <algorithm>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -8,7 +7,10 @@
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+
+#include <algorithm>
 #include <nlohmann/json.hpp>
 using namespace EE::Graphics;
 using namespace EE::System;
@@ -172,6 +174,7 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 			config["suggestions_syntax_highlight"] = mHighlightSuggestions;
 			updateConfigFile = true;
 		}
+
 		if ( config.contains( "max_label_characters" ) )
 			mMaxLabelCharacters = config.value( "max_label_characters", 100 );
 		else {
@@ -215,6 +218,7 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 			"autocomplete-close-signature-help",
 			"autocomplete-prev-signature-help",
 			"autocomplete-next-signature-help",
+			"autocomplete-from-current-doc-symbols",
 		};
 		// clang-format on
 		for ( const auto& key : list ) {
@@ -259,9 +263,15 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 
 	listeners.push_back(
 		editor->addEventListener( Event::OnDocumentClosed, [this]( const Event* event ) {
-			Lock l( mDocMutex );
 			const DocEvent* docEvent = static_cast<const DocEvent*>( event );
 			TextDocument* doc = docEvent->getDoc();
+
+			{
+				Lock ls( mDocUsesOwnSymbolsMutex );
+				mDocUsesOwnSymbols.erase( doc );
+			}
+
+			Lock l( mDocMutex );
 			mDocs.erase( doc );
 			mDocCache.erase( doc );
 			mDirty = true;
@@ -271,6 +281,12 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* ) {
 			TextDocument* oldDoc = mEditorDocs[editor];
 			TextDocument* newDoc = editor->getDocumentRef().get();
+
+			{
+				Lock ls( mDocUsesOwnSymbolsMutex );
+				mDocUsesOwnSymbols.erase( oldDoc );
+			}
+
 			Lock l( mDocMutex );
 			mDocs.erase( oldDoc );
 			mDocCache.erase( oldDoc );
@@ -312,6 +328,16 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 #endif
 		} ) );
 
+	if ( editor->hasDocument() ) {
+		editor->getDocument().setCommand(
+			"autocomplete-from-current-doc-symbols", [this]( TextDocument::Client* client ) {
+				Lock l( mDocUsesOwnSymbolsMutex );
+				auto& usesOwnSymbols =
+					mDocUsesOwnSymbols[&static_cast<UICodeEditor*>( client )->getDocument()];
+				usesOwnSymbols = !usesOwnSymbols;
+			} );
+	}
+
 	mEditors.insert( { editor, listeners } );
 	mDocs.insert( editor->getDocumentRef().get() );
 	mEditorDocs[editor] = editor->getDocumentRef().get();
@@ -325,18 +351,29 @@ void AutoCompletePlugin::onUnregister( UICodeEditor* editor ) {
 		resetSuggestions( editor );
 	if ( mSignatureHelpEditor == editor )
 		resetSignatureHelp();
-	Lock l( mDocMutex );
-	TextDocument* doc = mEditorDocs[editor];
-	auto cbs = mEditors[editor];
-	for ( auto listener : cbs )
-		editor->removeEventListener( listener );
-	mEditors.erase( editor );
-	mEditorDocs.erase( editor );
-	for ( auto ceditor : mEditorDocs )
-		if ( ceditor.second == doc )
-			return;
-	mDocs.erase( doc );
-	mDocCache.erase( doc );
+
+	TextDocument* doc = nullptr;
+
+	{
+		Lock l( mDocMutex );
+		doc = mEditorDocs[editor];
+		auto cbs = mEditors[editor];
+		for ( auto listener : cbs )
+			editor->removeEventListener( listener );
+		mEditors.erase( editor );
+		mEditorDocs.erase( editor );
+		for ( auto ceditor : mEditorDocs )
+			if ( ceditor.second == doc )
+				return;
+		mDocs.erase( doc );
+		mDocCache.erase( doc );
+	}
+
+	{
+		Lock l( mDocUsesOwnSymbolsMutex );
+		mDocUsesOwnSymbols.erase( doc );
+	}
+
 	mDirty = true;
 }
 
@@ -1403,7 +1440,8 @@ AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocu
 }
 
 void AutoCompletePlugin::runUpdateSuggestions( const std::string& symbol,
-											   const SymbolsList& symbols, UICodeEditor* editor ) {
+											   const SymbolsList& symbols, UICodeEditor* editor,
+											   bool fromDocCache ) {
 	{
 		{
 			Lock l( mSuggestionsEditorMutex );
@@ -1413,7 +1451,8 @@ void AutoCompletePlugin::runUpdateSuggestions( const std::string& symbol,
 			requestCodeCompletion( editor );
 		if ( symbol.empty() || symbols.empty() )
 			return;
-		Lock l( mLangSymbolsMutex );
+
+		Lock l( fromDocCache ? mDocMutex : mLangSymbolsMutex );
 		Lock l2( mSuggestionsMutex );
 		mSuggestions = fuzzyMatchSymbols( { &symbols }, symbol, mSuggestionsMaxVisible );
 	}
@@ -1421,7 +1460,32 @@ void AutoCompletePlugin::runUpdateSuggestions( const std::string& symbol,
 }
 
 void AutoCompletePlugin::updateSuggestions( const std::string& symbol, UICodeEditor* editor ) {
-	const std::string& lang = editor->getDocument().getSyntaxDefinition().getLanguageName();
+	TextDocument& doc = editor->getDocument();
+	bool usesOwnSymbols = false;
+
+	{
+		Lock l( mDocUsesOwnSymbolsMutex );
+		usesOwnSymbols = mDocUsesOwnSymbols[&doc];
+	}
+
+	if ( usesOwnSymbols ) {
+		Lock l( mDocMutex );
+		auto docCache = mDocCache.find( &doc );
+		if ( docCache == mDocCache.end() || mShuttingDown )
+			return;
+		const auto& symbols = docCache->second.symbols;
+		{
+#if AUTO_COMPLETE_THREADED
+			mThreadPool->run( [this, symbol, &symbols, editor] {
+				runUpdateSuggestions( symbol, symbols, editor, true );
+			} );
+#else
+			runUpdateSuggestions( symbol, symbols, editor, true );
+#endif
+		}
+	}
+
+	const std::string& lang = doc.getSyntaxDefinition().getLanguageName();
 	Lock l( mLangSymbolsMutex );
 	auto langSuggestions = mLangCache.find( lang );
 	if ( langSuggestions == mLangCache.end() )
@@ -1429,12 +1493,48 @@ void AutoCompletePlugin::updateSuggestions( const std::string& symbol, UICodeEdi
 	const auto& symbols = langSuggestions->second;
 	{
 #if AUTO_COMPLETE_THREADED
-		mThreadPool->run(
-			[this, symbol, &symbols, editor] { runUpdateSuggestions( symbol, symbols, editor ); } );
+		mThreadPool->run( [this, symbol, &symbols, editor] {
+			runUpdateSuggestions( symbol, symbols, editor, false );
+		} );
 #else
-		runUpdateSuggestions( symbol, symbols, editor );
+		runUpdateSuggestions( symbol, symbols, editor, false );
 #endif
 	}
+}
+
+bool AutoCompletePlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
+											  const Vector2i& /*position*/,
+											  const Uint32& /*flags*/ ) {
+	menu->addSeparator();
+
+	bool usesOwnSymbols = false;
+
+	{
+		Lock l( mDocUsesOwnSymbolsMutex );
+		usesOwnSymbols = mDocUsesOwnSymbols[&editor->getDocument()];
+	}
+
+	auto* subMenu = UIPopUpMenu::New();
+	subMenu->addClass( "autocomplete_plugin_menu" );
+	subMenu
+		->addCheckBox(
+			i18n( "autocomplete_from_doc_symbols",
+				  "Limit autocomplete to symbols in this document" ),
+			usesOwnSymbols,
+			KeyBindings::keybindFormat( mKeyBindings["autocomplete-from-current-doc-symbols"] ) )
+		->setTooltipText(
+			i18n( "autocomplete_from_doc_symbols_tooltip",
+				  "Instead of using the complete current language dictionary symbols\nit will use "
+				  "only the dictionary symbols from the current document." ) )
+		->setId( "autocomplete-from-current-doc-symbols" );
+
+	menu->addSubMenu( i18n( "autocomplete", "Auto-Complete" ),
+					  mManager->getUISceneNode()
+						  ->findIcon( "symbol-string" )
+						  ->getSize( PixelDensity::dpToPxI( 12 ) ),
+					  subMenu );
+
+	return false;
 }
 
 } // namespace ecode

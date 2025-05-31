@@ -424,6 +424,14 @@
       "command": "racket -l racket-langserver",
       "file_patterns": ["%.rkt$"],
       "rootIndicationFileNames": [".git"]
+    },
+    {
+      "language": "typst",
+      "name": "Tinymist",
+      "url": "git@github.com:Myriad-Dreamin/tinymist.git",
+      "command": "tinymist",
+      "file_patterns": ["%.typ$"],
+      "rootIndicationFileNames": [".git"]
     }
   ]
 }
