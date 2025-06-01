@@ -47,6 +47,10 @@ void ClippingMask::clipDisable() {
 	}
 }
 
+bool ClippingMask::isScissorsClipEnabled() const {
+	return !mScissorsClipped.empty();
+}
+
 void ClippingMask::clipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width,
 									const Int32& Height ) {
 	GlobalBatchRenderer::instance()->draw();

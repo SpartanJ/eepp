@@ -283,6 +283,7 @@ class TerminalDisplay : public ITerminalDisplay {
 	bool mDirty{ true };
 	bool mDirtyCursor{ true };
 	bool mDrawing{ false };
+	bool mFullDirty{ false };
 	Vector2i mCursor;
 	TerminalGlyph mCursorGlyph;
 	bool mUseColorEmoji{ true };
@@ -349,6 +350,8 @@ class TerminalDisplay : public ITerminalDisplay {
 	void drawboxlines( float x, float y, float w, float h, Color fg, ushort bd );
 
 	Rectf updateIMELocation();
+
+	void drawBg( bool toFBO = false );
 };
 
 }} // namespace eterm::Terminal

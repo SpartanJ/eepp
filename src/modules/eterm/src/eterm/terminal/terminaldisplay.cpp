@@ -1081,8 +1081,13 @@ void TerminalDisplay::drawbox( float x, float y, float w, float h, Color fg, Col
 }
 
 void TerminalDisplay::drawGrid( const Vector2f& pos ) {
-	if ( mFrameBuffer )
+	if ( mFrameBuffer ) {
+		mFrameBuffer->setPosition( mPosition.floor() + Vector2f( mPadding.Left, mPadding.Top ) );
 		mFrameBuffer->bind();
+
+		if ( mFullDirty )
+			drawBg( true );
+	}
 
 	auto fontSize = mFont->getFontHeight( mFontSize );
 	auto spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false, false ).advance;
@@ -1388,17 +1393,26 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 		mFrameBuffer->unbind();
 }
 
+void TerminalDisplay::drawBg( bool toFBO ) {
+	auto defaultBg = termColor( mEmulator->getDefaultBackground(), mColors );
+	Primitives p;
+	p.setForceDraw( toFBO );
+	p.setColor( defaultBg );
+
+	if ( toFBO ) {
+		p.drawRectangle( Rectf( Vector2f::Zero, mFrameBuffer->getSize().asFloat() ) );
+	} else {
+		p.drawRectangle( Rectf( mPosition.floor().asFloat(), mSize.asFloat() ) );
+	}
+}
+
 void TerminalDisplay::draw( const Vector2f& pos ) {
 	if ( !mEmulator || !mTerminal )
 		return;
 
 	mDrawing = true;
 
-	auto defaultBg = termColor( mEmulator->getDefaultBackground(), mColors );
-	Primitives p;
-	p.setForceDraw( false );
-	p.setColor( defaultBg );
-	p.drawRectangle( Rectf( mPosition.floor().asFloat(), mSize.asFloat() ) );
+	drawBg();
 
 	if ( !mFrameBuffer || mDirty )
 		drawGrid( pos );
@@ -1418,6 +1432,7 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 
 	mDrawing = false;
 	mDirty = false;
+	mFullDirty = false;
 }
 
 Vector2i TerminalDisplay::positionToGrid( const Vector2i& pos ) {
@@ -1455,6 +1470,7 @@ void TerminalDisplay::onSizeChange() {
 	Sizei gridSize( gridSizeFromTermDimensions(
 		mFont, mFontSize,
 		mSize - Vector2f( mPadding.Left + mPadding.Right, mPadding.Top + mPadding.Bottom ) ) );
+
 	if ( mTerminal ) {
 		if ( gridSize.getWidth() != mTerminal->getNumColumns() ||
 			 gridSize.getHeight() != mTerminal->getNumRows() ) {
@@ -1682,6 +1698,7 @@ void TerminalDisplay::invalidateLine( const int& line ) {
 void TerminalDisplay::invalidateLines() {
 	mDirtyLines.assign( mDirtyLines.size(), 1 );
 	mDirty = true;
+	mFullDirty = true;
 }
 void TerminalDisplay::setFocus( bool focus ) {
 	if ( focus )

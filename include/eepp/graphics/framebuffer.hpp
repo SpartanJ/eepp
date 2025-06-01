@@ -107,20 +107,32 @@ class EE_API FrameBuffer {
 	/** @return If the frame buffer was created */
 	virtual bool created() const = 0;
 
+	void setPosition( Vector2f position ) { mPosition = position; }
+
+	const Vector2f& getPosition() const { return mPosition; }
+
+	void setAdjustCurrentClipping( bool enabled ) { mAdjustCurrentClipping = enabled; }
+
+	bool adjustCurrentClipping() const { return mAdjustCurrentClipping; }
+
   protected:
 	EE::Window::Window* mWindow;
+	Vector2f mPosition;
 	Sizei mSize;
-	Uint32 mChannels;
+	Uint32 mChannels{ 4 };
 	std::string mName;
-	String::HashType mId;
-	bool mHasColorBuffer;
-	bool mHasDepthBuffer;
-	bool mHasStencilBuffer;
-	Texture* mTexture;
+	String::HashType mId{ 0 };
+	bool mHasColorBuffer{ false };
+	bool mHasDepthBuffer{ false };
+	bool mHasStencilBuffer{ false };
+	bool mAdjustCurrentClipping{ true };
+	bool mNeedsToRestoreScissorsClipping{ false };
+	Texture* mTexture{ nullptr };
 	ColorAf mClearColor;
 	View mView;
 	float mProjMat[16];
 	float mModelViewMat[16];
+	std::vector<Rectf> mOldScissorsRect;
 
 	FrameBuffer( EE::Window::Window* window );
 

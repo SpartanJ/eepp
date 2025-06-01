@@ -51,7 +51,7 @@ Texture* FrameBuffer::getTexture() const {
 }
 
 void FrameBuffer::setClearColor( const ColorAf& color ) {
-	mClearColor = color;
+	mClearColor.assign( color );
 }
 
 ColorAf FrameBuffer::getClearColor() const {
@@ -78,6 +78,17 @@ void FrameBuffer::setBufferView() {
 	GLi->ortho( 0.0f, mSize.getWidth(), 0.f, mSize.getHeight(), -1000.0f, 1000.0f );
 	GLi->matrixMode( GL_MODELVIEW );
 	GLi->loadIdentity();
+
+	auto cm = GLi->getClippingMask();
+	if ( mAdjustCurrentClipping && cm->isScissorsClipEnabled() ) {
+		mNeedsToRestoreScissorsClipping = true;
+		mOldScissorsRect = cm->getScissorsClipped();
+		Rectf currentClip = mOldScissorsRect.back();
+		Rectf fboScreenRect( mPosition.floor(), mSize.asFloat() );
+		Rectf newClipRect( fboScreenRect.getPosition() - currentClip.getPosition(),
+						   currentClip.getSize() );
+		cm->setScissorsClipped( { newClipRect } );
+	}
 }
 
 void FrameBuffer::recoverView() {
@@ -101,6 +112,11 @@ void FrameBuffer::recoverView() {
 	GLi->matrixMode( GL_MODELVIEW );
 	GLi->loadIdentity();
 	GLi->loadMatrixf( mModelViewMat );
+
+	if ( mNeedsToRestoreScissorsClipping ) {
+		GLi->getClippingMask()->setScissorsClipped( mOldScissorsRect );
+		mNeedsToRestoreScissorsClipping = false;
+	}
 }
 
 const Int32& FrameBuffer::getWidth() const {
