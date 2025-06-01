@@ -66,12 +66,12 @@ SyntaxDefinition& addModula3() {
 			  { "REFANY", "function" },	  { "TYPECODE", "function" },
 			  { "DISPOSE", "function" },  { "INC", "function" },
 			  { "LOOPHOLE", "function" }, { "VAL", "function" },
-			  { "BITSET", "keyword2" },	  { "BOOLEAN", "keyword2" },
-			  { "CARDINAL", "keyword2" }, { "CHAR", "keyword2" },
-			  { "INTEGER", "keyword2" },  { "REAL", "keyword2" },
-			  { "FLOAT", "keyword2" },	  { "LONGINT", "keyword2" },
-			  { "LONGREAL", "keyword2" }, { "BOOLEAN", "keyword2" },
-			  { "WIDECHAR", "keyword2" }, { "TRUE", "literal" },
+			  { "BITSET", "type" },		  { "BOOLEAN", "type" },
+			  { "CARDINAL", "type" },	  { "CHAR", "type" },
+			  { "INTEGER", "type" },	  { "REAL", "type" },
+			  { "FLOAT", "type" },		  { "LONGINT", "type" },
+			  { "LONGREAL", "type" },	  { "BOOLEAN", "type" },
+			  { "WIDECHAR", "type" },	  { "TRUE", "literal" },
 			  { "FALSE", "literal" },	  { "NIL", "literal" },
 			  { "NULL", "literal" }
 

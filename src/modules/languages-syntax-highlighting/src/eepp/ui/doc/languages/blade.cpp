@@ -32,7 +32,7 @@ SyntaxDefinition& addBlade() {
 			  { "iter", "keyword" },	{ "class", "keyword" },	  { "static", "keyword" },
 			  { "echo", "function" },	{ "false", "literal" },	  { "for", "keyword" },
 			  { "while", "keyword" },	{ "assert", "keyword" },  { "def", "keyword" },
-			  { "self", "keyword2" },	{ "catch", "keyword" },	  { "true", "literal" },
+			  { "self", "type" },		{ "catch", "keyword" },	  { "true", "literal" },
 			  { "else", "keyword" },	{ "nil", "literal" },	  { "when", "keyword" },
 			  { "break", "keyword" },	{ "die", "keyword" },	  { "or", "keyword" },
 			  { "if", "keyword" },		{ "do", "keyword" },

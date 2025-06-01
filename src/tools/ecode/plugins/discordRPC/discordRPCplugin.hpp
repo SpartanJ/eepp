@@ -13,8 +13,6 @@
 
 #include "sdk/ipc.hpp"
 
-#include <nlohmann/json.hpp>
-
 using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;

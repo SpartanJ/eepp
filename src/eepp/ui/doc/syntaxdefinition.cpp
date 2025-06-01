@@ -16,16 +16,16 @@ static void liftContentPatternsRecursive( SyntaxDefinition& def, SyntaxPattern& 
 										  Uint64& uniqueIdCounter ) {
 	for ( Uint64 i = 0; i < pattern.contentPatterns.size(); ++i ) {
 		// Pass a new prefix seed for children to ensure unique names
-		std::string childPrefixSeed = namePrefixSeed + "_cp" + String::toString( i );
+		std::string childPrefixSeed = String::format( "%s_cp%zu", namePrefixSeed, i );
 		liftContentPatternsRecursive( def, pattern.contentPatterns[i], childPrefixSeed,
 									  uniqueIdCounter );
 	}
 
 	if ( !pattern.contentPatterns.empty() ) {
 		// Generate a unique repository name for this pattern's content scope
-		std::string contentRepoName = "$CONTENT_" + def.getLanguageNameForFileSystem() + "_" +
-									  namePrefixSeed + "_uid" +
-									  String::toString( uniqueIdCounter++ );
+		std::string contentRepoName =
+			String::format( "$CONTENT_%s_%s_uid%zu", def.getLanguageNameForFileSystem(),
+							namePrefixSeed, uniqueIdCounter++ );
 		pattern.contentScopeRepoHash = String::hash( contentRepoName );
 		def.addRepository( std::move( contentRepoName ), std::move( pattern.contentPatterns ) );
 	}

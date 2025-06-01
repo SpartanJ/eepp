@@ -26,7 +26,7 @@ SyntaxDefinition& addGroovy() {
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "[%a_][%w_]*%f[%[]" }, "function" },
-			  { { "[A-Z]+_?[A-Z]+" }, "keyword2" },
+			  { { "[A-Z]+_?[A-Z]+" }, "type" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 			  { { "[a-zA-Z]+%.+" }, "function" },
 

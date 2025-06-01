@@ -239,22 +239,22 @@ static SyntaxStyleType semanticTokenTypeToSyntaxType( const std::string& type ) 
 		case SemanticTokenTypes::Interface:
 		case SemanticTokenTypes::Struct:
 		case SemanticTokenTypes::TypeParameter:
-			return "keyword2"_sst;
+			return "type"_sst;
 		case SemanticTokenTypes::Parameter:
-			return "keyword3"_sst;
+			return "parameter"_sst;
 		case SemanticTokenTypes::Variable:
 			return "symbol"_sst;
 		case SemanticTokenTypes::Property:
 			return "symbol"_sst;
 		case SemanticTokenTypes::EnumMember:
 		case SemanticTokenTypes::Event:
-			return "keyword2"_sst;
+			return "type"_sst;
 		case SemanticTokenTypes::Function:
 		case SemanticTokenTypes::Method:
 		case SemanticTokenTypes::Member:
 			return "function"_sst;
 		case SemanticTokenTypes::Macro:
-			return "keyword2"_sst;
+			return "type"_sst;
 		case SemanticTokenTypes::Keyword:
 		case SemanticTokenTypes::Modifier:
 			return "keyword"_sst;

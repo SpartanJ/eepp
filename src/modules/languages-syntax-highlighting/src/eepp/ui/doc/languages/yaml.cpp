@@ -21,7 +21,7 @@ SyntaxDefinition& addYAML() {
 			  { { "https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/"
 				  "?%%#=-]*" },
 				"link" },
-			  { { "([%s]%*)([%w%d_]+)" }, { "keyword", "keyword", "keyword2" } },
+			  { { "([%s]%*)([%w%d_]+)" }, { "keyword", "keyword", "type" } },
 			  { { "(%*)([%w%d_]+)" }, { "keyword", "keyword", "literal" } },
 			  { { "([%[%{])(%s*[%w%d]+%g+%s*)(:%s)" },
 				{ "keyword", "operator", "operator", "keyword" } },

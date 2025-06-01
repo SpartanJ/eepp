@@ -26,12 +26,12 @@ SyntaxDefinition& addElm() {
 		  {
 			  { "import", "keyword" },	 { "port", "keyword" },	  { "type", "keyword" },
 			  { "case", "keyword" },	 { "in", "keyword" },	  { "let", "keyword" },
-			  { "not", "keyword" },		 { "module", "keyword" }, { "number", "keyword2" },
-			  { "Bool", "keyword2" },	 { "of", "keyword" },	  { "if", "keyword" },
+			  { "not", "keyword" },		 { "module", "keyword" }, { "number", "type" },
+			  { "Bool", "type" },		 { "of", "keyword" },	  { "if", "keyword" },
 			  { "or", "keyword" },		 { "as", "keyword" },	  { "then", "keyword" },
-			  { "and", "keyword" },		 { "Int", "keyword2" },	  { "else", "keyword" },
+			  { "and", "keyword" },		 { "Int", "type" },		  { "else", "keyword" },
 			  { "exposing", "keyword" }, { "False", "literal" },  { "True", "literal" },
-			  { "String", "keyword2" },	 { "Float", "keyword2" }, { "Char", "keyword2" },
+			  { "String", "type" },		 { "Float", "type" },	  { "Char", "type" },
 			  { "xor", "keyword" },		 { "alias", "keyword" },
 
 		  },

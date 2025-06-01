@@ -33,16 +33,16 @@ SyntaxDefinition& addBend() {
 
 		  },
 		  {
-			  { "Nil", "keyword2" },   { "Name", "keyword" },	  { "bind", "keyword" },
-			  { "switch", "keyword" }, { "data", "keyword" },	  { "None", "keyword2" },
+			  { "Nil", "type" },	   { "Name", "keyword" },	  { "bind", "keyword" },
+			  { "switch", "keyword" }, { "data", "keyword" },	  { "None", "type" },
 			  { "return", "keyword" }, { "identity", "keyword" }, { "ask", "keyword" },
 			  { "object", "keyword" }, { "match", "keyword" },	  { "with", "keyword" },
 			  { "fold", "keyword" },   { "false", "literal" },	  { "def", "keyword" },
 			  { "true", "literal" },   { "else", "keyword" },	  { "λ", "keyword" },
-			  { "Bool", "keyword" },   { "when", "keyword" },	  { "bend", "keyword2" },
+			  { "Bool", "keyword" },   { "when", "keyword" },	  { "bend", "type" },
 			  { "use", "keyword" },	   { "case", "keyword" },	  { "if", "keyword" },
-			  { "let", "keyword" },	   { "Result", "keyword2" },  { "do", "keyword" },
-			  { "open", "keyword" },   { "Some", "keyword" },	  { "type", "keyword2" },
+			  { "let", "keyword" },	   { "Result", "type" },	  { "do", "keyword" },
+			  { "open", "keyword" },   { "Some", "keyword" },	  { "type", "type" },
 
 		  },
 		  "#",

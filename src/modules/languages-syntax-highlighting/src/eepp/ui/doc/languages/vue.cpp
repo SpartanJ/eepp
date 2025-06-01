@@ -18,7 +18,7 @@ SyntaxDefinition& addVue() {
 					 { { "0x[%da-fA-F]+" }, "number" },
 					 { { "-?%d+[%d%.]*f?" }, "number" },
 					 { { "-?%.?%d+f?" }, "number" },
-					 { { "%f[^<]![%a_][%w%_%-]*" }, "keyword2" },
+					 { { "%f[^<]![%a_][%w%_%-]*" }, "type" },
 					 { { "%f[^<][%a_][%w%_%-]*" }, "function" },
 					 { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
 					 { { "[%a_][%w_]*" }, "keyword" },
@@ -51,7 +51,7 @@ SyntaxDefinition& addVue() {
 			  { { "0x[%da-fA-F]+" }, "number" },
 			  { { "-?%d+[%d%.]*f?" }, "number" },
 			  { { "-?%.?%d+f?" }, "number" },
-			  { { "%f[^<]![%a_][%w%_%-]*" }, "keyword2" },
+			  { { "%f[^<]![%a_][%w%_%-]*" }, "type" },
 			  { { "%f[^<][%a_][%w%_%-]*" }, "function" },
 			  { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
 			  { { "[%a_][%w_]*" }, "keyword" },
@@ -60,7 +60,6 @@ SyntaxDefinition& addVue() {
 		  {},
 		  "",
 		  {} } );
-
 }
 
 }}}} // namespace EE::UI::Doc::Language

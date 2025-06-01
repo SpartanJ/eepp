@@ -29,13 +29,13 @@ SyntaxDefinition& addPICO8() {
 
 		  },
 		  {
-			  { "true", "literal" },   { "self", "keyword2" }, { "return", "keyword" },
-			  { "repeat", "keyword" }, { "or", "keyword" },	   { "and", "keyword" },
-			  { "break", "keyword" },  { "else", "keyword" },  { "until", "keyword" },
-			  { "do", "keyword" },	   { "in", "keyword" },	   { "while", "keyword" },
-			  { "end", "keyword" },	   { "nil", "literal" },   { "elseif", "keyword" },
-			  { "false", "literal" },  { "not", "keyword" },   { "local", "keyword" },
-			  { "for", "keyword" },	   { "then", "keyword" },  { "function", "keyword" },
+			  { "true", "literal" },   { "self", "type" },	  { "return", "keyword" },
+			  { "repeat", "keyword" }, { "or", "keyword" },	  { "and", "keyword" },
+			  { "break", "keyword" },  { "else", "keyword" }, { "until", "keyword" },
+			  { "do", "keyword" },	   { "in", "keyword" },	  { "while", "keyword" },
+			  { "end", "keyword" },	   { "nil", "literal" },  { "elseif", "keyword" },
+			  { "false", "literal" },  { "not", "keyword" },  { "local", "keyword" },
+			  { "for", "keyword" },	   { "then", "keyword" }, { "function", "keyword" },
 			  { "goto", "keyword" },   { "if", "keyword" },
 
 		  },

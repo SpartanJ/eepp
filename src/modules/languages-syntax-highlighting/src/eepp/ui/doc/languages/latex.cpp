@@ -16,7 +16,7 @@ SyntaxDefinition& addLatex() {
 			  { { "%$", "%$" }, "operator" },
 			  { { "\\%[", "\\]" }, "operator" },
 			  { { "{", "}" }, "keyword" },
-			  { { "\\%w*" }, "keyword2" },
+			  { { "\\%w*" }, "type" },
 
 		  },
 		  {

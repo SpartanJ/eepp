@@ -27,8 +27,10 @@ class SyntaxStyleTypes {
 	static constexpr auto Symbol = "symbol"_sst;
 	static constexpr auto Comment = "comment"_sst;
 	static constexpr auto Keyword = "keyword"_sst;
-	static constexpr auto Keyword2 = "keyword2"_sst;
-	static constexpr auto Keyword3 = "keyword3"_sst;
+	static constexpr auto Type = "type"_sst;
+	static constexpr auto Keyword2 = "keyword2"_sst; // @deprecated in favor of "type"
+	static constexpr auto Parameter = "parameter"_sst;
+	static constexpr auto Keyword3 = "keyword3"_sst; // @deprecated in favor of "parameter"
 	static constexpr auto Number = "number"_sst;
 	static constexpr auto Literal = "literal"_sst;
 	static constexpr auto String = "string"_sst;
@@ -239,8 +241,8 @@ constexpr auto SyntaxStyleEmpty() {
 
 /**
  * Syntax colors types accepted/used are:
- * "normal", "symbol", "comment", "keyword", "keyword2",
- * "number", "literal", "string", "operator", "function",
+ * "normal", "symbol", "comment", "keyword", "type" (or "keyword2"),
+ * "number", "literal", "string", "operator", "function", "parameter" (or "keyword3")
  * "link"
  *
  * Editor colors types accepted/used are:

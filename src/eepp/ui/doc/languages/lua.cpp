@@ -30,7 +30,7 @@ void addLua() {
 			  { "elseif", "keyword" }, { "false", "literal" }, { "in", "keyword" },
 			  { "then", "keyword" },   { "for", "keyword" },   { "goto", "keyword" },
 			  { "while", "keyword" },  { "and", "keyword" },   { "function", "keyword" },
-			  { "self", "keyword2" },  { "true", "literal" },  { "else", "keyword" },
+			  { "self", "type" },  { "true", "literal" },  { "else", "keyword" },
 			  { "nil", "literal" },	   { "not", "keyword" },   { "return", "keyword" },
 			  { "local", "keyword" },  { "break", "keyword" }, { "or", "keyword" },
 			  { "end", "keyword" },	   { "until", "keyword" }, { "if", "keyword" },

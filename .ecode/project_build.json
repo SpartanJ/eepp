@@ -169,7 +169,7 @@
   "eepp-linux": {
     "build": [
       {
-        "args": "--disable-static-build --with-text-shaper --with-debug-symbols gmake",
+        "args": "--disable-static-build --with-text-shaper --with-debug-symbols --with-mold-linker gmake",
         "command": "premake4",
         "working_dir": "${project_root}"
       },

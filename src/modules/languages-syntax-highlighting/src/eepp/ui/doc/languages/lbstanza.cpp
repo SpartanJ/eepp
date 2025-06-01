@@ -61,7 +61,7 @@ SyntaxDefinition& addLbstanza() {
 
 					} },
 				  { { "(?x) ^ \\s* (defpackage)", "\\s*$|:|(?=;)" },
-					{ "literal", "keyword2" },
+					{ "literal", "type" },
 					{ "operator" },
 					"",
 					SyntaxPatternMatchType::RegEx,
@@ -74,7 +74,7 @@ SyntaxDefinition& addLbstanza() {
 
 					} },
 				  { { "(?x) ^ \\s* (import) (?= \\s )", "\\s*$|:|(?=;)" },
-					{ "literal", "keyword2" },
+					{ "literal", "type" },
 					{ "operator" },
 					"",
 					SyntaxPatternMatchType::RegEx,
@@ -94,7 +94,7 @@ SyntaxDefinition& addLbstanza() {
 				  { { "(?x) ^ \\s* (?: (public|protected) \\s+ )? ( def ( struct | type | "
 					  "production | syntax ))",
 					  "(?x) $ | : | (?= ; ) " },
-					{ "literal", "keyword", "keyword2" },
+					{ "literal", "keyword", "type" },
 					{ "operator" },
 					"",
 					SyntaxPatternMatchType::RegEx,
@@ -107,14 +107,14 @@ SyntaxDefinition& addLbstanza() {
 
 					} },
 				  { { "(?x) \\s* (new)", "\\s*$|:|(?=;)" },
-					{ "literal", "keyword2" },
+					{ "literal", "type" },
 					{ "operator" },
 					"",
 					SyntaxPatternMatchType::RegEx,
 					{
 						{ { "[^ `\"'\t0-9~!%^*+-=/.:&|<>\\(\\{\\[][^ "
 							"\t,.:&|<>\\[\\]\\{\\}\\(\\)\\*]*" },
-						  "keyword2",
+						  "type",
 						  "",
 						  SyntaxPatternMatchType::RegEx },
 
@@ -123,7 +123,7 @@ SyntaxDefinition& addLbstanza() {
 					  "defn|defmethod|defmulti ) \\*? \\s+ ([^ "
 					  "`\"'\t0-9~!%^*+-=/.:&|<>\\(\\{\\[][^ \t,.:&|<>\\[\\]\\{\\}\\(\\)\\*]*) (?= "
 					  "\\s | < )" },
-					{ "literal", "keyword", "keyword", "keyword2", "function" },
+					{ "literal", "keyword", "keyword", "type", "function" },
 					{},
 					"",
 					SyntaxPatternMatchType::RegEx },
@@ -151,7 +151,7 @@ SyntaxDefinition& addLbstanza() {
 					  "\\s*",
 					  "(?x) (?= , | \\) | \\] | \\} | $ ) | \\s+ (?! -> | \\.\\.\\. | \\| | \\& "
 					  ")" },
-					{ "literal", "keyword2", "keyword", "normal", "operator" },
+					{ "literal", "type", "keyword", "normal", "operator" },
 					{},
 					"",
 					SyntaxPatternMatchType::RegEx,
@@ -164,7 +164,7 @@ SyntaxDefinition& addLbstanza() {
 
 					} },
 				  { { "(?x) \\s* (var|val|defrule) \\s+", "(?x) ( = | (?=\\)) ) (?! > ) " },
-					{ "literal", "keyword2", "normal" },
+					{ "literal", "type", "normal" },
 					{ "literal", "operator" },
 					"",
 					SyntaxPatternMatchType::RegEx,
@@ -182,7 +182,7 @@ SyntaxDefinition& addLbstanza() {
 
 					} },
 				  { { "(?x) \\s* label(?=[ <])", ":" },
-					{ "keyword2" },
+					{ "type" },
 					{ "operator" },
 					"",
 					SyntaxPatternMatchType::RegEx,
@@ -271,7 +271,7 @@ SyntaxDefinition& addLbstanza() {
 				  { { "(?x) ^(\\s*)(?:(public|protected)\\s+)? "
 					  "(lostanza|extern)(?![\\w\\-])(?=.*(?:=|:)$)",
 					  "^(?!\\1\\s+|\\n)" },
-					{ "function", "function", "keyword", "keyword2" },
+					{ "function", "function", "keyword", "type" },
 					{},
 					"",
 					SyntaxPatternMatchType::RegEx,
@@ -289,13 +289,13 @@ SyntaxDefinition& addLbstanza() {
 
 					} },
 				  { { "(lostanza)\\s+(deftype)\\s+(\\S+)\\s+" },
-					{ "keyword2", "function", "keyword2", "keyword2" },
+					{ "type", "function", "type", "type" },
 					{},
 					"",
 					SyntaxPatternMatchType::RegEx },
 				  { { "(?x)(lostanza)\\s+(?: (val|var)\\s+\\S+\\s*:| (defn)\\s+(\\S+)\\s+\\()",
 					  "$" },
-					{ "normal", "function", "keyword2", "keyword2", "function" },
+					{ "normal", "function", "type", "type", "function" },
 					{},
 					"",
 					SyntaxPatternMatchType::RegEx,
@@ -313,7 +313,7 @@ SyntaxDefinition& addLbstanza() {
 
 					} },
 				  { { "\\s*(extern)\\s+(\\S+)\\s*(:)", "$" },
-					{ "keyword", "keyword2", "normal", "operator" },
+					{ "keyword", "type", "normal", "operator" },
 					{},
 					"",
 					SyntaxPatternMatchType::RegEx,
@@ -358,8 +358,8 @@ SyntaxDefinition& addLbstanza() {
 					"",
 					SyntaxPatternMatchType::RegEx },
 				  { { "(\\\\<)(.+?)(>)", "(<)(\\2)(>)" },
-					{ "operator", "operator", "keyword2", "operator" },
-					{ "operator", "operator", "keyword2", "operator" },
+					{ "operator", "operator", "type", "operator" },
+					{ "operator", "operator", "type", "operator" },
 					"",
 					SyntaxPatternMatchType::RegEx },
 				  { { "(?<=\\s|\\()\\[", "\\]" },
@@ -377,7 +377,7 @@ SyntaxDefinition& addLbstanza() {
 					} },
 				  { { "(?x) (?<= \\S : \\s* ) ([^ `\"'\t0-9~!%^*+-=/.:&|<>\\(\\{\\[][^ "
 					  "\t,.:&|<>\\[\\]\\{\\}\\(\\)\\*]*)" },
-					"keyword2",
+					"type",
 					"",
 					SyntaxPatternMatchType::RegEx },
 				  { { "(?x) \\s* ([^ `\"'\t0-9~!%^*+-=/.:&|<>\\(\\{\\[][^ "
@@ -408,7 +408,7 @@ SyntaxDefinition& addLbstanza() {
 					"",
 					SyntaxPatternMatchType::RegEx },
 				  { { "(ptr|ref)(\\<)", "(?<!\\-)\\>" },
-					{ "keyword2", "keyword", "operator" },
+					{ "type", "keyword", "operator" },
 					{ "operator" },
 					"",
 					SyntaxPatternMatchType::RegEx,
@@ -427,7 +427,7 @@ SyntaxDefinition& addLbstanza() {
 					} },
 				  { { "\\baddr!?(?=\\(|\\{)" }, "function", "", SyntaxPatternMatchType::RegEx },
 				  { { "(?<!\\w|\\-)(byte|int|long|float|double)(?!\\w|\\-)" },
-					"keyword2",
+					"type",
 					"",
 					SyntaxPatternMatchType::RegEx },
 
@@ -445,7 +445,7 @@ SyntaxDefinition& addLbstanza() {
 					"",
 					SyntaxPatternMatchType::RegEx },
 				  { { "[^ `\"'\t0-9~!%^*+-=/.:&|<>\\(\\{\\[][^ \t,.:&|<>\\[\\]\\{\\}\\(\\)\\*]*" },
-					"keyword2",
+					"type",
 					"",
 					SyntaxPatternMatchType::RegEx },
 				  { { "(?x) Void | Equalable | Comparable | Hashable | Lengthable | Seq(?:able)? | "
@@ -456,7 +456,7 @@ SyntaxDefinition& addLbstanza() {
 					  "(?:String|Gen)?Symbol | Maybe | One | None | Exception | Coroutine | Vector "
 					  "| Timer | Liveness(?:Tracker|Marker) | Queue | Table | HashTable | "
 					  "(?:Splice|Nested|Plural|Choice)Template" },
-					"keyword2",
+					"type",
 					"",
 					SyntaxPatternMatchType::RegEx },
 				  { { "(?x) (?<! \\s ) < (?! : )", "(?x) (?<!\\-) >" },

@@ -30,7 +30,7 @@ SyntaxDefinition& addGraphQL() {
 			  { "true", "literal" },
 			  { "scalar", "keyword" },
 			  { "implements", "keyword" },
-			  { "extend", "keyword2" },
+			  { "extend", "type" },
 			  { "enum", "keyword" },
 			  { "schema", "keyword" },
 			  { "mutation", "keyword" },

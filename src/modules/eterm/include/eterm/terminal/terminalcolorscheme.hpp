@@ -5,7 +5,6 @@
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/pack.hpp>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 using namespace EE;
@@ -13,21 +12,6 @@ using namespace EE::System;
 
 namespace eterm { namespace Terminal {
 
-/**
- * Syntax colors types accepted/used are:
- * "normal", "symbol", "comment", "keyword", "keyword2",
- * "number", "literal", "string", "operator", "function",
- * "link"
- *
- * Editor colors types accepted/used are:
- * "background", "text", "caret"
- * "selection", "gutter_background",
- * "line_number", "line_number2", "line_highlight",
- * "gutter_background", "whitespace", "line_break_column",
- * "matching_bracket", "matching_selection", "suggestion", "suggestion_selected"
- *
- * Following the lite editor syntax colors (https://github.com/rxi/lite).
- */
 class TerminalColorScheme {
   public:
 	static TerminalColorScheme getDefault();

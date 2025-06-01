@@ -352,6 +352,12 @@ class EE_API String {
 	 */
 	static bool contains( const String& haystack, const String& needle );
 
+	/** @return True if a string contains a substring.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 */
+	static bool contains( std::string_view haystack, std::string_view needle );
+
 	/** @return True if a string contains a substring. Case-insensitive check.
 	 * @param haystack The string to search in.
 	 * @param needle The searched string.
@@ -363,6 +369,12 @@ class EE_API String {
 	 * @param needle The searched string.
 	 */
 	static bool icontains( const String& haystack, const String& needle );
+
+	/** @return True if a string contains a substring. Case-insensitive check.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 */
+	static bool icontains( std::string_view haystack, std::string_view needle );
 
 	static int fuzzyMatchSimple( const std::string& pattern, const std::string& string,
 								 bool allowUneven = false, bool permissive = false );

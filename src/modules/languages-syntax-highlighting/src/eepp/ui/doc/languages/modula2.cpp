@@ -83,12 +83,12 @@ SyntaxDefinition& addModula2() {
 			  { "ROUND", "function" },
 			  { "SIZE", "function" },
 			  { "TSIZE", "function" },
-			  { "BITSET", "keyword2" },
-			  { "BOOLEAN", "keyword2" },
-			  { "CARDINAL", "keyword2" },
-			  { "CHAR", "keyword2" },
-			  { "INTEGER", "keyword2" },
-			  { "REAL", "keyword2" },
+			  { "BITSET", "type" },
+			  { "BOOLEAN", "type" },
+			  { "CARDINAL", "type" },
+			  { "CHAR", "type" },
+			  { "INTEGER", "type" },
+			  { "REAL", "type" },
 			  { "TRUE", "literal" },
 			  { "FALSE", "literal" },
 			  { "NIL", "literal" },
@@ -99,7 +99,6 @@ SyntaxDefinition& addModula2() {
 		  {}
 
 		} );
-
 }
 
 }}}} // namespace EE::UI::Doc::Language

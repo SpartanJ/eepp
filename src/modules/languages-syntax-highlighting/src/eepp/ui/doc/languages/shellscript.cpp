@@ -12,7 +12,7 @@ SyntaxDefinition& addShellScript() {
 			  { "%.sh$", "%.bash$", "^%.bashrc$", "^%.bash_profile$", "^%.profile$", "%.zsh$",
 				"%.fish$", "^PKGBUILD$", "%.winlib$" },
 			  {
-				  { { "$[%a_@*#][%w_]*" }, "keyword2" },
+				  { { "$[%a_@*#][%w_]*" }, "type" },
 				  { { "#.*\n" }, "comment" },
 				  { { "<<%-?%s*EOF", "EOF" }, "string" },
 				  { { "\"", "\"", "\\" }, "string" },
@@ -24,9 +24,9 @@ SyntaxDefinition& addShellScript() {
 				  { { "%f[%S][%+%-][%w%-_]+%f[=]" }, "function" },
 				  { { "(%s%-%a[%w_%-]*%s+)(%d[%d%.]+)" }, { "normal", "function", "number" } },
 				  { { "(%s%-%a[%w_%-]*%s+)(%a[%a%-_:=]+)" }, { "normal", "function", "symbol" } },
-				  { { "[_%a][%w_]+%f[%+=]" }, "keyword2" },
-				  { { "${.-}" }, "keyword2" },
-				  { { "$[%d$%a_@*][%w_]*" }, "keyword2" },
+				  { { "[_%a][%w_]+%f[%+=]" }, "type" },
+				  { { "${.-}" }, "type" },
+				  { { "$[%d$%a_@*][%w_]*" }, "type" },
 				  { { "[%a_%-][%w_%-]*[%s]*%f[(]" }, "function" },
 				  { { "[%a_][%w_]*" }, "symbol" },
 

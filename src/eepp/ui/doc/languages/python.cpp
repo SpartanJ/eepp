@@ -31,7 +31,7 @@ void addPython() {
 			  { "raise", "keyword" },	{ "yield", "keyword" }, { "with", "keyword" },
 			  { "for", "keyword" },		{ "while", "keyword" }, { "assert", "keyword" },
 			  { "from", "keyword" },	{ "elif", "keyword" },	{ "def", "keyword" },
-			  { "self", "keyword2" },	{ "else", "keyword" },	{ "global", "keyword" },
+			  { "self", "type" },	{ "else", "keyword" },	{ "global", "keyword" },
 			  { "not", "keyword" },		{ "break", "keyword" }, { "nonlocal", "keyword" },
 			  { "is", "keyword" },		{ "or", "keyword" },	{ "if", "keyword" },
 			  { "except", "keyword" },

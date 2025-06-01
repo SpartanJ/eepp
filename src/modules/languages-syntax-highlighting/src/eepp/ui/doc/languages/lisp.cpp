@@ -17,9 +17,9 @@ SyntaxDefinition& addLisp() {
 			  { { "#o[0-7]+" }, "number" },
 			  { { "#b[01]+" }, "number" },
 			  { { "-?%d+[%d%.eE]*f?" }, "number" },
-			  { { "%(%s*([%a_][%w_-]*)%s+([%a_][%w_-]*)" }, { "operator", "symbol", "keyword2" } },
-			  { { "'([%a_][%w_-]*)" }, { "operator", "keyword2", "symbol" } },
-			  { { ":([%a_][%w_-]*)" }, { "operator", "keyword3", "symbol" } },
+			  { { "%(%s*([%a_][%w_-]*)%s+([%a_][%w_-]*)" }, { "operator", "symbol", "type" } },
+			  { { "'([%a_][%w_-]*)" }, { "operator", "type", "symbol" } },
+			  { { ":([%a_][%w_-]*)" }, { "operator", "parameter", "symbol" } },
 			  { { "[%<%>%=%*%/%+%-%`%@%%%(%)]" }, "operator" },
 
 		  },

@@ -69,7 +69,7 @@ SyntaxDefinition& addRacket() {
 					SyntaxPatternMatchType::RegEx,
 					{
 						{ { "(?<=\\[)\\s*([^\\s\\{\\}\\(\\)\\[\\]#\\|,\"'´\\\\;]+)" },
-						  { "normal", "keyword3" },
+						  { "normal", "parameter" },
 						  {},
 						  "",
 						  SyntaxPatternMatchType::RegEx },
@@ -837,7 +837,7 @@ SyntaxDefinition& addRacket() {
 						{ { "(?<=struct)\\s*([^\\s\\{\\}\\(\\)\\[\\]#\\|,\"'´\\\\;]+\\s+)?([^\\s\\{"
 							"\\}\\(\\)\\[\\]#\\|,\"'´\\\\;]+)\\s*(\\()",
 							"\\)" },
-						  { "normal", "normal", "keyword2", "operator" },
+						  { "normal", "normal", "type", "operator" },
 						  { "operator" },
 						  "",
 						  SyntaxPatternMatchType::RegEx,
@@ -1305,7 +1305,7 @@ SyntaxDefinition& addRacket() {
 					"",
 					SyntaxPatternMatchType::RegEx },
 				  { { "[^\\s\\{\\}\\(\\)\\[\\]#\\|,\"'´\\\\;]+" },
-					"keyword3",
+					"parameter",
 					"",
 					SyntaxPatternMatchType::RegEx },
 				  { { "include", "#keyword" },

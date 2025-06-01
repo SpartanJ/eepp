@@ -19,8 +19,8 @@ SyntaxDefinition& addPowerShell() {
 			  { { "%f[%S]%-[%w%-%_]+" }, "function" },
 			  { { "[%u][%a]+[%-][%u][%a]+" }, "function" },
 			  { { "${.*}" }, "symbol" },
-			  { { "$[%a_@*][%w_]*" }, "keyword2" },
-			  { { "$[%$][%a]+" }, "keyword2" },
+			  { { "$[%a_@*][%w_]*" }, "type" },
+			  { { "$[%$][%a]+" }, "type" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 
 		  },

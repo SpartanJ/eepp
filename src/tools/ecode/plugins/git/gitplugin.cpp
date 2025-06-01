@@ -395,12 +395,12 @@ void GitPlugin::updateStatusBarSync() {
 		auto insertedColor( getVarColor( "--theme-success" ) );
 		auto deletedColor( getVarColor( "--theme-error" ) );
 		patterns.emplace_back(
-			SyntaxPattern( { ".*%((%+%d+)%s/%s(%-%d+)%)" }, { "normal", "keyword", "keyword2" } ) );
+			SyntaxPattern( { ".*%((%+%d+)%s/%s(%-%d+)%)" }, { "normal", "keyword", "type" } ) );
 		SyntaxDefinition syntaxDef( "custom_build", {}, std::move( patterns ) );
 		SyntaxColorScheme scheme( "status_bar_git",
 								  { { "normal"_sst, { fontColor } },
 									{ "keyword"_sst, { insertedColor } },
-									{ "keyword2"_sst, { deletedColor } } },
+									{ "type"_sst, { deletedColor } } },
 								  {} );
 		mStatusCustomTokenizer = { std::move( syntaxDef ), std::move( scheme ) };
 	}

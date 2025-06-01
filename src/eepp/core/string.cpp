@@ -1293,6 +1293,10 @@ bool String::contains( const String& haystack, const String& needle ) {
 	return haystack.find( needle ) != String::InvalidPos;
 }
 
+bool String::contains( std::string_view haystack, std::string_view needle ) {
+	return haystack.find( needle ) != String::InvalidPos;
+}
+
 bool String::icontains( const std::string& haystack, const std::string& needle ) {
 	return std::search( haystack.begin(), haystack.end(), needle.begin(), needle.end(),
 						[]( char ch1, char ch2 ) {
@@ -1303,6 +1307,13 @@ bool String::icontains( const std::string& haystack, const std::string& needle )
 bool String::icontains( const String& haystack, const String& needle ) {
 	return std::search( haystack.begin(), haystack.end(), needle.begin(), needle.end(),
 						[]( String::StringBaseType ch1, String::StringBaseType ch2 ) {
+							return std::tolower( ch1 ) == std::tolower( ch2 );
+						} ) != haystack.end();
+}
+
+bool String::icontains( std::string_view haystack, std::string_view needle ) {
+	return std::search( haystack.begin(), haystack.end(), needle.begin(), needle.end(),
+						[]( char ch1, char ch2 ) {
 							return std::tolower( ch1 ) == std::tolower( ch2 );
 						} ) != haystack.end();
 }

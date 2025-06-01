@@ -7,6 +7,6 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 extern SyntaxDefinition& addJai();
 
-}}}}
+}}}} // namespace EE::UI::Doc::Language
 
 #endif

@@ -97,7 +97,7 @@ SyntaxDefinition& addGleam() {
 
 					} },
 				  { { "\\b([[:lower:]][[:word:]]*):\\s" },
-					"keyword3",
+					"parameter",
 					"",
 					SyntaxPatternMatchType::RegEx },
 				  { { "\\b([[:lower:]][[:word:]]*):" },
@@ -151,7 +151,7 @@ SyntaxDefinition& addGleam() {
 					{},
 					"",
 					SyntaxPatternMatchType::LuaPattern },
-				  { { "[[:upper:]][[:alnum:]]*" }, "keyword2", "", SyntaxPatternMatchType::RegEx },
+				  { { "[[:upper:]][[:alnum:]]*" }, "type", "", SyntaxPatternMatchType::RegEx },
 
 			  } },
 			{ "comments",

@@ -30,7 +30,7 @@ SyntaxDefinition& addTypst() {
 			{ "arguments",
 			  {
 				  { { "\\b[[:alpha:]_][[:alnum:]_-]*(?=:)" },
-					"keyword3",
+					"parameter",
 					"",
 					SyntaxPatternMatchType::RegEx },
 				  { { "include", "#code" },

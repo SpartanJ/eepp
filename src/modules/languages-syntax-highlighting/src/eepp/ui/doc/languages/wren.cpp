@@ -26,7 +26,7 @@ SyntaxDefinition& addWren() {
 			  { "false", "literal" },  { "in", "keyword" },		   { "for", "keyword" },
 			  { "while", "keyword" },  { "null", "literal" },	   { "true", "literal" },
 			  { "else", "keyword" },   { "construct", "keyword" }, { "foreign", "keyword" },
-			  { "this", "keyword2" },  { "return", "keyword" },	   { "var", "keyword" },
+			  { "this", "type" },	   { "return", "keyword" },	   { "var", "keyword" },
 			  { "import", "keyword" }, { "break", "keyword" },	   { "class", "keyword" },
 			  { "is", "keyword" },	   { "if", "keyword" },		   { "static", "keyword" },
 			  { "super", "keyword" },

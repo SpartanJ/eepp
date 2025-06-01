@@ -16,7 +16,7 @@ SyntaxDefinition& addPerl() {
 			  { { "-?%d+[%d%.eE]*" }, "number" },
 			  { { "-?%.?%d+" }, "number" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
-			  { { "[%@%$%*]+[%a_][%w_]*" }, "keyword2" },
+			  { { "[%@%$%*]+[%a_][%w_]*" }, "type" },
 			  { { "%--[%a_][%w_]*" }, "symbol" },
 
 		  },

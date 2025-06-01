@@ -45,8 +45,8 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 			{ "symbol"_sst, Color( "#e1e1e6" ) },
 			{ "comment"_sst, Color( "#cd8b00" ) },
 			{ "keyword"_sst, { Color( "#ff79c6" ), Color::Transparent, Text::Shadow } },
-			{ "keyword2"_sst, { Color( "#8be9fd" ), Color::Transparent, Text::Shadow } },
-			{ "keyword3"_sst, { Color( "#ffb86c" ), Color::Transparent, Text::Shadow } },
+			{ "type"_sst, { Color( "#8be9fd" ), Color::Transparent, Text::Shadow } },
+			{ "parameter"_sst, { Color( "#ffb86c" ), Color::Transparent, Text::Shadow } },
 			{ "number"_sst, Color( "#ffd24a" ) },
 			{ "literal"_sst, { Color( "#f1fa8c" ), Color::Transparent, Text::Shadow } },
 			{ "string"_sst, Color( "#ffcd8b" ) },
@@ -130,9 +130,10 @@ SyntaxColorScheme::Style parseStyle(
 				}
 			} else if ( syntaxColors &&
 						( "normal" == val || "symbol" == val || "comment" == val ||
-						  "keyword" == val || "keyword2" == val || "number" == val ||
-						  "literal" == val || "string" == val || "opetaror" == val ||
-						  "function" == val || "link" == val || "link_hover" == val ) ) {
+						  "keyword" == val || "keyword2" == val || "keyword3" == val ||
+						  "number" == val || "literal" == val || "string" == val ||
+						  "opetaror" == val || "function" == val || "link" == val ||
+						  "link_hover" == val || "type" == val || "parameter" == val ) ) {
 				auto styleIt = syntaxColors->find( toSyntaxStyleType( val ) );
 				if ( styleIt != syntaxColors->end() ) {
 					style = styleIt->second;
@@ -221,7 +222,11 @@ SyntaxColorScheme::getSyntaxStyle( const SyntaxStyleType& type ) const {
 	auto it = mSyntaxColors.find( type );
 	if ( it != mSyntaxColors.end() )
 		return it->second;
+	else if ( type == "keyword2"_sst )
+		return getSyntaxStyle( "type"_sst );
 	else if ( type == "keyword3"_sst )
+		return getSyntaxStyle( "parameter"_sst );
+	else if ( type == "parameter"_sst )
 		return getSyntaxStyle( "symbol"_sst );
 	else if ( type == "link"_sst || type == "link_hover"_sst )
 		return getSyntaxStyle( "function"_sst );

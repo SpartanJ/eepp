@@ -18,7 +18,7 @@ SyntaxDefinition& addJSX() {
 						 { { "/[%+%-%*%^%!%=%&%|%?%:%;%,%(%[%{%<%>%\\%\"].*%f[/]",
 							 "/[igmsuyd\n]?[igmsuyd\n]?[igmsuyd\n]?", "\\" },
 						   "string" },
-						 { { "%f[^<]![%a_][%w%_%-]*" }, "keyword2" },
+						 { { "%f[^<]![%a_][%w%_%-]*" }, "type" },
 						 { { "%f[^<][%a_][%w%_%-]*" }, "function" },
 						 { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
 						 { { "([%a_-][%w-_]*)(%\?\?)(=)%f[%{%\"]" },
@@ -50,8 +50,8 @@ SyntaxDefinition& addJSX() {
 						 { "with", "keyword" },		  { "yield", "keyword" },
 						 { "true", "literal" },		  { "false", "literal" },
 						 { "null", "literal" },		  { "undefined", "literal" },
-						 { "arguments", "keyword2" }, { "Infinity", "keyword2" },
-						 { "NaN", "keyword2" },		  { "this", "keyword2" },
+						 { "arguments", "type" },	  { "Infinity", "type" },
+						 { "NaN", "type" },			  { "this", "type" },
 					 },
 					 "//" } )
 			.setLSPName( "javascriptreact" );

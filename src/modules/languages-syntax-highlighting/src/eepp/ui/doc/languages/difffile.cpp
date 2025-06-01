@@ -16,7 +16,7 @@ SyntaxDefinition& addDiff() {
 			  { { "^index%s.-\n" }, "comment" },
 			  { { "^@@.-\n" }, "number" },
 			  { { "^%+.-\n" }, "function" },
-			  { { "^%-.-\n" }, "keyword2" },
+			  { { "^%-.-\n" }, "type" },
 
 		  },
 		  {

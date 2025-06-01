@@ -22,13 +22,13 @@ SyntaxDefinition& addFlow9() {
 
 		  },
 		  {
-			  { "int", "keyword2" },	{ "false", "literal" },	  { "native", "keyword" },
-			  { "default", "keyword" }, { "true", "literal" },	  { "else", "keyword" },
-			  { "switch", "keyword" },	{ "UInt64", "keyword2" }, { "forbid", "keyword" },
-			  { "flow", "keyword2" },	{ "double", "keyword2" }, { "bool", "keyword2" },
-			  { "import", "keyword" },	{ "void", "keyword2" },	  { "string", "keyword2" },
-			  { "if", "keyword" },		{ "export", "keyword" },  { "unittest", "keyword" },
-			  { "io", "keyword2" },		{ "ref", "keyword2" },
+			  { "int", "type" },		{ "false", "literal" },	 { "native", "keyword" },
+			  { "default", "keyword" }, { "true", "literal" },	 { "else", "keyword" },
+			  { "switch", "keyword" },	{ "UInt64", "type" },	 { "forbid", "keyword" },
+			  { "flow", "type" },		{ "double", "type" },	 { "bool", "type" },
+			  { "import", "keyword" },	{ "void", "type" },		 { "string", "type" },
+			  { "if", "keyword" },		{ "export", "keyword" }, { "unittest", "keyword" },
+			  { "io", "type" },			{ "ref", "type" },
 
 		  },
 		  "//",

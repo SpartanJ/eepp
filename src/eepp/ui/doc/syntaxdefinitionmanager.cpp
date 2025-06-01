@@ -38,24 +38,24 @@ class TextMateScopeMapper {
 		// -- Most Specific --
 		{ "markup.underline.link", "link" },	   // Specific markup
 		{ "constant.character.escape", "string" }, // Escapes within strings
-		{ "variable.parameter", "keyword3" },	   // Function parameters
+		{ "variable.parameter", "parameter" },	   // Function parameters
 		{ "variable.language", "literal" }, // Language constants like 'this', 'self', 'null'?
 		{ "variable.identifier", "normal" },
 		{ "variable.function", "function" },
-		{ "storage.type", "keyword" },			 // Class, struct, int, bool etc. (declaration)
-		{ "entity.name.function", "function" },	 // Function definition name
-		{ "entity.name.type", "keyword2" },		 // Type name (class, struct, etc.) in definition
-		{ "entity.name.class", "keyword2" },	 // Class name in definition
-		{ "entity.name.struct", "keyword2" },	 // Struct name in definition
-		{ "entity.name.interface", "keyword2" }, // Interface name in definition
-		{ "entity.name.tag", "keyword2" },		 // HTML/XML tag name
-		{ "keyword.control", "keyword" },		 // if, else, for, while, return etc.
-		{ "keyword.operator", "operator" },		 // +, -, =, and, or, etc.
+		{ "storage.type", "keyword" },			// Class, struct, int, bool etc. (declaration)
+		{ "entity.name.function", "function" }, // Function definition name
+		{ "entity.name.type", "type" },			// Type name (class, struct, etc.) in definition
+		{ "entity.name.class", "type" },		// Class name in definition
+		{ "entity.name.struct", "type" },		// Struct name in definition
+		{ "entity.name.interface", "type" },	// Interface name in definition
+		{ "entity.name.tag", "type" },			// HTML/XML tag name
+		{ "keyword.control", "keyword" },		// if, else, for, while, return etc.
+		{ "keyword.operator", "operator" },		// +, -, =, and, or, etc.
 		{ "punctuation.definition.string", "string" }, // <, >, </ in HTML/XML
 		{ "punctuation.definition.tag", "operator" },  // <, >, </ in HTML/XML
 		{ "support.function", "function" },			   // Built-in functions (print, len)
-		{ "support.type", "keyword2" },				   // Built-in types (string, list)
-		{ "support.class", "keyword2" },			   // Built-in classes
+		{ "support.type", "type" },					   // Built-in types (string, list)
+		{ "support.class", "type" },				   // Built-in classes
 		{ "storage.modifier", "keyword" },			   // public, private, static, const etc.
 		{ "constant.numeric", "number" },			   // Numbers
 		{ "constant.language", "literal" },			   // true, false, null etc.
@@ -80,7 +80,7 @@ class TextMateScopeMapper {
 		{ "declaration", "literal" },
 		{ "identifier", "literal" },
 		{ "function", "function" },
-		{ "type", "keyword2" },
+		{ "type", "type" },
 		{ "scope", "operator" },
 		{ "invalid", "error" },
 		{ "external", "keyword" },

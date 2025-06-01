@@ -52,15 +52,15 @@ SyntaxDefinition& addNim() {
 	};
 
 	for ( const auto& keyword : nim_standard_types )
-		nim_symbols[keyword] = "keyword2";
+		nim_symbols[keyword] = "type";
 
 	const std::vector<std::string> nim_standard_generic_types{
 		"range", "array", "open[aA]rray", "varargs", "seq", "set", "sink", "lent", "owned",
 	};
 
 	for ( const auto& type : nim_standard_generic_types ) {
-		nim_patterns.push_back( { { type + "%f[%[]" }, "keyword2" } );
-		nim_patterns.push_back( { { type + "+%f[%w]" }, "keyword2" } );
+		nim_patterns.push_back( { { type + "%f[%[]" }, "type" } );
+		nim_patterns.push_back( { { type + "+%f[%w]" }, "type" } );
 	}
 
 	const std::vector<SyntaxPattern> nim_user_patterns{
@@ -70,7 +70,7 @@ SyntaxDefinition& addNim() {
 		{ { "\"\"\"", "\"\"\"[^\"]" }, "string" },
 		{ { "'", "'", "\\" }, "literal" },
 		{ { "[a-zA-Z][a-zA-Z0-9_]*%f[(]" }, "function" },
-		{ { "[A-Z][a-zA-Z0-9_]*" }, "keyword2" },
+		{ { "[A-Z][a-zA-Z0-9_]*" }, "type" },
 		{ { "[a-zA-Z][a-zA-Z0-9_]*" }, "symbol" },
 		{ { "%.%f[^.]" }, "normal" },
 		{ { ":%f[ ]" }, "normal" },

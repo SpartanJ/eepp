@@ -5,39 +5,41 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 SyntaxDefinition& addV1() {
 
-	auto& v1 = SyntaxDefinitionManager::instance()
-		->add( { "V1",
-				 { "%.v1$" },
-				 {
-					 { { "<%s*[sS][cC][rR][iI][pP][tT]%s+[tT][yY][pP][eE]%s*=%s*['\"]%a+/"
-						 "[jJ][aA][vV][aA][sS][cC][rR][iI][pP][tT]['\"]%s*>",
-						 "<%s*/[sS][cC][rR][iI][pP][tT]>" },
-					   "function",
-					   "JavaScript" },
-					 { { "<%s*[sS][cC][rR][iI][pP][tT]%s*>", "<%s*/%s*[sS][cC][rR][iI][pP][tT]>" },
-					   "function",
-					   "JavaScript" },
-					 { { "<%s*[sS][tT][yY][lL][eE][^>]*>", "<%s*/%s*[sS][tT][yY][lL][eE]%s*>" },
-					   "function",
-					   "CSS" },
-					 { { "<%?v?1?", "%?>" }, "function", "V1Core" },
-					 { { "<!%-%-", "%-%->" }, "comment" },
-					 { { "%f[^>][^<]", "%f[<]" }, "normal" },
-					 { { "\"", "\"", "\\" }, "string" },
-					 { { "'", "'", "\\" }, "string" },
-					 { { "0x[%da-fA-F]+" }, "number" },
-					 { { "-?%d+[%d%.]*f?" }, "number" },
-					 { { "-?%.?%d+f?" }, "number" },
-					 { { "%f[^<]![%a_][%w%_%-]*" }, "keyword2" },
-					 { { "%f[^<][%a_][%w%_%-]*" }, "function" },
-					 { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
-					 { { "[%a_][%w_]*" }, "keyword" },
-					 { { "[/<>=]" }, "operator" },
-				 },
-				 {},
-				 "",
-				 { "^#!.*[ /]v1" } } )
-		.setAutoCloseXMLTags( true );
+	auto& v1 =
+		SyntaxDefinitionManager::instance()
+			->add(
+				{ "V1",
+				  { "%.v1$" },
+				  {
+					  { { "<%s*[sS][cC][rR][iI][pP][tT]%s+[tT][yY][pP][eE]%s*=%s*['\"]%a+/"
+						  "[jJ][aA][vV][aA][sS][cC][rR][iI][pP][tT]['\"]%s*>",
+						  "<%s*/[sS][cC][rR][iI][pP][tT]>" },
+						"function",
+						"JavaScript" },
+					  { { "<%s*[sS][cC][rR][iI][pP][tT]%s*>", "<%s*/%s*[sS][cC][rR][iI][pP][tT]>" },
+						"function",
+						"JavaScript" },
+					  { { "<%s*[sS][tT][yY][lL][eE][^>]*>", "<%s*/%s*[sS][tT][yY][lL][eE]%s*>" },
+						"function",
+						"CSS" },
+					  { { "<%?v?1?", "%?>" }, "function", "V1Core" },
+					  { { "<!%-%-", "%-%->" }, "comment" },
+					  { { "%f[^>][^<]", "%f[<]" }, "normal" },
+					  { { "\"", "\"", "\\" }, "string" },
+					  { { "'", "'", "\\" }, "string" },
+					  { { "0x[%da-fA-F]+" }, "number" },
+					  { { "-?%d+[%d%.]*f?" }, "number" },
+					  { { "-?%.?%d+f?" }, "number" },
+					  { { "%f[^<]![%a_][%w%_%-]*" }, "type" },
+					  { { "%f[^<][%a_][%w%_%-]*" }, "function" },
+					  { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
+					  { { "[%a_][%w_]*" }, "keyword" },
+					  { { "[/<>=]" }, "operator" },
+				  },
+				  {},
+				  "",
+				  { "^#!.*[ /]v1" } } )
+			.setAutoCloseXMLTags( true );
 
 	auto& sd = SyntaxDefinitionManager::instance()
 				   ->add( { "V1Core",
