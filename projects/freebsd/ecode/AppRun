@@ -2,4 +2,4 @@
 CANONPATH=$(readlink -f "$0")
 DIRPATH="$(dirname "$CANONPATH")"
 
-LD_LIBRARY_PATH="$DIRPATH/libs" "$DIRPATH/ecode.bin" "$@"
+LD_LIBRARY_PATH="$DIRPATH/libs" exec "$DIRPATH/ecode.bin" "$@"
