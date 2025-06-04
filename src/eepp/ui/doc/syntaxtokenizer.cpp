@@ -236,6 +236,8 @@ static inline void popStack( SyntaxStateRestored& curState, SyntaxState& retStat
 		return;
 	}
 
+	auto languageIndex = retState.langStack[curState.currentLevel];
+
 	retState.langStack[curState.currentLevel] = 0;
 	setSubsyntaxPatternIdx( curState, retState, SyntaxStateType{} );
 
@@ -250,6 +252,15 @@ static inline void popStack( SyntaxStateRestored& curState, SyntaxState& retStat
 	if ( retState.langStack[curState.currentLevel] != 0 &&
 		 retState.langStack[curState.currentLevel] != syntax.getLanguageIndex() ) {
 		setSubsyntaxPatternIdx( curState, retState, SyntaxStateType{} );
+
+		// Remove all the removed language stack
+		while ( retState.langStack[curState.currentLevel] == languageIndex &&
+				retState.langStack[curState.currentLevel] != 0 ) {
+			if ( curState.currentLevel > 0 )
+				curState.currentLevel--;
+			retState.langStack[curState.currentLevel] = 0;
+			setSubsyntaxPatternIdx( curState, retState, SyntaxStateType{} );
+		}
 	}
 
 	curState = SyntaxTokenizer::retrieveSyntaxState( syntax, retState );
