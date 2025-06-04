@@ -687,6 +687,7 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Value:
 		case PropertyId::Text:
 			setText( getTranslatorString( attribute.value() ) );
 			break;
@@ -786,6 +787,7 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Value:
 		case PropertyId::Text:
 			return getText().toUtf8();
 		case PropertyId::TextTransform:
@@ -829,21 +831,14 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 
 std::vector<PropertyId> UITextView::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
-	auto local = { PropertyId::Text,
-				   PropertyId::TextTransform,
-				   PropertyId::Color,
-				   PropertyId::TextShadowColor,
-				   PropertyId::TextShadowOffset,
-				   PropertyId::SelectionColor,
-				   PropertyId::SelectionBackColor,
-				   PropertyId::FontFamily,
-				   PropertyId::FontSize,
-				   PropertyId::FontStyle,
-				   PropertyId::Wordwrap,
-				   PropertyId::TextStrokeWidth,
-				   PropertyId::TextStrokeColor,
-				   PropertyId::TextSelection,
-				   PropertyId::TextAlign,
+	auto local = { PropertyId::Value,			PropertyId::Text,
+				   PropertyId::TextTransform,	PropertyId::Color,
+				   PropertyId::TextShadowColor, PropertyId::TextShadowOffset,
+				   PropertyId::SelectionColor,	PropertyId::SelectionBackColor,
+				   PropertyId::FontFamily,		PropertyId::FontSize,
+				   PropertyId::FontStyle,		PropertyId::Wordwrap,
+				   PropertyId::TextStrokeWidth, PropertyId::TextStrokeColor,
+				   PropertyId::TextSelection,	PropertyId::TextAlign,
 				   PropertyId::TextOverflow };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;

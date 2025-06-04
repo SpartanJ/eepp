@@ -252,6 +252,42 @@
         "command": "${project_root}/bin/eepp-7guis-cells-debug",
         "name": "eepp-7guis-cells-debug",
         "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-7guis-temperature-converter-debug",
+        "name": "eepp-7guis-temperature-converter-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-7guis-circle-drawer-debug",
+        "name": "eepp-7guis-circle-drawer-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-7guis-counter-debug",
+        "name": "eepp-7guis-counter-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-7guis-crud-debug",
+        "name": "eepp-7guis-crud-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-7guis-flight-booker-debug",
+        "name": "eepp-7guis-flight-booker-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-7guis-timer-debug",
+        "name": "eepp-7guis-timer-debug",
+        "working_dir": "${project_root}/bin"
       }
     ],
     "var": {
