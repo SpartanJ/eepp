@@ -86,6 +86,7 @@
 #include <eepp/ui/models/widgettreemodel.hpp>
 
 #include <eepp/ui/uidatabind.hpp>
+#include <eepp/ui/uiproperty.hpp>
 
 #include <eepp/ui/undostack.hpp>
 

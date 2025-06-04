@@ -4,7 +4,7 @@
 #include <eepp/system/log.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <memory>
-#include <set>
+#include <unordered_set>
 #include <variant>
 
 namespace EE { namespace UI {
@@ -23,12 +23,33 @@ template <typename T> class UIDataBind {
 	};
 
 	static Converter converterDefault() {
-		return Converter( []( const UIDataBind<T>*, T& val,
-							  const std::string& str ) { return String::fromString( val, str ); },
-						  []( const UIDataBind<T>*, std::string& str, const T& val ) {
-							  str = String::toString( val );
-							  return true;
-						  } );
+		return Converter(
+			[]( const UIDataBind<T>* databind, T& val, const std::string& str ) {
+				if constexpr ( std::is_same_v<T, std::string> ) {
+					str = val;
+					return true;
+				} else if constexpr ( std::is_same_v<T, bool> ) {
+					val = StyleSheetProperty( databind->getPropertyDefinition(), str ).asBool();
+					return true;
+				} else {
+					return String::fromString( val, str );
+				}
+			},
+			[]( const UIDataBind<T>*, std::string& str, const T& val ) {
+				if constexpr ( std::is_same_v<T, std::string> ||
+							   std::is_same_v<T, std::string_view> ) {
+					str = val;
+				} else if constexpr ( std::is_same_v<T, double> ) {
+					str = String::fromDouble( val );
+				} else if constexpr ( std::is_same_v<T, float> ) {
+					str = String::fromFloat( val );
+				} else if constexpr ( std::is_same_v<T, bool> ) {
+					str = val ? "true" : "false";
+				} else {
+					str = String::toString( val );
+				}
+				return true;
+			} );
 	}
 
 	static Converter converterString() {
@@ -56,7 +77,7 @@ template <typename T> class UIDataBind {
 	}
 
 	static std::unique_ptr<UIDataBind<T>>
-	New( T* t, const std::set<UIWidget*>& widgets,
+	New( T* t, const std::unordered_set<UIWidget*>& widgets,
 		 const Converter& converter = UIDataBind<T>::converterDefault(),
 		 const std::string& valueKey = "value",
 		 const Event::EventType& eventType = Event::OnValueChange ) {
@@ -74,7 +95,7 @@ template <typename T> class UIDataBind {
 
 	UIDataBind() {}
 
-	UIDataBind( T* t, const std::set<UIWidget*>& widgets,
+	UIDataBind( T* t, const std::unordered_set<UIWidget*>& widgets,
 				const Converter& converter = UIDataBind<T>::converterDefault(),
 				const std::string& valueKey = "value",
 				const Event::EventType& eventType = Event::OnValueChange ) {
@@ -88,7 +109,7 @@ template <typename T> class UIDataBind {
 		init( t, { widget }, converter, valueKey, eventType );
 	}
 
-	void init( T* t, const std::set<UIWidget*>& widgets,
+	void init( T* t, const std::unordered_set<UIWidget*>& widgets,
 			   const Converter& converter = UIDataBind<T>::converterDefault(),
 			   const std::string& valueKey = "value",
 			   const Event::EventType& eventType = Event::OnValueChange ) {
@@ -103,8 +124,21 @@ template <typename T> class UIDataBind {
 	}
 
 	void set( const T& t ) {
+		if ( t == *data )
+			return;
 		inSetValue = true;
 		*data = t;
+		setValueChange();
+		inSetValue = false;
+		if ( onValueChangeCb )
+			onValueChangeCb( t );
+	}
+
+	void set( T&& t ) {
+		if ( t == *data )
+			return;
+		inSetValue = true;
+		*data = std::move( t );
 		setValueChange();
 		inSetValue = false;
 		if ( onValueChangeCb )
@@ -151,11 +185,11 @@ template <typename T> class UIDataBind {
 
 	std::function<void( const T& newVal )> onValueChangeCb;
 
-	const std::set<UIWidget*>& getWidgets() const { return widgets; }
+	const std::unordered_set<UIWidget*>& getWidgets() const { return widgets; }
 
   protected:
 	T* data{ nullptr };
-	std::set<UIWidget*> widgets;
+	std::unordered_set<UIWidget*> widgets;
 	std::unordered_map<UIWidget*, Uint32> valueCbs;
 	std::unordered_map<UIWidget*, Uint32> closeCbs;
 	bool inSetValue{ false };
@@ -215,7 +249,7 @@ class UIDataBindBool {
 	using Ptr = std::unique_ptr<UIDataBind<bool>>;
 
 	static Ptr
-	New( bool* t, const std::set<UIWidget*>& widgets,
+	New( bool* t, const std::unordered_set<UIWidget*>& widgets,
 		 const UIDataBind<bool>::Converter& converter = UIDataBind<bool>::converterBool(),
 		 const std::string& valueKey = "value" ) {
 		return UIDataBind<bool>::New( t, widgets, converter, valueKey );
@@ -233,7 +267,7 @@ class UIDataBindString {
   public:
 	using Ptr = std::unique_ptr<UIDataBind<std::string>>;
 
-	static Ptr New( std::string* t, const std::set<UIWidget*>& widgets,
+	static Ptr New( std::string* t, const std::unordered_set<UIWidget*>& widgets,
 					const UIDataBind<std::string>::Converter& converter =
 						UIDataBind<std::string>::converterString(),
 					const std::string& valueKey = "text",
