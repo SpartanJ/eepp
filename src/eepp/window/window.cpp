@@ -291,15 +291,15 @@ bool Window::takeScreenshot( std::string filepath, const Image::SaveType& Format
 				return false;
 		}
 
-		return 0 != SOIL_save_screenshot( TmpPath.c_str(), Format, 0, 0, mWindow.WindowConfig.Width,
-										  mWindow.WindowConfig.Height );
+		return 0 != SOIL_save_screenshot( TmpPath.c_str(), (int)Format, 0, 0,
+										  mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 	} else {
 		std::string Direc = FileSystem::fileRemoveFileName( filepath );
 
 		if ( !FileSystem::isDirectory( Direc ) )
 			FileSystem::makeDir( Direc );
 
-		return 0 != SOIL_save_screenshot( filepath.c_str(), Format, 0, 0,
+		return 0 != SOIL_save_screenshot( filepath.c_str(), (int)Format, 0, 0,
 										  mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 	}
 }

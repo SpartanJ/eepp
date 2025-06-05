@@ -128,14 +128,15 @@ void TextureLoader::loadFile() {
 
 void TextureLoader::loadFromFile() {
 	if ( FileSystem::fileExists( mFilepath ) ) {
-		mImgType = stbi_test( mFilepath.c_str() );
+		mImgType = Image::getFormat( mFilepath );
 
-		if ( STBI_dds == mImgType && GLi->isExtension( EEGL_EXT_texture_compression_s3tc ) ) {
+		if ( Image::Format::DDS == mImgType &&
+			 GLi->isExtension( EEGL_EXT_texture_compression_s3tc ) ) {
 			loadFile();
 			mDirectUpload = true;
 			stbi__dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels,
 										&mIsCompressed );
-		} else if ( STBI_pvr == mImgType &&
+		} else if ( Image::Format::PVR == mImgType &&
 					stbi__pvr_info_from_path( mFilepath.c_str(), &mImgWidth, &mImgHeight,
 											  &mChannels, &mIsCompressed ) &&
 					( !mIsCompressed || GLi->isExtension( EEGL_IMG_texture_compression_pvrtc ) ) ) {
@@ -143,7 +144,7 @@ void TextureLoader::loadFromFile() {
 			// it doesn't need the extension ) means that it can be uploaded directly to the GPU.
 			loadFile();
 			mDirectUpload = true;
-		} else if ( STBI_pkm == mImgType &&
+		} else if ( Image::Format::PKM == mImgType &&
 					GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) ) {
 			loadFile();
 			mIsCompressed = mDirectUpload = true;
@@ -184,22 +185,22 @@ void TextureLoader::loadFromPack() {
 }
 
 void TextureLoader::loadFromMemory() {
-	mImgType = stbi_test_from_memory( mImagePtr, mSize );
+	mImgType = Image::getFormat( mImagePtr, mSize );
 
-	if ( STBI_dds == mImgType && GLi->isExtension( EEGL_EXT_texture_compression_s3tc ) ) {
+	if ( Image::Format::DDS == mImgType && GLi->isExtension( EEGL_EXT_texture_compression_s3tc ) ) {
 		mPixels = (Uint8*)eeMalloc( mSize );
 		memcpy( mPixels, mImagePtr, mSize );
 		stbi__dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels,
 									&mIsCompressed );
 		mDirectUpload = true;
-	} else if ( STBI_pvr == mImgType &&
+	} else if ( Image::Format::PVR == mImgType &&
 				stbi__pvr_info_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels,
 											&mIsCompressed ) &&
 				( !mIsCompressed || GLi->isExtension( EEGL_IMG_texture_compression_pvrtc ) ) ) {
 		mPixels = (Uint8*)eeMalloc( mSize );
 		memcpy( mPixels, mImagePtr, mSize );
 		mDirectUpload = true;
-	} else if ( STBI_pkm == mImgType &&
+	} else if ( Image::Format::PKM == mImgType &&
 				GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) ) {
 		mPixels = (Uint8*)eeMalloc( mSize );
 		memcpy( mPixels, mImagePtr, mSize );
@@ -225,9 +226,10 @@ void TextureLoader::loadFromStream() {
 		callbacks.skip = &IOCb::skip;
 		callbacks.eof = &IOCb::eof;
 
-		mImgType = stbi_test_from_callbacks( &callbacks, mStream );
+		mImgType = static_cast<Image::Format>( stbi_test_from_callbacks( &callbacks, mStream ) );
 
-		if ( STBI_dds == mImgType && GLi->isExtension( EEGL_EXT_texture_compression_s3tc ) ) {
+		if ( Image::Format::DDS == mImgType &&
+			 GLi->isExtension( EEGL_EXT_texture_compression_s3tc ) ) {
 			mSize = mStream->getSize();
 			mPixels = (Uint8*)eeMalloc( mSize );
 			mStream->seek( 0 );
@@ -237,7 +239,7 @@ void TextureLoader::loadFromStream() {
 										   &mIsCompressed );
 			mStream->seek( 0 );
 			mDirectUpload = true;
-		} else if ( STBI_pvr == mImgType &&
+		} else if ( Image::Format::PVR == mImgType &&
 					stbi__pvr_info_from_callbacks( &callbacks, mStream, &mImgWidth, &mImgHeight,
 												   &mChannels, &mIsCompressed ) &&
 					( !mIsCompressed || GLi->isExtension( EEGL_IMG_texture_compression_pvrtc ) ) ) {
@@ -247,7 +249,7 @@ void TextureLoader::loadFromStream() {
 			mStream->read( reinterpret_cast<char*>( mPixels ), mSize );
 			mStream->seek( 0 );
 			mDirectUpload = true;
-		} else if ( STBI_pkm == mImgType &&
+		} else if ( Image::Format::PKM == mImgType &&
 					GLi->isExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) ) {
 			mSize = mStream->getSize();
 			mPixels = (Uint8*)eeMalloc( mSize );
@@ -304,13 +306,13 @@ void TextureLoader::loadFromPixels() {
 				ScopedTexture scopedTexture;
 
 				if ( mDirectUpload ) {
-					if ( STBI_dds == mImgType ) {
+					if ( Image::Format::DDS == mImgType ) {
 						tTexId = SOIL_direct_load_DDS_from_memory( mPixels, mSize,
 																   SOIL_CREATE_NEW_ID, flags, 0 );
-					} else if ( STBI_pvr == mImgType ) {
+					} else if ( Image::Format::PVR == mImgType ) {
 						tTexId = SOIL_direct_load_PVR_from_memory( mPixels, mSize,
 																   SOIL_CREATE_NEW_ID, flags, 0 );
-					} else if ( STBI_pkm == mImgType ) {
+					} else if ( Image::Format::PKM == mImgType ) {
 						tTexId = SOIL_direct_load_ETC1_from_memory( mPixels, mSize,
 																	SOIL_CREATE_NEW_ID, flags );
 					}
@@ -341,12 +343,12 @@ void TextureLoader::loadFromPixels() {
 				mWidth = width;
 				mHeight = height;
 
-				if ( ( ( STBI_dds == mImgType && mIsCompressed ) || mCompressTexture ) &&
+				if ( ( ( Image::Format::DDS == mImgType && mIsCompressed ) || mCompressTexture ) &&
 					 mSize > 128 ) {
 					mSize -= 128; // Remove the DDS header size
-				} else if ( STBI_pvr == mImgType && mIsCompressed && mSize > 52 ) {
+				} else if ( Image::Format::PVR == mImgType && mIsCompressed && mSize > 52 ) {
 					mSize -= 52; // Remove the PVR header size
-				} else if ( STBI_pkm == mImgType && mIsCompressed && mSize > 16 ) {
+				} else if ( Image::Format::PKM == mImgType && mIsCompressed && mSize > 16 ) {
 					mSize -= 16; // Remove the PKM header size
 				} else {
 					mSize = mWidth * mHeight * mChannels;
@@ -456,7 +458,7 @@ void TextureLoader::reset() {
 	mLoaded = false;
 	mTexLoaded = false;
 	mDirectUpload = false;
-	mImgType = STBI_unknown;
+	mImgType = Image::Format::Unknown;
 	mIsCompressed = 0;
 }
 

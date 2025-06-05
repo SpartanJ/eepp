@@ -48,7 +48,7 @@ elif [[ "$CONFIG" == *"arm64"* && "$(uname -m)" == "x86_64" ]]; then
   PREMAKE5_ARCH="--arch=arm64"
 fi
 
-PREMAKE5_ARGS="--file=../../premake5.lua --os=windows --cc=mingw --windows-mingw-build --with-text-shaper $PREMAKE5_ARCH gmake2"
+PREMAKE5_ARGS="--file=../../premake5.lua --os=windows --cc=mingw --windows-mingw-build --with-text-shaper $PREMAKE5_ARCH gmake"
 
 if command -v premake5 &> /dev/null
 then

@@ -399,7 +399,7 @@ Notice: eepp uses [mojoAL](https://icculus.org/mojoAL/) by default as an OpenAL 
 OpenAL is optionally available as an audio backend. If you want to use it, you
 have the alternative to enable it. To enable it and disable the mojoAL drop-in replacemente, you
 need to add the parameter `--without-mojoal` to any `premake` call
-( ex: `premake5 --without-mojoal gmake2` ).
+( ex: `premake5 --without-mojoal gmake` ).
 
 ### GNU/Linux
 
@@ -410,7 +410,7 @@ will be installed anyways ):
 
 Clone the repository and run on the repository root directory:
 
-`premake5 gmake2`
+`premake5 gmake`
 
 or if you have premake4 installed you can run:
 
@@ -473,7 +473,7 @@ Execute `C:\w64devkit\w64devkit.exe` as an administrator (`right click` -> `Run 
 
 Then go to the `eepp` cloned repository directory and run:
 
-`premake5.exe --windows-mingw-build gmake2`
+`premake5.exe --windows-mingw-build gmake`
 
 `--windows-mingw-build` will automatically download and link external dependencies (SDL2).
 
@@ -504,7 +504,7 @@ files with [premake4 or premake5](https://premake.github.io/download.html).
 
 Generate the project:
 
-`premake5 --use-frameworks gmake2`
+`premake5 --use-frameworks gmake`
 
 And build it:
 

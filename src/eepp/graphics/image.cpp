@@ -1,7 +1,7 @@
 #include <SOIL2/src/SOIL2/SOIL2.h>
 #include <SOIL2/src/SOIL2/image_helper.h>
 #include <SOIL2/src/SOIL2/stb_image.h>
-#include <algorithm>
+
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/stbi_iocb.hpp>
@@ -9,14 +9,21 @@
 #include <eepp/system/log.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
+
+#include <algorithm>
+#include <memory>
+
 #include <imageresampler/resampler.h>
 #include <jpeg-compressor/jpge.h>
-#include <memory>
+#include <optional>
 
 #define NANOSVG_IMPLEMENTATION
 #include <nanosvg/nanosvg.h>
 #define NANOSVGRAST_IMPLEMENTATION
 #include <nanosvg/nanosvgrast.h>
+
+#include <webp/decode.h>
+#include <webp/encode.h>
 
 namespace EE { namespace Graphics {
 
@@ -209,6 +216,37 @@ static bool svg_test_from_stream( IOStream& stream ) {
 	return false;
 }
 
+struct ImageInfo {
+	int width{ 0 };
+	int height{ 0 };
+	int channels{ 4 };
+};
+
+static std::optional<ImageInfo> webp_test_from_memory( const Uint8* imageData,
+													   const unsigned int& imageDataSize ) {
+	if ( !imageData || imageDataSize < 12 ) // Minimum WebP header is ~12 bytes (RIFF+size+WEBP)
+		return {};
+	WebPDecoderConfig config;
+	if ( !WebPInitDecoderConfig( &config ) )
+		return {};
+	VP8StatusCode status =
+		WebPGetFeatures( imageData, static_cast<size_t>( imageDataSize ), &config.input );
+	if ( status == VP8_STATUS_OK )
+		return ImageInfo{ config.input.width, config.input.height, config.input.has_alpha ? 4 : 3 };
+	return {};
+}
+
+static std::optional<ImageInfo> webp_test_from_stream( IOStream& stream ) {
+	char buf[128]{ 0 };
+	stream.read( buf, 128 );
+	return webp_test_from_memory( reinterpret_cast<const Uint8*>( &buf[0] ), 128 );
+}
+
+static std::optional<ImageInfo> webp_test( const std::string& path ) {
+	IOStreamFile stream( path );
+	return webp_test_from_stream( stream );
+}
+
 Image* Image::New() {
 	return eeNew( Image, () );
 }
@@ -253,21 +291,23 @@ Image* Image::New( IOStream& stream, const unsigned int& forceChannels,
 	return eeNew( Image, ( stream, forceChannels, formatConfiguration ) );
 }
 
-std::string Image::saveTypeToExtension( const Int32& Format ) {
+std::string Image::saveTypeToExtension( Image::SaveType Format ) {
 	switch ( Format ) {
-		case Image::SaveType::SAVE_TYPE_TGA:
+		case Image::SaveType::TGA:
 			return "tga";
-		case Image::SaveType::SAVE_TYPE_BMP:
+		case Image::SaveType::BMP:
 			return "bmp";
-		case Image::SaveType::SAVE_TYPE_PNG:
+		case Image::SaveType::PNG:
 			return "png";
-		case Image::SaveType::SAVE_TYPE_DDS:
+		case Image::SaveType::DDS:
 			return "dds";
-		case Image::SaveType::SAVE_TYPE_JPG:
+		case Image::SaveType::JPG:
 			return "jpg";
-		case Image::SaveType::SAVE_TYPE_QOI:
+		case Image::SaveType::QOI:
 			return "qoi";
-		case Image::SaveType::SAVE_TYPE_UNKNOWN:
+		case Image::SaveType::WEBP:
+			return "webp";
+		case Image::SaveType::Unknown:
 		default:
 			break;
 	}
@@ -276,20 +316,22 @@ std::string Image::saveTypeToExtension( const Int32& Format ) {
 }
 
 Image::SaveType Image::extensionToSaveType( const std::string& Extension ) {
-	SaveType saveType = SaveType::SAVE_TYPE_UNKNOWN;
+	SaveType saveType = SaveType::Unknown;
 
 	if ( Extension == "tga" )
-		saveType = SaveType::SAVE_TYPE_TGA;
+		saveType = SaveType::TGA;
 	else if ( Extension == "bmp" )
-		saveType = SaveType::SAVE_TYPE_BMP;
+		saveType = SaveType::BMP;
 	else if ( Extension == "png" )
-		saveType = SaveType::SAVE_TYPE_PNG;
+		saveType = SaveType::PNG;
 	else if ( Extension == "dds" )
-		saveType = SaveType::SAVE_TYPE_DDS;
+		saveType = SaveType::DDS;
 	else if ( Extension == "jpg" || Extension == "jpeg" )
-		saveType = SaveType::SAVE_TYPE_JPG;
+		saveType = SaveType::JPG;
 	else if ( Extension == "qoi" )
-		saveType = SaveType::SAVE_TYPE_QOI;
+		saveType = SaveType::QOI;
+	else if ( Extension == "webp" )
+		saveType = SaveType::WEBP;
 
 	return saveType;
 }
@@ -310,6 +352,7 @@ Image::PixelFormat Image::channelsToPixelFormat( const Uint32& channels ) {
 bool Image::getInfo( const std::string& path, int* width, int* height, int* channels,
 					 const FormatConfiguration& imageFormatConfiguration ) {
 	bool res = stbi_info( path.c_str(), width, height, channels ) != 0;
+	std::optional<ImageInfo> info;
 
 	if ( !res && svg_test( path ) ) {
 		NSVGimage* image = nsvgParseFromFile( path.c_str(), "px", 96.0f, 0xFFFFFFFF );
@@ -323,6 +366,11 @@ bool Image::getInfo( const std::string& path, int* width, int* height, int* chan
 
 			res = true;
 		}
+	} else if ( !res && ( info = webp_test( path ) ) ) {
+		*width = info->width;
+		*height = info->height;
+		*channels = info->channels;
+		res = true;
 	} else if ( !res && PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string npath( path );
 		Pack* tPack = PackManager::instance()->exists( npath );
@@ -362,6 +410,7 @@ bool Image::getInfoFromMemory( const unsigned char* data, const size_t& dataSize
 							   int* height, int* channels,
 							   const FormatConfiguration& imageFormatConfiguration ) {
 	bool res = stbi_info_from_memory( data, dataSize, width, height, channels ) != 0;
+	std::optional<ImageInfo> info;
 
 	if ( !res && svg_test_from_memory( data, dataSize ) ) {
 		ScopedBuffer sdata( dataSize + 1 );
@@ -378,44 +427,70 @@ bool Image::getInfoFromMemory( const unsigned char* data, const size_t& dataSize
 
 			res = true;
 		}
+	} else if ( !res && ( info = webp_test_from_memory( data, dataSize ) ) ) {
+		*width = info->width;
+		*height = info->height;
+		*channels = info->channels;
+		res = true;
 	}
 
 	return res;
 }
 
 bool Image::isImage( const std::string& path ) {
-	return STBI_unknown != stbi_test( path.c_str() ) || svg_test( path );
+	return STBI_unknown != stbi_test( path.c_str() ) || svg_test( path ) || webp_test( path );
 }
 
 bool Image::isImage( const unsigned char* data, const size_t& dataSize ) {
 	return STBI_unknown != stbi_test_from_memory( data, dataSize ) ||
-		   svg_test_from_memory( data, dataSize );
+		   svg_test_from_memory( data, dataSize ) || webp_test_from_memory( data, dataSize );
 }
 
 Image::Format Image::getFormat( const std::string& path ) {
-	auto format = stbi_test( path.c_str() );
-	if ( format == STBI_unknown )
-		return svg_test( path ) ? Image::Format::SVG : Image::Format::Unknown;
-	return static_cast<Image::Format>( format );
+	auto format = static_cast<Image::Format>( stbi_test( path.c_str() ) );
+	if ( format == Image::Format::Unknown )
+		format = svg_test( path ) ? Image::Format::SVG : Image::Format::Unknown;
+	if ( format == Image::Format::Unknown )
+		format = webp_test( path ) ? Image::Format::WEBP : Image::Format::Unknown;
+	return format;
 }
 
 Image::Format Image::getFormat( const unsigned char* data, const size_t& dataSize ) {
-	auto format = stbi_test_from_memory( data, dataSize );
-	if ( format == STBI_unknown )
-		return svg_test_from_memory( data, dataSize ) ? Image::Format::SVG : Image::Format::Unknown;
-	return static_cast<Image::Format>( format );
+	auto format = static_cast<Image::Format>( stbi_test_from_memory( data, dataSize ) );
+	if ( format == Image::Format::Unknown ) {
+		format =
+			svg_test_from_memory( data, dataSize ) ? Image::Format::SVG : Image::Format::Unknown;
+	}
+	if ( format == Image::Format::Unknown ) {
+		format =
+			webp_test_from_memory( data, dataSize ) ? Image::Format::WEBP : Image::Format::Unknown;
+	}
+	return format;
+}
+
+Image::Format Image::getFormat( IOStream& stream ) {
+	stbi_io_callbacks callbacks;
+	callbacks.read = &IOCb::read;
+	callbacks.skip = &IOCb::skip;
+	callbacks.eof = &IOCb::eof;
+	auto format = static_cast<Image::Format>( stbi_test_from_callbacks( &callbacks, &stream ) );
+	if ( format == Image::Format::Unknown )
+		format = svg_test_from_stream( stream ) ? Image::Format::SVG : Image::Format::Unknown;
+	if ( format == Image::Format::Unknown )
+		format = webp_test_from_stream( stream ) ? Image::Format::WEBP : Image::Format::Unknown;
+	return format;
 }
 
 bool Image::isImageExtension( const std::string& path ) {
 	const std::string ext( FileSystem::fileExtension( path ) );
 	return ( ext == "png" || ext == "tga" || ext == "bmp" || ext == "jpg" || ext == "gif" ||
 			 ext == "jpeg" || ext == "dds" || ext == "psd" || ext == "hdr" || ext == "pic" ||
-			 ext == "pvr" || ext == "pkm" || ext == "svg" || ext == "qoi" );
+			 ext == "pvr" || ext == "pkm" || ext == "svg" || ext == "qoi" || ext == "webp" );
 }
 
 std::vector<std::string> Image::getImageExtensionsSupported() {
-	return std::vector<std::string>{ "png", "tga", "bmp", "jpg", "gif", "jpeg", "dds",
-									 "psd", "hdr", "pic", "pvr", "pkm", "svg",	"qoi" };
+	return std::vector<std::string>{ "png", "tga", "bmp", "jpg", "gif", "jpeg", "dds", "psd",
+									 "hdr", "pic", "pvr", "pkm", "svg", "qoi",	"webp" };
 }
 
 std::string Image::getLastFailureReason() {
@@ -503,6 +578,10 @@ Image::Image( std::string Path, const unsigned int& forceChannels,
 		mLoadedFromStbi = true;
 	} else if ( svg_test( Path ) ) {
 		svgLoad( nsvgParseFromFile( Path.c_str(), "px", 96.0f, 0xFFFFFFFF ) );
+	} else if ( webp_test( Path ) ) {
+		ScopedBuffer buf;
+		FileSystem::fileGet( Path, buf );
+		webpLoad( buf.get(), buf.size() );
 	} else if ( PackManager::instance()->isFallbackToPacksActive() &&
 				NULL != ( tPack = PackManager::instance()->exists( Path ) ) ) {
 		loadFromPack( tPack, Path );
@@ -540,6 +619,8 @@ Image::Image( const Uint8* imageData, const unsigned int& imageDataSize,
 		memcpy( data.get(), imageData, imageDataSize );
 		data[imageDataSize] = '\0';
 		svgLoad( nsvgParse( (char*)data.get(), "px", 96.0f, 0xFFFFFFFF ) );
+	} else if ( webp_test_from_memory( imageData, imageDataSize ) ) {
+		webpLoad( imageData, imageDataSize );
 	} else {
 		std::string reason = ".";
 
@@ -603,6 +684,11 @@ Image::Image( IOStream& stream, const unsigned int& forceChannels,
 			data[data.length() - 1] = '\0';
 
 			svgLoad( nsvgParse( (char*)data.get(), "px", 96.0f, 0xFFFFFFFF ) );
+		} else if ( webp_test_from_stream( stream ) ) {
+			ScopedBuffer data( stream.getSize() );
+			stream.seek( 0 );
+			stream.read( (char*)data.get(), data.length() );
+			webpLoad( data.get(), data.size() );
 		} else {
 			Log::error( "Failed to load image. Reason: %s", stbi_failure_reason() );
 		}
@@ -614,6 +700,96 @@ Image::Image( IOStream& stream, const unsigned int& forceChannels,
 Image::~Image() {
 	if ( !mAvoidFree )
 		clearCache();
+}
+
+void Image::webpLoad( const Uint8* imageData, size_t imageDataSize ) {
+	WebPBitstreamFeatures features;
+	if ( WebPGetFeatures( imageData, imageDataSize, &features ) != VP8_STATUS_OK )
+		return;
+
+	int channels = features.has_alpha ? 4 : 3;
+	int datasize = features.width * features.height * channels;
+	int stride = channels * features.width;
+	Uint8* dstImage = (Uint8*)malloc( datasize );
+
+	bool errdec = false;
+	if ( features.has_alpha ) {
+		errdec =
+			WebPDecodeRGBAInto( imageData, imageDataSize, dstImage, datasize, stride ) == nullptr;
+	} else {
+		errdec =
+			WebPDecodeRGBInto( imageData, imageDataSize, dstImage, datasize, stride ) == nullptr;
+	}
+
+	if ( errdec || nullptr == dstImage ) {
+		eeSAFE_FREE( dstImage );
+		return;
+	}
+
+	mPixels = dstImage;
+	mWidth = features.width;
+	mHeight = features.height;
+	mChannels = channels;
+	mLoadedFromStbi = true;
+}
+
+std::vector<Uint8> webpPacker( const Image& img, Uint32 quality, Uint32 compressionMethod,
+							   bool lossless ) {
+	quality = eeclamp( quality, 0u, 100u );
+	compressionMethod = eeclamp( quality, 0u, 6u );
+
+	if ( img.getChannels() < 3 )
+		return {};
+
+	Sizei s( img.getWidth(), img.getHeight() );
+	const Uint8* r = img.getPixelsPtr();
+
+	WebPConfig config;
+	WebPPicture pic;
+	if ( !WebPConfigInit( &config ) || !WebPPictureInit( &pic ) ) {
+		return {};
+	}
+
+	WebPMemoryWriter wrt;
+	if ( lossless ) {
+		config.lossless = 1;
+		config.exact = 1;
+	}
+	config.method = compressionMethod;
+	config.quality = quality;
+	config.use_sharp_yuv = 1;
+	pic.use_argb = 1;
+	pic.width = s.getWidth();
+	pic.height = s.getHeight();
+	pic.writer = WebPMemoryWrite;
+	pic.custom_ptr = &wrt;
+	WebPMemoryWriterInit( &wrt );
+
+	bool successImport = false;
+	if ( img.getChannels() == 3 ) {
+		successImport = WebPPictureImportRGB( &pic, r, 3 * s.getWidth() );
+	} else {
+		successImport = WebPPictureImportRGBA( &pic, r, 4 * s.getHeight() );
+	}
+
+	bool successEncode = false;
+	if ( successImport ) {
+		successEncode = WebPEncode( &config, &pic );
+	}
+	WebPPictureFree( &pic );
+
+	if ( !successEncode ) {
+		WebPMemoryWriterClear( &wrt );
+		return {};
+	}
+
+	// copy from wrt
+	std::vector<Uint8> dst;
+	dst.resize( wrt.size );
+	Uint8* w = dst.data();
+	memcpy( w, wrt.mem, wrt.size );
+	WebPMemoryWriterClear( &wrt );
+	return dst;
 }
 
 void Image::svgLoad( NSVGimage* image ) {
@@ -672,6 +848,8 @@ void Image::loadFromPack( Pack* Pack, const std::string& FilePackPath ) {
 			memcpy( data.get(), buffer.get(), buffer.length() );
 			data[buffer.length()] = '\0';
 			svgLoad( nsvgParse( (char*)data.get(), "px", 96.0f, 0xFFFFFFFF ) );
+		} else if ( webp_test_from_memory( buffer.get(), buffer.length() ) ) {
+			webpLoad( buffer.get(), buffer.length() );
 		} else {
 			Log::error( "Failed to load image %s. Reason: %s", FilePackPath.c_str(),
 						stbi_failure_reason() );
@@ -784,9 +962,15 @@ bool Image::saveToFile( const std::string& filepath, const SaveType& Format ) {
 		FileSystem::makeDir( fpath );
 
 	if ( NULL != mPixels && 0 != mWidth && 0 != mHeight && 0 != mChannels ) {
-		if ( SaveType::SAVE_TYPE_JPG != Format ) {
-			Res = 0 != ( SOIL_save_image( filepath.c_str(), Format, (Int32)mWidth, (Int32)mHeight,
-										  mChannels, getPixelsPtr() ) );
+		if ( SaveType::WEBP == Format ) {
+			auto data = webpPacker( *this, mFormatConfiguration.webpSaveQuality(),
+									mFormatConfiguration.webpSaveLossless(),
+									mFormatConfiguration.webpCompressionMethod() );
+			if ( !data.empty() )
+				FileSystem::fileWrite( filepath, data );
+		} else if ( SaveType::JPG != Format ) {
+			Res = 0 != ( SOIL_save_image( filepath.c_str(), (int)Format, (Int32)mWidth,
+										  (Int32)mHeight, mChannels, getPixelsPtr() ) );
 		} else {
 			jpge::params params;
 			params.m_quality = mFormatConfiguration.jpegSaveQuality();

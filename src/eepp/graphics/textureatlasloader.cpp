@@ -477,8 +477,9 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 	}
 
 	if ( NeedUpdate != ATLAS_IS_UPDATED ) {
-		std::string tapath( FileSystem::fileRemoveExtension( TextureAtlasPath ) + "." +
-							Image::saveTypeToExtension( mTexGrHdr.Format ) );
+		std::string tapath(
+			FileSystem::fileRemoveExtension( TextureAtlasPath ) + "." +
+			Image::saveTypeToExtension( static_cast<Image::SaveType>( mTexGrHdr.Format ) ) );
 
 		if ( ATLAS_NEEDS_RECREATE == NeedUpdate ) {
 			TexturePacker tp(
@@ -511,7 +512,8 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 				if ( z != 0 ) {
 					tapath = FileSystem::fileRemoveExtension( TextureAtlasPath ) + "_ch" +
 							 String::toString( z ) + "." +
-							 Image::saveTypeToExtension( mTexGrHdr.Format );
+							 Image::saveTypeToExtension(
+								 static_cast<Image::SaveType>( mTexGrHdr.Format ) );
 				}
 
 				Image Img( tapath );

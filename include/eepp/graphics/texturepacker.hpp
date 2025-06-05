@@ -136,7 +136,7 @@ class EE_API TexturePacker {
 	 * here.
 	 */
 	void save( const std::string& Filepath,
-			   const Image::SaveType& Format = Image::SaveType::SAVE_TYPE_PNG,
+			   const Image::SaveType& Format = Image::SaveType::PNG,
 			   const bool& KeepExtensions = false );
 
 	/** Clear all the textures added */

@@ -240,7 +240,7 @@ void EETest::createUIThemeTextureAtlas() {
 		TexturePacker tp( 2048, 2048, PixelDensity::toFloat( PD ), true, false, 2 );
 		tp.addTexturesPath( Path );
 		tp.packTextures();
-		tp.save( tgpath + ".png", Image::SaveType::SAVE_TYPE_PNG );
+		tp.save( tgpath + ".png", Image::SaveType::PNG );
 	} else {
 		TextureAtlasLoader tgl;
 		tgl.updateTextureAtlas( tgpath + EE_TEXTURE_ATLAS_EXTENSION, Path );

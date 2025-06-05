@@ -20,7 +20,7 @@ for i in "$@"; do
 	esac
 done
 
-premake5 --file=../../../premake5.lua --use-frameworks gmake2 || exit
+premake5 --file=../../../premake5.lua --use-frameworks gmake || exit
 
 make -C ../../../make/macosx/ -j$(sysctl -n hw.ncpu) -e verbose=true -e config=release_x86_64 ecode || exit
 rm -rf ./ecode.app

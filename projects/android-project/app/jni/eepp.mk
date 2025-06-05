@@ -11,6 +11,7 @@ EEPP_C_INCLUDES			:= \
 	$(EEPP_THIRD_PARTY_PATH) \
 	$(EEPP_THIRD_PARTY_PATH)/freetype2/include \
 	$(EEPP_THIRD_PARTY_PATH)/libpng \
+	$(EEPP_THIRD_PARTY_PATH)/libwebp/src \
 	$(SDL_PATH)/include \
 	$(EEPP_THIRD_PARTY_PATH)/chipmunk \
 	$(EEPP_INC_PATH)/eepp/thirdparty \
@@ -106,7 +107,7 @@ LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES)
 
 LOCAL_SRC_FILES			:= $(foreach F, $(CODE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES	:= freetype libpng pcre2 oniguruma harfbuzz
+LOCAL_STATIC_LIBRARIES	:= freetype libpng libwebp pcre2 oniguruma harfbuzz
 
 LOCAL_SHARED_LIBRARIES	:= SDL2
 
@@ -176,6 +177,31 @@ LOCAL_SRC_FILES			:= $(foreach F, $(LIBPNG_SRCS), $(addprefix $(dir $(F)),$(notd
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** LIBPNG ***************
+
+#*************** LIBWEBP ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
+
+LOCAL_MODULE			:= libwebp
+
+LIBWEBP_SRCS			:= \
+	libwebp/src/dec/*.c \
+	libwebp/src/demux/*.c \
+	libwebp/src/dsp/*.c \
+	libwebp/src/enc/*.c \
+	libwebp/src/mux/*.c \
+	libwebp/src/utils/*.c \
+	libwebp/src/webp/*.c \
+	libwebp/sharpyuv/*.c
+
+LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/libwebp $(LOCAL_PATH)/libwebp/src $(LOCAL_PATH)/sharpyuv
+LOCAL_CFLAGS			:= -Os
+
+LOCAL_SRC_FILES			:= $(foreach F, $(LIBWEBP_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** LIBWEBP ***************
 
 #**************** PCRE2 ***************
 include $(CLEAR_VARS)

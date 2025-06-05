@@ -46,7 +46,7 @@ TexturePacker::TexturePacker( const Uint32& maxWidth, const Uint32& maxHeight,
 	mTextureFilter( textureFilter ),
 	mKeepExtensions( false ),
 	mScalableSVG( scalableSVG ),
-	mFormat( Image::SaveType::SAVE_TYPE_PNG ) {
+	mFormat( Image::SaveType::PNG ) {
 	setOptions( maxWidth, maxHeight, pixelDensity, forcePowOfTwo, scalableSVG, pixelBorder,
 				textureFilter, allowChilds, allowFlipping );
 }
@@ -70,7 +70,7 @@ TexturePacker::TexturePacker() :
 	mTextureFilter( Texture::Filter::Linear ),
 	mKeepExtensions( false ),
 	mScalableSVG( false ),
-	mFormat( Image::SaveType::SAVE_TYPE_PNG ) {}
+	mFormat( Image::SaveType::PNG ) {}
 
 TexturePacker::~TexturePacker() {
 	close();
@@ -687,7 +687,7 @@ void TexturePacker::saveTextureRegions() {
 	TexGrHdr.Version = HDR_TEXTURE_ATLAS_VERSION;
 	TexGrHdr.Date = static_cast<Uint64>( Sys::getSystemTime() );
 	TexGrHdr.TextureCount = 1;
-	TexGrHdr.Format = mFormat;
+	TexGrHdr.Format = static_cast<int>( mFormat );
 	TexGrHdr.Width = mWidth;
 	TexGrHdr.Height = mHeight;
 	TexGrHdr.PixelBorder = mPixelBorder;

@@ -760,7 +760,8 @@ function add_static_links()
 			"pugixml-static",
 			"vorbis-static",
 			"pcre2-8-static",
-			"oniguruma-static"
+			"oniguruma-static",
+			"libwebp-static",
 	}
 
 	if not _OPTIONS["without-mojoal"] then
@@ -962,7 +963,8 @@ function build_eepp( build_name )
 		"src/thirdparty/libvorbis/include",
 		"src/thirdparty/mbedtls/include",
 		"src/thirdparty/pcre2/src",
-		"src/thirdparty/oniguruma"
+		"src/thirdparty/oniguruma",
+		"src/thirdparty/libwebp/src",
 	}
 
 	defines { "PCRE2_STATIC", "PCRE2_CODE_UNIT_WIDTH=8", "ONIG_STATIC" }
@@ -1132,6 +1134,14 @@ solution "eepp"
 		files { "src/thirdparty/libpng/**.c" }
 		includedirs { "src/thirdparty/libpng/include" }
 		build_base_configuration( "libpng" )
+
+	project "libwebp-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/libwebp/**.c" }
+		includedirs { "src/thirdparty/libwebp" }
+		build_base_configuration( "libwebp" )
 
 	project "freetype-static"
 		kind "StaticLib"
@@ -1646,7 +1656,6 @@ solution "eepp"
 			links { "util" }
 
 			if os_findlib("dw") then
-				print("Found dw")
 				links { "dw" }
 				defines { "ECODE_HAS_DW" }
 			end

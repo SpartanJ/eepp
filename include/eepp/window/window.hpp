@@ -364,7 +364,7 @@ class EE_API Window {
 	 * @return False if failed, otherwise returns True
 	 */
 	bool takeScreenshot( std::string filepath = "",
-						 const Image::SaveType& Format = Image::SaveType::SAVE_TYPE_PNG );
+						 const Image::SaveType& Format = Image::SaveType::PNG );
 
 	/** @return The pointer to the Window Info ( read only ) */
 	const WindowInfo* getWindowInfo() const;

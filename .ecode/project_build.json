@@ -119,7 +119,7 @@
   "ecode-windows": {
     "build": [
       {
-        "args": "--windows-mingw-build gmake2",
+        "args": "--windows-mingw-build gmake",
         "command": "premake5.exe",
         "working_dir": ""
       },
@@ -287,6 +287,12 @@
         "args": "",
         "command": "${project_root}/bin/eepp-7guis-timer-debug",
         "name": "eepp-7guis-timer-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eeiv-debug",
+        "name": "eeiv-debug",
         "working_dir": "${project_root}/bin"
       }
     ],
@@ -511,7 +517,7 @@
   "eepp-windows": {
     "build": [
       {
-        "args": "--windows-mingw-build gmake2",
+        "args": "--windows-mingw-build gmake",
         "command": "premake5.exe",
         "working_dir": ""
       },

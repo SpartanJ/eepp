@@ -22,12 +22,12 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		parser, "output-file", "Texture atlas file output path. Extension must be: \".eta\"",
 		{ 'o', "output-file" }, "", args::Options::Required | args::Options::Single );
 	std::unordered_map<std::string, Image::SaveType> saveTypeFormat{
-		{ "PNG", Image::SaveType::SAVE_TYPE_PNG }, { "DDS", Image::SaveType::SAVE_TYPE_DDS },
-		{ "TGA", Image::SaveType::SAVE_TYPE_TGA }, { "BMP", Image::SaveType::SAVE_TYPE_BMP },
-		{ "JPG", Image::SaveType::SAVE_TYPE_JPG }, { "QOI", Image::SaveType::SAVE_TYPE_QOI } };
+		{ "PNG", Image::SaveType::PNG }, { "DDS", Image::SaveType::DDS },
+		{ "TGA", Image::SaveType::TGA }, { "BMP", Image::SaveType::BMP },
+		{ "JPG", Image::SaveType::JPG }, { "QOI", Image::SaveType::QOI } };
 	args::MapFlag<std::string, Image::SaveType> saveType(
 		parser, "image-format", "Output image format.", { 'f', "image-format" }, saveTypeFormat,
-		Image::SaveType::SAVE_TYPE_PNG, args::Options::Single );
+		Image::SaveType::PNG, args::Options::Single );
 	std::unordered_map<std::string, PixelDensitySize> pixelDensityMap{
 		{ "MDPI", PixelDensitySize::MDPI },
 		{ "HDPI", PixelDensitySize::HDPI },

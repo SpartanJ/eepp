@@ -93,7 +93,7 @@ template <typename T> class UIDataBind {
 			new UIDataBind<T>( t, widget, converter, valueKey, eventType ) );
 	}
 
-	UIDataBind() {}
+	UIDataBind() : dataInitialized( true ) {}
 
 	UIDataBind( T* t, const std::unordered_set<UIWidget*>& widgets,
 				const Converter& converter = UIDataBind<T>::converterDefault(),
@@ -121,10 +121,11 @@ template <typename T> class UIDataBind {
 		for ( auto widget : widgets )
 			bindListeners( widget );
 		set( *data );
+		dataInitialized = true;
 	}
 
 	void set( const T& t ) {
-		if ( t == *data )
+		if ( dataInitialized && t == *data )
 			return;
 		inSetValue = true;
 		*data = t;
@@ -135,7 +136,7 @@ template <typename T> class UIDataBind {
 	}
 
 	void set( T&& t ) {
-		if ( t == *data )
+		if ( dataInitialized && t == *data )
 			return;
 		inSetValue = true;
 		*data = std::move( t );
@@ -193,6 +194,7 @@ template <typename T> class UIDataBind {
 	std::unordered_map<UIWidget*, Uint32> valueCbs;
 	std::unordered_map<UIWidget*, Uint32> closeCbs;
 	bool inSetValue{ false };
+	bool dataInitialized{ false };
 	const PropertyDefinition* property{ nullptr };
 	Converter converter;
 	Event::EventType eventType{ Event::OnValueChange };

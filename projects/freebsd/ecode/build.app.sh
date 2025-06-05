@@ -31,7 +31,7 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-premake5 --with-text-shaper gmake2 || exit
+premake5 --with-text-shaper gmake || exit
 cd make/bsd || exit
 gmake -j"$(nproc)" config=release_x86_64 ecode || exit
 cd "$DIRPATH" || exit
