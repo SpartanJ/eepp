@@ -27,7 +27,6 @@ newoption {
 		{ "SDL2",  "SDL2" },
 	}
 }
-newoption { trigger = "deps-arch", description = "Used exclusively to indicate premake the architecture of the dependencies that need to be downloaded" }
 newoption { trigger = "with-static-cpp", description = "Builds statically libstdc++" }
 
 function get_dll_extension()
@@ -194,7 +193,7 @@ function copy_sdl()
 	if _OPTIONS["windows-vc-build"] then
 		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/lib/x64/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/SDL2.dll" )
 		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/lib/x64/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/SDL2.dll" )
-	elseif _OPTIONS["windows-mingw-build"] and _OPTIONS["deps-arch"] ~= "arm64" then
+	elseif _OPTIONS["windows-mingw-build"] and _OPTIONS["arch"] ~= "arm64" then
 		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/bin/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/SDL2.dll" )
 		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/bin/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/SDL2.dll" )
 	end
@@ -221,10 +220,10 @@ function download_and_extract_dependencies()
 		if _OPTIONS["windows-vc-build"] then
 			download_and_extract_sdl(remote_sdl2_devel_vc_url)
 			copy_sdl()
-		elseif _OPTIONS["windows-mingw-build"] and _OPTIONS["deps-arch"] ~= "arm64" then
+		elseif _OPTIONS["windows-mingw-build"] and _OPTIONS["arch"] ~= "arm64" then
 			download_and_extract_sdl(remote_sdl2_devel_mingw_url)
 			copy_sdl()
-		elseif _OPTIONS["windows-mingw-build"] and _OPTIONS["deps-arch"] == "arm64" then
+		elseif _OPTIONS["windows-mingw-build"] and _OPTIONS["arch"] == "arm64" then
 			download_and_extract_sdl(remote_sdl2_devel_src_url)
 		elseif os.istarget("ios") then
 			download_and_extract_sdl(remote_sdl2_devel_src_url)
@@ -237,7 +236,7 @@ function build_arch_configuration()
 		buildoptions { "-D__USE_MINGW_ANSI_STDIO=1 -B /usr/bin/i686-w64-mingw32-" }
 
 	filter {"architecture:x86_64", "options:cc=mingw"}
-		if _OPTIONS["deps-arch"] ~= "arm64" then
+		if _OPTIONS["arch"] ~= "arm64" then
 			buildoptions { "-D__USE_MINGW_ANSI_STDIO=1 -B /usr/bin/x86_64-w64-mingw32-" }
 		end
 
@@ -454,7 +453,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/lib/", "/usr/i686-w64-mingw32/sys-root/mingw/lib/" }
 
 	filter { "options:windows-mingw-build", "architecture:x86_64" }
-		if _OPTIONS["deps-arch"] ~= "arm64" then
+		if _OPTIONS["arch"] ~= "arm64" then
 			syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/lib/", "/usr/x86_64-w64-mingw32/sys-root/mingw/lib/" }
 		end
 
@@ -833,7 +832,7 @@ function build_eepp( build_name )
 		incdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/include/" }
 
 	filter { "options:windows-mingw-build", "architecture:x86_64" }
-		if _OPTIONS["deps-arch"] ~= "arm64" then
+		if _OPTIONS["arch"] ~= "arm64" then
 			incdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/include/" }
 		end
 
@@ -1176,7 +1175,7 @@ workspace "eepp"
 		filter { "options:windows-mingw-build", "architecture:x86" }
 				incdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/include/" }
 		filter { "options:windows-mingw-build", "architecture:x86_64" }
-			if _OPTIONS["deps-arch"] ~= "arm64" then
+			if _OPTIONS["arch"] ~= "arm64" then
 				incdirs { "src/thirdparty/" .. remote_sdl2_version .."/x86_64-w64-mingw32/include/" }
 			end
 		filter { "options:windows-mingw-build", "options:arch=arm64" }
