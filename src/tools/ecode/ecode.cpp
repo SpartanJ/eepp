@@ -2238,11 +2238,29 @@ void App::loadImageFromPath( const std::string& path ) {
 	loadImageFromMedium( path, false );
 }
 
+static bool isVideoExtension( std::string_view ext ) {
+	static constexpr std::array<std::string_view, 10> videoExtensions = {
+		"mp4", "mov", "mkv", "avi", "wmv", "webm", "flv", "mpg", "mpeg", "m4v" };
+	for ( const auto& videoExt : videoExtensions )
+		if ( String::iequals( ext, videoExt ) )
+			return true;
+	return false;
+}
+
+static bool isDocumentExtension( std::string_view ext ) {
+	static constexpr std::array<std::string_view, 3> videoExtensions = { "doc", "docx", "pdf" };
+	for ( const auto& videoExt : videoExtensions )
+		if ( String::iequals( ext, videoExt ) )
+			return true;
+	return false;
+}
+
 bool App::loadFileFromPath(
 	std::string path, bool inNewTab, UICodeEditor* codeEditor,
 	std::function<void( UICodeEditor* codeEditor, const std::string& path )> onLoaded ) {
+	std::string ext = FileSystem::fileExtension( path );
 
-	if ( FileSystem::fileExtension( path ) == "lnk" ) {
+	if ( ext == "lnk" ) {
 		auto target = Sys::getShortcutTarget( path );
 		if ( !target.empty() ) {
 			if ( FileSystem::fileExists( target ) )
@@ -2253,8 +2271,9 @@ bool App::loadFileFromPath(
 			return false;
 	}
 
-	if ( Image::isImageExtension( path ) && Image::isImage( path ) &&
-		 FileSystem::fileExtension( path ) != "svg" ) {
+	if ( isVideoExtension( ext ) || isDocumentExtension( ext ) ) {
+		Engine::instance()->openURI( path );
+	} else if ( Image::isImageExtension( path ) && Image::isImage( path ) && ext != "svg" ) {
 		loadImageFromPath( path );
 	} else {
 		UITab* tab = mSplitter->isDocumentOpen( path );

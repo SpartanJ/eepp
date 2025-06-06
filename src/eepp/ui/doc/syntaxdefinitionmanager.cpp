@@ -1088,7 +1088,7 @@ void SyntaxDefinitionManager::loadFromFolder( const std::string& folderPath ) {
 
 std::vector<const SyntaxDefinition*>
 SyntaxDefinitionManager::languagesThatSupportExtension( std::string extension ) const {
-	std::vector<const SyntaxDefinition*> langs;
+	std::unordered_set<const SyntaxDefinition*> langs;
 	if ( extension.empty() )
 		return {};
 
@@ -1101,32 +1101,45 @@ SyntaxDefinitionManager::languagesThatSupportExtension( std::string extension ) 
 				 String::endsWith( ext, "$" ) ) {
 				LuaPattern words( ext );
 				int start, end;
-				if ( words.find( extension, start, end ) )
-					langs.push_back( &definition );
+				if ( words.find( extension, start, end ) ) {
+					langs.insert( &definition );
+					break;
+				}
 			} else if ( extension == ext ) {
-				langs.push_back( &definition );
+				langs.insert( &definition );
+				break;
 			}
 		}
 	}
 
 	for ( const auto& preDefinition : mPreDefinitions ) {
 		for ( const auto& ext : preDefinition.getFiles() ) {
+			if ( std::find_if( langs.begin(), langs.end(),
+							   [&preDefinition]( const SyntaxDefinition* sdf ) {
+								   return preDefinition.getLanguageName() == sdf->getLanguageName();
+							   } ) != langs.end() )
+				continue;
+
 			if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
 				 String::endsWith( ext, "$" ) ) {
 				LuaPattern words( ext );
 				int start, end;
 				if ( words.find( extension, start, end ) ) {
-					langs.push_back( &preDefinition.load() );
+					langs.insert( &preDefinition.load() );
 					break;
 				}
 			} else if ( extension == ext ) {
-				langs.push_back( &preDefinition.load() );
+				langs.insert( &preDefinition.load() );
 				break;
 			}
 		}
 	}
 
-	return langs;
+	std::vector<const SyntaxDefinition*> vlangs;
+	vlangs.reserve( langs.size() );
+	for ( const auto& l : langs )
+		vlangs.push_back( l );
+	return vlangs;
 }
 
 bool SyntaxDefinitionManager::extensionCanRepresentManyLanguages( std::string extension ) const {

@@ -7,27 +7,31 @@ template <typename T> class UIProperty {
 	UIProperty() {}
 
 	UIProperty( T defaultValue, UIWidget* widget,
-				const UIDataBind<T>::Converter& converter = UIDataBind<T>::converterDefault(),
+				const typename EE::UI::UIDataBind<T>::Converter& converter =
+					EE::UI::UIDataBind<T>::converterDefault(),
 				const std::string& valueKey = "value",
 				const Event::EventType& eventType = Event::OnValueChange ) :
 		mValue( std::move( defaultValue ) ),
 		mBindedData( &mValue, widget, converter, valueKey, eventType ) {}
 
 	UIProperty( T defaultValue, const std::unordered_set<UIWidget*>& widgets = {},
-				const UIDataBind<T>::Converter& converter = UIDataBind<T>::converterDefault(),
+				const typename EE::UI::UIDataBind<T>::Converter& converter =
+					EE::UI::UIDataBind<T>::converterDefault(),
 				const std::string& valueKey = "value",
 				const Event::EventType& eventType = Event::OnValueChange ) :
 		mValue( std::move( defaultValue ) ),
 		mBindedData( &mValue, widgets, converter, valueKey, eventType ) {}
 
 	UIProperty( const std::unordered_set<UIWidget*>& widgets = {},
-				const UIDataBind<T>::Converter& converter = UIDataBind<T>::converterDefault(),
+				const typename EE::UI::UIDataBind<T>::Converter& converter =
+					EE::UI::UIDataBind<T>::converterDefault(),
 				const std::string& valueKey = "value",
 				const Event::EventType& eventType = Event::OnValueChange ) :
 		mBindedData( &mValue, widgets, converter, valueKey, eventType ) {}
 
 	UIProperty( UIWidget* widget,
-				const UIDataBind<T>::Converter& converter = UIDataBind<T>::converterDefault(),
+				const typename EE::UI::UIDataBind<T>::Converter& converter =
+					EE::UI::UIDataBind<T>::converterDefault(),
 				const std::string& valueKey = "value",
 				const Event::EventType& eventType = Event::OnValueChange ) :
 		mBindedData( &mValue, widget, converter, valueKey, eventType ) {}

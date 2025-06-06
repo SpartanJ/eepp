@@ -27,7 +27,7 @@ SyntaxDefinition& addBrainfuck() {
 		  "",
 		  {}
 
-		} );
+		} ).setExtensionPriority( false );
 }
 
 }}}} // namespace EE::UI::Doc::Language

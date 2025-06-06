@@ -337,7 +337,7 @@ void LanguagesSyntaxHighlighting::load() {
 	sdm->addPreDefinition( {
 		"Groovy",
 		[]() -> SyntaxDefinition& { return addGroovy(); },
-		{ "%.groovy$" },
+		{ "%.groovy$", "^Jenkinsfile$" },
 	} );
 
 	sdm->addPreDefinition( {
@@ -572,10 +572,10 @@ void LanguagesSyntaxHighlighting::load() {
 	sdm->addPreDefinition( { "Shell script",
 							 []() -> SyntaxDefinition& { return addShellScript(); },
 							 { "%.sh$", "%.bash$", "^%.bashrc$", "^%.bash_profile$", "^%.profile$",
-							   "%.zsh$", "%.fish$", "^PKGBUILD$", "%.winlib$" },
-							 { "^#!.*[ /]bash", "^#!.*[ /]sh" },
+							   "%.zsh$", "%.fish$", "^PKGBUILD$", "%.winlib$", "^APKBUILD$" },
+							 { "^#!.*[ /]bash", "^#!.*[ /]sh", "^#!.*[ /]zsh", "^#!.*[ /]fish" },
 							 "shellscript",
-							 { "bash", "zsh", "sh" } } );
+							 { "bash", "zsh", "sh", "fish" } } );
 
 	sdm->addPreDefinition( {
 		"SmallBASIC",

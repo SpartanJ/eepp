@@ -10,7 +10,7 @@ SyntaxDefinition& addShellScript() {
 
 			{ "Shell script",
 			  { "%.sh$", "%.bash$", "^%.bashrc$", "^%.bash_profile$", "^%.profile$", "%.zsh$",
-				"%.fish$", "^PKGBUILD$", "%.winlib$" },
+				"%.fish$", "^PKGBUILD$", "%.winlib$", "^APKBUILD$" },
 			  {
 				  { { "$[%a_@*#][%w_]*" }, "type" },
 				  { { "#.*\n" }, "comment" },
@@ -52,9 +52,10 @@ SyntaxDefinition& addShellScript() {
 
 			  },
 			  "#",
-			  { "^#!.*[ /]bash", "^#!.*[ /]sh" },
+			  { "^#!.*[ /]bash", "^#!.*[ /]sh", "^#!.*[ /]zsh", "^#!.*[ /]fish" },
 			  "shellscript" } )
 		.addAlternativeName( "bash" )
+		.addAlternativeName( "fish" )
 		.addAlternativeName( "zsh" )
 		.addAlternativeName( "sh" );
 }

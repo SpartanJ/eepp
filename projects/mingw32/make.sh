@@ -45,7 +45,7 @@ elif [[ "$CONFIG" == *"arm64"* && "$(uname -m)" == "x86_64" ]]; then
   export AR="aarch64-w64-mingw32-ar"
   echo "Added $BIN_PATH to PATH."
 
-  PREMAKE5_ARCH="--arch=arm64"
+  PREMAKE5_ARCH="--deps-arch=arm64"
 fi
 
 PREMAKE5_ARGS="--file=../../premake5.lua --os=windows --cc=mingw --windows-mingw-build --with-text-shaper $PREMAKE5_ARCH gmake"
@@ -61,7 +61,7 @@ else
 fi
 
 if [[ "$CONFIG" == *"arm64"* ]]; then
-bash ./build_sdl2.sh --arch=arm64 || exit 1
+bash ./build_sdl2.sh --deps-arch=arm64 || exit 1
 else
 export CC=x86_64-w64-mingw32-gcc-posix
 export CXX=x86_64-w64-mingw32-g++-posix

@@ -8,7 +8,7 @@ SyntaxDefinition& addGroovy() {
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Groovy",
-		  { "%.groovy$" },
+		  { "%.groovy$", "^Jenkinsfile$" },
 		  {
 			  { { "//.*" }, "comment" },
 			  { { "/%*", "%*/" }, "comment" },

@@ -360,7 +360,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 		if ( !words.isValid() ) // Skip invalid patterns
 			return false;
 		if ( words.matches( text, matches.data(), startIdx ) &&
-			 ( numMatches = words.getNumMatches() ) > 0 && matches[0].start != matches[0].end ) {
+			 ( numMatches = words.getNumMatches() ) > 0 ) {
 			if ( shouldCloseSubSyntax ) {
 				if ( shouldCloseSubSyntax->range.second >= matches[0].end ) {
 					if ( !skipSubSyntaxSeparator ) {

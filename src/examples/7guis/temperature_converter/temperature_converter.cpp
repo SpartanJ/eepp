@@ -11,8 +11,8 @@ EE_MAIN_FUNC int main( int, char** ) {
 		<TextView text="Fahrenheit" layout_height="match_parent" padding="0dp 4dp 0dp 4dp" enabled="false" />
 	</hbox>
 	)xml" );
-	UIProperty<double> celsius( hbox->find( "celsius_input" )->setFocus()->asType<UIWidget>() );
-	UIProperty<double> fahrenheit( hbox->find<UITextInput>( "fahrenheit_input" ) );
+	UIProperty<double> celsius( 0, hbox->find( "celsius_input" )->setFocus()->asType<UIWidget>() );
+	UIProperty<double> fahrenheit( 32, hbox->find<UITextInput>( "fahrenheit_input" ) );
 	celsius.changed( [&fahrenheit]( auto c ) { fahrenheit = c * 9 / 5 + 32; } );
 	fahrenheit.changed( [&celsius]( auto f ) { celsius = ( f - 32 ) * 5 / 9; } );
 	return app.run();
