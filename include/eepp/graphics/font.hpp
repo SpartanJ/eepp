@@ -91,15 +91,13 @@ class EE_API Font {
 	virtual const Info& getInfo() const = 0;
 
 	virtual const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-								   bool italic, Float outlineThickness = 0,
-								   Float maxWidth = 0 ) const = 0;
+								   bool italic, Float outlineThickness = 0 ) const = 0;
 
 	/** @return The glyph drawable that represents the glyph in a texture. The glyph drawable
 	 * allocation is managed by the font. */
 	virtual GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
 											 bool bold = false, bool italic = false,
-											 Float outlineThickness = 0,
-											 const Float& forzeSize = 0 ) const = 0;
+											 Float outlineThickness = 0 ) const = 0;
 
 	virtual Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
 							  bool italic, Float outlineThickness = 0 ) const = 0;

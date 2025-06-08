@@ -294,6 +294,12 @@
         "command": "${project_root}/bin/eeiv-debug",
         "name": "eeiv-debug",
         "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-fonts-debug",
+        "name": "eepp-fonts-debug",
+        "working_dir": "${project_root}/bin"
       }
     ],
     "var": {

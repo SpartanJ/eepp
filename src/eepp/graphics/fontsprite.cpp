@@ -164,7 +164,7 @@ const FontSprite::Info& FontSprite::getInfo() const {
 	return mInfo;
 }
 
-const Glyph& FontSprite::getGlyph( Uint32 codePoint, unsigned int characterSize, bool, bool, Float,
+const Glyph& FontSprite::getGlyph( Uint32 codePoint, unsigned int characterSize, bool, bool,
 								   Float ) const {
 	GlyphTable& glyphs = mPages[characterSize].glyphs;
 
@@ -179,8 +179,8 @@ const Glyph& FontSprite::getGlyph( Uint32 codePoint, unsigned int characterSize,
 }
 
 GlyphDrawable* FontSprite::getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
-											 bool bold, bool italic, Float outlineThickness,
-											 const Float& ) const {
+											 bool bold, bool italic,
+											 Float outlineThickness ) const {
 	GlyphDrawableTable& drawables = mPages[characterSize].drawables;
 	auto it = drawables.find( codePoint );
 	if ( it != drawables.end() ) {

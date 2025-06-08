@@ -1246,7 +1246,7 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 					mVBForeground->setQuadColor( mCurGridPos, Color::Transparent );
 			} else {
 				auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD,
-													glyph.mode & ATTR_ITALIC, 0, advanceX );
+													glyph.mode & ATTR_ITALIC, 0 );
 
 				if ( ( glyph.mode & ATTR_EMOJI ) && FontManager::instance()->getColorEmojiFont() ) {
 					gd->setColor( Color::White );

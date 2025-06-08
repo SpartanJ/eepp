@@ -26,6 +26,10 @@ SyntaxDefinition& addCMake() {
 			  { { "[%a_][%w_]*" }, "symbol" },
 		  },
 		  {
+		  	  { "PRIVATE", "keyword" },
+		  	  { "PUBLIC", "keyword" },
+		  	  { "TREE", "literal" },
+		  	  { "FILES", "literal" },
 			  { "REPLACE", "literal" },
 			  { "SOURCES", "type" },
 			  { "REGEX", "literal" },

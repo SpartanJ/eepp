@@ -329,49 +329,35 @@ Uint32 FontTrueType::getGlyphIndex( const Uint32& codePoint ) const {
 }
 
 const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-									 bool italic, Float outlineThickness, Float maxWidth ) const {
+									 bool italic, Float outlineThickness ) const {
 	Uint32 idx = 0;
 	if ( mEnableEmojiFallback && !mIsColorEmojiFont && !mIsEmojiFont &&
 		 Font::isEmojiCodePoint( codePoint ) ) {
 		if ( !mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() != nullptr &&
 			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
 
-			// if ( isMonospace() && maxWidth == 0.f && !Text::TextShaperEnabled ) {
-			// 	const Glyph& monospaceGlyph =
-			// 		getGlyph( ' ', characterSize, bold, italic, outlineThickness );
-			// 	maxWidth = monospaceGlyph.advance;
-			// }
-
 			FontTrueType* fontEmoji =
 				static_cast<FontTrueType*>( FontManager::instance()->getColorEmojiFont() );
 			if ( ( idx = fontEmoji->getGlyphIndex( codePoint ) ) ) {
-				if ( mIsMonospace && mEnableDynamicMonospace && 0.f == maxWidth ) {
+				if ( mIsMonospace && mEnableDynamicMonospace ) {
 					mIsMonospaceComplete = false;
 					mUsingFallback = true;
 				}
 				return fontEmoji->getGlyphByIndex( idx, characterSize, bold, italic,
-												   outlineThickness, getPage( characterSize ),
-												   maxWidth );
+												   outlineThickness, getPage( characterSize ) );
 			}
 		} else if ( !mIsEmojiFont && FontManager::instance()->getEmojiFont() != nullptr &&
 					FontManager::instance()->getEmojiFont()->getType() == FontType::TTF ) {
 
-			// if ( isMonospace() && maxWidth == 0.f && !Text::TextShaperEnabled ) {
-			// 	const Glyph& monospaceGlyph =
-			// 		getGlyph( ' ', characterSize, bold, italic, outlineThickness );
-			// 	maxWidth = monospaceGlyph.advance;
-			// }
-
 			FontTrueType* fontEmoji =
 				static_cast<FontTrueType*>( FontManager::instance()->getEmojiFont() );
 			if ( ( idx = fontEmoji->getGlyphIndex( codePoint ) ) ) {
-				if ( mIsMonospace && mEnableDynamicMonospace && 0.f == maxWidth ) {
+				if ( mIsMonospace && mEnableDynamicMonospace ) {
 					mIsMonospaceComplete = false;
 					mUsingFallback = true;
 				}
 				return fontEmoji->getGlyphByIndex( idx, characterSize, bold, italic,
-												   outlineThickness, getPage( characterSize ),
-												   maxWidth );
+												   outlineThickness, getPage( characterSize ) );
 			}
 		}
 	}
@@ -379,19 +365,19 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 	if ( bold && italic && mFontBoldItalic != nullptr &&
 		 ( idx = mFontBoldItalic->getGlyphIndex( codePoint ) ) ) {
 		return mFontBoldItalic->getGlyphByIndex( idx, characterSize, true, true, outlineThickness,
-												 getPage( characterSize ), maxWidth );
+												 getPage( characterSize ) );
 	}
 
 	if ( bold && !italic && mFontBold != nullptr &&
 		 ( idx = mFontBold->getGlyphIndex( codePoint ) ) ) {
 		return mFontBold->getGlyphByIndex( idx, characterSize, true, false, outlineThickness,
-										   getPage( characterSize ), maxWidth );
+										   getPage( characterSize ) );
 	}
 
 	if ( italic && !bold && mFontItalic != nullptr &&
 		 ( idx = mFontItalic->getGlyphIndex( codePoint ) ) ) {
 		return mFontItalic->getGlyphByIndex( idx, characterSize, false, true, outlineThickness,
-											 getPage( characterSize ), maxWidth );
+											 getPage( characterSize ) );
 	}
 
 	idx = getGlyphIndex( codePoint );
@@ -406,8 +392,7 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 					mUsingFallback = true;
 				}
 				return fallbackFont->getGlyphByIndex( idx, characterSize, bold, italic,
-													  outlineThickness, getPage( characterSize ),
-													  maxWidth );
+													  outlineThickness, getPage( characterSize ) );
 			}
 		}
 	}
@@ -416,15 +401,14 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 }
 
 const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-									 bool italic, Float outlineThickness, Page& page,
-									 const Float& maxWidth ) const {
+									 bool italic, Float outlineThickness, Page& page ) const {
 	Uint32 index = getGlyphIndex( codePoint );
-	return getGlyphByIndex( index, characterSize, bold, italic, outlineThickness, page, maxWidth );
+	return getGlyphByIndex( index, characterSize, bold, italic, outlineThickness, page );
 }
 
 const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
-											bool italic, Float outlineThickness, Page& page,
-											const Float& maxWidth ) const {
+											bool italic, Float outlineThickness,
+											Page& page ) const {
 	eeASSERT( Engine::isRunninMainThread() );
 
 	// Get the page corresponding to the character size
@@ -440,8 +424,8 @@ const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int character
 		return it->second;
 	} else {
 		// Not found: we have to load it
-		Glyph glyph = loadGlyphByIndex( index, characterSize, bold, italic, outlineThickness, page,
-										maxWidth );
+		Glyph glyph =
+			loadGlyphByIndex( index, characterSize, bold, italic, outlineThickness, page );
 
 		return glyphs.emplace( key, glyph ).first->second;
 	}
@@ -450,12 +434,12 @@ const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int character
 const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
 											bool italic, Float outlineThickness ) const {
 	return getGlyphByIndex( index, characterSize, bold, italic, outlineThickness,
-							getPage( characterSize ), 0.f );
+							getPage( characterSize ) );
 }
 
 GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
-											   bool bold, bool italic, Float outlineThickness,
-											   const Float& maxWidth ) const {
+											   bool bold, bool italic,
+											   Float outlineThickness ) const {
 	// mKeyCache
 	Page& page = getPage( characterSize );
 	GlyphDrawableTable& drawables = page.drawables;
@@ -555,8 +539,7 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 	if ( it != drawables.end() ) {
 		return it->second;
 	} else {
-		const Glyph& glyph =
-			getGlyph( codePoint, characterSize, bold, italic, outlineThickness, maxWidth );
+		const Glyph& glyph = getGlyph( codePoint, characterSize, bold, italic, outlineThickness );
 		GlyphDrawable* region = GlyphDrawable::New(
 			page.texture, glyph.textureRect, glyph.size,
 			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, glyphIndex ) );
@@ -575,8 +558,7 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 GlyphDrawable* FontTrueType::getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex,
 															 unsigned int characterSize, bool bold,
 															 bool italic, Float outlineThickness,
-															 Page& page,
-															 const Float& maxWidth ) const {
+															 Page& page ) const {
 	GlyphDrawableTable& drawables = page.drawables;
 	Uint64 key = getIndexKey( mFontInternalId, glyphIndex, bold, italic, outlineThickness );
 
@@ -584,8 +566,8 @@ GlyphDrawable* FontTrueType::getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex,
 	if ( it != drawables.end() ) {
 		return it->second;
 	} else {
-		const Glyph& glyph = getGlyphByIndex( glyphIndex, characterSize, bold, italic,
-											  outlineThickness, page, maxWidth );
+		const Glyph& glyph =
+			getGlyphByIndex( glyphIndex, characterSize, bold, italic, outlineThickness, page );
 		GlyphDrawable* region = GlyphDrawable::New(
 			page.texture, glyph.textureRect, glyph.size,
 			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, glyphIndex ) );
@@ -603,10 +585,10 @@ GlyphDrawable* FontTrueType::getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex,
 
 GlyphDrawable* FontTrueType::getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex,
 															 unsigned int characterSize, bool bold,
-															 bool italic, Float outlineThickness,
-															 const Float& maxWidth ) const {
+															 bool italic,
+															 Float outlineThickness ) const {
 	return getGlyphDrawableFromGlyphIndex( glyphIndex, characterSize, bold, italic,
-										   outlineThickness, getPage( characterSize ), maxWidth );
+										   outlineThickness, getPage( characterSize ) );
 }
 
 Float FontTrueType::getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
@@ -906,8 +888,7 @@ fontSetRenderOptions( FT_Library library, FontAntialiasing antialiasing, FontHin
 }
 
 Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
-									  bool /*italic*/, Float outlineThickness, Page& page,
-									  const Float& maxWidth ) const {
+									  bool /*italic*/, Float outlineThickness, Page& page ) const {
 	// The glyph to return
 	Glyph glyph;
 
@@ -988,9 +969,6 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 	// Compute the glyph's advance offset
 	glyph.advance = static_cast<Float>( slot->metrics.horiAdvance ) / static_cast<Float>( 1 << 6 );
 
-	if ( maxWidth > 0.f )
-		glyph.advance = maxWidth;
-
 	if ( bold && !mBoldAdvanceSameAsRegular )
 		glyph.advance += static_cast<Float>( weight ) / static_cast<Float>( 1 << 6 );
 
@@ -1012,15 +990,13 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 		Float scale = 1.f;
 
 		if ( mIsColorEmojiFont || mIsEmojiFont ) {
-			scale = eemin( 1.f, (Float)( maxWidth > 0.f ? maxWidth : characterSize ) /
-									(Float)( maxWidth > 0.f ? width : height ) );
+			scale = eemin( 1.f, (Float)characterSize / height );
 		}
 
 		int destWidth = width;
 		int destHeight = height;
 
-		if ( maxWidth <= 0.f )
-			glyph.advance = eeceil( glyph.advance * scale );
+		glyph.advance = eeceil( glyph.advance * scale );
 
 		if ( scale >= 1.f ) {
 			destWidth *= scale;

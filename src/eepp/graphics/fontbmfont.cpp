@@ -186,7 +186,7 @@ const FontBMFont::Info& FontBMFont::getInfo() const {
 }
 
 const Glyph& FontBMFont::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-								   bool /*italic*/, Float outlineThickness, Float ) const {
+								   bool /*italic*/, Float outlineThickness ) const {
 	GlyphTable& glyphs = mPages[characterSize].glyphs;
 
 	GlyphTable::const_iterator it = glyphs.find( codePoint );
@@ -200,8 +200,8 @@ const Glyph& FontBMFont::getGlyph( Uint32 codePoint, unsigned int characterSize,
 }
 
 GlyphDrawable* FontBMFont::getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
-											 bool bold, bool italic, Float outlineThickness,
-											 const Float& ) const {
+											 bool bold, bool italic,
+											 Float outlineThickness ) const {
 	GlyphDrawableTable& drawables = mPages[characterSize].drawables;
 	auto it = drawables.find( codePoint );
 	if ( it != drawables.end() ) {
