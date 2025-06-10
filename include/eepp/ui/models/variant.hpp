@@ -59,6 +59,88 @@ class EE_API Variant {
 	Variant( const Uint64& val ) : mType( Type::Uint64 ) { mValue.asUint64 = val; }
 	explicit Variant( const char* data ) : mType( Type::cstr ) { mValue.asCStr = data; }
 	~Variant() { reset(); }
+
+	Variant( const Variant& other ) : mType( Type::Invalid ), mOwnsObject( other.mOwnsObject ) {
+		switch ( other.mType ) {
+			case Type::StdString:
+				mValue.asStdString = eeNew( std::string, ( *other.mValue.asStdString ) );
+				break;
+			case Type::String:
+				mValue.asString = eeNew( String, ( *other.mValue.asString ) );
+				break;
+			case Type::StringPtr:
+				mValue.asStringPtr = other.mValue.asStringPtr;
+				break;
+			case Type::Drawable:
+				mValue.asDrawable = other.mValue.asDrawable;
+				break;
+			case Type::Icon:
+				mValue.asIcon = other.mValue.asIcon;
+				break;
+			case Type::Vector2f:
+				mValue.asVector2f = eeNew( Vector2f, ( *other.mValue.asVector2f ) );
+				break;
+			case Type::Rectf:
+				mValue.asRectf = eeNew( Rectf, ( *other.mValue.asRectf ) );
+				break;
+			case Type::Bool:
+				mValue.asBool = other.mValue.asBool;
+				break;
+			case Type::Float:
+				mValue.asFloat = other.mValue.asFloat;
+				break;
+			case Type::Int:
+				mValue.asInt = other.mValue.asInt;
+				break;
+			case Type::Uint:
+				mValue.asUint = other.mValue.asUint;
+				break;
+			case Type::Int64:
+				mValue.asInt64 = other.mValue.asInt64;
+				break;
+			case Type::Uint64:
+				mValue.asUint64 = other.mValue.asUint64;
+				break;
+			case Type::cstr:
+				mValue.asCStr = other.mValue.asCStr;
+				break;
+			case Type::DataPtr:
+				mValue.asDataPtr = other.mValue.asDataPtr;
+				break;
+			case Type::Invalid:
+				break;
+		}
+		mType = other.mType;
+	}
+
+	Variant( Variant&& other ) noexcept :
+		mType( other.mType ), mOwnsObject( other.mOwnsObject ), mValue( other.mValue ) {
+		other.mType = Type::Invalid;
+		other.mOwnsObject = false;
+		std::memset( &other.mValue, 0, sizeof( mValue ) );
+	}
+
+	Variant& operator=( const Variant& other ) {
+		if ( this != &other ) {
+			reset();
+			new ( this ) Variant( other ); // reuse copy constructor
+		}
+		return *this;
+	}
+
+	Variant& operator=( Variant&& other ) noexcept {
+		if ( this != &other ) {
+			reset();
+			mType = other.mType;
+			mOwnsObject = other.mOwnsObject;
+			mValue = other.mValue;
+			other.mType = Type::Invalid;
+			other.mOwnsObject = false;
+			std::memset( &other.mValue, 0, sizeof( mValue ) );
+		}
+		return *this;
+	}
+
 	const std::string& asStdString() const { return *mValue.asStdString; }
 	const String& asString() const { return *mValue.asString; }
 	const String& asStringPtr() const { return *mValue.asStringPtr; }
