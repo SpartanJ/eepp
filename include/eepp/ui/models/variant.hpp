@@ -114,7 +114,7 @@ class EE_API Variant {
 	}
 
 	Variant( Variant&& other ) noexcept :
-		mType( other.mType ), mOwnsObject( other.mOwnsObject ), mValue( other.mValue ) {
+		mValue( other.mValue ), mType( other.mType ), mOwnsObject( other.mOwnsObject ) {
 		other.mType = Type::Invalid;
 		other.mOwnsObject = false;
 		std::memset( &other.mValue, 0, sizeof( mValue ) );
