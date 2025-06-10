@@ -8,7 +8,7 @@ void addJavaScript() {
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "JavaScript",
-		  { "%.js$" },
+		  { "%.js$", "%.mjs$" },
 		  {
 			  { { "//.-\n" }, "comment" },
 			  { { "/%*", "%*/" }, "comment" },

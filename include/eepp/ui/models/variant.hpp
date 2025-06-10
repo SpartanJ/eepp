@@ -117,7 +117,7 @@ class EE_API Variant {
 		mValue( other.mValue ), mType( other.mType ), mOwnsObject( other.mOwnsObject ) {
 		other.mType = Type::Invalid;
 		other.mOwnsObject = false;
-		std::memset( &other.mValue, 0, sizeof( mValue ) );
+		other.mValue = {};
 	}
 
 	Variant& operator=( const Variant& other ) {
@@ -136,7 +136,7 @@ class EE_API Variant {
 			mValue = other.mValue;
 			other.mType = Type::Invalid;
 			other.mOwnsObject = false;
-			std::memset( &other.mValue, 0, sizeof( mValue ) );
+			other.mValue = {};
 		}
 		return *this;
 	}
