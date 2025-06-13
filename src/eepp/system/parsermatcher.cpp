@@ -827,6 +827,91 @@ after_float_parts:; // Label to jump to after float parsing attempts
 	}
 }
 
+inline bool isValidRegexFlag( char c ) {
+	return c == 'g' || c == 'i' || c == 'm' || c == 's' || c == 'u' || c == 'y' || c == 'd';
+}
+
+inline bool isRegexContextBefore( const char* str, int offset ) {
+	// Skip whitespace backwards
+	while ( offset > 0 && std::isspace( static_cast<unsigned char>( str[offset - 1] ) ) ) {
+		offset--;
+	}
+
+	if ( offset == 0 )
+		return true;
+
+	// Common cases: after `return`, `(`, `=`, `,`, `:`
+	char prev = str[offset - 1];
+	return prev == '=' || prev == '(' || prev == '{' || prev == ',' || prev == ':' || prev == '[';
+}
+
+/**
+ * @brief Checks if the substring starting at stringStartOffset is a valid JavaScript regex.
+ *
+ * @param stringSearch The C-style string to search within.
+ * @param stringStartOffset The starting index within stringSearch.
+ * @param matchList Pointer to a Range struct to store the start and end indices of the match (if
+ * found).
+ * @param stringLength The total length of stringSearch.
+ * @return The number of matches
+ */
+inline size_t isJavaScriptRegEx( const char* stringSearch, int stringStartOffset,
+								 PatternMatcher::Range* matchList, size_t stringLength ) {
+	if ( !stringSearch || stringStartOffset < 0 || (size_t)stringStartOffset >= stringLength ) {
+		return 0;
+	}
+
+	const char* ptr = stringSearch + stringStartOffset;
+
+	if ( *ptr != '/' ) {
+		return 0;
+	}
+
+	// Heuristic check: likely a regex if it's in a valid context
+	if ( !isRegexContextBefore( stringSearch, stringStartOffset ) ) {
+		return 0;
+	}
+
+	int i = stringStartOffset + 1;
+	bool escaped = false;
+	bool insideCharClass = false;
+
+	// Search for closing '/'
+	while ( (size_t)i < stringLength ) {
+		char c = stringSearch[i];
+
+		if ( !escaped && c == '\\' ) {
+			escaped = true;
+			i++;
+			continue;
+		}
+
+		if ( !escaped && c == '[' ) {
+			insideCharClass = true;
+		} else if ( !escaped && c == ']' ) {
+			insideCharClass = false;
+		} else if ( !escaped && c == '/' && !insideCharClass ) {
+			// Check for flags
+			i++;
+			while ( (size_t)i < stringLength && isValidRegexFlag( stringSearch[i] ) ) {
+				i++;
+			}
+
+			if ( matchList ) {
+				matchList[0].start = stringStartOffset;
+				matchList[0].end = i;
+			}
+
+			return 1;
+		}
+
+		escaped = false;
+		i++;
+	}
+
+	return 0;
+}
+
 SINGLETON_DECLARE_IMPLEMENTATION( ParserMatcherManager );
 
 void ParserMatcherManager::registerBaseParsers() {
@@ -873,6 +958,11 @@ void ParserMatcherManager::registerBaseParsers() {
 						return isNumberLiteralBase( stringSearch, stringStartOffset, matchList,
 													stringLength, true, true, true, true );
 					} );
+
+	registerParser( "js_regex", []( const char* stringSearch, int stringStartOffset,
+									PatternMatcher::Range* matchList, size_t stringLength ) {
+		return isJavaScriptRegEx( stringSearch, stringStartOffset, matchList, stringLength );
+	} );
 
 	mRegisteredBaseParsers = true;
 }
