@@ -702,18 +702,14 @@ bool ProjectBuildManager::hasCleanCommands( const std::string& name ) {
 
 void ProjectBuildManager::cancelBuild() {
 	mCancelBuild = true;
-	if ( mProcess ) {
-		mProcess->destroy();
+	if ( mProcess )
 		mProcess->kill();
-	}
 }
 
 void ProjectBuildManager::cancelRun() {
 	mCancelRun = true;
-	if ( mProcessRun ) {
-		mProcessRun->destroy();
+	if ( mProcessRun )
 		mProcessRun->kill();
-	}
 }
 
 ProjectBuildConfiguration ProjectBuildManager::getConfig() const {

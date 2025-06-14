@@ -260,24 +260,25 @@ bool Process::join( int* const returnCodeOut ) {
 bool Process::kill() {
 	if ( mProcess == nullptr )
 		return true;
-	eeASSERT( mProcess != nullptr );
 	mShuttingDown = true;
 	subprocess_init_shutdown( PROCESS_PTR );
 	if ( PROCESS_PTR->alive ) {
 		destroy();
-		return 0 == subprocess_terminate( PROCESS_PTR );
+		int ret = 0 == subprocess_terminate( PROCESS_PTR );
+		eeSAFE_FREE( mProcess );
+		return ret;
 	}
 	return false;
 }
 
 bool Process::destroy() {
-	eeASSERT( mProcess != nullptr );
+	if ( mProcess == nullptr )
+		return true;
 	return 0 == subprocess_destroy( PROCESS_PTR );
 }
 
 bool Process::isAlive() {
-	eeASSERT( mProcess != nullptr );
-	return 0 != subprocess_alive( PROCESS_PTR );
+	return mProcess && 0 != subprocess_alive( PROCESS_PTR );
 }
 
 FILE* Process::getStdIn() const {

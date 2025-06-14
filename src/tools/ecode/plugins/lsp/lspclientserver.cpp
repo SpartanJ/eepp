@@ -1373,7 +1373,7 @@ bool LSPClientServer::needsAsync() {
 }
 
 bool LSPClientServer::isRunning() {
-	return mUsingProcess ? ( mProcess.isAlive() && !mProcess.isShuttingDown() &&
+	return mUsingProcess ? ( !mProcess.isShuttingDown() && mProcess.isAlive() &&
 							 ( !mUsingSocket || mSocket != nullptr ) )
 						 : ( mUsingSocket && mSocket != nullptr );
 }

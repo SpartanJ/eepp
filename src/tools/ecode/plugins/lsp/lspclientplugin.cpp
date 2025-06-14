@@ -1637,6 +1637,8 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 	if ( mShuttingDown )
 		return;
 
+	editor->removeActionsByTag( getMouseMoveHash( editor ) );
+
 	URI docURI;
 	{
 		Lock l( mDocMutex );
@@ -1735,8 +1737,9 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 		addFn( "lsp-switch-header-source",
 			   i18n( "lsp_switch_header_source", "Switch Header/Source" ), "filetype-hpp" );
 
-	addFn( "lsp-plugin-restart", i18n( "lsp_restart_lsp_client", "Restart LSP Client" ),
-		   "refresh" );
+	String restartStr( i18n( "lsp_restart_lsp_server", "Restart LSP Server" ) + " (" +
+					   server->getDefinition().name + ")" );
+	addFn( "lsp-plugin-restart", restartStr, "refresh" );
 
 #ifdef EE_DEBUG
 	if ( server->getDefinition().name == "clangd" )
