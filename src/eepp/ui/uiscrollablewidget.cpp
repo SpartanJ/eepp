@@ -392,6 +392,8 @@ Uint32 UIScrollableWidget::onMessage( const NodeMessage* Msg ) {
 
 			if ( moved )
 				return 1;
+
+			break;
 		}
 		case NodeMessage::FocusLoss: {
 			if ( NULL != getEventDispatcher() ) {
@@ -403,6 +405,8 @@ Uint32 UIScrollableWidget::onMessage( const NodeMessage* Msg ) {
 
 				return 1;
 			}
+
+			break;
 		}
 	}
 	return UIWidget::onMessage( Msg );

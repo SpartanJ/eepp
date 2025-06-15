@@ -663,6 +663,13 @@ UIBuildSettings::UIBuildSettings(
 		} );
 	} );
 
+	if ( isNew && mBuild.mOutputParser.getPreset().empty() &&
+		 !ProjectBuildOutputParser::getPresets().empty() ) {
+		mBuild.mOutputParser.mPreset = ProjectBuildOutputParser::getPresets().begin()->first;
+		mBuild.mOutputParser.mPresetConfig =
+			ProjectBuildOutputParser::getPresets().begin()->second.getConfig();
+	}
+
 	auto outputParserPresetsDDL = find<UIDropDownList>( "output_parsers_presets_list" );
 	outputParserPresetsDDL->getListBox()->setSelected( mBuild.mOutputParser.mPreset );
 	outputParserPresetsDDL->on( Event::OnItemSelected, [this]( const Event* event ) {

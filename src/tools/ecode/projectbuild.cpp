@@ -938,6 +938,17 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 											cmd.cmd, cmd.args ),
 						nullptr );
 
+			if ( Sys::which( cmd.cmd ).empty() ) {
+				progressFn(
+					progress,
+					Sys::getDateTimeStr() + ": " +
+						String::format( i18n( "command_path_does_not_exists",
+											  "WARNING: Command \"%s\" path cannot be found!\n" )
+											.toUtf8(),
+										cmd.cmd ),
+					nullptr );
+			}
+
 			if ( FileSystem::fileExists( cmd.workingDir ) ) {
 				progressFn(
 					progress,
@@ -985,13 +996,15 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 
 			if ( returnCode != EXIT_SUCCESS ) {
 				if ( progressFn ) {
-					progressFn( 100,
-								String::format( i18n( "process_exited_with_errors",
-													  "The process \"%s\" exited with errors.\n" )
-													.toUtf8()
-													.c_str(),
-												cmd.cmd.c_str() ),
-								nullptr );
+					progressFn(
+						100,
+						String::format(
+							i18n( "process_exited_with_errors",
+								  "The process \"%s\" exited with errors. Returned code: %d\n" )
+								.toUtf8()
+								.c_str(),
+							cmd.cmd.c_str(), returnCode ),
+						nullptr );
 				}
 				printElapsed();
 				if ( doneFn )

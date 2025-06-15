@@ -3337,7 +3337,8 @@ void App::sortSidePanel() {
 	}
 }
 
-#if EE_PLATFORM == EE_PLATFORM_MACOS
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_LINUX || \
+	EE_PLATFORM == EE_PLATFORM_BSD
 static std::string getDefaultShell() {
 	std::string shell = Sys::getEnv( "SHELL" );
 	if ( !shell.empty() )
@@ -3654,10 +3655,14 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			return;
 		}
 #endif
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_LINUX || \
+	EE_PLATFORM == EE_PLATFORM_BSD
+
 #if EE_PLATFORM == EE_PLATFORM_MACOS
 		macOS_createApplicationMenus();
 		macOS_enableScrollMomentum();
 		macOS_removeTitleBarSeparator( mWindow->getWindowHandler() );
+#endif
 
 		mThreadPool->run( [this]() {
 			// Checks if the default shell path contains more paths
@@ -3677,6 +3682,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 				}
 			}
 
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 			// Small hack to also add the xcode binaries path (provides git, lldb-dap and more)
 			{
 				std::string lldbPath;
@@ -3692,6 +3698,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 					}
 				}
 			}
+#endif
 
 			if ( pathSpl.size() != paths.size() ) {
 				std::string newPath = String::join( paths, ':' );
