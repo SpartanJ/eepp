@@ -3670,12 +3670,20 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			// that the environment is more friendly for any new user
 			std::string path( Sys::getEnv( "PATH" ) );
 			std::string shellPath( getShellEnv( "PATH", mConfig.term.shell ) );
+
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
+			if ( path == shellPath )
+				return;
+#endif
+
 			std::vector<std::string> paths;
 			auto pathSpl = String::split( path, ':' );
+
+			for ( auto& path : pathSpl )
+				paths.emplace_back( std::move( path ) );
+
 			if ( !shellPath.empty() && String::hash( path ) != String::hash( shellPath ) ) {
 				auto shellPathSpl = String::split( shellPath, ':' );
-				for ( auto& path : pathSpl )
-					paths.emplace_back( std::move( path ) );
 				for ( auto& shellPath : shellPathSpl ) {
 					if ( std::find( paths.begin(), paths.end(), shellPath ) == paths.end() )
 						paths.emplace_back( std::move( shellPath ) );
@@ -3700,9 +3708,10 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			}
 #endif
 
-			if ( pathSpl.size() != paths.size() ) {
+			if ( paths.size() > pathSpl.size() ) {
 				std::string newPath = String::join( paths, ':' );
 				setenv( "PATH", newPath.c_str(), 1 );
+				Log::info( "New PATH env has been set (inherited+shell PATH env): %s", newPath );
 			}
 		} );
 #endif
