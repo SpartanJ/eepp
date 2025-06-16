@@ -3701,6 +3701,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 					p.join( &retCode );
 					if ( retCode == 0 && !lldbPath.empty() ) {
 						String::trimInPlace( lldbPath, '\n' );
+						lldbPath = FileSystem::removeLastFolderFromPath( lldbPath );
 						if ( std::find( paths.begin(), paths.end(), lldbPath ) == paths.end() )
 							paths.emplace_back( lldbPath );
 					}
