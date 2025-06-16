@@ -3355,7 +3355,7 @@ static std::string getDefaultShell() {
 static std::string getShellEnv( const std::string& env, const std::string& defShell = "" ) {
 	std::string shell = defShell.empty() ? Sys::which( getDefaultShell() ) : defShell;
 	Process process;
-	if ( process.create( shell, "-c env", Process::getDefaultOptions() ) ) {
+	if ( process.create( shell, "-l -c env", Process::getDefaultOptions() ) ) {
 		size_t envLen = env.size();
 		std::string buf( 32 * 1024, '\0' );
 		process.readAllStdOut( buf );
