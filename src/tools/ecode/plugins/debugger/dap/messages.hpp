@@ -54,6 +54,7 @@ static const auto DAP_THREADS = "threads"sv;
 
 // request commands
 static const auto DAP_RUN_IN_TERMINAL = "runInTerminal";
+static const auto DAP_START_DEBUGGING = "startDebugging";
 
 // event values
 static const auto DAP_OUTPUT = "output"sv;

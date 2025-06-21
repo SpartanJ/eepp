@@ -839,7 +839,7 @@ void ProjectBuildManager::runConfig( StatusAppOutputController* saoc ) {
 		auto cmd = finalBuild.cmd + " " + finalBuild.args;
 		if ( finalBuild.runInTerminal ) {
 			UITerminal* term = mApp->getTerminalManager()->createTerminalInSplitter(
-				finalBuild.workingDir, "", {}, false );
+				finalBuild.workingDir, "", {}, {}, false );
 
 			Log::info( "Running \"%s\" in terminal", cmd );
 			if ( term == nullptr || term->getTerm() == nullptr ) {

@@ -8,10 +8,9 @@ namespace ecode {
 
 TerminalManager::TerminalManager( App* app ) : mApp( app ) {}
 
-UITerminal* TerminalManager::createTerminalInSplitter( const std::string& workingDir,
-													   std::string program,
-													   const std::vector<std::string>& args,
-													   bool fallback ) {
+UITerminal* TerminalManager::createTerminalInSplitter(
+	const std::string& workingDir, std::string program, const std::vector<std::string>& args,
+	const std::unordered_map<std::string, std::string>& env, bool fallback, bool keepAlive ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	std::string os = Sys::getOSName( true );
 	if ( !LuaPattern::hasMatches( os, "Windows 1%d"sv ) &&
@@ -29,11 +28,11 @@ UITerminal* TerminalManager::createTerminalInSplitter( const std::string& workin
 			if ( config.term.newTerminalOrientation == NewTerminalOrientation::Vertical &&
 				 orientation == UIOrientation::Horizontal ) {
 				term = createNewTerminal( "", splitter->getTabWidgets()[1], workingDir, program,
-										  args, fallback );
+										  args, env, fallback, keepAlive );
 			} else if ( config.term.newTerminalOrientation == NewTerminalOrientation::Horizontal &&
 						orientation == UIOrientation::Vertical ) {
 				term = createNewTerminal( "", splitter->getTabWidgets()[1], workingDir, program,
-										  args, fallback );
+										  args, env, fallback, keepAlive );
 			} else {
 				term = createNewTerminal( "", nullptr, workingDir, program, args );
 			}
@@ -45,17 +44,20 @@ UITerminal* TerminalManager::createTerminalInSplitter( const std::string& workin
 			case NewTerminalOrientation::Vertical: {
 				auto cwd = workingDir.empty() ? mApp->getCurrentWorkingDir() : workingDir;
 				splitter->split( SplitDirection::Right, splitter->getCurWidget(), false );
-				term = createNewTerminal( "", nullptr, cwd, program, args, fallback );
+				term =
+					createNewTerminal( "", nullptr, cwd, program, args, env, fallback, keepAlive );
 				break;
 			}
 			case NewTerminalOrientation::Horizontal: {
 				auto cwd = workingDir.empty() ? mApp->getCurrentWorkingDir() : workingDir;
 				splitter->split( SplitDirection::Bottom, splitter->getCurWidget(), false );
-				term = createNewTerminal( "", nullptr, cwd, program, args, fallback );
+				term =
+					createNewTerminal( "", nullptr, cwd, program, args, env, fallback, keepAlive );
 				break;
 			}
 			case NewTerminalOrientation::Same: {
-				term = createNewTerminal( "", nullptr, "", program, args, fallback );
+				term =
+					createNewTerminal( "", nullptr, "", program, args, env, fallback, keepAlive );
 				break;
 			}
 		}
@@ -307,7 +309,7 @@ std::string quoteString( std::string str ) {
 }
 
 static int openExternal( const std::string& defShell, const std::string& cmd,
-						  const std::string& scriptsPath, const std::string& workingDir ) {
+						 const std::string& scriptsPath, const std::string& workingDir ) {
 	// This is an utility bat script based in the Geany utility script called "geany-run-helper"
 	static const std::string RUN_HELPER =
 		R"shellscript(REM USAGE: ecode-run-helper DIRECTORY AUTOCLOSE COMMAND...
@@ -383,7 +385,7 @@ if not %autoclose%==1 pause
 }
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
 static int openExternal( const std::string&, const std::string& cmd, const std::string&,
-						  const std::string& workingDir ) {
+						 const std::string& workingDir ) {
 	static const std::string externalShell = "open -a terminal";
 	if ( !cmd.empty() ) {
 		std::string fcmd = externalShell + " \"" + cmd + "\"";
@@ -394,7 +396,7 @@ static int openExternal( const std::string&, const std::string& cmd, const std::
 }
 #else
 static int openExternal( const std::string&, const std::string& cmd, const std::string&,
-						  const std::string& workingDir ) {
+						 const std::string& workingDir ) {
 	std::vector<std::string> options = { "gnome-terminal", "konsole", "xterm", "st" };
 	for ( const auto& option : options ) {
 		auto externalShell( Sys::which( option ) );
@@ -413,7 +415,7 @@ static int openExternal( const std::string&, const std::string& cmd, const std::
 #endif
 
 int TerminalManager::openInExternalTerminal( const std::string& cmd,
-											  const std::string& workingDir ) {
+											 const std::string& workingDir ) {
 	Log::info( "Trying to open in external terminal: %s %s", cmd, workingDir );
 	return openExternal( mApp->termConfig().shell, cmd, mApp->getScriptsPath(), workingDir );
 }
@@ -447,10 +449,10 @@ void TerminalManager::displayError( const std::string& workingDir ) {
 	}
 }
 
-UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabWidget* inTabWidget,
-												const std::string& workingDir, std::string program,
-												const std::vector<std::string>& args,
-												bool fallback ) {
+UITerminal* TerminalManager::createNewTerminal(
+	const std::string& title, UITabWidget* inTabWidget, const std::string& workingDir,
+	std::string program, const std::vector<std::string>& args,
+	const std::unordered_map<std::string, std::string>& env, bool fallback, bool keepAlive ) {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	UIMessageBox* msgBox = UIMessageBox::New(
 		UIMessageBox::OK,
@@ -495,8 +497,8 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 	UITerminal* term = UITerminal::New(
 		mApp->getTerminalFont() ? mApp->getTerminalFont() : mApp->getFontMono(),
 		mApp->termConfig().fontSize.asPixels( 0, Sizef(), mApp->getDisplayDPI() ), initialSize,
-		program, args, !workingDir.empty() ? workingDir : mApp->getCurrentWorkingDir(),
-		mApp->termConfig().scrollback, nullptr, mUseFrameBuffer );
+		program, args, env, !workingDir.empty() ? workingDir : mApp->getCurrentWorkingDir(),
+		mApp->termConfig().scrollback, nullptr, mUseFrameBuffer, keepAlive );
 
 	if ( term == nullptr || term->getTerm() == nullptr ) {
 		if ( fallback )

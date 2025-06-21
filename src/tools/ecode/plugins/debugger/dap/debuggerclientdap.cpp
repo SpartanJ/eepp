@@ -52,10 +52,16 @@ void DebuggerClientDap::makeRequest( const std::string_view& command,
 
 void DebuggerClientDap::makeResponse( int reqSeq, bool success, const std::string& command,
 									  const nlohmann::json& body ) {
-	nlohmann::json jsonCmd = { { "seq", reqSeq },
+	mIdx = reqSeq + 1;
+
+	nlohmann::json jsonCmd = { { "type", "response" },
+							   { "request_seq", reqSeq },
+							   { "seq", mIdx.load() },
 							   { "success", success },
-							   { "command", command },
-							   { "body", body.empty() ? nlohmann::json::object() : body } };
+							   { "command", command } };
+
+	if ( !body.empty() )
+		jsonCmd["body"] = body;
 
 	std::string cmd = jsonCmd.dump();
 	std::string msg( String::format( "Content-Length: %zu\r\n\r\n%s", cmd.size(), cmd ) );
@@ -128,7 +134,7 @@ void DebuggerClientDap::processResponseInitialize( const Response& response,
 	requestLaunchCommand();
 }
 
-void DebuggerClientDap::requestLaunchCommand() {
+void DebuggerClientDap::requestLaunchCommand( std::function<void()> onLaunch ) {
 	if ( mState != State::Initializing ) {
 		Log::warning(
 			"DebuggerClientDap::requestLaunchCommand: trying to launch in an unexpected state" );
@@ -139,7 +145,7 @@ void DebuggerClientDap::requestLaunchCommand() {
 		return;
 
 	makeRequest( mProtocol.launchRequestType, mProtocol.launchArgs,
-				 [this]( const Response& response, const auto& ) {
+				 [this, onLaunch = std::move( onLaunch )]( const Response& response, const auto& ) {
 					 if ( response.success ) {
 						 mLaunched = true;
 						 checkRunning();
@@ -152,6 +158,9 @@ void DebuggerClientDap::requestLaunchCommand() {
 						 }
 						 setState( State::Failed );
 					 }
+
+					 if ( onLaunch )
+						 onLaunch();
 				 } );
 
 	if ( mProtocol.runTarget && runTargetCb ) {
@@ -233,8 +242,8 @@ void DebuggerClientDap::processProtocolMessage( const nlohmann::json& msg ) {
 }
 
 void DebuggerClientDap::processRequest( const nlohmann::json& msg ) {
-	const auto seq = msg.value( DAP_SEQ, 0 );
-	if ( seq == 0 )
+	const auto reqSeq = msg.value( DAP_SEQ, 0 );
+	if ( reqSeq == 0 )
 		return;
 	const auto command = msg.value( DAP_COMMAND, "" );
 	const auto args = msg.contains( DAP_ARGUMENTS ) ? msg[DAP_ARGUMENTS] : nlohmann::json{};
@@ -265,10 +274,27 @@ void DebuggerClientDap::processRequest( const nlohmann::json& msg ) {
 		if ( !largs.empty() ) {
 			std::string cmd = std::move( largs.front() );
 			largs.erase( largs.begin() );
-			runInTerminalCb( isIntegrated, cmd, largs, cwd, lenv, [this, seq, command]( int pid ) {
-				makeResponse( seq, pid != 0, command, nlohmann::json{ { "processId", pid } } );
-			} );
+			runInTerminalCb( isIntegrated, cmd, largs, cwd, lenv,
+							 [this, reqSeq, command]( int pid ) {
+								 makeResponse( reqSeq, pid != 0, command,
+											   nlohmann::json{ { "processId", pid } } );
+							 } );
 		}
+	} else if ( DAP_START_DEBUGGING == command ) {
+		mProtocol.launchRequestType = msg.value( DAP_REQUEST, "launch" );
+		mProtocol.launchArgs = args["configuration"];
+
+		mState = State::Initializing;
+
+		makeResponse( reqSeq, true, DAP_START_DEBUGGING, {} );
+
+		// TODO: Add child sessions support
+		// Re-launch with the new launch request
+		// makeRequest( mProtocol.launchRequestType, mProtocol.launchArgs,
+		// 			 [this, reqSeq]( const Response& response, const auto& ) {
+		// 				 if ( response.success ) {
+		// 				 }
+		// 			 } );
 	}
 }
 

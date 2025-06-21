@@ -2201,17 +2201,16 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 	DebuggerClientDap* dap = static_cast<DebuggerClientDap*>( mDebugger.get() );
 	dap->runInTerminalCb = [this]( bool isIntegrated, std::string cmd,
 								   const std::vector<std::string>& args, const std::string& cwd,
-								   const std::unordered_map<std::string, std::string>& /*env*/,
+								   const std::unordered_map<std::string, std::string>& env,
 								   std::function<void( int )> doneFn ) {
 		if ( !FileSystem::fileExists( cmd ) )
 			cmd = FileSystem::fileNameFromPath( cmd );
 		getUISceneNode()->runOnMainThread( [this, isIntegrated, cmd = std::move( cmd ), cwd, args,
-											doneFn = std::move( doneFn )] {
-			if ( isIntegrated ) {
+											doneFn = std::move( doneFn ), env = std::move( env )] {
+			if ( isIntegrated || !env.empty() ) {
 				UITerminal* term =
 					getPluginContext()->getTerminalManager()->createTerminalInSplitter(
-						cwd, cmd, args, false );
-				term->getTerm()->setKeepAlive( false );
+						cwd, cmd, args, env, false, false );
 
 				doneFn( term && term->getTerm() && term->getTerm()->getTerminal() &&
 								term->getTerm()->getTerminal()->getProcess()

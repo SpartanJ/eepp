@@ -154,8 +154,8 @@ class TerminalDisplay : public ITerminalDisplay {
 	create( EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
 			std::string program = "", std::vector<std::string> args = {},
 			const std::string& workingDir = "", const size_t& historySize = 10000,
-			IProcessFactory* processFactory = nullptr, const bool& useFrameBuffer = false,
-			const bool& keepAlive = true );
+			IProcessFactory* processFactory = nullptr, bool useFrameBuffer = false,
+			bool keepAlive = true, const std::unordered_map<std::string, std::string>& env = {} );
 
 	virtual ~TerminalDisplay();
 
@@ -310,6 +310,7 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	std::string mProgram;
 	std::vector<std::string> mArgs;
+	std::unordered_map<std::string, std::string> mEnv;
 	std::string mWorkingDir;
 
 	TerminalDisplay( EE::Window::Window* window, Font* font, const Float& fontSize,

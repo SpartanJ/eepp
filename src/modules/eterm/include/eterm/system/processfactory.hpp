@@ -48,12 +48,13 @@ class ProcessFactory : public IProcessFactory {
 														   std::unique_ptr<IPipe>& outPipe,
 														   bool withStderr = true ) override;
 
-	virtual std::unique_ptr<IProcess>
-	createWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
-							  const std::string& workingDirectory, int numColumns, int numRows,
-							  std::unique_ptr<IPseudoTerminal>& outPseudoTerminal ) override;
+	virtual std::unique_ptr<IProcess> createWithPseudoTerminal(
+		const std::string& program, const std::vector<std::string>& args,
+		const std::string& workingDirectory, int numColumns, int numRows,
+		std::unique_ptr<IPseudoTerminal>& outPseudoTerminal,
+		const std::unordered_map<std::string, std::string>& env = {} ) override;
 };
 
-}} // namespace EE::System
+}} // namespace eterm::System
 
 #endif

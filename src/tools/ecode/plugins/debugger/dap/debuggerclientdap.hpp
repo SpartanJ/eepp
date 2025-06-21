@@ -156,7 +156,7 @@ class DebuggerClientDap : public DebuggerClient {
 
 	void requestInitialize();
 
-	void requestLaunchCommand();
+	void requestLaunchCommand( std::function<void()> onLaunch = {} );
 
 	void processResponseInitialize( const Response& response, const nlohmann::json& );
 

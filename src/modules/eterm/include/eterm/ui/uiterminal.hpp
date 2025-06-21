@@ -19,9 +19,12 @@ class UITerminal : public UIWidget {
 	static UITerminal* New( Font* font, const Float& fontSize, const Sizef& pixelsSize,
 							const std::string& program = "",
 							const std::vector<std::string>& args = {},
+							const std::unordered_map<std::string, std::string>& env = {},
 							const std::string& workingDir = "", const size_t& historySize = 10000,
 							IProcessFactory* processFactory = nullptr,
-							const bool& useFrameBuffer = false );
+							bool useFrameBuffer = false,
+							bool keepAlive = true );
+
 	typedef std::function<void()> TerminalCommand;
 
 	static UITerminal* New( const std::shared_ptr<TerminalDisplay>& terminalDisplay );

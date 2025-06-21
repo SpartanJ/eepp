@@ -4,8 +4,7 @@
 namespace ecode {
 
 StatusTerminalController::StatusTerminalController( UISplitter* mainSplitter,
-													UISceneNode* uiSceneNode,
-													App* app ) :
+													UISceneNode* uiSceneNode, App* app ) :
 	StatusBarElement( mainSplitter, uiSceneNode, app ), mApp( app ) {}
 
 UIWidget* StatusTerminalController::getWidget() {
@@ -22,9 +21,9 @@ UITerminal* StatusTerminalController::getUITerminal() {
 	return mUITerminal;
 }
 
-UITerminal* StatusTerminalController::createTerminal( const std::string& workingDir,
-													  std::string program,
-													  const std::vector<std::string>& args ) {
+UITerminal* StatusTerminalController::createTerminal(
+	const std::string& workingDir, std::string program, const std::vector<std::string>& args,
+	const std::unordered_map<std::string, std::string>& env ) {
 	Sizef initialSize( 16, 16 );
 	if ( program.empty() && !mContext->termConfig().shell.empty() )
 		program = mContext->termConfig().shell;
@@ -32,7 +31,7 @@ UITerminal* StatusTerminalController::createTerminal( const std::string& working
 	UITerminal* term = UITerminal::New(
 		mContext->getTerminalFont() ? mContext->getTerminalFont() : mContext->getFontMono(),
 		mContext->termConfig().fontSize.asPixels( 0, Sizef(), mContext->getDisplayDPI() ),
-		initialSize, program, args,
+		initialSize, program, args, env,
 		!workingDir.empty() ? workingDir : mContext->getCurrentWorkingDir(), 10000, nullptr,
 		false );
 

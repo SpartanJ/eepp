@@ -15,16 +15,18 @@ class TerminalManager {
   public:
 	TerminalManager( App* app );
 
-	UITerminal* createTerminalInSplitter( const std::string& workingDir = "",
-										  std::string program = "",
-										  const std::vector<std::string>& args = {},
-										  bool fallback = true );
+	UITerminal*
+	createTerminalInSplitter( const std::string& workingDir = "", std::string program = "",
+							  const std::vector<std::string>& args = {},
+							  const std::unordered_map<std::string, std::string>& env = {},
+							  bool fallback = true, bool keepAlive = true );
 
 	UITerminal* createNewTerminal( const std::string& title = "",
 								   UITabWidget* inTabWidget = nullptr,
 								   const std::string& workingDir = "", std::string program = "",
 								   const std::vector<std::string>& args = {},
-								   bool fallback = true );
+								   const std::unordered_map<std::string, std::string>& env = {},
+								   bool fallback = true, bool keepAlive = true );
 
 	void applyTerminalColorScheme( const TerminalColorScheme& colorScheme );
 

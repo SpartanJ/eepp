@@ -388,12 +388,11 @@ static Sizei gridSizeFromTermDimensions( Font* font, const Float& fontSize,
 	return { clipColumns, clipRows };
 }
 
-std::shared_ptr<TerminalDisplay>
-TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fontSize,
-						 const Sizef& pixelsSize, std::string program,
-						 std::vector<std::string> args, const std::string& workingDir,
-						 const size_t& historySize, IProcessFactory* processFactory,
-						 const bool& useFrameBuffer, const bool& keepAlive ) {
+std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
+	EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
+	std::string program, std::vector<std::string> args, const std::string& workingDir,
+	const size_t& historySize, IProcessFactory* processFactory, bool useFrameBuffer, bool keepAlive,
+	const std::unordered_map<std::string, std::string>& env ) {
 	if ( program.empty() ) {
 		const char* shellenv = getenv( "SHELL" );
 #ifdef _WIN32
@@ -424,7 +423,7 @@ TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fo
 	Sizei termSize( gridSizeFromTermDimensions( font, fontSize, pixelsSize ) );
 	std::unique_ptr<IPseudoTerminal> pseudoTerminal = nullptr;
 	auto process = processFactory->createWithPseudoTerminal(
-		program, args, workingDir, termSize.getWidth(), termSize.getHeight(), pseudoTerminal );
+		program, args, workingDir, termSize.getWidth(), termSize.getHeight(), pseudoTerminal, env );
 
 	if ( !pseudoTerminal ) {
 		fprintf( stderr, "Failed to create pseudo terminal\n" );
@@ -449,6 +448,7 @@ TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fo
 													std::move( process ), terminal, historySize );
 	terminal->mProgram = program;
 	terminal->mArgs = args;
+	terminal->mEnv = env;
 	terminal->mWorkingDir = workingDir;
 	terminal->mKeepAlive = keepAlive;
 
@@ -1507,9 +1507,10 @@ void TerminalDisplay::onProcessExit( int exitCode ) {
 
 	Sizei termSize( mColumns, mRows );
 	std::unique_ptr<IPseudoTerminal> pseudoTerminal = nullptr;
-	std::vector<std::string> argsV( mArgs.begin(), mArgs.end() );
-	auto process = processFactory->createWithPseudoTerminal(
-		mProgram, argsV, mWorkingDir, termSize.getWidth(), termSize.getHeight(), pseudoTerminal );
+
+	auto process =
+		processFactory->createWithPseudoTerminal( mProgram, mArgs, mWorkingDir, termSize.getWidth(),
+												  termSize.getHeight(), pseudoTerminal, mEnv );
 
 	if ( !pseudoTerminal ) {
 		eeSAFE_DELETE( processFactory );

@@ -15,12 +15,14 @@ namespace eterm { namespace UI {
 
 UITerminal* UITerminal::New( Font* font, const Float& fontSize, const Sizef& pixelsSize,
 							 const std::string& program, const std::vector<std::string>& args,
+							 const std::unordered_map<std::string, std::string>& env,
 							 const std::string& workingDir, const size_t& historySize,
-							 IProcessFactory* processFactory, const bool& useFrameBuffer ) {
+							 IProcessFactory* processFactory, bool useFrameBuffer,
+							 bool keepAlive ) {
 	auto win = SceneManager::instance()->getUISceneNode()->getWindow();
 	auto terminal =
 		TerminalDisplay::create( win, font, fontSize, pixelsSize, program, args, workingDir,
-								 historySize, processFactory, useFrameBuffer );
+								 historySize, processFactory, useFrameBuffer, keepAlive, env );
 	return UITerminal::New( terminal );
 }
 

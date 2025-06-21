@@ -35,7 +35,8 @@ class StatusTerminalController : public StatusBarElement {
 	UITerminal* mUITerminal{ nullptr };
 
 	UITerminal* createTerminal( const std::string& workingDir = "", std::string program = "",
-								const std::vector<std::string>& args = {} );
+								const std::vector<std::string>& args = {},
+								const std::unordered_map<std::string, std::string>& env = {} );
 };
 
 } // namespace ecode
