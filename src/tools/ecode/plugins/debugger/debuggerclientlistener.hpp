@@ -73,6 +73,14 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 
 	const ProcessInfo& getProcessInfo() const { return mProcessInfo; }
 
+	const std::string& localRoot() const;
+
+	void setLocalRoot( const std::string& newLocalRoot );
+
+	const std::string& remoteRoot() const;
+
+	void setRemoteRoot( const std::string& newRemoteRoot );
+
   protected:
 	DebuggerClient* mClient{ nullptr };
 	DebuggerPlugin* mPlugin{ nullptr };
@@ -87,6 +95,8 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 	std::shared_ptr<VariablesHolder> mVariablesHolder;
 	std::unordered_map<int, Scope> mScopeRef;
 	ProcessInfo mProcessInfo;
+	std::string mLocalRoot;
+	std::string mRemoteRoot;
 
 	StatusDebuggerController* getStatusDebuggerController() const;
 

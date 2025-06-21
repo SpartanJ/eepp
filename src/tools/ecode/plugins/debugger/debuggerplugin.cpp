@@ -37,6 +37,7 @@ static constexpr auto REQUEST_TYPE_ATTACH = "attach";
 namespace ecode {
 
 static constexpr auto INPUT_PATTERN = "%$%{input%:([%w_]+)%}"sv;
+static constexpr auto ENV_PATTERN = "%$%{env%:([%w_]+)%}"sv;
 static constexpr auto COMMAND_PATTERN = "%$%{command%:([%w_]+)%}"sv;
 static constexpr auto CMD_PICK_PROCESS = "${command:pickProcess}"sv;
 static constexpr auto CMD_PROMPT_STRING = "${command:promptString}"sv;
@@ -44,12 +45,14 @@ static constexpr auto CMD_PICK_FILE = "${command:pickFile}"sv;
 
 static LuaPattern inputPtrn( INPUT_PATTERN );
 static LuaPattern commandPtrn( COMMAND_PATTERN );
+static LuaPattern envPtrn( ENV_PATTERN );
 static constexpr auto KEY_FILE = "${file}";
 static constexpr auto KEY_ARGS = "${args}";
 static constexpr auto KEY_CWD = "${cwd}";
 static constexpr auto KEY_ENV = "${env}";
 static constexpr auto KEY_STOPONENTRY = "${stopOnEntry}";
 static constexpr auto KEY_WORKSPACEFOLDER = "${workspaceFolder}";
+static constexpr auto KEY_WORKSPACEROOT = "${workspaceRoot}";
 static constexpr auto KEY_FILEDIRNAME = "${fileDirname}";
 static constexpr auto KEY_RANDPORT = "${randPort}";
 static constexpr auto KEY_PID = "${pid}";
@@ -69,6 +72,46 @@ static constexpr auto KEY_EXEC_PATH = "${execPath}";
 static constexpr auto KEY_DEFAULT_BUILD_TASK = "${defaultBuildTask}";
 static constexpr auto KEY_PATH_SEPARATOR = "${pathSeparator}";
 static constexpr auto KEY_PATH_SEPARATOR_ABBR = "${/}";
+
+static constexpr auto KEY_DEBUG_SERVER = "debugServer";
+
+static void replaceExecutableArgs( std::string& arg ) {
+	LuaPattern ptrn( "%$%b()" );
+	PatternMatcher::Range match[4];
+	while ( ptrn.matches( arg, match ) ) {
+		auto cmd = arg.substr( match[0].start, match[0].end - match[0].start );
+		if ( cmd.size() > 3 ) {
+			auto rcmd = cmd.substr( 2, cmd.size() - 3 );
+			std::string out;
+			Process p;
+			if ( p.create( rcmd ) ) {
+				p.readAllStdOut( out );
+				String::trimInPlace( out, '\n' );
+				String::trimInPlace( out, '\t' );
+				String::replaceAll( arg, cmd, out );
+			}
+		}
+	};
+}
+
+static void replaceEnvVars( std::string& arg ) {
+	PatternMatcher::Range match[4];
+	while ( envPtrn.matches( arg, match ) ) {
+		auto envCall = arg.substr( match[0].start, match[0].end - match[0].start );
+		if ( envCall.size() > 6 ) {
+			auto envName = envCall.substr( 6, envCall.size() - 7 );
+			const char* env = getenv( envName.c_str() );
+			if ( env ) {
+				std::string out{ env };
+				String::trimInPlace( out, '\n' );
+				String::trimInPlace( out, '\t' );
+				String::replaceAll( arg, envCall, out );
+			} else {
+				arg = "";
+			}
+		}
+	};
+}
 
 // Mouse Hover Tooltip
 static Action::UniqueID getMouseMoveHash( UICodeEditor* editor ) {
@@ -1103,6 +1146,7 @@ void DebuggerPlugin::replaceInVal( std::string& val,
 	}
 
 	String::replaceAll( val, KEY_WORKSPACEFOLDER, mProjectPath );
+	String::replaceAll( val, KEY_WORKSPACEROOT, mProjectPath );
 	String::replaceAll( val, KEY_USER_HOME, Sys::getUserDirectory() );
 	String::replaceAll( val, KEY_WORKSPACEFOLDER_BASENAME,
 						FileSystem::fileNameFromPath( mProjectPath ) );
@@ -1122,6 +1166,8 @@ void DebuggerPlugin::replaceInVal( std::string& val,
 
 	if ( String::contains( val, KEY_RANDPORT ) )
 		String::replaceAll( val, KEY_RANDPORT, String::toString( randomPort ) );
+
+	replaceEnvVars( val );
 }
 
 std::vector<std::string> DebuggerPlugin::replaceKeyInString(
@@ -1828,7 +1874,7 @@ void DebuggerPlugin::prepareAndRun( DapTool debugger, DapConfig config,
 	protocolSettings.runTarget = config.runTarget;
 	auto args = config.args;
 	replaceKeysInJson( args, randomPort, solvedInputs );
-	protocolSettings.launchArgs = args;
+	protocolSettings.launchArgs = std::move( args );
 	protocolSettings.redirectStdout = debugger.redirectStdout;
 	protocolSettings.redirectStderr = debugger.redirectStderr;
 	protocolSettings.supportsSourceRequest = debugger.supportsSourceRequest;
@@ -1838,7 +1884,7 @@ void DebuggerPlugin::prepareAndRun( DapTool debugger, DapConfig config,
 	for ( auto& arg : debugger.run.args ) {
 		auto res( replaceKeyInString( arg, randomPort, solvedInputs ) );
 		if ( res.size() == 1 && res[0] != arg ) {
-			if ( arg == KEY_RANDPORT )
+			if ( String::contains( arg, KEY_RANDPORT ) )
 				usesPorts = true;
 			arg = res[0];
 		}
@@ -1851,6 +1897,14 @@ void DebuggerPlugin::prepareAndRun( DapTool debugger, DapConfig config,
 		auto args = replaceKeyInString( cmdArg, randomPort, solvedInputs );
 		for ( const auto& arg : args )
 			debugger.run.args.emplace_back( arg );
+	}
+
+	if ( protocolSettings.launchArgs.contains( KEY_DEBUG_SERVER ) &&
+		 ( protocolSettings.launchArgs[KEY_DEBUG_SERVER].is_number_integer() ||
+		   ( protocolSettings.launchArgs[KEY_DEBUG_SERVER].is_string() &&
+			 String::isNumber(
+				 protocolSettings.launchArgs[KEY_DEBUG_SERVER].get<std::string>() ) ) ) ) {
+		usesPorts = true;
 	}
 
 	mThreadPool->run(
@@ -2021,10 +2075,43 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 
 	Command cmd = std::move( *cmdOpt );
 	bool isRemote = false;
+	bool runsDapServer = false;
+
+	for ( auto& arg : cmd.arguments )
+		replaceExecutableArgs( arg );
+
+	int port = randPort;
+	if ( protocolSettings.launchArgs.contains( KEY_DEBUG_SERVER ) &&
+		 ( protocolSettings.launchArgs[KEY_DEBUG_SERVER].is_number_integer() ||
+		   ( protocolSettings.launchArgs[KEY_DEBUG_SERVER].is_string() &&
+			 String::isNumber(
+				 protocolSettings.launchArgs[KEY_DEBUG_SERVER].get<std::string>() ) ) ) ) {
+		runsDapServer = true;
+		if ( protocolSettings.launchArgs[KEY_DEBUG_SERVER].is_string() ) {
+			String::fromString( port,
+								protocolSettings.launchArgs[KEY_DEBUG_SERVER].get<std::string>() );
+		} else if ( protocolSettings.launchArgs[KEY_DEBUG_SERVER].is_number_integer() ) {
+			port = protocolSettings.launchArgs.value( KEY_DEBUG_SERVER, randPort );
+		}
+	} else if ( protocolSettings.launchArgs.contains( "port" ) &&
+				protocolSettings.launchArgs["port"].is_number_integer() ) {
+		port = protocolSettings.launchArgs.value( "port", randPort );
+	}
+
+	std::string localRoot = mProjectPath;
+	std::string remoteRoot;
 
 	if ( protocolSettings.launchRequestType == REQUEST_TYPE_LAUNCH ) {
-		auto bus = std::make_unique<BusProcess>( cmd );
-		mDebugger = std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
+		if ( usesPorts ) {
+			Connection con;
+			con.host = protocolSettings.launchArgs.value( "host", "localhost" );
+			con.port = port;
+			auto bus = std::make_unique<BusSocketProcess>( cmd, con );
+			mDebugger = std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
+		} else {
+			auto bus = std::make_unique<BusProcess>( cmd );
+			mDebugger = std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
+		}
 	} else if ( protocolSettings.launchRequestType == REQUEST_TYPE_ATTACH ) {
 		auto mode = protocolSettings.launchArgs.value( "mode", "" );
 		if ( mode.empty() )
@@ -2032,7 +2119,7 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 
 		Connection con;
 		con.host = protocolSettings.launchArgs.value( "host", "localhost" );
-		con.port = protocolSettings.launchArgs.value( "port", 0 );
+		con.port = port;
 		bool useSocket = !con.host.empty() && con.port != 0;
 		if ( ( protocolSettings.launchArgs.contains( "host" ) ||
 			   protocolSettings.launchArgs.contains( "port" ) ) &&
@@ -2057,7 +2144,20 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 								 !protocolSettings.launchArgs.value( "program", "" ).empty() );
 
 		if ( mode == "local" ) {
-			if ( useSocket ) {
+			if ( runsDapServer ) {
+				if ( protocolSettings.launchArgs.contains( "remoteRoot" ) &&
+					 protocolSettings.launchArgs["remoteRoot"].is_string() ) {
+					isRemote = true;
+					remoteRoot = protocolSettings.launchArgs["remoteRoot"].get<std::string>();
+				}
+				if ( protocolSettings.launchArgs.contains( "localRoot" ) &&
+					 protocolSettings.launchArgs["localRoot"].is_string() ) {
+					localRoot = protocolSettings.launchArgs["localRoot"].get<std::string>();
+				}
+				auto bus = std::make_unique<BusSocketProcess>( cmd, con );
+				mDebugger =
+					std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
+			} else if ( useSocket ) {
 				auto bus = std::make_unique<BusSocketProcess>( cmd, con );
 				mDebugger =
 					std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
@@ -2089,6 +2189,12 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 
 	mListener = std::make_unique<DebuggerClientListener>( mDebugger.get(), this );
 	mListener->setIsRemote( isRemote );
+
+	if ( isRemote ) {
+		// mListener->setLocalRoot( localRoot );
+		// mListener->setRemoteRoot( remoteRoot );
+	}
+
 	mDebugger->addListener( mListener.get() );
 	mDebugger->setSilent( mSilence );
 
@@ -2105,6 +2211,7 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 				UITerminal* term =
 					getPluginContext()->getTerminalManager()->createTerminalInSplitter(
 						cwd, cmd, args, false );
+				term->getTerm()->setKeepAlive( false );
 
 				doneFn( term && term->getTerm() && term->getTerm()->getTerminal() &&
 								term->getTerm()->getTerminal()->getProcess()

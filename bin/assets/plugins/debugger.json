@@ -238,6 +238,44 @@
           }
         }
       ]
+    },
+    {
+      "name": "node",
+      "url": "https://github.com/microsoft/vscode-js-debug",
+      "type": "pwa-node",
+      "run": {
+        "command": "node",
+        "command_arguments": [
+          "${env:VSCODE_JS_DEBUG_PATH}/src/dapDebugServer.js",
+          "${randPort}",
+          "127.0.0.1"
+        ]
+      },
+      "languages": ["javascript", "typescript"],
+      "configurations": [
+        {
+          "name": "Launch Node.js program",
+          "request": "launch",
+          "arguments": {
+            "type": "pwa-node",
+            "program": "${file}",
+            "args": "${args}",
+            "cwd": "${cwd}",
+            "env": "${env}",
+            "runtimeExecutable": "node",
+            "console": "externalConsole"
+          }
+        },
+        {
+          "name": "Attach to Node.js process",
+          "request": "attach",
+          "arguments": {
+            "type": "pwa-node",
+            "processId": "${command:pickProcess}",
+            "cwd": "${cwd}"
+          }
+        }
+      ]
     }
   ]
 }

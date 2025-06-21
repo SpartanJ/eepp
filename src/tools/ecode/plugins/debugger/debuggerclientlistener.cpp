@@ -193,8 +193,36 @@ void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
 void DebuggerClientListener::sendBreakpoints() {
 	Lock l( mPlugin->mBreakpointsMutex );
 	for ( const auto& fileBps : mPlugin->mBreakpoints ) {
-		mClient->setBreakpoints( fileBps.first, fromSet( fileBps.second ) );
+		if ( isRemote() && !mLocalRoot.empty() && !mRemoteRoot.empty() &&
+			 String::startsWith( fileBps.first, mLocalRoot ) ) {
+			auto remoteRoot = mRemoteRoot;
+			auto localRoot = mLocalRoot;
+			FileSystem::dirAddSlashAtEnd( localRoot );
+			FileSystem::dirAddSlashAtEnd( remoteRoot );
+			auto remotePath = fileBps.first;
+			FileSystem::filePathRemoveBasePath( mLocalRoot, remotePath );
+			remotePath = remoteRoot + remotePath;
+			mClient->setBreakpoints( remotePath, fromSet( fileBps.second ) );
+		} else {
+			mClient->setBreakpoints( fileBps.first, fromSet( fileBps.second ) );
+		}
 	}
+}
+
+const std::string& DebuggerClientListener::localRoot() const {
+	return mLocalRoot;
+}
+
+void DebuggerClientListener::setLocalRoot( const std::string& newLocalRoot ) {
+	mLocalRoot = newLocalRoot;
+}
+
+const std::string& DebuggerClientListener::remoteRoot() const {
+	return mRemoteRoot;
+}
+
+void DebuggerClientListener::setRemoteRoot( const std::string& newRemoteRoot ) {
+	mRemoteRoot = newRemoteRoot;
 }
 
 void DebuggerClientListener::initialized() {
