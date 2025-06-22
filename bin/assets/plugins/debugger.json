@@ -254,7 +254,7 @@
       "languages": ["javascript", "typescript"],
       "configurations": [
         {
-          "name": "Launch Node.js program",
+          "name": "Launch script",
           "request": "launch",
           "arguments": {
             "type": "pwa-node",
@@ -263,7 +263,39 @@
             "cwd": "${cwd}",
             "env": "${env}",
             "runtimeExecutable": "node",
-            "console": "externalConsole"
+            "autoAttachChildProcesses": true,
+            "enableDWARF":true,
+            "enableContentValidation":true,
+            "outputCapture":"console",
+            "timeout":10000,
+            "showAsyncStacks":true,
+            "smartStep":true,
+            "sourceMaps":true,
+            "sourceMapRenames":true,
+            "pauseForSourceMap":false
+          }
+        },
+        {
+          "name": "Launch script in Terminal",
+          "request": "launch",
+          "arguments": {
+            "type": "pwa-node",
+            "program": "${file}",
+            "args": "${args}",
+            "cwd": "${cwd}",
+            "env": "${env}",
+            "runtimeExecutable": "node",
+            "console": "externalConsole",
+            "autoAttachChildProcesses": true,
+            "enableDWARF":true,
+            "enableContentValidation":true,
+            "outputCapture":"console",
+            "timeout":10000,
+            "showAsyncStacks":true,
+            "smartStep":true,
+            "sourceMaps":true,
+            "sourceMapRenames":true,
+            "pauseForSourceMap":false
           }
         },
         {

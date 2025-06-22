@@ -1204,8 +1204,9 @@ void App::loadFileFromPathOrFocus(
 	}
 }
 
-void App::focusOrLoadFile( const std::string& path, const TextRange& range ) {
-	UITab* tab = mSplitter->isDocumentOpen( path, true );
+void App::focusOrLoadFile( const std::string& path, const TextRange& range,
+						   bool searchInSameContext ) {
+	UITab* tab = mSplitter->isDocumentOpen( path, searchInSameContext );
 	if ( !tab ) {
 		FileInfo fileInfo( path );
 		if ( fileInfo.exists() && fileInfo.isRegularFile() )

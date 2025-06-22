@@ -411,7 +411,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 							 std::function<void( UICodeEditor*, const std::string& )> onLoaded =
 								 std::function<void( UICodeEditor*, const std::string& )>() );
 
-	void focusOrLoadFile( const std::string& path, const TextRange& range = {} );
+	void focusOrLoadFile( const std::string& path, const TextRange& range = {},
+						  bool searchInSameContext = true );
 
 	UISceneNode* getUISceneNode() const { return mUISceneNode; }
 

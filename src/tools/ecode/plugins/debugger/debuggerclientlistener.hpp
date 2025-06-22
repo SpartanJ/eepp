@@ -20,38 +20,66 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 
 	virtual ~DebuggerClientListener();
 
-	void stateChanged( DebuggerClient::State );
-	void initialized();
-	void launched();
-	void configured();
-	void failed();
-	void debuggeeRunning();
-	void debuggeeTerminated();
+	void stateChanged( DebuggerClient::State, const SessionId& sessionId );
+
+	void initialized( const SessionId& sessionId );
+
+	void launched( const SessionId& sessionId );
+
+	void configured( const SessionId& sessionId );
+
+	void failed( const SessionId& sessionId );
+
+	void debuggeeRunning( const SessionId& sessionId );
+
+	void debuggeeTerminated( const SessionId& sessionId );
 
 	void capabilitiesReceived( const Capabilities& capabilities );
-	void debuggeeExited( int exitCode );
-	void debuggeeStopped( const StoppedEvent& );
-	void debuggeeContinued( const ContinuedEvent& );
+
+	void debuggeeExited( int exitCode, const SessionId& sessionId );
+
+	void debuggeeStopped( const StoppedEvent&, const SessionId& sessionId );
+
+	void debuggeeContinued( const ContinuedEvent&, const SessionId& sessionId );
+
 	void outputProduced( const Output& );
-	void debuggingProcess( const ProcessInfo& );
+	void debuggingProcess( const ProcessInfo&, const SessionId& sessionId );
+
 	void errorResponse( const std::string& command, const std::string& summary,
-						const std::optional<Message>& message );
-	void threadChanged( const ThreadEvent& );
-	void moduleChanged( const ModuleEvent& );
-	void threads( std::vector<DapThread>&& );
-	void stackTrace( const int threadId, StackTraceInfo&& );
-	void scopes( const int frameId, std::vector<Scope>&& );
-	void variables( const int variablesReference, std::vector<Variable>&& );
-	void modules( ModulesInfo&& );
-	void serverDisconnected();
+						const std::optional<Message>& message, const SessionId& sessionId );
+
+	void threadChanged( const ThreadEvent&, const SessionId& sessionId );
+
+	void moduleChanged( const ModuleEvent&, const SessionId& sessionId );
+
+	void threads( std::vector<DapThread>&&, const SessionId& sessionId );
+
+	void stackTrace( const int threadId, StackTraceInfo&&, const SessionId& sessionId );
+
+	void scopes( const int frameId, std::vector<Scope>&&, const SessionId& sessionId );
+
+	void variables( const int variablesReference, std::vector<Variable>&&,
+					const SessionId& sessionId );
+
+	void modules( ModulesInfo&&, const SessionId& sessionId );
+
+	void serverDisconnected( const SessionId& sessionId );
+
 	void sourceContent( const std::string& path, int reference,
-						const SourceContent& content = SourceContent() );
+						const SourceContent& content = SourceContent(),
+						const SessionId& sessionId = "" );
+
 	void sourceBreakpoints( const std::string& path, int reference,
-							const std::optional<std::vector<Breakpoint>>& breakpoints );
-	void breakpointChanged( const BreakpointEvent& );
-	void expressionEvaluated( const std::string& expression, const std::optional<EvaluateInfo>& );
-	void gotoTargets( const Source& source, const int line,
-					  const std::vector<GotoTarget>& targets );
+							const std::optional<std::vector<Breakpoint>>& breakpoints,
+							const SessionId& sessionId );
+
+	void breakpointChanged( const BreakpointEvent&, const SessionId& sessionId );
+
+	void expressionEvaluated( const std::string& expression, const std::optional<EvaluateInfo>&,
+							  const SessionId& sessionId );
+
+	void gotoTargets( const Source& source, const int line, const std::vector<GotoTarget>& targets,
+					  const SessionId& sessionId );
 
 	bool isRemote() const;
 

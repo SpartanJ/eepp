@@ -22,6 +22,10 @@ class BusProcess : public Bus {
 
 	bool hasProcess() override { return true; }
 
+	Type type() const override { return Bus::Type::Process; }
+
+	const Command& getCommand() const { return mCommand; }
+
   protected:
 	Command mCommand;
 	Process mProcess;

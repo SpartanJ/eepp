@@ -184,7 +184,7 @@ void DebuggerClientListener::initUI() {
 	mPlugin->setUIDebuggingState( StatusDebuggerController::State::Running );
 }
 
-void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
+void DebuggerClientListener::stateChanged( DebuggerClient::State state, const SessionId& ) {
 	if ( state == DebuggerClient::State::Initializing ) {
 		mPlugin->getManager()->getUISceneNode()->runOnMainThread( [this] { initUI(); } );
 	}
@@ -225,24 +225,26 @@ void DebuggerClientListener::setRemoteRoot( const std::string& newRemoteRoot ) {
 	mRemoteRoot = newRemoteRoot;
 }
 
-void DebuggerClientListener::initialized() {
+void DebuggerClientListener::initialized( const SessionId& ) {
 	sendBreakpoints();
 }
 
-void DebuggerClientListener::launched() {}
+void DebuggerClientListener::launched( const SessionId& ) {}
 
-void DebuggerClientListener::configured() {}
+void DebuggerClientListener::configured( const SessionId& ) {}
 
-void DebuggerClientListener::failed() {
+void DebuggerClientListener::failed( const SessionId& ) {
 	mPlugin->exitDebugger();
 	resetState();
 }
 
-void DebuggerClientListener::debuggeeRunning() {}
+void DebuggerClientListener::debuggeeRunning( const SessionId& ) {}
 
-void DebuggerClientListener::debuggeeTerminated() {
-	mPlugin->exitDebugger();
-	resetState();
+void DebuggerClientListener::debuggeeTerminated( const SessionId& ) {
+	if ( mClient->sessionsActive() == 0 ) {
+		mPlugin->exitDebugger();
+		resetState();
+	}
 }
 
 void DebuggerClientListener::capabilitiesReceived( const Capabilities& /*capabilities*/ ) {}
@@ -258,12 +260,12 @@ void DebuggerClientListener::resetState() {
 	mVariablesHolder->clear();
 }
 
-void DebuggerClientListener::debuggeeExited( int /*exitCode*/ ) {
+void DebuggerClientListener::debuggeeExited( int /*exitCode*/, const SessionId& ) {
 	mPlugin->exitDebugger();
 	resetState();
 }
 
-void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
+void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event, const SessionId& ) {
 	Log::debug( "DebuggerClientListener::debuggeeStopped: reason %s", event.reason );
 
 	for ( auto& [editor, _] : mPlugin->mEditors ) {
@@ -309,7 +311,7 @@ void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
 		sdc->getWidget()->runOnMainThread( [sdc] { sdc->show(); } );
 }
 
-void DebuggerClientListener::debuggeeContinued( const ContinuedEvent& ) {
+void DebuggerClientListener::debuggeeContinued( const ContinuedEvent&, const SessionId& ) {
 	resetState();
 
 	UISceneNode* sceneNode = mPlugin->getUISceneNode();
@@ -339,27 +341,28 @@ void DebuggerClientListener::outputProduced( const Output& output ) {
 	}
 }
 
-void DebuggerClientListener::debuggingProcess( const ProcessInfo& info ) {
+void DebuggerClientListener::debuggingProcess( const ProcessInfo& info, const SessionId& ) {
 	mProcessInfo = info;
 }
 
 void DebuggerClientListener::errorResponse( const std::string& command, const std::string& summary,
-											const std::optional<Message>& /*message*/ ) {
+											const std::optional<Message>& /*message*/,
+											const SessionId& sessionId ) {
 	if ( command == "evaluate" )
 		return;
 
 	if ( command == "launch" )
-		failed();
+		failed( sessionId );
 
 	mPlugin->getPluginContext()->getNotificationCenter()->addNotification( summary, Seconds( 5 ),
 																		   true );
 }
 
-void DebuggerClientListener::threadChanged( const ThreadEvent& ) {}
+void DebuggerClientListener::threadChanged( const ThreadEvent&, const std::string& ) {}
 
-void DebuggerClientListener::moduleChanged( const ModuleEvent& ) {}
+void DebuggerClientListener::moduleChanged( const ModuleEvent&, const std::string& ) {}
 
-void DebuggerClientListener::threads( std::vector<DapThread>&& threads ) {
+void DebuggerClientListener::threads( std::vector<DapThread>&& threads, const SessionId& ) {
 	std::sort( threads.begin(), threads.end(),
 			   []( const DapThread& a, const DapThread& b ) { return a.id < b.id; } );
 
@@ -379,8 +382,9 @@ void DebuggerClientListener::changeScope( const StackFrame& f ) {
 	TextRange range{ { f.line - 1, f.column - 1 }, { f.line - 1, f.column - 1 } };
 	std::string path( f.source->path );
 
-	mPlugin->getUISceneNode()->runOnMainThread(
-		[this, path, range] { mPlugin->getPluginContext()->focusOrLoadFile( path, range ); } );
+	mPlugin->getUISceneNode()->runOnMainThread( [this, path, range] {
+		mPlugin->getPluginContext()->focusOrLoadFile( path, range );
+	} );
 
 	mCurrentScopePos = { f.source->path, f.line };
 
@@ -399,7 +403,8 @@ void DebuggerClientListener::changeThread( int id ) {
 		sdc->getUIThreads()->setSelection( mThreadsModel->fromThreadId( id ) );
 }
 
-void DebuggerClientListener::stackTrace( const int threadId, StackTraceInfo&& stack ) {
+void DebuggerClientListener::stackTrace( const int threadId, StackTraceInfo&& stack,
+										 const SessionId& ) {
 	changeThread( threadId );
 
 	for ( const auto& f : stack.stackFrames ) {
@@ -436,7 +441,8 @@ void DebuggerClientListener::stackTrace( const int threadId, StackTraceInfo&& st
 	}
 }
 
-void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&& scopes ) {
+void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&& scopes,
+									 const SessionId& ) {
 	if ( scopes.empty() )
 		return;
 
@@ -480,8 +486,8 @@ void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&&
 	}
 }
 
-void DebuggerClientListener::variables( const int variablesReference,
-										std::vector<Variable>&& vars ) {
+void DebuggerClientListener::variables( const int variablesReference, std::vector<Variable>&& vars,
+										const SessionId& ) {
 	mVariablesHolder->addVariables( variablesReference, std::move( vars ) );
 
 	auto scopeIt = mScopeRef.find( variablesReference );
@@ -493,24 +499,26 @@ void DebuggerClientListener::variables( const int variablesReference,
 	}
 }
 
-void DebuggerClientListener::modules( ModulesInfo&& ) {}
+void DebuggerClientListener::modules( ModulesInfo&&, const SessionId& ) {}
 
-void DebuggerClientListener::serverDisconnected() {}
+void DebuggerClientListener::serverDisconnected( const SessionId& ) {}
 
 void DebuggerClientListener::sourceContent( const std::string& /*path*/, int /*reference*/,
-											const SourceContent& /*content*/ ) {}
+											const SourceContent& /*content*/, const SessionId& ) {}
 
 void DebuggerClientListener::sourceBreakpoints(
 	const std::string& /*path*/, int /*reference*/,
-	const std::optional<std::vector<Breakpoint>>& /*breakpoints*/ ) {}
+	const std::optional<std::vector<Breakpoint>>& /*breakpoints*/, const SessionId& ) {}
 
-void DebuggerClientListener::breakpointChanged( const BreakpointEvent& ) {}
+void DebuggerClientListener::breakpointChanged( const BreakpointEvent&, const SessionId& ) {}
 
 void DebuggerClientListener::expressionEvaluated( const std::string& /*expression*/,
-												  const std::optional<EvaluateInfo>& ) {}
+												  const std::optional<EvaluateInfo>&,
+												  const SessionId& ) {}
 
 void DebuggerClientListener::gotoTargets( const Source& /*source*/, const int /*line*/,
-										  const std::vector<GotoTarget>& /*targets*/ ) {}
+										  const std::vector<GotoTarget>& /*targets*/,
+										  const SessionId& ) {}
 
 bool DebuggerClientListener::isRemote() const {
 	return mIsRemote;

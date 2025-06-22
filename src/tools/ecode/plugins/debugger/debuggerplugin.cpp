@@ -73,6 +73,9 @@ static constexpr auto KEY_DEFAULT_BUILD_TASK = "${defaultBuildTask}";
 static constexpr auto KEY_PATH_SEPARATOR = "${pathSeparator}";
 static constexpr auto KEY_PATH_SEPARATOR_ABBR = "${/}";
 
+static constexpr auto KEY_UUID = "${uuid}";
+static constexpr auto KEY_TIMESTAMP = "${timestamp}";
+
 static constexpr auto KEY_DEBUG_SERVER = "debugServer";
 
 static void replaceExecutableArgs( std::string& arg ) {
@@ -1154,6 +1157,10 @@ void DebuggerPlugin::replaceInVal( std::string& val,
 	String::replaceAll( val, KEY_EXEC_PATH, Sys::getProcessFilePath() );
 	String::replaceAll( val, KEY_PATH_SEPARATOR, FileSystem::getOSSlash() );
 	String::replaceAll( val, KEY_PATH_SEPARATOR_ABBR, FileSystem::getOSSlash() );
+	String::replaceAll( val, KEY_UUID, UUID().toString() );
+	String::replaceAll( val, KEY_TIMESTAMP,
+						std::to_string( std::chrono::system_clock::to_time_t(
+							std::chrono::system_clock::now() ) ) );
 
 	auto* editor = getPluginContext()->getSplitter()->getCurEditor();
 	if ( getPluginContext()->getSplitter()->getCurEditor() ) {
@@ -1759,7 +1766,7 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 			mDapConfigs.begin(), mDapConfigs.end(),
 			[&configuration]( const DapConfig& conf ) { return conf.name == configuration; } );
 
-		if ( configIt == debuggerIt->configurations.end() )
+		if ( configIt == mDapConfigs.end() )
 			return;
 
 		usingExternalConfig = true;

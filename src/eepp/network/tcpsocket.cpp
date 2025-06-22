@@ -355,7 +355,8 @@ void TcpSocket::startAsyncRead( ReadFn readFn ) {
 			while ( receive( buffer.data(), buffer.size(), received ) == Status::Done &&
 					received > 0 )
 				readFn( buffer.c_str(), received );
-			if ( clock.getElapsedTime().asMilliseconds() < 100.f ) {
+			if ( mSocket != Private::SocketImpl::invalidSocket() &&
+				 clock.getElapsedTime().asMilliseconds() < 100.f ) {
 				auto ms = 100.f - clock.getElapsedTime().asMilliseconds();
 				Sys::sleep( Milliseconds( ms ) );
 			}
