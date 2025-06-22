@@ -334,11 +334,11 @@ class EE_API Node : public Transformable {
 
 	bool removeActions( const std::vector<Action*>& actions );
 
-	bool removeActionsByTag( const String::HashType& tag );
+	bool removeActionsByTag( const Action::UniqueID& tag );
 
 	std::vector<Action*> getActions();
 
-	std::vector<Action*> getActionsByTag( const Uint32& tag );
+	std::vector<Action*> getActionsByTag( const Action::UniqueID& tag );
 
 	void clearActions();
 

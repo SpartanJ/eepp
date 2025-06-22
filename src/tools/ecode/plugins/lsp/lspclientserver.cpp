@@ -1245,6 +1245,10 @@ LSPClientServer::~LSPClientServer() {
 	shutdown();
 	std::unique_lock<std::mutex> lock( mShutdownMutex );
 	mShutdownCond.wait_for( lock, std::chrono::milliseconds( 275 ), [this]() { return !mReady; } );
+
+	if ( mUsingProcess )
+		mProcess.kill();
+
 	eeSAFE_DELETE( mSocket );
 	{
 		Lock l( mClientsMutex );

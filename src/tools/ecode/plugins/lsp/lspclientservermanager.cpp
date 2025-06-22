@@ -230,6 +230,7 @@ void LSPClientServerManager::renameSymbol( const URI& uri, const TextPosition& p
 }
 
 bool LSPClientServerManager::isServerRunning( const LSPClientServer* server ) {
+	Lock l( mClientsMutex );
 	for ( const auto& svr : mClients ) {
 		if ( server == svr.second.get() ) {
 			if ( mErasingClients.find( svr.first ) != mErasingClients.end() )
@@ -285,6 +286,7 @@ void LSPClientServerManager::run( const std::shared_ptr<TextDocument>& doc ) {
 }
 
 size_t LSPClientServerManager::clientCount() const {
+	Lock l( mClientsMutex );
 	return mClients.size();
 }
 
@@ -320,6 +322,7 @@ void LSPClientServerManager::updateDirty() {
 			// Kill server only after N seconds of inactivity
 			if ( server.second->getElapsedTime() > mLSPDecayTime ) {
 				// If a document was opened while waiting, remove the server from the queue
+				Lock l( mClientsMutex );
 				auto clientServer = mClients.find( server.first );
 				if ( clientServer != mClients.end() && clientServer->second->hasDocuments() ) {
 					invalidatedClose.push_back( server.first );

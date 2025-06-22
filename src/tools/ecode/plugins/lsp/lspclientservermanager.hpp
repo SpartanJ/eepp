@@ -111,7 +111,7 @@ class LSPClientServerManager {
 	std::map<String::HashType, std::unique_ptr<Clock>> mLSPsToClose;
 	LSPWorkspaceFolder mLSPWorkspaceFolder;
 	Clock mUpdateClock;
-	Mutex mClientsMutex;
+	mutable Mutex mClientsMutex;
 	Time mLSPDecayTime{ Minutes( 1 ) };
 
 	std::vector<LSPDefinition> supportsLSP( const std::shared_ptr<TextDocument>& doc );

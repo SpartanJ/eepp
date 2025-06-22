@@ -1567,7 +1567,7 @@ bool Node::removeActions( const std::vector<Action*>& actions ) {
 	return getActionManager()->removeActions( actions );
 }
 
-bool Node::removeActionsByTag( const String::HashType& tag ) {
+bool Node::removeActionsByTag( const Action::UniqueID& tag ) {
 	return getActionManager()->removeActionsByTagFromTarget( this, tag );
 }
 
@@ -1575,7 +1575,7 @@ std::vector<Action*> Node::getActions() {
 	return getActionManager()->getActionsFromTarget( this );
 }
 
-std::vector<Action*> Node::getActionsByTag( const Uint32& tag ) {
+std::vector<Action*> Node::getActionsByTag( const Action::UniqueID& tag ) {
 	return getActionManager()->getActionsByTagFromTarget( this, tag );
 }
 

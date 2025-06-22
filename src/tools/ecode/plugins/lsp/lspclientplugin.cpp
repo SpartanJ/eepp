@@ -1737,9 +1737,8 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 		addFn( "lsp-switch-header-source",
 			   i18n( "lsp_switch_header_source", "Switch Header/Source" ), "filetype-hpp" );
 
-	String restartStr( i18n( "lsp_restart_lsp_server", "Restart LSP Server" ) + " (" +
-					   server->getDefinition().name + ")" );
-	addFn( "lsp-plugin-restart", restartStr, "refresh" );
+	addFn( "lsp-plugin-restart", i18n( "lsp_restart_lsp_server", "Restart LSP Server" ),
+		   "refresh" );
 
 #ifdef EE_DEBUG
 	if ( server->getDefinition().name == "clangd" )
