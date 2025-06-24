@@ -27,8 +27,8 @@
       "file_patterns": ["%.js$", "%.ts$", "%.jsx$", "%.tsx$"],
       "warning_pattern": "[^:]:(%d+):(%d+): ([^%[]+)%[([^\n]+)",
       "warning_pattern_order": { "line": 1, "col": 2, "message": 3, "type": 4 },
-      "command": "eslint --no-ignore --format unix $FILENAME",
-      "url": "https://eslint.org"
+      "command": "oxlint --no-ignore --format unix $FILENAME",
+      "url": "https://github.com/oxc-project/oxc"
     },
     {
       "language": "lua",
