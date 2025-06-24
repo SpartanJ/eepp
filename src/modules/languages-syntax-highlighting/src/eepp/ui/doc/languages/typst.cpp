@@ -8,7 +8,7 @@ SyntaxDefinition& addTypst() {
 	return SyntaxDefinitionManager::instance()
 		->add(
 
-			{ "typst",
+			{ "Typst",
 			  { "%.typ$" },
 			  {
 				  { { "include", "#markup" },

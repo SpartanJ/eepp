@@ -251,6 +251,7 @@ static inline void popStack( SyntaxStateRestored& curState, SyntaxState& retStat
 
 	if ( retState.langStack[curState.currentLevel] != 0 &&
 		 retState.langStack[curState.currentLevel] != syntax.getLanguageIndex() ) {
+		retState.langStack[curState.currentLevel] = 0;
 		setSubsyntaxPatternIdx( curState, retState, SyntaxStateType{} );
 
 		// Remove all the removed language stack

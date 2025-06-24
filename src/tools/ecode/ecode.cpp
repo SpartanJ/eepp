@@ -4112,6 +4112,9 @@ static void exportLanguages( const std::string& path, const std::string& langs,
 	SyntaxDefinitionManager::instance()->loadFromFolder( langsPath );
 	std::vector<SyntaxDefinition> defs;
 
+	for ( auto& preDef : sdm->getPreDefinitions() )
+		preDef.load();
+
 	if ( !langs.empty() ) {
 		if ( langs == "all" ) {
 			defs = sdm->getDefinitions();

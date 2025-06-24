@@ -414,6 +414,9 @@ void LanguagesSyntaxHighlighting::load() {
 		{ "%.lisp$", "%.cl$", "%.el$" },
 	} );
 
+	sdm->addPreDefinition(
+		{ "L.B. Stanza", []() -> SyntaxDefinition& { return addLbstanza(); }, { "%.stanza$" } } );
+
 	sdm->addPreDefinition( {
 		"Lobster",
 		[]() -> SyntaxDefinition& { return addLobster(); },
@@ -626,7 +629,7 @@ void LanguagesSyntaxHighlighting::load() {
 							 { "ts" } } );
 
 	sdm->addPreDefinition(
-		{ "typst", []() -> SyntaxDefinition& { return addTypst(); }, { "%.typ$" } } );
+		{ "Typst", []() -> SyntaxDefinition& { return addTypst(); }, { "%.typ$" } } );
 
 	sdm->addPreDefinition( {
 		"Ü",

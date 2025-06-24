@@ -1,7 +1,7 @@
+#include "universallocator.hpp"
 #include "ecode.hpp"
 #include "pathhelper.hpp"
 #include "settingsmenu.hpp"
-#include "universallocator.hpp"
 
 #include <algorithm>
 
@@ -932,18 +932,24 @@ std::shared_ptr<ItemListOwnerModel<std::string>>
 UniversalLocator::openFileTypeModel( const std::string& pattern ) {
 	if ( nullptr == mApp->getSplitter()->getCurEditor() )
 		return ItemListOwnerModel<std::string>::create( {} );
+	const auto& preDefs = SyntaxDefinitionManager::instance()->getPreDefinitions();
 	const auto& defs = SyntaxDefinitionManager::instance()->getDefinitions();
-	std::vector<std::string> fileTypeNames;
-	fileTypeNames.reserve( defs.size() );
+	std::set<std::string> fileTypeNames;
+	for ( const auto& def : preDefs ) {
+		if ( pattern.empty() || String::startsWith( String::toLower( def.getLanguageName() ),
+													String::toLower( pattern ) ) )
+			fileTypeNames.insert( def.getLanguageName() );
+	}
 	for ( const auto& def : defs ) {
 		if ( !def.isVisible() )
 			continue;
 		if ( pattern.empty() || String::startsWith( String::toLower( def.getLanguageName() ),
 													String::toLower( pattern ) ) )
-			fileTypeNames.push_back( def.getLanguageName() );
+			fileTypeNames.insert( def.getLanguageName() );
 	}
-	std::sort( fileTypeNames.begin(), fileTypeNames.end() );
-	return ItemListOwnerModel<std::string>::create( fileTypeNames );
+	return ItemListOwnerModel<std::string>::create(
+		std::vector<std::string>( std::make_move_iterator( fileTypeNames.begin() ),
+								  std::make_move_iterator( fileTypeNames.end() ) ) );
 }
 
 void UniversalLocator::updateSwitchFileTypeTable() {
