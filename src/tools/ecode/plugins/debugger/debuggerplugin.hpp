@@ -28,7 +28,7 @@ struct DapConfig {
 struct DapTool {
 	std::string name;
 	std::string url;
-	std::string type;
+	std::vector<std::string> type;
 	std::vector<std::string> languagesSupported;
 	DapRunConfig run;
 	std::vector<DapConfig> configurations;

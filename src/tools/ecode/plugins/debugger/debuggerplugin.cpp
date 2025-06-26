@@ -467,7 +467,15 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 		for ( const auto& dap : dapArr ) {
 			DapTool dapTool;
 			dapTool.name = dap.value( "name", "" );
-			dapTool.type = dap.value( "type", "" );
+
+			if ( dap.contains( "type" ) && dap["type"].is_array() ) {
+				for ( const auto& obj : dap["type"] )
+					if ( obj.is_string() )
+						dapTool.type.emplace_back( obj.get<std::string>() );
+			} else if ( dap.contains( "type" ) && dap["type"].is_string() ) {
+				dapTool.type.emplace_back( dap.value( "type", "" ) );
+			}
+
 			dapTool.url = dap.value( "url", "" );
 
 			if ( dap.contains( "run" ) ) {
@@ -600,8 +608,9 @@ void DebuggerPlugin::loadProjectConfiguration( const std::string& path ) {
 		DapConfig dapConfig;
 		auto type = conf.value( "type", "" );
 
-		if ( !std::any_of( mDaps.begin(), mDaps.end(),
-						   [&type]( const DapTool& dap ) { return dap.type == type; } ) )
+		if ( !std::any_of( mDaps.begin(), mDaps.end(), [&type]( const DapTool& dap ) {
+				 return dap.type.end() != std::find( dap.type.begin(), dap.type.end(), type );
+			 } ) )
 			continue;
 
 		dapConfig.name = conf.value( "name", "" );
@@ -1109,7 +1118,10 @@ void DebuggerPlugin::updateDebuggerConfigurationList() {
 	{
 		Lock l( mDapsMutex );
 		for ( const auto& conf : mDapConfigs ) {
-			if ( conf.args.value( "type", "" ) != debuggerIt->type )
+			auto type( conf.args.value( "type", "" ) );
+
+			if ( std::find( debuggerIt->type.begin(), debuggerIt->type.end(), type ) ==
+				 debuggerIt->type.end() )
 				continue;
 
 			confNames.emplace_back( conf.name );

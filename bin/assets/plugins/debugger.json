@@ -242,7 +242,7 @@
     {
       "name": "node",
       "url": "https://github.com/microsoft/vscode-js-debug",
-      "type": "pwa-node",
+      "type": ["pwa-node", "pwa-chrome"],
       "run": {
         "command": "node",
         "command_arguments": [ "${env:VSCODE_JS_DEBUG_PATH}/src/dapDebugServer.js", "${randPort}", "127.0.0.1" ]

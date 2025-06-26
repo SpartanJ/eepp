@@ -27,6 +27,10 @@ struct Command {
 };
 
 struct Connection {
+	Connection() {}
+
+	Connection( int port, std::string host ) : port( port ), host( std::move( host ) ) {}
+
 	int port;
 	std::string host;
 	bool isValid() const;
