@@ -1,4 +1,5 @@
 #include "debuggerplugin.hpp"
+#include "../../jsonhelper.hpp"
 #include "../../notificationcenter.hpp"
 #include "../../terminalmanager.hpp"
 #include "../../uistatusbar.hpp"
@@ -16,7 +17,6 @@
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uitooltip.hpp>
-#include <nlohmann/json.hpp>
 
 using namespace EE::UI;
 using namespace EE::UI::Doc;
@@ -97,23 +97,31 @@ static void replaceExecutableArgs( std::string& arg ) {
 	};
 }
 
-static void replaceEnvVars( std::string& arg ) {
+static bool replaceEnvVars( std::string& arg, PluginContextProvider* ctx ) {
 	PatternMatcher::Range match[4];
 	while ( envPtrn.matches( arg, match ) ) {
 		auto envCall = arg.substr( match[0].start, match[0].end - match[0].start );
 		if ( envCall.size() > 6 ) {
 			auto envName = envCall.substr( 6, envCall.size() - 7 );
 			const char* env = getenv( envName.c_str() );
-			if ( env ) {
+			if ( env && strlen( env ) != 0 ) {
 				std::string out{ env };
 				String::trimInPlace( out, '\n' );
 				String::trimInPlace( out, '\t' );
 				String::replaceAll( arg, envCall, out );
 			} else {
 				arg = "";
+				ctx->getNotificationCenter()->addNotification( String::format(
+					ctx->i18n( "command_parameter_env_var_not_found",
+							   "The environment variable \"%s\" was not found but it's needed in "
+							   "order to run the debugger." )
+						.toUtf8(),
+					envName ) );
+				return false;
 			}
 		}
 	};
+	return true;
 }
 
 // Mouse Hover Tooltip
@@ -1120,7 +1128,7 @@ void DebuggerPlugin::updateDebuggerConfigurationList() {
 	}
 }
 
-void DebuggerPlugin::replaceInVal( std::string& val,
+bool DebuggerPlugin::replaceInVal( std::string& val,
 								   const std::optional<ProjectBuildStep>& runConfig,
 								   ProjectBuild* buildConfig, int randomPort ) {
 
@@ -1174,10 +1182,10 @@ void DebuggerPlugin::replaceInVal( std::string& val,
 	if ( String::contains( val, KEY_RANDPORT ) )
 		String::replaceAll( val, KEY_RANDPORT, String::toString( randomPort ) );
 
-	replaceEnvVars( val );
+	return replaceEnvVars( val, this->getPluginContext() );
 }
 
-std::vector<std::string> DebuggerPlugin::replaceKeyInString(
+std::pair<bool, std::vector<std::string>> DebuggerPlugin::replaceKeyInString(
 	std::string val, int randomPort,
 	const std::unordered_map<std::string, std::string>& solvedInputs ) {
 	auto pbm = getPluginContext()->getProjectBuildManager();
@@ -1185,8 +1193,9 @@ std::vector<std::string> DebuggerPlugin::replaceKeyInString(
 	auto buildConfig = pbm ? pbm->getCurrentBuild() : nullptr;
 
 	const auto replaceVal = [this, &runConfig, &buildConfig, &solvedInputs,
-							 randomPort]( std::string& val ) {
-		replaceInVal( val, runConfig, buildConfig, randomPort );
+							 randomPort]( std::string& val ) -> bool {
+		if ( !replaceInVal( val, runConfig, buildConfig, randomPort ) )
+			return false;
 
 		LuaPattern::Range matches[2];
 		if ( inputPtrn.matches( val, matches ) ) {
@@ -1204,6 +1213,8 @@ std::vector<std::string> DebuggerPlugin::replaceKeyInString(
 			if ( solvedIdIt != solvedInputs.end() )
 				val = solvedIdIt->second;
 		}
+
+		return true;
 	};
 
 	if ( runConfig && val == KEY_ARGS ) {
@@ -1213,12 +1224,13 @@ std::vector<std::string> DebuggerPlugin::replaceKeyInString(
 			replaceVal( arg );
 			argsArr.push_back( arg );
 		}
-		return argsArr;
+		return { true, argsArr };
 	}
 
-	replaceVal( val );
+	if ( !replaceVal( val ) )
+		return { false, {} };
 
-	return { val };
+	return { true, { val } };
 }
 
 void DebuggerPlugin::replaceKeysInJson(
@@ -1873,6 +1885,26 @@ void DebuggerPlugin::resolveInputsBeforeRun(
 	}
 }
 
+std::optional<Connection> getDebugServer( nlohmann::json& json ) {
+	auto debugServerInt = json_get_if<int>( json, KEY_DEBUG_SERVER );
+
+	if ( debugServerInt )
+		return Connection{ *debugServerInt, "localhost" };
+
+	auto debugServerStr = json_get_if<std::string>( json, KEY_DEBUG_SERVER );
+	if ( debugServerStr ) {
+		int port;
+		if ( String::isNumber( *debugServerStr ) && String::fromString( port, *debugServerStr ) )
+			return Connection( port, "localhost" );
+
+		auto split = String::split( *debugServerStr, ':' );
+		if ( split.size() == 2 && String::fromString( port, split[1] ) )
+			return Connection( port, split[1] );
+	}
+
+	return {};
+}
+
 void DebuggerPlugin::prepareAndRun( DapTool debugger, DapConfig config,
 									std::unordered_map<std::string, std::string> solvedInputs ) {
 	int randomPort = Math::randi( 44000, 45000 );
@@ -1889,7 +1921,13 @@ void DebuggerPlugin::prepareAndRun( DapTool debugger, DapConfig config,
 	bool usesPorts = false;
 
 	for ( auto& arg : debugger.run.args ) {
-		auto res( replaceKeyInString( arg, randomPort, solvedInputs ) );
+		auto ret( replaceKeyInString( arg, randomPort, solvedInputs ) );
+
+		// No success? Abort
+		if ( !ret.first )
+			return;
+
+		auto res( ret.second );
 		if ( res.size() == 1 && res[0] != arg ) {
 			if ( String::contains( arg, KEY_RANDPORT ) )
 				usesPorts = true;
@@ -1901,18 +1939,19 @@ void DebuggerPlugin::prepareAndRun( DapTool debugger, DapConfig config,
 		if ( cmdArg == KEY_FILE || cmdArg == KEY_ARGS || cmdArg == CMD_PICK_PROCESS ||
 			 cmdArg == CMD_PROMPT_STRING )
 			forceUseProgram = true;
-		auto args = replaceKeyInString( cmdArg, randomPort, solvedInputs );
+		auto ret = replaceKeyInString( cmdArg, randomPort, solvedInputs );
+
+		// No success? Abort
+		if ( !ret.first )
+			return;
+
+		auto args = ret.second;
 		for ( const auto& arg : args )
 			debugger.run.args.emplace_back( arg );
 	}
 
-	if ( protocolSettings.launchArgs.contains( KEY_DEBUG_SERVER ) &&
-		 ( protocolSettings.launchArgs[KEY_DEBUG_SERVER].is_number_integer() ||
-		   ( protocolSettings.launchArgs[KEY_DEBUG_SERVER].is_string() &&
-			 String::isNumber(
-				 protocolSettings.launchArgs[KEY_DEBUG_SERVER].get<std::string>() ) ) ) ) {
+	if ( getDebugServer( protocolSettings.launchArgs ) )
 		usesPorts = true;
-	}
 
 	mThreadPool->run(
 		[this, protocolSettings = std::move( protocolSettings ), randomPort,
@@ -2087,22 +2126,18 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 	for ( auto& arg : cmd.arguments )
 		replaceExecutableArgs( arg );
 
-	int port = randPort;
-	if ( protocolSettings.launchArgs.contains( KEY_DEBUG_SERVER ) &&
-		 ( protocolSettings.launchArgs[KEY_DEBUG_SERVER].is_number_integer() ||
-		   ( protocolSettings.launchArgs[KEY_DEBUG_SERVER].is_string() &&
-			 String::isNumber(
-				 protocolSettings.launchArgs[KEY_DEBUG_SERVER].get<std::string>() ) ) ) ) {
+	Connection con;
+	con.host = protocolSettings.launchArgs.value( "host", "localhost" );
+	con.port = randPort;
+
+	auto debugServer = getDebugServer( protocolSettings.launchArgs );
+	if ( debugServer ) {
 		runsDapServer = true;
-		if ( protocolSettings.launchArgs[KEY_DEBUG_SERVER].is_string() ) {
-			String::fromString( port,
-								protocolSettings.launchArgs[KEY_DEBUG_SERVER].get<std::string>() );
-		} else if ( protocolSettings.launchArgs[KEY_DEBUG_SERVER].is_number_integer() ) {
-			port = protocolSettings.launchArgs.value( KEY_DEBUG_SERVER, randPort );
-		}
+		con.host = debugServer->host;
+		con.port = debugServer->port;
 	} else if ( protocolSettings.launchArgs.contains( "port" ) &&
 				protocolSettings.launchArgs["port"].is_number_integer() ) {
-		port = protocolSettings.launchArgs.value( "port", randPort );
+		con.port = protocolSettings.launchArgs.value( "port", randPort );
 	}
 
 	std::string localRoot = mProjectPath;
@@ -2110,9 +2145,6 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 
 	if ( protocolSettings.launchRequestType == REQUEST_TYPE_LAUNCH ) {
 		if ( usesPorts ) {
-			Connection con;
-			con.host = protocolSettings.launchArgs.value( "host", "localhost" );
-			con.port = port;
 			auto bus = std::make_unique<BusSocketProcess>( cmd, con );
 			mDebugger = std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
 		} else {
@@ -2124,9 +2156,6 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 		if ( mode.empty() )
 			mode = "local";
 
-		Connection con;
-		con.host = protocolSettings.launchArgs.value( "host", "localhost" );
-		con.port = port;
 		bool useSocket = !con.host.empty() && con.port != 0;
 		if ( ( protocolSettings.launchArgs.contains( "host" ) ||
 			   protocolSettings.launchArgs.contains( "port" ) ) &&

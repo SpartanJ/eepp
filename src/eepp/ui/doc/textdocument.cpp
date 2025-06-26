@@ -1237,6 +1237,8 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 }
 
 size_t TextDocument::remove( const size_t& cursorIdx, TextRange range ) {
+	if ( !range.hasSelection() )
+		return 0;
 	size_t lineCount = mLines.size();
 	mUndoStack.clearRedoStack();
 	size_t linesRemoved = remove( cursorIdx, sanitizeRange( range.normalized() ),
@@ -1249,7 +1251,7 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range ) {
 
 size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 							 UndoStackContainer& undoStack, const Time& time, bool fromUndoRedo ) {
-	if ( !range.isValid() )
+	if ( !range.hasSelection() )
 		return 0;
 
 	mModificationId++;
@@ -1601,16 +1603,21 @@ void TextDocument::deleteTo( const size_t& cursorIdx, int offset ) {
 	setSelection( cursorIdx, cursorPos );
 }
 
-void TextDocument::deleteSelection( const size_t& cursorIdx ) {
+bool TextDocument::deleteSelection( const size_t& cursorIdx ) {
 	BoolScopedOpOptional op( !mDoingTextInput, mDoingTextInput, true );
+	if ( !getSelectionIndex( cursorIdx ).hasSelection() )
+		return false;
 	TextPosition cursorPos = getSelectionIndex( cursorIdx ).normalized().start();
 	remove( cursorIdx, getSelectionIndex( cursorIdx ) );
 	setSelection( cursorIdx, cursorPos );
+	return true;
 }
 
-void TextDocument::deleteSelection() {
+bool TextDocument::deleteSelection() {
+	bool somethingWasDeleted = false;
 	for ( size_t i = 0; i < mSelection.size(); ++i )
-		deleteSelection( i );
+		somethingWasDeleted |= deleteSelection( i );
+	return somethingWasDeleted;
 }
 
 void TextDocument::selectTo( TextPosition position ) {

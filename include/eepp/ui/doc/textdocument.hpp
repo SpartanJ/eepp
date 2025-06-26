@@ -275,7 +275,7 @@ class EE_API TextDocument {
 
 	void deleteTo( const size_t& cursorIdx, int offset );
 
-	void deleteSelection();
+	bool deleteSelection();
 
 	void selectTo( TextPosition position );
 
@@ -578,7 +578,7 @@ class EE_API TextDocument {
 
 	void popSelection();
 
-	void deleteSelection( const size_t& cursorIdx );
+	bool deleteSelection( const size_t& cursorIdx );
 
 	String getSelectedText( const size_t& cursorIdx ) const;
 

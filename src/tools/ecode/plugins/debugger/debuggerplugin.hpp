@@ -198,7 +198,7 @@ class DebuggerPlugin : public PluginBase {
 	void replaceKeysInJson( nlohmann::json& json, int randomPort,
 							const std::unordered_map<std::string, std::string>& solvedInputs );
 
-	std::vector<std::string>
+	std::pair<bool, std::vector<std::string>>
 	replaceKeyInString( std::string val, int randomPort,
 						const std::unordered_map<std::string, std::string>& solvedInputs );
 
@@ -285,7 +285,7 @@ class DebuggerPlugin : public PluginBase {
 	void onDocumentLineMove( TextDocument* doc, const Int64& fromLine, const Int64& toLine,
 							 const Int64& numLines );
 
-	void replaceInVal( std::string& val, const std::optional<ProjectBuildStep>& runConfig,
+	bool replaceInVal( std::string& val, const std::optional<ProjectBuildStep>& runConfig,
 					   ProjectBuild* buildConfig, int randomPort );
 };
 

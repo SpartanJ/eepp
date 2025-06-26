@@ -245,11 +245,7 @@
       "type": "pwa-node",
       "run": {
         "command": "node",
-        "command_arguments": [
-          "${env:VSCODE_JS_DEBUG_PATH}/src/dapDebugServer.js",
-          "${randPort}",
-          "127.0.0.1"
-        ]
+        "command_arguments": [ "${env:VSCODE_JS_DEBUG_PATH}/src/dapDebugServer.js", "${randPort}", "127.0.0.1" ]
       },
       "languages": ["javascript", "typescript"],
       "configurations": [
