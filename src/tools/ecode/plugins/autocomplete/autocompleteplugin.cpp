@@ -1104,7 +1104,7 @@ void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f
 	text.setFillColor( normalStyle.color );
 	text.setStyle( normalStyle.style );
 	text.setString( str );
-	SyntaxTokenizer::tokenizeText( doc.getSyntaxDefinition(), editor->getColorScheme(), text );
+	SyntaxTokenizer::tokenizeText( doc.getSyntaxDefinition(), editor->getColorScheme(), &text );
 	text.draw( boxRect.getPosition().x + mBoxPadding.Left,
 			   boxRect.getPosition().y + mBoxPadding.Top );
 }
@@ -1204,7 +1204,7 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 
 		if ( mHighlightSuggestions && suggestion.kind != LSPCompletionItemKind::Text ) {
 			SyntaxTokenizer::tokenizeText( doc.getSyntaxDefinition(), editor->getColorScheme(),
-										   text );
+										   &text );
 		}
 
 		text.draw( cursorPos.x + iconSpace.getWidth() + mBoxPadding.Left,
@@ -1246,7 +1246,7 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 						forceHTML ? SyntaxDefinitionManager::instance()->getByLSPName( "html" )
 								  : SyntaxDefinitionManager::instance()->getByLSPName( "markdown" );
 					SyntaxTokenizer::tokenizeText( syntaxDef, editor->getColorScheme(),
-												   mSuggestionDoc, 0, 0xFFFFFFFF, true, "\n\t " );
+												   &mSuggestionDoc, 0, 0xFFFFFFFF, true, "\n\t " );
 				}
 			}
 

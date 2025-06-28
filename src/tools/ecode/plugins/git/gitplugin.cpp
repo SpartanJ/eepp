@@ -406,7 +406,7 @@ void GitPlugin::updateStatusBarSync() {
 	}
 
 	SyntaxTokenizer::tokenizeText( mStatusCustomTokenizer->def, mStatusCustomTokenizer->scheme,
-								   *mStatusButton->getTextBox()->getTextCache() );
+								   mStatusButton->getTextBox()->getTextCache() );
 
 	mStatusButton->invalidateDraw();
 }
@@ -599,7 +599,7 @@ void GitPlugin::displayTooltip( UICodeEditor* editor, const Git::Blame& blame,
 	}
 
 	SyntaxTokenizer::tokenizeText( *mTooltipCustomSyntaxDef, editor->getColorScheme(),
-								   *tooltip->getTextCache() );
+								   tooltip->getTextCache() );
 
 	tooltip->notifyTextChangedFromTextCache();
 

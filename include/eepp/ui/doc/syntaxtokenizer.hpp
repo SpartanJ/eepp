@@ -3,10 +3,12 @@
 
 #include <eepp/config.hpp>
 #include <eepp/core/string.hpp>
-#include <eepp/graphics/text.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
 #include <string>
 
+namespace EE { namespace Graphics {
+class Text;
+}} // namespace EE::Graphics
 using namespace EE::Graphics;
 
 namespace EE { namespace UI { namespace Doc {
@@ -89,8 +91,8 @@ class EE_API SyntaxTokenizer {
 					  const SyntaxState& state, const size_t& startIndex = 0,
 					  bool skipSubSyntaxSeparator = false );
 
-	static Text& tokenizeText( const SyntaxDefinition& syntax, const SyntaxColorScheme& colorScheme,
-							   Text& text, const size_t& startIndex = 0,
+	static Text* tokenizeText( const SyntaxDefinition& syntax, const SyntaxColorScheme& colorScheme,
+							   Text* text, const size_t& startIndex = 0,
 							   const size_t& endIndex = 0xFFFFFFFF,
 							   bool skipSubSyntaxSeparator = false,
 							   const std::string& trimChars = "" );

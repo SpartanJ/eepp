@@ -1,3 +1,4 @@
+#include <eepp/graphics/text.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/parsermatcher.hpp>
@@ -834,12 +835,12 @@ SyntaxTokenizer::tokenizeComplete( const SyntaxDefinition& syntax, const std::st
 										   skipSubSyntaxSeparator );
 }
 
-Text& SyntaxTokenizer::tokenizeText( const SyntaxDefinition& syntax,
-									 const SyntaxColorScheme& colorScheme, Text& text,
+Text* SyntaxTokenizer::tokenizeText( const SyntaxDefinition& syntax,
+									 const SyntaxColorScheme& colorScheme, Text* text,
 									 const size_t& startIndex, const size_t& endIndex,
 									 bool skipSubSyntaxSeparator, const std::string& trimChars ) {
 
-	auto tokens = SyntaxTokenizer::tokenizeComplete( syntax, text.getString(), SyntaxState{},
+	auto tokens = SyntaxTokenizer::tokenizeComplete( syntax, text->getString(), SyntaxState{},
 													 startIndex, skipSubSyntaxSeparator )
 					  .first;
 
@@ -870,15 +871,15 @@ Text& SyntaxTokenizer::tokenizeText( const SyntaxDefinition& syntax,
 				txt += token.text;
 			++c;
 		}
-		text.setString( txt );
+		text->setString( txt );
 	}
 
 	size_t start = startIndex;
 	for ( const auto& token : tokens ) {
 		if ( start < endIndex ) {
 			if ( token.len > 0 )
-				text.setFillColor( colorScheme.getSyntaxStyle( token.type ).color, start,
-								   std::min( start + token.len, endIndex ) );
+				text->setFillColor( colorScheme.getSyntaxStyle( token.type ).color, start,
+									std::min( start + token.len, endIndex ) );
 			start += token.len;
 		} else {
 			break;
