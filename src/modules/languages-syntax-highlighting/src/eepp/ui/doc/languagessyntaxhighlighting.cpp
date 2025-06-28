@@ -61,6 +61,7 @@
 #include <eepp/ui/doc/languages/modula2.hpp>
 #include <eepp/ui/doc/languages/modula3.hpp>
 #include <eepp/ui/doc/languages/moonscript.hpp>
+#include <eepp/ui/doc/languages/msbuildsolution.hpp>
 #include <eepp/ui/doc/languages/nelua.hpp>
 #include <eepp/ui/doc/languages/nim.hpp>
 #include <eepp/ui/doc/languages/objeck.hpp>
@@ -79,6 +80,7 @@
 #include <eepp/ui/doc/languages/r.hpp>
 #include <eepp/ui/doc/languages/racket.hpp>
 #include <eepp/ui/doc/languages/rave.hpp>
+#include <eepp/ui/doc/languages/rcscript.hpp>
 #include <eepp/ui/doc/languages/rescript.hpp>
 #include <eepp/ui/doc/languages/ring.hpp>
 #include <eepp/ui/doc/languages/ruby.hpp>
@@ -426,7 +428,8 @@ void LanguagesSyntaxHighlighting::load() {
 	sdm->addPreDefinition( {
 		"Makefile",
 		[]() -> SyntaxDefinition& { return addMakefile(); },
-		{ "^[Mm]akefile$", "%.mk$", "%.make$", "%.mak$", "^Makefile%.am$", "^Makefile%.in$" },
+		{ "^[Mm]akefile$", "%.mk$", "%.make$", "%.mak$", "^Makefile%.am$", "^Makefile%.in$",
+		  "%.ppj$", "%.ppw$" },
 	} );
 
 	sdm->addPreDefinition( {
@@ -451,6 +454,12 @@ void LanguagesSyntaxHighlighting::load() {
 		"MoonScript",
 		[]() -> SyntaxDefinition& { return addMoonscript(); },
 		{ "%.moon$" },
+	} );
+
+	sdm->addPreDefinition( {
+		"MSBuild Solution",
+		[]() -> SyntaxDefinition& { return addMsbuildsolution(); },
+		{ "%.sln$" },
 	} );
 
 	sdm->addPreDefinition( {
@@ -539,6 +548,9 @@ void LanguagesSyntaxHighlighting::load() {
 
 	sdm->addPreDefinition(
 		{ "Racket", []() -> SyntaxDefinition& { return addRacket(); }, { "%.rkt$" } } );
+
+	sdm->addPreDefinition(
+		{ "RC Script", []() -> SyntaxDefinition& { return addRcscript(); }, { "%.rc$" } } );
 
 	sdm->addPreDefinition(
 		{ "Rave", []() -> SyntaxDefinition& { return addRave(); }, { "%.rave$" } } );

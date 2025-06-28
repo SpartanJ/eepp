@@ -9,7 +9,7 @@ void addConfigFile() {
 
 		{ "Config File",
 		  { "%.ini$", "%.conf$", "%.desktop$", "%.service$", "%.cfg$", "%.properties$", "%.wrap$",
-			"Doxyfile" },
+			"%.dev$", "Doxyfile" },
 		  {
 			  { { "%s*#%x%x%x%x%x%x%x%x" }, "string" },
 			  { { "%s*#%x%x%x%x%x%x" }, "string" },

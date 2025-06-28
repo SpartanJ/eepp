@@ -8,7 +8,8 @@ SyntaxDefinition& addMakefile() {
 	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Makefile",
-		  { "^[Mm]akefile$", "%.mk$", "%.make$", "%.mak$", "^Makefile%.am$", "^Makefile%.in$" },
+		  { "^[Mm]akefile$", "%.mk$", "%.make$", "%.mak$", "^Makefile%.am$", "^Makefile%.in$",
+			"%.ppj$", "%.ppw$" },
 		  {
 			  { { "#.*\n" }, "comment" },
 			  { { "[[.]]}" }, "normal" },

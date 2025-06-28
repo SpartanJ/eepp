@@ -43,9 +43,11 @@ struct EE_API SyntaxTokenComplete {
 
 #define SYNTAX_TOKENIZER_STATE_NONE ( 0 )
 
+using SyntaxSyateHolderType = Uint16;
+
 struct SyntaxStateType {
-	Uint8 state{ SYNTAX_TOKENIZER_STATE_NONE };
-	Uint8 repositoryIdx{ SYNTAX_TOKENIZER_STATE_NONE };
+	SyntaxSyateHolderType state{ SYNTAX_TOKENIZER_STATE_NONE };
+	SyntaxSyateHolderType repositoryIdx{ SYNTAX_TOKENIZER_STATE_NONE };
 };
 
 struct SyntaxStateRestored {
@@ -55,7 +57,7 @@ struct SyntaxStateRestored {
 	Uint32 currentLevel{ 0 };
 };
 
-#define MAX_SUB_SYNTAXS 8
+#define MAX_SUB_SYNTAXS 16
 
 struct SyntaxState {
 	// 16 bits per pattern - max 8 sub-languages - max 254 patterns per language or repository

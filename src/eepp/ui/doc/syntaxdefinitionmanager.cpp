@@ -881,8 +881,11 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 				} else if ( repository.contains( "patterns" ) &&
 							repository["patterns"].is_array() ) {
 					const auto& patterns = repository["patterns"];
-					for ( const auto& pattern : patterns )
+					for ( const auto& pattern : patterns ) {
+						if ( pattern.size() == 1 && pattern.contains( "comment" ) )
+							continue;
 						ptrns.emplace_back( parsePattern( pattern ) );
+					}
 				} else if ( repository.is_array() ) {
 					for ( const auto& pattern : repository )
 						ptrns.emplace_back( parsePattern( pattern ) );

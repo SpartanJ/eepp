@@ -18,7 +18,7 @@ static constexpr auto REGEX_FLAGS = RegEx::Options::Utf | RegEx::Options::AllowF
 struct PatternStackItem {
 	const std::vector<SyntaxPattern>* patterns{ nullptr };
 	size_t index = 0;
-	Uint8 repositoryIdx = 0;
+	SyntaxSyateHolderType repositoryIdx = 0;
 };
 
 // This tokenizer was a direct conversion to C++ from the lite (https://github.com/rxi/lite)
@@ -624,8 +624,9 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 				auto contentScopeRepoGlobalIndex = curState.currentSyntax->getRepositoryIndex(
 					activePattern->contentScopeRepoHash );
 
-				patternStack.push_back( { &contentScopePatterns, 0,
-										  static_cast<Uint8>( contentScopeRepoGlobalIndex ) } );
+				patternStack.push_back(
+					{ &contentScopePatterns, 0,
+					  static_cast<SyntaxSyateHolderType>( contentScopeRepoGlobalIndex ) } );
 
 				while ( !patternStack.empty() && !matched ) {
 					PatternStackItem& current = patternStack.back();
@@ -634,8 +635,9 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 						continue;
 					}
 					const SyntaxPattern* innerPtrn = &current.patterns->data()[current.index];
-					SyntaxStateType patternState = { static_cast<Uint8>( current.index + 1 ),
-													 current.repositoryIdx };
+					SyntaxStateType patternState = {
+						static_cast<SyntaxSyateHolderType>( current.index + 1 ),
+						current.repositoryIdx };
 					current.index++;
 
 					if ( innerPtrn->isRepositoryInclude() ) {
@@ -769,8 +771,8 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 					 pattern->patterns[0][0] == '^' )
 					continue;
 
-				SyntaxStateType patternIndex = { static_cast<Uint8>( current.index ),
-												 current.repositoryIdx };
+				SyntaxStateType patternIndex = {
+					static_cast<SyntaxSyateHolderType>( current.index ), current.repositoryIdx };
 				if ( matchPattern( *pattern, startIdx, patternIndex ) ) {
 					matched = true;
 					break;

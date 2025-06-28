@@ -9,7 +9,7 @@ void addXML() {
 		->add(
 
 			{ "XML",
-			  { "%.xml$", "%.svg$" },
+			  { "%.xml$", "%.svg$", "%.cbp$", "%.cbproj$" },
 			  {
 				  { { "<%s*[sS][tT][yY][lL][eE]%s*>", "<%s*/%s*[sS][tT][yY][lL][eE]%s*>" },
 					"function",
