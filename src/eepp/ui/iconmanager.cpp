@@ -10,6 +10,7 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 	UIIconTheme* iconTheme = UIIconTheme::New( iconThemeName );
 
 	if ( remixIconFont && remixIconFont->loaded() ) {
+		remixIconFont->setIsEmojiFont( true );
 		std::unordered_map<std::string, Uint32> icons = {
 
 			{ "document-new", 0xecc3 },
@@ -109,6 +110,7 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 	}
 
 	if ( noniconFont && noniconFont->loaded() ) {
+		noniconFont->setIsEmojiFont( true );
 		std::unordered_map<std::string, Uint32> mimeIcons =
 
 			{ { "filetype-lua", 61826 },
@@ -188,6 +190,7 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 	}
 
 	if ( codIconFont && codIconFont->loaded() ) {
+		codIconFont->setIsEmojiFont( true );
 		std::unordered_map<std::string, Uint32> codIcons = {
 
 			{ "symbol-text", 0xea93 },

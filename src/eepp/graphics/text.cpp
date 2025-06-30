@@ -169,6 +169,7 @@ Float Text::tabAdvance( Float hspace, Uint32 tabWidth, std::optional<Float> tabO
 }
 
 bool Text::TextShaperEnabled = false;
+Uint32 Text::GlobalInvalidationId = 0;
 
 std::string Text::styleFlagToString( const Uint32& flags ) {
 	std::string str;
@@ -1813,6 +1814,11 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 				 const OriginPoint& scaleCenter ) {
 	if ( NULL == mFontStyleConfig.Font )
 		return;
+
+	if ( mInvalidationId != Text::GlobalInvalidationId ) {
+		mInvalidationId = Text::GlobalInvalidationId;
+		invalidate();
+	}
 
 	ensureColorUpdate();
 	ensureGeometryUpdate();

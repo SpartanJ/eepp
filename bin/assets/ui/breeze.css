@@ -759,8 +759,8 @@ PopUpMenu {
 }
 
 MenuBar::Button {
-	padding-left: 4dp;
-	padding-right: 4dp;
+	padding-left: 6dp;
+	padding-right: 6dp;
 	min-height: 18dp;
 }
 

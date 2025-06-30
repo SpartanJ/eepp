@@ -23,6 +23,7 @@ struct WhitespaceDisplayConfig {
 class EE_API Text {
   public:
 	static bool TextShaperEnabled;
+	static Uint32 GlobalInvalidationId;
 
 	enum Style {
 		Regular = 0,			///< Regular characters, no style
@@ -307,6 +308,7 @@ class EE_API Text {
 	Float mCachedWidth{ 0 };
 	Uint32 mAlign{ TEXT_ALIGN_LEFT };
 	Uint32 mTabWidth{ 4 };
+	Uint32 mInvalidationId{ 0 };
 
 	std::vector<VertexCoords> mVertices;
 	std::vector<Color> mColors;

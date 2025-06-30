@@ -134,6 +134,10 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	ui.colorScheme = ini.getValue( "ui", "ui_color_scheme", "dark" ) == "light"
 						 ? ColorSchemePreference::Light
 						 : ColorSchemePreference::Dark;
+	ui.fontHinting =
+		FontTrueType::fontHintingFromString( ini.getValue( "ui", "font_hinting", "full" ) );
+	ui.fontAntialiasing = FontTrueType::fontAntialiasingFromString(
+		ini.getValue( "ui", "font_antialiasing", "grayscale" ) );
 	doc.trimTrailingWhitespaces = ini.getValueB( "document", "trim_trailing_whitespaces", false );
 	doc.forceNewLineAtEndOfFile =
 		ini.getValueB( "document", "force_new_line_at_end_of_file", false );
@@ -303,6 +307,9 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue(
 		"ui", "ui_color_scheme",
 		std::string_view{ ui.colorScheme == ColorSchemePreference::Light ? "light" : "dark" } );
+	ini.setValue( "ui", "font_hinting", FontTrueType::fontHintingToString( ui.fontHinting ) );
+	ini.setValue( "ui", "font_antialiasing",
+				  FontTrueType::fontAntialiasingToString( ui.fontAntialiasing ) );
 	ini.setValueB( "document", "trim_trailing_whitespaces", doc.trimTrailingWhitespaces );
 	ini.setValueB( "document", "force_new_line_at_end_of_file", doc.forceNewLineAtEndOfFile );
 	ini.setValueB( "document", "auto_detect_indent_type", doc.autoDetectIndentType );

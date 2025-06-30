@@ -1,4 +1,5 @@
 #include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/fonttruetype.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -61,6 +62,14 @@ FontHinting FontManager::getHinting() const {
 
 void FontManager::setHinting( FontHinting hinting ) {
 	mHinting = hinting;
+
+	for ( auto [_, font] : mResources ) {
+		if ( font->getType() == FontType::TTF ) {
+			auto ttf = static_cast<FontTrueType*>( font );
+			if ( !ttf->isEmojiFont() )
+				ttf->setHinting( hinting );
+		}
+	}
 }
 
 FontAntialiasing FontManager::getAntialiasing() const {
@@ -69,6 +78,14 @@ FontAntialiasing FontManager::getAntialiasing() const {
 
 void FontManager::setAntialiasing( FontAntialiasing antialiasing ) {
 	mAntialiasing = antialiasing;
+
+	for ( auto [_, font] : mResources ) {
+		if ( font->getType() == FontType::TTF ) {
+			auto ttf = static_cast<FontTrueType*>( font );
+			if ( !ttf->isEmojiFont() )
+				ttf->setAntialiasing( antialiasing );
+		}
+	}
 }
 
 }} // namespace EE::Graphics

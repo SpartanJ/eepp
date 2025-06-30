@@ -3398,16 +3398,22 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 	if ( fontPath.empty() )
 		return nullptr;
 	FontTrueType* font = FontTrueType::New( name );
-	if ( font->loadFromFile( fontPath ) )
+	if ( font->loadFromFile( fontPath ) ) {
+		font->setHinting( mConfig.ui.fontHinting );
+		font->setAntialiasing( mConfig.ui.fontAntialiasing );
 		return font;
+	}
 	eeSAFE_DELETE( font );
 	// Failed to load original font? Try to fallback
 	if ( !fallback.empty() && !wasFallback ) {
 		if ( !fontPath.empty() && FileSystem::isRelativePath( fontPath ) )
 			fontPath = mResPath + fontPath;
 		font = FontTrueType::New( name );
-		if ( font->loadFromFile( fontPath ) )
+		if ( font->loadFromFile( fontPath ) ) {
+			font->setHinting( mConfig.ui.fontHinting );
+			font->setAntialiasing( mConfig.ui.fontAntialiasing );
 			return font;
+		}
 		eeSAFE_DELETE( font );
 	}
 	return nullptr;

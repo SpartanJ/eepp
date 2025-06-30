@@ -41,6 +41,8 @@ struct UIConfig {
 	ColorSchemePreference colorScheme{ ColorSchemePreference::Dark };
 	std::string theme;
 	std::string language;
+	FontHinting fontHinting{ FontHinting::Full };
+	FontAntialiasing fontAntialiasing{ FontAntialiasing::Grayscale };
 };
 
 struct WindowStateConfig {

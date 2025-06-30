@@ -1322,7 +1322,10 @@ FontAntialiasing FontTrueType::getAntialiasing() const {
 }
 
 void FontTrueType::setAntialiasing( FontAntialiasing antialiasing ) {
-	mAntialiasing = antialiasing;
+	if ( antialiasing != mAntialiasing ) {
+		mAntialiasing = antialiasing;
+		clearCache();
+	}
 }
 
 FontHinting FontTrueType::getHinting() const {
@@ -1330,7 +1333,10 @@ FontHinting FontTrueType::getHinting() const {
 }
 
 void FontTrueType::setHinting( FontHinting hinting ) {
-	mHinting = hinting;
+	if ( hinting != mHinting ) {
+		mHinting = hinting;
+		clearCache();
+	}
 }
 
 bool FontTrueType::getEnableDynamicMonospace() const {
@@ -1508,6 +1514,7 @@ void FontTrueType::clearCache() {
 	mClosestCharacterSize.clear();
 	mCodePointIndexCache.clear();
 	mKeyCache.clear();
+	Text::GlobalInvalidationId++;
 }
 
 }} // namespace EE::Graphics

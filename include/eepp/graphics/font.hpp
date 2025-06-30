@@ -6,6 +6,8 @@
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/textureregion.hpp>
 
+using namespace std::literals;
+
 namespace EE { namespace Graphics {
 
 class Font;
@@ -52,6 +54,46 @@ class EE_API Font {
 		std::string fontpath; ///< The directory path of the font
 		std::string filename; ///< The file name
 	};
+
+	static std::string_view fontHintingToString( FontHinting hint ) {
+		switch ( hint ) {
+			case FontHinting::None:
+				return "none"sv;
+			case FontHinting::Slight:
+				return "slight"sv;
+			case FontHinting::Full:
+				break;
+		}
+		return "full"sv;
+	}
+
+	static FontHinting fontHintingFromString( std::string_view str ) {
+		if ( str == "none"sv )
+			return FontHinting::None;
+		if ( str == "slight"sv )
+			return FontHinting::Slight;
+		return FontHinting::Full;
+	}
+
+	static std::string_view fontAntialiasingToString( FontAntialiasing aa ) {
+		switch ( aa ) {
+			case FontAntialiasing::None:
+				return "none"sv;
+			case FontAntialiasing::Grayscale:
+				return "grayscale"sv;
+			case FontAntialiasing::Subpixel:
+				break;
+		}
+		return "subpixel"sv;
+	}
+
+	static FontAntialiasing fontAntialiasingFromString( std::string_view str ) {
+		if ( str == "none"sv )
+			return FontAntialiasing::None;
+		if ( str == "subpixel"sv )
+			return FontAntialiasing::Subpixel;
+		return FontAntialiasing::Grayscale;
+	}
 
 	static inline Uint32 getHorizontalAlign( const Uint32& flags ) {
 		return flags & TEXT_HALIGN_MASK;

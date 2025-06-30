@@ -1095,6 +1095,13 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		mApp->setUIColorScheme( item->getId() == "light" ? ColorSchemePreference::Light
 														 : ColorSchemePreference::Dark );
+
+		if ( item->getId() == "light" && mSplitter->getCurrentColorSchemeName() == "eepp" ) {
+			mSplitter->setColorScheme( "github" );
+		} else if ( item->getId() == "dark" &&
+					mSplitter->getCurrentColorSchemeName() == "github" ) {
+			mSplitter->setColorScheme( "eepp" );
+		}
 	} );
 	mWindowMenu->addSubMenu( i18n( "ui_language", "UI Language" ), findIcon( "globe" ),
 							 createLanguagesMenu() );
@@ -1104,6 +1111,10 @@ UIMenu* SettingsMenu::createWindowMenu() {
 							 createThemesMenu() );
 	mWindowMenu->addSubMenu( i18n( "ui_renderer", "Renderer" ), findIcon( "package" ),
 							 createRendererMenu() );
+	mWindowMenu->addSubMenu( i18n( "ui_font_hint", "Font Hint" ), findIcon( "font-size" ),
+							 createFontHintMenu() );
+	mWindowMenu->addSubMenu( i18n( "ui_font_antialiasing", "Font Anti-Aliasing" ),
+							 findIcon( "font-size" ), createFontAntiAliasingMenu() );
 	mWindowMenu
 		->add( i18n( "ui_scale_factor", "UI Scale Factor (Pixel Density)" ),
 			   findIcon( "pixel-density" ) )
@@ -2531,6 +2542,85 @@ void SettingsMenu::createProjectMenu() {
 			}
 		}
 	} );
+}
+
+UIMenu* SettingsMenu::createFontHintMenu() {
+	if ( mFontHintMenu )
+		return mFontHintMenu;
+
+	mFontHintMenu = UIPopUpMenu::New();
+
+	const auto fontHintMenuRefresh = [this] {
+		const auto& cfg = mApp->getConfig();
+		auto el =
+			mFontHintMenu->find( "hint_" + FontTrueType::fontHintingToString( cfg.ui.fontHinting ) );
+		if ( el && el->isType( UI_TYPE_MENURADIOBUTTON ) )
+			el->asType<UIMenuRadioButton>()->setActive( true );
+	};
+
+	mFontHintMenu->on( Event::OnMenuShow, [this, fontHintMenuRefresh]( auto ) {
+		if ( mFontHintMenu->getCount() == 0 ) {
+			mFontHintMenu->addRadioButton( i18n( "none", "None" ) )->setId( "hint_none" );
+			mFontHintMenu->addRadioButton( i18n( "slight", "Slight" ) )->setId( "hint_slight" );
+			mFontHintMenu->addRadioButton( i18n( "full", "Full" ) )->setId( "hint_full" );
+		}
+
+		fontHintMenuRefresh();
+	} );
+
+	mFontHintMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		const String& id = event->getNode()->asType<UIMenuItem>()->getId();
+		if ( String::startsWith( id, "hint_" ) ) {
+			auto hint = id.substr( 5 ).toUtf8();
+			mApp->getConfig().ui.fontHinting = FontTrueType::fontHintingFromString( hint );
+			FontManager::instance()->setHinting( mApp->getConfig().ui.fontHinting );
+		}
+	} );
+
+	return mFontHintMenu;
+}
+
+UIMenu* SettingsMenu::createFontAntiAliasingMenu() {
+	if ( mFontAntiAliasingMenu )
+		return mFontAntiAliasingMenu;
+
+	mFontAntiAliasingMenu = UIPopUpMenu::New();
+
+	const auto fontAntialiasingMenuRefresh = [this] {
+		const auto& cfg = mApp->getConfig();
+		auto el = mFontAntiAliasingMenu->find(
+			"aa_" + FontTrueType::fontAntialiasingToString( cfg.ui.fontAntialiasing ) );
+		if ( el && el->isType( UI_TYPE_MENURADIOBUTTON ) )
+			el->asType<UIMenuRadioButton>()->setActive( true );
+	};
+
+	mFontAntiAliasingMenu->on( Event::OnMenuShow, [this, fontAntialiasingMenuRefresh]( auto ) {
+		if ( mFontAntiAliasingMenu->getCount() == 0 ) {
+			mFontAntiAliasingMenu->addRadioButton( i18n( "none", "None" ) )->setId( "aa_none" );
+			mFontAntiAliasingMenu->addRadioButton( i18n( "grayscale", "Grayscale" ) )
+				->setId( "aa_grayscale" );
+			mFontAntiAliasingMenu->addRadioButton( i18n( "subpixel", "SubPixel (not working)" ) )
+				->setId( "aa_subpixel" );
+		}
+
+		fontAntialiasingMenuRefresh();
+	} );
+
+	mFontAntiAliasingMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		const String& id = event->getNode()->asType<UIMenuItem>()->getId();
+		if ( String::startsWith( id, "aa_" ) ) {
+			auto hint = id.substr( 3 ).toUtf8();
+			mApp->getConfig().ui.fontAntialiasing =
+				FontTrueType::fontAntialiasingFromString( hint );
+			FontManager::instance()->setAntialiasing( mApp->getConfig().ui.fontAntialiasing );
+		}
+	} );
+
+	return mFontAntiAliasingMenu;
 }
 
 void SettingsMenu::updateMenu() {
