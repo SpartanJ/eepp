@@ -19,6 +19,8 @@ class EE_API Input {
 
 	virtual ~Input();
 
+	static Uint32 sanitizeMod( const Uint32& mod );
+
 	/** Update the Input */
 	virtual void update() = 0;
 

@@ -506,7 +506,7 @@ const Uint32& Input::getModState() const {
 	return mInputMod;
 }
 
-static Uint32 sanitizeMod( const Uint32& mod ) {
+Uint32 Input::sanitizeMod( const Uint32& mod ) {
 	Uint32 smod = 0;
 	if ( mod & KEYMOD_CTRL )
 		smod |= KEYMOD_CTRL;
