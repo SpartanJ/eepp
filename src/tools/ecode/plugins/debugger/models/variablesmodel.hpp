@@ -142,7 +142,8 @@ class VariablesHolder {
 	void removeExpandedState( const ModelIndex& index, bool uniqueLocation = false );
 
 	bool restoreExpandedState( const ExpandedState::Location& location, DebuggerClient* client,
-							   UITreeView* uiVariables, bool uniqueLocation = false );
+							   UITreeView* uiVariables, bool uniqueLocation = false,
+							   bool unstableFrameId = false );
 
 	std::shared_ptr<VariablesModel> getModel() { return mModel; }
 

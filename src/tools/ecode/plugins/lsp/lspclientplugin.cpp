@@ -1577,57 +1577,11 @@ void LSPClientPlugin::getSymbolInfo( UICodeEditor* editor ) {
 	auto server = mClientManager.getOneLSPClientServer( editor );
 	if ( server == nullptr )
 		return;
-	server->documentHover(
-		editor->getDocument().getURI(), editor->getDocument().getSelection().start(),
-		[this, editor]( const Int64&, const LSPHover& resp ) {
-			json j;
-			auto& doc = editor->getDocument();
-			j["uri"] = doc.getURI().toString();
-			j["line"] = doc.getSelection().start().line();
-			j["character"] = doc.getSelection().start().column();
-			auto errResp = mManager->sendRequest( PluginMessageType::GetErrorOrWarning,
-												  PluginMessageFormat::JSON, &j );
-			if ( !resp.contents.empty() && !resp.contents[0].value.empty() ) {
-				editor->runOnMainThread( [editor, resp, errResp, this]() {
-					mSymbolInfoShowing = true;
-					if ( errResp.isResponse() ) {
-						LSPHover cresp( resp );
-						cresp.contents[0].value =
-							errResp.getResponse().data["text"].get<std::string>() + "\n\n" +
-							cresp.contents[0].value;
-						displayTooltip(
-							editor, cresp,
-							editor
-								->getScreenPosition( editor->getDocument().getSelection().start() )
-								.getPosition() );
-					} else {
-						displayTooltip(
-							editor, resp,
-							editor
-								->getScreenPosition( editor->getDocument().getSelection().start() )
-								.getPosition() );
-					}
-				} );
-			} else if ( errResp.isResponse() ) {
-				LSPHover tresp;
-				tresp.range =
-					TextRange::fromString( errResp.getResponse().data["range"].get<std::string>() );
-				tresp.contents.push_back(
-					{ LSPMarkupKind::MarkDown,
-					  errResp.getResponse().data["text"].get<std::string>() } );
-				editor->runOnMainThread( [editor, tresp, this]() {
-					mSymbolInfoShowing = true;
-					displayTooltip(
-						editor, tresp,
-						editor->getScreenPosition( editor->getDocument().getSelection().start() )
-							.getPosition() );
-				} );
-			} else {
-				json data = getURIAndPositionJSON( editor );
-				mManager->sendRequest( PluginMessageType::SignatureHelp, PluginMessageFormat::JSON,
-									   &data );
-			}
-		} );
+	server->documentHover( editor->getDocument().getURI(),
+						   editor->getDocument().getSelection().start(),
+						   [this, editor]( const Int64&, const LSPHover& resp ) {
+							   onDocumentHoverResponse( editor, resp, false );
+						   } );
 }
 
 void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
@@ -1767,7 +1721,7 @@ void LSPClientPlugin::hideTooltip( UICodeEditor* editor ) {
 	}
 }
 
-TextPosition currentMouseTextPosition( UICodeEditor* editor ) {
+static TextPosition currentMouseTextPosition( UICodeEditor* editor ) {
 	return editor->resolveScreenPosition(
 		editor->getUISceneNode()->getWindow()->getInput()->getMousePos().asFloat() );
 }
@@ -1842,6 +1796,66 @@ void LSPClientPlugin::tryDisplayTooltip( UICodeEditor* editor, const LSPHover& r
 	displayTooltip( editor, resp, position.asFloat() );
 }
 
+void LSPClientPlugin::onDocumentHoverResponse( UICodeEditor* editor, const LSPHover& resp,
+											   bool fromMousePos,
+											   std::optional<Vector2f> screenPos ) {
+	const auto& displayTooltipFn = [this, fromMousePos]( UICodeEditor* editor, const LSPHover& resp,
+														 const Vector2f& position ) {
+		if ( fromMousePos )
+			tryDisplayTooltip( editor, resp, position.asInt() );
+		else
+			displayTooltip( editor, resp, position );
+	};
+
+	const auto& getFinalPosFn = [screenPos]( UICodeEditor* editor ) {
+		return screenPos ? *screenPos
+						 : editor->getScreenPosition( editor->getDocument().getSelection().start() )
+							   .getPosition();
+	};
+
+	auto& doc = editor->getDocument();
+	json j;
+	TextPosition textPosition =
+		fromMousePos ? currentMouseTextPosition( editor ) : doc.getSelection().start();
+	j["uri"] = doc.getURI().toString();
+	j["line"] = textPosition.line();
+	j["character"] = textPosition.column();
+	auto errResp = mManager->sendRequest( PluginMessageType::GetErrorOrWarning,
+										  PluginMessageFormat::JSON, &j );
+	if ( !resp.contents.empty() && !resp.contents[0].value.empty() ) {
+		editor->runOnMainThread( [editor, resp, errResp, this, screenPos, displayTooltipFn,
+								  getFinalPosFn]() {
+			mSymbolInfoShowing = true;
+			auto pos =
+				screenPos
+					? *screenPos
+					: editor->getScreenPosition( editor->getDocument().getSelection().start() )
+						  .getPosition();
+			if ( errResp.isResponse() ) {
+				LSPHover cresp( resp );
+				cresp.contents[0].value = errResp.getResponse().data["text"].get<std::string>() +
+										  "\n\n" + cresp.contents[0].value;
+				displayTooltipFn( editor, cresp, getFinalPosFn( editor ) );
+			} else {
+				displayTooltipFn( editor, resp, pos );
+			}
+		} );
+	} else if ( errResp.isResponse() ) {
+		LSPHover tresp;
+		tresp.range =
+			TextRange::fromString( errResp.getResponse().data["range"].get<std::string>() );
+		tresp.contents.push_back(
+			{ LSPMarkupKind::MarkDown, errResp.getResponse().data["text"].get<std::string>() } );
+		editor->runOnMainThread( [editor, tresp, this, displayTooltipFn, getFinalPosFn]() {
+			mSymbolInfoShowing = true;
+			displayTooltipFn( editor, tresp, getFinalPosFn( editor ) );
+		} );
+	} else {
+		json data = getURIAndPositionJSON( editor );
+		mManager->sendRequest( PluginMessageType::SignatureHelp, PluginMessageFormat::JSON, &data );
+	}
+}
+
 bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position,
 								   const Uint32& flags ) {
 	auto localPos( editor->convertToNodeSpace( position.asFloat() ) );
@@ -1882,11 +1896,14 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 					if ( editorExists( editor ) && !resp.contents.empty() &&
 						 !resp.contents[0].value.empty() ) {
 						editor->runOnMainThread( [editor, resp, this]() {
-							auto mousePos =
-								editor->getUISceneNode()->getWindow()->getInput()->getMousePos();
-							if ( !editor->getScreenRect().contains( mousePos.asFloat() ) )
+							auto mousePos = editor->getUISceneNode()
+												->getWindow()
+												->getInput()
+												->getMousePos()
+												.asFloat();
+							if ( !editor->getScreenRect().contains( mousePos ) )
 								return;
-							tryDisplayTooltip( editor, resp, mousePos );
+							onDocumentHoverResponse( editor, resp, true, mousePos );
 						} );
 					}
 				} );

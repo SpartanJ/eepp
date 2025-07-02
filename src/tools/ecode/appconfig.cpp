@@ -823,6 +823,13 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 		}
 		if ( !j.is_discarded() ) {
 			editorsToLoad = countTotalEditors( j );
+			if ( editorsToLoad <= 0 ) {
+				app->getUISceneNode()->runOnMainThread( [app] {
+					if ( !app->getFileToOpen().empty() ) {
+						app->loadFileDelayed();
+					}
+				} );
+			}
 			loadDocuments( editorSplitter, j, curTabWidget, app, sessionSnapshotFiles );
 		}
 	}

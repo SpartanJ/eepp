@@ -248,6 +248,7 @@
         "command_arguments": [ "${env:VSCODE_JS_DEBUG_PATH}/src/dapDebugServer.js", "${randPort}", "127.0.0.1" ]
       },
       "languages": ["javascript", "typescript"],
+      "unstable_frame_id": true,
       "configurations": [
         {
           "name": "Launch script",

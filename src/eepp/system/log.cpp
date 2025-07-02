@@ -5,6 +5,8 @@
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 #include <android/log.h>
+#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+#include <emscripten/console.h>
 #endif
 
 #if defined( EE_COMPILER_MSVC )
@@ -132,6 +134,8 @@ void Log::write( const std::string_view& text ) {
 #else
 		OutputDebugString( text.c_str() );
 #endif
+#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+		emscripten_console_log( text.data() );
 #else
 		std::cout << text << std::flush;
 #endif
@@ -200,6 +204,8 @@ void Log::writel( const std::string_view& text ) {
 		OutputDebugString( text.data() );
 		OutputDebugString( "\n" );
 #endif
+#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+		emscripten_console_log( text.data() );
 #else
 		std::cout << text << std::endl;
 #endif

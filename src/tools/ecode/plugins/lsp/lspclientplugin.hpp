@@ -27,7 +27,7 @@ class LSPClientPlugin : public Plugin {
   public:
 	static PluginDefinition Definition() {
 		return { "lspclient",		   "LSP Client", "Language Server Protocol Client.",
-				 LSPClientPlugin::New, { 0, 2, 8 },	 LSPClientPlugin::NewSync };
+				 LSPClientPlugin::New, { 0, 2, 9 },	 LSPClientPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
@@ -220,6 +220,9 @@ class LSPClientPlugin : public Plugin {
 
 	std::shared_ptr<LSPSymbolInfoTreeModel> createDocSymbolsModel( URI uri,
 																   const std::string& query = "" );
+
+	void onDocumentHoverResponse( UICodeEditor* editor, const LSPHover& resp, bool fromMousePos,
+								  std::optional<Vector2f> screenPos = {} );
 };
 
 } // namespace ecode

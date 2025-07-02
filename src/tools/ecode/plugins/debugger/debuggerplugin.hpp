@@ -37,6 +37,7 @@ struct DapTool {
 	bool redirectStdout{ false };
 	bool redirectStderr{ false };
 	bool supportsSourceRequest{ false };
+	bool unstableFrameId{ false };
 };
 
 struct DapConfigurationInput {
@@ -191,7 +192,8 @@ class DebuggerPlugin : public PluginBase {
 	void runConfig( const std::string& debugger, const std::string& configuration );
 
 	void run( const std::string& debugger, ProtocolSettings&& protocolSettings,
-			  DapRunConfig&& runConfig, int randPort, bool forceUseProgram, bool usesPorts );
+			  DapRunConfig&& runConfig, int randPort, bool forceUseProgram, bool usesPorts,
+			  bool unstableFrameId );
 
 	void exitDebugger( bool requestDisconnect = false );
 

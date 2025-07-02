@@ -225,6 +225,14 @@ void DebuggerClientListener::setRemoteRoot( const std::string& newRemoteRoot ) {
 	mRemoteRoot = newRemoteRoot;
 }
 
+bool DebuggerClientListener::isUnstableFrameId() const {
+	return mUnstableFrameId;
+}
+
+void DebuggerClientListener::setUnstableFrameId( bool unstableFrameId ) {
+	mUnstableFrameId = unstableFrameId;
+}
+
 void DebuggerClientListener::initialized( const SessionId& ) {
 	sendBreakpoints();
 }
@@ -382,9 +390,8 @@ void DebuggerClientListener::changeScope( const StackFrame& f ) {
 	TextRange range{ { f.line - 1, f.column - 1 }, { f.line - 1, f.column - 1 } };
 	std::string path( f.source->path );
 
-	mPlugin->getUISceneNode()->runOnMainThread( [this, path, range] {
-		mPlugin->getPluginContext()->focusOrLoadFile( path, range );
-	} );
+	mPlugin->getUISceneNode()->runOnMainThread(
+		[this, path, range] { mPlugin->getPluginContext()->focusOrLoadFile( path, range ); } );
 
 	mCurrentScopePos = { f.source->path, f.line };
 
@@ -436,7 +443,8 @@ void DebuggerClientListener::stackTrace( const int threadId, StackTraceInfo&& st
 				ExpandedState::Location location{ mCurrentScopePos->first, mCurrentScopePos->second,
 												  mCurrentFrameId };
 				mPlugin->mExpressionsHolder->restoreExpandedState(
-					location, mClient, getStatusDebuggerController()->getUIExpressions(), true );
+					location, mClient, getStatusDebuggerController()->getUIExpressions(), true,
+					mUnstableFrameId );
 			} );
 	}
 }
@@ -452,7 +460,7 @@ void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&&
 		auto child = std::make_shared<ModelVariableNode>( scope.name, scope.variablesReference );
 		mVariablesHolder->addChild( child );
 		if ( ( !mPlugin->mFetchRegisters && scope.name == "Registers" ) ||
-			 ( !mPlugin->mFetchGlobals && scope.name == "Globals" ) )
+			 ( !mPlugin->mFetchGlobals && ( scope.name == "Global" || scope.name == "Globals" ) ) )
 			continue;
 		mClient->variables( scope.variablesReference );
 	}
@@ -477,7 +485,8 @@ void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&&
 					ModelVariableNode* node =
 						static_cast<ModelVariableNode*>( index.internalData() );
 					if ( ( !mPlugin->mFetchRegisters && node->var.name == "Registers" ) ||
-						 ( !mPlugin->mFetchGlobals && node->var.name == "Globals" ) )
+						 ( !mPlugin->mFetchGlobals &&
+						   ( node->var.name == "Global" || node->var.name == "Globals" ) ) )
 						continue;
 					uiVars->tryOpenModelIndex( index );
 				}
@@ -495,7 +504,8 @@ void DebuggerClientListener::variables( const int variablesReference, std::vecto
 		ExpandedState::Location location{ mCurrentScopePos->first, mCurrentScopePos->second,
 										  mCurrentFrameId };
 		mVariablesHolder->restoreExpandedState( location, mClient,
-												getStatusDebuggerController()->getUIVariables() );
+												getStatusDebuggerController()->getUIVariables(),
+												false, mUnstableFrameId );
 	}
 }
 

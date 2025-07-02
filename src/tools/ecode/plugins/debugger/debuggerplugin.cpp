@@ -467,6 +467,7 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 		for ( const auto& dap : dapArr ) {
 			DapTool dapTool;
 			dapTool.name = dap.value( "name", "" );
+			dapTool.unstableFrameId = dap.value( "unstable_frame_id", false );
 
 			if ( dap.contains( "type" ) && dap["type"].is_array() ) {
 				for ( const auto& obj : dap["type"] )
@@ -1969,7 +1970,7 @@ void DebuggerPlugin::prepareAndRun( DapTool debugger, DapConfig config,
 		[this, protocolSettings = std::move( protocolSettings ), randomPort,
 		 debugger = std::move( debugger ), forceUseProgram, usesPorts]() mutable {
 			run( debugger.name, std::move( protocolSettings ), std::move( debugger.run ),
-				 randomPort, forceUseProgram, usesPorts );
+				 randomPort, forceUseProgram, usesPorts, debugger.unstableFrameId );
 		},
 		[this]( const Uint64& ) {
 			if ( !mDebugger || !mDebugger->started() ) {
@@ -2114,7 +2115,7 @@ void DebuggerPlugin::initStatusDebuggerController() {
 
 void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protocolSettings,
 						  DapRunConfig&& runConfig, int randPort, bool forceUseProgram,
-						  bool usesPorts ) {
+						  bool usesPorts, bool unstableFrameId ) {
 	std::optional<Command> cmdOpt = debuggerBinaryExists( debugger, runConfig );
 
 	if ( !cmdOpt && ( protocolSettings.launchRequestType == REQUEST_TYPE_LAUNCH ||
@@ -2237,6 +2238,7 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 
 	mListener = std::make_unique<DebuggerClientListener>( mDebugger.get(), this );
 	mListener->setIsRemote( isRemote );
+	mListener->setUnstableFrameId( unstableFrameId );
 
 	if ( isRemote ) {
 		// mListener->setLocalRoot( localRoot );

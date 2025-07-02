@@ -109,6 +109,10 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 
 	void setRemoteRoot( const std::string& newRemoteRoot );
 
+	bool isUnstableFrameId() const;
+
+	void setUnstableFrameId( bool unstableFrameId );
+
   protected:
 	DebuggerClient* mClient{ nullptr };
 	DebuggerPlugin* mPlugin{ nullptr };
@@ -116,6 +120,7 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 	std::optional<std::pair<std::string, int>> mCurrentScopePos;
 	bool mPausedToRefreshBreakpoints{ false };
 	bool mIsRemote{ false };
+	bool mUnstableFrameId{ false };
 	int mCurrentThreadId{ 1 };
 	int mCurrentFrameId{ 0 };
 	std::shared_ptr<ThreadsModel> mThreadsModel;

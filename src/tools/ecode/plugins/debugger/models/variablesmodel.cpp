@@ -335,12 +335,13 @@ bool VariablesHolder::resolvePath( std::vector<std::string> path, DebuggerClient
 
 	return false;
 }
+
 static int getLocationDistance( const ExpandedState::Location& loc1,
-								const ExpandedState::Location& loc2 ) {
+								const ExpandedState::Location& loc2, bool unstableFrameId ) {
 	if ( loc1.filePath != loc2.filePath )
 		return std::numeric_limits<int>::max();
 
-	if ( loc1.frameIndex != loc2.frameIndex ) {
+	if ( !unstableFrameId && loc1.frameIndex != loc2.frameIndex ) {
 		return std::numeric_limits<int>::max() /
 			   2; // Different frame but same file is better than different file
 	}
@@ -350,7 +351,7 @@ static int getLocationDistance( const ExpandedState::Location& loc1,
 
 bool VariablesHolder::restoreExpandedState( const ExpandedState::Location& location,
 											DebuggerClient* client, UITreeView* uiVariables,
-											bool uniqueLocation ) {
+											bool uniqueLocation, bool unstableFrameId ) {
 	mCurrentLocation = location;
 
 	auto it = uniqueLocation ? mExpandedStates.begin() : mExpandedStates.find( location );
@@ -360,7 +361,7 @@ bool VariablesHolder::restoreExpandedState( const ExpandedState::Location& locat
 		int minDistance = std::numeric_limits<int>::max();
 
 		for ( const auto& state : mExpandedStates ) {
-			int distance = getLocationDistance( location, state.first );
+			int distance = getLocationDistance( location, state.first, unstableFrameId );
 			if ( distance < minDistance ) {
 				minDistance = distance;
 				nearestLoc = &state.first;
