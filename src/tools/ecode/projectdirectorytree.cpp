@@ -39,10 +39,8 @@ ProjectDirectoryTree::~ProjectDirectoryTree() {
 void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& scanComplete,
 								 const std::vector<std::string>& acceptedPatterns,
 								 const bool& ignoreHidden ) {
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 	mPool->run(
 		[this, acceptedPatterns = std::move( acceptedPatterns ), ignoreHidden] {
-#endif
 			Lock l( mFilesMutex );
 			mRunning = true;
 			mIgnoreHidden = ignoreHidden;
@@ -93,11 +91,6 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 						return processMessage( msg );
 					} );
 			}
-#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN && !defined( __EMSCRIPTEN_PTHREADS__ )
-			if ( scanComplete )
-				scanComplete( *this );
-#endif
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		},
 		[scanComplete, this]( const auto& ) {
 			if ( !mClosing && scanComplete ) {
@@ -106,7 +99,6 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 			}
 			mRunning = false;
 		} );
-#endif
 }
 
 std::shared_ptr<FileListModel>

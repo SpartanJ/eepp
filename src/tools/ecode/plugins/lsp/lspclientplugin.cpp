@@ -25,12 +25,6 @@ using json = nlohmann::json;
 
 namespace ecode {
 
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-#define LSPCLIENT_THREADED 1
-#else
-#define LSPCLIENT_THREADED 0
-#endif
-
 static Action::UniqueID getMouseMoveHash( UICodeEditor* editor ) {
 	return hashCombine( String::hash( "LSPClientPlugin::onMouseMove-" ),
 						reinterpret_cast<Action::UniqueID>( editor ) );
@@ -245,11 +239,7 @@ LSPClientPlugin::LSPClientPlugin( PluginManager* pluginManager, bool sync ) :
 	if ( sync ) {
 		load( pluginManager );
 	} else {
-#if defined( LSPCLIENT_THREADED ) && LSPCLIENT_THREADED == 1
 		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
-#else
-		load( pluginManager );
-#endif
 	}
 }
 

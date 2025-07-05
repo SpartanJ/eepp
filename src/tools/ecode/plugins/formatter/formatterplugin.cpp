@@ -17,12 +17,6 @@ using json = nlohmann::json;
 
 namespace ecode {
 
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-#define FORMATTER_THREADED 1
-#else
-#define FORMATTER_THREADED 0
-#endif
-
 Plugin* FormatterPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( FormatterPlugin, ( pluginManager, false ) );
 }
@@ -36,11 +30,7 @@ FormatterPlugin::FormatterPlugin( PluginManager* pluginManager, bool sync ) :
 	if ( sync ) {
 		load( pluginManager );
 	} else {
-#if defined( FORMATTER_THREADED ) && FORMATTER_THREADED == 1
 		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
-#else
-		load( pluginManager );
-#endif
 	}
 }
 

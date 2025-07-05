@@ -493,7 +493,6 @@ void StatusBuildOutputController::createContainer() {
 								onLoadDone( lineNum, colNum );
 							} );
 					} else {
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 						removeRelativeSubPaths( path );
 						mContext->getDirTree()->asyncMatchTree(
 							ProjectDirectoryTree::MatchType::Fuzzy, path, 1,
@@ -518,7 +517,6 @@ void StatusBuildOutputController::createContainer() {
 									}
 								} );
 							} );
-#endif
 					}
 				} else {
 					tab->getTabWidget()->setTabSelected( tab );

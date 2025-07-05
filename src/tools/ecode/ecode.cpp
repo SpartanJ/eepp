@@ -241,24 +241,28 @@ void App::updateEditorTabTitle( UICodeEditor* editor ) {
 		return;
 	if ( editor->getData() ) {
 		UITab* tab = (UITab*)editor->getData();
-		auto doc = editor->getDocumentRef();
-		std::string fileName( doc->getFilename() );
+		tab->ensureMainThread( [editor, isUniqueTabTitle, getTabWithSameTitle, getUniqueNameForTabs,
+								tab] {
+			auto doc = editor->getDocumentRef();
+			std::string fileName( doc->getFilename() );
 
-		if ( fileName != doc->getDefaultFileName() && !isUniqueTabTitle( tab ) ) {
-			auto tabsTitles = getUniqueNameForTabs( getTabWithSameTitle( tab ) );
-			for ( auto [ntab, title] : tabsTitles ) {
-				ntab->setText( title );
-				if ( ntab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) )
-					ntab->getOwnedWidget()->asType<UICodeEditor>()->addClass( NOT_UNIQUE_FILENAME );
+			if ( fileName != doc->getDefaultFileName() && !isUniqueTabTitle( tab ) ) {
+				auto tabsTitles = getUniqueNameForTabs( getTabWithSameTitle( tab ) );
+				for ( auto [ntab, title] : tabsTitles ) {
+					ntab->setText( title );
+					if ( ntab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) )
+						ntab->getOwnedWidget()->asType<UICodeEditor>()->addClass(
+							NOT_UNIQUE_FILENAME );
+				}
+			} else if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+				tab->getOwnedWidget()->asType<UICodeEditor>()->removeClass( NOT_UNIQUE_FILENAME );
+				tab->setText( fileName );
 			}
-		} else if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
-			tab->getOwnedWidget()->asType<UICodeEditor>()->removeClass( NOT_UNIQUE_FILENAME );
-			tab->setText( fileName );
-		}
 
-		bool dirty = doc->isDirty();
-		tab->removeClass( dirty ? "tab_clear" : "tab_modified" );
-		tab->addClass( dirty ? "tab_modified" : "tab_clear" );
+			bool dirty = doc->isDirty();
+			tab->removeClass( dirty ? "tab_clear" : "tab_modified" );
+			tab->addClass( dirty ? "tab_modified" : "tab_clear" );
+		} );
 	}
 }
 
@@ -886,14 +890,9 @@ void App::onTextDropped( String text ) {
 
 App::App( const size_t& jobs, const std::vector<std::string>& args ) :
 	mArgs( args ),
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-	mThreadPool( ThreadPool::createShared( jobs > 0 ? jobs : eemax<int>( 2, Sys::getCPUCount() ) ) )
-#elif defined( __EMSCRIPTEN_PTHREADS__ )
-	mThreadPool( ThreadPool::createShared( jobs > 0 ? jobs : eemin<int>( 8, Sys::getCPUCount() ) ) )
-#endif
-	,
-	mSettingsActions( std::make_unique<SettingsActions>( this ) ) {
-}
+	mThreadPool(
+		ThreadPool::createShared( jobs > 0 ? jobs : eemax<int>( 4, Sys::getCPUCount() ) ) ),
+	mSettingsActions( std::make_unique<SettingsActions>( this ) ) {}
 
 static void fsRemoveAll( const std::string& fpath ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -2182,9 +2181,7 @@ void App::loadImageFromMedium( const std::string& path, bool isMemory ) {
 	if ( imageView ) {
 		mImageLayout->setEnabled( true )->setVisible( true );
 		loaderView->setVisible( true );
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		mThreadPool->run( [this, imageView, loaderView, path, isMemory]() {
-#endif
 			Image::Format format =
 				isMemory ? Image::getFormat( reinterpret_cast<const unsigned char*>( path.c_str() ),
 											 path.size() )
@@ -2221,9 +2218,7 @@ void App::loadImageFromMedium( const std::string& path, bool isMemory ) {
 				imageView->setDrawable( nullptr );
 				loaderView->setVisible( false );
 			}
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		} );
-#endif
 	}
 }
 

@@ -124,6 +124,7 @@ struct GlobalSearchBarConfig {
 	bool luaPattern{ false };
 	bool wholeWord{ false };
 	bool escapeSequence{ false };
+	bool bufferOnlyMode{ false };
 };
 
 struct ProjectDocumentConfig {

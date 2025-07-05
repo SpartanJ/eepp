@@ -385,7 +385,6 @@ bool UICodeEditorSplitter::loadFileFromPath( const std::string& path, UICodeEdit
 void UICodeEditorSplitter::loadAsyncFileFromPath(
 	const std::string& path, UICodeEditor* codeEditor,
 	std::function<void( UICodeEditor* codeEditor, const std::string& path )> onLoaded ) {
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 	if ( !mThreadPool ) {
 		Log::error( "UICodeEditorSplitter::loadAsyncFileFromPath loading file async "
 					"without thread pool." );
@@ -417,15 +416,6 @@ void UICodeEditorSplitter::loadAsyncFileFromPath(
 					onLoaded( codeEditor, path );
 			} );
 	}
-#else
-	loadFileFromPath( path, codeEditor );
-	if ( nullptr == codeEditor )
-		codeEditor = mCurEditor;
-	if ( nullptr == codeEditor && !mTabWidgets.empty() )
-		codeEditor = createCodeEditorInTabWidget( mTabWidgets[0] ).second;
-	if ( onLoaded )
-		onLoaded( codeEditor, path );
-#endif
 }
 
 std::pair<UITab*, UICodeEditor*>

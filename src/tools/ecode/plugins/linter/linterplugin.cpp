@@ -20,12 +20,6 @@ using json = nlohmann::json;
 
 namespace ecode {
 
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-#define LINTER_THREADED 1
-#else
-#define LINTER_THREADED 0
-#endif
-
 Plugin* LinterPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( LinterPlugin, ( pluginManager, false ) );
 }
@@ -38,11 +32,7 @@ LinterPlugin::LinterPlugin( PluginManager* pluginManager, bool sync ) : Plugin( 
 	if ( sync ) {
 		load( pluginManager );
 	} else {
-#if defined( LINTER_THREADED ) && LINTER_THREADED == 1
 		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
-#else
-		load( pluginManager );
-#endif
 	}
 }
 
@@ -713,11 +703,7 @@ void LinterPlugin::update( UICodeEditor* editor ) {
 	auto it = mDirtyDoc.find( doc.get() );
 	if ( it != mDirtyDoc.end() && it->second->getElapsedTime() >= mDelayTime ) {
 		mDirtyDoc.erase( doc.get() );
-#if LINTER_THREADED
 		mThreadPool->run( [this, doc] { lintDoc( doc ); } );
-#else
-		lintDoc( doc );
-#endif
 	}
 }
 

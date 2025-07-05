@@ -160,7 +160,6 @@ newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
 newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
 newoption { trigger = "without-mojoal", description = "Compile without mojoAL as OpenAL implementation (that requires SDL2 backend). Instead it will use openal-soft." }
 newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link agains SDL2.framework." }
-newoption { trigger = "with-emscripten-pthreads", description = "Enables emscripten build to use posix threads" }
 newoption { trigger = "with-mold-linker", description = "Tries to use the mold linker instead of the default linker of the toolchain" }
 newoption { trigger = "with-debug-symbols", description = "Release builds are built with debug symbols." }
 newoption { trigger = "thread-sanitizer", description ="Compile with ThreadSanitizer." }
@@ -396,9 +395,7 @@ function build_base_configuration( package_name )
 
 	configuration "emscripten"
 		buildoptions { "-s USE_SDL=2" }
-		if _OPTIONS["with-emscripten-pthreads"] then
-			buildoptions { "-s USE_PTHREADS=1" }
-		end
+		buildoptions { "-s USE_PTHREADS=1" }
 end
 
 function build_base_cpp_configuration( package_name )
@@ -447,9 +444,7 @@ function build_base_cpp_configuration( package_name )
 
 	configuration "emscripten"
 		buildoptions { "-s USE_SDL=2" }
-		if _OPTIONS["with-emscripten-pthreads"] then
-			buildoptions { "-s USE_PTHREADS=1" }
-		end
+		buildoptions { "-s USE_PTHREADS=1" }
 end
 
 function add_cross_config_links()
@@ -610,10 +605,8 @@ function build_link_configuration( package_name, use_ee_icon )
 
 		if os.is_real("emscripten") then
 			linkoptions{ "--profiling --profiling-funcs -s DEMANGLE_SUPPORT=1 -s NO_DISABLE_EXCEPTION_CATCHING -sALLOW_MEMORY_GROWTH=1" }
-			if _OPTIONS["with-emscripten-pthreads"] then
-				buildoptions { "-s USE_PTHREADS=1" }
-				linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
-			end
+			buildoptions { "-s USE_PTHREADS=1" }
+			linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
 		end
 
 		fix_shared_lib_linking_path( package_name, "libeepp-debug" )
@@ -645,11 +638,8 @@ function build_link_configuration( package_name, use_ee_icon )
 	configuration "emscripten"
 		linkoptions { "-s TOTAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2" }
 		buildoptions { "-s USE_SDL=2" }
-
-		if _OPTIONS["with-emscripten-pthreads"] then
-			buildoptions { "-s USE_PTHREADS=1" }
-			linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
-		end
+		buildoptions { "-s USE_PTHREADS=1" }
+		linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
 
 		if _OPTIONS["with-gles1"] and ( not _OPTIONS["with-gles2"] or _OPTIONS["force-gles1"] ) then
 			linkoptions{ "-s LEGACY_GL_EMULATION=1" }

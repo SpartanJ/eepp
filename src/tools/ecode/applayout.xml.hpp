@@ -614,6 +614,7 @@ R"html(
 						<CheckBox id="lua_pattern" text='@string(lua_pattern, "Lua Pattern")' selected="false" margin-right="8dp" />
 						<CheckBox id="escape_sequence" text='@string(use_escape_sequences, "Use escape sequences")' margin-right="8dp" selected="false"
 								  tooltip='@string(escape_sequence_tooltip, "Replace \\, \t, \n, \r and \uXXXX (Unicode characters) with the corresponding control")' />
+						<CheckBox id="buffer_only_mode" text="@string(buffer_only_mode, Buffer Only Mode)" selected="false" tooltip="@string(buffer_only_mode_tooltip, Apply replacements to file buffers only.&#10;Changes won't be saved to disk until you explicitly save the files.)" visible="false" />
 					</StackLayout>
 					<hbox lw="mp" lh="wc">
 						<TextView text='@string(history, "History:")' margin-right="4dp" lh="18dp" focusable="false" />

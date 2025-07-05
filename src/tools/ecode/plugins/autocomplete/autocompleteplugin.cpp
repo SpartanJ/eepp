@@ -23,12 +23,6 @@ static constexpr auto SNIPPET_PTRN1 = "%$%{%d+%}"sv;
 static constexpr auto SNIPPET_PTRN2 = "%$%{%d+%:([%w,.%s%+%-]+)}"sv;
 static constexpr auto SNIPPET_PTRN3 = "%$%d+"sv;
 
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-#define AUTO_COMPLETE_THREADED 1
-#else
-#define AUTO_COMPLETE_THREADED 0
-#endif
-
 static json getURIJSON( TextDocument* doc, const PluginIDType& id ) {
 	json data;
 	data["uri"] = doc->getURI().toString();
@@ -102,11 +96,7 @@ AutoCompletePlugin::AutoCompletePlugin( PluginManager* pluginManager, bool sync 
 	if ( sync ) {
 		load( pluginManager );
 	} else {
-#if defined( AUTO_COMPLETE_THREADED ) && AUTO_COMPLETE_THREADED == 1
 		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
-#else
-		load( pluginManager );
-#endif
 	}
 }
 
@@ -317,15 +307,10 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 			const DocSyntaxDefEvent* event = static_cast<const DocSyntaxDefEvent*>( ev );
 			std::string oldLang = event->getOldLang();
 			std::string newLang = event->getNewLang();
-#if defined( AUTO_COMPLETE_THREADED ) && AUTO_COMPLETE_THREADED == 1
 			mThreadPool->run( [this, oldLang, newLang] {
 				updateLangCache( oldLang );
 				updateLangCache( newLang );
 			} );
-#else
-			updateLangCache( oldLang );
-			updateLangCache( newLang );
-#endif
 		} ) );
 
 	if ( editor->hasDocument() ) {
@@ -1009,11 +994,7 @@ void AutoCompletePlugin::update( UICodeEditor* ) {
 					if ( du != mDocsUpdating.end() && du->second == true )
 						continue;
 				}
-#if AUTO_COMPLETE_THREADED
 				mThreadPool->run( [this, doc] { updateDocCache( doc ); } );
-#else
-				updateDocCache( doc );
-#endif
 			}
 		}
 	}
@@ -1475,13 +1456,9 @@ void AutoCompletePlugin::updateSuggestions( const std::string& symbol, UICodeEdi
 			return;
 		const auto& symbols = docCache->second.symbols;
 		{
-#if AUTO_COMPLETE_THREADED
 			mThreadPool->run( [this, symbol, &symbols, editor] {
 				runUpdateSuggestions( symbol, symbols, editor, true );
 			} );
-#else
-			runUpdateSuggestions( symbol, symbols, editor, true );
-#endif
 		}
 	}
 
@@ -1492,13 +1469,9 @@ void AutoCompletePlugin::updateSuggestions( const std::string& symbol, UICodeEdi
 		return;
 	const auto& symbols = langSuggestions->second;
 	{
-#if AUTO_COMPLETE_THREADED
 		mThreadPool->run( [this, symbol, &symbols, editor] {
 			runUpdateSuggestions( symbol, symbols, editor, false );
 		} );
-#else
-		runUpdateSuggestions( symbol, symbols, editor, false );
-#endif
 	}
 }
 

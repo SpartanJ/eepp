@@ -355,7 +355,6 @@ void UniversalLocator::updateFilesTable( bool useGlob ) {
 			ProjectDirectoryTree::emptyModel( getLocatorCommands(), mApp->getCurrentProject() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	} else if ( !mLocateInput->getText().empty() ) {
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		mApp->getDirTree()->asyncMatchTree(
 			useGlob ? ProjectDirectoryTree::MatchType::Glob
 					: ProjectDirectoryTree::MatchType::Fuzzy,
@@ -369,15 +368,6 @@ void UniversalLocator::updateFilesTable( bool useGlob ) {
 				} );
 			},
 			mApp->getCurrentProject() );
-#else
-		mLocateTable->setModel(
-			useGlob ? mApp->getDirTree()->globMatchTree( text, LOCATEBAR_MAX_RESULTS,
-														 mApp->getCurrentProject() )
-					: mApp->getDirTree()->fuzzyMatchTree( text, LOCATEBAR_MAX_RESULTS,
-														  mApp->getCurrentProject() ) );
-		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-		mLocateTable->scrollToTop();
-#endif
 	} else {
 		mLocateTable->setModel( mApp->getDirTree()->asModel(
 			LOCATEBAR_MAX_RESULTS, getLocatorCommands(), mApp->getCurrentProject(),
@@ -403,7 +393,6 @@ void UniversalLocator::updateCommandPaletteTable() {
 	txt.trim();
 
 	if ( txt.size() > 1 ) {
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		mCommandPalette.asyncFuzzyMatch( txt.substr( 1 ).trim(), 10000, [this]( auto res ) {
 			mUISceneNode->runOnMainThread( [this, res] {
 				mLocateTable->setModel( res );
@@ -412,12 +401,6 @@ void UniversalLocator::updateCommandPaletteTable() {
 				mLocateTable->scrollToTop();
 			} );
 		} );
-#else
-		mLocateTable->setModel( mCommandPalette.fuzzyMatch( txt.substr( 1 ).trim(), 10000 ) );
-		if ( mLocateTable->getModel()->hasChilds() )
-			mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-		mLocateTable->scrollToTop();
-#endif
 	} else if ( mCommandPalette.getCurModel() ) {
 		mLocateTable->setModel( mCommandPalette.getCurModel() );
 		if ( mLocateTable->getModel()->hasChilds() )
@@ -1097,7 +1080,6 @@ void UniversalLocator::requestDocumentSymbol() {
 }
 
 void UniversalLocator::updateDocumentSymbol( const LSPSymbolInformationList& res ) {
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 	if ( mCurDocQuery.empty() ) {
 		mTextDocumentSymbolModel =
 			LSPSymbolInfoModel::create( mApp->getUISceneNode(), mCurDocQuery, res, true );
@@ -1114,21 +1096,6 @@ void UniversalLocator::updateDocumentSymbol( const LSPSymbolInformationList& res
 			} );
 		} );
 	}
-#else
-	mUISceneNode->runOnMainThread( [this, res] {
-		if ( mCurDocQuery.empty() ) {
-			mTextDocumentSymbolModel =
-				LSPSymbolInfoModel::create( mApp->getUISceneNode(), mCurDocQuery, res, true );
-		} else {
-			mTextDocumentSymbolModel = LSPSymbolInfoModel::create(
-				mApp->getUISceneNode(), mCurDocQuery,
-				fuzzyMatchTextDocumentSymbol( res, mCurDocQuery, 100 ), true );
-		}
-		mLocateTable->setModel( mTextDocumentSymbolModel );
-		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-		mLocateTable->scrollToTop();
-	} );
-#endif
 }
 
 std::string UniversalLocator::getCurDocURI() {

@@ -26,11 +26,6 @@ using namespace EE::UI::Doc;
 using namespace std::literals;
 
 using json = nlohmann::json;
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-#define GIT_THREADED 1
-#else
-#define GIT_THREADED 0
-#endif
 
 namespace ecode {
 
@@ -74,11 +69,7 @@ GitPlugin::GitPlugin( PluginManager* pluginManager, bool sync ) :
 	if ( sync ) {
 		load( pluginManager );
 	} else {
-#if defined( GIT_THREADED ) && GIT_THREADED == 1
 		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
-#else
-		load( pluginManager );
-#endif
 	}
 }
 

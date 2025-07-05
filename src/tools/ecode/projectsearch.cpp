@@ -159,50 +159,38 @@ static std::vector<ProjectSearch::ResultData::Result> searchInFileRegEx( const s
 	return searchInFilePatternMatch( file, pattern, caseSensitive, wholeWord );
 }
 
-void ProjectSearch::find( const std::vector<std::string> files, const std::string& string,
-						  ResultCb result, bool caseSensitive, bool wholeWord,
-						  const TextDocument::FindReplaceType& type,
-						  const std::vector<GlobMatch>& pathFilters, std::string basePath,
-						  std::vector<std::shared_ptr<TextDocument>> ) {
-	Result res;
-	const auto occ =
-		type == TextDocument::FindReplaceType::Normal
-			? String::BMH::createOccTable( (const unsigned char*)string.c_str(), string.size() )
-			: std::vector<size_t>();
-	for ( auto& file : files ) {
-		bool skip = false;
-		std::string_view fsv( file );
-		if ( !basePath.empty() && String::startsWith( file, basePath ) )
-			fsv = fsv.substr( basePath.size() );
-
-		for ( const auto& filter : pathFilters ) {
-			bool matches = String::globMatch( fsv, filter.first );
-			if ( ( matches && filter.second ) || ( !matches && !filter.second ) ) {
-				skip = true;
-				break;
-			}
-		}
-		if ( skip )
-			continue;
-
-		auto fileRes =
-			type == TextDocument::FindReplaceType::Normal
-				? searchInFileHorspool( file, string, caseSensitive, wholeWord, occ )
-				: ( type == TextDocument::FindReplaceType::LuaPattern
-						? searchInFileLuaPattern( file, string, caseSensitive, wholeWord )
-						: searchInFileRegEx( file, string, caseSensitive, wholeWord ) );
-		if ( !fileRes.empty() )
-			res.push_back( { file, fileRes } );
-	}
-	result( res );
-}
-
 struct FindData {
 	Mutex resMutex;
 	Mutex countMutex;
 	int resCount{ 0 };
 	ProjectSearch::Result res;
 };
+
+std::vector<ProjectSearch::ResultData::Result>
+ProjectSearch::fileResFromDoc( const std::string& string, bool caseSensitive, bool wholeWord,
+							   TextDocument::FindReplaceType type,
+							   std::shared_ptr<TextDocument> doc ) {
+	auto res = doc->findAll( string, caseSensitive, wholeWord, type );
+	std::vector<ProjectSearch::ResultData::Result> fileRes;
+	for ( const auto& r : res ) {
+		ProjectSearch::ResultData::Result f;
+		f.position = r.result;
+		const auto& line = doc->line( r.result.start().line() );
+		if ( line.size() > EE_1KB )
+			f.line = line.substr( 0, EE_1KB );
+		else
+			f.line = line.getTextWithoutNewLine();
+		f.start = r.result.start().column();
+		f.end = r.result.end().column();
+		std::vector<std::string> captures;
+		for ( const auto& capture : r.captures )
+			captures.emplace_back( doc->getText( capture ).toUtf8() );
+		f.captures = std::move( captures );
+		fileRes.emplace_back( std::move( f ) );
+	}
+
+	return fileRes;
+}
 
 void ProjectSearch::find( const std::vector<std::string> files, std::string string,
 						  std::shared_ptr<ThreadPool> pool, ResultCb result, bool caseSensitive,
@@ -216,6 +204,7 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 				result = std::move( result ), caseSensitive, wholeWord, type,
 				pathFilters = std::move( pathFilters ), basePath = std::move( basePath ),
 				openDocs = std::move( openDocs )]() mutable {
+		SearchConfig searchConfig( string, caseSensitive, wholeWord, type );
 		FindData* findData = eeNew( FindData, () );
 		findData->resCount = files.size();
 		if ( !caseSensitive )
@@ -267,7 +256,7 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 		findData->resCount = count;
 
 		if ( count == 0 ) {
-			result( findData->res );
+			result( { searchConfig, findData->res } );
 			eeDelete( findData );
 			return;
 		}
@@ -286,7 +275,7 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 
 			pos++;
 
-			const auto onSearchEnd = [result, findData]( const auto& ) {
+			const auto onSearchEnd = [result, findData, searchConfig]( const auto& ) {
 				int count;
 				{
 					Lock l( findData->countMutex );
@@ -294,7 +283,7 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 					count = findData->resCount;
 				}
 				if ( count == 0 ) {
-					result( findData->res );
+					result( { searchConfig, findData->res } );
 					eeDelete( findData );
 #if EE_PLATFORM == EE_PLATFORM_LINUX && defined( __GLIBC__ )
 					malloc_trim( 0 );
@@ -311,30 +300,14 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 			if ( openDoc && openPath->second->isDirty() ) {
 				pool->run(
 					[findData, doc, string, caseSensitive, wholeWord, type] {
-						auto res = doc->findAll( string, caseSensitive, wholeWord, type );
-						std::vector<ProjectSearch::ResultData::Result> fileRes;
-						for ( const auto& r : res ) {
-							ProjectSearch::ResultData::Result f;
-							f.openDoc = doc;
-							f.position = r.result;
-							const auto& line = doc->line( r.result.start().line() );
-							if ( line.size() > EE_1KB )
-								f.line = line.substr( 0, EE_1KB );
-							else
-								f.line = line.getTextWithoutNewLine();
-							f.start = r.result.start().column();
-							f.end = r.result.end().column();
-							std::vector<std::string> captures;
-							for ( const auto& capture : r.captures )
-								captures.emplace_back( doc->getText( capture ).toUtf8() );
-							f.captures = std::move( captures );
-							fileRes.emplace_back( std::move( f ) );
-						}
+						std::vector<ProjectSearch::ResultData::Result> fileRes =
+							fileResFromDoc( string, caseSensitive, wholeWord, type, doc );
 
 						if ( !fileRes.empty() ) {
 							Lock l( findData->resMutex );
 							std::string file( doc->getFilePath() );
-							findData->res.push_back( { std::move( file ), std::move( fileRes ) } );
+							findData->res.push_back(
+								{ std::move( file ), std::move( fileRes ), doc } );
 						}
 					},
 					onSearchEnd );

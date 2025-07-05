@@ -21,6 +21,13 @@ using GlobMatch = std::pair<std::string, bool>; // where string is the glob and 
 
 class ProjectSearch {
   public:
+	struct SearchConfig {
+		std::string searchString;
+		bool caseSensitive;
+		bool wholeWord;
+		TextDocument::FindReplaceType type;
+	};
+
 	struct ResultData {
 		struct Result {
 			Result( const String& line, const TextRange& pos, Int64 s, Int64 e ) :
@@ -32,10 +39,10 @@ class ProjectSearch {
 			Int64 end{ 0 };
 			bool selected{ true };
 			std::vector<std::string> captures;
-			std::shared_ptr<TextDocument> openDoc;
 		};
 		std::string file;
 		std::vector<Result> results;
+		std::shared_ptr<TextDocument> openDoc{ nullptr };
 		bool selected{ true };
 
 		void setResultsSelected( bool selected ) {
@@ -61,8 +68,9 @@ class ProjectSearch {
 		}
 	};
 
-	typedef std::vector<ResultData> Result;
-	typedef std::function<void( const Result& )> ResultCb;
+	using Result = std::vector<ResultData>;
+	using ConsolidatedResult = std::pair<SearchConfig, Result>;
+	using ResultCb = std::function<void( const ConsolidatedResult& )>;
 
 	class ResultModel : public Model {
 	  public:
@@ -213,12 +221,9 @@ class ProjectSearch {
 		return std::make_shared<ResultModel>( result );
 	}
 
-	static void
-	find( const std::vector<std::string> files, const std::string& string, ResultCb result,
-		  bool caseSensitive, bool wholeWord = false,
-		  const TextDocument::FindReplaceType& type = TextDocument::FindReplaceType::Normal,
-		  const std::vector<GlobMatch>& pathFilters = {}, std::string basePath = "",
-		  std::vector<std::shared_ptr<TextDocument>> openDocs = {} );
+	static std::vector<ProjectSearch::ResultData::Result>
+	fileResFromDoc( const std::string& string, bool caseSensitive, bool wholeWord,
+					TextDocument::FindReplaceType type, std::shared_ptr<TextDocument> doc );
 
 	static void
 	find( const std::vector<std::string> files, std::string string,

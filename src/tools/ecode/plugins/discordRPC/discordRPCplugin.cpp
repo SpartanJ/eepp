@@ -1,11 +1,6 @@
 #include "discordRPCplugin.hpp"
 
 using json = nlohmann::json;
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-#define dcRPC_THREADED 1
-#else
-#define dcRPC_THREADED 0
-#endif
 
 namespace ecode {
 
@@ -29,11 +24,7 @@ DiscordRPCplugin::DiscordRPCplugin( PluginManager* pluginManager, bool sync ) :
 	if ( sync ) {
 		load( pluginManager );
 	} else {
-#if defined( dcRPC_THREADED ) && dcRPC_THREADED == 1
 		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
-#else
-		load( pluginManager );
-#endif
 	}
 }
 

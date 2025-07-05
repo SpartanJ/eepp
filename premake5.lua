@@ -12,7 +12,6 @@ newoption { trigger = "without-mojoal", description = "Compile without mojoAL as
 newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link against SDL2.framework." }
 newoption { trigger = "windows-vc-build", description = "This is used to build the framework in Visual Studio downloading its external dependencies and making them available to the VS project without having to install them manually." }
 newoption { trigger = "windows-mingw-build", description = "This is used to build the framework with mingw downloading its external dependencies." }
-newoption { trigger = "with-emscripten-pthreads", description = "Enables emscripten build to use posix threads" }
 newoption { trigger = "with-mold-linker", description = "Tries to use the mold linker instead of the default linker of the toolchain" }
 newoption { trigger = "with-debug-symbols", description = "Release builds are built with debug symbols." }
 newoption { trigger = "thread-sanitizer", description = "Compile with ThreadSanitizer." }
@@ -269,9 +268,7 @@ function build_base_configuration( package_name )
 
 	filter "system:emscripten"
 		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
-		if _OPTIONS["with-emscripten-pthreads"] then
-			buildoptions { "-s USE_PTHREADS=1" }
-		end
+		buildoptions { "-s USE_PTHREADS=1" }
 
 	filter {}
 end
@@ -311,9 +308,7 @@ function build_base_cpp_configuration( package_name )
 
 	filter "system:emscripten"
 		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
-		if _OPTIONS["with-emscripten-pthreads"] then
-			buildoptions { "-s USE_PTHREADS=1" }
-		end
+		buildoptions { "-s USE_PTHREADS=1" }
 
 	filter {}
 end
@@ -464,11 +459,8 @@ function build_link_configuration( package_name, use_ee_icon )
 		targetname ( package_name .. extension )
 		linkoptions { "-O3 -s TOTAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2" }
 		buildoptions { "-O3 -s USE_SDL=2 -s PRECISE_F32=1 -s ENVIRONMENT=worker,web" }
-
-		if _OPTIONS["with-emscripten-pthreads"] then
-			buildoptions { "-s USE_PTHREADS=1" }
-			linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
-		end
+		buildoptions { "-s USE_PTHREADS=1" }
+		linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
 
 		if _OPTIONS["with-gles1"] and ( not _OPTIONS["with-gles2"] or _OPTIONS["force-gles1"] ) then
 			linkoptions{ "-s LEGACY_GL_EMULATION=1" }

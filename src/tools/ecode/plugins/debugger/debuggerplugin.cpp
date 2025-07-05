@@ -28,12 +28,6 @@ using json = nlohmann::json;
 static constexpr auto REQUEST_TYPE_LAUNCH = "launch";
 static constexpr auto REQUEST_TYPE_ATTACH = "attach";
 
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-#define DEBUGGER_THREADED 1
-#else
-#define DEBUGGER_THREADED 0
-#endif
-
 namespace ecode {
 
 static constexpr auto INPUT_PATTERN = "%$%{input%:([%w_]+)%}"sv;
@@ -143,11 +137,7 @@ DebuggerPlugin::DebuggerPlugin( PluginManager* pluginManager, bool sync ) :
 	if ( sync ) {
 		load( pluginManager );
 	} else {
-#if defined( DEBUGGER_THREADED ) && DEBUGGER_THREADED == 1
 		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
-#else
-		load( pluginManager );
-#endif
 	}
 }
 
