@@ -71,6 +71,36 @@ class UIRelativeLayoutCommandExecuter : public UIRelativeLayout, public WidgetCo
 	}
 };
 
+class UIHLinearLayoutCommandExecuter : public UILinearLayout, public WidgetCommandExecuter {
+  public:
+	static UIHLinearLayoutCommandExecuter* New() {
+		return eeNew( UIHLinearLayoutCommandExecuter, () );
+	}
+
+	UIHLinearLayoutCommandExecuter() :
+		UILinearLayout( "hboxce", UIOrientation::Horizontal ),
+		WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ) {}
+
+	virtual Uint32 onKeyDown( const KeyEvent& event ) {
+		return WidgetCommandExecuter::onKeyDown( event );
+	}
+};
+
+class UIVLinearLayoutCommandExecuter : public UILinearLayout, public WidgetCommandExecuter {
+  public:
+	static UIVLinearLayoutCommandExecuter* New() {
+		return eeNew( UIVLinearLayoutCommandExecuter, () );
+	}
+
+	UIVLinearLayoutCommandExecuter() :
+		UILinearLayout( "vboxce", UIOrientation::Vertical ),
+		WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ) {}
+
+	virtual Uint32 onKeyDown( const KeyEvent& event ) {
+		return WidgetCommandExecuter::onKeyDown( event );
+	}
+};
+
 } // namespace ecode
 
 #endif // ECODE_WIDGETCOMMANDEXECUTER_HPP

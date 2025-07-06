@@ -254,7 +254,7 @@ class EE_API UITabWidget : public UIWidget {
 	SplitFunctionCb mSplitFn;
 	Float mSplitEdgePercent{ 0.1 };
 	UIListView* mTabSwitcher{ nullptr };
-	TabJumpMode mTabJumpMode{ TabJumpMode::Chronological };
+	TabJumpMode mTabJumpMode{ TabJumpMode::Linear };
 
 	void onThemeLoaded();
 

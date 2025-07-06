@@ -3899,6 +3899,9 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		UIWidgetCreator::registerWidget( "mainlayout", UIMainLayout::New );
 		UIWidgetCreator::registerWidget( "statusbar", UIStatusBar::New );
 		UIWidgetCreator::registerWidget( "rellayce", UIRelativeLayoutCommandExecuter::New );
+		UIWidgetCreator::registerWidget( "hboxce", UIHLinearLayoutCommandExecuter::New );
+		UIWidgetCreator::registerWidget( "vboxce", UIVLinearLayoutCommandExecuter::New );
+
 		mUISceneNode->loadLayoutFromString( baseUI, nullptr, APP_LAYOUT_STYLE_MARKER );
 		mAppStyleSheet = mUISceneNode->getStyleSheet().getAllWithMarker( APP_LAYOUT_STYLE_MARKER );
 		mUISceneNode->bind( "main_layout", mMainLayout );

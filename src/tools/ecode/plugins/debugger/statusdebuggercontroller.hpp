@@ -18,6 +18,8 @@ using namespace EE::UI::Tools;
 
 namespace ecode {
 
+class UIHLinearLayoutCommandExecuter;
+
 class UIBreakpointsTableView : public UITableView {
   public:
 	static UIWidget* New() { return eeNew( UIBreakpointsTableView, () ); }
@@ -35,6 +37,8 @@ class UIBreakpointsTableView : public UITableView {
 class StatusDebuggerController : public StatusBarElement {
   public:
 	enum class State { NotStarted, Running, Paused };
+
+	static const std::map<KeyBindings::Shortcut, std::string> getLocalDefaultKeybindings();
 
 	StatusDebuggerController( UISplitter* mainSplitter, UISceneNode* uiSceneNode,
 							  PluginContextProvider* pluginContext );
@@ -70,7 +74,7 @@ class StatusDebuggerController : public StatusBarElement {
 	std::function<void( StatusDebuggerController*, UIWidget* )> onWidgetCreated{ nullptr };
 
   protected:
-	UILinearLayout* mContainer{ nullptr };
+	UIHLinearLayoutCommandExecuter* mContainer{ nullptr };
 	UITableView* mUIThreads{ nullptr };
 	UITableView* mUIStack{ nullptr };
 	UIBreakpointsTableView* mUIBreakpoints{ nullptr };
