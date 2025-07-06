@@ -306,14 +306,14 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 						if ( !fileRes.empty() ) {
 							Lock l( findData->resMutex );
 							std::string file( doc->getFilePath() );
-							findData->res.push_back(
-								{ std::move( file ), std::move( fileRes ), doc } );
+							findData->res.emplace_back( std::move( file ), std::move( fileRes ),
+														doc );
 						}
 					},
 					onSearchEnd );
 			} else {
 				pool->run(
-					[findData, file, string, caseSensitive, wholeWord, occ, type] {
+					[findData, file, string, caseSensitive, wholeWord, occ, type]() mutable {
 						auto fileRes = type == TextDocument::FindReplaceType::Normal
 										   ? searchInFileHorspool( file, string, caseSensitive,
 																   wholeWord, occ )
@@ -324,7 +324,7 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 																		wholeWord ) );
 						if ( !fileRes.empty() ) {
 							Lock l( findData->resMutex );
-							findData->res.push_back( { std::move( file ), std::move( fileRes ) } );
+							findData->res.emplace_back( std::string( file ), std::move( fileRes ) );
 						}
 					},
 					onSearchEnd );

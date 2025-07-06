@@ -23,9 +23,18 @@ class ProjectSearch {
   public:
 	struct SearchConfig {
 		std::string searchString;
-		bool caseSensitive;
-		bool wholeWord;
-		TextDocument::FindReplaceType type;
+		bool caseSensitive{ false };
+		bool wholeWord{ false };
+		TextDocument::FindReplaceType type{ TextDocument::FindReplaceType::Normal };
+
+		SearchConfig() {}
+
+		SearchConfig( std::string searchString, bool caseSensitive, bool wholeWord,
+					  TextDocument::FindReplaceType type ) :
+			searchString( std::move( searchString ) ),
+			caseSensitive( caseSensitive ),
+			wholeWord( wholeWord ),
+			type( type ) {}
 	};
 
 	struct ResultData {
@@ -44,6 +53,15 @@ class ProjectSearch {
 		std::vector<Result> results;
 		std::shared_ptr<TextDocument> openDoc{ nullptr };
 		bool selected{ true };
+
+		ResultData() {}
+
+		ResultData( std::string&& file, std::vector<Result>&& results,
+					std::shared_ptr<TextDocument> openDoc = {}, bool selected = true ) :
+			file( std::move( file ) ),
+			results( std::move( results ) ),
+			openDoc( std::move( openDoc ) ),
+			selected( selected ) {}
 
 		void setResultsSelected( bool selected ) {
 			this->selected = selected;
