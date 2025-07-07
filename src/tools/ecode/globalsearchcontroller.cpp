@@ -298,20 +298,20 @@ void GlobalSearchController::initGlobalSearchBar(
 	mGlobalSearchHistoryList =
 		mGlobalSearchBarLayout->find<UIDropDownList>( "global_search_history" );
 	mGlobalSearchBarLayout->setCommand( "global-search-clear-history", [this] { clearHistory(); } );
-	mGlobalSearchBarLayout->setCommand( "search-in-files", [this, caseSensitiveChk, wholeWordChk,
-															luaPatternChk, escapeSequenceChk,
-															regexChk, bufferOnlyModeChk] {
-		doGlobalSearch( mGlobalSearchInput->getText(), mGlobalSearchWhereInput->getText(),
-						caseSensitiveChk->isChecked(), wholeWordChk->isChecked(),
-						luaPatternChk->isChecked()
-							? TextDocument::FindReplaceType::LuaPattern
-							: ( regexChk->isChecked() ? TextDocument::FindReplaceType::RegEx
-													  : TextDocument::FindReplaceType::Normal ),
-						escapeSequenceChk->isChecked(), bufferOnlyModeChk->isChecked(), false );
-	} );
+	mGlobalSearchBarLayout->setCommand(
+		"search-in-files",
+		[this, caseSensitiveChk, wholeWordChk, luaPatternChk, escapeSequenceChk, regexChk] {
+			doGlobalSearch( mGlobalSearchInput->getText(), mGlobalSearchWhereInput->getText(),
+							caseSensitiveChk->isChecked(), wholeWordChk->isChecked(),
+							luaPatternChk->isChecked()
+								? TextDocument::FindReplaceType::LuaPattern
+								: ( regexChk->isChecked() ? TextDocument::FindReplaceType::RegEx
+														  : TextDocument::FindReplaceType::Normal ),
+							escapeSequenceChk->isChecked(), false );
+		} );
 	mGlobalSearchBarLayout->setCommand( "search-again", [this, caseSensitiveChk, wholeWordChk,
 														 luaPatternChk, escapeSequenceChk,
-														 bufferOnlyModeChk, regexChk] {
+														 regexChk] {
 		auto listBox = mGlobalSearchHistoryList->getListBox();
 		if ( listBox->getItemSelectedIndex() < mGlobalSearchHistory.size() ) {
 			const auto& item = mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 -
@@ -322,7 +322,7 @@ void GlobalSearchController::initGlobalSearchBar(
 								? TextDocument::FindReplaceType::LuaPattern
 								: ( regexChk->isChecked() ? TextDocument::FindReplaceType::RegEx
 														  : TextDocument::FindReplaceType::Normal ),
-							escapeSequenceChk->isChecked(), bufferOnlyModeChk->isChecked(),
+							escapeSequenceChk->isChecked(),
 							mGlobalSearchTreeReplace == mGlobalSearchTree, true );
 		}
 	} );
@@ -471,33 +471,33 @@ void GlobalSearchController::initGlobalSearchBar(
 		}
 		mGlobalSearchBarLayout->forceKeyDown( *keyEvent );
 	} );
-	mGlobalSearchBarLayout->setCommand(
-		"search-replace-in-files", [this, caseSensitiveChk, wholeWordChk, luaPatternChk,
-									escapeSequenceChk, bufferOnlyModeChk, replaceInput, regexChk] {
-			if ( mGlobalSearchTreeReplace == mGlobalSearchTree ) {
-				replaceInput->setFocus();
-				replaceInput->getDocument().selectAll();
-				return;
-			}
+	mGlobalSearchBarLayout->setCommand( "search-replace-in-files", [this, caseSensitiveChk,
+																	wholeWordChk, luaPatternChk,
+																	escapeSequenceChk, replaceInput,
+																	regexChk] {
+		if ( mGlobalSearchTreeReplace == mGlobalSearchTree ) {
+			replaceInput->setFocus();
+			replaceInput->getDocument().selectAll();
+			return;
+		}
 
-			// TODO Implement replacement from result from symbol reference
-			/*if ( mGlobalSearchHistory.back().second->isResultFromSymbolReference() ) {
-				mGlobalSearchTreeReplace->setModel( mGlobalSearchHistory.back().second );
-				showGlobalSearch( true );
-				updateGlobalSearchBarResults( mGlobalSearchHistory.back().first,
-											  mGlobalSearchHistory.back().second, true, false );
-			} else*/
-			{
-				doGlobalSearch(
-					mGlobalSearchInput->getText(), mGlobalSearchWhereInput->getText(),
-					caseSensitiveChk->isChecked(), wholeWordChk->isChecked(),
-					luaPatternChk->isChecked()
-						? TextDocument::FindReplaceType::LuaPattern
-						: ( regexChk->isChecked() ? TextDocument::FindReplaceType::RegEx
-												  : TextDocument::FindReplaceType::Normal ),
-					escapeSequenceChk->isChecked(), bufferOnlyModeChk->isChecked(), true );
-			}
-		} );
+		// TODO Implement replacement from result from symbol reference
+		/*if ( mGlobalSearchHistory.back().second->isResultFromSymbolReference() ) {
+			mGlobalSearchTreeReplace->setModel( mGlobalSearchHistory.back().second );
+			showGlobalSearch( true );
+			updateGlobalSearchBarResults( mGlobalSearchHistory.back().first,
+										  mGlobalSearchHistory.back().second, true, false );
+		} else*/
+		{
+			doGlobalSearch( mGlobalSearchInput->getText(), mGlobalSearchWhereInput->getText(),
+							caseSensitiveChk->isChecked(), wholeWordChk->isChecked(),
+							luaPatternChk->isChecked()
+								? TextDocument::FindReplaceType::LuaPattern
+								: ( regexChk->isChecked() ? TextDocument::FindReplaceType::RegEx
+														  : TextDocument::FindReplaceType::Normal ),
+							escapeSequenceChk->isChecked(), true );
+		}
+	} );
 	mGlobalSearchBarLayout->setCommand(
 		"replace-in-files", [this, replaceInput, escapeSequenceChk, bufferOnlyModeChk] {
 			auto listBox = mGlobalSearchHistoryList->getListBox();
@@ -760,8 +760,8 @@ std::vector<GlobMatch> GlobalSearchController::parseGlobMatches( const String& s
 void GlobalSearchController::doGlobalSearch( String text, String filter, bool caseSensitive,
 											 bool wholeWord,
 											 TextDocument::FindReplaceType searchType,
-											 bool escapeSequence, bool bufferOnlyMode,
-											 bool searchReplace, bool searchAgain ) {
+											 bool escapeSequence, bool searchReplace,
+											 bool searchAgain ) {
 	if ( mApp->getDirTree() && mApp->getDirTree()->getFilesCount() > 0 && !text.empty() ) {
 		mGlobalSearchTree = searchReplace ? mGlobalSearchTreeReplace : mGlobalSearchTreeSearch;
 		mGlobalSearchTreeSearch->setVisible( !searchReplace );

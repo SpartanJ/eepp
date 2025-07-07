@@ -51,7 +51,7 @@ class GlobalSearchController {
 
 	void doGlobalSearch( String text, String filter, bool caseSensitive, bool wholeWord,
 						 TextDocument::FindReplaceType searchType, bool escapeSequence,
-						 bool bufferOnlyMode, bool searchReplace, bool searchAgain = false );
+						 bool searchReplace, bool searchAgain = false );
 
 	void showGlobalSearch();
 

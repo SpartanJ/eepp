@@ -9,7 +9,7 @@ SyntaxDefinition& addRcscript() {
 		->add(
 
 			{ "RC Script",
-			  { "%.rc$" },
+			  { "%.rc$", "%.rc2$" },
 			  {
 				  { { "include", "#comments" },
 					{ "normal" },

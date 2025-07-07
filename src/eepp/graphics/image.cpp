@@ -485,12 +485,13 @@ bool Image::isImageExtension( const std::string& path ) {
 	const std::string ext( FileSystem::fileExtension( path ) );
 	return ( ext == "png" || ext == "tga" || ext == "bmp" || ext == "jpg" || ext == "gif" ||
 			 ext == "jpeg" || ext == "dds" || ext == "psd" || ext == "hdr" || ext == "pic" ||
-			 ext == "pvr" || ext == "pkm" || ext == "svg" || ext == "qoi" || ext == "webp" );
+			 ext == "pvr" || ext == "pkm" || ext == "svg" || ext == "qoi" || ext == "webp" ||
+			 ext == "jpe" );
 }
 
 std::vector<std::string> Image::getImageExtensionsSupported() {
-	return std::vector<std::string>{ "png", "tga", "bmp", "jpg", "gif", "jpeg", "dds", "psd",
-									 "hdr", "pic", "pvr", "pkm", "svg", "qoi",	"webp" };
+	return std::vector<std::string>{ "png", "tga", "bmp", "jpg", "gif", "jpeg", "dds",	"psd",
+									 "hdr", "pic", "pvr", "pkm", "svg", "qoi",	"webp", "jpe" };
 }
 
 std::string Image::getLastFailureReason() {

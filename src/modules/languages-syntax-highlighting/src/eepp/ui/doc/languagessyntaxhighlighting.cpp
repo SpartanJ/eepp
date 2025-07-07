@@ -35,6 +35,7 @@
 #include <eepp/ui/doc/languages/gdscript.hpp>
 #include <eepp/ui/doc/languages/gleam.hpp>
 #include <eepp/ui/doc/languages/glsl.hpp>
+#include <eepp/ui/doc/languages/gn.hpp>
 #include <eepp/ui/doc/languages/go.hpp>
 #include <eepp/ui/doc/languages/graphql.hpp>
 #include <eepp/ui/doc/languages/groovy.hpp>
@@ -77,6 +78,7 @@
 #include <eepp/ui/doc/languages/pony.hpp>
 #include <eepp/ui/doc/languages/postgresql.hpp>
 #include <eepp/ui/doc/languages/powershell.hpp>
+#include <eepp/ui/doc/languages/qmake.hpp>
 #include <eepp/ui/doc/languages/r.hpp>
 #include <eepp/ui/doc/languages/racket.hpp>
 #include <eepp/ui/doc/languages/rave.hpp>
@@ -328,6 +330,8 @@ void LanguagesSyntaxHighlighting::load() {
 		{ "%.glsl$", "%.frag$", "%.vert$", "%.fs$", "%.vs$", "%.tesc$", "%.tese$" },
 	} );
 
+	sdm->addPreDefinition( { "GN", []() -> SyntaxDefinition& { return addGn(); }, { "%.gn$" } } );
+
 	sdm->addPreDefinition( { "Go", []() -> SyntaxDefinition& { return addGo(); }, { "%.go$" } } );
 
 	sdm->addPreDefinition( {
@@ -429,7 +433,7 @@ void LanguagesSyntaxHighlighting::load() {
 		"Makefile",
 		[]() -> SyntaxDefinition& { return addMakefile(); },
 		{ "^[Mm]akefile$", "%.mk$", "%.make$", "%.mak$", "^Makefile%.am$", "^Makefile%.in$",
-		  "%.ppj$", "%.ppw$" },
+		  "%.ppj$", "%.ppw$", "^BSDmakefile$", "^GNUmakefile$" },
 	} );
 
 	sdm->addPreDefinition( {
@@ -541,6 +545,12 @@ void LanguagesSyntaxHighlighting::load() {
 	} );
 
 	sdm->addPreDefinition( {
+		"QMake",
+		[]() -> SyntaxDefinition& { return addQmake(); },
+		{ "%.pro$", "%.pri$" },
+	} );
+
+	sdm->addPreDefinition( {
 		"R",
 		[]() -> SyntaxDefinition& { return addR(); },
 		{ "%.r$", "%.rds$", "%.rda$", "%.rdata$", "%.R$" },
@@ -549,8 +559,9 @@ void LanguagesSyntaxHighlighting::load() {
 	sdm->addPreDefinition(
 		{ "Racket", []() -> SyntaxDefinition& { return addRacket(); }, { "%.rkt$" } } );
 
-	sdm->addPreDefinition(
-		{ "RC Script", []() -> SyntaxDefinition& { return addRcscript(); }, { "%.rc$" } } );
+	sdm->addPreDefinition( { "RC Script",
+							 []() -> SyntaxDefinition& { return addRcscript(); },
+							 { "%.rc$", "%.rc2$" } } );
 
 	sdm->addPreDefinition(
 		{ "Rave", []() -> SyntaxDefinition& { return addRave(); }, { "%.rave$" } } );
