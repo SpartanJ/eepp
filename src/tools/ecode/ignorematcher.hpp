@@ -43,6 +43,8 @@ class GitIgnoreMatcher : public IgnoreMatcher {
 
 	bool canMatch() override;
 
+	bool hasPatterns() const { return !mPatterns.empty(); }
+
 	const std::string& getIgnoreFilePath() const override;
 
 	bool match( const std::string& value ) const override;

@@ -6,6 +6,7 @@
 namespace ecode {
 
 #define PRJ_ALLOWED_PATH ".ecode/.prjallowed"
+#define PRJ_DISALLOWED_PATH ".ecode/.prjdisallowed"
 
 ProjectDirectoryTree::ProjectDirectoryTree(
 	const std::string& path, std::shared_ptr<ThreadPool> threadPool, PluginManager* pluginManager,
@@ -49,9 +50,15 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 				mDirectories.push_back( mPath );
 			}
 
-			if ( !mAllowedMatcher && FileSystem::fileExists( mPath + PRJ_ALLOWED_PATH ) )
+			if ( !mAllowedMatcher && FileSystem::fileExists( mPath + PRJ_ALLOWED_PATH ) ) {
 				mAllowedMatcher =
 					std::make_unique<GitIgnoreMatcher>( mPath, PRJ_ALLOWED_PATH, false );
+			}
+
+			if ( !mDisallowedMatcher && FileSystem::fileExists( mPath + PRJ_DISALLOWED_PATH ) ) {
+				mDisallowedMatcher =
+					std::make_unique<GitIgnoreMatcher>( mPath, PRJ_DISALLOWED_PATH, false );
+			}
 
 			if ( !acceptedPatterns.empty() ) {
 				std::vector<std::string> files;
@@ -62,7 +69,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 					mAcceptedPatterns.emplace_back( std::string{ strPattern } );
 				std::set<std::string> info;
 				getDirectoryFiles( files, names, mPath, info, false, mIgnoreMatcher,
-								   mAllowedMatcher.get() );
+								   mAllowedMatcher.get(), mDisallowedMatcher.get() );
 				size_t namesCount = names.size();
 				bool found;
 				for ( size_t i = 0; i < namesCount; i++ ) {
@@ -81,7 +88,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 			} else {
 				std::set<std::string> info;
 				getDirectoryFiles( mFiles, mNames, mPath, info, ignoreHidden, mIgnoreMatcher,
-								   mAllowedMatcher.get() );
+								   mAllowedMatcher.get(), mDisallowedMatcher.get() );
 			}
 			mIsReady = true;
 			if ( mPluginManager ) {
@@ -320,7 +327,8 @@ bool ProjectDirectoryTree::isDirInTree( const std::string& dirTree ) const {
 void ProjectDirectoryTree::getDirectoryFiles(
 	std::vector<std::string>& files, std::vector<std::string>& names, std::string directory,
 	std::set<std::string> currentDirs, const bool& ignoreHidden,
-	IgnoreMatcherManager& ignoreMatcher, GitIgnoreMatcher* allowedMatcher ) {
+	IgnoreMatcherManager& ignoreMatcher, GitIgnoreMatcher* allowedMatcher,
+	GitIgnoreMatcher* disallowedMatcher ) {
 	if ( !mRunning )
 		return;
 	currentDirs.insert( directory );
@@ -329,14 +337,21 @@ void ProjectDirectoryTree::getDirectoryFiles(
 	for ( auto& file : pathFiles ) {
 		std::string fullpath( directory + file );
 		if ( ignoreMatcher.foundMatch() && ignoreMatcher.match( directory, file ) ) {
-			if ( !allowedMatcher )
+			if ( !allowedMatcher || !allowedMatcher->hasPatterns() )
 				continue;
 			std::string localPath;
 			if ( String::startsWith( directory, allowedMatcher->getPath() ) )
 				localPath = directory.substr( allowedMatcher->getPath().size() );
 			if ( !allowedMatcher->match( localPath + file ) )
 				continue;
+		} else if ( disallowedMatcher && disallowedMatcher->hasPatterns() ) {
+			std::string localPath;
+			if ( String::startsWith( directory, disallowedMatcher->getPath() ) )
+				localPath = directory.substr( disallowedMatcher->getPath().size() );
+			if ( disallowedMatcher->match( localPath + file ) )
+				continue;
 		}
+
 		if ( FileSystem::isDirectory( fullpath ) ) {
 			fullpath += FileSystem::getOSSlash();
 			FileInfo dirInfo( fullpath, true );
@@ -363,7 +378,7 @@ void ProjectDirectoryTree::getDirectoryFiles(
 				ignoreMatcher.addChild( childMatch );
 			}
 			getDirectoryFiles( files, names, fullpath, currentDirs, ignoreHidden, ignoreMatcher,
-							   allowedMatcher );
+							   allowedMatcher, disallowedMatcher );
 			if ( childMatch ) {
 				ignoreMatcher.removeChild( childMatch );
 				eeSAFE_DELETE( childMatch );
@@ -435,7 +450,7 @@ void ProjectDirectoryTree::addFile( const FileInfo& file ) {
 		std::set<std::string> info;
 		if ( !mAcceptedPatterns.empty() ) {
 			getDirectoryFiles( files, names, mPath, info, false, mIgnoreMatcher,
-							   mAllowedMatcher.get() );
+							   mAllowedMatcher.get(), mDisallowedMatcher.get() );
 			size_t namesCount = names.size();
 			bool found;
 			for ( size_t i = 0; i < namesCount; i++ ) {
@@ -453,7 +468,7 @@ void ProjectDirectoryTree::addFile( const FileInfo& file ) {
 			}
 		} else {
 			getDirectoryFiles( mFiles, mNames, mPath, info, false, mIgnoreMatcher,
-							   mAllowedMatcher.get() );
+							   mAllowedMatcher.get(), mDisallowedMatcher.get() );
 		}
 	} else {
 		tryAddFile( file );
