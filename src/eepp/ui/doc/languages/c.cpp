@@ -8,7 +8,7 @@ void addC() {
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "C",
-		  { "%.c$", "%.C$", "%.h$", "%.icc$", "%.xbm$", "%.xpm$" },
+		  { "%.c$", "%.C$", "%.h$", "%.icc$", "%.xbm$", "%.xpm$", "%.h%.in$", "%.c%.in$" },
 		  {
 			  { { "//.-\n" }, "comment" },
 			  { { "/%*", "%*/" }, "comment" },

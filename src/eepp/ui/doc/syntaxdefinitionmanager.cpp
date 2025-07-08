@@ -242,7 +242,7 @@ static std::optional<nlohmann::json> serializePattern( const SyntaxPattern& ptrn
 	if ( ptrn.hasContentScope() ) {
 		const auto& contentPatterns = def.getRepository( ptrn.contentScopeRepoHash );
 		nlohmann::json ptrns = nlohmann::json::array();
-		for ( const auto& pattern : contentPatterns ) {
+		for ( const auto& pattern : contentPatterns.patterns ) {
 			auto ojptrn = serializePattern( pattern, def );
 			if ( ojptrn )
 				ptrns.emplace_back( std::move( *ojptrn ) );
@@ -310,7 +310,7 @@ static json toJson( const SyntaxDefinition& def ) {
 				continue;
 
 			nlohmann::json repo;
-			for ( const auto& pattern : patterns ) {
+			for ( const auto& pattern : patterns.patterns ) {
 				auto ojptrn = serializePattern( pattern, def );
 				if ( ojptrn )
 					repo.emplace_back( std::move( *ojptrn ) );
@@ -421,7 +421,7 @@ static void patternToCPP( std::string& buf, const SyntaxPattern& pattern,
 	if ( pattern.hasContentScope() ) {
 		const auto& patterns = def.getRepository( pattern.contentScopeRepoHash );
 		buf += ", {\n";
-		for ( const auto& ptrn : patterns )
+		for ( const auto& ptrn : patterns.patterns )
 			patternToCPP( buf, ptrn, def );
 		buf += "\n}";
 	}
@@ -516,7 +516,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 			if ( name.starts_with( "$CONTENT_" ) )
 				continue;
 			buf += "\n{ \"" + name + "\", ";
-			patternsToCPP( buf, repo.second );
+			patternsToCPP( buf, repo.second.patterns );
 			buf += "\n}, ";
 		}
 		buf += "\n} )";
@@ -1230,7 +1230,8 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByExtension( const std::stri
 					LuaPattern words( ext );
 					int start, end;
 					if ( words.find( fileName, start, end ) ) {
-						if ( hFileAsCPP && definition.getLSPName() == "c" && ext == "%.h$" )
+						if ( hFileAsCPP && definition.getLSPName() == "c" &&
+							 ( ext == "%.h$" || ext == "%.h%.in$" ) )
 							return getByLSPName( "cpp" );
 
 						if ( extHasMultipleLangs && !definition.hasExtensionPriority() ) {
@@ -1261,7 +1262,8 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByExtension( const std::stri
 					LuaPattern words( ext );
 					int start, end;
 					if ( words.find( fileName, start, end ) ) {
-						if ( hFileAsCPP && preDefinition.getLSPName() == "c" && ext == "%.h$" )
+						if ( hFileAsCPP && preDefinition.getLSPName() == "c" &&
+							 ( ext == "%.h$" || ext == "%.h%.in$" ) )
 							return getByLSPName( "cpp" );
 
 						if ( extHasMultipleLangs && !preDefinition.hasExtensionPriority() ) {

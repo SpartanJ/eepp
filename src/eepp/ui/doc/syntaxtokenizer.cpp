@@ -619,14 +619,14 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 					continue;
 				}
 
-				const auto& contentScopePatterns =
+				const auto& contentScopeRepository =
 					curState.currentSyntax->getRepository( activePattern->contentScopeRepoHash );
 
 				auto contentScopeRepoGlobalIndex = curState.currentSyntax->getRepositoryIndex(
 					activePattern->contentScopeRepoHash );
 
 				patternStack.push_back(
-					{ &contentScopePatterns, 0,
+					{ &contentScopeRepository.patterns, 0,
 					  static_cast<SyntaxSyateHolderType>( contentScopeRepoGlobalIndex ) } );
 
 				while ( !patternStack.empty() && !matched ) {
@@ -652,7 +652,8 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 						eeASSERT( repoIndex == innerPtrn->repositoryIdx );
 #endif
 						patternStack.push_back(
-							{ &targetRepo, 0, static_cast<Uint8>( innerPtrn->repositoryIdx ) } );
+							{ &targetRepo.patterns, 0,
+							  static_cast<Uint8>( innerPtrn->repositoryIdx ) } );
 						continue;
 					} else if ( innerPtrn->isRootSelfInclude() ) {
 						if ( patternStack.size() + 1 >= MAX_PATTERN_STACK_SIZE )
@@ -761,7 +762,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 				const auto& repo =
 					curState.currentSyntax->getRepository( pattern->getRepositoryName() );
 				patternStack.push_back(
-					{ &repo, 0, static_cast<Uint8>( pattern->repositoryIdx ) } );
+					{ &repo.patterns, 0, static_cast<Uint8>( pattern->repositoryIdx ) } );
 			} else if ( pattern->isRootSelfInclude() ) {
 				if ( patternStack.size() + 1 >= MAX_PATTERN_STACK_SIZE )
 					break;

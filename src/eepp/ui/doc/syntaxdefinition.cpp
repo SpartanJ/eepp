@@ -71,6 +71,12 @@ static void updatePatternState( SyntaxDefinition& def, SyntaxPattern& ptrn ) {
 			ptrn.repositoryIdx = def.getRepositoryIndex( ptrn.getRepositoryName() );
 		} else if ( ptrn.checkIsRootSelfInclude() ) {
 			ptrn.flags |= SyntaxPattern::IsRootSelfInclude;
+		} else if ( ptrn.checkIsSourceInclude() && ptrn.patterns[1].size() > 7 ) {
+			ptrn.flags |= SyntaxPattern::IsSourceInclude;
+			ptrn.syntax = SyntaxDefinitionManager::instance()
+							  ->getByLanguageName(
+								  std::string_view{ ptrn.patterns[1] }.substr( 7 /* "source." */ ) )
+							  .getLanguageName();
 		} else {
 			Log::warning( "updatePatternState unknown include directive: %s", ptrn.patterns[1] );
 			ptrn.flags &= ~SyntaxPattern::IsInclude;
@@ -430,16 +436,17 @@ SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
 }
 
 SyntaxDefinition& SyntaxDefinition::addRepository( std::string&& name,
-												   std::vector<SyntaxPattern>&& patterns ) {
+												   SyntaxRepository&& repository ) {
 
-	eeASSERT( patterns.size() < std::numeric_limits<Uint8>::max() - 1 );
+	eeASSERT( repository.patterns.size() < std::numeric_limits<Uint8>::max() - 1 &&
+			  repository.syntax.empty() );
 	auto hash = String::hash( name );
 	mRepositoryIndex[hash] = ++mRepositoryIndexCounter;
 	mRepositoryIndexInvert[mRepositoryIndexCounter] = hash;
-	for ( auto& ptrn : patterns )
+	for ( auto& ptrn : repository.patterns )
 		ptrn.repositoryIdx = mRepositoryIndexCounter;
-	updatePatternsState( *this, patterns );
-	mRepository[hash] = std::move( patterns );
+	updatePatternsState( *this, repository.patterns );
+	mRepository[hash] = std::move( repository );
 	updateRepoIndexState( *this, mPatterns );
 	mRepositoryNames[hash] = std::move( name );
 	return *this;
@@ -448,20 +455,22 @@ SyntaxDefinition& SyntaxDefinition::addRepository( std::string&& name,
 SyntaxDefinition& SyntaxDefinition::addRepositories(
 	std::vector<std::pair<std::string, std::vector<SyntaxPattern>>>&& repositories ) {
 	if ( !repositories.empty() ) {
-		for ( auto& ptrn : repositories )
-			addRepository( std::move( ptrn.first ), std::move( ptrn.second ) );
+		for ( auto& ptrn : repositories ) {
+			SyntaxRepository repo( std::move( ptrn.second ) );
+			addRepository( std::move( ptrn.first ), std::move( repo ) );
+		}
 		compile();
 	}
 	return *this;
 }
 
-const std::vector<SyntaxPattern>& SyntaxDefinition::getRepository( String::HashType hash ) const {
-	static std::vector<SyntaxPattern> EMPTY = {};
+const SyntaxRepository& SyntaxDefinition::getRepository( String::HashType hash ) const {
+	static SyntaxRepository EMPTY = SyntaxRepository( "" );
 	auto found = mRepository.find( hash );
 	return found != mRepository.end() ? found->second : EMPTY;
 }
 
-const std::vector<SyntaxPattern>& SyntaxDefinition::getRepository( std::string_view name ) const {
+const SyntaxRepository& SyntaxDefinition::getRepository( std::string_view name ) const {
 	return getRepository( String::hash( name ) );
 }
 
@@ -497,8 +506,8 @@ const SyntaxPattern* SyntaxDefinition::getPatternFromState( const SyntaxStateTyp
 		if ( hash ) {
 			const auto& repo = mRepository.find( hash );
 			if ( repo != mRepository.end() && state.state > 0 &&
-				 state.state - 1 < static_cast<int>( repo->second.size() ) ) {
-				return &repo->second[state.state - 1];
+				 state.state - 1 < static_cast<int>( repo->second.patterns.size() ) ) {
+				return &repo->second.patterns[state.state - 1];
 			}
 		}
 		eeASSERT( false );
@@ -506,8 +515,7 @@ const SyntaxPattern* SyntaxDefinition::getPatternFromState( const SyntaxStateTyp
 	return nullptr;
 }
 
-const SyntaxDefMap<String::HashType, std::vector<SyntaxPattern>>&
-SyntaxDefinition::getRepositories() const {
+const SyntaxDefMap<String::HashType, SyntaxRepository>& SyntaxDefinition::getRepositories() const {
 	return mRepository;
 }
 
@@ -528,20 +536,20 @@ void SyntaxDefinition::compile() {
 	if ( mRepository.empty() )
 		return;
 
-	std::vector<std::pair<String::HashType, std::vector<SyntaxPattern>*>> curRepos;
+	std::vector<std::pair<String::HashType, SyntaxRepository*>> curRepos;
 	curRepos.reserve( mRepository.size() );
 	for ( auto& repoPair : mRepository )
 		curRepos.emplace_back( repoPair.first, &repoPair.second );
 
 	for ( auto& repoPair : curRepos ) {
 		const auto& name = mRepositoryNames[repoPair.first];
-		for ( SyntaxPattern& p : *repoPair.second ) {
+		for ( SyntaxPattern& p : repoPair.second->patterns ) {
 			liftContentPatternsRecursive( *this, p, name, uniqueIdCounter );
 		}
 	}
 
 	for ( auto& repoPair : curRepos )
-		updateRepoIndexState( *this, *repoPair.second );
+		updateRepoIndexState( *this, repoPair.second->patterns );
 }
 
 }}} // namespace EE::UI::Doc

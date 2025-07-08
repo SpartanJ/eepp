@@ -75,6 +75,7 @@
 #include <eepp/ui/doc/languages/perl.hpp>
 #include <eepp/ui/doc/languages/php.hpp>
 #include <eepp/ui/doc/languages/pico-8.hpp>
+#include <eepp/ui/doc/languages/pkgconfig.hpp>
 #include <eepp/ui/doc/languages/po.hpp>
 #include <eepp/ui/doc/languages/pony.hpp>
 #include <eepp/ui/doc/languages/postgresql.hpp>
@@ -508,6 +509,10 @@ void LanguagesSyntaxHighlighting::load() {
 		[]() -> SyntaxDefinition& { return addPascal(); },
 		{ "%.pas$", "%.dpr$", "%.dpk$" },
 	} );
+
+	sdm->addPreDefinition( { "pkg-config",
+							 []() -> SyntaxDefinition& { return addPkgConfig(); },
+							 { "%.pc$", "%.pc%.in$" } } );
 
 	sdm->addPreDefinition( {
 		"Perl",

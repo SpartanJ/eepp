@@ -41,6 +41,7 @@ struct EE_API SyntaxPattern {
 		IsRepositoryInclude = 1 << 2,
 		IsRootSelfInclude = 1 << 3,
 		IsRangedMatch = 1 << 5,
+		IsSourceInclude = 1 << 6,
 	};
 
 	static SyntaxDefMap<SyntaxStyleType, std::string> SyntaxStyleTypeCache;
@@ -103,6 +104,8 @@ struct EE_API SyntaxPattern {
 
 	inline bool isRootSelfInclude() const { return flags & Flags::IsRootSelfInclude; }
 
+	inline bool isSourceInclude() const { return flags & Flags::IsSourceInclude; }
+
 	inline bool isRangedMatch() const { return flags & Flags::IsRangedMatch; }
 
 	inline bool isSimpleRangedMatch() const {
@@ -116,7 +119,8 @@ struct EE_API SyntaxPattern {
 
 	inline bool checkIsIncludePattern() const {
 		return patterns.size() == 2 && patterns[0] == "include" && !patterns[1].empty() &&
-			   ( patterns[1][0] == '#' || patterns[1][0] == '$' );
+			   ( patterns[1][0] == '#' || patterns[1][0] == '$' ||
+				 String::startsWith( patterns[1], "source." ) );
 	}
 
 	inline bool checkIsRangedMatch() const {
@@ -127,11 +131,26 @@ struct EE_API SyntaxPattern {
 		return checkIsIncludePattern() && ( patterns[1] == "$self" || patterns[1] == "$base" );
 	}
 
+	inline bool checkIsSourceInclude() const {
+		return checkIsIncludePattern() && String::startsWith( patterns[1], "source." );
+	}
+
 	inline bool checkIsRepositoryInclude() const {
 		return checkIsIncludePattern() && patterns[1][0] == '#';
 	}
 
 	inline bool hasContentScope() const { return contentScopeRepoHash != 0; }
+};
+
+struct EE_API SyntaxRepository {
+	std::vector<SyntaxPattern> patterns;
+	std::string syntax;
+
+	SyntaxRepository() {}
+
+	SyntaxRepository( std::vector<SyntaxPattern>&& patterns ) : patterns( std::move( patterns ) ) {}
+
+	SyntaxRepository( const std::string& syntax ) : syntax( syntax ) {}
 };
 
 struct EE_API SyntaxPreDefinition {
@@ -264,14 +283,14 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition& setFoldBraces( const std::vector<std::pair<Int64, Int64>>& foldBraces );
 
-	SyntaxDefinition& addRepository( std::string&& name, std::vector<SyntaxPattern>&& patterns );
+	SyntaxDefinition& addRepository( std::string&& name, SyntaxRepository&& patterns );
 
 	SyntaxDefinition& addRepositories(
 		std::vector<std::pair<std::string, std::vector<SyntaxPattern>>>&& repositories );
 
-	const std::vector<SyntaxPattern>& getRepository( String::HashType hash ) const;
+	const SyntaxRepository& getRepository( String::HashType hash ) const;
 
-	const std::vector<SyntaxPattern>& getRepository( std::string_view name ) const;
+	const SyntaxRepository& getRepository( std::string_view name ) const;
 
 	Uint32 getRepositoryIndex( String::HashType hash ) const;
 
@@ -281,7 +300,7 @@ class EE_API SyntaxDefinition {
 
 	std::string getRepositoryName( String::HashType hash ) const;
 
-	const SyntaxDefMap<String::HashType, std::vector<SyntaxPattern>>& getRepositories() const;
+	const SyntaxDefMap<String::HashType, SyntaxRepository>& getRepositories() const;
 
 	const SyntaxDefMap<String::HashType, std::string>& getRepositoriesNames() const;
 
@@ -311,7 +330,7 @@ class EE_API SyntaxDefinition {
 	bool mVisible{ true };
 	bool mHasExtensionPriority{ false };
 	bool mCaseInsensitive{ false };
-	SyntaxDefMap<String::HashType, std::vector<SyntaxPattern>> mRepository;
+	SyntaxDefMap<String::HashType, SyntaxRepository> mRepository;
 	SyntaxDefMap<String::HashType, Uint32> mRepositoryIndex;
 	SyntaxDefMap<String::HashType, std::string> mRepositoryNames;
 	SyntaxDefMap<Uint32, String::HashType> mRepositoryIndexInvert;
