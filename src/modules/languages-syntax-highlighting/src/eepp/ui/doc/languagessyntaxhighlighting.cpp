@@ -14,6 +14,7 @@
 #include <eepp/ui/doc/languages/carbon.hpp>
 #include <eepp/ui/doc/languages/clojure.hpp>
 #include <eepp/ui/doc/languages/cmake.hpp>
+#include <eepp/ui/doc/languages/cmakecache.hpp>
 #include <eepp/ui/doc/languages/containerfile.hpp>
 #include <eepp/ui/doc/languages/covscript.hpp>
 #include <eepp/ui/doc/languages/crystal.hpp>
@@ -220,6 +221,10 @@ void LanguagesSyntaxHighlighting::load() {
 		{ "^cmake_minimum_required.*%c" },
 
 	} );
+
+	sdm->addPreDefinition( { "CMakeCache",
+							 []() -> SyntaxDefinition& { return addCMakeCache(); },
+							 { "^CMakeCache.txt$" } } );
 
 	sdm->addPreDefinition( {
 		"Crystal",
@@ -561,7 +566,7 @@ void LanguagesSyntaxHighlighting::load() {
 
 	sdm->addPreDefinition( { "RC Script",
 							 []() -> SyntaxDefinition& { return addRcscript(); },
-							 { "%.rc$", "%.rc2$" } } );
+							 { "%.rc$", "%.rc2$", "%.dlg$" } } );
 
 	sdm->addPreDefinition(
 		{ "Rave", []() -> SyntaxDefinition& { return addRave(); }, { "%.rave$" } } );
