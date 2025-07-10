@@ -87,6 +87,7 @@
 #include <eepp/ui/doc/languages/rcscript.hpp>
 #include <eepp/ui/doc/languages/rescript.hpp>
 #include <eepp/ui/doc/languages/ring.hpp>
+#include <eepp/ui/doc/languages/rpmspec.hpp>
 #include <eepp/ui/doc/languages/ruby.hpp>
 #include <eepp/ui/doc/languages/rust.hpp>
 #include <eepp/ui/doc/languages/sass.hpp>
@@ -581,6 +582,9 @@ void LanguagesSyntaxHighlighting::load() {
 		[]() -> SyntaxDefinition& { return addRescript(); },
 		{ "%.res$" },
 	} );
+
+	sdm->addPreDefinition(
+		{ "RPM Spec", []() -> SyntaxDefinition& { return addRpmspec(); }, { "%.spec$" } } );
 
 	sdm->addPreDefinition( {
 		"Ruby",
