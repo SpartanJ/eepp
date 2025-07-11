@@ -306,7 +306,7 @@ static json toJson( const SyntaxDefinition& def ) {
 
 		for ( const auto& [hash, patterns] : def.getRepositories() ) {
 			std::string name = def.getRepositoryName( hash );
-			if ( name.starts_with( "$CONTENT_" ) )
+			if ( name.starts_with( "$CONTENT_" ) || name.starts_with( "source." ) )
 				continue;
 
 			nlohmann::json repo;
@@ -513,7 +513,7 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 		buf += ".addRepositories( {\n";
 		for ( const auto& repo : def.getRepositories() ) {
 			std::string name = def.getRepositoryName( repo.first );
-			if ( name.starts_with( "$CONTENT_" ) )
+			if ( name.starts_with( "$CONTENT_" ) || name.starts_with( "source." ) )
 				continue;
 			buf += "\n{ \"" + name + "\", ";
 			patternsToCPP( buf, repo.second.patterns );

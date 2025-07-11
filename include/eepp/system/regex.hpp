@@ -98,7 +98,7 @@ class EE_API RegEx : public PatternMatcher {
 	bool mCached : 1 { false };
 	bool mFilterOutCaptures : 1 { false };
 
-	bool initWithOnigmo( std::string_view pattern, bool useCache );
+	bool initWithOnigumura( std::string_view pattern, bool useCache );
 };
 
 }} // namespace EE::System

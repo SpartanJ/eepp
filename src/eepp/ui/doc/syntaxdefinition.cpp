@@ -73,10 +73,38 @@ static void updatePatternState( SyntaxDefinition& def, SyntaxPattern& ptrn ) {
 			ptrn.flags |= SyntaxPattern::IsRootSelfInclude;
 		} else if ( ptrn.checkIsSourceInclude() && ptrn.patterns[1].size() > 7 ) {
 			ptrn.flags |= SyntaxPattern::IsSourceInclude;
-			ptrn.syntax = SyntaxDefinitionManager::instance()
-							  ->getByLanguageName(
-								  std::string_view{ ptrn.patterns[1] }.substr( 7 /* "source." */ ) )
-							  .getLanguageName();
+
+			if ( def.getRepositoryName( String::hash( ptrn.patterns[1] ) ).empty() ) {
+				const auto& lang = SyntaxDefinitionManager::instance()->getByLanguageName(
+					std::string_view{ ptrn.patterns[1] }.substr( 7 /* "source." */ ) );
+
+				auto syntaxRepoName = ptrn.patterns[1];
+				auto patterns = lang.getPatterns();
+				for ( auto& iptrn : patterns ) {
+					if ( iptrn.isRepositoryInclude() ) {
+						iptrn.flags = SyntaxPattern::IsInclude | SyntaxPattern::IsSourceInclude;
+						iptrn.patterns[1] = String::format( "%s.%s", syntaxRepoName,
+															iptrn.patterns[1].substr( 1 ) );
+					}
+				}
+				def.addRepository( std::move( syntaxRepoName ), { std::move( patterns ) } );
+				const auto& repos = lang.getRepositories();
+				std::vector<std::pair<std::string, std::vector<SyntaxPattern>>> nrepos;
+				nrepos.reserve( repos.size() );
+				for ( const auto& repo : repos ) {
+					const auto& repoName = lang.getRepositoryName( repo.first );
+					auto newRepoName = String::format( "%s.%s", ptrn.patterns[1], repoName );
+					auto npatterns = repo.second.patterns;
+					for ( auto& iptrn : npatterns ) {
+						if ( iptrn.isRepositoryInclude() ) {
+							iptrn.flags = SyntaxPattern::IsInclude | SyntaxPattern::IsSourceInclude;
+							iptrn.patterns[1] = String::format( "%s.%s", ptrn.patterns[1],
+																iptrn.patterns[1].substr( 1 ) );
+						}
+					}
+					nrepos.emplace_back( std::move( newRepoName ), npatterns );
+				}
+			}
 		} else {
 			Log::warning( "updatePatternState unknown include directive: %s", ptrn.patterns[1] );
 			ptrn.flags &= ~SyntaxPattern::IsInclude;
@@ -438,8 +466,7 @@ SyntaxPattern::SyntaxPattern( std::vector<std::string>&& _patterns,
 SyntaxDefinition& SyntaxDefinition::addRepository( std::string&& name,
 												   SyntaxRepository&& repository ) {
 
-	eeASSERT( repository.patterns.size() < std::numeric_limits<Uint8>::max() - 1 &&
-			  repository.syntax.empty() );
+	eeASSERT( repository.patterns.size() < std::numeric_limits<SyntaxSyateHolderType>::max() - 1 );
 	auto hash = String::hash( name );
 	mRepositoryIndex[hash] = ++mRepositoryIndexCounter;
 	mRepositoryIndexInvert[mRepositoryIndexCounter] = hash;
@@ -465,7 +492,7 @@ SyntaxDefinition& SyntaxDefinition::addRepositories(
 }
 
 const SyntaxRepository& SyntaxDefinition::getRepository( String::HashType hash ) const {
-	static SyntaxRepository EMPTY = SyntaxRepository( "" );
+	static SyntaxRepository EMPTY = SyntaxRepository();
 	auto found = mRepository.find( hash );
 	return found != mRepository.end() ? found->second : EMPTY;
 }

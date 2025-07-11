@@ -80,6 +80,7 @@
 #include <eepp/ui/doc/languages/pony.hpp>
 #include <eepp/ui/doc/languages/postgresql.hpp>
 #include <eepp/ui/doc/languages/powershell.hpp>
+#include <eepp/ui/doc/languages/qbs.hpp>
 #include <eepp/ui/doc/languages/qmake.hpp>
 #include <eepp/ui/doc/languages/r.hpp>
 #include <eepp/ui/doc/languages/racket.hpp>
@@ -553,6 +554,12 @@ void LanguagesSyntaxHighlighting::load() {
 		"PowerShell",
 		[]() -> SyntaxDefinition& { return addPowerShell(); },
 		{ "%.ps1$", "%.psm1$", "%.psd1$", "%.ps1xml$", "%.pssc$", "%.psrc$", "%.cdxml$" },
+	} );
+
+	sdm->addPreDefinition( {
+		"Qbs",
+		[]() -> SyntaxDefinition& { return addQbs(); },
+		{ "%.qbs$" },
 	} );
 
 	sdm->addPreDefinition( {

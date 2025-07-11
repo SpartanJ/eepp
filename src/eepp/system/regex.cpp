@@ -74,8 +74,8 @@ RegEx::RegEx( std::string_view pattern, Uint32 options, bool useCache ) :
 		return;
 	}
 
-	if ( useCache && ( mOptions & Options::AllowFallback ) &&
-		 !( mOptions & Options::UseOniguruma ) && RegExCache::instance()->isEnabled() &&
+	if ( useCache && RegExCache::instance()->isEnabled() && ( mOptions & Options::AllowFallback ) &&
+		 !( mOptions & Options::UseOniguruma ) &&
 		 ( mCompiledPattern =
 			   RegExCache::instance()->find( pattern, mOptions | Options::UseOniguruma ) ) ) {
 		mValid = true;
@@ -85,7 +85,7 @@ RegEx::RegEx( std::string_view pattern, Uint32 options, bool useCache ) :
 	}
 
 	if ( mOptions & Options::UseOniguruma ) {
-		initWithOnigmo( pattern, useCache );
+		initWithOnigumura( pattern, useCache );
 		return;
 	}
 
@@ -111,7 +111,7 @@ RegEx::RegEx( std::string_view pattern, Uint32 options, bool useCache ) :
 		pcre2_get_error_message( errornumber, buffer, sizeof( buffer ) );
 		mValid = false;
 		if ( mOptions & Options::AllowFallback ) {
-			initWithOnigmo( pattern, useCache );
+			initWithOnigumura( pattern, useCache );
 		} else {
 			Log::debug( "PCRE2 compilation failed at offset " + std::to_string( erroroffset ) +
 						": " + reinterpret_cast<const char*>( buffer ) );
@@ -150,7 +150,7 @@ bool RegEx::matches( const char* stringSearch, int stringStartOffset,
 	if ( mOptions & Options::UseOniguruma ) {
 		OnigRegion* region = onig_region_new();
 		if ( !region ) {
-			Log::error( "Onigmo: onig_region_new() failed." );
+			Log::error( "Onigumura: onig_region_new() failed." );
 			mMatchNum = 0;
 			return false;
 		}
@@ -206,7 +206,7 @@ bool RegEx::matches( const char* stringSearch, int stringStartOffset,
 		} else { // Error
 			UChar errBuf[ONIG_MAX_ERROR_MESSAGE_LEN];
 			onig_error_code_to_str( errBuf, ret );
-			Log::debug( "Onigmo search error: %s", reinterpret_cast<const char*>( errBuf ) );
+			Log::debug( "Onigumura search error: %s", reinterpret_cast<const char*>( errBuf ) );
 			onig_region_free( region, 1 );
 			mMatchNum = 0;
 			return false;
@@ -270,7 +270,7 @@ const size_t& RegEx::getNumMatches() const {
 	return mMatchNum;
 }
 
-bool RegEx::initWithOnigmo( std::string_view pattern, bool useCache ) {
+bool RegEx::initWithOnigumura( std::string_view pattern, bool useCache ) {
 	OnigOptionType opt = ONIG_OPTION_NONE;
 
 	if ( mOptions & Options::Caseless )
@@ -290,7 +290,7 @@ bool RegEx::initWithOnigmo( std::string_view pattern, bool useCache ) {
 	if ( ret != ONIG_NORMAL ) {
 		UChar errBuf[ONIG_MAX_ERROR_MESSAGE_LEN];
 		onig_error_code_to_str( errBuf, ret, &err );
-		Log::info( "Onigmo compilation failed: %s", reinterpret_cast<const char*>( errBuf ) );
+		Log::info( "Onigumura compilation failed: %s", reinterpret_cast<const char*>( errBuf ) );
 		mValid = false;
 		if ( mCompiledPattern ) {
 			onig_free( regex );

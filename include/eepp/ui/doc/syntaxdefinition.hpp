@@ -113,8 +113,9 @@ struct EE_API SyntaxPattern {
 	}
 
 	std::string_view getRepositoryName() const {
-		eeASSERT( isRepositoryInclude() );
-		return std::string_view{ patterns[1] }.substr( 1 );
+		eeASSERT( isRepositoryInclude() || isSourceInclude() );
+		return isSourceInclude() ? std::string_view{ patterns[1] }
+								 : std::string_view{ patterns[1] }.substr( 1 );
 	}
 
 	inline bool checkIsIncludePattern() const {
@@ -144,13 +145,10 @@ struct EE_API SyntaxPattern {
 
 struct EE_API SyntaxRepository {
 	std::vector<SyntaxPattern> patterns;
-	std::string syntax;
 
 	SyntaxRepository() {}
 
 	SyntaxRepository( std::vector<SyntaxPattern>&& patterns ) : patterns( std::move( patterns ) ) {}
-
-	SyntaxRepository( const std::string& syntax ) : syntax( syntax ) {}
 };
 
 struct EE_API SyntaxPreDefinition {

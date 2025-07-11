@@ -386,6 +386,13 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 				int fullMatchEnd = matches[0].end;
 
 				if ( pattern.matchType == SyntaxPatternMatchType::RegEx ) {
+					/* Should we do this?
+					for ( size_t i = 1; i < numMatches; i++ ) {
+						fullMatchStart = eemin( matches[i].start, fullMatchStart );
+						fullMatchEnd = eemax( matches[i].end, fullMatchEnd );
+					}
+					*/
+
 					priorityMap.clear();
 					priorityMap.resize( fullMatchEnd - fullMatchStart, 0 );
 
@@ -653,12 +660,25 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 #endif
 						patternStack.push_back(
 							{ &targetRepo.patterns, 0,
-							  static_cast<Uint8>( innerPtrn->repositoryIdx ) } );
+							  static_cast<SyntaxSyateHolderType>( innerPtrn->repositoryIdx ) } );
 						continue;
 					} else if ( innerPtrn->isRootSelfInclude() ) {
 						if ( patternStack.size() + 1 >= MAX_PATTERN_STACK_SIZE )
 							break;
 						patternStack.push_back( { &curState.currentSyntax->getPatterns(), 0, 0 } );
+						continue;
+					} else if ( innerPtrn->isSourceInclude() ) {
+						if ( patternStack.size() + 1 >= MAX_PATTERN_STACK_SIZE )
+							break;
+						const auto& targetRepo =
+							curState.currentSyntax->getRepository( innerPtrn->getRepositoryName() );
+
+						const auto repoIndex = curState.currentSyntax->getRepositoryIndex(
+							innerPtrn->getRepositoryName() );
+
+						patternStack.push_back(
+							{ &targetRepo.patterns, 0,
+							  static_cast<SyntaxSyateHolderType>( repoIndex ) } );
 						continue;
 					}
 
@@ -762,12 +782,25 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 				const auto& repo =
 					curState.currentSyntax->getRepository( pattern->getRepositoryName() );
 				patternStack.push_back(
-					{ &repo.patterns, 0, static_cast<Uint8>( pattern->repositoryIdx ) } );
+					{ &repo.patterns, 0,
+					  static_cast<SyntaxSyateHolderType>( pattern->repositoryIdx ) } );
 			} else if ( pattern->isRootSelfInclude() ) {
 				if ( patternStack.size() + 1 >= MAX_PATTERN_STACK_SIZE )
 					break;
 
 				patternStack.push_back( { &curState.currentSyntax->getPatterns(), 0, 0 } );
+			} else if ( pattern->isSourceInclude() ) {
+				if ( patternStack.size() + 1 >= MAX_PATTERN_STACK_SIZE )
+					break;
+
+				const auto& repo =
+					curState.currentSyntax->getRepository( pattern->getRepositoryName() );
+
+				auto repoIndex =
+					curState.currentSyntax->getRepositoryIndex( pattern->getRepositoryName() );
+
+				patternStack.push_back(
+					{ &repo.patterns, 0, static_cast<SyntaxSyateHolderType>( repoIndex ) } );
 			} else {
 				if ( startIdx != 0 && pattern->matchType == SyntaxPatternMatchType::LuaPattern &&
 					 pattern->patterns[0][0] == '^' )
