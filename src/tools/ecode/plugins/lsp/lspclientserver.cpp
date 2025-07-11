@@ -780,7 +780,8 @@ static std::vector<LSPDiagnostic> parseDiagnosticsArr( const json& result ) {
 	std::vector<LSPDiagnostic> ret;
 	for ( const auto& diag : result ) {
 		auto range = parseRange( diag[MEMBER_RANGE] );
-		auto severity = static_cast<LSPDiagnosticSeverity>( diag["severity"].get<int>() );
+		auto severity = static_cast<LSPDiagnosticSeverity>(
+			diag.value( "severity", LSPDiagnosticSeverity::Information ) );
 		auto code = diag.contains( "code" ) ? ( diag["code"].is_number_integer()
 													? String::toString( diag["code"].get<int>() )
 													: diag.at( "code" ).get<std::string>() )

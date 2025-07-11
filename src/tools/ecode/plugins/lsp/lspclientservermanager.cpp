@@ -47,6 +47,7 @@ std::unique_ptr<LSPClientServer>
 LSPClientServerManager::runLSPServer( const String::HashType& id, const LSPDefinition& lsp,
 									  const std::string& rootPath,
 									  std::vector<std::string> languagesSupported ) {
+	Log::info( "Starting LSP server: %s", lsp.name );
 	auto server = std::make_unique<LSPClientServer>( this, id, lsp, rootPath, languagesSupported );
 	server->start();
 	return server;
@@ -141,8 +142,7 @@ void LSPClientServerManager::closeLSPServer( const String::HashType& id ) {
 		auto it = mClients.find( id );
 		if ( it != mClients.end() ) {
 			const auto& def = it->second->getDefinition();
-			Log::debug( "Closing LSP server: %s for language %s", def.name.c_str(),
-						def.language.c_str() );
+			Log::info( "Closing LSP server: %s for language %s", def.name, def.language );
 			mClients.erase( it );
 			mLSPsToClose.erase( id );
 			mErasingClients.erase( id );

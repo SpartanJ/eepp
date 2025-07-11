@@ -9,7 +9,7 @@ SyntaxDefinition& addMakefile() {
 
 		{ "Makefile",
 		  { "^[Mm]akefile$", "%.mk$", "%.make$", "%.mak$", "^Makefile%.am$", "^Makefile%.in$",
-			"%.ppj$", "%.ppw$", "^BSDmakefile$", "^GNUmakefile$" },
+			"%.ppj$", "%.ppw$", "^BSDmakefile$", "^GNUmakefile$", "^SMakefile$", "%.smk$" },
 		  {
 			  { { "#.*\n" }, "comment" },
 			  { { "[[.]]}" }, "normal" },

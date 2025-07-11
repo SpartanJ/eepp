@@ -440,7 +440,7 @@ void LanguagesSyntaxHighlighting::load() {
 		"Makefile",
 		[]() -> SyntaxDefinition& { return addMakefile(); },
 		{ "^[Mm]akefile$", "%.mk$", "%.make$", "%.mak$", "^Makefile%.am$", "^Makefile%.in$",
-		  "%.ppj$", "%.ppw$", "^BSDmakefile$", "^GNUmakefile$" },
+		  "%.ppj$", "%.ppw$", "^BSDmakefile$", "^GNUmakefile$", "^SMakefile$", "%.smk$" },
 	} );
 
 	sdm->addPreDefinition( {
