@@ -50,6 +50,7 @@ SyntaxDefinition& addZig() {
 			  { "callconv", "keyword" },
 			  { "test", "keyword" },
 			  { "f32", "type" },
+			  { "f80", "type" },
 			  { "const", "keyword" },
 			  { "union", "keyword" },
 			  { "nosuspend", "keyword" },

@@ -334,8 +334,6 @@ Uint32 UIMenuBar::onMessage( const NodeMessage* msg ) {
 				Node* focusNode = getEventDispatcher()->getFocusNode();
 				if ( !isParentOf( focusNode ) && !isPopUpMenuChild( focusNode ) ) {
 					onWidgetFocusLoss();
-					if ( mCurrentMenu && mCurrentMenu->isVisible() )
-						mCurrentMenu->hide();
 				}
 				return 1;
 			}
