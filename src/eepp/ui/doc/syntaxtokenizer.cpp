@@ -35,6 +35,8 @@ struct PatternStackItem {
 
 #define MAX_PATTERN_STACK_SIZE ( 16 )
 
+#define MAX_TRIED_PATTERNS ( 64 )
+
 static int isInMultiByteCodePoint( const char* text, const size_t& textSize, const size_t& pos ) {
 	// current char is a multybyte codepoint
 	if ( ( text[pos] & 0xC0 ) == 0x80 ) {
@@ -278,6 +280,10 @@ static inline void pushTokensToOpenCloseSubsyntax( int i, std::string_view textv
 	if ( rangeSubsyntax.numMatches > 1 ) {
 		int patternMatchStart = rangeSubsyntax.matches[0].start;
 		int patternMatchEnd = rangeSubsyntax.matches[0].end;
+
+		if ( patternMatchStart == patternMatchEnd )
+			return;
+
 		auto patternType = types[0];
 		int lastStart = patternMatchStart;
 		int lastEnd = patternMatchEnd;
@@ -341,6 +347,12 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 	size_t numMatches = 0;
 	std::optional<NonEscapedMatch> shouldCloseSubSyntax;
 
+	static constexpr auto TRIED_PATTERNS_BUFFER = MAX_TRIED_PATTERNS * sizeof( SyntaxStateType );
+	std::array<std::byte, TRIED_PATTERNS_BUFFER> triedPatternsBuffer;
+	std::pmr::monotonic_buffer_resource triedPatternsRes(
+		triedPatternsBuffer.data(), triedPatternsBuffer.size(), std::pmr::null_memory_resource() );
+	std::pmr::vector<SyntaxStateType> triedPatterns( &triedPatternsRes );
+
 	const auto matchPattern = [&]( const SyntaxPattern& pattern, size_t& startIdx,
 								   SyntaxStateType patternIndex,
 								   NonEscapedMatch* endRange = nullptr ) -> bool {
@@ -381,18 +393,13 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 			if ( numMatches > MAX_MATCHES )
 				numMatches = MAX_MATCHES;
 
+			size_t previousStartIdx = startIdx; // Track position before match
+
 			if ( numMatches > 1 ) {
 				int fullMatchStart = matches[0].start;
 				int fullMatchEnd = matches[0].end;
 
 				if ( pattern.matchType == SyntaxPatternMatchType::RegEx ) {
-					/* Should we do this?
-					for ( size_t i = 1; i < numMatches; i++ ) {
-						fullMatchStart = eemin( matches[i].start, fullMatchStart );
-						fullMatchEnd = eemax( matches[i].end, fullMatchEnd );
-					}
-					*/
-
 					priorityMap.clear();
 					priorityMap.resize( fullMatchEnd - fullMatchStart, 0 );
 
@@ -457,6 +464,12 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 					}
 
 					startIdx = fullMatchEnd;
+
+					if ( startIdx == previousStartIdx ) {
+						triedPatterns.push_back( patternIndex );
+					} else {
+						triedPatterns.clear();
+					}
 					return true;
 				} else {
 					auto patternType = pattern.types[0];
@@ -543,6 +556,11 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 						startIdx = fullMatchEnd;
 					}
 
+					if ( startIdx == previousStartIdx ) {
+						triedPatterns.push_back( patternIndex );
+					} else {
+						triedPatterns.clear();
+					}
 					return true;
 				}
 			} else {
@@ -567,13 +585,16 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 
 				patternText = textv.substr( start, end - start );
 				SyntaxStyleType type =
-					( pattern.types[0] == SyntaxStyleTypes::Symbol ||
-					  pattern.types[0] == SyntaxStyleTypes::Normal )
+					( !pattern.types.empty() && ( pattern.types[0] == SyntaxStyleTypes::Symbol ||
+												  pattern.types[0] == SyntaxStyleTypes::Normal ) )
 						? curState.currentSyntax->getSymbol( ( patternTextStr = patternText ) )
 						: SyntaxStyleEmpty();
 
 				if ( !skipSubSyntaxSeparator || !pattern.hasSyntaxOrContentScope() ) {
-					pushToken( tokens, type == SyntaxStyleEmpty() ? pattern.types[0] : type,
+					pushToken( tokens,
+							   !pattern.types.empty() && type == SyntaxStyleEmpty()
+								   ? pattern.types[0]
+								   : type,
 							   patternText );
 				}
 
@@ -582,6 +603,12 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 				}
 
 				startIdx = end;
+
+				if ( startIdx == previousStartIdx ) {
+					triedPatterns.push_back( patternIndex );
+				} else {
+					triedPatterns.clear();
+				}
 				return true;
 			}
 		}
@@ -623,6 +650,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 													tokens, true );
 					popStack( curState, retState, syntax, *activePattern );
 					startIdx = endRange.range.second;
+					triedPatterns.clear(); // Position advanced
 					continue;
 				}
 
@@ -687,6 +715,10 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 						 innerPtrn->patterns[0][0] == '^' )
 						continue;
 
+					if ( std::find( triedPatterns.begin(), triedPatterns.end(), patternState ) !=
+						 triedPatterns.end() )
+						continue;
+
 					if ( matchPattern( *innerPtrn, startIdx, patternState,
 									   endRange.numMatches ? &endRange : nullptr ) ) {
 						matched = true;
@@ -704,6 +736,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 					if ( dist > 0 ) {
 						pushToken( tokens, activePattern->types[0], text.substr( startIdx, dist ) );
 						startIdx += dist;
+						triedPatterns.clear(); // Position advanced
 					} else {
 						Log::error( "Error parsing \"%s\" using syntax: %s", text.c_str(),
 									syntax.getLSPName().c_str() );
@@ -733,6 +766,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 						}
 						popStack( curState, retState, syntax, *curState.subsyntaxInfo );
 						startIdx = rangeSubsyntax.range.second;
+						triedPatterns.clear(); // Position advanced
 						skip = true;
 					}
 				}
@@ -743,6 +777,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 														tokens, true );
 						popStack( curState, retState, syntax, *activePattern );
 						startIdx = endRange.range.second;
+						triedPatterns.clear(); // Position advanced
 						continue;
 					} else {
 						pushToken( tokens, activePattern->types[0], textv.substr( startIdx ) );
@@ -808,6 +843,11 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 
 				SyntaxStateType patternIndex = {
 					static_cast<SyntaxSyateHolderType>( current.index ), current.repositoryIdx };
+
+				if ( std::find( triedPatterns.begin(), triedPatterns.end(), patternIndex ) !=
+					 triedPatterns.end() )
+					continue;
+
 				if ( matchPattern( *pattern, startIdx, patternIndex ) ) {
 					matched = true;
 					break;
@@ -822,6 +862,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 			}
 			popStack( curState, retState, syntax, *curState.subsyntaxInfo );
 			startIdx = shouldCloseSubSyntax->range.second;
+			triedPatterns.clear(); // Position advanced
 			matched = true;
 			shouldCloseSubSyntax = {};
 			continue;
@@ -835,6 +876,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 			if ( dist > 0 ) {
 				pushToken( tokens, SyntaxStyleTypes::Normal, text.substr( startIdx, dist ) );
 				startIdx += dist;
+				triedPatterns.clear(); // Position advanced
 			} else {
 				Log::error( "Error parsing \"%s\" using syntax: %s", text.c_str(),
 							syntax.getLSPName().c_str() );

@@ -50,6 +50,12 @@ using SyntaxSyateHolderType = Uint16;
 struct SyntaxStateType {
 	SyntaxSyateHolderType state{ SYNTAX_TOKENIZER_STATE_NONE };
 	SyntaxSyateHolderType repositoryIdx{ SYNTAX_TOKENIZER_STATE_NONE };
+
+	bool operator==( const SyntaxStateType& other ) const {
+		return state == other.state && repositoryIdx == other.repositoryIdx;
+	}
+
+	bool operator!=( const SyntaxStateType& other ) const { return !( *this == other ); }
 };
 
 struct SyntaxStateRestored {

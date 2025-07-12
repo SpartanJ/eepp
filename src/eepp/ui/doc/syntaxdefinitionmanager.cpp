@@ -82,7 +82,7 @@ class TextMateScopeMapper {
 		{ "function", "function" },
 		{ "type", "type" },
 		{ "scope", "operator" },
-		{ "invalid", "error" },
+		{ "invalid", "normal" },
 		{ "external", "keyword" },
 		{ "tag", "operator" },
 		{ "comment", "comment" },	   // Comments
