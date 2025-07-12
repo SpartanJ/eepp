@@ -103,6 +103,7 @@
 #include <eepp/ui/doc/languages/tcl.hpp>
 #include <eepp/ui/doc/languages/teal.hpp>
 #include <eepp/ui/doc/languages/toml.hpp>
+#include <eepp/ui/doc/languages/tsx.hpp>
 #include <eepp/ui/doc/languages/typescript.hpp>
 #include <eepp/ui/doc/languages/typst.hpp>
 #include <eepp/ui/doc/languages/u.hpp>
@@ -671,6 +672,12 @@ void LanguagesSyntaxHighlighting::load() {
 							 {},
 
 							 { "ts" } } );
+
+	sdm->addPreDefinition( { "TSX",
+							 []() -> SyntaxDefinition& { return addTSX(); },
+							 { "%.tsx$" },
+							 {},
+							 "typescriptreact" } );
 
 	sdm->addPreDefinition(
 		{ "Typst", []() -> SyntaxDefinition& { return addTypst(); }, { "%.typ$" } } );

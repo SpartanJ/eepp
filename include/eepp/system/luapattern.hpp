@@ -8,6 +8,8 @@ namespace EE { namespace System {
 
 class EE_API LuaPattern : public PatternMatcher {
   public:
+	enum Options : Uint32 { None = 0, Anchored = 1 };
+
 	static std::string_view getURLPattern();
 
 	static std::string_view getURIPattern();
@@ -21,7 +23,7 @@ class EE_API LuaPattern : public PatternMatcher {
 
 	static bool hasMatches( const std::string& string, const std::string_view& pattern );
 
-	LuaPattern( std::string_view pattern );
+	LuaPattern( std::string_view pattern, Uint32 options = Options::None );
 
 	virtual bool matches( const char* stringSearch, int stringStartOffset,
 						  PatternMatcher::Range* matchList, size_t stringLength ) const;
@@ -38,6 +40,7 @@ class EE_API LuaPattern : public PatternMatcher {
   protected:
 	std::string_view mPattern;
 	mutable size_t mMatchNum;
+	Uint32 mOptions{ 0 };
 };
 
 class EE_API LuaPatternStorage : public LuaPattern {

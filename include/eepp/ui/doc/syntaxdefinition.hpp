@@ -209,9 +209,9 @@ class EE_API SyntaxDefinition {
 
 	const std::string& getComment() const;
 
-	const SyntaxDefMap<std::string, SyntaxStyleType>& getSymbols() const;
+	const SyntaxDefMap<String::HashType, SyntaxStyleType>& getSymbols() const;
 
-	SyntaxStyleType getSymbol( const std::string& symbol ) const;
+	SyntaxStyleType getSymbol( std::string_view symbol ) const;
 
 	/** Accepts lua patterns and file extensions. */
 	SyntaxDefinition& addFileType( const std::string& fileType );
@@ -229,7 +229,7 @@ class EE_API SyntaxDefinition {
 	SyntaxDefinition& addSymbols( const std::vector<std::string>& symbolNames,
 								  const std::string& typeName );
 
-	SyntaxDefinition& setSymbols( const SyntaxDefMap<std::string, SyntaxStyleType>& symbols,
+	SyntaxDefinition& setSymbols( const SyntaxDefMap<String::HashType, SyntaxStyleType>& symbols,
 								  const SyntaxDefMap<std::string, std::string>& symbolNames );
 
 	/** Sets the comment string used for auto-comment functionality. */
@@ -240,8 +240,6 @@ class EE_API SyntaxDefinition {
 	SyntaxDefinition& setHeaders( const std::vector<std::string>& headers );
 
 	void clearPatterns();
-
-	void clearSymbols();
 
 	const std::string& getLSPName() const;
 
@@ -316,7 +314,7 @@ class EE_API SyntaxDefinition {
 	std::string mLanguageName;
 	std::vector<std::string> mFiles;
 	std::vector<SyntaxPattern> mPatterns;
-	SyntaxDefMap<std::string, SyntaxStyleType> mSymbols;
+	SyntaxDefMap<String::HashType, SyntaxStyleType> mSymbolsHashes;
 	SyntaxDefMap<std::string, std::string> mSymbolNames;
 	std::string mComment;
 	std::vector<std::string> mHeaders;

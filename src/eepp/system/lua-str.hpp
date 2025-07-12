@@ -12,6 +12,7 @@ struct LuaMatch {
 	int end;
 };
 
-int lua_str_match( const char* text, int offset, size_t len, const char* pattern, LuaMatch* mm );
+int lua_str_match( const char* text, int offset, size_t len, const char* pattern, LuaMatch* mm,
+				   int force_anchor = 0 );
 
 #endif // EE_SYSTEM_LUA_STR_HPP

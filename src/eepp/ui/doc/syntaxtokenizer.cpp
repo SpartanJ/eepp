@@ -127,16 +127,17 @@ struct NonEscapedMatch {
 
 static NonEscapedMatch findNonEscaped( const std::string& text, const std::string& pattern,
 									   int offset, const std::string& escapeStr,
-									   SyntaxPatternMatchType matchType ) {
+									   SyntaxPatternMatchType matchType, bool anchored ) {
 	eeASSERT( !pattern.empty() );
 	if ( pattern.empty() )
 		return {};
 	std::variant<RegEx, LuaPattern, ParserMatcher> wordsVar =
 		matchType == SyntaxPatternMatchType::LuaPattern
-			? std::variant<RegEx, LuaPattern, ParserMatcher>( LuaPattern( pattern ) )
+			? std::variant<RegEx, LuaPattern, ParserMatcher>( LuaPattern(
+				  pattern, anchored ? LuaPattern::Options::Anchored : LuaPattern::Options::None ) )
 			: ( matchType == SyntaxPatternMatchType::RegEx
-					? std::variant<RegEx, LuaPattern, ParserMatcher>(
-						  RegEx( pattern, REGEX_FLAGS ) )
+					? std::variant<RegEx, LuaPattern, ParserMatcher>( RegEx(
+						  pattern, REGEX_FLAGS | ( anchored ? RegEx::Options::Anchored : 0 ) ) )
 					: std::variant<RegEx, LuaPattern, ParserMatcher>( ParserMatcher( pattern ) ) );
 	PatternMatcher& words =
 		std::visit( []( auto& patternType ) -> PatternMatcher& { return patternType; }, wordsVar );
@@ -340,8 +341,6 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 	const std::string_view textv{ text };
 	SyntaxState retState = state;
 	SyntaxStateRestored curState = SyntaxTokenizer::retrieveSyntaxState( syntax, state );
-	std::string patternStr;
-	std::string patternTextStr;
 	std::vector<size_t> priorityMap;
 	std::string_view patternText;
 	size_t numMatches = 0;
@@ -357,18 +356,15 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 								   SyntaxStateType patternIndex,
 								   NonEscapedMatch* endRange = nullptr ) -> bool {
 		int start = 0, end = 0;
-		patternStr =
-			pattern.matchType == SyntaxPatternMatchType::LuaPattern
-				? pattern.patterns[0][0] == '^' ? pattern.patterns[0] : "^" + pattern.patterns[0]
-				: pattern.patterns[0];
 		std::variant<RegEx, LuaPattern, ParserMatcher> wordsVar =
 			pattern.matchType == SyntaxPatternMatchType::LuaPattern
-				? std::variant<RegEx, LuaPattern, ParserMatcher>( LuaPattern( patternStr ) )
+				? std::variant<RegEx, LuaPattern, ParserMatcher>(
+					  LuaPattern( pattern.patterns[0], LuaPattern::Options::Anchored ) )
 				: ( pattern.matchType == SyntaxPatternMatchType::RegEx
 						? std::variant<RegEx, LuaPattern, ParserMatcher>(
-							  RegEx( patternStr, REGEX_FLAGS | RegEx::Options::Anchored ) )
+							  RegEx( pattern.patterns[0], REGEX_FLAGS | RegEx::Options::Anchored ) )
 						: std::variant<RegEx, LuaPattern, ParserMatcher>(
-							  ParserMatcher( patternStr ) ) );
+							  ParserMatcher( pattern.patterns[0] ) ) );
 		PatternMatcher& words = std::visit(
 			[]( auto& patternType ) -> PatternMatcher& { return patternType; }, wordsVar );
 		if ( !words.isValid() ) // Skip invalid patterns
@@ -443,8 +439,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 
 						if ( currentType == SyntaxStyleTypes::Symbol ||
 							 currentType == SyntaxStyleTypes::Normal ) {
-							SyntaxStyleType symbolType = curState.currentSyntax->getSymbol(
-								( patternTextStr = segmentText ) );
+							SyntaxStyleType symbolType = curState.currentSyntax->getSymbol( segmentText );
 							if ( symbolType != SyntaxStyleEmpty() ) {
 								currentType = symbolType;
 							} else if ( currentType == SyntaxStyleTypes::Symbol ) {
@@ -503,8 +498,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 								curMatch < pattern.types.size() &&
 										( pattern.types[curMatch] == SyntaxStyleTypes::Symbol ||
 										  pattern.types[curMatch] == SyntaxStyleTypes::Normal )
-									? curState.currentSyntax->getSymbol(
-										  ( patternTextStr = patternText ) )
+									? curState.currentSyntax->getSymbol( patternText )
 									: SyntaxStyleEmpty();
 
 							if ( !skipSubSyntaxSeparator || !pattern.hasSyntaxOrContentScope() ) {
@@ -587,7 +581,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 				SyntaxStyleType type =
 					( !pattern.types.empty() && ( pattern.types[0] == SyntaxStyleTypes::Symbol ||
 												  pattern.types[0] == SyntaxStyleTypes::Normal ) )
-						? curState.currentSyntax->getSymbol( ( patternTextStr = patternText ) )
+						? curState.currentSyntax->getSymbol( patternText )
 						: SyntaxStyleEmpty();
 
 				if ( !skipSubSyntaxSeparator || !pattern.hasSyntaxOrContentScope() ) {
@@ -626,6 +620,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 	std::pmr::monotonic_buffer_resource patternStackRes(
 		patternStackBuffer.data(), patternStackBuffer.size(), std::pmr::null_memory_resource() );
 	std::pmr::vector<PatternStackItem> patternStack( &patternStackRes );
+	std::string emptyStr;
 
 	while ( startIdx < size ) {
 		bool matched = false;
@@ -641,8 +636,8 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 		if ( activePattern ) {
 			auto endRange = findNonEscaped(
 				text, activePattern->patterns[1], startIdx,
-				activePattern->patterns.size() >= 3 ? activePattern->patterns[2] : "",
-				activePattern->matchType );
+				activePattern->patterns.size() >= 3 ? activePattern->patterns[2] : emptyStr,
+				activePattern->matchType, false );
 
 			if ( activePattern->hasContentScope() ) {
 				if ( endRange.range.first == static_cast<Int64>( startIdx ) ) {
@@ -754,8 +749,8 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 						findNonEscaped( text, curState.subsyntaxInfo->patterns[1], startIdx,
 										curState.subsyntaxInfo->patterns.size() >= 3
 											? curState.subsyntaxInfo->patterns[2]
-											: "",
-										activePattern->matchType );
+											: emptyStr,
+										activePattern->matchType, false );
 
 					if ( rangeSubsyntax.range.first != -1 &&
 						 ( endRange.range.first == -1 ||
@@ -789,10 +784,10 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 
 		if ( curState.subsyntaxInfo != nullptr && curState.subsyntaxInfo->patterns.size() > 1 ) {
 			auto rangeSubsyntax = findNonEscaped(
-				text, "^" + curState.subsyntaxInfo->patterns[1], startIdx,
+				text, curState.subsyntaxInfo->patterns[1], startIdx,
 				curState.subsyntaxInfo->patterns.size() >= 3 ? curState.subsyntaxInfo->patterns[2]
-															 : "",
-				curState.subsyntaxInfo->matchType );
+															 : emptyStr,
+				curState.subsyntaxInfo->matchType, true );
 
 			if ( rangeSubsyntax.range.first != -1 ) {
 				shouldCloseSubSyntax = rangeSubsyntax;

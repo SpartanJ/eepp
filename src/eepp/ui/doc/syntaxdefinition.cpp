@@ -9,6 +9,17 @@ using namespace std::literals;
 
 namespace EE { namespace UI { namespace Doc {
 
+static constexpr String::HashType toLowerAndHash( const char* str, Int64 len ) {
+	String::HashType hash = 5381;
+	while ( --len >= 0 )
+		hash = ( ( hash << 5 ) + hash ) + std::tolower( *str++ );
+	return hash;
+}
+
+static constexpr String::HashType toLowerAndHash( std::string_view str ) {
+	return toLowerAndHash( str.data(), str.size() );
+}
+
 SyntaxDefMap<SyntaxStyleType, std::string> SyntaxPattern::SyntaxStyleTypeCache = {};
 
 static void liftContentPatternsRecursive( SyntaxDefinition& def, SyntaxPattern& pattern,
@@ -145,7 +156,7 @@ SyntaxDefinition::SyntaxDefinition(
 	mComment( comment ),
 	mHeaders( std::move( headers ) ),
 	mLSPName( lspName.empty() ? String::toLower( mLanguageName ) : lspName ) {
-	mSymbols.reserve( mSymbolNames.size() );
+	mSymbolsHashes.reserve( mSymbolNames.size() );
 	if ( !mPatterns.empty() ) {
 		if ( !ParserMatcherManager::instance()->registeredBaseParsers() &&
 			 std::any_of( mPatterns.begin(), mPatterns.end(), []( const SyntaxPattern& pattern ) {
@@ -156,8 +167,10 @@ SyntaxDefinition::SyntaxDefinition(
 		mPatterns.emplace_back( SyntaxPattern{ { "%s+" }, "normal" } );
 		mPatterns.emplace_back( SyntaxPattern{ { "%w+%f[%s]" }, "normal" } );
 	}
-	for ( const auto& symbol : mSymbolNames )
-		mSymbols.insert( { symbol.first, toSyntaxStyleType( symbol.second ) } );
+	for ( const auto& symbol : mSymbolNames ) {
+		mSymbolsHashes.insert(
+			{ String::hash( symbol.first ), toSyntaxStyleType( symbol.second ) } );
+	}
 	addRepositories( std::move( repositories ) );
 }
 
@@ -209,7 +222,15 @@ bool SyntaxDefinition::isCaseInsensitive() const {
 }
 
 SyntaxDefinition& SyntaxDefinition::setCaseInsensitive( bool caseInsensitive ) {
-	mCaseInsensitive = caseInsensitive;
+	if ( mCaseInsensitive != caseInsensitive ) {
+		mCaseInsensitive = caseInsensitive;
+		mSymbolsHashes.clear();
+		for ( const auto& symbol : mSymbolNames ) {
+			mSymbolsHashes.insert(
+				{ mCaseInsensitive ? toLowerAndHash( symbol.first ) : String::hash( symbol.first ),
+				  toSyntaxStyleType( symbol.second ) } );
+		}
+	}
 	return *this;
 }
 
@@ -240,13 +261,14 @@ const std::string& SyntaxDefinition::getComment() const {
 	return mComment;
 }
 
-const SyntaxDefMap<std::string, SyntaxStyleType>& SyntaxDefinition::getSymbols() const {
-	return mSymbols;
+const SyntaxDefMap<String::HashType, SyntaxStyleType>& SyntaxDefinition::getSymbols() const {
+	return mSymbolsHashes;
 }
 
-SyntaxStyleType SyntaxDefinition::getSymbol( const std::string& symbol ) const {
-	auto it = mSymbols.find( mCaseInsensitive ? String::toLower( symbol ) : symbol );
-	if ( it != mSymbols.end() )
+SyntaxStyleType SyntaxDefinition::getSymbol( std::string_view symbol ) const {
+	auto it =
+		mSymbolsHashes.find( mCaseInsensitive ? toLowerAndHash( symbol ) : String::hash( symbol ) );
+	if ( it != mSymbolsHashes.end() )
 		return it->second;
 	return SyntaxStyleEmpty();
 }
@@ -280,7 +302,8 @@ SyntaxDefinition::addPatternsToFront( const std::vector<SyntaxPattern>& patterns
 
 SyntaxDefinition& SyntaxDefinition::addSymbol( const std::string& symbolName,
 											   const std::string& typeName ) {
-	mSymbols[symbolName] = toSyntaxStyleType( typeName );
+	mSymbolsHashes[mCaseInsensitive ? toLowerAndHash( symbolName ) : String::hash( symbolName )] =
+		toSyntaxStyleType( typeName );
 	mSymbolNames[symbolName] = typeName;
 	return *this;
 }
@@ -293,9 +316,9 @@ SyntaxDefinition& SyntaxDefinition::addSymbols( const std::vector<std::string>& 
 }
 
 SyntaxDefinition&
-SyntaxDefinition::setSymbols( const SyntaxDefMap<std::string, SyntaxStyleType>& symbols,
+SyntaxDefinition::setSymbols( const SyntaxDefMap<String::HashType, SyntaxStyleType>& symbols,
 							  const SyntaxDefMap<std::string, std::string>& symbolNames ) {
-	mSymbols = symbols;
+	mSymbolsHashes = symbols;
 	mSymbolNames = symbolNames;
 	return *this;
 }
@@ -316,10 +339,6 @@ SyntaxDefinition& SyntaxDefinition::setHeaders( const std::vector<std::string>& 
 
 void SyntaxDefinition::clearPatterns() {
 	mPatterns.clear();
-}
-
-void SyntaxDefinition::clearSymbols() {
-	mSymbols.clear();
 }
 
 const std::string& SyntaxDefinition::getLSPName() const {
