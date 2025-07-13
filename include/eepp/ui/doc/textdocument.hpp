@@ -37,9 +37,11 @@ struct DocumentContentChange {
 
 class EE_API TextDocument {
   public:
-    static bool isTextDocummentCommand( std::string_view cmd );
+	static bool isTextDocummentCommand( std::string_view cmd );
 
-    static bool isTextDocummentCommand( String::HashType cmdHash );
+	static bool isTextDocummentCommand( String::HashType cmdHash );
+
+	static bool fileMightBeBinary( const std::string& file );
 
 	enum class UndoRedo { Undo, Redo };
 

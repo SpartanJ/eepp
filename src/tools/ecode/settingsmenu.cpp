@@ -1,4 +1,5 @@
 #include "settingsmenu.hpp"
+
 #include <filesystem>
 namespace fs = std::filesystem;
 
@@ -2354,7 +2355,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 		} else if ( "new_folder" == id ) {
 			mApp->newFolder( file );
 		} else if ( "open_file" == id ) {
-			mApp->loadFileFromPath( file.getFilepath() );
+			mApp->openFileFromPath( file.getFilepath() );
 		} else if ( "remove" == id ) {
 			deleteFileDialog( file );
 		} else if ( "duplicate_file" == id ) {
@@ -2552,8 +2553,8 @@ UIMenu* SettingsMenu::createFontHintMenu() {
 
 	const auto fontHintMenuRefresh = [this] {
 		const auto& cfg = mApp->getConfig();
-		auto el =
-			mFontHintMenu->find( "hint_" + FontTrueType::fontHintingToString( cfg.ui.fontHinting ) );
+		auto el = mFontHintMenu->find( "hint_" +
+									   FontTrueType::fontHintingToString( cfg.ui.fontHinting ) );
 		if ( el && el->isType( UI_TYPE_MENURADIOBUTTON ) )
 			el->asType<UIMenuRadioButton>()->setActive( true );
 	};

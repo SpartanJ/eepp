@@ -88,6 +88,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	std::shared_ptr<ThreadPool> getThreadPool() const;
 
+	void openFileFromPath( const std::string& path );
+
 	bool loadFileFromPath( std::string path, bool inNewTab = true,
 						   UICodeEditor* codeEditor = nullptr,
 						   std::function<void( UICodeEditor*, const std::string& )> onLoaded =

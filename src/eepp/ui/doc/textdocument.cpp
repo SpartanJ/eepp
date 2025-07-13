@@ -28,6 +28,34 @@ static constexpr char DEFAULT_NON_WORD_CHARS[] = " \t\n/\\()\"':,.;<>~!@#$%^&*|+
 
 static UnorderedSet<String::HashType> TEXT_DOCUMENT_COMMANDS = {};
 
+bool TextDocument::fileMightBeBinary( const std::string& file ) {
+	static constexpr std::array<char, 4> BINARY_STR = { 0, 0, 0, 0 };
+	static constexpr size_t MAX_READ = 4096;
+
+	IOStreamFile f( file );
+	if ( !f.isOpen() ) {
+		// Handle file opening failure (e.g., return false or throw)
+		return false;
+	}
+
+	std::array<char, MAX_READ> buffer;
+	size_t bytesToRead = std::min<size_t>( MAX_READ, f.getSize() );
+	if ( bytesToRead < BINARY_STR.size() ) {
+		// File is too small to contain the binary sequence
+		return false;
+	}
+
+	size_t bytesRead = f.read( buffer.data(), bytesToRead );
+	if ( bytesRead < BINARY_STR.size() ) {
+		// Not enough bytes read to contain the binary sequence
+		return false;
+	}
+
+	auto res = std::search( buffer.begin(), buffer.begin() + bytesRead, BINARY_STR.begin(),
+							BINARY_STR.end() );
+	return res != buffer.begin() + bytesRead;
+}
+
 bool TextDocument::isTextDocummentCommand( std::string_view cmd ) {
 	return TEXT_DOCUMENT_COMMANDS.contains( String::hash( cmd ) );
 }
