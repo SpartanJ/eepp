@@ -905,7 +905,7 @@ AutoCompletePlugin::processSignatureHelp( const LSPSignatureHelp& signatureHelp 
 		mSignatureHelpVisible = true;
 		mSignatureHelp = signatures;
 		if ( mSignatureHelpSelected >= static_cast<Int32>( mSignatureHelp.signatures.size() ) )
-			mSignatureHelpSelected = 0;
+			mSignatureHelpSelected = -1;
 		if ( mSignatureHelp.signatures.empty() )
 			resetSignatureHelp();
 		editor->invalidateDraw();
