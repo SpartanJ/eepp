@@ -66,6 +66,7 @@
 #include <eepp/ui/doc/languages/msbuildsolution.hpp>
 #include <eepp/ui/doc/languages/nelua.hpp>
 #include <eepp/ui/doc/languages/nim.hpp>
+#include <eepp/ui/doc/languages/nix.hpp>
 #include <eepp/ui/doc/languages/objeck.hpp>
 #include <eepp/ui/doc/languages/objective-c.hpp>
 #include <eepp/ui/doc/languages/ocaml.hpp>
@@ -93,6 +94,7 @@
 #include <eepp/ui/doc/languages/rust.hpp>
 #include <eepp/ui/doc/languages/sass.hpp>
 #include <eepp/ui/doc/languages/scala.hpp>
+#include <eepp/ui/doc/languages/scheme.hpp>
 #include <eepp/ui/doc/languages/shellscript.hpp>
 #include <eepp/ui/doc/languages/smallbasic.hpp>
 #include <eepp/ui/doc/languages/solidity.hpp>
@@ -489,6 +491,12 @@ void LanguagesSyntaxHighlighting::load() {
 		{ "%.nim$", "%.nims$", "%.nimble$" },
 	} );
 
+	sdm->addPreDefinition( {
+		"Nix",
+		[]() -> SyntaxDefinition& { return addNix(); },
+		{ "%.nix$" },
+	} );
+
 	sdm->addPreDefinition(
 		{ "Objeck", []() -> SyntaxDefinition& { return addObjeck(); }, { "%.obs$" } } );
 
@@ -616,6 +624,10 @@ void LanguagesSyntaxHighlighting::load() {
 		[]() -> SyntaxDefinition& { return addScala(); },
 		{ "%.sc$", "%.scala$" },
 	} );
+
+	sdm->addPreDefinition( { "Scheme",
+							 []() -> SyntaxDefinition& { return addScheme(); },
+							 { "%.scm$", "%.ss$", "%.sch$", "%.sf$" } } );
 
 	sdm->addPreDefinition( { "Shell script",
 							 []() -> SyntaxDefinition& { return addShellScript(); },
