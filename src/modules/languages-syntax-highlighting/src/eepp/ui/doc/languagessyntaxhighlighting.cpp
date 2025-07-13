@@ -45,6 +45,7 @@
 #include <eepp/ui/doc/languages/haxe.hpp>
 #include <eepp/ui/doc/languages/hlsl.hpp>
 #include <eepp/ui/doc/languages/htaccess.hpp>
+#include <eepp/ui/doc/languages/idl.hpp>
 #include <eepp/ui/doc/languages/ignorefile.hpp>
 #include <eepp/ui/doc/languages/ispc.hpp>
 #include <eepp/ui/doc/languages/jai.hpp>
@@ -383,6 +384,9 @@ void LanguagesSyntaxHighlighting::load() {
 		[]() -> SyntaxDefinition& { return addIgnoreFile(); },
 		{ "%..*ignore$" },
 	} );
+
+	sdm->addPreDefinition(
+		{ "IDL", []() -> SyntaxDefinition& { return addIdl(); }, { "%.idl$" } } );
 
 	sdm->addPreDefinition( {
 		"ISPC",

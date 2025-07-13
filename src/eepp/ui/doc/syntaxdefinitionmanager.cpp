@@ -393,8 +393,11 @@ static std::string funcName( std::string name ) {
 
 static void patternToCPP( std::string& buf, const SyntaxPattern& pattern,
 						  const SyntaxDefinition& def ) {
-	bool allowReduce = pattern.patterns.size() == 1 && pattern.typesNames.size() <= 1 &&
-					   pattern.endTypesNames.empty();
+	bool allowReduce = ( pattern.patterns.size() == 1 && pattern.typesNames.size() <= 1 &&
+						 pattern.endTypesNames.empty() ) ||
+					   ( pattern.patterns.size() <= 3 && pattern.typesNames.size() <= 1 &&
+						 pattern.endTypesNames.empty() &&
+						 pattern.matchType == SyntaxPatternMatchType::LuaPattern );
 	bool setType = allowReduce && pattern.matchType != SyntaxPatternMatchType::LuaPattern;
 	bool addPatternType = pattern.matchType != SyntaxPatternMatchType::LuaPattern ||
 						  ( pattern.patterns.size() == 2 && pattern.patterns[0] == "include" );
