@@ -1,4 +1,5 @@
 #include "pathhelper.hpp"
+#include <array>
 
 namespace ecode {
 
