@@ -686,7 +686,7 @@ void LanguagesSyntaxHighlighting::load() {
 							 []() -> SyntaxDefinition& { return addTypeScript(); },
 							 { "%.ts$", "%.d%.ts$" },
 							 {},
-
+							 {},
 							 { "ts" } } );
 
 	sdm->addPreDefinition( { "TSX",

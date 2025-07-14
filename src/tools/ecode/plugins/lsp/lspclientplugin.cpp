@@ -1878,7 +1878,7 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 			if ( !editorExists( editor ) )
 				return;
 			auto server = mClientManager.getOneLSPClientServer( editor );
-			if ( server == nullptr )
+			if ( server == nullptr || !server->getCapabilities().hoverProvider )
 				return;
 			server->documentHover(
 				editor->getDocument().getURI(), currentMouseTextPosition( editor ),
