@@ -823,7 +823,7 @@ void App::mainLoop() {
 	}
 }
 
-void App::onFileDropped( std::string file ) {
+void App::onFileDropped( std::string file, bool openBinaryAsDocument ) {
 	Vector2f mousePos( mUISceneNode->getEventDispatcher()->getMousePosf() );
 	Node* node = mUISceneNode->overFind( mousePos );
 	UIWidget* widget = mSplitter->getCurWidget();
@@ -862,16 +862,18 @@ void App::onFileDropped( std::string file ) {
 		tab = d.first;
 	}
 
-	loadFileFromPath( file, false, codeEditor,
-					  [this, tab]( UICodeEditor* editor, const std::string& ) {
-						  if ( tab )
-							  tab->setTabSelected();
-						  else {
-							  UITab* tab = mSplitter->tabFromEditor( editor );
-							  if ( tab )
-								  tab->setTabSelected();
-						  }
-					  } );
+	loadFileFromPath(
+		file, false, codeEditor,
+		[this, tab]( UICodeEditor* editor, const std::string& ) {
+			if ( tab )
+				tab->setTabSelected();
+			else {
+				UITab* tab = mSplitter->tabFromEditor( editor );
+				if ( tab )
+					tab->setTabSelected();
+			}
+		},
+		openBinaryAsDocument );
 }
 
 void App::onTextDropped( String text ) {
@@ -2260,7 +2262,8 @@ void App::openFileFromPath( const std::string& path ) {
 
 bool App::loadFileFromPath(
 	std::string path, bool inNewTab, UICodeEditor* codeEditor,
-	std::function<void( UICodeEditor* codeEditor, const std::string& path )> onLoaded ) {
+	std::function<void( UICodeEditor* codeEditor, const std::string& path )> onLoaded,
+	bool openBinaryAsDocument ) {
 	std::string ext = FileSystem::fileExtension( path );
 
 	if ( ext == "lnk" ) {
@@ -2274,7 +2277,7 @@ bool App::loadFileFromPath(
 			return false;
 	}
 
-	if ( PathHelper::isOpenExternalExtension( ext ) ) {
+	if ( !openBinaryAsDocument && PathHelper::isOpenExternalExtension( ext ) ) {
 		Engine::instance()->openURI( path );
 	} else if ( Image::isImageExtension( path ) && Image::isImage( path ) && ext != "svg" ) {
 		loadImageFromPath( path );
@@ -3809,53 +3812,53 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 						loadFolder( mPathsToLoad[lastDirIdx] );
 					} else {
 						int mightBeBinaryCount = 0;
-						for ( const auto& file : mPathsToLoad )
+						for ( const auto& file : mPathsToLoad ) {
 							if ( !FileSystem::isDirectory( file ) &&
-								 TextDocument::fileMightBeBinary( file ) )
+								 !Image::isImageExtension( file ) &&
+								 ( TextDocument::fileMightBeBinary( file ) ||
+								   PathHelper::isOpenExternalExtension(
+									   FileSystem::fileExtension( file ) ) ) ) {
 								mightBeBinaryCount++;
+								break;
+							}
+						}
 
 						if ( mightBeBinaryCount ) {
-							if ( mightBeBinaryCount == 1 && mPathsToLoad.size() == 1 ) {
-								FileInfo f( mPathsToLoad[0] );
-								if ( f.isExecutable() )
-									Sys::execute( mPathsToLoad[0] );
-								else
-									Engine::instance()->openURI( mPathsToLoad[0] );
-							} else {
-								UIMessageBox* msgBox = UIMessageBox::New(
-									UIMessageBox::OK_CANCEL,
-									i18n( "dropped_binary_files_open_warn",
-										  "Some of the files seem to be binary.\nDo you want to "
-										  "open them as document? Otherwise they will be ignored "
-										  "for loading." ) );
-								msgBox->getButtonOK()->setText( i18n( "open", "Open" ) );
-								msgBox->getButtonOK()->getIcon()->setVisible( false );
-								msgBox->getButtonCancel()->setText( i18n( "ignore", "Ignore" ) );
-								msgBox->getButtonCancel()->getIcon()->setVisible( false );
-								msgBox->on( Event::OnConfirm,
-											[this, pathsToLoad = mPathsToLoad]( const Event* ) {
-												for ( const auto& file : pathsToLoad ) {
-													if ( !FileSystem::isDirectory( file ) )
-														onFileDropped( file );
-												}
-											} );
-								msgBox->on( Event::OnCancel,
-											[this, pathsToLoad = mPathsToLoad]( const Event* ) {
-												for ( const auto& file : pathsToLoad ) {
-													if ( !FileSystem::isDirectory( file ) &&
-														 !TextDocument::fileMightBeBinary( file ) )
-														onFileDropped( file );
-												}
-											} );
-								msgBox->setTitle( i18n( "warning", "Warning" ) );
-								msgBox->center();
-								msgBox->showWhenReady();
-							}
+							UIMessageBox* msgBox = UIMessageBox::New(
+								UIMessageBox::OK_CANCEL,
+								i18n( "dropped_binary_files_open_warn",
+									  "Some of the files seem to be binary.\nDo you want to "
+									  "open them as document? Otherwise they will be ignored "
+									  "for loading." ) );
+							msgBox->getButtonOK()->setText( i18n( "open", "Open" ) );
+							msgBox->getButtonOK()->getIcon()->setVisible( false );
+							msgBox->getButtonCancel()->setText( i18n( "ignore", "Ignore" ) );
+							msgBox->getButtonCancel()->getIcon()->setVisible( false );
+							msgBox->on( Event::OnConfirm,
+										[this, pathsToLoad = mPathsToLoad]( const Event* ) {
+											for ( const auto& file : pathsToLoad ) {
+												if ( !FileSystem::isDirectory( file ) )
+													onFileDropped( file, true );
+											}
+										} );
+							msgBox->on( Event::OnCancel,
+										[this, pathsToLoad = mPathsToLoad]( const Event* ) {
+											for ( const auto& file : pathsToLoad ) {
+												if ( !FileSystem::isDirectory( file ) &&
+													 !( TextDocument::fileMightBeBinary( file ) ||
+														PathHelper::isOpenExternalExtension(
+															FileSystem::fileExtension( file ) ) ) )
+													onFileDropped( file, true );
+											}
+										} );
+							msgBox->setTitle( i18n( "warning", "Warning" ) );
+							msgBox->center();
+							msgBox->showWhenReady();
 						} else {
 							// Load only files even if there are directories
 							for ( const auto& file : mPathsToLoad ) {
 								if ( !FileSystem::isDirectory( file ) )
-									onFileDropped( file );
+									onFileDropped( file, false );
 							}
 						}
 					}

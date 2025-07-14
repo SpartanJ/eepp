@@ -93,7 +93,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	bool loadFileFromPath( std::string path, bool inNewTab = true,
 						   UICodeEditor* codeEditor = nullptr,
 						   std::function<void( UICodeEditor*, const std::string& )> onLoaded =
-							   std::function<void( UICodeEditor*, const std::string& )>() );
+							   std::function<void( UICodeEditor*, const std::string& )>(),
+						   bool openBinaryAsDocument = false );
 
 	void hideGlobalSearchBar();
 
@@ -676,7 +677,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void showSidePanel( bool show );
 
-	void onFileDropped( std::string file );
+	void onFileDropped( std::string file, bool openBinaryAsDocument );
 
 	void onTextDropped( String text );
 

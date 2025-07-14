@@ -97,7 +97,8 @@ class PluginContextProvider {
 	virtual bool
 	loadFileFromPath( std::string path, bool inNewTab = true, UICodeEditor* codeEditor = nullptr,
 					  std::function<void( UICodeEditor*, const std::string& )> onLoaded =
-						  std::function<void( UICodeEditor*, const std::string& )>() ) = 0;
+						  std::function<void( UICodeEditor*, const std::string& )>(),
+					  bool openBinaryAsDocument = false ) = 0;
 
 	virtual ProjectDirectoryTree* getDirTree() const = 0;
 
