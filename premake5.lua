@@ -1512,6 +1512,8 @@ workspace "eepp"
 			links { "bsd", "network" }
 		filter "system:bsd"
 			links { "util" }
+		filter { "system:windows", "action:not vs*", "configurations:release*" }
+			linkoptions { "-Wl,--export-all-symbols" }
 
 	project "eterm"
 		set_kind()

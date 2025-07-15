@@ -1665,6 +1665,10 @@ solution "eepp"
 			buildoptions{ "-Wa,-mbig-obj" }
 		end
 		build_link_configuration( "ecode", false )
+		configuration { "release", "windows" }
+			if not is_vs() then
+				linkoptions { "-Wl,--export-all-symbols" }
+			end
 
 	project "eterm"
 		set_kind()
