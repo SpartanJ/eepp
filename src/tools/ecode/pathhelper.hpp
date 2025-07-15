@@ -57,6 +57,8 @@ struct PathHelper {
 	static bool isDocumentExtension( std::string_view ext );
 
 	static bool isOpenExternalExtension( std::string_view ext );
+
+	static bool isCompressedArchiveExtension( std::string_view ext );
 };
 
 } // namespace ecode

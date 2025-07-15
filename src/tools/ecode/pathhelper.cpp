@@ -22,7 +22,19 @@ bool PathHelper::isDocumentExtension( std::string_view ext ) {
 }
 
 bool PathHelper::isOpenExternalExtension( std::string_view ext ) {
-	return isVideoExtension( ext ) || isDocumentExtension( ext );
+	return isVideoExtension( ext ) || isDocumentExtension( ext ) ||
+		   isCompressedArchiveExtension( ext );
+}
+
+bool PathHelper::isCompressedArchiveExtension( std::string_view ext ) {
+	static constexpr std::array<std::string_view, 29> extensions = {
+		"zip", "rar", "7z",	  "tar", "gz",	 "bz2", "xz",	"z",   "arj", "cab",
+		"iso", "lzh", "lzma", "tgz", "tbz2", "txz", "zst",	"ace", "arc", "cpio",
+		"deb", "dmg", "lrz",  "lz",	 "lzo",	 "rpm", "shar", "wim", "zipx" };
+	for ( const auto& cext : extensions )
+		if ( String::iequals( ext, cext ) )
+			return true;
+	return false;
 }
 
 } // namespace ecode
