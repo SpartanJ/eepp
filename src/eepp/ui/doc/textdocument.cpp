@@ -29,31 +29,79 @@ static constexpr char DEFAULT_NON_WORD_CHARS[] = " \t\n/\\()\"':,.;<>~!@#$%^&*|+
 static UnorderedSet<String::HashType> TEXT_DOCUMENT_COMMANDS = {};
 
 bool TextDocument::fileMightBeBinary( const std::string& file ) {
-	static constexpr std::array<char, 4> BINARY_STR = { 0, 0, 0, 0 };
 	static constexpr size_t MAX_READ = 4096;
+	static constexpr std::array<char, 4> NULL_SEQUENCE = { 0, 0, 0, 0 };
+
+	// Common binary file magic numbers
+	static constexpr std::array<char, 4> ELF_MAGIC = { 0x7F, 'E', 'L', 'F' };
+	static constexpr std::array<char, 4> PNG_MAGIC = { (char)0x89, 'P', 'N', 'G' };
+	static constexpr std::array<char, 5> PDF_MAGIC = { '%', 'P', 'D', 'F', '-' };
+	// UTF-16/UTF-32 BOMs (to avoid misclassifying as binary)
+	static constexpr std::array<char, 2> UTF16BE_BOM = { (char)0xFE, (char)0xFF };
+	static constexpr std::array<char, 2> UTF16LE_BOM = { (char)0xFF, (char)0xFE };
+	static constexpr std::array<char, 4> UTF32BE_BOM = { (char)0x00, (char)0x00, (char)0xFE,
+														 (char)0xFF };
+	static constexpr std::array<char, 4> UTF32LE_BOM = { (char)0xFF, (char)0xFE, (char)0x00,
+														 (char)0x00 };
 
 	IOStreamFile f( file );
 	if ( !f.isOpen() ) {
-		// Handle file opening failure (e.g., return false or throw)
-		return false;
+		return false; // File cannot be opened, treat as non-binary or handle differently
 	}
 
 	std::array<char, MAX_READ> buffer;
 	size_t bytesToRead = std::min<size_t>( MAX_READ, f.getSize() );
-	if ( bytesToRead < BINARY_STR.size() ) {
-		// File is too small to contain the binary sequence
-		return false;
-	}
-
 	size_t bytesRead = f.read( buffer.data(), bytesToRead );
-	if ( bytesRead < BINARY_STR.size() ) {
-		// Not enough bytes read to contain the binary sequence
-		return false;
+	if ( bytesRead == 0 ) {
+		return false; // Empty file or read failure
 	}
 
-	auto res = std::search( buffer.begin(), buffer.begin() + bytesRead, BINARY_STR.begin(),
-							BINARY_STR.end() );
-	return res != buffer.begin() + bytesRead;
+	// Check for text encoding BOMs (indicates text file)
+	if ( bytesRead >= 2 ) {
+		if ( std::equal( UTF16BE_BOM.begin(), UTF16BE_BOM.end(), buffer.begin() ) ||
+			 std::equal( UTF16LE_BOM.begin(), UTF16LE_BOM.end(), buffer.begin() ) ) {
+			return false; // UTF-16 text file
+		}
+	}
+	if ( bytesRead >= 4 ) {
+		if ( std::equal( UTF32BE_BOM.begin(), UTF32BE_BOM.end(), buffer.begin() ) ||
+			 std::equal( UTF32LE_BOM.begin(), UTF32LE_BOM.end(), buffer.begin() ) ) {
+			return false; // UTF-32 text file
+		}
+	}
+
+	// Check for binary magic numbers
+	if ( bytesRead >= 4 ) {
+		if ( std::equal( ELF_MAGIC.begin(), ELF_MAGIC.end(), buffer.begin() ) ||
+			 std::equal( PNG_MAGIC.begin(), PNG_MAGIC.end(), buffer.begin() ) ||
+			 ( bytesRead >= 5 &&
+			   std::equal( PDF_MAGIC.begin(), PDF_MAGIC.end(), buffer.begin() ) ) ) {
+			return true; // Known binary file type
+		}
+	}
+
+	// Check for consecutive null bytes
+	if ( bytesRead >= NULL_SEQUENCE.size() ) {
+		auto res = std::search( buffer.begin(), buffer.begin() + bytesRead, NULL_SEQUENCE.begin(),
+								NULL_SEQUENCE.end() );
+		if ( res != buffer.begin() + bytesRead ) {
+			return true; // Found null sequence, likely binary
+		}
+	}
+
+	// Check proportion of non-printable characters
+	size_t nonPrintableCount = 0;
+	for ( size_t i = 0; i < bytesRead; ++i ) {
+		if ( buffer[i] < 32 && buffer[i] != '\n' && buffer[i] != '\r' && buffer[i] != '\t' ) {
+			++nonPrintableCount;
+		}
+	}
+	// Consider file binary if >10% of characters are non-printable
+	if ( nonPrintableCount > bytesRead * 0.1 ) {
+		return true;
+	}
+
+	return false; // Likely a text file
 }
 
 bool TextDocument::isTextDocummentCommand( std::string_view cmd ) {
