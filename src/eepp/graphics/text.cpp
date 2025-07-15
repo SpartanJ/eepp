@@ -1113,7 +1113,7 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 						width += tabAdvance( hspace, tabWidth,
 											 tabOffset ? *tabOffset + width : tabOffset );
 					} else {
-						const Glyph& glyph =
+						Glyph glyph =
 							font->getGlyphByIndex( curGlyph.codepoint, fontSize, bold, italic,
 												   outlineThickness, rFont->getPage( fontSize ) );
 
@@ -1188,7 +1188,7 @@ Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize, const Str
 						width += tabAdvance( hspace, tabWidth,
 											 tabOffset ? *tabOffset + width : tabOffset );
 					} else {
-						const Glyph& glyph =
+						Glyph glyph =
 							font->getGlyphByIndex( curGlyph.codepoint, fontSize, bold, italic,
 												   outlineThickness, rFont->getPage( fontSize ) );
 
@@ -1286,7 +1286,7 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 									 tabAdvance( hspace, tabWidth,
 												 tabOffset ? *tabOffset + position.x : tabOffset );
 							 } else {
-								 const Glyph& glyph = font->getGlyphByIndex(
+								 Glyph glyph = font->getGlyphByIndex(
 									 curGlyph.codepoint, fontSize, bold, italic, outlineThickness,
 									 rFont->getPage( fontSize ) );
 
@@ -1398,7 +1398,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 						width += tabAdvance( hspace, tabWidth,
 											 tabOffset ? *tabOffset + width : tabOffset );
 					} else {
-						const Glyph& glyph =
+						Glyph glyph =
 							font->getGlyphByIndex( curGlyph.codepoint, fontSize, bold, italic,
 												   outlineThickness, rFont->getPage( fontSize ) );
 
@@ -1577,7 +1577,7 @@ void Text::updateWidthCache() {
 								 width += tabAdvance( hspace, mTabWidth,
 													  mTabStops ? width : std::optional<Float>{} );
 							 } else {
-								 const Glyph& glyph = font->getGlyphByIndex(
+								 Glyph glyph = font->getGlyphByIndex(
 									 curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold,
 									 italic, mFontStyleConfig.OutlineThickness,
 									 rFont->getPage( mFontStyleConfig.CharacterSize ) );
@@ -1963,7 +1963,7 @@ void Text::ensureGeometryUpdate() {
 
 					// Apply the outline
 					if ( mFontStyleConfig.OutlineThickness != 0 ) {
-						const Glyph& glyph = font->getGlyphByIndex(
+						Glyph glyph = font->getGlyphByIndex(
 							curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold, reqItalic,
 							mFontStyleConfig.OutlineThickness,
 							rFont->getPage( mFontStyleConfig.CharacterSize ) );
@@ -1993,7 +1993,7 @@ void Text::ensureGeometryUpdate() {
 					}
 
 					// Extract the current glyph's description
-					const Glyph& glyph = font->getGlyphByIndex(
+					Glyph glyph = font->getGlyphByIndex(
 						curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold, reqItalic, 0,
 						rFont->getPage( mFontStyleConfig.CharacterSize ) );
 
