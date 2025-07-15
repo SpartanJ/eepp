@@ -266,6 +266,7 @@ bool Process::kill() {
 		destroy();
 		int ret = 0 == subprocess_terminate( PROCESS_PTR );
 		eeSAFE_FREE( mProcess );
+		mKilled = true;
 		return ret;
 	}
 	return false;
@@ -302,6 +303,10 @@ void Process::startShutdown() {
 
 bool Process::isShuttingDown() const {
 	return mShuttingDown;
+}
+
+bool Process::killed() const {
+	return mKilled;
 }
 
 size_t Process::readAll( std::string& buffer, bool readErr, Time timeout ) {

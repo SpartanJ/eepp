@@ -824,35 +824,40 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 		mNativeLinters[cmd]( doc, path );
 		return;
 	}
-	Process process;
+	std::unique_ptr<Process> process = std::make_unique<Process>();
 	TextDocument* docPtr = doc.get();
 	ScopedOp op(
 		[this, &process, &docPtr] {
 			std::lock_guard l( mRunningProcessesMutex );
 			auto found = mRunningProcesses.find( docPtr );
-			if ( found != mRunningProcesses.end() )
+			if ( found != mRunningProcesses.end() ) {
 				found->second->kill();
-			mRunningProcesses[docPtr] = &process;
+				eeASSERT( found->second != process.get() );
+			}
+			mRunningProcesses[docPtr] = process.get();
 		},
 		[this, &docPtr] {
 			std::lock_guard l( mRunningProcessesMutex );
 			mRunningProcesses.erase( docPtr );
 		} );
-	;
 
-	if ( process.create( cmd, Process::getDefaultOptions() | Process::CombinedStdoutStderr, {},
-						 mManager->getWorkspaceFolder() ) ) {
+	if ( process->create( cmd, Process::getDefaultOptions() | Process::CombinedStdoutStderr, {},
+						  mManager->getWorkspaceFolder() ) ) {
 		int returnCode;
 		std::string data;
-		process.readAllStdOut( data, Seconds( 30 ) );
+		process->readAllStdOut( data, Seconds( 30 ) );
 
 		if ( mShuttingDown ) {
-			process.kill();
+			process->kill();
 			return;
 		}
 
-		process.join( &returnCode );
-		process.destroy();
+		if ( process->isAlive() ) {
+			process->join( &returnCode );
+			process->destroy();
+		} else if ( process->killed() ) {
+			return;
+		}
 
 		if ( linter.hasNoErrorsExitCode && linter.noErrorsExitCode == returnCode ) {
 			Lock matchesLock( mMatchesMutex );
@@ -866,7 +871,7 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 						returnCode ) == linter.expectedExitCodes.end() )
 			return;
 
-		// Log::info( "Linter result:\n%s", data.c_str() );
+		// Log::debug( "Linter result:\n%s", data.c_str() );
 
 		std::map<Int64, std::vector<LinterMatch>> matches;
 		size_t totalMatches = 0;
@@ -971,9 +976,10 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 
 		setMatches( doc.get(), MatchOrigin::Linter, matches );
 
-		Log::info( "LinterPlugin::runLinter for %s took %.2fms. Found: %d matches. Errors: %d, "
+		Log::info( "LinterPlugin::runLinter with binary %s for %s took %.2fms. Found: %d matches. "
+				   "Errors: %d, "
 				   "Warnings: %d, Notices: %d.",
-				   path.c_str(), clock.getElapsedTime().asMilliseconds(), totalMatches, totalErrors,
+				   cmd, path, clock.getElapsedTime().asMilliseconds(), totalMatches, totalErrors,
 				   totalWarns, totalNotice );
 	}
 }

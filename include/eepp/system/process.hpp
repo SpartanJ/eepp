@@ -235,9 +235,13 @@ class EE_API Process {
 	/** Indicates if the process started its shutdown */
 	bool isShuttingDown() const;
 
+	/** @return True if the process has been manually killed via a kill() call  */
+	bool killed() const;
+
   protected:
 	void* mProcess{ nullptr };
 	bool mShuttingDown{ false };
+	bool mKilled{ false };
 	bool mIsAsync{ false };
 	size_t mBufferSize{ 131072 };
 	std::thread mStdOutThread;
