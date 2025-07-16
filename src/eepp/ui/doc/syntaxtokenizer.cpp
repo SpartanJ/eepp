@@ -185,6 +185,7 @@ SyntaxStateRestored SyntaxTokenizer::retrieveSyntaxState( const SyntaxDefinition
 				}
 			} else {
 				syntaxState.currentPatternIdx = state.state[i];
+				syntaxState.currentLevel = i;
 			}
 		} else {
 			break;
@@ -439,7 +440,8 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 
 						if ( currentType == SyntaxStyleTypes::Symbol ||
 							 currentType == SyntaxStyleTypes::Normal ) {
-							SyntaxStyleType symbolType = curState.currentSyntax->getSymbol( segmentText );
+							SyntaxStyleType symbolType =
+								curState.currentSyntax->getSymbol( segmentText );
 							if ( symbolType != SyntaxStyleEmpty() ) {
 								currentType = symbolType;
 							} else if ( currentType == SyntaxStyleTypes::Symbol ) {

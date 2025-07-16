@@ -54,6 +54,7 @@
 #include <eepp/ui/doc/languages/jsx.hpp>
 #include <eepp/ui/doc/languages/jule.hpp>
 #include <eepp/ui/doc/languages/julia.hpp>
+#include <eepp/ui/doc/languages/koka.hpp>
 #include <eepp/ui/doc/languages/kotlin.hpp>
 #include <eepp/ui/doc/languages/latex.hpp>
 #include <eepp/ui/doc/languages/lbstanza.hpp>
@@ -419,6 +420,10 @@ void LanguagesSyntaxHighlighting::load() {
 		{},
 		"javascriptreact",
 	} );
+
+	sdm->addPreDefinition( { "Koka",
+							 []() -> SyntaxDefinition& { return addKoka(); },
+							 { "%.kk$", "%.kki$", "%.kkc$" } } );
 
 	sdm->addPreDefinition(
 		{ "Kotlin", []() -> SyntaxDefinition& { return addKotlin(); }, { "%.kt$" } } );

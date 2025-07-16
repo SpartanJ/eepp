@@ -79,9 +79,12 @@ class TextMateScopeMapper {
 		// -- General Categories --
 		{ "declaration", "literal" },
 		{ "identifier", "literal" },
+		{ "literal", "literal" },
 		{ "function", "function" },
+		{ "number", "number" },
 		{ "type", "type" },
 		{ "scope", "operator" },
+		{ "parameter", "parameter" },
 		{ "invalid", "normal" },
 		{ "external", "keyword" },
 		{ "tag", "operator" },
