@@ -86,8 +86,9 @@ static void updatePatternState( SyntaxDefinition& def, SyntaxPattern& ptrn ) {
 			ptrn.flags |= SyntaxPattern::IsSourceInclude;
 
 			if ( def.getRepositoryName( String::hash( ptrn.patterns[1] ) ).empty() ) {
-				const auto& lang = SyntaxDefinitionManager::instance()->getByLanguageName(
-					std::string_view{ ptrn.patterns[1] }.substr( 7 /* "source." */ ) );
+				const auto& lang =
+					SyntaxDefinitionManager::instance()->getByLanguageNameInsensitive(
+						std::string_view{ ptrn.patterns[1] }.substr( 7 /* "source." */ ) );
 
 				auto syntaxRepoName = ptrn.patterns[1];
 				auto patterns = lang.getPatterns();

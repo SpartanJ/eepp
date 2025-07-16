@@ -331,7 +331,6 @@ void GlobalSearchController::initGlobalSearchBar(
 		const auto& item =
 			mGlobalSearchHistory[mGlobalSearchHistory.size() - 1 - listBox->getItemSelectedIndex()];
 		mGlobalSearchInput->setText( item.search );
-		;
 	} );
 	mGlobalSearchBarLayout->setCommand( "close-global-searchbar", [this] {
 		hideGlobalSearchBar();
@@ -405,6 +404,7 @@ void GlobalSearchController::initGlobalSearchBar(
 		}
 	};
 	mGlobalSearchInput->on( Event::KeyDown, switchInputToTree );
+	mGlobalSearchWhereInput->on( Event::KeyDown, switchInputToTree );
 	mGlobalSearchInput->on( Event::OnSizeChange, [this]( const Event* ) {
 		if ( mGlobalSearchBarLayout->isVisible() )
 			updateGlobalSearchBar();
