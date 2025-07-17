@@ -227,8 +227,7 @@ const std::size_t String::InvalidPos = StringType::npos;
 #define PATHSEP '/'
 #define CASE( c, caseInsensitive ) ( caseInsensitive ? std::tolower( c ) : ( c ) )
 
-bool String::globMatch( const std::string_view& text, const std::string_view& glob,
-						bool caseInsensitive ) {
+bool String::globMatch( std::string_view text, std::string_view glob, bool caseInsensitive ) {
 	size_t i = 0;
 	size_t j = 0;
 	size_t n = text.size();

@@ -87,6 +87,7 @@ class GlobalSearchController {
 	std::deque<SearchHistoryItem> mGlobalSearchHistory;
 	bool mValueChanging{ false };
 	ProjectSearch::SearchConfig mLastSearchConfig;
+	ProjectSearch::FindData* mCurSearch{ nullptr };
 
 	void onLoadDone( const Variant& lineNum, const Variant& colNum );
 

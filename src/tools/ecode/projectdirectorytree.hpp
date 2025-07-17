@@ -167,6 +167,8 @@ class ProjectDirectoryTree {
 
 	bool isRunning() const { return mRunning; }
 
+	bool isReady() const { return mIsReady; }
+
   protected:
 	std::string mPath;
 	std::shared_ptr<ThreadPool> mPool;

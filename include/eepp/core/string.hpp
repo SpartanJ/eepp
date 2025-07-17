@@ -541,7 +541,7 @@ class EE_API String {
 	/** glob matches a string against a glob
 	** @return True if matches
 	*/
-	static bool globMatch( const std::string_view& text, const std::string_view& glob,
+	static bool globMatch( std::string_view text, std::string_view glob,
 						   bool caseInsensitive = false );
 
 	/** glob matches a string against a set of globs

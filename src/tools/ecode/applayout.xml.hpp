@@ -551,9 +551,6 @@ R"html(
 					<TextView id="image_close" lw="wc" lh="wc" text="&#xeb99;" lg="top|right" enabled="false" />
 					<Loader id="image_loader" lw="64dp" lh="64dp" outline-thickness="6dp" lg="center" visible="false" />
 				</RelativeLayout>
-				<vbox id="notification_center" lw="256dp" lh="wc"
-					  lg="right|bottom" margin-right="22dp" margin-bottom="56dp">
-				</vbox>
 			</RelativeLayout>
 		</Splitter>
 		<searchbar id="search_bar" lw="mp" lh="wc">
@@ -642,5 +639,8 @@ R"html(
 		  text='@string(menu_hold_shift_hint, "Hold \"Shift\" to keep menu open)"'
 		  tooltip='@string(menu_hold_shift_hint_desc, "Keeping \"Shift\" clicked while changing any options it will keep the menu open.")' />
 </MainLayout>
+</vbox>
+<vbox id="notification_center" lw="256dp" lh="wc"
+	  lg="right|bottom" margin-right="22dp" margin-bottom="56dp">
 </vbox>
 )html"

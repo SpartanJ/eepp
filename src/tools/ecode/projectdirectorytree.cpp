@@ -80,6 +80,18 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 							break;
 						}
 					}
+					if ( !found && mAllowedMatcher ) {
+						std::string_view file{ files[i] };
+						if ( String::startsWith( file, mAllowedMatcher->getPath() ) ) {
+							std::string_view localPath( std::string_view{ file }.substr(
+								mAllowedMatcher->getPath().size() ) );
+							if ( mAllowedMatcher->match( localPath ) ) {
+								found = true;
+							}
+						} else if ( mAllowedMatcher->match( file ) ) {
+							found = true;
+						}
+					}
 					if ( found ) {
 						mFiles.emplace_back( std::move( files[i] ) );
 						mNames.emplace_back( std::move( names[i] ) );
@@ -339,16 +351,18 @@ void ProjectDirectoryTree::getDirectoryFiles(
 		if ( ignoreMatcher.foundMatch() && ignoreMatcher.match( directory, file ) ) {
 			if ( !allowedMatcher || !allowedMatcher->hasPatterns() )
 				continue;
-			std::string localPath;
+			std::string_view localPath( fullpath );
 			if ( String::startsWith( directory, allowedMatcher->getPath() ) )
-				localPath = directory.substr( allowedMatcher->getPath().size() );
-			if ( !allowedMatcher->match( localPath + file ) )
+				localPath = std::string_view{ fullpath }.substr( allowedMatcher->getPath().size() );
+			if ( !allowedMatcher->match( localPath ) )
 				continue;
 		} else if ( disallowedMatcher && disallowedMatcher->hasPatterns() ) {
-			std::string localPath;
-			if ( String::startsWith( directory, disallowedMatcher->getPath() ) )
-				localPath = directory.substr( disallowedMatcher->getPath().size() );
-			if ( disallowedMatcher->match( localPath + file ) )
+			std::string_view localPath( fullpath );
+			if ( String::startsWith( directory, disallowedMatcher->getPath() ) ) {
+				localPath =
+					std::string_view{ fullpath }.substr( disallowedMatcher->getPath().size() );
+			}
+			if ( disallowedMatcher->match( localPath ) )
 				continue;
 		}
 

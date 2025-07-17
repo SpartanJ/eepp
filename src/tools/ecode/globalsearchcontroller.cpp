@@ -593,7 +593,7 @@ void GlobalSearchController::showGlobalSearch( bool searchReplace ) {
 		mGlobalSearchInput->setText( text );
 	}
 	mGlobalSearchInput->getDocument().selectAll();
-	auto* loader = mGlobalSearchTree->getParent()->find( "loader" );
+	auto* loader = mGlobalSearchLayout->getParent()->find( "loader" );
 	if ( loader )
 		loader->setVisible( true );
 	if ( !searchReplace ) {
@@ -671,10 +671,16 @@ void GlobalSearchController::updateGlobalSearchBar() {
 void GlobalSearchController::hideGlobalSearchBar() {
 	mGlobalSearchBarLayout->setEnabled( false )->setVisible( false );
 	mGlobalSearchLayout->setVisible( false );
-	auto* loader = mGlobalSearchTree->getParent()->find( "loader" );
-	if ( loader )
+	auto* loader = mGlobalSearchLayout->getParent()->find( "loader" );
+	if ( loader ) {
 		loader->setVisible( false );
+		loader->close();
+	}
 	mApp->getStatusBar()->updateState();
+	if ( mCurSearch ) {
+		mCurSearch->active = false;
+		mApp->getThreadPool()->removeWithTag( mCurSearch->taskTag );
+	}
 }
 
 void GlobalSearchController::toggleGlobalSearchBar() {
@@ -762,67 +768,78 @@ void GlobalSearchController::doGlobalSearch( String text, String filter, bool ca
 											 TextDocument::FindReplaceType searchType,
 											 bool escapeSequence, bool searchReplace,
 											 bool searchAgain ) {
-	if ( mApp->getDirTree() && mApp->getDirTree()->getFilesCount() > 0 && !text.empty() ) {
-		mGlobalSearchTree = searchReplace ? mGlobalSearchTreeReplace : mGlobalSearchTreeSearch;
-		mGlobalSearchTreeSearch->setVisible( !searchReplace );
-		mGlobalSearchTreeReplace->setVisible( searchReplace );
-		mGlobalSearchLayout->findByClass( "status_box" )->setVisible( true );
-		mGlobalSearchLayout->findByClass( "replace_box" )->setVisible( false );
-		mGlobalSearchLayout->findByClass<UITextView>( "search_str" )->setText( text );
-		UILoader* loader = UILoader::New();
-		loader->setId( "loader" );
-		loader->setRadius( 48 );
-		loader->setOutlineThickness( 6 );
-		loader->setParent( mGlobalSearchLayout->getParent() );
-		loader->setPosition( mGlobalSearchLayout->getPosition() +
-							 mGlobalSearchLayout->getSize() * 0.5f - loader->getSize() * 0.5f );
-		Clock clock;
-		if ( escapeSequence )
-			text.unescape();
-		std::string search( text.toUtf8() );
+	if ( nullptr == mApp->getDirTree() || !mApp->getDirTree()->isReady() ) {
+		mApp->getNotificationCenter()->addNotification( mApp->i18n(
+			"project_still_indexing", "Project is still being indexed, please wait a moment." ) );
+		return;
+	}
 
-		std::vector<std::shared_ptr<TextDocument>> openDocs;
-		mSplitter->forEachDocSharedPtr(
-			[&openDocs]( auto doc ) { openDocs.emplace_back( std::move( doc ) ); } );
-		auto filters = parseGlobMatches( filter );
-		auto imageExts = Image::getImageExtensionsSupported();
-		imageExts.erase( std::remove_if( imageExts.begin(), imageExts.end(),
-										 []( const std::string& ext ) { return ext == "svg"; } ),
-						 imageExts.end() );
-		filters.reserve( filters.size() + imageExts.size() );
-		for ( const auto& ext : imageExts ) {
-			// If user explicitly requested to filter some extension, respect it and do not add the
-			// ignore for it.
-			std::string extGlob( "*." + ext );
-			if ( std::find_if( filters.begin(), filters.end(),
-							   [&extGlob]( const std::pair<std::string, bool>& filter ) {
-								   return filter.first == extGlob;
-							   } ) != filters.end() )
-				continue;
-			filters.emplace_back( extGlob, true );
-		}
+	if ( mApp->getDirTree()->getFilesCount() == 0 || text.empty() ) {
+		return;
+	}
 
-		ProjectSearch::find(
-			mApp->getDirTree()->getFiles(), search, mApp->getThreadPool(),
-			[this, clock, search, loader, searchReplace, searchAgain, escapeSequence, searchType,
-			 filter]( const ProjectSearch::ConsolidatedResult& res ) {
-				Log::info( "Global search for \"%s\" took %s", search.c_str(),
-						   clock.getElapsedTime().toString() );
-				mUISceneNode->runOnMainThread( [this, loader, res = std::move( res ), search,
-												searchReplace, searchAgain, escapeSequence,
-												searchType, filter] {
-					mLastSearchConfig = std::move( res.first );
-					auto model = ProjectSearch::asModel( res.second );
-					model->setOpType( searchType );
-					updateGlobalSearchHistory( model, search, filter, searchReplace, searchAgain,
-											   escapeSequence );
-					updateGlobalSearchBarResults( search, model, searchReplace, escapeSequence );
+	mGlobalSearchTree = searchReplace ? mGlobalSearchTreeReplace : mGlobalSearchTreeSearch;
+	mGlobalSearchTreeSearch->setVisible( !searchReplace );
+	mGlobalSearchTreeReplace->setVisible( searchReplace );
+	mGlobalSearchLayout->findByClass( "status_box" )->setVisible( true );
+	mGlobalSearchLayout->findByClass( "replace_box" )->setVisible( false );
+	mGlobalSearchLayout->findByClass<UITextView>( "search_str" )->setText( text );
+	UILoader* loader = UILoader::New();
+	loader->setId( "loader" );
+	loader->setRadius( 48 );
+	loader->setOutlineThickness( 6 );
+	loader->setParent( mGlobalSearchLayout->getParent() );
+	loader->setPosition( mGlobalSearchLayout->getPosition() +
+						 mGlobalSearchLayout->getSize() * 0.5f - loader->getSize() * 0.5f );
+	Clock clock;
+	if ( escapeSequence )
+		text.unescape();
+	std::string search( text.toUtf8() );
+
+	std::vector<std::shared_ptr<TextDocument>> openDocs;
+	mSplitter->forEachDocSharedPtr(
+		[&openDocs]( auto doc ) { openDocs.emplace_back( std::move( doc ) ); } );
+	auto filters = parseGlobMatches( filter );
+	auto imageExts = Image::getImageExtensionsSupported();
+	imageExts.erase( std::remove_if( imageExts.begin(), imageExts.end(),
+									 []( const std::string& ext ) { return ext == "svg"; } ),
+					 imageExts.end() );
+	filters.reserve( filters.size() + imageExts.size() );
+	for ( const auto& ext : imageExts ) {
+		// If user explicitly requested to filter some extension, respect it and do not add the
+		// ignore for it.
+		std::string extGlob( "*." + ext );
+		if ( std::find_if( filters.begin(), filters.end(),
+						   [&extGlob]( const std::pair<std::string, bool>& filter ) {
+							   return filter.first == extGlob;
+						   } ) != filters.end() )
+			continue;
+		filters.emplace_back( extGlob, true );
+	}
+
+	mCurSearch = ProjectSearch::find(
+		mApp->getDirTree()->getFiles(), search, mApp->getThreadPool(),
+		[this, clock, search, searchReplace, searchAgain, escapeSequence, searchType,
+		 filter]( const ProjectSearch::ConsolidatedResult& res ) {
+			Log::info( "Global search for \"%s\" took %s", search.c_str(),
+					   clock.getElapsedTime().toString() );
+			mUISceneNode->runOnMainThread( [this, res = std::move( res ), search, searchReplace,
+											searchAgain, escapeSequence, searchType, filter] {
+				mLastSearchConfig = std::move( res.first );
+				auto model = ProjectSearch::asModel( res.second );
+				model->setOpType( searchType );
+				updateGlobalSearchHistory( model, search, filter, searchReplace, searchAgain,
+										   escapeSequence );
+				updateGlobalSearchBarResults( search, model, searchReplace, escapeSequence );
+				auto* loader = mGlobalSearchLayout->getParent()->find( "loader" );
+				if ( loader ) {
 					loader->setVisible( false );
 					loader->close();
-				} );
-			},
-			caseSensitive, wholeWord, searchType, filters, mApp->getCurrentProject(), openDocs );
-	}
+				}
+				mCurSearch = nullptr;
+			} );
+		},
+		caseSensitive, wholeWord, searchType, filters, mApp->getCurrentProject(), openDocs );
 }
 
 void GlobalSearchController::onLoadDone( const Variant& lineNum, const Variant& colNum ) {

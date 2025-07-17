@@ -159,13 +159,6 @@ static std::vector<ProjectSearch::ResultData::Result> searchInFileRegEx( const s
 	return searchInFilePatternMatch( file, pattern, caseSensitive, wholeWord );
 }
 
-struct FindData {
-	Mutex resMutex;
-	Mutex countMutex;
-	int resCount{ 0 };
-	ProjectSearch::Result res;
-};
-
 std::vector<ProjectSearch::ResultData::Result>
 ProjectSearch::fileResFromDoc( const std::string& string, bool caseSensitive, bool wholeWord,
 							   TextDocument::FindReplaceType type,
@@ -192,20 +185,29 @@ ProjectSearch::fileResFromDoc( const std::string& string, bool caseSensitive, bo
 	return fileRes;
 }
 
-void ProjectSearch::find( const std::vector<std::string> files, std::string string,
-						  std::shared_ptr<ThreadPool> pool, ResultCb result, bool caseSensitive,
-						  bool wholeWord, const TextDocument::FindReplaceType& type,
-						  const std::vector<GlobMatch>& pathFilters, std::string basePath,
-						  std::vector<std::shared_ptr<TextDocument>> openDocs ) {
-	if ( files.empty() )
+ProjectSearch::FindData*
+ProjectSearch::find( const std::vector<std::string> files, std::string string,
+					 std::shared_ptr<ThreadPool> pool, ResultCb result, bool caseSensitive,
+					 bool wholeWord, const TextDocument::FindReplaceType& type,
+					 const std::vector<GlobMatch>& pathFilters, std::string basePath,
+					 std::vector<std::shared_ptr<TextDocument>> openDocs ) {
+	static const std::string_view PROJECT_SEARCH_TASK_TAG = "ProjectSearchFindTag";
+	static const Uint64 PROJECT_SEARCH_TASK_TAG_HASH =
+		std::hash<std::string_view>()( PROJECT_SEARCH_TASK_TAG );
+
+	if ( files.empty() ) {
 		result( {} );
+		return nullptr;
+	}
+	FindData* findData = eeNew( FindData, () );
+	findData->taskTag = PROJECT_SEARCH_TASK_TAG_HASH;
+
 	FileSystem::dirAddSlashAtEnd( basePath );
-	pool->run( [files = std::move( files ), string = std::move( string ), pool = std::move( pool ),
-				result = std::move( result ), caseSensitive, wholeWord, type,
-				pathFilters = std::move( pathFilters ), basePath = std::move( basePath ),
+	pool->run( [findData, files = std::move( files ), string = std::move( string ),
+				pool = std::move( pool ), result = std::move( result ), caseSensitive, wholeWord,
+				type, pathFilters = std::move( pathFilters ), basePath = std::move( basePath ),
 				openDocs = std::move( openDocs )]() mutable {
 		SearchConfig searchConfig( string, caseSensitive, wholeWord, type );
-		FindData* findData = eeNew( FindData, () );
 		findData->resCount = files.size();
 		if ( !caseSensitive )
 			String::toLowerInPlace( string );
@@ -244,6 +246,12 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 				}
 			}
 
+			if ( !findData->active ) {
+				result( {} );
+				eeDelete( findData );
+				return;
+			}
+
 			if ( skip ) {
 				search[pos++] = false;
 				continue;
@@ -255,7 +263,7 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 
 		findData->resCount = count;
 
-		if ( count == 0 ) {
+		if ( count == 0 || !findData->active ) {
 			result( { searchConfig, findData->res } );
 			eeDelete( findData );
 			return;
@@ -310,7 +318,7 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 														doc );
 						}
 					},
-					onSearchEnd );
+					onSearchEnd, PROJECT_SEARCH_TASK_TAG_HASH );
 			} else {
 				pool->run(
 					[findData, file, string, caseSensitive, wholeWord, occ, type]() mutable {
@@ -327,10 +335,11 @@ void ProjectSearch::find( const std::vector<std::string> files, std::string stri
 							findData->res.emplace_back( std::string( file ), std::move( fileRes ) );
 						}
 					},
-					onSearchEnd );
+					onSearchEnd, PROJECT_SEARCH_TASK_TAG_HASH );
 			}
 		}
 	} );
+	return findData;
 }
 
 void ProjectSearch::ResultModel::removeLastNewLineCharacter() {

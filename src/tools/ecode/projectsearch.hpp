@@ -243,7 +243,16 @@ class ProjectSearch {
 	fileResFromDoc( const std::string& string, bool caseSensitive, bool wholeWord,
 					TextDocument::FindReplaceType type, std::shared_ptr<TextDocument> doc );
 
-	static void
+	struct FindData {
+		Mutex resMutex;
+		Mutex countMutex;
+		int resCount{ 0 };
+		ProjectSearch::Result res;
+		bool active{ true };
+		Uint64 taskTag{ 0 };
+	};
+
+	static FindData*
 	find( const std::vector<std::string> files, std::string string,
 		  std::shared_ptr<ThreadPool> pool, ResultCb result, bool caseSensitive,
 		  bool wholeWord = false,

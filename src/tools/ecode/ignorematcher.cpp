@@ -57,7 +57,7 @@ bool GitIgnoreMatcher::parse() {
 	return !mPatterns.empty();
 }
 
-bool GitIgnoreMatcher::match( const std::string& value ) const {
+bool GitIgnoreMatcher::match( std::string_view value ) const {
 	if ( mPatterns.empty() )
 		return false;
 	bool match = false;

@@ -18,7 +18,7 @@ class IgnoreMatcher {
 
 	virtual bool canMatch() = 0;
 
-	virtual bool match( const std::string& value ) const = 0;
+	virtual bool match( std::string_view value ) const = 0;
 
 	virtual std::string findRepositoryRootPath() const = 0;
 
@@ -47,7 +47,7 @@ class GitIgnoreMatcher : public IgnoreMatcher {
 
 	const std::string& getIgnoreFilePath() const override;
 
-	bool match( const std::string& value ) const override;
+	bool match( std::string_view value ) const override;
 
 	std::string findRepositoryRootPath() const override;
 
