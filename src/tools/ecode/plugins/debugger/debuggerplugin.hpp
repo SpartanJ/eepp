@@ -52,7 +52,7 @@ class DebuggerPlugin : public PluginBase {
   public:
 	static PluginDefinition Definition() {
 		return { "debugger",		  "Debugger",  "Debugger integration",
-				 DebuggerPlugin::New, { 0, 0, 3 }, DebuggerPlugin::NewSync };
+				 DebuggerPlugin::New, { 0, 0, 4 }, DebuggerPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );

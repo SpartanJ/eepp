@@ -18,7 +18,7 @@ class AIAssistantPlugin : public PluginBase {
 
 	static PluginDefinition Definition() {
 		return { "aiassistant",			 "AI Assistant", "Chat with your favorite AI assistant",
-				 AIAssistantPlugin::New, { 0, 0, 2 },	 AIAssistantPlugin::NewSync };
+				 AIAssistantPlugin::New, { 0, 0, 3 },	 AIAssistantPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
