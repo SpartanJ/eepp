@@ -188,6 +188,13 @@ bool Process::create( const std::string& command, const std::vector<std::string>
 		return ret;
 	}
 
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+	if ( isFlatpakEnv() ) {
+		strings.push_back( "/usr/bin/flatpak-spawn" );
+		strings.push_back( "--host" );
+	}
+#endif
+
 	if ( ( options & UseAbsolutePath ) && command.find_first_of( "\\/" ) == std::string::npos ) {
 		rcommand = Sys::which( command );
 		if ( !rcommand.empty() )
