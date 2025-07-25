@@ -4133,34 +4133,6 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			},
 			Seconds( 60.f ) );
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX
-		// Is the process running from flatpak isolation for the first time?
-		if ( firstRun && getenv( "FLATPAK_ID" ) != NULL ) {
-			static const auto FLATPAK_WARN = R"xml(
-<window id="win_flatpak_warning" windowFlags="default|maximize|shadow" lw="440dp" lh="150dp" window-title="ecode - Flatpak Warning">
-	<vbox lw="mp" lh="mp" padding="4dp">
-		<StackLayout lw="mp" lh="0" lw8="1">
-			<TextView lw="mp" lh="wc" word-wrap="true">You are running flatpak version of ecode. This version is running inside of a container and is therefore not able to access tools on your host system.</TextView>
-			<TextView lw="wc" lh="wc">Please read carefully the following guide at: </TextView>
-			<Anchor href="https://github.com/flathub/dev.ensoft.ecode/blob/master/ECODE_FIRST_RUN.md">https://github.com/flathub/dev.ensoft.ecode/blob/master/ECODE_FIRST_RUN.md</Anchor>
-		</StackLayout>
-		<PushButton id="win_flatpak_warning_ok" text="OK" lg="right" />
-	</vbox>
-</window>
-			)xml";
-
-			UIWindow* flatpakWarnWindow =
-				static_cast<UIWindow*>( mUISceneNode->loadLayoutFromString( FLATPAK_WARN ) );
-			flatpakWarnWindow->find( "win_flatpak_warning_ok" )
-				->onClick( [flatpakWarnWindow]( auto ) { flatpakWarnWindow->closeWindow(); } );
-			flatpakWarnWindow->on( Event::KeyDown, [flatpakWarnWindow]( const Event* event ) {
-				if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE )
-					flatpakWarnWindow->closeWindow();
-			} );
-			flatpakWarnWindow->center();
-		}
-#endif
-
 		mPluginManager->setUIReady();
 
 		mWindow->runMainLoop( &appLoop, mBenchmarkMode ? 0 : mConfig.context.FrameRateLimit );
