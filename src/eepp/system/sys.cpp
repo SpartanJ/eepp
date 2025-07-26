@@ -1328,7 +1328,7 @@ std::string Sys::getProcessFilePath() {
 			break;
 	}
 
-	return FileSystem::fileNameFromPath( std::string( info.name ) );
+	return std::string{ info.name };
 #else
 	*exename = 0;
 #endif
