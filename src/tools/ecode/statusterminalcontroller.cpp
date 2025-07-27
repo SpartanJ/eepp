@@ -22,11 +22,14 @@ UITerminal* StatusTerminalController::getUITerminal() {
 }
 
 UITerminal* StatusTerminalController::createTerminal(
-	const std::string& workingDir, std::string program, const std::vector<std::string>& args,
+	const std::string& workingDir, std::string program, std::vector<std::string> args,
 	const std::unordered_map<std::string, std::string>& env ) {
 	Sizef initialSize( 16, 16 );
 	if ( program.empty() && !mContext->termConfig().shell.empty() )
 		program = mContext->termConfig().shell;
+
+	if ( args.empty() && !mContext->termConfig().shellArgs.empty() )
+		args = Process::parseArgs( mContext->termConfig().shellArgs );
 
 	UITerminal* term = UITerminal::New(
 		mContext->getTerminalFont() ? mContext->getTerminalFont() : mContext->getFontMono(),
