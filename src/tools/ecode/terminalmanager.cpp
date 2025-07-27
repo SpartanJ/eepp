@@ -9,7 +9,7 @@ namespace ecode {
 TerminalManager::TerminalManager( App* app ) : mApp( app ) {}
 
 UITerminal* TerminalManager::createTerminalInSplitter(
-	const std::string& workingDir, std::string program, const std::vector<std::string>& args,
+	const std::string& workingDir, std::string program, std::vector<std::string> args,
 	const std::unordered_map<std::string, std::string>& env, bool fallback, bool keepAlive ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	std::string os = Sys::getOSName( true );
@@ -158,18 +158,20 @@ void TerminalManager::configureTerminalShell() {
 		<window layout_width="300dp" layout_height="150dp" window-flags="default|shadow" window-title='@string(shell_configuration, "Shell Configuration")'>
 		<vbox lw="mp" lh="mp" padding="4dp">
 			<vbox lw="mp" lh="0" lw8="1">
-			<textview text='@string(configure_default_shell, "Configure default shell")' font-size="14dp" margin-bottom="8dp" />
-			<ComboBox id="shell_combo" layout_width="match_parent" layout_height="wrap_content" selectedIndex="0" popup-to-root="true"></ComboBox>
+				<TextView text='@string(configure_default_shell, "Configure default shell")' font-size="14dp" margin-bottom="8dp" />
+				<ComboBox id="shell_combo" layout_width="match_parent" layout_height="wrap_content" selectedIndex="0" popup-to-root="true" />
+				<TextInput id="shell_args" layout_width="match_parent" layout_height="wrap_content" margin-top="8dp" hint="@string(shell_arguments, Shell Command Line Arguments)" />
 			</vbox>
 			<hbox layout_gravity="right">
-				<pushbutton id="ok" text="@string(msg_box_ok, Ok)" icon="ok" />
-				<pushbutton id="cancel" text="@string(msg_box_cancel, Cancel)" margin-left="8dp" icon="cancel" />
+				<PushButton id="ok" text="@string(msg_box_ok, Ok)" icon="ok" />
+				<PushButton id="cancel" text="@string(msg_box_cancel, Cancel)" margin-left="8dp" icon="cancel" />
 			</hbox>
 		</vbox>
 		</window>
 	)xml" );
 	UIWindow* window = mApp->getUISceneNode()->loadLayoutFromString( layout )->asType<UIWindow>();
 	UIComboBox* shellCombo = window->find<UIComboBox>( "shell_combo" );
+	UITextInput* shellArgs = window->find<UITextInput>( "shell_args" );
 	UIPushButton* ok = window->find<UIPushButton>( "ok" );
 	UIPushButton* cancel = window->find<UIPushButton>( "cancel" );
 	const std::vector<std::string> list{
@@ -182,6 +184,7 @@ void TerminalManager::configureTerminalShell() {
 			found.emplace_back( std::move( f ) );
 	}
 	shellCombo->getListBox()->addListBoxItems( found );
+	shellArgs->setText( mApp->termConfig().shellArgs );
 	const char* shellEnv = std::getenv( "SHELL" );
 	if ( !mApp->termConfig().shell.empty() ) {
 		shellCombo->getListBox()->setSelected( mApp->termConfig().shell );
@@ -191,15 +194,17 @@ void TerminalManager::configureTerminalShell() {
 																	: Sys::which( shellEnv ) );
 		if ( !shellEnvStr.empty() )
 			shellCombo->getListBox()->setSelected( shellEnvStr );
-	} else if ( Sys::getPlatform() == "Windows" ) {
+	} else if ( Sys::getPlatformType() == Sys::PlatformType::Windows ) {
 		std::string shellEnvStr( Sys::which( "powershell" ) );
 		if ( !shellEnvStr.empty() )
 			shellCombo->getListBox()->setSelected( shellEnvStr );
 	}
-	const auto setShellFn = []( App* app, UIWindow* window, UIComboBox* shellCombo ) {
+	const auto setShellFn = []( App* app, UIWindow* window, UIComboBox* shellCombo,
+								UITextInput* shellArgs ) {
 		std::string shell( shellCombo->getText().toUtf8() );
 		if ( !Sys::which( shell ).empty() || FileSystem::fileExists( shell ) ) {
 			app->getConfig().term.shell = shell;
+			app->getConfig().term.shellArgs = shellArgs->getText().toUtf8();
 			window->closeWindow();
 		} else {
 			app->errorMsgBox( app->i18n(
@@ -212,8 +217,8 @@ void TerminalManager::configureTerminalShell() {
 		shellCombo->getListBox()->getVerticalScrollBar()->setClickStep(
 			shellCombo->getDropDownList()->getMaxNumVisibleItems() / (Float)found.size() );
 	ok->setFocus();
-	ok->onClick( [this, setShellFn, window,
-				  shellCombo]( const MouseEvent* ) { setShellFn( mApp, window, shellCombo ); },
+	ok->onClick( [this, setShellFn, window, shellCombo, shellArgs](
+					 const MouseEvent* ) { setShellFn( mApp, window, shellCombo, shellArgs ); },
 				 MouseButton::EE_BUTTON_LEFT );
 	cancel->onClick( [window]( const MouseEvent* ) { window->closeWindow(); }, EE_BUTTON_LEFT );
 	window->on( Event::KeyDown, [window]( const Event* event ) {
@@ -451,7 +456,7 @@ void TerminalManager::displayError( const std::string& workingDir ) {
 
 UITerminal* TerminalManager::createNewTerminal(
 	const std::string& title, UITabWidget* inTabWidget, const std::string& workingDir,
-	std::string program, const std::vector<std::string>& args,
+	std::string program, std::vector<std::string> args,
 	const std::unordered_map<std::string, std::string>& env, bool fallback, bool keepAlive ) {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	UIMessageBox* msgBox = UIMessageBox::New(
@@ -493,6 +498,9 @@ UITerminal* TerminalManager::createNewTerminal(
 
 	if ( program.empty() && !mApp->termConfig().shell.empty() )
 		program = mApp->termConfig().shell;
+
+	if ( args.empty() && !mApp->termConfig().shellArgs.empty() )
+		args = Process::parseArgs( mApp->termConfig().shellArgs );
 
 	UITerminal* term = UITerminal::New(
 		mApp->getTerminalFont() ? mApp->getTerminalFont() : mApp->getFontMono(),

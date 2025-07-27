@@ -212,6 +212,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		ini.getValueB( "global_search_bar", "buffer_only_mode", false );
 
 	term.shell = ini.getValue( "terminal", "shell" );
+	term.shellArgs = ini.getValue( "terminal", "shell_args",
+								   Sys::getPlatformType() == Sys::PlatformType::Haiku ? "-l" : "" );
 	term.fontSize = ini.getValue( "terminal", "font_size", "11dp" );
 	term.colorScheme = ini.getValue( "terminal", "colorscheme", "eterm" );
 	term.newTerminalOrientation = NewTerminalOrientation::fromString(
@@ -367,6 +369,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "global_search_bar", "buffer_only_mode", globalSearchBarConfig.bufferOnlyMode );
 
 	ini.setValue( "terminal", "shell", term.shell );
+	ini.setValue( "terminal", "shell_args", term.shellArgs );
 	ini.setValue( "terminal", "font_size", term.fontSize.toString() );
 	ini.setValue( "terminal", "colorscheme", term.colorScheme );
 	ini.setValue( "terminal", "new_terminal_orientation",

@@ -168,6 +168,7 @@ class NewTerminalOrientation {
 
 struct TerminalConfig {
 	std::string shell;
+	std::string shellArgs;
 	std::string colorScheme{ "eterm" };
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 	NewTerminalOrientation::Orientation newTerminalOrientation{
