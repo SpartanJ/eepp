@@ -34,6 +34,7 @@ SyntaxDefinition& addElena() {
 
 			  },
 			  {
+
 				  { "internal", "keyword" },	{ "int", "type" },
 				  { "new", "keyword" },			{ "continue", "keyword" },
 				  { "default", "keyword" },		{ "remove", "keyword" },
@@ -80,7 +81,8 @@ SyntaxDefinition& addElena() {
 				  { "implicit", "keyword" },	{ "ref", "keyword" },
 				  { "constructor", "keyword" }, { "singleton", "keyword" },
 				  { "real", "type" },			{ "ifnot", "keyword" },
-				  { "symbol", "keyword" },
+				  { "symbol", "keyword" },		{ "use", "keyword" },
+				  { "pointer", "type" }
 
 			  },
 			  "//",
