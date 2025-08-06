@@ -3,6 +3,7 @@
 #include "../bussocket.hpp"
 #include "../bussocketprocess.hpp"
 #include "messages.hpp"
+#include <cinttypes>
 #include <eepp/core/string.hpp>
 #include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
@@ -247,6 +248,12 @@ void DebuggerClientDap::asyncRead( const char* bytes, size_t n ) {
 		const auto info = readHeader();
 		if ( !info )
 			break;
+		if ( info->payloadStart >= mBuffer.size() ) {
+			Log::debug( "DebuggerClientDap::asyncRead: Out of range payloadStart access. Current "
+						"buffer was:\n%s\nPayload started at %" PRIu64 "",
+						mBuffer.data(), info->payloadStart );
+			break;
+		}
 		const auto data = mBuffer.substr( info->payloadStart, info->payloadLength );
 		if ( data.size() < info->payloadLength )
 			break;
