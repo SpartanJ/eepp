@@ -1,14 +1,14 @@
-#include <eepp/ui/doc/languages/haskell.hpp>
+#include <eepp/ui/doc/languages/curry.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-SyntaxDefinition& addHaskell() {
+SyntaxDefinition& addCurry() {
 
 	return SyntaxDefinitionManager::instance()->add(
 
-		{ "Haskell",
-		  { "%.hs$" },
+		{ "Curry",
+		  { "%.curry$" },
 		  {
 			  { { "%-%-", "\n" }, "comment" },
 			  { { "{%-", "%-}" }, "comment" },

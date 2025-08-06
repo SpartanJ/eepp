@@ -35,7 +35,7 @@ SyntaxDefinition& addElm() {
 			  { "xor", "keyword" },		 { "alias", "keyword" },
 
 		  },
-		  "%-%-",
+		  "--",
 		  {}
 
 		} );
