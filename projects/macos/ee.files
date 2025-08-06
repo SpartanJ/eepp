@@ -971,6 +971,8 @@
 ../../src/eepp/ui/doc/languages/csharp.cpp
 ../../src/eepp/ui/doc/languages/csharp.hpp
 ../../src/eepp/ui/doc/languages/css.cpp
+../../src/eepp/ui/doc/languages/curry.cpp
+../../src/eepp/ui/doc/languages/curry.hpp
 ../../src/eepp/ui/doc/languages/d.cpp
 ../../src/eepp/ui/doc/languages/dart.cpp
 ../../src/eepp/ui/doc/languages/dart.hpp

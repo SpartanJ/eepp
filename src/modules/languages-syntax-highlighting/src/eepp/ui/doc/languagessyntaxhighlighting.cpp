@@ -19,6 +19,7 @@
 #include <eepp/ui/doc/languages/covscript.hpp>
 #include <eepp/ui/doc/languages/crystal.hpp>
 #include <eepp/ui/doc/languages/csharp.hpp>
+#include <eepp/ui/doc/languages/curry.hpp>
 #include <eepp/ui/doc/languages/d.hpp>
 #include <eepp/ui/doc/languages/dart.hpp>
 #include <eepp/ui/doc/languages/difffile.hpp>
@@ -246,6 +247,12 @@ void LanguagesSyntaxHighlighting::load() {
 		{ "%.cs$", "%.csx$" },
 		{},
 		"csharp",
+	} );
+
+	sdm->addPreDefinition( {
+		"Curry",
+		[]() -> SyntaxDefinition& { return addCurry(); },
+		{ "%.curry$" },
 	} );
 
 	sdm->addPreDefinition( {
