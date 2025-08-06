@@ -33,7 +33,7 @@ SyntaxDefinition& addHaskell() {
 			  { "do", "keyword" },		 { "type", "keyword" },
 
 		  },
-		  "%-%-",
+		  "--",
 		  {}
 
 		} );

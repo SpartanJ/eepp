@@ -33,7 +33,7 @@ SyntaxDefinition& addCurry() {
 			  { "do", "keyword" },		 { "type", "keyword" },
 
 		  },
-		  "%-%-",
+		  "--",
 		  {}
 
 		} );
