@@ -833,16 +833,61 @@ inline bool isValidRegexFlag( char c ) {
 
 inline bool isRegexContextBefore( const char* str, int offset ) {
 	// Skip whitespace backwards
-	while ( offset > 0 && std::isspace( static_cast<unsigned char>( str[offset - 1] ) ) ) {
-		offset--;
+	int pos = offset;
+	while ( pos > 0 && std::isspace( static_cast<unsigned char>( str[pos - 1] ) ) ) {
+		pos--;
 	}
 
-	if ( offset == 0 )
-		return true;
+	if ( pos == 0 ) {
+		return true; // Beginning of string/line
+	}
 
-	// Common cases: after `return`, `(`, `=`, `,`, `:`
-	char prev = str[offset - 1];
-	return prev == '=' || prev == '(' || prev == '{' || prev == ',' || prev == ':' || prev == '[';
+	// Check for single character operators that can precede regex
+	char prev = str[pos - 1];
+	if ( prev == '=' || prev == '(' || prev == '{' || prev == ',' || prev == ':' || prev == '[' ||
+		 prev == ';' || prev == '!' || prev == '?' || prev == '+' || prev == '-' || prev == '*' ||
+		 prev == '/' || prev == '%' || prev == '<' || prev == '>' || prev == '^' || prev == '|' ||
+		 prev == '&' || prev == '~' ) {
+		return true;
+	}
+
+	// Check for multi-character operators
+	if ( pos >= 2 ) {
+		char prev2 = str[pos - 2];
+		// Two-character operators: ==, !=, <=, >=, &&, ||, etc.
+		if ( ( prev == '=' && ( prev2 == '=' || prev2 == '!' || prev2 == '<' || prev2 == '>' ) ) ||
+			 ( prev == '&' && prev2 == '&' ) || ( prev == '|' && prev2 == '|' ) ||
+			 ( prev == '+' && prev2 == '+' ) || ( prev == '-' && prev2 == '-' ) ) {
+			return true;
+		}
+
+		// Three-character operators: ===, !==
+		if ( pos >= 3 && prev == '=' && prev2 == '=' &&
+			 ( str[pos - 3] == '=' || str[pos - 3] == '!' ) ) {
+			return true;
+		}
+	}
+
+	// Check for keywords that can precede regex
+	// We'll look backwards for common keywords
+	const char* keywords[] = { "return", "throw",  "case", "in", "of",	  "typeof", "instanceof",
+							   "new",	 "delete", "void", "if", "while", "for",	"with" };
+
+	for ( const char* keyword : keywords ) {
+		size_t keywordLen = strlen( keyword );
+		if ( pos >= static_cast<int>( keywordLen ) ) {
+			// Check if we have the keyword followed by whitespace/end
+			if ( strncmp( &str[pos - keywordLen], keyword, keywordLen ) == 0 ) {
+				// Make sure it's a complete word (not part of identifier)
+				if ( pos == static_cast<int>( keywordLen ) ||
+					 !std::isalnum( static_cast<unsigned char>( str[pos - keywordLen - 1] ) ) ) {
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
 }
 
 /**
@@ -857,17 +902,16 @@ inline bool isRegexContextBefore( const char* str, int offset ) {
  */
 inline size_t isJavaScriptRegEx( const char* stringSearch, int stringStartOffset,
 								 PatternMatcher::Range* matchList, size_t stringLength ) {
-	if ( !stringSearch || stringStartOffset < 0 || (size_t)stringStartOffset >= stringLength ) {
+	if ( !stringSearch || stringStartOffset < 0 ||
+		 static_cast<size_t>( stringStartOffset ) >= stringLength ) {
 		return 0;
 	}
 
-	const char* ptr = stringSearch + stringStartOffset;
-
-	if ( *ptr != '/' ) {
+	if ( stringSearch[stringStartOffset] != '/' ) {
 		return 0;
 	}
 
-	// Heuristic check: likely a regex if it's in a valid context
+	// Enhanced context check
 	if ( !isRegexContextBefore( stringSearch, stringStartOffset ) ) {
 		return 0;
 	}
@@ -875,40 +919,81 @@ inline size_t isJavaScriptRegEx( const char* stringSearch, int stringStartOffset
 	int i = stringStartOffset + 1;
 	bool escaped = false;
 	bool insideCharClass = false;
+	bool foundContent = false; // Track if we found actual regex content
 
-	// Search for closing '/'
-	while ( (size_t)i < stringLength ) {
+	// Parse the regex body
+	while ( static_cast<size_t>( i ) < stringLength ) {
 		char c = stringSearch[i];
 
 		if ( !escaped && c == '\\' ) {
 			escaped = true;
+			foundContent = true;
 			i++;
 			continue;
 		}
 
-		if ( !escaped && c == '[' ) {
-			insideCharClass = true;
-		} else if ( !escaped && c == ']' ) {
-			insideCharClass = false;
-		} else if ( !escaped && c == '/' && !insideCharClass ) {
-			// Check for flags
-			i++;
-			while ( (size_t)i < stringLength && isValidRegexFlag( stringSearch[i] ) ) {
-				i++;
-			}
+		if ( !escaped ) {
+			if ( c == '[' ) {
+				insideCharClass = true;
+				foundContent = true;
+			} else if ( c == ']' && insideCharClass ) {
+				insideCharClass = false;
+			} else if ( c == '/' && !insideCharClass ) {
+				// Found closing slash
+				i++; // Move past the '/'
 
-			if ( matchList ) {
-				matchList[0].start = stringStartOffset;
-				matchList[0].end = i;
-			}
+				// Collect flags
+				int flagStart = i;
+				while ( static_cast<size_t>( i ) < stringLength &&
+						isValidRegexFlag( stringSearch[i] ) ) {
+					i++;
+				}
 
-			return 1;
+				// Additional validation: check for invalid patterns
+				// Empty regex // is usually a comment, not regex
+				if ( !foundContent && i == flagStart ) {
+					return 0; // Likely a comment start
+				}
+
+				// Check what comes after - should be end of statement or operator
+				if ( static_cast<size_t>( i ) < stringLength ) {
+					char nextChar = stringSearch[i];
+					// Skip whitespace
+					int nextPos = i;
+					while ( static_cast<size_t>( nextPos ) < stringLength &&
+							std::isspace( static_cast<unsigned char>( stringSearch[nextPos] ) ) ) {
+						nextPos++;
+					}
+
+					if ( static_cast<size_t>( nextPos ) < stringLength ) {
+						nextChar = stringSearch[nextPos];
+						// Should be followed by operators, semicolon, parentheses, etc.
+						// Not by alphanumeric characters (which would suggest division)
+						if ( std::isalnum( static_cast<unsigned char>( nextChar ) ) &&
+							 nextChar != '(' && nextChar != '[' ) {
+							return 0; // Likely division, not regex
+						}
+					}
+				}
+
+				if ( matchList ) {
+					matchList[0].start = stringStartOffset;
+					matchList[0].end = i;
+				}
+				return 1;
+			} else if ( c == '\n' || c == '\r' ) {
+				// Unescaped newline in regex is invalid
+				return 0;
+			} else if ( c != ' ' && c != '\t' ) {
+				foundContent = true;
+			}
 		}
 
 		escaped = false;
 		i++;
 	}
 
+	// Reached end without finding closing '/'
 	return 0;
 }
 

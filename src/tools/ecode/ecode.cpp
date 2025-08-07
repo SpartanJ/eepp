@@ -961,8 +961,11 @@ void App::updateRecentFiles() {
 			->setId( "reopen-closed-tab" )
 			->setEnabled( !mRecentClosedFiles.empty() );
 		menu->addSeparator();
-		for ( const auto& file : mRecentFiles )
-			menu->add( file );
+		for ( const auto& file : mRecentFiles ) {
+			if ( ( FileSystem::fileExists( file ) && !FileSystem::isDirectory( file ) ) ||
+				 String::startsWith( file, "https://" ) || String::startsWith( file, "http://" ) )
+				menu->add( file );
+		}
 		menu->addSeparator();
 		menu->add( i18n( "clear_menu", "Clear Menu" ) )->setId( "clear-menu" );
 		menu->on( Event::OnItemClicked, [this]( const Event* event ) {
@@ -982,6 +985,19 @@ void App::updateRecentFiles() {
 					 String::startsWith( path, "https://" ) ||
 					 String::startsWith( path, "http://" ) ) {
 					loadFileFromPathOrFocus( path );
+				} else {
+					auto msgBox = UIMessageBox::New(
+						UIMessageBox::YES_NO,
+						i18n( "file_does_not_exists_anymore_recreate",
+							  "File does not exists anymore.\nDo you want to recreate it?" ) );
+					msgBox->setTitle( i18n( "file_not_found", "File not found" ) );
+					msgBox->on( Event::OnConfirm, [path, this]( auto ) {
+						FileSystem::fileWrite( path, "" );
+						loadFileFromPathOrFocus( path );
+					} );
+					msgBox->center();
+					msgBox->showWhenReady();
+					updateRecentFiles();
 				}
 			}
 		} );
@@ -1000,8 +1016,10 @@ void App::updateRecentFolders() {
 		menu->removeEventsOfType( Event::OnItemClicked );
 		if ( mRecentFolders.empty() )
 			return;
-		for ( const auto& file : mRecentFolders )
-			menu->add( file );
+		for ( const auto& file : mRecentFolders ) {
+			if ( FileSystem::fileExists( file ) && FileSystem::isDirectory( file ) )
+				menu->add( file );
+		}
 		menu->addSeparator();
 		menu->add( i18n( "clear_menu", "Clear Menu" ) )->setId( "clear-menu" );
 		menu->addCheckBox(
@@ -3238,6 +3256,17 @@ void App::saveSidePanelTabsOrder() {
 }
 
 void App::loadFolder( std::string path ) {
+	if ( !FileSystem::fileExists( path ) || !FileSystem::isDirectory( path ) ) {
+		auto msgBox = UIMessageBox::New(
+			UIMessageBox::OK, i18n( "directory_does_not_exist",
+									"The directory does not exists and cannot be opened" ) );
+		msgBox->setTitle( i18n( "invalid_directory", "Invalid Directory" ) );
+		msgBox->center();
+		msgBox->showWhenReady();
+		updateRecentFolders();
+		return;
+	}
+
 	Clock dirTreeClock;
 
 	if ( FileSystem::fileExtension( path ) == "lnk" ) {

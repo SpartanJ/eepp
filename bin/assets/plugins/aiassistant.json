@@ -11,10 +11,10 @@
             "should_speculate": true
           },
           "default_temperature": 1.0,
-          "display_name": "Claude 3.5 Sonnet",
+          "display_name": "Claude Opus 4.1",
           "max_output_tokens": 8192,
           "max_tokens": 200000,
-          "name": "claude-3-5-sonnet-latest"
+          "name": "claude-opus-4-1-20250805"
         },
         {
           "cache_configuration": {
@@ -23,10 +23,10 @@
             "should_speculate": true
           },
           "default_temperature": 1.0,
-          "display_name": "Claude 3.7 Sonnet",
+          "display_name": "Claude Opus 4",
           "max_output_tokens": 8192,
           "max_tokens": 200000,
-          "name": "claude-3-7-sonnet-latest"
+          "name": "claude-opus-4-20250514"
         },
         {
           "cache_configuration": {
@@ -35,24 +35,60 @@
             "should_speculate": true
           },
           "default_temperature": 1.0,
-          "display_name": "Claude 3.5 Haiku",
+          "display_name": "Claude Sonnet 4",
           "max_output_tokens": 8192,
           "max_tokens": 200000,
-          "name": "claude-3-5-haiku-latest",
+          "name": "claude-sonnet-4-20250514"
+        },
+        {
+          "cache_configuration": {
+            "max_cache_anchors": 4,
+            "min_total_token": 2048,
+            "should_speculate": true
+          },
+          "default_temperature": 1.0,
+          "display_name": "Claude Sonnet 3.5",
+          "max_output_tokens": 8192,
+          "max_tokens": 200000,
+          "name": "claude-3-5-sonnet-20241022"
+        },
+        {
+          "cache_configuration": {
+            "max_cache_anchors": 4,
+            "min_total_token": 2048,
+            "should_speculate": true
+          },
+          "default_temperature": 1.0,
+          "display_name": "Claude Sonnet 3.7",
+          "max_output_tokens": 8192,
+          "max_tokens": 200000,
+          "name": "claude-3-7-sonnet-20250219"
+        },
+        {
+          "cache_configuration": {
+            "max_cache_anchors": 4,
+            "min_total_token": 2048,
+            "should_speculate": true
+          },
+          "default_temperature": 1.0,
+          "display_name": "Claude Haiku 3.5",
+          "max_output_tokens": 8192,
+          "max_tokens": 200000,
+          "name": "claude-3-5-haiku-20241022",
           "cheapest": true
         },
         {
           "cache_configuration": null,
           "default_temperature": 1.0,
-          "display_name": "Claude 3 Opus",
+          "display_name": "Claude Opus 3",
           "max_output_tokens": 4096,
           "max_tokens": 200000,
-          "name": "claude-3-opus-latest"
+          "name": "claude-3-opus-20240229"
         },
         {
           "cache_configuration": null,
           "default_temperature": 1.0,
-          "display_name": "Claude 3 Sonnet",
+          "display_name": "Claude Sonnet 3",
           "max_output_tokens": 4096,
           "max_tokens": 200000,
           "name": "claude-3-sonnet-20240229"
@@ -64,7 +100,7 @@
             "should_speculate": true
           },
           "default_temperature": 1.0,
-          "display_name": "Claude 3 Haiku",
+          "display_name": "Claude Haiku 3",
           "max_output_tokens": 4096,
           "max_tokens": 200000,
           "name": "claude-3-haiku-20240307"
