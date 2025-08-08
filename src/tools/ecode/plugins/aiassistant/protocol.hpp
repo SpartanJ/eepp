@@ -23,6 +23,8 @@ struct LLMModel {
 	std::optional<LLMCacheConfiguration> cacheConfiguration;
 	bool isEphemeral{ false };
 	bool cheapest{ false };
+	bool reasoning{ false };
+	bool toolCalling{ false };
 };
 
 struct LLMProvider {

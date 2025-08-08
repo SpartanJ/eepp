@@ -87,6 +87,14 @@ static std::map<std::string, LLMProvider> parseLLMProviders( const nlohmann::jso
 					model.cheapest = modelJson.value( "cheapest", false );
 				}
 
+				if ( modelJson.contains( "reasoning" ) ) {
+					model.reasoning = modelJson.value( "reasoning", false );
+				}
+
+				if ( modelJson.contains( "tool_calling" ) ) {
+					model.toolCalling = modelJson.value( "tool_calling", false );
+				}
+
 				if ( modelJson.contains( "cache_configuration" ) &&
 					 !modelJson["cache_configuration"].is_null() ) {
 					const auto& cacheJson = modelJson["cache_configuration"];
@@ -308,6 +316,11 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 			mApiKeys["xai"] = config.value( "xai_api_key", "" );
 		else if ( updateConfigFile )
 			config["xai_api_key"] = mApiKeys["xai"];
+
+		if ( config.contains( "github_api_key" ) )
+			mApiKeys["github"] = config.value( "github_api_key", "" );
+		else if ( updateConfigFile )
+			config["github_api_key"] = mApiKeys["github"];
 	}
 
 	if ( mKeyBindings.empty() ) {
@@ -486,6 +499,8 @@ std::optional<std::string> AIAssistantPlugin::getApiKeyFromProvider( const std::
 			ret = apiKey;
 		else
 			ret = getenv( "GROK_API_KEY" );
+	} else if ( provider == "github" ) {
+		ret = getenv( "GITHUB_API_KEY" );
 	}
 	if ( ret )
 		return std::string{ ret };

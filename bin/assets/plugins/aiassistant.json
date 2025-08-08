@@ -218,10 +218,6 @@
       "display_name": "OpenAI",
       "models": [
         {
-          "max_tokens": 16385,
-          "name": "gpt-3.5-turbo"
-        },
-        {
           "max_tokens": 8192,
           "name": "gpt-4"
         },
@@ -243,10 +239,6 @@
         },
         {
           "max_tokens": 128000,
-          "name": "o1-preview"
-        },
-        {
-          "max_tokens": 128000,
           "name": "o1-mini"
         },
         {
@@ -254,8 +246,7 @@
           "name": "o3-mini"
         },
         {
-          "name": "gpt-4.1-nano",
-          "cheapest": true
+          "name": "gpt-4.1-nano"
         },
         {
           "name": "gpt-4.1-mini"
@@ -276,7 +267,14 @@
           "name": "o1-pro"
         },
         {
-          "name": "gpt-4.5-preview"
+          "name": "gpt-5"
+        },
+        {
+          "name": "gpt-5-mini"
+        },
+        {
+          "name": "gpt-5-nano",
+          "cheapest": true
         }
       ],
       "version": 1
@@ -291,6 +289,69 @@
         },
         {
           "name": "grok-3-latest"
+        }
+      ]
+    },
+    "github": {
+      "api_url": "https://models.github.ai/inference/chat/completions",
+      "display_name": "GitHub",
+      "models": [
+        {
+          "name": "openai/gpt-4.1",
+          "display_name": "GitHub OpenAI GPT-4.1",
+          "tool_calling": true
+        },
+        {
+          "name": "openai/gpt-4.1-mini",
+          "display_name": "GitHub OpenAI GPT-4.1 Mini",
+          "tool_calling": true
+        },
+        {
+          "name": "openai/o3",
+          "display_name": "GitHub OpenAI o3",
+          "reasoning": true,
+          "tool_calling": true
+        },
+        {
+          "name": "openai/o3-mini",
+          "display_name": "GitHub OpenAI o3 Mini",
+          "reasoning": true,
+          "tool_calling": true
+        },
+        {
+          "name": "openai/o4-mini",
+          "display_name": "GitHub OpenAI o4 Mini",
+          "reasoning": true,
+          "tool_calling": true
+        },
+        {
+          "name": "deepseek/deepseek-v3-0324",
+          "display_name": "GitHub DeepSeek V3-0324"
+        },
+        {
+          "name": "mistral-ai/codestral-2501",
+          "display_name": "GitHub Mistral Codestral 25.01"
+        },
+        {
+          "name": "meta/llama-4-scout-17b-16e-instruct",
+          "display_name": "GitHub Meta Llama 4 Scout 17B",
+          "reasoning": true,
+          "tool_calling": true
+        },
+        {
+          "name": "deepseek/deepseek-r1-0528",
+          "display_name": "GitHub DeepSeek R1-0528",
+          "tool_calling": true
+        },
+        {
+          "name": "xai/grok-3",
+          "display_name": "GitHub xAI Grok 3",
+          "reasoning": true
+        },
+        {
+          "name": "xai/grok-3-mini",
+          "display_name": "GitHub xAI Grok 3 Mini",
+          "cheapest": true
         }
       ]
     }
