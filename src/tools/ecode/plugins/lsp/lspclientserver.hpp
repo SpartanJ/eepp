@@ -141,6 +141,8 @@ class LSPClientServer {
 
 	bool hasDocument( const URI& uri ) const;
 
+	bool hasDocumentClient( LSPDocumentClient* client ) const;
+
 	bool hasDocuments() const;
 
 	LSPRequestHandle didChangeWorkspaceFolders( const std::vector<LSPWorkspaceFolder>& added,
@@ -271,7 +273,7 @@ class LSPClientServer {
 	std::unordered_map<TextDocument*, std::unique_ptr<LSPDocumentClient>> mClients;
 	using HandlersMap = std::map<PluginIDType, std::pair<JsonReplyHandler, JsonReplyHandler>>;
 	HandlersMap mHandlers;
-	Mutex mClientsMutex;
+	mutable Mutex mClientsMutex;
 	Mutex mHandlersMutex;
 	bool mReady{ false };
 	bool mEnded{ false };

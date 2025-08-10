@@ -204,13 +204,18 @@ UICodeEditor::~UICodeEditor() {
 		Sys::sleep( Milliseconds( 0.1 ) );
 
 	mDocView.setDocument( nullptr );
-	if ( mDoc.use_count() == 1 ) {
+	std::size_t clientsOfTypeCount = mDoc->clientOfTypeCount( TextDocument::Client::Type::Core );
+	long useCount = mDoc.use_count();
+
+	if ( clientsOfTypeCount == 1 || useCount == 1 ) {
 		getUISceneNode()->removeActionsByTag( mTagFoldRange );
 
 		DocEvent event( this, mDoc.get(), Event::OnDocumentClosed );
 		sendEvent( &event );
 		mDoc->unregisterClient( this );
-		mDoc.reset();
+
+		if ( useCount == 1 )
+			mDoc.reset();
 	} else {
 		mDoc->unregisterClient( this );
 	}
@@ -973,9 +978,12 @@ TextDocument& UICodeEditor::getDocument() {
 void UICodeEditor::setDocument( std::shared_ptr<TextDocument> doc ) {
 	if ( mDoc.get() != doc.get() ) {
 		URI oldDocURI = mDoc->getURI();
+		std::size_t clientsOfTypeCount =
+			mDoc->clientOfTypeCount( TextDocument::Client::Type::Core );
+		long useCount = mDoc.use_count();
 		mDoc->unregisterClient( this );
 		mDocView.setDocument( nullptr );
-		if ( mDoc.use_count() == 1 )
+		if ( clientsOfTypeCount == 1 || useCount == 1 )
 			onDocumentClosed( mDoc.get() );
 		mDoc = doc;
 		mDoc->registerClient( this );
@@ -1187,8 +1195,6 @@ void UICodeEditor::setCodeEditorFlags( std::string flags, bool enable ) {
 				mFoldsAlwaysVisible = enable;
 			} else if ( "foldsvisible" == flag ) {
 				mFoldsVisible = enable;
-			} else if ( "flashcursor" == flag ) {
-				mEnableFlashCursor = enable;
 			} else if ( "defaultstyle" == flag ) {
 				mUseDefaultStyle = enable;
 			} else if ( !enable && "editorfeatures" == flag ) {
@@ -1242,8 +1248,6 @@ std::string UICodeEditor::getCodeEditorFlags( bool enabled ) const {
 		flags += "foldsalwaysvisible|";
 	if ( mFoldsVisible == enabled )
 		flags += "foldsvisible|";
-	if ( mEnableFlashCursor == enabled )
-		flags += "flashcursor|";
 	if ( mUseDefaultStyle == enabled )
 		flags += "defaultstyle|";
 
@@ -1956,9 +1960,9 @@ Float UICodeEditor::getLineWidth( const Int64& docLine ) {
 		Float width = 0;
 
 		if ( !isMonospaceLine ) {
-			auto& line = mDoc->line( docLine );
 			auto found = mLinesWidthCache.find( docLine );
-			if ( found != mLinesWidthCache.end() && line.getHash() == found->second.first )
+			if ( found != mLinesWidthCache.end() &&
+				 mDoc->getLineHash( docLine ) == found->second.first )
 				return found->second.second;
 		}
 
@@ -2211,7 +2215,7 @@ void UICodeEditor::onDocumentLineMove( const Int64& fromLine, const Int64& toLin
 			auto lineIt = mLinesWidthCache.find( i - numLines );
 			if ( lineIt != mLinesWidthCache.end() ) {
 				const auto& line = lineIt->second;
-				if ( line.first == mDoc->line( i ).getHash() ) {
+				if ( line.first == mDoc->getLineHash( i ) ) {
 					auto nl = mLinesWidthCache.extract( lineIt );
 					nl.key() = i;
 					mLinesWidthCache.insert( std::move( nl ) );
@@ -2222,7 +2226,7 @@ void UICodeEditor::onDocumentLineMove( const Int64& fromLine, const Int64& toLin
 		for ( Int64 i = fromLine; i < linesCount; i++ ) {
 			auto lineIt = mLinesWidthCache.find( i - numLines );
 			if ( lineIt != mLinesWidthCache.end() &&
-				 lineIt->second.first == mDoc->line( i ).getHash() ) {
+				 lineIt->second.first == mDoc->getLineHash( i ) ) {
 				auto nl = mLinesWidthCache.extract( lineIt );
 				nl.key() = i;
 				mLinesWidthCache[i] = std::move( nl.mapped() );
@@ -2906,7 +2910,7 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::LineWrapType:
 			return DocumentView::fromLineWrapType( getLineWrapType() );
 		case PropertyId::Text:
-			return mDoc->line( 0 ).toUtf8();
+			return mDoc->getLineTextUtf8( 0 );
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -3030,12 +3034,13 @@ void UICodeEditor::checkMatchingBrackets() {
 	static const std::vector<String::StringBaseType> close{ '}', ')', ']' };
 	mMatchingBrackets = TextRange();
 	TextPosition pos = mDoc->sanitizePosition( mDoc->getSelection().start() );
-	TextDocumentLine& line = mDoc->line( pos.line() );
-	auto isOpenIt = std::find( open.begin(), open.end(), line[pos.column()] );
-	auto isCloseIt = std::find( close.begin(), close.end(), line[pos.column()] );
+	auto searchChar = mDoc->getChar( pos );
+	auto isOpenIt = std::find( open.begin(), open.end(), searchChar );
+	auto isCloseIt = std::find( close.begin(), close.end(), searchChar );
 	if ( ( isOpenIt == open.end() && isCloseIt == close.end() ) && pos.column() > 0 ) {
-		isOpenIt = std::find( open.begin(), open.end(), line[pos.column() - 1] );
-		isCloseIt = std::find( close.begin(), close.end(), line[pos.column() - 1] );
+		searchChar = mDoc->getChar( TextPosition( pos.line(), pos.column() - 1 ) );
+		isOpenIt = std::find( open.begin(), open.end(), searchChar );
+		isCloseIt = std::find( close.begin(), close.end(), searchChar );
 		if ( isOpenIt != open.end() ) {
 			pos.setColumn( pos.column() - 1 );
 		} else if ( isCloseIt != close.end() ) {
@@ -3786,7 +3791,9 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 								 const Float& lineHeight,
 								 const DocumentViewLineRange& visibleLineRange ) {
 	Vector2f originalPosition( position );
-	const auto& tokens = mDoc->getHighlighter()->getLine( line );
+	// const auto& tokens = mDoc->getHighlighter()->getLine( line );
+	mDoc->getHighlighter()->copyLineToBuffer( line, mTokens );
+	const auto& tokens = mTokens;
 	const auto& docLine = mDoc->line( line );
 	const String& strLine = docLine.getText();
 	Primitives primitives;
@@ -4827,7 +4834,9 @@ void UICodeEditor::drawMinimap( const Vector2f& start, const DocumentLineRange&,
 		if ( mHighlightWord.isEmpty() && !selectionString.empty() )
 			drawWordMatch( selectionString, line );
 
-		const auto& tokens = mDoc->getHighlighter()->getLine( line, false );
+		// const auto& tokens = mDoc->getHighlighter()->getLine( line, false );
+		mDoc->getHighlighter()->copyLineToBuffer( line, mTokens, false );
+		const auto& tokens = mTokens;
 		const auto& text = mDoc->line( line ).getText();
 		Int64 pos = 0;
 		bool wrappedLine = mDocView.isWrappedLine( line );

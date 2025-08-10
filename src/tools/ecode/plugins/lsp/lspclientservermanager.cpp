@@ -394,7 +394,7 @@ void LSPClientServerManager::sendSymbolReferenceBroadcast( const std::vector<LSP
 
 		auto curDoc = mPluginManager->getSplitter()->findDocFromURI( r.uri );
 		if ( curDoc ) {
-			ProjectSearch::ResultData::Result rs( curDoc->line( r.range.start().line() ).getText(),
+			ProjectSearch::ResultData::Result rs( curDoc->getLineText( r.range.start().line() ),
 												  r.range, -1, -1 );
 
 			rd.results.emplace_back( std::move( rs ) );
@@ -406,14 +406,14 @@ void LSPClientServerManager::sendSymbolReferenceBroadcast( const std::vector<LSP
 				if ( TextDocument::LoadStatus::Loaded != doc->loadFromFile( fspath ) )
 					continue;
 
-				lineText = doc->line( r.range.start().line() ).getText();
+				lineText = doc->getLineText( r.range.start().line() );
 
 				tmpDocs.insert( { std::move( fspath ), std::move( doc ) } );
 			} else {
-				lineText = foundDoc->second->line( r.range.start().line() ).getText();
+				lineText = foundDoc->second->getLineText( r.range.start().line() );
 			}
 
-			ProjectSearch::ResultData::Result rs( lineText, r.range, -1, -1 );
+			ProjectSearch::ResultData::Result rs( std::move( lineText ), r.range, -1, -1 );
 
 			rd.results.emplace_back( std::move( rs ) );
 		}

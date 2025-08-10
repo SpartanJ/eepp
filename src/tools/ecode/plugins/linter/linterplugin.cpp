@@ -544,7 +544,7 @@ PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notificat
 		match.range = diag.range;
 		match.text = diag.message;
 		match.type = getLinterTypeFromSeverity( diag.severity );
-		match.lineCache = doc->line( match.range.start().line() ).getHash();
+		match.lineCache = doc->getLineHash( match.range.start().line() );
 		match.origin = MatchOrigin::Diagnostics;
 		match.diagnostic = std::move( diag );
 		matches[match.range.start().line()].emplace_back( std::move( match ) );
@@ -916,7 +916,7 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 					linterMatch.range.setStart(
 						{ line > 0 ? line - 1 : 0, col > 0 ? col - 1 : 0 } );
 
-					const String& text = doc->line( linterMatch.range.start().line() ).getText();
+					String text = doc->getLineText( linterMatch.range.start().line() );
 					size_t minCol =
 						text.find_first_not_of( " \t\f\v\n\r", linterMatch.range.start().column() );
 					if ( minCol == String::InvalidPos )
@@ -937,7 +937,7 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 
 					linterMatch.range.setEnd( endPos );
 					linterMatch.range = linterMatch.range.normalized();
-					linterMatch.lineCache = doc->line( linterMatch.range.start().line() ).getHash();
+					linterMatch.lineCache = doc->getLineHash( linterMatch.range.start().line() );
 					bool skip = false;
 
 					if ( linter.deduplicate && matches.find( line - 1 ) != matches.end() ) {
@@ -1033,7 +1033,7 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		if ( isDuplicate )
 			continue;
 
-		if ( match.lineCache != doc->line( index ).getHash() )
+		if ( match.lineCache != doc->getLineHash( index ) )
 			return;
 
 		Text line( "", editor->getFont(), editor->getFontSize() );
@@ -1133,7 +1133,7 @@ void LinterPlugin::minimapDrawBefore( UICodeEditor* editor, const DocumentLineRa
 	for ( const auto& matches : matchIt->second ) {
 		for ( const auto& match : matches.second ) {
 			if ( match.range.intersectsLineRange( docLineRange ) ) {
-				if ( match.lineCache != doc->line( match.range.start().line() ).getHash() )
+				if ( match.lineCache != doc->getLineHash( match.range.start().line() ) )
 					return;
 				Color col( editor->getColorScheme()
 							   .getEditorSyntaxStyle( getMatchString( match.type ) )
@@ -1449,7 +1449,7 @@ void LinterPlugin::registerNativeLinters() {
 							doc->previousWordBoundary( match.range.start(), false ) };
 			match.text = result.description();
 			match.type = getLinterTypeFromSeverity( LSPDiagnosticSeverity::Error );
-			match.lineCache = doc->line( match.range.start().line() ).getHash();
+			match.lineCache = doc->getLineHash( match.range.start().line() );
 			match.origin = MatchOrigin::Linter;
 			matches[line] = { match };
 		}

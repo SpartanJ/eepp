@@ -74,7 +74,7 @@ searchInFileHorspool( const std::string& file, const std::string& text, const bo
 			totNl += countNewLines( fileText, lSearchRes, searchRes );
 			String str(
 				textLine( caseSensitive ? fileText : fileTextOriginal, searchRes, relCol ) );
-			res.push_back( { str,
+			res.push_back( { std::move( str ),
 							 { { (Int64)totNl, (Int64)relCol },
 							   { (Int64)totNl, (Int64)( relCol + String::utf8Length( text ) ) } },
 							 searchRes,
@@ -168,11 +168,11 @@ ProjectSearch::fileResFromDoc( const std::string& string, bool caseSensitive, bo
 	for ( const auto& r : res ) {
 		ProjectSearch::ResultData::Result f;
 		f.position = r.result;
-		const auto& line = doc->line( r.result.start().line() );
-		if ( line.size() > EE_1KB )
-			f.line = line.substr( 0, EE_1KB );
+		auto lineLen = doc->getLineLength( r.result.start().line() );
+		if ( lineLen > EE_1KB )
+			f.line = doc->getLineTextSubStr( r.result.start().line(), 0, EE_1KB );
 		else
-			f.line = line.getTextWithoutNewLine();
+			f.line = doc->getLineTextWithoutNewLine( r.result.start().line() );
 		f.start = r.result.start().column();
 		f.end = r.result.end().column();
 		std::vector<std::string> captures;

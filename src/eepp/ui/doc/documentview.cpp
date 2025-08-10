@@ -363,7 +363,7 @@ DocumentView::VisibleLineRange DocumentView::getVisibleLineRange( const TextPosi
 		Int64 fromCol = mVisibleLines[mid].column();
 		Int64 toCol = mid + 1 <= toIdx
 						  ? mVisibleLines[mid + 1].column() - ( allowVisualLineEnd ? 0 : 1 )
-						  : mDoc->line( pos.line() ).size();
+						  : mDoc->getLineLength( pos.line() );
 
 		if ( pos.column() >= fromCol && pos.column() <= toCol ) {
 			// If it's between the limits we must check if it fits into the previous one
@@ -371,7 +371,7 @@ DocumentView::VisibleLineRange DocumentView::getVisibleLineRange( const TextPosi
 				Int64 fromCol = mVisibleLines[mid - 1].column();
 				Int64 toCol = mid <= toIdx
 								  ? mVisibleLines[mid].column() - ( allowVisualLineEnd ? 0 : 1 )
-								  : mDoc->line( pos.line() ).size();
+								  : mDoc->getLineLength( pos.line() );
 
 				info.visibleIndex = static_cast<VisibleIndex>( mid - 1 );
 				info.range = { { pos.line(), fromCol }, { pos.line(), toCol } };
@@ -411,7 +411,7 @@ TextRange DocumentView::getVisibleIndexRange( VisibleIndex visibleIndex ) const 
 		 mVisibleLines[idx + 1].line() == start.line() ) {
 		end.setColumn( mVisibleLines[idx + 1].column() );
 	} else {
-		end.setColumn( mDoc->line( start.line() ).size() );
+		end.setColumn( mDoc->getLineLength( start.line() ) );
 	}
 	return { start, end };
 }

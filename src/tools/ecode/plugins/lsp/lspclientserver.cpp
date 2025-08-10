@@ -1655,6 +1655,15 @@ bool LSPClientServer::hasDocument( const URI& uri ) const {
 	return false;
 }
 
+bool LSPClientServer::hasDocumentClient( LSPDocumentClient* cl ) const {
+	Lock l( mClientsMutex );
+	for ( const auto& client : mClients ) {
+		if ( client.second && client.second.get() == cl )
+			return true;
+	}
+	return false;
+}
+
 bool LSPClientServer::hasDocuments() const {
 	return !mDocs.empty();
 }

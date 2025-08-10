@@ -1161,7 +1161,7 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 		page.texture->update( pixelPtr, w, h, x, y );
 
 		if ( scale < 1.f )
-			eeFree( pixelPtr );
+			eeSAFE_DELETE_ARRAY( pixelPtr );
 	}
 
 	// Delete the FT glyph

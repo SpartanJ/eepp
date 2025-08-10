@@ -10,12 +10,13 @@ namespace EE { namespace UI { namespace Doc {
 static std::vector<TextRange> findFoldingRangesBraces( TextDocument* doc ) {
 	Clock c;
 	std::vector<TextRange> regions;
-	if ( doc->linesCount() <= 2 )
+	auto lineCount = doc->linesCount();
+	if ( lineCount <= 2 )
 		return regions;
 	const auto& braces = doc->getSyntaxDefinition().getFoldBraces();
 	std::stack<TextPosition> braceStack;
 	auto highlighter = doc->getHighlighter();
-	for ( size_t lineIdx = 0; lineIdx < doc->linesCount(); lineIdx++ ) {
+	for ( size_t lineIdx = 0; lineIdx < lineCount; lineIdx++ ) {
 		const auto& line = doc->line( lineIdx ).getText();
 		size_t lineLength = line.length();
 		for ( size_t colIdx = 0; colIdx < lineLength; colIdx++ ) {
@@ -63,12 +64,13 @@ static std::vector<TextRange> findFoldingRangesIndentation( TextDocument* doc ) 
 	Clock c;
 	std::stack<TextPosition> indentStack;
 	std::vector<TextRange> regions;
-	if ( doc->linesCount() <= 2 )
+	auto lineCount = doc->linesCount();
+	if ( lineCount <= 2 )
 		return regions;
 	const auto& braces = doc->getSyntaxDefinition().getFoldBraces();
 	int currentIndent = 0;
 
-	for ( size_t lineIdx = 0; lineIdx < doc->linesCount(); lineIdx++ ) {
+	for ( size_t lineIdx = 0; lineIdx < lineCount; lineIdx++ ) {
 		const auto& line = doc->line( lineIdx ).getText();
 		int newIndent = countLeadingSpaces( line );
 		if ( newIndent > currentIndent ) {
@@ -91,7 +93,7 @@ static std::vector<TextRange> findFoldingRangesIndentation( TextDocument* doc ) 
 		auto top = indentStack.top();
 		indentStack.pop();
 		regions.emplace_back( TextPosition( top.line() + 1, 0 ),
-							  TextPosition( static_cast<Int64>( doc->linesCount() ) - 1, 0 ) );
+							  TextPosition( static_cast<Int64>( lineCount ) - 1, 0 ) );
 	}
 
 	Log::debug( "findFoldingRangesIndentation for \"%s\" took %s", doc->getFilePath(),
@@ -102,9 +104,10 @@ static std::vector<TextRange> findFoldingRangesIndentation( TextDocument* doc ) 
 static std::vector<TextRange> findFoldingRangesMarkdown( TextDocument* doc ) {
 	Clock c; // For performance logging, consistent with existing functions
 	std::vector<TextRange> regions;
+	auto lineCount = doc->linesCount();
 
 	// Early return for small documents, as in other folding functions
-	if ( doc->linesCount() <= 2 )
+	if ( lineCount <= 2 )
 		return regions;
 
 	// Stack to track open heading sections: (line number, heading level)
@@ -115,7 +118,7 @@ static std::vector<TextRange> findFoldingRangesMarkdown( TextDocument* doc ) {
 	Int64 codeBlockStart = -1;
 
 	// Process each line
-	for ( size_t lineIdx = 0; lineIdx < doc->linesCount(); lineIdx++ ) {
+	for ( size_t lineIdx = 0; lineIdx < lineCount; lineIdx++ ) {
 		const String& lineText = doc->line( lineIdx ).getText();
 		String::View trimmed =
 			String::trim( lineText.view() ); // Remove leading and trailing whitespace
@@ -170,18 +173,17 @@ static std::vector<TextRange> findFoldingRangesMarkdown( TextDocument* doc ) {
 	while ( !sectionStack.empty() ) {
 		auto [headingLine, _] = sectionStack.back();
 		sectionStack.pop_back();
-		if ( headingLine < static_cast<Int64>( doc->linesCount() ) ) {
-			regions.emplace_back( TextPosition( headingLine, 0 ),		   // Start at heading
-								  TextPosition( doc->linesCount() - 1, 0 ) // End at document end
+		if ( headingLine < static_cast<Int64>( lineCount ) ) {
+			regions.emplace_back( TextPosition( headingLine, 0 ),  // Start at heading
+								  TextPosition( lineCount - 1, 0 ) // End at document end
 			);
 		}
 	}
 
 	// Close any unterminated code block
-	if ( inCodeBlock && codeBlockStart != -1 &&
-		 codeBlockStart < static_cast<Int64>( doc->linesCount() ) ) {
-		regions.emplace_back( TextPosition( codeBlockStart, 0 ),	   // Start at opening ```
-							  TextPosition( doc->linesCount() - 1, 0 ) // End at document end
+	if ( inCodeBlock && codeBlockStart != -1 && codeBlockStart < static_cast<Int64>( lineCount ) ) {
+		regions.emplace_back( TextPosition( codeBlockStart, 0 ), // Start at opening ```
+							  TextPosition( lineCount - 1, 0 )	 // End at document end
 		);
 	}
 

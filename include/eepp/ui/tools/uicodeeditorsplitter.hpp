@@ -363,6 +363,8 @@ class EE_API UICodeEditorSplitter {
 
 	UITabWidget* splitTabWidget( SplitDirection, UITabWidget* );
 
+	std::shared_ptr<TextDocument> getTextDocumentRef( TextDocument* doc );
+
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;

@@ -149,7 +149,7 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 		Log::error(
 			"AutoCompletePlugin::load - Error parsing config from path %s, error: %s, config "
 			"file content:\n%s",
-			path.c_str(), e.what(), data.c_str() );
+			path, e.what(), data );
 		// Recreate it
 		j = json::parse( "{\n  \"config\":{},\n  \"keybindings\":{},\n}\n", nullptr, true, true );
 	}
@@ -610,7 +610,7 @@ void AutoCompletePlugin::updateDocCache( TextDocument* doc ) {
 				lang.insert( lang.end(), d.second.symbols.begin(), d.second.symbols.end() );
 		}
 	}
-	Log::debug( "Dictionary for %s updated in: %.2fms", doc->getFilename().c_str(),
+	Log::debug( "Dictionary for %s updated in: %.2fms", doc->getFilename(),
 				clock.getElapsedTime().asMilliseconds() );
 }
 
@@ -624,7 +624,7 @@ void AutoCompletePlugin::updateLangCache( const std::string& langName ) {
 		if ( d.first->getSyntaxDefinition().getLanguageName() == langName )
 			lang.insert( lang.end(), d.second.symbols.begin(), d.second.symbols.end() );
 	}
-	Log::debug( "Lang dictionary for %s updated in: %.2fms", langName.c_str(),
+	Log::debug( "Lang dictionary for %s updated in: %.2fms", langName,
 				clock.getElapsedTime().asMilliseconds() );
 }
 
@@ -882,7 +882,7 @@ AutoCompletePlugin::processSignatureHelp( const LSPSignatureHelp& signatureHelp 
 			while ( 0 != doc.replaceAll( "  ", " " ) )
 				;
 
-			nsig.label = doc.line( 0 ).getTextWithoutNewLine();
+			nsig.label = doc.getLineTextWithoutNewLine( 0 );
 
 			for ( const auto& param : parameters ) {
 				auto res = doc.find( param );
@@ -1394,17 +1394,22 @@ void AutoCompletePlugin::resetSignatureHelp() {
 
 AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocument* doc ) {
 	static constexpr auto MAX_LINE_LENGTH = EE_1KB * 10;
-	LuaPattern pattern( mSymbolPattern );
 	AutoCompletePlugin::SymbolsList symbols;
+	std::shared_ptr<TextDocument> docRef =
+		getPluginContext()->getSplitter()->getTextDocumentRef( doc ); // acquire a doc
+	if ( docRef == nullptr )
+		return symbols;
+	LuaPattern pattern( mSymbolPattern );
 	if ( doc->linesCount() == 0 || doc->isHuge() || mShuttingDown )
 		return symbols;
 	std::string current( getPartialSymbol( doc ) );
 	TextPosition end = doc->getSelection().end();
-	for ( Int64 i = 0; i < static_cast<Int64>( doc->linesCount() ); i++ ) {
-		const auto& line = doc->line( i );
-		if ( line.size() > MAX_LINE_LENGTH )
+	auto lineCount = doc->linesCount();
+	std::string string;
+	for ( Int64 i = 0; i < static_cast<Int64>( lineCount ); i++ ) {
+		if ( doc->getLineLength( i ) > MAX_LINE_LENGTH )
 			continue;
-		auto string = line.toUtf8();
+		doc->getLineTextToBufferUtf8( i, string );
 		for ( auto& match : pattern.gmatch( string ) ) {
 			std::string matchStr( match[0] );
 			// Ignore the symbol if is actually the current symbol being written
@@ -1416,7 +1421,7 @@ AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocu
 							   } ) )
 				symbols.push_back( std::move( matchStr ) );
 		}
-		if ( mShuttingDown )
+		if ( mShuttingDown || mDocs.find( doc ) == mDocs.end() )
 			break;
 	}
 	return symbols;

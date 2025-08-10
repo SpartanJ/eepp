@@ -1782,4 +1782,13 @@ void UICodeEditorSplitter::updateTabWidgetVisualSplitting() {
 	}
 }
 
+std::shared_ptr<TextDocument> UICodeEditorSplitter::getTextDocumentRef( TextDocument* doc ) {
+	std::shared_ptr<TextDocument> ret;
+	forEachEditor( [doc, &ret]( UICodeEditor* editor ) {
+		if ( editor->getDocumentRef().get() == doc )
+			ret = editor->getDocumentRef();
+	} );
+	return ret;
+}
+
 }}} // namespace EE::UI::Tools

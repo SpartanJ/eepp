@@ -10,7 +10,6 @@
 #include <eepp/system/sys.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
-#include <set>
 #include <unordered_map>
 using namespace EE;
 using namespace EE::System;
@@ -125,7 +124,7 @@ class AutoCompletePlugin : public Plugin {
 	Mutex mDocMutex;
 	Time mUpdateFreq{ Seconds( 5 ) };
 	std::unordered_map<UICodeEditor*, std::vector<Uint32>> mEditors;
-	std::set<TextDocument*> mDocs;
+	std::unordered_set<TextDocument*> mDocs;
 	std::unordered_map<UICodeEditor*, TextDocument*> mEditorDocs;
 	bool mDirty{ false };
 	bool mReplacing{ false };

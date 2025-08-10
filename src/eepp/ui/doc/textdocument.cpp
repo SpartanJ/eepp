@@ -119,6 +119,7 @@ bool TextDocument::isNonWord( String::StringBaseType ch ) const {
 TextDocument::TextDocument( bool verbose ) :
 	mUUID( true ),
 	mUndoStack( this ),
+	mDocumentMutex( std::make_shared<std::shared_mutex>() ),
 	mVerbose( verbose ),
 	mAutoCloseBracketsPairs(
 		{ { '(', ')' }, { '[', ']' }, { '{', '}' }, { '\'', '\'' }, { '"', '"' }, { '`', '`' } } ),
@@ -185,8 +186,12 @@ void TextDocument::reset() {
 	mSelection.clear();
 	mSelection.push_back( { { 0, 0 }, { 0, 0 } } );
 	mLastSelection = 0;
-	mLines.clear();
-	mLines.emplace_back( String( "\n" ) );
+	{
+		Lock l( mLinesMutex );
+		mLines.clear();
+		mLines.emplace_back( String( "\n" ), mDocumentMutex );
+	}
+
 	{
 		Lock l( mSyntaxDefinitionMutex );
 		mSyntaxDefinition = SyntaxDefinitionManager::instance()->getPlainDefinition();
@@ -301,7 +306,12 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 	Clock clock;
 	if ( callReset )
 		reset();
-	mLines.clear();
+
+	{
+		Lock l( mLinesMutex );
+		mLines.clear();
+	}
+
 	MD5::Context md5Ctx;
 	if ( file.isOpen() ) {
 		const size_t BLOCK_SIZE = EE_1MB;
@@ -362,7 +372,7 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 				char lastChar = lineBuffer[lineBufferSize - 1];
 
 				if ( lastChar == '\n' || lastChar == '\r' ) {
-					if ( mLines.empty() ) {
+					if ( linesCount() == 0 ) {
 						if ( lineBufferSize > 1 && lineBuffer[lineBufferSize - 2] == '\r' &&
 							 lastChar == '\n' ) {
 							mLineEnding = TextFormat::LineEnding::CRLF;
@@ -389,10 +399,14 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 						lineBuffer[lineBuffer.size() - 1] = '\n';
 					}
 
-					mLines.push_back( lineBuffer );
+					{
+						Lock l( mLinesMutex );
+						mLines.emplace_back( lineBuffer, mDocumentMutex );
+					}
 					lineBuffer.resize( 0 );
 				} else if ( consume <= 0 && pending - read == 0 ) {
-					mLines.push_back( lineBuffer );
+					Lock l( mLinesMutex );
+					mLines.emplace_back( lineBuffer, mDocumentMutex );
 				}
 
 				if ( consume < 0 ) {
@@ -408,15 +422,18 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 		};
 	}
 
-	if ( !mLines.empty() ) {
-		const String& lastLine = mLines[mLines.size() - 1].getText();
+	auto lineCount = linesCount();
+	if ( lineCount != 0 ) {
+		Lock l( mLinesMutex );
+		const String& lastLine = mLines[lineCount - 1].getText();
 		if ( lastLine[lastLine.size() - 1] == '\n' ) {
-			mLines.push_back( String( "\n" ) );
+			mLines.emplace_back( String( "\n" ), mDocumentMutex );
 		} else {
-			mLines[mLines.size() - 1].append( "\n" );
+			mLines[lineCount - 1].append( "\n" );
 		}
 	} else {
-		mLines.push_back( String( "\n" ) );
+		Lock l( mLinesMutex );
+		mLines.emplace_back( String( "\n" ), mDocumentMutex );
 	}
 
 	if ( mAutoDetectIndentType )
@@ -465,14 +482,18 @@ void TextDocument::guessIndentType() {
 		}
 	};
 
-	size_t start = eemin<size_t>( 100, mLines.size() );
-	guessTabsFn( 0, start );
+	size_t start = eemin<size_t>( 100, linesCount() );
 
-	if ( !guessTabs && !guessSpaces ) {
-		if ( start == 100 )
-			guessTabsFn( start, eemin<size_t>( start + 100, mLines.size() ) );
-		if ( !guessTabs && !guessSpaces )
-			return;
+	{
+		Lock l( mLinesMutex );
+		guessTabsFn( 0, start );
+
+		if ( !guessTabs && !guessSpaces ) {
+			if ( start == 100 )
+				guessTabsFn( start, eemin<size_t>( start + 100, linesCount() ) );
+			if ( !guessTabs && !guessSpaces )
+				return;
+		}
 	}
 
 	if ( guessTabs >= guessSpaces ) {
@@ -781,7 +802,7 @@ bool TextDocument::save( const std::string& path ) {
 }
 
 bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
-	if ( !stream.isOpen() || mLines.empty() )
+	if ( !stream.isOpen() || linesCount() == 0 )
 		return false;
 	BoolScopedOp op( mDoingTextInput, true );
 	const std::string whitespaces( " \t\f\v\n\r" );
@@ -814,9 +835,9 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 		}
 	}
 
-	size_t lastLine = mLines.size() - 1;
+	size_t lastLine = linesCount() - 1;
 	for ( size_t i = 0; i <= lastLine; i++ ) {
-		std::string text( mLines[i].toUtf8() );
+		std::string text( getLineTextUtf8( i ) );
 
 		if ( !keepUndoRedoStatus && mTrimTrailingWhitespaces && text.size() > 1 &&
 			 whitespaces.find( text[text.size() - 2] ) != std::string::npos ) {
@@ -824,11 +845,11 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 			Int64 curLine = i;
 			if ( pos != std::string::npos ) {
 				remove( 0, { { curLine, static_cast<Int64>( pos + 1 ) },
-							 { curLine, static_cast<Int64>( mLines[i].getText().size() ) } } );
+							 { curLine, static_cast<Int64>( getLineLength( i ) ) } } );
 			} else {
 				remove( 0, { startOfLine( { curLine, 0 } ), { endOfLine( { curLine, 0 } ) } } );
 			}
-			text = mLines[i].toUtf8();
+			text = getLineTextUtf8( i );
 		}
 
 		if ( i == lastLine ) {
@@ -1096,18 +1117,19 @@ const TextRange& TextDocument::getSelection() const {
 }
 
 TextDocumentLine& TextDocument::line( const size_t& index ) {
-	static TextDocumentLine safeLine = TextDocumentLine( "" );
-	eeASSERT( index < mLines.size() );
-	return index >= mLines.size() ? safeLine : mLines[index];
+	static TextDocumentLine safeLine = TextDocumentLine( "", nullptr );
+	eeASSERT( index < linesCount() );
+	return index >= linesCount() ? safeLine : mLines[index];
 }
 
 const TextDocumentLine& TextDocument::line( const size_t& index ) const {
-	static TextDocumentLine safeLine = TextDocumentLine( "" );
-	eeASSERT( index < mLines.size() );
-	return index >= mLines.size() ? safeLine : mLines[index];
+	static TextDocumentLine safeLine = TextDocumentLine( "", nullptr );
+	eeASSERT( index < linesCount() );
+	return index >= linesCount() ? safeLine : mLines[index];
 }
 
 size_t TextDocument::linesCount() const {
+	Lock l( mLinesMutex );
 	return mLines.size();
 }
 
@@ -1129,6 +1151,7 @@ std::string TextDocument::getHashHexString() const {
 
 String TextDocument::getText( const TextRange& range ) const {
 	TextRange nrange = sanitizeRange( range.normalized() );
+	Lock l( mLinesMutex );
 	if ( nrange.start().line() == nrange.end().line() ) {
 		return mLines[nrange.start().line()].substr(
 			nrange.start().column(), nrange.end().column() - nrange.start().column() );
@@ -1206,11 +1229,13 @@ String::StringBaseType TextDocument::getCurrentChar() const {
 
 String::StringBaseType TextDocument::getChar( const TextPosition& position ) const {
 	auto pos = sanitizePosition( position );
+	Lock l( mLinesMutex );
 	return mLines[pos.line()][pos.column()];
 }
 
 String::StringBaseType
 TextDocument::getCharFromUnsanitizedPosition( const TextPosition& position ) const {
+	Lock l( mLinesMutex );
 	return mLines[position.line()][position.column()];
 }
 
@@ -1241,23 +1266,28 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 	}
 
 	position = sanitizePosition( position );
-	size_t lineCount = mLines.size();
+	size_t lineCount = linesCount();
+	Int64 linesAdd = 0;
 
-	String before = mLines[position.line()].substr( 0, position.column() );
-	String after = mLines[position.line()].substr( position.column() );
-	std::vector<String> lines = text.split( '\n', true );
-	Int64 linesAdd = eemax<Int64>( 0, static_cast<Int64>( lines.size() ) - 1 );
-	for ( auto i = 0; i < linesAdd; i++ )
-		lines[i] = lines[i] + "\n";
-	lines[0] = before + lines[0];
-	lines[lines.size() - 1] = lines[lines.size() - 1] + after;
+	{
+		Lock l( mLinesMutex );
+		String before = mLines[position.line()].substr( 0, position.column() );
+		String after = mLines[position.line()].substr( position.column() );
+		std::vector<String> lines = text.split( '\n', true );
+		linesAdd = eemax<Int64>( 0, static_cast<Int64>( lines.size() ) - 1 );
+		for ( auto i = 0; i < linesAdd; i++ )
+			lines[i] = lines[i] + "\n";
+		lines[0] = before + lines[0];
+		lines[lines.size() - 1] = lines[lines.size() - 1] + after;
 
-	mLines[position.line()] = TextDocumentLine( lines[0] );
-	notifyLineChanged( position.line() );
+		mLines[position.line()] = TextDocumentLine( lines[0], mDocumentMutex );
+		notifyLineChanged( position.line() );
 
-	for ( Int64 i = 1; i < (Int64)lines.size(); i++ ) {
-		mLines.insert( mLines.begin() + position.line() + i, TextDocumentLine( lines[i] ) );
-		notifyLineChanged( position.line() + i );
+		for ( Int64 i = 1; i < (Int64)lines.size(); i++ ) {
+			mLines.insert( mLines.begin() + position.line() + i,
+						   TextDocumentLine( lines[i], mDocumentMutex ) );
+			notifyLineChanged( position.line() + i );
+		}
 	}
 
 	TextPosition cursor = positionOffset( position, text.size() );
@@ -1272,8 +1302,8 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 
 	notifyTextChanged( { { position, position }, text } );
 
-	if ( lineCount != mLines.size() ) {
-		notifyLineCountChanged( lineCount, mLines.size() );
+	if ( lineCount != linesCount() ) {
+		notifyLineCountChanged( lineCount, linesCount() );
 	}
 
 	if ( mSelection.size() > 1 ) {
@@ -1315,12 +1345,12 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 size_t TextDocument::remove( const size_t& cursorIdx, TextRange range ) {
 	if ( !range.hasSelection() )
 		return 0;
-	size_t lineCount = mLines.size();
+	size_t lineCount = linesCount();
 	mUndoStack.clearRedoStack();
 	size_t linesRemoved = remove( cursorIdx, sanitizeRange( range.normalized() ),
 								  mUndoStack.getUndoStackContainer(), mTimer.getElapsedTime() );
-	if ( lineCount != mLines.size() ) {
-		notifyLineCountChanged( lineCount, mLines.size() );
+	if ( lineCount != linesCount() ) {
+		notifyLineCountChanged( lineCount, linesCount() );
 	}
 	return linesRemoved;
 }
@@ -1352,26 +1382,29 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 	bool deletedAcrossNewLine = false;
 
 	// First delete all the lines in between the first and last one.
-	if ( range.start().line() + 1 < range.end().line() ) {
-		mLines.erase( mLines.begin() + range.start().line() + 1,
-					  mLines.begin() + range.end().line() );
-		linesRemoved = range.end().line() - ( range.start().line() + 1 );
-		range.end().setLine( range.start().line() + 1 );
+	{
+		Lock l( mLinesMutex );
+		if ( range.start().line() + 1 < range.end().line() ) {
+			mLines.erase( mLines.begin() + range.start().line() + 1,
+						  mLines.begin() + range.end().line() );
+			linesRemoved = range.end().line() - ( range.start().line() + 1 );
+			range.end().setLine( range.start().line() + 1 );
+		}
 	}
 
 	if ( range.start().line() == range.end().line() ) {
 		// Delete within same line.
 		TextDocumentLine& line = this->line( range.start().line() );
 		bool wholeLineIsSelected =
-			range.start().column() == 0 && range.end().column() == (Int64)line.length();
+			range.start().column() == 0 && range.end().column() == (Int64)line.size();
 
 		if ( wholeLineIsSelected ) {
-			line = "\n";
+			line.setText( "\n" );
 		} else {
 			auto beforeSelection = line.substr( 0, range.start().column() );
 			auto afterSelection =
 				!line.empty() && range.end().column() < (Int64)line.size()
-					? line.substr( range.end().column(), line.length() - range.end().column() )
+					? line.substr( range.end().column(), line.size() - range.end().column() )
 					: "";
 
 			if ( !beforeSelection.empty() && beforeSelection[beforeSelection.size() - 1] == '\n' )
@@ -1389,7 +1422,7 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 		auto beforeSelection = firstLine.substr( 0, range.start().column() );
 		auto afterSelection = !secondLine.empty() && range.end().column() < (Int64)secondLine.size()
 								  ? secondLine.substr( range.end().column(),
-													   secondLine.length() - range.end().column() )
+													   secondLine.size() - range.end().column() )
 								  : "";
 
 		if ( !beforeSelection.empty() && beforeSelection[beforeSelection.size() - 1] == '\n' )
@@ -1398,13 +1431,18 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 			afterSelection += '\n';
 
 		firstLine.setText( beforeSelection + afterSelection );
+
+		Lock l( mLinesMutex );
 		mLines.erase( mLines.begin() + range.end().line() );
 		linesRemoved += 1;
 		deletedAcrossNewLine = true;
 	}
 
-	if ( mLines.empty() )
-		mLines.emplace_back( String( "\n" ) );
+	{
+		Lock l( mLinesMutex );
+		if ( mLines.empty() )
+			mLines.emplace_back( String( "\n" ), mDocumentMutex );
+	}
 
 	if ( mSelection.size() > 1 ) {
 		auto oriNm( originalRange.normalized() );
@@ -1477,12 +1515,12 @@ TextPosition TextDocument::positionOffset( TextPosition position, int columnOffs
 	while ( position.line() > 0 && position.column() < 0 ) {
 		position.setLine( position.line() - 1 );
 		position.setColumn(
-			eemax<Int64>( 0, position.column() + (Int64)mLines[position.line()].size() ) );
+			eemax<Int64>( 0, position.column() + (Int64)getLineLength( position.line() ) ) );
 	}
-	while ( position.line() < (Int64)mLines.size() - 1 &&
+	while ( position.line() < (Int64)linesCount() - 1 &&
 			position.column() >
-				(Int64)eemax<Int64>( 0, (Int64)mLines[position.line()].size() - 1 ) ) {
-		position.setColumn( position.column() - mLines[position.line()].size() );
+				(Int64)eemax<Int64>( 0, (Int64)getLineLength( position.line() ) - 1 ) ) {
+		position.setColumn( position.column() - getLineLength( position.line() ) );
 		position.setLine( position.line() + 1 );
 	}
 	return sanitizePosition( position );
@@ -1493,7 +1531,7 @@ TextPosition TextDocument::positionOffset( TextPosition position, TextPosition o
 }
 
 bool TextDocument::replaceLine( const Int64& lineNum, const String& text ) {
-	if ( lineNum >= 0 && lineNum < (Int64)mLines.size() ) {
+	if ( lineNum >= 0 && lineNum < (Int64)linesCount() ) {
 		TextRange oldSelection = getSelection();
 		setSelection( { startOfLine( { lineNum, 0 } ), endOfLine( { lineNum, 0 } ) } );
 		textInput( text, false );
@@ -1629,7 +1667,7 @@ TextPosition TextDocument::startOfLine( TextPosition position ) const {
 
 TextPosition TextDocument::endOfLine( TextPosition position ) const {
 	position = sanitizePosition( position );
-	return TextPosition( position.line(), mLines[position.line()].size() - 1 );
+	return TextPosition( position.line(), getLineLength( position.line() ) - 1 );
 }
 
 TextPosition TextDocument::startOfContent( TextPosition start ) {
@@ -1652,7 +1690,8 @@ TextPosition TextDocument::startOfDoc() const {
 }
 
 TextPosition TextDocument::endOfDoc() const {
-	return TextPosition( mLines.size() - 1, mLines[mLines.size() - 1].size() - 1 );
+	auto lineCount = linesCount();
+	return TextPosition( lineCount - 1, getLineLength( lineCount - 1 ) - 1 );
 }
 
 TextRange TextDocument::getDocRange() const {
@@ -1661,6 +1700,46 @@ TextRange TextDocument::getDocRange() const {
 
 TextRange TextDocument::getLineRange( Int64 line ) const {
 	return { startOfLine( { line, 0 } ), endOfLine( { line, 0 } ) };
+}
+
+std::size_t TextDocument::getLineLength( Int64 line ) const {
+	Lock l( mLinesMutex );
+	return mLines[line].size();
+}
+
+String TextDocument::getLineText( Int64 line ) const {
+	Lock l( mLinesMutex );
+	return mLines[line].getText();
+}
+
+String TextDocument::getLineTextSubStr( Int64 line, std::size_t pos, std::size_t n ) const {
+	Lock l( mLinesMutex );
+	return mLines[line].getText().substr( pos, n );
+}
+
+String::HashType TextDocument::getLineHash( Int64 line ) const {
+	Lock l( mLinesMutex );
+	return mLines[line].getHash();
+}
+
+String TextDocument::getLineTextWithoutNewLine( Int64 line ) const {
+	Lock l( mLinesMutex );
+	return mLines[line].getTextWithoutNewLine();
+}
+
+void TextDocument::getLineTextToBuffer( Int64 line, String& buffer ) const {
+	Lock l( mLinesMutex );
+	buffer = mLines[line].getText();
+}
+
+std::string TextDocument::getLineTextUtf8( Int64 line ) const {
+	Lock l( mLinesMutex );
+	return mLines[line].getText().toUtf8();
+}
+
+void TextDocument::getLineTextToBufferUtf8( Int64 line, std::string& buffer ) const {
+	Lock l( mLinesMutex );
+	buffer = mLines[line].getText().toUtf8();
 }
 
 void TextDocument::deleteTo( const size_t& cursorIdx, int offset ) {
@@ -1900,6 +1979,15 @@ void TextDocument::unregisterClient( Client* client ) {
 	mClients.erase( client );
 	if ( mActiveClient == client )
 		setActiveClient( nullptr );
+}
+
+std::size_t TextDocument::clientOfTypeCount( TextDocument::Client::Type type ) {
+	Lock l( mClientsMutex );
+	std::size_t count = 0;
+	for ( const auto& client : mClients )
+		if ( client->getTextDocumentClientType() == type )
+			count++;
+	return count;
 }
 
 void TextDocument::moveToPreviousChar() {
@@ -2380,7 +2468,7 @@ void TextDocument::moveLinesDown() {
 		TextRange range = getSelectionIndex( i ).normalized();
 		bool swap = getSelectionIndex( i ).normalized() != getSelection();
 		appendLineIfLastLine( i, range.end().line() + 1 );
-		if ( range.end().line() < (Int64)mLines.size() - 1 ) {
+		if ( range.end().line() < (Int64)linesCount() - 1 ) {
 			auto text = line( range.end().line() + 1 );
 			remove( i, { { range.end().line() + 1, 0 }, { range.end().line() + 2, 0 } } );
 			insert( i, { range.start().line(), 0 }, text.getText() );
@@ -2399,7 +2487,7 @@ bool TextDocument::hasRedo() const {
 }
 
 void TextDocument::appendLineIfLastLine( const size_t& cursorIdx, Int64 line ) {
-	if ( line >= (Int64)mLines.size() - 1 ) {
+	if ( line >= (Int64)linesCount() - 1 ) {
 		insert( cursorIdx, endOfDoc(), "\n" );
 	}
 }
@@ -2433,8 +2521,8 @@ void TextDocument::deleteTo( const size_t& cursorIdx, TextPosition position ) {
 }
 
 void TextDocument::print() const {
-	for ( size_t i = 0; i < mLines.size(); i++ )
-		printf( "%s", mLines[i].toUtf8().c_str() );
+	for ( size_t i = 0; i < linesCount(); i++ )
+		printf( "%s", getLineTextUtf8( i ).c_str() );
 }
 
 TextRange TextDocument::sanitizeRange( const TextRange& range ) const {
@@ -2455,9 +2543,9 @@ TextRanges TextDocument::sanitizeRange( const TextRanges& ranges ) const {
 }
 
 bool TextDocument::isValidPosition( const TextPosition& position ) const {
-	return !( position.line() < 0 || position.line() > (Int64)mLines.size() - 1 ||
+	return !( position.line() < 0 || position.line() > (Int64)linesCount() - 1 ||
 			  position.column() < 0 ||
-			  position.column() > (Int64)mLines[position.line()].size() - 1 );
+			  position.column() > (Int64)getLineLength( position.line() ) - 1 );
 }
 
 bool TextDocument::isValidRange( const TextRange& range ) const {
@@ -2498,9 +2586,10 @@ bool TextDocument::isSaving() const {
 }
 
 TextPosition TextDocument::sanitizePosition( const TextPosition& position ) const {
-	Int64 line = eeclamp<Int64>( position.line(), 0UL, mLines.size() ? mLines.size() - 1 : 0 );
+	auto lineCount = linesCount();
+	Int64 line = eeclamp<Int64>( position.line(), 0UL, lineCount ? lineCount - 1 : 0 );
 	Int64 col =
-		eeclamp<Int64>( position.column(), 0UL, eemax<Int64>( 0, mLines[line].size() - 1 ) );
+		eeclamp<Int64>( position.column(), 0UL, eemax<Int64>( 0, getLineLength( line ) - 1 ) );
 	return { line, col };
 }
 
@@ -2877,7 +2966,7 @@ TextDocument::SearchResult TextDocument::find( const String& text, TextPosition 
 	std::vector<String> textLines = type == FindReplaceType::Normal ? text.split( '\n', true, true )
 																	: std::vector<String>{ text };
 
-	if ( textLines.empty() || textLines.size() > mLines.size() )
+	if ( textLines.empty() || textLines.size() > linesCount() )
 		return {};
 
 	from = sanitizePosition( from );
@@ -2907,7 +2996,7 @@ TextDocument::SearchResult TextDocument::find( const String& text, TextPosition 
 		if ( initPos < from || initPos > to )
 			return find( text, range.result.end(), caseSensitive, wholeWord, type, restrictRange );
 
-		String currentLine( mLines[initPos.line()].getText() );
+		String currentLine( getLineText( initPos.line() ) );
 
 		if ( TextPosition( initPos.line(), (Int64)currentLine.size() - 1 ) > to )
 			return find( text, range.result.end(), caseSensitive, wholeWord, type, restrictRange );
@@ -2930,7 +3019,7 @@ TextDocument::SearchResult TextDocument::find( const String& text, TextPosition 
 	if ( initPos < from || initPos > to )
 		return find( text, range.result.end(), caseSensitive, wholeWord, type, restrictRange );
 
-	const String& lastLine = mLines[initPos.line()].getText();
+	const auto lastLine = getLineText( initPos.line() );
 	const String& curSearch = textLines[textLines.size() - 1];
 
 	if ( TextPosition( initPos.line(), (Int64)curSearch.size() - 1 ) > to )
@@ -2944,7 +3033,7 @@ TextDocument::SearchResult TextDocument::find( const String& text, TextPosition 
 		   String::startsWith( String( lastLine ).toLower(), String( curSearch ).toLower() ) ) ) {
 		TextRange foundRange( range.result.start(),
 							  TextPosition( initPos.line(), curSearch.size() ) );
-		if ( foundRange.end().column() == (Int64)mLines[foundRange.end().line()].size() )
+		if ( foundRange.end().column() == (Int64)getLineLength( foundRange.end().line() ) )
 			foundRange.setEnd( positionOffset( foundRange.end(), 1 ) );
 		range.result = foundRange;
 		return range;
@@ -2960,7 +3049,7 @@ TextDocument::SearchResult TextDocument::findLast( const String& text, TextPosit
 												   FindReplaceType type, TextRange restrictRange ) {
 	std::vector<String> textLines = text.split( '\n', true, true );
 
-	if ( textLines.empty() || textLines.size() > mLines.size() )
+	if ( textLines.empty() || textLines.size() > linesCount() )
 		return {};
 
 	from = sanitizePosition( from );
@@ -3013,7 +3102,7 @@ TextDocument::SearchResult TextDocument::findLast( const String& text, TextPosit
 	if ( initPos < from || initPos > to )
 		return findLast( text, range.result.end(), caseSensitive, wholeWord, type, restrictRange );
 
-	const String& lastLine = mLines[initPos.line()].getText();
+	const auto lastLine = getLineText( initPos.line() );
 	const String& curSearch = textLines[textLines.size() - 1];
 
 	if ( TextPosition( initPos.line(), (Int64)curSearch.size() - 1 ) > to )
@@ -3114,7 +3203,7 @@ int TextDocument::replaceAll( const String& text, const String& replace, const b
 		if ( found.isValid() ) {
 			if ( numCaptures && numCaptures <= found.captures.size() ) {
 				String finalReplace( replace );
-				std::string l( line( found.captures[0].start().line() ).toUtf8() );
+				std::string l( getLineTextUtf8( found.captures[0].start().line() ) );
 				for ( size_t i = 0; i < numCaptures; i++ ) {
 					String matchSubStr( replace.substr(
 						matchList[i].start, matchList[i].end - matchList[i].start ) ); // $1 $2 ...
@@ -3198,7 +3287,7 @@ TextPosition TextDocument::replace( String search, const String& replace, TextPo
 	if ( found.isValid() ) {
 		if ( numCaptures && numCaptures == found.captures.size() ) {
 			String finalReplace( replace );
-			std::string l( line( found.captures[0].start().line() ).toUtf8() );
+			std::string l( getLineTextUtf8( found.captures[0].start().line() ) );
 			for ( size_t i = 0; i < numCaptures; i++ ) {
 				String matchSubStr( replace.substr(
 					matchList[i].start, matchList[i].end - matchList[i].start ) ); // $1 $2 ...
@@ -3542,7 +3631,7 @@ void TextDocument::toggleLineComments() {
 
 		std::size_t startSpaces = std::string::npos;
 		for ( Int64 i = selection.start().line(); i <= selection.end().line(); i++ ) {
-			const String& text = mLines[i].getText();
+			const auto text = getLineText( i );
 			auto firstNonSpace = text.find_first_not_of( " \t\n" );
 			if ( firstNonSpace != std::string::npos && text[firstNonSpace] != '\n' ) {
 				startSpaces = eemin( startSpaces, firstNonSpace );
@@ -3562,7 +3651,7 @@ void TextDocument::toggleLineComments() {
 			bool swap = prevStart != range.start();
 			for ( Int64 lineIdx = selection.start().line(); lineIdx <= selection.end().line();
 				  lineIdx++ ) {
-				const String& text = mLines[lineIdx].getText();
+				const auto text = getLineText( lineIdx );
 				auto pos = text.find( commentText, startSpaces );
 				if ( pos != std::string::npos ) {
 					remove( cursorIdx, { { lineIdx, static_cast<Int64>( pos ) },
@@ -3725,10 +3814,10 @@ void TextDocument::escape() {
 
 		resetCursor();
 
-		size_t linesCount = mLines.size();
-		for ( size_t i = 0; i < linesCount; i++ ) {
+		size_t lineCount = linesCount();
+		for ( size_t i = 0; i < lineCount; i++ ) {
 			Int64 lineIdx = static_cast<Int64>( i );
-			String newText( String::escape( mLines[i].getTextWithoutNewLine() ) );
+			String newText( String::escape( getLineTextWithoutNewLine( i ) ) );
 			setSelection( 0, { { lineIdx, 0 }, { lineIdx, (Int64)line( i ).size() - 1 } } );
 			deleteTo( 0, 0 );
 			setSelection( 0, insert( 0, getSelectionIndex( 0 ).start(), newText ) );
@@ -3754,10 +3843,10 @@ void TextDocument::unescape() {
 
 		resetCursor();
 
-		size_t linesCount = mLines.size();
-		for ( size_t i = 0; i < linesCount; i++ ) {
+		size_t lineCount = linesCount();
+		for ( size_t i = 0; i < lineCount; i++ ) {
 			Int64 lineIdx = static_cast<Int64>( i );
-			String newText( String::unescape( mLines[i].getTextWithoutNewLine() ) );
+			String newText( String::unescape( getLineTextWithoutNewLine( i ) ) );
 			setSelection( 0, { { lineIdx, 0 }, { lineIdx, (Int64)line( i ).size() - 1 } } );
 			deleteTo( 0, 0 );
 			setSelection( 0, insert( 0, getSelectionIndex( 0 ).start(), newText ) );

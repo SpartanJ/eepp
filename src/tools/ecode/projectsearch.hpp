@@ -39,8 +39,8 @@ class ProjectSearch {
 
 	struct ResultData {
 		struct Result {
-			Result( const String& line, const TextRange& pos, Int64 s, Int64 e ) :
-				line( line ), position( pos ), start( s ), end( e ) {}
+			Result( String&& line, const TextRange& pos, Int64 s, Int64 e ) :
+				line( std::move( line ) ), position( pos ), start( s ), end( e ) {}
 			Result() {}
 			String line;
 			TextRange position;

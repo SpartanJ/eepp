@@ -21,6 +21,7 @@
 #include <eepp/ui/doc/textrange.hpp>
 #include <eepp/ui/doc/textundostack.hpp>
 #include <functional>
+#include <shared_mutex>
 #include <vector>
 
 using namespace EE::System;
@@ -84,6 +85,8 @@ class EE_API TextDocument {
 
 	class EE_API Client {
 	  public:
+		enum Type { Core, Auxiliary };
+
 		virtual ~Client();
 		virtual void onDocumentLoaded( TextDocument* ) {};
 		virtual void onDocumentTextChanged( const DocumentContentChange& ) = 0;
@@ -99,6 +102,7 @@ class EE_API TextDocument {
 		virtual void onDocumentDirtyOnFileSystem( TextDocument* ) = 0;
 		virtual void onDocumentMoved( TextDocument* ) = 0;
 		virtual void onDocumentReset( TextDocument* ) = 0;
+		virtual Client::Type getTextDocumentClientType() = 0;
 
 		virtual void onDocumentReloaded( TextDocument* doc ) {
 			onDocumentClosed( doc );
@@ -273,6 +277,22 @@ class EE_API TextDocument {
 
 	TextRange getLineRange( Int64 line ) const;
 
+	String getLineText( Int64 line ) const;
+
+	String getLineTextSubStr( Int64 line, std::size_t pos, std::size_t n ) const;
+
+	String::HashType getLineHash( Int64 line ) const;
+
+	String getLineTextWithoutNewLine( Int64 line ) const;
+
+	std::size_t getLineLength( Int64 ) const;
+
+	void getLineTextToBuffer( Int64 line, String& buffer ) const;
+
+	std::string getLineTextUtf8( Int64 line ) const;
+
+	void getLineTextToBufferUtf8( Int64 line, std::string& buffer ) const;
+
 	void deleteTo( const size_t& cursorIdx, TextPosition position );
 
 	void deleteTo( const size_t& cursorIdx, int offset );
@@ -296,6 +316,8 @@ class EE_API TextDocument {
 	void registerClient( Client* client );
 
 	void unregisterClient( Client* client );
+
+	std::size_t clientOfTypeCount( Client::Type type );
 
 	void moveToPreviousChar();
 
@@ -690,6 +712,8 @@ class EE_API TextDocument {
 	TextRanges mSelection;
 	UnorderedSet<Client*> mClients;
 	Mutex mClientsMutex;
+	mutable Mutex mLinesMutex;
+	mutable std::shared_ptr<std::shared_mutex> mDocumentMutex;
 	TextFormat::Encoding mEncoding{ TextFormat::Encoding::UTF8 };
 	TextFormat::LineEnding mLineEnding{ TextFormat::LineEnding::LF };
 	std::atomic<bool> mLoading{ false };

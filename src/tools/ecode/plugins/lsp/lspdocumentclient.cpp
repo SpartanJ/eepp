@@ -5,6 +5,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/window/engine.hpp>
 
@@ -44,7 +45,7 @@ LSPDocumentClient::~LSPDocumentClient() {
 	if ( nullptr != sceneNode && 0 != mTagSemanticTokens )
 		sceneNode->removeActionsByTag( mTagSemanticTokens );
 	mShutdown = true;
-	while ( mRunningSemanticTokens )
+	while ( mRunningSemanticTokens || mProcessingSemanticTokensResponse )
 		Sys::sleep( Milliseconds( 0.1f ) );
 }
 
@@ -174,8 +175,9 @@ void LSPDocumentClient::requestSemanticHighlighting( bool reqFull ) {
 	Uint64 docModId = mDoc->getModificationId();
 	mServer->documentSemanticTokensFull(
 		mDoc->getURI(), delta, reqId, range,
-		[docClient, uri, server, docModId]( const auto&, LSPSemanticTokensDelta&& deltas ) {
-			if ( server->hasDocument( uri ) ) {
+		[docClient, uri, server, docModId, this]( const auto&, LSPSemanticTokensDelta&& deltas ) {
+			BoolScopedOp op( mProcessingSemanticTokensResponse, true );
+			if ( server->hasDocumentClient( docClient ) && server->hasDocument( uri ) ) {
 				docClient->mWaitingSemanticTokensResponse = false;
 				docClient->processTokens( std::move( deltas ), docModId );
 			}
@@ -285,7 +287,7 @@ void LSPDocumentClient::processTokens( LSPSemanticTokensDelta&& tokens,
 	if ( docModificationId != mDoc->getModificationId() )
 		return requestSemanticHighlightingDelayed();
 
-	mRunningSemanticTokens = true;
+	BoolScopedOp op( mRunningSemanticTokens, true );
 
 	if ( !tokens.resultId.empty() )
 		mSemanticeResultId = tokens.resultId;
@@ -297,6 +299,9 @@ void LSPDocumentClient::processTokens( LSPSemanticTokensDelta&& tokens,
 							 curTokens.begin() + edit.start + edit.deleteCount );
 		}
 		curTokens.insert( curTokens.begin() + edit.start, edit.data.begin(), edit.data.end() );
+
+		if ( mShutdown )
+			return;
 	}
 
 	if ( !tokens.data.empty() ) {
@@ -304,8 +309,6 @@ void LSPDocumentClient::processTokens( LSPSemanticTokensDelta&& tokens,
 	}
 
 	highlight();
-
-	mRunningSemanticTokens = false;
 }
 
 void LSPDocumentClient::highlight() {
@@ -351,7 +354,7 @@ void LSPDocumentClient::highlight() {
 		} else {
 			line->tokens.push_back( { SyntaxStyleTypes::Normal, start, len } );
 		}
-		line->hash = mDoc->line( currentLine ).getHash();
+		line->hash = mDoc->getLineHash( currentLine );
 		line->updateSignature();
 
 		auto curSignature = mDoc->getHighlighter()->getTokenizedLineSignature( lastLine );

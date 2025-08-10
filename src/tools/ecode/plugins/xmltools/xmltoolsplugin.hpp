@@ -84,6 +84,7 @@ class XMLToolsPlugin : public PluginBase {
 		virtual void onDocumentDirtyOnFileSystem( TextDocument* ) {}
 		virtual void onDocumentMoved( TextDocument* ) {};
 		virtual void onDocumentReset( TextDocument* ) { mSelections.clear(); }
+		Client::Type getTextDocumentClientType() { return TextDocument::Client::Auxiliary; }
 
 	  protected:
 		TextDocument* mDoc{ nullptr };

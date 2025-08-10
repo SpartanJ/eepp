@@ -123,6 +123,8 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	void setSelectAllDocOnTabNavigate( bool selectAllDocOnTabNavigate );
 
+	Client::Type getTextDocumentClientType() { return TextDocument::Client::Core; }
+
   protected:
 	TextDocument mDoc;
 	Float mWaitCursorTime;

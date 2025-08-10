@@ -145,6 +145,8 @@ class EE_API UIConsole : public UIWidget,
 
 	TextDocument& getDoc();
 
+	Client::Type getTextDocumentClientType() { return TextDocument::Client::Core; }
+
   protected:
 	struct TextCache {
 		Text text;

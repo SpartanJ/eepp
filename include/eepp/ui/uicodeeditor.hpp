@@ -779,10 +779,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Float getPluginsGutterSpace() const;
 
-	void setEnableFlashCursor( bool enable ) { mEnableFlashCursor = enable; }
-
-	bool isEnabledFlashCursor() { return mEnableFlashCursor; }
-
 	void setCursorVisible( bool visible );
 
 	bool isCursorVisible() const;
@@ -801,6 +797,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void setTabStops( bool enabled );
 
 	bool usesTabStops() { return mTabStops; }
+
+	Client::Type getTextDocumentClientType() { return TextDocument::Client::Core; }
 
   protected:
 	struct LastXOffset {
@@ -845,7 +843,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mFoldsAlwaysVisible{ false };
 	bool mFoldsVisible{ false };
 	bool mFoldsIsFirst{ true };
-	bool mEnableFlashCursor{ false };
 	bool mDisableCursorBlinkingAfterAMinuteOfInactivity{ true };
 	bool mAllowSelectingTextFromGutter{ true };
 	bool mTabStops{ false };
@@ -931,6 +928,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	String::HashType mTagFoldRange{ 0 };
 	Uint32 mTabIndentCharacter{ 187 /*'»'*/ };
 	CharacterAlignment mTabIndentAlignment{ CharacterAlignment::Center };
+	std::vector<SyntaxTokenPosition> mTokens;
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );

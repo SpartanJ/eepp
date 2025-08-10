@@ -152,6 +152,7 @@ class DebuggerPlugin : public PluginBase {
 		virtual void onDocumentDirtyOnFileSystem( TextDocument* ) {}
 		virtual void onDocumentMoved( TextDocument* ) {}
 		virtual void onDocumentReset( TextDocument* ) {}
+		Client::Type getTextDocumentClientType() { return TextDocument::Client::Auxiliary; }
 
 		virtual void onDocumentLineMove( const Int64& fromLine, const Int64& toLine,
 										 const Int64& numLines ) {

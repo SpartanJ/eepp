@@ -51,18 +51,18 @@ void SyntaxHighlighter::invalidate( Int64 lineIndex ) {
 }
 
 TokenizedLine SyntaxHighlighter::tokenizeLine( const size_t& line, const SyntaxState& state ) {
-	auto& ln = mDoc->line( line );
 	TokenizedLine tokenizedLine;
 	tokenizedLine.initState = state;
-	tokenizedLine.hash = ln.getHash();
-	if ( mMaxTokenizationLength != 0 && (Int64)ln.size() > mMaxTokenizationLength ) {
-		Int64 textSize = ln.size();
+	tokenizedLine.hash = mDoc->getLineHash( line );
+	auto len = mDoc->getLineLength( line );
+	if ( mMaxTokenizationLength != 0 && (Int64)len > mMaxTokenizationLength ) {
+		Int64 textSize = len;
 		SyntaxTokenLen pos = 0;
 		while ( textSize > 0 ) {
 			SyntaxTokenLen chunkSize =
 				textSize > mMaxTokenizationLength ? mMaxTokenizationLength : textSize;
 			SyntaxTokenPosition token{ SyntaxStyleTypes::Normal, pos, chunkSize };
-			token.len = ln.size();
+			token.len = len;
 			tokenizedLine.tokens.emplace_back( token );
 			textSize -= chunkSize;
 			pos += chunkSize;
@@ -71,7 +71,8 @@ TokenizedLine SyntaxHighlighter::tokenizeLine( const size_t& line, const SyntaxS
 		tokenizedLine.updateSignature();
 		return tokenizedLine;
 	}
-	auto res = SyntaxTokenizer::tokenizePosition( mDoc->getSyntaxDefinition(), ln.toUtf8(), state );
+	auto res = SyntaxTokenizer::tokenizePosition( mDoc->getSyntaxDefinition(),
+												  mDoc->getLineTextUtf8( line ), state );
 	tokenizedLine.tokens = std::move( res.first );
 	tokenizedLine.state = std::move( res.second );
 	tokenizedLine.updateSignature();
@@ -94,7 +95,7 @@ void SyntaxHighlighter::moveHighlight( const Int64& fromLine, const Int64& /*toL
 			auto lineIt = mLines.find( i - numLines );
 			if ( lineIt != mLines.end() ) {
 				const auto& line = lineIt->second;
-				if ( line.hash == mDoc->line( i ).getHash() ) {
+				if ( line.hash == mDoc->getLineHash( i ) ) {
 					auto nl = mLines.extract( lineIt );
 					nl.key() = i;
 					mLines.insert( std::move( nl ) );
@@ -104,7 +105,7 @@ void SyntaxHighlighter::moveHighlight( const Int64& fromLine, const Int64& /*toL
 	} else if ( numLines < 0 ) {
 		for ( Int64 i = fromLine; i < linesCount; i++ ) {
 			auto lineIt = mLines.find( i - numLines );
-			if ( lineIt != mLines.end() && lineIt->second.hash == mDoc->line( i ).getHash() ) {
+			if ( lineIt != mLines.end() && lineIt->second.hash == mDoc->getLineHash( i ) ) {
 				auto nl = mLines.extract( lineIt );
 				nl.key() = i;
 				mLines[i] = std::move( nl.mapped() );
@@ -153,7 +154,7 @@ const std::vector<SyntaxTokenPosition>& SyntaxHighlighter::getLine( const size_t
 	static std::vector<SyntaxTokenPosition> noHighlightVector = {
 		{ SyntaxStyleTypes::Normal, 0, 0 } };
 	if ( mDoc->getSyntaxDefinition().getPatterns().empty() ) {
-		noHighlightVector[0].len = mDoc->line( index ).size();
+		noHighlightVector[0].len = mDoc->getLineLength( index );
 		return noHighlightVector;
 	}
 
@@ -162,7 +163,7 @@ const std::vector<SyntaxTokenPosition>& SyntaxHighlighter::getLine( const size_t
 		auto it = mLines.find( index );
 		bool needsTokenize =
 			it == mLines.end() ||
-			( index < mDoc->linesCount() && mDoc->line( index ).getHash() != it->second.hash );
+			( index < mDoc->linesCount() && mDoc->getLineHash( index ) != it->second.hash );
 		if ( !needsTokenize ) {
 			mMaxWantedLine = eemax<Int64>( mMaxWantedLine, index );
 			return it->second.tokens;
@@ -170,7 +171,7 @@ const std::vector<SyntaxTokenPosition>& SyntaxHighlighter::getLine( const size_t
 	}
 
 	if ( !mustTokenize ) {
-		noHighlightVector[0].len = mDoc->line( index ).size();
+		noHighlightVector[0].len = mDoc->getLineLength( index );
 		return noHighlightVector;
 	}
 
@@ -188,6 +189,52 @@ const std::vector<SyntaxTokenPosition>& SyntaxHighlighter::getLine( const size_t
 	mTokenizerLines[index] = mLines[index];
 	mMaxWantedLine = eemax<Int64>( mMaxWantedLine, index );
 	return mLines[index].tokens;
+}
+
+void SyntaxHighlighter::copyLineToBuffer( const size_t& index,
+										  std::vector<SyntaxTokenPosition>& buffer,
+										  bool mustTokenize ) {
+	static std::vector<SyntaxTokenPosition> noHighlightVector = {
+		{ SyntaxStyleTypes::Normal, 0, 0 } };
+	if ( mDoc->getSyntaxDefinition().getPatterns().empty() ) {
+		noHighlightVector[0].len = mDoc->getLineLength( index );
+		buffer = noHighlightVector;
+		return;
+	}
+
+	{
+		Lock l( mLinesMutex );
+		auto it = mLines.find( index );
+		bool needsTokenize =
+			it == mLines.end() ||
+			( index < mDoc->linesCount() && mDoc->getLineHash( index ) != it->second.hash );
+		if ( !needsTokenize ) {
+			mMaxWantedLine = eemax<Int64>( mMaxWantedLine, index );
+			buffer = it->second.tokens;
+			return;
+		}
+	}
+
+	if ( !mustTokenize ) {
+		noHighlightVector[0].len = mDoc->getLineLength( index );
+		buffer = noHighlightVector;
+		return;
+	}
+
+	SyntaxState prevState;
+	if ( index > 0 ) {
+		Lock l( mLinesMutex );
+		auto prevIt = mLines.find( index - 1 );
+		if ( prevIt != mLines.end() )
+			prevState = prevIt->second.state;
+	}
+	auto tokenizedLine = tokenizeLine( index, prevState );
+
+	Lock l( mLinesMutex );
+	mLines[index] = std::move( tokenizedLine );
+	mTokenizerLines[index] = mLines[index];
+	mMaxWantedLine = eemax<Int64>( mMaxWantedLine, index );
+	buffer = mLines[index].tokens;
 }
 
 Int64 SyntaxHighlighter::getFirstInvalidLine() const {
@@ -224,7 +271,7 @@ bool SyntaxHighlighter::updateDirty( int visibleLinesCount ) {
 				Lock l( mLinesMutex );
 				const auto& it = mLines.find( index );
 				mustTokenize = it == mLines.end() ||
-							   it->second.hash != mDoc->line( index ).getHash() ||
+							   it->second.hash != mDoc->getLineHash( index ) ||
 							   it->second.initState != state;
 			}
 
@@ -307,8 +354,7 @@ void SyntaxHighlighter::mergeLine( const size_t& line, const TokenizedLine& toke
 	{
 		mLinesMutex.lock();
 		auto found = mTokenizerLines.find( line );
-		if ( found != mTokenizerLines.end() &&
-			 mDoc->line( line ).getHash() == found->second.hash ) {
+		if ( found != mTokenizerLines.end() && mDoc->getLineHash( line ) == found->second.hash ) {
 			tline = found->second;
 			mLinesMutex.unlock();
 		} else {
