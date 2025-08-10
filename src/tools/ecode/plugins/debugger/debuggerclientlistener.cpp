@@ -34,7 +34,7 @@ DebuggerClientListener::DebuggerClientListener( DebuggerClient* client, Debugger
 }
 
 DebuggerClientListener::~DebuggerClientListener() {
-	resetState();
+	resetState( true );
 	auto sdc = getStatusDebuggerController();
 	if ( !mPlugin->isShuttingDown() && sdc ) {
 		if ( sdc->getUIThreads() )
@@ -243,7 +243,7 @@ void DebuggerClientListener::configured( const SessionId& ) {}
 
 void DebuggerClientListener::failed( const SessionId& ) {
 	mPlugin->exitDebugger();
-	resetState();
+	resetState( true );
 }
 
 void DebuggerClientListener::debuggeeRunning( const SessionId& ) {}
@@ -251,13 +251,13 @@ void DebuggerClientListener::debuggeeRunning( const SessionId& ) {}
 void DebuggerClientListener::debuggeeTerminated( const SessionId& ) {
 	if ( mClient->sessionsActive() == 0 ) {
 		mPlugin->exitDebugger();
-		resetState();
+		resetState( true );
 	}
 }
 
 void DebuggerClientListener::capabilitiesReceived( const Capabilities& /*capabilities*/ ) {}
 
-void DebuggerClientListener::resetState() {
+void DebuggerClientListener::resetState( bool full ) {
 	mStoppedData = {};
 	mCurrentScopePos = {};
 	mCurrentFrameId = 0;
@@ -265,12 +265,13 @@ void DebuggerClientListener::resetState() {
 		mThreadsModel->resetThreads();
 	if ( mStackModel )
 		mStackModel->resetStack();
-	mVariablesHolder->clear();
+	mVariablesHolder->clear( full );
+	mScopeRef.clear();
 }
 
 void DebuggerClientListener::debuggeeExited( int /*exitCode*/, const SessionId& ) {
 	mPlugin->exitDebugger();
-	resetState();
+	resetState( true );
 }
 
 void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event, const SessionId& ) {
@@ -320,7 +321,7 @@ void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event, const S
 }
 
 void DebuggerClientListener::debuggeeContinued( const ContinuedEvent&, const SessionId& ) {
-	resetState();
+	resetState( false );
 
 	UISceneNode* sceneNode = mPlugin->getUISceneNode();
 	sceneNode->runOnMainThread( [sceneNode] { sceneNode->getRoot()->invalidateDraw(); } );

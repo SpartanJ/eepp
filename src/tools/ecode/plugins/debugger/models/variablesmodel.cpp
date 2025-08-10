@@ -47,7 +47,7 @@ void ModelVariableNode::addChild( NodePtr child ) {
 }
 
 ModelVariableNode::NodePtr ModelVariableNode::getParent() const {
-	return parent;
+	return parent.lock();
 }
 
 std::optional<ModelVariableNode::NodePtr> ModelVariableNode::getChild( int variablesReference ) {
@@ -166,6 +166,10 @@ VariablesHolder::VariablesHolder( UISceneNode* sceneNode ) :
 	mNodeMap[0] = mRootNode;
 }
 
+VariablesHolder::~VariablesHolder() {
+	clear( true );
+}
+
 void VariablesHolder::addVariables( const int variablesReference, std::vector<Variable>&& vars ) {
 	Lock l( mMutex );
 	auto parentNode = getNodeByReference( variablesReference );
@@ -244,6 +248,7 @@ void VariablesHolder::clear( bool all ) {
 	if ( all ) {
 		mNodeMap.clear();
 		mCurrentLocation = {};
+		mExpandedStates.clear();
 	}
 }
 
@@ -256,7 +261,8 @@ VariablePath VariablesHolder::buildVariablePath( ModelVariableNode* node ) const
 	VariablePath path;
 	while ( node && node != mRootNode.get() ) {
 		path.push_back( node->getName() );
-		node = node->parent ? node->parent.get() : nullptr;
+		auto parentNode = node->parent.lock();
+		node = parentNode.get();
 	}
 	std::reverse( path.begin(), path.end() );
 	return path;

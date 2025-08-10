@@ -848,24 +848,35 @@ bool DebuggerClientDap::variables( int variablesReference, Variable::Type filter
 		[this, responseCb = std::move( responseCb )]( const Response& response,
 													  const nlohmann::json& request ) {
 			const int variablesReference = request.value( DAP_VARIABLES_REFERENCE, 0 );
-
 			if ( response.success ) {
-				auto variableList( Variable::parseList( response.body[DAP_VARIABLES] ) );
+				auto variableList = Variable::parseList( response.body[DAP_VARIABLES] );
 				if ( responseCb ) {
 					responseCb( variablesReference, std::move( variableList ) );
-				} else {
-					for ( auto listener : mListeners )
-						listener->variables( variablesReference, std::move( variableList ),
-											 mCurrentSessionId );
+				} else if ( !mListeners.empty() ) {
+					if ( mListeners.size() == 1 ) {
+						// Move directly to single listener
+						mListeners[0]->variables( variablesReference, std::move( variableList ),
+												  mCurrentSessionId );
+					} else {
+						// Copy for multiple listeners
+						for ( auto listener : mListeners ) {
+							std::vector<Variable> variableListCopy = variableList;
+							listener->variables( variablesReference, std::move( variableListCopy ),
+												 mCurrentSessionId );
+						}
+					}
 				}
 			} else {
-				std::vector<Variable> variableList;
+				std::vector<Variable> variableList; // Single empty vector
 				if ( responseCb ) {
 					responseCb( variablesReference, std::move( variableList ) );
-				} else {
-					for ( auto listener : mListeners )
-						listener->variables( variablesReference, std::move( variableList ),
+				} else if ( !mListeners.empty() ) {
+					// Share empty vector with all listeners
+					for ( auto listener : mListeners ) {
+						std::vector<Variable> variableListCopy = variableList;
+						listener->variables( variablesReference, std::move( variableListCopy ),
 											 mCurrentSessionId );
+					}
 				}
 			}
 		},

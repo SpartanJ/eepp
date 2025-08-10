@@ -133,7 +133,7 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 
 	StatusDebuggerController* getStatusDebuggerController() const;
 
-	void resetState();
+	void resetState( bool full );
 
 	void changeScope( const StackFrame& f );
 

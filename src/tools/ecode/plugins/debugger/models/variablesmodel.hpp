@@ -68,6 +68,7 @@ namespace ecode {
 
 struct ModelVariableNode : public std::enable_shared_from_this<ModelVariableNode> {
 	using NodePtr = std::shared_ptr<ModelVariableNode>;
+	using WeakNodePtr = std::weak_ptr<ModelVariableNode>;
 
 	ModelVariableNode( Variable&& var, NodePtr parent );
 
@@ -93,7 +94,7 @@ struct ModelVariableNode : public std::enable_shared_from_this<ModelVariableNode
 
 	NodePtr getParent() const;
 
-	NodePtr parent{ nullptr };
+	WeakNodePtr parent;
 	Variable var;
 	std::vector<NodePtr> children;
 };
@@ -126,6 +127,8 @@ class VariablesModel : public Model {
 class VariablesHolder {
   public:
 	VariablesHolder( UISceneNode* sceneNode );
+
+	~VariablesHolder();
 
 	void addVariables( const int variablesReference, std::vector<Variable>&& vars );
 

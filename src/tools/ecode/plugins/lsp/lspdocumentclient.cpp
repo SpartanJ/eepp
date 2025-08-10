@@ -175,9 +175,9 @@ void LSPDocumentClient::requestSemanticHighlighting( bool reqFull ) {
 	Uint64 docModId = mDoc->getModificationId();
 	mServer->documentSemanticTokensFull(
 		mDoc->getURI(), delta, reqId, range,
-		[docClient, uri, server, docModId, this]( const auto&, LSPSemanticTokensDelta&& deltas ) {
-			BoolScopedOp op( mProcessingSemanticTokensResponse, true );
+		[docClient, uri, server, docModId]( const auto&, LSPSemanticTokensDelta&& deltas ) {
 			if ( server->hasDocumentClient( docClient ) && server->hasDocument( uri ) ) {
+				BoolScopedOp op( docClient->mProcessingSemanticTokensResponse, true );
 				docClient->mWaitingSemanticTokensResponse = false;
 				docClient->processTokens( std::move( deltas ), docModId );
 			}
