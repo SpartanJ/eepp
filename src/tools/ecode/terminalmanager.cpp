@@ -15,8 +15,10 @@ UITerminal* TerminalManager::createTerminalInSplitter(
 	std::string os = Sys::getOSName( true );
 	if ( !LuaPattern::hasMatches( os, "Windows 1%d"sv ) &&
 		 !LuaPattern::hasMatches( os, "Windows Server 201[69]"sv ) &&
-		 !LuaPattern::hasMatches( os, "Windows Server 202%d"sv ) )
+		 !LuaPattern::hasMatches( os, "Windows Server 202%d"sv ) ) {
+		displayError( workingDir );
 		return nullptr;
+	}
 #endif
 
 	UITerminal* term = nullptr;
