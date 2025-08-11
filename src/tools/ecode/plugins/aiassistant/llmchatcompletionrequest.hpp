@@ -40,14 +40,19 @@ class LLMChatCompletionRequest {
 
 	const std::string& getResponse() const { return mResponse; }
 
+	const std::string& getReasoningResponse() const { return mReasoningResponse; }
+
   protected:
 	URI mUrl;
 	Http mHttp;
 	Http::Request mRequest;
 	IOStreamString mStream;
+	std::string mReasoningResponse;
 	std::string mResponse;
 	size_t mReadBytes{ 0 };
 	bool mCancel{ false };
+	bool mFirstMessage{ true };
+	bool mReasoning{ false };
 };
 
 } // namespace ecode

@@ -1179,13 +1179,6 @@ void Http::AsyncRequest::run() {
 		eeSAFE_DELETE( mStream );
 	}
 
-	// The Async Request destroys the socket used to create the request
-	if ( mHttp->mConnection ) {
-		HttpConnection* connection = mHttp->mConnection;
-		eeSAFE_DELETE( connection );
-		mHttp->mConnection = NULL;
-	}
-
 	mRunning = false;
 }
 

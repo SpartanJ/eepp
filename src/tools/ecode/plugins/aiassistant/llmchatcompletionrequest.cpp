@@ -48,9 +48,21 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 						std::string delta = msg["content"];
 						if ( delta.empty() )
 							return;
+						if ( mFirstMessage ) {
+							if ( String::startsWith( delta, "<think>" ) )
+								mReasoning = true;
+							mFirstMessage = false;
+						}
+
 						if ( streamedResponseCb )
-							streamedResponseCb( delta, false );
-						mResponse += std::move( delta );
+							streamedResponseCb( delta, mReasoning );
+						if ( mReasoning ) {
+							if ( String::endsWith( delta, "</think>" ) )
+								mReasoning = false;
+							mReasoningResponse += std::move( delta );
+						} else {
+							mResponse += std::move( delta );
+						}
 					}
 				}
 
@@ -70,6 +82,7 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 						std::string delta = choice["delta"]["reasoning_content"];
 						if ( streamedResponseCb )
 							streamedResponseCb( delta, true );
+						mReasoningResponse += std::move( delta );
 					} else if ( choice["delta"].contains( "content" ) ) {
 						std::string delta = choice["delta"]["content"];
 						if ( streamedResponseCb )

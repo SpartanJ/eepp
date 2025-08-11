@@ -931,13 +931,13 @@ LLMModel LLMChatUI::findModel( const std::string& provider, const std::string& m
 			return *modelIt;
 		}
 	}
-	if ( provider == "openai" && model == "gpt-4o" )
+	if ( provider == "openai" && model == "gpt-5" )
 		return mCurModel; // Do not stack-overflow if something is really wrong
 	return getDefaultModel();
 }
 
 LLMModel LLMChatUI::getDefaultModel() {
-	return findModel( "openai", "gpt-4o" );
+	return findModel( "openai", "gpt-5" );
 }
 
 std::string LLMChatUI::getNewFilePath( const std::string& uuid, const std::string& summary,
@@ -968,6 +968,12 @@ std::string LLMChatUI::prepareApiUrl( const std::string& apiKey ) {
 	String::replaceAll( url, "${model}", mCurModel.name );
 	String::replaceAll( url, "${api_key}", apiKey );
 	return url;
+}
+
+static bool allNewLines( const std::string& s ) {
+	if ( s.empty() )
+		return false;
+	return std::all_of( s.begin(), s.end(), []( char c ) { return c == '\n'; } );
 }
 
 void LLMChatUI::doRequest() {
@@ -1003,7 +1009,8 @@ void LLMChatUI::doRequest() {
 
 	mRequest->streamedResponseCb = [this, editor, thinking, thinkingID]( const std::string& chunk,
 																		 bool fromReasoning ) {
-		if ( fromReasoning )
+		if ( fromReasoning ||
+			 ( mRequest && mRequest->getResponse().empty() && allNewLines( chunk ) ) )
 			return;
 		auto conversation = chunk;
 		editor->runOnMainThread(
@@ -1086,7 +1093,7 @@ void LLMChatUI::doRequest() {
 						String::trimInPlace( mSummary, ' ' );
 						String::trimInPlace( mSummary, '"' );
 					} else {
-						// TODO: Implement generating a summary base on the user prompt (take the
+						// TODO: Implement generating a summary based on the user prompt (take the
 						// first few words)
 						mSummary = i18n( "untitled_conversation", "Untitled Conversation" );
 					}
