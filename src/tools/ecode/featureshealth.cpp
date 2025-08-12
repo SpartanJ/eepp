@@ -47,8 +47,8 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 	std::set<std::string> languages;
 
 	for ( const auto& def : definitions )
-		if ( def.isVisible() )
-			languages.insert( def.getLSPName() );
+		if ( def->isVisible() )
+			languages.insert( def->getLSPName() );
 
 	for ( const auto& pdef : preDefinitions )
 		languages.insert( pdef.getLSPName() );

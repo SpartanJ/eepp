@@ -1407,8 +1407,12 @@ AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocu
 	auto lineCount = doc->linesCount();
 	std::string string;
 	for ( Int64 i = 0; i < static_cast<Int64>( lineCount ); i++ ) {
-		if ( doc->getLineLength( i ) > MAX_LINE_LENGTH )
+		auto len = doc->getLineLength( i );
+		if ( len == 0 || len > MAX_LINE_LENGTH ) {
+			if ( len == 0 ) // Line count must have changed
+				lineCount = doc->linesCount();
 			continue;
+		}
 		doc->getLineTextToBufferUtf8( i, string );
 		for ( auto& match : pattern.gmatch( string ) ) {
 			std::string matchStr( match[0] );

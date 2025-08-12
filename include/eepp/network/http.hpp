@@ -597,11 +597,11 @@ class EE_API Http : NonCopyable {
 		 * @param host The scheme + hostname + port represented as an URI.
 		 * @param proxy The client proxy if any, scheme + hostname + post as URI.
 		 */
-		Http* get( const URI& host, const URI& proxy = URI() );
+		std::shared_ptr<Http> get( const URI& host, const URI& proxy = URI() );
 
 	  protected:
 		Mutex mMutex;
-		UnorderedMap<Uint32, Http*> mHttps;
+		UnorderedMap<Uint32, std::shared_ptr<Http>> mHttps;
 
 		static std::string getHostKey( const URI& host, const URI& proxy );
 

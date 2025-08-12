@@ -520,7 +520,7 @@ void processFormattingResponse( const std::shared_ptr<TextDocument>& doc,
 								std::vector<LSPTextEdit> edits ) {
 	TextRanges ranges = doc->getSelections();
 
-	doc->resetCursor();
+	doc->resetSelection();
 	doc->setRunningTransaction( true );
 
 	// Sort from bottom to top, this way we don't have to compute any position deltas

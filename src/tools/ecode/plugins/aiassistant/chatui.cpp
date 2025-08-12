@@ -1,6 +1,7 @@
 #include "chatui.hpp"
 #include "../../appconfig.hpp"
 #include "../../notificationcenter.hpp"
+#include "../../projectdirectorytree.hpp"
 #include "../../widgetcommandexecuter.hpp"
 #include "aiassistantplugin.hpp"
 #include "chathistory.hpp"
@@ -130,6 +131,17 @@ DropDownList.role_ui {
 .llm_chatui .image {
 	tint: var(--font);
 }
+.llm_chat_attach {
+	padding: 8dp 8dp 38dp 8dp;
+}
+.llm_chat_locate_input {
+	margin-bottom: 2dp;
+	padding: 0 0 0 4dp;
+}
+.llm_chat_attach_locate {
+	border-radius: 8dp;
+	margin-bottom: 4dp;
+}
 </style>
 <Splitter lw="mp" lh="mp" orientation="vertical" splitter-partition="75%" padding="4dp">
 	<RelativeLayout lw="mp">
@@ -143,9 +155,13 @@ DropDownList.role_ui {
 	</RelativeLayout>
 	<RelativeLayout lw="mp" class="llm_controls" clip="true">
 		<CodeEditor class="llm_chat_input" lw="mp" lh="mp" />
+		<vboxce class="llm_chat_attach" lw="mp" lh="mp" visible="false">
+			<TableView lw="mp" lh="0dp" lw8="1" class="llm_chat_attach_locate" />
+			<TextInput class="llm_chat_locate_input" lw="mp" lh="18dp" hint='@string(type_to_locate, "Type to Locate")' />
+		</vboxce>
 		<hbox lw="mp" lh="wc" layout_gravity="bottom|left" layout_margin="8dp" clip="false">
 			<PushButton id="llm_user" class="llm_button" text="@string(user, User)" tooltip="@string(change_role, Change Role)" min-width="60dp" margin-right="8dp" />
-			<!-- <PushButton class="llm_button" text="@string(attach, Attach)" tooltip="@string(attach, Attach)" icon="icon(attach, 14dp)" min-width="32dp" /> -->
+			<PushButton id="llm_attach" class="llm_button" text="@string(attach, Attach)" tooltip="@string(attach, Attach)" icon="icon(attach, 14dp)" min-width="32dp" />
 			<PushButton id="llm_chat_history" class="llm_button" text="@string(chat_history, Chat History)" tooltip="@string(chat_history, Chat History)" icon="icon(chat-history, 14dp)" min-width="32dp" />
 			<PushButton id="llm_settings_but" class="llm_button" text="@string(settings, Settings)" tooltip="@string(settings, Settings)" icon="icon(settings, 14dp)" min-width="32dp" />
 			<PushButton id="llm_more" class="llm_button" tooltip="@string(more_options, More Options)" icon="icon(more-fill, 14dp)" min-width="32dp" />
@@ -344,6 +360,8 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 
 	setCmd( "ai-chat-history", [this] { showChatHistory(); } );
 
+	setCmd( "ai-attach-file", [this] { showAttachFile(); } );
+
 	setCmd( "ai-toggle-private-chat", [this] { mChatPrivate->toggleSelection(); } );
 
 	setCmd( "ai-toggle-lock-chat", [this] { renameChat( mSummary, true ); } );
@@ -427,8 +445,13 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mChatHistory = find<UIPushButton>( "llm_chat_history" );
 	mChatHistory->onClick( [this]( auto ) { showChatHistory(); } );
 
+	mChatAttach = find<UIPushButton>( "llm_attach" );
+	mChatAttach->onClick( [this]( auto ) { showAttachFile(); } );
+
 	if ( getPlugin() == nullptr )
 		return;
+
+	initAttachFile();
 
 	auto providers = getPlugin()->getProviders();
 	setProviders( std::move( providers ) );
@@ -462,6 +485,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	bindCmds( mChatInput, true );
 
 	appendShortcutToTooltip( mChatHistory, "ai-chat-history" );
+	appendShortcutToTooltip( mChatAttach, "ai-attach-file" );
 	appendShortcutToTooltip( mChatRun, "ai-prompt" );
 	appendShortcutToTooltip( mChatStop, "ai-prompt" );
 	appendShortcutToTooltip( mChatAdd, "ai-add-chat" );
@@ -479,8 +503,8 @@ LLMChatUI::~LLMChatUI() {
 	if ( getPlugin() ) {
 		AIAssistantPlugin::AIAssistantConfig config;
 		config.partition = getSplitter()->getSplitPartition();
-		config.modelProvider = getCurModel().provider;
-		config.modelName = getCurModel().name;
+		config.modelProvider = mCurModel.provider;
+		config.modelName = mCurModel.name;
 		getPlugin()->setConfig( std::move( config ) );
 	}
 }
@@ -514,6 +538,7 @@ void LLMChatUI::bindCmds( UICodeEditor* editor, bool bindToChatUI ) {
 	addKb( editor, "mod+m", "ai-show-menu", bindToChatUI );
 	addKb( editor, "mod+shift+r", "ai-chat-toggle-role", bindToChatUI );
 	addKb( editor, "mod+shift+l", "ai-refresh-local-models", bindToChatUI );
+	addKb( editor, "mod+shift+a", "ai-attach-file", bindToChatUI );
 
 	if ( bindToChatUI )
 		addKb( editor, "mod+shift+return", "ai-add-chat", bindToChatUI );
@@ -538,6 +563,8 @@ void LLMChatUI::showChatHistory() {
 	auto plugin = getPlugin();
 	if ( plugin == nullptr )
 		return;
+
+	hideAttachFile();
 
 	static const char* CHAT_HISTORY_LAYOUT = R"xml(
 		<window window-flags="shadow|modal|ephemeral"
@@ -1330,6 +1357,146 @@ void LLMChatUI::deleteOldConversations( int days ) {
 	for ( const auto& chat : history )
 		if ( !chat.locked && chat.file.getModificationTime() < olderThanTime )
 			FileSystem::fileRemove( chat.file.getFilepath() );
+}
+
+void LLMChatUI::updateLocateBarColumns() {
+	Float width = eeceil( mLocateTable->getPixelsSize().getWidth() );
+	width -= mLocateTable->getVerticalScrollBar()->getPixelsSize().getWidth();
+	mLocateTable->setColumnsVisible( { 0, 1 } );
+	mLocateTable->setColumnWidth( 0, eeceil( width * 0.5 ) );
+	mLocateTable->setColumnWidth( 1, width - mLocateTable->getColumnWidth( 0 ) );
+}
+
+void LLMChatUI::showAttachFile() {
+	auto text = mLocateInput->getText();
+	auto ctx = getPlugin()->getPluginContext();
+	if ( !ctx->isDirTreeReady() ) {
+		mLocateTable->setModel( ProjectDirectoryTree::emptyModel( {}, ctx->getCurrentProject() ) );
+		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+	} else if ( !mLocateInput->getText().empty() ) {
+		ctx->getDirTree()->asyncMatchTree(
+			ProjectDirectoryTree::MatchType::Fuzzy, text, 100,
+			[this, text]( auto res ) {
+				mUISceneNode->runOnMainThread( [this, res] {
+					mLocateTable->setModel( res );
+					mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+					mLocateTable->scrollToTop();
+					updateLocateBarColumns();
+				} );
+			},
+			ctx->getCurrentProject() );
+	} else {
+		mLocateTable->setModel( ctx->getDirTree()->asModel(
+			100, {}, ctx->getCurrentProject(), Image::getImageExtensionsSupported() ) );
+		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+	}
+	mLocateBarLayout->setVisible( true );
+	mLocateInput->setFocus();
+	updateLocateBarColumns();
+}
+
+void LLMChatUI::hideAttachFile() {
+	mLocateBarLayout->setVisible( false );
+}
+
+void LLMChatUI::initAttachFile() {
+	mLocateBarLayout = findByClass<UIVLinearLayoutCommandExecuter>( "llm_chat_attach" );
+	mLocateInput = findByClass<UITextInput>( "llm_chat_locate_input" );
+	mLocateTable = findByClass<UITableView>( "llm_chat_attach_locate" );
+	mLocateTable->setHeadersVisible( false );
+
+	mLocateTable->on( Event::OnSizeChange, [this]( const Event* ) { updateLocateBarColumns(); } );
+
+	mLocateInput->on( Event::OnTextChanged, [this]( const Event* ) {
+		showAttachFile();
+		updateLocateBarColumns();
+	} );
+	mLocateInput->on( Event::OnPressEnter, [this]( const Event* ) {
+		KeyEvent keyEvent( mLocateTable, Event::KeyDown, KEY_RETURN, SCANCODE_UNKNOWN, 0, 0 );
+		mLocateTable->forceKeyDown( keyEvent );
+	} );
+	mLocateInput->on( Event::KeyDown, [this]( const Event* event ) {
+		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
+		mLocateTable->forceKeyDown( *keyEvent );
+	} );
+	mLocateBarLayout->setCommand( "close-locatebar", [this] {
+		hideAttachFile();
+		if ( mChatInput )
+			mChatInput->setFocus();
+	} );
+	mLocateBarLayout->getKeyBindings().addKeybindsString( {
+		{ "escape", "close-locatebar" },
+	} );
+	mLocateTable->on( Event::KeyDown, [this]( const Event* event ) {
+		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
+		if ( keyEvent->getKeyCode() == KEY_ESCAPE )
+			mLocateBarLayout->execute( "close-locatebar" );
+	} );
+	mLocateTable->on( Event::OnModelEvent, [this]( const Event* event ) {
+		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
+		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
+			Variant vName( modelEvent->getModel()->data(
+				modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 0 ),
+				ModelRole::Display ) );
+			Variant vPath( modelEvent->getModel()->data(
+				modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
+				ModelRole::Display ) );
+
+			if ( !vPath.isValid() )
+				return;
+
+			std::string path( vPath.toString() );
+			if ( path.empty() )
+				return;
+
+			Variant rangeStr( modelEvent->getModel()->data(
+				modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
+				ModelRole::Custom ) );
+
+			std::string prjPath( getPlugin()->getPluginContext()->getCurrentProject() );
+
+			if ( FileSystem::isRelativePath( path ) )
+				path = prjPath + path;
+
+			TextDocument doc;
+			if ( doc.loadFromFile( path ) == TextDocument::LoadStatus::Loaded ) {
+				std::string nameToDisplay = doc.getFilename();
+				if ( !prjPath.empty() && String::startsWith( doc.getFilePath(), prjPath ) ) {
+					nameToDisplay = doc.getFilePath();
+					FileSystem::filePathRemoveBasePath( prjPath, nameToDisplay );
+				}
+				auto cdoc = mChatInput->getDocumentRef();
+				cdoc->resetSelection();
+				cdoc->moveToEndOfLine();
+				const auto& lineComment = doc.getSyntaxDefinition().getComment();
+				if ( lineComment.empty() ) {
+					cdoc->textInput( "\n" + nameToDisplay + ":\n" );
+				}
+				cdoc->textInput( "\n```" + doc.getSyntaxDefinition().getLSPName() );
+				if ( !lineComment.empty() ) {
+					cdoc->textInput( String::format( " %s %s", lineComment, nameToDisplay ) );
+				}
+				auto lineToFold = cdoc->getSelection().end().line();
+				if ( doc.linesCount() >= 1 &&
+					 !String::startsWith( doc.line( 0 ).getText(), "\n" ) ) {
+					cdoc->textInput( "\n" );
+				}
+				cdoc->textInput( doc.getText() );
+				if ( doc.linesCount() >= 1 &&
+					 doc.line( doc.linesCount() - 1 ).getText() != String( "\n" ) ) {
+					cdoc->textInput( "\n" );
+				}
+				cdoc->textInput( "```\n" );
+				cdoc->getFoldRangeService().findRegionsNative();
+				if ( doc.linesCount() > 30 &&
+					 cdoc->getFoldRangeService().isFoldingRegionInLine( lineToFold ) ) {
+					mChatInput->toggleFoldUnfold( lineToFold );
+				}
+			}
+
+			mLocateBarLayout->execute( "close-locatebar" );
+		}
+	} );
 }
 
 } // namespace ecode

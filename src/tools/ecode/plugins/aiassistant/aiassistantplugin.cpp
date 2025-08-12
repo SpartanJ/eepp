@@ -23,6 +23,7 @@ static std::initializer_list<std::string> AIAssistantCommandList = {
 	"ai-prompt",
 	"ai-add-chat",
 	"ai-chat-history",
+	"ai-attach-file",
 	"ai-clone-chat",
 	"ai-settings",
 	"ai-toggle-private-chat",
@@ -336,6 +337,7 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 		mKeyBindings["ai-show-menu"] = "mod+m";
 		mKeyBindings["ai-chat-toggle-role"] = "mod+shift+r";
 		mKeyBindings["ai-refresh-local-models"] = "mod+shift+l";
+		mKeyBindings["ai-attach-file"] = "mod+shift+a";
 	}
 
 	auto& kb = j["keybindings"];

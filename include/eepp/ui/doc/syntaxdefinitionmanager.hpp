@@ -71,7 +71,7 @@ class EE_API SyntaxDefinitionManager {
 
 	void loadFromFolder( const std::string& folderPath );
 
-	const std::vector<SyntaxDefinition>& getDefinitions() const;
+	const std::vector<std::shared_ptr<SyntaxDefinition>>& getDefinitions() const;
 
 	const std::vector<SyntaxPreDefinition>& getPreDefinitions() const;
 
@@ -85,9 +85,10 @@ class EE_API SyntaxDefinitionManager {
   protected:
 	SyntaxDefinitionManager( std::size_t reserveSpaceForLanguages = 12 );
 
-	std::vector<SyntaxDefinition> mDefinitions;
+	std::vector<std::shared_ptr<SyntaxDefinition>> mDefinitions;
 	std::vector<SyntaxPreDefinition> mPreDefinitions;
 	std::map<std::string, std::string> mPriorities;
+	mutable Mutex mMutex;
 
 	std::optional<size_t> getLanguageIndex( const std::string& langName );
 };

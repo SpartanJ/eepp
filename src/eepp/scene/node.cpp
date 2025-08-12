@@ -1592,7 +1592,7 @@ void Node::runOnMainThread( Actions::Runnable::RunnableFunc runnable, const Time
 
 bool Node::ensureMainThread( Actions::Runnable::RunnableFunc runnable,
 							 const Action::UniqueID& uniqueIdentifier ) {
-	if ( Engine::isRunninMainThread() ) {
+	if ( Engine::isMainThread() ) {
 		runnable();
 		return true;
 	} else {

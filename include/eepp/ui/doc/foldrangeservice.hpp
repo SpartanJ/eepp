@@ -28,6 +28,8 @@ class EE_API FoldRangeServive {
 
 	void findRegions();
 
+	void findRegionsNative();
+
 	void clear();
 
 	bool empty();

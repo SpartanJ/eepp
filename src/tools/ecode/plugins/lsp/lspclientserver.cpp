@@ -1374,7 +1374,7 @@ void LSPClientServer::notifyServerInitialized() {
 }
 
 bool LSPClientServer::needsAsync() {
-	return Engine::isRunninMainThread();
+	return Engine::isMainThread();
 }
 
 bool LSPClientServer::isRunning() {

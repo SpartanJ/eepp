@@ -286,7 +286,7 @@ void App::setAppTitle( const std::string& title ) {
 
 	if ( mCurWindowTitle != fullTitle ) {
 		mCurWindowTitle = fullTitle;
-		if ( Engine::isRunninMainThread() ) {
+		if ( Engine::isMainThread() ) {
 			mWindow->setTitle( fullTitle );
 		} else {
 			mUISceneNode->runOnMainThread( [this, fullTitle] { mWindow->setTitle( fullTitle ); } );
@@ -2563,7 +2563,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	} );
 
 	auto docChanged = [this]( const Event* event ) {
-		if ( !Engine::isRunninMainThread() )
+		if ( !Engine::isMainThread() )
 			return;
 		const DocEvent* synEvent = static_cast<const DocEvent*>( event );
 		UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
@@ -4180,7 +4180,8 @@ static void exportLanguages( const std::string& path, const std::string& langs,
 
 	if ( !langs.empty() ) {
 		if ( langs == "all" ) {
-			defs = sdm->getDefinitions();
+			for ( const auto& def : sdm->getDefinitions() )
+				defs.push_back( *def.get() );
 		} else {
 			auto langss = String::split( langs, ',' );
 			for ( const auto& l : langss ) {

@@ -4,6 +4,10 @@
 #include <eepp/config.hpp>
 #include <eepp/core/noncopyable.hpp>
 
+#ifdef EE_DEBUG
+#include <eepp/system/clock.hpp>
+#endif
+
 namespace EE { namespace System {
 
 class Mutex;
@@ -22,6 +26,10 @@ class EE_API Lock : NonCopyable {
 
   private:
 	Mutex& mMutex; ///< Mutex to lock / unlock
+
+#ifdef EE_DEBUG
+	Clock mClock;
+#endif
 };
 
 class EE_API ConditionalLock : NonCopyable {

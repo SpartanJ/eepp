@@ -153,6 +153,8 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const TextDocument& 
 															bool keepIndentation, Uint32 tabWidth,
 															Float whiteSpaceWidth, bool tabStops,
 															Float initialXOffset ) {
+	if ( line >= doc.linesCount() )
+		return {};
 	const auto& docLine = doc.line( line );
 	const auto& text = docLine.getText();
 	return computeLineBreaks( text.view().substr( 0, text.size() - 1 ), fontStyle, maxWidth, mode,

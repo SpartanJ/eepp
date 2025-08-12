@@ -119,7 +119,7 @@ bool TextDocument::isNonWord( String::StringBaseType ch ) const {
 TextDocument::TextDocument( bool verbose ) :
 	mUUID( true ),
 	mUndoStack( this ),
-	mDocumentMutex( std::make_shared<std::shared_mutex>() ),
+	mDocumentMutex( std::make_shared<Mutex>() ),
 	mVerbose( verbose ),
 	mAutoCloseBracketsPairs(
 		{ { '(', ')' }, { '[', ']' }, { '{', '}' }, { '\'', '\'' }, { '"', '"' }, { '`', '`' } } ),
@@ -204,7 +204,7 @@ void TextDocument::reset() {
 	notifyDocumentReset();
 }
 
-void TextDocument::resetCursor() {
+void TextDocument::resetSelection() {
 	auto cursor = sanitizeRange( getSelection() );
 	mSelection.clear();
 	mSelection.push_back( cursor );
@@ -1128,7 +1128,7 @@ const TextDocumentLine& TextDocument::line( const size_t& index ) const {
 	return index >= linesCount() ? safeLine : mLines[index];
 }
 
-size_t TextDocument::linesCount() const {
+std::size_t TextDocument::linesCount() const {
 	Lock l( mLinesMutex );
 	return mLines.size();
 }
@@ -1703,42 +1703,58 @@ TextRange TextDocument::getLineRange( Int64 line ) const {
 }
 
 std::size_t TextDocument::getLineLength( Int64 line ) const {
+	eeASSERT( line < (Int64)linesCount() );
 	Lock l( mLinesMutex );
-	return mLines[line].size();
+	return line >= (Int64)mLines.size() ? 0 : mLines[line].size();
 }
 
 String TextDocument::getLineText( Int64 line ) const {
+	eeASSERT( line < (Int64)linesCount() );
 	Lock l( mLinesMutex );
-	return mLines[line].getText();
+	return line >= (Int64)mLines.size() ? String() : mLines[line].getText();
 }
 
 String TextDocument::getLineTextSubStr( Int64 line, std::size_t pos, std::size_t n ) const {
+	eeASSERT( line < (Int64)linesCount() );
 	Lock l( mLinesMutex );
-	return mLines[line].getText().substr( pos, n );
+	return line >= (Int64)mLines.size() ? String() : mLines[line].getText().substr( pos, n );
 }
 
 String::HashType TextDocument::getLineHash( Int64 line ) const {
+	eeASSERT( line < (Int64)linesCount() );
 	Lock l( mLinesMutex );
-	return mLines[line].getHash();
+	return line >= (Int64)mLines.size() ? 0 : mLines[line].getHash();
 }
 
 String TextDocument::getLineTextWithoutNewLine( Int64 line ) const {
+	eeASSERT( line < (Int64)linesCount() );
 	Lock l( mLinesMutex );
-	return mLines[line].getTextWithoutNewLine();
+	return line >= (Int64)mLines.size() ? String() : mLines[line].getTextWithoutNewLine();
 }
 
 void TextDocument::getLineTextToBuffer( Int64 line, String& buffer ) const {
+	eeASSERT( line < (Int64)linesCount() );
 	Lock l( mLinesMutex );
+	if ( line >= (Int64)mLines.size() ) {
+		buffer.clear();
+		return;
+	}
 	buffer = mLines[line].getText();
 }
 
 std::string TextDocument::getLineTextUtf8( Int64 line ) const {
+	eeASSERT( line < (Int64)linesCount() );
 	Lock l( mLinesMutex );
-	return mLines[line].getText().toUtf8();
+	return line >= (Int64)mLines.size() ? std::string() : mLines[line].getText().toUtf8();
 }
 
 void TextDocument::getLineTextToBufferUtf8( Int64 line, std::string& buffer ) const {
+	eeASSERT( line < (Int64)linesCount() );
 	Lock l( mLinesMutex );
+	if ( line >= (Int64)mLines.size() ) {
+		buffer.clear();
+		return;
+	}
 	buffer = mLines[line].getText().toUtf8();
 }
 
@@ -2065,12 +2081,12 @@ void TextDocument::moveToNextPage( Int64 pageSize ) {
 }
 
 void TextDocument::moveToStartOfDoc() {
-	resetCursor();
+	resetSelection();
 	setSelection( startOfDoc() );
 }
 
 void TextDocument::moveToEndOfDoc() {
-	resetCursor();
+	resetSelection();
 	setSelection( endOfDoc() );
 }
 
@@ -3812,7 +3828,7 @@ void TextDocument::escape() {
 	} else {
 		auto prevSels = getSelections();
 
-		resetCursor();
+		resetSelection();
 
 		size_t lineCount = linesCount();
 		for ( size_t i = 0; i < lineCount; i++ ) {
@@ -3841,7 +3857,7 @@ void TextDocument::unescape() {
 	} else {
 		auto prevSels = getSelections();
 
-		resetCursor();
+		resetSelection();
 
 		size_t lineCount = linesCount();
 		for ( size_t i = 0; i < lineCount; i++ ) {
@@ -3874,7 +3890,7 @@ void TextDocument::toBase64() {
 	} else {
 		auto prevSels = getSelections();
 
-		resetCursor();
+		resetSelection();
 		selectAll();
 		const auto fullDoc = getText().toUtf8();
 		std::string newDoc;
@@ -3904,7 +3920,7 @@ void TextDocument::fromBase64() {
 	} else {
 		auto prevSels = getSelections();
 
-		resetCursor();
+		resetSelection();
 		selectAll();
 		const auto fullDoc = getText().toUtf8();
 		std::string newDoc;
@@ -3968,7 +3984,7 @@ void TextDocument::initializeCommands() {
 	mCommands["toggle-line-comments"] = [this] { toggleLineComments(); };
 	mCommands["selection-to-upper"] = [this] { toUpperSelection(); };
 	mCommands["selection-to-lower"] = [this] { toLowerSelection(); };
-	mCommands["reset-cursor"] = [this] { resetCursor(); };
+	mCommands["reset-cursor"] = [this] { resetSelection(); };
 	mCommands["add-cursor-above"] = [this] { addCursorAbove(); };
 	mCommands["add-cursor-below"] = [this] { addCursorBelow(); };
 	mCommands["cursor-undo"] = [this] { cursorUndo(); };

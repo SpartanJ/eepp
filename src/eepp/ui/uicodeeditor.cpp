@@ -1102,7 +1102,7 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 }
 
 void UICodeEditor::updateIMELocation() {
-	if ( mDoc->isLoading() || mDoc->getActiveClient() != this || !Engine::isRunninMainThread() ||
+	if ( mDoc->isLoading() || mDoc->getActiveClient() != this || !Engine::isMainThread() ||
 		 mDocView.isFolded( mDoc->getSelection( true ).start().line() ) )
 		return;
 	Rectf r( getScreenPosition( mDoc->getSelection( true ).start() ) );
@@ -4430,7 +4430,7 @@ void UICodeEditor::onCursorPosChange() {
 	mLastActivity.restart();
 	sendCommonEvent( Event::OnCursorPosChange );
 	invalidateDraw();
-	if ( !Engine::isRunninMainThread() )
+	if ( !Engine::isMainThread() )
 		runOnMainThread( [this] { mDocView.ensureCursorVisibility(); } );
 	else
 		mDocView.ensureCursorVisibility();

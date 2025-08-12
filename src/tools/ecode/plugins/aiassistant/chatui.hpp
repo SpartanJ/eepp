@@ -16,6 +16,7 @@ class UIScrollView;
 class UISceneNode;
 class UIDropDownList;
 class UIPushButton;
+class UITableView;
 }} // namespace EE::UI
 
 namespace EE { namespace Graphics {
@@ -28,6 +29,7 @@ using namespace EE::Graphics;
 
 namespace ecode {
 
+class UIVLinearLayoutCommandExecuter;
 class AIAssistantPlugin;
 
 class LLMChat {
@@ -103,9 +105,14 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	UIPushButton* mChatHistory{ nullptr };
 	UIPushButton* mChatMore{ nullptr };
 	UIPushButton* mRefreshModels{ nullptr };
+	UIPushButton* mChatAttach{ nullptr };
 	UISelectButton* mChatPrivate{ nullptr };
 	UIScrollView* mChatScrollView{ nullptr };
 	UIDropDownList* mModelDDL{ nullptr };
+	UIVLinearLayoutCommandExecuter* mLocateBarLayout{ nullptr };
+	UITextInput* mLocateInput{ nullptr };
+	UITableView* mLocateTable{ nullptr };
+
 	std::unique_ptr<LLMChatCompletionRequest> mRequest;
 	std::unique_ptr<LLMChatCompletionRequest> mSummaryRequest;
 	LLMProviders mProviders;
@@ -175,6 +182,14 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 				bool bindToChatUI = false, bool searchDefined = true );
 
 	void deleteOldConversations( int days );
+
+	void initAttachFile();
+
+	void updateLocateBarColumns();
+
+	void showAttachFile();
+
+	void hideAttachFile();
 };
 
 } // namespace ecode

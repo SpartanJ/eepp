@@ -21,7 +21,6 @@
 #include <eepp/ui/doc/textrange.hpp>
 #include <eepp/ui/doc/textundostack.hpp>
 #include <functional>
-#include <shared_mutex>
 #include <vector>
 
 using namespace EE::System;
@@ -136,7 +135,7 @@ class EE_API TextDocument {
 
 	void reset();
 
-	void resetCursor();
+	void resetSelection();
 
 	LoadStatus loadFromStream( IOStream& path );
 
@@ -199,7 +198,7 @@ class EE_API TextDocument {
 
 	const TextDocumentLine& line( const size_t& index ) const;
 
-	size_t linesCount() const;
+	std::size_t linesCount() const;
 
 	const TextDocumentLine& getCurrentLine() const;
 
@@ -713,7 +712,7 @@ class EE_API TextDocument {
 	UnorderedSet<Client*> mClients;
 	Mutex mClientsMutex;
 	mutable Mutex mLinesMutex;
-	mutable std::shared_ptr<std::shared_mutex> mDocumentMutex;
+	mutable std::shared_ptr<Mutex> mDocumentMutex;
 	TextFormat::Encoding mEncoding{ TextFormat::Encoding::UTF8 };
 	TextFormat::LineEnding mLineEnding{ TextFormat::LineEnding::LF };
 	std::atomic<bool> mLoading{ false };

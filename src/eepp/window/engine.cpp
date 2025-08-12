@@ -42,13 +42,14 @@
 
 namespace EE { namespace Window {
 
+static Uint64 sMainThreadId{ 0 };
+
 SINGLETON_DECLARE_IMPLEMENTATION( Engine )
 
 Engine::Engine() :
 	mBackend( NULL ),
 	mWindow( NULL ),
 	mSharedGLContext( true ),
-	mMainThreadId( 0 ),
 	mPlatformHelper( NULL ),
 	mZip( NULL ),
 	mDisplayManager( NULL ) {
@@ -162,7 +163,7 @@ EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettin
 	if ( NULL != mWindow ) {
 		Settings.Backend = mWindow->getWindowInfo()->WindowConfig.Backend;
 	} else {
-		mMainThreadId = Thread::getCurrentThreadId();
+		sMainThreadId = Thread::getCurrentThreadId();
 	}
 
 	switch ( Settings.Backend ) {
@@ -239,10 +240,6 @@ Uint32 Engine::getWindowCount() const {
 
 bool Engine::isEngineRunning() {
 	return existsSingleton() && Engine::instance()->isRunning();
-}
-
-bool Engine::isRunninMainThread() {
-	return isEngineRunning() && Engine::instance()->isMainThread();
 }
 
 bool Engine::isRunning() const {
@@ -370,12 +367,12 @@ bool Engine::isThreaded() {
 #endif
 }
 
-Uint32 Engine::getMainThreadId() {
-	return mMainThreadId;
+Uint64 Engine::getMainThreadId() {
+	return sMainThreadId;
 }
 
-bool Engine::isMainThread() const {
-	return Thread::getCurrentThreadId() == Engine::instance()->getMainThreadId();
+bool Engine::isMainThread() {
+	return Thread::getCurrentThreadId() == Engine::getMainThreadId();
 }
 
 PlatformHelper* Engine::getPlatformHelper() {

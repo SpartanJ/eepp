@@ -152,7 +152,7 @@ DebuggerPlugin::~DebuggerPlugin() {
 	}
 
 	if ( mSidePanel && mTab ) {
-		if ( Engine::isRunninMainThread() )
+		if ( Engine::isMainThread() )
 			mSidePanel->removeTab( mTab );
 		else {
 			auto sidePanel = mSidePanel;
@@ -2341,7 +2341,7 @@ void DebuggerPlugin::setUIDebuggingState( StatusDebuggerController::State state 
 	}
 
 	if ( mPanelBoxButtons.box ) {
-		if ( Engine::isRunninMainThread() )
+		if ( Engine::isMainThread() )
 			updatePanelUIState( state );
 		else
 			mPanelBoxButtons.box->runOnMainThread( [this, state] { updatePanelUIState( state ); } );

@@ -409,7 +409,7 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
 											bool italic, Float outlineThickness,
 											Page& page ) const {
-	eeASSERT( Engine::isRunninMainThread() );
+	eeASSERT( Engine::isMainThread() );
 
 	// Get the page corresponding to the character size
 	GlyphTable& glyphs = page.glyphs;

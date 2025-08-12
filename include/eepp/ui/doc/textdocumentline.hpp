@@ -2,15 +2,17 @@
 #define EE_UI_DOC_TEXTDOCUMENTLINE_HPP
 
 #include <eepp/core/string.hpp>
+#include <eepp/system/lock.hpp>
+#include <eepp/system/mutex.hpp>
 #include <memory>
-#include <mutex>
-#include <shared_mutex>
+
+using namespace EE::System;
 
 namespace EE { namespace UI { namespace Doc {
 
 class EE_API TextDocumentLine {
   public:
-	TextDocumentLine( const String& text, std::shared_ptr<std::shared_mutex> docMutex ) :
+	TextDocumentLine( const String& text, std::shared_ptr<Mutex> docMutex ) :
 		mText( text ), mDocMutex( docMutex ) {
 		updateState();
 	}
@@ -18,13 +20,13 @@ class EE_API TextDocumentLine {
 	~TextDocumentLine() {
 		if ( mDocMutex ) {
 			// Wait for any readers to finish before destruction
-			std::unique_lock<std::shared_mutex> lock( *mDocMutex );
+			Lock lock( *mDocMutex );
 		}
 	}
 
 	void setText( String&& text ) {
 		if ( mDocMutex ) {
-			std::unique_lock<std::shared_mutex> lock( *mDocMutex );
+			Lock lock( *mDocMutex );
 			mText = std::move( text );
 			updateState();
 		} else {
@@ -35,7 +37,7 @@ class EE_API TextDocumentLine {
 
 	const String& getText() const {
 		if ( mDocMutex ) {
-			std::shared_lock<std::shared_mutex> lock( *mDocMutex );
+			Lock lock( *mDocMutex );
 			return mText;
 		}
 		return mText;
@@ -43,7 +45,7 @@ class EE_API TextDocumentLine {
 
 	String getTextWithoutNewLine() const {
 		if ( mDocMutex ) {
-			std::shared_lock<std::shared_mutex> lock( *mDocMutex );
+			Lock lock( *mDocMutex );
 			return mText.substr( 0, mText.size() - 1 );
 		}
 		return mText.substr( 0, mText.size() - 1 );
@@ -51,7 +53,7 @@ class EE_API TextDocumentLine {
 
 	String::StringBaseType operator[]( std::size_t index ) const {
 		if ( mDocMutex ) {
-			std::shared_lock<std::shared_mutex> lock( *mDocMutex );
+			Lock lock( *mDocMutex );
 			return mText[index];
 		}
 		return mText[index];
@@ -59,7 +61,7 @@ class EE_API TextDocumentLine {
 
 	void append( const String& text ) {
 		if ( mDocMutex ) {
-			std::unique_lock<std::shared_mutex> lock( *mDocMutex );
+			Lock lock( *mDocMutex );
 			mText.append( text );
 			updateState();
 		} else {
@@ -70,7 +72,7 @@ class EE_API TextDocumentLine {
 
 	String substr( std::size_t pos = 0, std::size_t n = String::StringType::npos ) const {
 		if ( mDocMutex ) {
-			std::shared_lock<std::shared_mutex> lock( *mDocMutex );
+			Lock lock( *mDocMutex );
 			return mText.substr( pos, n );
 		}
 		return mText.substr( pos, n );
@@ -78,7 +80,7 @@ class EE_API TextDocumentLine {
 
 	bool empty() const {
 		if ( mDocMutex ) {
-			std::shared_lock<std::shared_mutex> lock( *mDocMutex );
+			Lock lock( *mDocMutex );
 			return mText.empty();
 		}
 		return mText.empty();
@@ -86,7 +88,7 @@ class EE_API TextDocumentLine {
 
 	size_t size() const {
 		if ( mDocMutex ) {
-			std::shared_lock<std::shared_mutex> lock( *mDocMutex );
+			Lock lock( *mDocMutex );
 			return mText.size();
 		}
 		return mText.size();
@@ -94,13 +96,11 @@ class EE_API TextDocumentLine {
 
 	String::HashType getHash() const { return mHash; }
 
-	bool isAscii() const {
-		return ( mFlags & TextHints::AllAscii ) != 0;
-	}
+	bool isAscii() const { return ( mFlags & TextHints::AllAscii ) != 0; }
 
 	Uint32 getTextHints() const {
 		if ( mDocMutex ) {
-			std::shared_lock<std::shared_mutex> lock( *mDocMutex );
+			Lock lock( *mDocMutex );
 			return mFlags;
 		}
 		return mFlags;
@@ -110,7 +110,7 @@ class EE_API TextDocumentLine {
 	String mText;
 	String::HashType mHash;
 	Uint32 mFlags{ 0 };
-	std::shared_ptr<std::shared_mutex> mDocMutex;
+	std::shared_ptr<Mutex> mDocMutex;
 
 	void updateState() {
 		mHash = mText.getHash();

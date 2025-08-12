@@ -215,6 +215,13 @@ void FoldRangeServive::findRegions() {
 		return;
 	}
 
+	findRegionsNative();
+}
+
+void FoldRangeServive::findRegionsNative() {
+	if ( !mEnabled || mDoc == nullptr || !canFold() )
+		return;
+
 	switch ( mDoc->getSyntaxDefinition().getFoldRangeType() ) {
 		case FoldRangeType::Braces:
 			setFoldingRegions( findFoldingRangesBraces( mDoc ) );

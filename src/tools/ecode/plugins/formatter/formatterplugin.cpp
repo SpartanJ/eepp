@@ -385,7 +385,7 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 					std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 					auto pos = doc->getSelection();
 					auto scroll = editor->getScroll();
-					doc->resetCursor();
+					doc->resetSelection();
 					doc->selectAll();
 					doc->setRunningTransaction( true );
 					doc->textInput( data, false );
@@ -425,7 +425,7 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 			std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 			TextPosition pos = doc->getSelection().start();
 			auto scroll = editor->getScroll();
-			doc->resetCursor();
+			doc->resetSelection();
 			doc->selectAll();
 			doc->setRunningTransaction( true );
 			doc->textInput( res.result, false );
@@ -471,7 +471,7 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 					std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 					TextPosition pos = doc->getSelection().start();
 					auto scroll = editor->getScroll();
-					doc->resetCursor();
+					doc->resetSelection();
 					doc->selectAll();
 					doc->setRunningTransaction( true );
 					doc->textInput( data, false );

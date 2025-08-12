@@ -569,7 +569,7 @@ Http::Response Http::request( const URI& uri, Request::Method method, const Time
 							  const Http::Request::ProgressCallback& progressCallback,
 							  const Http::Request::FieldTable& headers, const std::string& body,
 							  const bool& validateCertificate, const URI& proxy ) {
-	Http* http = sGlobalHttpPool.get( uri, proxy );
+	auto http = sGlobalHttpPool.get( uri, proxy );
 	Request request( uri.getPathAndQuery(), method, body, validateCertificate, validateCertificate,
 					 true, true );
 	request.setProgressCallback( progressCallback );
@@ -601,7 +601,7 @@ void Http::requestAsync( const Http::AsyncResponseCallback& cb, const URI& uri, 
 						 const Http::Request::ProgressCallback& progressCallback,
 						 const Http::Request::FieldTable& headers, const std::string& body,
 						 const bool& validateCertificate, const URI& proxy ) {
-	Http* http = sGlobalHttpPool.get( uri, proxy );
+	auto http = sGlobalHttpPool.get( uri, proxy );
 	Request request( uri.getPathAndQuery(), method, body, validateCertificate, validateCertificate,
 					 true, true );
 	request.setProgressCallback( progressCallback );
@@ -1498,12 +1498,6 @@ Http::Pool::~Pool() {
 
 void Http::Pool::clear() {
 	Lock l( mMutex );
-	for ( auto& connection : mHttps ) {
-		Http* con = connection.second;
-
-		eeSAFE_DELETE( con );
-	}
-
 	mHttps.clear();
 }
 
@@ -1522,7 +1516,7 @@ bool Http::Pool::exists( const URI& host, const URI& proxy ) {
 	return mHttps.find( getHostHash( host, proxy ) ) != mHttps.end();
 }
 
-Http* Http::Pool::get( const URI& host, const URI& proxy ) {
+std::shared_ptr<Http> Http::Pool::get( const URI& host, const URI& proxy ) {
 	{
 		Lock l( mMutex );
 		auto hostInstance = mHttps.find( Http::Pool::getHostHash( host, proxy ) );
@@ -1532,7 +1526,7 @@ Http* Http::Pool::get( const URI& host, const URI& proxy ) {
 		}
 	}
 
-	Http* http = eeNew( Http, ( host.getHost(), host.getPort(), host.getScheme() == "https" ) );
+	auto http = std::make_shared<Http>( host.getHost(), host.getPort(), host.getScheme() == "https" );
 	Lock l( mMutex );
 	mHttps[getHostHash( host, proxy )] = http;
 	return http;

@@ -46,7 +46,7 @@ class AIAssistantPlugin : public PluginBase {
 
 	void onSaveState( IniFile* state ) override;
 
-	void setConfig( AIAssistantConfig config ) { mConfig = std::move( config ); }
+	void setConfig( AIAssistantConfig&& config ) { mConfig = std::move( config ); }
 
   protected:
 	LLMProviders mProviders;
