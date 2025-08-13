@@ -274,10 +274,8 @@ std::shared_ptr<ElementDefinition> StyleSheet::getElementStyles( UIWidget* eleme
 		HashCombine( seed, node );
 
 	auto cacheIterator = mNodeCache.find( seed );
-	if ( cacheIterator != mNodeCache.end() ) {
-		const std::shared_ptr<ElementDefinition>& definition = ( *cacheIterator ).second;
-		return definition;
-	}
+	if ( cacheIterator != mNodeCache.end() )
+		return cacheIterator->second;
 
 	auto newDefinition = std::make_shared<ElementDefinition>( applicableNodes );
 	mNodeCache[seed] = newDefinition;
