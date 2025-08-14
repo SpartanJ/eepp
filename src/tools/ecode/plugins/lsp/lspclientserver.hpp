@@ -124,8 +124,8 @@ class LSPClientServer {
 	LSPRequestHandle didChange( TextDocument* doc,
 								const std::vector<DocumentContentChange>& change = {} );
 
-	void queueDidChange( const URI& document, int version, const std::string& text,
-						 const std::vector<DocumentContentChange>& change = {} );
+	void queueAndProcess( const URI& document, int version,
+						  const std::vector<DocumentContentChange>& change = {} );
 
 	void processDidChangeQueue();
 
@@ -299,6 +299,7 @@ class LSPClientServer {
 	};
 	std::queue<DidChangeQueue> mDidChangeQueue;
 	Mutex mDidChangeMutex;
+	bool mIsProcessingQueue{ false };
 	std::mutex mShutdownMutex;
 	std::condition_variable mShutdownCond;
 

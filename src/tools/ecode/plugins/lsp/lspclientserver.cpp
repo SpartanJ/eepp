@@ -1628,18 +1628,37 @@ LSPClientServer::didChange( TextDocument* doc, const std::vector<DocumentContent
 	return LSPRequestHandle();
 }
 
-void LSPClientServer::queueDidChange( const URI& document, int version, const std::string&,
-									  const std::vector<DocumentContentChange>& change ) {
-	Lock l( mDidChangeMutex );
-	mDidChangeQueue.push( { document, version, change } );
+void LSPClientServer::queueAndProcess( const URI& document, int version,
+									   const std::vector<DocumentContentChange>& change ) {
+	bool shouldStartWorker = false;
+	{
+		Lock l( mDidChangeMutex );
+		mDidChangeQueue.push( { document, version, change } );
+		if ( !mIsProcessingQueue ) {
+			mIsProcessingQueue = true;
+			shouldStartWorker = true;
+		}
+	}
+
+	if ( shouldStartWorker ) {
+		getThreadPool()->run( [this]() { this->processDidChangeQueue(); } );
+	}
 }
 
 void LSPClientServer::processDidChangeQueue() {
-	Lock l( mDidChangeMutex );
-	while ( !mDidChangeQueue.empty() ) {
-		auto& change = mDidChangeQueue.front();
+	while ( true ) {
+		DidChangeQueue change;
+		{
+			Lock l( mDidChangeMutex );
+			if ( mDidChangeQueue.empty() ) {
+				mIsProcessingQueue = false;
+				break;
+			}
+			change = mDidChangeQueue.front();
+			mDidChangeQueue.pop();
+		}
+		// Process outside the lock to avoid blocking
 		didChange( change.uri, change.version, "", change.change );
-		mDidChangeQueue.pop();
 	}
 }
 

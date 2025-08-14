@@ -1703,37 +1703,37 @@ TextRange TextDocument::getLineRange( Int64 line ) const {
 }
 
 std::size_t TextDocument::getLineLength( Int64 line ) const {
-	eeASSERT( line < (Int64)linesCount() );
+	// eeASSERT( line < (Int64)linesCount() );
 	Lock l( mLinesMutex );
 	return line >= (Int64)mLines.size() ? 0 : mLines[line].size();
 }
 
 String TextDocument::getLineText( Int64 line ) const {
-	eeASSERT( line < (Int64)linesCount() );
+	// eeASSERT( line < (Int64)linesCount() );
 	Lock l( mLinesMutex );
 	return line >= (Int64)mLines.size() ? String() : mLines[line].getText();
 }
 
 String TextDocument::getLineTextSubStr( Int64 line, std::size_t pos, std::size_t n ) const {
-	eeASSERT( line < (Int64)linesCount() );
+	// eeASSERT( line < (Int64)linesCount() );
 	Lock l( mLinesMutex );
 	return line >= (Int64)mLines.size() ? String() : mLines[line].getText().substr( pos, n );
 }
 
 String::HashType TextDocument::getLineHash( Int64 line ) const {
-	eeASSERT( line < (Int64)linesCount() );
+	// eeASSERT( line < (Int64)linesCount() );
 	Lock l( mLinesMutex );
 	return line >= (Int64)mLines.size() ? 0 : mLines[line].getHash();
 }
 
 String TextDocument::getLineTextWithoutNewLine( Int64 line ) const {
-	eeASSERT( line < (Int64)linesCount() );
+	// eeASSERT( line < (Int64)linesCount() );
 	Lock l( mLinesMutex );
 	return line >= (Int64)mLines.size() ? String() : mLines[line].getTextWithoutNewLine();
 }
 
 void TextDocument::getLineTextToBuffer( Int64 line, String& buffer ) const {
-	eeASSERT( line < (Int64)linesCount() );
+	// eeASSERT( line < (Int64)linesCount() );
 	Lock l( mLinesMutex );
 	if ( line >= (Int64)mLines.size() ) {
 		buffer.clear();
@@ -1743,13 +1743,13 @@ void TextDocument::getLineTextToBuffer( Int64 line, String& buffer ) const {
 }
 
 std::string TextDocument::getLineTextUtf8( Int64 line ) const {
-	eeASSERT( line < (Int64)linesCount() );
+	// eeASSERT( line < (Int64)linesCount() );
 	Lock l( mLinesMutex );
 	return line >= (Int64)mLines.size() ? std::string() : mLines[line].getText().toUtf8();
 }
 
 void TextDocument::getLineTextToBufferUtf8( Int64 line, std::string& buffer ) const {
-	eeASSERT( line < (Int64)linesCount() );
+	// eeASSERT( line < (Int64)linesCount() );
 	Lock l( mLinesMutex );
 	if ( line >= (Int64)mLines.size() ) {
 		buffer.clear();
