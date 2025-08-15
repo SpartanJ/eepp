@@ -107,12 +107,20 @@ bool ActionManager::removeActionsByTagFromTarget( Node* target, const Action::Un
 
 void ActionManager::update( const Time& time, Action** actions, size_t count ) {
 	std::vector<Action*> removeList;
+	std::vector<Action*> deferredRemoveList;
+
+	// Copy the deferred remove list under lock to avoid data races during the loop.
+	{
+		Lock l( mMutex );
+		if ( !mActionsRemoveList.empty() )
+			deferredRemoveList = mActionsRemoveList;
+	}
 
 	for ( size_t i = 0; i < count; i++ ) {
 		Action* action = actions[i];
 
-		if ( std::find( mActionsRemoveList.begin(), mActionsRemoveList.end(), action ) !=
-			 mActionsRemoveList.end() )
+		if ( std::find( deferredRemoveList.begin(), deferredRemoveList.end(), action ) !=
+			 deferredRemoveList.end() )
 			continue;
 
 		action->update( time );
@@ -126,11 +134,18 @@ void ActionManager::update( const Time& time, Action** actions, size_t count ) {
 
 	mUpdating = false;
 
-	for ( auto it = mActionsRemoveList.begin(); it != mActionsRemoveList.end(); ++it )
+	// Atomically get the list of deferred removals and clear the shared list.
+	{
+		Lock l( mMutex );
+		deferredRemoveList.clear(); // Reuse the vector
+		deferredRemoveList.swap( mActionsRemoveList );
+	}
+
+	// Process actions that were queued for removal.
+	for ( auto it = deferredRemoveList.begin(); it != deferredRemoveList.end(); ++it )
 		removeAction( *it );
 
-	mActionsRemoveList.clear();
-
+	// Process actions that finished during this update.
 	for ( auto it = removeList.begin(); it != removeList.end(); ++it )
 		removeAction( *it );
 }
@@ -197,9 +212,9 @@ void ActionManager::clear() {
 
 bool ActionManager::removeAction( Action* action ) {
 	if ( NULL != action ) {
-		if ( !mUpdating ) {
-			Lock l( mMutex );
+		Lock l( mMutex );
 
+		if ( !mUpdating ) {
 			auto actionIt = std::find( mActions.begin(), mActions.end(), action );
 
 			if ( actionIt != mActions.end() ) {

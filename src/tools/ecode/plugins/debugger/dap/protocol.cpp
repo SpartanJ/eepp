@@ -277,7 +277,8 @@ StackFrame::StackFrame( const json& body ) :
 	presentationHint( parseOptionalString( body, DAP_PRESENTATION_HINT ) ) {}
 
 StackTraceInfo::StackTraceInfo( const json& body ) :
-	stackFrames( parseObjectList<StackFrame>( body["stackFrames"] ) ),
+	stackFrames( parseObjectList<StackFrame>(
+		body.contains( "stackFrames" ) ? body["stackFrames"] : nlohmann::json::array() ) ),
 	totalFrames( parseOptionalInt( body, "totalFrames" ) ) {}
 
 Module::Module( const json& body ) :

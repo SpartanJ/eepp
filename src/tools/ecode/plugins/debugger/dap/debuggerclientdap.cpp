@@ -69,6 +69,7 @@ void DebuggerClientDap::makeRequest( const std::string_view& command,
 
 	session.bus->write( msg.data(), msg.size() );
 
+	Lock l( mRequestsMutex );
 	mRequests[session.idx] = { std::string{ command }, arguments, onFinish, sessionId };
 	session.idx.fetch_add( 1, std::memory_order_relaxed );
 }
@@ -383,12 +384,25 @@ void DebuggerClientDap::processRequest( const nlohmann::json& msg ) {
 
 void DebuggerClientDap::processResponse( const nlohmann::json& msg ) {
 	const Response response( msg );
-	if ( response.request_seq < 0 || mRequests.count( response.request_seq ) == 0 ) {
-		Log::error( "DebuggerClientDap::processResponse: unexpected request seq" );
-		return;
+	Request request;
+	bool foundRequest = false;
+
+	{
+		Lock lock( mRequestsMutex );
+		auto it = mRequests.find( response.request_seq );
+		if ( it == mRequests.end() ) {
+			Log::error( "DebuggerClientDap::processResponse: unexpected request seq" );
+			return;
+		}
+
+		request = std::move( it->second );
+		mRequests.erase( it );
+		foundRequest = true;
 	}
 
-	auto request = mRequests.extract( response.request_seq ).mapped();
+	if ( !foundRequest )
+		return;
+
 	if ( response.command != request.command ) {
 		Log::error( "DebuggerClientDap::processResponse: command mismatch: %s (expected: %s)",
 					response.command, request.command );
@@ -402,9 +416,8 @@ void DebuggerClientDap::processResponse( const nlohmann::json& msg ) {
 		return;
 	}
 
-	if ( request.handler ) {
+	if ( request.handler )
 		request.handler( response, request.arguments );
-	}
 }
 
 void DebuggerClientDap::errorResponse( const std::string& command, const std::string& summary,
@@ -765,7 +778,7 @@ bool DebuggerClientDap::threads() {
 	makeRequest(
 		DAP_THREADS, {},
 		[this]( const Response& response, const nlohmann::json& ) {
-			if ( response.success ) {
+			if ( response.success && response.body.contains( DAP_THREADS ) ) {
 				std::vector<DapThread> threads(
 					DapThread::parseList( response.body[DAP_THREADS] ) );
 				for ( auto listener : mListeners )
@@ -809,7 +822,7 @@ bool DebuggerClientDap::scopes( int frameId ) {
 		DAP_SCOPES, arguments,
 		[this]( const Response& response, const nlohmann::json& request ) {
 			const int frameId = request.value( DAP_FRAME_ID, 1 );
-			if ( response.success ) {
+			if ( response.success && response.body.contains( DAP_SCOPES ) ) {
 				auto scopes( Scope::parseList( response.body[DAP_SCOPES] ) );
 				for ( auto listener : mListeners )
 					listener->scopes( frameId, std::move( scopes ), mCurrentSessionId );
@@ -1008,8 +1021,8 @@ bool DebuggerClientDap::gotoTargets( const Source& source, const int line,
 		[this]( const auto& response, const auto& req ) {
 			const auto source = Source( req[DAP_SOURCE] );
 			const int line = req.value( DAP_LINE, 1 );
-			if ( response.success ) {
-				auto list = GotoTarget::parseList( response.body["targets"] );
+			if ( response.success && response.body.contains( DAP_TARGETS ) ) {
+				auto list = GotoTarget::parseList( response.body[DAP_TARGETS] );
 				for ( auto listener : mListeners )
 					listener->gotoTargets( source, line, list, mCurrentSessionId );
 			} else {

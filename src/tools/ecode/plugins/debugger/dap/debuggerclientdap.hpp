@@ -118,6 +118,7 @@ class DebuggerClientDap : public DebuggerClient {
 	bool mDebug{ true };
 	bool mStarted{ false };
 	bool mDestroying{ false };
+	Mutex mRequestsMutex;
 	std::unordered_map<Uint64, Request> mRequests;
 	std::string mBuffer;
 	ProtocolSettings mProtocol;

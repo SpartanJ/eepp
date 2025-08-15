@@ -103,5 +103,6 @@ static const auto DAP_RESULT = "result"sv;
 static const auto DAP_TARGET_ID = "targetId"sv;
 static const auto DAP_END_LINE = "endLine"sv;
 static const auto DAP_END_COLUMN = "endColumn"sv;
+static const auto DAP_TARGETS = "targets"sv;
 
 } // namespace dap
