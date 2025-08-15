@@ -36,10 +36,17 @@
 #include <eterm/terminal/boxdrawdata.hpp>
 #include <eterm/terminal/terminalemulator.hpp>
 
+#include <eepp/core/memorymanager.hpp>
+#include <eepp/network/uri.hpp>
+#include <eepp/system/filesystem.hpp>
+#include <eepp/system/sys.hpp>
+
+using namespace EE::Network;
+using namespace EE::System;
+
 #include <assert.h>
 #include <cmath>
 #include <ctype.h>
-#include <eepp/core/memorymanager.hpp>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -1435,8 +1442,10 @@ void TerminalEmulator::csihandle( void ) {
 	switch ( mCsiescseq.mode[0] ) {
 		default:
 		unknown:
+#ifdef EE_DEBUG
 			fprintf( stderr, "erresc: unknown csi " );
 			csidump();
+#endif
 			/* die(""); */
 			break;
 		case '@': /* ICH -- Insert <n> blank char */
@@ -1602,6 +1611,34 @@ void TerminalEmulator::csihandle( void ) {
 		case 'm': /* SGR -- Terminal attribute (color) */
 			tsetattr( mCsiescseq.arg, mCsiescseq.narg );
 			break;
+		case '>': /* Private sequences */
+			switch ( mCsiescseq.mode[1] ) {
+				case '4': /* Extended underline styles ESC[>4;Nm */
+					// Extended underline styles - fallback to standard underline
+					DEFAULT( mCsiescseq.arg[0], 1 );
+					switch ( mCsiescseq.arg[0] ) {
+						case 0: // No underline - fallback to ESC[24m
+						{
+							int fallback_args[] = { 24 }; // Reset underline
+							tsetattr( fallback_args, 1 );
+						} break;
+						case 1: // Straight underline - fallback to ESC[4m
+						case 2: // Double underline
+						case 3: // Curly underline
+						case 4: // Dotted underline
+						case 5: // Dashed underline
+						{
+							int fallback_args[] = { 4 }; // Standard underline
+							tsetattr( fallback_args, 1 );
+						} break;
+						default:
+							goto unknown;
+					}
+					break;
+				default:
+					goto unknown;
+			}
+			break;
 		case 'n': /* DSR – Device Status Report (cursor position) */
 			if ( mCsiescseq.arg[0] == 6 ) {
 				len = snprintf( buf, sizeof( buf ), "\033[%i;%iR", mTerm.c.y + 1, mTerm.c.x + 1 );
@@ -1634,6 +1671,33 @@ void TerminalEmulator::csihandle( void ) {
 					if ( dpy )
 						dpy->setCursorMode( (TerminalCursorMode)mCsiescseq.arg[0] );
 					break;
+				default:
+					goto unknown;
+			}
+			break;
+		case '=': /* Progressive enhancement sequences */
+			/* Keyboard protocol ESC[=Nu */
+			/* Do nothing for the moment */
+			break;
+		case 't': /* Window manipulation */
+			switch ( mCsiescseq.arg[0] ) {
+				case 22: /* Save window title */
+					// Push current title to title stack
+					mTerm.title_stack.push_back( mTerm.title );
+					break;
+				case 23: /* Restore window title */
+					// Pop title from stack and set it
+					if ( !mTerm.title_stack.empty() ) {
+						mTerm.title = mTerm.title_stack.back();
+						mTerm.title_stack.pop_back();
+						// Notify display to update title
+						dpy = mDpy.lock();
+						if ( dpy ) {
+							dpy->setTitle( mTerm.title.data() );
+						}
+					}
+					break;
+				// Add other window manipulation codes as needed
 				default:
 					goto unknown;
 			}
@@ -1687,6 +1751,7 @@ void TerminalEmulator::strhandle( void ) {
 					if ( narg > 1 ) {
 						dpy->setTitle( mStrescseq.args[1] );
 						dpy->setIconTitle( mStrescseq.args[1] );
+						mTerm.title = mStrescseq.args[1];
 					}
 					return;
 				case 1:
@@ -1696,6 +1761,7 @@ void TerminalEmulator::strhandle( void ) {
 				case 2:
 					if ( narg > 1 ) {
 						dpy->setTitle( mStrescseq.args[1] );
+						mTerm.title = mStrescseq.args[1];
 					}
 					return;
 				case 52:
@@ -1729,10 +1795,47 @@ void TerminalEmulator::strhandle( void ) {
 						redraw();
 					}
 					return;
+				case 7: {
+					if ( narg > 1 )
+						mCurrentWorkingDirectory = URI( mStrescseq.args[1] ).getPath();
+					return;
+				}
+				case 133: {
+					if ( narg > 1 ) {
+						j = ( narg > 1 ) ? mStrescseq.args[1][0] : -1;
+						bool valid = false;
+						switch ( j ) {
+							case 'A': {
+								mPromptState = PromptState::WaitingPrompt;
+								valid = true;
+							}
+							case 'B': {
+								mPromptState = PromptState::PromptEnded;
+								valid = true;
+							}
+							case 'C': {
+								mPromptState = PromptState::CommandExecuting;
+								valid = true;
+							}
+							case 'D': {
+								mPromptState = PromptState::CommandExecuted;
+								valid = true;
+							}
+						}
+
+						if ( valid && mPromptStateChangedCb ) {
+							mPromptStateChangedCb( mPromptState,
+												   narg > 2 ? std::string_view{ mStrescseq.args[2] }
+															: "" );
+						}
+					}
+					return;
+				}
 			}
 			break;
 		case 'k': /* old title set compatibility */
 			dpy->setTitle( mStrescseq.args[0] );
+			mTerm.title = mStrescseq.args[0];
 			return;
 		case 'P': /* DCS -- Device Control String */
 		case '_': /* APC -- Application Program Command */
@@ -1740,8 +1843,10 @@ void TerminalEmulator::strhandle( void ) {
 			return;
 	}
 
+#ifdef EE_DEBUG
 	logError( "erresc: unknown str " );
 	strdump();
+#endif
 }
 
 void TerminalEmulator::strparse( void ) {
@@ -2399,8 +2504,10 @@ void TerminalEmulator::tresize( int col, int row ) {
 
 void TerminalEmulator::resettitle( void ) {
 	auto dpy = mDpy.lock();
-	if ( dpy )
+	if ( dpy ) {
 		dpy->setTitle( NULL );
+		mTerm.title = "";
+	}
 }
 
 void TerminalEmulator::drawregion( ITerminalDisplay& dpy, int x1, int y1, int x2, int y2 ) {

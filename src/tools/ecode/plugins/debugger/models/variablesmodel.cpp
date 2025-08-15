@@ -70,15 +70,19 @@ const std::vector<ModelVariableNode::NodePtr>& ModelVariableNode::getChildren() 
 }
 
 VariablesModel::VariablesModel( ModelVariableNode::NodePtr rootNode, UISceneNode* sceneNode ) :
-	rootNode( rootNode ), mSceneNode( sceneNode ) {}
+	mRootNode( rootNode ), mSceneNode( sceneNode ) {}
 
 ModelIndex VariablesModel::index( int row, int column, const ModelIndex& parent ) const {
+	if ( !mRootNode )
+		return ModelIndex();
+
 	ModelVariableNode* parentNode = parent.isValid()
 										? static_cast<ModelVariableNode*>( parent.internalData() )
-										: rootNode.get();
+										: mRootNode.get();
 
-	if ( row >= 0 && row < static_cast<int>( parentNode->getChildren().size() ) ) {
+	if ( parentNode && row >= 0 && row < static_cast<int>( parentNode->getChildren().size() ) ) {
 		ModelVariableNode::NodePtr childNode = parentNode->getChildren()[row];
+		mChildMap[childNode.get()] = childNode;
 		return createIndex( row, column, childNode.get() );
 	}
 
@@ -86,18 +90,18 @@ ModelIndex VariablesModel::index( int row, int column, const ModelIndex& parent 
 }
 
 ModelIndex VariablesModel::parentIndex( const ModelIndex& index ) const {
-	if ( !index.isValid() )
+	if ( !index.isValid() || nullptr == index.internalData() )
 		return ModelIndex();
 
 	ModelVariableNode* childNode = static_cast<ModelVariableNode*>( index.internalData() );
 	ModelVariableNode::NodePtr parentNode = childNode->getParent();
 
-	if ( parentNode == nullptr || parentNode == rootNode )
+	if ( parentNode == nullptr || parentNode == mRootNode )
 		return ModelIndex();
 
 	ModelVariableNode::NodePtr grandParentNode = parentNode->getParent();
 	if ( grandParentNode == nullptr )
-		grandParentNode = rootNode;
+		grandParentNode = mRootNode;
 
 	int row = std::distance( grandParentNode->getChildren().begin(),
 							 std::find_if( grandParentNode->getChildren().begin(),
@@ -106,21 +110,22 @@ ModelIndex VariablesModel::parentIndex( const ModelIndex& index ) const {
 											   return node.get() == parentNode.get();
 										   } ) );
 
+	mChildMap[parentNode.get()] = parentNode;
 	return createIndex( row, Columns::Name, parentNode.get() );
 }
 
 size_t VariablesModel::rowCount( const ModelIndex& index ) const {
 	ModelVariableNode* parentNode =
-		index.isValid() ? static_cast<ModelVariableNode*>( index.internalData() ) : rootNode.get();
+		index.isValid() ? static_cast<ModelVariableNode*>( index.internalData() ) : mRootNode.get();
 
 	return static_cast<int>( parentNode->getChildren().size() );
 }
 
 bool VariablesModel::hasChilds( const ModelIndex& index ) const {
 	if ( !index.isValid() )
-		return !rootNode->children.empty();
+		return !mRootNode->children.empty();
 	ModelVariableNode* node = static_cast<ModelVariableNode*>( index.internalData() );
-	return !node->children.empty() || node->var.variablesReference > 0;
+	return node && ( !node->children.empty() || node->var.variablesReference > 0 );
 }
 
 size_t VariablesModel::columnCount( const ModelIndex& ) const {
@@ -160,6 +165,13 @@ Variant VariablesModel::data( const ModelIndex& index, ModelRole role ) const {
 	return EMPTY;
 }
 
+void VariablesModel::invalidate( unsigned int flags ) {
+	if ( flags & Model::UpdateFlag::InvalidateAllIndexes ) {
+		mChildMap.clear();
+	}
+	Model::invalidate( flags );
+}
+
 VariablesHolder::VariablesHolder( UISceneNode* sceneNode ) :
 	mRootNode( std::make_shared<ModelVariableNode>( "Root", 0 ) ),
 	mModel( std::make_shared<VariablesModel>( mRootNode, sceneNode ) ) {
@@ -171,7 +183,7 @@ VariablesHolder::~VariablesHolder() {
 }
 
 void VariablesHolder::addVariables( const int variablesReference, std::vector<Variable>&& vars ) {
-	Lock l( mMutex );
+	Lock l( mModel->resourceMutex() );
 	auto parentNode = getNodeByReference( variablesReference );
 	if ( !parentNode ) {
 		auto node = mRootNode->getChildRecursive( variablesReference );
@@ -211,14 +223,14 @@ void VariablesHolder::addVariables( const int variablesReference, std::vector<Va
 }
 
 void VariablesHolder::addChild( ModelVariableNode::NodePtr child ) {
-	Lock l( mMutex );
+	Lock l( mModel->resourceMutex() );
 	mRootNode->addChild( child );
 	mNodeMap[child->var.variablesReference] = child;
 	mModel->invalidate( Model::UpdateFlag::InvalidateAllIndexes );
 }
 
 void VariablesHolder::addChilds( const std::vector<ModelVariableNode::NodePtr>& childs ) {
-	Lock l( mMutex );
+	Lock l( mModel->resourceMutex() );
 	for ( auto& child : childs ) {
 		mRootNode->addChild( child );
 		mNodeMap[child->var.variablesReference] = child;
@@ -227,7 +239,7 @@ void VariablesHolder::addChilds( const std::vector<ModelVariableNode::NodePtr>& 
 }
 
 void VariablesHolder::upsertRootChild( Variable&& var ) {
-	Lock l( mMutex );
+	Lock l( mModel->resourceMutex() );
 	for ( size_t i = 0; i < mRootNode->children.size(); i++ ) {
 		auto child = mRootNode->children[i];
 		if ( child->getName() == var.name ) {
@@ -243,7 +255,7 @@ void VariablesHolder::upsertRootChild( Variable&& var ) {
 }
 
 void VariablesHolder::clear( bool all ) {
-	Lock l( mMutex );
+	Lock l( mModel->resourceMutex() );
 	mRootNode->clear();
 	if ( all ) {
 		mNodeMap.clear();
@@ -269,6 +281,7 @@ VariablePath VariablesHolder::buildVariablePath( ModelVariableNode* node ) const
 }
 
 void VariablesHolder::saveExpandedState( const ModelIndex& index, bool uniqueLocation ) {
+	Lock l( mModel->resourceMutex() );
 	if ( !mCurrentLocation && !uniqueLocation )
 		return;
 
@@ -285,6 +298,7 @@ void VariablesHolder::saveExpandedState( const ModelIndex& index, bool uniqueLoc
 }
 
 void VariablesHolder::removeExpandedState( const ModelIndex& index, bool uniqueLocation ) {
+	Lock l( mModel->resourceMutex() );
 	if ( !mCurrentLocation && !uniqueLocation )
 		return;
 
@@ -358,6 +372,7 @@ static int getLocationDistance( const ExpandedState::Location& loc1,
 bool VariablesHolder::restoreExpandedState( const ExpandedState::Location& location,
 											DebuggerClient* client, UITreeView* uiVariables,
 											bool uniqueLocation, bool unstableFrameId ) {
+	Lock l( mModel->resourceMutex() );
 	mCurrentLocation = location;
 
 	auto it = uniqueLocation ? mExpandedStates.begin() : mExpandedStates.find( location );

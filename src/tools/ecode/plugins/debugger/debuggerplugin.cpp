@@ -1566,9 +1566,9 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 		}
 	}
 
-	if ( mDebugger && mListener && mListener->isStopped() && mListener->getCurrentScopePos() &&
-		 editor->getDocument().getFilePath() == mListener->getCurrentScopePos()->first ) {
-		int line = mListener->getCurrentScopePos()->second - 1;
+	if ( mDebugger && mListener && mListener->isStopped() &&
+		 mListener->isCurrentScopePos( editor->getDocument().getFilePath() ) ) {
+		int line = mListener->getCurrentScopePosLine() - 1;
 		if ( line >= 0 && line >= lineRange.first && line <= lineRange.second &&
 			 editor->getDocumentView().isLineVisible( line ) ) {
 
@@ -1610,9 +1610,8 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 void DebuggerPlugin::drawBeforeLineText( UICodeEditor* editor, const Int64& index,
 										 Vector2f position, const Float& /*fontSize*/,
 										 const Float& lineHeight ) {
-	if ( !mDebugger || !mListener || !mListener->isStopped() || !mListener->getCurrentScopePos() ||
-		 editor->getDocument().getFilePath() != mListener->getCurrentScopePos()->first ||
-		 mListener->getCurrentScopePos()->second - 1 != index ||
+	if ( !mDebugger || !mListener || !mListener->isStopped() ||
+		 !mListener->isCurrentScopePos( editor->getDocument().getFilePath(), index + 1 ) ||
 		 !editor->getDocumentView().isLineVisible( index ) )
 		return;
 

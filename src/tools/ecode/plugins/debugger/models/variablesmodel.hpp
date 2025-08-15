@@ -119,9 +119,13 @@ class VariablesModel : public Model {
 
 	Variant data( const ModelIndex& index, ModelRole role ) const override;
 
+	void invalidate( unsigned int flags ) override;
+
   protected:
-	ModelVariableNode::NodePtr rootNode;
+	ModelVariableNode::NodePtr mRootNode;
+	mutable std::unordered_map<ModelVariableNode*, ModelVariableNode::NodePtr> mChildMap;
 	UISceneNode* mSceneNode;
+
 };
 
 class VariablesHolder {
@@ -151,7 +155,6 @@ class VariablesHolder {
 	std::shared_ptr<VariablesModel> getModel() { return mModel; }
 
   protected:
-	Mutex mMutex;
 	std::shared_ptr<ModelVariableNode> mRootNode;
 	std::shared_ptr<VariablesModel> mModel;
 	std::unordered_map<int, ModelVariableNode::NodePtr> mNodeMap;

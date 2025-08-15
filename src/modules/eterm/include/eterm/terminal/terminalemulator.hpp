@@ -81,6 +81,8 @@ struct Term {
 	int icharset{ 0 };			   /* selected charset for sequence */
 	int* tabs{ nullptr };
 	Rune lastc{ 0 }; /* last printed char outside of sequence, 0 if control */
+	std::string title;
+	std::vector<std::string> title_stack;
 
 	~Term();
 };
@@ -105,6 +107,14 @@ struct STREscape {
 	size_t len; /* raw string length */
 	char* args[STR_ARG_SIZ];
 	int narg; /* nb of args */
+};
+
+enum class PromptState {
+	WaitingPrompt,
+	CommandExecuted,
+	CommandExecuting,
+	PromptEnded,
+	Unknown,
 };
 
 enum class TerminalMouseEventType { MouseMotion, MouseButtonDown, MouseButtonRelease };
@@ -229,6 +239,16 @@ class TerminalEmulator final {
 
 	System::IProcess* getProcess() const;
 
+	const std::string getCurrentWorkingDirectory() const { return mCurrentWorkingDirectory; }
+
+	PromptState getPromptState() const { return mPromptState; }
+
+	using PromptStateChangedCb = std::function<void( PromptState, std::string_view )>;
+
+	void setPromptStateChangedCb( PromptStateChangedCb promptStateChangedCb ) {
+		mPromptStateChangedCb = promptStateChangedCb;
+	}
+
   private:
 	DpyPtr mDpy;
 	PtyPtr mPty;
@@ -256,6 +276,10 @@ class TerminalEmulator final {
 
 	int mAllowAltScreen;
 	int mAllowWindowOps;
+
+	std::string mCurrentWorkingDirectory;
+	PromptState mPromptState{ PromptState::Unknown };
+	PromptStateChangedCb mPromptStateChangedCb;
 
 	void resizeHistory();
 	void setClipboard( const char* str );

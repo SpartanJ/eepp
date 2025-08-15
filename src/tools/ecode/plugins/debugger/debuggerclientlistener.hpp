@@ -95,6 +95,12 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 
 	std::optional<std::pair<std::string, int>> getCurrentScopePos() const;
 
+	int getCurrentScopePosLine() const;
+
+	bool isCurrentScopePos( const std::string& filePath ) const;
+
+	bool isCurrentScopePos( const std::string& filePath, int index ) const;
+
 	void setIsRemote( bool isRemote );
 
 	void sendBreakpoints();
@@ -114,6 +120,7 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 	void setUnstableFrameId( bool unstableFrameId );
 
   protected:
+	mutable Mutex mMutex;
 	DebuggerClient* mClient{ nullptr };
 	DebuggerPlugin* mPlugin{ nullptr };
 	std::optional<StoppedEvent> mStoppedData;

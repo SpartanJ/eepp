@@ -848,7 +848,7 @@ bool DebuggerClientDap::variables( int variablesReference, Variable::Type filter
 		[this, responseCb = std::move( responseCb )]( const Response& response,
 													  const nlohmann::json& request ) {
 			const int variablesReference = request.value( DAP_VARIABLES_REFERENCE, 0 );
-			if ( response.success ) {
+			if ( response.success && response.body.contains( DAP_VARIABLES ) ) {
 				auto variableList = Variable::parseList( response.body[DAP_VARIABLES] );
 				if ( responseCb ) {
 					responseCb( variablesReference, std::move( variableList ) );

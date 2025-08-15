@@ -258,6 +258,7 @@ void DebuggerClientListener::debuggeeTerminated( const SessionId& ) {
 void DebuggerClientListener::capabilitiesReceived( const Capabilities& /*capabilities*/ ) {}
 
 void DebuggerClientListener::resetState( bool full ) {
+	Lock l( mMutex );
 	mStoppedData = {};
 	mCurrentScopePos = {};
 	mCurrentFrameId = 0;
@@ -296,8 +297,12 @@ void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event, const S
 		}
 	}
 
-	mCurrentThreadId = mStoppedData ? *mStoppedData->threadId : 1;
-	mStoppedData = event;
+	int threadId = event.threadId.value_or( 1 );
+	{
+		Lock l( mMutex );
+		mStoppedData = event;
+		mCurrentThreadId = threadId;
+	}
 
 	if ( mPausedToRefreshBreakpoints ) {
 		mPlugin->sendPendingBreakpoints();
@@ -305,10 +310,10 @@ void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event, const S
 		return;
 	}
 
-	changeThread( mStoppedData ? *mStoppedData->threadId : 1 );
+	changeThread( threadId );
 
 	mClient->threads();
-	mClient->stackTrace( mCurrentThreadId );
+	mClient->stackTrace( threadId );
 
 	UISceneNode* sceneNode = mPlugin->getUISceneNode();
 	sceneNode->runOnMainThread( [sceneNode] { sceneNode->getWindow()->raise(); } );
@@ -379,7 +384,15 @@ void DebuggerClientListener::threads( std::vector<DapThread>&& threads, const Se
 }
 
 void DebuggerClientListener::changeScope( const StackFrame& f ) {
-	mCurrentFrameId = f.id;
+	{
+		Lock l( mMutex );
+		mCurrentFrameId = f.id;
+		if ( f.source ) {
+			mCurrentScopePos = { f.source->path, f.line };
+		} else {
+			mCurrentScopePos.reset();
+		}
+	}
 	mClient->scopes( f.id );
 
 	if ( mStackModel )
@@ -394,15 +407,16 @@ void DebuggerClientListener::changeScope( const StackFrame& f ) {
 	mPlugin->getUISceneNode()->runOnMainThread(
 		[this, path, range] { mPlugin->getPluginContext()->focusOrLoadFile( path, range ); } );
 
-	mCurrentScopePos = { f.source->path, f.line };
-
 	auto sdc = getStatusDebuggerController();
 	if ( sdc && sdc->getUIStack() )
 		sdc->getUIStack()->setSelection( mStackModel->index( f.id ) );
 }
 
 void DebuggerClientListener::changeThread( int id ) {
-	mCurrentThreadId = id;
+	{
+		Lock l( mMutex );
+		mCurrentThreadId = id;
+	}
 	if ( mThreadsModel )
 		mThreadsModel->setCurrentThreadId( id );
 
@@ -441,8 +455,14 @@ void DebuggerClientListener::stackTrace( const int threadId, StackTraceInfo&& st
 					var.memoryReference = info->memoryReference;
 				}
 				mPlugin->mExpressionsHolder->upsertRootChild( std::move( var ) );
-				ExpandedState::Location location{ mCurrentScopePos->first, mCurrentScopePos->second,
-												  mCurrentFrameId };
+				ExpandedState::Location location;
+				{
+					Lock l( mMutex );
+					if ( !mCurrentScopePos.has_value() )
+						return;
+					location = { mCurrentScopePos->first, mCurrentScopePos->second,
+								 mCurrentFrameId };
+				}
 				mPlugin->mExpressionsHolder->restoreExpandedState(
 					location, mClient, getStatusDebuggerController()->getUIExpressions(), true,
 					mUnstableFrameId );
@@ -500,10 +520,18 @@ void DebuggerClientListener::variables( const int variablesReference, std::vecto
 										const SessionId& ) {
 	mVariablesHolder->addVariables( variablesReference, std::move( vars ) );
 
-	auto scopeIt = mScopeRef.find( variablesReference );
-	if ( mCurrentScopePos && scopeIt != mScopeRef.end() ) {
-		ExpandedState::Location location{ mCurrentScopePos->first, mCurrentScopePos->second,
-										  mCurrentFrameId };
+	ExpandedState::Location location;
+	bool scopeFound = false;
+
+	{
+		Lock l( mMutex );
+		if ( !mCurrentScopePos.has_value() )
+			return;
+		location = { mCurrentScopePos->first, mCurrentScopePos->second, mCurrentFrameId };
+		scopeFound = mScopeRef.find( variablesReference ) != mScopeRef.end();
+	}
+
+	if ( scopeFound ) {
 		mVariablesHolder->restoreExpandedState( location, mClient,
 												getStatusDebuggerController()->getUIVariables(),
 												false, mUnstableFrameId );
@@ -536,10 +564,12 @@ bool DebuggerClientListener::isRemote() const {
 }
 
 bool DebuggerClientListener::isStopped() const {
+	Lock l( mMutex );
 	return mStoppedData ? true : false;
 }
 
 std::optional<StoppedEvent> DebuggerClientListener::getStoppedData() const {
+	Lock l( mMutex );
 	return mStoppedData;
 }
 
@@ -548,15 +578,34 @@ void DebuggerClientListener::setPausedToRefreshBreakpoints() {
 }
 
 int DebuggerClientListener::getCurrentThreadId() const {
+	Lock l( mMutex );
 	return mCurrentThreadId;
 }
 
 int DebuggerClientListener::getCurrentFrameId() const {
+	Lock l( mMutex );
 	return mCurrentFrameId;
 }
 
 std::optional<std::pair<std::string, int>> DebuggerClientListener::getCurrentScopePos() const {
+	Lock l( mMutex );
 	return mCurrentScopePos;
+}
+
+int DebuggerClientListener::getCurrentScopePosLine() const {
+	Lock l( mMutex );
+	return mCurrentScopePos.has_value() ? mCurrentScopePos->second : -1;
+}
+
+bool DebuggerClientListener::isCurrentScopePos( const std::string& filePath, int index ) const {
+	Lock l( mMutex );
+	return mCurrentScopePos.has_value() && index == mCurrentScopePos->second &&
+		   mCurrentScopePos->first == filePath;
+}
+
+bool DebuggerClientListener::isCurrentScopePos( const std::string& filePath ) const {
+	Lock l( mMutex );
+	return mCurrentScopePos.has_value() && mCurrentScopePos->first == filePath;
 }
 
 void DebuggerClientListener::setIsRemote( bool isRemote ) {

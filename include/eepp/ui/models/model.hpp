@@ -130,7 +130,7 @@ class EE_API Model {
 
 	void setOnUpdate( const std::function<void()>& onUpdate );
 
-	void invalidate( unsigned int flags = Model::UpdateFlag::InvalidateAllIndexes );
+	virtual void invalidate( unsigned int flags = Model::UpdateFlag::InvalidateAllIndexes );
 
 	std::weak_ptr<PersistentHandle> registerPersistentIndex( ModelIndex const& );
 

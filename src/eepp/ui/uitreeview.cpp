@@ -233,6 +233,8 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 		mWidgets[posIndex.y][index.column()] = widget;
 		widget->reloadStyle( true, true, true );
 	}
+	if ( !index.isValid() )
+		return widget;
 	const auto& colData = columnData( index.column() );
 	if ( !colData.visible ) {
 		widget->setVisible( false, false );
