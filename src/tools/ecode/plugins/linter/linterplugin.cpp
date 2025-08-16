@@ -544,7 +544,7 @@ PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notificat
 		match.range = diag.range;
 		match.text = diag.message;
 		match.type = getLinterTypeFromSeverity( diag.severity );
-		match.lineCache = doc->getLineHash( match.range.start().line() );
+		match.lineHash = doc->getLineHash( match.range.start().line() );
 		match.origin = MatchOrigin::Diagnostics;
 		match.diagnostic = std::move( diag );
 		matches[match.range.start().line()].emplace_back( std::move( match ) );
@@ -937,7 +937,7 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 
 					linterMatch.range.setEnd( endPos );
 					linterMatch.range = linterMatch.range.normalized();
-					linterMatch.lineCache = doc->getLineHash( linterMatch.range.start().line() );
+					linterMatch.lineHash = doc->getLineHash( linterMatch.range.start().line() );
 					bool skip = false;
 
 					if ( linter.deduplicate && matches.find( line - 1 ) != matches.end() ) {
@@ -1033,7 +1033,7 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		if ( isDuplicate )
 			continue;
 
-		if ( match.lineCache != doc->getLineHash( index ) )
+		if ( match.lineHash != doc->getLineHash( index ) )
 			return;
 
 		Text line( "", editor->getFont(), editor->getFontSize() );
@@ -1063,11 +1063,31 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 			line.draw( pos.x, pos.y + lineHeight * 0.5f );
 		}
 
-		Float rLineWidth = 0;
+		if ( match.range.start().line() != match.range.end().line() )
+			continue;
 
-		if ( !quickFixRendered && doc->getSelection().start().line() == index ) {
+		bool wrapped = editor->getDocumentView().isWrappedLine( index );
+		auto info = editor->getDocumentView().getVisibleLineRange( match.range.start() );
+
+		Float rLineWidth = 0;
+		bool willRenderQuickFix = !quickFixRendered && doc->getSelection().start().line() == index;
+		bool willRenderErrorLens = mErrorLens && i == 0;
+
+		if ( willRenderQuickFix || willRenderErrorLens ) {
+			Float lw =
+				wrapped && info.range.start().column() <
+							   static_cast<Int64>( editor->getDocument().getLineLength( index ) )
+					? Text::getTextWidth(
+						  editor->getDocument().line( index ).getText().view().substr(
+							  info.range.start().column(),
+							  info.range.end().column() - info.range.start().column() ),
+						  line.getFontStyleConfig() )
+					: editor->getLineWidth( index );
+			rLineWidth = lw + editor->getGlyphWidth();
+		}
+
+		if ( willRenderQuickFix ) {
 			if ( !match.diagnostic.codeActions.empty() ) {
-				rLineWidth = editor->getLineWidth( index ) + editor->getGlyphWidth();
 				Color wcolor(
 					editor->getColorScheme().getEditorSyntaxStyle( "warning"_sst ).color );
 				if ( nullptr == mLightbulbIcon ) {
@@ -1092,12 +1112,11 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 			}
 		}
 
-		if ( !mErrorLens || i != 0 )
+		if ( !willRenderErrorLens || rects.empty() )
 			continue;
 
-		if ( rLineWidth == 0 )
-			rLineWidth = editor->getLineWidth( index );
-		Float lineWidth = rLineWidth + sepSpace;
+		Float vpPadding = wrapped ? editor->getDocumentView().getLinePadding( index ) : 0;
+		Float lineWidth = rLineWidth + vpPadding + sepSpace;
 		Float realSpace = editor->getViewportWidth();
 		Float spaceWidth = realSpace - lineWidth;
 		if ( spaceWidth < sepSpace )
@@ -1108,14 +1127,26 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		line.setString( nlPos != std::string::npos ? match.text.substr( 0, nlPos ) : match.text );
 		Float txtWidth = line.getTextWidth();
 		Float distWidth = realSpace - txtWidth;
-		if ( txtWidth > spaceWidth )
+		if ( txtWidth > spaceWidth ) {
 			distWidth = lineWidth;
+			std::size_t ch = Text::findLastCharPosWithinLength( line.getString(), spaceWidth,
+																line.getFontStyleConfig() );
+			if ( ch > 0 && ch < line.getString().size() ) {
+				auto cutString( line.getString().substr( 0, ch ) );
+				cutString[cutString.size() - 1] = 0x2026 /*'…'*/;
+				line.setString( cutString );
+				txtWidth = spaceWidth;
+			}
+		}
 
 		Color blendedColor( Color( color, 50 ) );
-		p.drawRectangle( Rectf( { position.x + distWidth, position.y }, { txtWidth, lineHeight } ),
-						 Color::Transparent, Color::Transparent, blendedColor, blendedColor );
+		Vector2f pos{ position.x + distWidth, rects[0].getPosition().y };
+		p.drawRectangle( Rectf( pos, { txtWidth, lineHeight } ), Color::Transparent,
+						 Color::Transparent, blendedColor, blendedColor );
 		line.setColor( Color( color, 180 ) );
-		line.draw( position.x + distWidth, position.y );
+		line.draw( pos.x, pos.y );
+		Rectf box( pos - editor->getScreenPos(), { txtWidth, lineHeight } );
+		match.lensBox[editor] = box;
 	}
 }
 
@@ -1133,7 +1164,7 @@ void LinterPlugin::minimapDrawBefore( UICodeEditor* editor, const DocumentLineRa
 	for ( const auto& matches : matchIt->second ) {
 		for ( const auto& match : matches.second ) {
 			if ( match.range.intersectsLineRange( docLineRange ) ) {
-				if ( match.lineCache != doc->getLineHash( match.range.start().line() ) )
+				if ( match.lineHash != doc->getLineHash( match.range.start().line() ) )
 					return;
 				Color col( editor->getColorScheme()
 							   .getEditorSyntaxStyle( getMatchString( match.type ) )
@@ -1324,7 +1355,8 @@ bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 		if ( matchIt != it->second.end() ) {
 			auto& matches = matchIt->second;
 			for ( auto& match : matches ) {
-				if ( match.box[editor].contains( localPos ) ) {
+				if ( match.box[editor].contains( localPos ) ||
+					 match.lensBox[editor].contains( localPos ) ) {
 					if ( match.text.empty() )
 						return false;
 					mHoveringMatch = true;
@@ -1403,7 +1435,8 @@ bool LinterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
 
 	auto& matches = matchIt->second;
 	for ( auto& match : matches ) {
-		if ( match.box[editor].contains( localPos ) ) {
+		if ( match.box[editor].contains( localPos ) ||
+			 match.lensBox[editor].contains( localPos ) ) {
 			menu->addSeparator();
 			menu->add( editor->i18n( "linter_copy_error_message", "Copy Error Message" ),
 					   mManager->getUISceneNode()->findIcon( "copy" )->getSize(
@@ -1449,7 +1482,7 @@ void LinterPlugin::registerNativeLinters() {
 							doc->previousWordBoundary( match.range.start(), false ) };
 			match.text = result.description();
 			match.type = getLinterTypeFromSeverity( LSPDiagnosticSeverity::Error );
-			match.lineCache = doc->getLineHash( match.range.start().line() );
+			match.lineHash = doc->getLineHash( match.range.start().line() );
 			match.origin = MatchOrigin::Linter;
 			matches[line] = { match };
 		}

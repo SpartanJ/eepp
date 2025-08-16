@@ -288,6 +288,8 @@ class EE_API Text {
 
 	bool hasTabStops() const { return mTabStops; }
 
+	const FontStyleConfig& getFontStyleConfig() const { return mFontStyleConfig; }
+
   protected:
 	struct VertexCoords {
 		Vector2f texCoords;

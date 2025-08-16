@@ -1478,7 +1478,7 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( json&& msg, const Json
 			if ( mSocket ) {
 				size_t sent = 0;
 				mSocket->send( sjson.c_str(), sjson.size(), sent );
-			} else {
+			} else if ( !mProcess.isShuttingDown() && mProcess.isAlive() )  {
 				mProcess.write( sjson );
 			}
 		} else {
