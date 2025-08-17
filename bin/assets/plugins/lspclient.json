@@ -93,6 +93,12 @@
       "file_patterns": ["%.m$"]
     },
     {
+      "language": "objective-cpp",
+      "use": "clangd",
+      "share_process": true,
+      "file_patterns": ["%.mm$"]
+    },
+    {
       "language": "d",
       "name": "serve-d",
       "url": "https://github.com/Pure-D/serve-d",

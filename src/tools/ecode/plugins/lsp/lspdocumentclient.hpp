@@ -39,6 +39,7 @@ class LSPDocumentClient : public TextDocument::Client, public FoldRangeProvider 
 	virtual void onDocumentMoved( TextDocument* );
 	virtual void onDocumentReloaded( TextDocument* );
 	virtual void onDocumentReset( TextDocument* );
+	virtual void onDocumentSyntaxDefinitionChange( const SyntaxDefinition& );
 	Client::Type getTextDocumentClientType() { return TextDocument::Client::Auxiliary; }
 
 	void notifyOpen();

@@ -519,16 +519,23 @@ bool TextDocument::hasSyntaxDefinition() const {
 }
 
 const SyntaxDefinition& TextDocument::guessSyntax() const {
-	String header( getText( { { 0, 0 }, positionOffset( { 0, 0 }, 128 ) } ) );
-	return SyntaxDefinitionManager::instance()->find( mFilePath, header, mHAsCpp );
+	String header( getText(
+		{ { 0, 0 },
+		  positionOffset( { 0, 0 },
+						  FileSystem::fileExtension( mFilePath ) == "h" ? 5 * 1024 : 128 ) } ) );
+	return SyntaxDefinitionManager::instance()->find( mFilePath, header, mHExtLanguageType );
 }
 
 void TextDocument::resetSyntax() {
-	String header( getText( { { 0, 0 }, positionOffset( { 0, 0 }, 128 ) } ) );
+	String header( getText(
+		{ { 0, 0 },
+		  positionOffset( { 0, 0 },
+						  FileSystem::fileExtension( mFilePath ) == "h" ? 5 * 1024 : 128 ) } ) );
 	std::string oldDef = mSyntaxDefinition.getLSPName();
 	{
 		Lock l( mSyntaxDefinitionMutex );
-		mSyntaxDefinition = SyntaxDefinitionManager::instance()->find( mFilePath, header, mHAsCpp );
+		mSyntaxDefinition =
+			SyntaxDefinitionManager::instance()->find( mFilePath, header, mHExtLanguageType );
 	}
 	if ( mSyntaxDefinition.getLSPName() != oldDef )
 		notifySyntaxDefinitionChange();
@@ -2238,12 +2245,12 @@ TextRange TextDocument::getActiveClientVisibleRange() const {
 	return {};
 }
 
-bool TextDocument::hAsCpp() const {
-	return mHAsCpp;
+HExtLanguageType TextDocument::hExtLanguageType() const {
+	return mHExtLanguageType;
 }
 
-void TextDocument::setHAsCpp( bool hAsCpp ) {
-	mHAsCpp = hAsCpp;
+void TextDocument::setHExtLanguageType( HExtLanguageType hExtLanguageType ) {
+	mHExtLanguageType = hExtLanguageType;
 }
 
 const Uint64& TextDocument::getModificationId() const {

@@ -14,6 +14,7 @@
 #include <eepp/system/time.hpp>
 #include <eepp/system/uuid.hpp>
 #include <eepp/ui/doc/foldrangeservice.hpp>
+#include <eepp/ui/doc/hextlanguagetype.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <eepp/ui/doc/textdocumentline.hpp>
 #include <eepp/ui/doc/textformat.hpp>
@@ -650,9 +651,9 @@ class EE_API TextDocument {
 
 	TextRange getActiveClientVisibleRange() const;
 
-	bool hAsCpp() const;
+	HExtLanguageType hExtLanguageType() const;
 
-	void setHAsCpp( bool hAsCpp );
+	void setHExtLanguageType( HExtLanguageType hExtLanguageType );
 
 	const Uint64& getModificationId() const;
 
@@ -728,7 +729,7 @@ class EE_API TextDocument {
 	bool mSaving{ false };
 	bool mDeleteOnClose{ false };
 	bool mMightBeBinary{ false };
-	bool mHAsCpp{ false };
+	HExtLanguageType mHExtLanguageType{ false };
 	bool mLastCursorChangeWasInteresting{ false };
 	bool mDoingTextInput{ false };
 	bool mInsertingText{ false };

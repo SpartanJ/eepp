@@ -975,6 +975,9 @@
 ../../src/eepp/ui/css/stylesheetvariable.cpp
 ../../src/eepp/ui/css/timingfunction.cpp
 ../../src/eepp/ui/css/transitiondefinition.cpp
+../../src/eepp/ui/doc/documentview.cpp
+../../src/eepp/ui/doc/foldrangeservice.cpp
+../../src/eepp/ui/doc/hextlanguagetype.cpp
 ../../src/eepp/ui/doc/languages/cmake.cpp
 ../../src/eepp/ui/doc/languages/cmake.hpp
 ../../src/eepp/ui/doc/languages/configfile.cpp
@@ -1483,6 +1486,8 @@
 ../../src/modules/languages-syntax-highlighting/src/eepp/ui/doc/languages/objeck.hpp
 ../../src/modules/languages-syntax-highlighting/src/eepp/ui/doc/languages/objective-c.cpp
 ../../src/modules/languages-syntax-highlighting/src/eepp/ui/doc/languages/objective-c.hpp
+../../src/modules/languages-syntax-highlighting/src/eepp/ui/doc/languages/objective-cpp.cpp
+../../src/modules/languages-syntax-highlighting/src/eepp/ui/doc/languages/objective-cpp.hpp
 ../../src/modules/languages-syntax-highlighting/src/eepp/ui/doc/languages/ocaml.cpp
 ../../src/modules/languages-syntax-highlighting/src/eepp/ui/doc/languages/ocaml.hpp
 ../../src/modules/languages-syntax-highlighting/src/eepp/ui/doc/languages/odin.cpp

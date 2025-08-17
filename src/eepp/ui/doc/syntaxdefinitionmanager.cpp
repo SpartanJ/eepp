@@ -1231,8 +1231,31 @@ bool SyntaxDefinitionManager::extensionCanRepresentManyLanguages( std::string ex
 	return false;
 }
 
-const SyntaxDefinition& SyntaxDefinitionManager::getByExtension( const std::string& filePath,
-																 bool hFileAsCPP ) const {
+const SyntaxDefinition* SyntaxDefinitionManager::needsHFallback( HExtLanguageType langType,
+																 const std::string& lspName,
+																 const std::string& ext,
+																 const std::string& buffer ) const {
+	if ( lspName != "c" || !( ext == "h" || ext == ".h" || ext == "%.h$" || ext == "%.h%.in$" ) )
+		return nullptr;
+	switch ( langType ) {
+		case HExtLanguageType::AutoDetect: {
+			return &getByLSPName( HExtLanguageTypeHelper::toString(
+				HExtLanguageTypeHelper::detectLanguage( buffer ) ) );
+		}
+		case HExtLanguageType::C:
+			return &getByLSPName( "c" );
+		case HExtLanguageType::CPP:
+			return &getByLSPName( "cpp" );
+		case HExtLanguageType::ObjectiveC:
+			return &getByLSPName( "objective-c" );
+		case HExtLanguageType::ObjectiveCPP:
+			return &getByLSPName( "objective-cpp" );
+	}
+	return nullptr;
+}
+
+const SyntaxDefinition&
+SyntaxDefinitionManager::getByExtension( const std::string& filePath ) const {
 	std::string extension( FileSystem::fileExtension( filePath ) );
 	std::string fileName( FileSystem::fileNameFromPath( filePath ) );
 
@@ -1266,10 +1289,6 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByExtension( const std::stri
 						LuaPattern words( ext );
 						int start, end;
 						if ( words.find( fileName, start, end ) ) {
-							if ( hFileAsCPP && definition->getLSPName() == "c" &&
-								 ( ext == "%.h$" || ext == "%.h%.in$" ) )
-								return getByLSPName( "cpp" );
-
 							if ( extHasMultipleLangs && !definition->hasExtensionPriority() ) {
 								def = definition.get();
 								continue;
@@ -1278,9 +1297,6 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByExtension( const std::stri
 							return *definition.get();
 						}
 					} else if ( extension == ext ) {
-						if ( hFileAsCPP && definition->getLSPName() == "c" && ext == ".h" )
-							return getByLSPName( "cpp" );
-
 						if ( extHasMultipleLangs && !definition->hasExtensionPriority() ) {
 							def = definition.get();
 							continue;
@@ -1299,10 +1315,6 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByExtension( const std::stri
 					LuaPattern words( ext );
 					int start, end;
 					if ( words.find( fileName, start, end ) ) {
-						if ( hFileAsCPP && preDefinition.getLSPName() == "c" &&
-							 ( ext == "%.h$" || ext == "%.h%.in$" ) )
-							return getByLSPName( "cpp" );
-
 						if ( extHasMultipleLangs && !preDefinition.hasExtensionPriority() ) {
 							def = &preDefinition.load();
 							continue;
@@ -1311,9 +1323,6 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByExtension( const std::stri
 						return preDefinition.load();
 					}
 				} else if ( extension == ext ) {
-					if ( hFileAsCPP && preDefinition.getLSPName() == "c" && ext == ".h" )
-						return getByLSPName( "cpp" );
-
 					if ( extHasMultipleLangs && !preDefinition.hasExtensionPriority() ) {
 						def = &preDefinition.load();
 						continue;
@@ -1329,12 +1338,19 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByExtension( const std::stri
 }
 
 const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( const std::string& header,
-															  bool /*hFileAsCPP*/ ) const {
+															  const std::string& filePath,
+															  HExtLanguageType langType ) const {
 	if ( !header.empty() ) {
+
 		{
 			Lock l( mMutex );
 			for ( auto definition = mDefinitions.rbegin(); definition != mDefinitions.rend();
 				  ++definition ) {
+				auto needsHDef = needsHFallback( langType, definition->get()->getLSPName(),
+												 FileSystem::fileExtension( filePath ), header );
+				if ( needsHDef )
+					return *needsHDef;
+
 				for ( const auto& hdr : definition->get()->getHeaders() ) {
 					LuaPattern words( hdr );
 					int start, end;
@@ -1347,6 +1363,11 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( const std::string&
 
 		for ( auto preDefinition = mPreDefinitions.rbegin();
 			  preDefinition != mPreDefinitions.rend(); ++preDefinition ) {
+			auto needsHDef = needsHFallback( langType, preDefinition->getLSPName(),
+											 FileSystem::fileExtension( filePath ), header );
+			if ( needsHDef )
+				return *needsHDef;
+
 			for ( const auto& hdr : preDefinition->getHeaders() ) {
 				LuaPattern words( hdr );
 				int start, end;
@@ -1361,10 +1382,10 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( const std::string&
 
 const SyntaxDefinition& SyntaxDefinitionManager::find( const std::string& filePath,
 													   const std::string& header,
-													   bool hFileAsCPP ) {
-	const SyntaxDefinition& def = getByHeader( header );
+													   HExtLanguageType langType ) {
+	const SyntaxDefinition& def = getByHeader( header, filePath, langType );
 	if ( def.getLanguageName() == mDefinitions[0]->getLanguageName() )
-		return getByExtension( filePath, hFileAsCPP );
+		return getByExtension( filePath );
 	return def;
 }
 

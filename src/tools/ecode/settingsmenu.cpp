@@ -1986,11 +1986,10 @@ void SettingsMenu::updateProjectSettingsMenu() {
 	mSettingsMenu->getItemId( "project_settings" )
 		->setEnabled( !mApp->getCurrentProject().empty() );
 
-	mProjectMenu->getItemId( "h_as_cpp" )
-		->asType<UIMenuCheckBox>()
-		->setActive( mApp->getProjectDocConfig().hAsCPP );
-
-	mDocMenu->getItemId( "project_doc_settings" )->setEnabled( !mApp->getCurrentProject().empty() );
+	auto item = mHExtLanguageTypeMenu->find(
+		HExtLanguageTypeHelper::toString( mApp->getProjectDocConfig().hExtLanguageType ) );
+	if ( item && item->isType( UI_TYPE_MENURADIOBUTTON ) )
+		item->asType<UIMenuRadioButton>()->setActive( true );
 
 	for ( size_t i = 0; i < mProjectDocMenu->getCount(); i++ ) {
 		mProjectDocMenu->getItem( i )->setEnabled( !mApp->getCurrentProject().empty() &&
@@ -2516,31 +2515,47 @@ void SettingsMenu::createProjectMenu() {
 	owner->on( Event::OnMenuShow,
 			   [owner, this]( auto ) { mProjectDocMenu->setOwnerNode( owner ); } );
 
-	mProjectMenu
-		->addCheckBox( i18n( "h_as_cpp", "Treat .h files as C++ code." ),
-					   mApp->getProjectDocConfig().hAsCPP )
-		->setId( "h_as_cpp" );
+	HExtLanguageType hExtLanguageType = mApp->getProjectDocConfig().hExtLanguageType;
+	mHExtLanguageTypeMenu = UIPopUpMenu::New();
+	mHExtLanguageTypeMenu->setId( "h_ext_files_submenu" );
+	mHExtLanguageTypeMenu
+		->addRadioButton( i18n( "auto-detect", "Auto-Detect" ),
+						  hExtLanguageType == HExtLanguageType::AutoDetect )
+		->setId( "autodetect" );
+	mHExtLanguageTypeMenu->addRadioButton( "C", hExtLanguageType == HExtLanguageType::C )
+		->setId( "c" );
+	mHExtLanguageTypeMenu->addRadioButton( "C++", hExtLanguageType == HExtLanguageType::CPP )
+		->setId( "cpp" );
+	mHExtLanguageTypeMenu
+		->addRadioButton( "Objective-C", hExtLanguageType == HExtLanguageType::ObjectiveC )
+		->setId( "objective-c" );
+	mHExtLanguageTypeMenu
+		->addRadioButton( "Objective-C++", hExtLanguageType == HExtLanguageType::ObjectiveCPP )
+		->setId( "objective-cpp" );
 
-	mProjectMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+	mProjectMenu->addSubMenu( i18n( "treat_h_files_as_ellipsis", "Treat .h files as..." ), nullptr,
+							  mHExtLanguageTypeMenu );
+
+	mHExtLanguageTypeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
 			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
 			return;
 		const String& id = event->getNode()->getId();
 
-		if ( event->getNode()->isType( UI_TYPE_MENUCHECKBOX ) ) {
+		if ( event->getNode()->isType( UI_TYPE_MENURADIOBUTTON ) ) {
 			UIMenuCheckBox* item = event->getNode()->asType<UIMenuCheckBox>();
-			if ( "h_as_cpp" == id ) {
-				mApp->getProjectDocConfig().hAsCPP = item->isActive();
-				mApp->getSplitter()->forEachEditor( [this]( UICodeEditor* editor ) {
-					editor->getDocument().setHAsCpp( mApp->getProjectDocConfig().hAsCPP );
-					if ( editor->getDocument().getFileInfo().getExtension() == "h" ) {
-						editor->resetSyntaxDefinition();
-						if ( mSplitter->isCurEditor( editor ) )
-							updateCurrentFileType();
-					}
-				} );
-				updateProjectSettingsMenu();
-			}
+			mApp->getProjectDocConfig().hExtLanguageType =
+				HExtLanguageTypeHelper::fromString( item->getId() );
+			mApp->getSplitter()->forEachEditor( [this]( UICodeEditor* editor ) {
+				editor->getDocument().setHExtLanguageType(
+					mApp->getProjectDocConfig().hExtLanguageType );
+				if ( editor->getDocument().getFileInfo().getExtension() == "h" ) {
+					editor->resetSyntaxDefinition();
+					if ( mSplitter->isCurEditor( editor ) )
+						updateCurrentFileType();
+				}
+			} );
+			updateProjectSettingsMenu();
 		}
 	} );
 }

@@ -72,6 +72,7 @@
 #include <eepp/ui/doc/languages/nix.hpp>
 #include <eepp/ui/doc/languages/objeck.hpp>
 #include <eepp/ui/doc/languages/objective-c.hpp>
+#include <eepp/ui/doc/languages/objective-cpp.hpp>
 #include <eepp/ui/doc/languages/ocaml.hpp>
 #include <eepp/ui/doc/languages/odin.hpp>
 #include <eepp/ui/doc/languages/openscad.hpp>
@@ -521,6 +522,12 @@ void LanguagesSyntaxHighlighting::load() {
 		[]() -> SyntaxDefinition& { return addObjectiveC(); },
 		{ "%.m$" },
 	} );
+
+	sdm->addPreDefinition( { "Objective-C++",
+							 []() -> SyntaxDefinition& { return addObjectiveCPP(); },
+							 { "%.mm$" },
+							 {},
+							 "objective-cpp" } );
 
 	sdm->addPreDefinition( {
 		"OCaml",

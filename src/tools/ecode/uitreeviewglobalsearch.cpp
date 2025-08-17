@@ -39,7 +39,7 @@ UITreeViewGlobalSearch::UITreeViewGlobalSearch( const SyntaxColorScheme& colorSc
 
 UIWidget* UITreeViewGlobalSearch::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
 	UITableCell* widget = index.column() == (Int64)getModel()->treeColumn()
-							  ? UITreeViewCellGlobalSearch::New( mSearchReplace, hAsCPP )
+							  ? UITreeViewCellGlobalSearch::New( mSearchReplace, hExtLanguageType )
 							  : UITableCell::New();
 	return setupCell( widget, rowWidget, index );
 }
@@ -128,8 +128,10 @@ ProjectSearch::ResultData* UITreeViewCellGlobalSearch::getResultDataPtr() {
 
 #define CELL_GLOBAL_SEARCH_PADDING ( 12 )
 
-UITreeViewCellGlobalSearch::UITreeViewCellGlobalSearch( bool selectionEnabled, bool hAsCPP ) :
-	UITreeViewCell( selectionEnabled ? getCheckBoxFn() : nullptr ), mHAsCpp( hAsCPP ) {}
+UITreeViewCellGlobalSearch::UITreeViewCellGlobalSearch( bool selectionEnabled,
+														HExtLanguageType hExtLanguageType ) :
+	UITreeViewCell( selectionEnabled ? getCheckBoxFn() : nullptr ),
+	mHExtLanguageType( hExtLanguageType ) {}
 
 UIPushButton* UITreeViewCellGlobalSearch::setText( const String& text ) {
 	auto* result = getResultPtr();
@@ -154,7 +156,7 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 			(ProjectSearch::ResultData*)getCurIndex().parent().internalData();
 
 		const auto& styleDef =
-			SyntaxDefinitionManager::instance()->getByExtension( res->file, mHAsCpp );
+			SyntaxDefinitionManager::instance()->getByExtension( res->file );
 
 		Uint32 from = text.find_first_not_of( ' ' );
 		Uint32 to = from;

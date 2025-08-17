@@ -113,6 +113,7 @@ class SettingsMenu {
 	UIPopUpMenu* mProjectTreeMenu{ nullptr };
 	UIPopUpMenu* mProjectDocMenu{ nullptr };
 	UIPopUpMenu* mProjectMenu{ nullptr };
+	UIPopUpMenu* mHExtLanguageTypeMenu{ nullptr };
 	UIPopUpMenu* mEditMenu{ nullptr };
 	UIPopUpMenu* mHelpMenu{ nullptr };
 	UIPopUpMenu* mLineWrapMenu{ nullptr };

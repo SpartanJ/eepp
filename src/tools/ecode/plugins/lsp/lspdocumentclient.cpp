@@ -103,6 +103,10 @@ void LSPDocumentClient::onDocumentClosed( TextDocument* ) {
 
 void LSPDocumentClient::onDocumentDirtyOnFileSystem( TextDocument* ) {}
 
+void LSPDocumentClient::onDocumentSyntaxDefinitionChange( const SyntaxDefinition& ) {
+	requestSemanticHighlightingDelayed( true );
+}
+
 void LSPDocumentClient::onDocumentMoved( TextDocument* ) {
 	refreshTag();
 }

@@ -497,7 +497,8 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	IniFile cfg( projectCfgPath, false );
 	cfg.setValue( "path", "folder_path", projectFolder );
 	cfg.setValueB( "document", "use_global_settings", docConfig.useGlobalSettings );
-	cfg.setValueB( "document", "h_as_cpp", docConfig.hAsCPP );
+	cfg.setValue( "document", "h_ext_language_type",
+				  HExtLanguageTypeHelper::toString( docConfig.hExtLanguageType ) );
 	cfg.setValueB( "document", "trim_trailing_whitespaces", docConfig.doc.trimTrailingWhitespaces );
 	cfg.setValueB( "document", "force_new_line_at_end_of_file",
 				   docConfig.doc.forceNewLineAtEndOfFile );
@@ -761,7 +762,14 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 	IniFile cfg( projectCfgPath );
 
 	docConfig.useGlobalSettings = cfg.getValueB( "document", "use_global_settings", true );
-	docConfig.hAsCPP = cfg.getValueB( "document", "h_as_cpp", false );
+
+	if ( cfg.getValue( "document", "h_ext_language_type", "" ) == "" &&
+		 cfg.getValueB( "document", "h_as_cpp", false ) == true ) {
+		docConfig.hExtLanguageType = HExtLanguageType::CPP;
+	} else {
+		docConfig.hExtLanguageType = HExtLanguageTypeHelper::fromString(
+			cfg.getValue( "document", "h_ext_language_type", "autodetect" ) );
+	}
 	docConfig.doc.trimTrailingWhitespaces =
 		cfg.getValueB( "document", "trim_trailing_whitespaces", false );
 	docConfig.doc.forceNewLineAtEndOfFile =

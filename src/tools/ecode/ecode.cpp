@@ -2577,7 +2577,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			UITab* tab = (UITab*)editor->getData();
 			tab->setIcon( icon->getSize( mMenuIconSize ) );
 		}
-		editor->getDocument().setHAsCpp( mProjectDocConfig.hAsCPP );
+		editor->getDocument().setHExtLanguageType( mProjectDocConfig.hExtLanguageType );
 
 		auto ext = editor->getDocument().getFileInfo().getExtension();
 		if ( SyntaxDefinitionManager::instance()->extensionCanRepresentManyLanguages( ext ) ) {

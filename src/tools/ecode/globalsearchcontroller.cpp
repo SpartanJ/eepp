@@ -695,7 +695,7 @@ void GlobalSearchController::updateGlobalSearchBarResults(
 	const std::string& search, std::shared_ptr<ProjectSearch::ResultModel> model,
 	bool searchReplace, bool isEscaped ) {
 	updateGlobalSearchBar();
-	mGlobalSearchTree->hAsCPP = mApp->getProjectDocConfig().hAsCPP;
+	mGlobalSearchTree->hExtLanguageType = mApp->getProjectDocConfig().hExtLanguageType;
 	mGlobalSearchTree->setSearchStr( search );
 	mGlobalSearchTree->setModel( model );
 	if ( mGlobalSearchTree->getModel()->rowCount() < 50 )

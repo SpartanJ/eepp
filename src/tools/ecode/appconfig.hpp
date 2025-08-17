@@ -129,7 +129,7 @@ struct GlobalSearchBarConfig {
 
 struct ProjectDocumentConfig {
 	bool useGlobalSettings{ true };
-	bool hAsCPP{ false };
+	HExtLanguageType hExtLanguageType{ HExtLanguageType::AutoDetect };
 	DocumentConfig doc;
 	ProjectDocumentConfig() {}
 	ProjectDocumentConfig( const DocumentConfig& doc ) { this->doc = doc; }

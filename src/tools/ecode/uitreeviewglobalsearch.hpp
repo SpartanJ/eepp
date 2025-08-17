@@ -12,11 +12,12 @@ namespace ecode {
 
 class UITreeViewCellGlobalSearch : public UITreeViewCell {
   public:
-	static UITreeViewCellGlobalSearch* New( bool selectionEnabled, bool hAsCPP ) {
-		return eeNew( UITreeViewCellGlobalSearch, ( selectionEnabled, hAsCPP ) );
+	static UITreeViewCellGlobalSearch* New( bool selectionEnabled,
+											HExtLanguageType hExtLanguageType ) {
+		return eeNew( UITreeViewCellGlobalSearch, ( selectionEnabled, hExtLanguageType ) );
 	}
 
-	explicit UITreeViewCellGlobalSearch( bool selectionEnabled, bool hAsCPP );
+	explicit UITreeViewCellGlobalSearch( bool selectionEnabled, HExtLanguageType hExtLanguageType );
 
 	UIPushButton* setText( const String& text );
 
@@ -29,7 +30,7 @@ class UITreeViewCellGlobalSearch : public UITreeViewCell {
   protected:
 	std::pair<size_t, size_t> mSearchStrPos;
 	String mResultStr;
-	bool mHAsCpp{ false };
+	HExtLanguageType mHExtLanguageType{ HExtLanguageType::AutoDetect };
 
 	std::function<UITextView*( UIPushButton* )> getCheckBoxFn();
 
@@ -62,7 +63,8 @@ class UITreeViewGlobalSearch : public UITreeView {
 
 	const String& getSearchStr() const { return mSearchStr; }
 
-	bool hAsCPP = false;
+	HExtLanguageType hExtLanguageType{ HExtLanguageType::AutoDetect };
+
   protected:
 	Color mLineNumColor;
 	SyntaxColorScheme mColorScheme;

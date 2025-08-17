@@ -5,6 +5,7 @@
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/singleton.hpp>
+#include <eepp/ui/doc/hextlanguagetype.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <optional>
 #include <vector>
@@ -33,13 +34,14 @@ class EE_API SyntaxDefinitionManager {
 
 	bool extensionCanRepresentManyLanguages( std::string extension ) const;
 
-	const SyntaxDefinition& getByExtension( const std::string& filePath,
-											bool hFileAsCPP = false ) const;
+	const SyntaxDefinition& getByExtension( const std::string& filePath ) const;
 
-	const SyntaxDefinition& getByHeader( const std::string& header, bool hFileAsCPP = false ) const;
+	const SyntaxDefinition&
+	getByHeader( const std::string& header, const std::string& filePath = "",
+				 HExtLanguageType hLangType = HExtLanguageType::AutoDetect ) const;
 
 	const SyntaxDefinition& find( const std::string& filePath, const std::string& header,
-								  bool hFileAsCPP = false );
+								  HExtLanguageType hLangType = HExtLanguageType::AutoDetect );
 
 	const SyntaxDefinition& findFromString( const std::string_view& str ) const;
 
@@ -91,6 +93,10 @@ class EE_API SyntaxDefinitionManager {
 	mutable Mutex mMutex;
 
 	std::optional<size_t> getLanguageIndex( const std::string& langName );
+
+	const SyntaxDefinition* needsHFallback( HExtLanguageType langType, const std::string& lspName,
+											const std::string& ext,
+											const std::string& buffer ) const;
 };
 
 }}} // namespace EE::UI::Doc
