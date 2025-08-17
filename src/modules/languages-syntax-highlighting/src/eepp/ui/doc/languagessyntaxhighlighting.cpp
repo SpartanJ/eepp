@@ -769,7 +769,7 @@ void LanguagesSyntaxHighlighting::load() {
 	sdm->addPreDefinition( {
 		"YAML",
 		[]() -> SyntaxDefinition& { return addYAML(); },
-		{ "%.yml$", "%.yaml$" },
+		{ "%.yml$", "%.yaml$", "^.clangd$" },
 		{ "^%%YAML %d+%.%d+" },
 
 	} );

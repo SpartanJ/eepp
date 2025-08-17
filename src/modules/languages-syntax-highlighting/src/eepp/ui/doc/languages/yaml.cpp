@@ -41,7 +41,7 @@ SyntaxDefinition& addYAML() {
 		->add(
 
 			{ "YAML",
-			  { "%.yml$", "%.yaml$" },
+			  { "%.yml$", "%.yaml$", "^.clangd$" },
 			  {
 				  { { "^[%w%d]+%g+%s*%f[:]" }, "keyword" },
 				  { { "^%s+[%w%d]+%g+%s*%f[:]" }, "keyword" },
