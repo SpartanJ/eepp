@@ -1824,7 +1824,7 @@ void LSPClientPlugin::onDocumentHoverResponse( UICodeEditor* editor, const LSPHo
 			if ( errResp.isResponse() ) {
 				LSPHover cresp( resp );
 				cresp.contents[0].value = errResp.getResponse().data["text"].get<std::string>() +
-										  "\n\n" + cresp.contents[0].value;
+										  "\n---\n\n" + cresp.contents[0].value;
 				displayTooltipFn( editor, cresp, getFinalPosFn( editor ) );
 			} else {
 				displayTooltipFn( editor, resp, pos );

@@ -471,8 +471,9 @@ PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notificat
 		const auto& matches = foundLine->second;
 
 		for ( const auto& match : matches ) {
-			if ( pos.column() >= match.range.start().column() &&
-				 pos.column() <= match.range.end().column() ) {
+			if ( ( pos.column() >= match.range.start().column() &&
+				   pos.column() <= match.range.end().column() ) ||
+				 matches.size() == 1 ) {
 				PluginInmediateResponse msg;
 				msg.type = PluginMessageType::GetErrorOrWarning;
 				json rj;
