@@ -53,6 +53,8 @@ class FileSystemListener : public efsw::FileWatchListener {
 
 	void notifyMove( const FileInfo& oldFile, const FileInfo& newFile );
 
+	void notifyDelete( const FileInfo& file );
+
 	bool isIgnored( const std::string& path );
 };
 

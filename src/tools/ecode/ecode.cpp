@@ -2500,20 +2500,42 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		if ( !editor->getDocument().hasSyntaxDefinition() ) {
 			editor->setSyntaxDefinition( editor->getDocument().guessSyntax() );
 		}
+		if ( editor->getData() ) {
+			UITab* tab = (UITab*)editor->getData();
+			tab->removeClass( "tab_file_deleted" );
+		}
 	} );
 
 	editor->on( Event::OnDocumentDirtyOnFileSysten, [this, editor]( const Event* event ) {
 		const DocEvent* docEvent = static_cast<const DocEvent*>( event );
 		FileInfo file( docEvent->getDoc()->getFileInfo().getFilepath() );
 		TextDocument* doc = docEvent->getDoc();
-		if ( doc->getFileInfo() != file ) {
-			if ( !mConfig.editor.autoReloadOnDiskChange || doc->isDirty() ) {
-				editor->runOnMainThread( [this, editor]() { createDocDirtyAlert( editor ); } );
-			} else {
-				auto hash = String::hash( "OnDocumentDirtyOnFileSysten-" +
-										  docEvent->getDoc()->getFilePath() );
-				editor->removeActionsByTag( hash );
-				editor->runOnMainThread( [doc]() { doc->reload(); }, Seconds( 0.5f ), hash );
+		if ( FileSystem::fileExists( doc->getFileInfo().getFilepath() ) ) { // File modified!
+			if ( doc->getFileInfo() != file ) {
+				if ( !mConfig.editor.autoReloadOnDiskChange || doc->isDirty() ) {
+					editor->runOnMainThread( [this, editor]() { createDocDirtyAlert( editor ); } );
+				} else {
+					auto hash = String::hash( "OnDocumentDirtyOnFileSysten-" +
+											  docEvent->getDoc()->getFilePath() );
+					editor->removeActionsByTag( hash );
+					editor->runOnMainThread(
+						[doc, this]() {
+							auto docRef = mSplitter->getTextDocumentRef( doc );
+							if ( docRef )
+								docRef->reload();
+						},
+						Seconds( 0.5f ), hash );
+				}
+			}
+		} else { // File deleted!
+			if ( editor->getData() ) {
+				UITab* tab = (UITab*)editor->getData();
+				tab->ensureMainThread( [this, tab, doc] {
+					tab->addClass( "tab_file_deleted" );
+					auto docRef = mSplitter->getTextDocumentRef( doc );
+					if ( docRef )
+						docRef->setDirtyUntilSave();
+				} );
 			}
 		}
 	} );
@@ -2616,6 +2638,12 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->on( Event::OnDocumentChanged, docChanged );
 	editor->on( Event::OnDocumentSave, docChanged );
 	editor->on( Event::OnEditorTabReady, docChanged );
+	editor->on( Event::OnDocumentReloaded, [editor]( const Event* event ) {
+		if ( editor->getData() ) {
+			UITab* tab = (UITab*)editor->getData();
+			tab->removeClass( "tab_file_deleted" );
+		}
+	} );
 
 	editor->on( Event::OnCursorPosChangeInteresting, [this, editor]( auto ) {
 		mSplitter->addEditorPositionToNavigationHistory( editor );

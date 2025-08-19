@@ -36,7 +36,7 @@ SyntaxDefinition& addCurry() {
 		  "--",
 		  {}
 
-		} );
+		} ).setBlockComment( { "{-", "-}" } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

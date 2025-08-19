@@ -466,6 +466,13 @@ Anchor.error:hover {
 	foreground-size: 10dp 10dp;
 	foreground-position: center;
 }
+#code_container Tab {
+	text-decoration: none;
+}
+#code_container Tab.tab_file_deleted {
+	color: var(--theme-error);
+	text-decoration: strikethrough;
+}
 #code_container TabWidget::TabBar ScrollBarMini {
 	opacity: 0;
 	transition: opacity 0.15;
