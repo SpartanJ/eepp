@@ -43,6 +43,7 @@ void addLua() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	sd.setBlockComment( { "--[[", "]]" } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

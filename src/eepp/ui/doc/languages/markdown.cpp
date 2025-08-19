@@ -53,6 +53,7 @@ void addMarkdown() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Markdown );
+	sd.setBlockComment( { "<!--", "-->" } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

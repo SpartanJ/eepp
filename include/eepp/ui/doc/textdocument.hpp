@@ -491,6 +491,8 @@ class EE_API TextDocument {
 
 	void toggleLineComments();
 
+	void toggleBlockComments();
+
 	void setNonWordChars( const String& nonWordChars );
 
 	const SyntaxDefinition& guessSyntax() const;

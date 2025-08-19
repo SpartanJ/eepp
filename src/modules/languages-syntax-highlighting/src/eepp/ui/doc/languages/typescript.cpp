@@ -77,7 +77,8 @@ SyntaxDefinition& addTypeScript() {
 				} )
 			.setFoldRangeType( FoldRangeType::Braces )
 			.setFoldBraces( { { '{', '}' } } )
-			.addAlternativeName( "ts" );
+			.addAlternativeName( "ts" )
+			.setBlockComment( { "/*", "*/" } );
 
 	return ts;
 }

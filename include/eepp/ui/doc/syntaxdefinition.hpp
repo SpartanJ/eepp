@@ -188,6 +188,11 @@ struct EE_API SyntaxPreDefinition {
 
 class EE_API SyntaxDefinition {
   public:
+	struct BlockComment {
+		std::string open;
+		std::string close;
+	};
+
 	SyntaxDefinition();
 
 	SyntaxDefinition(
@@ -195,7 +200,8 @@ class EE_API SyntaxDefinition {
 		std::vector<SyntaxPattern>&& patterns,
 		SyntaxDefMap<std::string, std::string>&& symbols = {}, const std::string& comment = "",
 		std::vector<std::string>&& headers = {}, const std::string& lspName = "",
-		std::vector<std::pair<std::string, std::vector<SyntaxPattern>>>&& repositories = {} );
+		std::vector<std::pair<std::string, std::vector<SyntaxPattern>>>&& repositories = {},
+		BlockComment&& blockComment = {} );
 
 	const std::string& getLanguageName() const;
 
@@ -308,6 +314,10 @@ class EE_API SyntaxDefinition {
 
 	void compile();
 
+	SyntaxDefinition& setBlockComment( BlockComment&& blockComment );
+
+	const BlockComment& getBlockComment() const;
+
   protected:
 	friend class SyntaxDefinitionManager;
 
@@ -317,6 +327,7 @@ class EE_API SyntaxDefinition {
 	SyntaxDefMap<String::HashType, SyntaxStyleType> mSymbolsHashes;
 	SyntaxDefMap<std::string, std::string> mSymbolNames;
 	std::string mComment;
+	BlockComment mBlockComment;
 	std::vector<std::string> mHeaders;
 	std::string mLSPName;
 	Uint16 mLanguageIndex{ 0 };

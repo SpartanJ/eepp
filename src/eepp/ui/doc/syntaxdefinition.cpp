@@ -149,12 +149,14 @@ SyntaxDefinition::SyntaxDefinition(
 	const std::string& languageName, std::vector<std::string>&& files,
 	std::vector<SyntaxPattern>&& patterns, SyntaxDefMap<std::string, std::string>&& symbols,
 	const std::string& comment, std::vector<std::string>&& headers, const std::string& lspName,
-	std::vector<std::pair<std::string, std::vector<SyntaxPattern>>>&& repositories ) :
+	std::vector<std::pair<std::string, std::vector<SyntaxPattern>>>&& repositories,
+	BlockComment&& blockComment ) :
 	mLanguageName( languageName ),
 	mFiles( std::move( files ) ),
 	mPatterns( std::move( patterns ) ),
 	mSymbolNames( std::move( symbols ) ),
 	mComment( comment ),
+	mBlockComment( std::move( blockComment ) ),
 	mHeaders( std::move( headers ) ),
 	mLSPName( lspName.empty() ? String::toLower( mLanguageName ) : lspName ) {
 	mSymbolsHashes.reserve( mSymbolNames.size() );
@@ -573,6 +575,15 @@ const SyntaxDefMap<String::HashType, std::string>& SyntaxDefinition::getReposito
 std::string SyntaxDefinition::getRepositoryName( String::HashType hash ) const {
 	auto it = mRepositoryNames.find( hash );
 	return it != mRepositoryNames.end() ? it->second : "";
+}
+
+SyntaxDefinition& SyntaxDefinition::setBlockComment( SyntaxDefinition::BlockComment&& commentBlock ) {
+	mBlockComment = std::move( commentBlock );
+	return *this;
+}
+
+const SyntaxDefinition::BlockComment& SyntaxDefinition::getBlockComment() const {
+	return mBlockComment;
 }
 
 void SyntaxDefinition::compile() {

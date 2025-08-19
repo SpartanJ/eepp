@@ -64,6 +64,7 @@ void addJavaScript() {
 
 	sd.addAlternativeName( "js" );
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	sd.setBlockComment( { "/*", "*/" } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

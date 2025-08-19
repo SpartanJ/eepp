@@ -49,7 +49,8 @@ void addHTML() {
 			  { "^<html", "^<![Dd][Oo][Cc][Tt][Yy][Pp][Ee]%s[Hh][Tt][Mm][Ll]>" }
 
 			} )
-		.setAutoCloseXMLTags( true );
+		.setAutoCloseXMLTags( true )
+		.setBlockComment( { "<!--", "-->" } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

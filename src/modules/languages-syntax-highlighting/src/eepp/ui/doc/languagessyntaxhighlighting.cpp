@@ -61,6 +61,7 @@
 #include <eepp/ui/doc/languages/lbstanza.hpp>
 #include <eepp/ui/doc/languages/lisp.hpp>
 #include <eepp/ui/doc/languages/lobster.hpp>
+#include <eepp/ui/doc/languages/m4.hpp>
 #include <eepp/ui/doc/languages/makefile.hpp>
 #include <eepp/ui/doc/languages/meson.hpp>
 #include <eepp/ui/doc/languages/modula2.hpp>
@@ -455,6 +456,12 @@ void LanguagesSyntaxHighlighting::load() {
 		"Lobster",
 		[]() -> SyntaxDefinition& { return addLobster(); },
 		{ "%.lobster$" },
+	} );
+
+	sdm->addPreDefinition( {
+		"M4",
+		[]() -> SyntaxDefinition& { return addM4(); },
+		{ "%.m4$", "%.ac$", "%.at$", "^configure%.ac$", "^configure%.in$" },
 	} );
 
 	sdm->addPreDefinition( {

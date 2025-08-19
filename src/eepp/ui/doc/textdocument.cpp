@@ -3691,6 +3691,77 @@ void TextDocument::toggleLineComments() {
 	}
 }
 
+void TextDocument::toggleBlockComments() {
+	const auto& blockComment = mSyntaxDefinition.getBlockComment();
+	if ( blockComment.open.empty() || blockComment.close.empty() )
+		return;
+
+	bool wasRunningTransaction = isRunningTransaction();
+	if ( !wasRunningTransaction )
+		setRunningTransaction( true );
+	BoolScopedOp op( mDoingTextInput, true );
+
+	const String openStr = blockComment.open;
+	const String closeStr = blockComment.close;
+	const Int64 openLen = static_cast<Int64>( openStr.length() );
+	const Int64 closeLen = static_cast<Int64>( closeStr.length() );
+	const String openStrPadded = openStr + " ";
+	const String closeStrPadded = " " + closeStr;
+	const Int64 openLenPadded = static_cast<Int64>( openStrPadded.length() );
+	const Int64 closeLenPadded = static_cast<Int64>( closeStrPadded.length() );
+
+	auto sel = mSelection;
+	sel.sort();
+
+	// Process selections in reverse order to avoid coordinate invalidation from previous
+	// modifications
+	for ( Int64 i = mSelection.size() - 1; i >= 0; --i ) {
+		TextRange oriRange = getSelectionIndex( i );
+		TextRange range = getSelectionIndex( i, true );
+		bool needsSwap = oriRange != range;
+
+		if ( !range.hasSelection() ) {
+			setSelection( i, insert( i, range.start(), openStrPadded + closeStrPadded ) );
+			setSelection( i, positionOffset( getSelectionIndex( i ).start(), -closeLenPadded ) );
+			continue;
+		}
+
+		// Check for padded comment first
+		TextRange openRangePadded = { range.start(),
+									  positionOffset( range.start(), openLenPadded ) };
+		TextRange closeRangePadded = { positionOffset( range.end(), -closeLenPadded ),
+									   range.end() };
+		if ( openRangePadded.end() <= closeRangePadded.start() &&
+			 getText( openRangePadded ) == openStrPadded &&
+			 getText( closeRangePadded ) == closeStrPadded ) {
+			remove( i, closeRangePadded );
+			remove( i, openRangePadded );
+			setSelection( i, needsSwap ? closeRangePadded.start() : range.start(),
+						  needsSwap ? range.start() : closeRangePadded.start() );
+			continue;
+		}
+
+		TextRange openRange = { range.start(), positionOffset( range.start(), openLen ) };
+		TextRange closeRange = { positionOffset( range.end(), -closeLen ), range.end() };
+		if ( openRange.end() <= closeRange.start() && getText( openRange ) == openStr &&
+			 getText( closeRange ) == closeStr ) {
+			remove( i, closeRange );
+			remove( i, openRange );
+			setSelection( i, needsSwap ? closeRange.start() : range.start(),
+						  needsSwap ? range.start() : closeRange.start() );
+		} else {
+			auto start =
+				positionOffset( insert( i, range.start(), openStrPadded ), -openLenPadded );
+			insert( i, range.end(), closeStrPadded );
+			auto end = positionOffset( range.end(), closeLenPadded );
+			setSelection( i, needsSwap ? end : start, needsSwap ? start : end );
+		}
+	}
+
+	if ( !wasRunningTransaction )
+		setRunningTransaction( false );
+}
+
 void TextDocument::setNonWordChars( const String& nonWordChars ) {
 	mNonWordChars = nonWordChars;
 }
@@ -3989,6 +4060,7 @@ void TextDocument::initializeCommands() {
 	mCommands["undo"] = [this] { undo(); };
 	mCommands["redo"] = [this] { redo(); };
 	mCommands["toggle-line-comments"] = [this] { toggleLineComments(); };
+	mCommands["toggle-block-comments"] = [this] { toggleBlockComments(); };
 	mCommands["selection-to-upper"] = [this] { toUpperSelection(); };
 	mCommands["selection-to-lower"] = [this] { toLowerSelection(); };
 	mCommands["reset-cursor"] = [this] { resetSelection(); };
