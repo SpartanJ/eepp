@@ -1007,7 +1007,7 @@ SyntaxDefinition& addCMake() {
 		  "#",
 		  { "^cmake_minimum_required.*%c" }
 
-		} );
+		} ).setBlockComment( { "#[[", "]]" } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

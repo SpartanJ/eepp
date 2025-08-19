@@ -1498,7 +1498,7 @@ SyntaxDefinition& addNix() {
 					} },
 
 			  } },
-		} );
+		} ).setBlockComment( { "/*", "*/" } );;
 }
 
 }}}} // namespace EE::UI::Doc::Language

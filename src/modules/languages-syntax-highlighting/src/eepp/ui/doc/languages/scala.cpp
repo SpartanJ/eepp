@@ -48,7 +48,7 @@ SyntaxDefinition& addScala() {
 		  "//",
 		  {}
 
-		} );
+		} ).setBlockComment( { "/*", "*/" } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

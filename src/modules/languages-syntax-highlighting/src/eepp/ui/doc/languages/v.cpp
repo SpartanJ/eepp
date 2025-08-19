@@ -71,7 +71,8 @@ SyntaxDefinition& addV() {
 		} )
 		.setExtensionPriority( true )
 		.setFoldRangeType( FoldRangeType::Braces )
-		.setFoldBraces( { { '{', '}' } } );
+		.setFoldBraces( { { '{', '}' } } )
+		.setBlockComment( { "/*", "*/" } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

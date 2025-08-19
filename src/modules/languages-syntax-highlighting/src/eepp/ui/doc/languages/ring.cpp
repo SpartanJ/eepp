@@ -283,7 +283,7 @@ SyntaxDefinition& addRing() {
 		  "//",
 		  {}
 
-		} );
+		} ).setBlockComment( { "/*", "*/" } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

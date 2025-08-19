@@ -62,7 +62,8 @@ SyntaxDefinition& addZephir() {
 
 			} )
 		.setFoldRangeType( FoldRangeType::Braces )
-		.setFoldBraces( { { '}', '{' } } );
+		.setFoldBraces( { { '}', '{' } } )
+		.setBlockComment( { "/*", "*/" } );
 	;
 }
 

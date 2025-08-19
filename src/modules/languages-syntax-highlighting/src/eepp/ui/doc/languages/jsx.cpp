@@ -55,6 +55,7 @@ SyntaxDefinition& addJSX() {
 			.setLSPName( "javascriptreact" );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	sd.setBlockComment( { "/*", "*/" } );
 	return sd;
 }
 

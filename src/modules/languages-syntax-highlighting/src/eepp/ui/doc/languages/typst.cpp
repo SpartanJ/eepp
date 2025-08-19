@@ -395,7 +395,7 @@ SyntaxDefinition& addTypst() {
 					SyntaxPatternMatchType::LuaPattern },
 
 			  } },
-		} );
+		} ).setBlockComment( { "/*", "*/" } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

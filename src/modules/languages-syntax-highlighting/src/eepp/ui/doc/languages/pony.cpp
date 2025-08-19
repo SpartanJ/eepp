@@ -126,6 +126,7 @@ SyntaxDefinition& addPony() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	sd.setBlockComment( { "/*", "*/" } );
 	return sd;
 }
 

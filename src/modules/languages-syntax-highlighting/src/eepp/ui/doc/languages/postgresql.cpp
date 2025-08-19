@@ -402,7 +402,7 @@ SyntaxDefinition& addPostgreSQL() {
 		  "--",
 		  {}
 
-		} );
+		} ).setBlockComment( { "/*", "*/" } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

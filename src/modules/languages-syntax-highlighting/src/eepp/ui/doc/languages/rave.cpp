@@ -117,6 +117,7 @@ SyntaxDefinition& addRave() {
 		  "//" } );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	sd.setBlockComment( { "/*", "*/" } );
 	return sd;
 }
 

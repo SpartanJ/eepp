@@ -63,7 +63,8 @@ SyntaxDefinition& addIdl() {
 		.setFoldRangeType( FoldRangeType::Braces )
 		.setFoldBraces( {
 			{ '{', '}' },
-		} );
+		} )
+		.setBlockComment( { "/*", "*/" } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

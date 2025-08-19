@@ -90,7 +90,8 @@ SyntaxDefinition& addElena() {
 
 			} )
 		.setFoldRangeType( FoldRangeType::Braces )
-		.setFoldBraces( { { '{', '}' } } );
+		.setFoldBraces( { { '{', '}' } } )
+		.setBlockComment( { "/*", "*/" } );
 	;
 }
 

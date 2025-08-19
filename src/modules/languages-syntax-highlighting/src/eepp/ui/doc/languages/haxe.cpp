@@ -86,7 +86,7 @@ SyntaxDefinition& addHaxe() {
 
 		  },
 		  "//",
-		  {} } );
+		  {} } ).setBlockComment( { "/*", "*/" } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

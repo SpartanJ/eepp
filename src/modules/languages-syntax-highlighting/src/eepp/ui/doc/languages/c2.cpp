@@ -159,6 +159,7 @@ SyntaxDefinition& addC2() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	sd.setBlockComment( { "/*", "*/" } );
 	return sd;
 }
 

@@ -61,6 +61,7 @@ SyntaxDefinition& addJai() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	sd.setBlockComment( { "/*", "*/" } );
 	return sd;
 }
 

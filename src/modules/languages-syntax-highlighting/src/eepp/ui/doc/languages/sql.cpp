@@ -403,7 +403,7 @@ SyntaxDefinition& addSQL() {
 		  "--",
 		  {}
 
-		} );
+		} ).setBlockComment( { "/*", "*/" } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

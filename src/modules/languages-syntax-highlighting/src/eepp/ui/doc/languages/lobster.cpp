@@ -76,7 +76,7 @@ SyntaxDefinition& addLobster() {
 		  "//",
 		  {}
 
-		} );
+		} ).setBlockComment( { "/*", "*/" } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

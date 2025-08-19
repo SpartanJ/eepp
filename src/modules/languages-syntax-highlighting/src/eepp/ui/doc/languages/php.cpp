@@ -39,7 +39,8 @@ SyntaxDefinition& addPHP() {
 				  {},
 				  "",
 				  { "^#!.*[ /]php" } } )
-			.setAutoCloseXMLTags( true );
+			.setAutoCloseXMLTags( true )
+			.setBlockComment( { "<!--", "-->" } );
 
 	SyntaxDefinitionManager::instance()
 		->add( { "PHPCore",
@@ -107,6 +108,7 @@ SyntaxDefinition& addPHP() {
 		.setVisible( false );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	sd.setBlockComment( { "/*", "*/" } );
 	return sd;
 }
 

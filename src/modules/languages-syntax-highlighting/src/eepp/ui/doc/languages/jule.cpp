@@ -61,6 +61,7 @@ SyntaxDefinition& addJule() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	sd.setBlockComment( { "/*", "*/" } );
 	return sd;
 }
 }}}} // namespace EE::UI::Doc::Language

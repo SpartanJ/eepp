@@ -83,6 +83,7 @@ SyntaxDefinition& addV1() {
 				   .setVisible( false );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	sd.setBlockComment( { "/*", "*/" } );
 	return v1;
 }
 
