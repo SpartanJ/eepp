@@ -235,7 +235,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 						   "autocomplete" == creator.first || "linter" == creator.first ||
 							   "autoformatter" == creator.first || "lspclient" == creator.first ||
 							   "git" == creator.first || "debugger" == creator.first ||
-							   "aiassistant" == creator.first );
+							   "aiassistant" == creator.first || "spellchecker" == creator.first );
 	}
 
 	languagesExtensions.priorities = ini.getKeyMap( "languages_extensions" );

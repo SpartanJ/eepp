@@ -13,6 +13,14 @@ namespace EE::System {
 class IniFile;
 }
 
+namespace EE::UI {
+class UIListView;
+}
+
+namespace EE::UI::Abstract {
+class ModelEvent;
+}
+
 namespace ecode {
 
 class PluginManager;
@@ -79,6 +87,15 @@ class Plugin : public UICodeEditorPlugin {
 	void setReady( Time loadTime = Seconds( 0 ) );
 
 	void waitUntilLoaded();
+
+	typedef std::function<void( const ModelEvent* )> ModelEventCallback;
+
+	bool editorExists( UICodeEditor* editor );
+
+	void createListView( UICodeEditor* editor, std::shared_ptr<Model> model,
+						 const ModelEventCallback& onModelEventCb,
+						 const std::function<void( UIListView* )> onCreateCb = {} );
+
 };
 
 class PluginBase : public Plugin {
@@ -128,7 +145,6 @@ class PluginBase : public Plugin {
 
 	//! Usually used to unregister commands in a document
 	virtual void onUnregisterDocument( TextDocument* );
-	;
 };
 
 } // namespace ecode

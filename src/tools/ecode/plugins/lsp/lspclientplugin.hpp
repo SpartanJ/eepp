@@ -185,8 +185,6 @@ class LSPClientPlugin : public Plugin {
 
 	void switchSourceHeader( UICodeEditor* editor );
 
-	bool editorExists( UICodeEditor* editor );
-
 	void createLocationsView( UICodeEditor* editor, const std::vector<LSPLocation>& locs );
 
 	void getAndGoToLocation( UICodeEditor* editor, const std::string& search );
@@ -194,12 +192,6 @@ class LSPClientPlugin : public Plugin {
 	void codeAction( UICodeEditor* editor );
 
 	void createCodeActionsView( UICodeEditor* editor, const std::vector<LSPCodeAction>& cas );
-
-	typedef std::function<void( const ModelEvent* )> ModelEventCallback;
-
-	void createListView( UICodeEditor* editor, const std::shared_ptr<Model>& model,
-						 const ModelEventCallback& onModelEventCb,
-						 const std::function<void( UIListView* )> onCreateCb = {} );
 
 	PluginRequestHandle processTextDocumentSymbol( const PluginMessage& msg );
 

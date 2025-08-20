@@ -784,6 +784,7 @@ void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
 		return;
 
 	IOStreamString fileString;
+	mClock.restart();
 	if ( doc->isDirty() || !doc->hasFilepath() ) {
 		std::string tmpPath;
 		if ( !doc->hasFilepath() ) {
@@ -814,7 +815,6 @@ void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
 
 void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& linter,
 							  const std::string& path ) {
-	Clock clock;
 	std::string cmd( linter.command );
 	std::string pathstr( "\"" + path + "\"" );
 	String::replaceAll( cmd, "$FILENAME", pathstr );
@@ -980,7 +980,7 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 		Log::info( "LinterPlugin::runLinter with binary %s for %s took %.2fms. Found: %d matches. "
 				   "Errors: %d, "
 				   "Warnings: %d, Notices: %d.",
-				   cmd, path, clock.getElapsedTime().asMilliseconds(), totalMatches, totalErrors,
+				   cmd, path, mClock.getElapsedTime().asMilliseconds(), totalMatches, totalErrors,
 				   totalWarns, totalNotice );
 	}
 }

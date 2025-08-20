@@ -25,6 +25,7 @@
 #include "plugins/git/gitplugin.hpp"
 #include "plugins/linter/linterplugin.hpp"
 #include "plugins/lsp/lspclientplugin.hpp"
+#include "plugins/spellchecker/spellcheckerplugin.hpp"
 #include "plugins/xmltools/xmltoolsplugin.hpp"
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX
@@ -609,6 +610,7 @@ void App::initPluginManager() {
 	mPluginManager->registerPlugin( XMLToolsPlugin::Definition() );
 	mPluginManager->registerPlugin( GitPlugin::Definition() );
 	mPluginManager->registerPlugin( AIAssistantPlugin::Definition() );
+	mPluginManager->registerPlugin( SpellCheckerPlugin::Definition() );
 	mPluginManager->registerPlugin( DiscordRPCplugin::Definition() );
 }
 
@@ -2643,6 +2645,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			UITab* tab = (UITab*)editor->getData();
 			tab->removeClass( "tab_file_deleted" );
 		}
+		editor->getDocument().resetUndoRedo();
 	} );
 
 	editor->on( Event::OnCursorPosChangeInteresting, [this, editor]( auto ) {

@@ -70,6 +70,7 @@ CORE_SRCS				:= tools/ecode/*.cpp \
 							tools/ecode/plugins/linter/*.cpp \
 							tools/ecode/plugins/formatter/*.cpp \
 							tools/ecode/plugins/lsp/*.cpp \
+							tools/ecode/plugins/spellchecker/*.cpp \
 							tools/ecode/plugins/discordRPC/*.cpp \
 							tools/ecode/plugins/discordRPC/sdk/*.cpp \
 							tools/ecode/plugins/xmltools/*.cpp

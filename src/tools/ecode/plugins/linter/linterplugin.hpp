@@ -158,6 +158,7 @@ class LinterPlugin : public Plugin {
 	std::string mErrorMsg;
 	Rectf mQuickFixRect;
 	std::string mOldMaxWidth;
+	Clock mClock;
 
 	LinterPlugin( PluginManager* pluginManager, bool sync );
 
