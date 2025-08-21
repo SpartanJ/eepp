@@ -14,8 +14,8 @@ using json = nlohmann::json;
 
 namespace ecode {
 
-static constexpr std::string SPELL_CHECKER_CMD = "typos";
-static constexpr std::string SPELL_CHECKER_ARGS = "--format=brief";
+static constexpr auto SPELL_CHECKER_CMD = "typos";
+static constexpr auto SPELL_CHECKER_ARGS = "--format=brief";
 
 Plugin* SpellCheckerPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( SpellCheckerPlugin, ( pluginManager, false ) );
@@ -209,7 +209,7 @@ void SpellCheckerPlugin::spellCheckDoc( std::shared_ptr<TextDocument> doc ) {
 
 void SpellCheckerPlugin::runSpellChecker( std::shared_ptr<TextDocument> doc,
 										  const std::string& path ) {
-	std::string args( SPELL_CHECKER_ARGS + " \"" + path + "\"" );
+	std::string args( String::format( "%s \"%s\"", SPELL_CHECKER_ARGS, path ) );
 	std::unique_ptr<Process> process = std::make_unique<Process>();
 	TextDocument* docPtr = doc.get();
 	ScopedOp op(
