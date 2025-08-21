@@ -36,7 +36,7 @@ SceneNode::SceneNode( EE::Window::Window* window ) :
 	mNodeFlags |= NODE_FLAG_SCENENODE;
 	mSceneNode = this;
 
-	enableReportSizeChangeToChilds();
+	enableReportSizeChangeToChildren();
 
 	if ( NULL == mWindow ) {
 		mWindow = Engine::instance()->getCurrentWindow();
@@ -109,7 +109,7 @@ void SceneNode::draw() {
 
 			clipStart( needsClipPlanes );
 
-			drawChilds();
+			drawChildren();
 
 			clipEnd( needsClipPlanes );
 		}

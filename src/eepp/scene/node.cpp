@@ -40,7 +40,7 @@ Node::~Node() {
 		if ( mNodeFlags & NODE_FLAG_SCHEDULED_UPDATE )
 			mSceneNode->unsubscribeScheduledUpdate( this );
 
-		if ( isMouseOverMeOrChilds() )
+		if ( isMouseOverMeOrChildren() )
 			mSceneNode->removeMouseOverNode( this );
 	}
 
@@ -372,7 +372,7 @@ bool Node::isMouseOver() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_MOUSEOVER );
 }
 
-bool Node::isMouseOverMeOrChilds() const {
+bool Node::isMouseOverMeOrChildren() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_MOUSEOVER_ME_OR_CHILD );
 }
 
@@ -382,7 +382,7 @@ Uint32 Node::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 Uint32 Node::onMouseOver( const Vector2i& Pos, const Uint32& Flags ) {
-	if ( NULL != mParentNode && mParentNode->isMouseOverMeOrChilds() )
+	if ( NULL != mParentNode && mParentNode->isMouseOverMeOrChildren() )
 		mParentNode->onMouseOver( Pos, Flags );
 
 	writeNodeFlag( NODE_FLAG_MOUSEOVER, 1 );
@@ -398,7 +398,7 @@ Uint32 Node::onMouseOver( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 Uint32 Node::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
-	if ( NULL != mParentNode && !mParentNode->isMouseOverMeOrChilds() )
+	if ( NULL != mParentNode && !mParentNode->isMouseOverMeOrChildren() )
 		mParentNode->onMouseLeave( Pos, Flags );
 
 	writeNodeFlag( NODE_FLAG_MOUSEOVER, 0 );
@@ -529,7 +529,7 @@ void Node::setNodeFlags( const Uint32& flags ) {
 	mNodeFlags = flags;
 }
 
-void Node::drawChilds() {
+void Node::drawChildren() {
 	if ( isReverseDraw() ) {
 		Node* child = mChildLast;
 
@@ -566,7 +566,7 @@ void Node::nodeDraw() {
 
 		draw();
 
-		drawChilds();
+		drawChildren();
 
 		clipEnd( needsClipPlanes );
 
@@ -1740,7 +1740,7 @@ bool Node::reportSizeChangeToChilds() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS );
 }
 
-void Node::enableReportSizeChangeToChilds() {
+void Node::enableReportSizeChangeToChildren() {
 	writeNodeFlag( NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS, 1 );
 }
 

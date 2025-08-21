@@ -111,7 +111,7 @@ class VariablesModel : public Model {
 
 	size_t rowCount( const ModelIndex& index = ModelIndex() ) const override;
 
-	bool hasChilds( const ModelIndex& index = ModelIndex() ) const override;
+	bool hasChildren( const ModelIndex& index = ModelIndex() ) const override;
 
 	size_t columnCount( const ModelIndex& ) const override;
 

@@ -428,7 +428,7 @@ const char* Http::Response::getStatusDescription() const {
 	switch ( mStatus ) {
 		// 2xx: success
 		case Ok:
-			return "Successfull";
+			return "Successful";
 		case Created:
 			return "The resource has successfully been created";
 		case Accepted:
@@ -450,16 +450,16 @@ const char* Http::Response::getStatusDescription() const {
 		case MovedTemporarily:
 			return "The requested page has temporarily moved to a new location";
 		case NotModified:
-			return "For conditionnal requests, means the requested page hasn't changed and doesn't "
+			return "For conditional requests, means the requested page hasn't changed and doesn't "
 				   "need to be refreshed";
 
 		// 4xx: client error
 		case BadRequest:
 			return "The server couldn't understand the request (syntax error)";
 		case Unauthorized:
-			return "The requested page needs an authentification to be accessed";
+			return "The requested page needs an authentication to be accessed";
 		case Forbidden:
-			return "The requested page cannot be accessed at all, even with authentification";
+			return "The requested page cannot be accessed at all, even with authentication";
 		case NotFound:
 			return "The requested page doesn't exist";
 		case RangeNotSatisfiable:
@@ -822,14 +822,14 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 			// Send the request
 			if ( sslSocket->tcpSend( tunnelStr.c_str(), tunnelStr.size(), sent ) == Socket::Done ) {
 				char buffer[PACKET_BUFFER_SIZE + 1];
-				std::size_t readed = 0;
+				std::size_t read = 0;
 
 				// Get the proxy server response
-				if ( sslSocket->tcpReceive( buffer, PACKET_BUFFER_SIZE, readed ) == Socket::Done ) {
+				if ( sslSocket->tcpReceive( buffer, PACKET_BUFFER_SIZE, read ) == Socket::Done ) {
 					// Parse the HTTP Tunnel request response
 					Response tunnelResponse;
 					std::string header;
-					header.append( buffer, readed );
+					header.append( buffer, read );
 					tunnelResponse.parse( header );
 
 					if ( tunnelResponse.getStatus() == Response::Ok ) {
@@ -898,7 +898,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 				// Wait for the server's response
 				std::size_t currentTotalBytes = 0;
 				std::size_t len = 0;
-				std::size_t readed = 0;
+				std::size_t read = 0;
 				char* eol = NULL; // end of line
 				char* bol = NULL; // beginning of line
 				char buffer[PACKET_BUFFER_SIZE + 1];
@@ -913,14 +913,14 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 
 				while ( !request.isCancelled() &&
 						( status = mConnection->getSocket()->receive( buffer, PACKET_BUFFER_SIZE,
-																	  readed ) ) == Socket::Done ) {
+																	  read ) ) == Socket::Done ) {
 					char* readBuffer = buffer;
 
 					// If we didn't receive the header yet, we will try to find the end of the
 					// header
 					if ( !isnheader ) {
 						// calculate combined length of unprocessed data and new data
-						len += readed;
+						len += read;
 
 						// NULL terminate buffer for string functions
 						readBuffer[len] = '\0';
@@ -945,7 +945,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 								bol += 1;
 
 								// calculate the amount of data remaining in the buffer
-								len = readed - ( bol - readBuffer );
+								len = read - ( bol - readBuffer );
 
 								// Fill the header buffer
 								headerBuffer.append( readBuffer, ( bol - readBuffer ) );
@@ -1047,9 +1047,9 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 									// of the file buffer
 									if ( len > 0 ) {
 										readBuffer = bol;
-										readed = len;
+										read = len;
 									} else {
-										readed = 0;
+										read = 0;
 									}
 
 									headerBuffer.clear();
@@ -1063,10 +1063,10 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 					}
 
 					if ( isnheader ) {
-						currentTotalBytes += readed;
+						currentTotalBytes += read;
 
-						if ( readed > 0 )
-							bufferStream->write( readBuffer, readed );
+						if ( read > 0 )
+							bufferStream->write( readBuffer, read );
 
 						if ( !sendProgress( *this, request, received, Request::ContentReceived,
 											contentLength, currentTotalBytes ) ) {
@@ -1526,7 +1526,8 @@ std::shared_ptr<Http> Http::Pool::get( const URI& host, const URI& proxy ) {
 		}
 	}
 
-	auto http = std::make_shared<Http>( host.getHost(), host.getPort(), host.getScheme() == "https" );
+	auto http =
+		std::make_shared<Http>( host.getHost(), host.getPort(), host.getScheme() == "https" );
 	Lock l( mMutex );
 	mHttps[getHostHash( host, proxy )] = http;
 	return http;

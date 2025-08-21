@@ -1328,11 +1328,14 @@ void LSPClientPlugin::codeAction( UICodeEditor* editor ) {
 	if ( resp.isResponse() )
 		diagnostics = std::move( resp.getResponse().data );
 
-	mClientManager.codeAction(
+	bool sent = mClientManager.codeAction(
 		editor->getDocumentRef(), diagnostics,
 		[this, editor]( const LSPClientServer::IdType&, const std::vector<LSPCodeAction>& res ) {
 			createCodeActionsView( editor, res );
 		} );
+
+	if ( !sent )
+		editor->getDocument().execute( "spellchecker-fix-typo", editor );
 }
 
 void LSPClientPlugin::renameSymbol( UICodeEditor* editor ) {

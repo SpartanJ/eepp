@@ -304,7 +304,7 @@ class TerminalDisplay : public ITerminalDisplay {
 	VertexBuffer* mVBForeground{ nullptr };
 	std::vector<VertexBuffer*> mVBStyles;
 	TerminalColorScheme mColorScheme;
-	Uint32 mQuadVertexs{ 6 };
+	Uint32 mQuadVertex{ 6 };
 	Primitives mPrimitives;
 	Vector2u mCurGridPos;
 

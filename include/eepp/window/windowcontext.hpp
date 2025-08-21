@@ -20,7 +20,7 @@ namespace EE { namespace Window {
 #ifdef EE_GLEW_AVAILABLE
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
-typedef void* eeWindowContex;
+typedef void* eeWindowContext;
 
 #elif defined( EE_X11_PLATFORM )
 
@@ -30,17 +30,17 @@ typedef struct __glXContextRec* GLXContext;
 typedef struct __GLXcontextRec* GLXContext;
 #endif
 
-typedef GLXContext eeWindowContex;
+typedef GLXContext eeWindowContext;
 
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
 
 typedef struct __AGLContextRec* AGLContext;
 
-typedef AGLContext eeWindowContex;
+typedef AGLContext eeWindowContext;
 
 #endif
 #else
-typedef unsigned int eeWindowContex; //! Fallback
+typedef unsigned int eeWindowContext; //! Fallback
 #endif
 
 }} // namespace EE::Window

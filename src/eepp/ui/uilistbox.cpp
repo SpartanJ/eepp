@@ -347,8 +347,8 @@ void UIListBox::onTouchDragValueChange( Vector2f diff ) {
 }
 
 bool UIListBox::isTouchOverAllowedChilds() {
-	return isMouseOverMeOrChilds() && !mVScrollBar->isMouseOverMeOrChilds() &&
-		   !mHScrollBar->isMouseOverMeOrChilds();
+	return isMouseOverMeOrChildren() && !mVScrollBar->isMouseOverMeOrChildren() &&
+		   !mHScrollBar->isMouseOverMeOrChildren();
 }
 
 void UIListBox::findMaxWidth() {

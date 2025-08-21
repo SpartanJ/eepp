@@ -671,9 +671,9 @@ class EE_API TextDocument {
 
 	void setEncoding( TextFormat::Encoding encoding );
 
-	const FoldRangeServive& getFoldRangeService() const;
+	const FoldRangeService& getFoldRangeService() const;
 
-	FoldRangeServive& getFoldRangeService();
+	FoldRangeService& getFoldRangeService();
 
 	std::vector<TextDocumentLine> getLines() const;
 
@@ -699,7 +699,7 @@ class EE_API TextDocument {
 
   protected:
 	friend class TextUndoStack;
-	friend class FoldRangeServive;
+	friend class FoldRangeService;
 
 	EE::System::UUID mUUID;
 	Uint64 mModificationId{ 0 };
@@ -754,7 +754,7 @@ class EE_API TextDocument {
 	std::unique_ptr<SyntaxHighlighter> mHighlighter;
 	Mutex mStopFlagsMutex;
 	UnorderedMap<bool*, std::unique_ptr<bool>> mStopFlags;
-	FoldRangeServive mFoldRangeService;
+	FoldRangeService mFoldRangeService;
 
 	void initializeCommands();
 

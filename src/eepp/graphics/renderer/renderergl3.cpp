@@ -40,7 +40,7 @@ RendererGL3::RendererGL3() :
 	mLoaded( false ) {
 #if defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
 	mQuadsSupported = false;
-	mQuadVertexs = 6;
+	mQuadVertex = 6;
 #endif
 	Renderer::enable( GL_VERTEX_PROGRAM_POINT_SIZE );
 }

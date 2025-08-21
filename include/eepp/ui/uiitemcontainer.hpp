@@ -18,7 +18,7 @@ template <class TContainer> class UIItemContainer : public UIWidget {
 
 	void update( const Time& time );
 
-	void drawChilds();
+	void drawChildren();
 
 	virtual void onChildCountChange( Node* child, const bool& removed );
 
@@ -53,7 +53,7 @@ template <class TContainer> void UIItemContainer<TContainer>::update( const Time
 	}
 }
 
-template <class TContainer> void UIItemContainer<TContainer>::drawChilds() {
+template <class TContainer> void UIItemContainer<TContainer>::drawChildren() {
 	TContainer* tParent = reinterpret_cast<TContainer*>( getParent() );
 
 	if ( tParent->mItems.size() ) {

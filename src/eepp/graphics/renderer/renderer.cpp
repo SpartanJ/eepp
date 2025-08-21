@@ -198,7 +198,7 @@ Renderer::Renderer() :
 	mExtensions( 0 ),
 	mStateFlags( 1 << RSF_LINE_SMOOTH ),
 	mQuadsSupported( true ),
-	mQuadVertexs( 4 ),
+	mQuadVertex( 4 ),
 	mLineWidth( 1 ),
 	mCurVAO( 0 ),
 	mClippingMask( eeNew( ClippingMask, () ) ) {
@@ -707,8 +707,8 @@ void Renderer::colorMask( Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha ) {
 	glColorMask( red, green, blue, alpha );
 }
 
-const int& Renderer::quadVertexs() const {
-	return mQuadVertexs;
+const int& Renderer::quadVertex() const {
+	return mQuadVertex;
 }
 
 ClippingMask* Renderer::getClippingMask() const {

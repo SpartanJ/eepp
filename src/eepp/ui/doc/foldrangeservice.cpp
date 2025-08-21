@@ -194,9 +194,9 @@ static std::vector<TextRange> findFoldingRangesMarkdown( TextDocument* doc ) {
 	return regions;
 }
 
-FoldRangeServive::FoldRangeServive( TextDocument* doc ) : mDoc( doc ) {}
+FoldRangeService::FoldRangeService( TextDocument* doc ) : mDoc( doc ) {}
 
-bool FoldRangeServive::canFold() const {
+bool FoldRangeService::canFold() const {
 	if ( !mEnabled )
 		return false;
 	if ( mProvider && mProvider->foldingRangeProvider() )
@@ -206,7 +206,7 @@ bool FoldRangeServive::canFold() const {
 		   type == FoldRangeType::Markdown;
 }
 
-void FoldRangeServive::findRegions() {
+void FoldRangeService::findRegions() {
 	if ( !mEnabled || mDoc == nullptr || !canFold() )
 		return;
 
@@ -218,7 +218,7 @@ void FoldRangeServive::findRegions() {
 	findRegionsNative();
 }
 
-void FoldRangeServive::findRegionsNative() {
+void FoldRangeService::findRegionsNative() {
 	if ( !mEnabled || mDoc == nullptr || !canFold() )
 		return;
 
@@ -236,17 +236,17 @@ void FoldRangeServive::findRegionsNative() {
 	}
 }
 
-void FoldRangeServive::clear() {
+void FoldRangeService::clear() {
 	Lock l( mMutex );
 	mFoldingRegions.clear();
 }
 
-bool FoldRangeServive::empty() {
+bool FoldRangeService::empty() {
 	Lock l( mMutex );
 	return mFoldingRegions.empty();
 }
 
-std::optional<TextRange> FoldRangeServive::find( Int64 docIdx ) {
+std::optional<TextRange> FoldRangeService::find( Int64 docIdx ) {
 	Lock l( mMutex );
 	auto foldRegionIt = mFoldingRegions.find( docIdx );
 	if ( foldRegionIt == mFoldingRegions.end() )
@@ -254,7 +254,7 @@ std::optional<TextRange> FoldRangeServive::find( Int64 docIdx ) {
 	return foldRegionIt->second;
 }
 
-void FoldRangeServive::addFoldRegions( std::vector<TextRange> regions ) {
+void FoldRangeService::addFoldRegions( std::vector<TextRange> regions ) {
 	size_t newCount;
 	size_t oldCount;
 	{
@@ -269,13 +269,13 @@ void FoldRangeServive::addFoldRegions( std::vector<TextRange> regions ) {
 	mDoc->notifyFoldRegionsUpdated( oldCount, newCount );
 }
 
-bool FoldRangeServive::isFoldingRegionInLine( Int64 docIdx ) {
+bool FoldRangeService::isFoldingRegionInLine( Int64 docIdx ) {
 	Lock l( mMutex );
 	auto foldRegionIt = mFoldingRegions.find( docIdx );
 	return foldRegionIt != mFoldingRegions.end();
 }
 
-void FoldRangeServive::shiftFoldingRegions( Int64 fromLine, Int64 numLines ) {
+void FoldRangeService::shiftFoldingRegions( Int64 fromLine, Int64 numLines ) {
 	// TODO: Optimize this
 	Lock l( mMutex );
 	std::unordered_map<Int64, TextRange> foldingRegions;
@@ -290,7 +290,7 @@ void FoldRangeServive::shiftFoldingRegions( Int64 fromLine, Int64 numLines ) {
 	mFoldingRegions = foldingRegions;
 }
 
-void FoldRangeServive::setFoldingRegions( std::vector<TextRange> regions ) {
+void FoldRangeService::setFoldingRegions( std::vector<TextRange> regions ) {
 	size_t newCount = regions.size();
 	size_t oldCount;
 	{
@@ -306,26 +306,26 @@ void FoldRangeServive::setFoldingRegions( std::vector<TextRange> regions ) {
 	mDoc->notifyFoldRegionsUpdated( oldCount, newCount );
 }
 
-FoldRangeProvider* FoldRangeServive::getProvider() const {
+FoldRangeProvider* FoldRangeService::getProvider() const {
 	return mProvider;
 }
 
-bool FoldRangeServive::hasProvider() const {
+bool FoldRangeService::hasProvider() const {
 	return mProvider != nullptr;
 }
 
-void FoldRangeServive::setProvider( FoldRangeProvider* provider ) {
+void FoldRangeService::setProvider( FoldRangeProvider* provider ) {
 	mProvider = provider;
 	if ( provider == nullptr ) {
 		mFoldingRegions.clear();
 	}
 }
 
-bool FoldRangeServive::isEnabled() const {
+bool FoldRangeService::isEnabled() const {
 	return mEnabled;
 }
 
-void FoldRangeServive::setEnabled( bool enabled ) {
+void FoldRangeService::setEnabled( bool enabled ) {
 	mEnabled = enabled;
 }
 

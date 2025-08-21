@@ -14,7 +14,7 @@ UIStackLayout* UIStackLayout::New() {
 UIStackLayout::UIStackLayout() : UIStackLayout( "stacklayout" ) {}
 
 UIStackLayout::UIStackLayout( const std::string& tag ) : UILayout( tag ) {
-	mFlags |= UI_OWNS_CHILDS_POSITION;
+	mFlags |= UI_OWNS_CHILDREN_POSITION;
 	setClipType( ClipType::ContentBox );
 	setGravity( UI_HALIGN_LEFT | UI_VALIGN_TOP );
 	listenParent();

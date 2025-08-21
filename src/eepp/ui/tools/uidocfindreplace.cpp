@@ -169,7 +169,7 @@ UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc:
 	UILinearLayout( "docfindreplace", UIOrientation::Horizontal ),
 	WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ),
 	mDoc( doc ) {
-	mFlags |= UI_OWNS_CHILDS_POSITION;
+	mFlags |= UI_OWNS_CHILDREN_POSITION;
 
 	getKeyBindings().addKeybindsStringUnordered( keybindings );
 

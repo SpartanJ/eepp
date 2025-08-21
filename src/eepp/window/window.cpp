@@ -521,7 +521,7 @@ const std::string& Window::getTitle() const {
 	return mWindow.WindowConfig.Title;
 }
 
-eeWindowContex Window::getContext() const {
+eeWindowContext Window::getContext() const {
 #if defined( EE_GLEW_AVAILABLE ) &&                                   \
 	( EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM ) || \
 	  EE_PLATFORM == EE_PLATFORM_MACOS )
@@ -567,7 +567,7 @@ Vector2i Window::getPosition() const {
 	return Vector2i::Zero;
 }
 
-void Window::setCurrentContext( eeWindowContex ) {}
+void Window::setCurrentContext( eeWindowContext ) {}
 
 void Window::setCurrent() {}
 

@@ -728,8 +728,9 @@ static json codeActionParams( const URI& document, const TextRange& range,
 	context[MEMBER_DIAGNOSTICS] = diags;
 	if ( !kinds.empty() )
 		context["only"] = json( kinds );
-	if ( !diagnostics.empty() )
-		params["context"] = diagnostics;
+	params["context"] = !diagnostics.empty()
+							? diagnostics
+							: nlohmann::json{ { "diagnostics", nlohmann::json::array() } };
 	return params;
 }
 
@@ -1478,7 +1479,7 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( json&& msg, const Json
 			if ( mSocket ) {
 				size_t sent = 0;
 				mSocket->send( sjson.c_str(), sjson.size(), sent );
-			} else if ( !mProcess.isShuttingDown() && mProcess.isAlive() )  {
+			} else if ( !mProcess.isShuttingDown() && mProcess.isAlive() ) {
 				mProcess.write( sjson );
 			}
 		} else {

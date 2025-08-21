@@ -72,8 +72,8 @@ class TerminalManager {
 	std::map<std::string, TerminalColorScheme> mTerminalColorSchemes;
 	std::string mTerminalCurrentColorScheme;
 
-	Float mColorSchemeMenuesCreatedWithHeight{ 0 };
-	std::vector<UIPopUpMenu*> mColorSchemeMenues;
+	Float mColorSchemeMenusCreatedWithHeight{ 0 };
+	std::vector<UIPopUpMenu*> mColorSchemeMenus;
 	bool mUseFrameBuffer{ false };
 };
 

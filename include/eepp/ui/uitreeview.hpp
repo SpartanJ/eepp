@@ -50,7 +50,7 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	virtual Sizef getContentSize() const;
 
-	virtual void drawChilds();
+	virtual void drawChildren();
 
 	virtual Node* overFind( const Vector2f& point );
 

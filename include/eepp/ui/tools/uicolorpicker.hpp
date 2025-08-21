@@ -21,7 +21,7 @@ class EE_API UIColorPicker {
 									const ColorPickedCb& colorPickedCb = ColorPickedCb(),
 									const Uint8& modalAlpha = 120,
 									const Uint32& winFlags = UI_WIN_NO_DECORATION | UI_WIN_MODAL |
-															 UI_WIN_DRAGABLE_CONTAINER |
+															 UI_WIN_DRAGGABLE_CONTAINER |
 															 UI_WIN_FRAME_BUFFER,
 									const Sizef& winSize = Sizef( 320, 470 ) );
 

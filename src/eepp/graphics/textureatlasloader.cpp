@@ -280,7 +280,7 @@ void TextureAtlasLoader::createTextureRegions() {
 						Vector2i( tSh->OffsetX, tSh->OffsetY ), TextureRegionName );
 
 					tTextureRegion->setPixelDensity( tSh->PixelDensity / 100.f );
-					// if ( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPED )
+					// if ( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPPED )
 					// Should rotate the sub texture, but.. sub texture rotation is not stored.
 
 					mTextureAtlas->add( tTextureRegion );
@@ -445,9 +445,9 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 											  std::begin( result.digest ) ) ) {
 								if ( Image::getInfo( path.c_str(), &x, &y, &c ) ) {
 									// If size or channels changed, the  image need update.
-									if ( ( !( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPED ) &&
+									if ( ( !( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPPED ) &&
 										   tSh->Width == x && tSh->Height == y ) ||
-										 ( ( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPED ) &&
+										 ( ( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPPED ) &&
 										   tSh->Width == y && tSh->Height == x ) ||
 										 tSh->Channels != c ) {
 										// Only update the image with the newest one.

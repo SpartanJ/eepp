@@ -440,12 +440,12 @@ void LSPClientServerManager::getSymbolReferences( std::shared_ptr<TextDocument> 
 		} );
 }
 
-void LSPClientServerManager::codeAction( std::shared_ptr<TextDocument> doc,
+bool LSPClientServerManager::codeAction( std::shared_ptr<TextDocument> doc,
 										 const nlohmann::json& diagnostics,
 										 const LSPClientServer::CodeActionHandler& h ) {
 	auto* server = getOneLSPClientServer( doc );
-	if ( !server )
-		return;
+	if ( !server || !server->isRunning() )
+		return false;
 
 	auto range = doc->getSelection();
 	if ( !diagnostics.empty() && diagnostics.contains( "diagnostics" ) &&
@@ -458,6 +458,7 @@ void LSPClientServerManager::codeAction( std::shared_ptr<TextDocument> doc,
 	}
 
 	server->documentCodeAction( doc->getURI(), range, {}, diagnostics, h );
+	return true;
 }
 
 void LSPClientServerManager::memoryUsage( std::shared_ptr<TextDocument> doc ) {

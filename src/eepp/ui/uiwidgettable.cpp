@@ -646,8 +646,8 @@ void UIWidgetTable::onTouchDragValueChange( Vector2f diff ) {
 }
 
 bool UIWidgetTable::isTouchOverAllowedChilds() {
-	return isMouseOverMeOrChilds() && !mVScrollBar->isMouseOverMeOrChilds() &&
-		   !mHScrollBar->isMouseOverMeOrChilds();
+	return isMouseOverMeOrChildren() && !mVScrollBar->isMouseOverMeOrChildren() &&
+		   !mHScrollBar->isMouseOverMeOrChildren();
 }
 
 void UIWidgetTable::updatePageStep() {

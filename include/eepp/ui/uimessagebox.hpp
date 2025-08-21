@@ -14,7 +14,7 @@ class UIComboBox;
 
 #define UI_MESSAGE_BOX_DEFAULT_FLAGS                                          \
 	UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_MODAL | \
-		UI_WIN_SHARE_ALPHA_WITH_CHILDS
+		UI_WIN_SHARE_ALPHA_WITH_CHILDREN
 
 class EE_API UIMessageBox : public UIWindow {
   public:

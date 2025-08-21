@@ -2056,7 +2056,7 @@ void App::createDocDirtyAlert( UICodeEditor* editor, bool showEnableAutoReload )
 	)xml";
 	docAlert = mUISceneNode->loadLayoutFromString( msg, editor )->asType<UILinearLayout>();
 
-	editor->enableReportSizeChangeToChilds();
+	editor->enableReportSizeChangeToChildren();
 
 	docAlert->find( "file_autoreload" )
 		->setVisible( showEnableAutoReload ? !editor->getDocument().isDirty() : false )
@@ -2117,7 +2117,7 @@ void App::createDocDoesNotExistsInFSAlert( UICodeEditor* editor ) {
 	)xml";
 	docAlert = mUISceneNode->loadLayoutFromString( msg, editor )->asType<UILinearLayout>();
 
-	editor->enableReportSizeChangeToChilds();
+	editor->enableReportSizeChangeToChildren();
 
 	docAlert->find( "file_continue_editing" )->onClick( [docAlert, editor]( const MouseEvent* ) {
 		editor->disableReportSizeChangeToChilds();
@@ -2186,7 +2186,7 @@ void App::createDocManyLangsAlert( UICodeEditor* editor ) {
 		} );
 	}
 
-	editor->enableReportSizeChangeToChilds();
+	editor->enableReportSizeChangeToChildren();
 
 	docAlert->runOnMainThread(
 		[docAlert, editor] {
@@ -4269,7 +4269,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::Flag terminal( parser, "terminal", "Open a new terminal / Open ecode in terminal mode",
 						 { 't', "terminal" } );
 	args::MapFlag<std::string, LogLevel> logLevel(
-		parser, "log-level", "The level of details that the application will emmit logs.",
+		parser, "log-level", "The level of details that the application will emit logs.",
 		{ 'l', "log-level" }, Log::getMapFlag(), Log::getDefaultLogLevel() );
 	args::Flag fb( parser, "framebuffer", "Use frame buffer (more memory usage, less CPU usage)",
 				   { "fb", "framebuffer" } );

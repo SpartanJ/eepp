@@ -39,7 +39,7 @@ static String textLine( const std::string& fileText, const size_t& fromPos, Int6
 	}
 	relCol =
 		String::utf8Length( fileText.substr( nlStartPtr - stringStartPtr, startPtr - nlStartPtr ) );
-	// if the line to substract is massive we only get the fist kilobyte of that line, since the
+	// if the line to subtract is massive we only get the fist kilobyte of that line, since the
 	// line is only shared for visual aid.
 	return fileText.substr( nlStartPtr - stringStartPtr,
 							endPtr - nlStartPtr > EE_1KB ? EE_1KB : endPtr - nlStartPtr );
@@ -239,7 +239,7 @@ ProjectSearch::find( const std::vector<std::string> files, std::string string,
 				}
 
 				// if the file is not inverted and the file matches with the glob, then it must be
-				// not skiped
+				// not skipped
 				if ( !filter.second && matches ) {
 					skip = false;
 					break;

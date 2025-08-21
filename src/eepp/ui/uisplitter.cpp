@@ -15,7 +15,7 @@ UISplitter::UISplitter() :
 	mSplitPartition( StyleSheetLength( "50%" ) ),
 	mFirstWidget( NULL ),
 	mLastWidget( NULL ) {
-	mFlags |= UI_OWNS_CHILDS_POSITION;
+	mFlags |= UI_OWNS_CHILDREN_POSITION;
 	mSplitter = UIWidget::NewWithTag( "splitter::separator" );
 	mSplitter->setDragEnabled( true );
 	mSplitter->on( Event::OnDragStart,

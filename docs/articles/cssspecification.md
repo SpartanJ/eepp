@@ -162,7 +162,7 @@ properties.
 	* is similar to (but not equivalent, since specificity of inline CSS is higher):
 	* `<LinearLayout layout_width="match_parent" layout_height="match_parent" orientation="vertical"></LinearLayout>`
 * CSS standard properties directly linked to the Mozilla docs are fully supported, otherwise a clarification will appear.
-* _Applicable to_ will link to the EE::UI::UIWidget that can use that property, and betweeen parenthesis is the CSS element name.
+* _Applicable to_ will link to the EE::UI::UIWidget that can use that property, and between parenthesis is the CSS element name.
 
 ---
 
@@ -174,13 +174,13 @@ Read [animation-delay](https://developer.mozilla.org/en-US/docs/Web/CSS/animatio
 
 ### animation-direction
 
-Read [animation-direction](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-direction) documenation.
+Read [animation-direction](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-direction) documentation.
 
 ---
 
 ### animation-duration
 
-Read [animation-duration](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-duration) documenation.
+Read [animation-duration](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-duration) documentation.
 
 ---
 
@@ -582,7 +582,7 @@ Sets the amount of drag that is needed to start dragging an element.
 Sets the foreground color to highlight the current dragged element that its is hovering
 an element that accepts a drop of the dragged element.
 
-* Applicatable to: EE::UI::UITabWidget (TabWidget), EE::UI::UIRoot (:root)
+* Applicable to: EE::UI::UITabWidget (TabWidget), EE::UI::UIRoot (:root)
 * Data Type: [color](#color-data-type)
 * Default value: `#FFFFFF20`
 
@@ -673,7 +673,7 @@ Multiple flags can be set, flags are separated by `|`.
   * `clip`: Enables clipping of the element box.
   * `multiselect`: Enables multiple selection on elements that support selection. EE::UI::UIListBox (ListBox) for the moment.
   * `autopadding`: Enables the element to calculate the padding based on the skin size.
-  * `reportsizechangetochilds`: When enabled the element will emmit a event (`OnParentSizeChange`) to its childs reporting the size change of the parent.
+  * `reportsizechangetochilds`: When enabled the element will emit a event (`OnParentSizeChange`) to its children reporting the size change of the parent.
 * Default value: _No value_
 
 ---
@@ -759,8 +759,8 @@ gravity: center_horizontal|bottom;
 
 ### gravity-owner
 
-Widgets elements can inform that own childs position using a special flag on its implementation
-(UI_OWNS_CHILDS_POSITION). Sometimes some layouts may need to override the parent behavior that uses
+Widgets elements can inform that own children position using a special flag on its implementation
+(UI_OWNS_CHILDREN_POSITION). Sometimes some layouts may need to override the parent behavior that uses
 that flag. This flag will let the layout manage his gravity against its parent in all cases.
 
 * Applicable to: Any layout element.
@@ -964,7 +964,7 @@ in which these items are displayed/sorted inside the button.
 
 ### layout-gravity
 
-The layout gravity defines how the element gravitates againts its parent (when possible). Gravity
+The layout gravity defines how the element gravitates against its parent (when possible). Gravity
 specifies how a component should be placed in its group of cells. Must be one or more (separated by
 `|`) of the _value list_ values. This behaves as the [android:layout_gravity](https://developer.android.com/reference/android/widget/LinearLayout.LayoutParams#attr_android:layout_gravity)
 XML attribute (for those who are familiar with).
@@ -987,7 +987,7 @@ XML attribute (for those who are familiar with).
 ### layout-height
 
 Specifies the basic height of the element. This is a required attribute for any element inside of a
-containing layout element that doesn't use any fixed size for its childs (ej: EE::UI::UILinearLayout,
+containing layout element that doesn't use any fixed size for its children (ej: EE::UI::UILinearLayout,
 EE::UI::UIRelativeLayout). Its value may be a length/dimension (such as `12dp`) for a constant height
 or one of the special constants.
 
@@ -1007,7 +1007,7 @@ or one of the special constants.
 Positions the top edge of this element below the given anchor element ID.
 Accommodates top margin of this element and bottom margin of anchor view.
 
-* Applicatable to: Any child of a EE::UI::UIRelativeLayout (RelativeLayout)
+* Applicable to: Any child of a EE::UI::UIRelativeLayout (RelativeLayout)
 * Data Type: [string](#string-data-type) (anchor element ID)
 * Default value: _No value_
 * Aliases: `layout_to_bottom_of`
@@ -1019,7 +1019,7 @@ Accommodates top margin of this element and bottom margin of anchor view.
 Positions the right edge of this element to the left of the given anchor element ID.
 Accommodates right margin of this element and left margin of anchor element.
 
-* Applicatable to: Any child of a EE::UI::UIRelativeLayout (RelativeLayout)
+* Applicable to: Any child of a EE::UI::UIRelativeLayout (RelativeLayout)
 * Data Type: [string](#string-data-type) (anchor element ID)
 * Default value: _No value_
 * Aliases: `layout_to_left_of`
@@ -1031,7 +1031,7 @@ Accommodates right margin of this element and left margin of anchor element.
 Positions the left edge of this element to the right of the given anchor element ID. Accommodates
 left margin of this element and right margin of anchor element.
 
-* Applicatable to: Any child of a EE::UI::UIRelativeLayout (RelativeLayout)
+* Applicable to: Any child of a EE::UI::UIRelativeLayout (RelativeLayout)
 * Data Type: [string](#string-data-type) (anchor element ID)
 * Default value: _No value_
 * Aliases: `layout_to_right_of`
@@ -1043,7 +1043,7 @@ left margin of this element and right margin of anchor element.
 Positions the bottom edge of this element above the given anchor element ID.
 Accommodates bottom margin of this element and top margin of anchor view.
 
-* Applicatable to: Any child of a EE::UI::UIRelativeLayout (RelativeLayout)
+* Applicable to: Any child of a EE::UI::UIRelativeLayout (RelativeLayout)
 * Data Type: [string](#string-data-type) (anchor element ID)
 * Default value: _No value_
 * Aliases: `layout_to_top_of`
@@ -1077,7 +1077,7 @@ layout weight.
 ### layout-width
 
 Specifies the basic width of the element. This is a required attribute for any element inside of a
-containing layout element that doesn't use any fixed size for its childs (ej: EE::UI::UILinearLayout,
+containing layout element that doesn't use any fixed size for its children (ej: EE::UI::UILinearLayout,
 EE::UI::UIRelativeLayout). Its value may be a length/dimension (such as `12dp`) for a constant width
 or one of the special constants.
 
@@ -1264,11 +1264,11 @@ Read [min-height](https://developer.mozilla.org/en-US/docs/Web/CSS/min-height) d
 ### min-icon-size
 
 Sets the minimum size of the icon inside a push button (or any widget that extends from it, for
-example a menu item or a tab). It's usually required for the EE::UI::UIMenu (Menu) sice the icon
+example a menu item or a tab). It's usually required for the EE::UI::UIMenu (Menu) since the icon
 box must have a size if the menu contains items with icons and others without, otherwise the menu
 items will be misaligned.
 
-* Applicatable to: EE::UI::UIPushButton (PushButton), EE::UI::UIMenuItem (Menu::item),
+* Applicable to: EE::UI::UIPushButton (PushButton), EE::UI::UIMenuItem (Menu::item),
   EE::UI::UITab (Tab), EE::UI::UISelectButton (SelectButton), EE::UI::UIMenuCheckBox (Menu::checkbox),
   EE::UI::UIMenuSubMenu (Menu::SubMenu)
 * Data Type: [vector2-length](#vector2-length-data-type)
@@ -1427,7 +1427,7 @@ parent window.
 
 Sets the current progress of any type of progress bar or loader.
 
-* Applicable to: EE::UI::UIProgresBar (ProgressBar), EE::UI::UILoader (Loader)
+* Applicable to: EE::UI::UIProgressBar (ProgressBar), EE::UI::UILoader (Loader)
 * Data Type: [number](#number-data-type)
 * Default value: `0`
 
@@ -1619,8 +1619,8 @@ Sets a method to scale the image inside an element.
 * Applicable to: EE::UI::UIImage (Image), EE::UI::UITextureRegion (TextureRegion)
 * Data Type: [string-list](#string-list-data-type)
 * Value List:
-  * `fit-inside`: Fits the image inside the element mantaining its ratio.
-  * `expand`: Expands the image to cover the whole element without mantaining its ratio.
+  * `fit-inside`: Fits the image inside the element maintaining its ratio.
+  * `expand`: Expands the image to cover the whole element without maintaining its ratio.
   * `none`: Keeps the image as it is.
 
 ---
@@ -1688,7 +1688,7 @@ Selects an item inside an element containing a list of items from its item text.
 
 ### selection-back-color
 
-Sets the text selection background color on a text element that suports text selection.
+Sets the text selection background color on a text element that supports text selection.
 
 * Applicable to: EE::UI::UITextView (TextView) and any element that holds inside or extends from a
   TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
@@ -1701,7 +1701,7 @@ Sets the text selection background color on a text element that suports text sel
 
 ### selection-color
 
-Sets the text selection color on a text element that suports text selection.
+Sets the text selection color on a text element that supports text selection.
 
 * Applicable to: EE::UI::UITextView (TextView) and any element that holds inside text or extends from a
   TextView. EE::UI::UICheckBox (CheckBox), EE::UI::UIRadioButton (RadioButton), EE::UI::UITextInput
@@ -1759,7 +1759,7 @@ attached to the splitter.
 
 ### splitter-partition
 
-Sets the space ocuppied by the first view contained by the splitter.
+Sets the space occupied by the first view contained by the splitter.
 
 * Applicable to: EE::UI::UISplitter (Splitter)
 * Data Type: [length-percentage](#length-percentage-data-type)
@@ -1799,7 +1799,7 @@ Enables/disables manually rearraging the tabs in the tab bar.
 
 ### tabbar-allow-drag-and-drop-tabs
 
-Enables/disables the hability to move any tab from a TabWidget to another.
+Enables/disables the ability to move any tab from a TabWidget to another.
 
 * Applicable to: EE::UI::UITabWidget (TabWidget)
 * Data Type: [boolean](#boolean-data-type)
@@ -2201,10 +2201,10 @@ Multiple values are separated with a `|` (as a logical or).
   * `minimize`: Adds a minimize button to the titlebar.
   * `draggable`: Makes the window background draggable.
   * `shadow`: The window will project a shadow.
-  * `modal`: Makes the window modal (blocks interacting any element ouside the window).
+  * `modal`: Makes the window modal (blocks interacting any element outside the window).
   * `undecorated`: Creates an undecorated window (no borders and titlebar).
   * `resizeable`: Makes the window resizeable.
-  * `shareopacity`: Childs will inherit the window opacity (otherwise if you change the opacity of the window will only affect its borders, background and titlebar).
+  * `shareopacity`: Children will inherit the window opacity (otherwise if you change the opacity of the window will only affect its borders, background and titlebar).
   * `buttonactions`: Implements the window minimize, maximize and close buttons default actions. This means that close button click will close, minimize will hide (but not close) and maximize will maximize.
   * `framebuffer`: Creates the window on its own frame buffer.
   * `colorbuffer`: Enables the color buffer to the frame buffer (if active).
@@ -2615,7 +2615,7 @@ Read [length](https://developer.mozilla.org/en-US/docs/Web/CSS/length) documenta
 
 **Differences with documentation:**
 
-* Supported lenghts: `em`, `rem`, `pt`, `pc`, `in`, `cm`, `mm`, `vw`, `vh`, `vmin`, `vmax`.
+* Supported lengths: `em`, `rem`, `pt`, `pc`, `in`, `cm`, `mm`, `vw`, `vh`, `vmin`, `vmax`.
 
 * Also adds: `dp` as [Device-independent pixel](https://en.wikipedia.org/wiki/Device-independent_pixel). Plus `dpr` (dp rounded), `dprd` (dp rounded down) and `dpru` (dp rounded up).
 
@@ -2655,7 +2655,7 @@ and http/s resources.
 
 Valid resources path:
 ```CSS
-file://assets/icon/ee.png; /** relative path to the current working diretory */
+file://assets/icon/ee.png; /** relative path to the current working directory */
 "file://assets/icon/ee.png";
 https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/icon/ee.png;
 "https://raw.githubusercontent.com/SpartanJ/eepp/develop/bin/assets/icon/ee.png";
@@ -2668,13 +2668,13 @@ url(data:image/format,url-encoded-data);
 @texture/image_name_already_in_texture_factory;
 @textureregion/region_name_already_in_any_texture_atlas;
 @sprite/sprite_name_already_in_any_texture_atlas; /* sprite pattern name **/
-@drawable/drawable_name_already_in_any_drawable_manager; /* drawable managers are any holder of image resources. This includes: texture atlases, textures, nine patchs. */
+@drawable/drawable_name_already_in_any_drawable_manager; /* drawable managers are any holder of image resources. This includes: texture atlases, textures, nine patches. */
 @9p/nine_patch_resource_name_already_in_the_nine_path_manager;
 drawable_resource_name; /** same as doing: @drawable/drawable_resource_name */
 linear-gradient(from_color, to_color);
 linear-gradient(direction, from_color, to_color); /** valid directions are (without quotes): "to bottom", "to left", "to right", "to top". */
 circle(radius, color, type); /** type (optional) can be (without quotes): "fill" or "solid" (filled), or "line" (lined). */
-rectangle(type, color, rotation, radius); /** type (optional) can be (without quotes): "fill" or "solid" (filled), or "line" (lined). rotation (optional) is a number in degress: "0º" (without quotes). radius (optional), must be the last parameter. */
+rectangle(type, color, rotation, radius); /** type (optional) can be (without quotes): "fill" or "solid" (filled), or "line" (lined). rotation (optional) is a number in degrees: "0º" (without quotes). radius (optional), must be the last parameter. */
 triangle(type, color, "point_1.x point1.y, point_2.x point2.y, point_3.x point3.y", lineWidth) /** type can be (without quotes): "fill" or "solid" (filled), or "line" (lined). lineWidth (optional, default 1dp): the length or width of the lines when type is "fill"- */
 poly(type, color, "point_1.x point1.y, point_2.x point2.y, ...", lineWidth) /** polygon. type (optional) can be (without quotes): "fill" or "solid" (filled), or "line" (lined). lineWidth (optional, default 1dp): the length or width of the lines when type is "fill"- */
 icon(name, size) /** icons usually come from font glyphs, size is the font glyph size. For example: icon("quit", 24dp) */

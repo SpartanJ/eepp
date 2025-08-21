@@ -105,6 +105,11 @@ class SpellCheckerPlugin : public PluginBase {
 	void replaceMatchWithText( const TextRange& range, const std::string& newText, UICodeEditor* );
 
 	void createSpellCheckAlternativesView( UICodeEditor* editor );
+
+	void goToNextError( UICodeEditor* editor );
+
+	void goToPrevError( UICodeEditor* editor );
+
 };
 
 } // namespace ecode

@@ -13,7 +13,7 @@ UIScrollableWidget::UIScrollableWidget( const std::string& tag ) :
 	mHScroll( UIScrollBar::NewHorizontal() ),
 	mSizeChangeCb( 0 ),
 	mPosChangeCb( 0 ) {
-	mFlags |= UI_OWNS_CHILDS_POSITION | UI_SCROLLABLE;
+	mFlags |= UI_OWNS_CHILDREN_POSITION | UI_SCROLLABLE;
 
 	mVScroll->setParent( this );
 	mHScroll->setParent( this );

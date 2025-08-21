@@ -9,7 +9,7 @@ function newplatform(plf)
 		iscrosscompiler = true
 	}
 
-	-- Allow use of new platform in --platfroms
+	-- Allow use of new platform in --platforms
 	table.insert(premake.option.list["platform"].allowed, { name, description })
 	table.insert(premake.fields.platforms.allowed, name)
 
@@ -159,7 +159,7 @@ newoption { trigger = "with-static-backend", description = "It will try to compi
 newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
 newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
 newoption { trigger = "without-mojoal", description = "Compile without mojoAL as OpenAL implementation (that requires SDL2 backend). Instead it will use openal-soft." }
-newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link agains SDL2.framework." }
+newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link against SDL2.framework." }
 newoption { trigger = "with-mold-linker", description = "Tries to use the mold linker instead of the default linker of the toolchain" }
 newoption { trigger = "with-debug-symbols", description = "Release builds are built with debug symbols." }
 newoption { trigger = "thread-sanitizer", description ="Compile with ThreadSanitizer." }
@@ -812,19 +812,19 @@ function set_ios_config()
 		local err = false
 
 		if nil == os.getenv("TOOLCHAINPATH") then
-			print("You must set TOOLCHAINPATH enviroment variable.")
+			print("You must set TOOLCHAINPATH environment variable.")
 			print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/")
 			err = true
 		end
 
 		if nil == os.getenv("SYSROOTPATH") then
-			print("You must set SYSROOTPATH enviroment variable.")
+			print("You must set SYSROOTPATH environment variable.")
 			print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.1.sdk")
 			err = true
 		end
 
 		if nil == os.getenv("IOSVERSION") then
-			print("You must set IOSVERSION enviroment variable.")
+			print("You must set IOSVERSION environment variable.")
 			print("\tExample: 12.1")
 			err = true
 		end

@@ -184,7 +184,7 @@ class EE_API FileSystemModel : public Model {
 	virtual size_t treeColumn() const { return Column::Name; }
 	virtual size_t rowCount( const ModelIndex& = ModelIndex() ) const;
 	virtual size_t columnCount( const ModelIndex& = ModelIndex() ) const;
-	virtual bool hasChilds( const ModelIndex& = ModelIndex() ) const;
+	virtual bool hasChildren( const ModelIndex& = ModelIndex() ) const;
 	virtual std::string columnName( const size_t& column ) const;
 	virtual Variant data( const ModelIndex&, ModelRole role = ModelRole::Display ) const;
 	virtual ModelIndex parentIndex( const ModelIndex& ) const;

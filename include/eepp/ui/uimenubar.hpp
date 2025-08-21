@@ -80,7 +80,7 @@ class EE_API UIMenuBar : public UIWidget {
 
 	void unselectButtons();
 
-	void destroyMenues();
+	void destroyMenus();
 
 	void autoHeight();
 };

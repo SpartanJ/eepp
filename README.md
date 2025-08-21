@@ -448,7 +448,7 @@ Then the project files should be found in `make/windows/`. A complete solution
 and all the project will be available. Having installed everything, you'll be
 able to build the *Visual Studio* solution as any other project.
 
-Using the commnad line argument `--windows-vc-build` will download the SDL2 dependency automatically
+Using the command line argument `--windows-vc-build` will download the SDL2 dependency automatically
 and add the paths to the build process to link against it without the need to download manually any
 external dependency.
 
@@ -578,7 +578,7 @@ click in the plus icon (+), then go to _Add Other..._ and locate and select the
 This script can be used to build the SDL2 and eepp as two fat static libraries
 with arm64 and x86_64 architectures in it (arm64 for iPhone/iPad and x86_64 for
 the simulators). To generate a release build pass `config=release` as a parameter
-fo the script (`sh compile-all.sh config=release`). The built files will be
+for the script (`sh compile-all.sh config=release`). The built files will be
 located in `libs/ios/`, as `libSDL2.a` and `libeepp.a` (or `libeepp-debug.a` for
 debug build). This two files can be integrated in your project.
 
@@ -587,12 +587,12 @@ debug build). This two files can be integrated in your project.
 You will first need to [download and install emscripten](https://emscripten.org/docs/getting_started/downloads.html).
 Then there's a script for building the **emscripten** project in
 `projects/emscripten/make.sh`. Before running this script remember to set the
-emsdk enviroment, it should be something like: `source /path/to/emsdk/emsdk_env.sh`.
+emsdk environment, it should be something like: `source /path/to/emsdk/emsdk_env.sh`.
 That should be enough in **GNU/Linux** or **macOS** ( only tested this on GNU/Linux ).
 
 ## How to run the demos and tools?
 
-All the binaries are located at the `bin` directory after built. The binaries requiere two files:
+All the binaries are located at the `bin` directory after built. The binaries require two files:
 the eepp library and the SDL2 library. The eepp library will be located in `libs/{OS}/`. The build
 script will try to symlink the eepp library into `bin`, if that fails it should be copied or
 symlinked manually. Regarding the SDL2 library is not provided in the repository, so in order to run
@@ -639,7 +639,7 @@ course of the support+community that you can get from *Godot* or *cocos2d-x* to
 mention a couple.
 
 The main idea of this library is to focus on a better general approach to
-develop heavily UI based apps ands games than the other options, with cleaner
+develop heavily UI based apps and games than the other options, with cleaner
 code and implementation.
 
 The main reason I developed the library is for _fun_ and to _learn_ new

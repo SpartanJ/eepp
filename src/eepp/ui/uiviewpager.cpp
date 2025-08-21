@@ -29,10 +29,10 @@ UIViewPager::UIViewPager() :
 	mCurrentPage( 0 ),
 	mTotalPages( 0 ),
 	mTimingFunction( Ease::Interpolation::SineIn ) {
-	mFlags |= UI_OWNS_CHILDS_POSITION;
+	mFlags |= UI_OWNS_CHILDREN_POSITION;
 	mContainer = UIWidget::New();
 	mContainer->setParent( this );
-	mContainer->setFlags( UI_OWNS_CHILDS_POSITION );
+	mContainer->setFlags( UI_OWNS_CHILDREN_POSITION );
 	setClipType( ClipType::ContentBox );
 }
 

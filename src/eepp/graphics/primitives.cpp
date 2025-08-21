@@ -151,7 +151,7 @@ void Primitives::drawArc( const Vector2f& p, const Float& radius, Uint32 segment
 			segmentsCount = Uint32( (Float)segmentsCount * (Float)eeabs( arcAngleA ) / 360 );
 			Float startAngle = Math::radians( arcStartAngle );
 			Float theta = Math::radians( arcAngleA ) / Float( segmentsCount - 1 );
-			Float tangetialFactor = eetan( theta );
+			Float tangentialFactor = eetan( theta );
 			Float radialFactor = eecos( theta );
 			Float x = radius * eecos( startAngle );
 			Float y = radius * eesin( startAngle );
@@ -165,8 +165,8 @@ void Primitives::drawArc( const Vector2f& p, const Float& radius, Uint32 segment
 				Float tx = -y;
 				Float ty = x;
 
-				x += tx * tangetialFactor;
-				y += ty * tangetialFactor;
+				x += tx * tangentialFactor;
+				y += ty * tangentialFactor;
 
 				x *= radialFactor;
 				y *= radialFactor;

@@ -77,7 +77,7 @@ class UICustomOutputParserWindow : public UIWindow {
 
 	explicit UICustomOutputParserWindow( ProjectBuildOutputParserConfig& cfg ) :
 		UIWindow( SIMPLE_LAYOUT, { UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS |
-								   UI_WIN_SHARE_ALPHA_WITH_CHILDS | UI_WIN_MODAL } ),
+								   UI_WIN_SHARE_ALPHA_WITH_CHILDREN | UI_WIN_MODAL } ),
 		mTmpCfg( cfg ),
 		mCfg( cfg ) {
 		static const auto CUSTOM_OUTPUT_PARSER_XML = R"xml(

@@ -29,7 +29,7 @@ class EE_API Input {
 	 */
 	virtual void waitEvent( const Time& timeout = Time::Zero ) = 0;
 
-	/** @return If the mouse and keyboard are grabed. */
+	/** @return If the mouse and keyboard are grabbed. */
 	virtual bool grabInput() = 0;
 
 	/** Grab or Ungrab the mouse and keyboard. */
@@ -182,7 +182,7 @@ class EE_API Input {
 	/** @return The mouse position over the current view */
 	Vector2f getMousePosFromView( const View& View );
 
-	/** Set the mouse speed ( only affects grabed windows ) */
+	/** Set the mouse speed ( only affects grabbed windows ) */
 	void setMouseSpeed( const Float& Speed );
 
 	/** @return The Mouse Speed */
@@ -224,7 +224,7 @@ class EE_API Input {
 	/** @return The joystick manager */
 	JoystickManager* getJoystickManager() const;
 
-	/** @return The maximun number of fingers */
+	/** @return The maximum number of fingers */
 	Uint32 getFingerCount();
 
 	/** @return The input finger from it's index */
@@ -277,7 +277,7 @@ class EE_API Input {
 	Uint32 mClickTrigger;
 	Uint32 mDoubleClickTrigger;
 	Uint32 mInputMod;
-	Time mDoubleClickInterval; /// Determine the double click inverval in milliseconds ( default 400
+	Time mDoubleClickInterval; /// Determine the double click interval in milliseconds ( default 400
 							   /// ms )
 	Uint32 mLastButtonLeftClicked;
 	Uint32 mLastButtonRightClicked;
@@ -289,7 +289,7 @@ class EE_API Input {
 	Vector2i mMousePos;
 	Uint32 mNumCallBacks;
 	Float mMouseSpeed;
-	bool mInputGrabed;
+	bool mInputGrabbed;
 	InputFinger mFingers[EE_MAX_FINGERS];
 	Uint64 mEventsSentId{ 0 };
 	Clock mLastEvent;

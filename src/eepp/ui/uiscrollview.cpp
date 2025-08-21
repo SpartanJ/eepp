@@ -19,15 +19,15 @@ UIScrollView::UIScrollView() :
 	mScrollView( NULL ),
 	mSizeChangeCb( 0 ),
 	mPosChangeCb( 0 ) {
-	mFlags |= UI_OWNS_CHILDS_POSITION | UI_SCROLLABLE;
-	enableReportSizeChangeToChilds();
+	mFlags |= UI_OWNS_CHILDREN_POSITION | UI_SCROLLABLE;
+	enableReportSizeChangeToChildren();
 
 	mVScroll->setParent( this );
 	mHScroll->setParent( this );
 	mContainer->setParent( this );
 	mContainer->setClipType( ClipType::ContentBox );
-	mContainer->setFlags( UI_OWNS_CHILDS_POSITION );
-	mContainer->enableReportSizeChangeToChilds();
+	mContainer->setFlags( UI_OWNS_CHILDREN_POSITION );
+	mContainer->enableReportSizeChangeToChildren();
 
 	mContainer->on( Event::OnSizeChange, [this]( auto ) { containerUpdate(); } );
 	mVScroll->on( Event::OnValueChange, [this]( auto event ) { onValueChangeCb( event ); } );
@@ -281,9 +281,9 @@ void UIScrollView::onTouchDragValueChange( Vector2f diff ) {
 
 bool UIScrollView::isTouchOverAllowedChilds() {
 	bool ret = mViewType == Exclusive
-				   ? !mVScroll->isMouseOverMeOrChilds() && !mHScroll->isMouseOverMeOrChilds()
+				   ? !mVScroll->isMouseOverMeOrChildren() && !mHScroll->isMouseOverMeOrChildren()
 				   : true;
-	return isMouseOverMeOrChilds() && mScrollView->isMouseOverMeOrChilds() && ret;
+	return isMouseOverMeOrChildren() && mScrollView->isMouseOverMeOrChildren() && ret;
 }
 
 std::string UIScrollView::getPropertyString( const PropertyDefinition* propertyDef,

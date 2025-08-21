@@ -136,7 +136,7 @@ void TerminalManager::setTerminalColorSchemesPath( const std::string& terminalCo
 }
 
 void TerminalManager::updateColorSchemeMenu() {
-	for ( UIPopUpMenu* menu : mColorSchemeMenues ) {
+	for ( UIPopUpMenu* menu : mColorSchemeMenus ) {
 		for ( size_t i = 0; i < menu->getCount(); i++ ) {
 			UIWidget* widget = menu->getItem( i );
 			if ( widget->isType( UI_TYPE_MENURADIOBUTTON ) ) {
@@ -251,7 +251,7 @@ void TerminalManager::configureTerminalScrollback() {
 }
 
 UIMenu* TerminalManager::createColorSchemeMenu( bool emptyMenu ) {
-	mColorSchemeMenuesCreatedWithHeight =
+	mColorSchemeMenusCreatedWithHeight =
 		emptyMenu ? 0 : mApp->uiSceneNode()->getPixelsSize().getHeight();
 	size_t maxItems = 19;
 	auto cb = [this]( const Event* event ) {
@@ -262,17 +262,17 @@ UIMenu* TerminalManager::createColorSchemeMenu( bool emptyMenu ) {
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 	menu->addEventListener( Event::OnItemClicked, cb );
-	mColorSchemeMenues.push_back( menu );
+	mColorSchemeMenus.push_back( menu );
 	size_t total = 0;
 	const auto& colorSchemes = mTerminalColorSchemes;
 
 	if ( emptyMenu )
-		return mColorSchemeMenues[0];
+		return mColorSchemeMenus[0];
 
 	for ( auto& colorScheme : colorSchemes ) {
 		menu->addRadioButton( colorScheme.first, mTerminalCurrentColorScheme == colorScheme.first );
 
-		if ( mColorSchemeMenues.size() == 1 && menu->getCount() == 1 ) {
+		if ( mColorSchemeMenus.size() == 1 && menu->getCount() == 1 ) {
 			menu->reloadStyle( true, true );
 			Float height = menu->getPixelsSize().getHeight();
 			Float tHeight = mApp->uiSceneNode()->getPixelsSize().getHeight();
@@ -285,19 +285,19 @@ UIMenu* TerminalManager::createColorSchemeMenu( bool emptyMenu ) {
 			UIPopUpMenu* newMenu = UIPopUpMenu::New();
 			menu->addSubMenu( mApp->i18n( "more_ellipsis", "More..." ), nullptr, newMenu );
 			newMenu->addEventListener( Event::OnItemClicked, cb );
-			mColorSchemeMenues.push_back( newMenu );
+			mColorSchemeMenus.push_back( newMenu );
 			menu = newMenu;
 		}
 	}
 
-	return mColorSchemeMenues[0];
+	return mColorSchemeMenus[0];
 }
 
 void TerminalManager::updateMenuColorScheme( UIMenuSubMenu* colorSchemeMenu ) {
-	if ( mColorSchemeMenuesCreatedWithHeight != mApp->uiSceneNode()->getPixelsSize().getHeight() ) {
-		for ( UIPopUpMenu* menu : mColorSchemeMenues )
+	if ( mColorSchemeMenusCreatedWithHeight != mApp->uiSceneNode()->getPixelsSize().getHeight() ) {
+		for ( UIPopUpMenu* menu : mColorSchemeMenus )
 			menu->close();
-		mColorSchemeMenues.clear();
+		mColorSchemeMenus.clear();
 		auto* newMenu = createColorSchemeMenu();
 		newMenu->reloadStyle( true, true );
 		colorSchemeMenu->setSubMenu( newMenu );

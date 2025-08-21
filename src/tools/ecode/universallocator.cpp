@@ -396,14 +396,14 @@ void UniversalLocator::updateCommandPaletteTable() {
 		mCommandPalette.asyncFuzzyMatch( txt.substr( 1 ).trim(), 10000, [this]( auto res ) {
 			mUISceneNode->runOnMainThread( [this, res] {
 				mLocateTable->setModel( res );
-				if ( mLocateTable->getModel()->hasChilds() )
+				if ( mLocateTable->getModel()->hasChildren() )
 					mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 				mLocateTable->scrollToTop();
 			} );
 		} );
 	} else if ( mCommandPalette.getCurModel() ) {
 		mLocateTable->setModel( mCommandPalette.getCurModel() );
-		if ( mLocateTable->getModel()->hasChilds() )
+		if ( mLocateTable->getModel()->hasChildren() )
 			mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	}
 }
@@ -752,7 +752,7 @@ std::shared_ptr<FileListModel> UniversalLocator::openDocumentsModel( const std::
 void UniversalLocator::updateOpenDocumentsTable() {
 	mLocateTable->setModel(
 		openDocumentsModel( mLocateInput->getText().substr( 2 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->hasChilds() )
+	if ( mLocateTable->getModel()->hasChildren() )
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	mLocateTable->scrollToTop();
 }
@@ -789,7 +789,7 @@ UniversalLocator::openBuildModel( const std::string& pattern ) {
 
 void UniversalLocator::updateSwitchBuildTable() {
 	mLocateTable->setModel( openBuildModel( mLocateInput->getText().substr( 3 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->hasChilds() ) {
+	if ( mLocateTable->getModel()->hasChildren() ) {
 		ModelIndex idx =
 			mLocateTable->findRowWithText( mApp->getProjectBuildManager()->getConfig().buildName );
 		mLocateTable->getSelection().set( idx.isValid() ? idx
@@ -876,7 +876,7 @@ UniversalLocator::openRunTargetModel( const std::string& pattern ) {
 void UniversalLocator::updateSwitchBuildTypeTable() {
 	mLocateTable->setModel(
 		openBuildTypeModel( mLocateInput->getText().substr( 4 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->hasChilds() && nullptr != mApp->getProjectBuildManager() ) {
+	if ( mLocateTable->getModel()->hasChildren() && nullptr != mApp->getProjectBuildManager() ) {
 		ModelIndex idx =
 			mLocateTable->findRowWithText( mApp->getProjectBuildManager()->getConfig().buildType );
 		mLocateTable->getSelection().set( idx.isValid() ? idx
@@ -889,7 +889,7 @@ void UniversalLocator::updateSwitchBuildTypeTable() {
 void UniversalLocator::updateSwitchRunTargetTable() {
 	mLocateTable->setModel(
 		openRunTargetModel( mLocateInput->getText().substr( 4 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->hasChilds() && nullptr != mApp->getProjectBuildManager() ) {
+	if ( mLocateTable->getModel()->hasChildren() && nullptr != mApp->getProjectBuildManager() ) {
 		ModelIndex idx =
 			mLocateTable->findRowWithText( mApp->getProjectBuildManager()->getConfig().runName );
 		mLocateTable->getSelection().set( idx.isValid() ? idx
@@ -938,7 +938,7 @@ UniversalLocator::openFileTypeModel( const std::string& pattern ) {
 void UniversalLocator::updateSwitchFileTypeTable() {
 	mLocateTable->setModel(
 		openFileTypeModel( mLocateInput->getText().substr( 3 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->hasChilds() && mApp->getSplitter()->getCurEditor() ) {
+	if ( mLocateTable->getModel()->hasChildren() && mApp->getSplitter()->getCurEditor() ) {
 		ModelIndex idx = mLocateTable->findRowWithText( mApp->getSplitter()
 															->getCurEditor()
 															->getDocumentRef()

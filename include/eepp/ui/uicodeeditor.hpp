@@ -667,7 +667,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	const Vector2f& getFontShadowOffset() const;
 
-	void setScroll( const Vector2f& val, bool emmitEvent = true );
+	void setScroll( const Vector2f& val, bool emitEvent = true );
 
 	bool getShowLineEndings() const;
 
@@ -685,9 +685,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	virtual bool isScrollable() const;
 
-	bool setScrollX( const Float& val, bool emmitEvent = true );
+	bool setScrollX( const Float& val, bool emitEvent = true );
 
-	bool setScrollY( const Float& val, bool emmitEvent = true );
+	bool setScrollY( const Float& val, bool emitEvent = true );
 
 	Vector2f getScreenStart() const;
 

@@ -15,7 +15,7 @@ class EE_API UITableView : public UIAbstractTableView {
 
 	bool isType( const Uint32& type ) const;
 
-	virtual void drawChilds();
+	virtual void drawChildren();
 
 	virtual Node* overFind( const Vector2f& point );
 

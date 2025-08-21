@@ -35,7 +35,7 @@ class ConditionImpl {
 
   private:
 	int mIsInvalid;
-	int mConditionnedVar;
+	int mConditionedVar;
 
 	pthread_cond_t mCond;
 	pthread_mutex_t mMutex;

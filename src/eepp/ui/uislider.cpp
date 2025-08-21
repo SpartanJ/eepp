@@ -340,7 +340,7 @@ void UISlider::adjustSliderPos() {
 	mOnPosChange = false;
 }
 
-void UISlider::setValue( Float val, bool emmitEvent ) {
+void UISlider::setValue( Float val, bool emitEvent ) {
 	if ( val < mMinValue )
 		val = mMinValue;
 	if ( val > mMaxValue )
@@ -360,7 +360,7 @@ void UISlider::setValue( Float val, bool emmitEvent ) {
 			mOnPosChange = false;
 		}
 
-		if ( emmitEvent )
+		if ( emitEvent )
 			onValueChange();
 	}
 }

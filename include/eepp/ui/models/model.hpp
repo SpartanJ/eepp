@@ -64,7 +64,7 @@ class EE_API Model {
 
 	virtual ~Model() {};
 
-	virtual bool hasChilds( const ModelIndex& modelIndex = ModelIndex() ) const {
+	virtual bool hasChildren( const ModelIndex& modelIndex = ModelIndex() ) const {
 		return rowCount( modelIndex ) > 0;
 	}
 

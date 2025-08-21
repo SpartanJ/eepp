@@ -7,7 +7,7 @@
 namespace EE { namespace System { namespace Platform {
 
 ConditionImpl::ConditionImpl( int var ) :
-	mIsInvalid( true ), mConditionnedVar( var ), mCond(), mMutex() {
+	mIsInvalid( true ), mConditionedVar( var ), mCond(), mMutex() {
 	if ( 0 != pthread_cond_init( &mCond, NULL ) )
 		std::cerr << "ConditionImpl::ConditionImpl(): pthread_cond_init() error\n";
 
@@ -34,7 +34,7 @@ void ConditionImpl::unlock() {
 bool ConditionImpl::waitAndRetain( int value ) {
 	pthread_mutex_lock( &mMutex );
 
-	while ( mConditionnedVar != value && mIsInvalid ) {
+	while ( mConditionedVar != value && mIsInvalid ) {
 		pthread_cond_wait( &mCond, &mMutex );
 	}
 
@@ -48,7 +48,7 @@ bool ConditionImpl::waitAndRetain( int value ) {
 }
 
 void ConditionImpl::release( int value ) {
-	mConditionnedVar = value;
+	mConditionedVar = value;
 
 	pthread_mutex_unlock( &mMutex );
 
@@ -59,7 +59,7 @@ void ConditionImpl::setValue( int value ) {
 	// Make sure the Condition's value is not modified while retained
 	pthread_mutex_lock( &mMutex );
 
-	mConditionnedVar = value;
+	mConditionedVar = value;
 
 	pthread_mutex_unlock( &mMutex );
 
@@ -67,7 +67,7 @@ void ConditionImpl::setValue( int value ) {
 }
 
 int ConditionImpl::value() const {
-	return mConditionnedVar;
+	return mConditionedVar;
 }
 
 void ConditionImpl::signal() {

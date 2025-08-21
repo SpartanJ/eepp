@@ -1910,6 +1910,8 @@
 ../../src/tools/ecode/plugins/plugincontextprovider.hpp
 ../../src/tools/ecode/plugins/pluginmanager.cpp
 ../../src/tools/ecode/plugins/pluginmanager.hpp
+../../src/tools/ecode/plugins/spellchecker/spellcheckerplugin.cpp
+../../src/tools/ecode/plugins/spellchecker/spellcheckerplugin.hpp
 ../../src/tools/ecode/plugins/xmltools/xmltoolsplugin.cpp
 ../../src/tools/ecode/plugins/xmltools/xmltoolsplugin.hpp
 ../../src/tools/ecode/projectbuild.cpp

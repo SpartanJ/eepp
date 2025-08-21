@@ -291,7 +291,7 @@ void TextureFactory::grabTextures() {
 
 		if ( Tex && !Tex->hasLocalCopy() ) {
 			Tex->lock();
-			Tex->setGrabed( true );
+			Tex->setGrabbed( true );
 		}
 	}
 }
@@ -300,10 +300,10 @@ void TextureFactory::ungrabTextures() {
 	for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
 		Texture* Tex = getTexture( i );
 
-		if ( NULL != Tex && Tex->isGrabed() ) {
+		if ( NULL != Tex && Tex->isGrabbed() ) {
 			Tex->reload();
 			Tex->unlock();
-			Tex->setGrabed( false );
+			Tex->setGrabbed( false );
 		}
 	}
 }

@@ -1771,7 +1771,7 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 	BlendMode::setMode( effect );
 
 	Uint32 alloc = numvert * sizeof( VertexCoords );
-	Uint32 allocC = numvert * GLi->quadVertexs();
+	Uint32 allocC = numvert * GLi->quadVertex();
 
 	if ( 0 != mFontStyleConfig.OutlineThickness ) {
 		GLi->colorPointer( 4, GL_UNSIGNED_BYTE, 0,
@@ -1862,10 +1862,10 @@ void Text::ensureGeometryUpdate() {
 	if ( !mFontStyleConfig.Font || mString.empty() )
 		return;
 
-	mVertices.reserve( mString.size() * GLi->quadVertexs() );
+	mVertices.reserve( mString.size() * GLi->quadVertex() );
 
 	if ( mFontStyleConfig.OutlineThickness != 0.f )
-		mOutlineVertices.reserve( mString.size() * GLi->quadVertexs() );
+		mOutlineVertices.reserve( mString.size() * GLi->quadVertex() );
 
 	// Compute values related to the text style
 	bool bold = ( mFontStyleConfig.Style & Bold ) != 0;
@@ -2389,8 +2389,8 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 
 					if ( '\n' == curChar ) {
 						if ( underlined || strikeThrough ) {
-							for ( int v = 0; v < GLi->quadVertexs(); v++ )
-								mColors[rpos * GLi->quadVertexs() + v] = color;
+							for ( int v = 0; v < GLi->quadVertex(); v++ )
+								mColors[rpos * GLi->quadVertex() + v] = color;
 						}
 
 						if ( underlined )
@@ -2401,29 +2401,29 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 					}
 				}
 			} else {
-				for ( int v = 0; v < GLi->quadVertexs(); v++ )
-					mColors[lpos * GLi->quadVertexs() + v] = color;
+				for ( int v = 0; v < GLi->quadVertex(); v++ )
+					mColors[lpos * GLi->quadVertex() + v] = color;
 			}
 		}
 
 		if ( to == s ) {
 			if ( underlined ) {
 				lpos++;
-				Uint32 pos = lpos * GLi->quadVertexs();
+				Uint32 pos = lpos * GLi->quadVertex();
 
 				if ( pos < mColors.size() ) {
-					for ( int v = 0; v < GLi->quadVertexs(); v++ )
-						mColors[lpos * GLi->quadVertexs() + v] = color;
+					for ( int v = 0; v < GLi->quadVertex(); v++ )
+						mColors[lpos * GLi->quadVertex() + v] = color;
 				}
 			}
 
 			if ( strikeThrough ) {
 				lpos++;
-				Uint32 pos = lpos * GLi->quadVertexs();
+				Uint32 pos = lpos * GLi->quadVertex();
 
 				if ( pos < mColors.size() ) {
-					for ( int v = 0; v < GLi->quadVertexs(); v++ )
-						mColors[lpos * GLi->quadVertexs() + v] = color;
+					for ( int v = 0; v < GLi->quadVertex(); v++ )
+						mColors[lpos * GLi->quadVertex() + v] = color;
 				}
 			}
 		}
@@ -2586,8 +2586,8 @@ void Text::addGlyphQuad( std::vector<VertexCoords>& vertices, Vector2f position,
 Uint32 Text::getTotalVertices() {
 	bool underlined = ( mFontStyleConfig.Style & Underlined ) != 0;
 	bool strikeThrough = ( mFontStyleConfig.Style & StrikeThrough ) != 0;
-	size_t sv = mString.size() * GLi->quadVertexs();
-	Uint32 skiped = 0;
+	size_t sv = mString.size() * GLi->quadVertex();
+	Uint32 skipped = 0;
 	bool lineHasChars = false;
 
 	for ( const auto& ch : mString ) {
@@ -2595,27 +2595,27 @@ Uint32 Text::getTotalVertices() {
 
 		if ( ' ' == ch || '\n' == ch || '\t' == ch || '\r' == ch ) {
 			lineHasChars = false;
-			skiped++;
+			skipped++;
 
 			if ( '\n' == ch ) {
 				if ( underlined )
-					skiped--;
+					skipped--;
 
 				if ( strikeThrough )
-					skiped--;
+					skipped--;
 			}
 		}
 	}
 
 	if ( lineHasChars ) {
 		if ( underlined )
-			skiped--;
+			skipped--;
 
 		if ( strikeThrough )
-			skiped--;
+			skipped--;
 	}
 
-	sv -= skiped * GLi->quadVertexs();
+	sv -= skipped * GLi->quadVertex();
 
 	return sv;
 }

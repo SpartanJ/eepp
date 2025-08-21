@@ -40,7 +40,7 @@ TcpSocket::~TcpSocket() {
 
 unsigned short TcpSocket::getLocalPort() const {
 	if ( getHandle() != Private::SocketImpl::invalidSocket() ) {
-		// Retrieve informations about the local end of the socket
+		// Retrieve information about the local end of the socket
 		sockaddr_in address;
 		Private::SocketImpl::AddrLength size = sizeof( address );
 		if ( getsockname( getHandle(), reinterpret_cast<sockaddr*>( &address ), &size ) != -1 ) {
@@ -54,7 +54,7 @@ unsigned short TcpSocket::getLocalPort() const {
 
 IpAddress TcpSocket::getRemoteAddress() const {
 	if ( getHandle() != Private::SocketImpl::invalidSocket() ) {
-		// Retrieve informations about the remote end of the socket
+		// Retrieve information about the remote end of the socket
 		sockaddr_in address;
 		Private::SocketImpl::AddrLength size = sizeof( address );
 		if ( getpeername( getHandle(), reinterpret_cast<sockaddr*>( &address ), &size ) != -1 ) {
@@ -68,7 +68,7 @@ IpAddress TcpSocket::getRemoteAddress() const {
 
 unsigned short TcpSocket::getRemotePort() const {
 	if ( getHandle() != Private::SocketImpl::invalidSocket() ) {
-		// Retrieve informations about the remote end of the socket
+		// Retrieve information about the remote end of the socket
 		sockaddr_in address;
 		Private::SocketImpl::AddrLength size = sizeof( address );
 		if ( getpeername( getHandle(), reinterpret_cast<sockaddr*>( &address ), &size ) != -1 ) {
@@ -123,7 +123,7 @@ Socket::Status TcpSocket::connect( const IpAddress& remoteAddress, unsigned shor
 		// Get the error status
 		Status status = Private::SocketImpl::getErrorStatus();
 
-		// If we were in non-blocking mode, return immediatly
+		// If we were in non-blocking mode, return immediately
 		if ( !blocking )
 			return status;
 

@@ -243,7 +243,7 @@ class EE_API Renderer {
 
 	const bool& quadsSupported() const;
 
-	const int& quadVertexs() const;
+	const int& quadVertex() const;
 
 	ClippingMask* getClippingMask() const;
 
@@ -292,7 +292,7 @@ class EE_API Renderer {
 	Uint32 mExtensions;
 	Uint32 mStateFlags;
 	bool mQuadsSupported;
-	int mQuadVertexs;
+	int mQuadVertex;
 	float mLineWidth;
 	unsigned int mCurVAO;
 

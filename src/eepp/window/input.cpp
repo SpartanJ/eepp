@@ -22,7 +22,7 @@ Input::Input( EE::Window::Window* window, JoystickManager* joystickmanager ) :
 	mTClick( 0 ),
 	mNumCallBacks( 0 ),
 	mMouseSpeed( 1.0f ),
-	mInputGrabed( false ) {
+	mInputGrabbed( false ) {
 	memset( mScancodeDown, 0, EE_KEYS_SPACE );
 	memset( mScancodeUp, 0, EE_KEYS_SPACE );
 }
@@ -87,7 +87,7 @@ void Input::processEvent( InputEvent* Event ) {
 			break;
 		}
 		case InputEvent::MouseMotion: {
-			if ( !mInputGrabed ) {
+			if ( !mInputGrabbed ) {
 				mMousePos.x = Event->motion.x;
 				mMousePos.y = Event->motion.y;
 			} else {

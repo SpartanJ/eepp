@@ -77,7 +77,7 @@ class EE_API Action {
 	 */
 	void removeEventListener( const Uint32& callbackId );
 
-	/** Manually emmit an event of type Action::ActionType. */
+	/** Manually emit an event of type Action::ActionType. */
 	void sendEvent( const ActionType& actionType );
 
 	/** Sets the action EE::Scene::Node target. */

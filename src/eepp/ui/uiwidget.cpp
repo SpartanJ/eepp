@@ -1041,7 +1041,7 @@ void UIWidget::pushState( const Uint32& State, bool emitEvent ) {
 			mSkinState->pushState( State );
 
 		if ( NULL != mStyle ) {
-			if ( !( State == UIState::StateHover && !isMouseOverMeOrChilds() ) ) {
+			if ( !( State == UIState::StateHover && !isMouseOverMeOrChildren() ) ) {
 				updatePseudoClasses();
 				mStyle->pushState( State );
 			}
@@ -1063,7 +1063,7 @@ void UIWidget::popState( const Uint32& State, bool emitEvent ) {
 			mSkinState->popState( State );
 
 		if ( NULL != mStyle ) {
-			if ( !( State == UIState::StateHover && isMouseOverMeOrChilds() ) ) {
+			if ( !( State == UIState::StateHover && isMouseOverMeOrChildren() ) ) {
 				updatePseudoClasses();
 				mStyle->popState( State );
 			}
@@ -1739,7 +1739,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 						notifyLayoutAttrChange();
 					} else if ( "reportsizechangetochilds" == cur ||
 								"report_size_change_to_childs" == cur ) {
-						enableReportSizeChangeToChilds();
+						enableReportSizeChangeToChildren();
 					}
 				}
 			}

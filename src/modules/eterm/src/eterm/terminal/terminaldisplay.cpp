@@ -485,7 +485,7 @@ TerminalDisplay::TerminalDisplay( EE::Window::Window* window, Font* font, const 
 	Sizei gridSize( gridSizeFromTermDimensions( mFont, mFontSize, mSize - mPadding * 2.f ) );
 	mDirtyLines.resize( gridSize.getHeight(), 1 );
 
-	mQuadVertexs = GLi->quadVertexs();
+	mQuadVertex = GLi->quadVertex();
 
 	if ( mUseFrameBuffer )
 		createFrameBuffer();
@@ -1752,8 +1752,8 @@ void TerminalDisplay::drawFrameBuffer() {
 VertexBuffer* TerminalDisplay::createRowVBO( bool usesTexCoords ) {
 	auto* VBO = VertexBuffer::New(
 		usesTexCoords ? VERTEX_FLAGS_DEFAULT : VERTEX_FLAGS_PRIMITIVE,
-		mQuadVertexs == 6 ? EE::Graphics::PRIMITIVE_TRIANGLES : EE::Graphics::PRIMITIVE_QUADS,
-		mRows * mColumns * mQuadVertexs, 0, VertexBufferUsageType::Stream );
+		mQuadVertex == 6 ? EE::Graphics::PRIMITIVE_TRIANGLES : EE::Graphics::PRIMITIVE_QUADS,
+		mRows * mColumns * mQuadVertex, 0, VertexBufferUsageType::Stream );
 	VBO->setGridSize( Sizei( mColumns, 1 ) );
 	return VBO;
 }
@@ -1762,13 +1762,13 @@ void TerminalDisplay::createVBO( VertexBuffer** vbo, bool usesTexCoords ) {
 	eeSAFE_DELETE( ( *vbo ) );
 	( *vbo ) = VertexBuffer::New(
 		usesTexCoords ? VERTEX_FLAGS_DEFAULT : VERTEX_FLAGS_PRIMITIVE,
-		mQuadVertexs == 6 ? EE::Graphics::PRIMITIVE_TRIANGLES : EE::Graphics::PRIMITIVE_QUADS,
-		mRows * mColumns * mQuadVertexs, 0, VertexBufferUsageType::Stream );
-	( *vbo )->resizeArray( VERTEX_FLAG_POSITION, mRows * mColumns * mQuadVertexs );
-	( *vbo )->resizeArray( VERTEX_FLAG_COLOR, mRows * mColumns * mQuadVertexs );
+		mQuadVertex == 6 ? EE::Graphics::PRIMITIVE_TRIANGLES : EE::Graphics::PRIMITIVE_QUADS,
+		mRows * mColumns * mQuadVertex, 0, VertexBufferUsageType::Stream );
+	( *vbo )->resizeArray( VERTEX_FLAG_POSITION, mRows * mColumns * mQuadVertex );
+	( *vbo )->resizeArray( VERTEX_FLAG_COLOR, mRows * mColumns * mQuadVertex );
 	( *vbo )->setGridSize( Sizei( mColumns, mRows ) );
 	if ( usesTexCoords )
-		( *vbo )->resizeArray( VERTEX_FLAG_TEXTURE0, mRows * mColumns * mQuadVertexs );
+		( *vbo )->resizeArray( VERTEX_FLAG_TEXTURE0, mRows * mColumns * mQuadVertex );
 }
 
 void TerminalDisplay::initVBOs() {

@@ -72,7 +72,7 @@ class LSPClientServerManager {
 
 	void getSymbolReferences( std::shared_ptr<TextDocument> doc );
 
-	void codeAction( std::shared_ptr<TextDocument> doc, const nlohmann::json& diagnostics,
+	bool codeAction( std::shared_ptr<TextDocument> doc, const nlohmann::json& diagnostics,
 					 const LSPClientServer::CodeActionHandler& h );
 
 	void memoryUsage( std::shared_ptr<TextDocument> doc );

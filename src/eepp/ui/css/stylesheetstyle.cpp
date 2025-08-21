@@ -23,10 +23,10 @@ StyleSheetStyle::StyleSheetStyle( const std::string& selector,
 	}
 }
 
-std::string StyleSheetStyle::build( bool emmitMediaQueryStart, bool emmitMediaQueryEnd ) {
+std::string StyleSheetStyle::build( bool emitMediaQueryStart, bool emitMediaQueryEnd ) {
 	std::string css;
 
-	if ( emmitMediaQueryStart && mMediaQueryList && !mMediaQueryList->getQueryString().empty() )
+	if ( emitMediaQueryStart && mMediaQueryList && !mMediaQueryList->getQueryString().empty() )
 		css += mMediaQueryList->getQueryString() + " {\n\n";
 
 	css += mSelector.getName() + " {\n";
@@ -42,7 +42,7 @@ std::string StyleSheetStyle::build( bool emmitMediaQueryStart, bool emmitMediaQu
 
 	css += "}\n\n";
 
-	if ( emmitMediaQueryEnd && mMediaQueryList && !mMediaQueryList->getQueryString().empty() )
+	if ( emitMediaQueryEnd && mMediaQueryList && !mMediaQueryList->getQueryString().empty() )
 		css += "}\n\n";
 
 	return css;

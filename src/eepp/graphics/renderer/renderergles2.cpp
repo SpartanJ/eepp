@@ -50,7 +50,7 @@ RendererGLES2::RendererGLES2() :
 	mLoaded( false ),
 	mCurShaderLocal( true ) {
 	mQuadsSupported = false;
-	mQuadVertexs = 6;
+	mQuadVertex = 6;
 #if !defined( EE_GLES2 )
 	Renderer::enable( GL_VERTEX_PROGRAM_POINT_SIZE );
 #endif

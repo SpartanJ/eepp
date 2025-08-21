@@ -17,16 +17,16 @@ TexturePacker* TexturePacker::New() {
 TexturePacker* TexturePacker::New( const Uint32& maxWidth, const Uint32& maxHeight,
 								   const Float& pixelDensity, const bool& forcePowOfTwo,
 								   const bool& scalableSVG, const Uint32& pixelBorder,
-								   const Texture::Filter& textureFilter, const bool& allowChilds,
+								   const Texture::Filter& textureFilter, const bool& allowChildren,
 								   const bool& allowFlipping ) {
 	return eeNew( TexturePacker, ( maxWidth, maxHeight, pixelDensity, forcePowOfTwo, scalableSVG,
-								   pixelBorder, textureFilter, allowChilds, allowFlipping ) );
+								   pixelBorder, textureFilter, allowChildren, allowFlipping ) );
 }
 
 TexturePacker::TexturePacker( const Uint32& maxWidth, const Uint32& maxHeight,
 							  const Float& pixelDensity, const bool& forcePowOfTwo,
 							  const bool& scalableSVG, const Uint32& pixelBorder,
-							  const Texture::Filter& textureFilter, const bool& allowChilds,
+							  const Texture::Filter& textureFilter, const bool& allowChildren,
 							  const bool& allowFlipping ) :
 	mTotalArea( 0 ),
 	mFreeList( NULL ),
@@ -34,7 +34,7 @@ TexturePacker::TexturePacker( const Uint32& maxWidth, const Uint32& maxHeight,
 	mHeight( 128 ),
 	mPacked( false ),
 	mAllowFlipping( allowFlipping ),
-	mAllowChilds( allowChilds ),
+	mAllowChildren( allowChildren ),
 	mChild( NULL ),
 	mStrategy( PackBig ),
 	mCount( 0 ),
@@ -48,7 +48,7 @@ TexturePacker::TexturePacker( const Uint32& maxWidth, const Uint32& maxHeight,
 	mScalableSVG( scalableSVG ),
 	mFormat( Image::SaveType::PNG ) {
 	setOptions( maxWidth, maxHeight, pixelDensity, forcePowOfTwo, scalableSVG, pixelBorder,
-				textureFilter, allowChilds, allowFlipping );
+				textureFilter, allowChildren, allowFlipping );
 }
 
 TexturePacker::TexturePacker() :
@@ -137,7 +137,7 @@ Uint32 TexturePacker::getAtlasNumChannels() {
 void TexturePacker::setOptions( const Uint32& maxWidth, const Uint32& maxHeight,
 								const Float& pixelDensity, const bool& forcePowOfTwo,
 								const bool& scalableSVG, const Uint32& pixelBorder,
-								const Texture::Filter& textureFilter, const bool& allowChilds,
+								const Texture::Filter& textureFilter, const bool& allowChildren,
 								const bool& allowFlipping ) {
 	if ( !mTextures.size() ) { // only can change the dimensions before adding any texture
 		mMaxSize.x = maxWidth;
@@ -151,7 +151,7 @@ void TexturePacker::setOptions( const Uint32& maxWidth, const Uint32& maxHeight,
 
 		mForcePowOfTwo = forcePowOfTwo;
 		mAllowFlipping = allowFlipping;
-		mAllowChilds = allowChilds;
+		mAllowChildren = allowChildren;
 		mPixelBorder = pixelBorder;
 		mPixelDensity = eefloor( pixelDensity * 100 );
 		mTextureFilter = textureFilter;
@@ -215,7 +215,7 @@ void TexturePacker::validate() {
 #endif
 }
 
-TexturePackerTex* TexturePacker::getLonguestEdge() {
+TexturePackerTex* TexturePacker::getLongestEdge() {
 	TexturePackerTex* t = NULL;
 	std::vector<TexturePackerTex*>::iterator it;
 
@@ -526,7 +526,7 @@ Int32 TexturePacker::packTextures() {
 		//   over after the split.
 
 		if ( PackBig == mStrategy ) {
-			t = getLonguestEdge();
+			t = getLongestEdge();
 		} else if ( PackTiny == mStrategy ) {
 			t = getShortestEdge();
 		}
@@ -537,7 +537,7 @@ Int32 TexturePacker::packTextures() {
 
 		if ( NULL == bestFit ) {
 			if ( PackBig == mStrategy ) {
-				Log::debug( "TexturePacker: Chaging Strategy to Tiny. %s faults.",
+				Log::debug( "TexturePacker: Changing Strategy to Tiny. %s faults.",
 							t->name().c_str() );
 				reset();
 				addBorderToTextures( -( (Int32)mPixelBorder ) );
@@ -573,7 +573,7 @@ Int32 TexturePacker::packTextures() {
 
 				return packTextures();
 			} else {
-				if ( !mAllowChilds ) {
+				if ( !mAllowChildren ) {
 					return 0;
 				}
 			}
@@ -583,7 +583,7 @@ Int32 TexturePacker::packTextures() {
 	}
 
 	if ( mCount > 0 ) {
-		if ( mAllowChilds ) {
+		if ( mAllowChildren ) {
 			Log::debug( "Creating a new image as a child. Some textures couldn't get it: %d",
 						mCount );
 			createChild();
@@ -777,7 +777,7 @@ void TexturePacker::createTextureRegionsHdr( TexturePacker* Packer,
 			memcpy( tTextureRegionHdr.Hash, &md5Result.digest[0], HDR_HASH_SIZE );
 
 			if ( tTex->flipped() )
-				tTextureRegionHdr.Flags |= HDR_TEXTUREREGION_FLAG_FLIPED;
+				tTextureRegionHdr.Flags |= HDR_TEXTUREREGION_FLAG_FLIPPED;
 
 			TextureRegions[c] = tTextureRegionHdr;
 

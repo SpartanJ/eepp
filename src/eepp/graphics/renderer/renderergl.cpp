@@ -55,7 +55,7 @@ namespace EE { namespace Graphics {
 RendererGL::RendererGL() {
 #ifdef EE_GLES1
 	mQuadsSupported = false;
-	mQuadVertexs = 6;
+	mQuadVertex = 6;
 #endif
 }
 

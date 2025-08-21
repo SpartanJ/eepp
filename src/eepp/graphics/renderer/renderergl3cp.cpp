@@ -53,7 +53,7 @@ RendererGL3CP::RendererGL3CP() :
 	mBiggestAlloc( 0 ),
 	mLoaded( false ) {
 	mQuadsSupported = false;
-	mQuadVertexs = 6;
+	mQuadVertex = 6;
 }
 
 RendererGL3CP::~RendererGL3CP() {

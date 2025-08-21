@@ -83,7 +83,7 @@ std::string BlendMode::equationToString( const Equation& eq ) {
 		case BlendMode::Equation::Add:
 			return "Add";
 		case BlendMode::Equation::Subtract:
-			return "Substract";
+			return "Subtract";
 		case BlendMode::Equation::ReverseSubtract:
 			return "ReverseSubtract";
 	}

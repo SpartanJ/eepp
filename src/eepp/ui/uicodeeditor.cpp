@@ -135,7 +135,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mPreviewColor( Color::Transparent ),
 	mKeyBindings( getUISceneNode()->getWindow()->getInput() ),
 	mFindLongestLineWidthUpdateFrequency( Seconds( 1 ) ) {
-	mFlags |= UI_TAB_STOP | UI_OWNS_CHILDS_POSITION | UI_SCROLLABLE;
+	mFlags |= UI_TAB_STOP | UI_OWNS_CHILDREN_POSITION | UI_SCROLLABLE;
 	setTextSelection( true );
 	setColorScheme( SyntaxColorScheme::getDefault() );
 	refreshTag();
@@ -462,7 +462,7 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 			mMouseDown = false;
 			mMouseDownMinimap = false;
 			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
-		} else if ( !isMouseOverMeOrChilds() || mMinimapDragging ) {
+		} else if ( !isMouseOverMeOrChildren() || mMinimapDragging ) {
 			onMouseMove( getUISceneNode()->getEventDispatcher()->getMousePos(),
 						 getUISceneNode()->getEventDispatcher()->getPressTrigger() );
 		}
@@ -1759,7 +1759,7 @@ Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags
 			Engine::instance()->openURI( link.toUtf8() );
 			resetLinkOver( position );
 		}
-	} else if ( ( flags & EE_BUTTON_MMASK ) && isMouseOverMeOrChilds() ) {
+	} else if ( ( flags & EE_BUTTON_MMASK ) && isMouseOverMeOrChildren() ) {
 		auto txt( getUISceneNode()->getWindow()->getClipboard()->getText() );
 		if ( !isLocked() && !txt.empty() ) {
 			if ( mDoc->hasSelection() ) {
@@ -2374,30 +2374,30 @@ void UICodeEditor::showMinimap( bool showMinimap ) {
 	}
 }
 
-bool UICodeEditor::setScrollX( const Float& val, bool emmitEvent ) {
+bool UICodeEditor::setScrollX( const Float& val, bool emitEvent ) {
 	Float oldVal = mScroll.x;
 	mScroll.x = eefloor( eeclamp<Float>( val, 0.f, getMaxScroll().x ) );
 	if ( oldVal != mScroll.x ) {
 		invalidateDraw();
 		updateIMELocation();
-		if ( emmitEvent )
+		if ( emitEvent )
 			sendCommonEvent( Event::OnScrollChange );
-		if ( mHorizontalScrollBarEnabled && emmitEvent )
+		if ( mHorizontalScrollBarEnabled && emitEvent )
 			mHScrollBar->setValue( mScroll.x / getMaxScroll().x, false );
 		return true;
 	}
 	return false;
 }
 
-bool UICodeEditor::setScrollY( const Float& val, bool emmitEvent ) {
+bool UICodeEditor::setScrollY( const Float& val, bool emitEvent ) {
 	Float oldVal = mScroll.y;
 	mScroll.y = eefloor( eeclamp<Float>( val, 0, getMaxScroll().y ) );
 	if ( oldVal != mScroll.y ) {
 		invalidateDraw();
 		updateIMELocation();
-		if ( emmitEvent )
+		if ( emitEvent )
 			sendCommonEvent( Event::OnScrollChange );
-		if ( mVerticalScrollBarEnabled && emmitEvent )
+		if ( mVerticalScrollBarEnabled && emitEvent )
 			mVScrollBar->setValue( mScroll.y / getMaxScroll().y, false );
 		return true;
 	}
@@ -2727,9 +2727,9 @@ const Vector2f& UICodeEditor::getFontShadowOffset() const {
 	return mFontStyleConfig.getFontShadowOffset();
 }
 
-void UICodeEditor::setScroll( const Vector2f& val, bool emmitEvent ) {
-	setScrollX( val.x, emmitEvent );
-	setScrollY( val.y, emmitEvent );
+void UICodeEditor::setScroll( const Vector2f& val, bool emitEvent ) {
+	setScrollX( val.x, emitEvent );
+	setScrollY( val.y, emitEvent );
 }
 
 bool UICodeEditor::getShowLineEndings() const {

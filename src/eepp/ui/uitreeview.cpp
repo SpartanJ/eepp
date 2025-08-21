@@ -157,13 +157,13 @@ void UITreeView::bindNavigationClick( UIWidget* widget ) {
 }
 
 bool UITreeView::tryOpenModelIndex( const ModelIndex& index, bool forceUpdate ) {
-	bool hasChilds = false;
+	bool hasChildren = false;
 	{
 		ConditionalLock l( getModel() != nullptr,
 						   getModel() ? &getModel()->resourceMutex() : nullptr );
-		hasChilds = getModel()->hasChilds( index );
+		hasChildren = getModel()->hasChildren( index );
 	}
-	if ( hasChilds ) {
+	if ( hasChildren ) {
 		auto& data = getIndexMetadata( index );
 		if ( !data.open ) {
 			data.open = true;
@@ -199,7 +199,7 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 				ConditionalLock l( getModel() != nullptr,
 								   getModel() ? &getModel()->resourceMutex() : nullptr );
 				auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
-				if ( getModel()->hasChilds( idx ) ) {
+				if ( getModel()->hasChildren( idx ) ) {
 					auto& data = getIndexMetadata( idx );
 					data.open = !data.open;
 					createOrUpdateColumns( false );
@@ -248,7 +248,7 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 		UITableCell* cell = widget->asType<UITableCell>();
 		updateTableCellData( cell, index );
 
-		bool hasChilds = false;
+		bool hasChildren = false;
 
 		if ( widget->isType( UI_TYPE_TREEVIEW_CELL ) &&
 			 index.column() == (Int64)getModel()->treeColumn() ) {
@@ -266,9 +266,9 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 
 			Float indentation = minIndent + getIndentWidth() * indentLevel;
 
-			hasChilds = getModel()->hasChilds( index );
+			hasChildren = getModel()->hasChildren( index );
 
-			if ( hasChilds ) {
+			if ( hasChildren ) {
 				UIIcon* icon = getIndexMetadata( index ).open ? mExpandIcon : mContractIcon;
 				Drawable* drawable = icon ? icon->getSize( mExpanderIconSize ) : nullptr;
 
@@ -288,7 +288,7 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 			tcell->setIndentation( indentation );
 		}
 
-		if ( hasChilds && mExpandersAsIcons && cell->hasIcon() ) {
+		if ( hasChildren && mExpandersAsIcons && cell->hasIcon() ) {
 			cell->getIcon()->setVisible( false );
 			return widget;
 		}
@@ -344,7 +344,7 @@ struct DrawTraverseTreeVars {
 	Float rowHeight = 0;
 };
 
-void UITreeView::drawChilds() {
+void UITreeView::drawChildren() {
 	DrawTraverseTreeVars v{ this, 0, 0, getRowHeight() }; // To avoid allocating the lambda
 
 	traverseTree( [this, &v]( const int&, const ModelIndex& index, const size_t& indentLevel,
@@ -467,7 +467,7 @@ void UITreeView::setAllExpanded( const ModelIndex& index, bool expanded ) {
 	for ( size_t i = 0; i < count; i++ ) {
 		auto curIndex = model.index( i, model.treeColumn(), index );
 		getIndexMetadata( curIndex ).open = expanded;
-		if ( model.hasChilds( curIndex ) )
+		if ( model.hasChildren( curIndex ) )
 			setAllExpanded( curIndex, expanded );
 	}
 }
@@ -556,7 +556,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 		return UIAbstractTableView::onKeyDown( event );
 	auto curIndex = getSelection().first();
 
-	if ( nullptr == getModel() || !getModel()->hasChilds() )
+	if ( nullptr == getModel() || !getModel()->hasChildren() )
 		return UIAbstractTableView::onKeyDown( event );
 
 	switch ( event.getKeyCode() ) {
@@ -766,7 +766,7 @@ ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& cas
 	const Model* model = getModel();
 	ConditionalLock l( getModel() != nullptr,
 					   getModel() ? &const_cast<Model*>( getModel() )->resourceMutex() : nullptr );
-	if ( !model || !model->hasChilds() )
+	if ( !model || !model->hasChildren() )
 		return {};
 	ModelIndex foundIndex = {};
 	traverseTree( [&]( const int&, const ModelIndex& index, const size_t&, const Float& ) {
@@ -787,7 +787,7 @@ ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& cas
 ModelIndex UITreeView::openRowWithPath( const std::vector<std::string>& pathTree,
 										bool selectOpenedRow ) {
 	const Model* model = getModel();
-	if ( !model || !model->hasChilds() )
+	if ( !model || !model->hasChildren() )
 		return {};
 	ModelIndex parentIndex = {};
 	for ( size_t i = 0; i < pathTree.size(); i++ ) {

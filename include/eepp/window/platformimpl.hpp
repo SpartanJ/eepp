@@ -64,7 +64,7 @@ class PlatformImpl {
 	virtual void moveWindow( int left, int top ) = 0;
 
 	/** Set the GL context as the current context */
-	virtual void setContext( eeWindowContex Context ) = 0;
+	virtual void setContext( eeWindowContext Context ) = 0;
 
 	/** @return The current window position */
 	virtual Vector2i getPosition() = 0;
@@ -108,7 +108,7 @@ class PlatformImpl {
 	/** Force to reset the state of the current seted cursor */
 	virtual void restoreCursor() = 0;
 
-	virtual eeWindowContex getWindowContext() = 0;
+	virtual eeWindowContext getWindowContext() = 0;
 
   protected:
 	EE::Window::Window* mWindow;

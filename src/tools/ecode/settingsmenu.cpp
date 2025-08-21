@@ -74,7 +74,7 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 		->add( i18n( "save_all", "Save All" ), findIcon( "document-save-as" ),
 			   getKeybind( "save-all" ) )
 		->setId( "save-all" );
-	mSettingsMenu->addSeparator()->setId( "settings-submenues-sep" );
+	mSettingsMenu->addSeparator()->setId( "settings-submenus-sep" );
 
 	mProjectMenu = UIPopUpMenu::New();
 	auto projectMenuButton = mSettingsMenu
@@ -206,7 +206,7 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 }
 
 UIMenu* SettingsMenu::createFileTypeMenu( bool emptyMenu ) {
-	mFileTypeMenuesCreatedWithHeight = emptyMenu ? 0 : mUISceneNode->getPixelsSize().getHeight();
+	mFileTypeMenusCreatedWithHeight = emptyMenu ? 0 : mUISceneNode->getPixelsSize().getHeight();
 	size_t maxItems = 19;
 	auto* dM = SyntaxDefinitionManager::instance();
 	auto names = dM->getLanguageNames();
@@ -222,18 +222,18 @@ UIMenu* SettingsMenu::createFileTypeMenu( bool emptyMenu ) {
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 	menu->on( Event::OnItemClicked, cb );
-	mFileTypeMenues.push_back( menu );
+	mFileTypeMenus.push_back( menu );
 	size_t total = 0;
 
 	if ( emptyMenu )
-		return mFileTypeMenues[0];
+		return mFileTypeMenus[0];
 
 	for ( const auto& name : names ) {
 		menu->addRadioButton(
 			name, mSplitter->curEditorExistsAndFocused() &&
 					  mSplitter->getCurEditor()->getSyntaxDefinition().getLanguageName() == name );
 
-		if ( mFileTypeMenues.size() == 1 && menu->getCount() == 1 ) {
+		if ( mFileTypeMenus.size() == 1 && menu->getCount() == 1 ) {
 			auto menuBar = mUISceneNode->findByType( UI_TYPE_MENUBAR );
 			menu->reloadStyle( true, true );
 			Float height = menu->getPixelsSize().getHeight();
@@ -248,16 +248,16 @@ UIMenu* SettingsMenu::createFileTypeMenu( bool emptyMenu ) {
 			UIPopUpMenu* newMenu = UIPopUpMenu::New();
 			menu->addSubMenu( i18n( "more_ellipsis", "More..." ), nullptr, newMenu );
 			newMenu->on( Event::OnItemClicked, cb );
-			mFileTypeMenues.push_back( newMenu );
+			mFileTypeMenus.push_back( newMenu );
 			menu = newMenu;
 		}
 	}
 
-	return mFileTypeMenues[0];
+	return mFileTypeMenus[0];
 }
 
 UIMenu* SettingsMenu::createColorSchemeMenu( bool emptyMenu ) {
-	mColorSchemeMenuesCreatedWithHeight = emptyMenu ? 0 : mUISceneNode->getPixelsSize().getHeight();
+	mColorSchemeMenusCreatedWithHeight = emptyMenu ? 0 : mUISceneNode->getPixelsSize().getHeight();
 	size_t maxItems = 19;
 	auto cb = [this]( const Event* event ) {
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -267,18 +267,18 @@ UIMenu* SettingsMenu::createColorSchemeMenu( bool emptyMenu ) {
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 	menu->on( Event::OnItemClicked, cb );
-	mColorSchemeMenues.push_back( menu );
+	mColorSchemeMenus.push_back( menu );
 	size_t total = 0;
 	const auto& colorSchemes = mSplitter->getColorSchemes();
 
 	if ( emptyMenu )
-		return mColorSchemeMenues[0];
+		return mColorSchemeMenus[0];
 
 	for ( auto& colorScheme : colorSchemes ) {
 		menu->addRadioButton( colorScheme.first,
 							  mSplitter->getCurrentColorSchemeName() == colorScheme.first );
 
-		if ( mColorSchemeMenues.size() == 1 && menu->getCount() == 1 ) {
+		if ( mColorSchemeMenus.size() == 1 && menu->getCount() == 1 ) {
 			auto menuBar = mUISceneNode->findByType( UI_TYPE_MENUBAR );
 			menu->reloadStyle( true, true );
 			Float height = menu->getPixelsSize().getHeight();
@@ -293,12 +293,12 @@ UIMenu* SettingsMenu::createColorSchemeMenu( bool emptyMenu ) {
 			UIPopUpMenu* newMenu = UIPopUpMenu::New();
 			menu->addSubMenu( i18n( "more_ellipsis", "More..." ), nullptr, newMenu );
 			newMenu->on( Event::OnItemClicked, cb );
-			mColorSchemeMenues.push_back( newMenu );
+			mColorSchemeMenus.push_back( newMenu );
 			menu = newMenu;
 		}
 	}
 
-	return mColorSchemeMenues[0];
+	return mColorSchemeMenus[0];
 }
 
 UIMenu* SettingsMenu::createDocumentMenu() {
@@ -320,10 +320,10 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		i18n( "file_type", "File Type" ), findIcon( "file-code" ), createFileTypeMenu( true ) );
 
 	fileTypeMenu->on( Event::OnMenuShow, [this, fileTypeMenu]( const Event* ) {
-		if ( mFileTypeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
-			for ( UIPopUpMenu* menu : mFileTypeMenues )
+		if ( mFileTypeMenusCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
+			for ( UIPopUpMenu* menu : mFileTypeMenus )
 				menu->close();
-			mFileTypeMenues.clear();
+			mFileTypeMenus.clear();
 			auto* newMenu = createFileTypeMenu();
 			newMenu->reloadStyle( true, true );
 			fileTypeMenu->setSubMenu( newMenu );
@@ -482,10 +482,10 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		mDocMenu->addSubMenu( i18n( "syntax_color_scheme", "Syntax Color Scheme" ),
 							  findIcon( "palette" ), createColorSchemeMenu( true ) );
 	colorSchemeMenu->on( Event::OnMenuShow, [this, colorSchemeMenu]( const Event* ) {
-		if ( mColorSchemeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
-			for ( UIPopUpMenu* menu : mColorSchemeMenues )
+		if ( mColorSchemeMenusCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
+			for ( UIPopUpMenu* menu : mColorSchemeMenus )
 				menu->close();
-			mColorSchemeMenues.clear();
+			mColorSchemeMenus.clear();
 			auto* newMenu = createColorSchemeMenu();
 			newMenu->reloadStyle( true, true );
 			colorSchemeMenu->setSubMenu( newMenu );
@@ -2406,7 +2406,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 }
 
 void SettingsMenu::updateColorSchemeMenu() {
-	for ( UIPopUpMenu* menu : mColorSchemeMenues ) {
+	for ( UIPopUpMenu* menu : mColorSchemeMenus ) {
 		for ( size_t i = 0; i < menu->getCount(); i++ ) {
 			UIWidget* widget = menu->getItem( i );
 			if ( widget->isType( UI_TYPE_MENURADIOBUTTON ) ) {
@@ -2422,7 +2422,7 @@ void SettingsMenu::updateCurrentFileType() {
 	if ( !mSplitter->curEditorExistsAndFocused() )
 		return;
 	std::string curLang( mSplitter->getCurEditor()->getSyntaxDefinition().getLanguageName() );
-	for ( UIPopUpMenu* menu : mFileTypeMenues ) {
+	for ( UIPopUpMenu* menu : mFileTypeMenus ) {
 		for ( size_t i = 0; i < menu->getCount(); i++ ) {
 			if ( menu->getItem( i )->isType( UI_TYPE_MENURADIOBUTTON ) ) {
 				UIMenuRadioButton* menuItem = menu->getItem( i )->asType<UIMenuRadioButton>();
@@ -2661,7 +2661,7 @@ void SettingsMenu::updateMenu() {
 	setMenuParent( mWindowMenu );
 	setMenuParent( mHelpMenu );
 
-	mSettingsMenu->find( "settings-submenues-sep" )->setVisible( !showMenuBar );
+	mSettingsMenu->find( "settings-submenus-sep" )->setVisible( !showMenuBar );
 	mSettingsMenu->getItemId( "project_settings" )->setVisible( !showMenuBar );
 	mSettingsMenu->getItemId( "doc-menu" )->setVisible( !showMenuBar );
 	mSettingsMenu->getItemId( "term-menu" )->setVisible( !showMenuBar );

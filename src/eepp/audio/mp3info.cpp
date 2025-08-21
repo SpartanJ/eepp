@@ -3,7 +3,7 @@
 
 namespace EE { namespace Audio {
 
-/* Inpired in the mp3info library */
+/* Inspired in the mp3info library */
 
 static const int frame_size_index[] = {24000, 72000, 72000};
 
@@ -166,7 +166,7 @@ bool Mp3Info::getFirstHeader( long startpos ) {
 				break;
 			}
 
-			// If read 1MB and not 255 found, asume error
+			// If read 1MB and not 255 found, assume error
 			if ( mStream.tell() >= EE_1MB ) {
 				return false;
 			}

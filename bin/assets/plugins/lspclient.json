@@ -401,9 +401,9 @@
     },
     {
       "language": "markdown",
-      "name": "md-lsp",
-      "url": "https://github.com/matkrin/md-lsp",
-      "command": "md-lsp",
+      "name": "marksman",
+      "url": "https://github.com/artempyanykh/marksman",
+      "command": "marksman",
       "file_patterns": ["%.md$"],
       "rootIndicationFileNames": [".git"]
     },

@@ -41,7 +41,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	mUIThemeManager( UIThemeManager::New() ),
 	mUIIconThemeManager( UIIconThemeManager::New()->setFallbackThemeManager( mUIThemeManager ) ),
 	mKeyBindings( mWindow->getInput() ) {
-	// Reset size since the SceneNode already set it but needs to set the size from zero to emmit
+	// Reset size since the SceneNode already set it but needs to set the size from zero to emit
 	// the required events to its childs.
 	mSize = Sizef();
 	mDpSize = Sizef();
@@ -55,7 +55,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 
 	mRoot = UIRoot::New();
 	mRoot->setParent( this )->setPosition( 0, 0 )->setId( "uiscenenode_root_node" );
-	mRoot->enableReportSizeChangeToChilds();
+	mRoot->enableReportSizeChangeToChildren();
 
 	resizeNode( mWindow );
 }

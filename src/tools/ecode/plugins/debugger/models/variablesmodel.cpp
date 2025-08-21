@@ -121,7 +121,7 @@ size_t VariablesModel::rowCount( const ModelIndex& index ) const {
 	return static_cast<int>( parentNode->getChildren().size() );
 }
 
-bool VariablesModel::hasChilds( const ModelIndex& index ) const {
+bool VariablesModel::hasChildren( const ModelIndex& index ) const {
 	if ( !index.isValid() )
 		return !mRootNode->children.empty();
 	ModelVariableNode* node = static_cast<ModelVariableNode*>( index.internalData() );

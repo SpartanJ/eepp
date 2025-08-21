@@ -82,12 +82,13 @@ void SpellCheckerPlugin::load( PluginManager* pluginManager ) {
 	}
 
 	if ( mKeyBindings.empty() ) {
-		mKeyBindings["spellchecker-fix-typo"] = "alt+return";
+		mKeyBindings["spellchecker-fix-typo"] = "alt+shift+return";
 	}
 
 	if ( j.contains( "keybindings" ) ) {
 		auto& kb = j["keybindings"];
-		auto list = { "spellchecker-fix-typo" };
+		auto list = { "spellchecker-fix-typo", "spellchecker-go-to-next-error",
+					  "spellchecker-go-to-previous-error" };
 		for ( const auto& key : list ) {
 			if ( kb.contains( key ) ) {
 				if ( !kb[key].empty() )
@@ -121,7 +122,95 @@ void SpellCheckerPlugin::onRegisterDocument( TextDocument* doc ) {
 	doc->setCommand( "spellchecker-fix-typo", [this]( TextDocument::Client* client ) {
 		createSpellCheckAlternativesView( static_cast<UICodeEditor*>( client ) );
 	} );
+
+	doc->setCommand( "spellchecker-go-to-next-error", [this]( TextDocument::Client* client ) {
+		goToNextError( static_cast<UICodeEditor*>( client ) );
+	} );
+
+	doc->setCommand( "spellchecker-go-to-previous-error", [this]( TextDocument::Client* client ) {
+		goToPrevError( static_cast<UICodeEditor*>( client ) );
+	} );
+
 	setDocDirty( doc );
+}
+
+void SpellCheckerPlugin::goToNextError( UICodeEditor* editor ) {
+	if ( nullptr == editor || !editor->hasDocument() )
+		return;
+	TextDocument* doc = &editor->getDocument();
+	auto pos = doc->getSelection().start();
+
+	Lock l( mMatchesMutex );
+	auto fMatch = mMatches.find( doc );
+	if ( fMatch == mMatches.end() )
+		return;
+	const auto& matches = fMatch->second;
+	if ( matches.empty() )
+		return;
+
+	const SpellCheckerMatch* matched = nullptr;
+	for ( const auto& match : matches ) {
+		if ( match.first >= pos.line() ) {
+			for ( const auto& m : match.second ) {
+				if ( pos < m.range.normalized().start() ) {
+					matched = &m;
+					break;
+				}
+			}
+			if ( matched )
+				break;
+		}
+	}
+
+	if ( matched != nullptr ) {
+		editor->goToLine( matched->range.start() );
+		mManager->getSplitter()->addCurrentPositionToNavigationHistory();
+		return;
+	} else if ( matches.begin()->second.front().range.start().line() != pos.line() ) {
+		editor->goToLine( matches.begin()->second.front().range.start() );
+		mManager->getSplitter()->addCurrentPositionToNavigationHistory();
+		return;
+	}
+}
+
+void SpellCheckerPlugin::goToPrevError( UICodeEditor* editor ) {
+	if ( nullptr == editor || !editor->hasDocument() )
+		return;
+	TextDocument* doc = &editor->getDocument();
+	auto pos = doc->getSelection().start();
+
+	Lock l( mMatchesMutex );
+	auto fMatch = mMatches.find( doc );
+	if ( fMatch == mMatches.end() )
+		return;
+	auto& matches = fMatch->second;
+	if ( matches.empty() )
+		return;
+
+	const SpellCheckerMatch* matched = nullptr;
+	for ( auto match = matches.rbegin(); match != matches.rend(); ++match ) {
+		if ( match->first <= pos.line() ) {
+			for ( auto it = match->second.rbegin(); it != match->second.rend(); ++it ) {
+				const auto& m = *it;
+				if ( m.range.normalized().start() < pos ) {
+					matched = &m;
+					break;
+				}
+			}
+			if ( matched )
+				break;
+		}
+	}
+
+	if ( matched != nullptr ) {
+		editor->goToLine( matched->range.start() );
+		mManager->getSplitter()->addCurrentPositionToNavigationHistory();
+		return;
+	} else if ( matches.rbegin()->second.front().range.start().line() != pos.line() ) {
+		editor->goToLine( matches.rbegin()->second.front().range.start() );
+		mManager->getSplitter()->addCurrentPositionToNavigationHistory();
+		return;
+	}
 }
 
 void SpellCheckerPlugin::onUnregisterDocument( TextDocument* doc ) {
@@ -184,17 +273,8 @@ void SpellCheckerPlugin::spellCheckDoc( std::shared_ptr<TextDocument> doc ) {
 	IOStreamString fileString;
 	mClock.restart();
 	if ( doc->isDirty() || !doc->hasFilepath() ) {
-		std::string tmpPath;
-		if ( !doc->hasFilepath() ) {
-			tmpPath =
-				Sys::getTempPath() + ".ecode-" + doc->getFilename() + "." + String::randString( 8 );
-		} else {
-			tmpPath = Sys::getTempPath() + doc->getFilename();
-			if ( FileSystem::fileExists( tmpPath ) ) {
-				tmpPath = Sys::getTempPath() + ".ecode-" + doc->getFilename() + "." +
-						  String::randString( 8 );
-			}
-		}
+		std::string tmpPath =
+			Sys::getTempPath() + ".ecode-" + doc->getFilename() + "." + String::randString( 8 );
 
 		doc->save( fileString, true );
 		FileSystem::fileWrite( tmpPath, (Uint8*)fileString.getStreamPointer(),
@@ -246,7 +326,7 @@ void SpellCheckerPlugin::runSpellChecker( std::shared_ptr<TextDocument> doc,
 			return;
 		}
 
-		if ( 0 != returnCode ) {
+		if ( 0 != returnCode && 2 != returnCode ) {
 			Lock matchesLock( mMatchesMutex );
 			std::map<Int64, std::vector<SpellCheckerMatch>> empty;
 			setMatches( doc.get(), std::move( empty ) );
@@ -301,10 +381,10 @@ void SpellCheckerPlugin::runSpellChecker( std::shared_ptr<TextDocument> doc,
 
 		setMatches( doc.get(), std::move( matches ) );
 
-		Log::info( "SpellCheckerPlugin::runSpellChecker with binary %s for %s took %.2fms. Found: "
-				   "%d matches.",
-				   SPELL_CHECKER_CMD, path, mClock.getElapsedTime().asMilliseconds(),
-				   totalMatches );
+		Log::debug( "SpellCheckerPlugin::runSpellChecker with binary %s for %s took %.2fms. Found: "
+					"%d matches.",
+					SPELL_CHECKER_CMD, path, mClock.getElapsedTime().asMilliseconds(),
+					totalMatches );
 	}
 }
 

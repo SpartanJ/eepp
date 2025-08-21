@@ -3367,11 +3367,11 @@ void TextDocument::setEncoding( TextFormat::Encoding encoding ) {
 	mEncoding = encoding;
 }
 
-const FoldRangeServive& TextDocument::getFoldRangeService() const {
+const FoldRangeService& TextDocument::getFoldRangeService() const {
 	return mFoldRangeService;
 }
 
-FoldRangeServive& TextDocument::getFoldRangeService() {
+FoldRangeService& TextDocument::getFoldRangeService() {
 	return mFoldRangeService;
 }
 

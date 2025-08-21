@@ -283,8 +283,8 @@ Uint32 UIScrollBar::onMessage( const NodeMessage* Msg ) {
 	return 0;
 }
 
-void UIScrollBar::setValue( Float val, const bool& emmitEvent ) {
-	mSlider->setValue( val, emmitEvent );
+void UIScrollBar::setValue( Float val, const bool& emitEvent ) {
+	mSlider->setValue( val, emitEvent );
 }
 
 const Float& UIScrollBar::getValue() const {

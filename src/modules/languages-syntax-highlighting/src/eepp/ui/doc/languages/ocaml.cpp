@@ -29,7 +29,7 @@ SyntaxDefinition& addOCaml() {
 		  {
 			  { "and", "keyword" },		  { "as", "keyword" },		 { "asr", "operator" },
 			  { "assert", "keyword" },	  { "begin", "keyword" },	 { "class", "keyword" },
-			  { "constaint", "keyword" }, { "do", "keyword" },		 { "done", "keyword" },
+			  { "constraint", "keyword" }, { "do", "keyword" },		 { "done", "keyword" },
 			  { "downto", "keyword" },	  { "else", "keyword" },	 { "end", "keyword" },
 			  { "exception", "keyword" }, { "external", "keyword" }, { "false", "literal" },
 			  { "for", "keyword" },		  { "fun", "keyword" },		 { "function", "keyword" },

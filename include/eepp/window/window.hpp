@@ -138,7 +138,7 @@ class WindowInfo {
 	RGB ClearColor;
 	bool Created;
 	bool Maximized;
-	eeWindowContex Context;
+	eeWindowContext Context;
 };
 
 /** @brief DisplayMode contains a display mode available to use */
@@ -172,7 +172,7 @@ class EE_API Window {
 
 	virtual Uint32 getWindowID() const = 0;
 
-	/** Toogle the screen to Fullscreen, if it's in fullscreen toogle to windowed mode. */
+	/** Toggle the screen to Fullscreen, if it's in fullscreen toggle to windowed mode. */
 	virtual void toggleFullscreen() = 0;
 
 	/** Set the window title */
@@ -211,7 +211,7 @@ class EE_API Window {
 	/** This will attempt to show the window */
 	virtual void show();
 
-	/** This will attemp to move the window over the desktop to the position */
+	/** This will attempt to move the window over the desktop to the position */
 	virtual void setPosition( int Left, int Top );
 
 	/** @return The Current Window Position */
@@ -264,10 +264,10 @@ class EE_API Window {
 	virtual void setGamma( Float Red, Float Green, Float Blue ) = 0;
 
 	/** The the OpenGL context as the current context */
-	virtual void setCurrentContext( eeWindowContex Context );
+	virtual void setCurrentContext( eeWindowContext Context );
 
 	/** @return The current OpenGL context */
-	virtual eeWindowContex getContext() const;
+	virtual eeWindowContext getContext() const;
 
 	/** @return The window handler */
 	virtual eeWindowHandle getWindowHandler() const = 0;
@@ -313,7 +313,7 @@ class EE_API Window {
 	/** @return The size of the pixel in screen coordinates. This is the device scale factor. */
 	virtual Float getScale() const;
 
-	/** @return If the aplication is running returns true ( If you Init correctly the window and is
+	/** @return If the application is running returns true ( If you Init correctly the window and is
 	 * running ). */
 	bool isRunning() const;
 
@@ -344,7 +344,7 @@ class EE_API Window {
 	/** Set a new projection matrix */
 	void setProjection( const Transform& transform );
 
-	/** Set the current Viewport ( and creates a new ortho proyection if needed ) */
+	/** Set the current Viewport ( and creates a new ortho projection if needed ) */
 	void setViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
 
 	/** @return The viewport in pixels of the view */

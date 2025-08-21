@@ -167,11 +167,11 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	/** Unload the Texture from Memory */
 	void deleteTexture();
 
-	/** Set if the Texture is Grabed */
-	void setGrabed( const bool& isGrabed );
+	/** Set if the Texture is Grabbed */
+	void setGrabbed( const bool& isGrabbed );
 
-	/** @return If the texture is Grabed */
-	bool isGrabed() const;
+	/** @return If the texture is Grabbed */
+	bool isGrabbed() const;
 
 	/** @return If the texture was compressed on load (DXT compression) */
 	bool isCompressed() const;
@@ -206,7 +206,8 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 	 */
 	void draw( const Float& x, const Float& y, const Float& Angle = 0,
 			   const Vector2f& scale = Vector2f::One, const Color& color = Color::White,
-			   const BlendMode& Blend = BlendMode::Alpha(), const RenderMode& Effect = RENDER_NORMAL,
+			   const BlendMode& Blend = BlendMode::Alpha(),
+			   const RenderMode& Effect = RENDER_NORMAL,
 			   OriginPoint Center = OriginPoint( OriginPoint::OriginCenter ),
 			   const Rect& texSector = Rect( 0, 0, 0, 0 ) );
 
@@ -235,7 +236,8 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 				 const Color& Color1 = Color( 255, 255, 255, 255 ),
 				 const Color& Color2 = Color( 255, 255, 255, 255 ),
 				 const Color& Color3 = Color( 255, 255, 255, 255 ),
-				 const BlendMode& Blend = BlendMode::Alpha(), const RenderMode& Effect = RENDER_NORMAL,
+				 const BlendMode& Blend = BlendMode::Alpha(),
+				 const RenderMode& Effect = RENDER_NORMAL,
 				 OriginPoint Center = OriginPoint( OriginPoint::OriginCenter ),
 				 const Rect& texSector = Rect( 0, 0, 0, 0 ) );
 
@@ -272,7 +274,8 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 					 const Color& Color1 = Color( 255, 255, 255, 255 ),
 					 const Color& Color2 = Color( 255, 255, 255, 255 ),
 					 const Color& Color3 = Color( 255, 255, 255, 255 ),
-					 const BlendMode& Blend = BlendMode::Alpha(), Rect texSector = Rect( 0, 0, 0, 0 ) );
+					 const BlendMode& Blend = BlendMode::Alpha(),
+					 Rect texSector = Rect( 0, 0, 0, 0 ) );
 
 	Sizef getSize();
 
@@ -324,7 +327,7 @@ class EE_API Texture : public DrawableResource, public Image, private NonCopyabl
 		TEX_FLAG_MODIFIED = ( 1 << 1 ),
 		TEX_FLAG_COMPRESSED = ( 1 << 2 ),
 		TEX_FLAG_LOCKED = ( 1 << 3 ),
-		TEX_FLAG_GRABED = ( 1 << 4 )
+		TEX_FLAG_GRABBED = ( 1 << 4 )
 	};
 
 	friend class TextureFactory;

@@ -1195,11 +1195,15 @@ void LinterPlugin::goToNextError( UICodeEditor* editor ) {
 
 	Lock l( mMatchesMutex );
 	auto fMatch = mMatches.find( doc );
-	if ( fMatch == mMatches.end() )
+	if ( fMatch == mMatches.end() ) {
+		doc->execute( "spellchecker-go-to-next-error", editor );
 		return;
+	}
 	const auto& matches = fMatch->second;
-	if ( matches.empty() )
+	if ( matches.empty() ) {
+		doc->execute( "spellchecker-go-to-next-error", editor );
 		return;
+	}
 
 	const LinterMatch* matched = nullptr;
 	for ( const auto& match : matches ) {
@@ -1262,11 +1266,15 @@ void LinterPlugin::goToPrevError( UICodeEditor* editor ) {
 
 	Lock l( mMatchesMutex );
 	auto fMatch = mMatches.find( doc );
-	if ( fMatch == mMatches.end() )
+	if ( fMatch == mMatches.end() ) {
+		doc->execute( "spellchecker-go-to-previous-error", editor );
 		return;
+	}
 	auto& matches = fMatch->second;
-	if ( matches.empty() )
+	if ( matches.empty() ) {
+		doc->execute( "spellchecker-go-to-previous-error", editor );
 		return;
+	}
 
 	const LinterMatch* matched = nullptr;
 	for ( auto match = matches.rbegin(); match != matches.rend(); ++match ) {

@@ -66,7 +66,7 @@ class EE_API Condition : NonCopyable {
 
 	void unlock();
 
-	/** Performs an assignement followed by a signal() call.
+	/** Performs an assignment followed by a signal() call.
 	 * The internal Condition value is updated to value() and the Condition is
 	 * signaled. Note that the Condition must be unlocked in order
 	 * to be updated, otherwise it'll block until the Condition

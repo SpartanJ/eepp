@@ -2367,7 +2367,7 @@ void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const std::string& ex
 		win->getKeyBindings().addKeybind( { KEY_ESCAPE }, "closeWindow" );
 		win->setWindowFlags( UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS |
 							 UI_WIN_SHADOW | UI_WIN_EPHEMERAL | UI_WIN_RESIZEABLE |
-							 UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHARE_ALPHA_WITH_CHILDS );
+							 UI_WIN_DRAGGABLE_CONTAINER | UI_WIN_SHARE_ALPHA_WITH_CHILDREN );
 		win->center();
 		win->on( Event::OnWindowClose, [this]( auto ) { mHoverTooltip = nullptr; } );
 		win->on( Event::OnWindowReady, [win]( auto ) { win->setFocus(); } );

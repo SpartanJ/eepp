@@ -31,7 +31,7 @@ class EE_API UIScrollBar : public UIWidget {
 
 	virtual bool isType( const Uint32& type ) const;
 
-	virtual void setValue( Float val, const bool& emmitEvent = true );
+	virtual void setValue( Float val, const bool& emitEvent = true );
 
 	const Float& getValue() const;
 

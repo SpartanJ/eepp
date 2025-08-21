@@ -208,7 +208,7 @@ void MapEditor::createMenuBar() {
 	PU6->addEventListener( Event::OnItemClicked, [this]( auto event ) { mapMenuClick( event ); } );
 
 	mWinContainer = UIWidget::New();
-	mWinContainer->enableReportSizeChangeToChilds();
+	mWinContainer->enableReportSizeChangeToChildren();
 	mWinContainer->setParent( mUIContainer );
 	mWinContainer->setPosition( 0, MenuBar->getSize().getHeight() );
 	mWinContainer->setSize( mUIContainer->getSize().getWidth(),
@@ -1276,7 +1276,7 @@ void MapEditor::mapMenuClick( const Event* Event ) {
 		UIWindow* tWin = UIWindow::New();
 		tWin->setSizeWithDecoration( 1024, 768 );
 		tWin->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
-							  UI_WIN_DRAGABLE_CONTAINER );
+							  UI_WIN_DRAGGABLE_CONTAINER );
 		tWin->setMinWindowSize( 1024, 768 );
 
 		eeNew( Tools::TextureAtlasEditor, ( tWin ) );

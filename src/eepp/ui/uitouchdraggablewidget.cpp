@@ -59,7 +59,7 @@ UITouchDraggableWidget::setTouchDragDeceleration( const Vector2f& touchDragDecel
 void UITouchDraggableWidget::onTouchDragValueChange( Vector2f ) {}
 
 bool UITouchDraggableWidget::isTouchOverAllowedChilds() {
-	return isMouseOverMeOrChilds();
+	return isMouseOverMeOrChildren();
 }
 
 void UITouchDraggableWidget::scheduledUpdate( const Time& time ) {

@@ -478,7 +478,7 @@ size_t FileSystemModel::columnCount( const ModelIndex& ) const {
 	return Column::Count;
 }
 
-bool FileSystemModel::hasChilds( const ModelIndex& index ) const {
+bool FileSystemModel::hasChildren( const ModelIndex& index ) const {
 	Node& node = const_cast<Node&>( this->node( index ) );
 	if ( node.mInfoDirty )
 		node.fetchData( node.fullPath() );

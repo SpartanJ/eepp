@@ -1084,7 +1084,7 @@ void UINode::nodeDraw() {
 
 			draw();
 
-			drawChilds();
+			drawChildren();
 
 			smartClipEnd( ClipType::PaddingBox, needsClipPlanes );
 
@@ -1093,7 +1093,7 @@ void UINode::nodeDraw() {
 
 			smartClipEnd( ClipType::ContentBox, needsClipPlanes );
 		} else if ( !isClipped() ) {
-			drawChilds();
+			drawChildren();
 		}
 
 		if ( intersected )
@@ -1545,7 +1545,7 @@ void UINode::startDragging( const Vector2f& position ) {
 }
 
 bool UINode::ownsChildPosition() const {
-	return 0 != ( mFlags & UI_OWNS_CHILDS_POSITION );
+	return 0 != ( mFlags & UI_OWNS_CHILDREN_POSITION );
 }
 
 void UINode::setDragButton( const Uint32& Button ) {

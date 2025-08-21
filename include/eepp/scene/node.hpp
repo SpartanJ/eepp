@@ -179,7 +179,7 @@ class EE_API Node : public Transformable {
 
 	bool isMouseOver() const;
 
-	bool isMouseOverMeOrChilds() const;
+	bool isMouseOverMeOrChildren() const;
 
 	bool isMeOrParentTreeVisible() const;
 
@@ -366,7 +366,7 @@ class EE_API Node : public Transformable {
 
 	Node* getParentWidget() const;
 
-	void enableReportSizeChangeToChilds();
+	void enableReportSizeChangeToChildren();
 
 	void disableReportSizeChangeToChilds();
 
@@ -552,7 +552,7 @@ class EE_API Node : public Transformable {
 
 	virtual void matrixUnset();
 
-	virtual void drawChilds();
+	virtual void drawChildren();
 
 	virtual void onChildCountChange( Node* child, const bool& removed );
 

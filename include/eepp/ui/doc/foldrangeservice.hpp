@@ -20,9 +20,9 @@ class FoldRangeProvider {
 		virtual void requestFoldRange() = 0;
 };
 
-class EE_API FoldRangeServive {
+class EE_API FoldRangeService {
   public:
-	FoldRangeServive( TextDocument* doc );
+	FoldRangeService( TextDocument* doc );
 
 	bool canFold() const;
 

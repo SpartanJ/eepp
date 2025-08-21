@@ -15,7 +15,7 @@ UIGridLayout::UIGridLayout() :
 	mColumnWidth( 0 ),
 	mRowWeight( 0.25f ),
 	mRowHeight( 0 ) {
-	mFlags |= UI_OWNS_CHILDS_POSITION;
+	mFlags |= UI_OWNS_CHILDREN_POSITION;
 }
 
 Uint32 UIGridLayout::getType() const {

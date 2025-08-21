@@ -12,7 +12,7 @@ namespace EE { namespace UI { namespace Tools {
 TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNewTGCb( NewTGCb ) {
 	mUIWindow = UIWindow::New();
 	mUIWindow->setSizeWithDecoration( 378, 0 )->setMinWindowSize( 378, 0 )->setWindowFlags(
-		UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_SHARE_ALPHA_WITH_CHILDS |
+		UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_SHARE_ALPHA_WITH_CHILDREN |
 		UI_WIN_MODAL );
 
 	mUIWindow->addEventListener( Event::OnWindowClose,

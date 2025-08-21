@@ -122,10 +122,10 @@ class SettingsMenu {
 	UIMenuBar* mMenuBar{ nullptr };
 	UIPopUpMenu* mFontHintMenu{ nullptr };
 	UIPopUpMenu* mFontAntiAliasingMenu{ nullptr };
-	std::vector<UIPopUpMenu*> mFileTypeMenues;
-	Float mFileTypeMenuesCreatedWithHeight{ 0 };
-	std::vector<UIPopUpMenu*> mColorSchemeMenues;
-	Float mColorSchemeMenuesCreatedWithHeight{ 0 };
+	std::vector<UIPopUpMenu*> mFileTypeMenus;
+	Float mFileTypeMenusCreatedWithHeight{ 0 };
+	std::vector<UIPopUpMenu*> mColorSchemeMenus;
+	Float mColorSchemeMenusCreatedWithHeight{ 0 };
 };
 
 } // namespace ecode
