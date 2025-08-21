@@ -5112,7 +5112,7 @@ bool UICodeEditor::checkAutoCloseXMLTag( const String& text ) {
 	if ( start.line() >= (Int64)mDoc->linesCount() )
 		return false;
 	const auto& line = mDoc->line( start.line() ).getText();
-	if ( start.column() >= (Int64)line.size() )
+	if ( start.column() >= (Int64)line.size() || start.column() <= 1 || line.size() < 2 )
 		return false;
 	if ( line[start.column() - 1] != '>' || ( line.size() > 2 && line[start.column() - 2] == '/' ) )
 		return false;
