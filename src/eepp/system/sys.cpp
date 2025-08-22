@@ -1113,9 +1113,9 @@ std::string Sys::which( const std::string& exeName,
 		 FileSystem::fileExists( exeName ) )
 		return exeName;
 
-	std::vector<std::string> PATHS = getEnvSplitted( "PATH" );
+	std::vector<std::string> PATHS = getEnvSplit( "PATH" );
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	static std::vector<std::string> PATHEXTS = getEnvSplitted( "PATHEXT" );
+	static std::vector<std::string> PATHEXTS = getEnvSplit( "PATHEXT" );
 	std::string exePath;
 #endif
 
@@ -1173,7 +1173,7 @@ std::string Sys::getEnv( const std::string& name ) {
 #endif
 }
 
-std::vector<std::string> Sys::getEnvSplitted( const std::string& name ) {
+std::vector<std::string> Sys::getEnvSplit( const std::string& name ) {
 	return String::split( getEnv( name.c_str() ), PATH_SEP_CHAR );
 }
 
@@ -1429,7 +1429,7 @@ Int64 Sys::getProcessCreationTime( Uint64 pid ) {
 std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	std::vector<Uint64> pids;
-	std::vector<std::string> extensions = getEnvSplitted( "PATHEXT" );
+	std::vector<std::string> extensions = getEnvSplit( "PATHEXT" );
 
 	HMODULE hPsapi = LoadLibrary( TEXT( "psapi.dll" ) );
 	if ( !hPsapi )
@@ -1603,7 +1603,7 @@ std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 std::vector<std::pair<Uint64, std::string>> Sys::listProcesses() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	std::vector<std::pair<Uint64, std::string>> pids;
-	std::vector<std::string> extensions = getEnvSplitted( "PATHEXT" );
+	std::vector<std::string> extensions = getEnvSplit( "PATHEXT" );
 
 	HMODULE hPsapi = LoadLibrary( TEXT( "psapi.dll" ) );
 	if ( !hPsapi )

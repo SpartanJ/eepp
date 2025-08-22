@@ -103,9 +103,9 @@ class EE_API SceneNode : public Node {
 
 	void removeMouseOverNode( Node* node );
 
-	const bool& getUpdateAllChilds() const;
+	const bool& getUpdateAllChildren() const;
 
-	void setUpdateAllChilds( const bool& updateAllChilds );
+	void setUpdateAllChildren( bool updateAllChildren );
 
 	const Float& getDPI() const;
 
@@ -126,7 +126,7 @@ class EE_API SceneNode : public Node {
 	bool mFrameBufferBound;
 	bool mUseInvalidation;
 	bool mUseGlobalCursors;
-	bool mUpdateAllChilds;
+	bool mUpdateAllChildren;
 	Int32 mResizeCb;
 	bool mDrawDebugData;
 	bool mDrawBoxes;

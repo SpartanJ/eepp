@@ -279,7 +279,7 @@ class Git {
 	Result mergeBranch( const std::string& branch, bool fastForward = false,
 						const std::string& projectDir = "" );
 
-	Result commit( const std::string& commitMsg, bool ammend, bool byPassCommitHook,
+	Result commit( const std::string& commitMsg, bool amend, bool byPassCommitHook,
 				   const std::string& projectDir = "" );
 
 	Result fetch( const std::string& projectDir = "" );

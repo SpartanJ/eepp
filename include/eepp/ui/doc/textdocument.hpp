@@ -38,9 +38,9 @@ struct DocumentContentChange {
 
 class EE_API TextDocument {
   public:
-	static bool isTextDocummentCommand( std::string_view cmd );
+	static bool isTextDocumentCommand( std::string_view cmd );
 
-	static bool isTextDocummentCommand( String::HashType cmdHash );
+	static bool isTextDocumentCommand( String::HashType cmdHash );
 
 	static bool fileMightBeBinary( const std::string& file );
 
@@ -788,10 +788,10 @@ class EE_API TextDocument {
 
 	void notifySyntaxDefinitionChange();
 
-	void notifiyDocumenLineMove( const Int64& fromLine, const Int64& toLine,
+	void notifyDocumentLineMove( const Int64& fromLine, const Int64& toLine,
 								 const Int64& numLines );
 
-	void notifyInterstingCursorChange( TextPosition selection );
+	void notifyInterestingCursorChange( TextPosition selection );
 
 	void notifyFoldRegionsUpdated( size_t oldCount, size_t newCount );
 

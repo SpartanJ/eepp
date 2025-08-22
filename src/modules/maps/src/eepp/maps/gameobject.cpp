@@ -61,12 +61,12 @@ void GameObject::setMirrored( bool mirrored ) {
 			 : clearFlag( GObjFlags::GAMEOBJECT_MIRRORED );
 }
 
-bool GameObject::isFliped() const {
-	return 0 != ( mFlags & GObjFlags::GAMEOBJECT_FLIPED );
+bool GameObject::isFlipped() const {
+	return 0 != ( mFlags & GObjFlags::GAMEOBJECT_FLIPPED );
 }
 
-void GameObject::setFliped( bool fliped ) {
-	fliped ? setFlag( GObjFlags::GAMEOBJECT_FLIPED ) : clearFlag( GObjFlags::GAMEOBJECT_FLIPED );
+void GameObject::setFlipped( bool flipped ) {
+	flipped ? setFlag( GObjFlags::GAMEOBJECT_FLIPPED ) : clearFlag( GObjFlags::GAMEOBJECT_FLIPPED );
 }
 
 bool GameObject::isBlendAdd() const {
@@ -110,11 +110,11 @@ RenderMode GameObject::getRenderModeFromFlags() {
 	RenderMode Render = RENDER_NORMAL;
 
 	if ( ( mFlags & GObjFlags::GAMEOBJECT_MIRRORED ) &&
-		 ( mFlags & GObjFlags::GAMEOBJECT_FLIPED ) ) {
+		 ( mFlags & GObjFlags::GAMEOBJECT_FLIPPED ) ) {
 		Render = RENDER_FLIPPED_MIRRORED;
 	} else if ( mFlags & GObjFlags::GAMEOBJECT_MIRRORED ) {
 		Render = RENDER_MIRROR;
-	} else if ( mFlags & GObjFlags::GAMEOBJECT_FLIPED ) {
+	} else if ( mFlags & GObjFlags::GAMEOBJECT_FLIPPED ) {
 		Render = RENDER_FLIPPED;
 	}
 

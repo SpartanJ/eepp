@@ -474,7 +474,7 @@ PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notificat
 			if ( ( pos.column() >= match.range.start().column() &&
 				   pos.column() <= match.range.end().column() ) ||
 				 matches.size() == 1 ) {
-				PluginInmediateResponse msg;
+				PluginImmediateResponse msg;
 				msg.type = PluginMessageType::GetErrorOrWarning;
 				json rj;
 				rj["text"] = match.text;
@@ -516,7 +516,7 @@ PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notificat
 		for ( const auto& match : matches ) {
 			if ( pos.column() >= match.range.start().column() &&
 				 pos.column() <= match.range.end().column() ) {
-				PluginInmediateResponse msg;
+				PluginImmediateResponse msg;
 				msg.type = PluginMessageType::GetDiagnostics;
 				json rj;
 				rj["diagnostics"] = json::array( { toJson( match.diagnostic ) } );

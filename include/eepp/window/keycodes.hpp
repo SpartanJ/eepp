@@ -13,7 +13,7 @@ namespace EE { namespace Window {
 // eepp used to support several backends (SDL, SFML, Allegro), but ended up
 // always using SDL2 since it became the most stable and feature rich of them
 // So now the architecture is still open to new backends but I decided to
-// deprecate all the other backends since it was just a waste of time mantaining
+// deprecate all the other backends since it was just a waste of time maintaining
 // them.
 
 /**

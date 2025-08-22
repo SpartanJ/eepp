@@ -51,7 +51,7 @@ enum NodeFlags {
 	NODE_FLAG_REVERSE_DRAW = ( 1 << 16 ),
 	NODE_FLAG_FRAME_BUFFER = ( 1 << 17 ),
 	NODE_FLAG_CLIP_ENABLE = ( 1 << 18 ),
-	NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS = ( 1 << 19 ),
+	NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDREN = ( 1 << 19 ),
 	NODE_FLAG_OVER_FIND_ALLOWED = ( 1 << 20 ),
 
 	NODE_FLAG_SCENENODE = ( 1 << 21 ),
@@ -108,7 +108,7 @@ class EE_API Node : public Transformable {
 
 	Node* setVisible( const bool& visible, bool emitEventNotification = true );
 
-	Node* setChildsVisibility( bool visible, bool emitEventNotification = true );
+	Node* setChildrenVisibility( bool visible, bool emitEventNotification = true );
 
 	bool isVisible() const;
 
@@ -227,7 +227,7 @@ class EE_API Node : public Transformable {
 
 	void sendTextEvent( const Uint32& event, const std::string& text );
 
-	void childsCloseAll();
+	void closeAllChildren();
 
 	const std::string& getId() const;
 
@@ -324,7 +324,7 @@ class EE_API Node : public Transformable {
 
 	virtual void setAlpha( const Float& alpha );
 
-	virtual void setChildsAlpha( const Float& alpha );
+	virtual void setChildrenAlpha( const Float& alpha );
 
 	ActionManager* getActionManager() const;
 
@@ -368,9 +368,9 @@ class EE_API Node : public Transformable {
 
 	void enableReportSizeChangeToChildren();
 
-	void disableReportSizeChangeToChilds();
+	void disableReportSizeChangeToChildren();
 
-	bool reportSizeChangeToChilds() const;
+	bool reportSizeChangeToChildren() const;
 
 	Node* centerHorizontal();
 
@@ -411,8 +411,8 @@ class EE_API Node : public Transformable {
 						  const Action::UniqueID& uniqueIdentifier = 0 );
 
 	//! Does the same as runOnMainThread if called from a none main thread, otherwise it will be
-	//! executed inmediatelly.
-	//! @return True if runnable was inmediatelly executed.
+	//! executed immediately.
+	//! @return True if runnable was immediately executed.
 	bool ensureMainThread( Actions::Runnable::RunnableFunc runnable,
 						   const Action::UniqueID& uniqueIdentifier = 0 );
 
@@ -606,7 +606,7 @@ class EE_API Node : public Transformable {
 
 	void setDirty();
 
-	void setChildsDirty();
+	void setChildrenDirty();
 
 	void clipSmartEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height,
 						  bool needsClipPlanes );

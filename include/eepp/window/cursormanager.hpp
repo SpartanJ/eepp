@@ -88,7 +88,7 @@ class EE_API CursorManager {
 	**	@see SetGlobalCursor */
 	virtual void set( Cursor::Type cursor );
 
-	/** A Global Cursor is a cursor setted to be used in eepp. It's the system cursor of the engine.
+	/** A Global Cursor is a cursor set to be used in eepp. It's the system cursor of the engine.
 	**	The global cursor can be a Cursor ( user created cursor ) or a system cursor ( the OS cursor
 	*). *	The system cursor is used by default, but can be override it with this function. */
 	virtual void setGlobalCursor( Cursor::Type cursor, Cursor* fromCursor );
@@ -111,7 +111,7 @@ class EE_API CursorManager {
 	/** @return If the cursor is visible in the window */
 	virtual bool getVisible();
 
-	/** @return A pointer to the curent cursor */
+	/** @return A pointer to the current cursor */
 	Cursor* getCurrent() const;
 
 	/** @return The current system cursor */

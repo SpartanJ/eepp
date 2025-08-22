@@ -50,7 +50,7 @@ void UITableView::drawChildren() {
 			if ( yOffset - mScrollOffset.y + rowHeight < 0 )
 				continue;
 			UITableRow* rowNode = updateRow( realRowIndex, rowIndex, yOffset );
-			rowNode->setChildsVisibility( false, false );
+			rowNode->setChildrenVisibility( false, false );
 			realColIndex = 0;
 			for ( size_t colIndex = 0; colIndex < colCount; colIndex++ ) {
 				auto& colData = columnData( colIndex );

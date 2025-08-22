@@ -645,7 +645,7 @@ void UIWidgetTable::onTouchDragValueChange( Vector2f diff ) {
 		mHScrollBar->setValue( mHScrollBar->getValue() + ( -diff.x / mTotalWidth ) );
 }
 
-bool UIWidgetTable::isTouchOverAllowedChilds() {
+bool UIWidgetTable::isTouchOverAllowedChildren() {
 	return isMouseOverMeOrChildren() && !mVScrollBar->isMouseOverMeOrChildren() &&
 		   !mHScrollBar->isMouseOverMeOrChildren();
 }

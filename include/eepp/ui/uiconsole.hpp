@@ -107,7 +107,7 @@ class EE_API UIConsole : public UIWidget,
 	/** Add Text to Console */
 	void pushText( const String& str );
 
-	/** Add formated Text to console */
+	/** Add formatted Text to console */
 	template <typename... Args> void pushText( std::string_view format, Args&&... args ) {
 		pushText( String::format(
 			format, FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... ) );

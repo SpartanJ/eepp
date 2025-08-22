@@ -190,7 +190,7 @@ class EE_API Text {
 	Uint32 getStyle() const;
 
 	/** @see Set the alpha of each individual character.
-	**	This doesn't break any custom color per-character setted. */
+	**	This doesn't break any custom color per-character set. */
 	void setAlpha( const Uint8& alpha );
 
 	const Color& getFillColor() const;
@@ -212,7 +212,7 @@ class EE_API Text {
 	/** @return The cached text height */
 	Float getTextHeight();
 
-	/** @return The line espacing */
+	/** @return The line spacing */
 	Float getLineSpacing();
 
 	/** Draw the cached text on screen */
@@ -325,7 +325,7 @@ class EE_API Text {
 	/** Force to cache the width of the current text */
 	void cacheWidth();
 
-	static void addLine( std::vector<VertexCoords>& vertice, Float lineLength, Float lineTop,
+	static void addLine( std::vector<VertexCoords>& vertices, Float lineLength, Float lineTop,
 						 Float offset, Float thickness, Float outlineThickness, Int32 centerDiffX );
 
 	static void addGlyphQuad( std::vector<VertexCoords>& vertices, Vector2f position,

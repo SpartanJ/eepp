@@ -67,7 +67,7 @@ void UILinearLayout::updateLayout() {
 	mDirtyLayout = false;
 }
 
-void UILinearLayout::applyWidthPolicyOnChilds() {
+void UILinearLayout::applyWidthPolicyOnChildren() {
 	Node* child = mChild;
 
 	while ( NULL != child ) {
@@ -116,7 +116,7 @@ void UILinearLayout::applyWidthPolicyOnChilds() {
 	}
 }
 
-void UILinearLayout::applyHeightPolicyOnChilds() {
+void UILinearLayout::applyHeightPolicyOnChildren() {
 	Node* child = mChild;
 
 	while ( NULL != child ) {
@@ -192,7 +192,7 @@ void UILinearLayout::packVertical() {
 	if ( sizeChanged )
 		setInternalPixelsSize( size );
 
-	applyWidthPolicyOnChilds();
+	applyWidthPolicyOnChildren();
 
 	Float curY = mPaddingPx.Top;
 	Float maxX = 0;
@@ -323,7 +323,7 @@ void UILinearLayout::packHorizontal() {
 	if ( sizeChanged )
 		setInternalPixelsSize( size );
 
-	applyHeightPolicyOnChilds();
+	applyHeightPolicyOnChildren();
 
 	Float curX = mPaddingPx.Left;
 	Float maxY = 0;

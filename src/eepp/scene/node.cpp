@@ -181,7 +181,7 @@ Node* Node::setVisible( const bool& visible, bool emitEventNotification ) {
 	return this;
 }
 
-Node* Node::setChildsVisibility( bool visible, bool emitEventNotification ) {
+Node* Node::setChildrenVisibility( bool visible, bool emitEventNotification ) {
 	Node* child = mChild;
 	if ( emitEventNotification ) {
 		while ( child ) {
@@ -740,7 +740,7 @@ void Node::childRemove( Node* node ) {
 	onChildCountChange( node, true );
 }
 
-void Node::childsCloseAll() {
+void Node::closeAllChildren() {
 	Node* childLoop = mChild;
 	writeNodeFlag( NODE_FLAG_CLOSING_CHILDREN, 1 );
 	while ( NULL != childLoop ) {
@@ -1369,10 +1369,10 @@ void Node::setDirty() {
 
 	mNodeFlags |= NODE_FLAG_POSITION_DIRTY | NODE_FLAG_POLYGON_DIRTY;
 
-	setChildsDirty();
+	setChildrenDirty();
 }
 
-void Node::setChildsDirty() {
+void Node::setChildrenDirty() {
 	Node* ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
@@ -1534,11 +1534,11 @@ void Node::setAlpha( const Float& alpha ) {
 	}
 }
 
-void Node::setChildsAlpha( const Float& alpha ) {
+void Node::setChildrenAlpha( const Float& alpha ) {
 	Node* child = mChild;
 	while ( NULL != child ) {
 		child->setAlpha( alpha );
-		child->setChildsAlpha( alpha );
+		child->setChildrenAlpha( alpha );
 		child = child->getNextNode();
 	}
 }
@@ -1726,7 +1726,7 @@ Node* Node::getParentWidget() const {
 }
 
 void Node::sendParentSizeChange( const Vector2f& sizeChange ) {
-	if ( reportSizeChangeToChilds() ) {
+	if ( reportSizeChangeToChildren() ) {
 		Node* child = mChild;
 
 		while ( NULL != child ) {
@@ -1736,16 +1736,16 @@ void Node::sendParentSizeChange( const Vector2f& sizeChange ) {
 	}
 }
 
-bool Node::reportSizeChangeToChilds() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS );
+bool Node::reportSizeChangeToChildren() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDREN );
 }
 
 void Node::enableReportSizeChangeToChildren() {
-	writeNodeFlag( NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS, 1 );
+	writeNodeFlag( NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDREN, 1 );
 }
 
-void Node::disableReportSizeChangeToChilds() {
-	writeNodeFlag( NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS, 0 );
+void Node::disableReportSizeChangeToChildren() {
+	writeNodeFlag( NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDREN, 0 );
 }
 
 Node* Node::centerHorizontal() {

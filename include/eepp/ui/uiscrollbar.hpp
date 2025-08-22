@@ -92,7 +92,7 @@ class EE_API UIScrollBar : public UIWidget {
 
 	virtual void onAutoSize();
 
-	void adjustChilds();
+	void adjustChildren();
 
 	void onValueChangeCb( const Event* Event );
 

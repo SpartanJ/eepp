@@ -37,7 +37,7 @@ enum class ParticleEffect : Uint32 {
 	Callback //!< Callback defined effect. Set the callback before creating the effect.
 };
 
-/** @brief Basic but powerfull Particle System */
+/** @brief Basic but powerful Particle System */
 class EE_API ParticleSystem {
   public:
 	typedef std::function<void( Particle*, ParticleSystem* )> ParticleCallback;

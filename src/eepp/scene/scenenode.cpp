@@ -23,7 +23,7 @@ SceneNode::SceneNode( EE::Window::Window* window ) :
 	mFrameBufferBound( false ),
 	mUseInvalidation( false ),
 	mUseGlobalCursors( true ),
-	mUpdateAllChilds( true ),
+	mUpdateAllChildren( true ),
 	mResizeCb( -1 ),
 	mDrawDebugData( false ),
 	mDrawBoxes( false ),
@@ -157,7 +157,7 @@ void SceneNode::update( const Time& time ) {
 			node->scheduledUpdate( time );
 	}
 
-	if ( mUpdateAllChilds ) {
+	if ( mUpdateAllChildren ) {
 		Node::update( time );
 	} else {
 		for ( auto& nodeOver : mMouseOverNodes )
@@ -493,12 +493,12 @@ void SceneNode::removeMouseOverNode( Node* node ) {
 	mMouseOverNodes.erase( node );
 }
 
-const bool& SceneNode::getUpdateAllChilds() const {
-	return mUpdateAllChilds;
+const bool& SceneNode::getUpdateAllChildren() const {
+	return mUpdateAllChildren;
 }
 
-void SceneNode::setUpdateAllChilds( const bool& updateAllChilds ) {
-	mUpdateAllChilds = updateAllChilds;
+void SceneNode::setUpdateAllChildren( bool updateAllChildren ) {
+	mUpdateAllChildren = updateAllChildren;
 }
 
 const Float& SceneNode::getDPI() const {

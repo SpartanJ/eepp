@@ -7,7 +7,7 @@
 
 namespace EE { namespace System {
 
-// Inpired in rx-cpp (https://github.com/stevedonovan/rx-cpp/).
+// Inspired in rx-cpp (https://github.com/stevedonovan/rx-cpp/).
 
 class EE_API PatternMatcher {
   public:

@@ -96,7 +96,7 @@ class LSPClientServerManager {
 
 	bool isServerRunning( const LSPClientServer* server );
 
-	void requestSymanticHighlighting( std::shared_ptr<TextDocument> doc );
+	void requestSemanticHighlighting( std::shared_ptr<TextDocument> doc );
 
 	void rangeFormatting( std::shared_ptr<TextDocument> doc );
 

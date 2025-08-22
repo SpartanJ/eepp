@@ -114,9 +114,9 @@ void UIScrollBar::setTheme( UITheme* Theme ) {
 		mBtnDown->setSize( tSkin->getSize() );
 	}
 
-	adjustChilds();
+	adjustChildren();
 
-	mSlider->adjustChilds();
+	mSlider->adjustChildren();
 
 	onThemeLoaded();
 }
@@ -177,19 +177,19 @@ void UIScrollBar::onAutoSize() {
 			setInternalPixelsHeight( size.getHeight() );
 		}
 
-		adjustChilds();
+		adjustChildren();
 	}
 }
 
 void UIScrollBar::onSizeChange() {
 	onAutoSize();
 
-	adjustChilds();
+	adjustChildren();
 
 	UIWidget::onSizeChange();
 }
 
-void UIScrollBar::adjustChilds() {
+void UIScrollBar::adjustChildren() {
 	if ( mNodeFlags & NODE_FLAG_FREE_USE )
 		return;
 
@@ -252,7 +252,7 @@ void UIScrollBar::adjustChilds() {
 		}
 	}
 
-	mSlider->adjustChilds();
+	mSlider->adjustChildren();
 
 	mNodeFlags &= ~NODE_FLAG_FREE_USE;
 }
@@ -353,7 +353,7 @@ void UIScrollBar::setExpandBackground( bool expandBackground ) {
 
 		onAutoSize();
 
-		adjustChilds();
+		adjustChildren();
 	}
 }
 
@@ -458,7 +458,7 @@ void UIScrollBar::setScrollBarStyle( const ScrollBarType& scrollBarType ) {
 
 		onAutoSize();
 
-		adjustChilds();
+		adjustChildren();
 	}
 }
 
@@ -482,7 +482,7 @@ UINode* UIScrollBar::setOrientation( const UIOrientation& orientation ) {
 
 		applyDefaultTheme();
 
-		adjustChilds();
+		adjustChildren();
 	}
 
 	return this;
@@ -499,7 +499,7 @@ void UIScrollBar::onAlphaChange() {
 void UIScrollBar::onPaddingChange() {
 	onAutoSize();
 
-	adjustChilds();
+	adjustChildren();
 
 	UIWidget::onPaddingChange();
 }

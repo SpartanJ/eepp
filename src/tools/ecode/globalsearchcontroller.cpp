@@ -640,14 +640,14 @@ GlobalSearchBarConfig GlobalSearchController::getGlobalSearchBarConfig() const {
 	UICheckBox* luaPatternChk = mGlobalSearchBarLayout->find<UICheckBox>( "lua_pattern" );
 	UICheckBox* escapeSequenceChk = mGlobalSearchBarLayout->find<UICheckBox>( "escape_sequence" );
 	UICheckBox* bufferOnlyModeChk = mGlobalSearchBarLayout->find<UICheckBox>( "buffer_only_mode" );
-	GlobalSearchBarConfig globalSeachBarConfig;
-	globalSeachBarConfig.caseSensitive = caseSensitiveChk->isChecked();
-	globalSeachBarConfig.regex = regexChk->isChecked();
-	globalSeachBarConfig.luaPattern = luaPatternChk->isChecked();
-	globalSeachBarConfig.wholeWord = wholeWordChk->isChecked();
-	globalSeachBarConfig.escapeSequence = escapeSequenceChk->isChecked();
-	globalSeachBarConfig.bufferOnlyMode = bufferOnlyModeChk->isChecked();
-	return globalSeachBarConfig;
+	GlobalSearchBarConfig globalSearchBarConfig;
+	globalSearchBarConfig.caseSensitive = caseSensitiveChk->isChecked();
+	globalSearchBarConfig.regex = regexChk->isChecked();
+	globalSearchBarConfig.luaPattern = luaPatternChk->isChecked();
+	globalSearchBarConfig.wholeWord = wholeWordChk->isChecked();
+	globalSearchBarConfig.escapeSequence = escapeSequenceChk->isChecked();
+	globalSearchBarConfig.bufferOnlyMode = bufferOnlyModeChk->isChecked();
+	return globalSearchBarConfig;
 }
 
 void GlobalSearchController::updateGlobalSearchBar() {

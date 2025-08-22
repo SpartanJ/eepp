@@ -414,7 +414,7 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 
 				<vbox lw="mp" lh="wc" class="build_environment">
 					<TextView class="subtitle" text="@string(build_environment, Build Environment)" focusable="false" />
-					<CheckBox id="clear_sys_env" text="@string(clear_system_enviroment, Clear System Environment)" />
+					<CheckBox id="clear_sys_env" text="@string(clear_system_environment, Clear System Environment)" />
 					<TextView class="subtitle" text="@string(custom_environment_variables, Custom Environment Variables)" focusable="false" />
 					<hbox lw="mp" lh="wc">
 						<TableView id="table_envs" lw="0" lw8="1" lh="150dp" />
@@ -749,7 +749,7 @@ void UIBuildSettings::refreshTab() {
 	if ( !mTab )
 		return;
 	mTab->setText(
-		String::format( ( i18n( "build_seetings", "Build Settings" ) + ": %s" ).toUtf8().c_str(),
+		String::format( ( i18n( "build_settings", "Build Settings" ) + ": %s" ).toUtf8().c_str(),
 						mBuild.mName.c_str() ) );
 	std::string hashName = String::toString( String::hash( mIsNew ? "new_name" : mBuild.mName ) );
 	mTab->setId( "build_settings_" + hashName );

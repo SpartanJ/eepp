@@ -126,7 +126,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ValueFlag<Float> width( parser, "winwidth", "Window width (in dp)", { "width" }, 1280 );
 	args::ValueFlag<Float> height( parser, "winheight", "Window height (in dp)", { "height" },
 								   720 );
-	args::ValueFlag<Float> pixelDenstiyConf( parser, "pixel-density",
+	args::ValueFlag<Float> pixelDensityConf( parser, "pixel-density",
 											 "Set default application pixel density",
 											 { 'd', "pixel-density" } );
 	args::Positional<std::string> wd( parser, "wording-dir", "Working Directory / executable" );
@@ -200,7 +200,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	win = Engine::instance()->createWindow(
 		WindowSettings( winSize.getWidth(), winSize.getHeight(), "eterm", WindowStyle::Default,
 						WindowBackend::Default, 32, resPath + "icon/eterm.png",
-						pixelDenstiyConf ? pixelDenstiyConf.Get()
+						pixelDensityConf ? pixelDensityConf.Get()
 										 : currentDisplay->getPixelDensity() ),
 		ContextSettings( vsync.Get() ) );
 

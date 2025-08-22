@@ -55,7 +55,7 @@ class EE_API Event {
 		OnDocumentClosed,
 		OnDocumentReloaded,
 		OnDocumentSyntaxDefinitionChange,
-		OnDocumentDirtyOnFileSysten,
+		OnDocumentDirtyOnFileSystem,
 		OnFontStyleChanged,
 		OnPressEnter,
 		OnValueChange,

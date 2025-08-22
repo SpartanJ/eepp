@@ -820,7 +820,7 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 				URI uri;
 				if ( data.contains( "uri" ) && data["uri"].is_string() )
 					uri = data["uri"];
-				PluginInmediateResponse rmsg;
+				PluginImmediateResponse rmsg;
 				rmsg.type = PluginMessageType::QueryPluginCapability;
 				auto servers = mClientManager.getFilteredServers(
 					[capability, uri]( LSPClientServer* server ) {
@@ -1419,7 +1419,7 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 
 		doc.setCommand( "lsp-refresh-semantic-highlighting",
 						[this]( TextDocument::Client* client ) {
-							mClientManager.requestSymanticHighlighting(
+							mClientManager.requestSemanticHighlighting(
 								static_cast<UICodeEditor*>( client )->getDocumentRef() );
 						} );
 

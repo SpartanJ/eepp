@@ -8,7 +8,7 @@ using namespace EE::Math;
 namespace EE { namespace Graphics {
 
 /** @brief The class defines a view like a 2D camera ( position, size, move, scale ). Basically is a
- * 2D proyection in pixels seted over a viewport. */
+ * 2D projection in pixels seted over a viewport. */
 class EE_API View {
   public:
 	View();

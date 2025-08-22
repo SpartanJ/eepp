@@ -49,7 +49,7 @@ class EE_API Log : protected Mutex {
 
 	virtual ~Log();
 
-	/** @brief Indicates that the log must be writed to a file when the Log instance is closed.
+	/** @brief Indicates that the log must be written to a file when the Log instance is closed.
 	**	@param filepath The path to the file to write the log.
 	*/
 	void save( const std::string& filepath = "" );
@@ -73,7 +73,7 @@ class EE_API Log : protected Mutex {
 	 ** @param text The text to write */
 	void writel( const LogLevel& level, const std::string_view& text );
 
-	/** @brief Writes a formated string to the log with a log level.
+	/** @brief Writes a formatted string to the log with a log level.
 	 ** @param level The log level that will try to write.
 	 ** @param format The Text format.
 	 */
@@ -86,7 +86,7 @@ class EE_API Log : protected Mutex {
 		write( logLevelWithTimestamp( level, result, true ) );
 	}
 
-	/** @brief Writes a formated string to the log */
+	/** @brief Writes a formatted string to the log */
 	template <typename... Args>
 	void writef( std::string_view format, Args&&... args ) {
 		auto result = String::format(
@@ -95,10 +95,10 @@ class EE_API Log : protected Mutex {
 		write( "\n" );
 	}
 
-	/** @returns A reference of the current writed log. */
+	/** @returns A reference of the current written log. */
 	const std::string& getBuffer() const;
 
-	/** @returns If the log Writes are outputed to stdout. */
+	/** @returns If the log Writes are outputted to stdout. */
 	const bool& isLoggingToStdOut() const;
 
 	/** @brief Enabled or disables to output the Writes to stdout. */
@@ -107,11 +107,11 @@ class EE_API Log : protected Mutex {
 	/** @returns If the file is forced to flush the data on every Write call. */
 	const bool& isLiveWrite() const;
 
-	/** @brief Activate or deactivate to flush the writed data to the log on every Write call. */
+	/** @brief Activate or deactivate to flush the written data to the log on every Write call. */
 	void setLiveWrite( const bool& lw );
 
 	/** @brief Adds a reader interface.
-	**	The reader interface is used to the informed for every writed text to the log.
+	**	The reader interface is used to the informed for every written text to the log.
 	*/
 	void addLogReader( LogReaderInterface* reader );
 

@@ -3,6 +3,7 @@
 
 #include <cstring>
 #include <eepp/system/iostream.hpp>
+#include <string>
 
 namespace EE { namespace System {
 
@@ -32,7 +33,7 @@ class EE_API IOStreamString : public IOStream {
 	/** @return Pointer to the current position in the stream */
 	const char* getPositionPointer();
 
-	/** @return The pointer to the beggining of the stream */
+	/** @return The pointer to the beginning of the stream */
 	const char* getStreamPointer() const;
 
 	const std::string& getStream() const;

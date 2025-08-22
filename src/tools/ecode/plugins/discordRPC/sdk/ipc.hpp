@@ -57,7 +57,7 @@ class DiscordIPC {
 
 	bool UIReady = false;
 	bool IsReconnectScheduled =
-		false; // If we fail to load bofore UI initialises we call reconnect after init
+		false; // If we fail to load before UI initialises we call reconnect after init
 
 	// Configurables
 	std::string ClientID;

@@ -85,7 +85,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			// If the user provided the URL, creates an instance of URI to parse it.
 			URI uri( url.Get() );
 
-			// If no scheme provided asume HTTP
+			// If no scheme provided assume HTTP
 			if ( uri.getScheme().empty() ) {
 				uri = URI( "http://" + url.Get() );
 			}
@@ -248,7 +248,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 			// Set follow redirect
 			request.setFollowRedirect( location.Get() );
 
-			// Set the maximun number of redirects
+			// Set the maximum number of redirects
 			if ( maxRedirs ) {
 				request.setMaxRedirects( maxRedirs.Get() );
 			}

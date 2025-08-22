@@ -1654,7 +1654,7 @@ UIMenu* SettingsMenu::createViewMenu() {
 		->setActive( mApp->getConfig().editor.syncProjectTreeWithEditor )
 		->setTooltipText(
 			i18n( "sync_project_tree_tooltip",
-				  "Syncronizes the current focused document as the selected\nfile in the "
+				  "Synchronizes the current focused document as the selected\nfile in the "
 				  "directory tree." ) )
 		->setId( "sync-project-tree" );
 
@@ -1682,7 +1682,7 @@ UIMenu* SettingsMenu::createViewMenu() {
 		->setVisible( mApp->getConfig().ui.panelPosition == PanelPosition::Right );
 	mViewMenu
 		->add( i18n( "move_panel_right_ellipsis", "Move panel to right..." ),
-			   findIcon( "layout-right" ), getKeybind( "layout-rigth" ) )
+			   findIcon( "layout-right" ), getKeybind( "layout-right" ) )
 		->setId( "move-panel-right" )
 		->setVisible( mApp->getConfig().ui.panelPosition == PanelPosition::Left );
 
@@ -1820,7 +1820,7 @@ UIPopUpMenu* SettingsMenu::createToolsMenu() {
 			   findIcon( "search" ), getKeybind( "show-open-documents" ) )
 		->setId( "show-open-documents" );
 	mToolsMenu
-		->add( i18n( "workspace_symbol_find_ellipsis", "Search Worskspace Symbol..." ),
+		->add( i18n( "workspace_symbol_find_ellipsis", "Search Workspace Symbol..." ),
 			   findIcon( "search" ), getKeybind( "open-workspace-symbol-search" ) )
 		->setId( "open-workspace-symbol-search" );
 	mToolsMenu

@@ -324,7 +324,7 @@ template <typename T> bool Polygon2<T>::intersect( const Polygon2<T>& p1 ) {
 		max0 += sOffset;
 
 		if ( ( ( min0 - max1 ) > 0 ) || ( ( min1 - max0 ) > 0 ) ) {
-			return false; // Found a seperating axis, they can't possibly be touching
+			return false; // Found a separating axis, they can't possibly be touching
 		}
 	}
 
@@ -360,7 +360,7 @@ template <typename T> bool Polygon2<T>::intersect( const Polygon2<T>& p1 ) {
 		max0 += sOffset;
 
 		if ( ( ( min0 - max1 ) > 0 ) || ( ( min1 - max0 ) > 0 ) ) {
-			return false; // Found a seperating axis, they can't possibly be touching
+			return false; // Found a separating axis, they can't possibly be touching
 		}
 	}
 

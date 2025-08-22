@@ -185,7 +185,7 @@ UIMapNew::UIMapNew( UIMap* Map, std::function<void()> NewMapCb, bool ResizeMap )
 	mUIClipArea->setChecked( true );
 
 	if ( ResizeMap ) {
-		mUIClipArea->setChecked( 0 != mUIMap->Map()->getClipedArea() );
+		mUIClipArea->setChecked( 0 != mUIMap->Map()->getClippedArea() );
 	}
 
 	Txt =

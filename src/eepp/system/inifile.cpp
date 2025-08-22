@@ -86,7 +86,7 @@ bool IniFile::loadFromFile( const std::string& iniPath ) {
 
 bool IniFile::readFile() {
 
-	if ( mIniReaded )
+	if ( mIniRead )
 		return true;
 
 	bool isBOM = false;
@@ -124,7 +124,7 @@ bool IniFile::readFile() {
 		if ( line.length() && line[line.length() - 1] == '\r' )
 			line = line.substr( 0, line.size() - 1 );
 
-		// Check that the user hasn't openned a binary file by checking the first
+		// Check that the user hasn't opened a binary file by checking the first
 		// character of each line!
 		if ( !line.empty() && line[0] != '\0' && !isprint( line[0] ) && !isspace( line[0] ) ) {
 			Log::error( "IniFile::readFile(): Failing on char %d.", line[0] );
@@ -143,7 +143,7 @@ bool IniFile::readFile() {
 				case '=':
 					valuename = String::trim( line.substr( 0, pLeft ),
 											  "\t " ); // Remove the extra space between valuename
-													   // and = . No spaced valuename permited.
+													   // and = . No spaced valuename permitted.
 					value = String::lTrim( line.substr( pLeft + 1 ), "\t " );
 					setValue( keyname, valuename, value );
 					break;
@@ -159,7 +159,7 @@ bool IniFile::readFile() {
 	}
 
 	if ( mNames.size() ) {
-		mIniReaded = true;
+		mIniRead = true;
 
 		return true;
 	}
@@ -443,7 +443,7 @@ bool IniFile::deleteValue( const std::string& keyname, const std::string& valuen
 	if ( valueID == noID )
 		return false;
 
-	// This looks strange, but is neccessary.
+	// This looks strange, but is necessary.
 	std::vector<std::string>::iterator npos = mKeys[keyID].names.begin() + valueID;
 	std::vector<std::string>::iterator vpos = mKeys[keyID].values.begin() + valueID;
 	mKeys[keyID].names.erase( npos, npos + 1 );
@@ -466,7 +466,7 @@ bool IniFile::deleteKey( const std::string& keyname ) {
 }
 
 void IniFile::clear() {
-	mIniReaded = false;
+	mIniRead = false;
 	mNames.clear();
 	mKeys.clear();
 	mComments.clear();

@@ -391,7 +391,7 @@ class EE_API Image {
 	/** Flip the image ( rotate the image 90º ) */
 	virtual void flip();
 
-	/** Create a thumnail of the image */
+	/** Create a thumbnail of the image */
 	Graphics::Image* thumbnail( const Uint32& maxWidth, const Uint32& maxHeight,
 								ResamplerFilter filter = ResamplerFilter::RESAMPLER_LANCZOS4 );
 
@@ -411,7 +411,7 @@ class EE_API Image {
 	/** @return A copy of the original image */
 	Graphics::Image* copy();
 
-	/** Overload the assigment operator to ensure the image copy */
+	/** Overload the assignment operator to ensure the image copy */
 	Graphics::Image& operator=( const Image& right );
 
 	/** Set the image format configuration */

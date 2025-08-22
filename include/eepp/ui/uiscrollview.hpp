@@ -90,7 +90,7 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 
 	virtual void onTouchDragValueChange( Vector2f diff );
 
-	virtual bool isTouchOverAllowedChilds();
+	virtual bool isTouchOverAllowedChildren();
 };
 
 }} // namespace EE::UI

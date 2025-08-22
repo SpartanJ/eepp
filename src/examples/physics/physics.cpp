@@ -4,7 +4,7 @@ using namespace EE::Physics;
 
 /**
 The physics module is a OOP wrapper for Chipmunk Physics.
-To understand the conceptos of space, body, shapes, etc you can read the
+To understand the concepts of space, body, shapes, etc you can read the
 Chipmunk documentation:
 http://chipmunk-physics.net/release/ChipmunkLatest-Docs/
 */
@@ -136,7 +136,7 @@ void demo1Create() {
 	mSpace = Physics::Space::New();
 	mSpace->setIterations( 1 );
 
-	// The space will contain a very large number of similary sized objects.
+	// The space will contain a very large number of similarly sized objects.
 	// This is the perfect candidate for using the spatial hash.
 	// Generally you will never need to do this.
 	mSpace->useSpatialHash( 2.0, 10000 );
@@ -194,30 +194,30 @@ void demo2Create() {
 	mSpace->setGravity( cVectNew( 0, 100 ) );
 	mSpace->setSleepTimeThreshold( 0.5f );
 
-	Body *body, *statiBody = mSpace->getStaticBody();
+	Body *body, *staticBody = mSpace->getStaticBody();
 	Shape* shape;
 
 	shape = mSpace->addShape(
-		ShapeSegment::New( statiBody, cVectNew( 0, mWindow->getHeight() ),
+		ShapeSegment::New( staticBody, cVectNew( 0, mWindow->getHeight() ),
 						   cVectNew( mWindow->getWidth(), mWindow->getHeight() ), 0.0f ) );
 	shape->setE( 1.0f );
 	shape->setU( 1.0f );
 	shape->setLayers( NOT_GRABABLE_MASK );
 
 	shape = mSpace->addShape(
-		ShapeSegment::New( statiBody, cVectNew( mWindow->getWidth(), 0 ),
+		ShapeSegment::New( staticBody, cVectNew( mWindow->getWidth(), 0 ),
 						   cVectNew( mWindow->getWidth(), mWindow->getHeight() ), 0.0f ) );
 	shape->setE( 1.0f );
 	shape->setU( 1.0f );
 	shape->setLayers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ),
+	shape = mSpace->addShape( ShapeSegment::New( staticBody, cVectNew( 0, 0 ),
 												 cVectNew( 0, mWindow->getHeight() ), 0.0f ) );
 	shape->setE( 1.0f );
 	shape->setU( 1.0f );
 	shape->setLayers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ),
+	shape = mSpace->addShape( ShapeSegment::New( staticBody, cVectNew( 0, 0 ),
 												 cVectNew( mWindow->getWidth(), 0 ), 0.0f ) );
 	shape->setE( 1.0f );
 	shape->setU( 1.0f );
@@ -323,21 +323,21 @@ void demo3Create() {
 	mSpace->setIterations( 10 );
 	mSpace->setGravity( cVectNew( 0, 100 ) );
 
-	Body* statiBody = mSpace->getStaticBody();
+	Body* staticBody = mSpace->getStaticBody();
 	Shape* shape;
 
 	emitterInstance.queue = 5;
 	emitterInstance.blocked = 0;
 	emitterInstance.position = cVectNew( mWindow->getWidth() / 2, 150 );
 
-	shape = mSpace->addShape( ShapeCircle::New( statiBody, 15.0f, emitterInstance.position ) );
+	shape = mSpace->addShape( ShapeCircle::New( staticBody, 15.0f, emitterInstance.position ) );
 	shape->setSensor( 1 );
 	shape->setCollisionType( BLOCKING_SENSOR_TYPE );
 	shape->setData( &emitterInstance );
 
 	// Create our catch sensor to requeue the balls when they reach the bottom of the screen
 	shape = mSpace->addShape(
-		ShapeSegment::New( statiBody, cVectNew( -4000, 600 ), cVectNew( 4000, 600 ), 15.0f ) );
+		ShapeSegment::New( staticBody, cVectNew( -4000, 600 ), cVectNew( 4000, 600 ), 15.0f ) );
 	shape->setSensor( 1 );
 	shape->setCollisionType( CATCH_SENSOR_TYPE );
 	shape->setData( &emitterInstance );
@@ -397,7 +397,7 @@ cpBool stickyPreSolve( Arbiter* arb, Space* space, void* ) {
 	cpContactPointSet contacts = arb->getContactPointSet();
 
 	for ( int i = 0; i < contacts.count; i++ ) {
-		// Increase the distance (negative means overlaping) of the
+		// Increase the distance (negative means overlapping) of the
 		// collision to allow them to overlap more.
 		// This value is used only for fixing the positions of overlapping shapes.
 		cpFloat dist = contacts.points[i].dist + 2.0f * STICK_SENSOR_THICKNESS;
@@ -422,7 +422,7 @@ cpBool stickyPreSolve( Arbiter* arb, Space* space, void* ) {
 		// Dont draw the constraint
 		joint->setDrawPointSize( 0 );
 
-		// Give it a finite force for the stickyness.
+		// Give it a finite force for the stickiness.
 		joint->setMaxForce( 3e3 );
 
 		// Schedule a post-step() callback to add the joint.
@@ -433,7 +433,7 @@ cpBool stickyPreSolve( Arbiter* arb, Space* space, void* ) {
 	}
 
 	// Position correction and velocity are handled separately so changing
-	// the overlap distance alone won't prevent the collision from occuring.
+	// the overlap distance alone won't prevent the collision from occurring.
 	// Explicitly the collision for this frame if the shapes don't overlap using the new distance.
 	return ( deepest <= 0.0f );
 
@@ -487,34 +487,34 @@ void demo4Create() {
 	mSpace->setGravity( cVectNew( 0, 1000 ) );
 	mSpace->setCollisionSlop( 2.0 );
 
-	Body* statiBody = mSpace->getStaticBody();
+	Body* staticBody = mSpace->getStaticBody();
 	Shape* shape;
 
 	cpFloat x = 500;
 	cpFloat y = 400;
 
-	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( x + -340, y - 260 ),
+	shape = mSpace->addShape( ShapeSegment::New( staticBody, cVectNew( x + -340, y - 260 ),
 												 cVectNew( x - 340, y + 260 ), 20.0f ) );
 	shape->setElasticity( 1.0f );
 	shape->setFriction( 1.0f );
 	shape->setCollisionType( COLLIDE_STICK_SENSOR );
 	shape->setLayers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( x + 340, y - 260 ),
+	shape = mSpace->addShape( ShapeSegment::New( staticBody, cVectNew( x + 340, y - 260 ),
 												 cVectNew( x + 340, y + 260 ), 20.0f ) );
 	shape->setElasticity( 1.0f );
 	shape->setFriction( 1.0f );
 	shape->setCollisionType( COLLIDE_STICK_SENSOR );
 	shape->setLayers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( x - 340, y - 260 ),
+	shape = mSpace->addShape( ShapeSegment::New( staticBody, cVectNew( x - 340, y - 260 ),
 												 cVectNew( x + 340, y - 260 ), 20.0f ) );
 	shape->setElasticity( 1.0f );
 	shape->setFriction( 1.0f );
 	shape->setCollisionType( COLLIDE_STICK_SENSOR );
 	shape->setLayers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->addShape( ShapeSegment::New( statiBody, cVectNew( x - 340, y + 260 ),
+	shape = mSpace->addShape( ShapeSegment::New( staticBody, cVectNew( x - 340, y + 260 ),
 												 cVectNew( x + 340, y + 260 ), 20.0f ) );
 	shape->setElasticity( 1.0f );
 	shape->setFriction( 1.0f );

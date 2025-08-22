@@ -37,10 +37,10 @@ class EE_MAPS_API MapEditor {
   public:
 	typedef std::function<void()> MapEditorCloseCb;
 
-	static MapEditor* New( UIWindow* AttatchTo = NULL,
+	static MapEditor* New( UIWindow* AttachTo = NULL,
 						   const MapEditorCloseCb& callback = MapEditorCloseCb() );
 
-	MapEditor( UIWindow* AttatchTo = NULL, const MapEditorCloseCb& callback = MapEditorCloseCb() );
+	MapEditor( UIWindow* AttachTo = NULL, const MapEditorCloseCb& callback = MapEditorCloseCb() );
 
 	~MapEditor();
 
@@ -60,7 +60,7 @@ class EE_MAPS_API MapEditor {
 	UIDropDownList* mGOTypeList;
 	UIDropDownList* mLayerList;
 	UICheckBox* mChkMirrored;
-	UICheckBox* mChkFliped;
+	UICheckBox* mChkFlipped;
 	UICheckBox* mChkBlocked;
 	UICheckBox* mChkAnim;
 	UICheckBox* mChkRot90;
@@ -107,7 +107,7 @@ class EE_MAPS_API MapEditor {
 
 	void onBlueChange( const Event* Event );
 
-	void createLighContainer();
+	void createLightContainer();
 
 	UISelectButton* addObjContButton( String text, Uint32 mode );
 

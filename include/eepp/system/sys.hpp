@@ -33,7 +33,7 @@ class EE_API Sys {
 	/** @return the current date time */
 	static std::string getDateTimeStr();
 
-	/** Converts any epoch timestmap to a formatted string. */
+	/** Converts any epoch timestamp to a formatted string. */
 	static std::string epochToString( const Uint64& epochTimestamp,
 									  const std::string& format = "%Y-%m-%d %H:%M" );
 
@@ -108,8 +108,8 @@ class EE_API Sys {
 	/** @return An environment variable */
 	static std::string getEnv( const std::string& name );
 
-	/** @return A splitted environment variable */
-	static std::vector<std::string> getEnvSplitted( const std::string& name );
+	/** @return A split environment variable */
+	static std::vector<std::string> getEnvSplit( const std::string& name );
 
 	/** It will attach the console to the parent process console if any. Windows only function.
 	 * Other platforms will do nothing.
@@ -125,7 +125,7 @@ class EE_API Sys {
 	/** @return The process environment variables */
 	static std::unordered_map<std::string, std::string> getEnvironmentVariables();
 
-	/** @return The process ids found with the correspoding process / binary / executable name */
+	/** @return The process ids found with the corresponding process / binary / executable name */
 	static std::vector<Uint64> pidof( const std::string& processName );
 
 	/** @return A list of the current running processes */

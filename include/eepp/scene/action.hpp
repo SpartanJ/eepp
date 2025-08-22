@@ -72,7 +72,7 @@ class EE_API Action {
 	/** Same as Action::addEventListener */
 	Action* on( const ActionType& actionType, const ActionCallback& callback );
 
-	/** Removes an event listener previusly added.
+	/** Removes an event listener previously added.
 	 * @param callbackId The ID of the event listener returned by the Action::addEventListener call.
 	 */
 	void removeEventListener( const Uint32& callbackId );

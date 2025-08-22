@@ -183,17 +183,17 @@ void UIStyle::reloadFontFamily() {
 }
 
 void UIStyle::addStructurallyVolatileChild( UIWidget* widget ) {
-	if ( mStructurallyVolatileChilds.count( widget ) == 0 ) {
-		mStructurallyVolatileChilds.insert( widget );
+	if ( mStructurallyVolatileChildren.count( widget ) == 0 ) {
+		mStructurallyVolatileChildren.insert( widget );
 	}
 }
 
 void UIStyle::removeStructurallyVolatileChild( UIWidget* widget ) {
-	mStructurallyVolatileChilds.erase( widget );
+	mStructurallyVolatileChildren.erase( widget );
 }
 
-UnorderedSet<UIWidget*>& UIStyle::getStructurallyVolatileChilds() {
-	return mStructurallyVolatileChilds;
+UnorderedSet<UIWidget*>& UIStyle::getStructurallyVolatileChildren() {
+	return mStructurallyVolatileChildren;
 }
 
 bool UIStyle::hasProperty( const CSS::PropertyId& propertyId ) const {

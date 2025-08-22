@@ -43,7 +43,7 @@ GitStatusModel::GitStatusModel( Git::FilesStatus&& status, GitPlugin* gitPlugin 
 		}
 	}
 
-	// Set the parents after the addreses are stable
+	// Set the parents after the addresses are stable
 	for ( auto& status : mStatus ) {
 		for ( auto& type : status.type ) {
 			for ( auto& f : type.files )

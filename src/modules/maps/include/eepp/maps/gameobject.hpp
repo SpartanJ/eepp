@@ -55,9 +55,9 @@ class EE_MAPS_API GameObject {
 
 	void setMirrored( bool mirrored );
 
-	bool isFliped() const;
+	bool isFlipped() const;
 
-	void setFliped( bool fliped );
+	void setFlipped( bool flipped );
 
 	bool isBlendAdd() const;
 

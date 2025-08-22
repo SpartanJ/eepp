@@ -385,7 +385,7 @@ void TextureAtlasEditor::fillTextureRegionList() {
 		8.f / (Float)mTextureRegionList->getCount() );
 
 	if ( !res.empty() ) {
-		mTextureRegionGrid->childsCloseAll();
+		mTextureRegionGrid->closeAllChildren();
 
 		for ( auto& it : res ) {
 			TextureRegion* tr = it.second;
@@ -468,7 +468,7 @@ void TextureAtlasEditor::onTextureAtlasClose( const Event* ) {
 		TextureAtlasManager::instance()->remove( mTextureAtlasLoader->getTextureAtlas() );
 	eeSAFE_DELETE( mTextureAtlasLoader );
 	mTextureRegionList->clear();
-	mTextureRegionGrid->childsCloseAll();
+	mTextureRegionGrid->closeAllChildren();
 	mSpinOffX->setValue( 0 );
 	mSpinOffY->setValue( 0 );
 	mSpinDestW->setValue( 0 );

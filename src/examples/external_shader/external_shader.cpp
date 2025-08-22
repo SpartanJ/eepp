@@ -5,7 +5,7 @@
 namespace Demo_ExternalShader {
 
 #if defined( EE_ARM ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-static Float sqrt_aprox[20001];
+static Float sqrt_approx[20001];
 #endif
 
 Uint32 ParticlesNum = 30000;
@@ -155,7 +155,7 @@ void mainLoop() {
 #if !defined( EE_ARM ) && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 			Float d = eesqrt( distance );
 #else
-			Float d = sqrt_aprox[( Int32 )( distance * 1000 )];
+			Float d = sqrt_approx[( Int32 )( distance * 1000 )];
 #endif
 
 			if ( d < 2.f ) {
@@ -264,7 +264,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 #if defined( EE_ARM ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 		Float tFloat = 0;
 		for ( int i = 0; i <= 20000; i++ ) {
-			sqrt_aprox[i] = eesqrt( tFloat );
+			sqrt_approx[i] = eesqrt( tFloat );
 			tFloat += 0.001;
 		}
 #endif

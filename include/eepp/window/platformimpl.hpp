@@ -30,7 +30,7 @@ using namespace EE::Window;
 using namespace EE::Graphics;
 
 /** This is an abstraction of some platform specific implementations
- * It's not garanteed that everything is implemented in every platform.
+ * It's not guaranteed that everything is implemented in every platform.
  * X11 and Win32 implementation are complete, OS X implementation still lacks of most features.
  */
 class PlatformImpl {

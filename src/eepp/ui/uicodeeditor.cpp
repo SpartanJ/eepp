@@ -628,13 +628,13 @@ UICodeEditor* UICodeEditor::setFont( Font* font ) {
 }
 
 void UICodeEditor::onFontChanged() {
-	udpateGlyphWidth();
+	updateGlyphWidth();
 	mDocView.setFontStyle( mFontStyleConfig );
 	invalidateDraw();
 }
 
 void UICodeEditor::onFontStyleChanged() {
-	udpateGlyphWidth();
+	updateGlyphWidth();
 	mDocView.setFontStyle( mFontStyleConfig );
 	invalidateDraw();
 }
@@ -1088,7 +1088,7 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 		return 0;
 
 	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() &&
-		 !TextDocument::isTextDocummentCommand( mLastCmdHash ) )
+		 !TextDocument::isTextDocumentCommand( mLastCmdHash ) )
 		return 0;
 
 	mDoc->textInput( event.getText() );
@@ -2237,7 +2237,7 @@ void UICodeEditor::onDocumentLineMove( const Int64& fromLine, const Int64& toLin
 }
 
 void UICodeEditor::onDocumentDirtyOnFileSystem( TextDocument* doc ) {
-	DocEvent event( this, doc, Event::OnDocumentDirtyOnFileSysten );
+	DocEvent event( this, doc, Event::OnDocumentDirtyOnFileSystem );
 	sendEvent( &event );
 }
 
@@ -3245,7 +3245,7 @@ Float UICodeEditor::getGlyphWidth() const {
 	return mGlyphWidth;
 }
 
-void UICodeEditor::udpateGlyphWidth() {
+void UICodeEditor::updateGlyphWidth() {
 	mGlyphWidth = mFont->getGlyph( '@', getCharacterSize(), false, false ).advance;
 	mMouseWheelScroll = 3 * getLineHeight();
 	invalidateLongestLineWidth();
@@ -5254,8 +5254,8 @@ bool UICodeEditor::isCursorVisible() const {
 }
 
 void UICodeEditor::setDisableCursorBlinkingAfterAMinuteOfInactivity(
-	bool diableCursorBlinkingAfterAMinuteOfInactivity ) {
-	mDisableCursorBlinkingAfterAMinuteOfInactivity = diableCursorBlinkingAfterAMinuteOfInactivity;
+	bool disableCursorBlinkingAfterAMinuteOfInactivity ) {
+	mDisableCursorBlinkingAfterAMinuteOfInactivity = disableCursorBlinkingAfterAMinuteOfInactivity;
 }
 
 bool UICodeEditor::isCursorBlinkingAfterAMinuteOfInactivityDisabled() const {

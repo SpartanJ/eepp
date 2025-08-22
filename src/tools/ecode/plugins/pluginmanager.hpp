@@ -225,7 +225,7 @@ struct PluginMessage {
 	bool isBroadcast() const { return -1 == responseID; }
 };
 
-struct PluginInmediateResponse {
+struct PluginImmediateResponse {
 	PluginMessageType type{ PluginMessageType::Undefined };
 	nlohmann::json data;
 };
@@ -240,7 +240,7 @@ class PluginRequestHandle {
 
 	PluginRequestHandle( PluginIDType id ) : mId( std::move( id ) ) {}
 
-	explicit PluginRequestHandle( PluginInmediateResponse msg ) :
+	explicit PluginRequestHandle( PluginImmediateResponse msg ) :
 		mId( -2 ), mResponse( std::move( msg ) ) {}
 
 	virtual const PluginIDType& id() const { return mId; }
@@ -251,14 +251,14 @@ class PluginRequestHandle {
 
 	bool isBroadcast() const { return mId == -1; }
 
-	const PluginInmediateResponse& getResponse() const { return mResponse; }
+	const PluginImmediateResponse& getResponse() const { return mResponse; }
 
 	bool isResponse() const { return mId == -2 && !mResponse.data.empty(); }
 
   protected:
 	PluginIDType mId{ 0 };
-	PluginInmediateResponse
-		mResponse; //! Some requests can be responded inmediatly, so the message comes in the handle
+	PluginImmediateResponse
+		mResponse; //! Some requests can be responded immediately, so the message comes in the handle
 };
 
 class PluginManager {

@@ -229,9 +229,9 @@ void VariablesHolder::addChild( ModelVariableNode::NodePtr child ) {
 	mModel->invalidate( Model::UpdateFlag::InvalidateAllIndexes );
 }
 
-void VariablesHolder::addChilds( const std::vector<ModelVariableNode::NodePtr>& childs ) {
+void VariablesHolder::addChildren( const std::vector<ModelVariableNode::NodePtr>& children ) {
 	Lock l( mModel->resourceMutex() );
-	for ( auto& child : childs ) {
+	for ( auto& child : children ) {
 		mRootNode->addChild( child );
 		mNodeMap[child->var.variablesReference] = child;
 	}
@@ -333,7 +333,7 @@ bool VariablesHolder::resolvePath( std::vector<std::string> path, DebuggerClient
 	auto currentNode = *currentNodeOpt;
 
 	if ( currentNode->getVariablesReference() > 0 ) {
-		const auto onVariablesRecieved = [this, uiVariables, path, currentNode, pathPos,
+		const auto onVariablesReceived = [this, uiVariables, path, currentNode, pathPos,
 										  client]( const int variablesReference,
 												   std::vector<Variable>&& vars ) {
 			addVariables( variablesReference, std::move( vars ) );
@@ -348,7 +348,7 @@ bool VariablesHolder::resolvePath( std::vector<std::string> path, DebuggerClient
 		};
 
 		client->variables( currentNode->getVariablesReference(), Variable::Type::Both,
-						   onVariablesRecieved );
+						   onVariablesReceived );
 
 		return true;
 	}

@@ -2350,7 +2350,7 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 	}
 
 	if ( from <= to && from < s && to <= s ) {
-		size_t rto = to + 1;
+		size_t realTo = to + 1;
 		Int32 rpos = from;
 		Int32 lpos = 0;
 		Uint32 i;
@@ -2376,7 +2376,7 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 			}
 		}
 
-		for ( i = from; i < rto; i++ ) {
+		for ( i = from; i < realTo; i++ ) {
 			curChar = mString[i];
 
 			lpos = rpos;

@@ -56,7 +56,7 @@ This operation cannot be reverted!</string>
 	<string name="build_os_not_supported">Operating System not supported for this build!</string>
 	<string name="build_output_show_build_issues">Build Output Show Build Issues</string>
 	<string name="build_output_show_build_output">Build Output Show Build Output</string>
-	<string name="build_seetings">Build Settings</string>
+	<string name="build_settings">Build Settings</string>
 	<string name="build_settings">Build Settings</string>
 	<string name="build_settings_save_clarification">* All changes are automatically saved</string>
 	<string name="build_step_num">Step %u: %s</string>
@@ -96,7 +96,7 @@ This operation cannot be reverted!</string>
 	<string name="clear">Clear</string>
 	<string name="clear_history">Clear History</string>
 	<string name="clear_menu">Clear Menu</string>
-	<string name="clear_system_enviroment">Clear System Environment</string>
+	<string name="clear_system_environment">Clear System Environment</string>
 	<string name="clone_current_conversation">Clone Current Conversation</string>
 	<string name="clone_ellipsis">Clone...</string>
 	<string name="clone_setting">Clone Setting</string>
@@ -161,7 +161,7 @@ All changes will be lost.</string>
 	<string name="copy_error_message">Copy Error Message</string>
 	<string name="copy_file_path">Copy File Path</string>
 	<string name="copy_file_path_and_position">Copy File Path And Position</string>
-	<string name="coudlnt_write_the_file">Couldn't write the file.</string>
+	<string name="couldnt_write_the_file">Couldn't write the file.</string>
 	<string name="could_not_write_file">Could not write file to disk.
 Please check if the file is read-only or if ecode does not have permissions to write to that file.
 File path is: </string>
@@ -323,7 +323,7 @@ ecode will try to open an external terminal.</string>
 	<string name="fullscreen_toggle">Fullscreen Toggle</string>
 	<string name="git">Git</string>
 	<string name="git_add_branch">Add Branch</string>
-	<string name="git_ammend">Ammend last commit</string>
+	<string name="git_amend">Amend last commit</string>
 	<string name="git_apply_stash">Apply Stash</string>
 	<string name="git_apply_stash_title">Apply Stash</string>
 	<string name="git_blame">Git Blame</string>
@@ -449,7 +449,7 @@ Be aware that many of the core keybindings can be found there.</string>
 	<string name="locate_files_and_symbols">Locate Files &amp; Symbols</string>
 	<string name="lock">Lock</string>
 	<string name="lock_chat_memory">Lock Chat Memory</string>
-	<string name="lock_chat_memory_tooltip">Lock a chat memory to avoid being deleted during memory clean-ups. Chat memory will only be able to be deleted manually in the chat history.</string>
+	<string name="lock_chat_memory_tooltip">Lock a chat memory to avoid being deleted during memory clean-ups.&#13;Chat memory will only be able to be deleted manually in the chat history.</string>
 	<string name="lock_toggle">Lock Toggle</string>
 	<string name="lsp_code_action">Code Action</string>
 	<string name="lsp_find_references_to_symbol_under_cursor">Find References to Symbol Under Cursor</string>
@@ -784,7 +784,7 @@ Minimum value is 1, and maximum 6. Requires restart.</string>
 	<string name="switch_to_previous_split">Switch To Previous Split</string>
 	<string name="symlink_target">Symlink target</string>
 	<string name="sync_project_tree">Synchronize project tree with editor</string>
-	<string name="sync_project_tree_tooltip">Syncronizes the current focused document as the selected
+	<string name="sync_project_tree_tooltip">Synchronizes the current focused document as the selected
 file in the directory tree.</string>
 	<string name="syntax_color_scheme">Syntax Color Scheme</string>
 	<string name="system">System</string>
@@ -906,7 +906,7 @@ Restart ecode to see the changes.</string>
 	<string name="working_dir">Working Directory</string>
 	<string name="working_dir_at">Working Dir %s
 </string>
-	<string name="workspace_symbol_find_ellipsis">Search Worskspace Symbol...</string>
+	<string name="workspace_symbol_find_ellipsis">Search Workspace Symbol...</string>
 	<string name="wrap_letter">Letter wrap</string>
 	<string name="wrap_mode">Wrap Mode</string>
 	<string name="wrap_type_ellipsis">Wrap Against...</string>

@@ -279,7 +279,7 @@ void UIScrollView::onTouchDragValueChange( Vector2f diff ) {
 							( -diff.x / (Float)( mScrollView->getSize().getWidth() ) ) );
 }
 
-bool UIScrollView::isTouchOverAllowedChilds() {
+bool UIScrollView::isTouchOverAllowedChildren() {
 	bool ret = mViewType == Exclusive
 				   ? !mVScroll->isMouseOverMeOrChildren() && !mHScroll->isMouseOverMeOrChildren()
 				   : true;
@@ -380,7 +380,7 @@ Uint32 UIScrollView::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::MouseUp: {
 			if ( mVScroll->isEnabled() && 0 != mScrollView->getSize().getHeight() &&
-				 isTouchOverAllowedChilds() && Msg->getSender()->isUINode() &&
+				 isTouchOverAllowedChildren() && Msg->getSender()->isUINode() &&
 				 !Msg->getSender()->asType<UINode>()->isScrollable() ) {
 				if ( Msg->getFlags() & EE_BUTTON_WUMASK ) {
 					mVScroll->setValue( mVScroll->getValue() - mVScroll->getClickStep() );

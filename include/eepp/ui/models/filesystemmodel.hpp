@@ -130,7 +130,7 @@ class EE_API FileSystemModel : public Model {
 
 		void rename( const FileInfo& file );
 
-		void updateChilds( const FileInfo& oldParentFile, const FileInfo& newParentFile );
+		void updateChildren( const FileInfo& oldParentFile, const FileInfo& newParentFile );
 
 		friend class FileSystemModel;
 		std::string mName;
@@ -211,7 +211,7 @@ class EE_API FileSystemModel : public Model {
 
   protected:
 	std::atomic<bool> mInitOK;
-	std::atomic<bool> mShutingDown{ false };
+	std::atomic<bool> mShuttingDown{ false };
 	std::string mRootPath;
 	std::string mRealRootPath;
 	std::unique_ptr<Node> mRoot{ nullptr };

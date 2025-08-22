@@ -562,7 +562,7 @@ void DocumentView::recomputeDocLineToVisibleIndex( Int64 fromVisibleIndex, bool 
 	for ( Int64 visibleIdx = fromVisibleIndex; visibleIdx < visibleLinesCount; visibleIdx++ ) {
 		const auto& visibleLine = mVisibleLines[visibleIdx];
 		if ( visibleLine.column() == 0 ) {
-			// Non-contiguos lines means hidden lines
+			// Non-contiguous lines means hidden lines
 			if ( visibleLine.line() - previousLineIdx > 1 ) {
 				for ( Int64 i = previousLineIdx + 1; i < visibleLine.line(); i++ )
 					mDocLineToVisibleIndex[i] = static_cast<Int64>( VisibleIndex::invalid );

@@ -57,11 +57,11 @@ static void pushToken( std::vector<T>& tokens, const SyntaxStyleType& type,
 	if ( text.empty() )
 		return;
 	if ( !tokens.empty() && ( tokens[tokens.size() - 1].type == type ) ) {
-		size_t tpos = tokens.size() - 1;
-		tokens[tpos].type = type;
+		size_t tokenPos = tokens.size() - 1;
+		tokens[tokenPos].type = type;
 		if constexpr ( std::is_same_v<T, SyntaxTokenComplete> )
-			tokens[tpos].text += text;
-		tokens[tpos].len += String::utf8Length( text );
+			tokens[tokenPos].text += text;
+		tokens[tokenPos].len += String::utf8Length( text );
 	} else {
 		if ( text.size() > MAX_TOKEN_SIZE ) {
 			size_t textSize = text.size();
@@ -79,10 +79,10 @@ static void pushToken( std::vector<T>& tokens, const SyntaxStyleType& type,
 				if constexpr ( std::is_same_v<T, SyntaxTokenComplete> ) {
 					tokens.push_back( { type, std::string{ substr }, len } );
 				} else if constexpr ( std::is_same_v<T, SyntaxTokenPosition> ) {
-					SyntaxStyleType tpos = tokens.empty() ? 0
-														  : tokens[tokens.size() - 1].pos +
-																tokens[tokens.size() - 1].len;
-					tokens.push_back( { type, tpos, len } );
+					SyntaxStyleType tokenPos = tokens.empty() ? 0
+															  : tokens[tokens.size() - 1].pos +
+																	tokens[tokens.size() - 1].len;
+					tokens.push_back( { type, tokenPos, len } );
 				} else {
 					tokens.push_back( { type, len } );
 				}
@@ -94,11 +94,11 @@ static void pushToken( std::vector<T>& tokens, const SyntaxStyleType& type,
 				tokens.push_back( { type, std::string{ text },
 									static_cast<SyntaxTokenLen>( String::utf8Length( text ) ) } );
 			} else if constexpr ( std::is_same_v<T, SyntaxTokenPosition> ) {
-				SyntaxStyleType tpos =
+				SyntaxStyleType tokenPos =
 					tokens.empty() ? 0
 								   : tokens[tokens.size() - 1].pos + tokens[tokens.size() - 1].len;
 				tokens.push_back(
-					{ type, tpos, static_cast<SyntaxTokenLen>( String::utf8Length( text ) ) } );
+					{ type, tokenPos, static_cast<SyntaxTokenLen>( String::utf8Length( text ) ) } );
 			} else {
 				tokens.push_back(
 					{ type, static_cast<SyntaxTokenLen>( String::utf8Length( text ) ) } );

@@ -176,7 +176,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	struct MinimapConfig {
 		Float width{ 100 }; // dp width
 		Float maxPercentWidth{
-			0.1f }; // 0..1 max width that a minimap can ocupy on the editor view.
+			0.1f }; // 0..1 max width that a minimap can occupy on the editor view.
 		Float scale{ 1 };
 		int tabWidth{ 4 };
 		bool drawBackground{ true };
@@ -784,7 +784,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool isCursorVisible() const;
 
 	void setDisableCursorBlinkingAfterAMinuteOfInactivity(
-		bool diableCursorBlinkingAfterAMinuteOfInactivity );
+		bool disableCursorBlinkingAfterAMinuteOfInactivity );
 
 	bool isCursorBlinkingAfterAMinuteOfInactivityDisabled() const;
 
@@ -1077,7 +1077,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void disableEditorFeatures();
 
-	void udpateGlyphWidth();
+	void updateGlyphWidth();
 
 	Drawable* findIcon( const std::string& name );
 

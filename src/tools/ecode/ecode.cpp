@@ -518,7 +518,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 					updateEditorState();
 				} else {
 					UIMessageBox* msg =
-						UIMessageBox::New( UIMessageBox::OK, i18n( "coudlnt_write_the_file",
+						UIMessageBox::New( UIMessageBox::OK, i18n( "couldnt_write_the_file",
 																   "Couldn't write the file." ) );
 					msg->setTitle( "Error" );
 					msg->show();
@@ -1491,15 +1491,15 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 				return;
 			UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-			UICodeEditor* nce = nullptr;
+			UICodeEditor* newCe = nullptr;
 			UICodeEditor* ce = nullptr;
 			UIWidget* ncw = nullptr;
 			UIWidget* cw = nullptr;
 			if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
-				nce = tab->getOwnedWidget()->asType<UICodeEditor>();
+				newCe = tab->getOwnedWidget()->asType<UICodeEditor>();
 				ce = mSplitter->getCurEditor();
-				if ( nce != ce )
-					mSplitter->setCurrentEditor( nce );
+				if ( newCe != ce )
+					mSplitter->setCurrentEditor( newCe );
 			} else {
 				ncw = tab->getOwnedWidget()->asType<UIWidget>();
 				cw = mSplitter->getCurWidget();
@@ -1508,7 +1508,7 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 			}
 			runCommand( item->getId() );
 			if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
-				if ( nce != ce && mSplitter->checkEditorExists( ce ) )
+				if ( newCe != ce && mSplitter->checkEditorExists( ce ) )
 					mSplitter->setCurrentEditor( ce );
 			} else {
 				if ( ncw != cw && mSplitter->checkWidgetExists( cw ) )
@@ -2062,7 +2062,7 @@ void App::createDocDirtyAlert( UICodeEditor* editor, bool showEnableAutoReload )
 		->setVisible( showEnableAutoReload ? !editor->getDocument().isDirty() : false )
 		->onClick( [editor, docAlert, this]( const MouseEvent* ) {
 			editor->getDocument().reload();
-			editor->disableReportSizeChangeToChilds();
+			editor->disableReportSizeChangeToChildren();
 			docAlert->close();
 			editor->setFocus();
 			mConfig.editor.autoReloadOnDiskChange = true;
@@ -2071,27 +2071,27 @@ void App::createDocDirtyAlert( UICodeEditor* editor, bool showEnableAutoReload )
 
 	docAlert->find( "file_reload" )->onClick( [editor, docAlert]( const MouseEvent* ) {
 		editor->getDocument().reload();
-		editor->disableReportSizeChangeToChilds();
+		editor->disableReportSizeChangeToChildren();
 		docAlert->close();
 		editor->setFocus();
 	} );
 
 	docAlert->find( "file_overwrite" )->onClick( [editor, docAlert]( const MouseEvent* ) {
 		editor->getDocument().save();
-		editor->disableReportSizeChangeToChilds();
+		editor->disableReportSizeChangeToChildren();
 		docAlert->close();
 		editor->setFocus();
 	} );
 
 	docAlert->find( "file_ignore" )->onClick( [docAlert, editor]( const MouseEvent* ) {
-		editor->disableReportSizeChangeToChilds();
+		editor->disableReportSizeChangeToChildren();
 		docAlert->close();
 		editor->setFocus();
 	} );
 
 	docAlert->runOnMainThread(
 		[docAlert, editor] {
-			editor->disableReportSizeChangeToChilds();
+			editor->disableReportSizeChangeToChildren();
 			docAlert->close();
 			editor->setFocus();
 		},
@@ -2120,20 +2120,20 @@ void App::createDocDoesNotExistsInFSAlert( UICodeEditor* editor ) {
 	editor->enableReportSizeChangeToChildren();
 
 	docAlert->find( "file_continue_editing" )->onClick( [docAlert, editor]( const MouseEvent* ) {
-		editor->disableReportSizeChangeToChilds();
+		editor->disableReportSizeChangeToChildren();
 		docAlert->close();
 		editor->setFocus();
 	} );
 
 	docAlert->find( "file_close" )->onClick( [this, editor, docAlert]( const MouseEvent* ) {
-		editor->disableReportSizeChangeToChilds();
+		editor->disableReportSizeChangeToChildren();
 		docAlert->close();
 		mSplitter->closeTab( editor, UITabWidget::FocusTabBehavior::Default );
 	} );
 
 	docAlert->runOnMainThread(
 		[docAlert, editor] {
-			editor->disableReportSizeChangeToChilds();
+			editor->disableReportSizeChangeToChildren();
 			docAlert->close();
 			editor->setFocus();
 		},
@@ -2177,7 +2177,7 @@ void App::createDocManyLangsAlert( UICodeEditor* editor ) {
 		btn->setLayoutMarginRight( PixelDensity::dpToPx( 8 ) );
 		btn->onClick( [this, editor, lang, docAlert, ext]( auto ) {
 			editor->setSyntaxDefinition( *lang );
-			editor->disableReportSizeChangeToChilds();
+			editor->disableReportSizeChangeToChildren();
 			docAlert->close();
 			editor->setFocus();
 			mConfig.languagesExtensions.priorities[ext] = lang->getLSPName();
@@ -2190,7 +2190,7 @@ void App::createDocManyLangsAlert( UICodeEditor* editor ) {
 
 	docAlert->runOnMainThread(
 		[docAlert, editor] {
-			editor->disableReportSizeChangeToChilds();
+			editor->disableReportSizeChangeToChildren();
 			docAlert->close();
 			editor->setFocus();
 		},
@@ -2508,7 +2508,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		}
 	} );
 
-	editor->on( Event::OnDocumentDirtyOnFileSysten, [this, editor]( const Event* event ) {
+	editor->on( Event::OnDocumentDirtyOnFileSystem, [this, editor]( const Event* event ) {
 		const DocEvent* docEvent = static_cast<const DocEvent*>( event );
 		FileInfo file( docEvent->getDoc()->getFileInfo().getFilepath() );
 		TextDocument* doc = docEvent->getDoc();
@@ -2517,7 +2517,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 				if ( !mConfig.editor.autoReloadOnDiskChange || doc->isDirty() ) {
 					editor->runOnMainThread( [this, editor]() { createDocDirtyAlert( editor ); } );
 				} else {
-					auto hash = String::hash( "OnDocumentDirtyOnFileSysten-" +
+					auto hash = String::hash( "OnDocumentDirtyOnFileSystem-" +
 											  docEvent->getDoc()->getFilePath() );
 					editor->removeActionsByTag( hash );
 					editor->runOnMainThread(
@@ -3795,7 +3795,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		if ( mConfig.windowState.position != Vector2i( -1, -1 ) &&
 			 mConfig.windowState.displayIndex < displayManager->getDisplayCount() ) {
-			// 1 px offset to avoid a bug in SDL2 2.28 when maximazing windows
+			// 1 px offset to avoid a bug in SDL2 2.28 when maximizing windows
 			mWindow->setPosition( mConfig.windowState.position.x +
 									  ( mConfig.windowState.maximized ? -1 : 0 ),
 								  mConfig.windowState.position.y );
@@ -4256,7 +4256,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		{ 'f', "file" } );
 	args::ValueFlag<std::string> folder( parser, "folder", "The folder path to open",
 										 { "folder" } );
-	args::ValueFlag<Float> pixelDenstiyConf( parser, "pixel-density",
+	args::ValueFlag<Float> pixelDensityConf( parser, "pixel-density",
 											 "Set default application pixel density",
 											 { 'd', "pixel-density" } );
 	args::ValueFlag<std::string> prefersColorScheme(
@@ -4359,9 +4359,9 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		IOStreamFile sfile( convertLangPath.Get() );
 		if ( !sfile.isOpen() )
 			return EXIT_FAILURE;
-		std::vector<std::string> adedLangs;
-		if ( SyntaxDefinitionManager::instance()->loadFromStream( sfile, &adedLangs ) ) {
-			for ( const auto& lang : adedLangs ) {
+		std::vector<std::string> addedLangs;
+		if ( SyntaxDefinitionManager::instance()->loadFromStream( sfile, &addedLangs ) ) {
+			for ( const auto& lang : addedLangs ) {
 				const auto& def = SyntaxDefinitionManager::instance()->getByLanguageName( lang );
 				auto code = SyntaxDefinitionManager::toCPP( def );
 				if ( convertLangOutput && !convertLangOutput.Get().empty() &&
@@ -4392,7 +4392,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 	appInstance = eeNew( App, ( jobs, args ) );
 	appInstance->init( logLevel.Get(), folder ? folder.Get() : fileOrFolderPos.Get(),
-					   pixelDenstiyConf ? pixelDenstiyConf.Get() : 0.f,
+					   pixelDensityConf ? pixelDensityConf.Get() : 0.f,
 					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),
 					   benchmarkMode.Get(), css.Get(), file.Get(), verbose.Get(),
 					   disableFileLogs.Get(), openClean.Get(), portable.Get(), language.Get(),

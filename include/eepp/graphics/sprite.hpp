@@ -39,7 +39,7 @@ class EE_API Sprite : public Drawable {
 
 	static Sprite* fromGif( IOStream& gif );
 
-	/** Instanciate an empty sprite */
+	/** Instantiate an empty sprite */
 	Sprite();
 
 	/** Creates an animated Sprite from a animation name. It will search for a pattern name.
@@ -420,7 +420,7 @@ class EE_API Sprite : public Drawable {
 	Color* mVertexColors{ nullptr };
 
 	int mRepetitions{
-		-1 }; //!< Number of repetions of the animation, default -1 that equals to loop.
+		-1 }; //!< Number of repetitions of the animation, default -1 that equals to loop.
 
 	BlendMode mBlend{ BlendMode::Alpha() };
 	RenderMode mEffect{ RENDER_NORMAL };

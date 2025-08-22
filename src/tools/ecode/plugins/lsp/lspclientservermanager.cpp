@@ -240,7 +240,7 @@ bool LSPClientServerManager::isServerRunning( const LSPClientServer* server ) {
 	return false;
 }
 
-void LSPClientServerManager::requestSymanticHighlighting( std::shared_ptr<TextDocument> doc ) {
+void LSPClientServerManager::requestSemanticHighlighting( std::shared_ptr<TextDocument> doc ) {
 	auto* server = getOneLSPClientServer( doc );
 	if ( server ) {
 		LSPDocumentClient* client = server->getLSPDocumentClient( doc.get() );

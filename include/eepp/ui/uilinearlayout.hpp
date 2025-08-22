@@ -52,9 +52,9 @@ class EE_API UILinearLayout : public UILayout {
 
 	Sizei getTotalUsedSize();
 
-	void applyWidthPolicyOnChilds();
+	void applyWidthPolicyOnChildren();
 
-	void applyHeightPolicyOnChilds();
+	void applyHeightPolicyOnChildren();
 };
 
 }} // namespace EE::UI

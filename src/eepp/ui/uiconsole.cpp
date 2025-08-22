@@ -937,7 +937,7 @@ Uint32 UIConsole::onTextInput( const TextInputEvent& event ) {
 		return 0;
 
 	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() &&
-		 !TextDocument::isTextDocummentCommand( mLastCmdHash ) )
+		 !TextDocument::isTextDocumentCommand( mLastCmdHash ) )
 		return 0;
 
 	const String& text = event.getText();

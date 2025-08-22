@@ -15,12 +15,12 @@ BatchRenderer* BatchRenderer::New( const unsigned int& Prealloc ) {
 }
 
 BatchRenderer::BatchRenderer() {
-	allocVertexs( 4096 );
+	allocVertices( 4096 );
 	init();
 }
 
 BatchRenderer::BatchRenderer( const unsigned int& Prealloc ) {
-	allocVertexs( Prealloc );
+	allocVertices( Prealloc );
 	init();
 }
 
@@ -32,7 +32,7 @@ void BatchRenderer::init() {
 	quadsBegin();
 }
 
-void BatchRenderer::allocVertexs( const unsigned int& size ) {
+void BatchRenderer::allocVertices( const unsigned int& size ) {
 	eeSAFE_DELETE_ARRAY( mVertex );
 	mVertex = eeNewArray( VertexData, size );
 	mVertexSize = size;
@@ -64,7 +64,7 @@ void BatchRenderer::setBlendMode( const BlendMode& blend ) {
 		mBlend = blend;
 }
 
-void BatchRenderer::addVertexs( const unsigned int& num ) {
+void BatchRenderer::addVertices( const unsigned int& num ) {
 	mNumVertex += num;
 
 	if ( ( mNumVertex + num ) >= mVertexSize ) {
@@ -190,7 +190,7 @@ void BatchRenderer::batchQuad( const Float& x, const Float& y, const Float& widt
 		mTVertex->tex = mTexCoord[3];
 		mTVertex->color = mVerColor[3];
 
-		addVertexs( 4 );
+		addVertices( 4 );
 	} else {
 		mTVertex = &mVertex[mNumVertex];
 		mTVertex->pos.x = x;
@@ -226,7 +226,7 @@ void BatchRenderer::batchQuad( const Float& x, const Float& y, const Float& widt
 		mTVertex->tex = mTexCoord[3];
 		mTVertex->color = mVerColor[3];
 
-		addVertexs( 6 );
+		addVertices( 6 );
 	}
 }
 
@@ -261,7 +261,7 @@ void BatchRenderer::batchQuad( const Rectf& rect ) {
 		mTVertex->tex = mTexCoord[3];
 		mTVertex->color = mVerColor[3];
 
-		addVertexs( 4 );
+		addVertices( 4 );
 	} else {
 		mTVertex = &mVertex[mNumVertex];
 		mTVertex->pos.x = rect.Left;
@@ -297,7 +297,7 @@ void BatchRenderer::batchQuad( const Rectf& rect ) {
 		mTVertex->tex = mTexCoord[3];
 		mTVertex->color = mVerColor[3];
 
-		addVertexs( 6 );
+		addVertices( 6 );
 	}
 }
 
@@ -353,7 +353,7 @@ void BatchRenderer::batchQuadEx( Float x, Float y, Float width, Float height, Fl
 		mTVertex->color = mVerColor[3];
 		rotate( originPoint, &mTVertex->pos, angle );
 
-		addVertexs( 4 );
+		addVertices( 4 );
 	} else {
 		mTVertex = &mVertex[mNumVertex];
 		mTVertex->pos.x = x;
@@ -393,7 +393,7 @@ void BatchRenderer::batchQuadEx( Float x, Float y, Float width, Float height, Fl
 		mTVertex->tex = mTexCoord[3];
 		mTVertex->color = mVerColor[3];
 
-		addVertexs( 6 );
+		addVertices( 6 );
 	}
 }
 
@@ -430,7 +430,7 @@ void BatchRenderer::batchQuadFree( const Float& x0, const Float& y0, const Float
 		mTVertex->tex = mTexCoord[3];
 		mTVertex->color = mVerColor[3];
 
-		addVertexs( 4 );
+		addVertices( 4 );
 	} else {
 		mTVertex = &mVertex[mNumVertex];
 		mTVertex->pos.x = x1;
@@ -468,7 +468,7 @@ void BatchRenderer::batchQuadFree( const Float& x0, const Float& y0, const Float
 		mTVertex->tex = mTexCoord[3];
 		mTVertex->color = mVerColor[3];
 
-		addVertexs( 6 );
+		addVertices( 6 );
 	}
 }
 
@@ -523,7 +523,7 @@ void BatchRenderer::batchQuadFreeEx( const Float& x0, const Float& y0, const Flo
 		mTVertex->tex = mTexCoord[3];
 		mTVertex->color = mVerColor[3];
 
-		addVertexs( 4 );
+		addVertices( 4 );
 	} else {
 		mTVertex = &mVertex[mNumVertex];
 		mTVertex->pos.x = mQ[1].x;
@@ -561,7 +561,7 @@ void BatchRenderer::batchQuadFreeEx( const Float& x0, const Float& y0, const Flo
 		mTVertex->tex = mTexCoord[3];
 		mTVertex->color = mVerColor[3];
 
-		addVertexs( 6 );
+		addVertices( 6 );
 	}
 }
 
@@ -650,7 +650,7 @@ void BatchRenderer::batchPoint( const Float& x, const Float& y,
 	mTVertex->tex = mTexCoord[0];
 	mTVertex->color = mVerColor[0];
 
-	addVertexs( 1 );
+	addVertices( 1 );
 }
 
 void BatchRenderer::batchPointList( const std::vector<VertexData>& points,
@@ -659,7 +659,7 @@ void BatchRenderer::batchPointList( const std::vector<VertexData>& points,
 
 	unsigned int curNumVertex = mNumVertex;
 
-	addVertexs( points.size() );
+	addVertices( points.size() );
 
 	memcpy( (void*)&mVertex[curNumVertex], (void*)&points[0],
 			sizeof( VertexData ) * points.size() );
@@ -698,7 +698,7 @@ void BatchRenderer::batchLine( const Float& x0, const Float& y0, const Float& x1
 	mTVertex->tex = mTexCoord[1];
 	mTVertex->color = mVerColor[1];
 
-	addVertexs( 2 );
+	addVertices( 2 );
 }
 
 void BatchRenderer::lineLoopBegin() {
@@ -734,7 +734,7 @@ void BatchRenderer::batchLineLoop( const Float& x0, const Float& y0, const Float
 	mTVertex->tex = mTexCoord[1];
 	mTVertex->color = mVerColor[1];
 
-	addVertexs( 2 );
+	addVertices( 2 );
 }
 
 void BatchRenderer::batchLineLoop( const Vector2f& vector1, const Vector2f& vector2 ) {
@@ -753,7 +753,7 @@ void BatchRenderer::batchLineLoop( const Float& x0, const Float& y0 ) {
 	mTVertex->tex = mTexCoord[0];
 	mTVertex->color = mVerColor[0];
 
-	addVertexs( 1 );
+	addVertices( 1 );
 }
 
 void BatchRenderer::batchLineLoop( const Vector2f& vector1 ) {
@@ -793,7 +793,7 @@ void BatchRenderer::batchLineStrip( const Float& x0, const Float& y0, const Floa
 	mTVertex->tex = mTexCoord[1];
 	mTVertex->color = mVerColor[1];
 
-	addVertexs( 2 );
+	addVertices( 2 );
 }
 
 void BatchRenderer::batchLineStrip( const Vector2f& vector1, const Vector2f& vector2 ) {
@@ -812,7 +812,7 @@ void BatchRenderer::batchLineStrip( const Float& x0, const Float& y0 ) {
 	mTVertex->tex = mTexCoord[0];
 	mTVertex->color = mVerColor[0];
 
-	addVertexs( 1 );
+	addVertices( 1 );
 }
 
 void BatchRenderer::batchLineStrip( const Vector2f& vector1 ) {
@@ -870,7 +870,7 @@ void BatchRenderer::batchTriangleFan( const Float& x0, const Float& y0, const Fl
 	mTVertex->tex = mTexCoord[2];
 	mTVertex->color = mVerColor[2];
 
-	addVertexs( 3 );
+	addVertices( 3 );
 }
 
 void BatchRenderer::batchTriangleFan( const Float& x0, const Float& y0 ) {
@@ -885,7 +885,7 @@ void BatchRenderer::batchTriangleFan( const Float& x0, const Float& y0 ) {
 	mTVertex->tex = mTexCoord[0];
 	mTVertex->color = mVerColor[0];
 
-	addVertexs( 1 );
+	addVertices( 1 );
 }
 
 void BatchRenderer::trianglesBegin() {
@@ -939,7 +939,7 @@ void BatchRenderer::batchTriangle( const Float& x0, const Float& y0, const Float
 	mTVertex->tex = mTexCoord[2];
 	mTVertex->color = mVerColor[2];
 
-	addVertexs( 3 );
+	addVertices( 3 );
 }
 
 void BatchRenderer::polygonSetColor( const Color& Color ) {
@@ -959,7 +959,7 @@ void BatchRenderer::batchPolygon( const Polygon2f& Polygon ) {
 		mTVertex->tex = mTexCoord[0];
 		mTVertex->color = mVerColor[0];
 
-		addVertexs( 1 );
+		addVertices( 1 );
 	}
 }
 
@@ -975,7 +975,7 @@ void BatchRenderer::batchPolygonByPoint( const Float& x, const Float& y ) {
 	mTVertex->tex = mTexCoord[0];
 	mTVertex->color = mVerColor[0];
 
-	addVertexs( 1 );
+	addVertices( 1 );
 }
 
 void BatchRenderer::batchPolygonByPoint( const Vector2f& Vector ) {

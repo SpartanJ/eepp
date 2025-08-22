@@ -10,11 +10,11 @@ UndoCommand::UndoCommand( const std::string& text, UndoCommand* parent ) : UndoC
 
 UndoCommand::UndoCommand( UndoCommand* parent ) {
 	if ( parent != nullptr )
-		parent->mChilds.push_back( this );
+		parent->mChildren.push_back( this );
 }
 
 UndoCommand::~UndoCommand() {
-	for ( const auto& child : mChilds )
+	for ( const auto& child : mChildren )
 		delete child;
 }
 
@@ -35,13 +35,13 @@ bool UndoCommand::mergeWith( const UndoCommand* ) {
 }
 
 void UndoCommand::redo() {
-	for ( std::size_t i = 0; i < mChilds.size(); ++i )
-		mChilds.at( i )->redo();
+	for ( std::size_t i = 0; i < mChildren.size(); ++i )
+		mChildren.at( i )->redo();
 }
 
 void UndoCommand::undo() {
-	for ( int i = mChilds.size() - 1; i >= 0; --i )
-		mChilds.at( i )->undo();
+	for ( int i = mChildren.size() - 1; i >= 0; --i )
+		mChildren.at( i )->undo();
 }
 
 std::string UndoCommand::text() const {
@@ -64,13 +64,13 @@ void UndoCommand::setText( const std::string& text ) {
 }
 
 int UndoCommand::childCount() const {
-	return mChilds.size();
+	return mChildren.size();
 }
 
 const UndoCommand* UndoCommand::child( int index ) const {
-	if ( index < 0 || index >= static_cast<int>( mChilds.size() ) )
+	if ( index < 0 || index >= static_cast<int>( mChildren.size() ) )
 		return nullptr;
-	return mChilds.at( index );
+	return mChildren.at( index );
 }
 
 void UndoStack::setIndex( int idx, bool clean ) {
@@ -153,8 +153,8 @@ void UndoStack::push( UndoCommand* cmd ) {
 	UndoCommand* cur = nullptr;
 	if ( macro ) {
 		UndoCommand* macroCmd = mMacroStack.back();
-		if ( !macroCmd->mChilds.empty() )
-			cur = macroCmd->mChilds.back();
+		if ( !macroCmd->mChildren.empty() )
+			cur = macroCmd->mChildren.back();
 	} else {
 		if ( mIndex > 0 )
 			cur = mCommands.at( mIndex - 1 );
@@ -174,8 +174,8 @@ void UndoStack::push( UndoCommand* cmd ) {
 
 		if ( macro ) {
 			if ( cur->isObsolete() ) {
-				delete mMacroStack.back()->mChilds.back();
-				mMacroStack.back()->mChilds.pop_back();
+				delete mMacroStack.back()->mChildren.back();
+				mMacroStack.back()->mChildren.pop_back();
 			}
 		} else {
 			if ( cur->isObsolete() ) {
@@ -195,7 +195,7 @@ void UndoStack::push( UndoCommand* cmd ) {
 		delete cmd; // command should be deleted and NOT added to the stack
 	} else {
 		if ( macro ) {
-			mMacroStack.back()->mChilds.push_back( cmd );
+			mMacroStack.back()->mChildren.push_back( cmd );
 		} else {
 			mCommands.push_back( cmd );
 			checkUndoLimit();
@@ -395,7 +395,7 @@ void UndoStack::beginMacro( const std::string& text ) {
 			mCleanIndex = -1; // we've deleted the clean state
 		mCommands.push_back( cmd );
 	} else {
-		mMacroStack.back()->mChilds.push_back( cmd );
+		mMacroStack.back()->mChildren.push_back( cmd );
 	}
 	mMacroStack.push_back( cmd );
 

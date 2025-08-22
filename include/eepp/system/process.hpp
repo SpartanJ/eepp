@@ -108,7 +108,7 @@ class EE_API Process {
 	 **
 	 ** The only safe way to read from the standard output of a process during it's
 	 ** execution is to use the `Option::EnableAsync` option in
-	 ** conjuction with this method. */
+	 ** conjunction with this method. */
 	size_t readAllStdOut( std::string& buffer, Time timeout = Time::Zero );
 
 	/** @brief Read the standard output from the child process.
@@ -118,7 +118,7 @@ class EE_API Process {
 	 **
 	 ** The only safe way to read from the standard output of a process during it's
 	 ** execution is to use the `Option::EnableAsync` option in
-	 ** conjuction with this method. */
+	 ** conjunction with this method. */
 	size_t readStdOut( std::string& buffer );
 
 	/** @brief Read the standard output from the child process.
@@ -129,7 +129,7 @@ class EE_API Process {
 	 **
 	 ** The only safe way to read from the standard output of a process during it's
 	 ** execution is to use the `Option::EnableAsync` option in
-	 ** conjuction with this method. */
+	 ** conjunction with this method. */
 	size_t readStdOut( char* const buffer, const size_t& size );
 
 	/** @brief Read all the standard error from the child process.
@@ -139,7 +139,7 @@ class EE_API Process {
 	 **
 	 ** The only safe way to read from the standard error of a process during it's
 	 ** execution is to use the `Option::EnableAsync` option in
-	 ** conjuction with this method. */
+	 ** conjunction with this method. */
 	size_t readAllStdErr( std::string& buffer, Time timeout = Time::Zero );
 
 	/** @brief Read the standard error from the child process.
@@ -149,7 +149,7 @@ class EE_API Process {
 	 **
 	 ** The only safe way to read from the standard error of a process during it's
 	 ** execution is to use the `Option::EnableAsync` option in
-	 ** conjuction with this method. */
+	 ** conjunction with this method. */
 	size_t readStdErr( std::string& buffer );
 
 	/** @brief Read the standard error from the child process.
@@ -160,7 +160,7 @@ class EE_API Process {
 	 **
 	 ** The only safe way to read from the standard error of a process during it's
 	 ** execution is to use the `Option::EnableAsync` option in
-	 ** conjuction with this method. */
+	 ** conjunction with this method. */
 	size_t readStdErr( char* const buffer, const size_t& size );
 
 	/** @brief Write the standard output from the child process.

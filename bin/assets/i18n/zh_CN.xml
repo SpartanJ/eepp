@@ -50,7 +50,7 @@
 	<string name="build_os_not_supported">系统不支持此构建！</string>
 	<string name="build_output_show_build_issues">Build Output Show Build Issues</string>
 	<string name="build_output_show_build_output">Build Output Show Build Output</string>
-	<string name="build_seetings">Build Settings</string>
+	<string name="build_settings">Build Settings</string>
 	<string name="build_settings">构建设置</string>
 	<string name="build_settings_save_clarification">* 修改已自动保存</string>
 	<string name="build_step_num">Step %u: %s</string>
@@ -82,7 +82,7 @@
 </string>
 	<string name="clear_history">清理历史</string>
 	<string name="clear_menu">清空菜单</string>
-	<string name="clear_system_enviroment">Clear System Environment</string>
+	<string name="clear_system_environment">Clear System Environment</string>
 	<string name="clone_setting">Clone Setting</string>
 	<string name="cloned_name_must_be_different">Cloned name must be different from any existing build name.</string>
 	<string name="close">关闭</string>
@@ -130,7 +130,7 @@
 	<string name="copy_error_message">复制错误信息</string>
 	<string name="copy_file_path">复制文件路径</string>
 	<string name="copy_file_path_and_position">复制文件路径</string>
-	<string name="coudlnt_write_the_file">无法写入文件。</string>
+	<string name="couldnt_write_the_file">无法写入文件。</string>
 	<string name="could_not_write_file">无法向磁盘写入文件
 请检查文件是否被只读保护或ecode没有足够权限。
 文件路径：</string>
@@ -244,7 +244,7 @@
 	<string name="fullscreen_toggle">切换全屏</string>
 	<string name="git">Git</string>
 	<string name="git_add_branch">添加分支</string>
-	<string name="git_ammend">Ammend last commit</string>
+	<string name="git_amend">Amend last commit</string>
 	<string name="git_apply_stash">Apply Stash</string>
 	<string name="git_apply_stash_title">Apply Stash</string>
 	<string name="git_blame">Git Blame</string>
@@ -587,7 +587,7 @@ Restart ecode to see the changes.</string>
 	<string name="switch_to_previous_split">Switch To Previous Split</string>
 	<string name="symlink_target">软链接目标</string>
 	<string name="sync_project_tree">Synchronize project tree with editor</string>
-	<string name="sync_project_tree_tooltip">Syncronizes the current focused document as the selected
+	<string name="sync_project_tree_tooltip">Synchronizes the current focused document as the selected
 file in the directory tree.</string>
 	<string name="syntax_color_scheme">语法高亮配色</string>
 	<string name="tab_width">页宽</string>

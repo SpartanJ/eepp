@@ -22,7 +22,7 @@ class EE_API IOStream {
 
 	/** @brief Write data to the virtual file
 	**	@param data Data to write in the file
-	**	@param size Size of the data that needs to be writed */
+	**	@param size Size of the data that needs to be written */
 	virtual ios_size write( const char* data, ios_size size ) = 0;
 
 	/**	@brief Change the current reading position

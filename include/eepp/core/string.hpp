@@ -387,10 +387,10 @@ class EE_API String {
 	/** Replace all occurrences of the search string with the replacement string. */
 	static void replaceAll( String& target, const String& that, const String& with );
 
-	/** Replace the first ocurrence of the search string with the replacement string. */
+	/** Replace the first occurrence of the search string with the replacement string. */
 	static void replace( std::string& target, const std::string& that, const std::string& with );
 
-	/** Replace the first ocurrence of the search string with the replacement string. */
+	/** Replace the first occurrence of the search string with the replacement string. */
 	static void replace( String& target, const String& that, const String& with );
 
 	/** Removes the numbers at the end of the string */
@@ -405,7 +405,7 @@ class EE_API String {
 	/** Removes the trailing 0 and . in a string number */
 	static void numberCleanInPlace( std::string& strNumber );
 
-	/** Searchs the position of the corresponding close bracket in a string. */
+	/** Searches the position of the corresponding close bracket in a string. */
 	static std::size_t findCloseBracket( const std::string& string, std::size_t startOffset,
 										 char openBracket, char closeBracket );
 
@@ -531,7 +531,7 @@ class EE_API String {
 	/** @return The next character in a utf8 null terminated string */
 	static Uint32 utf8Next( char*& utf8String );
 
-	/** Converts an UTF-8 string view into an UTF-32 by using a currently allocated buffer (usefull
+	/** Converts an UTF-8 string view into an UTF-32 by using a currently allocated buffer (useful
 	 * for stack allocated buffers)
 	 * @return The number of elements written into the buffer (the string length)
 	 **/
@@ -638,7 +638,7 @@ class EE_API String {
 
 	/** @brief Implicit cast operator to std::string (ANSI string)
 	** The current global locale is used for conversion. If you
-	** want to explicitely specify a locale, see toAnsiString.
+	** want to explicitly specify a locale, see toAnsiString.
 	** Characters that do not fit in the target encoding are
 	** discarded from the returned string.
 	** This operator is defined for convenience, and is equivalent

@@ -498,7 +498,7 @@ void DebuggerClientDap::processEventTerminated( const SessionId& sessionId ) {
 		// Clean up terminated session
 		auto session = mSessions.extract( sessionId );
 
-		// We cannot destroy the Bus yet, since the async read from the socket might have emited
+		// We cannot destroy the Bus yet, since the async read from the socket might have emitted
 		// this termination.
 		if ( session.mapped().bus ) {
 			session.mapped().bus->close();

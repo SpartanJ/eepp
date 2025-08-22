@@ -52,13 +52,13 @@ class EE_API UISlider : public UIWidget {
 
 	UIWidget* getSliderButton() const;
 
-	void adjustChilds();
+	void adjustChildren();
 
 	void manageClick( const Uint32& flags );
 
 	UIOrientation getOrientation() const;
 
-	UISlider* setOrientation( const UIOrientation& orientation, std::string childsBaseTag = "" );
+	UISlider* setOrientation( const UIOrientation& orientation, std::string childrenBaseTag = "" );
 
 	bool getAllowHalfSliderOut() const;
 

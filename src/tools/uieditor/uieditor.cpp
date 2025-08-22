@@ -11,7 +11,7 @@ The layout files can be edited with any editor, and the layout changes can be se
 editor. So this is a layout preview app. The layout is updated every time the layout file is
 modified by the user. You'll need to save the file in your editor to see the changes. This was
 done in a rush for a personal project ( hence the horrendous code ), but it's quite useful and
-functional. Project files are created by hand for the moment, and they shuld look like this one:
+functional. Project files are created by hand for the moment, and they should look like this one:
 
 <uiproject>
 	<basepath>/optional/project/root/path</basepath>
@@ -296,7 +296,7 @@ void App::tryUpdateWatch( const std::string& file ) {
 }
 
 std::pair<UITab*, UICodeEditor*> App::loadLayout( std::string file, bool updateCurrentLayout ) {
-	mUIContainer->getContainer()->childsCloseAll();
+	mUIContainer->getContainer()->closeAllChildren();
 	mUISceneNode->update( Time::Zero );
 
 	Uint32 marker = String::hash( updateCurrentLayout ? file : mCurrentLayout );
@@ -850,7 +850,7 @@ void App::closeProject() {
 
 	mCurrentLayout = "";
 	mCurrentStyleSheet = "";
-	mUIContainer->getContainer()->childsCloseAll();
+	mUIContainer->getContainer()->closeAllChildren();
 	mUISceneNode->update( Time::Zero );
 	mUISceneNode->setStyleSheet( CSS::StyleSheet() );
 
@@ -1016,7 +1016,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 					updateEditorState();
 				} else {
 					UIMessageBox* msg =
-						UIMessageBox::New( UIMessageBox::OK, i18n( "coudlnt_write_the_file",
+						UIMessageBox::New( UIMessageBox::OK, i18n( "couldnt_write_the_file",
 																   "Couldn't write the file." ) );
 					msg->setTitle( "Error" );
 					msg->show();

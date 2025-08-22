@@ -23,7 +23,7 @@ UISpinBox::UISpinBox() :
 	mInput->setEnabled( true );
 	mInput->setParent( this );
 
-	auto cb = [this]( const Event* ) { adjustChilds(); };
+	auto cb = [this]( const Event* ) { adjustChildren(); };
 
 	mPushUp = UIWidget::NewWithTag( "spinbox::btnup" );
 	mPushUp->setVisible( true );
@@ -82,11 +82,11 @@ void UISpinBox::setTheme( UITheme* Theme ) {
 		mPushDown->setSize( tSkin->getSize() );
 	}
 
-	adjustChilds();
+	adjustChildren();
 	onThemeLoaded();
 }
 
-void UISpinBox::adjustChilds() {
+void UISpinBox::adjustChildren() {
 	mInput->setSize( getSize().getWidth() - mPushUp->getSize().getWidth(),
 					 mInput->getSize().getHeight() );
 
@@ -204,13 +204,13 @@ void UISpinBox::onBufferChange( const Event* ) {
 void UISpinBox::onSizeChange() {
 	UIWidget::onSizeChange();
 
-	adjustChilds();
+	adjustChildren();
 }
 
 void UISpinBox::onPositionChange() {
 	UIWidget::onPositionChange();
 
-	adjustChilds();
+	adjustChildren();
 }
 
 const double& UISpinBox::getValue() const {
@@ -274,7 +274,7 @@ void UISpinBox::onAlphaChange() {
 }
 
 void UISpinBox::onPaddingChange() {
-	adjustChilds();
+	adjustChildren();
 	UIWidget::onPaddingChange();
 }
 

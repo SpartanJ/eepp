@@ -144,7 +144,7 @@ class EE_API UIWidgetTable : public UITouchDraggableWidget {
 
 	virtual void onTouchDragValueChange( Vector2f diff );
 
-	virtual bool isTouchOverAllowedChilds();
+	virtual bool isTouchOverAllowedChildren();
 
 	void updatePageStep();
 };

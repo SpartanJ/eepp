@@ -87,7 +87,7 @@ void Log::setFilePath( const std::string& filePath ) {
 }
 
 Log::~Log() {
-	writel( LogLevel::Info, "eepp stoped\n" );
+	writel( LogLevel::Info, "eepp stopped\n" );
 
 	if ( mSave && !mLiveWrite && mKeepLog ) {
 		openFS();

@@ -330,11 +330,11 @@ void DebuggerPlugin::resetExpressions() {
 	if ( !mExpressionsHolder )
 		return;
 	mExpressionsHolder->clear( true );
-	std::vector<ModelVariableNode::NodePtr> childs;
-	childs.reserve( mExpressions.size() );
+	std::vector<ModelVariableNode::NodePtr> children;
+	children.reserve( mExpressions.size() );
 	for ( const auto& expression : mExpressions )
-		childs.emplace_back( std::make_shared<ModelVariableNode>( expression, 0 ) );
-	mExpressionsHolder->addChilds( childs );
+		children.emplace_back( std::make_shared<ModelVariableNode>( expression, 0 ) );
+	mExpressionsHolder->addChildren( children );
 }
 
 void DebuggerPlugin::closeProject() {
@@ -2204,7 +2204,7 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 				mDebugger =
 					std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
 			} else {
-				// Unsuported
+				// Unsupported
 			}
 		} else if ( mode == "remote" ) {
 			auto bus = std::make_unique<BusSocket>( con );

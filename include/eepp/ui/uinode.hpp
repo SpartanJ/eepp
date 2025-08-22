@@ -189,7 +189,7 @@ class EE_API UINode : public Node {
 
 	virtual UINode* setThemeSkin( const std::string& skinName );
 
-	void setThemeToChilds( UITheme* Theme );
+	void setThemeToChildren( UITheme* Theme );
 
 	UISkin* getSkin() const;
 

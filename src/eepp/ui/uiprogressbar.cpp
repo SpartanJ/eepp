@@ -116,8 +116,8 @@ void UIProgressBar::setTheme( UITheme* Theme ) {
 	if ( mFiller->mFillerSkin ) {
 		if ( mFlags & UI_AUTO_PADDING ) {
 			Float meH = (Float)getSkinSize().getHeight();
-			Float otH = (Float)mFiller->mFillerSkin->getSize().getHeight();
-			Float res = Math::roundUp( ( meH - otH ) * 0.5f );
+			Float skinH = (Float)mFiller->mFillerSkin->getSize().getHeight();
+			Float res = Math::roundUp( ( meH - skinH ) * 0.5f );
 			mFiller->setPadding( Rectf( res, res, res, res ) );
 		}
 	}

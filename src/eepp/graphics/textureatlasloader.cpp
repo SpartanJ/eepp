@@ -238,7 +238,7 @@ void TextureAtlasLoader::createTextureRegions() {
 		if ( NULL != tTex )
 			mTexturesLoaded.push_back( tTex );
 
-		// Create the Texture Atlas with the name of the real texture, not the Childs ( example
+		// Create the Texture Atlas with the name of the real texture, not the Children ( example
 		// load 1.png and not 1_ch1.png )
 		if ( 0 == z ) {
 			if ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_REMOVE_EXTENSION )

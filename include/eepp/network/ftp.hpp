@@ -19,7 +19,7 @@ class EE_API Ftp : NonCopyable {
   public:
 	/** @brief Enumeration of transfer modes */
 	enum TransferMode {
-		Binary, ///< Binary mode (file is transfered as a sequence of bytes)
+		Binary, ///< Binary mode (file is transferred as a sequence of bytes)
 		Ascii,	///< Text mode using ASCII encoding
 		Ebcdic	///< Text mode using EBCDIC encoding
 	};
@@ -141,7 +141,7 @@ class EE_API Ftp : NonCopyable {
 		std::string mDirectory; ///< Directory extracted from the response message
 	};
 
-	/**  @brief Specialization of FTP response returning a filename lisiting */
+	/**  @brief Specialization of FTP response returning a filename listing */
 	class EE_API ListingResponse : public Response {
 	  public:
 		/** @brief Default constructor
@@ -329,7 +329,7 @@ class EE_API Ftp : NonCopyable {
 	**  @return Server response to the request */
 	Response getResponse();
 
-	/**  @brief Utility class for exchanging datas with the server on the data channel */
+	/**  @brief Utility class for exchanging data with the server on the data channel */
 	class DataChannel;
 	friend class DataChannel;
 
@@ -356,7 +356,7 @@ Using the FTP client consists of 4 parts:
 @li Connecting to the FTP server
 @li Logging in (either as a registered user or anonymously)
 @li Sending commands to the server
-@li Disconnecting (this part can be done implicitely by the destructor)
+@li Disconnecting (this part can be done implicitly by the destructor)
 Every command returns a FTP response, which contains the
 status code as well as a message from the server. Some
 commands such as getWorkingDirectory and getDirectoryListing

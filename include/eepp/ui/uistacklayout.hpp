@@ -45,7 +45,7 @@ class EE_API UIStackLayout : public UILayout {
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
-	void applySizePolicyOnChilds();
+	void applySizePolicyOnChildren();
 
 	void setRowValign( const std::string& rowValign );
 

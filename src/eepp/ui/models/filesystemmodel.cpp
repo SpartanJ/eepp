@@ -139,11 +139,11 @@ void FileSystemModel::Node::rename( const FileInfo& file ) {
 	mHash = String::hash( mName );
 	mDisplayName = mName;
 	updateMimeType();
-	updateChilds( oldParentFile, mInfo );
+	updateChildren( oldParentFile, mInfo );
 }
 
-void FileSystemModel::Node::updateChilds( const FileInfo& oldParentFile,
-										  const FileInfo& newParentFile ) {
+void FileSystemModel::Node::updateChildren( const FileInfo& oldParentFile,
+											const FileInfo& newParentFile ) {
 	for ( Node* child : mChildren ) {
 		if ( String::startsWith( child->mInfo.getFilepath(), oldParentFile.getFilepath() ) ) {
 			std::string newFilePath( child->mInfo.getFilepath() );
@@ -200,7 +200,7 @@ bool FileSystemModel::Node::refresh( const FileSystemModel& model ) {
 	auto files = FileSystem::filesInfoGetInPath(
 		mInfo.getFilepath(), false, displayCfg.sortByName, displayCfg.foldersFirst,
 		displayCfg.ignoreHidden,
-		[&model] { return model.mShutingDown.load( std::memory_order_relaxed ); } );
+		[&model] { return model.mShuttingDown.load( std::memory_order_relaxed ); } );
 
 	std::vector<Node*> newChildren;
 	Node* node = nullptr;
@@ -261,7 +261,7 @@ bool FileSystemModel::Node::traverseIfNeeded( const FileSystemModel& model ) {
 	auto files = FileSystem::filesInfoGetInPath(
 		mInfo.getFilepath(), false, displayCfg.sortByName, displayCfg.foldersFirst,
 		displayCfg.ignoreHidden,
-		[&model] { return model.mShutingDown.load( std::memory_order_relaxed ); } );
+		[&model] { return model.mShuttingDown.load( std::memory_order_relaxed ); } );
 
 	const auto& patterns = displayCfg.acceptedExtensions;
 	bool accepted;
@@ -375,7 +375,7 @@ FileSystemModel::FileSystemModel( const std::string& rootPath, const FileSystemM
 }
 
 FileSystemModel::~FileSystemModel() {
-	mShutingDown = true;
+	mShuttingDown = true;
 	mInitOK = false;
 	mRoot.reset();
 }

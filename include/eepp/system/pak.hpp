@@ -61,7 +61,7 @@ class EE_API Pak : public Pack {
 	 * -1. */
 	Int32 exists( const std::string& path );
 
-	/** Check the integrity of the pakFile. \n If return 0 integrity OK. -1 wrong indentifier. -2
+	/** Check the integrity of the pakFile. \n If return 0 integrity OK. -1 wrong identifier. -2
 	 * wrong header. */
 	Int8 checkPack();
 
@@ -82,15 +82,15 @@ class EE_API Pak : public Pack {
 	struct pakHeader {
 		char head[4];	   //! Header of the file ( default: 'PACK' )
 		Uint32 dir_offset; //! Offset to the first pakEntry on the pakFile
-		Uint32 dir_length; //! Space ocuped by all the pakEntrys ( num of pakEntrys = dir_length /
+		Uint32 dir_length; //! Space ocuped by all the pakEntries ( num of pakEntries = dir_length /
 						   //! sizeof(pakEntry) )
-	};					   //! The header of the file
+	}; //! The header of the file
 
 	struct pakEntry {
 		char filename[56];	  //! File name
 		Uint32 file_position; //! The file position on the file ( in bytes )
 		Uint32 file_length;	  //! THe file length ( in bytes )
-	};						  //! The stored file info
+	}; //! The stored file info
 
 	struct pakFile {
 		IOStreamFile* fs;

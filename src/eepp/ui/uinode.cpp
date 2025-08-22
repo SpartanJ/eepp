@@ -192,7 +192,7 @@ Node* UINode::setSize( const Sizef& size ) {
 
 		setInternalSize( s );
 
-		if ( reportSizeChangeToChilds() ) {
+		if ( reportSizeChangeToChildren() ) {
 			sendParentSizeChange( sizeChange );
 		}
 	}
@@ -219,7 +219,7 @@ UINode* UINode::setPixelsSize( const Sizef& size ) {
 
 		setInternalPixelsSize( s );
 
-		if ( reportSizeChangeToChilds() ) {
+		if ( reportSizeChangeToChildren() ) {
 			sendParentSizeChange( PixelDensity::pxToDp( sizeChange ) );
 		}
 	}
@@ -1313,15 +1313,15 @@ void UINode::popState( const Uint32& State, bool emitEvent ) {
 	}
 }
 
-void UINode::setThemeToChilds( UITheme* Theme ) {
+void UINode::setThemeToChildren( UITheme* Theme ) {
 	Node* ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
 		if ( ChildLoop->isUINode() ) {
 			UINode* node = static_cast<UINode*>( ChildLoop );
-			node->setThemeToChilds( Theme );
-			node->setTheme( Theme ); // First set the theme to childs to let the father override the
-									 // childs forced themes
+			node->setThemeToChildren( Theme );
+			node->setTheme( Theme ); // First set the theme to children to let the father override the
+									 // children forced themes
 		}
 
 		ChildLoop = ChildLoop->getNextNode();

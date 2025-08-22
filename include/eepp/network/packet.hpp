@@ -187,7 +187,7 @@ in order to send it over the network using sockets
 (TcpSocket, UdpSocket).
 
 Packets solve 2 fundamental problems that arise when
-transfering data over the network:
+transferring data over the network:
 @li data is interpreted correctly according to the endianness
 @li the bounds of the packet are preserved (one send == one receive)
 

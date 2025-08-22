@@ -508,7 +508,7 @@ void FeaturesHealth::displayHealth( PluginManager* pluginManager, UISceneNode* s
 
 		HealthModel* model = static_cast<HealthModel*>( table->getModel() );
 		const auto& lang = model->getHealthRow( index.row() );
-		healthLangInfo->childsCloseAll();
+		healthLangInfo->closeAllChildren();
 		std::string type =
 			lang.lsp.url.empty() ? "TextView" : String::format( "Anchor href='%s'", lang.lsp.url );
 		std::string l = String::format(

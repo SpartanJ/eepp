@@ -240,7 +240,7 @@ void DiscordIPC::sendPacket( DiscordIPCOpcodes opcode, json j ) {
 	const std::string packet = j.dump();
 	std::vector<uint8_t> data;
 
-	// Add correct ammount of padding for the protocol
+	// Add correct amount of padding for the protocol
 	union {
 		uint32_t value;
 		uint8_t bytes[4];
@@ -285,7 +285,7 @@ void DiscordIPC::sendPacket( DiscordIPCOpcodes opcode, json j ) {
 		reconnect();
 		return;
 	} else if ( bytesSent != data.size() ) {
-		Log::error( "dcIPC: Incorrect ammount of data written: %zu bytes sent, %zu bytes expected",
+		Log::error( "dcIPC: Incorrect amount of data written: %zu bytes sent, %zu bytes expected",
 					bytesSent, data.size() );
 		reconnect();
 		return;

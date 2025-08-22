@@ -32,7 +32,7 @@ bool UIStackLayout::isType( const Uint32& type ) const {
 	return UIStackLayout::getType() == type ? true : UILayout::isType( type );
 }
 
-void UIStackLayout::applySizePolicyOnChilds() {
+void UIStackLayout::applySizePolicyOnChildren() {
 	Node* child = mChild;
 
 	while ( NULL != child ) {
@@ -215,7 +215,7 @@ void UIStackLayout::updateLayout() {
 	if ( size != getPixelsSize() )
 		setInternalPixelsSize( size );
 
-	applySizePolicyOnChilds();
+	applySizePolicyOnChildren();
 
 	Float curX = mPaddingPx.Left;
 	Node* child = mChild;

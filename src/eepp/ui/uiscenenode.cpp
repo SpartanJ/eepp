@@ -42,12 +42,12 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	mUIIconThemeManager( UIIconThemeManager::New()->setFallbackThemeManager( mUIThemeManager ) ),
 	mKeyBindings( mWindow->getInput() ) {
 	// Reset size since the SceneNode already set it but needs to set the size from zero to emit
-	// the required events to its childs.
+	// the required events to its children.
 	mSize = Sizef();
 	mDpSize = Sizef();
 
 	// Update only UI elements that requires it.
-	setUpdateAllChilds( false );
+	setUpdateAllChildren( false );
 
 	mNodeFlags |= NODE_FLAG_UISCENENODE | NODE_FLAG_OVER_FIND_ALLOWED;
 
@@ -69,8 +69,8 @@ UISceneNode::~UISceneNode() {
 	}
 
 	// UISceneNode can now destroy the ThreadPool shared to him. If that's the case,
-	// We need to ensure that the childs are destroyed before the thread pool,
-	// since its childs could be consuming it and need to uninitialize gracefully.
+	// We need to ensure that the children are destroyed before the thread pool,
+	// since its children could be consuming it and need to uninitialize gracefully.
 	childDeleteAll();
 }
 
@@ -537,7 +537,7 @@ Node* UISceneNode::setSize( const Sizef& Size ) {
 
 		setInternalSize( Size );
 
-		if ( reportSizeChangeToChilds() ) {
+		if ( reportSizeChangeToChildren() ) {
 			sendParentSizeChange( sizeChange );
 		}
 	}
@@ -559,7 +559,7 @@ UISceneNode* UISceneNode::setPixelsSize( const Sizef& size ) {
 
 		setInternalPixelsSize( size );
 
-		if ( reportSizeChangeToChilds() ) {
+		if ( reportSizeChangeToChildren() ) {
 			sendParentSizeChange( PixelDensity::pxToDp( sizeChange ) );
 		}
 	}
@@ -607,7 +607,7 @@ void UISceneNode::update( const Time& elapsed ) {
 	// This is required in some very edge cases where widgets are being created during the update
 	// of any of these 3 steps. Usually during the layout update, this could trigger resizes that
 	// provokes the creation of dynamic elements. This is the case of the UIListBox for example
-	// that creates childs dynamically only when they are visible.
+	// that creates children dynamically only when they are visible.
 	int invalidationDepth = mMaxInvalidationDepth;
 	while ( ( !mDirtyStyle.empty() || !mDirtyStyleState.empty() || !mDirtyLayouts.empty() ) &&
 			invalidationDepth > 0 ) {

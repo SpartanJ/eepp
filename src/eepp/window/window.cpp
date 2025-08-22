@@ -481,7 +481,7 @@ void Window::sendVideoResizeCb() {
 
 void Window::logSuccessfulInit( const std::string& BackendName ) {
 	std::string msg( String::format(
-		"Engine Initialized Succesfully.\n\tVersion: %s (codename: \"%s\")\n\tBuild time: "
+		"Engine Initialized Successfully.\n\tVersion: %s (codename: \"%s\")\n\tBuild time: "
 		"%s\n\tPlatform: %s\n\tOS: %s\n\tArch: %s\n\tCPU Cores: %d\n\tProcess Path: %s\n\tCurrent "
 		"Working Directory: %s\n\tHome Directory: %s\n\tDisk Free Space: %s\n\tWindow/Input "
 		"Backend: %s\n\tGL Backend: %s\n\tGL Vendor: %s\n\tGL Renderer: %s\n\tGL Version: "

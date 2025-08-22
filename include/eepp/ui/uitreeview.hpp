@@ -111,7 +111,7 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	bool getDisableCellClipping() const;
 
-	void setDisableCellClipping( bool disableCellCliping );
+	void setDisableCellClipping( bool disableCellClipping );
 
 	void clearViewMetadata();
 

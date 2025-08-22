@@ -41,7 +41,7 @@ class EE_API Joystick {
 	/** @return True if the joystick is plugged in */
 	virtual bool isPlugged() const = 0;
 
-	/** ReOpen the joysick ( this is the same of doing Close and the Open ) */
+	/** ReOpen the joystick ( this is the same of doing Close and the Open ) */
 	virtual void reOpen();
 
 	/** @return The number of hats */

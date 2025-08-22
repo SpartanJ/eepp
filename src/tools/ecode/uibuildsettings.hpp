@@ -42,7 +42,7 @@ class UIBuildSettings : public UIRelativeLayout {
 	explicit UIBuildSettings( ProjectBuild& build, ProjectBuildConfiguration& config, bool isNew,
 		 const std::function<void( const std::string& oldName, const std::string& newName )> onBuildNameChange );
 
-	void moveStepUp( size_t stepNum, bool isClea );
+	void moveStepUp( size_t stepNum, bool isClean );
 
 	void moveStepDown( size_t stepNum, bool isClean );
 

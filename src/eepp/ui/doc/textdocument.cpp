@@ -104,11 +104,11 @@ bool TextDocument::fileMightBeBinary( const std::string& file ) {
 	return false; // Likely a text file
 }
 
-bool TextDocument::isTextDocummentCommand( std::string_view cmd ) {
+bool TextDocument::isTextDocumentCommand( std::string_view cmd ) {
 	return TEXT_DOCUMENT_COMMANDS.contains( String::hash( cmd ) );
 }
 
-bool TextDocument::isTextDocummentCommand( String::HashType cmdHash ) {
+bool TextDocument::isTextDocumentCommand( String::HashType cmdHash ) {
 	return TEXT_DOCUMENT_COMMANDS.contains( cmdHash );
 }
 
@@ -474,7 +474,7 @@ void TextDocument::guessIndentType() {
 				if ( !match.empty() ) {
 					guessTabs++;
 					guessCountdown--;
-					break; // if tab found asume tabs
+					break; // if tab found assume tabs
 				}
 			}
 			if ( guessCountdown == 0 )
@@ -1038,7 +1038,7 @@ void TextDocument::setSelection( const size_t& cursorIdx, TextPosition start, Te
 		notifySelectionChanged( mSelection[cursorIdx] );
 
 		if ( !mDoingTextInput && mLastCursorChangeWasInteresting ) {
-			notifyInterstingCursorChange( mSelection[cursorIdx].start() );
+			notifyInterestingCursorChange( mSelection[cursorIdx].start() );
 			mLastCursorChangeWasInteresting = false;
 		}
 	}
@@ -1304,7 +1304,7 @@ TextPosition TextDocument::insert( const size_t& cursorIdx, TextPosition positio
 
 	if ( linesAdd > 0 ) {
 		mHighlighter->moveHighlight( position.line(), position.line(), linesAdd );
-		notifiyDocumenLineMove( position.line(), position.line(), linesAdd );
+		notifyDocumentLineMove( position.line(), position.line(), linesAdd );
 	}
 
 	notifyTextChanged( { { position, position }, text } );
@@ -1504,7 +1504,7 @@ size_t TextDocument::remove( const size_t& cursorIdx, TextRange range,
 		mHighlighter->moveHighlight( deletedAcrossNewLine ? range.start().line()
 														  : range.end().line(),
 									 range.end().line(), -linesRemoved );
-		notifiyDocumenLineMove( originalRange.start().line(), originalRange.end().line(),
+		notifyDocumentLineMove( originalRange.start().line(), originalRange.end().line(),
 								-linesRemoved );
 	}
 
@@ -1568,7 +1568,7 @@ TextPosition TextDocument::previousWordBoundary( TextPosition position, bool ign
 	if ( !ignoreFirstNonWord && !inWord )
 		return position;
 	String::StringBaseType nextChar = 0;
-	Int64 seekedChars = static_cast<Int64>( maxSeekChars );
+	Int64 seekChars = static_cast<Int64>( maxSeekChars );
 	do {
 		TextPosition curPos = position;
 		position = positionOffset( position, -1 );
@@ -1577,8 +1577,8 @@ TextPosition TextDocument::previousWordBoundary( TextPosition position, bool ign
 		}
 		nextChar = getChar( positionOffset( position, -1 ) );
 	} while ( ( ( inWord && !isNonWord( nextChar ) ) || ( !inWord && nextChar == ch ) ) &&
-			  --seekedChars );
-	return returnInvalidOnMaxSeek && seekedChars == 0 ? TextPosition() : position;
+			  --seekChars );
+	return returnInvalidOnMaxSeek && seekChars == 0 ? TextPosition() : position;
 }
 
 TextPosition TextDocument::nextWordBoundary( TextPosition position, bool ignoreFirstNonWord,
@@ -1589,7 +1589,7 @@ TextPosition TextDocument::nextWordBoundary( TextPosition position, bool ignoreF
 	if ( !ignoreFirstNonWord && !inWord )
 		return position;
 	String::StringBaseType nextChar = 0;
-	Int64 seekedChars = static_cast<Int64>( maxSeekChars );
+	Int64 seekChars = static_cast<Int64>( maxSeekChars );
 	do {
 		TextPosition curPos = position;
 		position = positionOffset( position, 1 );
@@ -1598,8 +1598,8 @@ TextPosition TextDocument::nextWordBoundary( TextPosition position, bool ignoreF
 		}
 		nextChar = getChar( position );
 	} while ( ( ( inWord && !isNonWord( nextChar ) ) || ( !inWord && nextChar == ch ) ) &&
-			  --seekedChars );
-	return returnInvalidOnMaxSeek && seekedChars == 0 ? TextPosition() : position;
+			  --seekChars );
+	return returnInvalidOnMaxSeek && seekChars == 0 ? TextPosition() : position;
 }
 
 TextPosition TextDocument::previousSpaceBoundaryInLine( TextPosition position,
@@ -1608,7 +1608,7 @@ TextPosition TextDocument::previousSpaceBoundaryInLine( TextPosition position,
 	auto ch = getChar( positionOffset( position, -1 ) );
 	bool inWord = ch != ' ';
 	String::StringBaseType nextChar = 0;
-	Int64 seekedChars = static_cast<Int64>( maxSeekChars );
+	Int64 seekChars = static_cast<Int64>( maxSeekChars );
 	do {
 		TextPosition curPos = position;
 		position = positionOffset( position, -1 );
@@ -1619,8 +1619,8 @@ TextPosition TextDocument::previousSpaceBoundaryInLine( TextPosition position,
 			break;
 		}
 		nextChar = getChar( positionOffset( position, -1 ) );
-	} while ( ( ( inWord && nextChar != ' ' ) || ( !inWord && nextChar == ch ) ) && --seekedChars );
-	return returnInvalidOnMaxSeek && seekedChars == 0 ? TextPosition() : position;
+	} while ( ( ( inWord && nextChar != ' ' ) || ( !inWord && nextChar == ch ) ) && --seekChars );
+	return returnInvalidOnMaxSeek && seekChars == 0 ? TextPosition() : position;
 }
 
 TextPosition TextDocument::nextSpaceBoundaryInLine( TextPosition position, std::size_t maxSeekChars,
@@ -1628,7 +1628,7 @@ TextPosition TextDocument::nextSpaceBoundaryInLine( TextPosition position, std::
 	auto ch = getChar( position );
 	bool inWord = ch != ' ';
 	String::StringBaseType nextChar = 0;
-	Int64 seekedChars = static_cast<Int64>( maxSeekChars );
+	Int64 seekChars = static_cast<Int64>( maxSeekChars );
 	do {
 		TextPosition curPos = position;
 		position = positionOffset( position, 1 );
@@ -1639,8 +1639,8 @@ TextPosition TextDocument::nextSpaceBoundaryInLine( TextPosition position, std::
 			break;
 		}
 		nextChar = getChar( position );
-	} while ( ( ( inWord && nextChar != ' ' ) || ( !inWord && nextChar == ch ) ) && --seekedChars );
-	return returnInvalidOnMaxSeek && seekedChars == 0 ? TextPosition() : position;
+	} while ( ( ( inWord && nextChar != ' ' ) || ( !inWord && nextChar == ch ) ) && --seekChars );
+	return returnInvalidOnMaxSeek && seekChars == 0 ? TextPosition() : position;
 }
 
 TextPosition TextDocument::startOfWord( TextPosition position ) const {
@@ -3782,7 +3782,7 @@ void TextDocument::notifyCursorChanged( TextPosition selection ) {
 	}
 }
 
-void TextDocument::notifyInterstingCursorChange( TextPosition selection ) {
+void TextDocument::notifyInterestingCursorChange( TextPosition selection ) {
 	if ( !selection.isValid() )
 		selection = getSelection().start();
 	Lock l( mClientsMutex );
@@ -3884,7 +3884,7 @@ void TextDocument::notifySyntaxDefinitionChange() {
 	}
 }
 
-void TextDocument::notifiyDocumenLineMove( const Int64& fromLine, const Int64& toLine,
+void TextDocument::notifyDocumentLineMove( const Int64& fromLine, const Int64& toLine,
 										   const Int64& numLines ) {
 	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {

@@ -355,7 +355,7 @@ void UITreeView::drawChildren() {
 			return IterationDecision::Continue;
 		Float xOffset = 0;
 		UITableRow* rowNode = updateRow( v.realRowIndex, index, yOffset );
-		rowNode->setChildsVisibility( false, false );
+		rowNode->setChildrenVisibility( false, false );
 		v.realColIndex = 0;
 		for ( size_t colIndex = 0; colIndex < getModel()->columnCount(); colIndex++ ) {
 			auto& colData = columnData( colIndex );

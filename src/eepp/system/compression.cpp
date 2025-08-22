@@ -83,9 +83,9 @@ int Compression::getMaxCompressedBufferSize( Uint64 srcSize, Mode mode, const Co
 									Z_DEFAULT_STRATEGY );
 			if ( err != Z_OK )
 				return -1;
-			int aout = deflateBound( &strm, srcSize );
+			int out = deflateBound( &strm, srcSize );
 			deflateEnd( &strm );
-			return aout;
+			return out;
 		}
 	}
 

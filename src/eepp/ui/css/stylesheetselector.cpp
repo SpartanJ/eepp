@@ -49,7 +49,7 @@ void StyleSheetSelector::parseSelector( std::string selector ) {
 		// Remove spaces that means nothing to the selector logic
 		// for example:
 		// Element > .class #id
-		// shold be
+		// should be
 		// Element>.class #id
 		removeExtraSpaces( selector );
 

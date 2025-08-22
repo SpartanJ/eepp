@@ -32,11 +32,11 @@ class EE_API BatchRenderer {
 
 	virtual ~BatchRenderer();
 
-	/** Construct with a defined number of vertexs preallocated */
+	/** Construct with a defined number of vertices preallocated */
 	BatchRenderer( const unsigned int& Prealloc );
 
-	/** Allocate space for vertexs */
-	void allocVertexs( const unsigned int& size );
+	/** Allocate space for vertices */
+	void allocVertices( const unsigned int& size );
 
 	/** Set the current texture to render on the batch ( if you change the texture and you have
 	 * batched something, this will be renderer immediately ) */
@@ -86,28 +86,28 @@ class EE_API BatchRenderer {
 	Vector2f getBatchCenter() const { return mCenter; }
 
 	/** Add to the batch a quad ( this will change your batch rendering method to PRIMITIVE_QUADS,
-	 * so if you were using another one will Draw all the batched vertexs first ) */
+	 * so if you were using another one will Draw all the batched vertices first ) */
 	void batchQuadEx( Float x, Float y, Float width, Float height, Float angle = 0.0f,
 					  Vector2f scale = Vector2f::One,
 					  OriginPoint originPoint = OriginPoint( OriginPoint::OriginCenter ) );
 
 	/** Add to the batch a quad ( this will change your batch rendering method to PRIMITIVE_QUADS,
-	 * so if you were using another one will Draw all the batched vertexs first ) */
+	 * so if you were using another one will Draw all the batched vertices first ) */
 	void batchQuad( const Float& x, const Float& y, const Float& width, const Float& height );
 
 	/** Add to the batch a quad ( this will change your batch rendering method to PRIMITIVE_QUADS,
-	 * so if you were using another one will Draw all the batched vertexs first ) */
+	 * so if you were using another one will Draw all the batched vertices first ) */
 	void batchQuad( const Rectf& rect );
 
 	/** Add to the batch a quad with the vertex freely seted ( this will change your batch rendering
-	 * method to PRIMITIVE_QUADS, so if you were using another one will Draw all the batched vertexs
-	 * first ) */
+	 * method to PRIMITIVE_QUADS, so if you were using another one will Draw all the batched
+	 * vertices first ) */
 	void batchQuadFree( const Float& x0, const Float& y0, const Float& x1, const Float& y1,
 						const Float& x2, const Float& y2, const Float& x3, const Float& y3 );
 
 	/** Add to the batch a quad with the vertex freely seted ( this will change your batch rendering
-	 * method to PRIMITIVE_QUADS, so if you were using another one will Draw all the batched vertexs
-	 * first ) */
+	 * method to PRIMITIVE_QUADS, so if you were using another one will Draw all the batched
+	 * vertices first ) */
 	void batchQuadFreeEx( const Float& x0, const Float& y0, const Float& x1, const Float& y1,
 						  const Float& x2, const Float& y2, const Float& x3, const Float& y3,
 						  const Float& Angle = 0.0f, const Float& Scale = 1.0f );
@@ -164,7 +164,7 @@ class EE_API BatchRenderer {
 	void linesSetColorFree( const Color& Color0, const Color& Color1 );
 
 	/** Add to the batch a line ( this will change your batch rendering method to PRIMITIVE_LINES,
-	 * so if you were using another one will Draw all the batched vertexs first ) */
+	 * so if you were using another one will Draw all the batched vertices first ) */
 	void batchLine( const Float& x0, const Float& y0, const Float& x1, const Float& y1 );
 
 	/** This will set as the default batch rendering to GL_LINE_LOOP. And will reset the line color
@@ -178,23 +178,25 @@ class EE_API BatchRenderer {
 	void lineLoopSetColorFree( const Color& Color0, const Color& Color1 );
 
 	/** Add to the batch a line ( this will change your batch rendering method to
-	 * PRIMITIVE_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first
+	 * PRIMITIVE_LINE_LOOP, so if you were using another one will Draw all the batched vertices
+	 * first
 	 * ) */
 	void batchLineLoop( const Float& x0, const Float& y0, const Float& x1, const Float& y1 );
 
 	/** Add to the batch a point to the line loop batch ( this will change your batch rendering
 	 * method to PRIMITIVE_LINE_LOOP, so if you were using another one will Draw all the batched
-	 * vertexs first ) */
+	 * vertices first ) */
 	void batchLineLoop( const Float& x0, const Float& y0 );
 
 	/** Add to the batch a line ( this will change your batch rendering method to
-	 * PRIMITIVE_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first
+	 * PRIMITIVE_LINE_LOOP, so if you were using another one will Draw all the batched vertices
+	 * first
 	 * ) */
 	void batchLineLoop( const Vector2f& vector1, const Vector2f& vector2 );
 
 	/** Add to the batch a point to the line loop batch ( this will change your batch rendering
 	 * method to PRIMITIVE_LINE_LOOP, so if you were using another one will Draw all the batched
-	 * vertexs first ) */
+	 * vertices first ) */
 	void batchLineLoop( const Vector2f& vector1 );
 
 	/** This will set as the default batch rendering to PRIMITIVE_LINE_STRIP. And will reset the
@@ -208,23 +210,23 @@ class EE_API BatchRenderer {
 	void lineStripSetColorFree( const Color& Color0, const Color& Color1 );
 
 	/** Add to the batch a line ( this will change your batch rendering method to
-	 * PRIMITIVE_LINE_STRIP, so if you were using another one will Draw all the batched vertexs
+	 * PRIMITIVE_LINE_STRIP, so if you were using another one will Draw all the batched vertices
 	 * first ) */
 	void batchLineStrip( const Float& x0, const Float& y0, const Float& x1, const Float& y1 );
 
 	/** Add to the batch a point to the line strip batch ( this will change your batch rendering
 	 * method to PRIMITIVE_LINE_STRIP, so if you were using another one will Draw all the batched
-	 * vertexs first ) */
+	 * vertices first ) */
 	void batchLineStrip( const Float& x0, const Float& y0 );
 
 	/** Add to the batch a line ( this will change your batch rendering method to
-	 * PRIMITIVE_LINE_STRIP, so if you were using another one will Draw all the batched vertexs
+	 * PRIMITIVE_LINE_STRIP, so if you were using another one will Draw all the batched vertices
 	 * first ) */
 	void batchLineStrip( const Vector2f& vector1, const Vector2f& vector2 );
 
 	/** Add to the batch a point to the line strip batch ( this will change your batch rendering
 	 * method to PRIMITIVE_LINE_STRIP, so if you were using another one will Draw all the batched
-	 * vertexs first ) */
+	 * vertices first ) */
 	void batchLineStrip( const Vector2f& vector1 );
 
 	/** This will set as the default batch rendering to PRIMITIVE_TRIANGLE_FAN. And will reset the
@@ -242,13 +244,13 @@ class EE_API BatchRenderer {
 								 const Float& x2, const Float& y2 );
 
 	/** Add to the batch a triangle fan ( this will change your batch rendering method to
-	 * PRIMITIVE_TRIANGLE_FAN, so if you were using another one will Draw all the batched vertexs
+	 * PRIMITIVE_TRIANGLE_FAN, so if you were using another one will Draw all the batched vertices
 	 * first ) */
 	void batchTriangleFan( const Float& x0, const Float& y0, const Float& x1, const Float& y1,
 						   const Float& x2, const Float& y2 );
 
 	/** Add to the batch a triangle fan ( this will change your batch rendering method to
-	 * PRIMITIVE_TRIANGLE_FAN, so if you were using another one will Draw all the batched vertexs
+	 * PRIMITIVE_TRIANGLE_FAN, so if you were using another one will Draw all the batched vertices
 	 * first ) */
 	void batchTriangleFan( const Float& x0, const Float& y0 );
 
@@ -267,7 +269,8 @@ class EE_API BatchRenderer {
 							   const Float& x2, const Float& y2 );
 
 	/** Add to the batch a triangle ( this will change your batch rendering method to
-	 * PRIMITIVE_TRIANGLES, so if you were using another one will Draw all the batched vertexs first
+	 * PRIMITIVE_TRIANGLES, so if you were using another one will Draw all the batched vertices
+	 * first
 	 * ) */
 	void batchTriangle( const Float& x0, const Float& y0, const Float& x1, const Float& y1,
 						const Float& x2, const Float& y2 );
@@ -276,7 +279,8 @@ class EE_API BatchRenderer {
 	void polygonSetColor( const Color& Color );
 
 	/** Add to the batch a polygon ( this will change your batch rendering method to
-	 * PRIMITIVE_POLYGON, so if you were using another one will Draw all the batched vertexs first )
+	 * PRIMITIVE_POLYGON, so if you were using another one will Draw all the batched vertices first
+	 * )
 	 */
 	void batchPolygon( const Polygon2f& Polygon );
 
@@ -292,10 +296,10 @@ class EE_API BatchRenderer {
 	/** @return The current point size */
 	Float getPointSize();
 
-	/** Batch a poligon adding one by one vector */
+	/** Batch a polygon adding one by one vector */
 	void batchPolygonByPoint( const Float& x, const Float& y );
 
-	/** Batch a poligon adding one by one vector */
+	/** Batch a polygon adding one by one vector */
 	void batchPolygonByPoint( const Vector2f& Vector );
 
 	/** Foce the blending mode change, ignoring if it's the same that before ( so you can change the
@@ -333,7 +337,7 @@ class EE_API BatchRenderer {
 
 	void init();
 
-	void addVertexs( const unsigned int& num );
+	void addVertices( const unsigned int& num );
 
 	void rotate( const Vector2f& center, Vector2f* point, const Float& angle );
 

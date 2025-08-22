@@ -250,7 +250,7 @@ void GitPlugin::initModelStyler() {
 			projectView->on( Event::OnModelChanged, [this]( auto ) { initModelStyler(); } );
 	}
 
-	mModelStylerId = projectView->getModel()->subsribeModelStyler(
+	mModelStylerId = projectView->getModel()->subscribeModelStyler(
 		[this]( const ModelIndex& index, const void* data ) -> Variant {
 			static const char* STYLE_MODIFIED = "git_highlight_style";
 			static const char* STYLE_NONE = "git_highlight_style_clear";
@@ -283,7 +283,7 @@ void GitPlugin::endModelStyler() {
 	}
 
 	if ( projectView->getModel() ) {
-		projectView->getModel()->unsubsribeModelStyler( mModelStylerId );
+		projectView->getModel()->unsubscribeModelStyler( mModelStylerId );
 		mModelStylerId = 0;
 	}
 }
@@ -643,7 +643,7 @@ void GitPlugin::blame( UICodeEditor* editor ) {
 	if ( !mGitFound ) {
 		editor->setTooltipText(
 			i18n( "git_not_found",
-				  "Git binary not found.\nPlease check that git is accesible via PATH" ) );
+				  "Git binary not found.\nPlease check that git is accessible via PATH" ) );
 		return;
 	}
 	mThreadPool->run( [this, editor]() {
@@ -833,16 +833,16 @@ void GitPlugin::commit( const std::string& repoPath ) {
 	txtEdit->setLineWrapMode( LineWrapMode::Letter );
 	txtEdit->setText( mLastCommitMsg );
 
-	UICheckBox* chkAmmend = UICheckBox::New();
-	chkAmmend->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
+	UICheckBox* chkAmend = UICheckBox::New();
+	chkAmend->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setLayoutGravity( UI_HALIGN_LEFT | UI_VALIGN_CENTER )
 		->setClipType( ClipType::None )
 		->setParent( msgBox->getLayoutCont()->getFirstChild() )
-		->setId( "git-ammend" );
-	chkAmmend->setText( i18n( "git_ammend", "Ammend last commit" ) );
-	chkAmmend->toPosition( 2 );
-	chkAmmend->setTooltipText( getUISceneNode()->getKeyBindings().getShortcutString(
+		->setId( "git-amend" );
+	chkAmend->setText( i18n( "git_amend", "Amend last commit" ) );
+	chkAmend->toPosition( 2 );
+	chkAmend->setTooltipText( getUISceneNode()->getKeyBindings().getShortcutString(
 		{ KEY_A, KeyMod::getDefaultModifier() }, true ) );
 
 	UICheckBox* chkBypassHook = UICheckBox::New();
@@ -870,9 +870,9 @@ void GitPlugin::commit( const std::string& repoPath ) {
 		{ KEY_P, KeyMod::getDefaultModifier() }, true ) );
 
 	txtEdit->getDocument().setCommand(
-		"commit-ammend", [chkAmmend] { chkAmmend->setChecked( !chkAmmend->isChecked() ); } );
+		"commit-amend", [chkAmend] { chkAmend->setChecked( !chkAmend->isChecked() ); } );
 	txtEdit->getKeyBindings().addKeybind( { KEY_L, KeyMod::getDefaultModifier() },
-										  "commit-ammend" );
+										  "commit-amend" );
 
 	txtEdit->getDocument().setCommand(
 		"commit-push", [chkPush] { chkPush->setChecked( !chkPush->isChecked() ); } );
@@ -884,21 +884,21 @@ void GitPlugin::commit( const std::string& repoPath ) {
 	txtEdit->getKeyBindings().addKeybind( { KEY_B, KeyMod::getDefaultModifier() },
 										  "commit-bypass-hook" );
 
-	msgBox->on( Event::OnConfirm, [this, msgBox, chkAmmend, chkBypassHook, chkPush,
+	msgBox->on( Event::OnConfirm, [this, msgBox, chkAmend, chkBypassHook, chkPush,
 								   repoPath]( const Event* ) {
 		std::string msg( msgBox->getTextEdit()->getText().toUtf8() );
 		if ( msg.empty() )
 			return;
-		bool ammend = chkAmmend->isChecked();
+		bool amend = chkAmend->isChecked();
 		bool bypassHook = chkBypassHook->isChecked();
 		bool pushCommit = chkPush->isChecked();
 
 		msgBox->closeWindow();
 		runAsync(
-			[this, msg, ammend, bypassHook, pushCommit, repoPath]() {
+			[this, msg, amend, bypassHook, pushCommit, repoPath]() {
 				std::optional<Git::Branch> branch = getBranchFromRepoPath( repoPath );
 				bool pushNewBranch = branch && !branch->name.empty() && branch->remote.empty();
-				auto res = mGit->commit( msg, ammend, bypassHook, repoPath );
+				auto res = mGit->commit( msg, amend, bypassHook, repoPath );
 				if ( res.success() ) {
 					mLastCommitMsg.clear();
 					if ( pushCommit ) {

@@ -12,7 +12,7 @@ void playSound() {
 		// Get the sound buffer to display the buffer information
 		SoundBuffer& buffer = soundManager.getBuffer( "sound" );
 
-		// Display sound informations
+		// Display sound information
 		std::cout << "sound.ogg :" << std::endl;
 		std::cout << " " << buffer.getDuration().asSeconds() << " seconds" << std::endl;
 		std::cout << " " << buffer.getSampleRate() << " samples / sec" << std::endl;
@@ -39,7 +39,7 @@ void playMusic( std::string path = "assets/sounds/music.ogg" ) {
 	if ( !music.openFromFile( path ) )
 		return;
 
-	// Display music informations
+	// Display music information
 	std::cout << FileSystem::fileNameFromPath( path ) << " :" << std::endl;
 	std::cout << " " << music.getDuration().asSeconds() << " seconds" << std::endl;
 	std::cout << " " << music.getSampleRate() << " samples / sec" << std::endl;

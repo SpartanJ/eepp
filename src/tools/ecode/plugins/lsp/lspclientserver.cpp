@@ -651,8 +651,7 @@ static std::vector<LSPDiagnostic> parseDiagnostics( const json& result ) {
 static std::vector<LSPCodeAction> parseCodeAction( const json& result ) {
 	std::vector<LSPCodeAction> ret;
 	const auto& codeActions = result;
-	for ( const auto& vaction : codeActions ) {
-		auto& action = vaction;
+	for ( auto& action : codeActions ) {
 		// entry could be Command or CodeAction
 		if ( !action.contains( MEMBER_COMMAND ) || !action.at( MEMBER_COMMAND ).is_string() ) {
 			// CodeAction

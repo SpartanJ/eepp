@@ -156,9 +156,9 @@ class EE_API Model {
 
 	void releaseResourceMutex();
 
-	Uint32 subsribeModelStyler( const ModelStyler& styler );
+	Uint32 subscribeModelStyler( const ModelStyler& styler );
 
-	void unsubsribeModelStyler( Uint32 id );
+	void unsubscribeModelStyler( Uint32 id );
 
   protected:
 	Model() {};

@@ -326,10 +326,10 @@ void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
 	}
 
 	if ( !isSceneNodeLoading() && mUISceneNode != NULL && mStyle != NULL ) {
-		// Childs that are structurally volatile can change states when a new
+		// Children that are structurally volatile can change states when a new
 		// element is added to the parent. We pre-store them and invalidate its
 		// state if that's the case.
-		auto& svc = mStyle->getStructurallyVolatileChilds();
+		auto& svc = mStyle->getStructurallyVolatileChildren();
 		for ( auto& child : svc ) {
 			mUISceneNode->invalidateStyleState( child );
 		}
@@ -1107,7 +1107,7 @@ UIStyle* UIWidget::getUIStyle() const {
 	return mStyle;
 }
 
-void UIWidget::reloadStyle( bool reloadChilds, bool disableAnimations, bool reportStateChange,
+void UIWidget::reloadStyle( bool reloadChildren, bool disableAnimations, bool reportStateChange,
 							bool forceReApplyProperties, bool resetPropertyCache ) {
 	createStyle();
 
@@ -1119,12 +1119,12 @@ void UIWidget::reloadStyle( bool reloadChilds, bool disableAnimations, bool repo
 	if ( resetPropertyCache )
 		mStyle->resetCachedProperties();
 
-	if ( NULL != getFirstChild() && reloadChilds ) {
+	if ( NULL != getFirstChild() && reloadChildren ) {
 		Node* child = getFirstChild();
 
 		while ( NULL != child ) {
 			if ( child->isWidget() )
-				child->asType<UIWidget>()->reloadStyle( reloadChilds, disableAnimations,
+				child->asType<UIWidget>()->reloadStyle( reloadChildren, disableAnimations,
 														reportStateChange, forceReApplyProperties,
 														resetPropertyCache );
 
@@ -1737,8 +1737,8 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 					} else if ( "auto_padding" == cur || "autopadding" == cur ) {
 						setFlags( UI_AUTO_PADDING );
 						notifyLayoutAttrChange();
-					} else if ( "reportsizechangetochilds" == cur ||
-								"report_size_change_to_childs" == cur ) {
+					} else if ( "reportsizechangetochildren" == cur ||
+								"report_size_change_to_children" == cur ) {
 						enableReportSizeChangeToChildren();
 					}
 				}
@@ -1894,7 +1894,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Opacity: {
 			Float alpha = eemin( attribute.asFloat() * 255.f, 255.f );
 			setAlpha( alpha );
-			setChildsAlpha( alpha );
+			setChildrenAlpha( alpha );
 			break;
 		}
 		case PropertyId::Cursor:
@@ -2002,7 +2002,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 
 	for ( pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end();
 		  ++ait ) {
-		// Create a property without triming its value
+		// Create a property without trimming its value
 		StyleSheetProperty prop( ait->name(), ait->value(), false,
 								 StyleSheetSelectorRule::SpecificityInline );
 
@@ -2083,7 +2083,7 @@ std::string UIWidget::getFlagsString() const {
 		flagvec.push_back( "multiselect" );
 	if ( mFlags & UI_AUTO_PADDING )
 		flagvec.push_back( "autopadding" );
-	if ( reportSizeChangeToChilds() )
+	if ( reportSizeChangeToChildren() )
 		flagvec.push_back( "reportsizechangetochilds" );
 	if ( isClipped() )
 		flagvec.push_back( "clip" );

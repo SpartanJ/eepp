@@ -359,13 +359,13 @@ template <typename T> Vector2<T> tRECT<T>::clampVector( const Vector2<T>& Vect )
 }
 
 template <typename T> Vector2<T> tRECT<T>::wrapVector( const Vector2<T>& Vect ) const {
-	T ix = eeabs( Right - Left );
-	T modx = eemod( Vect.x - Left, ix );
-	T x = ( modx > 0 ) ? modx : modx + ix;
+	T iX = eeabs( Right - Left );
+	T modx = eemod( Vect.x - Left, iX );
+	T x = ( modx > 0 ) ? modx : modx + iX;
 
-	T iy = eeabs( Top - Top );
-	T mody = eemod( Vect.y - Top, iy );
-	T y = ( mody > 0 ) ? mody : mody + iy;
+	T iY = eeabs( Top - Top );
+	T mody = eemod( Vect.y - Top, iY );
+	T y = ( mody > 0 ) ? mody : mody + iY;
 
 	return Vector2<T>( x + Left, y + Top );
 }

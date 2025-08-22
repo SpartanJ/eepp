@@ -45,12 +45,12 @@ static UITextView* createTextBox( const String& Text = "", Node* Parent = NULL,
 	return widget;
 }
 
-MapEditor* MapEditor::New( UIWindow* AttatchTo, const MapEditor::MapEditorCloseCb& callback ) {
-	return eeNew( MapEditor, ( AttatchTo, callback ) );
+MapEditor* MapEditor::New( UIWindow* AttachTo, const MapEditor::MapEditorCloseCb& callback ) {
+	return eeNew( MapEditor, ( AttachTo, callback ) );
 }
 
-MapEditor::MapEditor( UIWindow* AttatchTo, const MapEditorCloseCb& callback ) :
-	mUIWindow( AttatchTo ),
+MapEditor::MapEditor( UIWindow* AttachTo, const MapEditorCloseCb& callback ) :
+	mUIWindow( AttachTo ),
 	mTheme( NULL ),
 	mUIMap( NULL ),
 	mCloseCb( callback ),
@@ -254,7 +254,7 @@ void MapEditor::createETGMenu() {
 
 	createTabs();
 
-	createLighContainer();
+	createLightContainer();
 
 	createTextureRegionContainer( Width );
 
@@ -363,14 +363,14 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 	mChkMirrored->addEventListener( Event::OnValueChange,
 									[this]( auto event ) { chkClickMirrored( event ); } );
 
-	mChkFliped = UICheckBox::New();
-	mChkFliped->setFontStyle( Text::Shadow )
+	mChkFlipped = UICheckBox::New();
+	mChkFlipped->setFontStyle( Text::Shadow )
 		->resetFlags( ChkFlags )
 		->setParent( mTextureRegionCont )
 		->setPosition( mChkMirrored->getPosition().x + mChkMirrored->getSize().getWidth() + 32,
 					   mChkMirrored->getPosition().y );
-	mChkFliped->setText( "Fliped" );
-	mChkFliped->addEventListener( Event::OnValueChange,
+	mChkFlipped->setText( "Flipped" );
+	mChkFlipped->addEventListener( Event::OnValueChange,
 								  [this]( auto event ) { chkClickFlipped( event ); } );
 
 	mChkBlocked = UICheckBox::New();
@@ -388,8 +388,8 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 	mChkAnim->setFontStyle( Text::Shadow )
 		->resetFlags( ChkFlags )
 		->setParent( mTextureRegionCont )
-		->setPosition( mChkFliped->getPosition().x,
-					   mChkFliped->getPosition().y + mChkFliped->getSize().getHeight() + 4 );
+		->setPosition( mChkFlipped->getPosition().x,
+					   mChkFlipped->getPosition().y + mChkFlipped->getSize().getHeight() + 4 );
 	mChkAnim->setText( "Animated" );
 	mChkAnim->setTooltipText( "Indicates if the Sprite is animated." );
 	mChkAnim->addEventListener( Event::OnValueChange,
@@ -505,7 +505,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 	fillSGCombo();
 }
 
-void MapEditor::createLighContainer() {
+void MapEditor::createLightContainer() {
 	UIPushButton* NewLightBut = UIPushButton::New();
 	NewLightBut->setParent( mLightCont )
 		->setSize( mLightCont->getSize().getWidth() - TAB_CONT_X_DIST * 2, 0 )
@@ -851,11 +851,11 @@ void MapEditor::chkClickClampToTile( const Event* ) {
 }
 
 void MapEditor::updateGfx() {
-	if ( mChkMirrored->isChecked() && mChkFliped->isChecked() )
+	if ( mChkMirrored->isChecked() && mChkFlipped->isChecked() )
 		mGfxPreview->setRenderMode( RENDER_FLIPPED_MIRRORED );
 	else if ( mChkMirrored->isChecked() )
 		mGfxPreview->setRenderMode( RENDER_MIRROR );
-	else if ( mChkFliped->isChecked() )
+	else if ( mChkFlipped->isChecked() )
 		mGfxPreview->setRenderMode( RENDER_FLIPPED );
 	else
 		mGfxPreview->setRenderMode( RENDER_NORMAL );
@@ -872,8 +872,8 @@ void MapEditor::updateFlags() {
 	if ( mChkMirrored->isChecked() )
 		mCurGOFlags |= GObjFlags::GAMEOBJECT_MIRRORED;
 
-	if ( mChkFliped->isChecked() )
-		mCurGOFlags |= GObjFlags::GAMEOBJECT_FLIPED;
+	if ( mChkFlipped->isChecked() )
+		mCurGOFlags |= GObjFlags::GAMEOBJECT_FLIPPED;
 
 	if ( mChkBlocked->isChecked() )
 		mCurGOFlags |= GObjFlags::GAMEOBJECT_BLOCKED;
@@ -1477,12 +1477,12 @@ GameObject* MapEditor::createGameObject() {
 
 		} else {
 
-			Sprite* tStatiSprite = Sprite::New( mGfxPreview->getTextureRegion() );
-			tObj = eeNew( GameObjectSprite, ( mCurGOFlags, mCurLayer, tStatiSprite ) );
+			Sprite* tStaticSprite = Sprite::New( mGfxPreview->getTextureRegion() );
+			tObj = eeNew( GameObjectSprite, ( mCurGOFlags, mCurLayer, tStaticSprite ) );
 		}
 	} else {
 		//! Creates an empty game object. The client will interpret the GameObject Type, and
-		//! instanciate the corresponding class.
+		//! instantiate the corresponding class.
 
 		if ( mChkDI->isChecked() )
 			tObj = eeNew( GameObjectVirtual, ( String::hash( mDataIdInput->getText().toUtf8() ),

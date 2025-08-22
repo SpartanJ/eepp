@@ -14,7 +14,7 @@ using namespace std::literals;
 
 namespace ecode {
 
-static constexpr auto sNotCommitedYetHash = "0000000000000000000000000000000000000000";
+static constexpr auto sNotCommittedYetHash = "0000000000000000000000000000000000000000";
 
 Git::Blame::Blame( const std::string& error ) : error( error ), line( 0 ) {}
 
@@ -41,8 +41,8 @@ int Git::git( const std::string& args, const std::string& projectDir, std::strin
 	buf.clear();
 	Process p;
 	if ( !p.create( mGitPath, args,
-			  Process::CombinedStdoutStderr | Process::Options::NoWindow |
-				  Process::Options::EnableAsync | Process::Options::InheritEnvironment,
+					Process::CombinedStdoutStderr | Process::Options::NoWindow |
+						Process::Options::EnableAsync | Process::Options::InheritEnvironment,
 					{ { "LC_ALL", "en_US.UTF-8" } },
 					projectDir.empty() ? mProjectPath : projectDir ) ) {
 		return EXIT_FAILURE;
@@ -270,7 +270,7 @@ Git::Result Git::mergeBranch( const std::string& branch, bool fastForward,
 					  projectDir );
 }
 
-Git::Result Git::commit( const std::string& commitMsg, bool ammend, bool byPassCommitHook,
+Git::Result Git::commit( const std::string& commitMsg, bool amend, bool byPassCommitHook,
 						 const std::string& projectDir ) {
 	auto tmpPath = Sys::getTempPath() + ".ecode-git-commit-" + String::randString( 16 );
 	if ( !FileSystem::fileWrite( tmpPath, commitMsg ) ) {
@@ -281,8 +281,8 @@ Git::Result Git::commit( const std::string& commitMsg, bool ammend, bool byPassC
 	}
 	std::string buf;
 	std::string opts;
-	if ( ammend )
-		opts += " --ammend";
+	if ( amend )
+		opts += " --amend";
 
 	if ( byPassCommitHook )
 		opts += " --no-verify";
@@ -786,7 +786,7 @@ Git::Blame Git::blame( const std::string& filepath, std::size_t line ) const {
 
 	auto commitHash = buf.substr( 0, hashEnd );
 
-	if ( commitHash == sNotCommitedYetHash )
+	if ( commitHash == sNotCommittedYetHash )
 		return { "Not Committed Yet" };
 
 	auto author = getText( "author"sv );

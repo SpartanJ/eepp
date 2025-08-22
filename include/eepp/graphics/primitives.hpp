@@ -141,13 +141,13 @@ class EE_API Primitives {
 	/** @return The color used to draw the primitives */
 	const Color& getColor();
 
-	/** Forcing the draw, will force the batch renderer to draw the batched vertexs immediately (
+	/** Forcing the draw, will force the batch renderer to draw the batched vertices immediately (
 	 * active by default ). */
 	void setForceDraw( const bool& force );
 
 	const bool& getForceDraw() const;
 
-	/** Force to draw the batched vertexs. */
+	/** Force to draw the batched vertices. */
 	void drawBatch();
 
 	/** Set the fill mode used to draw primitives */

@@ -423,7 +423,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 						   getKeyBindings().getCommandKeybindString( "ai-toggle-lock-chat" ) )
 			->setTooltipText(
 				i18n( "lock_chat_memory_tooltip",
-					  "Lock a chat memory to avoid being deleted during memory clean-ups. Chat "
+					  "Lock a chat memory to avoid being deleted during memory clean-ups.\nChat "
 					  "memory will only be able to be deleted manually in the chat history." ) )
 			->setId( "ai-toggle-lock-chat" );
 

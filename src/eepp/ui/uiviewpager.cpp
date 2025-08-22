@@ -56,11 +56,11 @@ void UIViewPager::onChildCountChange( Node* child, const bool& removed ) {
 
 	if ( child != mContainer ) {
 		mTotalPages = mContainer->getChildCount();
-		updateChilds();
+		updateChildren();
 	}
 
 	if ( !removed && child != mContainer ) {
-		child->on( Event::OnPositionChange, [this]( const Event* ) { updateChilds(); } );
+		child->on( Event::OnPositionChange, [this]( const Event* ) { updateChildren(); } );
 	}
 
 	UIWidget::onChildCountChange( child, removed );
@@ -116,7 +116,7 @@ void UIViewPager::setTimingFunction( const Ease::Interpolation& timingFunction )
 }
 
 void UIViewPager::onSizeChange() {
-	updateChilds();
+	updateChildren();
 	UIWidget::onSizeChange();
 }
 
@@ -141,7 +141,7 @@ Uint32 UIViewPager::onMessage( const NodeMessage* Msg ) {
 	return UIWidget::onMessage( Msg );
 }
 
-void UIViewPager::updateChilds() {
+void UIViewPager::updateChildren() {
 	Float containerLength = mOrientation == UIOrientation::Horizontal
 								? getSize().getWidth() * mTotalPages
 								: getSize().getHeight() * mTotalPages;
