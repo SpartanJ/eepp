@@ -48,7 +48,7 @@ SyntaxDefinition& addElena() {
 				  { "goto", "keyword" },		{ "while", "keyword" },
 				  { "const", "keyword" },		{ "get", "keyword" },
 				  { "delegate", "keyword" },	{ "add", "keyword" },
-				  { "null", "literal" },		{ "unsafe", "keyword" },
+				  { "nil", "literal" },			{ "unsafe", "keyword" },
 				  { "fixed", "keyword" },		{ "else", "keyword" },
 				  { "stackalloc", "keyword" },	{ "global", "keyword" },
 				  { "record", "keyword" },		{ "enum", "keyword" },
