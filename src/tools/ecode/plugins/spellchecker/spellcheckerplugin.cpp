@@ -1,6 +1,7 @@
 #include "spellcheckerplugin.hpp"
 #include "eepp/ui/abstract/uiabstractview.hpp"
 #include "eepp/ui/models/itemlistmodel.hpp"
+#include "eepp/window/engine.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/luapattern.hpp>
@@ -109,6 +110,7 @@ void SpellCheckerPlugin::load( PluginManager* pluginManager ) {
 	}
 
 	subscribeFileSystemListener();
+	mTyposFound = !Sys::which( SPELL_CHECKER_CMD ).empty();
 	mReady = true;
 	fireReadyCbs();
 	setReady( clock.getElapsedTime() );
@@ -520,8 +522,29 @@ void SpellCheckerPlugin::replaceMatchWithText( const TextRange& range, const std
 
 bool SpellCheckerPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
 											  const Vector2i& position, const Uint32& /*flags*/ ) {
-	if ( !mTyposFound )
+
+	auto addFn = [this]( UIPopUpMenu* subMenu, const std::string& txtKey, const std::string& txtVal,
+						 const std::string& icon = "" ) {
+		subMenu
+			->add( i18n( txtKey, txtVal ),
+				   !icon.empty() ? findIcon( icon )->getSize( PixelDensity::dpToPxI( 12 ) )
+								 : nullptr,
+				   KeyBindings::keybindFormat( mKeyBindings[txtKey] ) )
+			->setId( txtKey );
+	};
+
+	if ( !mTyposFound ) {
+		menu->addSeparator();
+		auto* subMenu = UIPopUpMenu::New();
+		subMenu->addClass( "spellchecker_menu" );
+		subMenu->on( Event::OnItemClicked, []( const Event* ) {
+			Engine::instance()->openURI( "https://github.com/crate-ci/typos/" );
+		} );
+		addFn( subMenu, "spell-checker-not-installed",
+			   "Install the typos tool to have spell-checking (click to open typos site)" );
+		menu->addSubMenu( i18n( "spell-checker", "Spell Checker" ), nullptr, subMenu );
 		return false;
+	}
 
 	auto pickedMatch = getMatchFromScreenPos( editor, position.asFloat() );
 	if ( !pickedMatch )
@@ -538,18 +561,8 @@ bool SpellCheckerPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu*
 		replaceMatchWithText( range, id, editor );
 	} );
 
-	auto addFn = [this, subMenu]( const std::string& txtKey, const std::string& txtVal,
-								  const std::string& icon = "" ) {
-		subMenu
-			->add( i18n( txtKey, txtVal ),
-				   !icon.empty() ? findIcon( icon )->getSize( PixelDensity::dpToPxI( 12 ) )
-								 : nullptr,
-				   KeyBindings::keybindFormat( mKeyBindings[txtKey] ) )
-			->setId( txtKey );
-	};
-
 	for ( const auto& alt : pickedMatch->alternatives )
-		addFn( alt, alt );
+		addFn( subMenu, alt, alt );
 
 	menu->addSubMenu( i18n( "spell-checker", "Spell Checker" ), nullptr, subMenu );
 

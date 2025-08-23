@@ -38,6 +38,7 @@
 #include <eepp/ui/doc/languages/gleam.hpp>
 #include <eepp/ui/doc/languages/glsl.hpp>
 #include <eepp/ui/doc/languages/gn.hpp>
+#include <eepp/ui/doc/languages/gnuplot.hpp>
 #include <eepp/ui/doc/languages/go.hpp>
 #include <eepp/ui/doc/languages/graphql.hpp>
 #include <eepp/ui/doc/languages/groovy.hpp>
@@ -353,6 +354,10 @@ void LanguagesSyntaxHighlighting::load() {
 	} );
 
 	sdm->addPreDefinition( { "GN", []() -> SyntaxDefinition& { return addGn(); }, { "%.gn$" } } );
+
+	sdm->addPreDefinition( { "gnuplot",
+							 []() -> SyntaxDefinition& { return addGnuplot(); },
+							 { "%.gp$", "%.gnuplot$", "%.gnu$", "%.plot$", "%.plt$" } } );
 
 	sdm->addPreDefinition( { "Go", []() -> SyntaxDefinition& { return addGo(); }, { "%.go$" } } );
 

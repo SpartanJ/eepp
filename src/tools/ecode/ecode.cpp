@@ -2254,8 +2254,8 @@ void App::loadImageFromPath( const std::string& path ) {
 
 void App::openFileFromPath( const std::string& path ) {
 	std::string ext = FileSystem::fileExtension( path );
-	bool canOpenBinaryFile = PathHelper::isOpenExternalExtension( ext );
-	if ( !canOpenBinaryFile && TextDocument::fileMightBeBinary( path ) ) {
+	if ( !Image::isImageExtension( path ) && !PathHelper::isOpenExternalExtension( ext ) &&
+		 TextDocument::fileMightBeBinary( path ) ) {
 		auto msgBox = UIMessageBox::New(
 			UIMessageBox::YES_NO,
 			i18n( "open_binary_file_warning",
@@ -2297,10 +2297,10 @@ bool App::loadFileFromPath(
 			return false;
 	}
 
-	if ( !openBinaryAsDocument && PathHelper::isOpenExternalExtension( ext ) ) {
-		Engine::instance()->openURI( path );
-	} else if ( Image::isImageExtension( path ) && Image::isImage( path ) && ext != "svg" ) {
+	if ( Image::isImageExtension( path ) && Image::isImage( path ) && ext != "svg" ) {
 		loadImageFromPath( path );
+	} else if ( !openBinaryAsDocument && PathHelper::isOpenExternalExtension( ext ) ) {
+		Engine::instance()->openURI( path );
 	} else {
 		UITab* tab = mSplitter->isDocumentOpen( path );
 
