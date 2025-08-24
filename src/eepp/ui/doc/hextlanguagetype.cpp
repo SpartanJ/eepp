@@ -1,6 +1,6 @@
 #include <array>
-#include <sstream>
 
+#include <eepp/core/string.hpp>
 #include <eepp/ui/doc/hextlanguagetype.hpp>
 
 namespace EE { namespace UI { namespace Doc {
@@ -11,7 +11,7 @@ inline bool isWordBoundary( char c ) {
 }
 
 // Finds a keyword as a whole word (e.g., finds "class" but not "subclass").
-bool findStandaloneWord( const std::string& line, std::string_view keyword ) {
+bool findStandaloneWord( std::string_view line, std::string_view keyword ) {
 	size_t pos = 0;
 	while ( ( pos = line.find( keyword, pos ) ) != std::string::npos ) {
 		// Check character before the keyword
@@ -36,10 +36,10 @@ bool findStandaloneWord( const std::string& line, std::string_view keyword ) {
  * to distinguish between C, C++, Objective-C, and Objective-C++. It uses a
  * fast, heuristic-based approach optimized with std::array and std::string_view.
  *
- * @param buffer A std::string containing the source code from the .h file.
+ * @param buffer A std::string_view containing the source code from the .h file.
  * @return HExtLanguageType The detected language.
  */
-HExtLanguageType HExtLanguageTypeHelper::detectLanguage( const std::string& buffer ) {
+HExtLanguageType HExtLanguageTypeHelper::detectLanguage( std::string_view buffer ) {
 	bool hasCppFeature = false;
 	bool hasObjcFeature = false;
 
@@ -54,12 +54,10 @@ HExtLanguageType HExtLanguageTypeHelper::detectLanguage( const std::string& buff
 		"final", "public",	  "private",  "protected" };
 	static constexpr std::array<std::string_view, 2> cppTokens = { "::", "template<" };
 
-	std::stringstream ss( buffer );
-	std::string line;
 	bool inMultilineComment = false;
 
-	while ( std::getline( ss, line ) ) {
-		std::string processedLine = line;
+	String::readBySeparatorStoppable( buffer, [&]( std::string_view line ) {
+		std::string_view processedLine = line;
 
 		if ( inMultilineComment ) {
 			size_t endCommentPos = processedLine.find( "*/" );
@@ -67,23 +65,31 @@ HExtLanguageType HExtLanguageTypeHelper::detectLanguage( const std::string& buff
 				processedLine = processedLine.substr( endCommentPos + 2 );
 				inMultilineComment = false;
 			} else {
-				continue;
+				return false; // Skip the line, still in multiline comment
 			}
 		}
 
-		size_t startCommentPos = processedLine.find( "/*" );
-		if ( startCommentPos != std::string::npos ) {
+		// Handle multiline comments (/* ... */)
+		while ( true ) {
+			size_t startCommentPos = processedLine.find( "/*" );
+			if ( startCommentPos == std::string_view::npos ) {
+				break; // No more multiline comments
+			}
 			size_t endCommentPos = processedLine.find( "*/", startCommentPos );
-			if ( endCommentPos != std::string::npos ) {
-				processedLine.erase( startCommentPos, endCommentPos - startCommentPos + 2 );
+			if ( endCommentPos != std::string_view::npos ) {
+				// Skip the comment by creating a view after the comment
+				processedLine = processedLine.substr( endCommentPos + 2 );
 			} else {
+				// Multiline comment extends to next line
 				inMultilineComment = true;
 				processedLine = processedLine.substr( 0, startCommentPos );
+				break;
 			}
 		}
 
+		// Handle single-line comments (//)
 		size_t commentPos = processedLine.find( "//" );
-		if ( commentPos != std::string::npos ) {
+		if ( commentPos != std::string_view::npos ) {
 			processedLine = processedLine.substr( 0, commentPos );
 		}
 
@@ -91,11 +97,11 @@ HExtLanguageType HExtLanguageTypeHelper::detectLanguage( const std::string& buff
 			std::string_view lineView = processedLine;
 			lineView.remove_prefix(
 				std::min( lineView.find_first_not_of( " \t" ), lineView.size() ) );
-			if ( lineView.rfind( objcDirective, 0 ) == 0 ) {
+			if ( lineView.starts_with( objcDirective ) ) {
 				hasObjcFeature = true;
 			} else {
 				for ( const auto& keyword : objcKeywords ) {
-					if ( processedLine.find( keyword ) != std::string::npos ) {
+					if ( processedLine.find( keyword ) != std::string_view::npos ) {
 						hasObjcFeature = true;
 						break;
 					}
@@ -112,7 +118,7 @@ HExtLanguageType HExtLanguageTypeHelper::detectLanguage( const std::string& buff
 			}
 			if ( !hasCppFeature ) {
 				for ( const auto& token : cppTokens ) {
-					if ( processedLine.find( token ) != std::string::npos ) {
+					if ( processedLine.find( token ) != std::string_view::npos ) {
 						hasCppFeature = true;
 						break;
 					}
@@ -120,16 +126,15 @@ HExtLanguageType HExtLanguageTypeHelper::detectLanguage( const std::string& buff
 			}
 			if ( !hasCppFeature ) {
 				size_t ampPos = processedLine.find( '&' );
-				if ( ampPos != std::string::npos && ampPos + 1 < processedLine.length() &&
+				if ( ampPos != std::string_view::npos && ampPos + 1 < processedLine.length() &&
 					 processedLine[ampPos + 1] != '&' ) {
 					hasCppFeature = true;
 				}
 			}
 		}
 
-		if ( hasCppFeature && hasObjcFeature )
-			break;
-	}
+		return hasCppFeature && hasObjcFeature; // Stop if both features are found
+	} );
 
 	if ( hasCppFeature && hasObjcFeature )
 		return HExtLanguageType::ObjectiveCPP;

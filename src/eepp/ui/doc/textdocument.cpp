@@ -96,9 +96,14 @@ bool TextDocument::fileMightBeBinary( const std::string& file ) {
 			++nonPrintableCount;
 		}
 	}
-	// Consider file binary if >10% of characters are non-printable
-	if ( nonPrintableCount > bytesRead * 0.1 ) {
-		return true;
+
+	// Consider file binary if >20% of characters are non-printable
+	if ( nonPrintableCount > bytesRead * 0.2 ) {
+		// Also white-list known extensions
+		if ( !SyntaxDefinitionManager::instance()->isFileFormatSupported(
+				 file, std::string_view{ buffer.data(), buffer.size() } ) ) {
+			return true;
+		}
 	}
 
 	return false; // Likely a text file
@@ -397,6 +402,12 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 						lineBuffer.resize( lineBufferSize - 1 );
 					} else if ( mLineEnding == TextFormat::LineEnding::CR && lineBufferSize > 0 ) {
 						lineBuffer[lineBuffer.size() - 1] = '\n';
+					} else if ( mLineEnding == TextFormat::LineEnding::LF ) {
+						if ( lineBufferSize > 1 && lineBuffer[lineBufferSize - 2] == '\r' &&
+							 lastChar == '\n' ) {
+							lineBuffer.pop_back();
+							lineBuffer[lineBuffer.size() - 1] = '\n';
+						}
 					}
 
 					{
@@ -523,7 +534,8 @@ const SyntaxDefinition& TextDocument::guessSyntax() const {
 		{ { 0, 0 },
 		  positionOffset( { 0, 0 },
 						  FileSystem::fileExtension( mFilePath ) == "h" ? 5 * 1024 : 128 ) } ) );
-	return SyntaxDefinitionManager::instance()->find( mFilePath, header, mHExtLanguageType );
+	return SyntaxDefinitionManager::instance()->find( mFilePath, header.toUtf8(),
+													  mHExtLanguageType );
 }
 
 void TextDocument::resetSyntax() {
@@ -534,8 +546,8 @@ void TextDocument::resetSyntax() {
 	std::string oldDef = mSyntaxDefinition.getLSPName();
 	{
 		Lock l( mSyntaxDefinitionMutex );
-		mSyntaxDefinition =
-			SyntaxDefinitionManager::instance()->find( mFilePath, header, mHExtLanguageType );
+		mSyntaxDefinition = SyntaxDefinitionManager::instance()->find( mFilePath, header.toUtf8(),
+																	   mHExtLanguageType );
 	}
 	if ( mSyntaxDefinition.getLSPName() != oldDef )
 		notifySyntaxDefinitionChange();

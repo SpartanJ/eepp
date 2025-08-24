@@ -1087,9 +1087,17 @@ class EE_API String {
 								 std::function<void( std::string_view )> onSepChunkRead,
 								 char sep = '\n' );
 
+	static void readBySeparatorStoppable( std::string_view buf,
+										  std::function<bool( std::string_view )> onSepChunkRead,
+										  char sep = '\n' );
+
 	static void readBySeparator( String::View buf,
 								 std::function<void( String::View )> onSepChunkRead,
 								 String::StringBaseType sep = L'\n' );
+
+	static void readBySeparatorStoppable( String::View buf,
+										  std::function<bool( String::View )> onSepChunkRead,
+										  String::StringBaseType sep = L'\n' );
 
 	static size_t countLines( std::string_view text );
 

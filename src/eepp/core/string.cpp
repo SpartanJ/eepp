@@ -2271,6 +2271,29 @@ void String::readBySeparator( std::string_view buf,
 	}
 }
 
+void String::readBySeparatorStoppable( std::string_view buf,
+									   std::function<bool( std::string_view )> onSepChunkRead,
+									   char sep ) {
+	auto lastNL = 0;
+	auto nextNL = buf.find_first_of( sep );
+	if ( nextNL != std::string_view::npos ) {
+		while ( nextNL != std::string_view::npos ) {
+			if ( onSepChunkRead( buf.substr( lastNL, nextNL - lastNL ) ) )
+				return;
+			lastNL = nextNL + 1;
+			nextNL = buf.find_first_of( sep, nextNL + 1 );
+		}
+
+		if ( lastNL < static_cast<int>( buf.size() ) ) {
+			if ( onSepChunkRead( buf.substr( lastNL ) ) )
+				return;
+		}
+	} else {
+		if ( onSepChunkRead( buf ) )
+			return;
+	}
+}
+
 size_t String::countLines( std::string_view text ) {
 	const char* startPtr = text.data();
 	const char* endPtr = text.data() + text.size();
@@ -2289,6 +2312,19 @@ void String::readBySeparator( String::View buf, std::function<void( String::View
 	auto nextNL = buf.find_first_of( sep );
 	while ( nextNL != String::View::npos ) {
 		onSepChunkRead( buf.substr( lastNL, nextNL - lastNL ) );
+		lastNL = nextNL + 1;
+		nextNL = buf.find_first_of( sep, nextNL + 1 );
+	}
+}
+
+void String::readBySeparatorStoppable( String::View buf,
+									   std::function<bool( String::View )> onSepChunkRead,
+									   String::StringBaseType sep ) {
+	auto lastNL = 0;
+	auto nextNL = buf.find_first_of( sep );
+	while ( nextNL != String::View::npos ) {
+		if ( onSepChunkRead( buf.substr( lastNL, nextNL - lastNL ) ) )
+			return;
 		lastNL = nextNL + 1;
 		nextNL = buf.find_first_of( sep, nextNL + 1 );
 	}

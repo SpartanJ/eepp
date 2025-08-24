@@ -1234,7 +1234,7 @@ bool SyntaxDefinitionManager::extensionCanRepresentManyLanguages( std::string ex
 const SyntaxDefinition* SyntaxDefinitionManager::needsHFallback( HExtLanguageType langType,
 																 const std::string& lspName,
 																 const std::string& ext,
-																 const std::string& buffer ) const {
+																 std::string_view buffer ) const {
 	if ( lspName != "c" || !( ext == "h" || ext == ".h" || ext == "%.h$" || ext == "%.h%.in$" ) )
 		return nullptr;
 	switch ( langType ) {
@@ -1337,7 +1337,7 @@ SyntaxDefinitionManager::getByExtension( const std::string& filePath ) const {
 	return def != nullptr ? *def : *mDefinitions[0].get();
 }
 
-const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( const std::string& header,
+const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( std::string_view header,
 															  const std::string& filePath,
 															  HExtLanguageType langType ) const {
 	if ( !header.empty() ) {
@@ -1354,7 +1354,7 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( const std::string&
 				for ( const auto& hdr : definition->get()->getHeaders() ) {
 					LuaPattern words( hdr );
 					int start, end;
-					if ( words.find( header, start, end ) ) {
+					if ( words.find( header.data(), start, end ) ) {
 						return *definition->get();
 					}
 				}
@@ -1371,7 +1371,7 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( const std::string&
 			for ( const auto& hdr : preDefinition->getHeaders() ) {
 				LuaPattern words( hdr );
 				int start, end;
-				if ( words.find( header, start, end ) ) {
+				if ( words.find( header.data(), start, end ) ) {
 					return preDefinition->load();
 				}
 			}
@@ -1381,7 +1381,7 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( const std::string&
 }
 
 const SyntaxDefinition& SyntaxDefinitionManager::find( const std::string& filePath,
-													   const std::string& header,
+													   std::string_view header,
 													   HExtLanguageType langType ) {
 	const SyntaxDefinition& def = getByHeader( header, filePath, langType );
 	if ( def.getLanguageName() == mDefinitions[0]->getLanguageName() )
@@ -1409,6 +1409,11 @@ const std::map<std::string, std::string>& SyntaxDefinitionManager::getLanguageEx
 
 std::size_t SyntaxDefinitionManager::count() const {
 	return mDefinitions.size();
+}
+
+bool SyntaxDefinitionManager::isFileFormatSupported( const std::string& filePath,
+													 std::string_view header ) {
+	return &find( filePath, header ) != mDefinitions[0].get();
 }
 
 }}} // namespace EE::UI::Doc

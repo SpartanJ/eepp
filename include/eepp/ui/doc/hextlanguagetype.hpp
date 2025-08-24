@@ -7,7 +7,7 @@ namespace EE { namespace UI { namespace Doc {
 enum class HExtLanguageType { AutoDetect, C, CPP, ObjectiveC, ObjectiveCPP };
 
 struct EE_API HExtLanguageTypeHelper {
-	static HExtLanguageType detectLanguage( const std::string& buffer );
+	static HExtLanguageType detectLanguage( std::string_view buffer );
 
 	static std::string toString( HExtLanguageType langType );
 

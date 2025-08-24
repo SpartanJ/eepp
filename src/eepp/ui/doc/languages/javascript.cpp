@@ -58,7 +58,7 @@ void addJavaScript() {
 
 		  },
 		  "//",
-		  {}
+		  { "^#!.*[ /]env node", "^#!.*[ /]env bun", "^#!.*[ /]env deno" }
 
 		} );
 
