@@ -35,6 +35,8 @@ class TextShapeRun {
 		findNextEnd();
 	}
 
+	std::size_t curRunStart() { return mIndex; }
+
 	String::View curRun() const { return mString.substr( mIndex, mIsNewLine ? mLen - 1 : mLen ); }
 
 	bool hasNext() const { return mIndex < mString.size(); }
@@ -105,6 +107,7 @@ shapeAndRun( const String& string, FontTrueType* font, Uint32 characterSize, Uin
 		String::View curRun( run.curRun() );
 		font->setCurrentSize( characterSize );
 		hb_buffer_reset( hbBuffer );
+		hb_buffer_set_cluster_level( hbBuffer, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS );
 		hb_buffer_add_utf32( hbBuffer, (Uint32*)curRun.data(), curRun.size(), 0, curRun.size() );
 		hb_buffer_guess_segment_properties( hbBuffer );
 		hb_segment_properties_t props;
@@ -451,7 +454,7 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 				for ( std::size_t i = 0; i < glyphCount; ++i ) {
 					hb_glyph_info_t curGlyph = glyphInfo[i];
 					cluster = curGlyph.cluster;
-					ch = string[cluster];
+					ch = string[run.curRunStart() + cluster];
 					if ( ch == '\t' ) {
 						Float advance = tabAdvance( hspace, tabWidth,
 													tabOffset ? cpos.x - pos.x + *tabOffset
