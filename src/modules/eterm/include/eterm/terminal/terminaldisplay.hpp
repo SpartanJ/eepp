@@ -70,7 +70,7 @@ struct TerminalShortcut {
 };
 
 struct TerminalMouseShortcut {
-	MouseButtonsMask button;
+	MouseButtonMask button;
 	Uint32 mask;
 	TerminalShortcutAction action;
 	int appkey;

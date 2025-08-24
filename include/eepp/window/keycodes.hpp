@@ -737,7 +737,7 @@ enum MouseButton {
 #define EE_BUTTON_MASK( X ) ( 1 << ( (X)-1 ) )
 
 /** @enum MouseButtonsMask Mouse buttons mask, to check the current state of every button. */
-enum MouseButtonsMask {
+enum MouseButtonMask {
 	EE_BUTTON_LMASK = EE_BUTTON_MASK( EE_BUTTON_LEFT ),
 	EE_BUTTON_MMASK = EE_BUTTON_MASK( EE_BUTTON_MIDDLE ),
 	EE_BUTTON_RMASK = EE_BUTTON_MASK( EE_BUTTON_RIGHT ),
@@ -759,8 +759,12 @@ enum MouseButtonsMask {
 	EE_BUTTONS_ALL = 0xFFFFFFFF
 };
 
+using MouseButtonsMask = Uint32;
+
 #define EE_KEYS_NUM ( SCANCODES_NUM )
 #define EE_KEYS_SPACE ( EE_KEYS_NUM / 8 )
+
+enum class MouseAction : Uint8 { Down, Up, Move, Click, DoubleClick, Over, Leave };
 
 }} // namespace EE::Window
 

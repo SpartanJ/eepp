@@ -175,7 +175,7 @@ void KeyBindings::reset() {
 	mKeybindingsInvert.clear();
 }
 
-const ShortcutMap& KeyBindings::getShortcutMap() const {
+const KeyBindings::ShortcutMap& KeyBindings::getShortcutMap() const {
 	return mShortcuts;
 }
 

@@ -17,10 +17,11 @@ namespace EE { namespace UI {
 
 class UIWidget;
 
-typedef std::map<Uint64, std::string> ShortcutMap;
-
 class EE_API KeyBindings {
+
   public:
+	typedef std::map<Uint64, std::string> ShortcutMap;
+
 	struct Shortcut {
 		Shortcut() {}
 		Shortcut( Keycode key, Uint32 mod ) : key( key ), mod( mod ) {}
