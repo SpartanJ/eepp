@@ -11,7 +11,7 @@ class UISearchBar : public UILinearLayout, public WidgetCommandExecuter {
 
 	UISearchBar() :
 		UILinearLayout( "searchbar", UIOrientation::Horizontal ),
-		WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ) {}
+		WidgetCommandExecuter( getInput() ) {}
 
 	virtual Uint32 onKeyDown( const KeyEvent& event ) {
 		return WidgetCommandExecuter::onKeyDown( event );
@@ -23,7 +23,7 @@ class UILocateBar : public UILinearLayout, public WidgetCommandExecuter {
 	static UILocateBar* New() { return eeNew( UILocateBar, () ); }
 	UILocateBar() :
 		UILinearLayout( "locatebar", UIOrientation::Horizontal ),
-		WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ) {}
+		WidgetCommandExecuter( getInput() ) {}
 
 	virtual Uint32 onKeyDown( const KeyEvent& event ) {
 		return WidgetCommandExecuter::onKeyDown( event );
@@ -36,7 +36,7 @@ class UIGlobalSearchBar : public UILinearLayout, public WidgetCommandExecuter {
 
 	UIGlobalSearchBar() :
 		UILinearLayout( "globalsearchbar", UIOrientation::Vertical ),
-		WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ) {}
+		WidgetCommandExecuter( getInput() ) {}
 
 	virtual Uint32 onKeyDown( const KeyEvent& event ) {
 		return WidgetCommandExecuter::onKeyDown( event );
@@ -47,9 +47,7 @@ class UIMainLayout : public UIRelativeLayout, public WidgetCommandExecuter {
   public:
 	static UIMainLayout* New() { return eeNew( UIMainLayout, () ); }
 
-	UIMainLayout() :
-		UIRelativeLayout( "mainlayout" ),
-		WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ) {}
+	UIMainLayout() : UIRelativeLayout( "mainlayout" ), WidgetCommandExecuter( getInput() ) {}
 
 	virtual Uint32 onKeyDown( const KeyEvent& event ) {
 		return WidgetCommandExecuter::onKeyDown( event );
@@ -63,8 +61,7 @@ class UIRelativeLayoutCommandExecuter : public UIRelativeLayout, public WidgetCo
 	}
 
 	UIRelativeLayoutCommandExecuter() :
-		UIRelativeLayout( "rellayce" ),
-		WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ) {}
+		UIRelativeLayout( "rellayce" ), WidgetCommandExecuter( getInput() ) {}
 
 	virtual Uint32 onKeyDown( const KeyEvent& event ) {
 		return WidgetCommandExecuter::onKeyDown( event );
@@ -79,7 +76,7 @@ class UIHLinearLayoutCommandExecuter : public UILinearLayout, public WidgetComma
 
 	UIHLinearLayoutCommandExecuter() :
 		UILinearLayout( "hboxce", UIOrientation::Horizontal ),
-		WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ) {}
+		WidgetCommandExecuter( getInput() ) {}
 
 	virtual Uint32 onKeyDown( const KeyEvent& event ) {
 		return WidgetCommandExecuter::onKeyDown( event );
@@ -93,8 +90,7 @@ class UIVLinearLayoutCommandExecuter : public UILinearLayout, public WidgetComma
 	}
 
 	UIVLinearLayoutCommandExecuter() :
-		UILinearLayout( "vboxce", UIOrientation::Vertical ),
-		WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ) {}
+		UILinearLayout( "vboxce", UIOrientation::Vertical ), WidgetCommandExecuter( getInput() ) {}
 
 	virtual Uint32 onKeyDown( const KeyEvent& event ) {
 		return WidgetCommandExecuter::onKeyDown( event );

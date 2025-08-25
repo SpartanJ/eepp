@@ -118,6 +118,13 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditor::getDefaultKeybi
 	};
 }
 
+const MouseBindings::ShortcutMap UICodeEditor::getDefaultMousebindings() {
+	return { { { MouseAction::Down, EE_BUTTON_LMASK, KeyMod::getDefaultModifier() },
+			   "add-cursor-at-mouse-position" },
+			 { { MouseAction::Down, EE_BUTTON_LMASK, KEYMOD_SHIFT | KEYMOD_LALT },
+			   "add-cursors-from-current-to-mouse-position" } };
+}
+
 UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands,
 							const bool& autoRegisterBaseKeybindings ) :
 	UIWidget( elementTag ),
@@ -133,7 +140,7 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mLineNumberPaddingRight( PixelDensity::dpToPx( 6 ) ),
 	mFoldRegionWidth( PixelDensity::dpToPx( 12 ) ),
 	mPreviewColor( Color::Transparent ),
-	mKeyBindings( getUISceneNode()->getWindow()->getInput() ),
+	mKeyBindings( getInput() ),
 	mFindLongestLineWidthUpdateFrequency( Seconds( 1 ) ) {
 	mFlags |= UI_TAB_STOP | UI_OWNS_CHILDREN_POSITION | UI_SCROLLABLE;
 	setTextSelection( true );
@@ -456,12 +463,11 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 	}
 
 	if ( mMouseDown || mMouseDownMinimap ) {
-		if ( !( getUISceneNode()->getWindow()->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
-			stopMinimapDragging(
-				getUISceneNode()->getWindow()->getInput()->getMousePos().asFloat() );
+		if ( !( getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
+			stopMinimapDragging( getInput()->getMousePos().asFloat() );
 			mMouseDown = false;
 			mMouseDownMinimap = false;
-			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
+			getInput()->captureMouse( false );
 		} else if ( !isMouseOverMeOrChildren() || mMinimapDragging ) {
 			onMouseMove( getUISceneNode()->getEventDispatcher()->getMousePos(),
 						 getUISceneNode()->getEventDispatcher()->getPressTrigger() );
@@ -1046,7 +1052,7 @@ void UICodeEditor::setLineWrapKeepIndentation( bool keep ) {
 
 Uint32 UICodeEditor::onFocus( NodeFocusReason reason ) {
 	if ( !mLocked ) {
-		mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
+		mLastExecuteEventId = getInput()->getEventsSentId();
 		resetCursor();
 		getUISceneNode()->getWindow()->startTextInput();
 		mDoc->setActiveClient( this );
@@ -1060,8 +1066,8 @@ Uint32 UICodeEditor::onFocus( NodeFocusReason reason ) {
 
 Uint32 UICodeEditor::onFocusLoss() {
 	if ( mMouseDown )
-		getUISceneNode()->getWindow()->getInput()->captureMouse( false );
-	stopMinimapDragging( getUISceneNode()->getWindow()->getInput()->getMousePos().asFloat() );
+		getInput()->captureMouse( false );
+	stopMinimapDragging( getInput()->getMousePos().asFloat() );
 	mMouseDown = false;
 	mCursorVisible = false;
 	getSceneNode()->getWindow()->stopTextInput();
@@ -1079,7 +1085,7 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 
 	if ( mLocked || NULL == mFont )
 		return 0;
-	Input* input = getUISceneNode()->getWindow()->getInput();
+	Input* input = getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
 		 ( input->isLeftControlPressed() && !input->isLeftAltPressed() &&
@@ -1087,7 +1093,7 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 		 input->isMetaPressed() || ( input->isLeftAltPressed() && !input->isLeftControlPressed() ) )
 		return 0;
 
-	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() &&
+	if ( mLastExecuteEventId == getInput()->getEventsSentId() &&
 		 !TextDocument::isTextDocumentCommand( mLastCmdHash ) )
 		return 0;
 
@@ -1276,7 +1282,7 @@ Uint32 UICodeEditor::onKeyDown( const KeyEvent& event ) {
 		if ( !mLocked || mUnlockedCmd.find( cmd ) != mUnlockedCmd.end() ) {
 			mDoc->execute( cmd, this );
 			mLastCmdHash = String::hash( cmd );
-			mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
+			mLastExecuteEventId = getInput()->getEventsSentId();
 			return 1;
 		}
 	}
@@ -1289,8 +1295,8 @@ Uint32 UICodeEditor::onKeyUp( const KeyEvent& event ) {
 	for ( auto& plugin : mPlugins )
 		if ( plugin->onKeyUp( this, event ) )
 			return 1;
-	if ( mHandShown && !getUISceneNode()->getWindow()->getInput()->isKeyModPressed() )
-		resetLinkOver( getUISceneNode()->getWindow()->getInput()->getMousePos() );
+	if ( mHandShown && !getInput()->isKeyModPressed() )
+		resetLinkOver( getInput()->getMousePos() );
 	return UIWidget::onKeyUp( event );
 }
 
@@ -1497,6 +1503,15 @@ Int64 UICodeEditor::calculateMinimapClickedLine( const Vector2i& position ) {
 	return eeclamp( ret, (Int64)0, (Int64)visualLineCount );
 }
 
+bool UICodeEditor::tryExecuteMouseBinding( const MouseBindings::Shortcut& shortcut ) {
+	std::string cmd( mMouseBindings.getCommandFromMousebind( shortcut ) );
+	if ( !cmd.empty() ) {
+		mDoc->execute( cmd, this );
+		return true;
+	}
+	return false;
+}
+
 Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 	mLastActivity.restart();
 	for ( auto& plugin : mPlugins )
@@ -1537,11 +1552,14 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		}
 	}
 
+	MouseBindings::Shortcut shortcut{ MouseAction::Down, flags,
+									  getInput()->getSanitizedModState() };
+
 	if ( ( flags & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) && isTextSelectionEnabled() &&
 		 !getEventDispatcher()->isNodeDragging() && NULL != mFont && !mMouseDown &&
 		 getEventDispatcher()->getMouseDownNode() == this ) {
 		mMouseDown = true;
-		Input* input = getUISceneNode()->getWindow()->getInput();
+		Input* input = getInput();
 		input->captureMouse( true );
 		setFocus();
 
@@ -1555,38 +1573,51 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		if ( flags & EE_BUTTON_LMASK ) {
 			if ( localPos.x > mPaddingPx.Left + getLineNumberWidth() && downOverGutter ) {
 				toggleFoldUnfold( textScreenPos.line() );
-			} else if ( !downOverGutter && input->isModState( KEYMOD_LALT | KEYMOD_SHIFT ) ) {
-				TextRange range( mDoc->getSelection().start(), textScreenPos );
-				range = mDoc->sanitizeRange( range );
-				TextRange nrange = range.normalized();
-				TextRanges ranges;
-				ranges.reserve( nrange.end().line() - nrange.start().line() + 1 );
-				for ( Int64 i = nrange.start().line(); i <= nrange.end().line(); ++i ) {
-					TextPosition pos{ i, range.start().column() };
-					ranges.push_back( TextRange{ pos, pos } );
-				}
-				mDoc->addSelections( std::move( ranges ) );
 			} else if ( !downOverGutter && input->isModState( KEYMOD_SHIFT ) ) {
 				mDoc->selectTo( textScreenPos );
-			} else if ( !downOverGutter && input->isModState( KEYMOD_CTRL ) &&
-						checkMouseOverLink( position ).empty() ) {
-				TextPosition pos( textScreenPos );
-				if ( !mDoc->selectionExists( pos ) )
-					mDoc->addSelection( { pos, pos } );
 			} else if ( !downOverGutter &&
 						mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
 				mDoc->selectLine();
 			} else {
+				if ( !downOverGutter && tryExecuteMouseBinding( shortcut ) )
+					return UIWidget::onMouseDown( position, flags );
+
 				if ( !downOverGutter || mAllowSelectingTextFromGutter )
 					mDoc->setSelection( textScreenPos );
 				if ( downOverGutter && mAllowSelectingTextFromGutter )
 					mDoc->selectLine();
 			}
+		} else if ( !downOverGutter && tryExecuteMouseBinding( shortcut ) ) {
+			return UIWidget::onMouseDown( position, flags );
 		} else if ( !mDoc->hasSelection() ) {
 			mDoc->setSelection( textScreenPos );
 		}
 	}
 	return UIWidget::onMouseDown( position, flags );
+}
+
+void UICodeEditor::addCursorAtMousePosition() {
+	auto position = getInput()->getMousePos();
+	if ( checkMouseOverLink( position ).empty() ) {
+		auto pos( resolveScreenPosition( position.asFloat() ) );
+		if ( !mDoc->selectionExists( pos ) )
+			mDoc->addSelection( { pos, pos } );
+	}
+}
+
+void UICodeEditor::addCursorsFromCurrentToMousePosition() {
+	auto position = getInput()->getMousePos();
+	auto textScreenPos( resolveScreenPosition( position.asFloat() ) );
+	TextRange range( mDoc->getSelection().start(), textScreenPos );
+	range = mDoc->sanitizeRange( range );
+	TextRange nrange = range.normalized();
+	TextRanges ranges;
+	ranges.reserve( nrange.end().line() - nrange.start().line() + 1 );
+	for ( Int64 i = nrange.start().line(); i <= nrange.end().line(); ++i ) {
+		TextPosition pos{ i, range.start().column() };
+		ranges.push_back( TextRange{ pos, pos } );
+	}
+	mDoc->addSelections( std::move( ranges ) );
 }
 
 bool UICodeEditor::toggleFoldUnfold( Int64 docLineIdx ) {
@@ -1702,7 +1733,9 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 	bool minimapHover =
 		mMinimapEnabled && getMinimapRect( getScreenStart() ).contains( position.asFloat() );
 
-	Input* input = getUISceneNode()->getWindow()->getInput();
+	Input* input = getInput();
+
+	MouseBindings::Shortcut shortcut{ MouseAction::Up, flags, getInput()->getSanitizedModState() };
 
 	if ( flags & EE_BUTTON_LMASK ) {
 		stopMinimapDragging( position.asFloat() );
@@ -1711,8 +1744,10 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 			mMouseDownMinimap = false;
 			input->captureMouse( false );
 		}
+
+		tryExecuteMouseBinding( shortcut );
 	} else if ( flags & EE_BUTTON_WDMASK ) {
-		if ( getUISceneNode()->getWindow()->getInput()->isKeyModPressed() ) {
+		if ( getInput()->isKeyModPressed() ) {
 			mDoc->execute( "font-size-shrink" );
 		} else if ( input->isModState( KEYMOD_SHIFT ) ) {
 			setScrollX( mScroll.x + mMouseWheelScroll );
@@ -1720,7 +1755,7 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 			setScrollY( mScroll.y + mMouseWheelScroll );
 		}
 	} else if ( flags & EE_BUTTON_WUMASK ) {
-		if ( getUISceneNode()->getWindow()->getInput()->isKeyModPressed() ) {
+		if ( getInput()->isKeyModPressed() ) {
 			mDoc->execute( "font-size-grow" );
 		} else if ( input->isModState( KEYMOD_SHIFT ) ) {
 			setScrollX( mScroll.x - mMouseWheelScroll );
@@ -1735,7 +1770,8 @@ Uint32 UICodeEditor::onMouseUp( const Vector2i& position, const Uint32& flags ) 
 		Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
 		if ( localPos.x >= mPaddingPx.Left + getGutterWidth() && localPos.y >= mPluginsTopSpace )
 			onCreateContextMenu( position, flags );
-	}
+	} else if ( tryExecuteMouseBinding( shortcut ) )
+		return UIWidget::onMouseUp( position, flags );
 
 	return UIWidget::onMouseUp( position, flags );
 }
@@ -1752,8 +1788,13 @@ Uint32 UICodeEditor::onMouseClick( const Vector2i& position, const Uint32& flags
 			return 1;
 	}
 
-	if ( ( flags & EE_BUTTON_LMASK ) &&
-		 getUISceneNode()->getWindow()->getInput()->isKeyModPressed() ) {
+	MouseBindings::Shortcut shortcut{ MouseAction::Click, flags,
+									  getInput()->getSanitizedModState() };
+
+	if ( tryExecuteMouseBinding( shortcut ) )
+		return 1;
+
+	if ( ( flags & EE_BUTTON_LMASK ) && getInput()->isKeyModPressed() ) {
 		String link( checkMouseOverLink( position ) );
 		if ( !link.empty() ) {
 			Engine::instance()->openURI( link.toUtf8() );
@@ -1788,6 +1829,12 @@ Uint32 UICodeEditor::onMouseDoubleClick( const Vector2i& position, const Uint32&
 		if ( ( flags & EE_BUTTON_LMASK ) && rect.contains( position.asFloat() ) )
 			return 1;
 	}
+
+	MouseBindings::Shortcut shortcut{ MouseAction::DoubleClick, flags,
+									  getInput()->getSanitizedModState() };
+
+	if ( tryExecuteMouseBinding( shortcut ) )
+		return 1;
 
 	Vector2f localPos( convertToNodeSpace( position.asFloat() ) );
 	if ( isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) &&
@@ -4398,6 +4445,12 @@ void UICodeEditor::registerCommands() {
 	mDoc->setCommand( "copy-file-path-and-position", [this] { copyFilePath( true ); } );
 	mDoc->setCommand( "find-replace", [this] { showFindReplace(); } );
 	mDoc->setCommand( "open-context-menu", [this] { createContextMenu(); } );
+	mDoc->setCommand( "add-cursor-at-mouse-position", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->addCursorAtMousePosition();
+	} );
+	mDoc->setCommand( "add-cursors-from-current-to-mouse-position", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->addCursorsFromCurrentToMousePosition();
+	} );
 	mUnlockedCmd.insert( { "copy", "select-all", "open-containing-folder",
 						   "copy-containing-folder-path", "copy-file-path",
 						   "copy-file-path-and-position", "open-context-menu", "find-replace" } );
@@ -4425,6 +4478,7 @@ Tools::UIDocFindReplace* UICodeEditor::getFindReplace() {
 
 void UICodeEditor::registerKeybindings() {
 	mKeyBindings.addKeybinds( getDefaultKeybindings() );
+	mMouseBindings.addMousebinds( getDefaultMousebindings() );
 }
 
 void UICodeEditor::onCursorPosChange() {
@@ -4494,7 +4548,7 @@ void UICodeEditor::checkMouseOverColor( const Vector2i& position ) {
 }
 
 String UICodeEditor::checkMouseOverLink( const Vector2i& position ) {
-	if ( !mInteractiveLinks || !getUISceneNode()->getWindow()->getInput()->isKeyModPressed() )
+	if ( !mInteractiveLinks || !getInput()->isKeyModPressed() )
 		return resetLinkOver( position );
 
 	TextPosition pos( resolveScreenPosition( position.asFloat(), false ) );

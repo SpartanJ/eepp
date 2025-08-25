@@ -179,7 +179,7 @@ const KeyBindings::ShortcutMap& KeyBindings::getShortcutMap() const {
 	return mShortcuts;
 }
 
-const std::map<std::string, Uint64> KeyBindings::getKeybindings() const {
+const std::map<std::string, Uint64>& KeyBindings::getKeybindings() const {
 	return mKeybindingsInvert;
 }
 

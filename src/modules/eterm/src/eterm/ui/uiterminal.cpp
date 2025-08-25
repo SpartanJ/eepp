@@ -49,7 +49,7 @@ void UITerminal::draw() {
 
 UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay ) :
 	UIWidget( "terminal" ),
-	mKeyBindings( getUISceneNode()->getWindow()->getInput() ),
+	mKeyBindings( getInput() ),
 	mVScroll( UIScrollBar::NewVertical() ),
 	mTerm( terminalDisplay ) {
 	mFlags |= UI_TAB_STOP | UI_SCROLLABLE;
@@ -420,7 +420,7 @@ bool UITerminal::isUsingCustomTitle() const {
 }
 
 Uint32 UITerminal::onTextInput( const TextInputEvent& event ) {
-	Input* input = getUISceneNode()->getWindow()->getInput();
+	Input* input = getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
 		 ( input->isLeftControlPressed() && !input->isLeftAltPressed() &&

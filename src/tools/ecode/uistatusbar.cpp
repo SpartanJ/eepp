@@ -1,9 +1,9 @@
+#include "uistatusbar.hpp"
 #include "globalsearchcontroller.hpp"
 #include "plugins/plugincontextprovider.hpp"
 #include "statusappoutputcontroller.hpp"
 #include "statusbuildoutputcontroller.hpp"
 #include "statusterminalcontroller.hpp"
-#include "uistatusbar.hpp"
 #include "universallocator.hpp"
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/window.hpp>
@@ -73,8 +73,7 @@ UIStatusBar* UIStatusBar::New() {
 }
 
 UIStatusBar::UIStatusBar() :
-	UILinearLayout( "statusbar", UIOrientation::Horizontal ),
-	WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ) {}
+	UILinearLayout( "statusbar", UIOrientation::Horizontal ), WidgetCommandExecuter( getInput() ) {}
 
 void UIStatusBar::updateState() {
 	forEachChild( [this]( Node* node ) {

@@ -39,7 +39,7 @@ UIConsole* UIConsole::NewOpt( Font* font, const bool& makeDefaultCommands, const
 
 UIConsole::UIConsole( Font* font, const bool& makeDefaultCommands, const bool& attachToLog,
 					  const unsigned int& maxLogLines ) :
-	UIWidget( "console" ), mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {
+	UIWidget( "console" ), mKeyBindings( getInput() ) {
 	setFlags( UI_AUTO_PADDING );
 	mFlags |= UI_TAB_STOP | UI_SCROLLABLE | UI_TEXT_SELECTION_ENABLED;
 	setClipType( ClipType::ContentBox );
@@ -100,9 +100,9 @@ void UIConsole::setTheme( UITheme* Theme ) {
 
 void UIConsole::scheduledUpdate( const Time& ) {
 	if ( mMouseDown ) {
-		if ( !( getUISceneNode()->getWindow()->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
+		if ( !( getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
 			mMouseDown = false;
-			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
+			getInput()->captureMouse( false );
 		} else {
 			onMouseDown( getUISceneNode()->getEventDispatcher()->getMousePos(),
 						 getUISceneNode()->getEventDispatcher()->getPressTrigger() );
@@ -921,14 +921,14 @@ Uint32 UIConsole::onKeyDown( const KeyEvent& event ) {
 	if ( !cmd.empty() ) {
 		mDoc.execute( cmd );
 		mLastCmdHash = String::hash( cmd );
-		mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
+		mLastExecuteEventId = getInput()->getEventsSentId();
 		return 1;
 	}
 	return UIWidget::onKeyDown( event );
 }
 
 Uint32 UIConsole::onTextInput( const TextInputEvent& event ) {
-	Input* input = getUISceneNode()->getWindow()->getInput();
+	Input* input = getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
 		 ( input->isLeftControlPressed() && !input->isLeftAltPressed() &&
@@ -936,7 +936,7 @@ Uint32 UIConsole::onTextInput( const TextInputEvent& event ) {
 		 input->isMetaPressed() || ( input->isLeftAltPressed() && !input->isLeftControlPressed() ) )
 		return 0;
 
-	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() &&
+	if ( mLastExecuteEventId == getInput()->getEventsSentId() &&
 		 !TextDocument::isTextDocumentCommand( mLastCmdHash ) )
 		return 0;
 
@@ -1032,7 +1032,7 @@ Uint32 UIConsole::onFocus( NodeFocusReason reason ) {
 
 	getSceneNode()->getWindow()->startTextInput();
 
-	mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
+	mLastExecuteEventId = getInput()->getEventsSentId();
 
 	return 1;
 }
@@ -1072,7 +1072,7 @@ Uint32 UIConsole::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 
 	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) &&
 		 getEventDispatcher()->getMouseDownNode() == this && !mMouseDown ) {
-		getUISceneNode()->getWindow()->getInput()->captureMouse( true );
+		getInput()->captureMouse( true );
 		mMouseDown = true;
 		auto pos = getPositionOnScreen( position.asFloat() );
 		auto prevSelection = mSelection;
@@ -1144,7 +1144,7 @@ Uint32 UIConsole::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 	} else if ( flags & EE_BUTTON_LMASK ) {
 		if ( mMouseDown ) {
 			mMouseDown = false;
-			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
+			getInput()->captureMouse( false );
 		}
 	} else if ( ( flags & EE_BUTTON_RMASK ) ) {
 		onCreateContextMenu( position, flags );

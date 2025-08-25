@@ -505,13 +505,11 @@ UITableRow* UIAbstractTableView::createRow() {
 			return;
 		auto index = event->getNode()->asType<UITableRow>()->getCurIndex();
 		if ( mSelectionKind == SelectionKind::Single &&
-			 getUISceneNode()->getWindow()->getInput()->getSanitizedModState() &
-				 KeyMod::getDefaultModifier() ) {
+			 getInput()->getSanitizedModState() & KeyMod::getDefaultModifier() ) {
 			getSelection().remove( index );
 		} else {
 			if ( mSelectionKind == SelectionKind::Multiple &&
-				 getUISceneNode()->getWindow()->getInput()->getSanitizedModState() &
-					 KeyMod::getDefaultModifier() ) {
+				 getInput()->getSanitizedModState() & KeyMod::getDefaultModifier() ) {
 				getSelection().toggle( index );
 			} else {
 				getSelection().set( index );
@@ -575,7 +573,7 @@ void UIAbstractTableView::bindNavigationClick( UIWidget* widget ) {
 				onOpenModelIndex( idx, event );
 			} else if ( isCellSelection() && ( mouseEvent->getFlags() & EE_BUTTON_LMASK ) ) {
 				auto cellIdx = mouseEvent->getNode()->asType<UITableCell>()->getCurIndex();
-				if ( getUISceneNode()->getWindow()->getInput()->isControlPressed() ) {
+				if ( getInput()->isControlPressed() ) {
 					getSelection().remove( cellIdx );
 				} else {
 					getSelection().set( cellIdx );

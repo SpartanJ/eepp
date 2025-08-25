@@ -186,9 +186,7 @@ bool UIWelcomeScreen::isType( const Uint32& type ) const {
 }
 
 UIWelcomeScreen::UIWelcomeScreen( App* app ) :
-	UIRelativeLayout(),
-	WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ),
-	mApp( app ) {
+	UIRelativeLayout(), WidgetCommandExecuter( getInput() ), mApp( app ) {
 	setId( "welcome_ecode" );
 	addClass( "welcome_tab" );
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );

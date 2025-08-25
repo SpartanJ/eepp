@@ -2465,22 +2465,21 @@ bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position
 											const std::optional<EvaluateInfo>& info ) {
 					if ( info && mManager->getSplitter()->editorExists( editor ) &&
 						 !info->result.empty() ) {
-						editor->runOnMainThread( [this, editor, info = std::move( *info ),
-												  expression]() {
-							auto mousePos =
-								editor->getUISceneNode()->getWindow()->getInput()->getMousePos();
-							if ( !editor->getScreenRect().contains( mousePos.asFloat() ) )
-								return;
+						editor->runOnMainThread(
+							[this, editor, info = std::move( *info ), expression]() {
+								auto mousePos = editor->getInput()->getMousePos();
+								if ( !editor->getScreenRect().contains( mousePos.asFloat() ) )
+									return;
 
-							auto docPos = editor->resolveScreenPosition( mousePos.asFloat() );
-							auto range =
-								editor->getDocument().getWordRangeInPosition( docPos, true );
+								auto docPos = editor->resolveScreenPosition( mousePos.asFloat() );
+								auto range =
+									editor->getDocument().getWordRangeInPosition( docPos, true );
 
-							if ( mCurrentHover.contains( range ) ) {
-								mCurrentHover = range;
-								displayTooltip( editor, expression, info, mousePos.asFloat() );
-							}
-						} );
+								if ( mCurrentHover.contains( range ) ) {
+									mCurrentHover = range;
+									displayTooltip( editor, expression, info, mousePos.asFloat() );
+								}
+							} );
 					}
 				} );
 		},

@@ -197,9 +197,7 @@ static const char* DEFAULT_CHAT_GLOBE = R"xml(
 )xml";
 
 LLMChatUI::LLMChatUI( PluginManager* manager ) :
-	UILinearLayout(),
-	WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ),
-	mManager( manager ) {
+	UILinearLayout(), WidgetCommandExecuter( getInput() ), mManager( manager ) {
 	setClass( "llm_chatui" );
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 

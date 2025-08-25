@@ -167,7 +167,7 @@ void UIDocFindReplace::setDoc( const std::shared_ptr<Doc::TextDocument>& doc ) {
 UIDocFindReplace::UIDocFindReplace( UIWidget* parent, const std::shared_ptr<Doc::TextDocument>& doc,
 									std::unordered_map<std::string, std::string> keybindings ) :
 	UILinearLayout( "docfindreplace", UIOrientation::Horizontal ),
-	WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ),
+	WidgetCommandExecuter( getInput() ),
 	mDoc( doc ) {
 	mFlags |= UI_OWNS_CHILDREN_POSITION;
 

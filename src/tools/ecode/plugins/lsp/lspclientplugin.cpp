@@ -644,7 +644,7 @@ bool LSPClientPlugin::onMouseClick( UICodeEditor* editor, const Vector2i& pos,
 		}
 	}
 
-	Input* input = editor->getUISceneNode()->getWindow()->getInput();
+	Input* input = editor->getInput();
 	Uint32 mod = input->getSanitizedModState();
 	if ( mod != ( KEYMOD_LALT | KeyMod::getDefaultModifier() ) || ( flags & EE_BUTTON_LMASK ) == 0 )
 		return false;
@@ -1642,8 +1642,7 @@ void LSPClientPlugin::hideTooltip( UICodeEditor* editor ) {
 }
 
 static TextPosition currentMouseTextPosition( UICodeEditor* editor ) {
-	return editor->resolveScreenPosition(
-		editor->getUISceneNode()->getWindow()->getInput()->getMousePos().asFloat() );
+	return editor->resolveScreenPosition( editor->getInput()->getMousePos().asFloat() );
 }
 
 void LSPClientPlugin::tryHideTooltip( UICodeEditor* editor, const Vector2i& position ) {

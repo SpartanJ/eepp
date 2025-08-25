@@ -387,7 +387,7 @@ Uint32 UITab::onMessage( const NodeMessage* message ) {
 			} else if ( tTabW->getTabsClosable() && ( flags & EE_BUTTON_MMASK ) ) {
 				tTabW->tryCloseTab( this, UITabWidget::FocusTabBehavior::Closest );
 			} else if ( flags & EE_BUTTONS_WUWD ) {
-				Input* input = getUISceneNode()->getWindow()->getInput();
+				Input* input = getInput();
 				if ( input->isModState( KeyMod::getDefaultModifier() ) ) {
 					UISlider* slider = tTabW->getTabScroll()->getSlider();
 					if ( flags & EE_BUTTON_WUMASK ) {

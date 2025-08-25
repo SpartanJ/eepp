@@ -2,6 +2,44 @@
 
 namespace EE { namespace UI {
 
+std::string MouseBindings::mouseActionToString( MouseAction action ) {
+	switch ( action ) {
+		case MouseAction::Down:
+			return "mousedown";
+		case MouseAction::Up:
+			return "mouseup";
+		case MouseAction::Move:
+			return "mousemove";
+		case MouseAction::Click:
+			return "mouseclick";
+		case MouseAction::DoubleClick:
+			return "mousedoubleclick";
+		case MouseAction::Over:
+			return "mouseover";
+		case MouseAction::Leave:
+			return "mouseleave";
+	}
+	return ""; // unreachable
+}
+
+MouseAction MouseBindings::mouseActionFromString( std::string_view action ) {
+	if ( action == "mousedown" )
+		return MouseAction::Down;
+	if ( action == "mouseup" )
+		return MouseAction::Up;
+	if ( action == "mousemove" )
+		return MouseAction::Move;
+	if ( action == "mouseclick" )
+		return MouseAction::Click;
+	if ( action == "mousedoubleclick" )
+		return MouseAction::DoubleClick;
+	if ( action == "mouseover" )
+		return MouseAction::Over;
+	if ( action == "mouseleave" )
+		return MouseAction::Leave;
+	return MouseAction::Down;
+}
+
 MouseButtonsMask MouseBindings::getMouseButtonsMask( const std::string& strc ) {
 	MouseButtonsMask mask;
 	String::readBySeparator(
@@ -86,27 +124,14 @@ MouseBindings::Shortcut MouseBindings::sanitizeShortcut( const MouseBindings::Sh
 
 MouseBindings::MouseBindings() {}
 
-void MouseBindings::addMousebindsString( const std::map<std::string, std::string>& binds ) {
-	for ( auto& bind : binds ) {
-		addMousebindString( bind.first, bind.second );
-	}
-}
-
-void MouseBindings::addMousebinds( const std::map<MouseBindings::Shortcut, std::string>& binds ) {
-	for ( auto& bind : binds ) {
-		addMousebind( bind.first, bind.second );
-	}
-}
-
-void MouseBindings::addMousebindsStringUnordered(
+void MouseBindings::addMousebindsString(
 	const std::unordered_map<std::string, std::string>& binds ) {
 	for ( auto& bind : binds ) {
 		addMousebindString( bind.first, bind.second );
 	}
 }
 
-void MouseBindings::addMousebindsUnordered(
-	const std::unordered_map<MouseBindings::Shortcut, std::string>& binds ) {
+void MouseBindings::addMousebinds( const ShortcutMap& binds ) {
 	for ( auto& bind : binds ) {
 		addMousebind( bind.first, bind.second );
 	}
@@ -117,8 +142,10 @@ void MouseBindings::addMousebindString( const std::string& key, const std::strin
 }
 
 void MouseBindings::addMousebind( const MouseBindings::Shortcut& key, const std::string& command ) {
-	mShortcuts[sanitizeShortcut( key )] = command;
-	mMousebindingsInvert[command] = sanitizeShortcut( key );
+	Shortcut sshortcut = sanitizeShortcut( key );
+	mShortcuts[sshortcut] = command;
+	mActionShortcuts[sshortcut.action][sshortcut] = command;
+	mMousebindingsInvert[command] = sshortcut;
 }
 
 void MouseBindings::replaceMousebindString( const std::string& keys, const std::string& command ) {
@@ -127,24 +154,30 @@ void MouseBindings::replaceMousebindString( const std::string& keys, const std::
 
 void MouseBindings::replaceMousebind( const MouseBindings::Shortcut& keys,
 									  const std::string& command ) {
+	Shortcut sshortcut = sanitizeShortcut( keys );
 	bool erased;
 	do {
 		erased = false;
-		auto it = mShortcuts.find( sanitizeShortcut( keys ) );
+		auto it = mShortcuts.find( sshortcut );
 		if ( it != mShortcuts.end() ) {
 			mShortcuts.erase( it );
 			mMousebindingsInvert.erase( it->second );
 			erased = true;
 		}
 	} while ( erased );
-	mShortcuts[sanitizeShortcut( keys )] = command;
-	mMousebindingsInvert[command] = sanitizeShortcut( keys );
+	mShortcuts[sshortcut] = command;
+	mActionShortcuts[sshortcut.action][sshortcut] = command;
+	mMousebindingsInvert[command] = sshortcut;
 }
 
 MouseBindings::Shortcut MouseBindings::toShortcut( const std::string& keys ) {
 	Shortcut shortcut;
 	Uint32 mod = 0;
-	auto keysSplit = String::split( keys, '+' );
+	auto actionSplit = String::split( keys, ',' );
+	if ( actionSplit.size() != 2 )
+		return shortcut;
+	shortcut.action = mouseActionFromString( actionSplit[0] );
+	auto keysSplit = String::split( actionSplit[1], '+' );
 	for ( auto& part : keysSplit ) {
 		if ( ( mod = KeyMod::getKeyMod( part ) ) ) {
 			shortcut.mod |= mod;
@@ -163,6 +196,12 @@ void MouseBindings::removeMousebind( const MouseBindings::Shortcut& keys ) {
 	auto it = mShortcuts.find( keys );
 	if ( it != mShortcuts.end() ) {
 		mShortcuts.erase( it );
+		auto actionIt = mActionShortcuts.find( keys.action );
+		if ( actionIt != mActionShortcuts.end() ) {
+			auto it2 = actionIt->second.find( keys );
+			if ( it2 != actionIt->second.end() )
+				actionIt->second.erase( it2 );
+		}
 	}
 }
 
@@ -231,6 +270,7 @@ std::string MouseBindings::getCommandMousebindString( const std::string& command
 
 void MouseBindings::reset() {
 	mShortcuts.clear();
+	mActionShortcuts.clear();
 	mMousebindingsInvert.clear();
 }
 
@@ -238,12 +278,14 @@ const MouseBindings::ShortcutMap& MouseBindings::getShortcutMap() const {
 	return mShortcuts;
 }
 
-const std::map<std::string, MouseBindings::Shortcut> MouseBindings::getMousebindings() const {
+const std::unordered_map<std::string, MouseBindings::Shortcut>&
+MouseBindings::getMousebindings() const {
 	return mMousebindingsInvert;
 }
 
 std::string MouseBindings::fromShortcut( MouseBindings::Shortcut shortcut, bool format ) {
 	std::vector<std::string> mods;
+	std::string actionname( mouseActionToString( shortcut.action ) );
 	std::string keyname( String::toLower( getMouseButtonsName( shortcut.key ) ) );
 	const auto& MOD_MAP = KeyMod::getModMap();
 	if ( shortcut.mod & MOD_MAP.at( "mod" ) )
@@ -260,7 +302,7 @@ std::string MouseBindings::fromShortcut( MouseBindings::Shortcut shortcut, bool 
 		mods.emplace_back( "meta" );
 	if ( mods.empty() )
 		return format ? mousebindFormat( keyname ) : keyname;
-	auto ret = String::join( mods, '+' ) + "+" + keyname;
+	auto ret = actionname + "," + String::join( mods, '+' ) + "+" + keyname;
 	return format ? mousebindFormat( ret ) : ret;
 }
 

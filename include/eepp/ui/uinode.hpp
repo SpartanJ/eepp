@@ -264,6 +264,8 @@ class EE_API UINode : public Node {
 
 	UISceneNode* getUISceneNode() const;
 
+	Input* getInput() const;
+
 	void setMinWidth( const Float& width );
 
 	void setMinHeight( const Float& height );

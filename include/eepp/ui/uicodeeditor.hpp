@@ -7,6 +7,7 @@
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
+#include <eepp/ui/mouseshortcut.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>
 #include <eepp/ui/uiwidget.hpp>
 #include <unordered_map>
@@ -191,6 +192,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	static const std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings();
 
+	static const MouseBindings::ShortcutMap getDefaultMousebindings();
+
 	UICodeEditor( const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );
 
@@ -350,6 +353,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void setTextSelection( const bool& active );
 
 	KeyBindings& getKeyBindings();
+
+	MouseBindings& getMouseBindings();
 
 	void setKeyBindings( const KeyBindings& keyBindings );
 
@@ -725,8 +730,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void invalidateLongestLineWidth();
 
-	const DocumentView& documentView() const { return mDocView; }
-
 	LineWrapMode getLineWrapMode() const { return mDocView.getConfig().mode; }
 
 	void setLineWrapMode( LineWrapMode mode );
@@ -884,6 +887,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	UIScrollBar* mHScrollBar;
 	UnorderedMap<size_t, LastXOffset> mLastXOffset;
 	KeyBindings mKeyBindings;
+	MouseBindings mMouseBindings;
 	std::unordered_set<std::string> mUnlockedCmd;
 	Clock mLastDoubleClick;
 	Uint32 mLineBreakingColumn{ 100 };
@@ -1144,6 +1148,12 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Float editorWidth() const;
 
 	Float editorHeight() const;
+
+	bool tryExecuteMouseBinding( const MouseBindings::Shortcut& shortcut );
+
+	void addCursorAtMousePosition();
+
+	void addCursorsFromCurrentToMousePosition();
 };
 
 }} // namespace EE::UI

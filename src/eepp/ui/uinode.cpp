@@ -1320,8 +1320,8 @@ void UINode::setThemeToChildren( UITheme* Theme ) {
 		if ( ChildLoop->isUINode() ) {
 			UINode* node = static_cast<UINode*>( ChildLoop );
 			node->setThemeToChildren( Theme );
-			node->setTheme( Theme ); // First set the theme to children to let the father override the
-									 // children forced themes
+			node->setTheme( Theme ); // First set the theme to children to let the father override
+									 // the children forced themes
 		}
 
 		ChildLoop = ChildLoop->getNextNode();
@@ -1754,6 +1754,10 @@ Float UINode::convertLengthAsDp( const CSS::StyleSheetLength& length,
 
 UISceneNode* UINode::getUISceneNode() const {
 	return mUISceneNode;
+}
+
+Input* UINode::getInput() const {
+	return mUISceneNode->getWindow()->getInput();
 }
 
 Rectf UINode::getLocalDpBounds() const {

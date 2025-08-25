@@ -85,7 +85,7 @@ class EE_API KeyBindings {
 
 	const ShortcutMap& getShortcutMap() const;
 
-	const std::map<std::string, Uint64> getKeybindings() const;
+	const std::map<std::string, Uint64>& getKeybindings() const;
 
 	Shortcut getShortcutFromCommand( const std::string& cmd ) const;
 
