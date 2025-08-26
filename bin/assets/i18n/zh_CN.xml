@@ -50,7 +50,6 @@
 	<string name="build_os_not_supported">系统不支持此构建！</string>
 	<string name="build_output_show_build_issues">Build Output Show Build Issues</string>
 	<string name="build_output_show_build_output">Build Output Show Build Output</string>
-	<string name="build_settings">Build Settings</string>
 	<string name="build_settings">构建设置</string>
 	<string name="build_settings_save_clarification">* 修改已自动保存</string>
 	<string name="build_step_num">Step %u: %s</string>
