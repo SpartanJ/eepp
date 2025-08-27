@@ -57,7 +57,6 @@ This operation cannot be reverted!</string>
 	<string name="build_output_show_build_issues">Build Output Show Build Issues</string>
 	<string name="build_output_show_build_output">Build Output Show Build Output</string>
 	<string name="build_settings">Build Settings</string>
-	<string name="build_settings">Build Settings</string>
 	<string name="build_settings_save_clarification">* All changes are automatically saved</string>
 	<string name="build_step_num">Step %u: %s</string>
 	<string name="build_steps">Build Steps</string>

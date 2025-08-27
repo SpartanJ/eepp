@@ -4,9 +4,9 @@
 	author: 'NullPlane'
 	author_link: 'github.com/NullPlane'
 	collaborators: [ 'SpartanJ', 'NullPlane' ]
-	version: '0.7.1_r01'
+	version: '0.7.2_r01'
 	created: 2024-02-08
-	updated: 2025-05-17
+	updated: 2025-08-26
 	language: 'de'
 	format: 'xml'
 	file: 'de.xml'
@@ -71,7 +71,6 @@ Diese Operation kann nicht rückgängig gemacht werden!</string>
 	<string name="build_os_not_supported">Betriebssystem von gegenwärtigem Build nicht unterstützt!</string>
 	<string name="build_output_show_build_issues">Build-Output: Build-Probleme zeigen</string>
 	<string name="build_output_show_build_output">Build-Output: Build-Output zeigen</string>
-	<string name="build_settings">Build-Einstellungen</string>
 	<string name="build_settings">Build-Einstellungen</string>
 	<string name="build_settings_save_clarification">* Änderungen werden automatisch gespeichert</string>
 	<string name="build_step_num">Schritt %u: %s</string>
