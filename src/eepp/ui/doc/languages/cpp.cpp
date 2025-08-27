@@ -33,6 +33,11 @@ void addCPP() {
 				SyntaxPatternMatchType::RegEx },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "std%:%:[%w_]*" }, "type" },
+			  { { "^\\s*#\\s*(elifndef|elifdef|warning|pragma|error|line|include|undef|define|"
+				  "endif|else|elif|ifndef|ifdef|if)" },
+				"keyword",
+				"",
+				SyntaxPatternMatchType::RegEx },
 			  { { "(%[)(%[)(%a[%w_]+)(%])(%])" },
 				{ "normal", "keyword", "parameter", "type", "parameter", "keyword" } },
 			  { { "#?[%a_][%w_]*" }, "symbol" },
