@@ -977,6 +977,7 @@ workspace "eepp"
 	project "zlib-static"
 		kind "StaticLib"
 		language "C"
+		defines { "_LARGEFILE64_SOURCE" }
 		files { "src/thirdparty/zlib/*.c" }
 		build_base_configuration( "zlib" )
 		target_dir_thirdparty()
