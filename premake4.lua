@@ -1105,6 +1105,7 @@ solution "eepp"
 	project "zlib-static"
 		kind "StaticLib"
 		language "C"
+		defines { "_LARGEFILE64_SOURCE" }
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		files { "src/thirdparty/zlib/*.c" }
 		build_base_configuration( "zlib" )
