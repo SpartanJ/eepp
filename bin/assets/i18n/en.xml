@@ -299,7 +299,7 @@ ecode will try to open an external terminal.</string>
 	<string name="file_name">File Name</string>
 	<string name="file_path">File Path</string>
 	<string name="file_type">File Type</string>
-	<string name="filter_semicolon">Filter:</string>
+	<string name="filter_colon">Filter:</string>
 	<string name="find">Find</string>
 	<string name="find_and_replace">Find And Replace</string>
 	<string name="find_prev">Find Prev</string>

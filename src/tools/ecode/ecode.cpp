@@ -3163,7 +3163,7 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 
 				if ( FileSystem::fileExists( rpath ) ) {
 					loadFileFromPath( rpath, false, nullptr, onLoaded );
-				} else if ( FileSystem::fileWrite( path, "" ) ) {
+				} else if ( FileSystem::fileCanWrite( path ) ) {
 					loadFileFromPath( path, false, nullptr, onLoaded );
 				}
 

@@ -1976,7 +1976,7 @@ UIWindow* DebuggerPlugin::processPicker() {
 <window id="process_picker" lw="450dp" lh="450dp" padding="4dp" window-title="@string(list_of_processes, List of Processes)">
 	<vbox lw="mp" lh="mp">
 		<hbox lw="mp" lh="wc" margin-bottom="4dp">
-			<TextView text="@string(filter_semicolon, Filter:)" lh="mp" margin-right="8dp" />
+			<TextView text="@string(filter_colon, Filter:)" lh="mp" margin-right="8dp" />
 			<TextInput id="processes_filter" lw="0dp" lw8="1" />
 		</hbox>
 		<TableView id="processes_list" lw="mp" lh="0dp" lw8="1" />

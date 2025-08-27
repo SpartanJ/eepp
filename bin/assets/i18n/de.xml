@@ -314,7 +314,7 @@ ecode versucht, externes Terminal zu öffnen.</string>
 	<string name="file_name">Dateiname</string>
 	<string name="file_path">Dateipfad</string>
 	<string name="file_type">Dateityp</string>
-	<string name="filter_semicolon">Filter:</string>
+	<string name="filter_colon">Filter:</string>
 	<string name="find">Suchen</string>
 	<string name="find_and_replace">Suchen und Ersetzen</string>
 	<string name="find_prev">Voriges finden</string>
