@@ -1302,6 +1302,11 @@ void App::loadKeybindings() {
 										  DocSearchController::getDefaultKeybindings(), forceRebind,
 										  getMigrateKeybindings(), mConfig.iniState );
 
+	KeybindingsHelper::updateKeybindings( ini, "editor_mouse_bindings", mWindow->getInput(),
+										  mMousebindings, mMousebindingsInvert,
+										  UICodeEditor::getDefaultMousebindings(), forceRebind,
+										  getMigrateKeybindings(), mConfig.iniState );
+
 	auto localKeybindings = getLocalKeybindings();
 	for ( const auto& kb : localKeybindings ) {
 		auto found = mKeybindingsInvert.find( kb.second );
@@ -1340,10 +1345,15 @@ void App::reloadKeybindings() {
 	mRealSplitterKeybindings.clear();
 	mRealTerminalKeybindings.clear();
 	mRealDefaultKeybindings.clear();
+	mMousebindings.clear();
+	mMousebindingsInvert.clear();
 	loadKeybindings();
 	mSplitter->forEachEditor( [this]( UICodeEditor* ed ) {
 		ed->getKeyBindings().reset();
 		ed->getKeyBindings().addKeybindsStringUnordered( mKeybindings );
+		ed->getMouseBindings().reset();
+		ed->getMouseBindings().addMousebindsString( mMousebindings );
+
 	} );
 	mSplitter->forEachWidgetType( UI_TYPE_TERMINAL, [this]( UIWidget* widget ) {
 		mTerminalManager->setKeybindings( widget->asType<UITerminal>() );
@@ -2545,6 +2555,11 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	if ( !mKeybindings.empty() ) {
 		editor->getKeyBindings().reset();
 		editor->getKeyBindings().addKeybindsStringUnordered( mKeybindings );
+	}
+
+	if ( !mMousebindings.empty() ) {
+		editor->getMouseBindings().reset();
+		editor->getMouseBindings().addMousebindsString( mMousebindings );
 	}
 
 	editor->on( Event::OnClose, [this, editor]( auto ) {

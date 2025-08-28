@@ -3,6 +3,7 @@
 
 #include <eepp/system/inifile.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
+#include <eepp/ui/mouseshortcut.hpp>
 #include <string>
 
 using namespace EE::System;
@@ -24,6 +25,14 @@ class KeybindingsHelper {
 		std::unordered_map<std::string, std::string>& invertedKeybindings,
 		const std::map<KeyBindings::Shortcut, std::string>& defKeybindings, bool forceRebind,
 		const std::map<std::string, std::string>& migrateKeyindings, IniFile& iniState );
+
+	static void
+	updateKeybindings( IniFile& ini, const std::string& group, Input* input,
+					   std::unordered_map<std::string, std::string>& keybindings,
+					   std::unordered_map<std::string, std::string>& invertedKeybindings,
+					   const MouseBindings::ShortcutMap& defKeybindings, bool forceRebind,
+					   const std::map<std::string, std::string>& migrateKeyindings,
+					   IniFile& iniState );
 };
 
 } // namespace ecode

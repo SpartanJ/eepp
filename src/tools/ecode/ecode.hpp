@@ -583,6 +583,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::map<KeyBindings::Shortcut, std::string> mRealSplitterKeybindings;
 	std::map<KeyBindings::Shortcut, std::string> mRealTerminalKeybindings;
 	std::map<KeyBindings::Shortcut, std::string> mRealDefaultKeybindings;
+	std::unordered_map<std::string, std::string> mMousebindings;
+	std::unordered_map<std::string, std::string> mMousebindingsInvert;
 	std::string mConfigPath;
 	std::string mPluginsPath;
 	std::string mColorSchemesPath;

@@ -41,7 +41,7 @@ MouseAction MouseBindings::mouseActionFromString( std::string_view action ) {
 }
 
 MouseButtonsMask MouseBindings::getMouseButtonsMask( const std::string& strc ) {
-	MouseButtonsMask mask;
+	MouseButtonsMask mask = 0;
 	String::readBySeparator(
 		strc,
 		[&mask]( std::string_view str ) {

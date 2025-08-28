@@ -1592,6 +1592,8 @@ Uint32 UICodeEditor::onMouseDown( const Vector2i& position, const Uint32& flags 
 		} else if ( !mDoc->hasSelection() ) {
 			mDoc->setSelection( textScreenPos );
 		}
+	} else if ( !( flags & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) ) {
+		tryExecuteMouseBinding( shortcut );
 	}
 	return UIWidget::onMouseDown( position, flags );
 }
@@ -2639,6 +2641,10 @@ void UICodeEditor::setLineNumberActiveFontColor( const Color& lineNumberActiveFo
 
 KeyBindings& UICodeEditor::getKeyBindings() {
 	return mKeyBindings;
+}
+
+MouseBindings& UICodeEditor::getMouseBindings() {
+	return mMouseBindings;
 }
 
 void UICodeEditor::setKeyBindings( const KeyBindings& keyBindings ) {
