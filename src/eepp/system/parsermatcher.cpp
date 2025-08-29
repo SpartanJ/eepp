@@ -11,6 +11,148 @@ enum LanguageStandard {
 // Helper functions (needed by the logic, inferred from original code)
 namespace { // Use an anonymous namespace to keep helpers local to this translation unit
 
+/**
+ * @brief Parses a single field in CSV/TSV, handling quoted content and including trailing separator
+ *
+ * @param input The input string
+ * @param pos Current position (will be updated)
+ * @param length Total length of input
+ * @param delimiter Field delimiter (',' for CSV, '\t' for TSV)
+ * @param startPos Output: start position of the field content
+ * @param endPos Output: end position of the field content (including separator if present)
+ * @return true if a field was successfully parsed
+ */
+inline bool parseCSVField( const char* input, int& pos, int length, char delimiter, int& startPos,
+						   int& endPos ) {
+	if ( pos >= length ) {
+		return false;
+	}
+
+	startPos = pos;
+	bool inQuotes = false;
+	bool hasQuotes = false;
+
+	// Check if field starts with quote
+	if ( input[pos] == '"' ) {
+		hasQuotes = true;
+		inQuotes = true;
+		pos++; // Skip opening quote
+	}
+
+	while ( pos < length ) {
+		char c = input[pos];
+
+		if ( hasQuotes && inQuotes ) {
+			if ( c == '"' ) {
+				// Check for escaped quote (double quote)
+				if ( pos + 1 < length && input[pos + 1] == '"' ) {
+					pos += 2; // Skip both quotes
+					continue;
+				} else {
+					// End of quoted field
+					pos++; // Skip closing quote
+					inQuotes = false;
+
+					// Skip any whitespace until delimiter or end of line
+					while ( pos < length && input[pos] != delimiter && input[pos] != '\n' &&
+							input[pos] != '\r' &&
+							std::isspace( static_cast<unsigned char>( input[pos] ) ) ) {
+						pos++;
+					}
+
+					// Include delimiter if present
+					if ( pos < length && input[pos] == delimiter ) {
+						endPos = pos + 1; // Include the delimiter
+						pos++;			  // Move past delimiter
+					} else {
+						endPos = pos; // End of line or end of input
+					}
+					return true;
+				}
+			} else if ( c == '\n' || c == '\r' ) {
+				// Unescaped newline in quoted field - invalid
+				return false;
+			} else {
+				pos++;
+			}
+		} else {
+			// Not in quotes or unquoted field
+			if ( c == delimiter ) {
+				// Found delimiter - include it in the field
+				endPos = pos + 1; // Include the delimiter
+				pos++;			  // Move past delimiter
+				return true;
+			} else if ( c == '\n' || c == '\r' ) {
+				// End of line - don't include newline
+				endPos = pos;
+				return true;
+			} else if ( c == '"' && !hasQuotes ) {
+				// Quote in middle of unquoted field - treat as regular character
+				pos++;
+			} else {
+				pos++;
+			}
+		}
+	}
+
+	// Reached end of input
+	endPos = pos;
+	return startPos < endPos; // Return true if we have any content
+}
+
+/**
+ * @brief Parses a complete CSV/TSV line and creates match groups for each column
+ *
+ * @param input The input string
+ * @param startOffset Starting offset in the string
+ * @param length Total length of input
+ * @param delimiter Field delimiter (',' for CSV, '\t' for TSV)
+ * @param matchList Output array for match ranges
+ * @param maxMatches Maximum number of matches to store
+ * @return Number of columns found
+ */
+inline size_t parseCSVLine( const char* input, int startOffset, int length, char delimiter,
+							PatternMatcher::Range* matchList, size_t maxMatches ) {
+	if ( startOffset < 0 || startOffset >= length || !matchList ) {
+		return 0;
+	}
+
+	int pos = startOffset;
+	size_t columnCount = 0;
+
+	// Find end of current line
+	int lineEnd = pos;
+	while ( lineEnd < length && input[lineEnd] != '\n' && input[lineEnd] != '\r' ) {
+		lineEnd++;
+	}
+
+	// If line is empty, return 0
+	if ( pos >= lineEnd ) {
+		return 0;
+	}
+
+	// Set the first match to cover the entire line
+	matchList[0].start = startOffset;
+	matchList[0].end = lineEnd;
+	columnCount = 1;
+
+	// Parse individual fields/columns
+	while ( pos < lineEnd && columnCount < maxMatches ) {
+		int fieldStart, fieldEnd;
+
+		if ( parseCSVField( input, pos, lineEnd, delimiter, fieldStart, fieldEnd ) ) {
+			// Add column match (group index starts from 1, 0 is the whole line)
+			matchList[columnCount].start = fieldStart;
+			matchList[columnCount].end = fieldEnd;
+			columnCount++;
+		} else {
+			break;
+		}
+	}
+
+	return columnCount;
+}
+
 inline bool isBinaryDigit( char c ) {
 	return c == '0' || c == '1';
 }
@@ -1047,6 +1189,22 @@ void ParserMatcherManager::registerBaseParsers() {
 	registerParser( "js_regex", []( const char* stringSearch, int stringStartOffset,
 									PatternMatcher::Range* matchList, size_t stringLength ) {
 		return isJavaScriptRegEx( stringSearch, stringStartOffset, matchList, stringLength );
+	} );
+
+	// CSV Parser - detects CSV fields and creates match groups for each column
+	registerParser( "csv_parser", []( const char* stringSearch, int stringStartOffset,
+									  PatternMatcher::Range* matchList, size_t stringLength ) {
+		const size_t MAX_CSV_COLUMNS = 63;
+		return parseCSVLine( stringSearch, stringStartOffset, stringLength, ',', matchList,
+							 std::min( MAX_CSV_COLUMNS, stringLength ) );
+	} );
+
+	// TSV Parser - detects TSV fields and creates match groups for each column
+	registerParser( "tsv_parser", []( const char* stringSearch, int stringStartOffset,
+									  PatternMatcher::Range* matchList, size_t stringLength ) {
+		const size_t MAX_TSV_COLUMNS = 63;
+		return parseCSVLine( stringSearch, stringStartOffset, stringLength, '\t', matchList,
+							 std::min( MAX_TSV_COLUMNS, stringLength ) );
 	} );
 
 	mRegisteredBaseParsers = true;

@@ -24,7 +24,7 @@ SyntaxDefinition& addShellScript() {
 				  { { "%f[%S][%+%-][%w%-_]+%f[=]" }, "function" },
 				  { { "(%s%-%a[%w_%-]*%s+)(%d[%d%.]+)" }, { "normal", "function", "number" } },
 				  { { "(%s%-%a[%w_%-]*%s+)(%a[%a%-_:=]+)" }, { "normal", "function", "symbol" } },
-				  { { "[_%a][%w_]+%f[%+=]" }, "type" },
+				  { { "[_%a][%w_-]+%f[%+=]" }, "type" },
 				  { { "${.-}" }, "type" },
 				  { { "$[%d$%a_@*][%w_]*" }, "type" },
 				  { { "[%a_%-][%w_%-]*[%s]*%f[(]" }, "function" },

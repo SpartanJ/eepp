@@ -19,6 +19,7 @@
 #include <eepp/ui/doc/languages/covscript.hpp>
 #include <eepp/ui/doc/languages/crystal.hpp>
 #include <eepp/ui/doc/languages/csharp.hpp>
+#include <eepp/ui/doc/languages/csv.hpp>
 #include <eepp/ui/doc/languages/curry.hpp>
 #include <eepp/ui/doc/languages/d.hpp>
 #include <eepp/ui/doc/languages/dart.hpp>
@@ -245,17 +246,23 @@ void LanguagesSyntaxHighlighting::load() {
 	} );
 
 	sdm->addPreDefinition( {
+		"Curry",
+		[]() -> SyntaxDefinition& { return addCurry(); },
+		{ "%.curry$" },
+	} );
+
+	sdm->addPreDefinition( {
+		"CSV",
+		[]() -> SyntaxDefinition& { return addCSV(); },
+		{ "%.csv$" },
+	} );
+
+	sdm->addPreDefinition( {
 		"C#",
 		[]() -> SyntaxDefinition& { return addCSharp(); },
 		{ "%.cs$", "%.csx$" },
 		{},
 		"csharp",
-	} );
-
-	sdm->addPreDefinition( {
-		"Curry",
-		[]() -> SyntaxDefinition& { return addCurry(); },
-		{ "%.curry$" },
 	} );
 
 	sdm->addPreDefinition( {
@@ -725,6 +732,12 @@ void LanguagesSyntaxHighlighting::load() {
 							 { "%.tsx$" },
 							 {},
 							 "typescriptreact" } );
+
+	sdm->addPreDefinition( {
+		"TSV",
+		[]() -> SyntaxDefinition& { return addTSV(); },
+		{ "%.tsv$" },
+	} );
 
 	sdm->addPreDefinition(
 		{ "Typst", []() -> SyntaxDefinition& { return addTypst(); }, { "%.typ$" } } );
