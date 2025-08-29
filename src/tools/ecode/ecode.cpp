@@ -844,7 +844,8 @@ void App::onFileDropped( std::string file, bool openBinaryAsDocument ) {
 		Image::isImageExtension( file ) && FileSystem::fileExtension( file ) != "svg";
 	if ( node && node->isType( UI_TYPE_CODEEDITOR ) ) {
 		codeEditor = node->asType<UICodeEditor>();
-		if ( ( codeEditor->getDocument().isLoading() || !codeEditor->getDocument().isEmpty() ) &&
+		if ( ( codeEditor->getDocument().isLoading() || codeEditor->getDocument().hasFilepath() ||
+			   !codeEditor->getDocument().isEmpty() ) &&
 			 !willLoadAnImage ) {
 			auto d = mSplitter->createCodeEditorInTabWidget(
 				mSplitter->tabWidgetFromEditor( codeEditor ) );
@@ -1353,7 +1354,6 @@ void App::reloadKeybindings() {
 		ed->getKeyBindings().addKeybindsStringUnordered( mKeybindings );
 		ed->getMouseBindings().reset();
 		ed->getMouseBindings().addMousebindsString( mMousebindings );
-
 	} );
 	mSplitter->forEachWidgetType( UI_TYPE_TERMINAL, [this]( UIWidget* widget ) {
 		mTerminalManager->setKeybindings( widget->asType<UITerminal>() );
