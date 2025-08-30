@@ -1,13 +1,13 @@
-#include <eepp/ui/doc/languages/bazel.hpp>
+#include <eepp/ui/doc/languages/starlark.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-SyntaxDefinition& addBazel() {
+SyntaxDefinition& addStarlark() {
 
 	return SyntaxDefinitionManager::instance()->add(
 
-		{ "Bazel",
+		{ "Starlark",
 		  { "%.bazel$", "%.bzl$", "BUILD" },
 		  {
 			  { { "\"", "\"", "\\" }, "string" },
@@ -15,7 +15,6 @@ SyntaxDefinition& addBazel() {
 			  { { "[!%-/*?:=><]" }, "operator" },
 			  { { "-?%d+[%d%.eE_]*" }, "number" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
-			  { { "-?%d+[%d%.eE_]*" }, "number" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 
 		  },

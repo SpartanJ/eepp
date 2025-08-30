@@ -3,7 +3,6 @@
 #include <eepp/ui/doc/languages/angelscript.hpp>
 #include <eepp/ui/doc/languages/awkscript.hpp>
 #include <eepp/ui/doc/languages/batchscript.hpp>
-#include <eepp/ui/doc/languages/bazel.hpp>
 #include <eepp/ui/doc/languages/bend.hpp>
 #include <eepp/ui/doc/languages/blade.hpp>
 #include <eepp/ui/doc/languages/blueprint.hpp>
@@ -107,6 +106,7 @@
 #include <eepp/ui/doc/languages/solidity.hpp>
 #include <eepp/ui/doc/languages/sql.hpp>
 #include <eepp/ui/doc/languages/squirrel.hpp>
+#include <eepp/ui/doc/languages/starlark.hpp>
 #include <eepp/ui/doc/languages/svelte.hpp>
 #include <eepp/ui/doc/languages/swift.hpp>
 #include <eepp/ui/doc/languages/tcl.hpp>
@@ -170,7 +170,7 @@ void LanguagesSyntaxHighlighting::load() {
 
 	sdm->addPreDefinition( {
 		"Bazel",
-		[]() -> SyntaxDefinition& { return addBazel(); },
+		[]() -> SyntaxDefinition& { return addStarlark(); },
 		{ "%.bazel$", "%.bzl$", "BUILD" },
 	} );
 
