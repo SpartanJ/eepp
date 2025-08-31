@@ -6,6 +6,7 @@
 #include <eepp/ui/doc/languages/bend.hpp>
 #include <eepp/ui/doc/languages/blade.hpp>
 #include <eepp/ui/doc/languages/blueprint.hpp>
+#include <eepp/ui/doc/languages/bolt.hpp>
 #include <eepp/ui/doc/languages/brainfuck.hpp>
 #include <eepp/ui/doc/languages/buzz.hpp>
 #include <eepp/ui/doc/languages/c2.hpp>
@@ -184,6 +185,12 @@ void LanguagesSyntaxHighlighting::load() {
 		"Blueprint",
 		[]() -> SyntaxDefinition& { return addBlueprint(); },
 		{ "%.blp$" },
+	} );
+
+	sdm->addPreDefinition( {
+		"Bolt",
+		[]() -> SyntaxDefinition& { return addBolt(); },
+		{ "%.bolt$" },
 	} );
 
 	sdm->addPreDefinition( {
