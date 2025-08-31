@@ -1,6 +1,7 @@
 #include <eepp/ui/doc/languages/ada.hpp>
 #include <eepp/ui/doc/languages/adept.hpp>
 #include <eepp/ui/doc/languages/angelscript.hpp>
+#include <eepp/ui/doc/languages/armassembly.hpp>
 #include <eepp/ui/doc/languages/awkscript.hpp>
 #include <eepp/ui/doc/languages/batchscript.hpp>
 #include <eepp/ui/doc/languages/bend.hpp>
@@ -153,6 +154,12 @@ void LanguagesSyntaxHighlighting::load() {
 		"AngelScript",
 		[]() -> SyntaxDefinition& { return addAngelScript(); },
 		{ "%.as$", "%.asc$" },
+	} );
+
+	sdm->addPreDefinition( {
+		"ARM Assembly",
+		[]() -> SyntaxDefinition& { return addARMAssembly(); },
+		{ "%.s$", "%.S$", "%.asm$", "%.sx$" },
 	} );
 
 	sdm->addPreDefinition( {
