@@ -1387,6 +1387,10 @@ bool LSPClientServer::isReady() const {
 	return mReady;
 }
 
+bool LSPClientServer::isShuttingDown() const {
+	return mShuttingDown;
+}
+
 void LSPClientServer::removeDoc( TextDocument* doc ) {
 	Lock l( mClientsMutex );
 	if ( mClients.erase( doc ) > 0 ) {
@@ -1422,6 +1426,12 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( json&& msg, const Json
 														  const int id ) {
 	LSPRequestHandle ret;
 	ret.server = this;
+
+	// If it's shutting down but the write comes from a different thread, means that this is an
+	// old enqueued message and needs to be ignored. The shutdown messages happen in the main
+	// thread.
+	if ( mShuttingDown && !Engine::isMainThread() )
+		return ret;
 
 	if ( !isRunning() ) {
 		notifyServerError();
@@ -1494,8 +1504,13 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( json&& msg, const Json
 
 void LSPClientServer::sendAsync( json&& msg, const JsonReplyHandler& h,
 								 const JsonReplyHandler& eh ) {
-	getThreadPool()->run(
-		[this, msg = std::move( msg ), h, eh]() mutable { send( std::move( msg ), h, eh ); } );
+	if ( mShuttingDown )
+		return;
+	getThreadPool()->run( [this, msg = std::move( msg ), h, eh]() mutable {
+		if ( mShuttingDown )
+			return;
+		send( std::move( msg ), h, eh );
+	} );
 }
 
 LSPClientServer::LSPRequestHandle LSPClientServer::send( json&& msg, const JsonReplyHandler& h,
@@ -2443,11 +2458,17 @@ void LSPClientServer::documentSemanticTokensFull( const URI& document, bool delt
 }
 
 void LSPClientServer::shutdown() {
+	mShuttingDown = true;
 	if ( !mReady )
 		return;
 	Log::info( "LSPClientServer:shutdown: %s", mLSP.name.c_str() );
 	{
 		Lock l( mHandlersMutex );
+		Clock clock;
+		// Give the handler a changes to answer (max 100ms)
+		while ( !mHandlers.empty() && clock.getElapsedTime().asMilliseconds() < 100.f ) {
+			Sys::sleep( Milliseconds( 10 ) );
+		}
 		mHandlers.clear();
 	}
 

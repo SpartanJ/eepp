@@ -75,6 +75,8 @@ class LSPClientServer {
 
 	bool isReady() const;
 
+	bool isShuttingDown() const;
+
 	const LSPServerCapabilities& getCapabilities() const;
 
 	LSPClientServerManager* getManager() const;
@@ -280,6 +282,8 @@ class LSPClientServer {
 	bool mUsingProcess{ false };
 	bool mUsingSocket{ false };
 	bool mNotifiedServerError{ false };
+	bool mShuttingDown{ false };
+	bool mIsProcessingQueue{ false };
 	struct QueueMessage {
 		json msg;
 		JsonReplyHandler h;
@@ -299,10 +303,8 @@ class LSPClientServer {
 	};
 	std::queue<DidChangeQueue> mDidChangeQueue;
 	Mutex mDidChangeMutex;
-	bool mIsProcessingQueue{ false };
 	std::mutex mShutdownMutex;
 	std::condition_variable mShutdownCond;
-
 	std::atomic<int> mLastMsgId{ 0 };
 
 	void readStdOut( const char* bytes, size_t n );
