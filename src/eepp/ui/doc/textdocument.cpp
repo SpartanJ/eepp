@@ -3416,7 +3416,7 @@ static size_t guessFileSize( const TextDocument* doc ) {
 	Int64 maxLines = std::min( (Int64)401, (Int64)doc->linesCount() );
 	Int64 totalSize = 0;
 	for ( Int64 i = 0; i < maxLines; i++ )
-		totalSize += doc->line( i ).size();
+		totalSize += doc->getLineLength( i );
 	return totalSize;
 }
 

@@ -247,9 +247,9 @@ void SpellCheckerPlugin::update( UICodeEditor* editor ) {
 }
 
 void SpellCheckerPlugin::spellCheckDoc( std::shared_ptr<TextDocument> doc ) {
-	if ( !mLanguagesDisabled.empty() &&
-		 mLanguagesDisabled.find( doc->getSyntaxDefinition().getLSPName() ) !=
-			 mLanguagesDisabled.end() )
+	if ( ( !mLanguagesDisabled.empty() &&
+		   mLanguagesDisabled.find( doc->getSyntaxDefinition().getLSPName() ) !=
+			   mLanguagesDisabled.end() ) || doc->isHuge() )
 		return;
 
 	ScopedOp op(

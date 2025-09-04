@@ -1393,7 +1393,7 @@ void AutoCompletePlugin::resetSignatureHelp() {
 }
 
 AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocument* doc ) {
-	static constexpr auto MAX_LINE_LENGTH = EE_1KB * 10;
+	static constexpr auto MAX_LINE_COUNT = EE_1KB * 10;
 	AutoCompletePlugin::SymbolsList symbols;
 	std::shared_ptr<TextDocument> docRef =
 		getPluginContext()->getSplitter()->getTextDocumentRef( doc ); // acquire a doc
@@ -1408,7 +1408,7 @@ AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocu
 	std::string string;
 	for ( Int64 i = 0; i < static_cast<Int64>( lineCount ); i++ ) {
 		auto len = doc->getLineLength( i );
-		if ( len == 0 || len > MAX_LINE_LENGTH ) {
+		if ( len == 0 || len > MAX_LINE_COUNT ) {
 			if ( len == 0 ) // Line count must have changed
 				lineCount = doc->linesCount();
 			continue;
