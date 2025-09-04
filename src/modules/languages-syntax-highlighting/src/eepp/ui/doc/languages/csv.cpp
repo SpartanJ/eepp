@@ -4,16 +4,16 @@
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
 #define CSV_COLORING_PATTERN \
-	"keyword", "type", "parameter", "string", "operator", "number", "literal", "function",
+	"keyword", "parameter", "string", "number", "literal", "function", "type", "normal",
 
 SyntaxDefinition& addCSV() {
 	return SyntaxDefinitionManager::instance()->add(
 		{ "CSV",
 		  { "%.csv$" },
 		  { { { "csv_parser" },
-			  { "string", CSV_COLORING_PATTERN CSV_COLORING_PATTERN CSV_COLORING_PATTERN
-							  CSV_COLORING_PATTERN CSV_COLORING_PATTERN CSV_COLORING_PATTERN
-								  CSV_COLORING_PATTERN CSV_COLORING_PATTERN },
+			  { "operator", CSV_COLORING_PATTERN CSV_COLORING_PATTERN CSV_COLORING_PATTERN
+								CSV_COLORING_PATTERN CSV_COLORING_PATTERN CSV_COLORING_PATTERN
+									CSV_COLORING_PATTERN CSV_COLORING_PATTERN },
 			  "",
 			  SyntaxPatternMatchType::Parser } },
 		  {} } );
@@ -24,9 +24,9 @@ SyntaxDefinition& addTSV() {
 		{ "TSV",
 		  { "%.tsv$" },
 		  { { { "tsv_parser" },
-			  { "string", CSV_COLORING_PATTERN CSV_COLORING_PATTERN CSV_COLORING_PATTERN
-							  CSV_COLORING_PATTERN CSV_COLORING_PATTERN CSV_COLORING_PATTERN
-								  CSV_COLORING_PATTERN CSV_COLORING_PATTERN },
+			  { "operator", CSV_COLORING_PATTERN CSV_COLORING_PATTERN CSV_COLORING_PATTERN
+								CSV_COLORING_PATTERN CSV_COLORING_PATTERN CSV_COLORING_PATTERN
+									CSV_COLORING_PATTERN CSV_COLORING_PATTERN },
 			  "",
 			  SyntaxPatternMatchType::Parser } },
 		  {} } );

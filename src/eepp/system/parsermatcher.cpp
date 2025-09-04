@@ -62,8 +62,8 @@ inline bool parseCSVField( const char* input, int& pos, int length, char delimit
 
 					// Include delimiter if present
 					if ( pos < length && input[pos] == delimiter ) {
-						endPos = pos + 1; // Include the delimiter
-						pos++;			  // Move past delimiter
+						endPos = pos; // Do not include the delimiter
+						pos++;		  // Move past delimiter
 					} else {
 						endPos = pos; // End of line or end of input
 					}
@@ -79,8 +79,8 @@ inline bool parseCSVField( const char* input, int& pos, int length, char delimit
 			// Not in quotes or unquoted field
 			if ( c == delimiter ) {
 				// Found delimiter - include it in the field
-				endPos = pos + 1; // Include the delimiter
-				pos++;			  // Move past delimiter
+				endPos = pos; // Do not include the delimiter
+				pos++;		  // Move past delimiter
 				return true;
 			} else if ( c == '\n' || c == '\r' ) {
 				// End of line - don't include newline

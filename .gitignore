@@ -71,3 +71,4 @@ ecode.dmg
 /bin/unit_tests/lib*
 /projects/linux/ecode/polyfill-glibc
 /bin/crashes/*
+/bin/config/*
