@@ -3448,7 +3448,8 @@ void UICodeEditor::jumpLinesUp( int offset ) {
 void UICodeEditor::jumpLinesDown( int offset ) {
 	for ( size_t i = 0; i < mDoc->getSelections().size(); ++i ) {
 		TextPosition position = mDoc->getSelections()[i].start();
-		if ( position.line() >= (Int64)mDocView.getVisibleLinesCount() - offset ) {
+		Int64 visibleIndex = static_cast<Int64>( mDocView.getVisibleLineInfo( i ).visibleIndex );
+		if ( visibleIndex >= (Int64)mDocView.getVisibleLinesCount() - offset ) {
 			mDoc->setSelection( i, mDoc->endOfDoc(), mDoc->endOfDoc() );
 		} else {
 			mDoc->moveTo( i, moveToLineOffset( position, offset, i ) );
@@ -4297,15 +4298,10 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 				Vector2f offset( startScroll );
 				offset.x += getGlyphWidth();
 
-				if ( mDocView.isWrappedLine( i ) ) {
-					auto info = mDocView.getVisibleLineRange( { i, 0 }, true );
-					offset += getTextPositionOffset( info.range.end(), lineHeight, true ).asFloat();
-				} else {
-					offset += getTextPositionOffset(
-								  { i, static_cast<Int64>( mDoc->line( i ).getText().size() ) },
-								  lineHeight, true )
-								  .asFloat();
-				}
+				offset +=
+					getTextPositionOffset( { i, static_cast<Int64>( mDoc->getLineLength( i ) ) },
+										   lineHeight, true )
+						.asFloat();
 
 				Text::draw( String( (String::StringBaseType)0x2026 /* … */ ), offset, fontStyle,
 							mTabWidth );
