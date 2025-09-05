@@ -503,6 +503,8 @@ std::optional<std::string> AIAssistantPlugin::getApiKeyFromProvider( const std::
 			ret = getenv( "GROK_API_KEY" );
 	} else if ( provider == "github" ) {
 		ret = getenv( "GITHUB_API_KEY" );
+	} else if ( provider == "perplexity" ) {
+		ret = getenv( "PERPLEXITY_API_KEY" );
 	}
 	if ( ret )
 		return std::string{ ret };

@@ -354,6 +354,27 @@
           "cheapest": true
         }
       ]
+    },
+    "perplexity": {
+      "api_url": "https://api.perplexity.ai/chat/completions",
+      "display_name": "Perplexity",
+      "models": [
+        {
+          "name": "sonar-reasoning",
+          "display_name": "Sonar Reasoning",
+          "tool_calling": true
+        },
+        {
+          "name": "sonar-deep-research",
+          "display_name": "Sonar Deep Research",
+          "tool_calling": true
+        },
+        {
+          "name": "sonar",
+          "display_name": "Sonar",
+          "tool_calling": true
+        }
+      ]
     }
   }
 }
