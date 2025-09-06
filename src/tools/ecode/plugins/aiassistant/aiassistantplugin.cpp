@@ -322,6 +322,12 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 			mApiKeys["github"] = config.value( "github_api_key", "" );
 		else if ( updateConfigFile )
 			config["github_api_key"] = mApiKeys["github"];
+
+		if ( config.contains( "perplexity_api_key" ) )
+			mApiKeys["perplexity"] = config.value( "perplexity_api_key", "" );
+		else if ( updateConfigFile )
+			config["perplexity_api_key"] = mApiKeys["perplexity"];
+
 	}
 
 	if ( mKeyBindings.empty() ) {
