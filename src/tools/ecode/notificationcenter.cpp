@@ -8,8 +8,15 @@ using namespace EE::Scene;
 
 namespace ecode {
 
+NotificationCenter* sInstance = nullptr;
+
+NotificationCenter* NotificationCenter::instance() {
+	return sInstance;
+}
+
 NotificationCenter::NotificationCenter( UILayout* layout, PluginManager* pluginManager ) :
 	mLayout( layout ), mPluginManager( pluginManager ) {
+	sInstance = this;
 	mPluginManager->subscribeMessages(
 		"notificationcenter", [this]( const PluginMessage& msg ) -> PluginRequestHandle {
 			if ( !msg.isBroadcast() )

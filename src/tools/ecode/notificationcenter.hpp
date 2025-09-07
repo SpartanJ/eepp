@@ -7,6 +7,8 @@ namespace ecode {
 
 class NotificationCenter {
   public:
+	static NotificationCenter* instance();
+
 	NotificationCenter( UILayout* layout, PluginManager* pluginManager );
 
 	void addNotification( const String& text, const Time& delay = Seconds( 2.5 ),

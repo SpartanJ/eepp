@@ -1,14 +1,21 @@
 #include "uitreeviewfs.hpp"
 #include "customwidgets.hpp"
+#include "notificationcenter.hpp"
 
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/models/filesystemmodel.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/window/cursormanager.hpp>
 
-#include <filesystem>
-
 namespace ecode {
+
+static const std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings() {
+	return {
+		{ { KEY_C, KeyMod::getDefaultModifier() }, "copy" },
+		{ { KEY_X, KeyMod::getDefaultModifier() }, "cut" },
+		{ { KEY_V, KeyMod::getDefaultModifier() }, "paste" },
+	};
+}
 
 class UITreeViewCellFS : public UITreeViewCell {
   public:
@@ -30,7 +37,9 @@ class UITreeViewCellFS : public UITreeViewCell {
 		return widget->isType( static_cast<Uint32>( CustomWidgets::UI_TYPE_TREEVIEWCELLFS ) );
 	}
 
-	UITreeViewFS* getTreeView() const { return getParent()->getParent()->asType<UITreeViewFS>(); }
+	inline UITreeViewFS* getTreeView() const {
+		return getParent()->getParent()->asType<UITreeViewFS>();
+	}
 
 	const FileSystemModel* getModel() const {
 		auto model = getParent()->getParent()->asType<UITreeView>()->getModel();
@@ -95,6 +104,14 @@ class UITreeViewCellFS : public UITreeViewCell {
 			getEventDispatcher()->setNodeDragging( nullptr );
 			return 1;
 		}
+
+		std::string cmd = getTreeView()->getKeyBindings().getCommandFromKeyBind(
+			{ event.getKeyCode(), event.getMod() } );
+		if ( !cmd.empty() ) {
+			getTreeView()->execute( cmd );
+			return 1;
+		}
+
 		return 0;
 	}
 
@@ -108,7 +125,33 @@ class UITreeViewCellFS : public UITreeViewCell {
 
 UITextView* UITreeViewCellFS::sDragTV = nullptr;
 
-UITreeViewFS::UITreeViewFS() : UITreeView() {}
+UITreeViewFS::UITreeViewFS() : UITreeView(), mKeyBindings( getInput() ) {
+	mCommands["copy"] = [this] {
+		if ( getSelection().isEmpty() )
+			return;
+		mSrcCopy = getSelectionPath();
+		mWasCut = false;
+		NotificationCenter::instance()->addNotification(
+			String::format( i18n( "copied_file", "Copied '%s'" ).toUtf8(),
+							FileSystem::fileNameFromPath( mSrcCopy ) ) );
+	};
+
+	mCommands["cut"] = [this] {
+		if ( getSelection().isEmpty() )
+			return;
+		mSrcCopy = getSelectionPath();
+		mWasCut = true;
+		NotificationCenter::instance()->addNotification( String::format(
+			i18n( "cut_file", "Cut '%s'" ).toUtf8(), FileSystem::fileNameFromPath( mSrcCopy ) ) );
+	};
+
+	mCommands["paste"] = [this] {
+		if ( mWasCut )
+			moveFile( mSrcCopy, getSelectionPath() );
+	};
+
+	mKeyBindings.addKeybinds( getDefaultKeybindings() );
+}
 
 UIWidget* UITreeViewFS::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
 	auto* widget = UITreeViewCellFS::New();
@@ -128,21 +171,6 @@ Uint32 UITreeViewFS::onMessage( const NodeMessage* msg ) {
 		}
 	}
 	return UITreeView::onMessage( msg );
-}
-
-static bool fsRenameFile( const std::string& fpath, const std::string& newFilePath ) {
-	try {
-#if EE_PLATFORM == EE_PLATFORM_WIN
-		std::filesystem::rename( String( fpath ).toWideString(),
-								 String( newFilePath ).toWideString() );
-#else
-		std::filesystem::rename( fpath, newFilePath );
-#endif
-	} catch ( const std::filesystem::filesystem_error& ) {
-		return false;
-	}
-
-	return true;
 }
 
 void UITreeViewFS::moveFile( const std::string& src, const std::string& dst ) {
@@ -179,11 +207,48 @@ void UITreeViewFS::moveFile( const std::string& src, const std::string& dst ) {
 		partialSrc, partialDst ) );
 
 	UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::OK_CANCEL, confirmMsg );
+	msgBox->setTitle( "ecode" );
 	msgBox->center();
 	msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 	msgBox->showWhenReady();
 	msgBox->on( Event::OnConfirm, [srcPath = std::move( srcPath ), dstPath = std::move( dstPath )](
-									  auto ) { fsRenameFile( srcPath, dstPath ); } );
+									  auto ) { FileSystem::fileMove( srcPath, dstPath ); } );
+}
+
+void UITreeViewFS::copyFile( const std::string& src, const std::string& dst ) {
+	FileInfo srcInfo( src );
+	if ( !srcInfo.exists() )
+		return;
+	FileInfo dstInfo( dst );
+	if ( !dstInfo.exists() )
+		return;
+	if ( srcInfo.getFilepath() != srcInfo.getRealPath() )
+		srcInfo = FileInfo( srcInfo.getRealPath() );
+	if ( !dstInfo.isDirectory() ) {
+		dstInfo = FileInfo( dstInfo.getDirectoryPath() );
+		if ( dstInfo.getFilepath() != dstInfo.getRealPath() )
+			dstInfo = FileInfo( dstInfo.getRealPath() );
+	}
+	if ( srcInfo.getDirectoryPath() == dstInfo.getFilepath() )
+		return;
+
+	std::string srcPath( srcInfo.getFilepath() );
+	std::string dstPath( dstInfo.getFilepath() );
+	FileSystem::dirAddSlashAtEnd( dstPath );
+	dstPath += srcInfo.getFileName();
+	FileSystem::fileCopy( srcPath, dstPath );
+}
+
+std::string UITreeViewFS::getSelectionPath() const {
+	return static_cast<const FileSystemModel*>( getModel() )
+		->node( getSelection().first() )
+		.fullPath();
+}
+
+void UITreeViewFS::execute( const std::string& cmd ) {
+	auto cmdIt = mCommands.find( cmd );
+	if ( cmdIt != mCommands.end() )
+		return cmdIt->second();
 }
 
 } // namespace ecode

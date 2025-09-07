@@ -1,4 +1,5 @@
 #include "uiwelcomescreen.hpp"
+#include "customwidgets.hpp"
 #include "ecode.hpp"
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/window.hpp>

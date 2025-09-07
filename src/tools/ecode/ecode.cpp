@@ -1,4 +1,5 @@
 #include "ecode.hpp"
+#include "customwidgets.hpp"
 #include "featureshealth.hpp"
 #include "keybindingshelper.hpp"
 #include "pathhelper.hpp"

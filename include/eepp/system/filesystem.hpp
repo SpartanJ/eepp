@@ -39,9 +39,9 @@ class EE_API FileSystem {
 	 */
 	static bool fileGet( const std::string& path, std::string& data );
 
-	/** Copy a file to location.
-	 * @param src Source File Path
-	 * @param dst Destination File Path
+	/** Copy a file or a directory (recursively) to location.
+	 * @param src Source file / directory Path
+	 * @param dst Destination file path
 	 * @return If success.
 	 */
 	static bool fileCopy( const std::string& src, const std::string& dst );
@@ -78,6 +78,12 @@ class EE_API FileSystem {
 
 	/** Deletes a file from the file system. */
 	static bool fileRemove( const std::string& filepath );
+
+	/** Moves a file or folder to the destination path
+	 * @param fromPath The path of the file or folder to move
+	 * @param toPath The folder / directory destination path
+	 */
+	static bool fileMove( const std::string& fromPath, const std::string& toPath );
 
 	/** Hides the file in the file system */
 	static bool fileHide( const std::string& filepath );
@@ -172,6 +178,7 @@ class EE_API FileSystem {
 
 	/** Opens a file path with a path and mode encoded in UTF-8 */
 	static FILE* fopenUtf8( const std::string& path, const std::string& mode );
+
 };
 
 }} // namespace EE::System

@@ -2,7 +2,6 @@
 #define ECODE_HPP
 
 #include "appconfig.hpp"
-#include "customwidgets.hpp"
 #include "docsearchcontroller.hpp"
 #include "featureshealth.hpp"
 #include "filesystemlistener.hpp"

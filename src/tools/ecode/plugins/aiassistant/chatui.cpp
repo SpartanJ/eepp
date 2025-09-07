@@ -1306,26 +1306,11 @@ void LLMChatUI::updateTabTitle() {
 	tab->setText( title );
 }
 
-static bool fsRenameFile( const std::string& fpath, const std::string& newFilePath ) {
-	try {
-#if EE_PLATFORM == EE_PLATFORM_WIN
-		std::filesystem::rename( String( fpath ).toWideString(),
-								 String( newFilePath ).toWideString() );
-#else
-		std::filesystem::rename( fpath, newFilePath );
-#endif
-	} catch ( const std::filesystem::filesystem_error& ) {
-		return false;
-	}
-
-	return true;
-}
-
 void LLMChatUI::renameChat( const std::string& newName, bool invertLockedState ) {
 	auto oldPath = getNewFilePath( mUUID.toString(), mSummary, mChatLocked );
 	auto newPath =
 		getNewFilePath( mUUID.toString(), newName, invertLockedState ? !mChatLocked : mChatLocked );
-	if ( fsRenameFile( oldPath, newPath ) ) {
+	if ( FileSystem::fileMove( oldPath, newPath ) ) {
 		mSummary = newName;
 		if ( invertLockedState )
 			mChatLocked = !mChatLocked;

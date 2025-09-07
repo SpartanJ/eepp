@@ -4,6 +4,7 @@
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/sys.hpp>
 #include <sys/stat.h>
+#include <filesystem>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #ifndef WIN32_LEAN_AND_MEAN
@@ -93,38 +94,32 @@ bool FileSystem::fileGet( const std::string& path, std::string& data ) {
 }
 
 bool FileSystem::fileCopy( const std::string& src, const std::string& dst ) {
-	if ( fileExists( src ) ) {
-		Int64 chunksize = EE_1MB;
-		Int64 size = fileSize( src );
-		Int64 size_left = (Int32)size;
-		Int64 allocate = ( size < chunksize ) ? size : chunksize;
-		Int64 copysize = 0;
+	try {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		std::filesystem::path source = String( src ).toWideString();
+		std::filesystem::path destination = String( dst ).toWideString();
+#else
+		std::filesystem::path source = src;
+		std::filesystem::path destination = dst;
+#endif
 
-		TScopedBuffer<char> data( allocate );
-		char* buff = data.get();
+		if ( !std::filesystem::exists( source ) )
+			return false;
 
-		IOStreamFile in( src, "rb" );
-		IOStreamFile out( dst, "wb" );
-
-		if ( in.isOpen() && out.isOpen() && size > 0 ) {
-			do {
-				if ( size_left - chunksize < 0 ) {
-					copysize = size_left;
-				} else {
-					copysize = chunksize;
-				}
-
-				in.read( &buff[0], copysize );
-				out.write( &buff[0], copysize );
-
-				size_left -= copysize;
-			} while ( size_left > 0 );
-
-			return true;
+		if ( std::filesystem::is_directory( source ) ) {
+			std::filesystem::copy( source, destination,
+								   std::filesystem::copy_options::recursive |
+									   std::filesystem::copy_options::overwrite_existing );
+		} else {
+			std::filesystem::copy( source, destination,
+								   std::filesystem::copy_options::overwrite_existing );
 		}
+		return true;
+	} catch ( const std::filesystem::filesystem_error& ) {
+		return false;
+	} catch ( const std::exception& ) {
+		return false;
 	}
-
-	return false;
 }
 
 std::string FileSystem::fileExtension( const std::string& filepath, const bool& lowerExt ) {
@@ -708,6 +703,21 @@ FILE* FileSystem::fopenUtf8( const char* path, const char* mode ) {
 
 FILE* FileSystem::fopenUtf8( const std::string& path, const std::string& mode ) {
 	return fopenUtf8( path.c_str(), mode.c_str() );
+}
+
+bool FileSystem::fileMove( const std::string& fpath, const std::string& newFilePath ) {
+	try {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		std::filesystem::rename( String( fpath ).toWideString(),
+								 String( newFilePath ).toWideString() );
+#else
+		std::filesystem::rename( fpath, newFilePath );
+#endif
+	} catch ( const std::filesystem::filesystem_error& ) {
+		return false;
+	}
+
+	return true;
 }
 
 }} // namespace EE::System
