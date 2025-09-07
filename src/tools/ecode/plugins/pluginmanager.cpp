@@ -1,6 +1,6 @@
+#include "pluginmanager.hpp"
 #include "../filesystemlistener.hpp"
 #include "plugin.hpp"
-#include "pluginmanager.hpp"
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/scopedop.hpp>
@@ -402,9 +402,9 @@ class UIPluginManagerTable : public UITableView {
 		setOnUpdateCellCb( [this]( UITableCell* cell, Model* model ) {
 			if ( mUpdatingEnabled )
 				return;
-			if ( !cell->getTextBox()->isType( UI_TYPE_CHECKBOX ) )
+			if ( !cell->getTextView()->isType( UI_TYPE_CHECKBOX ) )
 				return;
-			UICheckBox* chk = cell->getTextBox()->asType<UICheckBox>();
+			UICheckBox* chk = cell->getTextView()->asType<UICheckBox>();
 			PluginsModel* pModel = static_cast<PluginsModel*>( model );
 			bool enabled = pModel
 							   ->data( model->index( cell->getCurIndex().row(),
@@ -449,7 +449,7 @@ class UIPluginManagerTable : public UITableView {
 		if ( index.column() == PluginsModel::Title ) {
 			UITableCell* widget = UITableCell::NewWithOpt(
 				mTag + "::cell", getCheckBoxFn( index, (const PluginsModel*)getModel() ) );
-			widget->getTextBox()->setEnabled( true );
+			widget->getTextView()->setEnabled( true );
 			return setupCell( widget, rowWidget, index );
 		}
 		return UITableView::createCell( rowWidget, index );

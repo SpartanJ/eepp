@@ -2,6 +2,7 @@
 #define ECODE_HPP
 
 #include "appconfig.hpp"
+#include "customwidgets.hpp"
 #include "docsearchcontroller.hpp"
 #include "featureshealth.hpp"
 #include "filesystemlistener.hpp"
@@ -24,10 +25,6 @@
 #include <stack>
 
 using namespace eterm::UI;
-
-enum class CustomWidgets {
-	UI_TYPE_WELCOME_TAB = UI_TYPE_USER + 1,
-};
 
 namespace ecode {
 

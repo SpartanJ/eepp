@@ -5,6 +5,7 @@
 #include "settingsactions.hpp"
 #include "settingsmenu.hpp"
 #include "uibuildsettings.hpp"
+#include "uitreeviewfs.hpp"
 #include "uiwelcomescreen.hpp"
 #include "version.hpp"
 #include <algorithm>
@@ -4035,6 +4036,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		UIWidgetCreator::registerWidget( "rellayce", UIRelativeLayoutCommandExecuter::New );
 		UIWidgetCreator::registerWidget( "hboxce", UIHLinearLayoutCommandExecuter::New );
 		UIWidgetCreator::registerWidget( "vboxce", UIVLinearLayoutCommandExecuter::New );
+		UIWidgetCreator::registerWidget( "treeviewfs", UITreeViewFS::New );
 
 		mUISceneNode->loadLayoutFromString( baseUI, nullptr, APP_LAYOUT_STYLE_MARKER );
 		mAppStyleSheet = mUISceneNode->getStyleSheet().getAllWithMarker( APP_LAYOUT_STYLE_MARKER );

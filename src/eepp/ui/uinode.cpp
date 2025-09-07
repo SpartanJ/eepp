@@ -1506,7 +1506,7 @@ bool UINode::isDragging() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_DRAGGING );
 }
 
-void UINode::setDragging( const bool& dragging ) {
+void UINode::setDragging( bool dragging, bool emitDropEvent ) {
 	if ( NULL == getEventDispatcher() )
 		return;
 
@@ -1523,15 +1523,17 @@ void UINode::setDragging( const bool& dragging ) {
 
 		onDragStop( getEventDispatcher()->getMousePos(), getEventDispatcher()->getPressTrigger() );
 
-		bool enabled = isEnabled();
-		mEnabled = false;
-		Node* found = getUISceneNode()->overFind( getEventDispatcher()->getMousePosf() );
-		if ( found && found->isUINode() ) {
-			NodeDropMessage msg( found, NodeMessage::Drop, this );
-			found->messagePost( &msg );
-			found->asType<UINode>()->onDrop( this );
+		if ( emitDropEvent ) {
+			bool enabled = isEnabled();
+			mEnabled = false;
+			Node* found = getUISceneNode()->overFind( getEventDispatcher()->getMousePosf() );
+			if ( found && found->isUINode() ) {
+				NodeDropMessage msg( found, NodeMessage::Drop, this );
+				found->messagePost( &msg );
+				found->asType<UINode>()->onDrop( this );
+			}
+			mEnabled = enabled;
 		}
-		mEnabled = enabled;
 	}
 }
 

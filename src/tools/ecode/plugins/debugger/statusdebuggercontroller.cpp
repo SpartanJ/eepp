@@ -65,7 +65,7 @@ UIWidget* UIBreakpointsTableView::createCell( UIWidget* rowWidget, const ModelIn
 	if ( index.column() == BreakpointsModel::Enabled ) {
 		UIBreakpointsTableCell* widget = UIBreakpointsTableCell::New(
 			mTag + "::cell", (const BreakpointsModel*)getModel(), index );
-		widget->getTextBox()->setEnabled( true );
+		widget->getTextView()->setEnabled( true );
 		widget->setDontAutoHideEmptyTextBox( true );
 		return setupCell( widget, rowWidget, index );
 	} else if ( index.column() == BreakpointsModel::Remove ) {

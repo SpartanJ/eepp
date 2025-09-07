@@ -150,10 +150,10 @@ void UIPushButton::onAutoSize() {
 
 			if ( textW > fsize.getWidth() - nonTextW ) {
 				Float mw = eemax( 0.f, fsize.getWidth() - nonTextW );
-				getTextBox()->setMaxWidthEq( String::format( "%.0fdp", mw ) );
+				getTextView()->setMaxWidthEq( String::format( "%.0fdp", mw ) );
 			}
-			if ( getTextBox()->getTextWidth() > getTextBox()->getSize().getWidth() )
-				getTextBox()->setHorizontalAlign( UI_HALIGN_LEFT );
+			if ( getTextView()->getTextWidth() > getTextView()->getSize().getWidth() )
+				getTextView()->setHorizontalAlign( UI_HALIGN_LEFT );
 		}
 
 		setInternalPixelsWidth( size.getWidth() );
@@ -420,7 +420,7 @@ const String& UIPushButton::getText() const {
 	return mTextBox->getText();
 }
 
-UITextView* UIPushButton::getTextBox() const {
+UITextView* UIPushButton::getTextView() const {
 	return mTextBox;
 }
 

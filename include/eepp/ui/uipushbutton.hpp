@@ -50,7 +50,7 @@ class EE_API UIPushButton : public UIWidget {
 
 	virtual const String& getText() const;
 
-	UITextView* getTextBox() const;
+	UITextView* getTextView() const;
 
 	void setIconMinimumSize( const Sizei& minIconSize );
 

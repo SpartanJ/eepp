@@ -340,7 +340,7 @@ void GitPlugin::updateStatusBarSync() {
 		mStatusButton->setClass( "status_but" );
 		mStatusButton->setIcon( iconDrawable( "source-control", 10 ) );
 		mStatusButton->reloadStyle( true, true );
-		mStatusButton->getTextBox()->setUsingCustomStyling( true );
+		mStatusButton->getTextView()->setUsingCustomStyling( true );
 
 		mStatusButton->on( Event::MouseClick, [this]( const Event* event ) {
 			if ( nullptr == mTab )
@@ -397,7 +397,7 @@ void GitPlugin::updateStatusBarSync() {
 	}
 
 	SyntaxTokenizer::tokenizeText( mStatusCustomTokenizer->def, mStatusCustomTokenizer->scheme,
-								   mStatusButton->getTextBox()->getTextCache() );
+								   mStatusButton->getTextView()->getTextCache() );
 
 	mStatusButton->invalidateDraw();
 }
@@ -871,8 +871,7 @@ void GitPlugin::commit( const std::string& repoPath ) {
 
 	txtEdit->getDocument().setCommand(
 		"commit-amend", [chkAmend] { chkAmend->setChecked( !chkAmend->isChecked() ); } );
-	txtEdit->getKeyBindings().addKeybind( { KEY_L, KeyMod::getDefaultModifier() },
-										  "commit-amend" );
+	txtEdit->getKeyBindings().addKeybind( { KEY_L, KeyMod::getDefaultModifier() }, "commit-amend" );
 
 	txtEdit->getDocument().setCommand(
 		"commit-push", [chkPush] { chkPush->setChecked( !chkPush->isChecked() ); } );

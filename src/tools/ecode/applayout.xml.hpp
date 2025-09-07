@@ -510,6 +510,11 @@ Anchor.error:hover {
 window::modaldialog.shadowbg {
 	background-color: #00000066;
 }
+textview.dragged_cell {
+	background-color: var(--button-back);
+	border-radius: 4dp;
+	padding: 4dp;
+}
 
 @media (prefers-color-scheme: light) {
 
@@ -539,7 +544,7 @@ R"html(
 <Splitter id="project_splitter" lw="mp" lh="mp">
 	<TabWidget id="panel" tabbar-hide-on-single-tab="true" tabbar-allow-rearrange="true" min-tab-width="32dp" max-tab-width="32dp">
 		<RelativeLayout id="project_view_cont" lw="mp" lh="mp">
-			<TreeView id="project_view" lw="mp" lh="mp" />
+			<TreeViewFS id="project_view" lw="mp" lh="mp" />
 			<vbox id="project_view_empty" lg="top|center_horizontal" lw="mp" lh="wc">
 				<TextView text-align="center" lw="mp" lg="center" text='@string(you_have_not_yet_opened_a_folder, "You have not yet opened a folder.")' word-wrap="true"  />
 				<PushButton lw="mp" lg="center" id="open_folder" text='@string(open_folder, "Open Folder")' margin-top="4dp" />

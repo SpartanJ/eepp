@@ -268,7 +268,7 @@ void UITab::onAutoSize() {
 			w = eemin( w, getMaxSize().getWidth() );
 
 		if ( textW > w - nonTextW )
-			getTextBox()->setMaxWidthEq( String::format( "%.0fdp", w - nonTextW ) );
+			getTextView()->setMaxWidthEq( String::format( "%.0fdp", w - nonTextW ) );
 	}
 
 	setInternalWidth( w );
@@ -278,8 +278,8 @@ void UITab::onAutoSize() {
 			getTabWidget()->orderTabs();
 	}
 
-	if ( getTextBox()->getTextWidth() > getTextBox()->getSize().getWidth() )
-		getTextBox()->setHorizontalAlign( UI_HALIGN_LEFT );
+	if ( getTextView()->getTextWidth() > getTextView()->getSize().getWidth() )
+		getTextView()->setHorizontalAlign( UI_HALIGN_LEFT );
 }
 
 std::string UITab::getPropertyString( const PropertyDefinition* propertyDef,

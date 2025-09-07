@@ -217,7 +217,7 @@ class EE_API UINode : public Node {
 
 	bool isDragging() const;
 
-	void setDragging( const bool& dragging );
+	void setDragging( bool dragging, bool emitDropEvent = true );
 
 	void startDragging( const Vector2f& position );
 
