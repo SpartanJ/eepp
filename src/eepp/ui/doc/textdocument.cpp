@@ -3731,6 +3731,7 @@ void TextDocument::toggleBlockComments() {
 		TextRange oriRange = getSelectionIndex( i );
 		TextRange range = getSelectionIndex( i, true );
 		bool needsSwap = oriRange != range;
+		bool sameLine = range.start().line() == range.end().line();
 
 		if ( !range.hasSelection() ) {
 			setSelection( i, insert( i, range.start(), openStrPadded + closeStrPadded ) );
@@ -3743,11 +3744,17 @@ void TextDocument::toggleBlockComments() {
 									  positionOffset( range.start(), openLenPadded ) };
 		TextRange closeRangePadded = { positionOffset( range.end(), -closeLenPadded ),
 									   range.end() };
+
 		if ( openRangePadded.end() <= closeRangePadded.start() &&
 			 getText( openRangePadded ) == openStrPadded &&
 			 getText( closeRangePadded ) == closeStrPadded ) {
 			remove( i, closeRangePadded );
 			remove( i, openRangePadded );
+			if ( sameLine &&
+				 closeRangePadded.start() == sanitizePosition( closeRangePadded.start() ) ) {
+				closeRangePadded.setStart(
+					positionOffset( closeRangePadded.start(), -openLenPadded ) );
+			}
 			setSelection( i, needsSwap ? closeRangePadded.start() : range.start(),
 						  needsSwap ? range.start() : closeRangePadded.start() );
 			continue;
@@ -3759,13 +3766,17 @@ void TextDocument::toggleBlockComments() {
 			 getText( closeRange ) == closeStr ) {
 			remove( i, closeRange );
 			remove( i, openRange );
+			if ( sameLine && closeRange.start() == sanitizePosition( closeRange.start() ) )
+				closeRange.setStart( positionOffset( closeRange.start(), -openLen ) );
 			setSelection( i, needsSwap ? closeRange.start() : range.start(),
 						  needsSwap ? range.start() : closeRange.start() );
 		} else {
 			auto start =
 				positionOffset( insert( i, range.start(), openStrPadded ), -openLenPadded );
-			insert( i, range.end(), closeStrPadded );
-			auto end = positionOffset( range.end(), closeLenPadded );
+			insert( i, sameLine ? positionOffset( range.end(), openLenPadded ) : range.end(),
+					closeStrPadded );
+			auto end =
+				positionOffset( range.end(), closeLenPadded + ( sameLine ? openLenPadded : 0 ) );
 			setSelection( i, needsSwap ? end : start, needsSwap ? start : end );
 		}
 	}
