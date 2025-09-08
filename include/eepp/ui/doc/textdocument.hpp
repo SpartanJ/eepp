@@ -287,6 +287,8 @@ class EE_API TextDocument {
 
 	std::size_t getLineLength( Int64 ) const;
 
+	void safeLineOp( Int64 line, std::function<void(TextDocumentLine&)> op );
+
 	void getLineTextToBuffer( Int64 line, String& buffer ) const;
 
 	std::string getLineTextUtf8( Int64 line ) const;

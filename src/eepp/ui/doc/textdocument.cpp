@@ -1727,6 +1727,16 @@ std::size_t TextDocument::getLineLength( Int64 line ) const {
 	return line >= (Int64)mLines.size() ? 0 : mLines[line].size();
 }
 
+void TextDocument::safeLineOp( Int64 line, std::function<void( TextDocumentLine& )> op ) {
+	Lock l( mLinesMutex );
+	static TextDocumentLine safeLine = TextDocumentLine( "", nullptr );
+	if ( line >= 0 && line < mLines.size() ) {
+		op( mLines[line] );
+	} else {
+		op( safeLine );
+	}
+}
+
 String TextDocument::getLineText( Int64 line ) const {
 	// eeASSERT( line < (Int64)linesCount() );
 	Lock l( mLinesMutex );

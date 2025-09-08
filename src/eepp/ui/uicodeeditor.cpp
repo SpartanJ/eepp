@@ -714,8 +714,15 @@ void UICodeEditor::onFoldRegionsUpdated( size_t oldCount, size_t newCount ) {
 }
 
 Uint32 UICodeEditor::onMessage( const NodeMessage* msg ) {
-	if ( msg->getMsg() == NodeMessage::MouseDown )
+	if ( msg->getMsg() == NodeMessage::MouseDown ) {
 		return 1;
+	} else if ( msg->getMsg() == NodeMessage::Focus ) {
+		if ( msg->getSender() == mVScrollBar || msg->getSender() == mHScrollBar ||
+			 mVScrollBar->isParentOf( msg->getSender() ) ||
+			 mHScrollBar->isParentOf( msg->getSender() ) ) {
+			setFocus();
+		}
+	}
 	return UIWidget::onMessage( msg );
 }
 
@@ -5194,11 +5201,15 @@ bool UICodeEditor::checkAutoCloseXMLTag( const String& text ) {
 }
 
 Int64 UICodeEditor::getCurrentColumnCount() const {
-	Int64 curLine = mDoc->getSelection().start().line();
-	Int64 sel = mDoc->getSelection().start().column();
 	Int64 count = 0;
-	for ( Int64 i = 0; i < sel; i++ )
-		count += mDoc->line( curLine ).getText()[i] == '\t' ? mTabWidth : 1;
+	mDoc->safeLineOp(
+		mDoc->getSelection().start().line(), [this, &count]( TextDocumentLine& line ) {
+			const String& lineText = mDoc->line( mDoc->getSelection().start().line() ).getText();
+			Int64 lineLen = lineText.size();
+			Int64 sel = eemin( mDoc->getSelection().start().column(), lineLen );
+			for ( Int64 i = 0; i < sel; i++ )
+				count += lineText[i] == '\t' ? mTabWidth : 1;
+		} );
 	return count;
 }
 
