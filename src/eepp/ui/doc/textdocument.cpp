@@ -1242,6 +1242,18 @@ String::StringBaseType TextDocument::getPrevChar() const {
 	return getChar( positionOffset( getSelection().start(), -1 ) );
 }
 
+String::StringBaseType TextDocument::getNextChar() const {
+	return getChar( positionOffset( getSelection().start(), 1 ) );
+}
+
+String::StringBaseType TextDocument::getPrevChar( const TextPosition& pos ) const {
+	return getChar( positionOffset( pos, -1 ) );
+}
+
+String::StringBaseType TextDocument::getNextChar( const TextPosition& pos ) const {
+	return getChar( positionOffset( pos, 1 ) );
+}
+
 String::StringBaseType TextDocument::getCurrentChar() const {
 	return getChar( getSelection().start() );
 }
@@ -1565,11 +1577,11 @@ bool TextDocument::replaceCurrentLine( const String& text ) {
 }
 
 TextPosition TextDocument::nextChar( TextPosition position ) const {
-	return positionOffset( position, TextPosition( 0, 1 ) );
+	return positionOffset( position, 1 );
 }
 
 TextPosition TextDocument::previousChar( TextPosition position ) const {
-	return positionOffset( position, TextPosition( 0, -1 ) );
+	return positionOffset( position, -1 );
 }
 
 TextPosition TextDocument::previousWordBoundary( TextPosition position, bool ignoreFirstNonWord,
@@ -1730,7 +1742,7 @@ std::size_t TextDocument::getLineLength( Int64 line ) const {
 void TextDocument::safeLineOp( Int64 line, std::function<void( TextDocumentLine& )> op ) {
 	Lock l( mLinesMutex );
 	static TextDocumentLine safeLine = TextDocumentLine( "", nullptr );
-	if ( line >= 0 && line < mLines.size() ) {
+	if ( line >= 0 && line < (Int64)mLines.size() ) {
 		op( mLines[line] );
 	} else {
 		op( safeLine );
@@ -3749,46 +3761,79 @@ void TextDocument::toggleBlockComments() {
 			continue;
 		}
 
-		// Check for padded comment first
-		TextRange openRangePadded = { range.start(),
-									  positionOffset( range.start(), openLenPadded ) };
-		TextRange closeRangePadded = { positionOffset( range.end(), -closeLenPadded ),
-									   range.end() };
-
-		if ( openRangePadded.end() <= closeRangePadded.start() &&
-			 getText( openRangePadded ) == openStrPadded &&
-			 getText( closeRangePadded ) == closeStrPadded ) {
-			remove( i, closeRangePadded );
-			remove( i, openRangePadded );
-			if ( sameLine &&
-				 closeRangePadded.start() == sanitizePosition( closeRangePadded.start() ) ) {
-				closeRangePadded.setStart(
-					positionOffset( closeRangePadded.start(), -openLenPadded ) );
+		// Find open
+		TextPosition openStart = range.start();
+		while ( openStart < range.end() &&
+				( getChar( openStart ) == ' ' || getChar( openStart ) == '\t' ) ) {
+			openStart = nextChar( openStart );
+		}
+		bool openFound = openStart < range.end();
+		bool openPadded = false;
+		TextRange openRange;
+		if ( openFound ) {
+			if ( positionOffset( openStart, openLenPadded ) <= range.end() &&
+				 getText( { openStart, positionOffset( openStart, openLenPadded ) } ) ==
+					 openStrPadded ) {
+				openPadded = true;
+				openRange = { openStart, positionOffset( openStart, openLenPadded ) };
+			} else if ( positionOffset( openStart, openLen ) <= range.end() &&
+						getText( { openStart, positionOffset( openStart, openLen ) } ) ==
+							openStr ) {
+				openPadded = false;
+				openRange = { openStart, positionOffset( openStart, openLen ) };
+			} else {
+				openFound = false;
 			}
-			setSelection( i, needsSwap ? closeRangePadded.start() : range.start(),
-						  needsSwap ? range.start() : closeRangePadded.start() );
+		}
+
+		// Find close
+		TextPosition closeEnd = range.end();
+		while ( closeEnd > range.start() &&
+				( getPrevChar( closeEnd ) == ' ' || getPrevChar( closeEnd ) == '\t' ) ) {
+			closeEnd = previousChar( closeEnd );
+		}
+		bool closeFound = closeEnd > range.start();
+		TextRange closeRange;
+		bool closePadded = false;
+		if ( closeFound ) {
+			TextPosition closeStart = positionOffset( closeEnd, -closeLen );
+			if ( closeStart >= range.start() && getText( { closeStart, closeEnd } ) == closeStr ) {
+				TextPosition padPos = positionOffset( closeStart, -1 );
+				if ( padPos >= range.start() && getChar( padPos ) == ' ' ) {
+					closeRange = { padPos, closeEnd };
+					closePadded = true;
+				} else {
+					closeRange = { closeStart, closeEnd };
+				}
+			} else {
+				closeFound = false;
+			}
+		}
+
+		// If both found and valid
+		if ( openFound && closeFound && openRange.end() <= closeRange.start() ) {
+			TextPosition closePos{ closeRange.start() };
+			// Calculate the close position before removing the text (otherwise positionOffset won't
+			// work)
+			if ( sameLine ) {
+				const Int64 openLenActual = openPadded ? openLenPadded : openLen;
+				const Int64 closeLenActual = closePadded ? closeLenPadded : closeLen;
+				closePos = positionOffset( closeRange.end(), -( closeLenActual + openLenActual ) );
+			}
+			// Uncomment
+			remove( i, closeRange );
+			remove( i, openRange );
+			setSelection( i, needsSwap ? closePos : range.start(),
+						  needsSwap ? range.start() : closePos );
 			continue;
 		}
 
-		TextRange openRange = { range.start(), positionOffset( range.start(), openLen ) };
-		TextRange closeRange = { positionOffset( range.end(), -closeLen ), range.end() };
-		if ( openRange.end() <= closeRange.start() && getText( openRange ) == openStr &&
-			 getText( closeRange ) == closeStr ) {
-			remove( i, closeRange );
-			remove( i, openRange );
-			if ( sameLine && closeRange.start() == sanitizePosition( closeRange.start() ) )
-				closeRange.setStart( positionOffset( closeRange.start(), -openLen ) );
-			setSelection( i, needsSwap ? closeRange.start() : range.start(),
-						  needsSwap ? range.start() : closeRange.start() );
-		} else {
-			auto start =
-				positionOffset( insert( i, range.start(), openStrPadded ), -openLenPadded );
-			insert( i, sameLine ? positionOffset( range.end(), openLenPadded ) : range.end(),
-					closeStrPadded );
-			auto end =
-				positionOffset( range.end(), closeLenPadded + ( sameLine ? openLenPadded : 0 ) );
-			setSelection( i, needsSwap ? end : start, needsSwap ? start : end );
-		}
+		// Else add
+		auto start = positionOffset( insert( i, range.start(), openStrPadded ), -openLenPadded );
+		insert( i, sameLine ? positionOffset( range.end(), openLenPadded ) : range.end(),
+				closeStrPadded );
+		auto end = positionOffset( range.end(), closeLenPadded + ( sameLine ? openLenPadded : 0 ) );
+		setSelection( i, needsSwap ? end : start, needsSwap ? start : end );
 	}
 
 	if ( !wasRunningTransaction )

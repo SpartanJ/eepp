@@ -217,6 +217,12 @@ class EE_API TextDocument {
 
 	String::StringBaseType getPrevChar() const;
 
+	String::StringBaseType getNextChar() const;
+
+	String::StringBaseType getPrevChar( const TextPosition& pos ) const;
+
+	String::StringBaseType getNextChar( const TextPosition& pos ) const;
+
 	String::StringBaseType getCurrentChar() const;
 
 	String::StringBaseType getChar( const TextPosition& position ) const;
