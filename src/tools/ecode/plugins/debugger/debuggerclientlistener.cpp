@@ -497,6 +497,8 @@ void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&&
 		uiVars->removeActionsByTag( SCOPES_UI_HASH );
 		uiVars->runOnMainThread(
 			[this, uiVars] {
+				// Reset selection given that the VariablesModel can end up doing an use-after-free
+				uiVars->getSelection().clear();
 				auto model = uiVars->getModel();
 				size_t total = model->rowCount();
 				for ( size_t i = 0; i < total; i++ ) {
