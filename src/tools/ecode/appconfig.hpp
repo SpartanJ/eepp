@@ -175,6 +175,7 @@ struct TerminalConfig {
 		NewTerminalOrientation::Horizontal };
 	Uint64 scrollback{ 10000 };
 	bool unsupportedOSWarnDisabled{ false };
+	bool closeTerminalTabOnExit{ false };
 };
 
 struct WorkspaceConfig {

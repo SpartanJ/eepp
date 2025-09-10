@@ -134,6 +134,8 @@ class PluginContextProvider {
 	virtual AppConfig& getConfig() = 0;
 
 	virtual bool isDirTreeReady() const = 0;
+
+	virtual bool pluginsDisabled() const = 0;
 };
 
 } // namespace ecode

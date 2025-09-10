@@ -647,7 +647,9 @@ void UICodeEditor::onFontStyleChanged() {
 
 void UICodeEditor::onDocumentLoaded( TextDocument* ) {
 	if ( mInvalidateOnLoaded ) {
-		onDocumentLoaded();
+		ensureMainThread( [this] {
+			onDocumentLoaded();
+		} );
 		mInvalidateOnLoaded = false;
 	}
 }

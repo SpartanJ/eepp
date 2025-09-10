@@ -524,6 +524,16 @@ UITerminal* TerminalManager::createNewTerminal(
 	term->setTitle( title );
 	auto csIt = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );
 	term->getTerm()->getTerminal()->setAllowMemoryTrimnming( true );
+	term->getTerm()->setKeepAlive( !mApp->getConfig().term.closeTerminalTabOnExit );
+	term->getTerm()->pushEventCallback( [this, term]( const TerminalDisplay::Event& event ) {
+		if ( event.type == TerminalDisplay::EventType::PROCESS_EXIT &&
+			 mApp->getConfig().term.closeTerminalTabOnExit && term->getData() != 0 ) {
+			UITab* tab = (UITab*)term->getData();
+			auto* tabWidget = mApp->getSplitter()->tabWidgetFromWidget( term );
+			if ( tabWidget )
+				tabWidget->removeTab( tab );
+		}
+	} );
 	term->setColorScheme( csIt != mTerminalColorSchemes.end()
 							  ? mTerminalColorSchemes.at( mTerminalCurrentColorScheme )
 							  : TerminalColorScheme::getDefault() );
@@ -565,6 +575,26 @@ UITerminal* TerminalManager::createNewTerminal(
 	term->setCommand( UITerminal::getExclusiveModeToggleCommandName(), [term, this] {
 		term->setExclusiveMode( !term->getExclusiveMode() );
 		mApp->updateTerminalMenu();
+	} );
+	term->setCommand( "move-tab-to-start", [this] {
+		auto widget = mApp->getSplitter()->getCurWidget();
+		if ( widget == nullptr || widget->getData() == 0 )
+			return;
+		UITabWidget* tabWidget = mApp->getSplitter()->tabWidgetFromWidget( widget );
+		if ( tabWidget ) {
+			UITab* tab = (UITab*)widget->getData();
+			tabWidget->moveTab( tab, 0 );
+		}
+	} );
+	term->setCommand( "move-tab-to-end", [this] {
+		auto widget = mApp->getSplitter()->getCurWidget();
+		if ( widget == nullptr || widget->getData() == 0 )
+			return;
+		UITabWidget* tabWidget = mApp->getSplitter()->tabWidgetFromWidget( widget );
+		if ( tabWidget ) {
+			UITab* tab = (UITab*)widget->getData();
+			tabWidget->moveTab( tab, tabWidget->getTabCount() );
+		}
 	} );
 	mApp->registerUnlockedCommands( *term );
 	term->setFocus();

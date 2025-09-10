@@ -981,9 +981,9 @@ void UITabWidget::tryCloseTab( UITab* tab, FocusTabBehavior focusTabBehavior ) {
 	removeTab( tab, true, false, focusTabBehavior );
 }
 
-void UITabWidget::swapTabs( UITab* left, UITab* right ) {
+bool UITabWidget::swapTabs( UITab* left, UITab* right ) {
 	if ( !left || !right || left->getTabWidget() != this || right->getTabWidget() != this )
-		return;
+		return false;
 	Uint32 leftIndex = getTabIndex( left );
 	Uint32 rightIndex = getTabIndex( right );
 	if ( leftIndex != eeINDEX_NOT_FOUND && rightIndex != eeINDEX_NOT_FOUND ) {
@@ -995,7 +995,36 @@ void UITabWidget::swapTabs( UITab* left, UITab* right ) {
 		mTabs[rightIndex] = left;
 		posTabs();
 		zorderTabs();
+		return true;
 	}
+	return false;
+}
+
+bool UITabWidget::moveTab( UITab* tab, Uint32 index ) {
+	auto tabIndex = getTabIndex( tab );
+
+	if ( tabIndex == eeINDEX_NOT_FOUND || mTabs.empty() )
+		return false;
+
+	if ( index >= mTabs.size() )
+		index = mTabs.size() - 1;
+
+	if ( tabIndex == index )
+		return false;
+
+	if ( tabIndex > index ) {
+		while ( tabIndex > index ) {
+			swapTabs( mTabs[tabIndex], mTabs[tabIndex - 1] );
+			tabIndex--;
+		}
+	} else {
+		while ( tabIndex < index ) {
+			swapTabs( mTabs[tabIndex], mTabs[tabIndex + 1] );
+			tabIndex++;
+		}
+	}
+
+	return true;
 }
 
 void UITabWidget::setSplitFunction( SplitFunctionCb cb, Float splitEdgePercent ) {

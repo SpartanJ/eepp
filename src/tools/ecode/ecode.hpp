@@ -38,11 +38,28 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	~App();
 
-	void init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
-			   const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
-			   std::string css, const std::string& fileToOpen, bool stdOutLogs,
-			   bool disableFileLogs, bool openClean, bool portable, std::string language,
-			   bool incognito, bool prematureExit );
+	struct InitParameters {
+		LogLevel logLevel{ LogLevel::Info };
+		std::string file;
+		Float pidelDensity{ 0.f };
+		std::string colorScheme;
+		bool terminal{ false };
+		bool frameBuffer{ false };
+		bool benchmarkMode{ false };
+		std::string css;
+		std::string fileToOpen;
+		bool stdOutLogs{ false };
+		bool disableFileLogs{ false};
+		bool openClean{ false };
+		bool portable{ false };
+		std::string language;
+		bool incognito{ false };
+		bool prematureExit{ false };
+		std::string profile;
+		bool disablePlugins{ false };
+	};
+
+	void init( InitParameters& );
 
 	void createWidgetInspector();
 
@@ -552,6 +569,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	const std::string& getLanguagesPath() const { return mLanguagesPath; }
 
+	bool pluginsDisabled() const { return mDisablePlugins; }
+
   protected:
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
@@ -605,6 +624,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	bool mDirTreeReady{ false };
 	bool mUseFrameBuffer{ false };
 	bool mBenchmarkMode{ false };
+	bool mDisablePlugins{ false };
 	bool mPortableMode{ false };
 	bool mPortableModeFailed{ false };
 	bool mDestroyingApp{ false };
@@ -656,6 +676,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::condition_variable mAsyncResourcesLoadCond;
 	std::vector<SyntaxColorScheme> mColorSchemes;
 	bool mAsyncResourcesLoaded{ false };
+	std::string mProfilePath;
 
 	void sortSidePanel();
 

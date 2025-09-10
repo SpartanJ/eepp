@@ -98,6 +98,8 @@ class EE_API UITabWidget : public UIWidget {
 
 	void insertTab( UITab* tab, const Uint32& index );
 
+	bool moveTab( UITab* tab, Uint32 index );
+
 	virtual void setTheme( UITheme* theme );
 
 	UITab* getTabSelected() const;
@@ -207,7 +209,7 @@ class EE_API UITabWidget : public UIWidget {
 
 	UIScrollBar* getTabScroll() const;
 
-	void swapTabs( UITab* left, UITab* right );
+	bool swapTabs( UITab* left, UITab* right );
 
 	void setSplitFunction( SplitFunctionCb cb, Float splitEdgePercent = 0.1 );
 

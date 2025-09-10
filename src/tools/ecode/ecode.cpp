@@ -614,11 +614,13 @@ void App::initPluginManager() {
 	mPluginManager->registerPlugin( AIAssistantPlugin::Definition() );
 	mPluginManager->registerPlugin( SpellCheckerPlugin::Definition() );
 	mPluginManager->registerPlugin( DiscordRPCplugin::Definition() );
+	mPluginManager->setPluginsDisabled( mDisablePlugins );
 }
 
 std::pair<bool, std::string> App::generateConfigPath() {
 	if ( mPortableMode ) {
-		std::string path( Sys::getProcessPath() + "config" );
+		std::string path( mProfilePath.empty() ? ( Sys::getProcessPath() + "config" )
+											   : mProfilePath );
 		FileSystem::dirAddSlashAtEnd( path );
 		bool fileExists = FileSystem::fileExists( path );
 
@@ -1482,13 +1484,8 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 			menuAdd( "split_top", "Split Top", "split-vertical", "split-top" );
 			menuAdd( "split_bottom", "Split Bottom", "split-vertical", "split-bottom" );
 
-			menu->addSeparator();
-
 			menuAdd( "open_containing_folder_ellipsis", "Open Containing Folder...", "folder-open",
 					 "open-containing-folder" );
-
-			menuAdd( "open_in_new_window_ellipsis", "Open in New Window...", "window",
-					 "open-in-new-window" );
 
 			menuAdd( "copy_containing_folder_path_ellipsis", "Copy Containing Folder Path...",
 					 "copy", "copy-containing-folder-path" );
@@ -1497,6 +1494,21 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 
 			menuAdd( "copy_file_path_and_position", "Copy File Path and Position", "copy",
 					 "copy-file-path-and-position" );
+
+			menu->addSeparator();
+
+			menuAdd( "open_in_new_window", "Open in New Window", "window", "open-in-new-window" );
+
+			menuAdd( "move_to_new_window", "Move to New Window", "window", "move-to-new-window" );
+		}
+
+		if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ||
+			 tab->getOwnedWidget()->isType( UI_TYPE_TERMINAL ) ) {
+			menu->addSeparator();
+
+			menuAdd( "move_tab_to_start", "Move Tab To Start", "window", "move-tab-to-start" );
+
+			menuAdd( "move_tab_to_end", "Move Tab To End", "window", "move-tab-to-end" );
 		}
 
 		menu->addEventListener( Event::OnItemClicked, [tab, this]( const Event* event ) {
@@ -2494,6 +2506,40 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		if ( !processPath.empty() ) {
 			auto cmd( processPath + " -x \"" + editor->getDocumentRef()->getFilePath() + "\"" );
 			Sys::execute( cmd );
+		}
+	} );
+	doc.setCommand( "move-to-new-window", [this] {
+		auto editor = mSplitter->getCurEditor();
+		if ( editor == nullptr || editor->getDocumentRef() == nullptr ||
+			 editor->getDocumentRef()->getFilePath().empty() )
+			return;
+		UITabWidget* tabWidget = mSplitter->tabWidgetFromEditor( editor );
+		if ( tabWidget )
+			tabWidget->removeTab( (UITab*)editor->getData() );
+		std::string processPath = Sys::getProcessFilePath();
+		if ( !processPath.empty() ) {
+			auto cmd( processPath + " -x \"" + editor->getDocumentRef()->getFilePath() + "\"" );
+			Sys::execute( cmd );
+		}
+	} );
+	doc.setCommand( "move-tab-to-start", [this] {
+		auto widget = mSplitter->getCurWidget();
+		if ( widget == nullptr || widget->getData() == 0 )
+			return;
+		UITabWidget* tabWidget = mSplitter->tabWidgetFromWidget( widget );
+		if ( tabWidget ) {
+			UITab* tab = (UITab*)widget->getData();
+			tabWidget->moveTab( tab, 0 );
+		}
+	} );
+	doc.setCommand( "move-tab-to-end", [this] {
+		auto widget = mSplitter->getCurWidget();
+		if ( widget == nullptr || widget->getData() == 0 )
+			return;
+		UITabWidget* tabWidget = mSplitter->tabWidgetFromWidget( widget );
+		if ( tabWidget ) {
+			UITab* tab = (UITab*)widget->getData();
+			tabWidget->moveTab( tab, tabWidget->getTabCount() );
 		}
 	} );
 	registerUnlockedCommands( doc );
@@ -3551,11 +3597,7 @@ bool App::needsRedirectToRunningProcess( std::string file ) {
 	return true;
 }
 
-void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
-				const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
-				std::string css, const std::string& fileToOpen, bool stdOutLogs,
-				bool disableFileLogs, bool openClean, bool portable, std::string language,
-				bool incognito, bool prematureExit ) {
+void App::init( InitParameters& params ) {
 	Http::setThreadPool( mThreadPool );
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
 	Display* currentDisplay = displayManager->getDisplayIndex( 0 );
@@ -3565,11 +3607,13 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		return;
 	}
 
-	mIncognito = incognito;
-	mPortableMode = portable;
+	mIncognito = params.incognito;
+	mPortableMode = params.portable || !params.profile.empty();
+	mProfilePath = params.profile;
 	mDisplayDPI = currentDisplay->getDPI();
-	mUseFrameBuffer = frameBuffer;
-	mBenchmarkMode = benchmarkMode;
+	mUseFrameBuffer = params.frameBuffer;
+	mBenchmarkMode = params.benchmarkMode;
+	mDisablePlugins = params.disablePlugins;
 
 	mResPath = Sys::getProcessPath();
 #if EE_PLATFORM == EE_PLATFORM_LINUX
@@ -3581,13 +3625,13 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 	mResPath += "assets";
 	FileSystem::dirAddSlashAtEnd( mResPath );
 
-	bool firstRun = loadConfig( logLevel, currentDisplay->getSize(), prematureExit, stdOutLogs,
-								disableFileLogs );
+	bool firstRun = loadConfig( params.logLevel, currentDisplay->getSize(), params.prematureExit,
+								params.stdOutLogs, params.disableFileLogs );
 
-	if ( prematureExit )
+	if ( params.prematureExit )
 		return;
 
-	if ( !openClean && needsRedirectToRunningProcess( file ) )
+	if ( !params.openClean && needsRedirectToRunningProcess( params.file ) )
 		return;
 
 	currentDisplay = displayManager->getDisplayIndex( mConfig.windowState.displayIndex <
@@ -3598,15 +3642,15 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	mConfig.windowState.pixelDensity =
-		pidelDensity > 0
-			? pidelDensity
+		params.pidelDensity > 0
+			? params.pidelDensity
 			: ( mConfig.windowState.pixelDensity > 0	? mConfig.windowState.pixelDensity
 				: currentDisplay->getPixelDensity() > 2 ? currentDisplay->getPixelDensity() / 2
 														: currentDisplay->getPixelDensity() );
 #else
 	mConfig.windowState.pixelDensity =
-		pidelDensity > 0
-			? pidelDensity
+		params.pidelDensity > 0
+			? params.pidelDensity
 			: ( mConfig.windowState.pixelDensity > 0 ? mConfig.windowState.pixelDensity
 													 : currentDisplay->getPixelDensity() );
 #endif
@@ -3955,19 +3999,19 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mUISceneNode->setThreadPool( mThreadPool );
 		mUIColorScheme = mConfig.ui.colorScheme;
 
-		if ( language.empty() )
-			language = mConfig.ui.language;
-		if ( !language.empty() )
-			mUISceneNode->getTranslator().setCurrentLanguage( language );
+		if ( params.language.empty() )
+			params.language = mConfig.ui.language;
+		if ( !params.language.empty() )
+			mUISceneNode->getTranslator().setCurrentLanguage( params.language );
 		std::string currentLanguage( mUISceneNode->getTranslator().getCurrentLanguage() );
 		mi18nPath = mResPath + "i18n" + FileSystem::getOSSlash();
 		std::string langPath( mi18nPath + currentLanguage + ".xml" );
 		if ( currentLanguage != "en" && FileSystem::fileExists( langPath ) )
 			mUISceneNode->getTranslator().loadFromFile( langPath );
 
-		if ( !colorScheme.empty() ) {
-			mUIColorScheme =
-				colorScheme == "light" ? ColorSchemePreference::Light : ColorSchemePreference::Dark;
+		if ( !params.colorScheme.empty() ) {
+			mUIColorScheme = params.colorScheme == "light" ? ColorSchemePreference::Light
+														   : ColorSchemePreference::Dark;
 		}
 		mUISceneNode->setColorSchemePreference( mUIColorScheme );
 
@@ -3987,12 +4031,12 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 
 		setTheme( getThemePath() );
 
-		if ( css.empty() )
-			css = mConfigPath + "style.css";
+		if ( params.css.empty() )
+			params.css = mConfigPath + "style.css";
 
-		if ( FileSystem::fileExists( css ) ) {
+		if ( FileSystem::fileExists( params.css ) ) {
 			CSS::StyleSheetParser parser;
-			if ( parser.loadFromFile( css ) )
+			if ( parser.loadFromFile( params.css ) )
 				mUISceneNode->combineStyleSheet( parser.getStyleSheet(), false );
 		}
 
@@ -4051,7 +4095,7 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 		mUISceneNode->on( Event::KeyDown, [this]( const Event* event ) {
 			trySendUnlockedCmd( *static_cast<const KeyEvent*>( event ) );
 		} );
-		if ( logLevel == LogLevel::Debug )
+		if ( params.logLevel == LogLevel::Debug )
 			mUISceneNode->setVerbose( true );
 		mDocInfo->setVisible( mConfig.editor.showDocInfo );
 
@@ -4174,15 +4218,15 @@ void App::init( const LogLevel& logLevel, std::string file, const Float& pidelDe
 			file = "";
 #endif
 
-		if ( terminal && file.empty() && fileToOpen.empty() ) {
+		if ( params.terminal && params.file.empty() && params.fileToOpen.empty() ) {
 			showSidePanel( false );
 			showStatusBar( false );
 			mTerminalManager->createNewTerminal();
 		} else {
-			initProjectTreeView( file, openClean );
+			initProjectTreeView( params.file, params.openClean );
 		}
 
-		mFileToOpen = fileToOpen;
+		mFileToOpen = params.fileToOpen;
 
 		Log::info( "Init ProjectTreeView took: %.2f ms",
 				   globalClock.getElapsedTime().asMilliseconds() );
@@ -4348,10 +4392,18 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		"Try to set the default language the editor will be loaded. The language must be supported "
 		"in order to this option do something.",
 		{ "language" }, "" );
+	args::ValueFlag<std::string> profile( parser, "profile", "Start with profile at <path>",
+										  { "profile" }, "" );
+	args::Flag disablePlugins( parser, "disable-plugins",
+							   "Disable all plugins. This option is not persisted and is effective "
+							   "only when the command opens a new window.",
+							   { "disable-plugins" } );
+
 #ifdef EE_TEXT_SHAPER_ENABLED
 	args::Flag textShaper( parser, "text-shaper", "Enables text-shaping capabilities",
 						   { "text-shaper" } );
 #endif
+
 	std::vector<std::string> args;
 	try {
 		args = Sys::parseArguments( argc, argv );
@@ -4408,15 +4460,29 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		Text::TextShaperEnabled = true;
 #endif
 
+	App::InitParameters params;
+	params.logLevel = logLevel.Get();
+	params.file = folder ? folder.Get() : fileOrFolderPos.Get();
+	params.pidelDensity = pixelDensityConf ? pixelDensityConf.Get() : 0.f;
+	params.colorScheme = prefersColorScheme ? prefersColorScheme.Get() : "";
+	params.terminal = terminal.Get();
+	params.frameBuffer = fb.Get();
+	params.benchmarkMode = benchmarkMode.Get();
+	params.css = css.Get();
+	params.fileToOpen = file.Get();
+	params.stdOutLogs = verbose.Get();
+	params.disableFileLogs = disableFileLogs.Get();
+	params.openClean = openClean.Get();
+	params.portable = portable.Get();
+	params.language = language.Get();
+	params.incognito = incognito.Get();
+	params.prematureExit = health || ( healthLang && !healthLang.Get().empty() ) ||
+						   ( exportLangPath && !exportLangPath.Get().empty() );
+	params.profile = profile.Get();
+	params.disablePlugins = disablePlugins.Get();
+
 	appInstance = eeNew( App, ( jobs, args ) );
-	appInstance->init( logLevel.Get(), folder ? folder.Get() : fileOrFolderPos.Get(),
-					   pixelDensityConf ? pixelDensityConf.Get() : 0.f,
-					   prefersColorScheme ? prefersColorScheme.Get() : "", terminal.Get(), fb.Get(),
-					   benchmarkMode.Get(), css.Get(), file.Get(), verbose.Get(),
-					   disableFileLogs.Get(), openClean.Get(), portable.Get(), language.Get(),
-					   incognito.Get(),
-					   health || ( healthLang && !healthLang.Get().empty() ) ||
-						   ( exportLangPath && !exportLangPath.Get().empty() ) );
+	appInstance->init( params );
 
 	if ( exportLangPath && !exportLangPath.Get().empty() ) {
 		Sys::windowAttachConsole();

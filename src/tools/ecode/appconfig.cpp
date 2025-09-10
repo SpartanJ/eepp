@@ -221,6 +221,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	term.scrollback = ini.getValueI( "terminal", "scrollback", 10000 );
 	term.unsupportedOSWarnDisabled =
 		ini.getValueB( "terminal", "unsupported_os_warn_disabled", false );
+	term.closeTerminalTabOnExit = ini.getValueB( "terminal", "close_terminal_tab_on_exit", false );
 
 	workspace.restoreLastSession = ini.getValueB( "workspace", "restore_last_session", false );
 	workspace.checkForUpdatesAtStartup =
@@ -242,7 +243,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 
 	iniInfo = FileInfo( ini.path() );
 
-	pluginManager->setPluginsEnabled( pluginsEnabled, sync );
+	if ( !pluginManager->pluginsDisabled() )
+		pluginManager->setPluginsEnabled( pluginsEnabled, sync );
 }
 
 void AppConfig::save( const std::vector<std::string>& recentFiles,
@@ -377,6 +379,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 				  NewTerminalOrientation::toString( term.newTerminalOrientation ) );
 	ini.setValue( "terminal", "scrollback", String::toString( term.scrollback ) );
 	ini.setValueB( "terminal", "unsupported_os_warn_disabled", term.unsupportedOSWarnDisabled );
+	ini.setValueB( "terminal", "close_terminal_tab_on_exit", term.closeTerminalTabOnExit );
 
 	ini.setValueB( "window", "vsync", context.VSync );
 	ini.setValue( "window", "glversion",
@@ -389,9 +392,11 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 				   workspace.checkForUpdatesAtStartup );
 	ini.setValueB( "workspace", "session_snapshot", workspace.sessionSnapshot );
 
-	const auto& pluginsEnabled = pluginManager->getPluginsEnabled();
-	for ( const auto& plugin : pluginsEnabled )
-		ini.setValueB( "plugins", plugin.first, plugin.second );
+	if ( !pluginManager->pluginsDisabled() ) {
+		const auto& pluginsEnabled = pluginManager->getPluginsEnabled();
+		for ( const auto& plugin : pluginsEnabled )
+			ini.setValueB( "plugins", plugin.first, plugin.second );
+	}
 
 	for ( const auto& langExt : languagesExtensions.priorities )
 		ini.setValue( "languages_extensions", langExt.first, langExt.second );

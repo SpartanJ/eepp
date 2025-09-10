@@ -176,7 +176,7 @@ class WindowsSignalHandling {
 	}
 
 	static void handle_stacktrace( int skip_frames = 0 ) {
-		std::string crashesPath( Sys::getProcessPath() );
+		std::string crashesPath( Sys::getConfigPath( "ecode" ) );
 		FileSystem::dirAddSlashAtEnd( crashesPath );
 		crashesPath += "crashes";
 		FileSystem::dirAddSlashAtEnd( crashesPath );

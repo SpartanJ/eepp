@@ -964,6 +964,11 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 							   findIcon( "terminal" ), newTerminalBehaviorSubMenu );
 
 	mTerminalMenu
+		->addCheckBox( i18n( "close_terminal_tab_on_exit", "Close Terminal Tab on Exit" ),
+					   mApp->getConfig().term.closeTerminalTabOnExit )
+		->setId( "close-terminal-tab-on-exit" );
+
+	mTerminalMenu
 		->add( i18n( "configure_terminal_shell", "Configure Terminal Shell" ),
 			   findIcon( "terminal" ), getKeybind( "configure-terminal-shell" ) )
 		->setId( "configure-terminal-shell" );
@@ -980,7 +985,14 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 
 	mTerminalMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		const std::string& id( event->getNode()->getId() );
-		if ( mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
+		if ( "close-terminal-tab-on-exit" == id ) {
+			bool active = event->getNode()->asType<UIMenuCheckBox>()->isActive();
+			mApp->getConfig().term.closeTerminalTabOnExit = active;
+			mSplitter->forEachWidgetType( UI_TYPE_TERMINAL, [active]( UIWidget* widget ) {
+				widget->asType<UITerminal>()->getTerm()->setKeepAlive( !active );
+			} );
+		} else if ( mSplitter->getCurWidget() &&
+					mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
 			UITerminal* terminal = mSplitter->getCurWidget()->asType<UITerminal>();
 			if ( "exclusive-mode" == id ) {
 				terminal->setExclusiveMode(
@@ -1028,10 +1040,6 @@ UIMenu* SettingsMenu::createEditMenu() {
 			   findIcon( "folder-open" ), getKeybind( "open-containing-folder" ) )
 		->setId( "open-containing-folder" );
 	mEditMenu
-		->add( i18n( "open_in_new_window_ellipsis", "Open in New Window..." ), findIcon( "window" ),
-			   getKeybind( "open-in-new-window" ) )
-		->setId( "open-in-new-window" );
-	mEditMenu
 		->add( i18n( "copy_containing_folder_path_ellipsis", "Copy Containing Folder Path..." ),
 			   findIcon( "copy" ), getKeybind( "copy-containing-folder-path" ) )
 		->setId( "copy-containing-folder-path" );
@@ -1039,17 +1047,32 @@ UIMenu* SettingsMenu::createEditMenu() {
 		->add( i18n( "copy_file_path", "Copy File Path" ), findIcon( "copy" ),
 			   getKeybind( "copy-file-path" ) )
 		->setId( "copy-file-path" );
+
+	UIMenuSeparator* moveSep = mEditMenu->addSeparator();
+
+	mEditMenu
+		->add( i18n( "open_in_new_window", "Open in New Window" ), findIcon( "window" ),
+			   getKeybind( "open-in-new-window" ) )
+		->setId( "open-in-new-window" );
+
+	mEditMenu
+		->add( i18n( "move_to_new_window", "Move to New Window" ), findIcon( "window" ),
+			   getKeybind( "move-to-new-window" ) )
+		->setId( "move-to-new-window" );
+
 	UIMenuSeparator* fileSep = mEditMenu->addSeparator();
 	mEditMenu
 		->add( i18n( "key_bindings", "Key Bindings" ), findIcon( "keybindings" ),
 			   getKeybind( "keybindings" ) )
 		->setId( "keybindings" );
+
 	mEditMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		runCommand( event->getNode()->getId() );
 	} );
-	mEditMenu->on( Event::OnMenuShow, [this, fileSep]( const Event* ) {
+
+	mEditMenu->on( Event::OnMenuShow, [this, fileSep, moveSep]( const Event* ) {
 		if ( !mSplitter->curEditorExistsAndFocused() ) {
 			mEditMenu->getItemId( "undo" )->setEnabled( false );
 			mEditMenu->getItemId( "redo" )->setEnabled( false );
@@ -1058,7 +1081,9 @@ UIMenu* SettingsMenu::createEditMenu() {
 			mEditMenu->getItemId( "open-containing-folder" )->setVisible( false );
 			mEditMenu->getItemId( "copy-containing-folder-path" )->setVisible( false );
 			mEditMenu->getItemId( "open-in-new-window" )->setVisible( false );
+			mEditMenu->getItemId( "move-to-new-window" )->setVisible( false );
 			mEditMenu->getItemId( "copy-file-path" )->setVisible( false );
+			moveSep->setVisible( false );
 			fileSep->setVisible( false );
 			return;
 		}
@@ -1070,7 +1095,9 @@ UIMenu* SettingsMenu::createEditMenu() {
 		mEditMenu->getItemId( "open-containing-folder" )->setVisible( doc->hasFilepath() );
 		mEditMenu->getItemId( "copy-containing-folder-path" )->setVisible( doc->hasFilepath() );
 		mEditMenu->getItemId( "open-in-new-window" )->setVisible( doc->hasFilepath() );
+		mEditMenu->getItemId( "move-to-new-window" )->setVisible( doc->hasFilepath() );
 		mEditMenu->getItemId( "copy-file-path" )->setVisible( doc->hasFilepath() );
+		moveSep->setVisible( true );
 		fileSep->setVisible( doc->hasFilepath() );
 	} );
 	return mEditMenu;
