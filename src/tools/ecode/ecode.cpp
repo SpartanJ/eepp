@@ -1506,9 +1506,13 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 			 tab->getOwnedWidget()->isType( UI_TYPE_TERMINAL ) ) {
 			menu->addSeparator();
 
-			menuAdd( "move_tab_to_start", "Move Tab To Start", "window", "move-tab-to-start" );
+			bool enabled = tab->getTabWidget()->getTabCount() > 1;
 
-			menuAdd( "move_tab_to_end", "Move Tab To End", "window", "move-tab-to-end" );
+			menuAdd( "move_tab_to_start", "Move Tab To Start", "window", "move-tab-to-start" )
+				->setEnabled( enabled );
+
+			menuAdd( "move_tab_to_end", "Move Tab To End", "window", "move-tab-to-end" )
+				->setEnabled( enabled );
 		}
 
 		menu->addEventListener( Event::OnItemClicked, [tab, this]( const Event* event ) {
