@@ -718,7 +718,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void saveDoc();
 
-	void loadFolder( std::string path );
+	void loadFolder( std::string path, bool forceNewWindow = false );
 
 	void loadKeybindings();
 

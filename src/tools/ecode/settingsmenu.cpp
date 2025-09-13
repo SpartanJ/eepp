@@ -1252,19 +1252,23 @@ UIMenu* SettingsMenu::createWindowMenu() {
 	mWindowMenu->addSubMenu( i18n( "split", "Split" ), findIcon( "split-horizontal" ), splitMenu );
 
 	mWindowMenu->addSeparator();
+
 	mWindowMenu
 		->add( i18n( "zoom_in", "Zoom In" ), findIcon( "zoom-in" ), getKeybind( "font-size-grow" ) )
 		->setId( "zoom-in" );
+
 	mWindowMenu
 		->add( i18n( "zoom_out", "Zoom Out" ), findIcon( "zoom-out" ),
 			   getKeybind( "font-size-shrink" ) )
 		->setId( "zoom-out" );
+
 	mWindowMenu
 		->add( i18n( "zoom_reset", "Zoom Reset" ), findIcon( "zoom-reset" ),
 			   getKeybind( "font-size-reset" ) )
 		->setId( "zoom-reset" );
 
 	mWindowMenu->addSeparator();
+
 	mWindowMenu
 		->addCheckBox( i18n( "open_files_in_new_window_enable", "Open Files in New Window" ),
 					   mApp->getConfig().ui.openFilesInNewWindow )
@@ -1272,6 +1276,15 @@ UIMenu* SettingsMenu::createWindowMenu() {
 								"When files are opened from a file explorer or from the command "
 								"line, this\ncontrols whether a new window is created or not." ) )
 		->setId( "open-files-in-new-window-enable" );
+
+	mWindowMenu
+		->addCheckBox( i18n( "open_project_in_new_window", "Open Project in New Window" ),
+					   mApp->getConfig().ui.openProjectInNewWindow )
+		->setTooltipText( i18n( "open_project_in_new_window_tooltip",
+								"Opened Project / Folders will be opened in a new window instead "
+								"of the current window unless no project is currently loaded." ) )
+		->setId( "open-project-in-new-window" );
+
 	mWindowMenu
 		->addCheckBox( i18n( "welcome_screen_enable", "Enable Welcome Screen" ),
 					   mApp->getConfig().ui.welcomeScreen )
@@ -1293,6 +1306,10 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		} else if ( "open-files-in-new-window-enable" == item->getId() ) {
 			bool active = item->asType<UIMenuCheckBox>()->isActive();
 			mApp->getConfig().ui.openFilesInNewWindow = active;
+			mApp->saveConfig();
+		} else if ( "open-project-in-new-window" == item->getId() ) {
+			bool active = item->asType<UIMenuCheckBox>()->isActive();
+			mApp->getConfig().ui.openProjectInNewWindow = active;
 			mApp->saveConfig();
 		} else {
 			String text = String( event->getNode()->asType<UIMenuItem>()->getId() ).toLower();

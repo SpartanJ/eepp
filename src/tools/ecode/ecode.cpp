@@ -1078,8 +1078,10 @@ void App::updateRecentFolders() {
 				mConfig.workspace.restoreLastSession =
 					event->getNode()->asType<UIMenuCheckBox>()->isActive();
 			} else {
-				const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
-				loadFolder( txt );
+				UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+				const String& txt = item->getText();
+				loadFolder( txt,
+							item->getUISceneNode()->getWindow()->getInput()->isShiftPressed() );
 			}
 		} );
 	}
@@ -3088,8 +3090,9 @@ void App::createAndShowRecentFolderPopUpMenu( Node* recentFolderBut ) {
 	menu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
-		const String& txt = event->getNode()->asType<UIMenuItem>()->getText();
-		loadFolder( txt );
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		const String& txt = item->getText();
+		loadFolder( txt, item->getUISceneNode()->getWindow()->getInput()->isShiftPressed() );
 	} );
 	auto pos = recentFolderBut->getScreenPos();
 	pos.y += recentFolderBut->getPixelsSize().getHeight();
@@ -3408,7 +3411,7 @@ void App::saveSidePanelTabsOrder() {
 		mConfig.windowState.sidePanelTabsOrder.emplace_back( mSidePanel->getTab( i )->getId() );
 }
 
-void App::loadFolder( std::string path ) {
+void App::loadFolder( std::string path, bool forceNewWindow ) {
 	if ( !FileSystem::fileExists( path ) || !FileSystem::isDirectory( path ) ) {
 		auto msgBox = UIMessageBox::New(
 			UIMessageBox::OK, i18n( "directory_does_not_exist",
@@ -3431,6 +3434,16 @@ void App::loadFolder( std::string path ) {
 				return;
 		} else if ( !FileSystem::fileExists( path ) )
 			return;
+	}
+
+	if ( ( mConfig.ui.openProjectInNewWindow || forceNewWindow ) &&
+		 ( !mCurrentProject.empty() && mCurrentProject != getPlaygroundPath() ) ) {
+		std::string processPath = Sys::getProcessFilePath();
+		if ( !processPath.empty() ) {
+			std::string cmd( processPath + " " + path );
+			Sys::execute( cmd );
+		}
+		return;
 	}
 
 	bool projectWasLoaded = !mCurrentProject.empty();

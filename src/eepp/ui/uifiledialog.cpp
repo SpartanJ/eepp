@@ -779,21 +779,15 @@ UIDropDownList* UIFileDialog::getFileTypeList() const {
 	return mFiletype;
 }
 
-Uint32 UIFileDialog::onKeyUp( const KeyEvent& event ) {
-	if ( mCloseShortcut && event.getKeyCode() == mCloseShortcut.key &&
-		 ( mCloseShortcut.mod == 0 || ( event.getMod() & mCloseShortcut.mod ) ) ) {
-		disableButtons();
-
-		closeWindow();
-	}
-
-	return UIWindow::onKeyUp( event );
-}
-
 Uint32 UIFileDialog::onKeyDown( const KeyEvent& event ) {
 	if ( mOpenShortut && event.getKeyCode() == mOpenShortut.key &&
 		 ( mOpenShortut.mod == 0 || ( event.getMod() & mOpenShortut.mod ) ) ) {
 		open();
+	} else if ( mCloseShortcut && event.getKeyCode() == mCloseShortcut.key &&
+		 ( mCloseShortcut.mod == 0 || ( event.getMod() & mCloseShortcut.mod ) ) ) {
+		disableButtons();
+
+		closeWindow();
 	}
 
 	return UIWindow::onKeyDown( event );

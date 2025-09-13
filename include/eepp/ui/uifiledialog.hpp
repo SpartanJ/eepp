@@ -154,8 +154,6 @@ class EE_API UIFileDialog : public UIWindow {
 
 	virtual void onWindowReady();
 
-	virtual Uint32 onKeyUp( const KeyEvent& event );
-
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 
 	void onPressEnter( const Event* Event );
