@@ -1895,23 +1895,43 @@ bool Sys::processHasChildren( ProcessID pid ) {
 	EE_PLATFORM == EE_PLATFORM_BSD
 	struct kinfo_proc* proc_list = nullptr;
 	size_t proc_count = 0;
+	int mib[] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL };
+	int err;
+	bool done = false;
 
-	// MIB (Management Information Base) for sysctl
-	int mib[] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0 };
+	do {
+		// First, call sysctl to get the size of the buffer needed
+		if ( sysctl( mib, 3, nullptr, &proc_count, nullptr, 0 ) < 0 ) {
+			return false;
+		}
 
-	// First, call sysctl to get the size of the buffer needed
-	if ( sysctl( mib, 4, nullptr, &proc_count, nullptr, 0 ) < 0 ) {
-		return false;
-	}
+		// If a buffer was previously allocated, free it
+		if ( proc_list ) {
+			free( proc_list );
+			proc_list = nullptr;
+		}
 
-	proc_list = (struct kinfo_proc*)malloc( proc_count );
-	if ( !proc_list ) {
-		return false;
-	}
+		// Allocate the buffer
+		proc_list = (struct kinfo_proc*)malloc( proc_count );
+		if ( !proc_list ) {
+			return false;
+		}
 
-	// Now, call sysctl again to populate the buffer
-	if ( sysctl( mib, 4, proc_list, &proc_count, nullptr, 0 ) < 0 ) {
-		free( proc_list );
+		// Now, call sysctl again to populate the buffer
+		err = sysctl( mib, 3, proc_list, &proc_count, nullptr, 0 );
+
+		if ( err == 0 ) {
+			done = true; // Success
+		} else if ( errno == ENOMEM ) {
+			// The process list grew; loop again to get the new size and re-allocate.
+			err = 0;
+		}
+	} while ( err == 0 && !done );
+
+	if ( err != 0 || !proc_list ) {
+		if ( proc_list ) {
+			free( proc_list );
+		}
 		return false;
 	}
 
