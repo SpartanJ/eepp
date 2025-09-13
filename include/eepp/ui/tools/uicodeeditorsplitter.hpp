@@ -59,6 +59,10 @@ class EE_API UICodeEditorSplitter {
 	virtual bool tryTabClose( UIWidget* widget, UITabWidget::FocusTabBehavior focusTabBehavior,
 							  std::function<void()> onMsgBoxCloseCb = {} );
 
+	virtual bool tryCodeEditorClose( UICodeEditor* editor,
+									 UITabWidget::FocusTabBehavior focusTabBehavior,
+									 std::function<void()> onMsgBoxCloseCb = {} );
+
 	virtual bool tryCloseAllTabs( UIWidget* widget,
 								  UITabWidget::FocusTabBehavior focusTabBehavior );
 
@@ -253,7 +257,8 @@ class EE_API UICodeEditorSplitter {
 		t.setCommand( "switch-to-previous-split", [this] { switchPreviousSplit( mCurWidget ); } );
 		t.setCommand( "switch-to-next-split", [this] { switchNextSplit( mCurWidget ); } );
 		t.setCommand( "close-tab", [this] {
-			tryTabClose( mCurWidget, UITabWidget::FocusTabBehavior::Default );
+			if ( tryTabClose( mCurWidget, UITabWidget::FocusTabBehavior::Default ) )
+				closeTab( mCurWidget, UITabWidget::FocusTabBehavior::Default );
 		} );
 		t.setCommand( "close-other-tabs", [this] {
 			tryCloseOtherTabs( mCurWidget, UITabWidget::FocusTabBehavior::Default );
@@ -365,9 +370,14 @@ class EE_API UICodeEditorSplitter {
 
 	std::shared_ptr<TextDocument> getTextDocumentRef( TextDocument* doc );
 
-	void setTabTryCloseCallback( UITabWidget::TabTryCloseCallback cb );
+	// @return True if can be removed
+	typedef std::function<bool( UIWidget*, UITabWidget::FocusTabBehavior,
+								std::function<void()> onMsgBoxCloseCb )>
+		TabTryCloseCallback;
 
-	bool isEditorInAnyWidget( UICodeEditor* ) const;
+	void setTabTryCloseCallback( TabTryCloseCallback cb );
+
+	bool isWidgetInAnyWidget( UIWidget* ) const;
 
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
@@ -395,7 +405,7 @@ class EE_API UICodeEditorSplitter {
 	size_t mNavigationHistoryPos{ std::numeric_limits<size_t>::max() };
 	std::function<void( UITabWidget* )> mOnTabWidgetCreateCb;
 	Float mVisualSplitEdgePercent{ 0.1 };
-	UITabWidget::TabTryCloseCallback mTabTryCloseCb;
+	TabTryCloseCallback mTabTryCloseCb;
 
 	UICodeEditorSplitter( UICodeEditorSplitter::Client* client, UISceneNode* sceneNode,
 						  std::shared_ptr<ThreadPool> threadPool,

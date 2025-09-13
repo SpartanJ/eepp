@@ -1869,8 +1869,12 @@ void TextDocument::moveTo( const size_t& cursorIdx, int columnOffset ) {
 	setSelection( cursorIdx, positionOffset( getSelection().start(), columnOffset ) );
 }
 
+static inline bool isSpace( String::StringBaseType ch ) {
+	return ch == ' ' || ch == '\t' || ch == '\n';
+}
+
 std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
-	static std::vector<std::pair<String::StringBaseType, String::StringBaseType>>
+	static const std::vector<std::pair<String::StringBaseType, String::StringBaseType>>
 		sAutoCloseBracketsPairs = { { '(', ')' }, { '{', '}' },	  { '[', ']' },
 									{ '"', '"' }, { '\'', '\'' }, { '`', '`' } };
 
@@ -1912,13 +1916,11 @@ std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
 			bool mustClose = true;
 
 			if ( sel.start().column() < (Int64)line( sel.start().line() ).size() ) {
-				auto ch = line( sel.start().line() ).getText()[sel.start().column()];
+				auto ch = getChar( sel.start() );
 
 				if ( isClose && ch == closeChar &&
-					 ( !isSame ||
-					   ( sel.start().column() - 1 >= 0 &&
-						 line( sel.start().line() ).getText()[sel.start().column() - 1] ==
-							 text[0] ) ) ) {
+					 ( !isSame || ( sel.start().column() - 1 >= 0 &&
+									getPrevChar( sel.start() ) == text[0] ) ) ) {
 					deleteTo( i, 1 );
 					inserted.push_back( false );
 					continue;
@@ -1929,6 +1931,20 @@ std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
 			}
 
 			if ( mustClose ) {
+				TextPosition openStart = positionOffset( sel.start(), 1 );
+				if ( openStart != sel.start() ) {
+					int maxIt = 100;
+					while ( maxIt-- > 0 && openStart < endOfDoc() &&
+							isSpace( getChar( openStart ) ) ) {
+						openStart = nextChar( openStart );
+					}
+					if ( openStart < endOfDoc() && maxIt > 0 &&
+						 getChar( openStart ) == closeChar ) {
+						inserted.push_back( false );
+						continue;
+					}
+				}
+
 				setSelection(
 					i, positionOffset( insert( i, sel.start(), text + String( closeChar ) ), -1 ) );
 				inserted.push_back( true );

@@ -97,11 +97,11 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 	} else if ( mConfig.term.warnBeforeClosingTab && isAnyTerminalDirty() ) {
 		if ( mCloseMsgBox )
 			return false;
-		mCloseMsgBox = UIMessageBox::New(
-			UIMessageBox::OK_CANCEL, i18n( "confirm_ecode_exit_terminal_close_warn",
-										   "Do you really want to close the code editor?\nAt "
-										   "least one terminal is still running a process." )
-										 .unescape() );
+		mCloseMsgBox = UIMessageBox::New( UIMessageBox::OK_CANCEL,
+										  i18n( "confirm_ecode_exit_terminal_close_warn",
+												"Do you really want to close the code editor?\nAt "
+												"least one terminal is still running a process." )
+											  .unescape() );
 
 		mCloseMsgBox->on( Event::OnConfirm, [this]( const Event* ) {
 			saveProject();
@@ -1548,6 +1548,13 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 				->setEnabled( enabled );
 		}
 
+		if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+			menu->addSeparator();
+
+			menuAdd( "clone_document_buffer", "Clone Document Buffer", "copy",
+					 "clone-document-buffer" );
+		}
+
 		menu->addEventListener( Event::OnItemClicked, [tab, this]( const Event* event ) {
 			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 				return;
@@ -2577,6 +2584,21 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		if ( tabWidget ) {
 			UITab* tab = (UITab*)widget->getData();
 			tabWidget->moveTab( tab, tabWidget->getTabCount() );
+		}
+	} );
+	doc.setCommand( "clone-document-buffer", [this] {
+		if ( mSplitter->curEditorExistsAndFocused() && mSplitter->getCurEditor() ) {
+			UICodeEditor* editor = mSplitter->getCurEditor();
+			auto d =
+				mSplitter->createCodeEditorInTabWidget( mSplitter->tabWidgetFromWidget( editor ) );
+			if ( d.first == nullptr && d.second == nullptr && !mSplitter->getTabWidgets().empty() )
+				d = mSplitter->createCodeEditorInTabWidget( mSplitter->getTabWidgets()[0] );
+			if ( d.first != nullptr || d.second != nullptr ) {
+				d.first->getTabWidget()->setTabSelected( d.first );
+				d.second->getDocument().textInput( editor->getDocument().getText() );
+				d.second->getDocument().setSyntaxDefinition(
+					editor->getDocument().getSyntaxDefinition() );
+			}
 		}
 	} );
 	registerUnlockedCommands( doc );
@@ -4152,31 +4174,40 @@ void App::init( InitParameters& params ) {
 			tabWidget->getTabBar()->onDoubleClick(
 				[this]( const MouseEvent* ) { mSplitter->createEditorInNewTab(); } );
 		} );
-		mSplitter->setTabTryCloseCallback(
-			[this]( UITab* tab, UITabWidget::FocusTabBehavior focusTabBehavior ) -> bool {
-				if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
-					mSplitter->tryTabClose( tab->getOwnedWidget()->asType<UICodeEditor>(),
-											focusTabBehavior );
-					return false;
-				} else if ( mConfig.term.warnBeforeClosingTab &&
-							tab->getOwnedWidget()->isType( UI_TYPE_TERMINAL ) ) {
-					UITerminal* term = tab->getOwnedWidget()->asType<UITerminal>();
-					ProcessID pid = term->getTerm()->getTerminal()->getProcess()->pid();
-					if ( Sys::processHasChildren( pid ) ) {
-						UIMessageBox* msgBox =
-							UIMessageBox::New( UIMessageBox::OK_CANCEL,
-											   i18n( "terminal_close_warn",
-													 "Are you sure you want to close this "
-													 "terminal?\nIt's still running a process." ) );
-						msgBox->on( Event::OnConfirm, [tab]( auto ) { tab->removeTab(); } );
-						msgBox->setTitle( "ecode" );
-						msgBox->center();
-						msgBox->showWhenReady();
-						return false;
-					}
-				}
+		mSplitter->setTabTryCloseCallback( [this]( UIWidget* widget,
+												   UITabWidget::FocusTabBehavior focusTabBehavior,
+												   std::function<void()> onMsgBoxCloseCb ) -> bool {
+			if ( widget == nullptr || widget->getData() == 0 )
 				return true;
-			} );
+			if ( widget->isType( UI_TYPE_CODEEDITOR ) ) {
+				return mSplitter->tryCodeEditorClose( widget->asType<UICodeEditor>(),
+													  focusTabBehavior, onMsgBoxCloseCb );
+			} else if ( mConfig.term.warnBeforeClosingTab && widget->isType( UI_TYPE_TERMINAL ) ) {
+				UITerminal* term = widget->asType<UITerminal>();
+				ProcessID pid = term->getTerm()->getTerminal()->getProcess()->pid();
+				if ( Sys::processHasChildren( pid ) ) {
+					UIMessageBox* msgBox = UIMessageBox::New(
+						UIMessageBox::OK_CANCEL,
+						i18n( "terminal_close_warn", "Are you sure you want to close this "
+													 "terminal?\nIt's still running a process." ) );
+					msgBox->on( Event::OnConfirm, [widget]( auto ) {
+						reinterpret_cast<UITab*>( widget->getData() )->removeTab();
+					} );
+
+					msgBox->on( Event::OnClose, [this, onMsgBoxCloseCb]( const Event* ) {
+						if ( mSplitter->getCurEditor() )
+							mSplitter->getCurEditor()->setFocus();
+						if ( onMsgBoxCloseCb )
+							onMsgBoxCloseCb();
+					} );
+					msgBox->setTitle( "ecode" );
+					msgBox->center();
+					msgBox->showWhenReady();
+					return false;
+				}
+			}
+			return true;
+		} );
 		mPluginManager->setSplitter( mSplitter );
 
 		Log::info( "Base UI took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );

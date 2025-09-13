@@ -31,11 +31,11 @@ class EE_API FontTrueType : public Font {
 
 	const Font::Info& getInfo() const;
 
-	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
+	Glyph getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
 						   Float outlineThickness = 0 ) const;
 
-	const Glyph& getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold, bool italic,
-								  Float outlineThickness = 0 ) const;
+	Glyph getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold, bool italic,
+						   Float outlineThickness = 0 ) const;
 
 	GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
 									 bool bold = false, bool italic = false,
@@ -183,10 +183,10 @@ class EE_API FontTrueType : public Font {
 
 	void cleanup();
 
-	const Glyph& getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold, bool italic,
+	Glyph getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold, bool italic,
 								  Float outlineThickness, Page& page ) const;
 
-	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
+	Glyph getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
 						   Float outlineThickness, Page& page ) const;
 
 	GlyphDrawable* getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex, unsigned int characterSize,

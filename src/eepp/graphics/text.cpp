@@ -1620,7 +1620,7 @@ void Text::updateWidthCache() {
 	size_t size = mString.size();
 	for ( std::size_t i = 0; i < size; ++i ) {
 		codepoint = mString[i];
-		const Glyph& glyph =
+		auto glyph =
 			mFontStyleConfig.Font->getGlyph( codepoint, mFontStyleConfig.CharacterSize, bold,
 											 italic, mFontStyleConfig.OutlineThickness );
 		if ( codepoint != '\r' && codepoint != '\t' ) {
@@ -2168,7 +2168,7 @@ void Text::ensureGeometryUpdate() {
 
 		// Apply the outline
 		if ( mFontStyleConfig.OutlineThickness != 0 ) {
-			const Glyph& glyph =
+			auto glyph =
 				mFontStyleConfig.Font->getGlyph( curChar, mFontStyleConfig.CharacterSize, bold,
 												 reqItalic, mFontStyleConfig.OutlineThickness );
 
@@ -2192,7 +2192,7 @@ void Text::ensureGeometryUpdate() {
 		}
 
 		// Extract the current glyph's description
-		const Glyph& glyph = mFontStyleConfig.Font->getGlyph(
+		auto glyph = mFontStyleConfig.Font->getGlyph(
 			curChar, mFontStyleConfig.CharacterSize, bold, reqItalic );
 
 		// Add the glyph to the vertices

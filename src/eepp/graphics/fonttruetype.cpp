@@ -328,8 +328,8 @@ Uint32 FontTrueType::getGlyphIndex( const Uint32& codePoint ) const {
 	return index;
 }
 
-const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-									 bool italic, Float outlineThickness ) const {
+Glyph FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
+							  Float outlineThickness ) const {
 	Uint32 idx = 0;
 	if ( mEnableEmojiFallback && !mIsColorEmojiFont && !mIsEmojiFont &&
 		 Font::isEmojiCodePoint( codePoint ) ) {
@@ -400,15 +400,14 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 	return getGlyphByIndex( idx, characterSize, bold, italic, outlineThickness );
 }
 
-const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-									 bool italic, Float outlineThickness, Page& page ) const {
+Glyph FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
+							  Float outlineThickness, Page& page ) const {
 	Uint32 index = getGlyphIndex( codePoint );
 	return getGlyphByIndex( index, characterSize, bold, italic, outlineThickness, page );
 }
 
-const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
-											bool italic, Float outlineThickness,
-											Page& page ) const {
+Glyph FontTrueType::getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
+									 bool italic, Float outlineThickness, Page& page ) const {
 	eeASSERT( Engine::isMainThread() );
 
 	// Get the page corresponding to the character size
@@ -431,8 +430,8 @@ const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int character
 	}
 }
 
-const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
-											bool italic, Float outlineThickness ) const {
+Glyph FontTrueType::getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
+									 bool italic, Float outlineThickness ) const {
 	return getGlyphByIndex( index, characterSize, bold, italic, outlineThickness,
 							getPage( characterSize ) );
 }
@@ -539,7 +538,7 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 	if ( it != drawables.end() ) {
 		return it->second;
 	} else {
-		const Glyph& glyph = getGlyph( codePoint, characterSize, bold, italic, outlineThickness );
+		auto glyph = getGlyph( codePoint, characterSize, bold, italic, outlineThickness );
 		GlyphDrawable* region = GlyphDrawable::New(
 			page.texture, glyph.textureRect, glyph.size,
 			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, glyphIndex ) );
@@ -566,7 +565,7 @@ GlyphDrawable* FontTrueType::getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex,
 	if ( it != drawables.end() ) {
 		return it->second;
 	} else {
-		const Glyph& glyph =
+		auto glyph =
 			getGlyphByIndex( glyphIndex, characterSize, bold, italic, outlineThickness, page );
 		GlyphDrawable* region = GlyphDrawable::New(
 			page.texture, glyph.textureRect, glyph.size,
@@ -600,8 +599,8 @@ Float FontTrueType::getKerning( Uint32 first, Uint32 second, unsigned int charac
 	FT_Face face = static_cast<FT_Face>( mFace );
 
 	if ( face && setCurrentSize( characterSize ) ) {
-		const Glyph& glyph1 = getGlyph( first, characterSize, bold, italic, outlineThickness );
-		const Glyph& glyph2 = getGlyph( second, characterSize, bold, italic, outlineThickness );
+		auto glyph1 = getGlyph( first, characterSize, bold, italic, outlineThickness );
+		auto glyph2 = getGlyph( second, characterSize, bold, italic, outlineThickness );
 
 		if ( glyph1.font != glyph2.font )
 			return 0.f;

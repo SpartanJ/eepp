@@ -302,7 +302,7 @@
         "working_dir": "${project_root}/bin"
       },
       {
-        "args": "",
+        "args": "--warn-before-closing",
         "command": "${project_root}/bin/eterm-debug",
         "name": "eterm-debug",
         "working_dir": "${project_root}/bin"

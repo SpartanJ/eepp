@@ -36,7 +36,7 @@ class EE_API FontBMFont : public Font {
 
 	const Font::Info& getInfo() const;
 
-	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
+	Glyph getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
 						   Float outlineThickness = 0 ) const;
 
 	GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,

@@ -132,8 +132,8 @@ class EE_API Font {
 
 	virtual const Info& getInfo() const = 0;
 
-	virtual const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-								   bool italic, Float outlineThickness = 0 ) const = 0;
+	virtual Glyph getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
+							Float outlineThickness = 0 ) const = 0;
 
 	/** @return The glyph drawable that represents the glyph in a texture. The glyph drawable
 	 * allocation is managed by the font. */
