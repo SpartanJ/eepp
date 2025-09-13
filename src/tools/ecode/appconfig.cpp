@@ -222,6 +222,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	term.unsupportedOSWarnDisabled =
 		ini.getValueB( "terminal", "unsupported_os_warn_disabled", false );
 	term.closeTerminalTabOnExit = ini.getValueB( "terminal", "close_terminal_tab_on_exit", false );
+	term.warnBeforeClosingTab = ini.getValueB( "terminal", "warn_before_closing_tab", true );
 
 	workspace.restoreLastSession = ini.getValueB( "workspace", "restore_last_session", false );
 	workspace.checkForUpdatesAtStartup =
@@ -380,6 +381,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "terminal", "scrollback", String::toString( term.scrollback ) );
 	ini.setValueB( "terminal", "unsupported_os_warn_disabled", term.unsupportedOSWarnDisabled );
 	ini.setValueB( "terminal", "close_terminal_tab_on_exit", term.closeTerminalTabOnExit );
+	ini.setValueB( "terminal", "warn_before_closing_tab", term.warnBeforeClosingTab );
 
 	ini.setValueB( "window", "vsync", context.VSync );
 	ini.setValue( "window", "glversion",

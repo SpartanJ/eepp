@@ -1668,7 +1668,14 @@ solution "eepp"
 		build_link_configuration( "ecode", false )
 		configuration { "release", "windows" }
 			if not is_vs() then
-				linkoptions { "-Wl,--export-all-symbols" }
+				buildoptions { "-g1" }
+			end
+		configuration { "release" }
+			if os.is_real("linux") or os.is_real("macosx") or os.is_real("bsd") or os.is_real("haiku") then
+				buildoptions { "-g1", "-fvisibility=default" }
+			end
+			if os.is_real("linux") or os.is_real("bsd") then
+				linkoptions { "-rdynamic" }
 			end
 
 	project "eterm"

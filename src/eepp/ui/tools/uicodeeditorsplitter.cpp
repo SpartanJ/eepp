@@ -486,6 +486,10 @@ void UICodeEditorSplitter::loadAsyncFileFromPathInNewTab(
 
 void UICodeEditorSplitter::setCurrentEditor( UICodeEditor* editor ) {
 	eeASSERT( checkEditorExists( editor ) );
+	if ( !isEditorInAnyWidget( editor ) ) {
+		eeASSERT( true ); // This should not happen by design
+		return;
+	}
 	bool isNew = mCurEditor != editor;
 	bool isNewW = mCurWidget != editor;
 	mCurEditor = editor;
@@ -646,6 +650,9 @@ UITabWidget* UICodeEditorSplitter::createTabWidget( Node* parent ) {
 	} );
 	tabWidget->setTabTryCloseCallback(
 		[this]( UITab* tab, UITabWidget::FocusTabBehavior focusTabBehavior ) -> bool {
+			if ( mTabTryCloseCb )
+				return mTabTryCloseCb( tab, focusTabBehavior );
+
 			if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
 				tryTabClose( tab->getOwnedWidget()->asType<UICodeEditor>(), focusTabBehavior );
 				return false;
@@ -1429,6 +1436,18 @@ bool UICodeEditorSplitter::checkEditorExists( UICodeEditor* checkEditor ) const 
 	return found || checkEditor == nullptr || mAboutToAddEditor == checkEditor || mFirstCodeEditor;
 }
 
+bool UICodeEditorSplitter::isEditorInAnyWidget( UICodeEditor* checkEditor ) const {
+	bool found = false;
+	forEachEditorStoppable( [&found, checkEditor]( UICodeEditor* editor ) {
+		if ( editor == checkEditor ) {
+			found = true;
+			return true;
+		}
+		return false;
+	} );
+	return found;
+}
+
 bool UICodeEditorSplitter::curEditorExists() const {
 	bool found = false;
 	forEachEditorStoppable( [&]( UICodeEditor* editor ) {
@@ -1789,6 +1808,11 @@ std::shared_ptr<TextDocument> UICodeEditorSplitter::getTextDocumentRef( TextDocu
 			ret = editor->getDocumentRef();
 	} );
 	return ret;
+}
+
+void UICodeEditorSplitter::setTabTryCloseCallback( UITabWidget::TabTryCloseCallback cb ) {
+	mTabTryCloseCb = cb;
+	forEachTabWidget( [&cb]( UITabWidget* tw ) { tw->setTabTryCloseCallback( cb ); } );
 }
 
 }}} // namespace EE::UI::Tools

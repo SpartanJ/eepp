@@ -176,6 +176,7 @@ struct TerminalConfig {
 	Uint64 scrollback{ 10000 };
 	bool unsupportedOSWarnDisabled{ false };
 	bool closeTerminalTabOnExit{ false };
+	bool warnBeforeClosingTab{ true };
 };
 
 struct WorkspaceConfig {

@@ -365,6 +365,10 @@ class EE_API UICodeEditorSplitter {
 
 	std::shared_ptr<TextDocument> getTextDocumentRef( TextDocument* doc );
 
+	void setTabTryCloseCallback( UITabWidget::TabTryCloseCallback cb );
+
+	bool isEditorInAnyWidget( UICodeEditor* ) const;
+
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
@@ -391,6 +395,7 @@ class EE_API UICodeEditorSplitter {
 	size_t mNavigationHistoryPos{ std::numeric_limits<size_t>::max() };
 	std::function<void( UITabWidget* )> mOnTabWidgetCreateCb;
 	Float mVisualSplitEdgePercent{ 0.1 };
+	UITabWidget::TabTryCloseCallback mTabTryCloseCb;
 
 	UICodeEditorSplitter( UICodeEditorSplitter::Client* client, UISceneNode* sceneNode,
 						  std::shared_ptr<ThreadPool> threadPool,

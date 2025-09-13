@@ -8,6 +8,8 @@
 
 namespace EE { namespace System {
 
+using ProcessID = Uint64;
+
 class EE_API Sys {
   public:
 	enum class PlatformType {
@@ -28,7 +30,7 @@ class EE_API Sys {
 	};
 
 	/** @return The current process id */
-	static Uint64 getProcessID();
+	static ProcessID getProcessID();
 
 	/** @return the current date time */
 	static std::string getDateTimeStr();
@@ -126,19 +128,22 @@ class EE_API Sys {
 	static std::unordered_map<std::string, std::string> getEnvironmentVariables();
 
 	/** @return The process ids found with the corresponding process / binary / executable name */
-	static std::vector<Uint64> pidof( const std::string& processName );
+	static std::vector<ProcessID> pidof( const std::string& processName );
 
 	/** @return A list of the current running processes */
-	static std::vector<std::pair<Uint64, std::string>> listProcesses();
+	static std::vector<std::pair<ProcessID, std::string>> listProcesses();
 
 	/** @returns The unix timestamp of the process creation time */
-	static Int64 getProcessCreationTime( Uint64 pid );
+	static Int64 getProcessCreationTime( ProcessID pid );
 
 	/** @returns The target destination of a windows shortcut path (.lnk files) */
 	static std::string getShortcutTarget( const std::string& lnkFilePath );
 
 	/** @returns The user home directory */
 	static std::string getUserDirectory();
+
+	/** @returns True if the process has any childrens */
+	static bool processHasChildren( ProcessID pid );
 };
 
 }} // namespace EE::System

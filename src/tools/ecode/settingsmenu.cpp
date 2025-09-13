@@ -168,8 +168,17 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 									: menuButton );
 		} );
 
-		if ( menuBarIndex == 0 )
-			menu->on( Event::OnMenuHide, [menuHint]( auto ) { menuHint->setVisible( false ); } );
+		if ( menuBarIndex == 0 ) {
+			menu->on( Event::OnMenuHide, [menuHint, this]( auto ) {
+				menuHint->setVisible( false );
+
+				if ( mSplitter->getUISceneNode()->getEventDispatcher()->getFocusNode() ==
+						 mSettingsMenu &&
+					 mSplitter->getCurWidget() ) {
+					mSplitter->getCurWidget()->setFocus();
+				}
+			} );
+		}
 
 		menu->on( Event::OnVisibleChange, [this, menuBarIndex]( const Event* event ) {
 			if ( mApp->getConfig().ui.showMenuBar ) {
@@ -963,10 +972,25 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 	mTerminalMenu->addSubMenu( i18n( "new_terminal_behavior", "New Terminal Behavior" ),
 							   findIcon( "terminal" ), newTerminalBehaviorSubMenu );
 
+	mTerminalMenu->addSeparator();
+
 	mTerminalMenu
 		->addCheckBox( i18n( "close_terminal_tab_on_exit", "Close Terminal Tab on Exit" ),
 					   mApp->getConfig().term.closeTerminalTabOnExit )
+		->setTooltipText( i18n( "close_terminal_tab_on_exit_tooltip",
+								"Closes the terminal tab when the main process exits.\nIf "
+								"disabled, a new shell process starts instead." ) )
 		->setId( "close-terminal-tab-on-exit" );
+
+	mTerminalMenu
+		->addCheckBox( i18n( "warn_before_closing_tab", "Warn Before Closing Tab" ),
+					   mApp->getConfig().term.warnBeforeClosingTab )
+		->setTooltipText( i18n( "warn_before_closing_tab_tooltip",
+								"Prompts for confirmation if a program is still running when "
+								"closing a terminal tab." ) )
+		->setId( "warn-before-closing-tab" );
+
+	mTerminalMenu->addSeparator();
 
 	mTerminalMenu
 		->add( i18n( "configure_terminal_shell", "Configure Terminal Shell" ),
@@ -991,6 +1015,9 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 			mSplitter->forEachWidgetType( UI_TYPE_TERMINAL, [active]( UIWidget* widget ) {
 				widget->asType<UITerminal>()->getTerm()->setKeepAlive( !active );
 			} );
+		} else if ( "warn-before-closing-tab" == id ) {
+			bool active = event->getNode()->asType<UIMenuCheckBox>()->isActive();
+			mApp->getConfig().term.warnBeforeClosingTab = active;
 		} else if ( mSplitter->getCurWidget() &&
 					mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
 			UITerminal* terminal = mSplitter->getCurWidget()->asType<UITerminal>();
@@ -1010,6 +1037,7 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 
 UIMenu* SettingsMenu::createEditMenu() {
 	mEditMenu = UIPopUpMenu::New();
+	mEditMenu->setId( "edit_menu" );
 	mEditMenu->add( i18n( "undo", "Undo" ), findIcon( "undo" ), getKeybind( "undo" ) )
 		->setId( "undo" );
 	mEditMenu->add( i18n( "redo", "Redo" ), findIcon( "redo" ), getKeybind( "redo" ) )
@@ -1034,7 +1062,9 @@ UIMenu* SettingsMenu::createEditMenu() {
 		->add( i18n( "find_replace", "Find/Replace" ), findIcon( "find-replace" ),
 			   getKeybind( "find-replace" ) )
 		->setId( "find-replace" );
+
 	mEditMenu->addSeparator();
+
 	mEditMenu
 		->add( i18n( "open_containing_folder_ellipsis", "Open Containing Folder..." ),
 			   findIcon( "folder-open" ), getKeybind( "open-containing-folder" ) )
@@ -1080,11 +1110,11 @@ UIMenu* SettingsMenu::createEditMenu() {
 			mEditMenu->getItemId( "cut" )->setEnabled( false );
 			mEditMenu->getItemId( "open-containing-folder" )->setVisible( false );
 			mEditMenu->getItemId( "copy-containing-folder-path" )->setVisible( false );
+			moveSep->setEnabled( false )->setVisible( false );
 			mEditMenu->getItemId( "open-in-new-window" )->setVisible( false );
 			mEditMenu->getItemId( "move-to-new-window" )->setVisible( false );
+			fileSep->setEnabled( false )->setVisible( false );
 			mEditMenu->getItemId( "copy-file-path" )->setVisible( false );
-			moveSep->setVisible( false );
-			fileSep->setVisible( false );
 			return;
 		}
 		auto doc = mSplitter->getCurEditor()->getDocumentRef();
@@ -1094,11 +1124,11 @@ UIMenu* SettingsMenu::createEditMenu() {
 		mEditMenu->getItemId( "cut" )->setEnabled( doc->hasSelection() );
 		mEditMenu->getItemId( "open-containing-folder" )->setVisible( doc->hasFilepath() );
 		mEditMenu->getItemId( "copy-containing-folder-path" )->setVisible( doc->hasFilepath() );
+		moveSep->setEnabled( true )->setVisible( true );
 		mEditMenu->getItemId( "open-in-new-window" )->setVisible( doc->hasFilepath() );
 		mEditMenu->getItemId( "move-to-new-window" )->setVisible( doc->hasFilepath() );
+		fileSep->setEnabled( doc->hasFilepath() )->setVisible( doc->hasFilepath() );
 		mEditMenu->getItemId( "copy-file-path" )->setVisible( doc->hasFilepath() );
-		moveSep->setVisible( true );
-		fileSep->setVisible( doc->hasFilepath() );
 	} );
 	return mEditMenu;
 }

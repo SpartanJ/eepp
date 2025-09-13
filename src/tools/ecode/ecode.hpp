@@ -708,6 +708,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	std::string titleFromEditor( UICodeEditor* editor );
 
+	bool isAnyTerminalDirty() const;
+
 	bool onCloseRequestCallback( EE::Window::Window* );
 
 	void addRemainingTabWidgets( Node* widget );

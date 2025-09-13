@@ -700,7 +700,7 @@ double Sys::getSystemTime() {
 #endif
 }
 
-Uint64 Sys::getProcessID() {
+ProcessID Sys::getProcessID() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return GetCurrentProcessId();
 #elif EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
@@ -1181,9 +1181,9 @@ std::vector<std::string> Sys::getEnvSplit( const std::string& name ) {
 static ULONG_PTR GetParentProcessId() {
 	ULONG_PTR pbi[6];
 	ULONG ulSize = 0;
-	LONG( WINAPI * NtQueryInformationProcess )
-	( HANDLE ProcessHandle, ULONG ProcessInformationClass, PVOID ProcessInformation,
-	  ULONG ProcessInformationLength, PULONG ReturnLength );
+	LONG( WINAPI * NtQueryInformationProcess )(
+		HANDLE ProcessHandle, ULONG ProcessInformationClass, PVOID ProcessInformation,
+		ULONG ProcessInformationLength, PULONG ReturnLength );
 	*(FARPROC*)&NtQueryInformationProcess =
 		GetProcAddress( LoadLibraryA( "NTDLL.DLL" ), "NtQueryInformationProcess" );
 	if ( NtQueryInformationProcess ) {
@@ -1338,7 +1338,7 @@ std::string Sys::getProcessFilePath() {
 #endif
 }
 
-Int64 Sys::getProcessCreationTime( Uint64 pid ) {
+Int64 Sys::getProcessCreationTime( ProcessID pid ) {
 	Int64 creationTime = -1;
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -1426,9 +1426,9 @@ Int64 Sys::getProcessCreationTime( Uint64 pid ) {
 	return creationTime;
 }
 
-std::vector<Uint64> Sys::pidof( const std::string& processName ) {
+std::vector<ProcessID> Sys::pidof( const std::string& processName ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	std::vector<Uint64> pids;
+	std::vector<ProcessID> pids;
 	std::vector<std::string> extensions = getEnvSplit( "PATHEXT" );
 
 	HMODULE hPsapi = LoadLibrary( TEXT( "psapi.dll" ) );
@@ -1496,7 +1496,7 @@ std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 	return pids;
 #elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
 
-	std::vector<Uint64> pids;
+	std::vector<ProcessID> pids;
 	DIR* dir = opendir( "/proc" );
 	if ( !dir ) {
 		return pids;
@@ -1524,7 +1524,7 @@ std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 	closedir( dir );
 	return pids;
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
-	std::vector<Uint64> pids;
+	std::vector<ProcessID> pids;
 
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0 };
 	size_t len;
@@ -1555,7 +1555,7 @@ std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 	free( procs );
 	return pids;
 #elif EE_PLATFORM == EE_PLATFORM_BSD
-	std::vector<Uint64> pids;
+	std::vector<ProcessID> pids;
 
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PROC, 0 };
 	size_t len;
@@ -1586,7 +1586,7 @@ std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 	free( procs );
 	return pids;
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
-	std::vector<Uint64> pids;
+	std::vector<ProcessID> pids;
 	int32 cookie = 0;
 	team_info teamInfo;
 	while ( get_next_team_info( &cookie, &teamInfo ) == B_OK ) {
@@ -1600,9 +1600,9 @@ std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 #endif
 }
 
-std::vector<std::pair<Uint64, std::string>> Sys::listProcesses() {
+std::vector<std::pair<ProcessID, std::string>> Sys::listProcesses() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	std::vector<std::pair<Uint64, std::string>> pids;
+	std::vector<std::pair<ProcessID, std::string>> pids;
 	std::vector<std::string> extensions = getEnvSplit( "PATHEXT" );
 
 	HMODULE hPsapi = LoadLibrary( TEXT( "psapi.dll" ) );
@@ -1655,7 +1655,7 @@ std::vector<std::pair<Uint64, std::string>> Sys::listProcesses() {
 	FreeLibrary( hPsapi );
 	return pids;
 #elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
-	std::vector<std::pair<Uint64, std::string>> pids;
+	std::vector<std::pair<ProcessID, std::string>> pids;
 	DIR* dir = opendir( "/proc" );
 	if ( !dir ) {
 		return pids;
@@ -1681,7 +1681,7 @@ std::vector<std::pair<Uint64, std::string>> Sys::listProcesses() {
 	closedir( dir );
 	return pids;
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
-	std::vector<std::pair<Uint64, std::string>> pids;
+	std::vector<std::pair<ProcessID, std::string>> pids;
 
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0 };
 	size_t len;
@@ -1711,7 +1711,7 @@ std::vector<std::pair<Uint64, std::string>> Sys::listProcesses() {
 	free( procs );
 	return pids;
 #elif EE_PLATFORM == EE_PLATFORM_BSD
-	std::vector<std::pair<Uint64, std::string>> pids;
+	std::vector<std::pair<ProcessID, std::string>> pids;
 
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PROC, 0 };
 	size_t len;
@@ -1741,7 +1741,7 @@ std::vector<std::pair<Uint64, std::string>> Sys::listProcesses() {
 	free( procs );
 	return pids;
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
-	std::vector<std::pair<Uint64, std::string>> pids;
+	std::vector<std::pair<ProcessID, std::string>> pids;
 	int32 cookie = 0;
 	team_info teamInfo;
 	while ( get_next_team_info( &cookie, &teamInfo ) == B_OK ) {
@@ -1830,6 +1830,125 @@ std::string Sys::getUserDirectory() {
 	// On Unix-based systems, use HOME
 	return std::string{ std::getenv( "HOME" ) };
 #endif
+}
+
+bool Sys::processHasChildren( ProcessID pid ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	HANDLE hSnapshot = CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 );
+	if ( hSnapshot == INVALID_HANDLE_VALUE ) {
+		return false;
+	}
+
+	PROCESSENTRY32 pe32;
+	pe32.dwSize = sizeof( PROCESSENTRY32 );
+
+	if ( !Process32First( hSnapshot, &pe32 ) ) {
+		CloseHandle( hSnapshot );
+		return false;
+	}
+
+	do {
+		if ( pe32.th32ParentProcessID == static_cast<DWORD>( pid ) ) {
+			CloseHandle( hSnapshot );
+			return true; // Found a child
+		}
+	} while ( Process32Next( hSnapshot, &pe32 ) );
+
+	CloseHandle( hSnapshot );
+	return false;
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
+	DIR* dir = opendir( "/proc" );
+	if ( !dir ) {
+		return false;
+	}
+
+	struct dirent* entry;
+	while ( ( entry = readdir( dir ) ) != nullptr ) {
+		char* endptr;
+		long tpid = strtol( entry->d_name, &endptr, 10 );
+		if ( *endptr != '\0' || tpid <= 0 ) { // Skip if not a valid PID directory
+			continue;
+		}
+		std::string status_path = std::string( "/proc/" ) + entry->d_name + "/status";
+		std::ifstream status_file( status_path );
+		if ( status_file.is_open() ) {
+			std::string line;
+			while ( std::getline( status_file, line ) ) {
+				if ( line.rfind( "PPid:", 0 ) == 0 ) {
+					try {
+						long ppid = std::stol( line.substr( 5 ) );
+						if ( ppid == (Int64)pid ) {
+							closedir( dir );
+							return true;
+						}
+					} catch ( const std::invalid_argument& ) {
+					}
+					break;
+				}
+			}
+		}
+	}
+
+	closedir( dir );
+	return false;
+#elif EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS || \
+	EE_PLATFORM == EE_PLATFORM_BSD
+	struct kinfo_proc* proc_list = nullptr;
+	size_t proc_count = 0;
+
+	// MIB (Management Information Base) for sysctl
+	int mib[] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0 };
+
+	// First, call sysctl to get the size of the buffer needed
+	if ( sysctl( mib, 4, nullptr, &proc_count, nullptr, 0 ) < 0 ) {
+		return false;
+	}
+
+	proc_list = (struct kinfo_proc*)malloc( proc_count );
+	if ( !proc_list ) {
+		return false;
+	}
+
+	// Now, call sysctl again to populate the buffer
+	if ( sysctl( mib, 4, proc_list, &proc_count, nullptr, 0 ) < 0 ) {
+		free( proc_list );
+		return false;
+	}
+
+	size_t num_procs = proc_count / sizeof( struct kinfo_proc );
+	for ( size_t i = 0; i < num_procs; i++ ) {
+		pid_t ppid;
+#if defined( __APPLE__ )
+		ppid = proc_list[i].kp_eproc.e_ppid;
+#else // FreeBSD
+		ppid = proc_list[i].ki_ppid;
+#endif
+		if ( static_cast<ProcessID>( ppid ) == pid ) {
+			free( proc_list );
+			return true; // Found a child
+		}
+	}
+
+	free( proc_list );
+	return false;
+
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+	int32 cookie = 0;
+	team_info ti;
+	while ( get_next_team_info( &cookie, &ti ) == B_OK ) {
+		if ( static_cast<ProcessID>( ti.parent ) == pid ) {
+			return true; // Found a child
+		}
+	}
+	return false;
+#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	return false;
+#else
+#warning "Unsupported operating system: processHasChildren not implemented."
+	return false; // To satisfy compiler, though #error should halt compilation.
+#endif
+
+	return false;
 }
 
 }} // namespace EE::System

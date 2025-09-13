@@ -1507,6 +1507,10 @@ workspace "eepp"
 				links { "dw" }
 				defines { "ECODE_HAS_DW" }
 			end
+		filter { "system:linux or system:macosx or system:haiku or system:bsd", "configurations:release*" }
+			buildoptions { "-g1", "-fvisibility=default" }
+		filter { "system:linux or system:bsd", "configurations:release*" }
+			linkoptions { "-rdynamic" }
 		filter { "system:windows" }
 			links { "dbghelp", "psapi" }
 		filter "system:haiku"
@@ -1514,7 +1518,7 @@ workspace "eepp"
 		filter "system:bsd"
 			links { "util" }
 		filter { "system:windows", "action:not vs*", "configurations:release*" }
-			linkoptions { "-Wl,--export-all-symbols" }
+			buildoptions { "-g1" }
 
 	project "eterm"
 		set_kind()
