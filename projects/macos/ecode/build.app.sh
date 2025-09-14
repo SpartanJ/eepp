@@ -119,6 +119,9 @@ cp ../../../bin/assets/ca-bundle.pem ecode.app/Contents/MacOS/assets/ca-bundle.p
 mkdir ecode.app/Contents/MacOS/assets/ui
 cp ../../../bin/assets/ui/breeze.css ecode.app/Contents/MacOS/assets/ui/
 
+# Clear quarantine flag recursively (more targeted than -cr)
+xattr -d -r com.apple.quarantine ecode.app 2>/dev/null || true
+
 # Clear permissions (basically for libSDL2)
 chmod -R u+rwX,go+rX,go-w ecode.app
 xattr -cr ecode.app

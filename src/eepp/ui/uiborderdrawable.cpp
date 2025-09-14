@@ -13,7 +13,8 @@ UIBorderDrawable* UIBorderDrawable::New( const UINode* owner ) {
 UIBorderDrawable::UIBorderDrawable( const UINode* owner ) :
 	Drawable( UIBORDERDRAWABLE ),
 	mOwner( owner ),
-	mVertexBuffer( VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLE_STRIP ) ),
+	mVertexBuffer(
+		VertexBuffer::NewVertexArray( VERTEX_FLAGS_PRIMITIVE, PRIMITIVE_TRIANGLE_STRIP ) ),
 	mBorderType( BorderType::Inside ),
 	mNeedsUpdate( false ),
 	mColorNeedsUpdate( false ),
