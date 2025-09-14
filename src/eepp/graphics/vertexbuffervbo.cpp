@@ -415,11 +415,13 @@ void VertexBufferVBO::clear() {
 	for ( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {
 		if ( VERTEX_FLAG_QUERY( mVertexFlags, i ) && mArrayHandle[i] ) {
 			glDeleteBuffers( 1, (unsigned int*)&mArrayHandle[i] );
+			mArrayHandle[i] = 0;
 		}
 	}
 
 	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) && mElementHandle ) {
 		glDeleteBuffers( 1, (unsigned int*)&mElementHandle );
+		mElementHandle = 0;
 	}
 
 	if ( GLv_3CP == GLi->version() && mVAO ) {
