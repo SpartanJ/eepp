@@ -356,6 +356,10 @@ const Int32& VertexBuffer::getElementNum() const {
 }
 
 void VertexBuffer::clear() {
+	clearData();
+}
+
+void VertexBuffer::clearData() {
 	mPosArray.clear();
 	for ( auto& texCoord : mTexCoordArray )
 		texCoord.clear();

@@ -285,10 +285,12 @@ static void fromJson( LSPWorkspaceFoldersServerCapabilities& options, const json
 	if ( json.is_object() ) {
 		auto& ob = json;
 		options.supported = ob.value( "supported", false );
-		if ( ob["changeNotifications"].is_boolean() ) {
-			options.changeNotifications = ob["changeNotifications"].get<bool>();
-		} else if ( ob["changeNotifications"].is_string() ) {
-			options.changeNotifications = true;
+		if ( ob.contains( "changeNotifications" ) ) {
+			if ( ob["changeNotifications"].is_boolean() ) {
+				options.changeNotifications = ob["changeNotifications"].get<bool>();
+			} else if ( ob["changeNotifications"].is_string() ) {
+				options.changeNotifications = true;
+			}
 		}
 	}
 }

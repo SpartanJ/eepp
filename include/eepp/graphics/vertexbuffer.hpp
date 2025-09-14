@@ -183,6 +183,8 @@ class EE_API VertexBuffer {
 	/** Clear the cached data and destroy the buffers */
 	virtual void clear();
 
+	void clearData();
+
   protected:
 	Uint32 mVertexFlags;
 	PrimitiveType mDrawType;

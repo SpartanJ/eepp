@@ -1187,10 +1187,8 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 
 		mDirtyLines[j] = false;
 
-		if ( !mVBStyles.empty() ) {
-			eeSAFE_DELETE( mVBStyles[j] );
-			mVBStyles[j] = createRowVBO( false );
-		}
+		if ( !mVBStyles.empty() )
+			mVBStyles[j]->clearData();
 
 		for ( Uint32 i = 0; i < mColumns; i++ ) {
 			mCurGridPos = { i, j };
@@ -1305,10 +1303,14 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 
 	if ( !mVBStyles.empty() ) {
 		if ( dirtyFG ) {
-			for ( auto& vbo : mVBStyles )
-				vbo->update( VERTEX_FLAGS_PRIMITIVE, false );
+			for ( auto vbo : mVBStyles ) {
+				if ( vbo->getVertexCount() )
+					vbo->update( VERTEX_FLAGS_PRIMITIVE, false );
+			}
 		}
-		for ( auto& vbo : mVBStyles ) {
+		for ( auto vbo : mVBStyles ) {
+			if ( vbo->getVertexCount() == 0 )
+				continue;
 			vbo->bind();
 			vbo->draw();
 			vbo->unbind();
@@ -1750,10 +1752,10 @@ void TerminalDisplay::drawFrameBuffer() {
 }
 
 VertexBuffer* TerminalDisplay::createRowVBO( bool usesTexCoords ) {
-	auto* VBO = VertexBuffer::New(
+	auto* VBO = VertexBuffer::NewVertexArray(
 		usesTexCoords ? VERTEX_FLAGS_DEFAULT : VERTEX_FLAGS_PRIMITIVE,
 		mQuadVertex == 6 ? EE::Graphics::PRIMITIVE_TRIANGLES : EE::Graphics::PRIMITIVE_QUADS,
-		mRows * mColumns * mQuadVertex, 0, VertexBufferUsageType::Stream );
+		mColumns * mQuadVertex, 0, VertexBufferUsageType::Stream );
 	VBO->setGridSize( Sizei( mColumns, 1 ) );
 	return VBO;
 }
