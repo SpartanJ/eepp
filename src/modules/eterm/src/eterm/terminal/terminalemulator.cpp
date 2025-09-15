@@ -1617,7 +1617,7 @@ void TerminalEmulator::csihandle( void ) {
 					// Extended underline styles - fallback to standard underline
 					DEFAULT( mCsiescseq.arg[0], 1 );
 					switch ( mCsiescseq.arg[0] ) {
-						case 0: // No underline - fallback to ESC[24m
+ 						/* case 0: // No underline - fallback to ESC[24m
 						{
 							int fallback_args[] = { 24 }; // Reset underline
 							tsetattr( fallback_args, 1 );
@@ -1630,7 +1630,7 @@ void TerminalEmulator::csihandle( void ) {
 						{
 							int fallback_args[] = { 4 }; // Standard underline
 							tsetattr( fallback_args, 1 );
-						} break;
+						} break; */
 						default:
 							goto unknown;
 					}
