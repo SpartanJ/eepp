@@ -1111,7 +1111,7 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 				Uint32 prevGlyphIndex = 0;
 				for ( std::size_t i = 0; i < glyphCount; ++i ) {
 					hb_glyph_info_t curGlyph = glyphInfo[i];
-					auto curChar = string[curGlyph.cluster];
+					auto curChar = string[run.curRunStart() + curGlyph.cluster];
 					if ( curChar == '\t' ) {
 						width += tabAdvance( hspace, tabWidth,
 											 tabOffset ? *tabOffset + width : tabOffset );
@@ -1185,7 +1185,7 @@ Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize, const Str
 
 				for ( std::size_t i = 0; i < glyphCount; ++i ) {
 					hb_glyph_info_t curGlyph = glyphInfo[i];
-					auto curChar = string[curGlyph.cluster];
+					auto curChar = string[run.curRunStart() + curGlyph.cluster];
 
 					if ( curChar == '\t' ) {
 						width += tabAdvance( hspace, tabWidth,
@@ -1215,7 +1215,8 @@ Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize, const Str
 					width = 0;
 				return true;
 			} );
-		return completeRun ? ( width <= maxWidth ? it : it - 1 ) : pos;
+		return completeRun ? ( width <= maxWidth ? string.size() : eemax( (size_t)0, it - 1 ) )
+						   : pos;
 	}
 #endif
 
@@ -1282,7 +1283,7 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 							 if ( curPos >= index )
 								 return false;
 
-							 auto curChar = string[curGlyph.cluster];
+							 auto curChar = string[curPos];
 
 							 if ( curChar == '\t' ) {
 								 position.x +=
@@ -1394,7 +1395,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 
 				for ( std::size_t i = 0; i < glyphCount; ++i ) {
 					hb_glyph_info_t curGlyph = glyphInfo[i];
-					auto curChar = string[curGlyph.cluster];
+					auto curChar = string[run.curRunStart() + curGlyph.cluster];
 					lWidth = width;
 
 					if ( curChar == '\t' ) {
@@ -1574,7 +1575,7 @@ void Text::updateWidthCache() {
 
 						 for ( std::size_t i = 0; i < glyphCount; ++i ) {
 							 hb_glyph_info_t curGlyph = glyphInfo[i];
-							 auto curChar = mString[curGlyph.cluster];
+							 auto curChar = mString[run.curRunStart() + curGlyph.cluster];
 
 							 if ( curChar == '\t' ) {
 								 width += tabAdvance( hspace, mTabWidth,
@@ -1940,7 +1941,7 @@ void Text::ensureGeometryUpdate() {
 				for ( std::size_t i = 0; i < glyphCount; ++i ) {
 					hb_glyph_info_t curGlyph = glyphInfo[i];
 					hb_glyph_position_t curGlyphPos = glyphPos[i];
-					auto curChar = mString[curGlyph.cluster];
+					auto curChar = mString[run.curRunStart() + curGlyph.cluster];
 
 					x += rFont->getKerningFromGlyphIndex(
 						prevGlyphIndex, curGlyph.codepoint, mFontStyleConfig.CharacterSize, bold,
@@ -2192,8 +2193,8 @@ void Text::ensureGeometryUpdate() {
 		}
 
 		// Extract the current glyph's description
-		auto glyph = mFontStyleConfig.Font->getGlyph(
-			curChar, mFontStyleConfig.CharacterSize, bold, reqItalic );
+		auto glyph = mFontStyleConfig.Font->getGlyph( curChar, mFontStyleConfig.CharacterSize, bold,
+													  reqItalic );
 
 		// Add the glyph to the vertices
 		addGlyphQuad( mVertices, Vector2f( x, y ), glyph, italic, 0, centerDiffX );
