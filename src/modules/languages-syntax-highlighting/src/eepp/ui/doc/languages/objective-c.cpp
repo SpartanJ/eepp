@@ -135,7 +135,8 @@ SyntaxDefinition& addObjectiveC() {
 			  { "byref", "keyword" },
 			  { "in", "keyword" },
 			  { "out", "keyword" },
-			  { "inout", "keyword" } },
+			  { "inout", "keyword" },
+			  { "readonly", "keyword" } },
 
 		  "//",
 		  {}
