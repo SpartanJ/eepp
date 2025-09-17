@@ -75,6 +75,7 @@ SyntaxDefinition& addObjectiveC() {
 			  { "case", "keyword" },
 			  { "if", "keyword" },
 			  { "do", "keyword" },
+			  { "constexpr", "keyword" },
 
 			  { "#if", "keyword" },
 			  { "#ifdef", "keyword" },

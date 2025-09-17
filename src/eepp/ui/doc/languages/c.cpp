@@ -46,7 +46,7 @@ void addC() {
 			  { "enum", "keyword" },	  { "int8_t", "type" },		  { "int64_t", "type" },
 			  { "float", "type" },		  { "struct", "keyword" },	  { "break", "keyword" },
 			  { "uint8_t", "type" },	  { "uint64_t", "type" },	  { "case", "keyword" },
-			  { "if", "keyword" },		  { "do", "keyword" },
+			  { "if", "keyword" },		  { "do", "keyword" },		  { "constexpr", "keyword" },
 
 			  { "#if", "keyword" },		  { "#ifdef", "keyword" },	  { "#ifndef", "keyword" },
 			  { "#elif", "keyword" },	  { "#else", "keyword" },	  { "#endif", "keyword" },
