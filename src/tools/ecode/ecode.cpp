@@ -3647,23 +3647,21 @@ bool App::needsRedirectToRunningProcess( std::string file ) {
 	if ( pids.size() <= 1 )
 		return false;
 
+	bool useFirstInstance = FileSystem::fileExists( firstInstanceIndicatorPath() );
 	Uint64 processPid = Sys::getProcessID();
 	Uint64 selectedPid = processPid;
-	Uint64 selCreationTime = Sys::getProcessCreationTime( processPid );
-
-	auto isBetter =
-		FileSystem::fileExists( firstInstanceIndicatorPath() )
-			? []( Uint64 newTime,
-				  Uint64 bestTime ) { return newTime <= bestTime; } // Finding oldest (min)
-			: []( Uint64 newTime, Uint64 bestTime ) {
-				  return newTime >= bestTime;
-			  }; // Finding newest (max)
+	Uint64 selCreationTime = useFirstInstance ? std::numeric_limits<Uint64>::max() : 0;
 
 	for ( const auto pid : pids ) {
 		if ( pid == processPid )
 			continue;
+
 		Uint64 creationTime = Sys::getProcessCreationTime( pid );
-		if ( isBetter( creationTime, selCreationTime ) ) {
+
+		bool shouldUpdate = ( useFirstInstance && creationTime <= selCreationTime ) ||
+							( !useFirstInstance && creationTime >= selCreationTime );
+
+		if ( shouldUpdate ) {
 			selectedPid = pid;
 			selCreationTime = creationTime;
 		}
