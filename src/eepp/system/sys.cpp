@@ -13,12 +13,18 @@
 #include <iostream>
 #include <sstream>
 
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
+#define EE_USE_POSIX_SPAWN
+#elif defined( __GLIBC__ ) && ( __GLIBC__ > 2 || ( __GLIBC__ == 2 && __GLIBC_MINOR__ >= 29 ) )
+#define EE_USE_POSIX_SPAWN
+#endif
+
 // This taints the System module!
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 #include <eepp/window/engine.hpp>
 #endif
 
-#if defined( EE_PLATFORM_POSIX )
+#ifdef EE_PLATFORM_POSIX
 #include <dirent.h>
 #include <dlfcn.h>
 #include <sys/utsname.h>
@@ -73,6 +79,9 @@ typedef DWORD( WINAPI* GetModuleBaseName_t )( HANDLE, HMODULE, LPSTR, DWORD );
 #if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
 #include <libproc.h>
 #include <mach-o/dyld.h>
+#endif
+
+#ifdef EE_USE_POSIX_SPAWN
 #include <spawn.h>
 #endif
 
@@ -100,8 +109,7 @@ using namespace EE::Network;
 #define PATH_MAX 4096
 #endif
 
-std::unordered_map<std::string, std::string> _getEnvironmentVariables() {
-	std::unordered_map<std::string, std::string> ret;
+char** _getEnviron() {
 	char** env;
 #if defined( WIN ) && ( _MSC_VER >= 1900 )
 	env = *__p__environ();
@@ -109,6 +117,12 @@ std::unordered_map<std::string, std::string> _getEnvironmentVariables() {
 	extern char** environ;
 	env = environ;
 #endif
+	return env;
+}
+
+std::unordered_map<std::string, std::string> _getEnvironmentVariables() {
+	std::unordered_map<std::string, std::string> ret;
+	char** env = _getEnviron();
 
 	for ( ; *env; ++env ) {
 		auto var = EE::String::split( *env, "=" );
@@ -1257,6 +1271,33 @@ static int windowsSystem( const std::string& programPath, const std::string& wor
 int Sys::execute( const std::string& cmd, const std::string& workingDir ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return windowsSystem( cmd, workingDir );
+#elif defined( EE_USE_POSIX_SPAWN )
+	pid_t pid;
+	std::vector<std::string> cmdArr = String::split( cmd, " ", "", "\"", true );
+	std::vector<char*> strings;
+	for ( size_t i = 0; i < cmdArr.size(); ++i )
+		strings.push_back( const_cast<char*>( cmdArr[i].c_str() ) );
+	strings.push_back( NULL );
+
+	posix_spawn_file_actions_t actions;
+	if ( !workingDir.empty() ) {
+		if ( posix_spawn_file_actions_init( &actions ) != 0 )
+			return -1; // Failed to initialize
+
+		if ( posix_spawn_file_actions_addchdir_np( &actions, workingDir.c_str() ) != 0 ) {
+			posix_spawn_file_actions_destroy( &actions );
+			return -1; // Failed to add chdir action
+		}
+	}
+	int status = posix_spawnp( &pid, strings[0], workingDir.empty() ? NULL : &actions, NULL,
+							   strings.data(), _getEnviron() );
+
+	if ( !workingDir.empty() )
+		posix_spawn_file_actions_destroy( &actions );
+
+	if ( status == 0 )
+		return pid;
+	return -1;
 #elif EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	pid_t pid = fork();
 	if ( pid == 0 ) {
@@ -1270,9 +1311,11 @@ int Sys::execute( const std::string& cmd, const std::string& workingDir ) {
 			FileSystem::changeWorkingDirectory( workingDir );
 
 		execvp( strings[0], (char* const*)strings.data() );
-		exit( 0 );
+		exit( 127 );
 	}
 	return pid;
+#else
+	return -1;
 #endif
 }
 
@@ -1488,9 +1531,6 @@ std::vector<ProcessID> Sys::pidof( const std::string& processName ) {
 			CloseHandle( hProcess );
 		}
 	}
-
-	for ( auto pid : pids )
-		eePRINTL( "Found pid %d", pid );
 
 	FreeLibrary( hPsapi );
 	return pids;

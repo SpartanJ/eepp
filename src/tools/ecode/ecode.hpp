@@ -49,7 +49,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		std::string css;
 		std::string fileToOpen;
 		bool stdOutLogs{ false };
-		bool disableFileLogs{ false};
+		bool disableFileLogs{ false };
 		bool openClean{ false };
 		bool portable{ false };
 		std::string language;
@@ -57,6 +57,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		bool prematureExit{ false };
 		std::string profile;
 		bool disablePlugins{ false };
+		bool redirectToFirstInstance{ false };
 	};
 
 	void init( InitParameters& );
@@ -362,13 +363,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 				mTerminalManager->configureTerminalScrollback();
 		} );
 		t.setCommand( "check-for-updates", [this] { mSettingsActions->checkForUpdates( false ); } );
-		t.setCommand( "create-new-window", [] {
-			std::string processPath = Sys::getProcessFilePath();
-			if ( !processPath.empty() ) {
-				std::string cmd( processPath + " -x" );
-				Sys::execute( cmd );
-			}
-		} );
+		t.setCommand( "create-new-window", [this] { openInNewWindow(); } );
 		t.setCommand( "create-new-welcome-tab", [this] { createWelcomeTab(); } );
 
 		mSplitter->registerSplitterCommands( t );
@@ -625,6 +620,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	bool mUseFrameBuffer{ false };
 	bool mBenchmarkMode{ false };
 	bool mDisablePlugins{ false };
+	bool mRedirectToFirstInstance{ false };
+	bool mFirstInstance{ false };
 	bool mPortableMode{ false };
 	bool mPortableModeFailed{ false };
 	bool mDestroyingApp{ false };
@@ -793,6 +790,10 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	std::function<void( UICodeEditor*, const std::string& )>
 	getForcePositionFn( TextPosition initialPosition );
+
+	void openInNewWindow( const std::string& params = "" );
+
+	std::string firstInstanceIndicatorPath() const;
 };
 
 } // namespace ecode

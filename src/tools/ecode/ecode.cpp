@@ -971,6 +971,9 @@ App::~App() {
 	mDirTree.reset();
 
 	fsRemoveAll( mPidPath );
+
+	if ( mFirstInstance )
+		FileSystem::fileRemove( firstInstanceIndicatorPath() );
 }
 
 void App::updateRecentButtons() {
@@ -2452,6 +2455,16 @@ void App::createWidgetInspector() {
 	UIWidgetInspector::create( mUISceneNode, mMenuIconSize );
 }
 
+void App::openInNewWindow( const std::string& params ) {
+	std::string processPath = Sys::getProcessFilePath();
+	if ( !processPath.empty() ) {
+		std::string cmd( processPath + " -x" );
+		if ( !params.empty() )
+			cmd += " " + params;
+		Sys::execute( cmd );
+	}
+}
+
 void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	const CodeEditorConfig& config = mConfig.editor;
 	const DocumentConfig& docc = !mCurrentProject.empty() && !mProjectDocConfig.useGlobalSettings
@@ -2548,11 +2561,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		if ( editor == nullptr || editor->getDocumentRef() == nullptr ||
 			 editor->getDocumentRef()->getFilePath().empty() )
 			return;
-		std::string processPath = Sys::getProcessFilePath();
-		if ( !processPath.empty() ) {
-			auto cmd( processPath + " -x \"" + editor->getDocumentRef()->getFilePath() + "\"" );
-			Sys::execute( cmd );
-		}
+		openInNewWindow( "\"" + editor->getDocumentRef()->getFilePath() + "\"" );
 	} );
 	doc.setCommand( "move-to-new-window", [this] {
 		auto editor = mSplitter->getCurEditor();
@@ -2562,11 +2571,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		UITabWidget* tabWidget = mSplitter->tabWidgetFromEditor( editor );
 		if ( tabWidget )
 			tabWidget->removeTab( (UITab*)editor->getData() );
-		std::string processPath = Sys::getProcessFilePath();
-		if ( !processPath.empty() ) {
-			auto cmd( processPath + " -x \"" + editor->getDocumentRef()->getFilePath() + "\"" );
-			Sys::execute( cmd );
-		}
+		openInNewWindow( "\"" + editor->getDocumentRef()->getFilePath() + "\"" );
 	} );
 	doc.setCommand( "move-tab-to-start", [this] {
 		auto widget = mSplitter->getCurWidget();
@@ -3438,11 +3443,7 @@ void App::loadFolder( std::string path, bool forceNewWindow ) {
 
 	if ( ( mConfig.ui.openProjectInNewWindow || forceNewWindow ) &&
 		 ( !mCurrentProject.empty() && mCurrentProject != getPlaygroundPath() ) ) {
-		std::string processPath = Sys::getProcessFilePath();
-		if ( !processPath.empty() ) {
-			std::string cmd( processPath + " " + path );
-			Sys::execute( cmd );
-		}
+		openInNewWindow( "\"" + path + "\"" );
 		return;
 	}
 
@@ -3619,6 +3620,10 @@ FontTrueType* App::loadFont( const std::string& name, std::string fontPath,
 	return nullptr;
 }
 
+std::string App::firstInstanceIndicatorPath() const {
+	return mConfigPath + "first-instance";
+}
+
 bool App::needsRedirectToRunningProcess( std::string file ) {
 	if ( mConfig.ui.openFilesInNewWindow || file.empty() )
 		return false;
@@ -3643,23 +3648,31 @@ bool App::needsRedirectToRunningProcess( std::string file ) {
 		return false;
 
 	Uint64 processPid = Sys::getProcessID();
-	Uint64 latestPid = processPid;
-	Uint64 lastCreationTime = 0;
+	Uint64 selectedPid = processPid;
+	Uint64 selCreationTime = Sys::getProcessCreationTime( processPid );
+
+	auto isBetter =
+		FileSystem::fileExists( firstInstanceIndicatorPath() )
+			? []( Uint64 newTime,
+				  Uint64 bestTime ) { return newTime <= bestTime; } // Finding oldest (min)
+			: []( Uint64 newTime, Uint64 bestTime ) {
+				  return newTime >= bestTime;
+			  }; // Finding newest (max)
 
 	for ( const auto pid : pids ) {
-		if ( pid != Sys::getProcessID() ) {
-			Uint64 creationTime = Sys::getProcessCreationTime( pid );
-			if ( creationTime >= lastCreationTime ) {
-				latestPid = pid;
-				lastCreationTime = creationTime;
-			}
+		if ( pid == processPid )
+			continue;
+		Uint64 creationTime = Sys::getProcessCreationTime( pid );
+		if ( isBetter( creationTime, selCreationTime ) ) {
+			selectedPid = pid;
+			selCreationTime = creationTime;
 		}
 	}
 
-	if ( latestPid == processPid )
+	if ( selectedPid == processPid )
 		return false;
 
-	std::string pidPath = mIpcPath + String::toString( latestPid );
+	std::string pidPath = mIpcPath + String::toString( selectedPid );
 	if ( !FileSystem::isDirectory( pidPath ) )
 		return false;
 	FileSystem::dirAddSlashAtEnd( pidPath );
@@ -3686,6 +3699,7 @@ void App::init( InitParameters& params ) {
 	mUseFrameBuffer = params.frameBuffer;
 	mBenchmarkMode = params.benchmarkMode;
 	mDisablePlugins = params.disablePlugins;
+	mRedirectToFirstInstance = params.redirectToFirstInstance;
 
 	mResPath = Sys::getProcessPath();
 #if EE_PLATFORM == EE_PLATFORM_LINUX
@@ -3840,6 +3854,14 @@ void App::init( InitParameters& params ) {
 
 		mAsyncResourcesLoaded = true;
 		mAsyncResourcesLoadCond.notify_all();
+
+		if ( mRedirectToFirstInstance ) {
+			std::string processName( FileSystem::fileNameFromPath( Sys::getProcessFilePath() ) );
+			mFirstInstance = Sys::pidof( processName ).size() == 1;
+			std::string indicatorPath( firstInstanceIndicatorPath() );
+			if ( !FileSystem::fileExists( indicatorPath ) )
+				FileSystem::fileWrite( indicatorPath, "" );
+		}
 	} );
 
 	mWindow = engine->createWindow( winSettings, mConfig.context );
@@ -4504,6 +4526,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 							   "Disable all plugins. This option is not persisted and is effective "
 							   "only when the command opens a new window.",
 							   { "disable-plugins" } );
+	args::Flag redirectToFirstInstance(
+		parser, "first-instance",
+		"When multiple ecode instances are running, the `--first-instance` flag opens a file in "
+		"the earliest launched instance instead of the most recently launched one.",
+		{ "first-instance" } );
 
 #ifdef EE_TEXT_SHAPER_ENABLED
 	args::Flag textShaper( parser, "text-shaper", "Enables text-shaping capabilities",
@@ -4586,6 +4613,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 						   ( exportLangPath && !exportLangPath.Get().empty() );
 	params.profile = profile.Get();
 	params.disablePlugins = disablePlugins.Get();
+	params.redirectToFirstInstance = redirectToFirstInstance.Get();
 
 	appInstance = eeNew( App, ( jobs, args ) );
 	appInstance->init( params );
