@@ -30,7 +30,11 @@
 
 #else
 #ifndef _POSIX_C_SOURCE
-#   define _POSIX_C_SOURCE 2 // for popen()
+#define _POSIX_C_SOURCE 200809L
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#   define _XOPEN_SOURCE 700
+#   define __BSD_VISIBLE 1
+#endif
 #endif
 #ifdef __APPLE__
 #   ifndef _DARWIN_C_SOURCE
