@@ -429,9 +429,7 @@ struct EngineInitializer {
 	~EngineInitializer() { Engine::destroySingleton(); }
 };
 
-#if EE_PLATFORM != EE_PLATFORM_ANDROID && EE_PLATFORM != EE_PLATFORM_IOS
-
-#else
+#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
 
 extern "C" int EE_SDL_main( int argc, char* argv[] );
 

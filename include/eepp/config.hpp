@@ -112,6 +112,7 @@
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS || \
 	( EE_PLATFORM == EE_PLATFORM_WIN && defined( EE_COMPILER_MSVC ) )
+#define EE_OVERRIDES_MAIN
 #if defined( EE_BACKEND_SDL_ACTIVE )
 #if EE_PLATFORM == EE_PLATFORM_WIN && defined( EE_COMPILER_MSVC )
 #define main SDL_main
@@ -121,7 +122,7 @@
 #endif
 #endif
 
-#ifdef __cplusplus
+#if defined( __cplusplus ) && defined( EE_OVERRIDES_MAIN )
 #define EE_MAIN_FUNC extern "C"
 #else
 #define EE_MAIN_FUNC

@@ -34,6 +34,7 @@ struct UIConfig {
 	bool welcomeScreen{ true };
 	bool openFilesInNewWindow{ false };
 	bool openProjectInNewWindow{ false };
+	bool nativeFileDialogs{ false };
 	PanelPosition panelPosition{ PanelPosition::Left };
 	std::string serifFont;
 	std::string monospaceFont;

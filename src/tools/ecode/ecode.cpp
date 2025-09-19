@@ -348,8 +348,10 @@ void App::onDocumentUndoRedo( UICodeEditor* editor, TextDocument& doc ) {
 }
 
 void App::openFileDialog() {
-	UIFileDialog* dialog =
-		UIFileDialog::New( UIFileDialog::DefaultFlags, "*", getDefaultFileDialogFolder() );
+	UIFileDialog* dialog = UIFileDialog::New(
+		UIFileDialog::DefaultFlags |
+			( mConfig.ui.nativeFileDialogs ? UIFileDialog::UseNativeFileDialog : 0 ),
+		"*", getDefaultFileDialogFolder() );
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "open_file", "Open File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
@@ -400,10 +402,11 @@ void App::refreshFolderView() {
 }
 
 void App::openFolderDialog() {
-	UIFileDialog* dialog =
-		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect |
-							   UIFileDialog::ShowOnlyFolders,
-						   "*", getLastUsedFolder() );
+	UIFileDialog* dialog = UIFileDialog::New(
+		UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect |
+			UIFileDialog::ShowOnlyFolders |
+			( mConfig.ui.nativeFileDialogs ? UIFileDialog::UseNativeFileDialog : 0 ),
+		"*", getLastUsedFolder() );
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "open_folder", "Open Folder" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
@@ -426,9 +429,11 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool term
 	std::string absoluteFontPath( fontPath );
 	if ( FileSystem::isRelativePath( absoluteFontPath ) )
 		absoluteFontPath = mResPath + fontPath;
-	UIFileDialog* dialog =
-		UIFileDialog::New( UIFileDialog::DefaultFlags, "*.ttf; *.otf; *.wolff; *.otb; *.bdf; *.ttc",
-						   FileSystem::fileRemoveFileName( absoluteFontPath ) );
+	UIFileDialog* dialog = UIFileDialog::New(
+		UIFileDialog::DefaultFlags |
+			( mConfig.ui.nativeFileDialogs ? UIFileDialog::UseNativeFileDialog : 0 ),
+		"*.ttf; *.otf; *.wolff; *.otb; *.bdf; *.ttc",
+		FileSystem::fileRemoveFileName( absoluteFontPath ) );
 	ModelIndex index = dialog->getMultiView()->getListView()->findRowWithText(
 		FileSystem::fileNameFromPath( fontPath ), true, true );
 	if ( index.isValid() )
@@ -536,8 +541,11 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 	std::string folderPath( FileSystem::fileRemoveFileName( editor->getDocument().getFilePath() ) );
 	if ( !FileSystem::isDirectory( folderPath ) )
 		folderPath = getLastUsedFolder();
-	UIFileDialog* dialog =
-		UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "*", folderPath );
+	UIFileDialog* dialog = UIFileDialog::New(
+		UIFileDialog::DefaultFlags |
+			( mConfig.ui.nativeFileDialogs ? UIFileDialog::UseNativeFileDialog : 0 ) |
+			UIFileDialog::SaveDialog,
+		"*", folderPath );
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "save_file_as", "Save File As" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
@@ -4340,8 +4348,8 @@ void App::init( InitParameters& params ) {
 		Log::info( "Complete UI took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-		if ( file == "./this.program" )
-			file = "";
+		if ( params.file == "./this.program" )
+			params.file = "";
 #endif
 
 		if ( params.terminal && params.file.empty() && params.fileToOpen.empty() ) {
@@ -4358,7 +4366,7 @@ void App::init( InitParameters& params ) {
 				   globalClock.getElapsedTime().asMilliseconds() );
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-		if ( file.empty() || !mFileToOpen.empty() )
+		if ( params.file.empty() || !mFileToOpen.empty() )
 			downloadFileWeb(
 				mFileToOpen.empty()
 					? "https://raw.githubusercontent.com/SpartanJ/eepp/develop/README.md"

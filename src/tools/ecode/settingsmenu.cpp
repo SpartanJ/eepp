@@ -1286,6 +1286,16 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		->setId( "open-project-in-new-window" );
 
 	mWindowMenu
+		->addCheckBox( i18n( "use_native_file_dialogs", "Enable Native File Dialogs" ),
+					   mApp->getConfig().ui.nativeFileDialogs )
+		->setTooltipText(
+			i18n( "use_native_file_dialogs_tooltip",
+				  "Try to use the OS native file dialogs if they are available." ) )
+		->setId( "native-file-dialogs" );
+
+	mWindowMenu->addSeparator();
+
+	mWindowMenu
 		->addCheckBox( i18n( "welcome_screen_enable", "Enable Welcome Screen" ),
 					   mApp->getConfig().ui.welcomeScreen )
 		->setId( "welcome-screen-enable" );
@@ -1303,6 +1313,7 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		} else if ( "welcome-screen-enable" == item->getId() ) {
 			bool active = item->asType<UIMenuCheckBox>()->isActive();
 			mApp->getConfig().ui.welcomeScreen = active;
+			mApp->saveConfig();
 		} else if ( "open-files-in-new-window-enable" == item->getId() ) {
 			bool active = item->asType<UIMenuCheckBox>()->isActive();
 			mApp->getConfig().ui.openFilesInNewWindow = active;
@@ -1310,6 +1321,10 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		} else if ( "open-project-in-new-window" == item->getId() ) {
 			bool active = item->asType<UIMenuCheckBox>()->isActive();
 			mApp->getConfig().ui.openProjectInNewWindow = active;
+			mApp->saveConfig();
+		} else if ( "native-file-dialogs" == item->getId() ) {
+			bool active = item->asType<UIMenuCheckBox>()->isActive();
+			mApp->getConfig().ui.nativeFileDialogs = active;
 			mApp->saveConfig();
 		} else {
 			String text = String( event->getNode()->asType<UIMenuItem>()->getId() ).toLower();

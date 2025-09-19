@@ -1836,7 +1836,10 @@ void DebuggerPlugin::resolveInputsBeforeRun(
 		} );
 	} else if ( input.type == "pickfile" ) {
 		UIFileDialog* dialog = UIFileDialog::New(
-			UIFileDialog::DefaultFlags, "*", getPluginContext()->getDefaultFileDialogFolder() );
+			UIFileDialog::DefaultFlags | ( getPluginContext()->getConfig().ui.nativeFileDialogs
+											   ? UIFileDialog::UseNativeFileDialog
+											   : 0 ),
+			"*", getPluginContext()->getDefaultFileDialogFolder() );
 		dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		dialog->setTitle( i18n( "open_file", "Open File" ) );
 		dialog->setCloseShortcut( KEY_ESCAPE );

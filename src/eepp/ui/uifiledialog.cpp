@@ -1,3 +1,11 @@
+#include <portable-file-dialogs/portable-file-dialogs.h>
+#ifdef UUID
+#undef UUID
+#endif
+#ifdef KEY_EXECUTE
+#undef KEY_EXECUTE
+#endif
+
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/ui/models/filesystemmodel.hpp>
@@ -16,6 +24,20 @@ namespace EE { namespace UI {
 #define FDLG_MIN_HEIGHT 400
 #define FDLG_DRIVE_PATH "drives://"
 
+struct NativeFileDialogHandler {
+	~NativeFileDialogHandler() {
+		if ( saveFile )
+			saveFile->kill();
+		if ( openFile )
+			openFile->kill();
+		if ( selectFolder )
+			selectFolder->kill();
+	}
+	std::unique_ptr<pfd::save_file> saveFile;
+	std::unique_ptr<pfd::open_file> openFile;
+	std::unique_ptr<pfd::select_folder> selectFolder;
+};
+
 UIFileDialog* UIFileDialog::New( Uint32 dialogFlags, const std::string& defaultFilePattern,
 								 const std::string& defaultDirectory ) {
 	return eeNew( UIFileDialog, ( dialogFlags, defaultFilePattern, defaultDirectory ) );
@@ -25,8 +47,18 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 							const std::string& defaultDirectory ) :
 	UIWindow(),
 	mCurPath( FileSystem::getRealPath( defaultDirectory ) ),
+	mFilePatterns( defaultFilePattern ),
 	mDialogFlags( dialogFlags ),
 	mCloseShortcut( KEY_ESCAPE ) {
+
+	if ( usingNativeFileDialog() ) {
+		mHandler = eeNew( NativeFileDialogHandler, () );
+		String::replaceAll( mFilePatterns, ";", "" );
+		setVisible( false );
+		subscribeScheduledUpdate();
+		return;
+	}
+
 	if ( getSize().getWidth() < FDLG_MIN_WIDTH ) {
 		mDpSize.x = FDLG_MIN_WIDTH;
 		mSize.x = PixelDensity::dpToPxI( FDLG_MIN_WIDTH );
@@ -247,7 +279,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		->setLayoutWeight( 1 )
 		->setParent( hLayout );
 	mFiletype->setPopUpToRoot( true );
-	mFiletype->getListBox()->addListBoxItem( defaultFilePattern );
+	mFiletype->getListBox()->addListBoxItem( mFilePatterns );
 	mFiletype->getListBox()->setSelected( 0 );
 	mFiletype->setLayoutMargin( Rectf( 0, 0, 4, 0 ) );
 
@@ -270,9 +302,13 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 	mUISceneNode->setIsLoading( loading );
 }
 
-UIFileDialog::~UIFileDialog() {}
+UIFileDialog::~UIFileDialog() {
+	eeSAFE_DELETE( mHandler );
+}
 
 void UIFileDialog::onWindowReady() {
+	if ( usingNativeFileDialog() )
+		return;
 	updateClickStep();
 	if ( isSaveDialog() ) {
 		mFile->getDocument().selectAll();
@@ -290,6 +326,8 @@ bool UIFileDialog::isType( const Uint32& type ) const {
 }
 
 void UIFileDialog::setTheme( UITheme* Theme ) {
+	if ( usingNativeFileDialog() )
+		return;
 	UIWindow::setTheme( Theme );
 
 	mButtonOpen->setTheme( Theme );
@@ -328,6 +366,9 @@ void UIFileDialog::setTheme( UITheme* Theme ) {
 }
 
 void UIFileDialog::refreshFolder( bool resetScroll ) {
+	if ( usingNativeFileDialog() )
+		return;
+
 	FileSystem::dirAddSlashAtEnd( mCurPath );
 
 	if ( mCurPath == FDLG_DRIVE_PATH ) {
@@ -379,6 +420,9 @@ void UIFileDialog::refreshFolder( bool resetScroll ) {
 }
 
 void UIFileDialog::updateClickStep() {
+	if ( usingNativeFileDialog() )
+		return;
+
 	if ( mMultiView->getListView()->getVerticalScrollBar() ) {
 		mMultiView->getListView()->getVerticalScrollBar()->setClickStep(
 			1.f /
@@ -398,6 +442,8 @@ void UIFileDialog::updateClickStep() {
 void UIFileDialog::setCurPath( const std::string& path ) {
 	mCurPath = path;
 	FileSystem::dirAddSlashAtEnd( mCurPath );
+	if ( usingNativeFileDialog() )
+		return;
 	mPath->setText( mCurPath );
 	if ( !isSaveDialog() )
 		mFile->setText( "" );
@@ -442,6 +488,9 @@ void UIFileDialog::onPressFileEnter( const Event* ) {
 }
 
 void UIFileDialog::disableButtons() {
+	if ( usingNativeFileDialog() )
+		return;
+
 	mButtonOpen->setEnabled( false );
 	mButtonCancel->setEnabled( false );
 	mButtonUp->setEnabled( false );
@@ -560,6 +609,9 @@ Uint32 UIFileDialog::onMessage( const NodeMessage* Msg ) {
 }
 
 void UIFileDialog::save() {
+	if ( usingNativeFileDialog() )
+		return;
+
 	sendCommonEvent( Event::SaveFile );
 
 	disableButtons();
@@ -568,6 +620,9 @@ void UIFileDialog::save() {
 }
 
 void UIFileDialog::open() {
+	if ( usingNativeFileDialog() )
+		return;
+
 	auto fullPath( getFullPath() );
 
 	if ( mMultiView->getSelection().isEmpty() &&
@@ -628,6 +683,9 @@ void UIFileDialog::onPressEnter( const Event* ) {
 }
 
 void UIFileDialog::addFilePattern( std::string pattern, bool select ) {
+	if ( usingNativeFileDialog() )
+		return;
+
 	Uint32 index = mFiletype->getListBox()->addListBoxItem( pattern );
 
 	if ( select ) {
@@ -691,11 +749,16 @@ void UIFileDialog::setShowHidden( const bool& showHidden ) {
 
 void UIFileDialog::setAllowsMultiFileSelect( bool allow ) {
 	BitOp::setBitFlagValue( &mDialogFlags, AllowMultiFileSelection, allow ? 1 : 0 );
+	if ( usingNativeFileDialog() )
+		return;
 	mMultiView->setMultiSelect( allow );
 	mFile->setEnabled( !allow );
 }
 
 std::string UIFileDialog::getFullPath( size_t index ) const {
+	if ( usingNativeFileDialog() )
+		return index < mRes.size() ? mRes[index] : ( !mRes.empty() ? mRes[0] : "" );
+
 	if ( mDisplayingDrives )
 		return getCurFile();
 
@@ -706,10 +769,15 @@ std::string UIFileDialog::getFullPath( size_t index ) const {
 }
 
 std::string UIFileDialog::getFullPath() const {
+	if ( usingNativeFileDialog() )
+		return !mRes.empty() ? mRes[0] : "";
 	return getFullPath( 0 );
 }
 
 std::vector<std::string> UIFileDialog::getFullPaths() const {
+	if ( usingNativeFileDialog() )
+		return mRes;
+
 	if ( mDisplayingDrives )
 		return { getCurFile() };
 
@@ -731,6 +799,9 @@ std::string UIFileDialog::getCurPath() const {
 }
 
 std::string UIFileDialog::getCurFile( size_t index ) const {
+	if ( usingNativeFileDialog() )
+		return "";
+
 	if ( mDialogFlags & SaveDialog )
 		return mFile->getText();
 	if ( mMultiView->getSelection().isEmpty() )
@@ -784,7 +855,7 @@ Uint32 UIFileDialog::onKeyDown( const KeyEvent& event ) {
 		 ( mOpenShortut.mod == 0 || ( event.getMod() & mOpenShortut.mod ) ) ) {
 		open();
 	} else if ( mCloseShortcut && event.getKeyCode() == mCloseShortcut.key &&
-		 ( mCloseShortcut.mod == 0 || ( event.getMod() & mCloseShortcut.mod ) ) ) {
+				( mCloseShortcut.mod == 0 || ( event.getMod() & mCloseShortcut.mod ) ) ) {
 		disableButtons();
 
 		closeWindow();
@@ -798,6 +869,9 @@ const KeyBindings::Shortcut& UIFileDialog::getCloseShortcut() const {
 }
 
 void UIFileDialog::setFileName( const std::string& name ) {
+	mFileName = name;
+	if ( usingNativeFileDialog() )
+		return;
 	if ( mFile )
 		mFile->setText( name );
 }
@@ -807,6 +881,9 @@ void UIFileDialog::setCloseShortcut( const KeyBindings::Shortcut& closeWithKey )
 }
 
 void UIFileDialog::setViewMode( const UIMultiModelView::ViewMode& viewMode ) {
+	if ( usingNativeFileDialog() )
+		return;
+
 	mMultiView->setViewMode( viewMode );
 	switch ( viewMode ) {
 		case UIMultiModelView::ViewMode::Table:
@@ -834,7 +911,117 @@ void UIFileDialog::setOpenShortut( const KeyBindings::Shortcut& newOpenShortut )
 }
 
 void UIFileDialog::setSingleClickNavigation( bool singleClickNavigation ) {
+	if ( usingNativeFileDialog() )
+		return;
 	mMultiView->setSingleClickNavigation( singleClickNavigation );
+}
+
+bool UIFileDialog::show() {
+	if ( usingNativeFileDialog() ) {
+		if ( isSaveDialog() ) {
+			std::string savePath( mCurPath );
+			if ( !savePath.empty() ) {
+				if ( FileSystem::isDirectory( savePath ) ) {
+					FileSystem::dirAddSlashAtEnd( savePath );
+					savePath += mFileName;
+				}
+			} else if ( !mFileName.empty() )
+				savePath = mFileName;
+
+			mHandler->saveFile = std::make_unique<pfd::save_file>(
+				getTitle().toUtf8(), savePath, std::vector<std::string>{ mFilePatterns } );
+		} else {
+			pfd::opt opt = pfd::opt::none;
+			if ( mDialogFlags & UIFileDialog::AllowMultiFileSelection )
+				opt = pfd::opt::multiselect;
+
+			if ( mDialogFlags & UIFileDialog::ShowOnlyFolders ) {
+				mHandler->selectFolder =
+					std::make_unique<pfd::select_folder>( getTitle().toUtf8(), mCurPath, opt );
+			} else {
+				mHandler->openFile = std::make_unique<pfd::open_file>(
+					getTitle().toUtf8(), mCurPath, std::vector<std::string>{ mFilePatterns }, opt );
+			}
+		}
+		return true;
+	}
+	return UIWindow::show();
+}
+
+bool UIFileDialog::hide() {
+	if ( usingNativeFileDialog() ) {
+		eeSAFE_DELETE( mHandler );
+		mHandler = eeNew( NativeFileDialogHandler, () );
+		return true;
+	}
+	return UIWindow::hide();
+}
+
+bool UIFileDialog::usingNativeFileDialog() const {
+	return ( mDialogFlags & Flags::UseNativeFileDialog ) && pfd::settings::available();
+}
+
+void UIFileDialog::scheduledUpdate( const Time& time ) {
+	if ( !usingNativeFileDialog() )
+		return;
+
+	if ( mHandler->saveFile == nullptr && mHandler->openFile == nullptr &&
+		 mHandler->selectFolder == nullptr )
+		return;
+
+	// Events are sent with delay because it must be sent outside the scheduledUpdate function
+	// given that the even can generate a deletion of an element that will be removed during the
+	// scheduledUpdate.
+	if ( isSaveDialog() ) {
+		if ( mHandler->saveFile && mHandler->saveFile->ready( 1 ) ) {
+			if ( mHandler->saveFile->result().empty() ) {
+				runOnMainThread( [this] {
+					sendCommonEvent( Event::OnWindowClose );
+					close();
+				} );
+			} else {
+				mRes = { mHandler->saveFile->result() };
+				runOnMainThread( [this] {
+					sendCommonEvent( Event::SaveFile );
+					close();
+				} );
+			}
+			mHandler->saveFile.reset();
+		}
+	} else {
+		if ( ( mDialogFlags & UIFileDialog::ShowOnlyFolders ) && mHandler->selectFolder &&
+			 mHandler->selectFolder->ready( 1 ) ) {
+			if ( mHandler->selectFolder->result().empty() ) {
+				runOnMainThread( [this] {
+					sendCommonEvent( Event::OnWindowClose );
+					close();
+				} );
+			} else {
+				mRes = { mHandler->selectFolder->result() };
+
+				runOnMainThread( [this] {
+					sendCommonEvent( Event::OpenFile );
+					close();
+				} );
+			}
+			mHandler->selectFolder.reset();
+		} else if ( mHandler->openFile && mHandler->openFile->ready( 1 ) ) {
+			if ( mHandler->openFile->result().empty() ) {
+				runOnMainThread( [this] {
+					sendCommonEvent( Event::OnWindowClose );
+					close();
+				} );
+			} else {
+				mRes = mHandler->openFile->result();
+
+				runOnMainThread( [this] {
+					sendCommonEvent( Event::OpenFile );
+					close();
+				} );
+			}
+			mHandler->openFile.reset();
+		}
+	}
 }
 
 }} // namespace EE::UI

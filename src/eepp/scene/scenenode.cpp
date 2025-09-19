@@ -152,6 +152,9 @@ void SceneNode::update( const Time& time ) {
 		mScheduledUpdateRemove.clear();
 	}
 
+	// TODO: Handle the case where one of the nodes updated generates the deletion of any of the
+	// following nodes. As a rule user should always delete elements with a `close()` call.
+	// But it's still allowed to just delete any running node.
 	if ( !mScheduledUpdate.empty() ) {
 		for ( auto& node : mScheduledUpdate )
 			node->scheduledUpdate( time );

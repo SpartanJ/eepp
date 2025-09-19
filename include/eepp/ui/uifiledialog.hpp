@@ -15,6 +15,8 @@
 
 namespace EE { namespace UI {
 
+struct NativeFileDialogHandler;
+
 class EE_API UIFileDialog : public UIWindow {
   public:
 	enum Flags {
@@ -25,6 +27,8 @@ class EE_API UIFileDialog : public UIWindow {
 		ShowOnlyFolders = ( 1 << 4 ),
 		ShowHidden = ( 1 << 5 ),
 		AllowMultiFileSelection = ( 1 << 6 ),
+		UseNativeFileDialog =
+			( 1 << 7 ), //< Uses the OS native file dialog if exists and it's available
 	};
 
 	static const Uint32 DefaultFlags = UIFileDialog::Flags::FoldersFirst |
@@ -107,18 +111,6 @@ class EE_API UIFileDialog : public UIWindow {
 
 	void setCloseShortcut( const KeyBindings::Shortcut& closeWithKey );
 
-	UIIcon* getIconNewFolder() const;
-
-	void setIconNewFolder( UIIcon* iconNewFolder );
-
-	UIIcon* getIconListView() const;
-
-	void setIconListView( UIIcon* iconListView );
-
-	UIIcon* getIconTableView() const;
-
-	void setIconTableView( UIIcon* iconTableView );
-
 	void setViewMode( const UIMultiModelView::ViewMode& viewMode );
 
 	const UIMultiModelView::ViewMode& getViewMode() const;
@@ -129,8 +121,17 @@ class EE_API UIFileDialog : public UIWindow {
 
 	void setSingleClickNavigation( bool singleClickNavigation );
 
+	virtual bool show();
+
+	virtual bool hide();
+
+	bool usingNativeFileDialog() const;
+
+	virtual void scheduledUpdate( const Time& time );
+
   protected:
 	std::string mCurPath;
+	std::string mFilePatterns;
 	UIPushButton* mButtonOpen;
 	UIPushButton* mButtonCancel;
 	UIPushButton* mButtonUp;
@@ -140,6 +141,7 @@ class EE_API UIFileDialog : public UIWindow {
 	UIMultiModelView* mMultiView;
 	UITextInput* mPath;
 	UITextInput* mFile;
+	std::string mFileName;
 	UIDropDownList* mFiletype;
 	Uint32 mDialogFlags;
 	KeyBindings::Shortcut mCloseShortcut;
@@ -147,6 +149,8 @@ class EE_API UIFileDialog : public UIWindow {
 	std::shared_ptr<FileSystemModel> mModel;
 	std::shared_ptr<DiskDrivesModel> mDiskDrivesModel;
 	bool mDisplayingDrives{ false };
+	NativeFileDialogHandler* mHandler{ nullptr };
+	std::vector<std::string> mRes;
 
 	UIFileDialog( Uint32 dialogFlags = UIFileDialog::DefaultFlags,
 				  const std::string& defaultFilePattern = "*",

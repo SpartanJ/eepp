@@ -124,6 +124,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	ui.welcomeScreen = ini.getValueB( "ui", "welcome_screen", true );
 	ui.openFilesInNewWindow = ini.getValueB( "ui", "open_files_in_new_window", false );
 	ui.openProjectInNewWindow = ini.getValueB( "ui", "open_project_in_new_window", false );
+	ui.nativeFileDialogs = ini.getValueB( "ui", "native_file_dialogs", false );
 	ui.panelPosition = panelPositionFromString( ini.getValue( "ui", "panel_position", "left" ) );
 	ui.serifFont = ini.getValue( "ui", "serif_font", "fonts/NotoSans-Regular.ttf" );
 	ui.monospaceFont = ini.getValue( "ui", "monospace_font", "fonts/DejaVuSansMono.ttf" );
@@ -307,6 +308,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "ui", "welcome_screen", ui.welcomeScreen );
 	ini.setValueB( "ui", "open_files_in_new_window", ui.openFilesInNewWindow );
 	ini.setValueB( "ui", "open_project_in_new_window", ui.openProjectInNewWindow );
+	ini.setValueB( "ui", "native_file_dialogs", ui.nativeFileDialogs );
 	ini.setValue( "ui", "panel_position", panelPositionToString( ui.panelPosition ) );
 	ini.setValue( "ui", "serif_font", ui.serifFont );
 	ini.setValue( "ui", "monospace_font", ui.monospaceFont );

@@ -662,11 +662,11 @@ function generate_os_links()
 			table.insert( os_links, "dl" )
 		end
 	elseif os.is_real("windows") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid" } )
 	elseif os.is_real("mingw32") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid" } )
 	elseif os.is_real("mingw64") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid" } )
 	elseif os.is_real("macosx") then
 		multiple_insert( os_links, { "OpenGL.framework", "CoreFoundation.framework" } )
 	elseif os.is_real("freebsd") then
