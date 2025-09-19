@@ -16,6 +16,10 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #   define WIN32_LEAN_AND_MEAN 1
 #endif
+#if _WIN32_WINNT < 0x600
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x600
+#endif
 #include <windows.h>
 #include <commdlg.h>
 #include <shlobj.h>
@@ -31,7 +35,7 @@
 #else
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
-#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
 #   define _XOPEN_SOURCE 700
 #   define __BSD_VISIBLE 1
 #endif
