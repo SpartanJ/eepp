@@ -82,7 +82,7 @@ SyntaxDefinition& addElena() {
 				  { "constructor", "keyword" }, { "singleton", "keyword" },
 				  { "real", "type" },			{ "ifnot", "keyword" },
 				  { "symbol", "keyword" },		{ "use", "keyword" },
-				  { "pointer", "type" }
+				  { "pointer", "type" },		{ "this", "keyword" },
 
 			  },
 			  "//",
