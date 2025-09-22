@@ -1039,7 +1039,7 @@ void EETest::createColorPicker( Node* node ) {
 	mColorPicker = Tools::UIColorPicker::NewModal( node, []( Color color ) {
 		UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::OK, color.toHexString() );
 		msgBox->center();
-		msgBox->show();
+		msgBox->showWhenReady();
 	} );
 	// mColorPicker->getUIWindow()->center();
 }

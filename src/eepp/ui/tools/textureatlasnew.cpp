@@ -254,13 +254,13 @@ void TextureAtlasNew::onSelectFolder( const Event* Event ) {
 										"The folder must contain at least one image!" );
 			MsgBox->setTitle( "Error" );
 			MsgBox->center();
-			MsgBox->show();
+			MsgBox->showWhenReady();
 		}
 	} else {
 		MsgBox = UIMessageBox::New( UIMessageBox::OK, "You must select a folder!" );
 		MsgBox->setTitle( "Error" );
 		MsgBox->center();
-		MsgBox->show();
+		MsgBox->showWhenReady();
 	}
 }
 

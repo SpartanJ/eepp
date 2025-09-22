@@ -30,7 +30,7 @@ bool onCloseRequestCallback( EE::Window::Window* ) {
 		MsgBox->addEventListener( Event::OnClose, []( const Event* ) { MsgBox = NULL; } );
 		MsgBox->setTitle( "Close Texture Atlas Editor?" );
 		MsgBox->center();
-		MsgBox->show();
+		MsgBox->showWhenReady();
 		return false;
 	} else {
 		return true;
