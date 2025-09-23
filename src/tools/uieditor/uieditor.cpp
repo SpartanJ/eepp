@@ -878,7 +878,7 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 	mMsgBox->addEventListener( Event::OnWindowClose, [this]( const Event* ) { mMsgBox = NULL; } );
 	mMsgBox->setTitle( "Close Editor?" );
 	mMsgBox->center();
-	mMsgBox->show();
+	mMsgBox->showWhenReady();
 
 	SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
 	return false;

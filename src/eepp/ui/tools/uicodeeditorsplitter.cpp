@@ -1051,7 +1051,7 @@ bool UICodeEditorSplitter::tryCodeEditorClose( UICodeEditor* editor,
 		mTryCloseMsgBox->setTitle(
 			editor->getUISceneNode()->i18n( "ask_close_tab", "Close Tab?" ) );
 		mTryCloseMsgBox->center();
-		mTryCloseMsgBox->show();
+		mTryCloseMsgBox->showWhenReady();
 		return false;
 	}
 

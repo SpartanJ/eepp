@@ -311,7 +311,7 @@ void TextureAtlasEditor::fileMenuClick( const Event* Event ) {
 									  [this]( auto event ) { onTextureAtlasClose( event ); } );
 			MsgBox->setTitle( "Close Texture Atlas?" );
 			MsgBox->center();
-			MsgBox->show();
+			MsgBox->showWhenReady();
 		} else {
 			onTextureAtlasClose( NULL );
 		}

@@ -131,7 +131,6 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 															  "Enter new folder name:" ) );
 			msgBox->setTitle( i18n( "uifiledialog_create_new_folder", "Create new folder" ) );
 			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
-			msgBox->show();
 			msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 				auto folderName( msgBox->getTextInput()->getText() );
 				auto newFolderPath( getCurPath() + folderName );
@@ -147,6 +146,7 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 
 				msgBox->closeWindow();
 			} );
+			msgBox->showWhenReady();
 		}
 	} );
 

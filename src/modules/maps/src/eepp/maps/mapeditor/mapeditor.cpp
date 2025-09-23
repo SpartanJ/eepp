@@ -1167,7 +1167,7 @@ void MapEditor::fileMenuClick( const Event* Event ) {
 		MsgBox->addEventListener( Event::OnConfirm, [this]( auto event ) { onMapClose( event ); } );
 		MsgBox->setTitle( "Close Map?" );
 		MsgBox->center();
-		MsgBox->show();
+		MsgBox->showWhenReady();
 	} else if ( "Quit" == txt ) {
 		if ( NULL == mUIWindow ) {
 			mUIContainer->getSceneNode()->getWindow()->close();
@@ -1339,7 +1339,7 @@ UIMessageBox* MapEditor::createAlert( const String& title, const String& text ) 
 	MsgBox->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MODAL );
 	MsgBox->setTitle( title );
 	MsgBox->center();
-	MsgBox->show();
+	MsgBox->showWhenReady();
 	return MsgBox;
 }
 

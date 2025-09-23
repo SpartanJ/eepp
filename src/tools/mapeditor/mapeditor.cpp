@@ -30,7 +30,7 @@ bool onCloseRequestCallback( EE::Window::Window* ) {
 		MsgBox->addEventListener( Event::OnClose, []( const Event* ) { MsgBox = NULL; } );
 		MsgBox->setTitle( "Close Map?" );
 		MsgBox->center();
-		MsgBox->show();
+		MsgBox->showWhenReady();
 		return false;
 	} else {
 		return true;
