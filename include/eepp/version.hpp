@@ -5,9 +5,9 @@
 #include <string>
 
 #define EEPP_MAJOR_VERSION 2
-#define EEPP_MINOR_VERSION 8
-#define EEPP_PATCH_LEVEL 8
-#define EEPP_CODENAME "Siddhi"
+#define EEPP_MINOR_VERSION 9
+#define EEPP_PATCH_LEVEL 0
+#define EEPP_CODENAME "Sādhanā"
 
 /** The compiled version of the library */
 #define EEPP_VERSION( x )             \
