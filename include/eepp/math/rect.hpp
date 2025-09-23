@@ -22,6 +22,18 @@ template <typename T> class tRECT {
 
 	tRECT<T>& setPosition( const Vector2<T>& pos );
 
+	tRECT<T>& setPositionX( const T& posX );
+
+	tRECT<T>& setPositionY( const T& posY );
+
+	tRECT<T>& setSize( const tSize<T>& size );
+
+	tRECT<T>& move( const Vector2<T>& offset );
+
+	tRECT<T>& moveX( const T& offsetX );
+
+	tRECT<T>& moveY( const T& offsetY );
+
 	bool intersect( const tRECT<T>& rect ) const;
 
 	bool contains( const tRECT<T>& rect ) const;
@@ -267,6 +279,46 @@ template <typename T> tRECT<T>& tRECT<T>::setPosition( const Vector2<T>& pos ) {
 	Bottom = pos.y + size.y;
 	Right = pos.x + size.x;
 	Top = pos.y;
+	return *this;
+}
+
+template <typename T> tRECT<T>& tRECT<T>::setPositionX( const T& posX ) {
+	auto size = getSize();
+	Left = posX;
+	Right = posX + size.x;
+	return *this;
+}
+
+template <typename T> tRECT<T>& tRECT<T>::setPositionY( const T& posY ) {
+	auto size = getSize();
+	Bottom = posY + size.y;
+	Top = posY;
+	return *this;
+}
+
+template <typename T> tRECT<T>& tRECT<T>::setSize( const tSize<T>& size ) {
+	Bottom = Top + size.y;
+	Right = Left + size.x;
+	return *this;
+}
+
+template <typename T> tRECT<T>& tRECT<T>::move( const Vector2<T>& offset ) {
+	Left += offset.x;
+	Bottom += offset.y;
+	Right += offset.x;
+	Top += offset.y;
+	return *this;
+}
+
+template <typename T> tRECT<T>& tRECT<T>::moveX( const T& offsetX ) {
+	Left += offsetX;
+	Right += offsetX;
+	return *this;
+}
+
+template <typename T> tRECT<T>& tRECT<T>::moveY( const T& offsetY ) {
+	Bottom += offsetY;
+	Top += offsetY;
 	return *this;
 }
 
