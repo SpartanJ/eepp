@@ -99,6 +99,10 @@ class EE_API UIStyle : public UIState {
 
 	void applyVarValues( CSS::StyleSheetProperty* style );
 
+	void applyLightDarkValues( CSS::StyleSheetProperty* style );
+
+	void applyLightDarkValue( std::string& newValue );
+
 	void setVariableFromValue( CSS::StyleSheetProperty* property, const std::string& value );
 
 	void updateState();

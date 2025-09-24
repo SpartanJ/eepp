@@ -39,11 +39,11 @@ class EE_API StyleSheetProperty {
 								 bool cachedProperty = false );
 
 	explicit StyleSheetProperty( const std::string& name, const std::string& value,
-								 const bool& trimValue = true, const Uint32& specificity = 0,
+								 bool trimValue = true, const Uint32& specificity = 0,
 								 const Uint32& index = 0 );
 
 	explicit StyleSheetProperty( const std::string& name, const std::string& value,
-								 const Uint32& specificity, const bool& isVolatile = false,
+								 const Uint32& specificity, bool isVolatile = false,
 								 const Uint32& index = 0 );
 
 	Uint32 getId() const;
@@ -66,9 +66,9 @@ class EE_API StyleSheetProperty {
 
 	void setValue( const std::string& value, bool updateHash = false );
 
-	const bool& isVolatile() const;
+	bool isVolatile() const;
 
-	void setVolatile( const bool& isVolatile );
+	void setVolatile( bool isVolatile );
 
 	bool operator==( const StyleSheetProperty& property ) const;
 
@@ -138,7 +138,9 @@ class EE_API StyleSheetProperty {
 
 	const ShorthandDefinition* getShorthandDefinition() const;
 
-	const bool& isVarValue() const;
+	bool isVarValue() const;
+
+	bool isLightDarkValue() const;
 
 	size_t getPropertyIndexCount() const;
 
@@ -189,16 +191,17 @@ class EE_API StyleSheetProperty {
 	String::HashType mValueHash;
 	Uint32 mSpecificity;
 	Uint32 mIndex;
-	bool mVolatile;
-	bool mImportant;
-	bool mIsVarValue;
-	bool mCachedProperty{ false };
+	bool mVolatile : 1 { false };
+	bool mImportant : 1 { false };
+	bool mIsVarValue : 1 { false };
+	bool mIsLightDarkValue : 1 { false };
+	bool mCachedProperty : 1 { false };
 	const PropertyDefinition* mPropertyDefinition;
 	const ShorthandDefinition* mShorthandDefinition;
 	std::vector<StyleSheetProperty> mIndexedProperty;
 	std::vector<VariableFunctionCache> mVarCache;
 
-	explicit StyleSheetProperty( const bool& isVolatile, const PropertyDefinition* definition,
+	explicit StyleSheetProperty( bool isVolatile, const PropertyDefinition* definition,
 								 const std::string& value, const Uint32& specificity = 0,
 								 const Uint32& index = 0 );
 

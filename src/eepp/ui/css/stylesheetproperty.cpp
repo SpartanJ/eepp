@@ -42,8 +42,7 @@ StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
 	}
 }
 
-StyleSheetProperty::StyleSheetProperty( const bool& isVolatile,
-										const PropertyDefinition* definition,
+StyleSheetProperty::StyleSheetProperty( bool isVolatile, const PropertyDefinition* definition,
 										const std::string& value, const Uint32& /*specificity*/,
 										const Uint32& index ) :
 	mName( definition->getName() ),
@@ -67,7 +66,7 @@ StyleSheetProperty::StyleSheetProperty( const bool& isVolatile,
 }
 
 StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value,
-										const bool& trimValue, const Uint32& specificity,
+										bool trimValue, const Uint32& specificity,
 										const Uint32& index ) :
 	mName( String::toLower( String::trim( name ) ) ),
 	mNameHash( String::hash( mName ) ),
@@ -93,7 +92,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 }
 
 StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value,
-										const Uint32& specificity, const bool& isVolatile,
+										const Uint32& specificity, bool isVolatile,
 										const Uint32& index ) :
 	mName( String::toLower( String::trim( name ) ) ),
 	mNameHash( String::hash( mName ) ),
@@ -165,11 +164,11 @@ void StyleSheetProperty::setValue( const std::string& value, bool updateHash ) {
 	createIndexed();
 }
 
-const bool& StyleSheetProperty::isVolatile() const {
+bool StyleSheetProperty::isVolatile() const {
 	return mVolatile;
 }
 
-void StyleSheetProperty::setVolatile( const bool& isVolatile ) {
+void StyleSheetProperty::setVolatile( bool isVolatile ) {
 	mVolatile = isVolatile;
 }
 
@@ -215,6 +214,8 @@ void StyleSheetProperty::checkVars() {
 		mIsVarValue = true;
 		mVarCache = std::move( varCache );
 	}
+
+	mIsLightDarkValue = mValue.find( "light-dark(" ) != std::string::npos;
 }
 
 static void varToVal( VariableFunctionCache& varCache, const std::string& varDef ) {
@@ -536,8 +537,12 @@ const ShorthandDefinition* StyleSheetProperty::getShorthandDefinition() const {
 	return mShorthandDefinition;
 }
 
-const bool& StyleSheetProperty::isVarValue() const {
+bool StyleSheetProperty::isVarValue() const {
 	return mIsVarValue;
+}
+
+bool StyleSheetProperty::isLightDarkValue() const {
+	return mIsLightDarkValue;
 }
 
 size_t StyleSheetProperty::getPropertyIndexCount() const {

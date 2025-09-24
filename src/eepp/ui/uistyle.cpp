@@ -209,6 +209,37 @@ void UIStyle::unsubscribeRelated( UIWidget* widget ) {
 	mRelatedWidgets.erase( widget );
 }
 
+void UIStyle::applyLightDarkValue( std::string& value ) {
+	std::string::size_type tokenStart = 0;
+	std::string::size_type tokenEnd = 0;
+
+	while ( true ) {
+		tokenStart = value.find( "light-dark(", tokenStart );
+		if ( tokenStart != std::string::npos ) {
+			tokenEnd = String::findCloseBracket( value, tokenStart, '(', ')' );
+			if ( tokenEnd != std::string::npos ) {
+				auto fn( value.substr( tokenStart, tokenEnd + 1 ) );
+				auto function( FunctionString::parse( fn ) );
+				auto size = function.getParameters().size();
+				if ( size > 0 ) {
+					String::replaceAll(
+						value, fn,
+						function.getParameters()
+							[size == 1 || mWidget->getUISceneNode()->getColorSchemePreference() ==
+											  ColorSchemePreference::Light
+								 ? 0
+								 : 1] );
+				}
+				tokenStart = tokenEnd;
+			} else {
+				break;
+			}
+		} else {
+			break;
+		}
+	};
+}
+
 void UIStyle::setVariableFromValue( StyleSheetProperty* property, const std::string& value ) {
 	if ( !property->getVarCache().empty() ) {
 		std::string newValue( value );
@@ -221,12 +252,20 @@ void UIStyle::setVariableFromValue( StyleSheetProperty* property, const std::str
 				}
 			}
 		}
+		if ( property->isLightDarkValue() )
+			applyLightDarkValue( newValue );
+		property->setValue( newValue );
+	} else if ( property->isLightDarkValue() ) {
+		std::string newValue( value );
+		applyLightDarkValue( newValue );
 		property->setValue( newValue );
 	}
 }
 
+void UIStyle::applyLightDarkValues( CSS::StyleSheetProperty* style ) {}
+
 void UIStyle::applyVarValues( StyleSheetProperty* property ) {
-	if ( property->isVarValue() ) {
+	if ( property->isVarValue() || property->isLightDarkValue() ) {
 		if ( NULL != property->getPropertyDefinition() &&
 			 property->getPropertyDefinition()->isIndexed() ) {
 			for ( size_t i = 0; i < property->getPropertyIndexCount(); i++ ) {

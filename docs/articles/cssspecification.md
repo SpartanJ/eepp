@@ -1092,6 +1092,12 @@ or one of the special constants.
 
 ---
 
+### light-dark
+
+Read [light-dark](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/light-dark) documentation.
+
+---
+
 ### line-spacing
 
 Sets a extra line spacing to the line box.
@@ -2096,6 +2102,12 @@ Sets the current value to an element that accepts values.
 * Applicable to: EE::UI::UIScrollBar (ScrollBar), EE::UI::UISlider (Slider), EE::UI::UISpinBox (SpinBox)
 * Data Type: [number](#number-data-type)
 * Default value: _Not set_
+
+---
+
+### var
+
+Read [var](https://developer.mozilla.org/en-US/docs/Web/CSS/var) documentation.
 
 ---
 

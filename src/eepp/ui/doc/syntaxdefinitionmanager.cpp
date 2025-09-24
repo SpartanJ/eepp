@@ -880,6 +880,33 @@ static SyntaxDefinition loadTextMateLanguage( const nlohmann::json& json, Syntax
 	return def;
 }
 
+static void parseRepositoryItem( SyntaxDefinition& def, const std::string& name,
+								 const nlohmann::json& item ) {
+	std::vector<SyntaxPattern> ptrns;
+	if ( item.contains( "match" ) || item.contains( "begin" ) ) {
+		ptrns.emplace_back( parsePattern( item ) );
+	} else if ( item.contains( "patterns" ) && item["patterns"].is_array() ) {
+		const auto& patterns = item["patterns"];
+		for ( const auto& pattern : patterns ) {
+			if ( pattern.size() == 1 && pattern.contains( "comment" ) )
+				continue;
+			ptrns.emplace_back( parsePattern( pattern ) );
+		}
+	} else if ( item.is_array() ) {
+		for ( const auto& pattern : item )
+			ptrns.emplace_back( parsePattern( pattern ) );
+	}
+
+	if ( item.contains( "repository" ) && item["repository"].is_object() ) {
+		for ( const auto& [iname, iitem] : item["repository"].items() ) {
+			parseRepositoryItem( def, iname, iitem );
+		}
+	}
+
+	auto rname( name );
+	def.addRepository( std::move( rname ), std::move( ptrns ) );
+};
+
 static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 	SyntaxDefinition def;
 
@@ -894,25 +921,8 @@ static SyntaxDefinition loadLanguage( const nlohmann::json& json ) {
 
 		if ( json.contains( "repository" ) && json["repository"].is_object() ) {
 			const auto& repository = json["repository"];
-			for ( const auto& [name, repository] : repository.items() ) {
-				std::vector<SyntaxPattern> ptrns;
-				if ( repository.contains( "match" ) || repository.contains( "begin" ) ) {
-					ptrns.emplace_back( parsePattern( repository ) );
-				} else if ( repository.contains( "patterns" ) &&
-							repository["patterns"].is_array() ) {
-					const auto& patterns = repository["patterns"];
-					for ( const auto& pattern : patterns ) {
-						if ( pattern.size() == 1 && pattern.contains( "comment" ) )
-							continue;
-						ptrns.emplace_back( parsePattern( pattern ) );
-					}
-				} else if ( repository.is_array() ) {
-					for ( const auto& pattern : repository )
-						ptrns.emplace_back( parsePattern( pattern ) );
-				}
-				auto rname( name );
-				def.addRepository( std::move( rname ), std::move( ptrns ) );
-			}
+			for ( const auto& [name, item] : repository.items() )
+				parseRepositoryItem( def, name, item );
 		}
 
 		if ( ( json.contains( "$schema" ) && json["$schema"].is_string() &&

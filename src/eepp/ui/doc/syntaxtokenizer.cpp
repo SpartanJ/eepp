@@ -535,10 +535,10 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 															 fullMatchEnd - fullMatchStart ) );
 								}
 							}
-						}
 
-						lastStart = start;
-						lastEnd = end;
+							lastStart = start;
+							lastEnd = end;
+						}
 					}
 
 					if ( lastEnd < fullMatchEnd ) {
