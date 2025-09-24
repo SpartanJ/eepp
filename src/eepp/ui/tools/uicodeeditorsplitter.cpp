@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/uimessagebox.hpp>
@@ -1043,7 +1044,7 @@ bool UICodeEditorSplitter::tryCodeEditorClose( UICodeEditor* editor,
 		} );
 		mTryCloseMsgBox->on( Event::OnClose, [this, onMsgBoxCloseCb]( const Event* ) {
 			mTryCloseMsgBox = nullptr;
-			if ( mCurEditor )
+			if ( !SceneManager::instance()->isShuttingDown() && mCurEditor )
 				mCurEditor->setFocus();
 			if ( onMsgBoxCloseCb )
 				onMsgBoxCloseCb();

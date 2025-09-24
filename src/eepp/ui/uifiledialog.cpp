@@ -928,8 +928,12 @@ bool UIFileDialog::show() {
 			} else if ( !mFileName.empty() )
 				savePath = mFileName;
 
+			std::vector<std::string> ptrns;
+			if ( mFilePatterns != "*" )
+				ptrns.push_back( mFilePatterns );
+
 			mHandler->saveFile = std::make_unique<pfd::save_file>(
-				getTitle().toUtf8(), savePath, std::vector<std::string>{ mFilePatterns } );
+				getTitle().toUtf8(), savePath, ptrns );
 		} else {
 			pfd::opt opt = pfd::opt::none;
 			if ( mDialogFlags & UIFileDialog::AllowMultiFileSelection )
