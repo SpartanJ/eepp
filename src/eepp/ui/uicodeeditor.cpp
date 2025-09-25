@@ -647,9 +647,7 @@ void UICodeEditor::onFontStyleChanged() {
 
 void UICodeEditor::onDocumentLoaded( TextDocument* ) {
 	if ( mInvalidateOnLoaded ) {
-		ensureMainThread( [this] {
-			onDocumentLoaded();
-		} );
+		ensureMainThread( [this] { onDocumentLoaded(); } );
 		mInvalidateOnLoaded = false;
 	}
 }
@@ -4390,9 +4388,10 @@ void UICodeEditor::drawLineEndings( const DocumentLineRange& lineRange, const Ve
 									const Float& /*lineHeight*/ ) {
 	Color color( Color( mWhitespaceColor ).blendAlpha( mAlpha ) );
 	auto fontSize = getCharacterSize();
-	GlyphDrawable* nl = mFont->getGlyphDrawable( 8628 /*'↴'*/, fontSize );
-	if ( nl->getPixelsSize() == Sizef::Zero )
-		nl = mFont->getGlyphDrawable( 172 /* '¬'*/, fontSize );
+	bool hasMainGlyph = mFont && mFont->getType() == FontType::TTF &&
+						static_cast<FontTrueType*>( mFont )->hasGlyph( 8628 );
+	GlyphDrawable* nl =
+		mFont->getGlyphDrawable( hasMainGlyph ? 0x21B5 /*'↵'*/ : 172 /* '¬'*/, fontSize );
 	nl->setDrawMode( GlyphDrawable::DrawMode::Text );
 	nl->setColor( color );
 	for ( auto index = lineRange.first; index <= lineRange.second; index++ ) {
