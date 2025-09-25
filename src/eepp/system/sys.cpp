@@ -125,15 +125,12 @@ std::unordered_map<std::string, std::string> _getEnvironmentVariables() {
 	char** env = _getEnviron();
 
 	for ( ; *env; ++env ) {
-		auto var = EE::String::split( *env, "=" );
-
-		if ( var.size() == 2 ) {
-			ret.insert( std::make_pair( var[0], var[1] ) );
-		} else if ( var.size() > 2 ) {
-			auto val( var[1] );
-			for ( size_t i = 2; i < var.size(); ++i )
-				val += var[i];
-			ret.insert( std::make_pair( var[0], val ) );
+		std::string env_var_str( *env );
+		size_t pos = env_var_str.find( '=' );
+		if ( pos != std::string::npos ) {
+			std::string key = env_var_str.substr( 0, pos );
+			std::string value = env_var_str.substr( pos + 1 );
+			ret.emplace( key, value );
 		}
 	}
 
