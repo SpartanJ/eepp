@@ -132,17 +132,17 @@ class EE_API UIFileDialog : public UIWindow {
   protected:
 	std::string mCurPath;
 	std::string mFilePatterns;
-	UIPushButton* mButtonOpen;
-	UIPushButton* mButtonCancel;
-	UIPushButton* mButtonUp;
-	UIPushButton* mButtonNewFolder;
-	UISelectButton* mButtonListView;
-	UISelectButton* mButtonTableView;
-	UIMultiModelView* mMultiView;
-	UITextInput* mPath;
-	UITextInput* mFile;
+	UIPushButton* mButtonOpen{ nullptr };
+	UIPushButton* mButtonCancel{ nullptr };
+	UIPushButton* mButtonUp{ nullptr };
+	UIPushButton* mButtonNewFolder{ nullptr };
+	UISelectButton* mButtonListView{ nullptr };
+	UISelectButton* mButtonTableView{ nullptr };
+	UIMultiModelView* mMultiView{ nullptr };
+	UITextInput* mPath{ nullptr };
+	UITextInput* mFile{ nullptr };
 	std::string mFileName;
-	UIDropDownList* mFiletype;
+	UIDropDownList* mFiletype{ nullptr };
 	Uint32 mDialogFlags;
 	KeyBindings::Shortcut mCloseShortcut;
 	KeyBindings::Shortcut mOpenShortut{ KEY_RETURN, KeyMod::getDefaultModifier() };

@@ -434,11 +434,13 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool term
 			( mConfig.ui.nativeFileDialogs ? UIFileDialog::UseNativeFileDialog : 0 ),
 		"*.ttf; *.otf; *.wolff; *.otb; *.bdf; *.ttc",
 		FileSystem::fileRemoveFileName( absoluteFontPath ) );
-	ModelIndex index = dialog->getMultiView()->getListView()->findRowWithText(
-		FileSystem::fileNameFromPath( fontPath ), true, true );
-	if ( index.isValid() )
-		dialog->runOnMainThread(
-			[dialog, index]() { dialog->getMultiView()->setSelection( index ); } );
+	if ( dialog->getMultiView() ) {
+		ModelIndex index = dialog->getMultiView()->getListView()->findRowWithText(
+			FileSystem::fileNameFromPath( fontPath ), true, true );
+		if ( index.isValid() )
+			dialog->runOnMainThread(
+				[dialog, index]() { dialog->getMultiView()->setSelection( index ); } );
+	}
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( i18n( "select_font_file", "Select Font File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
