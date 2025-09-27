@@ -1496,6 +1496,8 @@ std::string String::numberClean( const std::string& number ) {
 }
 
 void String::numberCleanInPlace( std::string& strNumber ) {
+	if ( strNumber.empty() )
+		return;
 	while ( strNumber.back() == '0' )
 		strNumber.pop_back();
 	if ( strNumber.back() == '.' )

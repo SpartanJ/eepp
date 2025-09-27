@@ -120,6 +120,7 @@ class EE_API Event {
 		OnDataChanged,
 		OnBeforeFoldUnfoldRange,
 		OnFoldUnfoldRange,
+		OnResourceLoaded,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 

@@ -888,4 +888,8 @@ const bool& Renderer::quadsSupported() const {
 	return mQuadsSupported;
 }
 
+void Renderer::waitForIdle() {
+	glFinish();
+}
+
 }} // namespace EE::Graphics

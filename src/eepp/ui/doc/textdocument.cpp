@@ -1931,6 +1931,7 @@ std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
 			}
 
 			if ( mustClose ) {
+				/* // I'm not entirely convinced about this
 				TextPosition openStart = positionOffset( sel.start(), 1 );
 				if ( openStart != sel.start() ) {
 					int maxIt = 100;
@@ -1944,6 +1945,7 @@ std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
 						continue;
 					}
 				}
+				*/
 
 				setSelection(
 					i, positionOffset( insert( i, sel.start(), text + String( closeChar ) ), -1 ) );

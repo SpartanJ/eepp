@@ -279,6 +279,8 @@ class EE_API Renderer {
 
 	Color readPixel( int x, int y );
 
+	void waitForIdle();
+
   protected:
 	static Renderer* sSingleton;
 

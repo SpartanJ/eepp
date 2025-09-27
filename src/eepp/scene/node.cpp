@@ -1360,6 +1360,8 @@ void Node::updateOriginPoint() {
 		}
 	}
 
+	eeASSERT( !std::isnan( mScaleOriginPoint.x ) && !std::isnan( mScaleOriginPoint.y ) );
+
 	setDirty();
 }
 
@@ -1403,6 +1405,12 @@ Color Node::getColor( const Color& Col ) {
 
 const OriginPoint& Node::getRotationOriginPoint() const {
 	return mRotationOriginPoint;
+}
+
+void Node::setRotationOriginPointPixels( const OriginPoint& center ) {
+	mRotationOriginPoint = center;
+	updateOriginPoint();
+	Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
 }
 
 void Node::setRotationOriginPoint( const OriginPoint& center ) {
@@ -1460,6 +1468,7 @@ void Node::setRotation( const Float& angle, const OriginPoint& center ) {
 }
 
 void Node::setScale( const Vector2f& scale ) {
+	eeASSERT( !std::isnan( scale.x ) && !std::isnan( scale.y ) );
 	Transformable::setScale( scale.x, scale.y );
 
 	updateOriginPoint();
@@ -1479,6 +1488,12 @@ void Node::setScale( const Vector2f& scale ) {
 
 const OriginPoint& Node::getScaleOriginPoint() const {
 	return mScaleOriginPoint;
+}
+
+void Node::setScaleOriginPointPixels( const OriginPoint& center ) {
+	mScaleOriginPoint = center;
+	updateOriginPoint();
+	Transformable::setScaleOrigin( getScaleCenter().x, getScaleCenter().y );
 }
 
 void Node::setScaleOriginPoint( const OriginPoint& center ) {
@@ -1512,7 +1527,7 @@ Vector2f Node::getScaleCenter() const {
 }
 
 void Node::setScale( const Vector2f& scale, const OriginPoint& center ) {
-	mScaleOriginPoint = PixelDensity::dpToPx( center );
+	mScaleOriginPoint = center;
 	updateOriginPoint();
 	Transformable::setScaleOrigin( getScaleOriginPoint().x, getScaleOriginPoint().y );
 	setScale( Vector2f( scale.x, scale.y ) );
@@ -1520,6 +1535,10 @@ void Node::setScale( const Vector2f& scale, const OriginPoint& center ) {
 
 void Node::setScale( const Float& scale, const OriginPoint& center ) {
 	setScale( Vector2f( scale, scale ), center );
+}
+
+void Node::setScale( const Float& scale ) {
+	setScale( Vector2f( scale, scale ) );
 }
 
 const Float& Node::getAlpha() const {

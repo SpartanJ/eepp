@@ -103,6 +103,10 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 			{ "chat-private", 0xEB69 },
 			{ "loader-2", 0xEEC2 },
 			{ "more-fill", 0xEF78 },
+			{ "volume-up-fill", 0xF2A1 },
+			{ "volume-down-fill", 0xF29B },
+			{ "volume-mute-fill", 0xF29D },
+			{ "pause-fill", 0xEFD7 },
 		};
 
 		for ( const auto& icon : icons )

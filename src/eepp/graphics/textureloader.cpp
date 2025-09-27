@@ -335,6 +335,11 @@ void TextureLoader::loadFromPixels() {
 				}
 			}
 
+			if ( threadedLoad ) {
+				GLi->waitForIdle(); // Lock the thread until the texture has been uploaded to the
+									// GPU VRAM
+			}
+
 			if ( threadedLoad && Engine::instance()->isSharedGLContextEnabled() ) {
 				Engine::instance()->getCurrentWindow()->unsetGLContextThread();
 			}
