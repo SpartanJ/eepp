@@ -4389,9 +4389,11 @@ void UICodeEditor::drawLineEndings( const DocumentLineRange& lineRange, const Ve
 	Color color( Color( mWhitespaceColor ).blendAlpha( mAlpha ) );
 	auto fontSize = getCharacterSize();
 	bool hasMainGlyph = mFont && mFont->getType() == FontType::TTF &&
-						static_cast<FontTrueType*>( mFont )->hasGlyph( 8628 );
-	GlyphDrawable* nl =
-		mFont->getGlyphDrawable( hasMainGlyph ? 0x21B5 /*'↵'*/ : 172 /* '¬'*/, fontSize );
+						static_cast<FontTrueType*>( mFont )->hasGlyph( 0x23CE ); // ⏎
+	bool hasSecondaryGlyph = !hasMainGlyph && mFont && mFont->getType() == FontType::TTF &&
+							 static_cast<FontTrueType*>( mFont )->hasGlyph( 0x21B5 ); // ↵
+	GlyphDrawable* nl = mFont->getGlyphDrawable(
+		hasMainGlyph ? 0x23CE : ( hasSecondaryGlyph ? 0x21B5 /*'↵'*/ : 172 /* '¬'*/ ), fontSize );
 	nl->setDrawMode( GlyphDrawable::DrawMode::Text );
 	nl->setColor( color );
 	for ( auto index = lineRange.first; index <= lineRange.second; index++ ) {
