@@ -557,6 +557,24 @@ Multiple flags are separated by `|`.
 
 ---
 
+### display-options
+
+Allows to set what information should be displayed of the current image.
+Multiple flags can be set, flags are separated by `|`.
+
+* Applicable to: Any child of a EE::UI::UIImageViewer (ImageViewer)
+* Data Type: [string-list](#string-list-data-type)
+* Value List:
+  * `name`: Displays the file name
+  * `dimensions`: Displays the image dimensions
+  * `path`: Displays the file path
+  * `gallery_position`: Displays the gallery position of the current image (ex: `4 / 15`)
+  * `size`: Displays the file size
+  * `type`: Displays the image type
+* Default value: _No value_
+
+---
+
 ### display-percent
 
 Enables/disables displaying the percentage of progress in the progress bar.

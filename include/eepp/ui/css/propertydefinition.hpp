@@ -224,6 +224,7 @@ enum class PropertyId : Uint32 {
 	DisableCodeEditorFlags = String::hash( "disable-editor-flags" ),
 	LineWrapMode = String::hash( "line-wrap-mode" ),
 	LineWrapType = String::hash( "line-wrap-type" ),
+	DisplayOptions = String::hash( "display-options" ),
 };
 
 enum class PropertyType : Uint32 {

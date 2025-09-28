@@ -420,6 +420,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "line-wrap-mode", "nowrap" ).setType( PropertyType::String );
 	registerProperty( "line-wrap-type", "viewport" ).setType( PropertyType::String );
 
+	registerProperty( "display-options", "" ).setType( PropertyType::String );
+
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },
 					   "box" );

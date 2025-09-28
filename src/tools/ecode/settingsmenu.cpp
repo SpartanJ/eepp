@@ -1288,10 +1288,17 @@ UIMenu* SettingsMenu::createWindowMenu() {
 	mWindowMenu
 		->addCheckBox( i18n( "use_native_file_dialogs", "Enable Native File Dialogs" ),
 					   mApp->getConfig().ui.nativeFileDialogs )
-		->setTooltipText(
-			i18n( "use_native_file_dialogs_tooltip",
-				  "Try to use the OS native file dialogs if they are available." ) )
+		->setTooltipText( i18n( "use_native_file_dialogs_tooltip",
+								"Try to use the OS native file dialogs if they are available." ) )
 		->setId( "native-file-dialogs" );
+
+	mWindowMenu
+		->addCheckBox( i18n( "quick_preview_images", "Quick Preview Images" ),
+					   mApp->getConfig().ui.imagesQuickPreview )
+		->setTooltipText(
+			i18n( "quick_preview_images_tooltip",
+				  "Instead of opening a new tab to view an image uses a quick-preview." ) )
+		->setId( "quick-preview-images" );
 
 	mWindowMenu->addSeparator();
 
@@ -1325,6 +1332,10 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		} else if ( "native-file-dialogs" == item->getId() ) {
 			bool active = item->asType<UIMenuCheckBox>()->isActive();
 			mApp->getConfig().ui.nativeFileDialogs = active;
+			mApp->saveConfig();
+		} else if ( "quick-preview-images" == item->getId() ) {
+			bool active = item->asType<UIMenuCheckBox>()->isActive();
+			mApp->getConfig().ui.imagesQuickPreview = active;
 			mApp->saveConfig();
 		} else {
 			String text = String( event->getNode()->asType<UIMenuItem>()->getId() ).toLower();

@@ -204,6 +204,19 @@ UITextView* UITextView::setText( const String& text ) {
 	return this;
 }
 
+UITextView* UITextView::setText( String&& text ) {
+	if ( mString != text ) {
+		mString = std::move( text );
+		mTextCache->setString( mString );
+
+		recalculate();
+		onTextChanged();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
 const Color& UITextView::getFontColor() const {
 	return mFontStyleConfig.FontColor;
 }

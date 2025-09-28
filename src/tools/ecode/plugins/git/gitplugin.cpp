@@ -693,7 +693,7 @@ void GitPlugin::checkout( Git::Branch branch ) {
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::YES_NO, i18n( "git_create_local_branch", "Create local branch?" ) );
 		msgBox->on( Event::OnConfirm, [checkOutFn]( const Event* ) { checkOutFn( true ); } );
-		msgBox->on( Event::OnCancel, [checkOutFn]( const Event* ) { checkOutFn( false ); } );
+		msgBox->on( Event::OnDiscard, [checkOutFn]( const Event* ) { checkOutFn( false ); } );
 		msgBox->setTitle( i18n( "git_checkout", "Check Out" ) );
 		msgBox->center();
 		msgBox->showWhenReady();
@@ -912,7 +912,7 @@ void GitPlugin::commit( const std::string& repoPath ) {
 			true, true, true, true, true );
 	} );
 
-	msgBox->on( Event::OnCancel, [this, msgBox]( const Event* ) {
+	msgBox->on( Event::OnDiscard, [this, msgBox]( const Event* ) {
 		mLastCommitMsg = msgBox->getTextEdit()->getText();
 	} );
 

@@ -1092,6 +1092,11 @@ TextInput.table_cell_edit {
 	padding-bottom: 0!important;
 }
 
+ImageViewer > TextView {
+	text-stroke-width: 1dp;
+	text-stroke-color: var(--back);
+}
+
 @media (prefers-color-scheme: light) {
 
 :root {

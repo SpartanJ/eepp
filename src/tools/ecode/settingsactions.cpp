@@ -236,7 +236,7 @@ void SettingsActions::setIndentTabCharacter() {
 			msgBoxAlert->setCloseShortcut( { KEY_ESCAPE, 0 } );
 		}
 	} );
-	msgBox->on( Event::OnCancel, [this]( const Event* ) {
+	msgBox->on( Event::OnDiscard, [this]( const Event* ) {
 		String txt = String::fromUtf8( mApp->getConfig().editor.tabIndentCharacter );
 		if ( txt.size() != 1 )
 			return;

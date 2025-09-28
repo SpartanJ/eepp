@@ -291,6 +291,44 @@ Image* Image::New( IOStream& stream, const unsigned int& forceChannels,
 	return eeNew( Image, ( stream, forceChannels, formatConfiguration ) );
 }
 
+std::string Image::formatToString( Format format ) {
+	switch ( format ) {
+		case Format::JPEG:
+			return "JPEG";
+		case Format::PNG:
+			return "PNG";
+		case Format::BMP:
+			return "BMP";
+		case Format::GIF:
+			return "GIF";
+		case Format::TGA:
+			return "TGA";
+		case Format::PSD:
+			return "PSD";
+		case Format::PIC:
+			return "PIC";
+		case Format::PNM:
+			return "PNM";
+		case Format::DDS:
+			return "DDS";
+		case Format::PVR:
+			return "PVR";
+		case Format::PKM:
+			return "PKM";
+		case Format::HDR:
+			return "HDR";
+		case Format::QOI:
+			return "QOI";
+		case Format::SVG:
+			return "SVG";
+		case Format::WEBP:
+			return "WEBP";
+		case Format::Unknown:
+			break;
+	}
+	return "unknown";
+}
+
 std::string Image::saveTypeToExtension( Image::SaveType Format ) {
 	switch ( Format ) {
 		case Image::SaveType::TGA:

@@ -121,6 +121,7 @@ class EE_API Event {
 		OnBeforeFoldUnfoldRange,
 		OnFoldUnfoldRange,
 		OnResourceLoaded,
+		OnDiscard,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 

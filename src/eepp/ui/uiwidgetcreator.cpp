@@ -1,3 +1,4 @@
+#include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/tools/uitextureviewer.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
@@ -102,6 +103,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["menuseparator"] = UIMenuSeparator::New;
 		registeredWidget["anchor"] = UIAnchor::New;
 		registeredWidget["textureviewer"] = Tools::UITextureViewer::New;
+		registeredWidget["imageviewer"] = Tools::UIImageViewer::New;
 
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;

@@ -515,6 +515,19 @@ textview.dragged_cell {
 	border-radius: 4dp;
 	padding: 4dp;
 }
+ImageViewer {
+	display-options: name|pos|dimensions;
+}
+ImageViewer > TextView {
+	x: 4dp;
+	y: 24dp;
+}
+TabWidget::container > ImageViewer {
+	background-color: var(--list-back);
+}
+TabWidget::container > ImageViewer > TextView {
+	y: 4dp;
+}
 
 @media (prefers-color-scheme: light) {
 
@@ -559,9 +572,8 @@ R"html(
 				<vbox id="code_container" lw="mp" lh="mp"></vbox>
 				<TextView id="doc_info" enabled="false" />
 				<RelativeLayout id="image_container" lw="mp" lh="mp" visible="false" enabled="false">
-					<Image lw="mp" lh="mp" scaleType="fit_inside" gravity="center" enabled="false" lg="center" />
-					<TextView id="image_close" lw="wc" lh="wc" text="&#xeb99;" lg="top|right" enabled="false" />
-					<Loader id="image_loader" lw="64dp" lh="64dp" outline-thickness="6dp" lg="center" visible="false" />
+					<ImageViewer lw="mp" lh="mp" scaleType="fit_inside" gravity="center" enabled="true" lg="center" />
+					<TextView id="image_close" lw="wc" lh="wc" text="&#xeb99;" lg="top|right" enabled="true" />
 				</RelativeLayout>
 			</RelativeLayout>
 		</Splitter>

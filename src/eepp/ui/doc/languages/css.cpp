@@ -423,6 +423,7 @@ void addCSS() {
 			  { "Tooltip", "keyword" },
 			  { "Menu", "keyword" },
 			  { "PopUpMenu", "keyword" },
+			  { "ImageViewer", "keyword" },
 
 		  },
 		  "",

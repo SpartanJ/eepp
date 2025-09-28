@@ -15,6 +15,7 @@
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/ui/doc/languagessyntaxhighlighting.hpp>
 #include <eepp/ui/iconmanager.hpp>
+#include <eepp/ui/tools/uiimageviewer.hpp>
 #include <filesystem>
 #include <iostream>
 
@@ -496,7 +497,7 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool term
 					msgBox->on( Event::OnConfirm, [loadMonoFont, fontMono]( const Event* ) {
 						loadMonoFont( fontMono );
 					} );
-					msgBox->on( Event::OnCancel, [fontMono]( const Event* ) {
+					msgBox->on( Event::OnDiscard, [fontMono]( const Event* ) {
 						FontManager::instance()->remove( fontMono );
 					} );
 					msgBox->setTitle( i18n( "confirm_loading_font", "Font loading confirmation" ) );
@@ -2280,55 +2281,53 @@ void App::createDocManyLangsAlert( UICodeEditor* editor ) {
 		Seconds( 30.f ) );
 }
 
-void App::loadImageFromMedium( const std::string& path, bool isMemory ) {
-	UIImage* imageView = mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE );
-	UILoader* loaderView = mImageLayout->findByType<UILoader>( UI_TYPE_LOADER );
-	if ( imageView ) {
-		mImageLayout->setEnabled( true )->setVisible( true );
-		loaderView->setVisible( true );
-		mThreadPool->run( [this, imageView, loaderView, path, isMemory]() {
-			Image::Format format =
-				isMemory ? Image::getFormat( reinterpret_cast<const unsigned char*>( path.c_str() ),
-											 path.size() )
-						 : Image::getFormat( path );
+void App::loadImageFromMedium( const std::string& path, bool isMemory, bool forcePreview,
+							   bool forceTab ) {
+	if ( !forceTab && ( mConfig.ui.imagesQuickPreview || forcePreview ) ) {
+		UIImageViewer* imageView = mImageLayout->findByType<UIImageViewer>( UI_TYPE_IMAGE_VIEWER );
 
-			if ( format == Image::Format::Unknown )
-				return;
-
-			Drawable* image = nullptr;
-
-			if ( format != Image::Format::GIF ) {
-				image = isMemory ? TextureFactory::instance()->loadFromMemory(
-									   reinterpret_cast<const unsigned char*>( path.c_str() ),
-									   path.size() )
-								 : TextureFactory::instance()->loadFromFile( path );
-			} else {
-				IOStream* stream = isMemory
-									   ? (IOStream*)new IOStreamMemory( path.c_str(), path.size() )
-									   : (IOStream*)new IOStreamFile( path );
-				Sprite* sprite = Sprite::fromGif( *stream );
-				sprite->setAutoAnimate( false );
-				image = sprite;
-				delete stream;
-			}
-
-			if ( mImageLayout->isVisible() ) {
-				imageView->runOnMainThread( [this, imageView, loaderView, image]() {
-					mImageLayout->setFocus();
-					imageView->setDrawable( image, true );
-					loaderView->setVisible( false );
+		if ( imageView ) {
+			mImageLayout->setEnabled( true )->setVisible( true );
+			if ( !imageView->hasEventsOfType( Event::OnResourceLoaded ) ) {
+				imageView->on( Event::OnResourceLoaded, [this, imageView]( auto ) {
+					if ( mImageLayout->isVisible() ) {
+						mImageLayout->getFirstChild()->setFocus();
+					} else {
+						imageView->reset();
+					}
 				} );
-			} else {
-				eeSAFE_DELETE( image );
-				imageView->setDrawable( nullptr );
-				loaderView->setVisible( false );
 			}
-		} );
+			imageView->loadImageAsync( path, isMemory, true );
+		}
+	} else {
+		UIImageViewer* imageView = UIImageViewer::New();
+		auto [tab, iv] =
+			mSplitter->createWidget( imageView, i18n( "image_viewer", "Image Viewer" ) );
+
+		if ( imageView ) {
+			imageView->on( Event::OnResourceLoaded, [tab, imageView, this]( auto ) {
+				tab->setText( imageView->getImageName().empty()
+								  ? i18n( "image_viewer", "Image Viewer" )
+								  : String( imageView->getImageName() ) );
+				std::string path( imageView->getImagePath() );
+				tab->setTooltipText( path );
+				if ( mConfig.editor.syncProjectTreeWithEditor ) {
+					mProjectTreeView->setFocusOnSelection( false );
+					if ( !mCurrentProject.empty() && String::startsWith( path, mCurrentProject ) ) {
+						mProjectTreeView->openRowWithPath( path.substr( mCurrentProject.size() ) );
+					} else {
+						mProjectTreeView->openRowWithPath( FileSystem::fileNameFromPath( path ) );
+					}
+					mProjectTreeView->setFocusOnSelection( true );
+				}
+			} );
+			imageView->loadImageAsync( path, isMemory, true );
+		}
 	}
 }
 
 void App::loadImageFromMemory( const std::string& content ) {
-	loadImageFromMedium( content, true );
+	loadImageFromMedium( content, true, true );
 }
 
 void App::loadImageFromPath( const std::string& path ) {
@@ -2349,6 +2348,7 @@ void App::openFileFromPath( const std::string& path ) {
 		msgBox->getButtonOK()->getIcon()->setVisible( false );
 		msgBox->getButtonCancel()->setText( i18n( "open_externally", "Open externally" ) );
 		msgBox->getButtonCancel()->getIcon()->setVisible( false );
+		msgBox->setCloseShortcut( { KEY_ESCAPE } );
 		msgBox->on( Event::OnConfirm, [this, path]( auto ) { loadFileFromPath( path ); } );
 		msgBox->on( Event::OnCancel, [path]( auto ) {
 			FileInfo f( path );
@@ -3326,19 +3326,18 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 }
 
 void App::initImageView() {
-	mImageLayout->on( Event::MouseClick, [this]( const Event* ) {
-		mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE )->setDrawable( nullptr );
+	const auto hideImagePreview = [this] {
+		mImageLayout->findByType<UIImageViewer>( UI_TYPE_IMAGE_VIEWER )->reset();
 		mImageLayout->setEnabled( false )->setVisible( false );
 		if ( mSplitter->getCurWidget() )
 			mSplitter->getCurWidget()->setFocus();
+	};
+	mImageLayout->find( "image_close" )->on( Event::MouseClick, [hideImagePreview]( auto ) {
+		hideImagePreview();
 	} );
-	mImageLayout->on( Event::KeyDown, [this]( const Event* event ) {
-		if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE ) {
-			mImageLayout->findByType<UIImage>( UI_TYPE_IMAGE )->setDrawable( nullptr );
-			mImageLayout->setEnabled( false )->setVisible( false );
-			if ( mSplitter->getCurWidget() )
-				mSplitter->getCurWidget()->setFocus();
-		}
+	mImageLayout->on( Event::KeyDown, [hideImagePreview]( const Event* event ) {
+		if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE )
+			hideImagePreview();
 	} );
 }
 
@@ -4064,7 +4063,7 @@ void App::init( InitParameters& params ) {
 													onFileDropped( file, true );
 											}
 										} );
-							msgBox->on( Event::OnCancel,
+							msgBox->on( Event::OnDiscard,
 										[this, pathsToLoad = mPathsToLoad]( const Event* ) {
 											for ( const auto& file : pathsToLoad ) {
 												if ( !FileSystem::isDirectory( file ) &&

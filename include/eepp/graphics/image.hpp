@@ -43,6 +43,8 @@ class EE_API Image {
 		WEBP = 15,
 	};
 
+	static std::string formatToString( Format format );
+
 	/** @enum PixelFormat Format Pixel formats to write into a texture image. */
 	enum PixelFormat {
 		PIXEL_FORMAT_RED,

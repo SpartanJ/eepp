@@ -49,6 +49,8 @@ class EE_API UITextView : public UIWidget {
 
 	virtual UITextView* setText( const String& text );
 
+	virtual UITextView* setText( String&& text );
+
 	const Color& getFontColor() const;
 
 	UITextView* setFontColor( const Color& color );

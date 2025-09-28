@@ -136,6 +136,12 @@ class PluginContextProvider {
 	virtual bool isDirTreeReady() const = 0;
 
 	virtual bool pluginsDisabled() const = 0;
+
+	virtual void loadImageFromMedium( const std::string& path, bool isMemory,
+
+									  bool forcePreview = false, bool forceTab = false ) = 0;
+
+	virtual void loadImageFromPath( const std::string& path ) = 0;
 };
 
 } // namespace ecode

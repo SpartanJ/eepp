@@ -504,7 +504,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void setTheme( const std::string& path );
 
-	void loadImageFromMedium( const std::string& path, bool isMemory );
+	void loadImageFromMedium( const std::string& path, bool isMemory, bool forcePreview = false, bool forceTab = false );
 
 	void loadImageFromPath( const std::string& path );
 

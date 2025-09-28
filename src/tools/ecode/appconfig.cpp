@@ -7,6 +7,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
 #include <nlohmann/json.hpp>
@@ -125,6 +126,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	ui.openFilesInNewWindow = ini.getValueB( "ui", "open_files_in_new_window", false );
 	ui.openProjectInNewWindow = ini.getValueB( "ui", "open_project_in_new_window", false );
 	ui.nativeFileDialogs = ini.getValueB( "ui", "native_file_dialogs", false );
+	ui.imagesQuickPreview = ini.getValueB( "ui", "images_quick_preview", false );
 	ui.panelPosition = panelPositionFromString( ini.getValue( "ui", "panel_position", "left" ) );
 	ui.serifFont = ini.getValue( "ui", "serif_font", "fonts/NotoSans-Regular.ttf" );
 	ui.monospaceFont = ini.getValue( "ui", "monospace_font", "fonts/DejaVuSansMono.ttf" );
@@ -309,6 +311,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "ui", "open_files_in_new_window", ui.openFilesInNewWindow );
 	ini.setValueB( "ui", "open_project_in_new_window", ui.openProjectInNewWindow );
 	ini.setValueB( "ui", "native_file_dialogs", ui.nativeFileDialogs );
+	ini.setValueB( "ui", "images_quick_preview", ui.imagesQuickPreview );
 	ini.setValue( "ui", "panel_position", panelPositionToString( ui.panelPosition ) );
 	ini.setValue( "ui", "serif_font", ui.serifFont );
 	ini.setValue( "ui", "monospace_font", ui.monospaceFont );
@@ -473,6 +476,14 @@ json AppConfig::saveNode( Node* node ) {
 				f["type"] = "terminal";
 				if ( term->isUsingCustomTitle() )
 					f["title"] = term->getTitle();
+				files.emplace_back( f );
+			} else if ( ownedWidget->isType( UI_TYPE_IMAGE_VIEWER ) ) {
+				UIImageViewer* iv = ownedWidget->asType<UIImageViewer>();
+				if ( iv->getImagePath().empty() )
+					continue;
+				json f;
+				f["type"] = "image_viewer";
+				f["path"] = iv->getImagePath();
 				files.emplace_back( f );
 			} else if ( node->isWidget() ) {
 				UIWidget* widget = ownedWidget->asType<UIWidget>();
@@ -727,6 +738,9 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 				if ( curTabWidget->getTabCount() == totalToLoad )
 					curTabWidget->setTabSelected(
 						eeclamp<Int32>( currentPage, 0, curTabWidget->getTabCount() - 1 ) );
+			} else if ( file["type"] == "image_viewer" ) {
+				if ( file.contains( "path" ) && file["path"].is_string() )
+					app->loadImageFromMedium( file["path"].get<std::string>(), false, false, true );
 			} else {
 				auto found = tabWidgetTypes.find( file["type"] );
 				if ( found != tabWidgetTypes.end() ) {
