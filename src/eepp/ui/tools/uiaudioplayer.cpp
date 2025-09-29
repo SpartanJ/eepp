@@ -4,8 +4,6 @@
 #include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 
-#include <format>
-
 namespace EE::UI::Tools {
 
 static const auto AUDIO_PLAYER_LAYOUT = R"xml(
@@ -74,12 +72,15 @@ static const auto AUDIO_PLAYER_LAYOUT = R"xml(
 </hbox>
 	)xml";
 
+static std::string formatSingleTime( const Time& t ) {
+	long totalSeconds = static_cast<long>( t.asSeconds() );
+	long minutes = totalSeconds / 60;
+	long seconds = totalSeconds % 60;
+	return String::format( "%ld:%02ld", minutes, seconds );
+}
+
 static std::string toTimeString( const Time& t, const Time& t2 ) {
-	auto formatTime = []( const Time& time ) {
-		long totalSeconds = static_cast<long>( time.asSeconds() );
-		return std::format( "{}:{:02}", totalSeconds / 60, totalSeconds % 60 );
-	};
-	return std::format( "{} / {}", formatTime( t ), formatTime( t2 ) );
+	return String::format( "%s / %s", formatSingleTime( t ), formatSingleTime( t2 ) );
 }
 
 UIAudioPlayer* UIAudioPlayer::New() {
