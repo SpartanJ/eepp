@@ -6,54 +6,48 @@
 
 namespace EE { namespace UI {
 
-class UIProgressBarFiller : public UIWidget {
-  public:
-	static UIProgressBarFiller* New( UIProgressBar* parent ) {
-		return eeNew( UIProgressBarFiller, ( parent ) );
-	}
+UIProgressBarFiller* UIProgressBarFiller::New( UIProgressBar* parent ) {
+	return eeNew( UIProgressBarFiller, ( parent ) );
+}
 
-	UIProgressBarFiller( UIProgressBar* parent ) :
-		UIWidget( "progressbar::filler" ), mProgressBar( NULL ), mFillerSkin( NULL ) {
-		setParent( parent );
-		mProgressBar = parent;
-	}
+UIProgressBarFiller::UIProgressBarFiller( UIProgressBar* parent ) :
+	UIWidget( "progressbar::filler" ), mProgressBar( NULL ), mFillerSkin( NULL ) {
+	setParent( parent );
+	mProgressBar = parent;
+}
 
-	void draw() override {
-		UIWidget::draw();
+void UIProgressBarFiller::draw() {
+	UIWidget::draw();
 
-		if ( NULL == mFillerSkin )
-			return;
+	if ( NULL == mFillerSkin )
+		return;
 
-		Sizef fSize( mSize );
+	Sizef fSize( mSize );
 
-		if ( !mProgressBar->getStyleConfig().VerticalExpand )
-			fSize.y = (Float)mFillerSkin->getSize().getHeight();
+	if ( !mProgressBar->getStyleConfig().VerticalExpand )
+		fSize.y = (Float)mFillerSkin->getSize().getHeight();
 
-		if ( fSize.y > mSize.getHeight() )
-			fSize.y = mSize.getHeight();
+	if ( fSize.y > mSize.getHeight() )
+		fSize.y = mSize.getHeight();
 
-		Sizei rSize( PixelDensity::dpToPxI( mFillerSkin->getSize() ) );
-		Sizei numTiles( (Int32)eeceil( (Float)fSize.getWidth() / (Float)rSize.getWidth() + 2 ),
-						(Int32)eeceil( (Float)fSize.getHeight() / (Float)rSize.getHeight() ) + 2 );
+	Sizei rSize( PixelDensity::dpToPxI( mFillerSkin->getSize() ) );
+	Sizei numTiles( (Int32)eeceil( (Float)fSize.getWidth() / (Float)rSize.getWidth() + 2 ),
+					(Int32)eeceil( (Float)fSize.getHeight() / (Float)rSize.getHeight() ) + 2 );
 
-		clipSmartEnable( mScreenPos.x, mScreenPos.y, fSize.getWidth(), fSize.getHeight() );
+	clipSmartEnable( mScreenPos.x, mScreenPos.y, fSize.getWidth(), fSize.getHeight() );
 
-		Vector2f offset( mProgressBar->mOffset );
+	Vector2f offset( mProgressBar->mOffset );
 
-		for ( int y = -1; y < numTiles.y; y++ ) {
-			for ( int x = -1; x < numTiles.x; x++ ) {
-				mFillerSkin->draw( Vector2f( (Int32)offset.x + mScreenPosi.x + x * rSize.getWidth(),
-											 offset.y + mScreenPosi.y + y * rSize.getHeight() ),
-								   Sizef( rSize.getWidth(), rSize.getHeight() ) );
-			}
+	for ( int y = -1; y < numTiles.y; y++ ) {
+		for ( int x = -1; x < numTiles.x; x++ ) {
+			mFillerSkin->draw( Vector2f( (Int32)offset.x + mScreenPosi.x + x * rSize.getWidth(),
+										 offset.y + mScreenPosi.y + y * rSize.getHeight() ),
+							   Sizef( rSize.getWidth(), rSize.getHeight() ) );
 		}
-
-		clipSmartDisable();
 	}
 
-	UIProgressBar* mProgressBar;
-	UISkin* mFillerSkin;
-};
+	clipSmartDisable();
+}
 
 UIProgressBar* UIProgressBar::New() {
 	return eeNew( UIProgressBar, () );
@@ -290,6 +284,10 @@ void UIProgressBar::onAlphaChange() {
 	UINode::onAlphaChange();
 
 	mTextBox->setAlpha( mAlpha );
+}
+
+UIProgressBarFiller* UIProgressBar::getFiller() const {
+	return mFiller;
 }
 
 }} // namespace EE::UI

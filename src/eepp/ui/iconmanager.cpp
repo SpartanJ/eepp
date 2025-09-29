@@ -93,6 +93,10 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 			{ "filetype-pic", 0xF3C5 },
 			{ "filetype-pvr", 0xF3C5 },
 			{ "filetype-pkm", 0xF3C5 },
+			{ "filetype-mp3", 0xEF83 },
+			{ "filetype-ogg", 0xEF83 },
+			{ "filetype-wav", 0xEF83 },
+			{ "filetype-flac", 0xEF83 },
 			{ "settings", 0xF0E3 },
 			{ "stop", 0xF1A0 },
 			{ "text-wrap", 0xF200 },
@@ -284,7 +288,8 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 			{ "eye", 0xea70 },
 			{ "eye-closed", 0xeae7 },
 			{ "settings-alt", 0xeb52 },
-			{ "attach", 0xec34 } };
+			{ "attach", 0xec34 },
+		};
 
 		for ( const auto& icon : codIcons )
 			iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );

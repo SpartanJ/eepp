@@ -20,6 +20,8 @@ class SoundFileReaderOgg : public SoundFileReader {
 	////////////////////////////////////////////////////////////
 	static bool check( IOStream& stream );
 
+	static bool usesFileExtension( std::string_view ext );
+
   public:
 	SoundFileReaderOgg();
 

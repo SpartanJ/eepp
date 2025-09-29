@@ -272,10 +272,14 @@ static String ptrGetLine( char* data, const size_t& size, size_t& position,
 	switch ( enc ) {
 		case TextFormat::Encoding::UTF16LE: {
 			searchSubstr( data, size, position, LE_END_LF, LE_END_CR, codepointSize( enc ) );
+			if ( position == size )
+				return "";
 			return String::fromUtf16( data, position, false );
 		}
 		case TextFormat::Encoding::UTF16BE: {
 			searchSubstr( data, size, position, BE_END_LF, BE_END_CR, codepointSize( enc ) );
+			if ( position == size )
+				return "";
 			return String::fromUtf16( data, position, true );
 		}
 		case TextFormat::Encoding::UTF8:
@@ -374,6 +378,8 @@ TextDocument::LoadStatus TextDocument::loadFromStream( IOStream& file, std::stri
 				bufferPtr += position;
 				consume -= position;
 				size_t lineBufferSize = lineBuffer.size();
+				if ( lineBufferSize == 0 )
+					break;
 				char lastChar = lineBuffer[lineBufferSize - 1];
 
 				if ( lastChar == '\n' || lastChar == '\r' ) {

@@ -528,6 +528,9 @@ TabWidget::container > ImageViewer {
 TabWidget::container > ImageViewer > TextView {
 	y: 4dp;
 }
+.audio_player {
+	layout-width: 300dp;
+}
 
 @media (prefers-color-scheme: light) {
 

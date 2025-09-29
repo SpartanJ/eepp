@@ -34,8 +34,6 @@ class EE_API UIImageViewer : public UIWidget {
 
 	static UIImageViewer* New();
 
-	UIImageViewer();
-
 	virtual ~UIImageViewer();
 
 	virtual Uint32 getType() const override;
@@ -96,6 +94,8 @@ class EE_API UIImageViewer : public UIWidget {
 	Int64 mCurFileSize{ 0 };
 	Image::Format mCurFileType;
 	Uint32 mDisplayOptions{ 0 };
+
+	UIImageViewer();
 
 	virtual void onSizeChange() override;
 

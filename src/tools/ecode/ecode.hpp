@@ -510,6 +510,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void loadImageFromMemory( const std::string& content );
 
+	void loadAudioFromPath( const std::string& path, bool autoPlay = true );
+
 	void createAndShowRecentFolderPopUpMenu( Node* recentFoldersBut );
 
 	void createAndShowRecentFilesPopUpMenu( Node* recentFilesBut );

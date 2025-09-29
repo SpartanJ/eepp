@@ -31,7 +31,7 @@ long tell( void* data ) {
 	return static_cast<long>( stream->tell() );
 }
 
-static ov_callbacks callbacks = {&read, &seek, NULL, &tell};
+static ov_callbacks callbacks = { &read, &seek, NULL, &tell };
 } // namespace
 
 namespace EE { namespace Audio { namespace Private {
@@ -41,9 +41,12 @@ bool SoundFileReaderOgg::check( IOStream& stream ) {
 	if ( ov_test_callbacks( &stream, &file, NULL, 0, callbacks ) == 0 ) {
 		ov_clear( &file );
 		return true;
-	} else {
-		return false;
 	}
+	return false;
+}
+
+bool SoundFileReaderOgg::usesFileExtension( std::string_view ext ) {
+	return "ogg" == ext;
 }
 
 SoundFileReaderOgg::SoundFileReaderOgg() : mVorbis(), mChannelCount( 0 ) {

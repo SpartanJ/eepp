@@ -814,7 +814,7 @@ function build_eepp( build_name )
 		files { "src/eepp/network/platform/unix/*.cpp" }
 
 	filter "options:not without-mojoal"
-		defines( "AL_LIBTYPE_STATIC" )
+		defines { "AL_LIBTYPE_STATIC", "EE_MOJOAL" }
 		incdirs { "src/thirdparty/mojoAL" }
 
 	filter "options:windows-vc-build"
@@ -1159,7 +1159,7 @@ workspace "eepp"
 		kind "StaticLib"
 		language "C"
 		incdirs { "include/eepp/thirdparty/mojoAL" }
-		defines( "AL_LIBTYPE_STATIC" )
+		defines { "AL_LIBTYPE_STATIC", "EE_MOJOAL" }
 		files { "src/thirdparty/mojoAL/*.c" }
 		build_base_cpp_configuration( "mojoal" )
 		target_dir_thirdparty()

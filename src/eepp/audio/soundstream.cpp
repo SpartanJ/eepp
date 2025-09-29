@@ -165,9 +165,9 @@ Time SoundStream::getPlayingOffset() const {
 	if ( mSampleRate && mChannelCount ) {
 		ALfloat secs = 0.f;
 		alCheck( alGetSourcef( mSource, AL_SEC_OFFSET, &secs ) );
-
-		return Seconds( secs +
-						static_cast<float>( mSamplesProcessed ) / mSampleRate / mChannelCount );
+		float time = static_cast<float>( mSamplesProcessed ) / static_cast<float>( mSampleRate ) /
+					 static_cast<float>( mChannelCount );
+		return Seconds( secs + time );
 	} else {
 		return Time::Zero;
 	}
@@ -262,7 +262,17 @@ void SoundStream::streamData() {
 			} else {
 				ALint size, bits;
 				alCheck( alGetBufferi( buffer, AL_SIZE, &size ) );
+
+#ifdef EE_MOJOAL
+				// IMPORTANT! mojoAL is *LYING* about buffer bitness, because it reports the one
+				// passed to alBufferData, but internally always works with Float32; therefore
+				// final samples found in the buffer are in float32!
+				// Reference:
+				// https://github.com/adventuregamestudio/ags/commit/48542c69960c6bbd418d50937b836313819b55eb#diff-c776bdf2d0b75ff838097e0c28a1307484ce91bb2b23d1b23ddd54888d49589eR51-R67
+				bits = sizeof( ALfloat ) * 8;
+#else
 				alCheck( alGetBufferi( buffer, AL_BITS, &bits ) );
+#endif
 
 				// Bits can be 0 if the format or parameters are corrupt, avoid division by zero
 				if ( bits == 0 ) {
@@ -310,7 +320,7 @@ bool SoundStream::fillAndPushBuffer( unsigned int bufferNum, bool immediateLoop 
 	bool requestStop = false;
 
 	// Acquire audio data, also address EOF and error cases if they occur
-	Chunk data = {NULL, 0};
+	Chunk data = { NULL, 0 };
 	for ( Uint32 retryCount = 0; !onGetData( data ) && ( retryCount < BufferRetries );
 		  ++retryCount ) {
 		// Check if the stream must loop or stop

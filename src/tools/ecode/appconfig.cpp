@@ -7,6 +7,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/tools/uiaudioplayer.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
@@ -485,6 +486,14 @@ json AppConfig::saveNode( Node* node ) {
 				f["type"] = "image_viewer";
 				f["path"] = iv->getImagePath();
 				files.emplace_back( f );
+			} else if ( ownedWidget->isType( UI_TYPE_AUDIO_PLAYER ) ) {
+				UIAudioPlayer* ap = ownedWidget->asType<UIAudioPlayer>();
+				if ( ap->getFilePath().empty() )
+					continue;
+				json f;
+				f["type"] = "audio_player";
+				f["path"] = ap->getFilePath();
+				files.emplace_back( f );
 			} else if ( node->isWidget() ) {
 				UIWidget* widget = ownedWidget->asType<UIWidget>();
 				if ( widget->getClasses().size() == 1 ) {
@@ -741,6 +750,9 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 			} else if ( file["type"] == "image_viewer" ) {
 				if ( file.contains( "path" ) && file["path"].is_string() )
 					app->loadImageFromMedium( file["path"].get<std::string>(), false, false, true );
+			} else if ( file["type"] == "audio_player" ) {
+				if ( file.contains( "path" ) && file["path"].is_string() )
+					app->loadAudioFromPath( file["path"].get<std::string>(), false );
 			} else {
 				auto found = tabWidgetTypes.find( file["type"] );
 				if ( found != tabWidgetTypes.end() ) {

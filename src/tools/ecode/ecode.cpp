@@ -15,6 +15,7 @@
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/ui/doc/languagessyntaxhighlighting.hpp>
 #include <eepp/ui/iconmanager.hpp>
+#include <eepp/ui/tools/uiaudioplayer.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <filesystem>
 #include <iostream>
@@ -888,26 +889,28 @@ void App::onFileDropped( std::string file, bool openBinaryAsDocument ) {
 	if ( !node )
 		node = widget;
 
-	bool willLoadAnImage =
-		Image::isImageExtension( file ) && FileSystem::fileExtension( file ) != "svg";
+	bool doesntNeedEmptyEditor =
+		( Image::isImageExtension( file ) && FileSystem::fileExtension( file ) != "svg" ) ||
+		SoundFileFactory::isKnownFileExtension( file );
 	if ( node && node->isType( UI_TYPE_CODEEDITOR ) ) {
 		codeEditor = node->asType<UICodeEditor>();
 		if ( ( codeEditor->getDocument().isLoading() || codeEditor->getDocument().hasFilepath() ||
 			   !codeEditor->getDocument().isEmpty() ) &&
-			 !willLoadAnImage ) {
+			 !doesntNeedEmptyEditor ) {
 			auto d = mSplitter->createCodeEditorInTabWidget(
 				mSplitter->tabWidgetFromEditor( codeEditor ) );
 			codeEditor = d.second;
 			tab = d.first;
 		}
 	} else if ( widget && widget->isType( UI_TYPE_TERMINAL ) ) {
-		if ( !Image::isImageExtension( file ) && !willLoadAnImage ) {
+		if ( !Image::isImageExtension( file ) && !SoundFileFactory::isKnownFileExtension( file ) &&
+			 !doesntNeedEmptyEditor ) {
 			auto d =
 				mSplitter->createCodeEditorInTabWidget( mSplitter->tabWidgetFromWidget( widget ) );
 			codeEditor = d.second;
 			tab = d.first;
 		}
-	} else if ( !willLoadAnImage ) {
+	} else if ( !doesntNeedEmptyEditor ) {
 		auto d = mSplitter->createEditorInNewTab();
 		codeEditor = d.second;
 		tab = d.first;
@@ -2283,6 +2286,9 @@ void App::createDocManyLangsAlert( UICodeEditor* editor ) {
 
 void App::loadImageFromMedium( const std::string& path, bool isMemory, bool forcePreview,
 							   bool forceTab ) {
+	if ( !FileSystem::fileExists( path ) || !Image::isImage( path ) )
+		return;
+
 	if ( !forceTab && ( mConfig.ui.imagesQuickPreview || forcePreview ) ) {
 		UIImageViewer* imageView = mImageLayout->findByType<UIImageViewer>( UI_TYPE_IMAGE_VIEWER );
 
@@ -2304,25 +2310,26 @@ void App::loadImageFromMedium( const std::string& path, bool isMemory, bool forc
 		auto [tab, iv] =
 			mSplitter->createWidget( imageView, i18n( "image_viewer", "Image Viewer" ) );
 
-		if ( imageView ) {
-			imageView->on( Event::OnResourceLoaded, [tab, imageView, this]( auto ) {
-				tab->setText( imageView->getImageName().empty()
-								  ? i18n( "image_viewer", "Image Viewer" )
-								  : String( imageView->getImageName() ) );
-				std::string path( imageView->getImagePath() );
-				tab->setTooltipText( path );
-				if ( mConfig.editor.syncProjectTreeWithEditor ) {
-					mProjectTreeView->setFocusOnSelection( false );
-					if ( !mCurrentProject.empty() && String::startsWith( path, mCurrentProject ) ) {
-						mProjectTreeView->openRowWithPath( path.substr( mCurrentProject.size() ) );
-					} else {
-						mProjectTreeView->openRowWithPath( FileSystem::fileNameFromPath( path ) );
-					}
-					mProjectTreeView->setFocusOnSelection( true );
+		imageView->on( Event::OnResourceLoaded, [tab, imageView, this]( auto ) {
+			tab->setText( imageView->getImageName().empty() ? i18n( "image_viewer", "Image Viewer" )
+															: String( imageView->getImageName() ) );
+			std::string path( imageView->getImagePath() );
+			std::string ext( FileSystem::fileExtension( path ) );
+			String::toLowerInPlace( ext );
+			tab->setTooltipText( path );
+			auto icon = findIcon( "filetype-" + ext );
+			tab->setIcon( icon ? icon : findIcon( "file" ) );
+			if ( mConfig.editor.syncProjectTreeWithEditor ) {
+				mProjectTreeView->setFocusOnSelection( false );
+				if ( !mCurrentProject.empty() && String::startsWith( path, mCurrentProject ) ) {
+					mProjectTreeView->openRowWithPath( path.substr( mCurrentProject.size() ) );
+				} else {
+					mProjectTreeView->openRowWithPath( FileSystem::fileNameFromPath( path ) );
 				}
-			} );
-			imageView->loadImageAsync( path, isMemory, true );
-		}
+				mProjectTreeView->setFocusOnSelection( true );
+			}
+		} );
+		imageView->loadImageAsync( path, isMemory, true );
 	}
 }
 
@@ -2334,10 +2341,23 @@ void App::loadImageFromPath( const std::string& path ) {
 	loadImageFromMedium( path, false );
 }
 
+void App::loadAudioFromPath( const std::string& path, bool autoPlay ) {
+	if ( !SoundFileFactory::isValidAudioFile( path ) )
+		return;
+	UIAudioPlayer* audioPlayer = UIAudioPlayer::New();
+	auto [tab, iv] = mSplitter->createWidget( audioPlayer, i18n( "audio_player", "Audio Player" ) );
+	tab->setText( FileSystem::fileNameFromPath( path ) )->setTooltipText( path );
+	std::string ext( FileSystem::fileExtension( path ) );
+	String::toLowerInPlace( ext );
+	auto icon = findIcon( "filetype-" + ext );
+	tab->setIcon( icon ? icon : findIcon( "file" ) );
+	audioPlayer->loadFromPath( path, autoPlay );
+}
+
 void App::openFileFromPath( const std::string& path ) {
 	std::string ext = FileSystem::fileExtension( path );
-	if ( !Image::isImageExtension( path ) && !PathHelper::isOpenExternalExtension( ext ) &&
-		 TextDocument::fileMightBeBinary( path ) ) {
+	if ( !Image::isImageExtension( path ) && !SoundFileFactory::isKnownFileExtension( path ) &&
+		 !PathHelper::isOpenExternalExtension( ext ) && TextDocument::fileMightBeBinary( path ) ) {
 		auto msgBox = UIMessageBox::New(
 			UIMessageBox::YES_NO,
 			i18n( "open_binary_file_warning",
@@ -2382,6 +2402,9 @@ bool App::loadFileFromPath(
 
 	if ( Image::isImageExtension( path ) && Image::isImage( path ) && ext != "svg" ) {
 		loadImageFromPath( path );
+	} else if ( SoundFileFactory::isKnownFileExtension( path ) &&
+				SoundFileFactory::isValidAudioFile( path ) ) {
+		loadAudioFromPath( path );
 	} else if ( !openBinaryAsDocument && PathHelper::isOpenExternalExtension( ext ) ) {
 		Engine::instance()->openURI( path );
 	} else {
@@ -3307,6 +3330,20 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 					loadFileFromPath( path, false, nullptr, onLoaded );
 				}
 
+				// If we opened a new tab and the first tab is simply empty, discard it
+				if ( mSplitter->getTabWidgets().size() == 1 &&
+					 mSplitter->getTabWidgets()[0]->getTabCount() == 2 &&
+					 mSplitter->getTabWidgets()[0]->getTab( 0 ) ) {
+					auto tab = mSplitter->getTabWidgets()[0]->getTab( 0 );
+					if ( tab && tab->getOwnedWidget() &&
+						 tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+						auto editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+						if ( editor->hasDocument() && editor->getDocument().isEmpty() ) {
+							mSplitter->getTabWidgets()[0]->removeTab( tab );
+						}
+					}
+				}
+
 				mSettings->updateProjectSettingsMenu();
 			}
 		}
@@ -4037,6 +4074,7 @@ void App::init( InitParameters& params ) {
 						for ( const auto& file : mPathsToLoad ) {
 							if ( !FileSystem::isDirectory( file ) &&
 								 !Image::isImageExtension( file ) &&
+								 !SoundFileFactory::isKnownFileExtension( file ) &&
 								 ( TextDocument::fileMightBeBinary( file ) ||
 								   PathHelper::isOpenExternalExtension(
 									   FileSystem::fileExtension( file ) ) ) ) {

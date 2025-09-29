@@ -359,6 +359,7 @@ void DebuggerPlugin::closeProject() {
 		sdc->getUIStack()->setModel( nullptr );
 		sdc->getUIThreads()->setModel( nullptr );
 		sdc->getUIVariables()->setModel( nullptr );
+		sdc->getUIVariables()->clearViewMetadata();
 	}
 }
 

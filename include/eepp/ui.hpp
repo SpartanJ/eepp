@@ -73,9 +73,11 @@
 #include <eepp/ui/doc/textdocument.hpp>
 
 #include <eepp/ui/tools/textureatlaseditor.hpp>
+#include <eepp/ui/tools/uiaudioplayer.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/tools/uicolorpicker.hpp>
 #include <eepp/ui/tools/uidocfindreplace.hpp>
+#include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
 
 #include <eepp/ui/models/csspropertiesmodel.hpp>

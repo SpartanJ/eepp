@@ -960,7 +960,7 @@ function build_eepp( build_name )
 	defines { "PCRE2_STATIC", "PCRE2_CODE_UNIT_WIDTH=8", "ONIG_STATIC" }
 
 	if not _OPTIONS["without-mojoal"] then
-		defines( "AL_LIBTYPE_STATIC" )
+		defines { "AL_LIBTYPE_STATIC", "EE_MOJOAL" }
 		includedirs { "src/thirdparty/mojoAL" }
 	end
 
@@ -1291,7 +1291,7 @@ solution "eepp"
 		project "mojoal-static"
 			kind "StaticLib"
 			language "C"
-			defines( "AL_LIBTYPE_STATIC" )
+			defines {"AL_LIBTYPE_STATIC", "EE_MOJOAL" }
 			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 			includedirs { "include/eepp/thirdparty/mojoAL" }
 			files { "src/thirdparty/mojoAL/*.c" }

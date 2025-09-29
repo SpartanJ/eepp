@@ -7,7 +7,19 @@
 
 namespace EE { namespace UI {
 
-class UIProgressBarFiller;
+class UIProgressBar;
+
+class EE_API UIProgressBarFiller : public UIWidget {
+  public:
+	static UIProgressBarFiller* New( UIProgressBar* parent );
+
+	UIProgressBarFiller( UIProgressBar* parent );
+
+	void draw() override;
+
+	UIProgressBar* mProgressBar;
+	UISkin* mFillerSkin;
+};
 
 class EE_API UIProgressBar : public UIWidget {
   public:
@@ -62,6 +74,8 @@ class EE_API UIProgressBar : public UIWidget {
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
 	const StyleConfig& getStyleConfig() const;
+
+	UIProgressBarFiller* getFiller() const;
 
   protected:
 	friend class UIProgressBarFiller;

@@ -1,9 +1,10 @@
-#include <eepp/audio/soundfilereadermp3.hpp>
-#define DR_MP3_IMPLEMENTATION
-#include <dr_libs/dr_mp3.h>
 #include <eepp/audio/mp3info.hpp>
+#include <eepp/audio/soundfilereadermp3.hpp>
 #include <eepp/core/core.hpp>
 #include <eepp/system/iostreammemory.hpp>
+
+#define DR_MP3_IMPLEMENTATION
+#include <dr_libs/dr_mp3.h>
 
 static size_t drmp3_func_read( void* data, void* ptr, size_t size ) {
 	IOStream* stream = static_cast<IOStream*>( data );
@@ -13,20 +14,35 @@ static size_t drmp3_func_read( void* data, void* ptr, size_t size ) {
 static drmp3_bool32 drmp3_func_seek( void* data, int offset, drmp3_seek_origin whence ) {
 	IOStream* stream = static_cast<IOStream*>( data );
 	switch ( whence ) {
-		case drmp3_seek_origin_start:
+		case DRMP3_SEEK_SET:
 			break;
-		case drmp3_seek_origin_current:
+		case DRMP3_SEEK_CUR:
 			offset += stream->tell();
+			break;
+		case DRMP3_SEEK_END:
+			offset = stream->getSize();
 			break;
 	}
 	stream->seek( offset );
 	return 1;
 }
 
+static drmp3_bool32 drmp3_func_tell( void* data, drmp3_int64* pCursor ) {
+	IOStream* stream = static_cast<IOStream*>( data );
+	*pCursor = stream->tell();
+	return DRMP3_TRUE;
+}
+
+static void drmp3_func_onmeta( void* pUserData, const drmp3_metadata* pMetadata ) {}
+
 namespace EE { namespace Audio { namespace Private {
 
 bool SoundFileReaderMp3::check( IOStream& stream ) {
 	return Mp3Info( stream ).isValidMp3();
+}
+
+bool SoundFileReaderMp3::usesFileExtension( std::string_view ext ) {
+	return ext == "mp3";
 }
 
 SoundFileReaderMp3::SoundFileReaderMp3() : mChannelCount( 0 ), mMp3( NULL ) {}
@@ -37,15 +53,14 @@ SoundFileReaderMp3::~SoundFileReaderMp3() {
 
 bool SoundFileReaderMp3::open( IOStream& stream, Info& info ) {
 	mMp3 = (drmp3*)eeMalloc( sizeof( drmp3 ) );
-	// This could be solved with drmp3_get_mp3_frame_count, but our implementation is faster.
-	Mp3Info::Info mp3info = Mp3Info( stream ).getInfo();
 
 	stream.seek( 0 );
 
-	if ( drmp3_init( mMp3, drmp3_func_read, drmp3_func_seek, &stream, NULL ) ) {
+	if ( drmp3_init( mMp3, drmp3_func_read, drmp3_func_seek, drmp3_func_tell, drmp3_func_onmeta,
+					 &stream, NULL ) ) {
 		info.channelCount = mChannelCount = mMp3->channels;
 		info.sampleRate = mMp3->sampleRate;
-		info.sampleCount = mp3info.frames * DRMP3_MAX_SAMPLES_PER_FRAME;
+		info.sampleCount = drmp3_get_pcm_frame_count( mMp3 ) * mMp3->channels;
 		return true;
 	}
 

@@ -2,6 +2,7 @@
 #include <eepp/audio/audiodevice.hpp>
 #include <eepp/audio/listener.hpp>
 #include <eepp/core/core.hpp>
+#include <eepp/system/clock.hpp>
 #include <eepp/system/log.hpp>
 #include <memory>
 
@@ -24,20 +25,25 @@ AudioDevice* AudioDevice::New() {
 }
 
 AudioDevice::AudioDevice() {
+	Clock c;
+
 	// Create the device
 	audioDevice = alcOpenDevice( NULL );
+	Log::debug( "alcOpenDevice took: %s", c.getElapsedTimeAndReset().toString() );
 
 	if ( audioDevice ) {
 		// Create the context
 		audioContext = alcCreateContext( audioDevice, NULL );
+		Log::debug( "alcCreateContext took: %s", c.getElapsedTimeAndReset().toString() );
 
 		if ( audioContext ) {
 			// Set the context as the current one (we'll only need one)
 			alcMakeContextCurrent( audioContext );
+			Log::debug( "alcMakeContextCurrent took: %s", c.getElapsedTimeAndReset().toString() );
 
 			// Apply the listener properties the user might have set
-			float orientation[] = {listenerDirection.x, listenerDirection.y, listenerDirection.z,
-								   listenerUpVector.x,	listenerUpVector.y,	 listenerUpVector.z};
+			float orientation[] = { listenerDirection.x, listenerDirection.y, listenerDirection.z,
+									listenerUpVector.x,	 listenerUpVector.y,  listenerUpVector.z };
 			alCheck( alListenerf( AL_GAIN, listenerVolume * 0.01f ) );
 			alCheck( alListener3f( AL_POSITION, listenerPosition.x, listenerPosition.y,
 								   listenerPosition.z ) );
@@ -150,8 +156,8 @@ Vector3f AudioDevice::getPosition() {
 
 void AudioDevice::setDirection( const Vector3f& direction ) {
 	if ( audioContext ) {
-		float orientation[] = {direction.x,		   direction.y,		   direction.z,
-							   listenerUpVector.x, listenerUpVector.y, listenerUpVector.z};
+		float orientation[] = { direction.x,		direction.y,		direction.z,
+								listenerUpVector.x, listenerUpVector.y, listenerUpVector.z };
 		alCheck( alListenerfv( AL_ORIENTATION, orientation ) );
 	}
 
@@ -164,8 +170,8 @@ Vector3f AudioDevice::getDirection() {
 
 void AudioDevice::setUpVector( const Vector3f& upVector ) {
 	if ( audioContext ) {
-		float orientation[] = {listenerDirection.x, listenerDirection.y, listenerDirection.z,
-							   upVector.x,			upVector.y,			 upVector.z};
+		float orientation[] = { listenerDirection.x, listenerDirection.y, listenerDirection.z,
+								upVector.x,			 upVector.y,		  upVector.z };
 		alCheck( alListenerfv( AL_ORIENTATION, orientation ) );
 	}
 

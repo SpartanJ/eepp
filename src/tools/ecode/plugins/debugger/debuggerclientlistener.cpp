@@ -494,6 +494,7 @@ void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&&
 		return;
 	auto uiVars = sdc->getUIVariables();
 	if ( uiVars ) {
+		uiVars->clearViewMetadata();
 		uiVars->removeActionsByTag( SCOPES_UI_HASH );
 		uiVars->runOnMainThread(
 			[this, uiVars] {

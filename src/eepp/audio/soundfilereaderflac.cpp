@@ -1,6 +1,7 @@
 #include <eepp/audio/soundfilereaderflac.hpp>
 #include <eepp/core/core.hpp>
 #include <eepp/system/iostreammemory.hpp>
+
 #define DR_FLAC_IMPLEMENTATION
 #include <dr_libs/dr_flac.h>
 
@@ -12,20 +13,34 @@ static size_t drflac_func_read( void* data, void* ptr, size_t size ) {
 static drflac_bool32 drflac_func_seek( void* data, int offset, drflac_seek_origin whence ) {
 	IOStream* stream = static_cast<IOStream*>( data );
 	switch ( whence ) {
-		case drflac_seek_origin_start:
+		case DRFLAC_SEEK_SET:
 			break;
-		case drflac_seek_origin_current:
+		case DRFLAC_SEEK_CUR:
 			offset += stream->tell();
+			break;
+		case DRFLAC_SEEK_END:
+			offset = stream->getSize();
 			break;
 	}
 	stream->seek( offset );
 	return 1;
 }
 
+static drflac_bool32 drflac_func_tell( void* data, drflac_int64* pCursor ) {
+	IOStream* stream = static_cast<IOStream*>( data );
+	*pCursor = stream->tell();
+	return DRFLAC_TRUE;
+}
+
 namespace EE { namespace Audio { namespace Private {
 
+bool SoundFileReaderFlac::usesFileExtension( std::string_view ext ) {
+	return ext == "flac";
+}
+
 bool SoundFileReaderFlac::check( IOStream& stream ) {
-	drflac* flac = drflac_open( drflac_func_read, drflac_func_seek, &stream, NULL );
+	drflac* flac =
+		drflac_open( drflac_func_read, drflac_func_seek, drflac_func_tell, &stream, NULL );
 
 	if ( flac ) {
 		drflac_close( flac );
@@ -45,7 +60,8 @@ SoundFileReaderFlac::~SoundFileReaderFlac() {
 bool SoundFileReaderFlac::open( IOStream& stream, Info& info ) {
 	stream.seek( 0 );
 
-	if ( ( mFlac = drflac_open( drflac_func_read, drflac_func_seek, &stream, NULL ) ) ) {
+	if ( ( mFlac = drflac_open( drflac_func_read, drflac_func_seek, drflac_func_tell, &stream,
+								NULL ) ) ) {
 		info.channelCount = mChannelCount = mFlac->channels;
 		info.sampleRate = mFlac->sampleRate;
 		info.sampleCount = mFlac->totalPCMFrameCount * mFlac->channels;
