@@ -66,8 +66,6 @@ Engine::Engine() :
 Engine::~Engine() {
 	GlobalBatchRenderer::destroySingleton();
 
-	TextureAtlasManager::destroySingleton();
-
 	NinePatchManager::destroySingleton();
 
 	Scene::SceneManager::destroySingleton();
@@ -77,6 +75,8 @@ Engine::~Engine() {
 	Doc::SyntaxDefinitionManager::destroySingleton();
 
 	FontManager::destroySingleton();
+
+	TextureAtlasManager::destroySingleton();
 
 	TextureFactory::destroySingleton();
 

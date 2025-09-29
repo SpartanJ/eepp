@@ -8,6 +8,7 @@
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uisprite.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/window/input.hpp>
 
@@ -154,21 +155,28 @@ void UIImageViewer::loadImageAsync( std::string_view path, bool isContents, bool
 		if ( format == Image::Format::Unknown )
 			return;
 
-		Drawable* image = nullptr;
+		Sprite* image = nullptr;
 
 		if ( mClosing )
 			return;
 
 		if ( format != Image::Format::GIF ) {
-			image = isContents
-						? TextureFactory::instance()->loadFromMemory(
-							  reinterpret_cast<const unsigned char*>( path.c_str() ), path.size() )
-						: TextureFactory::instance()->loadFromFile( path );
+			auto tex = isContents ? TextureFactory::instance()->loadFromMemory(
+										reinterpret_cast<const unsigned char*>( path.c_str() ),
+										path.size() )
+								  : TextureFactory::instance()->loadFromFile( path );
+			Sprite* sprite = Sprite::New();
+			sprite->createStatic( tex );
+			sprite->setAsTextureOwner( true );
+			sprite->setAsTextureRegionOwner( true );
+			image = sprite;
 		} else {
 			IOStream* stream = isContents
 								   ? (IOStream*)new IOStreamMemory( path.c_str(), path.size() )
 								   : (IOStream*)new IOStreamFile( path );
 			Sprite* sprite = Sprite::fromGif( *stream );
+			sprite->setAsTextureOwner( true );
+			sprite->setAsTextureRegionOwner( true );
 			sprite->setAutoAnimate( false );
 			image = sprite;
 			delete stream;
@@ -178,12 +186,7 @@ void UIImageViewer::loadImageAsync( std::string_view path, bool isContents, bool
 			return;
 
 		if ( image ) {
-
-			if ( isContents )
-				mCurFileSize = path.size();
-			else
-				mCurFileSize = FileSystem::fileSize( path );
-
+			mCurFileSize = isContents ? path.size() : FileSystem::fileSize( path );
 			mCurFileType = format;
 
 			runOnMainThread( [this, image] {
@@ -309,6 +312,36 @@ Uint32 UIImageViewer::onKeyDown( const KeyEvent& event ) {
 		return 1;
 	} else if ( event.getKeyCode() == KEY_T ) {
 		resetImageView();
+	} else if ( event.getKeyCode() == KEY_X ) {
+		auto sprite = static_cast<Sprite*>( mImage->getDrawable() );
+		auto mode = sprite->getRenderMode();
+		if ( mode == RENDER_NORMAL )
+			mode = RENDER_FLIPPED;
+		else if ( mode == RENDER_MIRROR )
+			mode = RENDER_FLIPPED_MIRRORED;
+		else if ( mode == RENDER_FLIPPED_MIRRORED )
+			mode = RENDER_MIRROR;
+		else
+			mode = RENDER_NORMAL;
+		sprite->setRenderMode( mode );
+		invalidateDraw();
+	} else if ( event.getKeyCode() == KEY_C ) {
+		auto sprite = static_cast<Sprite*>( mImage->getDrawable() );
+		auto mode = sprite->getRenderMode();
+		if ( mode == RENDER_NORMAL )
+			mode = RENDER_MIRROR;
+		else if ( mode == RENDER_FLIPPED )
+			mode = RENDER_FLIPPED_MIRRORED;
+		else if ( mode == RENDER_FLIPPED_MIRRORED )
+			mode = RENDER_FLIPPED;
+		else
+			mode = RENDER_NORMAL;
+		sprite->setRenderMode( mode );
+		invalidateDraw();
+	} else if ( event.getKeyCode() == KEY_R ) {
+		mImage->setRotation( mImage->getRotation() + 90.0f );
+	} else if ( event.getKeyCode() == KEY_T ) {
+	 	resetImageView();
 	}
 	return UIWidget::onKeyDown( event );
 }

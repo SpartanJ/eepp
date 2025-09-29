@@ -37,7 +37,7 @@ Uint32 UISprite::deallocSprite() {
 	return mNodeFlags & NODE_FLAG_FREE_USE;
 }
 
-void UISprite::setSprite( Graphics::Sprite* sprite ) {
+UISprite* UISprite::setSprite( Graphics::Sprite* sprite ) {
 	if ( deallocSprite() )
 		eeSAFE_DELETE( mSprite );
 
@@ -45,6 +45,7 @@ void UISprite::setSprite( Graphics::Sprite* sprite ) {
 	mSprite->setAutoAnimate( false );
 
 	updateSize();
+	return this;
 }
 
 void UISprite::draw() {
@@ -104,6 +105,10 @@ Graphics::Sprite* UISprite::getSprite() const {
 	return mSprite;
 }
 
+Drawable* UISprite::getDrawable() const {
+	return mSprite;
+}
+
 Color UISprite::getColor() const {
 	if ( NULL != mSprite )
 		return mSprite->getColor();
@@ -111,20 +116,22 @@ Color UISprite::getColor() const {
 	return Color::White;
 }
 
-void UISprite::setColor( const Color& color ) {
+UISprite* UISprite::setColor( const Color& color ) {
 	if ( NULL != mSprite )
 		mSprite->setColor( color );
 
 	setAlpha( color.a );
+	return this;
 }
 
 const RenderMode& UISprite::getRenderMode() const {
 	return mRender;
 }
 
-void UISprite::setRenderMode( const RenderMode& render ) {
+UISprite* UISprite::setRenderMode( const RenderMode& render ) {
 	mRender = render;
 	invalidateDraw();
+	return this;
 }
 
 void UISprite::updateSize() {
@@ -180,8 +187,9 @@ const Vector2f& UISprite::getAlignOffset() const {
 	return mAlignOffset;
 }
 
-void UISprite::setIsSpriteOwner( const bool& dealloc ) {
+UISprite* UISprite::setIsSpriteOwner( const bool& dealloc ) {
 	writeNodeFlag( NODE_FLAG_FREE_USE, dealloc ? 1 : 0 );
+	return this;
 }
 
 bool UISprite::getDeallocSprite() {

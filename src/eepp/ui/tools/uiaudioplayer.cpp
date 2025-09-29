@@ -4,6 +4,8 @@
 #include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 
+#include <format>
+
 namespace EE::UI::Tools {
 
 static const auto AUDIO_PLAYER_LAYOUT = R"xml(
