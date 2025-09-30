@@ -328,6 +328,11 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 		else if ( updateConfigFile )
 			config["perplexity_api_key"] = mApiKeys["perplexity"];
 
+		if ( config.contains( "openrouter_api_key" ) )
+			mApiKeys["openrouter"] = config.value( "openrouter_api_key", "" );
+		else if ( updateConfigFile )
+			config["openrouter_api_key"] = mApiKeys["openrouter"];
+
 	}
 
 	if ( mKeyBindings.empty() ) {
@@ -511,7 +516,10 @@ std::optional<std::string> AIAssistantPlugin::getApiKeyFromProvider( const std::
 		ret = getenv( "GITHUB_API_KEY" );
 	} else if ( provider == "perplexity" ) {
 		ret = getenv( "PERPLEXITY_API_KEY" );
+	} else if ( provider == "openrouter" ) {
+		ret = getenv( "OPENROUTER_API_KEY" );
 	}
+
 	if ( ret )
 		return std::string{ ret };
 

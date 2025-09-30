@@ -239,7 +239,7 @@ class EE_API TextDocument {
 
 	TextPosition positionOffset( TextPosition position, TextPosition offset ) const;
 
-	bool replaceLine( const Int64& lineNum, const String& text );
+	bool replaceLine( Int64 lineNum, const String& text );
 
 	bool replaceCurrentLine( const String& text );
 
@@ -356,6 +356,8 @@ class EE_API TextDocument {
 	void deleteToPreviousChar();
 
 	void deleteToNextChar();
+
+	void deleteToStartOfLine();
 
 	void deleteToEndOfLine();
 
@@ -704,6 +706,8 @@ class EE_API TextDocument {
 	void toBase64();
 
 	void fromBase64();
+
+	void trimTrailingWhitespace();
 
   protected:
 	friend class TextUndoStack;

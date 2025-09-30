@@ -1567,7 +1567,7 @@ TextPosition TextDocument::positionOffset( TextPosition position, TextPosition o
 	return sanitizePosition( position + offset );
 }
 
-bool TextDocument::replaceLine( const Int64& lineNum, const String& text ) {
+bool TextDocument::replaceLine( Int64 lineNum, const String& text ) {
 	if ( lineNum >= 0 && lineNum < (Int64)linesCount() ) {
 		TextRange oldSelection = getSelection();
 		setSelection( { startOfLine( { lineNum, 0 } ), endOfLine( { lineNum, 0 } ) } );
@@ -2197,6 +2197,12 @@ void TextDocument::deleteToPreviousChar() {
 void TextDocument::deleteToNextChar() {
 	for ( size_t i = 0; i < mSelection.size(); ++i )
 		deleteTo( i, 1 );
+	mergeSelection();
+}
+
+void TextDocument::deleteToStartOfLine() {
+	for ( size_t i = 0; i < mSelection.size(); ++i )
+		deleteTo( i, startOfLine( getSelectionIndex( i ).start() ) );
 	mergeSelection();
 }
 
@@ -4111,6 +4117,21 @@ void TextDocument::fromBase64() {
 	}
 }
 
+void TextDocument::trimTrailingWhitespace() {
+	BoolScopedOpOptional op( !mDoingTextInput, mDoingTextInput, true );
+	for ( size_t i = 0; i < linesCount(); i++ ) {
+		safeLineOp( i, [&]( TextDocumentLine& op ) {
+			if ( op.size() > 1 && ( op[op.size() - 2] == ' ' || op[op.size() - 2] == '\t' ) ) {
+				String text( op.getText() );
+				text.pop_back(); // Remove '\n'
+				while ( !text.empty() && ( text.back() == ' ' || text.back() == '\t' ) )
+					text.pop_back();
+				replaceLine( i, text );
+			}
+		} );
+	}
+}
+
 void TextDocument::initializeCommands() {
 	mCommands["reset"] = [this] { reset(); };
 	mCommands["save"] = [this] { save(); };
@@ -4119,6 +4140,7 @@ void TextDocument::initializeCommands() {
 	mCommands["delete-to-next-word"] = [this] { deleteToNextWord(); };
 	mCommands["delete-to-next-char"] = [this] { deleteToNextChar(); };
 	mCommands["delete-current-line"] = [this] { deleteCurrentLine(); };
+	mCommands["delete-to-start-of-line"] = [this] { deleteToStartOfLine(); };
 	mCommands["delete-to-end-of-line"] = [this] { deleteToEndOfLine(); };
 	mCommands["delete-selection"] = [this] { deleteSelection(); };
 	mCommands["delete-word"] = [this] { deleteWord(); };
@@ -4174,6 +4196,7 @@ void TextDocument::initializeCommands() {
 	mCommands["unescape"] = [this] { unescape(); };
 	mCommands["to-base64"] = [this] { toBase64(); };
 	mCommands["from-base64"] = [this] { fromBase64(); };
+	mCommands["trim-trailing-whitespace"] = [this] { trimTrailingWhitespace(); };
 
 	if ( TEXT_DOCUMENT_COMMANDS.empty() ) {
 		for ( const auto& [cmd, _] : mCommands )

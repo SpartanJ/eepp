@@ -375,6 +375,48 @@
           "tool_calling": true
         }
       ]
+    },
+    "openrouter": {
+      "api_url": "https://openrouter.ai/api/v1/chat/completions",
+      "display_name": "OpenRouter",
+      "models": [
+        {
+          "name": "x-ai/grok-4-fast:free",
+          "display_name": "xAI: Grok 4 Fast (free)"
+        },
+        {
+          "name": "deepseek/deepseek-chat-v3.1:free",
+          "display_name": "DeepSeek: DeepSeek V3.1 (free)"
+        },
+        {
+          "name": "x-ai/grok-code-fast-1",
+          "display_name": "xAI: Grok Code Fast 1"
+        },
+        {
+          "name": "anthropic/claude-sonnet-4",
+          "display_name": "Anthropic: Claude Sonnet 4"
+        },
+        {
+          "name": "google/gemini-2.5-flash",
+          "display_name": "Google: Gemini 2.5 Flash"
+        },
+        {
+          "name": "deepseek/deepseek-chat-v3-0324",
+          "display_name": "DeepSeek: DeepSeek V3 0324"
+        },
+        {
+          "name": "google/gemini-2.5-pro",
+          "display_name": "Google: Gemini 2.5 Pro"
+        },
+        {
+          "name": "openai/gpt-5",
+          "display_name": "OpenAI: GPT-5"
+        },
+        {
+          "name": "google/gemini-2.5-flash-lite",
+          "display_name": "Google: Gemini 2.5 Flash Lite"
+        }
+      ]
     }
   }
 }

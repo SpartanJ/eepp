@@ -406,7 +406,7 @@
   "eepp-linux-ninja": {
     "build": [
       {
-        "args": "--disable-static-build --with-text-shaper ninja",
+        "args": "--disable-static-build --with-text-shaper --with-debug-symbols ninja",
         "command": "premake5",
         "working_dir": "${project_root}"
       },
