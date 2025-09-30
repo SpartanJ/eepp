@@ -7,6 +7,9 @@ CommandPalette::build( const std::vector<std::string>& commandList,
 					   const EE::UI::KeyBindings& keybindings ) {
 	std::vector<std::vector<std::string>> ret;
 	for ( const auto& cmd : commandList ) {
+		if ( std::find_if( ret.begin(), ret.end(),
+						   [&cmd]( const auto& other ) { return other[2] == cmd; } ) != ret.end() )
+			continue;
 		std::string cmdName( cmd );
 		String::capitalizeInPlace( cmdName );
 		String::replaceAll( cmdName, "-", " " );
