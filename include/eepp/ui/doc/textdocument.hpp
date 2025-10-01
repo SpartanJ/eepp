@@ -293,7 +293,7 @@ class EE_API TextDocument {
 
 	std::size_t getLineLength( Int64 ) const;
 
-	void safeLineOp( Int64 line, std::function<void(TextDocumentLine&)> op );
+	void safeLineOp( Int64 line, std::function<void( TextDocumentLine& )> op );
 
 	void getLineTextToBuffer( Int64 line, String& buffer ) const;
 
@@ -839,6 +839,21 @@ class EE_API TextDocument {
 							   TextRange restrictRange = TextRange() );
 
 	void changeFilePath( const std::string& filePath, bool notify );
+
+	void joinLines();
+
+	TextPosition findPreviousEmptyLines( size_t selIdx );
+
+	TextPosition findNextEmptyLines( size_t selIdx );
+
+	void moveToNextParagraph();
+
+	void moveToPreviousParagraph();
+
+	void selectCurrentParagraph();
+
+	void deleteCurrentParagraph();
+
 };
 
 struct TextSearchParams {

@@ -240,7 +240,7 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 			} );
 		}
 
-		return TabWidgetData{ chatUI, getPluginContext()->findIcon( "code-ai" ),
+		return TabWidgetData{ chatUI, getPluginContext()->findIcon( "chat-sparkle" ),
 							  i18n( "ai_assistant", "AI Assistant" ) };
 	};
 	config.onSave = []( UIWidget* widget ) {
@@ -415,7 +415,7 @@ LLMChatUI* AIAssistantPlugin::newAIAssistant() {
 	if ( !splitter->hasSplit() )
 		tabWidget = splitter->splitTabWidget( SplitDirection::Right, tabWidget );
 	auto [tab, _] = splitter->createWidgetInTabWidget( tabWidget, chatUI, tabName );
-	auto icon = getPluginContext()->findIcon( "code-ai" );
+	auto icon = getPluginContext()->findIcon( "chat-sparkle" );
 	if ( icon )
 		tab->setIcon( icon );
 	return chatUI;
@@ -479,7 +479,7 @@ void AIAssistantPlugin::initUI() {
 		mStatusButton->setParent( mStatusBar );
 		mStatusButton->setId( "ai_assistant_but" );
 		mStatusButton->setClass( "status_but" );
-		mStatusButton->setIcon( iconDrawable( "code-ai", 14 ) );
+		mStatusButton->setIcon( iconDrawable( "chat-sparkle", 14 ) );
 		mStatusButton->setTooltipText( i18n( "ai_assistant", "AI Assistant" ) );
 		mStatusButton->on( Event::MouseClick,
 						   [this]( const Event* ) { newAIAssistant()->setFocus(); } );

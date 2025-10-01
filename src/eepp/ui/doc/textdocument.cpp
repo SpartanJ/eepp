@@ -4132,6 +4132,87 @@ void TextDocument::trimTrailingWhitespace() {
 	}
 }
 
+void TextDocument::joinLines() {
+	if ( linesCount() < 2 )
+		return;
+
+	BoolScopedOp op( mDoingTextInput, true );
+	for ( size_t cursorIdx = mSelection.size() - 1; cursorIdx != (size_t)-1; --cursorIdx ) {
+		auto range = getSelectionIndex( cursorIdx ).normalized();
+		Int64 startLine = range.start().line();
+		Int64 endLine = range.hasSelection() ? range.end().line() : startLine;
+		Int64 joinTo = endLine + ( range.hasSelection() ? 0 : 1 );
+		if ( joinTo >= (Int64)linesCount() || startLine >= joinTo )
+			continue;
+
+		String joined;
+		for ( Int64 ln = startLine; ln <= joinTo; ln++ ) {
+			String part = getLineTextWithoutNewLine( ln );
+			if ( ln > startLine ) {
+				size_t lpos = part.find_first_not_of( " \t" );
+				part = lpos != String::InvalidPos ? part.substr( lpos ) : String();
+			}
+			if ( ln < joinTo ) {
+				size_t rpos = part.find_last_not_of( " \t" );
+				part = rpos != String::InvalidPos ? part.substr( 0, rpos + 1 ) : String();
+			}
+			if ( !joined.empty() )
+				joined += String( " " );
+			joined += part;
+		}
+
+		TextRange repRange( { startLine, 0 }, { joinTo, (Int64)( getLineLength( joinTo ) - 1 ) } );
+		remove( cursorIdx, repRange );
+		setSelection( cursorIdx, insert( cursorIdx, { startLine, 0 }, joined ) );
+	}
+	mergeSelection();
+}
+
+TextPosition TextDocument::findPreviousEmptyLines( size_t selIdx ) {
+	Int64 startLine = mSelection[selIdx].normalized().start().line() - 1;
+	bool found = false;
+	for ( ; startLine >= 0; --startLine ) {
+		if ( getLineLength( startLine ) == 1 ) {
+			found = true;
+			break;
+		}
+	}
+	return found ? TextPosition{ startLine, static_cast<Int64>( getLineLength( startLine ) ) }
+				 : startOfDoc();
+}
+
+TextPosition TextDocument::findNextEmptyLines( size_t selIdx ) {
+	Int64 startLine = mSelection[selIdx].normalized().end().line() + 1;
+	bool found = false;
+	for ( ; startLine < static_cast<Int64>( linesCount() ); ++startLine ) {
+		if ( getLineLength( startLine ) == 1 ) {
+			found = true;
+			break;
+		}
+	}
+	return found ? TextPosition{ startLine, 0 } : endOfDoc();
+}
+
+void TextDocument::moveToPreviousParagraph() {
+	for ( size_t i = 0; i < mSelection.size(); ++i )
+		setSelection( i, findPreviousEmptyLines( i ) );
+}
+
+void TextDocument::moveToNextParagraph() {
+	for ( size_t i = 0; i < mSelection.size(); ++i )
+		setSelection( i, findNextEmptyLines( i ) );
+}
+
+void TextDocument::selectCurrentParagraph() {
+	for ( size_t i = 0; i < mSelection.size(); ++i )
+		setSelection( i, { findPreviousEmptyLines( i ), findNextEmptyLines( i ) } );
+}
+
+void TextDocument::deleteCurrentParagraph() {
+	selectCurrentParagraph();
+	deleteToNextChar();
+}
+
 void TextDocument::initializeCommands() {
 	mCommands["reset"] = [this] { reset(); };
 	mCommands["save"] = [this] { save(); };
@@ -4144,6 +4225,7 @@ void TextDocument::initializeCommands() {
 	mCommands["delete-to-end-of-line"] = [this] { deleteToEndOfLine(); };
 	mCommands["delete-selection"] = [this] { deleteSelection(); };
 	mCommands["delete-word"] = [this] { deleteWord(); };
+	mCommands["delete-paragraph"] = [this] { deleteCurrentParagraph(); };
 	mCommands["move-to-previous-char"] = [this] { moveToPreviousChar(); };
 	mCommands["move-to-previous-word"] = [this] { moveToPreviousWord(); };
 	mCommands["move-to-next-char"] = [this] { moveToNextChar(); };
@@ -4157,6 +4239,8 @@ void TextDocument::initializeCommands() {
 	mCommands["move-to-start-of-line"] = [this] { moveToStartOfLine(); };
 	mCommands["move-to-end-of-line"] = [this] { moveToEndOfLine(); };
 	mCommands["move-to-start-of-content"] = [this] { moveToStartOfContent(); };
+	mCommands["move-to-previous-paragraph"] = [this] { moveToPreviousParagraph(); };
+	mCommands["move-to-next-paragraph"] = [this] { moveToNextParagraph(); };
 	mCommands["move-lines-up"] = [this] { moveLinesUp(); };
 	mCommands["move-lines-down"] = [this] { moveLinesDown(); };
 	mCommands["select-to-previous-char"] = [this] { selectToPreviousChar(); };
@@ -4176,6 +4260,7 @@ void TextDocument::initializeCommands() {
 	mCommands["select-to-end-of-doc"] = [this] { selectToEndOfDoc(); };
 	mCommands["select-to-previous-page"] = [this] { selectToPreviousPage( mPageSize ); };
 	mCommands["select-to-next-page"] = [this] { selectToNextPage( mPageSize ); };
+	mCommands["select-paragraph"] = [this] { selectCurrentParagraph(); };
 	mCommands["select-all"] = [this] { selectAll(); };
 	mCommands["new-line"] = [this] { newLine(); };
 	mCommands["new-line-above"] = [this] { newLineAbove(); };
@@ -4197,6 +4282,7 @@ void TextDocument::initializeCommands() {
 	mCommands["to-base64"] = [this] { toBase64(); };
 	mCommands["from-base64"] = [this] { fromBase64(); };
 	mCommands["trim-trailing-whitespace"] = [this] { trimTrailingWhitespace(); };
+	mCommands["join-lines"] = [this] { joinLines(); };
 
 	if ( TEXT_DOCUMENT_COMMANDS.empty() ) {
 		for ( const auto& [cmd, _] : mCommands )

@@ -392,13 +392,14 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	setCmd( "ai-show-menu", [this] {
 		UIPopUpMenu* menu = UIPopUpMenu::New();
 
-		menu->add( i18n( "new_conversation", "New Conversation" ),
-				   getUISceneNode()->findIconDrawable( "code-ai", PixelDensity::dpToPxI( 12 ) ),
-				   getPlugin()
-					   ->getPluginContext()
-					   ->getMainLayout()
-					   ->getKeyBindings()
-					   .getCommandKeybindString( "new-ai-assistant" ) )
+		menu->add(
+				i18n( "new_conversation", "New Conversation" ),
+				getUISceneNode()->findIconDrawable( "chat-sparkle", PixelDensity::dpToPxI( 12 ) ),
+				getPlugin()
+					->getPluginContext()
+					->getMainLayout()
+					->getKeyBindings()
+					.getCommandKeybindString( "new-ai-assistant" ) )
 			->setId( "new-ai-assistant" );
 
 		menu->add(
