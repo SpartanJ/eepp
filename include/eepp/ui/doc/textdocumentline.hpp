@@ -51,6 +51,14 @@ class EE_API TextDocumentLine {
 		return mText.substr( 0, mText.size() - 1 );
 	}
 
+	String::View getTextViewWithoutNewLine() const {
+		if ( mDocMutex ) {
+			Lock lock( *mDocMutex );
+			return mText.view().substr( 0, mText.size() - 1 );
+		}
+		return mText.view().substr( 0, mText.size() - 1 );
+	}
+
 	String::StringBaseType operator[]( std::size_t index ) const {
 		if ( mDocMutex ) {
 			Lock lock( *mDocMutex );

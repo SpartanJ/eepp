@@ -572,6 +572,11 @@ class EE_API String {
 	**/
 	String( StringBaseType utf32Char );
 
+	/** @brief Construct from single UTF-32 character repeated count times
+	** @param utf32Char UTF-32 character to convert
+	**/
+	String( size_t count, StringBaseType utf32Char );
+
 	/** @brief Construct from an from a null-terminated C-style UTF-8 string to UTF-32
 	** @param uf8String UTF-8 string to convert
 	**/
@@ -1082,6 +1087,8 @@ class EE_API String {
 	}
 
 	const StringType& getString() const { return mString; }
+
+	StringType& getString() { return mString; }
 
 	static void readBySeparator( std::string_view buf,
 								 std::function<void( std::string_view )> onSepChunkRead,

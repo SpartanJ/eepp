@@ -1020,7 +1020,7 @@ bool UICodeEditor::isDirty() const {
 
 void UICodeEditor::invalidateEditor( bool dirtyScroll ) {
 	mDirtyEditor = true;
-	mDirtyScroll = dirtyScroll;
+	mDirtyScroll = mDirtyScroll || dirtyScroll;
 }
 
 void UICodeEditor::invalidateLongestLineWidth() {
@@ -1629,6 +1629,28 @@ void UICodeEditor::addCursorsFromCurrentToMousePosition() {
 	mDoc->addSelections( std::move( ranges ) );
 }
 
+bool UICodeEditor::fold( Int64 docLineIdx ) {
+	if ( mDoc->getFoldRangeService().isFoldingRegionInLine( docLineIdx ) ) {
+		/* if ( !mDocView.isFolded( docLineIdx ) ) */ {
+			sendCommonEvent( Event::OnBeforeFoldUnfoldRange );
+			mDocView.foldRegion( docLineIdx );
+			return true;
+		}
+	}
+	return false;
+}
+
+bool UICodeEditor::unfold( Int64 docLineIdx ) {
+	if ( mDoc->getFoldRangeService().isFoldingRegionInLine( docLineIdx ) ) {
+		/* if ( mDocView.isFolded( docLineIdx ) ) */ {
+			sendCommonEvent( Event::OnBeforeFoldUnfoldRange );
+			mDocView.unfoldRegion( docLineIdx );
+			return true;
+		}
+	}
+	return false;
+}
+
 bool UICodeEditor::toggleFoldUnfold( Int64 docLineIdx ) {
 	if ( mDoc->getFoldRangeService().isFoldingRegionInLine( docLineIdx ) ) {
 		sendCommonEvent( Event::OnBeforeFoldUnfoldRange );
@@ -1640,6 +1662,34 @@ bool UICodeEditor::toggleFoldUnfold( Int64 docLineIdx ) {
 		return true;
 	}
 	return false;
+}
+
+void UICodeEditor::foldAll() {
+	sendCommonEvent( Event::OnBeforeFoldUnfoldRange );
+	mDocView.foldAll();
+}
+
+void UICodeEditor::unfoldAll() {
+	sendCommonEvent( Event::OnBeforeFoldUnfoldRange );
+	mDocView.unfoldAll();
+}
+
+void UICodeEditor::fold() {
+	auto sels = getDocument().getSelections();
+	for ( const auto& sel : sels )
+		fold( sel.start().line() );
+}
+
+void UICodeEditor::unfold() {
+	auto sels = getDocument().getSelections();
+	for ( const auto& sel : sels )
+		unfold( sel.start().line() );
+}
+
+void UICodeEditor::toggleFoldUnfold() {
+	auto sels = getDocument().getSelections();
+	for ( const auto& sel : sels )
+		toggleFoldUnfold( sel.start().line() );
 }
 
 void UICodeEditor::updateMipmapHover( const Vector2f& position ) {
@@ -4252,8 +4302,12 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 
 		if ( foldVisible && mDoc->getFoldRangeService().isFoldingRegionInLine( i ) ) {
 			bool isFolded = mDocView.isFolded( i );
+			bool currentLineHasFold =
+				std::find_if( mDoc->getSelections().begin(), mDoc->getSelections().end(),
+							  [i]( const TextRange& sel ) { return i == sel.start().line(); } ) !=
+				mDoc->getSelections().end();
 
-			if ( mFoldsAlwaysVisible || mFoldsVisible ) {
+			if ( mFoldsAlwaysVisible || mFoldsVisible || currentLineHasFold ) {
 				if ( ( isFolded && mFoldedDrawable ) || ( !isFolded && mFoldedDrawable ) ) {
 					Drawable* drawable = isFolded ? mFoldedDrawable : mFoldDrawable;
 					GlyphDrawable::DrawMode oldMode;
@@ -4463,6 +4517,17 @@ void UICodeEditor::registerCommands() {
 	mDoc->setCommand( "add-cursors-from-current-to-mouse-position", []( Client* client ) {
 		static_cast<UICodeEditor*>( client )->addCursorsFromCurrentToMousePosition();
 	} );
+	mDoc->setCommand( "toggle-fold", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->toggleFoldUnfold();
+	} );
+	mDoc->setCommand( "fold-all",
+					  []( Client* client ) { static_cast<UICodeEditor*>( client )->foldAll(); } );
+	mDoc->setCommand( "unfold-all",
+					  []( Client* client ) { static_cast<UICodeEditor*>( client )->unfoldAll(); } );
+	mDoc->setCommand( "fold",
+					  []( Client* client ) { static_cast<UICodeEditor*>( client )->fold(); } );
+	mDoc->setCommand( "unfold",
+					  []( Client* client ) { static_cast<UICodeEditor*>( client )->unfold(); } );
 	mUnlockedCmd.insert( { "copy", "select-all", "open-containing-folder",
 						   "copy-containing-folder-path", "copy-file-path",
 						   "copy-file-path-and-position", "open-context-menu", "find-replace" } );
@@ -4497,10 +4562,7 @@ void UICodeEditor::onCursorPosChange() {
 	mLastActivity.restart();
 	sendCommonEvent( Event::OnCursorPosChange );
 	invalidateDraw();
-	if ( !Engine::isMainThread() )
-		runOnMainThread( [this] { mDocView.ensureCursorVisibility(); } );
-	else
-		mDocView.ensureCursorVisibility();
+	ensureMainThread( [this] { mDocView.ensureCursorVisibility(); } );
 }
 
 static bool checkHexa( const std::string& hexStr ) {

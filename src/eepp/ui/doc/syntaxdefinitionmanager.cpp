@@ -1390,26 +1390,69 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( std::string_view h
 	return *mDefinitions[0].get();
 }
 
+const SyntaxDefinition& SyntaxDefinitionManager::getByPath( const std::string& filePath ) const {
+	static const auto KNOWN_CPP_PATHS = {
+		"**/include/c++/**",
+	};
+
+	for ( auto path : KNOWN_CPP_PATHS )
+		if ( String::globMatch( filePath, path, true ) )
+			return findFromString( "cpp" );
+
+	return *mDefinitions[0].get();
+}
+
+const SyntaxDefinition&
+SyntaxDefinitionManager::getByFileAssociations( const std::string& filePath ) const {
+	const SyntaxDefinition* def = &getPlainDefinition();
+	Lock l( mFileAssociationsMutex );
+	if ( !mFileAssociations.empty() ) {
+		for ( const auto& [glob, lang] : mFileAssociations ) {
+			if ( String::globMatch( filePath, glob ) ) {
+				def = &findFromString( lang );
+				if ( def != &getPlainDefinition() )
+					return *def;
+			}
+		}
+	}
+	return *def;
+}
+
 const SyntaxDefinition& SyntaxDefinitionManager::find( const std::string& filePath,
 													   std::string_view header,
 													   HExtLanguageType langType ) {
-	const SyntaxDefinition& def = getByHeader( header, filePath, langType );
-	if ( def.getLanguageName() == mDefinitions[0]->getLanguageName() )
-		return getByExtension( filePath );
-	return def;
+	const SyntaxDefinition* def = &getByFileAssociations( filePath );
+	if ( def != &getPlainDefinition() )
+		return *def;
+
+	def = &getByHeader( header, filePath, langType );
+	if ( def != &getPlainDefinition() )
+		return *def;
+
+	def = &getByExtension( filePath );
+	if ( def != &getPlainDefinition() )
+		return *def;
+
+	def = &getByPath( filePath );
+	if ( def != &getPlainDefinition() )
+		return *def;
+
+	return *def;
 }
 
 const SyntaxDefinition&
 SyntaxDefinitionManager::findFromString( const std::string_view& lang ) const {
-	const auto& syn = getByLSPName( lang );
-	if ( syn.getLSPName() != getPlainDefinition().getLSPName() )
-		return syn;
-	const auto& syn2 = getByLanguageName( lang );
-	if ( syn2.getLSPName() != getPlainDefinition().getLSPName() )
-		return syn2;
-	const auto& syn3 = getByLanguageNameInsensitive( lang );
-	if ( syn3.getLSPName() != getPlainDefinition().getLSPName() )
-		return syn3;
+	const SyntaxDefinition* syn = &getByLSPName( lang );
+	if ( syn != &getPlainDefinition() )
+		return *syn;
+
+	syn = &getByLanguageName( lang );
+	if ( syn != &getPlainDefinition() )
+		return *syn;
+
+	syn = &getByLanguageNameInsensitive( lang );
+	if ( syn != &getPlainDefinition() )
+		return *syn;
 	return getPlainDefinition();
 }
 
@@ -1424,6 +1467,17 @@ std::size_t SyntaxDefinitionManager::count() const {
 bool SyntaxDefinitionManager::isFileFormatSupported( const std::string& filePath,
 													 std::string_view header ) {
 	return &find( filePath, header ) != mDefinitions[0].get();
+}
+
+void SyntaxDefinitionManager::setFileAssociations(
+	SyntaxDefinitionManager::FileAssociations&& fa ) {
+	Lock l( mFileAssociationsMutex );
+	mFileAssociations = std::move( fa );
+}
+
+SyntaxDefinitionManager::FileAssociations SyntaxDefinitionManager::getFileAssociations() const {
+	Lock l( mFileAssociationsMutex );
+	return mFileAssociations;
 }
 
 }}} // namespace EE::UI::Doc

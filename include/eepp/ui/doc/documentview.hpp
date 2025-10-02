@@ -146,6 +146,10 @@ class EE_API DocumentView {
 
 	void unfoldRegion( Int64 foldDocIdx );
 
+	void foldAll();
+
+	void unfoldAll();
+
 	bool isOneToOne() const;
 
 	std::vector<TextRange> intersectsFoldedRegions( const TextRange& range ) const;

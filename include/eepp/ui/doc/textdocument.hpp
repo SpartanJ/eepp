@@ -291,6 +291,8 @@ class EE_API TextDocument {
 
 	String getLineTextWithoutNewLine( Int64 line ) const;
 
+	String::View getLineTextViewWithoutNewLine( Int64 line ) const;
+
 	std::size_t getLineLength( Int64 ) const;
 
 	void safeLineOp( Int64 line, std::function<void( TextDocumentLine& )> op );
@@ -709,6 +711,20 @@ class EE_API TextDocument {
 
 	void trimTrailingWhitespace();
 
+	void joinLines();
+
+	void moveToNextParagraph();
+
+	void moveToPreviousParagraph();
+
+	void selectCurrentParagraph();
+
+	void deleteCurrentParagraph();
+
+	void convertIndentationToTabs();
+
+	void convertIndentationToSpaces();
+
   protected:
 	friend class TextUndoStack;
 	friend class FoldRangeService;
@@ -840,19 +856,9 @@ class EE_API TextDocument {
 
 	void changeFilePath( const std::string& filePath, bool notify );
 
-	void joinLines();
-
 	TextPosition findPreviousEmptyLines( size_t selIdx );
 
 	TextPosition findNextEmptyLines( size_t selIdx );
-
-	void moveToNextParagraph();
-
-	void moveToPreviousParagraph();
-
-	void selectCurrentParagraph();
-
-	void deleteCurrentParagraph();
 
 };
 

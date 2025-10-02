@@ -278,7 +278,7 @@ bool FoldRangeService::isFoldingRegionInLine( Int64 docIdx ) {
 void FoldRangeService::shiftFoldingRegions( Int64 fromLine, Int64 numLines ) {
 	// TODO: Optimize this
 	Lock l( mMutex );
-	std::unordered_map<Int64, TextRange> foldingRegions;
+	FoldingRegions foldingRegions;
 	for ( auto& foldingRegion : mFoldingRegions ) {
 		if ( foldingRegion.second.start().line() > fromLine ) {
 			foldingRegion.second.start().setLine( foldingRegion.second.start().line() + numLines );

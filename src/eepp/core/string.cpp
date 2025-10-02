@@ -1535,6 +1535,8 @@ String::String( StringBaseType utf32Char ) {
 	mString += utf32Char;
 }
 
+String::String( size_t count, StringBaseType utf32Char ) : mString( count, utf32Char ) {}
+
 String::String( const char* utf8String ) {
 	if ( utf8String ) {
 		std::size_t length = strlen( utf8String );

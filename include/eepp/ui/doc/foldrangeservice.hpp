@@ -4,8 +4,8 @@
 #include <eepp/config.hpp>
 #include <eepp/system/mutex.hpp>
 #include <eepp/ui/doc/textrange.hpp>
+#include <map>
 #include <optional>
-#include <unordered_map>
 
 using namespace EE::System;
 
@@ -14,11 +14,13 @@ namespace EE { namespace UI { namespace Doc {
 class TextDocument;
 
 class FoldRangeProvider {
-	public:
-		virtual bool foldingRangeProvider() const = 0;
+  public:
+	virtual bool foldingRangeProvider() const = 0;
 
-		virtual void requestFoldRange() = 0;
+	virtual void requestFoldRange() = 0;
 };
+
+using FoldingRegions = std::map<Int64, TextRange>;
 
 class EE_API FoldRangeService {
   public:
@@ -56,9 +58,11 @@ class EE_API FoldRangeService {
 
 	void setEnabled( bool enabled );
 
+	const FoldingRegions& getFoldingRegions() const { return mFoldingRegions; }
+
   protected:
 	TextDocument* mDoc;
-	std::unordered_map<Int64, TextRange> mFoldingRegions;
+	FoldingRegions mFoldingRegions;
 	FoldRangeProvider* mProvider{ nullptr };
 	Mutex mMutex;
 	bool mEnabled{ true };

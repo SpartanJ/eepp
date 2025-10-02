@@ -17,6 +17,8 @@ namespace EE { namespace UI { namespace Doc {
 class EE_API SyntaxDefinitionManager {
 	SINGLETON_DECLARE_HEADERS( SyntaxDefinitionManager )
   public:
+  	using FileAssociations = std::unordered_map<std::string /* path or pattern */, std::string /* language name */>;
+
 	static SyntaxDefinitionManager* createSingleton( std::size_t reserveSpaceForLanguages );
 
 	static std::pair<std::string, std::string> toCPP( const SyntaxDefinition& def );
@@ -35,6 +37,10 @@ class EE_API SyntaxDefinitionManager {
 	bool extensionCanRepresentManyLanguages( std::string extension ) const;
 
 	const SyntaxDefinition& getByExtension( const std::string& filePath ) const;
+
+	const SyntaxDefinition& getByPath( const std::string& filePath ) const;
+
+	const SyntaxDefinition& getByFileAssociations( const std::string& filePath ) const;
 
 	const SyntaxDefinition&
 	getByHeader( std::string_view header, const std::string& filePath = "",
@@ -86,13 +92,19 @@ class EE_API SyntaxDefinitionManager {
 
 	bool isFileFormatSupported( const std::string& filePath, std::string_view header );
 
+	void setFileAssociations( FileAssociations&& fa );
+
+	FileAssociations getFileAssociations() const;
+
   protected:
 	SyntaxDefinitionManager( std::size_t reserveSpaceForLanguages = 12 );
 
 	std::vector<std::shared_ptr<SyntaxDefinition>> mDefinitions;
 	std::vector<SyntaxPreDefinition> mPreDefinitions;
 	std::map<std::string, std::string> mPriorities;
+	FileAssociations mFileAssociations;
 	mutable Mutex mMutex;
+	mutable Mutex mFileAssociationsMutex;
 
 	std::optional<size_t> getLanguageIndex( const std::string& langName );
 

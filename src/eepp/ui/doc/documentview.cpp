@@ -612,6 +612,26 @@ void DocumentView::unfoldRegion( Int64 foldDocIdx, bool verifyConsistency, bool 
 		clearCache();
 }
 
+void DocumentView::foldAll() {
+	if ( !mDoc->getFoldRangeService().canFold() )
+		return;
+
+	const auto& frs = mDoc->getFoldRangeService().getFoldingRegions();
+
+	for ( const auto& [line, range] : frs ) {
+		if ( isLineVisible( line ) && !isFolded( line ) )
+			foldRegion( line );
+	}
+}
+
+void DocumentView::unfoldAll() {
+	if ( !mDoc->getFoldRangeService().canFold() )
+		return;
+
+	while ( !mFoldedRegions.empty() )
+		unfoldRegion( mFoldedRegions.begin()->start().line() );
+}
+
 void DocumentView::ensureCursorVisibility() {
 	if ( mFoldedRegions.empty() )
 		return;
@@ -696,8 +716,12 @@ void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visi
 
 		recomputeDocLineToVisibleIndex( oldIdxFrom, recomputeLineToVisibleIndex );
 	} else {
-		Int64 oldIdxFrom = static_cast<Int64>( toVisibleIndex( fromDocIdx ) );
-		Int64 oldIdxTo = static_cast<Int64>( toVisibleIndex( toDocIdx, true ) );
+		auto oldIdxFromVI = toVisibleIndex( fromDocIdx );
+		auto oldIdxToVI = toVisibleIndex( toDocIdx, true );
+		Int64 oldIdxFrom = static_cast<Int64>( oldIdxFromVI );
+		Int64 oldIdxTo = static_cast<Int64>( oldIdxToVI );
+		if ( VisibleIndex::invalid == oldIdxFromVI || VisibleIndex::invalid == oldIdxToVI )
+			return;
 		mVisibleLines.erase( mVisibleLines.begin() + oldIdxFrom,
 							 mVisibleLines.begin() + oldIdxTo + 1 );
 		for ( Int64 idx = fromDocIdx; idx <= toDocIdx; idx++ ) {

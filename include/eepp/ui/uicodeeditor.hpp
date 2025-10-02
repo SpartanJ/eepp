@@ -795,7 +795,21 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	bool allowSelectingTextFromGutter() const;
 
+	bool fold( Int64 docLineIdx );
+
+	bool unfold( Int64 docLineIdx );
+
 	bool toggleFoldUnfold( Int64 docLineIdx );
+
+	void fold();
+
+	void unfold();
+
+	void toggleFoldUnfold();
+
+	void foldAll();
+
+	void unfoldAll();
 
 	void setTabStops( bool enabled );
 

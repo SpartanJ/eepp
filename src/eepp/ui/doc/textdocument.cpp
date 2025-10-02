@@ -1779,6 +1779,12 @@ String TextDocument::getLineTextWithoutNewLine( Int64 line ) const {
 	return line >= (Int64)mLines.size() ? String() : mLines[line].getTextWithoutNewLine();
 }
 
+String::View TextDocument::getLineTextViewWithoutNewLine( Int64 line ) const {
+	// eeASSERT( line < (Int64)linesCount() );
+	Lock l( mLinesMutex );
+	return line >= (Int64)mLines.size() ? String::View() : mLines[line].getTextViewWithoutNewLine();
+}
+
 void TextDocument::getLineTextToBuffer( Int64 line, String& buffer ) const {
 	// eeASSERT( line < (Int64)linesCount() );
 	Lock l( mLinesMutex );
@@ -1873,10 +1879,6 @@ void TextDocument::moveTo( const size_t& cursorIdx, TextPosition offset ) {
 
 void TextDocument::moveTo( const size_t& cursorIdx, int columnOffset ) {
 	setSelection( cursorIdx, positionOffset( getSelection().start(), columnOffset ) );
-}
-
-static inline bool isSpace( String::StringBaseType ch ) {
-	return ch == ' ' || ch == '\t' || ch == '\n';
 }
 
 std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
@@ -4213,6 +4215,138 @@ void TextDocument::deleteCurrentParagraph() {
 	deleteToNextChar();
 }
 
+void TextDocument::convertIndentationToTabs() {
+	AtomicBoolScopedOp op( mRunningTransaction, true );
+	auto oldSel = getSelections();
+	bool changed = false;
+	String newDoc;
+
+	for ( Int64 i = 0; i < static_cast<Int64>( linesCount() ); i++ ) {
+		auto pos = startOfContent( { i, static_cast<Int64>( getLineLength( i ) ) } );
+
+		if ( pos.column() > 0 ) {
+			auto originalLine = getLineText( i );
+			auto indentationPart = originalLine.substr( 0, pos.column() );
+
+			// Check if there are any spaces to convert
+			if ( indentationPart.find( U' ' ) == String::InvalidPos ) {
+				newDoc += getLineText( i );
+				continue;
+			}
+
+			String newIndentation;
+			Uint32 spaceCounter = 0;
+
+			// Iterate through the indentation part to process spaces and tabs
+			for ( const auto& ch : indentationPart ) {
+				if ( ch == U' ' ) {
+					spaceCounter++;
+					// If we have collected enough spaces for a tab, replace them
+					if ( spaceCounter == mIndentWidth ) {
+						newIndentation += U'\t';
+						spaceCounter = 0; // Reset counter
+					}
+				} else if ( ch == U'\t' ) {
+					// If we encounter a tab, we must first append any pending spaces
+					if ( spaceCounter > 0 ) {
+						newIndentation.append( spaceCounter, U' ' );
+						spaceCounter = 0;
+					}
+					newIndentation += U'\t'; // Then, append the tab itself
+				} else {
+					// This case should ideally not be reached if startOfContent is accurate,
+					// but as a safeguard, we append pending spaces and the character.
+					if ( spaceCounter > 0 ) {
+						newIndentation.append( spaceCounter, U' ' );
+						spaceCounter = 0;
+					}
+					newIndentation += ch;
+				}
+			}
+
+			// After the loop, append any remaining spaces that didn't form a full tab
+			if ( spaceCounter > 0 ) {
+				newIndentation.append( spaceCounter, U' ' );
+			}
+
+			// Reconstruct the full line
+			auto restOfLine = originalLine.substr( pos.column() );
+			String newLine = newIndentation + restOfLine;
+
+			newDoc += std::move( newLine );
+			changed = true;
+		} else {
+			newDoc += getLineText( i );
+		}
+	}
+
+	if ( changed ) {
+		if ( !newDoc.empty() && newDoc.back() == '\n' )
+			newDoc.pop_back();
+
+		selectAll();
+		textInput( newDoc );
+		setSelection( oldSel );
+		notifySelectionChanged();
+		notifyCursorChanged();
+	}
+}
+
+void TextDocument::convertIndentationToSpaces() {
+	AtomicBoolScopedOp op( mRunningTransaction, true );
+	auto oldSel = getSelections();
+	bool changed = false;
+	String newDoc;
+
+	const String spaceReplacement( mIndentWidth, U' ' );
+
+	for ( Int64 i = 0; i < static_cast<Int64>( linesCount() ); i++ ) {
+		// Get the position where the actual content (non-whitespace) of the line begins
+		auto pos = startOfContent( { i, static_cast<Int64>( getLineLength( i ) ) } );
+
+		if ( pos.column() > 0 ) {
+			auto originalLine = getLineText( i );
+			auto indentationPart = originalLine.substr( 0, pos.column() );
+
+			// Check if there are any tabs to convert to avoid unnecessary work
+			if ( indentationPart.find( U'\t' ) == String::InvalidPos ) {
+				newDoc += getLineText( i );
+				continue;
+			}
+
+			String newIndentation;
+			// Build the new indentation by replacing tabs with spaces
+			for ( const auto& ch : indentationPart ) {
+				if ( ch == U'\t' ) {
+					newIndentation += spaceReplacement;
+				} else {
+					newIndentation += ch; // Keep existing spaces
+				}
+			}
+
+			// Reconstruct the full line with the new indentation
+			auto restOfLine = originalLine.substr( pos.column() );
+			String newLine = newIndentation + restOfLine;
+
+			newDoc += std::move( newLine );
+			changed = true;
+		} else {
+			newDoc += getLineText( i );
+		}
+	}
+
+	if ( changed ) {
+		if ( !newDoc.empty() && newDoc.back() == '\n' )
+			newDoc.pop_back();
+
+		selectAll();
+		textInput( newDoc );
+		setSelection( oldSel );
+		notifySelectionChanged();
+		notifyCursorChanged();
+	}
+}
+
 void TextDocument::initializeCommands() {
 	mCommands["reset"] = [this] { reset(); };
 	mCommands["save"] = [this] { save(); };
@@ -4283,6 +4417,8 @@ void TextDocument::initializeCommands() {
 	mCommands["from-base64"] = [this] { fromBase64(); };
 	mCommands["trim-trailing-whitespace"] = [this] { trimTrailingWhitespace(); };
 	mCommands["join-lines"] = [this] { joinLines(); };
+	mCommands["convert-indentation-to-tabs"] = [this] { convertIndentationToTabs(); };
+	mCommands["convert-indentation-to-spaces"] = [this] { convertIndentationToSpaces(); };
 
 	if ( TEXT_DOCUMENT_COMMANDS.empty() ) {
 		for ( const auto& [cmd, _] : mCommands )
