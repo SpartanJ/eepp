@@ -125,6 +125,7 @@ class GitPlugin : public PluginBase {
 	Mutex mRepoMutex;
 	Mutex mReposMutex;
 	String mLastCommitMsg;
+	Uint32 mRepositionCbId{ 0 };
 
 	struct CustomTokenizer {
 		SyntaxDefinition def;

@@ -1376,6 +1376,11 @@ void UICodeEditor::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	if ( !mCreateDefaultContextMenuOptions )
 		return;
 
+	if ( mInteractiveLinks && !checkMouseOverLink( getInput()->getMousePos(), false ).empty() ){
+		menuAdd( menu, i18n( "uicodeeditor_open_url", "Open URL" ), "window", "open-hover-url" );
+		menu->addSeparator();
+	}
+
 	if ( !mLocked ) {
 		menuAdd( menu, i18n( "uicodeeditor_undo", "Undo" ), "undo", "undo" )
 			->setEnabled( mDoc->hasUndo() );
@@ -4528,6 +4533,12 @@ void UICodeEditor::registerCommands() {
 					  []( Client* client ) { static_cast<UICodeEditor*>( client )->fold(); } );
 	mDoc->setCommand( "unfold",
 					  []( Client* client ) { static_cast<UICodeEditor*>( client )->unfold(); } );
+	mDoc->setCommand( "open-hover-url", []( Client* client ) {
+		UICodeEditor* editor = static_cast<UICodeEditor*>( client );
+		if ( !editor->mLink.empty() )
+			Engine::instance()->openURI( editor->mLink );
+	} );
+
 	mUnlockedCmd.insert( { "copy", "select-all", "open-containing-folder",
 						   "copy-containing-folder-path", "copy-file-path",
 						   "copy-file-path-and-position", "open-context-menu", "find-replace" } );
@@ -4621,8 +4632,8 @@ void UICodeEditor::checkMouseOverColor( const Vector2i& position ) {
 	}
 }
 
-String UICodeEditor::checkMouseOverLink( const Vector2i& position ) {
-	if ( !mInteractiveLinks || !getInput()->isKeyModPressed() )
+String UICodeEditor::checkMouseOverLink( const Vector2i& position, bool checkModifiers ) {
+	if ( !mInteractiveLinks || ( checkModifiers && !getInput()->isKeyModPressed() ) )
 		return resetLinkOver( position );
 
 	TextPosition pos( resolveScreenPosition( position.asFloat(), false ) );
@@ -4667,8 +4678,10 @@ String UICodeEditor::checkMouseOverLink( const Vector2i& position ) {
 		for ( const auto& link : links ) {
 			if ( pos.column() >= startB.column() + link.first &&
 				 pos.column() <= startB.column() + link.second ) {
-				getUISceneNode()->setCursor( Cursor::Hand );
-				mHandShown = true;
+				if ( checkModifiers ) {
+					getUISceneNode()->setCursor( Cursor::Hand );
+					mHandShown = true;
+				}
 				mLinkPosition = { { startB.line(), startB.column() + link.first },
 								  { startB.line(), startB.column() + link.second } };
 				mLink = String( linkStr.substr( link.first, link.second - link.first ) );

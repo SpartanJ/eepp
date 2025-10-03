@@ -1087,7 +1087,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void checkMouseOverColor( const Vector2i& position );
 
-	String checkMouseOverLink( const Vector2i& position );
+	String checkMouseOverLink( const Vector2i& position, bool checkModifiers = true );
 
 	String resetLinkOver( const Vector2i& mousePos );
 

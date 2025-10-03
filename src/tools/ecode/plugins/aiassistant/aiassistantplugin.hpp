@@ -52,9 +52,10 @@ class AIAssistantPlugin : public PluginBase {
 	LLMProviders mProviders;
 	bool mUIInit{ false };
 	UIWidget* mStatusBar{ nullptr };
-	UIPushButton* mStatusButton{ nullptr };
+	UIPushButton* mAIChatButton{ nullptr };
 	UnorderedMap<std::string, std::string> mApiKeys;
 	AIAssistantConfig mConfig;
+	Uint32 mAIChatButtonPosCbId{ 0 };
 
 	AIAssistantPlugin( PluginManager* pluginManager, bool sync );
 

@@ -87,6 +87,9 @@ GitPlugin::~GitPlugin() {
 	if ( getUISceneNode() )
 		getUISceneNode()->removeActionsByTag( GIT_STATUS_UPDATE_TAG );
 
+	if ( mStatusBar && mRepositionCbId )
+		mStatusBar->removeEventListener( mRepositionCbId );
+
 	{
 		Lock l( mGitBranchMutex );
 	}
@@ -352,13 +355,22 @@ void GitPlugin::updateStatusBarSync() {
 				mPanelSwicher->getListBox()->setSelected( 1 );
 		} );
 
-		if ( mStatusBar->getNextNode() == nullptr ||
-			 mStatusBar->getNextNode()->getId() != "doc_info" ) {
-			auto docInfo = mStatusBar->find( "doc_info" );
-			if ( docInfo != nullptr && docInfo->getParent() == mStatusButton->getParent() ) {
-				mStatusButton->toPosition( docInfo->getNodeIndex() );
+		const auto reposition = [this] {
+			if ( mStatusBar == nullptr )
+				return;
+			if ( mStatusButton->getNextNode() == nullptr ||
+				 mStatusButton->getNextNode()->getId() != "doc_info" ) {
+				auto docInfo = mStatusBar->find( "doc_info" );
+				if ( docInfo != nullptr && docInfo->getParent() == mStatusButton->getParent() ) {
+					mStatusButton->toPosition( docInfo->getNodeIndex() );
+				}
 			}
-		}
+		};
+
+		reposition();
+
+		mRepositionCbId =
+			mStatusBar->on( Event::OnChildCountChanged, [reposition]( auto ) { reposition(); } );
 	}
 
 	mStatusButton->setVisible( !mGit->getGitFolder().empty() );

@@ -82,7 +82,7 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 				  { "file-search", 0xed05 },
 				  { "window", 0xf2c4 },
 				  { "file-lock-fill", 0xecf2 },
-				  { "filetype-svg", 0xF3C5 },
+				  { "file	type-svg", 0xF3C5 },
 				  { "filetype-png", 0xF3C5 },
 				  { "filetype-jpg", 0xF3C5 },
 				  { "filetype-jpeg", 0xF3C5 },

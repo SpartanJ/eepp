@@ -20,18 +20,9 @@ static std::initializer_list<std::string> AIAssistantUnlockedCommandList = {
 
 static std::initializer_list<std::string> AIAssistantCommandList = {
 
-	"ai-prompt",
-	"ai-add-chat",
-	"ai-chat-history",
-	"ai-attach-file",
-	"ai-clone-chat",
-	"ai-settings",
-	"ai-toggle-private-chat",
-	"ai-save-chat",
-	"ai-rename-chat",
-	"ai-show-menu",
-	"ai-chat-toggle-role",
-	"ai-refresh-local-models",
+	"ai-prompt",	   "ai-add-chat",  "ai-chat-history",		 "ai-attach-file",
+	"ai-clone-chat",   "ai-settings",  "ai-toggle-private-chat", "ai-save-chat",
+	"ai-rename-chat",  "ai-show-menu", "ai-chat-toggle-role",	 "ai-refresh-local-models",
 	"new-ai-assistant"
 
 };
@@ -152,9 +143,11 @@ AIAssistantPlugin::~AIAssistantPlugin() {
 
 	waitUntilLoaded();
 	mShuttingDown = true;
-	if ( mStatusButton )
-		mStatusButton->close();
-
+	if ( mAIChatButton ) {
+		if ( mAIChatButtonPosCbId )
+			mAIChatButton->getParent()->removeEventListener( mAIChatButtonPosCbId );
+		mAIChatButton->close();
+	}
 	getPluginContext()->getConfig().removeTabWidgetType( "llm_chatui" );
 }
 
@@ -332,7 +325,6 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 			mApiKeys["openrouter"] = config.value( "openrouter_api_key", "" );
 		else if ( updateConfigFile )
 			config["openrouter_api_key"] = mApiKeys["openrouter"];
-
 	}
 
 	if ( mKeyBindings.empty() ) {
@@ -473,16 +465,24 @@ void AIAssistantPlugin::initUI() {
 	if ( !mStatusBar )
 		return;
 
-	if ( !mStatusButton ) {
-		mStatusButton = UIPushButton::New();
-		mStatusButton->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent );
-		mStatusButton->setParent( mStatusBar );
-		mStatusButton->setId( "ai_assistant_but" );
-		mStatusButton->setClass( "status_but" );
-		mStatusButton->setIcon( iconDrawable( "chat-sparkle", 14 ) );
-		mStatusButton->setTooltipText( i18n( "ai_assistant", "AI Assistant" ) );
-		mStatusButton->on( Event::MouseClick,
+	if ( !mAIChatButton ) {
+		mAIChatButton = UIPushButton::New();
+		mAIChatButton->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::MatchParent );
+		mAIChatButton->setParent( mStatusBar );
+		mAIChatButton->setId( "ai_assistant_but" );
+		mAIChatButton->setClass( "status_but" );
+		mAIChatButton->setIcon( iconDrawable( "chat-sparkle", 14 ) );
+		mAIChatButton->setTooltipText( i18n( "ai_assistant", "AI Assistant" ) );
+
+		mAIChatButton->on( Event::MouseClick,
 						   [this]( const Event* ) { newAIAssistant()->setFocus(); } );
+
+		mAIChatButtonPosCbId =
+			mAIChatButton->getParent()->on( Event::OnChildCountChanged, []( const Event* event ) {
+				auto statusButton = event->getNode()->find( "ai_assistant_but" );
+				if ( statusButton && event->getNode()->getLastChild() != statusButton )
+					statusButton->toFront();
+			} );
 	}
 }
 

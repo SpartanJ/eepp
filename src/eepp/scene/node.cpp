@@ -471,7 +471,7 @@ Node* Node::toFront() {
 }
 
 Node* Node::toBack() {
-	if ( NULL != mParentNode ) {
+	if ( NULL != mParentNode && mParentNode->mChild != this ) {
 		mParentNode->childAddAt( this, 0 );
 	}
 	return this;
