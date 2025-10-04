@@ -30,18 +30,17 @@ UISpinBox::UISpinBox() :
 	mPushUp->setEnabled( true );
 	mPushUp->setParent( this );
 	mPushUp->setSize( 8, 8 );
-	mPushUp->addEventListener( Event::OnSizeChange, cb );
+	mPushUp->on( Event::OnSizeChange, cb );
 
 	mPushDown = UIWidget::NewWithTag( "spinbox::btndown" );
 	mPushDown->setVisible( true );
 	mPushDown->setEnabled( true );
 	mPushDown->setParent( this );
 	mPushDown->setSize( 8, 8 );
-	mPushDown->addEventListener( Event::OnSizeChange, cb );
+	mPushDown->on( Event::OnSizeChange, cb );
 
 	mInput->setAllowOnlyNumbers( true, false );
-	mInput->addEventListener( Event::OnBufferChange,
-							  [this]( auto event ) { onBufferChange( event ); } );
+	mInput->on( Event::OnBufferChange, [this]( auto event ) { onBufferChange( event ); } );
 	double val = mValue;
 	mValue += 1;
 	setValue( val );

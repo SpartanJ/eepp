@@ -37,24 +37,20 @@ UIDropDownList::UIDropDownList( const std::string& tag ) :
 	// This will force to change the parent when shown, and force the CSS style reload.
 	mListBox->setParent( this );
 
-	mListBox->addEventListener( Event::OnWidgetFocusLoss,
-								[this]( auto event ) { onListBoxFocusLoss( event ); } );
-	mListBox->addEventListener( Event::OnItemSelected,
-								[this]( auto event ) { onItemSelected( event ); } );
-	mListBox->addEventListener( Event::OnItemClicked,
-								[this]( auto event ) { onItemClicked( event ); } );
-	mListBox->addEventListener( Event::OnItemKeyDown,
-								[this]( auto event ) { onItemKeyDown( event ); } );
-	mListBox->addEventListener( Event::KeyDown, [this]( auto event ) { onItemKeyDown( event ); } );
-	mListBox->addEventListener( Event::OnClear, [this]( auto event ) { onWidgetClear( event ); } );
-	mListBoxCloseCb = mListBox->addEventListener( Event::OnClose,
-												  [this]( const Event* ) { mListBox = nullptr; } );
-	mListBox->addEventListener( Event::OnSelectionChanged, [this]( auto ) {
+	mListBox->on( Event::OnWidgetFocusLoss, [this]( auto event ) { onListBoxFocusLoss( event ); } );
+	mListBox->on( Event::OnItemSelected, [this]( auto event ) { onItemSelected( event ); } );
+	mListBox->on( Event::OnItemClicked, [this]( auto event ) { onItemClicked( event ); } );
+	mListBox->on( Event::OnItemKeyDown, [this]( auto event ) { onItemKeyDown( event ); } );
+	mListBox->on( Event::KeyDown, [this]( auto event ) { onItemKeyDown( event ); } );
+	mListBox->on( Event::OnClear, [this]( auto event ) { onWidgetClear( event ); } );
+	mListBoxCloseCb =
+		mListBox->on( Event::OnClose, [this]( const Event* ) { mListBox = nullptr; } );
+	mListBox->on( Event::OnSelectionChanged, [this]( auto ) {
 		if ( !mListBox->hasSelection() )
 			mListBox->setSelected( 0 );
 		sendCommonEvent( Event::OnSelectionChanged );
 	} );
-	mListBox->addEventListener( Event::OnItemValueChange, [this]( const Event* event ) {
+	mListBox->on( Event::OnItemValueChange, [this]( const Event* event ) {
 		if ( mListBox->getItemSelectedIndex() == event->asItemValueEvent()->getItemIndex() )
 			setText( mListBox->getItemSelectedText() );
 	} );
@@ -416,6 +412,11 @@ void UIDropDownList::loadFromXmlNode( const pugi::xml_node& node ) {
 	UITextInput::loadFromXmlNode( node );
 
 	endAttributesTransaction();
+}
+
+void UIDropDownList::onClassChange() {
+	if ( mListBox )
+		mListBox->setClasses( getClasses() );
 }
 
 }} // namespace EE::UI

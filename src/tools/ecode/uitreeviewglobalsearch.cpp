@@ -81,7 +81,7 @@ void UITreeViewCellGlobalSearch::toggleSelected() {
 std::function<UITextView*( UIPushButton* )> UITreeViewCellGlobalSearch::getCheckBoxFn() {
 	return [this]( UIPushButton* ) -> UITextView* {
 		UICheckBox* chk = UICheckBox::New();
-		addEventListener( Event::MouseClick, [this, chk]( const Event* event ) {
+		on( Event::MouseClick, [this, chk]( const Event* event ) {
 			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
 			if ( !( mouseEvent->getFlags() & EE_BUTTON_LMASK ) )
 				return 1;
@@ -155,8 +155,7 @@ UIPushButton* UITreeViewCellGlobalSearch::updateText( const std::string& text ) 
 		ProjectSearch::ResultData* res =
 			(ProjectSearch::ResultData*)getCurIndex().parent().internalData();
 
-		const auto& styleDef =
-			SyntaxDefinitionManager::instance()->getByExtension( res->file );
+		const auto& styleDef = SyntaxDefinitionManager::instance()->getByExtension( res->file );
 
 		Uint32 from = text.find_first_not_of( ' ' );
 		Uint32 to = from;

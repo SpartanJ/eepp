@@ -147,13 +147,12 @@ void UISceneNode::onParentChange() {
 	setDirty();
 	setPixelsSize( getParent()->getPixelsSize() );
 
-	mCurOnSizeChangeListener =
-		getParent()->addEventListener( Event::OnSizeChange, [this]( const Event* ) {
-			setDirty();
-			setPixelsSize( getParent()->getPixelsSize() );
-			onMediaChanged();
-			sendMsg( this, NodeMessage::WindowResize );
-		} );
+	mCurOnSizeChangeListener = getParent()->on( Event::OnSizeChange, [this]( const Event* ) {
+		setDirty();
+		setPixelsSize( getParent()->getPixelsSize() );
+		onMediaChanged();
+		sendMsg( this, NodeMessage::WindowResize );
+	} );
 }
 
 void UISceneNode::setTranslator( Translator translator ) {

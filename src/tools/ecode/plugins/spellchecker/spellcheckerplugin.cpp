@@ -225,8 +225,8 @@ void SpellCheckerPlugin::onDocumentChanged( UICodeEditor*, TextDocument* oldDoc 
 
 void SpellCheckerPlugin::onRegisterListeners( UICodeEditor* editor,
 											  std::vector<Uint32>& listeners ) {
-	listeners.push_back( editor->addEventListener(
-		Event::OnTextChanged, [this, editor]( const Event* ) { setDocDirty( editor ); } ) );
+	listeners.push_back( editor->on( Event::OnTextChanged,
+									 [this, editor]( const Event* ) { setDocDirty( editor ); } ) );
 }
 
 void SpellCheckerPlugin::setDocDirty( TextDocument* doc ) {
@@ -249,7 +249,8 @@ void SpellCheckerPlugin::update( UICodeEditor* editor ) {
 void SpellCheckerPlugin::spellCheckDoc( std::shared_ptr<TextDocument> doc ) {
 	if ( ( !mLanguagesDisabled.empty() &&
 		   mLanguagesDisabled.find( doc->getSyntaxDefinition().getLSPName() ) !=
-			   mLanguagesDisabled.end() ) || doc->isHuge() )
+			   mLanguagesDisabled.end() ) ||
+		 doc->isHuge() )
 		return;
 
 	ScopedOp op(

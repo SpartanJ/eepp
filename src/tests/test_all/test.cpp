@@ -372,8 +372,8 @@ void EETest::createBaseUI() {
 
 	tWin->setTitle( "Widgets Test" );
 
-	tWin->addEventListener( Event::MouseUp, [this]( auto event ) { onWinMouseUp( event ); } );
-	C->addEventListener( Event::MouseUp, [this]( auto event ) { onWinMouseUp( event ); } );
+	tWin->on( Event::MouseUp, [this]( auto event ) { onWinMouseUp( event ); } );
+	C->on( Event::MouseUp, [this]( auto event ) { onWinMouseUp( event ); } );
 
 	UISprite* sprite = UISprite::New();
 	sprite->setFlags( UI_AUTO_SIZE );
@@ -397,7 +397,7 @@ void EETest::createBaseUI() {
 	Button->setParent( C )->setPosition( 225, 215 )->setSize( 90, 0 );
 	Button->setIcon( mSceneNode->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) ) );
 	Button->setText( "Click Me" );
-	Button->addEventListener( Event::MouseClick, [this]( auto event ) { onButtonClick( event ); } );
+	Button->on( Event::MouseClick, [this]( auto event ) { onButtonClick( event ); } );
 	Button->setTooltipText( "Click and see what happens..." );
 
 	UICheckBox* Checkbox = UICheckBox::New();
@@ -417,8 +417,7 @@ void EETest::createBaseUI() {
 		->setParent( C )
 		->setPosition( 220, 80 )
 		->setSize( 80, 24 );
-	mSlider->addEventListener( Event::OnValueChange,
-							   [this]( auto event ) { onSliderValueChange( event ); } );
+	mSlider->on( Event::OnValueChange, [this]( auto event ) { onSliderValueChange( event ); } );
 
 	UISlider::New()
 		->setOrientation( UIOrientation::Vertical )
@@ -437,8 +436,7 @@ void EETest::createBaseUI() {
 
 	mScrollBar = UIScrollBar::New();
 	mScrollBar->setParent( C )->setSize( 0, 240 );
-	mScrollBar->addEventListener( Event::OnValueChange,
-								  [this]( auto event ) { onValueChange( event ); } );
+	mScrollBar->on( Event::OnValueChange, [this]( auto event ) { onValueChange( event ); } );
 
 	mProgressBar = UIProgressBar::New();
 	mProgressBar->setParent( C )->setSize( 200, 24 )->setPosition( 20, 190 );
@@ -560,11 +558,10 @@ void EETest::createBaseUI() {
 	Menu->addSeparator();
 	Menu->add( "Quit" );
 
-	Menu->addEventListener( Event::OnItemClicked, [this]( auto event ) { onItemClick( event ); } );
-	Menu->getItem( "Quit" )->addEventListener( Event::MouseUp,
-											   [this]( auto event ) { onQuitClick( event ); } );
+	Menu->on( Event::OnItemClicked, [this]( auto event ) { onItemClick( event ); } );
+	Menu->getItem( "Quit" )->on( Event::MouseUp, [this]( auto event ) { onQuitClick( event ); } );
 
-	SceneManager::instance()->getUISceneNode()->getRoot()->addEventListener(
+	SceneManager::instance()->getUISceneNode()->getRoot()->on(
 		Event::MouseClick, [this]( auto event ) { onMainClick( event ); } );
 
 #ifdef EE_PLATFORM_TOUCH
@@ -583,7 +580,7 @@ void EETest::createBaseUI() {
 	mShowMenu->setPosition( screenSize.getWidth() - mShowMenu->getSize().getWidth() - 32,
 							screenSize.getHeight() - mShowMenu->getSize().getHeight() - 9 );
 	mShowMenu->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
-	mShowMenu->addEventListener( Event::MouseClick, [this]( auto event ) { onShowMenu( event ); } );
+	mShowMenu->on( Event::MouseClick, [this]( auto event ) { onShowMenu( event ); } );
 #endif
 }
 
@@ -657,11 +654,10 @@ void EETest::createNewUI() {
 	scrollView->setTouchDragEnabled( true );
 	scrollView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent )
 		->setParent( relLay );
-	scrollView->getContainer()->addEventListener( Event::MouseClick,
-												  [this]( auto event ) { onMainClick( event ); } );
+	scrollView->getContainer()->on( Event::MouseClick,
+									[this]( auto event ) { onMainClick( event ); } );
 	container->setParent( scrollView );
-	container->addEventListener( Event::MouseClick,
-								 [this]( auto event ) { onMainClick( event ); } );
+	container->on( Event::MouseClick, [this]( auto event ) { onMainClick( event ); } );
 
 	UILoader* loader = UILoader::New();
 	loader->setOutlineThickness( 4 )
@@ -738,7 +734,7 @@ void EETest::createNewUI() {
 	pushButton->setPosition( 50, 560 )->setSize( 200, 0 )->setParent( container );
 	pushButton->setText( "PushButton" );
 	pushButton->setIcon( mSceneNode->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) ) );
-	pushButton->addEventListener( Event::MouseClick, [this, pushButton]( const Event* event ) {
+	pushButton->on( Event::MouseClick, [this, pushButton]( const Event* event ) {
 		if ( static_cast<const MouseEvent*>( event )->getFlags() & EE_BUTTON_LMASK )
 			createColorPicker( pushButton );
 	} );
@@ -1076,11 +1072,10 @@ void EETest::createDecoratedWindow() {
 		->setMinWindowSize( 530, 350 )
 		->setPosition( 200, 50 );
 
-	mUIWindow->addEventListener( Event::OnWindowClose,
-								 [this]( auto event ) { onCloseClick( event ); } );
+	mUIWindow->on( Event::OnWindowClose, [this]( auto event ) { onCloseClick( event ); } );
 	mUIWindow->setTitle( "Test Window" );
-	mUIWindow->addEventListener( Event::OnDragStart, onWinDragStart );
-	mUIWindow->addEventListener( Event::OnDragStop, onWinDragStop );
+	mUIWindow->on( Event::OnDragStart, onWinDragStart );
+	mUIWindow->on( Event::OnDragStop, onWinDragStop );
 
 	UILinearLayout* lay = UILinearLayout::NewVertical();
 	lay->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
@@ -1093,7 +1088,7 @@ void EETest::createDecoratedWindow() {
 	UIPopUpMenu* PopMenu = UIPopUpMenu::New();
 	PopMenu->add( "Hide Border" );
 	PopMenu->add( "Close" );
-	PopMenu->addEventListener( Event::OnItemClicked, []( const Event* Event ) {
+	PopMenu->on( Event::OnItemClicked, []( const Event* Event ) {
 		if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 
@@ -1139,7 +1134,7 @@ void EETest::createDecoratedWindow() {
 	Button->setText( "Click Me" );
 	Button->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( lay );
-	Button->addEventListener( Event::MouseClick, [this]( auto event ) { onButtonClick( event ); } );
+	Button->on( Event::MouseClick, [this]( auto event ) { onButtonClick( event ); } );
 
 	mUIWindow->setKeyBindingCommand( "button-click", [this] { addFlyingIcon(); } );
 	mUIWindow->addKeyBinding( { KEY_C, KEYMOD_LALT }, "button-click" );
@@ -1154,8 +1149,7 @@ void EETest::createDecoratedWindow() {
 	UITextEdit* TEdit = UITextEdit::New();
 	TEdit->setFlags( UI_WORD_WRAP );
 	TEdit->setParent( TabWidget );
-	TEdit->addEventListener( Event::OnSizeChange,
-							 [this, TEdit]( const Event* ) { TEdit->setText( mBuddha ); } );
+	TEdit->on( Event::OnSizeChange, [this, TEdit]( const Event* ) { TEdit->setText( mBuddha ); } );
 	TabWidget->add( "TextEdit", TEdit );
 
 	UITextInput* Txt = UITextInput::New();

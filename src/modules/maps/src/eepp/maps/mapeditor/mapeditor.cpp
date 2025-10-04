@@ -72,12 +72,10 @@ MapEditor::MapEditor( UIWindow* AttachTo, const MapEditorCloseCb& callback ) :
 	if ( NULL != mUIWindow ) {
 		mUIContainer = mUIWindow->getContainer();
 		mUIWindow->setTitle( "Map Editor" );
-		mUIWindow->addEventListener( Event::OnWindowClose,
-									 [this]( auto event ) { windowClose( event ); } );
+		mUIWindow->on( Event::OnWindowClose, [this]( auto event ) { windowClose( event ); } );
 	} else {
 		mUIContainer = SceneManager::instance()->getUISceneNode();
-		mUIContainer->addEventListener( Event::OnClose,
-										[this]( auto event ) { windowClose( event ); } );
+		mUIContainer->on( Event::OnClose, [this]( auto event ) { windowClose( event ); } );
 	}
 
 	createME();
@@ -139,7 +137,7 @@ void MapEditor::createMenuBar() {
 	PU1->add( "Quit",
 			  PU1->getUISceneNode()->findIconDrawable( "quit", PixelDensity::dpToPxI( 16 ) ) );
 
-	PU1->addEventListener( Event::OnItemClicked, [this]( auto event ) { fileMenuClick( event ); } );
+	PU1->on( Event::OnItemClicked, [this]( auto event ) { fileMenuClick( event ); } );
 	MenuBar->addMenuButton( "File", PU1 );
 
 	UIPopUpMenu* PU3 = UIPopUpMenu::New();
@@ -166,7 +164,7 @@ void MapEditor::createMenuBar() {
 
 	PU3->addSeparator();
 
-	PU3->addEventListener( Event::OnItemClicked, [this]( auto event ) { viewMenuClick( event ); } );
+	PU3->on( Event::OnItemClicked, [this]( auto event ) { viewMenuClick( event ); } );
 	MenuBar->addMenuButton( "View", PU3 );
 
 	UIPopUpMenu* PU4 = UIPopUpMenu::New();
@@ -174,7 +172,7 @@ void MapEditor::createMenuBar() {
 	PU4->add( "Properties..." );
 	PU4->add( "Resize..." );
 
-	PU4->addEventListener( Event::OnItemClicked, [this]( auto event ) { mapMenuClick( event ); } );
+	PU4->on( Event::OnItemClicked, [this]( auto event ) { mapMenuClick( event ); } );
 	MenuBar->addMenuButton( "Map", PU4 );
 
 	UIPopUpMenu* PU5 = UIPopUpMenu::New();
@@ -196,8 +194,7 @@ void MapEditor::createMenuBar() {
 
 	mLayerChkVisible = PU5->addCheckBox( "Visible" );
 
-	PU5->addEventListener( Event::OnItemClicked,
-						   [this]( auto event ) { layerMenuClick( event ); } );
+	PU5->on( Event::OnItemClicked, [this]( auto event ) { layerMenuClick( event ); } );
 	MenuBar->addMenuButton( "Layer", PU5 );
 
 	UIPopUpMenu* PU6 = UIPopUpMenu::New();
@@ -205,7 +202,7 @@ void MapEditor::createMenuBar() {
 	PU6->add( "New Texture Atlas..." );
 	PU6->add( "Add External Texture Atlas..." );
 	MenuBar->addMenuButton( "Atlases", PU6 );
-	PU6->addEventListener( Event::OnItemClicked, [this]( auto event ) { mapMenuClick( event ); } );
+	PU6->on( Event::OnItemClicked, [this]( auto event ) { mapMenuClick( event ); } );
 
 	mWinContainer = UIWidget::New();
 	mWinContainer->enableReportSizeChangeToChildren();
@@ -249,8 +246,7 @@ void MapEditor::createETGMenu() {
 		->setSize( Width + DistToBorder, mWinContainer->getSize().getHeight() - DistFromTopMenu )
 		->setPosition( ContPosX, DistFromTopMenu );
 
-	mTabWidget->addEventListener( Event::OnTabSelected,
-								  [this]( auto event ) { onTabSelected( event ); } );
+	mTabWidget->on( Event::OnTabSelected, [this]( auto event ) { onTabSelected( event ); } );
 
 	createTabs();
 
@@ -313,8 +309,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 		->setSize( Width - 30, 0 )
 		->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 
-	mGOTypeList->addEventListener( Event::OnItemSelected,
-								   [this]( auto event ) { onTypeChange( event ); } );
+	mGOTypeList->on( Event::OnItemSelected, [this]( auto event ) { onTypeChange( event ); } );
 	fillGotyList();
 
 	mBtnGOTypeAdd = UIPushButton::New();
@@ -327,8 +322,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 			"add", PixelDensity::dpToPxI( 16 ) ) )
 		->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mBtnGOTypeAdd->setTooltipText( "Adds a new game object type\nunknown by the map editor." );
-	mBtnGOTypeAdd->addEventListener( Event::MouseClick,
-									 [this]( auto event ) { addNewGOType( event ); } );
+	mBtnGOTypeAdd->on( Event::MouseClick, [this]( auto event ) { addNewGOType( event ); } );
 
 	if ( NULL == mBtnGOTypeAdd->getIcon()->getDrawable() )
 		mBtnGOTypeAdd->setText( "..." );
@@ -344,8 +338,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 		->setSize( Width, 0 )
 		->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 
-	mLayerList->addEventListener( Event::OnItemSelected,
-								  [this]( auto event ) { onLayerSelect( event ); } );
+	mLayerList->on( Event::OnItemSelected, [this]( auto event ) { onLayerSelect( event ); } );
 
 	Txt = createTextBox( "Game Object Flags:", mTextureRegionCont, Sizef( Width, 16 ),
 						 Vector2f( TAB_CONT_X_DIST, mLayerList->getPosition().y +
@@ -360,8 +353,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 		->setParent( mTextureRegionCont )
 		->setPosition( TAB_CONT_X_DIST, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
 	mChkMirrored->setText( "Mirrored" );
-	mChkMirrored->addEventListener( Event::OnValueChange,
-									[this]( auto event ) { chkClickMirrored( event ); } );
+	mChkMirrored->on( Event::OnValueChange, [this]( auto event ) { chkClickMirrored( event ); } );
 
 	mChkFlipped = UICheckBox::New();
 	mChkFlipped->setFontStyle( Text::Shadow )
@@ -370,8 +362,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 		->setPosition( mChkMirrored->getPosition().x + mChkMirrored->getSize().getWidth() + 32,
 					   mChkMirrored->getPosition().y );
 	mChkFlipped->setText( "Flipped" );
-	mChkFlipped->addEventListener( Event::OnValueChange,
-								  [this]( auto event ) { chkClickFlipped( event ); } );
+	mChkFlipped->on( Event::OnValueChange, [this]( auto event ) { chkClickFlipped( event ); } );
 
 	mChkBlocked = UICheckBox::New();
 	mChkBlocked->setFontStyle( Text::Shadow )
@@ -381,8 +372,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 					   mChkMirrored->getPosition().y + mChkMirrored->getSize().getHeight() + 4 );
 	mChkBlocked->setText( "Blocked" );
 	mChkBlocked->setTooltipText( "Blocks the tile occupied by the sprite." );
-	mChkBlocked->addEventListener( Event::OnValueChange,
-								   [this]( auto event ) { chkClickBlocked( event ); } );
+	mChkBlocked->on( Event::OnValueChange, [this]( auto event ) { chkClickBlocked( event ); } );
 
 	mChkAnim = UICheckBox::New();
 	mChkAnim->setFontStyle( Text::Shadow )
@@ -392,8 +382,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 					   mChkFlipped->getPosition().y + mChkFlipped->getSize().getHeight() + 4 );
 	mChkAnim->setText( "Animated" );
 	mChkAnim->setTooltipText( "Indicates if the Sprite is animated." );
-	mChkAnim->addEventListener( Event::OnValueChange,
-								[this]( auto event ) { chkClickAnimated( event ); } );
+	mChkAnim->on( Event::OnValueChange, [this]( auto event ) { chkClickAnimated( event ); } );
 
 	mChkRot90 = UICheckBox::New();
 	mChkRot90->setFontStyle( Text::Shadow )
@@ -402,8 +391,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 		->setPosition( mChkBlocked->getPosition().x,
 					   mChkBlocked->getPosition().y + mChkBlocked->getSize().getHeight() + 4 );
 	mChkRot90->setText( String::fromUtf8( std::string_view{ "Rotate 90º" } ) );
-	mChkRot90->addEventListener( Event::OnValueChange,
-								 [this]( auto event ) { chkClickRot90( event ); } );
+	mChkRot90->on( Event::OnValueChange, [this]( auto event ) { chkClickRot90( event ); } );
 
 	mChkAutoFix = UICheckBox::New();
 	mChkAutoFix->setFontStyle( Text::Shadow )
@@ -414,8 +402,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 	mChkAutoFix->setText( "AutoFix TilePos" );
 	mChkAutoFix->setTooltipText( "In a tiled layer if the sprite is moved,\nit will update the "
 								 "current tile position automatically." );
-	mChkAutoFix->addEventListener( Event::OnValueChange,
-								   [this]( auto event ) { chkClickAutoFix( event ); } );
+	mChkAutoFix->on( Event::OnValueChange, [this]( auto event ) { chkClickAutoFix( event ); } );
 
 	mChkBlendAdd = UICheckBox::New();
 	mChkBlendAdd->setFontStyle( Text::Shadow )
@@ -425,8 +412,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 					   mChkRot90->getPosition().y + mChkRot90->getSize().getHeight() + 4 );
 	mChkBlendAdd->setText( "Additive Blend" );
 	mChkBlendAdd->setTooltipText( "Use additive blend mode." );
-	mChkBlendAdd->addEventListener( Event::OnValueChange,
-									[this]( auto event ) { chkClickAutoFix( event ); } );
+	mChkBlendAdd->on( Event::OnValueChange, [this]( auto event ) { chkClickAutoFix( event ); } );
 
 	Txt = createTextBox( "Game Object Data:", mTextureRegionCont, Sizef( Width, 16 ),
 						 Vector2f( TAB_CONT_X_DIST, mChkBlendAdd->getPosition().y +
@@ -441,7 +427,7 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 	mChkDI->setText( "Add as DataId" );
 	mChkDI->setTooltipText(
 		"If the resource it's not a sprite,\nyou can reference it with a data id" );
-	mChkDI->addEventListener( Event::OnValueChange, [this]( auto event ) { chkClickDI( event ); } );
+	mChkDI->on( Event::OnValueChange, [this]( auto event ) { chkClickDI( event ); } );
 
 	mSGCont = UIWidget::New();
 	mSGCont->setParent( mTextureRegionCont )
@@ -460,8 +446,8 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 		->setParent( mSGCont )
 		->setSize( Width, 0 )
 		->setPosition( 0, Txt->getPosition().y + Txt->getSize().getHeight() + 4 );
-	mTextureAtlasesList->addEventListener(
-		Event::OnItemSelected, [this]( auto event ) { onTextureAtlasChange( event ); } );
+	mTextureAtlasesList->on( Event::OnItemSelected,
+							 [this]( auto event ) { onTextureAtlasChange( event ); } );
 
 	mTextureRegionList = UIListBox::New();
 	mTextureRegionList->setParent( mSGCont )
@@ -471,8 +457,8 @@ void MapEditor::createTextureRegionContainer( Int32 Width ) {
 							  mTextureRegionList->getContainerPadding().Top +
 							  mTextureRegionList->getContainerPadding().Bottom );
 	mTextureRegionList->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	mTextureRegionList->addEventListener(
-		Event::OnItemSelected, [this]( auto event ) { onTextureRegionChange( event ); } );
+	mTextureRegionList->on( Event::OnItemSelected,
+							[this]( auto event ) { onTextureRegionChange( event ); } );
 
 	mGfxPreview = UITextureRegion::New();
 	mGfxPreview->setScaleType( UIScaleType::FitInside )
@@ -511,8 +497,7 @@ void MapEditor::createLightContainer() {
 		->setSize( mLightCont->getSize().getWidth() - TAB_CONT_X_DIST * 2, 0 )
 		->setPosition( TAB_CONT_X_DIST, 0 );
 	NewLightBut->setText( "New Light" );
-	NewLightBut->addEventListener( Event::MouseClick,
-								   [this]( auto event ) { onNewLight( event ); } );
+	NewLightBut->on( Event::MouseClick, [this]( auto event ) { onNewLight( event ); } );
 
 	UITextView* Txt =
 		createTextBox( "Light Color:", mLightCont, Sizef(), Vector2f( TAB_CONT_X_DIST, 32 ),
@@ -540,8 +525,7 @@ void MapEditor::createLightContainer() {
 		->setPosition( Txt->getPosition().x + Txt->getSize().getWidth(), Txt->getPosition().y );
 	mUIRedSlider->setMaxValue( 255 );
 	mUIRedSlider->setValue( 255 );
-	mUIRedSlider->addEventListener( Event::OnValueChange,
-									[this]( auto event ) { onRedChange( event ); } );
+	mUIRedSlider->on( Event::OnValueChange, [this]( auto event ) { onRedChange( event ); } );
 
 	mUIRedTxt = createTextBox(
 		String::toString( (Uint32)255 ), mLightCont, Sizef(),
@@ -560,8 +544,7 @@ void MapEditor::createLightContainer() {
 		->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 	mUIGreenSlider->setMaxValue( 255 );
 	mUIGreenSlider->setValue( 255 );
-	mUIGreenSlider->addEventListener( Event::OnValueChange,
-									  [this]( auto event ) { onGreenChange( event ); } );
+	mUIGreenSlider->on( Event::OnValueChange, [this]( auto event ) { onGreenChange( event ); } );
 
 	mUIGreenTxt = createTextBox(
 		String::toString( (Uint32)255 ), mLightCont, Sizef(),
@@ -580,8 +563,7 @@ void MapEditor::createLightContainer() {
 		->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 	mUIBlueSlider->setMaxValue( 255 );
 	mUIBlueSlider->setValue( 255 );
-	mUIBlueSlider->addEventListener( Event::OnValueChange,
-									 [this]( auto event ) { onBlueChange( event ); } );
+	mUIBlueSlider->on( Event::OnValueChange, [this]( auto event ) { onBlueChange( event ); } );
 
 	mUIBlueTxt = createTextBox(
 		String::toString( (Uint32)255 ), mLightCont, Sizef(),
@@ -600,8 +582,8 @@ void MapEditor::createLightContainer() {
 		->setPosition( Txt->getPosition().x,
 					   Txt->getPosition().y + Txt->getSize().getHeight() + 8 );
 	mLightRadius->setMaxValue( 2000 );
-	mLightRadius->addEventListener( Event::OnValueChange,
-									[this]( auto event ) { onLightRadiusChangeVal( event ); } );
+	mLightRadius->on( Event::OnValueChange,
+					  [this]( auto event ) { onLightRadiusChangeVal( event ); } );
 
 	mLightTypeChk = UICheckBox::New();
 	mLightTypeChk->setFlags( UI_AUTO_SIZE )
@@ -610,8 +592,7 @@ void MapEditor::createLightContainer() {
 					   mLightRadius->getPosition().y + mLightRadius->getSize().getHeight() + 8 );
 	mLightTypeChk->setText( "Isometric Light" );
 	mLightTypeChk->setChecked( false );
-	mLightTypeChk->addEventListener( Event::OnValueChange,
-									 [this]( auto event ) { onLightTypeChange( event ); } );
+	mLightTypeChk->on( Event::OnValueChange, [this]( auto event ) { onLightTypeChange( event ); } );
 }
 
 UISelectButton* MapEditor::addObjContButton( String text, Uint32 mode ) {
@@ -622,8 +603,7 @@ UISelectButton* MapEditor::addObjContButton( String text, Uint32 mode ) {
 	Button->setText( text );
 	Button->setData( mode );
 
-	Button->addEventListener( Event::MouseClick,
-							  [this]( auto event ) { onObjectModeSel( event ); } );
+	Button->on( Event::MouseClick, [this]( auto event ) { onObjectModeSel( event ); } );
 
 	mLastSelButtonY += Button->getSize().getHeight() + 4;
 
@@ -646,8 +626,8 @@ void MapEditor::createObjectsContainer() {
 	mChkClampToTile = UICheckBox::New();
 	mChkClampToTile->resetFlags( ChkFlags )->setParent( mObjectCont )->setPosition( 12, nextY );
 	mChkClampToTile->setText( "Clamp Position to Tile" );
-	mChkClampToTile->addEventListener( Event::OnValueChange,
-									   [this]( auto event ) { chkClickClampToTile( event ); } );
+	mChkClampToTile->on( Event::OnValueChange,
+						 [this]( auto event ) { chkClickClampToTile( event ); } );
 	mChkClampToTile->setChecked( true );
 }
 
@@ -690,11 +670,9 @@ void MapEditor::createUIMap() {
 	mUIMap->setVisible( true );
 	mUIMap->setEnabled( true );
 	createNewEmptyMap();
-	mUIMap->addEventListener( Event::OnSizeChange,
-							  [this]( auto event ) { onMapSizeChange( event ); } );
-	mUIMap->addEventListener( Event::MouseDown, [this]( auto event ) { onMapMouseDown( event ); } );
-	mUIMap->addEventListener( Event::MouseClick,
-							  [this]( auto event ) { onMapMouseClick( event ); } );
+	mUIMap->on( Event::OnSizeChange, [this]( auto event ) { onMapSizeChange( event ); } );
+	mUIMap->on( Event::MouseDown, [this]( auto event ) { onMapMouseDown( event ); } );
+	mUIMap->on( Event::MouseClick, [this]( auto event ) { onMapMouseClick( event ); } );
 	mUIMap->setLightSelectCb( [this]( auto event ) { onLightSelect( event ); } );
 	mUIMap->setLightRadiusChangeCb( [this]( auto event ) { onLightRadiusChange( event ); } );
 	mUIMap->setAddObjectCallback(
@@ -710,16 +688,14 @@ void MapEditor::createUIMap() {
 		->setSize( mWinContainer->getSize().getWidth() - 225 - ScrollV, ScrollH )
 		->setPosition( 0, mWinContainer->getSize().getHeight() - ScrollH );
 	mMapHScroll->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
-	mMapHScroll->addEventListener( Event::OnValueChange,
-								   [this]( auto event ) { onScrollMapH( event ); } );
+	mMapHScroll->on( Event::OnValueChange, [this]( auto event ) { onScrollMapH( event ); } );
 
 	mMapVScroll = UIScrollBar::New();
 	mMapVScroll->setParent( mWinContainer )
 		->setSize( ScrollV, mWinContainer->getSize().getHeight() - ScrollH )
 		->setPosition( mWinContainer->getSize().getWidth() - 225 - ScrollV, 0 );
 	mMapVScroll->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM );
-	mMapVScroll->addEventListener( Event::OnValueChange,
-								   [this]( auto event ) { onScrollMapV( event ); } );
+	mMapVScroll->on( Event::OnValueChange, [this]( auto event ) { onScrollMapV( event ); } );
 
 	mapCreated();
 }
@@ -1145,7 +1121,7 @@ void MapEditor::fileMenuClick( const Event* Event ) {
 		UIFileDialog* TGDialog = UIFileDialog::New( UIFileDialog::DefaultFlags, "*.eem" );
 		TGDialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open Map" );
-		TGDialog->addEventListener( Event::OpenFile, [this]( auto event ) { mapOpen( event ); } );
+		TGDialog->on( Event::OpenFile, [this]( auto event ) { mapOpen( event ); } );
 		TGDialog->center();
 		TGDialog->show();
 	} else if ( "Save As..." == txt ) {
@@ -1153,7 +1129,7 @@ void MapEditor::fileMenuClick( const Event* Event ) {
 			UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "*.eem" );
 		TGDialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Save Map" );
-		TGDialog->addEventListener( Event::SaveFile, [this]( auto event ) { mapSave( event ); } );
+		TGDialog->on( Event::SaveFile, [this]( auto event ) { mapSave( event ); } );
 		TGDialog->center();
 		TGDialog->show();
 	} else if ( "Save" == txt ) {
@@ -1164,7 +1140,7 @@ void MapEditor::fileMenuClick( const Event* Event ) {
 		UIMessageBox* MsgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
 			"Do you really want to close the current map?\nAll changes will be lost." );
-		MsgBox->addEventListener( Event::OnConfirm, [this]( auto event ) { onMapClose( event ); } );
+		MsgBox->on( Event::OnConfirm, [this]( auto event ) { onMapClose( event ); } );
 		MsgBox->setTitle( "Close Map?" );
 		MsgBox->center();
 		MsgBox->showWhenReady();
@@ -1287,15 +1263,13 @@ void MapEditor::mapMenuClick( const Event* Event ) {
 			UIFileDialog::DefaultFlags, std::string( "*" ) + EE_TEXTURE_ATLAS_EXTENSION );
 		TGDialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Load Texture Atlas..." );
-		TGDialog->addEventListener( Event::OpenFile,
-									[this]( auto event ) { cextureAtlasOpen( event ); } );
+		TGDialog->on( Event::OpenFile, [this]( auto event ) { cextureAtlasOpen( event ); } );
 		TGDialog->center();
 		TGDialog->show();
 	} else if ( "Properties..." == txt ) {
 		eeNew( TileMapProperties, ( mUIMap->Map() ) );
 	} else if ( "Resize..." ) {
-		eeNew( UIMapNew, (
-							 mUIMap, [this] { onMapLoad(); }, true ) );
+		eeNew( UIMapNew, ( mUIMap, [this] { onMapLoad(); }, true ) );
 	}
 }
 

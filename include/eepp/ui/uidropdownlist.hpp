@@ -85,6 +85,8 @@ class EE_API UIDropDownList : public UITextInput {
 
 	virtual Uint32 onKeyDown( const KeyEvent& Event );
 
+	virtual void onClassChange();
+
 	virtual void onSizeChange();
 
 	virtual void onAutoSize();

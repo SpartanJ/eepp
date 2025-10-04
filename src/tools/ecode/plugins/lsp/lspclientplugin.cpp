@@ -1351,12 +1351,12 @@ void LSPClientPlugin::renameSymbol( UICodeEditor* editor ) {
 		selection.hasSelection() ? selection.end() : selStart ) );
 	msgBox->getTextInput()->getDocument().selectAll();
 	msgBox->showWhenReady();
-	msgBox->addEventListener( Event::OnConfirm, [this, selStart, editor, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [this, selStart, editor, msgBox]( const Event* ) {
 		String newName( msgBox->getTextInput()->getText() );
 		mClientManager.renameSymbol( editor->getDocumentRef()->getURI(), selStart, newName );
 		msgBox->closeWindow();
 	} );
-	msgBox->addEventListener( Event::OnClose, [this]( const Event* ) {
+	msgBox->on( Event::OnClose, [this]( const Event* ) {
 		if ( mManager->getSplitter() && mManager->getSplitter()->getCurWidget() )
 			mManager->getSplitter()->getCurWidget()->setFocus();
 	} );
@@ -1437,22 +1437,20 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 
 	std::vector<Uint32> listeners;
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
-			mEditorDocs[editor] = editor->getDocumentRef().get();
-			mClientManager.run( editor->getDocumentRef() );
-			updateCurrentSymbol( editor->getDocument() );
-		} ) );
+	listeners.push_back( editor->on( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
+		mEditorDocs[editor] = editor->getDocumentRef().get();
+		mClientManager.run( editor->getDocumentRef() );
+		updateCurrentSymbol( editor->getDocument() );
+	} ) );
+
+	listeners.push_back( editor->on( Event::OnCursorPosChange, [this, editor]( const Event* ) {
+		if ( mSymbolInfoShowing )
+			hideTooltip( editor );
+		updateCurrentSymbol( editor->getDocument() );
+	} ) );
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnCursorPosChange, [this, editor]( const Event* ) {
-			if ( mSymbolInfoShowing )
-				hideTooltip( editor );
-			updateCurrentSymbol( editor->getDocument() );
-		} ) );
-
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* event ) {
+		editor->on( Event::OnDocumentChanged, [this, editor]( const Event* event ) {
 			const DocChangedEvent* docChangedEvent = static_cast<const DocChangedEvent*>( event );
 			TextDocument* oldDoc = mEditorDocs[editor];
 			TextDocument* newDoc = editor->getDocumentRef().get();

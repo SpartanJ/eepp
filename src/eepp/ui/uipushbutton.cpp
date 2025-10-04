@@ -73,10 +73,10 @@ UIPushButton::UIPushButton( const std::string& tag,
 		->setParent( this )
 		->setVisible( true )
 		->setEnabled( false );
-	mTextBox->addEventListener( Event::OnFontChanged, cb );
-	mTextBox->addEventListener( Event::OnFontStyleChanged, cb );
-	mTextBox->addEventListener( Event::OnTextChanged, cb );
-	mTextBox->addEventListener( Event::OnVisibleChange, cb );
+	mTextBox->on( Event::OnFontChanged, cb );
+	mTextBox->on( Event::OnFontStyleChanged, cb );
+	mTextBox->on( Event::OnTextChanged, cb );
+	mTextBox->on( Event::OnVisibleChange, cb );
 
 	applyDefaultTheme();
 }
@@ -388,10 +388,10 @@ UIImage* UIPushButton::getIcon() {
 			->setVisible( true )
 			->setEnabled( false );
 
-		mIcon->addEventListener( Event::OnPaddingChange, cb );
-		mIcon->addEventListener( Event::OnMarginChange, cb );
-		mIcon->addEventListener( Event::OnSizeChange, cb );
-		mIcon->addEventListener( Event::OnVisibleChange, cb );
+		mIcon->on( Event::OnPaddingChange, cb );
+		mIcon->on( Event::OnMarginChange, cb );
+		mIcon->on( Event::OnSizeChange, cb );
+		mIcon->on( Event::OnVisibleChange, cb );
 
 		if ( mIconMinSize != Sizei::Zero ) {
 			auto iconMinSize = mIconMinSize;

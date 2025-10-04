@@ -71,7 +71,7 @@ UISlider::UISlider( const std::string& tag, const UIOrientation& orientation ) :
 	mSlider->setDragEnabled( true );
 	mSlider->setSize( 4, 4 );
 	mSlider->setPosition( 0, 0 );
-	mSlider->addEventListener( Event::OnPositionChange, [this]( const Event* ) {
+	mSlider->on( Event::OnPositionChange, [this]( const Event* ) {
 		if ( !mUpdating && !mOnPosChange )
 			fixSliderPos();
 	} );
@@ -81,10 +81,10 @@ UISlider::UISlider( const std::string& tag, const UIOrientation& orientation ) :
 	else
 		mSlider->centerHorizontal();
 
-	mBackSlider->addEventListener( Event::OnSizeChange, cb );
-	mSlider->addEventListener( Event::OnSizeChange, cb );
-	mBackSlider->addEventListener( Event::OnPaddingChange, cb );
-	mSlider->addEventListener( Event::OnPaddingChange, cb );
+	mBackSlider->on( Event::OnSizeChange, cb );
+	mSlider->on( Event::OnSizeChange, cb );
+	mBackSlider->on( Event::OnPaddingChange, cb );
+	mSlider->on( Event::OnPaddingChange, cb );
 
 	applyDefaultTheme();
 }

@@ -243,49 +243,45 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 	Lock l( mDocMutex );
 	std::vector<Uint32> listeners;
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
-			mDirty = true;
-			mDocs.insert( editor->getDocumentRef().get() );
-			mEditorDocs[editor] = editor->getDocumentRef().get();
-			tryRequestCapabilities( editor );
-		} ) );
+	listeners.push_back( editor->on( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
+		mDirty = true;
+		mDocs.insert( editor->getDocumentRef().get() );
+		mEditorDocs[editor] = editor->getDocumentRef().get();
+		tryRequestCapabilities( editor );
+	} ) );
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentClosed, [this]( const Event* event ) {
-			const DocEvent* docEvent = static_cast<const DocEvent*>( event );
-			TextDocument* doc = docEvent->getDoc();
+	listeners.push_back( editor->on( Event::OnDocumentClosed, [this]( const Event* event ) {
+		const DocEvent* docEvent = static_cast<const DocEvent*>( event );
+		TextDocument* doc = docEvent->getDoc();
 
-			{
-				Lock ls( mDocUsesOwnSymbolsMutex );
-				mDocUsesOwnSymbols.erase( doc );
-			}
+		{
+			Lock ls( mDocUsesOwnSymbolsMutex );
+			mDocUsesOwnSymbols.erase( doc );
+		}
 
-			Lock l( mDocMutex );
-			mDocs.erase( doc );
-			mDocCache.erase( doc );
-			mDirty = true;
-		} ) );
+		Lock l( mDocMutex );
+		mDocs.erase( doc );
+		mDocCache.erase( doc );
+		mDirty = true;
+	} ) );
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* ) {
-			TextDocument* oldDoc = mEditorDocs[editor];
-			TextDocument* newDoc = editor->getDocumentRef().get();
+	listeners.push_back( editor->on( Event::OnDocumentChanged, [this, editor]( const Event* ) {
+		TextDocument* oldDoc = mEditorDocs[editor];
+		TextDocument* newDoc = editor->getDocumentRef().get();
 
-			{
-				Lock ls( mDocUsesOwnSymbolsMutex );
-				mDocUsesOwnSymbols.erase( oldDoc );
-			}
+		{
+			Lock ls( mDocUsesOwnSymbolsMutex );
+			mDocUsesOwnSymbols.erase( oldDoc );
+		}
 
-			Lock l( mDocMutex );
-			mDocs.erase( oldDoc );
-			mDocCache.erase( oldDoc );
-			mEditorDocs[editor] = newDoc;
-			mDirty = true;
-		} ) );
+		Lock l( mDocMutex );
+		mDocs.erase( oldDoc );
+		mDocCache.erase( oldDoc );
+		mEditorDocs[editor] = newDoc;
+		mDirty = true;
+	} ) );
 
-	listeners.push_back( editor->addEventListener( Event::OnCursorPosChange, [this, editor](
-																				 const Event* ) {
+	listeners.push_back( editor->on( Event::OnCursorPosChange, [this, editor]( const Event* ) {
 		if ( !mReplacing )
 			resetSuggestions( editor );
 
@@ -296,14 +292,14 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 		}
 	} ) );
 
-	listeners.push_back( editor->addEventListener(
-		Event::OnFocusLoss, [this]( const Event* ) { resetSignatureHelp(); } ) );
+	listeners.push_back(
+		editor->on( Event::OnFocusLoss, [this]( const Event* ) { resetSignatureHelp(); } ) );
 
-	listeners.push_back( editor->addEventListener(
-		Event::OnDocumentUndoRedo, [this]( const Event* ) { resetSignatureHelp(); } ) );
+	listeners.push_back(
+		editor->on( Event::OnDocumentUndoRedo, [this]( const Event* ) { resetSignatureHelp(); } ) );
 
-	listeners.push_back( editor->addEventListener(
-		Event::OnDocumentSyntaxDefinitionChange, [this]( const Event* ev ) {
+	listeners.push_back(
+		editor->on( Event::OnDocumentSyntaxDefinitionChange, [this]( const Event* ev ) {
 			const DocSyntaxDefEvent* event = static_cast<const DocSyntaxDefEvent*>( ev );
 			std::string oldLang = event->getOldLang();
 			std::string newLang = event->getNewLang();

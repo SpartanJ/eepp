@@ -26,8 +26,8 @@ bool onCloseRequestCallback( EE::Window::Window* ) {
 		MsgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
 			"Do you really want to close the current map?\nAll changes will be lost." );
-		MsgBox->addEventListener( Event::OnConfirm, []( const Event* ) { win->close(); } );
-		MsgBox->addEventListener( Event::OnClose, []( const Event* ) { MsgBox = NULL; } );
+		MsgBox->on( Event::OnConfirm, []( const Event* ) { win->close(); } );
+		MsgBox->on( Event::OnClose, []( const Event* ) { MsgBox = NULL; } );
 		MsgBox->setTitle( "Close Map?" );
 		MsgBox->center();
 		MsgBox->showWhenReady();

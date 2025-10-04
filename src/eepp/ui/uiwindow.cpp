@@ -100,8 +100,8 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	mContainer->setParent( this );
 	mContainer->setClipType( ClipType::ContentBox );
 	mContainer->enableReportSizeChangeToChildren();
-	mContainer->addEventListener( Event::OnPositionChange,
-								  [this]( auto event ) { onContainerPositionChange( event ); } );
+	mContainer->on( Event::OnPositionChange,
+					[this]( auto event ) { onContainerPositionChange( event ); } );
 
 	updateWinFlags();
 
@@ -215,7 +215,7 @@ void UIWindow::updateWinFlags() {
 			if ( NULL == mButtonClose ) {
 				mButtonClose = UIWidget::NewWithTag( "window::close" );
 				mButtonClose->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
-				mButtonClose->addEventListener( Event::OnSizeChange, cb );
+				mButtonClose->on( Event::OnSizeChange, cb );
 				needsUpdate = true;
 			}
 
@@ -231,7 +231,7 @@ void UIWindow::updateWinFlags() {
 			if ( NULL == mButtonMaximize ) {
 				mButtonMaximize = UIWidget::NewWithTag( "window::maximize" );
 				mButtonMaximize->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
-				mButtonMaximize->addEventListener( Event::OnSizeChange, cb );
+				mButtonMaximize->on( Event::OnSizeChange, cb );
 				needsUpdate = true;
 			}
 
@@ -247,7 +247,7 @@ void UIWindow::updateWinFlags() {
 			if ( NULL == mButtonMinimize ) {
 				mButtonMinimize = UIWidget::NewWithTag( "window::minimize" );
 				mButtonMinimize->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
-				mButtonMinimize->addEventListener( Event::OnSizeChange, cb );
+				mButtonMinimize->on( Event::OnSizeChange, cb );
 				needsUpdate = true;
 			}
 

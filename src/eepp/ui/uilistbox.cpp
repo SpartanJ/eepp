@@ -57,18 +57,17 @@ UIListBox::UIListBox( const std::string& tag ) :
 	mVScrollBar->setPosition( getSize().getWidth() - 8, 0 );
 	mVScrollBar->setSize( 8, getSize().getHeight() );
 	mVScrollBar->setEnabled( false )->setVisible( false );
-	mVScrollBar->addEventListener( Event::OnSizeChange, cb );
-	mVScrollBar->addEventListener( Event::OnValueChange,
-								   [this]( auto event ) { onScrollValueChange( event ); } );
+	mVScrollBar->on( Event::OnSizeChange, cb );
+	mVScrollBar->on( Event::OnValueChange, [this]( auto event ) { onScrollValueChange( event ); } );
 
 	mHScrollBar = UIScrollBar::NewHorizontal();
 	mHScrollBar->setParent( this );
 	mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth(), 8 );
 	mHScrollBar->setPosition( 0, getSize().getHeight() - 8 );
 	mHScrollBar->setEnabled( false )->setVisible( false );
-	mHScrollBar->addEventListener( Event::OnSizeChange, cb );
-	mHScrollBar->addEventListener( Event::OnValueChange,
-								   [this]( auto event ) { onHScrollValueChange( event ); } );
+	mHScrollBar->on( Event::OnSizeChange, cb );
+	mHScrollBar->on( Event::OnValueChange,
+					 [this]( auto event ) { onHScrollValueChange( event ); } );
 
 	mDummyItem = createListBoxItem( "" );
 	mDummyItem->setSize( 0, 0 );

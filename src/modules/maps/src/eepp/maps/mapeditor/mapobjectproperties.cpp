@@ -42,8 +42,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject* Obj ) :
 		->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL )
 		->setMinWindowSize( 500, 500 );
 
-	mUIWindow->addEventListener( Event::OnWindowClose,
-								 [this] ( auto event ) { onWindowClose( event ); } );
+	mUIWindow->on( Event::OnWindowClose, [this]( auto event ) { onWindowClose( event ); } );
 	mUIWindow->setTitle( "Object Properties" );
 
 	Int32 InitialY = 16;
@@ -58,8 +57,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject* Obj ) :
 		->setPosition( Txt->getPosition().x + DistFromTitle, Txt->getPosition().y + DistFromTitle );
 	mUIInput->setMaxLength( 64 );
 	mUIInput->setText( mObj->getName() );
-	mUIInput->addEventListener( Event::OnPressEnter,
-								[this] ( auto event ) { onOKClick( event ); } );
+	mUIInput->on( Event::OnPressEnter, [this]( auto event ) { onOKClick( event ); } );
 
 	UITextView* Txt2 = createTextBox( "Object type:", mUIWindow->getContainer(), Sizef(),
 									  Vector2f( 50 + 192, InitialY ),
@@ -71,8 +69,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject* Obj ) :
 					   Txt2->getPosition().y + DistFromTitle );
 	mUIInput2->setMaxLength( 64 );
 	mUIInput2->setText( mObj->getTypeName() );
-	mUIInput2->addEventListener( Event::OnPressEnter,
-								 [this] ( auto event ) { onOKClick( event ); } );
+	mUIInput2->on( Event::OnPressEnter, [this]( auto event ) { onOKClick( event ); } );
 
 	Uint32 TxtBoxFlags = UI_NODE_DEFAULT_FLAGS | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
 	createTextBox( "Property Name", mUIWindow->getContainer(), Sizef( 192, 24 ),
@@ -89,8 +86,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject* Obj ) :
 	OKButton->setPosition(
 		mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4,
 		mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
-	OKButton->addEventListener( Event::MouseClick,
-								[this] ( auto event ) { onOKClick( event ); } );
+	OKButton->on( Event::MouseClick, [this]( auto event ) { onOKClick( event ); } );
 	OKButton->setText( "OK" );
 	OKButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 
@@ -100,8 +96,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject* Obj ) :
 		->setPosition( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4,
 					   OKButton->getPosition().y );
 	CancelButton->setIcon( sceneNode->findIconDrawable( "cancel", PixelDensity::dpToPxI( 16 ) ) );
-	CancelButton->addEventListener( Event::MouseClick,
-									[this] ( auto event ) { onCancelClick( event ); } );
+	CancelButton->on( Event::MouseClick, [this]( auto event ) { onCancelClick( event ); } );
 	CancelButton->setText( "Cancel" );
 	CancelButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 
@@ -124,8 +119,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject* Obj ) :
 	AddButton->setParent( mUIWindow->getContainer() )->setSize( 24, 0 )->setPosition( Pos );
 	AddButton->setIcon( sceneNode->findIconDrawable( "add", PixelDensity::dpToPxI( 16 ) ) );
 	AddButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	AddButton->addEventListener( Event::MouseClick,
-								 [this] ( auto event ) { onAddCellClick( event ); } );
+	AddButton->on( Event::MouseClick, [this]( auto event ) { onAddCellClick( event ); } );
 
 	if ( NULL == AddButton->getIcon()->getDrawable() )
 		AddButton->setText( "+" );
@@ -136,8 +130,7 @@ MapObjectProperties::MapObjectProperties( GameObjectObject* Obj ) :
 	RemoveButton->setParent( mUIWindow->getContainer() )->setSize( 24, 0 )->setPosition( Pos );
 	RemoveButton->setIcon( sceneNode->findIconDrawable( "remove", PixelDensity::dpToPxI( 16 ) ) );
 	RemoveButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	RemoveButton->addEventListener( Event::MouseClick,
-									[this] ( auto event ) { onRemoveCellClick( event ); } );
+	RemoveButton->on( Event::MouseClick, [this]( auto event ) { onRemoveCellClick( event ); } );
 
 	if ( NULL == RemoveButton->getIcon()->getDrawable() )
 		RemoveButton->setText( "-" );

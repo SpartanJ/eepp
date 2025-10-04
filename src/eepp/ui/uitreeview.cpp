@@ -132,7 +132,7 @@ void UITreeView::bindNavigationClick( UIWidget* widget ) {
 	};
 
 	mWidgetsClickCbId[widget].push_back(
-		widget->addEventListener( Event::MouseDoubleClick, [this, openTree]( const Event* event ) {
+		widget->on( Event::MouseDoubleClick, [this, openTree]( const Event* event ) {
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
 			auto cellIdx = mouseEvent->getNode()->asType<UITableCell>()->getCurIndex();
 			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
@@ -145,7 +145,7 @@ void UITreeView::bindNavigationClick( UIWidget* widget ) {
 		} ) );
 
 	mWidgetsClickCbId[widget].push_back(
-		widget->addEventListener( Event::MouseClick, [this, openTree]( const Event* event ) {
+		widget->on( Event::MouseClick, [this, openTree]( const Event* event ) {
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
 			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
 			if ( mouseEvent->getFlags() & EE_BUTTON_RMASK ) {
@@ -949,10 +949,10 @@ UITreeViewCell::UITreeViewCell( const std::function<UITextView*( UIPushButton* )
 		->setParent( const_cast<UITreeViewCell*>( this ) )
 		->setVisible( false )
 		->setEnabled( false );
-	mImage->addEventListener( Event::OnPaddingChange, cb );
-	mImage->addEventListener( Event::OnMarginChange, cb );
-	mImage->addEventListener( Event::OnSizeChange, cb );
-	mImage->addEventListener( Event::OnVisibleChange, cb );
+	mImage->on( Event::OnPaddingChange, cb );
+	mImage->on( Event::OnMarginChange, cb );
+	mImage->on( Event::OnSizeChange, cb );
+	mImage->on( Event::OnVisibleChange, cb );
 }
 
 UIWidget* UITreeViewCell::getExtraInnerWidget() const {

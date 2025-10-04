@@ -261,7 +261,7 @@ UIMenu* TerminalManager::createColorSchemeMenu( bool emptyMenu ) {
 	};
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
-	menu->addEventListener( Event::OnItemClicked, cb );
+	menu->on( Event::OnItemClicked, cb );
 	mColorSchemeMenus.push_back( menu );
 	size_t total = 0;
 	const auto& colorSchemes = mTerminalColorSchemes;
@@ -284,7 +284,7 @@ UIMenu* TerminalManager::createColorSchemeMenu( bool emptyMenu ) {
 		if ( menu->getCount() == maxItems && colorSchemes.size() - total > 1 ) {
 			UIPopUpMenu* newMenu = UIPopUpMenu::New();
 			menu->addSubMenu( mApp->i18n( "more_ellipsis", "More..." ), nullptr, newMenu );
-			newMenu->addEventListener( Event::OnItemClicked, cb );
+			newMenu->on( Event::OnItemClicked, cb );
 			mColorSchemeMenus.push_back( newMenu );
 			menu = newMenu;
 		}
@@ -537,7 +537,7 @@ UITerminal* TerminalManager::createNewTerminal(
 	term->setColorScheme( csIt != mTerminalColorSchemes.end()
 							  ? mTerminalColorSchemes.at( mTerminalCurrentColorScheme )
 							  : TerminalColorScheme::getDefault() );
-	term->addEventListener( Event::OnTitleChange, [this]( const Event* event ) {
+	term->on( Event::OnTitleChange, [this]( const Event* event ) {
 		if ( event->getNode() != mApp->getSplitter()->getCurWidget() )
 			return;
 		mApp->setAppTitle( event->getNode()->asType<UITerminal>()->getTitle() );
@@ -550,7 +550,7 @@ UITerminal* TerminalManager::createNewTerminal(
 		msgBox->getTextInput()->setHint( mApp->i18n( "any_name_ellipsis", "Any name..." ) );
 		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 		msgBox->showWhenReady();
-		msgBox->addEventListener( Event::OnConfirm, [msgBox, term]( const Event* ) {
+		msgBox->on( Event::OnConfirm, [msgBox, term]( const Event* ) {
 			std::string title( msgBox->getTextInput()->getText().toUtf8() );
 			term->setTitle( title );
 			msgBox->close();

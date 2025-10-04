@@ -491,7 +491,7 @@ void App::updateRecentFiles() {
 		if ( 0xFFFFFFFF != mRecentFilesEventClickId )
 			menu->removeEventListener( mRecentFilesEventClickId );
 
-		mRecentFilesEventClickId = menu->addEventListener(
+		mRecentFilesEventClickId = menu->on(
 			Event::OnItemClicked, [this]( const Event* event ) { onRecentFilesClick( event ); } );
 	}
 
@@ -520,7 +520,7 @@ void App::updateRecentProjects() {
 		if ( 0xFFFFFFFF != mRecentProjectEventClickId )
 			menu->removeEventListener( mRecentProjectEventClickId );
 
-		mRecentProjectEventClickId = menu->addEventListener(
+		mRecentProjectEventClickId = menu->on(
 			Event::OnItemClicked, [this]( const Event* event ) { onRecentProjectClick( event ); } );
 	}
 
@@ -633,8 +633,8 @@ void App::refreshLayoutList() {
 
 			mUIMenuBar->addMenuButton( "Layouts", uiLayoutsMenu );
 
-			uiLayoutsMenu->addEventListener(
-				Event::OnItemClicked, [this]( const Event* event ) { onLayoutSelected( event ); } );
+			uiLayoutsMenu->on( Event::OnItemClicked,
+							   [this]( const Event* event ) { onLayoutSelected( event ); } );
 		} else {
 			uiLayoutsMenu = mUIMenuBar->getPopUpMenu( "Layouts" );
 		}
@@ -874,8 +874,8 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 		UIMessageBox::OK_CANCEL,
 		"Do you really want to close the current file?\nAll changes will be lost." );
 	mMsgBox->setTheme( mTheme );
-	mMsgBox->addEventListener( Event::OnConfirm, [this]( const Event* ) { mWindow->close(); } );
-	mMsgBox->addEventListener( Event::OnWindowClose, [this]( const Event* ) { mMsgBox = NULL; } );
+	mMsgBox->on( Event::OnConfirm, [this]( const Event* ) { mWindow->close(); } );
+	mMsgBox->on( Event::OnWindowClose, [this]( const Event* ) { mMsgBox = NULL; } );
 	mMsgBox->setTitle( "Close Editor?" );
 	mMsgBox->center();
 	mMsgBox->showWhenReady();
@@ -970,7 +970,7 @@ void App::showFileDialog( const String& title, const std::function<void( const E
 	dialog->setTheme( mTheme );
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( title );
-	dialog->addEventListener( Event::OpenFile, cb );
+	dialog->on( Event::OpenFile, cb );
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->center();
 	dialog->show();
@@ -998,7 +998,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 	if ( FileSystem::fileExtension( editor->getDocument().getFilename() ).empty() )
 		filename += editor->getSyntaxDefinition().getFileExtension();
 	dialog->setFileName( filename );
-	dialog->addEventListener( Event::SaveFile, [this, editor]( const Event* event ) {
+	dialog->on( Event::SaveFile, [this, editor]( const Event* event ) {
 		if ( editor ) {
 			std::string path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 			if ( !path.empty() && !FileSystem::isDirectory( path ) &&
@@ -1031,7 +1031,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 		}
 	} );
 	if ( focusOnClose ) {
-		dialog->addEventListener( Event::OnWindowClose, [editor]( const Event* ) {
+		dialog->on( Event::OnWindowClose, [editor]( const Event* ) {
 			if ( editor && !SceneManager::instance()->isShuttingDown() )
 				editor->setFocus();
 		} );
@@ -1140,8 +1140,7 @@ void App::createAppMenu() {
 	uiPopMenu->add( "Quit", findIcon( "quit" ) )->setId( "quit" );
 
 	mUIMenuBar->addMenuButton( "File", uiPopMenu );
-	uiPopMenu->addEventListener( Event::OnItemClicked,
-								 [this]( const Event* event ) { fileMenuClick( event ); } );
+	uiPopMenu->on( Event::OnItemClicked, [this]( const Event* event ) { fileMenuClick( event ); } );
 
 	UIPopUpMenu* uiResourceMenu = UIPopUpMenu::New();
 	uiResourceMenu->add( "Load images from path...", findIcon( "document-open" ) )
@@ -1153,8 +1152,8 @@ void App::createAppMenu() {
 	uiResourceMenu->add( "Load style sheet from path...", findIcon( "document-open" ) )
 		->setId( "load-css-from-path" );
 	mUIMenuBar->addMenuButton( "Resources", uiResourceMenu );
-	uiResourceMenu->addEventListener( Event::OnItemClicked,
-									  [this]( const Event* event ) { fileMenuClick( event ); } );
+	uiResourceMenu->on( Event::OnItemClicked,
+						[this]( const Event* event ) { fileMenuClick( event ); } );
 
 	UIPopUpMenu* colorsMenu = UIPopUpMenu::New();
 	colorsMenu
@@ -1185,8 +1184,7 @@ void App::createAppMenu() {
 	viewMenu->add( "Toggle Console", findIcon( "terminal" ), "F3" )->setId( "toggle-console" );
 	viewMenu->add( "Toggle Editor", findIcon( "editor" ), "F9" )->setId( "toggle-editor" );
 	mUIMenuBar->addMenuButton( "View", viewMenu );
-	viewMenu->addEventListener( Event::OnItemClicked,
-								[this]( const Event* event ) { fileMenuClick( event ); } );
+	viewMenu->on( Event::OnItemClicked, [this]( const Event* event ) { fileMenuClick( event ); } );
 	mConsole = UIConsole::New();
 	mConsole->setQuakeMode( true );
 	mConsole->setVisible( false );
@@ -1324,7 +1322,7 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 		mUIContainer = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, winStyle );
 		mUIContainer->setId( "appContainer" )->setSize( mUISceneNode->getSize() );
 		mUIContainer->setParent( mUISceneNode->getRoot() );
-		mUISceneNode->addEventListener( Event::OnSizeChange, [this]( const Event* ) {
+		mUISceneNode->on( Event::OnSizeChange, [this]( const Event* ) {
 			mUIContainer->setPixelsSize( mUISceneNode->getPixelsSize() );
 		} );
 
@@ -1372,8 +1370,7 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 
 		resizeCb();
 
-		mUISceneNode->addEventListener( Event::OnSizeChange,
-										[this]( const Event* ) { resizeCb(); } );
+		mUISceneNode->on( Event::OnSizeChange, [this]( const Event* ) { resizeCb(); } );
 
 		mUseDefaultTheme = useAppTheme;
 
@@ -1477,12 +1474,12 @@ void App::saveAllProcess() {
 				mTmpDocs.erase( &editor->getDocument() );
 			} else {
 				UIFileDialog* dialog = saveFileDialog( editor, false );
-				dialog->addEventListener( Event::SaveFile, [this, editor]( const Event* ) {
+				dialog->on( Event::SaveFile, [this, editor]( const Event* ) {
 					updateEditorTabTitle( editor );
 					if ( mSplitter->getCurEditor() == editor )
 						updateEditorTitle( editor );
 				} );
-				dialog->addEventListener( Event::OnWindowClose, [this, editor]( const Event* ) {
+				dialog->on( Event::OnWindowClose, [this, editor]( const Event* ) {
 					mTmpDocs.erase( &editor->getDocument() );
 					if ( !SceneManager::instance()->isShuttingDown() && !mTmpDocs.empty() )
 						saveAllProcess();

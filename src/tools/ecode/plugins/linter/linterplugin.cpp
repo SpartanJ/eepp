@@ -606,41 +606,38 @@ void LinterPlugin::onRegister( UICodeEditor* editor ) {
 
 	std::vector<Uint32> listeners;
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* event ) {
-			Lock l( mDocMutex );
-			const DocEvent* docEvent = static_cast<const DocEvent*>( event );
-			mDocs.insert( docEvent->getDoc() );
-			mEditorDocs[editor] = docEvent->getDoc();
-			setDocDirty( docEvent->getDoc() );
-		} ) );
+	listeners.push_back( editor->on( Event::OnDocumentLoaded, [this, editor]( const Event* event ) {
+		Lock l( mDocMutex );
+		const DocEvent* docEvent = static_cast<const DocEvent*>( event );
+		mDocs.insert( docEvent->getDoc() );
+		mEditorDocs[editor] = docEvent->getDoc();
+		setDocDirty( docEvent->getDoc() );
+	} ) );
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentClosed, [this]( const Event* event ) {
-			Lock l( mDocMutex );
-			const DocEvent* docEvent = static_cast<const DocEvent*>( event );
-			TextDocument* doc = docEvent->getDoc();
-			mDocs.erase( doc );
-			mDirtyDoc.erase( doc );
-			Lock matchesLock( mMatchesMutex );
-			mMatches.erase( doc );
-		} ) );
+	listeners.push_back( editor->on( Event::OnDocumentClosed, [this]( const Event* event ) {
+		Lock l( mDocMutex );
+		const DocEvent* docEvent = static_cast<const DocEvent*>( event );
+		TextDocument* doc = docEvent->getDoc();
+		mDocs.erase( doc );
+		mDirtyDoc.erase( doc );
+		Lock matchesLock( mMatchesMutex );
+		mMatches.erase( doc );
+	} ) );
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* ) {
-			TextDocument* oldDoc = mEditorDocs[editor];
-			TextDocument* newDoc = editor->getDocumentRef().get();
-			Lock l( mDocMutex );
-			mDocs.erase( oldDoc );
-			mDirtyDoc.erase( oldDoc );
-			mEditorDocs[editor] = newDoc;
-			mDocs.insert( newDoc );
-			Lock matchesLock( mMatchesMutex );
-			mMatches.erase( oldDoc );
-		} ) );
+	listeners.push_back( editor->on( Event::OnDocumentChanged, [this, editor]( const Event* ) {
+		TextDocument* oldDoc = mEditorDocs[editor];
+		TextDocument* newDoc = editor->getDocumentRef().get();
+		Lock l( mDocMutex );
+		mDocs.erase( oldDoc );
+		mDirtyDoc.erase( oldDoc );
+		mEditorDocs[editor] = newDoc;
+		mDocs.insert( newDoc );
+		Lock matchesLock( mMatchesMutex );
+		mMatches.erase( oldDoc );
+	} ) );
 
-	listeners.push_back( editor->addEventListener(
-		Event::OnTextChanged, [this, editor]( const Event* ) { setDocDirty( editor ); } ) );
+	listeners.push_back( editor->on( Event::OnTextChanged,
+									 [this, editor]( const Event* ) { setDocDirty( editor ); } ) );
 
 	for ( auto& kb : mKeyBindings ) {
 		if ( !kb.second.empty() )

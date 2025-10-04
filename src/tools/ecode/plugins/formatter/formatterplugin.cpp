@@ -70,30 +70,27 @@ void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 		} );
 	}
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
-			tryRequestCapabilities( editor->getDocumentRef() );
-		} ) );
+	listeners.push_back( editor->on( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
+		tryRequestCapabilities( editor->getDocumentRef() );
+	} ) );
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* ) {
-			TextDocument* newDoc = editor->getDocumentRef().get();
-			mEditorDocs[editor] = newDoc;
-		} ) );
+	listeners.push_back( editor->on( Event::OnDocumentChanged, [this, editor]( const Event* ) {
+		TextDocument* newDoc = editor->getDocumentRef().get();
+		mEditorDocs[editor] = newDoc;
+	} ) );
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentSave, [this]( const Event* event ) {
-			if ( mAutoFormatOnSave && event->getNode()->isType( UI_TYPE_CODEEDITOR ) ) {
-				UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
-				auto isAutoFormatting = mIsAutoFormatting.find( &editor->getDocument() );
-				if ( ( isAutoFormatting == mIsAutoFormatting.end() ||
-					   isAutoFormatting->second == false ) &&
-					 mPluginManager &&
-					 !String::startsWith( editor->getDocument().getFilePath(),
-										  mPluginManager->getPluginsPath() ) )
-					formatDocAsync( editor );
-			}
-		} ) );
+	listeners.push_back( editor->on( Event::OnDocumentSave, [this]( const Event* event ) {
+		if ( mAutoFormatOnSave && event->getNode()->isType( UI_TYPE_CODEEDITOR ) ) {
+			UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
+			auto isAutoFormatting = mIsAutoFormatting.find( &editor->getDocument() );
+			if ( ( isAutoFormatting == mIsAutoFormatting.end() ||
+				   isAutoFormatting->second == false ) &&
+				 mPluginManager &&
+				 !String::startsWith( editor->getDocument().getFilePath(),
+									  mPluginManager->getPluginsPath() ) )
+				formatDocAsync( editor );
+		}
+	} ) );
 
 	mEditors.insert( { editor, listeners } );
 	mEditorDocs[editor] = editor->getDocumentRef().get();

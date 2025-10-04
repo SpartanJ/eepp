@@ -424,6 +424,7 @@ void addCSS() {
 			  { "Menu", "keyword" },
 			  { "PopUpMenu", "keyword" },
 			  { "ImageViewer", "keyword" },
+			  { "AudioPlayer", "keyword" },
 
 		  },
 		  "",

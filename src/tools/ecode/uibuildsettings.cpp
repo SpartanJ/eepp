@@ -593,7 +593,7 @@ UIBuildSettings::UIBuildSettings(
 		msgBox->setTitle( i18n( "build_settings", "Build Settings" ) );
 		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 		msgBox->showWhenReady();
-		msgBox->addEventListener( Event::OnConfirm, [this, msgBox]( const Event* ) {
+		msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 			mCanceled = true;
 			sendTextEvent( Event::OnClear, mBuild.getName() );
 			msgBox->closeWindow();
@@ -612,7 +612,7 @@ UIBuildSettings::UIBuildSettings(
 			msgBox->getTextInput()->setText( mBuild.getName() );
 			msgBox->getTextInput()->getDocument().selectAll();
 		} );
-		msgBox->addEventListener( Event::OnConfirm, [msgBox, this]( const Event* ) {
+		msgBox->on( Event::OnConfirm, [msgBox, this]( const Event* ) {
 			const auto& newBuildName = msgBox->getTextInput()->getText();
 			sendTextEvent( Event::OnCopy, newBuildName );
 			msgBox->closeWindow();
@@ -625,19 +625,19 @@ UIBuildSettings::UIBuildSettings(
 		msgBox->setTitle( i18n( "build_settings", "Build Settings" ) );
 		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 		msgBox->showWhenReady();
-		msgBox->addEventListener(
-			Event::OnConfirm, [this, msgBox, buildTypeDropDown, panelBuildTypeDDL]( const Event* ) {
-				const auto& buildType = msgBox->getTextInput()->getText();
-				mBuild.mBuildTypes.insert( buildType.toUtf8() );
-				buildTypeDropDown->getListBox()->addListBoxItem( buildType );
-				buildTypeDropDown->getListBox()->setSelected( buildType );
-				if ( panelBuildTypeDDL ) {
-					panelBuildTypeDDL->getListBox()->addListBoxItem( buildType );
-					panelBuildTypeDDL->getListBox()->setSelected( buildType );
-					panelBuildTypeDDL->setEnabled( true );
-				}
-				msgBox->closeWindow();
-			} );
+		msgBox->on( Event::OnConfirm,
+					[this, msgBox, buildTypeDropDown, panelBuildTypeDDL]( const Event* ) {
+						const auto& buildType = msgBox->getTextInput()->getText();
+						mBuild.mBuildTypes.insert( buildType.toUtf8() );
+						buildTypeDropDown->getListBox()->addListBoxItem( buildType );
+						buildTypeDropDown->getListBox()->setSelected( buildType );
+						if ( panelBuildTypeDDL ) {
+							panelBuildTypeDDL->getListBox()->addListBoxItem( buildType );
+							panelBuildTypeDDL->getListBox()->setSelected( buildType );
+							panelBuildTypeDDL->setEnabled( true );
+						}
+						msgBox->closeWindow();
+					} );
 	} );
 
 	find( "build_type_del" )->onClick( [this, buildTypeDropDown, panelBuildTypeDDL]( auto ) {
@@ -650,17 +650,17 @@ UIBuildSettings::UIBuildSettings(
 		msgBox->setTitle( i18n( "build_settings", "Build Settings" ) );
 		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 		msgBox->showWhenReady();
-		msgBox->addEventListener( Event::OnConfirm, [this, msgBox, buildTypeDropDown,
-													 panelBuildTypeDDL, txt]( const Event* ) {
-			mBuild.mBuildTypes.erase( txt.toUtf8() );
-			buildTypeDropDown->getListBox()->removeListBoxItem( txt );
-			if ( panelBuildTypeDDL ) {
-				panelBuildTypeDDL->getListBox()->removeListBoxItem( txt );
-				if ( panelBuildTypeDDL->getListBox()->isEmpty() )
-					panelBuildTypeDDL->setEnabled( false );
-			}
-			msgBox->closeWindow();
-		} );
+		msgBox->on( Event::OnConfirm,
+					[this, msgBox, buildTypeDropDown, panelBuildTypeDDL, txt]( const Event* ) {
+						mBuild.mBuildTypes.erase( txt.toUtf8() );
+						buildTypeDropDown->getListBox()->removeListBoxItem( txt );
+						if ( panelBuildTypeDDL ) {
+							panelBuildTypeDDL->getListBox()->removeListBoxItem( txt );
+							if ( panelBuildTypeDDL->getListBox()->isEmpty() )
+								panelBuildTypeDDL->setEnabled( false );
+						}
+						msgBox->closeWindow();
+					} );
 	} );
 
 	if ( isNew && mBuild.mOutputParser.getPreset().empty() &&

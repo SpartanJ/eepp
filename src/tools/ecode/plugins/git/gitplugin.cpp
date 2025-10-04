@@ -639,11 +639,10 @@ std::string GitPlugin::gitBranch() {
 }
 
 void GitPlugin::onRegisterListeners( UICodeEditor* editor, std::vector<Uint32>& listeners ) {
-	listeners.push_back(
-		editor->addEventListener( Event::OnCursorPosChange, [this, editor]( const Event* ) {
-			if ( mTooltipInfoShowing )
-				hideTooltip( editor );
-		} ) );
+	listeners.push_back( editor->on( Event::OnCursorPosChange, [this, editor]( const Event* ) {
+		if ( mTooltipInfoShowing )
+			hideTooltip( editor );
+	} ) );
 }
 
 Color GitPlugin::getVarColor( const std::string& var ) {

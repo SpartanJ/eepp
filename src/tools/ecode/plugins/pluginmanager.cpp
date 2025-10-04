@@ -530,7 +530,7 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 			prefs->setEnabled( enabled && plugin->hasFileConfig() );
 		}
 	};
-	tv->addEventListener( Event::OnClose, [manager, tv]( const Event* ) {
+	tv->on( Event::OnClose, [manager, tv]( const Event* ) {
 		if ( tv->readyCbs.empty() )
 			return;
 		for ( const auto& cb : tv->readyCbs ) {

@@ -46,8 +46,8 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 		mTextInput->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 			->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
 			->setParent( vlay )
-			->addEventListener( Event::OnPressEnter,
-								[this]( const Event* ) { sendCommonEvent( Event::OnConfirm ); } );
+			->on( Event::OnPressEnter,
+				  [this]( const Event* ) { sendCommonEvent( Event::OnConfirm ); } );
 	} else if ( mMsgBoxType == TEXT_EDIT ) {
 		mTextEdit = UITextEdit::New();
 		mTextEdit->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
@@ -92,7 +92,8 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 		} );
 	}
 
-	on( Event::OnWindowCloseClick, [this]( const Event* ) { sendCommonEvent( Event::OnDiscard ); } );
+	on( Event::OnWindowCloseClick,
+		[this]( const Event* ) { sendCommonEvent( Event::OnDiscard ); } );
 
 	UILinearLayout* hlay = UILinearLayout::NewHorizontal();
 	hlay->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )

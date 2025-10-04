@@ -30,7 +30,7 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 	static const auto WIDGET_LAYOUT = R"xml(
 	<vbox lw="mp" lh="mp">
 		<hbox lw="wc" lh="wc">
-			<PushButton id="pick_widget" lh="18dp" icon="icon(cursor-pointer, 16dp)" text='@string(pick_widget, "Pick Widget")' text-as-fallback="true" />
+			<PushButton id="pick_widget" lh="18dp" icon="icon(inspect, 12dp)" text='@string(pick_widget, "Pick Widget")' text-as-fallback="true" />
 			<CheckBox id="debug-draw-highlight" text='@string(debug_draw_highlight, "Highlight Focus & Hover")' margin-left="4dp" lg="center" />
 			<CheckBox id="debug-draw-boxes" text='@string(debug_draw_boxes, "Draw Boxes")' margin-left="4dp" lg="center" />
 			<CheckBox id="debug-draw-debug-data" text='@string(debug_draw_debug_data, "Draw Debug Data")' margin-left="4dp" lg="center" />"
@@ -82,21 +82,29 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 	} );
 
 	UIPushButton* button = cont->find<UIPushButton>( "pick_widget" );
-	button->addEventListener(
-		Event::MouseClick, [sceneNode, widgetTree, tableView]( const Event* event ) {
-			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
-				bool wasHighlightOver = sceneNode->getHighlightOver();
-				sceneNode->setHighlightOver( true );
-				sceneNode->getEventDispatcher()->setDisableMousePress( true );
-				sceneNode->runOnMainThread( [sceneNode, widgetTree, tableView, wasHighlightOver]() {
-					checkWidgetPick( sceneNode, widgetTree, wasHighlightOver, tableView );
-				} );
-			}
-		} );
+
+	if ( button->getIcon() == nullptr ) {
+		Drawable* cursorPointer = button->getUISceneNode()->findIconDrawable(
+			"cursor-pointer", PixelDensity::dpToPx( 16 ) );
+
+		if ( cursorPointer )
+			button->setIcon( cursorPointer, true );
+	}
+
+	button->on( Event::MouseClick, [sceneNode, widgetTree, tableView]( const Event* event ) {
+		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
+			bool wasHighlightOver = sceneNode->getHighlightOver();
+			sceneNode->setHighlightOver( true );
+			sceneNode->getEventDispatcher()->setDisableMousePress( true );
+			sceneNode->runOnMainThread( [sceneNode, widgetTree, tableView, wasHighlightOver]() {
+				checkWidgetPick( sceneNode, widgetTree, wasHighlightOver, tableView );
+			} );
+		}
+	} );
 
 	cont->find<UICheckBox>( "debug-draw-highlight" )
 		->setChecked( sceneNode->getHighlightOver() )
-		->addEventListener( Event::OnValueChange, [sceneNode, highlightToggle]( const auto* ) {
+		->on( Event::OnValueChange, [sceneNode, highlightToggle]( const auto* ) {
 			if ( highlightToggle ) {
 				highlightToggle();
 			} else {
@@ -107,7 +115,7 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 
 	cont->find<UICheckBox>( "debug-draw-boxes" )
 		->setChecked( sceneNode->getDrawBoxes() )
-		->addEventListener( Event::OnValueChange, [sceneNode, drawBoxesToggle]( const auto* ) {
+		->on( Event::OnValueChange, [sceneNode, drawBoxesToggle]( const auto* ) {
 			if ( drawBoxesToggle ) {
 				drawBoxesToggle();
 			} else {
@@ -117,7 +125,7 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 
 	cont->find<UICheckBox>( "debug-draw-debug-data" )
 		->setChecked( sceneNode->getDrawDebugData() )
-		->addEventListener( Event::OnValueChange, [sceneNode, drawDebugDataToggle]( const auto* ) {
+		->on( Event::OnValueChange, [sceneNode, drawDebugDataToggle]( const auto* ) {
 			if ( drawDebugDataToggle ) {
 				drawDebugDataToggle();
 			} else {
@@ -126,14 +134,14 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 		} );
 
 	cont->find<UIPushButton>( "widget-tree-search-collapse" )
-		->addEventListener( Event::MouseClick, [widgetTree]( const Event* event ) {
+		->on( Event::MouseClick, [widgetTree]( const Event* event ) {
 			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
 				widgetTree->collapseAll();
 			}
 		} );
 
 	cont->find<UIPushButton>( "widget-tree-search-expand" )
-		->addEventListener( Event::MouseClick, [widgetTree]( const Event* event ) {
+		->on( Event::MouseClick, [widgetTree]( const Event* event ) {
 			if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK ) {
 				widgetTree->expandAll();
 			}
@@ -150,22 +158,20 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 
 	uiWin->center();
 
-	Uint32 winCb = sceneNode->addEventListener( Event::OnWindowAdded, [sceneNode, uiWin](
-																		  const Event* event ) {
+	Uint32 winCb = sceneNode->on( Event::OnWindowAdded, [sceneNode, uiWin]( const Event* event ) {
 		UIWindow* eWin = event->asWindowEvent()->getWindow()->asType<UIWindow>();
 		if ( eWin != uiWin ) {
-			Uint32 winRdCb =
-				eWin->addEventListener( Event::OnWindowReady, [uiWin]( const Event* eWinEvent ) {
-					uiWin->toFront();
-					eWinEvent->getNode()->removeEventListener( eWinEvent->getCallbackId() );
-				} );
-			uiWin->addEventListener( Event::OnWindowClose, [sceneNode, winRdCb]( const Event* ) {
+			Uint32 winRdCb = eWin->on( Event::OnWindowReady, [uiWin]( const Event* eWinEvent ) {
+				uiWin->toFront();
+				eWinEvent->getNode()->removeEventListener( eWinEvent->getCallbackId() );
+			} );
+			uiWin->on( Event::OnWindowClose, [sceneNode, winRdCb]( const Event* ) {
 				if ( !SceneManager::instance()->isShuttingDown() )
 					sceneNode->removeEventListener( winRdCb );
 			} );
 		}
 	} );
-	uiWin->addEventListener( Event::OnWindowClose, [sceneNode, winCb]( const Event* ) {
+	uiWin->on( Event::OnWindowClose, [sceneNode, winCb]( const Event* ) {
 		if ( !SceneManager::instance()->isShuttingDown() )
 			sceneNode->removeEventListener( winCb );
 	} );

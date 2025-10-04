@@ -169,8 +169,8 @@ UIWidget* UIMenu::add( UIWidget* widget ) {
 			widgetsResize();
 		}
 	};
-	widget->addEventListener( Event::OnVisibleChange, cb );
-	widget->addEventListener( Event::OnSizeChange, cb );
+	widget->on( Event::OnVisibleChange, cb );
+	widget->on( Event::OnSizeChange, cb );
 	resizeMe();
 	return widget;
 }
@@ -190,7 +190,7 @@ UIMenuSeparator* UIMenu::addSeparator() {
 	mNextPosY += separator->getPixelsSize().getHeight();
 	mItems.push_back( separator );
 	resizeMe();
-	separator->addEventListener( Event::OnSizeChange, [this]( const Event* ) {
+	separator->on( Event::OnSizeChange, [this]( const Event* ) {
 		if ( !mResizing ) {
 			widgetsSetPos();
 			widgetsResize();

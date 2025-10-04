@@ -43,8 +43,7 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 		->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL )
 		->setMinWindowSize( 500, 500 );
 
-	mUIWindow->addEventListener( Event::OnWindowClose,
-								 [this] ( auto event ) { onWindowClose( event ); } );
+	mUIWindow->on( Event::OnWindowClose, [this]( auto event ) { onWindowClose( event ); } );
 	mUIWindow->setTitle( "Map Properties" );
 
 	Uint32 DiffIfLights = 0;
@@ -77,8 +76,7 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 						   Txt->getPosition().y );
 		mUIRedSlider->setMaxValue( 255 );
 		mUIRedSlider->setValue( mMap->getBaseColor().r );
-		mUIRedSlider->addEventListener( Event::OnValueChange,
-										[this] ( auto event ) { onRedChange( event ); } );
+		mUIRedSlider->on( Event::OnValueChange, [this]( auto event ) { onRedChange( event ); } );
 
 		mUIRedTxt = createTextBox(
 			String::toString( (Uint32)mMap->getBaseColor().r ), mUIWindow->getContainer(), Sizef(),
@@ -98,8 +96,8 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 			->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 		mUIGreenSlider->setMaxValue( 255 );
 		mUIGreenSlider->setValue( mMap->getBaseColor().g );
-		mUIGreenSlider->addEventListener( Event::OnValueChange,
-										  [this] ( auto event ) { onGreenChange( event ); } );
+		mUIGreenSlider->on( Event::OnValueChange,
+							[this]( auto event ) { onGreenChange( event ); } );
 
 		mUIGreenTxt = createTextBox(
 			String::toString( (Uint32)mMap->getBaseColor().g ), mUIWindow->getContainer(), Sizef(),
@@ -118,8 +116,7 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 			->setPosition( mUIRedSlider->getPosition().x, Txt->getPosition().y );
 		mUIBlueSlider->setMaxValue( 255 );
 		mUIBlueSlider->setValue( mMap->getBaseColor().b );
-		mUIBlueSlider->addEventListener( Event::OnValueChange,
-										 [this] ( auto event ) { onBlueChange( event ); } );
+		mUIBlueSlider->on( Event::OnValueChange, [this]( auto event ) { onBlueChange( event ); } );
 
 		mUIBlueTxt = createTextBox(
 			String::toString( (Uint32)mMap->getBaseColor().b ), mUIWindow->getContainer(), Sizef(),
@@ -141,8 +138,7 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 	OKButton->setPosition(
 		mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4,
 		mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
-	OKButton->addEventListener( Event::MouseClick,
-								[this] ( auto event ) { onOKClick( event ); } );
+	OKButton->on( Event::MouseClick, [this]( auto event ) { onOKClick( event ); } );
 	OKButton->setText( "OK" );
 	OKButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 
@@ -152,8 +148,7 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 		->setPosition( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4,
 					   OKButton->getPosition().y );
 	CancelButton->setIcon( sceneNode->findIconDrawable( "cancel", PixelDensity::dpToPxI( 16 ) ) );
-	CancelButton->addEventListener( Event::MouseClick,
-									[this] ( auto event ) { onCancelClick( event ); } );
+	CancelButton->on( Event::MouseClick, [this]( auto event ) { onCancelClick( event ); } );
 	CancelButton->setText( "Cancel" );
 	CancelButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 
@@ -176,8 +171,7 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 	AddButton->setSize( 24, 0 )->setParent( mUIWindow->getContainer() )->setPosition( Pos );
 	AddButton->setIcon( sceneNode->findIconDrawable( "add", PixelDensity::dpToPxI( 16 ) ) );
 	AddButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	AddButton->addEventListener( Event::MouseClick,
-								 [this] ( auto event ) { onAddCellClick( event ); } );
+	AddButton->on( Event::MouseClick, [this]( auto event ) { onAddCellClick( event ); } );
 
 	if ( NULL == AddButton->getIcon()->getDrawable() )
 		AddButton->setText( "+" );
@@ -188,8 +182,7 @@ TileMapProperties::TileMapProperties( TileMap* Map ) :
 	RemoveButton->setSize( 24, 0 )->setParent( mUIWindow->getContainer() )->setPosition( Pos );
 	RemoveButton->setIcon( sceneNode->findIconDrawable( "remove", PixelDensity::dpToPxI( 16 ) ) );
 	RemoveButton->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	RemoveButton->addEventListener( Event::MouseClick,
-									[this] ( auto event ) { onRemoveCellClick( event ); } );
+	RemoveButton->on( Event::MouseClick, [this]( auto event ) { onRemoveCellClick( event ); } );
 
 	if ( NULL == RemoveButton->getIcon()->getDrawable() )
 		RemoveButton->setText( "-" );

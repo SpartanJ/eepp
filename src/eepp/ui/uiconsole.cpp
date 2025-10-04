@@ -1251,7 +1251,7 @@ bool UIConsole::onCreateContextMenu( const Vector2i& position, const Uint32& fla
 	}
 
 	menu->setCloseOnHide( true );
-	menu->addEventListener( Event::OnItemClicked, [this, menu]( const Event* event ) {
+	menu->on( Event::OnItemClicked, [this, menu]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -1270,11 +1270,11 @@ bool UIConsole::onCreateContextMenu( const Vector2i& position, const Uint32& fla
 		menu->show();
 		mCurrentMenu = menu;
 	} );
-	menu->addEventListener( Event::OnMenuHide, [this]( const Event* ) {
+	menu->on( Event::OnMenuHide, [this]( const Event* ) {
 		if ( !isClosing() )
 			setFocus();
 	} );
-	menu->addEventListener( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
+	menu->on( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
 	return true;
 }
 

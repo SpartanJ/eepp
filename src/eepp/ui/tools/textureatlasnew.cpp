@@ -15,8 +15,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 		UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS |
 		UI_WIN_SHARE_ALPHA_WITH_CHILDREN | UI_WIN_MODAL );
 
-	mUIWindow->addEventListener( Event::OnWindowClose,
-								 [this]( auto event ) { windowClose( event ); } );
+	mUIWindow->on( Event::OnWindowClose, [this]( auto event ) { windowClose( event ); } );
 	mUIWindow->setTitle( "New Texture Atlas" );
 
 	static const auto layout = R"xml(
@@ -104,14 +103,16 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 	mComboWidth->getListBox()->setSelected( "2048" );
 	mComboHeight->getListBox()->setSelected( "2048" );
 
-	mSetPathButton->addEventListener( Event::MouseClick,
-									  [this]( auto event ) { onDialogFolderSelect( event ); } );
-	mUIWindow->find<UIPushButton>( "okButton" )
-		->addEventListener( Event::MouseClick, [this]( auto event ) { okClick( event ); } );
-	mUIWindow->find<UIPushButton>( "cancelButton" )
-		->addEventListener( Event::MouseClick, [this]( auto event ) { cancelClick( event ); } );
+	mSetPathButton->on( Event::MouseClick,
+						[this]( auto event ) { onDialogFolderSelect( event ); } );
+	mUIWindow->find<UIPushButton>( "okButton" )->on( Event::MouseClick, [this]( auto event ) {
+		okClick( event );
+	} );
+	mUIWindow->find<UIPushButton>( "cancelButton" )->on( Event::MouseClick, [this]( auto event ) {
+		cancelClick( event );
+	} );
 
-	container->addEventListener( Event::OnLayoutUpdate, [this]( const Event* event ) {
+	container->on( Event::OnLayoutUpdate, [this]( const Event* event ) {
 		mUIWindow->setMinWindowSize( event->getNode()->getSize() );
 		mUIWindow->center();
 		mUIWindow->show();
@@ -132,8 +133,7 @@ void TextureAtlasNew::okClick( const Event* event ) {
 			UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "*." + ext );
 		TGDialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Save Texture Atlas" );
-		TGDialog->addEventListener( Event::SaveFile,
-									[this]( auto event ) { textureAtlasSave( event ); } );
+		TGDialog->on( Event::SaveFile, [this]( auto event ) { textureAtlasSave( event ); } );
 		TGDialog->center();
 		TGDialog->show();
 	}
@@ -211,8 +211,7 @@ void TextureAtlasNew::onDialogFolderSelect( const Event* event ) {
 			UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect, "*" );
 		TGDialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Create Texture Atlas ( Select Folder Containing Textures )" );
-		TGDialog->addEventListener( Event::OpenFile,
-									[this]( auto event ) { onSelectFolder( event ); } );
+		TGDialog->on( Event::OpenFile, [this]( auto event ) { onSelectFolder( event ); } );
 		TGDialog->center();
 		TGDialog->show();
 	}

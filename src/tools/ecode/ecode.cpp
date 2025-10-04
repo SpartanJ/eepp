@@ -1574,7 +1574,7 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 					 "clone-document-buffer" );
 		}
 
-		menu->addEventListener( Event::OnItemClicked, [tab, this]( const Event* event ) {
+		menu->on( Event::OnItemClicked, [tab, this]( const Event* event ) {
 			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 				return;
 			UIMenuItem* item = event->getNode()->asType<UIMenuItem>();

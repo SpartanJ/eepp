@@ -551,7 +551,7 @@ void UIAbstractTableView::onScrollChange() {
 
 void UIAbstractTableView::bindNavigationClick( UIWidget* widget ) {
 	mWidgetsClickCbId[widget].push_back(
-		widget->addEventListener( Event::MouseDoubleClick, [this]( const Event* event ) {
+		widget->on( Event::MouseDoubleClick, [this]( const Event* event ) {
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
 			auto cellIdx = mouseEvent->getNode()->asType<UITableCell>()->getCurIndex();
 			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
@@ -564,7 +564,7 @@ void UIAbstractTableView::bindNavigationClick( UIWidget* widget ) {
 		} ) );
 
 	mWidgetsClickCbId[widget].push_back(
-		widget->addEventListener( Event::MouseClick, [this]( const Event* event ) {
+		widget->on( Event::MouseClick, [this]( const Event* event ) {
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
 			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
 			if ( mouseEvent->getFlags() & EE_BUTTON_RMASK ) {

@@ -79,7 +79,7 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	} );
 
 	mVScroll->setParent( this );
-	mVScroll->addEventListener( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
+	mVScroll->on( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
 
 	setCommand( "terminal-scroll-up-screen",
 				[this] { mTerm->action( TerminalShortcutAction::SCROLLUP_SCREEN ); } );
@@ -581,7 +581,7 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 	}
 
 	menu->setCloseOnHide( true );
-	menu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	menu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -594,7 +594,7 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 	UIMenu::findBestMenuPos( pos, menu );
 	menu->setPixelsPosition( pos );
 	menu->show();
-	menu->addEventListener( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
+	menu->on( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
 	mCurrentMenu = menu;
 	return true;
 }

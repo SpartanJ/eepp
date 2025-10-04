@@ -210,37 +210,34 @@ void PluginBase::onRegister( UICodeEditor* editor ) {
 
 	std::vector<Uint32> listeners;
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* event ) {
+	listeners.push_back( editor->on( Event::OnDocumentLoaded, [this, editor]( const Event* event ) {
+		Lock l( mMutex );
+		const DocEvent* docEvent = static_cast<const DocEvent*>( event );
+		mDocs.insert( docEvent->getDoc() );
+		mEditorDocs[editor] = docEvent->getDoc();
+		onDocumentLoaded( docEvent->getDoc() );
+	} ) );
+
+	listeners.push_back( editor->on( Event::OnDocumentClosed, [this]( const Event* event ) {
+		{
 			Lock l( mMutex );
 			const DocEvent* docEvent = static_cast<const DocEvent*>( event );
-			mDocs.insert( docEvent->getDoc() );
-			mEditorDocs[editor] = docEvent->getDoc();
-			onDocumentLoaded( docEvent->getDoc() );
-		} ) );
+			TextDocument* doc = docEvent->getDoc();
+			onDocumentClosed( doc );
+			onUnregisterDocument( doc );
+			mDocs.erase( doc );
+		}
+	} ) );
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentClosed, [this]( const Event* event ) {
-			{
-				Lock l( mMutex );
-				const DocEvent* docEvent = static_cast<const DocEvent*>( event );
-				TextDocument* doc = docEvent->getDoc();
-				onDocumentClosed( doc );
-				onUnregisterDocument( doc );
-				mDocs.erase( doc );
-			}
-		} ) );
-
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* ) {
-			TextDocument* oldDoc = mEditorDocs[editor];
-			TextDocument* newDoc = editor->getDocumentRef().get();
-			Lock l( mMutex );
-			mDocs.erase( oldDoc );
-			mDocs.insert( newDoc );
-			mEditorDocs[editor] = newDoc;
-			onDocumentChanged( editor, oldDoc );
-		} ) );
+	listeners.push_back( editor->on( Event::OnDocumentChanged, [this, editor]( const Event* ) {
+		TextDocument* oldDoc = mEditorDocs[editor];
+		TextDocument* newDoc = editor->getDocumentRef().get();
+		Lock l( mMutex );
+		mDocs.erase( oldDoc );
+		mDocs.insert( newDoc );
+		mEditorDocs[editor] = newDoc;
+		onDocumentChanged( editor, oldDoc );
+	} ) );
 
 	onRegisterListeners( editor, listeners );
 

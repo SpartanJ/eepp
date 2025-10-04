@@ -15,10 +15,10 @@ UITableHeaderColumn::UITableHeaderColumn( const std::string& parentTag, UIAbstra
 		->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
 		->setParent( this );
 	mImage->setEnabled( false );
-	mImage->addEventListener( Event::OnPaddingChange, cb );
-	mImage->addEventListener( Event::OnMarginChange, cb );
-	mImage->addEventListener( Event::OnSizeChange, cb );
-	mImage->addEventListener( Event::OnVisibleChange, cb );
+	mImage->on( Event::OnPaddingChange, cb );
+	mImage->on( Event::OnMarginChange, cb );
+	mImage->on( Event::OnSizeChange, cb );
+	mImage->on( Event::OnVisibleChange, cb );
 }
 
 Uint32 UITableHeaderColumn::onCalculateDrag( const Vector2f& position, const Uint32& flags ) {

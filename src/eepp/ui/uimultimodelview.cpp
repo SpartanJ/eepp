@@ -27,8 +27,8 @@ UIMultiModelView::UIMultiModelView( const std::string& tag ) : UIStackWidget( ta
 	mTable = UITableView::New();
 	mList->setParent( this );
 	mTable->setParent( this );
-	mList->addEventListener( Event::OnModelEvent, modelEvent );
-	mTable->addEventListener( Event::OnModelEvent, modelEvent );
+	mList->on( Event::OnModelEvent, modelEvent );
+	mTable->on( Event::OnModelEvent, modelEvent );
 	mList->setOnSelectionChange( selectionChange );
 	mTable->setOnSelectionChange( selectionChange );
 	mList->setOnSelection( selection );

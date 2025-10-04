@@ -200,10 +200,10 @@ template <typename T> class UIDataBind {
 	Event::EventType eventType{ Event::OnValueChange };
 
 	void bindListeners( UIWidget* widget ) {
-		valueCbs[widget] = widget->addEventListener( eventType, [this]( const Event* event ) {
+		valueCbs[widget] = widget->on( eventType, [this]( const Event* event ) {
 			processValueChange( event->getNode()->asType<UIWidget>() );
 		} );
-		closeCbs[widget] = widget->addEventListener( Event::OnClose, [this]( const Event* event ) {
+		closeCbs[widget] = widget->on( Event::OnClose, [this]( const Event* event ) {
 			closeCbs.erase( event->getNode()->asType<UIWidget>() );
 			this->widgets.erase( event->getNode()->asType<UIWidget>() );
 		} );

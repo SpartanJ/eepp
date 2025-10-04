@@ -586,7 +586,7 @@ void UIMap::createObjPopUpMenu() {
 	Menu->add( "Remove Object" );
 	Menu->addSeparator();
 	Menu->add( "Object Properties..." );
-	Menu->addEventListener( Event::OnItemClicked, [this] ( auto event ) { objItemClick( event ); } );
+	Menu->on( Event::OnItemClicked, [this]( auto event ) { objItemClick( event ); } );
 
 	if ( Menu->show() ) {
 		Vector2f Pos = getEventDispatcher()->getMousePosf();

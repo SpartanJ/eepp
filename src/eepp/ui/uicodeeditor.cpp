@@ -152,17 +152,15 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 		[this]( auto, auto ) { sendCommonEvent( Event::OnFoldUnfoldRange ); } );
 	mVScrollBar = UIScrollBar::NewVertical();
 	mVScrollBar->setParent( this );
-	mVScrollBar->addEventListener( Event::OnSizeChange,
-								   [this]( const Event* ) { updateScrollBar(); } );
-	mVScrollBar->addEventListener( Event::OnValueChange, [this]( const Event* ) {
+	mVScrollBar->on( Event::OnSizeChange, [this]( const Event* ) { updateScrollBar(); } );
+	mVScrollBar->on( Event::OnValueChange, [this]( const Event* ) {
 		setScrollY( mVScrollBar->getValue() * getMaxScroll().y, false );
 	} );
 
 	mHScrollBar = UIScrollBar::NewHorizontal();
 	mHScrollBar->setParent( this );
-	mHScrollBar->addEventListener( Event::OnSizeChange,
-								   [this]( const Event* ) { updateScrollBar(); } );
-	mHScrollBar->addEventListener( Event::OnValueChange, [this]( const Event* ) {
+	mHScrollBar->on( Event::OnSizeChange, [this]( const Event* ) { updateScrollBar(); } );
+	mHScrollBar->on( Event::OnValueChange, [this]( const Event* ) {
 		setScrollX( mHScrollBar->getValue() * getMaxScroll().x, false );
 	} );
 
@@ -1376,7 +1374,7 @@ void UICodeEditor::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	if ( !mCreateDefaultContextMenuOptions )
 		return;
 
-	if ( mInteractiveLinks && !checkMouseOverLink( getInput()->getMousePos(), false ).empty() ){
+	if ( mInteractiveLinks && !checkMouseOverLink( getInput()->getMousePos(), false ).empty() ) {
 		menuAdd( menu, i18n( "uicodeeditor_open_url", "Open URL" ), "window", "open-hover-url" );
 		menu->addSeparator();
 	}
@@ -1457,7 +1455,7 @@ bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& 
 
 	UICodeEditor* editor = this;
 	const auto registerMenu = [editor, this]( UIMenu* menu ) {
-		menu->addEventListener( Event::OnItemClicked, [this, menu, editor]( const Event* event ) {
+		menu->on( Event::OnItemClicked, [this, menu, editor]( const Event* event ) {
 			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 				return;
 			UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -1480,11 +1478,11 @@ bool UICodeEditor::onCreateContextMenu( const Vector2i& position, const Uint32& 
 		menu->show();
 		mCurrentMenu = menu;
 	} );
-	menu->addEventListener( Event::OnMenuHide, [this]( const Event* ) {
+	menu->on( Event::OnMenuHide, [this]( const Event* ) {
 		if ( !isClosing() )
 			setFocus();
 	} );
-	menu->addEventListener( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
+	menu->on( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
 	return true;
 }
 
@@ -1973,11 +1971,10 @@ void UICodeEditor::checkColorPickerAction() {
 			}
 		}
 		if ( colorPicker )
-			colorPicker->getUIWindow()->addEventListener(
-				Event::OnWindowClose, [this]( const Event* ) {
-					if ( !SceneManager::instance()->isShuttingDown() )
-						setFocus();
-				} );
+			colorPicker->getUIWindow()->on( Event::OnWindowClose, [this]( const Event* ) {
+				if ( !SceneManager::instance()->isShuttingDown() )
+					setFocus();
+			} );
 	}
 }
 
