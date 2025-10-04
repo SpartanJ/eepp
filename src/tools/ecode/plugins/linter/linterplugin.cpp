@@ -42,10 +42,16 @@ LinterPlugin::~LinterPlugin() {
 	mManager->unsubscribeMessages( this );
 	unsubscribeFileSystemListener();
 
-	if ( mWorkersCount != 0 ) {
-		std::unique_lock<std::mutex> lock( mWorkMutex );
-		mWorkerCondition.wait( lock, [this]() { return mWorkersCount <= 0; } );
+	{
+		std::lock_guard l( mRunningProcessesMutex );
+		for ( auto const& [doc, process] : mRunningProcesses ) {
+			if ( process )
+				process->kill();
+		}
 	}
+
+	std::unique_lock<std::mutex> lock( mWorkMutex );
+	mWorkerCondition.wait( lock, [this]() { return mWorkersCount <= 0; } );
 
 	for ( const auto& editor : mEditors ) {
 		for ( auto& kb : mKeyBindings ) {
@@ -745,6 +751,9 @@ Linter LinterPlugin::getLinterForLang( const std::string& lang ) {
 }
 
 void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
+	if ( mShuttingDown )
+		return;
+
 	if ( !mLanguagesDisabled.empty() &&
 		 mLanguagesDisabled.find( doc->getSyntaxDefinition().getLSPName() ) !=
 			 mLanguagesDisabled.end() )
@@ -762,7 +771,8 @@ void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
 			}
 			mWorkerCondition.notify_all();
 		} );
-	if ( !mReady )
+
+	if ( !mReady || mShuttingDown )
 		return;
 	auto linter = supportsLinter( doc );
 	if ( linter.command.empty() )
