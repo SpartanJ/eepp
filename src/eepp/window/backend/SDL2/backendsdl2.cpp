@@ -26,7 +26,6 @@ WindowBackendSDL2::WindowBackendSDL2() : WindowBackendLibrary() {
 #if SDL_VERSION_ATLEAST( 2, 0, 22 )
 	SDL_SetHint( SDL_HINT_IME_SUPPORT_EXTENDED_TEXT, "1" );
 #endif
-	SDL_SetHint( SDL_HINT_MAC_BACKGROUND_APP, "1" );
 }
 
 WindowBackendSDL2::~WindowBackendSDL2() {
