@@ -92,6 +92,8 @@ class EE_API SyntaxDefinitionManager {
 
 	bool isFileFormatSupported( const std::string& filePath, std::string_view header );
 
+	void resetFileAssociations();
+
 	void setFileAssociations( FileAssociations&& fa );
 
 	FileAssociations getFileAssociations() const;

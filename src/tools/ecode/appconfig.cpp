@@ -919,10 +919,56 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 			plugin->onLoadProject( projectFolder, projectPluginsStatePath );
 		} );
 	}
+
+	loadFileAssociations( projectFolder );
 }
 
 bool AppConfig::isNewVersion() const {
 	return windowState.lastRunVersion != ecode::Version::getVersionNum();
+}
+
+void AppConfig::loadFileAssociations( const std::string& projectFolder ) {
+	std::string faPath( projectFolder + ".ecode/settings.json" );
+
+	if ( !FileSystem::fileExists( faPath ) ) {
+		faPath = projectFolder + ".vscode/settings.json";
+		if ( !FileSystem::fileExists( faPath ) )
+			return;
+	}
+
+	std::string data;
+	if ( !FileSystem::fileGet( faPath, data ) )
+		return;
+
+	json j;
+	try {
+		j = json::parse( data, nullptr, true, true );
+	} catch ( const json::exception& e ) {
+		Log::error( "AppConfig::loadFileAssociations - Error parsing config from "
+					"path %s, error: %s, config file content:\n%s",
+					faPath, e.what(), data );
+		return;
+	}
+
+	if ( j.contains( "files.associations" ) && j["files.associations"].is_object() ) {
+		const auto& associations = j["files.associations"];
+		SyntaxDefinitionManager::FileAssociations fa;
+
+		for ( const auto& item : associations.items() ) {
+			const std::string& key = item.key();
+			const json& val = item.value();
+
+			if ( val.is_string() ) {
+				fa[key] = val;
+			} else {
+				Log::warning( "AppConfig::loadFileAssociations - Skipping key '%s' because its "
+							  "value is not a string.",
+							  key );
+			}
+		}
+
+		SyntaxDefinitionManager::instance()->setFileAssociations( std::move( fa ) );
+	}
 }
 
 } // namespace ecode

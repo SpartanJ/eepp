@@ -2108,6 +2108,9 @@ void App::closeFolder() {
 	mFileSystemModel->setRootPath( "" );
 	mPluginManager->setWorkspaceFolder( "" );
 	updateOpenRecentFolderBtn();
+
+	SyntaxDefinitionManager::instance()->resetFileAssociations();
+
 	if ( mUniversalLocator )
 		mUniversalLocator->updateFilesTable();
 	if ( getConfig().ui.welcomeScreen ) {
@@ -3523,6 +3526,8 @@ void App::loadFolder( std::string path, bool forceNewWindow ) {
 	Clock projClock;
 	if ( mProjectBuildManager )
 		mProjectBuildManager.reset();
+
+	SyntaxDefinitionManager::instance()->resetFileAssociations();
 
 	mProjectBuildManager =
 		std::make_unique<ProjectBuildManager>( rpath, mThreadPool, mSidePanel, this );

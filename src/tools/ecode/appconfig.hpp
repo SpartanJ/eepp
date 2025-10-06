@@ -269,6 +269,8 @@ class AppConfig {
 
 	void editorLoadedCounter( ecode::App* app );
 
+	void loadFileAssociations( const std::string& projectFolder );
+
 	nlohmann::json saveNode( Node* node );
 
 	Mutex tabWidgetTypesMutex;

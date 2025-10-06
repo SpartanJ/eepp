@@ -1469,6 +1469,11 @@ bool SyntaxDefinitionManager::isFileFormatSupported( const std::string& filePath
 	return &find( filePath, header ) != mDefinitions[0].get();
 }
 
+void SyntaxDefinitionManager::resetFileAssociations() {
+	Lock l( mFileAssociationsMutex );
+	mFileAssociations.clear();
+}
+
 void SyntaxDefinitionManager::setFileAssociations(
 	SyntaxDefinitionManager::FileAssociations&& fa ) {
 	Lock l( mFileAssociationsMutex );
