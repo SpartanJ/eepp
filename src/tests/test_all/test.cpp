@@ -45,7 +45,7 @@ class UIBlurredWindow : public UIWindow {
 											   mScreenPos.y + mSize.y ) );
 
 			RGB cc = getSceneNode()->getWindow()->getClearColor();
-			mFboBlur->setClearColor( ColorAf( cc.r / 255.f, cc.g / 255.f, cc.b / 255.f, 0 ) );
+			mFboBlur->setClearColor( ColorAf( cc.r / 255.f, cc.g / 255.f, cc.b / 255.f, 1.f ) );
 			mFboBlur->bind();
 			mFboBlur->clear();
 			textureRegion.draw( Vector2f( 0, 0 ), mFboBlur->getSizef() );
@@ -1172,7 +1172,8 @@ void EETest::createDecoratedWindow() {
 }
 
 void EETest::onCloseClick( const Event* ) {
-	mUIWindow = NULL;
+	if ( TestInstance )
+		mUIWindow = NULL;
 }
 
 void EETest::onItemClick( const Event* event ) {
@@ -1934,6 +1935,9 @@ void EETest::input() {
 	if ( KM->isKeyUp( KEY_F8 ) )
 		uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
 
+	if ( KM->isKeyUp( KEY_F11 ) )
+		UIWidgetInspector::create( uiSceneNode, PixelDensity::dpToPx( 12 ) );
+
 	if ( !mWindow->isVisible() ) {
 		mWasMinimized = true;
 
@@ -2553,6 +2557,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 
 	Test->process();
 
+	TestInstance = nullptr;
 	eeDelete( Test );
 
 	PhysicsManager::destroySingleton();

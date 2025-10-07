@@ -105,7 +105,7 @@ class EE_API UIWindow : public UIWidget {
 
 	virtual bool show();
 
-	virtual bool hide();
+	virtual bool hide( bool immediate = false /* ignores animations */ );
 
 	UIWindow* showWhenReady();
 

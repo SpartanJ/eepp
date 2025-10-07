@@ -270,7 +270,7 @@ void SceneNode::createFrameBuffer() {
 		FrameBuffer::New( fboSize.getWidth(), fboSize.getHeight(), true, false, false, 4, mWindow );
 
 	// Frame buffer failed to create?
-	if ( !mFrameBuffer->created() ) {
+	if ( mFrameBuffer == nullptr || !mFrameBuffer->created() ) {
 		eeSAFE_DELETE( mFrameBuffer );
 	}
 }

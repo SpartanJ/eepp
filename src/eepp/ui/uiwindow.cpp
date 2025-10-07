@@ -375,67 +375,19 @@ void UIWindow::drawHighlightInvalidation() {
 }
 
 void UIWindow::drawShadow() {
-	if ( mStyleConfig.WinFlags & UI_WIN_SHADOW ) {
-		UIWidget::matrixSet();
+	if ( !( mStyleConfig.WinFlags & UI_WIN_SHADOW ) )
+		return;
 
-		Primitives P;
-		P.setForceDraw( false );
+	UIWidget::matrixSet();
 
-		Color BeginC( 0, 0, 0, 25 * ( getAlpha() / (Float)255 ) );
-		Color EndC( 0, 0, 0, 0 );
-		Float SSize = PixelDensity::dpToPx( 16.f );
+	Primitives P;
+	Color shadowColor( 0, 0, 0, 25 * ( getAlpha() / 255.f ) );
+	Float shadowSize = PixelDensity::dpToPx( 16.f );
+	Vector2f shadowOffset( 0, shadowSize );
+	Rectf windowRect( mScreenPos, mSize );
+	P.drawSoftShadow( windowRect, shadowOffset, shadowSize, shadowColor, shadowSize / 2 );
 
-		Vector2f ShadowPos = mScreenPos + Vector2f( 0, SSize );
-
-		P.drawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y ),
-								Sizef( mSize.getWidth(), mSize.getHeight() ) ),
-						 BeginC, BeginC, BeginC, BeginC );
-
-		P.drawRectangle(
-			Rectf( Vector2f( ShadowPos.x, ShadowPos.y - SSize ), Sizef( mSize.getWidth(), SSize ) ),
-			EndC, BeginC, BeginC, EndC );
-
-		P.drawRectangle( Rectf( Vector2f( ShadowPos.x - SSize, ShadowPos.y ),
-								Sizef( SSize, mSize.getHeight() ) ),
-						 EndC, EndC, BeginC, BeginC );
-
-		P.drawRectangle( Rectf( Vector2f( ShadowPos.x + mSize.getWidth(), ShadowPos.y ),
-								Sizef( SSize, mSize.getHeight() ) ),
-						 BeginC, BeginC, EndC, EndC );
-
-		P.drawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y + mSize.getHeight() ),
-								Sizef( mSize.getWidth(), SSize ) ),
-						 BeginC, EndC, EndC, BeginC );
-
-		P.drawTriangle(
-			Triangle2f( Vector2f( ShadowPos.x + mSize.getWidth(), ShadowPos.y ),
-						Vector2f( ShadowPos.x + mSize.getWidth(), ShadowPos.y - SSize ),
-						Vector2f( ShadowPos.x + mSize.getWidth() + SSize, ShadowPos.y ) ),
-			BeginC, EndC, EndC );
-
-		P.drawTriangle( Triangle2f( Vector2f( ShadowPos.x, ShadowPos.y ),
-									Vector2f( ShadowPos.x, ShadowPos.y - SSize ),
-									Vector2f( ShadowPos.x - SSize, ShadowPos.y ) ),
-						BeginC, EndC, EndC );
-
-		P.drawTriangle(
-			Triangle2f(
-				Vector2f( ShadowPos.x + mSize.getWidth(), ShadowPos.y + mSize.getHeight() ),
-				Vector2f( ShadowPos.x + mSize.getWidth(), ShadowPos.y + mSize.getHeight() + SSize ),
-				Vector2f( ShadowPos.x + mSize.getWidth() + SSize,
-						  ShadowPos.y + mSize.getHeight() ) ),
-			BeginC, EndC, EndC );
-
-		P.drawTriangle(
-			Triangle2f( Vector2f( ShadowPos.x, ShadowPos.y + mSize.getHeight() ),
-						Vector2f( ShadowPos.x - SSize, ShadowPos.y + mSize.getHeight() ),
-						Vector2f( ShadowPos.x, ShadowPos.y + mSize.getHeight() + SSize ) ),
-			BeginC, EndC, EndC );
-
-		P.setForceDraw( true );
-
-		UIWidget::matrixUnset();
-	}
+	UIWidget::matrixUnset();
 }
 
 void UIWindow::onPaddingChange() {
@@ -1119,10 +1071,10 @@ bool UIWindow::show() {
 	return false;
 }
 
-bool UIWindow::hide() {
+bool UIWindow::hide( bool immediate ) {
 	if ( isVisible() ) {
 		UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
-		if ( themeManager->getDefaultEffectsEnabled() ) {
+		if ( !immediate && themeManager->getDefaultEffectsEnabled() ) {
 			runAction( Actions::Sequence::New(
 				Actions::FadeOut::New( themeManager->getWidgetsFadeOutTime() ),
 				Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
@@ -1150,7 +1102,7 @@ UIWindow* UIWindow::showWhenReady() {
 		show();
 	} else {
 		mShowWhenReady = true;
-		hide();
+		hide( true );
 	}
 	return this;
 }

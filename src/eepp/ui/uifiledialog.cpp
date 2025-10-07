@@ -952,13 +952,13 @@ bool UIFileDialog::show() {
 	return UIWindow::show();
 }
 
-bool UIFileDialog::hide() {
+bool UIFileDialog::hide( bool immediate ) {
 	if ( usingNativeFileDialog() ) {
 		eeSAFE_DELETE( mHandler );
 		mHandler = eeNew( NativeFileDialogHandler, () );
 		return true;
 	}
-	return UIWindow::hide();
+	return UIWindow::hide( immediate );
 }
 
 bool UIFileDialog::usingNativeFileDialog() const {

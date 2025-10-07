@@ -123,7 +123,7 @@ class EE_API UIFileDialog : public UIWindow {
 
 	virtual bool show();
 
-	virtual bool hide();
+	virtual bool hide( bool immediate = false );
 
 	bool usingNativeFileDialog() const;
 

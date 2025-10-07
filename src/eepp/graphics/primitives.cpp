@@ -465,4 +465,106 @@ const Float& Primitives::getLineWidth() const {
 	return mLineWidth;
 }
 
+void Primitives::drawSoftShadow( const Rectf& boxRect, const Vector2f& shadowOffset,
+								 Float shadowSize, const Color& shadowColor,
+								 Uint32 cornerSegments ) {
+	if ( shadowSize <= 0.f )
+		return;
+
+	if ( cornerSegments == 0 )
+		cornerSegments = 1;
+
+	setForceDraw( false );
+
+	// Define the start (opaque) and end (transparent) colors for the gradient
+	Color beginC = shadowColor;
+	Color endC( shadowColor.r, shadowColor.g, shadowColor.b, 0 );
+
+	// Calculate the position of the main, solid part of the shadow
+	Rectf shadowBox = boxRect;
+	shadowBox.move( shadowOffset );
+
+	// 1. Draw the central, solid part of the shadow
+	// drawRectangle(const Rectf& R, const Color& TopLeft, const Color& BottomLeft, const Color&
+	// BottomRight, const Color& TopRight)
+	drawRectangle( shadowBox, beginC, beginC, beginC, beginC );
+
+	// 2. Draw the four faded edge rectangles, using the correct (Left, Top, Right, Bottom)
+	// constructor Top edge
+	drawRectangle(
+		Rectf( shadowBox.Left, shadowBox.Top - shadowSize, shadowBox.Right, shadowBox.Top ), endC,
+		beginC, beginC, endC );
+
+	// Bottom edge
+	drawRectangle(
+		Rectf( shadowBox.Left, shadowBox.Bottom, shadowBox.Right, shadowBox.Bottom + shadowSize ),
+		beginC, endC, endC, beginC );
+
+	// Left edge
+	drawRectangle(
+		Rectf( shadowBox.Left - shadowSize, shadowBox.Top, shadowBox.Left, shadowBox.Bottom ), endC,
+		endC, beginC, beginC );
+
+	// Right edge
+	drawRectangle(
+		Rectf( shadowBox.Right, shadowBox.Top, shadowBox.Right + shadowSize, shadowBox.Bottom ),
+		beginC, beginC, endC, endC );
+
+	// 3. Draw the four corners using triangle fans
+	if ( cornerSegments > 0 ) {
+		Float step =
+			90.0f / static_cast<Float>( cornerSegments ); // Angle step for each triangle in the fan
+
+		// Top-Left Corner
+		Vector2f tlCenter( shadowBox.Left, shadowBox.Top );
+		for ( Uint32 i = 0; i < cornerSegments; ++i ) {
+			Float ang1 = 180.0f + i * step;
+			Float ang2 = 180.0f + ( i + 1 ) * step;
+			Vector2f p1( tlCenter.x + shadowSize * Math::cosAng( ang1 ),
+						 tlCenter.y + shadowSize * Math::sinAng( ang1 ) );
+			Vector2f p2( tlCenter.x + shadowSize * Math::cosAng( ang2 ),
+						 tlCenter.y + shadowSize * Math::sinAng( ang2 ) );
+			drawTriangle( Triangle2f( tlCenter, p1, p2 ), beginC, endC, endC );
+		}
+
+		// Top-Right Corner
+		Vector2f trCenter( shadowBox.Right, shadowBox.Top );
+		for ( Uint32 i = 0; i < cornerSegments; ++i ) {
+			Float ang1 = 270.0f + i * step;
+			Float ang2 = 270.0f + ( i + 1 ) * step;
+			Vector2f p1( trCenter.x + shadowSize * Math::cosAng( ang1 ),
+						 trCenter.y + shadowSize * Math::sinAng( ang1 ) );
+			Vector2f p2( trCenter.x + shadowSize * Math::cosAng( ang2 ),
+						 trCenter.y + shadowSize * Math::sinAng( ang2 ) );
+			drawTriangle( Triangle2f( trCenter, p1, p2 ), beginC, endC, endC );
+		}
+
+		// Bottom-Left Corner
+		Vector2f blCenter( shadowBox.Left, shadowBox.Bottom );
+		for ( Uint32 i = 0; i < cornerSegments; ++i ) {
+			Float ang1 = 90.0f + i * step;
+			Float ang2 = 90.0f + ( i + 1 ) * step;
+			Vector2f p1( blCenter.x + shadowSize * Math::cosAng( ang1 ),
+						 blCenter.y + shadowSize * Math::sinAng( ang1 ) );
+			Vector2f p2( blCenter.x + shadowSize * Math::cosAng( ang2 ),
+						 blCenter.y + shadowSize * Math::sinAng( ang2 ) );
+			drawTriangle( Triangle2f( blCenter, p1, p2 ), beginC, endC, endC );
+		}
+
+		// Bottom-Right Corner
+		Vector2f brCenter( shadowBox.Right, shadowBox.Bottom );
+		for ( Uint32 i = 0; i < cornerSegments; ++i ) {
+			Float ang1 = 0.0f + i * step;
+			Float ang2 = 0.0f + ( i + 1 ) * step;
+			Vector2f p1( brCenter.x + shadowSize * Math::cosAng( ang1 ),
+						 brCenter.y + shadowSize * Math::sinAng( ang1 ) );
+			Vector2f p2( brCenter.x + shadowSize * Math::cosAng( ang2 ),
+						 brCenter.y + shadowSize * Math::sinAng( ang2 ) );
+			drawTriangle( Triangle2f( brCenter, p1, p2 ), beginC, endC, endC );
+		}
+	}
+
+	drawBatch();
+}
+
 }} // namespace EE::Graphics
