@@ -428,8 +428,8 @@
     ],
     "clean": [
       {
-        "args": "config=${build_type} clean",
-        "command": "make",
+        "args": "-t clean ${build_type}",
+        "command": "ninja",
         "working_dir": "${build_dir}"
       }
     ],
