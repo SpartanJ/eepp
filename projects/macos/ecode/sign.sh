@@ -80,10 +80,6 @@ else
     fi
 fi
 
-# Debug: List certificates
-echo "Listing certificates in keychain for debugging..."
-security find-certificate -a -p "$KEYCHAIN_NAME"
-
 # Ensure keychain is unlocked
 echo "Ensuring keychain is unlocked..."
 security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
