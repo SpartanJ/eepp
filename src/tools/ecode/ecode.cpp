@@ -3760,6 +3760,12 @@ void App::init( InitParameters& params ) {
 	mResPath += "assets";
 	FileSystem::dirAddSlashAtEnd( mResPath );
 
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	if ( !FileSystem::fileExists( mResPath ) ) {
+		mResPath = Sys::getProcessPath() + "/../Resources/assets/";
+	}
+#endif
+
 	bool firstRun = loadConfig( params.logLevel, currentDisplay->getSize(), params.prematureExit,
 								params.stdOutLogs, params.disableFileLogs );
 

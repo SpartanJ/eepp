@@ -45,10 +45,12 @@ echo "Building using sdl2-config"
 ../make_no_fw.sh config=$CONFIG_NAME ecode || exit
 fi
 
+RESOURCES_PATH="ecode.app/Contents/Resources"
+
 rm -rf ./ecode.app
 mkdir -p ecode.app/Contents/MacOS/
-mkdir -p ecode.app/Contents/Resources/
-cp ../../../bin/assets/icon/ecode.icns ecode.app/Contents/Resources/ecode.icns
+mkdir -p "$RESOURCES_PATH"
+cp ../../../bin/assets/icon/ecode.icns $RESOURCES_PATH/ecode.icns
 
 VERSIONPATH=../../../src/tools/ecode/version.hpp
 ECODE_MAJOR_VERSION=$(grep "define ECODE_MAJOR_VERSION" $VERSIONPATH | awk '{print $3}')
@@ -89,35 +91,35 @@ fi
 
 fi
 
-#cp -r ../../../bin/assets ecode.app/Contents/MacOS/assets
-mkdir -p ecode.app/Contents/MacOS/assets/colorschemes
-cp -r ../../../bin/assets/colorschemes/ ecode.app/Contents/MacOS/assets/colorschemes/
-mkdir -p ecode.app/Contents/MacOS/assets/i18n
-cp -r ../../../bin/assets/i18n/ ecode.app/Contents/MacOS/assets/i18n/
-#cp -r ../../../bin/assets/fonts ecode.app/Contents/MacOS/assets/
-mkdir -p ecode.app/Contents/MacOS/assets/fonts
-cp -r ../../../bin/assets/fonts/DejaVuSansMono.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/DejaVuSansMono-Bold.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/DejaVuSansMono-Oblique.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/DejaVuSansMono-BoldOblique.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/DejaVuSansMonoNerdFontComplete.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/nonicons.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/codicon.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoSans-Regular.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/remixicon.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoEmoji-Regular.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoSans-Bold.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoSans-Italic.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoSans-BoldItalic.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoColorEmoji.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/DroidSansFallbackFull.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/plugins ecode.app/Contents/MacOS/assets/
-# cp -r ../../../bin/assets/icon ecode.app/Contents/MacOS/assets/
-mkdir -p ecode.app/Contents/MacOS/assets/icon
-cp ../../../bin/assets/icon/ecode.png ecode.app/Contents/MacOS/assets/icon
-cp ../../../bin/assets/ca-bundle.pem ecode.app/Contents/MacOS/assets/ca-bundle.pem
-mkdir ecode.app/Contents/MacOS/assets/ui
-cp ../../../bin/assets/ui/breeze.css ecode.app/Contents/MacOS/assets/ui/
+#cp -r ../../../bin/assets $RESOURCES_PATH/assets
+mkdir -p $RESOURCES_PATH/assets/colorschemes
+cp -r ../../../bin/assets/colorschemes/ $RESOURCES_PATH/assets/colorschemes/
+mkdir -p $RESOURCES_PATH/assets/i18n
+cp -r ../../../bin/assets/i18n/ $RESOURCES_PATH/assets/i18n/
+#cp -r ../../../bin/assets/fonts $RESOURCES_PATH/assets/
+mkdir -p $RESOURCES_PATH/assets/fonts
+cp -r ../../../bin/assets/fonts/DejaVuSansMono.ttf $RESOURCES_PATH/assets/fonts/
+cp -r ../../../bin/assets/fonts/DejaVuSansMono-Bold.ttf $RESOURCES_PATH/assets/fonts/
+cp -r ../../../bin/assets/fonts/DejaVuSansMono-Oblique.ttf $RESOURCES_PATH/assets/fonts/
+cp -r ../../../bin/assets/fonts/DejaVuSansMono-BoldOblique.ttf $RESOURCES_PATH/assets/fonts/
+cp -r ../../../bin/assets/fonts/DejaVuSansMonoNerdFontComplete.ttf $RESOURCES_PATH/assets/fonts/
+cp -r ../../../bin/assets/fonts/nonicons.ttf $RESOURCES_PATH/assets/fonts/
+cp -r ../../../bin/assets/fonts/codicon.ttf $RESOURCES_PATH/assets/fonts/
+cp -r ../../../bin/assets/fonts/NotoSans-Regular.ttf $RESOURCES_PATH/assets/fonts/
+cp -r ../../../bin/assets/fonts/remixicon.ttf $RESOURCES_PATH/assets/fonts/
+cp -r ../../../bin/assets/fonts/NotoEmoji-Regular.ttf $RESOURCES_PATH/assets/fonts/
+cp -r ../../../bin/assets/fonts/NotoSans-Bold.ttf $RESOURCES_PATH/assets/fonts/
+cp -r ../../../bin/assets/fonts/NotoSans-Italic.ttf $RESOURCES_PATH/assets/fonts/
+cp -r ../../../bin/assets/fonts/NotoSans-BoldItalic.ttf $RESOURCES_PATH/assets/fonts/
+cp -r ../../../bin/assets/fonts/NotoColorEmoji.ttf $RESOURCES_PATH/assets/fonts/
+cp -r ../../../bin/assets/fonts/DroidSansFallbackFull.ttf $RESOURCES_PATH/assets/fonts/
+cp -r ../../../bin/assets/plugins $RESOURCES_PATH/assets/
+# cp -r ../../../bin/assets/icon $RESOURCES_PATH/assets/
+mkdir -p $RESOURCES_PATH/assets/icon
+cp ../../../bin/assets/icon/ecode.png $RESOURCES_PATH/assets/icon
+cp ../../../bin/assets/ca-bundle.pem $RESOURCES_PATH/assets/ca-bundle.pem
+mkdir $RESOURCES_PATH/assets/ui
+cp ../../../bin/assets/ui/breeze.css $RESOURCES_PATH/assets/ui/
 
 # Clear quarantine flag recursively (more targeted than -cr)
 xattr -d -r com.apple.quarantine ecode.app 2>/dev/null || true
