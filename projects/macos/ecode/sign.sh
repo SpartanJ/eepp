@@ -98,28 +98,43 @@ sign_app() {
 notarize_dmg() {
     echo "Notarizing DMG at: $ARTIFACT_PATH"
 
-    # Submit for notarization and wait for it to complete
-    NOTARY_OUTPUT=$(xcrun notarytool submit "$ARTIFACT_PATH" \
+    # Temporary file to store the command's output
+    local notary_output_file
+    notary_output_file=$(mktemp)
+
+    # Submit for notarization and check the exit code directly.
+    # The --wait flag makes the command exit with 0 on success and non-zero on failure.
+    # We redirect all output to a temp file so we can show it and parse it later.
+    if ! xcrun notarytool submit "$ARTIFACT_PATH" \
         --apple-id "$MACOS_APPLE_ID" \
         --password "$MACOS_NOTARIZATION_PASSWORD" \
         --team-id "$MACOS_TEAM_ID" \
-        --wait 2>&1)
+        --wait > "$notary_output_file" 2>&1; then
 
-    echo "$NOTARY_OUTPUT"
-
-    # Check for success
-    if ! echo "$NOTARY_OUTPUT" | grep -q "Status: Accepted"; then
         echo "Error: Notarization failed."
-        # Attempt to get logs for debugging
-        REQUEST_UUID=$(echo "$NOTARY_OUTPUT" | grep "id:" | awk '{print $2}')
+        # Print the full output from the failed command for debugging
+        cat "$notary_output_file"
+
+        # Attempt to get logs if we can find a UUID.
+        # Use 'head -n 1' to ensure we only get the first matching line.
+        REQUEST_UUID=$(grep "id:" "$notary_output_file" | head -n 1 | awk '{print $2}')
         if [[ -n "$REQUEST_UUID" ]]; then
             echo "Fetching notarization logs for UUID: $REQUEST_UUID"
-            xcrun notarytool log "$REQUEST_UUID" --apple-id "$MACOS_APPLE_ID" --password "$MACOS_NOTARIZATION_PASSWORD" --team-id "$MACOS_TEAM_ID"
+            xcrun notarytool log "$REQUEST_UUID" \
+                --apple-id "$MACOS_APPLE_ID" \
+                --password "$MACOS_NOTARIZATION_PASSWORD" \
+                --team-id "$MACOS_TEAM_ID"
         fi
+        rm "$notary_output_file"
         exit 1
     fi
 
-    echo "Notarization successful. Stapling ticket to DMG..."
+    # If we reach here, the command succeeded.
+    echo "Notarization successful. Full log:"
+    cat "$notary_output_file"
+    rm "$notary_output_file"
+
+    echo "Stapling ticket to DMG..."
     xcrun stapler staple "$ARTIFACT_PATH"
     echo "Stapling complete."
 }
