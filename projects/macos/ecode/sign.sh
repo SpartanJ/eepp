@@ -107,46 +107,6 @@ sign_app() {
     echo "Signing main application bundle with entitlements..."
     codesign --force --verbose --sign "$SIGNING_IDENTITY" --entitlements "$ENTITLEMENTS_PATH" --options runtime --timestamp "$ARTIFACT_PATH"
     echo "App signing complete."
-
-    # Notarize the app
-    ZIP_PATH="${ARTIFACT_PATH%.*}.zip"
-    echo "Zipping app for notarization: $ZIP_PATH"
-    ditto -c -k --sequesterRsrc --keepParent "$ARTIFACT_PATH" "$ZIP_PATH"
-
-    local notary_output_file
-    notary_output_file=$(mktemp)
-
-    echo "Notarizing app zip..."
-    if ! xcrun notarytool submit "$ZIP_PATH" \
-        --apple-id "$MACOS_APPLE_ID" \
-        --password "$MACOS_NOTARIZATION_PASSWORD" \
-        --team-id "$MACOS_TEAM_ID" \
-        --wait > "$notary_output_file" 2>&1; then
-
-        echo "Error: App notarization failed."
-        cat "$notary_output_file"
-        REQUEST_UUID=$(grep "id:" "$notary_output_file" | head -n 1 | awk '{print $2}')
-        if [[ -n "$REQUEST_UUID" ]]; then
-            echo "Fetching notarization logs for UUID: $REQUEST_UUID"
-            xcrun notarytool log "$REQUEST_UUID" \
-                --apple-id "$MACOS_APPLE_ID" \
-                --password "$MACOS_NOTARIZATION_PASSWORD" \
-                --team-id "$MACOS_TEAM_ID"
-        fi
-        rm "$notary_output_file"
-        rm -f "$ZIP_PATH"
-        exit 1
-    fi
-
-    echo "App notarization successful. Full log:"
-    cat "$notary_output_file"
-    rm "$notary_output_file"
-
-    echo "Stapling ticket to app..."
-    xcrun stapler staple "$ARTIFACT_PATH"
-    echo "App stapling complete."
-
-    rm -f "$ZIP_PATH"
 }
 
 # Function to notarize and staple the .dmg
