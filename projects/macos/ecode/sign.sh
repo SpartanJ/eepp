@@ -7,21 +7,15 @@ DIRPATH="$(dirname "$CANONPATH")"
 cd "$DIRPATH" || exit
 
 # This script handles code signing and notarization for the macOS app.
-# It's designed to be called from the CI environment.
-#
 # It expects the following environment variables to be set for real signing:
 # - MACOS_CERTIFICATE_P12_B64: The base64 encoded .p12 certificate.
 # - MACOS_CERTIFICATE_PASSWORD: The password for the .p12 certificate.
 # - MACOS_APPLE_ID: Your Apple ID email used for notarization.
 # - MACOS_NOTARIZATION_PASSWORD: An app-specific password for your Apple ID.
 # - MACOS_TEAM_ID: Your Apple Developer Team ID.
-#
-# If these variables are not set, it will fall back to ad-hoc (self) signing for .app bundles
-# and skip notarization for .dmg files.
 
 # The first argument is the path to the artifact, relative to this script's location.
 ARTIFACT_PATH="$1"
-# The entitlements file is in the same directory as this script.
 ENTITLEMENTS_PATH="entitlements.plist"
 
 if [[ -z "$ARTIFACT_PATH" ]]; then
@@ -38,12 +32,10 @@ fi
 if [[ -z "$MACOS_CERTIFICATE_P12_B64" ]]; then
     if [[ "$ARTIFACT_PATH" == *.app ]]; then
         echo "No signing certificate found. Performing ad-hoc signing..."
-        # Find and sign all binaries within the app bundle
         find "$ARTIFACT_PATH/Contents/MacOS/" -type f -exec codesign --force --sign - {} \;
         codesign --force --sign - "$ARTIFACT_PATH"
         echo "Ad-hoc signing complete."
     fi
-    # For .dmg files, we just skip if no credentials
     exit 0
 fi
 
@@ -54,25 +46,54 @@ KEYCHAIN_NAME="build.keychain"
 KEYCHAIN_PASSWORD="a-very-secure-password"
 CERTIFICATE_P12_PATH="certificate.p12"
 
-# Decode the certificate
-echo "$MACOS_CERTIFICATE_P12_B64" | base64 --decode > "$CERTIFICATE_P12_PATH"
+# Check if keychain already exists
+if [[ -f "$HOME/Library/Keychains/$KEYCHAIN_NAME-db" ]]; then
+    echo "Keychain $KEYCHAIN_NAME already exists. Reusing it..."
+    security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
+else
+    echo "Creating temporary keychain: $KEYCHAIN_NAME"
+    security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
+    security default-keychain -s "$KEYCHAIN_NAME"
+    security set-keychain-settings -t 3600 -u "$KEYCHAIN_NAME"
 
-# Create a temporary keychain
-security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
-security default-keychain -s "$KEYCHAIN_NAME"
+    # Decode and import the certificate
+    echo "Decoding certificate..."
+    echo "$MACOS_CERTIFICATE_P12_B64" | base64 --decode > "$CERTIFICATE_P12_PATH"
+    if [[ ! -s "$CERTIFICATE_P12_PATH" ]]; then
+        echo "Error: Certificate file is empty or invalid."
+        exit 1
+    fi
+
+    echo "Importing certificate into keychain..."
+    security import "$CERTIFICATE_P12_PATH" -k "$KEYCHAIN_NAME" -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+    if [[ $? -ne 0 ]]; then
+        echo "Error: Failed to import certificate."
+        exit 1
+    fi
+
+    # Allow codesign access
+    echo "Setting keychain partition list..."
+    security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME" > /dev/null
+    if [[ $? -ne 0 ]]; then
+        echo "Error: Failed to set keychain partition list."
+        exit 1
+    fi
+fi
+
+# Debug: List certificates
+echo "Listing certificates in keychain for debugging..."
+security find-certificate -a -p "$KEYCHAIN_NAME"
+
+# Ensure keychain is unlocked
+echo "Ensuring keychain is unlocked..."
 security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
-security set-keychain-settings -t 3600 -u "$KEYCHAIN_NAME"
-
-# Import the certificate into the keychain
-security import "$CERTIFICATE_P12_PATH" -k "$KEYCHAIN_NAME" -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
-
-# Allow codesign to access the certificate
-security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME" > /dev/null
 
 # Find the signing identity
+echo "Searching for signing identity..."
 SIGNING_IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_NAME" | grep "Developer ID Application" | head -n 1 | awk -F '"' '{print $2}')
 if [[ -z "$SIGNING_IDENTITY" ]]; then
-    echo "Error: Signing identity not found in keychain."
+    echo "Error: No Developer ID Application signing identity found."
+    security find-identity -v -p codesigning "$KEYCHAIN_NAME"
     exit 1
 fi
 echo "Using signing identity: $SIGNING_IDENTITY"
@@ -82,26 +103,23 @@ echo "Using signing identity: $SIGNING_IDENTITY"
 # Function to sign the .app bundle
 sign_app() {
     echo "Signing application bundle at: $ARTIFACT_PATH"
-    # Sign all dylibs, frameworks and executables from the inside out
     find "$ARTIFACT_PATH" -depth -name "*.dylib" -o -name "*.framework" -o -path "$ARTIFACT_PATH/Contents/MacOS/*" -type f | while read -r comp; do
         echo "Signing component: $comp"
-        codesign --force --verify --verbose --sign "$SIGNING_IDENTITY" --options runtime --timestamp "$comp"
+        codesign --force --verbose --sign "$SIGNING_IDENTITY" --options runtime --timestamp "$comp"
     done
 
     echo "Signing main application bundle with entitlements..."
-    codesign --force --verify --verbose --sign "$SIGNING_IDENTITY" --entitlements "$ENTITLEMENTS_PATH" --options runtime --timestamp "$ARTIFACT_PATH"
+    codesign --force --verbose --sign "$SIGNING_IDENTITY" --entitlements "$ENTITLEMENTS_PATH" --options runtime --timestamp "$ARTIFACT_PATH"
     echo "App signing complete."
 
-    # Notarize the app: Zip it first (Apple recommends zipping apps for submission)
+    # Notarize the app
     ZIP_PATH="${ARTIFACT_PATH%.*}.zip"
     echo "Zipping app for notarization: $ZIP_PATH"
     ditto -c -k --sequesterRsrc --keepParent "$ARTIFACT_PATH" "$ZIP_PATH"
 
-    # Temporary file to store the command's output
     local notary_output_file
     notary_output_file=$(mktemp)
 
-    # Submit for notarization
     echo "Notarizing app zip..."
     if ! xcrun notarytool submit "$ZIP_PATH" \
         --apple-id "$MACOS_APPLE_ID" \
@@ -128,12 +146,10 @@ sign_app() {
     cat "$notary_output_file"
     rm "$notary_output_file"
 
-    # Staple to the app (not the zip)
     echo "Stapling ticket to app..."
     xcrun stapler staple "$ARTIFACT_PATH"
     echo "App stapling complete."
 
-    # Clean up zip
     rm -f "$ZIP_PATH"
 }
 
@@ -141,18 +157,30 @@ sign_app() {
 notarize_dmg() {
     echo "Notarizing DMG at: $ARTIFACT_PATH"
 
-    # Sign the DMG first (required before notarization)
+    # Re-verify keychain state
+    echo "Verifying keychain state before DMG signing..."
+    security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
+    security find-identity -v -p codesigning "$KEYCHAIN_NAME"
+
+    # Sign the DMG
     echo "Signing DMG..."
-    codesign --force --verify --verbose --sign "$SIGNING_IDENTITY" --timestamp "$ARTIFACT_PATH"
+    codesign --force --verbose --sign "$SIGNING_IDENTITY" "$ARTIFACT_PATH"
+    if [[ $? -ne 0 ]]; then
+        echo "Error: Failed to sign DMG. Checking keychain state..."
+        security find-identity -v -p codesigning "$KEYCHAIN_NAME"
+        exit 1
+    fi
     echo "DMG signing complete."
 
-    # Temporary file to store the command's output
+    # Verify the signature
+    echo "Verifying DMG signature..."
+    codesign --verify --verbose "$ARTIFACT_PATH"
+
+    # Notarize the DMG
     local notary_output_file
     notary_output_file=$(mktemp)
 
-    # Submit for notarization and check the exit code directly.
-    # The --wait flag makes the command exit with 0 on success and non-zero on failure.
-    # We redirect all output to a temp file so we can show it and parse it later.
+    echo "Notarizing DMG..."
     if ! xcrun notarytool submit "$ARTIFACT_PATH" \
         --apple-id "$MACOS_APPLE_ID" \
         --password "$MACOS_NOTARIZATION_PASSWORD" \
@@ -160,11 +188,7 @@ notarize_dmg() {
         --wait > "$notary_output_file" 2>&1; then
 
         echo "Error: Notarization failed."
-        # Print the full output from the failed command for debugging
         cat "$notary_output_file"
-
-        # Attempt to get logs if we can find a UUID.
-        # Use 'head -n 1' to ensure we only get the first matching line.
         REQUEST_UUID=$(grep "id:" "$notary_output_file" | head -n 1 | awk '{print $2}')
         if [[ -n "$REQUEST_UUID" ]]; then
             echo "Fetching notarization logs for UUID: $REQUEST_UUID"
@@ -177,7 +201,6 @@ notarize_dmg() {
         exit 1
     fi
 
-    # If we reach here, the command succeeded.
     echo "Notarization successful. Full log:"
     cat "$notary_output_file"
     rm "$notary_output_file"
@@ -188,12 +211,13 @@ notarize_dmg() {
 }
 
 # --- CLEANUP ---
-cleanup() {
-    echo "Cleaning up..."
-    security delete-keychain "$KEYCHAIN_NAME" || true
-    rm -f "$CERTIFICATE_P12_PATH"
-}
-trap cleanup EXIT
+# Note: Cleanup is handled in CI, not here, since this script is called twice
+# cleanup() {
+#     echo "Cleaning up..."
+#     security delete-keychain "$KEYCHAIN_NAME" || true
+#     rm -f "$CERTIFICATE_P12_PATH"
+# }
+# trap cleanup EXIT
 
 # --- EXECUTION ---
 if [[ "$ARTIFACT_PATH" == *.app ]]; then
