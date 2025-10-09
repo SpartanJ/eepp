@@ -508,7 +508,7 @@ Generate the project:
 
 And build it:
 
-`make -C make/macosx config=release_x86_64` (or `config=debug_x86_64` for a debug build)
+`make -C make/macosx config=release_x86_64` (or `config=debug_x86_64` for a debug build, or `release_arm64`/`debug_arm64` if building from arm64)
 
 ##### Using premake4
 
