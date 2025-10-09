@@ -77,7 +77,6 @@ if [[ -z "$SIGNING_IDENTITY" ]]; then
 fi
 echo "Using signing identity: $SIGNING_IDENTITY"
 
-
 # --- MAIN LOGIC ---
 
 # Function to sign the .app bundle
@@ -92,11 +91,60 @@ sign_app() {
     echo "Signing main application bundle with entitlements..."
     codesign --force --verify --verbose --sign "$SIGNING_IDENTITY" --entitlements "$ENTITLEMENTS_PATH" --options runtime --timestamp "$ARTIFACT_PATH"
     echo "App signing complete."
+
+    # Notarize the app: Zip it first (Apple recommends zipping apps for submission)
+    ZIP_PATH="${ARTIFACT_PATH%.*}.zip"
+    echo "Zipping app for notarization: $ZIP_PATH"
+    ditto -c -k --sequesterRsrc --keepParent "$ARTIFACT_PATH" "$ZIP_PATH"
+
+    # Temporary file to store the command's output
+    local notary_output_file
+    notary_output_file=$(mktemp)
+
+    # Submit for notarization
+    echo "Notarizing app zip..."
+    if ! xcrun notarytool submit "$ZIP_PATH" \
+        --apple-id "$MACOS_APPLE_ID" \
+        --password "$MACOS_NOTARIZATION_PASSWORD" \
+        --team-id "$MACOS_TEAM_ID" \
+        --wait > "$notary_output_file" 2>&1; then
+
+        echo "Error: App notarization failed."
+        cat "$notary_output_file"
+        REQUEST_UUID=$(grep "id:" "$notary_output_file" | head -n 1 | awk '{print $2}')
+        if [[ -n "$REQUEST_UUID" ]]; then
+            echo "Fetching notarization logs for UUID: $REQUEST_UUID"
+            xcrun notarytool log "$REQUEST_UUID" \
+                --apple-id "$MACOS_APPLE_ID" \
+                --password "$MACOS_NOTARIZATION_PASSWORD" \
+                --team-id "$MACOS_TEAM_ID"
+        fi
+        rm "$notary_output_file"
+        rm -f "$ZIP_PATH"
+        exit 1
+    fi
+
+    echo "App notarization successful. Full log:"
+    cat "$notary_output_file"
+    rm "$notary_output_file"
+
+    # Staple to the app (not the zip)
+    echo "Stapling ticket to app..."
+    xcrun stapler staple "$ARTIFACT_PATH"
+    echo "App stapling complete."
+
+    # Clean up zip
+    rm -f "$ZIP_PATH"
 }
 
 # Function to notarize and staple the .dmg
 notarize_dmg() {
     echo "Notarizing DMG at: $ARTIFACT_PATH"
+
+    # Sign the DMG first (required before notarization)
+    echo "Signing DMG..."
+    codesign --force --verify --verbose --sign "$SIGNING_IDENTITY" --timestamp "$ARTIFACT_PATH"
+    echo "DMG signing complete."
 
     # Temporary file to store the command's output
     local notary_output_file
