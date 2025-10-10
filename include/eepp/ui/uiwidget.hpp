@@ -308,9 +308,9 @@ class EE_API UIWidget : public UINode {
 	PositionPolicy mLayoutPositionPolicy;
 	UIWidget* mLayoutPositionPolicyWidget;
 	int mAttributesTransactionCount;
+	Uint32 mPseudoClasses{ 0 };
 	std::string mSkinName;
 	std::vector<std::string> mClasses;
-	Uint32 mPseudoClasses{ 0 };
 	String mTooltipText;
 
 	explicit UIWidget( const std::string& tag );

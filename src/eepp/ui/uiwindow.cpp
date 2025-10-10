@@ -375,18 +375,14 @@ void UIWindow::drawHighlightInvalidation() {
 }
 
 void UIWindow::drawShadow() {
-	if ( !( mStyleConfig.WinFlags & UI_WIN_SHADOW ) )
-		return;
-
 	UIWidget::matrixSet();
-
-	Primitives P;
+	Primitives p;
 	Color shadowColor( 0, 0, 0, 25 * ( getAlpha() / 255.f ) );
 	Float shadowSize = PixelDensity::dpToPx( 16.f );
 	Vector2f shadowOffset( 0, shadowSize );
 	Rectf windowRect( mScreenPos, mSize );
-	P.drawSoftShadow( windowRect, shadowOffset, shadowSize, shadowColor, shadowSize / 2 );
-
+	p.setColor( shadowColor );
+	p.drawSoftShadow( windowRect, shadowOffset, shadowSize, shadowSize / 2 );
 	UIWidget::matrixUnset();
 }
 
@@ -1231,7 +1227,8 @@ void UIWindow::nodeDraw() {
 
 		preDraw();
 
-		drawShadow();
+		if ( mStyleConfig.WinFlags & UI_WIN_SHADOW )
+			drawShadow();
 
 		ClippingMask* clippingMask = GLi->getClippingMask();
 

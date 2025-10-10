@@ -17,6 +17,7 @@ Node* Node::New() {
 Node::Node() :
 	mIdHash( 0 ),
 	mSize( 0, 0 ),
+	mAlpha( 255.f ),
 	mData( 0 ),
 	mParentNode( NULL ),
 	mSceneNode( NULL ),
@@ -27,10 +28,9 @@ Node::Node() :
 	mPrev( NULL ),
 	mNodeFlags( NODE_FLAG_POSITION_DIRTY | NODE_FLAG_POLYGON_DIRTY ),
 	mBlend( BlendMode::Alpha() ),
-	mNumCallBacks( 0 ),
 	mVisible( true ),
 	mEnabled( true ),
-	mAlpha( 255.f ) {}
+	mNumCallBacks( 0 ) {}
 
 Node::~Node() {
 	if ( !SceneManager::instance()->isShuttingDown() && NULL != mSceneNode ) {

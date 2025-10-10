@@ -318,6 +318,12 @@
         "command": "${project_root}/bin/eepp-test-debug",
         "name": "eepp-test-debug",
         "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-perf-test-debug",
+        "name": "eepp-ui-perf-test-debug",
+        "working_dir": "${project_root}/bin"
       }
     ],
     "var": {

@@ -479,21 +479,24 @@ class EE_API Node : public Transformable {
 	friend class EventDispatcher;
 
 	std::string mId;
-	String::HashType mIdHash;
+	String::HashType mIdHash{ 0 };
 	Vector2f mScreenPos;
 	Vector2i mScreenPosi;
 	Sizef mSize;
-	UintPtr mData;
-	Node* mParentNode;
-	SceneNode* mSceneNode;
-	Node* mNodeDrawInvalidator;
-	Node* mChild;	  //! Pointer to the first child of the node
-	Node* mChildLast; //! Pointer to the last child added
-	Node* mNext;	  //! Pointer to the next child of the father
-	Node* mPrev;	  //! Pointer to the prev child of the father
-	Uint32 mNodeFlags;
-	BlendMode mBlend;
-	Uint32 mNumCallBacks;
+	Float mAlpha{ 255.f };
+	UintPtr mData{ 0 };
+	Node* mParentNode{ nullptr };
+	SceneNode* mSceneNode{ nullptr };
+	Node* mNodeDrawInvalidator{ nullptr };
+	Node* mChild{ nullptr };	  //! Pointer to the first child of the node
+	Node* mChildLast{ nullptr }; //! Pointer to the last child added
+	Node* mNext{ nullptr };	  //! Pointer to the next child of the father
+	Node* mPrev{ nullptr };	  //! Pointer to the prev child of the father
+	Uint32 mNodeFlags{ NODE_FLAG_POSITION_DIRTY | NODE_FLAG_POLYGON_DIRTY };
+	BlendMode mBlend{ BlendMode::Alpha() };
+	bool mVisible{ true };
+	bool mEnabled{ true };
+	Uint32 mNumCallBacks{ 0 };
 
 	mutable Polygon2f mPoly;
 	mutable Rectf mWorldBounds;
@@ -501,12 +504,9 @@ class EE_API Node : public Transformable {
 
 	EventsMap mEvents;
 
-	bool mVisible;
-	bool mEnabled;
 
 	OriginPoint mRotationOriginPoint;
 	OriginPoint mScaleOriginPoint;
-	Float mAlpha;
 
 	virtual Uint32 onMessage( const NodeMessage* msg );
 

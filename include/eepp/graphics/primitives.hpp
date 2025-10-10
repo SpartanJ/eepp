@@ -149,7 +149,7 @@ class EE_API Primitives {
 	 * result in a smoother corner.
 	 */
 	void drawSoftShadow( const Rectf& boxRect, const Vector2f& shadowOffset, Float shadowSize,
-						 const Color& shadowColor, Uint32 cornerSegments = 8 );
+						 Uint32 cornerSegments = 8 );
 
 	/** Set the current color for drawing primitives */
 	void setColor( const Color& Color );

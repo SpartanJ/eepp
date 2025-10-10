@@ -466,8 +466,7 @@ const Float& Primitives::getLineWidth() const {
 }
 
 void Primitives::drawSoftShadow( const Rectf& boxRect, const Vector2f& shadowOffset,
-								 Float shadowSize, const Color& shadowColor,
-								 Uint32 cornerSegments ) {
+								 Float shadowSize, Uint32 cornerSegments ) {
 	if ( shadowSize <= 0.f )
 		return;
 
@@ -477,8 +476,8 @@ void Primitives::drawSoftShadow( const Rectf& boxRect, const Vector2f& shadowOff
 	setForceDraw( false );
 
 	// Define the start (opaque) and end (transparent) colors for the gradient
-	Color beginC = shadowColor;
-	Color endC( shadowColor.r, shadowColor.g, shadowColor.b, 0 );
+	Color beginC = mColor;
+	Color endC( mColor.r, mColor.g, mColor.b, 0 );
 
 	// Calculate the position of the main, solid part of the shadow
 	Rectf shadowBox = boxRect;

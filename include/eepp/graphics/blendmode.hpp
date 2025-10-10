@@ -8,7 +8,7 @@ namespace EE { namespace Graphics {
 
 class EE_API BlendMode {
   public:
-	enum class Factor {
+	enum class Factor : Uint8 {
 		Zero,			  /// (0, 0, 0, 0)
 		One,			  /// (1, 1, 1, 1)
 		SrcColor,		  /// (src.r, src.g, src.b, src.a)
@@ -21,28 +21,60 @@ class EE_API BlendMode {
 		OneMinusDstAlpha  /// (1, 1, 1, 1) - (dst.a, dst.a, dst.a, dst.a)
 	};
 
-	enum class Equation {
+	enum class Equation : Uint8 {
 		Add,			/// Pixel = Src * SrcFactor + Dst * DstFactor
 		Subtract,		/// Pixel = Src * SrcFactor - Dst * DstFactor
 		ReverseSubtract /// Pixel = Dst * DstFactor - Src * SrcFactor
 	};
 
-	static BlendMode Alpha();	 /// Blend source and dest according to dest alpha
-	static BlendMode Add();		 /// Add source to dest
-	static BlendMode Multiply(); /// Multiply source and dest
-	static BlendMode None();	 /// Overwrite dest with source
+	/// Blend source and dest according to dest alpha
+	static constexpr BlendMode Alpha() {
+		return { Factor::SrcAlpha, Factor::OneMinusSrcAlpha, Equation::Add,
+				 Factor::One,	   Factor::OneMinusSrcAlpha, Equation::Add };
+	}
+
+	/// Add source to dest
+	static constexpr BlendMode Add() {
+		return { Factor::SrcAlpha, Factor::One, Equation::Add,
+				 Factor::One,	   Factor::One, Equation::Add };
+	}
+
+	/// Multiply source and dest
+	static constexpr BlendMode Multiply() { return { Factor::DstColor, Factor::Zero }; }
+
+	/// Overwrite dest with source
+	static constexpr BlendMode None() { return { Factor::One, Factor::Zero }; }
 
 	static std::string equationToString( const Equation& eq );
 
 	static std::string factorToString( const Factor& fc );
 
-	BlendMode();
+	constexpr BlendMode() :
+		colorSrcFactor( Factor::SrcAlpha ),
+		colorDstFactor( Factor::OneMinusSrcAlpha ),
+		colorEquation( Equation::Add ),
+		alphaSrcFactor( Factor::One ),
+		alphaDstFactor( Factor::OneMinusSrcAlpha ),
+		alphaEquation( Equation::Add ) {}
 
-	BlendMode( Factor sourceFactor, Factor destinationFactor, Equation blendEquation = BlendMode::Equation::Add );
+	constexpr BlendMode( Factor sourceFactor, Factor destinationFactor,
+						 Equation blendEquation = Equation::Add ) :
+		colorSrcFactor( sourceFactor ),
+		colorDstFactor( destinationFactor ),
+		colorEquation( blendEquation ),
+		alphaSrcFactor( sourceFactor ),
+		alphaDstFactor( destinationFactor ),
+		alphaEquation( blendEquation ) {}
 
-	BlendMode( Factor colorSourceFactor, Factor colorDestinationFactor, Equation colorBlendEquation,
-			   Factor alphaSourceFactor, Factor alphaDestinationFactor,
-			   Equation alphaBlendEquation );
+	constexpr BlendMode( Factor colorSourceFactor, Factor colorDestinationFactor,
+						 Equation colorBlendEquation, Factor alphaSourceFactor,
+						 Factor alphaDestinationFactor, Equation alphaBlendEquation ) :
+		colorSrcFactor( colorSourceFactor ),
+		colorDstFactor( colorDestinationFactor ),
+		colorEquation( colorBlendEquation ),
+		alphaSrcFactor( alphaSourceFactor ),
+		alphaDstFactor( alphaDestinationFactor ),
+		alphaEquation( alphaBlendEquation ) {}
 
 	/** Set a Predefined Blend Function
 	 * @param mode The Blend Mode
@@ -66,8 +98,18 @@ class EE_API BlendMode {
 	static BlendMode sLastBlend;
 };
 
-EE_API bool operator==( const BlendMode& left, const BlendMode& right );
-EE_API bool operator!=( const BlendMode& left, const BlendMode& right );
+constexpr bool operator==( const BlendMode& left, const BlendMode& right ) {
+	return ( left.colorSrcFactor == right.colorSrcFactor ) &&
+		   ( left.colorDstFactor == right.colorDstFactor ) &&
+		   ( left.colorEquation == right.colorEquation ) &&
+		   ( left.alphaSrcFactor == right.alphaSrcFactor ) &&
+		   ( left.alphaDstFactor == right.alphaDstFactor ) &&
+		   ( left.alphaEquation == right.alphaEquation );
+}
+
+constexpr bool operator!=( const BlendMode& left, const BlendMode& right ) {
+	return !( left == right );
+}
 
 }} // namespace EE::Graphics
 

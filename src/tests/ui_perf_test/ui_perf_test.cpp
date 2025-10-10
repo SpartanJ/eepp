@@ -1,4 +1,5 @@
 #include <eepp/ee.hpp>
+#include <iostream>
 
 using namespace EE::UI::Abstract;
 
@@ -21,13 +22,13 @@ class TestModel : public Model {
 
 	size_t getRows() const { return 10000; }
 	size_t getCols() const { return 4; }
-	size_t getChilds() const { return 50; }
+	size_t getChildren() const { return 50; }
 
 	TestModel() : Model() {
 		for ( size_t row = 0; row < getRows(); ++row ) {
 			NodeT* n = new NodeT();
 			n->parent = &mRoot;
-			for ( size_t i = 0; i < getChilds(); i++ ) {
+			for ( size_t i = 0; i < getChildren(); i++ ) {
 				NodeT* c = new NodeT();
 				c->parent = n;
 				n->children.push_back( c );
@@ -133,7 +134,7 @@ void mainLoop() {
 	SceneManager::instance()->update();
 
 	// Check if the UI has been invalidated ( needs redraw ).
-	if ( true || SceneManager::instance()->getUISceneNode()->invalidated() ) {
+	if ( SceneManager::instance()->getUISceneNode()->invalidated() ) {
 		win->clear();
 
 		// Redraw the UI scene.
@@ -146,7 +147,7 @@ void mainLoop() {
 
 		win->display();
 	} else {
-		// win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
+		win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
 	}
 }
 
@@ -198,7 +199,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 			->setDefaultFont( font )
 			->add( theme );
 
-		auto* vlay = UILinearLayout::NewVertical();
+ 		auto* vlay = UILinearLayout::NewVertical();
 		vlay->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 
 		Clock clock;
@@ -212,49 +213,52 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		view->setModel( SortingProxyModel::New( model ) );
 		Log::notice( "Total time: %.2fms", clock.getElapsedTime().asMilliseconds() );
 
-		/* ListBox test */ /*
-		 std::vector<String> strings;
-		 for ( size_t i = 0; i < 10000; i++ )
-			 strings.emplace_back( String::format(
-				 "This is a very long string number %ld. Cover the full width of the listbox.",
-				 i ) );
-		  auto* lbox = UIListBox::New();
-		  std::cout << "Time New: " << clock.getElapsed().asMilliseconds() << " ms" << std::endl;
-		  lbox->setParent( vlay );
-		  std::cout << "Time setParent: " << clock.getElapsed().asMilliseconds() << " ms"
-					<< std::endl;
-		  lbox->setLayoutMargin( Rectf( 4, 4, 4, 4 ) );
-		  std::cout << "Time setLayoutMargin: " << clock.getElapsed().asMilliseconds() << " ms"
-					<< std::endl;
-		  lbox->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
-		  std::cout << "Time setLayoutSizePolicy: " << clock.getElapsed().asMilliseconds() << " ms"
-					<< std::endl;
-		  for ( size_t i = 0; i < 10; i++ )
-			  lbox->addListBoxItem( String::format(
-				  "This is a very long string number %ld. Cover the full width of the listbox.",
-				  i ) );
-		  std::cout << "Time addListBoxItem: " << clock.getElapsed().asMilliseconds() << " ms"
-					<< std::endl;
-		  lbox->addListBoxItems( strings );
-		  std::cout << "Time addListBoxItems: " << clock.getElapsed().asMilliseconds() << " ms"
-					<< std::endl;*/
+		/* ListBox test */
+/*
+		std::vector<String> strings;
+		for ( size_t i = 0; i < 10000; i++ )
+			strings.emplace_back( String::format(
+				"This is a very long string number %ld. Cover the full width of the listbox.",
+				i ) );
+		auto* lbox = UIListBox::New();
+		std::cout << "Time New: " << clock.getElapsedTime().asMilliseconds() << " ms" << std::endl;
+		lbox->setParent( vlay );
+		std::cout << "Time setParent: " << clock.getElapsedTime().asMilliseconds() << " ms"
+				  << std::endl;
+		lbox->setLayoutMargin( Rectf( 4, 4, 4, 4 ) );
+		std::cout << "Time setLayoutMargin: " << clock.getElapsedTime().asMilliseconds() << " ms"
+				  << std::endl;
+		lbox->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+		std::cout << "Time setLayoutSizePolicy: " << clock.getElapsedTime().asMilliseconds()
+				  << " ms" << std::endl;
+		for ( size_t i = 0; i < 10; i++ )
+			lbox->addListBoxItem( String::format(
+				"This is a very long string number %ld. Cover the full width of the listbox.",
+				i ) );
+		std::cout << "Time addListBoxItem: " << clock.getElapsedTime().asMilliseconds() << " ms"
+				  << std::endl;
+		lbox->addListBoxItems( strings );
+		std::cout << "Time addListBoxItems: " << clock.getElapsedTime().asMilliseconds() << " ms"
+				  << std::endl;
+ */
 
-		/* Create Widget test */
 		Clock total;
-		/*for ( size_t i = 0; i < 10000; i++ ) {
+		/* Create Widget test */
+/*
+		for ( size_t i = 0; i < 10000; i++ ) {
 			UINode::New();
 		}
-		std::cout << "Time UINode total: " << total.getElapsedTime().toString() << std::endl;
-		uiSceneNode->getRoot()->childsCloseAll();
+		std::cout << "Time 10k UINode total: " << total.getElapsedTime().toString() << std::endl;
+		uiSceneNode->getRoot()->closeAllChildren();
 
 		total.restart();
 		for ( size_t i = 0; i < 10000; i++ ) {
 			UIWidget::New();
 		}
-		std::cout << "Time UIWidget total: " << total.getElapsedTime().toString() << std::endl;
-		uiSceneNode->getRoot()->childsCloseAll();*/
+		std::cout << "Time 10k UIWidget total: " << total.getElapsedTime().toString() << std::endl;
+		uiSceneNode->getRoot()->closeAllChildren();
 
-		/*auto* rl = UIRelativeLayout::New();
+		auto* rl = UIRelativeLayout::New();
 		rl->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 
 		auto* sv = UIScrollView::New();
@@ -271,15 +275,26 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 			but->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 			but->setParent( parent )->clipEnable();
 		}
-		std::cout << "Time UIPushButton total: " << total.getElapsedTime().toString() << std::endl;
+		std::cout << "Time  10k UIPushButton total: " << total.getElapsedTime().toString() << std::endl;
 
-		// uiSceneNode->getRoot()->childsCloseAll();
+		// uiSceneNode->getRoot()->closeAllChildren();
 		total.restart();
 		SceneManager::instance()->update();
 		std::cout << "SceneManager::instance()->update(): " << total.getElapsedTime().toString()
-				  << std::endl;*/
+				  << std::endl;
+*/
+/*
+		auto* main = UIRelativeLayout::New();
+		main->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+		auto* sv = UIScrollView::New();
+		sv->setParent( main );
+		sv->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+		sv->setPixelsSize( win->getSize().asFloat() );
+ 		auto* vlay = UILinearLayout::NewVertical();
+ 		vlay->setParent( sv );
+		vlay->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 
-		/*total.restart();
+		total.restart();
 		for ( size_t i = 0; i < 100000; i++ ) {
 			auto* widget = UIWidget::New();
 			widget->setParent( vlay );
@@ -293,11 +308,12 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 			widget->setBackgroundColor( Color::fromHsv( col ) );
 		}
 		std::cout << "Time UIWidget total: " << total.getElapsedTime().asMilliseconds() << " ms"
-				  << std::endl;*/
-
-		/*UIWindow* wind = UIWindow::New();
+				  << std::endl;
+ */
+/*
+		UIWindow* wind = UIWindow::New();
 		wind->setSize( 500, 500 );
-		wind->setWinFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
+		wind->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_RESIZEABLE | UI_WIN_MAXIMIZE_BUTTON );
 
 		UILinearLayout* layWin = UILinearLayout::NewVertical();
 		layWin->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
@@ -305,7 +321,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 
 		UILinearLayout* layPar = UILinearLayout::NewHorizontal();
 		layPar->setParent( layWin );
-		layPar->setLayoutMargin( Rect( 10, 10, 10, 10 ) );
+		layPar->setLayoutMargin( Rectf( 10, 10, 10, 10 ) );
 		layPar->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 		layPar->setLayoutGravity( UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 		layPar->setBackgroundColor( 0x999999FF );
@@ -318,31 +334,31 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 
 		UITextView::New()
 			->setText( "Text on test 1" )
-			->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+			->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 			->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 			->setParent( lay );
 		UITextView::New()
 			->setText( "Text on test 2" )
-			->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+			->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 			->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 			->setParent( lay );
 		UICheckBox::New()
 			->setText( "Checkbox" )
-			->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+			->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 			->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 			->setParent( lay );
 		UITextView::New()
 			->setText( "Text on test 3" )
-			->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+			->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 			->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 			->setParent( lay );
 		UITextView::New()
 			->setText( "Text on test 4" )
-			->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+			->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 			->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 			->setParent( lay );
 		UITextInput::New()
-			->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+			->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 			->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 			->setParent( lay );
 
@@ -355,26 +371,27 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 
 		UIPushButton::New()
 			->setText( "PushButton" )
-			->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+			->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 			->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 			->setLayoutGravity( UI_VALIGN_CENTER )
 			->setParent( lay2 );
 		UIListBox* lbox = UIListBox::New();
-		lbox->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+		lbox->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 			->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::Fixed )
 			->setSize( 0, 105 )
 			->setParent( lay2 );
-		lbox->addListBoxItems( {"This", "is", "a", "ListBox"} );
+		lbox->addListBoxItems( { "This", "is", "a", "ListBox" } );
 		lay2->setParent( layPar );
 		lay->setParent( layPar );
 
 		UIDropDownList* drop = UIDropDownList::New();
-		drop->setLayoutMargin( Rect( 10, 10, 10, 10 ) )
+		drop->setLayoutMargin( Rectf( 10, 10, 10, 10 ) )
 			->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 			->setParent( layWin );
-		drop->getListBox()->addListBoxItems( {"Car", "Bus", "Plane", "Submarine"} );
+		drop->getListBox()->addListBoxItems( { "Car", "Bus", "Plane", "Submarine" } );
 		drop->getListBox()->setSelected( 0 );
-		wind->show();*/
+		wind->show();
+ */
 
 		win->runMainLoop( &mainLoop );
 	}

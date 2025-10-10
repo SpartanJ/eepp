@@ -358,7 +358,10 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 
 	setCmd( "ai-chat-history", [this] { showChatHistory(); } );
 
-	setCmd( "ai-attach-file", [this] { showAttachFile(); } );
+	setCmd( "ai-attach-file", [this] {
+		showAttachFile();
+		mLocateInput->getDocument().selectAll();
+	} );
 
 	setCmd( "ai-toggle-private-chat", [this] { mChatPrivate->toggleSelection(); } );
 
@@ -1452,14 +1455,8 @@ void LLMChatUI::initAttachFile() {
 				auto cdoc = mChatInput->getDocumentRef();
 				cdoc->resetSelection();
 				cdoc->moveToEndOfLine();
-				const auto& lineComment = doc.getSyntaxDefinition().getComment();
-				if ( lineComment.empty() ) {
-					cdoc->textInput( "\n" + nameToDisplay + ":\n" );
-				}
-				cdoc->textInput( "\n```" + doc.getSyntaxDefinition().getLSPName() );
-				if ( !lineComment.empty() ) {
-					cdoc->textInput( String::format( " %s %s", lineComment, nameToDisplay ) );
-				}
+				cdoc->textInput( "\n`" + nameToDisplay + "`:\n" );
+				cdoc->textInput( "```" + doc.getSyntaxDefinition().getLSPName() );
 				auto lineToFold = cdoc->getSelection().end().line();
 				if ( doc.linesCount() >= 1 &&
 					 !String::startsWith( doc.line( 0 ).getText(), "\n" ) ) {
