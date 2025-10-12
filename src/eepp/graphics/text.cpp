@@ -963,6 +963,10 @@ void Text::transformText( const TextTransform::Value& transform ) {
 	}
 }
 
+const String& Text::getString() const {
+	return mString;
+}
+
 String& Text::getString() {
 	return mString;
 }

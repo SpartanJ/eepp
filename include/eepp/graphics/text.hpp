@@ -181,6 +181,8 @@ class EE_API Text {
 
 	void transformText( const TextTransform::Value& transform );
 
+	const String& getString() const;
+
 	String& getString();
 
 	Font* getFont() const;

@@ -199,6 +199,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 			->setDefaultFont( font )
 			->add( theme );
 
+/*
  		auto* vlay = UILinearLayout::NewVertical();
 		vlay->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 
@@ -212,6 +213,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		view->setParent( vlay );
 		view->setModel( SortingProxyModel::New( model ) );
 		Log::notice( "Total time: %.2fms", clock.getElapsedTime().asMilliseconds() );
+ */
 
 		/* ListBox test */
 /*
@@ -244,7 +246,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 
 		Clock total;
 		/* Create Widget test */
-/*
+
 		for ( size_t i = 0; i < 10000; i++ ) {
 			UINode::New();
 		}
@@ -275,14 +277,14 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 			but->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
 			but->setParent( parent )->clipEnable();
 		}
-		std::cout << "Time  10k UIPushButton total: " << total.getElapsedTime().toString() << std::endl;
+		std::cout << "Time 10k UIPushButton total: " << total.getElapsedTime().toString() << std::endl;
 
 		// uiSceneNode->getRoot()->closeAllChildren();
 		total.restart();
 		SceneManager::instance()->update();
 		std::cout << "SceneManager::instance()->update(): " << total.getElapsedTime().toString()
 				  << std::endl;
-*/
+
 /*
 		auto* main = UIRelativeLayout::New();
 		main->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );

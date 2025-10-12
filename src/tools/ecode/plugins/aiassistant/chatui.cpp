@@ -1308,6 +1308,7 @@ void LLMChatUI::updateTabTitle() {
 	if ( !mSummary.empty() )
 		title += " - " + mSummary;
 	tab->setText( title );
+	tab->setTooltipText( title );
 }
 
 void LLMChatUI::renameChat( const std::string& newName, bool invertLockedState ) {
