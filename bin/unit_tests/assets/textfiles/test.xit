@@ -1,0 +1,203 @@
+[ ] Open
+[x] Checked
+[@] Ongoing
+[~] Obsolete
+
+[*] Invalid
+[o] Invalid
+[X] Invalid (uppercase)
+[ ] Invalid (non-breaking space)
+
+[] Invalid
+[  ] Invalid
+[ x ] Invalid
+[@@] Invalid
+
+ [x] Invalid
+    [x] Invalid
+
+[ ] Do this
+
+[ ]   Do this
+
+[ ]
+[ ]
+[ ]
+
+[ ]Invalid
+[ ]! Invalid
+[ ]. Invalid
+[ ]!!. Invalid
+[ ]#invalid
+[ ]->2022-02-16 Invalid
+
+[ ] This is a longer ...
+    description text
+[ ] And this one ...
+    is even ...
+    longer
+
+[ ] The following is just ...
+    [ ] description text
+
+[x] These lines ...
+    should all ...
+    look the same
+
+[ ] This has some ...
+       more spaces
+[ ] And this one ...
+             as well
+
+[ ] The next line is ...
+invalid
+[ ] The next line is ...
+ invalid
+[ ] The next line is ...
+   invalid
+[ ] The next line is ...
+	invalid (it’s a tab)
+
+[ ] ! This is important
+[ ] !!! This is very important
+[ ] !!!!!!!!!! This super important
+
+[ ] ..! This is important
+[ ] !!. This is more important
+[ ] ... This is not important
+
+[ ] !   Do something
+[ ] .   Do something
+
+[ ]    ! Do something
+[ ]    . Do something
+
+[ ] .!. Invalid
+[ ] !.! Invalid
+
+[ ] !This has regular priority
+[ ] .The dot is not priority
+[ ] This is also
+    !!! not important
+
+[ ] ! !!! This is important!
+[ ] !! ! ! This ! is also important
+[ ] !. ... This . is also important
+[ ] . ! This is not important
+
+[ ] -> 2022-01-31
+[ ] Do this -> 2022-01-31
+[ ] -> 2022-01-31 (something)
+[ ] Do something until ...
+    -> 2022-01-31
+
+[ ] -> 2022-01-31
+[ ] -> 2022-01
+[ ] -> 2022
+[ ] -> 2022-W01
+[ ] -> 2022-Q1
+
+[ ] -> 2022/01/31
+[ ] -> 2022/W01
+
+[ ] -> 2022-01/31
+
+[ ] -> 2022-01-31 -> 2022-01-31
+
+[ ] Do this soon -> 2022-01-31!!!
+[ ] Do this (-> 2022-01-31)
+
+[ ] ---> 2022-01-31
+[ ] Due-> 2022-01-31
+[ ] -> 2022-01-31very urgent
+[ ] -> 2022-01-31T10:00
+[ ] -> 2022-01-31-0
+[ ] -> 2022/01/31/0
+
+[ ] ->2022-01-31
+[ ] → 2022-01-31
+[ ] ->   2022-01-31
+[ ] >2022-01-31
+[ ] Do until ->
+    2022-01-31
+
+[ ] #tag
+[ ] #T-A-G
+[ ] #--tag--
+[ ] #__tag__
+[ ] #t_a_g
+[ ] #123
+[ ] #___
+[ ] #---
+[ ] #1t2a3g
+[ ] #täg
+[ ] #今日は
+[ ] #გამარჯობა
+
+[ ] This #text contains #tags
+[ ] #Actually, it #has a #LOT.
+    Even on the #next-line!
+
+[ ] This is a #tag.
+[ ] Tags: #tag1/#tag2
+[ ] #t-a-g!
+[ ] #--tag--?
+[ ] #--tag--:text
+[ ] (#tag)
+[ ] #tag🥳
+
+[ ] Not a tag: #
+
+[ ] #tag=value
+[ ] #t-a-g=v-a-l-u-e
+[ ] #国=日本
+
+[ ] #tag=
+[ ] #tag=""
+[ ] #tag=''
+
+[ ] #tag="v a l u e"
+[ ] #tag='v!a.l?u+e'
+[ ] #tag='foo'bar
+[ ] #tag='foo'-bar
+[ ] #tag='foo'!!
+[ ] (#tag="bar")
+
+[ ] #tag='It\'s great
+
+[ ] #tag="v a l u e
+[ ] #tag="v a l u e'
+[ ] #tag="hello
+    World!"
+
+[ ] Item 1 of group
+[ ] Item 2 of group
+
+[ ] Item of another group
+
+Todos
+[ ] Item 1
+[ ] Item 2
+
+Group 1
+[ ] Item
+
+Group 2
+[ ] Item
+
+Todos
+
+ Todos
+[ ] Do this
+
+    Todos
+[ ] Do this
+
+[Todos]
+[ ] Do this
+
+[ ] Do this
+Todos
+[ ] Do this
+
+

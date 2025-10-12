@@ -1364,7 +1364,7 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( std::string_view h
 				for ( const auto& hdr : definition->get()->getHeaders() ) {
 					LuaPattern words( hdr );
 					int start, end;
-					if ( words.find( header.data(), start, end ) ) {
+					if ( words.find( header.data(), start, end, 0, header.size(), 0 ) ) {
 						return *definition->get();
 					}
 				}
@@ -1466,7 +1466,8 @@ std::size_t SyntaxDefinitionManager::count() const {
 
 bool SyntaxDefinitionManager::isFileFormatSupported( const std::string& filePath,
 													 std::string_view header ) {
-	return &find( filePath, header ) != mDefinitions[0].get();
+	return &find( filePath, header ) != mDefinitions[0].get() ||
+		   FileSystem::fileExtension( filePath ) == "txt";
 }
 
 void SyntaxDefinitionManager::resetFileAssociations() {

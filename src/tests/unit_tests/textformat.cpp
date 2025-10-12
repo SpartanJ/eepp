@@ -4,6 +4,7 @@
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/doc/textformat.hpp>
 
 using namespace EE::Graphics;
@@ -82,11 +83,20 @@ UTEST( TextFormat, autodetectProject ) {
 				continue;
 			}
 			auto extension = file.getExtension();
+			bool fromSDLFolder = false;
 			if ( "a" == extension || "zip" == extension || "dll" == extension ||
 				 "dat" == extension || "cur" == extension || "icns" == extension ||
 				 "wav" == extension || Image::isImageExtension( file.getFilepath() ) ||
-				 LuaPattern::hasMatches( file.getFilepath(), "SDL2%-%d+%.%d+%.%d+" ) )
+				 ( fromSDLFolder =
+					   LuaPattern::hasMatches( file.getFilepath(), "SDL2%-%d+%.%d+%.%d+" ) ) ) {
+				if ( !fromSDLFolder && "dat" != extension ) {
+					EXPECT_TRUE_MSG( TextDocument::fileMightBeBinary( file.getFilepath() ),
+									 String::format( "File %s should be detected as binary file",
+													 file.getFilepath() )
+										 .c_str() );
+				}
 				continue;
+			}
 			IOStreamFile stream( file.getFilepath() );
 			auto expectedEncoding = getEncoding( file.getFileName() );
 			auto textFormat = TextFormat::autodetect( stream );
@@ -95,6 +105,10 @@ UTEST( TextFormat, autodetectProject ) {
 										   TextFormat::encodingToString( textFormat.encoding ),
 										   TextFormat::encodingToString( expectedEncoding ) )
 							   .c_str() );
+			EXPECT_FALSE_MSG(
+				TextDocument::fileMightBeBinary( file.getFilepath() ),
+				String::format( "File %s should be detected as text file", file.getFilepath() )
+					.c_str() );
 		}
 	};
 	checkFolder( projectRoot );

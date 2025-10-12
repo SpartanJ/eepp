@@ -28,6 +28,8 @@ static constexpr char DEFAULT_NON_WORD_CHARS[] = " \t\n/\\()\"':,.;<>~!@#$%^&*|+
 
 static UnorderedSet<String::HashType> TEXT_DOCUMENT_COMMANDS = {};
 
+#include <string_view> // Ensure this is included for std::string_view
+
 bool TextDocument::fileMightBeBinary( const std::string& file ) {
 	static constexpr size_t MAX_READ = 4096;
 	static constexpr std::array<char, 4> NULL_SEQUENCE = { 0, 0, 0, 0 };
@@ -36,7 +38,14 @@ bool TextDocument::fileMightBeBinary( const std::string& file ) {
 	static constexpr std::array<char, 4> ELF_MAGIC = { 0x7F, 'E', 'L', 'F' };
 	static constexpr std::array<char, 4> PNG_MAGIC = { (char)0x89, 'P', 'N', 'G' };
 	static constexpr std::array<char, 5> PDF_MAGIC = { '%', 'P', 'D', 'F', '-' };
-	// UTF-16/UTF-32 BOMs (to avoid misclassifying as binary)
+	static constexpr std::array<char, 4> ZIP_MAGIC = { 'P', 'K', (char)0x03,
+													   (char)0x04 }; // Standard ZIP
+	static constexpr std::array<char, 4> ZIP_EMPTY = { 'P', 'K', (char)0x05,
+													   (char)0x06 }; // Empty ZIP
+	static constexpr std::array<char, 4> ZIP_SPANNED = { 'P', 'K', (char)0x07,
+														 (char)0x08 }; // Spanned ZIP
+	// UTF-8/UTF-16/UTF-32 BOMs (to avoid misclassifying as binary)
+	static constexpr std::array<char, 3> UTF8_BOM = { (char)0xEF, (char)0xBB, (char)0xBF };
 	static constexpr std::array<char, 2> UTF16BE_BOM = { (char)0xFE, (char)0xFF };
 	static constexpr std::array<char, 2> UTF16LE_BOM = { (char)0xFF, (char)0xFE };
 	static constexpr std::array<char, 4> UTF32BE_BOM = { (char)0x00, (char)0x00, (char)0xFE,
@@ -57,6 +66,9 @@ bool TextDocument::fileMightBeBinary( const std::string& file ) {
 	}
 
 	// Check for text encoding BOMs (indicates text file)
+	if ( bytesRead >= 3 && std::equal( UTF8_BOM.begin(), UTF8_BOM.end(), buffer.begin() ) ) {
+		return false; // UTF-8 text file
+	}
 	if ( bytesRead >= 2 ) {
 		if ( std::equal( UTF16BE_BOM.begin(), UTF16BE_BOM.end(), buffer.begin() ) ||
 			 std::equal( UTF16LE_BOM.begin(), UTF16LE_BOM.end(), buffer.begin() ) ) {
@@ -70,10 +82,13 @@ bool TextDocument::fileMightBeBinary( const std::string& file ) {
 		}
 	}
 
-	// Check for binary magic numbers
+	// Check for known binary magic numbers (ELF, PNG, PDF, ZIP)
 	if ( bytesRead >= 4 ) {
 		if ( std::equal( ELF_MAGIC.begin(), ELF_MAGIC.end(), buffer.begin() ) ||
 			 std::equal( PNG_MAGIC.begin(), PNG_MAGIC.end(), buffer.begin() ) ||
+			 std::equal( ZIP_MAGIC.begin(), ZIP_MAGIC.end(), buffer.begin() ) ||
+			 std::equal( ZIP_EMPTY.begin(), ZIP_EMPTY.end(), buffer.begin() ) ||
+			 std::equal( ZIP_SPANNED.begin(), ZIP_SPANNED.end(), buffer.begin() ) ||
 			 ( bytesRead >= 5 &&
 			   std::equal( PDF_MAGIC.begin(), PDF_MAGIC.end(), buffer.begin() ) ) ) {
 			return true; // Known binary file type
@@ -89,21 +104,187 @@ bool TextDocument::fileMightBeBinary( const std::string& file ) {
 		}
 	}
 
+	// Check if the buffer is valid in common text encodings (without BOM)
+	auto isValidUtf8 = []( const char* data, size_t len ) -> bool {
+		const unsigned char* udata = reinterpret_cast<const unsigned char*>( data );
+		size_t i = 0;
+		while ( i < len ) {
+			if ( udata[i] <= 0x7F ) {
+				++i;
+				continue;
+			}
+			if ( udata[i] >= 0xC2 && udata[i] <= 0xDF ) { // 2-byte sequence
+				if ( i + 1 >= len || udata[i + 1] < 0x80 || udata[i + 1] > 0xBF ) {
+					return false;
+				}
+				i += 2;
+				continue;
+			}
+			if ( udata[i] >= 0xE0 && udata[i] <= 0xEF ) { // 3-byte sequence
+				if ( i + 2 >= len ) {
+					return false;
+				}
+				if ( ( udata[i] == 0xE0 && udata[i + 1] < 0xA0 ) || udata[i + 1] > 0xBF ||
+					 ( udata[i] == 0xED && udata[i + 1] > 0x9F ) || udata[i + 2] < 0x80 ||
+					 udata[i + 2] > 0xBF ) {
+					return false;
+				}
+				i += 3;
+				continue;
+			}
+			if ( udata[i] >= 0xF0 && udata[i] <= 0xF4 ) { // 4-byte sequence
+				if ( i + 3 >= len ) {
+					return false;
+				}
+				if ( ( udata[i] == 0xF0 && udata[i + 1] < 0x90 ) || udata[i + 1] > 0xBF ||
+					 ( udata[i] == 0xF4 && udata[i + 1] > 0x8F ) || udata[i + 2] < 0x80 ||
+					 udata[i + 2] > 0xBF || udata[i + 3] < 0x80 || udata[i + 3] > 0xBF ) {
+					return false;
+				}
+				i += 4;
+				continue;
+			}
+			return false;
+		}
+		return true;
+	};
+
+	auto isValidUtf16LE = []( const char* data, size_t len ) -> bool {
+		const unsigned char* udata = reinterpret_cast<const unsigned char*>( data );
+		if ( len < 2 )
+			return true;
+		len -= len % 2;
+		size_t i = 0;
+		while ( i < len ) {
+			Uint16 word =
+				static_cast<Uint16>( udata[i] ) | ( static_cast<Uint16>( udata[i + 1] ) << 8 );
+			i += 2;
+			if ( word >= 0xD800 && word <= 0xDBFF ) { // High surrogate
+				if ( i >= len )
+					return false;
+				Uint16 next =
+					static_cast<Uint16>( udata[i] ) | ( static_cast<Uint16>( udata[i + 1] ) << 8 );
+				if ( next < 0xDC00 || next > 0xDFFF )
+					return false;
+				i += 2;
+			} else if ( word >= 0xDC00 && word <= 0xDFFF ) { // Low surrogate without high
+				return false;
+			}
+		}
+		return true;
+	};
+
+	auto isValidUtf16BE = []( const char* data, size_t len ) -> bool {
+		const unsigned char* udata = reinterpret_cast<const unsigned char*>( data );
+		if ( len < 2 )
+			return true;
+		len -= len % 2;
+		size_t i = 0;
+		while ( i < len ) {
+			Uint16 word =
+				( static_cast<Uint16>( udata[i] ) << 8 ) | static_cast<Uint16>( udata[i + 1] );
+			i += 2;
+			if ( word >= 0xD800 && word <= 0xDBFF ) { // High surrogate
+				if ( i >= len )
+					return false;
+				Uint16 next =
+					( static_cast<Uint16>( udata[i] ) << 8 ) | static_cast<Uint16>( udata[i + 1] );
+				if ( next < 0xDC00 || next > 0xDFFF )
+					return false;
+				i += 2;
+			} else if ( word >= 0xDC00 && word <= 0xDFFF ) { // Low surrogate without high
+				return false;
+			}
+		}
+		return true;
+	};
+
+	auto isValidUtf32LE = []( const char* data, size_t len ) -> bool {
+		const unsigned char* udata = reinterpret_cast<const unsigned char*>( data );
+		if ( len < 4 )
+			return true;
+		len -= len % 4;
+		for ( size_t i = 0; i < len; i += 4 ) {
+			Uint32 code = static_cast<Uint32>( udata[i] ) |
+						  ( static_cast<Uint32>( udata[i + 1] ) << 8 ) |
+						  ( static_cast<Uint32>( udata[i + 2] ) << 16 ) |
+						  ( static_cast<Uint32>( udata[i + 3] ) << 24 );
+			if ( code > 0x10FFFF || ( code >= 0xD800 && code <= 0xDFFF ) ) {
+				return false;
+			}
+		}
+		return true;
+	};
+
+	auto isValidUtf32BE = []( const char* data, size_t len ) -> bool {
+		const unsigned char* udata = reinterpret_cast<const unsigned char*>( data );
+		if ( len < 4 )
+			return true;
+		len -= len % 4;
+		for ( size_t i = 0; i < len; i += 4 ) {
+			Uint32 code = static_cast<Uint32>( udata[i + 3] ) |
+						  ( static_cast<Uint32>( udata[i + 2] ) << 8 ) |
+						  ( static_cast<Uint32>( udata[i + 1] ) << 16 ) |
+						  ( static_cast<Uint32>( udata[i] ) << 24 );
+			if ( code > 0x10FFFF || ( code >= 0xD800 && code <= 0xDFFF ) ) {
+				return false;
+			}
+		}
+		return true;
+	};
+
+	// Calculate byte entropy to detect binary files
+	auto calculateEntropy = []( const char* data, size_t len ) -> double {
+		std::array<size_t, 256> freq = { 0 };
+		for ( size_t i = 0; i < len; ++i ) {
+			freq[static_cast<unsigned char>( data[i] )]++;
+		}
+		double entropy = 0.0;
+		for ( size_t i = 0; i < 256; ++i ) {
+			if ( freq[i] > 0 ) {
+				double p = static_cast<double>( freq[i] ) / len;
+				entropy -= p * std::log2( p );
+			}
+		}
+		return entropy;
+	};
+
+	bool isFileFormatSupported = SyntaxDefinitionManager::instance()->isFileFormatSupported(
+		file, std::string_view{ buffer.data(), bytesRead } );
+
 	// Check proportion of non-printable characters
 	size_t nonPrintableCount = 0;
 	for ( size_t i = 0; i < bytesRead; ++i ) {
-		if ( buffer[i] < 32 && buffer[i] != '\n' && buffer[i] != '\r' && buffer[i] != '\t' ) {
+		unsigned char uch = static_cast<unsigned char>( buffer[i] );
+		if ( uch < 32 && uch != '\n' && uch != '\r' && uch != '\t' )
 			++nonPrintableCount;
-		}
 	}
 
-	// Consider file binary if >20% of characters are non-printable
-	if ( nonPrintableCount > bytesRead * 0.2 ) {
-		// Also white-list known extensions
-		if ( !SyntaxDefinitionManager::instance()->isFileFormatSupported(
-				 file, std::string_view{ buffer.data(), buffer.size() } ) ) {
-			return true;
+	// Check if the buffer is valid in common text encodings
+	bool validUtf8 = isValidUtf8( buffer.data(), bytesRead );
+	if ( validUtf8 || isValidUtf16LE( buffer.data(), bytesRead ) ||
+		 isValidUtf16BE( buffer.data(), bytesRead ) || isValidUtf32LE( buffer.data(), bytesRead ) ||
+		 isValidUtf32BE( buffer.data(), bytesRead ) ) {
+		// Even if valid text encoding, check non-printable characters
+		if ( nonPrintableCount > bytesRead * 0.2 &&
+			 !isFileFormatSupported ) { // 20% threshold for text encodings
+			return true;				// Likely binary due to non-printable chars
 		}
+		// For valid UTF-8, check entropy to catch binary files with valid UTF-8 sequences
+		if ( validUtf8 ) {
+			double entropy = calculateEntropy( buffer.data(), bytesRead );
+			// Binary files typically have higher entropy (>6.5 bits) than text
+			if ( entropy > 6.5 && !isFileFormatSupported ) {
+				return true; // Likely binary due to high entropy
+			}
+		}
+		return false; // Valid text encoding, treat as text
+	}
+
+	// For non-text encodings, check non-printable characters
+	if ( nonPrintableCount > bytesRead * 0.1 &&
+		 !isFileFormatSupported ) { // 10% threshold for non-text encodings
+		return true;				// Likely binary due to extension and non-printable chars
 	}
 
 	return false; // Likely a text file
