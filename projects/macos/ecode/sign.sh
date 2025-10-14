@@ -2,9 +2,8 @@
 set -eo pipefail
 
 # Change to the script's directory to ensure relative paths are stable.
-CANONPATH=$(readlink -f "$0")
-DIRPATH="$(dirname "$CANONPATH")"
-cd "$DIRPATH" || exit
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR" || exit 1
 
 # This script handles code signing and notarization for the macOS app.
 # It expects the following environment variables to be set for real signing:
@@ -99,7 +98,7 @@ echo "Using signing identity: $SIGNING_IDENTITY"
 # Function to sign the .app bundle
 sign_app() {
     echo "Signing application bundle at: $ARTIFACT_PATH"
-    find "$ARTIFACT_PATH" -depth -name "*.dylib" -o -name "*.framework" -o -path "$ARTIFACT_PATH/Contents/MacOS/*" -type f | while read -r comp; do
+    find "$ARTIFACT_PATH" -depth \( -name "*.dylib" -o -name "*.framework" -o -path "$ARTIFACT_PATH/Contents/MacOS/*" \) -type f | while read -r comp; do
         echo "Signing component: $comp"
         codesign --force --verbose --sign "$SIGNING_IDENTITY" --options runtime --timestamp "$comp"
     done
@@ -107,6 +106,49 @@ sign_app() {
     echo "Signing main application bundle with entitlements..."
     codesign --force --verbose --sign "$SIGNING_IDENTITY" --entitlements "$ENTITLEMENTS_PATH" --options runtime --timestamp "$ARTIFACT_PATH"
     echo "App signing complete."
+
+    echo "Verifying app signature..."
+    codesign --verify --deep --strict --verbose=2 "$ARTIFACT_PATH"
+
+    # Notarize the app
+    ZIP_PATH="${ARTIFACT_PATH%.*}.zip"
+    echo "Zipping app for notarization: $ZIP_PATH"
+    ditto -c -k --sequesterRsrc --keepParent "$ARTIFACT_PATH" "$ZIP_PATH"
+
+    local notary_output_file
+    notary_output_file=$(mktemp)
+
+    echo "Notarizing app zip..."
+    if ! xcrun notarytool submit "$ZIP_PATH" \
+        --apple-id "$MACOS_APPLE_ID" \
+        --password "$MACOS_NOTARIZATION_PASSWORD" \
+        --team-id "$MACOS_TEAM_ID" \
+        --wait > "$notary_output_file" 2>&1; then
+
+        echo "Error: App notarization failed."
+        cat "$notary_output_file"
+        REQUEST_UUID=$(grep "id:" "$notary_output_file" | head -n 1 | awk '{print $2}')
+        if [[ -n "$REQUEST_UUID" ]]; then
+            echo "Fetching notarization logs for UUID: $REQUEST_UUID"
+            xcrun notarytool log "$REQUEST_UUID" \
+                --apple-id "$MACOS_APPLE_ID" \
+                --password "$MACOS_NOTARIZATION_PASSWORD" \
+                --team-id "$MACOS_TEAM_ID"
+        fi
+        rm "$notary_output_file"
+        rm -f "$ZIP_PATH"
+        exit 1
+    fi
+
+    echo "App notarization successful. Full log:"
+    cat "$notary_output_file"
+    rm "$notary_output_file"
+
+    echo "Stapling ticket to app..."
+    xcrun stapler staple "$ARTIFACT_PATH"
+    echo "App stapling complete."
+
+    rm -f "$ZIP_PATH"
 }
 
 # Function to notarize and staple the .dmg
@@ -120,7 +162,7 @@ notarize_dmg() {
 
     # Sign the DMG
     echo "Signing DMG..."
-    codesign --force --verbose --sign "$SIGNING_IDENTITY" "$ARTIFACT_PATH"
+    codesign --force --verbose --sign "$SIGNING_IDENTITY" --options runtime --timestamp "$ARTIFACT_PATH"
     if [[ $? -ne 0 ]]; then
         echo "Error: Failed to sign DMG. Checking keychain state..."
         security find-identity -v -p codesigning "$KEYCHAIN_NAME"
@@ -165,15 +207,6 @@ notarize_dmg() {
     xcrun stapler staple "$ARTIFACT_PATH"
     echo "Stapling complete."
 }
-
-# --- CLEANUP ---
-# Note: Cleanup is handled in CI, not here, since this script is called twice
-# cleanup() {
-#     echo "Cleaning up..."
-#     security delete-keychain "$KEYCHAIN_NAME" || true
-#     rm -f "$CERTIFICATE_P12_PATH"
-# }
-# trap cleanup EXIT
 
 # --- EXECUTION ---
 if [[ "$ARTIFACT_PATH" == *.app ]]; then
