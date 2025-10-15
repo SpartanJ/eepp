@@ -115,6 +115,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 }
 
 UIWindow::~UIWindow() {
+	mClosing = true;
 	if ( NULL != getUISceneNode() && !SceneManager::instance()->isShuttingDown() ) {
 		if ( NULL != mModalNode ) {
 			mModalNode->setEnabled( false );
@@ -448,6 +449,9 @@ bool UIWindow::isType( const Uint32& type ) const {
 }
 
 void UIWindow::closeWindow() {
+	if ( mClosing )
+		return;
+
 	if ( NULL != mButtonClose )
 		mButtonClose->setEnabled( false );
 

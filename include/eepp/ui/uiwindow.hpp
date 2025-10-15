@@ -236,6 +236,7 @@ class EE_API UIWindow : public UIWidget {
 	bool mFrameBufferBound;
 	bool mWindowReady{ false };
 	bool mShowWhenReady{ false };
+	bool mClosing{ false };
 
 	KeyBindings mKeyBindings;
 	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;

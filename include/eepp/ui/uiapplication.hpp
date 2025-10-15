@@ -17,7 +17,8 @@ class EE_API UIApplication {
 		Settings() {}
 
 		Settings( std::optional<Float> pixelDensity, bool loadBaseResources = true,
-				  Font* baseFont = nullptr, std::optional<std::string> baseStyleSheetPath = {}, Font* emojiFont = nullptr );
+				  Font* baseFont = nullptr, std::optional<std::string> baseStyleSheetPath = {},
+				  Font* emojiFont = nullptr );
 
 		//! Not setting anything will automatically try to detect the main screen pixel density
 		std::optional<Float> pixelDensity;

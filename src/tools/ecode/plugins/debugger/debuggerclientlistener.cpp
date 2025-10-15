@@ -45,6 +45,79 @@ DebuggerClientListener::~DebuggerClientListener() {
 	}
 }
 
+void DebuggerClientListener::createAndShowVariableMenu( ModelIndex idx ) {
+	auto context = mPlugin->getPluginContext();
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+
+	ModelVariableNode* node = static_cast<ModelVariableNode*>( idx.internalData() );
+	Variable var( node->var );
+
+	menu->add( context->i18n( "debugger_copy_variable_value", "Copy Value" ),
+			   context->findIcon( "copy" ) )
+		->setId( "debugger_copy_variable_value" );
+
+	menu->add( context->i18n( "debugger_copy_variable_name", "Copy Name" ),
+			   context->findIcon( "copy" ) )
+		->setId( "debugger_copy_variable_name" );
+
+	if ( var.type ) {
+		menu->add( context->i18n( "debugger_copy_variable_type", "Copy Type" ),
+				   context->findIcon( "copy" ) )
+			->setId( "debugger_copy_variable_type" );
+	}
+
+	if ( var.evaluateName ) {
+		menu->add( context->i18n( "debugger_copy_variable_evaluate_name", "Copy Evaluate Name" ),
+				   context->findIcon( "copy" ) )
+			->setId( "debugger_copy_variable_evaluate_name" );
+	}
+
+	if ( var.memoryReference ) {
+		menu->add(
+				context->i18n( "debugger_copy_variable_memory_reference", "Copy Memory Reference" ),
+				context->findIcon( "copy" ) )
+			->setId( "debugger_copy_variable_memory_reference" );
+	}
+
+	menu->add( context->i18n( "debugger_value_viewer", "Value Viewer" ),
+			   context->findIcon( "eye" ) )
+		->setId( "debugger_value_viewer" );
+
+	menu->on( Event::OnItemClicked, [this, var = std::move( var )]( const Event* event ) {
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		std::string id( item->getId() );
+		if ( id == "debugger_copy_variable_value" ) {
+			mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( var.value );
+		} else if ( id == "debugger_copy_variable_name" ) {
+			mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( var.name );
+		} else if ( id == "debugger_copy_variable_type" ) {
+			mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( *var.type );
+		} else if ( id == "debugger_copy_variable_evaluate_name" ) {
+			mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( *var.evaluateName );
+		} else if ( id == "debugger_copy_variable_memory_reference" ) {
+			mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( *var.memoryReference );
+		} else if ( id == "debugger_value_viewer" ) {
+			static constexpr auto VALUE_VIEWER_LAYOUT = R"html(
+					<window id="process_picker" lw="250dp" lh="250dp" padding="4dp" window-flags="default|ephemeral">
+						<vbox lw="mp" lh="mp">
+							<TextEdit id="value_input" lw="mp" lh="0dp" lw8="1" wordwrap="true" />
+						</vbox>
+					</window>
+					)html";
+			UIWindow* win = mPlugin->getUISceneNode()
+								->loadLayoutFromString( VALUE_VIEWER_LAYOUT )
+								->asType<UIWindow>();
+			win->setTitle( String::format( "%s:", var.name ) );
+			UITextEdit* input = win->find( "value_input" )->asType<UITextEdit>();
+			input->setText( var.value );
+			win->center();
+			win->showWhenReady();
+		}
+	} );
+
+	menu->showOverMouseCursor();
+}
+
 void DebuggerClientListener::initUI() {
 	auto sdc = getStatusDebuggerController();
 
@@ -104,80 +177,7 @@ void DebuggerClientListener::initUI() {
 			mVariablesHolder->removeExpandedState( idx );
 		} else if ( modelEvent->getModelEventType() == Abstract::ModelEventType::OpenMenu &&
 					idx.isValid() ) {
-
-			auto context = mPlugin->getPluginContext();
-			UIPopUpMenu* menu = UIPopUpMenu::New();
-
-			ModelVariableNode* node = static_cast<ModelVariableNode*>( idx.internalData() );
-			Variable var( node->var );
-
-			menu->add( context->i18n( "debugger_copy_variable_value", "Copy Value" ),
-					   context->findIcon( "copy" ) )
-				->setId( "debugger_copy_variable_value" );
-
-			menu->add( context->i18n( "debugger_copy_variable_name", "Copy Name" ),
-					   context->findIcon( "copy" ) )
-				->setId( "debugger_copy_variable_name" );
-
-			if ( var.type ) {
-				menu->add( context->i18n( "debugger_copy_variable_type", "Copy Type" ),
-						   context->findIcon( "copy" ) )
-					->setId( "debugger_copy_variable_type" );
-			}
-
-			if ( var.evaluateName ) {
-				menu->add( context->i18n( "debugger_copy_variable_evaluate_name",
-										  "Copy Evaluate Name" ),
-						   context->findIcon( "copy" ) )
-					->setId( "debugger_copy_variable_evaluate_name" );
-			}
-
-			if ( var.memoryReference ) {
-				menu->add( context->i18n( "debugger_copy_variable_memory_reference",
-										  "Copy Memory Reference" ),
-						   context->findIcon( "copy" ) )
-					->setId( "debugger_copy_variable_memory_reference" );
-			}
-
-			menu->add( context->i18n( "debugger_value_viewer", "Value Viewer" ),
-					   context->findIcon( "eye" ) )
-				->setId( "debugger_value_viewer" );
-
-			menu->on( Event::OnItemClicked, [this, var = std::move( var )]( const Event* event ) {
-				UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-				std::string id( item->getId() );
-				if ( id == "debugger_copy_variable_value" ) {
-					mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( var.value );
-				} else if ( id == "debugger_copy_variable_name" ) {
-					mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( var.name );
-				} else if ( id == "debugger_copy_variable_type" ) {
-					mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( *var.type );
-				} else if ( id == "debugger_copy_variable_evaluate_name" ) {
-					mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText(
-						*var.evaluateName );
-				} else if ( id == "debugger_copy_variable_memory_reference" ) {
-					mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText(
-						*var.memoryReference );
-				} else if ( id == "debugger_value_viewer" ) {
-					static constexpr auto VALUE_VIEWER_LAYOUT = R"html(
-					<window id="process_picker" lw="250dp" lh="250dp" padding="4dp" window-flags="default|ephemeral">
-						<vbox lw="mp" lh="mp">
-							<TextEdit id="value_input" lw="mp" lh="0dp" lw8="1" wordwrap="true" />
-						</vbox>
-					</window>
-					)html";
-					UIWindow* win = mPlugin->getUISceneNode()
-										->loadLayoutFromString( VALUE_VIEWER_LAYOUT )
-										->asType<UIWindow>();
-					win->setTitle( String::format( "%s:", var.name ) );
-					UITextEdit* input = win->find( "value_input" )->asType<UITextEdit>();
-					input->setText( var.value );
-					win->center();
-					win->showWhenReady();
-				}
-			} );
-
-			menu->showOverMouseCursor();
+			createAndShowVariableMenu( idx );
 		}
 	} );
 

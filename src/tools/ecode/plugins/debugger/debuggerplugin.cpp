@@ -2392,9 +2392,11 @@ void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const std::string& ex
 		tv->setFocusOnSelection( false );
 
 		tv->on( Event::OnModelEvent, [this]( const Event* event ) {
+			if ( !mDebugger || !mListener )
+				return;
 			const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
-			if ( mDebugger && mListener &&
-				 modelEvent->getModelEventType() == Abstract::ModelEventType::OpenTree ) {
+			auto idx( modelEvent->getModelIndex() );
+			if ( modelEvent->getModelEventType() == Abstract::ModelEventType::OpenTree ) {
 				ModelVariableNode* node =
 					static_cast<ModelVariableNode*>( modelEvent->getModelIndex().internalData() );
 				mDebugger->variables(
@@ -2403,6 +2405,9 @@ void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const std::string& ex
 						mHoverExpressionsHolder->addVariables( variablesReference,
 															   std::move( vars ) );
 					} );
+			} else if ( modelEvent->getModelEventType() == Abstract::ModelEventType::OpenMenu &&
+						idx.isValid() ) {
+				mListener->createAndShowVariableMenu( idx );
 			}
 		} );
 

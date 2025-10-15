@@ -119,6 +119,8 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 
 	void setUnstableFrameId( bool unstableFrameId );
 
+	void createAndShowVariableMenu( ModelIndex idx );
+
   protected:
 	mutable Mutex mMutex;
 	DebuggerClient* mClient{ nullptr };
