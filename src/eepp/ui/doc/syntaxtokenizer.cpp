@@ -397,7 +397,10 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 				int fullMatchEnd = matches[0].end;
 
 				if ( pattern.matchType == SyntaxPatternMatchType::RegEx ||
-					 pattern.matchType == SyntaxPatternMatchType::Parser ) {
+					 pattern.matchType == SyntaxPatternMatchType::Parser ||
+					 std::find_if( matches.begin(), matches.end(), []( auto match ) {
+						 return match.start == match.end;
+					 } ) != matches.end() ) {
 					priorityMap.clear();
 					priorityMap.resize( fullMatchEnd - fullMatchStart, 0 );
 
