@@ -481,7 +481,6 @@ class EE_API Node : public Transformable {
 	std::string mId;
 	String::HashType mIdHash{ 0 };
 	Vector2f mScreenPos;
-	Vector2i mScreenPosi;
 	Sizef mSize;
 	Float mAlpha{ 255.f };
 	UintPtr mData{ 0 };

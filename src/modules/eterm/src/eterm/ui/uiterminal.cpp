@@ -42,7 +42,7 @@ bool UITerminal::isType( const Uint32& type ) const {
 
 void UITerminal::draw() {
 	if ( mTerm ) {
-		mTerm->setPosition( mScreenPosi.asFloat() );
+		mTerm->setPosition( mScreenPos.trunc() );
 		mTerm->draw();
 	}
 }
@@ -499,7 +499,7 @@ Uint32 UITerminal::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 }
 
 void UITerminal::onPositionChange() {
-	mTerm->setPosition( mScreenPosi.asFloat() );
+	mTerm->setPosition( mScreenPos.trunc() );
 	UIWidget::onPositionChange();
 }
 
@@ -517,7 +517,7 @@ void UITerminal::onSizeChange() {
 Uint32 UITerminal::onFocus( NodeFocusReason reason ) {
 	getUISceneNode()->getWindow()->startTextInput();
 	updateScreenPos();
-	mTerm->setPosition( mScreenPosi.asFloat() );
+	mTerm->setPosition( mScreenPos.trunc() );
 	mTerm->setFocus( true );
 	invalidateDraw();
 	return UIWidget::onFocus( reason );

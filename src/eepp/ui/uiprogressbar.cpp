@@ -40,9 +40,10 @@ void UIProgressBarFiller::draw() {
 
 	for ( int y = -1; y < numTiles.y; y++ ) {
 		for ( int x = -1; x < numTiles.x; x++ ) {
-			mFillerSkin->draw( Vector2f( (Int32)offset.x + mScreenPosi.x + x * rSize.getWidth(),
-										 offset.y + mScreenPosi.y + y * rSize.getHeight() ),
-							   Sizef( rSize.getWidth(), rSize.getHeight() ) );
+			mFillerSkin->draw(
+				Vector2f( (Int32)offset.x + std::trunc( mScreenPos.x ) + x * rSize.getWidth(),
+						  offset.y + std::trunc( mScreenPos.y ) + y * rSize.getHeight() ),
+				Sizef( rSize.getWidth(), rSize.getHeight() ) );
 		}
 	}
 

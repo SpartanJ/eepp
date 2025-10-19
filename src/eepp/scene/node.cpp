@@ -513,8 +513,8 @@ void Node::onSizeChange() {
 }
 
 Rectf Node::getScreenBounds() const {
-	return Rectf( Vector2f( mScreenPosi.x, mScreenPosi.y ),
-				  Sizef( (Float)(int)mSize.getWidth(), (Float)(int)mSize.getHeight() ) );
+	return Rectf( mScreenPos.trunc(),
+				  Sizef( std::trunc( mSize.getWidth() ), std::trunc( mSize.getHeight() ) ) );
 }
 
 Rectf Node::getLocalBounds() const {
@@ -1259,7 +1259,6 @@ void Node::updateScreenPos() {
 	nodeToWorldTranslation( Pos );
 
 	mScreenPos = Pos;
-	mScreenPosi = Vector2i( Pos.x, Pos.y );
 
 	updateCenter();
 

@@ -353,8 +353,8 @@ void UIWindow::drawFrameBuffer() {
 		} else {
 			Rect r( 0, 0, mSize.getWidth(), mSize.getHeight() );
 			TextureRegion textureRegion( mFrameBuffer->getTexture(), r, r.getSize().asFloat() );
-			textureRegion.draw( mScreenPosi.x, mScreenPosi.y, Color::White, getRotation(),
-								getScale() );
+			textureRegion.draw( std::trunc( mScreenPos.x ), std::trunc( mScreenPos.y ),
+								Color::White, getRotation(), getScale() );
 		}
 	}
 }
@@ -1329,9 +1329,9 @@ void UIWindow::matrixSet() {
 				mFrameBuffer->clear();
 			}
 
-			if ( 0 != mScreenPosi ) {
+			if ( Vector2f::Zero != mScreenPos ) {
 				GLi->pushMatrix();
-				GLi->translatef( -mScreenPosi.x, -mScreenPosi.y, 0.f );
+				GLi->translatef( std::trunc( -mScreenPos.x ), std::trunc( -mScreenPos.y ), 0.f );
 			}
 		}
 	} else {
@@ -1343,7 +1343,7 @@ void UIWindow::matrixUnset() {
 	if ( ownsFrameBuffer() ) {
 		GlobalBatchRenderer::instance()->draw();
 
-		if ( 0 != mScreenPosi )
+		if ( Vector2f::Zero != mScreenPos )
 			GLi->popMatrix();
 
 		if ( mFrameBufferBound ) {

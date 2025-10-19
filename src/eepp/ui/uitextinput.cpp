@@ -135,14 +135,16 @@ void UITextInput::draw() {
 		if ( mTextCache->getTextWidth() ) {
 			drawSelection( mTextCache );
 			mTextCache->setAlign( getFlags() );
-			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
-							  (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
-							  Vector2f::One, 0.f, getBlendMode() );
+			mTextCache->draw(
+				std::trunc( mScreenPos.x ) + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
+				std::trunc( mScreenPos.y ) + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
+				Vector2f::One, 0.f, getBlendMode() );
 		} else if ( !mHintCache->getString().empty() &&
 					( mHintDisplay == HintDisplay::Always || hasFocus() ) ) {
-			mHintCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
-							  (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
-							  Vector2f::One, 0.f, getBlendMode() );
+			mHintCache->draw(
+				std::trunc( mScreenPos.x ) + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
+				std::trunc( mScreenPos.y ) + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
+				Vector2f::One, 0.f, getBlendMode() );
 		}
 	}
 

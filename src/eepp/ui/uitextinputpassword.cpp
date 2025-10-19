@@ -35,9 +35,10 @@ void UITextInputPassword::draw() {
 			}
 
 			mPassCache->setAlign( getFlags() );
-			mPassCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
-							  (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
-							  Vector2f::One, 0.f, getBlendMode() );
+			mPassCache->draw(
+				std::trunc( mScreenPos.x ) + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
+				std::trunc( mScreenPos.y ) + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
+				Vector2f::One, 0.f, getBlendMode() );
 
 			if ( isClipped() ) {
 				clipSmartDisable();
@@ -49,9 +50,10 @@ void UITextInputPassword::draw() {
 								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 			}
 
-			mHintCache->draw( (Float)mScreenPosi.x + (int)mHintAlignOffset.x + (int)mPaddingPx.Left,
-							  (Float)mScreenPosi.y + (int)mHintAlignOffset.y + (int)mPaddingPx.Top,
-							  Vector2f::One, 0.f, getBlendMode() );
+			mHintCache->draw(
+				std::trunc( mScreenPos.x ) + (int)mHintAlignOffset.x + (int)mPaddingPx.Left,
+				std::trunc( mScreenPos.y ) + (int)mHintAlignOffset.y + (int)mPaddingPx.Top,
+				Vector2f::One, 0.f, getBlendMode() );
 
 			if ( isClipped() ) {
 				clipSmartDisable();

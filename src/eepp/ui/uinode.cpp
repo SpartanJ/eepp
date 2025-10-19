@@ -633,12 +633,14 @@ void UINode::drawSkin() {
 				PixelDensity::dpToPx( getSkinSize( getSkin(), mSkinState->getCurrentState() ) );
 			Sizef diff = ( mSize - rSize ) * 0.5f;
 
-			mSkinState->draw( mScreenPosi.x + eefloor( diff.x ), mScreenPosi.y + eefloor( diff.y ),
+			mSkinState->draw( std::trunc( mScreenPos.x ) + eefloor( diff.x ),
+							  std::trunc( mScreenPos.y ) + eefloor( diff.y ),
 							  eefloor( rSize.getWidth() ), eefloor( rSize.getHeight() ),
 							  (Uint32)mAlpha );
 		} else {
-			mSkinState->draw( mScreenPosi.x, mScreenPosi.y, eefloor( mSize.getWidth() ),
-							  eefloor( mSize.getHeight() ), (Uint32)mAlpha );
+			mSkinState->draw( std::trunc( mScreenPos.x ), std::trunc( mScreenPos.y ),
+							  eefloor( mSize.getWidth() ), eefloor( mSize.getHeight() ),
+							  (Uint32)mAlpha );
 		}
 	}
 }
@@ -974,20 +976,20 @@ UINode* UINode::resetFlags( Uint32 newFlags ) {
 
 void UINode::drawBackground() {
 	if ( ( mFlags & UI_FILL_BACKGROUND ) && NULL != mBackground ) {
-		mBackground->draw( mScreenPosi.asFloat(), mSize.floor(), mAlpha );
+		mBackground->draw( mScreenPos.trunc(), mSize.floor(), mAlpha );
 	}
 }
 
 void UINode::drawForeground() {
 	if ( ( mFlags & UI_FILL_FOREGROUND ) && NULL != mForeground ) {
-		mForeground->draw( mScreenPosi.asFloat(), mSize.floor(), (Uint32)mAlpha );
+		mForeground->draw( mScreenPos.trunc(), mSize.floor(), (Uint32)mAlpha );
 	}
 }
 
 void UINode::drawBorder() {
 	if ( ( mFlags & UI_BORDER ) && NULL != mBorder ) {
 		mBorder->setAlpha( mAlpha );
-		mBorder->draw( mScreenPosi.asFloat(), mSize.floor() );
+		mBorder->draw( mScreenPos.trunc(), mSize.floor() );
 	}
 }
 

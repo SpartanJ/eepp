@@ -284,8 +284,8 @@ void SceneNode::drawFrameBuffer() {
 		} else {
 			Rect r = Rect( 0, 0, mSize.getWidth(), mSize.getHeight() );
 			TextureRegion textureRegion( mFrameBuffer->getTexture(), r, r.getSize().asFloat() );
-			textureRegion.draw( mScreenPosi.x, mScreenPosi.y, Color::White, getRotation(),
-								getScale() );
+			Vector2f pos( mScreenPos.trunc() );
+			textureRegion.draw( pos.x, pos.y, Color::White, getRotation(), getScale() );
 		}
 	}
 }

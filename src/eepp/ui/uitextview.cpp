@@ -90,9 +90,10 @@ void UITextView::draw() {
 		}
 
 		mTextCache->setAlign( Font::getHorizontalAlign( getFlags() ) );
-		mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
-						  (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
-						  Vector2f::One, 0.f, getBlendMode() );
+		mTextCache->draw(
+			std::trunc( mScreenPos.x ) + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
+			std::trunc( mScreenPos.y ) + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
+			Vector2f::One, 0.f, getBlendMode() );
 
 		if ( isClipped() )
 			clipSmartDisable();
