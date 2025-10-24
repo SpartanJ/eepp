@@ -1303,7 +1303,7 @@ void DebuggerPlugin::replaceKeysInJson(
 				j = std::move( argsArr );
 				continue;
 			} else if ( runConfig && val == KEY_ENV && buildConfig ) {
-				j = nlohmann::json{};
+				j = nlohmann::json::object();
 				for ( const auto& env : buildConfig->envs() )
 					j[env.first] = env.second;
 			} else if ( val == KEY_STOPONENTRY ) {
