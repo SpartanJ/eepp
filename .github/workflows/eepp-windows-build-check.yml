@@ -51,20 +51,8 @@ jobs:
         set LIBGL_ALWAYS_SOFTWARE=1
         set GALLIUM_DRIVER=llvmpipe
         bin\unit_tests\eepp-unit_tests.exe
-    - name: Upload test artifacts if folder exists
-      if: always()
-      shell: cmd
-      run: |
-        if exist bin\unit_tests\output (
-          echo Artifact folder exists, uploading...
-          exit 0
-        ) else (
-          echo No artifact folder (bin\unit_tests\output), tests passed, skipping upload.
-          exit 0
-        )
-      id: upload-check
     - name: Upload artifacts
-      if: always() && steps.upload-check.outputs.result == '0' && exists('bin/unit_tests/output')
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: windows-test-output
