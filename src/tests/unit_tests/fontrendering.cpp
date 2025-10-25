@@ -14,6 +14,8 @@ UTEST( FontRendering, fontsTest ) {
 	if ( !win->isOpen() ) {
 		std::cout << "OpenGL context not available, skipping" << std::endl;
 		return;
+	} else {
+		std::cout << GLi->getRenderer() << std::endl;
 	}
 
 	// This will never trigger for the moment

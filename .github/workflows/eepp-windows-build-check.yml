@@ -33,8 +33,14 @@ jobs:
       shell: cmd
       run: |
         "%MSBUILD_PATH%\MSBuild.exe" .\make\windows\eepp.sln -m /p:Platform="x64" /p:Configuration="release"
+    - name: Install Mesa for software rendering
+      uses: f3d-app/install-mesa-windows-action@v1
+      with:
+        path: ${{ github.workspace }}/bin/unit_tests
     - name: Unit Tests
       shell: cmd
+      env:
+        GALLIUM_DRIVER: llvmpipe
       run: |
         bin\unit_tests\eepp-unit_tests.exe
     - name: Upload artifacts
