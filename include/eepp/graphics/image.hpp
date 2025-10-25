@@ -310,6 +310,17 @@ class EE_API Image {
 	Image( IOStream& stream, const unsigned int& forceChannels = 0,
 		   const FormatConfiguration& formatConfiguration = FormatConfiguration() );
 
+	Image( const Image& other );
+
+	/** Overload the assignment operator to ensure the image copy */
+	Image& operator=( const Image& right );
+
+    /** @brief Move constructor */
+    Image( Image&& other ) noexcept;
+
+    /** @brief Move assignment operator */
+    Image& operator=( Image&& other ) noexcept;
+
 	virtual ~Image();
 
 	/** Create an empty image data */
@@ -413,14 +424,35 @@ class EE_API Image {
 	/** @return A copy of the original image */
 	Graphics::Image* copy();
 
-	/** Overload the assignment operator to ensure the image copy */
-	Graphics::Image& operator=( const Image& right );
-
 	/** Set the image format configuration */
 	void setImageFormatConfiguration( const FormatConfiguration& imageFormatConfiguration );
 
 	/** @return The image format configuration */
 	const FormatConfiguration& getImageFormatConfiguration() const;
+
+	struct DiffResult {
+		Image* diffImage{ nullptr }; ///< The visual diff image. Null if dimensions mismatched.
+		long long numDifferentPixels{ 0 }; ///< The number of pixels that exceeded the threshold.
+		double maxDeltaE{ 0.0 };		   ///< The maximum perceptual difference (Delta E) found.
+		bool areSame() const { return numDifferentPixels == 0; }
+		~DiffResult() { eeSAFE_DELETE( diffImage ); }
+	};
+
+	/**
+	 * @brief Performs a visual and perceptual diff against another image.
+	 *
+	 * This method compares the current image with another using the CIEDE2000 Delta E formula,
+	 * which mimics human perception of color differences.
+	 *
+	 * @param other The image to compare against.
+	 * @param threshold The Delta E threshold. Differences below this value are ignored.
+	 *        A value of 1.0 is roughly the limit of human perception.
+	 *        A common default for tests is 2.3 (a "just noticeable difference").
+	 * @param diffColor The color used to highlight differing pixels in the output image.
+	 * @return A DiffResult struct containing the diff image and statistics.
+	 */
+	DiffResult diff( const Image& other, float threshold = 2.3f,
+					 const Color& diffColor = Color( 255, 0, 255, 255 ) ) const;
 
   protected:
 	Uint8* mPixels;

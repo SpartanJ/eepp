@@ -366,6 +366,12 @@ class EE_API Window {
 	bool takeScreenshot( std::string filepath = "",
 						 const Image::SaveType& Format = Image::SaveType::PNG );
 
+	/** Captures the window front buffer into an Image
+	 * You have to call it before Display, and after render all the objects.
+	 * @return False if failed, otherwise returns True
+	 */
+	Image getFrontBufferImage();
+
 	/** @return The pointer to the Window Info ( read only ) */
 	const WindowInfo* getWindowInfo() const;
 

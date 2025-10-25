@@ -26,11 +26,6 @@ FontSprite::FontSprite( const std::string FontName ) :
 void FontSprite::cleanup() {
 	sendEvent( Event::Unload );
 
-	Texture* texture = mPages[mFontSize].texture;
-
-	if ( NULL != texture && TextureFactory::existsSingleton() )
-		TextureFactory::instance()->remove( texture->getTextureId() );
-
 	mPages.clear();
 	mFontSize = 0;
 	mFilePath = "";

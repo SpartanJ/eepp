@@ -27,6 +27,129 @@
 
 namespace EE { namespace Graphics {
 
+// Helper structs for color spaces
+struct XYZ {
+	double x, y, z;
+};
+
+struct Lab {
+	double l, a, b;
+};
+
+// sRGB to Linear RGB conversion
+static constexpr double srgbToLinear( double c ) {
+	return ( c > 0.04045 ) ? pow( ( c + 0.055 ) / 1.055, 2.4 ) : ( c / 12.92 );
+}
+
+// RGB to XYZ conversion (D65 illuminant)
+static constexpr XYZ rgbToXyz( const Color& c ) {
+	double r = srgbToLinear( c.r / 255.0 );
+	double g = srgbToLinear( c.g / 255.0 );
+	double b = srgbToLinear( c.b / 255.0 );
+	return {
+		.x = r * 0.4124564 + g * 0.3575761 + b * 0.1804375,
+		.y = r * 0.2126729 + g * 0.7151522 + b * 0.0721750,
+		.z = r * 0.0193339 + g * 0.1191920 + b * 0.9503041,
+	};
+}
+
+// XYZ to CIELAB conversion (D65 illuminant)
+static constexpr Lab xyzToLab( const XYZ& xyz ) {
+	auto f = []( double t ) { return ( t > 0.008856 ) ? cbrt( t ) : ( 7.787 * t + 16.0 / 116.0 ); };
+	// Reference white point for D65
+	constexpr double ref_x = 0.95047;
+	constexpr double ref_y = 1.00000;
+	constexpr double ref_z = 1.08883;
+
+	double fx = f( xyz.x / ref_x );
+	double fy = f( xyz.y / ref_y );
+	double fz = f( xyz.z / ref_z );
+
+	return {
+		.l = 116.0 * fy - 16.0,
+		.a = 500.0 * ( fx - fy ),
+		.b = 200.0 * ( fy - fz ),
+	};
+}
+
+// Calculate CIEDE2000 Delta E between two Lab colors
+static constexpr double deltaECIEDE2000( const Lab& lab1, const Lab& lab2 ) {
+	double l1 = lab1.l, a1 = lab1.a, b1 = lab1.b;
+	double l2 = lab2.l, a2 = lab2.a, b2 = lab2.b;
+
+	// Constants
+	constexpr double kL = 1.0, kC = 1.0, kH = 1.0;
+	constexpr double pi = 3.14159265358979323846;
+
+	double c1 = sqrt( a1 * a1 + b1 * b1 );
+	double c2 = sqrt( a2 * a2 + b2 * b2 );
+	double c_bar = ( c1 + c2 ) / 2.0;
+	double c_bar7 = pow( c_bar, 7 );
+	double g = 0.5 * ( 1.0 - sqrt( c_bar7 / ( c_bar7 + 6103515625.0 ) ) ); // 25^7
+
+	double a1_prime = a1 * ( 1.0 + g );
+	double a2_prime = a2 * ( 1.0 + g );
+
+	double c1_prime = sqrt( a1_prime * a1_prime + b1 * b1 );
+	double c2_prime = sqrt( a2_prime * a2_prime + b2 * b2 );
+
+	double h1_prime = ( a1_prime == 0 && b1 == 0 ) ? 0 : atan2( b1, a1_prime );
+	if ( h1_prime < 0 )
+		h1_prime += 2 * pi;
+	double h2_prime = ( a2_prime == 0 && b2 == 0 ) ? 0 : atan2( b2, a2_prime );
+	if ( h2_prime < 0 )
+		h2_prime += 2 * pi;
+
+	double delta_l_prime = l2 - l1;
+	double delta_c_prime = c2_prime - c1_prime;
+
+	double delta_h_prime;
+	double h_diff = h2_prime - h1_prime;
+	if ( c1_prime * c2_prime == 0 ) {
+		delta_h_prime = 0;
+	} else if ( fabs( h_diff ) <= pi ) {
+		delta_h_prime = h_diff;
+	} else if ( h_diff > pi ) {
+		delta_h_prime = h_diff - 2 * pi;
+	} else {
+		delta_h_prime = h_diff + 2 * pi;
+	}
+	delta_h_prime = 2.0 * sqrt( c1_prime * c2_prime ) * sin( delta_h_prime / 2.0 );
+
+	double l_bar_prime = ( l1 + l2 ) / 2.0;
+	double c_bar_prime = ( c1_prime + c2_prime ) / 2.0;
+	double h_bar_prime;
+	if ( c1_prime * c2_prime == 0 ) {
+		h_bar_prime = h1_prime + h2_prime;
+	} else if ( fabs( h1_prime - h2_prime ) <= pi ) {
+		h_bar_prime = ( h1_prime + h2_prime ) / 2.0;
+	} else if ( ( h1_prime + h2_prime ) < 2 * pi ) {
+		h_bar_prime = ( h1_prime + h2_prime + 2 * pi ) / 2.0;
+	} else {
+		h_bar_prime = ( h1_prime + h2_prime - 2 * pi ) / 2.0;
+	}
+
+	double t = 1.0 - 0.17 * cos( h_bar_prime - pi / 6.0 ) + 0.24 * cos( 2.0 * h_bar_prime ) +
+			   0.32 * cos( 3.0 * h_bar_prime + pi / 30.0 ) -
+			   0.20 * cos( 4.0 * h_bar_prime - 63.0 * pi / 180.0 );
+
+	double s_l = 1.0 + ( 0.015 * pow( l_bar_prime - 50.0, 2 ) ) /
+						   sqrt( 20.0 + pow( l_bar_prime - 50.0, 2 ) );
+	double s_c = 1.0 + 0.045 * c_bar_prime;
+	double s_h = 1.0 + 0.015 * c_bar_prime * t;
+
+	double delta_theta =
+		( 30.0 * pi / 180.0 ) * exp( -pow( ( h_bar_prime * 180.0 / pi - 275.0 ) / 25.0, 2 ) );
+	double r_c = 2.0 * sqrt( pow( c_bar_prime, 7 ) / ( pow( c_bar_prime, 7 ) + 6103515625.0 ) );
+	double r_t = -r_c * sin( 2.0 * delta_theta );
+
+	double term_l = delta_l_prime / ( kL * s_l );
+	double term_c = delta_c_prime / ( kC * s_c );
+	double term_h = delta_h_prime / ( kH * s_h );
+
+	return sqrt( term_l * term_l + term_c * term_c + term_h * term_h + r_t * term_c * term_h );
+}
+
 static const char* get_resampler_name( Image::ResamplerFilter filter ) {
 	switch ( filter ) {
 		case Image::ResamplerFilter::RESAMPLER_BOX:
@@ -736,6 +859,57 @@ Image::Image( IOStream& stream, const unsigned int& forceChannels,
 	}
 }
 
+Image::Image( const Image& other ) :
+	mPixels( nullptr ),
+	mWidth( 0 ),
+	mHeight( 0 ),
+	mChannels( 0 ),
+	mSize( 0 ),
+	mAvoidFree( false ),
+	mLoadedFromStbi( false ) {
+	*this = other; // Delegate to copy assignment operator
+}
+
+Image::Image( Image&& other ) noexcept :
+	mPixels( other.mPixels ),
+	mWidth( other.mWidth ),
+	mHeight( other.mHeight ),
+	mChannels( other.mChannels ),
+	mSize( other.mSize ),
+	mAvoidFree( other.mAvoidFree ),
+	mLoadedFromStbi( other.mLoadedFromStbi ),
+	mFormatConfiguration( std::move( other.mFormatConfiguration ) ) {
+	other.mPixels = nullptr;
+	other.mWidth = 0;
+	other.mHeight = 0;
+	other.mChannels = 0;
+	other.mSize = 0;
+}
+
+Image& Image::operator=( Image&& other ) noexcept {
+	if ( this != &other ) {
+		if ( !mAvoidFree ) {
+			clearCache();
+		}
+
+		mPixels = other.mPixels;
+		mWidth = other.mWidth;
+		mHeight = other.mHeight;
+		mChannels = other.mChannels;
+		mSize = other.mSize;
+		mAvoidFree = other.mAvoidFree;
+		mLoadedFromStbi = other.mLoadedFromStbi;
+		mFormatConfiguration = std::move( other.mFormatConfiguration );
+
+		other.mPixels = nullptr;
+		other.mWidth = 0;
+		other.mHeight = 0;
+		other.mChannels = 0;
+		other.mSize = 0;
+	}
+	return *this;
+}
+
 Image::~Image() {
 	if ( !mAvoidFree )
 		clearCache();
@@ -1264,6 +1438,9 @@ Graphics::Image* Image::copy() {
 }
 
 Graphics::Image& Image::operator=( const Image& right ) {
+	if (this == &right)
+		return *this;
+
 	mWidth = right.mWidth;
 	mHeight = right.mHeight;
 	mChannels = right.mChannels;
@@ -1331,6 +1508,79 @@ std::pair<std::vector<Image>, int> Image::loadGif( IOStream& stream ) {
 	free( data );
 	free( delays );
 	return { std::move( gif ), delay ? delay : 100 };
+}
+
+Image::DiffResult Image::diff( const Image& other, float threshold, const Color& diffColor ) const {
+	DiffResult result;
+
+	if ( getWidth() != other.getWidth() || getHeight() != other.getHeight() ) {
+		Log::error( "Image::diff: Image dimensions do not match." );
+		result.numDifferentPixels = getWidth() * getHeight();
+		return result;
+	}
+
+	if ( getChannels() < 3 || other.getChannels() < 3 ) {
+		Log::warning( "Image::diff: Perceptual diff requires at least 3 color channels. "
+					  "Falling back to simple comparison." );
+		return result;
+	}
+
+	// Create a 4-channel RGBA image for the diff output
+	result.diffImage = Image::New( getWidth(), getHeight(), 4 );
+	if ( !result.diffImage ) {
+		Log::error( "Image::diff: Failed to create diff image." );
+		return result;
+	}
+
+	const Uint8* p1 = this->getPixelsPtr();
+	const Uint8* p2 = other.getPixelsPtr();
+	Uint8* pDiff = result.diffImage->getPixels();
+
+	unsigned int channels1 = this->getChannels();
+	unsigned int channels2 = other.getChannels();
+	unsigned int channelsDiff = result.diffImage->getChannels();
+
+	for ( unsigned int y = 0; y < getHeight(); ++y ) {
+		for ( unsigned int x = 0; x < getWidth(); ++x ) {
+			size_t offset1 = ( y * getWidth() + x ) * channels1;
+			size_t offset2 = ( y * getWidth() + x ) * channels2;
+			size_t offsetDiff = ( y * getWidth() + x ) * channelsDiff;
+
+			Color c1( p1[offset1], p1[offset1 + 1], p1[offset1 + 2],
+					  channels1 == 4 ? p1[offset1 + 3] : 255 );
+			Color c2( p2[offset2], p2[offset2 + 1], p2[offset2 + 2],
+					  channels2 == 4 ? p2[offset2 + 3] : 255 );
+
+			// Also compare alpha channels directly, as perceptual diff is for color only
+			bool alphaDiffers = ( c1.a != c2.a );
+
+			Lab lab1 = xyzToLab( rgbToXyz( c1 ) );
+			Lab lab2 = xyzToLab( rgbToXyz( c2 ) );
+			double delta = deltaECIEDE2000( lab1, lab2 );
+
+			if ( delta > result.maxDeltaE ) {
+				result.maxDeltaE = delta;
+			}
+
+			if ( delta > threshold || alphaDiffers ) {
+				result.numDifferentPixels++;
+				pDiff[offsetDiff] = diffColor.r;
+				pDiff[offsetDiff + 1] = diffColor.g;
+				pDiff[offsetDiff + 2] = diffColor.b;
+				pDiff[offsetDiff + 3] = diffColor.a;
+			} else {
+				// Blend original pixel with a transparent gray to fade it out
+				// This makes the highlighted differences stand out more.
+				Uint8 avg = ( c1.r + c1.g + c1.b ) / 3;
+				pDiff[offsetDiff] = avg;
+				pDiff[offsetDiff + 1] = avg;
+				pDiff[offsetDiff + 2] = avg;
+				pDiff[offsetDiff + 3] = 128; // Semi-transparent
+			}
+		}
+	}
+
+	return result;
 }
 
 }} // namespace EE::Graphics

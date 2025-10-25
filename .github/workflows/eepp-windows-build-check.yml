@@ -33,7 +33,21 @@ jobs:
       shell: cmd
       run: |
         "%MSBUILD_PATH%\MSBuild.exe" .\make\windows\eepp.sln -m /p:Platform="x64" /p:Configuration="release"
+    - name: Download Mesa3D for Windows
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/pal1000/mesa-dist-win/releases/download/25.2.4/mesa3d-25.2.4-release-msvc.7z" -OutFile "mesa.7z"
+        7z x mesa.7z -o"C:\mesa"
+      shell: powershell
+    - name: Set up Mesa DLLs
+      run: |
+        copy C:\mesa\x64\opengl32.dll .
+        copy C:\mesa\x64\libglapi.dll .
+        # Add Mesa to PATH for dependencies
+        set PATH=C:\mesa\x64;%PATH%
+      shell: cmd
     - name: Unit Tests
       shell: cmd
       run: |
+        set LIBGL_ALWAYS_SOFTWARE=1
+        set GALLIUM_DRIVER=llvmpipe
         bin\unit_tests\eepp-unit_tests.exe
