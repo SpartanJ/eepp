@@ -73,7 +73,7 @@ static constexpr Lab xyzToLab( const XYZ& xyz ) {
 }
 
 // Calculate CIEDE2000 Delta E between two Lab colors
-static constexpr double deltaECIEDE2000( const Lab& lab1, const Lab& lab2 ) {
+static double deltaECIEDE2000( const Lab& lab1, const Lab& lab2 ) {
 	double l1 = lab1.l, a1 = lab1.a, b1 = lab1.b;
 	double l2 = lab2.l, a2 = lab2.a, b2 = lab2.b;
 

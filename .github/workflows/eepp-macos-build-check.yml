@@ -16,7 +16,7 @@ jobs:
         git submodule update --init --recursive
     - name: Install dependencies
       run: |
-        brew install wget SDL2 premake mesa
+        brew install wget SDL2 premake
     - name: Build
       run: |
         premake5 --with-text-shaper --disable-static-build gmake
@@ -24,9 +24,4 @@ jobs:
     - name: Unit Tests
       run: |
         cd bin/unit_tests
-        export LIBGL_ALWAYS_SOFTWARE=1
-        export GALLIUM_DRIVER=llvmpipe
-        export SDL_VIDEODRIVER=cocoa
         ./eepp-unit_tests
-      env:
-        DYLD_LIBRARY_PATH: /opt/homebrew/lib  # Ensures Mesa's libGL is used
