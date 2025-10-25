@@ -982,7 +982,7 @@ std::vector<Uint8> webpPacker( const Image& img, Uint32 quality, Uint32 compress
 	if ( img.getChannels() == 3 ) {
 		successImport = WebPPictureImportRGB( &pic, r, 3 * s.getWidth() );
 	} else {
-		successImport = WebPPictureImportRGBA( &pic, r, 4 * s.getHeight() );
+		successImport = WebPPictureImportRGBA( &pic, r, 4 * s.getWidth() );
 	}
 
 	bool successEncode = false;

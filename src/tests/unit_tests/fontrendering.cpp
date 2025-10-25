@@ -7,7 +7,9 @@ using namespace EE::System;
 UTEST( FontRendering, fontsTest ) {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
-	auto win = Engine::instance()->createWindow( WindowSettings( 1220, 850, "eepp - Fonts" ) );
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1220, 850, "eepp - Fonts", WindowStyle::Default, WindowBackend::Default, 32,
+						{}, 1, false, true ) );
 
 	if ( !win->isOpen() ) {
 		std::cout << "OpenGL context not available, skipping" << std::endl;
@@ -104,7 +106,7 @@ UTEST( FontRendering, fontsTest ) {
 	text3.draw( std::floor( ( win->getWidth() - text3.getTextWidth() ) * 0.5f ), 560 );
 	text4.draw( std::floor( ( win->getWidth() - text4.getTextWidth() ) * 0.5f ), 590 );
 	text5.draw( std::floor( ( win->getWidth() - text5.getTextWidth() ) * 0.5f ), 640 );
-	text6.draw( std::floor( ( win->getWidth() - text6.getTextWidth() ) * 0.5f ), 690 );
+	text6.draw( 19 + std::floor( ( win->getWidth() - text6.getTextWidth() ) * 0.5f ), 690 );
 
 	{
 		Image::FormatConfiguration fconf;
@@ -124,6 +126,9 @@ UTEST( FontRendering, fontsTest ) {
 
 		Image::DiffResult result = actualImage.diff( expectedImage );
 
+		EXPECT_EQ_MSG( expectedImage.getWidth(), actualImage.getWidth(), "Images width not equal" );
+		EXPECT_EQ_MSG( expectedImage.getHeight(), actualImage.getHeight(),
+					   "Images height not equal" );
 		EXPECT_TRUE( result.areSame() );
 
 		if ( !result.areSame() ) {
@@ -131,16 +136,16 @@ UTEST( FontRendering, fontsTest ) {
 					  << std::endl;
 			std::cerr << "Maximum perceptual difference (Delta E): " << result.maxDeltaE
 					  << std::endl;
+			if ( !FileSystem::fileExists( "output" ) )
+				FileSystem::makeDir( "output" );
+			std::string actualImagePath = "output/eepp-fonts_actual_output." + saveExt;
+			actualImage.saveToFile( actualImagePath, saveType );
+			std::cerr << "Actual image saved to: " << actualImagePath << std::endl;
 			if ( result.diffImage ) {
-				std::string actualImagePath =
-					Sys::getTempPath() + "eepp-fonts_actual_output." + saveExt;
-				std::string diffImagePath =
-					Sys::getTempPath() + "eepp-fonts_diff_output." + saveExt;
+				std::string diffImagePath = "output/eepp-fonts_diff_output." + saveExt;
 				result.diffImage->setImageFormatConfiguration( fconf );
 				result.diffImage->saveToFile( diffImagePath, saveType );
-				actualImage.saveToFile( actualImagePath, saveType );
 				std::cerr << "Visual diff saved to: " << diffImagePath << std::endl;
-				std::cerr << "Actual image saved to: " << actualImagePath << std::endl;
 			}
 		}
 	}

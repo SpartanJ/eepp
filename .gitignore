@@ -69,6 +69,7 @@ ecode.dmg
 /compile_commands.json
 /bin/unit_tests/eepp*
 /bin/unit_tests/lib*
+/bin/unit_tests/output/*
 /projects/linux/ecode/polyfill-glibc
 /bin/crashes/*
 /bin/config/*

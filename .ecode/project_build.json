@@ -538,6 +538,12 @@
         "command": "${project_root}/bin/ecode",
         "name": "ecode-release",
         "working_dir": "${project_root}/bin/"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/unit_tests/eepp-unit_tests-debug",
+        "name": "eepp-unit_test-debug",
+        "working_dir": "${project_root}/bin/"
       }
     ],
     "var": {

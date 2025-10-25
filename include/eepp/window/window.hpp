@@ -49,7 +49,8 @@ class WindowSettings {
 						   Uint32 style = WindowStyle::Default,
 						   WindowBackend backend = WindowBackend::Default, Uint32 bpp = 32,
 						   const std::string& icon = std::string(), const Float& pixelDensity = 1,
-						   const bool& useScreenKeyboard = EE_SCREEN_KEYBOARD_ENABLED ) :
+						   const bool& useScreenKeyboard = EE_SCREEN_KEYBOARD_ENABLED,
+						   bool disableHiDPI = false ) :
 		Style( style ),
 		Width( width ),
 		Height( height ),
@@ -58,7 +59,8 @@ class WindowSettings {
 		Title( title ),
 		Backend( backend ),
 		PixelDensity( pixelDensity ),
-		UseScreenKeyboard( useScreenKeyboard ) {}
+		UseScreenKeyboard( useScreenKeyboard ),
+		DisableHiDPI( disableHiDPI ) {}
 
 	inline WindowSettings() :
 		Style( WindowStyle::Default ),
@@ -67,17 +69,19 @@ class WindowSettings {
 		BitsPerPixel( 32 ),
 		Backend( WindowBackend::Default ),
 		PixelDensity( 1 ),
-		UseScreenKeyboard( EE_SCREEN_KEYBOARD_ENABLED ) {}
+		UseScreenKeyboard( EE_SCREEN_KEYBOARD_ENABLED ),
+		DisableHiDPI( false ) {}
 
-	Uint32 Style;
-	Uint32 Width;  //! In screen coordinates (pixels * scale)
-	Uint32 Height; //! In screen coordinates (pixels * scale)
-	Uint32 BitsPerPixel;
+	Uint32 Style{ WindowStyle::Default };
+	Uint32 Width{ 800 };  //! In screen coordinates (pixels * scale)
+	Uint32 Height{ 600 }; //! In screen coordinates (pixels * scale)
+	Uint32 BitsPerPixel{ 32 };
 	std::string Icon;
 	std::string Title;
-	WindowBackend Backend;
-	Float PixelDensity;
-	bool UseScreenKeyboard;
+	WindowBackend Backend{ WindowBackend::Default };
+	Float PixelDensity{ 1 };
+	bool UseScreenKeyboard{ EE_SCREEN_KEYBOARD_ENABLED };
+	bool DisableHiDPI{ false };
 };
 
 /** @brief ContextSettings Small class that contains the renderer context information */
