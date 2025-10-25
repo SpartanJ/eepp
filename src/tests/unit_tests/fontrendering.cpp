@@ -8,7 +8,7 @@ UTEST( FontRendering, fontsTest ) {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
 	auto win = Engine::instance()->createWindow(
-		WindowSettings( 1220, 850, "eepp - Fonts", WindowStyle::Default, WindowBackend::Default, 32,
+		WindowSettings( 1024, 650, "eepp - Fonts", WindowStyle::Default, WindowBackend::Default, 32,
 						{}, 1, false, true ) );
 
 	if ( !win->isOpen() ) {
@@ -98,15 +98,15 @@ UTEST( FontRendering, fontsTest ) {
 	text7.setOutlineColor( Color( 0, 0, 0, 255 ) );
 
 	win->clear();
-	text.draw( std::floor( ( win->getWidth() - text.getTextWidth() ) * 0.5f ), 32 );
-	text2.draw( std::floor( ( win->getWidth() - text2.getTextWidth() ) * 0.5f ), 300 );
-	text7.draw( std::floor( ( win->getWidth() - text7.getTextWidth() ) * 0.5f ), 400 );
-	text2.draw( std::floor( ( win->getWidth() - text2.getTextWidth() ) * 0.5f ), 430,
-				Vector2f( 1.1f, 1.1f ), 12.5f );
-	text3.draw( std::floor( ( win->getWidth() - text3.getTextWidth() ) * 0.5f ), 560 );
-	text4.draw( std::floor( ( win->getWidth() - text4.getTextWidth() ) * 0.5f ), 590 );
-	text5.draw( std::floor( ( win->getWidth() - text5.getTextWidth() ) * 0.5f ), 640 );
-	text6.draw( 19 + std::floor( ( win->getWidth() - text6.getTextWidth() ) * 0.5f ), 690 );
+
+	Float offsetY = 0;
+	text.draw( 0, 0 );
+	text2.draw( 0, ( offsetY += text.getTextHeight() + 16 ) );
+	text7.draw( 0, ( offsetY += text2.getTextHeight() + 16 ) );
+	text3.draw( 0, ( offsetY += text7.getTextHeight() + 16 ) );
+	text4.draw( 0, ( offsetY += text3.getTextHeight() + 16 ) );
+	text5.draw( 0, ( offsetY += text4.getTextHeight() + 16 ) );
+	text6.draw( 0, ( offsetY += text5.getTextHeight() + 16 ) );
 
 	{
 		Image::FormatConfiguration fconf;
