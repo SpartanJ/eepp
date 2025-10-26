@@ -50,3 +50,6 @@
 #define EXPECT_STRINGEQ_MSG(x, y, msg) UTEST_STRINGEQ(x, y, msg, 0)
 #define ASSERT_STRINGEQ(x, y) UTEST_STRINGEQ(x, y, "", 1)
 #define ASSERT_STRINGEQ_MSG(x, y, msg) UTEST_STRINGEQ(x, y, msg, 1)
+
+#define UTEST_PRINT_INFO(str) UTEST_PRINTF( "\033[32m[   INFO   ]\033[0m \t%s\n", str )
+#define UTEST_PRINT_STEP(str) UTEST_PRINTF( "\033[32m[ SUB-STEP ]\033[0m \t%s\n", str )

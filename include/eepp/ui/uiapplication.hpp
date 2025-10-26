@@ -16,10 +16,13 @@ class EE_API UIApplication {
 	struct Settings {
 		Settings() {}
 
-		Settings( std::optional<Float> pixelDensity, bool loadBaseResources = true,
-				  Font* baseFont = nullptr, std::optional<std::string> baseStyleSheetPath = {},
-				  Font* emojiFont = nullptr );
+		Settings( std::optional<std::string> basePath, std::optional<Float> pixelDensity = {},
+				  bool loadBaseResources = true, Font* baseFont = nullptr,
+				  std::optional<std::string> baseStyleSheetPath = {}, Font* emojiFont = nullptr );
 
+		//! By default it will use the current process path as the base path. This will set the
+		//! default working directory.
+		std::optional<std::string> basePath;
 		//! Not setting anything will automatically try to detect the main screen pixel density
 		std::optional<Float> pixelDensity;
 		//! Must be set to true in order to initialize the basic UI resources (font and UI theme).
@@ -52,12 +55,19 @@ class EE_API UIApplication {
 	//! Document
 	UISceneNode* getUI() const;
 
+	//! Runs the application until window is closed
+	//! @return EXIT_SUCCESS if application run successfully
 	int run();
+
+	//! Set if the application must show the memory manager result after closing the main window.
+	void setShowMemoryManagerResult( bool show );
+	bool showMemoryManagerResult() const;
 
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
 	EE::Window::Window* mWindow{ nullptr };
 	bool mDidRun{ false };
+	bool mShowMemoryManagerResult{ false };
 };
 
 }} // namespace EE::UI

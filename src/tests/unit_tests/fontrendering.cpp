@@ -1,8 +1,72 @@
-#include "utest.h"
-#include <eepp/ee.hpp>
+#include "utest.hpp"
+
+#include <eepp/graphics/fontbmfont.hpp>
+#include <eepp/graphics/fontsprite.hpp>
+#include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/image.hpp>
+#include <eepp/graphics/renderer/renderergl.hpp>
+#include <eepp/graphics/text.hpp>
+#include <eepp/scene/scenemanager.hpp>
+#include <eepp/system/filesystem.hpp>
+#include <eepp/system/scopedop.hpp>
+#include <eepp/system/sys.hpp>
+#include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uitextedit.hpp>
+#include <eepp/window/engine.hpp>
+
 #include <iostream>
 
+using namespace EE;
+using namespace EE::Scene;
 using namespace EE::System;
+using namespace EE::Graphics;
+using namespace EE::Window;
+using namespace EE::UI;
+
+static void compareImages( utest_state_s& utest_state, int* utest_result, EE::Window::Window* win,
+						   const std::string& imageName ) {
+	auto saveType = Image::SaveType::WEBP;
+	auto saveExt( Image::saveTypeToExtension( saveType ) );
+	std::string expectedImagePath( "assets/fontrendering/" + imageName + "." + saveExt );
+
+	Image::FormatConfiguration fconf;
+	fconf.webpSaveLossless( true );
+
+	Image actualImage = win->getFrontBufferImage();
+	actualImage.setImageFormatConfiguration( fconf );
+
+	if ( !FileSystem::fileExists( expectedImagePath ) )
+		actualImage.saveToFile( expectedImagePath, saveType );
+
+	Image expectedImage( expectedImagePath );
+	ASSERT_TRUE( expectedImage.getPixelsPtr() != nullptr );
+	EXPECT_EQ_MSG( expectedImage.getWidth(), actualImage.getWidth(), "Images width not equal" );
+	EXPECT_EQ_MSG( expectedImage.getHeight(), actualImage.getHeight(), "Images height not equal" );
+
+	Image::DiffResult result = actualImage.diff( expectedImage );
+	EXPECT_TRUE( result.areSame() );
+	if ( !result.areSame() ) {
+		auto saveExt( Image::saveTypeToExtension( saveType ) );
+		std::string withTextShaper = Text::TextShaperEnabled ? "_text_shape" : "";
+		std::cerr << "Test FAILED: " << result.numDifferentPixels << " pixels differ." << std::endl;
+		std::cerr << "Maximum perceptual difference (Delta E): " << result.maxDeltaE << std::endl;
+		if ( !FileSystem::fileExists( "output" ) )
+			FileSystem::makeDir( "output" );
+		std::string actualImagePath =
+			"output/" + imageName + "_actual_output" + withTextShaper + "." + saveExt;
+		actualImage.saveToFile( actualImagePath, saveType );
+		std::cerr << "Actual image saved to: " << actualImagePath << std::endl;
+		if ( result.diffImage ) {
+			std::string diffImagePath =
+				"output/" + imageName + "_diff_output" + withTextShaper + "." + saveExt;
+			result.diffImage->setImageFormatConfiguration( fconf );
+			result.diffImage->saveToFile( diffImagePath, saveType );
+			std::cerr << "Visual diff saved to: " << diffImagePath << std::endl;
+		}
+	}
+}
 
 UTEST( FontRendering, fontsTest ) {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
@@ -11,15 +75,9 @@ UTEST( FontRendering, fontsTest ) {
 		WindowSettings( 1024, 650, "eepp - Fonts", WindowStyle::Default, WindowBackend::Default, 32,
 						{}, 1, false, true ) );
 
-	if ( !win->isOpen() ) {
-		std::cout << "OpenGL context not available, skipping" << std::endl;
-		return;
-	} else {
-		std::cout << GLi->getRenderer() << std::endl;
-	}
-
-	// This will never trigger for the moment
 	ASSERT_TRUE_MSG( win->isOpen(), "Failed to create Window" );
+
+	UTEST_PRINT_INFO( GLi->getRenderer().c_str() );
 
 	win->setClearColor( RGB( 230, 230, 230 ) );
 
@@ -99,58 +157,81 @@ UTEST( FontRendering, fontsTest ) {
 	text7.setOutlineThickness( 2 );
 	text7.setOutlineColor( Color( 0, 0, 0, 255 ) );
 
-	win->clear();
-
-	Float offsetY = 0;
-	text.draw( 0, 0 );
-	text2.draw( 0, ( offsetY += text.getTextHeight() + 16 ) );
-	text7.draw( 0, ( offsetY += text2.getTextHeight() + 16 ) );
-	text3.draw( 0, ( offsetY += text7.getTextHeight() + 16 ) );
-	text4.draw( 0, ( offsetY += text3.getTextHeight() + 16 ) );
-	text5.draw( 0, ( offsetY += text4.getTextHeight() + 16 ) );
-	text6.draw( 0, ( offsetY += text5.getTextHeight() + 16 ) );
-
 	{
-		Image::FormatConfiguration fconf;
-		fconf.webpSaveLossless( true );
-		Image actualImage = win->getFrontBufferImage();
-		actualImage.setImageFormatConfiguration( fconf );
-		auto saveType = Image::SaveType::WEBP;
-		auto saveExt( Image::saveTypeToExtension( saveType ) );
-		std::string expectedImagePath( "assets/fontrendering/eepp-fonts." + saveExt );
+		const auto runTest = [&]() {
+			win->clear();
 
-		if ( !FileSystem::fileExists( expectedImagePath ) )
-			actualImage.saveToFile( expectedImagePath, saveType );
+			Float offsetY = 0;
+			text.draw( 0, 0 );
+			text2.draw( 0, ( offsetY += text.getTextHeight() + 16 ) );
+			text7.draw( 0, ( offsetY += text2.getTextHeight() + 16 ) );
+			text3.draw( 0, ( offsetY += text7.getTextHeight() + 16 ) );
+			text4.draw( 0, ( offsetY += text3.getTextHeight() + 16 ) );
+			text5.draw( 0, ( offsetY += text4.getTextHeight() + 16 ) );
+			text6.draw( 0, ( offsetY += text5.getTextHeight() + 16 ) );
 
-		Image expectedImage( expectedImagePath );
+			compareImages( utest_state, utest_result, win, "eepp-fonts" );
+		};
 
-		ASSERT_TRUE( expectedImage.getPixelsPtr() != nullptr );
+		UTEST_PRINT_STEP( "Text Shaper disabled" );
+		runTest();
 
-		Image::DiffResult result = actualImage.diff( expectedImage );
-
-		EXPECT_EQ_MSG( expectedImage.getWidth(), actualImage.getWidth(), "Images width not equal" );
-		EXPECT_EQ_MSG( expectedImage.getHeight(), actualImage.getHeight(),
-					   "Images height not equal" );
-		EXPECT_TRUE( result.areSame() );
-
-		if ( !result.areSame() ) {
-			std::cerr << "Test FAILED: " << result.numDifferentPixels << " pixels differ."
-					  << std::endl;
-			std::cerr << "Maximum perceptual difference (Delta E): " << result.maxDeltaE
-					  << std::endl;
-			if ( !FileSystem::fileExists( "output" ) )
-				FileSystem::makeDir( "output" );
-			std::string actualImagePath = "output/eepp-fonts_actual_output." + saveExt;
-			actualImage.saveToFile( actualImagePath, saveType );
-			std::cerr << "Actual image saved to: " << actualImagePath << std::endl;
-			if ( result.diffImage ) {
-				std::string diffImagePath = "output/eepp-fonts_diff_output." + saveExt;
-				result.diffImage->setImageFormatConfiguration( fconf );
-				result.diffImage->saveToFile( diffImagePath, saveType );
-				std::cerr << "Visual diff saved to: " << diffImagePath << std::endl;
-			}
+		UTEST_PRINT_STEP( "Text Shaper enabled" );
+		{
+			BoolScopedOp op( Text::TextShaperEnabled, true );
+			runTest();
 		}
 	}
 
 	Engine::destroySingleton();
+}
+
+UTEST( FontRendering, editorTest ) {
+	const auto runTest = [&]() {
+		UIApplication app(
+			WindowSettings( 1024, 650, "eepp - CodeEditor", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ),
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash() ) );
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+		UICodeEditor* editor = UICodeEditor::New();
+		editor->setPixelsSize( app.getUI()->getPixelsSize() );
+		editor->loadFromFile( "assets/textformat/english.utf8.lf.bom.txt" );
+		SceneManager::instance()->update();
+		SceneManager::instance()->draw();
+		compareImages( utest_state, utest_result, app.getWindow(), "eepp-editor-monospace" );
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	runTest();
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+	}
+}
+
+UTEST( FontRendering, textEditTest ) {
+	const auto runTest = [&]() {
+		UIApplication app(
+			WindowSettings( 1024, 650, "eepp - TextEdit", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ),
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash() ) );
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+		UITextEdit* editor = UITextEdit::New();
+		editor->setPixelsSize( app.getUI()->getPixelsSize() );
+		editor->loadFromFile( "assets/textformat/english.utf8.lf.bom.txt" );
+		SceneManager::instance()->update();
+		SceneManager::instance()->draw();
+		compareImages( utest_state, utest_result, app.getWindow(), "eepp-textedit" );
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	runTest();
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+	}
 }

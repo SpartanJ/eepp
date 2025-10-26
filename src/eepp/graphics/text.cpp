@@ -117,6 +117,12 @@ shapeAndRun( const String& string, FontTrueType* font, Uint32 characterSize, Uin
 		static const hb_feature_t features[] = {
 			hb_feature_t{ HB_TAG( 'k', 'e', 'r', 'n' ), 0, HB_FEATURE_GLOBAL_START,
 						  HB_FEATURE_GLOBAL_END },
+			hb_feature_t{ HB_TAG( 'l', 'i', 'g', 'a' ), 0, HB_FEATURE_GLOBAL_START,
+						  HB_FEATURE_GLOBAL_END },
+			hb_feature_t{ HB_TAG( 'c', 'l', 'i', 'g' ), 0, HB_FEATURE_GLOBAL_START,
+						  HB_FEATURE_GLOBAL_END },
+			hb_feature_t{ HB_TAG( 'd', 'l', 'i', 'g' ), 0, HB_FEATURE_GLOBAL_START,
+						  HB_FEATURE_GLOBAL_END },
 		};
 
 		// whitelist cross-platforms shapers only
@@ -128,7 +134,8 @@ shapeAndRun( const String& string, FontTrueType* font, Uint32 characterSize, Uin
 			break;
 		}
 
-		hb_shape_full( static_cast<hb_font_t*>( font->hb() ), hbBuffer, features, 1, shaper_list );
+		hb_shape_full( static_cast<hb_font_t*>( font->hb() ), hbBuffer, features,
+					   eeARRAY_SIZE( features ), shaper_list );
 
 		// from the shaped text we get the glyphs and positions
 		unsigned int glyphCount;

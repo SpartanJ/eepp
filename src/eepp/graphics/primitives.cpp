@@ -7,21 +7,17 @@
 
 namespace EE { namespace Graphics {
 
-static GlobalBatchRenderer* sBR = NULL;
-
 Primitives::Primitives() :
 	mFillMode( DRAW_FILL ),
 	mBlendMode( BlendMode::Alpha() ),
 	mLineWidth( 1.f ),
 	mForceDraw( true ) {
-	if ( NULL == sBR ) {
-		sBR = GlobalBatchRenderer::instance();
-	}
 }
 
 Primitives::~Primitives() {}
 
 void Primitives::drawPoint( const Vector2f& p, const Float& pointSize ) {
+	auto sBR = GlobalBatchRenderer::instance();
 	sBR->setPointSize( pointSize );
 
 	sBR->setTexture( NULL );
@@ -34,6 +30,7 @@ void Primitives::drawPoint( const Vector2f& p, const Float& pointSize ) {
 }
 
 void Primitives::drawLine( const Line2f& line ) {
+	auto sBR = GlobalBatchRenderer::instance();
 	sBR->setLineWidth( mLineWidth );
 
 	sBR->setTexture( NULL );
@@ -47,6 +44,7 @@ void Primitives::drawLine( const Line2f& line ) {
 
 void Primitives::drawTriangle( const Triangle2f& t, const Color& Color1, const Color& Color2,
 							   const Color& Color3 ) {
+	auto sBR = GlobalBatchRenderer::instance();
 	sBR->setTexture( NULL );
 	sBR->setBlendMode( mBlendMode );
 
@@ -141,6 +139,7 @@ void Primitives::drawArc( const Vector2f& p, const Float& radius, Uint32 segment
 
 	Float angleShift = 360 / static_cast<Float>( segmentsCount );
 	Float arcAngleA = arcAngle > 360 ? arcAngle - 360 * std::floor( arcAngle / 360 ) : arcAngle;
+	auto sBR = GlobalBatchRenderer::instance();
 
 	sBR->setTexture( NULL );
 
@@ -197,6 +196,7 @@ void Primitives::drawArc( const Vector2f& p, const Float& radius, Uint32 segment
 void Primitives::drawRectangle( const Rectf& R, const Color& TopLeft, const Color& BottomLeft,
 								const Color& BottomRight, const Color& TopRight, const Float& Angle,
 								const Vector2f& Scale ) {
+	auto sBR = GlobalBatchRenderer::instance();
 	sBR->setTexture( NULL );
 	sBR->setBlendMode( mBlendMode );
 
@@ -242,6 +242,7 @@ void Primitives::drawRectangle( const Rectf& R, const Float& Angle, const Vector
 }
 
 void Primitives::drawRectangle( const Rectf& R ) {
+	auto sBR = GlobalBatchRenderer::instance();
 	sBR->setTexture( NULL );
 	sBR->setBlendMode( mBlendMode );
 
@@ -269,6 +270,7 @@ void Primitives::drawRoundedRectangle( const Rectf& R, const Color& TopLeft,
 									   const Color& BottomLeft, const Color& BottomRight,
 									   const Color& TopRight, const Float& Angle,
 									   const Vector2f& Scale, const unsigned int& Corners ) {
+	auto sBR = GlobalBatchRenderer::instance();
 	sBR->setTexture( NULL );
 	sBR->setBlendMode( mBlendMode );
 
@@ -356,6 +358,7 @@ void Primitives::drawRoundedRectangle( const Rectf& R, const Float& Angle, const
 void Primitives::drawQuad( const Quad2f& q, const Color& Color1, const Color& Color2,
 						   const Color& Color3, const Color& Color4, const Float& OffsetX,
 						   const Float& OffsetY ) {
+	auto sBR = GlobalBatchRenderer::instance();
 	sBR->setTexture( NULL );
 	sBR->setBlendMode( mBlendMode );
 
@@ -390,6 +393,7 @@ void Primitives::drawQuad( const Quad2f& q, const Float& OffsetX, const Float& O
 }
 
 void Primitives::drawPolygon( const Polygon2f& p ) {
+	auto sBR = GlobalBatchRenderer::instance();
 	sBR->setTexture( NULL );
 	sBR->setBlendMode( mBlendMode );
 
@@ -416,6 +420,7 @@ void Primitives::drawPolygon( const Polygon2f& p ) {
 }
 
 void Primitives::drawBatch() {
+	auto sBR = GlobalBatchRenderer::instance();
 	if ( mForceDraw )
 		sBR->draw();
 	else

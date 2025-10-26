@@ -37,7 +37,13 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 					 displayManager->getDisplayIndex( mWindow->getCurrentDisplayIndex() )
 						 ->getPixelDensity() ) );
 
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	if ( !appSettings.basePath || appSettings.basePath->empty() ) {
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	} else {
+		std::string path( *appSettings.basePath );
+		FileSystem::dirAddSlashAtEnd( path );
+		FileSystem::changeWorkingDirectory( path );
+	}
 
 	mUISceneNode = UISceneNode::New();
 	SceneManager::instance()->add( mUISceneNode );
@@ -78,7 +84,8 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 
 UIApplication::~UIApplication() {
 	Engine::destroySingleton();
-	MemoryManager::showResults();
+	if ( mShowMemoryManagerResult )
+		MemoryManager::showResults();
 }
 
 EE::Window::Window* UIApplication::getWindow() const {
@@ -110,13 +117,23 @@ int UIApplication::run() {
 	return mDidRun ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
-UIApplication::Settings::Settings( std::optional<Float> pixelDensity, bool loadBaseResources,
+UIApplication::Settings::Settings( std::optional<std::string> basePath,
+								   std::optional<Float> pixelDensity, bool loadBaseResources,
 								   Font* baseFont, std::optional<std::string> baseStyleSheetPath,
 								   Font* emojiFont ) :
+	basePath( basePath ),
 	pixelDensity( pixelDensity ),
 	loadBaseResources( loadBaseResources ),
 	baseFont( baseFont ),
 	baseStyleSheetPath( baseStyleSheetPath ),
 	emojiFont( emojiFont ) {}
+
+void UIApplication::setShowMemoryManagerResult( bool show ) {
+	mShowMemoryManagerResult = show;
+}
+
+bool UIApplication::showMemoryManagerResult() const {
+	return mShowMemoryManagerResult;
+}
 
 }} // namespace EE::UI

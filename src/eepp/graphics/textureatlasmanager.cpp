@@ -12,7 +12,9 @@ TextureAtlasManager::TextureAtlasManager() :
 	add( GlobalTextureAtlas::instance() );
 }
 
-TextureAtlasManager::~TextureAtlasManager() {}
+TextureAtlasManager::~TextureAtlasManager() {
+	GlobalTextureAtlas::detachSingleton();
+}
 
 TextureAtlas* TextureAtlasManager::loadFromFile( const std::string& TextureAtlasPath ) {
 	TextureAtlasLoader loader( TextureAtlasPath );
