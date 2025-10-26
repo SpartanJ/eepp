@@ -13,7 +13,7 @@ class UISceneNode;
 
 class EE_API UIApplication {
   public:
-	struct Settings {
+	struct EE_API Settings {
 		Settings() {}
 
 		Settings( std::optional<std::string> basePath, std::optional<Float> pixelDensity = {},
