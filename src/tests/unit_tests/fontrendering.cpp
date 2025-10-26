@@ -191,7 +191,7 @@ UTEST( FontRendering, editorTest ) {
 		UIApplication app(
 			WindowSettings( 1024, 650, "eepp - CodeEditor", WindowStyle::Default,
 							WindowBackend::Default, 32, {}, 1, false, true ),
-			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash() ) );
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 		UICodeEditor* editor = UICodeEditor::New();
 		editor->setPixelsSize( app.getUI()->getPixelsSize() );
@@ -216,7 +216,7 @@ UTEST( FontRendering, textEditTest ) {
 		UIApplication app(
 			WindowSettings( 1024, 650, "eepp - TextEdit", WindowStyle::Default,
 							WindowBackend::Default, 32, {}, 1, false, true ),
-			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash() ) );
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 		UITextEdit* editor = UITextEdit::New();
 		editor->setPixelsSize( app.getUI()->getPixelsSize() );
