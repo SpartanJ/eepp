@@ -978,18 +978,20 @@ void TerminalEmulator::selmove( int n ) {
 }
 
 void TerminalEmulator::selscroll( int top, int n ) {
-	if ( mSel.ob.x == -1 )
+	if ( mSel.ob.x == -1 || mSel.alt != IS_SET( MODE_ALTSCREEN ) )
 		return;
 
-	top += mTerm.scr;
-	int bot = mTerm.bot + mTerm.scr;
-
-	if ( BETWEEN( mSel.nb.y, top, bot ) != BETWEEN( mSel.ne.y, top, bot ) ) {
+	if ( BETWEEN( mSel.nb.y, top, mTerm.bot ) != BETWEEN( mSel.ne.y, top, mTerm.bot ) ) {
 		selclear();
-	} else if ( BETWEEN( mSel.nb.y, top, bot ) ) {
-		selmove( n );
-		if ( mSel.nb.y < top || mSel.ne.y > bot )
+	} else if ( BETWEEN( mSel.nb.y, top, mTerm.bot ) ) {
+		mSel.ob.y += n;
+		mSel.oe.y += n;
+		if ( mSel.ob.y < mTerm.top || mSel.ob.y > mTerm.bot || mSel.oe.y < mTerm.top ||
+			 mSel.oe.y > mTerm.bot ) {
 			selclear();
+		} else {
+			selnormalize();
+		}
 	}
 }
 
@@ -1617,7 +1619,7 @@ void TerminalEmulator::csihandle( void ) {
 					// Extended underline styles - fallback to standard underline
 					DEFAULT( mCsiescseq.arg[0], 1 );
 					switch ( mCsiescseq.arg[0] ) {
- 						/* case 0: // No underline - fallback to ESC[24m
+						/* case 0: // No underline - fallback to ESC[24m
 						{
 							int fallback_args[] = { 24 }; // Reset underline
 							tsetattr( fallback_args, 1 );
@@ -2830,6 +2832,9 @@ bool TerminalEmulator::update() {
 	if ( mStatus == TerminalEmulator::STARTING ) {
 		mStatus = TerminalEmulator::RUNNING;
 	} else if ( mStatus != TerminalEmulator::RUNNING ) {
+		if ( mDirty )
+			draw();
+
 		return true;
 	}
 

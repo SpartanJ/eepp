@@ -845,7 +845,9 @@ void UIBuildSettings::runSetup() {
 							   ->querySelector( "#build_tab_view #run_config_list" )
 							   ->asType<UIDropDownList>();
 
+	auto runName = mConfig.runName;
 	runUpdate( true, runList, panelRunListDDL );
+	mConfig.runName = std::move( runName );
 
 	runList->getListBox()->setSelected( runIndex() );
 	if ( panelRunListDDL )
