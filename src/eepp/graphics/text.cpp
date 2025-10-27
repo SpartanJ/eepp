@@ -115,21 +115,22 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( Text::TextShaperEnabled && font->getType() == FontType::TTF ) {
-		FontTrueType* ttfFont = static_cast<FontTrueType*>( font );
+		FontTrueType* rFont = static_cast<FontTrueType*>( font );
 		shapeAndRun(
-			string, ttfFont, characterSize, style, outlineThickness,
+			string, rFont, characterSize, style, outlineThickness,
 			[&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t* glyphPos, Uint32 glyphCount,
 				 const hb_segment_properties_t& props, TextShapeRun& run ) {
 				bool isRTL = HB_DIRECTION_IS_HORIZONTAL( props.direction ) &&
 							 props.direction == HB_DIRECTION_RTL;
-				FontTrueType* currentFont = run.font();
-				if ( !currentFont )
+				FontTrueType* font = run.font();
+				if ( !font )
 					return true;
 				result.shapedGlyphs.reserve( glyphCount );
 
 				if ( isRTL ) { // For RTL, we trust HarfBuzz positioning completely
 					for ( size_t i = 0; i < glyphCount; ++i ) {
 						ShapedGlyph sg;
+						sg.font = font;
 						sg.glyphIndex = glyphInfo[i].codepoint;
 						sg.stringIndex = run.pos() + glyphInfo[i].cluster;
 						sg.position.x = pen.x + ( glyphPos[i].x_offset / 64.f );
@@ -152,6 +153,7 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 																		: std::optional<Float>{} );
 
 							ShapedGlyph sg;
+							sg.font = font;
 							sg.glyphIndex = glyphInfo[i].codepoint;
 							sg.stringIndex = run.pos() + cluster;
 							sg.position = pen;
@@ -161,16 +163,18 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 							pen.x += advance;
 							continue;
 						}
-						pen.x += ttfFont->getKerningFromGlyphIndex(
+						pen.x += font->getKerningFromGlyphIndex(
 							prevGlyphIndex, glyphInfo[i].codepoint, characterSize, bold, italic,
 							outlineThickness );
 						ShapedGlyph sg;
+						sg.font = font;
 						sg.glyphIndex = glyphInfo[i].codepoint;
 						sg.stringIndex = run.pos() + cluster;
 						sg.position = pen;
 						result.shapedGlyphs.emplace_back( std::move( sg ) );
-						Glyph glyph = ttfFont->getGlyphByIndex(
-							glyphInfo[i].codepoint, characterSize, bold, italic, outlineThickness );
+						Glyph glyph = font->getGlyphByIndex( glyphInfo[i].codepoint, characterSize,
+															 bold, italic, outlineThickness,
+															 rFont->getPage( characterSize ) );
 						pen.x += glyph.advance;
 						prevGlyphIndex = glyphInfo[i].codepoint;
 					}
@@ -602,8 +606,6 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 
 		for ( const ShapedGlyph& sg : layout.shapedGlyphs ) {
 			auto ch = string[sg.stringIndex];
-			FontTrueType* curFont = static_cast<FontTrueType*>( font );
-
 			auto gpos( ( sg.position + pos ).trunc() );
 
 			if ( ch == '\t' ) {
@@ -641,7 +643,7 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 			}
 
 			if ( style & Text::Shadow ) {
-				auto* gds = curFont->getGlyphDrawableFromGlyphIndex(
+				auto* gds = sg.font->getGlyphDrawableFromGlyphIndex(
 					sg.glyphIndex, fontSize, isBold, isItalic, outlineThickness,
 					rFont->getPage( fontSize ) );
 				if ( gds )
@@ -649,14 +651,14 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 			}
 
 			if ( outlineThickness != 0.f ) {
-				auto* gdo = curFont->getGlyphDrawableFromGlyphIndex(
+				auto* gdo = sg.font->getGlyphDrawableFromGlyphIndex(
 					sg.glyphIndex, fontSize, isBold, isItalic, outlineThickness,
 					rFont->getPage( fontSize ) );
 				if ( gdo )
 					drawGlyph( BR, gdo, gpos, outlineColor, isItalic );
 			}
 
-			auto* gd = curFont->getGlyphDrawableFromGlyphIndex(
+			auto* gd = sg.font->getGlyphDrawableFromGlyphIndex(
 				sg.glyphIndex, fontSize, isBold, isItalic, 0, rFont->getPage( fontSize ) );
 			if ( gd ) {
 				drawGlyph( BR, gd, gpos,

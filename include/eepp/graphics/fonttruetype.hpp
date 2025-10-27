@@ -152,6 +152,7 @@ class EE_API FontTrueType : public Font {
 
   protected:
 	friend class Text;
+	friend class TextLayouter;
 
 	explicit FontTrueType( const std::string& FontName );
 

@@ -23,6 +23,7 @@ struct WhitespaceDisplayConfig {
 };
 
 struct ShapedGlyph {
+	FontTrueType* font{ nullptr };
 	Uint32 glyphIndex{ 0 };
 	size_t stringIndex{ 0 };
 	Vector2f position;
