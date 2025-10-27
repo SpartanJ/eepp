@@ -2162,6 +2162,7 @@ void Text::ensureGeometryUpdate() {
 						mLinesWidth.push_back( x );
 
 					x = 0;
+					prevChar = 0;
 					break;
 				case '\r':
 					break;
