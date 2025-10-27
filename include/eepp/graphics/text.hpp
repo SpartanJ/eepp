@@ -10,6 +10,8 @@
 
 namespace EE { namespace Graphics {
 
+class FontTrueType;
+
 enum class CharacterAlignment : Uint32 { Left = 0, Center = 1, Right = 2 };
 
 struct WhitespaceDisplayConfig {
@@ -18,6 +20,71 @@ struct WhitespaceDisplayConfig {
 	CharacterAlignment tabAlign{ CharacterAlignment::Center };
 	Color color;
 	std::optional<Float> tabOffset;
+};
+
+struct ShapedGlyph {
+	Uint32 glyphIndex{ 0 };
+	size_t stringIndex{ 0 };
+	Vector2f position;
+};
+
+struct TextLayout {
+	std::vector<ShapedGlyph> shapedGlyphs;
+	std::vector<Float> linesWidth;
+	Sizef size;
+};
+
+class EE_API TextLayouter {
+  public:
+	static TextLayout layout( const String& string, Font* font, const Uint32& fontSize,
+							  const Uint32& style, const Uint32& tabWidth = 4,
+							  const Float& outlineThickness = 0.f,
+							  std::optional<Float> tabOffset = {}, Uint32 textDrawHints = 0 );
+
+	static TextLayout layout( const String::View& string, Font* font, const Uint32& fontSize,
+							  const Uint32& style, const Uint32& tabWidth = 4,
+							  const Float& outlineThickness = 0.f,
+							  std::optional<Float> tabOffset = {}, Uint32 textDrawHints = 0 );
+
+  protected:
+	template <typename StringType>
+	static TextLayout layout( const StringType& string, Font* font, const Uint32& fontSize,
+							  const Uint32& style, const Uint32& tabWidth = 4,
+							  const Float& outlineThickness = 0.f,
+							  std::optional<Float> tabOffset = {}, Uint32 textDrawHints = 0 );
+};
+
+// helper class that divides the string into lines and font runs.
+class EE_API TextShapeRun {
+  public:
+	TextShapeRun( String::View str, FontTrueType* font, Uint32 characterSize, Uint32 style,
+				  Float outlineThickness );
+
+	String::View curRun() const;
+
+	bool hasNext() const;
+
+	std::size_t pos() const;
+
+	void next();
+
+	bool runIsNewLine() const;
+
+	FontTrueType* font();
+
+  protected:
+	void findNextEnd();
+
+	String::View mString;
+	std::size_t mIndex{ 0 };
+	std::size_t mLen{ 0 };
+	Font* mFont{ nullptr };
+	Uint32 mCharacterSize;
+	Uint32 mStyle;
+	Float mOutlineThickness;
+	Font* mCurFont{ nullptr };
+	Font* mStartFont{ nullptr };
+	bool mIsNewLine{ false };
 };
 
 class EE_API Text {

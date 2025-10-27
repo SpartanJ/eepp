@@ -204,7 +204,7 @@
     },
     "run": [
       {
-        "args": "",
+        "args": "--text-shaper",
         "command": "${project_root}/bin/ecode-debug",
         "name": "ecode-debug",
         "working_dir": "${project_root}/bin"
