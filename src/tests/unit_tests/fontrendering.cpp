@@ -14,6 +14,7 @@
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextedit.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/window/engine.hpp>
 
 #include <iostream>
@@ -193,7 +194,7 @@ UTEST( FontRendering, editorTest ) {
 							WindowBackend::Default, 32, {}, 1, false, true ),
 			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-		UICodeEditor* editor = UICodeEditor::New();
+		auto* editor = UICodeEditor::New();
 		editor->setPixelsSize( app.getUI()->getPixelsSize() );
 		editor->loadFromFile( "assets/textformat/english.utf8.lf.bom.txt" );
 		SceneManager::instance()->update();
@@ -218,12 +219,143 @@ UTEST( FontRendering, textEditTest ) {
 							WindowBackend::Default, 32, {}, 1, false, true ),
 			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-		UITextEdit* editor = UITextEdit::New();
+		auto* editor = UITextEdit::New();
 		editor->setPixelsSize( app.getUI()->getPixelsSize() );
 		editor->loadFromFile( "assets/textformat/english.utf8.lf.bom.txt" );
 		SceneManager::instance()->update();
 		SceneManager::instance()->draw();
 		compareImages( utest_state, utest_result, app.getWindow(), "eepp-textedit" );
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	runTest();
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+	}
+}
+
+UTEST( FontRendering, tabsTest ) {
+	const auto runTest = [&]() {
+		UIApplication app(
+			WindowSettings( 1024, 650, "eepp - Tabs Test", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ),
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+		auto* editor = UICodeEditor::New();
+		editor->setPixelsSize( app.getUI()->getPixelsSize() );
+		editor->loadFromFile( "assets/fontrendering/tabs_test.txt" );
+		SceneManager::instance()->update();
+		SceneManager::instance()->draw();
+		compareImages( utest_state, utest_result, app.getWindow(),
+					   "eepp-editor-monospace-tabs-test" );
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	runTest();
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+	}
+}
+
+UTEST( FontRendering, tabStopTest ) {
+	const auto runTest = [&]() {
+		UIApplication app(
+			WindowSettings( 1024, 650, "eepp - Tab Stop Test", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ),
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+		auto* editor = UICodeEditor::New();
+		editor->setTabStops( true );
+		editor->setPixelsSize( app.getUI()->getPixelsSize() );
+		editor->loadFromFile( "assets/fontrendering/tabs_test.txt" );
+		SceneManager::instance()->update();
+		SceneManager::instance()->draw();
+		compareImages( utest_state, utest_result, app.getWindow(),
+					   "eepp-editor-monospace-tab-stop-test" );
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	runTest();
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+	}
+}
+
+UTEST( FontRendering, tabsTextEditTest ) {
+	const auto runTest = [&]() {
+		UIApplication app(
+			WindowSettings( 1024, 650, "eepp - TextEdit - Tabs Test", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ),
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+		auto* editor = UITextEdit::New();
+		editor->setPixelsSize( app.getUI()->getPixelsSize() );
+		editor->loadFromFile( "assets/fontrendering/tabs_test.txt" );
+		SceneManager::instance()->update();
+		SceneManager::instance()->draw();
+		compareImages( utest_state, utest_result, app.getWindow(), "eepp-text-edit-tabs-test" );
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	runTest();
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+	}
+}
+
+UTEST( FontRendering, tabStopTextEditTest ) {
+	const auto runTest = [&]() {
+		UIApplication app(
+			WindowSettings( 1024, 650, "eepp - TextEdit - Tab Stop Test", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ),
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+		auto* editor = UITextEdit::New();
+		editor->setTabStops( true );
+		editor->setPixelsSize( app.getUI()->getPixelsSize() );
+		editor->loadFromFile( "assets/fontrendering/tabs_test.txt" );
+		SceneManager::instance()->update();
+		SceneManager::instance()->draw();
+		compareImages( utest_state, utest_result, app.getWindow(), "eepp-text-edit-tab-stop-test" );
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	runTest();
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+	}
+}
+
+UTEST( FontRendering, textViewTest ) {
+	const auto runTest = [&]() {
+		UIApplication app( WindowSettings( 1024, 650, "eepp - TextView", WindowStyle::Default,
+										   WindowBackend::Default, 32, {}, 1, false, true ),
+						   UIApplication::Settings(
+							   Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f ) );
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+		auto* view = UITextView::New();
+		view->setPixelsSize( app.getUI()->getPixelsSize() );
+		std::string file;
+		FileSystem::fileGet( "assets/textformat/english.utf8.lf.bom.txt", file );
+		view->setText( file );
+		SceneManager::instance()->update();
+		SceneManager::instance()->draw();
+		compareImages( utest_state, utest_result, app.getWindow(), "eepp-textview" );
 	};
 
 	UTEST_PRINT_STEP( "Text Shaper disabled" );
