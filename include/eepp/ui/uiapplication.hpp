@@ -18,7 +18,8 @@ class EE_API UIApplication {
 
 		Settings( std::optional<std::string> basePath, std::optional<Float> pixelDensity = {},
 				  bool loadBaseResources = true, Font* baseFont = nullptr,
-				  std::optional<std::string> baseStyleSheetPath = {}, Font* emojiFont = nullptr );
+				  std::optional<std::string> baseStyleSheetPath = {}, Font* emojiFont = nullptr,
+				  Font* fallbackFont = nullptr );
 
 		//! By default it will use the current process path as the base path. This will set the
 		//! default working directory.
@@ -37,9 +38,13 @@ class EE_API UIApplication {
 		//! The style sheet path is the path of the base UI theme stylesheet ( will look at
 		//! "assets/ui/breeze.css" by default )
 		std::optional<std::string> baseStyleSheetPath;
-		//! The default emoji font for the UI. If not provided it will load NotoEmoji-Regular ( will
-		//! look at "assets/fonts/NotoEmoji-Regular.ttf" )
+		//! The default emoji font for the UI. If not provided it will load Noto Color Emoji ( it
+		//! will look at "assets/fonts/NotoColorEmoji.ttf" ) otherwise it will try NotoEmoji-Regular
+		//! ( it will look at "assets/fonts/NotoEmoji-Regular.ttf" )
 		Font* emojiFont{ nullptr };
+		//! The default fallback font for the UI. If not provided it will load Droid Sans Fallback
+		//! Full ( it will look at "assets/fonts/DroidSansFallbackFull.ttf" )
+		Font* fallbackFont{ nullptr };
 	};
 
 	UIApplication( const WindowSettings& windowSettings, const Settings& appSettings = Settings(),

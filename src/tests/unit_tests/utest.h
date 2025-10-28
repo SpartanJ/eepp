@@ -1415,7 +1415,7 @@ int utest_main(int argc, const char *const argv[]) {
   size_t skipped_testcases_length = 0;
   const char *filter = UTEST_NULL;
   utest_uint64_t ran_tests = 0;
-  int enable_mixed_units = 0;
+  int enable_mixed_units = 1;
   int random_order = 0;
   utest_uint32_t seed = 0;
 
@@ -1437,7 +1437,7 @@ int utest_main(int argc, const char *const argv[]) {
     /* Test config switches */
     const char filter_str[] = "--filter=";
     const char output_str[] = "--output=";
-    const char enable_mixed_units_str[] = "--enable-mixed-units";
+    const char enable_mixed_units_str[] = "--disable-mixed-units";
     const char random_order_str[] = "--random-order";
     const char random_order_with_seed_str[] = "--random-order=";
 
@@ -1451,7 +1451,7 @@ int utest_main(int argc, const char *const argv[]) {
              "names can be passed to --filter.\n");
       printf("  --output=<output>       Output an xunit XML file to the file "
              "specified in <output>.\n"
-             "  --enable-mixed-units    Enable the per-test output to contain "
+             "  --disable-mixed-units    Disable the per-test output to contain "
              "mixed units (s/ms/us/ns).\n"
              "  --random-order[=<seed>] Randomize the order that the tests are "
              "ran in. If the optional <seed> argument is not provided, then a "
@@ -1472,7 +1472,7 @@ int utest_main(int argc, const char *const argv[]) {
       return 0;
     } else if (0 == UTEST_STRNCMP(argv[index], enable_mixed_units_str,
                                   strlen(enable_mixed_units_str))) {
-      enable_mixed_units = 1;
+      enable_mixed_units = 0;
     } else if (0 == UTEST_STRNCMP(argv[index], random_order_with_seed_str,
                                   strlen(random_order_with_seed_str))) {
       seed =
