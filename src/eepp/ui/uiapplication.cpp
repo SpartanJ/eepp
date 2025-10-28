@@ -67,8 +67,16 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 		FontFamily::loadFromRegular( static_cast<FontTrueType*>( monospaceFont ) );
 	}
 
-	if ( appSettings.emojiFont == nullptr )
-		FontTrueType::New( "NotoEmoji-Regular", "assets/fonts/NotoEmoji-Regular.ttf" );
+	if ( appSettings.emojiFont == nullptr ) {
+		if ( FileSystem::fileExists( "assets/fonts/NotoColorEmoji.ttf" ) )
+			FontTrueType::New( "NotoColorEmoji", "assets/fonts/NotoColorEmoji.ttf" );
+		else if ( FileSystem::fileExists( "assets/fonts/NotoEmoji-Regular.ttf" ) )
+			FontTrueType::New( "NotoEmoji-Regular", "assets/fonts/NotoEmoji-Regular.ttf" );
+	}
+
+	if ( appSettings.fallbackFont == nullptr &&
+		 FileSystem::fileExists( "assets/fonts/DroidSansFallbackFull.ttf" ) )
+		FontTrueType::New( "DroidSansFallbackFull", "assets/fonts/DroidSansFallbackFull.ttf" );
 
 	mUISceneNode->getUIThemeManager()->setDefaultFont( font );
 	mUISceneNode->getRoot()->addClass( "appbackground" );
@@ -120,13 +128,14 @@ int UIApplication::run() {
 UIApplication::Settings::Settings( std::optional<std::string> basePath,
 								   std::optional<Float> pixelDensity, bool loadBaseResources,
 								   Font* baseFont, std::optional<std::string> baseStyleSheetPath,
-								   Font* emojiFont ) :
+								   Font* emojiFont, Font* fallbackFont ) :
 	basePath( basePath ),
 	pixelDensity( pixelDensity ),
 	loadBaseResources( loadBaseResources ),
 	baseFont( baseFont ),
 	baseStyleSheetPath( baseStyleSheetPath ),
-	emojiFont( emojiFont ) {}
+	emojiFont( emojiFont ),
+	fallbackFont( fallbackFont ) {}
 
 void UIApplication::setShowMemoryManagerResult( bool show ) {
 	mShowMemoryManagerResult = show;

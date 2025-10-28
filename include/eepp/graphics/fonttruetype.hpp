@@ -150,6 +150,8 @@ class EE_API FontTrueType : public Font {
 
 	void clearCache();
 
+	Uint32 getGlyphIndex( const Uint32& codePoint ) const;
+
   protected:
 	friend class Text;
 
@@ -192,8 +194,6 @@ class EE_API FontTrueType : public Font {
 	GlyphDrawable* getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex, unsigned int characterSize,
 												   bool bold, bool italic, Float outlineThickness,
 												   Page& page ) const;
-
-	Uint32 getGlyphIndex( const Uint32& codePoint ) const;
 
 	Glyph loadGlyphByIndex( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
 							Float outlineThickness, Page& page ) const;
