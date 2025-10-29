@@ -293,10 +293,11 @@ FontTrueType* TextShapeRun::font() {
 }
 
 void TextShapeRun::findNextEnd() {
+#ifdef EE_TEXT_SHAPER_ENABLED
 	Font* lFont = mStartFont ? mStartFont : mFont;
 	std::size_t len = mString.size();
 	std::size_t pos = 0;
-	Uint32 curScript = 0;
+	hb_script_t curScript = HB_SCRIPT_UNKNOWN;
 
 	for ( std::size_t idx = mIndex; idx < len; ++idx, ++pos ) {
 		auto ch = mString[idx];
@@ -312,6 +313,8 @@ void TextShapeRun::findNextEnd() {
 			mStartFont = font;
 			lFont = font;
 			mCurFont = font;
+			if ( curScript == HB_SCRIPT_COMMON )
+				curScript = HB_SCRIPT_LATIN;
 		}
 
 		// Break run if:
@@ -320,6 +323,7 @@ void TextShapeRun::findNextEnd() {
 		// - Script changed
 		hb_script_t effectiveScript =
 			( script == HB_SCRIPT_COMMON ) ? (hb_script_t)curScript : script;
+
 		if ( mIsNewLine || ( lFont != nullptr && font != lFont ) ||
 			 effectiveScript != curScript ) {
 			mLen = mIsNewLine ? pos + 1 : pos;
@@ -329,10 +333,32 @@ void TextShapeRun::findNextEnd() {
 
 		lFont = font;
 		mCurFont = font;
-		curScript = script;
+		curScript = effectiveScript;
 	}
 
 	mLen = len - mIndex;
+#else
+	Font* lFont = mStartFont;
+	std::size_t len = mString.size();
+	std::size_t idx;
+	std::size_t pos = 0;
+	for ( idx = mIndex; idx < len; idx++, pos++ ) {
+		Font* font = mFont
+						 ->getGlyph( mString[idx], mCharacterSize, mStyle & Text::Bold,
+									 mStyle & Text::Italic, mOutlineThickness )
+						 .font;
+		mIsNewLine = mString[idx] == '\n';
+		if ( mIsNewLine || ( lFont != nullptr && font != lFont ) ) {
+			mCurFont = lFont;
+			mStartFont = font;
+			mLen = mIsNewLine ? pos + 1 : pos;
+			return;
+		}
+		lFont = font;
+		mCurFont = font;
+	}
+	mLen = idx;
+#endif
 }
 
 Float Text::tabAdvance( Float hspace, Uint32 tabWidth, std::optional<Float> tabOffset ) {
