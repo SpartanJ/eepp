@@ -293,26 +293,46 @@ FontTrueType* TextShapeRun::font() {
 }
 
 void TextShapeRun::findNextEnd() {
-	Font* lFont = mStartFont;
+	Font* lFont = mStartFont ? mStartFont : mFont;
 	std::size_t len = mString.size();
-	std::size_t idx;
 	std::size_t pos = 0;
-	for ( idx = mIndex; idx < len; idx++, pos++ ) {
-		Font* font = mFont
-						 ->getGlyph( mString[idx], mCharacterSize, mStyle & Text::Bold,
-									 mStyle & Text::Italic, mOutlineThickness )
-						 .font;
-		mIsNewLine = mString[idx] == '\n';
-		if ( mIsNewLine || ( lFont != nullptr && font != lFont ) ) {
-			mCurFont = lFont;
+	Uint32 curScript = 0;
+
+	for ( std::size_t idx = mIndex; idx < len; ++idx, ++pos ) {
+		auto ch = mString[idx];
+		hb_script_t script = hb_unicode_script( hb_unicode_funcs_get_default(), ch );
+		auto font = mFont
+						->getGlyph( ch, mCharacterSize, mStyle & Text::Bold, mStyle & Text::Italic,
+									mOutlineThickness )
+						.font;
+		mIsNewLine = ( ch == '\n' );
+
+		if ( idx == mIndex ) {
+			curScript = script;
 			mStartFont = font;
+			lFont = font;
+			mCurFont = font;
+		}
+
+		// Break run if:
+		// - Newline
+		// - Font changed
+		// - Script changed
+		hb_script_t effectiveScript =
+			( script == HB_SCRIPT_COMMON ) ? (hb_script_t)curScript : script;
+		if ( mIsNewLine || ( lFont != nullptr && font != lFont ) ||
+			 effectiveScript != curScript ) {
 			mLen = mIsNewLine ? pos + 1 : pos;
+			mCurFont = lFont;
 			return;
 		}
+
 		lFont = font;
 		mCurFont = font;
+		curScript = script;
 	}
-	mLen = idx;
+
+	mLen = len - mIndex;
 }
 
 Float Text::tabAdvance( Float hspace, Uint32 tabWidth, std::optional<Float> tabOffset ) {
@@ -1550,7 +1570,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 					width = 0;
 					lHeight = height;
 					height += vspace;
-					if ( pos.x > width && pos.y <= lHeight ) {
+					if ( pos.x > width && pos.y <= lHeight && glyphCount > 0 ) {
 						nearest = run.pos() + glyphInfo[glyphCount - 1].cluster + 1;
 						return false;
 					}
