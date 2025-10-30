@@ -1279,6 +1279,8 @@ void DebuggerPlugin::replaceKeysInJson(
 		return true;
 	};
 
+	std::vector<std::string> keysToRemove;
+
 	for ( auto& j : json ) {
 		if ( j.is_object() ) {
 			replaceKeysInJson( j, randomPort, solvedInputs );
@@ -1303,9 +1305,13 @@ void DebuggerPlugin::replaceKeysInJson(
 				j = std::move( argsArr );
 				continue;
 			} else if ( runConfig && val == KEY_ENV && buildConfig ) {
-				j = nlohmann::json::object();
-				for ( const auto& env : buildConfig->envs() )
-					j[env.first] = env.second;
+				if ( !buildConfig->envs().empty() ) {
+					j = nlohmann::json::object();
+					for ( const auto& env : buildConfig->envs() )
+						j[env.first] = env.second;
+				} else {
+					keysToRemove.push_back( "env" );
+				}
 			} else if ( val == KEY_STOPONENTRY ) {
 				j = false;
 			} else {
@@ -1328,6 +1334,10 @@ void DebuggerPlugin::replaceKeysInJson(
 					j = std::move( val );
 			}
 		}
+	}
+
+	for ( const auto& key : keysToRemove ) {
+		json.erase( key );
 	}
 }
 
