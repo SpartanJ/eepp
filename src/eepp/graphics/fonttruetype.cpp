@@ -1290,11 +1290,17 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 					}
 				} else if ( characterSize != currentSize &&
 							( result = FT_Set_Pixel_Sizes( face, 0, it->second ) ) == FT_Err_Ok ) {
+#ifdef EE_TEXT_SHAPER_ENABLED
+					hb_ft_font_changed( (hb_font_t*)mHBFont );
+#endif
 					return true;
 				}
 			}
 		}
 
+#ifdef EE_TEXT_SHAPER_ENABLED
+		hb_ft_font_changed( (hb_font_t*)mHBFont );
+#endif
 		return result == FT_Err_Ok;
 	} else {
 		return true;

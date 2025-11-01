@@ -25,8 +25,8 @@ shapeAndRun( const String& string, FontTrueType* font, Uint32 characterSize, Uin
 			 Float outlineThickness,
 			 const std::function<bool( hb_glyph_info_t*, hb_glyph_position_t*, Uint32,
 									   const hb_segment_properties_t&, TextShapeRun& )>& cb ) {
-	hb_buffer_t* hbBuffer = hb_buffer_create();
 	TextShapeRun run( string.view(), font, characterSize, style, outlineThickness );
+	hb_buffer_t* hbBuffer = hb_buffer_create();
 	bool completeRun = true;
 
 	while ( run.hasNext() ) {
@@ -57,7 +57,7 @@ shapeAndRun( const String& string, FontTrueType* font, Uint32 characterSize, Uin
 		};
 
 		// whitelist cross-platforms shapers only
-		static const char* shaper_list[] = { "graphite2", "ot", "fallback", nullptr };
+		static const char* shaper_list[] = { "ot", "graphite2", "fallback", nullptr };
 
 		if ( !font || !font->hb() ) {
 			eeASSERT( font && font->hb() );
@@ -129,15 +129,16 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 
 				if ( isRTL ) { // For RTL, we trust HarfBuzz positioning completely
 					for ( size_t i = 0; i < glyphCount; ++i ) {
+						auto& curGpos = glyphPos[i];
 						ShapedGlyph sg;
 						sg.font = font;
 						sg.glyphIndex = glyphInfo[i].codepoint;
 						sg.stringIndex = run.pos() + glyphInfo[i].cluster;
-						sg.position.x = pen.x + ( glyphPos[i].x_offset / 64.f );
-						sg.position.y = pen.y - ( glyphPos[i].y_offset / 64.f );
+						sg.position.x = pen.x + ( curGpos.x_offset / 64.f );
+						sg.position.y = pen.y - ( curGpos.y_offset / 64.f );
 						result.shapedGlyphs.emplace_back( std::move( sg ) );
-						pen.x += glyphPos[i].x_advance / 64.f;
-						pen.y += glyphPos[i].y_advance / 64.f;
+						pen.x += curGpos.x_advance / 64.f;
+						pen.y += curGpos.y_advance / 64.f;
 					}
 				} else { // For LTR, we use our custom kerning
 					Uint32 prevGlyphIndex = 0;
@@ -313,7 +314,7 @@ void TextShapeRun::findNextEnd() {
 			mStartFont = font;
 			lFont = font;
 			mCurFont = font;
-			if ( curScript == HB_SCRIPT_COMMON )
+			if ( curScript == HB_SCRIPT_COMMON || curScript == HB_SCRIPT_INHERITED )
 				curScript = HB_SCRIPT_LATIN;
 		}
 
@@ -322,10 +323,10 @@ void TextShapeRun::findNextEnd() {
 		// - Font changed
 		// - Script changed
 		hb_script_t effectiveScript =
-			( script == HB_SCRIPT_COMMON ) ? (hb_script_t)curScript : script;
+			( script == HB_SCRIPT_COMMON || script == HB_SCRIPT_INHERITED ) ? (hb_script_t)curScript
+																			: script;
 
-		if ( mIsNewLine || ( lFont != nullptr && font != lFont ) ||
-			 effectiveScript != curScript ) {
+		if ( mIsNewLine || ( lFont != nullptr && font != lFont ) || effectiveScript != curScript ) {
 			mLen = mIsNewLine ? pos + 1 : pos;
 			mCurFont = lFont;
 			return;
