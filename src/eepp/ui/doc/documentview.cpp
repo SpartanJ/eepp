@@ -509,8 +509,8 @@ void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 
 	// Shift the line numbers
 	if ( numLines != 0 ) {
-		Int64 visibleLinesCount = mVisibleLines.size();
-		for ( Int64 i = oldIdxFrom; i < visibleLinesCount; i++ )
+		visibleLinesCount = mVisibleLines.size();
+		for ( Int64 i = oldIdxFrom; i < static_cast<Int64>( visibleLinesCount ); i++ )
 			mVisibleLines[i].setLine( mVisibleLines[i].line() + numLines );
 
 		shiftFoldingRegions( fromLine, numLines );

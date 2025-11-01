@@ -1144,7 +1144,7 @@ void LLMChatUI::doRequest() {
 void LLMChatUI::toggleEnableChat( UIWidget* chat, bool enabled ) {
 	chat->findByClass( "role_ui" )->setEnabled( enabled );
 	UICodeEditor* editor = chat->findByClass( "data_ui" )->asType<UICodeEditor>();
-	editor->setEnabled( enabled );
+	// editor->setEnabled( enabled );
 	editor->setLocked( !enabled );
 	chat->findByClass( "erase_but" )->setEnabled( enabled );
 	chat->findByClass( "move_up" )->setEnabled( enabled );
