@@ -28,6 +28,10 @@ class LSPClientServerManager;
 
 class LSPClientServer {
   public:
+	static void sanitizeCommand( std::string& cmd, const std::string& workspaceFolder );
+
+	static void sanitizeCommand( nlohmann::json& jsonObj, const std::string& workspaceFolder );
+
 	static PluginIDType getID( const json& json );
 
 	using IdType = PluginIDType;
@@ -146,6 +150,9 @@ class LSPClientServer {
 	bool hasDocumentClient( LSPDocumentClient* client ) const;
 
 	bool hasDocuments() const;
+
+	LSPRequestHandle didChangeConfiguration( const nlohmann::json& settings,
+											 const std::string& workspaceFolder, bool async );
 
 	LSPRequestHandle didChangeWorkspaceFolders( const std::vector<LSPWorkspaceFolder>& added,
 												const std::vector<LSPWorkspaceFolder>& removed,

@@ -297,17 +297,6 @@ static LSPURIAndServer getServerURIFromTextDocumentURI( LSPClientServerManager& 
 	return { uri, manager.getOneLSPClientServer( uri ) };
 }
 
-static void sanitizeCommand( std::string& cmd, const std::string& workspaceFolder ) {
-	static std::string cpucount( String::toString( Sys::getCPUCount() ) );
-	static std::string userdir = Sys::getUserDirectory();
-	String::replaceAll( cmd, "$NPROC", cpucount );
-	String::replaceAll( cmd, "${nproc}", cpucount );
-	String::replaceAll( cmd, "$PROJECTPATH", workspaceFolder );
-	String::replaceAll( cmd, "${project_root}", workspaceFolder );
-	String::replaceAll( cmd, "$HOME", userdir );
-	String::replaceAll( cmd, "${home}", userdir );
-}
-
 LSPPositionAndServer getLSPLocationFromJSON( LSPClientServerManager& manager, const json& data ) {
 	if ( !data.contains( "uri" ) || !data.contains( "position" ) )
 		return {};
@@ -972,7 +961,7 @@ static std::string parseCommand( nlohmann::json cmd, const std::string& workspac
 				command = cmd[platform].get<std::string>();
 		}
 	}
-	sanitizeCommand( command, workspaceFolder );
+	LSPClientServer::sanitizeCommand( command, workspaceFolder );
 	return command;
 }
 
@@ -1144,7 +1133,8 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			   ( obj.contains( "command_parameters" ) &&
 				 obj.at( "command_parameters" ).is_string() ) ||
 			   ( obj.contains( "host" ) && obj.at( "host" ).is_string() &&
-				 obj.contains( "port " ) && obj.at( "port" ).is_number_integer() ) ) ) {
+				 obj.contains( "port " ) && obj.at( "port" ).is_number_integer() ) ||
+			   obj.contains( "settings" ) || obj.contains( "initializationOptions" ) ) ) {
 			for ( auto& lspR : lsps ) {
 				std::string name = obj.contains( "name" ) ? obj["name"] : obj["use"];
 				if ( lspR.name == name ) {
@@ -1163,11 +1153,18 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 						if ( !cmdParam.empty() && cmdParam.front() != ' ' )
 							cmdParam = " " + cmdParam;
 						lspR.commandParameters += cmdParam;
-						sanitizeCommand( lspR.commandParameters, mManager->getWorkspaceFolder() );
+						LSPClientServer::sanitizeCommand( lspR.commandParameters,
+														  mManager->getWorkspaceFolder() );
 					}
 					if ( obj.contains( "host" ) ) {
 						lspR.host = obj.value( "host", "" );
 						lspR.port = obj.value( "port", 0 );
+					}
+					if ( obj.contains( "settings" ) ) {
+						lspR.settings = obj["settings"];
+					}
+					if ( obj.contains( "initializationOptions" ) ) {
+						lspR.initializationOptions = obj["initializationOptions"];
 					}
 					tryAddEnv( obj, lspR );
 				}
@@ -1202,6 +1199,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 					lsp.host = tlsp.host;
 					lsp.port = tlsp.port;
 					lsp.initializationOptions = tlsp.initializationOptions;
+					lsp.settings = tlsp.settings;
 					lsp.extraTriggerChars = tlsp.extraTriggerChars;
 					lsp.usesLSP = use;
 					if ( obj.contains( "share_process" ) && obj["share_process"].is_boolean() ) {
@@ -1233,8 +1231,12 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		}
 
 		lsp.commandParameters = obj.value( "command_parameters", lsp.commandParameters );
+
 		if ( obj.contains( "initializationOptions" ) )
 			lsp.initializationOptions = obj["initializationOptions"];
+
+		if ( obj.contains( "settings" ) )
+			lsp.settings = obj["settings"];
 
 		auto& fp = obj["file_patterns"];
 
@@ -1257,8 +1259,8 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			}
 		}
 
-		sanitizeCommand( lsp.command, mManager->getWorkspaceFolder() );
-		sanitizeCommand( lsp.commandParameters, mManager->getWorkspaceFolder() );
+		LSPClientServer::sanitizeCommand( lsp.command, mManager->getWorkspaceFolder() );
+		LSPClientServer::sanitizeCommand( lsp.commandParameters, mManager->getWorkspaceFolder() );
 
 		tryAddEnv( obj, lsp );
 

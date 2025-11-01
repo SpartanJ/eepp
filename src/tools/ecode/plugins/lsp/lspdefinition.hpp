@@ -26,6 +26,7 @@ struct LSPDefinition {
 	std::unordered_map<std::string, std::string> languageIdsForFilePatterns;
 	int port{ 0 };
 	nlohmann::json initializationOptions;
+	nlohmann::json settings;
 
 	std::string usesLSP;
 	bool shareProcessWithOtherDefinition{ false };

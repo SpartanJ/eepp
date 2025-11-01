@@ -1,6 +1,7 @@
 #include "utest.hpp"
 
 #include <eepp/graphics/fontbmfont.hpp>
+#include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fontsprite.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/image.hpp>
@@ -366,4 +367,23 @@ UTEST( FontRendering, textViewTest ) {
 		BoolScopedOp op( Text::TextShaperEnabled, true );
 		runTest();
 	}
+}
+
+UTEST( FontRendering, textEditBengaliTest ) {
+	BoolScopedOp op( Text::TextShaperEnabled, true );
+	UIApplication app(
+		WindowSettings( 1024, 650, "eepp - TextEdit Bengali", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	FontTrueType* bengaliFont = FontTrueType::New( "NotoSerifBengali-Regular",
+												   "assets/fonts/NotoSerifBengali-Regular.ttf" );
+	FontManager::instance()->addFallbackFont( bengaliFont );
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	auto* editor = UITextEdit::New();
+	editor->setPixelsSize( app.getUI()->getPixelsSize() );
+	editor->loadFromFile( "assets/textfiles/test-bengali.uext" );
+	SceneManager::instance()->update();
+	SceneManager::instance()->draw();
+	compareImages( utest_state, utest_result, app.getWindow(), "eepp-textedit-bengali" );
 }

@@ -538,25 +538,26 @@ PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notificat
 		 notification.format != PluginMessageFormat::Diagnostics )
 		return PluginRequestHandle::empty();
 	const auto& diags = notification.asDiagnostics();
-	TextDocument* doc = getDocumentFromURI( diags.uri );
-	if ( doc == nullptr ||
-		 mLSPLanguagesDisabled.find( String::toLower( doc->getSyntaxDefinition().getLSPName() ) ) !=
-			 mLSPLanguagesDisabled.end() )
-		return PluginRequestHandle::empty();
-
 	std::map<Int64, std::vector<LinterMatch>> matches;
+	TextDocument* doc = getDocumentFromURI( diags.uri );
+	{
+		Lock l( mDocMutex );
+		if ( doc == nullptr || mLSPLanguagesDisabled.find(
+								   String::toLower( doc->getSyntaxDefinition().getLSPName() ) ) !=
+								   mLSPLanguagesDisabled.end() )
+			return PluginRequestHandle::empty();
 
-	for ( const auto& diag : diags.diagnostics ) {
-		LinterMatch match;
-		match.range = diag.range;
-		match.text = diag.message;
-		match.type = getLinterTypeFromSeverity( diag.severity );
-		match.lineHash = doc->getLineHash( match.range.start().line() );
-		match.origin = MatchOrigin::Diagnostics;
-		match.diagnostic = std::move( diag );
-		matches[match.range.start().line()].emplace_back( std::move( match ) );
+		for ( const auto& diag : diags.diagnostics ) {
+			LinterMatch match;
+			match.range = diag.range;
+			match.text = diag.message;
+			match.type = getLinterTypeFromSeverity( diag.severity );
+			match.lineHash = doc->getLineHash( match.range.start().line() );
+			match.origin = MatchOrigin::Diagnostics;
+			match.diagnostic = std::move( diag );
+			matches[match.range.start().line()].emplace_back( std::move( match ) );
+		}
 	}
-
 	setMatches( doc, MatchOrigin::Diagnostics, matches );
 	return PluginRequestHandle::empty();
 }

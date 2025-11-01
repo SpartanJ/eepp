@@ -117,6 +117,11 @@ void LSPClientServerManager::tryRunServer( const std::shared_ptr<TextDocument>& 
 				if ( ( server = serverUP.get() ) ) {
 					mClients[id] = std::move( serverUP );
 					if ( server->isRunning() ) {
+						if ( !server->getDefinition().settings.empty() ) {
+							server->didChangeConfiguration( server->getDefinition().settings,
+															rootPath, true );
+						}
+
 						if ( !mLSPWorkspaceFolder.uri.empty() )
 							server->didChangeWorkspaceFolders( { mLSPWorkspaceFolder }, {}, true );
 					} else {
@@ -488,6 +493,11 @@ void LSPClientServerManager::didChangeWorkspaceFolders( const std::string& folde
 	std::vector<LSPWorkspaceFolder> newWorkspaceFolder = { mLSPWorkspaceFolder };
 	Lock l( mClientsMutex );
 	for ( auto& server : mClients ) {
+		if ( !server.second->getDefinition().settings.empty() ) {
+			server.second->didChangeConfiguration( server.second->getDefinition().settings, folder,
+												   true );
+		}
+
 		server.second->didChangeWorkspaceFolders( newWorkspaceFolder, oldLSPWorkspaceFolder, true );
 		if ( server.second->getCapabilities().diagnosticProvider.workspaceDiagnostics ) {
 			mPlugin->getManager()->sendRequest( PluginMessageType::WorkspaceDiagnostic,

@@ -14,6 +14,35 @@
 
 namespace ecode {
 
+void LSPClientServer::sanitizeCommand( std::string& cmd, const std::string& workspaceFolder ) {
+	static std::string cpucount( String::toString( Sys::getCPUCount() ) );
+	static std::string userdir = Sys::getUserDirectory();
+	String::replaceAll( cmd, "$NPROC", cpucount );
+	String::replaceAll( cmd, "${nproc}", cpucount );
+	String::replaceAll( cmd, "$PROJECTPATH", workspaceFolder );
+	String::replaceAll( cmd, "${project_root}", workspaceFolder );
+	String::replaceAll( cmd, "${workspaceFolder}", workspaceFolder );
+	String::replaceAll( cmd, "$HOME", userdir );
+	String::replaceAll( cmd, "${home}", userdir );
+}
+
+void LSPClientServer::sanitizeCommand( nlohmann::json& jsonObj,
+									   const std::string& workspaceFolder ) {
+	if ( jsonObj.is_string() ) {
+		std::string s = jsonObj.get<std::string>();
+		sanitizeCommand( s, workspaceFolder );
+		jsonObj = s; // Assign the modified string back to the JSON object
+	} else if ( jsonObj.is_object() ) {
+		for ( auto& el : jsonObj.items() ) {
+			sanitizeCommand( el.value(), workspaceFolder );
+		}
+	} else if ( jsonObj.is_array() ) {
+		for ( auto& el : jsonObj ) {
+			sanitizeCommand( el, workspaceFolder );
+		}
+	}
+}
+
 #define CONTENT_LENGTH "Content-Length"
 #define CONTENT_LENGTH_HEADER "Content-Length:"
 
@@ -201,6 +230,12 @@ static std::vector<LSPLocation> parseDocumentLocation( const json& result ) {
 	} else if ( result.is_object() ) {
 		ret.push_back( parseLocation( result ) );
 	}
+	return ret;
+}
+
+static json changeConfigurationParams( const json& settings ) {
+	json ret;
+	ret["settings"] = settings;
 	return ret;
 }
 
@@ -1164,6 +1199,7 @@ void LSPClientServer::initialize() {
 			  { "formatting", json{ { "dynamicRegistration", true } } },
 			  { "rangeFormatting", json{ { "dynamicRegistration", true } } },
 			  { "codeLens", json{ { "dynamicRegistration", true } } },
+			  { "didChangeConfiguration", json{ { "dynamicRegistration", true } } },
 		  } },
 		{ "window", json{ { "workDoneProgress", true },
 						  { "showMessage", showMessage },
@@ -1219,7 +1255,10 @@ void LSPClientServer::initialize() {
 #endif
 			mCapabilities.languages = mLanguagesSupported;
 			mReady = true;
-			write( newRequest( "initialized" ) );
+			write( newRequest( "initialized" ), [this]( const IdType&, const json& ) {
+				if ( !mLSP.settings.empty() )
+					didChangeConfiguration( mLSP.settings, mWorkspaceFolder.getFSPath(), true );
+			} );
 			sendQueuedMessages();
 			notifyServerInitialized();
 
@@ -2228,6 +2267,19 @@ void LSPClientServer::switchSourceHeader( const URI& document ) {
 				mManager->goToLocation( { res.get<std::string>(), TextRange() } );
 			}
 		} );
+}
+
+LSPClientServer::LSPRequestHandle
+LSPClientServer::didChangeConfiguration( const nlohmann::json& settings,
+										 const std::string& workspaceFolder, bool async ) {
+	auto finalSettings = settings;
+	sanitizeCommand( finalSettings, workspaceFolder );
+	auto params = changeConfigurationParams( finalSettings );
+	if ( async && needsAsync() ) {
+		sendAsync( newRequest( "workspace/didChangeConfiguration", params ) );
+		return {};
+	}
+	return send( newRequest( "workspace/didChangeConfiguration", params ) );
 }
 
 LSPClientServer::LSPRequestHandle

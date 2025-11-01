@@ -154,7 +154,7 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 	border-top-right-radius: 0dp;
 }
 #check_for_updates .check_at_startup {
-	margin: 6dp 0dp 6p 0dp;
+	margin: 6dp 0dp 6dp 0dp;
 }
 #project_view_empty {
 	padding-top: 8dp;
@@ -187,6 +187,12 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 }
 #status_bar > .status_but:last-child {
 	border-right-color: transparent;
+}
+#status_bar > #ai_assistant_but.status_but {
+	padding: 0dp 4dp 0dp 6dp;
+}
+#status_bar > #ai_assistant_but.status_but > PushButton::icon {
+	margin-right: 0dp;
 }
 .vertical_bar {
 	background-color: var(--list-back);
