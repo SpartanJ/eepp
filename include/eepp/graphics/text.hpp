@@ -25,7 +25,7 @@ struct WhitespaceDisplayConfig {
 struct ShapedGlyph {
 	FontTrueType* font{ nullptr };
 	Uint32 glyphIndex{ 0 };
-	size_t stringIndex{ 0 };
+	Uint32 stringIndex{ 0 };
 	Vector2f position;
 };
 
@@ -91,6 +91,7 @@ class EE_API TextShapeRun {
 class EE_API Text {
   public:
 	static bool TextShaperEnabled;
+	static bool TextShaperOptimizations;
 	static Uint32 GlobalInvalidationId;
 
 	enum Style {
@@ -166,14 +167,16 @@ class EE_API Text {
 									   const Uint32& fontSize, const String& string,
 									   const Uint32& style, const Uint32& tabWidth = 4,
 									   const Float& outlineThickness = 0.f,
-									   std::optional<Float> tabOffset = {} );
+									   std::optional<Float> tabOffset = {},
+									   Uint32 textDrawHints = 0 );
 
 	static Vector2f findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
 									  const String& string, const Uint32& style,
 									  const Uint32& tabWidth = 4,
 									  const Float& outlineThickness = 0.f,
 									  std::optional<Float> tabOffset = {},
-									  bool allowNewLine = true );
+									  bool allowNewLine = true,
+									  Uint32 textDrawHints = 0 );
 
 	static std::size_t findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
 													const String& string, Float maxWidth,
