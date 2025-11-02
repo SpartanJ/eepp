@@ -1,7 +1,7 @@
-#include "eepp/ui/uithememanager.hpp"
 #include "utest.hpp"
 
 #include <eepp/graphics/fontbmfont.hpp>
+#include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fontsprite.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
@@ -17,6 +17,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uitextview.hpp>
+#include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/engine.hpp>
 
 #include <iostream>
@@ -52,7 +53,10 @@ static void compareImages( utest_state_s& utest_state, int* utest_result, EE::Wi
 	EXPECT_TRUE( result.areSame() );
 	if ( !result.areSame() ) {
 		auto saveExt( Image::saveTypeToExtension( saveType ) );
-		std::string withTextShaper = Text::TextShaperEnabled ? "_text_shape" : "";
+		std::string withTextShaper =
+			Text::TextShaperEnabled
+				? ( Text::TextShaperOptimizations ? "_text_shape_no_opt" : "_text_shape" )
+				: "";
 		std::cerr << "Test FAILED: " << result.numDifferentPixels << " pixels differ." << std::endl;
 		std::cerr << "Maximum perceptual difference (Delta E): " << result.maxDeltaE << std::endl;
 		if ( !FileSystem::fileExists( "output" ) )
@@ -183,6 +187,10 @@ UTEST( FontRendering, fontsTest ) {
 		{
 			BoolScopedOp op( Text::TextShaperEnabled, true );
 			runTest();
+
+			UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+			BoolScopedOp op2( Text::TextShaperOptimizations, false );
+			runTest();
 		}
 	}
 
@@ -211,6 +219,10 @@ UTEST( FontRendering, editorTest ) {
 	{
 		BoolScopedOp op( Text::TextShaperEnabled, true );
 		runTest();
+
+		UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
+		runTest();
 	}
 }
 
@@ -236,6 +248,10 @@ UTEST( FontRendering, textEditTest ) {
 	{
 		BoolScopedOp op( Text::TextShaperEnabled, true );
 		runTest();
+
+		UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
+		runTest();
 	}
 }
 
@@ -248,7 +264,7 @@ UTEST( FontRendering, tabsTest ) {
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 		auto* editor = UICodeEditor::New();
 		editor->setPixelsSize( app.getUI()->getPixelsSize() );
-		editor->loadFromFile( "assets/fontrendering/tabs_test.txt" );
+		editor->loadFromFile( "assets/textfiles/test-tabs.txt" );
 		SceneManager::instance()->update();
 		SceneManager::instance()->draw();
 		compareImages( utest_state, utest_result, app.getWindow(),
@@ -261,6 +277,10 @@ UTEST( FontRendering, tabsTest ) {
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	{
 		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+
+		UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
 		runTest();
 	}
 }
@@ -275,7 +295,7 @@ UTEST( FontRendering, tabStopTest ) {
 		auto* editor = UICodeEditor::New();
 		editor->setTabStops( true );
 		editor->setPixelsSize( app.getUI()->getPixelsSize() );
-		editor->loadFromFile( "assets/fontrendering/tabs_test.txt" );
+		editor->loadFromFile( "assets/textfiles/test-tabs.txt" );
 		SceneManager::instance()->update();
 		SceneManager::instance()->draw();
 		compareImages( utest_state, utest_result, app.getWindow(),
@@ -289,6 +309,10 @@ UTEST( FontRendering, tabStopTest ) {
 	{
 		BoolScopedOp op( Text::TextShaperEnabled, true );
 		runTest();
+
+		UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
+		runTest();
 	}
 }
 
@@ -301,7 +325,7 @@ UTEST( FontRendering, tabsTextEditTest ) {
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 		auto* editor = UITextEdit::New();
 		editor->setPixelsSize( app.getUI()->getPixelsSize() );
-		editor->loadFromFile( "assets/fontrendering/tabs_test.txt" );
+		editor->loadFromFile( "assets/textfiles/test-tabs.txt" );
 		SceneManager::instance()->update();
 		SceneManager::instance()->draw();
 		compareImages( utest_state, utest_result, app.getWindow(), "eepp-text-edit-tabs-test" );
@@ -313,6 +337,10 @@ UTEST( FontRendering, tabsTextEditTest ) {
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	{
 		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+
+		UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
 		runTest();
 	}
 }
@@ -327,7 +355,7 @@ UTEST( FontRendering, tabStopTextEditTest ) {
 		auto* editor = UITextEdit::New();
 		editor->setTabStops( true );
 		editor->setPixelsSize( app.getUI()->getPixelsSize() );
-		editor->loadFromFile( "assets/fontrendering/tabs_test.txt" );
+		editor->loadFromFile( "assets/textfiles/test-tabs.txt" );
 		SceneManager::instance()->update();
 		SceneManager::instance()->draw();
 		compareImages( utest_state, utest_result, app.getWindow(), "eepp-text-edit-tab-stop-test" );
@@ -339,6 +367,10 @@ UTEST( FontRendering, tabStopTextEditTest ) {
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	{
 		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+
+		UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
 		runTest();
 	}
 }
@@ -367,6 +399,10 @@ UTEST( FontRendering, textViewTest ) {
 	{
 		BoolScopedOp op( Text::TextShaperEnabled, true );
 		runTest();
+
+		UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
+		runTest();
 	}
 }
 
@@ -377,8 +413,8 @@ UTEST( FontRendering, textEditBengaliTest ) {
 						WindowBackend::Default, 32, {}, 1, false, true ),
 		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-	FontTrueType* bengaliFont = FontTrueType::New( "NotoSerifBengali-Regular",
-												   "assets/fonts/NotoSerifBengali-Regular.ttf" );
+	FontTrueType* bengaliFont =
+		FontTrueType::New( "NotoSansBengali-Regular", "assets/fonts/NotoSansBengali-Regular.ttf" );
 	FontManager::instance()->addFallbackFont( bengaliFont );
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	auto* editor = UITextEdit::New();
@@ -395,6 +431,8 @@ UTEST( FontRendering, textSizes ) {
 						WindowBackend::Default, 32, {}, 1, false, true ) );
 
 	ASSERT_TRUE_MSG( win->isOpen(), "Failed to create Window" );
+
+	Text::TextShaperEnabled = false;
 
 	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
@@ -417,6 +455,12 @@ UTEST( FontRendering, textSizes ) {
 		EXPECT_EQ( 96, size.getHeight() );
 		EXPECT_EQ( 445, Text::getTextWidth( txt, config ) );
 
+		Vector2i topPos{ 120, 0 };
+		EXPECT_EQ( 19, Text::findCharacterFromPos( topPos, true, config.Font, config.CharacterSize,
+												   txt, 0 ) );
+		EXPECT_EQ( 19, Text::findCharacterFromPos( topPos, false, config.Font, config.CharacterSize,
+												   txt, 0 ) );
+
 		Vector2i startPos{ 120, 7 };
 		EXPECT_EQ( 19, Text::findCharacterFromPos( startPos, true, config.Font,
 												   config.CharacterSize, txt, 0 ) );
@@ -427,7 +471,7 @@ UTEST( FontRendering, textSizes ) {
 		EXPECT_EQ( 242, Text::findCharacterFromPos( middlePos, true, config.Font,
 													config.CharacterSize, txt, 0 ) );
 		EXPECT_EQ( 242, Text::findCharacterFromPos( middlePos, false, config.Font,
-												   config.CharacterSize, txt, 0 ) );
+													config.CharacterSize, txt, 0 ) );
 
 		Vector2i endPos{ 120, 103 };
 		EXPECT_EQ( 395, Text::findCharacterFromPos( endPos, true, config.Font, config.CharacterSize,
@@ -436,6 +480,8 @@ UTEST( FontRendering, textSizes ) {
 												   txt, 0 ) );
 
 		EXPECT_EQ( 18ul, Text::findLastCharPosWithinLength( txt, 120, config ) );
+		EXPECT_EQ( 446ul, Text::findLastCharPosWithinLength( txt, 1000, config ) );
+
 		Vector2f pos = Text::findCharacterPos( 19, config.Font, config.CharacterSize, txt, 0 );
 		EXPECT_EQ( 120, pos.x );
 		EXPECT_EQ( 0, pos.y );
@@ -466,6 +512,90 @@ UTEST( FontRendering, textSizes ) {
 		BoolScopedOp op( Text::TextShaperEnabled, true );
 		runTest();
 	}
+
+	UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
+		runTest();
+	}
+
+	Engine::destroySingleton();
+}
+
+UTEST( FontRendering, textStyles ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 230, "eepp - Text Styles", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ) );
+
+	ASSERT_TRUE_MSG( win->isOpen(), "Failed to create Window" );
+
+	Text::TextShaperEnabled = false;
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	FontFamily::loadFromRegular( font );
+
+	win->setClearColor( RGB( 255, 255, 255 ) );
+
+	FontStyleConfig config;
+	config.Font = font;
+	config.FontColor = Color::Black;
+	config.CharacterSize = 20;
+	config.OutlineColor = Color::Black;
+	config.ShadowColor = Color::lightgray;
+
+	String txt( "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod\n"
+				"tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,\n"
+				"quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo\n"
+				"consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse\n"
+				"cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non\n"
+				"proident, sunt in culpa qui officia deserunt mollit anim id est laborum." );
+
+	const auto runTest = [&]( std::string_view styleName, Uint32 textAlign ) {
+		win->clear();
+		Text text;
+		text.setStyleConfig( config );
+		text.setString( txt );
+		text.setAlign( textAlign );
+		text.draw( 32, 32 );
+		compareImages( utest_state, utest_result, win, "eepp-text-style-" + styleName );
+	};
+
+	const auto runTestSuite = [&]( Uint32 style, std::string_view styleName,
+								   Uint32 textAlign = TEXT_ALIGN_LEFT ) {
+		config.Style = style;
+
+		UTEST_PRINT_STEP( styleName.data() );
+		UTEST_PRINT_STEP( "	Text Shaper disabled" );
+		runTest( styleName, textAlign );
+
+		UTEST_PRINT_STEP( "	Text Shaper enabled" );
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest( styleName, textAlign );
+
+		UTEST_PRINT_STEP( "	Text Shaper enabled w/o optimizations" );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
+		runTest( styleName, textAlign );
+	};
+
+	runTestSuite( Text::Regular, "regular" );
+	runTestSuite( Text::Bold, "bold" );
+	runTestSuite( Text::Italic, "italic" );
+	runTestSuite( Text::Underlined, "underline" );
+	runTestSuite( Text::StrikeThrough, "strikethrough" );
+	runTestSuite( Text::Shadow, "shadow" );
+	config.FontColor = Color::White;
+	config.OutlineThickness = 1;
+	runTestSuite( Text::Regular, "outline" );
+	config.FontColor = Color::Black;
+	config.OutlineThickness = 0;
+	runTestSuite( Text::Regular, "regular-center", TEXT_ALIGN_CENTER );
+	runTestSuite( Text::Regular, "regular-right", TEXT_ALIGN_RIGHT );
+	runTestSuite( Text::Underlined, "underline-center", TEXT_ALIGN_CENTER );
+	runTestSuite( Text::Underlined, "underline-right", TEXT_ALIGN_RIGHT );
+	runTestSuite( Text::StrikeThrough, "strikethrough-center", TEXT_ALIGN_CENTER );
+	runTestSuite( Text::StrikeThrough, "strikethrough-right", TEXT_ALIGN_RIGHT );
 
 	Engine::destroySingleton();
 }

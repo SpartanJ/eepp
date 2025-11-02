@@ -540,11 +540,13 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	size_t characterWidth( const String& str ) const;
 
-	Float getTextWidth( const String& text, std::optional<Float> tabOffset = {} ) const;
+	Float getTextWidth( const String& text, std::optional<Float> tabOffset = {},
+						Uint32 textHints = 0 ) const;
 
 	size_t characterWidth( const String::View& str ) const;
 
-	Float getTextWidth( const String::View& text, std::optional<Float> tabOffset ) const;
+	Float getTextWidth( const String::View& text, std::optional<Float> tabOffset,
+						Uint32 textHints = 0 ) const;
 
 	Float getLineHeight() const;
 
@@ -1131,13 +1133,13 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	template <typename StringType>
 	Float getTextWidth( const StringType& text, bool fromMonospaceLine,
-						std::optional<Float> tabOffset ) const;
+						std::optional<Float> tabOffset, Uint32 textHints = 0 ) const;
 
-	Float getTextWidth( const String& text, bool fromMonospaceLine,
-						std::optional<Float> tabOffset ) const;
+	Float getTextWidth( const String& text, bool fromMonospaceLine, std::optional<Float> tabOffset,
+						Uint32 textHints = 0 ) const;
 
 	Float getTextWidth( const String::View& text, bool fromMonospaceLine,
-						std::optional<Float> tabOffset ) const;
+						std::optional<Float> tabOffset, Uint32 textHints = 0 ) const;
 
 	void updateIMELocation();
 
