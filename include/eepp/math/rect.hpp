@@ -79,6 +79,8 @@ template <typename T> class tRECT {
 
 	T getHeight() const;
 
+	void normalize();
+
 	tRECT<T> ceil() const;
 
 	tRECT<T> floor() const;
@@ -263,6 +265,11 @@ template <typename T> Vector2<T> tRECT<T>::getCenter() const {
 
 template <typename T> tSize<T> tRECT<T>::getSize() const {
 	return tSize<T>( eeabs( Right - Left ), eeabs( Bottom - Top ) );
+}
+
+template <typename T> void tRECT<T>::normalize() {
+	if ( Left > Right ) std::swap( Left, Right );
+	if ( Top > Bottom ) std::swap( Top, Bottom );
 }
 
 template <typename T> T tRECT<T>::getWidth() const {

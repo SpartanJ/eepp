@@ -264,7 +264,7 @@ UTEST( FontRendering, tabsTest ) {
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 		auto* editor = UICodeEditor::New();
 		editor->setPixelsSize( app.getUI()->getPixelsSize() );
-		editor->loadFromFile( "assets/fontrendering/tabs_test.txt" );
+		editor->loadFromFile( "assets/textfiles/test-tabs.txt" );
 		SceneManager::instance()->update();
 		SceneManager::instance()->draw();
 		compareImages( utest_state, utest_result, app.getWindow(),
@@ -295,7 +295,7 @@ UTEST( FontRendering, tabStopTest ) {
 		auto* editor = UICodeEditor::New();
 		editor->setTabStops( true );
 		editor->setPixelsSize( app.getUI()->getPixelsSize() );
-		editor->loadFromFile( "assets/fontrendering/tabs_test.txt" );
+		editor->loadFromFile( "assets/textfiles/test-tabs.txt" );
 		SceneManager::instance()->update();
 		SceneManager::instance()->draw();
 		compareImages( utest_state, utest_result, app.getWindow(),
@@ -325,7 +325,7 @@ UTEST( FontRendering, tabsTextEditTest ) {
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 		auto* editor = UITextEdit::New();
 		editor->setPixelsSize( app.getUI()->getPixelsSize() );
-		editor->loadFromFile( "assets/fontrendering/tabs_test.txt" );
+		editor->loadFromFile( "assets/textfiles/test-tabs.txt" );
 		SceneManager::instance()->update();
 		SceneManager::instance()->draw();
 		compareImages( utest_state, utest_result, app.getWindow(), "eepp-text-edit-tabs-test" );
@@ -355,7 +355,7 @@ UTEST( FontRendering, tabStopTextEditTest ) {
 		auto* editor = UITextEdit::New();
 		editor->setTabStops( true );
 		editor->setPixelsSize( app.getUI()->getPixelsSize() );
-		editor->loadFromFile( "assets/fontrendering/tabs_test.txt" );
+		editor->loadFromFile( "assets/textfiles/test-tabs.txt" );
 		SceneManager::instance()->update();
 		SceneManager::instance()->draw();
 		compareImages( utest_state, utest_result, app.getWindow(), "eepp-text-edit-tab-stop-test" );

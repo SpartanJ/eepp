@@ -2080,7 +2080,8 @@ Float UICodeEditor::getLineWidth( const Int64& docLine ) {
 			auto len =
 				i + 1 < vline.visualLines.size() ? vline.visualLines[i + 1].column() : line.size();
 			auto vlineStr = line.view().substr( pos, len - pos );
-			auto curWidth = getTextWidth( vlineStr, isMonospaceLine );
+			auto curWidth =
+				getTextWidth( vlineStr, isMonospaceLine, {}, mDoc->line( docLine ).getTextHints() );
 			width = eemax( width, curWidth );
 		}
 
@@ -2096,13 +2097,15 @@ Float UICodeEditor::getLineWidth( const Int64& docLine ) {
 		auto found = mLinesWidthCache.find( docLine );
 		if ( found != mLinesWidthCache.end() && line.getHash() == found->second.first )
 			return found->second.second;
-		Float width = getTextWidth( line.getText(), {}, mTabStops ? 0 : std::optional<Float>{} );
+		Float width = getTextWidth( line.getText(), {}, mTabStops ? 0 : std::optional<Float>{},
+									line.getTextHints() );
 		mLinesWidthCache[docLine] = { line.getHash(), width };
 		return width;
 	}
 
 	return getTextWidth( mDoc->line( docLine ).getText(), isMonospaceLine,
-						 mTabStops ? 0 : std::optional<Float>{} );
+						 mTabStops ? 0 : std::optional<Float>{},
+						 mDoc->line( docLine ).getTextHints() );
 }
 
 void UICodeEditor::updateScrollBar() {
@@ -2530,12 +2533,12 @@ Vector2d UICodeEditor::getTextPositionOffset( const TextPosition& position,
 			const auto& line = mDoc->line( position.line() ).getText();
 			auto partialLine =
 				line.view().substr( info.range.start().column(), info.range.end().column() );
-			Float x =
-				Text::findCharacterPos( position.column() - info.range.start().column(), mFont,
-										getCharacterSize(), partialLine, mFontStyleConfig.Style,
-										mTabWidth, mFontStyleConfig.OutlineThickness,
-										mTabStops ? 0 : std::optional<Float>(), false )
-					.x;
+			Float x = Text::findCharacterPos(
+						  position.column() - info.range.start().column(), mFont,
+						  getCharacterSize(), partialLine, mFontStyleConfig.Style, mTabWidth,
+						  mFontStyleConfig.OutlineThickness, mTabStops ? 0 : std::optional<Float>(),
+						  false, mDoc->line( position.line() ).getTextHints() )
+						  .x;
 			if ( visualizeNewLine && allowVisualLineEnd &&
 				 position.column() == (Int64)mDoc->line( position.line() ).getText().size() - 1 )
 				x += getGlyphWidth();
@@ -2567,7 +2570,8 @@ Vector2d UICodeEditor::getTextPositionOffset( const TextPosition& position,
 			Text::findCharacterPos(
 				isLastChar ? position.column() - 1 : position.column(), mFont, getCharacterSize(),
 				mDoc->line( position.line() ).getText(), mFontStyleConfig.Style, mTabWidth,
-				mFontStyleConfig.OutlineThickness, mTabStops ? 0 : std::optional<Float>(), false )
+				mFontStyleConfig.OutlineThickness, mTabStops ? 0 : std::optional<Float>(), false,
+				mDoc->line( position.line() ).getTextHints() )
 				.x;
 		if ( visualizeNewLine && isLastChar )
 			x += getGlyphWidth();
@@ -2600,34 +2604,36 @@ size_t UICodeEditor::characterWidth( const String& str ) const {
 	return characterWidth<String>( str );
 }
 
-Float UICodeEditor::getTextWidth( const String& text, std::optional<Float> tabOffset ) const {
-	return getTextWidth<String>( text, false, tabOffset );
+Float UICodeEditor::getTextWidth( const String& text, std::optional<Float> tabOffset,
+								  Uint32 textHints ) const {
+	return getTextWidth<String>( text, false, tabOffset, textHints );
 }
 
 size_t UICodeEditor::characterWidth( const String::View& str ) const {
 	return characterWidth<String::View>( str );
 }
 
-Float UICodeEditor::getTextWidth( const String::View& text, std::optional<Float> tabOffset ) const {
-	return getTextWidth<String::View>( text, false, tabOffset );
+Float UICodeEditor::getTextWidth( const String::View& text, std::optional<Float> tabOffset,
+								  Uint32 textHints ) const {
+	return getTextWidth<String::View>( text, false, tabOffset, textHints );
 }
 
 Float UICodeEditor::getTextWidth( const String& text, bool fromMonospaceLine,
-								  std::optional<Float> tabOffset ) const {
-	return getTextWidth<String>( text, fromMonospaceLine, tabOffset );
+								  std::optional<Float> tabOffset, Uint32 textHints ) const {
+	return getTextWidth<String>( text, fromMonospaceLine, tabOffset, textHints );
 }
 
 Float UICodeEditor::getTextWidth( const String::View& text, bool fromMonospaceLine,
-								  std::optional<Float> tabOffset ) const {
-	return getTextWidth<String::View>( text, fromMonospaceLine, tabOffset );
+								  std::optional<Float> tabOffset, Uint32 textHints ) const {
+	return getTextWidth<String::View>( text, fromMonospaceLine, tabOffset, textHints );
 }
 
 template <typename StringType>
 Float UICodeEditor::getTextWidth( const StringType& line, bool fromMonospaceLine,
-								  std::optional<Float> tabOffset ) const {
+								  std::optional<Float> tabOffset, Uint32 textHints ) const {
 	if ( !fromMonospaceLine && isNotMonospace() ) {
 		return Text::getTextWidth( mFont, getCharacterSize(), line, mFontStyleConfig.Style,
-								   mTabWidth, 0.f, 0, tabOffset );
+								   mTabWidth, 0.f, textHints, tabOffset );
 	}
 
 	Float glyphWidth = getGlyphWidth();
@@ -3204,7 +3210,8 @@ Int64 UICodeEditor::getColFromXOffset( VisibleIndex visibleIndex, const Float& x
 				   Text::findCharacterFromPos( Vector2i( eemax( -xOffset + x, 0.f ), 0 ), true,
 											   mFont, getCharacterSize(), line,
 											   mFontStyleConfig.Style, mTabWidth, 0.f,
-											   mTabStops ? 0 : std::optional<Float>() );
+											   mTabStops ? 0 : std::optional<Float>(),
+											   mDoc->line( pos.line() ).getTextHints() );
 		}
 
 		Int64 len = line.length();
@@ -3230,7 +3237,8 @@ Int64 UICodeEditor::getColFromXOffset( VisibleIndex visibleIndex, const Float& x
 	if ( !isMonospaceLine( pos.line() ) ) {
 		return Text::findCharacterFromPos(
 			Vector2i( x, 0 ), true, mFont, getCharacterSize(), mDoc->line( pos.line() ).getText(),
-			mFontStyleConfig.Style, mTabWidth, 0.f, mTabStops ? 0 : std::optional<Float>() );
+			mFontStyleConfig.Style, mTabWidth, 0.f, mTabStops ? 0 : std::optional<Float>(),
+			mDoc->line( pos.line() ).getTextHints() );
 	}
 
 	const String& line = mDoc->line( pos.line() ).getText();
@@ -4193,6 +4201,7 @@ std::vector<Rectf> UICodeEditor::getTextRangeRectangles(
 					}
 				}
 				selRect.Right = startScroll.x + endOffset.x;
+				selRect.normalize();
 				rects.push_back( selRect );
 			}
 		} else {
@@ -4232,6 +4241,7 @@ std::vector<Rectf> UICodeEditor::getTextRangeRectangles(
 													   lh, false, visualizeNewLines )
 									.x;
 			}
+			selRect.normalize();
 			rects.push_back( selRect );
 		}
 	}
@@ -5365,7 +5375,8 @@ void UICodeEditor::setTabIndentAlignment( CharacterAlignment alignment ) {
 }
 
 bool UICodeEditor::isMonospaceLine( Int64 lineIndex ) const {
-	return mFont && ( mFont->isMonospace() ||
+	return mFont && ( ( mFont->isMonospace() &&
+						( !Text::TextShaperEnabled || mDoc->line( lineIndex ).isAscii() ) ) ||
 					  ( mFont->getType() == FontType::TTF &&
 						static_cast<FontTrueType*>( mFont )->isIdentifiedAsMonospace() &&
 						mDoc->line( lineIndex ).isAscii() ) );
