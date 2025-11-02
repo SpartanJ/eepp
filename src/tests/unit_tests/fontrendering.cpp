@@ -1,3 +1,4 @@
+#include "eepp/ui/uithememanager.hpp"
 #include "utest.hpp"
 
 #include <eepp/graphics/fontbmfont.hpp>
@@ -386,4 +387,32 @@ UTEST( FontRendering, textEditBengaliTest ) {
 	SceneManager::instance()->update();
 	SceneManager::instance()->draw();
 	compareImages( utest_state, utest_result, app.getWindow(), "eepp-textedit-bengali" );
+}
+
+UTEST( FontRendering, textSizes ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 650, "eepp - Fonts", WindowStyle::Default, WindowBackend::Default, 32,
+						{}, 1, false, true ) );
+
+	ASSERT_TRUE_MSG( win->isOpen(), "Failed to create Window" );
+
+	String txt( "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod" );
+
+	win->setClearColor( RGB( 230, 230, 230 ) );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	win->clear();
+
+	FontStyleConfig config;
+	config.Font = font;
+
+	EXPECT_EQ( 415.f, Text::draw( txt, Vector2f::Zero, config ).getWidth() );
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	BoolScopedOp op( Text::TextShaperEnabled, true );
+	win->clear();
+	EXPECT_EQ( 415.f, Text::draw( txt, Vector2f::Zero, config ).getWidth() );
 }
