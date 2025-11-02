@@ -84,7 +84,6 @@ shapeAndRun( const String& string, FontTrueType* font, Uint32 characterSize, Uin
 	hb_buffer_destroy( hbBuffer );
 	return completeRun;
 }
-#endif
 
 // New helper function to identify scripts where our custom kerning is safe to apply.
 static inline bool isSimpleScript( hb_script_t script ) {
@@ -92,6 +91,8 @@ static inline bool isSimpleScript( hb_script_t script ) {
 	return script == HB_SCRIPT_LATIN || script == HB_SCRIPT_GREEK || script == HB_SCRIPT_CYRILLIC ||
 		   script == HB_SCRIPT_INVALID;
 }
+
+#endif
 
 static inline bool canSkipShaping( Uint32 textDrawHints ) {
 	return Text::TextShaperOptimizations && ( textDrawHints & TextHints::AllAscii ) != 0;
