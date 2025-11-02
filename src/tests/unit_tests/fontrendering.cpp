@@ -391,28 +391,81 @@ UTEST( FontRendering, textEditBengaliTest ) {
 
 UTEST( FontRendering, textSizes ) {
 	auto win = Engine::instance()->createWindow(
-		WindowSettings( 1024, 650, "eepp - Fonts", WindowStyle::Default, WindowBackend::Default, 32,
-						{}, 1, false, true ) );
+		WindowSettings( 1024, 650, "eepp - Text Sizes", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ) );
 
 	ASSERT_TRUE_MSG( win->isOpen(), "Failed to create Window" );
-
-	String txt( "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod" );
-
-	win->setClearColor( RGB( 230, 230, 230 ) );
 
 	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 
-	UTEST_PRINT_STEP( "Text Shaper disabled" );
-	win->clear();
-
 	FontStyleConfig config;
 	config.Font = font;
+	config.CharacterSize = 12;
+	config.Style = 0;
 
-	EXPECT_EQ( 415.f, Text::draw( txt, Vector2f::Zero, config ).getWidth() );
+	String txt( "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod\n"
+				"tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,\n"
+				"quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo\n"
+				"consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse\n"
+				"cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non\n"
+				"proident, sunt in culpa qui officia deserunt mollit anim id est laborum." );
+
+	const auto runTest = [&]() {
+		Sizef size = Text::draw( txt, Vector2f::Zero, config );
+		EXPECT_EQ( 445, size.getWidth() );
+		EXPECT_EQ( 96, size.getHeight() );
+		EXPECT_EQ( 445, Text::getTextWidth( txt, config ) );
+
+		Vector2i startPos{ 120, 7 };
+		EXPECT_EQ( 19, Text::findCharacterFromPos( startPos, true, config.Font,
+												   config.CharacterSize, txt, 0 ) );
+		EXPECT_EQ( 19, Text::findCharacterFromPos( startPos, false, config.Font,
+												   config.CharacterSize, txt, 0 ) );
+
+		Vector2i middlePos{ 120, 64 };
+		EXPECT_EQ( 242, Text::findCharacterFromPos( middlePos, true, config.Font,
+													config.CharacterSize, txt, 0 ) );
+		EXPECT_EQ( 242, Text::findCharacterFromPos( middlePos, false, config.Font,
+												   config.CharacterSize, txt, 0 ) );
+
+		Vector2i endPos{ 120, 103 };
+		EXPECT_EQ( 395, Text::findCharacterFromPos( endPos, true, config.Font, config.CharacterSize,
+													txt, 0 ) );
+		EXPECT_EQ( -1, Text::findCharacterFromPos( endPos, false, config.Font, config.CharacterSize,
+												   txt, 0 ) );
+
+		EXPECT_EQ( 18ul, Text::findLastCharPosWithinLength( txt, 120, config ) );
+		Vector2f pos = Text::findCharacterPos( 19, config.Font, config.CharacterSize, txt, 0 );
+		EXPECT_EQ( 120, pos.x );
+		EXPECT_EQ( 0, pos.y );
+
+		Text text;
+		text.setStyleConfig( config );
+		text.setString( txt );
+		EXPECT_EQ( 445, text.getTextWidth() );
+		EXPECT_EQ( 96, text.getTextHeight() );
+		EXPECT_EQ( 446, text.getLocalBounds().getWidth() );
+		EXPECT_EQ( 93, text.getLocalBounds().getHeight() );
+		EXPECT_EQ( 19, text.findCharacterFromPos( startPos, true ) );
+		EXPECT_EQ( 19, text.findCharacterFromPos( startPos, false ) );
+		EXPECT_EQ( 242, text.findCharacterFromPos( middlePos, true ) );
+		EXPECT_EQ( 242, text.findCharacterFromPos( middlePos, false ) );
+		EXPECT_EQ( 395, text.findCharacterFromPos( endPos ) );
+		EXPECT_EQ( -1, text.findCharacterFromPos( endPos, false ) );
+		pos = text.findCharacterPos( 19 );
+		EXPECT_EQ( 120, pos.x );
+		EXPECT_EQ( 0, pos.y );
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	runTest();
 
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
-	BoolScopedOp op( Text::TextShaperEnabled, true );
-	win->clear();
-	EXPECT_EQ( 415.f, Text::draw( txt, Vector2f::Zero, config ).getWidth() );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+	}
+
+	Engine::destroySingleton();
 }
