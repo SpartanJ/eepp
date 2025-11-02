@@ -656,7 +656,7 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 								   ( textDrawHints & TextHints::AllAscii ) != 0 ) );
 	Float kerning = 0;
 	Float width = 0;
-	Float height = font->getFontHeight( fontSize );
+	Float height = font->getLineSpacing( fontSize );
 	Sizef size{ 0, height };
 	size_t ssize = string.size();
 	BatchRenderer* BR = GlobalBatchRenderer::instance();
