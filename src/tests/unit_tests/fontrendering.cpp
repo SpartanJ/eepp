@@ -376,8 +376,8 @@ UTEST( FontRendering, textEditBengaliTest ) {
 						WindowBackend::Default, 32, {}, 1, false, true ),
 		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-	FontTrueType* bengaliFont = FontTrueType::New( "NotoSerifBengali-Regular",
-												   "assets/fonts/NotoSerifBengali-Regular.ttf" );
+	FontTrueType* bengaliFont = FontTrueType::New( "NotoSansBengali-Regular",
+												   "assets/fonts/NotoSansBengali-Regular.ttf" );
 	FontManager::instance()->addFallbackFont( bengaliFont );
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	auto* editor = UITextEdit::New();

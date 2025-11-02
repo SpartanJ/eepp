@@ -94,6 +94,13 @@ shapeAndRun( const String& string, const FontStyleConfig& config,
 }
 #endif
 
+// New helper function to identify scripts where our custom kerning is safe to apply.
+static inline bool isSimpleScript( hb_script_t script ) {
+	// This list can be expanded, but covers the most common simple LTR scripts.
+	return script == HB_SCRIPT_LATIN || script == HB_SCRIPT_GREEK || script == HB_SCRIPT_CYRILLIC ||
+		   script == HB_SCRIPT_INVALID;
+}
+
 template <typename StringType>
 TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uint32& characterSize,
 								 const Uint32& style, const Uint32& tabWidth,
@@ -120,64 +127,86 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 			string, rFont, characterSize, style, outlineThickness,
 			[&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t* glyphPos, Uint32 glyphCount,
 				 const hb_segment_properties_t& props, TextShapeRun& run ) {
-				bool isRTL = HB_DIRECTION_IS_HORIZONTAL( props.direction ) &&
-							 props.direction == HB_DIRECTION_RTL;
-				FontTrueType* font = run.font();
-				if ( !font )
+				FontTrueType* currentRunFont = run.font();
+				if ( !currentRunFont )
 					return true;
-				result.shapedGlyphs.reserve( glyphCount );
+				result.shapedGlyphs.reserve( result.shapedGlyphs.size() + glyphCount );
+				Uint32 prevGlyphIndex = 0;
 
-				if ( isRTL ) { // For RTL, we trust HarfBuzz positioning completely
+				if ( isSimpleScript( props.script ) ) {
 					for ( size_t i = 0; i < glyphCount; ++i ) {
-						auto& curGpos = glyphPos[i];
-						ShapedGlyph sg;
-						sg.font = font;
-						sg.glyphIndex = glyphInfo[i].codepoint;
-						sg.stringIndex = run.pos() + glyphInfo[i].cluster;
-						sg.position.x = pen.x + ( curGpos.x_offset / 64.f );
-						sg.position.y = pen.y - ( curGpos.y_offset / 64.f );
-						result.shapedGlyphs.emplace_back( std::move( sg ) );
-						pen.x += curGpos.x_advance / 64.f;
-						pen.y += curGpos.y_advance / 64.f;
-					}
-				} else { // For LTR, we use our custom kerning
-					Uint32 prevGlyphIndex = 0;
-					Uint32 cluster = 0;
-					String::StringBaseType ch;
+						Uint32 cluster = glyphInfo[i].cluster;
+						String::StringBaseType ch = string[run.pos() + cluster];
 
-					for ( size_t i = 0; i < glyphCount; ++i ) {
-						cluster = glyphInfo[i].cluster;
-						ch = string[run.pos() + cluster];
 						if ( ch == '\t' ) {
 							Float advance = Text::tabAdvance( hspace, tabWidth,
 															  tabOffset ? pen.x + *tabOffset
 																		: std::optional<Float>{} );
-
 							ShapedGlyph sg;
-							sg.font = font;
+							sg.font = currentRunFont;
 							sg.glyphIndex = glyphInfo[i].codepoint;
 							sg.stringIndex = run.pos() + cluster;
 							sg.position = pen;
 							result.shapedGlyphs.emplace_back( std::move( sg ) );
 
-							prevGlyphIndex = glyphInfo[i].codepoint;
 							pen.x += advance;
+							prevGlyphIndex = 0; // Reset kerning after a tab
 							continue;
 						}
-						pen.x += font->getKerningFromGlyphIndex(
+
+						Glyph currentGlyph = currentRunFont->getGlyphByIndex(
+							glyphInfo[i].codepoint, characterSize, bold, italic, outlineThickness );
+
+						pen.x += currentRunFont->getKerningFromGlyphIndex(
 							prevGlyphIndex, glyphInfo[i].codepoint, characterSize, bold, italic,
 							outlineThickness );
+
 						ShapedGlyph sg;
-						sg.font = font;
+						sg.font = currentRunFont;
 						sg.glyphIndex = glyphInfo[i].codepoint;
-						sg.stringIndex = run.pos() + cluster;
-						sg.position = pen;
+						sg.stringIndex = run.pos() + glyphInfo[i].cluster;
+
+						float offsetX = glyphPos[i].x_offset / 64.f;
+						float offsetY = glyphPos[i].y_offset / 64.f;
+						sg.position.x = pen.x + offsetX;
+						sg.position.y = pen.y - offsetY;
 						result.shapedGlyphs.emplace_back( std::move( sg ) );
-						Glyph glyph = font->getGlyphByIndex( glyphInfo[i].codepoint, characterSize,
-															 bold, italic, outlineThickness,
-															 rFont->getPage( characterSize ) );
-						pen.x += glyph.advance;
+
+						pen.x += currentGlyph.advance;
 						prevGlyphIndex = glyphInfo[i].codepoint;
+					}
+				} else {
+					for ( size_t i = 0; i < glyphCount; ++i ) {
+						Uint32 cluster = glyphInfo[i].cluster;
+						String::StringBaseType ch = string[run.pos() + cluster];
+
+						if ( ch == '\t' ) {
+							Float advance = Text::tabAdvance( hspace, tabWidth,
+															  tabOffset ? pen.x + *tabOffset
+																		: std::optional<Float>{} );
+							ShapedGlyph sg;
+							sg.font = currentRunFont;
+							sg.glyphIndex = glyphInfo[i].codepoint;
+							sg.stringIndex = run.pos() + cluster;
+							sg.position = pen;
+							result.shapedGlyphs.emplace_back( std::move( sg ) );
+
+							pen.x += advance;
+							prevGlyphIndex = 0; // Reset kerning after a tab
+							continue;
+						}
+
+						ShapedGlyph sg;
+						sg.font = currentRunFont;
+						sg.glyphIndex = glyphInfo[i].codepoint;
+						sg.stringIndex = run.pos() + glyphInfo[i].cluster;
+						float offsetX = glyphPos[i].x_offset / 64.f;
+						float offsetY = glyphPos[i].y_offset / 64.f;
+						sg.position.x = pen.x + offsetX;
+						sg.position.y = pen.y - offsetY;
+						result.shapedGlyphs.emplace_back( std::move( sg ) );
+						pen.x += glyphPos[i].x_advance / 64.f;
+						pen.y += glyphPos[i].y_advance / 64.f;
 					}
 				}
 
@@ -236,7 +265,7 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 
 	result.linesWidth.push_back( pen.x );
 	maxWidth = eemax( maxWidth, pen.x );
-	result.size = { maxWidth, pen.y + vspace };
+	result.size = { maxWidth, pen.y };
 
 	return result;
 }
@@ -645,7 +674,8 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 	BR->setTexture( fontTexture, fontTexture->getCoordinateType() );
 
 #ifdef EE_TEXT_SHAPER_ENABLED
-	if ( TextShaperEnabled && font->getType() == FontType::TTF ) {
+	if ( TextShaperEnabled /* && !( textDrawHints & TextHints::AllAscii ) */ &&
+		 font->getType() == FontType::TTF ) {
 		FontTrueType* rFont = static_cast<FontTrueType*>( font );
 
 		auto layout = TextLayouter::layout( string, rFont, fontSize, style, tabWidth,
@@ -680,12 +710,14 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 				continue;
 			}
 
-			if ( ch == ' ' && whitespaceDisplayConfig.spaceDisplayCharacter ) {
-				if ( spaceGlyph == nullptr ) {
-					spaceGlyph = font->getGlyphDrawable(
-						whitespaceDisplayConfig.spaceDisplayCharacter, fontSize );
+			if ( ch == ' ' ) {
+				if ( whitespaceDisplayConfig.spaceDisplayCharacter ) {
+					if ( spaceGlyph == nullptr ) {
+						spaceGlyph = font->getGlyphDrawable(
+							whitespaceDisplayConfig.spaceDisplayCharacter, fontSize );
+					}
+					drawGlyph( BR, spaceGlyph, gpos, whitespaceDisplayConfig.color, isItalic );
 				}
-				drawGlyph( BR, spaceGlyph, gpos, whitespaceDisplayConfig.color, isItalic );
 				continue;
 			}
 
@@ -1252,40 +1284,11 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 	}
 
 #ifdef EE_TEXT_SHAPER_ENABLED
-	if ( TextShaperEnabled && font->getType() == FontType::TTF ) {
-		FontTrueType* rFont = static_cast<FontTrueType*>( font );
-		shapeAndRun(
-			string, rFont, fontSize, style, outlineThickness,
-			[&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t*, Uint32 glyphCount,
-				 const hb_segment_properties_t&, TextShapeRun& run ) {
-				FontTrueType* font = run.font();
-				Uint32 prevGlyphIndex = 0;
-				for ( std::size_t i = 0; i < glyphCount; ++i ) {
-					hb_glyph_info_t curGlyph = glyphInfo[i];
-					auto curChar = string[run.pos() + curGlyph.cluster];
-					if ( curChar == '\t' ) {
-						width += tabAdvance( hspace, tabWidth,
-											 tabOffset ? *tabOffset + width : tabOffset );
-					} else {
-						Glyph glyph =
-							font->getGlyphByIndex( curGlyph.codepoint, fontSize, bold, italic,
-												   outlineThickness, rFont->getPage( fontSize ) );
-
-						width += rFont->getKerningFromGlyphIndex( prevGlyphIndex,
-																  curGlyph.codepoint, fontSize,
-																  bold, italic, outlineThickness );
-
-						width += font->isColorEmojiFont() && ' ' != curChar ? glyph.size.getWidth()
-																			: glyph.advance;
-					}
-					maxWidth = eemax( maxWidth, width );
-					prevGlyphIndex = curGlyph.codepoint;
-				}
-				if ( run.runIsNewLine() )
-					width = 0;
-				return true;
-			} );
-		return maxWidth;
+	if ( TextShaperEnabled /* && !( textDrawHints & TextHints::AllAscii ) */ &&
+		 font->getType() == FontType::TTF ) {
+		return TextLayouter::layout( string, static_cast<FontTrueType*>( font ), fontSize, style,
+									 tabWidth, outlineThickness, tabOffset, textDrawHints )
+			.size.getWidth();
 	}
 #endif
 
