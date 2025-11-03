@@ -4309,7 +4309,7 @@ void UICodeEditor::drawLineNumbers( const DocumentLineRange& lineRange, const Ve
 							: mLineNumberFontColor,
 						mFontStyleConfig.Style, mFontStyleConfig.OutlineThickness,
 						mFontStyleConfig.OutlineColor, mFontStyleConfig.ShadowColor,
-						mFontStyleConfig.ShadowOffset );
+						mFontStyleConfig.ShadowOffset, 4, TextHints::AllAscii );
 		}
 
 		if ( foldVisible && mDoc->getFoldRangeService().isFoldingRegionInLine( i ) ) {

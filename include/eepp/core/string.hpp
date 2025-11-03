@@ -1030,6 +1030,8 @@ class EE_API String {
 
 	bool isAscii() const;
 
+	static bool isAscii( String::View str );
+
 	String::View view() const;
 
 	// No allocation int to str
