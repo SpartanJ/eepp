@@ -4,6 +4,7 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
+#include <eepp/graphics/textlayouter.hpp>
 #include <eepp/graphics/texttransform.hpp>
 
 #include <optional>
@@ -22,72 +23,6 @@ struct WhitespaceDisplayConfig {
 	std::optional<Float> tabOffset;
 };
 
-struct ShapedGlyph {
-	FontTrueType* font{ nullptr };
-	Uint32 glyphIndex{ 0 };
-	Uint32 stringIndex{ 0 };
-	Vector2f position;
-};
-
-struct TextLayout {
-	std::vector<ShapedGlyph> shapedGlyphs;
-	std::vector<Float> linesWidth;
-	Sizef size;
-};
-
-class EE_API TextLayouter {
-  public:
-	static TextLayout layout( const String& string, Font* font, const Uint32& fontSize,
-							  const Uint32& style, const Uint32& tabWidth = 4,
-							  const Float& outlineThickness = 0.f,
-							  std::optional<Float> tabOffset = {}, Uint32 textDrawHints = 0 );
-
-	static TextLayout layout( const String::View& string, Font* font, const Uint32& fontSize,
-							  const Uint32& style, const Uint32& tabWidth = 4,
-							  const Float& outlineThickness = 0.f,
-							  std::optional<Float> tabOffset = {}, Uint32 textDrawHints = 0 );
-
-  protected:
-	template <typename StringType>
-	static TextLayout layout( const StringType& string, Font* font, const Uint32& fontSize,
-							  const Uint32& style, const Uint32& tabWidth = 4,
-							  const Float& outlineThickness = 0.f,
-							  std::optional<Float> tabOffset = {}, Uint32 textDrawHints = 0 );
-};
-
-// helper class that divides the string into lines and font runs.
-class EE_API TextShapeRun {
-  public:
-	TextShapeRun( String::View str, FontTrueType* font, Uint32 characterSize, Uint32 style,
-				  Float outlineThickness );
-
-	String::View curRun() const;
-
-	bool hasNext() const;
-
-	std::size_t pos() const;
-
-	void next();
-
-	bool runIsNewLine() const;
-
-	FontTrueType* font();
-
-  protected:
-	void findNextEnd();
-
-	String::View mString;
-	std::size_t mIndex{ 0 };
-	std::size_t mLen{ 0 };
-	Font* mFont{ nullptr };
-	Uint32 mCharacterSize;
-	Uint32 mStyle;
-	Float mOutlineThickness;
-	Font* mCurFont{ nullptr };
-	Font* mStartFont{ nullptr };
-	bool mIsNewLine{ false };
-};
-
 class EE_API Text {
   public:
 	static bool TextShaperEnabled;
@@ -102,6 +37,10 @@ class EE_API Text {
 		StrikeThrough = 1 << 3, ///< Strike through characters
 		Shadow = 1 << 4			///< Draw a shadow below the text
 	};
+
+	static inline bool canSkipShaping( Uint32 textDrawHints ) {
+		return Text::TextShaperOptimizations && ( textDrawHints & TextHints::AllAscii ) != 0;
+	}
 
 	static Float tabAdvance( Float spaceHorizontalAdvance, Uint32 tabLength,
 							 std::optional<Float> tabOffset );
@@ -167,38 +106,40 @@ class EE_API Text {
 									   const Uint32& fontSize, const String& string,
 									   const Uint32& style, const Uint32& tabWidth = 4,
 									   const Float& outlineThickness = 0.f,
-									   std::optional<Float> tabOffset = {},
-									   Uint32 textDrawHints = 0 );
+									   std::optional<Float> tabOffset = {}, Uint32 textHints = 0 );
 
 	static Vector2f findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
 									  const String& string, const Uint32& style,
 									  const Uint32& tabWidth = 4,
 									  const Float& outlineThickness = 0.f,
-									  std::optional<Float> tabOffset = {},
-									  bool allowNewLine = true,
-									  Uint32 textDrawHints = 0 );
+									  std::optional<Float> tabOffset = {}, bool allowNewLine = true,
+									  Uint32 textHints = 0 );
 
 	static std::size_t findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
 													const String& string, Float maxWidth,
 													const Uint32& style, const Uint32& tabWidth = 4,
 													const Float& outlineThickness = 0.f,
-													std::optional<Float> tabOffset = {} );
+													std::optional<Float> tabOffset = {},
+													Uint32 textHints = 0 );
 
 	static std::size_t findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
 													const String::View& string, Float maxWidth,
 													const Uint32& style, const Uint32& tabWidth = 4,
 													const Float& outlineThickness = 0.f,
-													std::optional<Float> tabOffset = {} );
+													std::optional<Float> tabOffset = {},
+													Uint32 textHints = 0 );
 
 	static std::size_t findLastCharPosWithinLength( const String& string, Float maxWidth,
 													const FontStyleConfig& config,
 													const Uint32& tabWidth = 4,
-													std::optional<Float> tabOffset = {} );
+													std::optional<Float> tabOffset = {},
+													Uint32 textHints = 0 );
 
 	static std::size_t findLastCharPosWithinLength( const String::View& string, Float maxWidth,
 													const FontStyleConfig& config,
 													const Uint32& tabWidth = 4,
-													std::optional<Float> tabOffset = {} );
+													std::optional<Float> tabOffset = {},
+													Uint32 textHints = 0 );
 
 	static bool wrapText( Font* font, const Uint32& fontSize, String& string, const Float& maxWidth,
 						  const Uint32& style, const Uint32& tabWidth = 4,
@@ -374,16 +315,17 @@ class EE_API Text {
 	Color mBackgroundColor{ Color::Transparent };
 
 	mutable Rectf mBounds; ///< Bounding rectangle of the text (in local coordinates)
-	mutable bool mGeometryNeedUpdate{ false }; ///< Does the geometry need to be recomputed?
-	mutable bool mCachedWidthNeedUpdate{ false };
-	mutable bool mColorsNeedUpdate{ false };
-	mutable bool mContainsColorEmoji{ false };
-	bool mTabStops{ false };
+	mutable bool mGeometryNeedUpdate : 1 { false }; ///< Does the geometry need to be recomputed?
+	mutable bool mCachedWidthNeedUpdate : 1 { false };
+	mutable bool mColorsNeedUpdate : 1 { false };
+	mutable bool mContainsColorEmoji : 1 { false };
+	bool mTabStops : 1 { false };
 
 	Float mCachedWidth{ 0 };
 	Uint32 mAlign{ TEXT_ALIGN_LEFT };
 	Uint32 mTabWidth{ 4 };
 	Uint32 mInvalidationId{ 0 };
+	Uint32 mTextHints{ 0 };
 
 	std::vector<VertexCoords> mVertices;
 	std::vector<Color> mColors;
@@ -437,11 +379,11 @@ class EE_API Text {
 					   const WhitespaceDisplayConfig& whitespaceDisplayConfig = {} );
 
 	template <typename StringType>
-	static std::size_t findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
-													const StringType& string, Float width,
-													const Uint32& style, const Uint32& tabWidth = 4,
-													const Float& outlineThickness = 0.f,
-													std::optional<Float> tabOffset = {} );
+	static std::size_t
+	findLastCharPosWithinLength( Font* font, const Uint32& fontSize, const StringType& string,
+								 Float width, const Uint32& style, const Uint32& tabWidth = 4,
+								 const Float& outlineThickness = 0.f,
+								 std::optional<Float> tabOffset = {}, Uint32 textHints = 0 );
 
 	template <typename StringType>
 	static bool wrapText( Font* font, const Uint32& fontSize, StringType& string,

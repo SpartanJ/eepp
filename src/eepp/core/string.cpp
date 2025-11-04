@@ -1372,6 +1372,17 @@ bool String::contains( const String& needle ) const {
 	return String::contains( *this, needle );
 }
 
+template <typename StringType> static inline bool isAsciiTpl( const StringType& str ) {
+	for ( const auto& codepoint : str )
+		if ( codepoint > 127 )
+			return false;
+	return true;
+}
+
+bool String::isAscii( String::View str ) {
+	return isAsciiTpl<String::View>( str );
+}
+
 bool String::isAscii() const {
 	auto data = mString.data();
 	size_t len = mString.size();

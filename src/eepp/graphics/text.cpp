@@ -12,390 +12,11 @@
 #include <eepp/graphics/texturefactory.hpp>
 #include <limits>
 
-#ifdef EE_TEXT_SHAPER_ENABLED
-#include <harfbuzz/hb-ft.h>
-#include <harfbuzz/hb.h>
-#endif
-
 namespace EE { namespace Graphics {
 
-#ifdef EE_TEXT_SHAPER_ENABLED
-static bool
-shapeAndRun( const String& string, FontTrueType* font, Uint32 characterSize, Uint32 style,
-			 Float outlineThickness,
-			 const std::function<bool( hb_glyph_info_t*, hb_glyph_position_t*, Uint32,
-									   const hb_segment_properties_t&, TextShapeRun& )>& cb ) {
-	TextShapeRun run( string.view(), font, characterSize, style, outlineThickness );
-	hb_buffer_t* hbBuffer = hb_buffer_create();
-	bool completeRun = true;
-
-	while ( run.hasNext() ) {
-		FontTrueType* font = run.font();
-		if ( font == nullptr ) { // empty line
-			run.next();
-			continue;
-		}
-		String::View curRun( run.curRun() );
-		font->setCurrentSize( characterSize );
-		hb_buffer_reset( hbBuffer );
-		hb_buffer_set_cluster_level( hbBuffer, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS );
-		hb_buffer_add_utf32( hbBuffer, (Uint32*)curRun.data(), curRun.size(), 0, curRun.size() );
-		hb_buffer_guess_segment_properties( hbBuffer );
-		hb_segment_properties_t props;
-		hb_buffer_get_segment_properties( hbBuffer, &props );
-
-		// We use our own kerning algo
-		static const hb_feature_t features[] = {
-			hb_feature_t{ HB_TAG( 'k', 'e', 'r', 'n' ), 0, HB_FEATURE_GLOBAL_START,
-						  HB_FEATURE_GLOBAL_END },
-			hb_feature_t{ HB_TAG( 'l', 'i', 'g', 'a' ), 0, HB_FEATURE_GLOBAL_START,
-						  HB_FEATURE_GLOBAL_END },
-			hb_feature_t{ HB_TAG( 'c', 'l', 'i', 'g' ), 0, HB_FEATURE_GLOBAL_START,
-						  HB_FEATURE_GLOBAL_END },
-			hb_feature_t{ HB_TAG( 'd', 'l', 'i', 'g' ), 0, HB_FEATURE_GLOBAL_START,
-						  HB_FEATURE_GLOBAL_END },
-		};
-
-		// whitelist cross-platforms shapers only
-		static const char* shaper_list[] = { "ot", "graphite2", "fallback", nullptr };
-
-		if ( !font || !font->hb() ) {
-			eeASSERT( font && font->hb() );
-			completeRun = false;
-			break;
-		}
-
-		hb_shape_full( static_cast<hb_font_t*>( font->hb() ), hbBuffer, features,
-					   eeARRAY_SIZE( features ), shaper_list );
-
-		// from the shaped text we get the glyphs and positions
-		unsigned int glyphCount;
-		hb_glyph_info_t* glyphInfo = hb_buffer_get_glyph_infos( hbBuffer, &glyphCount );
-		hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( hbBuffer, &glyphCount );
-
-		if ( cb( glyphInfo, glyphPos, glyphCount, props, run ) )
-			run.next();
-		else {
-			completeRun = false;
-			break;
-		}
-	}
-
-	hb_buffer_destroy( hbBuffer );
-	return completeRun;
-}
-
-// New helper function to identify scripts where our custom kerning is safe to apply.
-static inline bool isSimpleScript( hb_script_t script ) {
-	// This list can be expanded, but covers the most common simple LTR scripts.
-	return script == HB_SCRIPT_LATIN || script == HB_SCRIPT_GREEK || script == HB_SCRIPT_CYRILLIC ||
-		   script == HB_SCRIPT_INVALID;
-}
-
-#endif
-
-static inline bool canSkipShaping( Uint32 textDrawHints ) {
-	return Text::TextShaperOptimizations && ( textDrawHints & TextHints::AllAscii ) != 0;
-}
-
-template <typename StringType>
-TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uint32& characterSize,
-								 const Uint32& style, const Uint32& tabWidth,
-								 const Float& outlineThickness, std::optional<Float> tabOffset,
-								 Uint32 textDrawHints ) {
-	TextLayout result;
-
-	if ( !font || string.empty() ) {
-		result.size = { 0.f, font ? (Float)font->getFontHeight( characterSize ) : 0.f };
-		return result;
-	}
-
-	bool bold = ( style & Text::Bold ) != 0;
-	bool italic = ( style & Text::Italic ) != 0;
-	Float hspace = font->getGlyph( ' ', characterSize, bold, italic, outlineThickness ).advance;
-	Float vspace = font->getLineSpacing( characterSize );
-	Vector2f pen;
-	Float maxWidth = 0;
-
-#ifdef EE_TEXT_SHAPER_ENABLED
-	if ( Text::TextShaperEnabled && font->getType() == FontType::TTF &&
-		 !canSkipShaping( textDrawHints ) ) {
-		FontTrueType* rFont = static_cast<FontTrueType*>( font );
-		shapeAndRun(
-			string, rFont, characterSize, style, outlineThickness,
-			[&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t* glyphPos, Uint32 glyphCount,
-				 const hb_segment_properties_t& props, TextShapeRun& run ) {
-				FontTrueType* currentRunFont = run.font();
-				if ( !currentRunFont )
-					return true;
-				result.shapedGlyphs.reserve( result.shapedGlyphs.size() + glyphCount );
-				Uint32 prevGlyphIndex = 0;
-
-				if ( isSimpleScript( props.script ) ) {
-					for ( size_t i = 0; i < glyphCount; ++i ) {
-						Uint32 cluster = glyphInfo[i].cluster;
-						String::StringBaseType ch = string[run.pos() + cluster];
-
-						if ( ch == '\t' ) {
-							Float advance = Text::tabAdvance( hspace, tabWidth,
-															  tabOffset ? pen.x + *tabOffset
-																		: std::optional<Float>{} );
-							ShapedGlyph sg;
-							sg.font = currentRunFont;
-							sg.glyphIndex = glyphInfo[i].codepoint;
-							sg.stringIndex = run.pos() + cluster;
-							sg.position = pen;
-							result.shapedGlyphs.emplace_back( std::move( sg ) );
-
-							pen.x += advance;
-							prevGlyphIndex = 0; // Reset kerning after a tab
-							continue;
-						}
-
-						Glyph currentGlyph = currentRunFont->getGlyphByIndex(
-							glyphInfo[i].codepoint, characterSize, bold, italic, outlineThickness );
-
-						if ( ch != '\n' && ch != '\r' ) {
-							pen.x += currentRunFont->getKerningFromGlyphIndex(
-								prevGlyphIndex, glyphInfo[i].codepoint, characterSize, bold, italic,
-								outlineThickness );
-						}
-
-						ShapedGlyph sg;
-						sg.font = currentRunFont;
-						sg.glyphIndex = glyphInfo[i].codepoint;
-						sg.stringIndex = run.pos() + glyphInfo[i].cluster;
-
-						float offsetX = glyphPos[i].x_offset / 64.f;
-						float offsetY = glyphPos[i].y_offset / 64.f;
-						sg.position.x = pen.x + offsetX;
-						sg.position.y = pen.y - offsetY;
-						result.shapedGlyphs.emplace_back( std::move( sg ) );
-
-						pen.x += currentGlyph.advance;
-						prevGlyphIndex = glyphInfo[i].codepoint;
-					}
-				} else {
-					for ( size_t i = 0; i < glyphCount; ++i ) {
-						Uint32 cluster = glyphInfo[i].cluster;
-						String::StringBaseType ch = string[run.pos() + cluster];
-
-						if ( ch == '\t' ) {
-							Float advance = Text::tabAdvance( hspace, tabWidth,
-															  tabOffset ? pen.x + *tabOffset
-																		: std::optional<Float>{} );
-							ShapedGlyph sg;
-							sg.font = currentRunFont;
-							sg.glyphIndex = glyphInfo[i].codepoint;
-							sg.stringIndex = run.pos() + cluster;
-							sg.position = pen;
-							result.shapedGlyphs.emplace_back( std::move( sg ) );
-
-							pen.x += advance;
-							prevGlyphIndex = 0; // Reset kerning after a tab
-							continue;
-						}
-
-						ShapedGlyph sg;
-						sg.font = currentRunFont;
-						sg.glyphIndex = glyphInfo[i].codepoint;
-						sg.stringIndex = run.pos() + glyphInfo[i].cluster;
-						float offsetX = glyphPos[i].x_offset / 64.f;
-						float offsetY = glyphPos[i].y_offset / 64.f;
-						sg.position.x = pen.x + offsetX;
-						sg.position.y = pen.y - offsetY;
-						result.shapedGlyphs.emplace_back( std::move( sg ) );
-						pen.x += glyphPos[i].x_advance / 64.f;
-						pen.y += glyphPos[i].y_advance / 64.f;
-					}
-				}
-
-				if ( run.runIsNewLine() ) {
-					result.linesWidth.push_back( pen.x );
-					maxWidth = eemax( maxWidth, pen.x );
-					pen.x = 0;
-					pen.y += vspace;
-				}
-				return true;
-			} );
-	} else
-#endif
-	{
-		// Fallback for non-TrueType fonts or when shaper is disabled
-		Uint32 prevChar = 0;
-		for ( size_t i = 0; i < string.size(); ++i ) {
-			Uint32 curChar = string[i];
-			if ( curChar == '\n' ) {
-				result.linesWidth.push_back( pen.x );
-				maxWidth = eemax( maxWidth, pen.x );
-				pen.x = 0;
-				pen.y += vspace;
-				prevChar = 0;
-				continue;
-			}
-			if ( curChar == '\r' ) {
-				prevChar = 0;
-				continue;
-			}
-
-			pen.x += font->getKerning( prevChar, curChar, characterSize, bold, italic,
-									   outlineThickness );
-			prevChar = curChar;
-
-			if ( curChar == '\t' ) {
-				pen.x += Text::tabAdvance(
-					hspace, tabWidth,
-					tabOffset ? ( tabOffset ? *tabOffset + pen.x : std::optional<Float>{} )
-							  : std::optional<Float>{} );
-				ShapedGlyph sg;
-				sg.stringIndex = i;
-				sg.position = pen;
-				result.shapedGlyphs.emplace_back( std::move( sg ) );
-				continue;
-			}
-
-			ShapedGlyph sg;
-			sg.font = static_cast<FontTrueType*>( font );
-			sg.glyphIndex = sg.font->getGlyphIndex( curChar );
-			sg.stringIndex = i;
-			sg.position = pen;
-			pen.x +=
-				font->getGlyph( curChar, characterSize, bold, italic, outlineThickness ).advance;
-			result.shapedGlyphs.emplace_back( std::move( sg ) );
-		}
-	}
-
-	// pen.y doesn't have the last line height counted unless the last run ended with a new line
-	if ( string[string.size() - 1] != '\n' )
-		pen.y += vspace;
-
-	result.linesWidth.push_back( pen.x );
-	maxWidth = eemax( maxWidth, pen.x );
-	result.size = { maxWidth, pen.y };
-
-	return result;
-}
-
-TextLayout TextLayouter::layout( const String& string, Font* font, const Uint32& fontSize,
-								 const Uint32& style, const Uint32& tabWidth,
-								 const Float& outlineThickness, std::optional<Float> tabOffset,
-								 Uint32 textDrawHints ) {
-	return TextLayouter::layout<String>( string, font, fontSize, style, tabWidth, outlineThickness,
-										 tabOffset, textDrawHints );
-}
-
-TextLayout TextLayouter::layout( const String::View& string, Font* font, const Uint32& fontSize,
-								 const Uint32& style, const Uint32& tabWidth,
-								 const Float& outlineThickness, std::optional<Float> tabOffset,
-								 Uint32 textDrawHints ) {
-	return TextLayouter::layout<String::View>( string, font, fontSize, style, tabWidth,
-											   outlineThickness, tabOffset, textDrawHints );
-}
-
-TextShapeRun::TextShapeRun( String::View str, FontTrueType* font, Uint32 characterSize,
-							Uint32 style, Float outlineThickness ) :
-	mString( str ),
-	mFont( font ),
-	mCharacterSize( characterSize ),
-	mStyle( style ),
-	mOutlineThickness( outlineThickness ),
-	mCurFont( mFont ) {
-	findNextEnd();
-}
-
-String::View TextShapeRun::curRun() const {
-	return mString.substr( mIndex, mIsNewLine ? mLen - 1 : mLen );
-}
-
-bool TextShapeRun::hasNext() const {
-	return mIndex < mString.size();
-}
-
-std::size_t TextShapeRun::pos() const {
-	return mIndex;
-}
-
-void TextShapeRun::next() {
-	mIndex += mLen;
-	findNextEnd();
-}
-
-bool TextShapeRun::runIsNewLine() const {
-	return mIsNewLine;
-}
-
-FontTrueType* TextShapeRun::font() {
-	return static_cast<FontTrueType*>( mCurFont );
-}
-
-void TextShapeRun::findNextEnd() {
-#ifdef EE_TEXT_SHAPER_ENABLED
-	Font* lFont = mStartFont ? mStartFont : mFont;
-	std::size_t len = mString.size();
-	std::size_t pos = 0;
-	hb_script_t curScript = HB_SCRIPT_UNKNOWN;
-
-	for ( std::size_t idx = mIndex; idx < len; ++idx, ++pos ) {
-		auto ch = mString[idx];
-		hb_script_t script = hb_unicode_script( hb_unicode_funcs_get_default(), ch );
-		auto font = mFont
-						->getGlyph( ch, mCharacterSize, mStyle & Text::Bold, mStyle & Text::Italic,
-									mOutlineThickness )
-						.font;
-		mIsNewLine = ( ch == '\n' );
-
-		if ( idx == mIndex ) {
-			curScript = script;
-			mStartFont = font;
-			lFont = font;
-			mCurFont = font;
-			if ( curScript == HB_SCRIPT_COMMON || curScript == HB_SCRIPT_INHERITED )
-				curScript = HB_SCRIPT_LATIN;
-		}
-
-		// Break run if:
-		// - Newline
-		// - Font changed
-		// - Script changed
-		hb_script_t effectiveScript =
-			( script == HB_SCRIPT_COMMON || script == HB_SCRIPT_INHERITED ) ? (hb_script_t)curScript
-																			: script;
-
-		if ( mIsNewLine || ( lFont != nullptr && font != lFont ) || effectiveScript != curScript ) {
-			mLen = mIsNewLine ? pos + 1 : pos;
-			mCurFont = lFont;
-			return;
-		}
-
-		lFont = font;
-		mCurFont = font;
-		curScript = effectiveScript;
-	}
-
-	mLen = len - mIndex;
-#else
-	Font* lFont = mStartFont;
-	std::size_t len = mString.size();
-	std::size_t idx;
-	std::size_t pos = 0;
-	for ( idx = mIndex; idx < len; idx++, pos++ ) {
-		Font* font = mFont
-						 ->getGlyph( mString[idx], mCharacterSize, mStyle & Text::Bold,
-									 mStyle & Text::Italic, mOutlineThickness )
-						 .font;
-		mIsNewLine = mString[idx] == '\n';
-		if ( mIsNewLine || ( lFont != nullptr && font != lFont ) ) {
-			mCurFont = lFont;
-			mStartFont = font;
-			mLen = mIsNewLine ? pos + 1 : pos;
-			return;
-		}
-		lFont = font;
-		mCurFont = font;
-	}
-	mLen = idx;
-#endif
-}
+bool Text::TextShaperEnabled = false;
+bool Text::TextShaperOptimizations = true;
+Uint32 Text::GlobalInvalidationId = 0;
 
 Float Text::tabAdvance( Float hspace, Uint32 tabWidth, std::optional<Float> tabOffset ) {
 	Float advance = hspace * tabWidth;
@@ -408,10 +29,6 @@ Float Text::tabAdvance( Float hspace, Uint32 tabWidth, std::optional<Float> tabO
 	}
 	return advance;
 }
-
-bool Text::TextShaperEnabled = false;
-bool Text::TextShaperOptimizations = true;
-Uint32 Text::GlobalInvalidationId = 0;
 
 std::string Text::styleFlagToString( const Uint32& flags ) {
 	std::string str;
@@ -1029,6 +646,7 @@ void Text::onNewString() {
 	mGeometryNeedUpdate = true;
 	mCachedWidthNeedUpdate = true;
 	mContainsColorEmoji = false;
+	mTextHints = mString.isAscii() ? TextHints::AllAscii : 0;
 	if ( FontManager::instance()->getColorEmojiFont() != nullptr ) {
 		if ( mFontStyleConfig.Font->getType() == FontType::TTF ) {
 			FontTrueType* fontTrueType = static_cast<FontTrueType*>( mFontStyleConfig.Font );
@@ -1320,10 +938,11 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 }
 
 template <typename StringType>
-std::size_t
-Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize, const StringType& string,
-								   Float maxWidth, const Uint32& style, const Uint32& tabWidth,
-								   const Float& outlineThickness, std::optional<Float> tabOffset ) {
+std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
+											   const StringType& string, Float maxWidth,
+											   const Uint32& style, const Uint32& tabWidth,
+											   const Float& outlineThickness,
+											   std::optional<Float> tabOffset, Uint32 textHints ) {
 	if ( NULL == font || string.empty() )
 		return 0;
 	String::StringBaseType codepoint;
@@ -1335,7 +954,7 @@ Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize, const Str
 		font->getGlyph( L' ', fontSize, bold, italic, outlineThickness ).advance );
 
 #ifdef EE_TEXT_SHAPER_ENABLED
-	if ( TextShaperEnabled && font->getType() == FontType::TTF ) {
+	if ( TextShaperEnabled && font->getType() == FontType::TTF && !canSkipShaping( textHints ) ) {
 		auto layout =
 			TextLayouter::layout( string, static_cast<FontTrueType*>( font ), fontSize, style,
 								  tabWidth, outlineThickness, tabOffset /* , textDrawHints */ );
@@ -1632,36 +1251,36 @@ std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSiz
 											   const String& string, Float maxWidth,
 											   const Uint32& style, const Uint32& tabWidth,
 											   const Float& outlineThickness,
-											   std::optional<Float> tabOffset ) {
+											   std::optional<Float> tabOffset, Uint32 textHints ) {
 	return findLastCharPosWithinLength<String>( font, fontSize, string, maxWidth, style, tabWidth,
-												outlineThickness, tabOffset );
+												outlineThickness, tabOffset, textHints );
 }
 
 std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
 											   const String::View& string, Float maxWidth,
 											   const Uint32& style, const Uint32& tabWidth,
 											   const Float& outlineThickness,
-											   std::optional<Float> tabOffset ) {
-	return findLastCharPosWithinLength<String::View>( font, fontSize, string, maxWidth, style,
-													  tabWidth, outlineThickness, tabOffset );
+											   std::optional<Float> tabOffset, Uint32 textHints ) {
+	return findLastCharPosWithinLength<String::View>(
+		font, fontSize, string, maxWidth, style, tabWidth, outlineThickness, tabOffset, textHints );
 }
 
 std::size_t Text::findLastCharPosWithinLength( const String& string, Float maxWidth,
 											   const FontStyleConfig& config,
 											   const Uint32& tabWidth,
-											   std::optional<Float> tabOffset ) {
+											   std::optional<Float> tabOffset, Uint32 textHints ) {
 	return findLastCharPosWithinLength<String>( config.Font, config.CharacterSize, string, maxWidth,
 												config.Style, tabWidth, config.OutlineThickness,
-												tabOffset );
+												tabOffset, textHints );
 }
 
 std::size_t Text::findLastCharPosWithinLength( const String::View& string, Float maxWidth,
 											   const FontStyleConfig& config,
 											   const Uint32& tabWidth,
-											   std::optional<Float> tabOffset ) {
-	return findLastCharPosWithinLength<String::View>( config.Font, config.CharacterSize, string,
-													  maxWidth, config.Style, tabWidth,
-													  config.OutlineThickness, tabOffset );
+											   std::optional<Float> tabOffset, Uint32 textHints ) {
+	return findLastCharPosWithinLength<String::View>(
+		config.Font, config.CharacterSize, string, maxWidth, config.Style, tabWidth,
+		config.OutlineThickness, tabOffset, textHints );
 }
 
 void Text::updateWidthCache() {
@@ -1680,7 +1299,8 @@ void Text::updateWidthCache() {
 										   .advance );
 
 #ifdef EE_TEXT_SHAPER_ENABLED
-	if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF ) {
+	if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF &&
+		 !canSkipShaping( mTextHints ) ) {
 		auto layout = TextLayouter::layout( mString, mFontStyleConfig.Font,
 											mFontStyleConfig.CharacterSize, mFontStyleConfig.Style,
 											mTabWidth, mFontStyleConfig.OutlineThickness );
@@ -1995,7 +1615,8 @@ void Text::ensureGeometryUpdate() {
 	unsigned int line = 0;
 
 #ifdef EE_TEXT_SHAPER_ENABLED
-	if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF ) {
+	if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF &&
+		 !canSkipShaping( mTextHints ) ) {
 		FontTrueType* rFont = static_cast<FontTrueType*>( mFontStyleConfig.Font );
 		auto layout = TextLayouter::layout( mString, rFont, mFontStyleConfig.CharacterSize,
 											mFontStyleConfig.Style, mTabWidth,

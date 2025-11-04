@@ -1909,7 +1909,10 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 	Vector2f pos( screenStart.x + eefloor( PixelDensity::dpToPx( 8 ) ),
 				  screenStart.y + textOffsetY );
 
-	auto drawn = Text::draw( String::View( utf32Path, pathLen ), pos, font, fontSize, textColor );
+	String::View pathView{ utf32Path, pathLen };
+	auto drawn = Text::draw( String::View( utf32Path, pathLen ), pos, font, fontSize, textColor, 0,
+							 0.f, Color::Black, Color::Black, { 1, 1 }, 4,
+							 String::isAscii( pathView ) ? TextHints::AllAscii : 0 );
 
 	Lock l( mDocCurrentSymbolsMutex );
 	auto symbolsInfoIt = mDocCurrentSymbols.find( editor->getDocument().getURI() );
@@ -1953,7 +1956,9 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 			iconDrawable->setColor( c );
 		}
 
-		drawn = Text::draw( info.name, pos, font, fontSize, textColor );
+		drawn =
+			Text::draw( info.name, pos, font, fontSize, textColor, 0, 0.f, Color::Black,
+						Color::Black, { 1, 1 }, 4, info.name.isAscii() ? TextHints::AllAscii : 0 );
 		pos.x += drawn.getWidth();
 	}
 }
