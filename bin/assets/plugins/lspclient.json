@@ -268,9 +268,9 @@
     },
     {
       "language": "cmake",
-      "name": "cmake-language-server",
-      "url": "https://github.com/regen100/cmake-language-server",
-      "command": "cmake-language-server",
+      "name": "neocmakelsp",
+      "url": "https://github.com/neocmakelsp/neocmakelsp",
+      "command": "neocmakelsp stdio",
       "file_patterns": ["%.cmake$", "CMakeLists%.txt$"],
       "rootIndicationFileNames": ["build"]
     },
