@@ -613,6 +613,8 @@
 ../../src/eepp/graphics/stbi_iocb.hpp
 ../../src/eepp/graphics/textcache.cpp
 ../../src/eepp/graphics/text.cpp
+../../src/eepp/graphics/textlayouter.cpp
+../../src/eepp/graphics/textshaperun.cpp
 ../../src/eepp/graphics/textureatlas.cpp
 ../../src/eepp/graphics/textureatlasloader.cpp
 ../../src/eepp/graphics/textureatlasmanager.cpp
