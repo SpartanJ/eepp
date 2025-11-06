@@ -1184,6 +1184,16 @@ struct TextHints {
 
 } // namespace EE
 
+namespace std {
+
+template <> struct hash<EE::String> {
+	std::size_t operator()( const EE::String& s ) const noexcept {
+		return std::hash<EE::String::StringType>()( s.getString() );
+	}
+};
+
+} // namespace std
+
 #endif
 
 /**

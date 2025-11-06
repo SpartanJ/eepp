@@ -1,3 +1,4 @@
+#include <eepp/core/lrucache.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/textlayouter.hpp>
@@ -9,6 +10,8 @@
 #endif
 
 namespace EE::Graphics {
+
+using LRULayoutCache = LRUCache<1024, Uint64, TextLayout>;
 
 #ifdef EE_TEXT_SHAPER_ENABLED
 static bool
@@ -86,15 +89,37 @@ static inline bool isSimpleScript( hb_script_t script ) {
 #endif
 
 template <typename StringType>
+static inline Uint64 textLayoutHash( const StringType& string, Font* font,
+									 const Uint32& characterSize, const Uint32& style,
+									 const Uint32& tabWidth, const Float& outlineThickness,
+									 std::optional<Float> tabOffset ) {
+	return hashCombine( std::hash<StringType>()( string ), std::hash<Font*>()( font ),
+						std::hash<Uint32>()( characterSize ), std::hash<Uint32>()( style ),
+						std::hash<Uint32>()( tabWidth ), std::hash<Float>()( outlineThickness ),
+						std::hash<std::optional<Float>>()( tabOffset ) );
+}
+
+template <typename StringType>
 TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uint32& characterSize,
 								 const Uint32& style, const Uint32& tabWidth,
 								 const Float& outlineThickness, std::optional<Float> tabOffset,
 								 Uint32 textDrawHints ) {
+	static LRULayoutCache sLayoutCache;
 	TextLayout result;
 
 	if ( !font || string.empty() ) {
 		result.size = { 0.f, font ? (Float)font->getFontHeight( characterSize ) : 0.f };
 		return result;
+	}
+
+	Uint64 hash = 0;
+	if ( !Text::canSkipShaping( textDrawHints ) ) {
+		hash = textLayoutHash( string, font, characterSize, style, tabWidth, outlineThickness,
+							   tabOffset );
+
+		auto cacheHit = sLayoutCache.get( hash );
+		if ( cacheHit.has_value() )
+			return *cacheHit;
 	}
 
 	bool bold = ( style & Text::Bold ) != 0;
@@ -260,6 +285,7 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 	maxWidth = eemax( maxWidth, pen.x );
 	result.size = { maxWidth, pen.y };
 
+	sLayoutCache.put( hash, result );
 	return result;
 }
 
