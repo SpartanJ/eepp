@@ -26,7 +26,7 @@ class EE_API Engine {
 	static bool isEngineRunning();
 
 	/** @return The id of the thread that was used to initialize the OpenGL Context. */
-	static Uint64 getMainThreadId();
+	static UintPtr getMainThreadId();
 
 	/** @returns True if the current thread is the main thread. */
 	static bool isMainThread();

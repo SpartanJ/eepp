@@ -19,7 +19,7 @@ class EE_API Thread : NonCopyable {
 	typedef void ( *FuncType )( void* );
 
 	/** @return The current thread id */
-	static Uint32 getCurrentThreadId();
+	static UintPtr getCurrentThreadId();
 
 	/** @brief Construct the thread from a functor with no argument
 	**	This constructor works for function objects, as well

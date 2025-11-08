@@ -179,6 +179,7 @@ const Http::Request::ProgressCallback& Http::Request::getProgressCallback() cons
 
 void Http::Request::cancel() {
 	mCancel = true;
+	setProgressCallback( {} );
 }
 
 const bool& Http::Request::isCancelled() const {
@@ -641,13 +642,27 @@ Http::Http( const std::string& host, unsigned short port, bool useSSL, URI proxy
 }
 
 Http::~Http() {
-	// First we wait to finish any request pending
-	for ( auto&& itt : mThreads ) {
-		itt->wait();
+
+	{
+		Lock l( mThreadsMutex );
+		// First we wait to finish any request pending
+		for ( auto&& itt : mThreads ) {
+			itt->cancel();
+			itt->wait();
+		}
 	}
 
-	for ( auto&& itt : mThreads ) {
-		eeDelete( itt );
+	{
+		Lock l( mThreadsMutex );
+		for ( auto&& itt : mThreads ) {
+			eeDelete( itt );
+		}
+	}
+
+	{
+		Lock l( mCurRequestsMutex );
+		for ( auto [_, req] : mCurRequests )
+			req->cancel();
 	}
 
 	// Then we destroy the last open connection
@@ -780,8 +795,11 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 	// Prepare the response
 	Response received;
 
+	if ( request.isCancelled() )
+		return Response();
+
 	// If not connected, try to connect to the server
-	if ( !mConnection->isConnected() ) {
+	if ( mConnection && !mConnection->isConnected() ) {
 		// We need to create an HTTP Tunnel?
 		if ( isProxied() && mIsSSL && SSLSocket::isSupported() ) {
 			SSLSocket* sslSocket = reinterpret_cast<SSLSocket*>( mConnection->getSocket() );
@@ -809,7 +827,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 	}
 
 	// Connect the socket to the host
-	if ( mConnection->isConnected() ) {
+	if ( mConnection && mConnection->isConnected() ) {
 		// Create a HTTP Tunnel for SSL connections if not ready
 		if ( isProxied() && mIsSSL && !mConnection->isTunneled() ) {
 			// Create the HTTP Tunnel request
@@ -889,9 +907,10 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 			Socket::Status status;
 
 			// Send it through the socket
-			if ( mConnection->getSocket()->send( requestStr.c_str(), requestStr.size() ) ==
-				 Socket::Done ) {
-				if ( !sendProgress( *this, request, received, Request::Sent, 0, 0 ) ) {
+			if ( mConnection && mConnection->getSocket()->send(
+									requestStr.c_str(), requestStr.size() ) == Socket::Done ) {
+				if ( !request.isCancelled() &&
+					 !sendProgress( *this, request, received, Request::Sent, 0, 0 ) ) {
 					request.mCancel = true;
 				}
 
@@ -911,7 +930,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 				IOStreamInflate* inflateStream = NULL;
 				IOStream* bufferStream = NULL;
 
-				while ( !request.isCancelled() &&
+				while ( !request.isCancelled() && mConnection &&
 						( status = mConnection->getSocket()->receive( buffer, PACKET_BUFFER_SIZE,
 																	  read ) ) == Socket::Done ) {
 					char* readBuffer = buffer;
@@ -989,7 +1008,8 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 											contentLength = 0;
 									}
 
-									if ( received.getField( "connection" ) == "closed" ) {
+									if ( mConnection &&
+										 received.getField( "connection" ) == "closed" ) {
 										mConnection->setConnected( false );
 										mConnection->setTunneled( false );
 									}
@@ -1008,7 +1028,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 											URI uri( location );
 
 											// Close the connection
-											if ( !mConnection->isKeepAlive() )
+											if ( mConnection && !mConnection->isKeepAlive() )
 												mConnection->disconnect();
 
 											eeSAFE_DELETE( chunkedStream );
@@ -1037,7 +1057,8 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 										}
 									}
 
-									if ( !sendProgress( *this, request, received,
+									if ( !request.isCancelled() &&
+										 !sendProgress( *this, request, received,
 														Request::HeaderReceived, contentLength,
 														0 ) ) {
 										request.mCancel = true;
@@ -1065,10 +1086,11 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 					if ( isnheader ) {
 						currentTotalBytes += read;
 
-						if ( read > 0 )
+						if ( read > 0 && !request.isCancelled() )
 							bufferStream->write( readBuffer, read );
 
-						if ( !sendProgress( *this, request, received, Request::ContentReceived,
+						if ( !request.isCancelled() &&
+							 !sendProgress( *this, request, received, Request::ContentReceived,
 											contentLength, currentTotalBytes ) ) {
 							request.mCancel = true;
 							break;
@@ -1093,21 +1115,21 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 					received.parseFields( in );
 				}
 
-				if ( status == Socket::Status::Disconnected ) {
+				if ( mConnection && status == Socket::Status::Disconnected ) {
 					mConnection->setConnected( false );
 					mConnection->setTunneled( false );
 				}
 
 				eeSAFE_DELETE( chunkedStream );
 				eeSAFE_DELETE( inflateStream );
-			} else {
+			} else if ( mConnection ) {
 				mConnection->setConnected( false );
 				mConnection->setTunneled( false );
 			}
 		}
 
 		// Close the connection
-		if ( !mConnection->isKeepAlive() ) {
+		if ( mConnection && !mConnection->isKeepAlive() ) {
 			mConnection->disconnect();
 
 			if ( mConnection ) {
@@ -1131,8 +1153,11 @@ void Http::setThreadPool( std::shared_ptr<ThreadPool> pool ) {
 	sGlobalThreadPool = pool;
 }
 
-Http::AsyncRequest::AsyncRequest( Http* http, const Http::AsyncResponseCallback& cb,
-								  Http::Request request, Time timeout ) :
+std::atomic<Uint64> Http::AsyncRequest::IdCounter = 1;
+
+Http::AsyncRequest::AsyncRequest( Uint64 id, Http* http, const Http::AsyncResponseCallback& cb,
+								  Http::Request request, Time timeout, bool fromLocalPool ) :
+	mId( id ),
 	mHttp( http ),
 	mCb( cb ),
 	mRequest( request ),
@@ -1140,10 +1165,13 @@ Http::AsyncRequest::AsyncRequest( Http* http, const Http::AsyncResponseCallback&
 	mRunning( true ),
 	mStreamed( false ),
 	mStreamOwned( false ),
+	mFromLocalPool( fromLocalPool ),
 	mStream( NULL ) {}
 
-Http::AsyncRequest::AsyncRequest( Http* http, const Http::AsyncResponseCallback& cb,
-								  Http::Request request, IOStream& writeTo, Time timeout ) :
+Http::AsyncRequest::AsyncRequest( Uint64 id, Http* http, const Http::AsyncResponseCallback& cb,
+								  Http::Request request, IOStream& writeTo, Time timeout,
+								  bool fromLocalPool ) :
+	mId( id ),
 	mHttp( http ),
 	mCb( cb ),
 	mRequest( request ),
@@ -1151,10 +1179,13 @@ Http::AsyncRequest::AsyncRequest( Http* http, const Http::AsyncResponseCallback&
 	mRunning( true ),
 	mStreamed( true ),
 	mStreamOwned( false ),
+	mFromLocalPool( fromLocalPool ),
 	mStream( &writeTo ) {}
 
-Http::AsyncRequest::AsyncRequest( Http* http, const Http::AsyncResponseCallback& cb,
-								  Http::Request request, std::string writePath, Time timeout ) :
+Http::AsyncRequest::AsyncRequest( Uint64 id, Http* http, const Http::AsyncResponseCallback& cb,
+								  Http::Request request, std::string writePath, Time timeout,
+								  bool fromLocalPool ) :
+	mId( id ),
 	mHttp( http ),
 	mCb( cb ),
 	mRequest( request ),
@@ -1162,6 +1193,7 @@ Http::AsyncRequest::AsyncRequest( Http* http, const Http::AsyncResponseCallback&
 	mRunning( true ),
 	mStreamed( true ),
 	mStreamOwned( true ),
+	mFromLocalPool( fromLocalPool ),
 	mStream( IOStreamFile::New( writePath, "wb" ) ) {}
 
 Http::AsyncRequest::~AsyncRequest() {
@@ -1169,36 +1201,39 @@ Http::AsyncRequest::~AsyncRequest() {
 		eeSAFE_DELETE( mStream );
 }
 
+void Http::AsyncRequest::cancel() {
+	mRequest.cancel();
+}
+
 void Http::AsyncRequest::run() {
 	Http::Response response = mStreamed ? mHttp->downloadRequest( mRequest, *mStream, mTimeout )
 										: mHttp->sendRequest( mRequest, mTimeout );
 
-	mCb( *mHttp, mRequest, response );
+	if ( !mRequest.isCancelled() )
+		mCb( *mHttp, mRequest, response );
 
 	if ( mStreamed && mStreamOwned ) {
 		eeSAFE_DELETE( mStream );
 	}
 
 	mRunning = false;
+
+	if ( mFromLocalPool ) {
+		mHttp->removeAsyncRequest( this );
+		auto me = this;
+		eeSAFE_DELETE( me );
+	}
 }
 
-void Http::removeOldThreads() {
-	std::vector<AsyncRequest*> remove;
-
-	for ( AsyncRequest* ar : mThreads ) {
-		if ( ar->mRunning )
-			continue;
-		// We need to be sure, since the state is set in the thread, this will not block the
-		// thread anyway
-		ar->wait();
-
-		eeDelete( ar );
-
-		remove.push_back( ar );
+void Http::removeAsyncRequest( AsyncRequest* req ) {
+	{
+		Lock l( mCurRequestsMutex );
+		mCurRequests.erase( req->id() );
 	}
 
-	for ( auto rem : remove ) {
-		auto found = std::find( mThreads.begin(), mThreads.end(), rem );
+	{
+		Lock l( mThreadsMutex );
+		auto found = std::find( mThreads.begin(), mThreads.end(), req );
 		if ( found != mThreads.end() )
 			mThreads.erase( found );
 	}
@@ -1261,6 +1296,16 @@ bool Http::isProxied() const {
 	return !mProxy.empty();
 }
 
+bool Http::setCancelRequest( Uint64 reqId ) {
+	Lock l( mCurRequestsMutex );
+	auto found = mCurRequests.find( reqId );
+	if ( found != mCurRequests.end() ) {
+		found->second->cancel();
+		return true;
+	}
+	return false;
+}
+
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 struct WGetAsyncRequest {
 	Http* http;
@@ -1318,8 +1363,9 @@ void emscripten_async_wget2_got_error_file( unsigned int, void* vwget, int error
 }
 #endif
 
-void Http::sendAsyncRequest( const Http::AsyncResponseCallback& cb, const Http::Request& request,
-							 Time timeout ) {
+Uint64 Http::sendAsyncRequest( const Http::AsyncResponseCallback& cb, const Http::Request& request,
+							   Time timeout ) {
+	Uint64 id = Http::AsyncRequest::IdCounter.fetch_add( 1, std::memory_order_relaxed );
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	WGetAsyncRequest* wget = new WGetAsyncRequest();
 	wget->http = this;
@@ -1330,24 +1376,40 @@ void Http::sendAsyncRequest( const Http::AsyncResponseCallback& cb, const Http::
 								 URI( request.getUri() ).getQuery().c_str(), wget, 1,
 								 emscripten_async_wget2_got_data,
 								 emscripten_async_wget2_got_error_data, NULL );
+	return id;
 #else
 	if ( sGlobalThreadPool ) {
-		sGlobalThreadPool->run( [this, cb, request, timeout] {
-			AsyncRequest asyncRequest( this, cb, request, timeout );
+		sGlobalThreadPool->run( [this, cb, request, timeout, id] {
+			AsyncRequest asyncRequest( id, this, cb, request, timeout, false );
+			{
+				Lock l( mCurRequestsMutex );
+				mCurRequests[id] = &asyncRequest;
+			}
 			asyncRequest.run();
+			{
+				Lock l( mCurRequestsMutex );
+				mCurRequests.erase( id );
+			}
 		} );
-		return;
+		return id;
 	}
-	AsyncRequest* thread = eeNew( AsyncRequest, ( this, cb, request, timeout ) );
+	AsyncRequest* thread = eeNew( AsyncRequest, ( id, this, cb, request, timeout, true ) );
+	{
+		Lock l( mCurRequestsMutex );
+		mCurRequests[id] = thread;
+	}
 	thread->launch();
-	Lock l( mThreadsMutex );
-	removeOldThreads();
-	mThreads.push_back( thread );
+	{
+		Lock l( mThreadsMutex );
+		mThreads.push_back( thread );
+	}
+	return id;
 #endif
 }
 
-void Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
-								 const Http::Request& request, IOStream& writeTo, Time timeout ) {
+Uint64 Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
+								   const Http::Request& request, IOStream& writeTo, Time timeout ) {
+	Uint64 id = Http::AsyncRequest::IdCounter.fetch_add( 1, std::memory_order_relaxed );
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	WGetAsyncRequest* wget = new WGetAsyncRequest();
 	wget->http = this;
@@ -1359,25 +1421,41 @@ void Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
 								 URI( request.getUri() ).getQuery().c_str(), wget, 1,
 								 emscripten_async_wget2_got_data,
 								 emscripten_async_wget2_got_error_data, NULL );
+	return id;
 #else
 	if ( sGlobalThreadPool ) {
-		sGlobalThreadPool->run( [this, cb, request, &writeTo, timeout] {
-			AsyncRequest asyncRequest( this, cb, request, writeTo, timeout );
+		sGlobalThreadPool->run( [this, cb, request, &writeTo, timeout, id] {
+			AsyncRequest asyncRequest( id, this, cb, request, writeTo, timeout, false );
+			{
+				Lock l( mCurRequestsMutex );
+				mCurRequests[id] = &asyncRequest;
+			}
 			asyncRequest.run();
+			{
+				Lock l( mCurRequestsMutex );
+				mCurRequests.erase( id );
+			}
 		} );
-		return;
+		return id;
 	}
-	AsyncRequest* thread = eeNew( AsyncRequest, ( this, cb, request, writeTo, timeout ) );
+	AsyncRequest* thread = eeNew( AsyncRequest, ( id, this, cb, request, writeTo, timeout, true ) );
+	{
+		Lock l( mCurRequestsMutex );
+		mCurRequests[id] = thread;
+	}
 	thread->launch();
-	Lock l( mThreadsMutex );
-	removeOldThreads();
-	mThreads.push_back( thread );
+	{
+		Lock l( mThreadsMutex );
+		mThreads.push_back( thread );
+	}
+	return id;
 #endif
 }
 
-void Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
-								 const Http::Request& request, std::string writePath,
-								 Time timeout ) {
+Uint64 Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
+								   const Http::Request& request, std::string writePath,
+								   Time timeout ) {
+	Uint64 id = Http::AsyncRequest::IdCounter.fetch_add( 1, std::memory_order_relaxed );
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	WGetAsyncRequest* wget = new WGetAsyncRequest();
 	wget->http = this;
@@ -1390,17 +1468,32 @@ void Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
 							NULL );
 #else
 	if ( sGlobalThreadPool ) {
-		sGlobalThreadPool->run( [this, cb, request, writePath, timeout] {
-			AsyncRequest asyncRequest( this, cb, request, writePath, timeout );
+		sGlobalThreadPool->run( [this, cb, request, writePath, timeout, id] {
+			AsyncRequest asyncRequest( id, this, cb, request, writePath, timeout, false );
+			{
+				Lock l( mCurRequestsMutex );
+				mCurRequests[id] = &asyncRequest;
+			}
 			asyncRequest.run();
+			{
+				Lock l( mCurRequestsMutex );
+				mCurRequests.erase( id );
+			}
 		} );
-		return;
+		return id;
 	}
-	AsyncRequest* thread = eeNew( AsyncRequest, ( this, cb, request, writePath, timeout ) );
+	AsyncRequest* thread =
+		eeNew( AsyncRequest, ( id, this, cb, request, writePath, timeout, true ) );
+	{
+		Lock l( mCurRequestsMutex );
+		mCurRequests[id] = thread;
+	}
 	thread->launch();
-	Lock l( mThreadsMutex );
-	removeOldThreads();
-	mThreads.push_back( thread );
+	{
+		Lock l( mThreadsMutex );
+		mThreads.push_back( thread );
+	}
+	return id;
 #endif
 }
 

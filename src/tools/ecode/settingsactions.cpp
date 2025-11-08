@@ -6,7 +6,7 @@ using namespace std::string_literals;
 
 namespace ecode {
 
-void SettingsActions::checkForUpdatesResponse( Http::Response response, bool fromStartup ) {
+void SettingsActions::checkForUpdatesResponse( Http::Response&& response, bool fromStartup ) {
 	auto updatesError = [this, fromStartup]() {
 		if ( fromStartup )
 			return;
@@ -103,8 +103,8 @@ void SettingsActions::checkForUpdates( bool fromStartup ) {
 		[this, fromStartup]( const Http&, Http::Request&, Http::Response& response ) {
 			if ( !SceneManager::existsSingleton() || SceneManager::instance()->isShuttingDown() )
 				return;
-			mApp->getUISceneNode()->runOnMainThread( [this, response, fromStartup]() {
-				checkForUpdatesResponse( response, fromStartup );
+			mApp->getUISceneNode()->runOnMainThread( [this, res = response, fromStartup]() mutable {
+				checkForUpdatesResponse( std::move( res ), fromStartup );
 			} );
 		},
 		"https://api.github.com/repos/SpartanJ/ecode/releases/latest", Seconds( 30 ) );

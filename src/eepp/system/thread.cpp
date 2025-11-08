@@ -3,17 +3,20 @@
 
 namespace EE { namespace System {
 
-Uint32 Thread::getCurrentThreadId() {
+UintPtr Thread::getCurrentThreadId() {
 	return Platform::ThreadImpl::getCurrentThreadId();
 }
 
 Thread::Thread() : mThreadImpl( NULL ), mEntryPoint( NULL ) {}
 
 Thread::~Thread() {
-	wait();
+	if ( mThreadImpl && mThreadImpl->getId() != Thread::getCurrentThreadId() )
+		wait();
 
 	if ( NULL != mEntryPoint )
 		delete mEntryPoint;
+
+	eeSAFE_DELETE( mThreadImpl );
 }
 
 void Thread::launch() {

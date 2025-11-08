@@ -7,8 +7,7 @@ namespace ecode {
 LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, const std::string& auth,
 													const std::string& reqBody,
 													const std::string& provider ) :
-	mUrl( uri ) {
-	mHttp.setHost( mUrl );
+	mUrl( uri ), mHttp( Http::Pool::getGlobal().get( URI( uri ) ) ) {
 	mRequest.setUri( mUrl.getPathEtc() );
 	mRequest.setHeader( "Content-Type", "application/json" );
 	if ( provider == "anthropic" ) {
@@ -23,7 +22,6 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 	mRequest.setProgressCallback( [this]( const Http&, const Http::Request&, const Http::Response&,
 										  const Http::Request::Status& status, size_t, size_t ) {
 		if ( mCancel ) {
-			mRequest.cancel();
 			if ( cancelCb )
 				cancelCb( *this );
 			return false;
@@ -103,14 +101,18 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 	} );
 }
 
+LLMChatCompletionRequest::~LLMChatCompletionRequest() {
+	cancel();
+}
+
 void LLMChatCompletionRequest::request() {
-	Http::Response res = mHttp.downloadRequest( mRequest, mStream, Seconds( 5 ) );
+	Http::Response res = mHttp->downloadRequest( mRequest, mStream, Seconds( 5 ) );
 	if ( doneCb )
 		doneCb( *this, res );
 }
 
 void LLMChatCompletionRequest::requestAsync() {
-	mHttp.downloadAsyncRequest(
+	mRequestId = mHttp->downloadAsyncRequest(
 		[this]( const Http&, Http::Request&, Http::Response& res ) {
 			if ( doneCb )
 				doneCb( *this, res );
@@ -120,6 +122,8 @@ void LLMChatCompletionRequest::requestAsync() {
 
 void LLMChatCompletionRequest::cancel() {
 	mCancel = true;
+	if ( mRequestId )
+		mHttp->setCancelRequest( mRequestId );
 }
 
 const std::string& LLMChatCompletionRequest::getStream() const {

@@ -30,6 +30,8 @@ class LLMChatCompletionRequest {
 	LLMChatCompletionRequest( const std::string& uri, const std::string& auth,
 							  const std::string& reqBody, const std::string& provider );
 
+	~LLMChatCompletionRequest();
+
 	void request();
 
 	void requestAsync();
@@ -44,7 +46,7 @@ class LLMChatCompletionRequest {
 
   protected:
 	URI mUrl;
-	Http mHttp;
+	std::shared_ptr<Http> mHttp;
 	Http::Request mRequest;
 	IOStreamString mStream;
 	std::string mReasoningResponse;
@@ -53,6 +55,7 @@ class LLMChatCompletionRequest {
 	bool mCancel{ false };
 	bool mFirstMessage{ true };
 	bool mReasoning{ false };
+	Uint64 mRequestId{ 0 };
 };
 
 } // namespace ecode

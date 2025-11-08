@@ -174,7 +174,7 @@ class EE_API Http : NonCopyable {
 					 ///< target resource.
 			Patch,	 ///< The PATCH method is used to apply partial modifications to a resource.
 			Connect	 ///< The CONNECT method starts two-way communications with the requested
-					///< resource. It can be used to open a tunnel.
+					 ///< resource. It can be used to open a tunnel.
 		};
 
 		/** @brief Enumerate the available states for a request */
@@ -418,7 +418,10 @@ class EE_API Http : NonCopyable {
 	void setHost( const std::string& host, unsigned short port = 0, bool useSSL = false,
 				  URI proxy = URI() );
 
-	/** @brief Sets the host from an URI (this is the equivalent of calling setHost( uri.getHost(), uri.getPort(), uri.getScheme() == "https" ) ) */
+	/** @brief Sets the host from an URI (this is the equivalent of calling setHost(
+	 * uri.getHost(),
+
+	 * * uri.getPort(), uri.getScheme() == "https" ) ) */
 	void setHost( const URI& uri, URI proxy = URI() );
 
 	/** @brief Send a HTTP request and return the server's response.
@@ -472,22 +475,25 @@ class EE_API Http : NonCopyable {
 		AsyncResponseCallback;
 
 	/** @brief Sends the request and creates a new thread, when got the response informs the result
-	 *to the callback. *	This function does not lock the caller thread.
-	 **  @see sendRequest */
-	void sendAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
-						   Time timeout = Time::Zero );
+	 ** to the callback. *	This function does not lock the caller thread.
+	 ** @see sendRequest
+     ** @return Unique Id of the request added */
+	Uint64 sendAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
+							 Time timeout = Time::Zero );
 
 	/** @brief Sends the request and creates a new thread, when got the response informs the result
 	 *to the callback. *	This function does not lock the caller thread.
-	 **  @see downloadRequest */
-	void downloadAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
-							   IOStream& writeTo, Time timeout = Time::Zero );
+	 **  @see downloadRequest
+	 **  @return Unique Id of the request added */
+	Uint64 downloadAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
+								 IOStream& writeTo, Time timeout = Time::Zero );
 
 	/** @brief Sends the request and creates a new thread, when got the response informs the result
 	 *to the callback. *	This function does not lock the caller thread.
-	 **  @see downloadRequest */
-	void downloadAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
-							   std::string writePath, Time timeout = Time::Zero );
+	 **  @see downloadRequest
+	 **  @return Unique Id of the request added */
+	Uint64 downloadAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
+								 std::string writePath, Time timeout = Time::Zero );
 
 	/** @return The host address */
 	const IpAddress& getHost() const;
@@ -512,6 +518,9 @@ class EE_API Http : NonCopyable {
 
 	/** @return Is a proxy is need to be used */
 	bool isProxied() const;
+
+	/** @return If request has been found and canceled */
+	bool setCancelRequest( Uint64 reqId );
 
 	/** Helper class to build the body of a multipart/form-data request. */
 	class EE_API MultipartEntitiesBuilder {
@@ -663,21 +672,28 @@ class EE_API Http : NonCopyable {
   private:
 	class AsyncRequest : public Thread {
 	  public:
-		AsyncRequest( Http* http, const AsyncResponseCallback& cb, Http::Request request,
-					  Time timeout );
+		static std::atomic<Uint64> IdCounter;
 
-		AsyncRequest( Http* http, const AsyncResponseCallback& cb, Http::Request request,
-					  IOStream& writeTo, Time timeout );
+		AsyncRequest( Uint64 id, Http* http, const AsyncResponseCallback& cb, Http::Request request,
+					  Time timeout, bool fromLocalPool );
 
-		AsyncRequest( Http* http, const AsyncResponseCallback& cb, Http::Request request,
-					  std::string writePath, Time timeout );
+		AsyncRequest( Uint64 id, Http* http, const AsyncResponseCallback& cb, Http::Request request,
+					  IOStream& writeTo, Time timeout, bool fromLocalPool );
+
+		AsyncRequest( Uint64 id, Http* http, const AsyncResponseCallback& cb, Http::Request request,
+					  std::string writePath, Time timeout, bool fromLocalPool );
 
 		~AsyncRequest();
 
 		void run();
 
+		Uint64 id() const { return mId; }
+
+		void cancel();
+
 	  protected:
 		friend class Http;
+		Uint64 mId{ 0 };
 		Http* mHttp;
 		AsyncResponseCallback mCb;
 		Http::Request mRequest;
@@ -685,6 +701,7 @@ class EE_API Http : NonCopyable {
 		bool mRunning;
 		bool mStreamed;
 		bool mStreamOwned;
+		bool mFromLocalPool;
 		IOStream* mStream;
 	};
 
@@ -736,8 +753,10 @@ class EE_API Http : NonCopyable {
 	bool mIsSSL;
 	bool mHostSolved;
 	URI mProxy;
+	Mutex mCurRequestsMutex;
+	std::unordered_map<Uint64, AsyncRequest*> mCurRequests;
 
-	void removeOldThreads();
+	void removeAsyncRequest( AsyncRequest* req );
 
 	Request prepareFields( const Http::Request& request );
 };

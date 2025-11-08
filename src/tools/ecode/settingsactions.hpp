@@ -42,7 +42,7 @@ class SettingsActions {
 
 	String i18n( const std::string& key, const String& def );
 
-	void checkForUpdatesResponse( Http::Response response, bool fromStartup );
+	void checkForUpdatesResponse( Http::Response&& response, bool fromStartup );
 
 };
 

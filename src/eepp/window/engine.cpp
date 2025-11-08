@@ -42,7 +42,7 @@
 
 namespace EE { namespace Window {
 
-static Uint64 sMainThreadId{ 0 };
+static UintPtr sMainThreadId{ 0 };
 
 SINGLETON_DECLARE_IMPLEMENTATION( Engine )
 
@@ -367,7 +367,7 @@ bool Engine::isThreaded() {
 #endif
 }
 
-Uint64 Engine::getMainThreadId() {
+UintPtr Engine::getMainThreadId() {
 	return sMainThreadId;
 }
 
