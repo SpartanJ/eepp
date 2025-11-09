@@ -5,7 +5,7 @@
  *   Load the basic TrueType tables, i.e., tables that can be either in
  *   TTF or OTF fonts (body).
  *
- * Copyright (C) 1996-2019 by
+ * Copyright (C) 1996-2025 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -17,10 +17,9 @@
  */
 
 
-#include <ft2build.h>
-#include FT_INTERNAL_DEBUG_H
-#include FT_INTERNAL_STREAM_H
-#include FT_TRUETYPE_TAGS_H
+#include <freetype/internal/ftdebug.h>
+#include <freetype/internal/ftstream.h>
+#include <freetype/tttags.h>
 #include "ttload.h"
 
 #include "sferrors.h"
@@ -65,8 +64,8 @@
 #endif
 
 
-    FT_TRACE4(( "tt_face_lookup_table: %08p, `%c%c%c%c' -- ",
-                face,
+    FT_TRACE4(( "tt_face_lookup_table: %p, `%c%c%c%c' -- ",
+                (void *)face,
                 (FT_Char)( tag >> 24 ),
                 (FT_Char)( tag >> 16 ),
                 (FT_Char)( tag >> 8  ),
@@ -206,9 +205,8 @@
 
       if ( FT_STREAM_READ_FIELDS( table_dir_entry_fields, &table ) )
       {
-        nn--;
         FT_TRACE2(( "check_table_dir:"
-                    " can read only %d table%s in font (instead of %d)\n",
+                    " can read only %hu table%s in font (instead of %hu)\n",
                     nn, nn == 1 ? "" : "s", sfnt->num_tables ));
         sfnt->num_tables = nn;
         break;
@@ -218,7 +216,7 @@
 
       if ( table.Offset > stream->size )
       {
-        FT_TRACE2(( "check_table_dir: table entry %d invalid\n", nn ));
+        FT_TRACE2(( "check_table_dir: table entry %hu invalid\n", nn ));
         continue;
       }
       else if ( table.Length > stream->size - table.Offset )
@@ -233,7 +231,7 @@
           valid_entries++;
         else
         {
-          FT_TRACE2(( "check_table_dir: table entry %d invalid\n", nn ));
+          FT_TRACE2(( "check_table_dir: table entry %hu invalid\n", nn ));
           continue;
         }
       }
@@ -363,7 +361,7 @@
     };
 
 
-    FT_TRACE2(( "tt_face_load_font_dir: %08p\n", face ));
+    FT_TRACE2(( "tt_face_load_font_dir: %p\n", (void *)face ));
 
     /* read the offset table */
 
@@ -382,7 +380,7 @@
 
     /* load the table directory */
 
-    FT_TRACE2(( "-- Number of tables: %10u\n",    sfnt.num_tables ));
+    FT_TRACE2(( "-- Number of tables: %10hu\n",   sfnt.num_tables ));
     FT_TRACE2(( "-- Format version:   0x%08lx\n", sfnt.format_tag ));
 
     if ( sfnt.format_tag != TTAG_OTTO )
@@ -397,7 +395,15 @@
       }
     }
     else
+    {
       valid_entries = sfnt.num_tables;
+      if ( !valid_entries )
+      {
+        FT_TRACE2(( "tt_face_load_font_dir: no valid tables found\n" ));
+        error = FT_THROW( Unknown_File_Format );
+        goto Exit;
+      }
+    }
 
     face->num_tables = valid_entries;
     face->format_tag = sfnt.format_tag;
@@ -409,9 +415,9 @@
          FT_FRAME_ENTER( sfnt.num_tables * 16L ) )
       goto Exit;
 
-    FT_TRACE2(( "\n"
-                "  tag    offset    length   checksum\n"
-                "  ----------------------------------\n" ));
+    FT_TRACE2(( "\n" ));
+    FT_TRACE2(( "  tag    offset    length   checksum\n" ));
+    FT_TRACE2(( "  ----------------------------------\n" ));
 
     valid_entries = 0;
     for ( nn = 0; nn < sfnt.num_tables; nn++ )
@@ -498,7 +504,15 @@
 
     FT_FRAME_EXIT();
 
-    FT_TRACE2(( "table directory loaded\n\n" ));
+    if ( !valid_entries )
+    {
+      FT_TRACE2(( "tt_face_load_font_dir: no valid tables found\n" ));
+      error = FT_THROW( Unknown_File_Format );
+      goto Exit;
+    }
+
+    FT_TRACE2(( "table directory loaded\n" ));
+    FT_TRACE2(( "\n" ));
 
   Exit:
     return error;
@@ -521,7 +535,8 @@
    *     The tag of table to load.  Use the value 0 if you want
    *     to access the whole font file, else set this parameter
    *     to a valid TrueType table tag that you can forge with
-   *     the MAKE_TT_TAG macro.
+   *     the MAKE_TT_TAG macro.  Use value 1 to access the table
+   *     directory.
    *
    *   offset ::
    *     The starting offset in the table (or the file if
@@ -563,7 +578,29 @@
     FT_ULong   size;
 
 
-    if ( tag != 0 )
+    if ( tag == 0 )
+    {
+      /* The whole font file. */
+      size = face->root.stream->size;
+    }
+    else if ( tag == 1 )
+    {
+      /* The currently selected font's table directory.            */
+      /*                                                           */
+      /* Note that `face_index` is also used to enumerate elements */
+      /* of containers like a Mac Resource; this means we must     */
+      /* check whether we actually have a TTC (with multiple table */
+      /* directories).                                             */
+      FT_Long  idx = face->root.face_index & 0xFFFF;
+
+
+      if ( idx >= face->ttc_header.count )
+        idx = 0;
+
+      offset += face->ttc_header.offsets[idx];
+      size    = 4 + 8 + 16 * face->num_tables;
+    }
+    else
     {
       /* look for tag in font directory */
       table = tt_face_lookup_table( face, tag );
@@ -576,9 +613,6 @@
       offset += table->Offset;
       size    = table->Length;
     }
-    else
-      /* tag == 0 -- the user wants to access the font file directly */
-      size = face->root.stream->size;
 
     if ( length && *length == 0 )
     {
@@ -664,8 +698,8 @@
     if ( FT_STREAM_READ_FIELDS( header_fields, header ) )
       goto Exit;
 
-    FT_TRACE3(( "Units per EM: %4u\n", header->Units_Per_EM ));
-    FT_TRACE3(( "IndexToLoc:   %4d\n", header->Index_To_Loc_Format ));
+    FT_TRACE3(( "Units per EM: %4hu\n", header->Units_Per_EM ));
+    FT_TRACE3(( "IndexToLoc:   %4hd\n", header->Index_To_Loc_Format ));
 
   Exit:
     return error;
@@ -787,15 +821,15 @@
       if ( maxProfile->maxTwilightPoints > ( 0xFFFFU - 4 ) )
       {
         FT_TRACE0(( "tt_face_load_maxp:"
-                    " too much twilight points in `maxp' table;\n"
-                    "                  "
+                    " too much twilight points in `maxp' table;\n" ));
+        FT_TRACE0(( "                  "
                     " some glyphs might be rendered incorrectly\n" ));
 
         maxProfile->maxTwilightPoints = 0xFFFFU - 4;
       }
     }
 
-    FT_TRACE3(( "numGlyphs: %u\n", maxProfile->numGlyphs ));
+    FT_TRACE3(( "numGlyphs: %hu\n", maxProfile->numGlyphs ));
 
   Exit:
     return error;
@@ -829,6 +863,8 @@
     FT_ULong      table_pos, table_len;
     FT_ULong      storage_start, storage_limit;
     TT_NameTable  table;
+    TT_Name       names    = NULL;
+    TT_LangTag    langTags = NULL;
 
     static const FT_Frame_Field  name_table_fields[] =
     {
@@ -909,14 +945,14 @@
       storage_start += 2 + 4 * table->numLangTagRecords;
 
       /* allocate language tag records array */
-      if ( FT_NEW_ARRAY( table->langTags, table->numLangTagRecords ) ||
-           FT_FRAME_ENTER( table->numLangTagRecords * 4 )            )
+      if ( FT_QNEW_ARRAY( langTags, table->numLangTagRecords ) ||
+           FT_FRAME_ENTER( table->numLangTagRecords * 4 )      )
         goto Exit;
 
       /* load language tags */
       {
-        TT_LangTag  entry = table->langTags;
-        TT_LangTag  limit = entry + table->numLangTagRecords;
+        TT_LangTag  entry = langTags;
+        TT_LangTag  limit = FT_OFFSET( entry, table->numLangTagRecords );
 
 
         for ( ; entry < limit; entry++ )
@@ -931,7 +967,13 @@
             /* invalid entry; ignore it */
             entry->stringLength = 0;
           }
+
+          /* mark the string as not yet loaded */
+          entry->string = NULL;
         }
+
+        table->langTags = langTags;
+        langTags        = NULL;
       }
 
       FT_FRAME_EXIT();
@@ -940,14 +982,15 @@
     }
 
     /* allocate name records array */
-    if ( FT_NEW_ARRAY( table->names, table->numNameRecords ) ||
-         FT_FRAME_ENTER( table->numNameRecords * 12 )        )
+    if ( FT_QNEW_ARRAY( names, table->numNameRecords ) ||
+         FT_FRAME_ENTER( table->numNameRecords * 12 )  )
       goto Exit;
 
     /* load name records */
     {
-      TT_Name  entry = table->names;
+      TT_Name  entry = names;
       FT_UInt  count = table->numNameRecords;
+      FT_UInt  valid = 0;
 
 
       for ( ; count > 0; count-- )
@@ -980,15 +1023,20 @@
           }
         }
 
+        /* mark the string as not yet converted */
+        entry->string = NULL;
+
+        valid++;
         entry++;
       }
 
       /* reduce array size to the actually used elements */
-      count = (FT_UInt)( entry - table->names );
-      (void)FT_RENEW_ARRAY( table->names,
-                            table->numNameRecords,
-                            count );
-      table->numNameRecords = count;
+      FT_MEM_QRENEW_ARRAY( names,
+                           table->numNameRecords,
+                           valid );
+      table->names          = names;
+      names                 = NULL;
+      table->numNameRecords = valid;
     }
 
     FT_FRAME_EXIT();
@@ -997,6 +1045,8 @@
     face->num_names = (FT_UShort)table->numNameRecords;
 
   Exit:
+    FT_FREE( names );
+    FT_FREE( langTags );
     return error;
   }
 
@@ -1016,7 +1066,7 @@
   FT_LOCAL_DEF( void )
   tt_face_free_name( TT_Face  face )
   {
-    FT_Memory     memory = face->root.driver->root.memory;
+    FT_Memory     memory = face->root.memory;
     TT_NameTable  table  = &face->name_table;
 
 
@@ -1242,11 +1292,11 @@
       }
     }
 
-    FT_TRACE3(( "sTypoAscender:  %4d\n",   os2->sTypoAscender ));
-    FT_TRACE3(( "sTypoDescender: %4d\n",   os2->sTypoDescender ));
-    FT_TRACE3(( "usWinAscent:    %4u\n",   os2->usWinAscent ));
-    FT_TRACE3(( "usWinDescent:   %4u\n",   os2->usWinDescent ));
-    FT_TRACE3(( "fsSelection:    0x%2x\n", os2->fsSelection ));
+    FT_TRACE3(( "sTypoAscender:  %4hd\n",   os2->sTypoAscender ));
+    FT_TRACE3(( "sTypoDescender: %4hd\n",   os2->sTypoDescender ));
+    FT_TRACE3(( "usWinAscent:    %4hu\n",   os2->usWinAscent ));
+    FT_TRACE3(( "usWinDescent:   %4hu\n",   os2->usWinDescent ));
+    FT_TRACE3(( "fsSelection:    0x%2hx\n", os2->fsSelection ));
 
   Exit:
     return error;
@@ -1304,10 +1354,16 @@
     if ( FT_STREAM_READ_FIELDS( post_fields, post ) )
       return error;
 
+    if ( post->FormatType != 0x00030000L &&
+         post->FormatType != 0x00025000L &&
+         post->FormatType != 0x00020000L &&
+         post->FormatType != 0x00010000L )
+      return FT_THROW( Invalid_Post_Table_Format );
+
     /* we don't load the glyph names, we do that in another */
     /* module (ttpost).                                     */
 
-    FT_TRACE3(( "FormatType:   0x%x\n", post->FormatType ));
+    FT_TRACE3(( "FormatType:   0x%lx\n", post->FormatType ));
     FT_TRACE3(( "isFixedPitch:   %s\n", post->isFixedPitch
                                         ? "  yes" : "   no" ));
 
@@ -1403,8 +1459,8 @@
     FT_Error   error;
     FT_Memory  memory = stream->memory;
 
-    FT_UInt        j,num_ranges;
-    TT_GaspRange   gaspranges = NULL;
+    FT_UShort      j, num_ranges;
+    TT_GaspRange   gasp_ranges = NULL;
 
 
     /* the gasp table is optional */
@@ -1415,8 +1471,8 @@
     if ( FT_FRAME_ENTER( 4L ) )
       goto Exit;
 
-    face->gasp.version   = FT_GET_USHORT();
-    face->gasp.numRanges = FT_GET_USHORT();
+    face->gasp.version = FT_GET_USHORT();
+    num_ranges         = FT_GET_USHORT();
 
     FT_FRAME_EXIT();
 
@@ -1428,29 +1484,31 @@
       goto Exit;
     }
 
-    num_ranges = face->gasp.numRanges;
-    FT_TRACE3(( "numRanges: %u\n", num_ranges ));
+    FT_TRACE3(( "numRanges: %hu\n", num_ranges ));
 
-    if ( FT_QNEW_ARRAY( face->gasp.gaspRanges, num_ranges ) ||
-         FT_FRAME_ENTER( num_ranges * 4L )                  )
+    if ( FT_QNEW_ARRAY( gasp_ranges, num_ranges ) ||
+         FT_FRAME_ENTER( num_ranges * 4L )        )
       goto Exit;
-
-    gaspranges = face->gasp.gaspRanges;
 
     for ( j = 0; j < num_ranges; j++ )
     {
-      gaspranges[j].maxPPEM  = FT_GET_USHORT();
-      gaspranges[j].gaspFlag = FT_GET_USHORT();
+      gasp_ranges[j].maxPPEM  = FT_GET_USHORT();
+      gasp_ranges[j].gaspFlag = FT_GET_USHORT();
 
-      FT_TRACE3(( "gaspRange %d: rangeMaxPPEM %5d, rangeGaspBehavior 0x%x\n",
+      FT_TRACE3(( "gaspRange %hu: rangeMaxPPEM %5hu, rangeGaspBehavior 0x%hx\n",
                   j,
-                  gaspranges[j].maxPPEM,
-                  gaspranges[j].gaspFlag ));
+                  gasp_ranges[j].maxPPEM,
+                  gasp_ranges[j].gaspFlag ));
     }
+
+    face->gasp.gaspRanges = gasp_ranges;
+    gasp_ranges           = NULL;
+    face->gasp.numRanges  = num_ranges;
 
     FT_FRAME_EXIT();
 
   Exit:
+    FT_FREE( gasp_ranges );
     return error;
   }
 

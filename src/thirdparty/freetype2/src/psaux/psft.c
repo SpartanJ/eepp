@@ -37,7 +37,7 @@
 
 
 #include "psft.h"
-#include FT_INTERNAL_DEBUG_H
+#include <freetype/internal/ftdebug.h>
 
 #include "psfont.h"
 #include "pserror.h"
@@ -45,11 +45,11 @@
 #include "cffdecode.h"
 
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
-#include FT_MULTIPLE_MASTERS_H
-#include FT_SERVICE_MULTIPLE_MASTERS_H
+#include <freetype/ftmm.h>
+#include <freetype/internal/services/svmm.h>
 #endif
 
-#include FT_SERVICE_CFF_TABLE_LOAD_H
+#include <freetype/internal/services/svcfftl.h>
 
 
 #define CF2_MAX_SIZE  cf2_intToFixed( 2000 )    /* max ppem */
@@ -68,11 +68,10 @@
     CF2_Fixed  maxScale;
 
 
-    FT_ASSERT( unitsPerEm > 0 );
-
     if ( transform->a <= 0 || transform->d <= 0 )
       return FT_THROW( Invalid_Size_Handle );
 
+    FT_ASSERT( unitsPerEm > 0 );
     FT_ASSERT( transform->b == 0 && transform->c == 0 );
     FT_ASSERT( transform->tx == 0 && transform->ty == 0 );
 
@@ -297,7 +296,6 @@
   cf2_getUnitsPerEm( PS_Decoder*  decoder )
   {
     FT_ASSERT( decoder && decoder->builder.face );
-    FT_ASSERT( decoder->builder.face->units_per_EM );
 
     return decoder->builder.face->units_per_EM;
   }
@@ -313,7 +311,7 @@
     FT_Error   error = FT_Err_Ok;
     CF2_Font   font;
 
-    FT_Bool    is_t1 = decoder->builder.is_t1;
+    FT_Bool  is_t1 = decoder->builder.is_t1;
 
 
     FT_ASSERT( decoder &&
@@ -385,7 +383,7 @@
       FT_ZERO( &buf );
       buf.start =
       buf.ptr   = charstring_base;
-      buf.end   = charstring_base + charstring_len;
+      buf.end   = FT_OFFSET( charstring_base, charstring_len );
 
       FT_ZERO( &transform );
 
@@ -568,12 +566,12 @@
   FT_LOCAL_DEF( void )
   cf2_getBlueValues( PS_Decoder*  decoder,
                      size_t*      count,
-                     FT_Pos*     *data )
+                     FT_Fixed*   *data )
   {
     FT_ASSERT( decoder && decoder->current_subfont );
 
     *count = decoder->current_subfont->private_dict.num_blue_values;
-    *data  = (FT_Pos*)
+    *data  = (FT_Fixed*)
                &decoder->current_subfont->private_dict.blue_values;
   }
 
@@ -581,12 +579,12 @@
   FT_LOCAL_DEF( void )
   cf2_getOtherBlues( PS_Decoder*  decoder,
                      size_t*      count,
-                     FT_Pos*     *data )
+                     FT_Fixed*   *data )
   {
     FT_ASSERT( decoder && decoder->current_subfont );
 
     *count = decoder->current_subfont->private_dict.num_other_blues;
-    *data  = (FT_Pos*)
+    *data  = (FT_Fixed*)
                &decoder->current_subfont->private_dict.other_blues;
   }
 
@@ -594,12 +592,12 @@
   FT_LOCAL_DEF( void )
   cf2_getFamilyBlues( PS_Decoder*  decoder,
                       size_t*      count,
-                      FT_Pos*     *data )
+                      FT_Fixed*   *data )
   {
     FT_ASSERT( decoder && decoder->current_subfont );
 
     *count = decoder->current_subfont->private_dict.num_family_blues;
-    *data  = (FT_Pos*)
+    *data  = (FT_Fixed*)
                &decoder->current_subfont->private_dict.family_blues;
   }
 
@@ -607,12 +605,12 @@
   FT_LOCAL_DEF( void )
   cf2_getFamilyOtherBlues( PS_Decoder*  decoder,
                            size_t*      count,
-                           FT_Pos*     *data )
+                           FT_Fixed*   *data )
   {
     FT_ASSERT( decoder && decoder->current_subfont );
 
     *count = decoder->current_subfont->private_dict.num_family_other_blues;
-    *data  = (FT_Pos*)
+    *data  = (FT_Fixed*)
                &decoder->current_subfont->private_dict.family_other_blues;
   }
 
@@ -697,7 +695,7 @@
     FT_ASSERT( charstring + len >= charstring );
 
     buf->start = charstring;
-    buf->end   = charstring + len;
+    buf->end   = FT_OFFSET( charstring, len );
     buf->ptr   = buf->start;
 
     return FT_Err_Ok;
@@ -742,13 +740,13 @@
     /* For ordinary fonts get the character data stored in the face record. */
     {
       glyph_data.pointer = type1->charstrings[glyph_index];
-      glyph_data.length  = (FT_Int)type1->charstrings_len[glyph_index];
+      glyph_data.length  = type1->charstrings_len[glyph_index];
     }
 
     if ( !error )
     {
       FT_Byte*  charstring_base = (FT_Byte*)glyph_data.pointer;
-      FT_ULong  charstring_len  = (FT_ULong)glyph_data.length;
+      FT_ULong  charstring_len  = glyph_data.length;
 
 
       FT_ASSERT( charstring_base + charstring_len >= charstring_base );
@@ -778,7 +776,7 @@
     face = (T1_Face)decoder->builder.face;
 
     data.pointer = buf->start;
-    data.length  = (FT_Int)( buf->end - buf->start );
+    data.length  = (FT_UInt)( buf->end - buf->start );
 
     if ( face->root.internal->incremental_interface )
       face->root.internal->incremental_interface->funcs->free_glyph_data(
@@ -820,7 +818,7 @@
       /* The CID driver stores subroutines with seed bytes.  This     */
       /* case is taken care of when decoder->subrs_len == 0.          */
       if ( decoder->locals_len )
-        buf->end = buf->start + decoder->locals_len[idx];
+        buf->end = FT_OFFSET( buf->start, decoder->locals_len[idx] );
       else
       {
         /* We are using subroutines from a CID font.  We must adjust */

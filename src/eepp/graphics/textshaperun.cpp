@@ -68,6 +68,7 @@ void TextShapeRun::findNextEnd() {
 			mCurFont = font;
 			if ( curScript == HB_SCRIPT_COMMON || curScript == HB_SCRIPT_INHERITED )
 				curScript = HB_SCRIPT_LATIN;
+			mIsRTL = hb_script_get_horizontal_direction( curScript ) == HB_DIRECTION_RTL;
 		}
 
 		// Break run if:
@@ -81,6 +82,7 @@ void TextShapeRun::findNextEnd() {
 		if ( mIsNewLine || ( lFont != nullptr && font != lFont ) || effectiveScript != curScript ) {
 			mLen = mIsNewLine ? pos + 1 : pos;
 			mCurFont = lFont;
+			mIsRTL = hb_script_get_horizontal_direction( effectiveScript ) == HB_DIRECTION_RTL;
 			return;
 		}
 
@@ -112,6 +114,10 @@ void TextShapeRun::findNextEnd() {
 	}
 	mLen = idx;
 #endif
+}
+
+bool TextShapeRun::isRTL() const {
+	return mIsRTL;
 }
 
 } // namespace EE::Graphics

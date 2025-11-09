@@ -734,11 +734,12 @@ function add_static_links()
 	end
 
 	if not _OPTIONS["with-dynamic-freetype"] then
-		links { "freetype-static", "libpng-static" }
+		links { "freetype-static" }
 	end
 
 	if _OPTIONS["with-text-shaper"] then
-		links { "harfbuzz-static" }
+		links { "harfbuzz-static", "SheenBidi-static" }
+		includedirs { "src/thirdparty/SheenBidi/Headers" }
 		defines { "EE_TEXT_SHAPER_ENABLED" }
 	end
 
@@ -752,6 +753,7 @@ function add_static_links()
 			"pcre2-8-static",
 			"oniguruma-static",
 			"libwebp-static",
+			"libpng-static",
 	}
 
 	if not _OPTIONS["without-mojoal"] then
@@ -955,6 +957,8 @@ function build_eepp( build_name )
 		"src/thirdparty/pcre2/src",
 		"src/thirdparty/oniguruma",
 		"src/thirdparty/libwebp/src",
+		"src/thirdparty/SheenBidi/Headers",
+		"src/thirdparty/SheenBidi/Headers/SheenBidi",
 	}
 
 	defines { "PCRE2_STATIC", "PCRE2_CODE_UNIT_WIDTH=8", "ONIG_STATIC" }
@@ -1256,6 +1260,14 @@ solution "eepp"
 			if is_vs() then
 				buildoptions{ "/bigobj" }
 			end
+
+		project "SheenBidi-static"
+			kind "StaticLib"
+			language "C"
+			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+			files { "src/thirdparty/SheenBidi/Source/**.c" }
+			includedirs { "src/thirdparty/SheenBidi/Headers" }
+			build_base_configuration( "sheenbidi" )
 	end
 
 	project "chipmunk-static"

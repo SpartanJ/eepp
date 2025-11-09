@@ -5,7 +5,7 @@
  *   Basic SFNT/TrueType type definitions and interface (specification
  *   only).
  *
- * Copyright (C) 1996-2019 by
+ * Copyright (C) 1996-2025 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -21,13 +21,13 @@
 #define TTTYPES_H_
 
 
-#include <ft2build.h>
-#include FT_TRUETYPE_TABLES_H
-#include FT_INTERNAL_OBJECTS_H
-#include FT_COLOR_H
+#include <freetype/tttables.h>
+#include <freetype/internal/ftobjs.h>
+#include <freetype/ftcolor.h>
+#include "freetype/fttypes.h"
 
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
-#include FT_MULTIPLE_MASTERS_H
+#include <freetype/ftmm.h>
 #endif
 
 
@@ -780,13 +780,15 @@ FT_BEGIN_HEADER
   /**************************************************************************
    *
    * @struct:
-   *   TT_Post_20Rec
+   *   TT_Post_NamesRec
    *
    * @description:
-   *   Postscript names sub-table, format 2.0.  Stores the PS name of each
-   *   glyph in the font face.
+   *   Postscript names table, either format 2.0 or 2.5.
    *
    * @fields:
+   *   loaded ::
+   *     A flag to indicate whether the PS names are loaded.
+   *
    *   num_glyphs ::
    *     The number of named glyphs in the table.
    *
@@ -799,68 +801,13 @@ FT_BEGIN_HEADER
    *   glyph_names ::
    *     The PS names not in Mac Encoding.
    */
-  typedef struct  TT_Post_20Rec_
+  typedef struct  TT_Post_NamesRec_
   {
+    FT_Bool     loaded;
     FT_UShort   num_glyphs;
     FT_UShort   num_names;
     FT_UShort*  glyph_indices;
-    FT_Char**   glyph_names;
-
-  } TT_Post_20Rec, *TT_Post_20;
-
-
-  /**************************************************************************
-   *
-   * @struct:
-   *   TT_Post_25Rec
-   *
-   * @description:
-   *   Postscript names sub-table, format 2.5.  Stores the PS name of each
-   *   glyph in the font face.
-   *
-   * @fields:
-   *   num_glyphs ::
-   *     The number of glyphs in the table.
-   *
-   *   offsets ::
-   *     An array of signed offsets in a normal Mac Postscript name encoding.
-   */
-  typedef struct  TT_Post_25_
-  {
-    FT_UShort  num_glyphs;
-    FT_Char*   offsets;
-
-  } TT_Post_25Rec, *TT_Post_25;
-
-
-  /**************************************************************************
-   *
-   * @struct:
-   *   TT_Post_NamesRec
-   *
-   * @description:
-   *   Postscript names table, either format 2.0 or 2.5.
-   *
-   * @fields:
-   *   loaded ::
-   *     A flag to indicate whether the PS names are loaded.
-   *
-   *   format_20 ::
-   *     The sub-table used for format 2.0.
-   *
-   *   format_25 ::
-   *     The sub-table used for format 2.5.
-   */
-  typedef struct  TT_Post_NamesRec_
-  {
-    FT_Bool  loaded;
-
-    union
-    {
-      TT_Post_20Rec  format_20;
-      TT_Post_25Rec  format_25;
-
-    } names;
+    FT_Byte**   glyph_names;
 
   } TT_Post_NamesRec, *TT_Post_Names;
 
@@ -983,8 +930,8 @@ FT_BEGIN_HEADER
    *   resolution and scaling independent parts of a TrueType font resource.
    *
    * @note:
-   *   The TT_Face structure is also used as a 'parent class' for the
-   *   OpenType-CFF class (T2_Face).
+   *   The TT_Face structure is also used for CFF support; see file
+   *   `cffotypes.h`.
    */
   typedef struct TT_FaceRec_*  TT_Face;
 
@@ -1254,12 +1201,16 @@ FT_BEGIN_HEADER
    *   mm ::
    *     A pointer to the Multiple Masters service.
    *
-   *   var ::
-   *     A pointer to the Metrics Variations service.
+   *   tt_var ::
+   *     A pointer to the Metrics Variations service for the "truetype"
+   *     driver.
    *
-   *   hdmx ::
-   *     The face's horizontal device metrics ('hdmx' table).  This table is
-   *     optional in TrueType/OpenType fonts.
+   *   face_var ::
+   *     A pointer to the Metrics Variations service for this `TT_Face`'s
+   *     driver.
+   *
+   *   psaux ::
+   *     A pointer to the PostScript Auxiliary service.
    *
    *   gasp ::
    *     The grid-fitting and scaling properties table ('gasp').  This table
@@ -1325,10 +1276,6 @@ FT_BEGIN_HEADER
    *
    *     If varied by the `CVAR' table, non-integer values are possible.
    *
-   *   interpreter ::
-   *     A pointer to the TrueType bytecode interpreters field is also used
-   *     to hook the debugger in 'ttdebug'.
-   *
    *   extra ::
    *     Reserved for third-party font drivers.
    *
@@ -1365,6 +1312,12 @@ FT_BEGIN_HEADER
    *   var_postscript_prefix_len ::
    *     The length of the `var_postscript_prefix` string.
    *
+   *   var_default_named_instance ::
+   *     The index of the default named instance.
+   *
+   *   non_var_style_name ::
+   *     The non-variation style name, used as a backup.
+   *
    *   horz_metrics_size ::
    *     The size of the 'hmtx' table.
    *
@@ -1373,7 +1326,7 @@ FT_BEGIN_HEADER
    *
    *   num_locations ::
    *     The number of glyph locations in this TrueType file.  This should be
-   *     identical to the number of glyphs.  Ignored for Type 2 fonts.
+   *     one more than the number of glyphs.  Ignored for Type 2 fonts.
    *
    *   glyph_locations ::
    *     An array of longs.  These are offsets to glyph data within the
@@ -1391,8 +1344,8 @@ FT_BEGIN_HEADER
    *   hdmx_record_size ::
    *     The size of a single hdmx record.
    *
-   *   hdmx_record_sizes ::
-   *     An array holding the ppem sizes available in the 'hdmx' table.
+   *   hdmx_records ::
+   *     A array of pointers to the 'hdmx' table records sorted by ppem.
    *
    *   sbit_table ::
    *     A pointer to the font's embedded bitmap location table.
@@ -1410,14 +1363,6 @@ FT_BEGIN_HEADER
    *   sbit_strike_map ::
    *     A mapping between the strike indices exposed by the API and the
    *     indices used in the font's sbit table.
-   *
-   *   cpal ::
-   *     A pointer to data related to the 'CPAL' table.  `NULL` if the table
-   *     is not available.
-   *
-   *   colr ::
-   *     A pointer to data related to the 'COLR' table.  `NULL` if the table
-   *     is not available.
    *
    *   kern_table ::
    *     A pointer to the 'kern' table.
@@ -1446,19 +1391,23 @@ FT_BEGIN_HEADER
    *   vert_metrics_offset ::
    *     The file offset of the 'vmtx' table.
    *
-   *   sph_found_func_flags ::
-   *     Flags identifying special bytecode functions (used by the v38
-   *     implementation of the bytecode interpreter).
-   *
-   *   sph_compatibility_mode ::
-   *     This flag is set if we are in ClearType backward compatibility mode
-   *     (used by the v38 implementation of the bytecode interpreter).
-   *
    *   ebdt_start ::
    *     The file offset of the sbit data table (CBDT, bdat, etc.).
    *
    *   ebdt_size ::
    *     The size of the sbit data table.
+   *
+   *   cpal ::
+   *     A pointer to data related to the 'CPAL' table.  `NULL` if the table
+   *     is not available.
+   *
+   *   colr ::
+   *     A pointer to data related to the 'COLR' table.  `NULL` if the table
+   *     is not available.
+   *
+   *   svg ::
+   *     A pointer to data related to the 'SVG' table.  `NULL` if the table
+   *     is not available.
    */
   typedef struct  TT_FaceRec_
   {
@@ -1509,8 +1458,14 @@ FT_BEGIN_HEADER
     void*                 mm;
 
     /* a typeless pointer to the FT_Service_MetricsVariationsRec table */
-    /* used to handle the HVAR, VVAR, and MVAR OpenType tables         */
-    void*                 var;
+    /* used to handle the HVAR, VVAR, and MVAR OpenType tables by the  */
+    /* "truetype" driver                                               */
+    void*                 tt_var;
+
+    /* a typeless pointer to the FT_Service_MetricsVariationsRec table */
+    /* used to handle the HVAR, VVAR, and MVAR OpenType tables by this */
+    /* TT_Face's driver                                                */
+    void*                 face_var;             /* since 2.13.1 */
 #endif
 
     /* a typeless pointer to the PostScript Aux service */
@@ -1562,10 +1517,6 @@ FT_BEGIN_HEADER
     FT_ULong              cvt_size;
     FT_Int32*             cvt;
 
-    /* A pointer to the bytecode interpreter to use.  This is also */
-    /* used to hook the debugger for the `ttdebug' utility.        */
-    TT_Interpreter        interpreter;
-
 
     /************************************************************************
      *
@@ -1592,6 +1543,9 @@ FT_BEGIN_HEADER
     const char*           var_postscript_prefix;     /* since 2.7.2 */
     FT_UInt               var_postscript_prefix_len; /* since 2.7.2 */
 
+    FT_UInt               var_default_named_instance;  /* since 2.13.1 */
+
+    const char*           non_var_style_name;  /* since 2.13.1 */
 #endif
 
     /* since version 2.2 */
@@ -1599,14 +1553,14 @@ FT_BEGIN_HEADER
     FT_ULong              horz_metrics_size;
     FT_ULong              vert_metrics_size;
 
-    FT_ULong              num_locations; /* in broken TTF, gid > 0xFFFF */
+    FT_ULong              num_locations; /* up to 0xFFFF + 1 */
     FT_Byte*              glyph_locations;
 
     FT_Byte*              hdmx_table;
     FT_ULong              hdmx_table_size;
     FT_UInt               hdmx_record_count;
     FT_ULong              hdmx_record_size;
-    FT_Byte*              hdmx_record_sizes;
+    FT_Byte**             hdmx_records;
 
     FT_Byte*              sbit_table;
     FT_ULong              sbit_table_size;
@@ -1628,13 +1582,6 @@ FT_BEGIN_HEADER
     FT_ULong              horz_metrics_offset;
     FT_ULong              vert_metrics_offset;
 
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    /* since 2.4.12 */
-    FT_ULong              sph_found_func_flags; /* special functions found */
-                                                /* for this face           */
-    FT_Bool               sph_compatibility_mode;
-#endif /* TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY */
-
 #ifdef TT_CONFIG_OPTION_EMBEDDED_BITMAPS
     /* since 2.7 */
     FT_ULong              ebdt_start;  /* either `CBDT', `EBDT', or `bdat' */
@@ -1644,6 +1591,18 @@ FT_BEGIN_HEADER
     /* since 2.10 */
     void*                 cpal;
     void*                 colr;
+
+    /* since 2.12 */
+    void*                 svg;
+
+#ifdef TT_CONFIG_OPTION_GPOS_KERNING
+    /* since 2.13.3 */
+    FT_Byte*              gpos_table;
+    /* since 2.14 */
+    /* This is actually an array of GPOS lookup subtables. */
+    FT_UInt32*            gpos_lookups_kerning;
+    FT_UInt               num_gpos_lookups_kerning;
+#endif
 
   } TT_FaceRec;
 
@@ -1658,15 +1617,6 @@ FT_BEGIN_HEADER
    *   coordinates.
    *
    * @fields:
-   *   memory ::
-   *     A handle to the memory manager.
-   *
-   *   max_points ::
-   *     The maximum size in points of the zone.
-   *
-   *   max_contours ::
-   *     Max size in links contours of the zone.
-   *
    *   n_points ::
    *     The current number of points in the zone.
    *
@@ -1690,11 +1640,8 @@ FT_BEGIN_HEADER
    */
   typedef struct  TT_GlyphZoneRec_
   {
-    FT_Memory   memory;
-    FT_UShort   max_points;
-    FT_Short    max_contours;
     FT_UShort   n_points;    /* number of points in zone    */
-    FT_Short    n_contours;  /* number of contours          */
+    FT_UShort   n_contours;  /* number of contours          */
 
     FT_Vector*  org;         /* original point coordinates  */
     FT_Vector*  cur;         /* current point coordinates   */
@@ -1735,7 +1682,7 @@ FT_BEGIN_HEADER
     FT_UInt          glyph_index;
 
     FT_Stream        stream;
-    FT_Int           byte_len;
+    FT_UInt          byte_len;
 
     FT_Short         n_contours;
     FT_BBox          bbox;
@@ -1751,7 +1698,6 @@ FT_BEGIN_HEADER
     TT_GlyphZoneRec  zone;
 
     TT_ExecContext   exec;
-    FT_Byte*         instructions;
     FT_ULong         ins_pos;
 
     /* for possible extensibility in other formats */
@@ -1769,6 +1715,9 @@ FT_BEGIN_HEADER
 
     /* since version 2.6.2 */
     FT_ListRec       composites;
+
+    /* since version 2.11.2 */
+    FT_Byte*         widthp;
 
   } TT_LoaderRec;
 

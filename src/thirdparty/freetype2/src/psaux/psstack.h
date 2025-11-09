@@ -39,6 +39,7 @@
 #ifndef PSSTACK_H_
 #define PSSTACK_H_
 
+#include <freetype/internal/compiler-macros.h>
 
 FT_BEGIN_HEADER
 
@@ -48,8 +49,8 @@ FT_BEGIN_HEADER
   {
     union
     {
-      CF2_Fixed  r;      /* 16.16 fixed point */
-      CF2_Frac   f;      /* 2.30 fixed point (for font matrix) */
+      CF2_Fixed  r;      /* 16.16 fixed-point */
+      CF2_Frac   f;      /* 2.30 fixed-point (for font matrix) */
       CF2_Int    i;
     } u;
 

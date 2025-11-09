@@ -4,7 +4,7 @@
  *
  *   SFNT object management (base).
  *
- * Copyright (C) 1996-2019 by
+ * Copyright (C) 1996-2025 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -16,28 +16,32 @@
  */
 
 
-#include <ft2build.h>
 #include "sfobjs.h"
 #include "ttload.h"
 #include "ttcmap.h"
 #include "ttkern.h"
 #include "sfwoff.h"
-#include FT_INTERNAL_SFNT_H
-#include FT_INTERNAL_DEBUG_H
-#include FT_TRUETYPE_IDS_H
-#include FT_TRUETYPE_TAGS_H
-#include FT_SERVICE_POSTSCRIPT_CMAPS_H
-#include FT_SFNT_NAMES_H
+#include "sfwoff2.h"
+#include <freetype/internal/sfnt.h>
+#include <freetype/internal/ftdebug.h>
+#include <freetype/ttnameid.h>
+#include <freetype/tttags.h>
+#include <freetype/internal/services/svpscmap.h>
+#include <freetype/ftsnames.h>
 
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
-#include FT_SERVICE_MULTIPLE_MASTERS_H
-#include FT_SERVICE_METRICS_VARIATIONS_H
+#include <freetype/internal/services/svmm.h>
+#include <freetype/internal/services/svmetric.h>
 #endif
 
 #include "sferrors.h"
 
 #ifdef TT_CONFIG_OPTION_BDF
 #include "ttbdf.h"
+#endif
+
+#ifdef TT_CONFIG_OPTION_GPOS_KERNING
+#include "ttgpos.h"
 #endif
 
 
@@ -65,7 +69,7 @@
 
     len = (FT_UInt)entry->stringLength / 2;
 
-    if ( FT_NEW_ARRAY( string, len + 1 ) )
+    if ( FT_QNEW_ARRAY( string, len + 1 ) )
       return NULL;
 
     for ( n = 0; n < len; n++ )
@@ -100,7 +104,7 @@
 
     len = (FT_UInt)entry->stringLength;
 
-    if ( FT_NEW_ARRAY( string, len + 1 ) )
+    if ( FT_QNEW_ARRAY( string, len + 1 ) )
       return NULL;
 
     for ( n = 0; n < len; n++ )
@@ -341,7 +345,9 @@
   /* synthesized into a TTC with one offset table.              */
   static FT_Error
   sfnt_open_font( FT_Stream  stream,
-                  TT_Face    face )
+                  TT_Face    face,
+                  FT_Int*    face_instance_index,
+                  FT_Long*   woff2_num_faces )
   {
     FT_Memory  memory = stream->memory;
     FT_Error   error;
@@ -358,17 +364,27 @@
       FT_FRAME_END
     };
 
+#ifndef FT_CONFIG_OPTION_USE_BROTLI
+    FT_UNUSED( face_instance_index );
+    FT_UNUSED( woff2_num_faces );
+#endif
+
 
     face->ttc_header.tag     = 0;
     face->ttc_header.version = 0;
     face->ttc_header.count   = 0;
 
+#if defined( FT_CONFIG_OPTION_USE_ZLIB )   || \
+    defined( FT_CONFIG_OPTION_USE_BROTLI )
   retry:
+#endif
+
     offset = FT_STREAM_POS();
 
     if ( FT_READ_ULONG( tag ) )
       return error;
 
+#ifdef FT_CONFIG_OPTION_USE_ZLIB
     if ( tag == TTAG_wOFF )
     {
       FT_TRACE2(( "sfnt_open_font: file is a WOFF; synthesizing SFNT\n" ));
@@ -384,6 +400,28 @@
       stream = face->root.stream;
       goto retry;
     }
+#endif
+
+#ifdef FT_CONFIG_OPTION_USE_BROTLI
+    if ( tag == TTAG_wOF2 )
+    {
+      FT_TRACE2(( "sfnt_open_font: file is a WOFF2; synthesizing SFNT\n" ));
+
+      if ( FT_STREAM_SEEK( offset ) )
+        return error;
+
+      error = woff2_open_font( stream,
+                               face,
+                               face_instance_index,
+                               woff2_num_faces );
+      if ( error )
+        return error;
+
+      /* Swap out stream and retry! */
+      stream = face->root.stream;
+      goto retry;
+    }
+#endif
 
     if ( tag != 0x00010000UL &&
          tag != TTAG_ttcf    &&
@@ -425,7 +463,7 @@
         return FT_THROW( Array_Too_Large );
 
       /* now read the offsets of each font in the file */
-      if ( FT_NEW_ARRAY( face->ttc_header.offsets, face->ttc_header.count ) )
+      if ( FT_QNEW_ARRAY( face->ttc_header.offsets, face->ttc_header.count ) )
         return error;
 
       if ( FT_FRAME_ENTER( face->ttc_header.count * 4L ) )
@@ -443,7 +481,7 @@
       face->ttc_header.version = 1 << 16;
       face->ttc_header.count   = 1;
 
-      if ( FT_NEW( face->ttc_header.offsets ) )
+      if ( FT_QNEW( face->ttc_header.offsets ) )
         return error;
 
       face->ttc_header.offsets[0] = offset;
@@ -461,9 +499,10 @@
                   FT_Parameter*  params )
   {
     FT_Error      error;
-    FT_Library    library = face->root.driver->root.library;
+    FT_Library    library         = face->root.driver->root.library;
     SFNT_Service  sfnt;
     FT_Int        face_index;
+    FT_Long       woff2_num_faces = 0;
 
 
     /* for now, parameters are unused */
@@ -499,38 +538,50 @@
                                         0 );
     }
 
-    if ( !face->var )
+    if ( !face->tt_var )
     {
       /* we want the metrics variations interface */
       /* from the `truetype' module only          */
       FT_Module  tt_module = FT_Get_Module( library, "truetype" );
 
 
-      face->var = ft_module_get_service( tt_module,
-                                         FT_SERVICE_ID_METRICS_VARIATIONS,
-                                         0 );
+      face->tt_var = ft_module_get_service( tt_module,
+                                            FT_SERVICE_ID_METRICS_VARIATIONS,
+                                            0 );
     }
+
+    if ( !face->face_var )
+      face->face_var = ft_module_get_service(
+                         &face->root.driver->root,
+                         FT_SERVICE_ID_METRICS_VARIATIONS,
+                         0 );
 #endif
 
     FT_TRACE2(( "SFNT driver\n" ));
 
-    error = sfnt_open_font( stream, face );
+    error = sfnt_open_font( stream,
+                            face,
+                            &face_instance_index,
+                            &woff2_num_faces );
     if ( error )
       return error;
 
     /* Stream may have changed in sfnt_open_font. */
     stream = face->root.stream;
 
-    FT_TRACE2(( "sfnt_init_face: %08p (index %d)\n",
-                face,
+    FT_TRACE2(( "sfnt_init_face: %p (index %d)\n",
+                (void *)face,
                 face_instance_index ));
 
     face_index = FT_ABS( face_instance_index ) & 0xFFFF;
 
     /* value -(N+1) requests information on index N */
-    if ( face_instance_index < 0 )
+    if ( face_instance_index < 0 && face_index > 0 )
       face_index--;
 
+    /* Note that `face_index` is also used to enumerate elements */
+    /* of containers like a Mac Resource; this means we must     */
+    /* check whether we actually have a TTC.                     */
     if ( face_index >= face->ttc_header.count )
     {
       if ( face_instance_index >= 0 )
@@ -618,8 +669,8 @@
        */
 
       if ( ( face->variation_support & TT_FACE_FLAG_VAR_FVAR ) &&
-           !( FT_ALLOC( default_values, num_axes * 4 )  ||
-              FT_ALLOC( instance_values, num_axes * 4 ) )      )
+           !( FT_QALLOC(  default_values, num_axes * 4 ) ||
+              FT_QALLOC( instance_values, num_axes * 4 ) )     )
       {
         /* the current stream position is 16 bytes after the table start */
         FT_ULong  array_start = FT_STREAM_POS() - 16 + offset;
@@ -653,6 +704,9 @@
 
           instance_offset += instance_size;
         }
+
+        /* named instance indices start with value 1 */
+        face->var_default_named_instance = i + 1;
 
         if ( i == num_instances )
         {
@@ -688,6 +742,10 @@
 
     face->root.num_faces  = face->ttc_header.count;
     face->root.face_index = face_instance_index;
+
+    /* `num_faces' for a WOFF2 needs to be handled separately. */
+    if ( woff2_num_faces )
+      face->root.num_faces = woff2_num_faces;
 
     return error;
   }
@@ -742,17 +800,23 @@
                   FT_Int         num_params,
                   FT_Parameter*  params )
   {
-    FT_Error      error;
+    FT_Error  error;
 #ifdef TT_CONFIG_OPTION_POSTSCRIPT_NAMES
-    FT_Error      psnames_error;
+    FT_Error  psnames_error;
 #endif
-    FT_Bool       has_outline;
-    FT_Bool       is_apple_sbit;
-    FT_Bool       is_apple_sbix;
-    FT_Bool       has_CBLC;
-    FT_Bool       has_CBDT;
-    FT_Bool       ignore_typographic_family    = FALSE;
-    FT_Bool       ignore_typographic_subfamily = FALSE;
+
+    FT_Bool  has_outline;
+    FT_Bool  is_apple_sbit;
+
+    FT_Bool  has_CBLC;
+    FT_Bool  has_CBDT;
+    FT_Bool  has_EBLC;
+    FT_Bool  has_bloc;
+    FT_Bool  has_sbix;
+
+    FT_Bool  ignore_typographic_family    = FALSE;
+    FT_Bool  ignore_typographic_subfamily = FALSE;
+    FT_Bool  ignore_sbix                  = FALSE;
 
     SFNT_Service  sfnt = (SFNT_Service)face->sfnt;
 
@@ -771,6 +835,8 @@
           ignore_typographic_family = TRUE;
         else if ( params[i].tag == FT_PARAM_TAG_IGNORE_TYPOGRAPHIC_SUBFAMILY )
           ignore_typographic_subfamily = TRUE;
+        else if ( params[i].tag == FT_PARAM_TAG_IGNORE_SBIX )
+          ignore_sbix = TRUE;
       }
     }
 
@@ -791,7 +857,8 @@
     /* it doesn't contain outlines.                                */
     /*                                                             */
 
-    FT_TRACE2(( "sfnt_load_face: %08p\n\n", face ));
+    FT_TRACE2(( "sfnt_load_face: %p\n", (void *)face ));
+    FT_TRACE2(( "\n" ));
 
     /* do we have outlines in there? */
 #ifdef FT_CONFIG_OPTION_INCREMENTAL
@@ -805,14 +872,17 @@
                            tt_face_lookup_table( face, TTAG_CFF2 ) );
 #endif
 
-    is_apple_sbit = 0;
-    is_apple_sbix = !face->goto_table( face, TTAG_sbix, stream, 0 );
+    /* check which sbit formats are present */
+    has_CBLC = !face->goto_table( face, TTAG_CBLC, stream, 0 );
+    has_CBDT = !face->goto_table( face, TTAG_CBDT, stream, 0 );
+    has_EBLC = !face->goto_table( face, TTAG_EBLC, stream, 0 );
+    has_bloc = !face->goto_table( face, TTAG_bloc, stream, 0 );
+    has_sbix = !face->goto_table( face, TTAG_sbix, stream, 0 );
 
-    /* Apple 'sbix' color bitmaps are rendered scaled and then the 'glyf'
-     * outline rendered on top.  We don't support that yet, so just ignore
-     * the 'glyf' outline and advertise it as a bitmap-only font. */
-    if ( is_apple_sbix )
-      has_outline = FALSE;
+    is_apple_sbit = FALSE;
+
+    if ( ignore_sbix )
+      has_sbix = FALSE;
 
     /* if this font doesn't contain outlines, we try to load */
     /* a `bhed' table                                        */
@@ -824,15 +894,12 @@
 
     /* load the font header (`head' table) if this isn't an Apple */
     /* sbit font file                                             */
-    if ( !is_apple_sbit || is_apple_sbix )
+    if ( !is_apple_sbit || has_sbix )
     {
       LOAD_( head );
       if ( error )
         goto Exit;
     }
-
-    has_CBLC = !face->goto_table( face, TTAG_CBLC, stream, 0 );
-    has_CBDT = !face->goto_table( face, TTAG_CBDT, stream, 0 );
 
     /* Ignore outlines for CBLC/CBDT fonts. */
     if ( has_CBLC || has_CBDT )
@@ -943,7 +1010,11 @@
     /* the optional tables */
 
     /* embedded bitmap support */
-    if ( sfnt->load_eblc )
+    /* TODO: Replace this clumsy check for all possible sbit tables     */
+    /*       with something better (for example, by passing a parameter */
+    /*       to suppress 'sbix' loading).                               */
+    if ( sfnt->load_eblc                                  &&
+         ( has_CBLC || has_EBLC || has_bloc || has_sbix ) )
       LOAD_( eblc );
 
     /* colored glyph support */
@@ -953,10 +1024,18 @@
       LOAD_( colr );
     }
 
+    /* OpenType-SVG glyph support */
+    if ( sfnt->load_svg )
+      LOAD_( svg );
+
     /* consider the pclt, kerning, and gasp tables as optional */
     LOAD_( pclt );
     LOAD_( gasp );
     LOAD_( kern );
+
+#ifdef TT_CONFIG_OPTION_GPOS_KERNING
+    LOAD_( gpos );
+#endif
 
     face->root.num_glyphs = face->max_profile.numGlyphs;
 
@@ -995,6 +1074,16 @@
         GET_NAME( FONT_SUBFAMILY, &face->root.style_name );
     }
 
+#ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
+    {
+      FT_Memory  memory = face->root.memory;
+
+
+      if ( FT_STRDUP( face->non_var_style_name, face->root.style_name ) )
+        goto Exit;
+    }
+#endif
+
     /* now set up root fields */
     {
       FT_Face  root  = &face->root;
@@ -1007,11 +1096,19 @@
        */
       if ( face->sbit_table_type == TT_SBIT_TABLE_TYPE_CBLC ||
            face->sbit_table_type == TT_SBIT_TABLE_TYPE_SBIX ||
-           face->colr                                       )
+           face->colr                                       ||
+           face->svg                                        )
         flags |= FT_FACE_FLAG_COLOR;      /* color glyphs */
 
       if ( has_outline == TRUE )
-        flags |= FT_FACE_FLAG_SCALABLE;   /* scalable outlines */
+      {
+        /* by default (and for backward compatibility) we handle */
+        /* fonts with an 'sbix' table as bitmap-only             */
+        if ( has_sbix )
+          flags |= FT_FACE_FLAG_SBIX;     /* with 'sbix' bitmaps */
+        else
+          flags |= FT_FACE_FLAG_SCALABLE; /* scalable outlines */
+      }
 
       /* The sfnt driver only supports bitmap fonts natively, thus we */
       /* don't set FT_FACE_FLAG_HINTER.                               */
@@ -1033,20 +1130,18 @@
         flags |= FT_FACE_FLAG_VERTICAL;
 
       /* kerning available ? */
-      if ( TT_FACE_HAS_KERNING( face ) )
+      if ( face->kern_avail_bits
+#ifdef TT_CONFIG_OPTION_GPOS_KERNING
+           || face->num_gpos_lookups_kerning
+#endif
+         )
         flags |= FT_FACE_FLAG_KERNING;
 
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
       /* Don't bother to load the tables unless somebody asks for them. */
       /* No need to do work which will (probably) not be used.          */
       if ( face->variation_support & TT_FACE_FLAG_VAR_FVAR )
-      {
-        if ( tt_face_lookup_table( face, TTAG_glyf ) != 0 &&
-             tt_face_lookup_table( face, TTAG_gvar ) != 0 )
-          flags |= FT_FACE_FLAG_MULTIPLE_MASTERS;
-        if ( tt_face_lookup_table( face, TTAG_CFF2 ) != 0 )
-          flags |= FT_FACE_FLAG_MULTIPLE_MASTERS;
-      }
+        flags |= FT_FACE_FLAG_MULTIPLE_MASTERS;
 #endif
 
       root->face_flags = flags;
@@ -1120,9 +1215,10 @@
         }
 
         /* synthesize Unicode charmap if one is missing */
-        if ( !has_unicode )
+        if ( !has_unicode                                &&
+             root->face_flags & FT_FACE_FLAG_GLYPH_NAMES )
         {
-          FT_CharMapRec cmaprec;
+          FT_CharMapRec  cmaprec;
 
 
           cmaprec.face        = root;
@@ -1159,7 +1255,7 @@
 
         if ( count > 0 )
         {
-          FT_Memory        memory   = face->root.stream->memory;
+          FT_Memory        memory   = face->root.memory;
           FT_UShort        em_size  = face->header.Units_Per_EM;
           FT_Short         avgwidth = face->os2.xAvgCharWidth;
           FT_Size_Metrics  metrics;
@@ -1178,7 +1274,7 @@
           /* of `FT_Face', we map `available_sizes' indices to strike    */
           /* indices                                                     */
           if ( FT_NEW_ARRAY( root->available_sizes, count ) ||
-               FT_NEW_ARRAY( sbit_strike_map, count ) )
+               FT_QNEW_ARRAY( sbit_strike_map, count ) )
             goto Exit;
 
           bsize_idx = 0;
@@ -1207,7 +1303,7 @@
           }
 
           /* reduce array size to the actually used elements */
-          (void)FT_RENEW_ARRAY( sbit_strike_map, count, bsize_idx );
+          FT_MEM_QRENEW_ARRAY( sbit_strike_map, count, bsize_idx );
 
           /* from now on, all strike indices are mapped */
           /* using `sbit_strike_map'                    */
@@ -1233,7 +1329,8 @@
        *
        * Set up metrics.
        */
-      if ( FT_IS_SCALABLE( root ) )
+      if ( FT_IS_SCALABLE( root ) ||
+           FT_HAS_SBIX( root )    )
       {
         /* XXX What about if outline header is missing */
         /*     (e.g. sfnt wrapped bitmap)?             */
@@ -1372,6 +1469,12 @@
         sfnt->free_cpal( face );
         sfnt->free_colr( face );
       }
+
+#ifdef FT_CONFIG_OPTION_SVG
+      /* free SVG data */
+      if ( sfnt->free_svg )
+        sfnt->free_svg( face );
+#endif
     }
 
 #ifdef TT_CONFIG_OPTION_BDF
@@ -1381,6 +1484,11 @@
 
     /* freeing the kerning table */
     tt_face_done_kern( face );
+
+#ifdef TT_CONFIG_OPTION_GPOS_KERNING
+    /* freeing the GPOS table */
+    tt_face_done_gpos( face );
+#endif
 
     /* freeing the collection table */
     FT_FREE( face->ttc_header.offsets );
@@ -1431,6 +1539,7 @@
 
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
     FT_FREE( face->var_postscript_prefix );
+    FT_FREE( face->non_var_style_name );
 #endif
 
     /* freeing glyph color palette data */

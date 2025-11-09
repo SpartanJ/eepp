@@ -1,3 +1,4 @@
+#include <eepp/core/retainsymbol.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/text.hpp>
@@ -28,6 +29,8 @@ using namespace EE::Window;
 #endif
 
 namespace {
+
+RETAIN_SYMBOL( FT_Palette_Select );
 
 // FreeType callbacks that operate on a IOStream
 unsigned long read( FT_Stream rec, unsigned long offset, unsigned char* buffer,

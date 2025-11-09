@@ -4,7 +4,7 @@
  *
  *   The FreeType glyph loader (body).
  *
- * Copyright (C) 2002-2019 by
+ * Copyright (C) 2002-2025 by
  * David Turner, Robert Wilhelm, and Werner Lemberg
  *
  * This file is part of the FreeType project, and may only be used,
@@ -16,11 +16,10 @@
  */
 
 
-#include <ft2build.h>
-#include FT_INTERNAL_DEBUG_H
-#include FT_INTERNAL_GLYPH_LOADER_H
-#include FT_INTERNAL_MEMORY_H
-#include FT_INTERNAL_OBJECTS_H
+#include <freetype/internal/ftdebug.h>
+#include <freetype/internal/ftgloadr.h>
+#include <freetype/internal/ftmemory.h>
+#include <freetype/internal/ftobjs.h>
 
 #undef  FT_COMPONENT
 #define FT_COMPONENT  gloader
@@ -93,6 +92,7 @@
 
     base->outline.n_points   = 0;
     base->outline.n_contours = 0;
+    base->outline.flags      = 0;
     base->num_subglyphs      = 0;
 
     *current = *base;
@@ -146,9 +146,9 @@
     FT_Outline*  current = &loader->current.outline;
 
 
-    current->points   = base->points   + base->n_points;
-    current->tags     = base->tags     + base->n_points;
-    current->contours = base->contours + base->n_contours;
+    current->points   = FT_OFFSET( base->points,   base->n_points );
+    current->tags     = FT_OFFSET( base->tags,     base->n_points );
+    current->contours = FT_OFFSET( base->contours, base->n_contours );
 
     /* handle extra points table - if any */
     if ( loader->use_extra )
@@ -168,6 +168,10 @@
     FT_Error   error;
     FT_Memory  memory = loader->memory;
 
+
+    if ( loader->max_points == 0           ||
+         loader->base.extra_points != NULL )
+      return FT_Err_Ok;
 
     if ( !FT_NEW_ARRAY( loader->base.extra_points, 2 * loader->max_points ) )
     {
@@ -189,7 +193,7 @@
     FT_GlyphLoad  current = &loader->current;
 
 
-    current->subglyphs = base->subglyphs + base->num_subglyphs;
+    current->subglyphs = FT_OFFSET( base->subglyphs, base->num_subglyphs );
   }
 
 
@@ -208,8 +212,12 @@
     FT_Outline*  current = &loader->current.outline;
     FT_Bool      adjust  = 0;
 
-    FT_UInt      new_max, old_max;
+    FT_UInt  new_max, old_max, min_new_max;
 
+
+    error = FT_GlyphLoader_CreateExtra( loader );
+    if ( error )
+      goto Exit;
 
     /* check points & tags */
     new_max = (FT_UInt)base->n_points + (FT_UInt)current->n_points +
@@ -218,10 +226,18 @@
 
     if ( new_max > old_max )
     {
-      new_max = FT_PAD_CEIL( new_max, 8 );
-
       if ( new_max > FT_OUTLINE_POINTS_MAX )
-        return FT_THROW( Array_Too_Large );
+      {
+        error = FT_THROW( Array_Too_Large );
+        goto Exit;
+      }
+
+      min_new_max = old_max + ( old_max >> 1 );
+      if ( new_max < min_new_max )
+        new_max = min_new_max;
+      new_max = FT_PAD_CEIL( new_max, 8 );
+      if ( new_max > FT_OUTLINE_POINTS_MAX )
+        new_max = FT_OUTLINE_POINTS_MAX;
 
       if ( FT_RENEW_ARRAY( base->points, old_max, new_max ) ||
            FT_RENEW_ARRAY( base->tags,   old_max, new_max ) )
@@ -244,16 +260,28 @@
       loader->max_points = new_max;
     }
 
+    error = FT_GlyphLoader_CreateExtra( loader );
+    if ( error )
+      goto Exit;
+
     /* check contours */
     old_max = loader->max_contours;
     new_max = (FT_UInt)base->n_contours + (FT_UInt)current->n_contours +
               n_contours;
     if ( new_max > old_max )
     {
-      new_max = FT_PAD_CEIL( new_max, 4 );
-
       if ( new_max > FT_OUTLINE_CONTOURS_MAX )
-        return FT_THROW( Array_Too_Large );
+      {
+        error = FT_THROW( Array_Too_Large );
+        goto Exit;
+      }
+
+      min_new_max = old_max + ( old_max >> 1 );
+      if ( new_max < min_new_max )
+        new_max = min_new_max;
+      new_max = FT_PAD_CEIL( new_max, 4 );
+      if ( new_max > FT_OUTLINE_CONTOURS_MAX )
+        new_max = FT_OUTLINE_CONTOURS_MAX;
 
       if ( FT_RENEW_ARRAY( base->contours, old_max, new_max ) )
         goto Exit;
@@ -327,34 +355,25 @@
   FT_BASE_DEF( void )
   FT_GlyphLoader_Add( FT_GlyphLoader  loader )
   {
-    FT_GlyphLoad  base;
-    FT_GlyphLoad  current;
-
-    FT_Int        n_curr_contours;
-    FT_Int        n_base_points;
-    FT_Int        n;
+    FT_Outline*  base;
+    FT_Outline*  current;
+    FT_Int       n;
 
 
     if ( !loader )
       return;
 
-    base    = &loader->base;
-    current = &loader->current;
-
-    n_curr_contours = current->outline.n_contours;
-    n_base_points   = base->outline.n_points;
-
-    base->outline.n_points =
-      (short)( base->outline.n_points + current->outline.n_points );
-    base->outline.n_contours =
-      (short)( base->outline.n_contours + current->outline.n_contours );
-
-    base->num_subglyphs += current->num_subglyphs;
+    base    = &loader->base.outline;
+    current = &loader->current.outline;
 
     /* adjust contours count in newest outline */
-    for ( n = 0; n < n_curr_contours; n++ )
-      current->outline.contours[n] =
-        (short)( current->outline.contours[n] + n_base_points );
+    for ( n = 0; n < current->n_contours; n++ )
+      current->contours[n] += base->n_points;
+
+    base->n_points   += current->n_points;
+    base->n_contours += current->n_contours;
+
+    loader->base.num_subglyphs += loader->current.num_subglyphs;
 
     /* prepare for another new glyph image */
     FT_GlyphLoader_Prepare( loader );

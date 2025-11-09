@@ -314,26 +314,26 @@ function build_base_cpp_configuration( package_name )
 end
 
 function get_architecture()
-    if jit then
-        return jit.arch
-    end
+	if jit then
+		return jit.arch
+	end
 
-    local handle = io.popen("uname -m 2>/dev/null")
-    if handle then
-        local arch = handle:read("*l")
-        handle:close()
-        if arch then return arch end
-    end
+	local handle = io.popen("uname -m 2>/dev/null")
+	if handle then
+		local arch = handle:read("*l")
+		handle:close()
+		if arch then return arch end
+	end
 
-    local arch = os.getenv("PROCESSOR_ARCHITECTURE")
-    if arch then
-        if arch == "AMD64" or arch == "IA64" then
-          return "x86_64"
-        end
-        return string.lower(arch)
-    end
+	local arch = os.getenv("PROCESSOR_ARCHITECTURE")
+	if arch then
+		if arch == "AMD64" or arch == "IA64" then
+		  return "x86_64"
+		end
+		return string.lower(arch)
+	end
 
-    return "x86_64"
+	return "x86_64"
 end
 
 function build_link_configuration( package_name, use_ee_icon )
@@ -556,11 +556,12 @@ function add_static_links()
 	end
 
 	if not _OPTIONS["with-dynamic-freetype"] then
-		links { "freetype-static", "libpng-static" }
+		links { "freetype-static" }
 	end
 
 	if _OPTIONS["with-text-shaper"] then
-		links { "harfbuzz-static" }
+		links { "harfbuzz-static", "SheenBidi-static" }
+		includedirs { "src/thirdparty/SheenBidi/Headers" }
 		defines { "EE_TEXT_SHAPER_ENABLED" }
 	end
 
@@ -575,6 +576,7 @@ function add_static_links()
 			"pcre2-8-static",
 			"oniguruma-static",
 			"libwebp-static",
+			"libpng-static",
 	}
 
 	if not _OPTIONS["without-mojoal"] then
@@ -771,6 +773,8 @@ function build_eepp( build_name )
 		"src/thirdparty/pcre2/src",
 		"src/thirdparty/oniguruma",
 		"src/thirdparty/libwebp/src",
+		"src/thirdparty/SheenBidi/Headers",
+		"src/thirdparty/SheenBidi/Headers/SheenBidi",
 	}
 
 	add_static_links()
@@ -1127,6 +1131,14 @@ workspace "eepp"
 			target_dir_thirdparty()
 			filter "action:vs*"
 				buildoptions{ "/bigobj" }
+
+		project "SheenBidi-static"
+			kind "StaticLib"
+			language "C"
+			files { "src/thirdparty/SheenBidi/Source/**.c" }
+			incdirs { "src/thirdparty/SheenBidi/Headers" }
+			target_dir_thirdparty()
+			build_base_configuration( "sheenbidi" )
 	end
 
 	project "chipmunk-static"
