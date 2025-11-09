@@ -669,6 +669,7 @@ void TerminalEmulator::kscrolldown( const TerminalArg* a ) {
 		mTerm.scr -= n;
 		selmove( -n );
 		tfulldirt();
+		onScrollPositionChange();
 	}
 }
 
@@ -691,6 +692,7 @@ void TerminalEmulator::kscrollup( const TerminalArg* a ) {
 		mTerm.scr += n;
 		selmove( n );
 		tfulldirt();
+		onScrollPositionChange();
 	}
 }
 
@@ -701,6 +703,7 @@ void TerminalEmulator::kscrollto( const TerminalArg* a ) {
 		mTerm.scr = n;
 		selscroll( 0, n );
 		tfulldirt();
+		onScrollPositionChange();
 	}
 }
 
@@ -970,6 +973,8 @@ void TerminalEmulator::tscrollup( int top, int n, int copyhist ) {
 
 	if ( mTerm.scr == 0 )
 		selscroll( top, -n );
+
+	onScrollPositionChange();
 }
 
 void TerminalEmulator::selmove( int n ) {
@@ -1835,10 +1840,13 @@ void TerminalEmulator::strhandle( void ) {
 				}
 			}
 			break;
-		case 'k': /* old title set compatibility */
-			dpy->setTitle( mStrescseq.args[0] );
-			mTerm.title = mStrescseq.args[0];
+		case 'k': /* old title set compatibility */ {
+			if ( mStrescseq.args[0] ) {
+				dpy->setTitle( mStrescseq.args[0] );
+				mTerm.title = mStrescseq.args[0];
+			}
 			return;
+		}
 		case 'P': /* DCS -- Device Control String */
 		case '_': /* APC -- Application Program Command */
 		case '^': /* PM -- Privacy Message */
@@ -2708,7 +2716,6 @@ TerminalEmulator::TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
 	mDpy( display ),
 	mPty( std::move( pty ) ),
 	mProcess( std::move( process ) ),
-	mColorsLoaded( false ),
 	mExitCode( 1 ),
 	mStatus( STARTING ),
 	mBuflen( 0 ),
@@ -2771,6 +2778,12 @@ void TerminalEmulator::onProcessExit( int exitCode ) {
 	auto dpy = mDpy.lock();
 	if ( dpy )
 		dpy->onProcessExit( exitCode );
+}
+
+void TerminalEmulator::onScrollPositionChange() {
+	auto dpy = mDpy.lock();
+	if ( dpy )
+		dpy->onScrollPositionChange();
 }
 
 void TerminalEmulator::setClipboard( const char* str ) {

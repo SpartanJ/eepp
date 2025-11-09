@@ -1530,6 +1530,10 @@ void TerminalDisplay::onProcessExit( int exitCode ) {
 	eeSAFE_DELETE( processFactory );
 }
 
+void TerminalDisplay::onScrollPositionChange() {
+	sendEvent( { EventType::SCROLL_HISTORY } );
+}
+
 void TerminalDisplay::onTextInput( const Uint32& chr ) {
 	if ( !mTerminal )
 		return;

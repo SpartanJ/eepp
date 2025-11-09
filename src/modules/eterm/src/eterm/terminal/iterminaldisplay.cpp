@@ -76,4 +76,6 @@ const char* ITerminalDisplay::getClipboard() const {
 
 void ITerminalDisplay::onProcessExit( int /*exitCode*/ ) {}
 
+void ITerminalDisplay::onScrollPositionChange() {}
+
 }}

@@ -326,6 +326,8 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	virtual void onProcessExit( int exitCode );
 
+	virtual void onScrollPositionChange();
+
 	void sendEvent( const TerminalDisplay::Event& event );
 
 	Sizei getFrameBufferSize();

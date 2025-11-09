@@ -87,6 +87,8 @@ class ITerminalDisplay {
 	TerminalEmulator* mEmulator;
 
 	virtual void onProcessExit( int exitCode );
+
+	virtual void onScrollPositionChange();
 };
 
 }} // namespace eterm::Terminal

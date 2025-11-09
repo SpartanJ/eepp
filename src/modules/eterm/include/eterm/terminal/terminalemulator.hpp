@@ -254,7 +254,6 @@ class TerminalEmulator final {
 	PtyPtr mPty;
 	ProcPtr mProcess;
 
-	bool mColorsLoaded;
 	bool mDirty{ true };
 	bool mAllowMemoryTrimnming{ false };
 	int mExitCode;
@@ -288,6 +287,8 @@ class TerminalEmulator final {
 	int resetColor( int x, const char* name );
 
 	void onProcessExit( int exitCode );
+
+	void onScrollPositionChange();
 
 	void csidump();
 	void csihandle();
