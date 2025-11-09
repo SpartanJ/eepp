@@ -47,7 +47,7 @@
 #elif defined( _MSC_VER )
 // For MSVC, the /include:symbol linker option is the most direct way.
 #define RETAIN_SYMBOL( symbol )                                                 \
-	_Pragma( "comment(linker, \"/include:\"" #symbol "\")" ) static void* const \
+	__pragma( "comment(linker, \"/include:\"" #symbol "\")" ) static void* const \
 	_RETAIN_SYMBOL_UNIQUE_NAME( g_retained_symbol_ptr_ ) = (void*)&( symbol )
 
 #else
