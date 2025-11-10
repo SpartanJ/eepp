@@ -418,6 +418,7 @@ UTEST( FontRendering, textEditBengaliTest ) {
 	FontManager::instance()->addFallbackFont( bengaliFont );
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	auto* editor = UITextEdit::New();
+	// editor->setFontSize( PixelDensity::dpToPx( 12 ) );
 	editor->setPixelsSize( app.getUI()->getPixelsSize() );
 	editor->loadFromFile( "assets/textfiles/test-bengali.uext" );
 	SceneManager::instance()->update();

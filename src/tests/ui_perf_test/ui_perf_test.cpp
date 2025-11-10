@@ -153,34 +153,37 @@ void mainLoop() {
 
 EE_MAIN_FUNC int main( int, char*[] ) {
 	{
-		Text::TextShaperEnabled = false;
+		Text::TextShaperEnabled = true;
+		Text::TextShaperOptimizations = false;
 		UIApplication app( WindowSettings( 1024, 650, "eepp - TextEdit", WindowStyle::Default,
 										   WindowBackend::Default, 32, {}, 1, false, true ),
 						   UIApplication::Settings( {}, 1.5f ) );
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 		auto ll = UILinearLayout::NewVertical();
 		ll->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
-		auto editor = UICodeEditor::New();
+		auto editor = UITextEdit::New();
 		editor->setShowLineNumber( false );
 		editor->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 		editor->setParent( ll );
-		// editor->setFontSize( PixelDensity::dpToPx( 32 ) );
-		/* FontManager::instance()->addFallbackFont(
-			FontTrueType::New( "arabic", "unit_tests/assets/fonts/NotoNaskhArabic-Regular.ttf" ) ); */
+		editor->setFontSize( PixelDensity::dpToPx( 12 ) );
+		// FontManager::instance()->addFallbackFont(
+		// 	FontTrueType::New( "arabic", "unit_tests/assets/fonts/NotoNaskhArabic-Regular.ttf" ) );
 		FontManager::instance()->addFallbackFont( FontTrueType::New(
 			"NotoSerifBengali-Regular", "unit_tests/assets/fonts/NotoSansBengali-Regular.ttf" ) );
 		// editor->setLineWrapMode( LineWrapMode::Word );
 		// editor->setFont( FontManager::instance()->getByName( "monospace" ) );
 		// editor->loadFromFile( "unit_tests/assets/textfiles/test-arabic-simple.uext" );
-		editor->loadFromFile( "unit_tests/assets/textfiles/test-arabic.uext" );
-		// editor->loadFromFile( "unit_tests/assets/textfiles/test-bengali.uext" );
+		// editor->loadFromFile( "unit_tests/assets/textfiles/test-arabic.uext" );
+		editor->loadFromFile( "unit_tests/assets/textfiles/test-bengali.uext" );
 		// editor->loadFromFile( "unit_tests/assets/textfiles/test-flags.uext" );
 		// editor->loadFromFile( "unit_tests/assets/textformat/english.utf8.lf.nobom.txt" );
 		// editor->getDocument().textInput( "اسمي..." );
 		// editor->getDocument().textInput( " হ্যাঁ " );
+		// editor->getDocument().textInput( "I'm from...: আমি ... থেকে এসেছি।" );
+
 		editor->setFont( app.getUI()->getUIThemeManager()->getDefaultFont() );
 		editor->on( Event::KeyUp, [&]( const Event* event ) {
-			if ( event->asKeyEvent()->getKeyCode() == KEY_F1 ){
+			if ( event->asKeyEvent()->getKeyCode() == KEY_F1 ) {
 				Text::TextShaperEnabled = !Text::TextShaperEnabled;
 				app.getUI()->getRoot()->invalidateDraw();
 			}

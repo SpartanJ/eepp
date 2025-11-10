@@ -143,6 +143,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		FontTrueType::fontHintingFromString( ini.getValue( "ui", "font_hinting", "full" ) );
 	ui.fontAntialiasing = FontTrueType::fontAntialiasingFromString(
 		ini.getValue( "ui", "font_antialiasing", "grayscale" ) );
+	Text::TextShaperEnabled |= ini.getValueB( "ui", "text_shaper", false );
+	Text::TextShaperOptimizations |= ini.getValueB( "ui", "text_shaper_optimizations", true );
 	doc.trimTrailingWhitespaces = ini.getValueB( "document", "trim_trailing_whitespaces", false );
 	doc.forceNewLineAtEndOfFile =
 		ini.getValueB( "document", "force_new_line_at_end_of_file", false );

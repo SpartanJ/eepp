@@ -14,6 +14,7 @@ struct ShapedGlyph {
 	Uint32 glyphIndex{ 0 };
 	Uint32 stringIndex{ 0 };
 	Vector2f position;
+	Vector2f advance;
 };
 
 } // namespace EE::Graphics

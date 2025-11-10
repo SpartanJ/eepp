@@ -304,6 +304,8 @@ class EE_API Text {
 
 	const FontStyleConfig& getFontStyleConfig() const { return mFontStyleConfig; }
 
+	Uint32 getTextHints() const { return mTextHints; }
+
   protected:
 	struct VertexCoords {
 		Vector2f texCoords;

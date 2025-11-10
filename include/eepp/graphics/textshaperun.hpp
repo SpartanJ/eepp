@@ -26,8 +26,6 @@ class EE_API TextShapeRun {
 
 	FontTrueType* font();
 
-	bool isRTL() const;
-
   protected:
 	void findNextEnd();
 
@@ -41,7 +39,6 @@ class EE_API TextShapeRun {
 	Font* mCurFont{ nullptr };
 	Font* mStartFont{ nullptr };
 	bool mIsNewLine{ false };
-	bool mIsRTL{ false };
 };
 
 } // namespace EE::Graphics

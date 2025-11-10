@@ -50,11 +50,9 @@ void TextShapeRun::findNextEnd() {
 	Font* lFont = mStartFont ? mStartFont : mFont;
 	std::size_t len = mString.size();
 	std::size_t pos = 0;
-	hb_script_t curScript = HB_SCRIPT_UNKNOWN;
 
 	for ( std::size_t idx = mIndex; idx < len; ++idx, ++pos ) {
 		auto ch = mString[idx];
-		hb_script_t script = hb_unicode_script( hb_unicode_funcs_get_default(), ch );
 		auto font = mFont
 						->getGlyph( ch, mCharacterSize, mStyle & Text::Bold, mStyle & Text::Italic,
 									mOutlineThickness )
@@ -62,33 +60,22 @@ void TextShapeRun::findNextEnd() {
 		mIsNewLine = ( ch == '\n' );
 
 		if ( idx == mIndex ) {
-			curScript = script;
 			mStartFont = font;
 			lFont = font;
 			mCurFont = font;
-			if ( curScript == HB_SCRIPT_COMMON || curScript == HB_SCRIPT_INHERITED )
-				curScript = HB_SCRIPT_LATIN;
-			mIsRTL = hb_script_get_horizontal_direction( curScript ) == HB_DIRECTION_RTL;
 		}
 
 		// Break run if:
 		// - Newline
 		// - Font changed
-		// - Script changed
-		hb_script_t effectiveScript =
-			( script == HB_SCRIPT_COMMON || script == HB_SCRIPT_INHERITED ) ? (hb_script_t)curScript
-																			: script;
-
-		if ( mIsNewLine || ( lFont != nullptr && font != lFont ) || effectiveScript != curScript ) {
+		if ( mIsNewLine || ( lFont != nullptr && font != lFont ) ) {
 			mLen = mIsNewLine ? pos + 1 : pos;
 			mCurFont = lFont;
-			mIsRTL = hb_script_get_horizontal_direction( effectiveScript ) == HB_DIRECTION_RTL;
 			return;
 		}
 
 		lFont = font;
 		mCurFont = font;
-		curScript = effectiveScript;
 	}
 
 	mLen = len - mIndex;
@@ -114,10 +101,6 @@ void TextShapeRun::findNextEnd() {
 	}
 	mLen = idx;
 #endif
-}
-
-bool TextShapeRun::isRTL() const {
-	return mIsRTL;
 }
 
 } // namespace EE::Graphics

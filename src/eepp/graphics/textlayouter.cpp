@@ -5,85 +5,160 @@
 #include <eepp/graphics/textshaperun.hpp>
 
 #ifdef EE_TEXT_SHAPER_ENABLED
+#include <SheenBidi/SheenBidi.h>
 #include <harfbuzz/hb-ft.h>
 #include <harfbuzz/hb.h>
 #endif
 
 namespace EE::Graphics {
 
-using LRULayoutCache = LRUCache<1024, Uint64, TextLayout>;
+using LRULayoutCache = LRUCache<2048, Uint64, TextLayout>;
 
 #ifdef EE_TEXT_SHAPER_ENABLED
-static bool
-shapeAndRun( const String& string, FontTrueType* font, Uint32 characterSize, Uint32 style,
-			 Float outlineThickness,
-			 const std::function<bool( hb_glyph_info_t*, hb_glyph_position_t*, Uint32,
-									   const hb_segment_properties_t&, TextShapeRun& )>& cb ) {
-	TextShapeRun run( string.view(), font, characterSize, style, outlineThickness );
+
+struct TextSegment {
+	std::size_t offset{};
+	std::size_t length{};
+	hb_script_t script{};
+	hb_direction_t direction{};
+};
+
+// Split string into segments with uniform text properties
+static void segmentString( String::View input,
+						   std::function<bool( const TextSegment& segment )> cb ) {
+	const SBCodepointSequence codepointSequence{
+		SBStringEncodingUTF32, static_cast<const void*>( input.data() ), input.size() };
+	auto* const scriptLocator = SBScriptLocatorCreate();
+	auto* const algorithm = SBAlgorithmCreate( &codepointSequence );
+	SBUInteger paragraphOffset = 0;
+
+	while ( paragraphOffset < input.size() ) {
+		SBUInteger paragraphLength{};
+		SBUInteger separatorLength{};
+		SBAlgorithmGetParagraphBoundary( algorithm, paragraphOffset,
+										 std::numeric_limits<SBUInteger>::max(), &paragraphLength,
+										 &separatorLength );
+
+		auto* const paragraph = SBAlgorithmCreateParagraph( algorithm, paragraphOffset,
+															paragraphLength, SBLevelDefaultLTR );
+		auto* const line = SBParagraphCreateLine( paragraph, paragraphOffset, paragraphLength );
+		const auto runCount = SBLineGetRunCount( line );
+		const auto* runArray = SBLineGetRunsPtr( line );
+
+		for ( SBUInteger i = 0; i < runCount; i++ ) {
+			// Odd levels are RTL, even levels are LTR
+			const auto direction = ( runArray[i].level % 2 ) ? HB_DIRECTION_RTL : HB_DIRECTION_LTR;
+
+			const SBCodepointSequence codepointSubsequence{
+				SBStringEncodingUTF32,
+				static_cast<const void*>( input.data() + runArray[i].offset ), runArray[i].length };
+
+			SBScriptLocatorLoadCodepoints( scriptLocator, &codepointSubsequence );
+
+			while ( SBScriptLocatorMoveNext( scriptLocator ) ) {
+				const auto* agent = SBScriptLocatorGetAgent( scriptLocator );
+				const auto script =
+					hb_script_from_iso15924_tag( SBScriptGetUnicodeTag( agent->script ) );
+
+				if ( !cb( TextSegment{ runArray[i].offset + agent->offset, agent->length, script,
+									   direction } ) )
+					break;
+			}
+
+			SBScriptLocatorReset( scriptLocator );
+		}
+
+		SBLineRelease( line );
+		SBParagraphRelease( paragraph );
+
+		paragraphOffset += paragraphLength;
+	}
+
+	SBAlgorithmRelease( algorithm );
+	SBScriptLocatorRelease( scriptLocator );
+}
+
+static inline bool isSimpleScript( hb_script_t script ) {
+	return script == HB_SCRIPT_LATIN || script == HB_SCRIPT_GREEK || script == HB_SCRIPT_CYRILLIC ||
+		   script == HB_SCRIPT_INVALID || script == HB_SCRIPT_COMMON;
+}
+
+static bool shapeAndRun( const String& string, FontTrueType* font, Uint32 characterSize,
+						 Uint32 style, Float outlineThickness,
+						 const std::function<bool( hb_glyph_info_t*, hb_glyph_position_t*, Uint32,
+												   const hb_segment_properties_t&,
+												   const TextSegment&, TextShapeRun& )>& cb ) {
+	String::View input = string.view();
 	hb_buffer_t* hbBuffer = hb_buffer_create();
 	bool completeRun = true;
 
-	while ( run.hasNext() ) {
-		FontTrueType* font = run.font();
-		if ( font == nullptr ) { // empty line
-			run.next();
-			continue;
+	segmentString( input, [&]( const TextSegment& segment ) {
+		TextShapeRun run( input.substr( segment.offset, segment.length ), font, characterSize,
+						  style, outlineThickness );
+
+		while ( run.hasNext() ) {
+			FontTrueType* font = run.font();
+			if ( font == nullptr ) { // empty line
+				run.next();
+				continue;
+			}
+			String::View curRun( run.curRun() );
+			font->setCurrentSize( characterSize );
+			hb_buffer_reset( hbBuffer );
+			hb_buffer_set_cluster_level( hbBuffer, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS );
+			hb_buffer_add_utf32( hbBuffer, (Uint32*)curRun.data(), curRun.size(), 0,
+								 curRun.size() );
+
+			hb_buffer_set_direction( hbBuffer, segment.direction );
+			hb_buffer_set_script( hbBuffer, segment.script );
+			hb_buffer_guess_segment_properties( hbBuffer );
+			hb_segment_properties_t props;
+			hb_buffer_get_segment_properties( hbBuffer, &props );
+			std::uint32_t featuresEnabled = !isSimpleScript( segment.script ) ? 1 : 0;
+
+			// We use our own kerning algo
+			const hb_feature_t features[] = {
+				hb_feature_t{ HB_TAG( 'k', 'e', 'r', 'n' ), featuresEnabled,
+							  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
+				hb_feature_t{ HB_TAG( 'l', 'i', 'g', 'a' ), featuresEnabled,
+							  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
+				hb_feature_t{ HB_TAG( 'c', 'l', 'i', 'g' ), featuresEnabled,
+							  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
+				hb_feature_t{ HB_TAG( 'd', 'l', 'i', 'g' ), featuresEnabled,
+							  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
+			};
+
+			// whitelist cross-platforms shapers only
+			static const char* shaper_list[] = { "ot", "graphite2", "fallback", nullptr };
+
+			if ( !font || !font->hb() ) {
+				eeASSERT( font && font->hb() );
+				completeRun = false;
+				break;
+			}
+
+			hb_shape_full( static_cast<hb_font_t*>( font->hb() ), hbBuffer, features,
+						   eeARRAY_SIZE( features ), shaper_list );
+
+			// from the shaped text we get the glyphs and positions
+			unsigned int glyphCount;
+			hb_glyph_info_t* glyphInfo = hb_buffer_get_glyph_infos( hbBuffer, &glyphCount );
+			hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( hbBuffer, &glyphCount );
+
+			if ( cb( glyphInfo, glyphPos, glyphCount, props, segment, run ) )
+				run.next();
+			else {
+				completeRun = false;
+				return false;
+				break;
+			}
 		}
-		String::View curRun( run.curRun() );
-		font->setCurrentSize( characterSize );
-		hb_buffer_reset( hbBuffer );
-		hb_buffer_set_cluster_level( hbBuffer, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS );
-		hb_buffer_add_utf32( hbBuffer, (Uint32*)curRun.data(), curRun.size(), 0, curRun.size() );
-		hb_buffer_guess_segment_properties( hbBuffer );
-		hb_segment_properties_t props;
-		hb_buffer_get_segment_properties( hbBuffer, &props );
 
-		// We use our own kerning algo
-		static const hb_feature_t features[] = {
-			hb_feature_t{ HB_TAG( 'k', 'e', 'r', 'n' ), 0, HB_FEATURE_GLOBAL_START,
-						  HB_FEATURE_GLOBAL_END },
-			hb_feature_t{ HB_TAG( 'l', 'i', 'g', 'a' ), 0, HB_FEATURE_GLOBAL_START,
-						  HB_FEATURE_GLOBAL_END },
-			hb_feature_t{ HB_TAG( 'c', 'l', 'i', 'g' ), 0, HB_FEATURE_GLOBAL_START,
-						  HB_FEATURE_GLOBAL_END },
-			hb_feature_t{ HB_TAG( 'd', 'l', 'i', 'g' ), 0, HB_FEATURE_GLOBAL_START,
-						  HB_FEATURE_GLOBAL_END },
-		};
-
-		// whitelist cross-platforms shapers only
-		static const char* shaper_list[] = { "ot", "graphite2", "fallback", nullptr };
-
-		if ( !font || !font->hb() ) {
-			eeASSERT( font && font->hb() );
-			completeRun = false;
-			break;
-		}
-
-		hb_shape_full( static_cast<hb_font_t*>( font->hb() ), hbBuffer, features,
-					   eeARRAY_SIZE( features ), shaper_list );
-
-		// from the shaped text we get the glyphs and positions
-		unsigned int glyphCount;
-		hb_glyph_info_t* glyphInfo = hb_buffer_get_glyph_infos( hbBuffer, &glyphCount );
-		hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( hbBuffer, &glyphCount );
-
-		if ( cb( glyphInfo, glyphPos, glyphCount, props, run ) )
-			run.next();
-		else {
-			completeRun = false;
-			break;
-		}
-	}
+		return true;
+	} );
 
 	hb_buffer_destroy( hbBuffer );
 	return completeRun;
-}
-
-// New helper function to identify scripts where our custom kerning is safe to apply.
-static inline bool isSimpleScript( hb_script_t script ) {
-	// This list can be expanded, but covers the most common simple LTR scripts.
-	return script == HB_SCRIPT_LATIN || script == HB_SCRIPT_GREEK || script == HB_SCRIPT_CYRILLIC ||
-		   script == HB_SCRIPT_INVALID;
 }
 
 #endif
@@ -136,7 +211,8 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 		shapeAndRun(
 			string, rFont, characterSize, style, outlineThickness,
 			[&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t* glyphPos, Uint32 glyphCount,
-				 const hb_segment_properties_t& props, TextShapeRun& run ) {
+				 const hb_segment_properties_t& props, const TextSegment& segment,
+				 TextShapeRun& run ) {
 				FontTrueType* currentRunFont = run.font();
 				if ( !currentRunFont )
 					return true;
@@ -146,7 +222,7 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 				if ( isSimpleScript( props.script ) ) {
 					for ( size_t i = 0; i < glyphCount; ++i ) {
 						Uint32 cluster = glyphInfo[i].cluster;
-						String::StringBaseType ch = string[run.pos() + cluster];
+						String::StringBaseType ch = string[segment.offset + run.pos() + cluster];
 
 						if ( ch == '\t' ) {
 							Float advance = Text::tabAdvance( hspace, tabWidth,
@@ -155,8 +231,9 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 							ShapedGlyph sg;
 							sg.font = currentRunFont;
 							sg.glyphIndex = glyphInfo[i].codepoint;
-							sg.stringIndex = run.pos() + cluster;
+							sg.stringIndex = segment.offset + run.pos() + cluster;
 							sg.position = pen;
+							sg.advance = { advance, 0 };
 							result.shapedGlyphs.emplace_back( std::move( sg ) );
 
 							pen.x += advance;
@@ -176,10 +253,11 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 						ShapedGlyph sg;
 						sg.font = currentRunFont;
 						sg.glyphIndex = glyphInfo[i].codepoint;
-						sg.stringIndex = run.pos() + glyphInfo[i].cluster;
+						sg.stringIndex = segment.offset + run.pos() + glyphInfo[i].cluster;
 
 						float offsetX = glyphPos[i].x_offset / 64.f;
 						float offsetY = glyphPos[i].y_offset / 64.f;
+						sg.advance = { offsetX, offsetY };
 						sg.position.x = pen.x + offsetX;
 						sg.position.y = pen.y - offsetY;
 						result.shapedGlyphs.emplace_back( std::move( sg ) );
@@ -190,7 +268,7 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 				} else {
 					for ( size_t i = 0; i < glyphCount; ++i ) {
 						Uint32 cluster = glyphInfo[i].cluster;
-						String::StringBaseType ch = string[run.pos() + cluster];
+						String::StringBaseType ch = string[segment.offset + run.pos() + cluster];
 
 						if ( ch == '\t' ) {
 							Float advance = Text::tabAdvance( hspace, tabWidth,
@@ -199,7 +277,8 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 							ShapedGlyph sg;
 							sg.font = currentRunFont;
 							sg.glyphIndex = glyphInfo[i].codepoint;
-							sg.stringIndex = run.pos() + cluster;
+							sg.stringIndex = segment.offset + run.pos() + cluster;
+							sg.advance = { advance, 0 };
 							sg.position = pen;
 							result.shapedGlyphs.emplace_back( std::move( sg ) );
 
@@ -211,20 +290,26 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 						ShapedGlyph sg;
 						sg.font = currentRunFont;
 						sg.glyphIndex = glyphInfo[i].codepoint;
-						sg.stringIndex = run.pos() + glyphInfo[i].cluster;
+						sg.stringIndex = segment.offset + run.pos() + glyphInfo[i].cluster;
 						float offsetX = glyphPos[i].x_offset / 64.f;
 						float offsetY = glyphPos[i].y_offset / 64.f;
-						sg.position.x = pen.x + offsetX;
-						sg.position.y = pen.y - offsetY;
+						sg.advance = { offsetX, offsetY };
+						sg.position.x = std::round( pen.x + offsetX );
+						sg.position.y = std::round( pen.y - offsetY );
 						result.shapedGlyphs.emplace_back( std::move( sg ) );
-						pen.x += glyphPos[i].x_advance / 64.f;
+						pen.x += Font::isEmojiCodePoint( ch )
+									 ? currentRunFont
+										   ->getGlyphByIndex( glyphInfo[i].codepoint, characterSize,
+															  bold, italic, outlineThickness )
+										   .advance
+									 : glyphPos[i].x_advance / 64.f;
 						pen.y += glyphPos[i].y_advance / 64.f;
 					}
 				}
 
 				if ( run.runIsNewLine() ) {
-					result.linesWidth.push_back( pen.x );
-					maxWidth = eemax( maxWidth, pen.x );
+					result.linesWidth.push_back( std::ceil( pen.x ) );
+					maxWidth = eemax( maxWidth, result.linesWidth[result.linesWidth.size() - 1] );
 					pen.x = 0;
 					pen.y += vspace;
 				}
@@ -255,13 +340,16 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 			prevChar = curChar;
 
 			if ( curChar == '\t' ) {
-				pen.x += Text::tabAdvance(
-					hspace, tabWidth,
-					tabOffset ? ( tabOffset ? *tabOffset + pen.x : std::optional<Float>{} )
-							  : std::optional<Float>{} );
+
 				ShapedGlyph sg;
 				sg.stringIndex = i;
+				sg.advance = { Text::tabAdvance( hspace, tabWidth,
+												 tabOffset ? ( tabOffset ? *tabOffset + pen.x
+																		 : std::optional<Float>{} )
+														   : std::optional<Float>{} ),
+							   0 };
 				sg.position = pen;
+				pen.x += sg.advance.x;
 				result.shapedGlyphs.emplace_back( std::move( sg ) );
 				continue;
 			}
@@ -270,9 +358,11 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 			sg.font = static_cast<FontTrueType*>( font );
 			sg.glyphIndex = sg.font->getGlyphIndex( curChar );
 			sg.stringIndex = i;
+			sg.advance = {
+				font->getGlyph( curChar, characterSize, bold, italic, outlineThickness ).advance,
+				0 };
 			sg.position = pen;
-			pen.x +=
-				font->getGlyph( curChar, characterSize, bold, italic, outlineThickness ).advance;
+			pen.x += sg.advance.x;
 			result.shapedGlyphs.emplace_back( std::move( sg ) );
 		}
 	}
@@ -281,9 +371,9 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 	if ( string[string.size() - 1] != '\n' )
 		pen.y += vspace;
 
-	result.linesWidth.push_back( pen.x );
-	maxWidth = eemax( maxWidth, pen.x );
-	result.size = { maxWidth, pen.y };
+	result.linesWidth.push_back( std::ceil( pen.x ) );
+	maxWidth = eemax( maxWidth, result.linesWidth[result.linesWidth.size() - 1] );
+	result.size = { maxWidth, std::ceil( pen.y ) };
 
 	sLayoutCache.put( hash, result );
 	return result;
