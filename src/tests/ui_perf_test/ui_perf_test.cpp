@@ -166,17 +166,18 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		editor->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 		editor->setParent( ll );
 		editor->setFontSize( PixelDensity::dpToPx( 12 ) );
-		// FontManager::instance()->addFallbackFont(
-		// 	FontTrueType::New( "arabic", "unit_tests/assets/fonts/NotoNaskhArabic-Regular.ttf" ) );
+		FontManager::instance()->addFallbackFont(
+			FontTrueType::New( "arabic", "unit_tests/assets/fonts/NotoNaskhArabic-Regular.ttf" ) );
 		FontManager::instance()->addFallbackFont( FontTrueType::New(
 			"NotoSerifBengali-Regular", "unit_tests/assets/fonts/NotoSansBengali-Regular.ttf" ) );
 		// editor->setLineWrapMode( LineWrapMode::Word );
-		// editor->setFont( FontManager::instance()->getByName( "monospace" ) );
+		editor->setFont( FontManager::instance()->getByName( "monospace" ) );
 		// editor->loadFromFile( "unit_tests/assets/textfiles/test-arabic-simple.uext" );
 		// editor->loadFromFile( "unit_tests/assets/textfiles/test-arabic.uext" );
-		editor->loadFromFile( "unit_tests/assets/textfiles/test-bengali.uext" );
+		// editor->loadFromFile( "unit_tests/assets/textfiles/test-bengali.uext" );
 		// editor->loadFromFile( "unit_tests/assets/textfiles/test-flags.uext" );
 		// editor->loadFromFile( "unit_tests/assets/textformat/english.utf8.lf.nobom.txt" );
+		editor->loadFromFile( "unit_tests/assets/textfiles/test-arabic-mixed.uext" );
 		// editor->getDocument().textInput( "اسمي..." );
 		// editor->getDocument().textInput( " হ্যাঁ " );
 		// editor->getDocument().textInput( "I'm from...: আমি ... থেকে এসেছি।" );

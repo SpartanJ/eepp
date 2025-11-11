@@ -12,7 +12,7 @@ class FontTrueType;
 class EE_API TextShapeRun {
   public:
 	TextShapeRun( String::View str, FontTrueType* font, Uint32 characterSize, Uint32 style,
-				  Float outlineThickness );
+				  Float outlineThickness, bool isRTL );
 
 	String::View curRun() const;
 
@@ -29,16 +29,20 @@ class EE_API TextShapeRun {
   protected:
 	void findNextEnd();
 
+	inline bool checkRun( std::size_t idx, std::size_t pos );
+
 	String::View mString;
 	std::size_t mIndex{ 0 };
 	std::size_t mLen{ 0 };
 	Font* mFont{ nullptr };
+	Font* mLFont{ nullptr };
 	Uint32 mCharacterSize;
 	Uint32 mStyle;
 	Float mOutlineThickness;
 	Font* mCurFont{ nullptr };
 	Font* mStartFont{ nullptr };
-	bool mIsNewLine{ false };
+	bool mIsNewLine : 1 { false };
+	bool mIsRTL : 1 { false };
 };
 
 } // namespace EE::Graphics
