@@ -1041,6 +1041,11 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 		if ( !layout.shapedGlyphs.empty() && index >= maxStringIndex + 1 && msg ) {
 			Glyph metrics = msg->font->getGlyphByIndex( msg->glyphIndex, fontSize, bold, italic,
 														outlineThickness );
+			if ( string[msg->stringIndex] == '\t' ) {
+				Float advance = Text::tabAdvance(
+					hspace, tabWidth, tabOffset ? *tabOffset : std::optional<Float>{} );
+				return ( msg->position + Vector2f{ advance, 0 } ).trunc();
+			}
 			return ( msg->position + Vector2f{ metrics.advance, 0 } ).trunc();
 		}
 
@@ -1626,6 +1631,9 @@ void Text::ensureGeometryUpdate() {
 		mCachedWidth = layout.size.getWidth();
 
 		for ( const ShapedGlyph& sg : layout.shapedGlyphs ) {
+			if ( mString[sg.stringIndex] == '\t' )
+				continue;
+
 			Float currentX = x + sg.position.x;
 			Float currentY = y + sg.position.y;
 
