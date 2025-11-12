@@ -6,6 +6,7 @@
 
 #ifdef EE_TEXT_SHAPER_ENABLED
 #include <SheenBidi/SheenBidi.h>
+#include <SheenBidi/Source/SBScriptLocator.h>
 #include <harfbuzz/hb-ft.h>
 #include <harfbuzz/hb.h>
 #endif
@@ -23,12 +24,44 @@ struct TextSegment {
 	hb_direction_t direction{};
 };
 
+static inline bool isSimpleScript( hb_script_t script ) {
+	return script == HB_SCRIPT_LATIN || script == HB_SCRIPT_GREEK || script == HB_SCRIPT_CYRILLIC ||
+		   script == HB_SCRIPT_INVALID || script == HB_SCRIPT_COMMON;
+}
+
+// Helper function to get a thread-local, reusable HarfBuzz buffer.
+static hb_buffer_t* getThreadLocalHbBuffer() {
+	struct HbBufferDeleter {
+		void operator()( hb_buffer_t* buf ) const {
+			if ( buf )
+				hb_buffer_destroy( buf );
+		}
+	};
+	thread_local static std::unique_ptr<hb_buffer_t, HbBufferDeleter> sHbBuffer(
+		hb_buffer_create() );
+	return sHbBuffer.get();
+}
+
+// Helper function to get a thread-local, reusable SheenBidi script locator.
+static SBScriptLocator* getThreadLocalSbScriptLocator() {
+	// Custom deleter for SBScriptLocator
+	struct SbScriptLocatorDeleter {
+		void operator()( SBScriptLocator* loc ) const {
+			if ( loc )
+				SBScriptLocatorRelease( loc );
+		}
+	};
+
+	thread_local static std::unique_ptr<SBScriptLocator, SbScriptLocatorDeleter> sSbScriptLocator(
+		SBScriptLocatorCreate() );
+	return sSbScriptLocator.get();
+}
+
 // Split string into segments with uniform text properties
-static void segmentString( String::View input,
-						   std::function<bool( const TextSegment& segment )> cb ) {
+template <typename Callable> static void segmentString( String::View input, Callable cb ) {
 	const SBCodepointSequence codepointSequence{
 		SBStringEncodingUTF32, static_cast<const void*>( input.data() ), input.size() };
-	auto* const scriptLocator = SBScriptLocatorCreate();
+	auto* const scriptLocator = getThreadLocalSbScriptLocator();
 	auto* const algorithm = SBAlgorithmCreate( &codepointSequence );
 	SBUInteger paragraphOffset = 0;
 
@@ -83,22 +116,13 @@ static void segmentString( String::View input,
 	}
 
 	SBAlgorithmRelease( algorithm );
-	SBScriptLocatorRelease( scriptLocator );
 }
 
-static inline bool isSimpleScript( hb_script_t script ) {
-	return script == HB_SCRIPT_LATIN || script == HB_SCRIPT_GREEK || script == HB_SCRIPT_CYRILLIC ||
-		   script == HB_SCRIPT_INVALID || script == HB_SCRIPT_COMMON;
-}
-
-static bool shapeAndRun( const String& string, FontTrueType* font, Uint32 characterSize,
-						 Uint32 style, Float outlineThickness,
-						 const std::function<bool( hb_glyph_info_t*, hb_glyph_position_t*, Uint32,
-												   const hb_segment_properties_t&,
-												   const TextSegment&, TextShapeRun& )>& cb ) {
+template <typename Callable>
+static void shapeAndRun( const String& string, FontTrueType* font, Uint32 characterSize,
+						 Uint32 style, Float outlineThickness, Callable cb ) {
 	String::View input = string.view();
-	hb_buffer_t* hbBuffer = hb_buffer_create();
-	bool completeRun = true;
+	hb_buffer_t* hbBuffer = getThreadLocalHbBuffer();
 
 	segmentString( input, [&]( const TextSegment& segment ) {
 		TextShapeRun run( input.substr( segment.offset, segment.length ), font, characterSize,
@@ -141,7 +165,6 @@ static bool shapeAndRun( const String& string, FontTrueType* font, Uint32 charac
 
 			if ( !font || !font->hb() ) {
 				eeASSERT( font && font->hb() );
-				completeRun = false;
 				break;
 			}
 
@@ -156,17 +179,12 @@ static bool shapeAndRun( const String& string, FontTrueType* font, Uint32 charac
 			if ( cb( glyphInfo, glyphPos, glyphCount, props, segment, run ) )
 				run.next();
 			else {
-				completeRun = false;
 				return false;
-				break;
 			}
 		}
 
 		return true;
 	} );
-
-	hb_buffer_destroy( hbBuffer );
-	return completeRun;
 }
 
 #endif
