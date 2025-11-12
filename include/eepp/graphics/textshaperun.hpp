@@ -29,8 +29,6 @@ class EE_API TextShapeRun {
   protected:
 	void findNextEnd();
 
-	inline bool checkRun( std::size_t idx, std::size_t pos );
-
 	String::View mString;
 	std::size_t mIndex{ 0 };
 	std::size_t mLen{ 0 };

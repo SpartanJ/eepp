@@ -2,11 +2,6 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/textshaperun.hpp>
 
-#ifdef EE_TEXT_SHAPER_ENABLED
-#include <harfbuzz/hb-ft.h>
-#include <harfbuzz/hb.h>
-#endif
-
 namespace EE::Graphics {
 
 TextShapeRun::TextShapeRun( String::View str, FontTrueType* font, Uint32 characterSize,

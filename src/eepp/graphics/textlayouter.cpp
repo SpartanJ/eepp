@@ -24,8 +24,8 @@ struct TextSegment {
 };
 
 // Split string into segments with uniform text properties
-static void segmentString( String::View input, std::function<bool( const TextSegment& segment )> cb,
-						   const std::function<void()>& newParagraphCb ) {
+static void segmentString( String::View input,
+						   std::function<bool( const TextSegment& segment )> cb ) {
 	const SBCodepointSequence codepointSequence{
 		SBStringEncodingUTF32, static_cast<const void*>( input.data() ), input.size() };
 	auto* const scriptLocator = SBScriptLocatorCreate();
@@ -80,8 +80,6 @@ static void segmentString( String::View input, std::function<bool( const TextSeg
 		SBParagraphRelease( paragraph );
 
 		paragraphOffset += paragraphLength;
-
-		newParagraphCb();
 	}
 
 	SBAlgorithmRelease( algorithm );
@@ -97,83 +95,75 @@ static bool shapeAndRun( const String& string, FontTrueType* font, Uint32 charac
 						 Uint32 style, Float outlineThickness,
 						 const std::function<bool( hb_glyph_info_t*, hb_glyph_position_t*, Uint32,
 												   const hb_segment_properties_t&,
-												   const TextSegment&, TextShapeRun& )>& cb,
-						 const std::function<void()>& newParagraphCb ) {
+												   const TextSegment&, TextShapeRun& )>& cb ) {
 	String::View input = string.view();
 	hb_buffer_t* hbBuffer = hb_buffer_create();
 	bool completeRun = true;
 
-	segmentString(
-		input,
-		[&]( const TextSegment& segment ) {
-			TextShapeRun run( input.substr( segment.offset, segment.length ), font, characterSize,
-							  style, outlineThickness, segment.direction == HB_DIRECTION_RTL );
+	segmentString( input, [&]( const TextSegment& segment ) {
+		TextShapeRun run( input.substr( segment.offset, segment.length ), font, characterSize,
+						  style, outlineThickness, segment.direction == HB_DIRECTION_RTL );
 
-			while ( run.hasNext() ) {
-				FontTrueType* font = run.font();
-				if ( font == nullptr ) { // empty line
-					run.next();
-					continue;
-				}
-				String::View curRun( run.curRun() );
-				font->setCurrentSize( characterSize );
-				hb_buffer_reset( hbBuffer );
-				hb_buffer_set_cluster_level( hbBuffer,
-											 HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS );
-				hb_buffer_add_utf32( hbBuffer, (Uint32*)curRun.data(), curRun.size(), 0,
-									 curRun.size() );
+		while ( run.hasNext() ) {
+			FontTrueType* font = run.font();
+			if ( font == nullptr ) { // empty line
+				run.next();
+				continue;
+			}
+			String::View curRun( run.curRun() );
+			font->setCurrentSize( characterSize );
+			hb_buffer_reset( hbBuffer );
+			hb_buffer_set_cluster_level( hbBuffer, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS );
+			hb_buffer_add_utf32( hbBuffer, (Uint32*)curRun.data(), curRun.size(), 0,
+								 curRun.size() );
 
-				hb_buffer_set_direction( hbBuffer, segment.direction );
-				hb_buffer_set_script( hbBuffer, segment.script );
-				hb_buffer_guess_segment_properties( hbBuffer );
-				hb_segment_properties_t props;
-				hb_buffer_get_segment_properties( hbBuffer, &props );
-				std::uint32_t featuresEnabled = !isSimpleScript( segment.script ) ? 1 : 0;
+			hb_buffer_set_direction( hbBuffer, segment.direction );
+			hb_buffer_set_script( hbBuffer, segment.script );
+			hb_buffer_guess_segment_properties( hbBuffer );
+			hb_segment_properties_t props;
+			hb_buffer_get_segment_properties( hbBuffer, &props );
+			std::uint32_t featuresEnabled = !isSimpleScript( segment.script ) ? 1 : 0;
 
-				// We use our own kerning algo
-				const hb_feature_t features[] = {
-					hb_feature_t{ HB_TAG( 'k', 'e', 'r', 'n' ), featuresEnabled,
-								  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
-					hb_feature_t{ HB_TAG( 'l', 'i', 'g', 'a' ), featuresEnabled,
-								  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
-					hb_feature_t{ HB_TAG( 'c', 'l', 'i', 'g' ), featuresEnabled,
-								  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
-					hb_feature_t{ HB_TAG( 'd', 'l', 'i', 'g' ), featuresEnabled,
-								  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
-				};
+			// We use our own kerning algo
+			const hb_feature_t features[] = {
+				hb_feature_t{ HB_TAG( 'k', 'e', 'r', 'n' ), featuresEnabled,
+							  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
+				hb_feature_t{ HB_TAG( 'l', 'i', 'g', 'a' ), featuresEnabled,
+							  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
+				hb_feature_t{ HB_TAG( 'c', 'l', 'i', 'g' ), featuresEnabled,
+							  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
+				hb_feature_t{ HB_TAG( 'd', 'l', 'i', 'g' ), featuresEnabled,
+							  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
+			};
 
-				// whitelist cross-platforms shapers only
-				static const char* shaper_list[] = { "ot", "graphite2", "fallback", nullptr };
+			// whitelist cross-platforms shapers only
+			static const char* shaper_list[] = { "ot", "graphite2", "fallback", nullptr };
 
-				if ( !font || !font->hb() ) {
-					eeASSERT( font && font->hb() );
-					completeRun = false;
-					break;
-				}
-
-				hb_shape_full( static_cast<hb_font_t*>( font->hb() ), hbBuffer, features,
-							   eeARRAY_SIZE( features ), shaper_list );
-
-				// from the shaped text we get the glyphs and positions
-				unsigned int glyphCount;
-				hb_glyph_info_t* glyphInfo = hb_buffer_get_glyph_infos( hbBuffer, &glyphCount );
-				hb_glyph_position_t* glyphPos =
-					hb_buffer_get_glyph_positions( hbBuffer, &glyphCount );
-
-				if ( cb( glyphInfo, glyphPos, glyphCount, props, segment, run ) )
-					run.next();
-				else {
-					completeRun = false;
-					return false;
-					break;
-				}
+			if ( !font || !font->hb() ) {
+				eeASSERT( font && font->hb() );
+				completeRun = false;
+				break;
 			}
 
-			return true;
-		},
-		[] {
+			hb_shape_full( static_cast<hb_font_t*>( font->hb() ), hbBuffer, features,
+						   eeARRAY_SIZE( features ), shaper_list );
 
-		} );
+			// from the shaped text we get the glyphs and positions
+			unsigned int glyphCount;
+			hb_glyph_info_t* glyphInfo = hb_buffer_get_glyph_infos( hbBuffer, &glyphCount );
+			hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( hbBuffer, &glyphCount );
+
+			if ( cb( glyphInfo, glyphPos, glyphCount, props, segment, run ) )
+				run.next();
+			else {
+				completeRun = false;
+				return false;
+				break;
+			}
+		}
+
+		return true;
+	} );
 
 	hb_buffer_destroy( hbBuffer );
 	return completeRun;
@@ -332,12 +322,6 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 					pen.y += vspace;
 				}
 				return true;
-			},
-			[&] {
-				result.linesWidth.push_back( std::ceil( pen.x ) );
-				maxWidth = eemax( maxWidth, result.linesWidth[result.linesWidth.size() - 1] );
-				pen.x = 0;
-				pen.y += vspace;
 			} );
 	} else
 #endif
