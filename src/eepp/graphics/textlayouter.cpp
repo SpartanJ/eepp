@@ -58,7 +58,8 @@ static SBScriptLocator* getThreadLocalSbScriptLocator() {
 }
 
 // Split string into segments with uniform text properties
-template <typename Callable> static void segmentString( String::View input, Callable cb ) {
+template <typename Callable>
+static void segmentString( TextLayout& result, String::View input, Callable cb ) {
 	const SBCodepointSequence codepointSequence{
 		SBStringEncodingUTF32, static_cast<const void*>( input.data() ), input.size() };
 	auto* const scriptLocator = getThreadLocalSbScriptLocator();
@@ -109,6 +110,9 @@ template <typename Callable> static void segmentString( String::View input, Call
 			SBScriptLocatorReset( scriptLocator );
 		}
 
+		if ( runCount > 0 && paragraphOffset == 0 )
+			result.isRTL = ( runArray[0].level % 2 ) != 0;
+
 		SBLineRelease( line );
 		SBParagraphRelease( paragraph );
 
@@ -119,12 +123,12 @@ template <typename Callable> static void segmentString( String::View input, Call
 }
 
 template <typename Callable>
-static void shapeAndRun( const String& string, FontTrueType* font, Uint32 characterSize,
-						 Uint32 style, Float outlineThickness, Callable cb ) {
+static void shapeAndRun( TextLayout& result, const String& string, FontTrueType* font,
+						 Uint32 characterSize, Uint32 style, Float outlineThickness, Callable cb ) {
 	String::View input = string.view();
 	hb_buffer_t* hbBuffer = getThreadLocalHbBuffer();
 
-	segmentString( input, [&]( const TextSegment& segment ) {
+	segmentString( result, input, [&]( const TextSegment& segment ) {
 		TextShapeRun run( input.substr( segment.offset, segment.length ), font, characterSize,
 						  style, outlineThickness, segment.direction == HB_DIRECTION_RTL );
 
@@ -225,6 +229,7 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 
 	bool bold = ( style & Text::Bold ) != 0;
 	bool italic = ( style & Text::Italic ) != 0;
+	Uint32 spaceGlyphIndex = 0;
 	Float hspace = font->getGlyph( ' ', characterSize, bold, italic, outlineThickness ).advance;
 	Float vspace = font->getLineSpacing( characterSize );
 	Vector2f pen;
@@ -235,7 +240,7 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 		 !Text::canSkipShaping( textDrawHints ) ) {
 		FontTrueType* rFont = static_cast<FontTrueType*>( font );
 		shapeAndRun(
-			string, rFont, characterSize, style, outlineThickness,
+			result, string, rFont, characterSize, style, outlineThickness,
 			[&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t* glyphPos, Uint32 glyphCount,
 				 const hb_segment_properties_t& props, const TextSegment& segment,
 				 TextShapeRun& run ) {
@@ -256,7 +261,11 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 																		: std::optional<Float>{} );
 							ShapedGlyph sg;
 							sg.font = currentRunFont;
-							sg.glyphIndex = glyphInfo[i].codepoint;
+							if ( spaceGlyphIndex == 0 && font->getType() == FontType::TTF ) {
+								spaceGlyphIndex =
+									static_cast<FontTrueType*>( font )->getGlyphIndex( ' ' );
+							}
+							sg.glyphIndex = spaceGlyphIndex;
 							sg.stringIndex = segment.offset + run.pos() + cluster;
 							sg.position = pen;
 							sg.advance = { advance, 0 };
@@ -280,12 +289,9 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 						sg.font = currentRunFont;
 						sg.glyphIndex = glyphInfo[i].codepoint;
 						sg.stringIndex = segment.offset + run.pos() + glyphInfo[i].cluster;
-
-						float offsetX = glyphPos[i].x_offset / 64.f;
-						float offsetY = glyphPos[i].y_offset / 64.f;
-						sg.advance = { offsetX, offsetY };
-						sg.position.x = pen.x + offsetX;
-						sg.position.y = pen.y - offsetY;
+						sg.advance = { currentGlyph.advance, 0 };
+						sg.position.x = pen.x + ( glyphPos[i].x_offset / 64.f );
+						sg.position.y = pen.y - ( glyphPos[i].y_offset / 64.f );
 						result.shapedGlyphs.emplace_back( std::move( sg ) );
 
 						pen.x += currentGlyph.advance;
@@ -317,19 +323,17 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 						sg.font = currentRunFont;
 						sg.glyphIndex = glyphInfo[i].codepoint;
 						sg.stringIndex = segment.offset + run.pos() + glyphInfo[i].cluster;
-						float offsetX = glyphPos[i].x_offset / 64.f;
-						float offsetY = glyphPos[i].y_offset / 64.f;
-						sg.advance = { offsetX, offsetY };
-						sg.position.x = std::round( pen.x + offsetX );
-						sg.position.y = std::round( pen.y - offsetY );
+						sg.advance = { glyphPos[i].x_advance / 64.f, glyphPos[i].y_advance / 64.f };
+						sg.position.x = std::round( pen.x + ( glyphPos[i].x_offset / 64.f ) );
+						sg.position.y = std::round( pen.y - ( glyphPos[i].y_offset / 64.f ) );
 						result.shapedGlyphs.emplace_back( std::move( sg ) );
 						pen.x += Font::isEmojiCodePoint( ch )
 									 ? currentRunFont
 										   ->getGlyphByIndex( glyphInfo[i].codepoint, characterSize,
 															  bold, italic, outlineThickness )
 										   .advance
-									 : glyphPos[i].x_advance / 64.f;
-						pen.y += glyphPos[i].y_advance / 64.f;
+									 : sg.advance.x;
+						pen.y += sg.advance.y;
 					}
 				}
 

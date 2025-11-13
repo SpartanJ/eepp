@@ -1034,16 +1034,20 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 				csg = &sg;
 			}
 
-			if ( sg.stringIndex == index )
+			if ( sg.stringIndex == index ) {
+				if ( layout.isRTL )
+					return ( sg.position + sg.advance ).trunc();
 				return sg.position.trunc();
+			}
 		}
 
-		if ( !layout.shapedGlyphs.empty() && index >= maxStringIndex + 1 && msg ) {
+		if ( !layout.shapedGlyphs.empty() && !layout.isRTL && index >= maxStringIndex + 1 && msg ) {
 			Glyph metrics = msg->font->getGlyphByIndex( msg->glyphIndex, fontSize, bold, italic,
 														outlineThickness );
 			if ( string[msg->stringIndex] == '\t' ) {
-				Float advance = Text::tabAdvance(
-					hspace, tabWidth, tabOffset ? *tabOffset : std::optional<Float>{} );
+				Float advance = Text::tabAdvance( hspace, tabWidth,
+												  tabOffset ? msg->position.x + *tabOffset
+															: std::optional<Float>{} );
 				return ( msg->position + Vector2f{ advance, 0 } ).trunc();
 			}
 			return ( msg->position + Vector2f{ metrics.advance, 0 } ).trunc();
@@ -1143,7 +1147,8 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 			Float charRight;
 
 			bool isLastOnLine =
-				( i + 1 == sgs || layout.shapedGlyphs[i + 1].position.y != sg.position.y );
+				i + 1 == sgs ||
+				( !layout.isRTL && layout.shapedGlyphs[i + 1].position.y != sg.position.y );
 
 			if ( !isLastOnLine ) {
 				// The cell extends to the beginning of the next glyph
@@ -1162,13 +1167,24 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 			// --- Direct Hit Test ---
 			// Check if the point is within the vertical bounds of the current line
 			if ( fpos.y >= charTop && fpos.y <= charBottom ) {
-				auto findNextInsertionIndex = [&]() -> Int32 {
+				auto findNextInsertionIndex = []( size_t i, size_t sgs, const ShapedGlyph& sg,
+												  const TextLayout& layout, auto& tSize ) -> Int32 {
 					// Return insertion point after this glyph. Find the next distinct stringIndex.
-					for ( size_t j = i + 1; j < sgs; ++j ) {
-						if ( layout.shapedGlyphs[j].stringIndex > sg.stringIndex )
-							return layout.shapedGlyphs[j].stringIndex;
+					if ( layout.isRTL ) {
+						if ( i > 0 ) {
+							for ( Int64 j = (Int64)i - 1; j >= 0; j-- ) {
+								if ( layout.shapedGlyphs[j].stringIndex > sg.stringIndex )
+									return layout.shapedGlyphs[j].stringIndex;
+							}
+						}
+						return 0; // Reached the end
+					} else {
+						for ( size_t j = i + 1; j < sgs; ++j ) {
+							if ( layout.shapedGlyphs[j].stringIndex > sg.stringIndex )
+								return layout.shapedGlyphs[j].stringIndex;
+						}
+						return tSize; // Reached the end
 					}
-					return tSize; // Reached the end
 				};
 
 				// Case 1: Point is within the horizontal bounds of this glyph's cell
@@ -1177,12 +1193,12 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 					if ( fpos.x < midPoint ) {
 						return sg.stringIndex;
 					} else {
-						return findNextInsertionIndex();
+						return findNextInsertionIndex( i, sgs, sg, layout, tSize );
 					}
 				}
 				// Case 2: Point is to the right of the last glyph on the line
 				else if ( isLastOnLine && fpos.x >= charRight ) {
-					return findNextInsertionIndex();
+					return findNextInsertionIndex( i, sgs, sg, layout, tSize );
 				}
 			}
 

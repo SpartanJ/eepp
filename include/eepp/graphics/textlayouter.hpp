@@ -15,6 +15,7 @@ struct TextLayout {
 	std::vector<ShapedGlyph> shapedGlyphs;
 	std::vector<Float> linesWidth;
 	Sizef size;
+	bool isRTL{ false };
 };
 
 class EE_API TextLayouter {
