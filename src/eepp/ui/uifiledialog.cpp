@@ -918,8 +918,21 @@ void UIFileDialog::setSingleClickNavigation( bool singleClickNavigation ) {
 
 bool UIFileDialog::show() {
 	if ( usingNativeFileDialog() ) {
+		const auto getSafePath = []( std::string path ) -> std::string {
+			std::string lastPath;
+			while ( !FileSystem::fileExists( path ) && !path.empty() && lastPath != path ) {
+				std::string newPath = FileSystem::removeLastFolderFromPath( path );
+				if ( newPath == path )
+					return Sys::getTempPath();
+				lastPath = std::move( path );
+				path = std::move( newPath );
+			};
+			return path;
+		};
+
+		std::string curSafePath( getSafePath( mCurPath ) );
 		if ( isSaveDialog() ) {
-			std::string savePath( mCurPath );
+			std::string savePath( curSafePath );
 			if ( !savePath.empty() ) {
 				if ( FileSystem::isDirectory( savePath ) ) {
 					FileSystem::dirAddSlashAtEnd( savePath );
@@ -941,10 +954,11 @@ bool UIFileDialog::show() {
 
 			if ( mDialogFlags & UIFileDialog::ShowOnlyFolders ) {
 				mHandler->selectFolder =
-					std::make_unique<pfd::select_folder>( getTitle().toUtf8(), mCurPath, opt );
+					std::make_unique<pfd::select_folder>( getTitle().toUtf8(), curSafePath, opt );
 			} else {
 				mHandler->openFile = std::make_unique<pfd::open_file>(
-					getTitle().toUtf8(), mCurPath, std::vector<std::string>{ mFilePatterns }, opt );
+					getTitle().toUtf8(), curSafePath, std::vector<std::string>{ mFilePatterns },
+					opt );
 			}
 		}
 		return true;
