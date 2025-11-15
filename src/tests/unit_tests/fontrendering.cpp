@@ -426,6 +426,46 @@ UTEST( FontRendering, textEditBengaliTest ) {
 	compareImages( utest_state, utest_result, app.getWindow(), "eepp-textedit-bengali" );
 }
 
+UTEST( FontRendering, textEditArabicTest ) {
+	BoolScopedOp op( Text::TextShaperEnabled, true );
+	UIApplication app(
+		WindowSettings( 1024, 650, "eepp - TextEdit Arabic", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	FontTrueType* arabicFont =
+		FontTrueType::New( "NotoNaskhArabic-Regular", "assets/fonts/NotoNaskhArabic-Regular.ttf" );
+	FontManager::instance()->addFallbackFont( arabicFont );
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	auto* editor = UITextEdit::New();
+	// editor->setFontSize( PixelDensity::dpToPx( 12 ) );
+	editor->setPixelsSize( app.getUI()->getPixelsSize() );
+	editor->loadFromFile( "assets/textfiles/test-arabic.uext" );
+	SceneManager::instance()->update();
+	SceneManager::instance()->draw();
+	compareImages( utest_state, utest_result, app.getWindow(), "eepp-textedit-arabic" );
+}
+
+UTEST( FontRendering, textEditHebrewTest ) {
+	BoolScopedOp op( Text::TextShaperEnabled, true );
+	UIApplication app(
+		WindowSettings( 1024, 650, "eepp - TextEdit Hebrew", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5f ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	FontTrueType* hebrewFont =
+		FontTrueType::New( "NotoSansHebrew-Regular", "assets/fonts/NotoSansHebrew-Regular.ttf" );
+	FontManager::instance()->addFallbackFont( hebrewFont );
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	auto* editor = UITextEdit::New();
+	// editor->setFontSize( PixelDensity::dpToPx( 12 ) );
+	editor->setPixelsSize( app.getUI()->getPixelsSize() );
+	editor->loadFromFile( "assets/textfiles/test-hebrew.uext" );
+	SceneManager::instance()->update();
+	SceneManager::instance()->draw();
+	compareImages( utest_state, utest_result, app.getWindow(), "eepp-textedit-hebrew" );
+}
+
 UTEST( FontRendering, textSizes ) {
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 1024, 650, "eepp - Text Sizes", WindowStyle::Default,
