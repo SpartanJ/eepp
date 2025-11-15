@@ -1034,6 +1034,58 @@ class EE_API String {
 
 	String::View view() const;
 
+
+	/* \brief Check if the position before a character is a grapheme boundary
+	**
+	** When manipulating unicode strings, removing single codepoints
+	** does not always make sense since they might be a part
+	** of a grapheme composed of multiple codepoints. In the case of
+	** a text editor, it is more intuitive to the user if entire
+	** graphemes are removed when e.g. delete or backspace is pressed
+	** rather than single codepoints. For this reason, the visual caret
+	** that marks the insertion/deletion point should only be
+	** positioned at a grapheme boundaries.
+	**
+	** \param position The position of the character to check
+	**
+	** \return `true` if the position before a character is a grapheme boundary
+	**
+	** \see `isWordBoundary`, `isSentenceBoundary`
+	*/
+	bool isGraphemeBoundary( std::size_t position ) const;
+	static bool isGraphemeBoundary( String::View string, std::size_t position );
+
+	/* \brief Check if the position before a character is a word boundary
+	**
+	** When breaking text into multiple lines, it is important to know
+	** where each word ends so that lines aren't broken in the middle
+	** of a word. This should be used in combination with
+	** `isSentenceBoundary` to ensure punctuation isn't broken into a
+	** new line by itself.
+	**
+	** \param position The position of the character to check
+	**
+	** \return `true` if the position before a character is a word boundary
+	**
+	** \see `isGraphemeBoundary`, `isSentenceBoundary`
+	*/
+	bool isWordBoundary( std::size_t position ) const;
+	static bool isWordBoundary( String::View string, std::size_t position );
+
+	/* \brief Check if the position before a character is a sentence boundary
+	**
+	** This can be used together with `isWordBoundary` to break
+	** lines. See `isWordBoundary` for more information.
+	**
+	** \param position The position of the character to check
+	**
+	** \return `true` if the position before a character is a sentence boundary
+	**
+	** \see `isGraphemeBoundary`, `isWordBoundary`
+	*/
+	bool isSentenceBoundary( std::size_t position ) const;
+	static bool isSentenceBoundary( String::View string, std::size_t position );
+
 	// No allocation int to str
 	template <typename IntType, typename StrType>
 	static const StrType* intToStrBuf( IntType value, StrType* buffer, size_t bufferSize,

@@ -1730,6 +1730,33 @@ TextPosition TextDocument::positionOffset( TextPosition position, int columnOffs
 	if ( sanitizeInput )
 		position = sanitizePosition( position );
 	position.setColumn( position.column() + columnOffset );
+
+	// Try to do the offset respecting graphene boundaries
+	if ( columnOffset ) {
+		Int64 lineLen = getLineLength( position.line() );
+
+		if ( position.column() > 0 && position.column() < lineLen - 1 ) {
+			Int64 cursorIndex = position.column();
+
+			// The Unicode standard recommends that grapheme boundaries
+			// be used as text insertion/deletion points since this is
+			// what most users would expect from text editing software
+
+			// We first increment/decrement the cursor based on user input
+			int direction = columnOffset > 0 ? 1 : -1;
+
+			// As long as we are not at a grapheme boundary yet, keep
+			// moving the cursor position until we arrive at one
+			while ( cursorIndex > 0 && cursorIndex < lineLen - 1 &&
+					!getLineText( position.line() ).isGraphemeBoundary( cursorIndex ) ) {
+				cursorIndex += direction;
+			}
+
+			if ( position.column() != cursorIndex )
+				position.setColumn( cursorIndex );
+		}
+	}
+
 	while ( position.line() > 0 && position.column() < 0 ) {
 		position.setLine( position.line() - 1 );
 		position.setColumn(

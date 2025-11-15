@@ -12,10 +12,13 @@
 #include <charconv>
 #include <climits>
 #include <cstdarg>
+#include <cstdint>
 #include <iostream>
 #include <iterator>
 #include <limits>
 #include <random>
+
+#include <cpp-unicodelib/unicodelib.h>
 
 #if ( __GNUC__ >= 11 || ( __clang__ && __clang_major__ >= 12 ) ) && \
 	EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
@@ -2370,6 +2373,30 @@ bool String::iequals( String::View str1, String::View str2 ) {
 					   []( String::StringBaseType c1, String::StringBaseType c2 ) {
 						   return std::tolower( c1 ) == std::tolower( c2 );
 					   } );
+}
+
+bool String::isGraphemeBoundary( std::size_t position ) const {
+	return unicode::is_grapheme_boundary( mString.data(), mString.size(), position );
+}
+
+bool String::isGraphemeBoundary( String::View string, std::size_t position ) {
+	return unicode::is_grapheme_boundary( string.data(), string.size(), position );
+}
+
+bool String::isWordBoundary( std::size_t position ) const {
+	return unicode::is_word_boundary( mString.data(), mString.size(), position );
+}
+
+bool String::isWordBoundary( String::View string, std::size_t position ) {
+	return unicode::is_word_boundary( string.data(), string.size(), position );
+}
+
+bool String::isSentenceBoundary( std::size_t position ) const {
+	return unicode::is_sentence_boundary( mString.data(), mString.size(), position );
+}
+
+bool String::isSentenceBoundary( String::View string, std::size_t position ) {
+	return unicode::is_sentence_boundary( string.data(), string.size(), position );
 }
 
 } // namespace EE

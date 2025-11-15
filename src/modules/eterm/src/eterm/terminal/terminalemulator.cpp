@@ -447,8 +447,8 @@ void TerminalEmulator::selnormalize( void ) {
 	selsnap( &mSel.ne.x, &mSel.ne.y, +1 );
 
 	/* selection is over terminal size? */
-	mSel.nb.y = MIN( mTerm.bot, mSel.nb.y );
-	mSel.ne.y = MIN( mTerm.bot, mSel.ne.y );
+	// mSel.nb.y = MIN( mTerm.bot, mSel.nb.y );
+	// mSel.ne.y = MIN( mTerm.bot, mSel.ne.y );
 
 	/* expand selection over line breaks */
 	if ( mSel.type == SEL_RECTANGULAR )

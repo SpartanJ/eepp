@@ -1130,85 +1130,73 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 		 !canSkipShaping( textDrawHints ) ) {
 		auto layout = TextLayouter::layout( string, font, fontSize, style, tabWidth,
 											outlineThickness, tabOffset );
+
 		auto sgs = layout.shapedGlyphs.size();
 		if ( sgs == 0 )
 			return 0;
 
+		if ( pos.x < 0 )
+			return layout.isRTL ? tSize : 0;
+
 		for ( size_t i = 0; i < sgs; i++ ) {
-			const ShapedGlyph& sg = layout.shapedGlyphs[i];
+			const ShapedGlyph* sg = &layout.shapedGlyphs[i];
 
-			Glyph metrics =
-				sg.font->getGlyphByIndex( sg.glyphIndex, fontSize, bold, italic, outlineThickness );
-
-			// Define the boundaries of the character's clickable cell
-			Float charLeft = sg.position.x;
-			Float charTop = sg.position.y;
+			Float charLeft = sg->position.x;
+			Float charTop = sg->position.y;
 			Float charBottom = charTop + vspace;
-			Float charRight;
+			Float charRight = charLeft + sg->advance.x;
+			auto curStringIndex = sg->stringIndex;
+
+			// Expand bounds over the whole cluster (multiple glyphs for one string index)
+			while ( i + 1 < sgs && layout.shapedGlyphs[i + 1].stringIndex == curStringIndex ) {
+				i++;
+				sg = &layout.shapedGlyphs[i];
+				charBottom = sg->position.y + vspace;
+				charRight = sg->position.x + sg->advance.x;
+			};
 
 			bool isLastOnLine =
 				i + 1 == sgs ||
-				( !layout.isRTL && layout.shapedGlyphs[i + 1].position.y != sg.position.y );
+				( !layout.isRTL && layout.shapedGlyphs[i + 1].position.y != sg->position.y );
 
-			if ( !isLastOnLine ) {
-				// The cell extends to the beginning of the next glyph
-				charRight = layout.shapedGlyphs[i + 1].position.x;
-			} else {
-				// For the last glyph on a line, the cell is its advance width
-				charRight = charLeft + metrics.advance;
-			}
-
-			// In complex scripts, visual order might not guarantee x increases (e.g. negative
-			// kerning). Ensure right > left for hit-testing, otherwise the cell has no width or
-			// negative width.
-			if ( charRight <= charLeft )
-				charRight = charLeft + metrics.advance;
-
-			// --- Direct Hit Test ---
-			// Check if the point is within the vertical bounds of the current line
 			if ( fpos.y >= charTop && fpos.y <= charBottom ) {
-				auto findNextInsertionIndex = []( size_t i, size_t sgs, const ShapedGlyph& sg,
-												  const TextLayout& layout, auto& tSize ) -> Int32 {
-					// Return insertion point after this glyph. Find the next distinct stringIndex.
+				auto findNextInsertionIndex = [&]() -> Int32 {
 					if ( layout.isRTL ) {
 						if ( i > 0 ) {
 							for ( Int64 j = (Int64)i - 1; j >= 0; j-- ) {
-								if ( layout.shapedGlyphs[j].stringIndex > sg.stringIndex )
+								if ( layout.shapedGlyphs[j].stringIndex > sg->stringIndex )
 									return layout.shapedGlyphs[j].stringIndex;
 							}
 						}
-						return 0; // Reached the end
+						return 0;
 					} else {
 						for ( size_t j = i + 1; j < sgs; ++j ) {
-							if ( layout.shapedGlyphs[j].stringIndex > sg.stringIndex )
+							if ( layout.shapedGlyphs[j].stringIndex > sg->stringIndex )
 								return layout.shapedGlyphs[j].stringIndex;
 						}
-						return tSize; // Reached the end
+						return tSize;
 					}
 				};
 
-				// Case 1: Point is within the horizontal bounds of this glyph's cell
 				if ( fpos.x >= charLeft && fpos.x < charRight ) {
 					Float midPoint = charLeft + ( charRight - charLeft ) * 0.5f;
 					if ( fpos.x < midPoint ) {
-						return sg.stringIndex;
+						return sg->stringIndex;
 					} else {
-						return findNextInsertionIndex( i, sgs, sg, layout, tSize );
+						return findNextInsertionIndex();
 					}
-				}
-				// Case 2: Point is to the right of the last glyph on the line
-				else if ( isLastOnLine && fpos.x >= charRight ) {
-					return findNextInsertionIndex( i, sgs, sg, layout, tSize );
+				} else if ( isLastOnLine && fpos.x >= charRight ) {
+					return findNextInsertionIndex();
 				}
 			}
 
-			// --- Nearest Character Test ---
 			if ( returnNearest ) {
-				Vector2f cellCenter( ( charLeft + charRight ) * 0.5f, charTop + vspace * 0.5f );
+				Vector2f cellCenter( charLeft + ( charRight - charLeft ) * 0.5f,
+									 charTop + vspace * 0.5f );
 				Int32 dist = static_cast<Int32>( fpos.distance( cellCenter ) );
 				if ( dist < minDist ) {
 					minDist = dist;
-					nearest = sg.stringIndex; // Store the index of the character itself
+					nearest = sg->stringIndex;
 				}
 			}
 		}
