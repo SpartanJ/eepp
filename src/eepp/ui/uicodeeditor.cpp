@@ -2652,7 +2652,7 @@ Float UICodeEditor::getTextWidth( const StringType& line, bool fromMonospaceLine
 Vector2d UICodeEditor::getTextPositionOffsetSanitized( TextPosition position,
 													   std::optional<Float> lineHeight ) const {
 	position.setLine( eeclamp<Int64>( position.line(), 0L, mDoc->linesCount() - 1 ) );
-	// This is different from sanitizePosition, sinze allows the last character.
+	// This is different from sanitizePosition, since allows the last character.
 	position.setColumn(
 		eeclamp<Int64>( position.column(), 0L,
 						eemax<Int64>( 0, position.line() < static_cast<Int64>( mDoc->linesCount() )
@@ -3421,6 +3421,24 @@ void UICodeEditor::moveToPreviousPage() {
 
 void UICodeEditor::moveToNextPage() {
 	jumpLinesDown( getViewPortLineCount().y );
+}
+
+void UICodeEditor::addCursorAbove() {
+	size_t cursorIdx = mDoc->getTopMostCursorIndex();
+	TextPosition curPos = mDoc->getSelections()[cursorIdx].start();
+	if ( curPos.line() == 0 )
+		return;
+	auto newPos( moveToLineOffset( curPos, -1, cursorIdx ) );
+	mDoc->addSelection( { newPos, newPos } );
+}
+
+void UICodeEditor::addCursorBelow() {
+	size_t cursorIdx = mDoc->getBottomMostCursorIndex();
+	TextPosition curPos = mDoc->getSelections()[cursorIdx].start();
+	if ( curPos.line() >= (Int64)mDoc->linesCount() - 1 )
+		return;
+	auto newPos( moveToLineOffset( curPos, 1, cursorIdx ) );
+	mDoc->addSelection( { newPos, newPos } );
 }
 
 void UICodeEditor::moveToStartOfLine() {
@@ -4544,6 +4562,12 @@ void UICodeEditor::registerCommands() {
 		UICodeEditor* editor = static_cast<UICodeEditor*>( client );
 		if ( !editor->mLink.empty() )
 			Engine::instance()->openURI( editor->mLink );
+	} );
+	mDoc->setCommand( "add-cursor-above", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->addCursorAbove();
+	} );
+	mDoc->setCommand( "add-cursor-below", []( Client* client ) {
+		static_cast<UICodeEditor*>( client )->addCursorBelow();
 	} );
 
 	mUnlockedCmd.insert( { "copy", "select-all", "open-containing-folder",

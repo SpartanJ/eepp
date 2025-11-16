@@ -448,6 +448,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void moveToNextLine();
 
+	void addCursorAbove();
+
+	void addCursorBelow();
+
 	void moveToPreviousPage();
 
 	void moveToNextPage();

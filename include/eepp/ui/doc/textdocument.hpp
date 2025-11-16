@@ -590,6 +590,10 @@ class EE_API TextDocument {
 
 	void addCursorBelow();
 
+	size_t getTopMostCursorIndex();
+
+	size_t getBottomMostCursorIndex();
+
 	TextRange getTopMostCursor();
 
 	TextRange getBottomMostCursor();

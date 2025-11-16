@@ -4634,6 +4634,34 @@ void TextDocument::initializeCommands() {
 	}
 }
 
+size_t TextDocument::getTopMostCursorIndex() {
+	if ( mSelection.size() == 1 )
+		return 0;
+	TextRange topMost( mSelection[0] );
+	size_t topMostIndex = 0;
+	for ( size_t i = 1; i < mSelection.size(); ++i ) {
+		if ( mSelection[i] < topMost ) {
+			topMost = mSelection[i];
+			topMostIndex = i;
+		}
+	}
+	return topMostIndex;
+}
+
+size_t TextDocument::getBottomMostCursorIndex() {
+	if ( mSelection.size() == 1 )
+		return 0;
+	TextRange bottomMost( mSelection[0] );
+	size_t bottomMostIndex = 0;
+	for ( size_t i = 1; i < mSelection.size(); ++i ) {
+		if ( mSelection[i] > bottomMost ) {
+			bottomMost = mSelection[i];
+			bottomMostIndex = i;
+		}
+	}
+	return bottomMostIndex;
+}
+
 TextRange TextDocument::getTopMostCursor() {
 	if ( mSelection.size() == 1 )
 		return mSelection.front();
