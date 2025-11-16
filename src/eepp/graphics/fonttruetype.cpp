@@ -12,6 +12,8 @@
 using namespace EE::Window;
 
 #include <freetype/ftlcdfil.h>
+#include <freetype/ftmodapi.h>
+#include <freetype/otsvg.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
@@ -28,9 +30,157 @@ using namespace EE::Window;
 #include <harfbuzz/hb.h>
 #endif
 
+#include <thirdparty/nanosvg/nanosvg.h>
+#include <thirdparty/nanosvg/nanosvgrast.h>
+
 namespace {
 
 RETAIN_SYMBOL( FT_Palette_Select );
+
+using namespace EE;
+
+struct SVG_Data {
+	NSVGrasterizer* rasterizer;
+};
+
+FT_Error svg_init( FT_Pointer* data_pointer ) {
+	SVG_Data* data = new SVG_Data();
+	data->rasterizer = nsvgCreateRasterizer();
+	if ( !data->rasterizer ) {
+		delete data;
+		return FT_Err_Out_Of_Memory;
+	}
+	*data_pointer = data;
+	return FT_Err_Ok;
+}
+
+void svg_free( FT_Pointer* data_pointer ) {
+	SVG_Data* data = static_cast<SVG_Data*>( *data_pointer );
+	if ( data ) {
+		nsvgDeleteRasterizer( data->rasterizer );
+		delete data;
+		*data_pointer = nullptr;
+	}
+}
+
+FT_Error svg_preset( FT_GlyphSlot slot, FT_Bool cache, FT_Pointer* data_pointer ) {
+	FT_UNUSED( data_pointer );
+	FT_UNUSED( cache );
+	FT_SVG_Document document = (FT_SVG_Document)slot->other;
+	FT_Pos ascender = document->metrics.ascender;
+	FT_Pos descender = document->metrics.descender;
+
+	// The total height of the glyph's design space in pixels is ascender - descender.
+	// We convert from 26.6 format to integer pixels using ceiling division.
+	unsigned int pixel_height = ( ascender - descender + 63 ) >> 6;
+	unsigned int pixel_width = pixel_height;
+
+	if ( pixel_width == 0 || pixel_height == 0 ) {
+		slot->bitmap.width = 0;
+		slot->bitmap.rows = 0;
+		return FT_Err_Ok;
+	}
+
+	slot->bitmap.width = pixel_width;
+	slot->bitmap.rows = pixel_height;
+	slot->bitmap.pitch = pixel_width * 4;
+	slot->bitmap.pixel_mode = FT_PIXEL_MODE_BGRA;
+	slot->bitmap_top = ascender >> 6;
+	slot->bitmap_left = 0;
+	slot->metrics.width = (FT_Pos)( pixel_width * 64 );
+	slot->metrics.height = (FT_Pos)( pixel_height * 64 );
+	slot->metrics.horiBearingX = (FT_Pos)( slot->bitmap_left * 64 );
+	slot->metrics.horiBearingY = (FT_Pos)( slot->bitmap_top * 64 );
+
+	return FT_Err_Ok;
+}
+
+FT_Error svg_render( FT_GlyphSlot slot, FT_Pointer* data_pointer ) {
+	SVG_Data* svg_data = static_cast<SVG_Data*>( *data_pointer );
+	if ( !svg_data || !svg_data->rasterizer ) {
+		return FT_Err_Invalid_Handle;
+	}
+
+	FT_SVG_Document document = (FT_SVG_Document)slot->other;
+
+	memset( slot->bitmap.buffer, 0, slot->bitmap.pitch * slot->bitmap.rows );
+
+	// Handle empty glyphs
+	if ( document->svg_document_length == 0 ) {
+		return FT_Err_Ok;
+	}
+
+	std::string svg_string( (const char*)document->svg_document, document->svg_document_length );
+	NSVGimage* image = nsvgParse( &svg_string[0], "px", 96.0f, 0xFFFFFFFF );
+	if ( !image ) {
+		return FT_Err_Invalid_File_Format;
+	}
+
+	if ( !image->shapes ) {
+		nsvgDelete( image );
+		return FT_Err_Ok; // No shapes to render
+	}
+
+	float overallBounds[4];
+	memcpy( overallBounds, image->shapes->bounds, sizeof( float ) * 4 );
+
+	// Iterate through the rest of the shapes to find the union of all bounding boxes
+	for ( NSVGshape* shape = image->shapes->next; shape != nullptr; shape = shape->next ) {
+		overallBounds[0] = std::min( overallBounds[0], shape->bounds[0] ); // min-x
+		overallBounds[1] = std::min( overallBounds[1], shape->bounds[1] ); // min-y
+		overallBounds[2] = std::max( overallBounds[2], shape->bounds[2] ); // max-x
+		overallBounds[3] = std::max( overallBounds[3], shape->bounds[3] ); // max-y
+	}
+
+	float svgMinX = overallBounds[0];
+	float svgMinY = overallBounds[1];
+	float svgWidth = overallBounds[2] - svgMinX;
+	float svgHeight = overallBounds[3] - svgMinY;
+
+	if ( svgWidth == 0 || svgHeight == 0 ) {
+		nsvgDelete( image );
+		return FT_Err_Ok; // Nothing to render
+	}
+
+	// Calculate the scale to fit the target bitmap size, preserving aspect ratio
+	float scaleX = (float)slot->bitmap.width / svgWidth;
+	float scaleY = (float)slot->bitmap.rows / svgHeight;
+	float scale = std::min( scaleX, scaleY );
+
+	// Calculate the translation needed to align the SVG's content with the bitmap's origin (0,0)
+	float tx = -svgMinX * scale;
+	float ty = -svgMinY * scale;
+
+	// Center the glyph within the bitmap slot
+	float centered_tx = tx + ( (float)slot->bitmap.width - svgWidth * scale ) * 0.5f;
+	float centered_ty = ty + ( (float)slot->bitmap.rows - svgHeight * scale ) * 0.5f;
+
+	// Rasterize directly into a temporary RGBA buffer.
+	std::vector<unsigned char> rgba_buffer( slot->bitmap.width * slot->bitmap.rows * 4 );
+	nsvgRasterize( svg_data->rasterizer, image, centered_tx, centered_ty, scale, rgba_buffer.data(),
+				   slot->bitmap.width, slot->bitmap.rows, slot->bitmap.width * 4 );
+	nsvgDelete( image );
+
+	// Swizzle from RGBA (nanosvg) to BGRA (FreeType bitmap).
+	// Your original code performed RGBA -> RGBA copy.
+	// FT_PIXEL_MODE_BGRA requires Blue in the first byte.
+	for ( unsigned int y = 0; y < slot->bitmap.rows; ++y ) {
+		for ( unsigned int x = 0; x < slot->bitmap.width; ++x ) {
+			unsigned char* src = &rgba_buffer[( y * slot->bitmap.width + x ) * 4];
+			unsigned char* dst = &slot->bitmap.buffer[( y * slot->bitmap.pitch ) + x * 4];
+			dst[0] = src[2]; // Blue
+			dst[1] = src[1]; // Green
+			dst[2] = src[0]; // Red
+			dst[3] = src[3]; // Alpha
+		}
+	}
+
+	slot->format = FT_GLYPH_FORMAT_BITMAP;
+
+	return FT_Err_Ok;
+}
+
+static SVG_RendererHooks svg_hooks = { svg_init, svg_free, svg_render, svg_preset };
 
 // FreeType callbacks that operate on a IOStream
 unsigned long read( FT_Stream rec, unsigned long offset, unsigned char* buffer,
@@ -108,8 +258,22 @@ FontTrueType::~FontTrueType() {
 	cleanup();
 }
 
-bool checkIsColorEmojiFont( const FT_Face& face ) {
+static bool checkHasSvgTable( const FT_Face& face ) {
+	static const uint32_t tag = FT_MAKE_TAG( 'S', 'V', 'G', ' ' ); // The tag for the SVG table
+	unsigned long length = 0;
+	FT_Load_Sfnt_Table( face, tag, 0, nullptr, &length );
+	return length > 0;
+}
+
+static bool checkIsColorEmojiFont( const FT_Face& face ) {
 	static const uint32_t tag = FT_MAKE_TAG( 'C', 'B', 'D', 'T' );
+	unsigned long length = 0;
+	FT_Load_Sfnt_Table( face, tag, 0, nullptr, &length );
+	return length > 0;
+}
+
+static bool checkHasColrTable( const FT_Face& face ) {
+	static const uint32_t tag = FT_MAKE_TAG( 'C', 'O', 'L', 'R' );
 	unsigned long length = 0;
 	FT_Load_Sfnt_Table( face, tag, 0, nullptr, &length );
 	return length > 0;
@@ -141,6 +305,8 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 		return false;
 	}
 	mLibrary = library;
+
+	FT_Property_Set( static_cast<FT_Library>( mLibrary ), "ot-svg", "svg-hooks", &svg_hooks );
 
 	// Load the new font face from the specified file
 	FT_Face face;
@@ -176,6 +342,8 @@ bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bo
 	}
 	mLibrary = library;
 
+	FT_Property_Set( static_cast<FT_Library>( mLibrary ), "ot-svg", "svg-hooks", &svg_hooks );
+
 	// Load the new font face from the specified file
 	FT_Face face;
 	if ( FT_New_Memory_Face( static_cast<FT_Library>( mLibrary ),
@@ -199,6 +367,8 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 		return false;
 	}
 	mLibrary = library;
+
+	FT_Property_Set( static_cast<FT_Library>( mLibrary ), "ot-svg", "svg-hooks", &svg_hooks );
 
 	// Make sure that the stream's reading position is at the beginning
 	stream.seek( 0 );
@@ -258,12 +428,15 @@ bool FontTrueType::setFontFace( void* _face ) {
 	mHBFont = hb_ft_font_create( static_cast<FT_Face>( face ), NULL );
 #endif
 	mIsMonospaceComplete = mIsMonospace = FT_IS_FIXED_WIDTH( face );
-	mIsColorEmojiFont = checkIsColorEmojiFont( face );
+	mIsColorEmojiFont = checkIsColorEmojiFont( face ); // For CBDT (COLRv0)
+	mHasSvgGlyphs = checkHasSvgTable( face );		   // For SVG table
+	mHasColrGlyphs = checkHasColrTable( face );		   // For COLR table (COLRv1)
 	mIsEmojiFont = FT_Get_Char_Index( face, 0x1F600 ) != 0;
 	mIsBold = face->style_flags & FT_STYLE_FLAG_BOLD;
 	mIsItalic = face->style_flags & FT_STYLE_FLAG_ITALIC;
 
-	if ( mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() == nullptr )
+	if ( ( mIsColorEmojiFont || mHasSvgGlyphs || mHasColrGlyphs ) &&
+		 FontManager::instance()->getColorEmojiFont() == nullptr )
 		FontManager::instance()->setColorEmojiFont( this );
 
 	if ( mIsEmojiFont && FontManager::instance()->getEmojiFont() == nullptr )
@@ -334,8 +507,8 @@ Uint32 FontTrueType::getGlyphIndex( const Uint32& codePoint ) const {
 Glyph FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
 							  Float outlineThickness ) const {
 	Uint32 idx = 0;
-	if ( mEnableEmojiFallback && !mIsColorEmojiFont && !mIsEmojiFont &&
-		 Font::isEmojiCodePoint( codePoint ) ) {
+	if ( mEnableEmojiFallback && !mIsColorEmojiFont && !mHasSvgGlyphs && !mHasColrGlyphs &&
+		 !mIsEmojiFont && Font::isEmojiCodePoint( codePoint ) ) {
 		if ( !mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() != nullptr &&
 			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
 
@@ -913,8 +1086,6 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 	FT_Error err = 0;
 
 	auto loadOptions = fontSetLoadOptions( mAntialiasing, mHinting );
-	auto renderOptions =
-		fontSetRenderOptions( static_cast<FT_Library>( mLibrary ), mAntialiasing, mHinting );
 
 	// Load the glyph corresponding to the code point
 	FT_Int32 flags = loadOptions | FT_LOAD_COLOR;
@@ -955,8 +1126,14 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 		}
 	}
 
+	FT_Render_Mode finalRenderMode = FT_RENDER_MODE_NORMAL;
+	if ( glyphDesc->format != FT_GLYPH_FORMAT_SVG ) {
+		finalRenderMode =
+			fontSetRenderOptions( static_cast<FT_Library>( mLibrary ), mAntialiasing, mHinting );
+	}
+
 	// Convert the glyph to a bitmap (i.e. rasterize it)
-	FT_Glyph_To_Bitmap( &glyphDesc, renderOptions, 0, 1 );
+	FT_Glyph_To_Bitmap( &glyphDesc, finalRenderMode, 0, 1 );
 	FT_Bitmap& bitmap = reinterpret_cast<FT_BitmapGlyph>( glyphDesc )->bitmap;
 
 	// Apply bold if necessary -- fallback technique using bitmap (lower quality)
@@ -1488,6 +1665,14 @@ void FontTrueType::setBoldItalicFont( FontTrueType* fontBoldItalic ) {
 			} );
 	}
 	updateMonospaceState();
+}
+
+bool FontTrueType::hasSvgGlyphs() const {
+	return mHasSvgGlyphs;
+}
+
+bool FontTrueType::hasColrGlyphs() const {
+	return mHasColrGlyphs;
 }
 
 FontTrueType::Page::Page( const Uint32 fontInternalId, const std::string& pageName ) :

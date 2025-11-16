@@ -32,7 +32,7 @@ class EE_API FontTrueType : public Font {
 	const Font::Info& getInfo() const;
 
 	Glyph getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
-						   Float outlineThickness = 0 ) const;
+					Float outlineThickness = 0 ) const;
 
 	Glyph getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold, bool italic,
 						   Float outlineThickness = 0 ) const;
@@ -76,6 +76,10 @@ class EE_API FontTrueType : public Font {
 	void setBoldAdvanceSameAsRegular( bool boldAdvanceSameAsRegular );
 
 	bool isColorEmojiFont() const;
+
+	bool hasSvgGlyphs() const;
+
+	bool hasColrGlyphs() const;
 
 	/** @return True if the font identifies itself as a monospace font and currently does not hold
 	 * any non-monospaced glyph (from a fallback font) */
@@ -187,10 +191,10 @@ class EE_API FontTrueType : public Font {
 	void cleanup();
 
 	Glyph getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold, bool italic,
-								  Float outlineThickness, Page& page ) const;
+						   Float outlineThickness, Page& page ) const;
 
 	Glyph getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
-						   Float outlineThickness, Page& page ) const;
+					Float outlineThickness, Page& page ) const;
 
 	GlyphDrawable* getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex, unsigned int characterSize,
 												   bool bold, bool italic, Float outlineThickness,
@@ -221,18 +225,20 @@ class EE_API FontTrueType : public Font {
 	mutable PageTable mPages; ///< Table containing the glyphs pages by character size
 	mutable std::vector<Uint8>
 		mPixelBuffer; ///< Pixel buffer holding a glyph's pixels before being written to the texture
-	bool mBoldAdvanceSameAsRegular;
-	bool mIsColorEmojiFont{ false };
-	bool mIsEmojiFont{ false };
-	mutable bool mIsMonospace{ false };
-	mutable bool mIsMonospaceComplete{ false };
-	mutable bool mUsingFallback{ false };
-	bool mEnableEmojiFallback{ true };
-	bool mEnableFallbackFont{ true };
-	bool mEnableDynamicMonospace{ false };
-	bool mIsBold{ false };
-	bool mIsItalic{ false };
-	mutable bool mIsMonospaceCompletePending{ false };
+	bool mBoldAdvanceSameAsRegular : 1 { false };
+	bool mIsColorEmojiFont : 1 { false };
+	bool mIsEmojiFont : 1 { false };
+	bool mHasSvgGlyphs : 1 { false };
+	bool mHasColrGlyphs : 1 { false };
+	mutable bool mIsMonospace : 1 { false };
+	mutable bool mIsMonospaceComplete : 1 { false };
+	mutable bool mUsingFallback : 1 { false };
+	bool mEnableEmojiFallback : 1 { true };
+	bool mEnableFallbackFont : 1 { true };
+	bool mEnableDynamicMonospace : 1 { false };
+	bool mIsBold : 1 { false };
+	bool mIsItalic : 1 { false };
+	mutable bool mIsMonospaceCompletePending : 1 { false };
 	mutable UnorderedMap<unsigned int, unsigned int> mClosestCharacterSize;
 	mutable UnorderedMap<Uint32, Uint32> mCodePointIndexCache;
 	mutable UnorderedMap<Uint32, std::tuple<Uint32, Uint32, bool>> mKeyCache;
