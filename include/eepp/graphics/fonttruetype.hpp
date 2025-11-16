@@ -225,20 +225,20 @@ class EE_API FontTrueType : public Font {
 	mutable PageTable mPages; ///< Table containing the glyphs pages by character size
 	mutable std::vector<Uint8>
 		mPixelBuffer; ///< Pixel buffer holding a glyph's pixels before being written to the texture
-	bool mBoldAdvanceSameAsRegular : 1 { false };
-	bool mIsColorEmojiFont : 1 { false };
-	bool mIsEmojiFont : 1 { false };
-	bool mHasSvgGlyphs : 1 { false };
-	bool mHasColrGlyphs : 1 { false };
-	mutable bool mIsMonospace : 1 { false };
-	mutable bool mIsMonospaceComplete : 1 { false };
-	mutable bool mUsingFallback : 1 { false };
-	bool mEnableEmojiFallback : 1 { true };
-	bool mEnableFallbackFont : 1 { true };
-	bool mEnableDynamicMonospace : 1 { false };
-	bool mIsBold : 1 { false };
-	bool mIsItalic : 1 { false };
-	mutable bool mIsMonospaceCompletePending : 1 { false };
+	bool mBoldAdvanceSameAsRegular{ false };
+	bool mIsColorEmojiFont{ false };
+	bool mIsEmojiFont{ false };
+	bool mHasSvgGlyphs{ false };
+	bool mHasColrGlyphs{ false };
+	mutable bool mIsMonospace{ false };
+	mutable bool mIsMonospaceComplete{ false };
+	mutable bool mUsingFallback{ false };
+	bool mEnableEmojiFallback{ true };
+	bool mEnableFallbackFont{ true };
+	bool mEnableDynamicMonospace{ false };
+	bool mIsBold{ false };
+	bool mIsItalic{ false };
+	mutable bool mIsMonospaceCompletePending{ false };
 	mutable UnorderedMap<unsigned int, unsigned int> mClosestCharacterSize;
 	mutable UnorderedMap<Uint32, Uint32> mCodePointIndexCache;
 	mutable UnorderedMap<Uint32, std::tuple<Uint32, Uint32, bool>> mKeyCache;

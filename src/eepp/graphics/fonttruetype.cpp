@@ -306,8 +306,6 @@ bool FontTrueType::loadFromFile( const std::string& filename ) {
 	}
 	mLibrary = library;
 
-	FT_Property_Set( static_cast<FT_Library>( mLibrary ), "ot-svg", "svg-hooks", &svg_hooks );
-
 	// Load the new font face from the specified file
 	FT_Face face;
 	if ( FT_New_Face( static_cast<FT_Library>( mLibrary ), filename.c_str(), 0, &face ) != 0 ) {
@@ -342,8 +340,6 @@ bool FontTrueType::loadFromMemory( const void* data, std::size_t sizeInBytes, bo
 	}
 	mLibrary = library;
 
-	FT_Property_Set( static_cast<FT_Library>( mLibrary ), "ot-svg", "svg-hooks", &svg_hooks );
-
 	// Load the new font face from the specified file
 	FT_Face face;
 	if ( FT_New_Memory_Face( static_cast<FT_Library>( mLibrary ),
@@ -367,8 +363,6 @@ bool FontTrueType::loadFromStream( IOStream& stream ) {
 		return false;
 	}
 	mLibrary = library;
-
-	FT_Property_Set( static_cast<FT_Library>( mLibrary ), "ot-svg", "svg-hooks", &svg_hooks );
 
 	// Make sure that the stream's reading position is at the beginning
 	stream.seek( 0 );
@@ -434,6 +428,9 @@ bool FontTrueType::setFontFace( void* _face ) {
 	mIsEmojiFont = FT_Get_Char_Index( face, 0x1F600 ) != 0;
 	mIsBold = face->style_flags & FT_STYLE_FLAG_BOLD;
 	mIsItalic = face->style_flags & FT_STYLE_FLAG_ITALIC;
+
+	if ( mHasSvgGlyphs )
+		FT_Property_Set( static_cast<FT_Library>( mLibrary ), "ot-svg", "svg-hooks", &svg_hooks );
 
 	if ( ( mIsColorEmojiFont || mHasSvgGlyphs || mHasColrGlyphs ) &&
 		 FontManager::instance()->getColorEmojiFont() == nullptr )
@@ -1030,10 +1027,14 @@ static int fontSetLoadOptions( FontAntialiasing antialiasing, FontHinting hintin
 	return load_target | hint;
 }
 
-static constexpr FT_Render_Mode
-fontSetRenderOptions( FT_Library library, FontAntialiasing antialiasing, FontHinting hinting ) {
+static constexpr FT_Render_Mode fontSetRenderOptions( FT_Library library,
+													  FontAntialiasing antialiasing,
+													  FontHinting hinting,
+													  FT_Glyph_Format glyphFormat ) {
 	if ( antialiasing == FontAntialiasing::None )
 		return FT_RENDER_MODE_MONO;
+	if ( glyphFormat == FT_GLYPH_FORMAT_SVG )
+		return FT_RENDER_MODE_NORMAL;
 	if ( antialiasing == FontAntialiasing::Subpixel ) {
 		unsigned char weights[] = { 0x10, 0x40, 0x70, 0x40, 0x10 };
 		switch ( hinting ) {
@@ -1086,6 +1087,8 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 	FT_Error err = 0;
 
 	auto loadOptions = fontSetLoadOptions( mAntialiasing, mHinting );
+	if ( mIsColorEmojiFont || mHasSvgGlyphs )
+		loadOptions = FT_LOAD_TARGET_NORMAL;
 
 	// Load the glyph corresponding to the code point
 	FT_Int32 flags = loadOptions | FT_LOAD_COLOR;
@@ -1126,11 +1129,8 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 		}
 	}
 
-	FT_Render_Mode finalRenderMode = FT_RENDER_MODE_NORMAL;
-	if ( glyphDesc->format != FT_GLYPH_FORMAT_SVG ) {
-		finalRenderMode =
-			fontSetRenderOptions( static_cast<FT_Library>( mLibrary ), mAntialiasing, mHinting );
-	}
+	FT_Render_Mode finalRenderMode = fontSetRenderOptions(
+		static_cast<FT_Library>( mLibrary ), mAntialiasing, mHinting, glyphDesc->format );
 
 	// Convert the glyph to a bitmap (i.e. rasterize it)
 	FT_Glyph_To_Bitmap( &glyphDesc, finalRenderMode, 0, 1 );
