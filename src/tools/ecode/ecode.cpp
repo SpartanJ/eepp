@@ -470,19 +470,23 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool term
 				auto loadMonoFont = [this, &fontPath, newPath,
 									 terminalFont]( FontTrueType* fontMono ) {
 					fontPath = newPath;
-					mFontMono = fontMono;
-					mFontMono->setEnableDynamicMonospace( true );
-					mFontMono->setBoldAdvanceSameAsRegular( true );
-					FontFamily::loadFromRegular( mFontMono );
+					if ( terminalFont )
+						mTerminalFont = fontMono;
+					else
+						mFontMono = fontMono;
+					fontMono->setEnableDynamicMonospace( true );
+					fontMono->setBoldAdvanceSameAsRegular( true );
+					FontFamily::loadFromRegular( fontMono );
 					if ( mSplitter ) {
 						if ( terminalFont ) {
 							mSplitter->forEachWidgetType(
-								UI_TYPE_TERMINAL, [this]( UIWidget* term ) {
-									term->asType<UITerminal>()->setFont( mFontMono );
+								UI_TYPE_TERMINAL, [fontMono]( UIWidget* term ) {
+									term->asType<UITerminal>()->setFont( fontMono );
 								} );
 						} else {
-							mSplitter->forEachEditor(
-								[this]( UICodeEditor* editor ) { editor->setFont( mFontMono ); } );
+							mSplitter->forEachEditor( [fontMono]( UICodeEditor* editor ) {
+								editor->setFont( fontMono );
+							} );
 						}
 					}
 				};
