@@ -301,8 +301,11 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	setCmd( "ai-prompt", [this] {
 		// "ai-prompt-stop"
 		if ( mRequest ) {
-			mRequest->cancel();
-			return;
+			if ( !mRequest->isCancelled() ) {
+				mRequest->cancel();
+				return;
+			} else
+				mRequest.reset();
 		}
 
 		auto chats = findAllByClass( "llm_conversation" );
@@ -1021,10 +1024,14 @@ void LLMChatUI::doRequest() {
 	mChatStop->setVisible( true )->setEnabled( true );
 
 	UIWidget* chat = addChatUI( LLMChat::Role::Assistant );
-	toggleEnableChats( false );
+	toggleEnableChats( false ); // editor is not disabled (to allow copy with locked document)
 
 	auto model = mCurModel;
 	auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
+
+	// new editor must be disabled because even on locked document it's possible to move the cursor
+	editor->setEnabled( false );
+
 	auto* thinking = editor->findByClass<UIImage>( "thinking" );
 	auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
 	thinking->setVisible( true );
@@ -1052,9 +1059,15 @@ void LLMChatUI::doRequest() {
 			} );
 	};
 
-	mRequest->cancelCb = [this, thinking, thinkingID]( const LLMChatCompletionRequest& ) {
+	mRequest->cancelCb = [this, thinking, thinkingID, editor]( const LLMChatCompletionRequest& ) {
 		thinking->removeActionsByTag( thinkingID );
 		thinking->setVisible( false );
+		mChatStop->setVisible( false )->setEnabled( false );
+		mChatRun->setVisible( true )->setEnabled( true );
+		toggleEnableChats( true );
+		editor->setEnabled( true );
+		if ( editor->hasFocus() )
+			mChatInput->setFocus();
 		removeLastChat();
 	};
 
@@ -1086,6 +1099,7 @@ void LLMChatUI::doRequest() {
 			}
 			mRequest.reset();
 			toggleEnableChats( true );
+			editor->setEnabled( true );
 
 			mChatStop->setVisible( false )->setEnabled( false );
 			mChatRun->setVisible( true )->setEnabled( true );

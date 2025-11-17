@@ -174,7 +174,7 @@ class EE_API Http : NonCopyable {
 					 ///< target resource.
 			Patch,	 ///< The PATCH method is used to apply partial modifications to a resource.
 			Connect	 ///< The CONNECT method starts two-way communications with the requested
-					 ///< resource. It can be used to open a tunnel.
+					///< resource. It can be used to open a tunnel.
 		};
 
 		/** @brief Enumerate the available states for a request */
@@ -315,8 +315,21 @@ class EE_API Http : NonCopyable {
 		/** Sets a progress callback */
 		void setProgressCallback( const ProgressCallback& progressCallback );
 
+		/** Definition of the cancel callback
+		 * @param http The http client
+		 * @param request The http request
+		 */
+		typedef std::function<void( const Http& http, const Http::Request& request )>
+			CancelCallback;
+
+		/** Sets a cancel callback */
+		void setCancelCallback( const CancelCallback& cancelCb );
+
 		/** Get the progress callback */
 		const ProgressCallback& getProgressCallback() const;
+
+		/** Get the cancel callback */
+		const CancelCallback& getCancelCallback() const;
 
 		/** Cancels the current request if being processed */
 		void cancel();
@@ -375,6 +388,7 @@ class EE_API Http : NonCopyable {
 		mutable bool mCancel;		///< Cancel state of current request
 		bool mVerbose{ false };		///< Enable/Disable verbosity
 		ProgressCallback mProgressCallback;		///< Progress callback
+		CancelCallback mCancelCallback;			///< Cancel callback
 		unsigned int mMaxRedirections;			///< Maximum number of redirections allowed
 		mutable unsigned int mRedirectionCount; ///< Number of redirections followed by the request
 		URI mProxy;								///< Proxy information
@@ -477,7 +491,7 @@ class EE_API Http : NonCopyable {
 	/** @brief Sends the request and creates a new thread, when got the response informs the result
 	 ** to the callback. *	This function does not lock the caller thread.
 	 ** @see sendRequest
-     ** @return Unique Id of the request added */
+	 ** @return Unique Id of the request added */
 	Uint64 sendAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
 							 Time timeout = Time::Zero );
 
@@ -759,6 +773,8 @@ class EE_API Http : NonCopyable {
 	void removeAsyncRequest( AsyncRequest* req );
 
 	Request prepareFields( const Http::Request& request );
+
+	void onCancel( const Http::Request& request );
 };
 
 }} // namespace EE::Network

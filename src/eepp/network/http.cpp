@@ -173,8 +173,16 @@ void Http::Request::setProgressCallback( const Http::Request::ProgressCallback& 
 	mProgressCallback = progressCallback;
 }
 
+void Http::Request::setCancelCallback( const Http::Request::CancelCallback& cancelCallback ) {
+	mCancelCallback = cancelCallback;
+}
+
 const Http::Request::ProgressCallback& Http::Request::getProgressCallback() const {
 	return mProgressCallback;
+}
+
+const Http::Request::CancelCallback& Http::Request::getCancelCallback() const {
+	return mCancelCallback;
 }
 
 void Http::Request::cancel() {
@@ -206,6 +214,11 @@ std::string Http::Request::prepareTunnel( const Http& http ) {
 	out << "\r\n";
 
 	return out.str();
+}
+
+void Http::onCancel( const Http::Request& request ) {
+	if ( request.getCancelCallback() )
+		request.getCancelCallback()( *this, request );
 }
 
 bool Http::Request::isVerbose() const {
@@ -795,8 +808,10 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 	// Prepare the response
 	Response received;
 
-	if ( request.isCancelled() )
+	if ( request.isCancelled() ) {
+		onCancel( request );
 		return Response();
+	}
 
 	// If not connected, try to connect to the server
 	if ( mConnection && !mConnection->isConnected() ) {
@@ -1127,6 +1142,9 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 				mConnection->setTunneled( false );
 			}
 		}
+
+		if ( request.isCancelled() )
+			onCancel( request );
 
 		// Close the connection
 		if ( mConnection && !mConnection->isKeepAlive() ) {

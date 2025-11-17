@@ -19,13 +19,14 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 	mRequest.setBody( reqBody );
 	mRequest.setFollowRedirect( true );
 	mRequest.setMethod( Http::Request::Method::Post );
+	mRequest.setCancelCallback( [this]( const Http&, const Http::Request& ) { onCancel(); } );
 	mRequest.setProgressCallback( [this]( const Http&, const Http::Request&, const Http::Response&,
 										  const Http::Request::Status& status, size_t, size_t ) {
 		if ( mCancel ) {
-			if ( cancelCb )
-				cancelCb( *this );
+			onCancel();
 			return false;
 		}
+		mHadProgress = true;
 		if ( status != Http::Request::ContentReceived )
 			return true;
 		std::string chunk =
@@ -106,12 +107,18 @@ LLMChatCompletionRequest::~LLMChatCompletionRequest() {
 }
 
 void LLMChatCompletionRequest::request() {
+	mCancel = false;
+	mCancelled = false;
+	mHadProgress = false;
 	Http::Response res = mHttp->downloadRequest( mRequest, mStream, Seconds( 5 ) );
 	if ( doneCb )
 		doneCb( *this, res );
 }
 
 void LLMChatCompletionRequest::requestAsync() {
+	mCancel = false;
+	mCancelled = false;
+	mHadProgress = false;
 	mRequestId = mHttp->downloadAsyncRequest(
 		[this]( const Http&, Http::Request&, Http::Response& res ) {
 			if ( doneCb )
@@ -124,10 +131,22 @@ void LLMChatCompletionRequest::cancel() {
 	mCancel = true;
 	if ( mRequestId )
 		mHttp->setCancelRequest( mRequestId );
+	if ( !mHadProgress )
+		onCancel();
 }
 
 const std::string& LLMChatCompletionRequest::getStream() const {
 	return mStream.getStream();
+}
+
+bool LLMChatCompletionRequest::isCancelled() const {
+	return mCancelled;
+}
+
+void LLMChatCompletionRequest::onCancel() {
+	if ( !mCancelled && cancelCb )
+		cancelCb( *this );
+	mCancelled = true;
 }
 
 } // namespace ecode

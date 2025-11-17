@@ -47,6 +47,8 @@ class EE_API FontManager : public ResourceManager<Font> {
 
 	void setAntialiasing( FontAntialiasing antialiasing );
 
+	Font* getByInternalId( Uint32 internalId ) const;
+
   protected:
 	Font* mColorEmojiFont{ nullptr };
 	Font* mEmojiFont{ nullptr };

@@ -1,7 +1,7 @@
 #include <eepp/core/lrucache.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/text.hpp>
-#include <eepp/graphics/textlayouter.hpp>
+#include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/textshaperun.hpp>
 
 #ifdef EE_TEXT_SHAPER_ENABLED
@@ -13,7 +13,7 @@
 
 namespace EE::Graphics {
 
-using LRULayoutCache = LRUCache<2048, Uint64, TextLayout>;
+using LRULayoutCache = LRUCache<2048, Uint64, TextLayout::Cache>;
 
 #ifdef EE_TEXT_SHAPER_ENABLED
 
@@ -110,8 +110,10 @@ static void segmentString( TextLayout& result, String::View input, Callable cb )
 			SBScriptLocatorReset( scriptLocator );
 		}
 
-		if ( runCount > 0 && paragraphOffset == 0 )
-			result.isRTL = ( runArray[0].level % 2 ) != 0;
+		if ( runCount > 0 && paragraphOffset == 0 ) {
+			result.direction = ( runArray[0].level % 2 ) != 0 ? TextDirection::RightToLeft
+															  : TextDirection::LeftToRight;
+		}
 
 		SBLineRelease( line );
 		SBParagraphRelease( paragraph );
@@ -205,16 +207,16 @@ static inline Uint64 textLayoutHash( const StringType& string, Font* font,
 }
 
 template <typename StringType>
-TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uint32& characterSize,
-								 const Uint32& style, const Uint32& tabWidth,
-								 const Float& outlineThickness, std::optional<Float> tabOffset,
-								 Uint32 textDrawHints ) {
+TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
+									  const Uint32& characterSize, const Uint32& style,
+									  const Uint32& tabWidth, const Float& outlineThickness,
+									  std::optional<Float> tabOffset, Uint32 textDrawHints ) {
 	static LRULayoutCache sLayoutCache;
-	TextLayout result;
 
 	if ( !font || string.empty() ) {
-		result.size = { 0.f, font ? (Float)font->getFontHeight( characterSize ) : 0.f };
-		return result;
+		auto layout = std::make_shared<TextLayout>();
+		layout->size = { 0.f, font ? (Float)font->getFontHeight( characterSize ) : 0.f };
+		return layout;
 	}
 
 	Uint64 hash = 0;
@@ -234,6 +236,9 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 	Float vspace = font->getLineSpacing( characterSize );
 	Vector2f pen;
 	Float maxWidth = 0;
+
+	auto resultPtr = std::make_shared<TextLayout>();
+	TextLayout& result = *resultPtr;
 
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( Text::TextShaperEnabled && font->getType() == FontType::TTF &&
@@ -269,6 +274,7 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 							sg.stringIndex = segment.offset + run.pos() + cluster;
 							sg.position = pen;
 							sg.advance = { advance, 0 };
+							sg.direction = (TextDirection)segment.direction;
 							result.shapedGlyphs.emplace_back( std::move( sg ) );
 
 							pen.x += advance;
@@ -290,6 +296,7 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 						sg.glyphIndex = glyphInfo[i].codepoint;
 						sg.stringIndex = segment.offset + run.pos() + glyphInfo[i].cluster;
 						sg.advance = { currentGlyph.advance, 0 };
+						sg.direction = (TextDirection)segment.direction;
 						sg.position.x = pen.x + ( glyphPos[i].x_offset / 64.f );
 						sg.position.y = pen.y - ( glyphPos[i].y_offset / 64.f );
 						result.shapedGlyphs.emplace_back( std::move( sg ) );
@@ -311,6 +318,7 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 							sg.glyphIndex = glyphInfo[i].codepoint;
 							sg.stringIndex = segment.offset + run.pos() + cluster;
 							sg.advance = { advance, 0 };
+							sg.direction = (TextDirection)segment.direction;
 							sg.position = pen;
 							result.shapedGlyphs.emplace_back( std::move( sg ) );
 
@@ -324,6 +332,7 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 						sg.glyphIndex = glyphInfo[i].codepoint;
 						sg.stringIndex = segment.offset + run.pos() + glyphInfo[i].cluster;
 						sg.advance = { glyphPos[i].x_advance / 64.f, glyphPos[i].y_advance / 64.f };
+						sg.direction = (TextDirection)segment.direction;
 						sg.position.x = std::round( pen.x + ( glyphPos[i].x_offset / 64.f ) );
 						sg.position.y = std::round( pen.y - ( glyphPos[i].y_offset / 64.f ) );
 						result.shapedGlyphs.emplace_back( std::move( sg ) );
@@ -378,6 +387,7 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 																		 : std::optional<Float>{} )
 														   : std::optional<Float>{} ),
 							   0 };
+				sg.direction = TextDirection::LeftToRight;
 				sg.position = pen;
 				pen.x += sg.advance.x;
 				result.shapedGlyphs.emplace_back( std::move( sg ) );
@@ -391,6 +401,7 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 			sg.advance = {
 				font->getGlyph( curChar, characterSize, bold, italic, outlineThickness ).advance,
 				0 };
+			sg.direction = TextDirection::LeftToRight;
 			sg.position = pen;
 			pen.x += sg.advance.x;
 			result.shapedGlyphs.emplace_back( std::move( sg ) );
@@ -405,24 +416,24 @@ TextLayout TextLayouter::layout( const StringType& string, Font* font, const Uin
 	maxWidth = eemax( maxWidth, result.linesWidth[result.linesWidth.size() - 1] );
 	result.size = { maxWidth, std::ceil( pen.y ) };
 
-	sLayoutCache.put( hash, result );
-	return result;
+	sLayoutCache.put( hash, resultPtr );
+	return resultPtr;
 }
 
-TextLayout TextLayouter::layout( const String& string, Font* font, const Uint32& fontSize,
-								 const Uint32& style, const Uint32& tabWidth,
-								 const Float& outlineThickness, std::optional<Float> tabOffset,
-								 Uint32 textDrawHints ) {
-	return TextLayouter::layout<String>( string, font, fontSize, style, tabWidth, outlineThickness,
-										 tabOffset, textDrawHints );
+TextLayout::Cache TextLayout::layout( const String& string, Font* font, const Uint32& fontSize,
+									  const Uint32& style, const Uint32& tabWidth,
+									  const Float& outlineThickness, std::optional<Float> tabOffset,
+									  Uint32 textDrawHints ) {
+	return TextLayout::layout<String>( string, font, fontSize, style, tabWidth, outlineThickness,
+									   tabOffset, textDrawHints );
 }
 
-TextLayout TextLayouter::layout( const String::View& string, Font* font, const Uint32& fontSize,
-								 const Uint32& style, const Uint32& tabWidth,
-								 const Float& outlineThickness, std::optional<Float> tabOffset,
-								 Uint32 textDrawHints ) {
-	return TextLayouter::layout<String::View>( string, font, fontSize, style, tabWidth,
-											   outlineThickness, tabOffset, textDrawHints );
+TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
+									  const Uint32& fontSize, const Uint32& style,
+									  const Uint32& tabWidth, const Float& outlineThickness,
+									  std::optional<Float> tabOffset, Uint32 textDrawHints ) {
+	return TextLayout::layout<String::View>( string, font, fontSize, style, tabWidth,
+											 outlineThickness, tabOffset, textDrawHints );
 }
 
 } // namespace EE::Graphics

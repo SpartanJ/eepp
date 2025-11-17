@@ -302,10 +302,10 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 		 !canSkipShaping( textDrawHints ) ) {
 		FontTrueType* rFont = static_cast<FontTrueType*>( font );
 
-		auto layout = TextLayouter::layout( string, rFont, fontSize, style, tabWidth,
+		auto layout = TextLayout::layout( string, rFont, fontSize, style, tabWidth,
 											outlineThickness, tabOffset, textDrawHints );
 
-		for ( const ShapedGlyph& sg : layout.shapedGlyphs ) {
+		for ( const ShapedGlyph& sg : layout->shapedGlyphs ) {
 			auto ch = string[sg.stringIndex];
 			auto gpos( ( sg.position + pos ).trunc() );
 
@@ -373,7 +373,7 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 
 		BR->drawOpt();
 
-		return layout.size;
+		return layout->size;
 	}
 #endif
 
@@ -911,9 +911,9 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( TextShaperEnabled && font->getType() == FontType::TTF &&
 		 !canSkipShaping( textDrawHints ) ) {
-		return TextLayouter::layout( string, static_cast<FontTrueType*>( font ), fontSize, style,
+		return TextLayout::layout( string, static_cast<FontTrueType*>( font ), fontSize, style,
 									 tabWidth, outlineThickness, tabOffset, textDrawHints )
-			.size.getWidth();
+			->size.getWidth();
 	}
 #endif
 
@@ -956,10 +956,10 @@ std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSiz
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( TextShaperEnabled && font->getType() == FontType::TTF && !canSkipShaping( textHints ) ) {
 		auto layout =
-			TextLayouter::layout( string, static_cast<FontTrueType*>( font ), fontSize, style,
+			TextLayout::layout( string, static_cast<FontTrueType*>( font ), fontSize, style,
 								  tabWidth, outlineThickness, tabOffset /* , textDrawHints */ );
 		size_t lastStringIndex = 0;
-		for ( const ShapedGlyph& sg : layout.shapedGlyphs ) {
+		for ( const ShapedGlyph& sg : layout->shapedGlyphs ) {
 			Glyph metrics =
 				sg.font->getGlyphByIndex( sg.glyphIndex, fontSize, bold, italic, outlineThickness );
 			if ( sg.position.x + metrics.advance > maxWidth )
@@ -1014,7 +1014,7 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( TextShaperEnabled && font->getType() == FontType::TTF &&
 		 !canSkipShaping( textDrawHints ) ) {
-		auto layout = TextLayouter::layout( string, font, fontSize, style, tabWidth,
+		auto layout = TextLayout::layout( string, font, fontSize, style, tabWidth,
 											outlineThickness, tabOffset );
 		Uint32 maxStringIndex = 0;
 		Uint32 closestDist = std::numeric_limits<Uint32>::max();
@@ -1022,7 +1022,7 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 		const ShapedGlyph* msg = nullptr;
 		const ShapedGlyph* csg = nullptr;
 
-		for ( const ShapedGlyph& sg : layout.shapedGlyphs ) {
+		for ( const ShapedGlyph& sg : layout->shapedGlyphs ) {
 			if ( sg.stringIndex >= maxStringIndex ) {
 				maxStringIndex = std::max( maxStringIndex, sg.stringIndex );
 				msg = &sg;
@@ -1035,13 +1035,14 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 			}
 
 			if ( sg.stringIndex == index ) {
-				if ( layout.isRTL )
+				if ( layout->isRTL() )
 					return ( sg.position + sg.advance ).trunc();
 				return sg.position.trunc();
 			}
 		}
 
-		if ( !layout.shapedGlyphs.empty() && !layout.isRTL && index >= maxStringIndex + 1 && msg ) {
+		if ( !layout->shapedGlyphs.empty() && !layout->isRTL() && index >= maxStringIndex + 1 &&
+			 msg ) {
 			Glyph metrics = msg->font->getGlyphByIndex( msg->glyphIndex, fontSize, bold, italic,
 														outlineThickness );
 			if ( string[msg->stringIndex] == '\t' ) {
@@ -1128,18 +1129,18 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( TextShaperEnabled && font->getType() == FontType::TTF &&
 		 !canSkipShaping( textDrawHints ) ) {
-		auto layout = TextLayouter::layout( string, font, fontSize, style, tabWidth,
+		auto layout = TextLayout::layout( string, font, fontSize, style, tabWidth,
 											outlineThickness, tabOffset );
 
-		auto sgs = layout.shapedGlyphs.size();
+		auto sgs = layout->shapedGlyphs.size();
 		if ( sgs == 0 )
 			return 0;
 
 		if ( pos.x < 0 )
-			return layout.isRTL ? tSize : 0;
+			return layout->isRTL() ? tSize : 0;
 
 		for ( size_t i = 0; i < sgs; i++ ) {
-			const ShapedGlyph* sg = &layout.shapedGlyphs[i];
+			const ShapedGlyph* sg = &layout->shapedGlyphs[i];
 
 			Float charLeft = sg->position.x;
 			Float charTop = sg->position.y;
@@ -1148,31 +1149,31 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 			auto curStringIndex = sg->stringIndex;
 
 			// Expand bounds over the whole cluster (multiple glyphs for one string index)
-			while ( i + 1 < sgs && layout.shapedGlyphs[i + 1].stringIndex == curStringIndex ) {
+			while ( i + 1 < sgs && layout->shapedGlyphs[i + 1].stringIndex == curStringIndex ) {
 				i++;
-				sg = &layout.shapedGlyphs[i];
+				sg = &layout->shapedGlyphs[i];
 				charBottom = sg->position.y + vspace;
 				charRight = sg->position.x + sg->advance.x;
 			};
 
 			bool isLastOnLine =
 				i + 1 == sgs ||
-				( !layout.isRTL && layout.shapedGlyphs[i + 1].position.y != sg->position.y );
+				( !layout->isRTL() && layout->shapedGlyphs[i + 1].position.y != sg->position.y );
 
 			if ( fpos.y >= charTop && fpos.y <= charBottom ) {
 				auto findNextInsertionIndex = [&]() -> Int32 {
-					if ( layout.isRTL ) {
+					if ( layout->isRTL() ) {
 						if ( i > 0 ) {
 							for ( Int64 j = (Int64)i - 1; j >= 0; j-- ) {
-								if ( layout.shapedGlyphs[j].stringIndex > sg->stringIndex )
-									return layout.shapedGlyphs[j].stringIndex;
+								if ( layout->shapedGlyphs[j].stringIndex > sg->stringIndex )
+									return layout->shapedGlyphs[j].stringIndex;
 							}
 						}
 						return 0;
 					} else {
 						for ( size_t j = i + 1; j < sgs; ++j ) {
-							if ( layout.shapedGlyphs[j].stringIndex > sg->stringIndex )
-								return layout.shapedGlyphs[j].stringIndex;
+							if ( layout->shapedGlyphs[j].stringIndex > sg->stringIndex )
+								return layout->shapedGlyphs[j].stringIndex;
 						}
 						return tSize;
 					}
@@ -1310,11 +1311,11 @@ void Text::updateWidthCache() {
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF &&
 		 !canSkipShaping( mTextHints ) ) {
-		auto layout = TextLayouter::layout( mString, mFontStyleConfig.Font,
+		auto layout = TextLayout::layout( mString, mFontStyleConfig.Font,
 											mFontStyleConfig.CharacterSize, mFontStyleConfig.Style,
 											mTabWidth, mFontStyleConfig.OutlineThickness );
-		mLinesWidth = std::move( layout.linesWidth );
-		mCachedWidth = layout.size.getWidth();
+		mLinesWidth = layout->linesWidth;
+		mCachedWidth = layout->size.getWidth();
 		return;
 	}
 #endif
@@ -1627,14 +1628,14 @@ void Text::ensureGeometryUpdate() {
 	if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF &&
 		 !canSkipShaping( mTextHints ) ) {
 		FontTrueType* rFont = static_cast<FontTrueType*>( mFontStyleConfig.Font );
-		auto layout = TextLayouter::layout( mString, rFont, mFontStyleConfig.CharacterSize,
+		auto layout = TextLayout::layout( mString, rFont, mFontStyleConfig.CharacterSize,
 											mFontStyleConfig.Style, mTabWidth,
 											mFontStyleConfig.OutlineThickness );
 
-		mLinesWidth = std::move( layout.linesWidth );
-		mCachedWidth = layout.size.getWidth();
+		mLinesWidth = layout->linesWidth;
+		mCachedWidth = layout->size.getWidth();
 
-		for ( const ShapedGlyph& sg : layout.shapedGlyphs ) {
+		for ( const ShapedGlyph& sg : layout->shapedGlyphs ) {
 			if ( mString[sg.stringIndex] == '\t' )
 				continue;
 

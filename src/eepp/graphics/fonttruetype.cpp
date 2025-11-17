@@ -1207,21 +1207,8 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 		Uint8* current = pixelPtr;
 		Uint8* end = current + bufferSize;
 
-		if ( bitmap.pixel_mode == FT_PIXEL_MODE_LCD ) {
-			while ( current != end ) {
-				( *current++ ) = 0;
-				( *current++ ) = 0;
-				( *current++ ) = 0;
-				( *current++ ) = 0;
-			}
-		} else {
-			while ( current != end ) {
-				( *current++ ) = 255;
-				( *current++ ) = 255;
-				( *current++ ) = 255;
-				( *current++ ) = 0;
-			}
-		}
+		std::fill( (Uint32*)pixelPtr, (Uint32*)end,
+				   bitmap.pixel_mode == FT_PIXEL_MODE_LCD ? 0x00000000 : 0x00FFFFFF );
 
 		// Extract the glyph's pixels from the bitmap
 		const Uint8* pixels = bitmap.buffer;

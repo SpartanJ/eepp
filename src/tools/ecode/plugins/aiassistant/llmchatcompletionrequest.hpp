@@ -38,6 +38,8 @@ class LLMChatCompletionRequest {
 
 	void cancel();
 
+	bool isCancelled() const;
+
 	const std::string& getStream() const;
 
 	const std::string& getResponse() const { return mResponse; }
@@ -53,9 +55,13 @@ class LLMChatCompletionRequest {
 	std::string mResponse;
 	size_t mReadBytes{ 0 };
 	bool mCancel{ false };
+	bool mCancelled{ false };
 	bool mFirstMessage{ true };
 	bool mReasoning{ false };
+	bool mHadProgress{ false };
 	Uint64 mRequestId{ 0 };
+
+	void onCancel();
 };
 
 } // namespace ecode

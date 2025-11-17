@@ -4,7 +4,7 @@
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
-#include <eepp/graphics/textlayouter.hpp>
+#include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/texttransform.hpp>
 
 #include <optional>

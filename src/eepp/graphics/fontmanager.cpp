@@ -9,9 +9,9 @@ FontManager::FontManager() {}
 
 FontManager::~FontManager() {}
 
-Graphics::Font* FontManager::add( Graphics::Font* Font ) {
-	eeASSERT( NULL != Font );
-	return ResourceManager<Graphics::Font>::add( Font );
+Graphics::Font* FontManager::add( Graphics::Font* font ) {
+	eeASSERT( NULL != font );
+	return ResourceManager<Graphics::Font>::add( font );
 }
 
 void FontManager::setColorEmojiFont( Font* font ) {
@@ -86,6 +86,15 @@ void FontManager::setAntialiasing( FontAntialiasing antialiasing ) {
 				ttf->setAntialiasing( antialiasing );
 		}
 	}
+}
+
+Font* FontManager::getByInternalId( Uint32 internalId ) const {
+	for ( auto [_, font] : mResources ) {
+		if ( font->getType() == FontType::TTF &&
+			 static_cast<FontTrueType*>( font )->getFontInternalId() == internalId )
+			return font;
+	}
+	return nullptr;
 }
 
 }} // namespace EE::Graphics
