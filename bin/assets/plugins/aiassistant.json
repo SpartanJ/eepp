@@ -166,6 +166,11 @@
           "name": "gemini-2.5-flash",
           "display_name": "Gemini 2.5 Flash",
           "max_tokens": 1000000
+        },
+        {
+          "name": "gemini-3-pro-preview",
+          "display_name": "Gemini 3 Pro Preview",
+          "max_tokens": 1000000
         }
       ]
     },

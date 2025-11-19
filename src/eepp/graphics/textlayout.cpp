@@ -285,7 +285,8 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 						Glyph currentGlyph = currentRunFont->getGlyphByIndex(
 							glyphInfo[i].codepoint, characterSize, bold, italic, outlineThickness );
 
-						if ( ch != '\n' && ch != '\r' ) {
+						if ( ch != '\n' && ch != '\r' &&
+							 !( textDrawHints & TextHints::NoKerning ) ) {
 							pen.x += currentRunFont->getKerningFromGlyphIndex(
 								prevGlyphIndex, glyphInfo[i].codepoint, characterSize, bold, italic,
 								outlineThickness );
@@ -374,8 +375,10 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 				continue;
 			}
 
-			pen.x += font->getKerning( prevChar, curChar, characterSize, bold, italic,
-									   outlineThickness );
+			if ( !( textDrawHints & TextHints::NoKerning ) ) {
+				pen.x += font->getKerning( prevChar, curChar, characterSize, bold, italic,
+										   outlineThickness );
+			}
 			prevChar = curChar;
 
 			if ( curChar == '\t' ) {

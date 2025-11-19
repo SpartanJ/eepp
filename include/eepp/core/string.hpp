@@ -1032,8 +1032,15 @@ class EE_API String {
 
 	static bool isAscii( String::View str );
 
-	String::View view() const;
+	bool isLatin1() const;
 
+	static bool isLatin1( String::View str );
+
+	Uint32 getTextHints();
+
+	static Uint32 getTextHints( String::View str );
+
+	String::View view() const;
 
 	/* \brief Check if the position before a character is a grapheme boundary
 	**
@@ -1231,6 +1238,8 @@ struct TextHints {
 	enum Hints {
 		None = 0,
 		AllAscii = 1 << 0,
+		AllLatin1 = 1 << 1,
+		NoKerning = 1 << 2,
 	};
 };
 

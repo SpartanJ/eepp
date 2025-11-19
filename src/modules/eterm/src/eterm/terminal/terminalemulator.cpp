@@ -1014,6 +1014,7 @@ void TerminalEmulator::tnewline( int first_col ) {
 void TerminalEmulator::csiparse( void ) {
 	char *p = mCsiescseq.buf, *np;
 	long int v;
+	int sep = ';'; /* colon or semi-colon, but not both */
 
 	mCsiescseq.narg = 0;
 	if ( *p == '?' ) {
@@ -1031,7 +1032,9 @@ void TerminalEmulator::csiparse( void ) {
 			v = -1;
 		mCsiescseq.arg[mCsiescseq.narg++] = v;
 		p = np;
-		if ( *p != ';' || mCsiescseq.narg == ESC_ARG_SIZ )
+		if ( sep == ';' && *p == ':' )
+			sep = ':'; /* allow override to colon once */
+		if ( *p != sep || mCsiescseq.narg == ESC_ARG_SIZ )
 			break;
 		p++;
 	}
@@ -1272,15 +1275,21 @@ void TerminalEmulator::tsetattr( int* attr, int l ) {
 				if ( ( idx = tdefcolor( attr, &i, l ) ) >= 0 )
 					mTerm.c.attr.fg = idx;
 				break;
-			case 39:
+			case 39: /* set foreground color to default */
 				mTerm.c.attr.fg = mDefaultFg;
 				break;
 			case 48:
 				if ( ( idx = tdefcolor( attr, &i, l ) ) >= 0 )
 					mTerm.c.attr.bg = idx;
 				break;
-			case 49:
+			case 49: /* set background color to default */
 				mTerm.c.attr.bg = mDefaultBg;
+				break;
+			case 58:
+				/* This starts a sequence to change the color of
+				 * "underline" pixels. We don't support that and
+				 * instead eat up a following "5;n" or "2;r;g;b". */
+				tdefcolor( attr, &i, l );
 				break;
 			default:
 				if ( BETWEEN( attr[i], 30, 37 ) ) {
@@ -1393,7 +1402,7 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 					if ( *args != 1049 )
 						break;
 					/* FALLTHROUGH */
-				case 1048:
+				case 1048: /* save/restore cursor (like DECSC/DECRC) */
 					tcursor( ( set ) ? CURSOR_SAVE : CURSOR_LOAD );
 					break;
 				case 2004: /* 2004: bracketed paste mode */
@@ -1550,7 +1559,7 @@ void TerminalEmulator::csihandle( void ) {
 					}
 					break;
 				case 1: /* above */
-					if ( mTerm.c.y > 1 )
+					if ( mTerm.c.y > 0 )
 						tclearregion( 0, 0, mTerm.col - 1, mTerm.c.y - 1 );
 					tclearregion( 0, mTerm.c.y, mTerm.c.x, mTerm.c.y );
 					break;
@@ -1666,7 +1675,11 @@ void TerminalEmulator::csihandle( void ) {
 			tcursor( CURSOR_SAVE );
 			break;
 		case 'u': /* DECRC -- Restore cursor position (ANSI.SYS) */
-			tcursor( CURSOR_LOAD );
+			if ( mCsiescseq.priv ) {
+				goto unknown;
+			} else {
+				tcursor( CURSOR_LOAD );
+			}
 			break;
 		case ' ':
 			switch ( mCsiescseq.mode[1] ) {
@@ -1746,6 +1759,15 @@ void TerminalEmulator::strhandle( void ) {
 	strparse();
 	par = ( narg = mStrescseq.narg ) ? atoi( mStrescseq.args[0] ) : 0;
 
+	static constexpr unsigned int defaultfg = 258;
+	static constexpr unsigned int defaultbg = 259;
+	static constexpr unsigned int defaultcs = 256;
+	const struct {
+		int idx;
+		const char* str;
+	} osc_table[] = {
+		{ defaultfg, "foreground" }, { defaultbg, "background" }, { defaultcs, "cursor" } };
+
 	std::shared_ptr<ITerminalDisplay> dpy = mDpy.lock();
 
 	if ( !dpy )
@@ -1771,7 +1793,7 @@ void TerminalEmulator::strhandle( void ) {
 						mTerm.title = mStrescseq.args[1];
 					}
 					return;
-				case 52:
+				case 52: /* manipulate selection data */
 					if ( narg > 2 && mAllowWindowOps ) {
 						dec = base64dec( mStrescseq.args[2] );
 						if ( dec ) {
@@ -1780,6 +1802,23 @@ void TerminalEmulator::strhandle( void ) {
 						} else {
 							fprintf( stderr, "erresc: invalid base64\n" );
 						}
+					}
+					return;
+				case 10: /* set dynamic VT100 text foreground color */
+				case 11: /* set dynamic VT100 text background color */
+				case 12: /* set dynamic text cursor color */
+					if ( narg < 2 )
+						break;
+					p = mStrescseq.args[1];
+					if ( ( j = par - 10 ) < 0 || j >= (int)LEN( osc_table ) )
+						break; /* shouldn't be possible */
+
+					if ( !strcmp( p, "?" ) ) {
+						osc_color_response( par, osc_table[j].idx, 0 );
+					} else if ( xsetcolorname( osc_table[j].idx, p ) ) {
+						fprintf( stderr, "erresc: invalid %s color: %s\n", osc_table[j].str, p );
+					} else {
+						tfulldirt();
 					}
 					return;
 				case 4: /* color set */
@@ -1800,6 +1839,19 @@ void TerminalEmulator::strhandle( void ) {
 						 * are dirty
 						 */
 						redraw();
+					}
+					return;
+				case 110: /* reset dynamic VT100 text foreground color */
+				case 111: /* reset dynamic VT100 text background color */
+				case 112: /* reset dynamic text cursor color */
+					if ( narg != 1 )
+						break;
+					if ( ( j = par - 110 ) < 0 || j >= (int)LEN( osc_table ) )
+						break; /* shouldn't be possible */
+					if ( resetColor( osc_table[j].idx, NULL ) ) {
+						fprintf( stderr, "erresc: %s color not found\n", osc_table[j].str );
+					} else {
+						tfulldirt();
 					}
 					return;
 				case 7: {
@@ -2574,6 +2626,10 @@ void TerminalEmulator::redraw() {
 	draw();
 }
 
+int TerminalEmulator::xsetcolorname( int x, const char* name ) {
+	return resetColor( x, name );
+}
+
 void TerminalEmulator::xsetmode( int set, unsigned int mode ) {
 	auto dpy = mDpy.lock();
 	if ( dpy )
@@ -2585,6 +2641,40 @@ bool TerminalEmulator::xgetmode( const TerminalWinMode& mode ) {
 	if ( dpy )
 		return dpy->getMode( mode );
 	return false;
+}
+
+int TerminalEmulator::xgetcolor( int x, unsigned char* r, unsigned char* g, unsigned char* b ) {
+	// if ( !BETWEEN( x, 0, dc.collen - 1 ) )
+	// 	return 1;
+
+	// *r = dc.col[x].color.red >> 8;
+	// *g = dc.col[x].color.green >> 8;
+	// *b = dc.col[x].color.blue >> 8;
+
+	// return 0;
+
+	return 1;
+}
+
+void TerminalEmulator::osc_color_response( int num, int index, int is_osc4 ) {
+	int n;
+	char buf[32];
+	unsigned char r, g, b;
+
+	if ( xgetcolor( is_osc4 ? num : index, &r, &g, &b ) ) {
+		fprintf( stderr, "erresc: failed to fetch %s color %d\n", is_osc4 ? "osc4" : "osc",
+				 is_osc4 ? num : index );
+		return;
+	}
+
+	n = snprintf( buf, sizeof buf, "\033]%s%d;rgb:%02x%02x/%02x%02x/%02x%02x\007",
+				  is_osc4 ? "4;" : "", num, r, r, g, g, b, b );
+	if ( n < 0 || n >= (int)sizeof( buf ) ) {
+		fprintf( stderr, "error: %s while printing %s response\n",
+				 n < 0 ? "snprintf failed" : "truncation occurred", is_osc4 ? "osc4" : "osc" );
+	} else {
+		ttywrite( buf, n, 1 );
+	}
 }
 
 void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Vector2i& pos,

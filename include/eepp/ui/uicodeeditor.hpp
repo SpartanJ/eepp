@@ -823,6 +823,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	Client::Type getTextDocumentClientType() { return TextDocument::Client::Core; }
 
+	void setKerningEnabled( bool enabled );
+
+	bool isKerningEnabled() const;
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -869,6 +873,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mDisableCursorBlinkingAfterAMinuteOfInactivity{ true };
 	bool mAllowSelectingTextFromGutter{ true };
 	bool mTabStops{ false };
+	bool mKerningEnabled{ false };
 	DocumentView mDocView;
 	Clock mBlinkTimer;
 	Time mBlinkTime;
@@ -1174,6 +1179,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void addCursorAtMousePosition();
 
 	void addCursorsFromCurrentToMousePosition();
+
+	inline Uint32 getWidgetTextDrawHints() const {
+		return mKerningEnabled ? 0 : TextHints::NoKerning;
+	}
 };
 
 }} // namespace EE::UI

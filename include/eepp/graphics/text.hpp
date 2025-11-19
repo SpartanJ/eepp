@@ -39,7 +39,8 @@ class EE_API Text {
 	};
 
 	static inline bool canSkipShaping( Uint32 textDrawHints ) {
-		return Text::TextShaperOptimizations && ( textDrawHints & TextHints::AllAscii ) != 0;
+		return Text::TextShaperOptimizations &&
+			   ( textDrawHints & ( TextHints::AllAscii | TextHints::AllLatin1 ) ) != 0;
 	}
 
 	static Float tabAdvance( Float spaceHorizontalAdvance, Uint32 tabLength,
@@ -304,7 +305,9 @@ class EE_API Text {
 
 	const FontStyleConfig& getFontStyleConfig() const { return mFontStyleConfig; }
 
-	Uint32 getTextHints() const { return mTextHints; }
+	Uint32 getTextHints() const;
+
+	void setTextHints( Uint32 textHints );
 
   protected:
 	struct VertexCoords {

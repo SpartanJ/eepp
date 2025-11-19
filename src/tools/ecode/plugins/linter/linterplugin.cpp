@@ -1066,8 +1066,11 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 			std::string str( strSize, '~' );
 			String string( str );
 			line.setString( string );
-			Rectf box( pos - editor->getScreenPos(),
-					   { editor->getTextWidth( string ), lineHeight } );
+			line.setTextHints( TextHints::AllAscii );
+			Rectf box(
+				pos - editor->getScreenPos(),
+				{ editor->getTextWidth( string, std::optional<Float>{}, TextHints::AllAscii ),
+				  lineHeight } );
 			match.box[editor] = box;
 			line.draw( pos.x, pos.y + lineHeight * 0.5f );
 		}

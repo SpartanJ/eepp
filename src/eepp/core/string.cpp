@@ -1375,26 +1375,15 @@ bool String::contains( const String& needle ) const {
 	return String::contains( *this, needle );
 }
 
-template <typename StringType> static inline bool isAsciiTpl( const StringType& str ) {
-	for ( const auto& codepoint : str )
-		if ( codepoint > 127 )
-			return false;
-	return true;
-}
-
-bool String::isAscii( String::View str ) {
-	return isAsciiTpl<String::View>( str );
-}
-
-bool String::isAscii() const {
-	auto data = mString.data();
-	size_t len = mString.size();
-	size_t i = 0;
-
+template <typename StringType, auto Limit = 127>
+static inline bool isAsciiTpl( const StringType& str ) {
 	// #ifdef EE_STD_SIMD
+	// 	std::size_t i = 0;
+	// 	std::size_t len = str.size();
+	// 	auto data = str.data();
 	// 	using simd_type = simd::native_simd<char32_t>;
 	// 	constexpr size_t simd_size = simd_type::size();
-	// 	const simd_type ascii_limit = 127;
+	// 	const simd_type ascii_limit = Limit;
 	// 	for ( ; i + simd_size - 1 < len; i += simd_size ) {
 	// 		simd_type chunk;
 	// 		chunk.copy_from( &data[i], simd::element_aligned );
@@ -1404,11 +1393,42 @@ bool String::isAscii() const {
 	// 	}
 	// #endif
 
-	for ( ; i < len; ++i )
-		if ( data[i] > 127 )
+	for ( const auto& codepoint : str )
+		if ( codepoint > Limit )
 			return false;
-
 	return true;
+}
+
+bool String::isAscii( String::View str ) {
+	return isAsciiTpl<String::View>( str );
+}
+
+bool String::isAscii() const {
+	return isAsciiTpl<String::StringType>( mString );
+}
+
+bool String::isLatin1() const {
+	return isAsciiTpl<String::StringType, 255>( mString );
+}
+
+bool String::isLatin1( String::View str ) {
+	return isAsciiTpl<String::View, 255>( str );
+}
+
+Uint32 String::getTextHints() {
+	if ( isAscii() )
+		return TextHints::AllAscii | TextHints::AllLatin1;
+	if ( isLatin1() )
+		return TextHints::AllLatin1;
+	return 0;
+}
+
+Uint32 String::getTextHints( String::View str ) {
+	if ( isAscii( str ) )
+		return TextHints::AllAscii | TextHints::AllLatin1;
+	if ( isLatin1( str ) )
+		return TextHints::AllLatin1;
+	return 0;
 }
 
 String::View String::view() const {

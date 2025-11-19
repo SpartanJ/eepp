@@ -370,6 +370,8 @@ class TerminalEmulator final {
 	void xsetpointermotion( int );
 	void xsetsel( char* );
 	void xximspot( int, int );
+	int xgetcolor( int x, unsigned char* r, unsigned char* g, unsigned char* b );
+	void osc_color_response( int num, int index, int is_osc4 );
 
 	void trimMemory();
 

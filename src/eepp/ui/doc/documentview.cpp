@@ -61,12 +61,11 @@ Float DocumentView::computeOffsets( const String::View& string, const FontStyleC
 	return 0.f;
 }
 
-DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String::View& string,
-															const FontStyleConfig& fontStyle,
-															Float maxWidth, LineWrapMode mode,
-															bool keepIndentation, Uint32 tabWidth,
-															Float whiteSpaceWidth, Uint32 textHints,
-															bool tabStops, Float initialXOffset ) {
+DocumentView::LineWrapInfo
+DocumentView::computeLineBreaks( const String::View& string, const FontStyleConfig& fontStyle,
+								 Float maxWidth, LineWrapMode mode, bool keepIndentation,
+								 Uint32 tabWidth, Float whiteSpaceWidth, Uint32 textDrawHints,
+								 bool tabStops, Float initialXOffset ) {
 	LineWrapInfo info;
 	info.wraps.push_back( 0 );
 	if ( string.empty() || nullptr == fontStyle.Font || mode == LineWrapMode::NoWrap )
@@ -93,7 +92,7 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String::View& 
 		( fontStyle.Font->isMonospace() ||
 		  ( fontStyle.Font->getType() == FontType::TTF &&
 			static_cast<FontTrueType*>( fontStyle.Font )->isIdentifiedAsMonospace() &&
-			( textHints & TextHints::AllAscii ) ) );
+			( textDrawHints & TextHints::AllAscii ) ) );
 
 	size_t lastSpace = 0;
 	Uint32 prevChar = 0;
@@ -110,8 +109,10 @@ DocumentView::LineWrapInfo DocumentView::computeLineBreaks( const String::View& 
 			w = Text::tabAdvance( hspace, tabWidth, tabStops ? xoffset : std::optional<Float>{} );
 
 		if ( !isMonospace && curChar != '\r' ) {
-			w += fontStyle.Font->getKerning( prevChar, curChar, fontStyle.CharacterSize, bold,
-											 italic, outlineThickness );
+			if ( !( textDrawHints & TextHints::NoKerning ) ) {
+				w += fontStyle.Font->getKerning( prevChar, curChar, fontStyle.CharacterSize, bold,
+												 italic, outlineThickness );
+			}
 			prevChar = curChar;
 		}
 

@@ -106,6 +106,8 @@ class EE_API TextDocumentLine {
 
 	bool isAscii() const { return ( mFlags & TextHints::AllAscii ) != 0; }
 
+	bool isLatin1() const { return ( mFlags & TextHints::AllLatin1 ) != 0; }
+
 	Uint32 getTextHints() const {
 		if ( mDocMutex ) {
 			Lock lock( *mDocMutex );
@@ -116,13 +118,13 @@ class EE_API TextDocumentLine {
 
   protected:
 	String mText;
-	String::HashType mHash;
+	String::HashType mHash{ 0 };
 	Uint32 mFlags{ 0 };
 	std::shared_ptr<Mutex> mDocMutex;
 
 	void updateState() {
 		mHash = mText.getHash();
-		mFlags = mText.isAscii() ? TextHints::AllAscii : 0;
+		mFlags = mText.getTextHints();
 	}
 };
 
