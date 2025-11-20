@@ -131,6 +131,7 @@ class EE_API UITextView : public UIWidget {
 	Vector2f mRealAlignOffset;
 	Int32 mSelCurInit;
 	Int32 mSelCurEnd;
+	Uint32 mTextDrawHints{ 0 };
 	struct SelPosCache {
 		SelPosCache( Vector2f ip, Vector2f ep ) : initPos( ip ), endPos( ep ) {}
 

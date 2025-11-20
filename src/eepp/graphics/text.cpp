@@ -822,7 +822,7 @@ Vector2f Text::findCharacterPos( std::size_t index ) const {
 
 	return Text::findCharacterPos( index, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
 								   mString, mFontStyleConfig.Style, mTabWidth,
-								   mFontStyleConfig.OutlineThickness );
+								   mFontStyleConfig.OutlineThickness, {}, true, mTextHints );
 }
 
 Int32 Text::findCharacterFromPos( const Vector2i& pos, bool nearest ) const {

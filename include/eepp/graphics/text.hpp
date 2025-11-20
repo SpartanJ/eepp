@@ -40,7 +40,7 @@ class EE_API Text {
 
 	static inline bool canSkipShaping( Uint32 textDrawHints ) {
 		return Text::TextShaperOptimizations &&
-			   ( textDrawHints & ( TextHints::AllAscii | TextHints::AllLatin1 ) ) != 0;
+			   ( textDrawHints & ( TextHints::AllLatin1 | TextHints::AllAscii ) ) != 0;
 	}
 
 	static Float tabAdvance( Float spaceHorizontalAdvance, Uint32 tabLength,

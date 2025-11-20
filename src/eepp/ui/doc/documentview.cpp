@@ -92,7 +92,7 @@ DocumentView::computeLineBreaks( const String::View& string, const FontStyleConf
 		( fontStyle.Font->isMonospace() ||
 		  ( fontStyle.Font->getType() == FontType::TTF &&
 			static_cast<FontTrueType*>( fontStyle.Font )->isIdentifiedAsMonospace() &&
-			( textDrawHints & TextHints::AllAscii ) ) );
+			Text::canSkipShaping( textDrawHints ) ) );
 
 	size_t lastSpace = 0;
 	Uint32 prevChar = 0;

@@ -195,6 +195,7 @@ const String& UITextView::getText() const {
 UITextView* UITextView::setText( const String& text ) {
 	if ( mString != text ) {
 		mString = text;
+		mTextDrawHints = mString.getTextHints();
 		mTextCache->setString( mString );
 
 		recalculate();
@@ -208,6 +209,7 @@ UITextView* UITextView::setText( const String& text ) {
 UITextView* UITextView::setText( String&& text ) {
 	if ( mString != text ) {
 		mString = std::move( text );
+		mTextDrawHints = mString.getTextHints();
 		mTextCache->setString( mString );
 
 		recalculate();
@@ -473,7 +475,7 @@ void UITextView::setTheme( UITheme* Theme ) {
 }
 
 Float UITextView::getTextWidth() {
-	return hasTextOverflow() ? Text::getTextWidth( mString, mFontStyleConfig )
+	return hasTextOverflow() ? Text::getTextWidth( mString, mFontStyleConfig, 4, mTextDrawHints )
 							 : mTextCache->getTextWidth();
 }
 
@@ -878,16 +880,18 @@ void UITextView::loadFromXmlNode( const pugi::xml_node& node ) {
 
 void UITextView::updateTextOverflow() {
 	if ( hasTextOverflow() ) {
-		mTextOverflowWidth = Text::getTextWidth( mTextOverflow, mFontStyleConfig );
+		mTextOverflowWidth =
+			Text::getTextWidth( mTextOverflow, mFontStyleConfig, 4, mTextDrawHints );
 
 		Float maxWidth = mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right;
 
-		std::size_t charPos =
-			Text::findLastCharPosWithinLength( mString, maxWidth, mFontStyleConfig );
+		std::size_t charPos = Text::findLastCharPosWithinLength(
+			mString, maxWidth, mFontStyleConfig, 4, {}, mTextDrawHints );
 
 		if ( charPos != mString.size() ) {
 			maxWidth -= mTextOverflowWidth;
-			charPos = Text::findLastCharPosWithinLength( mString, maxWidth, mFontStyleConfig );
+			charPos = Text::findLastCharPosWithinLength( mString, maxWidth, mFontStyleConfig, 4, {},
+														 mTextDrawHints );
 			mTextCache->setString( mString.view().substr( 0, charPos ) + mTextOverflow );
 		} else {
 			if ( mFlags & UI_WORD_WRAP ) {
