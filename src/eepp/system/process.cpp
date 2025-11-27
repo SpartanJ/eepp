@@ -270,11 +270,11 @@ bool Process::kill() {
 	mShuttingDown = true;
 	subprocess_init_shutdown( PROCESS_PTR );
 	if ( PROCESS_PTR->alive ) {
+		int ret = subprocess_terminate( PROCESS_PTR );
 		destroy();
-		int ret = 0 == subprocess_terminate( PROCESS_PTR );
 		eeSAFE_FREE( mProcess );
 		mKilled = true;
-		return ret;
+		return 0 == ret;
 	}
 	return false;
 }

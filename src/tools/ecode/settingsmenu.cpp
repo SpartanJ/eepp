@@ -2373,17 +2373,6 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 				   findIcon( "folder-open" ) )
 			->setId( "open_all_files_in_folder" );
 	} else {
-		if ( file.isRegularFile() ) {
-			auto curDir( mApp->getCurrentWorkingDir() );
-			FileSystem::dirAddSlashAtEnd( curDir );
-			if ( curDir == file.getDirectoryPath() ) {
-				mProjectTreeMenu
-					->add( i18n( "new_file_in_file_folder_ellipsis", "New File in File Folder..." ),
-						   findIcon( "file-add" ) )
-					->setId( "new_file" );
-			}
-		}
-
 		mProjectTreeMenu->add( i18n( "open_file", "Open File" ), findIcon( "document-open" ) )
 			->setId( "open_file" );
 		mProjectTreeMenu

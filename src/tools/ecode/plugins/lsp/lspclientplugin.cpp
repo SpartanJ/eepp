@@ -1080,7 +1080,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		auto list = { "lsp-go-to-definition",
 					  "lsp-go-to-declaration",
 					  "lsp-go-to-implementation",
-					  "lspz-go-to-type-definition",
+					  "lsp-go-to-type-definition",
 					  "lsp-switch-header-source",
 					  "lsp-symbol-info",
 					  "lsp-symbol-references",

@@ -438,7 +438,7 @@ wchar_t* Utf8ToUtf16_C( const char* utf8Str ) {
 		utf8Str,
 		-1,
 		NULL,
-		0	
+		0
 	);
 
 	if ( wideCharCount == 0 ) {
@@ -896,7 +896,7 @@ int subprocess_create_ex(const char *const commandLine[], int options,
 	  free( working_directoryW );
     return -1;
   }
-  
+
   free( commandLineCombinedW );
   free( used_environment );
   free( working_directoryW );
