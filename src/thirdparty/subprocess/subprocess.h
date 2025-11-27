@@ -388,6 +388,7 @@ __declspec(dllimport) int __stdcall CreateProcessA(
 __declspec(dllimport) int __stdcall CloseHandle(void *);
 __declspec(dllimport) unsigned long __stdcall WaitForSingleObject(
     void *, unsigned long);
+__declspec( dllimport ) int __stdcall CancelIo( void* );
 __declspec(dllimport) int __stdcall GetExitCodeProcess(
     void *, unsigned long *lpExitCode);
 __declspec(dllimport) int __stdcall TerminateProcess(void *, unsigned int);
@@ -1255,10 +1256,31 @@ int subprocess_destroy(struct subprocess_s *const process) {
     process->stdin_file = SUBPROCESS_NULL;
   }
 
-  if (process->stdout_file) {
+  if ( process->stdout_file ) {
+#if defined(_WIN32)
+	  if ( process->options & subprocess_option_enable_async ) {
+		  /* Get the underlying OS handle from the FILE stream */
+		  int fd = _fileno( process->stdout_file );
+		  void* handle = SUBPROCESS_PTR_CAST( void*, _get_osfhandle( fd ) );
+
+		  if ( handle != (void*)-1 ) {
+			  CancelIo( handle );
+		  }
+	  }
+#endif
     fclose(process->stdout_file);
 
     if (process->stdout_file != process->stderr_file) {
+#if defined(_WIN32)
+		if ( process->options & subprocess_option_enable_async ) {
+			int fd = _fileno( process->stderr_file );
+			void* handle = SUBPROCESS_PTR_CAST( void*, _get_osfhandle( fd ) );
+
+			if ( handle != (void*)-1 ) {
+				CancelIo( handle );
+			}
+		}
+#endif
       fclose(process->stderr_file);
     }
 

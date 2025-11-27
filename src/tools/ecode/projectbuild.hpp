@@ -305,13 +305,13 @@ class ProjectBuildManager {
 
 	bool hasCleanCommands( const std::string& name );
 
-	bool loaded() const { return mLoadedWithBuilds; }
+	bool loaded() const;
 
-	bool loading() const { return mLoading; }
+	bool loading() const;
 
-	bool isBuilding() const { return mBuilding; }
+	bool isBuilding() const;
 
-	bool isRunningApp() const { return mRunning; }
+	bool isRunningApp() const;
 
 	void cancelBuild();
 

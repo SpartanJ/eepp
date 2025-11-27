@@ -1092,7 +1092,10 @@ void ProjectBuildManager::runApp( const ProjectBuildCommand& cmd, const ProjectB
 				progressFn( 0, std::move( data ), &cmd );
 		} while ( bytesRead != 0 && mProcessRun->isAlive() && !mShuttingDown && !mCancelRun );
 
-		if ( mShuttingDown || mCancelRun ) {
+		if ( mShuttingDown )
+			return;
+
+		if ( mCancelRun ) {
 			if ( mProcessRun )
 				mProcessRun->kill();
 			mCancelRun = false;
@@ -1175,6 +1178,22 @@ void ProjectBuildManager::buildSidePanelTab() {
 	mTab->setTextAsFallback( true );
 
 	updateSidePanelTab();
+}
+
+bool ProjectBuildManager::loaded() const {
+	return mLoadedWithBuilds;
+}
+
+bool ProjectBuildManager::loading() const {
+	return mLoading;
+}
+
+bool ProjectBuildManager::isBuilding() const {
+	return mBuilding;
+}
+
+bool ProjectBuildManager::isRunningApp() const {
+	return mRunning;
 }
 
 void ProjectBuildManager::updateSidePanelTab() {

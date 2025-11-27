@@ -260,13 +260,13 @@ size_t Process::write( const std::string_view& buffer ) {
 }
 
 bool Process::join( int* const returnCodeOut ) {
-	eeASSERT( mProcess != nullptr );
-	return 0 == subprocess_join( PROCESS_PTR, returnCodeOut );
+	return mProcess != nullptr && 0 == subprocess_join( PROCESS_PTR, returnCodeOut );
 }
 
 bool Process::kill() {
-	if ( mProcess == nullptr )
+	if ( mProcess == nullptr || mKilled || mKilling )
 		return true;
+	mKilling = true;
 	mShuttingDown = true;
 	subprocess_init_shutdown( PROCESS_PTR );
 	if ( PROCESS_PTR->alive ) {
