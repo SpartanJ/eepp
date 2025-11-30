@@ -1176,6 +1176,7 @@ void LSPClientServer::initialize() {
 	showDocument["support"] = true;
 
 	json workspace;
+	workspace["configuration"] = true;
 	workspace["applyEdit"] = true;
 	workspace["executeCommand"] = json{ { "dynamicRegistration", true } };
 	workspace["workspaceFolders"] = true;
@@ -1255,10 +1256,14 @@ void LSPClientServer::initialize() {
 #endif
 			mCapabilities.languages = mLanguagesSupported;
 			mReady = true;
-			write( newRequest( "initialized" ), [this]( const IdType&, const json& ) {
-				if ( !mLSP.settings.empty() )
-					didChangeConfiguration( mLSP.settings, mWorkspaceFolder.getFSPath(), true );
-			} );
+
+			write( newRequest( "initialized" ) );
+
+			// Send configuration immediately after initialized
+			if ( !mLSP.settings.empty() ) {
+				didChangeConfiguration( mLSP.settings, mWorkspaceFolder.getFSPath(), true );
+			}
+
 			sendQueuedMessages();
 			notifyServerInitialized();
 
@@ -2020,6 +2025,83 @@ void LSPClientServer::processRequest( const json& msg ) {
 				PluginMessageType::ShowDocument, PluginMessageFormat::ShowDocument, &showDoc );
 		}
 		write( newSuccessResult( msgid ) );
+		return;
+	} else if ( method == "workspace/configuration" ) {
+		json results = json::array();
+		if ( msg.contains( MEMBER_PARAMS ) && msg[MEMBER_PARAMS].contains( "items" ) ) {
+			const auto& items = msg[MEMBER_PARAMS]["items"];
+			if ( items.is_array() ) {
+				for ( const auto& item : items ) {
+					json val = json::object();
+					if ( item.contains( "section" ) && item["section"].is_string() ) {
+						std::string section = item["section"].get<std::string>();
+
+						// Special handling for formatting options to return live editor settings
+						if ( section == "formattingOptions" ) {
+							URI docUri;
+							if ( item.contains( "scopeUri" ) ) {
+								docUri = URI( item["scopeUri"].get<std::string>() );
+							}
+
+							int tabWidth = 4;
+							bool useSpaces = true;
+
+							UITab* tab =
+								mManager->getPluginManager()->getSplitter()->isDocumentOpen(
+									docUri );
+							if ( tab ) {
+								UICodeEditor* editor =
+									tab->getOwnedWidget()->asType<UICodeEditor>();
+								tabWidth = editor->getTabWidth();
+								useSpaces = editor->getDocument().getIndentType() ==
+											TextDocument::IndentType::IndentSpaces;
+							}
+
+							val["tabSize"] = tabWidth;
+							val["insertSpaces"] = useSpaces;
+							val["indentSize"] = tabWidth;
+
+							results.push_back( val );
+							continue;
+						}
+
+						if ( !section.empty() ) {
+							const json* current = &mLSP.settings;
+							bool found = true;
+							size_t start = 0;
+							size_t end = section.find( '.' );
+
+							// Traverse dot-notation: "typescript.format" ->
+							// settings["typescript"]["format"]
+							while ( start != std::string::npos ) {
+								std::string part = section.substr( start, end - start );
+								if ( current->is_object() && current->contains( part ) ) {
+									current = &current->at( part );
+								} else {
+									found = false;
+									break;
+								}
+								if ( end == std::string::npos )
+									break;
+								start = end + 1;
+								end = section.find( '.', start );
+							}
+
+							if ( found ) {
+								val = *current;
+							}
+						} else {
+							// Empty section means return the whole settings object
+							val = mLSP.settings;
+						}
+					}
+					results.push_back( val );
+				}
+			}
+		}
+		json response = newID( msgid );
+		response[MEMBER_RESULT] = results;
+		write( std::move( response ) );
 		return;
 	}
 	write( newError( LSPErrorCode::MethodNotFound, method ), nullptr, nullptr, msgid );
