@@ -10,7 +10,7 @@ case "$OSTYPE" in
   darwin*)
     perl -i -pe "s/#define ECODE_COMMIT_NUMBER [0-9]+/#define ECODE_COMMIT_NUMBER $COMMIT_NUMBER/" "$FILE_PATH"
     ;;
-  freebsd*|openbsd*|netbsd*|dragonfly*)
+  freebsd*|openbsd*|netbsd*|dragonfly*|solaris*)
     gsed -i "s/#define ECODE_COMMIT_NUMBER [0-9]\+/#define ECODE_COMMIT_NUMBER $COMMIT_NUMBER/" "$FILE_PATH"
     ;;
   *)
