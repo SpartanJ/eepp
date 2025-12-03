@@ -31,9 +31,9 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-premake5 --with-text-shaper gmake || exit
+premake4 --with-text-shaper gmake || exit
 cd make/bsd || exit
-gmake -j"$(nproc)" config=release_x86_64 ecode || exit
+gmake -j"$(nproc)" config=release ecode || exit
 cd "$DIRPATH" || exit
 rm -rf ./ecode.app
 mkdir -p ecode.app/assets
@@ -84,7 +84,7 @@ ECODE_PATCH_LEVEL=$(grep "define ECODE_PATCH_LEVEL" $VERSIONPATH | awk '{print $
 ECODE_VERSION="$ECODE_MAJOR_VERSION"."$ECODE_MINOR_VERSION"."$ECODE_PATCH_LEVEL"
 fi
 
-ECODE_NAME=ecode-freebsd-"$ECODE_VERSION"-x86_64
+ECODE_NAME=ecode-openbsd-"$ECODE_VERSION"-x86_64
 
 mv ecode.app/AppRun ecode.app/ecode
 mv ecode.app ecode
@@ -93,3 +93,4 @@ echo "Generating $ECODE_NAME.tar.gz"
 tar -czf "$ECODE_NAME".tar.gz ecode
 
 mv ecode ecode.app
+
