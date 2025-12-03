@@ -33,7 +33,13 @@ done
 
 premake4 --with-text-shaper gmake || exit
 cd make/bsd || exit
-gmake -j"$(nproc)" config=release ecode || exit
+if [ -x /usr/bin/nproc ]; then # nproc is only available on FreeBSD 13.2 and later
+  parallel_tasks=$(/usr/bin/nproc)
+else
+  parallel_tasks=$(getconf NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)
+  # the former is the number of online cpus, the later is the total number of cpus
+fi
+gmake -j"${parallel_tasks}" config=release ecode || exit
 cd "$DIRPATH" || exit
 rm -rf ./ecode.app
 mkdir -p ecode.app/assets
@@ -93,4 +99,5 @@ echo "Generating $ECODE_NAME.tar.gz"
 tar -czf "$ECODE_NAME".tar.gz ecode
 
 mv ecode ecode.app
+
 
