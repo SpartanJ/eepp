@@ -53,7 +53,6 @@ then
 else
   parallel_tasks=$(getconf NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)
   # the former is the number of online cpus, the later is the total number of cpus
-  # note: if you are on illumos, use psrinfo -n and psrinfo -p instead
 fi
 gmake -j"${parallel_tasks}" config="${CONFIG_NAME}" ecode || exit
 
