@@ -6,7 +6,7 @@ COMMIT_NUMBER=$(git rev-list "$(git tag --sort=-creatordate | grep ecode | sed -
 
 FILE_PATH="../../src/tools/ecode/version.hpp"
 
-case "$OSTYPE" in
+case "$(echo "$OSTYPE" | tr 'A-Z' 'a-z')" in
   darwin*)
     perl -i -pe "s/#define ECODE_COMMIT_NUMBER [0-9]+/#define ECODE_COMMIT_NUMBER $COMMIT_NUMBER/" "$FILE_PATH"
     ;;
