@@ -717,6 +717,8 @@ class EE_API TextDocument {
 
 	void joinLines();
 
+	void duplicateLineOrSelection();
+
 	void moveToNextParagraph();
 
 	void moveToPreviousParagraph();

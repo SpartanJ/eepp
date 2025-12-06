@@ -4378,6 +4378,46 @@ void TextDocument::joinLines() {
 	mergeSelection();
 }
 
+void TextDocument::duplicateLineOrSelection() {
+	AtomicBoolScopedOp op( mRunningTransaction, true );
+
+	// Must process from bottom to top to not invalidate positions of cursors above.
+	for ( Int64 i = mSelection.size() - 1; i >= 0; --i ) {
+		TextRange sel = getSelectionIndex( i );
+
+		if ( sel.hasSelection() ) {
+			TextRange normalizedSel = sel.normalized();
+			String selectedText = getText( normalizedSel );
+			if ( !selectedText.empty() ) {
+				TextPosition insertionPoint = normalizedSel.end();
+				TextPosition endOfInsertion = insert( i, insertionPoint, selectedText );
+
+				// After duplicating selection, select the new duplicated text.
+				// The selection direction should be preserved.
+				if ( sel.isNormalized() ) {
+					setSelection( i, { insertionPoint, endOfInsertion } );
+				} else {
+					setSelection( i, { endOfInsertion, insertionPoint } );
+				}
+			}
+		} else {
+			Int64 lineNum = sel.start().line();
+			// Don't duplicate the last empty line.
+			if ( lineNum >= (Int64)linesCount() - 1 && getLineLength( lineNum ) <= 1 ) {
+				continue;
+			}
+
+			String lineText = getLineText( lineNum );
+			TextPosition insertionPoint = { lineNum + 1, 0 };
+			insert( i, insertionPoint, lineText );
+			TextPosition newCursorPos = { lineNum + 1, sel.start().column() };
+			setSelection( i, newCursorPos );
+		}
+	}
+
+	mergeSelection();
+}
+
 TextPosition TextDocument::findPreviousEmptyLines( size_t selIdx ) {
 	Int64 startLine = mSelection[selIdx].normalized().start().line() - 1;
 	bool found = false;
@@ -4625,6 +4665,7 @@ void TextDocument::initializeCommands() {
 	mCommands["from-base64"] = [this] { fromBase64(); };
 	mCommands["trim-trailing-whitespace"] = [this] { trimTrailingWhitespace(); };
 	mCommands["join-lines"] = [this] { joinLines(); };
+	mCommands["duplicate-line-or-selection"] = [this] { duplicateLineOrSelection(); };
 	mCommands["convert-indentation-to-tabs"] = [this] { convertIndentationToTabs(); };
 	mCommands["convert-indentation-to-spaces"] = [this] { convertIndentationToSpaces(); };
 

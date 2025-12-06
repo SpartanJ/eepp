@@ -12,11 +12,9 @@ framework heavily focused on the development of rich graphical user interfaces.
 
 ### Cross platform functionality
 
-* Official support for Linux, Windows, macOS, Android and iOS.
+* Official support for Linux, Windows, macOS, FreeBSD, Haiku, Android and iOS.
 
 * Exports to HTML5 using emscripten with some minor limitations.
-
-* Also works on BSD and Haiku.
 
 ### UI Module
 
