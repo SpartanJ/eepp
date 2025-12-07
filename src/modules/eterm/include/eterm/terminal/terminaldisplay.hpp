@@ -264,6 +264,16 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	void setKeepAlive( bool keepAlive );
 
+	bool useFrameBuffer() const;
+
+	const std::string& getProgram() const { return mProgram; }
+
+	const std::vector<std::string>& getArgs() const { return mArgs; }
+
+	const std::unordered_map<std::string, std::string>& getEnv() { return mEnv; }
+
+	const std::string& getWorkingDir() const { return mWorkingDir; }
+
   protected:
 	EE::Window::Window* mWindow;
 	std::vector<TerminalGlyph> mBuffer;

@@ -1799,4 +1799,8 @@ Rectf TerminalDisplay::updateIMELocation() {
 	return r;
 }
 
+bool TerminalDisplay::useFrameBuffer() const {
+	return mUseFrameBuffer;
+}
+
 }} // namespace eterm::Terminal

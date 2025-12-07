@@ -114,6 +114,8 @@ class UITerminal : public UIWidget {
 
 	void setColorScheme( const TerminalColorScheme& colorScheme );
 
+	void restart();
+
   protected:
 	std::string mTitle;
 	bool mIsCustomTitle{ false };
@@ -183,6 +185,8 @@ class UITerminal : public UIWidget {
 	virtual void updateScrollPosition();
 
 	virtual void onScrollChange();
+
+	void registerNewTerminal();
 };
 
 }} // namespace eterm::UI

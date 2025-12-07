@@ -109,6 +109,8 @@ json ProjectBuild::serialize( const ProjectBuild::Map& builds ) {
 					step["enabled"] = run->enabled;
 				if ( run->runInTerminal )
 					step["run_in_terminal"] = run->runInTerminal;
+				if ( run->reusePreviousTerminal )
+					step["reuse_previous_terminal"] = run->reusePreviousTerminal;
 				jrun.push_back( step );
 			}
 		}
@@ -360,6 +362,13 @@ ProjectBuildManager::~ProjectBuildManager() {
 	if ( mUISceneNode && !SceneManager::instance()->isShuttingDown() && mSidePanel && mTab ) {
 		mSidePanel->removeTab( mTab );
 	}
+
+	if ( mUISceneNode && !SceneManager::instance()->isShuttingDown() && mApp->getSplitter() &&
+		 mLastUsedTerm && mApp->getSplitter()->ownedWidgetExists( mLastUsedTerm ) &&
+		 mLastUsedTermCloseCbId ) {
+		mLastUsedTerm->removeEventListener( mLastUsedTermCloseCbId );
+	}
+
 	if ( mUISceneNode && mUISceneNode->getRoot()->querySelector( "#build_settings_new_name" ) )
 		addNewBuild();
 
@@ -550,6 +559,7 @@ ProjectBuild::Map ProjectBuild::deserialize( const json& j, const std::string& p
 				rstep->workingDir = step.value( "working_dir", "" );
 				rstep->enabled = step.value( "enabled", true );
 				rstep->runInTerminal = step.value( "run_in_terminal", false );
+				rstep->reusePreviousTerminal = step.value( "reuse_previous_terminal", false );
 				b.mRun.emplace_back( std::move( rstep ) );
 			}
 		}
@@ -838,14 +848,26 @@ void ProjectBuildManager::runConfig( StatusAppOutputController* saoc ) {
 
 		auto cmd = finalBuild.cmd + ( !finalBuild.args.empty() ? ( " " + finalBuild.args ) : "" );
 		if ( finalBuild.runInTerminal ) {
-			UITerminal* term = mApp->getTerminalManager()->createTerminalInSplitter(
-				finalBuild.workingDir, "", {}, {}, false );
+			bool mustReuseLastUsedTerm = finalBuild.reusePreviousTerminal && mLastUsedTerm &&
+										 mApp->getSplitter()->ownedWidgetExists( mLastUsedTerm );
+
+			UITerminal* term = mustReuseLastUsedTerm
+								   ? mLastUsedTerm
+								   : mApp->getTerminalManager()->createTerminalInSplitter(
+										 finalBuild.workingDir, "", {}, {}, false );
 
 			Log::info( "Running \"%s\" in terminal", cmd );
 			if ( term == nullptr || term->getTerm() == nullptr ) {
 				mApp->getTerminalManager()->openInExternalTerminal( cmd, finalBuild.workingDir );
 			} else {
+				if ( mustReuseLastUsedTerm ) {
+					term->restart();
+				} else {
+					mLastUsedTermCloseCbId =
+						term->on( Event::OnClose, [this]( auto ) { mLastUsedTerm = nullptr; } );
+				}
 				term->executeFile( cmd );
+				mLastUsedTerm = term;
 			}
 		} else {
 			Log::info( "Running \"%s\" in app", cmd );

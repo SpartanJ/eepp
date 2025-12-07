@@ -596,6 +596,23 @@ UICodeEditorSplitter::getTabFromOwnedWidgetId( const std::string& id ) {
 	return ret;
 }
 
+bool UICodeEditorSplitter::ownedWidgetExists( UIWidget* widget ) {
+	if ( !widget )
+		return false;
+	bool found = false;
+	forEachTabWidgetStoppable( [&found, widget]( UITabWidget* tabWidget ) {
+		for ( size_t i = 0; i < tabWidget->getTabCount(); ++i ) {
+			UITab* tab = tabWidget->getTab( i );
+			if ( tab->getOwnedWidget() == widget ) {
+				found = true;
+				return true;
+			}
+		}
+		return false;
+	} );
+	return found;
+}
+
 bool UICodeEditorSplitter::removeTabWithOwnedWidgetId( const std::string& id, bool destroyOwnedNode,
 													   bool immediateClose ) {
 	auto ret = getTabFromOwnedWidgetId( id );

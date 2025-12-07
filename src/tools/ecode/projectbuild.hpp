@@ -15,6 +15,11 @@ using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
 
+namespace eterm::UI {
+class UITerminal;
+}
+using namespace eterm::UI;
+
 namespace ecode {
 
 class App;
@@ -100,6 +105,7 @@ struct ProjectBuildStep {
 	std::string name;
 	bool enabled{ true };
 	bool runInTerminal{ false };
+	bool reusePreviousTerminal{ false };
 };
 
 using ProjectBuildSteps = std::vector<std::unique_ptr<ProjectBuildStep>>;
@@ -353,6 +359,7 @@ class ProjectBuildManager {
 	UISceneNode* mUISceneNode{ nullptr };
 	UITab* mTab{ nullptr };
 	App* mApp{ nullptr };
+	UITerminal* mLastUsedTerm{ nullptr };
 	std::unique_ptr<Process> mProcess;
 	std::unique_ptr<Process> mProcessRun;
 	ProjectBuild mNewBuild;
@@ -364,6 +371,7 @@ class ProjectBuildManager {
 	bool mCancelRun{ false };
 	bool mRunning{ false };
 	std::unordered_map<Node*, std::set<Uint32>> mCbs;
+	Uint32 mLastUsedTermCloseCbId{ 0 };
 
 	void runBuild( const std::string& buildName, const std::string& buildType,
 				   const ProjectBuildi18nFn& i18n, const ProjectBuildCommandsRes& res,

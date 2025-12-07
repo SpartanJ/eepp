@@ -238,6 +238,8 @@ class UIBuildStep : public UILinearLayout {
 			UIDataBindString::New( &mStep->workingDir, findByClass( "input_working_dir" ) );
 		mDataBindHolder +=
 			UIDataBindBool::New( &mStep->runInTerminal, findByClass( "run_in_terminal" ) );
+		mDataBindHolder += UIDataBindBool::New( &mStep->reusePreviousTerminal,
+												findByClass( "reuse_previous_terminal" ) );
 	}
 
   protected:
@@ -274,7 +276,10 @@ class UIBuildStep : public UILinearLayout {
 			<TextView lh="mp" min-width="100dp" text="@string(working_dir, Working Directory)" focusable="false" />
 			<Input class="input_working_dir" lw="0" lw8="1" />
 		</hbox>
-		<CheckBox class="run_in_terminal" text="@string(run_in_terminal, Run in terminal)" visible="false" />
+		<hbox lw="mp">
+			<CheckBox class="run_in_terminal" text="@string(run_in_terminal, Run in terminal)" visible="false" />
+			<CheckBox margin-left="8dp" class="reuse_previous_terminal" text="@string(reuse_previous_terminal, Reuse previous terminal)" visible="false" />
+		</hbox>
 	</vbox>
 )xml";
 
@@ -283,8 +288,20 @@ class UIBuildStep : public UILinearLayout {
 		if ( !isBuildOrClean() ) {
 			findByClass( "enabled_checkbox" )->setVisible( false );
 			auto runInTerminal = findByClass( "run_in_terminal" )->asType<UICheckBox>();
+
+			auto reusePreviousTerminal =
+				findByClass( "reuse_previous_terminal" )->asType<UICheckBox>();
+
 			runInTerminal->setVisible( true );
 			runInTerminal->setChecked( buildStep->runInTerminal );
+			runInTerminal->on( Event::OnValueChange,
+							   [reusePreviousTerminal, runInTerminal]( auto ) {
+								   reusePreviousTerminal->setEnabled( runInTerminal->isChecked() );
+							   } );
+
+			reusePreviousTerminal->setVisible( true );
+			reusePreviousTerminal->setEnabled( buildStep->runInTerminal );
+			reusePreviousTerminal->setChecked( buildStep->reusePreviousTerminal );
 		}
 
 		findByClass( "details_but" )->onClick( [this]( const MouseEvent* event ) {

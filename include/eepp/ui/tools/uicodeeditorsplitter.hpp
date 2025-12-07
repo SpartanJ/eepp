@@ -116,6 +116,8 @@ class EE_API UICodeEditorSplitter {
 
 	std::vector<std::pair<UITab*, UITabWidget*>> getTabFromOwnedWidgetId( const std::string& id );
 
+	bool ownedWidgetExists( UIWidget* widget );
+
 	bool removeTabWithOwnedWidgetId( const std::string& id, bool destroyOwnedNode = true,
 									 bool immediateClose = false );
 

@@ -47,13 +47,8 @@ void UITerminal::draw() {
 	}
 }
 
-UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay ) :
-	UIWidget( "terminal" ),
-	mKeyBindings( getInput() ),
-	mVScroll( UIScrollBar::NewVertical() ),
-	mTerm( terminalDisplay ) {
-	mFlags |= UI_TAB_STOP | UI_SCROLLABLE;
-	if ( !terminalDisplay )
+void UITerminal::registerNewTerminal() {
+	if ( !mTerm )
 		return;
 	mTerm->pushEventCallback( [this]( const TerminalDisplay::Event& event ) {
 		switch ( event.type ) {
@@ -77,7 +72,17 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 			}
 		}
 	} );
+}
 
+UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay ) :
+	UIWidget( "terminal" ),
+	mKeyBindings( getInput() ),
+	mVScroll( UIScrollBar::NewVertical() ),
+	mTerm( terminalDisplay ) {
+	mFlags |= UI_TAB_STOP | UI_SCROLLABLE;
+	if ( !terminalDisplay )
+		return;
+	registerNewTerminal();
 	mVScroll->setParent( this );
 	mVScroll->on( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
 
@@ -597,6 +602,14 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 	menu->on( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
 	mCurrentMenu = menu;
 	return true;
+}
+
+void UITerminal::restart() {
+	auto win = SceneManager::instance()->getUISceneNode()->getWindow();
+	mTerm = TerminalDisplay::create(
+		win, mTerm->getFont(), mTerm->getFontSize(), mTerm->getSize(), mTerm->getProgram(),
+		mTerm->getArgs(), mTerm->getWorkingDir(), mTerm->getTerminal()->getHistorySize(), nullptr,
+		mTerm->useFrameBuffer(), mTerm->getKeepAlive(), mTerm->getEnv() );
 }
 
 }} // namespace eterm::UI
