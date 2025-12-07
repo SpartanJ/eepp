@@ -423,8 +423,7 @@ Restart ecode to see the changes.</string>
 	<string name="open_a_file">打开一个文件</string>
 	<string name="open_a_folder">打开一个文件夹</string>
 	<string name="open_command_palette">打开命令网络</string>
-	<string name="open_containing_folder">打开当前文件夹</string>
-	<string name="open_containing_folder_ellipsis">打开当前文件夹...</string>
+	<string name="open_containing_folder_in_fm">打开当前文件夹</string>
 	<string name="open_context_menu">打开上下文菜单</string>
 	<string name="open_document_symbol_search">打开文档符号查找</string>
 	<string name="open_documents">打开文档</string>
@@ -433,7 +432,7 @@ Restart ecode to see the changes.</string>
 	<string name="open_file_from_web_ellipsis">从网络打开文件...</string>
 	<string name="open_first_a_folder">请先打开文件夹。</string>
 	<string name="open_folder">打开文件夹</string>
-	<string name="open_folder_ellipsis">打开文件夹...</string>
+	<string name="open_folder_in_fm">打开文件夹</string>
 	<string name="open_global_search">全局搜索</string>
 	<string name="open_in_horizontal_split">在新水平分页中打开</string>
 	<string name="open_in_new_window">在新窗口中打开</string>
@@ -644,7 +643,7 @@ file in the directory tree.</string>
 	<string name="uicodeeditor_copy_file_path_and_position">Copy File Path and Position</string>
 	<string name="uicodeeditor_cut">Paste</string>
 	<string name="uicodeeditor_delete">Delete</string>
-	<string name="uicodeeditor_open_containing_folder_ellipsis">Open Containing Folder...</string>
+	<string name="uicodeeditor_open_containing_folder_in_fm">Open Containing Folder in File Manager</string>
 	<string name="uicodeeditor_paste">粘贴</string>
 	<string name="uicodeeditor_redo">重做</string>
 	<string name="uicodeeditor_select_all">全选</string>

@@ -142,6 +142,11 @@ class PluginContextProvider {
 									  bool forcePreview = false, bool forceTab = false ) = 0;
 
 	virtual void loadImageFromPath( const std::string& path ) = 0;
+
+	virtual void loadFolder( std::string path, bool forceNewWindow = false ) = 0;
+
+	virtual void showGlobalSearch( bool searchAndReplace,
+								   std::optional<std::string> pathFilters = {} ) = 0;
 };
 
 } // namespace ecode

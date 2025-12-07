@@ -47,9 +47,13 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 			   getKeybind( "open-file" ) )
 		->setId( "open-file" );
 	mSettingsMenu
-		->add( i18n( "open_folder_ellipsis", "Open Folder..." ), findIcon( "document-open" ),
-			   getKeybind( "open-folder" ) )
+		->add( i18n( "open_folder_in_fm", "Open Folder in File Manager" ),
+			   findIcon( "document-open" ), getKeybind( "open-folder" ) )
 		->setId( "open-folder" );
+	mSettingsMenu
+		->add( i18n( "open_folder_in_new_window", "Open Folder in New ecode Window" ),
+			   findIcon( "folder-open" ) )
+		->setId( "open-folder-in-new-window" );
 	mSettingsMenu
 		->add( i18n( "open_file_from_web_ellipsis", "Open File from Web..." ),
 			   findIcon( "download-cloud" ), getKeybind( "download-file-web" ) )
@@ -1066,7 +1070,7 @@ UIMenu* SettingsMenu::createEditMenu() {
 	mEditMenu->addSeparator();
 
 	mEditMenu
-		->add( i18n( "open_containing_folder_ellipsis", "Open Containing Folder..." ),
+		->add( i18n( "open_containing_folder_in_fm", "Open Containing Folder in File Manager" ),
 			   findIcon( "folder-open" ), getKeybind( "open-containing-folder" ) )
 		->setId( "open-containing-folder" );
 	mEditMenu
@@ -2284,9 +2288,15 @@ void SettingsMenu::createProjectTreeMenu() {
 		mProjectTreeMenu
 			->add( i18n( "new_folder_ellipsis", "New Folder..." ), findIcon( "folder-add" ) )
 			->setId( "new_folder" );
+		mProjectTreeMenu->addSeparator();
 		mProjectTreeMenu
-			->add( i18n( "open_folder_ellipsis", "Open Folder..." ), findIcon( "folder-open" ) )
+			->add( i18n( "open_folder_in_fm", "Open Folder in File Manager" ),
+				   findIcon( "folder-open" ) )
 			->setId( "open_folder" );
+		mProjectTreeMenu
+			->add( i18n( "open_folder_in_new_window", "Open Folder in New ecode Window" ),
+				   findIcon( "folder-open" ) )
+			->setId( "open-folder-in-new-window" );
 		mProjectTreeMenu
 			->add( i18n( "execute_dir_in_terminal", "Open directory in terminal" ),
 				   findIcon( "filetype-bash" ) )
@@ -2311,8 +2321,13 @@ void SettingsMenu::createProjectTreeMenu() {
 			->setId( "configure-ignore-files" );
 	} else if ( !mApp->getFileSystemModel() ) {
 		mProjectTreeMenu
-			->add( i18n( "open_folder_ellipsis", "Open Folder..." ), findIcon( "folder-open" ) )
+			->add( i18n( "open_folder_in_fm", "Open Folder in File Manager" ),
+				   findIcon( "folder-open" ) )
 			->setId( "open-folder" );
+		mProjectTreeMenu
+			->add( i18n( "open_folder_in_new_window", "Open Folder in New ecode Window" ),
+				   findIcon( "folder-open" ) )
+			->setId( "open_folder_in_new_window" );
 	}
 
 	mProjectTreeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
@@ -2320,12 +2335,16 @@ void SettingsMenu::createProjectTreeMenu() {
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		std::string id( item->getId() );
+		if ( id.empty() )
+			return;
 		if ( "new_file" == id || "new_file_in_place" == id ) {
 			mApp->newFile( FileInfo( mApp->getCurrentProject() ) );
 		} else if ( "new_folder" == id ) {
 			mApp->newFolder( FileInfo( mApp->getCurrentProject() ) );
 		} else if ( "open_folder" == id ) {
 			Engine::instance()->openURI( mApp->getCurrentProject() );
+		} else if ( "open_folder_in_new_window" == id ) {
+			mApp->loadFolder( mApp->getCurrentProject(), true );
 		} else if ( "execute_dir_in_terminal" == id ) {
 			mApp->getTerminalManager()->createNewTerminal( "", nullptr, mApp->getCurrentProject() );
 		} else if ( "show-hidden-files" == id ) {
@@ -2365,20 +2384,31 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 		mProjectTreeMenu
 			->add( i18n( "new_folder_ellipsis", "New Folder..." ), findIcon( "folder-add" ) )
 			->setId( "new_folder" );
+		mProjectTreeMenu->addSeparator();
 		mProjectTreeMenu
-			->add( i18n( "open_folder_ellipsis", "Open Folder..." ), findIcon( "folder-open" ) )
+			->add( i18n( "open_folder_in_fm", "Open Folder in File Manager" ),
+				   findIcon( "folder-open" ) )
 			->setId( "open_folder" );
+		mProjectTreeMenu
+			->add( i18n( "open_folder_in_new_window", "Open Folder in New ecode Window" ),
+				   findIcon( "folder-open" ) )
+			->setId( "open_folder_in_new_window" );
 		mProjectTreeMenu
 			->add( i18n( "open_all_files_in_folder", "Open All Files in Folder" ),
 				   findIcon( "folder-open" ) )
 			->setId( "open_all_files_in_folder" );
+		mProjectTreeMenu->addSeparator();
+		mProjectTreeMenu
+			->add( i18n( "find_in_folder_ellipsis", "Find in Folder..." ),
+				   findIcon( "file-search" ) )
+			->setId( "find_in_folder" );
 	} else {
 		mProjectTreeMenu->add( i18n( "open_file", "Open File" ), findIcon( "document-open" ) )
 			->setId( "open_file" );
 		mProjectTreeMenu
-			->add( i18n( "open_containing_folder_ellipsis", "Open Containing Folder..." ),
+			->add( i18n( "open_containing_folder_in_fm", "Open Containing Folder in File Manager" ),
 				   findIcon( "folder-open" ) )
-			->setId( "open_containing_folder" );
+			->setId( "open_containing_folder_in_fm" );
 		mProjectTreeMenu
 			->add( i18n( "new_file_in_directory_ellipsis", "New File in directory..." ),
 				   findIcon( "file-add" ) )
@@ -2464,12 +2494,20 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 			} );
 		} else if ( "rename" == id ) {
 			mApp->renameFile( file );
-		} else if ( "open_containing_folder" == id ) {
+		} else if ( "open_containing_folder_in_fm" == id ) {
 			Engine::instance()->openURI( file.getDirectoryPath() );
 		} else if ( "open_folder" == id ) {
 			Engine::instance()->openURI( file.getFilepath() );
+		} else if ( "open_folder_in_new_window" == id ) {
+			mApp->loadFolder( file.getFilepath(), true );
 		} else if ( "open_all_files_in_folder" == id ) {
 			mApp->openAllFilesInFolder( file );
+		} else if ( "find_in_folder" == id ) {
+			std::string folder = file.getFilepath();
+			FileSystem::filePathRemoveBasePath( mApp->getCurrentProject(), folder );
+			FileSystem::dirAddSlashAtEnd( folder );
+			folder += "*";
+			mApp->showGlobalSearch( false, folder );
 		} else if ( "show-hidden-files" == id ) {
 			mApp->toggleHiddenFiles();
 		} else if ( "execute_in_terminal" == id ) {

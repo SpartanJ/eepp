@@ -1405,10 +1405,10 @@ void UICodeEditor::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 	if ( mDoc->hasFilepath() ) {
 		menu->addSeparator();
 
-		menuAdd(
-			menu,
-			i18n( "uicodeeditor_open_containing_folder_ellipsis", "Open Containing Folder..." ),
-			"folder-open", "open-containing-folder" );
+		menuAdd( menu,
+				 i18n( "uicodeeditor_open_containing_folder_in_fm",
+					   "Open Containing Folder in File Manager" ),
+				 "folder-open", "open-containing-folder" );
 
 		menuAdd( menu,
 				 i18n( "uicodeeditor_copy_containing_folder_path_ellipsis",

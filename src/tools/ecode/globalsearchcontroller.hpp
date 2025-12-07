@@ -55,7 +55,7 @@ class GlobalSearchController {
 
 	void showGlobalSearch();
 
-	void showGlobalSearch( bool searchAndReplace );
+	void showGlobalSearch( bool searchAndReplace, std::optional<std::string> pathFilters = {} );
 
 	void updateColorScheme( const SyntaxColorScheme& colorScheme );
 

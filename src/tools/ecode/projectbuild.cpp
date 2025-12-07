@@ -836,7 +836,7 @@ void ProjectBuildManager::runConfig( StatusAppOutputController* saoc ) {
 			finalBuild.cmd = finalBuild.workingDir + finalBuild.cmd;
 		}
 
-		auto cmd = finalBuild.cmd + " " + finalBuild.args;
+		auto cmd = finalBuild.cmd + ( !finalBuild.args.empty() ? ( " " + finalBuild.args ) : "" );
 		if ( finalBuild.runInTerminal ) {
 			UITerminal* term = mApp->getTerminalManager()->createTerminalInSplitter(
 				finalBuild.workingDir, "", {}, {}, false );

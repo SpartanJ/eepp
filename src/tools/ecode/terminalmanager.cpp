@@ -16,7 +16,8 @@ UITerminal* TerminalManager::createTerminalInSplitter(
 	if ( !LuaPattern::hasMatches( os, "Windows 1%d"sv ) &&
 		 !LuaPattern::hasMatches( os, "Windows Server 201[69]"sv ) &&
 		 !LuaPattern::hasMatches( os, "Windows Server 202%d"sv ) ) {
-		displayError( workingDir );
+		if ( fallback )
+			displayError( workingDir );
 		return nullptr;
 	}
 #endif
@@ -318,7 +319,7 @@ std::string quoteString( std::string str ) {
 static int openExternal( const std::string& defShell, const std::string& cmd,
 						 const std::string& scriptsPath, const std::string& workingDir ) {
 	// This is an utility bat script based in the Geany utility script called "geany-run-helper"
-	static const std::string RUN_HELPER =
+	static const std::string_view RUN_HELPER =
 		R"shellscript(REM USAGE: ecode-run-helper DIRECTORY AUTOCLOSE COMMAND...
 
 REM unnecessary, but we get the directory
@@ -353,9 +354,9 @@ if not %autoclose%==1 pause
 	if ( !cmd.empty() && !scriptsPath.empty() ) {
 		std::string runHelperPath = scriptsPath + "ecode-run-helper.bat";
 		bool canContinue = true;
-		if ( !FileSystem::fileExists( runHelperPath ) ) {
-			if ( !FileSystem::fileWrite( runHelperPath, RUN_HELPER ) )
-				canContinue = false;
+		if ( !FileSystem::fileExists( runHelperPath ) &&
+			 !FileSystem::fileWrite( runHelperPath, RUN_HELPER ) ) {
+			canContinue = false;
 		}
 		if ( canContinue ) {
 			std::string cmdDir = String::trim( FileSystem::fileRemoveFileName( cmd ) );
@@ -372,6 +373,7 @@ if not %autoclose%==1 pause
 	}
 
 	std::vector<std::string> options;
+	options.reserve( 3 );
 	if ( !defShell.empty() )
 		options.push_back( defShell );
 	options.push_back( "cmd" );
@@ -393,7 +395,22 @@ if not %autoclose%==1 pause
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
 static int openExternal( const std::string&, const std::string& cmd, const std::string&,
 						 const std::string& workingDir ) {
-	static const std::string externalShell = "open -a terminal";
+
+	std::vector<std::string> options = { "ghostty", "iTerm2", "eterm" };
+	for ( const auto& option : options ) {
+		auto externalShell( Sys::which( option ) );
+		if ( !externalShell.empty() ) {
+			if ( !cmd.empty() ) {
+				auto fcmd = externalShell + " -e \"" + cmd + "\"";
+				Log::info( "Running: %s", fcmd );
+				return Sys::execute( fcmd, workingDir );
+			} else {
+				return Sys::execute( externalShell, workingDir );
+			}
+		}
+	}
+
+	static const std::string externalShell = "open -a terminal --args";
 	if ( !cmd.empty() ) {
 		std::string fcmd = externalShell + " \"" + cmd + "\"";
 		Log::info( "Running: %s", fcmd );
@@ -404,7 +421,7 @@ static int openExternal( const std::string&, const std::string& cmd, const std::
 #else
 static int openExternal( const std::string&, const std::string& cmd, const std::string&,
 						 const std::string& workingDir ) {
-	std::vector<std::string> options = { "gnome-terminal", "konsole", "xterm", "st" };
+	std::vector<std::string> options = { "gnome-terminal", "konsole", "eterm", "xterm", "st" };
 	for ( const auto& option : options ) {
 		auto externalShell( Sys::which( option ) );
 		if ( !externalShell.empty() ) {

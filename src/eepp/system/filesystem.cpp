@@ -186,8 +186,8 @@ bool FileSystem::fileWrite( const std::string& filepath, const std::vector<Uint8
 	return fileWrite( filepath, reinterpret_cast<const Uint8*>( &data[0] ), (Uint32)data.size() );
 }
 
-bool FileSystem::fileWrite( const std::string& filepath, const std::string& data ) {
-	return fileWrite( filepath, (const Uint8*)data.c_str(), (Uint32)data.size() );
+bool FileSystem::fileWrite( const std::string& filepath, std::string_view data ) {
+	return fileWrite( filepath, (const Uint8*)data.data(), (Uint32)data.size() );
 }
 
 bool FileSystem::fileRemove( const std::string& filepath ) {

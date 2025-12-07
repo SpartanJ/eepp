@@ -561,8 +561,7 @@ Bitte die Anwendung neu starten.</string>
 	<string name="open_a_folder">Einen Ordner öffnen</string>
 	<string name="open_all_files_in_folder">Alle Dateien im Ordner öffnen</string>
 	<string name="open_command_palette">Befehlspalette öffnen</string>
-	<string name="open_containing_folder">Ordner aktueller Datei öffnen</string>
-	<string name="open_containing_folder_ellipsis">Ordner aktueller Datei öffnen...</string>
+	<string name="open_containing_folder_in_fm">Ordner aktueller Datei öffnen</string>
 	<string name="open_context_menu">Kontextmenü öffnen</string>
 	<string name="open_document_symbol_search">Dokumentsymbolsuche öffnen</string>
 	<string name="open_documents">Geöffnete Dokumente</string>
@@ -574,7 +573,7 @@ in einem neuen Fenster geöffnet werden.</string>
 	<string name="open_files_in_new_window_enable">Dateien in neuem Fenster öffnen</string>
 	<string name="open_first_a_folder">Zuerst muss ein Ordner geöffnet werden.</string>
 	<string name="open_folder">Ordner öffnen</string>
-	<string name="open_folder_ellipsis">Ordner öffnen...</string>
+	<string name="open_folder_in_fm">Ordner öffnen</string>
 	<string name="open_global_search">Globale Suche öffnen</string>
 	<string name="open_in_horizontal_split">In neuer horizontaler Kachel öffnen</string>
 	<string name="open_in_new_window">In neuem Fenster öffnen</string>
@@ -870,7 +869,7 @@ in der Baumansicht und in Öffen-/Schließdialogen aktivieren.</string>
 	<string name="uicodeeditor_copy_file_path_and_position">Dateipfad und -position kopieren</string>
 	<string name="uicodeeditor_cut">Ausschneiden</string>
 	<string name="uicodeeditor_delete">Löschen</string>
-	<string name="uicodeeditor_open_containing_folder_ellipsis">Überordner öffnen...</string>
+	<string name="uicodeeditor_open_containing_folder_in_fm">Überordner öffnen</string>
 	<string name="uicodeeditor_paste">Einfügen</string>
 	<string name="uicodeeditor_redo">Wiederholen</string>
 	<string name="uicodeeditor_select_all">Alles auswählen</string>

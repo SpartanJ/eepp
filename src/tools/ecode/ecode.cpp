@@ -546,7 +546,9 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 	std::string filename( editor->getDocument().getFilename() );
 	if ( FileSystem::fileExtension( editor->getDocument().getFilename() ).empty() )
 		filename += editor->getSyntaxDefinition().getFileExtension();
-	std::string folderPath( FileSystem::fileRemoveFileName( editor->getDocument().getFilePath() ) );
+	std::string folderPath( !mLastFileFolder.empty() ? mLastFileFolder
+													 : FileSystem::fileRemoveFileName(
+														   editor->getDocument().getFilePath() ) );
 	if ( !FileSystem::isDirectory( folderPath ) )
 		folderPath = getLastUsedFolder();
 	UIFileDialog* dialog = UIFileDialog::New(
@@ -565,6 +567,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 			if ( !path.empty() && !FileSystem::isDirectory( path ) &&
 				 FileSystem::fileWrite( path, "" ) ) {
 				if ( editor->getDocument().save( path ) ) {
+					mLastFileFolder = FileSystem::fileRemoveFileName( path );
 					insertRecentFileAndUpdateUI( path );
 					updateEditorState();
 				} else {
@@ -1540,8 +1543,8 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 			menuAdd( "split_top", "Split Top", "split-vertical", "split-top" );
 			menuAdd( "split_bottom", "Split Bottom", "split-vertical", "split-bottom" );
 
-			menuAdd( "open_containing_folder_ellipsis", "Open Containing Folder...", "folder-open",
-					 "open-containing-folder" );
+			menuAdd( "open_containing_folder_in_fm", "Open Containing Folder in File Manager",
+					 "folder-open", "open-containing-folder" );
 
 			menuAdd( "copy_containing_folder_path_ellipsis", "Copy Containing Folder Path...",
 					 "copy", "copy-containing-folder-path" );
@@ -2483,8 +2486,8 @@ void App::fullscreenToggle() {
 	mSettings->updateViewMenu();
 }
 
-void App::showGlobalSearch( bool searchAndReplace ) {
-	mGlobalSearchController->showGlobalSearch( searchAndReplace );
+void App::showGlobalSearch( bool searchAndReplace, std::optional<std::string> pathFilters ) {
+	mGlobalSearchController->showGlobalSearch( searchAndReplace, pathFilters );
 }
 
 void App::showFindView() {

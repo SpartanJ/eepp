@@ -565,7 +565,8 @@ void GlobalSearchController::initGlobalSearchBar(
 	mGlobalSearchTree = mGlobalSearchTreeSearch;
 }
 
-void GlobalSearchController::showGlobalSearch( bool searchReplace ) {
+void GlobalSearchController::showGlobalSearch( bool searchReplace,
+											   std::optional<std::string> pathFilters ) {
 	mApp->hideLocateBar();
 	mApp->hideSearchBar();
 	mApp->hideStatusTerminal();
@@ -606,6 +607,8 @@ void GlobalSearchController::showGlobalSearch( bool searchReplace ) {
 										  searchReplace, escapeSequenceChk->isChecked() );
 		}
 	}
+	if ( mGlobalSearchWhereInput && pathFilters )
+		mGlobalSearchWhereInput->setText( *pathFilters );
 	updateGlobalSearchBar();
 	mApp->getStatusBar()->updateState();
 }

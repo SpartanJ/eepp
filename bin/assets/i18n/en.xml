@@ -546,8 +546,7 @@ Please restart the application.</string>
 	<string name="open_a_folder">Open a Folder</string>
 	<string name="open_all_files_in_folder">Open All Files in Folder</string>
 	<string name="open_command_palette">Open Command Palette</string>
-	<string name="open_containing_folder">Open Containing Folder</string>
-	<string name="open_containing_folder_ellipsis">Open Containing Folder...</string>
+	<string name="open_containing_folder_in_fm">Open Containing Folder in File Manager</string>
 	<string name="open_context_menu">Open Context Menu</string>
 	<string name="open_document_symbol_search">Open Document Symbol Search</string>
 	<string name="open_documents">Open Documents</string>
@@ -559,7 +558,7 @@ controls whether a new window is created or not.</string>
 	<string name="open_files_in_new_window_enable">Open Files in New Window</string>
 	<string name="open_first_a_folder">You must first open a folder.</string>
 	<string name="open_folder">Open Folder</string>
-	<string name="open_folder_ellipsis">Open Folder...</string>
+	<string name="open_folder_in_fm">Open Folder in File Manager</string>
 	<string name="open_global_search">Open Global Search</string>
 	<string name="open_in_horizontal_split">Open In New Horizontal Split</string>
 	<string name="open_in_new_window">Open In New Window</string>
@@ -855,7 +854,7 @@ the directory tree and in file dialogs to open a folder or file.</string>
 	<string name="uicodeeditor_copy_file_path_and_position">Copy File Path and Position</string>
 	<string name="uicodeeditor_cut">Cut</string>
 	<string name="uicodeeditor_delete">Delete</string>
-	<string name="uicodeeditor_open_containing_folder_ellipsis">Open Containing Folder...</string>
+	<string name="uicodeeditor_open_containing_folder_in_fm">Open Containing Folder in File Manager</string>
 	<string name="uicodeeditor_paste">Paste</string>
 	<string name="uicodeeditor_redo">Redo</string>
 	<string name="uicodeeditor_select_all">Select All</string>

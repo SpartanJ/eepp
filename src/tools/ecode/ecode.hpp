@@ -124,7 +124,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void downloadFileWebDialog();
 
-	void showGlobalSearch( bool searchAndReplace );
+	void showGlobalSearch( bool searchAndReplace, std::optional<std::string> pathFilters = {} );
 
 	void showFindView();
 
@@ -504,7 +504,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void setTheme( const std::string& path );
 
-	void loadImageFromMedium( const std::string& path, bool isMemory, bool forcePreview = false, bool forceTab = false );
+	void loadImageFromMedium( const std::string& path, bool isMemory, bool forcePreview = false,
+							  bool forceTab = false );
 
 	void loadImageFromPath( const std::string& path );
 
@@ -567,6 +568,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	const std::string& getLanguagesPath() const { return mLanguagesPath; }
 
 	bool pluginsDisabled() const { return mDisablePlugins; }
+
+	void loadFolder( std::string path, bool forceNewWindow = false );
 
   protected:
 	std::vector<std::string> mArgs;
@@ -716,8 +719,6 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	void updateEditorState();
 
 	void saveDoc();
-
-	void loadFolder( std::string path, bool forceNewWindow = false );
 
 	void loadKeybindings();
 
