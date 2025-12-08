@@ -121,6 +121,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	int mPendingModelsToLoad{ 0 };
 	bool mChatIsPrivate{ false };
 	bool mChatLocked{ false };
+	bool mLinkMode{ false };
 
 	LLMModel findModel( const std::string& provider, const std::string& model );
 
@@ -132,9 +133,9 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void showMsg( String msg );
 
-	nlohmann::json serializeChat( const LLMModel& model );
+	nlohmann::json serializeChat( const LLMModel& model, bool forRequest = false );
 
-	nlohmann::json chatToJson();
+	nlohmann::json chatToJson( bool forRequest );
 
 	std::string prepareApiUrl( const std::string& apiKey );
 
@@ -190,6 +191,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	void showAttachFile();
 
 	void hideAttachFile();
+
+	void insertFileToDocument( std::string path, std::shared_ptr<TextDocument> cdoc );
 };
 
 } // namespace ecode

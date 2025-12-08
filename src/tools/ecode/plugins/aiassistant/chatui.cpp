@@ -161,7 +161,7 @@ DropDownList.role_ui {
 		</vboxce>
 		<hbox lw="mp" lh="wc" layout_gravity="bottom|left" layout_margin="8dp" clip="false">
 			<PushButton id="llm_user" class="llm_button" text="@string(user, User)" tooltip="@string(change_role, Change Role)" min-width="60dp" margin-right="8dp" />
-			<PushButton id="llm_attach" class="llm_button" text="@string(attach, Attach)" tooltip="@string(attach, Attach)" icon="icon(attach, 14dp)" min-width="32dp" />
+			<PushButton id="llm_attach" class="llm_button" text="@string(add_context, Add Context)" tooltip="@string(add_context, Add Context)" icon="icon(attach, 14dp)" min-width="32dp" />
 			<PushButton id="llm_chat_history" class="llm_button" text="@string(chat_history, Chat History)" tooltip="@string(chat_history, Chat History)" icon="icon(chat-history, 14dp)" min-width="32dp" />
 			<PushButton id="llm_settings_but" class="llm_button" text="@string(settings, Settings)" tooltip="@string(settings, Settings)" icon="icon(settings, 14dp)" min-width="32dp" />
 			<PushButton id="llm_more" class="llm_button" tooltip="@string(more_options, More Options)" icon="icon(more-fill, 14dp)" min-width="32dp" />
@@ -362,6 +362,13 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	setCmd( "ai-chat-history", [this] { showChatHistory(); } );
 
 	setCmd( "ai-attach-file", [this] {
+		mLinkMode = false;
+		showAttachFile();
+		mLocateInput->getDocument().selectAll();
+	} );
+
+	setCmd( "ai-link-file", [this] {
+		mLinkMode = true;
 		showAttachFile();
 		mLocateInput->getDocument().selectAll();
 	} );
@@ -395,7 +402,42 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		getPlugin()->newAIAssistant()->setFocus();
 	} );
 
+	setCmd( "ai-show-add-context-menu", [this] {
+		if ( getPlugin() == nullptr )
+			return;
+		UIPopUpMenu* menu = UIPopUpMenu::New();
+
+		menu->add( i18n( "attach_file", "Attach File" ),
+				   getUISceneNode()->findIconDrawable( "attach", PixelDensity::dpToPxI( 12 ) ),
+				   getKeyBindings().getCommandKeybindString( "ai-attach-file" ) )
+			->setId( "ai-attach-file" );
+
+		menu->add( i18n( "link_file", "Link File" ),
+				   getUISceneNode()->findIconDrawable( "link", PixelDensity::dpToPxI( 12 ) ),
+				   getKeyBindings().getCommandKeybindString( "ai-link-file" ) )
+			->setTooltipText( i18n( "link_file_tooltip",
+									"Unlike Attach File (which captures a snapshot),\n"
+									"Link File always refers to the current version of the file,\n"
+									"even when you re-run the same prompt later.\n"
+									"Acts like a symbolic link." ) )
+			->setId( "ai-link-file" );
+
+		menu->on( Event::OnItemClicked, [this]( const Event* event ) {
+			UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+			std::string id( item->getId() );
+			execute( id );
+		} );
+
+		menu->runOnMainThread( [this, menu] {
+			auto pos( mChatAttach->getScreenPos() );
+			UIMenu::findBestMenuPos( pos, menu );
+			menu->showAtScreenPosition( pos );
+		} );
+	} );
+
 	setCmd( "ai-show-menu", [this] {
+		if ( getPlugin() == nullptr )
+			return;
 		UIPopUpMenu* menu = UIPopUpMenu::New();
 
 		menu->add(
@@ -451,7 +493,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mChatHistory->onClick( [this]( auto ) { showChatHistory(); } );
 
 	mChatAttach = find<UIPushButton>( "llm_attach" );
-	mChatAttach->onClick( [this]( auto ) { showAttachFile(); } );
+	mChatAttach->onClick( [this]( auto ) { execute( "ai-show-add-context-menu" ); } );
 
 	if ( getPlugin() == nullptr )
 		return;
@@ -490,7 +532,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	bindCmds( mChatInput, true );
 
 	appendShortcutToTooltip( mChatHistory, "ai-chat-history" );
-	appendShortcutToTooltip( mChatAttach, "ai-attach-file" );
+	appendShortcutToTooltip( mChatAttach, "ai-show-add-context-menu" );
 	appendShortcutToTooltip( mChatRun, "ai-prompt" );
 	appendShortcutToTooltip( mChatStop, "ai-prompt" );
 	appendShortcutToTooltip( mChatAdd, "ai-add-chat" );
@@ -544,6 +586,7 @@ void LLMChatUI::bindCmds( UICodeEditor* editor, bool bindToChatUI ) {
 	addKb( editor, "mod+shift+r", "ai-chat-toggle-role", bindToChatUI );
 	addKb( editor, "mod+shift+l", "ai-refresh-local-models", bindToChatUI );
 	addKb( editor, "mod+shift+a", "ai-attach-file", bindToChatUI );
+	addKb( editor, "mod+shift+z", "ai-link-file", bindToChatUI );
 
 	if ( bindToChatUI )
 		addKb( editor, "mod+shift+return", "ai-add-chat", bindToChatUI );
@@ -871,7 +914,7 @@ void LLMChatUI::resizeToFit( UICodeEditor* editor ) {
 	editor->setPixelsSize( editor->getPixelsSize().getWidth(), height );
 }
 
-nlohmann::json LLMChatUI::chatToJson() {
+nlohmann::json LLMChatUI::chatToJson( bool forRequest ) {
 	auto j = nlohmann::json::array();
 	auto chats = findAllByClass( "llm_conversation" );
 	for ( const auto& chat : chats ) {
@@ -884,21 +927,55 @@ nlohmann::json LLMChatUI::chatToJson() {
 		if ( text.empty() )
 			continue;
 
+		if ( forRequest ) {
+			LuaPattern ptrn( "\n```file://([^`]*)```\n" );
+			PatternMatcher::Range matches[2];
+			while ( ptrn.matches( text, matches ) ) {
+				std::string path( text.substr( matches[1].start, matches[1].length() ) );
+				if ( FileSystem::isRelativePath( path ) ) {
+					std::string prjPath( getPlugin()->getPluginContext()->getCurrentProject() );
+					path = prjPath + path;
+				}
+				std::string fileBuffer;
+				TextDocument doc;
+				if ( FileSystem::fileExists( path ) &&
+					 doc.loadFromFile( path ) == TextDocument::LoadStatus::Loaded ) {
+					fileBuffer += "\n`" + doc.getFilename() + "`:\n";
+					fileBuffer += "```" + doc.getSyntaxDefinition().getLSPName();
+					if ( doc.linesCount() >= 1 &&
+						 !String::startsWith( doc.line( 0 ).getText(), "\n" ) ) {
+						fileBuffer += "\n";
+					}
+					fileBuffer += doc.getText().toUtf8();
+					if ( doc.linesCount() >= 1 &&
+						 doc.line( doc.linesCount() - 1 ).getText() != String( "\n" ) ) {
+						fileBuffer += "\n";
+					}
+					fileBuffer += "```\n";
+				} else {
+					fileBuffer = path + "has been deleted from the file system.";
+				}
+				text.replace( matches[0].start, matches[0].length(), fileBuffer );
+			}
+		}
+
 		j.push_back( { { "role", role }, { "content", std::move( text ) } } );
 	}
 	return j;
 }
 
 Uint32 LLMChatUI::onMessage( const NodeMessage* msg ) {
-	if ( msg->getMsg() == NodeMessage::Focus ) {
+	AIAssistantPlugin* plugin = getPlugin();
+	// plugin can be null since plugin could be re-loading or unloaded
+	if ( plugin && msg->getMsg() == NodeMessage::Focus ) {
 		getPlugin()->getPluginContext()->getSplitter()->setCurrentWidget( this );
 	}
 	return 0;
 }
 
-nlohmann::json LLMChatUI::serializeChat( const LLMModel& model ) {
+nlohmann::json LLMChatUI::serializeChat( const LLMModel& model, bool forRequest ) {
 	nlohmann::json j = {
-		{ "model", model.name }, { "stream", true }, { "messages", chatToJson() } };
+		{ "model", model.name }, { "stream", true }, { "messages", chatToJson( forRequest ) } };
 	if ( model.maxOutputTokens )
 		j["max_tokens"] = *model.maxOutputTokens;
 	return j;
@@ -1041,7 +1118,7 @@ void LLMChatUI::doRequest() {
 
 	std::string apiUrl( prepareApiUrl( apiKeyStr ) );
 	mRequest = std::make_unique<LLMChatCompletionRequest>(
-		apiUrl, apiKeyStr, serializeChat( model ).dump(), model.provider );
+		apiUrl, apiKeyStr, serializeChat( model, true ).dump(), model.provider );
 
 	mRequest->streamedResponseCb = [this, editor, thinking, thinkingID]( const std::string& chunk,
 																		 bool fromReasoning ) {
@@ -1115,8 +1192,7 @@ void LLMChatUI::doRequest() {
 					"straight to the title, without any preamble and prefix like `Here's a concise "
 					"suggestion:...` or `Title:`. Ignore this message for the summary generation.";
 
-				// TODO: Implement stripping the serialized chat for summary (remove code-blocks)
-				auto jchat = serializeChat( getCheapestModelFromCurrentProvider() );
+				auto jchat = serializeChat( getCheapestModelFromCurrentProvider(), true );
 
 				jchat["messages"].push_back(
 					{ { "role", LLMChat::roleToString( LLMChat::Role::User ) },
@@ -1370,6 +1446,8 @@ void LLMChatUI::updateLocateBarColumns() {
 }
 
 void LLMChatUI::showAttachFile() {
+	if ( getPlugin() == nullptr )
+		return;
 	auto text = mLocateInput->getText();
 	auto ctx = getPlugin()->getPluginContext();
 	if ( !ctx->isDirTreeReady() ) {
@@ -1399,6 +1477,41 @@ void LLMChatUI::showAttachFile() {
 
 void LLMChatUI::hideAttachFile() {
 	mLocateBarLayout->setVisible( false );
+}
+
+void LLMChatUI::insertFileToDocument( std::string path, std::shared_ptr<TextDocument> cdoc ) {
+	std::string prjPath( getPlugin()->getPluginContext()->getCurrentProject() );
+
+	if ( FileSystem::isRelativePath( path ) )
+		path = prjPath + path;
+
+	TextDocument doc;
+	if ( doc.loadFromFile( path ) == TextDocument::LoadStatus::Loaded ) {
+		std::string nameToDisplay = doc.getFilename();
+		if ( !prjPath.empty() && String::startsWith( doc.getFilePath(), prjPath ) ) {
+			nameToDisplay = doc.getFilePath();
+			FileSystem::filePathRemoveBasePath( prjPath, nameToDisplay );
+		}
+		cdoc->resetSelection();
+		cdoc->moveToEndOfLine();
+		cdoc->textInput( "\n`" + nameToDisplay + "`:\n" );
+		cdoc->textInput( "```" + doc.getSyntaxDefinition().getLSPName() );
+		auto lineToFold = cdoc->getSelection().end().line();
+		if ( doc.linesCount() >= 1 && !String::startsWith( doc.line( 0 ).getText(), "\n" ) ) {
+			cdoc->textInput( "\n" );
+		}
+		cdoc->textInput( doc.getText() );
+		if ( doc.linesCount() >= 1 &&
+			 doc.line( doc.linesCount() - 1 ).getText() != String( "\n" ) ) {
+			cdoc->textInput( "\n" );
+		}
+		cdoc->textInput( "```\n" );
+		cdoc->getFoldRangeService().findRegionsNative();
+		if ( doc.linesCount() > 30 &&
+			 cdoc->getFoldRangeService().isFoldingRegionInLine( lineToFold ) ) {
+			mChatInput->toggleFoldUnfold( lineToFold );
+		}
+	}
 }
 
 void LLMChatUI::initAttachFile() {
@@ -1455,39 +1568,14 @@ void LLMChatUI::initAttachFile() {
 				modelEvent->getModel()->index( modelEvent->getModelIndex().row(), 1 ),
 				ModelRole::Custom ) );
 
-			std::string prjPath( getPlugin()->getPluginContext()->getCurrentProject() );
+			auto cdoc = mChatInput->getDocumentRef();
 
-			if ( FileSystem::isRelativePath( path ) )
-				path = prjPath + path;
-
-			TextDocument doc;
-			if ( doc.loadFromFile( path ) == TextDocument::LoadStatus::Loaded ) {
-				std::string nameToDisplay = doc.getFilename();
-				if ( !prjPath.empty() && String::startsWith( doc.getFilePath(), prjPath ) ) {
-					nameToDisplay = doc.getFilePath();
-					FileSystem::filePathRemoveBasePath( prjPath, nameToDisplay );
-				}
-				auto cdoc = mChatInput->getDocumentRef();
+			if ( mLinkMode ) {
 				cdoc->resetSelection();
 				cdoc->moveToEndOfLine();
-				cdoc->textInput( "\n`" + nameToDisplay + "`:\n" );
-				cdoc->textInput( "```" + doc.getSyntaxDefinition().getLSPName() );
-				auto lineToFold = cdoc->getSelection().end().line();
-				if ( doc.linesCount() >= 1 &&
-					 !String::startsWith( doc.line( 0 ).getText(), "\n" ) ) {
-					cdoc->textInput( "\n" );
-				}
-				cdoc->textInput( doc.getText() );
-				if ( doc.linesCount() >= 1 &&
-					 doc.line( doc.linesCount() - 1 ).getText() != String( "\n" ) ) {
-					cdoc->textInput( "\n" );
-				}
-				cdoc->textInput( "```\n" );
-				cdoc->getFoldRangeService().findRegionsNative();
-				if ( doc.linesCount() > 30 &&
-					 cdoc->getFoldRangeService().isFoldingRegionInLine( lineToFold ) ) {
-					mChatInput->toggleFoldUnfold( lineToFold );
-				}
+				cdoc->textInput( "\n```file://" + path + "```\n" );
+			} else {
+				insertFileToDocument( path, cdoc );
 			}
 
 			mLocateBarLayout->execute( "close-locatebar" );

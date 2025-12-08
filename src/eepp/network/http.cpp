@@ -810,6 +810,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 
 	if ( request.isCancelled() ) {
 		onCancel( request );
+		endConnection();
 		return Response();
 	}
 
@@ -821,6 +822,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 
 			// For an HTTP Tunnel first we need to connect to the proxy server ( without TLS )
 			if ( sslSocket->tcpConnect( mHost, mProxy.getPort(), timeout ) != Socket::Done ) {
+				endConnection();
 				return received;
 			} else {
 				mConnection->setConnected( true );
@@ -828,6 +830,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 		} else {
 			if ( mConnection->getSocket()->connect(
 					 mHost, mProxy.empty() ? mPort : mProxy.getPort(), timeout ) != Socket::Done ) {
+				endConnection();
 				return received;
 			} else {
 				mConnection->setConnected( true );
@@ -836,7 +839,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 
 		if ( mConnection->isConnected() &&
 			 !sendProgress( *this, request, received, Request::Connected, 0, 0 ) ) {
-			mConnection->disconnect();
+			endConnection();
 			return received;
 		}
 	}
@@ -1147,18 +1150,23 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 			onCancel( request );
 
 		// Close the connection
-		if ( mConnection && !mConnection->isKeepAlive() ) {
-			mConnection->disconnect();
-
-			if ( mConnection ) {
-				HttpConnection* connection = mConnection;
-				eeSAFE_DELETE( connection );
-				mConnection = NULL;
-			}
-		}
+		endConnection();
 	}
 
 	return received;
+}
+
+void Http::endConnection() {
+	if ( mConnection && !mConnection->isKeepAlive() ) {
+		if ( mConnection->isConnected() )
+			mConnection->disconnect();
+
+		if ( mConnection ) {
+			HttpConnection* connection = mConnection;
+			eeSAFE_DELETE( connection );
+			mConnection = NULL;
+		}
+	}
 }
 
 Http::Response Http::downloadRequest( const Http::Request& request, std::string writePath,

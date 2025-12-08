@@ -775,6 +775,8 @@ class EE_API Http : NonCopyable {
 	Request prepareFields( const Http::Request& request );
 
 	void onCancel( const Http::Request& request );
+
+	void endConnection();
 };
 
 }} // namespace EE::Network

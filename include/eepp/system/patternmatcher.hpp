@@ -16,6 +16,7 @@ class EE_API PatternMatcher {
 	struct EE_API Range {
 		int start{ -1 };
 		int end{ -1 };
+		int length() const { return end - start; }
 		bool isValid() { return -1 != start && -1 != end; }
 	};
 

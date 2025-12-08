@@ -292,8 +292,9 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 				  { "eye-closed", 0xeae7 },
 				  { "settings-alt", 0xeb52 },
 				  { "attach", 0xec34 },
-				  { "chat-sparkle", 0xEC4F },
-				  { "inspect", 0xEBD1 },
+				  { "chat-sparkle", 0xec4f },
+				  { "inspect", 0xebd1 },
+				  { "link", 0xeb15 },
 
 			  } ) {
 			iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );
