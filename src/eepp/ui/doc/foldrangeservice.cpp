@@ -102,6 +102,7 @@ static std::vector<TextRange> findFoldingRangesIndentation( TextDocument* doc ) 
 }
 
 static std::vector<TextRange> findFoldingRangesMarkdown( TextDocument* doc ) {
+	static const String codeFence( "```" );
 	Clock c; // For performance logging, consistent with existing functions
 	std::vector<TextRange> regions;
 	auto lineCount = doc->linesCount();
@@ -138,9 +139,16 @@ static std::vector<TextRange> findFoldingRangesMarkdown( TextDocument* doc ) {
 			// Continue to next line if still in code block
 		} else {
 			if ( String::startsWith( trimmed, "```" ) ) {
-				// Start a new code block
-				inCodeBlock = true;
-				codeBlockStart = static_cast<Int64>( lineIdx );
+				// Check if the line contains a closing ``` on the same line.
+				// We search starting from index 3 (after the opening ```).
+				bool isSingleLineBlock =
+					trimmed.size() > 3 && trimmed.find( codeFence.view(), 3 ) != String::View::npos;
+
+				if ( !isSingleLineBlock ) {
+					// Start a new code block
+					inCodeBlock = true;
+					codeBlockStart = static_cast<Int64>( lineIdx );
+				}
 			} else if ( String::startsWith( trimmed, "#" ) ) {
 				// Check if it's a valid heading
 				size_t hashCount = 0;
