@@ -104,6 +104,7 @@ class DebuggerClientDap : public DebuggerClient {
 		bool configured = false;
 		bool waitingToAttach = false;
 		std::unique_ptr<Bus> bus;
+		std::string buffer;
 		std::atomic<Uint64> idx{ 1 };
 	};
 
@@ -120,7 +121,6 @@ class DebuggerClientDap : public DebuggerClient {
 	bool mDestroying{ false };
 	Mutex mRequestsMutex;
 	std::unordered_map<Uint64, Request> mRequests;
-	std::string mBuffer;
 	ProtocolSettings mProtocol;
 	Capabilities mAdapterCapabilities;
 	std::vector<std::unique_ptr<Bus>> mBusesToClose;
@@ -128,7 +128,7 @@ class DebuggerClientDap : public DebuggerClient {
 	// Session management
 	mutable Mutex mSessionsMutex;
 	std::unordered_map<std::string, Session> mSessions;	   // Session ID to Session
-	std::string mCurrentSessionId;						   // Latest active session
+	SessionId mCurrentSessionId;						   // Latest active session
 	std::unordered_map<int, std::string> mThreadToSession; // Thread ID to Session ID
 
 	void setState( const State& state, const SessionId& sessionId ) override;
@@ -139,7 +139,7 @@ class DebuggerClientDap : public DebuggerClient {
 					  ResponseHandler onFinish, const SessionId& sessionId );
 	void makeResponse( int reqSeq, bool success, const std::string& command,
 					   const nlohmann::json& body, const std::string& sessionId );
-	void asyncRead( const char* bytes, size_t n );
+	void asyncRead( const char* bytes, size_t n, const SessionId& sessionId );
 	void processProtocolMessage( const nlohmann::json& msg );
 	void processResponse( const nlohmann::json& msg );
 	void processEvent( const nlohmann::json& msg );
@@ -148,7 +148,7 @@ class DebuggerClientDap : public DebuggerClient {
 		Uint64 payloadStart;
 		Uint64 payloadLength;
 	};
-	std::optional<HeaderInfo> readHeader();
+	std::optional<HeaderInfo> readHeader( std::string& buffer );
 	void errorResponse( const std::string& command, const std::string& summary,
 						const std::optional<Message>& message, const SessionId& sessionId = "" );
 

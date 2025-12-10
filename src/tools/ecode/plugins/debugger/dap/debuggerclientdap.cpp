@@ -121,10 +121,11 @@ bool DebuggerClientDap::supportsTerminateDebuggee() const {
 
 bool DebuggerClientDap::start() {
 	bool started = false;
-	if ( mSessions[mCurrentSessionId].bus &&
-		 ( started = mSessions[mCurrentSessionId].bus->start() ) ) {
-		mSessions[mCurrentSessionId].bus->startAsyncRead(
-			[this]( const char* bytes, size_t n ) { asyncRead( bytes, n ); } );
+	SessionId sessionId = mCurrentSessionId;
+	if ( mSessions[sessionId].bus && ( started = mSessions[sessionId].bus->start() ) ) {
+		mSessions[sessionId].bus->startAsyncRead( [this, sessionId]( const char* bytes, size_t n ) {
+			asyncRead( bytes, n, sessionId );
+		} );
 	} else {
 		Log::warning( "DebuggerClientDap::start: could not initialize the debugger" );
 		return false;
@@ -241,24 +242,25 @@ void DebuggerClientDap::requestInitialize( const SessionId& sessionId,
 		sessionId );
 }
 
-void DebuggerClientDap::asyncRead( const char* bytes, size_t n ) {
+void DebuggerClientDap::asyncRead( const char* bytes, size_t n, const SessionId& sessionId ) {
 	std::string_view read( bytes, n );
-	mBuffer += read;
+	auto& buffer = mSessions[sessionId].buffer;
+	buffer += read;
 
 	while ( true ) {
-		const auto info = readHeader();
+		const auto info = readHeader( buffer );
 		if ( !info )
 			break;
-		if ( info->payloadStart >= mBuffer.size() ) {
+		if ( info->payloadStart >= buffer.size() ) {
 			Log::debug( "DebuggerClientDap::asyncRead: Out of range payloadStart access. Current "
 						"buffer was:\n%s\nPayload started at %" PRIu64 "",
-						mBuffer.data(), info->payloadStart );
+						buffer.data(), info->payloadStart );
 			break;
 		}
-		const auto data = mBuffer.substr( info->payloadStart, info->payloadLength );
+		const auto data = buffer.substr( info->payloadStart, info->payloadLength );
 		if ( data.size() < info->payloadLength )
 			break;
-		mBuffer.erase( 0, info->payloadStart + info->payloadLength );
+		buffer.erase( 0, info->payloadStart + info->payloadLength );
 
 #ifndef EE_DEBUG
 		try {
@@ -326,7 +328,7 @@ void DebuggerClientDap::processRequest( const nlohmann::json& msg ) {
 				} );
 		}
 	} else if ( DAP_START_DEBUGGING == command ) {
-		std::string sessionId =
+		SessionId sessionId =
 			args.contains( "configuration" )
 				? args["configuration"].value( "__pendingTargetId",
 											   "" ) // This is non-standard, we recover the target
@@ -369,8 +371,9 @@ void DebuggerClientDap::processRequest( const nlohmann::json& msg ) {
 		mCurrentSessionId = sessionId;
 
 		if ( newSession.bus && newSession.bus->start() ) {
-			newSession.bus->startAsyncRead(
-				[this]( const char* bytes, size_t n ) { asyncRead( bytes, n ); } );
+			newSession.bus->startAsyncRead( [this, sessionId]( const char* bytes, size_t n ) {
+				asyncRead( bytes, n, sessionId );
+			} );
 		} else {
 			Log::warning( "DebuggerClientDap::start: could not initialize the debugger" );
 			return;
@@ -584,28 +587,28 @@ void DebuggerClientDap::processEventBreakpoint( const nlohmann::json& body,
 		listener->breakpointChanged( breakpointEvent, sessionId );
 }
 
-std::optional<DebuggerClientDap::HeaderInfo> DebuggerClientDap::readHeader() {
+std::optional<DebuggerClientDap::HeaderInfo> DebuggerClientDap::readHeader( std::string& buffer ) {
 	Uint64 length = std::string::npos;
 	Uint64 start = 0;
 	Uint64 end = std::string::npos;
 
-	auto discardExploredBuffer = [this, length, start, end]() mutable {
-		mBuffer.erase( 0, end );
+	auto discardExploredBuffer = [&buffer, length, start, end]() mutable {
+		buffer.erase( 0, end );
 		length = end = std::string::npos;
 		start = 0;
 	};
 
 	while ( true ) {
-		end = mBuffer.find( DAP_SEP, start );
+		end = buffer.find( DAP_SEP, start );
 		if ( end == std::string::npos ) {
-			if ( mBuffer.size() > MAX_HEADER_SIZE )
-				mBuffer.clear();
+			if ( buffer.size() > MAX_HEADER_SIZE )
+				buffer.clear();
 			length = std::string::npos;
 			break; // PENDING
 		}
 
-		const auto header = mBuffer.substr( start, end - start );
-		while ( std::string_view{ mBuffer }.substr( end, 2 ) == DAP_SEP )
+		const auto header = buffer.substr( start, end - start );
+		while ( end <= buffer.size() && std::string_view{ buffer }.substr( end, 2 ) == DAP_SEP )
 			end += DAP_SEP_SIZE;
 
 		// header block separator
