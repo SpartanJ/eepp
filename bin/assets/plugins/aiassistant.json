@@ -177,7 +177,6 @@
     "lmstudio": {
       "api_url": "http://localhost:1234/api/v0/chat/completions",
       "display_name": "LMStudio",
-      "enabled": false,
       "fetch_models_url": "http://localhost:1234/api/v0/models",
       "open_api": true
     },

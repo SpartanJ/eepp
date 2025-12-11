@@ -801,10 +801,15 @@ void LLMChatUI::fillApiModels( UIDropDownList* modelDDL ) {
 		for ( const auto& el : jdata ) {
 			LLMModel model;
 			model.provider = name;
-			model.name = el.contains( "model" ) ? el.value( "model", "" ) : el.value( "id", "" );
+			model.name = el.contains( "model" ) ? el.value( "model", "" )
+												: ( el.contains( "id" ) ? el.value( "id", "" )
+																		: el.value( "key", "" ) );
 
 			if ( el.contains( "name" ) )
 				model.displayName = el.value( "name", "" );
+
+			if ( !model.displayName && el.contains( "display_name" ) )
+				model.displayName = el.value( "display_name", "" );
 
 			model.isEphemeral = true;
 
