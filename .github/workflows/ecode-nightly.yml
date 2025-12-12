@@ -428,7 +428,7 @@ jobs:
     needs: release
     runs-on: windows-latest
     env:
-      MSBUILD_PATH: C:/Program Files/Microsoft Visual Studio/2022/Enterprise/MSBuild/Current/Bin
+      MSBUILD_PATH: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin
     steps:
     - name: Configure Git
       shell: pwsh
@@ -451,18 +451,15 @@ jobs:
     - name: Create project
       shell: pwsh
       run: |
-        ./premake5.exe --windows-vc-build --with-text-shaper --disable-static-build vs2022
+        .\premake5.exe --windows-vc-build --with-text-shaper --disable-static-build vs2022
     - name: Patch commit number
       shell: pwsh
       run: |
-        $COMMIT_NUMBER = git rev-list "$((git tag --sort=-creatordate | Select-String ecode | Select-Object -First 1).Line)..HEAD" --count
-        if ($LASTEXITCODE) { exit $LASTEXITCODE }
-        $FILE_PATH = "src/tools/ecode/version.hpp"
-        (Get-Content $FILE_PATH) -replace '#define ECODE_COMMIT_NUMBER \d+', "#define ECODE_COMMIT_NUMBER $COMMIT_NUMBER" | Set-Content $FILE_PATH
+        .\projects\scripts\patch_commit_number.ps1
     - name: Build
       shell: pwsh
       run: |
-        & "$env:MSBUILD_PATH/MSBuild.exe" ./make/windows/eepp.sln -m /t:ecode /p:Platform=x64 /p:Configuration=release
+        & "$env:MSBUILD_PATH/MSBuild.exe" .\make\windows\eepp.sln -m /t:ecode /p:Platform=x64 /p:Configuration=release
     - name: Generate ZIP archives
       shell: pwsh
       run: |
