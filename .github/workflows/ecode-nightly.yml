@@ -463,8 +463,8 @@ jobs:
     - name: Generate ZIP archives
       shell: pwsh
       run: |
-        Compress-Archive -LiteralPath ./bin/assets, ./bin/SDL2.dll, ./bin/eepp.dll, ./bin/ecode.exe -DestinationPath ./ecode-windows-nightly-msvc-x86_64.zip -Force
-        Compress-Archive -LiteralPath ./bin/ecode.pdb -DestinationPath ./ecode-windows-nightly-msvc-x86_64-pdb.zip -Force
+        Compress-Archive -LiteralPath .\bin\assets, .\bin\SDL2.dll, .\bin\eepp.dll, .\bin\ecode.exe -DestinationPath .\ecode-windows-nightly-msvc-x86_64.zip -Force
+        Compress-Archive -LiteralPath .\bin\ecode.pdb -DestinationPath .\ecode-windows-nightly-msvc-x86_64-pdb.zip -Force
     - name: Upload Files
       uses: softprops/action-gh-release@v2.2.2
       with:
