@@ -57,8 +57,7 @@ fi
 gmake -j"${parallel_tasks}" config="${CONFIG_NAME}" ecode || exit
 
 cd "$DIRPATH" || exit
-rm -rf ./ecode.app
-mkdir -p ecode.app/assets
+bash ../../scripts/copy_ecode_assets.sh ../../bin ecode.app || exit
 mkdir -p ecode.app/libs
 chmod +x AppRun
 cp AppRun ecode.app/
@@ -68,32 +67,6 @@ cp ../../../libs/bsd/x86_64/libeepp.so ecode.app/libs/
 cp ../../../bin/ecode ecode.app/ecode.bin
 cp -L /usr/local/lib/libSDL2-2.0.so.0 ecode.app/libs/
 strip ecode.app/libs/libSDL2-2.0.so.0
-mkdir -p ecode.app/assets/colorschemes
-mkdir -p ecode.app/assets/fonts
-mkdir -p ecode.app/assets/i18n
-cp -r ../../../bin/assets/i18n ecode.app/assets/
-cp -r ../../../bin/assets/colorschemes ecode.app/assets/
-cp -r ../../../bin/assets/fonts/DejaVuSansMono.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/DejaVuSansMono-Bold.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/DejaVuSansMono-Oblique.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/DejaVuSansMono-BoldOblique.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/DejaVuSansMonoNerdFontComplete.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/nonicons.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/codicon.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoSans-Regular.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoSans-Bold.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoSans-Italic.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoSans-BoldItalic.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/remixicon.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoEmoji-Regular.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoColorEmoji.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/fonts/DroidSansFallbackFull.ttf ecode.app/assets/fonts/
-cp -r ../../../bin/assets/plugins ecode.app/assets/
-mkdir -p ecode.app/assets/icon/
-cp -r ../../../bin/assets/icon/ecode.png ecode.app/assets/icon/
-mkdir ecode.app/assets/ui
-cp ../../../bin/assets/ui/breeze.css ecode.app/assets/ui/
-cp ../../../bin/assets/ca-bundle.pem ecode.app/assets/ca-bundle.pem
 
 if [ -n "$VERSION" ];
 then
