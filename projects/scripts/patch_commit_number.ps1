@@ -11,3 +11,5 @@ try {
 } catch {
   exit 1
 }
+
+Set-Location (Resolve-Path "$PSScriptRoot\..\..")
