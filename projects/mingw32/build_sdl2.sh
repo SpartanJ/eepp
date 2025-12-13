@@ -21,7 +21,7 @@ HOST="--host=aarch64-w64-mingw32"
 
 if [ -f "/usr/local/cross-tools/aarch64-w64-mingw32/bin/SDL2.dll" ]; then
 echo "SDL2 found in cross-tools folder"
-# exit 0
+exit 0
 fi
 
 else
