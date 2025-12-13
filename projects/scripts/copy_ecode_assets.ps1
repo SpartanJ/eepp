@@ -5,8 +5,10 @@
 .USAGE
     .\copy_ecode_assets.ps1 <source_dir> <dest_dir>
 .EXAMPLE
-    .\copy_ecode_assets.ps1 ..\..\..\bin ecode.app
+    .\copy_ecode_assets.ps1 .\bin .\ecode
 #>
+
+Set-Location (Resolve-Path "$PSScriptRoot\..\..")
 
 param (
     [Parameter(Mandatory = $true)]
