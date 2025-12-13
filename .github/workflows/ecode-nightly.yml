@@ -482,7 +482,7 @@ jobs:
       shell: pwsh
       run: |
         .\projects\scripts\patch_commit_number.ps1
-        .\projects\windows\ecode\build.app.ps1 --arch arm64
+        .\projects\windows\ecode\build.app.ps1 -arch arm64
     - name: Upload Files
       uses: softprops/action-gh-release@v2.2.2
       with:
