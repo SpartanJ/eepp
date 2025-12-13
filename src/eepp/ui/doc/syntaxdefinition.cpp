@@ -169,6 +169,7 @@ SyntaxDefinition::SyntaxDefinition(
 		updatePatternsState( *this, mPatterns );
 		mPatterns.emplace_back( SyntaxPattern{ { "%s+" }, "normal" } );
 		mPatterns.emplace_back( SyntaxPattern{ { "%w+%f[%s]" }, "normal" } );
+		mPatterns.back().flags |= SyntaxPattern::Flags::IsAutomaticallyAdded;
 	}
 	for ( const auto& symbol : mSymbolNames ) {
 		mSymbolsHashes.insert(

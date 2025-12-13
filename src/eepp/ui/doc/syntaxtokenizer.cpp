@@ -716,6 +716,9 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 						 innerPtrn->patterns[0][0] == '^' )
 						continue;
 
+					if ( patternStack.size() > 1 && innerPtrn->isAutomaticallyAdded() )
+						continue;
+
 					if ( std::find( triedPatterns.begin(), triedPatterns.end(), patternState ) !=
 						 triedPatterns.end() )
 						continue;

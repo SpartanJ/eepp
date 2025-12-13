@@ -15,21 +15,52 @@ void addMarkdown() {
 		{ "Markdown",
 		  { "%.md$", "%.markdown$" },
 		  {
-			  { { "\\." }, "normal" },
 			  { { "```[%w \t%+%-#]+", "```" }, "function", dynSyntax },
+			  { { "include", "#comments" }, "normal" },
+			  { { "include", "#strings" }, "normal" },
+			  { { "include", "#enumerations" }, "normal" },
+			  { { "include", "#decorations" }, "normal" },
+			  { { "include", "#headings" }, "normal" },
+			  { { "include", "#links" }, "normal" },
+		  },
+		  {},
+		  "",
+		  {} } );
+
+	sd.addRepositories( {
+
+		{ "comments",
+		  {
 			  { { "<!%-%-", "%-%->" }, "comment" },
-			  { { "```", "```" }, "string" },
-			  { { "``", "``" }, "string" },
-			  { { "`", "`" }, "string" },
-			  { { "~~", "~~", "\\" }, "type" },
 			  { { "%-%-%-+" }, "comment" },
-			  { { "%*%s+" }, "operator" },
-			  { { "%*", "[%*\n]", "\\" }, "operator" },
-			  { { "%s%_", "[%_\n]", "\\" }, "type" },
-			  { { "^%_", "[%_\n]", "\\" }, "type" },
-			  { { "^#.-\n" }, "keyword" },
-			  { { "\n#.-\n" }, "keyword" },
-			  { { "\n%_", "[%_\n]", "\\" }, "type" },
+		  } },
+
+		{ "strings",
+		  {
+			  { { "```", "```" }, "string" },
+			  { { "``", "(``|\n)" }, { "string" }, {}, "", SyntaxPatternMatchType::RegEx },
+			  { { "`", "[`\n]" }, "string" },
+			  { { "^%s*>+%s.*" }, "string" },
+		  } },
+
+		{ "enumerations",
+		  {
+			  { { "^%s*%*%s" }, "number" },
+			  { { "^%s*%-%s" }, "number" },
+			  { { "^%s*%+%s" }, "number" },
+			  { { "^%s*[0-9]+[%.%)]%s" }, "number" },
+			  { { "%*%s+" }, "number" },
+		  } },
+
+		{ "headings",
+		  {
+			  { { "^#.+\n" }, "keyword" },
+			  { { "\n#.+\n" }, "keyword" },
+			  { { "^=+\n" }, "keyword" },
+		  } },
+
+		{ "links",
+		  {
 			  { { "%[!%[([^%]]-)%]%((https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/"
 				  "?[%w_.~!*:@&+$/?%%#=-]*)%)%]%((https?://[%w_.~!*:@&+$/"
 				  "?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/?%%#=-]*)%)" },
@@ -43,16 +74,108 @@ void addMarkdown() {
 			  { { "https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/"
 				  "?%%#=-]*" },
 				"link" },
+		  } },
 
-		  },
+		{ "decorations_bold",
 		  {
+			  { { "\\*\\*(?!\\*)", "(\\*\\*|\n)" },
+				{ "type,bold", "type,bold", "type,bold" },
+				{},
+				"",
+				SyntaxPatternMatchType::RegEx,
+				{
+					{ { "include", "$self" }, "type,bold" },
+				} },
+			  { { "__(?!_)", "(__|\n)" },
+				{ "type,bold", "type,bold", "type,bold" },
+				{},
+				"",
+				SyntaxPatternMatchType::RegEx,
+				{
+					{ { "include", "$self" }, "type,bold" },
+				} },
+		  } },
 
-		  },
-		  "",
-		  {}
+		{ "decorations_italic",
+		  {
+			  { { "%s%_%f[^_]", "[%_\n]" },
+				{ "type,italic" },
+				{},
+				"",
+				SyntaxPatternMatchType::LuaPattern,
+				{
+					{ { "include", "$self" },
+					  "type,italic",
+					  "",
+					  SyntaxPatternMatchType::LuaPattern },
+				} },
 
-		} );
+			  { { "^%_%f[^_]", "[%_\n]" },
+				{ "type,italic" },
+				{},
+				"",
+				SyntaxPatternMatchType::LuaPattern,
+				{
+					{ { "include", "$self" }, "type,italic" },
+				} },
 
+			  { { "%s%*%f[^*]", "[%*\n]" },
+				{ "type,italic" },
+				{},
+				"",
+				SyntaxPatternMatchType::LuaPattern,
+				{
+					{ { "include", "$self" }, "type,italic" },
+				} },
+
+			  { { "^%*%f[^*]", "[%*\n]" },
+				{ "type,italic" },
+				{},
+				"",
+				SyntaxPatternMatchType::LuaPattern,
+				{
+					{ { "include", "$self" }, "type,italic" },
+				} },
+
+			  { { "\n%_%f[^_]", "[%_\n]" },
+				{ "type,italic" },
+				{},
+				"",
+				SyntaxPatternMatchType::LuaPattern,
+				{
+					{ { "include", "$self" }, "type,italic" },
+				} },
+		  } },
+
+		{ "decorations_strikethrough",
+		  {
+			  { { "~~~" }, "normal" },
+			  { { "~~", "(~~|\n)" },
+				{ "type,strikethrough" },
+				{},
+				"",
+				SyntaxPatternMatchType::RegEx,
+				{
+					{ { "include", "$self" }, "type,strikethrough" },
+				} },
+			  { { "~", "(~|\n)" },
+				{ "type,strikethrough" },
+				{},
+				"",
+				SyntaxPatternMatchType::RegEx,
+				{
+					{ { "include", "$self" }, "type,strikethrough" },
+				} },
+		  } },
+
+		{ "decorations",
+		  {
+			  { { "include", "#decorations_bold" }, "normal" },
+			  { { "include", "#decorations_italic" }, "normal" },
+			  { { "include", "#decorations_strikethrough" }, "normal" },
+		  } },
+
+	} );
 	sd.setFoldRangeType( FoldRangeType::Markdown );
 	sd.setBlockComment( { "<!--", "-->" } );
 }

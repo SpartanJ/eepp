@@ -42,6 +42,7 @@ struct EE_API SyntaxPattern {
 		IsRootSelfInclude = 1 << 3,
 		IsRangedMatch = 1 << 5,
 		IsSourceInclude = 1 << 6,
+		IsAutomaticallyAdded = 1 << 7,
 	};
 
 	static SyntaxDefMap<SyntaxStyleType, std::string> SyntaxStyleTypeCache;
@@ -107,6 +108,8 @@ struct EE_API SyntaxPattern {
 	inline bool isSourceInclude() const { return flags & Flags::IsSourceInclude; }
 
 	inline bool isRangedMatch() const { return flags & Flags::IsRangedMatch; }
+
+	inline bool isAutomaticallyAdded() const { return flags & Flags::IsAutomaticallyAdded; }
 
 	inline bool isSimpleRangedMatch() const {
 		return isRangedMatch() && !hasContentScope() && !hasSyntax();
