@@ -16,7 +16,7 @@ if ($arch -eq "arm64") {
   & "$env:MSBUILD_PATH/MSBuild.exe" .\make\windows\eepp.sln -m /t:ecode /p:Platform=ARM64 /p:Configuration=release
   New-Item -Name "ecode" -ItemType Directory
   .\projects\scripts\copy_ecode_assets.ps1 .\bin .\ecode
-  Copy-Item -Path ".\bin\assets", ".\bin\SDL2.dll", ".\bin\eepp.dll", ".\bin\ecode.exe" -Destination ".\ecode"
+  Copy-Item -Path ".\bin\SDL2.dll", ".\bin\eepp.dll", ".\bin\ecode.exe" -Destination ".\ecode"
   Compress-Archive -LiteralPath ".\ecode" -DestinationPath .\ecode-windows-nightly-msvc-arm64.zip -Force
   Compress-Archive -LiteralPath ".\bin\ecode.pdb" -DestinationPath .\ecode-windows-nightly-msvc-arm64-pdb.zip -Force
 }
@@ -27,7 +27,7 @@ else {
   & "$env:MSBUILD_PATH/MSBuild.exe" .\make\windows\eepp.sln -m /t:ecode /p:Platform=x64 /p:Configuration=release
   New-Item -Name "ecode" -ItemType Directory
   .\projects\scripts\copy_ecode_assets.ps1 .\bin .\ecode
-  Copy-Item -Path ".\bin\assets", ".\bin\SDL2.dll", ".\bin\eepp.dll", ".\bin\ecode.exe" -Destination ".\ecode"
+  Copy-Item -Path ".\bin\SDL2.dll", ".\bin\eepp.dll", ".\bin\ecode.exe" -Destination ".\ecode"
   Compress-Archive -LiteralPath ".\ecode" -DestinationPath .\ecode-windows-nightly-msvc-x86_64.zip -Force
   Compress-Archive -LiteralPath ".\bin\ecode.pdb" -DestinationPath .\ecode-windows-nightly-msvc-x86_64-pdb.zip -Force
 }
