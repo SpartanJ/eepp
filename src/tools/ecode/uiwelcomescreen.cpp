@@ -1,6 +1,7 @@
 #include "uiwelcomescreen.hpp"
 #include "customwidgets.hpp"
 #include "ecode.hpp"
+#include "version.hpp"
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/window.hpp>
 
@@ -20,22 +21,33 @@ static const auto LAYOUT = R"xml(
 	color: var(--font);
 	cursor: hand;
 }
-#home_logo {
+#welcome_ecode #home_logo {
 	focusable: false;
 	background-image: icon(ecode,256dp);
 	background-position: center center;
 	background-tint: var(--font-hint);
 	background-size: 100% 100%;
 }
-#home_logo:hover {
+#welcome_ecode #home_logo:hover {
 	background-tint: var(--primary);
 }
-#home_title {
+#welcome_ecode #home_title {
 	font-size: 24dp;
 	color: var(--font-hint);
-	font-family: DejaVuSansMono;
 	font-style: bold|shadow;
+}
+#welcome_ecode #home_title,
+#welcome_ecode #version_number {
+	cursor: pointer;
+	font-family: DejaVuSansMono;
 	text-shadow-color: rgba(0,0,0,0.4);
+}
+#welcome_ecode #version_number {
+	font-style: shadow;
+}
+#welcome_ecode #version_number:hover {
+	color: var(--primary);
+	cursor: hand;
 }
 #welcome_ecode PushButton {
 	min-width: 128dp;
@@ -82,7 +94,10 @@ static const auto LAYOUT = R"xml(
 		<vbox class="left" lw="0" lh="wc" lw8="0.5" lg="center">
 			<hbox lw="wc" lh="wc" lg="center">
 				<image id="home_logo" lw="wc" min-width="128dp" lh="128dp" lg="center" />
-				<tv id="home_title" text="ecode" lg="center" />
+				<vbox lg="center">
+					<tv id="home_title" text="ecode" lg="center" />
+					<tv id="version_number" text="version x.x.x" lg="center" />
+				</vbox>
 			</hbox>
 			<tv class="bold" text="@string(shortcuts, Shortcuts)" lg="center" margin-top="16dp" />
 			<vbox lw="mp" lh="wc" lg="center">
@@ -220,6 +235,10 @@ UIWelcomeScreen::UIWelcomeScreen( App* app ) :
 	recentFiles->onClick( [this]( const MouseEvent* event ) {
 		mApp->createAndShowRecentFilesPopUpMenu( event->getNode() );
 	} );
+
+	find<UITextView>( "version_number" )
+		->setText( String::format( "version %s", ecode::Version::getVersionNumString() ) )
+		->onClick( [this]( auto ) { mApp->runCommand( "check-for-updates" ); } );
 
 	find<UITextView>( "main_menu_shortcut" )->setText( mApp->getKeybind( "menu-toggle" ) );
 

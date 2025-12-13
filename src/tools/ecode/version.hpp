@@ -43,22 +43,22 @@ class Version {
 	Uint64 patch;  /**< update version */
 	Uint64 commit; /**< commit number, used for nightly builds */
 
-	/** @return The linked version of the library */
+	/** @return The linked version of ecode */
 	static Version getVersion();
 
-	/** @return The linked version number of the library */
+	/** @return The linked version number of ecode */
 	static Uint64 getVersionNum();
 
-	/** @return The linked version number of the library */
+	/** @return The linked version number of ecode */
 	static std::string getVersionNumString();
 
-	/** @return The library version name: "ecode version major.minor.patch" */
+	/** @return The ecode version name: "ecode version major.minor.patch" */
 	static std::string getVersionFullName();
 
 	/** @return The version codename */
 	static std::string getCodename();
 
-	/** @return The build time of the library */
+	/** @return The build time of ecode */
 	static inline std::string getBuildTime() {
 		return std::string( __DATE__ ) + " " + std::string( __TIME__ );
 	}
