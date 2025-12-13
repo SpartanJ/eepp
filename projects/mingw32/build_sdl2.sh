@@ -19,7 +19,7 @@ if [[ "$ARCH" == "arm64" ]]; then
 echo "Building SDL2 for arch $ARCH"
 HOST="--host=aarch64-w64-mingw32"
 
-if [ ! -f "/usr/local/cross-tools/aarch64-w64-mingw32/bin/SDL2.dll" ]; then
+if [ -f "/usr/local/cross-tools/aarch64-w64-mingw32/bin/SDL2.dll" ]; then
 echo "SDL2 found in cross-tools folder"
 # exit 0
 fi
