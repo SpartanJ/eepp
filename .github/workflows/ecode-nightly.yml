@@ -422,3 +422,74 @@ jobs:
           prerelease: true
           files: |
             projects/freebsd/ecode/ecode-freebsd-${{ env.INSTALL_REF }}-x86_64.tar.gz
+
+  build_windows_msvc:
+    name: Windows x86_64 MSVC Nightly
+    needs: release
+    runs-on: windows-latest
+    env:
+      MSBUILD_PATH: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin
+    steps:
+    - name: Configure Git
+      shell: pwsh
+      run: |
+        git config --system core.autocrlf false
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.ref }}
+        fetch-depth: 2
+    - name: Checkout submodules
+      shell: pwsh
+      run: |
+        git submodule update --init --recursive
+    - name: Build
+      shell: pwsh
+      run: |
+        .\projects\scripts\patch_commit_number.ps1
+        .\projects\windows\ecode\build.app.ps1
+    - name: Upload Files
+      uses: softprops/action-gh-release@v2.2.2
+      with:
+        tag_name: ${{ needs.release.outputs.version }}
+        draft: false
+        prerelease: true
+        files: |
+          ./ecode-windows-nightly-msvc-x86_64.zip
+          ./ecode-windows-nightly-msvc-x86_64-pdb.zip
+
+  build_windows_arm64_msvc:
+    name: Windows arm64 MSVC Nightly
+    if: false
+    needs: release
+    runs-on: windows-latest
+    env:
+      MSBUILD_PATH: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin
+    steps:
+    - name: Configure Git
+      shell: pwsh
+      run: |
+        git config --system core.autocrlf false
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.ref }}
+        fetch-depth: 2
+    - name: Checkout submodules
+      shell: pwsh
+      run: |
+        git submodule update --init --recursive
+    - name: Build
+      shell: pwsh
+      run: |
+        .\projects\scripts\patch_commit_number.ps1
+        .\projects\windows\ecode\build.app.ps1 -arch arm64
+    - name: Upload Files
+      uses: softprops/action-gh-release@v2.2.2
+      with:
+        tag_name: ${{ needs.release.outputs.version }}
+        draft: false
+        prerelease: true
+        files: |
+          ./ecode-windows-nightly-msvc-arm64.zip
+          ./ecode-windows-nightly-msvc-arm64-pdb.zip
