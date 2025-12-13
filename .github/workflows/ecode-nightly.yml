@@ -460,7 +460,6 @@ jobs:
 
   build_windows_arm64_msvc:
     name: Windows arm64 MSVC Nightly
-    if: false
     needs: release
     runs-on: windows-latest
     env:
