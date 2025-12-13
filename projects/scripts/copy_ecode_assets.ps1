@@ -8,8 +8,6 @@
     .\copy_ecode_assets.ps1 .\bin .\ecode
 #>
 
-Set-Location (Resolve-Path "$PSScriptRoot\..\..")
-
 param (
     [Parameter(Mandatory = $true)]
     [string]$SourceDir,
@@ -25,16 +23,8 @@ if ($args.Count -ne 2 -and (-not $PSBoundParameters.ContainsKey('SourceDir'))) {
     exit 1
 }
 
-# Resolve SCRIPT_DIR to the directory where this script lives
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-Write-Host "Running copy_ecode_assets.ps1 from: $ScriptDir"
+Set-Location (Resolve-Path "$PSScriptRoot\..\..")
 
-# Resolve source_dir relative to the script location if it's relative
-if (-not [System.IO.Path]::IsPathRooted($SourceDir)) {
-    $SourceDir = Join-Path $ScriptDir $SourceDir
-}
-
-# Convert SOURCE_DIR to absolute path and check it exists
 try {
     $SourceDir = (Resolve-Path $SourceDir -ErrorAction Stop).Path
 } catch {
