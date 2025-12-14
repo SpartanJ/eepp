@@ -54,9 +54,9 @@ void addMarkdown() {
 
 		{ "headings",
 		  {
-			  { { "^#.+\n" }, "keyword" },
-			  { { "\n#.+\n" }, "keyword" },
-			  { { "^=+\n" }, "keyword" },
+			  { { "^#.-\n" }, "keyword" },
+			  { { "\n#.-\n" }, "keyword" },
+			  { { "^=-\n" }, "keyword" },
 		  } },
 
 		{ "links",
@@ -76,24 +76,41 @@ void addMarkdown() {
 				"link" },
 		  } },
 
+		{ "inside_bold",
+		  {
+			  { { "include" }, "#strings", "normal" },
+			  { { "include" }, "#decorations_italic", "normal" },
+			  { { "include" }, "#decorations_strikethrough", "normal" },
+			  { { "include" }, "#links", "normal" },
+		  } },
+
 		{ "decorations_bold",
 		  {
 			  { { "\\*\\*(?!\\*)", "(\\*\\*|\n)" },
-				{ "type,bold", "type,bold", "type,bold" },
+				{ "type,bold" },
 				{},
 				"",
 				SyntaxPatternMatchType::RegEx,
 				{
-					{ { "include", "$self" }, "type,bold" },
+					{ { "include", "#inside_bold" }, "type,bold" },
 				} },
+
 			  { { "__(?!_)", "(__|\n)" },
-				{ "type,bold", "type,bold", "type,bold" },
+				{ "type,bold" },
 				{},
 				"",
 				SyntaxPatternMatchType::RegEx,
 				{
-					{ { "include", "$self" }, "type,bold" },
+					{ { "include", "#inside_bold" }, "type,bold" },
 				} },
+		  } },
+
+		{ "inside_italic",
+		  {
+			  { { "include" }, "#strings", "normal" },
+			  { { "include" }, "#decorations_bold", "normal" },
+			  { { "include" }, "#decorations_strikethrough", "normal" },
+			  { { "include" }, "#links", "normal" },
 		  } },
 
 		{ "decorations_italic",
@@ -104,10 +121,7 @@ void addMarkdown() {
 				"",
 				SyntaxPatternMatchType::LuaPattern,
 				{
-					{ { "include", "$self" },
-					  "type,italic",
-					  "",
-					  SyntaxPatternMatchType::LuaPattern },
+					{ { "include", "#inside_italic" }, "type,italic" },
 				} },
 
 			  { { "^%_%f[^_]", "[%_\n]" },
@@ -116,7 +130,7 @@ void addMarkdown() {
 				"",
 				SyntaxPatternMatchType::LuaPattern,
 				{
-					{ { "include", "$self" }, "type,italic" },
+					{ { "include", "#inside_italic" }, "type,italic" },
 				} },
 
 			  { { "%s%*%f[^*]", "[%*\n]" },
@@ -125,7 +139,7 @@ void addMarkdown() {
 				"",
 				SyntaxPatternMatchType::LuaPattern,
 				{
-					{ { "include", "$self" }, "type,italic" },
+					{ { "include", "#inside_italic" }, "type,italic" },
 				} },
 
 			  { { "^%*%f[^*]", "[%*\n]" },
@@ -134,7 +148,7 @@ void addMarkdown() {
 				"",
 				SyntaxPatternMatchType::LuaPattern,
 				{
-					{ { "include", "$self" }, "type,italic" },
+					{ { "include", "#inside_italic" }, "type,italic" },
 				} },
 
 			  { { "\n%_%f[^_]", "[%_\n]" },
@@ -143,7 +157,7 @@ void addMarkdown() {
 				"",
 				SyntaxPatternMatchType::LuaPattern,
 				{
-					{ { "include", "$self" }, "type,italic" },
+					{ { "include", "#inside_italic" }, "type,italic" },
 				} },
 		  } },
 

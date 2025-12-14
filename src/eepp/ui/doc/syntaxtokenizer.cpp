@@ -220,13 +220,10 @@ static inline void pushStack( SyntaxStateRestored& curState, SyntaxState& retSta
 	setSubsyntaxPatternIdx( curState, retState, patternIndex );
 
 	curState.subsyntaxInfo = &enteringSubsyntax;
-	curState.currentSyntax =
-		!enteringSubsyntax.hasSyntax()
-			? curState.currentSyntax
-			: ( &SyntaxDefinitionManager::instance()->getByLanguageName(
-				  curState.subsyntaxInfo->dynSyntax
-					  ? curState.subsyntaxInfo->dynSyntax( enteringSubsyntax, patternTextStr )
-					  : curState.subsyntaxInfo->syntax ) );
+	curState.currentSyntax = &SyntaxDefinitionManager::instance()->getByLanguageName(
+		curState.subsyntaxInfo->dynSyntax
+			? curState.subsyntaxInfo->dynSyntax( enteringSubsyntax, patternTextStr )
+			: curState.subsyntaxInfo->syntax );
 
 	retState.langStack[curState.currentLevel] = curState.currentSyntax->getLanguageIndex();
 	curState.currentLevel++;
