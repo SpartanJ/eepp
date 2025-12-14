@@ -20,7 +20,7 @@ $archSuffix = if ($isArm64) { "arm64" } else { "x86_64" }
 $premakeExtra = if ($isArm64) { "--arch=arm64" } else { "" }
 $msbuildPlat = if ($isArm64) { "ARM64" } else { "x64" }
 
-& $premakeCmd --windows-vc-build --with-text-shaper $premakeExtra --disable-static-build vs2022
+& $premakeCmd --windows-vc-build --with-text-shaper $(if ($premakeExtra) { $premakeExtra }) --disable-static-build vs2022
 
 & "$env:MSBUILD_PATH/MSBuild.exe" .\make\windows\eepp.sln -m /t:ecode /p:Platform=$msbuildPlat /p:Configuration=release
 .\projects\scripts\copy_ecode_assets.ps1 .\bin .\projects\windows\ecode\ecode
