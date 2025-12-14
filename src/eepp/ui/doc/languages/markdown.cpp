@@ -78,10 +78,10 @@ void addMarkdown() {
 
 		{ "inside_bold",
 		  {
-			  { { "include" }, "#strings", "normal" },
-			  { { "include" }, "#decorations_italic", "normal" },
-			  { { "include" }, "#decorations_strikethrough", "normal" },
-			  { { "include" }, "#links", "normal" },
+			  { { "include", "#strings" }, "normal" },
+			  { { "include", "#decorations_italic" }, "normal" },
+			  { { "include", "#decorations_strikethrough" }, "normal" },
+			  { { "include", "#links" }, "normal" },
 		  } },
 
 		{ "decorations_bold",
@@ -107,10 +107,10 @@ void addMarkdown() {
 
 		{ "inside_italic",
 		  {
-			  { { "include" }, "#strings", "normal" },
-			  { { "include" }, "#decorations_bold", "normal" },
-			  { { "include" }, "#decorations_strikethrough", "normal" },
-			  { { "include" }, "#links", "normal" },
+			  { { "include", "#strings" }, "normal" },
+			  { { "include", "#decorations_bold" }, "normal" },
+			  { { "include", "#decorations_strikethrough" }, "normal" },
+			  { { "include", "#links" }, "normal" },
 		  } },
 
 		{ "decorations_italic",

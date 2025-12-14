@@ -248,7 +248,7 @@ static inline void popStack( SyntaxStateRestored& curState, SyntaxState& retStat
 		return;
 	}
 
-	if ( curState.currentLevel > 0 )
+	if ( curState.currentLevel > 0 && fromPattern.hasSyntax() )
 		curState.currentLevel--;
 
 	if ( retState.langStack[curState.currentLevel] != 0 &&
