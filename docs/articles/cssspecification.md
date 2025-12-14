@@ -1279,6 +1279,22 @@ Sets the maximum visible items for the list shown by a drop down list or combo b
 
 ---
 
+### menu-width-mode
+
+Sets how is the dropdown-menu width calculated.
+
+* Applicable to: EE::UI::UIDropDownList (DropDownList), EE::UI::UIComboBox (ComboBox)
+* Data Type: [string-list](#string-list-data-type)
+* Value List:
+  * `dropdown`: Same width as the dropdown button.
+  * `contents`: The length of its contents.
+  * `contents-center`: The length of its contents but centered against the dropdown button.
+  * `expand-if-needed`: Same width as the dropdown button unless its contents are larger than the dropdown button, in that case it will expand to its contents.
+  * `expand-if-needed-center`: Same as `expand-if-needed` but centered against the dropdown button.
+* Default value: `dropdown`
+
+---
+
 ### min-height
 
 Read [min-height](https://developer.mozilla.org/en-US/docs/Web/CSS/min-height) documentation.

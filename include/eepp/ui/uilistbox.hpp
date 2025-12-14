@@ -116,6 +116,8 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 
 	void setItemText( const Uint32& index, const String& newText );
 
+	UIListBoxItem* getReferenceItem() const { return mDummyItem; }
+
   protected:
 	friend class UIListBoxItem;
 	friend class UIItemContainer<UIListBox>;

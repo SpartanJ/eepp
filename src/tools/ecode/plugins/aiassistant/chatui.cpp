@@ -166,7 +166,7 @@ DropDownList.role_ui {
 			<PushButton id="llm_settings_but" class="llm_button" text="@string(settings, Settings)" tooltip="@string(settings, Settings)" icon="icon(settings, 14dp)" min-width="32dp" />
 			<PushButton id="llm_more" class="llm_button" tooltip="@string(more_options, More Options)" icon="icon(more-fill, 14dp)" min-width="32dp" />
 			<hbox lw="0" lw8="1" lh="mp" layout_gravity="center" padding-left="8dp" padding-right="8dp">
-				<DropDownList class="model_ui" lw="0" lw8="1" selected-index="0"></DropDownList>
+				<DropDownList class="model_ui" menu-width-mode="expand-if-needed-centered" lw="0" lw8="1" selected-index="0"></DropDownList>
 				<PushButton id="refresh_model_ui" tooltip="@string(refresh_model_ui, Refresh Local Models)" icon="icon(refresh, 14dp)" />
 			</hbox>
 			<SelectButton id="llm_private_chat" class="llm_button" tooltip="@string(private_chat, Toggle Private Chat)" icon="icon(chat-private, 14dp)" min-width="32dp" margin-right="8dp" select-on-click="true" />

@@ -1179,16 +1179,16 @@ void ProjectBuildManager::buildSidePanelTab() {
 					<TextView text="@string(build_settings, Build Settings)" font-size="15dp" focusable="false" />
 					<TextView text="@string(build_configuration, Build Configuration)" focusable="false" />
 					<hbox lw="mp" lh="wc" margin-top="2dp" margin-bottom="4dp">
-						<DropDownList id="build_list" layout_width="0" lw8="1" layout_height="wrap_content" />
+						<DropDownList id="build_list" layout_width="0" lw8="1" layout_height="wrap_content" menu-width-mode="expand-if-needed" />
 						<PushButton id="build_edit" id="build_edit" text="@string(edit_build, Edit Build)" tooltip="@string(edit_build, Edit Build)"  text-as-fallback="true" icon="icon(file-edit, 12dp)" margin-left="2dp" />
 						<PushButton id="build_add" id="build_add" text="@string(add_build, Add Build)" tooltip="@string(add_build, Add Build)" text-as-fallback="true" icon="icon(add, 12dp)" margin-left="2dp" />
 					</hbox>
 					<TextView text="@string(build_target, Build Target)" margin-top="8dp" focusable="false" />
-					<DropDownList lw="mp" id="build_type_list" margin-top="2dp" />
+					<DropDownList lw="mp" id="build_type_list" margin-top="2dp" menu-width-mode="expand-if-needed" />
 					<PushButton id="build_button" lw="mp" lh="wc" text="@string(build, Build)" margin-top="8dp" icon="icon(hammer, 12dp)" />
 					<PushButton id="clean_button" lw="mp" lh="wc" text="@string(clean, Clean)" margin-top="8dp" icon="icon(eraser, 12dp)" />
 					<TextView text="@string(run_target, Run Target)" margin-top="8dp" focusable="false" />
-					<DropDownList lw="mp" id="run_config_list" margin-top="2dp" />
+					<DropDownList lw="mp" id="run_config_list" margin-top="2dp" menu-width-mode="expand-if-needed" />
 					<PushButton id="run_button" lw="mp" lh="wc" text="@string(run, Run)" margin-top="8dp" icon="icon(play, 12dp)" />
 					<PushButton id="build_and_run_button" lw="mp" lh="wc" text="@string(build_and_run, Build & Run)" margin-top="8dp" icon="icon(play, 12dp)" />
 				</vbox>

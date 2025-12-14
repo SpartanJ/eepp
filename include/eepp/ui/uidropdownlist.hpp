@@ -8,10 +8,23 @@ namespace EE { namespace UI {
 
 class EE_API UIDropDownList : public UITextInput {
   public:
+	enum class MenuWidthMode {
+		DropDown,
+		Contents,
+		ContentsCentered,
+		ExpandIfNeeded,
+		ExpandIfNeededCentered
+	};
+
+	static MenuWidthMode menuWidthModeFromString( std::string_view str );
+
+	static std::string menuWidthModeToString( MenuWidthMode rule );
+
 	class StyleConfig {
 	  public:
 		Uint32 MaxNumVisibleItems = 10;
 		bool PopUpToRoot = false;
+		MenuWidthMode menuWidthRule{ MenuWidthMode::DropDown };
 	};
 
 	static UIDropDownList* NewWithTag( const std::string& tag );
@@ -30,19 +43,19 @@ class EE_API UIDropDownList : public UITextInput {
 
 	UIListBox* getListBox() const;
 
-	void showList();
+	UIDropDownList* showList();
 
 	bool getPopUpToRoot() const;
 
-	void setPopUpToRoot( bool popUpToRoot );
+	UIDropDownList* setPopUpToRoot( bool popUpToRoot );
 
 	Uint32 getMaxNumVisibleItems() const;
 
-	void setMaxNumVisibleItems( const Uint32& maxNumVisibleItems );
+	UIDropDownList* setMaxNumVisibleItems( const Uint32& maxNumVisibleItems );
 
 	const StyleConfig& getStyleConfig() const;
 
-	void setStyleConfig( const StyleConfig& styleConfig );
+	UIDropDownList* setStyleConfig( const StyleConfig& styleConfig );
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
@@ -52,6 +65,10 @@ class EE_API UIDropDownList : public UITextInput {
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
 	virtual void loadFromXmlNode( const pugi::xml_node& node );
+
+	UIDropDownList* setMenuWidthMode( MenuWidthMode rule );
+
+	MenuWidthMode getMenuWidthMode() const;
 
   protected:
 	friend class UIComboBox;
