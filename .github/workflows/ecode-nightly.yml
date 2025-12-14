@@ -434,15 +434,9 @@ jobs:
       shell: pwsh
       run: |
         git config --system core.autocrlf false
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      with:
-        ref: ${{ github.ref }}
-        fetch-depth: 2
-    - name: Checkout submodules
-      shell: pwsh
-      run: |
-        git submodule update --init --recursive
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with: { fetch-depth: 0, submodules: 'recursive' }
     - name: Build
       shell: pwsh
       run: |
@@ -470,15 +464,9 @@ jobs:
       shell: pwsh
       run: |
         git config --system core.autocrlf false
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      with:
-        ref: ${{ github.ref }}
-        fetch-depth: 2
-    - name: Checkout submodules
-      shell: pwsh
-      run: |
-        git submodule update --init --recursive
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with: { fetch-depth: 0, submodules: 'recursive' }
     - name: Build
       shell: pwsh
       run: |

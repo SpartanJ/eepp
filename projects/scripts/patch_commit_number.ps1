@@ -2,7 +2,10 @@ Set-Location (Resolve-Path "$PSScriptRoot\..\..")
 
 $COMMIT_NUMBER = git rev-list "$((git tag --sort=-creatordate | Select-String ecode | Select-Object -First 1).Line)..HEAD" --count
 
-if ($LASTEXITCODE) { exit $LASTEXITCODE }
+if ($LASTEXITCODE) {
+  Write-Error "Error: git binary not found"
+  exit $LASTEXITCODE
+}
 
 $FILE_PATH = ".\src\tools\ecode\version.hpp"
 
