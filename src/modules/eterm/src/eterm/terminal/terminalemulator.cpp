@@ -96,6 +96,7 @@ const static unsigned int worddelimiters[] = { ' ', 0 };
 static const unsigned int tabspaces = 4;
 
 #ifdef _WIN32
+#define MICROSOFT_WINDOWS_WINBASE_H_DEFINE_INTERLOCKED_CPLUSPLUS_OVERLOADS 0
 #include <windows.h>
 #endif
 

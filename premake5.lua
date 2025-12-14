@@ -155,6 +155,7 @@ remote_sdl2_version_number = "2.32.8"
 remote_sdl2_version = "SDL2-" .. remote_sdl2_version_number
 remote_sdl2_devel_src_url = "https://libsdl.org/release/" .. remote_sdl2_version .. ".zip"
 remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-" .. remote_sdl2_version_number .. "-VC.zip"
+remote_sdl2_devel_vc_arm64_url = "https://github.com/mmozeiko/build-sdl2/releases/download/2025-12-14/SDL2-arm64-2025-12-14.zip"
 remote_sdl2_devel_mingw_url = "https://www.libsdl.org/release/SDL2-devel-" .. remote_sdl2_version_number .. "-mingw.zip"
 
 remote_sdl2_arm64_cross_tools_path = "/usr/local/cross-tools/aarch64-w64-mingw32"
@@ -189,7 +190,10 @@ function download_and_extract_sdl(sdl_url)
 end
 
 function copy_sdl()
-	if _OPTIONS["windows-vc-build"] then
+	if _OPTIONS["windows-vc-build"] and _OPTIONS["arch"] == "arm64" then
+		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/bin/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/SDL2.dll" )
+		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/bin/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/SDL2.dll" )
+	elseif _OPTIONS["windows-vc-build"] then
 		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/lib/x64/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/SDL2.dll" )
 		os.copyfile( _MAIN_SCRIPT_DIR .. "/src/thirdparty/" .. remote_sdl2_version .."/lib/x64/SDL2.dll", _MAIN_SCRIPT_DIR .. "/bin/unit_tests/SDL2.dll" )
 	elseif _OPTIONS["windows-mingw-build"] and _OPTIONS["arch"] ~= "arm64" then
@@ -215,8 +219,15 @@ function version_to_number( version )
 end
 
 function download_and_extract_dependencies()
+	if _OPTIONS["windows-vc-build"] and _OPTIONS["arch"] == "arm64" then
+		remote_sdl2_version = "SDL2-arm64"
+	end
+
 	if not os.isdir("src/thirdparty/" .. remote_sdl2_version) then
-		if _OPTIONS["windows-vc-build"] then
+		if _OPTIONS["windows-vc-build"] and _OPTIONS["arch"] == "arm64" then
+			download_and_extract_sdl(remote_sdl2_devel_vc_arm64_url)
+			copy_sdl()
+		elseif _OPTIONS["windows-vc-build"] then
 			download_and_extract_sdl(remote_sdl2_devel_vc_url)
 			copy_sdl()
 		elseif _OPTIONS["windows-mingw-build"] and _OPTIONS["arch"] ~= "arm64" then
@@ -438,10 +449,13 @@ function build_link_configuration( package_name, use_ee_icon )
 			links { "SDL2", "SDL2main" }
 		end
 
+	filter { "options:windows-vc-build", "options:arch=arm64" }
+		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/lib" }
+
 	filter { "options:windows-vc-build", "system:windows", "platforms:x86" }
 		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/lib/x86" }
 
-	filter { "options:windows-vc-build", "system:windows", "platforms:x86_64" }
+	filter { "options:windows-vc-build", "system:windows", "platforms:x86_64", "not options:arch=arm64" }
 		syslibdirs { "src/thirdparty/" .. remote_sdl2_version .."/lib/x64" }
 
 	filter { "options:windows-mingw-build", "architecture:x86" }
@@ -954,6 +968,8 @@ workspace "eepp"
 		incdirs { "include/thirdparty/glew" }
 		build_base_configuration( "glew" )
 		target_dir_thirdparty()
+		filter { "action:vs*", "options:arch=arm64" }
+			buildoptions{ "/bigobj", "/O1", "/Zm200" }
 
 	project "mbedtls-static"
 		kind "StaticLib"

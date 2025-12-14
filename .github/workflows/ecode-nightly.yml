@@ -449,12 +449,11 @@ jobs:
         draft: false
         prerelease: true
         files: |
-          ./ecode-windows-nightly-msvc-x86_64.zip
-          ./ecode-windows-nightly-msvc-x86_64-pdb.zip
+          ./projects/windows/ecode/ecode-windows-nightly-msvc-x86_64.zip
+          ./projects/windows/ecode/ecode-windows-nightly-msvc-x86_64-pdb.zip
 
   build_windows_arm64_msvc:
     name: Windows arm64 MSVC Nightly
-    if: false
     needs: release
     runs-on: windows-latest
     env:
@@ -479,5 +478,5 @@ jobs:
         draft: false
         prerelease: true
         files: |
-          ./ecode-windows-nightly-msvc-arm64.zip
-          ./ecode-windows-nightly-msvc-arm64-pdb.zip
+          ./projects/windows/ecode/ecode-windows-nightly-msvc-arm64.zip
+          ./projects/windows/ecode/ecode-windows-nightly-msvc-arm64-pdb.zip

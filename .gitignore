@@ -54,6 +54,8 @@ eepp.geany
 ecode.dmg
 /projects/linux/ecode/ecode.app
 /projects/freebsd/ecode/ecode.app
+/projects/windows/ecode/ecode
+/projects/windows/ecode/ecode-*
 *.AppImage
 /projects/mingw32/ecode/ecode/
 /projects/mingw32/ecode/ecode-*

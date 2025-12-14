@@ -11,6 +11,11 @@
 #include <math.h>
 #include <float.h>
 
+#if defined(_MSC_VER) && defined(_M_ARM64)
+#include <malloc.h>  // Declares _alloca on MSVC
+#define alloca _alloca
+#endif
+
 /* Unless compiling statically into another app, we want the public API
    to export on Windows. Define these before including al.h, so we override
    its attempt to mark these as `dllimport`. */
@@ -85,7 +90,9 @@
 #  endif
 #endif
 
-#if defined(__SSE__)  /* if you are on x86 or x86-64, we assume you have SSE1 by now. */
+#if defined(_MSC_VER) && defined(_M_ARM64)
+#define NEED_SCALAR_FALLBACK 1
+#elif defined(__SSE__)  /* if you are on x86 or x86-64, we assume you have SSE1 by now. */
 #define NEED_SCALAR_FALLBACK 0
 #elif (defined(__ARM_ARCH) && (__ARM_ARCH >= 8))  /* ARMv8 always has NEON. */
 #define NEED_SCALAR_FALLBACK 0
@@ -4302,7 +4309,7 @@ static float source_get_offset(ALsource *src, ALenum param)
     }
     switch(param) {
         case AL_SAMPLE_OFFSET: return (float) (offset / framesize); break;
-        case AL_SEC_OFFSET: return ((float) (offset / framesize)) / freq; break;
+        case AL_SEC_OFFSET: return ((float) (offset / framesize)) / ((float) freq); break;
         case AL_BYTE_OFFSET: return (float) offset; break;
         default: break;
     }
