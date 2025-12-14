@@ -837,6 +837,7 @@ function build_eepp( build_name )
 
 	filter "options:windows-vc-build"
 		incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include" }
+		incdirs { "src/thirdparty/" .. remote_sdl2_version .. "/include/SDL2" }
 
 	filter { "options:windows-mingw-build", "architecture:x86" }
 		incdirs { "src/thirdparty/" .. remote_sdl2_version .."/i686-w64-mingw32/include/" }
