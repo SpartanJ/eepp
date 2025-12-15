@@ -30,6 +30,9 @@ using namespace EE::Window;
 
 namespace ecode {
 
+static const char* DEFAULT_PROVIDER = "google";
+static const char* DEFAULT_MODEL = "gemini-2.5-flash";
+
 const char* LLMChat::roleToString( Role role ) {
 	switch ( role ) {
 		case Role::User:
@@ -142,6 +145,13 @@ DropDownList.role_ui {
 	border-radius: 8dp;
 	margin-bottom: 4dp;
 }
+.llm_chat_input {
+	background-image: none;
+}
+.llm_chat_input.incognito {
+	background-image: icon(spy-line, 16dp);
+	background-position: top 8dp right 8dp;
+}
 </style>
 <Splitter lw="mp" lh="mp" orientation="vertical" splitter-partition="75%" padding="4dp">
 	<RelativeLayout lw="mp">
@@ -160,17 +170,17 @@ DropDownList.role_ui {
 			<TextInput class="llm_chat_locate_input" lw="mp" lh="18dp" hint='@string(type_to_locate, "Type to Locate")' />
 		</vboxce>
 		<hbox lw="mp" lh="wc" layout_gravity="bottom|left" layout_margin="8dp" clip="false">
-			<PushButton id="llm_user" class="llm_button" text="@string(user, User)" tooltip="@string(change_role, Change Role)" min-width="60dp" margin-right="8dp" />
-			<PushButton id="llm_attach" class="llm_button" text="@string(add_context, Add Context)" tooltip="@string(add_context, Add Context)" icon="icon(attach, 14dp)" min-width="32dp" />
-			<PushButton id="llm_chat_history" class="llm_button" text="@string(chat_history, Chat History)" tooltip="@string(chat_history, Chat History)" icon="icon(chat-history, 14dp)" min-width="32dp" />
-			<PushButton id="llm_settings_but" class="llm_button" text="@string(settings, Settings)" tooltip="@string(settings, Settings)" icon="icon(settings, 14dp)" min-width="32dp" />
+			<PushButton id="llm_user" class="llm_button" text="@string(user, User)" tooltip="@string(change_role, Change Role)" min-width="60dp" margin-right="4dp" />
+			<PushButton id="llm_attach" class="llm_button" text="@string(add_context, Add Context)" tooltip="@string(add_context, Add Context)" icon="icon(attach, 14dp)" min-width="32dp" margin-right="4dp" />
+			<PushButton id="llm_chat_history" class="llm_button" text="@string(chat_history, Chat History)" tooltip="@string(chat_history, Chat History)" icon="icon(chat-history, 14dp)" min-width="32dp" margin-right="4dp" />
 			<PushButton id="llm_more" class="llm_button" tooltip="@string(more_options, More Options)" icon="icon(more-fill, 14dp)" min-width="32dp" />
-			<hbox lw="0" lw8="1" lh="mp" layout_gravity="center" padding-left="8dp" padding-right="8dp">
+			<hbox lw="0" lw8="1" lh="mp" layout_gravity="center" padding-left="4dp" padding-right="4dp">
 				<DropDownList class="model_ui" menu-width-mode="expand-if-needed-centered" lw="0" lw8="1" selected-index="0"></DropDownList>
-				<PushButton id="refresh_model_ui" tooltip="@string(refresh_model_ui, Refresh Local Models)" icon="icon(refresh, 14dp)" />
+				<!-- <PushButton id="refresh_model_ui" tooltip="@string(refresh_model_ui, Refresh Local Models)" icon="icon(refresh, 14dp)" /> -->
 			</hbox>
-			<SelectButton id="llm_private_chat" class="llm_button" tooltip="@string(private_chat, Toggle Private Chat)" icon="icon(chat-private, 14dp)" min-width="32dp" margin-right="8dp" select-on-click="true" />
-			<PushButton id="llm_add_chat" class="llm_button" text="@string(add, Add)" tooltip="@string(add_message, Add Message)" icon="icon(add, 15dp)" min-width="32dp" layout-margin-right="8dp" />
+			<PushButton id="llm_settings_but" class="llm_button" text="@string(settings, Settings)" tooltip="@string(settings, Settings)" icon="icon(settings, 14dp)" min-width="32dp" margin-right="4dp" />
+			<!-- <SelectButton id="llm_private_chat" class="llm_button" tooltip="@string(private_chat, Toggle Private Chat)" icon="icon(chat-private, 14dp)" min-width="32dp" margin-right="8dp" select-on-click="true" /> -->
+			<PushButton id="llm_add_chat" class="llm_button" text="@string(add, Add)" tooltip="@string(add_message, Add Message)" icon="icon(add, 15dp)" min-width="32dp" margin-right="4dp" />
 			<PushButton id="llm_run" class="llm_button primary" text="@string(run, Run)" tooltip="@string(add_message_and_run_prompt, Add Message and Run Prompt)" icon="icon(play-filled, 14dp)" />
 			<PushButton id="llm_stop" class="llm_button primary" text="@string(stop, Stop)" icon="icon(stop, 12dp)" min-width="32dp" visible="false" enabled="false" />
 		</hbox>
@@ -207,8 +217,8 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mChatsList = findByClass( "llm_chats" );
 	mModelDDL = findByClass<UIDropDownList>( "model_ui" );
 
-	mRefreshModels = find<UIPushButton>( "refresh_model_ui" );
-	mRefreshModels->onClick( [this]( auto ) { execute( "ai-refresh-local-models" ); } );
+	// mRefreshModels = find<UIPushButton>( "refresh_model_ui" );
+	// mRefreshModels->onClick( [this]( auto ) { execute( "ai-refresh-local-models" ); } );
 
 	mChatMore = find<UIPushButton>( "llm_more" );
 	mChatMore->onClick( [this]( auto ) { execute( "ai-show-menu" ); } );
@@ -262,9 +272,9 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mChatUserRole = find<UIPushButton>( "llm_user" );
 	mChatUserRole->onClick( [this]( auto ) { execute( "ai-chat-toggle-role" ); } );
 
-	mChatPrivate = find<UISelectButton>( "llm_private_chat" );
+	/* mChatPrivate = find<UISelectButton>( "llm_private_chat" );
 	mChatPrivate->on( Event::OnValueChange,
-					  [this]( auto ) { mChatIsPrivate = mChatPrivate->isSelected(); } );
+					  [this]( auto ) { mChatIsPrivate = mChatPrivate->isSelected(); } ); */
 
 	auto setCmd = [this]( const std::string& name, const CommandCallback& cb ) {
 		setCommand( name, cb );
@@ -373,7 +383,15 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		mLocateInput->getDocument().selectAll();
 	} );
 
-	setCmd( "ai-toggle-private-chat", [this] { mChatPrivate->toggleSelection(); } );
+	setCmd( "ai-toggle-private-chat", [this] {
+		mChatIsPrivate = !mChatIsPrivate;
+		/* mChatPrivate->toggleSelection(); */
+
+		if ( mChatIsPrivate )
+			mChatInput->addClass( "incognito" );
+		else
+			mChatInput->removeClass( "incognito" );
+	} );
 
 	setCmd( "ai-toggle-lock-chat", [this] { renameChat( mSummary, true ); } );
 
@@ -466,6 +484,8 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 				   getKeyBindings().getCommandKeybindString( "ai-clone-chat" ) )
 			->setId( "ai-clone-chat" );
 
+		menu->addSeparator();
+
 		menu->addCheckBox( i18n( "lock_chat_memory", "Lock Chat Memory" ), mChatLocked,
 						   getKeyBindings().getCommandKeybindString( "ai-toggle-lock-chat" ) )
 			->setTooltipText(
@@ -473,6 +493,19 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 					  "Lock a chat memory to avoid being deleted during memory clean-ups.\nChat "
 					  "memory will only be able to be deleted manually in the chat history." ) )
 			->setId( "ai-toggle-lock-chat" );
+
+		menu->addCheckBox( i18n( "toggle_private_chat", "Toggle Private Chat" ), mChatIsPrivate,
+						   getKeyBindings().getCommandKeybindString( "ai-toggle-private-chat" ) )
+			->setTooltipText( i18n( "toggle_private_chat_tooltip",
+									"Private chats won't be saved into the chat history." ) )
+			->setId( "ai-toggle-private-chat" );
+
+		menu->addSeparator();
+
+		menu->add( i18n( "refresh_model_ui", "Refresh Local Models" ),
+				   getUISceneNode()->findIconDrawable( "refresh", PixelDensity::dpToPxI( 12 ) ),
+				   getKeyBindings().getCommandKeybindString( "ai-refresh-local-models" ) )
+			->setId( "ai-refresh-local-models" );
 
 		menu->on( Event::OnItemClicked, [this]( const Event* event ) {
 			UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -537,10 +570,10 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	appendShortcutToTooltip( mChatStop, "ai-prompt" );
 	appendShortcutToTooltip( mChatAdd, "ai-add-chat" );
 	appendShortcutToTooltip( mChatSettings, "ai-settings" );
-	appendShortcutToTooltip( mChatPrivate, "ai-toggle-private-chat" );
+	// appendShortcutToTooltip( mChatPrivate, "ai-toggle-private-chat" );
 	appendShortcutToTooltip( mChatMore, "ai-show-menu" );
 	appendShortcutToTooltip( mChatUserRole, "ai-chat-toggle-role" );
-	appendShortcutToTooltip( mRefreshModels, "ai-refresh-local-models" );
+	// appendShortcutToTooltip( mRefreshModels, "ai-refresh-local-models" );
 
 	addKb( mChatInput, "mod+keypad enter", "ai-prompt", true, false );
 	addKb( mChatInput, "mod+shift+keypad enter", "ai-add-chat", true, false );
@@ -1045,13 +1078,13 @@ LLMModel LLMChatUI::findModel( const std::string& provider, const std::string& m
 			return *modelIt;
 		}
 	}
-	if ( provider == "openai" && model == "gpt-5" )
+	if ( provider == DEFAULT_PROVIDER && model == DEFAULT_MODEL )
 		return mCurModel; // Do not stack-overflow if something is really wrong
 	return getDefaultModel();
 }
 
 LLMModel LLMChatUI::getDefaultModel() {
-	return findModel( "openai", "gpt-5" );
+	return findModel( DEFAULT_PROVIDER, DEFAULT_MODEL );
 }
 
 std::string LLMChatUI::getNewFilePath( const std::string& uuid, const std::string& summary,

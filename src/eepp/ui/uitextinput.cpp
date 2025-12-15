@@ -200,7 +200,7 @@ void UITextInput::alignFix() {
 	Vector2f rOffset( mRealAlignOffset );
 	UITextView::alignFix();
 
-	if ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT ) {
+	if ( mAllowEditing && Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT ) {
 		Float tW = getVisibleTextCache()->findCharacterPos( selCurInit() ).x;
 		mCurPos.x = tW;
 		mCurPos.y = 0;
