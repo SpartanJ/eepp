@@ -3206,7 +3206,7 @@ App::getForcePositionFn( TextPosition initialPosition ) {
 	return forcePosition;
 }
 
-void App::initProjectTreeViewUI() {
+void App::initProjectViewEmptyCont() {
 	mProjectViewEmptyCont = mUISceneNode->find<UILinearLayout>( "project_view_empty" );
 	mProjectViewEmptyCont->find<UIPushButton>( "open_folder" )
 		->on( Event::MouseClick, [this]( const Event* event ) {
@@ -3219,6 +3219,10 @@ void App::initProjectTreeViewUI() {
 				createAndShowRecentFolderPopUpMenu(
 					mProjectViewEmptyCont->find<UIPushButton>( "open_recent_folder" ) );
 		} );
+}
+
+void App::initProjectTreeViewUI() {
+	initProjectViewEmptyCont();
 	mProjectTreeView = mUISceneNode->find<UITreeView>( "project_view" );
 	mProjectTreeView->setColumnsHidden(
 		{ FileSystemModel::Icon, FileSystemModel::Size, FileSystemModel::Group,
@@ -4412,6 +4416,7 @@ void App::init( InitParameters& params ) {
 		if ( params.terminal && params.file.empty() && params.fileToOpen.empty() ) {
 			showSidePanel( false );
 			showStatusBar( false );
+			initProjectViewEmptyCont();
 			mTerminalManager->createNewTerminal();
 		} else {
 			initProjectTreeView( params.file, params.openClean );

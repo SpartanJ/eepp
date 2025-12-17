@@ -688,6 +688,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void initLocateBar();
 
+	void initProjectViewEmptyCont();
+
 	void initProjectTreeViewUI();
 
 	void initProjectTreeView( std::string path, bool openClean );

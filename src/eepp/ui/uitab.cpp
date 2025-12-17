@@ -381,9 +381,7 @@ Uint32 UITab::onMessage( const NodeMessage* message ) {
 			break;
 		}
 		case NodeMessage::MouseUp: {
-			if ( flags & EE_BUTTON_LMASK && message->getSender() != mCloseButton ) {
-				tTabW->setTabSelected( this );
-			} else if ( tTabW->getTabsClosable() && ( flags & EE_BUTTON_MMASK ) ) {
+			if ( tTabW->getTabsClosable() && ( flags & EE_BUTTON_MMASK ) ) {
 				tTabW->tryCloseTab( this, UITabWidget::FocusTabBehavior::Closest );
 			} else if ( flags & EE_BUTTONS_WUWD ) {
 				Input* input = getInput();
