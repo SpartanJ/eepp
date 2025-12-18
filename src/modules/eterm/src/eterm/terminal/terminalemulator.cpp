@@ -880,6 +880,12 @@ void TerminalEmulator::treset( void ) {
 		tclearregion( 0, 0, mTerm.col - 1, mTerm.row - 1 );
 		tswapscreen();
 	}
+
+	xsetmode( 0, MODE_MOUSE | MODE_MOUSESGR | MODE_APPKEYPAD | MODE_APPCURSOR | MODE_FOCUS |
+					 MODE_BRCKTPASTE | MODE_MOUSEX10 | MODE_MOUSEMANY );
+	auto dpy = mDpy.lock();
+	if ( dpy )
+		dpy->setMode( MODE_VISIBLE, 1 );
 }
 
 void TerminalEmulator::tnew( int col, int row, size_t historySize ) {
@@ -2680,10 +2686,27 @@ void TerminalEmulator::osc_color_response( int num, int index, int is_osc4 ) {
 
 void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Vector2i& pos,
 									const Uint32& flags, const Uint32& mod ) {
-	if ( !xgetmode( MODE_MOUSEBTN ) && !xgetmode( MODE_MOUSESGR ) &&
+	if ( !xgetmode( (TerminalWinMode)MODE_MOUSE ) && !xgetmode( MODE_MOUSESGR ) &&
 		 ( TerminalMouseEventType::MouseButtonDown == type ||
-		   TerminalMouseEventType::MouseButtonRelease == type ) )
+		   TerminalMouseEventType::MouseButtonRelease == type ) ) {
+		/* If mouse mode is not enabled, we send arrow keys for scroll events */
+		if ( type == TerminalMouseEventType::MouseButtonDown ) {
+			if ( flags & ( EE_BUTTON_WUMASK | EE_BUTTON_WDMASK ) ) {
+				char buf[64];
+				int len = 0;
+				if ( flags & EE_BUTTON_WUMASK ) {
+					len = snprintf( buf, sizeof( buf ), "%s",
+									xgetmode( MODE_APPKEYPAD ) ? "\033OA" : "\033[A" );
+				} else if ( flags & EE_BUTTON_WDMASK ) {
+					len = snprintf( buf, sizeof( buf ), "%s",
+									xgetmode( MODE_APPKEYPAD ) ? "\033OB" : "\033[B" );
+				}
+				if ( len > 0 )
+					ttywrite( buf, len, 0 );
+			}
+		}
 		return;
+	}
 
 	if ( !xgetmode( MODE_MOUSEMOTION ) && TerminalMouseEventType::MouseMotion == type )
 		return;
@@ -2737,7 +2760,7 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 			if ( xgetmode( MODE_MOUSEX10 ) )
 				return;
 			/* Don't send release events for the scroll wheel */
-			if ( btn >= 28 && btn <= 31 )
+			if ( btn >= 4 && btn <= 7 )
 				return;
 		}
 		code = 0;
