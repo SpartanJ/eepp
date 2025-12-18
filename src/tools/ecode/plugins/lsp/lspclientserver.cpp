@@ -1206,7 +1206,7 @@ void LSPClientServer::initialize() {
 						  { "showMessage", showMessage },
 						  { "showDocument", showDocument } } },
 		{ "workspace", workspace },
-		{ "general", json{ { "positionEncodings", json::array( { "utf-32" } ) } } } };
+		{ "general", json{ { "positionEncodings", json::array( { "utf-16" } ) } } } };
 
 	json params{ { "processId", Sys::getProcessID() },
 				 { "capabilities", capabilities },
@@ -1260,9 +1260,7 @@ void LSPClientServer::initialize() {
 			write( newRequest( "initialized" ) );
 
 			// Send configuration immediately after initialized
-			if ( !mLSP.settings.empty() ) {
-				didChangeConfiguration( mLSP.settings, mWorkspaceFolder.getFSPath(), true );
-			}
+			didChangeConfiguration( mLSP.settings, mWorkspaceFolder.getFSPath(), true );
 
 			sendQueuedMessages();
 			notifyServerInitialized();
