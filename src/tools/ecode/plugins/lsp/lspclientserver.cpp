@@ -1206,7 +1206,7 @@ void LSPClientServer::initialize() {
 						  { "showMessage", showMessage },
 						  { "showDocument", showDocument } } },
 		{ "workspace", workspace },
-		{ "general", json{ { "positionEncodings", json::array( { "utf-16" } ) } } } };
+		{ "general", json{ { "positionEncodings", json::array( { "utf-32" } ) } } } };
 
 	json params{ { "processId", Sys::getProcessID() },
 				 { "capabilities", capabilities },
