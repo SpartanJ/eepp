@@ -551,7 +551,7 @@ char* TerminalEmulator::getsel( void ) const {
 	ptr = str = (char*)xmalloc( bufsize );
 
 	/* append every set & selected glyph to the selection */
-	for ( y = mSel.nb.y; y <= mSel.ne.y && y < mTerm.row; y++ ) {
+	for ( y = mSel.nb.y; y <= mSel.ne.y; y++ ) {
 		if ( ( linelen = tlinelen( y ) ) == 0 ) {
 			*ptr++ = '\n';
 			continue;
@@ -2690,20 +2690,19 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 		 ( TerminalMouseEventType::MouseButtonDown == type ||
 		   TerminalMouseEventType::MouseButtonRelease == type ) ) {
 		/* If mouse mode is not enabled, we send arrow keys for scroll events */
-		if ( type == TerminalMouseEventType::MouseButtonDown ) {
-			if ( flags & ( EE_BUTTON_WUMASK | EE_BUTTON_WDMASK ) ) {
-				char buf[64];
-				int len = 0;
-				if ( flags & EE_BUTTON_WUMASK ) {
-					len = snprintf( buf, sizeof( buf ), "%s",
-									xgetmode( MODE_APPKEYPAD ) ? "\033OA" : "\033[A" );
-				} else if ( flags & EE_BUTTON_WDMASK ) {
-					len = snprintf( buf, sizeof( buf ), "%s",
-									xgetmode( MODE_APPKEYPAD ) ? "\033OB" : "\033[B" );
-				}
-				if ( len > 0 )
-					ttywrite( buf, len, 0 );
+		if ( type == TerminalMouseEventType::MouseButtonDown &&
+			 ( flags & ( EE_BUTTON_WUMASK | EE_BUTTON_WDMASK ) ) && tisaltscr() ) {
+			char buf[64];
+			int len = 0;
+			if ( flags & EE_BUTTON_WUMASK ) {
+				len = snprintf( buf, sizeof( buf ), "%s",
+								xgetmode( MODE_APPKEYPAD ) ? "\033OA" : "\033[A" );
+			} else if ( flags & EE_BUTTON_WDMASK ) {
+				len = snprintf( buf, sizeof( buf ), "%s",
+								xgetmode( MODE_APPKEYPAD ) ? "\033OB" : "\033[B" );
 			}
+			if ( len > 0 )
+				ttywrite( buf, len, 0 );
 		}
 		return;
 	}
