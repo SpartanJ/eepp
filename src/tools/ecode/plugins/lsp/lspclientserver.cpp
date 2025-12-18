@@ -2353,6 +2353,12 @@ LSPClientServer::LSPRequestHandle
 LSPClientServer::didChangeConfiguration( const nlohmann::json& settings,
 										 const std::string& workspaceFolder, bool async ) {
 	auto finalSettings = settings;
+
+	// Ensure finalSettings is a JSON object.
+	// If it's null, empty, or not an object, initialize it to {}
+	if ( !finalSettings.is_object() )
+		finalSettings = nlohmann::json::object();
+
 	sanitizeCommand( finalSettings, workspaceFolder );
 	auto params = changeConfigurationParams( finalSettings );
 	if ( async && needsAsync() ) {
