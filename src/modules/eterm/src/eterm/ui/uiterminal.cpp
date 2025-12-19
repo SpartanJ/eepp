@@ -315,7 +315,7 @@ const std::shared_ptr<TerminalDisplay>& UITerminal::getTerm() const {
 void UITerminal::scheduledUpdate( const Time& ) {
 	if ( !mTerm )
 		return;
-	mTerm->update();
+	mTerm->update( isMouseOverMeOrChildren() );
 
 	if ( mTerm->isDirty() && isVisible() )
 		invalidateDraw();
@@ -451,11 +451,14 @@ Uint32 UITerminal::onKeyDown( const KeyEvent& event ) {
 	if ( mUISceneNode->getUIEventDispatcher()->justGainedFocus() )
 		return 0;
 
-	std::string cmd = mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
-	if ( !cmd.empty() ) {
-		if ( !mExclusiveMode || cmd == getExclusiveModeToggleCommandName() )
-			execute( cmd );
-		return 1;
+	if ( !mTerm->isRegisteredShortcut( event.getKeyCode(), event.getMod() ) ) {
+		std::string cmd =
+			mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
+		if ( !cmd.empty() ) {
+			if ( !mExclusiveMode || cmd == getExclusiveModeToggleCommandName() )
+				execute( cmd );
+			return 1;
+		}
 	}
 
 	mTerm->onKeyDown( event.getKeyCode(), event.getChar(), event.getMod(), event.getScancode() );

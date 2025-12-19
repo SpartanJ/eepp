@@ -173,7 +173,7 @@ class TerminalDisplay : public ITerminalDisplay {
 	virtual void drawCursor( int cx, int cy, TerminalGlyph g, int ox, int oy, TerminalGlyph og );
 	virtual void drawEnd();
 
-	virtual bool update();
+	virtual bool update( bool isMouseOverMe = true );
 
 	void executeFile( const std::string& cmd );
 
@@ -199,6 +199,8 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	virtual void onKeyDown( const Keycode& keyCode, const Uint32& chr, const Uint32& mod,
 							const Scancode& scancode );
+
+	bool isRegisteredShortcut( const Keycode& keyCode, const Uint32& mod ) const;
 
 	Font* getFont() const;
 
@@ -319,6 +321,7 @@ class TerminalDisplay : public ITerminalDisplay {
 	Uint32 mQuadVertex{ 6 };
 	Primitives mPrimitives;
 	Vector2u mCurGridPos;
+	Clock mLastAutoScroll;
 
 	std::string mProgram;
 	std::vector<std::string> mArgs;

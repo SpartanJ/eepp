@@ -29,6 +29,7 @@ UITab::UITab() :
 	mCloseButton->on( Event::OnVisibleChange, cb );
 	applyDefaultTheme();
 	unsetFlags( UI_DRAG_VERTICAL );
+	mNodeFlags |= NODE_FLAG_DISABLE_CLICK_FOCUS;
 }
 
 UITab::~UITab() {}

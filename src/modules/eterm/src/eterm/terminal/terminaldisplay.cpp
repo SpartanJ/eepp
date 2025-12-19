@@ -628,7 +628,7 @@ void TerminalDisplay::setKeepAlive( bool keepAlive ) {
 	mKeepAlive = keepAlive;
 }
 
-bool TerminalDisplay::update() {
+bool TerminalDisplay::update( bool isMouseOverMe ) {
 	bool ret = true;
 	if ( mFocus && isBlinkingCursor() && mClock.getElapsedTime().asSeconds() > 0.7 ) {
 		mMode ^= MODE_BLINK;
@@ -640,6 +640,14 @@ bool TerminalDisplay::update() {
 		ret = mTerminal->update();
 		if ( histi != mTerminal->getHistorySize() )
 			sendEvent( { EventType::HISTORY_LENGTH_CHANGE } );
+	}
+	if ( mAlreadyClickedLButton ) {
+		if ( !( mWindow->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
+			mWindow->getInput()->captureMouse( false );
+		} else if ( !isMouseOverMe ) {
+			onMouseMove( mWindow->getInput()->getMousePos(),
+						 mWindow->getInput()->getPressTrigger() );
+		}
 	}
 	return ret;
 }
@@ -826,6 +834,22 @@ void TerminalDisplay::onMouseMove( const Vector2i& pos, const Uint32& flags ) {
 	bool shiftPressed = ( mWindow->getInput()->getModState() & KEYMOD_SHIFT ) != 0;
 	bool isCapturingMouse = isAppCapturingMouse() && !shiftPressed;
 
+	if ( !isAltScr() && !isCapturingMouse && ( flags & EE_BUTTON_LMASK ) &&
+		 mAlreadyClickedLButton ) {
+		Vector2f relPos = { pos.x - mPosition.x - mPadding.Left,
+							pos.y - mPosition.y - mPadding.Top };
+
+		if ( mLastAutoScroll.getElapsedTime() >= Milliseconds( 16 ) ) {
+			if ( relPos.y < 0 ) {
+				action( TerminalShortcutAction::SCROLLUP_ROW );
+				mLastAutoScroll.restart();
+			} else if ( relPos.y > mSize.getHeight() ) {
+				action( TerminalShortcutAction::SCROLLDOWN_ROW );
+				mLastAutoScroll.restart();
+			}
+		}
+	}
+
 	if ( !isCapturingMouse && ( flags & EE_BUTTON_LMASK ) &&
 		 ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_EMPTY ||
 		   mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_READY ) ) {
@@ -856,6 +880,7 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 			mTerminal->selstart( gridPos.x, gridPos.y, 0 );
 			mDraggingSel = true;
 			invalidateLines();
+			mWindow->getInput()->captureMouse( true );
 		}
 	} else if ( flags & EE_BUTTON_MMASK ) {
 		if ( !mAlreadyClickedMButton ) {
@@ -891,8 +916,10 @@ void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 
 	Uint32 smod = sanitizeMod( mWindow->getInput()->getModState() );
 
-	if ( flags & EE_BUTTON_LMASK )
+	if ( flags & EE_BUTTON_LMASK ) {
 		mAlreadyClickedLButton = false;
+		mWindow->getInput()->captureMouse( false );
+	}
 
 	if ( flags & EE_BUTTON_MMASK )
 		mAlreadyClickedMButton = false;
@@ -1586,6 +1613,30 @@ void TerminalDisplay::onTextEditing( const String&, const Int32&, const Int32& )
 	updateIMELocation();
 }
 
+bool TerminalDisplay::isRegisteredShortcut( const Keycode& keyCode, const Uint32& mod ) const {
+	Uint32 smod = sanitizeMod( mod );
+	auto scIt = terminalKeyMap.Shortcuts().find( keyCode );
+	if ( scIt != terminalKeyMap.Shortcuts().end() ) {
+		for ( auto& k : scIt->second ) {
+			if ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == smod ) {
+				if ( IS_SET( MODE_APPKEYPAD ) ? k.appkey < 0 : k.appkey > 0 )
+					continue;
+
+				if ( IS_SET( MODE_NUMLOCK ) && k.appkey == 2 )
+					continue;
+
+				if ( IS_SET( MODE_APPCURSOR ) ? k.appcursor < 0 : k.appcursor > 0 )
+					continue;
+
+				if ( !k.altscrn || ( k.altscrn == ( mEmulator->tisaltscr() ? 1 : -1 ) ) ) {
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
 void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, const Uint32& mod,
 								 const Scancode& scancode ) {
 	if ( mWindow->getIME().isEditing() )
@@ -1614,7 +1665,7 @@ void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, 
 	}
 
 	if ( mod & KEYMOD_CTRL ) {
-		// I really dont like this, as it depends on the undelying backend implementation (SDL in
+		// I really dont like this, as it depends on the underlying backend implementation (SDL in
 		// this case)
 		if ( ( scancode >= SCANCODE_A && scancode <= SCANCODE_0 ) ||
 			 SCANCODE_LEFTBRACKET == scancode || SCANCODE_RIGHTBRACKET == scancode ) {
@@ -1748,6 +1799,12 @@ void TerminalDisplay::setFocus( bool focus ) {
 
 	if ( focus == mFocus )
 		return;
+
+	// focus loss
+	if ( mFocus && !focus && mAlreadyClickedMButton ) {
+		mWindow->getInput()->captureMouse( false );
+	}
+
 	mFocus = focus;
 	bool modeFocus = mMode & MODE_FOCUSED;
 	if ( mFocus != modeFocus ) {

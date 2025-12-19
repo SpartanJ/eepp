@@ -63,7 +63,8 @@ enum NodeFlags {
 
 	NODE_FLAG_LOADING = ( 1 << 27 ),
 	NODE_FLAG_CLOSING_CHILDREN = ( 1 << 28 ),
-	NODE_FLAG_FREE_USE = ( 1 << 29 )
+	NODE_FLAG_DISABLE_CLICK_FOCUS = ( 1 << 29 ),
+	NODE_FLAG_FREE_USE = ( 1 << 30 )
 };
 
 class EE_API Node : public Transformable {
