@@ -3761,7 +3761,13 @@ void App::init( InitParameters& params ) {
 	mDisablePlugins = params.disablePlugins;
 	mRedirectToFirstInstance = params.redirectToFirstInstance;
 
-	mResPath = Sys::getProcessPath();
+#ifdef ECODE_SHAREDIR
+    mResPath = ECODE_SHAREDIR;
+    FileSystem::dirAddSlashAtEnd( mResPath );
+#else
+    mResPath = Sys::getProcessPath();
+#endif
+
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 	if ( String::contains( mResPath, ".mount_" ) )
 		FileSystem::dirAddSlashAtEnd( mResPath );

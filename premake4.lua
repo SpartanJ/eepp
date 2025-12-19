@@ -174,6 +174,11 @@ newoption {
 		{ "SDL2",  "SDL2" }
 	}
 }
+newoption {
+    trigger     = "sharedir",
+    value       = "PATH",
+    description = "Set the shared data directory (default: /usr/share/ecode)",
+}
 newoption { trigger = "with-static-cpp", description = "Builds statically libstdc++" }
 
 function explode(div,str)
@@ -589,6 +594,10 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	if _OPTIONS["with-static-cpp"] then
 		linkoptions { "-static-libgcc -static-libstdc++" }
+	end
+
+	if _OPTIONS["sharedir"] then
+	    defines { "ECODE_SHAREDIR=\"" .. _OPTIONS["sharedir"] .. "\"" }
 	end
 
 	set_ios_config()

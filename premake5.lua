@@ -26,6 +26,11 @@ newoption {
 		{ "SDL2",  "SDL2" },
 	}
 }
+newoption {
+    trigger     = "sharedir",
+    value       = "PATH",
+    description = "Set the shared data directory (default: /usr/share/ecode)",
+}
 newoption { trigger = "with-static-cpp", description = "Builds statically libstdc++" }
 
 function get_dll_extension()
@@ -487,6 +492,10 @@ function build_link_configuration( package_name, use_ee_icon )
 	filter { "action:export-compile-commands", "system:macosx" }
 		buildoptions { "-std=c++20" }
 
+	filter { "options:sharedir" }
+		if _OPTIONS["sharedir"] then
+			defines { "ECODE_SHAREDIR=\"" .. _OPTIONS["sharedir"] .. "\"" }
+		end
 	filter {}
 end
 

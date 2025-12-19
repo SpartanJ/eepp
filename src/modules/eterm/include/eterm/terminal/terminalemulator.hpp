@@ -249,6 +249,8 @@ class TerminalEmulator final {
 		mPromptStateChangedCb = promptStateChangedCb;
 	}
 
+	int getTerminalMode() const { return mTerm.mode; }
+
   private:
 	DpyPtr mDpy;
 	PtyPtr mPty;

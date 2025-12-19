@@ -603,6 +603,11 @@ void TerminalDisplay::setColorScheme( const TerminalColorScheme& colorScheme ) {
 	invalidateLines();
 }
 
+bool TerminalDisplay::isAppCapturingMouse() const {
+	return mTerminal &&
+		   ( mMode & ( MODE_MOUSEX10 | MODE_MOUSEBTN | MODE_MOUSEMOTION | MODE_MOUSEMANY ) );
+}
+
 bool TerminalDisplay::isAltScr() const {
 	return mEmulator && mEmulator->tisaltscr();
 }
@@ -788,6 +793,10 @@ void TerminalDisplay::drawCursor( int cx, int cy, TerminalGlyph g, int, int, Ter
 	if ( mCursor != Vector2i( cx, cy ) || mCursorGlyph != g ) {
 		mCursor.x = cx;
 		mCursor.y = cy;
+		if ( isBlinkingCursor() ) {
+			mMode |= MODE_BLINK;
+			mClock.restart();
+		}
 		mCursorGlyph = g;
 		invalidateCursor();
 	}
@@ -804,7 +813,7 @@ void TerminalDisplay::onMouseDoubleClick( const Vector2i& pos, const Uint32& fla
 	if ( flags & EE_BUTTON_LMASK )
 		mLastDoubleClick.restart();
 
-	if ( !isAltScr() && ( flags & EE_BUTTON_LMASK ) &&
+	if ( !isAppCapturingMouse() && ( flags & EE_BUTTON_LMASK ) &&
 		 ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_EMPTY ||
 		   mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_IDLE ) ) {
 		auto gridPos{ positionToGrid( pos ) };
@@ -814,7 +823,10 @@ void TerminalDisplay::onMouseDoubleClick( const Vector2i& pos, const Uint32& fla
 }
 
 void TerminalDisplay::onMouseMove( const Vector2i& pos, const Uint32& flags ) {
-	if ( !isAltScr() && ( flags & EE_BUTTON_LMASK ) &&
+	bool shiftPressed = ( mWindow->getInput()->getModState() & KEYMOD_SHIFT ) != 0;
+	bool isCapturingMouse = isAppCapturingMouse() && !shiftPressed;
+
+	if ( !isCapturingMouse && ( flags & EE_BUTTON_LMASK ) &&
 		 ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_EMPTY ||
 		   mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_READY ) ) {
 		auto gridPos{ positionToGrid( pos ) };
@@ -828,16 +840,18 @@ void TerminalDisplay::onMouseMove( const Vector2i& pos, const Uint32& flags ) {
 }
 
 void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
-	if ( ( flags & EE_BUTTON_LMASK ) && mDraggingSel ) {
+	bool shiftPressed = ( mWindow->getInput()->getModState() & KEYMOD_SHIFT ) != 0;
+	bool isCapturingMouse = isAppCapturingMouse() && !shiftPressed;
+
+	if ( ( flags & EE_BUTTON_LMASK ) && mDraggingSel )
 		return;
-	}
 
 	auto gridPos{ positionToGrid( pos ) };
 
-	if ( !isAltScr() && ( flags & EE_BUTTON_LMASK ) &&
+	if ( !isCapturingMouse && ( flags & EE_BUTTON_LMASK ) &&
 		 mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
 		mTerminal->selstart( gridPos.x, gridPos.y, SNAP_LINE );
-	} else if ( !isAltScr() && ( flags & EE_BUTTON_LMASK ) ) {
+	} else if ( !isCapturingMouse && ( flags & EE_BUTTON_LMASK ) ) {
 		if ( !mDraggingSel ) {
 			mTerminal->selstart( gridPos.x, gridPos.y, 0 );
 			mDraggingSel = true;
@@ -1292,6 +1306,85 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 			invalidateCursor();
 	}
 
+	bool redrawCursor =
+		!mEmulator->isScrolling() && !IS_SET( MODE_HIDE ) && ( !mUseFrameBuffer || mDirtyCursor );
+	bool mustRenderUnderline = false;
+
+	if ( redrawCursor ) {
+		mDirtyCursor = false;
+		Color drawcol;
+
+		if ( IS_SET( MODE_REVERSE ) ) {
+			if ( mEmulator->isSelected( mCursor.x, mCursor.y ) ) {
+				drawcol = mColorScheme.getCursor();
+			} else {
+				drawcol = mColorScheme.getBackground();
+			}
+		} else {
+			drawcol = mEmulator->isSelected( mCursor.x, mCursor.y ) ? mColorScheme.getBackground()
+																	: mColorScheme.getCursor();
+		}
+
+		mPrimitives.setColor( drawcol );
+
+		/* draw the new one */
+		if ( IS_SET( MODE_FOCUSED ) ) {
+			switch ( mCursorMode ) {
+				case StExtension: {
+					auto* gd = mFont->getGlyphDrawable(
+						mCursorMode == StExtension ? 0xFB04 /* TUX */ : mCursorGlyph.u, mFontSize );
+					gd->setColor( termColor( mCursorGlyph.fg, mColors ) );
+					gd->setDrawMode( GlyphDrawable::DrawMode::Text );
+					gd->draw(
+						{ pos.x + mCursor.x * spaceCharAdvanceX, pos.y + mCursor.y * lineHeight } );
+					break;
+				}
+				case BlinkUnderline: {
+					if ( !( mMode & MODE_BLINK ) )
+						break;
+				}
+				case SteadyUnderline: {
+					mustRenderUnderline = true;
+					break;
+				}
+				case BlinkBar: {
+					if ( !( mMode & MODE_BLINK ) )
+						break;
+				}
+				case SteadyBar: {
+					mPrimitives.drawRectangle( Rectf(
+						{ pos.x + mCursor.x * spaceCharAdvanceX, pos.y + mCursor.y * lineHeight },
+						{ std::ceil( PixelDensity::dpToPx( 1 ) ), lineHeight } ) );
+					break;
+				}
+				case BlinkingBlock:
+				case BlinkingBlockDefault: {
+					if ( !( mMode & MODE_BLINK ) )
+						break;
+				}
+				case SteadyBlock:
+				case TerminalCursorMode::MAX_CURSOR: {
+					mPrimitives.drawRectangle( Rectf(
+						{ pos.x + mCursor.x * spaceCharAdvanceX, pos.y + mCursor.y * lineHeight },
+						{ spaceCharAdvanceX, lineHeight } ) );
+					break;
+				}
+			}
+		} else {
+			Vector2f cpos{ pos.x + mCursor.x * spaceCharAdvanceX, pos.y + mCursor.y * lineHeight };
+			mPrimitives.setColor( drawcol );
+			mPrimitives.drawRectangle(
+				Rectf( Vector2f( cpos.x, cpos.y ), { spaceCharAdvanceX, cursorThickness } ) );
+			mPrimitives.drawRectangle(
+				Rectf( Vector2f( cpos.x, cpos.y ), { cursorThickness, lineHeight } ) );
+			mPrimitives.drawRectangle( Rectf( Vector2f( cpos.x + spaceCharAdvanceX, cpos.y ),
+											  { cursorThickness, lineHeight } ) );
+			mPrimitives.drawRectangle(
+				Rectf( Vector2f( cpos.x, cpos.y + lineHeight - cursorThickness ),
+					   { spaceCharAdvanceX, cursorThickness } ) );
+		}
+	}
+
 	if ( mVBForeground ) {
 		mFont->getTexture( mFontSize )->bind();
 		if ( dirtyFG )
@@ -1317,71 +1410,13 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 		}
 	}
 
-	if ( !mEmulator->isScrolling() && !IS_SET( MODE_HIDE ) &&
-		 ( !mUseFrameBuffer || mDirtyCursor ) ) {
-		mDirtyCursor = false;
-		Color drawcol;
-		if ( IS_SET( MODE_REVERSE ) ) {
-			if ( mEmulator->isSelected( mCursor.x, mCursor.y ) ) {
-				drawcol = mColorScheme.getCursor();
-			} else {
-				drawcol = mColorScheme.getBackground();
-			}
-		} else {
-			drawcol = mEmulator->isSelected( mCursor.x, mCursor.y ) ? mColorScheme.getBackground()
-																	: mColorScheme.getCursor();
-		}
-
-		mPrimitives.setColor( drawcol );
-		/* draw the new one */
-		if ( IS_SET( MODE_FOCUSED ) ) {
-			switch ( mCursorMode ) {
-				case StExtension:
-				case SteadyBlock: {
-					auto* gd = mFont->getGlyphDrawable(
-						mCursorMode == StExtension ? 0xFB04 /* TUX */ : mCursorGlyph.u, mFontSize );
-					gd->setColor( termColor( mCursorGlyph.fg, mColors ) );
-					gd->setDrawMode( GlyphDrawable::DrawMode::Text );
-					gd->draw(
-						{ pos.x + mCursor.x * spaceCharAdvanceX, pos.y + mCursor.y * lineHeight } );
-					break;
-				}
-				case BlinkUnderline: {
-					if ( !( mMode & MODE_BLINK ) )
-						break;
-				}
-				case SteadyUnderline:
-					mPrimitives.drawRectangle(
-						Rectf( { pos.x + mCursor.x * spaceCharAdvanceX,
-								 pos.y + mCursor.y * lineHeight + lineHeight - cursorThickness },
-							   { spaceCharAdvanceX, cursorThickness } ) );
-					break;
-				case BlinkingBlock:
-				case BlinkingBlockDefault:
-				case BlinkBar: {
-					if ( !( mMode & MODE_BLINK ) )
-						break;
-				}
-				case SteadyBar:
-				case TerminalCursorMode::MAX_CURSOR:
-					mPrimitives.drawRectangle( Rectf(
-						{ pos.x + mCursor.x * spaceCharAdvanceX, pos.y + mCursor.y * lineHeight },
-						{ spaceCharAdvanceX, lineHeight } ) );
-					break;
-			}
-		} else {
-			Vector2f cpos{ pos.x + mCursor.x * spaceCharAdvanceX, pos.y + mCursor.y * lineHeight };
-			mPrimitives.setColor( drawcol );
-			mPrimitives.drawRectangle(
-				Rectf( Vector2f( cpos.x, cpos.y ), { spaceCharAdvanceX, cursorThickness } ) );
-			mPrimitives.drawRectangle(
-				Rectf( Vector2f( cpos.x, cpos.y ), { cursorThickness, lineHeight } ) );
-			mPrimitives.drawRectangle( Rectf( Vector2f( cpos.x + spaceCharAdvanceX, cpos.y ),
-											  { cursorThickness, lineHeight } ) );
-			mPrimitives.drawRectangle(
-				Rectf( Vector2f( cpos.x, cpos.y + lineHeight - cursorThickness ),
-					   { spaceCharAdvanceX, cursorThickness } ) );
-		}
+	// Underline is rendered after foreground render because it usually clashes with the underlines
+	// decorations and ends up being not visible, I prefer to do this even it it's not standard.
+	if ( mustRenderUnderline ) {
+		mPrimitives.drawRectangle(
+			Rectf( { pos.x + mCursor.x * spaceCharAdvanceX,
+					 pos.y + mCursor.y * lineHeight + lineHeight - cursorThickness },
+				   { spaceCharAdvanceX, cursorThickness } ) );
 	}
 
 	if ( mFrameBuffer && pos.y + lineHeight * mRows < mSize.getHeight() ) {

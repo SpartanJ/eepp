@@ -533,6 +533,8 @@ UITerminal* TerminalManager::createNewTerminal(
 		return nullptr;
 	}
 
+	term->getTerm()->setCursorMode( mApp->termConfig().cursorStyle );
+
 	auto ret = mApp->getSplitter()->createWidgetInTabWidget(
 		tabWidget, term, title.empty() ? mApp->i18n( "shell", "Shell" ).toUtf8() : title, true );
 	ret.first->setIcon( mApp->findIcon( "filetype-bash" ) );

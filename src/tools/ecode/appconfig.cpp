@@ -230,6 +230,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		ini.getValueB( "terminal", "unsupported_os_warn_disabled", false );
 	term.closeTerminalTabOnExit = ini.getValueB( "terminal", "close_terminal_tab_on_exit", false );
 	term.warnBeforeClosingTab = ini.getValueB( "terminal", "warn_before_closing_tab", true );
+	term.cursorStyle = TerminalCursorHelper::modeFromString(
+		ini.getValue( "terminal", "cursor_style", "steady_underline" ) );
 
 	workspace.restoreLastSession = ini.getValueB( "workspace", "restore_last_session", false );
 	workspace.checkForUpdatesAtStartup =
@@ -392,6 +394,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "terminal", "unsupported_os_warn_disabled", term.unsupportedOSWarnDisabled );
 	ini.setValueB( "terminal", "close_terminal_tab_on_exit", term.closeTerminalTabOnExit );
 	ini.setValueB( "terminal", "warn_before_closing_tab", term.warnBeforeClosingTab );
+	ini.setValue( "terminal", "cursor_style",
+				  TerminalCursorHelper::modeToString( term.cursorStyle ) );
 
 	ini.setValueB( "window", "vsync", context.VSync );
 	ini.setValue( "window", "glversion",

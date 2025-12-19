@@ -25,6 +25,10 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <string>
+#include <string_view>
+
+using namespace std::literals;
 
 namespace eterm { namespace Terminal {
 
@@ -38,6 +42,46 @@ enum TerminalCursorMode {
 	SteadyBar = 6,
 	StExtension = 7,
 	MAX_CURSOR
+};
+
+struct TerminalCursorHelper {
+	static TerminalCursorMode modeFromString( std::string_view str ) {
+		if ( str == "blinking_block" )
+			return TerminalCursorMode::BlinkingBlock;
+		if ( str == "steady_block" )
+			return TerminalCursorMode::SteadyBlock;
+		if ( str == "blink_underline" )
+			return TerminalCursorMode::BlinkUnderline;
+		if ( str == "steady_underline" )
+			return TerminalCursorMode::SteadyUnderline;
+		if ( str == "blink_bar" )
+			return TerminalCursorMode::BlinkBar;
+		if ( str == "steady_bar" )
+			return TerminalCursorMode::SteadyBar;
+		return TerminalCursorMode::SteadyUnderline;
+	}
+
+	static std::string modeToString( TerminalCursorMode mode ) {
+		switch ( mode ) {
+			case BlinkingBlock:
+			case BlinkingBlockDefault:
+				return "blinking_block";
+			case SteadyBlock:
+				return "steady_block";
+			case BlinkUnderline:
+				return "blink_underline";
+			case SteadyUnderline:
+				return "steady_underline";
+			case BlinkBar:
+				return "blink_bar";
+			case SteadyBar:
+				return "steady_bar";
+			case StExtension:
+			case MAX_CURSOR:
+				break;
+		}
+		return "steady_underline";
+	}
 };
 
 enum TerminalWinMode {

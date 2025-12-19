@@ -9,6 +9,8 @@
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/window/window.hpp>
 
+#include <eterm/terminal/terminaltypes.hpp>
+
 #include <nlohmann/json_fwd.hpp>
 
 using namespace EE;
@@ -18,6 +20,7 @@ using namespace EE::UI::CSS;
 using namespace EE::UI::Tools;
 using namespace EE::System;
 using namespace EE::Window;
+using namespace eterm::Terminal;
 
 namespace ecode {
 class App;
@@ -180,6 +183,7 @@ struct TerminalConfig {
 	bool unsupportedOSWarnDisabled{ false };
 	bool closeTerminalTabOnExit{ false };
 	bool warnBeforeClosingTab{ true };
+	TerminalCursorMode cursorStyle{ TerminalCursorMode::SteadyUnderline };
 };
 
 struct WorkspaceConfig {

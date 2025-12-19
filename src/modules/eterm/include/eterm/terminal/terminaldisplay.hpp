@@ -274,6 +274,8 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	const std::string& getWorkingDir() const { return mWorkingDir; }
 
+	bool isAppCapturingMouse() const;
+
   protected:
 	EE::Window::Window* mWindow;
 	std::vector<TerminalGlyph> mBuffer;
@@ -365,6 +367,7 @@ class TerminalDisplay : public ITerminalDisplay {
 	Rectf updateIMELocation();
 
 	void drawBg( bool toFBO = false );
+
 };
 
 }} // namespace eterm::Terminal

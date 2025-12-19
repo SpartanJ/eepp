@@ -976,6 +976,48 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 	mTerminalMenu->addSubMenu( i18n( "new_terminal_behavior", "New Terminal Behavior" ),
 							   findIcon( "terminal" ), newTerminalBehaviorSubMenu );
 
+	UIPopUpMenu* cursorStyleMenu = UIPopUpMenu::New();
+
+	mTerminalMenu->addSubMenu( i18n( "cursor_style", "Cursor Style" ), findIcon( "terminal" ),
+							   cursorStyleMenu );
+
+	const auto cursorStyleMenuRefresh = [this, cursorStyleMenu] {
+		const auto& cfg = mApp->getConfig();
+		auto el = cursorStyleMenu->find(
+			"tcursor_" + TerminalCursorHelper::modeToString( cfg.term.cursorStyle ) );
+		if ( el && el->isType( UI_TYPE_MENURADIOBUTTON ) )
+			el->asType<UIMenuRadioButton>()->setActive( true );
+	};
+
+	cursorStyleMenu->on(
+		Event::OnMenuShow, [this, cursorStyleMenu, cursorStyleMenuRefresh]( auto ) {
+			if ( cursorStyleMenu->getCount() == 0 ) {
+				cursorStyleMenu->addRadioButton( i18n( "blinking_block", "Blinking Block" ) )
+					->setId( "tcursor_blinking_block" );
+				cursorStyleMenu->addRadioButton( i18n( "steady_block", "Steady Block" ) )
+					->setId( "tcursor_steady_block" );
+				cursorStyleMenu->addRadioButton( i18n( "blink_underline", "Blink Underline" ) )
+					->setId( "tcursor_blink_underline" );
+				cursorStyleMenu->addRadioButton( i18n( "steady_underline", "Steady Underline" ) )
+					->setId( "tcursor_steady_underline" );
+				cursorStyleMenu->addRadioButton( i18n( "blink_bar", "Blink Bar" ) )
+					->setId( "tcursor_blink_bar" );
+				cursorStyleMenu->addRadioButton( i18n( "steady_bar", "Steady Bar" ) )
+					->setId( "tcursor_steady_bar" );
+			}
+			cursorStyleMenuRefresh();
+		} );
+
+	cursorStyleMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		const std::string& id( event->getNode()->getId() );
+		std::string cursor = id.substr( 8 );
+		mApp->getConfig().term.cursorStyle = TerminalCursorHelper::modeFromString( cursor );
+		mSplitter->forEachWidgetType( UI_TYPE_TERMINAL, [this]( UIWidget* widget ) {
+			widget->asType<UITerminal>()->getTerm()->setCursorMode(
+				mApp->getConfig().term.cursorStyle );
+		} );
+	} );
+
 	mTerminalMenu->addSeparator();
 
 	mTerminalMenu
