@@ -25,6 +25,7 @@
 #include <eterm/system/autohandle.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
 #include <memory>
+#include <string>
 
 using namespace EE::Math;
 using namespace eterm::System;
