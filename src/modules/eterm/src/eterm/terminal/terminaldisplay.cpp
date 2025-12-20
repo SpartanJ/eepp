@@ -75,7 +75,7 @@ TerminalKeyMap::TerminalKeyMap( const TerminalKey keys[], size_t keysLen,
 }
 
 static TerminalShortcut shortcuts[] = {
-	{ KEY_INSERT, KEYMOD_SHIFT, TerminalShortcutAction::PASTE, 0, 0 },
+	{ KEY_INSERT, KEYMOD_SHIFT, TerminalShortcutAction::PASTE_SELECTION, 0, 0 },
 	{ KEY_V, KEYMOD_SHIFT | KEYMOD_CTRL, TerminalShortcutAction::PASTE, 0, 0 },
 	{ KEY_C, KEYMOD_SHIFT | KEYMOD_CTRL, TerminalShortcutAction::COPY, 0, 0 },
 	{ KEY_PAGEUP, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLUP_SCREEN, 0, 0, -1 },
@@ -92,7 +92,9 @@ static TerminalMouseShortcut mouseShortcuts[] = {
 	{ EE_BUTTON_WUMASK, 0, TerminalShortcutAction::SCROLLUP_ROW, 0, 0, -1 },
 	{ EE_BUTTON_WDMASK, 0, TerminalShortcutAction::SCROLLDOWN_ROW, 0, 0, -1 },
 	{ EE_BUTTON_WUMASK, KEYMOD_CTRL, TerminalShortcutAction::FONTSIZE_GROW, 0, 0, 0 },
-	{ EE_BUTTON_WDMASK, KEYMOD_CTRL, TerminalShortcutAction::FONTSIZE_SHRINK, 0, 0, 0 } };
+	{ EE_BUTTON_WDMASK, KEYMOD_CTRL, TerminalShortcutAction::FONTSIZE_SHRINK, 0, 0, 0 },
+	{ EE_BUTTON_MMASK, 0, TerminalShortcutAction::PASTE_SELECTION, 0, 0, -1 },
+};
 
 static TerminalKey keys[] = {
 	/* keysym           mask            string      appkey appcursor */
@@ -678,8 +680,29 @@ void TerminalDisplay::action( TerminalShortcutAction action ) {
 	switch ( action ) {
 		case TerminalShortcutAction::PASTE: {
 			getClipboard();
-			if ( !mClipboard.empty() )
-				mTerminal->ttywrite( mClipboardUtf8.c_str(), mClipboardUtf8.size(), 1 );
+			if ( !mClipboardUtf8.empty() ) {
+				if ( mMode & MODE_BRCKTPASTE ) {
+					mTerminal->write( "\033[200~", 6 );
+					mTerminal->write( mClipboardUtf8.c_str(), mClipboardUtf8.size() );
+					mTerminal->write( "\033[201~", 6 );
+				} else {
+					mTerminal->write( mClipboardUtf8.c_str(), mClipboardUtf8.size() );
+				}
+			}
+			break;
+		}
+		case TerminalShortcutAction::PASTE_SELECTION: {
+			std::string selection = mWindow->getClipboard()->getPrimarySelectionText();
+			sanitizeInput( selection );
+			if ( !selection.empty() ) {
+				if ( mMode & MODE_BRCKTPASTE ) {
+					mTerminal->write( "\033[200~", 6 );
+					mTerminal->write( selection.c_str(), selection.size() );
+					mTerminal->write( "\033[201~", 6 );
+				} else {
+					mTerminal->write( selection.c_str(), selection.size() );
+				}
+			}
 			break;
 		}
 		case TerminalShortcutAction::COPY: {
@@ -752,22 +775,35 @@ void TerminalDisplay::setIconTitle( const char* title ) {
 void TerminalDisplay::setClipboard( const char* text ) {
 	if ( text == nullptr )
 		return;
-	mClipboard = text;
-	mClipboardUtf8 = mClipboard.toUtf8();
-	mWindow->getClipboard()->setText( mClipboard );
+	mWindow->getClipboard()->setText( text );
 }
 
 const char* TerminalDisplay::getClipboard() const {
-	mClipboard = mWindow->getClipboard()->getText();
-#ifdef _WIN32
-	if ( mPasteNewlineFix ) {
-		size_t pos;
-		while ( ( pos = mClipboard.find( '\r' ) ) != std::string::npos )
-			mClipboard.erase( pos, 1 );
-	}
-#endif
-	mClipboardUtf8 = mClipboard.toUtf8();
+	mClipboardUtf8 = mWindow->getClipboard()->getText();
+	const_cast<TerminalDisplay*>( this )->sanitizeInput( mClipboardUtf8 );
 	return mClipboardUtf8.c_str();
+}
+
+void TerminalDisplay::sanitizeInput( std::string& input ) {
+	if ( !mPasteNewlineFix )
+		return;
+
+	// Replace isolated \n (not part of \r\n) with \r
+	// This handles Unix-style clipboard text (\n) → simulate Enter as \r
+	// Preserves \r\n (Windows) as a single line ending → \r
+	// Keeps lone \r as-is
+
+	size_t pos = 0;
+	while ( ( pos = input.find( '\n', pos ) ) != std::string::npos ) {
+		if ( pos == 0 || input[pos - 1] != '\r' ) {
+			input.replace( pos, 1, "\r" );
+		} else {
+			// Part of \r\n: remove the \n, keep the preceding \r
+			input.erase( pos, 1 );
+			++pos; // Skip over the kept \r if needed
+		}
+		++pos;
+	}
 }
 
 bool TerminalDisplay::drawBegin( Uint32 columns, Uint32 rows ) {
@@ -832,12 +868,13 @@ void TerminalDisplay::onMouseDoubleClick( const Vector2i& pos, const Uint32& fla
 
 void TerminalDisplay::onMouseMove( const Vector2i& pos, const Uint32& flags ) {
 	bool shiftPressed = ( mWindow->getInput()->getModState() & KEYMOD_SHIFT ) != 0;
+	auto mousePos = mWindow->getInput()->getRelativeMousePos();
 	bool isCapturingMouse = isAppCapturingMouse() && !shiftPressed;
 
 	if ( !isAltScr() && !isCapturingMouse && ( flags & EE_BUTTON_LMASK ) &&
 		 mAlreadyClickedLButton ) {
-		Vector2f relPos = { pos.x - mPosition.x - mPadding.Left,
-							pos.y - mPosition.y - mPadding.Top };
+		Vector2f relPos = { mousePos.x - mPosition.x - mPadding.Left,
+							mousePos.y - mPosition.y - mPadding.Top };
 
 		if ( mLastAutoScroll.getElapsedTime() >= Milliseconds( 16 ) ) {
 			if ( relPos.y < 0 ) {
@@ -882,22 +919,8 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 			invalidateLines();
 			mWindow->getInput()->captureMouse( true );
 		}
-	} else if ( flags & EE_BUTTON_MMASK ) {
-		if ( !mAlreadyClickedMButton ) {
-			mAlreadyClickedMButton = true;
-			auto selection = mTerminal->getSelection();
-			if ( !selection.empty() && selection != "\n" ) {
-				for ( auto& chr : selection )
-					onTextInput( chr );
-			} else {
-				getClipboard();
-				if ( !mClipboard.empty() ) {
-					for ( auto& chr : mClipboard )
-						onTextInput( chr );
-				}
-			}
-		}
 	}
+
 	if ( ( flags & EE_BUTTON_LMASK ) ) {
 		if ( !mAlreadyClickedLButton ) {
 			mAlreadyClickedLButton = true;
@@ -905,6 +928,15 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 			return;
 		}
 	}
+
+	if ( ( flags & EE_BUTTON_MMASK ) ) {
+		if ( !mAlreadyClickedMButton ) {
+			mAlreadyClickedMButton = true;
+		} else {
+			return;
+		}
+	}
+
 	mTerminal->mousereport( TerminalMouseEventType::MouseButtonDown, positionToGrid( pos ), flags,
 							mWindow->getInput()->getModState() );
 }
@@ -912,6 +944,11 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 	if ( ( flags & EE_BUTTON_LMASK ) && mDraggingSel ) {
 		mDraggingSel = false;
+	}
+
+	if ( flags & EE_BUTTON_LMASK ) {
+		auto selection = mTerminal->getSelection();
+		mWindow->getClipboard()->setPrimarySelectionText( selection );
 	}
 
 	Uint32 smod = sanitizeMod( mWindow->getInput()->getModState() );

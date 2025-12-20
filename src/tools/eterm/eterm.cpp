@@ -196,6 +196,12 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 									"Maximum rendering frames per second of the terminal. Default "
 									"value will be the refresh rate of the screen.",
 									{ "max-fps" }, 0 );
+	args::MapFlag<std::string, TerminalCursorMode> cursorStyle(
+		parser, "cursor-style",
+		"Sets the cursor-style (accepted values: blinking_block, steady_block, blink_underline, "
+		"steady_underline, blink_bar, steady_bar)",
+		{ "cursor-style" }, TerminalCursorHelper::getTerminalCursorModeMap(),
+		TerminalCursorMode::SteadyUnderline );
 	args::Flag benchmarkModeFlag(
 		parser, "benchmark-mode",
 		"Render as much as possible to measure the rendering performance.", { "benchmark-mode" } );
@@ -322,6 +328,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		}
 
 		terminal->getTerminal()->setAllowMemoryTrimnming( true );
+		terminal->setCursorMode( cursorStyle.Get() );
 		terminal->pushEventCallback( [&closeOnExit]( const TerminalDisplay::Event& event ) {
 			if ( event.type == TerminalDisplay::EventType::TITLE ) {
 				windowStringData = event.eventData;
@@ -353,9 +360,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		win->runMainLoop( [fontMono] {
 			bool termNeedsUpdate = false;
 			win->getInput()->update();
+			auto mousePos = win->getInput()->getRelativeMousePos();
+			bool mouseOutsideBounds = mousePos.y < 0 || mousePos.y > win->getSize().getHeight();
 
 			if ( terminal )
-				termNeedsUpdate = !terminal->update();
+				termNeedsUpdate = !terminal->update( !mouseOutsideBounds );
 
 			if ( ( terminal && ( benchmarkMode || terminal->isDirty() ) &&
 				   ( !termNeedsUpdate || lastRender.getElapsedTime() >= frameTime ) ) ||

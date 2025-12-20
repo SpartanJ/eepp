@@ -103,6 +103,8 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	setCommand( "terminal-font-size-shrink",
 				[this] { mTerm->action( TerminalShortcutAction::FONTSIZE_SHRINK ); } );
 	setCommand( "terminal-paste", [this] { mTerm->action( TerminalShortcutAction::PASTE ); } );
+	setCommand( "terminal-paste-selection",
+				[this] { mTerm->action( TerminalShortcutAction::PASTE_SELECTION ); } );
 	setCommand( "terminal-copy", [this] { mTerm->action( TerminalShortcutAction::COPY ); } );
 	setCommand( "terminal-open-link",
 				[this] { Engine::instance()->openURI( mTerm->getTerminal()->getSelection() ); } );

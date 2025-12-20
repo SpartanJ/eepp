@@ -14,7 +14,6 @@
 #include <eterm/terminal/terminalcolorscheme.hpp>
 #include <eterm/terminal/terminalemulator.hpp>
 
-#include <atomic>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -33,6 +32,7 @@ namespace eterm { namespace Terminal {
 
 enum class TerminalShortcutAction {
 	PASTE,
+	PASTE_SELECTION,
 	COPY,
 	SCROLLUP_ROW,
 	SCROLLDOWN_ROW,
@@ -283,7 +283,6 @@ class TerminalDisplay : public ITerminalDisplay {
 	std::vector<TerminalGlyph> mBuffer;
 	std::vector<Color> mColors;
 	std::shared_ptr<TerminalEmulator> mTerminal;
-	mutable String mClipboard;
 	mutable std::string mClipboardUtf8;
 	Uint32 mNumCallBacks;
 	std::map<Uint32, EventFunc> mCallbacks;
@@ -370,6 +369,8 @@ class TerminalDisplay : public ITerminalDisplay {
 	Rectf updateIMELocation();
 
 	void drawBg( bool toFBO = false );
+
+	void sanitizeInput( std::string& input );
 
 };
 

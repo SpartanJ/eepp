@@ -27,6 +27,7 @@
 #include <string.h>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 using namespace std::literals;
 
@@ -81,6 +82,17 @@ struct TerminalCursorHelper {
 				break;
 		}
 		return "steady_underline";
+	}
+
+	static std::unordered_map<std::string, TerminalCursorMode> getTerminalCursorModeMap() {
+		return {
+			{ "blinking_block", TerminalCursorMode::BlinkingBlock },
+			{ "steady_block", TerminalCursorMode::SteadyBlock },
+			{ "blink_underline", TerminalCursorMode::BlinkUnderline },
+			{ "steady_underline", TerminalCursorMode::SteadyUnderline },
+			{ "blink_bar", TerminalCursorMode::BlinkBar },
+			{ "steady_bar", TerminalCursorMode::SteadyBar },
+		};
 	}
 };
 

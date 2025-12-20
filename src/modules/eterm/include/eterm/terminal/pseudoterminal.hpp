@@ -79,6 +79,8 @@ class PseudoTerminal final : public IPseudoTerminal {
 	AutoHandle mMaster;
 	AutoHandle mSlave;
 
+	std::string mWriteBuffer;
+
 	PseudoTerminal( int columns, int rows, AutoHandle&& master, AutoHandle&& slave );
 #endif
 };

@@ -49,6 +49,26 @@ std::string ClipboardSDL::getText() {
 #endif
 }
 
+std::string ClipboardSDL::getPrimarySelectionText() {
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	return "";
+#else
+	if ( SDL_HasPrimarySelectionText() ) {
+		char* text = SDL_GetPrimarySelectionText();
+		std::string str( text );
+		SDL_free( text );
+		return str;
+	}
+	return "";
+#endif
+}
+
+void ClipboardSDL::setPrimarySelectionText( const std::string& text ) {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+	SDL_SetPrimarySelectionText( text.c_str() );
+#endif
+}
+
 String ClipboardSDL::getWideText() {
 	return String::fromUtf8( getText() );
 }

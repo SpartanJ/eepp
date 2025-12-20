@@ -95,6 +95,8 @@ void Input::processEvent( InputEvent* Event ) {
 				mMousePos.y += static_cast<Int32>( (Float)Event->motion.yrel * mMouseSpeed );
 			}
 
+			mRealMousePos = mMousePos;
+
 			if ( mMousePos.x >= (int)mWindow->getWidth() ) {
 				mMousePos.x = mWindow->getWidth();
 			} else if ( mMousePos.x < 0 ) {
@@ -306,6 +308,10 @@ void Input::injectButtonRelease( const Uint32& Button ) {
 
 Vector2i Input::getMousePos() const {
 	return mMousePos;
+}
+
+Vector2i Input::getRelativeMousePos() const {
+	return mRealMousePos;
 }
 
 void Input::setMousePos( const Vector2i& Pos ) {
