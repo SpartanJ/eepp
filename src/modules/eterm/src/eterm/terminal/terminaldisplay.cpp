@@ -646,6 +646,7 @@ bool TerminalDisplay::update( bool isMouseOverMe ) {
 	if ( mAlreadyClickedLButton ) {
 		if ( !( mWindow->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
 			mWindow->getInput()->captureMouse( false );
+			mDraggingSel = false;
 		} else if ( !isMouseOverMe ) {
 			onMouseMove( mWindow->getInput()->getMousePos(),
 						 mWindow->getInput()->getPressTrigger() );
