@@ -2008,7 +2008,7 @@ void UICodeEditor::drawCursor( const Vector2f& startScroll, const Float& lineHei
 	if ( mCursorVisible && !mLocked && isTextSelectionEnabled() &&
 		 !mDocView.isFolded( cursor.line(), true ) ) {
 		auto offset = getTextPositionOffset( cursor, lineHeight );
-		Vector2f cursorPos( startScroll.x + offset.x, startScroll.y + offset.y );
+		Vector2f cursorPos( startScroll.x + offset.x, startScroll.y + offset.y + getLineOffset() );
 		Primitives primitives;
 		primitives.setColor( Color( mCaretColor ).blendAlpha( mAlpha ) );
 		primitives.drawRectangle(

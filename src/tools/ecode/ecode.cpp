@@ -3762,10 +3762,10 @@ void App::init( InitParameters& params ) {
 	mRedirectToFirstInstance = params.redirectToFirstInstance;
 
 #ifdef ECODE_SHAREDIR
-    mResPath = ECODE_SHAREDIR;
-    FileSystem::dirAddSlashAtEnd( mResPath );
+	mResPath = ECODE_SHAREDIR;
+	FileSystem::dirAddSlashAtEnd( mResPath );
 #else
-    mResPath = Sys::getProcessPath();
+	mResPath = Sys::getProcessPath();
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX
