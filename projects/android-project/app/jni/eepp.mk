@@ -25,6 +25,7 @@ EEPP_C_INCLUDES			:= \
 	$(EEPP_THIRD_PARTY_PATH)/mojoAL \
 	$(EEPP_THIRD_PARTY_PATH)/pcre2/src \
 	$(EEPP_THIRD_PARTY_PATH)/oniguruma \
+	$(EEPP_THIRD_PARTY_PATH)/SheenBidi/Headers \
 	$(EEPP_THIRD_PARTY_PATH)/efsw/include \
 	$(EEPP_BASE_PATH)/modules/eterm/include \
 	$(EEPP_BASE_PATH)/modules/eterm/src \
@@ -39,6 +40,7 @@ EEPP_C_FLAGS				:= \
 	-Wl,--undefined=Java_org_libsdl_app_SDLActivity_nativeInit \
 	-DANDROID \
 	-DANDROID_NDK \
+	-DZ_HAVE_UNISTD_H \
 	-DDISABLE_IMPORTGL \
 	-Wall \
 	-Wno-unknown-pragmas \
@@ -108,7 +110,7 @@ LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES)
 
 LOCAL_SRC_FILES			:= $(foreach F, $(CODE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES	:= freetype libpng libwebp pcre2 oniguruma harfbuzz
+LOCAL_STATIC_LIBRARIES	:= freetype libpng libwebp pcre2 oniguruma harfbuzz sheenbidi
 
 LOCAL_SHARED_LIBRARIES	:= SDL2
 
@@ -329,6 +331,23 @@ LOCAL_SRC_FILES			:= $(foreach F, $(HARFBUZZ_SRCS), $(addprefix $(dir $(F)),$(no
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** HARFBUZZ *************
+
+#*************** SHEENBIDI *************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
+
+LOCAL_MODULE			:= sheenbidi
+
+SHEENBIDI_SRCS			:=  SheenBidi/Source/**.c
+
+LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/SheenBidi/Headers
+LOCAL_CFLAGS			:= -Os -I$(LOCAL_PATH)/freetype2/include
+
+LOCAL_SRC_FILES			:= $(foreach F, $(SHEENBIDI_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** SHEENBIDI *************
 
 #**************** SDL 2 ***************
 include $(CLEAR_VARS)
