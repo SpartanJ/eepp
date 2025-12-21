@@ -10,7 +10,7 @@ UIScrollView* UIScrollView::New() {
 
 UIScrollView::UIScrollView() :
 	UITouchDraggableWidget( "scrollview" ),
-	mViewType( Exclusive ),
+	mViewType( ScrollViewType::Outside ),
 	mVScrollMode( ScrollBarMode::Auto ),
 	mHScrollMode( ScrollBarMode::Auto ),
 	mVScroll( UIScrollBar::NewVertical() ),
@@ -114,7 +114,7 @@ const ScrollBarMode& UIScrollView::getHorizontalScrollMode() const {
 	return mHScrollMode;
 }
 
-const UIScrollView::ScrollViewType& UIScrollView::getViewType() const {
+const ScrollViewType& UIScrollView::getViewType() const {
 	return mViewType;
 }
 
@@ -175,7 +175,7 @@ void UIScrollView::containerUpdate() {
 
 	Sizef size = getSize() - mPadding;
 
-	if ( Exclusive == mViewType ) {
+	if ( ScrollViewType::Outside == mViewType ) {
 		if ( mVScroll->isVisible() )
 			size.x -= mVScroll->getSize().getWidth();
 
@@ -280,7 +280,7 @@ void UIScrollView::onTouchDragValueChange( Vector2f diff ) {
 }
 
 bool UIScrollView::isTouchOverAllowedChildren() {
-	bool ret = mViewType == Exclusive
+	bool ret = mViewType == ScrollViewType::Outside
 				   ? !mVScroll->isMouseOverMeOrChildren() && !mHScroll->isMouseOverMeOrChildren()
 				   : true;
 	return isMouseOverMeOrChildren() && mScrollView->isMouseOverMeOrChildren() && ret;
@@ -304,7 +304,7 @@ std::string UIScrollView::getPropertyString( const PropertyDefinition* propertyD
 			return mVScroll->getScrollBarType() == UIScrollBar::NoButtons ? "no-buttons"
 																		  : "two-buttons";
 		case PropertyId::ScrollBarMode:
-			return getViewType() == Inclusive ? "inclusive" : "exclusive";
+			return getViewType() == ScrollViewType::Overlay ? "overlay" : "outside";
 		default:
 			return UITouchDraggableWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -326,10 +326,10 @@ bool UIScrollView::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::ScrollBarMode: {
 			std::string val( attribute.asString() );
 			String::toLowerInPlace( val );
-			if ( "inclusive" == val || "inside" == val )
-				setViewType( Inclusive );
+			if ( "overlay" == val || "inclusive" == val || "inside" == val )
+				setViewType( ScrollViewType::Overlay );
 			else if ( "exclusive" == val || "outside" == val )
-				setViewType( Exclusive );
+				setViewType( ScrollViewType::Outside );
 			break;
 		}
 		case PropertyId::VScrollMode: {

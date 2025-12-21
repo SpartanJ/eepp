@@ -147,14 +147,14 @@ const ScrollBarMode& UITerminal::getVerticalScrollMode() const {
 	return mVScrollMode;
 }
 
-const UITerminal::ScrollViewType& UITerminal::getViewType() const {
+const ScrollViewType& UITerminal::getScrollViewType() const {
 	return mViewType;
 }
 
-void UITerminal::setViewType( const ScrollViewType& viewType ) {
+void UITerminal::setScrollViewType( const ScrollViewType& viewType ) {
 	if ( viewType != mViewType ) {
 		mViewType = viewType;
-		onContentSizeChange();
+		onSizeChange();
 	}
 }
 
@@ -171,7 +171,7 @@ void UITerminal::onPaddingChange() {
 	mTerm->setPadding(
 		{ mPaddingPx.Left, mPaddingPx.Top,
 		  mPaddingPx.Right +
-			  ( mViewType == Exclusive ? mVScroll->getPixelsSize().getWidth() : 0.f ),
+			  ( mViewType == ScrollViewType::Outside ? mVScroll->getPixelsSize().getWidth() : 0.f ),
 		  mPaddingPx.Bottom } );
 	onContentSizeChange();
 	UIWidget::onPaddingChange();
@@ -235,7 +235,7 @@ std::string UITerminal::getPropertyString( const PropertyDefinition* propertyDef
 			return mVScroll->getScrollBarType() == UIScrollBar::NoButtons ? "no-buttons"
 																		  : "two-buttons";
 		case PropertyId::ScrollBarMode:
-			return getViewType() == Inclusive ? "inclusive" : "exclusive";
+			return getScrollViewType() == ScrollViewType::Overlay ? "overlay" : "outside";
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -274,10 +274,10 @@ bool UITerminal::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::ScrollBarMode: {
 			std::string val( attribute.asString() );
 			String::toLowerInPlace( val );
-			if ( "inclusive" == val || "inside" == val )
-				setViewType( Inclusive );
-			else if ( "exclusive" == val || "outside" == val )
-				setViewType( Exclusive );
+			if ( "overlay" == val || "inclusive" == val || "inside" == val )
+				setScrollViewType( ScrollViewType::Overlay );
+			else if ( "outside" == val || "exclusive" == val || "outside" == val )
+				setScrollViewType( ScrollViewType::Outside );
 			break;
 		}
 		case PropertyId::VScrollMode: {
@@ -317,7 +317,11 @@ const std::shared_ptr<TerminalDisplay>& UITerminal::getTerm() const {
 void UITerminal::scheduledUpdate( const Time& ) {
 	if ( !mTerm )
 		return;
-	mTerm->update( isMouseOverMeOrChildren() );
+
+	auto mousePos = getInput()->getRelativeMousePos();
+	bool mouseOutsideBounds =
+		mousePos.y < 0 || mousePos.y > getUISceneNode()->getWindow()->getSize().getHeight();
+	mTerm->update( isMouseOverMeOrChildren() && !mouseOutsideBounds );
 
 	if ( mTerm->isDirty() && isVisible() )
 		invalidateDraw();
@@ -326,7 +330,7 @@ void UITerminal::scheduledUpdate( const Time& ) {
 		mVScroll->setVisible( !mTerm->getTerminal()->tisaltscr() )
 			->setEnabled( !mTerm->getTerminal()->tisaltscr() );
 	} else if ( ScrollBarMode::Auto == mVScrollMode ) {
-		if ( mViewType == Inclusive && mMouseClock.getElapsedTime() > Seconds( 1 ) &&
+		if ( mViewType == ScrollViewType::Overlay && mMouseClock.getElapsedTime() > Seconds( 1 ) &&
 			 !mVScroll->isDragging() )
 			mVScroll->setVisible( false )->setEnabled( false );
 	}
@@ -472,7 +476,7 @@ Uint32 UITerminal::onKeyUp( const KeyEvent& ) {
 }
 
 Uint32 UITerminal::onMouseMove( const Vector2i& position, const Uint32& flags ) {
-	if ( mViewType == Inclusive && ScrollBarMode::Auto == mVScrollMode ) {
+	if ( mViewType == ScrollViewType::Overlay && ScrollBarMode::Auto == mVScrollMode ) {
 		mMouseClock.restart();
 		bool visible = !mTerm->getTerminal()->tisaltscr() && getContentSize() > getVisibleArea() &&
 					   !mTerm->getTerminal()->hasSelection();
@@ -518,7 +522,7 @@ void UITerminal::onSizeChange() {
 	mTerm->setPadding(
 		{ mPaddingPx.Left, mPaddingPx.Top,
 		  mPaddingPx.Right +
-			  ( mViewType == Exclusive ? mVScroll->getPixelsSize().getWidth() : 0.f ),
+			  ( mViewType == ScrollViewType::Outside ? mVScroll->getPixelsSize().getWidth() : 0.f ),
 		  mPaddingPx.Bottom } );
 	onContentSizeChange();
 	UIWidget::onSizeChange();

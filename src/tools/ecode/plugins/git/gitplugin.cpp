@@ -1511,7 +1511,7 @@ void GitPlugin::buildSidePanelTab() {
 	mBranchesTree->setHeadersVisible( false );
 	mBranchesTree->setExpandersAsIcons( true );
 	mBranchesTree->setIndentWidth( PixelDensity::dpToPx( 16 ) );
-	mBranchesTree->setScrollViewType( UIScrollableWidget::Inclusive );
+	mBranchesTree->setScrollViewType( ScrollViewType::Overlay );
 	mBranchesTree->on( Event::OnModelEvent, [this]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		if ( !modelEvent->getModelIndex().hasParent() )
@@ -1577,7 +1577,7 @@ void GitPlugin::buildSidePanelTab() {
 	mStatusTree->setAutoColumnsWidth( true );
 	mStatusTree->setHeadersVisible( false );
 	mStatusTree->setExpandersAsIcons( true );
-	mStatusTree->setScrollViewType( UIScrollableWidget::Inclusive );
+	mStatusTree->setScrollViewType( ScrollViewType::Overlay );
 	mStatusTree->setIndentWidth( PixelDensity::dpToPx( 4 ) );
 	mStatusTree->on( Event::OnRowCreated, [this]( const Event* event ) {
 		UITableRow* row = event->asRowCreatedEvent()->getRow();

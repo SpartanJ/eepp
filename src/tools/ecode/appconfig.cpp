@@ -232,6 +232,14 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	term.warnBeforeClosingTab = ini.getValueB( "terminal", "warn_before_closing_tab", true );
 	term.cursorStyle = TerminalCursorHelper::modeFromString(
 		ini.getValue( "terminal", "cursor_style", "steady_underline" ) );
+	term.scrollBarType = ini.getValue( "terminal", "scrollbar_type", "overlay" ) == "overlay"
+							 ? ScrollViewType::Overlay
+							 : ScrollViewType::Outside;
+	auto scrollbarMode = ini.getValue( "terminal", "scrollbar_mode", "auto" );
+	term.scrollBarMode =
+		scrollbarMode == "auto"
+			? ScrollBarMode::Auto
+			: ( scrollbarMode == "on" ? ScrollBarMode::AlwaysOn : ScrollBarMode::AlwaysOff );
 
 	workspace.restoreLastSession = ini.getValueB( "workspace", "restore_last_session", false );
 	workspace.checkForUpdatesAtStartup =
@@ -263,7 +271,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 					  EE::Window::Window* win, const std::string& colorSchemeName,
 					  const SearchBarConfig& searchBarConfig,
 					  const GlobalSearchBarConfig& globalSearchBarConfig,
-					  PluginManager* pluginManager ) {
+					  PluginManager* pluginManager, bool terminalMode ) {
 
 	FileInfo configInfo( ini.path() );
 	if ( iniInfo.getModificationTime() != 0 &&
@@ -309,7 +317,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "editor", "font_size", editor.fontSize.toString() );
 	ini.setValue( "ui", "font_size", ui.fontSize.toString() );
 	ini.setValue( "ui", "panel_font_size", ui.panelFontSize.toString() );
-	ini.setValueB( "ui", "show_side_panel", ui.showSidePanel );
+	if ( !terminalMode )
+		ini.setValueB( "ui", "show_side_panel", ui.showSidePanel );
 	ini.setValueB( "ui", "show_status_bar", ui.showStatusBar );
 	ini.setValueB( "ui", "show_menu_bar", ui.showMenuBar );
 	ini.setValueB( "ui", "welcome_screen", ui.welcomeScreen );
@@ -396,6 +405,12 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "terminal", "warn_before_closing_tab", term.warnBeforeClosingTab );
 	ini.setValue( "terminal", "cursor_style",
 				  TerminalCursorHelper::modeToString( term.cursorStyle ) );
+	ini.setValue( "terminal", "scrollbar_type",
+				  term.scrollBarType == ScrollViewType::Overlay ? "overlay"sv : "outside"sv );
+	ini.setValue( "terminal", "scrollbar_mode",
+				  term.scrollBarMode == ScrollBarMode::Auto
+					  ? "auto"sv
+					  : ( term.scrollBarMode == ScrollBarMode::AlwaysOn ? "on"sv : "off" ) );
 
 	ini.setValueB( "window", "vsync", context.VSync );
 	ini.setValue( "window", "glversion",

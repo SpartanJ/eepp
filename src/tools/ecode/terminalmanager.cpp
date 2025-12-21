@@ -534,6 +534,8 @@ UITerminal* TerminalManager::createNewTerminal(
 	}
 
 	term->getTerm()->setCursorMode( mApp->termConfig().cursorStyle );
+	term->setScrollViewType( mApp->termConfig().scrollBarType );
+	term->setVerticalScrollMode( mApp->termConfig().scrollBarMode );
 
 	auto ret = mApp->getSplitter()->createWidgetInTabWidget(
 		tabWidget, term, title.empty() ? mApp->i18n( "shell", "Shell" ).toUtf8() : title, true );

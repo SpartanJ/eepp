@@ -10,6 +10,7 @@
 #include <eepp/window/window.hpp>
 
 #include <eterm/terminal/terminaltypes.hpp>
+#include <eterm/ui/uiterminal.hpp>
 
 #include <nlohmann/json_fwd.hpp>
 
@@ -21,6 +22,7 @@ using namespace EE::UI::Tools;
 using namespace EE::System;
 using namespace EE::Window;
 using namespace eterm::Terminal;
+using namespace eterm::UI;
 
 namespace ecode {
 class App;
@@ -184,6 +186,8 @@ struct TerminalConfig {
 	bool closeTerminalTabOnExit{ false };
 	bool warnBeforeClosingTab{ true };
 	TerminalCursorMode cursorStyle{ TerminalCursorMode::SteadyUnderline };
+	ScrollViewType scrollBarType{ ScrollViewType::Overlay };
+	ScrollBarMode scrollBarMode{ ScrollBarMode::Auto };
 };
 
 struct WorkspaceConfig {
@@ -243,7 +247,8 @@ class AppConfig {
 			   const std::vector<std::string>& recentFolders, const std::string& panelPartition,
 			   const std::string& statusBarPartition, EE::Window::Window* win,
 			   const std::string& colorSchemeName, const SearchBarConfig& searchBarConfig,
-			   const GlobalSearchBarConfig& globalSearchBarConfig, PluginManager* pluginManager );
+			   const GlobalSearchBarConfig& globalSearchBarConfig, PluginManager* pluginManager,
+			   bool terminalMode );
 
 	void saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
 					  const std::string& configPath, const ProjectDocumentConfig& docConfig,

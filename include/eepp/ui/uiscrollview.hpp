@@ -9,8 +9,6 @@ class UIScrollBar;
 
 class EE_API UIScrollView : public UITouchDraggableWidget {
   public:
-	enum ScrollViewType { Inclusive, Exclusive };
-
 	static UIScrollView* New();
 
 	UIScrollView();

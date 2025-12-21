@@ -790,7 +790,8 @@ void App::saveConfig() {
 				  mMainSplitter ? mMainSplitter->getSplitPartition().toString() : "85%", mWindow,
 				  mSplitter ? mSplitter->getCurrentColorSchemeName() : mConfig.editor.colorScheme,
 				  mDocSearchController->getSearchBarConfig(),
-				  mGlobalSearchController->getGlobalSearchBarConfig(), mPluginManager.get() );
+				  mGlobalSearchController->getGlobalSearchBarConfig(), mPluginManager.get(),
+				  mTerminalMode );
 }
 
 std::string App::getKeybind( const std::string& command ) {
@@ -2831,6 +2832,17 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->showLinesRelativePosition( config.linesRelativePosition );
 
 	mPluginManager->onNewEditor( editor );
+
+	if ( mTerminalMode && mTerminalModeSidePanelWasVisible &&
+		 mSplitter->getTabWidgets().size() == 1 &&
+		 ( mSplitter->getTabWidgets()[0]->getTabCount() == 0 ||
+		   ( mSplitter->getTabWidgets()[0]->getTabCount() == 1 && mSplitter->getCurEditor() &&
+			 mSplitter->getCurEditor()->getDocument().isUntitledEmpty() ) ) ) {
+		showSidePanel( true );
+		mConfig.ui.showSidePanel = true;
+		if ( mSettings )
+			getSettingsMenu()->updateViewMenu();
+	}
 }
 
 void App::loadCurrentDirectory() {
@@ -3239,7 +3251,7 @@ void App::initProjectTreeViewUI() {
 	mProjectTreeView->setHeadersVisible( false );
 	mProjectTreeView->setExpandersAsIcons( true );
 	mProjectTreeView->setSingleClickNavigation( mConfig.editor.singleClickNavigation );
-	mProjectTreeView->setScrollViewType( UIScrollableWidget::Inclusive );
+	mProjectTreeView->setScrollViewType( ScrollViewType::Overlay );
 	mProjectTreeView->on( Event::OnModelEvent, [this]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		ModelEventType type = modelEvent->getModelEventType();
@@ -4423,8 +4435,13 @@ void App::init( InitParameters& params ) {
 #endif
 
 		if ( params.terminal && params.file.empty() && params.fileToOpen.empty() ) {
+			mTerminalMode = true;
+			mTerminalModeSidePanelWasVisible = mConfig.ui.showSidePanel;
+			mConfig.ui.showSidePanel = false;
 			showSidePanel( false );
 			showStatusBar( false );
+			if ( mSettings )
+				getSettingsMenu()->updateViewMenu();
 			initProjectViewEmptyCont();
 			mTerminalManager->createNewTerminal();
 		} else {

@@ -678,6 +678,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::condition_variable mAsyncResourcesLoadCond;
 	std::vector<SyntaxColorScheme> mColorSchemes;
 	bool mAsyncResourcesLoaded{ false };
+	bool mTerminalMode{ false };
+	bool mTerminalModeSidePanelWasVisible{ false };
 	std::string mProfilePath;
 
 	void sortSidePanel();

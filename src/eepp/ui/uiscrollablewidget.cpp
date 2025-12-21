@@ -6,7 +6,7 @@ namespace EE { namespace UI {
 
 UIScrollableWidget::UIScrollableWidget( const std::string& tag ) :
 	UIWidget( tag ),
-	mScrollViewType( Exclusive ),
+	mScrollViewType( ScrollViewType::Outside ),
 	mVScrollMode( ScrollBarMode::Auto ),
 	mHScrollMode( ScrollBarMode::Auto ),
 	mVScroll( UIScrollBar::NewVertical() ),
@@ -79,7 +79,7 @@ void UIScrollableWidget::setScrollMode( const ScrollBarMode& verticalMode,
 	}
 }
 
-const UIScrollableWidget::ScrollViewType& UIScrollableWidget::getViewType() const {
+const ScrollViewType& UIScrollableWidget::getViewType() const {
 	return mScrollViewType;
 }
 
@@ -109,7 +109,7 @@ void UIScrollableWidget::onContentSizeChange() {
 		Float totW =
 			getPixelsSize().getWidth() - getPixelsPadding().Left - getPixelsPadding().Right;
 
-		if ( mScrollViewType == Exclusive )
+		if ( mScrollViewType == ScrollViewType::Outside )
 			totW -= mVScroll->getPixelsSize().getWidth();
 
 		bool visible = contentSize.getWidth() > totW;
@@ -133,12 +133,12 @@ void UIScrollableWidget::onContentSizeChange() {
 	}
 
 	if ( ScrollBarMode::Auto == mHScrollMode ) {
-		Float totW = getPixelsSize().getWidth() - getPixelsPadding().Left -
-					 getPixelsPadding().Right -
-					 ( mVScroll->isVisible() &&
-							   ( mScrollViewType == Exclusive || mVScroll->getAlpha() != 0.f )
-						   ? mVScroll->getPixelsSize().getWidth()
-						   : 0 );
+		Float totW =
+			getPixelsSize().getWidth() - getPixelsPadding().Left - getPixelsPadding().Right -
+			( mVScroll->isVisible() &&
+					  ( mScrollViewType == ScrollViewType::Outside || mVScroll->getAlpha() != 0.f )
+				  ? mVScroll->getPixelsSize().getWidth()
+				  : 0 );
 
 		bool visible = contentSize.getWidth() > totW;
 
@@ -147,7 +147,7 @@ void UIScrollableWidget::onContentSizeChange() {
 
 	Sizef size = getPixelsSize() - mPaddingPx;
 
-	if ( Exclusive == mScrollViewType ) {
+	if ( ScrollViewType::Outside == mScrollViewType ) {
 		if ( mVScroll->isVisible() )
 			size.x -= mVScroll->getPixelsSize().getWidth();
 
@@ -258,7 +258,7 @@ std::string UIScrollableWidget::getPropertyString( const PropertyDefinition* pro
 			return mVScroll->getScrollBarType() == UIScrollBar::NoButtons ? "no-buttons"
 																		  : "two-buttons";
 		case PropertyId::ScrollBarMode:
-			return getViewType() == Inclusive ? "inclusive" : "exclusive";
+			return getViewType() == ScrollViewType::Overlay ? "overlay" : "outside";
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -313,10 +313,10 @@ bool UIScrollableWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::ScrollBarMode: {
 			std::string val( attribute.asString() );
 			String::toLowerInPlace( val );
-			if ( "inclusive" == val || "inside" == val )
-				setScrollViewType( Inclusive );
-			else if ( "exclusive" == val || "outside" == val )
-				setScrollViewType( Exclusive );
+			if ( "overlay" == val || "inclusive" == val || "inside" == val )
+				setScrollViewType( ScrollViewType::Overlay );
+			else if ( "outside" == val || "exclusive" == val || "outside" == val )
+				setScrollViewType( ScrollViewType::Outside );
 			break;
 		}
 		case PropertyId::VScrollMode: {

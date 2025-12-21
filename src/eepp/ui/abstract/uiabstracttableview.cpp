@@ -347,11 +347,12 @@ void UIAbstractTableView::columnResizeToContent( const size_t& colIndex ) {
 }
 
 Float UIAbstractTableView::getContentSpaceWidth() const {
-	return eefloor(
-		getPixelsSize().getWidth() - getPixelsPadding().Left - getPixelsPadding().Right -
-		( mVScroll->isVisible() && ( mScrollViewType == Exclusive || mVScroll->getAlpha() != 0.f )
-			  ? mVScroll->getPixelsSize().getWidth()
-			  : 0 ) );
+	return eefloor( getPixelsSize().getWidth() - getPixelsPadding().Left -
+					getPixelsPadding().Right -
+					( mVScroll->isVisible() && ( mScrollViewType == ScrollViewType::Outside ||
+												 mVScroll->getAlpha() != 0.f )
+						  ? mVScroll->getPixelsSize().getWidth()
+						  : 0 ) );
 }
 
 void UIAbstractTableView::updateColumnsWidth() {
@@ -360,7 +361,7 @@ void UIAbstractTableView::updateColumnsWidth() {
 		if ( visibleColumnCount() == 1 && ( col = visibleColumn() ) != -1 ) {
 			Float width = eemax( getContentSpaceWidth(), getMaxColumnContentWidth( col, true ) );
 			bool shouldVScrollBeVisible = shouldVerticalScrollBeVisible();
-			if ( mScrollViewType == Exclusive || mVScroll->getAlpha() != 0.f ) {
+			if ( mScrollViewType == ScrollViewType::Outside || mVScroll->getAlpha() != 0.f ) {
 				if ( !mVScroll->isVisible() && shouldVScrollBeVisible )
 					width -= getVerticalScrollBar()->getPixelsSize().getWidth();
 				else if ( mVScroll->isVisible() && !shouldVScrollBeVisible )

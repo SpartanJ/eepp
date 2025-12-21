@@ -1672,11 +1672,11 @@ Defines how the scrollbar should fit inside an scrollable element.
 * Applicable to: EE::UI::UIScrollView (ScrollView)
 * Data Type: [string-list](#string-list-data-type)
 * Value List:
-  * `inclusive`: The scrollbar is part of the scrollable element container, this means that it will
+  * `overlay`: The scrollbar is part of the scrollable element container, this means that it will
 	be on top of the content (scrollbars on mobile usually behave like this).
-  * `exclusive`: The scrollbar is outside the scrollable element container, this means that it will not
+  * `outside`: The scrollbar is outside the scrollable element container, this means that it will not
 	be on top of the content (scrollbars on desktop usually behave like this).
-* Default value: `exclusive`
+* Default value: `outside`
 
 ---
 

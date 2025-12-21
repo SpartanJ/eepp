@@ -1018,6 +1018,90 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 		} );
 	} );
 
+	UIPopUpMenu* scrollBarTypeMenu = UIPopUpMenu::New();
+
+	const auto scrollBarTypeMenuRefresh = [this, scrollBarTypeMenu] {
+		const auto& cfg = mApp->getConfig();
+		auto el = scrollBarTypeMenu->find(
+			"tscrolltype_" +
+			( cfg.term.scrollBarType == ScrollViewType::Overlay ? "overlay"sv : "outside"sv ) );
+		if ( el && el->isType( UI_TYPE_MENURADIOBUTTON ) )
+			el->asType<UIMenuRadioButton>()->setActive( true );
+	};
+
+	scrollBarTypeMenu->on(
+		Event::OnMenuShow, [this, scrollBarTypeMenu, scrollBarTypeMenuRefresh]( auto ) {
+			if ( scrollBarTypeMenu->getCount() == 0 ) {
+				scrollBarTypeMenu->addRadioButton( i18n( "overlay", "Overlay" ) )
+					->setTooltipText(
+						i18n( "scroll_overlay_tooltip", "Scrollbar appears over content." ) )
+					->setId( "tscrolltype_overlay" );
+				scrollBarTypeMenu->addRadioButton( i18n( "outside", "Outside" ) )
+					->setTooltipText( i18n( "scroll_outside_tooltip",
+											"Scrollbar has its own space, never covers content." ) )
+					->setId( "tscrolltype_outside" );
+			}
+			scrollBarTypeMenuRefresh();
+		} );
+
+	scrollBarTypeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		const std::string& id( event->getNode()->getId() );
+		std::string cursor = id.substr( 12 );
+		mApp->getConfig().term.scrollBarType =
+			cursor == "overlay" ? ScrollViewType::Overlay : ScrollViewType::Outside;
+		mSplitter->forEachWidgetType( UI_TYPE_TERMINAL, [this]( UIWidget* widget ) {
+			widget->asType<UITerminal>()->setScrollViewType( mApp->getConfig().term.scrollBarType );
+		} );
+	} );
+
+	mTerminalMenu->addSubMenu( i18n( "scrollbar_type", "ScrollBar Type" ), nullptr,
+							   scrollBarTypeMenu );
+
+	UIPopUpMenu* scrollBarModeMenu = UIPopUpMenu::New();
+
+	const auto scrollBarModeMenuRefresh = [this, scrollBarModeMenu] {
+		const auto& cfg = mApp->getConfig();
+		auto el = scrollBarModeMenu->find(
+			"tscrollmode_" +
+			( cfg.term.scrollBarMode == ScrollBarMode::Auto
+				  ? "auto"sv
+				  : ( cfg.term.scrollBarMode == ScrollBarMode::AlwaysOn ? "on"sv : "off"sv ) ) );
+		if ( el && el->isType( UI_TYPE_MENURADIOBUTTON ) )
+			el->asType<UIMenuRadioButton>()->setActive( true );
+	};
+
+	scrollBarModeMenu->on(
+		Event::OnMenuShow, [this, scrollBarModeMenu, scrollBarModeMenuRefresh]( auto ) {
+			if ( scrollBarModeMenu->getCount() == 0 ) {
+				scrollBarModeMenu->addRadioButton( i18n( "auto", "Auto" ) )
+					->setTooltipText( i18n( "scrollbar_mode_auto_tooltip",
+											"In overlay type Scrollbar will be visible only when "
+											"mouse moves over the terminal.\nIn outside type it "
+											"will be visible if there's any scrollable area." ) )
+					->setId( "tscrollmode_auto" );
+				scrollBarModeMenu->addRadioButton( i18n( "always_visible", "Always Visible" ) )
+					->setId( "tscrollmode_on" );
+				scrollBarModeMenu->addRadioButton( i18n( "always_hidden", "Always Hidden" ) )
+					->setId( "tscrollmode_off" );
+			}
+			scrollBarModeMenuRefresh();
+		} );
+
+	scrollBarModeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		const std::string& id( event->getNode()->getId() );
+		std::string mode = id.substr( 12 );
+		mApp->getConfig().term.scrollBarMode =
+			mode == "auto" ? ScrollBarMode::Auto
+						   : ( mode == "on" ? ScrollBarMode::AlwaysOn : ScrollBarMode::AlwaysOff );
+		mSplitter->forEachWidgetType( UI_TYPE_TERMINAL, [this]( UIWidget* widget ) {
+			widget->asType<UITerminal>()->setVerticalScrollMode(
+				mApp->getConfig().term.scrollBarMode );
+		} );
+	} );
+
+	mTerminalMenu->addSubMenu( i18n( "scrollbar_mode", "ScrollBar Mode" ), nullptr,
+							   scrollBarModeMenu );
+
 	mTerminalMenu->addSeparator();
 
 	mTerminalMenu

@@ -112,6 +112,8 @@ enum UINodeType {
 
 enum class ScrollBarMode : Uint32 { Auto, AlwaysOn, AlwaysOff };
 
+enum class ScrollViewType { Overlay, Outside };
+
 enum class UIOrientation : Uint32 { Vertical, Horizontal };
 
 enum class SizePolicy : Uint32 { Fixed, MatchParent, WrapContent };
