@@ -191,6 +191,8 @@ static inline void _drawUnderline( Font* font, Float fontSize, const Color& font
 	Float top =
 		cpos.y + std::floor( fontSize + underlineOffset - ( underlineThickness / 2 ) + 0.5f );
 	Float bottom = top + std::floor( underlineThickness + 0.5f );
+	if ( top == bottom )
+		bottom = top + 1;
 
 	if ( style & Text::Shadow ) {
 		BR->quadsSetTexCoord( 0, 0, 1, 1 );
@@ -232,6 +234,9 @@ static inline void _drawStrikeThrough( Font* font, Float fontSize, const Color& 
 	Float top =
 		std::floor( cpos.y + fontSize + strikeThroughOffset - ( underlineThickness / 2 ) + 0.5f );
 	Float bottom = top + std::floor( underlineThickness + 0.5f );
+	if ( top == bottom )
+		bottom = top + 1;
+
 	if ( style & Text::Shadow ) {
 		BR->quadsSetTexCoord( 0, 0, 1, 1 );
 		BR->quadsSetColor( shadowColor );
