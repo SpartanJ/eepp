@@ -1410,7 +1410,18 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 	FT_UShort currentSize = face->size->metrics.x_ppem;
 
 	if ( currentSize != characterSize ) {
-		if ( mIsColorEmojiFont || mIsBitmapOnly ) {
+		if ( mIsColorEmojiFont ) {
+			int bestMatch = 0;
+			int diff = eeabs( characterSize - face->available_sizes[0].width );
+			for ( int i = 1; i < face->num_fixed_sizes; ++i ) {
+				int ndiff = eeabs( characterSize - face->available_sizes[i].width );
+				if ( ndiff < diff ) {
+					bestMatch = i;
+					diff = ndiff;
+				}
+			}
+			characterSize = bestMatch;
+		} else if ( mIsBitmapOnly ) {
 			int bestMatch = face->available_sizes[0].height;
 			int diff = eeabs( characterSize - face->available_sizes[0].height );
 			for ( int i = 1; i < face->num_fixed_sizes; ++i ) {
