@@ -1315,8 +1315,9 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		->setId( "editor-font-size" );
 	mWindowMenu->add( i18n( "terminal_font_size", "Terminal Font Size" ), findIcon( "font-size" ) )
 		->setId( "terminal-font-size" );
-	mWindowMenu->add( i18n( "serif_font_ellipsis", "Serif Font..." ), findIcon( "font-size" ) )
-		->setId( "serif-font" );
+	mWindowMenu
+		->add( i18n( "sans-serif_font_ellipsis", "Sans-Serif Font..." ), findIcon( "font-size" ) )
+		->setId( "sans-serif-font" );
 	mWindowMenu
 		->add( i18n( "monospace_font_ellipsis", "Monospace Font..." ), findIcon( "font-size" ) )
 		->setId( "monospace-font" );
@@ -1400,6 +1401,19 @@ UIMenu* SettingsMenu::createWindowMenu() {
 	mWindowMenu->addSeparator();
 
 	mWindowMenu
+		->addCheckBox(
+			i18n( "use_editor_font_in_input_fields", "Use the editor font in input fields" ),
+			mApp->getConfig().ui.editorFontInInputFields,
+			getKeybind( "use-editor-font-in-input-fields" ) )
+		->setTooltipText(
+			i18n( "use_editor_font_in_input_fields_desc",
+				  "When enabled all main input fields will use the same monospace font as the "
+				  "editor,\notherwise they will use the default sans-serif font." ) )
+		->setId( "use-editor-font-in-input-fields" );
+
+	mWindowMenu->addSeparator();
+
+	mWindowMenu
 		->addCheckBox( i18n( "open_files_in_new_window_enable", "Open Files in New Window" ),
 					   mApp->getConfig().ui.openFilesInNewWindow )
 		->setTooltipText( i18n( "open_files_in_new_window_desc",
@@ -1467,6 +1481,10 @@ UIMenu* SettingsMenu::createWindowMenu() {
 			bool active = item->asType<UIMenuCheckBox>()->isActive();
 			mApp->getConfig().ui.imagesQuickPreview = active;
 			mApp->saveConfig();
+		} else if ( "use-editor-font-in-input-fields" == item->getId() ) {
+			bool active = item->asType<UIMenuCheckBox>()->isActive();
+			mApp->getConfig().ui.editorFontInInputFields = active;
+			mApp->updateInputFonts();
 		} else {
 			String text = String( event->getNode()->asType<UIMenuItem>()->getId() ).toLower();
 			String::replaceAll( text, " ", "-" );

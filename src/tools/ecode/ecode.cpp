@@ -498,17 +498,8 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool term
 									 mUISceneNode->find<UICodeEditor>( "app_output_output" ) )
 								appOutputEditor->setFont( fontMono );
 
-							if ( auto locateFind =
-									 mUISceneNode->find<UITextInput>( "locate_find" ) )
-								locateFind->setFont( fontMono );
-
-							if ( auto globalSearchFind =
-									 mUISceneNode->find<UITextInput>( "global_search_find" ) )
-								globalSearchFind->setFont( fontMono );
-
-							if ( auto globalSearchWhere =
-									 mUISceneNode->find<UITextInput>( "global_search_where" ) )
-								globalSearchWhere->setFont( fontMono );
+							if ( mConfig.ui.editorFontInInputFields )
+								updateInputFonts();
 						}
 					}
 				};
@@ -519,6 +510,25 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool term
 	} );
 	dialog->center();
 	dialog->show();
+}
+
+void App::updateInputFonts() {
+	FontTrueType* font = mConfig.ui.editorFontInInputFields ? mFontMono : mFont;
+
+	if ( auto locateFind = mUISceneNode->find<UITextInput>( "locate_find" ) )
+		locateFind->setFont( font );
+
+	if ( auto searchFind = mUISceneNode->find<UITextInput>( "search_find" ) )
+		searchFind->setFont( font );
+
+	if ( auto searchReplace = mUISceneNode->find<UITextInput>( "search_replace" ) )
+		searchReplace->setFont( font );
+
+	if ( auto globalSearchFind = mUISceneNode->find<UITextInput>( "global_search_find" ) )
+		globalSearchFind->setFont( font );
+
+	if ( auto globalSearchWhere = mUISceneNode->find<UITextInput>( "global_search_where" ) )
+		globalSearchWhere->setFont( font );
 }
 
 void App::downloadFileWebDialog() {
@@ -2020,7 +2030,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "terminal-font-size",
 			 "ui-font-size",
 			 "ui-panel-font-size",
-			 "serif-font",
+			 "sans-serif-font",
 			 "monospace-font",
 			 "terminal-font",
 			 "fallback-font",
@@ -3893,7 +3903,7 @@ void App::init( InitParameters& params ) {
 		// Load fonts
 		Clock fontsClock;
 
-		mFont = loadFont( "sans-serif", mConfig.ui.serifFont, "fonts/NotoSans-Regular.ttf" );
+		mFont = loadFont( "sans-serif", mConfig.ui.sansSerifFont, "fonts/NotoSans-Regular.ttf" );
 		FontFamily::loadFromRegular( mFont );
 
 		mFontMono = loadFont( "monospace", mConfig.ui.monospaceFont, "fonts/DejaVuSansMono.ttf" );
@@ -4288,6 +4298,8 @@ void App::init( InitParameters& params ) {
 
 		if ( !mConfig.ui.showSidePanel )
 			showSidePanel( mConfig.ui.showSidePanel );
+
+		updateInputFonts();
 
 		mSplitter = UICodeEditorSplitter::New( this, mUISceneNode, mThreadPool, mColorSchemes,
 											   mInitColorScheme );

@@ -129,7 +129,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	ui.nativeFileDialogs = ini.getValueB( "ui", "native_file_dialogs", false );
 	ui.imagesQuickPreview = ini.getValueB( "ui", "images_quick_preview", false );
 	ui.panelPosition = panelPositionFromString( ini.getValue( "ui", "panel_position", "left" ) );
-	ui.serifFont = ini.getValue( "ui", "serif_font", "fonts/NotoSans-Regular.ttf" );
+	ui.sansSerifFont = ini.getValue( "ui", "serif_font", "fonts/NotoSans-Regular.ttf" );
 	ui.monospaceFont = ini.getValue( "ui", "monospace_font", "fonts/DejaVuSansMono.ttf" );
 	ui.terminalFont =
 		ini.getValue( "ui", "terminal_font", "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
@@ -145,6 +145,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		ini.getValue( "ui", "font_antialiasing", "grayscale" ) );
 	Text::TextShaperEnabled |= ini.getValueB( "ui", "text_shaper", false );
 	Text::TextShaperOptimizations |= ini.getValueB( "ui", "text_shaper_optimizations", true );
+	ui.editorFontInInputFields = ini.getValueB( "ui", "editor_font_in_input_fields", true );
+
 	doc.trimTrailingWhitespaces = ini.getValueB( "document", "trim_trailing_whitespaces", false );
 	doc.forceNewLineAtEndOfFile =
 		ini.getValueB( "document", "force_new_line_at_end_of_file", false );
@@ -327,7 +329,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "ui", "native_file_dialogs", ui.nativeFileDialogs );
 	ini.setValueB( "ui", "images_quick_preview", ui.imagesQuickPreview );
 	ini.setValue( "ui", "panel_position", panelPositionToString( ui.panelPosition ) );
-	ini.setValue( "ui", "serif_font", ui.serifFont );
+	ini.setValue( "ui", "serif_font", ui.sansSerifFont );
 	ini.setValue( "ui", "monospace_font", ui.monospaceFont );
 	ini.setValue( "ui", "terminal_font", ui.terminalFont );
 	ini.setValue( "ui", "theme", ui.theme );
@@ -339,6 +341,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "ui", "font_hinting", FontTrueType::fontHintingToString( ui.fontHinting ) );
 	ini.setValue( "ui", "font_antialiasing",
 				  FontTrueType::fontAntialiasingToString( ui.fontAntialiasing ) );
+	ini.setValueB( "ui", "editor_font_in_input_fields", ui.editorFontInInputFields );
+
 	ini.setValueB( "document", "trim_trailing_whitespaces", doc.trimTrailingWhitespaces );
 	ini.setValueB( "document", "force_new_line_at_end_of_file", doc.forceNewLineAtEndOfFile );
 	ini.setValueB( "document", "auto_detect_indent_type", doc.autoDetectIndentType );

@@ -115,6 +115,7 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 				  { "volume-mute-fill", 0xF29D },
 				  { "pause-fill", 0xEFD7 },
 				  { "spy-line", 0xF17F },
+				  { "input-field", 0xF47A },
 			  } ) {
 			iconTheme->add( UIGlyphIcon::New( icon.first, remixIconFont, icon.second ) );
 		}

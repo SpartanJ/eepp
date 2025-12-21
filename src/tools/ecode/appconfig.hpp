@@ -41,8 +41,9 @@ struct UIConfig {
 	bool openProjectInNewWindow{ false };
 	bool nativeFileDialogs{ false };
 	bool imagesQuickPreview{ false };
+	bool editorFontInInputFields{ true };
 	PanelPosition panelPosition{ PanelPosition::Left };
-	std::string serifFont;
+	std::string sansSerifFont;
 	std::string monospaceFont;
 	std::string terminalFont;
 	std::string fallbackFont;

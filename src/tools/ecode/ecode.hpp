@@ -75,6 +75,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	void openFontDialog( std::string& fontPath, bool loadingMonoFont, bool terminalFont = false,
 						 std::function<void()> onFinish = {} );
 
+	void updateInputFonts();
+
 	void downloadFileWeb( const std::string& url );
 
 	UIFileDialog* saveFileDialog( UICodeEditor* editor, bool focusOnClose = true );
@@ -337,7 +339,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		t.setCommand( "terminal-font-size", [this] { mSettingsActions->setTerminalFontSize(); } );
 		t.setCommand( "ui-font-size", [this] { mSettingsActions->setUIFontSize(); } );
 		t.setCommand( "ui-panel-font-size", [this] { mSettingsActions->setUIPanelFontSize(); } );
-		t.setCommand( "serif-font", [this] { openFontDialog( mConfig.ui.serifFont, false ); } );
+		t.setCommand( "sans-serif-font",
+					  [this] { openFontDialog( mConfig.ui.sansSerifFont, false ); } );
 		t.setCommand( "monospace-font",
 					  [this] { openFontDialog( mConfig.ui.monospaceFont, true ); } );
 		t.setCommand( "terminal-font",

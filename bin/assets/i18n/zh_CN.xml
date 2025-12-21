@@ -522,8 +522,8 @@ Restart ecode to see the changes.</string>
 	<string name="select_font_file">选择字体文件</string>
 	<string name="select_to_next_line">选择下一行</string>
 	<string name="select_to_previous_line">选择上一行</string>
-	<string name="serif_font">Serif字体</string>
-	<string name="serif_font_ellipsis">Serif字体...</string>
+	<string name="sans-serif_font">Sans-Serif字体</string>
+	<string name="sans-serif_font_ellipsis">Sans-Serif字体...</string>
 	<string name="set_cursor_blinking_time">设置光标闪烁时间：设置0禁用
 </string>
 	<string name="set_editor_font_size">设置字体大小：</string>

@@ -708,8 +708,8 @@ Bitte das Programmverzeichnis auf Schreibrechte überprüfen.</string>
 	<string name="select_to_previous_line">Auswahl zu voriger Zeile</string>
 	<string name="select_to_start_of_content">Auswahl zu Inhaltsanfang</string>
 	<string name="select_to_start_of_line">Auswahl zu Zeilenanfang</string>
-	<string name="serif_font">Serifenschriftart</string>
-	<string name="serif_font_ellipsis">Serifenschriftart...</string>
+	<string name="sans-serif_font">SansSerifenschriftart</string>
+	<string name="sans-serif_font_ellipsis">SansSerifenschriftart...</string>
 	<string name="session_snapshot">Sitzungs-Snapshot &amp; Regelmäßige Sicherung</string>
 	<string name="session_snapshot_desc">Wenn Sitzungs-Snapshots aktiv sind, wird der Editor Änderungen im 
 	Dokumenten-Buffer beibehalten, auch, wenn sie vor Beendigung nicht gespeichert wurden.</string>

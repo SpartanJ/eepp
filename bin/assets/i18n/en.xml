@@ -693,8 +693,8 @@ Please check that the application directory has write permissions.</string>
 	<string name="select_to_previous_line">Select To Previous Line</string>
 	<string name="select_to_start_of_content">Select To Start Of Content</string>
 	<string name="select_to_start_of_line">Select To Start Of Line</string>
-	<string name="serif_font">Serif Font</string>
-	<string name="serif_font_ellipsis">Serif Font...</string>
+	<string name="sans-serif_font">Sans-Serif Font</string>
+	<string name="sans-serif_font_ellipsis">Sans Serif Font...</string>
 	<string name="session_snapshot">Session Snapshot &amp; Periodic Backup</string>
 	<string name="session_snapshot_desc">When session snapshot is enabled the editor will keep
 the document buffer changes between sessions, even if they are not saved
