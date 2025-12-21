@@ -425,6 +425,7 @@ bool FontTrueType::setFontFace( void* _face ) {
 	mIsColorEmojiFont = checkIsColorEmojiFont( face ); // For CBDT (COLRv0)
 	mHasSvgGlyphs = checkHasSvgTable( face );		   // For SVG table
 	mHasColrGlyphs = checkHasColrTable( face );		   // For COLR table (COLRv1)
+	mIsBitmapOnly = !FT_IS_SCALABLE( face ) && ( face->num_fixed_sizes > 0 );
 	mIsEmojiFont = FT_Get_Char_Index( face, 0x1F600 ) != 0;
 	mIsBold = face->style_flags & FT_STYLE_FLAG_BOLD;
 	mIsItalic = face->style_flags & FT_STYLE_FLAG_ITALIC;
@@ -1409,21 +1410,22 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 	FT_UShort currentSize = face->size->metrics.x_ppem;
 
 	if ( currentSize != characterSize ) {
-		if ( mIsColorEmojiFont ) {
-			int bestMatch = 0;
-			int diff = eeabs( characterSize - face->available_sizes[0].width );
+		if ( mIsColorEmojiFont || mIsBitmapOnly ) {
+			int bestMatch = face->available_sizes[0].height;
+			int diff = eeabs( characterSize - face->available_sizes[0].height );
 			for ( int i = 1; i < face->num_fixed_sizes; ++i ) {
-				int ndiff = eeabs( characterSize - face->available_sizes[i].width );
+				int ndiff = eeabs( characterSize - face->available_sizes[i].height );
 				if ( ndiff < diff ) {
-					bestMatch = i;
+					bestMatch = face->available_sizes[i].height;
 					diff = ndiff;
 				}
 			}
 			characterSize = bestMatch;
 		}
 
-		FT_Error result = mIsColorEmojiFont ? FT_Select_Size( face, characterSize )
-											: FT_Set_Pixel_Sizes( face, 0, characterSize );
+		FT_Error result = mIsColorEmojiFont
+							  ? FT_Select_Size( face, characterSize )
+							  : FT_Set_Pixel_Sizes( face, 0, characterSize );
 
 		if ( result == FT_Err_Invalid_Pixel_Size ) {
 			// In the case of bitmap fonts, resizing can

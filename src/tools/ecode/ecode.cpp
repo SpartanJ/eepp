@@ -448,8 +448,10 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool term
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->setSingleClickNavigation( mConfig.editor.singleClickNavigation );
 	dialog->on( Event::OnWindowClose, [this]( const Event* ) {
-		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
+		if ( mSplitter && mSplitter->getCurWidget() &&
+			 !SceneManager::instance()->isShuttingDown() ) {
 			mSplitter->getCurWidget()->setFocus();
+		}
 	} );
 	dialog->on( Event::OpenFile, [this, &fontPath, loadingMonoFont, terminalFont,
 								  onFinish]( const Event* event ) {
@@ -487,30 +489,31 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool term
 							mSplitter->forEachEditor( [fontMono]( UICodeEditor* editor ) {
 								editor->setFont( fontMono );
 							} );
+
+							if ( auto buildOutputEditor =
+									 mUISceneNode->find<UICodeEditor>( "build_output_output" ) )
+								buildOutputEditor->setFont( fontMono );
+
+							if ( auto appOutputEditor =
+									 mUISceneNode->find<UICodeEditor>( "app_output_output" ) )
+								appOutputEditor->setFont( fontMono );
+
+							if ( auto locateFind =
+									 mUISceneNode->find<UITextInput>( "locate_find" ) )
+								locateFind->setFont( fontMono );
+
+							if ( auto globalSearchFind =
+									 mUISceneNode->find<UITextInput>( "global_search_find" ) )
+								globalSearchFind->setFont( fontMono );
+
+							if ( auto globalSearchWhere =
+									 mUISceneNode->find<UITextInput>( "global_search_where" ) )
+								globalSearchWhere->setFont( fontMono );
 						}
 					}
 				};
-				if ( !fontMono->isMonospace() ) {
-					auto* msgBox = UIMessageBox::New(
-						UIMessageBox::YES_NO,
-						i18n(
-							"confirm_loading_none_monospace_font",
-							"The editor only supports monospaced fonts and the selected font isn't "
-							"flagged as monospace.\nDo you want to load it anyways?\nPerformance "
-							"and memory usage will be awful without a monospaced font." )
-							.unescape() );
-					msgBox->on( Event::OnConfirm, [loadMonoFont, fontMono]( const Event* ) {
-						loadMonoFont( fontMono );
-					} );
-					msgBox->on( Event::OnDiscard, [fontMono]( const Event* ) {
-						FontManager::instance()->remove( fontMono );
-					} );
-					msgBox->setTitle( i18n( "confirm_loading_font", "Font loading confirmation" ) );
-					msgBox->center();
-					msgBox->showWhenReady();
-				} else {
-					loadMonoFont( fontMono );
-				}
+
+				loadMonoFont( fontMono );
 			}
 		}
 	} );

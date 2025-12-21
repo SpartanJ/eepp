@@ -238,7 +238,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	UICodeEditor* setFont( Font* font );
 
-	UICodeEditor* setFontSize( const Float& size );
+	bool setFontSize( const Float& size );
 
 	const Float& getFontSize() const;
 
@@ -1183,6 +1183,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	inline Uint32 getWidgetTextDrawHints() const {
 		return mKerningEnabled ? 0 : TextHints::NoKerning;
 	}
+
+	bool setInternalFontSize( const Float& size );
 };
 
 }} // namespace EE::UI

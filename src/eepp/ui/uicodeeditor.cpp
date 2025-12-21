@@ -624,6 +624,7 @@ UICodeEditor* UICodeEditor::setFont( Font* font ) {
 	if ( mFont != font ) {
 		mFont = font;
 		mFontStyleConfig.Font = mFont;
+		setFontSize( mFontSize );
 		invalidateDraw();
 		invalidateEditor();
 		onFontChanged();
@@ -767,14 +768,28 @@ void UICodeEditor::setShowIndentationGuides( bool showIndentationGuides ) {
 	}
 }
 
-UICodeEditor* UICodeEditor::setFontSize( const Float& size ) {
-	if ( mFontStyleConfig.CharacterSize != size ) {
-		mFontStyleConfig.CharacterSize =
-			eeabs( size - (int)size ) == 0.5f || (int)size == size ? size : eefloor( size );
-		mFontSize = mFontStyleConfig.CharacterSize;
-		onFontChanged();
+bool UICodeEditor::setInternalFontSize( const Float& size ) {
+	Float initialSize = mFontStyleConfig.CharacterSize;
+	if ( NULL != mFontStyleConfig.Font && mFontStyleConfig.CharacterSize != size ) {
+		mFontStyleConfig.CharacterSize = size;
+		if ( !mFontStyleConfig.Font->isScalable() ) {
+			Float realSize = mFontStyleConfig.Font->getFontHeight( mFontStyleConfig.CharacterSize );
+			if ( realSize != mFontStyleConfig.CharacterSize )
+				mFontStyleConfig.CharacterSize = realSize;
+		}
 	}
-	return this;
+	if ( initialSize != mFontStyleConfig.CharacterSize ) {
+		onFontChanged();
+		return true;
+	}
+	return false;
+}
+
+bool UICodeEditor::setFontSize( const Float& size ) {
+	bool set = setInternalFontSize( size );
+	if ( set )
+		mFontSize = mFontStyleConfig.CharacterSize;
+	return set;
 }
 
 const Float& UICodeEditor::getFontSize() const {
@@ -3639,34 +3654,35 @@ void UICodeEditor::paste() {
 }
 
 void UICodeEditor::fontSizeGrow() {
-	Float line = mScroll.y / getLineHeight();
-	Float col = mScroll.x / getGlyphWidth();
-	mFontStyleConfig.CharacterSize = eemin<Float>( 96, mFontStyleConfig.CharacterSize + 1 );
-	onFontChanged();
-	updateLongestLineWidth();
-	setScrollY( getLineHeight() * line );
-	setScrollX( getGlyphWidth() * col );
-	invalidateDraw();
+	if ( setInternalFontSize( eemin<Float>( 96, mFontStyleConfig.CharacterSize + 1 ) ) ) {
+		Float line = mScroll.y / getLineHeight();
+		Float col = mScroll.x / getGlyphWidth();
+		updateLongestLineWidth();
+		setScrollY( getLineHeight() * line );
+		setScrollX( getGlyphWidth() * col );
+		invalidateDraw();
+	}
 }
 
 void UICodeEditor::fontSizeShrink() {
-	Float line = mScroll.y / getLineHeight();
-	Float col = mScroll.x / getGlyphWidth();
-	mFontStyleConfig.CharacterSize = eemax<Float>( 4, mFontStyleConfig.CharacterSize - 1 );
-	onFontChanged();
-	updateLongestLineWidth();
-	setScrollY( getLineHeight() * line );
-	setScrollX( getGlyphWidth() * col );
-	invalidateDraw();
+	if ( setInternalFontSize( eemax<Float>( 4, mFontStyleConfig.CharacterSize - 1 ) ) ) {
+		Float line = mScroll.y / getLineHeight();
+		Float col = mScroll.x / getGlyphWidth();
+		updateLongestLineWidth();
+		setScrollY( getLineHeight() * line );
+		setScrollX( getGlyphWidth() * col );
+		invalidateDraw();
+	}
 }
 
 void UICodeEditor::fontSizeReset() {
-	Float line = mScroll.y / getLineHeight();
-	Float col = mScroll.x / getGlyphWidth();
-	setFontSize( mFontSize );
-	updateLongestLineWidth();
-	setScrollY( getLineHeight() * line );
-	setScrollX( getGlyphWidth() * col );
+	if ( setInternalFontSize( mFontSize ) ) {
+		Float line = mScroll.y / getLineHeight();
+		Float col = mScroll.x / getGlyphWidth();
+		updateLongestLineWidth();
+		setScrollY( getLineHeight() * line );
+		setScrollX( getGlyphWidth() * col );
+	}
 }
 
 const bool& UICodeEditor::getShowWhitespaces() const {

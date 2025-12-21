@@ -442,6 +442,10 @@ class EE_API Node : public Transformable {
 
 	bool inParentTreeOf( Node* child ) const;
 
+	bool inParentTreeOfType( Uint32 type ) const;
+
+	Node* getParentOfType( Uint32 type ) const;
+
 	void setLoadingState( bool loading );
 
 	bool isLoadingState() const;

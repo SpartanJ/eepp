@@ -885,6 +885,26 @@ bool Node::inParentTreeOf( Node* child ) const {
 	return false;
 }
 
+bool Node::inParentTreeOfType( Uint32 type ) const {
+	Node* node = mParentNode;
+	while ( NULL != node ) {
+		if ( node->isType( type ) )
+			return true;
+		node = node->mParentNode;
+	}
+	return false;
+}
+
+Node* Node::getParentOfType( Uint32 type ) const {
+	Node* node = mParentNode;
+	while ( NULL != node ) {
+		if ( node->isType( type ) )
+			return node;
+		node = node->mParentNode;
+	}
+	return nullptr;
+}
+
 void Node::setLoadingState( bool loading ) {
 	writeNodeFlag( NODE_FLAG_LOADING, loading ? 1 : 0 );
 }

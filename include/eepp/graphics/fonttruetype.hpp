@@ -230,6 +230,7 @@ class EE_API FontTrueType : public Font {
 	bool mIsEmojiFont{ false };
 	bool mHasSvgGlyphs{ false };
 	bool mHasColrGlyphs{ false };
+	bool mIsBitmapOnly{ false };
 	mutable bool mIsMonospace{ false };
 	mutable bool mIsMonospaceComplete{ false };
 	mutable bool mUsingFallback{ false };

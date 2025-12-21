@@ -5,6 +5,7 @@ TextInput#search_find,
 TextInput#search_replace,
 TextInput#locate_find,
 TextInput#global_search_find,
+TextInput#global_search_where,
 TextInput.small_input,
 .search_str {
 	padding-top: 0;
