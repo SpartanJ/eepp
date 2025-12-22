@@ -4248,10 +4248,9 @@ void App::init( InitParameters& params ) {
 		}
 
 #if EE_PLATFORM == EE_PLATFORM_MACOS
-		if ( ( macOS_isDarkModeEnabled() &&
-			   mConfig.ui.colorScheme == ColorSchemePreference::Dark ) ||
-			 ( !macOS_isDarkModeEnabled() &&
-			   mConfig.ui.colorScheme == ColorSchemePreference::Light ) ) {
+		auto colorScheme = ColorSchemePreferences::fromExt( mConfig.ui.colorScheme );
+		if ( ( macOS_isDarkModeEnabled() && colorScheme == ColorSchemePreference::Dark ) ||
+			 ( !macOS_isDarkModeEnabled() && colorScheme == ColorSchemePreference::Light ) ) {
 			auto backVar = mUISceneNode->getStyleSheet()
 							   .getStyleFromSelector( ":root", true )
 							   ->getVariableByName( "--back" );
