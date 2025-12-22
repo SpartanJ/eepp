@@ -464,6 +464,7 @@ void StatusBuildOutputController::createContainer() {
 	editor->getDocument().textInput(
 		mContext->i18n( "no_build_has_been_run", "No build has been run" ), false );
 	editor->setScrollY( editor->getMaxScroll().y );
+	editor->setColorScheme( mContext->getSplitter()->getCurrentColorScheme() );
 	mButOutput = mContainer->find<UISelectButton>( "but_build_output_output" );
 	mButIssues = mContainer->find<UISelectButton>( "but_build_output_issues" );
 	mTableIssues = mContainer->find<UITableView>( "build_output_issues" );

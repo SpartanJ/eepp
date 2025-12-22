@@ -435,10 +435,8 @@ void App::refreshStyleSheet() {
 		setUserDefaultTheme();
 	}
 
-	if ( !mCurrentLayout.empty() && FileSystem::fileExists( mCurrentLayout ) &&
-		 mUIContainer != NULL ) {
-		loadLayout( mCurrentLayout );
-	}
+	mInvalidationLayout = InvalidationType::Memory;
+	reloadLayout();
 
 	mUpdateStyleSheet = false;
 	mUpdateBaseStyleSheet = false;
@@ -1157,17 +1155,21 @@ void App::createAppMenu() {
 
 	UIPopUpMenu* colorsMenu = UIPopUpMenu::New();
 	colorsMenu
-		->addRadioButton( i18n( "light", "Light" ), mUIColorScheme == ColorSchemePreference::Light )
+		->addRadioButton( i18n( "system", "System" ),
+						  mUIColorScheme == ColorSchemeExtPreference::System )
+		->setId( "system" );
+	colorsMenu
+		->addRadioButton( i18n( "light", "Light" ),
+						  mUIColorScheme == ColorSchemeExtPreference::Light )
 		->setId( "light" );
 	colorsMenu
-		->addRadioButton( i18n( "dark", "Dark" ), mUIColorScheme == ColorSchemePreference::Dark )
+		->addRadioButton( i18n( "dark", "Dark" ), mUIColorScheme == ColorSchemeExtPreference::Dark )
 		->setId( "dark" );
 	colorsMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		mUIColorScheme =
-			item->getId() == "light" ? ColorSchemePreference::Light : ColorSchemePreference::Dark;
+		mUIColorScheme = ColorSchemePreferences::fromStringExt( item->getId() );
 		mUISceneNode->setColorSchemePreference( mUIColorScheme );
 		updateLayoutFunc( InvalidationType::Memory );
 	} );
@@ -1289,8 +1291,7 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 		mAppUISceneNode->enableDrawInvalidation();
 		mUISceneNode->enableDrawInvalidation();
 
-		mUIColorScheme =
-			colorScheme == "light" ? ColorSchemePreference::Light : ColorSchemePreference::Dark;
+		mUIColorScheme = ColorSchemePreferences::fromStringExt( colorScheme );
 		mUISceneNode->setColorSchemePreference( mUIColorScheme );
 
 		FontTrueType* remixIconFont = loadFont( "icon", "fonts/remixicon.ttf" );
@@ -1544,7 +1545,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 							"Use the default application theme in the editor.",
 							{ 'u', "use-app-theme" } );
 	args::ValueFlag<std::string> prefersColorScheme(
-		parser, "prefers-color-scheme", "Set the preferred color scheme (\"light\" or \"dark\")",
+		parser, "prefers-color-scheme",
+		"Set the preferred color scheme (\"light\", \"dark\" or \"system\")",
 		{ 'c', "prefers-color-scheme" } );
 
 	try {

@@ -21,7 +21,9 @@
 
 // This taints the System module!
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
+#include <android/configuration.h>
 #include <eepp/window/engine.hpp>
+#include <jni.h>
 #endif
 
 #ifdef EE_PLATFORM_POSIX
@@ -41,6 +43,7 @@
 #endif
 #include <stdlib.h>
 #include <windows.h>
+#include <winreg.h>
 #undef GetDiskFreeSpace
 #undef GetTempPath
 
@@ -103,6 +106,11 @@ typedef DWORD( WINAPI* GetModuleBaseName_t )( HANDLE, HMODULE, LPSTR, DWORD );
 #include <eepp/network/uri.hpp>
 #include <emscripten.h>
 using namespace EE::Network;
+#endif
+
+#if EE_PLATFORM == EE_PLATFORM_IOS
+#include <objc/message.h>
+#include <objc/runtime.h>
 #endif
 
 #ifndef PATH_MAX
@@ -2006,6 +2014,255 @@ bool Sys::processHasChildren( ProcessID pid ) {
 #endif
 
 	return false;
+}
+
+static bool _isOSUsingDarkColorScheme() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	// Checks the registry for the "AppsUseLightTheme" key.
+	// 0 = Dark, 1 = Light. If key is missing (Win 7/8), default to Light (false).
+
+	HKEY hKey;
+	const wchar_t* subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
+	const wchar_t* valueName = L"AppsUseLightTheme";
+
+	if ( RegOpenKeyExW( HKEY_CURRENT_USER, subKey, 0, KEY_READ, &hKey ) != ERROR_SUCCESS ) {
+		return false;
+	}
+
+	DWORD value = 1; // Default to Light
+	DWORD size = sizeof( DWORD );
+	LSTATUS status = RegQueryValueExW( hKey, valueName, nullptr, nullptr,
+									   reinterpret_cast<LPBYTE>( &value ), &size );
+
+	RegCloseKey( hKey );
+
+	if ( status == ERROR_SUCCESS ) {
+		return ( value == 0 );
+	}
+	return false;
+
+#elif EE_PLATFORM == EE_PLATFORM_IOS
+	// Logic: [UIScreen.mainScreen.traitCollection userInterfaceStyle] == 2 (Dark)
+
+	// 1. Get UIScreen Class
+	Class uiScreenClass = objc_getClass( "UIScreen" );
+	if ( !uiScreenClass )
+		return false; // Should not happen on iOS
+
+	// 2. Call [UIScreen mainScreen]
+	// We must cast objc_msgSend to the correct function signature
+	typedef id ( *MainScreenMethod )( Class, SEL );
+	SEL mainScreenSel = sel_registerName( "mainScreen" );
+	MainScreenMethod getMainScreen = (MainScreenMethod)objc_msgSend;
+	id mainScreen = getMainScreen( uiScreenClass, mainScreenSel );
+	if ( !mainScreen )
+		return false;
+
+	// 3. Call [screen traitCollection]
+	typedef id ( *TraitCollectionMethod )( id, SEL );
+	SEL traitCollectionSel = sel_registerName( "traitCollection" );
+	TraitCollectionMethod getTraitCollection = (TraitCollectionMethod)objc_msgSend;
+	id traits = getTraitCollection( mainScreen, traitCollectionSel );
+	if ( !traits )
+		return false;
+
+	// 4. Call [traits userInterfaceStyle]
+	// Return type is NSInteger (long)
+	typedef long ( *UserInterfaceStyleMethod )( id, SEL );
+	SEL styleSel = sel_registerName( "userInterfaceStyle" );
+	UserInterfaceStyleMethod getStyle = (UserInterfaceStyleMethod)objc_msgSend;
+	long style = getStyle( traits, styleSel );
+
+	// 5. Check constants: UIUserInterfaceStyleLight = 1, UIUserInterfaceStyleDark = 2
+	return ( style == 2 );
+
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+	// Checks global user preferences via CoreFoundation (C-API).
+	// This avoids complex Obj-C Runtime casting and works in CLI apps / before UI init.
+	// Key: "AppleInterfaceStyle". Value: "Dark" (exists) or null (Light).
+
+	bool isDark = false;
+	CFStringRef key = CFSTR( "AppleInterfaceStyle" );
+	CFPropertyListRef propertyValue =
+		CFPreferencesCopyAppValue( key, kCFPreferencesAnyApplication );
+
+	if ( propertyValue ) {
+		if ( CFGetTypeID( propertyValue ) == CFStringGetTypeID() ) {
+			CFStringRef style = static_cast<CFStringRef>( propertyValue );
+			// Check if string contains "Dark"
+			if ( CFStringCompare( style, CFSTR( "Dark" ), 0 ) == kCFCompareEqualTo ) {
+				isDark = true;
+			}
+		}
+		CFRelease( propertyValue );
+	}
+	return isDark;
+#elif EE_PLATFORM == EE_PLATFORM_ANDROID
+	// Logic: ActivityThread.currentApplication().getResources().getConfiguration().uiMode
+
+	// 1. Retrieve the environment from your engine
+	void* rawEnv = Window::Engine::instance()->getPlatformHelper()->getJNIEnv();
+	if ( !rawEnv )
+		return false;
+
+	// Cast void* to JNIEnv*
+	JNIEnv* env = static_cast<JNIEnv*>( rawEnv );
+
+	bool isDark = false;
+
+	// 2. Reflection to get the Application Context without passing it as an argument
+	// Note: We use the hidden class "android.app.ActivityThread" to get the current app.
+	jclass activityThreadCls = env->FindClass( "android/app/ActivityThread" );
+
+	if ( activityThreadCls ) {
+		jmethodID currentAppMethod = env->GetStaticMethodID(
+			activityThreadCls, "currentApplication", "()Landroid/app/Application;" );
+
+		if ( currentAppMethod ) {
+			jobject context = env->CallStaticObjectMethod( activityThreadCls, currentAppMethod );
+
+			if ( context ) {
+				// 3. context.getResources()
+				jclass contextCls = env->GetObjectClass( context );
+				jmethodID getResMethod = env->GetMethodID( contextCls, "getResources",
+														   "()Landroid/content/res/Resources;" );
+				jobject resources = env->CallObjectMethod( context, getResMethod );
+
+				if ( resources ) {
+					// 4. resources.getConfiguration()
+					jclass resCls = env->GetObjectClass( resources );
+					jmethodID getConfigMethod = env->GetMethodID(
+						resCls, "getConfiguration", "()Landroid/content/res/Configuration;" );
+					jobject config = env->CallObjectMethod( resources, getConfigMethod );
+
+					if ( config ) {
+						// 5. config.uiMode & UI_MODE_NIGHT_MASK
+						jclass configCls = env->GetObjectClass( config );
+						jfieldID uiModeField = env->GetFieldID( configCls, "uiMode", "I" );
+						int uiMode = env->GetIntField( config, uiModeField );
+
+						// UI_MODE_NIGHT_MASK (0x30) check against UI_MODE_NIGHT_YES (0x20)
+						if ( ( uiMode & 0x30 ) == 0x20 ) {
+							isDark = true;
+						}
+
+						// Cleanup local references to avoid JNI table overflow
+						env->DeleteLocalRef( config );
+						env->DeleteLocalRef( configCls );
+					}
+					env->DeleteLocalRef( resources );
+					env->DeleteLocalRef( resCls );
+				}
+				env->DeleteLocalRef( context );
+				env->DeleteLocalRef( contextCls );
+			}
+		}
+		env->DeleteLocalRef( activityThreadCls );
+	}
+
+	// Safety: Clear any exceptions if something wasn't found (e.g. old Android versions)
+	if ( env->ExceptionCheck() ) {
+		env->ExceptionClear();
+	}
+
+	return isDark;
+
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
+	// Helper to parse INI-style files robustly
+	auto checkFileForDarkTheme = [&]( const std::string& path, const std::string& key ) -> bool {
+		if ( access( path.c_str(), R_OK ) != 0 )
+			return false;
+
+		std::ifstream file( path );
+		std::string line;
+		while ( std::getline( file, line ) ) {
+			// 1. Trim leading whitespace (handle indented keys)
+			size_t keyStart = line.find_first_not_of( " \t" );
+			if ( keyStart == std::string::npos )
+				continue; // Empty line
+
+			// 2. Skip comments
+			if ( line[keyStart] == '#' || line[keyStart] == ';' )
+				continue;
+
+			// 3. Check if the line starts specifically with our key
+			if ( line.compare( keyStart, key.length(), key ) == 0 ) {
+				// 4. Look for '=' after the key
+				size_t afterKeyIndex = keyStart + key.length();
+				size_t eqPos = line.find( '=', afterKeyIndex );
+
+				if ( eqPos != std::string::npos ) {
+					// 5. strict check: ensure only whitespace exists between key and '='
+					// This prevents "Color" matching "ColorScheme" or "gtk-theme" matching
+					// "gtk-theme-backup"
+					bool isValidKey = true;
+					for ( size_t i = afterKeyIndex; i < eqPos; ++i ) {
+						if ( line[i] != ' ' && line[i] != '\t' ) {
+							isValidKey = false;
+							break;
+						}
+					}
+
+					if ( isValidKey ) {
+						std::string value = line.substr( eqPos + 1 );
+						value = String::toLower( value );
+						if ( value.find( "dark" ) != std::string::npos ) {
+							return true;
+						}
+					}
+				}
+			}
+		}
+		return false;
+	};
+
+	// 1. Check Environment Variables (GTK_THEME overrides config files)
+	const char* gtkTheme = std::getenv( "GTK_THEME" );
+	if ( gtkTheme ) {
+		std::string theme( gtkTheme );
+		theme = String::toLower( theme );
+		if ( theme.find( "dark" ) != std::string::npos )
+			return true;
+	}
+
+	const char* home = std::getenv( "HOME" );
+	if ( !home )
+		return false;
+	std::string homeStr( home );
+
+	// 2. KDE Plasma
+	if ( checkFileForDarkTheme( homeStr + "/.config/kdeglobals", "ColorScheme" ) ) {
+		return true;
+	}
+
+	// 3. GTK 3/4 (Gnome, XFCE, Mate, Cinnamon)
+	if ( checkFileForDarkTheme( homeStr + "/.config/gtk-3.0/settings.ini", "gtk-theme-name" ) ) {
+		return true;
+	}
+	if ( checkFileForDarkTheme( homeStr + "/.config/gtk-4.0/settings.ini", "gtk-theme-name" ) ) {
+		return true;
+	}
+
+	return false; // Default to light
+#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+    // Executes JavaScript: window.matchMedia('(prefers-color-scheme: dark)').matches
+    return EM_ASM_INT({
+        if (typeof window !== 'undefined' && window.matchMedia) {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 1 : 0;
+        }
+        return 0;
+    }) != 0;
+#else
+	return true; // Any other OS default to dark
+#endif
+}
+
+bool Sys::isOSUsingDarkColorScheme( bool allowUsingCached ) {
+	static bool isUsingDarkColorScheme = _isOSUsingDarkColorScheme();
+	if ( allowUsingCached )
+		return isUsingDarkColorScheme;
+	isUsingDarkColorScheme = _isOSUsingDarkColorScheme();
+	return isUsingDarkColorScheme;
 }
 
 }} // namespace EE::System

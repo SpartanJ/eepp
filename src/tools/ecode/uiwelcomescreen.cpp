@@ -40,7 +40,7 @@ static const auto LAYOUT = R"xml(
 #welcome_ecode #version_number {
 	cursor: pointer;
 	font-family: DejaVuSansMono;
-	text-shadow-color: rgba(0,0,0,0.4);
+	text-shadow-color: light-dark(#00000019, #00000066);
 }
 #welcome_ecode #version_number {
 	font-style: shadow;
@@ -87,6 +87,26 @@ static const auto LAYOUT = R"xml(
 #welcome_ecode .right > PushButton:last-of-type {
 	margin-bottom: 0dp;
 }
+#welcome_ecode .color_scheme_icon {
+	lw: 24dp;
+	lh: 24dp;
+	background-color: transparent;
+	border-radius: 12dp;
+	foreground-position: center;
+	foreground-tint: var(--font);
+	transition: all 0.1s;
+}
+#welcome_ecode .color_scheme_icon:hover {
+	background-color: var(--primary);
+	foreground-tint: light-dark(var(--back), var(--font));
+	cursor: hand;
+}
+#welcome_ecode #light_color_scheme_but {
+	foreground-image: icon("sun", 16dp);
+}
+#welcome_ecode #dark_color_scheme_but {
+	foreground-image: icon("moon", 16dp);
+}
 ]]>
 </style>
 <RelativeLayout lw="mp" lh="mp" max-width="512dp" layout_gravity="center">
@@ -124,6 +144,10 @@ static const auto LAYOUT = R"xml(
 				<hbox class="shortcut" lg="center">
 					<tv class="name" id="open_file" text="@string(open_file, Open File)" />
 					<tv class="shortcut" id="open_file_shortcut" text="Ctrl + O" />
+				</hbox>
+				<hbox layout-gravity="center">
+					<Widget id="light_color_scheme_but" class="color_scheme_icon" />
+					<Widget id="dark_color_scheme_but" class="color_scheme_icon" />
 				</hbox>
 			</vbox>
 		</vbox>
@@ -253,6 +277,14 @@ UIWelcomeScreen::UIWelcomeScreen( App* app ) :
 	find<UITextView>( "open_folder_shortcut" )->setText( mApp->getKeybind( "open-folder" ) );
 
 	find<UITextView>( "open_file_shortcut" )->setText( mApp->getKeybind( "open-file" ) );
+
+	find( "light_color_scheme_but" )->onClick( [this]( auto ) {
+		mApp->setUIColorSchemeFromUserInteraction( ColorSchemeExtPreference::Light );
+	} );
+
+	find( "dark_color_scheme_but" )->onClick( [this]( auto ) {
+		mApp->setUIColorSchemeFromUserInteraction( ColorSchemeExtPreference::Dark );
+	} );
 
 	auto welcomeDisabledChk = find<UICheckBox>( "disable_welcome_screen" );
 	welcomeDisabledChk->on( Event::OnValueChange, [welcomeDisabledChk, this]( auto ) {

@@ -1078,6 +1078,23 @@ ColorSchemePreference UISceneNode::getColorSchemePreference() const {
 	return mColorSchemePreference;
 }
 
+void UISceneNode::setColorSchemePreference(
+	const ColorSchemeExtPreference& colorSchemePreference ) {
+	switch ( colorSchemePreference ) {
+		case ColorSchemeExtPreference::Light:
+			setColorSchemePreference( ColorSchemePreference::Light );
+			break;
+		case ColorSchemeExtPreference::Dark:
+			setColorSchemePreference( ColorSchemePreference::Dark );
+			break;
+		case ColorSchemeExtPreference::System:
+			setColorSchemePreference( Sys::isOSUsingDarkColorScheme()
+										  ? ColorSchemePreference::Dark
+										  : ColorSchemePreference::Light );
+			break;
+	}
+}
+
 void UISceneNode::setColorSchemePreference( const ColorSchemePreference& colorSchemePreference ) {
 	if ( mColorSchemePreference != colorSchemePreference ) {
 		mColorSchemePreference = colorSchemePreference;

@@ -47,7 +47,7 @@ struct UIConfig {
 	std::string monospaceFont;
 	std::string terminalFont;
 	std::string fallbackFont;
-	ColorSchemePreference colorScheme{ ColorSchemePreference::Dark };
+	ColorSchemeExtPreference colorScheme{ ColorSchemeExtPreference::Dark };
 	std::string theme;
 	std::string language;
 	FontHinting fontHinting{ FontHinting::Full };

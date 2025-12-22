@@ -1203,7 +1203,7 @@ void App::panelPosition( const PanelPosition& panelPosition ) {
 	mSettings->updateViewMenu();
 }
 
-void App::setUIColorScheme( const ColorSchemePreference& colorScheme ) {
+void App::setUIColorScheme( const ColorSchemeExtPreference& colorScheme ) {
 	if ( colorScheme == mUIColorScheme )
 		return;
 	mUIColorScheme = mConfig.ui.colorScheme = colorScheme;
@@ -1212,7 +1212,19 @@ void App::setUIColorScheme( const ColorSchemePreference& colorScheme ) {
 		mPluginManager->setUIThemeReloaded();
 }
 
-ColorSchemePreference App::getUIColorScheme() const {
+void App::setUIColorSchemeFromUserInteraction( const ColorSchemeExtPreference& colorSchemeExt ) {
+	setUIColorScheme( colorSchemeExt );
+	ColorSchemePreference colorScheme = ColorSchemePreferences::fromExt( colorSchemeExt );
+	if ( colorScheme == ColorSchemePreference::Light &&
+		 mSplitter->getCurrentColorSchemeName() == "eepp" ) {
+		mSplitter->setColorScheme( "github" );
+	} else if ( colorScheme == ColorSchemePreference::Dark &&
+				mSplitter->getCurrentColorSchemeName() == "github" ) {
+		mSplitter->setColorScheme( "eepp" );
+	}
+}
+
+ColorSchemeExtPreference App::getUIColorScheme() const {
 	return mUIColorScheme;
 }
 
@@ -4202,8 +4214,11 @@ void App::init( InitParameters& params ) {
 			mUISceneNode->getTranslator().loadFromFile( langPath );
 
 		if ( !params.colorScheme.empty() ) {
-			mUIColorScheme = params.colorScheme == "light" ? ColorSchemePreference::Light
-														   : ColorSchemePreference::Dark;
+			mUIColorScheme =
+				params.colorScheme == "light"
+					? ColorSchemeExtPreference::Light
+					: ( params.colorScheme == "dark" ? ColorSchemeExtPreference::Dark
+													 : ColorSchemeExtPreference::System );
 		}
 		mUISceneNode->setColorSchemePreference( mUIColorScheme );
 
@@ -4556,7 +4571,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 											 "Set default application pixel density",
 											 { 'd', "pixel-density" } );
 	args::ValueFlag<std::string> prefersColorScheme(
-		parser, "prefers-color-scheme", "Set the preferred color scheme (\"light\" or \"dark\")",
+		parser, "prefers-color-scheme",
+		"Set the preferred color scheme (\"light\", \"dark\" or \"system\")",
 		{ 'c', "prefers-color-scheme" } );
 	args::ValueFlag<std::string> css(
 		parser, "css",

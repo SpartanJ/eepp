@@ -205,7 +205,7 @@ class App : public UICodeEditorSplitter::Client {
 	UILayout* mPreviewLayout{ nullptr };
 	UIWidget* mSidePanel{ nullptr };
 	std::unordered_set<Doc::TextDocument*> mTmpDocs;
-	ColorSchemePreference mUIColorScheme;
+	ColorSchemeExtPreference mUIColorScheme;
 
 	Drawable* findIcon( const std::string& icon );
 };

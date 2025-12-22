@@ -144,6 +144,9 @@ class EE_API Sys {
 
 	/** @returns True if the process has any childrens */
 	static bool processHasChildren( ProcessID pid );
+
+	/** @returns True if the operating system is using a dark color scheme */
+	static bool isOSUsingDarkColorScheme( bool allowUsingCached = true );
 };
 
 }} // namespace EE::System

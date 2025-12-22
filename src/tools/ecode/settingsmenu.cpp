@@ -1268,28 +1268,29 @@ UIMenu* SettingsMenu::createWindowMenu() {
 	auto shouldCloseCb = []( UIMenuItem* ) -> bool { return false; };
 	UIPopUpMenu* colorsMenu = UIPopUpMenu::New();
 	colorsMenu
+		->addRadioButton( i18n( "system", "System" ),
+						  mApp->getUIColorScheme() == ColorSchemeExtPreference::System )
+		->setOnShouldCloseCb( shouldCloseCb )
+		->setTooltipText( i18n(
+			"prefers_color_scheme_system_tooltip",
+			"System options will try to pick the system-wide currently preferred color scheme." ) )
+		->setId( "system" );
+	colorsMenu
 		->addRadioButton( i18n( "light", "Light" ),
-						  mApp->getUIColorScheme() == ColorSchemePreference::Light )
+						  mApp->getUIColorScheme() == ColorSchemeExtPreference::Light )
 		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "light" );
 	colorsMenu
 		->addRadioButton( i18n( "dark", "Dark" ),
-						  mApp->getUIColorScheme() == ColorSchemePreference::Dark )
+						  mApp->getUIColorScheme() == ColorSchemeExtPreference::Dark )
 		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "dark" );
 	colorsMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		mApp->setUIColorScheme( item->getId() == "light" ? ColorSchemePreference::Light
-														 : ColorSchemePreference::Dark );
-
-		if ( item->getId() == "light" && mSplitter->getCurrentColorSchemeName() == "eepp" ) {
-			mSplitter->setColorScheme( "github" );
-		} else if ( item->getId() == "dark" &&
-					mSplitter->getCurrentColorSchemeName() == "github" ) {
-			mSplitter->setColorScheme( "eepp" );
-		}
+		auto colorSchemeExt = ColorSchemePreferences::fromStringExt( item->getId() );
+		mApp->setUIColorSchemeFromUserInteraction( colorSchemeExt );
 	} );
 	mWindowMenu->addSubMenu( i18n( "ui_language", "UI Language" ), findIcon( "globe" ),
 							 createLanguagesMenu() );

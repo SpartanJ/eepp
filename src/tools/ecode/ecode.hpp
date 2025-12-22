@@ -453,9 +453,11 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void setFocusEditorOnClose( UIMessageBox* msgBox );
 
-	void setUIColorScheme( const ColorSchemePreference& colorScheme );
+	void setUIColorScheme( const ColorSchemeExtPreference& colorScheme );
 
-	ColorSchemePreference getUIColorScheme() const;
+	void setUIColorSchemeFromUserInteraction( const ColorSchemeExtPreference& colorSchemeExt );
+
+	ColorSchemeExtPreference getUIColorScheme() const;
 
 	EE::Window::Window* getWindow() const;
 
@@ -663,7 +665,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::unique_ptr<StatusAppOutputController> mStatusAppOutputController;
 	std::unique_ptr<ProjectBuildManager> mProjectBuildManager;
 	std::string mLastFileFolder;
-	ColorSchemePreference mUIColorScheme;
+	ColorSchemeExtPreference mUIColorScheme;
 	std::unique_ptr<TerminalManager> mTerminalManager;
 	std::unique_ptr<PluginManager> mPluginManager;
 	std::unique_ptr<SettingsMenu> mSettings;

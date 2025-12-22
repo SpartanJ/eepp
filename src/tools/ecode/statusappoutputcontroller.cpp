@@ -182,6 +182,7 @@ void StatusAppOutputController::createContainer() {
 	editor->setShowLineNumber( false );
 	editor->getDocument().reset();
 	editor->setScrollY( editor->getMaxScroll().y );
+	editor->setColorScheme( mContext->getSplitter()->getCurrentColorScheme() );
 	mAppOutput = editor;
 	mAppOutput->on( Event::OnScrollChange, [this]( auto ) {
 		mScrollLocked = mAppOutput->getMaxScroll().y == mAppOutput->getScroll().y;
