@@ -145,7 +145,7 @@ class EE_API Font {
 							  bool italic, Float outlineThickness = 0 ) const = 0;
 
 	virtual Float getAscent( unsigned int characterSize ) const {
-		return getLineSpacing( characterSize );
+		return getFontHeight( characterSize );
 	}
 
 	virtual Float getDescent( unsigned int ) const { return 0.f; }

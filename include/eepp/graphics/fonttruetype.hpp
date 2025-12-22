@@ -252,6 +252,8 @@ class EE_API FontTrueType : public Font {
 	Uint32 mFontItalicCb{ 0 };
 	Uint32 mFontBoldItalicCb{ 0 };
 
+	Float getGlyphTopOffset( unsigned int characterSize ) const;
+
 	void updateFontInternalId();
 
 	bool setFontFace( void* face );

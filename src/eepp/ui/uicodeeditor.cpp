@@ -4127,17 +4127,17 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 
 	if ( mHandShown && mLinkPosition.isValid() && mLinkPosition.inSameLine() &&
 		 mLinkPosition.start().line() == line ) {
-		bool skipUnderlining = false;
+		bool skipStyling = false;
 		auto rects = getTextRangeRectangles( mLinkPosition, getScreenScroll(), {}, lineHeight,
 											 visibleLineRange );
 		auto screenBounds = getScreenBounds();
 		if ( !std::any_of( rects.begin(), rects.end(), [&screenBounds]( const Rectf& rect ) {
 				 return screenBounds.intersect( rect );
 			 } ) ) {
-			skipUnderlining = true;
+			skipStyling = true;
 		}
 
-		if ( !mUseDefaultStyle && !skipUnderlining ) {
+		if ( !mUseDefaultStyle && !skipStyling ) {
 			auto tokenType = mDoc->getHighlighter()->getTokenTypeAt( mLinkPosition.start() );
 			const SyntaxColorScheme::Style& style = mColorScheme.getSyntaxStyle( tokenType );
 			SyntaxColorScheme::Style linkStyle = style;
@@ -4157,14 +4157,24 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 			}
 		}
 
-		if ( !skipUnderlining ) {
+		if ( !skipStyling ) {
 			for ( auto& rect : rects ) {
 				if ( screenBounds.intersect( rect ) ) {
-					Text::drawUnderline( rect.getPosition(), rect.getWidth(), fontStyle.Font,
-										 fontStyle.CharacterSize, fontStyle.FontColor,
-										 fontStyle.Style, fontStyle.OutlineThickness,
-										 fontStyle.OutlineColor, fontStyle.ShadowColor,
-										 fontStyle.ShadowOffset );
+					if ( fontStyle.Style & Text::Underlined ) {
+						Text::drawUnderline( rect.getPosition(), rect.getWidth(), fontStyle.Font,
+											 fontStyle.CharacterSize, fontStyle.FontColor,
+											 fontStyle.Style, fontStyle.OutlineThickness,
+											 fontStyle.OutlineColor, fontStyle.ShadowColor,
+											 fontStyle.ShadowOffset );
+					}
+
+					if ( fontStyle.Style & Text::StrikeThrough ) {
+						Text::drawStrikeThrough( rect.getPosition(), rect.getWidth(),
+												 fontStyle.Font, fontStyle.CharacterSize,
+												 fontStyle.FontColor, fontStyle.Style,
+												 fontStyle.OutlineThickness, fontStyle.OutlineColor,
+												 fontStyle.ShadowColor, fontStyle.ShadowOffset );
+					}
 				}
 			}
 		}

@@ -717,8 +717,9 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 			page.texture, glyph.textureRect, glyph.size,
 			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, glyphIndex ) );
 
-		region->setGlyphOffset( { glyph.bounds.Left - outlineThickness,
-								  characterSize + glyph.bounds.Top - outlineThickness } );
+		region->setGlyphOffset(
+			{ glyph.bounds.Left - outlineThickness,
+			  getGlyphTopOffset( characterSize ) + glyph.bounds.Top - outlineThickness } );
 		region->setAdvance( glyph.advance );
 		region->setIsItalic( isItalic );
 
@@ -745,8 +746,9 @@ GlyphDrawable* FontTrueType::getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex,
 			page.texture, glyph.textureRect, glyph.size,
 			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, glyphIndex ) );
 
-		region->setGlyphOffset( { glyph.bounds.Left - outlineThickness,
-								  characterSize + glyph.bounds.Top - outlineThickness } );
+		region->setGlyphOffset(
+			{ glyph.bounds.Left - outlineThickness,
+			  getGlyphTopOffset( characterSize ) + glyph.bounds.Top - outlineThickness } );
 		region->setAdvance( glyph.advance );
 		region->setIsItalic( italic );
 
@@ -858,6 +860,11 @@ Float FontTrueType::getLineSpacing( unsigned int characterSize ) const {
 	}
 }
 
+Float FontTrueType::getGlyphTopOffset( unsigned int characterSize ) const {
+	FT_Face face = static_cast<FT_Face>( mFace );
+	return FT_IS_SCALABLE( face ) ? characterSize : getAscent( characterSize );
+}
+
 Float FontTrueType::getAscent( unsigned int characterSize ) const {
 	FT_Face face = static_cast<FT_Face>( mFace );
 
@@ -917,7 +924,7 @@ Float FontTrueType::getUnderlinePosition( unsigned int characterSize ) const {
 	if ( face && setCurrentSize( characterSize ) ) {
 		// Return a fixed position if font is a bitmap font
 		if ( !FT_IS_SCALABLE( face ) )
-			return characterSize / 10.f;
+			return -1; // getGlyphTopOffset( characterSize ) / 10.f;
 
 		return -static_cast<Float>(
 				   FT_MulFix( face->underline_position, face->size->metrics.y_scale ) ) /
@@ -933,7 +940,7 @@ Float FontTrueType::getUnderlineThickness( unsigned int characterSize ) const {
 	if ( face && setCurrentSize( characterSize ) ) {
 		// Return a fixed thickness if font is a bitmap font
 		if ( !FT_IS_SCALABLE( face ) )
-			return characterSize / 14.f;
+			return getGlyphTopOffset( characterSize ) / 14.f;
 
 		return static_cast<Float>(
 				   FT_MulFix( face->underline_thickness, face->size->metrics.y_scale ) ) /
@@ -1434,9 +1441,8 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 			characterSize = bestMatch;
 		}
 
-		FT_Error result = mIsColorEmojiFont
-							  ? FT_Select_Size( face, characterSize )
-							  : FT_Set_Pixel_Sizes( face, 0, characterSize );
+		FT_Error result = mIsColorEmojiFont ? FT_Select_Size( face, characterSize )
+											: FT_Set_Pixel_Sizes( face, 0, characterSize );
 
 		if ( result == FT_Err_Invalid_Pixel_Size ) {
 			// In the case of bitmap fonts, resizing can
