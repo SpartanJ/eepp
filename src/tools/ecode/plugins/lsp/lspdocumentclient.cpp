@@ -411,12 +411,7 @@ void LSPDocumentClient::requestSymbols() {
 	if ( !server->getCapabilities().documentSymbolProvider )
 		return;
 	URI uri = mDoc->getURI();
-	if ( Engine::instance()->isMainThread() ) {
-		mServer->getThreadPool()->run(
-			[server, uri]() { server->documentSymbolsBroadcast( uri ); } );
-	} else {
-		server->documentSymbolsBroadcast( uri );
-	}
+	server->documentSymbolsBroadcast( uri );
 }
 
 void LSPDocumentClient::requestFoldRange() {
@@ -439,12 +434,7 @@ void LSPDocumentClient::requestFoldRange() {
 		doc->getFoldRangeService().setFoldingRegions( regions );
 	};
 
-	if ( Engine::instance()->isMainThread() ) {
-		server->getThreadPool()->run(
-			[server, uri, handler]() { server->documentFoldingRange( uri, handler ); } );
-	} else {
-		server->documentFoldingRange( uri, handler );
-	}
+	server->documentFoldingRange( uri, handler );
 }
 
 void LSPDocumentClient::requestSymbolsDelayed() {

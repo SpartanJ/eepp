@@ -947,9 +947,8 @@ void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 		mDraggingSel = false;
 	}
 
-	if ( flags & EE_BUTTON_LMASK ) {
-		auto selection = mTerminal->getSelection();
-		mWindow->getClipboard()->setPrimarySelectionText( selection );
+	if ( ( flags & EE_BUTTON_LMASK ) && mWindow->getClipboard()->hasPrimarySelection() ) {
+		mWindow->getClipboard()->setPrimarySelectionText( mTerminal->getSelection() );
 	}
 
 	Uint32 smod = sanitizeMod( mWindow->getInput()->getModState() );

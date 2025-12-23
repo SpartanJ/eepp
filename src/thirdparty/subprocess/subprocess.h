@@ -183,7 +183,7 @@ subprocess_weak int subprocess_terminate(struct subprocess_s *const process);
 ///
 /// The only safe way to read from the standard output of a process during it's
 /// execution is to use the `subprocess_option_enable_async` option in
-/// conjuction with this method.
+/// conjunction with this method.
 subprocess_weak unsigned
 subprocess_read_stdout(struct subprocess_s *const process, char *const buffer,
                        unsigned size);
@@ -197,7 +197,7 @@ subprocess_read_stdout(struct subprocess_s *const process, char *const buffer,
 ///
 /// The only safe way to read from the standard error of a process during it's
 /// execution is to use the `subprocess_option_enable_async` option in
-/// conjuction with this method.
+/// conjunction with this method.
 subprocess_weak unsigned
 subprocess_read_stderr(struct subprocess_s *const process, char *const buffer,
                        unsigned size);
@@ -234,6 +234,7 @@ subprocess_weak void subprocess_init_shutdown(struct subprocess_s *const process
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <poll.h>
 #endif
 
 #if defined(_WIN32)
@@ -1509,28 +1510,33 @@ subprocess_write_stdin(struct subprocess_s *const process, char *const buffer,
     }
     return SUBPROCESS_CAST(unsigned, bytes_write);
 #else
-    const int fd = fileno(process->stdin_file);
-    int bytes_to_write = size;
-    char* buffer_to_write = buffer;
-    do {
-       const ssize_t ret = write(fd, buffer_to_write, bytes_to_write);
+  const int fd = fileno(process->stdin_file);
+  int bytes_to_write = size;
+  char* buffer_to_write = buffer;
+  do {
+     const ssize_t ret = write(fd, buffer_to_write, bytes_to_write);
 
-       if (ret > 0) {
-          bytes_to_write -= ret;
-          buffer_to_write += ret;
-          fsync(fd);
-       } else if (ret <= 0) {
-          if (ret == -1) {
-             if (((errno == EAGAIN ) || (errno == EINPROGRESS)) && !process->shutting_down) {
-                continue;
-             }
-             return -1;
-          }
-          if (ret == 0)
-             return 0;
-       }
-    } while ( bytes_to_write );
-    return bytes_to_write == 0 ? size : -1;
+     if (ret > 0) {
+        bytes_to_write -= ret;
+        buffer_to_write += ret;
+        fsync(fd);
+     } else if (ret <= 0) {
+        if (ret == -1) {
+           if (((errno == EAGAIN ) || (errno == EINPROGRESS)) && !process->shutting_down) {
+              struct pollfd pfd;
+              pfd.fd = fd;
+              pfd.events = POLLOUT;
+              // Wait up to 1ms, then check shutting_down again
+              poll(&pfd, 1, 1);
+              continue;
+           }
+           return -1;
+        }
+        if (ret == 0)
+           return 0;
+     }
+  } while ( bytes_to_write );
+  return bytes_to_write == 0 ? size : -1;
 #endif
 }
 

@@ -245,6 +245,7 @@ class EE_API Process {
 	bool mIsAsync{ false };
 	bool mKilling{ false };
 	size_t mBufferSize{ 131072 };
+	std::string mCmdLine;
 	std::thread mStdOutThread;
 	std::thread mStdErrThread;
 	Mutex mStdInMutex;

@@ -49,12 +49,12 @@ std::string ClipboardSDL::getText() {
 #endif
 }
 
-std::string ClipboardSDL::getPrimarySelectionText() {
-#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-	return "";
-#else
+bool ClipboardSDL::hasPrimarySelection() const {
+	return SDL_HasPrimarySelectionText();
+}
 
-#if SDL_VERSION_ATLEAST(2, 26, 0)
+std::string ClipboardSDL::getPrimarySelectionText() {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && SDL_VERSION_ATLEAST( 2, 26, 0 )
 	if ( SDL_HasPrimarySelectionText() ) {
 		char* text = SDL_GetPrimarySelectionText();
 		std::string str( text );
@@ -63,13 +63,14 @@ std::string ClipboardSDL::getPrimarySelectionText() {
 	}
 #endif
 
-	return "";
-#endif
+	return getText();
 }
 
 void ClipboardSDL::setPrimarySelectionText( const std::string& text ) {
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && SDL_VERSION_ATLEAST(2, 26, 0)
-	SDL_SetPrimarySelectionText( text.c_str() );
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN && SDL_VERSION_ATLEAST( 2, 26, 0 )
+	if ( SDL_HasPrimarySelectionText() ) {
+		SDL_SetPrimarySelectionText( text.c_str() );
+	}
 #endif
 }
 

@@ -950,6 +950,8 @@ std::string String::join( const std::vector<const char*>& strArray, const Int8& 
 
 	if ( s > 0 ) {
 		for ( size_t i = 0; i < s; i++ ) {
+			if ( strArray[i] == nullptr )
+				continue;
 			str += strArray[i];
 
 			if ( joinchar >= 0 && ( i != s - 1 || appendLastJoinChar ) ) {

@@ -862,7 +862,7 @@ Float FontTrueType::getLineSpacing( unsigned int characterSize ) const {
 
 Float FontTrueType::getGlyphTopOffset( unsigned int characterSize ) const {
 	FT_Face face = static_cast<FT_Face>( mFace );
-	return FT_IS_SCALABLE( face ) ? characterSize : getAscent( characterSize );
+	return FT_IS_SCALABLE( face ) || mIsColorEmojiFont ? characterSize : getAscent( characterSize );
 }
 
 Float FontTrueType::getAscent( unsigned int characterSize ) const {

@@ -467,12 +467,8 @@ PluginRequestHandle LSPClientPlugin::processTextDocumentSymbol( const PluginMess
 	auto handler = [uri, this]( const PluginIDType& id, LSPSymbolInformationList&& res ) {
 		setDocumentSymbolsFromResponse( id, uri, std::move( res ) );
 	};
-	if ( Engine::instance()->isMainThread() ) {
-		server->getThreadPool()->run(
-			[server, uri, handler]() { server->documentSymbols( uri, handler ); } );
-	} else {
-		server->documentSymbols( uri, handler );
-	}
+
+	server->documentSymbols( uri, handler );
 
 	return { uri.toString() };
 }

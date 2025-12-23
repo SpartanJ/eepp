@@ -129,7 +129,7 @@ class AutoCompletePlugin : public Plugin {
 	bool mDirty{ false };
 	bool mReplacing{ false };
 	bool mSignatureHelpVisible{ false };
-	bool mHighlightSuggestions{ false };
+	bool mHighlightSuggestions{ true };
 	struct DocCache {
 		Uint64 changeId{ static_cast<Uint64>( -1 ) };
 		SymbolsList symbols;

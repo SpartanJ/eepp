@@ -5,6 +5,7 @@
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/system/sys.hpp>
 
@@ -180,6 +181,7 @@ bool Process::create( const std::string& command, const std::vector<std::string>
 		}
 
 		envStrings.push_back( NULL );
+		mCmdLine = rcommand.empty() ? command : rcommand;
 
 		auto ret = 0 == subprocess_create_ex( strings.data(), options, envStrings.data(),
 											  !workingDirectory.empty() ? workingDirectory.c_str()
@@ -208,6 +210,7 @@ bool Process::create( const std::string& command, const std::vector<std::string>
 	for ( size_t i = 0; i < cmdArr.size(); ++i )
 		strings.push_back( cmdArr[i].c_str() );
 	strings.push_back( NULL );
+	mCmdLine = rcommand.empty() ? command : rcommand;
 
 	auto ret =
 		0 == subprocess_create_ex( strings.data(), options, nullptr,
@@ -396,6 +399,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 	eeASSERT( mProcess != nullptr );
 	mReadStdOutFn = readStdOut;
 	mReadStdErrFn = readStdErr;
+	Log::info( "Process::startAsyncRead called for command: %s", mCmdLine );
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	void* stdOutFd =
 		SUBPROCESS_PTR_CAST( void*, _get_osfhandle( _fileno( PROCESS_PTR->stdout_file ) ) );
@@ -403,6 +407,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 		SUBPROCESS_PTR_CAST( void*, _get_osfhandle( _fileno( PROCESS_PTR->stderr_file ) ) );
 	if ( stdOutFd ) {
 		mStdOutThread = std::thread( [this, stdOutFd]() {
+			Log::info( "Process::startAsyncRead thread started for command: %s", mCmdLine );
 			unsigned n;
 			std::string buffer;
 			buffer.resize( mBufferSize );
@@ -438,28 +443,66 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 	}
 #elif defined( EE_PLATFORM_POSIX )
 	mStdOutThread = std::thread( [this] {
+		Log::info( "Process::startAsyncRead thread started for command: %s", mCmdLine );
 		auto stdOutFd = fileno( PROCESS_PTR->stdout_file );
 		auto stdErrFd = PROCESS_PTR->stderr_file ? fileno( PROCESS_PTR->stderr_file ) : 0;
 		std::vector<pollfd> pollfds;
 		std::bitset<2> fdIsStdOut;
 		if ( stdOutFd ) {
 			fdIsStdOut.set( pollfds.size() );
-			pollfds.emplace_back();
-			pollfds.back().fd =
-				fcntl( stdOutFd, F_SETFL, fcntl( stdOutFd, F_GETFL ) | O_NONBLOCK ) == 0 ? stdOutFd
-																						 : -1;
+			pollfds.emplace_back(); // Get current flags
+			int currentFlags = fcntl( stdOutFd, F_GETFL );
+			if ( currentFlags == -1 ) {
+				pollfds.back().fd = -1; // Invalid FD
+				Log::error( "Process::startAsyncRead %s Failed to get flags for stdout fd",
+							mCmdLine );
+			} else {
+				// Set non-blocking
+				if ( fcntl( stdOutFd, F_SETFL, currentFlags | O_NONBLOCK ) == 0 ) {
+					pollfds.back().fd = stdOutFd;
+				} else {
+					pollfds.back().fd = -1;
+					Log::error( "Process::startAsyncRead %s Failed to set O_NONBLOCK on stdout",
+								mCmdLine );
+				}
+			}
 			pollfds.back().events = POLLIN;
+		} else {
+			Log::error( "Process::startAsyncRead %s stdOutFd PROCESS_PTR->stdout_file: %p fd: %d",
+						mCmdLine, PROCESS_PTR->stdout_file, stdOutFd );
 		}
+
 		if ( stdErrFd && stdOutFd != stdErrFd ) {
 			pollfds.emplace_back();
-			pollfds.back().fd =
-				fcntl( stdErrFd, F_SETFL, fcntl( stdErrFd, F_GETFL ) | O_NONBLOCK ) == 0 ? stdErrFd
-																						 : -1;
+			int currentFlags = fcntl( stdErrFd, F_GETFL );
+			if ( currentFlags == -1 ) {
+				pollfds.back().fd = -1; // Invalid FD
+				Log::error( "Process::startAsyncRead %s Failed to get flags for stdout fd",
+							mCmdLine );
+			} else {
+				// Set non-blocking
+				if ( fcntl( stdErrFd, F_SETFL, currentFlags | O_NONBLOCK ) == 0 ) {
+					pollfds.back().fd = stdErrFd;
+				} else {
+					pollfds.back().fd = -1;
+					Log::error( "Process::startAsyncRead %s Failed to set O_NONBLOCK on stdout",
+								mCmdLine );
+				}
+			}
 			pollfds.back().events = POLLIN;
+		} else if ( !stdErrFd ) {
+			Log::error( "Process::startAsyncRead %s stdOutFd PROCESS_PTR->stderr_file: %p fd: %d",
+						PROCESS_PTR->stderr_file, stdErrFd );
 		}
 		std::string buffer;
 		buffer.resize( mBufferSize );
 		bool anyOpen = !pollfds.empty();
+		if ( !anyOpen ) {
+			Log::error( "Process::startAsyncRead no fds open, aborting for command: %s", mCmdLine );
+		} else {
+			Log::info( "Process::startAsyncRead fds open, starting polling command: %s", mCmdLine );
+		}
+
 		while ( anyOpen && !mShuttingDown ) {
 			int res = poll( pollfds.data(), static_cast<nfds_t>( pollfds.size() ), 100 );
 			if ( res > 0 ) {
@@ -477,6 +520,10 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 									mReadStdErrFn( buffer.c_str(), static_cast<size_t>( n ) );
 							} else if ( n == 0 || ( n < 0 && errno != EINTR && errno != EAGAIN &&
 													errno != EWOULDBLOCK ) ) {
+								Log::info(
+									"Process::startAsyncRead %s read failed for fd: %d, read "
+									"result was %d, errno is %d",
+									mCmdLine, pollfds[i].fd, n, errno );
 								pollfds[i].fd = -1;
 								continue;
 							}
@@ -494,15 +541,22 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 										mReadStdErrFn( buffer.c_str(), static_cast<size_t>( n ) );
 								}
 							}
+							Log::info( "Process::startAsyncRead %s polling POLLHUP for fd: %d",
+									   mCmdLine, pollfds[i].fd );
 							pollfds[i].fd = -1;
 							continue;
 						}
 						anyOpen = true;
 					}
 				}
-			} else if ( res < 0 && errno != EINTR )
+			} else if ( res < 0 && errno != EINTR ) {
+				Log::error( "Process::startAsyncRead polling interrupted for: %s", mCmdLine );
 				break;
+			}
 		}
+
+		Log::info( "Process::startAsyncRead polling ended for: %s, any open: %s, shutting down: %s",
+				   mCmdLine, anyOpen ? "true" : "false", mShuttingDown ? "true" : "false" );
 	} );
 #endif
 }
