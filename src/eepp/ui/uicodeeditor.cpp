@@ -4161,19 +4161,19 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 			for ( auto& rect : rects ) {
 				if ( screenBounds.intersect( rect ) ) {
 					if ( fontStyle.Style & Text::Underlined ) {
-						Text::drawUnderline( rect.getPosition(), rect.getWidth(), fontStyle.Font,
-											 fontStyle.CharacterSize, fontStyle.FontColor,
-											 fontStyle.Style, fontStyle.OutlineThickness,
-											 fontStyle.OutlineColor, fontStyle.ShadowColor,
-											 fontStyle.ShadowOffset );
+						Text::drawUnderline(
+							{ rect.getPosition().x, rect.getPosition().y + lineOffset },
+							rect.getWidth(), fontStyle.Font, fontStyle.CharacterSize,
+							fontStyle.FontColor, fontStyle.Style, fontStyle.OutlineThickness,
+							fontStyle.OutlineColor, fontStyle.ShadowColor, fontStyle.ShadowOffset );
 					}
 
 					if ( fontStyle.Style & Text::StrikeThrough ) {
-						Text::drawStrikeThrough( rect.getPosition(), rect.getWidth(),
-												 fontStyle.Font, fontStyle.CharacterSize,
-												 fontStyle.FontColor, fontStyle.Style,
-												 fontStyle.OutlineThickness, fontStyle.OutlineColor,
-												 fontStyle.ShadowColor, fontStyle.ShadowOffset );
+						Text::drawStrikeThrough(
+							{ rect.getPosition().x, rect.getPosition().y + lineOffset },
+							rect.getWidth(), fontStyle.Font, fontStyle.CharacterSize,
+							fontStyle.FontColor, fontStyle.Style, fontStyle.OutlineThickness,
+							fontStyle.OutlineColor, fontStyle.ShadowColor, fontStyle.ShadowOffset );
 					}
 				}
 			}
