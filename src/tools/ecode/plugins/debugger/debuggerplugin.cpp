@@ -176,6 +176,8 @@ DebuggerPlugin::~DebuggerPlugin() {
 
 	if ( SceneManager::existsSingleton() && !SceneManager::instance()->isShuttingDown() &&
 		 getPluginContext() && getPluginContext()->getMainLayout() ) {
+		getPluginContext()->getMainLayout()->unsetCommands( mRegisteredCommands );
+
 		for ( const auto& kb : mKeyBindings )
 			getPluginContext()->getMainLayout()->getKeyBindings().removeCommandKeybind( kb.first );
 	}
@@ -695,6 +697,7 @@ PluginRequestHandle DebuggerPlugin::processMessage( const PluginMessage& msg ) {
 			break;
 		}
 		case ecode::PluginMessageType::UIReady: {
+			registerCommands( getPluginContext()->getMainLayout() );
 			for ( const auto& kb : mKeyBindings ) {
 				getPluginContext()->getMainLayout()->getKeyBindings().addKeybindString( kb.second,
 																						kb.first );
@@ -1394,8 +1397,15 @@ DebuggerPlugin::needsToResolveInputs( nlohmann::json& json,
 	return inputs;
 }
 
-void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
-	doc->setCommand( "debugger-continue-interrupt", [this] {
+template <typename TCommandRegister, typename Cmd, typename CmdCb>
+void DebuggerPlugin::registerCommand( TCommandRegister* doc, Cmd cmd, CmdCb cb ) {
+	doc->setCommand( cmd, cb );
+	mRegisteredCommands.push_back( cmd );
+}
+
+template <typename TCommandRegister>
+void DebuggerPlugin::registerCommands( TCommandRegister* executer ) {
+	registerCommand( executer, "debugger-continue-interrupt", [this] {
 		if ( mDebugger && mListener ) {
 			if ( mListener->isStopped() ) {
 				resume( mListener->getCurrentThreadId() );
@@ -1431,21 +1441,50 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 		}
 	} );
 
-	doc->setCommand( "debugger-start", [this] {
+	registerCommand( executer, "debugger-start", [this] {
 		if ( mDebugger )
 			exitDebugger( true );
 		runCurrentConfig();
 	} );
 
-	doc->setCommand( "debugger-stop", [this] { exitDebugger( true ); } );
+	registerCommand( executer, "debugger-stop", [this] { exitDebugger( true ); } );
 
-	doc->setCommand( "debugger-start-stop", [this] {
+	registerCommand( executer, "debugger-start-stop", [this] {
 		if ( mDebugger && mDebugger->started() ) {
 			exitDebugger( true );
 		} else {
 			runCurrentConfig();
 		}
 	} );
+
+	registerCommand( executer, "debugger-step-over", [this] {
+		if ( mDebugger && mListener && mListener->isStopped() )
+			mDebugger->stepOver( mListener->getCurrentThreadId() );
+	} );
+
+	registerCommand( executer, "debugger-step-into", [this] {
+		if ( mDebugger && mListener && mListener->isStopped() )
+			mDebugger->stepInto( mListener->getCurrentThreadId() );
+	} );
+
+	registerCommand( executer, "debugger-step-out", [this] {
+		if ( mDebugger && mListener && mListener->isStopped() )
+			mDebugger->stepOut( mListener->getCurrentThreadId() );
+	} );
+
+	registerCommand( executer, "toggle-status-app-debugger", [this] {
+		if ( getStatusDebuggerController() )
+			getStatusDebuggerController()->toggle();
+	} );
+
+	registerCommand( executer, "show-debugger-tab", [this] {
+		if ( mTab )
+			mTab->setTabSelected();
+	} );
+}
+
+void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
+	registerCommands( doc );
 
 	doc->setCommand( "debugger-breakpoint-toggle", [doc, this] {
 		if ( setBreakpoint( doc, doc->getSelection().start().line() + 1 ) )
@@ -1455,31 +1494,6 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 	doc->setCommand( "debugger-breakpoint-enable-toggle", [this, doc] {
 		if ( breakpointToggleEnabled( doc, doc->getSelection().start().line() + 1 ) )
 			getUISceneNode()->getRoot()->invalidateDraw();
-	} );
-
-	doc->setCommand( "debugger-step-over", [this] {
-		if ( mDebugger && mListener && mListener->isStopped() )
-			mDebugger->stepOver( mListener->getCurrentThreadId() );
-	} );
-
-	doc->setCommand( "debugger-step-into", [this] {
-		if ( mDebugger && mListener && mListener->isStopped() )
-			mDebugger->stepInto( mListener->getCurrentThreadId() );
-	} );
-
-	doc->setCommand( "debugger-step-out", [this] {
-		if ( mDebugger && mListener && mListener->isStopped() )
-			mDebugger->stepOut( mListener->getCurrentThreadId() );
-	} );
-
-	doc->setCommand( "toggle-status-app-debugger", [this] {
-		if ( getStatusDebuggerController() )
-			getStatusDebuggerController()->toggle();
-	} );
-
-	doc->setCommand( "show-debugger-tab", [this]() {
-		if ( mTab )
-			mTab->setTabSelected();
 	} );
 
 	Lock l( mClientsMutex );

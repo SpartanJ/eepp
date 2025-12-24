@@ -66,7 +66,7 @@ class UITerminal : public UIWidget {
 
 	void addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds );
 
-	void execute( const std::string& command );
+	bool execute( const std::string& command );
 
 	void setCommands( const std::map<std::string, TerminalCommand>& cmds );
 

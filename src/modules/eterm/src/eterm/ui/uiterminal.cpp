@@ -399,11 +399,13 @@ void UITerminal::addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>
 	mKeyBindings.addKeybinds( binds );
 }
 
-void UITerminal::execute( const std::string& command ) {
+bool UITerminal::execute( const std::string& command ) {
 	auto cmdIt = mCommands.find( command );
 	if ( cmdIt != mCommands.end() ) {
 		cmdIt->second();
+		return true;
 	}
+	return false;
 }
 
 void UITerminal::setCommands( const std::map<std::string, TerminalCommand>& cmds ) {

@@ -616,7 +616,8 @@ void App::runCommand( const std::string& command ) {
 		editor->getDocument().execute( command, editor );
 	} else if ( mSplitter->getCurWidget() &&
 				mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
-		mSplitter->getCurWidget()->asType<UITerminal>()->execute( command );
+		if ( !mSplitter->getCurWidget()->asType<UITerminal>()->execute( command ) )
+			mMainLayout->execute( command );
 	} else {
 		mMainLayout->execute( command );
 	}

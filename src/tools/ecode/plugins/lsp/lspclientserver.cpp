@@ -1745,10 +1745,12 @@ void LSPClientServer::processDidChangeQueue() {
 }
 
 bool LSPClientServer::hasDocument( TextDocument* doc ) const {
+	Lock l( mClientsMutex );
 	return std::find( mDocs.begin(), mDocs.end(), doc ) != mDocs.end();
 }
 
 bool LSPClientServer::hasDocument( const URI& uri ) const {
+	Lock l( mClientsMutex );
 	for ( const auto& doc : mDocs ) {
 		if ( doc->getURI() == uri )
 			return true;
@@ -1766,6 +1768,7 @@ bool LSPClientServer::hasDocumentClient( LSPDocumentClient* cl ) const {
 }
 
 bool LSPClientServer::hasDocuments() const {
+	Lock l( mClientsMutex );
 	return !mDocs.empty();
 }
 

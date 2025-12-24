@@ -135,6 +135,7 @@ class DebuggerPlugin : public PluginBase {
 	std::string mLastStateJsonDump;
 	std::string mCurDebugger;
 	std::string mCurConfiguration;
+	std::vector<std::string> mRegisteredCommands;
 
 	class DebuggerPluginClient : public TextDocument::Client {
 	  public:
@@ -290,6 +291,12 @@ class DebuggerPlugin : public PluginBase {
 
 	bool replaceInVal( std::string& val, const std::optional<ProjectBuildStep>& runConfig,
 					   ProjectBuild* buildConfig, int randomPort );
+
+	template<typename TCommandRegister, typename Cmd, typename CmdCb>
+	void registerCommand( TCommandRegister* doc, Cmd cmd, CmdCb cb );
+
+	template<typename TCommandRegister>
+	void registerCommands( TCommandRegister* doc );
 };
 
 } // namespace ecode
