@@ -106,6 +106,7 @@ struct ProjectBuildStep {
 	bool enabled{ true };
 	bool runInTerminal{ false };
 	bool reusePreviousTerminal{ false };
+	bool useStatusBarTerminal{ false };
 };
 
 using ProjectBuildSteps = std::vector<std::unique_ptr<ProjectBuildStep>>;

@@ -617,10 +617,10 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 
 void UITerminal::restart() {
 	auto win = SceneManager::instance()->getUISceneNode()->getWindow();
-	mTerm = TerminalDisplay::create(
-		win, mTerm->getFont(), mTerm->getFontSize(), mTerm->getSize(), mTerm->getProgram(),
-		mTerm->getArgs(), mTerm->getWorkingDir(), mTerm->getTerminal()->getHistorySize(), nullptr,
-		mTerm->useFrameBuffer(), mTerm->getKeepAlive(), mTerm->getEnv() );
+	mTerm = TerminalDisplay::create( win, mTerm->getFont(), mTerm->getFontSize(), mTerm->getSize(),
+									 mTerm->getProgram(), mTerm->getArgs(), mTerm->getWorkingDir(),
+									 mTerm->getHistorySize(), nullptr, mTerm->useFrameBuffer(),
+									 mTerm->getKeepAlive(), mTerm->getEnv() );
 }
 
 }} // namespace eterm::UI

@@ -278,6 +278,8 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	bool isAppCapturingMouse() const;
 
+	std::size_t getHistorySize() const { return mHistorySize; }
+
   protected:
 	EE::Window::Window* mWindow;
 	std::vector<TerminalGlyph> mBuffer;
@@ -321,6 +323,7 @@ class TerminalDisplay : public ITerminalDisplay {
 	Primitives mPrimitives;
 	Vector2u mCurGridPos;
 	Clock mLastAutoScroll;
+	std::size_t mHistorySize{ 0 };
 
 	std::string mProgram;
 	std::vector<std::string> mArgs;

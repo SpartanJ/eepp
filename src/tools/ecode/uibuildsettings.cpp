@@ -240,6 +240,8 @@ class UIBuildStep : public UILinearLayout {
 			UIDataBindBool::New( &mStep->runInTerminal, findByClass( "run_in_terminal" ) );
 		mDataBindHolder += UIDataBindBool::New( &mStep->reusePreviousTerminal,
 												findByClass( "reuse_previous_terminal" ) );
+		mDataBindHolder += UIDataBindBool::New( &mStep->useStatusBarTerminal,
+												findByClass( "use_statusbar_terminal" ) );
 	}
 
   protected:
@@ -279,6 +281,7 @@ class UIBuildStep : public UILinearLayout {
 		<hbox lw="mp">
 			<CheckBox class="run_in_terminal" text="@string(run_in_terminal, Run in terminal)" visible="false" />
 			<CheckBox margin-left="8dp" class="reuse_previous_terminal" text="@string(reuse_previous_terminal, Reuse previous terminal)" visible="false" />
+			<CheckBox margin-left="8dp" class="use_statusbar_terminal" text="@string(use_statusbar_terminal, Use status bar terminal)" visible="false" />
 		</hbox>
 	</vbox>
 )xml";
@@ -292,16 +295,37 @@ class UIBuildStep : public UILinearLayout {
 			auto reusePreviousTerminal =
 				findByClass( "reuse_previous_terminal" )->asType<UICheckBox>();
 
+			auto useStatusBarTerminal =
+				findByClass( "use_statusbar_terminal" )->asType<UICheckBox>();
+
 			runInTerminal->setVisible( true );
 			runInTerminal->setChecked( buildStep->runInTerminal );
-			runInTerminal->on( Event::OnValueChange,
-							   [reusePreviousTerminal, runInTerminal]( auto ) {
-								   reusePreviousTerminal->setEnabled( runInTerminal->isChecked() );
-							   } );
+			runInTerminal->on( Event::OnValueChange, [reusePreviousTerminal, runInTerminal,
+													  useStatusBarTerminal]( auto ) {
+				reusePreviousTerminal->setEnabled( runInTerminal->isChecked() );
+				useStatusBarTerminal->setEnabled( runInTerminal->isChecked() );
+				if ( !runInTerminal->isChecked() ) {
+					reusePreviousTerminal->setChecked( false );
+					useStatusBarTerminal->setChecked( false );
+				}
+			} );
+
+			useStatusBarTerminal->on( Event::OnValueChange, [runInTerminal, reusePreviousTerminal,
+															 useStatusBarTerminal]( auto ) {
+				if ( useStatusBarTerminal->isChecked() ) {
+					reusePreviousTerminal->setChecked( true )->setEnabled( false );
+				} else if ( runInTerminal->isChecked() ) {
+					reusePreviousTerminal->setEnabled( true );
+				}
+			} );
 
 			reusePreviousTerminal->setVisible( true );
 			reusePreviousTerminal->setEnabled( buildStep->runInTerminal );
 			reusePreviousTerminal->setChecked( buildStep->reusePreviousTerminal );
+
+			useStatusBarTerminal->setVisible( true );
+			useStatusBarTerminal->setEnabled( buildStep->runInTerminal );
+			useStatusBarTerminal->setChecked( buildStep->useStatusBarTerminal );
 		}
 
 		findByClass( "details_but" )->onClick( [this]( const MouseEvent* event ) {

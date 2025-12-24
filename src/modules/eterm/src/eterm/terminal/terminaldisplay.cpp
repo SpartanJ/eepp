@@ -453,6 +453,7 @@ std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
 	terminal->mEnv = env;
 	terminal->mWorkingDir = workingDir;
 	terminal->mKeepAlive = keepAlive;
+	terminal->mHistorySize = historySize;
 
 	if ( freeProcessFactory )
 		eeSAFE_DELETE( processFactory );
