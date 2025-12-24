@@ -93,7 +93,7 @@ static const auto LAYOUT = R"xml(
 	background-color: transparent;
 	border-radius: 12dp;
 	foreground-position: center;
-	foreground-tint: var(--font);
+	foreground-tint: var(--font-hint);
 	transition: all 0.1s;
 }
 #welcome_ecode .color_scheme_icon:hover {

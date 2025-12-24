@@ -136,7 +136,8 @@ void EventDispatcher::update( const Time& time ) {
 		if ( NULL != mFocusNode && mDownNode == mOverNode &&
 			 ( mInput->getPressTrigger() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) &&
 			 ( !nodeWasDragging || mMousePos == mLastMousePos ) &&
-			 !( mOverNode->getNodeFlags() & NODE_FLAG_DISABLE_CLICK_FOCUS ) ) {
+			 ( mOverNode == NULL ||
+			   !( mOverNode->getNodeFlags() & NODE_FLAG_DISABLE_CLICK_FOCUS ) ) ) {
 			setFocusNode( mOverNode, NodeFocusReason::Click );
 		}
 	} else if ( NULL != mOverNode && mInput->getReleaseTrigger() &&
