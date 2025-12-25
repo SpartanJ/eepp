@@ -839,6 +839,13 @@ bool FileSystemModel::handleFileEventLocked( const FileEvent& event ) {
 					{ FileSystemEventType::Delete, event.directory, event.oldFilename } );
 			}
 
+			const auto& displayCfg = getDisplayConfig();
+
+			if ( displayCfg.fileIsVisibleFn && !displayCfg.fileIsVisibleFn( file.getFilepath() ) ) {
+				return handleFileEventLocked(
+					{ FileSystemEventType::Delete, event.directory, event.oldFilename } );
+			}
+
 			Node* childNode = parent->mChildren[index.row()];
 			{
 				Lock l( mResourceLock );
