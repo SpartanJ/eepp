@@ -1209,8 +1209,10 @@ void App::setUIColorScheme( const ColorSchemeExtPreference& colorScheme ) {
 		return;
 	mUIColorScheme = mConfig.ui.colorScheme = colorScheme;
 	mUISceneNode->setColorSchemePreference( colorScheme );
-	if ( !firstFrame )
+	if ( !firstFrame ) {
+		tintTitleBar();
 		mPluginManager->setUIThemeReloaded();
+	}
 }
 
 void App::setUIColorSchemeFromUserInteraction( const ColorSchemeExtPreference& colorSchemeExt ) {
@@ -1810,8 +1812,10 @@ void App::setTheme( const std::string& path ) {
 
 	mUISceneNode->reloadStyle( true, true, true );
 
-	if ( !firstFrame )
+	if ( !firstFrame ) {
+		tintTitleBar();
 		mPluginManager->setUIThemeReloaded();
+	}
 }
 
 bool App::dirInFolderWatches( const std::string& dir ) {
@@ -3780,6 +3784,23 @@ bool App::needsRedirectToRunningProcess( std::string file ) {
 	return true;
 }
 
+void App::tintTitleBar() {
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+	auto colorScheme = ColorSchemePreferences::fromExt( mConfig.ui.colorScheme );
+	if ( ( Sys::isOSUsingDarkColorScheme() && colorScheme == ColorSchemePreference::Dark ) ||
+		 ( !Sys::isOSUsingDarkColorScheme() && colorScheme == ColorSchemePreference::Light ) ) {
+		auto backVar = mUISceneNode->getStyleSheet()
+						   .getStyleFromSelector( ":root", true )
+						   ->getVariableByName( "--back" );
+		if ( !backVar.isEmpty() ) {
+			auto backColor( Color::fromString( backVar.getValue() ) );
+			macOS_changeTitleBarColor( mWindow->getWindowHandler(), backColor.r / 255.f,
+									   backColor.g / 255.f, backColor.b / 255.f );
+		}
+	}
+#endif
+}
+
 void App::init( InitParameters& params ) {
 	Http::setThreadPool( mThreadPool );
 	DisplayManager* displayManager = Engine::instance()->getDisplayManager();
@@ -4248,21 +4269,6 @@ void App::init( InitParameters& params ) {
 				mUISceneNode->combineStyleSheet( parser.getStyleSheet(), false );
 		}
 
-#if EE_PLATFORM == EE_PLATFORM_MACOS
-		auto colorScheme = ColorSchemePreferences::fromExt( mConfig.ui.colorScheme );
-		if ( ( macOS_isDarkModeEnabled() && colorScheme == ColorSchemePreference::Dark ) ||
-			 ( !macOS_isDarkModeEnabled() && colorScheme == ColorSchemePreference::Light ) ) {
-			auto backVar = mUISceneNode->getStyleSheet()
-							   .getStyleFromSelector( ":root", true )
-							   ->getVariableByName( "--back" );
-			if ( !backVar.isEmpty() ) {
-				auto backColor( Color::fromString( backVar.getValue() ) );
-				macOS_changeTitleBarColor( mWindow->getWindowHandler(), backColor.r / 255.f,
-										   backColor.g / 255.f, backColor.b / 255.f );
-			}
-		}
-#endif
-
 		std::string panelUI( String::format( R"css(
 		#panel treeview > treeview::row > treeview::cell > treeview::cell::text,
 		#panel treeview > treeview::row > table::cell > table::cell::text {
@@ -4271,6 +4277,8 @@ void App::init( InitParameters& params ) {
 		)css",
 											 mConfig.ui.panelFontSize.toString() ) );
 		mUISceneNode->combineStyleSheet( panelUI, false, APP_LAYOUT_STYLE_MARKER );
+
+		tintTitleBar();
 
 		const auto baseUI = (
 #include "applayout.xml.hpp"

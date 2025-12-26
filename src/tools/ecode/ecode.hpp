@@ -806,6 +806,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	void openInNewWindow( const std::string& params = "" );
 
 	std::string firstInstanceIndicatorPath() const;
+
+	void tintTitleBar();
 };
 
 } // namespace ecode
