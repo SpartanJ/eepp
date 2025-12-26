@@ -48,6 +48,10 @@ UITerminal* StatusTerminalController::createTerminal(
 		mContext->getTerminalManager()->getTerminalCurrentColorScheme();
 	auto csIt = terminalColorSchemes.find( currentTerminalColorScheme );
 	term->getTerm()->getTerminal()->setAllowMemoryTrimnming( true );
+	term->getTerm()->setCursorMode( mContext->termConfig().cursorStyle );
+	term->setScrollViewType( mContext->termConfig().scrollBarType );
+	term->setVerticalScrollMode( mContext->termConfig().scrollBarMode );
+
 	term->setColorScheme( csIt != terminalColorSchemes.end()
 							  ? terminalColorSchemes.at( currentTerminalColorScheme )
 							  : TerminalColorScheme::getDefault() );

@@ -1016,6 +1016,12 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 			widget->asType<UITerminal>()->getTerm()->setCursorMode(
 				mApp->getConfig().term.cursorStyle );
 		} );
+
+		if ( mApp->getStatusTerminalController() &&
+			 mApp->getStatusTerminalController()->getUITerminal() ) {
+			mApp->getStatusTerminalController()->getUITerminal()->getTerm()->setCursorMode(
+				mApp->getConfig().term.cursorStyle );
+		}
 	} );
 
 	UIPopUpMenu* scrollBarTypeMenu = UIPopUpMenu::New();
