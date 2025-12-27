@@ -852,10 +852,17 @@ void ProjectBuildManager::runConfig( StatusAppOutputController* saoc ) {
 		auto cmd = finalBuild.cmd + ( !finalBuild.args.empty() ? ( " " + finalBuild.args ) : "" );
 		if ( finalBuild.runInTerminal ) {
 			if ( finalBuild.useStatusBarTerminal && mApp->getStatusTerminalController() ) {
-				mApp->getStatusTerminalController()->show();
-				auto term = mApp->getStatusTerminalController()->getUITerminal();
-				term->restart();
-				term->executeFile( cmd );
+				auto stc = mApp->getStatusTerminalController();
+				stc->show();
+				if ( finalBuild.reusePreviousTerminal ) {
+					stc->getTabWidget()->setTabSelected( (Uint32)0 );
+					auto term = stc->getUITerminal();
+					term->restart();
+					term->executeFile( cmd );
+				} else if ( stc->getTabWidget()->getTabCount() ) {
+					auto term = stc->createTerminal();
+					term->executeFile( cmd );
+				}
 			} else {
 				bool mustReuseLastUsedTerm =
 					finalBuild.reusePreviousTerminal && mLastUsedTerm &&

@@ -651,6 +651,16 @@ Allows enabling specific behavior flags for the code editor component. Multiple 
 
 ---
 
+### expand-text
+
+If `true` the inner element for text is expanded to occupy as much horizontal space as possible.
+
+* Applicable to: EE::UI::UIPushButton (PushButton) and any element that extends it: UIMenuItem, UISelectButton (SelectButton), UITableCell , UITableHeaderColumn.
+* Data Type: [boolean](#boolean-data-type)
+* Default value: `false`
+
+---
+
 ### font-family
 
 Read [font-family](https://developer.mozilla.org/en-US/docs/Web/CSS/font-family) documentation.

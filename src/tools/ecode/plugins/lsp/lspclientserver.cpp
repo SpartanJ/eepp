@@ -1264,16 +1264,6 @@ void LSPClientServer::initialize() {
 			didChangeConfiguration( mLSP.settings, mWorkspaceFolder.getFSPath(), true );
 
 			sendQueuedMessagesAsync();
-			notifyServerInitialized();
-
-			// Broadcast the language capabilities to all the interested plugins
-			mManager->getPluginManager()->sendBroadcast(
-				mManager->getPlugin(), PluginMessageType::LanguageServerCapabilities,
-				PluginMessageFormat::LanguageServerCapabilities, &mCapabilities );
-
-			mManager->getPluginManager()->sendBroadcast(
-				nullptr, PluginMessageType::LanguageServerReady,
-				PluginMessageFormat::LSPClientServer, this );
 		},
 		[]( const IdType&, const json& ) {} );
 }
@@ -2298,6 +2288,17 @@ void LSPClientServer::sendQueuedMessagesAsync() {
 			mWritingStdIn--;
 		}
 		mQueuedMessages.clear();
+
+		notifyServerInitialized();
+
+		// Broadcast the language capabilities to all the interested plugins
+		mManager->getPluginManager()->sendBroadcast(
+			mManager->getPlugin(), PluginMessageType::LanguageServerCapabilities,
+			PluginMessageFormat::LanguageServerCapabilities, &mCapabilities );
+
+		mManager->getPluginManager()->sendBroadcast( nullptr,
+													 PluginMessageType::LanguageServerReady,
+													 PluginMessageFormat::LSPClientServer, this );
 	} );
 }
 

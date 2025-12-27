@@ -195,6 +195,8 @@ class EE_API UITabWidget : public UIWidget {
 
 	virtual bool acceptsDropOfWidget( const UIWidget* widget );
 
+	void setAcceptsDropOfWidgetFn( std::function<bool( const UIWidget* widget )> fn );
+
 	const Color& getDroppableHoveringColor() const;
 
 	void setDroppableHoveringColor( const Color& droppableHoveringColor );
@@ -227,6 +229,8 @@ class EE_API UITabWidget : public UIWidget {
 
 	TabJumpMode getTabJumpMode() const { return mTabJumpMode; }
 
+	void forEachTab( std::function<void( UITab* )> fn, Uint32 filterOwnedType = UI_TYPE_UNKNOWN );
+
   protected:
 	friend class UITab;
 
@@ -257,6 +261,7 @@ class EE_API UITabWidget : public UIWidget {
 	Float mSplitEdgePercent{ 0.1 };
 	UIListView* mTabSwitcher{ nullptr };
 	TabJumpMode mTabJumpMode{ TabJumpMode::Linear };
+	std::function<bool( const UIWidget* widget )> mAcceptsDropOfWidgetFn;
 
 	void onThemeLoaded();
 

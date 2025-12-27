@@ -400,6 +400,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "gravity-owner", "false" ).setType( PropertyType::Bool );
 	registerProperty( "href", "" ).setType( PropertyType::String );
 	registerProperty( "focusable", "true" ).setType( PropertyType::Bool );
+	registerProperty( "expand-text", "false" ).setType( PropertyType::Bool );
 
 	registerProperty( "inner-widget-orientation", "widgeticontextbox" )
 		.setType( PropertyType::String );

@@ -75,8 +75,13 @@ void TerminalManager::applyTerminalColorScheme( const TerminalColorScheme& color
 	} );
 
 	if ( mApp->getStatusTerminalController() &&
-		 mApp->getStatusTerminalController()->getUITerminal() ) {
-		mApp->getStatusTerminalController()->getUITerminal()->setColorScheme( colorScheme );
+		 mApp->getStatusTerminalController()->getTabWidget() ) {
+		mApp->getStatusTerminalController()->getTabWidget()->forEachTab(
+			[colorScheme]( UITab* tab ) {
+				tab->getOwnedWidget()->asType<UITerminal>()->getTerm()->setColorScheme(
+					colorScheme );
+			},
+			UI_TYPE_TERMINAL );
 	}
 }
 

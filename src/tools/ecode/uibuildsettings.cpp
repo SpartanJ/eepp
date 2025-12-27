@@ -310,15 +310,6 @@ class UIBuildStep : public UILinearLayout {
 				}
 			} );
 
-			useStatusBarTerminal->on( Event::OnValueChange, [runInTerminal, reusePreviousTerminal,
-															 useStatusBarTerminal]( auto ) {
-				if ( useStatusBarTerminal->isChecked() ) {
-					reusePreviousTerminal->setChecked( true )->setEnabled( false );
-				} else if ( runInTerminal->isChecked() ) {
-					reusePreviousTerminal->setEnabled( true );
-				}
-			} );
-
 			reusePreviousTerminal->setVisible( true );
 			reusePreviousTerminal->setEnabled( buildStep->runInTerminal );
 			reusePreviousTerminal->setChecked( buildStep->reusePreviousTerminal );

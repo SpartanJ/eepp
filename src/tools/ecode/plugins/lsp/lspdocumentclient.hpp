@@ -87,6 +87,7 @@ class LSPDocumentClient : public TextDocument::Client, public FoldRangeProvider 
 	bool mProcessingSemanticTokensResponse{ false };
 	bool mShutdown{ false };
 	bool mFirstHighlight{ true };
+	bool mAlreadyRequestedFoldingRanges{ false };
 
 	void refreshTag();
 

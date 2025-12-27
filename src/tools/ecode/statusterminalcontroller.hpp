@@ -2,6 +2,7 @@
 #define ECODE_STATUSTERMINALCONTROLLER_HPP
 
 #include "uistatusbar.hpp"
+#include "widgetcommandexecuter.hpp"
 
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -29,14 +30,25 @@ class StatusTerminalController : public StatusBarElement {
 
 	UITerminal* getUITerminal();
 
-  protected:
-	App* mApp;
-
-	UITerminal* mUITerminal{ nullptr };
+	UITabWidget* getTabWidget();
 
 	UITerminal* createTerminal( const std::string& workingDir = "", std::string program = "",
 								std::vector<std::string> args = {},
 								const std::unordered_map<std::string, std::string>& env = {} );
+
+  protected:
+	App* mApp;
+
+	UIHLinearLayoutCommandExecuter* mContainer{ nullptr };
+	UITabWidget* mTabWidget{ nullptr };
+
+	UIPushButton* mAddBtn{ nullptr };
+
+	UITerminal* mUITerminal{ nullptr };
+
+	UIHLinearLayoutCommandExecuter* createContainer();
+
+	bool tryTabClose( UITab* tab );
 };
 
 } // namespace ecode

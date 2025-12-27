@@ -11,9 +11,15 @@ class EE_API UIStackWidget : public UIWidget {
 
 	static UIStackWidget* NewWithTag( const std::string& tag = "stackwidget" );
 
+	virtual Uint32 getType() const;
+
+	virtual bool isType( const Uint32& type ) const;
+
 	void setActiveWidget( UIWidget* widget );
 
 	UIWidget* getActiveWidget() const;
+
+	void invalidate( Node* invalidator );
 
   protected:
 	UIWidget* mActiveWidget{ nullptr };

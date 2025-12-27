@@ -79,11 +79,15 @@ class EE_API UIPushButton : public UIWidget {
 
 	bool isTextAsFallback() const;
 
-	void setTextAsFallback( bool textAsFallback );
+	UIPushButton* setTextAsFallback( bool textAsFallback );
 
 	bool dontAutoHideEmptyTextBox() const;
 
-	void setDontAutoHideEmptyTextBox( bool dontAutoHideEmptyTextBox );
+	UIPushButton* setDontAutoHideEmptyTextBox( bool dontAutoHideEmptyTextBox );
+
+	bool expandTextView() const;
+
+	UIPushButton* setExpandTextView( bool expand );
 
   protected:
 	UIImage* mIcon;
@@ -92,6 +96,7 @@ class EE_API UIPushButton : public UIWidget {
 	InnerWidgetOrientation mInnerWidgetOrientation{ InnerWidgetOrientation::IconTextBoxWidget };
 	bool mTextAsFallback{ false };
 	bool mDontAutoHideEmptyTextBox{ false };
+	bool mExpandTextView{ false };
 
 	UIPushButton();
 

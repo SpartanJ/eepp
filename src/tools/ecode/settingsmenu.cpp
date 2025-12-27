@@ -1018,9 +1018,13 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 		} );
 
 		if ( mApp->getStatusTerminalController() &&
-			 mApp->getStatusTerminalController()->getUITerminal() ) {
-			mApp->getStatusTerminalController()->getUITerminal()->getTerm()->setCursorMode(
-				mApp->getConfig().term.cursorStyle );
+			 mApp->getStatusTerminalController()->getTabWidget() ) {
+			mApp->getStatusTerminalController()->getTabWidget()->forEachTab(
+				[this]( UITab* tab ) {
+					tab->getOwnedWidget()->asType<UITerminal>()->getTerm()->setCursorMode(
+						mApp->getConfig().term.cursorStyle );
+				},
+				UI_TYPE_TERMINAL );
 		}
 	} );
 

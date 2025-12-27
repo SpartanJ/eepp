@@ -924,7 +924,8 @@ void UITabWidget::setAllowSwitchTabsInEmptySpaces( bool allowSwitchTabsInEmptySp
 bool UITabWidget::acceptsDropOfWidget( const UIWidget* widget ) {
 	return mAllowDragAndDropTabs && widget && UI_TYPE_TAB == widget->getType() &&
 		   !isParentOf( widget ) &&
-		   ( mSplitFn || widget->asConstType<UITab>()->getTabWidget() != this );
+		   ( mSplitFn || widget->asConstType<UITab>()->getTabWidget() != this ) &&
+		   ( !mAcceptsDropOfWidgetFn || mAcceptsDropOfWidgetFn( widget ) );
 }
 
 const Color& UITabWidget::getDroppableHoveringColor() const {
@@ -1107,7 +1108,9 @@ void UITabWidget::onPaddingChange() {
 Uint32 UITabWidget::onMessage( const NodeMessage* msg ) {
 	if ( msg->getMsg() == NodeMessage::Drop && mAllowDragAndDropTabs ) {
 		const NodeDropMessage* dropMsg = static_cast<const NodeDropMessage*>( msg );
-		if ( dropMsg->getDroppedNode()->isType( UI_TYPE_TAB ) ) {
+		if ( dropMsg->getDroppedNode()->isType( UI_TYPE_TAB ) &&
+			 ( !mAcceptsDropOfWidgetFn ||
+			   mAcceptsDropOfWidgetFn( dropMsg->getDroppedNode()->asConstType<UIWidget>() ) ) ) {
 			UITab* tab = dropMsg->getDroppedNode()->asType<UITab>();
 			auto dir = getDropDirection();
 			if ( !mSplitFn || !dir ) {
@@ -1465,6 +1468,19 @@ Uint32 UITabWidget::getTabSelectedFocusHistoryIndex() const {
 Uint32 UITabWidget::getTabSelectedFocusHistoryFreezedIndex() const {
 	auto it = std::find( mFocusHistoryFreezed.begin(), mFocusHistoryFreezed.end(), mTabSelected );
 	return it != mFocusHistoryFreezed.end() ? std::distance( mFocusHistoryFreezed.begin(), it ) : 0;
+}
+
+void UITabWidget::forEachTab( std::function<void( UITab* )> fn, Uint32 filterOwnedType ) {
+	for ( const auto& tab : mTabs ) {
+		if ( filterOwnedType == UI_TYPE_UNKNOWN ||
+			 ( tab->getOwnedWidget() && tab->getOwnedWidget()->isType( filterOwnedType ) ) ) {
+			fn( tab );
+		}
+	}
+}
+
+void UITabWidget::setAcceptsDropOfWidgetFn( std::function<bool( const UIWidget* widget )> fn ) {
+	mAcceptsDropOfWidgetFn = fn;
 }
 
 }} // namespace EE::UI

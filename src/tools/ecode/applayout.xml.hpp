@@ -429,17 +429,17 @@ Anchor.error:hover {
 .texture-preview {
 	border: 1dp solid var(--list-back);
 }
-#code_container TabWidget {
+.tab_widget_cont TabWidget {
 	max-tab-width: 200dp;
 }
-#code_container Tab > Tab::Text {
+.tab_widget_cont Tab > Tab::Text {
 	text-overflow: ellipsis;
 }
-#code_container Tab > Tab::close {
+.tab_widget_cont Tab > Tab::close {
 	opacity: 0;
 }
-#code_container Tab:selected > Tab::close,
-#code_container Tab:hover > Tab::close {
+.tab_widget_cont Tab:selected > Tab::close,
+.tab_widget_cont Tab:hover > Tab::close {
 	opacity: 1;
 }
 #project_view ScrollBar {
@@ -451,42 +451,42 @@ Anchor.error:hover {
 #project_view ScrollBar:focus-within {
 	opacity: 1;
 }
-#code_container Tab > Tab::close {
+.tab_widget_cont Tab > Tab::close {
 	foreground-image: url("data:image/svg,<svg width='16' height='16' viewBox='0 0 16 16'><path fill='#ffffff' fill-rule='evenodd' d='M 2.3432061,13.657206 A 8.0002061,8.0002061 0 1 1 13.657206,2.3432061 8.0002061,8.0002061 0 0 1 2.3432061,13.657206 Z m 3.687,-8.6869999 a 0.75,0.75 0 0 0 -1.06,1.06 l 1.97,1.97 -1.97,1.97 a 0.75,0.75 0 1 0 1.06,1.0599999 l 1.97,-1.9699999 1.97,1.9699999 A 0.75,0.75 0 1 0 11.030206,9.9702061 l -1.9699999,-1.97 1.9699999,-1.97 a 0.75,0.75 0 1 0 -1.0599999,-1.06 l -1.97,1.97 z' /></svg>");
 	foreground-tint: var(--tab-close);
 	foreground-size: 10dp 10dp;
 	foreground-position: center;
 }
-#code_container Tab > Tab::close:hover {
+.tab_widget_cont Tab > Tab::close:hover {
 	foreground-tint: var(--tab-close-hover);
 }
-#code_container Tab.tab_modified > tab::close {
+.tab_widget_cont Tab.tab_modified > tab::close {
 	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' width='12' height='12' fill='#ffffff'><path d='M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z'></path></svg>");
 	foreground-tint: var(--primary);
 	foreground-size: 6dp 6dp;
 	foreground-position: center;
 	opacity: 1;
 }
-#code_container Tab.tab_modified > Tab::close:hover {
+.tab_widget_cont Tab.tab_modified > Tab::close:hover {
 	foreground-image: url("data:image/svg,<svg width='16' height='16' viewBox='0 0 16 16'><path fill='#ffffff' fill-rule='evenodd' d='M 2.3432061,13.657206 A 8.0002061,8.0002061 0 1 1 13.657206,2.3432061 8.0002061,8.0002061 0 0 1 2.3432061,13.657206 Z m 3.687,-8.6869999 a 0.75,0.75 0 0 0 -1.06,1.06 l 1.97,1.97 -1.97,1.97 a 0.75,0.75 0 1 0 1.06,1.0599999 l 1.97,-1.9699999 1.97,1.9699999 A 0.75,0.75 0 1 0 11.030206,9.9702061 l -1.9699999,-1.97 1.9699999,-1.97 a 0.75,0.75 0 1 0 -1.0599999,-1.06 l -1.97,1.97 z' /></svg>");
 	foreground-tint: var(--tab-close-hover);
 	foreground-size: 10dp 10dp;
 	foreground-position: center;
 }
-#code_container Tab {
+.tab_widget_cont Tab {
 	text-decoration: none;
 }
-#code_container Tab.tab_file_deleted {
+.tab_widget_cont Tab.tab_file_deleted {
 	color: var(--theme-error);
 	text-decoration: strikethrough;
 }
-#code_container TabWidget::TabBar ScrollBarMini {
+.tab_widget_cont TabWidget::TabBar ScrollBarMini {
 	opacity: 0;
 	transition: opacity 0.15;
 }
-#code_container TabWidget::TabBar:hover ScrollBarMini,
-#code_container TabWidget::TabBar ScrollBarMini.dragging,
-#code_container TabWidget::TabBar ScrollBarMini:focus-within {
+.tab_widget_cont TabWidget::TabBar:hover ScrollBarMini,
+.tab_widget_cont TabWidget::TabBar ScrollBarMini.dragging,
+.tab_widget_cont TabWidget::TabBar ScrollBarMini:focus-within {
 	opacity: 1;
 }
 .notbold {
@@ -579,7 +579,7 @@ R"html(
 	<vbox>
 		<Splitter id="main_splitter" lw="mp" lh="0" lw8="1" orientation="vertical">
 			<RelativeLayout id="main_splitter_cont">
-				<vbox id="code_container" lw="mp" lh="mp"></vbox>
+				<vbox id="code_container" class="tab_widget_cont" lw="mp" lh="mp"></vbox>
 				<TextView id="doc_info" enabled="false" />
 				<RelativeLayout id="image_container" lw="mp" lh="mp" visible="false" enabled="false">
 					<ImageViewer lw="mp" lh="mp" scaleType="fit_inside" gravity="center" enabled="true" lg="center" />
@@ -661,7 +661,7 @@ R"html(
 		<statusbar lw="mp" lh="wc" id="status_bar">
 			<PushButton class="status_but" id="status_locate_bar" text="@string(locate, Locate)" icon="icon(search-fuzzy, 11dp)" />
 			<PushButton class="status_but" id="status_global_search_bar" text="@string(search, Search)" icon="icon(file-search, 11dp)" />
-			<PushButton class="status_but" id="status_terminal" text="@string(terminal, Terminal)" icon="icon(terminal, 11dp)" />
+			<PushButton class="status_but" id="status_terminal_panel" text="@string(terminal, Terminal)" icon="icon(terminal, 11dp)" />
 			<PushButton class="status_but" id="status_build_output" text="@string(build, Build)" icon="icon(symbol-property, 11dp)"  />
 			<PushButton class="status_but" id="status_app_output" text="@string(app_output, App Output)" icon="icon(output, 11dp)"  />
 			<Widget class="status_sep" lw="0" lw8="1" lh="1dp" />

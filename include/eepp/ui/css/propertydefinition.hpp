@@ -226,6 +226,7 @@ enum class PropertyId : Uint32 {
 	LineWrapType = String::hash( "line-wrap-type" ),
 	DisplayOptions = String::hash( "display-options" ),
 	MenuWidthMode = String::hash( "menu-width-mode" ),
+	ExpandText = String::hash( "expand-text" ),
 };
 
 enum class PropertyType : Uint32 {

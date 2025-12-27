@@ -19,14 +19,17 @@ LSPDocumentClient::LSPDocumentClient( LSPClientServer* server, TextDocument* doc
 	notifyOpen();
 	requestSymbolsDelayed();
 	requestSemanticHighlightingDelayed();
-	if ( mServer->isReady() )
+	if ( mServer->isReady() ) {
+		mAlreadyRequestedFoldingRanges = true;
 		setupFoldRangeService();
+	}
 }
 
 void LSPDocumentClient::onServerInitialized() {
 	requestSymbols();
 	requestSemanticHighlighting();
-	setupFoldRangeService();
+	if ( !mAlreadyRequestedFoldingRanges )
+		setupFoldRangeService();
 	// requestCodeLens();
 }
 
