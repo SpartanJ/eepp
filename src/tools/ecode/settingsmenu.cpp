@@ -1062,6 +1062,16 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 		mSplitter->forEachWidgetType( UI_TYPE_TERMINAL, [this]( UIWidget* widget ) {
 			widget->asType<UITerminal>()->setScrollViewType( mApp->getConfig().term.scrollBarType );
 		} );
+
+		if ( mApp->getStatusTerminalController() &&
+			 mApp->getStatusTerminalController()->getTabWidget() ) {
+			mApp->getStatusTerminalController()->getTabWidget()->forEachTab(
+				[this]( UITab* tab ) {
+					tab->getOwnedWidget()->asType<UITerminal>()->setScrollViewType(
+						mApp->getConfig().term.scrollBarType );
+				},
+				UI_TYPE_TERMINAL );
+		}
 	} );
 
 	mTerminalMenu->addSubMenu( i18n( "scrollbar_type", "ScrollBar Type" ), nullptr,
@@ -1107,6 +1117,16 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 			widget->asType<UITerminal>()->setVerticalScrollMode(
 				mApp->getConfig().term.scrollBarMode );
 		} );
+
+		if ( mApp->getStatusTerminalController() &&
+			 mApp->getStatusTerminalController()->getTabWidget() ) {
+			mApp->getStatusTerminalController()->getTabWidget()->forEachTab(
+				[this]( UITab* tab ) {
+					tab->getOwnedWidget()->asType<UITerminal>()->setVerticalScrollMode(
+						mApp->getConfig().term.scrollBarMode );
+				},
+				UI_TYPE_TERMINAL );
+		}
 	} );
 
 	mTerminalMenu->addSubMenu( i18n( "scrollbar_mode", "ScrollBar Mode" ), nullptr,
