@@ -367,6 +367,9 @@ void TerminalEmulator::selinit( void ) {
 }
 
 int TerminalEmulator::tlinelen( int y ) const {
+	if ( y < 0 )
+		return 0;
+
 	int i = mTerm.col;
 
 	if ( TLINE( y )[i - 1].mode & ATTR_WRAP )

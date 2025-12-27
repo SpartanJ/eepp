@@ -1309,7 +1309,7 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 				continue;
 			}
 
-			if ( glyph.u == 32 ) {
+			if ( glyph.u == 32 && !( glyph.mode & ( ATTR_UNDERLINE | ATTR_STRUCK ) ) ) {
 				x += advanceX;
 				if ( mVBForeground )
 					mVBForeground->setQuadColor( mCurGridPos, Color::Transparent );
