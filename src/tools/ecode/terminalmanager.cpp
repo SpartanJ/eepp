@@ -598,9 +598,8 @@ UITerminal* TerminalManager::createNewTerminal(
 									? it->first
 									: mTerminalColorSchemes.begin()->first );
 	} );
-	term->setCommand( UITerminal::getExclusiveModeToggleCommandName(), [term, this] {
+	term->setCommand( UITerminal::getExclusiveModeToggleCommandName(), [term] {
 		term->setExclusiveMode( !term->getExclusiveMode() );
-		mApp->updateTerminalMenu();
 	} );
 	term->setCommand( "move-tab-to-start", [this] {
 		auto widget = mApp->getSplitter()->getCurWidget();

@@ -113,7 +113,7 @@ class EE_API Node : public Transformable {
 
 	bool isVisible() const;
 
-	bool isHided() const;
+	bool hasVisibility() const;
 
 	Node* setEnabled( const bool& enabled );
 

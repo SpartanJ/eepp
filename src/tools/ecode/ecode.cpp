@@ -1519,7 +1519,6 @@ void App::onWidgetFocusChange( UIWidget* widget ) {
 		mDocInfo->setVisible( widget && widget->isType( UI_TYPE_CODEEDITOR ) );
 
 	mSettings->updateDocumentMenu();
-	mSettings->updateTerminalMenu();
 	if ( widget && !widget->isType( UI_TYPE_CODEEDITOR ) ) {
 		if ( widget->isType( UI_TYPE_TERMINAL ) )
 			setAppTitle( widget->asType<UITerminal>()->getTitle() );
@@ -3014,10 +3013,6 @@ std::string App::getNewFilePath( const FileInfo& file, UIMessageBox* msgBox, boo
 
 const std::stack<std::string>& App::getRecentClosedFiles() const {
 	return mRecentClosedFiles;
-}
-
-void App::updateTerminalMenu() {
-	mSettings->updateTerminalMenu();
 }
 
 UIMessageBox* App::newInputMsgBox( const String& title, const String& msg ) {

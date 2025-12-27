@@ -126,6 +126,10 @@ class SettingsMenu {
 	Float mFileTypeMenusCreatedWithHeight{ 0 };
 	std::vector<UIPopUpMenu*> mColorSchemeMenus;
 	Float mColorSchemeMenusCreatedWithHeight{ 0 };
+
+	void forEachTerminal( const std::function<void( UITerminal* )> fn );
+
+	UITerminal* getCurrentTerminal() const;
 };
 
 } // namespace ecode

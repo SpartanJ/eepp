@@ -201,8 +201,14 @@ bool Node::isVisible() const {
 	return mVisible;
 }
 
-bool Node::isHided() const {
-	return !mVisible;
+bool Node::hasVisibility() const {
+	const Node* cur = this;
+	while ( cur ) {
+		if ( !cur->isVisible() )
+			return false;
+		cur = cur->getParent();
+	}
+	return true;
 }
 
 Node* Node::setEnabled( const bool& enabled ) {

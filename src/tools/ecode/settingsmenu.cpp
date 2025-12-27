@@ -314,6 +314,36 @@ UIMenu* SettingsMenu::createColorSchemeMenu( bool emptyMenu ) {
 	return mColorSchemeMenus[0];
 }
 
+void SettingsMenu::forEachTerminal( const std::function<void( UITerminal* )> fn ) {
+	mSplitter->forEachWidgetType(
+		UI_TYPE_TERMINAL, [&fn]( UIWidget* widget ) { fn( widget->asType<UITerminal>() ); } );
+
+	if ( mApp->getStatusTerminalController() &&
+		 mApp->getStatusTerminalController()->getTabWidget() ) {
+		mApp->getStatusTerminalController()->getTabWidget()->forEachTab(
+			[&fn]( UITab* tab ) { fn( tab->getOwnedWidget()->asType<UITerminal>() ); },
+			UI_TYPE_TERMINAL );
+	}
+}
+
+UITerminal* SettingsMenu::getCurrentTerminal() const {
+	UITerminal* splitterTerm =
+		mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL )
+			? mSplitter->getCurWidget()->asType<UITerminal>()
+			: nullptr;
+	/* TODO: Think in a better way to detect if the "Current Terminal" is the tab widget terminal */
+	if ( splitterTerm == nullptr ) {
+		auto stc = mApp->getStatusTerminalController();
+		if ( stc && stc->getTabWidget() && stc->getTabWidget()->getTabSelected() &&
+			 stc->getTabWidget()->getTabSelected()->getOwnedWidget() &&
+			 stc->getTabWidget()->getTabSelected()->getOwnedWidget()->isType( UI_TYPE_TERMINAL ) &&
+			 stc->getTabWidget()->getTabSelected()->getOwnedWidget()->hasVisibility() ) {
+			return stc->getTabWidget()->getTabSelected()->getOwnedWidget()->asType<UITerminal>();
+		}
+	}
+	return splitterTerm;
+}
+
 UIMenu* SettingsMenu::createDocumentMenu() {
 	auto shouldCloseCb = []( UIMenuItem* ) -> bool { return false; };
 
@@ -926,6 +956,8 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 UIMenu* SettingsMenu::createTerminalMenu() {
 	mTerminalMenu = UIPopUpMenu::New();
 
+	mTerminalMenu->on( Event::OnMenuShow, [this]( auto ) { updateTerminalMenu(); } );
+
 	mTerminalMenu->add( i18n( "current_terminal", "Current Terminal" ) )
 		->setTextAlign( UI_HALIGN_CENTER );
 
@@ -1012,20 +1044,9 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 		const std::string& id( event->getNode()->getId() );
 		std::string cursor = id.substr( 8 );
 		mApp->getConfig().term.cursorStyle = TerminalCursorHelper::modeFromString( cursor );
-		mSplitter->forEachWidgetType( UI_TYPE_TERMINAL, [this]( UIWidget* widget ) {
-			widget->asType<UITerminal>()->getTerm()->setCursorMode(
-				mApp->getConfig().term.cursorStyle );
+		forEachTerminal( [this]( UITerminal* term ) {
+			term->getTerm()->setCursorMode( mApp->getConfig().term.cursorStyle );
 		} );
-
-		if ( mApp->getStatusTerminalController() &&
-			 mApp->getStatusTerminalController()->getTabWidget() ) {
-			mApp->getStatusTerminalController()->getTabWidget()->forEachTab(
-				[this]( UITab* tab ) {
-					tab->getOwnedWidget()->asType<UITerminal>()->getTerm()->setCursorMode(
-						mApp->getConfig().term.cursorStyle );
-				},
-				UI_TYPE_TERMINAL );
-		}
 	} );
 
 	UIPopUpMenu* scrollBarTypeMenu = UIPopUpMenu::New();
@@ -1059,19 +1080,9 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 		std::string cursor = id.substr( 12 );
 		mApp->getConfig().term.scrollBarType =
 			cursor == "overlay" ? ScrollViewType::Overlay : ScrollViewType::Outside;
-		mSplitter->forEachWidgetType( UI_TYPE_TERMINAL, [this]( UIWidget* widget ) {
-			widget->asType<UITerminal>()->setScrollViewType( mApp->getConfig().term.scrollBarType );
+		forEachTerminal( [this]( UITerminal* term ) {
+			term->setScrollViewType( mApp->getConfig().term.scrollBarType );
 		} );
-
-		if ( mApp->getStatusTerminalController() &&
-			 mApp->getStatusTerminalController()->getTabWidget() ) {
-			mApp->getStatusTerminalController()->getTabWidget()->forEachTab(
-				[this]( UITab* tab ) {
-					tab->getOwnedWidget()->asType<UITerminal>()->setScrollViewType(
-						mApp->getConfig().term.scrollBarType );
-				},
-				UI_TYPE_TERMINAL );
-		}
 	} );
 
 	mTerminalMenu->addSubMenu( i18n( "scrollbar_type", "ScrollBar Type" ), nullptr,
@@ -1113,20 +1124,9 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 		mApp->getConfig().term.scrollBarMode =
 			mode == "auto" ? ScrollBarMode::Auto
 						   : ( mode == "on" ? ScrollBarMode::AlwaysOn : ScrollBarMode::AlwaysOff );
-		mSplitter->forEachWidgetType( UI_TYPE_TERMINAL, [this]( UIWidget* widget ) {
-			widget->asType<UITerminal>()->setVerticalScrollMode(
-				mApp->getConfig().term.scrollBarMode );
+		forEachTerminal( [this]( UITerminal* term ) {
+			term->setVerticalScrollMode( mApp->getConfig().term.scrollBarMode );
 		} );
-
-		if ( mApp->getStatusTerminalController() &&
-			 mApp->getStatusTerminalController()->getTabWidget() ) {
-			mApp->getStatusTerminalController()->getTabWidget()->forEachTab(
-				[this]( UITab* tab ) {
-					tab->getOwnedWidget()->asType<UITerminal>()->setVerticalScrollMode(
-						mApp->getConfig().term.scrollBarMode );
-				},
-				UI_TYPE_TERMINAL );
-		}
 	} );
 
 	mTerminalMenu->addSubMenu( i18n( "scrollbar_mode", "ScrollBar Mode" ), nullptr,
@@ -1178,9 +1178,8 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 		} else if ( "warn-before-closing-tab" == id ) {
 			bool active = event->getNode()->asType<UIMenuCheckBox>()->isActive();
 			mApp->getConfig().term.warnBeforeClosingTab = active;
-		} else if ( mSplitter->getCurWidget() &&
-					mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
-			UITerminal* terminal = mSplitter->getCurWidget()->asType<UITerminal>();
+		} else if ( getCurrentTerminal() ) {
+			UITerminal* terminal = getCurrentTerminal();
 			if ( "exclusive-mode" == id ) {
 				terminal->setExclusiveMode(
 					event->getNode()->asType<UIMenuCheckBox>()->isActive() );
@@ -2335,8 +2334,7 @@ void SettingsMenu::updateProjectSettingsMenu() {
 }
 
 void SettingsMenu::updateTerminalMenu() {
-	bool enabled =
-		mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL );
+	bool enabled = getCurrentTerminal() != nullptr;
 
 	Node* child = mTerminalMenu->getFirstChild();
 	while ( child && child->getId() != "end_current_terminal" ) {
@@ -2349,7 +2347,7 @@ void SettingsMenu::updateTerminalMenu() {
 
 	mTerminalMenu->getItemId( "exclusive-mode" )
 		->asType<UIMenuCheckBox>()
-		->setActive( mSplitter->getCurWidget()->asType<UITerminal>()->getExclusiveMode() );
+		->setActive( getCurrentTerminal()->getExclusiveMode() );
 }
 
 void SettingsMenu::updateDocumentMenu() {

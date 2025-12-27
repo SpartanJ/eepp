@@ -481,8 +481,6 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	const std::stack<std::string>& getRecentClosedFiles() const;
 
-	void updateTerminalMenu();
-
 	void refreshFolderView();
 
 	bool isFileVisibleInTreeView( const std::string& filePath );
