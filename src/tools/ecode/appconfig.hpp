@@ -152,13 +152,15 @@ struct ProjectBuildConfiguration {
 
 class NewTerminalOrientation {
   public:
-	enum Orientation { Same, Vertical, Horizontal };
+	enum Orientation { Same, Vertical, Horizontal, StatusBarPanel };
 
 	static NewTerminalOrientation::Orientation fromString( const std::string& orientation ) {
 		if ( "same" == orientation )
 			return Orientation::Same;
 		if ( "horizontal" == orientation )
 			return Orientation::Horizontal;
+		if ( "statusbar_panel" == orientation )
+			return Orientation::StatusBarPanel;
 		return Orientation::Vertical;
 	}
 
@@ -168,6 +170,8 @@ class NewTerminalOrientation {
 				return "vertical";
 			case Orientation::Horizontal:
 				return "horizontal";
+			case Orientation::StatusBarPanel:
+				return "statusbar_panel";
 			case Orientation::Same:
 			default:
 				return "same";

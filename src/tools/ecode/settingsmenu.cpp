@@ -47,8 +47,8 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 			   getKeybind( "open-file" ) )
 		->setId( "open-file" );
 	mSettingsMenu
-		->add( i18n( "open_folder_ellipsis", "Open Folder..." ),
-			   findIcon( "document-open" ), getKeybind( "open-folder" ) )
+		->add( i18n( "open_folder_ellipsis", "Open Folder..." ), findIcon( "document-open" ),
+			   getKeybind( "open-folder" ) )
 		->setId( "open-folder" );
 	mSettingsMenu
 		->add( i18n( "open_file_from_web_ellipsis", "Open File from Web..." ),
@@ -985,24 +985,32 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 #endif
 
 	UIPopUpMenu* newTerminalBehaviorSubMenu = UIPopUpMenu::New();
-	auto currentOrientation =
-		NewTerminalOrientation::toString( mApp->getConfig().term.newTerminalOrientation );
+	auto currentOrientation = mApp->getConfig().term.newTerminalOrientation;
 
 	newTerminalBehaviorSubMenu
 		->addRadioButton( i18n( "open_in_same_tabbar", "Open In Current Tab Bar" ) )
-		->setActive( currentOrientation == "same" )
+		->setActive( currentOrientation == NewTerminalOrientation::Same )
 		->setId( "same" );
 	newTerminalBehaviorSubMenu
 		->addRadioButton( i18n( "open_in_vertical_split", "Open In New Vertical Split" ) )
-		->setActive( currentOrientation == "vertical" )
+		->setActive( currentOrientation == NewTerminalOrientation::Vertical )
 		->setId( "vertical" );
 	newTerminalBehaviorSubMenu
 		->addRadioButton( i18n( "open_in_horizontal_split", "Open In New Horizontal Split" ) )
-		->setActive( currentOrientation == "horizontal" )
+		->setActive( currentOrientation == NewTerminalOrientation::Horizontal )
 		->setId( "horizontal" );
+	newTerminalBehaviorSubMenu
+		->addRadioButton( i18n( "open_in_statusbar_panel", "Open In Status Bar Panel" ) )
+		->setActive( currentOrientation == NewTerminalOrientation::StatusBarPanel )
+		->setId( "statusbar_panel" );
 
 	mTerminalMenu->addSubMenu( i18n( "new_terminal_behavior", "New Terminal Behavior" ),
 							   findIcon( "terminal" ), newTerminalBehaviorSubMenu );
+
+	newTerminalBehaviorSubMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		const std::string& id( event->getNode()->getId() );
+		mApp->getConfig().term.newTerminalOrientation = NewTerminalOrientation::fromString( id );
+	} );
 
 	UIPopUpMenu* cursorStyleMenu = UIPopUpMenu::New();
 
@@ -1157,11 +1165,6 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 		->add( i18n( "configure_terminal_scrollback", "Configure Terminal Scrollback" ),
 			   findIcon( "terminal" ), getKeybind( "configure-terminal-scrollback" ) )
 		->setId( "configure-terminal-scrollback" );
-
-	newTerminalBehaviorSubMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
-		const std::string& id( event->getNode()->getId() );
-		mApp->getConfig().term.newTerminalOrientation = NewTerminalOrientation::fromString( id );
-	} );
 
 	mTerminalMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		const std::string& id( event->getNode()->getId() );

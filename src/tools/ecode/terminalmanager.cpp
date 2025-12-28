@@ -25,7 +25,11 @@ UITerminal* TerminalManager::createTerminalInSplitter(
 	UITerminal* term = nullptr;
 	auto splitter = mApp->getSplitter();
 	auto& config = mApp->getConfig();
-	if ( splitter && splitter->hasSplit() ) {
+
+	if ( config.term.newTerminalOrientation == NewTerminalOrientation::StatusBarPanel ) {
+		mApp->getStatusTerminalController()->show();
+		mApp->getStatusTerminalController()->createTerminal();
+	} else if ( splitter && splitter->hasSplit() ) {
 		if ( splitter->getTabWidgets().size() == 2 ) {
 			UIOrientation orientation = splitter->getMainSplitOrientation();
 			if ( config.term.newTerminalOrientation == NewTerminalOrientation::Vertical &&
@@ -63,6 +67,8 @@ UITerminal* TerminalManager::createTerminalInSplitter(
 					createNewTerminal( "", nullptr, "", program, args, env, fallback, keepAlive );
 				break;
 			}
+			case NewTerminalOrientation::StatusBarPanel:
+				break;
 		}
 	}
 	return term;
@@ -598,9 +604,8 @@ UITerminal* TerminalManager::createNewTerminal(
 									? it->first
 									: mTerminalColorSchemes.begin()->first );
 	} );
-	term->setCommand( UITerminal::getExclusiveModeToggleCommandName(), [term] {
-		term->setExclusiveMode( !term->getExclusiveMode() );
-	} );
+	term->setCommand( UITerminal::getExclusiveModeToggleCommandName(),
+					  [term] { term->setExclusiveMode( !term->getExclusiveMode() ); } );
 	term->setCommand( "move-tab-to-start", [this] {
 		auto widget = mApp->getSplitter()->getCurWidget();
 		if ( widget == nullptr || widget->getData() == 0 )
