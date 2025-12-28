@@ -429,7 +429,7 @@ void StatusBuildOutputController::createContainer() {
 	if ( mContainer )
 		return;
 	const auto XML = R"xml(
-	<hbox id="build_output" class="vertical_bar" lw="mp" lh="mp" visible="false">
+	<hboxce id="build_output" class="vertical_bar" lw="mp" lh="mp" visible="false">
 		<rellayce id="build_output_command_executer" lw="0" lw8="1" lh="mp" class="status_build_output_cont">
 			<CodeEditor id="build_output_output" lw="mp" lh="mp" />
 			<TableView id="build_output_issues" lw="mp" lh="mp" visible="false" />
@@ -437,13 +437,14 @@ void StatusBuildOutputController::createContainer() {
 			<SelectButton id="but_build_output_output" text="@string(output_capitalized, Output)" layout-to-left-of="but_build_output_issues" selected="true" />
 		</rellayce>
 		<vbox lw="16dp" lh="mp">
+			<PushButton class="expand_status_bar_panel" lw="mp" tooltip="@string(expand_panel, Expand Panel)" />
 			<PushButton id="build_output_clear" lw="mp" icon="icon(eraser, 12dp)" tooltip="@string(clear, Clear)" />
 			<PushButton id="build_output_build" lw="mp" icon="icon(hammer, 12dp)" tooltip="@string(build, Build)" />
 			<PushButton id="build_output_stop" lw="mp" icon="icon(stop, 12dp)" enabled="false" />
 			<PushButton id="build_output_find" lw="mp" icon="icon(search, 12dp)" tooltip="@string(find, Find)" />
 			<PushButton id="build_output_configure" lw="mp" icon="icon(settings, 12dp)" tooltip="@string(configure_ellipsis, Configure...)" />
 		</vbox>
-	</hbox>
+	</hboxce>
 	)xml";
 
 	if ( mMainSplitter->getLastWidget() != nullptr ) {
@@ -453,10 +454,15 @@ void StatusBuildOutputController::createContainer() {
 
 	mContainer = mContext->getUISceneNode()
 					 ->loadLayoutFromString( XML, mMainSplitter )
-					 ->asType<UILinearLayout>();
+					 ->asType<UIHLinearLayoutCommandExecuter>();
 	mRelLayCE = mContainer->find( "build_output_command_executer" )
 					->asType<UIRelativeLayoutCommandExecuter>();
+
+	mContext->getStatusBar()->registerStatusBarPanel( mContainer, mContainer );
+
 	auto editor = mContainer->find<UICodeEditor>( "build_output_output" );
+	editor->getKeyBindings().addKeybindsStringUnordered( mContext->getStatusBarKeybindings() );
+
 	editor->setLocked( true );
 	editor->setLineBreakingColumn( 0 );
 	editor->setShowLineNumber( false );

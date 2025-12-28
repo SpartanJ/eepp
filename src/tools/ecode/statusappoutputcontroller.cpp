@@ -1,6 +1,7 @@
 #include "statusappoutputcontroller.hpp"
 #include "notificationcenter.hpp"
 #include "plugins/plugincontextprovider.hpp"
+#include "widgetcommandexecuter.hpp"
 #include <eepp/ui/tools/uidocfindreplace.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 
@@ -154,18 +155,19 @@ void StatusAppOutputController::createContainer() {
 	if ( mContainer )
 		return;
 	const auto XML = R"xml(
-	<hbox id="app_output" class="vertical_bar" lw="mp" lh="mp" visible="false">
+	<hboxce id="app_output" class="vertical_bar" lw="mp" lh="mp" visible="false">
 		<rellayce id="app_command_executer" lw="0" lw8="1" lh="mp">
 			<CodeEditor id="app_output_output" lw="mp" lh="mp" />
 		</rellayce>
 		<vbox lw="16dp" lh="mp">
+			<PushButton class="expand_status_bar_panel" lw="mp" tooltip="@string(expand_panel, Expand Panel)" />
 			<PushButton id="app_output_clear" lw="mp" icon="icon(eraser, 12dp)" tooltip="@string(clear, Clear)" />
 			<PushButton id="app_output_run" lw="mp" icon="icon(play, 12dp)" tooltip="@string(run, Run)" />
 			<PushButton id="app_output_stop" lw="mp" icon="icon(stop, 12dp)" enabled="false" />
 			<PushButton id="app_output_find" lw="mp" icon="icon(search, 12dp)" tooltip="@string(find, Find)" />
 			<PushButton id="app_output_configure" lw="mp" icon="icon(settings, 12dp)" tooltip="@string(configure_ellipsis, Configure...)" />
 		</vbox>
-	</hbox>
+	</hboxce>
 	)xml";
 
 	if ( mMainSplitter->getLastWidget() != nullptr ) {
@@ -175,8 +177,13 @@ void StatusAppOutputController::createContainer() {
 
 	mContainer = mContext->getUISceneNode()
 					 ->loadLayoutFromString( XML, mMainSplitter )
-					 ->asType<UILinearLayout>();
+					 ->asType<UIHLinearLayoutCommandExecuter>();
+
+	mContext->getStatusBar()->registerStatusBarPanel( mContainer, mContainer );
+
 	auto editor = mContainer->find<UICodeEditor>( "app_output_output" );
+	editor->getKeyBindings().addKeybindsStringUnordered( mContext->getStatusBarKeybindings() );
+
 	editor->setLocked( true );
 	editor->setLineBreakingColumn( 0 );
 	editor->setShowLineNumber( false );

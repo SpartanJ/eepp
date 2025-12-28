@@ -60,6 +60,7 @@ UIHLinearLayoutCommandExecuter* StatusTerminalController::createContainer() {
 					tab-close-button-visible="true"
 					tab-closable="true"></TabWidget>
 			<vbox lw="16dp" lh="mp" class="vertical_bar">
+				<PushButton class="expand_status_bar_panel" lw="mp" tooltip="@string(expand_panel, Expand Panel)" />
 				<PushButton id="terminal_panel_add" lw="mp" icon="icon(add, 12dp)" tooltip="@string(add_terminal, Add Terminal)" />
 			</vbox>
 		</hboxce>
@@ -93,6 +94,12 @@ UIHLinearLayoutCommandExecuter* StatusTerminalController::createContainer() {
 
 	mAddBtn->onClick( [this]( auto ) { createTerminal(); } );
 
+	auto kb = mContext->getKeybind( "create-new-terminal" );
+	if ( !kb.empty() ) {
+		mAddBtn->setTooltipText(
+			String::format( "%s (%s)", mAddBtn->getTooltipText().toUtf8(), kb ) );
+	}
+
 	const auto onTabCountChange = [this]( auto ) {
 		if ( SceneManager::instance()->isShuttingDown() )
 			return;
@@ -103,6 +110,8 @@ UIHLinearLayoutCommandExecuter* StatusTerminalController::createContainer() {
 
 	mTabWidget->on( Event::OnTabAdded, onTabCountChange );
 	mTabWidget->on( Event::OnTabClosed, onTabCountChange );
+
+	mContext->getStatusBar()->registerStatusBarPanel( mContainer, mContainer );
 
 	return mContainer;
 }
@@ -175,9 +184,8 @@ UITerminal* StatusTerminalController::createTerminal(
 				? it->first
 				: mContext->getTerminalManager()->getTerminalColorSchemes().begin()->first );
 	} );
-	term->setCommand( UITerminal::getExclusiveModeToggleCommandName(), [term] {
-		term->setExclusiveMode( !term->getExclusiveMode() );
-	} );
+	term->setCommand( UITerminal::getExclusiveModeToggleCommandName(),
+					  [term] { term->setExclusiveMode( !term->getExclusiveMode() ); } );
 	term->setCommand( "close-tab", [this] {
 		if ( tryTabClose( mTabWidget->getTabSelected() ) )
 			mTabWidget->removeTab( mTabWidget->getTabSelected() );
@@ -214,6 +222,10 @@ UITerminal* StatusTerminalController::createTerminal(
 		} );
 	} );
 
+	term->setCommand( "statusbar-panel-expand-contract-toggle",
+					  [this] { mContext->getStatusBar()->togglePanelExpansion(); } );
+	term->getKeyBindings().addKeybindsStringUnordered( mContext->getStatusBarKeybindings() );
+
 	term->setFocus();
 	term->setParent( mTabWidget );
 
@@ -223,6 +235,17 @@ UITerminal* StatusTerminalController::createTerminal(
 
 	term->setData( (UintPtr)tab );
 	term->on( Event::OnTitleChange, [tab, term]( auto ) { tab->setText( term->getTitle() ); } );
+
+	term->on( Event::OnCreateContextMenu, [this]( const Event* event ) {
+		auto cevent = static_cast<const ContextMenuEvent*>( event );
+		cevent->getMenu()->addSeparator();
+		cevent->getMenu()
+			->add( mContext->getStatusBar()->isPanelExpanded()
+					   ? mContext->i18n( "contract_panel", "Contract Panel" )
+					   : mContext->i18n( "expand_panel", "Expand Panel" ),
+				   mContext->findIcon( "fullscreen" ) )
+			->setId( "statusbar-panel-expand-contract-toggle" );
+	} );
 
 	mTabWidget->setTabSelected( tab );
 	return term;

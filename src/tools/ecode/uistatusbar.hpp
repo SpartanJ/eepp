@@ -37,6 +37,8 @@ class StatusBarElement {
 
 class UIStatusBar : public UILinearLayout, public WidgetCommandExecuter {
   public:
+	static std::unordered_map<std::string, std::string> getDefaultKeybindings();
+
 	static UIStatusBar* New();
 
 	UIStatusBar();
@@ -55,6 +57,18 @@ class UIStatusBar : public UILinearLayout, public WidgetCommandExecuter {
 
 	void hideAllElements();
 
+	StyleSheetLength getPanelContractedPartition() const;
+
+	void togglePanelExpansion();
+
+	bool isPanelExpanded() const;
+
+	void expandPanel();
+
+	void contractPanel();
+
+	void registerStatusBarPanel( WidgetCommandExecuter* container, UIWidget* widget );
+
   protected:
 	UnorderedMap<std::string, std::pair<UIPushButton*, std::shared_ptr<StatusBarElement>>>
 		mElements;
@@ -62,6 +76,8 @@ class UIStatusBar : public UILinearLayout, public WidgetCommandExecuter {
 	virtual Uint32 onMessage( const NodeMessage* msg );
 
 	PluginContextProvider* mContext{ nullptr };
+	bool mPanelExpanded{ false };
+	StyleSheetLength mPanelContractedPartition;
 
 	virtual void onVisibilityChange();
 

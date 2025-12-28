@@ -574,6 +574,10 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void loadFolder( std::string path, bool forceNewWindow = false );
 
+	const std::unordered_map<std::string, std::string>& getStatusBarKeybindings() const {
+		return mStatusBarKeybindings;
+	}
+
   protected:
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
@@ -597,6 +601,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::unordered_map<std::string, std::string> mKeybindingsInvert;
 	std::unordered_map<std::string, std::string> mGlobalSearchKeybindings;
 	std::unordered_map<std::string, std::string> mDocumentSearchKeybindings;
+	std::unordered_map<std::string, std::string> mStatusBarKeybindings;
 	std::map<KeyBindings::Shortcut, std::string> mRealLocalKeybindings;
 	std::map<KeyBindings::Shortcut, std::string> mRealSplitterKeybindings;
 	std::map<KeyBindings::Shortcut, std::string> mRealTerminalKeybindings;

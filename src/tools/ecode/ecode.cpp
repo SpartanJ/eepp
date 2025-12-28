@@ -796,13 +796,14 @@ void App::saveConfig() {
 	if ( !mCurrentProject.empty() )
 		saveSidePanelTabsOrder();
 
-	mConfig.save( mRecentFiles, mRecentFolders,
-				  mProjectSplitter ? mProjectSplitter->getSplitPartition().toString() : "15%",
-				  mMainSplitter ? mMainSplitter->getSplitPartition().toString() : "85%", mWindow,
-				  mSplitter ? mSplitter->getCurrentColorSchemeName() : mConfig.editor.colorScheme,
-				  mDocSearchController->getSearchBarConfig(),
-				  mGlobalSearchController->getGlobalSearchBarConfig(), mPluginManager.get(),
-				  mTerminalMode );
+	mConfig.save(
+		mRecentFiles, mRecentFolders,
+		mProjectSplitter ? mProjectSplitter->getSplitPartition().toString() : "15%",
+		mStatusBar ? mStatusBar->getPanelContractedPartition().toString()
+				   : ( mMainSplitter ? mMainSplitter->getSplitPartition().toString() : "85%" ),
+		mWindow, mSplitter ? mSplitter->getCurrentColorSchemeName() : mConfig.editor.colorScheme,
+		mDocSearchController->getSearchBarConfig(),
+		mGlobalSearchController->getGlobalSearchBarConfig(), mPluginManager.get(), mTerminalMode );
 }
 
 std::string App::getKeybind( const std::string& command ) {
@@ -1398,6 +1399,11 @@ void App::loadKeybindings() {
 	KeybindingsHelper::updateKeybindings( ini, "editor_mouse_bindings", mWindow->getInput(),
 										  mMousebindings, mMousebindingsInvert,
 										  UICodeEditor::getDefaultMousebindings(), forceRebind,
+										  getMigrateKeybindings(), mConfig.iniState );
+
+	KeybindingsHelper::updateKeybindings( ini, "statusbar", mWindow->getInput(),
+										  mStatusBarKeybindings,
+										  UIStatusBar::getDefaultKeybindings(), forceRebind,
 										  getMigrateKeybindings(), mConfig.iniState );
 
 	auto localKeybindings = getLocalKeybindings();

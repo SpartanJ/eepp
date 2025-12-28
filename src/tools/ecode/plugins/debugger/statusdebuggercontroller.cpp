@@ -221,6 +221,7 @@ void StatusDebuggerController::createContainer() {
 			<Tab id="debugger_tab_console" text="@string(console_output, Console Output)" owns="debugger_console" />
 		</TabWidget>
 		<vbox id="app_debugger_buttons" class="vertical_bar" lw="16dp" lh="mp">
+			<PushButton class="expand_status_bar_panel" lw="mp" tooltip="@string(expand_panel, Expand Panel)" />
 			<PushButton id="app_debugger_start" class="debugger_start" lw="mp" icon="icon(debug-start, 12dp)" tooltip="@string(start, Start)" />
 			<PushButton id="app_debugger_stop" class="debugger_stop" lw="mp" icon="icon(debug-stop, 12dp)" tooltip="@string(stop, Stop)" />
 			<PushButton id="app_debugger_continue" class="debugger_continue" lw="mp" icon="icon(debug-continue, 12dp)" tooltip="@string(continue, Continue)" />
@@ -242,6 +243,7 @@ void StatusDebuggerController::createContainer() {
 	mContainer = mContext->getUISceneNode()
 					 ->loadLayoutFromString( XML, mMainSplitter )
 					 ->asType<UIHLinearLayoutCommandExecuter>();
+	mContext->getStatusBar()->registerStatusBarPanel( mContainer, mContainer );
 
 	mContainer->bind( "app_debugger_tab_widget", mUITabWidget );
 	mContainer->bind( "debugger_threads_and_stack", mUIThreadsSplitter );

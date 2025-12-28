@@ -18,6 +18,7 @@ using namespace EE::UI::Tools;
 namespace ecode {
 
 class UIRelativeLayoutCommandExecuter;
+class UIHLinearLayoutCommandExecuter;
 
 struct StatusMessage {
 	ProjectOutputParserTypes type;
@@ -56,7 +57,7 @@ class StatusBuildOutputController : public StatusBarElement {
 	void showBuildOutput();
 
   protected:
-	UILinearLayout* mContainer{ nullptr };
+	UIHLinearLayoutCommandExecuter* mContainer{ nullptr };
 	UIRelativeLayoutCommandExecuter* mRelLayCE{ nullptr };
 	UICodeEditor* mBuildOutput{ nullptr };
 	UISelectButton* mButOutput{ nullptr };

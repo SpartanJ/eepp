@@ -334,6 +334,12 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 	icon: icon(arrow-up-s, 10dp);
 	inner-widget-orientation: widgettextboxicon;
 }
+.expand_status_bar_panel {
+	icon: icon(arrow-up-s, 16dp);
+}
+.expand_status_bar_panel.expanded {
+	icon: icon(arrow-down-s, 16dp);
+}
 .settings_panel .details_but.contracted {
 	icon: icon(arrow-down-s, 10dp);
 }

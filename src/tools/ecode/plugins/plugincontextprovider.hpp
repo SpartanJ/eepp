@@ -2,6 +2,7 @@
 
 #include <eepp/core/string.hpp>
 #include <eepp/ui/doc/textrange.hpp>
+#include <optional>
 #include <string>
 
 namespace EE {
@@ -147,6 +148,8 @@ class PluginContextProvider {
 
 	virtual void showGlobalSearch( bool searchAndReplace,
 								   std::optional<std::string> pathFilters = {} ) = 0;
+
+	virtual const std::unordered_map<std::string, std::string>& getStatusBarKeybindings() const = 0;
 };
 
 } // namespace ecode
