@@ -47,13 +47,9 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 			   getKeybind( "open-file" ) )
 		->setId( "open-file" );
 	mSettingsMenu
-		->add( i18n( "open_folder_in_fm", "Open Folder in File Manager" ),
+		->add( i18n( "open_folder_ellipsis", "Open Folder..." ),
 			   findIcon( "document-open" ), getKeybind( "open-folder" ) )
 		->setId( "open-folder" );
-	mSettingsMenu
-		->add( i18n( "open_folder_in_new_window", "Open Folder in New ecode Window" ),
-			   findIcon( "folder-open" ) )
-		->setId( "open-folder-in-new-window" );
 	mSettingsMenu
 		->add( i18n( "open_file_from_web_ellipsis", "Open File from Web..." ),
 			   findIcon( "download-cloud" ), getKeybind( "download-file-web" ) )

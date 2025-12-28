@@ -573,7 +573,8 @@ in einem neuen Fenster geöffnet werden.</string>
 	<string name="open_files_in_new_window_enable">Dateien in neuem Fenster öffnen</string>
 	<string name="open_first_a_folder">Zuerst muss ein Ordner geöffnet werden.</string>
 	<string name="open_folder">Ordner öffnen</string>
-	<string name="open_folder_in_fm">Ordner öffnen</string>
+	<string name="open_folder_ellipsis">Ordner öffnen...</string>
+	<string name="open_folder_in_fm">Ordner im Dateimanager öffnen</string>
 	<string name="open_global_search">Globale Suche öffnen</string>
 	<string name="open_in_horizontal_split">In neuer horizontaler Kachel öffnen</string>
 	<string name="open_in_new_window">In neuem Fenster öffnen</string>

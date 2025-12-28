@@ -432,7 +432,8 @@ Restart ecode to see the changes.</string>
 	<string name="open_file_from_web_ellipsis">从网络打开文件...</string>
 	<string name="open_first_a_folder">请先打开文件夹。</string>
 	<string name="open_folder">打开文件夹</string>
-	<string name="open_folder_in_fm">打开文件夹</string>
+	<string name="open_folder_ellipsis">打开文件夹</string>
+	<string name="open_folder_in_fm">在文件管理器中打开文件夹</string>
 	<string name="open_global_search">全局搜索</string>
 	<string name="open_in_horizontal_split">在新水平分页中打开</string>
 	<string name="open_in_new_window">在新窗口中打开</string>

@@ -558,6 +558,7 @@ controls whether a new window is created or not.</string>
 	<string name="open_files_in_new_window_enable">Open Files in New Window</string>
 	<string name="open_first_a_folder">You must first open a folder.</string>
 	<string name="open_folder">Open Folder</string>
+	<string name="open_folder_ellipsis">Open Folder...</string>
 	<string name="open_folder_in_fm">Open Folder in File Manager</string>
 	<string name="open_global_search">Open Global Search</string>
 	<string name="open_in_horizontal_split">Open In New Horizontal Split</string>
