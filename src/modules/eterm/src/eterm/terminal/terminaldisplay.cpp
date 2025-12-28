@@ -694,7 +694,12 @@ void TerminalDisplay::action( TerminalShortcutAction action ) {
 			break;
 		}
 		case TerminalShortcutAction::PASTE_SELECTION: {
-			std::string selection = mWindow->getClipboard()->getPrimarySelectionText();
+			std::string selection =
+				mWindow->getClipboard()->hasPrimarySelection()
+					? mWindow->getClipboard()->getPrimarySelectionText()
+					: ( mTerminal->hasSelection()
+							? mTerminal->getSelection()
+							: mWindow->getClipboard()->getPrimarySelectionText() );
 			sanitizeInput( selection );
 			if ( !selection.empty() ) {
 				if ( mMode & MODE_BRCKTPASTE ) {
