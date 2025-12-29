@@ -229,8 +229,6 @@ void StatusDebuggerController::createContainer() {
 			<PushButton id="app_debugger_step_over" class="debugger_step_over" lw="mp" icon="icon(debug-step-over, 12dp)" tooltip="@string(step_over, Step Over)" />
 			<PushButton id="app_debugger_step_into" class="debugger_step_into" lw="mp" icon="icon(debug-step-into, 12dp)" tooltip="@string(step_into, Step Into)" />
 			<PushButton id="app_debugger_step_out" class="debugger_step_out" lw="mp" icon="icon(debug-step-out, 12dp)" tooltip="@string(step_out, Step Out)" />
-			<Widget lw="mp" lh="0" lw8="1" />
-			<PushButton class="status_bar_panel_hide" lw="mp" tooltip="@string(hide_panel, Hide Panel)" />
 		</vbox>
 	</hboxce>
 	)xml";

@@ -62,8 +62,6 @@ UIHLinearLayoutCommandExecuter* StatusTerminalController::createContainer() {
 			<vbox lw="16dp" lh="mp" class="vertical_bar">
 				<PushButton class="expand_status_bar_panel" lw="mp" tooltip="@string(expand_panel, Expand Panel)" />
 				<PushButton id="terminal_panel_add" lw="mp" icon="icon(add, 12dp)" tooltip="@string(add_terminal, Add Terminal)" />
-				<Widget lw="mp" lh="0" lw8="1" />
-				<PushButton class="status_bar_panel_hide" lw="mp" tooltip="@string(hide_panel, Hide Panel)" />
 			</vbox>
 		</hboxce>
 	)xml";

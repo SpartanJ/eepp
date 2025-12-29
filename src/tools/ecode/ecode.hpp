@@ -268,8 +268,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 					  [this] { mStatusBuildOutputController->toggle(); } );
 		t.setCommand( "toggle-status-app-output",
 					  [this] { mStatusAppOutputController->toggle(); } );
-		t.setCommand( "toggle-status-terminal-panel",
-					  [this] { mStatusTerminalController->toggle(); } );
+		t.setCommand( "toggle-status-terminal", [this] { mStatusTerminalController->toggle(); } );
 		t.setCommand( "open-locatebar", [this] { mUniversalLocator->showLocateBar(); } );
 		t.setCommand( "open-locatebar-glob-search",
 					  [this] { mUniversalLocator->showLocateBar( true ); } );
