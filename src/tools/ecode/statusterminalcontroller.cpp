@@ -221,6 +221,15 @@ UITerminal* StatusTerminalController::createTerminal(
 			term->setFocus();
 		} );
 	} );
+	term->getTerm()->pushEventCallback( [this, term]( const TerminalDisplay::Event& event ) {
+		if ( event.type == TerminalDisplay::EventType::PROCESS_EXIT &&
+			 mApp->getConfig().term.closeTerminalTabOnExit && term->getData() != 0 ) {
+			UITab* tab = (UITab*)term->getData();
+			auto* tabWidget = mApp->getSplitter()->tabWidgetFromWidget( term );
+			if ( tabWidget )
+				tabWidget->removeTab( tab );
+		}
+	} );
 
 	term->setCommand( "statusbar-panel-expand-contract-toggle",
 					  [this] { mContext->getStatusBar()->togglePanelExpansion(); } );
