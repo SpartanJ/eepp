@@ -921,7 +921,9 @@ void App::onFileDropped( std::string file, bool openBinaryAsDocument ) {
 			   !codeEditor->getDocument().isEmpty() ) &&
 			 !doesntNeedEmptyEditor ) {
 			auto d = mSplitter->createCodeEditorInTabWidget(
-				mSplitter->tabWidgetFromEditor( codeEditor ) );
+				mConfig.editor.openDocumentsInMainSplit
+					? mSplitter->getPreferredTabWidget()
+					: mSplitter->tabWidgetFromEditor( codeEditor ) );
 			codeEditor = d.second;
 			tab = d.first;
 		}
@@ -2675,8 +2677,9 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setCommand( "clone-document-buffer", [this] {
 		if ( mSplitter->curEditorExistsAndFocused() && mSplitter->getCurEditor() ) {
 			UICodeEditor* editor = mSplitter->getCurEditor();
-			auto d =
-				mSplitter->createCodeEditorInTabWidget( mSplitter->tabWidgetFromWidget( editor ) );
+			auto d = mSplitter->createCodeEditorInTabWidget(
+				mConfig.editor.openDocumentsInMainSplit ? mSplitter->getPreferredTabWidget()
+													: mSplitter->tabWidgetFromWidget( editor ) );
 			if ( d.first == nullptr && d.second == nullptr && !mSplitter->getTabWidgets().empty() )
 				d = mSplitter->createCodeEditorInTabWidget( mSplitter->getTabWidgets()[0] );
 			if ( d.first != nullptr || d.second != nullptr ) {
@@ -4331,6 +4334,7 @@ void App::init( InitParameters& params ) {
 											   mInitColorScheme );
 		mSplitter->setHideTabBarOnSingleTab( mConfig.editor.hideTabBarOnSingleTab );
 		mSplitter->setHideTabBar( mConfig.editor.hideTabBar );
+		mSplitter->setOpenDocumentsInMainSplit( mConfig.editor.openDocumentsInMainSplit );
 		mSplitter->setOnTabWidgetCreateCb( [this]( UITabWidget* tabWidget ) {
 			tabWidget->getTabBar()->onDoubleClick(
 				[this]( const MouseEvent* ) { mSplitter->createEditorInNewTab(); } );

@@ -46,6 +46,8 @@ class SettingsMenu {
 
 	UIMenu* createFontAntiAliasingMenu();
 
+	UIMenu* createFontsMenu();
+
 	void updateTerminalMenu();
 
 	void updateProjectSettingsMenu();
@@ -122,6 +124,7 @@ class SettingsMenu {
 	UIMenuBar* mMenuBar{ nullptr };
 	UIPopUpMenu* mFontHintMenu{ nullptr };
 	UIPopUpMenu* mFontAntiAliasingMenu{ nullptr };
+	UIPopUpMenu* mFontsMenu{ nullptr };
 	std::vector<UIPopUpMenu*> mFileTypeMenus;
 	Float mFileTypeMenusCreatedWithHeight{ 0 };
 	std::vector<UIPopUpMenu*> mColorSchemeMenus;

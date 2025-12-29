@@ -87,6 +87,7 @@ struct CodeEditorConfig {
 	bool hideTabBarOnSingleTab{ true };
 	bool hideTabBar{ false };
 	bool tabSwitcher{ false };
+	bool openDocumentsInMainSplit{ false };
 	UITabWidget::TabJumpMode tabJumpMode{ UITabWidget::TabJumpMode::Linear };
 
 	bool singleClickNavigation{ false };

@@ -329,8 +329,17 @@ bool UICodeEditorSplitter::loadDocument( std::shared_ptr<TextDocument> doc,
 	return true;
 }
 
+UITabWidget* UICodeEditorSplitter::getFirstTabWidget() const {
+	eeASSERT( !mTabWidgets.empty() );
+	return mTabWidgets[0];
+}
+
+UITabWidget* UICodeEditorSplitter::getPreferredTabWidget() const {
+	return mOpenDocumentsInMainSplit ? getFirstTabWidget() : tabWidgetFromWidget( mCurWidget );
+}
+
 std::pair<UITab*, UICodeEditor*> UICodeEditorSplitter::createEditorInNewTab() {
-	auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
+	auto d = createCodeEditorInTabWidget( getPreferredTabWidget() );
 	if ( d.first == nullptr || d.second == nullptr ) {
 		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
 			d = createCodeEditorInTabWidget( mTabWidgets[0] );
@@ -347,7 +356,7 @@ std::pair<UITab*, UICodeEditor*> UICodeEditorSplitter::createEditorInNewTab() {
 
 std::pair<UITab*, UICodeEditor*>
 UICodeEditorSplitter::loadDocumentInNewTab( std::shared_ptr<TextDocument> doc ) {
-	auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
+	auto d = createCodeEditorInTabWidget( getPreferredTabWidget() );
 	if ( d.first == nullptr || d.second == nullptr ) {
 		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
 			d = createCodeEditorInTabWidget( mTabWidgets[0] );
@@ -421,7 +430,7 @@ void UICodeEditorSplitter::loadAsyncFileFromPath(
 
 std::pair<UITab*, UICodeEditor*>
 UICodeEditorSplitter::loadFileFromPathInNewTab( const std::string& path ) {
-	auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
+	auto d = createCodeEditorInTabWidget( getPreferredTabWidget() );
 	if ( d.first == nullptr || d.second == nullptr ) {
 		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
 			d = createCodeEditorInTabWidget( mTabWidgets[0] );
@@ -469,7 +478,7 @@ void UICodeEditorSplitter::loadAsyncFileFromPathInNewTab(
 		loadFileFromPathInNewTab( path );
 		return;
 	}
-	auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
+	auto d = createCodeEditorInTabWidget( getPreferredTabWidget() );
 	if ( d.first == nullptr || d.second == nullptr ) {
 		if ( !mTabWidgets.empty() && mTabWidgets[0]->getTabCount() > 0 ) {
 			d = createCodeEditorInTabWidget( mTabWidgets[0] );

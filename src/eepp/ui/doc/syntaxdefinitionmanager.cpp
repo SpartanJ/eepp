@@ -1381,7 +1381,7 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( std::string_view h
 			for ( const auto& hdr : preDefinition->getHeaders() ) {
 				LuaPattern words( hdr );
 				int start, end;
-				if ( words.find( header.data(), start, end ) ) {
+				if ( words.find( header.data(), start, end, 0, header.size() ) ) {
 					return preDefinition->load();
 				}
 			}

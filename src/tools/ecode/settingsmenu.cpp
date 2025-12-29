@@ -1320,42 +1320,22 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		auto colorSchemeExt = ColorSchemePreferences::fromStringExt( item->getId() );
 		mApp->setUIColorSchemeFromUserInteraction( colorSchemeExt );
 	} );
-	mWindowMenu->addSubMenu( i18n( "ui_language", "UI Language" ), findIcon( "globe" ),
-							 createLanguagesMenu() );
+	mWindowMenu->addSubMenu( i18n( "fonts_configuration", "Fonts Configuration" ),
+							 findIcon( "font-size" ), createFontsMenu() );
 	mWindowMenu->addSubMenu( i18n( "ui_prefes_color_scheme", "UI Prefers Color Scheme" ),
 							 findIcon( "color-scheme" ), colorsMenu );
 	mWindowMenu->addSubMenu( i18n( "ui_thene", "UI Theme" ), findIcon( "palette" ),
 							 createThemesMenu() );
+	mWindowMenu->addSubMenu( i18n( "ui_language", "UI Language" ), findIcon( "globe" ),
+							 createLanguagesMenu() );
 	mWindowMenu->addSubMenu( i18n( "ui_renderer", "Renderer" ), findIcon( "package" ),
 							 createRendererMenu() );
-	mWindowMenu->addSubMenu( i18n( "ui_font_hint", "Font Hint" ), findIcon( "font-size" ),
-							 createFontHintMenu() );
-	mWindowMenu->addSubMenu( i18n( "ui_font_antialiasing", "Font Anti-Aliasing" ),
-							 findIcon( "font-size" ), createFontAntiAliasingMenu() );
+
 	mWindowMenu
 		->add( i18n( "ui_scale_factor", "UI Scale Factor (Pixel Density)" ),
 			   findIcon( "pixel-density" ) )
 		->setId( "ui-scale-factor" );
-	mWindowMenu->add( i18n( "ui_font_size", "UI Font Size" ), findIcon( "font-size" ) )
-		->setId( "ui-font-size" );
-	mWindowMenu->add( i18n( "ui_panel_font_size", "UI Panel Font Size" ), findIcon( "font-size" ) )
-		->setId( "ui-panel-font-size" );
-	mWindowMenu->add( i18n( "editor_font_size", "Editor Font Size" ), findIcon( "font-size" ) )
-		->setId( "editor-font-size" );
-	mWindowMenu->add( i18n( "terminal_font_size", "Terminal Font Size" ), findIcon( "font-size" ) )
-		->setId( "terminal-font-size" );
-	mWindowMenu
-		->add( i18n( "sans-serif_font_ellipsis", "Sans-Serif Font..." ), findIcon( "font-size" ) )
-		->setId( "sans-serif-font" );
-	mWindowMenu
-		->add( i18n( "monospace_font_ellipsis", "Monospace Font..." ), findIcon( "font-size" ) )
-		->setId( "monospace-font" );
-	mWindowMenu
-		->add( i18n( "terminal_font_ellipsis", "Terminal Font..." ), findIcon( "font-size" ) )
-		->setId( "terminal-font" );
-	mWindowMenu
-		->add( i18n( "fallback_font_ellipsis", "Fallback Font..." ), findIcon( "font-size" ) )
-		->setId( "fallback-font" );
+
 	mWindowMenu->addSeparator();
 	mWindowMenu
 		->add( i18n( "key_bindings", "Key Bindings" ), findIcon( "keybindings" ),
@@ -1459,6 +1439,14 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		->setId( "open-project-in-new-window" );
 
 	mWindowMenu
+		->addCheckBox( i18n( "open_documents_in_main_split", "Open Documents in Main Split" ),
+					   mApp->getConfig().editor.openDocumentsInMainSplit )
+		->setTooltipText( i18n( "open_documents_in_main_split_tooltip",
+								"Always open new documents in the main split (top-left), "
+								"instead of the last active split." ) )
+		->setId( "open-documents-in-main-split" );
+
+	mWindowMenu
 		->addCheckBox( i18n( "use_native_file_dialogs", "Enable Native File Dialogs" ),
 					   mApp->getConfig().ui.nativeFileDialogs )
 		->setTooltipText( i18n( "use_native_file_dialogs_tooltip",
@@ -1502,6 +1490,11 @@ UIMenu* SettingsMenu::createWindowMenu() {
 			bool active = item->asType<UIMenuCheckBox>()->isActive();
 			mApp->getConfig().ui.openProjectInNewWindow = active;
 			mApp->saveConfig();
+		} else if ( "open-documents-in-main-split" == item->getId() ) {
+			bool active = item->asType<UIMenuCheckBox>()->isActive();
+			mApp->getConfig().editor.openDocumentsInMainSplit = active;
+			mApp->saveConfig();
+			mApp->getSplitter()->setOpenDocumentsInMainSplit( active );
 		} else if ( "native-file-dialogs" == item->getId() ) {
 			bool active = item->asType<UIMenuCheckBox>()->isActive();
 			mApp->getConfig().ui.nativeFileDialogs = active;
@@ -2936,6 +2929,41 @@ UIMenu* SettingsMenu::createFontAntiAliasingMenu() {
 	} );
 
 	return mFontAntiAliasingMenu;
+}
+
+UIMenu* SettingsMenu::createFontsMenu() {
+	mFontsMenu = UIPopUpMenu::New();
+	mFontsMenu->addSubMenu( i18n( "ui_font_hint", "Font Hint" ), findIcon( "font-size" ),
+							createFontHintMenu() );
+	mFontsMenu->addSubMenu( i18n( "ui_font_antialiasing", "Font Anti-Aliasing" ),
+							findIcon( "font-size" ), createFontAntiAliasingMenu() );
+	mFontsMenu->add( i18n( "ui_font_size", "UI Font Size" ), findIcon( "font-size" ) )
+		->setId( "ui-font-size" );
+	mFontsMenu->add( i18n( "ui_panel_font_size", "UI Panel Font Size" ), findIcon( "font-size" ) )
+		->setId( "ui-panel-font-size" );
+	mFontsMenu->add( i18n( "editor_font_size", "Editor Font Size" ), findIcon( "font-size" ) )
+		->setId( "editor-font-size" );
+	mFontsMenu->add( i18n( "terminal_font_size", "Terminal Font Size" ), findIcon( "font-size" ) )
+		->setId( "terminal-font-size" );
+	mFontsMenu
+		->add( i18n( "sans-serif_font_ellipsis", "Sans-Serif Font..." ), findIcon( "font-size" ) )
+		->setId( "sans-serif-font" );
+	mFontsMenu
+		->add( i18n( "monospace_font_ellipsis", "Monospace Font..." ), findIcon( "font-size" ) )
+		->setId( "monospace-font" );
+	mFontsMenu->add( i18n( "terminal_font_ellipsis", "Terminal Font..." ), findIcon( "font-size" ) )
+		->setId( "terminal-font" );
+	mFontsMenu->add( i18n( "fallback_font_ellipsis", "Fallback Font..." ), findIcon( "font-size" ) )
+		->setId( "fallback-font" );
+	mFontsMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		String text = String( event->getNode()->asType<UIMenuItem>()->getId() ).toLower();
+		String::replaceAll( text, " ", "-" );
+		String::replaceAll( text, "/", "-" );
+		runCommand( text );
+	} );
+	return mFontsMenu;
 }
 
 void SettingsMenu::updateMenu() {

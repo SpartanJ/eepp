@@ -118,6 +118,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.highlightCurrentLine = ini.getValueB( "editor", "highlight_current_line", true );
 	editor.verticalScrollbar = ini.getValueB( "editor", "vertical_scrollbar", true );
 	editor.horizontalScrollbar = ini.getValueB( "editor", "horizontal_scrollbar", true );
+	editor.openDocumentsInMainSplit =
+		ini.getValueB( "editor", "open_documents_in_main_split", false );
 	ui.fontSize = ini.getValue( "ui", "font_size", "11dp" );
 	ui.panelFontSize = ini.getValue( "ui", "panel_font_size", "11dp" );
 	ui.showSidePanel = ini.getValueB( "ui", "show_side_panel", true );
@@ -304,9 +306,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	iniState.setValue( "files", "recentfiles", String::join( urlEncode( recentFiles ), ';' ) );
 	iniState.setValue( "folders", "recentfolders",
 					   String::join( urlEncode( recentFolders ), ';' ) );
+
 	iniState.setValueU( "editor", "last_run_version", ecode::Version::getVersionNum() );
-	iniState.setValue( "ui", "side_panel_tabs_order",
-					   String::join( windowState.sidePanelTabsOrder, ',' ) );
 	ini.setValueB( "editor", "show_line_numbers", editor.showLineNumbers );
 	ini.setValueB( "editor", "show_white_spaces", editor.showWhiteSpaces );
 	ini.setValueB( "editor", "show_indentation_guides", editor.showIndentationGuides );
@@ -315,7 +316,9 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "highlight_current_line", editor.highlightCurrentLine );
 	ini.setValueB( "editor", "vertical_scrollbar", editor.verticalScrollbar );
 	ini.setValueB( "editor", "horizontal_scrollbar", editor.horizontalScrollbar );
+	ini.setValueB( "editor", "open_documents_in_main_split", editor.openDocumentsInMainSplit );
 	ini.setValue( "editor", "font_size", editor.fontSize.toString() );
+
 	ini.setValue( "ui", "font_size", ui.fontSize.toString() );
 	ini.setValue( "ui", "panel_font_size", ui.panelFontSize.toString() );
 	if ( !terminalMode )
@@ -339,6 +342,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "ui", "font_antialiasing",
 				  FontTrueType::fontAntialiasingToString( ui.fontAntialiasing ) );
 	ini.setValueB( "ui", "editor_font_in_input_fields", ui.editorFontInInputFields );
+	iniState.setValue( "ui", "side_panel_tabs_order",
+					   String::join( windowState.sidePanelTabsOrder, ',' ) );
 
 	ini.setValueB( "document", "trim_trailing_whitespaces", doc.trimTrailingWhitespaces );
 	ini.setValueB( "document", "force_new_line_at_end_of_file", doc.forceNewLineAtEndOfFile );

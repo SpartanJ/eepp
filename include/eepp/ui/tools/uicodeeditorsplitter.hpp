@@ -278,7 +278,7 @@ class EE_API UICodeEditorSplitter {
 			tryCloseTabsToDirection( mCurWidget, UITabWidget::FocusTabBehavior::Default, true );
 		} );
 		t.setCommand( "create-new", [this] {
-			auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
+			auto d = createCodeEditorInTabWidget( getPreferredTabWidget() );
 			if ( d.first != nullptr && d.second != nullptr ) {
 				d.first->getTabWidget()->setTabSelected( d.first );
 			} else if ( !mTabWidgets.empty() ) {
@@ -381,6 +381,14 @@ class EE_API UICodeEditorSplitter {
 
 	bool isWidgetInAnyWidget( UIWidget* ) const;
 
+	void setOpenDocumentsInMainSplit( bool open ) { mOpenDocumentsInMainSplit = open; }
+
+	bool openDocumentsInMainSplit() const { return mOpenDocumentsInMainSplit; }
+
+	UITabWidget* getFirstTabWidget() const;
+
+	UITabWidget* getPreferredTabWidget() const;
+
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
@@ -395,6 +403,7 @@ class EE_API UICodeEditorSplitter {
 	bool mHideTabBarOnSingleTab{ true };
 	bool mFirstCodeEditor{ true };
 	bool mVisualSplitting{ true };
+	bool mOpenDocumentsInMainSplit{ false };
 	UICodeEditor* mAboutToAddEditor{ nullptr };
 	UIMessageBox* mTryCloseMsgBox{ nullptr };
 	Mutex mTabWidgetMutex;
