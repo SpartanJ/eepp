@@ -265,6 +265,20 @@ void UIStatusBar::registerStatusBarPanel( WidgetCommandExecuter* container, UIWi
 
 	container->setCommand( "statusbar-panel-expand-contract-toggle",
 						   [this] { togglePanelExpansion(); } );
+
+	container->setCommand( "statusbar-panel-hide", [this] {
+		if ( mContext->getMainSplitter()->isFull() ) {
+			auto widget = mContext->getMainSplitter()->getLastWidget();
+			if ( widget && widget->isVisible() ) {
+				widget->setParent( mUISceneNode );
+				widget->setVisible( false );
+				mContext->getStatusBar()->updateState();
+				if ( mContext->getSplitter()->getCurWidget() )
+					mContext->getSplitter()->getCurWidget()->setFocus();
+			}
+		}
+	} );
+
 	container->getKeyBindings().addKeybindsStringUnordered( mContext->getStatusBarKeybindings() );
 
 	if ( widget ) {
@@ -278,6 +292,13 @@ void UIStatusBar::registerStatusBarPanel( WidgetCommandExecuter* container, UIWi
 			expCntPanelBtn->onClick( [container]( auto event ) {
 				container->execute( "statusbar-panel-expand-contract-toggle" );
 			} );
+		}
+
+		auto contractPanelBtn =
+			widget->findByClass( "status_bar_panel_hide" )->asType<UIPushButton>();
+		if ( contractPanelBtn ) {
+			contractPanelBtn->onClick(
+				[container]( auto event ) { container->execute( "statusbar-panel-hide" ); } );
 		}
 	}
 }

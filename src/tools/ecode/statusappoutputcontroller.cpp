@@ -166,6 +166,8 @@ void StatusAppOutputController::createContainer() {
 			<PushButton id="app_output_stop" lw="mp" icon="icon(stop, 12dp)" enabled="false" />
 			<PushButton id="app_output_find" lw="mp" icon="icon(search, 12dp)" tooltip="@string(find, Find)" />
 			<PushButton id="app_output_configure" lw="mp" icon="icon(settings, 12dp)" tooltip="@string(configure_ellipsis, Configure...)" />
+			<Widget lw="mp" lh="0" lw8="1" />
+			<PushButton class="status_bar_panel_hide" lw="mp" tooltip="@string(hide_panel, Hide Panel)" />
 		</vbox>
 	</hboxce>
 	)xml";

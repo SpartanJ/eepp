@@ -1970,7 +1970,7 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		  "reopen-closed-tab" },
 		{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
 		{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
-		{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
+		{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal-panel" },
 		{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
 		{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
 		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start-cancel" },
@@ -1996,7 +1996,8 @@ std::map<std::string, std::string> App::getMigrateKeybindings() {
 			 { "menu-toggle", "mod+shift+m" },
 #endif
 			 { "lock-toggle", "mod+shift+l" },		{ "debug-widget-tree-view", "f11" },
-			 { "project-build-and-run", "f5" },		{ "project-build-start", "mod+shift+b" } };
+			 { "project-build-and-run", "f5" },		{ "project-build-start", "mod+shift+b" },
+			 { "toggle-status-terminal", "alt+3" } };
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
@@ -2022,7 +2023,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 			 "toggle-status-locate-bar",
 			 "toggle-status-global-search-bar",
 			 "toggle-status-build-output",
-			 "toggle-status-terminal",
+			 "toggle-status-terminal-panel",
 			 "toggle-status-app-output",
 			 "menu-toggle",
 			 "switch-side-panel",
@@ -2678,8 +2679,9 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		if ( mSplitter->curEditorExistsAndFocused() && mSplitter->getCurEditor() ) {
 			UICodeEditor* editor = mSplitter->getCurEditor();
 			auto d = mSplitter->createCodeEditorInTabWidget(
-				mConfig.editor.openDocumentsInMainSplit ? mSplitter->getPreferredTabWidget()
-													: mSplitter->tabWidgetFromWidget( editor ) );
+				mConfig.editor.openDocumentsInMainSplit
+					? mSplitter->getPreferredTabWidget()
+					: mSplitter->tabWidgetFromWidget( editor ) );
 			if ( d.first == nullptr && d.second == nullptr && !mSplitter->getTabWidgets().empty() )
 				d = mSplitter->createCodeEditorInTabWidget( mSplitter->getTabWidgets()[0] );
 			if ( d.first != nullptr || d.second != nullptr ) {

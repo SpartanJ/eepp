@@ -340,6 +340,9 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 .expand_status_bar_panel.expanded {
 	icon: icon(arrow-down-s, 16dp);
 }
+.status_bar_panel_hide {
+	icon: icon(arrow-down-s, 16dp);
+}
 .settings_panel .details_but.contracted {
 	icon: icon(arrow-down-s, 10dp);
 }
