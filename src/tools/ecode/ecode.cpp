@@ -3386,8 +3386,8 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 
 				if ( FileSystem::fileExists( rpath ) ) {
 					loadFileFromPath( rpath, false, nullptr, onLoaded );
-				} else if ( FileSystem::fileCanWrite( path ) ) {
-					loadFileFromPath( path, false, nullptr, onLoaded );
+				} else if ( FileSystem::fileCanWrite( folderPath ) ) {
+					loadFileFromPath( rpath, false, nullptr, onLoaded );
 				}
 
 				// If we opened a new tab and the first tab is simply empty, discard it

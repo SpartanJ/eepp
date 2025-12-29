@@ -103,29 +103,24 @@ static std::vector<TextRange> findFoldingRangesIndentation( TextDocument* doc ) 
 
 static std::vector<TextRange> findFoldingRangesMarkdown( TextDocument* doc ) {
 	static const String codeFence( "```" );
-	Clock c; // For performance logging, consistent with existing functions
+	Clock c;
 	std::vector<TextRange> regions;
 	auto lineCount = doc->linesCount();
 
-	// Early return for small documents, as in other folding functions
 	if ( lineCount <= 2 )
 		return regions;
 
 	// Stack to track open heading sections: (line number, heading level)
 	std::vector<std::pair<Int64, int>> sectionStack;
-
-	// State for code blocks
 	bool inCodeBlock = false;
 	Int64 codeBlockStart = -1;
 
-	// Process each line
 	for ( size_t lineIdx = 0; lineIdx < lineCount; lineIdx++ ) {
 		const String& lineText = doc->line( lineIdx ).getText();
 		String::View trimmed =
-			String::trim( lineText.view() ); // Remove leading and trailing whitespace
+			String::trim( lineText.view() );
 
 		if ( inCodeBlock ) {
-			// Check for code block end
 			if ( String::startsWith( trimmed, "```" ) ) {
 				// Ensure there's content to fold between start and end
 				if ( codeBlockStart != -1 && codeBlockStart <= static_cast<Int64>( lineIdx ) - 1 ) {

@@ -10,7 +10,7 @@ SyntaxDefinition& addXit() {
 			.getLanguageName();
 	};
 
-	return SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "[x]it!",
 		  { "%.xit$" },
@@ -54,6 +54,8 @@ SyntaxDefinition& addXit() {
 		  {}
 
 		} );
+	sd.setFoldRangeType( FoldRangeType::Markdown );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

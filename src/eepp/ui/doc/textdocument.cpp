@@ -829,7 +829,9 @@ URI TextDocument::getLoadingFileURI() const {
 
 TextDocument::LoadStatus TextDocument::loadFromFile( const std::string& path ) {
 	mLoading = true;
-	if ( !FileSystem::fileExists( path ) && PackManager::instance()->isFallbackToPacksActive() ) {
+	bool fileExists = FileSystem::fileExists( path );
+
+	if ( !fileExists && PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string pathFix( path );
 		Pack* pack = PackManager::instance()->exists( pathFix );
 		if ( NULL != pack ) {
@@ -838,8 +840,14 @@ TextDocument::LoadStatus TextDocument::loadFromFile( const std::string& path ) {
 		}
 	}
 
-	IOStreamFile file( path, "rb" );
-	auto ret = loadFromStream( file, path, true );
+	LoadStatus ret = LoadStatus::Failed;
+	if ( fileExists ) {
+		IOStreamFile file( path, "rb" );
+		ret = loadFromStream( file, path, true );
+	} else {
+		setDirtyUntilSave();
+	}
+
 	changeFilePath( path, false );
 	resetSyntax();
 	mLoading = false;
