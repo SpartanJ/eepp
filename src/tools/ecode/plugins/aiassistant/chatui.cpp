@@ -196,6 +196,7 @@ static const char* DEFAULT_CHAT_GLOBE = R"xml(
 			<item>@string(assistant, Assistant)</item>
 			<item>@string(system, System)</item>
 		</DropDownList>
+		<PushButton class="copy_contents" text="@string(copy_contents, Copy Contents)" icon="icon(copy, 12dp)" tooltip="@string(copy_contents, Copy Contents)" />
 		<PushButton class="move_up" text="@string(move_up, Move Up)" icon="icon(arrow-up-s, 12dp)" tooltip="@string(move_up, Move Up)" />
 		<PushButton class="move_down" text="@string(move_down, Move Down)" icon="icon(arrow-down-s, 12dp)"  tooltip="@string(move_down, Move Down)" />
 		<PushButton class="erase_but" text="@string(remove_chat, Remove Chat)" icon="icon(chrome-close, 10dp)" tooltip="@string(remove_chat, Remove Chat)" />
@@ -952,6 +953,37 @@ void LLMChatUI::resizeToFit( UICodeEditor* editor ) {
 	editor->setPixelsSize( editor->getPixelsSize().getWidth(), height );
 }
 
+void LLMChatUI::replaceFileLinksToContents( std::string& text ) {
+	LuaPattern ptrn( "\n```file://([^`]*)```\n" );
+	PatternMatcher::Range matches[2];
+	while ( ptrn.matches( text, matches ) ) {
+		std::string path( text.substr( matches[1].start, matches[1].length() ) );
+		if ( FileSystem::isRelativePath( path ) ) {
+			std::string prjPath( getPlugin()->getPluginContext()->getCurrentProject() );
+			path = prjPath + path;
+		}
+		std::string fileBuffer;
+		TextDocument doc;
+		if ( FileSystem::fileExists( path ) &&
+			 doc.loadFromFile( path ) == TextDocument::LoadStatus::Loaded ) {
+			fileBuffer += "\n`" + doc.getFilename() + "`:\n";
+			fileBuffer += "```" + doc.getSyntaxDefinition().getLSPName();
+			if ( doc.linesCount() >= 1 && !String::startsWith( doc.line( 0 ).getText(), "\n" ) ) {
+				fileBuffer += "\n";
+			}
+			fileBuffer += doc.getText().toUtf8();
+			if ( doc.linesCount() >= 1 &&
+				 doc.line( doc.linesCount() - 1 ).getText() != String( "\n" ) ) {
+				fileBuffer += "\n";
+			}
+			fileBuffer += "```\n";
+		} else {
+			fileBuffer = path + "has been deleted from the file system.";
+		}
+		text.replace( matches[0].start, matches[0].length(), fileBuffer );
+	}
+}
+
 nlohmann::json LLMChatUI::chatToJson( bool forRequest ) {
 	auto j = nlohmann::json::array();
 	auto chats = findAllByClass( "llm_conversation" );
@@ -965,37 +997,8 @@ nlohmann::json LLMChatUI::chatToJson( bool forRequest ) {
 		if ( text.empty() )
 			continue;
 
-		if ( forRequest ) {
-			LuaPattern ptrn( "\n```file://([^`]*)```\n" );
-			PatternMatcher::Range matches[2];
-			while ( ptrn.matches( text, matches ) ) {
-				std::string path( text.substr( matches[1].start, matches[1].length() ) );
-				if ( FileSystem::isRelativePath( path ) ) {
-					std::string prjPath( getPlugin()->getPluginContext()->getCurrentProject() );
-					path = prjPath + path;
-				}
-				std::string fileBuffer;
-				TextDocument doc;
-				if ( FileSystem::fileExists( path ) &&
-					 doc.loadFromFile( path ) == TextDocument::LoadStatus::Loaded ) {
-					fileBuffer += "\n`" + doc.getFilename() + "`:\n";
-					fileBuffer += "```" + doc.getSyntaxDefinition().getLSPName();
-					if ( doc.linesCount() >= 1 &&
-						 !String::startsWith( doc.line( 0 ).getText(), "\n" ) ) {
-						fileBuffer += "\n";
-					}
-					fileBuffer += doc.getText().toUtf8();
-					if ( doc.linesCount() >= 1 &&
-						 doc.line( doc.linesCount() - 1 ).getText() != String( "\n" ) ) {
-						fileBuffer += "\n";
-					}
-					fileBuffer += "```\n";
-				} else {
-					fileBuffer = path + "has been deleted from the file system.";
-				}
-				text.replace( matches[0].start, matches[0].length(), fileBuffer );
-			}
-		}
+		if ( forRequest )
+			replaceFileLinksToContents( text );
 
 		j.push_back( { { "role", role }, { "content", std::move( text ) } } );
 	}
@@ -1277,6 +1280,7 @@ void LLMChatUI::toggleEnableChat( UIWidget* chat, bool enabled ) {
 	chat->findByClass( "erase_but" )->setEnabled( enabled );
 	chat->findByClass( "move_up" )->setEnabled( enabled );
 	chat->findByClass( "move_down" )->setEnabled( enabled );
+	chat->findByClass( "copy_contents" )->setEnabled( enabled );
 }
 
 void LLMChatUI::toggleEnableChats( bool enabled ) {
@@ -1357,6 +1361,15 @@ UIWidget* LLMChatUI::addChatUI( LLMChat::Role role ) {
 	chat->findByClass( "move_down" )->onClick( [chat]( auto ) {
 		if ( chat->getNodeIndex() < chat->getParent()->getChildCount() - 1 )
 			chat->toPosition( chat->getNodeIndex() + 1 );
+	} );
+	chat->findByClass( "copy_contents" )->onClick( [this, editor]( auto ) {
+		auto text = editor->getDocument().getText().toUtf8();
+		if ( text.empty() )
+			return;
+		replaceFileLinksToContents( text );
+		getUISceneNode()->getWindow()->getClipboard()->setText( text );
+		getPlugin()->getPluginContext()->getNotificationCenter()->addNotification(
+			i18n( "chat_copied", "Chat Copied" ) );
 	} );
 	resizeToFit( editor );
 	return chat;

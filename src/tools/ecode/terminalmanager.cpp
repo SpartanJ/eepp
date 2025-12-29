@@ -26,7 +26,8 @@ UITerminal* TerminalManager::createTerminalInSplitter(
 	auto splitter = mApp->getSplitter();
 	auto& config = mApp->getConfig();
 
-	if ( config.term.newTerminalOrientation == NewTerminalOrientation::StatusBarPanel ) {
+	if ( config.term.newTerminalOrientation == NewTerminalOrientation::StatusBarPanel &&
+		 mApp->getStatusTerminalController() ) {
 		mApp->getStatusTerminalController()->show();
 		mApp->getStatusTerminalController()->createTerminal();
 	} else if ( splitter && splitter->hasSplit() ) {

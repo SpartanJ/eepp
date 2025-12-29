@@ -94,7 +94,8 @@ SyntaxDefinition& addYAML() {
 			  { "^%%YAML %d+%.%d+" }
 
 			} )
-		.setFoldRangeType( FoldRangeType::Indentation );
+		.setFoldRangeType( FoldRangeType::Indentation )
+		.addAlternativeName( "yml" );
 }
 
 }}}} // namespace EE::UI::Doc::Language

@@ -1960,44 +1960,38 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 }
 
 void LSPClientPlugin::updateCurrentSymbol( TextDocument& doc ) {
-	if ( !mBreadcrumb )
+	if ( !mBreadcrumb || mShuttingDown )
 		return;
 
 	std::vector<DisplaySymbolInfo> symbolsInfo;
 	URI uri = doc.getURI();
 
 	{
-		mDocSymbolsMutex.lock();
-
+		Lock l( mDocSymbolsMutex );
 		auto symbolsIt = mDocSymbols.find( uri );
-		if ( symbolsIt == mDocSymbols.end() ) {
-			mDocSymbolsMutex.unlock();
-			Lock l( mDocCurrentSymbolsMutex );
-			mDocCurrentSymbols[uri] = {};
-			return;
-		}
+		if ( symbolsIt != mDocSymbols.end() ) {
+			LSPSymbolInformationList* list = &symbolsIt->second;
+			auto sel = doc.getSelection();
+			LSPSymbolInformationList::iterator foundIt;
 
-		LSPSymbolInformationList* list = &symbolsIt->second;
-		auto sel = doc.getSelection();
-		LSPSymbolInformationList::iterator foundIt;
-
-		bool found = false;
-		do {
-			foundIt = std::lower_bound( list->begin(), list->end(), sel,
-										[]( const LSPSymbolInformation& cur,
-											const TextRange& sel ) { return cur.range < sel; } );
-			found = foundIt != list->end() && foundIt->range.contains( sel );
-			if ( found ) {
-				symbolsInfo.push_back( { String::fromUtf8( foundIt->name ),
-										 LSPSymbolKindHelper::toIconString( foundIt->kind ) } );
-				if ( foundIt->children.empty() )
+			bool found = false;
+			do {
+				foundIt =
+					std::lower_bound( list->begin(), list->end(), sel,
+									  []( const LSPSymbolInformation& cur, const TextRange& sel ) {
+										  return cur.range < sel;
+									  } );
+				found = foundIt != list->end() && foundIt->range.contains( sel );
+				if ( found ) {
+					symbolsInfo.push_back( { String::fromUtf8( foundIt->name ),
+											 LSPSymbolKindHelper::toIconString( foundIt->kind ) } );
+					if ( foundIt->children.empty() )
+						break;
+					list = &foundIt->children;
+				} else
 					break;
-				list = &foundIt->children;
-			} else
-				break;
-		} while ( found );
-
-		mDocSymbolsMutex.unlock();
+			} while ( found );
+		}
 	}
 
 	Lock l( mDocCurrentSymbolsMutex );

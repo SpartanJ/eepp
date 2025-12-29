@@ -4000,6 +4000,8 @@ void App::init( InitParameters& params ) {
 	Log::info( "%s (codename: \"%s\") initializing", ecode::Version::getVersionFullName(),
 			   ecode::Version::getCodename() );
 
+	Log::info( "ecode resources path: %s", mResPath );
+
 	if ( mWindow && mWindow->isOpen() ) {
 		// Only verify GPU driver availability on Windows.
 		// macOS will have at least a fallback renderer

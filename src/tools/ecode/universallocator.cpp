@@ -569,8 +569,7 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 				path = mApp->getCurrentProject() + path;
 
 			if ( !range.isValid() && !FileSystem::isRelativePath( path ) &&
-				 pathHasPosition( mLocateInput->getText() ) &&
-				 String::startsWith( mLocateInput->getText().toUtf8(), path ) ) {
+				 pathHasPosition( mLocateInput->getText() ) ) {
 				auto pathAndPos = getPathAndPosition( mLocateInput->getText() );
 				range = { pathAndPos.second, pathAndPos.second };
 			}

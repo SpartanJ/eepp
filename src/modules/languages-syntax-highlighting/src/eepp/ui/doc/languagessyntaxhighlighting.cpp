@@ -138,9 +138,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void LanguagesSyntaxHighlighting::load() {
-	auto sdm = SyntaxDefinitionManager::instance();
-
+static void preDefinitionLangsChunk1( SyntaxDefinitionManager* sdm ) {
 	sdm->addPreDefinition( {
 		"Ada",
 		[]() -> SyntaxDefinition& { return addAda(); },
@@ -285,21 +283,6 @@ void LanguagesSyntaxHighlighting::load() {
 		{ "%.ec$", "%.eh$" },
 	} );
 
-	sdm->addPreDefinition( {
-		"OpenSCAD",
-		[]() -> SyntaxDefinition& { return addOpenSCAD(); },
-		{ "%.scad$" },
-	} );
-
-	sdm->addPreDefinition( {
-		"Ring",
-		[]() -> SyntaxDefinition& { return addRing(); },
-		{ "%.ring$", "%.rh$", "%.rform$" },
-	} );
-
-	sdm->addPreDefinition(
-		{ "Tcl", []() -> SyntaxDefinition& { return addTcl(); }, { "%.tcl$" } } );
-
 	sdm->addPreDefinition(
 		{ "D", []() -> SyntaxDefinition& { return addD(); }, { "%.d$", "%.di$" } } );
 
@@ -429,7 +412,9 @@ void LanguagesSyntaxHighlighting::load() {
 		[]() -> SyntaxDefinition& { return addISPC(); },
 		{ "%.ispc$", "%.isph$", "%.ih$" },
 	} );
+}
 
+static void preDefinitionLangsChunk2( SyntaxDefinitionManager* sdm ) {
 	sdm->addPreDefinition(
 		{ "Jai", []() -> SyntaxDefinition& { return addJai(); }, { "%.jai$" } } );
 
@@ -572,6 +557,12 @@ void LanguagesSyntaxHighlighting::load() {
 		{ "Odin", []() -> SyntaxDefinition& { return addOdin(); }, { "%.odin$" } } );
 
 	sdm->addPreDefinition( {
+		"OpenSCAD",
+		[]() -> SyntaxDefinition& { return addOpenSCAD(); },
+		{ "%.scad$" },
+	} );
+
+	sdm->addPreDefinition( {
 		"Pascal",
 		[]() -> SyntaxDefinition& { return addPascal(); },
 		{ "%.pas$", "%.dpr$", "%.dpk$" },
@@ -637,6 +628,12 @@ void LanguagesSyntaxHighlighting::load() {
 		"R",
 		[]() -> SyntaxDefinition& { return addR(); },
 		{ "%.r$", "%.rds$", "%.rda$", "%.rdata$", "%.R$" },
+	} );
+
+	sdm->addPreDefinition( {
+		"Ring",
+		[]() -> SyntaxDefinition& { return addRing(); },
+		{ "%.ring$", "%.rh$", "%.rform$" },
 	} );
 
 	sdm->addPreDefinition(
@@ -732,6 +729,9 @@ void LanguagesSyntaxHighlighting::load() {
 	} );
 
 	sdm->addPreDefinition(
+		{ "Tcl", []() -> SyntaxDefinition& { return addTcl(); }, { "%.tcl$" } } );
+
+	sdm->addPreDefinition(
 		{ "TOML", []() -> SyntaxDefinition& { return addToml(); }, { "%.toml$" } } );
 
 	sdm->addPreDefinition( { "TypeScript",
@@ -812,13 +812,12 @@ void LanguagesSyntaxHighlighting::load() {
 	sdm->addPreDefinition(
 		{ "Xtend", []() -> SyntaxDefinition& { return addXtend(); }, { "%.xtend$" } } );
 
-	sdm->addPreDefinition( {
-		"YAML",
-		[]() -> SyntaxDefinition& { return addYAML(); },
-		{ "%.yml$", "%.yaml$", "^.clangd$" },
-		{ "^%%YAML %d+%.%d+" },
-
-	} );
+	sdm->addPreDefinition( { "YAML",
+							 []() -> SyntaxDefinition& { return addYAML(); },
+							 { "%.yml$", "%.yaml$", "^.clangd$" },
+							 { "^%%YAML %d+%.%d+" },
+							 "yaml",
+							 { "yml" } } );
 
 	sdm->addPreDefinition( {
 		"YueScript",
@@ -831,6 +830,14 @@ void LanguagesSyntaxHighlighting::load() {
 
 	sdm->addPreDefinition(
 		{ "Zig", []() -> SyntaxDefinition& { return addZig(); }, { "%.zig$" } } );
+}
+
+void LanguagesSyntaxHighlighting::load() {
+	auto sdm = SyntaxDefinitionManager::instance();
+
+	// This is to avoid reaching the VTA max-vartrack-size (var-tracking-assignments)
+	preDefinitionLangsChunk1( sdm );
+	preDefinitionLangsChunk2( sdm );
 }
 
 }}}} // namespace EE::UI::Doc::Language

@@ -193,6 +193,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	void hideAttachFile();
 
 	void insertFileToDocument( std::string path, std::shared_ptr<TextDocument> cdoc );
+
+	void replaceFileLinksToContents( std::string& text );
 };
 
 } // namespace ecode

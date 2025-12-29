@@ -494,7 +494,7 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	filter { "options:sharedir" }
 		if _OPTIONS["sharedir"] then
-			defines { "ECODE_SHAREDIR=\"" .. _OPTIONS["sharedir"] .. "\"" }
+			defines { "ECODE_SHAREDIR='\"" .. _OPTIONS["sharedir"] .. "\"'" }
 		end
 	filter {}
 end
