@@ -144,8 +144,6 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		FontTrueType::fontHintingFromString( ini.getValue( "ui", "font_hinting", "full" ) );
 	ui.fontAntialiasing = FontTrueType::fontAntialiasingFromString(
 		ini.getValue( "ui", "font_antialiasing", "grayscale" ) );
-	Text::TextShaperEnabled |= ini.getValueB( "ui", "text_shaper", false );
-	Text::TextShaperOptimizations |= ini.getValueB( "ui", "text_shaper_optimizations", true );
 	ui.editorFontInInputFields = ini.getValueB( "ui", "editor_font_in_input_fields", true );
 
 	doc.trimTrailingWhitespaces = ini.getValueB( "document", "trim_trailing_whitespaces", false );

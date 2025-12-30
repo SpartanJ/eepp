@@ -2678,8 +2678,9 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		if ( mSplitter->curEditorExistsAndFocused() && mSplitter->getCurEditor() ) {
 			UICodeEditor* editor = mSplitter->getCurEditor();
 			auto d = mSplitter->createCodeEditorInTabWidget(
-				mConfig.editor.openDocumentsInMainSplit ? mSplitter->getPreferredTabWidget()
-													: mSplitter->tabWidgetFromWidget( editor ) );
+				mConfig.editor.openDocumentsInMainSplit
+					? mSplitter->getPreferredTabWidget()
+					: mSplitter->tabWidgetFromWidget( editor ) );
 			if ( d.first == nullptr && d.second == nullptr && !mSplitter->getTabWidgets().empty() )
 				d = mSplitter->createCodeEditorInTabWidget( mSplitter->getTabWidgets()[0] );
 			if ( d.first != nullptr || d.second != nullptr ) {
@@ -4670,8 +4671,13 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		{ "first-instance" } );
 
 #ifdef EE_TEXT_SHAPER_ENABLED
-	args::Flag textShaper( parser, "text-shaper", "Enables text-shaping capabilities",
-						   { "text-shaper" } );
+	args::Flag textShaper(
+		parser, "text-shaper",
+		"WARNING: Do not use this option. It will be completely "
+		"removed soon. It does nothing since text-shaper is enabled by default.",
+		{ "text-shaper" } );
+	args::Flag noTextShaper( parser, "no-text-shaper", "Disables text-shaping capabilities",
+							 { "no-text-shaper" } );
 #endif
 
 	std::vector<std::string> args;
@@ -4726,8 +4732,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	}
 
 #ifdef EE_TEXT_SHAPER_ENABLED
-	if ( textShaper.Get() )
-		Text::TextShaperEnabled = true;
+	if ( noTextShaper.Get() )
+		Text::TextShaperEnabled = false;
 #endif
 
 	App::InitParameters params;

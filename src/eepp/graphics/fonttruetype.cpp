@@ -39,6 +39,7 @@ RETAIN_SYMBOL( FT_Palette_Select );
 
 using namespace EE;
 
+#ifdef EE_TRUETYPE_SVG_FONT_ENABLED
 struct SVG_Data {
 	NSVGrasterizer* rasterizer;
 };
@@ -181,6 +182,7 @@ FT_Error svg_render( FT_GlyphSlot slot, FT_Pointer* data_pointer ) {
 }
 
 static SVG_RendererHooks svg_hooks = { svg_init, svg_free, svg_render, svg_preset };
+#endif
 
 // FreeType callbacks that operate on a IOStream
 unsigned long read( FT_Stream rec, unsigned long offset, unsigned char* buffer,
@@ -430,8 +432,13 @@ bool FontTrueType::setFontFace( void* _face ) {
 	mIsBold = face->style_flags & FT_STYLE_FLAG_BOLD;
 	mIsItalic = face->style_flags & FT_STYLE_FLAG_ITALIC;
 
-	if ( mHasSvgGlyphs )
-		FT_Property_Set( static_cast<FT_Library>( mLibrary ), "ot-svg", "svg-hooks", &svg_hooks );
+	if ( mHasSvgGlyphs ) {
+#ifdef EE_TRUETYPE_SVG_FONT_ENABLED
+		 FT_Property_Set( static_cast<FT_Library>( mLibrary ), "ot-svg", "svg-hooks", &svg_hooks );
+#else
+		return false;
+#endif
+	}
 
 	if ( ( mIsColorEmojiFont || mHasSvgGlyphs || mHasColrGlyphs ) &&
 		 FontManager::instance()->getColorEmojiFont() == nullptr )
@@ -1175,13 +1182,22 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 		const int padding = 2;
 
 		Float scale = 1.f;
-
-		if ( mIsColorEmojiFont || mIsEmojiFont ) {
-			scale = eemin( 1.f, (Float)characterSize / height );
-		}
-
 		int destWidth = width;
 		int destHeight = height;
+
+		if ( mIsColorEmojiFont ) {
+			// Browsers scale emojis slightly larger than the EM size to match the visual weight
+			// of the text's Ascender.
+			// Noto Sans Ascent is ~1.07em. Applying 1.1x scaling results in ~1.18em,
+			// which matches Chrome/Firefox rendering behavior for Noto Color Emoji.
+			Float targetSize = ( page.font != this )
+								   ? (Float)page.font->getAscent( characterSize ) * 1.1f
+								   : (Float)characterSize;
+
+			scale = eemin( 1.f, targetSize / height );
+		} else if ( mIsEmojiFont ) {
+			scale = eemin( 1.f, (Float)characterSize / height );
+		}
 
 		glyph.advance = eeceil( glyph.advance * scale );
 
@@ -1502,7 +1518,7 @@ FontTrueType::Page& FontTrueType::getPage( unsigned int characterSize ) const {
 			name += ":bold";
 		if ( mIsItalic )
 			name += ":italic";
-		mPages[characterSize] = std::make_unique<Page>( mFontInternalId, name );
+		mPages[characterSize] = std::make_unique<Page>( mFontInternalId, name, this );
 		pageIt = mPages.find( characterSize );
 	}
 	return *pageIt->second;
@@ -1681,8 +1697,9 @@ bool FontTrueType::hasColrGlyphs() const {
 	return mHasColrGlyphs;
 }
 
-FontTrueType::Page::Page( const Uint32 fontInternalId, const std::string& pageName ) :
-	texture( NULL ), nextRow( 3 ), fontInternalId( fontInternalId ) {
+FontTrueType::Page::Page( const Uint32 fontInternalId, const std::string& pageName,
+						  const FontTrueType* font ) :
+	texture( NULL ), fontInternalId( fontInternalId ), nextRow( 3 ), font( font ) {
 	// Make sure that the texture is initialized by default
 	Image image;
 	image.create( 128, 128, 4 );

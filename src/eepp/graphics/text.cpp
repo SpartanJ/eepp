@@ -14,7 +14,11 @@
 
 namespace EE { namespace Graphics {
 
+#ifdef EE_TEXT_SHAPER_ENABLED
+bool Text::TextShaperEnabled = true;
+#else
 bool Text::TextShaperEnabled = false;
+#endif
 bool Text::TextShaperOptimizations = true;
 Uint32 Text::GlobalInvalidationId = 0;
 

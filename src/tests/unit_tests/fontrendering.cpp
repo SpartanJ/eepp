@@ -181,7 +181,10 @@ UTEST( FontRendering, fontsTest ) {
 		};
 
 		UTEST_PRINT_STEP( "Text Shaper disabled" );
-		runTest();
+		{
+			BoolScopedOp op( Text::TextShaperEnabled, false );
+			runTest();
+		}
 
 		UTEST_PRINT_STEP( "Text Shaper enabled" );
 		{
@@ -213,7 +216,10 @@ UTEST( FontRendering, editorTest ) {
 	};
 
 	UTEST_PRINT_STEP( "Text Shaper disabled" );
-	runTest();
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
 
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	{
@@ -242,7 +248,10 @@ UTEST( FontRendering, textEditTest ) {
 	};
 
 	UTEST_PRINT_STEP( "Text Shaper disabled" );
-	runTest();
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
 
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	{
@@ -272,7 +281,10 @@ UTEST( FontRendering, tabsTest ) {
 	};
 
 	UTEST_PRINT_STEP( "Text Shaper disabled" );
-	runTest();
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
 
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	{
@@ -303,7 +315,10 @@ UTEST( FontRendering, tabStopTest ) {
 	};
 
 	UTEST_PRINT_STEP( "Text Shaper disabled" );
-	runTest();
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
 
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	{
@@ -332,7 +347,10 @@ UTEST( FontRendering, tabsTextEditTest ) {
 	};
 
 	UTEST_PRINT_STEP( "Text Shaper disabled" );
-	runTest();
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
 
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	{
@@ -362,7 +380,10 @@ UTEST( FontRendering, tabStopTextEditTest ) {
 	};
 
 	UTEST_PRINT_STEP( "Text Shaper disabled" );
-	runTest();
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
 
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	{
@@ -393,7 +414,10 @@ UTEST( FontRendering, textViewTest ) {
 	};
 
 	UTEST_PRINT_STEP( "Text Shaper disabled" );
-	runTest();
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
 
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	{
@@ -546,7 +570,10 @@ UTEST( FontRendering, textSizes ) {
 	};
 
 	UTEST_PRINT_STEP( "Text Shaper disabled" );
-	runTest();
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
 
 	UTEST_PRINT_STEP( "Text Shaper enabled" );
 	{
@@ -608,16 +635,22 @@ UTEST( FontRendering, textStyles ) {
 		config.Style = style;
 
 		UTEST_PRINT_STEP( styleName.data() );
-		UTEST_PRINT_STEP( "	Text Shaper disabled" );
-		runTest( styleName, textAlign );
 
-		UTEST_PRINT_STEP( "	Text Shaper enabled" );
-		BoolScopedOp op( Text::TextShaperEnabled, true );
-		runTest( styleName, textAlign );
+		{
+			UTEST_PRINT_STEP( "	Text Shaper disabled" );
+			BoolScopedOp op( Text::TextShaperEnabled, false );
+			runTest( styleName, textAlign );
+		}
 
-		UTEST_PRINT_STEP( "	Text Shaper enabled w/o optimizations" );
-		BoolScopedOp op2( Text::TextShaperOptimizations, false );
-		runTest( styleName, textAlign );
+		{
+			UTEST_PRINT_STEP( "	Text Shaper enabled" );
+			BoolScopedOp op( Text::TextShaperEnabled, true );
+			runTest( styleName, textAlign );
+
+			UTEST_PRINT_STEP( "	Text Shaper enabled w/o optimizations" );
+			BoolScopedOp op2( Text::TextShaperOptimizations, false );
+			runTest( styleName, textAlign );
+		}
 	};
 
 	runTestSuite( Text::Regular, "regular" );
@@ -637,6 +670,61 @@ UTEST( FontRendering, textStyles ) {
 	runTestSuite( Text::Underlined, "underline-right", TEXT_ALIGN_RIGHT );
 	runTestSuite( Text::StrikeThrough, "strikethrough-center", TEXT_ALIGN_CENTER );
 	runTestSuite( Text::StrikeThrough, "strikethrough-right", TEXT_ALIGN_RIGHT );
+
+	Engine::destroySingleton();
+}
+
+UTEST( FontRendering, emojisWithText ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 230, "eepp - Emojis With Text", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ) );
+
+	ASSERT_TRUE_MSG( win->isOpen(), "Failed to create Window" );
+
+	Text::TextShaperEnabled = false;
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	FontFamily::loadFromRegular( font );
+
+	FontTrueType* fontEmojiColor = FontTrueType::New( "NotoColorEmoji" );
+	fontEmojiColor->loadFromFile( "../assets/fonts/NotoColorEmoji.ttf" );
+
+	win->setClearColor( RGB( 255, 255, 255 ) );
+
+	FontStyleConfig config;
+	config.Font = font;
+	config.FontColor = Color::Black;
+	config.CharacterSize = 16;
+
+	String txt(
+		R"txt(👻 Lorem ipsum dolor sit amet, 👻 consectetur adipisicing elit, sed do eiusmod🤯 tempor incididunt ut labore et dolore magna
+aliqua. Ut enim ad😎 minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat 🤖.
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur 🧐. Excepteur sint occaecat
+cupidatat non proident👽, sunt in culpa qui officia deserunt mollit anim id est laborum. 😀)txt" );
+
+	const auto runTest = [&]() {
+		win->clear();
+		Text text;
+		text.setStyleConfig( config );
+		text.setString( txt );
+		text.draw( 32, 32 );
+		compareImages( utest_state, utest_result, win, "eepp-emojis-with-text" );
+	};
+
+	UTEST_PRINT_STEP( "	Text Shaper disabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
+
+	UTEST_PRINT_STEP( "	Text Shaper enabled" );
+	BoolScopedOp op( Text::TextShaperEnabled, true );
+	runTest();
+
+	UTEST_PRINT_STEP( "	Text Shaper enabled w/o optimizations" );
+	BoolScopedOp op2( Text::TextShaperOptimizations, false );
+	runTest();
 
 	Engine::destroySingleton();
 }

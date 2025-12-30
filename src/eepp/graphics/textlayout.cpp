@@ -283,7 +283,8 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 						}
 
 						Glyph currentGlyph = currentRunFont->getGlyphByIndex(
-							glyphInfo[i].codepoint, characterSize, bold, italic, outlineThickness );
+							glyphInfo[i].codepoint, characterSize, bold, italic, outlineThickness,
+							rFont->getPage( characterSize ) );
 
 						if ( ch != '\n' && ch != '\r' &&
 							 !( textDrawHints & TextHints::NoKerning ) ) {
@@ -340,7 +341,8 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 						pen.x += Font::isEmojiCodePoint( ch )
 									 ? currentRunFont
 										   ->getGlyphByIndex( glyphInfo[i].codepoint, characterSize,
-															  bold, italic, outlineThickness )
+															  bold, italic, outlineThickness,
+															  rFont->getPage( characterSize ) )
 										   .advance
 									 : sg.advance.x;
 						pen.y += sg.advance.y;

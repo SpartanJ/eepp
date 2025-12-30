@@ -158,7 +158,7 @@ class EE_API FontTrueType : public Font {
 
   protected:
 	friend class Text;
-	friend class TextLayouter;
+	friend class TextLayout;
 
 	explicit FontTrueType( const std::string& FontName );
 
@@ -175,17 +175,19 @@ class EE_API FontTrueType : public Font {
 	typedef UnorderedMap<Uint64, GlyphDrawable*> GlyphDrawableTable;
 
 	struct Page {
-		explicit Page( const Uint32 fontInternalId, const std::string& pageName );
+		explicit Page( const Uint32 fontInternalId, const std::string& pageName,
+					   const FontTrueType* font );
 
 		~Page();
 
 		GlyphTable glyphs; ///< Table mapping code points to their corresponding glyph
 		GlyphDrawableTable
-			drawables;		  ///> Table mapping code points to their corresponding glyph drawables.
-		Texture* texture;	  ///< Texture containing the pixels of the glyphs
-		unsigned int nextRow; ///< Y position of the next new row in the texture
+			drawables;	  ///> Table mapping code points to their corresponding glyph drawables.
+		Texture* texture; ///< Texture containing the pixels of the glyphs
 		std::vector<Row> rows; ///< List containing the position of all the existing rows
-		Uint32 fontInternalId{ 0 };
+		Uint32 fontInternalId{ 0 }; // The font internal id
+		unsigned int nextRow; ///< Y position of the next new row in the texture
+		const FontTrueType* font{ nullptr };
 	};
 
 	void cleanup();
