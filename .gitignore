@@ -75,3 +75,8 @@ ecode.dmg
 /projects/linux/ecode/polyfill-glibc
 /bin/crashes/*
 /bin/config/*
+/projects/android-project/.settings/*
+/projects/android-project/app/.settings/*
+/projects/android-project/app/.classpath
+/projects/android-project/.project
+/projects/android-project/app/.project

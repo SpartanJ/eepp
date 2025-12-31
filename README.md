@@ -575,8 +575,8 @@ click in the plus icon (+), then go to _Add Other..._ and locate and select the
 
 This script can be used to build the SDL2 and eepp as two fat static libraries
 with arm64 and x86_64 architectures in it (arm64 for iPhone/iPad and x86_64 for
-the simulators). To generate a release build pass `config=release` as a parameter
-for the script (`sh compile-all.sh config=release`). The built files will be
+the simulators). To generate a release build pass `config=release_arm64` as a parameter
+for the script (`sh compile-all.sh config=release_arm64`). The built files will be
 located in `libs/ios/`, as `libSDL2.a` and `libeepp.a` (or `libeepp-debug.a` for
 debug build). This two files can be integrated in your project.
 

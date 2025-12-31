@@ -1,0 +1,35 @@
+name: Android
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
+    - uses: android-actions/setup-android@v3
+    - name: Accept licenses
+      run: yes | sdkmanager --licenses > /dev/null
+    - name: Install SDK + NDK components
+      run: |
+        sdkmanager "platform-tools" \
+                   "platforms;android-34" \
+                   "build-tools;34.0.0" \
+                   "ndk;28.1.13356709"
+    - name: Configure local properties
+      run: |
+        cd make/android-project
+        {
+          echo "sdk.dir=$ANDROID_SDK_ROOT"
+          echo "ndk.dir=$ANDROID_SDK_ROOT/ndk/28.1.13356709"
+        } > local.properties
+    - name: Build
+      run: |
+        cd make/android-project
+        ./gradlew assembleEcodeRelease -Pandroid.injected.ndk.abiFilters=arm64-v8a

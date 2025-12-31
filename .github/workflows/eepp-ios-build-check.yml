@@ -1,0 +1,18 @@
+name: iOS
+
+on: [push, pull_request]
+
+jobs:
+  MacOS:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: Install dependencies
+      run: |
+        brew install cmake premake
+    - name: Build
+      run: |
+        cd project/ios
+        sh ./compile-all.sh
