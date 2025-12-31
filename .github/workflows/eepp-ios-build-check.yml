@@ -14,5 +14,5 @@ jobs:
         brew install cmake premake
     - name: Build
       run: |
-        cd project/ios
+        cd projects/ios
         sh ./compile-all.sh
