@@ -1025,12 +1025,14 @@ int subprocess_create_ex(const char *const commandLine[], int options,
     }
   }
 
+#if !defined( __IPHONE__ ) && !defined( TARGET_OS_IPHONE )
   if (working_directory) {
     if (0 != posix_spawn_file_actions_addchdir_np(&actions, working_directory)) {
       posix_spawn_file_actions_destroy(&actions);
       return -1;
     }
   }
+#endif
 
 #ifdef __clang__
 #pragma clang diagnostic push

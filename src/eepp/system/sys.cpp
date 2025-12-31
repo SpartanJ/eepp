@@ -79,8 +79,11 @@ typedef DWORD( WINAPI* GetModuleBaseName_t )( HANDLE, HMODULE, LPSTR, DWORD );
 #include <sys/user.h>
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 #include <libproc.h>
+#endif
+
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
 #include <mach-o/dyld.h>
 #endif
 
@@ -1285,6 +1288,7 @@ int Sys::execute( const std::string& cmd, const std::string& workingDir ) {
 	strings.push_back( NULL );
 
 	posix_spawn_file_actions_t actions;
+#if EE_PLATFORM != EE_PLATFORM_IOS
 	if ( !workingDir.empty() ) {
 		if ( posix_spawn_file_actions_init( &actions ) != 0 )
 			return -1; // Failed to initialize
@@ -1294,6 +1298,7 @@ int Sys::execute( const std::string& cmd, const std::string& workingDir ) {
 			return -1; // Failed to add chdir action
 		}
 	}
+#endif
 	int status = posix_spawnp( &pid, strings[0], workingDir.empty() ? NULL : &actions, NULL,
 							   strings.data(), _getEnviron() );
 

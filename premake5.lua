@@ -162,7 +162,6 @@ remote_sdl2_devel_src_url = "https://libsdl.org/release/" .. remote_sdl2_version
 remote_sdl2_devel_vc_url = "https://www.libsdl.org/release/SDL2-devel-" .. remote_sdl2_version_number .. "-VC.zip"
 remote_sdl2_devel_vc_arm64_url = "https://github.com/mmozeiko/build-sdl2/releases/download/2025-12-14/SDL2-arm64-2025-12-14.zip"
 remote_sdl2_devel_mingw_url = "https://www.libsdl.org/release/SDL2-devel-" .. remote_sdl2_version_number .. "-mingw.zip"
-
 remote_sdl2_arm64_cross_tools_path = "/usr/local/cross-tools/aarch64-w64-mingw32"
 
 function incdirs( dirs )
@@ -674,7 +673,7 @@ function set_ios_config()
 
 		local framework_path = sysroot_path .. "/System/Library/Frameworks"
 		local framework_libs_path = framework_path .. "/usr/lib"
-		local sysroot_ver = " -miphoneos-version-min=9.0 -isysroot " .. sysroot_path
+		local sysroot_ver = " -miphoneos-version-min=16.3 -isysroot " .. sysroot_path
 
 		buildoptions { sysroot_ver .. " -I" .. sysroot_path .. "/usr/include" }
 		linkoptions { sysroot_ver }
@@ -944,6 +943,9 @@ workspace "eepp"
 	filter "system:macosx"
 		defines { "GL_SILENCE_DEPRECATION" }
 
+	filter "system:ios"
+		defines { "GLES_SILENCE_DEPRECATION" }
+
 	filter "configurations:debug*"
 		defines { "DEBUG" }
 		symbols "On"
@@ -1080,7 +1082,7 @@ workspace "eepp"
 			'src/thirdparty/pcre2/src/pcre2_valid_utf.c',
 			'src/thirdparty/pcre2/src/pcre2_xclass.c',
 		}
-		if not os.istarget("emscripten") then
+		if not os.istarget("emscripten") and not os.istarget("ios") then
 			files { 'src/thirdparty/pcre2/src/pcre2_jit_compile.c' }
 		end
 		incdirs { "src/thirdparty/pcre2/src" }

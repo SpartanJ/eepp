@@ -847,7 +847,7 @@ function set_ios_config()
 		local sysroot_path = os.getenv("SYSROOTPATH")
 		local framework_path = sysroot_path .. "/System/Library/Frameworks"
 		local framework_libs_path = framework_path .. "/usr/lib"
-		local sysroot_ver = " -miphoneos-version-min=9.0 -isysroot " .. sysroot_path
+		local sysroot_ver = " -miphoneos-version-min=16.3 -isysroot " .. sysroot_path
 
 		buildoptions { sysroot_ver .. " -I" .. sysroot_path .. "/usr/include" }
 		linkoptions { sysroot_ver }
@@ -1071,6 +1071,8 @@ solution "eepp"
 
 	if os.is_real("macosx") then
 		defines { "GL_SILENCE_DEPRECATION" }
+	elseif os.is_real("ios") then
+		defines { "GLES_SILENCE_DEPRECATION" }
 	end
 
 	project "SOIL2-static"
@@ -1190,7 +1192,7 @@ solution "eepp"
 			'src/thirdparty/pcre2/src/pcre2_valid_utf.c',
 			'src/thirdparty/pcre2/src/pcre2_xclass.c',
 		}
-		if not os.is_real("emscripten") then
+		if not os.is_real("emscripten") and not os.is_real("ios") then
 			files { 'src/thirdparty/pcre2/src/pcre2_jit_compile.c' }
 		end
 		includedirs { "src/thirdparty/pcre2/src" }
