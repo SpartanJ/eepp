@@ -1,5 +1,5 @@
 #!/bin/sh
-cd $(dirname "$0")
+cd $(dirname "$0") || exit
 
-./build-sdl2.sh
 ./compile-arm64.sh $@
+./build-sdl2.sh

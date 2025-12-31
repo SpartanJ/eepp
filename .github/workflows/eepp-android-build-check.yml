@@ -3,7 +3,7 @@ name: Android
 on: [push, pull_request]
 
 jobs:
-  build:
+  Android:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
@@ -21,13 +21,12 @@ jobs:
         sdkmanager "platform-tools" \
                    "platforms;android-34" \
                    "build-tools;34.0.0" \
-                   "ndk;28.1.13356709"
+                   "ndk;29.0.14206865"
     - name: Configure local properties
       run: |
         cd projects/android-project
         {
           echo "sdk.dir=$ANDROID_SDK_ROOT"
-          echo "ndk.dir=$ANDROID_SDK_ROOT/ndk/28.1.13356709"
         } > local.properties
     - name: Build
       run: |

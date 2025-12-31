@@ -3,7 +3,7 @@ name: iOS
 on: [push, pull_request]
 
 jobs:
-  MacOS:
+  iOS:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
@@ -15,4 +15,4 @@ jobs:
     - name: Build
       run: |
         cd projects/ios
-        sh ./compile-all.sh
+        sh ./compile-all.sh config=release_arm64
