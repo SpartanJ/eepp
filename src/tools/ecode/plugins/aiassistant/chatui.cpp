@@ -449,7 +449,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 
 		menu->runOnMainThread( [this, menu] {
 			auto pos( mChatAttach->getScreenPos() );
-			UIMenu::findBestMenuPos( pos, menu );
+			UIMenu::findBestMenuPos( pos, menu, nullptr, nullptr, mChatAttach );
 			menu->showAtScreenPosition( pos );
 		} );
 	} );
@@ -516,7 +516,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 
 		menu->runOnMainThread( [this, menu] {
 			auto pos( mChatMore->getScreenPos() );
-			UIMenu::findBestMenuPos( pos, menu );
+			UIMenu::findBestMenuPos( pos, menu, nullptr, nullptr, mChatMore );
 			menu->showAtScreenPosition( pos );
 		} );
 	} );

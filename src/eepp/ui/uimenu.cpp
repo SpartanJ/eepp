@@ -693,8 +693,8 @@ bool UIMenu::isChildOrSubMenu( Node* node ) {
 		   ( mCurrentSubMenu && mCurrentSubMenu->isChildOrSubMenu( node ) );
 }
 
-void UIMenu::findBestMenuPos( Vector2f& pos, UIWidget* menu, UIMenu* parent,
-							  UIMenuSubMenu* subMenu ) {
+void UIMenu::findBestMenuPos( Vector2f& pos, UIWidget* menu, UIMenu* parent, UIMenuSubMenu* subMenu,
+							  Node* trigger ) {
 	SceneNode* sceneNode = menu->getSceneNode();
 
 	if ( nullptr == sceneNode )
@@ -706,7 +706,46 @@ void UIMenu::findBestMenuPos( Vector2f& pos, UIWidget* menu, UIMenu* parent,
 	Rectf qPos( pos.x, pos.y, pos.x + menu->getPixelsSize().getWidth(),
 				pos.y + menu->getPixelsSize().getHeight() );
 
-	if ( nullptr != parent && nullptr != subMenu ) {
+	if ( nullptr != trigger ) {
+		Rectf qTrigger = trigger->getScreenRect();
+		// Try to position below the trigger
+		pos.y = qTrigger.Bottom;
+		qPos.Top = pos.y;
+		qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+
+		if ( !qScreen.contains( qPos ) ) {
+			// Try to position above the trigger
+			pos.y = qTrigger.Top - menu->getPixelsSize().getHeight();
+			qPos.Top = pos.y;
+			qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+
+			if ( !qScreen.contains( qPos ) ) {
+				// Try to position to the right of the trigger
+				pos.x = qTrigger.Right;
+				pos.y = qTrigger.Top;
+				qPos.Left = pos.x;
+				qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
+				qPos.Top = pos.y;
+				qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+
+				if ( !qScreen.contains( qPos ) ) {
+					// Try to position to the left of the trigger
+					pos.x = qTrigger.Left - menu->getPixelsSize().getWidth();
+					qPos.Left = pos.x;
+					qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
+
+					if ( !qScreen.contains( qPos ) ) {
+						// Reset to original position if no better position found
+						pos = oriPos;
+						qPos.Left = pos.x;
+						qPos.Right = qPos.Left + menu->getPixelsSize().getWidth();
+						qPos.Top = pos.y;
+						qPos.Bottom = qPos.Top + menu->getPixelsSize().getHeight();
+					}
+				}
+			}
+		}
+	} else if ( nullptr != parent && nullptr != subMenu ) {
 		Rectf qPrevMenu;
 		bool clipMenu = parent->getOwnerNode() && parent->getOwnerNode()->getParent() &&
 						parent->getOwnerNode()->getParent()->isType( UI_TYPE_MENU );

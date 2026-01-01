@@ -16,7 +16,7 @@ class EE_API UIMenu : public UIWidget {
 	static UIMenu* New();
 
 	static void findBestMenuPos( Vector2f& position, UIWidget* menu, UIMenu* parent = NULL,
-								 UIMenuSubMenu* subMenu = NULL );
+								 UIMenuSubMenu* subMenu = NULL, Node* trigger = NULL );
 
 	UIMenu();
 
