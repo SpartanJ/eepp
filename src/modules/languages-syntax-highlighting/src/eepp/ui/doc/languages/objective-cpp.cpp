@@ -159,6 +159,11 @@ SyntaxDefinition& addObjectiveCPP() {
 			  { "export", "keyword" },
 			  { "ssize_t", "type" },
 			  { "signed", "type" },
+			  { "final", "keyword" },
+			  { "sizeof", "keyword" },
+			  { "co_await", "keyword" },
+			  { "import", "keyword" },
+			  { "module", "keyword" },
 
 			  { "#if", "keyword" },
 			  { "#ifdef", "keyword" },
