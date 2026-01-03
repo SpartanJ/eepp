@@ -1561,8 +1561,8 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 		invalidate();
 	}
 
-	ensureColorUpdate();
 	ensureGeometryUpdate();
+	ensureColorUpdate();
 
 	if ( mFontStyleConfig.Style & Shadow ) {
 		std::vector<Color> colors;
@@ -2087,7 +2087,14 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 	if ( mString.empty() )
 		return;
 
+	ensureGeometryUpdate();
 	ensureColorUpdate();
+
+	size_t numVerts = mVertices.size();
+	if ( mColors.size() < numVerts ) {
+		mColors.resize( numVerts, mFontStyleConfig.FontColor );
+		mColorsNeedUpdate = false;
+	}
 
 	bool underlined = ( mFontStyleConfig.Style & Underlined ) != 0;
 	bool strikeThrough = ( mFontStyleConfig.Style & StrikeThrough ) != 0;
@@ -2098,6 +2105,41 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 	}
 
 	if ( from <= to && from < s && to <= s ) {
+#ifdef EE_TEXT_SHAPER_ENABLED
+		if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF &&
+			 !canSkipShaping( mTextHints ) ) {
+			FontTrueType* rFont = static_cast<FontTrueType*>( mFontStyleConfig.Font );
+			auto layout = TextLayout::layout( mString, rFont, mFontStyleConfig.CharacterSize,
+											  mFontStyleConfig.Style, mTabWidth,
+											  mFontStyleConfig.OutlineThickness );
+			size_t vIdx = 0;
+			bool bold = ( mFontStyleConfig.Style & Bold ) != 0;
+			bool italic = ( mFontStyleConfig.Style & Italic ) != 0;
+
+			for ( const ShapedGlyph& sg : layout->shapedGlyphs ) {
+				if ( mString[sg.stringIndex] == '\t' )
+					continue;
+
+				Glyph glyph =
+					sg.font->getGlyphByIndex( sg.glyphIndex, mFontStyleConfig.CharacterSize, bold,
+											  italic, mFontStyleConfig.OutlineThickness,
+											  rFont->getPage( mFontStyleConfig.CharacterSize ) );
+
+				if ( glyph.bounds.Right > 0 && glyph.bounds.Bottom > 0 ) {
+					if ( vIdx + GLi->quadVertex() <= mColors.size() && sg.stringIndex >= from &&
+						 sg.stringIndex <= to ) {
+						for ( int i = 0; i < GLi->quadVertex(); ++i )
+							mColors[vIdx + i] = color;
+					}
+					vIdx += GLi->quadVertex();
+				}
+			}
+
+			mColorsNeedUpdate = false;
+			return;
+		}
+#endif
+
 		size_t realTo = to + 1;
 		Int32 rpos = from;
 		Int32 lpos = 0;
@@ -2176,6 +2218,78 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 			}
 		}
 	}
+}
+
+void Text::setFillColor( const std::vector<Color>& colors ) {
+	if ( mString.empty() || colors.empty() )
+		return;
+
+	ensureGeometryUpdate();
+	ensureColorUpdate();
+
+	size_t numVerts = mVertices.size();
+	if ( mColors.size() < numVerts ) {
+		mColors.resize( numVerts, mFontStyleConfig.FontColor );
+		mColorsNeedUpdate = false;
+	}
+
+#ifdef EE_TEXT_SHAPER_ENABLED
+	if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF &&
+		 !canSkipShaping( mTextHints ) ) {
+		FontTrueType* rFont = static_cast<FontTrueType*>( mFontStyleConfig.Font );
+		auto layout = TextLayout::layout( mString, rFont, mFontStyleConfig.CharacterSize,
+										  mFontStyleConfig.Style, mTabWidth,
+										  mFontStyleConfig.OutlineThickness );
+		size_t vIdx = 0;
+		bool bold = ( mFontStyleConfig.Style & Bold ) != 0;
+		bool italic = ( mFontStyleConfig.Style & Italic ) != 0;
+
+		for ( const ShapedGlyph& sg : layout->shapedGlyphs ) {
+			if ( mString[sg.stringIndex] == '\t' )
+				continue;
+
+			Glyph glyph =
+				sg.font->getGlyphByIndex( sg.glyphIndex, mFontStyleConfig.CharacterSize, bold,
+										  italic, mFontStyleConfig.OutlineThickness,
+										  rFont->getPage( mFontStyleConfig.CharacterSize ) );
+
+			if ( glyph.bounds.Right > 0 && glyph.bounds.Bottom > 0 ) {
+				if ( vIdx + GLi->quadVertex() <= mColors.size() &&
+					 sg.stringIndex < colors.size() ) {
+					Color color = colors[sg.stringIndex];
+					if ( mContainsColorEmoji && Font::isEmojiCodePoint( mString[sg.stringIndex] ) )
+						color = Color( 255, 255, 255, color.a );
+					for ( int i = 0; i < GLi->quadVertex(); ++i )
+						mColors[vIdx + i] = color;
+					vIdx += GLi->quadVertex();
+				}
+			}
+		}
+
+		mColorsNeedUpdate = false;
+		return;
+	}
+#endif
+
+	size_t s = mString.size();
+	size_t vIdx = 0;
+
+	for ( size_t i = 0; i < s; i++ ) {
+		String::StringBaseType curChar = mString[i];
+		if ( ' ' == curChar || '\n' == curChar || '\t' == curChar || '\r' == curChar )
+			continue;
+
+		if ( vIdx + GLi->quadVertex() <= mColors.size() && i < colors.size() ) {
+			Color color = colors[i];
+			if ( mContainsColorEmoji && Font::isEmojiCodePoint( curChar ) )
+				color = Color( 255, 255, 255, color.a );
+			for ( int v = 0; v < GLi->quadVertex(); v++ )
+				mColors[vIdx + v] = color;
+			vIdx += GLi->quadVertex();
+		}
+	}
+
+	mColorsNeedUpdate = false;
 }
 
 // Add an underline or strikethrough line to the vertex array

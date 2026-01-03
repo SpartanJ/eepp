@@ -188,6 +188,8 @@ class EE_API Text {
 
 	void setFillColor( const Color& color, Uint32 from, Uint32 to );
 
+	void setFillColor( const std::vector<Color>& colors );
+
 	void setOutlineColor( const Color& color );
 
 	void setOutlineThickness( Float thickness );

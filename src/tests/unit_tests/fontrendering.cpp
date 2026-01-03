@@ -728,3 +728,70 @@ cupidatat non proident👽, sunt in culpa qui officia deserunt mollit anim id es
 
 	Engine::destroySingleton();
 }
+
+UTEST( FontRendering, textSetFillColor ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 230, "eepp - Text Set Fill Color", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ) );
+
+	ASSERT_TRUE_MSG( win->isOpen(), "Failed to create Window" );
+
+	UTEST_PRINT_INFO( GLi->getRenderer().c_str() );
+
+	win->setClearColor( RGB( 230, 230, 230 ) );
+
+	FontTrueType* arabicFont =
+		FontTrueType::New( "NotoNaskhArabic-Regular", "assets/fonts/NotoNaskhArabic-Regular.ttf" );
+
+	Text text;
+	text.setFont( arabicFont );
+	text.setFontSize( 64 );
+	text.setAlign( TEXT_ALIGN_CENTER );
+	std::string arabicTxtUtf8;
+	FileSystem::fileGet( "assets/textfiles/test-arabic-simple.uext", arabicTxtUtf8 );
+	String arabicTxt( arabicTxtUtf8 );
+	text.setString( arabicTxt );
+	text.setFillColor( Color::Black );
+
+	const auto runTest = [&]( std::string_view testName ) {
+		win->clear();
+		text.draw( 0, win->getHeight() * 0.5f - text.getTextHeight() * 0.5f );
+		compareImages( utest_state, utest_result, win,
+					   std::string( "eepp-text-set-fill-color-" ) + std::string( testName ) );
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+
+		// Test Vector Fill
+		{
+			std::vector<Color> colors;
+			for ( size_t i = 0; i < arabicTxt.size(); i++ ) {
+				// Alternating colors
+				if ( i % 3 == 0 )
+					colors.push_back( Color::Red );
+				else if ( i % 3 == 1 )
+					colors.push_back( Color::Green );
+				else
+					colors.push_back( Color::Blue );
+			}
+			text.setFillColor( colors );
+			runTest( "vector" );
+		}
+
+		// Test Range Fill
+		{
+			text.setFillColor( Color::Black );
+			// Color "World" (بالعالم) in Red. It's at the end of the string.
+			// "مرحباً" (Hello) is 6 chars + space = 7.
+			// "بالعالم" (World) starts at index 7.
+			if ( arabicTxt.size() > 7 ) {
+				text.setFillColor( Color::Red, 7, arabicTxt.size() );
+			}
+			runTest( "range" );
+		}
+	}
+
+	Engine::destroySingleton();
+}

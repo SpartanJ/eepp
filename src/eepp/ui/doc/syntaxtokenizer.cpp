@@ -951,17 +951,24 @@ Text* SyntaxTokenizer::tokenizeText( const SyntaxDefinition& syntax,
 		text->setString( txt );
 	}
 
+	std::vector<Color> colors( text->getString().size(), text->getFillColor() );
 	size_t start = startIndex;
 	for ( const auto& token : tokens ) {
 		if ( start < endIndex ) {
-			if ( token.len > 0 )
-				text->setFillColor( colorScheme.getSyntaxStyle( token.type ).color, start,
-									std::min( start + token.len, endIndex ) );
+			if ( token.len > 0 ) {
+				Color color = colorScheme.getSyntaxStyle( token.type ).color;
+				size_t end = std::min( start + token.len, endIndex );
+				if ( end > colors.size() )
+					end = colors.size();
+				for ( size_t i = start; i < end; i++ )
+					colors[i] = color;
+			}
 			start += token.len;
 		} else {
 			break;
 		}
 	}
+	text->setFillColor( colors );
 
 	return text;
 }
