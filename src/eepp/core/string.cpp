@@ -1,6 +1,6 @@
 #include <eepp/core/string.hpp>
 #include <eepp/core/utf.hpp>
-// #include <eepp/core/simd.hpp>
+#include <eepp/system/cpu.hpp>
 
 #include <thirdparty/fast_float/include/fast_float/fast_float.h>
 #define FTS_FUZZY_MATCH_IMPLEMENTATION
@@ -27,6 +27,17 @@
 
 #ifndef STD_SUPPORTS_FIXED_TO_CHARS
 #include <sstream>
+#endif
+
+#if defined( EE_ARCH_X86_64 )
+	#if defined( _MSC_VER )
+		#include <intrin.h>
+	#elif defined( __GNUC__ ) || defined( __clang__ )
+		#include <emmintrin.h>
+		#include <immintrin.h>
+	#endif
+#elif defined( EE_ARCH_ARM64 )
+	#include <arm_neon.h>
 #endif
 
 namespace EE {
@@ -1377,23 +1388,67 @@ bool String::contains( const String& needle ) const {
 	return String::contains( *this, needle );
 }
 
+namespace {
+
+#ifdef EE_ARCH_X86_64
+#if defined( __GNUC__ ) || defined( __clang__ )
+__attribute__( ( target( "avx2" ) ) )
+#endif
+bool isAsciiAVX2( const char32_t* data, size_t len, uint32_t limit ) {
+	const char32_t* end = data + len;
+	const __m256i maskVec = _mm256_set1_epi32( ~limit );
+
+	while ( data + 8 <= end ) {
+		__m256i chunk = _mm256_loadu_si256( (const __m256i*)data );
+		if ( _mm256_testz_si256( chunk, maskVec ) == 0 )
+			return false;
+		data += 8;
+	}
+
+	while ( data < end ) {
+		if ( *data > limit )
+			return false;
+		data++;
+	}
+	return true;
+}
+#endif
+
+#ifdef EE_ARCH_ARM64
+bool isAsciiNEON( const char32_t* data, size_t len, uint32_t limit ) {
+	const char32_t* end = data + len;
+	const uint32x4_t maskVec = vdupq_n_u32( ~limit );
+
+	while ( data + 4 <= end ) {
+		uint32x4_t chunk = vld1q_u32( (const uint32_t*)data );
+		uint32x4_t tst = vtstq_u32( chunk, maskVec );
+		if ( vmaxvq_u32( tst ) != 0 )
+			return false;
+		data += 4;
+	}
+
+	while ( data < end ) {
+		if ( *data > limit )
+			return false;
+		data++;
+	}
+	return true;
+}
+#endif
+
+} // namespace
+
 template <typename StringType, auto Limit = 127>
 static inline bool isAsciiTpl( const StringType& str ) {
-	// #ifdef EE_STD_SIMD
-	// 	std::size_t i = 0;
-	// 	std::size_t len = str.size();
-	// 	auto data = str.data();
-	// 	using simd_type = simd::native_simd<char32_t>;
-	// 	constexpr size_t simd_size = simd_type::size();
-	// 	const simd_type ascii_limit = Limit;
-	// 	for ( ; i + simd_size - 1 < len; i += simd_size ) {
-	// 		simd_type chunk;
-	// 		chunk.copy_from( &data[i], simd::element_aligned );
-	// 		auto mask = chunk > ascii_limit;
-	// 		if ( simd::any_of( mask ) )
-	// 			return false;
-	// 	}
-	// #endif
+#ifdef EE_ARCH_X86_64
+	if ( System::CPU::hasAVX2() ) {
+		return isAsciiAVX2( (const char32_t*)str.data(), str.size(), Limit );
+	}
+#elif defined( EE_ARCH_ARM64 )
+	if ( System::CPU::hasNEON() ) {
+		return isAsciiNEON( (const char32_t*)str.data(), str.size(), Limit );
+	}
+#endif
 
 	for ( const auto& codepoint : str )
 		if ( codepoint > Limit )

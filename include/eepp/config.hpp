@@ -316,6 +316,12 @@ typedef signed long long Int64;
 typedef unsigned long long Uint64;
 #endif
 
+#if defined( __x86_64__ ) || defined( _M_X64 )
+	#define EE_ARCH_X86_64
+#elif defined( __aarch64__ ) || defined( _M_ARM64 )
+	#define EE_ARCH_ARM64
+#endif
+
 #if defined( EE_LINUX_64 ) || defined( EE_SPARC_64 ) || defined( __osf__ ) ||                  \
 	( defined( _WIN64 ) && !defined( _XBOX ) ) || defined( __64BIT__ ) || defined( __LP64 ) || \
 	defined( __LP64__ ) || defined( _LP64 ) || defined( _ADDR64 ) || defined( _CRAYC )

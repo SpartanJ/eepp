@@ -1519,8 +1519,8 @@ Uint64 Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
 		Lock l( mThreadsMutex );
 		mThreads.push_back( thread );
 	}
-	return id;
 #endif
+	return id;
 }
 
 const IpAddress& Http::getHost() const {
