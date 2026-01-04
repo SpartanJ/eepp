@@ -123,6 +123,7 @@
 #include <eepp/ui/doc/languages/vala.hpp>
 #include <eepp/ui/doc/languages/vb.hpp>
 #include <eepp/ui/doc/languages/verilog.hpp>
+#include <eepp/ui/doc/languages/viml.hpp>
 #include <eepp/ui/doc/languages/vue.hpp>
 #include <eepp/ui/doc/languages/wren.hpp>
 #include <eepp/ui/doc/languages/x86assembly.hpp>
@@ -793,6 +794,9 @@ static void preDefinitionLangsChunk2( SyntaxDefinitionManager* sdm ) {
 		{ "%.bas$", "%.cls$", "%.ctl$", "%.dob$", "%.dsm$", "%.dsr$", "%.frm$", "%.pag$", "%.vb$",
 		  "%.vba$", "%.vbs$" },
 	} );
+
+	sdm->addPreDefinition(
+		{ "VimL", []() -> SyntaxDefinition& { return addViml(); }, { "%.vim$", "%.vimrc$" } } );
 
 	sdm->addPreDefinition(
 		{ "Vue", []() -> SyntaxDefinition& { return addVue(); }, { "%.vue?$" } } );

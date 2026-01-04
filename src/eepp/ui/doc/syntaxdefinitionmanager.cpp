@@ -52,6 +52,7 @@ class TextMateScopeMapper {
 		{ "entity.name.tag", "type" },			// HTML/XML tag name
 		{ "keyword.control", "keyword" },		// if, else, for, while, return etc.
 		{ "keyword.operator", "operator" },		// +, -, =, and, or, etc.
+		{ "punctuation.definition.comment", "comment" },
 		{ "punctuation.definition.string", "string" }, // <, >, </ in HTML/XML
 		{ "punctuation.definition.tag", "operator" },  // <, >, </ in HTML/XML
 		{ "support.function", "function" },			   // Built-in functions (print, len)
@@ -258,6 +259,9 @@ static std::optional<nlohmann::json> serializePattern( const SyntaxPattern& ptrn
 		if ( !ptrns.empty() )
 			pattern["patterns"] = std::move( ptrns );
 	}
+
+	if ( !ptrn.contentTypeName.empty() )
+		pattern["contentName"] = ptrn.contentTypeName;
 
 	return pattern;
 }
@@ -688,6 +692,8 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 	std::vector<std::string> ptrns;
 	std::vector<SyntaxPattern> subPatterns;
 	auto ctype = SyntaxPatternMatchType::LuaPattern;
+	std::string contentTypeName;
+	SyntaxStyleType contentType{ SyntaxStyleEmpty() };
 	std::string syntax;
 
 	const auto fillTypes = []( const nlohmann::json& captures, std::vector<std::string>& type,
@@ -729,9 +735,9 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 			type.emplace_back( TextMateScopeMapper::scopeToType( pattern.value( "name", "" ) ) );
 		}
 
-		if ( type.empty() && pattern.contains( "contentName" ) ) {
-			type.emplace_back(
-				TextMateScopeMapper::scopeToType( pattern.value( "contentName", "" ) ) );
+		if ( pattern.contains( "contentName" ) ) {
+			contentTypeName = pattern.value( "contentName", "" );
+			contentType = toSyntaxStyleType( TextMateScopeMapper::scopeToType( contentTypeName ) );
 		}
 
 		if ( pattern.contains( "beginCaptures" ) )
@@ -853,8 +859,17 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 
 	eeASSERT( !ptrns.empty() );
 
-	return SyntaxPattern( std::move( ptrns ), std::move( type ), std::move( endType ), syntax,
-						  ctype, std::move( subPatterns ) );
+	SyntaxPattern ptrn( std::move( ptrns ), std::move( type ), std::move( endType ), syntax, ctype,
+						std::move( subPatterns ) );
+
+	if ( contentType != SyntaxStyleEmpty() ) {
+		ptrn.contentTypeName = std::move( contentTypeName );
+		ptrn.contentType = contentType;
+		if ( SyntaxStyleTypes::needsToBeCached( contentType ) ) {
+			SyntaxPattern::SyntaxStyleTypeCache[contentType] = ptrn.contentTypeName;
+		}
+	}
+	return ptrn;
 }
 
 static SyntaxDefinition loadTextMateLanguage( const nlohmann::json& json, SyntaxDefinition& def ) {

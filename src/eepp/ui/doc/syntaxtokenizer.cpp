@@ -270,10 +270,10 @@ static inline void popStack( SyntaxStateRestored& curState, SyntaxState& retStat
 }
 
 template <typename T>
-static inline void pushTokensToOpenCloseSubsyntax( int i, std::string_view textv,
-												   const SyntaxPattern* subsyntaxInfo,
-												   const NonEscapedMatch& rangeSubsyntax,
-												   std::vector<T>& tokens, bool isClose = false ) {
+static inline void
+pushTokensToOpenCloseSubsyntax( int i, std::string_view textv, const SyntaxPattern* subsyntaxInfo,
+								const NonEscapedMatch& rangeSubsyntax, std::vector<T>& tokens,
+								std::vector<size_t>& priorityMap, bool isClose = false ) {
 	const auto& types = isClose && !subsyntaxInfo->endTypes.empty() ? subsyntaxInfo->endTypes
 																	: subsyntaxInfo->types;
 	if ( rangeSubsyntax.numMatches > 1 ) {
@@ -284,40 +284,100 @@ static inline void pushTokensToOpenCloseSubsyntax( int i, std::string_view textv
 			return;
 
 		auto patternType = types[0];
-		int lastStart = patternMatchStart;
-		int lastEnd = patternMatchEnd;
 
 		if ( i < patternMatchStart )
 			pushToken( tokens, patternType, textv.substr( i, patternMatchStart - i ) );
 
-		int start;
-		int end;
-
+		bool overlaps = false;
+		int lastEndCheck = patternMatchStart;
 		for ( int sidx = 1; sidx < rangeSubsyntax.numMatches; sidx++ ) {
-			start = rangeSubsyntax.matches[sidx].start;
-			end = rangeSubsyntax.matches[sidx].end;
-
-			if ( start == -1 || end == -1 )
+			int s = rangeSubsyntax.matches[sidx].start;
+			int e = rangeSubsyntax.matches[sidx].end;
+			if ( s == -1 || e == -1 )
 				continue;
-
-			if ( sidx == 1 && start > lastStart ) {
-				pushToken( tokens, patternType,
-						   textv.substr( patternMatchStart, start - patternMatchStart ) );
-			} else if ( start > lastEnd ) {
-				pushToken( tokens, patternType, textv.substr( lastEnd, start - lastEnd ) );
+			if ( s < lastEndCheck ) {
+				overlaps = true;
+				break;
 			}
+			lastEndCheck = e;
+		}
 
-			auto ss{ textv.substr( start, end - start ) };
+		if ( !overlaps ) {
+			int lastStart = patternMatchStart;
+			int lastEnd = patternMatchEnd;
+			int start;
+			int end;
 
-			pushToken( tokens, sidx < static_cast<int>( types.size() ) ? types[sidx] : types[0],
-					   ss );
+			for ( int sidx = 1; sidx < rangeSubsyntax.numMatches; sidx++ ) {
+				start = rangeSubsyntax.matches[sidx].start;
+				end = rangeSubsyntax.matches[sidx].end;
 
-			if ( sidx == rangeSubsyntax.numMatches - 1 && end < patternMatchEnd ) {
-				pushToken( tokens, patternType, textv.substr( end, patternMatchEnd - end ) );
+				if ( start == -1 || end == -1 )
+					continue;
+
+				if ( sidx == 1 && start > lastStart ) {
+					pushToken( tokens, patternType,
+							   textv.substr( patternMatchStart, start - patternMatchStart ) );
+				} else if ( start > lastEnd ) {
+					pushToken( tokens, patternType, textv.substr( lastEnd, start - lastEnd ) );
+				}
+
+				auto ss{ textv.substr( start, end - start ) };
+
+				pushToken( tokens, sidx < static_cast<int>( types.size() ) ? types[sidx] : types[0],
+						   ss );
+
+				if ( sidx == rangeSubsyntax.numMatches - 1 && end < patternMatchEnd ) {
+					pushToken( tokens, patternType, textv.substr( end, patternMatchEnd - end ) );
+				}
+
+				lastStart = start;
+				lastEnd = end;
 			}
+		} else {
+			int fullMatchLen = patternMatchEnd - patternMatchStart;
+			if ( fullMatchLen > 0 ) {
+				priorityMap.clear();
+				priorityMap.resize( fullMatchLen, 0 );
 
-			lastStart = start;
-			lastEnd = end;
+				for ( int sidx = 1; sidx < rangeSubsyntax.numMatches; sidx++ ) {
+					int start = rangeSubsyntax.matches[sidx].start;
+					int end = rangeSubsyntax.matches[sidx].end;
+
+					if ( start == -1 || end == -1 )
+						continue;
+
+					if ( start < patternMatchStart )
+						start = patternMatchStart;
+					if ( end > patternMatchEnd )
+						end = patternMatchEnd;
+					if ( start >= end )
+						continue;
+
+					for ( int k = start; k < end; ++k ) {
+						priorityMap[k - patternMatchStart] = sidx;
+					}
+				}
+
+				int currentBytePos = 0;
+				while ( currentBytePos < fullMatchLen ) {
+					size_t currentCaptureIndex = priorityMap[currentBytePos];
+					auto currentType =
+						currentCaptureIndex < types.size() ? types[currentCaptureIndex] : types[0];
+
+					int segmentEndBytePos = currentBytePos + 1;
+					while ( segmentEndBytePos < fullMatchLen &&
+							priorityMap[segmentEndBytePos] == currentCaptureIndex ) {
+						segmentEndBytePos++;
+					}
+
+					pushToken( tokens, currentType,
+							   textv.substr( patternMatchStart + currentBytePos,
+											 segmentEndBytePos - currentBytePos ) );
+
+					currentBytePos = segmentEndBytePos;
+				}
+			}
 		}
 	} else {
 		pushToken( tokens, types[0], textv.substr( i, rangeSubsyntax.range.second - i ) );
@@ -373,7 +433,8 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 				if ( shouldCloseSubSyntax->range.second >= matches[0].end ) {
 					if ( !skipSubSyntaxSeparator ) {
 						pushTokensToOpenCloseSubsyntax( startIdx, textv, curState.subsyntaxInfo,
-														*shouldCloseSubSyntax, tokens );
+														*shouldCloseSubSyntax, tokens,
+														priorityMap );
 					}
 					popStack( curState, retState, syntax, *curState.subsyntaxInfo );
 					startIdx = shouldCloseSubSyntax->range.second;
@@ -645,7 +706,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 			if ( activePattern->hasContentScope() ) {
 				if ( endRange.range.first == static_cast<Int64>( startIdx ) ) {
 					pushTokensToOpenCloseSubsyntax( startIdx, textv, activePattern, endRange,
-													tokens, true );
+													tokens, priorityMap, true );
 					popStack( curState, retState, syntax, *activePattern );
 					startIdx = endRange.range.second;
 					triedPatterns.clear(); // Position advanced
@@ -735,7 +796,11 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 					String::utf8Next( strEnd );
 					int dist = strEnd - strStart;
 					if ( dist > 0 ) {
-						pushToken( tokens, activePattern->types[0], text.substr( startIdx, dist ) );
+						pushToken( tokens,
+								   activePattern->contentType != SyntaxStyleEmpty()
+									   ? activePattern->contentType
+									   : activePattern->types[0],
+								   text.substr( startIdx, dist ) );
 						startIdx += dist;
 						triedPatterns.clear(); // Position advanced
 					} else {
@@ -763,7 +828,8 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 						   rangeSubsyntax.range.first < endRange.range.first ) ) {
 						if ( !skipSubSyntaxSeparator ) {
 							pushTokensToOpenCloseSubsyntax( startIdx, textv, curState.subsyntaxInfo,
-															rangeSubsyntax, tokens, true );
+															rangeSubsyntax, tokens, priorityMap,
+															true );
 						}
 						popStack( curState, retState, syntax, *curState.subsyntaxInfo );
 						startIdx = rangeSubsyntax.range.second;
@@ -775,7 +841,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 				if ( !skip ) {
 					if ( endRange.range.first != -1 ) {
 						pushTokensToOpenCloseSubsyntax( startIdx, textv, activePattern, endRange,
-														tokens, true );
+														tokens, priorityMap, true );
 						popStack( curState, retState, syntax, *activePattern );
 						startIdx = endRange.range.second;
 						triedPatterns.clear(); // Position advanced
@@ -859,7 +925,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 		if ( !matched && shouldCloseSubSyntax ) {
 			if ( !skipSubSyntaxSeparator ) {
 				pushTokensToOpenCloseSubsyntax( startIdx, textv, curState.subsyntaxInfo,
-												*shouldCloseSubSyntax, tokens );
+												*shouldCloseSubSyntax, tokens, priorityMap );
 			}
 			popStack( curState, retState, syntax, *curState.subsyntaxInfo );
 			startIdx = shouldCloseSubSyntax->range.second;
