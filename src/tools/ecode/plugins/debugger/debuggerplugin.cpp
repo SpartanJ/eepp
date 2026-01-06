@@ -923,6 +923,10 @@ void DebuggerPlugin::openExpressionMenu( ModelIndex idx ) {
 					mExpressionsHolder->addChild(
 						std::make_shared<ModelVariableNode>( expression, 0 ) );
 					msgBox->closeWindow();
+
+					if ( mDebuggingState == StatusDebuggerController::State::Paused && mListener ) {
+						mListener->evaluateExpression( expression );
+					}
 				}
 			} );
 		}

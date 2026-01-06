@@ -81,6 +81,10 @@ class DebuggerClientListener : public DebuggerClient::Listener {
 	void gotoTargets( const Source& source, const int line, const std::vector<GotoTarget>& targets,
 					  const SessionId& sessionId );
 
+	void evaluateExpression( const std::string& expression );
+
+	void evaluateExpressions();
+
 	bool isRemote() const;
 
 	bool isStopped() const;

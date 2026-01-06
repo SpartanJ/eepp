@@ -242,6 +242,8 @@ class UIBuildStep : public UILinearLayout {
 												findByClass( "reuse_previous_terminal" ) );
 		mDataBindHolder += UIDataBindBool::New( &mStep->useStatusBarTerminal,
 												findByClass( "use_statusbar_terminal" ) );
+		mDataBindHolder += UIDataBindBool::New( &mStep->stripAnsiCodes,
+												findByClass( "strip_ansi_codes" ) );
 	}
 
   protected:
@@ -278,11 +280,12 @@ class UIBuildStep : public UILinearLayout {
 			<TextView lh="mp" min-width="100dp" text="@string(working_dir, Working Directory)" focusable="false" />
 			<Input class="input_working_dir" lw="0" lw8="1" />
 		</hbox>
-		<hbox lw="mp">
+		<StackLayout lw="mp">
 			<CheckBox class="run_in_terminal" text="@string(run_in_terminal, Run in terminal)" visible="false" />
 			<CheckBox margin-left="8dp" class="reuse_previous_terminal" text="@string(reuse_previous_terminal, Reuse previous terminal)" visible="false" />
 			<CheckBox margin-left="8dp" class="use_statusbar_terminal" text="@string(use_statusbar_terminal, Use status bar terminal)" visible="false" />
-		</hbox>
+			<CheckBox margin-left="8dp" class="strip_ansi_codes" text="@string(strip_ansi_codes, Strip ANSI codes)" visible="false" />
+		</StackLayout>
 	</vbox>
 )xml";
 
@@ -298,12 +301,15 @@ class UIBuildStep : public UILinearLayout {
 			auto useStatusBarTerminal =
 				findByClass( "use_statusbar_terminal" )->asType<UICheckBox>();
 
+			auto stripAnsiCodes = findByClass( "strip_ansi_codes" )->asType<UICheckBox>();
+
 			runInTerminal->setVisible( true );
 			runInTerminal->setChecked( buildStep->runInTerminal );
 			runInTerminal->on( Event::OnValueChange, [reusePreviousTerminal, runInTerminal,
-													  useStatusBarTerminal]( auto ) {
+													  useStatusBarTerminal, stripAnsiCodes]( auto ) {
 				reusePreviousTerminal->setEnabled( runInTerminal->isChecked() );
 				useStatusBarTerminal->setEnabled( runInTerminal->isChecked() );
+				stripAnsiCodes->setEnabled( !runInTerminal->isChecked() );
 				if ( !runInTerminal->isChecked() ) {
 					reusePreviousTerminal->setChecked( false );
 					useStatusBarTerminal->setChecked( false );
@@ -317,6 +323,10 @@ class UIBuildStep : public UILinearLayout {
 			useStatusBarTerminal->setVisible( true );
 			useStatusBarTerminal->setEnabled( buildStep->runInTerminal );
 			useStatusBarTerminal->setChecked( buildStep->useStatusBarTerminal );
+
+			stripAnsiCodes->setVisible( true );
+			stripAnsiCodes->setEnabled( !buildStep->runInTerminal );
+			stripAnsiCodes->setChecked( buildStep->stripAnsiCodes );
 		}
 
 		findByClass( "details_but" )->onClick( [this]( const MouseEvent* event ) {
@@ -447,6 +457,7 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 				<vbox lw="mp" lh="wc" class="build_environment">
 					<TextView class="subtitle" text="@string(build_environment, Build Environment)" focusable="false" />
 					<CheckBox id="clear_sys_env" text="@string(clear_system_environment, Clear System Environment)" />
+					<CheckBox id="output_parsers_strip_ansi_codes" text="@string(strip_ansi_codes_in_build_oupput, Strip ANSI codes in build output)" />
 					<TextView class="subtitle" text="@string(custom_environment_variables, Custom Environment Variables)" focusable="false" />
 					<hbox lw="mp" lh="wc">
 						<TableView id="table_envs" lw="0" lw8="1" lh="150dp" />
@@ -613,6 +624,8 @@ UIBuildSettings::UIBuildSettings(
 
 	mDataBindHolder +=
 		UIDataBindBool::New( &mBuild.mConfig.clearSysEnv, find<UIWidget>( "clear_sys_env" ) );
+	mDataBindHolder += UIDataBindBool::New( &mBuild.mConfig.stripAnsiCodes,
+											find<UICheckBox>( "output_parsers_strip_ansi_codes" ) );
 
 	bindTable( "table_envs", "env", mBuild.mEnvs );
 	bindTable( "table_vars", "var", mBuild.mVars );

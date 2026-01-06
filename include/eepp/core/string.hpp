@@ -1171,6 +1171,10 @@ class EE_API String {
 
 	static size_t countLines( String::View text );
 
+	/** Strips any ANSI code found in the string.
+	 *	@param str The string to strip
+	 */
+	static void stripAnsiCodes( std::string& str );
   private:
 	friend EE_API bool operator==( const String& left, const String& right );
 	friend EE_API bool operator<( const String& left, const String& right );

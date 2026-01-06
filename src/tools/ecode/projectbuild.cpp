@@ -113,12 +113,15 @@ json ProjectBuild::serialize( const ProjectBuild::Map& builds ) {
 					step["reuse_previous_terminal"] = run->reusePreviousTerminal;
 				if ( run->useStatusBarTerminal )
 					step["use_statusbar_terminal"] = run->useStatusBarTerminal;
+				if ( run->stripAnsiCodes )
+					step["strip_ansi_codes"] = run->stripAnsiCodes;
 				jrun.push_back( step );
 			}
 		}
 
 		bj["build_types"] = curBuild.buildTypes();
 		bj["config"]["clear_sys_env"] = curBuild.getConfig().clearSysEnv;
+		bj["config"]["strip_ansi_codes"] = curBuild.getConfig().stripAnsiCodes;
 		bj["os"] = curBuild.os();
 
 		if ( !curBuild.vars().empty() ) {
@@ -513,6 +516,7 @@ ProjectBuild::Map ProjectBuild::deserialize( const json& j, const std::string& p
 
 		if ( buildObj.contains( "config" ) && buildObj["config"].is_object() ) {
 			b.mConfig.clearSysEnv = buildObj.value( "clear_sys_env", false );
+			b.mConfig.stripAnsiCodes = buildObj.value( "strip_ansi_codes", false );
 		}
 
 		if ( buildObj.contains( "var" ) && buildObj["var"].is_object() ) {
@@ -563,6 +567,7 @@ ProjectBuild::Map ProjectBuild::deserialize( const json& j, const std::string& p
 				rstep->runInTerminal = step.value( "run_in_terminal", false );
 				rstep->reusePreviousTerminal = step.value( "reuse_previous_terminal", false );
 				rstep->useStatusBarTerminal = step.value( "use_statusbar_terminal", false );
+				rstep->stripAnsiCodes = step.value( "strip_ansi_codes", false );
 				b.mRun.emplace_back( std::move( rstep ) );
 			}
 		}
@@ -1020,8 +1025,11 @@ void ProjectBuildManager::runBuild( const std::string& buildName, const std::str
 			do {
 				bytesRead = mProcess->readStdOut( buffer );
 				std::string data( buffer.substr( 0, bytesRead ) );
-				if ( progressFn )
+				if ( progressFn ) {
+					if ( cmd.config.stripAnsiCodes )
+						String::stripAnsiCodes( data );
 					progressFn( progress, std::move( data ), &cmd );
+				}
 			} while ( bytesRead != 0 && mProcess->isAlive() && !mShuttingDown && !mCancelBuild );
 
 			if ( mShuttingDown || mCancelBuild ) {
@@ -1130,8 +1138,11 @@ void ProjectBuildManager::runApp( const ProjectBuildCommand& cmd, const ProjectB
 		do {
 			bytesRead = mProcessRun->readStdOut( buffer );
 			std::string data( buffer.substr( 0, bytesRead ) );
-			if ( progressFn )
+			if ( progressFn ) {
+				if ( cmd.stripAnsiCodes )
+					String::stripAnsiCodes( data );
 				progressFn( 0, std::move( data ), &cmd );
+			}
 		} while ( bytesRead != 0 && mProcessRun->isAlive() && !mShuttingDown && !mCancelRun );
 
 		if ( mShuttingDown )

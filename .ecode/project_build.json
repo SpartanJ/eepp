@@ -24,7 +24,8 @@
       }
     ],
     "config": {
-      "clear_sys_env": false
+      "clear_sys_env": false,
+      "strip_ansi_codes": false
     },
     "os": [
       "linux"
@@ -87,7 +88,8 @@
       }
     ],
     "config": {
-      "clear_sys_env": false
+      "clear_sys_env": false,
+      "strip_ansi_codes": false
     },
     "os": [
       "macos"
@@ -141,7 +143,8 @@
       }
     ],
     "config": {
-      "clear_sys_env": false
+      "clear_sys_env": false,
+      "strip_ansi_codes": false
     },
     "os": [
       "windows"
@@ -191,7 +194,8 @@
       }
     ],
     "config": {
-      "clear_sys_env": false
+      "clear_sys_env": false,
+      "strip_ansi_codes": false
     },
     "os": [
       "linux"
@@ -360,7 +364,8 @@
       }
     ],
     "config": {
-      "clear_sys_env": false
+      "clear_sys_env": false,
+      "strip_ansi_codes": false
     },
     "os": [
       "linux"
@@ -440,7 +445,8 @@
       }
     ],
     "config": {
-      "clear_sys_env": false
+      "clear_sys_env": false,
+      "strip_ansi_codes": false
     },
     "os": [
       "linux"
@@ -515,7 +521,8 @@
       }
     ],
     "config": {
-      "clear_sys_env": false
+      "clear_sys_env": false,
+      "strip_ansi_codes": false
     },
     "os": [
       "macos"
@@ -575,7 +582,8 @@
       }
     ],
     "config": {
-      "clear_sys_env": false
+      "clear_sys_env": false,
+      "strip_ansi_codes": false
     },
     "os": [
       "windows"

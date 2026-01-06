@@ -60,7 +60,7 @@ class LinterPlugin : public Plugin {
 				 "Use static code analysis tool used to flag programming errors, bugs, "
 				 "stylistic errors, and suspicious constructs.",
 				 LinterPlugin::New,
-				 { 0, 2, 8 },
+				 { 0, 2, 9 },
 				 LinterPlugin::NewSync };
 	}
 

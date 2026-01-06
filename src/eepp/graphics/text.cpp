@@ -914,7 +914,7 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 			}
 			maxWidth = eemax( width, maxWidth );
 		}
-		return width;
+		return maxWidth;
 	}
 
 #ifdef EE_TEXT_SHAPER_ENABLED

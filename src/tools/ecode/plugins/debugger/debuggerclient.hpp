@@ -83,6 +83,7 @@ class DebuggerClient {
 		virtual void gotoTargets( const Source& source, const int line,
 								  const std::vector<GotoTarget>& targets,
 								  const SessionId& sessionId ) = 0;
+
 	};
 
 	virtual bool start() = 0;

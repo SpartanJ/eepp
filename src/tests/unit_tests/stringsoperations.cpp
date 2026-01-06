@@ -163,3 +163,50 @@ UTEST( String, isLatin1HighBit ) {
 	strHigh += (String::StringBaseType)0x80000000;
 	EXPECT_FALSE( strHigh.isLatin1() );
 }
+
+UTEST( String, stripAnsiCodes ) {
+	// 1. Basic color codes
+	std::string redBold = "\x1B[1;31mHello\x1B[0m";
+	String::stripAnsiCodes( redBold );
+	EXPECT_STREQ( "Hello", redBold.c_str() );
+
+	// 2. Cursor movement (CSI)
+	std::string clearScreen = "\x1B[2JMove";
+	String::stripAnsiCodes( clearScreen );
+	EXPECT_STREQ( "Move", clearScreen.c_str() );
+
+	// 3. No codes
+	std::string plain = "Just text";
+	String::stripAnsiCodes( plain );
+	EXPECT_STREQ( "Just text", plain.c_str() );
+
+	// 4. Multiple mixed codes
+	std::string complex = "A\x1B[32mB\x1B[33mC\x1B[0m";
+	String::stripAnsiCodes( complex );
+	EXPECT_STREQ( "ABC", complex.c_str() );
+
+	// 5. Code at end
+	std::string endCode = "End\x1B[K";
+	String::stripAnsiCodes( endCode );
+	EXPECT_STREQ( "End", endCode.c_str() );
+
+	// 6. Code at start
+	std::string startCode = "\x1B[HStart";
+	String::stripAnsiCodes( startCode );
+	EXPECT_STREQ( "Start", startCode.c_str() );
+
+	// 7. Long string (trigger SIMD paths)
+	std::string longStr;
+	std::string expected;
+	for ( int i = 0; i < 1000; i++ ) {
+		longStr += "a\x1B[31mb";
+		expected += "ab";
+	}
+	String::stripAnsiCodes( longStr );
+	EXPECT_STREQ( expected.c_str(), longStr.c_str() );
+
+	// 8. Adjacent codes
+	std::string adjacent = "Double\x1B[1m\x1B[31mColor";
+	String::stripAnsiCodes( adjacent );
+	EXPECT_STREQ( "DoubleColor", adjacent.c_str() );
+}

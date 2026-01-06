@@ -29,15 +29,25 @@
 #include <sstream>
 #endif
 
+#ifdef EE_ARCH_X86_64
+#if defined( _MSC_VER )
+#define COMPILER_MSVC 1
+#include <intrin.h>
+#elif ( defined( __GNUC__ ) || defined( __clang__ ) )
+#define COMPILER_GCC_CLANG 1
+#include <cpuid.h>
+#endif
+#endif
+
 #if defined( EE_ARCH_X86_64 )
-	#if defined( _MSC_VER )
-		#include <intrin.h>
-	#elif defined( __GNUC__ ) || defined( __clang__ )
-		#include <emmintrin.h>
-		#include <immintrin.h>
-	#endif
+#if defined( _MSC_VER )
+#include <intrin.h>
+#elif defined( __GNUC__ ) || defined( __clang__ )
+#include <emmintrin.h>
+#include <immintrin.h>
+#endif
 #elif defined( EE_ARCH_ARM64 )
-	#include <arm_neon.h>
+#include <arm_neon.h>
 #endif
 
 namespace EE {
@@ -1388,13 +1398,11 @@ bool String::contains( const String& needle ) const {
 	return String::contains( *this, needle );
 }
 
-namespace {
-
 #ifdef EE_ARCH_X86_64
 #if defined( __GNUC__ ) || defined( __clang__ )
 __attribute__( ( target( "avx2" ) ) )
 #endif
-bool isAsciiAVX2( const char32_t* data, size_t len, uint32_t limit ) {
+static bool isAsciiAVX2( const char32_t* data, size_t len, uint32_t limit ) {
 	const char32_t* end = data + len;
 	const __m256i maskVec = _mm256_set1_epi32( ~limit );
 
@@ -1415,7 +1423,7 @@ bool isAsciiAVX2( const char32_t* data, size_t len, uint32_t limit ) {
 #endif
 
 #ifdef EE_ARCH_ARM64
-bool isAsciiNEON( const char32_t* data, size_t len, uint32_t limit ) {
+static bool isAsciiNEON( const char32_t* data, size_t len, uint32_t limit ) {
 	const char32_t* end = data + len;
 	const uint32x4_t maskVec = vdupq_n_u32( ~limit );
 
@@ -1435,8 +1443,6 @@ bool isAsciiNEON( const char32_t* data, size_t len, uint32_t limit ) {
 	return true;
 }
 #endif
-
-} // namespace
 
 template <typename StringType, auto Limit = 127>
 static inline bool isAsciiTpl( const StringType& str ) {
@@ -2474,6 +2480,198 @@ bool String::isSentenceBoundary( std::size_t position ) const {
 
 bool String::isSentenceBoundary( String::View string, std::size_t position ) {
 	return unicode::is_sentence_boundary( string.data(), string.size(), position );
+}
+
+void strip_ansi_scalar( std::string& str ) {
+	if ( str.empty() )
+		return;
+
+	char* data = &str[0];
+	const size_t len = str.size();
+	size_t read_idx = 0;
+	size_t write_idx = 0;
+
+	while ( read_idx < len ) {
+		// Fast scan for ESC
+		if ( unlikely( data[read_idx] == '\x1B' ) ) {
+			// Check for CSI sequence: ESC + [
+			if ( read_idx + 1 < len && data[read_idx + 1] == '[' ) {
+				size_t scan = read_idx + 2;
+				// Scan for the terminator byte (0x40 - 0x7E)
+				while ( scan < len ) {
+					unsigned char c = static_cast<unsigned char>( data[scan] );
+					if ( c >= 0x40 && c <= 0x7E ) {
+						scan++; // Include the terminator
+						break;
+					}
+					scan++;
+				}
+				read_idx = scan;
+				continue;
+			}
+		}
+
+		// Copy char if indices diverged
+		if ( read_idx != write_idx ) {
+			data[write_idx] = data[read_idx];
+		}
+		write_idx++;
+		read_idx++;
+	}
+	str.resize( write_idx );
+}
+
+#ifdef EE_ARCH_X86
+
+// Force AVX2 generation for this function on GCC/Clang
+#if defined( COMPILER_GCC_CLANG )
+__attribute__( ( target( "avx2" ) ) )
+#endif
+void strip_ansi_avx2( std::string& str ) {
+	if ( str.empty() )
+		return;
+
+	char* data = &str[0];
+	const size_t len = str.size();
+	size_t read_idx = 0;
+	size_t write_idx = 0;
+
+	const __m256i esc_vec = _mm256_set1_epi8( '\x1B' );
+
+	// Process 32-byte chunks
+	while ( read_idx + 32 <= len ) {
+		__m256i chunk = _mm256_loadu_si256( reinterpret_cast<const __m256i*>( data + read_idx ) );
+		__m256i cmp = _mm256_cmpeq_epi8( chunk, esc_vec );
+		int mask = _mm256_movemask_epi8( cmp );
+
+		if ( likely( mask == 0 ) ) {
+			if ( read_idx != write_idx ) {
+				_mm256_storeu_si256( reinterpret_cast<__m256i*>( data + write_idx ), chunk );
+			}
+			read_idx += 32;
+			write_idx += 32;
+		} else {
+			// Found ESC. Let the scalar loop handle the complexity of finding EXACT location
+			// and parsing the variable length ANSI code.
+			break;
+		}
+	}
+
+	// Finish remaining with Scalar Logic
+	while ( read_idx < len ) {
+		if ( unlikely( data[read_idx] == '\x1B' ) ) {
+			if ( read_idx + 1 < len && data[read_idx + 1] == '[' ) {
+				size_t scan = read_idx + 2;
+				while ( scan < len ) {
+					unsigned char c = static_cast<unsigned char>( data[scan] );
+					if ( c >= 0x40 && c <= 0x7E ) {
+						scan++;
+						break;
+					}
+					scan++;
+				}
+				read_idx = scan;
+				continue;
+			}
+		}
+		if ( read_idx != write_idx ) {
+			data[write_idx] = data[read_idx];
+		}
+		write_idx++;
+		read_idx++;
+	}
+	str.resize( write_idx );
+}
+#endif // ARCH_X86
+
+#ifdef EE_ARCH_ARM64
+
+void strip_ansi_neon( std::string& str ) {
+	if ( str.empty() )
+		return;
+
+	char* data = &str[0];
+	const size_t len = str.size();
+	size_t read_idx = 0;
+	size_t write_idx = 0;
+
+	const uint8x16_t esc_vec = vdupq_n_u8( '\x1B' );
+
+	// Process 16-byte chunks (NEON register size is 128-bit)
+	while ( read_idx + 16 <= len ) {
+		// Load 16 bytes
+		uint8x16_t chunk = vld1q_u8( reinterpret_cast<const uint8_t*>( data + read_idx ) );
+
+		// Compare with ESC (0xFF if equal, 0x00 if not)
+		uint8x16_t cmp = vceqq_u8( chunk, esc_vec );
+
+		// Check if any byte matched.
+		// vmaxvq_u32 checks 32-bit lanes, but if any byte is 0xFF, the 32-bit lane will be
+		// non-zero. This is a fast reduction instruction on AArch64.
+		uint32_t has_esc = vmaxvq_u32( vreinterpretq_u32_u8( cmp ) );
+
+		if ( likely( has_esc == 0 ) ) {
+			// No escape codes found
+			if ( read_idx != write_idx ) {
+				vst1q_u8( reinterpret_cast<uint8_t*>( data + write_idx ), chunk );
+			}
+			read_idx += 16;
+			write_idx += 16;
+		} else {
+			// Found ESC. Break to scalar to handle specific parsing.
+			break;
+		}
+	}
+
+	// Scalar fallback for the rest
+	while ( read_idx < len ) {
+		if ( unlikely( data[read_idx] == '\x1B' ) ) {
+			if ( read_idx + 1 < len && data[read_idx + 1] == '[' ) {
+				size_t scan = read_idx + 2;
+				while ( scan < len ) {
+					unsigned char c = static_cast<unsigned char>( data[scan] );
+					if ( c >= 0x40 && c <= 0x7E ) {
+						scan++;
+						break;
+					}
+					scan++;
+				}
+				read_idx = scan;
+				continue;
+			}
+		}
+		if ( read_idx != write_idx ) {
+			data[write_idx] = data[read_idx];
+		}
+		write_idx++;
+		read_idx++;
+	}
+	str.resize( write_idx );
+}
+#endif // EE_ARCH_ARM64
+
+typedef void ( *stripper_func )( std::string& );
+
+stripper_func resolve_ansi_strip_fn() {
+#ifdef EE_ARCH_ARM64
+	return strip_ansi_neon;
+#endif
+
+#ifdef EE_ARCH_X86
+	if ( CPU::hasAVX2() ) {
+		return strip_ansi_avx2;
+	}
+#endif
+
+	return strip_ansi_scalar;
+}
+
+/** Strips any ANSI code found in the string.
+ *	@param str The string to strip
+ */
+void String::stripAnsiCodes( std::string& str ) {
+	static const stripper_func implementation = resolve_ansi_strip_fn();
+	implementation( str );
 }
 
 } // namespace EE

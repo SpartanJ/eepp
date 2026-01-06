@@ -107,6 +107,7 @@ struct ProjectBuildStep {
 	bool runInTerminal{ false };
 	bool reusePreviousTerminal{ false };
 	bool useStatusBarTerminal{ false };
+	bool stripAnsiCodes{ false };
 };
 
 using ProjectBuildSteps = std::vector<std::unique_ptr<ProjectBuildStep>>;
@@ -114,6 +115,7 @@ using ProjectBuildKeyVal = std::vector<std::pair<std::string, std::string>>;
 
 struct ProjectBuildConfig {
 	bool clearSysEnv{ false };
+	bool stripAnsiCodes{ false };
 };
 
 enum class ProjectOutputParserTypes { Error = 0, Warning = 1, Notice = 2 };

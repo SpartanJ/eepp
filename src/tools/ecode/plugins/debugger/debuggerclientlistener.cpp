@@ -439,35 +439,41 @@ void DebuggerClientListener::stackTrace( const int threadId, StackTraceInfo&& st
 
 	mStackModel->setStack( std::move( stack ) );
 
-	for ( const auto& expression : mPlugin->mExpressions ) {
-		mClient->evaluate(
-			expression, "watch", getCurrentFrameId(),
-			[this, expression]( const std::string&, const std::optional<EvaluateInfo>& info ) {
-				Variable var;
-				var.evaluateName = expression;
-				var.name = std::move( expression );
-				if ( info ) {
-					var.value = info->result;
-					var.type = info->type;
-					var.variablesReference = info->variablesReference;
-					var.indexedVariables = info->indexedVariables;
-					var.namedVariables = info->namedVariables;
-					var.memoryReference = info->memoryReference;
-				}
-				mPlugin->mExpressionsHolder->upsertRootChild( std::move( var ) );
-				ExpandedState::Location location;
-				{
-					Lock l( mMutex );
-					if ( !mCurrentScopePos.has_value() )
-						return;
-					location = { mCurrentScopePos->first, mCurrentScopePos->second,
-								 mCurrentFrameId };
-				}
-				mPlugin->mExpressionsHolder->restoreExpandedState(
-					location, mClient, getStatusDebuggerController()->getUIExpressions(), true,
-					mUnstableFrameId );
-			} );
-	}
+	evaluateExpressions();
+}
+
+void DebuggerClientListener::evaluateExpression( const std::string& expression ) {
+	mClient->evaluate(
+		expression, "watch", getCurrentFrameId(),
+		[this, expression]( const std::string&, const std::optional<EvaluateInfo>& info ) {
+			Variable var;
+			var.evaluateName = expression;
+			var.name = std::move( expression );
+			if ( info ) {
+				var.value = info->result;
+				var.type = info->type;
+				var.variablesReference = info->variablesReference;
+				var.indexedVariables = info->indexedVariables;
+				var.namedVariables = info->namedVariables;
+				var.memoryReference = info->memoryReference;
+			}
+			mPlugin->mExpressionsHolder->upsertRootChild( std::move( var ) );
+			ExpandedState::Location location;
+			{
+				Lock l( mMutex );
+				if ( !mCurrentScopePos.has_value() )
+					return;
+				location = { mCurrentScopePos->first, mCurrentScopePos->second, mCurrentFrameId };
+			}
+			mPlugin->mExpressionsHolder->restoreExpandedState(
+				location, mClient, getStatusDebuggerController()->getUIExpressions(), true,
+				mUnstableFrameId );
+		} );
+}
+
+void DebuggerClientListener::evaluateExpressions() {
+	for ( const auto& expression : mPlugin->mExpressions )
+		evaluateExpression( expression );
 }
 
 void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&& scopes,

@@ -21,7 +21,7 @@ void addCPP() {
 			  { { "/%*", "%*/" }, "comment" },
 			  { { "\"", "[\"\n]", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },
-			  { { "(#%s*include)%s+([<%\"][%w%d%.%\\%/%_%-%+]+[>%\"])" },
+			  { { "%s*(#%s*include)%s+([<%\"][%w%d%.%\\%/%_%-%+]+[>%\"])" },
 				{ "keyword", "keyword", "literal" } },
 			  { { "cpp_number_parser" }, "number", "", SyntaxPatternMatchType::Parser },
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
