@@ -2554,7 +2554,8 @@ Vector2d UICodeEditor::getTextPositionOffset( const TextPosition& position,
 					position.column() - info.range.start().column(), mFont, getCharacterSize(),
 					partialLine, mFontStyleConfig.Style, mTabWidth,
 					mFontStyleConfig.OutlineThickness, mTabStops ? 0 : std::optional<Float>(),
-					false, mDoc->line( position.line() ).getTextHints() | getWidgetTextDrawHints() )
+					false, mDoc->line( position.line() ).getTextHints() | getWidgetTextDrawHints(),
+					mTextDirection )
 					.x;
 			if ( visualizeNewLine && allowVisualLineEnd &&
 				 position.column() == (Int64)mDoc->line( position.line() ).getText().size() - 1 )
@@ -2588,7 +2589,8 @@ Vector2d UICodeEditor::getTextPositionOffset( const TextPosition& position,
 				isLastChar ? position.column() - 1 : position.column(), mFont, getCharacterSize(),
 				mDoc->line( position.line() ).getText(), mFontStyleConfig.Style, mTabWidth,
 				mFontStyleConfig.OutlineThickness, mTabStops ? 0 : std::optional<Float>(), false,
-				mDoc->line( position.line() ).getTextHints() | getWidgetTextDrawHints() )
+				mDoc->line( position.line() ).getTextHints() | getWidgetTextDrawHints(),
+				mTextDirection )
 				.x;
 		if ( visualizeNewLine && isLastChar )
 			x += getGlyphWidth();
@@ -2650,7 +2652,7 @@ Float UICodeEditor::getTextWidth( const StringType& line, bool fromMonospaceLine
 								  std::optional<Float> tabOffset, Uint32 textHints ) const {
 	if ( !fromMonospaceLine && isNotMonospace() ) {
 		return Text::getTextWidth( mFont, getCharacterSize(), line, mFontStyleConfig.Style,
-								   mTabWidth, 0.f, textHints, tabOffset );
+								   mTabWidth, 0.f, textHints, mTextDirection, tabOffset );
 	}
 
 	Float glyphWidth = getGlyphWidth();
@@ -3228,7 +3230,8 @@ Int64 UICodeEditor::getColFromXOffset( VisibleIndex visibleIndex, const Float& x
 					   Vector2i( eemax( -xOffset + x, 0.f ), 0 ), true, mFont, getCharacterSize(),
 					   line, mFontStyleConfig.Style, mTabWidth, 0.f,
 					   mTabStops ? 0 : std::optional<Float>(),
-					   mDoc->line( pos.line() ).getTextHints() | getWidgetTextDrawHints() );
+					   mDoc->line( pos.line() ).getTextHints() | getWidgetTextDrawHints(),
+					   mTextDirection );
 		}
 
 		Int64 len = line.length();
@@ -3255,7 +3258,7 @@ Int64 UICodeEditor::getColFromXOffset( VisibleIndex visibleIndex, const Float& x
 		return Text::findCharacterFromPos(
 			Vector2i( x, 0 ), true, mFont, getCharacterSize(), mDoc->line( pos.line() ).getText(),
 			mFontStyleConfig.Style, mTabWidth, 0.f, mTabStops ? 0 : std::optional<Float>(),
-			mDoc->line( pos.line() ).getTextHints() | getWidgetTextDrawHints() );
+			mDoc->line( pos.line() ).getTextHints() | getWidgetTextDrawHints(), mTextDirection );
 	}
 
 	const String& line = mDoc->line( pos.line() ).getText();
@@ -4025,7 +4028,7 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 
 					position.x +=
 						Text::draw( text, { position.x, position.y + lineOffset }, fontStyle,
-									mTabWidth, drawHints, whitespaceDisplayConfig )
+									mTabWidth, drawHints, mTextDirection, whitespaceDisplayConfig )
 							.getWidth();
 				}
 
@@ -4100,18 +4103,21 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 							size = Text::draw(
 								text.substr( start, end ),
 								{ position.x + start * getGlyphWidth(), position.y + lineOffset },
-								fontStyle, mTabWidth, drawHints, whitespaceDisplayConfig );
+								fontStyle, mTabWidth, drawHints, mTextDirection,
+								whitespaceDisplayConfig );
 							if ( minimumCharsToCoverScreen == end )
 								break;
 						}
 					} else {
 						size = Text::draw( text.substr( 0, eemin( curCharsWidth, maxWidth ) ),
 										   { position.x, position.y + lineOffset }, fontStyle,
-										   mTabWidth, drawHints, whitespaceDisplayConfig );
+										   mTabWidth, drawHints, mTextDirection,
+										   whitespaceDisplayConfig );
 					}
 				} else {
-					size = Text::draw( text, { position.x, position.y + lineOffset }, fontStyle,
-									   mTabWidth, drawHints, whitespaceDisplayConfig );
+					size =
+						Text::draw( text, { position.x, position.y + lineOffset }, fontStyle,
+									mTabWidth, drawHints, mTextDirection, whitespaceDisplayConfig );
 				}
 
 				if ( !isMonospace )
@@ -5491,6 +5497,17 @@ void UICodeEditor::setKerningEnabled( bool enabled ) {
 
 bool UICodeEditor::isKerningEnabled() const {
 	return mKerningEnabled;
+}
+
+void UICodeEditor::setTextDirection( TextDirection direction ) {
+	if ( direction == mTextDirection )
+		return;
+	mTextDirection = direction;
+	invalidateDraw();
+}
+
+TextDirection UICodeEditor::getTextDirection() const {
+	return mTextDirection;
 }
 
 }} // namespace EE::UI

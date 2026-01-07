@@ -59,7 +59,8 @@ static SBScriptLocator* getThreadLocalSbScriptLocator() {
 
 // Split string into segments with uniform text properties
 template <typename Callable>
-static void segmentString( TextLayout& result, String::View input, Callable cb ) {
+static void segmentString( TextLayout& result, String::View input, Callable cb,
+						   TextDirection direction ) {
 	const SBCodepointSequence codepointSequence{
 		SBStringEncodingUTF32, static_cast<const void*>( input.data() ), input.size() };
 	auto* const scriptLocator = getThreadLocalSbScriptLocator();
@@ -81,8 +82,24 @@ static void segmentString( TextLayout& result, String::View input, Callable cb )
 		if ( separatorLength < paragraphLength )
 			paragraphLength -= separatorLength;
 
-		auto* const paragraph = SBAlgorithmCreateParagraph( algorithm, paragraphOffset,
-															paragraphLength, SBLevelDefaultLTR );
+		SBLevel level = 0;
+
+		switch ( direction ) {
+			case TextDirection::LeftToRight:
+				level = 0;
+				break;
+			case TextDirection::RightToLeft:
+				level = 1;
+				break;
+			case TextDirection::TopToBottom:
+			case TextDirection::BottomToTop:
+			case TextDirection::Unspecified:
+				level = SBLevelDefaultLTR;
+				break;
+		}
+
+		auto* const paragraph =
+			SBAlgorithmCreateParagraph( algorithm, paragraphOffset, paragraphLength, level );
 		auto* const line = SBParagraphCreateLine( paragraph, paragraphOffset, paragraphLength );
 		const auto runCount = SBLineGetRunCount( line );
 		const auto* runArray = SBLineGetRunsPtr( line );
@@ -126,71 +143,77 @@ static void segmentString( TextLayout& result, String::View input, Callable cb )
 
 template <typename Callable>
 static void shapeAndRun( TextLayout& result, const String& string, FontTrueType* font,
-						 Uint32 characterSize, Uint32 style, Float outlineThickness, Callable cb ) {
+						 Uint32 characterSize, Uint32 style, Float outlineThickness,
+						 TextDirection baseDirection, Callable cb ) {
 	String::View input = string.view();
 	hb_buffer_t* hbBuffer = getThreadLocalHbBuffer();
 
-	segmentString( result, input, [&]( const TextSegment& segment ) {
-		TextShapeRun run( input.substr( segment.offset, segment.length ), font, characterSize,
-						  style, outlineThickness, segment.direction == HB_DIRECTION_RTL );
+	segmentString(
+		result, input,
+		[&]( const TextSegment& segment ) {
+			TextShapeRun run( input.substr( segment.offset, segment.length ), font, characterSize,
+							  style, outlineThickness, segment.direction == HB_DIRECTION_RTL );
 
-		while ( run.hasNext() ) {
-			FontTrueType* font = run.font();
-			if ( font == nullptr ) { // empty line
-				run.next();
-				continue;
+			while ( run.hasNext() ) {
+				FontTrueType* font = run.font();
+				if ( font == nullptr ) { // empty line
+					run.next();
+					continue;
+				}
+				String::View curRun( run.curRun() );
+				font->setCurrentSize( characterSize );
+				hb_buffer_reset( hbBuffer );
+				hb_buffer_set_cluster_level( hbBuffer,
+											 HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS );
+				hb_buffer_add_utf32( hbBuffer, (Uint32*)curRun.data(), curRun.size(), 0,
+									 curRun.size() );
+
+				hb_buffer_set_direction( hbBuffer, segment.direction );
+				hb_buffer_set_script( hbBuffer, segment.script );
+				hb_buffer_guess_segment_properties( hbBuffer );
+				hb_segment_properties_t props;
+				hb_buffer_get_segment_properties( hbBuffer, &props );
+				std::uint32_t featuresEnabled = !isSimpleScript( segment.script ) ? 1 : 0;
+
+				// We use our own kerning algo
+				const hb_feature_t features[] = {
+					hb_feature_t{ HB_TAG( 'k', 'e', 'r', 'n' ), featuresEnabled,
+								  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
+					hb_feature_t{ HB_TAG( 'l', 'i', 'g', 'a' ), featuresEnabled,
+								  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
+					hb_feature_t{ HB_TAG( 'c', 'l', 'i', 'g' ), featuresEnabled,
+								  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
+					hb_feature_t{ HB_TAG( 'd', 'l', 'i', 'g' ), featuresEnabled,
+								  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
+				};
+
+				// whitelist cross-platforms shapers only
+				static const char* shaper_list[] = { "ot", "graphite2", "fallback", nullptr };
+
+				if ( !font || !font->hb() ) {
+					eeASSERT( font && font->hb() );
+					break;
+				}
+
+				hb_shape_full( static_cast<hb_font_t*>( font->hb() ), hbBuffer, features,
+							   eeARRAY_SIZE( features ), shaper_list );
+
+				// from the shaped text we get the glyphs and positions
+				unsigned int glyphCount;
+				hb_glyph_info_t* glyphInfo = hb_buffer_get_glyph_infos( hbBuffer, &glyphCount );
+				hb_glyph_position_t* glyphPos =
+					hb_buffer_get_glyph_positions( hbBuffer, &glyphCount );
+
+				if ( cb( glyphInfo, glyphPos, glyphCount, props, segment, run ) )
+					run.next();
+				else {
+					return false;
+				}
 			}
-			String::View curRun( run.curRun() );
-			font->setCurrentSize( characterSize );
-			hb_buffer_reset( hbBuffer );
-			hb_buffer_set_cluster_level( hbBuffer, HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS );
-			hb_buffer_add_utf32( hbBuffer, (Uint32*)curRun.data(), curRun.size(), 0,
-								 curRun.size() );
 
-			hb_buffer_set_direction( hbBuffer, segment.direction );
-			hb_buffer_set_script( hbBuffer, segment.script );
-			hb_buffer_guess_segment_properties( hbBuffer );
-			hb_segment_properties_t props;
-			hb_buffer_get_segment_properties( hbBuffer, &props );
-			std::uint32_t featuresEnabled = !isSimpleScript( segment.script ) ? 1 : 0;
-
-			// We use our own kerning algo
-			const hb_feature_t features[] = {
-				hb_feature_t{ HB_TAG( 'k', 'e', 'r', 'n' ), featuresEnabled,
-							  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
-				hb_feature_t{ HB_TAG( 'l', 'i', 'g', 'a' ), featuresEnabled,
-							  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
-				hb_feature_t{ HB_TAG( 'c', 'l', 'i', 'g' ), featuresEnabled,
-							  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
-				hb_feature_t{ HB_TAG( 'd', 'l', 'i', 'g' ), featuresEnabled,
-							  HB_FEATURE_GLOBAL_START, HB_FEATURE_GLOBAL_END },
-			};
-
-			// whitelist cross-platforms shapers only
-			static const char* shaper_list[] = { "ot", "graphite2", "fallback", nullptr };
-
-			if ( !font || !font->hb() ) {
-				eeASSERT( font && font->hb() );
-				break;
-			}
-
-			hb_shape_full( static_cast<hb_font_t*>( font->hb() ), hbBuffer, features,
-						   eeARRAY_SIZE( features ), shaper_list );
-
-			// from the shaped text we get the glyphs and positions
-			unsigned int glyphCount;
-			hb_glyph_info_t* glyphInfo = hb_buffer_get_glyph_infos( hbBuffer, &glyphCount );
-			hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( hbBuffer, &glyphCount );
-
-			if ( cb( glyphInfo, glyphPos, glyphCount, props, segment, run ) )
-				run.next();
-			else {
-				return false;
-			}
-		}
-
-		return true;
-	} );
+			return true;
+		},
+		baseDirection );
 }
 
 #endif
@@ -199,18 +222,21 @@ template <typename StringType>
 static inline Uint64 textLayoutHash( const StringType& string, Font* font,
 									 const Uint32& characterSize, const Uint32& style,
 									 const Uint32& tabWidth, const Float& outlineThickness,
-									 std::optional<Float> tabOffset ) {
+									 std::optional<Float> tabOffset, TextDirection direction ) {
 	return hashCombine( std::hash<StringType>()( string ), std::hash<Font*>()( font ),
 						std::hash<Uint32>()( characterSize ), std::hash<Uint32>()( style ),
 						std::hash<Uint32>()( tabWidth ), std::hash<Float>()( outlineThickness ),
-						std::hash<std::optional<Float>>()( tabOffset ) );
+						std::hash<std::optional<Float>>()( tabOffset ),
+						std::hash<std::underlying_type_t<TextDirection>>()(
+							static_cast<std::underlying_type_t<TextDirection>>( direction ) ) );
 }
 
 template <typename StringType>
 TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 									  const Uint32& characterSize, const Uint32& style,
 									  const Uint32& tabWidth, const Float& outlineThickness,
-									  std::optional<Float> tabOffset, Uint32 textDrawHints ) {
+									  std::optional<Float> tabOffset, Uint32 textDrawHints,
+									  TextDirection baseDirection ) {
 	static LRULayoutCache sLayoutCache;
 
 	if ( !font || string.empty() ) {
@@ -222,7 +248,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 	Uint64 hash = 0;
 	if ( !Text::canSkipShaping( textDrawHints ) ) {
 		hash = textLayoutHash( string, font, characterSize, style, tabWidth, outlineThickness,
-							   tabOffset );
+							   tabOffset, baseDirection );
 
 		auto cacheHit = sLayoutCache.get( hash );
 		if ( cacheHit.has_value() )
@@ -245,7 +271,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 		 !Text::canSkipShaping( textDrawHints ) ) {
 		FontTrueType* rFont = static_cast<FontTrueType*>( font );
 		shapeAndRun(
-			result, string, rFont, characterSize, style, outlineThickness,
+			result, string, rFont, characterSize, style, outlineThickness, baseDirection,
 			[&]( hb_glyph_info_t* glyphInfo, hb_glyph_position_t* glyphPos, Uint32 glyphCount,
 				 const hb_segment_properties_t& props, const TextSegment& segment,
 				 TextShapeRun& run ) {
@@ -428,17 +454,19 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 TextLayout::Cache TextLayout::layout( const String& string, Font* font, const Uint32& fontSize,
 									  const Uint32& style, const Uint32& tabWidth,
 									  const Float& outlineThickness, std::optional<Float> tabOffset,
-									  Uint32 textDrawHints ) {
+									  Uint32 textDrawHints, TextDirection baseDirection ) {
 	return TextLayout::layout<String>( string, font, fontSize, style, tabWidth, outlineThickness,
-									   tabOffset, textDrawHints );
+									   tabOffset, textDrawHints, baseDirection );
 }
 
 TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 									  const Uint32& fontSize, const Uint32& style,
 									  const Uint32& tabWidth, const Float& outlineThickness,
-									  std::optional<Float> tabOffset, Uint32 textDrawHints ) {
+									  std::optional<Float> tabOffset, Uint32 textDrawHints,
+									  TextDirection baseDirection ) {
 	return TextLayout::layout<String::View>( string, font, fontSize, style, tabWidth,
-											 outlineThickness, tabOffset, textDrawHints );
+											 outlineThickness, tabOffset, textDrawHints,
+											 baseDirection );
 }
 
 } // namespace EE::Graphics

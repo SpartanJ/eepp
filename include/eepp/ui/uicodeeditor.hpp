@@ -827,6 +827,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	bool isKerningEnabled() const;
 
+	void setTextDirection( TextDirection direction );
+
+	TextDirection getTextDirection() const;
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -958,6 +962,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	Uint32 mTabIndentCharacter{ 187 /*'»'*/ };
 	CharacterAlignment mTabIndentAlignment{ CharacterAlignment::Center };
 	std::vector<SyntaxTokenPosition> mTokens;
+	TextDirection mTextDirection{ TextDirection::LeftToRight };
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );

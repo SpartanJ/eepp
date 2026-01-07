@@ -55,7 +55,8 @@ Float DocumentView::computeOffsets( const String::View& string, const FontStyleC
 	auto nonIndentPos = string.find_first_not_of( sepSpaces.data() );
 	if ( nonIndentPos != String::View::npos ) {
 		Float w = Text::getTextWidth( string.substr( 0, nonIndentPos ), fontStyle, tabWidth,
-									  TextHints::AllAscii, tabStops ? 0 : std::optional<Float>{} );
+									  TextHints::AllAscii, TextDirection::LeftToRight,
+									  tabStops ? 0 : std::optional<Float>{} );
 		return maxWidth != 0.f ? ( w > maxWidth ? 0.f : w ) : w;
 	}
 	return 0.f;

@@ -93,64 +93,65 @@ Uint32 Text::stringToStyleFlag( const std::string& str ) {
 Float Text::getTextWidth( Font* font, const Uint32& fontSize, const String& string,
 						  const Uint32& style, const Uint32& tabWidth,
 						  const Float& outlineThickness, Uint32 textDrawHints,
-						  std::optional<Float> tabOffset ) {
+						  TextDirection direction, std::optional<Float> tabOffset ) {
 	return getTextWidth<String>( font, fontSize, string, style, tabWidth, outlineThickness,
-								 textDrawHints, tabOffset );
+								 textDrawHints, direction, tabOffset );
 }
 
 Float Text::getTextWidth( Font* font, const Uint32& fontSize, const String::View& string,
 						  const Uint32& style, const Uint32& tabWidth,
 						  const Float& outlineThickness, Uint32 textDrawHints,
-						  std::optional<Float> tabOffset ) {
+						  TextDirection direction, std::optional<Float> tabOffset ) {
 	return getTextWidth<String::View>( font, fontSize, string, style, tabWidth, outlineThickness,
-									   textDrawHints, tabOffset );
+									   textDrawHints, direction, tabOffset );
 }
 
 Float Text::getTextWidth( const String& string, const FontStyleConfig& config,
-						  const Uint32& tabWidth, Uint32 textDrawHints,
+						  const Uint32& tabWidth, Uint32 textDrawHints, TextDirection direction,
 						  std::optional<Float> tabOffset ) {
 	return getTextWidth<String>( config.Font, config.CharacterSize, string, config.Style, tabWidth,
-								 config.OutlineThickness, textDrawHints, tabOffset );
+								 config.OutlineThickness, textDrawHints, direction, tabOffset );
 }
 
 Float Text::getTextWidth( const String::View& string, const FontStyleConfig& config,
-						  const Uint32& tabWidth, Uint32 textDrawHints,
+						  const Uint32& tabWidth, Uint32 textDrawHints, TextDirection direction,
 						  std::optional<Float> tabOffset ) {
 	return getTextWidth<String::View>( config.Font, config.CharacterSize, string, config.Style,
-									   tabWidth, config.OutlineThickness, textDrawHints,
+									   tabWidth, config.OutlineThickness, textDrawHints, direction,
 									   tabOffset );
 }
 
 Sizef Text::draw( const String& string, const Vector2f& pos, Font* font, Float fontSize,
 				  const Color& fontColor, Uint32 style, Float outlineThickness,
 				  const Color& outlineColor, const Color& shadowColor, const Vector2f& shadowOffset,
-				  const Uint32& tabWidth, Uint32 textDrawHints,
+				  const Uint32& tabWidth, Uint32 textDrawHints, TextDirection direction,
 				  const WhitespaceDisplayConfig& whitespaceDisplayConfig ) {
 	return draw<String>( string, pos, font, fontSize, fontColor, style, outlineThickness,
 						 outlineColor, shadowColor, shadowOffset, tabWidth, textDrawHints,
-						 whitespaceDisplayConfig );
+						 direction, whitespaceDisplayConfig );
 }
 
 Sizef Text::draw( const String& string, const Vector2f& pos, const FontStyleConfig& config,
-				  const Uint32& tabWidth, Uint32 textDrawHints,
+				  const Uint32& tabWidth, Uint32 textDrawHints, TextDirection direction,
 				  const WhitespaceDisplayConfig& whitespaceDisplayConfig ) {
-	return draw<String>( string, pos, config, tabWidth, textDrawHints, whitespaceDisplayConfig );
+	return draw<String>( string, pos, config, tabWidth, textDrawHints, direction,
+						 whitespaceDisplayConfig );
 }
 
 Sizef Text::draw( const String::View& string, const Vector2f& pos, Font* font, Float fontSize,
 				  const Color& fontColor, Uint32 style, Float outlineThickness,
 				  const Color& outlineColor, const Color& shadowColor, const Vector2f& shadowOffset,
-				  const Uint32& tabWidth, Uint32 textDrawHints,
+				  const Uint32& tabWidth, Uint32 textDrawHints, TextDirection direction,
 				  const WhitespaceDisplayConfig& whitespaceDisplayConfig ) {
 	return draw<String::View>( string, pos, font, fontSize, fontColor, style, outlineThickness,
 							   outlineColor, shadowColor, shadowOffset, tabWidth, textDrawHints,
-							   whitespaceDisplayConfig );
+							   direction, whitespaceDisplayConfig );
 }
 
 Sizef Text::draw( const String::View& string, const Vector2f& pos, const FontStyleConfig& config,
-				  const Uint32& tabWidth, Uint32 textDrawHints,
+				  const Uint32& tabWidth, Uint32 textDrawHints, TextDirection direction,
 				  const WhitespaceDisplayConfig& whitespaceDisplayConfig ) {
-	return draw<String::View>( string, pos, config, tabWidth, textDrawHints,
+	return draw<String::View>( string, pos, config, tabWidth, textDrawHints, direction,
 							   whitespaceDisplayConfig );
 }
 
@@ -271,7 +272,7 @@ template <typename StringType>
 Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Float fontSize,
 				  const Color& fontColor, Uint32 style, Float outlineThickness,
 				  const Color& outlineColor, const Color& shadowColor, const Vector2f& shadowOffset,
-				  const Uint32& tabWidth, Uint32 textDrawHints,
+				  const Uint32& tabWidth, Uint32 textDrawHints, TextDirection direction,
 				  const WhitespaceDisplayConfig& whitespaceDisplayConfig ) {
 	Vector2f cpos{ pos };
 	String::StringBaseType ch;
@@ -312,7 +313,7 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 		FontTrueType* rFont = static_cast<FontTrueType*>( font );
 
 		auto layout = TextLayout::layout( string, rFont, fontSize, style, tabWidth,
-										  outlineThickness, tabOffset, textDrawHints );
+										  outlineThickness, tabOffset, textDrawHints, direction );
 
 		for ( const ShapedGlyph& sg : layout->shapedGlyphs ) {
 			auto ch = string[sg.stringIndex];
@@ -504,12 +505,12 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, Font* font, Flo
 
 template <typename StringType>
 Sizef Text::draw( const StringType& string, const Vector2f& pos, const FontStyleConfig& config,
-				  const Uint32& tabWidth, Uint32 textDrawHints,
+				  const Uint32& tabWidth, Uint32 textDrawHints, TextDirection direction,
 				  const WhitespaceDisplayConfig& whitespaceDisplayConfig ) {
 	return draw<StringType>( string, pos, config.Font, config.CharacterSize, config.FontColor,
 							 config.Style, config.OutlineThickness, config.OutlineColor,
 							 config.ShadowColor, config.ShadowOffset, tabWidth, textDrawHints,
-							 whitespaceDisplayConfig );
+							 direction, whitespaceDisplayConfig );
 }
 
 template <typename StringType>
@@ -883,7 +884,7 @@ template <typename StringType>
 Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& string,
 						  const Uint32& style, const Uint32& tabWidth,
 						  const Float& outlineThickness, Uint32 textDrawHints,
-						  std::optional<Float> tabOffset ) {
+						  TextDirection direction, std::optional<Float> tabOffset ) {
 	if ( NULL == font || string.empty() )
 		return 0;
 	Float width = 0;
@@ -953,7 +954,7 @@ std::size_t
 Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize, const StringType& string,
 								   Float maxWidth, const Uint32& style, const Uint32& tabWidth,
 								   const Float& outlineThickness, std::optional<Float> tabOffset,
-								   Uint32 textDrawHints ) {
+								   Uint32 textDrawHints, TextDirection direction ) {
 	if ( NULL == font || string.empty() )
 		return 0;
 	String::StringBaseType codepoint;
@@ -969,7 +970,7 @@ Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize, const Str
 		 !canSkipShaping( textDrawHints ) ) {
 		auto layout =
 			TextLayout::layout( string, static_cast<FontTrueType*>( font ), fontSize, style,
-								tabWidth, outlineThickness, tabOffset /* , textDrawHints */ );
+								tabWidth, outlineThickness, tabOffset, 0, direction );
 		size_t lastStringIndex = 0;
 		for ( const ShapedGlyph& sg : layout->shapedGlyphs ) {
 			Glyph metrics =
@@ -1006,7 +1007,8 @@ Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize, const Str
 Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
 								 const String& string, const Uint32& style, const Uint32& tabWidth,
 								 const Float& outlineThickness, std::optional<Float> tabOffset,
-								 bool allowNewLine, Uint32 textDrawHints ) {
+								 bool allowNewLine, Uint32 textDrawHints,
+								 TextDirection direction ) {
 	// Make sure that we have a valid font
 	if ( !font )
 		return Vector2f();
@@ -1029,7 +1031,7 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 	if ( TextShaperEnabled && font->getType() == FontType::TTF &&
 		 !canSkipShaping( textDrawHints ) ) {
 		auto layout = TextLayout::layout( string, font, fontSize, style, tabWidth, outlineThickness,
-										  tabOffset );
+										  tabOffset, 0, direction );
 		Uint32 maxStringIndex = 0;
 		Uint32 closestDist = std::numeric_limits<Uint32>::max();
 
@@ -1121,7 +1123,8 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font* font,
 								  const Uint32& fontSize, const String& string, const Uint32& style,
 								  const Uint32& tabWidth, const Float& outlineThickness,
-								  std::optional<Float> tabOffset, Uint32 textDrawHints ) {
+								  std::optional<Float> tabOffset, Uint32 textDrawHints,
+								  TextDirection direction ) {
 	if ( NULL == font )
 		return 0;
 
@@ -1144,7 +1147,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 	if ( TextShaperEnabled && font->getType() == FontType::TTF &&
 		 !canSkipShaping( textDrawHints ) ) {
 		auto layout = TextLayout::layout( string, font, fontSize, style, tabWidth, outlineThickness,
-										  tabOffset );
+										  tabOffset, 0, direction );
 
 		auto sgs = layout->shapedGlyphs.size();
 		if ( sgs == 0 )
@@ -1277,37 +1280,41 @@ std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSiz
 											   const String& string, Float maxWidth,
 											   const Uint32& style, const Uint32& tabWidth,
 											   const Float& outlineThickness,
-											   std::optional<Float> tabOffset, Uint32 textHints ) {
+											   std::optional<Float> tabOffset, Uint32 textHints,
+											   TextDirection direction ) {
 	return findLastCharPosWithinLength<String>( font, fontSize, string, maxWidth, style, tabWidth,
-												outlineThickness, tabOffset, textHints );
+												outlineThickness, tabOffset, textHints, direction );
 }
 
 std::size_t Text::findLastCharPosWithinLength( Font* font, const Uint32& fontSize,
 											   const String::View& string, Float maxWidth,
 											   const Uint32& style, const Uint32& tabWidth,
 											   const Float& outlineThickness,
-											   std::optional<Float> tabOffset, Uint32 textHints ) {
-	return findLastCharPosWithinLength<String::View>(
-		font, fontSize, string, maxWidth, style, tabWidth, outlineThickness, tabOffset, textHints );
+											   std::optional<Float> tabOffset, Uint32 textHints,
+											   TextDirection direction ) {
+	return findLastCharPosWithinLength<String::View>( font, fontSize, string, maxWidth, style,
+													  tabWidth, outlineThickness, tabOffset,
+													  textHints, direction );
 }
 
 std::size_t Text::findLastCharPosWithinLength( const String& string, Float maxWidth,
 											   const FontStyleConfig& config,
 											   const Uint32& tabWidth,
-											   std::optional<Float> tabOffset, Uint32 textHints ) {
+											   std::optional<Float> tabOffset, Uint32 textHints,
+											   TextDirection direction ) {
 	return findLastCharPosWithinLength<String>( config.Font, config.CharacterSize, string, maxWidth,
 												config.Style, tabWidth, config.OutlineThickness,
-												tabOffset, textHints );
+												tabOffset, textHints, direction );
 }
 
 std::size_t Text::findLastCharPosWithinLength( const String::View& string, Float maxWidth,
 											   const FontStyleConfig& config,
 											   const Uint32& tabWidth,
-											   std::optional<Float> tabOffset,
-											   Uint32 textDrawHints ) {
+											   std::optional<Float> tabOffset, Uint32 textDrawHints,
+											   TextDirection direction ) {
 	return findLastCharPosWithinLength<String::View>(
 		config.Font, config.CharacterSize, string, maxWidth, config.Style, tabWidth,
-		config.OutlineThickness, tabOffset, textDrawHints );
+		config.OutlineThickness, tabOffset, textDrawHints, direction );
 }
 
 void Text::updateWidthCache() {
@@ -1328,9 +1335,9 @@ void Text::updateWidthCache() {
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF &&
 		 !canSkipShaping( mTextHints ) ) {
-		auto layout = TextLayout::layout( mString, mFontStyleConfig.Font,
-										  mFontStyleConfig.CharacterSize, mFontStyleConfig.Style,
-										  mTabWidth, mFontStyleConfig.OutlineThickness );
+		auto layout = TextLayout::layout(
+			mString, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, mFontStyleConfig.Style,
+			mTabWidth, mFontStyleConfig.OutlineThickness, {}, mTextHints, mDirection );
 		mLinesWidth = layout->linesWidth;
 		mCachedWidth = layout->size.getWidth();
 		return;
@@ -1655,9 +1662,9 @@ void Text::ensureGeometryUpdate() {
 	if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF &&
 		 !canSkipShaping( mTextHints ) ) {
 		FontTrueType* rFont = static_cast<FontTrueType*>( mFontStyleConfig.Font );
-		auto layout = TextLayout::layout( mString, rFont, mFontStyleConfig.CharacterSize,
-										  mFontStyleConfig.Style, mTabWidth,
-										  mFontStyleConfig.OutlineThickness );
+		auto layout = TextLayout::layout(
+			mString, rFont, mFontStyleConfig.CharacterSize, mFontStyleConfig.Style, mTabWidth,
+			mFontStyleConfig.OutlineThickness, {}, mTextHints, mDirection );
 
 		mLinesWidth = layout->linesWidth;
 		mCachedWidth = layout->size.getWidth();
@@ -2109,9 +2116,9 @@ void Text::setFillColor( const Color& color, Uint32 from, Uint32 to ) {
 		if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF &&
 			 !canSkipShaping( mTextHints ) ) {
 			FontTrueType* rFont = static_cast<FontTrueType*>( mFontStyleConfig.Font );
-			auto layout = TextLayout::layout( mString, rFont, mFontStyleConfig.CharacterSize,
-											  mFontStyleConfig.Style, mTabWidth,
-											  mFontStyleConfig.OutlineThickness );
+			auto layout = TextLayout::layout(
+				mString, rFont, mFontStyleConfig.CharacterSize, mFontStyleConfig.Style, mTabWidth,
+				mFontStyleConfig.OutlineThickness, {}, mTextHints, mDirection );
 			size_t vIdx = 0;
 			bool bold = ( mFontStyleConfig.Style & Bold ) != 0;
 			bool italic = ( mFontStyleConfig.Style & Italic ) != 0;
@@ -2237,9 +2244,9 @@ void Text::setFillColor( const std::vector<Color>& colors ) {
 	if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF &&
 		 !canSkipShaping( mTextHints ) ) {
 		FontTrueType* rFont = static_cast<FontTrueType*>( mFontStyleConfig.Font );
-		auto layout = TextLayout::layout( mString, rFont, mFontStyleConfig.CharacterSize,
-										  mFontStyleConfig.Style, mTabWidth,
-										  mFontStyleConfig.OutlineThickness );
+		auto layout = TextLayout::layout(
+			mString, rFont, mFontStyleConfig.CharacterSize, mFontStyleConfig.Style, mTabWidth,
+			mFontStyleConfig.OutlineThickness, {}, mTextHints, mDirection );
 		size_t vIdx = 0;
 		bool bold = ( mFontStyleConfig.Style & Bold ) != 0;
 		bool italic = ( mFontStyleConfig.Style & Italic ) != 0;
@@ -2480,6 +2487,18 @@ Uint32 Text::getTotalVertices() {
 	sv -= skipped * GLi->quadVertex();
 
 	return sv;
+}
+
+void Text::setDirection( TextDirection direction ) {
+	if ( direction == mDirection )
+		return;
+
+	mDirection = direction;
+	invalidate();
+}
+
+TextDirection Text::getDirection() const {
+	return mDirection;
 }
 
 }} // namespace EE::Graphics

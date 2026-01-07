@@ -26,19 +26,22 @@ class EE_API TextLayout {
 	static Cache layout( const String& string, Font* font, const Uint32& fontSize,
 						 const Uint32& style, const Uint32& tabWidth = 4,
 						 const Float& outlineThickness = 0.f, std::optional<Float> tabOffset = {},
-						 Uint32 textDrawHints = 0 );
+						 Uint32 textDrawHints = 0,
+						 TextDirection baseDirection = TextDirection::LeftToRight );
 
 	static Cache layout( const String::View& string, Font* font, const Uint32& fontSize,
 						 const Uint32& style, const Uint32& tabWidth = 4,
 						 const Float& outlineThickness = 0.f, std::optional<Float> tabOffset = {},
-						 Uint32 textDrawHints = 0 );
+						 Uint32 textDrawHints = 0,
+						 TextDirection baseDirection = TextDirection::LeftToRight );
 
   protected:
 	template <typename StringType>
 	static Cache layout( const StringType& string, Font* font, const Uint32& fontSize,
 						 const Uint32& style, const Uint32& tabWidth = 4,
 						 const Float& outlineThickness = 0.f, std::optional<Float> tabOffset = {},
-						 Uint32 textDrawHints = 0 );
+						 Uint32 textDrawHints = 0,
+						 TextDirection baseDirection = TextDirection::LeftToRight );
 };
 
 } // namespace EE::Graphics
