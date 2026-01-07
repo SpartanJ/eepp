@@ -462,9 +462,8 @@ Uint32 UITerminal::onKeyDown( const KeyEvent& event ) {
 	if ( !mTerm->isRegisteredShortcut( event.getKeyCode(), event.getMod() ) ) {
 		std::string cmd =
 			mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
-		if ( !cmd.empty() ) {
-			if ( !mExclusiveMode || cmd == getExclusiveModeToggleCommandName() )
-				execute( cmd );
+		if ( !cmd.empty() && ( !mExclusiveMode || cmd == getExclusiveModeToggleCommandName() ) ) {
+			execute( cmd );
 			return 1;
 		}
 	}

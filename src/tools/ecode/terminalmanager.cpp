@@ -628,6 +628,8 @@ UITerminal* TerminalManager::createNewTerminal(
 		}
 	} );
 	mApp->registerUnlockedCommands( *term );
+	term->getKeyBindings().removeCommandKeybind( "find-replace" );
+	term->getKeyBindings().removeCommandKeybind( "open-locatebar" );
 	term->setFocus();
 	return term;
 #endif

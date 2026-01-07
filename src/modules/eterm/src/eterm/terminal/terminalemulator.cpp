@@ -1223,6 +1223,14 @@ int32_t TerminalEmulator::tdefcolor( int* attr, int* npar, int l ) {
 }
 
 void TerminalEmulator::tsetattr( int* attr, int l ) {
+	// Check if this is a private sequence (should be ignored for SGR)
+	// Private sequences start with '?' and should not affect text attributes
+	if ( mCsiescseq.priv ) {
+		// Private mode queries/commands don't set text attributes
+		// Just return without changing any attributes
+		return;
+	}
+
 	int i;
 	int32_t idx;
 
@@ -1360,6 +1368,8 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 				case 18: /* DECPFF -- Printer feed (IGNORED) */
 				case 19: /* DECPEX -- Printer extent (IGNORED) */
 				case 42: /* DECNRCM -- National characters (IGNORED) */
+				case 45: /* Reverse wrap-around (IGNORED) */
+				case 67: /* DECBKM -- Backarrow key sends backspace vs DEL (IGNORED) */
 				case 12: /* att610 -- Start blinking cursor (IGNORED) */
 					break;
 				case 25: /* DECTCEM -- Text Cursor Enable Mode */
@@ -1427,12 +1437,15 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 				case 1015: /* urxvt mangled mouse mode; incompatible
 						  and can be mistaken for other control
 						  codes. */
+				case 1039: /* ESC to Meta (not implemented) */
 					break;
 				case 2026: // IGNORE DECSET/DECRST 2026 for sync updates
 						   // (https://codeberg.org/dnkl/foot/pulls/461/files)
 					break;
 				default:
+#ifdef EE_DEBUG
 					fprintf( stderr, "erresc: unknown private set/reset mode %d\n", *args );
+#endif
 					break;
 			}
 		} else {
@@ -1452,10 +1465,42 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 					MODBIT( mTerm.mode, set, MODE_CRLF );
 					break;
 				default:
+#ifdef EE_DEBUG
 					fprintf( stderr, "erresc: unknown set/reset mode %d\n", *args );
+#endif
 					break;
 			}
 		}
+	}
+}
+
+void TerminalEmulator::handleDeviceAttributes() {
+	if ( mCsiescseq.priv ) {
+		char buf[64];
+		int len;
+		// Private Device Attributes - respond with terminal capabilities
+		switch ( mCsiescseq.arg[0] ) {
+			case 0: // Primary DA
+			case 1: // Secondary DA
+				// Respond with VT220 emulation
+				len = snprintf( buf, sizeof( buf ), "\033[?1;2c" );
+				ttywrite( buf, len, 0 );
+				break;
+			case 62: // Request terminfo/termcap name
+				// Respond with our terminal name
+				len = snprintf( buf, sizeof( buf ), "\033P1+r%s\033\\", "st-256color" );
+				ttywrite( buf, len, 0 );
+				break;
+			case 63: // Request terminfo/termcap name (secondary)
+				// Similar response
+				break;
+			default:
+				// Unknown private DA query
+				break;
+		}
+	} else {
+		// Standard DA - respond with VT100 identification
+		ttywrite( vtiden, strlen( vtiden ), 0 );
 	}
 }
 
@@ -1507,8 +1552,7 @@ void TerminalEmulator::csihandle( void ) {
 			}
 			break;
 		case 'c': /* DA -- Device Attributes */
-			if ( mCsiescseq.arg[0] == 0 )
-				ttywrite( vtiden, strlen( vtiden ), 0 );
+			handleDeviceAttributes();
 			break;
 		case 'b': /* REP -- if last char is printable print it <n> more times */
 			DEFAULT( mCsiescseq.arg[0], 1 );
@@ -1732,6 +1776,12 @@ void TerminalEmulator::csihandle( void ) {
 					goto unknown;
 			}
 			break;
+		case '?':
+			/* Private mode queries - ignore or handle appropriately */
+			/* For XTQMODKEYS and similar queries, we should either:
+			   1. Ignore completely (do nothing)
+			   2. Send a proper response if required */
+			break;
 	}
 }
 
@@ -1808,7 +1858,7 @@ void TerminalEmulator::strhandle( void ) {
 						dec = base64dec( mStrescseq.args[2] );
 						if ( dec ) {
 							setClipboard( dec );
-							free( dec );
+							xfree( dec );
 						} else {
 							fprintf( stderr, "erresc: invalid base64\n" );
 						}
