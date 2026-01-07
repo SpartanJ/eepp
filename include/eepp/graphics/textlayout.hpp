@@ -20,6 +20,7 @@ class EE_API TextLayout {
 	std::vector<Float> linesWidth;
 	Sizef size;
 	TextDirection direction{ TextDirection::Unspecified };
+	bool hasMixedDirection : 1 { false };
 
 	bool isRTL() const { return direction == TextDirection::RightToLeft; }
 

@@ -265,6 +265,14 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 
 	auto resultPtr = std::make_shared<TextLayout>();
 	TextLayout& result = *resultPtr;
+	struct GlyphDirCounter {
+		int ltr{ 0 };
+		int rtl{ 0 };
+		int ttb{ 0 };
+		int btt{ 0 };
+		int other{ 0 };
+	};
+	GlyphDirCounter gdc;
 
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( Text::TextShaperEnabled && font->getType() == FontType::TTF &&
@@ -301,6 +309,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 							sg.position = pen;
 							sg.advance = { advance, 0 };
 							sg.direction = (TextDirection)segment.direction;
+							sg.script = (LangScript)segment.script;
 							result.shapedGlyphs.emplace_back( std::move( sg ) );
 
 							pen.x += advance;
@@ -325,6 +334,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 						sg.stringIndex = segment.offset + run.pos() + glyphInfo[i].cluster;
 						sg.advance = { currentGlyph.advance, 0 };
 						sg.direction = (TextDirection)segment.direction;
+						sg.script = (LangScript)segment.script;
 						sg.position.x = pen.x + ( glyphPos[i].x_offset / 64.f );
 						sg.position.y = pen.y - ( glyphPos[i].y_offset / 64.f );
 						result.shapedGlyphs.emplace_back( std::move( sg ) );
@@ -337,6 +347,24 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 						Uint32 cluster = glyphInfo[i].cluster;
 						String::StringBaseType ch = string[segment.offset + run.pos() + cluster];
 
+						switch ( segment.direction ) {
+							case HB_DIRECTION_INVALID:
+								gdc.other++;
+								break;
+							case HB_DIRECTION_LTR:
+								gdc.ltr++;
+								break;
+							case HB_DIRECTION_RTL:
+								gdc.rtl++;
+								break;
+							case HB_DIRECTION_TTB:
+								gdc.ttb++;
+								break;
+							case HB_DIRECTION_BTT:
+								gdc.btt++;
+								break;
+						}
+
 						if ( ch == '\t' ) {
 							Float advance = Text::tabAdvance( hspace, tabWidth,
 															  tabOffset ? pen.x + *tabOffset
@@ -347,6 +375,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 							sg.stringIndex = segment.offset + run.pos() + cluster;
 							sg.advance = { advance, 0 };
 							sg.direction = (TextDirection)segment.direction;
+							sg.script = (LangScript)segment.script;
 							sg.position = pen;
 							result.shapedGlyphs.emplace_back( std::move( sg ) );
 
@@ -361,6 +390,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 						sg.stringIndex = segment.offset + run.pos() + glyphInfo[i].cluster;
 						sg.advance = { glyphPos[i].x_advance / 64.f, glyphPos[i].y_advance / 64.f };
 						sg.direction = (TextDirection)segment.direction;
+						sg.script = (LangScript)segment.script;
 						sg.position.x = std::round( pen.x + ( glyphPos[i].x_offset / 64.f ) );
 						sg.position.y = std::round( pen.y - ( glyphPos[i].y_offset / 64.f ) );
 						result.shapedGlyphs.emplace_back( std::move( sg ) );
@@ -419,6 +449,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 														   : std::optional<Float>{} ),
 							   0 };
 				sg.direction = TextDirection::LeftToRight;
+				sg.script = LangScript::LATIN;
 				sg.position = pen;
 				pen.x += sg.advance.x;
 				result.shapedGlyphs.emplace_back( std::move( sg ) );
@@ -433,6 +464,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 				font->getGlyph( curChar, characterSize, bold, italic, outlineThickness ).advance,
 				0 };
 			sg.direction = TextDirection::LeftToRight;
+			sg.script = LangScript::LATIN;
 			sg.position = pen;
 			pen.x += sg.advance.x;
 			result.shapedGlyphs.emplace_back( std::move( sg ) );
@@ -446,6 +478,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 	result.linesWidth.push_back( std::ceil( pen.x ) );
 	maxWidth = eemax( maxWidth, result.linesWidth[result.linesWidth.size() - 1] );
 	result.size = { maxWidth, std::ceil( pen.y ) };
+	result.hasMixedDirection = !!gdc.ltr + !!gdc.rtl + !!gdc.ttb + !!gdc.btt + !!gdc.other > 1;
 
 	sLayoutCache.put( hash, resultPtr );
 	return resultPtr;

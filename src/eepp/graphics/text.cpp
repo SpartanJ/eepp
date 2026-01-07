@@ -1149,46 +1149,43 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 		auto layout = TextLayout::layout( string, font, fontSize, style, tabWidth, outlineThickness,
 										  tabOffset, 0, direction );
 
-		auto sgs = layout->shapedGlyphs.size();
+		auto sgs = static_cast<int>( layout->shapedGlyphs.size() );
 		if ( sgs == 0 )
 			return 0;
 
 		if ( pos.x < 0 )
 			return layout->isRTL() ? tSize : 0;
 
-		for ( size_t i = 0; i < sgs; i++ ) {
+		Float charLeft, charTop, charBottom, charRight;
+
+		for ( auto i = 0; i < sgs; i++ ) {
 			const ShapedGlyph* sg = &layout->shapedGlyphs[i];
 
-			Float charLeft = sg->position.x;
-			Float charTop = sg->position.y;
-			Float charBottom = charTop + vspace;
-			Float charRight = charLeft + sg->advance.x;
-			auto curStringIndex = sg->stringIndex;
+			charLeft = sg->position.x;
+			charTop = sg->position.y;
+			charBottom = charTop + vspace;
+			charRight = charLeft + sg->advance.x;
 
 			// Expand bounds over the whole cluster (multiple glyphs for one string index)
-			while ( i + 1 < sgs && layout->shapedGlyphs[i + 1].stringIndex == curStringIndex ) {
+			while ( i + 1 < sgs && layout->shapedGlyphs[i + 1].stringIndex == sg->stringIndex ) {
 				i++;
 				sg = &layout->shapedGlyphs[i];
 				charBottom = sg->position.y + vspace;
 				charRight = sg->position.x + sg->advance.x;
 			};
 
-			bool isLastOnLine =
-				i + 1 == sgs ||
-				( !layout->isRTL() && layout->shapedGlyphs[i + 1].position.y != sg->position.y );
-
 			if ( fpos.y >= charTop && fpos.y <= charBottom ) {
-				auto findNextInsertionIndex = [&]() -> Int32 {
+				auto findNextInsertionIndex = [&layout, sg, i, sgs, tSize]() -> Int32 {
 					if ( layout->isRTL() ) {
 						if ( i > 0 ) {
-							for ( Int64 j = (Int64)i - 1; j >= 0; j-- ) {
+							for ( auto j = i - 1; j >= 0; j-- ) {
 								if ( layout->shapedGlyphs[j].stringIndex > sg->stringIndex )
 									return layout->shapedGlyphs[j].stringIndex;
 							}
 						}
 						return 0;
 					} else {
-						for ( size_t j = i + 1; j < sgs; ++j ) {
+						for ( auto j = i + 1; j < sgs; ++j ) {
 							if ( layout->shapedGlyphs[j].stringIndex > sg->stringIndex )
 								return layout->shapedGlyphs[j].stringIndex;
 						}
@@ -1203,8 +1200,6 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 					} else {
 						return findNextInsertionIndex();
 					}
-				} else if ( isLastOnLine && fpos.x >= charRight ) {
-					return findNextInsertionIndex();
 				}
 			}
 
@@ -1218,7 +1213,8 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 				}
 			}
 		}
-		return nearest;
+
+		return ( sgs && nearest == sgs - 1 && fpos.x >= charRight ) ? tSize : nearest;
 	}
 #endif
 

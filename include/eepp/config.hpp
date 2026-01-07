@@ -343,6 +343,13 @@ typedef Uint32 UintPtr;
 #define EE_1MB ( 1048576 )
 #define EE_1GB ( 1073741824 )
 #define EE_1TB ( 1099511627776 )
+
+#define EE_TAG( c1, c2, c3, c4 )                                                            \
+	( (Uint32)( ( ( (Uint32)( c1 ) & 0xFF ) << 24 ) | ( ( (Uint32)( c2 ) & 0xFF ) << 16 ) | \
+				( ( (Uint32)( c3 ) & 0xFF ) << 8 ) | ( (Uint32)( c4 ) & 0xFF ) ) )
+
+#define EE_TAG_NONE EE_TAG( 0, 0, 0, 0 )
+
 } // namespace EE
 
 #endif
