@@ -841,7 +841,7 @@ std::string Sys::getTempPath() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	DWORD dwRetVal = GetTempPathA( EE_MAX_CFG_PATH_LEN, path );
 
-	if ( 0 <= dwRetVal || dwRetVal > EE_MAX_CFG_PATH_LEN ) {
+	if ( dwRetVal == 0 || dwRetVal > EE_MAX_CFG_PATH_LEN ) {
 		return std::string( "C:\\WINDOWS\\TEMP\\" );
 	}
 #elif EE_PLATFORM == EE_PLATFORM_ANDROID

@@ -2367,7 +2367,7 @@ void App::loadImageFromMedium( const std::string& path, bool isMemory, bool forc
 			tab->setTooltipText( path );
 			auto icon = findIcon( "filetype-" + ext );
 			tab->setIcon( icon ? icon : findIcon( "file" ) );
-			if ( mConfig.editor.syncProjectTreeWithEditor ) {
+			if ( mProjectTreeView && mConfig.editor.syncProjectTreeWithEditor ) {
 				mProjectTreeView->setFocusOnSelection( false );
 				if ( !mCurrentProject.empty() && String::startsWith( path, mCurrentProject ) ) {
 					mProjectTreeView->openRowWithPath( path.substr( mCurrentProject.size() ) );
