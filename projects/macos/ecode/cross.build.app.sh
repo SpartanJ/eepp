@@ -22,7 +22,7 @@ done
 
 RESOURCES_PATH="ecode.app/Contents/Resources"
 
-premake5 --file=../../../premake5.lua --disable-static-build --with-text-shaper --use-frameworks gmake || exit
+premake5 --file=../../../premake5.lua --disable-static-build --use-frameworks gmake || exit
 
 make -C ../../../make/macosx/ -j$(sysctl -n hw.ncpu) -e verbose=true -e config=release_x86_64 ecode || exit
 

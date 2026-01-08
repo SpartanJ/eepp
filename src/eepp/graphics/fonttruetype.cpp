@@ -1601,7 +1601,7 @@ bool FontTrueType::isIdentifiedAsMonospace() const {
 }
 
 bool FontTrueType::isScalable() const {
-	return FT_IS_SCALABLE( static_cast<FT_Face>( mFace ) );
+	return mFace ? FT_IS_SCALABLE( static_cast<FT_Face>( mFace ) ) : false;
 }
 
 bool FontTrueType::isEmojiFont() const {

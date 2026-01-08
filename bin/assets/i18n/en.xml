@@ -394,7 +394,7 @@ Restart ecode to see the changes.</string>
 	<string name="go_to_line_in_current_document">Go To Line in Current Document</string>
 	<string name="gone">gone</string>
 	<string name="group">Group</string>
-	<string name="h_as_cpp">Treat .h files as C++ code.</string>
+	<string name="treat_h_files_as_ellipsis">Treat .h files as C++ code.</string>
 	<string name="help">Help</string>
 	<string name="hide">Hide</string>
 	<string name="hide_tabbar_on_single_tab">Hide tabbar on single tab</string>

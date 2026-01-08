@@ -28,7 +28,7 @@ jobs:
     - name: Create project
       shell: powershell
       run: |
-        ./premake5.exe --windows-vc-build --with-text-shaper --disable-static-build vs2022
+        ./premake5.exe --windows-vc-build --disable-static-build vs2022
     - name: Build
       shell: cmd
       run: |

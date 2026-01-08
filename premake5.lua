@@ -18,7 +18,7 @@ newoption { trigger = "thread-sanitizer", description = "Compile with ThreadSani
 newoption { trigger = "address-sanitizer", description = "Compile with AddressSanitizer." }
 newoption { trigger = "time-trace", description = "Compile with time tracing." }
 newoption { trigger = "disable-static-build", description = "Disables eepp static build project, this is just a helper to avoid rebuilding twice eepp while developing the library." }
-newoption { trigger = "with-text-shaper", description = "Enables text-shaping capabilities by relying on harfbuzz." }
+newoption { trigger = "without-text-shaper", description = "Disables text-shaping capabilities." }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -386,7 +386,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 	end
 
-	if _OPTIONS["with-text-shaper"] then
+	if not _OPTIONS["without-text-shaper"] then
 		defines { "EE_TEXT_SHAPER_ENABLED" }
 	end
 
@@ -581,7 +581,7 @@ function add_static_links()
 		links { "freetype-static" }
 	end
 
-	if _OPTIONS["with-text-shaper"] then
+	if not _OPTIONS["without-text-shaper"] then
 		links { "harfbuzz-static", "SheenBidi-static" }
 		includedirs { "src/thirdparty/SheenBidi/Headers" }
 		defines { "EE_TEXT_SHAPER_ENABLED" }
@@ -1150,7 +1150,7 @@ workspace "eepp"
 		incdirs { "src/thirdparty/oniguruma" }
 		build_base_configuration( "oniguruma" )
 
-	if _OPTIONS["with-text-shaper"] then
+	if not _OPTIONS["without-text-shaper"] then
 		project "harfbuzz-static"
 			kind "StaticLib"
 			language "C++"

@@ -2,7 +2,7 @@
   "ecode-linux": {
     "build": [
       {
-        "args": "--disable-static-build --with-text-shaper gmake",
+        "args": "--disable-static-build gmake",
         "command": "premake4",
         "working_dir": "${project_root}"
       },
@@ -172,7 +172,7 @@
   "eepp-linux": {
     "build": [
       {
-        "args": "--disable-static-build --with-text-shaper --with-mold-linker --with-debug-symbols --address-sanitizer gmake",
+        "args": "--disable-static-build --with-mold-linker --with-debug-symbols --address-sanitizer gmake",
         "command": "premake4",
         "working_dir": "${project_root}"
       },
@@ -337,7 +337,7 @@
   "eepp-linux-cmake": {
     "build": [
       {
-        "args": "--disable-static-build --with-text-shaper cmake",
+        "args": "--disable-static-build cmake",
         "command": "premake5",
         "working_dir": "${project_root}"
       },
@@ -423,7 +423,7 @@
   "eepp-linux-ninja": {
     "build": [
       {
-        "args": "--disable-static-build --with-text-shaper --with-debug-symbols ninja",
+        "args": "--disable-static-build --with-debug-symbols ninja",
         "command": "premake5",
         "working_dir": "${project_root}"
       },

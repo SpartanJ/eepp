@@ -24,7 +24,7 @@ jobs:
         tar xvzf premake-5.0.0-beta6-linux.tar.gz
     - name: Build
       run: |
-        ./premake5 --with-text-shaper --disable-static-build gmake
+        ./premake5 --disable-static-build gmake
         cd make/linux
         make all -j$(nproc) -e config=release_x86_64
     - name: Unit Tests

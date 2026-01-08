@@ -34,11 +34,11 @@ done
 CONFIG_NAME=
 if command -v premake5 &> /dev/null
 then
-    premake5 --with-text-shaper gmake || exit
+    premake5 gmake || exit
     CONFIG_NAME=release_x86_64
 elif command -v premake4 &> /dev/null
 then
-    premake4 --with-text-shaper gmake || exit
+    premake4 gmake || exit
     CONFIG_NAME=release
 else
     echo "Neither premake5 nor premake4 is available. Please install one."

@@ -836,7 +836,7 @@ std::string Sys::getConfigPath( const std::string& appname ) {
 }
 
 std::string Sys::getTempPath() {
-	char path[EE_MAX_CFG_PATH_LEN];
+	char path[EE_MAX_CFG_PATH_LEN + 1];
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	DWORD dwRetVal = GetTempPathA( EE_MAX_CFG_PATH_LEN, path );
