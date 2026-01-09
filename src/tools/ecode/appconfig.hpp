@@ -137,10 +137,15 @@ struct GlobalSearchBarConfig {
 	bool bufferOnlyMode{ false };
 };
 
+struct LanguagesExtensions {
+	std::map<std::string, std::string> priorities;
+};
+
 struct ProjectDocumentConfig {
 	bool useGlobalSettings{ true };
 	HExtLanguageType hExtLanguageType{ HExtLanguageType::AutoDetect };
 	DocumentConfig doc;
+	LanguagesExtensions languagesExtensions;
 	ProjectDocumentConfig() {}
 	ProjectDocumentConfig( const DocumentConfig& doc ) { this->doc = doc; }
 };
@@ -191,6 +196,7 @@ struct TerminalConfig {
 	bool unsupportedOSWarnDisabled{ false };
 	bool closeTerminalTabOnExit{ false };
 	bool warnBeforeClosingTab{ true };
+	bool exclusiveMode{ false };
 	TerminalCursorMode cursorStyle{ TerminalCursorMode::SteadyUnderline };
 	ScrollViewType scrollBarType{ ScrollViewType::Overlay };
 	ScrollBarMode scrollBarMode{ ScrollBarMode::Auto };
@@ -200,10 +206,6 @@ struct WorkspaceConfig {
 	bool restoreLastSession{ false };
 	bool checkForUpdatesAtStartup{ true };
 	bool sessionSnapshot{ true };
-};
-
-struct LanguagesExtensions {
-	std::map<std::string, std::string> priorities;
 };
 
 struct SessionSnapshotFile {

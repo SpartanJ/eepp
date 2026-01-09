@@ -155,6 +155,7 @@ UITerminal* StatusTerminalController::createTerminal(
 	auto csIt = terminalColorSchemes.find( currentTerminalColorScheme );
 	term->getTerm()->getTerminal()->setAllowMemoryTrimnming( true );
 	term->getTerm()->setCursorMode( mContext->termConfig().cursorStyle );
+	term->setExclusiveMode( mContext->termConfig().exclusiveMode );
 	term->setScrollViewType( mContext->termConfig().scrollBarType );
 	term->setVerticalScrollMode( mContext->termConfig().scrollBarMode );
 

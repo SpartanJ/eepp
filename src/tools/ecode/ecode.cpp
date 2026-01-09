@@ -539,6 +539,11 @@ void App::downloadFileWebDialog() {
 	msgBox->setTitle( mWindowTitle );
 	msgBox->getTextInput()->setHint( i18n( "any_https_or_http_url", "Any https or http URL" ) );
 	msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+	msgBox->setMinWindowSize( Sizef( 300, 50 ) );
+	msgBox->getLayoutCont()->setLayoutWidthPolicy( SizePolicy::MatchParent );
+	msgBox->getLayoutCont()->getFirstWidget()->asType<UIWidget>()->setLayoutWidthPolicy(
+		SizePolicy::MatchParent );
+	msgBox->center();
 	msgBox->showWhenReady();
 	msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 		std::string url( msgBox->getTextInput()->getText().toUtf8() );
@@ -2000,71 +2005,75 @@ std::map<std::string, std::string> App::getMigrateKeybindings() {
 }
 
 std::vector<std::string> App::getUnlockedCommands() {
-	return { "create-new",
-			 "create-new-terminal",
-			 "create-new-welcome-tab",
-			 "fullscreen-toggle",
-			 "open-file",
-			 "open-folder",
-			 "reopen-closed-tab",
-			 "console-toggle",
-			 "close-app",
-			 "open-locatebar",
-			 "open-locatebar-glob-search",
-			 "open-command-palette",
-			 "open-global-search",
-			 "project-build-start",
-			 "project-build-start-cancel",
-			 "project-build-cancel",
-			 "project-build-clean",
-			 "project-build-and-run",
-			 "project-run-executable",
-			 "toggle-status-locate-bar",
-			 "toggle-status-global-search-bar",
-			 "toggle-status-build-output",
-			 "toggle-status-terminal",
-			 "toggle-status-app-output",
-			 "menu-toggle",
-			 "switch-side-panel",
-			 "toggle-status-bar",
-			 "download-file-web",
-			 "create-new-terminal",
-			 "terminal-split-left",
-			 "terminal-split-right",
-			 "terminal-split-top",
-			 "terminal-split-bottom",
-			 "terminal-split-swap",
-			 "reopen-closed-tab",
-			 "plugin-manager-open",
-			 "debug-widget-tree-view",
-			 "debug-draw-highlight-toggle",
-			 "debug-draw-boxes-toggle",
-			 "debug-draw-debug-data",
-			 "editor-set-line-breaking-column",
-			 "editor-set-line-spacing",
-			 "editor-set-cursor-blinking-time",
-			 "editor-set-indent-tab-character",
-			 "check-for-updates",
-			 "keybindings",
-			 "about-ecode",
-			 "ecode-source",
-			 "ui-scale-factor",
-			 "show-side-panel",
-			 "editor-font-size",
-			 "terminal-font-size",
-			 "ui-font-size",
-			 "ui-panel-font-size",
-			 "sans-serif-font",
-			 "monospace-font",
-			 "terminal-font",
-			 "fallback-font",
-			 "tree-view-configure-ignore-files",
-			 "show-open-documents",
-			 "open-workspace-symbol-search",
-			 "open-document-symbol-search",
-			 "show-folder-treeview-tab",
-			 "show-build-tab",
-			 "create-new-window" };
+	return {
+		"create-new",
+		"create-new-terminal",
+		"create-new-welcome-tab",
+		"fullscreen-toggle",
+		"open-file",
+		"open-folder",
+		"reopen-closed-tab",
+		"console-toggle",
+		"close-app",
+		"open-locatebar",
+		"open-locatebar-glob-search",
+		"open-command-palette",
+		"open-global-search",
+		"project-build-start",
+		"project-build-start-cancel",
+		"project-build-cancel",
+		"project-build-clean",
+		"project-build-and-run",
+		"project-run-executable",
+		"toggle-status-locate-bar",
+		"toggle-status-global-search-bar",
+		"toggle-status-build-output",
+		"toggle-status-terminal",
+		"toggle-status-app-output",
+		"menu-toggle",
+		"switch-side-panel",
+		"toggle-status-bar",
+		"download-file-web",
+		"create-new-terminal",
+		"terminal-split-left",
+		"terminal-split-right",
+		"terminal-split-top",
+		"terminal-split-bottom",
+		"terminal-split-swap",
+		"reopen-closed-tab",
+		"plugin-manager-open",
+		"debug-widget-tree-view",
+		"debug-draw-highlight-toggle",
+		"debug-draw-boxes-toggle",
+		"debug-draw-debug-data",
+		"editor-set-line-breaking-column",
+		"editor-set-line-spacing",
+		"editor-set-cursor-blinking-time",
+		"editor-set-indent-tab-character",
+		"check-for-updates",
+		"keybindings",
+		"about-ecode",
+		"ecode-source",
+		"ui-scale-factor",
+		"show-side-panel",
+		"editor-font-size",
+		"terminal-font-size",
+		"ui-font-size",
+		"ui-panel-font-size",
+		"sans-serif-font",
+		"monospace-font",
+		"terminal-font",
+		"fallback-font",
+		"tree-view-configure-ignore-files",
+		"show-open-documents",
+		"open-workspace-symbol-search",
+		"open-document-symbol-search",
+		"show-folder-treeview-tab",
+		"show-build-tab",
+		"create-new-window",
+		"reset-global-language-extensions-priorities",
+		"reset-project-language-extensions-priorities",
+	};
 }
 
 void App::saveProject( bool onlyIfNeeded, bool sessionSnapshotEnabled ) {
@@ -2275,6 +2284,17 @@ void App::createDocDoesNotExistsInFSAlert( UICodeEditor* editor ) {
 		Seconds( 30.f ) );
 }
 
+std::map<std::string, std::string>& App::getCurrentLanguageExtensionsPriorities() {
+	if ( !mCurrentProject.empty() && mCurrentProject != getPlaygroundPath() )
+		return mProjectDocConfig.languagesExtensions.priorities;
+	return mConfig.languagesExtensions.priorities;
+}
+
+void App::updateLanguageExtensionsPriorities() {
+	SyntaxDefinitionManager::instance()->setLanguageExtensionsPriority(
+		getCurrentLanguageExtensionsPriorities() );
+}
+
 void App::createDocManyLangsAlert( UICodeEditor* editor ) {
 	UILinearLayout* docAlert = editor->findByClass<UILinearLayout>( "doc_alert_manylangs" );
 
@@ -2292,7 +2312,7 @@ void App::createDocManyLangsAlert( UICodeEditor* editor ) {
 		<TextView id="doc_alert_text" layout_width="wrap_content" layout_height="wrap_content" margin-right="24dp"
 			text='@string(reload_current_file, "The current document uses an extension that can be interpreted as more than one languages.&#xA;Which language is this document?")'
 		/>
-		<StackLayout class="languages" layout_width="200dp" layout_height="wrap_content" margin-right="24dp" margin-top="8dp"></StackLayout>
+		<StackLayout class="languages" layout_width="match_parent" layout_height="wrap_content" margin-right="24dp" margin-top="8dp"></StackLayout>
 		<TextView font-size="9dp" text='@string(lang_selected_default, The language selected will be set as the default language for this file extension.)' margin-top="8dp" />
 	</vbox>
 	)xml";
@@ -2315,9 +2335,8 @@ void App::createDocManyLangsAlert( UICodeEditor* editor ) {
 			editor->disableReportSizeChangeToChildren();
 			docAlert->close();
 			editor->setFocus();
-			mConfig.languagesExtensions.priorities[ext] = lang->getLSPName();
-			SyntaxDefinitionManager::instance()->setLanguageExtensionsPriority(
-				mConfig.languagesExtensions.priorities );
+			getCurrentLanguageExtensionsPriorities()[ext] = lang->getLSPName();
+			updateLanguageExtensionsPriorities();
 		} );
 	}
 
@@ -2434,7 +2453,7 @@ void App::openFileFromPath( const std::string& path ) {
 bool App::loadFileFromPath(
 	std::string path, bool inNewTab, UICodeEditor* codeEditor,
 	std::function<void( UICodeEditor* codeEditor, const std::string& path )> onLoaded,
-	bool openBinaryAsDocument ) {
+	bool openBinaryAsDocument, bool tryFindMimeType ) {
 	std::string ext = FileSystem::fileExtension( path );
 
 	if ( ext == "lnk" ) {
@@ -2448,9 +2467,10 @@ bool App::loadFileFromPath(
 			return false;
 	}
 
-	if ( Image::isImageExtension( path ) && Image::isImage( path ) && ext != "svg" ) {
+	if ( ( Image::isImageExtension( path ) || tryFindMimeType ) && Image::isImage( path ) &&
+		 ext != "svg" ) {
 		loadImageFromPath( path );
-	} else if ( SoundFileFactory::isKnownFileExtension( path ) &&
+	} else if ( ( SoundFileFactory::isKnownFileExtension( path ) || tryFindMimeType ) &&
 				SoundFileFactory::isValidAudioFile( path ) ) {
 		loadAudioFromPath( path );
 	} else if ( !openBinaryAsDocument && PathHelper::isOpenExternalExtension( ext ) ) {
@@ -2817,9 +2837,10 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 
 		auto ext = editor->getDocument().getFileInfo().getExtension();
 		if ( SyntaxDefinitionManager::instance()->extensionCanRepresentManyLanguages( ext ) ) {
-			auto hasConfig = mConfig.languagesExtensions.priorities.find( ext );
+			auto& priorities = getCurrentLanguageExtensionsPriorities();
+			auto hasConfig = priorities.find( ext );
 			const SyntaxDefinition* def = nullptr;
-			if ( hasConfig != mConfig.languagesExtensions.priorities.end() &&
+			if ( hasConfig != priorities.end() &&
 				 ( def = SyntaxDefinitionManager::instance()->getPtrByLSPName(
 					   hasConfig->second ) ) ) {
 				editor->setSyntaxDefinition( *def );
@@ -3585,6 +3606,7 @@ void App::loadFolder( std::string path, bool forceNewWindow ) {
 	if ( mProjectBuildManager )
 		mProjectBuildManager.reset();
 
+	updateLanguageExtensionsPriorities();
 	SyntaxDefinitionManager::instance()->resetFileAssociations();
 
 	mProjectBuildManager =
@@ -3911,7 +3933,7 @@ void App::init( InitParameters& params ) {
 		SyntaxDefinitionManager::createSingleton();
 		Language::LanguagesSyntaxHighlighting::load();
 		SyntaxDefinitionManager::instance()->setLanguageExtensionsPriority(
-			mConfig.languagesExtensions.priorities );
+			getCurrentLanguageExtensionsPriorities() );
 		Log::info( "Syntax definitions loaded in %s.",
 				   defClock.getElapsedTimeAndReset().toString() );
 
@@ -4671,11 +4693,10 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		{ "first-instance" } );
 
 #ifdef EE_TEXT_SHAPER_ENABLED
-	args::Flag textShaper(
-		parser, "text-shaper",
-		"WARNING: Do not use this option. It will be completely "
-		"removed soon. It does nothing since text-shaper is enabled by default.",
-		{ "text-shaper" } );
+	args::Flag textShaper( parser, "text-shaper",
+						   "WARNING: Do not use this option. It will be completely "
+						   "removed soon. It does nothing since text-shaper is enabled by default.",
+						   { "text-shaper" } );
 	args::Flag noTextShaper( parser, "no-text-shaper", "Disables text-shaping capabilities",
 							 { "no-text-shaper" } );
 #endif

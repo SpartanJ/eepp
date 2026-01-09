@@ -35,6 +35,7 @@
 #include <eepp/ui/doc/languages/fixscript.hpp>
 #include <eepp/ui/doc/languages/flow9.hpp>
 #include <eepp/ui/doc/languages/fortran.hpp>
+#include <eepp/ui/doc/languages/freebasic.hpp>
 #include <eepp/ui/doc/languages/fstab.hpp>
 #include <eepp/ui/doc/languages/gdscript.hpp>
 #include <eepp/ui/doc/languages/gleam.hpp>
@@ -89,6 +90,7 @@
 #include <eepp/ui/doc/languages/pony.hpp>
 #include <eepp/ui/doc/languages/postgresql.hpp>
 #include <eepp/ui/doc/languages/powershell.hpp>
+#include <eepp/ui/doc/languages/qb64.hpp>
 #include <eepp/ui/doc/languages/qbs.hpp>
 #include <eepp/ui/doc/languages/qmake.hpp>
 #include <eepp/ui/doc/languages/r.hpp>
@@ -338,6 +340,12 @@ static void preDefinitionLangsChunk1( SyntaxDefinitionManager* sdm ) {
 		"Fortran",
 		[]() -> SyntaxDefinition& { return addFortran(); },
 		{ "%.f$", "%.f90$", "%.f95$" },
+	} );
+
+	sdm->addPreDefinition( {
+		"FreeBASIC",
+		[]() -> SyntaxDefinition& { return addFreeBASIC(); },
+		{ "%.bas$", "%.bi$" },
 	} );
 
 	sdm->addPreDefinition(
@@ -611,6 +619,12 @@ static void preDefinitionLangsChunk2( SyntaxDefinitionManager* sdm ) {
 		"PowerShell",
 		[]() -> SyntaxDefinition& { return addPowerShell(); },
 		{ "%.ps1$", "%.psm1$", "%.psd1$", "%.ps1xml$", "%.pssc$", "%.psrc$", "%.cdxml$" },
+	} );
+
+	sdm->addPreDefinition( {
+		"QB64",
+		[]() -> SyntaxDefinition& { return addQB64(); },
+		{ "%.bas$", "%.bi$", "%.bm$" },
 	} );
 
 	sdm->addPreDefinition( {

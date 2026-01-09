@@ -231,6 +231,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 		ini.getValueB( "terminal", "unsupported_os_warn_disabled", false );
 	term.closeTerminalTabOnExit = ini.getValueB( "terminal", "close_terminal_tab_on_exit", false );
 	term.warnBeforeClosingTab = ini.getValueB( "terminal", "warn_before_closing_tab", true );
+	term.exclusiveMode = ini.getValueB( "terminal", "exclusive_mode", false );
 	term.cursorStyle = TerminalCursorHelper::modeFromString(
 		ini.getValue( "terminal", "cursor_style", "steady_underline" ) );
 	term.scrollBarType = ini.getValue( "terminal", "scrollbar_type", "overlay" ) == "overlay"
@@ -407,6 +408,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "terminal", "unsupported_os_warn_disabled", term.unsupportedOSWarnDisabled );
 	ini.setValueB( "terminal", "close_terminal_tab_on_exit", term.closeTerminalTabOnExit );
 	ini.setValueB( "terminal", "warn_before_closing_tab", term.warnBeforeClosingTab );
+	ini.setValueB( "terminal", "exclusive_mode", term.exclusiveMode );
 	ini.setValue( "terminal", "cursor_style",
 				  TerminalCursorHelper::modeToString( term.cursorStyle ) );
 	ini.setValue( "terminal", "scrollbar_type",
@@ -571,6 +573,8 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	cfg.setValue( "build", "run_name", buildConfig.runName );
 	cfg.setValue( "nodes", "documents",
 				  saveNode( editorSplitter->getBaseLayout()->getFirstChild() ).dump() );
+	for ( const auto& langExt : docConfig.languagesExtensions.priorities )
+		cfg.setValue( "languages_extensions", langExt.first, langExt.second );
 	cfg.deleteKey( "files" );
 	if ( onlyIfNeeded ) {
 		IOStreamString stringFile;
@@ -855,6 +859,8 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 		prjCfg.runName = cfg.getValue( "build", "run_name", "" );
 		app->getProjectBuildManager()->setConfig( prjCfg );
 	}
+
+	docConfig.languagesExtensions.priorities = cfg.getKeyMap( "languages_extensions" );
 
 	std::vector<SessionSnapshotFile> sessionSnapshotFiles;
 	if ( sessionSnapshot ) {

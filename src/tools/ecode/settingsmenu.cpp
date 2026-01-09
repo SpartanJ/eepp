@@ -1139,6 +1139,14 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 	mTerminalMenu->addSeparator();
 
 	mTerminalMenu
+		->addCheckBox(
+			i18n( "enable_exclusive_mode_by_default", "Enable Exclusive Mode by Default" ),
+			mApp->getConfig().term.exclusiveMode )
+		->setTooltipText( i18n( "enable_exclusive_mode_by_default_tooltip",
+								"New terminals will have the exclusive mode enabled by default" ) )
+		->setId( "enable-exclusive-mode-by-default" );
+
+	mTerminalMenu
 		->addCheckBox( i18n( "close_terminal_tab_on_exit", "Close Terminal Tab on Exit" ),
 					   mApp->getConfig().term.closeTerminalTabOnExit )
 		->setTooltipText( i18n( "close_terminal_tab_on_exit_tooltip",
@@ -1174,6 +1182,9 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 			mSplitter->forEachWidgetType( UI_TYPE_TERMINAL, [active]( UIWidget* widget ) {
 				widget->asType<UITerminal>()->getTerm()->setKeepAlive( !active );
 			} );
+		} else if ( "enable-exclusive-mode-by-default" == id ) {
+			bool active = event->getNode()->asType<UIMenuCheckBox>()->isActive();
+			mApp->getConfig().term.exclusiveMode = active;
 		} else if ( "warn-before-closing-tab" == id ) {
 			bool active = event->getNode()->asType<UIMenuCheckBox>()->isActive();
 			mApp->getConfig().term.warnBeforeClosingTab = active;

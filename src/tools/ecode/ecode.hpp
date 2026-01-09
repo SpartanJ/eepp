@@ -110,7 +110,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 						   UICodeEditor* codeEditor = nullptr,
 						   std::function<void( UICodeEditor*, const std::string& )> onLoaded =
 							   std::function<void( UICodeEditor*, const std::string& )>(),
-						   bool openBinaryAsDocument = false );
+						   bool openBinaryAsDocument = false, bool tryFindMimeType = false );
 
 	void hideGlobalSearchBar();
 
@@ -415,6 +415,27 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 				tabWidget->focusPreviousTab( triggerCodes );
 			}
 		} );
+
+		t.setCommand( "reset-global-language-extensions-priorities", [this] {
+			mConfig.languagesExtensions.priorities.clear();
+			saveConfig();
+			mNotificationCenter->addNotification(
+				i18n( "global_language_extensions_priorities_has_been_reset",
+					  "Global language extensions priorities has been reset" ) );
+		} );
+
+		t.setCommand( "reset-project-language-extensions-priorities", [this] {
+			if ( !mCurrentProject.empty() && mCurrentProject != getPlaygroundPath() ) {
+				mProjectDocConfig.languagesExtensions.priorities.clear();
+				saveProject();
+				mNotificationCenter->addNotification(
+					i18n( "project_language_extensions_priorities_has_been_reset",
+						  "Project language extensions priorities has been reset" ) );
+			} else {
+				mNotificationCenter->addNotification(
+					i18n( "no_project_loaded", "No project loaded" ) );
+			}
+		} );
 	}
 
 	PluginManager* getPluginManager() const;
@@ -577,6 +598,10 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	const std::unordered_map<std::string, std::string>& getStatusBarKeybindings() const {
 		return mStatusBarKeybindings;
 	}
+
+	void updateLanguageExtensionsPriorities();
+
+	std::map<std::string, std::string>& getCurrentLanguageExtensionsPriorities();
 
   protected:
 	std::vector<std::string> mArgs;

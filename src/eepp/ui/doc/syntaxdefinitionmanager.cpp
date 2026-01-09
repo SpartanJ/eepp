@@ -545,6 +545,13 @@ namespace EE { namespace UI { namespace Doc { namespace Language {
 
 SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle ) {
 	Lock l( mMutex );
+	auto existsIt =
+		std::find_if( mDefinitions.begin(), mDefinitions.end(),
+					  [&syntaxStyle]( const std::shared_ptr<SyntaxDefinition>& def ) {
+						  return def->getLanguageName() == syntaxStyle.getLanguageName();
+					  } );
+	if ( existsIt != mDefinitions.end() )
+		return **existsIt;
 	syntaxStyle.mLanguageIndex = mDefinitions.size();
 	syntaxStyle.compile();
 	mDefinitions.emplace_back( std::make_shared<SyntaxDefinition>( std::move( syntaxStyle ) ) );
