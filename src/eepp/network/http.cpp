@@ -27,6 +27,20 @@ namespace EE { namespace Network {
 
 #define PACKET_BUFFER_SIZE ( 16384 )
 
+std::string Http::Request::statusToString( Http::Request::Status status ) {
+	switch ( status ) {
+		case Connected:
+			return "Connected";
+		case Sent:
+			return "Sent";
+		case HeaderReceived:
+			return "HeaderReceived";
+		case ContentReceived:
+			return "ContentReceived";
+	}
+	return "";
+}
+
 Http::Request::Method Http::Request::methodFromString( std::string methodString ) {
 	String::toLowerInPlace( methodString );
 	if ( "get" == methodString )
@@ -610,11 +624,11 @@ Http::Response Http::post( const URI& uri, const Time& timeout,
 					validateCertificate, proxy );
 }
 
-void Http::requestAsync( const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout,
-						 Request::Method method,
-						 const Http::Request::ProgressCallback& progressCallback,
-						 const Http::Request::FieldTable& headers, const std::string& body,
-						 const bool& validateCertificate, const URI& proxy ) {
+Uint64 Http::requestAsync( const Http::AsyncResponseCallback& cb, const URI& uri,
+						   const Time& timeout, Request::Method method,
+						   const Http::Request::ProgressCallback& progressCallback,
+						   const Http::Request::FieldTable& headers, const std::string& body,
+						   const bool& validateCertificate, const URI& proxy ) {
 	auto http = sGlobalHttpPool.get( uri, proxy );
 	Request request( uri.getPathAndQuery(), method, body, validateCertificate, validateCertificate,
 					 true, true );
@@ -623,23 +637,23 @@ void Http::requestAsync( const Http::AsyncResponseCallback& cb, const URI& uri, 
 	for ( const auto& field : headers )
 		request.setField( field.first, field.second );
 
-	http->sendAsyncRequest( cb, request, timeout );
+	return http->sendAsyncRequest( cb, request, timeout );
 }
 
-void Http::getAsync( const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout,
-					 const Http::Request::ProgressCallback& progressCallback,
-					 const Http::Request::FieldTable& headers, const std::string& body,
-					 const bool& validateCertificate, const URI& proxy ) {
-	requestAsync( cb, uri, timeout, Request::Method::Get, progressCallback, headers, body,
-				  validateCertificate, proxy );
+Uint64 Http::getAsync( const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout,
+					   const Http::Request::ProgressCallback& progressCallback,
+					   const Http::Request::FieldTable& headers, const std::string& body,
+					   const bool& validateCertificate, const URI& proxy ) {
+	return requestAsync( cb, uri, timeout, Request::Method::Get, progressCallback, headers, body,
+						 validateCertificate, proxy );
 }
 
-void Http::postAsync( const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout,
-					  const Http::Request::ProgressCallback& progressCallback,
-					  const Http::Request::FieldTable& headers, const std::string& body,
-					  const bool& validateCertificate, const URI& proxy ) {
-	requestAsync( cb, uri, timeout, Request::Method::Post, progressCallback, headers, body,
-				  validateCertificate, proxy );
+Uint64 Http::postAsync( const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout,
+						const Http::Request::ProgressCallback& progressCallback,
+						const Http::Request::FieldTable& headers, const std::string& body,
+						const bool& validateCertificate, const URI& proxy ) {
+	return requestAsync( cb, uri, timeout, Request::Method::Post, progressCallback, headers, body,
+						 validateCertificate, proxy );
 }
 
 Http::Http() : mConnection( NULL ), mHost(), mPort( 0 ), mIsSSL( false ), mHostSolved( false ) {}

@@ -681,7 +681,7 @@ Window {
 	window-titlebar-size: 24dp 24dp;
 	window-buttons-offset: -6dp 0dp;
 	window-buttons-separation: 8dp;
-	window-flags: shadow;
+	window-flags: default|shadow;
 }
 
 Window::decoration {

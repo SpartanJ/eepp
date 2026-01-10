@@ -185,6 +185,8 @@ class EE_API Http : NonCopyable {
 			ContentReceived ///< Content received.
 		};
 
+		static std::string statusToString( Status status );
+
 		/** @return Method from a method name string. */
 		static Method methodFromString( std::string methodString );
 
@@ -654,8 +656,10 @@ class EE_API Http : NonCopyable {
 		  const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "",
 		  const bool& validateCertificate = true, const URI& proxy = URI() );
 
-	/** Creates an async HTTP Request using the global HTTP Client Pool */
-	static void
+	/** Creates an async HTTP Request using the global HTTP Client Pool
+	** @return The unique async request id
+	*/
+	static Uint64
 	requestAsync( const Http::AsyncResponseCallback& cb, const URI& uri,
 				  const Time& timeout = Time::Zero, Request::Method method = Request::Method::Get,
 				  const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
@@ -663,15 +667,19 @@ class EE_API Http : NonCopyable {
 				  const std::string& body = "", const bool& validateCertificate = true,
 				  const URI& proxy = URI() );
 
-	/** Creates an async HTTP GET Request using the global HTTP Client Pool */
-	static void getAsync(
+	/** Creates an async HTTP GET Request using the global HTTP Client Pool
+	** @return The unique async request id
+	*/
+	static Uint64 getAsync(
 		const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout = Time::Zero,
 		const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
 		const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "",
 		const bool& validateCertificate = true, const URI& proxy = URI() );
 
-	/** Creates an async HTTP POST Request using the global HTTP Client Pool */
-	static void postAsync(
+	/** Creates an async HTTP POST Request using the global HTTP Client Pool
+	** @return The unique async request id
+	*/
+	static Uint64 postAsync(
 		const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout = Time::Zero,
 		const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
 		const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "",

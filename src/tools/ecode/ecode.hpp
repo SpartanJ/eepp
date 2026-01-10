@@ -34,6 +34,8 @@ class SettingsMenu;
 
 class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
   public:
+	static App* instance();
+
 	explicit App( const size_t& jobs = 0, const std::vector<std::string>& args = {} );
 
 	~App();
@@ -468,7 +470,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::vector<std::pair<String::StringBaseType, String::StringBaseType>>
 	makeAutoClosePairs( const std::string& strPairs );
 
-	ProjectDocumentConfig& getProjectDocConfig();
+	ProjectConfig& getProjectConfig();
 
 	const std::string& getWindowTitle() const;
 
@@ -603,6 +605,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	std::map<std::string, std::string>& getCurrentLanguageExtensionsPriorities();
 
+	bool isDestroyingApp() const { return mDestroyingApp; }
+
   protected:
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
@@ -667,7 +671,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	bool mIncognito{ false };
 	Clock mLastRender;
 	Clock mSecondsCounter;
-	ProjectDocumentConfig mProjectDocConfig;
+	ProjectConfig mProjectDocConfig;
 	std::unordered_set<Doc::TextDocument*> mTmpDocs;
 	std::string mCurrentProject;
 	std::string mCurrentProjectName;

@@ -1053,7 +1053,8 @@ bool UIWindow::show() {
 		setEnabled( true );
 		setVisible( true );
 
-		setFocus();
+		if ( mStealFocusOnShow )
+			setFocus();
 
 		UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
 		if ( themeManager->getDefaultEffectsEnabled() ) {
@@ -1083,7 +1084,7 @@ bool UIWindow::hide( bool immediate ) {
 			setVisible( false );
 		}
 
-		if ( NULL != mSceneNode )
+		if ( NULL != mSceneNode && hasFocusWithin() )
 			mSceneNode->setFocus();
 
 		if ( NULL != mModalNode ) {
@@ -1678,9 +1679,8 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 						winflags |= UI_WIN_EPHEMERAL;
 				}
 
-				/// TODO: WinFlags should replace old winFlags
 				if ( winflags != mStyleConfig.WinFlags ) {
-					mStyleConfig.WinFlags |= winflags;
+					mStyleConfig.WinFlags = winflags;
 					updateWinFlags();
 				}
 			}
@@ -1724,7 +1724,7 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 
 void UIWindow::loadFromXmlNode( const pugi::xml_node& node ) {
 	UIWidget::loadFromXmlNode( node );
-
+	setStealFocusOnShow( false );
 	showWhenReady();
 }
 
@@ -1796,6 +1796,14 @@ void UIWindow::checkEphemeralClose() {
 	if ( !mShowWhenReady && ( mStyleConfig.WinFlags & UI_WIN_EPHEMERAL ) && focusNode != this &&
 		 !inParentTreeOf( focusNode ) )
 		closeWindow();
+}
+
+void UIWindow::setStealFocusOnShow( bool steal ) {
+	mStealFocusOnShow = steal;
+}
+
+bool UIWindow::stealsFocusOnShow() const {
+	return mStealFocusOnShow;
 }
 
 }} // namespace EE::UI

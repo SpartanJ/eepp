@@ -200,6 +200,10 @@ class EE_API UIWindow : public UIWidget {
 
 	void executeKeyBindingCommand( const std::string& command );
 
+	void setStealFocusOnShow( bool steal );
+
+	bool stealsFocusOnShow() const;
+
   protected:
 	enum UI_RESIZE_TYPE {
 		RESIZE_NONE,
@@ -236,6 +240,7 @@ class EE_API UIWindow : public UIWidget {
 	bool mFrameBufferBound;
 	bool mWindowReady{ false };
 	bool mShowWhenReady{ false };
+	bool mStealFocusOnShow{ true };
 	bool mClosing{ false };
 
 	KeyBindings mKeyBindings;

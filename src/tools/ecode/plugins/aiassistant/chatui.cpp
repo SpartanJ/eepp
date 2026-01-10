@@ -649,7 +649,7 @@ void LLMChatUI::showChatHistory() {
 	hideAttachFile();
 
 	static const char* CHAT_HISTORY_LAYOUT = R"xml(
-		<window window-flags="shadow|modal|ephemeral"
+		<window window-flags="default|shadow|modal|ephemeral|maximize"
 				window-title="@string(ai_conversations_history, AI Conversations History)">
 			<Loader id="loader" radius="48" outline-thickness="6dp" indeterminate="true" />
 			<vbox lw="mp" lh="mp">

@@ -152,6 +152,7 @@ class EE_API Engine {
 	std::map<Uint32, Window*> mWindows;
 	EE::Window::Window* mWindow;
 	bool mSharedGLContext;
+	bool mIsShuttingDown{ false };
 	PlatformHelper* mPlatformHelper;
 	Pack* mZip;
 	DisplayManager* mDisplayManager;

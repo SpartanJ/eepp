@@ -897,14 +897,6 @@ TextDocument::LoadStatus TextDocument::loadFromPack( Pack* pack, std::string fil
 	return ret;
 }
 
-static std::string getTempPathFromURI( const URI& uri ) {
-	std::string lastSegment( uri.getLastPathSegment() );
-	std::string name( String::randString( 8 ) +
-					  ( lastSegment.empty() ? ".txt" : "." + lastSegment ) );
-	std::string tmpPath( Sys::getTempPath() + name );
-	return tmpPath;
-}
-
 TextDocument::LoadStatus TextDocument::loadFromURL( const std::string& url,
 													const Http::Request::FieldTable& headers ) {
 	mLoading = true;
@@ -919,7 +911,7 @@ TextDocument::LoadStatus TextDocument::loadFromURL( const std::string& url,
 		Http::get( uri, Seconds( 10 ), nullptr, headers, "", true, Http::getEnvProxyURI() );
 
 	if ( response.getStatus() <= Http::Response::Ok ) {
-		std::string path( getTempPathFromURI( uri ) );
+		std::string path( URI::getTempPathFromURI( uri ) );
 		FileSystem::fileWrite( path, (const Uint8*)response.getBody().c_str(),
 							   response.getBody().size() );
 		auto ret = loadFromFile( path );
@@ -950,7 +942,7 @@ bool TextDocument::loadAsyncFromURL( const std::string& url,
 		[this, onLoaded = std::move( onLoaded ),
 		 uri = std::move( uri )]( const Http&, Http::Request&, Http::Response& response ) {
 			if ( response.getStatus() <= Http::Response::Ok ) {
-				std::string path( getTempPathFromURI( uri ) );
+				std::string path( URI::getTempPathFromURI( uri ) );
 				FileSystem::fileWrite( path, (const Uint8*)response.getBody().c_str(),
 									   response.getBody().size() );
 				if ( loadFromFile( path ) == LoadStatus::Loaded ) {

@@ -282,7 +282,7 @@ void TextureLoader::notifyLoaded() {
 }
 
 void TextureLoader::loadFromPixels() {
-	if ( !mLoaded && mTexLoaded ) {
+	if ( !mLoaded && mTexLoaded && Engine::isEngineRunning() ) {
 		Uint32 tTexId = 0;
 
 		if ( NULL != mPixels ) {
@@ -304,6 +304,9 @@ void TextureLoader::loadFromPixels() {
 
 			{
 				ScopedTexture scopedTexture;
+
+				if ( !Engine::isEngineRunning() )
+					return;
 
 				if ( mDirectUpload ) {
 					if ( Image::Format::DDS == mImgType ) {

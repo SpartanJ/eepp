@@ -90,7 +90,7 @@ ScrollBar {
 }
 
 Window {
-	window-flags: shadow;
+	window-flags: default|shadow;
 	window-buttons-offset: -2dp 0;
 }
 

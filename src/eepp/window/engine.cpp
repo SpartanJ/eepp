@@ -64,6 +64,8 @@ Engine::Engine() :
 }
 
 Engine::~Engine() {
+	mIsShuttingDown = true;
+
 	GlobalBatchRenderer::destroySingleton();
 
 	NinePatchManager::destroySingleton();
@@ -243,7 +245,7 @@ bool Engine::isEngineRunning() {
 }
 
 bool Engine::isRunning() const {
-	return NULL != mWindow;
+	return NULL != mWindow && !mIsShuttingDown;
 }
 
 WindowBackend Engine::getDefaultBackend() const {

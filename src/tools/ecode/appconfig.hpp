@@ -141,13 +141,13 @@ struct LanguagesExtensions {
 	std::map<std::string, std::string> priorities;
 };
 
-struct ProjectDocumentConfig {
+struct ProjectConfig {
 	bool useGlobalSettings{ true };
 	HExtLanguageType hExtLanguageType{ HExtLanguageType::AutoDetect };
 	DocumentConfig doc;
 	LanguagesExtensions languagesExtensions;
-	ProjectDocumentConfig() {}
-	ProjectDocumentConfig( const DocumentConfig& doc ) { this->doc = doc; }
+	ProjectConfig() {}
+	ProjectConfig( const DocumentConfig& doc ) { this->doc = doc; }
 };
 
 struct ProjectBuildConfiguration {
@@ -259,12 +259,12 @@ class AppConfig {
 			   bool terminalMode );
 
 	void saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
-					  const std::string& configPath, const ProjectDocumentConfig& docConfig,
+					  const std::string& configPath, const ProjectConfig& docConfig,
 					  const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
 					  bool sessionSnapshot, PluginManager* );
 
 	void loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
-					  const std::string& configPath, ProjectDocumentConfig& docConfig,
+					  const std::string& configPath, ProjectConfig& docConfig,
 					  ecode::App* app, bool sessionSnapshot, PluginManager* pluginManager );
 
 	void addTabWidgetType( const std::string& type, TabWidgetCbs tabWidget ) {

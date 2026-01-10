@@ -6,6 +6,7 @@
 #include "settingsactions.hpp"
 #include "settingsmenu.hpp"
 #include "uibuildsettings.hpp"
+#include "uidownloadwindow.hpp"
 #include "uitreeviewfs.hpp"
 #include "uiwelcomescreen.hpp"
 #include "version.hpp"
@@ -60,6 +61,10 @@ static const auto NOT_UNIQUE_FILENAME = "not_unique";
 
 void appLoop() {
 	appInstance->mainLoop();
+}
+
+App* App::instance() {
+	return appInstance;
 }
 
 bool App::isAnyTerminalDirty() const {
@@ -555,7 +560,7 @@ void App::downloadFileWebDialog() {
 }
 
 void App::downloadFileWeb( const std::string& url ) {
-	loadFileFromPath( url, true );
+	UIDownloadWindow::downloadFileWeb( url );
 }
 
 UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
@@ -989,7 +994,9 @@ static void fsRemoveAll( const std::string& fpath ) {
 }
 
 App::~App() {
+	appInstance = nullptr;
 	mDestroyingApp = true;
+
 	if ( mProjectBuildManager )
 		mProjectBuildManager.reset();
 
@@ -1303,7 +1310,7 @@ App::makeAutoClosePairs( const std::string& strPairs ) {
 	return pairs;
 }
 
-ProjectDocumentConfig& App::getProjectDocConfig() {
+ProjectConfig& App::getProjectConfig() {
 	return mProjectDocConfig;
 }
 
@@ -2128,7 +2135,7 @@ void App::closeEditors() {
 	if ( mFileSystemListener )
 		mFileSystemListener->setDirTree( mDirTree );
 
-	mProjectDocConfig = ProjectDocumentConfig( mConfig.doc );
+	mProjectDocConfig = ProjectConfig( mConfig.doc );
 	mSettings->updateProjectSettingsMenu();
 	if ( !mSplitter->getTabWidgets().empty() && mSplitter->getTabWidgets()[0]->getTabCount() == 0 )
 		mSplitter->createCodeEditorInTabWidget( mSplitter->getTabWidgets()[0] );

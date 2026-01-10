@@ -543,7 +543,7 @@ json AppConfig::saveNode( Node* node ) {
 }
 
 void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
-							 const std::string& configPath, const ProjectDocumentConfig& docConfig,
+							 const std::string& configPath, const ProjectConfig& docConfig,
 							 const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
 							 bool sessionSnapshot, PluginManager* pluginManager ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
@@ -817,7 +817,7 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 }
 
 void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
-							 const std::string& configPath, ProjectDocumentConfig& docConfig,
+							 const std::string& configPath, ProjectConfig& docConfig,
 							 ecode::App* app, bool sessionSnapshot, PluginManager* pluginManager ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
