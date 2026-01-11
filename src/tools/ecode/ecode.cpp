@@ -562,6 +562,19 @@ void App::downloadFileWebDialog() {
 	} );
 }
 
+void App::resetPanelsPartitions() {
+	if ( mProjectSplitter ) {
+		mConfig.windowState.panelPartition = "15%";
+		mProjectSplitter->setSplitPartition(
+			StyleSheetLength( mConfig.windowState.panelPartition ) );
+	}
+	if ( mMainSplitter ) {
+		mConfig.windowState.statusBarPartition = "85%";
+		mMainSplitter->setSplitPartition(
+			StyleSheetLength( mConfig.windowState.statusBarPartition ) );
+	}
+}
+
 void App::downloadFileWeb( const std::string& url ) {
 	UIDownloadWindow::downloadFileWeb( url );
 }

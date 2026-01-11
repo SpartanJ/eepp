@@ -822,8 +822,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	UIPopUpMenu* indentWidthMenuProject = UIPopUpMenu::New();
 	for ( int w = 2; w <= 12; w++ )
 		indentWidthMenuProject
-			->addRadioButton( String::toString( w ),
-							  mApp->getProjectConfig().doc.indentWidth == w )
+			->addRadioButton( String::toString( w ), mApp->getProjectConfig().doc.indentWidth == w )
 			->setId( String::format( "indent_width_%d", w ) )
 			->setData( w );
 	mProjectDocMenu
@@ -851,16 +850,16 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 
 	UIPopUpMenu* lineEndingsProjectMenu = UIPopUpMenu::New();
 	lineEndingsProjectMenu
-		->addRadioButton( "Windows (CR/LF)", mApp->getProjectConfig().doc.lineEndings ==
-												 TextFormat::LineEnding::CRLF )
+		->addRadioButton( "Windows (CR/LF)",
+						  mApp->getProjectConfig().doc.lineEndings == TextFormat::LineEnding::CRLF )
 		->setId( "CRLF" );
 	lineEndingsProjectMenu
-		->addRadioButton( "Unix (LF)", mApp->getProjectConfig().doc.lineEndings ==
-										   TextFormat::LineEnding::LF )
+		->addRadioButton( "Unix (LF)",
+						  mApp->getProjectConfig().doc.lineEndings == TextFormat::LineEnding::LF )
 		->setId( "LF" );
 	lineEndingsProjectMenu
-		->addRadioButton( "Macintosh (CR)", mApp->getProjectConfig().doc.lineEndings ==
-												TextFormat::LineEnding::CR )
+		->addRadioButton( "Macintosh (CR)",
+						  mApp->getProjectConfig().doc.lineEndings == TextFormat::LineEnding::CR )
 		->setId( "CR" );
 	mProjectDocMenu
 		->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsProjectMenu )
@@ -1471,6 +1470,22 @@ UIMenu* SettingsMenu::createWindowMenu() {
 			i18n( "quick_preview_images_tooltip",
 				  "Instead of opening a new tab to view an image uses a quick-preview." ) )
 		->setId( "quick-preview-images" );
+
+	mWindowMenu->addSeparator();
+
+	mWindowMenu->add( i18n( "reset_panel_layout", "Reset Panel Layout" ) )
+		->setTooltipText( i18n( "reset_panel_layout_tooltip",
+								"Restores all panels to their default sizes "
+								"(e.g. sidebar, statusbar)." ) )
+		->setId( "reset-panel-layout" );
+
+	mWindowMenu->add( i18n( "reset_global_file_associations", "Reset Global File Associations" ) )
+		->setTooltipText( i18n( "reset_global_file_associations_tooltip",
+								"Clears your saved language choices for ambiguous file extensions\n"
+								"(e.g. choosing C++ for .h files). This only affects files opened\n"
+								"outside of project folders. After resetting, you'll be prompted\n"
+								"to choose a language again when opening these files." ) )
+		->setId( "reset-global-file-associations" );
 
 	mWindowMenu->addSeparator();
 
@@ -2300,11 +2315,11 @@ void SettingsMenu::updateProjectSettingsMenu() {
 		->asType<UIMenuCheckBox>()
 		->setActive( mApp->getProjectConfig().doc.autoDetectIndentType );
 
-	auto* curIndent = mProjectDocMenu->find( "indent_width" )
-						  ->asType<UIMenuSubMenu>()
-						  ->getSubMenu()
-						  ->find( String::format( "indent_width_%d",
-												  mApp->getProjectConfig().doc.indentWidth ) );
+	auto* curIndent =
+		mProjectDocMenu->find( "indent_width" )
+			->asType<UIMenuSubMenu>()
+			->getSubMenu()
+			->find( String::format( "indent_width_%d", mApp->getProjectConfig().doc.indentWidth ) );
 
 	if ( curIndent )
 		curIndent->asType<UIMenuRadioButton>()->setActive( true );
@@ -2334,6 +2349,9 @@ void SettingsMenu::updateProjectSettingsMenu() {
 		->setEnabled( true )
 		->asType<UIMenuCheckBox>()
 		->setActive( mApp->getProjectConfig().useGlobalSettings );
+
+	mProjectMenu->getItemId( "reset-project-file-associations" )
+		->setEnabled( mApp->projectIsOpen() );
 }
 
 void SettingsMenu::updateTerminalMenu() {
@@ -2838,6 +2856,17 @@ void SettingsMenu::createProjectMenu() {
 
 	mProjectMenu->addSubMenu( i18n( "treat_h_files_as_ellipsis", "Treat .h files as..." ), nullptr,
 							  mHExtLanguageTypeMenu );
+
+	mProjectMenu->addSeparator();
+
+	mProjectMenu
+		->add( i18n( "reset_project_file_associations", "Reset Project File Associations" ) )
+		->setTooltipText( i18n( "reset_project_file_associations_tooltip",
+								"Clears your saved language choices for ambiguous file extensions\n"
+								"(e.g. choosing C++ for .h files) in the current project.\n"
+								"After resetting, you'll be prompted to choose a language again\n"
+								"when opening these files within this project." ) )
+		->setId( "reset-project-file-associations" );
 
 	mHExtLanguageTypeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||

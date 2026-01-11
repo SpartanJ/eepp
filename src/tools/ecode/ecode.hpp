@@ -419,21 +419,21 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 			}
 		} );
 
-		t.setCommand( "reset-global-language-extensions-priorities", [this] {
+		t.setCommand( "reset-global-file-associations", [this] {
 			mConfig.languagesExtensions.priorities.clear();
 			saveConfig();
 			mNotificationCenter->addNotification(
-				i18n( "global_language_extensions_priorities_has_been_reset",
-					  "Global language extensions priorities has been reset" ) );
+				i18n( "global_file_associations_has_been_reset",
+					  "Global file associations has been reset" ) );
 		} );
 
-		t.setCommand( "reset-project-language-extensions-priorities", [this] {
+		t.setCommand( "reset-project-file-associations", [this] {
 			if ( !mCurrentProject.empty() && mCurrentProject != getPlaygroundPath() ) {
 				mProjectDocConfig.languagesExtensions.priorities.clear();
 				saveProject();
 				mNotificationCenter->addNotification(
-					i18n( "project_language_extensions_priorities_has_been_reset",
-						  "Project language extensions priorities has been reset" ) );
+					i18n( "project_file_associations_has_been_reset",
+						  "Project file associations has been reset" ) );
 			} else {
 				mNotificationCenter->addNotification(
 					i18n( "no_project_loaded", "No project loaded" ) );
@@ -443,7 +443,15 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		t.setCommand( "maximize-tab-widget", [this] { maximizeTabWidget(); } );
 
 		t.setCommand( "restore-maximized-tab-widget", [this] { restoreMaximizedTabWidget(); } );
+
+		t.setCommand( "reset-panel-layout", [this] {
+			resetPanelsPartitions();
+			mNotificationCenter->addNotification(
+				i18n( "panels_partitions_has_been_reset", "Panels partitions has been reset" ) );
+		} );
 	}
+
+	void resetPanelsPartitions();
 
 	void maximizeTabWidget();
 
@@ -615,6 +623,10 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::map<std::string, std::string>& getCurrentLanguageExtensionsPriorities();
 
 	bool isDestroyingApp() const { return mDestroyingApp; }
+
+	bool projectIsOpen() const {
+		return !mCurrentProject.empty() && mCurrentProject != getPlaygroundPath();
+	}
 
   protected:
 	std::vector<std::string> mArgs;

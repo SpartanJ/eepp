@@ -150,6 +150,8 @@ class PluginContextProvider {
 								   std::optional<std::string> pathFilters = {} ) = 0;
 
 	virtual const std::unordered_map<std::string, std::string>& getStatusBarKeybindings() const = 0;
+
+	virtual bool projectIsOpen() const = 0;
 };
 
 } // namespace ecode
