@@ -1906,7 +1906,7 @@ String& String::operator=( const String& right ) {
 	return *this;
 }
 
-String& String::operator=( String&& right ) {
+String& String::operator=( String&& right ) noexcept {
 	mString = std::move( right.mString );
 	return *this;
 }

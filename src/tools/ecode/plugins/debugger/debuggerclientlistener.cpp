@@ -111,6 +111,7 @@ void DebuggerClientListener::createAndShowVariableMenu( ModelIndex idx ) {
 			UITextEdit* input = win->find( "value_input" )->asType<UITextEdit>();
 			input->setText( var.value );
 			win->center();
+			win->on( Event::OnWindowReady, [input]( auto ) { input->setFocus(); } );
 			win->showWhenReady();
 		}
 	} );

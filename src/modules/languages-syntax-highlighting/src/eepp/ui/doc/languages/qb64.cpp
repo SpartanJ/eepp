@@ -8,7 +8,7 @@ SyntaxDefinition& addQB64() {
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "QB64",
-		  { "%.bas$", "%.bi$", "%.bm$" },
+		  { "%.bas$", "%.bi$", "%.bm$", "%.inc$" },
 		  {
 			  { { "'.*" }, "comment" },
 			  { { "rem%s.*" }, "comment" },

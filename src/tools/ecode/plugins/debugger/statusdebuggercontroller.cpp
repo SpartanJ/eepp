@@ -279,6 +279,14 @@ void StatusDebuggerController::createContainer() {
 		} );
 	}
 
+	mContainer->on( Event::KeyDown, [this]( const Event* event ) {
+		auto ke = event->asKeyEvent();
+		if ( ke->getSanitizedMod() == 0 && ke->getKeyCode() == EE::Window::KEY_ESCAPE &&
+			 mSplitter->getCurEditor() ) {
+			mSplitter->getCurEditor()->setFocus();
+		}
+	} );
+
 	mContainer->getKeyBindings().addKeybinds( getLocalDefaultKeybindings() );
 
 	setDebuggingState( State::NotStarted );

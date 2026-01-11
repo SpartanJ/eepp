@@ -204,6 +204,8 @@ class EE_API UIWindow : public UIWidget {
 
 	bool stealsFocusOnShow() const;
 
+	void setCheckEphemeralCloseFn( std::function<bool( Node* focusNode )> fn );
+
   protected:
 	enum UI_RESIZE_TYPE {
 		RESIZE_NONE,
@@ -242,9 +244,11 @@ class EE_API UIWindow : public UIWidget {
 	bool mShowWhenReady{ false };
 	bool mStealFocusOnShow{ true };
 	bool mClosing{ false };
+	bool mLoadedFromXML{ false };
 
 	KeyBindings mKeyBindings;
 	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;
+	std::function<bool( Node* focusNode )> mCheckEphemeralCloseFn;
 
 	virtual void onSizeChange();
 

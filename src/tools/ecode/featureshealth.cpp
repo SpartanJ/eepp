@@ -592,6 +592,7 @@ void FeaturesHealth::displayHealth( PluginManager* pluginManager, UISceneNode* s
 
 	win->setKeyBindingCommand( "close-window", [win]() { win->closeWindow(); } );
 	win->addKeyBinding( { KEY_ESCAPE }, "close-window" );
+	win->on( Event::OnWindowReady, [table]( auto ) { table->setFocus(); } );
 	win->showWhenReady();
 	win->center();
 }

@@ -173,7 +173,8 @@ void App::saveAllProcess() {
 				} );
 				dialog->on( Event::OnWindowClose, [this, editor]( const Event* ) {
 					mTmpDocs.erase( &editor->getDocument() );
-					if ( !SceneManager::instance()->isShuttingDown() && !mTmpDocs.empty() )
+					if ( App::instance() && !SceneManager::instance()->isShuttingDown() &&
+						 !mTmpDocs.empty() )
 						saveAllProcess();
 				} );
 				return true;
@@ -372,7 +373,8 @@ void App::openFileDialog() {
 		}
 	} );
 	dialog->on( Event::OnWindowClose, [this]( const Event* ) {
-		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
+		if ( App::instance() && mSplitter && mSplitter->getCurWidget() &&
+			 !SceneManager::instance()->isShuttingDown() )
 			mSplitter->getCurWidget()->setFocus();
 	} );
 	dialog->center();
@@ -424,7 +426,8 @@ void App::openFolderDialog() {
 			loadFolder( path );
 	} );
 	dialog->on( Event::OnWindowClose, [this]( const Event* ) {
-		if ( mSplitter && mSplitter->getCurWidget() && !SceneManager::instance()->isShuttingDown() )
+		if ( App::instance() && mSplitter && mSplitter->getCurWidget() &&
+			 !SceneManager::instance()->isShuttingDown() )
 			mSplitter->getCurWidget()->setFocus();
 	} );
 	dialog->center();
@@ -453,7 +456,7 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool term
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->setSingleClickNavigation( mConfig.editor.singleClickNavigation );
 	dialog->on( Event::OnWindowClose, [this]( const Event* ) {
-		if ( mSplitter && mSplitter->getCurWidget() &&
+		if ( App::instance() && mSplitter && mSplitter->getCurWidget() &&
 			 !SceneManager::instance()->isShuttingDown() ) {
 			mSplitter->getCurWidget()->setFocus();
 		}
@@ -563,6 +566,108 @@ void App::downloadFileWeb( const std::string& url ) {
 	UIDownloadWindow::downloadFileWeb( url );
 }
 
+void App::maximizeTabWidget() {
+	UITabWidget* curTabWidget = mSplitter->getCurTabWidget();
+	if ( !curTabWidget || mUISceneNode->getRoot()->hasChild( "detached_tab_widget_win" ) )
+		return;
+
+	UIWindow::StyleConfig winCfg;
+	winCfg.WinFlags = UI_WIN_SHADOW | UI_WIN_MODAL | UI_WIN_EPHEMERAL | UI_WIN_NO_DECORATION;
+	UIWindow* win = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, winCfg );
+	win->setPixelsSize( getUISceneNode()->getPixelsSize() - PixelDensity::dpToPx( 64 ) );
+	win->setId( "detached_tab_widget_win" );
+	win->addClass( "tab_widget_cont" );
+	win->getModalWidget()->addClass( "shadowbg" );
+	win->getModalWidget()->onClick( [this]( auto ) {
+		if ( App::instance() )
+			restoreMaximizedTabWidget();
+	} );
+	win->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_LEFT | UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT );
+	win->toFront();
+	win->center();
+	win->setKeyBindingCommand( "close-maximized-tab-widget", [this] {
+		if ( App::instance() )
+			restoreMaximizedTabWidget();
+	} );
+	win->getKeyBindings().addKeybind( { KEY_ESCAPE }, "close-maximized-tab-widget" );
+	win->setCheckEphemeralCloseFn( []( Node* focusNode ) {
+		if ( focusNode->isType( UI_TYPE_POPUPMENU ) && focusNode->getId() != "settings_menu" )
+			return false;
+		if ( focusNode->getSceneNode()->isUISceneNode() ) {
+			UISceneNode* sceneNode = static_cast<UISceneNode*>( focusNode->getSceneNode() );
+			auto wtv = sceneNode->getRoot()->hasChild( "widget-tree-view" );
+			if ( wtv && ( focusNode == wtv || wtv->inParentTreeOf( focusNode ) ) )
+				return false;
+		}
+		return true;
+	} );
+	auto tabWidgetParent = curTabWidget->getParent();
+	bool wasFirstSplit = tabWidgetParent->isType( UI_TYPE_SPLITTER ) &&
+						 tabWidgetParent->asType<UISplitter>()->getFirstWidget() == curTabWidget;
+	auto nodeLink = UINodeLink::NewLink( curTabWidget );
+	if ( wasFirstSplit )
+		nodeLink->setClass( "was_first_split" );
+	curTabWidget->setParent( win );
+	curTabWidget->setId( "detached_tab_widget" );
+	curTabWidget->setPixelsPosition( Vector2f::Zero );
+	curTabWidget->setPixelsSize( win->getContainer()->getPixelsSize() );
+	curTabWidget->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_LEFT | UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT );
+	if ( !curTabWidget->inParentTreeOf( getUISceneNode()->getEventDispatcher()->getFocusNode() ) )
+		curTabWidget->getTabSelected()->getOwnedWidget()->setFocus();
+	win->on( Event::OnWindowClose, [this]( auto ) {
+		if ( App::instance() )
+			restoreMaximizedTabWidget();
+	} );
+	nodeLink->setParent( tabWidgetParent );
+	nodeLink->setId( "nodelink_tab_widget" );
+	if ( wasFirstSplit && tabWidgetParent->isType( UI_TYPE_SPLITTER ) )
+		tabWidgetParent->asType<UISplitter>()->swap();
+
+	UIImage* fullscreenImg = UIImage::New();
+	fullscreenImg->unsetFlags( UI_AUTO_SIZE );
+	fullscreenImg->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
+	fullscreenImg->setParent( win );
+	fullscreenImg->setSize( { 24, curTabWidget->getTabBar()->getSize().getHeight() } );
+	fullscreenImg->setPosition( { curTabWidget->getSize().getWidth() - 24, 0 } );
+	fullscreenImg->setAnchors( UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
+	fullscreenImg->setDrawable( findIcon( "fullscreen", PixelDensity::dpToPx( 16 ) ) );
+	fullscreenImg->setVerticalAlign( UI_VALIGN_CENTER );
+	fullscreenImg->setHorizontalAlign( UI_HALIGN_CENTER );
+	fullscreenImg->addClass( "pseudo_anchor" );
+	fullscreenImg->toFront();
+	fullscreenImg->onClick( [this]( auto ) {
+		restoreMaximizedTabWidget();
+		getUISceneNode()->getWindow()->getCursorManager()->set( Cursor::SysType::SysArrow );
+	} );
+}
+
+void App::restoreMaximizedTabWidget() {
+	if ( !App::instance() || !SceneManager::isActive() )
+		return;
+	auto sceneNode = appInstance->getUISceneNode();
+	if ( !sceneNode )
+		return;
+	auto nodeLink = sceneNode->getRoot()->find( "nodelink_tab_widget" );
+	if ( !nodeLink )
+		return;
+	auto splitterParent = nodeLink->getParent();
+	nodeLink->setParent( sceneNode );
+	auto curTabWidget = sceneNode->getRoot()->find<UIWidget>( "detached_tab_widget" );
+	if ( !curTabWidget )
+		return;
+	curTabWidget->setParent( splitterParent );
+	curTabWidget->setAnchors( 0 );
+	curTabWidget->setId( "" );
+	if ( nodeLink->asType<UIWidget>()->hasClass( "was_first_split" ) &&
+		 splitterParent->isType( UI_TYPE_SPLITTER ) ) {
+		splitterParent->asType<UISplitter>()->swap();
+	}
+	nodeLink->close();
+	auto win = mUISceneNode->find( "detached_tab_widget_win" );
+	if ( win )
+		win->close();
+}
+
 UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 	if ( !editor )
 		return nullptr;
@@ -611,7 +716,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 	} );
 	if ( focusOnClose ) {
 		dialog->on( Event::OnWindowClose, [editor]( const Event* ) {
-			if ( editor && !SceneManager::instance()->isShuttingDown() )
+			if ( editor && App::instance() && !SceneManager::instance()->isShuttingDown() )
 				editor->setFocus();
 		} );
 	}
@@ -1629,6 +1734,15 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 					 "clone-document-buffer" );
 		}
 
+		menu->addSeparator();
+		if ( mUISceneNode->getRoot()->hasChild( "detached_tab_widget_win" ) ) {
+			menuAdd( "restore_maximized_tab_widget", "Restore Maximized Tab Widget", "fullscreen",
+					 "restore-maximized-tab-widget" );
+		} else {
+			menuAdd( "maximize_tab_widget", "Maximize Tab Widget", "fullscreen",
+					 "maximize-tab-widget" );
+		}
+
 		menu->on( Event::OnItemClicked, [tab, this]( const Event* event ) {
 			if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 				return;
@@ -2080,6 +2194,8 @@ std::vector<std::string> App::getUnlockedCommands() {
 		"create-new-window",
 		"reset-global-language-extensions-priorities",
 		"reset-project-language-extensions-priorities",
+		"maximize-tab-widget",
+		"restore-maximized-tab-widget",
 	};
 }
 
@@ -2482,6 +2598,9 @@ bool App::loadFileFromPath(
 		loadAudioFromPath( path );
 	} else if ( !openBinaryAsDocument && PathHelper::isOpenExternalExtension( ext ) ) {
 		Engine::instance()->openURI( path );
+	} else if ( tryFindMimeType && TextDocument::fileMightBeBinary( path ) ) {
+		// Trigger the warning message box with the message "File looks like a binary file"
+		openFileFromPath( path );
 	} else {
 		UITab* tab = mSplitter->isDocumentOpen( path );
 
@@ -3563,6 +3682,8 @@ void App::loadFolder( std::string path, bool forceNewWindow ) {
 		return;
 	}
 
+	restoreMaximizedTabWidget();
+
 	Clock dirTreeClock;
 
 	if ( FileSystem::fileExtension( path ) == "lnk" ) {
@@ -4401,6 +4522,10 @@ void App::init( InitParameters& params ) {
 					return false;
 				}
 			}
+			return true;
+		} );
+		mSplitter->setCanCreateSplitFn( [this]( auto, auto ) {
+			restoreMaximizedTabWidget();
 			return true;
 		} );
 		mPluginManager->setSplitter( mSplitter );

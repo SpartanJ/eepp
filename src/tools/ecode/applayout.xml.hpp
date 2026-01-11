@@ -544,6 +544,14 @@ TabWidget::container > ImageViewer > TextView {
 .audio_player {
 	layout-width: 300dp;
 }
+.pseudo_anchor {
+	tint: var(--floating-icon);
+	cursor: arrow;
+}
+.pseudo_anchor:hover {
+	tint: var(--primary);
+	cursor: hand;
+}
 
 @media (prefers-color-scheme: light) {
 

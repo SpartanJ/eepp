@@ -338,6 +338,10 @@ UITabWidget* UICodeEditorSplitter::getPreferredTabWidget() const {
 	return mOpenDocumentsInMainSplit ? getFirstTabWidget() : tabWidgetFromWidget( mCurWidget );
 }
 
+UITabWidget* UICodeEditorSplitter::getCurTabWidget() const {
+	return getCurWidget() ? tabWidgetFromWidget( getCurWidget() ) : nullptr;
+}
+
 std::pair<UITab*, UICodeEditor*> UICodeEditorSplitter::createEditorInNewTab() {
 	auto d = createCodeEditorInTabWidget( getPreferredTabWidget() );
 	if ( d.first == nullptr || d.second == nullptr ) {
@@ -1243,7 +1247,7 @@ bool UICodeEditorSplitter::curEditorExistsAndFocused() const {
 
 UISplitter* UICodeEditorSplitter::split( const SplitDirection& direction, UIWidget* widget,
 										 bool openCurEditor ) {
-	if ( !widget )
+	if ( !widget || ( mCanCreateSplitFn && !mCanCreateSplitFn( direction, widget ) ) )
 		return nullptr;
 	UIOrientation orientation =
 		direction == SplitDirection::Left || direction == SplitDirection::Right
@@ -1289,9 +1293,14 @@ UISplitter* UICodeEditorSplitter::split( const SplitDirection& direction, UIWidg
 	return splitter;
 }
 
+void UICodeEditorSplitter::setCanCreateSplitFn(
+	std::function<bool( SplitDirection direction, UIWidget* tabWidget )> fn ) {
+	mCanCreateSplitFn = fn;
+}
+
 UITabWidget* UICodeEditorSplitter::splitTabWidget( SplitDirection direction,
 												   UITabWidget* tabWidget ) {
-	if ( !tabWidget )
+	if ( !tabWidget || ( mCanCreateSplitFn && !mCanCreateSplitFn( direction, tabWidget ) ) )
 		return nullptr;
 	UIOrientation orientation =
 		direction == SplitDirection::Left || direction == SplitDirection::Right

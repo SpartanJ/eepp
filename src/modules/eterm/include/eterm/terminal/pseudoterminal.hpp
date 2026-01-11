@@ -72,7 +72,8 @@ class PseudoTerminal final : public IPseudoTerminal {
 
 	bool mAttached;
 
-	PseudoTerminal( int columns, int rows, AutoHandle&& hInput, AutoHandle&& hOutput, void* hPC );
+	PseudoTerminal( int columns, int rows, AutoHandle&& hInput, AutoHandle&& hOutput,
+					void* hPC ) noexcept;
 #else
 	int mColumns;
 	int mRows;
@@ -82,7 +83,7 @@ class PseudoTerminal final : public IPseudoTerminal {
 
 	std::string mWriteBuffer;
 
-	PseudoTerminal( int columns, int rows, AutoHandle&& master, AutoHandle&& slave );
+	PseudoTerminal( int columns, int rows, AutoHandle&& master, AutoHandle&& slave ) noexcept;
 #endif
 };
 } // namespace Terminal

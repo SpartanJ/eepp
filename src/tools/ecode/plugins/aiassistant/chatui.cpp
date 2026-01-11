@@ -687,6 +687,7 @@ void LLMChatUI::showChatHistory() {
 	win->center();
 	win->getModalWidget()->addClass( "shadowbg" );
 	win->setId( UUID().toString() );
+	win->on( Event::OnWindowReady, [win]( auto ) { win->setFocus(); } );
 
 	loader->center();
 

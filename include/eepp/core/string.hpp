@@ -678,7 +678,7 @@ class EE_API String {
 	**/
 	String& operator=( const String& right );
 
-	String& operator=( String&& right );
+	String& operator=( String&& right ) noexcept;
 
 	String& operator=( const StringBaseType& right );
 

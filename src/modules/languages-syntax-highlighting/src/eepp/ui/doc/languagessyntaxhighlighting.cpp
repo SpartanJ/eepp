@@ -624,7 +624,7 @@ static void preDefinitionLangsChunk2( SyntaxDefinitionManager* sdm ) {
 	sdm->addPreDefinition( {
 		"QB64",
 		[]() -> SyntaxDefinition& { return addQB64(); },
-		{ "%.bas$", "%.bi$", "%.bm$" },
+		{ "%.bas$", "%.bi$", "%.bm$", "%.inc$" },
 	} );
 
 	sdm->addPreDefinition( {
@@ -708,7 +708,7 @@ static void preDefinitionLangsChunk2( SyntaxDefinitionManager* sdm ) {
 	sdm->addPreDefinition( {
 		"SmallBASIC",
 		[]() -> SyntaxDefinition& { return addSmallBASIC(); },
-		{ "%.bas$" },
+		{ "%.bas$", "%.sb$" },
 	} );
 
 	sdm->addPreDefinition( {

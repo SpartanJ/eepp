@@ -9,7 +9,7 @@ SyntaxDefinition& addSmallBASIC() {
 		->add(
 
 			{ "SmallBASIC",
-			  { "%.bas$" },
+			  { "%.bas$", "%.sb$" },
 			  {
 				  { { "'.*" }, "comment" },
 				  { { "REM%s.*" }, "comment" },

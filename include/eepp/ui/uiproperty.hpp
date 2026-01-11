@@ -38,7 +38,7 @@ template <typename T> class UIProperty {
 
 	void operator=( const T& newVal ) { mBindedData.set( newVal ); }
 
-	void operator=( T&& newVal ) { mBindedData.set( std::move( newVal ) ); }
+	void operator=( T&& newVal ) noexcept { mBindedData.set( std::move( newVal ) ); }
 
 	const T& value() const { return mBindedData.get(); }
 

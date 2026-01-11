@@ -9,6 +9,7 @@
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/tools/uiaudioplayer.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
+#include <eepp/ui/uinodelink.hpp>
 #include <eterm/ui/uiterminal.hpp>
 
 #include <nlohmann/json.hpp>
@@ -477,6 +478,8 @@ json AppConfig::saveNode( Node* node ) {
 			splitter->getOrientation() == UIOrientation::Horizontal ? "horizontal" : "vertical";
 		res["first"] = saveNode( splitter->getFirstWidget() );
 		res["last"] = saveNode( splitter->getLastWidget() );
+	} else if ( node->isType( UI_TYPE_NODELINK ) && node->asType<UINodeLink>()->getNodeLink() ) {
+		return saveNode( node->asType<UINodeLink>()->getNodeLink() );
 	} else if ( node->isType( UI_TYPE_TABWIDGET ) ) {
 		UITabWidget* tabWidget = node->asType<UITabWidget>();
 		std::vector<json> files;

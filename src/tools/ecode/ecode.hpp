@@ -19,6 +19,7 @@
 #include "uistatusbar.hpp"
 #include "universallocator.hpp"
 #include <eepp/ee.hpp>
+#include <eepp/ui/uinodelink.hpp>
 #include <efsw/efsw.hpp>
 #include <eterm/ui/uiterminal.hpp>
 #include <stack>
@@ -438,7 +439,15 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 					i18n( "no_project_loaded", "No project loaded" ) );
 			}
 		} );
+
+		t.setCommand( "maximize-tab-widget", [this] { maximizeTabWidget(); } );
+
+		t.setCommand( "restore-maximized-tab-widget", [this] { restoreMaximizedTabWidget(); } );
 	}
+
+	void maximizeTabWidget();
+
+	void restoreMaximizedTabWidget();
 
 	PluginManager* getPluginManager() const;
 

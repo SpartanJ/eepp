@@ -12,6 +12,7 @@
 #include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uimenubar.hpp>
+#include <eepp/ui/uinodelink.hpp>
 #include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiradiobutton.hpp>
@@ -102,6 +103,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["menuradiobutton"] = UIMenuRadioButton::New;
 		registeredWidget["menuseparator"] = UIMenuSeparator::New;
 		registeredWidget["anchor"] = UIAnchor::New;
+		registeredWidget["nodelink"] = UINodeLink::New;
 		registeredWidget["textureviewer"] = Tools::UITextureViewer::New;
 		registeredWidget["imageviewer"] = Tools::UIImageViewer::New;
 

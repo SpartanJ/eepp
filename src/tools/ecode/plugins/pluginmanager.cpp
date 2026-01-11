@@ -545,6 +545,7 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 			win->close();
 	} );
 	win->center();
+	win->on( Event::OnWindowReady, [close]( auto ) { close->setFocus(); } );
 	return win;
 }
 

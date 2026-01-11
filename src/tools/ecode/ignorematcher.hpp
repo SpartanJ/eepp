@@ -61,11 +61,11 @@ class GitIgnoreMatcher : public IgnoreMatcher {
 
 class IgnoreMatcherManager {
   public:
-	IgnoreMatcherManager( IgnoreMatcherManager&& ignoreMatcher );
+	IgnoreMatcherManager( IgnoreMatcherManager&& ignoreMatcher ) noexcept;
 
 	IgnoreMatcherManager( std::string rootPath );
 
-	IgnoreMatcherManager& operator=( IgnoreMatcherManager&& other );
+	IgnoreMatcherManager& operator=( IgnoreMatcherManager&& other ) noexcept;
 
 	virtual ~IgnoreMatcherManager();
 

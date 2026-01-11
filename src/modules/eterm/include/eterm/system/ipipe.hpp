@@ -47,6 +47,6 @@ class IPipe {
 	virtual int read( char* buf, size_t n, bool block = false ) = 0;
 };
 
-}} // namespace EE::System
+}} // namespace eterm::System
 
 #endif

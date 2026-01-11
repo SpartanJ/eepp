@@ -21,8 +21,11 @@ UIWindow* UIWidgetInspector::create( UISceneNode* sceneNode, const Float& menuIc
 									 std::function<void()> drawBoxesToggle,
 									 std::function<void()> drawDebugDataToggle ) {
 	static ModelIndex lastModelIndex = {};
-	if ( sceneNode->getRoot()->hasChild( "widget-tree-view" ) )
+	auto wtv = sceneNode->getRoot()->hasChild( "widget-tree-view" );
+	if ( wtv ) {
+		wtv->toFront();
 		return nullptr;
+	}
 	UIWindow* uiWin = UIWindow::New();
 	uiWin->setId( "widget-tree-view" );
 	uiWin->setMinWindowSize( 600, 400 );

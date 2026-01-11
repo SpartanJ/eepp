@@ -455,12 +455,22 @@ void StatusBuildOutputController::createContainer() {
 	mContainer = mContext->getUISceneNode()
 					 ->loadLayoutFromString( XML, mMainSplitter )
 					 ->asType<UIHLinearLayoutCommandExecuter>();
+
+	mContainer->on( Event::KeyDown, [this]( const Event* event ) {
+		auto ke = event->asKeyEvent();
+		if ( ke->getSanitizedMod() == 0 && ke->getKeyCode() == EE::Window::KEY_ESCAPE &&
+			 mSplitter->getCurEditor() ) {
+			mSplitter->getCurEditor()->setFocus();
+		}
+	} );
+
 	mRelLayCE = mContainer->find( "build_output_command_executer" )
 					->asType<UIRelativeLayoutCommandExecuter>();
 
 	mContext->getStatusBar()->registerStatusBarPanel( mContainer, mContainer );
 
 	auto editor = mContainer->find<UICodeEditor>( "build_output_output" );
+	mContainer->getKeyBindings().addKeybindsStringUnordered( mContext->getStatusBarKeybindings() );
 	editor->getKeyBindings().addKeybindsStringUnordered( mContext->getStatusBarKeybindings() );
 
 	editor->setLocked( true );
@@ -571,18 +581,28 @@ void StatusBuildOutputController::createContainer() {
 		mScrollLocked = mBuildOutput->getMaxScroll().y == mBuildOutput->getScroll().y;
 	} );
 	mContainer->setVisible( false );
-	mRelLayCE->setCommand( "build-output-show-build-output", [this]() { showBuildOutput(); } );
-	mRelLayCE->setCommand( "build-output-show-build-issues", [this]() { showIssues(); } );
-	mRelLayCE->getKeyBindings().addKeybind( { KEY_1, KeyMod::getDefaultModifier() },
-											"build-output-show-build-output" );
-	mRelLayCE->getKeyBindings().addKeybind( { KEY_2, KeyMod::getDefaultModifier() },
-											"build-output-show-build-issues" );
+
+	mContainer->setCommand( "build-output-show-build-output", [this]() { showBuildOutput(); } );
+	mContainer->setCommand( "build-output-show-build-issues", [this]() { showIssues(); } );
+	mContainer->getKeyBindings().addKeybind( { KEY_1, KeyMod::getDefaultModifier() },
+											 "build-output-show-build-output" );
+	mContainer->getKeyBindings().addKeybind( { KEY_2, KeyMod::getDefaultModifier() },
+											 "build-output-show-build-issues" );
+
+	mBuildOutput->getDocument().setCommand( "build-output-show-build-output",
+											[this]() { showBuildOutput(); } );
+	mBuildOutput->getDocument().setCommand( "build-output-show-build-issues",
+											[this]() { showIssues(); } );
+	mBuildOutput->getKeyBindings().addKeybind( { KEY_1, KeyMod::getDefaultModifier() },
+											   "build-output-show-build-output" );
+	mBuildOutput->getKeyBindings().addKeybind( { KEY_2, KeyMod::getDefaultModifier() },
+											   "build-output-show-build-issues" );
 	mButOutput->onClick( [this]( auto ) { showBuildOutput(); } );
 	mButIssues->onClick( [this]( auto ) { showIssues(); } );
 	mButOutput->setTooltipText(
-		mRelLayCE->getKeyBindings().getCommandKeybindString( "build-output-show-build-output" ) );
+		mContainer->getKeyBindings().getCommandKeybindString( "build-output-show-build-output" ) );
 	mButIssues->setTooltipText(
-		mRelLayCE->getKeyBindings().getCommandKeybindString( "build-output-show-build-issues" ) );
+		mContainer->getKeyBindings().getCommandKeybindString( "build-output-show-build-issues" ) );
 
 	mContainer->bind( "build_output_clear", mClearButton );
 	mContainer->bind( "build_output_build", mBuildButton );

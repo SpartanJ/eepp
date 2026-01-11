@@ -22,6 +22,7 @@
 #include <eepp/ui/uimenuseparator.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uinode.hpp>
+#include <eepp/ui/uinodelink.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uipushbutton.hpp>

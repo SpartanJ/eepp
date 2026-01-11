@@ -4596,8 +4596,8 @@ void TextDocument::convertIndentationToSpaces() {
 }
 
 void TextDocument::initializeCommands() {
-	mCommands["reset"] = [this] { reset(); };
-	mCommands["save"] = [this] { save(); };
+	mCommands["reset-document"] = [this] { reset(); };
+	mCommands["save-doc"] = [this] { save(); };
 	mCommands["delete-to-previous-word"] = [this] { deleteToPreviousWord(); };
 	mCommands["delete-to-previous-char"] = [this] { deleteToPreviousChar(); };
 	mCommands["delete-to-next-word"] = [this] { deleteToNextWord(); };

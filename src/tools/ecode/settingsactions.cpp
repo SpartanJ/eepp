@@ -101,7 +101,7 @@ void SettingsActions::checkForUpdatesResponse( Http::Response&& response, bool f
 void SettingsActions::checkForUpdates( bool fromStartup ) {
 	Http::getAsync(
 		[this, fromStartup]( const Http&, Http::Request&, Http::Response& response ) {
-			if ( !SceneManager::existsSingleton() || SceneManager::instance()->isShuttingDown() )
+			if ( !SceneManager::isActive() )
 				return;
 			mApp->getUISceneNode()->runOnMainThread( [this, res = response, fromStartup]() mutable {
 				checkForUpdatesResponse( std::move( res ), fromStartup );

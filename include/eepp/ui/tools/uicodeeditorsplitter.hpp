@@ -389,6 +389,11 @@ class EE_API UICodeEditorSplitter {
 
 	UITabWidget* getPreferredTabWidget() const;
 
+	UITabWidget* getCurTabWidget() const;
+
+	void
+	setCanCreateSplitFn( std::function<bool( SplitDirection direction, UIWidget* widget )> fn );
+
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
@@ -417,6 +422,7 @@ class EE_API UICodeEditorSplitter {
 	std::function<void( UITabWidget* )> mOnTabWidgetCreateCb;
 	Float mVisualSplitEdgePercent{ 0.1 };
 	TabTryCloseCallback mTabTryCloseCb;
+	std::function<bool( SplitDirection direction, UIWidget* widget )> mCanCreateSplitFn;
 
 	UICodeEditorSplitter( UICodeEditorSplitter::Client* client, UISceneNode* sceneNode,
 						  std::shared_ptr<ThreadPool> threadPool,

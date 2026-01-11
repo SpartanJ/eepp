@@ -1680,7 +1680,10 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 				}
 
 				if ( winflags != mStyleConfig.WinFlags ) {
-					mStyleConfig.WinFlags = winflags;
+					if ( mLoadedFromXML )
+						mStyleConfig.WinFlags = winflags;
+					else
+						mStyleConfig.WinFlags |= winflags;
 					updateWinFlags();
 				}
 			}
@@ -1724,6 +1727,7 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 
 void UIWindow::loadFromXmlNode( const pugi::xml_node& node ) {
 	UIWidget::loadFromXmlNode( node );
+	mLoadedFromXML = true;
 	setStealFocusOnShow( false );
 	showWhenReady();
 }
@@ -1794,7 +1798,8 @@ void UIWindow::sendWindowToFront() {
 void UIWindow::checkEphemeralClose() {
 	Node* focusNode = getUISceneNode()->getUIEventDispatcher()->getFocusNode();
 	if ( !mShowWhenReady && ( mStyleConfig.WinFlags & UI_WIN_EPHEMERAL ) && focusNode != this &&
-		 !inParentTreeOf( focusNode ) )
+		 !inParentTreeOf( focusNode ) &&
+		 ( !mCheckEphemeralCloseFn || mCheckEphemeralCloseFn( focusNode ) ) )
 		closeWindow();
 }
 
@@ -1804,6 +1809,10 @@ void UIWindow::setStealFocusOnShow( bool steal ) {
 
 bool UIWindow::stealsFocusOnShow() const {
 	return mStealFocusOnShow;
+}
+
+void UIWindow::setCheckEphemeralCloseFn( std::function<bool( Node* focusNode )> fn ) {
+	mCheckEphemeralCloseFn = fn;
 }
 
 }} // namespace EE::UI

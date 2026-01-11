@@ -96,7 +96,8 @@ fail:
 
 PseudoTerminal::~PseudoTerminal() {}
 
-PseudoTerminal::PseudoTerminal( int columns, int rows, AutoHandle&& master, AutoHandle&& slave ) :
+PseudoTerminal::PseudoTerminal( int columns, int rows, AutoHandle&& master,
+								AutoHandle&& slave ) noexcept :
 	mColumns( columns ),
 	mRows( rows ),
 	mMaster( std::move( master ) ),
@@ -264,7 +265,7 @@ PseudoTerminal::~PseudoTerminal() {
 }
 
 PseudoTerminal::PseudoTerminal( int columns, int rows, AutoHandle&& hInput, AutoHandle&& hOutput,
-								void* hPC ) :
+								void* hPC ) noexcept :
 	mInputHandle( std::move( hInput ) ),
 	mOutputHandle( std::move( hOutput ) ),
 	mPHPC( hPC ),
