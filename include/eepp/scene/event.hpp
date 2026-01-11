@@ -55,7 +55,7 @@ class EE_API Event {
 		OnDocumentClosed,
 		OnDocumentReloaded,
 		OnDocumentSyntaxDefinitionChange,
-		OnDocumentDirtyOnFileSysten,
+		OnDocumentDirtyOnFileSystem,
 		OnFontStyleChanged,
 		OnPressEnter,
 		OnValueChange,
@@ -116,6 +116,12 @@ class EE_API Event {
 		OnScrollChange,
 		OnModelChanged,
 		OnWindowToFront,
+		OnVisibleLinesCountChange,
+		OnDataChanged,
+		OnBeforeFoldUnfoldRange,
+		OnFoldUnfoldRange,
+		OnResourceLoaded,
+		OnDiscard,
 		NoEvent = eeINDEX_NOT_FOUND
 	};
 

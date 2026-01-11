@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addJulia() {
+SyntaxDefinition& addJulia() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -35,33 +35,31 @@ void addJulia() {
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "%g*!" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {
-			  { "function", "keyword" },  { "import", "keyword" },	   { "for", "keyword" },
-			  { "begin", "keyword" },	  { "local", "keyword" },	   { "const", "keyword" },
-			  { "mutable", "keyword2" },  { "using", "keyword" },	   { "where", "keyword" },
-			  { "finally", "keyword" },	  { "Float64", "keyword2" },   { "UInt8", "keyword2" },
-			  { "elseif", "keyword" },	  { "Dict", "keyword" },	   { "global", "keyword" },
-			  { "Function", "keyword2" }, { "Ref", "keyword2" },	   { "try", "keyword" },
-			  { "UInt128", "keyword2" },  { "Vector", "keyword2" },	   { "module", "keyword" },
-			  { "Matrix", "keyword2" },	  { "nothing", "literal" },	   { "struct", "keyword2" },
-			  { "Number", "keyword2" },	  { "let", "keyword" },		   { "return", "keyword" },
-			  { "UInt32", "keyword2" },	  { "Int8", "keyword2" },	   { "Float16", "keyword2" },
-			  { "typeof", "keyword" },	  { "if", "keyword" },		   { "type", "keyword" },
-			  { "String", "keyword2" },	  { "baremodule", "keyword" }, { "Int128", "keyword2" },
-			  { "Char", "keyword2" },	  { "continue", "keyword" },   { "end", "keyword" },
-			  { "while", "keyword" },	  { "quote", "keyword" },	   { "Float32", "keyword2" },
-			  { "true", "literal" },	  { "Set", "keyword" },		   { "UInt16", "keyword2" },
-			  { "Union", "keyword" },	  { "abstract", "keyword2" },  { "Inf", "literal" },
-			  { "Int16", "keyword2" },	  { "primitive", "keyword2" }, { "Int64", "keyword2" },
-			  { "missing", "literal" },	  { "NaN", "literal" },		   { "Bool", "keyword2" },
-			  { "Int32", "keyword2" },	  { "macro", "keyword" },	   { "UInt64", "keyword2" },
-			  { "Int", "keyword2" },	  { "catch", "keyword" },	   { "do", "keyword" },
-			  { "export", "keyword" },	  { "false", "literal" },	   { "Integer", "keyword2" },
-			  { "else", "keyword" },	  { "in", "keyword" },		   { "break", "keyword" },
+			  { "function", "keyword" }, { "import", "keyword" },	  { "for", "keyword" },
+			  { "begin", "keyword" },	 { "local", "keyword" },	  { "const", "keyword" },
+			  { "mutable", "type" },	 { "using", "keyword" },	  { "where", "keyword" },
+			  { "finally", "keyword" },	 { "Float64", "type" },		  { "UInt8", "type" },
+			  { "elseif", "keyword" },	 { "Dict", "keyword" },		  { "global", "keyword" },
+			  { "Function", "type" },	 { "Ref", "type" },			  { "try", "keyword" },
+			  { "UInt128", "type" },	 { "Vector", "type" },		  { "module", "keyword" },
+			  { "Matrix", "type" },		 { "nothing", "literal" },	  { "struct", "type" },
+			  { "Number", "type" },		 { "let", "keyword" },		  { "return", "keyword" },
+			  { "UInt32", "type" },		 { "Int8", "type" },		  { "Float16", "type" },
+			  { "typeof", "keyword" },	 { "if", "keyword" },		  { "type", "keyword" },
+			  { "String", "type" },		 { "baremodule", "keyword" }, { "Int128", "type" },
+			  { "Char", "type" },		 { "continue", "keyword" },	  { "end", "keyword" },
+			  { "while", "keyword" },	 { "quote", "keyword" },	  { "Float32", "type" },
+			  { "true", "literal" },	 { "Set", "keyword" },		  { "UInt16", "type" },
+			  { "Union", "keyword" },	 { "abstract", "type" },	  { "Inf", "literal" },
+			  { "Int16", "type" },		 { "primitive", "type" },	  { "Int64", "type" },
+			  { "missing", "literal" },	 { "NaN", "literal" },		  { "Bool", "type" },
+			  { "Int32", "type" },		 { "macro", "keyword" },	  { "UInt64", "type" },
+			  { "Int", "type" },		 { "catch", "keyword" },	  { "do", "keyword" },
+			  { "export", "keyword" },	 { "false", "literal" },	  { "Integer", "type" },
+			  { "else", "keyword" },	 { "in", "keyword" },		  { "break", "keyword" },
 
 		  },
 		  "#",
@@ -70,6 +68,7 @@ void addJulia() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

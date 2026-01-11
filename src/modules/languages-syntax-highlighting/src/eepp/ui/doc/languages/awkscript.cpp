@@ -3,14 +3,14 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addAwkScript() {
+SyntaxDefinition& addAwkScript() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Awk Script",
 		  { "%.awk$" },
 		  {
-			  { { "%$[%a_@*#][%w_]*" }, "keyword2" },
+			  { { "%$[%a_@*#][%w_]*" }, "type" },
 			  { { "#.*" }, "comment" },
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },
@@ -23,13 +23,11 @@ void addAwkScript() {
 				{ "normal", "function", "normal", "number" } },
 			  { { "(%s%-%a[%w_%-]*)(%s+)(%a[%a%-_:=]+)" },
 				{ "normal", "function", "normal", "symbol" } },
-			  { { "[_%a][%w_]+%f[%+=]" }, "keyword2" },
-			  { { "%${.-}" }, "keyword2" },
-			  { { "%$[%d%$%a_@*][%w_]*" }, "keyword2" },
+			  { { "[_%a][%w_]+%f[%+=]" }, "type" },
+			  { { "%${.-}" }, "type" },
+			  { { "%$[%d%$%a_@*][%w_]*" }, "type" },
 			  { { "([%a_%-][%w_%-]*)(%s*%f[(])" }, { "normal", "function", "normal" } },
 			  { { "[%a_][%w_]*" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

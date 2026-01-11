@@ -75,7 +75,7 @@ TerminalKeyMap::TerminalKeyMap( const TerminalKey keys[], size_t keysLen,
 }
 
 static TerminalShortcut shortcuts[] = {
-	{ KEY_INSERT, KEYMOD_SHIFT, TerminalShortcutAction::PASTE, 0, 0 },
+	{ KEY_INSERT, KEYMOD_SHIFT, TerminalShortcutAction::PASTE_SELECTION, 0, 0 },
 	{ KEY_V, KEYMOD_SHIFT | KEYMOD_CTRL, TerminalShortcutAction::PASTE, 0, 0 },
 	{ KEY_C, KEYMOD_SHIFT | KEYMOD_CTRL, TerminalShortcutAction::COPY, 0, 0 },
 	{ KEY_PAGEUP, KEYMOD_SHIFT, TerminalShortcutAction::SCROLLUP_SCREEN, 0, 0, -1 },
@@ -92,7 +92,9 @@ static TerminalMouseShortcut mouseShortcuts[] = {
 	{ EE_BUTTON_WUMASK, 0, TerminalShortcutAction::SCROLLUP_ROW, 0, 0, -1 },
 	{ EE_BUTTON_WDMASK, 0, TerminalShortcutAction::SCROLLDOWN_ROW, 0, 0, -1 },
 	{ EE_BUTTON_WUMASK, KEYMOD_CTRL, TerminalShortcutAction::FONTSIZE_GROW, 0, 0, 0 },
-	{ EE_BUTTON_WDMASK, KEYMOD_CTRL, TerminalShortcutAction::FONTSIZE_SHRINK, 0, 0, 0 } };
+	{ EE_BUTTON_WDMASK, KEYMOD_CTRL, TerminalShortcutAction::FONTSIZE_SHRINK, 0, 0, 0 },
+	{ EE_BUTTON_MMASK, 0, TerminalShortcutAction::PASTE_SELECTION, 0, 0, -1 },
+};
 
 static TerminalKey keys[] = {
 	/* keysym           mask            string      appkey appcursor */
@@ -388,12 +390,11 @@ static Sizei gridSizeFromTermDimensions( Font* font, const Float& fontSize,
 	return { clipColumns, clipRows };
 }
 
-std::shared_ptr<TerminalDisplay>
-TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fontSize,
-						 const Sizef& pixelsSize, std::string program,
-						 std::vector<std::string> args, const std::string& workingDir,
-						 const size_t& historySize, IProcessFactory* processFactory,
-						 const bool& useFrameBuffer, const bool& keepAlive ) {
+std::shared_ptr<TerminalDisplay> TerminalDisplay::create(
+	EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
+	std::string program, std::vector<std::string> args, const std::string& workingDir,
+	const size_t& historySize, IProcessFactory* processFactory, bool useFrameBuffer, bool keepAlive,
+	const std::unordered_map<std::string, std::string>& env ) {
 	if ( program.empty() ) {
 		const char* shellenv = getenv( "SHELL" );
 #ifdef _WIN32
@@ -424,7 +425,7 @@ TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fo
 	Sizei termSize( gridSizeFromTermDimensions( font, fontSize, pixelsSize ) );
 	std::unique_ptr<IPseudoTerminal> pseudoTerminal = nullptr;
 	auto process = processFactory->createWithPseudoTerminal(
-		program, args, workingDir, termSize.getWidth(), termSize.getHeight(), pseudoTerminal );
+		program, args, workingDir, termSize.getWidth(), termSize.getHeight(), pseudoTerminal, env );
 
 	if ( !pseudoTerminal ) {
 		fprintf( stderr, "Failed to create pseudo terminal\n" );
@@ -449,8 +450,10 @@ TerminalDisplay::create( EE::Window::Window* window, Font* font, const Float& fo
 													std::move( process ), terminal, historySize );
 	terminal->mProgram = program;
 	terminal->mArgs = args;
+	terminal->mEnv = env;
 	terminal->mWorkingDir = workingDir;
 	terminal->mKeepAlive = keepAlive;
+	terminal->mHistorySize = historySize;
 
 	if ( freeProcessFactory )
 		eeSAFE_DELETE( processFactory );
@@ -485,7 +488,7 @@ TerminalDisplay::TerminalDisplay( EE::Window::Window* window, Font* font, const 
 	Sizei gridSize( gridSizeFromTermDimensions( mFont, mFontSize, mSize - mPadding * 2.f ) );
 	mDirtyLines.resize( gridSize.getHeight(), 1 );
 
-	mQuadVertexs = GLi->quadVertexs();
+	mQuadVertex = GLi->quadVertex();
 
 	if ( mUseFrameBuffer )
 		createFrameBuffer();
@@ -603,6 +606,11 @@ void TerminalDisplay::setColorScheme( const TerminalColorScheme& colorScheme ) {
 	invalidateLines();
 }
 
+bool TerminalDisplay::isAppCapturingMouse() const {
+	return mTerminal &&
+		   ( mMode & ( MODE_MOUSEX10 | MODE_MOUSEBTN | MODE_MOUSEMOTION | MODE_MOUSEMANY ) );
+}
+
 bool TerminalDisplay::isAltScr() const {
 	return mEmulator && mEmulator->tisaltscr();
 }
@@ -623,7 +631,7 @@ void TerminalDisplay::setKeepAlive( bool keepAlive ) {
 	mKeepAlive = keepAlive;
 }
 
-bool TerminalDisplay::update() {
+bool TerminalDisplay::update( bool isMouseOverMe ) {
 	bool ret = true;
 	if ( mFocus && isBlinkingCursor() && mClock.getElapsedTime().asSeconds() > 0.7 ) {
 		mMode ^= MODE_BLINK;
@@ -635,6 +643,15 @@ bool TerminalDisplay::update() {
 		ret = mTerminal->update();
 		if ( histi != mTerminal->getHistorySize() )
 			sendEvent( { EventType::HISTORY_LENGTH_CHANGE } );
+	}
+	if ( mAlreadyClickedLButton ) {
+		if ( !( mWindow->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
+			mWindow->getInput()->captureMouse( false );
+			mDraggingSel = false;
+		} else if ( !isMouseOverMe ) {
+			onMouseMove( mWindow->getInput()->getMousePos(),
+						 mWindow->getInput()->getPressTrigger() );
+		}
 	}
 	return ret;
 }
@@ -665,8 +682,34 @@ void TerminalDisplay::action( TerminalShortcutAction action ) {
 	switch ( action ) {
 		case TerminalShortcutAction::PASTE: {
 			getClipboard();
-			if ( !mClipboard.empty() )
-				mTerminal->ttywrite( mClipboardUtf8.c_str(), mClipboardUtf8.size(), 1 );
+			if ( !mClipboardUtf8.empty() ) {
+				if ( mMode & MODE_BRCKTPASTE ) {
+					mTerminal->write( "\033[200~", 6 );
+					mTerminal->write( mClipboardUtf8.c_str(), mClipboardUtf8.size() );
+					mTerminal->write( "\033[201~", 6 );
+				} else {
+					mTerminal->write( mClipboardUtf8.c_str(), mClipboardUtf8.size() );
+				}
+			}
+			break;
+		}
+		case TerminalShortcutAction::PASTE_SELECTION: {
+			std::string selection =
+				mWindow->getClipboard()->hasPrimarySelection()
+					? mWindow->getClipboard()->getPrimarySelectionText()
+					: ( mTerminal->hasSelection()
+							? mTerminal->getSelection()
+							: mWindow->getClipboard()->getPrimarySelectionText() );
+			sanitizeInput( selection );
+			if ( !selection.empty() ) {
+				if ( mMode & MODE_BRCKTPASTE ) {
+					mTerminal->write( "\033[200~", 6 );
+					mTerminal->write( selection.c_str(), selection.size() );
+					mTerminal->write( "\033[201~", 6 );
+				} else {
+					mTerminal->write( selection.c_str(), selection.size() );
+				}
+			}
 			break;
 		}
 		case TerminalShortcutAction::COPY: {
@@ -739,22 +782,35 @@ void TerminalDisplay::setIconTitle( const char* title ) {
 void TerminalDisplay::setClipboard( const char* text ) {
 	if ( text == nullptr )
 		return;
-	mClipboard = text;
-	mClipboardUtf8 = mClipboard.toUtf8();
-	mWindow->getClipboard()->setText( mClipboard );
+	mWindow->getClipboard()->setText( text );
 }
 
 const char* TerminalDisplay::getClipboard() const {
-	mClipboard = mWindow->getClipboard()->getText();
-#ifdef _WIN32
-	if ( mPasteNewlineFix ) {
-		size_t pos;
-		while ( ( pos = mClipboard.find( '\r' ) ) != std::string::npos )
-			mClipboard.erase( pos, 1 );
-	}
-#endif
-	mClipboardUtf8 = mClipboard.toUtf8();
+	mClipboardUtf8 = mWindow->getClipboard()->getText();
+	const_cast<TerminalDisplay*>( this )->sanitizeInput( mClipboardUtf8 );
 	return mClipboardUtf8.c_str();
+}
+
+void TerminalDisplay::sanitizeInput( std::string& input ) {
+	if ( !mPasteNewlineFix )
+		return;
+
+	// Replace isolated \n (not part of \r\n) with \r
+	// This handles Unix-style clipboard text (\n) → simulate Enter as \r
+	// Preserves \r\n (Windows) as a single line ending → \r
+	// Keeps lone \r as-is
+
+	size_t pos = 0;
+	while ( ( pos = input.find( '\n', pos ) ) != std::string::npos ) {
+		if ( pos == 0 || input[pos - 1] != '\r' ) {
+			input.replace( pos, 1, "\r" );
+		} else {
+			// Part of \r\n: remove the \n, keep the preceding \r
+			input.erase( pos, 1 );
+			++pos; // Skip over the kept \r if needed
+		}
+		++pos;
+	}
 }
 
 bool TerminalDisplay::drawBegin( Uint32 columns, Uint32 rows ) {
@@ -788,6 +844,10 @@ void TerminalDisplay::drawCursor( int cx, int cy, TerminalGlyph g, int, int, Ter
 	if ( mCursor != Vector2i( cx, cy ) || mCursorGlyph != g ) {
 		mCursor.x = cx;
 		mCursor.y = cy;
+		if ( isBlinkingCursor() ) {
+			mMode |= MODE_BLINK;
+			mClock.restart();
+		}
 		mCursorGlyph = g;
 		invalidateCursor();
 	}
@@ -804,7 +864,7 @@ void TerminalDisplay::onMouseDoubleClick( const Vector2i& pos, const Uint32& fla
 	if ( flags & EE_BUTTON_LMASK )
 		mLastDoubleClick.restart();
 
-	if ( !isAltScr() && ( flags & EE_BUTTON_LMASK ) &&
+	if ( !isAppCapturingMouse() && ( flags & EE_BUTTON_LMASK ) &&
 		 ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_EMPTY ||
 		   mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_IDLE ) ) {
 		auto gridPos{ positionToGrid( pos ) };
@@ -814,7 +874,27 @@ void TerminalDisplay::onMouseDoubleClick( const Vector2i& pos, const Uint32& fla
 }
 
 void TerminalDisplay::onMouseMove( const Vector2i& pos, const Uint32& flags ) {
-	if ( !isAltScr() && ( flags & EE_BUTTON_LMASK ) &&
+	bool shiftPressed = ( mWindow->getInput()->getModState() & KEYMOD_SHIFT ) != 0;
+	auto mousePos = mWindow->getInput()->getRelativeMousePos();
+	bool isCapturingMouse = isAppCapturingMouse() && !shiftPressed;
+
+	if ( !isAltScr() && !isCapturingMouse && ( flags & EE_BUTTON_LMASK ) &&
+		 mAlreadyClickedLButton ) {
+		Vector2f relPos = { mousePos.x - mPosition.x - mPadding.Left,
+							mousePos.y - mPosition.y - mPadding.Top };
+
+		if ( mLastAutoScroll.getElapsedTime() >= Milliseconds( 16 ) ) {
+			if ( relPos.y < 0 ) {
+				action( TerminalShortcutAction::SCROLLUP_ROW );
+				mLastAutoScroll.restart();
+			} else if ( relPos.y > mSize.getHeight() ) {
+				action( TerminalShortcutAction::SCROLLDOWN_ROW );
+				mLastAutoScroll.restart();
+			}
+		}
+	}
+
+	if ( !isCapturingMouse && ( flags & EE_BUTTON_LMASK ) &&
 		 ( mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_EMPTY ||
 		   mTerminal->getSelectionMode() == TerminalSelectionMode::SEL_READY ) ) {
 		auto gridPos{ positionToGrid( pos ) };
@@ -828,37 +908,26 @@ void TerminalDisplay::onMouseMove( const Vector2i& pos, const Uint32& flags ) {
 }
 
 void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
-	if ( ( flags & EE_BUTTON_LMASK ) && mDraggingSel ) {
+	bool shiftPressed = ( mWindow->getInput()->getModState() & KEYMOD_SHIFT ) != 0;
+	bool isCapturingMouse = isAppCapturingMouse() && !shiftPressed;
+
+	if ( ( flags & EE_BUTTON_LMASK ) && mDraggingSel )
 		return;
-	}
 
 	auto gridPos{ positionToGrid( pos ) };
 
-	if ( !isAltScr() && ( flags & EE_BUTTON_LMASK ) &&
+	if ( !isCapturingMouse && ( flags & EE_BUTTON_LMASK ) &&
 		 mLastDoubleClick.getElapsedTime() < Milliseconds( 300.f ) ) {
 		mTerminal->selstart( gridPos.x, gridPos.y, SNAP_LINE );
-	} else if ( !isAltScr() && ( flags & EE_BUTTON_LMASK ) ) {
+	} else if ( !isCapturingMouse && ( flags & EE_BUTTON_LMASK ) ) {
 		if ( !mDraggingSel ) {
 			mTerminal->selstart( gridPos.x, gridPos.y, 0 );
 			mDraggingSel = true;
 			invalidateLines();
-		}
-	} else if ( flags & EE_BUTTON_MMASK ) {
-		if ( !mAlreadyClickedMButton ) {
-			mAlreadyClickedMButton = true;
-			auto selection = mTerminal->getSelection();
-			if ( !selection.empty() && selection != "\n" ) {
-				for ( auto& chr : selection )
-					onTextInput( chr );
-			} else {
-				getClipboard();
-				if ( !mClipboard.empty() ) {
-					for ( auto& chr : mClipboard )
-						onTextInput( chr );
-				}
-			}
+			mWindow->getInput()->captureMouse( true );
 		}
 	}
+
 	if ( ( flags & EE_BUTTON_LMASK ) ) {
 		if ( !mAlreadyClickedLButton ) {
 			mAlreadyClickedLButton = true;
@@ -866,6 +935,15 @@ void TerminalDisplay::onMouseDown( const Vector2i& pos, const Uint32& flags ) {
 			return;
 		}
 	}
+
+	if ( ( flags & EE_BUTTON_MMASK ) ) {
+		if ( !mAlreadyClickedMButton ) {
+			mAlreadyClickedMButton = true;
+		} else {
+			return;
+		}
+	}
+
 	mTerminal->mousereport( TerminalMouseEventType::MouseButtonDown, positionToGrid( pos ), flags,
 							mWindow->getInput()->getModState() );
 }
@@ -875,10 +953,16 @@ void TerminalDisplay::onMouseUp( const Vector2i& pos, const Uint32& flags ) {
 		mDraggingSel = false;
 	}
 
+	if ( ( flags & EE_BUTTON_LMASK ) && mWindow->getClipboard()->hasPrimarySelection() ) {
+		mWindow->getClipboard()->setPrimarySelectionText( mTerminal->getSelection() );
+	}
+
 	Uint32 smod = sanitizeMod( mWindow->getInput()->getModState() );
 
-	if ( flags & EE_BUTTON_LMASK )
+	if ( flags & EE_BUTTON_LMASK ) {
 		mAlreadyClickedLButton = false;
+		mWindow->getInput()->captureMouse( false );
+	}
 
 	if ( flags & EE_BUTTON_MMASK )
 		mAlreadyClickedMButton = false;
@@ -1081,8 +1165,13 @@ void TerminalDisplay::drawbox( float x, float y, float w, float h, Color fg, Col
 }
 
 void TerminalDisplay::drawGrid( const Vector2f& pos ) {
-	if ( mFrameBuffer )
+	if ( mFrameBuffer ) {
+		mFrameBuffer->setPosition( mPosition.floor() + Vector2f( mPadding.Left, mPadding.Top ) );
 		mFrameBuffer->bind();
+
+		if ( mFullDirty )
+			drawBg( true );
+	}
 
 	auto fontSize = mFont->getFontHeight( mFontSize );
 	auto spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false, false ).advance;
@@ -1182,10 +1271,8 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 
 		mDirtyLines[j] = false;
 
-		if ( !mVBStyles.empty() ) {
-			eeSAFE_DELETE( mVBStyles[j] );
-			mVBStyles[j] = createRowVBO( false );
-		}
+		if ( !mVBStyles.empty() )
+			mVBStyles[j]->clearData();
 
 		for ( Uint32 i = 0; i < mColumns; i++ ) {
 			mCurGridPos = { i, j };
@@ -1227,7 +1314,7 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 				continue;
 			}
 
-			if ( glyph.u == 32 ) {
+			if ( glyph.u == 32 && !( glyph.mode & ( ATTR_UNDERLINE | ATTR_STRUCK ) ) ) {
 				x += advanceX;
 				if ( mVBForeground )
 					mVBForeground->setQuadColor( mCurGridPos, Color::Transparent );
@@ -1241,7 +1328,7 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 					mVBForeground->setQuadColor( mCurGridPos, Color::Transparent );
 			} else {
 				auto* gd = mFont->getGlyphDrawable( glyph.u, mFontSize, glyph.mode & ATTR_BOLD,
-													glyph.mode & ATTR_ITALIC, 0, advanceX );
+													glyph.mode & ATTR_ITALIC, 0 );
 
 				if ( ( glyph.mode & ATTR_EMOJI ) && FontManager::instance()->getColorEmojiFont() ) {
 					gd->setColor( Color::White );
@@ -1289,31 +1376,14 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 			invalidateCursor();
 	}
 
-	if ( mVBForeground ) {
-		mFont->getTexture( mFontSize )->bind();
-		if ( dirtyFG )
-			mVBForeground->update( VERTEX_FLAGS_DEFAULT, false );
-		mVBForeground->bind();
-		mVBForeground->draw();
-		mVBForeground->unbind();
-	}
+	bool redrawCursor =
+		!mEmulator->isScrolling() && !IS_SET( MODE_HIDE ) && ( !mUseFrameBuffer || mDirtyCursor );
+	bool mustRenderUnderline = false;
 
-	if ( !mVBStyles.empty() ) {
-		if ( dirtyFG ) {
-			for ( auto& vbo : mVBStyles )
-				vbo->update( VERTEX_FLAGS_PRIMITIVE, false );
-		}
-		for ( auto& vbo : mVBStyles ) {
-			vbo->bind();
-			vbo->draw();
-			vbo->unbind();
-		}
-	}
-
-	if ( !mEmulator->isScrolling() && !IS_SET( MODE_HIDE ) &&
-		 ( !mUseFrameBuffer || mDirtyCursor ) ) {
+	if ( redrawCursor ) {
 		mDirtyCursor = false;
 		Color drawcol;
+
 		if ( IS_SET( MODE_REVERSE ) ) {
 			if ( mEmulator->isSelected( mCursor.x, mCursor.y ) ) {
 				drawcol = mColorScheme.getCursor();
@@ -1326,11 +1396,11 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 		}
 
 		mPrimitives.setColor( drawcol );
+
 		/* draw the new one */
 		if ( IS_SET( MODE_FOCUSED ) ) {
 			switch ( mCursorMode ) {
-				case StExtension:
-				case SteadyBlock: {
+				case StExtension: {
 					auto* gd = mFont->getGlyphDrawable(
 						mCursorMode == StExtension ? 0xFB04 /* TUX */ : mCursorGlyph.u, mFontSize );
 					gd->setColor( termColor( mCursorGlyph.fg, mColors ) );
@@ -1343,24 +1413,32 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 					if ( !( mMode & MODE_BLINK ) )
 						break;
 				}
-				case SteadyUnderline:
-					mPrimitives.drawRectangle(
-						Rectf( { pos.x + mCursor.x * spaceCharAdvanceX,
-								 pos.y + mCursor.y * lineHeight + lineHeight - cursorThickness },
-							   { spaceCharAdvanceX, cursorThickness } ) );
+				case SteadyUnderline: {
+					mustRenderUnderline = true;
 					break;
-				case BlinkingBlock:
-				case BlinkingBlockDefault:
+				}
 				case BlinkBar: {
 					if ( !( mMode & MODE_BLINK ) )
 						break;
 				}
-				case SteadyBar:
-				case TerminalCursorMode::MAX_CURSOR:
+				case SteadyBar: {
+					mPrimitives.drawRectangle( Rectf(
+						{ pos.x + mCursor.x * spaceCharAdvanceX, pos.y + mCursor.y * lineHeight },
+						{ std::ceil( PixelDensity::dpToPx( 1 ) ), lineHeight } ) );
+					break;
+				}
+				case BlinkingBlock:
+				case BlinkingBlockDefault: {
+					if ( !( mMode & MODE_BLINK ) )
+						break;
+				}
+				case SteadyBlock:
+				case TerminalCursorMode::MAX_CURSOR: {
 					mPrimitives.drawRectangle( Rectf(
 						{ pos.x + mCursor.x * spaceCharAdvanceX, pos.y + mCursor.y * lineHeight },
 						{ spaceCharAdvanceX, lineHeight } ) );
 					break;
+				}
 			}
 		} else {
 			Vector2f cpos{ pos.x + mCursor.x * spaceCharAdvanceX, pos.y + mCursor.y * lineHeight };
@@ -1377,6 +1455,40 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 		}
 	}
 
+	if ( mVBForeground ) {
+		mFont->getTexture( mFontSize )->bind();
+		if ( dirtyFG )
+			mVBForeground->update( VERTEX_FLAGS_DEFAULT, false );
+		mVBForeground->bind();
+		mVBForeground->draw();
+		mVBForeground->unbind();
+	}
+
+	if ( !mVBStyles.empty() ) {
+		if ( dirtyFG ) {
+			for ( auto vbo : mVBStyles ) {
+				if ( vbo->getVertexCount() )
+					vbo->update( VERTEX_FLAGS_PRIMITIVE, false );
+			}
+		}
+		for ( auto vbo : mVBStyles ) {
+			if ( vbo->getVertexCount() == 0 )
+				continue;
+			vbo->bind();
+			vbo->draw();
+			vbo->unbind();
+		}
+	}
+
+	// Underline is rendered after foreground render because it usually clashes with the underlines
+	// decorations and ends up being not visible, I prefer to do this even it it's not standard.
+	if ( mustRenderUnderline ) {
+		mPrimitives.drawRectangle(
+			Rectf( { pos.x + mCursor.x * spaceCharAdvanceX,
+					 pos.y + mCursor.y * lineHeight + lineHeight - cursorThickness },
+				   { spaceCharAdvanceX, cursorThickness } ) );
+	}
+
 	if ( mFrameBuffer && pos.y + lineHeight * mRows < mSize.getHeight() ) {
 		mPrimitives.setColor( defaultBg );
 		mPrimitives.drawRectangle(
@@ -1388,17 +1500,26 @@ void TerminalDisplay::drawGrid( const Vector2f& pos ) {
 		mFrameBuffer->unbind();
 }
 
+void TerminalDisplay::drawBg( bool toFBO ) {
+	auto defaultBg = termColor( mEmulator->getDefaultBackground(), mColors );
+	Primitives p;
+	p.setForceDraw( toFBO );
+	p.setColor( defaultBg );
+
+	if ( toFBO ) {
+		p.drawRectangle( Rectf( Vector2f::Zero, mFrameBuffer->getSize().asFloat() ) );
+	} else {
+		p.drawRectangle( Rectf( mPosition.floor().asFloat(), mSize.asFloat() ) );
+	}
+}
+
 void TerminalDisplay::draw( const Vector2f& pos ) {
 	if ( !mEmulator || !mTerminal )
 		return;
 
 	mDrawing = true;
 
-	auto defaultBg = termColor( mEmulator->getDefaultBackground(), mColors );
-	Primitives p;
-	p.setForceDraw( false );
-	p.setColor( defaultBg );
-	p.drawRectangle( Rectf( mPosition.floor().asFloat(), mSize.asFloat() ) );
+	drawBg();
 
 	if ( !mFrameBuffer || mDirty )
 		drawGrid( pos );
@@ -1418,6 +1539,7 @@ void TerminalDisplay::draw( const Vector2f& pos ) {
 
 	mDrawing = false;
 	mDirty = false;
+	mFullDirty = false;
 }
 
 Vector2i TerminalDisplay::positionToGrid( const Vector2i& pos ) {
@@ -1455,6 +1577,7 @@ void TerminalDisplay::onSizeChange() {
 	Sizei gridSize( gridSizeFromTermDimensions(
 		mFont, mFontSize,
 		mSize - Vector2f( mPadding.Left + mPadding.Right, mPadding.Top + mPadding.Bottom ) ) );
+
 	if ( mTerminal ) {
 		if ( gridSize.getWidth() != mTerminal->getNumColumns() ||
 			 gridSize.getHeight() != mTerminal->getNumRows() ) {
@@ -1491,9 +1614,10 @@ void TerminalDisplay::onProcessExit( int exitCode ) {
 
 	Sizei termSize( mColumns, mRows );
 	std::unique_ptr<IPseudoTerminal> pseudoTerminal = nullptr;
-	std::vector<std::string> argsV( mArgs.begin(), mArgs.end() );
-	auto process = processFactory->createWithPseudoTerminal(
-		mProgram, argsV, mWorkingDir, termSize.getWidth(), termSize.getHeight(), pseudoTerminal );
+
+	auto process =
+		processFactory->createWithPseudoTerminal( mProgram, mArgs, mWorkingDir, termSize.getWidth(),
+												  termSize.getHeight(), pseudoTerminal, mEnv );
 
 	if ( !pseudoTerminal ) {
 		eeSAFE_DELETE( processFactory );
@@ -1511,6 +1635,10 @@ void TerminalDisplay::onProcessExit( int exitCode ) {
 	eeSAFE_DELETE( processFactory );
 }
 
+void TerminalDisplay::onScrollPositionChange() {
+	sendEvent( { EventType::SCROLL_HISTORY } );
+}
+
 void TerminalDisplay::onTextInput( const Uint32& chr ) {
 	if ( !mTerminal )
 		return;
@@ -1526,6 +1654,30 @@ void TerminalDisplay::onTextEditing( const String&, const Int32&, const Int32& )
 		return;
 	invalidateCursor();
 	updateIMELocation();
+}
+
+bool TerminalDisplay::isRegisteredShortcut( const Keycode& keyCode, const Uint32& mod ) const {
+	Uint32 smod = sanitizeMod( mod );
+	auto scIt = terminalKeyMap.Shortcuts().find( keyCode );
+	if ( scIt != terminalKeyMap.Shortcuts().end() ) {
+		for ( auto& k : scIt->second ) {
+			if ( k.mask == KEYMOD_CTRL_SHIFT_ALT_META || k.mask == smod ) {
+				if ( IS_SET( MODE_APPKEYPAD ) ? k.appkey < 0 : k.appkey > 0 )
+					continue;
+
+				if ( IS_SET( MODE_NUMLOCK ) && k.appkey == 2 )
+					continue;
+
+				if ( IS_SET( MODE_APPCURSOR ) ? k.appcursor < 0 : k.appcursor > 0 )
+					continue;
+
+				if ( !k.altscrn || ( k.altscrn == ( mEmulator->tisaltscr() ? 1 : -1 ) ) ) {
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 }
 
 void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, const Uint32& mod,
@@ -1556,7 +1708,7 @@ void TerminalDisplay::onKeyDown( const Keycode& keyCode, const Uint32& /*chr*/, 
 	}
 
 	if ( mod & KEYMOD_CTRL ) {
-		// I really dont like this, as it depends on the undelying backend implementation (SDL in
+		// I really dont like this, as it depends on the underlying backend implementation (SDL in
 		// this case)
 		if ( ( scancode >= SCANCODE_A && scancode <= SCANCODE_0 ) ||
 			 SCANCODE_LEFTBRACKET == scancode || SCANCODE_RIGHTBRACKET == scancode ) {
@@ -1682,6 +1834,7 @@ void TerminalDisplay::invalidateLine( const int& line ) {
 void TerminalDisplay::invalidateLines() {
 	mDirtyLines.assign( mDirtyLines.size(), 1 );
 	mDirty = true;
+	mFullDirty = true;
 }
 void TerminalDisplay::setFocus( bool focus ) {
 	if ( focus )
@@ -1689,6 +1842,12 @@ void TerminalDisplay::setFocus( bool focus ) {
 
 	if ( focus == mFocus )
 		return;
+
+	// focus loss
+	if ( mFocus && !focus && mAlreadyClickedMButton ) {
+		mWindow->getInput()->captureMouse( false );
+	}
+
 	mFocus = focus;
 	bool modeFocus = mMode & MODE_FOCUSED;
 	if ( mFocus != modeFocus ) {
@@ -1732,10 +1891,10 @@ void TerminalDisplay::drawFrameBuffer() {
 }
 
 VertexBuffer* TerminalDisplay::createRowVBO( bool usesTexCoords ) {
-	auto* VBO = VertexBuffer::New(
+	auto* VBO = VertexBuffer::NewVertexArray(
 		usesTexCoords ? VERTEX_FLAGS_DEFAULT : VERTEX_FLAGS_PRIMITIVE,
-		mQuadVertexs == 6 ? EE::Graphics::PRIMITIVE_TRIANGLES : EE::Graphics::PRIMITIVE_QUADS,
-		mRows * mColumns * mQuadVertexs, 0, VertexBufferUsageType::Stream );
+		mQuadVertex == 6 ? EE::Graphics::PRIMITIVE_TRIANGLES : EE::Graphics::PRIMITIVE_QUADS,
+		mColumns * mQuadVertex, 0, VertexBufferUsageType::Stream );
 	VBO->setGridSize( Sizei( mColumns, 1 ) );
 	return VBO;
 }
@@ -1744,13 +1903,13 @@ void TerminalDisplay::createVBO( VertexBuffer** vbo, bool usesTexCoords ) {
 	eeSAFE_DELETE( ( *vbo ) );
 	( *vbo ) = VertexBuffer::New(
 		usesTexCoords ? VERTEX_FLAGS_DEFAULT : VERTEX_FLAGS_PRIMITIVE,
-		mQuadVertexs == 6 ? EE::Graphics::PRIMITIVE_TRIANGLES : EE::Graphics::PRIMITIVE_QUADS,
-		mRows * mColumns * mQuadVertexs, 0, VertexBufferUsageType::Stream );
-	( *vbo )->resizeArray( VERTEX_FLAG_POSITION, mRows * mColumns * mQuadVertexs );
-	( *vbo )->resizeArray( VERTEX_FLAG_COLOR, mRows * mColumns * mQuadVertexs );
+		mQuadVertex == 6 ? EE::Graphics::PRIMITIVE_TRIANGLES : EE::Graphics::PRIMITIVE_QUADS,
+		mRows * mColumns * mQuadVertex, 0, VertexBufferUsageType::Stream );
+	( *vbo )->resizeArray( VERTEX_FLAG_POSITION, mRows * mColumns * mQuadVertex );
+	( *vbo )->resizeArray( VERTEX_FLAG_COLOR, mRows * mColumns * mQuadVertex );
 	( *vbo )->setGridSize( Sizei( mColumns, mRows ) );
 	if ( usesTexCoords )
-		( *vbo )->resizeArray( VERTEX_FLAG_TEXTURE0, mRows * mColumns * mQuadVertexs );
+		( *vbo )->resizeArray( VERTEX_FLAG_TEXTURE0, mRows * mColumns * mQuadVertex );
 }
 
 void TerminalDisplay::initVBOs() {
@@ -1764,7 +1923,7 @@ void TerminalDisplay::initVBOs() {
 }
 
 Rectf TerminalDisplay::updateIMELocation() {
-	if ( !Engine::isRunninMainThread() )
+	if ( !Engine::isMainThread() )
 		return {};
 	Float fontSize = mFont->getFontHeight( mFontSize );
 	Float spaceCharAdvanceX = mFont->getGlyph( 'A', mFontSize, false, false ).advance;
@@ -1773,6 +1932,10 @@ Rectf TerminalDisplay::updateIMELocation() {
 			 { spaceCharAdvanceX, fontSize } );
 	mWindow->getIME().setLocation( r.asInt() );
 	return r;
+}
+
+bool TerminalDisplay::useFrameBuffer() const {
+	return mUseFrameBuffer;
 }
 
 }} // namespace eterm::Terminal

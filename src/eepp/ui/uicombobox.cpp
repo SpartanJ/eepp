@@ -179,6 +179,7 @@ bool UIComboBox::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::RowHeight:
 		case PropertyId::VScrollMode:
 		case PropertyId::HScrollMode:
+		case PropertyId::MenuWidthMode:
 			return mDropDownList->applyProperty( attribute );
 		default:
 			return UIWidget::applyProperty( attribute );
@@ -229,6 +230,7 @@ std::string UIComboBox::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::RowHeight:
 		case PropertyId::VScrollMode:
 		case PropertyId::HScrollMode:
+		case PropertyId::MenuWidthMode:
 			return mDropDownList->getPropertyString( propertyDef, propertyIndex );
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
@@ -274,6 +276,7 @@ std::vector<PropertyId> UIComboBox::getPropertiesImplemented() const {
 		PropertyId::RowHeight,
 		PropertyId::VScrollMode,
 		PropertyId::HScrollMode,
+		PropertyId::MenuWidthMode,
 	};
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;

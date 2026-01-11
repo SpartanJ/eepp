@@ -14,14 +14,14 @@ namespace eterm { namespace UI {
 
 class UITerminal : public UIWidget {
   public:
-	enum ScrollViewType { Inclusive, Exclusive };
-
 	static UITerminal* New( Font* font, const Float& fontSize, const Sizef& pixelsSize,
 							const std::string& program = "",
 							const std::vector<std::string>& args = {},
+							const std::unordered_map<std::string, std::string>& env = {},
 							const std::string& workingDir = "", const size_t& historySize = 10000,
-							IProcessFactory* processFactory = nullptr,
-							const bool& useFrameBuffer = false );
+							IProcessFactory* processFactory = nullptr, bool useFrameBuffer = false,
+							bool keepAlive = true );
+
 	typedef std::function<void()> TerminalCommand;
 
 	static UITerminal* New( const std::shared_ptr<TerminalDisplay>& terminalDisplay );
@@ -66,7 +66,7 @@ class UITerminal : public UIWidget {
 
 	void addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>& binds );
 
-	void execute( const std::string& command );
+	bool execute( const std::string& command );
 
 	void setCommands( const std::map<std::string, TerminalCommand>& cmds );
 
@@ -92,9 +92,9 @@ class UITerminal : public UIWidget {
 
 	UIScrollBar* getVerticalScrollBar() const;
 
-	const ScrollViewType& getViewType() const;
+	const ScrollViewType& getScrollViewType() const;
 
-	void setViewType( const ScrollViewType& viewType );
+	void setScrollViewType( const ScrollViewType& viewType );
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
@@ -111,6 +111,8 @@ class UITerminal : public UIWidget {
 
 	void setColorScheme( const TerminalColorScheme& colorScheme );
 
+	void restart();
+
   protected:
 	std::string mTitle;
 	bool mIsCustomTitle{ false };
@@ -120,7 +122,7 @@ class UITerminal : public UIWidget {
 	std::map<std::string, TerminalCommand> mCommands;
 	UIPopUpMenu* mCurrentMenu{ nullptr };
 	size_t mMenuIconSize{ 16 };
-	ScrollViewType mViewType{ Inclusive };
+	ScrollViewType mViewType{ ScrollViewType::Overlay };
 	ScrollBarMode mVScrollMode{ ScrollBarMode::Auto };
 	UIScrollBar* mVScroll{ nullptr };
 	int mScrollOffset;
@@ -180,6 +182,8 @@ class UITerminal : public UIWidget {
 	virtual void updateScrollPosition();
 
 	virtual void onScrollChange();
+
+	void registerNewTerminal();
 };
 
 }} // namespace eterm::UI

@@ -1,0 +1,7 @@
+Hello!
+This is a test sentence mixing Latin script with Arabic (like مرحبا، يا صديقي! which means "Hello, my friend!") 
+and Bengali (আমার নাম রহস্যময়। which means "My name is mysterious."), plus some emojis 😊🚀🌟. 
+Now, let's embed RTL inside LTR: The word "English" followed by العربية (Arabic) and then back to "text".
+In Bengali: বাংলা ভাষা is beautiful, and mixing with Arabic: বাংলা مع العربية.
+Finally, numbers 123 in Arabic context: ١٢٣، and emojis in RTL: 😊 مرحبا 😊.
+Punctuation test: (Hello? مرحبا!) [End: 😎].

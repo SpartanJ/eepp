@@ -124,54 +124,52 @@ TextureAtlasEditor::TextureAtlasEditor( UIWindow* attachTo, const TGEditorCloseC
 	UIWidgetCreator::removeCustomWidgetCallback( "TextureAtlasTextureRegionEditor" );
 
 	mUIContainer->bind( "TextureRegionList", mTextureRegionList );
-	mTextureRegionList->addEventListener(
-		Event::OnItemSelected, [this]( auto event ) { onTextureRegionChange( event ); } );
+	mTextureRegionList->on( Event::OnItemSelected,
+							[this]( auto event ) { onTextureRegionChange( event ); } );
 
 	mUIContainer->bind( "gridlayout", mTextureRegionGrid );
 
 	mUIContainer->bind( "offX", mSpinOffX );
-	mSpinOffX->addEventListener( Event::OnValueChange,
-								 [this]( auto event ) { onOffXChange( event ); } );
+	mSpinOffX->on( Event::OnValueChange, [this]( auto event ) { onOffXChange( event ); } );
 
 	mUIContainer->bind( "offY", mSpinOffY );
-	mSpinOffY->addEventListener( Event::OnValueChange,
-								 [this]( auto event ) { onOffYChange( event ); } );
+	mSpinOffY->on( Event::OnValueChange, [this]( auto event ) { onOffYChange( event ); } );
 
 	mUIContainer->bind( "destW", mSpinDestW );
-	mSpinDestW->addEventListener( Event::OnValueChange,
-								  [this]( auto event ) { onDestWChange( event ); } );
+	mSpinDestW->on( Event::OnValueChange, [this]( auto event ) { onDestWChange( event ); } );
 
 	mUIContainer->bind( "destH", mSpinDestH );
-	mSpinDestH->addEventListener( Event::OnValueChange,
-								  [this]( auto event ) { onDestHChange( event ); } );
+	mSpinDestH->on( Event::OnValueChange, [this]( auto event ) { onDestHChange( event ); } );
 
 	mUIContainer->bind( "textureFilter", mTextureFilterList );
-	mTextureFilterList->addEventListener(
-		Event::OnItemSelected, [this]( auto event ) { onTextureFilterChange( event ); } );
+	mTextureFilterList->on( Event::OnItemSelected,
+							[this]( auto event ) { onTextureFilterChange( event ); } );
 
-	mUIContainer->find<UIPushButton>( "resetDest" )
-		->addEventListener( Event::MouseClick, [this]( auto event ) { onResetDestSize( event ); } );
+	mUIContainer->find<UIPushButton>( "resetDest" )->on( Event::MouseClick, [this]( auto event ) {
+		onResetDestSize( event );
+	} );
 
-	mUIContainer->find<UIPushButton>( "resetOff" )
-		->addEventListener( Event::MouseClick, [this]( auto event ) { onResetOffset( event ); } );
+	mUIContainer->find<UIPushButton>( "resetOff" )->on( Event::MouseClick, [this]( auto event ) {
+		onResetOffset( event );
+	} );
 
-	mUIContainer->find<UIPushButton>( "centerOff" )
-		->addEventListener( Event::MouseClick, [this]( auto event ) { onCenterOffset( event ); } );
+	mUIContainer->find<UIPushButton>( "centerOff" )->on( Event::MouseClick, [this]( auto event ) {
+		onCenterOffset( event );
+	} );
 
-	mUIContainer->find<UIPushButton>( "hbotOff" )
-		->addEventListener( Event::MouseClick, [this]( auto event ) { onHBOffset( event ); } );
+	mUIContainer->find<UIPushButton>( "hbotOff" )->on( Event::MouseClick, [this]( auto event ) {
+		onHBOffset( event );
+	} );
 
-	mUIContainer->find<UIPopUpMenu>( "fileMenu" )
-		->addEventListener( Event::OnItemClicked,
-							[this]( auto event ) { fileMenuClick( event ); } );
+	mUIContainer->find<UIPopUpMenu>( "fileMenu" )->on( Event::OnItemClicked, [this]( auto event ) {
+		fileMenuClick( event );
+	} );
 
 	if ( NULL != mUIWindow ) {
 		mUIWindow->setTitle( "Texture Atlas Editor" );
-		mUIWindow->addEventListener( Event::OnWindowClose,
-									 [this]( auto event ) { windowClose( event ); } );
+		mUIWindow->on( Event::OnWindowClose, [this]( auto event ) { windowClose( event ); } );
 	} else {
-		mUIContainer->addEventListener( Event::OnClose,
-										[this]( auto event ) { windowClose( event ); } );
+		mUIContainer->on( Event::OnClose, [this]( auto event ) { windowClose( event ); } );
 		mUIContainer->find<UINode>( "texture_atlas_editor_root" )
 			->setThemeSkin( mUIContainer->getSceneNode()
 								->asType<UISceneNode>()
@@ -294,8 +292,7 @@ void TextureAtlasEditor::fileMenuClick( const Event* Event ) {
 			UIFileDialog::DefaultFlags, std::string( "*" ) + EE_TEXTURE_ATLAS_EXTENSION );
 		TGDialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Open Texture Atlas" );
-		TGDialog->addEventListener( Event::OpenFile,
-									[this]( auto event ) { openTextureAtlas( event ); } );
+		TGDialog->on( Event::OpenFile, [this]( auto event ) { openTextureAtlas( event ); } );
 		TGDialog->center();
 		TGDialog->show();
 	} else if ( "Save" == txt ) {
@@ -307,11 +304,10 @@ void TextureAtlasEditor::fileMenuClick( const Event* Event ) {
 			UIMessageBox* MsgBox = UIMessageBox::New( UIMessageBox::OK_CANCEL,
 													  "Do you really want to close the current "
 													  "texture atlas?\nAll changes will be lost." );
-			MsgBox->addEventListener( Event::OnConfirm,
-									  [this]( auto event ) { onTextureAtlasClose( event ); } );
+			MsgBox->on( Event::OnConfirm, [this]( auto event ) { onTextureAtlasClose( event ); } );
 			MsgBox->setTitle( "Close Texture Atlas?" );
 			MsgBox->center();
-			MsgBox->show();
+			MsgBox->showWhenReady();
 		} else {
 			onTextureAtlasClose( NULL );
 		}
@@ -385,7 +381,7 @@ void TextureAtlasEditor::fillTextureRegionList() {
 		8.f / (Float)mTextureRegionList->getCount() );
 
 	if ( !res.empty() ) {
-		mTextureRegionGrid->childsCloseAll();
+		mTextureRegionGrid->closeAllChildren();
 
 		for ( auto& it : res ) {
 			TextureRegion* tr = it.second;
@@ -396,8 +392,7 @@ void TextureAtlasEditor::fillTextureRegionList() {
 				->setTooltipText( tr->getName() )
 				->setGravity( UI_HALIGN_CENTER | UI_VALIGN_CENTER )
 				->setParent( mTextureRegionGrid )
-				->addEventListener( Event::MouseClick,
-									[this]( auto event ) { onTextureRegionChange( event ); } );
+				->on( Event::MouseClick, [this]( auto event ) { onTextureRegionChange( event ); } );
 			;
 		}
 	}
@@ -468,7 +463,7 @@ void TextureAtlasEditor::onTextureAtlasClose( const Event* ) {
 		TextureAtlasManager::instance()->remove( mTextureAtlasLoader->getTextureAtlas() );
 	eeSAFE_DELETE( mTextureAtlasLoader );
 	mTextureRegionList->clear();
-	mTextureRegionGrid->childsCloseAll();
+	mTextureRegionGrid->closeAllChildren();
 	mSpinOffX->setValue( 0 );
 	mSpinOffY->setValue( 0 );
 	mSpinDestW->setValue( 0 );

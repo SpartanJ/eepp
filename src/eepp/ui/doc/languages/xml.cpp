@@ -9,7 +9,7 @@ void addXML() {
 		->add(
 
 			{ "XML",
-			  { "%.xml$", "%.svg$" },
+			  { "%.xml$", "%.svg$", "%.cbp$", "%.cbproj$" },
 			  {
 				  { { "<%s*[sS][tT][yY][lL][eE]%s*>", "<%s*/%s*[sS][tT][yY][lL][eE]%s*>" },
 					"function",
@@ -22,10 +22,10 @@ void addXML() {
 				  { { "0x[%da-fA-F]+" }, "number" },
 				  { { "-?%d+[%d%.]*f?" }, "number" },
 				  { { "-?%.?%d+f?" }, "number" },
-				  { { "%f[^<]![%a_][%w%_%-]*" }, "keyword2" },
+				  { { "%f[^<]![%a_][%w%_%-]*" }, "type" },
 				  { { "%f[^<][%a_][%w%_%-]*" }, "function" },
 				  { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
-				  { { "[%a_][%w_]*" }, "keyword" },
+				  { { "[%a_][%w_-]*" }, "keyword" },
 				  { { "[/<>=]" }, "operator" },
 
 			  },
@@ -33,10 +33,11 @@ void addXML() {
 
 			  },
 			  "",
-			  { "<%?xml" }
+			  { "^<%?xml" }
 
 			} )
-		.setAutoCloseXMLTags( true );
+		.setAutoCloseXMLTags( true )
+		.setBlockComment( { "<!--", "-->" } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

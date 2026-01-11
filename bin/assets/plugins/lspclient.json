@@ -59,8 +59,10 @@
       "initializationOptions": {
         "usePlaceholders": true,
         "semanticTokens": true,
-        "noSemanticString": true,
-        "noSemanticNumber": true
+        "semanticTokenTypes": {
+          "string": false,
+          "number": false
+        }
       }
     },
     {
@@ -89,6 +91,12 @@
       "use": "clangd",
       "share_process": true,
       "file_patterns": ["%.m$"]
+    },
+    {
+      "language": "objective-cpp",
+      "use": "clangd",
+      "share_process": true,
+      "file_patterns": ["%.mm$"]
     },
     {
       "language": "d",
@@ -260,9 +268,9 @@
     },
     {
       "language": "cmake",
-      "name": "cmake-language-server",
-      "url": "https://github.com/regen100/cmake-language-server",
-      "command": "cmake-language-server",
+      "name": "neocmakelsp",
+      "url": "https://github.com/neocmakelsp/neocmakelsp",
+      "command": "neocmakelsp stdio",
       "file_patterns": ["%.cmake$", "CMakeLists%.txt$"],
       "rootIndicationFileNames": ["build"]
     },
@@ -390,6 +398,46 @@
       "url": "https://github.com/AdaCore/ada_language_server",
       "command": "ada_language_server",
       "file_patterns": ["%.adb$", "%.ads$", "%.ada$"]
+    },
+    {
+      "language": "markdown",
+      "name": "marksman",
+      "url": "https://github.com/artempyanykh/marksman",
+      "command": "marksman",
+      "file_patterns": ["%.md$"],
+      "rootIndicationFileNames": [".git"]
+    },
+    {
+      "language": "c3",
+      "name": "c3-lsp",
+      "url": "https://github.com/pherrymason/c3-lsp",
+      "command": "c3lsp",
+      "file_patterns": ["%.c3$"],
+      "rootIndicationFileNames": [".git"]
+    },
+    {
+      "language": "ü",
+      "name": "Ü language server",
+      "url": "https://github.com/Panzerschrek/U-00DC-Sprache",
+      "command": "u.._language_server",
+      "file_patterns": ["%.u$", "%.uh$"],
+      "rootIndicationFileNames": [".git"]
+    },
+    {
+      "language": "racket",
+      "name": "racket-langserver",
+      "url": "https://github.com/jeapostrophe/racket-langserver",
+      "command": "racket -l racket-langserver",
+      "file_patterns": ["%.rkt$"],
+      "rootIndicationFileNames": [".git"]
+    },
+    {
+      "language": "typst",
+      "name": "Tinymist",
+      "url": "https://github.com/Myriad-Dreamin/tinymist",
+      "command": "tinymist",
+      "file_patterns": ["%.typ$"],
+      "rootIndicationFileNames": [".git"]
     }
   ]
 }

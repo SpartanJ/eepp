@@ -6,11 +6,18 @@ std::vector<std::vector<std::string>>
 CommandPalette::build( const std::vector<std::string>& commandList,
 					   const EE::UI::KeyBindings& keybindings ) {
 	std::vector<std::vector<std::string>> ret;
+	std::unordered_set<std::string> processedCommands;
+	ret.reserve( commandList.size() );
+	processedCommands.reserve( commandList.size() );
 	for ( const auto& cmd : commandList ) {
-		std::string cmdName( cmd );
-		String::capitalizeInPlace( cmdName );
-		String::replaceAll( cmdName, "-", " " );
-		ret.push_back( { cmdName, keybindings.getCommandKeybindString( cmd ), cmd } );
+		if ( processedCommands.insert( cmd ).second ) {
+			std::string cmdName( cmd );
+			String::capitalizeInPlace( cmdName );
+			String::replaceAll( cmdName, "-", " " );
+
+			ret.push_back(
+				{ std::move( cmdName ), keybindings.getCommandKeybindString( cmd ), cmd } );
+		}
 	}
 	return ret;
 }
@@ -66,7 +73,7 @@ void CommandPalette::setCurModel( const std::shared_ptr<CommandPaletteModel>& cu
 
 std::shared_ptr<CommandPaletteModel>
 CommandPalette::fuzzyMatch( const std::vector<std::vector<std::string>>& cmdPalette,
-							const std::string& match, const size_t& max ) const {
+							const std::string& pattern, const size_t& max ) const {
 	if ( cmdPalette.empty() )
 		return {};
 
@@ -75,9 +82,11 @@ CommandPalette::fuzzyMatch( const std::vector<std::vector<std::string>>& cmdPale
 	std::vector<std::vector<std::string>> ret;
 
 	for ( size_t i = 0; i < cmdPalette.size(); i++ ) {
-		int matchName = String::fuzzyMatch( cmdPalette[i][0], match );
-		int matchKeybind = String::fuzzyMatch( cmdPalette[i][2], match );
-		matchesMap.insert( { std::max( matchName, matchKeybind ), i } );
+		int matchName = String::fuzzyMatch( pattern, cmdPalette[i][0] );
+		int matchKeybind = String::fuzzyMatch( pattern, cmdPalette[i][2] );
+		int matchScore = std::max( matchName, matchKeybind );
+		if ( matchScore > std::numeric_limits<int>::min() )
+			matchesMap.insert( { matchScore, i } );
 	}
 	for ( auto& res : matchesMap ) {
 		if ( ret.size() < max )
@@ -86,15 +95,15 @@ CommandPalette::fuzzyMatch( const std::vector<std::vector<std::string>>& cmdPale
 	return CommandPaletteModel::create( 3, ret );
 }
 
-void CommandPalette::asyncFuzzyMatch( const std::string& match, const size_t& max,
+void CommandPalette::asyncFuzzyMatch( const std::string& pattern, const size_t& max,
 									  MatchResultCb res ) const {
 	if ( !mCurModel )
 		return;
 
-	mPool->run( [this, match, max, res]() {
+	mPool->run( [this, pattern, max, res]() {
 		const std::vector<std::vector<std::string>>& cmdPalette =
 			mCurModel.get() == mBaseModel.get() ? mCommandPalette : mCommandPaletteEditor;
-		res( fuzzyMatch( cmdPalette, match, max ) );
+		res( fuzzyMatch( cmdPalette, pattern, max ) );
 	} );
 }
 

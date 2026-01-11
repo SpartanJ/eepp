@@ -160,8 +160,8 @@ void UITooltip::draw() {
 
 		if ( mTextCache->getTextWidth() ) {
 			mTextCache->setAlign( getFlags() );
-			mTextCache->draw( (Float)mScreenPosi.x + (int)mAlignOffset.x,
-							  (Float)mScreenPosi.y + (int)mAlignOffset.y, Vector2f::One, 0.f,
+			mTextCache->draw( std::trunc( mScreenPos.x ) + (int)mAlignOffset.x,
+							  std::trunc( mScreenPos.y ) + (int)mAlignOffset.y, Vector2f::One, 0.f,
 							  getBlendMode() );
 		}
 	}

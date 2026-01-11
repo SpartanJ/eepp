@@ -8,7 +8,7 @@
         "command": "gdb",
         "command_arguments": "--interpreter=dap"
       },
-      "languages": [ "cpp", "c", "d", "go", "objectivec", "fortran", "pascal", "rust" ],
+      "languages": [ "cpp", "c", "d", "go", "objectivec", "fortran", "pascal", "rust", "ü" ],
       "configurations": [
         {
           "name": "Launch binary",
@@ -48,7 +48,7 @@
       "find": {
         "macos": "xcrun -f ${command}"
       },
-      "languages": [ "cpp", "c", "odin", "rust", "zig" ],
+      "languages": [ "cpp", "c", "odin", "rust", "zig", "ü" ],
       "configurations": [
         {
           "name": "Launch binary",
@@ -235,6 +235,73 @@
           "arguments": {
             "program": "${file}",
             "args": "${args}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "node",
+      "url": "https://github.com/microsoft/vscode-js-debug",
+      "type": ["pwa-node", "pwa-chrome"],
+      "run": {
+        "command": "node",
+        "command_arguments": [ "${env:VSCODE_JS_DEBUG_PATH}/src/dapDebugServer.js", "${randPort}", "127.0.0.1" ]
+      },
+      "languages": ["javascript", "typescript"],
+      "unstable_frame_id": true,
+      "configurations": [
+        {
+          "name": "Launch script",
+          "request": "launch",
+          "arguments": {
+            "type": "pwa-node",
+            "program": "${file}",
+            "args": "${args}",
+            "cwd": "${cwd}",
+            "env": "${env}",
+            "runtimeExecutable": "node",
+            "autoAttachChildProcesses": true,
+            "enableDWARF":true,
+            "enableContentValidation":true,
+            "outputCapture":"console",
+            "timeout":10000,
+            "showAsyncStacks":true,
+            "smartStep":true,
+            "sourceMaps":true,
+            "sourceMapRenames":true,
+            "pauseForSourceMap":false
+          }
+        },
+        {
+          "name": "Launch script in Terminal",
+          "request": "launch",
+          "arguments": {
+            "type": "pwa-node",
+            "program": "${file}",
+            "args": "${args}",
+            "cwd": "${cwd}",
+            "env": "${env}",
+            "runtimeExecutable": "node",
+            "console": "externalConsole",
+            "autoAttachChildProcesses": true,
+            "enableDWARF":true,
+            "enableContentValidation":true,
+            "outputCapture":"console",
+            "timeout":10000,
+            "showAsyncStacks":true,
+            "smartStep":true,
+            "sourceMaps":true,
+            "sourceMapRenames":true,
+            "pauseForSourceMap":false
+          }
+        },
+        {
+          "name": "Attach to Node.js process",
+          "request": "attach",
+          "arguments": {
+            "type": "pwa-node",
+            "processId": "${command:pickProcess}",
+            "cwd": "${cwd}"
           }
         }
       ]

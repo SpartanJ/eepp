@@ -4,7 +4,7 @@
  *
  *   CID-keyed Type1 Glyph Loader (body).
  *
- * Copyright (C) 1996-2019 by
+ * Copyright (C) 1996-2025 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -16,17 +16,16 @@
  */
 
 
-#include <ft2build.h>
 #include "cidload.h"
 #include "cidgload.h"
-#include FT_INTERNAL_DEBUG_H
-#include FT_INTERNAL_STREAM_H
-#include FT_OUTLINE_H
-#include FT_INTERNAL_CALC_H
+#include <freetype/internal/ftdebug.h>
+#include <freetype/internal/ftstream.h>
+#include <freetype/ftoutln.h>
+#include <freetype/internal/ftcalc.h>
 
-#include FT_INTERNAL_POSTSCRIPT_AUX_H
-#include FT_INTERNAL_CFF_TYPES_H
-#include FT_DRIVER_H
+#include <freetype/internal/psaux.h>
+#include <freetype/internal/cfftypes.h>
+#include <freetype/ftdriver.h>
 
 #include "ciderrs.h"
 
@@ -39,6 +38,117 @@
    */
 #undef  FT_COMPONENT
 #define FT_COMPONENT  cidgload
+
+
+  /*
+   * A helper function to compute FD number (`fd_select`), the offset to the
+   * head of the glyph data (`off1`), and the offset to the and of the glyph
+   * data (`off2`).
+   *
+   * The number how many times `cid_get_offset` is invoked can be controlled
+   * by the number of non-NULL arguments.  If `fd_select` is non-NULL but
+   * `off1` and `off2` are NULL, `cid_get_offset` is invoked only for
+   * `fd_select`; `off1` and `off2` are not validated.
+   *
+   */
+  FT_LOCAL_DEF( FT_Error )
+  cid_compute_fd_and_offsets( CID_Face   face,
+                              FT_UInt    glyph_index,
+                              FT_ULong*  fd_select_p,
+                              FT_ULong*  off1_p,
+                              FT_ULong*  off2_p )
+  {
+    FT_Error  error = FT_Err_Ok;
+
+    CID_FaceInfo  cid       = &face->cid;
+    FT_Stream     stream    =  face->cid_stream;
+    FT_UInt       entry_len = cid->fd_bytes + cid->gd_bytes;
+
+    FT_Byte*  p;
+    FT_Bool   need_frame_exit = 0;
+    FT_ULong  fd_select, off1, off2;
+
+
+    /* For ordinary fonts, read the CID font dictionary index */
+    /* and charstring offset from the CIDMap.                 */
+
+    if ( FT_STREAM_SEEK( cid->data_offset + cid->cidmap_offset +
+                         glyph_index * entry_len )               ||
+         FT_FRAME_ENTER( 2 * entry_len )                         )
+      goto Exit;
+
+    need_frame_exit = 1;
+
+    p         = (FT_Byte*)stream->cursor;
+    fd_select = cid_get_offset( &p, cid->fd_bytes );
+    off1      = cid_get_offset( &p, cid->gd_bytes );
+
+    p    += cid->fd_bytes;
+    off2  = cid_get_offset( &p, cid->gd_bytes );
+
+    if ( fd_select_p )
+      *fd_select_p = fd_select;
+    if ( off1_p )
+      *off1_p = off1;
+    if ( off2_p )
+      *off2_p = off2;
+
+    if ( fd_select >= cid->num_dicts )
+    {
+      /*
+       * fd_select == 0xFF is often used to indicate that the CID
+       * has no charstring to be rendered, similar to GID = 0xFFFF
+       * in TrueType fonts.
+       */
+      if ( ( cid->fd_bytes == 1 && fd_select == 0xFFU   ) ||
+           ( cid->fd_bytes == 2 && fd_select == 0xFFFFU ) )
+      {
+        FT_TRACE1(( "cid_load_glyph: fail for glyph index %u:\n",
+                    glyph_index ));
+        FT_TRACE1(( "                FD number %lu is the maximum\n",
+                    fd_select ));
+        FT_TRACE1(( "                integer fitting into %u byte%s\n",
+                    cid->fd_bytes, cid->fd_bytes == 1 ? "" : "s" ));
+      }
+      else
+      {
+        FT_TRACE0(( "cid_load_glyph: fail for glyph index %u:\n",
+                    glyph_index ));
+        FT_TRACE0(( "                FD number %lu is larger\n",
+                    fd_select ));
+        FT_TRACE0(( "                than number of dictionaries (%u)\n",
+                    cid->num_dicts ));
+      }
+
+      error = FT_THROW( Invalid_Offset );
+      goto Exit;
+    }
+    else if ( off2 > stream->size )
+    {
+      FT_TRACE0(( "cid_load_glyph: fail for glyph index %u:\n",
+                  glyph_index ));
+      FT_TRACE0(( "               end of the glyph data\n" ));
+      FT_TRACE0(( "               is beyond the data stream\n" ));
+
+      error = FT_THROW( Invalid_Offset );
+      goto Exit;
+    }
+    else if ( off1 > off2 )
+    {
+      FT_TRACE0(( "cid_load_glyph: fail for glyph index %u:\n",
+                  glyph_index ));
+      FT_TRACE0(( "                the end position of glyph data\n" ));
+      FT_TRACE0(( "                is set before the start position\n" ));
+
+      error = FT_THROW( Invalid_Offset );
+    }
+
+    Exit:
+      if ( need_frame_exit )
+        FT_FRAME_EXIT();
+
+    return error;
+  }
 
 
   FT_CALLBACK_DEF( FT_Error )
@@ -64,7 +174,7 @@
 #endif
 
 
-    FT_TRACE1(( "cid_load_glyph: glyph index %d\n", glyph_index ));
+    FT_TRACE1(( "cid_load_glyph: glyph index %u\n", glyph_index ));
 
 #ifdef FT_CONFIG_OPTION_INCREMENTAL
 
@@ -77,20 +187,17 @@
 
       error = inc->funcs->get_glyph_data( inc->object,
                                           glyph_index, &glyph_data );
-      if ( error )
+      if ( error || glyph_data.length < cid->fd_bytes )
         goto Exit;
 
       p         = (FT_Byte*)glyph_data.pointer;
-      fd_select = cid_get_offset( &p, (FT_Byte)cid->fd_bytes );
+      fd_select = cid_get_offset( &p, cid->fd_bytes );
 
-      if ( glyph_data.length != 0 )
-      {
-        glyph_length = (FT_ULong)( glyph_data.length - cid->fd_bytes );
-        (void)FT_ALLOC( charstring, glyph_length );
-        if ( !error )
-          ft_memcpy( charstring, glyph_data.pointer + cid->fd_bytes,
+      glyph_length = glyph_data.length - cid->fd_bytes;
+
+      if ( !FT_QALLOC( charstring, glyph_length ) )
+        FT_MEM_COPY( charstring, glyph_data.pointer + cid->fd_bytes,
                      glyph_length );
-      }
 
       inc->funcs->free_glyph_data( inc->object, &glyph_data );
 
@@ -101,41 +208,20 @@
     else
 
 #endif /* FT_CONFIG_OPTION_INCREMENTAL */
-
-    /* For ordinary fonts read the CID font dictionary index */
-    /* and charstring offset from the CIDMap.                */
     {
-      FT_UInt   entry_len = (FT_UInt)( cid->fd_bytes + cid->gd_bytes );
       FT_ULong  off1, off2;
 
 
-      if ( FT_STREAM_SEEK( cid->data_offset + cid->cidmap_offset +
-                           glyph_index * entry_len )               ||
-           FT_FRAME_ENTER( 2 * entry_len )                         )
+      error = cid_compute_fd_and_offsets( face, glyph_index,
+                                          &fd_select, &off1, &off2 );
+      if ( error )
         goto Exit;
-
-      p         = (FT_Byte*)stream->cursor;
-      fd_select = cid_get_offset( &p, (FT_Byte)cid->fd_bytes );
-      off1      = cid_get_offset( &p, (FT_Byte)cid->gd_bytes );
-      p        += cid->fd_bytes;
-      off2      = cid_get_offset( &p, (FT_Byte)cid->gd_bytes );
-      FT_FRAME_EXIT();
-
-      if ( fd_select >= (FT_ULong)cid->num_dicts ||
-           off2 > stream->size                   ||
-           off1 > off2                           )
-      {
-        FT_TRACE0(( "cid_load_glyph: invalid glyph stream offsets\n" ));
-        error = FT_THROW( Invalid_Offset );
-        goto Exit;
-      }
 
       glyph_length = off2 - off1;
-      if ( glyph_length == 0 )
-        goto Exit;
-      if ( FT_ALLOC( charstring, glyph_length ) )
-        goto Exit;
-      if ( FT_STREAM_READ_AT( cid->data_offset + off1,
+
+      if ( glyph_length == 0                             ||
+           FT_QALLOC( charstring, glyph_length )         ||
+           FT_STREAM_READ_AT( cid->data_offset + off1,
                               charstring, glyph_length ) )
         goto Exit;
     }
@@ -166,7 +252,9 @@
       cs_offset = decoder->lenIV >= 0 ? (FT_UInt)decoder->lenIV : 0;
       if ( cs_offset > glyph_length )
       {
-        FT_TRACE0(( "cid_load_glyph: invalid glyph stream offsets\n" ));
+        FT_TRACE0(( "cid_load_glyph: fail for glyph_index=%u,"
+                    " offset to the charstring is beyond glyph length\n",
+                    glyph_index ));
         error = FT_THROW( Invalid_Offset );
         goto Exit;
       }
@@ -364,16 +452,12 @@
     glyph->x_scale = cidsize->metrics.x_scale;
     glyph->y_scale = cidsize->metrics.y_scale;
 
-    cidglyph->outline.n_points   = 0;
-    cidglyph->outline.n_contours = 0;
-
     hinting = FT_BOOL( ( load_flags & FT_LOAD_NO_SCALE   ) == 0 &&
                        ( load_flags & FT_LOAD_NO_HINTING ) == 0 );
     scaled  = FT_BOOL( ( load_flags & FT_LOAD_NO_SCALE   ) == 0 );
 
     glyph->hint      = hinting;
     glyph->scaled    = scaled;
-    cidglyph->format = FT_GLYPH_FORMAT_OUTLINE;
 
     error = psaux->t1_decoder_funcs->init( &decoder,
                                            cidglyph->face,
@@ -413,12 +497,8 @@
 
     /* now set the metrics -- this is rather simple, as    */
     /* the left side bearing is the xMin, and the top side */
-    /* bearing the yMax                                    */
-    cidglyph->outline.flags &= FT_OUTLINE_OWNER;
-    cidglyph->outline.flags |= FT_OUTLINE_REVERSE_FILL;
-
-    /* for composite glyphs, return only left side bearing and */
-    /* advance width                                           */
+    /* bearing the yMax; for composite glyphs, return only */
+    /* left side bearing and advance width                 */
     if ( load_flags & FT_LOAD_NO_RECURSE )
     {
       FT_Slot_Internal  internal = cidglyph->internal;
@@ -439,6 +519,13 @@
       FT_Glyph_Metrics*  metrics = &cidglyph->metrics;
 
 
+      cidglyph->format = FT_GLYPH_FORMAT_OUTLINE;
+
+      cidglyph->outline.flags &= FT_OUTLINE_OWNER;
+      cidglyph->outline.flags |= FT_OUTLINE_REVERSE_FILL;
+      if ( cidsize->metrics.y_ppem < 24 )
+        cidglyph->outline.flags |= FT_OUTLINE_HIGH_PRECISION;
+
       /* copy the _unscaled_ advance width */
       metrics->horiAdvance =
         FIXED_TO_INT( decoder.builder.advance.x );
@@ -450,11 +537,6 @@
       metrics->vertAdvance        = ( face->cid.font_bbox.yMax -
                                       face->cid.font_bbox.yMin ) >> 16;
       cidglyph->linearVertAdvance = metrics->vertAdvance;
-
-      cidglyph->format            = FT_GLYPH_FORMAT_OUTLINE;
-
-      if ( cidsize->metrics.y_ppem < 24 )
-        cidglyph->outline.flags |= FT_OUTLINE_HIGH_PRECISION;
 
       /* apply the font matrix, if any */
       if ( font_matrix.xx != 0x10000L || font_matrix.yy != 0x10000L ||

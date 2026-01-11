@@ -3,52 +3,99 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addYAML() {
+SyntaxDefinition& addYAML() {
 
-	auto& sd = SyntaxDefinitionManager::instance()->add(
+	SyntaxDefinitionManager::instance()
+		->add(
 
-		{ "YAML",
-		  { "%.yml$", "%.yaml$" },
-		  {
-			  { { "#", "\n" }, "comment" },
-			  { { "\"", "\"", "\\" }, "string" },
-			  { { "'", "'", "\\" }, "string" },
-			  { { "%-?%.inf" }, "number" },
-			  { { "%.NaN" }, "number" },
-			  { { "(%&)(%g+)" }, { "normal", "keyword", "literal" } },
-			  { { "!%g+" }, "keyword" },
-			  { { "<<" }, "literal" },
-			  { { "https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/"
-				  "?%%#=-]*" },
-				"link" },
-			  { { "([%s]%*)([%w%d_]+)" }, { "keyword", "keyword", "keyword2" } },
-			  { { "(%*)([%w%d_]+)" }, { "keyword", "keyword", "literal" } },
-			  { { "([%[%{])(%s*[%w%d]+%g+%s*)(:%s)" },
-				{ "keyword", "operator", "operator", "keyword" } },
-			  { { "([%s][%w%d]+%g+%s*)(:%s)" }, { "keyword", "keyword", "operator" } },
-			  { { "([%w%d]+%g+%s*)(:%s)" }, { "keyword", "keyword", "operator" } },
-			  { { "0%d+" }, "number" },
-			  { { "0x%x+" }, "number" },
-			  { { "[%+%-]?%d+[,%.eE:%+%d]*%d+" }, "number" },
-			  { { "[%*%|%!>%%]" }, "keyword" },
-			  { { "[%-:%?%*%{%}%[%]]" }, "operator" },
-			  { { "([%d%a_][%g_]*)([%]%},])" }, { "string", "operator", "operator" } },
-			  { { "[%d%a$/_][%g_]*" }, "string" },
+			{ "YAMLBL",
+			  {},
+			  {
+				  { { "#", "\n" }, "comment" },
+				  { { "\"", "\"", "\\" }, "string" },
+				  { { "'", "'", "\\" }, "string" },
+				  { { "([%w%d]+%g+)(%s*)(:)(%s)" }, { "type", "normal", "operator", "normal" } },
+				  { { "%$[%a%w_]+" }, "keyword" },
+				  { { "%$%{%{.-%}%}" }, "keyword" },
+				  { { "%-?%.inf" }, "number" },
+				  { { "%.NaN" }, "number" },
+				  { { "[%+%-]?0%d+" }, "number" },
+				  { { "[%+%-]?0x%x+" }, "number" },
+				  { { "[%+%-]?%d+[,%.eE:%+%d]*%d+" }, "number" },
+				  { { "[%+%-]?%d+" }, "number" },
+				  { { "," }, "operator" },
+				  { { "%w+" }, "string" },
+				  { { "[_%(%)%*@~`!%%%^&=%+%-\\;%.><%?/%s]+" }, "string" },
 
-		  },
-		  {
-			  { "false", "number" },
-			  { "n", "number" },
-			  { "y", "number" },
-			  { "true", "number" },
+			  },
+			  {
 
-		  },
-		  "#",
-		  {}
+			  },
+			  "",
+			  {}
 
-		} );
+			} )
+		.setVisible( false );
 
-	sd.setFoldRangeType( FoldRangeType::Indentation );
+	return SyntaxDefinitionManager::instance()
+		->add(
+
+			{ "YAML",
+			  { "%.yml$", "%.yaml$", "^.clangd$" },
+			  {
+				  { { "^[%w%d]+%g+%s*%f[:]" }, "keyword" },
+				  { { "^%s+[%w%d]+%g+%s*%f[:]" }, "keyword" },
+				  { { ":%s+%[", "%]" }, { "operator" }, {}, "YAMLBL" },
+				  { { ":%s+{", "}" }, { "operator" }, {}, "YAMLBL" },
+				  { { "(^%s+)([%w%d]+%g+)(%s*)(:)(%s)" },
+					{ "normal", "normal", "keyword", "normal", "operator", "normal" } },
+				  { { "^%s+(%-)%s+([%w%d]+%g+)%s*(:)%s" },
+					{ "normal", "operator", "keyword", "operator" } },
+				  { { "^%s*%[", "%]" }, { "operator" }, {}, "YAMLBL" },
+				  { { "^%s*{", "}" }, { "operator" }, {}, "YAMLBL" },
+				  { { "^%s*%-%s*%[", "%]" }, { "operator" }, {}, "YAMLBL" },
+				  { { "^%s*%-%s*{", "}" }, { "operator" }, {}, "YAMLBL" },
+				  { { "%s+" }, "normal" },
+				  { { "#", "\n" }, "comment" },
+				  { { "\"", "\"", "\\" }, "string" },
+				  { { "'", "'", "\\" }, "string" },
+				  { { "!!%w+%s+%[", "%]" }, { "operator" }, {}, "YAMLBL" },
+				  { { "!!%w+%s+{", "}" }, { "operator" }, {}, "YAMLBL" },
+				  { { "%-?%.inf" }, "number" },
+				  { { "%.NaN" }, "number" },
+				  { { "(^%-)%s+([%w%d]+%g+)%s*(:)%s" },
+					{ "normal", "operator", "keyword", "operator" } },
+				  { { "(%&)(%g+)" }, { "normal", "keyword", "type" } },
+				  { { "<<" }, "literal" },
+				  { { "(%*)([%w%d_-]+)" }, { "normal", "keyword", "type" } },
+				  { { "!!%g+" }, "keyword" },
+				  { { "(^[%w%d]+%g+)%s*(:)%s" }, { "normal", "literal", "operator" } },
+				  { { "%$[%a%w_]+" }, "keyword" },
+				  { { "%$%{%{.-%}%}" }, "keyword" },
+				  { { "[%+%-]?0%d+" }, "number" },
+				  { { "[%+%-]?0x%x+" }, "number" },
+				  { { "[%+%-]?%d+[,%.eE:%+%d]*%d+" }, "number" },
+				  { { "[%+%-]?%d+" }, "number" },
+				  { { "[%*%|%!>%%]" }, "keyword" },
+				  { { "[%-%$:%?]+" }, "operator" },
+				  { { "[%d%a_][%g_]*" }, "string" },
+				  { { "%p+" }, "string" },
+				  { { "%w+%f[%s]" }, "normal" },
+
+			  },
+			  {
+				  { "true", "number" },
+				  { "n", "number" },
+				  { "y", "number" },
+				  { "false", "number" },
+
+			  },
+			  "#",
+			  { "^%%YAML %d+%.%d+" }
+
+			} )
+		.setFoldRangeType( FoldRangeType::Indentation )
+		.addAlternativeName( "yml" );
 }
 
 }}}} // namespace EE::UI::Doc::Language

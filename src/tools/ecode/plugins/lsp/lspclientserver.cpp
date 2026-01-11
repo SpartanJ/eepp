@@ -1,5 +1,5 @@
-#include "lspclientplugin.hpp"
 #include "lspclientserver.hpp"
+#include "lspclientplugin.hpp"
 #include "lspclientservermanager.hpp"
 #include <algorithm>
 #include <eepp/system/filesystem.hpp>
@@ -7,12 +7,42 @@
 #include <eepp/system/lock.hpp>
 #include <eepp/system/log.hpp>
 #include <eepp/system/luapattern.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/system/sys.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/window/engine.hpp>
 #include <list>
 
 namespace ecode {
+
+void LSPClientServer::sanitizeCommand( std::string& cmd, const std::string& workspaceFolder ) {
+	static std::string cpucount( String::toString( Sys::getCPUCount() ) );
+	static std::string userdir = Sys::getUserDirectory();
+	String::replaceAll( cmd, "$NPROC", cpucount );
+	String::replaceAll( cmd, "${nproc}", cpucount );
+	String::replaceAll( cmd, "$PROJECTPATH", workspaceFolder );
+	String::replaceAll( cmd, "${project_root}", workspaceFolder );
+	String::replaceAll( cmd, "${workspaceFolder}", workspaceFolder );
+	String::replaceAll( cmd, "$HOME", userdir );
+	String::replaceAll( cmd, "${home}", userdir );
+}
+
+void LSPClientServer::sanitizeCommand( nlohmann::json& jsonObj,
+									   const std::string& workspaceFolder ) {
+	if ( jsonObj.is_string() ) {
+		std::string s = jsonObj.get<std::string>();
+		sanitizeCommand( s, workspaceFolder );
+		jsonObj = s; // Assign the modified string back to the JSON object
+	} else if ( jsonObj.is_object() ) {
+		for ( auto& el : jsonObj.items() ) {
+			sanitizeCommand( el.value(), workspaceFolder );
+		}
+	} else if ( jsonObj.is_array() ) {
+		for ( auto& el : jsonObj ) {
+			sanitizeCommand( el, workspaceFolder );
+		}
+	}
+}
 
 #define CONTENT_LENGTH "Content-Length"
 #define CONTENT_LENGTH_HEADER "Content-Length:"
@@ -204,6 +234,12 @@ static std::vector<LSPLocation> parseDocumentLocation( const json& result ) {
 	return ret;
 }
 
+static json changeConfigurationParams( const json& settings ) {
+	json ret;
+	ret["settings"] = settings;
+	return ret;
+}
+
 static json changeWorkspaceFoldersParams( const std::vector<LSPWorkspaceFolder>& added,
 										  const std::vector<LSPWorkspaceFolder>& removed ) {
 	json event;
@@ -285,10 +321,12 @@ static void fromJson( LSPWorkspaceFoldersServerCapabilities& options, const json
 	if ( json.is_object() ) {
 		auto& ob = json;
 		options.supported = ob.value( "supported", false );
-		if ( ob["changeNotifications"].is_boolean() ) {
-			options.changeNotifications = ob["changeNotifications"].get<bool>();
-		} else if ( ob["changeNotifications"].is_string() ) {
-			options.changeNotifications = true;
+		if ( ob.contains( "changeNotifications" ) ) {
+			if ( ob["changeNotifications"].is_boolean() ) {
+				options.changeNotifications = ob["changeNotifications"].get<bool>();
+			} else if ( ob["changeNotifications"].is_string() ) {
+				options.changeNotifications = true;
+			}
 		}
 	}
 }
@@ -651,8 +689,7 @@ static std::vector<LSPDiagnostic> parseDiagnostics( const json& result ) {
 static std::vector<LSPCodeAction> parseCodeAction( const json& result ) {
 	std::vector<LSPCodeAction> ret;
 	const auto& codeActions = result;
-	for ( const auto& vaction : codeActions ) {
-		auto& action = vaction;
+	for ( auto& action : codeActions ) {
 		// entry could be Command or CodeAction
 		if ( !action.contains( MEMBER_COMMAND ) || !action.at( MEMBER_COMMAND ).is_string() ) {
 			// CodeAction
@@ -728,8 +765,9 @@ static json codeActionParams( const URI& document, const TextRange& range,
 	context[MEMBER_DIAGNOSTICS] = diags;
 	if ( !kinds.empty() )
 		context["only"] = json( kinds );
-	if ( !diagnostics.empty() )
-		params["context"] = diagnostics;
+	params["context"] = !diagnostics.empty()
+							? diagnostics
+							: nlohmann::json{ { "diagnostics", nlohmann::json::array() } };
 	return params;
 }
 
@@ -752,7 +790,7 @@ static LSPMarkupContent parseMarkupContent( const json& v ) {
 
 static LSPHover parseHover( const json& result ) {
 	LSPHover ret;
-	if ( result.is_null() )
+	if ( result.is_null() || result.empty() )
 		return ret;
 
 	if ( result.contains( MEMBER_RANGE ) )
@@ -780,7 +818,8 @@ static std::vector<LSPDiagnostic> parseDiagnosticsArr( const json& result ) {
 	std::vector<LSPDiagnostic> ret;
 	for ( const auto& diag : result ) {
 		auto range = parseRange( diag[MEMBER_RANGE] );
-		auto severity = static_cast<LSPDiagnosticSeverity>( diag["severity"].get<int>() );
+		auto severity = static_cast<LSPDiagnosticSeverity>(
+			diag.value( "severity", LSPDiagnosticSeverity::Information ) );
 		auto code = diag.contains( "code" ) ? ( diag["code"].is_number_integer()
 													? String::toString( diag["code"].get<int>() )
 													: diag.at( "code" ).get<std::string>() )
@@ -1138,6 +1177,7 @@ void LSPClientServer::initialize() {
 	showDocument["support"] = true;
 
 	json workspace;
+	workspace["configuration"] = true;
 	workspace["applyEdit"] = true;
 	workspace["executeCommand"] = json{ { "dynamicRegistration", true } };
 	workspace["workspaceFolders"] = true;
@@ -1161,6 +1201,7 @@ void LSPClientServer::initialize() {
 			  { "formatting", json{ { "dynamicRegistration", true } } },
 			  { "rangeFormatting", json{ { "dynamicRegistration", true } } },
 			  { "codeLens", json{ { "dynamicRegistration", true } } },
+			  { "didChangeConfiguration", json{ { "dynamicRegistration", true } } },
 		  } },
 		{ "window", json{ { "workDoneProgress", true },
 						  { "showMessage", showMessage },
@@ -1216,18 +1257,13 @@ void LSPClientServer::initialize() {
 #endif
 			mCapabilities.languages = mLanguagesSupported;
 			mReady = true;
+
 			write( newRequest( "initialized" ) );
-			sendQueuedMessages();
-			notifyServerInitialized();
 
-			// Broadcast the language capabilities to all the interested plugins
-			mManager->getPluginManager()->sendBroadcast(
-				mManager->getPlugin(), PluginMessageType::LanguageServerCapabilities,
-				PluginMessageFormat::LanguageServerCapabilities, &mCapabilities );
+			// Send configuration immediately after initialized
+			didChangeConfiguration( mLSP.settings, mWorkspaceFolder.getFSPath(), true );
 
-			mManager->getPluginManager()->sendBroadcast(
-				nullptr, PluginMessageType::LanguageServerReady,
-				PluginMessageFormat::LSPClientServer, this );
+			sendQueuedMessagesAsync();
 		},
 		[]( const IdType&, const json& ) {} );
 }
@@ -1245,6 +1281,10 @@ LSPClientServer::~LSPClientServer() {
 	shutdown();
 	std::unique_lock<std::mutex> lock( mShutdownMutex );
 	mShutdownCond.wait_for( lock, std::chrono::milliseconds( 275 ), [this]() { return !mReady; } );
+
+	if ( mUsingProcess )
+		mProcess.kill();
+
 	eeSAFE_DELETE( mSocket );
 	{
 		Lock l( mClientsMutex );
@@ -1310,8 +1350,11 @@ bool LSPClientServer::start() {
 	}
 
 	if ( !cmd.empty() ) {
-		bool ret = mProcess.create( cmd, Process::getDefaultOptions() | Process::EnableAsync,
-									mLSP.env, mRootPath );
+		auto flags = Process::getDefaultOptions() | Process::EnableAsync;
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		flags |= Process::UseAbsolutePath;
+#endif
+		bool ret = mProcess.create( cmd, flags, mLSP.env, mRootPath );
 		if ( ret ) {
 			if ( mProcess.isAlive() ) {
 				mUsingProcess = true;
@@ -1343,19 +1386,27 @@ bool LSPClientServer::start() {
 }
 
 bool LSPClientServer::registerDoc( const std::shared_ptr<TextDocument>& doc ) {
-	Lock l( mClientsMutex );
-	for ( TextDocument* cdoc : mDocs ) {
-		if ( cdoc == doc.get() ) {
-			if ( mClients.find( doc.get() ) == mClients.end() ) {
-				mClients[doc.get()] = std::make_unique<LSPDocumentClient>( this, doc.get() );
-				return true;
+	{
+		Lock l( mClientsMutex );
+		for ( TextDocument* cdoc : mDocs ) {
+			if ( cdoc == doc.get() ) {
+				if ( mClients.find( doc.get() ) == mClients.end() ) {
+					mClients[doc.get()] = std::make_unique<LSPDocumentClient>( this, doc.get() );
+					return true;
+				}
+				return false;
 			}
-			return false;
 		}
 	}
 
-	mClients[doc.get()] = std::make_unique<LSPDocumentClient>( this, doc.get() );
-	mDocs.emplace_back( doc.get() );
+	auto client = std::make_unique<LSPDocumentClient>( this, doc.get() );
+
+	{
+		Lock l( mClientsMutex );
+		mClients[doc.get()] = std::move( client );
+		mDocs.emplace_back( doc.get() );
+	}
+
 	doc->registerClient( mClients[doc.get()].get() );
 	return true;
 }
@@ -1366,17 +1417,21 @@ void LSPClientServer::notifyServerInitialized() {
 }
 
 bool LSPClientServer::needsAsync() {
-	return Engine::isRunninMainThread();
+	return Engine::isMainThread();
 }
 
 bool LSPClientServer::isRunning() {
-	return mUsingProcess ? ( mProcess.isAlive() && !mProcess.isShuttingDown() &&
+	return mUsingProcess ? ( !mProcess.isShuttingDown() && mProcess.isAlive() &&
 							 ( !mUsingSocket || mSocket != nullptr ) )
 						 : ( mUsingSocket && mSocket != nullptr );
 }
 
 bool LSPClientServer::isReady() const {
 	return mReady;
+}
+
+bool LSPClientServer::isShuttingDown() const {
+	return mShuttingDown;
 }
 
 void LSPClientServer::removeDoc( TextDocument* doc ) {
@@ -1414,6 +1469,12 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( json&& msg, const Json
 														  const int id ) {
 	LSPRequestHandle ret;
 	ret.server = this;
+
+	// If it's shutting down but the write comes from a different thread, means that this is an
+	// old enqueued message and needs to be ignored. The shutdown messages happen in the main
+	// thread.
+	if ( mShuttingDown && !Engine::isMainThread() )
+		return ret;
 
 	if ( !isRunning() ) {
 		notifyServerError();
@@ -1470,10 +1531,11 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( json&& msg, const Json
 			if ( mSocket ) {
 				size_t sent = 0;
 				mSocket->send( sjson.c_str(), sjson.size(), sent );
-			} else {
+			} else if ( !mProcess.isShuttingDown() && mProcess.isAlive() ) {
 				mProcess.write( sjson );
 			}
 		} else {
+			Lock l( mQueuedMessagesMutex );
 			mQueuedMessages.push_back( { std::move( msg ), h, eh } );
 		}
 	} catch ( const json::exception& e ) {
@@ -1484,10 +1546,28 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( json&& msg, const Json
 	return ret;
 }
 
+void LSPClientServer::writeAsync( json&& msg, const JsonReplyHandler& h, const JsonReplyHandler& eh,
+								  const int id ) {
+	if ( mShuttingDown || !isRunning() )
+		return;
+	getThreadPool()->run( [this, msg = std::move( msg ), h, eh, id]() mutable {
+		if ( mShuttingDown || !isRunning() )
+			return;
+		mWritingStdIn++;
+		write( std::move( msg ), h, eh, id );
+		mWritingStdIn--;
+	} );
+}
+
 void LSPClientServer::sendAsync( json&& msg, const JsonReplyHandler& h,
 								 const JsonReplyHandler& eh ) {
-	getThreadPool()->run(
-		[this, msg = std::move( msg ), h, eh]() mutable { send( std::move( msg ), h, eh ); } );
+	if ( mShuttingDown )
+		return;
+	getThreadPool()->run( [this, msg = std::move( msg ), h, eh]() mutable {
+		if ( mShuttingDown )
+			return;
+		send( std::move( msg ), h, eh );
+	} );
 }
 
 LSPClientServer::LSPRequestHandle LSPClientServer::send( json&& msg, const JsonReplyHandler& h,
@@ -1620,26 +1700,47 @@ LSPClientServer::didChange( TextDocument* doc, const std::vector<DocumentContent
 	return LSPRequestHandle();
 }
 
-void LSPClientServer::queueDidChange( const URI& document, int version, const std::string&,
-									  const std::vector<DocumentContentChange>& change ) {
-	Lock l( mDidChangeMutex );
-	mDidChangeQueue.push( { document, version, change } );
+void LSPClientServer::queueAndProcess( const URI& document, int version,
+									   const std::vector<DocumentContentChange>& change ) {
+	bool shouldStartWorker = false;
+	{
+		Lock l( mDidChangeMutex );
+		mDidChangeQueue.push( { document, version, change } );
+		if ( !mIsProcessingQueue ) {
+			mIsProcessingQueue = true;
+			shouldStartWorker = true;
+		}
+	}
+
+	if ( shouldStartWorker ) {
+		getThreadPool()->run( [this]() { this->processDidChangeQueue(); } );
+	}
 }
 
 void LSPClientServer::processDidChangeQueue() {
-	Lock l( mDidChangeMutex );
-	while ( !mDidChangeQueue.empty() ) {
-		auto& change = mDidChangeQueue.front();
+	while ( true ) {
+		DidChangeQueue change;
+		{
+			Lock l( mDidChangeMutex );
+			if ( mDidChangeQueue.empty() ) {
+				mIsProcessingQueue = false;
+				break;
+			}
+			change = mDidChangeQueue.front();
+			mDidChangeQueue.pop();
+		}
+		// Process outside the lock to avoid blocking
 		didChange( change.uri, change.version, "", change.change );
-		mDidChangeQueue.pop();
 	}
 }
 
 bool LSPClientServer::hasDocument( TextDocument* doc ) const {
+	Lock l( mClientsMutex );
 	return std::find( mDocs.begin(), mDocs.end(), doc ) != mDocs.end();
 }
 
 bool LSPClientServer::hasDocument( const URI& uri ) const {
+	Lock l( mClientsMutex );
 	for ( const auto& doc : mDocs ) {
 		if ( doc->getURI() == uri )
 			return true;
@@ -1647,7 +1748,17 @@ bool LSPClientServer::hasDocument( const URI& uri ) const {
 	return false;
 }
 
+bool LSPClientServer::hasDocumentClient( LSPDocumentClient* cl ) const {
+	Lock l( mClientsMutex );
+	for ( const auto& client : mClients ) {
+		if ( client.second && client.second.get() == cl )
+			return true;
+	}
+	return false;
+}
+
 bool LSPClientServer::hasDocuments() const {
+	Lock l( mClientsMutex );
 	return !mDocs.empty();
 }
 
@@ -1664,25 +1775,22 @@ const std::shared_ptr<ThreadPool>& LSPClientServer::getThreadPool() const {
 	return mManager->getThreadPool();
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::documentSymbols( const URI& document,
-																	const JsonReplyHandler& h,
-																	const JsonReplyHandler& eh ) {
-	auto params = textDocumentParams( document );
-	return send( newRequest( "textDocument/documentSymbol", params ), h, eh );
-}
-
-LSPClientServer::LSPRequestHandle
-LSPClientServer::documentFoldingRange( const URI& document, const JsonReplyHandler& h,
+void LSPClientServer::documentSymbols( const URI& document, const JsonReplyHandler& h,
 									   const JsonReplyHandler& eh ) {
 	auto params = textDocumentParams( document );
-	return send( newRequest( "textDocument/foldingRange", params ), h, eh );
+	sendAsync( newRequest( "textDocument/documentSymbol", params ), h, eh );
 }
 
-LSPClientServer::LSPRequestHandle
-LSPClientServer::documentFoldingRange( const URI& document,
-									   const ReplyHandler<std::vector<LSPFoldingRange>>& h,
-									   const ReplyHandler<LSPResponseError>& eh ) {
-	return documentFoldingRange(
+void LSPClientServer::documentFoldingRange( const URI& document, const JsonReplyHandler& h,
+											const JsonReplyHandler& eh ) {
+	auto params = textDocumentParams( document );
+	sendAsync( newRequest( "textDocument/foldingRange", params ), h, eh );
+}
+
+void LSPClientServer::documentFoldingRange( const URI& document,
+											const ReplyHandler<std::vector<LSPFoldingRange>>& h,
+											const ReplyHandler<LSPResponseError>& eh ) {
+	documentFoldingRange(
 		document,
 		[h]( const IdType& id, const json& json ) {
 			if ( h )
@@ -1694,11 +1802,10 @@ LSPClientServer::documentFoldingRange( const URI& document,
 		} );
 }
 
-LSPClientServer::LSPRequestHandle
-LSPClientServer::documentSymbols( const URI& document,
-								  const WReplyHandler<LSPSymbolInformationList>& h,
-								  const ReplyHandler<LSPResponseError>& eh ) {
-	return documentSymbols(
+void LSPClientServer::documentSymbols( const URI& document,
+									   const WReplyHandler<LSPSymbolInformationList>& h,
+									   const ReplyHandler<LSPResponseError>& eh ) {
+	documentSymbols(
 		document,
 		[this, h]( const IdType& id, const json& json ) {
 			if ( h )
@@ -1710,9 +1817,9 @@ LSPClientServer::documentSymbols( const URI& document,
 		} );
 }
 
-LSPClientServer::LSPRequestHandle LSPClientServer::documentSymbolsBroadcast( const URI& document ) {
-	return documentSymbols( document, [this, document]( const PluginIDType& id,
-														LSPSymbolInformationList&& res ) {
+void LSPClientServer::documentSymbolsBroadcast( const URI& document ) {
+	documentSymbols( document, [this, document]( const PluginIDType& id,
+												 LSPSymbolInformationList&& res ) {
 		getManager()->getPlugin()->setDocumentSymbolsFromResponse( id, document, std::move( res ) );
 	} );
 }
@@ -1896,25 +2003,25 @@ void LSPClientServer::processRequest( const json& msg ) {
 									  } );
 		return;
 	} else if ( method == "window/workDoneProgress/create" ) {
-		write( newEmptyResult( msgid ) );
+		writeAsync( newEmptyResult( msgid ) );
 		return;
 	} else if ( method == "workspace/semanticTokens/refresh" ) {
 		refreshSmenaticHighlighting();
-		write( newEmptyResult( msgid ) );
+		writeAsync( newEmptyResult( msgid ) );
 		return;
 	} else if ( method == "workspace/codeLens/refresh" ) {
 		refreshCodeLens();
-		write( newEmptyResult( msgid ) );
+		writeAsync( newEmptyResult( msgid ) );
 		return;
 	} else if ( method == "client/registerCapability" ) {
 		registerCapabilities( msg[MEMBER_PARAMS] );
-		write( newEmptyResult( msgid ) );
+		writeAsync( newEmptyResult( msgid ) );
 		return;
 	} else if ( method == "window/showMessageRequest" ) {
 		auto msgReq = parseMessageRequest( msg[MEMBER_PARAMS] );
 		mManager->getPluginManager()->sendBroadcast( PluginMessageType::ShowMessage,
 													 PluginMessageFormat::ShowMessage, &msgReq );
-		write( newEmptyResult( msgid ) );
+		writeAsync( newEmptyResult( msgid ) );
 		return;
 	} else if ( method == "window/showDocument" ) {
 		auto showDoc = parseShowDocument( msg[MEMBER_PARAMS] );
@@ -1927,10 +2034,87 @@ void LSPClientServer::processRequest( const json& msg ) {
 			mManager->getPluginManager()->sendBroadcast(
 				PluginMessageType::ShowDocument, PluginMessageFormat::ShowDocument, &showDoc );
 		}
-		write( newSuccessResult( msgid ) );
+		writeAsync( newSuccessResult( msgid ) );
+		return;
+	} else if ( method == "workspace/configuration" ) {
+		json results = json::array();
+		if ( msg.contains( MEMBER_PARAMS ) && msg[MEMBER_PARAMS].contains( "items" ) ) {
+			const auto& items = msg[MEMBER_PARAMS]["items"];
+			if ( items.is_array() ) {
+				for ( const auto& item : items ) {
+					json val = json::object();
+					if ( item.contains( "section" ) && item["section"].is_string() ) {
+						std::string section = item["section"].get<std::string>();
+
+						// Special handling for formatting options to return live editor settings
+						if ( section == "formattingOptions" ) {
+							URI docUri;
+							if ( item.contains( "scopeUri" ) ) {
+								docUri = URI( item["scopeUri"].get<std::string>() );
+							}
+
+							int tabWidth = 4;
+							bool useSpaces = true;
+
+							UITab* tab =
+								mManager->getPluginManager()->getSplitter()->isDocumentOpen(
+									docUri );
+							if ( tab ) {
+								UICodeEditor* editor =
+									tab->getOwnedWidget()->asType<UICodeEditor>();
+								tabWidth = editor->getTabWidth();
+								useSpaces = editor->getDocument().getIndentType() ==
+											TextDocument::IndentType::IndentSpaces;
+							}
+
+							val["tabSize"] = tabWidth;
+							val["insertSpaces"] = useSpaces;
+							val["indentSize"] = tabWidth;
+
+							results.push_back( val );
+							continue;
+						}
+
+						if ( !section.empty() ) {
+							const json* current = &mLSP.settings;
+							bool found = true;
+							size_t start = 0;
+							size_t end = section.find( '.' );
+
+							// Traverse dot-notation: "typescript.format" ->
+							// settings["typescript"]["format"]
+							while ( start != std::string::npos ) {
+								std::string part = section.substr( start, end - start );
+								if ( current->is_object() && current->contains( part ) ) {
+									current = &current->at( part );
+								} else {
+									found = false;
+									break;
+								}
+								if ( end == std::string::npos )
+									break;
+								start = end + 1;
+								end = section.find( '.', start );
+							}
+
+							if ( found ) {
+								val = *current;
+							}
+						} else {
+							// Empty section means return the whole settings object
+							val = mLSP.settings;
+						}
+					}
+					results.push_back( val );
+				}
+			}
+		}
+		json response = newID( msgid );
+		response[MEMBER_RESULT] = results;
+		writeAsync( std::move( response ) );
 		return;
 	}
-	write( newError( LSPErrorCode::MethodNotFound, method ), nullptr, nullptr, msgid );
+	writeAsync( newError( LSPErrorCode::MethodNotFound, method ), nullptr, nullptr, msgid );
 }
 
 void LSPClientServer::readStdOut( const char* bytes, size_t n ) {
@@ -2084,16 +2268,38 @@ void LSPClientServer::readStdErr( const char* bytes, size_t n ) {
 	mReceiveErr = received;
 
 	if ( !received.empty() )
-		Log::debug( "LSPClientServer::readStdErr server %s:\n%s", mLSP.name, received );
+		Log::info( "LSPClientServer::readStdErr server %s:\n%s", mLSP.name, received );
 
 	if ( !isRunning() )
 		notifyServerError();
 }
 
-void LSPClientServer::sendQueuedMessages() {
-	for ( auto& msg : mQueuedMessages )
-		write( std::move( msg.msg ), msg.h, msg.eh );
-	mQueuedMessages.clear();
+void LSPClientServer::sendQueuedMessagesAsync() {
+	if ( mShuttingDown )
+		return;
+	getThreadPool()->run( [this]() mutable {
+		if ( mShuttingDown )
+			return;
+		for ( auto& msg : mQueuedMessages ) {
+			if ( mShuttingDown )
+				return;
+			mWritingStdIn++;
+			write( std::move( msg.msg ), msg.h, msg.eh );
+			mWritingStdIn--;
+		}
+		mQueuedMessages.clear();
+
+		notifyServerInitialized();
+
+		// Broadcast the language capabilities to all the interested plugins
+		mManager->getPluginManager()->sendBroadcast(
+			mManager->getPlugin(), PluginMessageType::LanguageServerCapabilities,
+			PluginMessageFormat::LanguageServerCapabilities, &mCapabilities );
+
+		mManager->getPluginManager()->sendBroadcast( nullptr,
+													 PluginMessageType::LanguageServerReady,
+													 PluginMessageFormat::LSPClientServer, this );
+	} );
 }
 
 void LSPClientServer::goToLocation( const json& res ) {
@@ -2175,6 +2381,25 @@ void LSPClientServer::switchSourceHeader( const URI& document ) {
 				mManager->goToLocation( { res.get<std::string>(), TextRange() } );
 			}
 		} );
+}
+
+LSPClientServer::LSPRequestHandle
+LSPClientServer::didChangeConfiguration( const nlohmann::json& settings,
+										 const std::string& workspaceFolder, bool async ) {
+	auto finalSettings = settings;
+
+	// Ensure finalSettings is a JSON object.
+	// If it's null, empty, or not an object, initialize it to {}
+	if ( !finalSettings.is_object() )
+		finalSettings = nlohmann::json::object();
+
+	sanitizeCommand( finalSettings, workspaceFolder );
+	auto params = changeConfigurationParams( finalSettings );
+	if ( async && needsAsync() ) {
+		sendAsync( newRequest( "workspace/didChangeConfiguration", params ) );
+		return {};
+	}
+	return send( newRequest( "workspace/didChangeConfiguration", params ) );
 }
 
 LSPClientServer::LSPRequestHandle
@@ -2407,13 +2632,22 @@ void LSPClientServer::documentSemanticTokensFull( const URI& document, bool delt
 }
 
 void LSPClientServer::shutdown() {
+	mShuttingDown = true;
 	if ( !mReady )
 		return;
 	Log::info( "LSPClientServer:shutdown: %s", mLSP.name.c_str() );
 	{
 		Lock l( mHandlersMutex );
+		Clock clock;
+		// Give the handler a changes to answer (max 100ms)
+		while ( !mHandlers.empty() && clock.getElapsedTime().asMilliseconds() < 100.f ) {
+			Sys::sleep( Milliseconds( 10 ) );
+		}
 		mHandlers.clear();
 	}
+
+	while ( mWritingStdIn )
+		Sys::sleep( Milliseconds( 1 ) );
 
 	sendSync(
 		newRequest( "shutdown" ),

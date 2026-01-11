@@ -1,4 +1,7 @@
 #include <eepp/network/uri.hpp>
+#include <eepp/system/sys.hpp>
+
+using namespace EE::System;
 
 namespace EE { namespace Network {
 
@@ -20,6 +23,14 @@ const std::string URI::RESERVED_PATH = "?#";
 const std::string URI::RESERVED_QUERY = "#";
 const std::string URI::RESERVED_FRAGMENT = "";
 const std::string URI::ILLEGAL = "%<>{}|\\\"^`";
+
+std::string URI::getTempPathFromURI( const URI& uri ) {
+	std::string lastSegment( uri.getLastPathSegment() );
+	std::string name( String::randString( 8 ) +
+					  ( lastSegment.empty() ? ".txt" : "." + lastSegment ) );
+	std::string tmpPath( Sys::getTempPath() + name );
+	return tmpPath;
+}
 
 URI::URI() : mPort( 0 ) {}
 

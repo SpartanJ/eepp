@@ -30,19 +30,21 @@ class EE_API UISprite : public UIWidget {
 
 	Graphics::Sprite* getSprite() const;
 
-	void setSprite( Graphics::Sprite* sprite );
+	Drawable* getDrawable() const;
+
+	UISprite* setSprite( Graphics::Sprite* sprite );
 
 	Color getColor() const;
 
-	void setColor( const Color& color );
+	UISprite* setColor( const Color& color );
 
 	const RenderMode& getRenderMode() const;
 
-	void setRenderMode( const RenderMode& render );
+	UISprite* setRenderMode( const RenderMode& render );
 
 	const Vector2f& getAlignOffset() const;
 
-	void setIsSpriteOwner( const bool& dealloc );
+	UISprite* setIsSpriteOwner( const bool& dealloc );
 
 	bool getDeallocSprite();
 

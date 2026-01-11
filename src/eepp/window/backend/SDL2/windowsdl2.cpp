@@ -289,7 +289,8 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 		mWindow.WindowConfig.Height = mWindow.DesktopResolution.getHeight();
 	}
 
-	mWindow.Flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
+	mWindow.Flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN |
+					( ( !mWindow.WindowConfig.DisableHiDPI ? SDL_WINDOW_ALLOW_HIGHDPI : 0 ) );
 
 	if ( mWindow.WindowConfig.Style & WindowStyle::Resize ) {
 		mWindow.Flags |= SDL_WINDOW_RESIZABLE;

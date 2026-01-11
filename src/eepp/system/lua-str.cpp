@@ -1,7 +1,6 @@
 #include "lua-str.hpp"
 #include <cctype>
 #include <cstdarg>
-#include <cstdbool>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -300,7 +299,7 @@ init:						/* using goto's to optimize tail recursion */
 						if ( s != NULL ) {
 							p += 4;
 							goto init; /* return match(ms, s, p + 4); */
-						}			   /* else fail (s == NULL) */
+						} /* else fail (s == NULL) */
 						break;
 					}
 					case 'f': { /* frontier? */
@@ -342,7 +341,7 @@ init:						/* using goto's to optimize tail recursion */
 				break;
 			}
 			default:
-			dflt : {								/* pattern class plus optional suffix */
+			dflt: {									/* pattern class plus optional suffix */
 				const char* ep = classend( ms, p ); /* points to optional suffix */
 				/* does not match at least once? */
 				if ( !singlematch( ms, s, p, ep ) ) {
@@ -416,7 +415,8 @@ static int push_captures( MatchState* ms, const char* s, const char* e, LuaMatch
 	return nlevels; /* number of strings pushed */
 }
 
-int lua_str_match( const char* s, int offset, size_t ls, const char* p, LuaMatch* mm ) {
+int lua_str_match( const char* s, int offset, size_t ls, const char* p, LuaMatch* mm,
+				   int force_anchor ) {
 	size_t lp = strlen( p );
 	const char* s1 = s + offset;
 	MatchState ms;
@@ -424,7 +424,8 @@ int lua_str_match( const char* s, int offset, size_t ls, const char* p, LuaMatch
 	if ( anchor ) {
 		p++;
 		lp--; /* skip anchor character */
-	}
+	} else if ( force_anchor )
+		anchor = 1;
 	ms.matchdepth = MAXCCALLS;
 	ms.src_init = s;
 	ms.src_end = s + ls;

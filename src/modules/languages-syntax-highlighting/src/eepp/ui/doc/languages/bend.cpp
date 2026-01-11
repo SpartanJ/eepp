@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addBend() {
+SyntaxDefinition& addBend() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -30,21 +30,19 @@ void addBend() {
 			  { { "0x[%da-fA-F]+" }, "number" },
 			  { { "-?%d+[%d%.eE]*" }, "number" },
 			  { { "-?%.?%d+" }, "number" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {
-			  { "Nil", "keyword2" },   { "Name", "keyword" },	  { "bind", "keyword" },
-			  { "switch", "keyword" }, { "data", "keyword" },	  { "None", "keyword2" },
+			  { "Nil", "type" },	   { "Name", "keyword" },	  { "bind", "keyword" },
+			  { "switch", "keyword" }, { "data", "keyword" },	  { "None", "type" },
 			  { "return", "keyword" }, { "identity", "keyword" }, { "ask", "keyword" },
 			  { "object", "keyword" }, { "match", "keyword" },	  { "with", "keyword" },
 			  { "fold", "keyword" },   { "false", "literal" },	  { "def", "keyword" },
 			  { "true", "literal" },   { "else", "keyword" },	  { "λ", "keyword" },
-			  { "Bool", "keyword" },   { "when", "keyword" },	  { "bend", "keyword2" },
+			  { "Bool", "keyword" },   { "when", "keyword" },	  { "bend", "type" },
 			  { "use", "keyword" },	   { "case", "keyword" },	  { "if", "keyword" },
-			  { "let", "keyword" },	   { "Result", "keyword2" },  { "do", "keyword" },
-			  { "open", "keyword" },   { "Some", "keyword" },	  { "type", "keyword2" },
+			  { "let", "keyword" },	   { "Result", "type" },	  { "do", "keyword" },
+			  { "open", "keyword" },   { "Some", "keyword" },	  { "type", "type" },
 
 		  },
 		  "#",
@@ -53,6 +51,7 @@ void addBend() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

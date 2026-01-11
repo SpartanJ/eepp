@@ -402,9 +402,9 @@ class UIPluginManagerTable : public UITableView {
 		setOnUpdateCellCb( [this]( UITableCell* cell, Model* model ) {
 			if ( mUpdatingEnabled )
 				return;
-			if ( !cell->getTextBox()->isType( UI_TYPE_CHECKBOX ) )
+			if ( !cell->getTextView()->isType( UI_TYPE_CHECKBOX ) )
 				return;
-			UICheckBox* chk = cell->getTextBox()->asType<UICheckBox>();
+			UICheckBox* chk = cell->getTextView()->asType<UICheckBox>();
 			PluginsModel* pModel = static_cast<PluginsModel*>( model );
 			bool enabled = pModel
 							   ->data( model->index( cell->getCurIndex().row(),
@@ -449,7 +449,7 @@ class UIPluginManagerTable : public UITableView {
 		if ( index.column() == PluginsModel::Title ) {
 			UITableCell* widget = UITableCell::NewWithOpt(
 				mTag + "::cell", getCheckBoxFn( index, (const PluginsModel*)getModel() ) );
-			widget->getTextBox()->setEnabled( true );
+			widget->getTextView()->setEnabled( true );
 			return setupCell( widget, rowWidget, index );
 		}
 		return UITableView::createCell( rowWidget, index );
@@ -467,11 +467,10 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 	<window
 		id="plugin-manager-window"
 		lw="800dp" lh="400dp"
-		padding="8dp"
 		window-title="@string(plugin_manager, Plugins Manager)"
 		window-flags="default|maximize|shadow"
 		window-min-size="300dp 300dp">
-		<vbox lw="mp" lh="mp">
+		<vbox lw="mp" lh="mp" margin="8dp">
 			<UIPluginManagerTable id="plugin-manager-table" lw="mp" lh="fixed" layout_weight="1" />
 			<vbox lw="mp" lh="wc">
 				<hbox margin-top="4dp" layout-gravity="right">
@@ -495,9 +494,8 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 	tv->setAutoColumnsWidth( true );
 	tv->setFitAllColumnsToWidget( true );
 	tv->setMainColumn( PluginsModel::Description );
-	prefs->addEventListener( Event::MouseClick, [tv, manager, loadFileCb]( const Event* event ) {
-		if ( event->asMouseEvent()->getFlags() & EE_BUTTON_LMASK &&
-			 !tv->getSelection().isEmpty() ) {
+	prefs->onClick( [tv, manager, loadFileCb]( const MouseEvent* event ) {
+		if ( !tv->getSelection().isEmpty() ) {
 			const PluginDefinition* def =
 				manager->getDefinitionIndex( tv->getSelection().first().row() );
 			if ( def == nullptr || !manager->isEnabled( def->id ) )
@@ -532,7 +530,7 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 			prefs->setEnabled( enabled && plugin->hasFileConfig() );
 		}
 	};
-	tv->addEventListener( Event::OnClose, [manager, tv]( const Event* ) {
+	tv->on( Event::OnClose, [manager, tv]( const Event* ) {
 		if ( tv->readyCbs.empty() )
 			return;
 		for ( const auto& cb : tv->readyCbs ) {
@@ -547,6 +545,7 @@ UIWindow* UIPluginManager::New( UISceneNode* sceneNode, PluginManager* manager,
 			win->close();
 	} );
 	win->center();
+	win->on( Event::OnWindowReady, [close]( auto ) { close->setFocus(); } );
 	return win;
 }
 

@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addWren() {
+SyntaxDefinition& addWren() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -26,7 +26,7 @@ void addWren() {
 			  { "false", "literal" },  { "in", "keyword" },		   { "for", "keyword" },
 			  { "while", "keyword" },  { "null", "literal" },	   { "true", "literal" },
 			  { "else", "keyword" },   { "construct", "keyword" }, { "foreign", "keyword" },
-			  { "this", "keyword2" },  { "return", "keyword" },	   { "var", "keyword" },
+			  { "this", "type" },	   { "return", "keyword" },	   { "var", "keyword" },
 			  { "import", "keyword" }, { "break", "keyword" },	   { "class", "keyword" },
 			  { "is", "keyword" },	   { "if", "keyword" },		   { "static", "keyword" },
 			  { "super", "keyword" },
@@ -38,6 +38,8 @@ void addWren() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	sd.setBlockComment( { "/*", "*/" } );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

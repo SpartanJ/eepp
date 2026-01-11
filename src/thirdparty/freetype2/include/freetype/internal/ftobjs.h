@@ -4,7 +4,7 @@
  *
  *   The FreeType private base classes (specification).
  *
- * Copyright (C) 1996-2019 by
+ * Copyright (C) 1996-2025 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -26,21 +26,21 @@
 #ifndef FTOBJS_H_
 #define FTOBJS_H_
 
-#include <ft2build.h>
-#include FT_RENDER_H
-#include FT_SIZES_H
-#include FT_LCD_FILTER_H
-#include FT_INTERNAL_MEMORY_H
-#include FT_INTERNAL_GLYPH_LOADER_H
-#include FT_INTERNAL_DRIVER_H
-#include FT_INTERNAL_AUTOHINT_H
-#include FT_INTERNAL_SERVICE_H
-#include FT_INTERNAL_CALC_H
+#include <freetype/ftrender.h>
+#include <freetype/ftsizes.h>
+#include <freetype/ftlcdfil.h>
+#include <freetype/internal/ftmemory.h>
+#include <freetype/internal/ftgloadr.h>
+#include <freetype/internal/ftdrv.h>
+#include <freetype/internal/autohint.h>
+#include <freetype/internal/ftserv.h>
+#include <freetype/internal/ftcalc.h>
 
 #ifdef FT_CONFIG_OPTION_INCREMENTAL
-#include FT_INCREMENTAL_H
+#include <freetype/ftincrem.h>
 #endif
 
+#include "compiler-macros.h"
 
 FT_BEGIN_HEADER
 
@@ -226,8 +226,8 @@ FT_BEGIN_HEADER
   } FT_CMap_ClassRec;
 
 
-#define FT_DECLARE_CMAP_CLASS( class_ )              \
-  FT_CALLBACK_TABLE const  FT_CMap_ClassRec class_;
+#define FT_DECLARE_CMAP_CLASS( class_ )            \
+  FT_CALLBACK_TABLE const FT_CMap_ClassRec  class_;
 
 #define FT_DEFINE_CMAP_CLASS(       \
           class_,                   \
@@ -274,6 +274,28 @@ FT_BEGIN_HEADER
   ft_lcd_padding( FT_BBox*        cbox,
                   FT_GlyphSlot    slot,
                   FT_Render_Mode  mode );
+
+
+  /**************************************************************************
+   *
+   * @Function:
+   *   find_unicode_charmap
+   *
+   * @Description:
+   *   This function finds a Unicode charmap, if there is one.  And if there
+   *   is more than one, it tries to favour the more extensive one, i.e., one
+   *   that supports UCS-4 against those which are limited to the BMP (UCS-2
+   *   encoding.)
+   *
+   *   If a unicode charmap is found, `face->charmap` is set to it.
+   *
+   *   This function is called from `open_face`, from `FT_Select_Charmap(...,
+   *   FT_ENCODING_UNICODE)`, and also from `afadjust.c` in the 'autofit'
+   *   module.
+   */
+  FT_BASE( FT_Error )
+  find_unicode_charmap( FT_Face  face );
+
 
 #ifdef FT_CONFIG_OPTION_SUBPIXEL_RENDERING
 
@@ -418,7 +440,8 @@ FT_BEGIN_HEADER
    *     initializing the glyph slot.
    */
 
-#define FT_GLYPH_OWN_BITMAP  0x1U
+#define FT_GLYPH_OWN_BITMAP    0x1U
+#define FT_GLYPH_OWN_GZIP_SVG  0x2U
 
   typedef struct  FT_Slot_InternalRec_
   {
@@ -497,9 +520,9 @@ FT_BEGIN_HEADER
    */
   typedef struct  FT_ModuleRec_
   {
-    FT_Module_Class*  clazz;
-    FT_Library        library;
-    FT_Memory         memory;
+    const FT_Module_Class*  clazz;
+    FT_Library              library;
+    FT_Memory               memory;
 
   } FT_ModuleRec;
 
@@ -603,12 +626,6 @@ FT_BEGIN_HEADER
 #define FT_FACE_MEMORY( x )   FT_FACE( x )->memory
 #define FT_FACE_STREAM( x )   FT_FACE( x )->stream
 
-#define FT_SIZE_FACE( x )     FT_SIZE( x )->face
-#define FT_SLOT_FACE( x )     FT_SLOT( x )->face
-
-#define FT_FACE_SLOT( x )     FT_FACE( x )->glyph
-#define FT_FACE_SIZE( x )     FT_FACE( x )->size
-
 
   /**************************************************************************
    *
@@ -653,7 +670,7 @@ FT_BEGIN_HEADER
   FT_BASE( void )
   FT_Done_GlyphSlot( FT_GlyphSlot  slot );
 
- /* */
+  /* */
 
 #define FT_REQUEST_WIDTH( req )                                            \
           ( (req)->horiResolution                                          \
@@ -673,7 +690,7 @@ FT_BEGIN_HEADER
 
 
   /* Set the metrics according to a size request. */
-  FT_BASE( void )
+  FT_BASE( FT_Error )
   FT_Request_Metrics( FT_Face          face,
                       FT_Size_Request  req );
 
@@ -1057,6 +1074,9 @@ FT_BEGIN_HEADER
    *   The struct will be allocated in the global scope (or the scope where
    *   the macro is used).
    */
+#define FT_DECLARE_GLYPH( class_ )                \
+  FT_CALLBACK_TABLE const FT_Glyph_Class  class_;
+
 #define FT_DEFINE_GLYPH(          \
           class_,                 \
           size_,                  \

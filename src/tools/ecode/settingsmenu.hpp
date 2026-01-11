@@ -42,6 +42,12 @@ class SettingsMenu {
 
 	UIMenu* createLanguagesMenu();
 
+	UIMenu* createFontHintMenu();
+
+	UIMenu* createFontAntiAliasingMenu();
+
+	UIMenu* createFontsMenu();
+
 	void updateTerminalMenu();
 
 	void updateProjectSettingsMenu();
@@ -109,15 +115,24 @@ class SettingsMenu {
 	UIPopUpMenu* mProjectTreeMenu{ nullptr };
 	UIPopUpMenu* mProjectDocMenu{ nullptr };
 	UIPopUpMenu* mProjectMenu{ nullptr };
+	UIPopUpMenu* mHExtLanguageTypeMenu{ nullptr };
 	UIPopUpMenu* mEditMenu{ nullptr };
 	UIPopUpMenu* mHelpMenu{ nullptr };
 	UIPopUpMenu* mLineWrapMenu{ nullptr };
 	UIPopUpMenu* mCodeFoldingMenu{ nullptr };
+	UIPopUpMenu* mTabBarMenu{ nullptr };
 	UIMenuBar* mMenuBar{ nullptr };
-	std::vector<UIPopUpMenu*> mFileTypeMenues;
-	Float mFileTypeMenuesCreatedWithHeight{ 0 };
-	std::vector<UIPopUpMenu*> mColorSchemeMenues;
-	Float mColorSchemeMenuesCreatedWithHeight{ 0 };
+	UIPopUpMenu* mFontHintMenu{ nullptr };
+	UIPopUpMenu* mFontAntiAliasingMenu{ nullptr };
+	UIPopUpMenu* mFontsMenu{ nullptr };
+	std::vector<UIPopUpMenu*> mFileTypeMenus;
+	Float mFileTypeMenusCreatedWithHeight{ 0 };
+	std::vector<UIPopUpMenu*> mColorSchemeMenus;
+	Float mColorSchemeMenusCreatedWithHeight{ 0 };
+
+	void forEachTerminal( const std::function<void( UITerminal* )> fn );
+
+	UITerminal* getCurrentTerminal() const;
 };
 
 } // namespace ecode

@@ -135,19 +135,35 @@ class EE_API Primitives {
 	 */
 	void drawPolygon( const Polygon2f& p );
 
+	/**
+	 * @brief Draws a soft-edged shadow for a rectangular box using only primitives.
+	 *
+	 * This function improves upon basic rectangular shadows by rendering the corners
+	 * with a radial gradient (using a triangle fan), which produces a much smoother look.
+	 *
+	 * @param boxRect The rectangle of the UI element casting the shadow (in screen coordinates).
+	 * @param shadowOffset An offset to apply to the shadow's position relative to the box.
+	 * @param shadowSize The distance the shadow extends and fades out from the box edges.
+	 * @param shadowColor The base color of the shadow (alpha will be used for max opacity).
+	 * @param cornerSegments The number of triangles to use for each corner fan. More segments
+	 * result in a smoother corner.
+	 */
+	void drawSoftShadow( const Rectf& boxRect, const Vector2f& shadowOffset, Float shadowSize,
+						 Uint32 cornerSegments = 8 );
+
 	/** Set the current color for drawing primitives */
 	void setColor( const Color& Color );
 
 	/** @return The color used to draw the primitives */
 	const Color& getColor();
 
-	/** Forcing the draw, will force the batch renderer to draw the batched vertexs immediately (
+	/** Forcing the draw, will force the batch renderer to draw the batched vertices immediately (
 	 * active by default ). */
 	void setForceDraw( const bool& force );
 
 	const bool& getForceDraw() const;
 
-	/** Force to draw the batched vertexs. */
+	/** Force to draw the batched vertices. */
 	void drawBatch();
 
 	/** Set the fill mode used to draw primitives */

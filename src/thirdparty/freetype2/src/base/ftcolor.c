@@ -4,7 +4,7 @@
  *
  *   FreeType's glyph color management (body).
  *
- * Copyright (C) 2018-2019 by
+ * Copyright (C) 2018-2025 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -16,11 +16,10 @@
  */
 
 
-#include <ft2build.h>
-#include FT_INTERNAL_DEBUG_H
-#include FT_INTERNAL_SFNT_H
-#include FT_INTERNAL_TRUETYPE_TYPES_H
-#include FT_COLOR_H
+#include <freetype/internal/ftdebug.h>
+#include <freetype/internal/sfnt.h>
+#include <freetype/internal/tttypes.h>
+#include <freetype/ftcolor.h>
 
 
 #ifdef TT_CONFIG_OPTION_COLOR_LAYERS
@@ -57,9 +56,7 @@
                      FT_Color*  *apalette )
   {
     FT_Error  error;
-
-    TT_Face       ttface;
-    SFNT_Service  sfnt;
+    TT_Face   ttface = (TT_Face)face;
 
 
     if ( !face )
@@ -73,14 +70,17 @@
       return FT_Err_Ok;
     }
 
-    ttface = (TT_Face)face;
-    sfnt   = (SFNT_Service)ttface->sfnt;
+    if ( palette_index != ttface->palette_index )
+    {
+      SFNT_Service  sfnt = (SFNT_Service)ttface->sfnt;
 
-    error = sfnt->set_palette( ttface, palette_index );
-    if ( error )
-      return error;
 
-    ttface->palette_index = palette_index;
+      error = sfnt->set_palette( ttface, palette_index );
+      if ( error )
+        return error;
+
+      ttface->palette_index = palette_index;
+    }
 
     if ( apalette )
       *apalette = ttface->palette;

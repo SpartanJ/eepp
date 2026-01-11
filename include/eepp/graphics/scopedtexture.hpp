@@ -5,7 +5,7 @@
 
 namespace EE { namespace Graphics { namespace Private {
 
-/** @brief binds a texture a restores previusly binded texture */
+/** @brief binds a texture a restores previously binded texture */
 class EE_API ScopedTexture {
   public:
 	ScopedTexture( int textureBind = -1 /** with -1 as default it avoid the auto-binding */ );

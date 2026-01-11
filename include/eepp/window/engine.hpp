@@ -25,7 +25,11 @@ class EE_API Engine {
 
 	static bool isEngineRunning();
 
-	static bool isRunninMainThread();
+	/** @return The id of the thread that was used to initialize the OpenGL Context. */
+	static UintPtr getMainThreadId();
+
+	/** @returns True if the current thread is the main thread. */
+	static bool isMainThread();
 
 	/** Creates a new window. */
 	EE::Window::Window* createWindow( WindowSettings Settings,
@@ -130,12 +134,6 @@ class EE_API Engine {
 	 * for emscripten) */
 	bool isThreaded();
 
-	/** @return The id of the thread that was used to initialize the OpenGL Context. */
-	Uint32 getMainThreadId();
-
-	/** @returns True if the current thread is the main thread. */
-	bool isMainThread() const;
-
 	/** @return The instance of platform class that provides some helpers for some platforms */
 	PlatformHelper* getPlatformHelper();
 
@@ -154,7 +152,7 @@ class EE_API Engine {
 	std::map<Uint32, Window*> mWindows;
 	EE::Window::Window* mWindow;
 	bool mSharedGLContext;
-	Uint32 mMainThreadId;
+	bool mIsShuttingDown{ false };
 	PlatformHelper* mPlatformHelper;
 	Pack* mZip;
 	DisplayManager* mDisplayManager;

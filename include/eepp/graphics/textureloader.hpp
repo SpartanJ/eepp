@@ -150,7 +150,7 @@ class EE_API TextureLoader {
 	bool mLoaded{ false };
 	bool mTexLoaded{ false };
 	bool mDirectUpload{ false };
-	int mImgType{ 0 };
+	Image::Format mImgType{ 0 };
 	int mIsCompressed{ 0 };
 
 	Clock mTE;

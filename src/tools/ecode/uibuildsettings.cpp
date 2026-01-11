@@ -77,7 +77,7 @@ class UICustomOutputParserWindow : public UIWindow {
 
 	explicit UICustomOutputParserWindow( ProjectBuildOutputParserConfig& cfg ) :
 		UIWindow( SIMPLE_LAYOUT, { UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS |
-								   UI_WIN_SHARE_ALPHA_WITH_CHILDS | UI_WIN_MODAL } ),
+								   UI_WIN_SHARE_ALPHA_WITH_CHILDREN | UI_WIN_MODAL } ),
 		mTmpCfg( cfg ),
 		mCfg( cfg ) {
 		static const auto CUSTOM_OUTPUT_PARSER_XML = R"xml(
@@ -238,6 +238,12 @@ class UIBuildStep : public UILinearLayout {
 			UIDataBindString::New( &mStep->workingDir, findByClass( "input_working_dir" ) );
 		mDataBindHolder +=
 			UIDataBindBool::New( &mStep->runInTerminal, findByClass( "run_in_terminal" ) );
+		mDataBindHolder += UIDataBindBool::New( &mStep->reusePreviousTerminal,
+												findByClass( "reuse_previous_terminal" ) );
+		mDataBindHolder += UIDataBindBool::New( &mStep->useStatusBarTerminal,
+												findByClass( "use_statusbar_terminal" ) );
+		mDataBindHolder += UIDataBindBool::New( &mStep->stripAnsiCodes,
+												findByClass( "strip_ansi_codes" ) );
 	}
 
   protected:
@@ -274,7 +280,12 @@ class UIBuildStep : public UILinearLayout {
 			<TextView lh="mp" min-width="100dp" text="@string(working_dir, Working Directory)" focusable="false" />
 			<Input class="input_working_dir" lw="0" lw8="1" />
 		</hbox>
-		<CheckBox class="run_in_terminal" text="@string(run_in_terminal, Run in terminal)" visible="false" />
+		<StackLayout lw="mp">
+			<CheckBox class="run_in_terminal" text="@string(run_in_terminal, Run in terminal)" visible="false" />
+			<CheckBox margin-left="8dp" class="reuse_previous_terminal" text="@string(reuse_previous_terminal, Reuse previous terminal)" visible="false" />
+			<CheckBox margin-left="8dp" class="use_statusbar_terminal" text="@string(use_statusbar_terminal, Use status bar terminal)" visible="false" />
+			<CheckBox margin-left="8dp" class="strip_ansi_codes" text="@string(strip_ansi_codes, Strip ANSI codes)" visible="false" />
+		</StackLayout>
 	</vbox>
 )xml";
 
@@ -283,8 +294,39 @@ class UIBuildStep : public UILinearLayout {
 		if ( !isBuildOrClean() ) {
 			findByClass( "enabled_checkbox" )->setVisible( false );
 			auto runInTerminal = findByClass( "run_in_terminal" )->asType<UICheckBox>();
+
+			auto reusePreviousTerminal =
+				findByClass( "reuse_previous_terminal" )->asType<UICheckBox>();
+
+			auto useStatusBarTerminal =
+				findByClass( "use_statusbar_terminal" )->asType<UICheckBox>();
+
+			auto stripAnsiCodes = findByClass( "strip_ansi_codes" )->asType<UICheckBox>();
+
 			runInTerminal->setVisible( true );
 			runInTerminal->setChecked( buildStep->runInTerminal );
+			runInTerminal->on( Event::OnValueChange, [reusePreviousTerminal, runInTerminal,
+													  useStatusBarTerminal, stripAnsiCodes]( auto ) {
+				reusePreviousTerminal->setEnabled( runInTerminal->isChecked() );
+				useStatusBarTerminal->setEnabled( runInTerminal->isChecked() );
+				stripAnsiCodes->setEnabled( !runInTerminal->isChecked() );
+				if ( !runInTerminal->isChecked() ) {
+					reusePreviousTerminal->setChecked( false );
+					useStatusBarTerminal->setChecked( false );
+				}
+			} );
+
+			reusePreviousTerminal->setVisible( true );
+			reusePreviousTerminal->setEnabled( buildStep->runInTerminal );
+			reusePreviousTerminal->setChecked( buildStep->reusePreviousTerminal );
+
+			useStatusBarTerminal->setVisible( true );
+			useStatusBarTerminal->setEnabled( buildStep->runInTerminal );
+			useStatusBarTerminal->setChecked( buildStep->useStatusBarTerminal );
+
+			stripAnsiCodes->setVisible( true );
+			stripAnsiCodes->setEnabled( !buildStep->runInTerminal );
+			stripAnsiCodes->setChecked( buildStep->stripAnsiCodes );
 		}
 
 		findByClass( "details_but" )->onClick( [this]( const MouseEvent* event ) {
@@ -409,12 +451,13 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 							<PushButton id="custom_var_del" icon="icon(delete-bin, 12dp)" min-width="20dp" tooltip="@string(del_custom_variable, Delete Selected Variable)" lg="center" />
 						</vbox>
 					</hbox>
-					<TextView class="span" lw="mp" lh="wc" word-wrap="true" text='@string(custom_variables_desc_3, "There are predefined custom variables available to use:&#10;${project_root}: The folder / project root directory.&#10;${build_type}: The build type selected to build the project.&#10;${os}: The current operating system name.&#10;${arch}: The current operating architecture.&#10;${nproc}: The number of logical processing units.&#10;${current_doc}: The last or current focused document path.&#10;${current_doc_name}: The last or current focused document name (without extension).&#10;${current_doc_dir}: The last or current focused document directory.")' />
+					<TextView class="span" lw="mp" lh="wc" word-wrap="true" text='@string(custom_variables_desc_3, "There are predefined custom variables available to use:&#10;${project_root}: The folder / project root directory.&#10;${build_type}: The build type selected to build the project.&#10;${os}: The current operating system name.&#10;${arch}: The current operating architecture.&#10;${nproc}: The number of logical processing units.&#10;${current_doc}: The last or current focused document path.&#10;${current_doc_name}: The last or current focused document name without extension.&#10;${current_doc_dir}: The last or current focused document directory.")' />
 				</vbox>
 
 				<vbox lw="mp" lh="wc" class="build_environment">
 					<TextView class="subtitle" text="@string(build_environment, Build Environment)" focusable="false" />
-					<CheckBox id="clear_sys_env" text="@string(clear_system_enviroment, Clear System Environment)" />
+					<CheckBox id="clear_sys_env" text="@string(clear_system_environment, Clear System Environment)" />
+					<CheckBox id="output_parsers_strip_ansi_codes" text="@string(strip_ansi_codes_in_build_oupput, Strip ANSI codes in build output)" />
 					<TextView class="subtitle" text="@string(custom_environment_variables, Custom Environment Variables)" focusable="false" />
 					<hbox lw="mp" lh="wc">
 						<TableView id="table_envs" lw="0" lw8="1" lh="150dp" />
@@ -581,6 +624,8 @@ UIBuildSettings::UIBuildSettings(
 
 	mDataBindHolder +=
 		UIDataBindBool::New( &mBuild.mConfig.clearSysEnv, find<UIWidget>( "clear_sys_env" ) );
+	mDataBindHolder += UIDataBindBool::New( &mBuild.mConfig.stripAnsiCodes,
+											find<UICheckBox>( "output_parsers_strip_ansi_codes" ) );
 
 	bindTable( "table_envs", "env", mBuild.mEnvs );
 	bindTable( "table_vars", "var", mBuild.mVars );
@@ -593,7 +638,7 @@ UIBuildSettings::UIBuildSettings(
 		msgBox->setTitle( i18n( "build_settings", "Build Settings" ) );
 		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 		msgBox->showWhenReady();
-		msgBox->addEventListener( Event::OnConfirm, [this, msgBox]( const Event* ) {
+		msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 			mCanceled = true;
 			sendTextEvent( Event::OnClear, mBuild.getName() );
 			msgBox->closeWindow();
@@ -612,7 +657,7 @@ UIBuildSettings::UIBuildSettings(
 			msgBox->getTextInput()->setText( mBuild.getName() );
 			msgBox->getTextInput()->getDocument().selectAll();
 		} );
-		msgBox->addEventListener( Event::OnConfirm, [msgBox, this]( const Event* ) {
+		msgBox->on( Event::OnConfirm, [msgBox, this]( const Event* ) {
 			const auto& newBuildName = msgBox->getTextInput()->getText();
 			sendTextEvent( Event::OnCopy, newBuildName );
 			msgBox->closeWindow();
@@ -625,18 +670,19 @@ UIBuildSettings::UIBuildSettings(
 		msgBox->setTitle( i18n( "build_settings", "Build Settings" ) );
 		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 		msgBox->showWhenReady();
-		msgBox->addEventListener(
-			Event::OnConfirm, [this, msgBox, buildTypeDropDown, panelBuildTypeDDL]( const Event* ) {
-				const auto& buildType = msgBox->getTextInput()->getText();
-				mBuild.mBuildTypes.insert( buildType.toUtf8() );
-				buildTypeDropDown->getListBox()->addListBoxItem( buildType );
-				buildTypeDropDown->getListBox()->setSelected( buildType );
-				if ( panelBuildTypeDDL ) {
-					panelBuildTypeDDL->getListBox()->addListBoxItem( buildType );
-					panelBuildTypeDDL->getListBox()->setSelected( buildType );
-				}
-				msgBox->closeWindow();
-			} );
+		msgBox->on( Event::OnConfirm,
+					[this, msgBox, buildTypeDropDown, panelBuildTypeDDL]( const Event* ) {
+						const auto& buildType = msgBox->getTextInput()->getText();
+						mBuild.mBuildTypes.insert( buildType.toUtf8() );
+						buildTypeDropDown->getListBox()->addListBoxItem( buildType );
+						buildTypeDropDown->getListBox()->setSelected( buildType );
+						if ( panelBuildTypeDDL ) {
+							panelBuildTypeDDL->getListBox()->addListBoxItem( buildType );
+							panelBuildTypeDDL->getListBox()->setSelected( buildType );
+							panelBuildTypeDDL->setEnabled( true );
+						}
+						msgBox->closeWindow();
+					} );
 	} );
 
 	find( "build_type_del" )->onClick( [this, buildTypeDropDown, panelBuildTypeDDL]( auto ) {
@@ -649,16 +695,25 @@ UIBuildSettings::UIBuildSettings(
 		msgBox->setTitle( i18n( "build_settings", "Build Settings" ) );
 		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 		msgBox->showWhenReady();
-		msgBox->addEventListener( Event::OnConfirm, [this, msgBox, buildTypeDropDown,
-													 panelBuildTypeDDL, txt]( const Event* ) {
-			mBuild.mBuildTypes.erase( txt.toUtf8() );
-			buildTypeDropDown->getListBox()->removeListBoxItem( txt );
-			if ( panelBuildTypeDDL ) {
-				panelBuildTypeDDL->getListBox()->removeListBoxItem( txt );
-			}
-			msgBox->closeWindow();
-		} );
+		msgBox->on( Event::OnConfirm,
+					[this, msgBox, buildTypeDropDown, panelBuildTypeDDL, txt]( const Event* ) {
+						mBuild.mBuildTypes.erase( txt.toUtf8() );
+						buildTypeDropDown->getListBox()->removeListBoxItem( txt );
+						if ( panelBuildTypeDDL ) {
+							panelBuildTypeDDL->getListBox()->removeListBoxItem( txt );
+							if ( panelBuildTypeDDL->getListBox()->isEmpty() )
+								panelBuildTypeDDL->setEnabled( false );
+						}
+						msgBox->closeWindow();
+					} );
 	} );
+
+	if ( isNew && mBuild.mOutputParser.getPreset().empty() &&
+		 !ProjectBuildOutputParser::getPresets().empty() ) {
+		mBuild.mOutputParser.mPreset = ProjectBuildOutputParser::getPresets().begin()->first;
+		mBuild.mOutputParser.mPresetConfig =
+			ProjectBuildOutputParser::getPresets().begin()->second.getConfig();
+	}
 
 	auto outputParserPresetsDDL = find<UIDropDownList>( "output_parsers_presets_list" );
 	outputParserPresetsDDL->getListBox()->setSelected( mBuild.mOutputParser.mPreset );
@@ -739,7 +794,7 @@ void UIBuildSettings::refreshTab() {
 	if ( !mTab )
 		return;
 	mTab->setText(
-		String::format( ( i18n( "build_seetings", "Build Settings" ) + ": %s" ).toUtf8().c_str(),
+		String::format( ( i18n( "build_settings", "Build Settings" ) + ": %s" ).toUtf8().c_str(),
 						mBuild.mName.c_str() ) );
 	std::string hashName = String::toString( String::hash( mIsNew ? "new_name" : mBuild.mName ) );
 	mTab->setId( "build_settings_" + hashName );
@@ -835,7 +890,9 @@ void UIBuildSettings::runSetup() {
 							   ->querySelector( "#build_tab_view #run_config_list" )
 							   ->asType<UIDropDownList>();
 
+	auto runName = mConfig.runName;
 	runUpdate( true, runList, panelRunListDDL );
+	mConfig.runName = std::move( runName );
 
 	runList->getListBox()->setSelected( runIndex() );
 	if ( panelRunListDDL )

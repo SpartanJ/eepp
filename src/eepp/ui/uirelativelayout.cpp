@@ -8,11 +8,11 @@ UIRelativeLayout* UIRelativeLayout::New() {
 }
 
 UIRelativeLayout::UIRelativeLayout() : UILayout( "relativelayout" ) {
-	mFlags |= UI_OWNS_CHILDS_POSITION;
+	mFlags |= UI_OWNS_CHILDREN_POSITION;
 }
 
 UIRelativeLayout::UIRelativeLayout( const std::string& tagName ) : UILayout( tagName ) {
-	mFlags |= UI_OWNS_CHILDS_POSITION;
+	mFlags |= UI_OWNS_CHILDREN_POSITION;
 }
 
 Uint32 UIRelativeLayout::getType() const {

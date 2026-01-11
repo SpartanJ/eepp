@@ -9,7 +9,7 @@ TcpListener::TcpListener() : Socket( Tcp ) {}
 
 unsigned short TcpListener::getLocalPort() const {
 	if ( getHandle() != Private::SocketImpl::invalidSocket() ) {
-		// Retrieve informations about the local end of the socket
+		// Retrieve information about the local end of the socket
 		sockaddr_in address;
 		Private::SocketImpl::AddrLength size = sizeof( address );
 

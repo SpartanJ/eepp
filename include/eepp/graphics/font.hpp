@@ -6,6 +6,8 @@
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/textureregion.hpp>
 
+using namespace std::literals;
+
 namespace EE { namespace Graphics {
 
 class Font;
@@ -22,14 +24,14 @@ struct EE_API Glyph {
 
 enum class FontType { TTF, BMF, Sprite };
 
-enum FontHorizontalAlign {
+enum FontHorizontalAlign : Uint32 {
 	TEXT_ALIGN_LEFT = ( 0 << 0 ),
 	TEXT_ALIGN_RIGHT = ( 1 << 0 ),
 	TEXT_ALIGN_CENTER = ( 2 << 0 ),
 	TEXT_HALIGN_MASK = ( 3 << 0 )
 };
 
-enum FontVerticalAlign {
+enum FontVerticalAlign : Uint32 {
 	TEXT_ALIGN_TOP = ( 0 << 2 ),
 	TEXT_ALIGN_BOTTOM = ( 1 << 2 ),
 	TEXT_ALIGN_MIDDLE = ( 2 << 2 ),
@@ -52,6 +54,46 @@ class EE_API Font {
 		std::string fontpath; ///< The directory path of the font
 		std::string filename; ///< The file name
 	};
+
+	static std::string_view fontHintingToString( FontHinting hint ) {
+		switch ( hint ) {
+			case FontHinting::None:
+				return "none"sv;
+			case FontHinting::Slight:
+				return "slight"sv;
+			case FontHinting::Full:
+				break;
+		}
+		return "full"sv;
+	}
+
+	static FontHinting fontHintingFromString( std::string_view str ) {
+		if ( str == "none"sv )
+			return FontHinting::None;
+		if ( str == "slight"sv )
+			return FontHinting::Slight;
+		return FontHinting::Full;
+	}
+
+	static std::string_view fontAntialiasingToString( FontAntialiasing aa ) {
+		switch ( aa ) {
+			case FontAntialiasing::None:
+				return "none"sv;
+			case FontAntialiasing::Grayscale:
+				return "grayscale"sv;
+			case FontAntialiasing::Subpixel:
+				break;
+		}
+		return "subpixel"sv;
+	}
+
+	static FontAntialiasing fontAntialiasingFromString( std::string_view str ) {
+		if ( str == "none"sv )
+			return FontAntialiasing::None;
+		if ( str == "subpixel"sv )
+			return FontAntialiasing::Subpixel;
+		return FontAntialiasing::Grayscale;
+	}
 
 	static inline Uint32 getHorizontalAlign( const Uint32& flags ) {
 		return flags & TEXT_HALIGN_MASK;
@@ -90,22 +132,20 @@ class EE_API Font {
 
 	virtual const Info& getInfo() const = 0;
 
-	virtual const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-								   bool italic, Float outlineThickness = 0,
-								   Float maxWidth = 0 ) const = 0;
+	virtual Glyph getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
+							Float outlineThickness = 0 ) const = 0;
 
 	/** @return The glyph drawable that represents the glyph in a texture. The glyph drawable
 	 * allocation is managed by the font. */
 	virtual GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
 											 bool bold = false, bool italic = false,
-											 Float outlineThickness = 0,
-											 const Float& forzeSize = 0 ) const = 0;
+											 Float outlineThickness = 0 ) const = 0;
 
 	virtual Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
 							  bool italic, Float outlineThickness = 0 ) const = 0;
 
 	virtual Float getAscent( unsigned int characterSize ) const {
-		return getLineSpacing( characterSize );
+		return getFontHeight( characterSize );
 	}
 
 	virtual Float getDescent( unsigned int ) const { return 0.f; }

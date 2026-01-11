@@ -71,6 +71,8 @@ void FileSystemListener::handleFileAction( efsw::WatchID, const std::string& dir
 					if ( isFileOpen( oldFile ) )
 						notifyMove( oldFile, file );
 				}
+			} else if ( action == efsw::Actions::Delete ) {
+				notifyDelete( file );
 			}
 
 			if ( file.isLink() )
@@ -145,7 +147,7 @@ void FileSystemListener::notifyChange( const FileInfo& file ) {
 			 file.getModificationTime() != doc.getFileInfo().getModificationTime() &&
 			 !doc.isSaving() ) {
 			MD5::Digest curHash = MD5::fromFile( file.getFilepath() ).digest;
-			if ( curHash != doc.getHash() ) {
+			if ( curHash != doc.getHash() || doc.isDirty() ) {
 				Log::notice( "Document: \"%s\" has changed on the file system:",
 							 file.getFilepath().c_str() );
 				Log::notice( "Modification time on file system: %u vs %u in memory",
@@ -163,6 +165,13 @@ void FileSystemListener::notifyMove( const FileInfo& oldFile, const FileInfo& ne
 	mSplitter->forEachDoc( [&]( TextDocument& doc ) {
 		if ( oldFile.getFilepath() == doc.getFileInfo().getFilepath() )
 			doc.notifyDocumentMoved( newFile.getFilepath() );
+	} );
+}
+
+void FileSystemListener::notifyDelete( const FileInfo& file ) {
+	mSplitter->forEachDoc( [&]( TextDocument& doc ) {
+		if ( file.getFilepath() == doc.getFileInfo().getFilepath() )
+			doc.setDirtyOnFileSystem( true );
 	} );
 }
 

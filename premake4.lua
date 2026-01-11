@@ -9,7 +9,7 @@ function newplatform(plf)
 		iscrosscompiler = true
 	}
 
-	-- Allow use of new platform in --platfroms
+	-- Allow use of new platform in --platforms
 	table.insert(premake.option.list["platform"].allowed, { name, description })
 	table.insert(premake.fields.platforms.allowed, name)
 
@@ -159,15 +159,14 @@ newoption { trigger = "with-static-backend", description = "It will try to compi
 newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
 newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
 newoption { trigger = "without-mojoal", description = "Compile without mojoAL as OpenAL implementation (that requires SDL2 backend). Instead it will use openal-soft." }
-newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link agains SDL2.framework." }
-newoption { trigger = "with-emscripten-pthreads", description = "Enables emscripten build to use posix threads" }
+newoption { trigger = "use-frameworks", description = "In macOS it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link against SDL2.framework." }
 newoption { trigger = "with-mold-linker", description = "Tries to use the mold linker instead of the default linker of the toolchain" }
 newoption { trigger = "with-debug-symbols", description = "Release builds are built with debug symbols." }
 newoption { trigger = "thread-sanitizer", description ="Compile with ThreadSanitizer." }
 newoption { trigger = "address-sanitizer", description = "Compile with AddressSanitizer." }
 newoption { trigger = "time-trace", description = "Compile with time trace." }
 newoption { trigger = "disable-static-build", description = "Disables eepp static build project, this is just a helper to avoid rebuilding twice eepp while developing the library." }
-newoption { trigger = "with-text-shaper", description = "Enables text-shaping capabilities by relying on harfbuzz." }
+newoption { trigger = "without-text-shaper", description = "Disables text-shaping capabilities." }
 newoption {
 	trigger = "with-backend",
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.",
@@ -175,6 +174,12 @@ newoption {
 		{ "SDL2",  "SDL2" }
 	}
 }
+newoption {
+    trigger     = "sharedir",
+    value       = "PATH",
+    description = "Set the shared data directory (default: /usr/share/ecode)",
+}
+newoption { trigger = "with-static-cpp", description = "Builds statically libstdc++" }
 
 function explode(div,str)
 	if (div=='') then return false end
@@ -344,7 +349,7 @@ os_links = { }
 backends = { }
 static_backends = { }
 backend_selected = false
-remote_sdl2_version = "SDL2-2.30.3"
+remote_sdl2_version = "SDL2-2.32.8"
 
 function build_arch_configuration()
 	if os.is_real("mingw32") or os.is_real("mingw64") then
@@ -395,9 +400,7 @@ function build_base_configuration( package_name )
 
 	configuration "emscripten"
 		buildoptions { "-s USE_SDL=2" }
-		if _OPTIONS["with-emscripten-pthreads"] then
-			buildoptions { "-s USE_PTHREADS=1" }
-		end
+		buildoptions { "-s USE_PTHREADS=1" }
 end
 
 function build_base_cpp_configuration( package_name )
@@ -406,9 +409,9 @@ function build_base_cpp_configuration( package_name )
 	end
 
 	if not is_vs() then
-		buildoptions{ "-std=c++17" }
+		buildoptions{ "-std=c++20" }
 	else
-		buildoptions{ "/std:c++17", "/utf-8" }
+		buildoptions{ "/std:c++20", "/utf-8" }
 	end
 
 	set_ios_config()
@@ -446,9 +449,7 @@ function build_base_cpp_configuration( package_name )
 
 	configuration "emscripten"
 		buildoptions { "-s USE_SDL=2" }
-		if _OPTIONS["with-emscripten-pthreads"] then
-			buildoptions { "-s USE_PTHREADS=1" }
-		end
+		buildoptions { "-s USE_PTHREADS=1" }
 end
 
 function add_cross_config_links()
@@ -510,9 +511,9 @@ function build_link_configuration( package_name, use_ee_icon )
 	end
 
 	if not is_vs() then
-		buildoptions{ "-std=c++17" }
+		buildoptions{ "-std=c++20" }
 	else
-		buildoptions{ "/std:c++17", "/utf-8", "/bigobj" }
+		buildoptions{ "/std:c++20", "/utf-8", "/bigobj" }
 	end
 
 	if package_name ~= "eepp" and package_name ~= "eepp-static" then
@@ -587,8 +588,16 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 	end
 
-	if _OPTIONS["with-text-shaper"] then
+	if not _OPTIONS["without-text-shaper"] then
 		defines { "EE_TEXT_SHAPER_ENABLED" }
+	end
+
+	if _OPTIONS["with-static-cpp"] then
+		linkoptions { "-static-libgcc -static-libstdc++" }
+	end
+
+	if _OPTIONS["sharedir"] then
+	    defines { "ECODE_SHAREDIR='\"" .. _OPTIONS["sharedir"] .. "\"'" }
 	end
 
 	set_ios_config()
@@ -605,10 +614,8 @@ function build_link_configuration( package_name, use_ee_icon )
 
 		if os.is_real("emscripten") then
 			linkoptions{ "--profiling --profiling-funcs -s DEMANGLE_SUPPORT=1 -s NO_DISABLE_EXCEPTION_CATCHING -sALLOW_MEMORY_GROWTH=1" }
-			if _OPTIONS["with-emscripten-pthreads"] then
-				buildoptions { "-s USE_PTHREADS=1" }
-				linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
-			end
+			buildoptions { "-s USE_PTHREADS=1" }
+			linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
 		end
 
 		fix_shared_lib_linking_path( package_name, "libeepp-debug" )
@@ -627,7 +634,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 
 		if not is_vs() and not os.is_real("emscripten") then
-			buildoptions { "-fno-strict-aliasing -ffast-math" }
+			buildoptions { "-fno-strict-aliasing" }
 		end
 
 		fix_shared_lib_linking_path( package_name, "libeepp" )
@@ -640,11 +647,8 @@ function build_link_configuration( package_name, use_ee_icon )
 	configuration "emscripten"
 		linkoptions { "-s TOTAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2" }
 		buildoptions { "-s USE_SDL=2" }
-
-		if _OPTIONS["with-emscripten-pthreads"] then
-			buildoptions { "-s USE_PTHREADS=1" }
-			linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
-		end
+		buildoptions { "-s USE_PTHREADS=1" }
+		linkoptions { "-s USE_PTHREADS=1 -sPTHREAD_POOL_SIZE=8" }
 
 		if _OPTIONS["with-gles1"] and ( not _OPTIONS["with-gles2"] or _OPTIONS["force-gles1"] ) then
 			linkoptions{ "-s LEGACY_GL_EMULATION=1" }
@@ -667,11 +671,11 @@ function generate_os_links()
 			table.insert( os_links, "dl" )
 		end
 	elseif os.is_real("windows") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid" } )
 	elseif os.is_real("mingw32") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid" } )
 	elseif os.is_real("mingw64") then
-		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32" } )
+		multiple_insert( os_links, { "opengl32", "glu32", "gdi32", "ws2_32", "winmm", "ole32", "uuid" } )
 	elseif os.is_real("macosx") then
 		multiple_insert( os_links, { "OpenGL.framework", "CoreFoundation.framework" } )
 	elseif os.is_real("freebsd") then
@@ -739,11 +743,12 @@ function add_static_links()
 	end
 
 	if not _OPTIONS["with-dynamic-freetype"] then
-		links { "freetype-static", "libpng-static" }
+		links { "freetype-static" }
 	end
 
-	if _OPTIONS["with-text-shaper"] then
-		links { "harfbuzz-static" }
+	if not _OPTIONS["without-text-shaper"] then
+		links { "harfbuzz-static", "SheenBidi-static" }
+		includedirs { "src/thirdparty/SheenBidi/Headers" }
 		defines { "EE_TEXT_SHAPER_ENABLED" }
 	end
 
@@ -754,7 +759,10 @@ function add_static_links()
 			"imageresampler-static",
 			"pugixml-static",
 			"vorbis-static",
-			"pcre2-8-static"
+			"pcre2-8-static",
+			"oniguruma-static",
+			"libwebp-static",
+			"libpng-static",
 	}
 
 	if not _OPTIONS["without-mojoal"] then
@@ -815,19 +823,19 @@ function set_ios_config()
 		local err = false
 
 		if nil == os.getenv("TOOLCHAINPATH") then
-			print("You must set TOOLCHAINPATH enviroment variable.")
+			print("You must set TOOLCHAINPATH environment variable.")
 			print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/")
 			err = true
 		end
 
 		if nil == os.getenv("SYSROOTPATH") then
-			print("You must set SYSROOTPATH enviroment variable.")
+			print("You must set SYSROOTPATH environment variable.")
 			print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.1.sdk")
 			err = true
 		end
 
 		if nil == os.getenv("IOSVERSION") then
-			print("You must set IOSVERSION enviroment variable.")
+			print("You must set IOSVERSION environment variable.")
 			print("\tExample: 12.1")
 			err = true
 		end
@@ -839,7 +847,7 @@ function set_ios_config()
 		local sysroot_path = os.getenv("SYSROOTPATH")
 		local framework_path = sysroot_path .. "/System/Library/Frameworks"
 		local framework_libs_path = framework_path .. "/usr/lib"
-		local sysroot_ver = " -miphoneos-version-min=9.0 -isysroot " .. sysroot_path
+		local sysroot_ver = " -miphoneos-version-min=16.3 -isysroot " .. sysroot_path
 
 		buildoptions { sysroot_ver .. " -I" .. sysroot_path .. "/usr/include" }
 		linkoptions { sysroot_ver }
@@ -955,13 +963,17 @@ function build_eepp( build_name )
 		"src/thirdparty/libogg/include",
 		"src/thirdparty/libvorbis/include",
 		"src/thirdparty/mbedtls/include",
-		"src/thirdparty/pcre2/src"
+		"src/thirdparty/pcre2/src",
+		"src/thirdparty/oniguruma",
+		"src/thirdparty/libwebp/src",
+		"src/thirdparty/SheenBidi/Headers",
+		"src/thirdparty/SheenBidi/Headers/SheenBidi",
 	}
 
-	defines { "PCRE2_STATIC", "PCRE2_CODE_UNIT_WIDTH=8" }
+	defines { "PCRE2_STATIC", "PCRE2_CODE_UNIT_WIDTH=8", "ONIG_STATIC" }
 
 	if not _OPTIONS["without-mojoal"] then
-		defines( "AL_LIBTYPE_STATIC" )
+		defines { "AL_LIBTYPE_STATIC", "EE_MOJOAL" }
 		includedirs { "src/thirdparty/mojoAL" }
 	end
 
@@ -976,9 +988,9 @@ function build_eepp( build_name )
 	end
 
 	if not is_vs() then
-		buildoptions{ "-std=c++17" }
+		buildoptions{ "-std=c++20" }
 	else
-		buildoptions{ "/std:c++17", "/utf-8", "/bigobj" }
+		buildoptions{ "/std:c++20", "/utf-8", "/bigobj" }
 	end
 
 	if os.is_real("mingw32") or os.is_real("mingw64") or os.is_real("windows") then
@@ -1059,6 +1071,8 @@ solution "eepp"
 
 	if os.is_real("macosx") then
 		defines { "GL_SILENCE_DEPRECATION" }
+	elseif os.is_real("ios") then
+		defines { "GLES_SILENCE_DEPRECATION" }
 	end
 
 	project "SOIL2-static"
@@ -1106,6 +1120,7 @@ solution "eepp"
 	project "zlib-static"
 		kind "StaticLib"
 		language "C"
+		defines { "_LARGEFILE64_SOURCE" }
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		files { "src/thirdparty/zlib/*.c" }
 		build_base_configuration( "zlib" )
@@ -1125,6 +1140,14 @@ solution "eepp"
 		files { "src/thirdparty/libpng/**.c" }
 		includedirs { "src/thirdparty/libpng/include" }
 		build_base_configuration( "libpng" )
+
+	project "libwebp-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/libwebp/**.c" }
+		includedirs { "src/thirdparty/libwebp" }
+		build_base_configuration( "libwebp" )
 
 	project "freetype-static"
 		kind "StaticLib"
@@ -1169,13 +1192,74 @@ solution "eepp"
 			'src/thirdparty/pcre2/src/pcre2_valid_utf.c',
 			'src/thirdparty/pcre2/src/pcre2_xclass.c',
 		}
-		if not os.is_real("emscripten") then
+		if not os.is_real("emscripten") and not os.is_real("ios") then
 			files { 'src/thirdparty/pcre2/src/pcre2_jit_compile.c' }
 		end
 		includedirs { "src/thirdparty/pcre2/src" }
 		build_base_configuration( "pcre2-8" )
 
-	if _OPTIONS["with-text-shaper"] then
+	project "oniguruma-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files {
+			'src/thirdparty/oniguruma/regcomp.c',
+			'src/thirdparty/oniguruma/regenc.c',
+			'src/thirdparty/oniguruma/regerror.c',
+			'src/thirdparty/oniguruma/regext.c',
+			'src/thirdparty/oniguruma/regexec.c',
+			'src/thirdparty/oniguruma/regparse.c',
+			'src/thirdparty/oniguruma/regsyntax.c',
+			'src/thirdparty/oniguruma/regtrav.c',
+			'src/thirdparty/oniguruma/regversion.c',
+			'src/thirdparty/oniguruma/st.c',
+			'src/thirdparty/oniguruma/reggnu.c',
+			'src/thirdparty/oniguruma/regposerr.c',
+			'src/thirdparty/oniguruma/regposix.c',
+			'src/thirdparty/oniguruma/mktable.c',
+			'src/thirdparty/oniguruma/ascii.c',
+			'src/thirdparty/oniguruma/euc_jp.c',
+			'src/thirdparty/oniguruma/euc_tw.c',
+			'src/thirdparty/oniguruma/euc_kr.c',
+			'src/thirdparty/oniguruma/sjis.c',
+			'src/thirdparty/oniguruma/big5.c',
+			'src/thirdparty/oniguruma/gb18030.c',
+			'src/thirdparty/oniguruma/koi8.c',
+			'src/thirdparty/oniguruma/koi8_r.c',
+			'src/thirdparty/oniguruma/cp1251.c',
+			'src/thirdparty/oniguruma/iso8859_1.c',
+			'src/thirdparty/oniguruma/iso8859_2.c',
+			'src/thirdparty/oniguruma/iso8859_3.c',
+			'src/thirdparty/oniguruma/iso8859_4.c',
+			'src/thirdparty/oniguruma/iso8859_5.c',
+			'src/thirdparty/oniguruma/iso8859_6.c',
+			'src/thirdparty/oniguruma/iso8859_7.c',
+			'src/thirdparty/oniguruma/iso8859_8.c',
+			'src/thirdparty/oniguruma/iso8859_9.c',
+			'src/thirdparty/oniguruma/iso8859_10.c',
+			'src/thirdparty/oniguruma/iso8859_11.c',
+			'src/thirdparty/oniguruma/iso8859_13.c',
+			'src/thirdparty/oniguruma/iso8859_14.c',
+			'src/thirdparty/oniguruma/iso8859_15.c',
+			'src/thirdparty/oniguruma/iso8859_16.c',
+			'src/thirdparty/oniguruma/utf8.c',
+			'src/thirdparty/oniguruma/utf16_be.c',
+			'src/thirdparty/oniguruma/utf16_le.c',
+			'src/thirdparty/oniguruma/utf32_be.c',
+			'src/thirdparty/oniguruma/utf32_le.c',
+			'src/thirdparty/oniguruma/unicode.c',
+			'src/thirdparty/oniguruma/unicode_fold_data.c',
+			'src/thirdparty/oniguruma/unicode_fold1_key.c',
+			'src/thirdparty/oniguruma/unicode_fold2_key.c',
+			'src/thirdparty/oniguruma/unicode_fold3_key.c',
+			'src/thirdparty/oniguruma/onig_init.c',
+			'src/thirdparty/oniguruma/unicode_unfold_key.c',
+		}
+		defines { "ONIG_STATIC" }
+		includedirs { "src/thirdparty/oniguruma" }
+		build_base_configuration( "oniguruma" )
+
+	if not _OPTIONS["without-text-shaper"] then
 		project "harfbuzz-static"
 			kind "StaticLib"
 			language "C++"
@@ -1187,6 +1271,14 @@ solution "eepp"
 			if is_vs() then
 				buildoptions{ "/bigobj" }
 			end
+
+		project "SheenBidi-static"
+			kind "StaticLib"
+			language "C"
+			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+			files { "src/thirdparty/SheenBidi/Source/**.c" }
+			includedirs { "src/thirdparty/SheenBidi/Headers" }
+			build_base_configuration( "sheenbidi" )
 	end
 
 	project "chipmunk-static"
@@ -1222,7 +1314,7 @@ solution "eepp"
 		project "mojoal-static"
 			kind "StaticLib"
 			language "C"
-			defines( "AL_LIBTYPE_STATIC" )
+			defines {"AL_LIBTYPE_STATIC", "EE_MOJOAL" }
 			set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 			includedirs { "include/eepp/thirdparty/mojoAL" }
 			files { "src/thirdparty/mojoAL/*.c" }
@@ -1235,9 +1327,9 @@ solution "eepp"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty/efsw/src" }
 		if not is_vs() then
-			buildoptions{ "-std=c++17" }
+			buildoptions{ "-std=c++20" }
 		else
-			buildoptions{ "/std:c++17" }
+			buildoptions{ "/std:c++20" }
 		end
 
 		if os.is("windows") then
@@ -1297,9 +1389,9 @@ solution "eepp"
 			defines { "EE_STATIC" }
 		end
 		if not is_vs() then
-			buildoptions{ "-std=c++17" }
+			buildoptions{ "-std=c++20" }
 		else
-			buildoptions{ "/std:c++17" }
+			buildoptions{ "/std:c++20" }
 		end
 		build_base_cpp_configuration( "eepp-maps-static" )
 
@@ -1315,9 +1407,9 @@ solution "eepp"
 			defines { "EE_STATIC" }
 		end
 		if not is_vs() then
-			buildoptions{ "-std=c++17" }
+			buildoptions{ "-std=c++20" }
 		else
-			buildoptions{ "/std:c++17" }
+			buildoptions{ "/std:c++20" }
 		end
 		build_base_cpp_configuration( "eepp-maps" )
 		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp-maps" )
@@ -1330,9 +1422,9 @@ solution "eepp"
 		files { "src/modules/physics/src/**.cpp", "src/eepp/physics/constraints/*.cpp" }
 		defines { "EE_PHYSICS_STATIC" }
 		if not is_vs() then
-			buildoptions{ "-std=c++17" }
+			buildoptions{ "-std=c++20" }
 		else
-			buildoptions{ "/std:c++17" }
+			buildoptions{ "/std:c++20" }
 		end
 		build_base_cpp_configuration( "eepp-physics-static" )
 
@@ -1345,9 +1437,9 @@ solution "eepp"
 		links { "chipmunk-static", "eepp-shared" }
 		defines { "EE_PHYSICS_EXPORTS" }
 		if not is_vs() then
-			buildoptions{ "-std=c++17" }
+			buildoptions{ "-std=c++20" }
 		else
-			buildoptions{ "/std:c++17" }
+			buildoptions{ "/std:c++20" }
 		end
 		build_base_cpp_configuration( "eepp-physics" )
 		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp-physics" )
@@ -1365,9 +1457,9 @@ solution "eepp"
 			defines { "WINVER=0x0602" }
 		end
 		if not is_vs() then
-			buildoptions{ "-std=c++17" }
+			buildoptions{ "-std=c++20" }
 		else
-			buildoptions{ "/std:c++17" }
+			buildoptions{ "/std:c++20" }
 		end
 		build_base_cpp_configuration( "eterm" )
 
@@ -1381,9 +1473,9 @@ solution "eepp"
 			defines { "EE_STATIC" }
 		end
 		if not is_vs() then
-			buildoptions{ "-std=c++17" }
+			buildoptions{ "-std=c++20" }
 		else
-			buildoptions{ "/std:c++17" }
+			buildoptions{ "/std:c++20" }
 		end
 		build_base_cpp_configuration( "languages-syntax-highlighting" )
 
@@ -1402,7 +1494,7 @@ solution "eepp"
 		set_targetdir("libs/" .. os.get_real() .. "/")
 		build_eepp( "eepp" )
 		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/", "eepp" )
-		postsymlinklib("../libs/" .. os.get_real() .. "/", "../../bin/unit_tests/", "eepp" )
+		postsymlinklib("../../libs/" .. os.get_real() .. "/", "../../bin/unit_tests/", "eepp" )
 
 	-- Examples
 	project "eepp-external-shader"
@@ -1574,24 +1666,19 @@ solution "eepp"
 			links { "CoreFoundation.framework", "CoreServices.framework", "Cocoa.framework" }
 			links { "ecode-macos-helper-static" }
 		end
-		if _OPTIONS["with-debug-symbols"] then
-			defines { "ECODE_USE_BACKWARD" }
-		end
 		if os.is_real("linux") then
-			if _OPTIONS["with-debug-symbols"] then
-				links { "util", "bfd", "dw", "dl", "stdc++fs" }
-			else
-				links { "util", "stdc++fs" }
+			links { "util" }
+
+			if os_findlib("dw") then
+				links { "dw" }
+				defines { "ECODE_HAS_DW" }
 			end
 		end
-		if (os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64")) and _OPTIONS["with-debug-symbols"] then
+		if os.is_real("windows") or os.is_real("mingw32") or os.is_real("mingw64") then
 			links { "dbghelp", "psapi" }
-			if os.is_real("mingw32") or os.is_real("mingw64") then
-				links { "msvcr90" }
-			end
 		end
 		if os.is("haiku") then
-			links { "bsd" }
+			links { "bsd", "network" }
 		end
 		if os.is("windows") and not is_vs() then
 			if os.is64bit() then
@@ -1602,6 +1689,17 @@ solution "eepp"
 			buildoptions{ "-Wa,-mbig-obj" }
 		end
 		build_link_configuration( "ecode", false )
+		configuration { "release", "windows" }
+			if not is_vs() then
+				buildoptions { "-g1" }
+			end
+		configuration { "release" }
+			if os.is_real("linux") or os.is_real("macosx") or os.is_real("bsd") or os.is_real("haiku") then
+				buildoptions { "-g1", "-fvisibility=default" }
+			end
+			if os.is_real("linux") or os.is_real("bsd") then
+				linkoptions { "-rdynamic" }
+			end
 
 	project "eterm"
 		set_kind()

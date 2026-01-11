@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addVala() {
+SyntaxDefinition& addVala() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -18,8 +18,17 @@ void addVala() {
 			  { { "'", "'" }, "string" },
 			  { { "-?0x%x+" }, "number" },
 			  { { "-?%.?%d+[uUlLfFdDmM]?" }, "number" },
+			  { { "(class|interface|struct)\\s+([A-Za-z]\\w*)" },
+				{ "keyword", "keyword", "type" },
+				"",
+				SyntaxPatternMatchType::RegEx },
+			  { { "(class|interface|struct)\\s+([A-Za-z]\\w*)\\s*:\\s*([A-Za-z]\\w*)" },
+				{ "keyword", "keyword", "type", "type" },
+				"",
+				SyntaxPatternMatchType::RegEx },
 			  { { "-?%d+[%d%.eE]*f?" }, "number" },
 			  { { "[%+%-/%*%<>!=%^&|?~:;%.%(%)%[%]{}]" }, "operator" },
+			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 		  },
 		  {
@@ -37,7 +46,7 @@ void addVala() {
 			  { "as", "keyword" },			{ "base", "keyword" },		{ "break", "keyword" },
 			  { "case", "keyword" },		{ "catch", "keyword" },		{ "construct", "keyword" },
 			  { "continue", "keyword" },	{ "default", "keyword" },	{ "delete", "keyword" },
-			  { "do", "keyword" },
+			  { "do", "keyword" },			{ "owned", "keyword" },		{ "yield", "keyword" },
 
 			  { "else", "keyword" },		{ "ensures", "keyword" },	{ "finally", "keyword" },
 			  { "for", "keyword" },			{ "foreach", "keyword" },	{ "get", "keyword" },
@@ -50,21 +59,21 @@ void addVala() {
 			  { "typeof", "keyword" },
 
 			  { "value", "keyword" },		{ "var", "keyword" },		{ "void", "keyword" },
-			  { "while", "keyword" },
+			  { "while", "keyword" },		{ "async", "keyword" },		{ "internal", "keyword" },
 
 			  { "null", "keyword" },		{ "true", "keyword" },		{ "false", "keyword" },
 
-			  { "bool", "keyword2" },		{ "char", "keyword2" },		{ "double", "keyword2" },
-			  { "float", "keyword2" },		{ "int", "keyword2" },		{ "int8", "keyword2" },
-			  { "int16", "keyword2" },		{ "int32", "keyword2" },	{ "int64", "keyword2" },
-			  { "long", "keyword2" },		{ "short", "keyword2" },
+			  { "bool", "type" },			{ "char", "type" },			{ "double", "type" },
+			  { "float", "type" },			{ "int", "type" },			{ "int8", "type" },
+			  { "int16", "type" },			{ "int32", "type" },		{ "int64", "type" },
+			  { "long", "type" },			{ "short", "type" },
 
-			  { "size_t", "keyword2" },		{ "ssize_t", "keyword2" },	{ "string", "keyword2" },
-			  { "uchar", "keyword2" },		{ "uint", "keyword2" },		{ "uint8", "keyword2" },
-			  { "uint16", "keyword2" },		{ "uint32", "keyword2" },	{ "uint64", "keyword2" },
-			  { "ulong", "keyword2" },
+			  { "size_t", "type" },			{ "ssize_t", "type" },		{ "string", "type" },
+			  { "uchar", "type" },			{ "uint", "type" },			{ "uint8", "type" },
+			  { "uint16", "type" },			{ "uint32", "type" },		{ "uint64", "type" },
+			  { "ulong", "type" },			{ "IOError", "type" },		{ "Object", "type" },
 
-			  { "unichar", "keyword2" },	{ "ushort", "keyword2" },
+			  { "unichar", "type" },		{ "ushort", "type" },		{ "Error", "type" },
 
 		  },
 		  "//",
@@ -73,6 +82,8 @@ void addVala() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	sd.setBlockComment( { "/*", "*/" } );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

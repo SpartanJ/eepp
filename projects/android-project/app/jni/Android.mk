@@ -61,16 +61,23 @@ LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES)
 
 CORE_SRCS				:= tools/ecode/*.cpp \
 							tools/ecode/plugins/*.cpp \
+							tools/ecode/plugins/aiassistant/*.cpp \
 							tools/ecode/plugins/autocomplete/*.cpp \
+							tools/ecode/plugins/debugger/*.cpp \
+							tools/ecode/plugins/debugger/dap/*.cpp \
+							tools/ecode/plugins/debugger/models/*.cpp \
 							tools/ecode/plugins/git/*.cpp \
 							tools/ecode/plugins/linter/*.cpp \
 							tools/ecode/plugins/formatter/*.cpp \
 							tools/ecode/plugins/lsp/*.cpp \
+							tools/ecode/plugins/spellchecker/*.cpp \
+							tools/ecode/plugins/discordRPC/*.cpp \
+							tools/ecode/plugins/discordRPC/sdk/*.cpp \
 							tools/ecode/plugins/xmltools/*.cpp
 
 LOCAL_SRC_FILES			:= $(SDL_MAIN_PATH) $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES	:= efsw eterm eepp
+LOCAL_STATIC_LIBRARIES	:= efsw eterm languages-syntax-highlighting eepp
 
 include $(BUILD_SHARED_LIBRARY)
 #************ ecode ************

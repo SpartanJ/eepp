@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addClojure() {
+SyntaxDefinition& addClojure() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Clojure",
 		  { "%.clj$", "%.cljs$", "%.clc$", "%.edn$" },
@@ -17,9 +17,9 @@ void addClojure() {
 			  { { "\"\"\"", "\"\"\"", "\\" }, "string" },
 			  { { "(Retention)(%s+)([%a_][%w_/]*)" },
 				{ "normal", "keyword", "normal", "literal" } },
-			  { { ":[%a_][%w_/%-]*" }, "keyword2" },
+			  { { ":[%a_][%w_/%-]*" }, "type" },
 			  { { "([%a_][%w_]*)(%.)([%a_][%w_/%-]*)" },
-				{ "normal", "keyword", "operator", "keyword2" } },
+				{ "normal", "keyword", "operator", "type" } },
 			  { { "(%()(def)(%s+)([%a_][%w_%-]*)" },
 				{ "normal", "normal", "keyword", "literal", "literal" } },
 			  { { "(%()(def[%a_][%w_]*)(%s+)([%a_][%w_%-]*)" },
@@ -32,18 +32,16 @@ void addClojure() {
 			  { { "-?%.?%d+f?" }, "number" },
 			  { { "[!%#%$%%&*+./%<=>%?@\\%^|%-~:]" }, "operator" },
 			  { { "[%a_'][%w_']*" }, "normal" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {
-			  { "int", "literal" },		 { "str", "keyword" },	  { "false", "keyword2" },
-			  { "get", "keyword" },		 { "def", "keyword" },	  { "Deprecated", "keyword" },
-			  { "catch", "keyword" },	 { "true", "keyword2" },  { "defn", "keyword" },
-			  { "apply", "keyword" },	 { "vector", "keyword" }, { "nil", "literal" },
-			  { "require", "keyword2" }, { "try", "keyword" },	  { "String", "keyword" },
-			  { "fn", "keyword" },		 { "ns", "keyword" },	  { "cond", "keyword" },
-			  { "if", "keyword" },		 { "let", "keyword" },	  { "Retention", "keyword" },
+			  { "int", "literal" },		{ "str", "keyword" },	 { "false", "type" },
+			  { "get", "keyword" },		{ "def", "keyword" },	 { "Deprecated", "keyword" },
+			  { "catch", "keyword" },	{ "true", "type" },		 { "defn", "keyword" },
+			  { "apply", "keyword" },	{ "vector", "keyword" }, { "nil", "literal" },
+			  { "require", "type" },	{ "try", "keyword" },	 { "String", "keyword" },
+			  { "fn", "keyword" },		{ "ns", "keyword" },	 { "cond", "keyword" },
+			  { "if", "keyword" },		{ "let", "keyword" },	 { "Retention", "keyword" },
 			  { "println", "keyword" },
 
 		  },

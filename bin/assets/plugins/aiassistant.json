@@ -1,0 +1,419 @@
+{
+  "config": {},
+  "providers": {
+    "anthropic": {
+      "api_url": "https://api.anthropic.com/v1/messages",
+      "models": [
+        {
+          "cache_configuration": {
+            "max_cache_anchors": 4,
+            "min_total_token": 2048,
+            "should_speculate": true
+          },
+          "default_temperature": 1.0,
+          "display_name": "Claude Opus 4.5",
+          "max_output_tokens": 8192,
+          "max_tokens": 200000,
+          "name": "claude-opus-4-5-20251101"
+        },
+        {
+          "cache_configuration": {
+            "max_cache_anchors": 4,
+            "min_total_token": 2048,
+            "should_speculate": true
+          },
+          "default_temperature": 1.0,
+          "display_name": "Claude Haiku 4.5",
+          "max_output_tokens": 8192,
+          "max_tokens": 200000,
+          "name": "claude-haiku-4-5-20251001"
+        },
+        {
+          "cache_configuration": {
+            "max_cache_anchors": 4,
+            "min_total_token": 2048,
+            "should_speculate": true
+          },
+          "default_temperature": 1.0,
+          "display_name": "Claude Sonnet 4.5",
+          "max_output_tokens": 8192,
+          "max_tokens": 200000,
+          "name": "claude-sonnet-4-5-20250929"
+        },
+        {
+          "cache_configuration": {
+            "max_cache_anchors": 4,
+            "min_total_token": 2048,
+            "should_speculate": true
+          },
+          "default_temperature": 1.0,
+          "display_name": "Claude Opus 4.1",
+          "max_output_tokens": 8192,
+          "max_tokens": 200000,
+          "name": "claude-opus-4-1-20250805"
+        },
+        {
+          "cache_configuration": {
+            "max_cache_anchors": 4,
+            "min_total_token": 2048,
+            "should_speculate": true
+          },
+          "default_temperature": 1.0,
+          "display_name": "Claude Opus 4",
+          "max_output_tokens": 8192,
+          "max_tokens": 200000,
+          "name": "claude-opus-4-20250514"
+        },
+        {
+          "cache_configuration": {
+            "max_cache_anchors": 4,
+            "min_total_token": 2048,
+            "should_speculate": true
+          },
+          "default_temperature": 1.0,
+          "display_name": "Claude Sonnet 4",
+          "max_output_tokens": 8192,
+          "max_tokens": 200000,
+          "name": "claude-sonnet-4-20250514"
+        }
+      ],
+      "version": 1
+    },
+    "deepseek": {
+      "api_url": "https://api.deepseek.com/v1/chat/completions",
+      "display_name": "DeepSeek",
+      "models": [
+        {
+          "display_name": "DeepSeek Chat",
+          "max_output_tokens": 8192,
+          "max_tokens": 64000,
+          "name": "deepseek-chat",
+          "cheapest": true
+        },
+        {
+          "display_name": "DeepSeek Reasoner",
+          "max_output_tokens": 8192,
+          "max_tokens": 64000,
+          "name": "deepseek-reasoner"
+        }
+      ],
+      "version": 1
+    },
+    "google": {
+      "api_url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+      "models": [
+        {
+          "name": "gemini-2.5-flash-lite",
+          "display_name": "Gemini 2.5 Flash Lite",
+          "max_tokens": 1000000,
+          "cheapest": true
+        },
+        {
+          "name": "gemini-2.5-pro",
+          "display_name": "Gemini 2.5 Pro",
+          "max_tokens": 1000000
+        },
+        {
+          "name": "gemini-2.5-flash",
+          "display_name": "Gemini 2.5 Flash",
+          "max_tokens": 1000000
+        },
+        {
+          "name": "gemini-3-pro-preview",
+          "display_name": "Gemini 3 Pro Preview",
+          "max_tokens": 1000000
+        }
+      ]
+    },
+    "lmstudio": {
+      "api_url": "http://localhost:1234/api/v0/chat/completions",
+      "display_name": "LMStudio",
+      "fetch_models_url": "http://localhost:1234/api/v0/models",
+      "open_api": true
+    },
+    "mistral": {
+      "api_url": "https://api.mistral.ai/v1/chat/completions",
+      "models": [
+        {
+          "display_name": "codestral-latest",
+          "max_tokens": 256000,
+          "name": "codestral-latest"
+        },
+        {
+          "display_name": "mistral-large-latest",
+          "max_tokens": 131000,
+          "name": "mistral-large-latest"
+        },
+        {
+          "display_name": "mistral-small-latest",
+          "max_tokens": 32000,
+          "name": "mistral-small-latest",
+          "cheapest": true
+        },
+        {
+          "display_name": "open-mistral-nemo",
+          "max_tokens": 131000,
+          "name": "open-mistral-nemo"
+        },
+        {
+          "display_name": "open-codestral-mamba",
+          "max_tokens": 256000,
+          "name": "open-codestral-mamba"
+        }
+      ],
+      "version": 1
+    },
+    "ollama": {
+      "api_url": "http://localhost:11434/api/chat",
+      "fetch_models_url": "http://localhost:11434/api/tags",
+      "open_api": true
+    },
+    "openai": {
+      "api_url": "https://api.openai.com/v1/chat/completions",
+      "display_name": "OpenAI",
+      "models": [
+        {
+          "max_tokens": 128000,
+          "name": "gpt-4o"
+        },
+        {
+          "max_tokens": 128000,
+          "name": "gpt-4o-mini"
+        },
+        {
+          "max_tokens": 200000,
+          "name": "o1"
+        },
+        {
+          "max_tokens": 128000,
+          "name": "o1-mini"
+        },
+        {
+          "max_tokens": 200000,
+          "name": "o3-mini"
+        },
+        {
+          "name": "gpt-4.1-nano"
+        },
+        {
+          "name": "gpt-4.1-mini"
+        },
+        {
+          "name": "gpt-4.1"
+        },
+        {
+          "name": "o4-mini"
+        },
+        {
+          "name": "o3"
+        },
+        {
+          "name": "o3-pro"
+        },
+        {
+          "name": "o1-pro"
+        },
+        {
+          "name": "gpt-5"
+        },
+        {
+          "name": "gpt-5-mini"
+        },
+        {
+          "name": "gpt-5-nano",
+          "cheapest": true
+        },
+        {
+          "name": "gpt-5-pro"
+        },
+        {
+          "name": "gpt-5.1"
+        },
+        {
+          "name": "gpt-5.2"
+        },
+        {
+          "name": "gpt-5.2-pro"
+        },
+        {
+          "name": "gpt-5.1-codex-max"
+        },
+        {
+          "name": "gpt-5.1-codex"
+        }
+      ],
+      "version": 1
+    },
+    "xai": {
+      "api_url": "https://api.x.ai/v1/chat/completions",
+      "display_name": "xAI",
+      "models": [
+        {
+          "name": "grok-4-1-fast-non-reasoning-latest",
+          "cheapest": true
+        },
+        {
+          "name": "grok-code-fast-1"
+        },
+        {
+          "name": "grok-4-1-fast-reasoning-latest"
+        },
+        {
+          "name": "grok-3-latest"
+        },
+        {
+          "name": "grok-4-latest"
+        }
+      ]
+    },
+    "github": {
+      "api_url": "https://models.github.ai/inference/chat/completions",
+      "display_name": "GitHub",
+      "models": [
+        {
+          "name": "openai/gpt-5",
+          "display_name": "GitHub OpenAI GPT-5",
+          "tool_calling": true
+        },
+        {
+          "name": "openai/gpt-5-mini",
+          "display_name": "GitHub OpenAI GPT-5 mini",
+          "tool_calling": true
+        },
+        {
+          "name": "openai/gpt-5-nano",
+          "display_name": "GitHub OpenAI GPT-5 nano",
+          "tool_calling": true
+        },
+        {
+          "name": "openai/gpt-4.1",
+          "display_name": "GitHub OpenAI GPT-4.1",
+          "tool_calling": true
+        },
+        {
+          "name": "openai/gpt-4.1-mini",
+          "display_name": "GitHub OpenAI GPT-4.1 Mini",
+          "tool_calling": true
+        },
+        {
+          "name": "openai/o3",
+          "display_name": "GitHub OpenAI o3",
+          "reasoning": true,
+          "tool_calling": true
+        },
+        {
+          "name": "openai/o3-mini",
+          "display_name": "GitHub OpenAI o3 Mini",
+          "reasoning": true,
+          "tool_calling": true
+        },
+        {
+          "name": "openai/o4-mini",
+          "display_name": "GitHub OpenAI o4 Mini",
+          "reasoning": true,
+          "tool_calling": true
+        },
+        {
+          "name": "deepseek/deepseek-v3-0324",
+          "display_name": "GitHub DeepSeek V3-0324"
+        },
+        {
+          "name": "mistral-ai/codestral-2501",
+          "display_name": "GitHub Mistral Codestral 25.01"
+        },
+        {
+          "name": "meta/llama-4-scout-17b-16e-instruct",
+          "display_name": "GitHub Meta Llama 4 Scout 17B",
+          "reasoning": true,
+          "tool_calling": true
+        },
+        {
+          "name": "deepseek/deepseek-r1-0528",
+          "display_name": "GitHub DeepSeek R1-0528",
+          "tool_calling": true
+        },
+        {
+          "name": "xai/grok-3",
+          "display_name": "GitHub xAI Grok 3",
+          "reasoning": true
+        },
+        {
+          "name": "xai/grok-3-mini",
+          "display_name": "GitHub xAI Grok 3 Mini",
+          "cheapest": true
+        }
+      ]
+    },
+    "perplexity": {
+      "api_url": "https://api.perplexity.ai/chat/completions",
+      "display_name": "Perplexity",
+      "models": [
+        {
+          "name": "sonar-reasoning",
+          "display_name": "Sonar Reasoning",
+          "tool_calling": true
+        },
+        {
+          "name": "sonar-deep-research",
+          "display_name": "Sonar Deep Research",
+          "tool_calling": true
+        },
+        {
+          "name": "sonar",
+          "display_name": "Sonar",
+          "tool_calling": true
+        }
+      ]
+    },
+    "openrouter": {
+      "api_url": "https://openrouter.ai/api/v1/chat/completions",
+      "display_name": "OpenRouter",
+      "models": [
+        {
+          "name": "x-ai/grok-4-fast",
+          "display_name": "xAI: Grok 4 Fast"
+        },
+        {
+          "name": "deepseek/deepseek-chat-v3.1",
+          "display_name": "DeepSeek: DeepSeek V3.1"
+        },
+        {
+          "name": "x-ai/grok-code-fast-1",
+          "display_name": "xAI: Grok Code Fast 1"
+        },
+        {
+          "name": "anthropic/claude-sonnet-4",
+          "display_name": "Anthropic: Claude Sonnet 4"
+        },
+        {
+          "name": "google/gemini-2.5-flash",
+          "display_name": "Google: Gemini 2.5 Flash"
+        },
+        {
+          "name": "deepseek/deepseek-chat-v3-0324",
+          "display_name": "DeepSeek: DeepSeek V3 0324"
+        },
+        {
+          "name": "google/gemini-2.5-pro",
+          "display_name": "Google: Gemini 2.5 Pro"
+        },
+        {
+          "name": "openai/gpt-5",
+          "display_name": "OpenAI: GPT-5"
+        },
+        {
+          "name": "google/gemini-2.5-flash-lite",
+          "display_name": "Google: Gemini 2.5 Flash Lite"
+        },
+        {
+          "name": "openai/gpt-5.2",
+          "display_name": "OpenAI: GPT-5.2"
+        },
+        {
+          "name": "openai/gpt-5.2-pro",
+          "display_name": "OpenAI: GPT-5 Pro"
+        }
+      ]
+    }
+  }
+}

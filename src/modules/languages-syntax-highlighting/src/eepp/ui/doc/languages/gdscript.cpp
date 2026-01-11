@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addGDScript() {
+SyntaxDefinition& addGDScript() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -22,53 +22,53 @@ void addGDScript() {
 
 		  },
 		  {
-			  { "Array", "keyword2" },
-			  { "RID", "keyword2" },
-			  { "NodePath", "keyword2" },
-			  { "Basis", "keyword2" },
-			  { "Transform", "keyword2" },
-			  { "Quat", "keyword2" },
-			  { "void", "keyword2" },
-			  { "Transform2D", "keyword2" },
-			  { "AABB", "keyword2" },
+			  { "Array", "type" },
+			  { "RID", "type" },
+			  { "NodePath", "type" },
+			  { "Basis", "type" },
+			  { "Transform", "type" },
+			  { "Quat", "type" },
+			  { "void", "type" },
+			  { "Transform2D", "type" },
+			  { "AABB", "type" },
 			  { "true", "literal" },
-			  { "Vector3", "keyword2" },
-			  { "int", "keyword2" },
+			  { "Vector3", "type" },
+			  { "int", "type" },
 			  { "mastersync", "keyword" },
 			  { "is", "keyword" },
 			  { "signal", "keyword" },
 			  { "class", "keyword" },
-			  { "Rect2", "keyword2" },
+			  { "Rect2", "type" },
 			  { "pass", "keyword" },
 			  { "elif", "keyword" },
-			  { "PoolStringArray", "keyword2" },
+			  { "PoolStringArray", "type" },
 			  { "as", "keyword" },
 			  { "TAU", "literal" },
 			  { "INF", "literal" },
 			  { "and", "keyword" },
-			  { "PoolVector2Array", "keyword2" },
+			  { "PoolVector2Array", "type" },
 			  { "for", "keyword" },
-			  { "Color", "keyword2" },
-			  { "PoolIntArray", "keyword2" },
+			  { "Color", "type" },
+			  { "PoolIntArray", "type" },
 			  { "tool", "keyword" },
-			  { "bool", "keyword2" },
+			  { "bool", "type" },
 			  { "continue", "keyword" },
-			  { "Object", "keyword2" },
+			  { "Object", "type" },
 			  { "NAN", "literal" },
-			  { "Dictionary", "keyword2" },
+			  { "Dictionary", "type" },
 			  { "self", "keyword" },
 			  { "const", "keyword" },
 			  { "or", "keyword" },
 			  { "false", "literal" },
-			  { "PoolByteArray", "keyword2" },
+			  { "PoolByteArray", "type" },
 			  { "PI", "literal" },
 			  { "var", "keyword" },
 			  { "while", "keyword" },
-			  { "PoolVector3Array", "keyword2" },
+			  { "PoolVector3Array", "type" },
 			  { "func", "keyword" },
 			  { "if", "keyword" },
 			  { "setget", "keyword" },
-			  { "String", "keyword2" },
+			  { "String", "type" },
 			  { "else", "keyword" },
 			  { "in", "keyword" },
 			  { "onready", "keyword" },
@@ -77,9 +77,9 @@ void addGDScript() {
 			  { "match", "keyword" },
 			  { "static", "keyword" },
 			  { "extends", "keyword" },
-			  { "PoolColorArray", "keyword2" },
-			  { "float", "keyword2" },
-			  { "Plane", "keyword2" },
+			  { "PoolColorArray", "type" },
+			  { "float", "type" },
+			  { "Plane", "type" },
 			  { "puppet", "keyword" },
 			  { "remotesync", "keyword" },
 			  { "return", "keyword" },
@@ -87,7 +87,7 @@ void addGDScript() {
 			  { "enum", "keyword" },
 			  { "breakpoint", "keyword" },
 			  { "null", "literal" },
-			  { "Vector2", "keyword2" },
+			  { "Vector2", "type" },
 			  { "preload", "keyword" },
 			  { "export", "keyword" },
 			  { "yield", "keyword" },
@@ -95,7 +95,7 @@ void addGDScript() {
 			  { "assert", "keyword" },
 			  { "remote", "keyword" },
 			  { "master", "keyword" },
-			  { "PoolRealArray", "keyword2" },
+			  { "PoolRealArray", "type" },
 
 		  },
 		  "#",
@@ -104,6 +104,7 @@ void addGDScript() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

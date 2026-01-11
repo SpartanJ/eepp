@@ -4,18 +4,61 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/window/engine.hpp>
 
+#include <bitset>
+
 namespace EE { namespace Graphics {
 
+// Maximum Unicode code point for emojis (covering up to U+1FAFF)
+constexpr size_t MAX_EMOJI_CODE_POINT = 0x1FAFF + 1; // 129791
+
+// Static bitset to store emoji code points
+static const std::bitset<MAX_EMOJI_CODE_POINT> emojiLookup = []() {
+	std::bitset<MAX_EMOJI_CODE_POINT> bits;
+
+	// Define emoji ranges (Unicode 15.1, tailored for Noto Sans Color Emoji)
+	static constexpr struct {
+		uint32_t min, max;
+	} ranges[] = {
+		{ 0x1F300, 0x1F5FF }, // Miscellaneous Symbols and Pictographs
+		{ 0x1F600, 0x1F64F }, // Emoticons
+		{ 0x1F680, 0x1F6FF }, // Transport and Map Symbols
+		{ 0x1F900, 0x1F9FF }, // Supplemental Symbols and Pictographs
+		{ 0x1FA70, 0x1FAFF }, // Symbols and Pictographs Extended-A
+		{ 0x2600, 0x26FF },	  // Miscellaneous Symbols
+		{ 0x2700, 0x27BF },	  // Dingbats
+		{ 0x1F1E6, 0x1F1FF }, // Regional Indicator Symbols
+		{ 0x1F000, 0x1F02F }, // Mahjong Tiles, Domino Tiles
+		{ 0x1F0A0, 0x1F0FF }, // Playing Cards
+		{ 0x1F100, 0x1F1FF }, // Enclosed Alphanumeric Supplement (partial)
+		{ 0x1F200, 0x1F2FF }, // Enclosed Ideographic Supplement (partial)
+	};
+
+	// Define single emoji code points
+	static constexpr uint32_t singles[] = {
+		0x203C, 0x2049, 0x2139, 0x231A, 0x231B, 0x2328, 0x23CF, 0x23E9,
+		0x23F0, 0x23F3, 0x25AA, 0x25AB, 0x25B6, 0x25C0, 0x25FB, 0x25FC,
+		0x25FD, 0x25FE, 0x2B50, 0x2B55, 0x3030, 0x303D, 0x3297, 0x3299,
+	};
+
+	// Set bits for ranges
+	for ( const auto& range : ranges )
+		for ( uint32_t i = range.min; i <= range.max; ++i )
+			bits.set( i );
+
+	// Set bits for single code points
+	for ( const auto& code : singles )
+		bits.set( code );
+
+	// Set bits for emoji variation selector and ZWJ
+	bits.set( 0xFE0F ); // Variation Selector-16
+	bits.set( 0x200D ); // Zero Width Joiner
+
+	return bits;
+}();
+
 bool Font::isEmojiCodePoint( const Uint32& codePoint ) {
-	static constexpr Uint32 rangeMin = 127744;
-	static constexpr Uint32 rangeMax = 131069;
-	static constexpr Uint32 rangeMin2 = 126980;
-	static constexpr Uint32 rangeMax2 = 127569;
-	static constexpr Uint32 rangeMin3 = 8986;
-	static constexpr Uint32 rangeMax3 = 12953;
-	return codePoint >= 8986 && ( ( rangeMin <= codePoint && codePoint <= rangeMax ) ||
-								  ( rangeMin2 <= codePoint && codePoint <= rangeMax2 ) ||
-								  ( rangeMin3 <= codePoint && codePoint <= rangeMax3 ) );
+	// Check if code point is within valid range and is an emoji
+	return codePoint < MAX_EMOJI_CODE_POINT && emojiLookup[codePoint];
 }
 
 bool Font::containsEmojiCodePoint( const String& string ) {

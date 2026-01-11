@@ -19,6 +19,8 @@ class EE_API Input {
 
 	virtual ~Input();
 
+	static Uint32 sanitizeMod( const Uint32& mod );
+
 	/** Update the Input */
 	virtual void update() = 0;
 
@@ -27,7 +29,7 @@ class EE_API Input {
 	 */
 	virtual void waitEvent( const Time& timeout = Time::Zero ) = 0;
 
-	/** @return If the mouse and keyboard are grabed. */
+	/** @return If the mouse and keyboard are grabbed. */
 	virtual bool grabInput() = 0;
 
 	/** Grab or Ungrab the mouse and keyboard. */
@@ -170,8 +172,11 @@ class EE_API Input {
 	/** Pop the callback id indicated. */
 	void popCallback( const Uint32& CallbackId );
 
-	/** @return The Mouse position vector */
+	/** @return The Mouse position */
 	Vector2i getMousePos() const;
+
+	/** @return The Mouse position with no clamping */
+	Vector2i getRelativeMousePos() const;
 
 	/** This will change the value of the mouse pos, will not REALLY move the mouse ( for that is
 	 * InjectMousePos ). */
@@ -180,7 +185,7 @@ class EE_API Input {
 	/** @return The mouse position over the current view */
 	Vector2f getMousePosFromView( const View& View );
 
-	/** Set the mouse speed ( only affects grabed windows ) */
+	/** Set the mouse speed ( only affects grabbed windows ) */
 	void setMouseSpeed( const Float& Speed );
 
 	/** @return The Mouse Speed */
@@ -222,7 +227,7 @@ class EE_API Input {
 	/** @return The joystick manager */
 	JoystickManager* getJoystickManager() const;
 
-	/** @return The maximun number of fingers */
+	/** @return The maximum number of fingers */
 	Uint32 getFingerCount();
 
 	/** @return The input finger from it's index */
@@ -275,7 +280,7 @@ class EE_API Input {
 	Uint32 mClickTrigger;
 	Uint32 mDoubleClickTrigger;
 	Uint32 mInputMod;
-	Time mDoubleClickInterval; /// Determine the double click inverval in milliseconds ( default 400
+	Time mDoubleClickInterval; /// Determine the double click interval in milliseconds ( default 400
 							   /// ms )
 	Uint32 mLastButtonLeftClicked;
 	Uint32 mLastButtonRightClicked;
@@ -285,9 +290,10 @@ class EE_API Input {
 	Uint32 mLastButtonMiddleClick;
 	Uint32 mTClick;
 	Vector2i mMousePos;
+	Vector2i mRealMousePos;
 	Uint32 mNumCallBacks;
 	Float mMouseSpeed;
-	bool mInputGrabed;
+	bool mInputGrabbed;
 	InputFinger mFingers[EE_MAX_FINGERS];
 	Uint64 mEventsSentId{ 0 };
 	Clock mLastEvent;

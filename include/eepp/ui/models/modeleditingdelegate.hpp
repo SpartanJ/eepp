@@ -114,13 +114,13 @@ class EE_API StringModelEditingDelegate : public ModelEditingDelegate {
 		auto input = UITextInput::New();
 		input->addClass( "table_cell_edit" );
 		input->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed );
-		input->addEventListener( Event::OnPressEnter, [this]( auto ) { commit(); } );
-		input->addEventListener( Event::OnFocusLoss, [this]( auto ) { rollback(); } );
-		input->addEventListener( Event::KeyUp, [this]( const Event* event ) {
+		input->on( Event::OnPressEnter, [this]( auto ) { commit(); } );
+		input->on( Event::OnFocusLoss, [this]( auto ) { rollback(); } );
+		input->on( Event::KeyUp, [this]( const Event* event ) {
 			if ( event->asKeyEvent()->getKeyCode() == KEY_ESCAPE )
 				rollback();
 		} );
-		input->addEventListener( Event::OnValueChange, [this]( auto ) { change(); } );
+		input->on( Event::OnValueChange, [this]( auto ) { change(); } );
 		return input;
 	}
 };

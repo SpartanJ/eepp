@@ -124,7 +124,7 @@ void ArcDrawable::updateVertex() {
 				Uint32( (Float)mSegmentsCount * (Float)eeabs( arcAngleA ) / 360 );
 			Float startAngle = Math::radians( mArcStartAngle );
 			Float theta = Math::radians( arcAngleA ) / Float( segmentsCount - 1 );
-			Float tangetialFactor = eetan( theta );
+			Float tangentialFactor = eetan( theta );
 			Float radialFactor = eecos( theta );
 			Float x = mRadius * eecos( startAngle );
 			Float y = mRadius * eesin( startAngle );
@@ -136,8 +136,8 @@ void ArcDrawable::updateVertex() {
 				Float tx = -y;
 				Float ty = x;
 
-				x += tx * tangetialFactor;
-				y += ty * tangetialFactor;
+				x += tx * tangentialFactor;
+				y += ty * tangentialFactor;
 
 				x *= radialFactor;
 				y *= radialFactor;

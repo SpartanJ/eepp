@@ -40,12 +40,12 @@ class EE_API FontSprite : public Font {
 
 	const Font::Info& getInfo() const;
 
-	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
-						   Float outlineThickness = 0, Float maxWidth = 0 ) const;
+	Glyph getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
+					Float outlineThickness = 0 ) const;
 
 	GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
 									 bool bold = false, bool italic = false,
-									 Float outlineThickness = 0, const Float& maxWidth = 0 ) const;
+									 Float outlineThickness = 0 ) const;
 
 	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
 					  bool italic, Float outlineThickness = 0 ) const;

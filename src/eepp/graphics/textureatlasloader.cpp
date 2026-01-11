@@ -147,9 +147,13 @@ void TextureAtlasLoader::loadFromStream( IOStream& IOS ) {
 
 				if ( !mSkipResourceLoad && NULL == tTex ) {
 					if ( NULL != mPack ) {
-						mRL.add( [=] { TextureFactory::instance()->loadFromPack( mPack, path ); } );
+						mRL.add( [this, path = std::move( path )] {
+							TextureFactory::instance()->loadFromPack( mPack, path );
+						} );
 					} else {
-						mRL.add( [=] { TextureFactory::instance()->loadFromFile( path ); } );
+						mRL.add( [path = std::move( path )] {
+							TextureFactory::instance()->loadFromFile( path );
+						} );
 					}
 				}
 
@@ -234,7 +238,7 @@ void TextureAtlasLoader::createTextureRegions() {
 		if ( NULL != tTex )
 			mTexturesLoaded.push_back( tTex );
 
-		// Create the Texture Atlas with the name of the real texture, not the Childs ( example
+		// Create the Texture Atlas with the name of the real texture, not the Children ( example
 		// load 1.png and not 1_ch1.png )
 		if ( 0 == z ) {
 			if ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_REMOVE_EXTENSION )
@@ -276,7 +280,7 @@ void TextureAtlasLoader::createTextureRegions() {
 						Vector2i( tSh->OffsetX, tSh->OffsetY ), TextureRegionName );
 
 					tTextureRegion->setPixelDensity( tSh->PixelDensity / 100.f );
-					// if ( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPED )
+					// if ( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPPED )
 					// Should rotate the sub texture, but.. sub texture rotation is not stored.
 
 					mTextureAtlas->add( tTextureRegion );
@@ -441,9 +445,9 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 											  std::begin( result.digest ) ) ) {
 								if ( Image::getInfo( path.c_str(), &x, &y, &c ) ) {
 									// If size or channels changed, the  image need update.
-									if ( ( !( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPED ) &&
+									if ( ( !( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPPED ) &&
 										   tSh->Width == x && tSh->Height == y ) ||
-										 ( ( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPED ) &&
+										 ( ( tSh->Flags & HDR_TEXTUREREGION_FLAG_FLIPPED ) &&
 										   tSh->Width == y && tSh->Height == x ) ||
 										 tSh->Channels != c ) {
 										// Only update the image with the newest one.
@@ -473,8 +477,9 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 	}
 
 	if ( NeedUpdate != ATLAS_IS_UPDATED ) {
-		std::string tapath( FileSystem::fileRemoveExtension( TextureAtlasPath ) + "." +
-							Image::saveTypeToExtension( mTexGrHdr.Format ) );
+		std::string tapath(
+			FileSystem::fileRemoveExtension( TextureAtlasPath ) + "." +
+			Image::saveTypeToExtension( static_cast<Image::SaveType>( mTexGrHdr.Format ) ) );
 
 		if ( ATLAS_NEEDS_RECREATE == NeedUpdate ) {
 			TexturePacker tp(
@@ -507,7 +512,8 @@ bool TextureAtlasLoader::updateTextureAtlas( std::string TextureAtlasPath, std::
 				if ( z != 0 ) {
 					tapath = FileSystem::fileRemoveExtension( TextureAtlasPath ) + "_ch" +
 							 String::toString( z ) + "." +
-							 Image::saveTypeToExtension( mTexGrHdr.Format );
+							 Image::saveTypeToExtension(
+								 static_cast<Image::SaveType>( mTexGrHdr.Format ) );
 				}
 
 				Image Img( tapath );

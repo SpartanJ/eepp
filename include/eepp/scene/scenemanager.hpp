@@ -19,6 +19,8 @@ class SceneNode;
 class EE_API SceneManager {
 	SINGLETON_DECLARE_HEADERS( SceneManager )
   public:
+	static bool isActive();
+
 	SceneManager();
 
 	~SceneManager();

@@ -62,7 +62,7 @@ class EE_API FileInfo {
 
 	std::string getDirectoryPath() const;
 
-	const Uint64& getModificationTime() const;
+	const Int64& getModificationTime() const;
 
 	const Uint64& getSize() const;
 
@@ -81,7 +81,7 @@ class EE_API FileInfo {
   protected:
 	mutable std::string mFilepath;
 	std::string mFileName;
-	Uint64 mModificationTime{ 0 };
+	Int64 mModificationTime{ 0 };
 	Uint64 mSize{ 0 };
 	Uint32 mOwnerId{ 0 };
 	Uint32 mGroupId{ 0 };

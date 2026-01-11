@@ -16,39 +16,43 @@ PREMAKE5_ARCH=
 if [[ "$CONFIG" == *"x86_64"* ]]; then
   ARCH=64
 elif [[ "$CONFIG" == *"arm64"* && "$(uname -m)" == "x86_64" ]]; then
-  LLVM_MINGW_V="20241015"
-  URL="https://github.com/mstorsjo/llvm-mingw/releases/download/$LLVM_MINGW_V/llvm-mingw-$LLVM_MINGW_V-ucrt-ubuntu-20.04-x86_64.tar.xz"
-  FILE_NAME="llvm-mingw-$LLVM_MINGW_V-ucrt-ubuntu-20.04-x86_64"
-  TAR_FILE_NAME="$FILE_NAME.tar.xz"
-  RENAMED_FOLDER="llvm-mingw"
-  BIN_PATH="$(pwd)/$RENAMED_FOLDER/bin"
-
-  if [[ ! -f "$TAR_FILE_NAME" ]]; then
-    echo "Downloading $TAR_FILE_NAME..."
-    curl -LO "$URL" || { echo "Download failed!"; exit 1; }
-  else
-    echo "$TAR_FILE_NAME already exists. Skipping download."
-  fi
-
-  if [[ ! -d "$RENAMED_FOLDER" ]]; then
-    echo "Extracting $TAR_FILE_NAME..."
-    tar -xf "$TAR_FILE_NAME" || { echo "Extraction failed!"; exit 1; }
-    mv "$FILE_NAME" "$RENAMED_FOLDER"
-  else
-    echo "$RENAMED_FOLDER directory already exists. Skipping extraction."
-  fi
-
-
-  export PATH="$PATH:$BIN_PATH"
   export CC="aarch64-w64-mingw32-gcc"
   export CXX="aarch64-w64-mingw32-g++"
   export AR="aarch64-w64-mingw32-ar"
-  echo "Added $BIN_PATH to PATH."
-
   PREMAKE5_ARCH="--arch=arm64"
+
+  if ! command -v aarch64-w64-mingw32-gcc &> /dev/null \
+  || ! command -v aarch64-w64-mingw32-g++ &> /dev/null \
+  || ! command -v aarch64-w64-mingw32-ar &> /dev/null
+  then
+    LLVM_MINGW_V="20241015"
+    URL="https://github.com/mstorsjo/llvm-mingw/releases/download/$LLVM_MINGW_V/llvm-mingw-$LLVM_MINGW_V-ucrt-ubuntu-20.04-x86_64.tar.xz"
+    FILE_NAME="llvm-mingw-$LLVM_MINGW_V-ucrt-ubuntu-20.04-x86_64"
+    TAR_FILE_NAME="$FILE_NAME.tar.xz"
+    RENAMED_FOLDER="llvm-mingw"
+    BIN_PATH="$(pwd)/$RENAMED_FOLDER/bin"
+  
+    if [[ ! -f "$TAR_FILE_NAME" ]]; then
+      echo "Downloading $TAR_FILE_NAME..."
+      curl -LO "$URL" || { echo "Download failed!"; exit 1; }
+    else
+      echo "$TAR_FILE_NAME already exists. Skipping download."
+    fi
+  
+    if [[ ! -d "$RENAMED_FOLDER" ]]; then
+      echo "Extracting $TAR_FILE_NAME..."
+      tar -xf "$TAR_FILE_NAME" || { echo "Extraction failed!"; exit 1; }
+      mv "$FILE_NAME" "$RENAMED_FOLDER"
+    else
+      echo "$RENAMED_FOLDER directory already exists. Skipping extraction."
+    fi
+  
+    export PATH="$PATH:$BIN_PATH"
+    echo "Added $BIN_PATH to PATH."
+  fi
 fi
 
-PREMAKE5_ARGS="--file=../../premake5.lua --os=windows --cc=mingw --windows-mingw-build $PREMAKE5_ARCH gmake2"
+PREMAKE5_ARGS="--file=../../premake5.lua --os=windows --cc=mingw --windows-mingw-build $PREMAKE5_ARCH gmake"
 
 if command -v premake5 &> /dev/null
 then

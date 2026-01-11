@@ -5,6 +5,8 @@
 #include <eepp/core/string.hpp>
 #include <eepp/ui/doc/foldrangetype.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
+#include <eepp/ui/doc/syntaxtokenizer.hpp>
+
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -26,49 +28,189 @@ template <typename T> static auto toSyntaxStyleTypeV( const std::vector<T>& s ) 
 		return std::vector<SyntaxStyleType>{};
 }
 
+enum class SyntaxPatternMatchType { LuaPattern, RegEx, Parser };
+
+class SyntaxDefinition;
+
+template <typename Key, typename Value> using SyntaxDefMap = std::unordered_map<Key, Value>;
+
 struct EE_API SyntaxPattern {
-	static UnorderedMap<SyntaxStyleType, std::string> SyntaxStyleTypeCache;
+	enum Flags {
+		IsPure = 1 << 0,
+		IsInclude = 1 << 1,
+		IsRepositoryInclude = 1 << 2,
+		IsRootSelfInclude = 1 << 3,
+		IsRangedMatch = 1 << 5,
+		IsSourceInclude = 1 << 6,
+		IsAutomaticallyAdded = 1 << 7,
+	};
+
+	static SyntaxDefMap<SyntaxStyleType, std::string> SyntaxStyleTypeCache;
 
 	using DynamicSyntax =
 		std::function<std::string( const SyntaxPattern&, const std::string_view& )>;
 
 	std::vector<std::string> patterns;
 	std::vector<SyntaxStyleType> types;
+	std::vector<SyntaxStyleType> endTypes;
 	std::vector<std::string> typesNames;
+	std::vector<std::string> endTypesNames;
+	std::string contentTypeName;
+	SyntaxStyleType contentType{ SyntaxStyleEmpty() };
 	std::string syntax{ "" };
 	DynamicSyntax dynSyntax;
-	bool isRegEx{ false };
+	SyntaxPatternMatchType matchType{ SyntaxPatternMatchType::LuaPattern };
+	const SyntaxDefinition* def{ nullptr };
+	Uint16 flags{ 0 };
+	Uint16 repositoryIdx{ 0 };
+	std::vector<SyntaxPattern> contentPatterns;
+	String::HashType contentScopeRepoHash{
+		0 }; // Hash of the repository containing this rule's content patterns
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
-				   const std::string& _syntax = "", bool isRegEx = false );
+				   const std::string& _syntax = "",
+				   SyntaxPatternMatchType matchType = SyntaxPatternMatchType::LuaPattern );
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
-				   const std::string& _syntax = "", bool isRegEx = false );
+				   const std::string& _syntax = "",
+				   SyntaxPatternMatchType matchType = SyntaxPatternMatchType::LuaPattern );
+
+	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
+				   std::vector<std::string>&& _endTypes, const std::string& _syntax = "",
+				   SyntaxPatternMatchType matchType = SyntaxPatternMatchType::LuaPattern );
+
+	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
+				   std::vector<std::string>&& _endTypes, const std::string& _syntax,
+				   SyntaxPatternMatchType matchType, std::vector<SyntaxPattern>&& _subPatterns );
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
-				   DynamicSyntax&& _syntax, bool isRegEx = false );
+				   DynamicSyntax&& _syntax,
+				   SyntaxPatternMatchType matchType = SyntaxPatternMatchType::LuaPattern );
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
-				   DynamicSyntax&& _syntax, bool isRegEx = false );
+				   DynamicSyntax&& _syntax,
+				   SyntaxPatternMatchType matchType = SyntaxPatternMatchType::LuaPattern );
 
-	bool hasSyntax() const { return !syntax.empty() || dynSyntax; }
+	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
+				   std::vector<std::string>&& _endTypes, DynamicSyntax&& _syntax,
+				   SyntaxPatternMatchType matchType = SyntaxPatternMatchType::LuaPattern );
+
+	inline bool hasSyntax() const { return !syntax.empty() || dynSyntax; }
+
+	inline bool hasSyntaxOrContentScope() const { return hasSyntax() || hasContentScope(); }
+
+	inline bool isPure() const { return flags & Flags::IsPure; }
+
+	inline bool isInclude() const { return flags & Flags::IsInclude; }
+
+	inline bool isRepositoryInclude() const { return flags & Flags::IsRepositoryInclude; }
+
+	inline bool isRootSelfInclude() const { return flags & Flags::IsRootSelfInclude; }
+
+	inline bool isSourceInclude() const { return flags & Flags::IsSourceInclude; }
+
+	inline bool isRangedMatch() const { return flags & Flags::IsRangedMatch; }
+
+	inline bool isAutomaticallyAdded() const { return flags & Flags::IsAutomaticallyAdded; }
+
+	inline bool isSimpleRangedMatch() const {
+		return isRangedMatch() && !hasContentScope() && !hasSyntax();
+	}
+
+	std::string_view getRepositoryName() const {
+		eeASSERT( isRepositoryInclude() || isSourceInclude() );
+		return isSourceInclude() ? std::string_view{ patterns[1] }
+								 : std::string_view{ patterns[1] }.substr( 1 );
+	}
+
+	inline bool checkIsIncludePattern() const {
+		return patterns.size() == 2 && patterns[0] == "include" && !patterns[1].empty() &&
+			   ( patterns[1][0] == '#' || patterns[1][0] == '$' ||
+				 String::startsWith( patterns[1], "source." ) );
+	}
+
+	inline bool checkIsRangedMatch() const {
+		return !checkIsIncludePattern() && patterns.size() >= 2;
+	}
+
+	inline bool checkIsRootSelfInclude() const {
+		return checkIsIncludePattern() && ( patterns[1] == "$self" || patterns[1] == "$base" );
+	}
+
+	inline bool checkIsSourceInclude() const {
+		return checkIsIncludePattern() && String::startsWith( patterns[1], "source." );
+	}
+
+	inline bool checkIsRepositoryInclude() const {
+		return checkIsIncludePattern() && patterns[1][0] == '#';
+	}
+
+	inline bool hasContentScope() const { return contentScopeRepoHash != 0; }
+};
+
+struct EE_API SyntaxRepository {
+	std::vector<SyntaxPattern> patterns;
+
+	SyntaxRepository() {}
+
+	SyntaxRepository( std::vector<SyntaxPattern>&& patterns ) : patterns( std::move( patterns ) ) {}
+};
+
+struct EE_API SyntaxPreDefinition {
+	std::string name;
+	std::function<SyntaxDefinition&()> load;
+	std::vector<std::string> files;
+	std::vector<std::string> headers;
+	std::string lspName;
+	std::vector<std::string> alternativeNames;
+	bool extensionPriority{ false };
+
+	SyntaxPreDefinition( const std::string& name, std::function<SyntaxDefinition&()> load,
+						 std::vector<std::string>&& files, std::vector<std::string>&& headers = {},
+						 const std::string& lspName = "",
+						 std::vector<std::string>&& alternativeNames = {},
+						 bool extensionPriority = false ) :
+		name( name ),
+		load( load ),
+		files( std::move( files ) ),
+		headers( std::move( headers ) ),
+		lspName( lspName.empty() ? String::toLower( name ) : lspName ),
+		alternativeNames( std::move( alternativeNames ) ),
+		extensionPriority( extensionPriority ) {}
+
+	const std::string& getLanguageName() const { return name; }
+
+	const std::vector<std::string>& getAlternativeNames() const { return alternativeNames; }
+
+	const std::string& getLSPName() const { return lspName; }
+
+	const std::vector<std::string>& getFiles() const { return files; }
+
+	bool hasExtensionPriority() const { return extensionPriority; }
+
+	const std::vector<std::string>& getHeaders() const { return headers; }
 };
 
 class EE_API SyntaxDefinition {
   public:
+	struct BlockComment {
+		std::string open;
+		std::string close;
+	};
+
 	SyntaxDefinition();
 
-	SyntaxDefinition( const std::string& languageName, std::vector<std::string>&& files,
-					  std::vector<SyntaxPattern>&& patterns,
-					  UnorderedMap<std::string, std::string>&& symbols = {},
-					  const std::string& comment = "", std::vector<std::string>&& headers = {},
-					  const std::string& lspName = "" );
+	SyntaxDefinition(
+		const std::string& languageName, std::vector<std::string>&& files,
+		std::vector<SyntaxPattern>&& patterns,
+		SyntaxDefMap<std::string, std::string>&& symbols = {}, const std::string& comment = "",
+		std::vector<std::string>&& headers = {}, const std::string& lspName = "",
+		std::vector<std::pair<std::string, std::vector<SyntaxPattern>>>&& repositories = {},
+		BlockComment&& blockComment = {} );
 
 	const std::string& getLanguageName() const;
 
 	std::string getLanguageNameForFileSystem() const;
-
-	const String::HashType& getLanguageId() const;
 
 	const std::vector<std::string>& getFiles() const;
 
@@ -78,9 +220,9 @@ class EE_API SyntaxDefinition {
 
 	const std::string& getComment() const;
 
-	const UnorderedMap<std::string, SyntaxStyleType>& getSymbols() const;
+	const SyntaxDefMap<String::HashType, SyntaxStyleType>& getSymbols() const;
 
-	SyntaxStyleType getSymbol( const std::string& symbol ) const;
+	SyntaxStyleType getSymbol( std::string_view symbol ) const;
 
 	/** Accepts lua patterns and file extensions. */
 	SyntaxDefinition& addFileType( const std::string& fileType );
@@ -98,7 +240,8 @@ class EE_API SyntaxDefinition {
 	SyntaxDefinition& addSymbols( const std::vector<std::string>& symbolNames,
 								  const std::string& typeName );
 
-	SyntaxDefinition& setSymbols( const UnorderedMap<std::string, SyntaxStyleType>& symbols );
+	SyntaxDefinition& setSymbols( const SyntaxDefMap<String::HashType, SyntaxStyleType>& symbols,
+								  const SyntaxDefMap<std::string, std::string>& symbolNames );
 
 	/** Sets the comment string used for auto-comment functionality. */
 	SyntaxDefinition& setComment( const std::string& comment );
@@ -108,8 +251,6 @@ class EE_API SyntaxDefinition {
 	SyntaxDefinition& setHeaders( const std::vector<std::string>& headers );
 
 	void clearPatterns();
-
-	void clearSymbols();
 
 	const std::string& getLSPName() const;
 
@@ -133,7 +274,7 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition& setExtensionPriority( bool hasExtensionPriority );
 
-	UnorderedMap<std::string, std::string> getSymbolNames() const;
+	SyntaxDefMap<std::string, std::string> getSymbolNames() const;
 
 	const Uint16& getLanguageIndex() const { return mLanguageIndex; }
 
@@ -149,16 +290,49 @@ class EE_API SyntaxDefinition {
 
 	SyntaxDefinition& setFoldBraces( const std::vector<std::pair<Int64, Int64>>& foldBraces );
 
+	SyntaxDefinition& addRepository( std::string&& name, SyntaxRepository&& patterns );
+
+	SyntaxDefinition& addRepositories(
+		std::vector<std::pair<std::string, std::vector<SyntaxPattern>>>&& repositories );
+
+	const SyntaxRepository& getRepository( String::HashType hash ) const;
+
+	const SyntaxRepository& getRepository( std::string_view name ) const;
+
+	Uint32 getRepositoryIndex( String::HashType hash ) const;
+
+	Uint32 getRepositoryIndex( std::string_view name ) const;
+
+	String::HashType getRepositoryHash( Uint32 index ) const;
+
+	std::string getRepositoryName( String::HashType hash ) const;
+
+	const SyntaxDefMap<String::HashType, SyntaxRepository>& getRepositories() const;
+
+	const SyntaxDefMap<String::HashType, std::string>& getRepositoriesNames() const;
+
+	SyntaxDefinition& addAlternativeName( const std::string& name );
+
+	const std::vector<std::string>& getAlternativeNames() const;
+
+	const SyntaxPattern* getPatternFromState( const SyntaxStateType& state ) const;
+
+	void compile();
+
+	SyntaxDefinition& setBlockComment( BlockComment&& blockComment );
+
+	const BlockComment& getBlockComment() const;
+
   protected:
 	friend class SyntaxDefinitionManager;
 
 	std::string mLanguageName;
-	String::HashType mLanguageId;
 	std::vector<std::string> mFiles;
 	std::vector<SyntaxPattern> mPatterns;
-	UnorderedMap<std::string, SyntaxStyleType> mSymbols;
-	UnorderedMap<std::string, std::string> mSymbolNames;
+	SyntaxDefMap<String::HashType, SyntaxStyleType> mSymbolsHashes;
+	SyntaxDefMap<std::string, std::string> mSymbolNames;
 	std::string mComment;
+	BlockComment mBlockComment;
 	std::vector<std::string> mHeaders;
 	std::string mLSPName;
 	Uint16 mLanguageIndex{ 0 };
@@ -168,6 +342,12 @@ class EE_API SyntaxDefinition {
 	bool mVisible{ true };
 	bool mHasExtensionPriority{ false };
 	bool mCaseInsensitive{ false };
+	SyntaxDefMap<String::HashType, SyntaxRepository> mRepository;
+	SyntaxDefMap<String::HashType, Uint32> mRepositoryIndex;
+	SyntaxDefMap<String::HashType, std::string> mRepositoryNames;
+	SyntaxDefMap<Uint32, String::HashType> mRepositoryIndexInvert;
+	std::vector<std::string> mLanguageAlternativeNames;
+	Uint32 mRepositoryIndexCounter{ 0 };
 };
 
 }}} // namespace EE::UI::Doc

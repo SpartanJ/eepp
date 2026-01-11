@@ -14,6 +14,8 @@
 
 namespace ecode {
 
+static constexpr auto SCOPES_UI_HASH = String::hash( "DebuggerClientListener::scopes::ui" );
+
 std::vector<SourceBreakpoint>
 DebuggerClientListener::fromSet( const UnorderedSet<SourceBreakpointStateful>& set ) {
 	std::vector<SourceBreakpoint> bps;
@@ -32,7 +34,7 @@ DebuggerClientListener::DebuggerClientListener( DebuggerClient* client, Debugger
 }
 
 DebuggerClientListener::~DebuggerClientListener() {
-	resetState();
+	resetState( true );
 	auto sdc = getStatusDebuggerController();
 	if ( !mPlugin->isShuttingDown() && sdc ) {
 		if ( sdc->getUIThreads() )
@@ -41,6 +43,80 @@ DebuggerClientListener::~DebuggerClientListener() {
 			sdc->getUIStack()->removeEventsOfType( Event::OnModelEvent );
 		mPlugin->setUIDebuggingState( StatusDebuggerController::State::NotStarted );
 	}
+}
+
+void DebuggerClientListener::createAndShowVariableMenu( ModelIndex idx ) {
+	auto context = mPlugin->getPluginContext();
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+
+	ModelVariableNode* node = static_cast<ModelVariableNode*>( idx.internalData() );
+	Variable var( node->var );
+
+	menu->add( context->i18n( "debugger_copy_variable_value", "Copy Value" ),
+			   context->findIcon( "copy" ) )
+		->setId( "debugger_copy_variable_value" );
+
+	menu->add( context->i18n( "debugger_copy_variable_name", "Copy Name" ),
+			   context->findIcon( "copy" ) )
+		->setId( "debugger_copy_variable_name" );
+
+	if ( var.type ) {
+		menu->add( context->i18n( "debugger_copy_variable_type", "Copy Type" ),
+				   context->findIcon( "copy" ) )
+			->setId( "debugger_copy_variable_type" );
+	}
+
+	if ( var.evaluateName ) {
+		menu->add( context->i18n( "debugger_copy_variable_evaluate_name", "Copy Evaluate Name" ),
+				   context->findIcon( "copy" ) )
+			->setId( "debugger_copy_variable_evaluate_name" );
+	}
+
+	if ( var.memoryReference ) {
+		menu->add(
+				context->i18n( "debugger_copy_variable_memory_reference", "Copy Memory Reference" ),
+				context->findIcon( "copy" ) )
+			->setId( "debugger_copy_variable_memory_reference" );
+	}
+
+	menu->add( context->i18n( "debugger_value_viewer", "Value Viewer" ),
+			   context->findIcon( "eye" ) )
+		->setId( "debugger_value_viewer" );
+
+	menu->on( Event::OnItemClicked, [this, var = std::move( var )]( const Event* event ) {
+		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+		std::string id( item->getId() );
+		if ( id == "debugger_copy_variable_value" ) {
+			mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( var.value );
+		} else if ( id == "debugger_copy_variable_name" ) {
+			mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( var.name );
+		} else if ( id == "debugger_copy_variable_type" ) {
+			mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( *var.type );
+		} else if ( id == "debugger_copy_variable_evaluate_name" ) {
+			mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( *var.evaluateName );
+		} else if ( id == "debugger_copy_variable_memory_reference" ) {
+			mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( *var.memoryReference );
+		} else if ( id == "debugger_value_viewer" ) {
+			static constexpr auto VALUE_VIEWER_LAYOUT = R"html(
+					<window id="process_picker" lw="250dp" lh="250dp" padding="4dp" window-flags="default|ephemeral">
+						<vbox lw="mp" lh="mp">
+							<TextEdit id="value_input" lw="mp" lh="0dp" lw8="1" wordwrap="true" />
+						</vbox>
+					</window>
+					)html";
+			UIWindow* win = mPlugin->getUISceneNode()
+								->loadLayoutFromString( VALUE_VIEWER_LAYOUT )
+								->asType<UIWindow>();
+			win->setTitle( String::format( "%s:", var.name ) );
+			UITextEdit* input = win->find( "value_input" )->asType<UITextEdit>();
+			input->setText( var.value );
+			win->center();
+			win->on( Event::OnWindowReady, [input]( auto ) { input->setFocus(); } );
+			win->showWhenReady();
+		}
+	} );
+
+	menu->showOverMouseCursor();
 }
 
 void DebuggerClientListener::initUI() {
@@ -102,87 +178,14 @@ void DebuggerClientListener::initUI() {
 			mVariablesHolder->removeExpandedState( idx );
 		} else if ( modelEvent->getModelEventType() == Abstract::ModelEventType::OpenMenu &&
 					idx.isValid() ) {
-
-			auto context = mPlugin->getPluginContext();
-			UIPopUpMenu* menu = UIPopUpMenu::New();
-
-			ModelVariableNode* node = static_cast<ModelVariableNode*>( idx.internalData() );
-			Variable var( node->var );
-
-			menu->add( context->i18n( "debugger_copy_variable_value", "Copy Value" ),
-					   context->findIcon( "copy" ) )
-				->setId( "debugger_copy_variable_value" );
-
-			menu->add( context->i18n( "debugger_copy_variable_name", "Copy Name" ),
-					   context->findIcon( "copy" ) )
-				->setId( "debugger_copy_variable_name" );
-
-			if ( var.type ) {
-				menu->add( context->i18n( "debugger_copy_variable_type", "Copy Type" ),
-						   context->findIcon( "copy" ) )
-					->setId( "debugger_copy_variable_type" );
-			}
-
-			if ( var.evaluateName ) {
-				menu->add( context->i18n( "debugger_copy_variable_evaluate_name",
-										  "Copy Evaluate Name" ),
-						   context->findIcon( "copy" ) )
-					->setId( "debugger_copy_variable_evaluate_name" );
-			}
-
-			if ( var.memoryReference ) {
-				menu->add( context->i18n( "debugger_copy_variable_memory_reference",
-										  "Copy Memory Reference" ),
-						   context->findIcon( "copy" ) )
-					->setId( "debugger_copy_variable_memory_reference" );
-			}
-
-			menu->add( context->i18n( "debugger_value_viewer", "Value Viewer" ),
-					   context->findIcon( "eye" ) )
-				->setId( "debugger_value_viewer" );
-
-			menu->on( Event::OnItemClicked, [this, var = std::move( var )]( const Event* event ) {
-				UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-				std::string id( item->getId() );
-				if ( id == "debugger_copy_variable_value" ) {
-					mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( var.value );
-				} else if ( id == "debugger_copy_variable_name" ) {
-					mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( var.name );
-				} else if ( id == "debugger_copy_variable_type" ) {
-					mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText( *var.type );
-				} else if ( id == "debugger_copy_variable_evaluate_name" ) {
-					mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText(
-						*var.evaluateName );
-				} else if ( id == "debugger_copy_variable_memory_reference" ) {
-					mPlugin->getUISceneNode()->getWindow()->getClipboard()->setText(
-						*var.memoryReference );
-				} else if ( id == "debugger_value_viewer" ) {
-					static constexpr auto VALUE_VIEWER_LAYOUT = R"html(
-					<window id="process_picker" lw="250dp" lh="250dp" padding="4dp" window-flags="default|ephemeral">
-						<vbox lw="mp" lh="mp">
-							<TextEdit id="value_input" lw="mp" lh="0dp" lw8="1" wordwrap="true" />
-						</vbox>
-					</window>
-					)html";
-					UIWindow* win = mPlugin->getUISceneNode()
-										->loadLayoutFromString( VALUE_VIEWER_LAYOUT )
-										->asType<UIWindow>();
-					win->setTitle( String::format( "%s:", var.name ) );
-					UITextEdit* input = win->find( "value_input" )->asType<UITextEdit>();
-					input->setText( var.value );
-					win->center();
-					win->showWhenReady();
-				}
-			} );
-
-			menu->showOverMouseCursor();
+			createAndShowVariableMenu( idx );
 		}
 	} );
 
 	mPlugin->setUIDebuggingState( StatusDebuggerController::State::Running );
 }
 
-void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
+void DebuggerClientListener::stateChanged( DebuggerClient::State state, const SessionId& ) {
 	if ( state == DebuggerClient::State::Initializing ) {
 		mPlugin->getManager()->getUISceneNode()->runOnMainThread( [this] { initUI(); } );
 	}
@@ -191,34 +194,72 @@ void DebuggerClientListener::stateChanged( DebuggerClient::State state ) {
 void DebuggerClientListener::sendBreakpoints() {
 	Lock l( mPlugin->mBreakpointsMutex );
 	for ( const auto& fileBps : mPlugin->mBreakpoints ) {
-		std::string path( fileBps.first );
-		mClient->setBreakpoints( path, fromSet( fileBps.second ) );
+		if ( isRemote() && !mLocalRoot.empty() && !mRemoteRoot.empty() &&
+			 String::startsWith( fileBps.first, mLocalRoot ) ) {
+			auto remoteRoot = mRemoteRoot;
+			auto localRoot = mLocalRoot;
+			FileSystem::dirAddSlashAtEnd( localRoot );
+			FileSystem::dirAddSlashAtEnd( remoteRoot );
+			auto remotePath = fileBps.first;
+			FileSystem::filePathRemoveBasePath( mLocalRoot, remotePath );
+			remotePath = remoteRoot + remotePath;
+			mClient->setBreakpoints( remotePath, fromSet( fileBps.second ) );
+		} else {
+			mClient->setBreakpoints( fileBps.first, fromSet( fileBps.second ) );
+		}
 	}
 }
 
-void DebuggerClientListener::initialized() {
+const std::string& DebuggerClientListener::localRoot() const {
+	return mLocalRoot;
+}
+
+void DebuggerClientListener::setLocalRoot( const std::string& newLocalRoot ) {
+	mLocalRoot = newLocalRoot;
+}
+
+const std::string& DebuggerClientListener::remoteRoot() const {
+	return mRemoteRoot;
+}
+
+void DebuggerClientListener::setRemoteRoot( const std::string& newRemoteRoot ) {
+	mRemoteRoot = newRemoteRoot;
+}
+
+bool DebuggerClientListener::isUnstableFrameId() const {
+	return mUnstableFrameId;
+}
+
+void DebuggerClientListener::setUnstableFrameId( bool unstableFrameId ) {
+	mUnstableFrameId = unstableFrameId;
+}
+
+void DebuggerClientListener::initialized( const SessionId& ) {
 	sendBreakpoints();
 }
 
-void DebuggerClientListener::launched() {}
+void DebuggerClientListener::launched( const SessionId& ) {}
 
-void DebuggerClientListener::configured() {}
+void DebuggerClientListener::configured( const SessionId& ) {}
 
-void DebuggerClientListener::failed() {
+void DebuggerClientListener::failed( const SessionId& ) {
 	mPlugin->exitDebugger();
-	resetState();
+	resetState( true );
 }
 
-void DebuggerClientListener::debuggeeRunning() {}
+void DebuggerClientListener::debuggeeRunning( const SessionId& ) {}
 
-void DebuggerClientListener::debuggeeTerminated() {
-	mPlugin->exitDebugger();
-	resetState();
+void DebuggerClientListener::debuggeeTerminated( const SessionId& ) {
+	if ( mClient->sessionsActive() == 0 ) {
+		mPlugin->exitDebugger();
+		resetState( true );
+	}
 }
 
 void DebuggerClientListener::capabilitiesReceived( const Capabilities& /*capabilities*/ ) {}
 
-void DebuggerClientListener::resetState() {
+void DebuggerClientListener::resetState( bool full ) {
+	Lock l( mMutex );
 	mStoppedData = {};
 	mCurrentScopePos = {};
 	mCurrentFrameId = 0;
@@ -226,15 +267,16 @@ void DebuggerClientListener::resetState() {
 		mThreadsModel->resetThreads();
 	if ( mStackModel )
 		mStackModel->resetStack();
-	mVariablesHolder->clear();
+	mVariablesHolder->clear( full );
+	mScopeRef.clear();
 }
 
-void DebuggerClientListener::debuggeeExited( int /*exitCode*/ ) {
+void DebuggerClientListener::debuggeeExited( int /*exitCode*/, const SessionId& ) {
 	mPlugin->exitDebugger();
-	resetState();
+	resetState( true );
 }
 
-void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
+void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event, const SessionId& ) {
 	Log::debug( "DebuggerClientListener::debuggeeStopped: reason %s", event.reason );
 
 	for ( auto& [editor, _] : mPlugin->mEditors ) {
@@ -256,8 +298,12 @@ void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
 		}
 	}
 
-	mCurrentThreadId = mStoppedData ? *mStoppedData->threadId : 1;
-	mStoppedData = event;
+	int threadId = event.threadId.value_or( 1 );
+	{
+		Lock l( mMutex );
+		mStoppedData = event;
+		mCurrentThreadId = threadId;
+	}
 
 	if ( mPausedToRefreshBreakpoints ) {
 		mPlugin->sendPendingBreakpoints();
@@ -265,10 +311,10 @@ void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
 		return;
 	}
 
-	changeThread( mStoppedData ? *mStoppedData->threadId : 1 );
+	changeThread( threadId );
 
 	mClient->threads();
-	mClient->stackTrace( mCurrentThreadId );
+	mClient->stackTrace( threadId );
 
 	UISceneNode* sceneNode = mPlugin->getUISceneNode();
 	sceneNode->runOnMainThread( [sceneNode] { sceneNode->getWindow()->raise(); } );
@@ -280,8 +326,8 @@ void DebuggerClientListener::debuggeeStopped( const StoppedEvent& event ) {
 		sdc->getWidget()->runOnMainThread( [sdc] { sdc->show(); } );
 }
 
-void DebuggerClientListener::debuggeeContinued( const ContinuedEvent& ) {
-	resetState();
+void DebuggerClientListener::debuggeeContinued( const ContinuedEvent&, const SessionId& ) {
+	resetState( false );
 
 	UISceneNode* sceneNode = mPlugin->getUISceneNode();
 	sceneNode->runOnMainThread( [sceneNode] { sceneNode->getRoot()->invalidateDraw(); } );
@@ -310,27 +356,28 @@ void DebuggerClientListener::outputProduced( const Output& output ) {
 	}
 }
 
-void DebuggerClientListener::debuggingProcess( const ProcessInfo& info ) {
+void DebuggerClientListener::debuggingProcess( const ProcessInfo& info, const SessionId& ) {
 	mProcessInfo = info;
 }
 
 void DebuggerClientListener::errorResponse( const std::string& command, const std::string& summary,
-											const std::optional<Message>& /*message*/ ) {
+											const std::optional<Message>& /*message*/,
+											const SessionId& sessionId ) {
 	if ( command == "evaluate" )
 		return;
 
 	if ( command == "launch" )
-		failed();
+		failed( sessionId );
 
 	mPlugin->getPluginContext()->getNotificationCenter()->addNotification( summary, Seconds( 5 ),
 																		   true );
 }
 
-void DebuggerClientListener::threadChanged( const ThreadEvent& ) {}
+void DebuggerClientListener::threadChanged( const ThreadEvent&, const std::string& ) {}
 
-void DebuggerClientListener::moduleChanged( const ModuleEvent& ) {}
+void DebuggerClientListener::moduleChanged( const ModuleEvent&, const std::string& ) {}
 
-void DebuggerClientListener::threads( std::vector<DapThread>&& threads ) {
+void DebuggerClientListener::threads( std::vector<DapThread>&& threads, const SessionId& ) {
 	std::sort( threads.begin(), threads.end(),
 			   []( const DapThread& a, const DapThread& b ) { return a.id < b.id; } );
 
@@ -338,7 +385,15 @@ void DebuggerClientListener::threads( std::vector<DapThread>&& threads ) {
 }
 
 void DebuggerClientListener::changeScope( const StackFrame& f ) {
-	mCurrentFrameId = f.id;
+	{
+		Lock l( mMutex );
+		mCurrentFrameId = f.id;
+		if ( f.source ) {
+			mCurrentScopePos = { f.source->path, f.line };
+		} else {
+			mCurrentScopePos.reset();
+		}
+	}
 	mClient->scopes( f.id );
 
 	if ( mStackModel )
@@ -353,15 +408,16 @@ void DebuggerClientListener::changeScope( const StackFrame& f ) {
 	mPlugin->getUISceneNode()->runOnMainThread(
 		[this, path, range] { mPlugin->getPluginContext()->focusOrLoadFile( path, range ); } );
 
-	mCurrentScopePos = { f.source->path, f.line };
-
 	auto sdc = getStatusDebuggerController();
 	if ( sdc && sdc->getUIStack() )
 		sdc->getUIStack()->setSelection( mStackModel->index( f.id ) );
 }
 
 void DebuggerClientListener::changeThread( int id ) {
-	mCurrentThreadId = id;
+	{
+		Lock l( mMutex );
+		mCurrentThreadId = id;
+	}
 	if ( mThreadsModel )
 		mThreadsModel->setCurrentThreadId( id );
 
@@ -370,7 +426,8 @@ void DebuggerClientListener::changeThread( int id ) {
 		sdc->getUIThreads()->setSelection( mThreadsModel->fromThreadId( id ) );
 }
 
-void DebuggerClientListener::stackTrace( const int threadId, StackTraceInfo&& stack ) {
+void DebuggerClientListener::stackTrace( const int threadId, StackTraceInfo&& stack,
+										 const SessionId& ) {
 	changeThread( threadId );
 
 	for ( const auto& f : stack.stackFrames ) {
@@ -383,31 +440,45 @@ void DebuggerClientListener::stackTrace( const int threadId, StackTraceInfo&& st
 
 	mStackModel->setStack( std::move( stack ) );
 
-	for ( const auto& expression : mPlugin->mExpressions ) {
-		mClient->evaluate(
-			expression, "watch", getCurrentFrameId(),
-			[this, expression]( const std::string&, const std::optional<EvaluateInfo>& info ) {
-				Variable var;
-				var.evaluateName = expression;
-				var.name = std::move( expression );
-				if ( info ) {
-					var.value = info->result;
-					var.type = info->type;
-					var.variablesReference = info->variablesReference;
-					var.indexedVariables = info->indexedVariables;
-					var.namedVariables = info->namedVariables;
-					var.memoryReference = info->memoryReference;
-				}
-				mPlugin->mExpressionsHolder->upsertRootChild( std::move( var ) );
-				ExpandedState::Location location{ mCurrentScopePos->first, mCurrentScopePos->second,
-												  mCurrentFrameId };
-				mPlugin->mExpressionsHolder->restoreExpandedState(
-					location, mClient, getStatusDebuggerController()->getUIExpressions(), true );
-			} );
-	}
+	evaluateExpressions();
 }
 
-void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&& scopes ) {
+void DebuggerClientListener::evaluateExpression( const std::string& expression ) {
+	mClient->evaluate(
+		expression, "watch", getCurrentFrameId(),
+		[this, expression]( const std::string&, const std::optional<EvaluateInfo>& info ) {
+			Variable var;
+			var.evaluateName = expression;
+			var.name = std::move( expression );
+			if ( info ) {
+				var.value = info->result;
+				var.type = info->type;
+				var.variablesReference = info->variablesReference;
+				var.indexedVariables = info->indexedVariables;
+				var.namedVariables = info->namedVariables;
+				var.memoryReference = info->memoryReference;
+			}
+			mPlugin->mExpressionsHolder->upsertRootChild( std::move( var ) );
+			ExpandedState::Location location;
+			{
+				Lock l( mMutex );
+				if ( !mCurrentScopePos.has_value() )
+					return;
+				location = { mCurrentScopePos->first, mCurrentScopePos->second, mCurrentFrameId };
+			}
+			mPlugin->mExpressionsHolder->restoreExpandedState(
+				location, mClient, getStatusDebuggerController()->getUIExpressions(), true,
+				mUnstableFrameId );
+		} );
+}
+
+void DebuggerClientListener::evaluateExpressions() {
+	for ( const auto& expression : mPlugin->mExpressions )
+		evaluateExpression( expression );
+}
+
+void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&& scopes,
+									 const SessionId& ) {
 	if ( scopes.empty() )
 		return;
 
@@ -417,7 +488,7 @@ void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&&
 		auto child = std::make_shared<ModelVariableNode>( scope.name, scope.variablesReference );
 		mVariablesHolder->addChild( child );
 		if ( ( !mPlugin->mFetchRegisters && scope.name == "Registers" ) ||
-			 ( !mPlugin->mFetchGlobals && scope.name == "Globals" ) )
+			 ( !mPlugin->mFetchGlobals && ( scope.name == "Global" || scope.name == "Globals" ) ) )
 			continue;
 		mClient->variables( scope.variablesReference );
 	}
@@ -430,62 +501,85 @@ void DebuggerClientListener::scopes( const int /*frameId*/, std::vector<Scope>&&
 		return;
 	auto uiVars = sdc->getUIVariables();
 	if ( uiVars ) {
-		uiVars->runOnMainThread( [this, uiVars] {
-			auto model = uiVars->getModel();
-			size_t total = model->rowCount();
-			for ( size_t i = 0; i < total; i++ ) {
-				auto index = model->index( i, uiVars->getMainColumn() );
-				ModelVariableNode* node = static_cast<ModelVariableNode*>( index.internalData() );
-				if ( ( !mPlugin->mFetchRegisters && node->var.name == "Registers" ) ||
-					 ( !mPlugin->mFetchGlobals && node->var.name == "Globals" ) )
-					continue;
-				uiVars->tryOpenModelIndex( index );
-			}
-		} );
+		uiVars->clearViewMetadata();
+		uiVars->removeActionsByTag( SCOPES_UI_HASH );
+		uiVars->runOnMainThread(
+			[this, uiVars] {
+				// Reset selection given that the VariablesModel can end up doing an use-after-free
+				uiVars->getSelection().clear();
+				auto model = uiVars->getModel();
+				size_t total = model->rowCount();
+				for ( size_t i = 0; i < total; i++ ) {
+					auto index = model->index( i, uiVars->getMainColumn() );
+					if ( !index.isValid() )
+						continue;
+					ModelVariableNode* node =
+						static_cast<ModelVariableNode*>( index.internalData() );
+					if ( ( !mPlugin->mFetchRegisters && node->var.name == "Registers" ) ||
+						 ( !mPlugin->mFetchGlobals &&
+						   ( node->var.name == "Global" || node->var.name == "Globals" ) ) )
+						continue;
+					uiVars->tryOpenModelIndex( index );
+				}
+			},
+			Seconds( 0 ), SCOPES_UI_HASH );
 	}
 }
 
-void DebuggerClientListener::variables( const int variablesReference,
-										std::vector<Variable>&& vars ) {
+void DebuggerClientListener::variables( const int variablesReference, std::vector<Variable>&& vars,
+										const SessionId& ) {
 	mVariablesHolder->addVariables( variablesReference, std::move( vars ) );
 
-	auto scopeIt = mScopeRef.find( variablesReference );
-	if ( mCurrentScopePos && scopeIt != mScopeRef.end() ) {
-		ExpandedState::Location location{ mCurrentScopePos->first, mCurrentScopePos->second,
-										  mCurrentFrameId };
+	ExpandedState::Location location;
+	bool scopeFound = false;
+
+	{
+		Lock l( mMutex );
+		if ( !mCurrentScopePos.has_value() )
+			return;
+		location = { mCurrentScopePos->first, mCurrentScopePos->second, mCurrentFrameId };
+		scopeFound = mScopeRef.find( variablesReference ) != mScopeRef.end();
+	}
+
+	if ( scopeFound ) {
 		mVariablesHolder->restoreExpandedState( location, mClient,
-												getStatusDebuggerController()->getUIVariables() );
+												getStatusDebuggerController()->getUIVariables(),
+												false, mUnstableFrameId );
 	}
 }
 
-void DebuggerClientListener::modules( ModulesInfo&& ) {}
+void DebuggerClientListener::modules( ModulesInfo&&, const SessionId& ) {}
 
-void DebuggerClientListener::serverDisconnected() {}
+void DebuggerClientListener::serverDisconnected( const SessionId& ) {}
 
 void DebuggerClientListener::sourceContent( const std::string& /*path*/, int /*reference*/,
-											const SourceContent& /*content*/ ) {}
+											const SourceContent& /*content*/, const SessionId& ) {}
 
 void DebuggerClientListener::sourceBreakpoints(
 	const std::string& /*path*/, int /*reference*/,
-	const std::optional<std::vector<Breakpoint>>& /*breakpoints*/ ) {}
+	const std::optional<std::vector<Breakpoint>>& /*breakpoints*/, const SessionId& ) {}
 
-void DebuggerClientListener::breakpointChanged( const BreakpointEvent& ) {}
+void DebuggerClientListener::breakpointChanged( const BreakpointEvent&, const SessionId& ) {}
 
 void DebuggerClientListener::expressionEvaluated( const std::string& /*expression*/,
-												  const std::optional<EvaluateInfo>& ) {}
+												  const std::optional<EvaluateInfo>&,
+												  const SessionId& ) {}
 
 void DebuggerClientListener::gotoTargets( const Source& /*source*/, const int /*line*/,
-										  const std::vector<GotoTarget>& /*targets*/ ) {}
+										  const std::vector<GotoTarget>& /*targets*/,
+										  const SessionId& ) {}
 
 bool DebuggerClientListener::isRemote() const {
 	return mIsRemote;
 }
 
 bool DebuggerClientListener::isStopped() const {
+	Lock l( mMutex );
 	return mStoppedData ? true : false;
 }
 
 std::optional<StoppedEvent> DebuggerClientListener::getStoppedData() const {
+	Lock l( mMutex );
 	return mStoppedData;
 }
 
@@ -494,15 +588,34 @@ void DebuggerClientListener::setPausedToRefreshBreakpoints() {
 }
 
 int DebuggerClientListener::getCurrentThreadId() const {
+	Lock l( mMutex );
 	return mCurrentThreadId;
 }
 
 int DebuggerClientListener::getCurrentFrameId() const {
+	Lock l( mMutex );
 	return mCurrentFrameId;
 }
 
 std::optional<std::pair<std::string, int>> DebuggerClientListener::getCurrentScopePos() const {
+	Lock l( mMutex );
 	return mCurrentScopePos;
+}
+
+int DebuggerClientListener::getCurrentScopePosLine() const {
+	Lock l( mMutex );
+	return mCurrentScopePos.has_value() ? mCurrentScopePos->second : -1;
+}
+
+bool DebuggerClientListener::isCurrentScopePos( const std::string& filePath, int index ) const {
+	Lock l( mMutex );
+	return mCurrentScopePos.has_value() && index == mCurrentScopePos->second &&
+		   mCurrentScopePos->first == filePath;
+}
+
+bool DebuggerClientListener::isCurrentScopePos( const std::string& filePath ) const {
+	Lock l( mMutex );
+	return mCurrentScopePos.has_value() && mCurrentScopePos->first == filePath;
 }
 
 void DebuggerClientListener::setIsRemote( bool isRemote ) {

@@ -14,7 +14,7 @@ namespace EE { namespace System {
 class EE_API ThreadLocal : NonCopyable {
   public:
 	/** @brief Default constructor
-	**  @param value Optional value to initalize the variable */
+	**  @param value Optional value to initialize the variable */
 	ThreadLocal( void* value = NULL );
 
 	~ThreadLocal();

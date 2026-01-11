@@ -7,7 +7,7 @@
 // Rewritten by: Shane Hill
 // Date:         21/08/2001
 // Email:        Shane.Hill@dsto.defence.gov.au
-// Reason:       Remove dependancy on MFC. Code should compile on any
+// Reason:       Remove dependency on MFC. Code should compile on any
 //               platform. Tested on Windows/Linux/Irix
 //
 // Spartan: I made many modifications to the class. So, this is not the original.
@@ -136,7 +136,7 @@ class EE_API IniFile {
 					  double const defValue = 0.0 ) const;
 
 	/** Sets value of [keyname] valuename =.
-	** Specify the optional paramter as false (0) if you do not want it to create
+	** Specify the optional parameter as false (0) if you do not want it to create
 	** the key if it doesn't exist. @return true if data entered, false otherwise.
 	** Overloaded to accept std::string, int, and double. */
 	bool setValue( unsigned const keyID, unsigned const valueID, const std::string& value );
@@ -191,7 +191,7 @@ class EE_API IniFile {
 	bool setValueF( const std::string& keyname, const std::string& valuename, double const value,
 					bool create = true );
 
-	/** Sets a formated value from a keyname and a valuename */
+	/** Sets a formatted value from a keyname and a valuename */
 	bool setValueV( const std::string& keyname, const std::string& valuename, char* format, ... );
 
 	/** Deletes specified value.
@@ -255,14 +255,14 @@ class EE_API IniFile {
 	bool deleteKeyComments( unsigned const keyID );
 	bool deleteKeyComments( const std::string& keyname );
 
-	bool iniParsed() { return mIniReaded; }
+	bool iniParsed() { return mIniRead; }
 
 	bool keyExists( const std::string& keyname ) const;
 
 	bool keyValueExists( const std::string& keyname, const std::string& valuename ) const;
 
   private:
-	bool mIniReaded{ false };
+	bool mIniRead{ false };
 	std::string mPath;
 	std::string mBuffer;
 	struct key {

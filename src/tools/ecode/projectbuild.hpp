@@ -15,6 +15,11 @@ using namespace EE;
 using namespace EE::System;
 using namespace EE::UI;
 
+namespace eterm::UI {
+class UITerminal;
+}
+using namespace eterm::UI;
+
 namespace ecode {
 
 class App;
@@ -26,7 +31,7 @@ class StatusAppOutputController;
   "ecode": {
 	"build": [
 	  {
-		"args": "--with-debug-symbols gmake",
+		"args": "gmake",
 		"command": "premake4",
 		"working_dir": "${project_root}"
 	  },
@@ -100,6 +105,9 @@ struct ProjectBuildStep {
 	std::string name;
 	bool enabled{ true };
 	bool runInTerminal{ false };
+	bool reusePreviousTerminal{ false };
+	bool useStatusBarTerminal{ false };
+	bool stripAnsiCodes{ false };
 };
 
 using ProjectBuildSteps = std::vector<std::unique_ptr<ProjectBuildStep>>;
@@ -107,6 +115,7 @@ using ProjectBuildKeyVal = std::vector<std::pair<std::string, std::string>>;
 
 struct ProjectBuildConfig {
 	bool clearSysEnv{ false };
+	bool stripAnsiCodes{ false };
 };
 
 enum class ProjectOutputParserTypes { Error = 0, Warning = 1, Notice = 2 };
@@ -215,9 +224,9 @@ class ProjectBuild {
 
 	ProjectBuildSteps replaceVars( const ProjectBuildSteps& steps ) const;
 
-	static json serialize( const ProjectBuild::Map& builds );
+	static nlohmann::json serialize( const ProjectBuild::Map& builds );
 
-	static ProjectBuild::Map deserialize( const json& j, const std::string& projectRoot );
+	static ProjectBuild::Map deserialize( const nlohmann::json& j, const std::string& projectRoot );
 
   protected:
 	friend class ProjectBuildManager;
@@ -305,13 +314,13 @@ class ProjectBuildManager {
 
 	bool hasCleanCommands( const std::string& name );
 
-	bool loaded() const { return mLoadedWithBuilds; }
+	bool loaded() const;
 
-	bool loading() const { return mLoading; }
+	bool loading() const;
 
-	bool isBuilding() const { return mBuilding; }
+	bool isBuilding() const;
 
-	bool isRunningApp() const { return mRunning; }
+	bool isRunningApp() const;
 
 	void cancelBuild();
 
@@ -353,6 +362,7 @@ class ProjectBuildManager {
 	UISceneNode* mUISceneNode{ nullptr };
 	UITab* mTab{ nullptr };
 	App* mApp{ nullptr };
+	UITerminal* mLastUsedTerm{ nullptr };
 	std::unique_ptr<Process> mProcess;
 	std::unique_ptr<Process> mProcessRun;
 	ProjectBuild mNewBuild;
@@ -364,6 +374,7 @@ class ProjectBuildManager {
 	bool mCancelRun{ false };
 	bool mRunning{ false };
 	std::unordered_map<Node*, std::set<Uint32>> mCbs;
+	Uint32 mLastUsedTermCloseCbId{ 0 };
 
 	void runBuild( const std::string& buildName, const std::string& buildType,
 				   const ProjectBuildi18nFn& i18n, const ProjectBuildCommandsRes& res,

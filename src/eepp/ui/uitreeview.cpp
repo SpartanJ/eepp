@@ -88,8 +88,10 @@ void UITreeView::traverseTree( TreeViewCallback callback ) const {
 }
 
 void UITreeView::createOrUpdateColumns( bool resetColumnData ) {
-	if ( !getModel() )
+	if ( !getModel() ) {
+		updateContentSize();
 		return;
+	}
 	UIAbstractTableView::createOrUpdateColumns( resetColumnData );
 	updateContentSize();
 }
@@ -130,7 +132,7 @@ void UITreeView::bindNavigationClick( UIWidget* widget ) {
 	};
 
 	mWidgetsClickCbId[widget].push_back(
-		widget->addEventListener( Event::MouseDoubleClick, [this, openTree]( const Event* event ) {
+		widget->on( Event::MouseDoubleClick, [this, openTree]( const Event* event ) {
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
 			auto cellIdx = mouseEvent->getNode()->asType<UITableCell>()->getCurIndex();
 			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
@@ -143,7 +145,7 @@ void UITreeView::bindNavigationClick( UIWidget* widget ) {
 		} ) );
 
 	mWidgetsClickCbId[widget].push_back(
-		widget->addEventListener( Event::MouseClick, [this, openTree]( const Event* event ) {
+		widget->on( Event::MouseClick, [this, openTree]( const Event* event ) {
 			auto mouseEvent = static_cast<const MouseEvent*>( event );
 			auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
 			if ( mouseEvent->getFlags() & EE_BUTTON_RMASK ) {
@@ -155,13 +157,13 @@ void UITreeView::bindNavigationClick( UIWidget* widget ) {
 }
 
 bool UITreeView::tryOpenModelIndex( const ModelIndex& index, bool forceUpdate ) {
-	bool hasChilds = false;
+	bool hasChildren = false;
 	{
 		ConditionalLock l( getModel() != nullptr,
 						   getModel() ? &getModel()->resourceMutex() : nullptr );
-		hasChilds = getModel()->hasChilds( index );
+		hasChildren = getModel()->hasChildren( index );
 	}
-	if ( hasChilds ) {
+	if ( hasChildren ) {
 		auto& data = getIndexMetadata( index );
 		if ( !data.open ) {
 			data.open = true;
@@ -197,7 +199,7 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 				ConditionalLock l( getModel() != nullptr,
 								   getModel() ? &getModel()->resourceMutex() : nullptr );
 				auto idx = mouseEvent->getNode()->getParent()->asType<UITableRow>()->getCurIndex();
-				if ( getModel()->hasChilds( idx ) ) {
+				if ( getModel()->hasChildren( idx ) ) {
 					auto& data = getIndexMetadata( idx );
 					data.open = !data.open;
 					createOrUpdateColumns( false );
@@ -206,12 +208,17 @@ UIWidget* UITreeView::setupCell( UITableCell* widget, UIWidget* rowWidget,
 			}
 		} );
 	}
+
+	if ( mSetupCellCb )
+		mSetupCellCb( widget );
+
 	return widget;
 }
 
 UIWidget* UITreeView::createCell( UIWidget* rowWidget, const ModelIndex& index ) {
-	UITableCell* widget = index.column() == (Int64)getModel()->treeColumn() ? UITreeViewCell::New()
-																			: UITableCell::New();
+	UITableCell* widget = index.column() == (Int64)getModel()->treeColumn()
+							  ? UITreeViewCell::New()
+							  : UITableCell::New( mTag + "::cell" );
 	return setupCell( widget, rowWidget, index );
 }
 
@@ -226,6 +233,8 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 		mWidgets[posIndex.y][index.column()] = widget;
 		widget->reloadStyle( true, true, true );
 	}
+	if ( !index.isValid() )
+		return widget;
 	const auto& colData = columnData( index.column() );
 	if ( !colData.visible ) {
 		widget->setVisible( false, false );
@@ -239,7 +248,7 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 		UITableCell* cell = widget->asType<UITableCell>();
 		updateTableCellData( cell, index );
 
-		bool hasChilds = false;
+		bool hasChildren = false;
 
 		if ( widget->isType( UI_TYPE_TREEVIEW_CELL ) &&
 			 index.column() == (Int64)getModel()->treeColumn() ) {
@@ -257,9 +266,9 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 
 			Float indentation = minIndent + getIndentWidth() * indentLevel;
 
-			hasChilds = getModel()->hasChilds( index );
+			hasChildren = getModel()->hasChildren( index );
 
-			if ( hasChilds ) {
+			if ( hasChildren ) {
 				UIIcon* icon = getIndexMetadata( index ).open ? mExpandIcon : mContractIcon;
 				Drawable* drawable = icon ? icon->getSize( mExpanderIconSize ) : nullptr;
 
@@ -279,7 +288,7 @@ UIWidget* UITreeView::updateCell( const Vector2<Int64>& posIndex, const ModelInd
 			tcell->setIndentation( indentation );
 		}
 
-		if ( hasChilds && mExpandersAsIcons && cell->hasIcon() ) {
+		if ( hasChildren && mExpandersAsIcons && cell->hasIcon() ) {
 			cell->getIcon()->setVisible( false );
 			return widget;
 		}
@@ -335,7 +344,7 @@ struct DrawTraverseTreeVars {
 	Float rowHeight = 0;
 };
 
-void UITreeView::drawChilds() {
+void UITreeView::drawChildren() {
 	DrawTraverseTreeVars v{ this, 0, 0, getRowHeight() }; // To avoid allocating the lambda
 
 	traverseTree( [this, &v]( const int&, const ModelIndex& index, const size_t& indentLevel,
@@ -346,7 +355,7 @@ void UITreeView::drawChilds() {
 			return IterationDecision::Continue;
 		Float xOffset = 0;
 		UITableRow* rowNode = updateRow( v.realRowIndex, index, yOffset );
-		rowNode->setChildsVisibility( false, false );
+		rowNode->setChildrenVisibility( false, false );
 		v.realColIndex = 0;
 		for ( size_t colIndex = 0; colIndex < getModel()->columnCount(); colIndex++ ) {
 			auto& colData = columnData( colIndex );
@@ -458,7 +467,7 @@ void UITreeView::setAllExpanded( const ModelIndex& index, bool expanded ) {
 	for ( size_t i = 0; i < count; i++ ) {
 		auto curIndex = model.index( i, model.treeColumn(), index );
 		getIndexMetadata( curIndex ).open = expanded;
-		if ( model.hasChilds( curIndex ) )
+		if ( model.hasChildren( curIndex ) )
 			setAllExpanded( curIndex, expanded );
 	}
 }
@@ -547,7 +556,7 @@ Uint32 UITreeView::onKeyDown( const KeyEvent& event ) {
 		return UIAbstractTableView::onKeyDown( event );
 	auto curIndex = getSelection().first();
 
-	if ( nullptr == getModel() || !getModel()->hasChilds() )
+	if ( nullptr == getModel() || !getModel()->hasChildren() )
 		return UIAbstractTableView::onKeyDown( event );
 
 	switch ( event.getKeyCode() ) {
@@ -757,7 +766,7 @@ ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& cas
 	const Model* model = getModel();
 	ConditionalLock l( getModel() != nullptr,
 					   getModel() ? &const_cast<Model*>( getModel() )->resourceMutex() : nullptr );
-	if ( !model || !model->hasChilds() )
+	if ( !model || !model->hasChildren() )
 		return {};
 	ModelIndex foundIndex = {};
 	traverseTree( [&]( const int&, const ModelIndex& index, const size_t&, const Float& ) {
@@ -778,7 +787,7 @@ ModelIndex UITreeView::findRowWithText( const std::string& text, const bool& cas
 ModelIndex UITreeView::openRowWithPath( const std::vector<std::string>& pathTree,
 										bool selectOpenedRow ) {
 	const Model* model = getModel();
-	if ( !model || !model->hasChilds() )
+	if ( !model || !model->hasChildren() )
 		return {};
 	ModelIndex parentIndex = {};
 	for ( size_t i = 0; i < pathTree.size(); i++ ) {
@@ -940,10 +949,10 @@ UITreeViewCell::UITreeViewCell( const std::function<UITextView*( UIPushButton* )
 		->setParent( const_cast<UITreeViewCell*>( this ) )
 		->setVisible( false )
 		->setEnabled( false );
-	mImage->addEventListener( Event::OnPaddingChange, cb );
-	mImage->addEventListener( Event::OnMarginChange, cb );
-	mImage->addEventListener( Event::OnSizeChange, cb );
-	mImage->addEventListener( Event::OnVisibleChange, cb );
+	mImage->on( Event::OnPaddingChange, cb );
+	mImage->on( Event::OnMarginChange, cb );
+	mImage->on( Event::OnSizeChange, cb );
+	mImage->on( Event::OnVisibleChange, cb );
 }
 
 UIWidget* UITreeViewCell::getExtraInnerWidget() const {

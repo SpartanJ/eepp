@@ -4,19 +4,19 @@
 	author: 'NullPlane'
 	author_link: 'github.com/NullPlane'
 	collaborators: [ 'SpartanJ', 'NullPlane' ]
-	version: 0.32
-	version_ecode: 0.6.4
+	version: '0.7.2_r01'
 	created: 2024-02-08
-	updated: 2025-01-23
+	updated: 2025-08-26
 	language: 'de'
 	format: 'xml'
-	file: de.xml
+	file: 'de.xml'
 	source: 'github.com/SpartanJ/eepp/tree/develop/bin/assets/i18n'
 	credits: 'i18n/en.xml'
 	license: 'MIT (respective)'
 ?-->
 <resources language="de" title="Deutsch">
 	<string name="about_ecode">Über ecode...</string>
+	<string name="add">Hinzufügen</string>
 	<string name="add_branch">Zweig hinzufügen</string>
 	<string name="add_build">Build hinzufügen</string>
 	<string name="add_build_step">Build-Schritt hinzufügen</string>
@@ -27,20 +27,36 @@
 	<string name="add_ellipsis">Hinzufügen...</string>
 	<string name="add_exclude_filter">Exkludierenden Filter hinzufügen</string>
 	<string name="add_include_filter">Inkludierenden Filter hinzufügen</string>
+	<string name="add_message">Nachricht hinzufügen</string>
+	<string name="add_message_and_run_prompt">Nachricht hinzufügen und Aufforderung starten</string>
 	<string name="advanced_options">Erweiterte Optionen</string>
+	<string name="ai_assistant">KI-Assistent</string>
+	<string name="ai_clear_history">Verlauf bereinigen...</string>
+	<string name="ai_confirm_delete_chats">Sind Sie sicher, dass Unterhaltungen älter als %d Tage gelöscht werden sollen?
+Diese Operation kann nicht rückgängig gemacht werden!</string>
+	<string name="ai_conversations_history">KI-Unterhaltungen</string>
+	<string name="ai_llm_presentation">Womit kann ich helfen?</string>
+	<string name="ai_rename_chat">Unterhaltung umbenennen</string>
 	<string name="any_https_or_http_url">Jegliche http(s)/URLs</string>
 	<string name="any_name_ellipsis">Jeglicher Name...</string>
 	<string name="app_output">Programmrückgabe</string>
 	<string name="arguments">Argumente</string>
 	<string name="ask_close_tab">Tab schließen?</string>
+	<string name="assistant">Assistent</string>
+	<string name="attach">Anhängen</string>
 	<string name="author">Autor</string>
 	<string name="auto_close_brackets_and_tags">Klammern &amp; Tags automatisch vervollständigen</string>
 	<string name="auto_close_xml_tags">XML-Tags automatisch vervollständigen</string>
 	<string name="auto_detect_indent_type_and_width">Einzugsart- &amp; weite automatisch erkennen</string>
 	<string name="autoreload_on_disk_change">Auto-Auffrischen bei Dateiänderung im Festspeicher</string>
 	<string name="back_quotes">Backticks ``</string>
+	<string name="binary_for_debugger">Debugger-Binary</string>
+	<string name="binary_for_formatter">Formatter-Binary</string>
+	<string name="binary_for_language_server">Language-Server-Binary</string>
+	<string name="binary_for_linter">Linter-Binary</string>
 	<string name="brackets">Klammern ()</string>
 	<string name="branches">Zweige</string>
+	<string name="breakpoints">Haltemarken</string>
 	<string name="build">Build</string>
 	<string name="build_cloned_name">Neuer Name für Build-Klon:</string>
 	<string name="build_configuration">Build-Konfiguration</string>
@@ -49,12 +65,12 @@
 	<string name="build_environment">Build-Umgebung</string>
 	<string name="build_failed">In der Build-Ausführung traten Fehler auf
 </string>
+	<string name="build_failed_debug_anyways">Projekt-Build fehlgeschlagen. Wollen Sie die Binary dennoch debuggen?</string>
 	<string name="build_name">Build-Name</string>
 	<string name="build_name_not_found">Build-Name nicht gefunden</string>
 	<string name="build_os_not_supported">Betriebssystem von gegenwärtigem Build nicht unterstützt!</string>
 	<string name="build_output_show_build_issues">Build-Output: Build-Probleme zeigen</string>
 	<string name="build_output_show_build_output">Build-Output: Build-Output zeigen</string>
-	<string name="build_seetings">Build-Einstellungen</string>
 	<string name="build_settings">Build-Einstellungen</string>
 	<string name="build_settings_save_clarification">* Änderungen werden automatisch gespeichert</string>
 	<string name="build_step_num">Schritt %u: %s</string>
@@ -68,6 +84,7 @@
 	<string name="build_types">Build-Typen</string>
 	<string name="build_types_desc">Build-Typen können als dynamische Build-Option repräsentiert durch den respektiven Schlüssel ${build_type} verwendet werden. Der aktuelle Build-Typ kann einfach im Editor gewechselt werden.</string>
 	<string name="camsg_box_cancel">Abbrechen</string>
+	<string name="cancel">Abbrechen</string>
 	<string name="cancel_build">Build abbrechen</string>
 	<string name="cancel_clean">Bereinigung abbrechen</string>
 	<string name="cancel_run">Ausführung abbrechen</string>
@@ -76,9 +93,13 @@
 	<string name="center">Zentriert</string>
 	<string name="change_case">Groß-/Kleinschreibung wechseln</string>
 	<string name="change_escape_sequence">Escape-Sequenz ändern</string>
+	<string name="change_role">Rolle ändern</string>
 	<string name="change_whole_word">Ganzes Wort ändern</string>
+	<string name="chat_cloned"> (dupliziert)</string>
+	<string name="chat_history">Unterhaltungsverlauf</string>
 	<string name="check_for_new_updates_at_startup">Bei Programmstart nach Aktualisierungen suchen</string>
 	<string name="check_for_updates">Prüfe auf Aktualisierungen</string>
+	<string name="check_for_updates_ellipsis">Prüfe auf Aktualisierungen...</string>
 	<string name="check_languages_health">Sprachenintegrität prüfen</string>
 	<string name="clean">Bereinigen</string>
 	<string name="clean_failed">In der Bereinigung traten Fehler auf
@@ -89,7 +110,8 @@
 	<string name="clear">Bereinigen</string>
 	<string name="clear_history">Verlauf Bereinigen</string>
 	<string name="clear_menu">Menü bereinigen</string>
-	<string name="clear_system_enviroment">Systemumgebung bereinigen</string>
+	<string name="clear_system_environment">Systemumgebung bereinigen</string>
+	<string name="clone_current_conversation">Aktuelle Unterhaltung duplizieren</string>
 	<string name="clone_ellipsis">Duplizieren...</string>
 	<string name="clone_setting">Einstellung duplizieren</string>
 	<string name="cloned_name_must_be_different">Klon-Namen dürfen sich mit keinem bestehenden Build-Namen decken.</string>
@@ -116,35 +138,44 @@
 	<string name="color_scheme_set">Farbschema: %s</string>
 	<string name="column_position">Spaltenposition</string>
 	<string name="command">Befehl</string>
+	<string name="command_line">Befehlszeile</string>
 	<string name="command_palette">Befehlspalette</string>
 	<string name="command_palette_ellipsis">Befehlspalette...</string>
 	<string name="commit">Commit</string>
 	<string name="commit_bypass_hook">Committen und Hook umgehen</string>
 	<string name="complete_edit">Vollständige Bearbeitung</string>
+	<string name="configure_api_key">Der Anbieter-API-Schlüssel muss zuerst konfiguriert sein.</string>
 	<string name="configure_default_shell">Standard-Shell ändern</string>
 	<string name="configure_ellipsis">Verwalten...</string>
 	<string name="configure_ignore_files_ellipsis">Ignorierte Dateien verwalten...</string>
 	<string name="configure_terminal_scrollback">Konsolenverlaufslänge ändern</string>
 	<string name="configure_terminal_shell">Konsolen-Shell wählen</string>
+	<string name="configured_debugger">Gewählter Debugger</string>
+	<string name="configured_formatter">Gewählter Formatter</string>
+	<string name="configured_language_server">Gewählter Language Server</string>
+	<string name="configured_linter">Gewählter Linter</string>
 	<string name="confirm_build_delete">Wollen Sie die Build-Konfiguration wiklich löschen?</string>
 	<string name="confirm_close_folder">Einige Dateien wurden noch nicht gespeichert.
 Wollen Sie den Ordner wirklich schließen?</string>
 	<string name="confirm_close_tab">Diesen Tab wirklich schließen?
 Alle Änderungen in "%s" gehen dann verloren.</string>
+	<string name="confirm_del_llm_chat">Sicher, dass Sie "%s?" entfernen wollen?</string>
 	<string name="confirm_ecode_exit">Soll ecode wirklich geschlossen werden?
 Alle ungespeicherten Änderungen gehen dann verloren.</string>
 	<string name="confirm_loading_font">Font-Ladebestätigung</string>
 	<string name="confirm_new_file_encoding">Für neue Kodierungen muss die Datei gespeichert werden. Soll sie jetzt gespeichert werden?</string>
 	<string name="confirm_remove_file">Wollen Sie "%s" wirklich entfernen?</string>
+	<string name="console_output">Konsolenausgabe</string>
 	<string name="console_toggle">Konsole umschalten</string>
+	<string name="continue">Fortfahren</string>
 	<string name="continue_editing">Bearbeitung fortsetzen</string>
 	<string name="copy">Kopieren</string>
-	<string name="copy_containing_folder_path">Kopieren mit Ordnerpfad</string>
-	<string name="copy_containing_folder_path_ellipsis">Kopieren mit Ordnerpfad...</string>
+	<string name="copy_containing_folder_path">Ordnerpfad kopieren</string>
+	<string name="copy_containing_folder_path_ellipsis">Ordnerpfad kopieren...</string>
 	<string name="copy_error_message">Fehlermeldung kopieren</string>
 	<string name="copy_file_path">Dateipfad kopieren</string>
 	<string name="copy_file_path_and_position">Dateipfad und -position kopieren</string>
-	<string name="coudlnt_write_the_file">Datei konnte nicht geschrieben werden.</string>
+	<string name="couldnt_write_the_file">Datei konnte nicht geschrieben werden.</string>
 	<string name="could_not_write_file">Dateispeicherung auf Datenträger fehlgeschlagen.
 Bitte prüfen, ob Datei schreibgeschützt ist oder ecode nicht über die Schreibberechtigung verfügt.
 Dateipfad: </string>
@@ -171,27 +202,57 @@ Dateipfad: </string>
 	<string name="custom_variables">Angepasste Variablen</string>
 	<string name="custom_variables_desc">Angepasste Variablen erlauben das Vereinfachen von Build-Befehlsschritten durch Hinzufügen eigener Variablen, die über die Build-Einstellungen in Befehlen, Argumenten und Arbeitsverzeichnissen angewendet werden können.</string>
 	<string name="custom_variables_desc_2">Angepasste Variablen können mit ${variable_name} in beliebigen Befehlen aufgerufen werden.</string>
-	<string name="custom_variables_desc_3">Es gibt bereits vordefinierte angepasste Variablen zur Nutzung:&#10;${project_root}: Ordner-/Projekt-Root-Verzeichnis.&#10;${build_type}: Ausgewählter Build-Typ zur Projekterstellung.&#10;${os}: Name des aktuellen Betriebssystems.&#10;${arch}: Architektur des aktuellen Betriebssystems.&#10;${nproc}: Anzahl logischer Prozessoreinheiten.&#10;${current_doc}: Letzter oder aktueller Dokumentenpfad.&#10;${current_doc_name}: Letzter oder aktueller Name fokussierten Dokuments (ohne Erweiterung)&#10;${current_doc_dir}: Letztes oder gegenwärtig fokussiertes Projektverzeichnis.</string>	
+	<string name="custom_variables_desc_3">Es gibt bereits vordefinierte angepasste Variablen zur Nutzung:&amp;#10;${project_root}: Ordner-/Projekt-Root-Verzeichnis.&amp;#10;${build_type}: Ausgewählter Build-Typ zur Projekterstellung.&amp;#10;${os}: Name des aktuellen Betriebssystems.&amp;#10;${arch}: Architektur des aktuellen Betriebssystems.&amp;#10;${nproc}: Anzahl logischer Prozessoreinheiten.&amp;#10;${current_doc}: Letzter oder aktueller Dokumentenpfad.&amp;#10;${current_doc_name}: Letzter oder aktueller Name fokussierten Dokuments (ohne Erweiterung).&amp;#10;${current_doc_dir}: Letztes oder gegenwärtig fokussiertes Projektverzeichnis.</string>	
 	<string name="cut">Ausschneiden</string>
 	<string name="dark">Dunkel</string>
 	<string name="date">Datum</string>
+	<string name="datetime">Datumsangabe</string>
+	<string name="dc_editing">Bearbeite %s, Dateiart %s </string>
+	<string name="dc_workspace">Arbeiten an %s</string>
+	<string name="debug">Debuggen</string>
 	<string name="debug_draw_boxes">Boxen zeigen</string>
 	<string name="debug_draw_boxes_toggle">Debug-Umschaltung: Boxen zeigen</string>
 	<string name="debug_draw_debug_data">Debug-Daten zeigen</string>
 	<string name="debug_draw_highlight">Fokus &amp; Maus-Hover markieren</string>
 	<string name="debug_draw_highlight_toggle">Debug-Umschaltung: Markierungen zeigen</string>
 	<string name="debug_widget_tree_view">Debug: Widget-Baumansicht</string>
+	<string name="debuggee_exception_triggered_desc">Debuggee warf eine Ausnahme: %s</string>
+	<string name="debugger">Debugger</string>
+	<string name="debugger_add_expression">Ausdruck hinzufügen...</string>
+	<string name="debugger_binary_not_found">Debugger-Binary nicht gefunden. Binary "%s" muss installiert sein.</string>
+	<string name="debugger_breakpoint_enable_toggle">Debugger-Haltemarkenaktivierung umschalten</string>
+	<string name="debugger_breakpoint_toggle">Debugger-Haltemarken umschalten</string>
+	<string name="debugger_configuration">Debugger-Konfiguration</string>
+	<string name="debugger_configuration_not_supported">Debugger-Konfiguration derzeit nicht unterstützt.</string>
+	<string name="debugger_continue_interrupt">Debugger-Halt: Fortfahren</string>
+	<string name="debugger_copy_variable_evaluate_name">Namensevaluierung kopieren</string>
+	<string name="debugger_copy_variable_memory_reference">Speicherreferenz kopieren</string>
+	<string name="debugger_copy_variable_name">Namen kopieren</string>
+	<string name="debugger_copy_variable_type">Typ kopieren</string>
+	<string name="debugger_copy_variable_value">Wert kopieren</string>
+	<string name="debugger_init_failed">Debugger-Initialisierung fehlgeschlagen.</string>
+	<string name="debugger_remove_expression">Ausdruck entfernen</string>
+	<string name="debugger_start">Debugger: Start</string>
+	<string name="debugger_start_stop">Debugger Start Stopp</string>
+	<string name="debugger_step_into">Debugger: Schritt einwärts</string>
+	<string name="debugger_step_out">Debugger: Schritt auswärts</string>
+	<string name="debugger_step_over">Debugger: Schritt darüber</string>
+	<string name="debugger_stop">Debugger: Stop</string>
+	<string name="debugger_value_viewer">Wert-Inspektor</string>
 	<string name="default_theme">Standard-Thema</string>
 	<string name="del_custom_output_parser">Angewählten individuellen Output-Parser löschen</string>
 	<string name="del_custom_variable">Angewählte Umgebungsvariable löschen</string>
 	<string name="delete">Löschen</string>
+	<string name="delete_history_older_than_ellipsis">Lösche Unterhaltungen älter als...</string>
 	<string name="delete_selected">Markiertes löschen</string>
 	<string name="delete_setting">Einstellung löschen</string>
 	<string name="details_nbsp">Details </string>
 	<string name="directory">Verzeichnis</string>
 	<string name="disable_welcome_screen">Willkommensbildschirm deaktivieren</string>
+	<string name="discordrpc_reconnect">DiscordRPC-Verbindungswiederaufnahme</string>
 	<string name="document">Dokument</string>
 	<string name="document_symbol_find_ellipsis">Symbole im Dokument finden...</string>
+	<string name="documentation">Dokumentation</string>
 	<string name="documents_settings">Dokumenteneinstellungen</string>
 	<string name="double_quotes">Doppelte Anführungszeichen ""</string>
 	<string name="download_file_web">Datei aus dem Netz herunterladen</string>
@@ -199,6 +260,7 @@ Dateipfad: </string>
 	<string name="duplicate_file_ellipsis">Datei duplizieren...</string>
 	<string name="ecode_no_updates_available">Gegenwärtig steht keine Aktualisierung an.</string>
 	<string name="ecode_source">ecode-Quelltext</string>
+	<string name="ecode_source_ellipsis">ecode-Quelltext...</string>
 	<string name="ecode_unreleased_version">Sie führen eine unveröffentlichte Version von ecode aus.
 Gegenwärtige Version: </string>
 	<string name="ecode_updates_available"> verfügbar!
@@ -232,23 +294,26 @@ auf farbenrepräsentierende Wörter.</string>
 	<string name="error_checking_version">Aktualisierungssuche fehlgeschlagen.</string>
 	<string name="error_copying_file">Fehler beim Kopieren der Datei.</string>
 	<string name="error_renaming_file">Fehler beim Umbenennen der Datei.</string>
-	<string name="escape_sequence_tooltip">Unicode-Zeichen \, 	,
-,
- und ( ersetzen</string>
+	<string name="escape_sequence_tooltip">Unicode-Zeichen \, \t, \n, \r und ( ersetzen</string>
+	<string name="escape_sequences">Escape-Sequenzen</string>
 	<string name="exclusive_mode">Exklusivmodus</string>
 	<string name="executable_to_run">Auszuführende Programmdatei</string>
 	<string name="execute_dir_in_terminal">Verzeichnis in Konsole öffnen</string>
 	<string name="execute_in_terminal">In Konsole ausführen</string>
 	<string name="expand_all">Alle erweitern</string>
+	<string name="expressions">Ausdrücke</string>
 	<string name="fallback_font">Reserve-Schriftart</string>
 	<string name="fallback_font_ellipsis">Reserve-Schriftart...</string>
 	<string name="feature_not_supported_in_emscripten">Diese Funktion wird nur in der ecode-Desktopversion unterstützt.</string>
-	<string name="feature_not_supported_in_os">Diese Funktion wird vom derzeitigen Betriebssystem nicht unterstützt. ecode versucht, externes Terminal zu öffnen.</string>
+	<string name="feature_not_supported_in_os">Diese Funktion wird vom derzeitigen Betriebssystem nicht unterstützt.
+ecode versucht, externes Terminal zu öffnen.</string>
 	<string name="file">Datei</string>
 	<string name="file_already_exists">Diese Datei existiert bereits!</string>
 	<string name="file_encoding">Dateikodierung</string>
 	<string name="file_name">Dateiname</string>
+	<string name="file_path">Dateipfad</string>
 	<string name="file_type">Dateityp</string>
+	<string name="filter_colon">Filter:</string>
 	<string name="find">Suchen</string>
 	<string name="find_and_replace">Suchen und Ersetzen</string>
 	<string name="find_prev">Voriges finden</string>
@@ -260,28 +325,31 @@ auf farbenrepräsentierende Wörter.</string>
 	<string name="font_size_grow">Schriftgröße erhöhen</string>
 	<string name="font_size_reset">Schriftgröße zurücksetzen</string>
 	<string name="font_size_shrink">Schriftgröße verringern</string>
+	<string name="for_help_please_visit">Hilfematerial unter:</string>
 	<string name="force_new_line_at_end_of_file">Neuzeile am Dokumentende erzwingen</string>
 	<string name="format_doc">Dok. formatieren</string>
 	<string name="formatter_format_document">Dokument formatieren</string>
+	<string name="forum">Forum</string>
+	<string name="found">Gefunden</string>
 	<string name="frame_rate_limit">Bildwiederholratenbegrenzung</string>
 	<string name="frame_rate_limit_applied">Bildwiederholratenbegrenzung angewendet</string>
 	<string name="fullscreen_mode">Vollbildmodus</string>
 	<string name="fullscreen_toggle">Vollbild umschalten</string>
 	<string name="git">Git</string>
 	<string name="git_add_branch">Zweig hinzufügen</string>
-	<string name="git_ammend">Letzten Commit abändern</string>
+	<string name="git_amend">Letzten Commit abändern</string>
 	<string name="git_apply_stash">Stash anwenden</string>
 	<string name="git_apply_stash_title">Stash anwenden</string>
-	<string name="git_blame">Git Blame</string>
+	<string name="git_blame">Git-Blame</string>
 	<string name="git_bypass_hook">Commit-Hook umgehen</string>
 	<string name="git_changed">Geändert</string>
 	<string name="git_checkout">Auschecken</string>
 	<string name="git_checkout_ellipsis">Auschecken...</string>
-	<string name="git_commit">Git Commit</string>
+	<string name="git_commit">Git-Commit</string>
 	<string name="git_commit_message">Commit-Nachricht:</string>
 	<string name="git_confirm">Bestätigen</string>
 	<string name="git_confirm_apply_stash">Einen zuvor gespeicherten Stash anwenden?</string>
-	<string name="git_confirm_branch_delete">Sind Sie sicher, dass Sie Zweig "%s" löschen ?</string>
+	<string name="git_confirm_branch_delete">Sind Sie sicher, dass Sie Zweig "%s" löschen möchten?</string>
 	<string name="git_confirm_branch_merge">Sind Sie sicher, dass Sie aus Zweig "%s" vereinigen möchten?</string>
 	<string name="git_confirm_discard_changes">Sind Sie sicher, dass Sie alle Änderungen verwerfen möchten in: "%s"?</string>
 	<string name="git_confirm_drop_stash">Sind Sie sicher, dass Sie den ausgewählten Stash fallen lassen möchten?</string>
@@ -291,7 +359,10 @@ auf farbenrepräsentierende Wörter.</string>
 Zweignamen eingeben:</string>
 	<string name="git_create_local_branch">Lokalen Zweig erstellen?</string>
 	<string name="git_delete_branch">Löschen</string>
+	<string name="git_diff_head">HEAD-Diff</string>
+	<string name="git_diff_staged">Stage-Diff</string>
 	<string name="git_discard">Verwerfen</string>
+	<string name="git_discard_all">Alles verwerfen</string>
 	<string name="git_drop_stash">Stash fallen lassen</string>
 	<string name="git_drop_stash_title">Stash fallen lassen</string>
 	<string name="git_fast_forward_merge">Fast-Forward-Vereinigung</string>
@@ -326,6 +397,7 @@ Stash benennen (optional):</string>
 	<string name="git_tags">Tags</string>
 	<string name="git_unmerged">Unvereinigt</string>
 	<string name="git_unstage">Entstagen</string>
+	<string name="git_unstage_all">Alles entstagen</string>
 	<string name="git_untracked">Unverfolgt</string>
 	<string name="global_search">Globale Suche</string>
 	<string name="global_search_clear_history">Globalen Suchverlauf bereinigen</string>
@@ -335,16 +407,20 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="go_to_line">Zu Zeile springen</string>
 	<string name="go_to_line_ellipsis">Zu Zeile springen...</string>
 	<string name="go_to_line_in_current_document">In aktuellem Dokument zu Zeile springen</string>
+	<string name="gone">verschwunden</string>  <!-- ###STATE### -->
 	<string name="group">Gruppierung</string>
 	<string name="h_as_cpp">.h-Dateien als C++-Code ansehen.</string>
 	<string name="help">Hilfe</string>
 	<string name="hide">Ausblenden</string>
 	<string name="hide_tabbar_on_single_tab">Tableiste bei einzelnem Tab ausblenden</string>
 	<string name="hide_tabbar_on_single_tab_tooltip">Blendet die Tableiste bei einem einzelnen Element im Tab-Widget aus.</string>
+	<string name="highlight">Markieren</string>
 	<string name="highlight_current_line">Aktuelle Zeile markieren</string>
 	<string name="highlight_matching_brackets">Klammerpaare markieren</string>
 	<string name="highlight_selection_match">Auf Auswahl passenden Text markieren</string>
 	<string name="history">Verlauf:</string>
+	<string name="host_port_required">Es wurden kein Host und Port gesetzt.</string>
+	<string name="id">Id</string>
 	<string name="ignore">Ignorieren</string>
 	<string name="indent">Einzug</string>
 	<string name="indent_tab_alignment">Tab-Einzugsausrichtung</string>
@@ -362,7 +438,10 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="keep_indentation">Einrückung beibehalten</string>
 	<string name="key_bindings">Tastenzuweisungen</string>
 	<string name="keybindings">Tastenzuweisungen</string>
+	<string name="keybindings_clarification">Zusätzliche Tastenzuseisungen für aktive Plugins können im Plugin Manager verwaltet werden.
+Beachten Sie, dass der Großteil der Tastenzuweisungen hier definiert wird.</string>
 	<string name="lang_selected_default">Die ausgewählte Sprache wird als Standard für diese Dateierweiterung gesetzt.</string>
+	<string name="language">Sprache</string>
 	<string name="languages_health">Sprachenintegrität</string>
 	<string name="left">Links</string>
 	<string name="light">Hell</string>
@@ -376,12 +455,15 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="linter_copy_error_message">Linter: Fehlermitteilung kopieren</string>
 	<string name="linter_go_to_next_error">Linter: Zu nächstem Fehler gehen</string>
 	<string name="linter_go_to_previous_error">Linter: Zu vorigem Fehler gehen</string>
+	<string name="list_of_processes">Prozessliste</string>
 	<string name="load_cur_dir_as_folder">Aktuelles Dokumentverzeichnis als Ordner laden</string>
 	<string name="load_current_dir">Aktuelles Verz. laden</string>
 	<string name="locate">Finden</string>
 	<string name="locate_ellipsis">Finden...</string>
 	<string name="locate_files_and_symbols">Dateien &amp; Symbole finden</string>
 	<string name="lock">Sperren</string>
+	<string name="lock_chat_memory">Chat-Speicher sperren</string>
+	<string name="lock_chat_memory_tooltip">Chat-Speicher sperren, um Löschung bei Speicherbereinigung zu verhindern. Chat-Speicher kann nur noch manuell im Chatverlauf freigegeben werden.</string>
 	<string name="lock_toggle">Sperren umschalten</string>
 	<string name="lsp_code_action">Code-Aktion</string>
 	<string name="lsp_find_references_to_symbol_under_cursor">Referenz zu Symbol unter Eingabemarke finden</string>
@@ -402,6 +484,9 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="lsp_symbol_info">LSP: Symbolinformationen</string>
 	<string name="lsp_symbol_references">LSP: Symbolreferenzen</string>
 	<string name="lua_pattern">Lua-Schema</string>
+	<string name="lua_pattern_match">Lua-Schemenabgleich</string>
+	<string name="main_menu">Hauptmenü</string>
+	<string name="match_case">Groß-/Kleinschreibung vergleichen</string>
 	<string name="match_whole_word">Ganzes Wort vergleichen</string>
 	<string name="menu_hold_shift_hint">Zum Offenhalten "UMSCHALT" halten</string>
 	<string name="menu_hold_shift_hint_desc">"UMSCHALT" beim Ändern jeglicher Optionen gedrückt zu halten hält das Menü offen.</string>
@@ -413,6 +498,7 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="monospace_font">Monospace-Schriftart</string>
 	<string name="monospace_font_ellipsis">Monospace-Schriftart...</string>
 	<string name="more_ellipsis">Mehr...</string>
+	<string name="more_options">Weitere Optionen</string>
 	<string name="move_down">Nach unten</string>
 	<string name="move_panel_left">Paneel nach links bewegen</string>
 	<string name="move_panel_left_ellipsis">Paneel nach links bewegen...</string>
@@ -438,6 +524,9 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="must_configure_build_and_run_config">Fügen Sie zuerst eine Build- und Ausführungskonfiguration hinzu</string>
 	<string name="must_configure_build_config">Fügen Sie zuerst eine Build-Konfiguration hinzu</string>
 	<string name="name">Name</string>
+	<string name="new_ai_assistant">Neuer KI-Assistent</string>
+	<string name="new_conversation">Neue Unterhaltung</string>
+	<string name="new_fallback_font_requires_restart">Neue Ausweichschriftart festgelegt. Für sichtbare Änderung bitte die Anwendung neu starten.</string>
 	<string name="new_file">Neue Datei</string>
 	<string name="new_file_ellipsis">Neue Datei...</string>
 	<string name="new_file_in_directory_ellipsis">Neue Datei im Verzeichnis...</string>
@@ -449,7 +538,7 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="new_terminal_name">Neuer Konsolenname:</string>
 	<string name="new_ui_language">Neue Sprache zugewiesen.
 Für vollständige Änderung bitte die Anwendung neu starten.</string>
-	<string name="new_ui_scale_factor">New UI scale factor assigned.
+	<string name="new_ui_scale_factor">Neue Oberflächenskalierung festgelegt.
 Bitte die Anwendung neu starten.</string>
 	<string name="new_value">Neuer Wert</string>
 	<string name="new_window">Neues Fenster</string>
@@ -458,21 +547,24 @@ Bitte die Anwendung neu starten.</string>
 	<string name="no_build_has_been_run">Kein Build wurde ausgeführt</string>
 	<string name="no_code_action">Keine Code-Aktion</string>
 	<string name="no_open_document">Kein Dokument geöffnet</string>
+	<string name="no_run_config">Zuerst muss ein "Ausführungsziel" konfiguriert und ausgewählt werden. Navigieren Sie zu den "Build-Einstellungen" und setzen Sie eine neue Build- und Ausführungskonfiguration auf (Build-Schritt ist optional).</string>
 	<string name="no_running_lsp_server">Kein laufender LSP-Server</string>
 	<string name="no_threads">Zum Ausführen von Builds muss ecode in Threads laufen.</string>
 	<string name="no_wrap">Kein Umbruch</string>
 	<string name="none">Keines</string>
 	<string name="not_found_in_path">Unter $PATH nicht gefunden</string>
+	<string name="nothing_to_clone">Nichts zum Duplizieren</string>
 	<string name="notice">Anmerkung</string>
+	<string name="number_of_days">Tagesanzahl</string>
 	<string name="open">Öffnen</string>
 	<string name="open_a_file">Eine Datei öffnen</string>
 	<string name="open_a_folder">Einen Ordner öffnen</string>
+	<string name="open_all_files_in_folder">Alle Dateien im Ordner öffnen</string>
 	<string name="open_command_palette">Befehlspalette öffnen</string>
-	<string name="open_containing_folder">Ordner aktueller Datei öffnen</string>
-	<string name="open_containing_folder_ellipsis">Ordner aktueller Datei öffnen...</string>
+	<string name="open_containing_folder_in_fm">Ordner aktueller Datei öffnen</string>
 	<string name="open_context_menu">Kontextmenü öffnen</string>
 	<string name="open_document_symbol_search">Dokumentsymbolsuche öffnen</string>
-	<string name="open_documents">Dokumente öffnen</string>
+	<string name="open_documents">Geöffnete Dokumente</string>
 	<string name="open_file">Datei öffnen</string>
 	<string name="open_file_ellipsis">Datei öffnen...</string>
 	<string name="open_file_from_web_ellipsis">Datei aus dem Netz öffnen...</string>
@@ -482,6 +574,7 @@ in einem neuen Fenster geöffnet werden.</string>
 	<string name="open_first_a_folder">Zuerst muss ein Ordner geöffnet werden.</string>
 	<string name="open_folder">Ordner öffnen</string>
 	<string name="open_folder_ellipsis">Ordner öffnen...</string>
+	<string name="open_folder_in_fm">Ordner im Dateimanager öffnen</string>
 	<string name="open_global_search">Globale Suche öffnen</string>
 	<string name="open_in_horizontal_split">In neuer horizontaler Kachel öffnen</string>
 	<string name="open_in_new_window">In neuem Fenster öffnen</string>
@@ -489,10 +582,10 @@ in einem neuen Fenster geöffnet werden.</string>
 	<string name="open_in_same_tabbar">In aktueller Tableiste öffnen</string>
 	<string name="open_in_vertical_split">In neuer vertikaler Kachel öffnen</string>
 	<string name="open_locatebar">Suchleiste öffnen</string>
-	<string name="open_locatebar_glob_search">Globale Suchleiste öffnen</string>
+	<string name="open_locatebar_glob_search">Glob-Suchleiste öffnen</string>
 	<string name="open_recent_folder_ellipsis">Letzte Ordner öffnen...</string>
 	<string name="open_workspace_symbol_search">Arbeitsbereichssymbolsuche öffnen</string>
-	<string name="output">Ausgabe</string>
+	<string name="output_capitalized">Ausgabe</string>
 	<string name="output_parser">Ausgabe-Parser</string>
 	<string name="output_parser_desc">Angepasste Ausgabe-Parser prüfen auf der Kommandozeile auf benutzerdefinierte Fehlerschemata, um Einträge unter Build-Probleme zu erstellen und diese im Build-Output zu markieren</string>
 	<string name="output_parser_preset">Es gibt generische Output-Parser-Voreinstellungen, die hierunter ausgewählt werden können. Standardmäßig wird eine "generische" Voreinstellung gewählt:</string>
@@ -501,7 +594,10 @@ in einem neuen Fenster geöffnet werden.</string>
 	<string name="paste">Einfügen</string>
 	<string name="path">Pfad</string>
 	<string name="path_filters">Pfadfilter:</string>
+	<string name="path_is">PATH ist</string>
 	<string name="pattern">Schema</string>
+	<string name="pause">Pausieren</string>
+	<string name="pick_process">Prozess wählen</string>
 	<string name="pick_widget">Widget wählen</string>
 	<string name="please_enter_file_url_ellipsis">Bitte Datei-URL eingeben...</string>
 	<string name="plugin_manager">Erweiterungsverwaltung</string>
@@ -517,10 +613,12 @@ Bitte das Programmverzeichnis auf Schreibrechte überprüfen.</string>
 	<string name="press_enter">Enter drücken</string>
 	<string name="previous">Voriges</string>
 	<string name="previous_tab">Voriger Tab</string>
+	<string name="private_chat">Private Unterhaltung umschalten</string>
 	<string name="process_exited_normally">Prozess "%s" wurde normal beendet.
 </string>
 	<string name="process_exited_with_errors">Prozess "%s" wurde mit Fehlern beendet.
 </string>
+	<string name="process_id">Prozess-ID</string>
 	<string name="project">Projekt</string>
 	<string name="project_build_and_run">Projekt: Build und Ausführung</string>
 	<string name="project_build_cancel">Projekt: Build abbrechen</string>
@@ -537,6 +635,7 @@ Bitte das Programmverzeichnis auf Schreibrechte überprüfen.</string>
 	<string name="recent_folders">Letzte Ordner</string>
 	<string name="recent_folders_ellipsis">Letzte Ordner...</string>
 	<string name="redo">Wiederholen</string>
+	<string name="refresh_model_ui">Lokale Modelle aktualisieren</string>
 	<string name="refresh_view_ellipsis">Ansicht aktualisieren...</string>
 	<string name="regex_match">Regulärer Ausdruck: Treffer</string>
 	<string name="regular_expression">Regulärer Ausdruck</string>
@@ -545,11 +644,13 @@ Bitte das Programmverzeichnis auf Schreibrechte überprüfen.</string>
 	<string name="remove">Entfernen</string>
 	<string name="remove item">Eintrag entfernen</string>
 	<string name="remove_all">Alles entfernen</string>
+	<string name="remove_chat">Unterhaltung entfernen</string>
 	<string name="remove_ellipsis">Entfernen...</string>
 	<string name="remove_file_question">Datei entfernen?</string>
 	<string name="remove_item">Eintrag entfernen</string>
 	<string name="rename">Umbenennen</string>
 	<string name="rename_ellipsis">Umbenennen...</string>
+	<string name="rename_conversation">Unterhaltung umbenennen</string>
 	<string name="rename_file">Datei umbenennen</string>
 	<string name="rename_session">Sitzung umbenennen</string>
 	<string name="reopen_closed_document">Geschlossenes Dokument wiederherstellen</string>
@@ -560,6 +661,7 @@ Bitte das Programmverzeichnis auf Schreibrechte überprüfen.</string>
 	<string name="replace_and_find">Ersetzen &amp; Suchen</string>
 	<string name="replace_selection">Auswahl ersetzen</string>
 	<string name="replace_with_text">Ersetzen mit:</string>
+	<string name="repository">Repo</string>
 	<string name="restore_last_session_at_startup">Letzte Sitzung beim Start wiederherstellen</string>
 	<string name="right">Rechts</string>
 	<string name="run">Ausführen</string>
@@ -583,12 +685,14 @@ Bitte das Programmverzeichnis auf Schreibrechte überprüfen.</string>
 	<string name="save_all">Alles speichern</string>
 	<string name="save_as_doc">Als Dok. speichern</string>
 	<string name="save_as_ellipsis">Speichern als...</string>
+	<string name="save_conversation">Unterhaltung speichern</string>
 	<string name="save_doc">Dok. speichern</string>
 	<string name="save_file_as">Datei speichern als</string>
 	<string name="search">Suchen</string>
 	<string name="search_again">Nochmals suchen</string>
 	<string name="search_and_replace">Suchen &amp; Ersetzen</string>
-	<string name="search_files_with_glob_match">Suche Dateien mit Globalvergleich</string>
+	<string name="search_chat_ellipsis">Unterhaltung durchsuchen...</string>
+	<string name="search_files_with_glob_match">Dateisuche mit Glob-Vergleich</string>
 	<string name="search_for">Suchen nach:</string>
 	<string name="search_for_symbols_in_current_document">Suchen nach Symbolen in aktuellem Dokument</string>
 	<string name="search_for_workspace_symbols">Suchen nach Arbeitsbereichssymbolen</string>
@@ -605,8 +709,8 @@ Bitte das Programmverzeichnis auf Schreibrechte überprüfen.</string>
 	<string name="select_to_previous_line">Auswahl zu voriger Zeile</string>
 	<string name="select_to_start_of_content">Auswahl zu Inhaltsanfang</string>
 	<string name="select_to_start_of_line">Auswahl zu Zeilenanfang</string>
-	<string name="serif_font">Serifenschriftart</string>
-	<string name="serif_font_ellipsis">Serifenschriftart...</string>
+	<string name="sans-serif_font">SansSerifenschriftart</string>
+	<string name="sans-serif_font_ellipsis">SansSerifenschriftart...</string>
 	<string name="session_snapshot">Sitzungs-Snapshot &amp; Regelmäßige Sicherung</string>
 	<string name="session_snapshot_desc">Wenn Sitzungs-Snapshots aktiv sind, wird der Editor Änderungen im 
 	Dokumenten-Buffer beibehalten, auch, wenn sie vor Beendigung nicht gespeichert wurden.</string>
@@ -630,15 +734,17 @@ Auf 0 setzen zum Deaktivieren.
 </string>
 	<string name="set_side_panel_font_size">Seitenpaneel-Schriftgöße festlegen:</string>
 	<string name="set_terminal_font_size">Konsolenschriftgöße festlegen:</string>
-	<string name="set_ui_font_size">Set the UI font size:</string>
+	<string name="set_ui_font_size">Größe der Oberflächenschriftart festlegen:</string>
 	<string name="set_ui_scale_factor">Oberflächenskalierung festlegen (Pixeldichte):
 Minimalwert ist 1, Maximalwert 6. Anwendungsneustart benötigt.</string>
+	<string name="settings">Einstellungen</string>
 	<string name="shell">Shell</string>
 	<string name="shell_configuration">Shell-Konfiguration</string>
 	<string name="shortcuts">Shortcuts</string>
 	<string name="show-document-symbols">Dokumentsymbole anzeigen</string>
 	<string name="show_build_tab">Build-Tab anzeigen</string>
 	<string name="show_console">Konsole anzeigen</string>
+	<string name="show_debugger_tab">Debugger-Tab anzeigen</string>
 	<string name="show_doc_info">Dokumentinformationen anzeigen</string>
 	<string name="show_folder_treeview_tab">Ordner-Baumansicht-Tab öffnen</string>
 	<string name="show_hidden_files">Versteckte Dateien anzeigen</string>
@@ -658,6 +764,8 @@ Minimalwert ist 1, Maximalwert 6. Anwendungsneustart benötigt.</string>
 	<string name="single_quotes">Einfache Anführungszeichen ''</string>
 	<string name="size">Größe</string>
 	<string name="source_control">Quellcode-Verwaltung</string>
+	<string name="source_name">Quellenname</string>
+	<string name="source_path">Quellpfad</string>
 	<string name="spaces">Leerzeichen</string>
 	<string name="split">Kachelung</string>
 	<string name="split_bottom">Kachelung am Fußende</string>
@@ -666,9 +774,15 @@ Minimalwert ist 1, Maximalwert 6. Anwendungsneustart benötigt.</string>
 	<string name="split_swap">Kacheltausch</string>
 	<string name="split_top">Kachelung am Kopfende</string>
 	<string name="square_brakcets">Eckige Klammern []</string>
+	<string name="start">Starten</string>
 	<string name="starting_process">Starte %s %s
 </string>
 	<string name="status">Status</string>
+	<string name="step_into">Schritt einwärts</string>
+	<string name="step_out">Schritt auswärts</string>
+	<string name="step_over">Schritt darüber</string>
+	<string name="stop">Stoppen</string>
+	<string name="summary">Zusammenfassung</string>
 	<string name="supported_platforms">Unterstützte Plattformen</string>
 	<string name="supported_platforms_desc">Keine Festlegung heißt, dass die Build-Einstellungen unter jedem Betriebssystem funktionstüchtig und verfügbar sind</string>
 	<string name="switch_build">Build wechseln</string>
@@ -687,6 +801,7 @@ Minimalwert ist 1, Maximalwert 6. Anwendungsneustart benötigt.</string>
 	<string name="sync_project_tree_tooltip">Synchronisiert derzeit fokussiertes Dokument als gewählte
 Datei im Verzeichnisbaum.</string>
 	<string name="syntax_color_scheme">Syntax-Farbschema</string>
+	<string name="system">System</string>
 	<string name="tab_width">Tabweite</string>
 	<string name="tabs">Tabs</string>
 	<string name="terminal">Konsole</string>
@@ -713,9 +828,13 @@ Datei im Verzeichnisbaum.</string>
 	<string name="terminal_split_right">Konsolenkachelung rechts</string>
 	<string name="terminal_split_top">Konsolenkachelung am Kopfende</string>
 	<string name="texture_viewer">Texturenbetrachter</string>
+	<string name="the_ecode_nbsp">ecode-</string>
+	<string name="thread_id">Thread-ID</string>
+	<string name="threads_and_stack">Threads &amp; Stack</string>
 	<string name="toggle_lua_pattern">Lua-Schema umschalten</string>
 	<string name="toggle_menu_bar">Menüleiste umschalten</string>
 	<string name="toggle_regex">Regex umschalten</string>
+	<string name="toggle_status_app_debugger">App-Debugger-Statusrückgabe umschalten</string>
 	<string name="toggle_status_app_output">App-Statusrückgabe umschalten</string>
 	<string name="toggle_status_bar">Statusleiste umschalten</string>
 	<string name="toggle_status_build_output">Statusumschaltung: Build-Output</string>
@@ -751,7 +870,7 @@ in der Baumansicht und in Öffen-/Schließdialogen aktivieren.</string>
 	<string name="uicodeeditor_copy_file_path_and_position">Dateipfad und -position kopieren</string>
 	<string name="uicodeeditor_cut">Ausschneiden</string>
 	<string name="uicodeeditor_delete">Löschen</string>
-	<string name="uicodeeditor_open_containing_folder_ellipsis">Überordner öffnen...</string>
+	<string name="uicodeeditor_open_containing_folder_in_fm">Überordner öffnen</string>
 	<string name="uicodeeditor_paste">Einfügen</string>
 	<string name="uicodeeditor_redo">Wiederholen</string>
 	<string name="uicodeeditor_select_all">Alles auswählen</string>
@@ -776,11 +895,18 @@ in der Baumansicht und in Öffen-/Schließdialogen aktivieren.</string>
 	<string name="uiterminal_paste">Einfügen</string>
 	<string name="undo">Rückgängig</string>
 	<string name="unindent">Entrücken</string>
+	<string name="unknown_request_type">Unbekannter Anfragetyp: %s</string>
 	<string name="unlock">Entsperren</string>
+	<string name="untitled_conversation">Unbenannte Unterhaltung</string>
+	<string name="update_list">Liste aktualisieren</string>
 	<string name="use_escape_sequences">Escape-Sequenzen benutzen</string>
 	<string name="use_global_settings">Globale Einstellungen benutzen</string>
+	<string name="user">Nutzer</string>
 	<string name="using_build_type">Verwendeter Build-Typ: %s.
 </string>
+	<string name="value">Wert</string>
+	<string name="variable_name">Variablenname</string>
+	<string name="variables">Variablen</string>
 	<string name="view">Ansicht</string>
 	<string name="viewport">Anzeigebereich</string>
 	<string name="vsync">VSync</string>

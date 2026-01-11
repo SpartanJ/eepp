@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addBrainfuck() {
+SyntaxDefinition& addBrainfuck() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Brainfuck",
 		  { "%.bf$" },
@@ -13,14 +13,12 @@ void addBrainfuck() {
 			  { { "%[" }, "operator" },
 			  { { "%]" }, "operator" },
 			  { { "%-" }, "keyword" },
-			  { { "<" }, "keyword2" },
-			  { { ">" }, "keyword2" },
+			  { { "<" }, "type" },
+			  { { ">" }, "type" },
 			  { { "+" }, "string" },
 			  { { "," }, "literal" },
 			  { { "%." }, "string" },
 			  { { "[^%-%.<>%+,%[%]]+" }, "comment" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {
@@ -29,7 +27,7 @@ void addBrainfuck() {
 		  "",
 		  {}
 
-		} );
+		} ).setExtensionPriority( false );
 }
 
 }}}} // namespace EE::UI::Doc::Language

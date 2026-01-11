@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <eepp/network/ipaddress.hpp>
 #include <eepp/network/packet.hpp>
 #include <eepp/network/platform/platformimpl.hpp>
@@ -15,7 +14,7 @@ UdpSocket::UdpSocket() : Socket( Udp ), mBuffer( MaxDatagramSize ) {}
 
 unsigned short UdpSocket::getLocalPort() const {
 	if ( getHandle() != Private::SocketImpl::invalidSocket() ) {
-		// Retrieve informations about the local end of the socket
+		// Retrieve information about the local end of the socket
 		sockaddr_in address;
 		Private::SocketImpl::AddrLength size = sizeof( address );
 		if ( getsockname( getHandle(), reinterpret_cast<sockaddr*>( &address ), &size ) != -1 ) {
@@ -106,7 +105,7 @@ Socket::Status UdpSocket::receive( void* data, std::size_t size, std::size_t& re
 	if ( sizeReceived < 0 )
 		return Private::SocketImpl::getErrorStatus();
 
-	// Fill the sender informations
+	// Fill the sender information
 	received = static_cast<std::size_t>( sizeReceived );
 	remoteAddress = IpAddress( ntohl( address.sin_addr.s_addr ) );
 	remotePort = ntohs( address.sin_port );

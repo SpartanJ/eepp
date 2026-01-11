@@ -40,7 +40,7 @@ class EE_API UndoCommand : public NonCopyable {
   protected:
 	friend class UndoStack;
 
-	std::vector<UndoCommand*> mChilds;
+	std::vector<UndoCommand*> mChildren;
 	std::string mText;
 	std::string mActionText;
 	int mId{ -1 };

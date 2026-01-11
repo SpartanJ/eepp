@@ -59,7 +59,7 @@ class EE_API Zip : public Pack {
 	 * -1. */
 	Int32 exists( const std::string& path );
 
-	/** Check the integrity of the pack file. \n If return 0 integrity OK. -1 wrong indentifier. -2
+	/** Check the integrity of the pack file. \n If return 0 integrity OK. -1 wrong identifier. -2
 	 * wrong header. */
 	Int8 checkPack();
 

@@ -33,7 +33,7 @@ class EE_API TextureAtlasNew {
 	UICheckBox* mForcePow2;
 	UICheckBox* mScalableSVG;
 	UICheckBox* mSaveExtensions;
-	UICheckBox* mAllowChilds;
+	UICheckBox* mAllowChildren;
 
 	void windowClose( const Event* Event );
 

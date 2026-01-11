@@ -136,9 +136,13 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	void setRowHeaderWidth( Float rowHeaderWidth );
 
-	bool hasOnUpdateCellCb();
+	bool hasOnUpdateCellCb() const;
 
 	void setOnUpdateCellCb( const std::function<void( UITableCell*, Model* )>& onUpdateCellCb );
+
+	bool hasSetupCellCb() const;
+
+	void setSetupCellCb( const std::function<void( UITableCell* )>& onSetupCellCb );
 
   protected:
 	friend class EE::UI::UITableHeaderColumn;
@@ -149,7 +153,10 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 		Float maxWidth{ 0 };
 		Float width{ 0 };
 		bool visible{ true };
+		bool manuallySet{ false };
 		UIPushButton* widget{ nullptr };
+
+		void setWidth( Float w, bool manuallySet = false );
 	};
 
 	Float mRowHeight{ 0 };
@@ -172,6 +179,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 	size_t mMainColumn{ 0 };
 	std::unordered_map<UIWidget*, std::vector<Uint32>> mWidgetsClickCbId;
 	std::function<void( UITableCell*, Model* )> mOnUpdateCellCb;
+	std::function<void( UITableCell* )> mSetupCellCb;
 	Float mRowHeaderWidth{ 0 };
 
 	virtual ~UIAbstractTableView();

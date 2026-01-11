@@ -16,7 +16,7 @@ class EE_API ResourceLoader {
 	typedef std::function<void( ResourceLoader* )> ResLoadCallback;
 	typedef std::function<void()> ObjectLoaderTask;
 
-	/** @param MaxThreads Set the maximun simultaneous threads to load resources, THREADS_AUTO will
+	/** @param MaxThreads Set the maximum simultaneous threads to load resources, THREADS_AUTO will
 	 * use the cpu number of cores. */
 	ResourceLoader( const Uint32& MaxThreads = THREADS_AUTO );
 
@@ -54,7 +54,7 @@ class EE_API ResourceLoader {
 	 * the loaders. */
 	bool clear();
 
-	/** @return The aproximate percent of progress ( between 0 and 100 ) */
+	/** @return The approximate percent of progress ( between 0 and 100 ) */
 	Float getProgress();
 
 	/** @returns The number of resources added to load. */

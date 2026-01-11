@@ -59,6 +59,8 @@ class EE_API UIWidget : public UINode {
 
 	UIWidget* setTooltipText( const String& text );
 
+	UIWidget* setTooltipTextIfNotEmpty( const String& text );
+
 	String getTooltipText();
 
 	void updateAnchorsDistances();
@@ -197,9 +199,9 @@ class EE_API UIWidget : public UINode {
 
 	UIStyle* getUIStyle() const;
 
-	void reloadStyle( const bool& reloadChilds = true, const bool& disableAnimations = false,
-					  const bool& reportStateChange = true,
-					  const bool& forceReApplyProperties = false );
+	void reloadStyle( bool reloadChildren = true, bool disableAnimations = false,
+					  bool reportStateChange = true, bool forceReApplyProperties = false,
+					  bool resetPropertyCache = false );
 
 	void beginAttributesTransaction();
 
@@ -306,9 +308,9 @@ class EE_API UIWidget : public UINode {
 	PositionPolicy mLayoutPositionPolicy;
 	UIWidget* mLayoutPositionPolicyWidget;
 	int mAttributesTransactionCount;
+	Uint32 mPseudoClasses{ 0 };
 	std::string mSkinName;
 	std::vector<std::string> mClasses;
-	Uint32 mPseudoClasses{ 0 };
 	String mTooltipText;
 
 	explicit UIWidget( const std::string& tag );

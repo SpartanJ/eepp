@@ -71,7 +71,7 @@ class EE_API UISpinBox : public UIWidget {
 	double mClickStep;
 	bool mModifyingVal;
 
-	void adjustChilds();
+	void adjustChildren();
 
 	virtual void onSizeChange();
 

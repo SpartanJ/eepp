@@ -137,7 +137,7 @@ class EE_API TextureAtlasLoader {
 	bool updateTextureAtlas( std::string TextureAtlasPath, std::string ImagesPath,
 							 Sizei maxImageSize = Sizei::Zero );
 
-	/** Rewrites the texture atlas file. Usefull if the TextureRegions where modified and need to be
+	/** Rewrites the texture atlas file. Useful if the TextureRegions where modified and need to be
 	 * updated inside the texture atlas. */
 	bool updateTextureAtlas();
 

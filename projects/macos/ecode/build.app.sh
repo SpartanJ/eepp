@@ -45,10 +45,11 @@ echo "Building using sdl2-config"
 ../make_no_fw.sh config=$CONFIG_NAME ecode || exit
 fi
 
-rm -rf ./ecode.app
+RESOURCES_PATH="ecode.app/Contents/Resources"
+
+bash ../../scripts/copy_ecode_assets.sh ../../bin $RESOURCES_PATH || exit
 mkdir -p ecode.app/Contents/MacOS/
-mkdir -p ecode.app/Contents/Resources/
-cp ../../../bin/assets/icon/ecode.icns ecode.app/Contents/Resources/ecode.icns
+cp ../../../bin/assets/icon/ecode.icns $RESOURCES_PATH/ecode.icns
 
 VERSIONPATH=../../../src/tools/ecode/version.hpp
 ECODE_MAJOR_VERSION=$(grep "define ECODE_MAJOR_VERSION" $VERSIONPATH | awk '{print $3}')
@@ -89,35 +90,8 @@ fi
 
 fi
 
-#cp -r ../../../bin/assets ecode.app/Contents/MacOS/assets
-mkdir -p ecode.app/Contents/MacOS/assets/colorschemes
-cp -r ../../../bin/assets/colorschemes/ ecode.app/Contents/MacOS/assets/colorschemes/
-mkdir -p ecode.app/Contents/MacOS/assets/i18n
-cp -r ../../../bin/assets/i18n/ ecode.app/Contents/MacOS/assets/i18n/
-#cp -r ../../../bin/assets/fonts ecode.app/Contents/MacOS/assets/
-mkdir -p ecode.app/Contents/MacOS/assets/fonts
-cp -r ../../../bin/assets/fonts/DejaVuSansMono.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/DejaVuSansMono-Bold.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/DejaVuSansMono-Oblique.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/DejaVuSansMono-BoldOblique.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/DejaVuSansMonoNerdFontComplete.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/nonicons.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/codicon.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoSans-Regular.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/remixicon.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoEmoji-Regular.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoSans-Bold.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoSans-Italic.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoSans-BoldItalic.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/NotoColorEmoji.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/fonts/DroidSansFallbackFull.ttf ecode.app/Contents/MacOS/assets/fonts/
-cp -r ../../../bin/assets/plugins ecode.app/Contents/MacOS/assets/
-# cp -r ../../../bin/assets/icon ecode.app/Contents/MacOS/assets/
-mkdir -p ecode.app/Contents/MacOS/assets/icon
-cp ../../../bin/assets/icon/ecode.png ecode.app/Contents/MacOS/assets/icon
-cp ../../../bin/assets/ca-bundle.pem ecode.app/Contents/MacOS/assets/ca-bundle.pem
-mkdir ecode.app/Contents/MacOS/assets/ui
-cp ../../../bin/assets/ui/breeze.css ecode.app/Contents/MacOS/assets/ui/
+# Clear quarantine flag recursively (more targeted than -cr)
+xattr -d -r com.apple.quarantine ecode.app 2>/dev/null || true
 
 # Clear permissions (basically for libSDL2)
 chmod -R u+rwX,go+rX,go-w ecode.app

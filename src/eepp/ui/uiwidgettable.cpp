@@ -57,13 +57,11 @@ UIWidgetTable::UIWidgetTable() :
 	mVScrollBar->setVisible( ScrollBarMode::AlwaysOn == mVScrollMode );
 	mVScrollBar->setEnabled( ScrollBarMode::AlwaysOn == mVScrollMode );
 
-	mVScrollBar->addEventListener( Event::OnValueChange,
-								   [this] ( auto event ) { onScrollValueChange( event ); } );
-	mHScrollBar->addEventListener( Event::OnValueChange,
-								   [this] ( auto event ) { onScrollValueChange( event ); } );
+	mVScrollBar->on( Event::OnValueChange, [this]( auto event ) { onScrollValueChange( event ); } );
+	mHScrollBar->on( Event::OnValueChange, [this]( auto event ) { onScrollValueChange( event ); } );
 
-	mVScrollBar->addEventListener( Event::OnSizeChange, cb );
-	mHScrollBar->addEventListener( Event::OnSizeChange, cb );
+	mVScrollBar->on( Event::OnSizeChange, cb );
+	mHScrollBar->on( Event::OnSizeChange, cb );
 
 	applyDefaultTheme();
 }
@@ -645,9 +643,9 @@ void UIWidgetTable::onTouchDragValueChange( Vector2f diff ) {
 		mHScrollBar->setValue( mHScrollBar->getValue() + ( -diff.x / mTotalWidth ) );
 }
 
-bool UIWidgetTable::isTouchOverAllowedChilds() {
-	return isMouseOverMeOrChilds() && !mVScrollBar->isMouseOverMeOrChilds() &&
-		   !mHScrollBar->isMouseOverMeOrChilds();
+bool UIWidgetTable::isTouchOverAllowedChildren() {
+	return isMouseOverMeOrChildren() && !mVScrollBar->isMouseOverMeOrChildren() &&
+		   !mHScrollBar->isMouseOverMeOrChildren();
 }
 
 void UIWidgetTable::updatePageStep() {

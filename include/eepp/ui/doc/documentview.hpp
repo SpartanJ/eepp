@@ -18,7 +18,8 @@ enum class LineWrapType { Viewport, LineBreakingColumn };
 enum class VisibleIndex : Int64 { first = 0, invalid = std::numeric_limits<Int64>::max() };
 
 inline VisibleIndex visibleIndexOffset( VisibleIndex idx, Int64 offset ) {
-	return static_cast<VisibleIndex>( static_cast<Int64>( idx ) + offset );
+	return eemax( VisibleIndex::first,
+				  static_cast<VisibleIndex>( static_cast<Int64>( idx ) + offset ) );
 }
 
 class EE_API DocumentView {
@@ -35,7 +36,8 @@ class EE_API DocumentView {
 		LineWrapMode mode{ LineWrapMode::NoWrap };
 		bool keepIndentation{ true };
 		Uint32 tabWidth{ 4 };
-		std::optional<Uint32> maxCharactersWidth;
+		std::optional<Uint32> maxCharactersWidth{};
+		bool tabStops{ false };
 		bool operator==( const Config& other ) {
 			return mode == other.mode && keepIndentation == other.keepIndentation &&
 				   tabWidth == other.tabWidth && maxCharactersWidth == other.maxCharactersWidth;
@@ -62,19 +64,24 @@ class EE_API DocumentView {
 	static LineWrapInfo
 	computeLineBreaks( const String::View& string, const FontStyleConfig& fontStyle, Float maxWidth,
 					   LineWrapMode mode, bool keepIndentation, Uint32 tabWidth = 4,
-					   Float whiteSpaceWidth = 0.f /* 0 = should calculate it */ );
+					   Float whiteSpaceWidth = 0.f /* 0 = should calculate it */,
+					   Uint32 textHints = TextHints::None, bool tabStops = false,
+					   Float initialXOffset = 0.f );
 
 	static LineWrapInfo computeLineBreaks( const String& string, const FontStyleConfig& fontStyle,
 										   Float maxWidth, LineWrapMode mode, bool keepIndentation,
-										   Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f );
+										   Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f,
+										   Uint32 textHints = TextHints::None,
+										   bool tabStops = false, Float initialXOffset = 0.f );
 
 	static LineWrapInfo computeLineBreaks( const TextDocument& doc, size_t line,
 										   const FontStyleConfig& fontStyle, Float maxWidth,
 										   LineWrapMode mode, bool keepIndentation,
-										   Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f );
+										   Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f,
+										   bool tabStops = false, Float initialXOffset = 0.f );
 
 	static Float computeOffsets( const String::View& string, const FontStyleConfig& fontStyle,
-								 Uint32 tabWidth, Float maxWidth = 0.f );
+								 Uint32 tabWidth, Float maxWidth = 0.f, bool tabStops = false );
 
 	DocumentView( std::shared_ptr<TextDocument> doc, FontStyleConfig fontStyle, Config config );
 
@@ -139,6 +146,10 @@ class EE_API DocumentView {
 
 	void unfoldRegion( Int64 foldDocIdx );
 
+	void foldAll();
+
+	void unfoldAll();
+
 	bool isOneToOne() const;
 
 	std::vector<TextRange> intersectsFoldedRegions( const TextRange& range ) const;
@@ -151,6 +162,14 @@ class EE_API DocumentView {
 	const std::vector<TextRange> getFoldedRegions() const { return mFoldedRegions; }
 
 	void onFoldRegionsUpdated();
+
+	void setOnVisibleLineCountChange( std::function<void()> onVisibleLinesCountChangeCb );
+
+	void setOnFoldUnfoldCb( std::function<void( Int64 docIdx, bool unfolded )> onFoldUnfoldCb );
+
+	void setTabStops( bool enabled );
+
+	bool usesTabStops() const { return mConfig.tabStops; }
 
   protected:
 	std::shared_ptr<TextDocument> mDoc;
@@ -165,6 +184,8 @@ class EE_API DocumentView {
 	bool mPendingReconstruction{ false };
 	bool mUnderConstruction{ false };
 	bool mUpdatingFoldRegions{ false };
+	std::function<void()> mOnVisibleLineCountChange;
+	std::function<void( Int64 docIdx, bool unfolded )> mOnFoldUnfoldCb;
 
 	void changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visible,
 						   bool recomputeOffset = true, bool recomputeLineToVisibleIndex = true );
@@ -181,6 +202,8 @@ class EE_API DocumentView {
 					   bool recomputeLineToVisibleIndex = true );
 
 	void moveCursorToVisibleArea();
+
+	void onVisibleLinesCountChange();
 };
 
 }}} // namespace EE::UI::Doc

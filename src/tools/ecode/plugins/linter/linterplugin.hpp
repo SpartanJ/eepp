@@ -45,9 +45,10 @@ struct LinterMatch {
 	std::string text;
 	TextRange range;
 	LinterType type{ LinterType::Error };
-	String::HashType lineCache{ 0 };
+	String::HashType lineHash{ 0 };
 	MatchOrigin origin{ MatchOrigin::Linter };
 	std::unordered_map<UICodeEditor*, Rectf> box;
+	std::unordered_map<UICodeEditor*, Rectf> lensBox;
 	LSPDiagnostic diagnostic;
 };
 
@@ -59,7 +60,7 @@ class LinterPlugin : public Plugin {
 				 "Use static code analysis tool used to flag programming errors, bugs, "
 				 "stylistic errors, and suspicious constructs.",
 				 LinterPlugin::New,
-				 { 0, 2, 6 },
+				 { 0, 2, 9 },
 				 LinterPlugin::NewSync };
 	}
 
@@ -157,6 +158,7 @@ class LinterPlugin : public Plugin {
 	std::string mErrorMsg;
 	Rectf mQuickFixRect;
 	std::string mOldMaxWidth;
+	Clock mClock;
 
 	LinterPlugin( PluginManager* pluginManager, bool sync );
 

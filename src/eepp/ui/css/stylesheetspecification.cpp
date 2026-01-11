@@ -400,6 +400,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "gravity-owner", "false" ).setType( PropertyType::Bool );
 	registerProperty( "href", "" ).setType( PropertyType::String );
 	registerProperty( "focusable", "true" ).setType( PropertyType::Bool );
+	registerProperty( "expand-text", "false" ).setType( PropertyType::Bool );
 
 	registerProperty( "inner-widget-orientation", "widgeticontextbox" )
 		.setType( PropertyType::String );
@@ -413,6 +414,15 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "text-overflow", "clip" ).setType( PropertyType::String );
 
 	registerProperty( "check-mode", "element" ).setType( PropertyType::String );
+
+	registerProperty( "enable-editor-flags", "" ).setType( PropertyType::String );
+	registerProperty( "disable-editor-flags", "" ).setType( PropertyType::String );
+
+	registerProperty( "line-wrap-mode", "nowrap" ).setType( PropertyType::String );
+	registerProperty( "line-wrap-type", "viewport" ).setType( PropertyType::String );
+
+	registerProperty( "display-options", "" ).setType( PropertyType::String );
+	registerProperty( "menu-width-mode", "" ).setType( PropertyType::String );
 
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },
@@ -816,54 +826,103 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		value = String::trim( value );
 		if ( value.empty() )
 			return {};
-		std::vector<StyleSheetProperty> properties;
+
 		const std::vector<std::string>& propNames = shorthand->getProperties();
 		std::vector<std::string> values = String::split( value, ',' );
-		std::unordered_map<std::string, std::vector<std::string>> tmpProperties;
+
+		std::vector<std::string> xValues;
+		std::vector<std::string> yValues;
+
+		// Helper to identify keywords that can actually take an offset
+		auto isDirectionalKeyword = []( const std::string& s ) {
+			return s == "left" || s == "right" || s == "top" || s == "bottom";
+		};
+
+		// Helper to identify explicit axis direction
+		auto isYAxis = []( const std::string& s ) {
+			return String::startsWith( s, "top" ) || String::startsWith( s, "bottom" );
+		};
+
+		auto isXAxis = []( const std::string& s ) {
+			return String::startsWith( s, "left" ) || String::startsWith( s, "right" );
+		};
 
 		for ( auto& val : values ) {
-			std::vector<std::string> pos = String::split( val, ' ' );
-			bool lastWasKeyword = false;
-			bool isXAxis = true;
-			std::string xAxis = "";
-			std::string yAxis = "";
-
-			for ( const auto& data : pos ) {
-				bool isKeyword = isKeywordPosition( data );
-				if ( isXAxis && ( isKeyword && lastWasKeyword ) )
-					isXAxis = false;
-
-				if ( isXAxis )
-					xAxis += data + " ";
-				else
-					yAxis += data + " ";
-
-				if ( isXAxis && ( !isKeyword && !lastWasKeyword ) )
-					isXAxis = false;
-
-				lastWasKeyword = isKeyword;
+			// 1. Tokenize
+			std::vector<std::string> rawTokens = String::split( val, ' ' );
+			std::vector<std::string> tokens;
+			for ( const auto& t : rawTokens ) {
+				std::string clean = String::trim( t );
+				if ( !clean.empty() )
+					tokens.push_back( clean );
 			}
 
-			if ( xAxis.empty() )
-				xAxis = "center";
+			if ( tokens.empty() )
+				continue;
 
-			if ( yAxis.empty() )
-				yAxis = "center";
+			// 2. Group Components correctly
+			std::vector<std::string> components;
+			size_t idx = 0;
+			while ( idx < tokens.size() ) {
+				std::string current = tokens[idx];
 
-			if ( String::startsWith( xAxis, "top" ) || String::startsWith( xAxis, "bottom" ) )
-				std::swap( xAxis, yAxis );
+				// Check if we should merge with next token.
+				// Rule: We only merge if 'current' is a directional keyword AND
+				// 'next' is NOT a keyword (implies it's a length/percent).
+				// Example: "right 10px" -> merge. "3px 3px" -> don't merge.
+				if ( isDirectionalKeyword( current ) ) {
+					size_t nextIdx = idx + 1;
+					if ( nextIdx < tokens.size() && !isKeywordPosition( tokens[nextIdx] ) ) {
+						current += " " + tokens[nextIdx];
+						idx++; // Skip the next token since we consumed it
+					}
+				}
 
-			String::trimInPlace( xAxis );
-			String::trimInPlace( yAxis );
+				components.push_back( current );
+				idx++;
+			}
 
-			tmpProperties[propNames[0]].emplace_back( xAxis );
-			tmpProperties[propNames[1]].emplace_back( yAxis );
+			// 3. Assign Axes
+			std::string xAxis = "center";
+			std::string yAxis = "center";
+
+			if ( components.size() == 1 ) {
+				// Case: "bottom" -> Y=bottom, X=center
+				// Case: "10px"   -> X=10px,   Y=center
+				if ( isYAxis( components[0] ) )
+					yAxis = components[0];
+				else
+					xAxis = components[0];
+			} else if ( components.size() >= 2 ) {
+				// Case: "10px 20px" -> X=10px, Y=20px
+				// Case: "top right" -> Y=top, X=right (Swap)
+				// Case: "right 10px top" -> X=right 10px, Y=top
+
+				std::string c1 = components[0];
+				std::string c2 = components[1];
+
+				// By default, first is X, second is Y.
+				// We swap ONLY if the first is clearly Vertical OR the second is clearly
+				// Horizontal.
+				if ( isYAxis( c1 ) || isXAxis( c2 ) ) {
+					yAxis = c1;
+					xAxis = c2;
+				} else {
+					xAxis = c1;
+					yAxis = c2;
+				}
+			}
+
+			xValues.push_back( xAxis );
+			yValues.push_back( yAxis );
 		}
 
-		for ( auto& props : tmpProperties ) {
-			properties.push_back(
-				StyleSheetProperty( props.first, String::join( props.second, ',' ) ) );
-		}
+		std::vector<StyleSheetProperty> properties;
+		if ( !propNames.empty() )
+			properties.emplace_back( propNames[0], String::join( xValues, ',' ) );
+		if ( propNames.size() > 1 )
+			properties.emplace_back( propNames[1], String::join( yValues, ',' ) );
+
 		return properties;
 	};
 

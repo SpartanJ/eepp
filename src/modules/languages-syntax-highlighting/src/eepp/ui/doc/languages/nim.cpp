@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addNim() {
+SyntaxDefinition& addNim() {
 	std::vector<SyntaxPattern> nim_patterns;
-	UnorderedMap<std::string, std::string> nim_symbols;
+	SyntaxDefMap<std::string, std::string> nim_symbols;
 
 	const std::vector<std::string> nim_number_patterns = {
 		"0[bB][01][01_]*",	  "0o[0-7][0-7_]*",
@@ -52,15 +52,15 @@ void addNim() {
 	};
 
 	for ( const auto& keyword : nim_standard_types )
-		nim_symbols[keyword] = "keyword2";
+		nim_symbols[keyword] = "type";
 
 	const std::vector<std::string> nim_standard_generic_types{
 		"range", "array", "open[aA]rray", "varargs", "seq", "set", "sink", "lent", "owned",
 	};
 
 	for ( const auto& type : nim_standard_generic_types ) {
-		nim_patterns.push_back( { { type + "%f[%[]" }, "keyword2" } );
-		nim_patterns.push_back( { { type + "+%f[%w]" }, "keyword2" } );
+		nim_patterns.push_back( { { type + "%f[%[]" }, "type" } );
+		nim_patterns.push_back( { { type + "+%f[%w]" }, "type" } );
 	}
 
 	const std::vector<SyntaxPattern> nim_user_patterns{
@@ -70,7 +70,7 @@ void addNim() {
 		{ { "\"\"\"", "\"\"\"[^\"]" }, "string" },
 		{ { "'", "'", "\\" }, "literal" },
 		{ { "[a-zA-Z][a-zA-Z0-9_]*%f[(]" }, "function" },
-		{ { "[A-Z][a-zA-Z0-9_]*" }, "keyword2" },
+		{ { "[A-Z][a-zA-Z0-9_]*" }, "type" },
 		{ { "[a-zA-Z][a-zA-Z0-9_]*" }, "symbol" },
 		{ { "%.%f[^.]" }, "normal" },
 		{ { ":%f[ ]" }, "normal" },
@@ -88,6 +88,7 @@ void addNim() {
 	} );
 
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

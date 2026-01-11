@@ -5,11 +5,6 @@
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-#define XMLTOOLS_THREADED 1
-#else
-#define XMLTOOLS_THREADED 0
-#endif
 
 namespace ecode {
 
@@ -26,11 +21,7 @@ XMLToolsPlugin::XMLToolsPlugin( PluginManager* pluginManager, bool sync ) :
 	if ( sync ) {
 		load( pluginManager );
 	} else {
-#if defined( XMLTOOLS_THREADED ) && XMLTOOLS_THREADED == 1
 		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
-#else
-		load( pluginManager );
-#endif
 	}
 }
 

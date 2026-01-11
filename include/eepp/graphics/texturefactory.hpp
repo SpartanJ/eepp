@@ -208,7 +208,7 @@ class EE_API TextureFactory : protected Mutex {
 	/** Get a local copy for all the textures */
 	void grabTextures();
 
-	/** Reload all the grabed textures */
+	/** Reload all the grabbed textures */
 	void ungrabTextures();
 
 	/** Allocate space for Textures (only works if EE_ALLOC_TEXTURES_ON_VECTOR is defined) */

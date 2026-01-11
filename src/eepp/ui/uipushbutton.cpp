@@ -65,7 +65,10 @@ UIPushButton::UIPushButton( const std::string& tag,
 	UIWidget( tag ), mIcon( NULL ), mTextBox( NULL ) {
 	mFlags |= ( UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER );
 
-	auto cb = [this]( const Event* ) { onSizeChange(); };
+	auto cb = [this]( const Event* ) {
+		if ( mTextBox->getLayoutWidthPolicy() != SizePolicy::Fixed )
+			onSizeChange();
+	};
 
 	mTextBox = newTextViewCb ? newTextViewCb( this ) : UITextView::NewWithTag( tag + "::text" );
 	mTextBox->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
@@ -73,10 +76,10 @@ UIPushButton::UIPushButton( const std::string& tag,
 		->setParent( this )
 		->setVisible( true )
 		->setEnabled( false );
-	mTextBox->addEventListener( Event::OnFontChanged, cb );
-	mTextBox->addEventListener( Event::OnFontStyleChanged, cb );
-	mTextBox->addEventListener( Event::OnTextChanged, cb );
-	mTextBox->addEventListener( Event::OnVisibleChange, cb );
+	mTextBox->on( Event::OnFontChanged, cb );
+	mTextBox->on( Event::OnFontStyleChanged, cb );
+	mTextBox->on( Event::OnTextChanged, cb );
+	mTextBox->on( Event::OnVisibleChange, cb );
 
 	applyDefaultTheme();
 }
@@ -124,6 +127,9 @@ void UIPushButton::onAutoSize() {
 		setInternalHeight( getSkinSize().getHeight() );
 	}
 
+	if ( mExpandTextView && mWidthPolicy == SizePolicy::MatchParent )
+		return;
+
 	if ( mWidthPolicy == SizePolicy::WrapContent || ( mFlags & UI_AUTO_SIZE ) ) {
 		Sizef size = getContentSize();
 
@@ -137,23 +143,24 @@ void UIPushButton::onAutoSize() {
 		if ( size.getWidth() != fsize.getWidth() ) {
 			UIWidget* eiw = getExtraInnerWidget();
 			Float nonTextW =
-				( NULL != mIcon ? mIcon->getSize().getWidth() + mIcon->getLayoutMargin().Left +
-									  mIcon->getLayoutMargin().Right
-								: 0 ) +
+				( NULL != mIcon
+					  ? mIcon->getPixelsSize().getWidth() + mIcon->getLayoutPixelsMargin().Left +
+							mIcon->getLayoutPixelsMargin().Right
+					  : 0 ) +
 				( NULL != eiw && eiw->isVisible()
-					  ? eiw->getSize().getWidth() + eiw->getLayoutMargin().Left +
-							eiw->getLayoutMargin().Right
+					  ? eiw->getPixelsSize().getWidth() + eiw->getLayoutPixelsMargin().Left +
+							eiw->getLayoutPixelsMargin().Right
 					  : 0 ) +
 				getSkinSize().getWidth();
 
-			Float textW = mTextBox->getSize().getWidth();
+			Float textW = mTextBox->getPixelsSize().getWidth();
 
-			if ( textW > fsize.getWidth() - nonTextW ) {
+			if ( !mExpandTextView && textW > fsize.getWidth() - nonTextW ) {
 				Float mw = eemax( 0.f, fsize.getWidth() - nonTextW );
-				getTextBox()->setMaxWidthEq( String::format( "%.0fdp", mw ) );
+				getTextView()->setMaxWidthEq( String::format( "%.0fdp", mw ) );
 			}
-			if ( getTextBox()->getTextWidth() > getTextBox()->getSize().getWidth() )
-				getTextBox()->setHorizontalAlign( UI_HALIGN_LEFT );
+			if ( getTextView()->getTextWidth() > getTextView()->getSize().getWidth() )
+				getTextView()->setHorizontalAlign( UI_HALIGN_LEFT );
 		}
 
 		setInternalPixelsWidth( size.getWidth() );
@@ -183,6 +190,27 @@ Vector2f UIPushButton::calcLayoutSize( const std::array<UIWidget*, 3>& widgets,
 }
 
 Vector2f UIPushButton::packLayout( const std::array<UIWidget*, 3>& widgets, const Rectf& padding ) {
+	if ( mExpandTextView && mTextBox && mTextBox->isVisible() ) {
+		Float availableWidth = mSize.getWidth() - padding.Left - padding.Right;
+		Float usedWidth = 0;
+
+		for ( const auto& widget : widgets ) {
+			if ( widget && widget->isVisible() && widget != mTextBox ) {
+				usedWidth += widget->getPixelsSize().getWidth() +
+							 widget->getLayoutPixelsMargin().Left +
+							 widget->getLayoutPixelsMargin().Right;
+			}
+		}
+
+		usedWidth +=
+			mTextBox->getLayoutPixelsMargin().Left + mTextBox->getLayoutPixelsMargin().Right;
+
+		Float textWidth = eemax( 0.f, availableWidth - usedWidth );
+
+		if ( textWidth != mTextBox->getPixelsSize().getWidth() )
+			mTextBox->setPixelsSize( { textWidth, mTextBox->getPixelsSize().getHeight() } );
+	}
+
 	std::array<Vector2f, 3> pos;
 	Vector2f totSize{ padding.Left, padding.Top + padding.Bottom };
 	UIWidget* widget;
@@ -303,22 +331,24 @@ bool UIPushButton::isTextAsFallback() const {
 	return mTextAsFallback;
 }
 
-void UIPushButton::setTextAsFallback( bool textAsFallback ) {
+UIPushButton* UIPushButton::setTextAsFallback( bool textAsFallback ) {
 	if ( mTextAsFallback != textAsFallback ) {
 		mTextAsFallback = textAsFallback;
 		updateTextBox();
 	}
+	return this;
 }
 
 bool UIPushButton::dontAutoHideEmptyTextBox() const {
 	return mDontAutoHideEmptyTextBox;
 }
 
-void UIPushButton::setDontAutoHideEmptyTextBox( bool dontAutoHideEmptyTextBox ) {
+UIPushButton* UIPushButton::setDontAutoHideEmptyTextBox( bool dontAutoHideEmptyTextBox ) {
 	if ( mDontAutoHideEmptyTextBox != dontAutoHideEmptyTextBox ) {
 		mDontAutoHideEmptyTextBox = dontAutoHideEmptyTextBox;
 		updateTextBox();
 	}
+	return this;
 }
 
 void UIPushButton::onPaddingChange() {
@@ -388,10 +418,10 @@ UIImage* UIPushButton::getIcon() {
 			->setVisible( true )
 			->setEnabled( false );
 
-		mIcon->addEventListener( Event::OnPaddingChange, cb );
-		mIcon->addEventListener( Event::OnMarginChange, cb );
-		mIcon->addEventListener( Event::OnSizeChange, cb );
-		mIcon->addEventListener( Event::OnVisibleChange, cb );
+		mIcon->on( Event::OnPaddingChange, cb );
+		mIcon->on( Event::OnMarginChange, cb );
+		mIcon->on( Event::OnSizeChange, cb );
+		mIcon->on( Event::OnVisibleChange, cb );
 
 		if ( mIconMinSize != Sizei::Zero ) {
 			auto iconMinSize = mIconMinSize;
@@ -420,7 +450,7 @@ const String& UIPushButton::getText() const {
 	return mTextBox->getText();
 }
 
-UITextView* UIPushButton::getTextBox() const {
+UITextView* UIPushButton::getTextView() const {
 	return mTextBox;
 }
 
@@ -536,12 +566,28 @@ void UIPushButton::setInnerWidgetOrientation(
 	}
 }
 
+bool UIPushButton::expandTextView() const {
+	return mExpandTextView;
+}
+
+UIPushButton* UIPushButton::setExpandTextView( bool expand ) {
+	if ( mExpandTextView != expand ) {
+		mExpandTextView = expand;
+		mTextBox->setLayoutWidthPolicy( expand ? SizePolicy::Fixed : SizePolicy::WrapContent );
+		mTextBox->setClipType( expand ? ClipType::ContentBox : ClipType::None );
+		updateTextBox();
+	}
+	return this;
+}
+
 std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyDef,
 											 const Uint32& propertyIndex ) const {
 	if ( NULL == propertyDef )
 		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::ExpandText:
+			return mExpandTextView ? "true" : "false";
 		case PropertyId::InnerWidgetOrientation:
 			return innerWidgetOrientationToString( mInnerWidgetOrientation );
 		case PropertyId::Text:
@@ -605,7 +651,8 @@ std::vector<PropertyId> UIPushButton::getPropertiesImplemented() const {
 				   PropertyId::TextStrokeColor,
 				   PropertyId::TextSelection,
 				   PropertyId::TextTransform,
-				   PropertyId::TextOverflow };
+				   PropertyId::TextOverflow,
+				   PropertyId::ExpandText };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -660,6 +707,9 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::Tint:
 			getIcon()->setColor( attribute.asColor() );
+			break;
+		case PropertyId::ExpandText:
+			setExpandTextView( attribute.asBool() );
 			break;
 		case PropertyId::Color:
 		case PropertyId::TextShadowColor:

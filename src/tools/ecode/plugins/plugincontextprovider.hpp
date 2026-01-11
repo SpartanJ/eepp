@@ -2,6 +2,7 @@
 
 #include <eepp/core/string.hpp>
 #include <eepp/ui/doc/textrange.hpp>
+#include <optional>
 #include <string>
 
 namespace EE {
@@ -97,7 +98,8 @@ class PluginContextProvider {
 	virtual bool
 	loadFileFromPath( std::string path, bool inNewTab = true, UICodeEditor* codeEditor = nullptr,
 					  std::function<void( UICodeEditor*, const std::string& )> onLoaded =
-						  std::function<void( UICodeEditor*, const std::string& )>() ) = 0;
+						  std::function<void( UICodeEditor*, const std::string& )>(),
+					  bool openBinaryAsDocument = false, bool tryFindMimeType = false ) = 0;
 
 	virtual ProjectDirectoryTree* getDirTree() const = 0;
 
@@ -119,7 +121,8 @@ class PluginContextProvider {
 
 	virtual std::string getCurrentWorkingDir() const = 0;
 
-	virtual void focusOrLoadFile( const std::string& path, const TextRange& range = {} ) = 0;
+	virtual void focusOrLoadFile( const std::string& path, const TextRange& range = {},
+								  bool searchInSameContext = false ) = 0;
 
 	virtual void runCommand( const std::string& command ) = 0;
 
@@ -129,7 +132,26 @@ class PluginContextProvider {
 
 	virtual std::string getDefaultFileDialogFolder() const = 0;
 
-	virtual const AppConfig& getConfig() const = 0;
+	virtual AppConfig& getConfig() = 0;
+
+	virtual bool isDirTreeReady() const = 0;
+
+	virtual bool pluginsDisabled() const = 0;
+
+	virtual void loadImageFromMedium( const std::string& path, bool isMemory,
+
+									  bool forcePreview = false, bool forceTab = false ) = 0;
+
+	virtual void loadImageFromPath( const std::string& path ) = 0;
+
+	virtual void loadFolder( std::string path, bool forceNewWindow = false ) = 0;
+
+	virtual void showGlobalSearch( bool searchAndReplace,
+								   std::optional<std::string> pathFilters = {} ) = 0;
+
+	virtual const std::unordered_map<std::string, std::string>& getStatusBarKeybindings() const = 0;
+
+	virtual bool projectIsOpen() const = 0;
 };
 
 } // namespace ecode

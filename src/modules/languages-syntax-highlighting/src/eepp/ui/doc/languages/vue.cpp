@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addVue() {
+SyntaxDefinition& addVue() {
 
 	SyntaxDefinitionManager::instance()
 		->add( { "Vue-HTML",
@@ -18,7 +18,7 @@ void addVue() {
 					 { { "0x[%da-fA-F]+" }, "number" },
 					 { { "-?%d+[%d%.]*f?" }, "number" },
 					 { { "-?%.?%d+f?" }, "number" },
-					 { { "%f[^<]![%a_][%w%_%-]*" }, "keyword2" },
+					 { { "%f[^<]![%a_][%w%_%-]*" }, "type" },
 					 { { "%f[^<][%a_][%w%_%-]*" }, "function" },
 					 { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
 					 { { "[%a_][%w_]*" }, "keyword" },
@@ -30,7 +30,7 @@ void addVue() {
 		.setVisible( false )
 		.setAutoCloseXMLTags( true );
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 		{ "Vue",
 		  { "%.vue?$" },
 		  {
@@ -51,7 +51,7 @@ void addVue() {
 			  { { "0x[%da-fA-F]+" }, "number" },
 			  { { "-?%d+[%d%.]*f?" }, "number" },
 			  { { "-?%.?%d+f?" }, "number" },
-			  { { "%f[^<]![%a_][%w%_%-]*" }, "keyword2" },
+			  { { "%f[^<]![%a_][%w%_%-]*" }, "type" },
 			  { { "%f[^<][%a_][%w%_%-]*" }, "function" },
 			  { { "%f[^<]/[%a_][%w%_%-]*" }, "function" },
 			  { { "[%a_][%w_]*" }, "keyword" },
@@ -60,7 +60,6 @@ void addVue() {
 		  {},
 		  "",
 		  {} } );
-
 }
 
 }}}} // namespace EE::UI::Doc::Language

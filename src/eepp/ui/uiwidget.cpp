@@ -100,6 +100,7 @@ UIWidget* UIWidget::setLayoutMargin( const Rectf& margin ) {
 		mLayoutMarginPx = PixelDensity::dpToPx( mLayoutMargin ).ceil();
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -111,6 +112,7 @@ UIWidget* UIWidget::setLayoutMarginLeft( const Float& marginLeft ) {
 		mLayoutMarginPx.Left = eeceil( PixelDensity::dpToPx( mLayoutMargin.Left ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -122,6 +124,7 @@ UIWidget* UIWidget::setLayoutMarginRight( const Float& marginRight ) {
 		mLayoutMarginPx.Right = eeceil( PixelDensity::dpToPx( mLayoutMargin.Right ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -133,6 +136,7 @@ UIWidget* UIWidget::setLayoutMarginTop( const Float& marginTop ) {
 		mLayoutMarginPx.Top = eeceil( PixelDensity::dpToPx( mLayoutMargin.Top ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -144,6 +148,7 @@ UIWidget* UIWidget::setLayoutMarginBottom( const Float& marginBottom ) {
 		mLayoutMarginPx.Bottom = eeceil( PixelDensity::dpToPx( mLayoutMargin.Bottom ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -155,6 +160,7 @@ UIWidget* UIWidget::setLayoutPixelsMargin( const Rectf& margin ) {
 		mLayoutMargin = PixelDensity::pxToDp( mLayoutMarginPx ).ceil();
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -166,6 +172,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginLeft( const Float& marginLeft ) {
 		mLayoutMargin.Left = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Left ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -177,6 +184,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginRight( const Float& marginRight ) {
 		mLayoutMargin.Right = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Right ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -188,6 +196,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginTop( const Float& marginTop ) {
 		mLayoutMargin.Top = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Top ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -199,6 +208,7 @@ UIWidget* UIWidget::setLayoutPixelsMarginBottom( const Float& marginBottom ) {
 		mLayoutMargin.Bottom = eeceil( PixelDensity::pxToDp( mLayoutMarginPx.Bottom ) );
 		onMarginChange();
 		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 
 	return this;
@@ -316,10 +326,10 @@ void UIWidget::onChildCountChange( Node* child, const bool& removed ) {
 	}
 
 	if ( !isSceneNodeLoading() && mUISceneNode != NULL && mStyle != NULL ) {
-		// Childs that are structurally volatile can change states when a new
+		// Children that are structurally volatile can change states when a new
 		// element is added to the parent. We pre-store them and invalidate its
 		// state if that's the case.
-		auto& svc = mStyle->getStructurallyVolatileChilds();
+		auto& svc = mStyle->getStructurallyVolatileChildren();
 		for ( auto& child : svc ) {
 			mUISceneNode->invalidateStyleState( child );
 		}
@@ -424,6 +434,12 @@ UIWidget* UIWidget::setTooltipText( const String& text ) {
 	mTooltipText = text;
 	if ( mTooltip )
 		mTooltip->setText( text );
+	return this;
+}
+
+UIWidget* UIWidget::setTooltipTextIfNotEmpty( const String& text ) {
+	if ( !text.empty() )
+		setTooltipText( text );
 	return this;
 }
 
@@ -558,9 +574,14 @@ void UIWidget::notifyLayoutAttrChange() {
 }
 
 void UIWidget::notifyLayoutAttrChangeParent() {
-	if ( 0 == mAttributesTransactionCount && NULL != mParentNode ) {
+	if ( NULL == mParentNode )
+		return;
+
+	if ( 0 == mAttributesTransactionCount ) {
 		NodeMessage msg( this, NodeMessage::LayoutAttributeChange );
 		mParentNode->messagePost( &msg );
+	} else {
+		mFlags |= UI_PARENT_ATTRIBUTE_CHANGED;
 	}
 }
 
@@ -1020,7 +1041,7 @@ void UIWidget::pushState( const Uint32& State, bool emitEvent ) {
 			mSkinState->pushState( State );
 
 		if ( NULL != mStyle ) {
-			if ( !( State == UIState::StateHover && !isMouseOverMeOrChilds() ) ) {
+			if ( !( State == UIState::StateHover && !isMouseOverMeOrChildren() ) ) {
 				updatePseudoClasses();
 				mStyle->pushState( State );
 			}
@@ -1042,7 +1063,7 @@ void UIWidget::popState( const Uint32& State, bool emitEvent ) {
 			mSkinState->popState( State );
 
 		if ( NULL != mStyle ) {
-			if ( !( State == UIState::StateHover && isMouseOverMeOrChilds() ) ) {
+			if ( !( State == UIState::StateHover && isMouseOverMeOrChildren() ) ) {
 				updatePseudoClasses();
 				mStyle->popState( State );
 			}
@@ -1086,8 +1107,8 @@ UIStyle* UIWidget::getUIStyle() const {
 	return mStyle;
 }
 
-void UIWidget::reloadStyle( const bool& reloadChilds, const bool& disableAnimations,
-							const bool& reportStateChange, const bool& forceReApplyProperties ) {
+void UIWidget::reloadStyle( bool reloadChildren, bool disableAnimations, bool reportStateChange,
+							bool forceReApplyProperties, bool resetPropertyCache ) {
 	createStyle();
 
 	if ( NULL == mStyle )
@@ -1095,13 +1116,17 @@ void UIWidget::reloadStyle( const bool& reloadChilds, const bool& disableAnimati
 
 	mStyle->load();
 
-	if ( NULL != getFirstChild() && reloadChilds ) {
+	if ( resetPropertyCache )
+		mStyle->resetCachedProperties();
+
+	if ( NULL != getFirstChild() && reloadChildren ) {
 		Node* child = getFirstChild();
 
 		while ( NULL != child ) {
 			if ( child->isWidget() )
-				child->asType<UIWidget>()->reloadStyle( reloadChilds, disableAnimations,
-														reportStateChange, forceReApplyProperties );
+				child->asType<UIWidget>()->reloadStyle( reloadChildren, disableAnimations,
+														reportStateChange, forceReApplyProperties,
+														resetPropertyCache );
 
 			child = child->getNextNode();
 		}
@@ -1150,6 +1175,12 @@ void UIWidget::endAttributesTransaction() {
 			notifyLayoutAttrChange();
 
 			mFlags &= ~UI_ATTRIBUTE_CHANGED;
+		}
+
+		if ( mFlags & UI_PARENT_ATTRIBUTE_CHANGED ) {
+			notifyLayoutAttrChangeParent();
+
+			mFlags &= ~UI_PARENT_ATTRIBUTE_CHANGED;
 		}
 	}
 }
@@ -1706,9 +1737,9 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 					} else if ( "auto_padding" == cur || "autopadding" == cur ) {
 						setFlags( UI_AUTO_PADDING );
 						notifyLayoutAttrChange();
-					} else if ( "reportsizechangetochilds" == cur ||
-								"report_size_change_to_childs" == cur ) {
-						enableReportSizeChangeToChilds();
+					} else if ( "reportsizechangetochildren" == cur ||
+								"report_size_change_to_children" == cur ) {
+						enableReportSizeChangeToChildren();
 					}
 				}
 			}
@@ -1863,7 +1894,7 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Opacity: {
 			Float alpha = eemin( attribute.asFloat() * 255.f, 255.f );
 			setAlpha( alpha );
-			setChildsAlpha( alpha );
+			setChildrenAlpha( alpha );
 			break;
 		}
 		case PropertyId::Cursor:
@@ -1971,7 +2002,7 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 
 	for ( pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end();
 		  ++ait ) {
-		// Create a property without triming its value
+		// Create a property without trimming its value
 		StyleSheetProperty prop( ait->name(), ait->value(), false,
 								 StyleSheetSelectorRule::SpecificityInline );
 
@@ -2052,7 +2083,7 @@ std::string UIWidget::getFlagsString() const {
 		flagvec.push_back( "multiselect" );
 	if ( mFlags & UI_AUTO_PADDING )
 		flagvec.push_back( "autopadding" );
-	if ( reportSizeChangeToChilds() )
+	if ( reportSizeChangeToChildren() )
 		flagvec.push_back( "reportsizechangetochilds" );
 	if ( isClipped() )
 		flagvec.push_back( "clip" );

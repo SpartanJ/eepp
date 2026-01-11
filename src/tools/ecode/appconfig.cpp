@@ -7,7 +7,12 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/md5.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/tools/uiaudioplayer.hpp>
+#include <eepp/ui/tools/uiimageviewer.hpp>
+#include <eepp/ui/uinodelink.hpp>
 #include <eterm/ui/uiterminal.hpp>
+
+#include <nlohmann/json.hpp>
 
 using namespace EE::Network;
 using namespace eterm::UI;
@@ -114,6 +119,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.highlightCurrentLine = ini.getValueB( "editor", "highlight_current_line", true );
 	editor.verticalScrollbar = ini.getValueB( "editor", "vertical_scrollbar", true );
 	editor.horizontalScrollbar = ini.getValueB( "editor", "horizontal_scrollbar", true );
+	editor.openDocumentsInMainSplit =
+		ini.getValueB( "editor", "open_documents_in_main_split", false );
 	ui.fontSize = ini.getValue( "ui", "font_size", "11dp" );
 	ui.panelFontSize = ini.getValue( "ui", "panel_font_size", "11dp" );
 	ui.showSidePanel = ini.getValueB( "ui", "show_side_panel", true );
@@ -121,17 +128,25 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	ui.showMenuBar = ini.getValueB( "ui", "show_menu_bar", false );
 	ui.welcomeScreen = ini.getValueB( "ui", "welcome_screen", true );
 	ui.openFilesInNewWindow = ini.getValueB( "ui", "open_files_in_new_window", false );
+	ui.openProjectInNewWindow = ini.getValueB( "ui", "open_project_in_new_window", false );
+	ui.nativeFileDialogs = ini.getValueB( "ui", "native_file_dialogs", false );
+	ui.imagesQuickPreview = ini.getValueB( "ui", "images_quick_preview", false );
 	ui.panelPosition = panelPositionFromString( ini.getValue( "ui", "panel_position", "left" ) );
-	ui.serifFont = ini.getValue( "ui", "serif_font", "fonts/NotoSans-Regular.ttf" );
+	ui.sansSerifFont = ini.getValue( "ui", "serif_font", "fonts/NotoSans-Regular.ttf" );
 	ui.monospaceFont = ini.getValue( "ui", "monospace_font", "fonts/DejaVuSansMono.ttf" );
 	ui.terminalFont =
 		ini.getValue( "ui", "terminal_font", "fonts/DejaVuSansMonoNerdFontComplete.ttf" );
 	ui.fallbackFont = ini.getValue( "ui", "fallback_font", "fonts/DroidSansFallbackFull.ttf" );
 	ui.theme = ini.getValue( "ui", "theme" );
 	ui.language = ini.getValue( "ui", "language" );
-	ui.colorScheme = ini.getValue( "ui", "ui_color_scheme", "dark" ) == "light"
-						 ? ColorSchemePreference::Light
-						 : ColorSchemePreference::Dark;
+	ui.colorScheme =
+		ColorSchemePreferences::fromStringExt( ini.getValue( "ui", "ui_color_scheme", "system" ) );
+	ui.fontHinting =
+		FontTrueType::fontHintingFromString( ini.getValue( "ui", "font_hinting", "full" ) );
+	ui.fontAntialiasing = FontTrueType::fontAntialiasingFromString(
+		ini.getValue( "ui", "font_antialiasing", "grayscale" ) );
+	ui.editorFontInInputFields = ini.getValueB( "ui", "editor_font_in_input_fields", true );
+
 	doc.trimTrailingWhitespaces = ini.getValueB( "document", "trim_trailing_whitespaces", false );
 	doc.forceNewLineAtEndOfFile =
 		ini.getValueB( "document", "force_new_line_at_end_of_file", false );
@@ -139,6 +154,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	doc.writeUnicodeBOM = ini.getValueB( "document", "write_bom", false );
 	doc.indentWidth = ini.getValueI( "document", "indent_width", 4 );
 	doc.indentSpaces = ini.getValueB( "document", "indent_spaces", false );
+	doc.tabStops = ini.getValueB( "document", "tab_stops", true );
 	doc.lineEndings =
 		TextFormat::stringToLineEnding( ini.getValue( "document", "line_endings", "LF" ) );
 	// Migrate old data
@@ -157,6 +173,11 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.minimap = ini.getValueB( "editor", "minimap", true );
 	editor.showDocInfo = ini.getValueB( "editor", "show_doc_info", true );
 	editor.hideTabBarOnSingleTab = ini.getValueB( "editor", "hide_tab_bar_on_single_tab", false );
+	editor.hideTabBar = ini.getValueB( "editor", "hide_tab_bar", false );
+	editor.tabSwitcher = ini.getValueB( "editor", "tab_switcher", false );
+	editor.tabJumpMode =
+		UITabWidget::tabJumpModefromString( ini.getValue( "editor", "tab_jump_mode", "linear" ) );
+
 	editor.singleClickNavigation = ini.getValueB( "editor", "single_click_tree_navigation", false );
 	editor.syncProjectTreeWithEditor =
 		ini.getValueB( "editor", "sync_project_tree_with_editor", true );
@@ -182,7 +203,6 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.tabIndentAlignment = characterAlignmentFromString(
 		ini.getValue( "editor", "tab_indent_alignment",
 					  characterAlignmentToString( CharacterAlignment::Center ) ) );
-	editor.flashCursor = ini.getValueB( "editor", "flash_cursor", true );
 
 	searchBarConfig.caseSensitive = ini.getValueB( "search_bar", "case_sensitive", false );
 	searchBarConfig.luaPattern = ini.getValueB( "search_bar", "lua_pattern", false );
@@ -197,14 +217,32 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	globalSearchBarConfig.wholeWord = ini.getValueB( "global_search_bar", "whole_word", false );
 	globalSearchBarConfig.escapeSequence =
 		ini.getValueB( "global_search_bar", "escape_sequence", false );
+	globalSearchBarConfig.bufferOnlyMode =
+		ini.getValueB( "global_search_bar", "buffer_only_mode", false );
 
 	term.shell = ini.getValue( "terminal", "shell" );
+	term.shellArgs = ini.getValue( "terminal", "shell_args",
+								   Sys::getPlatformType() == Sys::PlatformType::Haiku ? "-l" : "" );
 	term.fontSize = ini.getValue( "terminal", "font_size", "11dp" );
 	term.colorScheme = ini.getValue( "terminal", "colorscheme", "eterm" );
 	term.newTerminalOrientation = NewTerminalOrientation::fromString(
 		ini.getValue( "terminal", "new_terminal_orientation", "vertical" ) );
 	term.scrollback = ini.getValueI( "terminal", "scrollback", 10000 );
-	term.unsupportedOSWarnDisabled = ini.getValueB( "terminal", "unsupported_os_warn_disabled" );
+	term.unsupportedOSWarnDisabled =
+		ini.getValueB( "terminal", "unsupported_os_warn_disabled", false );
+	term.closeTerminalTabOnExit = ini.getValueB( "terminal", "close_terminal_tab_on_exit", false );
+	term.warnBeforeClosingTab = ini.getValueB( "terminal", "warn_before_closing_tab", true );
+	term.exclusiveMode = ini.getValueB( "terminal", "exclusive_mode", false );
+	term.cursorStyle = TerminalCursorHelper::modeFromString(
+		ini.getValue( "terminal", "cursor_style", "steady_underline" ) );
+	term.scrollBarType = ini.getValue( "terminal", "scrollbar_type", "overlay" ) == "overlay"
+							 ? ScrollViewType::Overlay
+							 : ScrollViewType::Outside;
+	auto scrollbarMode = ini.getValue( "terminal", "scrollbar_mode", "auto" );
+	term.scrollBarMode =
+		scrollbarMode == "auto"
+			? ScrollBarMode::Auto
+			: ( scrollbarMode == "on" ? ScrollBarMode::AlwaysOn : ScrollBarMode::AlwaysOff );
 
 	workspace.restoreLastSession = ini.getValueB( "workspace", "restore_last_session", false );
 	workspace.checkForUpdatesAtStartup =
@@ -218,13 +256,16 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 			ini.getValueB( "plugins", creator.first,
 						   "autocomplete" == creator.first || "linter" == creator.first ||
 							   "autoformatter" == creator.first || "lspclient" == creator.first ||
-							   "git" == creator.first || "debugger" == creator.first );
+							   "git" == creator.first || "debugger" == creator.first ||
+							   "aiassistant" == creator.first || "spellchecker" == creator.first );
 	}
-	pluginManager->setPluginsEnabled( pluginsEnabled, sync );
 
 	languagesExtensions.priorities = ini.getKeyMap( "languages_extensions" );
 
 	iniInfo = FileInfo( ini.path() );
+
+	if ( !pluginManager->pluginsDisabled() )
+		pluginManager->setPluginsEnabled( pluginsEnabled, sync );
 }
 
 void AppConfig::save( const std::vector<std::string>& recentFiles,
@@ -233,7 +274,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 					  EE::Window::Window* win, const std::string& colorSchemeName,
 					  const SearchBarConfig& searchBarConfig,
 					  const GlobalSearchBarConfig& globalSearchBarConfig,
-					  PluginManager* pluginManager ) {
+					  PluginManager* pluginManager, bool terminalMode ) {
 
 	FileInfo configInfo( ini.path() );
 	if ( iniInfo.getModificationTime() != 0 &&
@@ -265,9 +306,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	iniState.setValue( "files", "recentfiles", String::join( urlEncode( recentFiles ), ';' ) );
 	iniState.setValue( "folders", "recentfolders",
 					   String::join( urlEncode( recentFolders ), ';' ) );
+
 	iniState.setValueU( "editor", "last_run_version", ecode::Version::getVersionNum() );
-	iniState.setValue( "ui", "side_panel_tabs_order",
-					   String::join( windowState.sidePanelTabsOrder, ',' ) );
 	ini.setValueB( "editor", "show_line_numbers", editor.showLineNumbers );
 	ini.setValueB( "editor", "show_white_spaces", editor.showWhiteSpaces );
 	ini.setValueB( "editor", "show_indentation_guides", editor.showIndentationGuides );
@@ -276,29 +316,41 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "highlight_current_line", editor.highlightCurrentLine );
 	ini.setValueB( "editor", "vertical_scrollbar", editor.verticalScrollbar );
 	ini.setValueB( "editor", "horizontal_scrollbar", editor.horizontalScrollbar );
+	ini.setValueB( "editor", "open_documents_in_main_split", editor.openDocumentsInMainSplit );
 	ini.setValue( "editor", "font_size", editor.fontSize.toString() );
+
 	ini.setValue( "ui", "font_size", ui.fontSize.toString() );
 	ini.setValue( "ui", "panel_font_size", ui.panelFontSize.toString() );
-	ini.setValueB( "ui", "show_side_panel", ui.showSidePanel );
+	if ( !terminalMode )
+		ini.setValueB( "ui", "show_side_panel", ui.showSidePanel );
 	ini.setValueB( "ui", "show_status_bar", ui.showStatusBar );
 	ini.setValueB( "ui", "show_menu_bar", ui.showMenuBar );
 	ini.setValueB( "ui", "welcome_screen", ui.welcomeScreen );
 	ini.setValueB( "ui", "open_files_in_new_window", ui.openFilesInNewWindow );
+	ini.setValueB( "ui", "open_project_in_new_window", ui.openProjectInNewWindow );
+	ini.setValueB( "ui", "native_file_dialogs", ui.nativeFileDialogs );
+	ini.setValueB( "ui", "images_quick_preview", ui.imagesQuickPreview );
 	ini.setValue( "ui", "panel_position", panelPositionToString( ui.panelPosition ) );
-	ini.setValue( "ui", "serif_font", ui.serifFont );
+	ini.setValue( "ui", "serif_font", ui.sansSerifFont );
 	ini.setValue( "ui", "monospace_font", ui.monospaceFont );
 	ini.setValue( "ui", "terminal_font", ui.terminalFont );
 	ini.setValue( "ui", "theme", ui.theme );
 	ini.setValue( "ui", "language", ui.language );
 	ini.setValue( "ui", "fallback_font", ui.fallbackFont );
-	ini.setValue(
-		"ui", "ui_color_scheme",
-		std::string_view{ ui.colorScheme == ColorSchemePreference::Light ? "light" : "dark" } );
+	ini.setValue( "ui", "ui_color_scheme", ColorSchemePreferences::toString( ui.colorScheme ) );
+	ini.setValue( "ui", "font_hinting", FontTrueType::fontHintingToString( ui.fontHinting ) );
+	ini.setValue( "ui", "font_antialiasing",
+				  FontTrueType::fontAntialiasingToString( ui.fontAntialiasing ) );
+	ini.setValueB( "ui", "editor_font_in_input_fields", ui.editorFontInInputFields );
+	iniState.setValue( "ui", "side_panel_tabs_order",
+					   String::join( windowState.sidePanelTabsOrder, ',' ) );
+
 	ini.setValueB( "document", "trim_trailing_whitespaces", doc.trimTrailingWhitespaces );
 	ini.setValueB( "document", "force_new_line_at_end_of_file", doc.forceNewLineAtEndOfFile );
 	ini.setValueB( "document", "auto_detect_indent_type", doc.autoDetectIndentType );
 	ini.setValueB( "document", "write_bom", doc.writeUnicodeBOM );
 	ini.setValueI( "document", "indent_width", doc.indentWidth );
+	ini.setValueB( "document", "tab_stops", doc.tabStops );
 	ini.setValueB( "document", "indent_spaces", doc.indentSpaces );
 	ini.setValue( "document", "line_endings", TextFormat::lineEndingToString( doc.lineEndings ) );
 	ini.setValueI( "document", "tab_width", doc.tabWidth );
@@ -310,6 +362,10 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "minimap", editor.minimap );
 	ini.setValueB( "editor", "show_doc_info", editor.showDocInfo );
 	ini.setValueB( "editor", "hide_tab_bar_on_single_tab", editor.hideTabBarOnSingleTab );
+	ini.setValueB( "editor", "hide_tab_bar", editor.hideTabBar );
+	ini.setValueB( "editor", "tab_switcher", editor.tabSwitcher );
+	ini.setValue( "editor", "tab_jump_mode",
+				  UITabWidget::tabJumpModeToString( editor.tabJumpMode ) );
 	ini.setValueB( "editor", "single_click_tree_navigation", editor.singleClickNavigation );
 	ini.setValueB( "editor", "sync_project_tree_with_editor", editor.syncProjectTreeWithEditor );
 	ini.setValueB( "editor", "auto_close_xml_tags", editor.autoCloseXMLTags );
@@ -329,7 +385,6 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "editor", "tab_indent_character", editor.tabIndentCharacter );
 	ini.setValue( "editor", "tab_indent_alignment",
 				  characterAlignmentToString( editor.tabIndentAlignment ) );
-	ini.setValueB( "editor", "flash_cursor", editor.flashCursor );
 
 	ini.setValueB( "search_bar", "case_sensitive", searchBarConfig.caseSensitive );
 	ini.setValueB( "search_bar", "lua_pattern", searchBarConfig.luaPattern );
@@ -342,14 +397,27 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "global_search_bar", "regex", globalSearchBarConfig.regex );
 	ini.setValueB( "global_search_bar", "whole_word", globalSearchBarConfig.wholeWord );
 	ini.setValueB( "global_search_bar", "escape_sequence", globalSearchBarConfig.escapeSequence );
+	ini.setValueB( "global_search_bar", "buffer_only_mode", globalSearchBarConfig.bufferOnlyMode );
 
 	ini.setValue( "terminal", "shell", term.shell );
+	ini.setValue( "terminal", "shell_args", term.shellArgs );
 	ini.setValue( "terminal", "font_size", term.fontSize.toString() );
 	ini.setValue( "terminal", "colorscheme", term.colorScheme );
 	ini.setValue( "terminal", "new_terminal_orientation",
 				  NewTerminalOrientation::toString( term.newTerminalOrientation ) );
 	ini.setValue( "terminal", "scrollback", String::toString( term.scrollback ) );
 	ini.setValueB( "terminal", "unsupported_os_warn_disabled", term.unsupportedOSWarnDisabled );
+	ini.setValueB( "terminal", "close_terminal_tab_on_exit", term.closeTerminalTabOnExit );
+	ini.setValueB( "terminal", "warn_before_closing_tab", term.warnBeforeClosingTab );
+	ini.setValueB( "terminal", "exclusive_mode", term.exclusiveMode );
+	ini.setValue( "terminal", "cursor_style",
+				  TerminalCursorHelper::modeToString( term.cursorStyle ) );
+	ini.setValue( "terminal", "scrollbar_type",
+				  term.scrollBarType == ScrollViewType::Overlay ? "overlay"sv : "outside"sv );
+	ini.setValue( "terminal", "scrollbar_mode",
+				  term.scrollBarMode == ScrollBarMode::Auto
+					  ? "auto"sv
+					  : ( term.scrollBarMode == ScrollBarMode::AlwaysOn ? "on"sv : "off" ) );
 
 	ini.setValueB( "window", "vsync", context.VSync );
 	ini.setValue( "window", "glversion",
@@ -362,12 +430,16 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 				   workspace.checkForUpdatesAtStartup );
 	ini.setValueB( "workspace", "session_snapshot", workspace.sessionSnapshot );
 
-	const auto& pluginsEnabled = pluginManager->getPluginsEnabled();
-	for ( const auto& plugin : pluginsEnabled )
-		ini.setValueB( "plugins", plugin.first, plugin.second );
+	if ( !pluginManager->pluginsDisabled() ) {
+		const auto& pluginsEnabled = pluginManager->getPluginsEnabled();
+		for ( const auto& plugin : pluginsEnabled )
+			ini.setValueB( "plugins", plugin.first, plugin.second );
+	}
 
 	for ( const auto& langExt : languagesExtensions.priorities )
 		ini.setValue( "languages_extensions", langExt.first, langExt.second );
+
+	pluginManager->forEachPlugin( [this]( Plugin* plugin ) { plugin->onSaveState( &iniState ); } );
 
 	ini.writeFile();
 	iniState.writeFile();
@@ -396,7 +468,7 @@ struct ProjectPath {
 	}
 };
 
-json saveNode( Node* node ) {
+json AppConfig::saveNode( Node* node ) {
 	json res;
 	if ( node->isType( UI_TYPE_SPLITTER ) ) {
 		UISplitter* splitter = node->asType<UISplitter>();
@@ -406,6 +478,8 @@ json saveNode( Node* node ) {
 			splitter->getOrientation() == UIOrientation::Horizontal ? "horizontal" : "vertical";
 		res["first"] = saveNode( splitter->getFirstWidget() );
 		res["last"] = saveNode( splitter->getLastWidget() );
+	} else if ( node->isType( UI_TYPE_NODELINK ) && node->asType<UINodeLink>()->getNodeLink() ) {
+		return saveNode( node->asType<UINodeLink>()->getNodeLink() );
 	} else if ( node->isType( UI_TYPE_TABWIDGET ) ) {
 		UITabWidget* tabWidget = node->asType<UITabWidget>();
 		std::vector<json> files;
@@ -434,6 +508,34 @@ json saveNode( Node* node ) {
 				if ( term->isUsingCustomTitle() )
 					f["title"] = term->getTitle();
 				files.emplace_back( f );
+			} else if ( ownedWidget->isType( UI_TYPE_IMAGE_VIEWER ) ) {
+				UIImageViewer* iv = ownedWidget->asType<UIImageViewer>();
+				if ( iv->getImagePath().empty() )
+					continue;
+				json f;
+				f["type"] = "image_viewer";
+				f["path"] = iv->getImagePath();
+				files.emplace_back( f );
+			} else if ( ownedWidget->isType( UI_TYPE_AUDIO_PLAYER ) ) {
+				UIAudioPlayer* ap = ownedWidget->asType<UIAudioPlayer>();
+				if ( ap->getFilePath().empty() )
+					continue;
+				json f;
+				f["type"] = "audio_player";
+				f["path"] = ap->getFilePath();
+				files.emplace_back( f );
+			} else if ( node->isWidget() ) {
+				UIWidget* widget = ownedWidget->asType<UIWidget>();
+				if ( widget->getClasses().size() == 1 ) {
+					auto found = tabWidgetTypes.find( widget->getClasses()[0] );
+					if ( found != tabWidgetTypes.end() ) {
+						auto f = found->second.onSave( widget );
+						f["type"] = found->first;
+						if ( !f.contains( "title" ) || !f["title"].is_string() )
+							f["title"] = tabWidget->getTab( i )->getText();
+						files.emplace_back( f );
+					}
+				}
 			}
 		}
 		res["type"] = "tabwidget";
@@ -444,7 +546,7 @@ json saveNode( Node* node ) {
 }
 
 void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
-							 const std::string& configPath, const ProjectDocumentConfig& docConfig,
+							 const std::string& configPath, const ProjectConfig& docConfig,
 							 const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
 							 bool sessionSnapshot, PluginManager* pluginManager ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
@@ -456,7 +558,8 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	IniFile cfg( projectCfgPath, false );
 	cfg.setValue( "path", "folder_path", projectFolder );
 	cfg.setValueB( "document", "use_global_settings", docConfig.useGlobalSettings );
-	cfg.setValueB( "document", "h_as_cpp", docConfig.hAsCPP );
+	cfg.setValue( "document", "h_ext_language_type",
+				  HExtLanguageTypeHelper::toString( docConfig.hExtLanguageType ) );
 	cfg.setValueB( "document", "trim_trailing_whitespaces", docConfig.doc.trimTrailingWhitespaces );
 	cfg.setValueB( "document", "force_new_line_at_end_of_file",
 				   docConfig.doc.forceNewLineAtEndOfFile );
@@ -473,6 +576,8 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	cfg.setValue( "build", "run_name", buildConfig.runName );
 	cfg.setValue( "nodes", "documents",
 				  saveNode( editorSplitter->getBaseLayout()->getFirstChild() ).dump() );
+	for ( const auto& langExt : docConfig.languagesExtensions.priorities )
+		cfg.setValue( "languages_extensions", langExt.first, langExt.second );
 	cfg.deleteKey( "files" );
 	if ( onlyIfNeeded ) {
 		IOStreamString stringFile;
@@ -674,6 +779,28 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 				if ( curTabWidget->getTabCount() == totalToLoad )
 					curTabWidget->setTabSelected(
 						eeclamp<Int32>( currentPage, 0, curTabWidget->getTabCount() - 1 ) );
+			} else if ( file["type"] == "image_viewer" ) {
+				if ( file.contains( "path" ) && file["path"].is_string() )
+					app->loadImageFromMedium( file["path"].get<std::string>(), false, false, true );
+			} else if ( file["type"] == "audio_player" ) {
+				if ( file.contains( "path" ) && file["path"].is_string() )
+					app->loadAudioFromPath( file["path"].get<std::string>(), false );
+			} else {
+				auto found = tabWidgetTypes.find( file["type"] );
+				if ( found != tabWidgetTypes.end() ) {
+					auto [widget, icon, title] = found->second.onLoad( file );
+
+					auto [tab, _] = editorSplitter->createWidgetInTabWidget(
+						curTabWidget, widget, !title.empty() ? title : file.value( "title", "" ) );
+					editorSplitter->removeUnusedTab( curTabWidget, true, false );
+
+					if ( icon )
+						tab->setIcon( icon );
+
+					if ( curTabWidget->getTabCount() == totalToLoad )
+						curTabWidget->setTabSelected(
+							eeclamp<Int32>( currentPage, 0, curTabWidget->getTabCount() - 1 ) );
+				}
 			}
 		}
 	} else if ( j["type"] == "splitter" ) {
@@ -693,7 +820,7 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 }
 
 void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
-							 const std::string& configPath, ProjectDocumentConfig& docConfig,
+							 const std::string& configPath, ProjectConfig& docConfig,
 							 ecode::App* app, bool sessionSnapshot, PluginManager* pluginManager ) {
 	FileSystem::dirAddSlashAtEnd( projectFolder );
 	std::string projectsPath( configPath + "projects" + FileSystem::getOSSlash() );
@@ -704,7 +831,14 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 	IniFile cfg( projectCfgPath );
 
 	docConfig.useGlobalSettings = cfg.getValueB( "document", "use_global_settings", true );
-	docConfig.hAsCPP = cfg.getValueB( "document", "h_as_cpp", false );
+
+	if ( cfg.getValue( "document", "h_ext_language_type", "" ) == "" &&
+		 cfg.getValueB( "document", "h_as_cpp", false ) == true ) {
+		docConfig.hExtLanguageType = HExtLanguageType::CPP;
+	} else {
+		docConfig.hExtLanguageType = HExtLanguageTypeHelper::fromString(
+			cfg.getValue( "document", "h_ext_language_type", "autodetect" ) );
+	}
 	docConfig.doc.trimTrailingWhitespaces =
 		cfg.getValueB( "document", "trim_trailing_whitespaces", false );
 	docConfig.doc.forceNewLineAtEndOfFile =
@@ -728,6 +862,8 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 		prjCfg.runName = cfg.getValue( "build", "run_name", "" );
 		app->getProjectBuildManager()->setConfig( prjCfg );
 	}
+
+	docConfig.languagesExtensions.priorities = cfg.getKeyMap( "languages_extensions" );
 
 	std::vector<SessionSnapshotFile> sessionSnapshotFiles;
 	if ( sessionSnapshot ) {
@@ -773,6 +909,13 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 		}
 		if ( !j.is_discarded() ) {
 			editorsToLoad = countTotalEditors( j );
+			if ( editorsToLoad <= 0 ) {
+				app->getUISceneNode()->runOnMainThread( [app] {
+					if ( !app->getFileToOpen().empty() ) {
+						app->loadFileDelayed();
+					}
+				} );
+			}
 			loadDocuments( editorSplitter, j, curTabWidget, app, sessionSnapshotFiles );
 		}
 	}
@@ -810,10 +953,56 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 			plugin->onLoadProject( projectFolder, projectPluginsStatePath );
 		} );
 	}
+
+	loadFileAssociations( projectFolder );
 }
 
 bool AppConfig::isNewVersion() const {
 	return windowState.lastRunVersion != ecode::Version::getVersionNum();
+}
+
+void AppConfig::loadFileAssociations( const std::string& projectFolder ) {
+	std::string faPath( projectFolder + ".ecode/settings.json" );
+
+	if ( !FileSystem::fileExists( faPath ) ) {
+		faPath = projectFolder + ".vscode/settings.json";
+		if ( !FileSystem::fileExists( faPath ) )
+			return;
+	}
+
+	std::string data;
+	if ( !FileSystem::fileGet( faPath, data ) )
+		return;
+
+	json j;
+	try {
+		j = json::parse( data, nullptr, true, true );
+	} catch ( const json::exception& e ) {
+		Log::error( "AppConfig::loadFileAssociations - Error parsing config from "
+					"path %s, error: %s, config file content:\n%s",
+					faPath, e.what(), data );
+		return;
+	}
+
+	if ( j.contains( "files.associations" ) && j["files.associations"].is_object() ) {
+		const auto& associations = j["files.associations"];
+		SyntaxDefinitionManager::FileAssociations fa;
+
+		for ( const auto& item : associations.items() ) {
+			const std::string& key = item.key();
+			const json& val = item.value();
+
+			if ( val.is_string() ) {
+				fa[key] = val;
+			} else {
+				Log::warning( "AppConfig::loadFileAssociations - Skipping key '%s' because its "
+							  "value is not a string.",
+							  key );
+			}
+		}
+
+		SyntaxDefinitionManager::instance()->setFileAssociations( std::move( fa ) );
+	}
 }
 
 } // namespace ecode

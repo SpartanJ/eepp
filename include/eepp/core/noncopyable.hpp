@@ -11,7 +11,7 @@ class EE_API NonCopyable {
 	/**	@brief Default constructor
 	**	Because this class has a copy constructor, the compiler
 	**	will not automatically generate the default constructor.
-	**	That's why we must define it explicitely. */
+	**	That's why we must define it explicitly. */
 	NonCopyable() {}
 
   private:
@@ -37,7 +37,7 @@ class EE_API NonCopyable {
 #endif
 
 /** @class EE::NonCopyable
-**	This class makes its instances non-copyable, by explicitely
+**	This class makes its instances non-copyable, by explicitly
 **	disabling its copy constructor and its assignment operator.
 **	To create a non-copyable class, simply inherit from
 **	EE::NonCopyable.

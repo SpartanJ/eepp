@@ -94,6 +94,8 @@ template <typename T> class Vector2 {
 	/** Scales the vector position against another vector */
 	void scale( const T& scale, const Vector2<T>& Center );
 
+	Vector2<T> trunc() const;
+
 	Vector2<T> ceil() const;
 
 	Vector2<T> floor() const;
@@ -382,6 +384,10 @@ template <typename T> void Vector2<T>::clamp( T len ) {
 		x *= len;
 		y *= len;
 	}
+}
+
+template <typename T> Vector2<T> Vector2<T>::trunc() const {
+	return Vector2<T>( std::trunc( x ), std::trunc( y ) );
 }
 
 template <typename T> Vector2<T> Vector2<T>::ceil() const {

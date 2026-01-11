@@ -263,7 +263,7 @@ bool Shader::compile() {
 		Log::error( mCompileLog.c_str() );
 		Log::error( mSource.c_str() );
 	} else {
-		Log::info( "Shader %s compiled succesfully", getName().c_str() );
+		Log::info( "Shader %s compiled successfully", getName().c_str() );
 	}
 
 #endif

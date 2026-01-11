@@ -18,6 +18,8 @@ using namespace EE::UI::Tools;
 
 namespace ecode {
 
+class UIHLinearLayoutCommandExecuter;
+
 class StatusAppOutputController : public StatusBarElement {
   public:
 	StatusAppOutputController( UISplitter* mainSplitter, UISceneNode* uiSceneNode,
@@ -39,10 +41,12 @@ class StatusAppOutputController : public StatusBarElement {
 
 	UIPushButton* getRunButton();
 
+	UIPushButton* getBuildAndRunButton();
+
 	void updateRunButton();
 
   protected:
-	UILinearLayout* mContainer{ nullptr };
+	UIHLinearLayoutCommandExecuter* mContainer{ nullptr };
 	UICodeEditor* mAppOutput{ nullptr };
 	std::vector<PatternHolder> mPatternHolder;
 	UIPushButton* mClearButton{ nullptr };

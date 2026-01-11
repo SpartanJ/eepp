@@ -4,7 +4,7 @@
  *
  *   CID objects manager (body).
  *
- * Copyright (C) 1996-2019 by
+ * Copyright (C) 1996-2025 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -16,17 +16,16 @@
  */
 
 
-#include <ft2build.h>
-#include FT_INTERNAL_DEBUG_H
-#include FT_INTERNAL_STREAM_H
+#include <freetype/internal/ftdebug.h>
+#include <freetype/internal/ftstream.h>
 
 #include "cidgload.h"
 #include "cidload.h"
 
-#include FT_SERVICE_POSTSCRIPT_CMAPS_H
-#include FT_INTERNAL_POSTSCRIPT_AUX_H
-#include FT_INTERNAL_POSTSCRIPT_HINTS_H
-#include FT_DRIVER_H
+#include <freetype/internal/services/svpscmap.h>
+#include <freetype/internal/psaux.h>
+#include <freetype/internal/pshints.h>
+#include <freetype/ftdriver.h>
 
 #include "ciderrs.h"
 
@@ -50,7 +49,8 @@
   FT_LOCAL_DEF( void )
   cid_slot_done( FT_GlyphSlot  slot )
   {
-    slot->internal->glyph_hints = NULL;
+    if ( slot->internal )
+      slot->internal->glyph_hints = NULL;
   }
 
 
@@ -69,8 +69,7 @@
       FT_Module  module;
 
 
-      module = FT_Get_Module( slot->face->driver->root.library,
-                              "pshinter" );
+      module = FT_Get_Module( slot->library, "pshinter" );
       if ( module )
       {
         T1_Hints_Funcs  funcs;
@@ -153,14 +152,18 @@
   }
 
 
-  FT_LOCAL( FT_Error )
+  FT_LOCAL_DEF( FT_Error )
   cid_size_request( FT_Size          size,
                     FT_Size_Request  req )
   {
+    FT_Error  error;
+
     PSH_Globals_Funcs  funcs;
 
 
-    FT_Request_Metrics( size->face, req );
+    error = FT_Request_Metrics( size->face, req );
+    if ( error )
+      goto Exit;
 
     funcs = cid_size_get_globals_funcs( (CID_Size)size );
 
@@ -170,7 +173,8 @@
                         size->metrics.y_scale,
                         0, 0 );
 
-    return FT_Err_Ok;
+  Exit:
+    return error;
   }
 
 
@@ -211,7 +215,7 @@
     /* release subrs */
     if ( face->subrs )
     {
-      FT_Int  n;
+      FT_UInt  n;
 
 
       for ( n = 0; n < cid->num_dicts; n++ )
@@ -263,7 +267,8 @@
    *
    * @Input:
    *   stream ::
-   *     The source font stream.
+   *     Dummy argument for compatibility with the `FT_Face_InitFunc` API.
+   *     Ignored.  The stream should be passed through `face->root.stream`.
    *
    *   face_index ::
    *     The index of the font face in the resource.
@@ -369,6 +374,14 @@
 
       if ( info->is_fixed_pitch )
         cidface->face_flags |= FT_FACE_FLAG_FIXED_WIDTH;
+
+      /*
+       * For the sfnt-wrapped CID fonts for MacOS, currently,
+       * its `cmap' tables are ignored, and the content in
+       * its `CID ' table is treated the same as naked CID-keyed
+       * font.  See ft_lookup_PS_in_sfnt_stream().
+       */
+      cidface->face_flags |= FT_FACE_FLAG_CID_KEYED;
 
       /* XXX: TODO: add kerning with .afm support */
 
@@ -479,11 +492,7 @@
 
 
     /* set default property values, cf. `ftt1drv.h' */
-#ifdef T1_CONFIG_OPTION_OLD_ENGINE
-    driver->hinting_engine = FT_HINTING_FREETYPE;
-#else
     driver->hinting_engine = FT_HINTING_ADOBE;
-#endif
 
     driver->no_stem_darkening = TRUE;
 

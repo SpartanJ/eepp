@@ -23,10 +23,10 @@ StyleSheetStyle::StyleSheetStyle( const std::string& selector,
 	}
 }
 
-std::string StyleSheetStyle::build( bool emmitMediaQueryStart, bool emmitMediaQueryEnd ) {
+std::string StyleSheetStyle::build( bool emitMediaQueryStart, bool emitMediaQueryEnd ) {
 	std::string css;
 
-	if ( emmitMediaQueryStart && mMediaQueryList && !mMediaQueryList->getQueryString().empty() )
+	if ( emitMediaQueryStart && mMediaQueryList && !mMediaQueryList->getQueryString().empty() )
 		css += mMediaQueryList->getQueryString() + " {\n\n";
 
 	css += mSelector.getName() + " {\n";
@@ -42,7 +42,7 @@ std::string StyleSheetStyle::build( bool emmitMediaQueryStart, bool emmitMediaQu
 
 	css += "}\n\n";
 
-	if ( emmitMediaQueryEnd && mMediaQueryList && !mMediaQueryList->getQueryString().empty() )
+	if ( emitMediaQueryEnd && mMediaQueryList && !mMediaQueryList->getQueryString().empty() )
 		css += "}\n\n";
 
 	return css;
@@ -143,6 +143,17 @@ void StyleSheetStyle::setProperty( const StyleSheetProperty& property ) {
 
 void StyleSheetStyle::clearProperties() {
 	mProperties.clear();
+}
+
+void StyleSheetStyle::clearCachedProperties() {
+	StyleSheetProperties::iterator it;
+	do {
+		it = std::find_if(
+			mProperties.begin(), mProperties.end(),
+			[]( const auto& model ) { return model.second.isCachedProperty(); } );
+		if ( it != mProperties.end() )
+			mProperties.erase( it );
+	} while ( it != mProperties.end() );
 }
 
 bool StyleSheetStyle::hasProperties() const {

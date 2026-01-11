@@ -40,7 +40,7 @@ class UISineWaveWidget : public UIWidget {
 
 	UISineWaveWidget() :
 		UIWidget(
-			"sinewavewidget" ) // parameter is the element tag (for accesing the element from CSS)
+			"sinewavewidget" ) // parameter is the element tag (for accessing the element from CSS)
 	{}
 };
 

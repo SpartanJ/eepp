@@ -71,11 +71,13 @@ class EE_API UIStyle : public UIState {
 
 	void removeStructurallyVolatileChild( UIWidget* widget );
 
-	UnorderedSet<UIWidget*>& getStructurallyVolatileChilds();
+	UnorderedSet<UIWidget*>& getStructurallyVolatileChildren();
 
 	bool hasProperty( const CSS::PropertyId& propertyId ) const;
 
 	void resetGlobalDefinition();
+
+	void resetCachedProperties();
 
   protected:
 	UIWidget* mWidget;
@@ -86,7 +88,7 @@ class EE_API UIStyle : public UIState {
 	CSS::AnimationsMap mAnimations;
 	UnorderedSet<UIWidget*> mRelatedWidgets;
 	UnorderedSet<UIWidget*> mSubscribedWidgets;
-	UnorderedSet<UIWidget*> mStructurallyVolatileChilds;
+	UnorderedSet<UIWidget*> mStructurallyVolatileChildren;
 	Uint32 mStateDepthCounter{ 0 };
 	Uint64 mLoadedVersion{ 0 };
 	const CSS::StyleSheet* mLoadedStyleSheet{ nullptr };
@@ -96,6 +98,10 @@ class EE_API UIStyle : public UIState {
 	bool mFirstState;
 
 	void applyVarValues( CSS::StyleSheetProperty* style );
+
+	void applyLightDarkValues( CSS::StyleSheetProperty* style );
+
+	void applyLightDarkValue( std::string& newValue );
 
 	void setVariableFromValue( CSS::StyleSheetProperty* property, const std::string& value );
 

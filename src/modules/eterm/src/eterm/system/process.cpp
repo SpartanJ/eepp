@@ -108,7 +108,8 @@ int Process::getExitCode() const {
 
 Process::Process( int pid ) : mPID( pid ) {}
 
-static void execshell( const char* cmd, const char* const* args, std::string workingDirectory ) {
+static void execshell( const char* cmd, const char* const* args, std::string workingDirectory,
+					   const std::unordered_map<std::string, std::string>& env ) {
 	const struct passwd* pw;
 	const char* sh;
 
@@ -141,6 +142,9 @@ static void execshell( const char* cmd, const char* const* args, std::string wor
 	setenv( "TERM", "xterm-256color", 1 );
 	setenv( "COLORTERM", "24bit", 1 );
 
+	for ( const auto& e : env )
+		setenv( e.first.c_str(), e.second.c_str(), 1 );
+
 	signal( SIGCHLD, SIG_DFL );
 	signal( SIGHUP, SIG_DFL );
 	signal( SIGINT, SIG_DFL );
@@ -164,7 +168,8 @@ std::unique_ptr<Process> Process::createWithPipe( const std::string& /*program*/
 std::unique_ptr<Process>
 Process::createWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
 								   const std::string& workingDirectory,
-								   Terminal::PseudoTerminal& pseudoTerminal ) {
+								   Terminal::PseudoTerminal& pseudoTerminal,
+								   const std::unordered_map<std::string, std::string>& env ) {
 	int pid = fork();
 	if ( pid == -1 ) {
 		fprintf( stderr, "Failed to fork process\n" );
@@ -195,7 +200,7 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 			argsV.push_back( a.c_str() );
 		}
 		argsV.push_back( nullptr );
-		execshell( program.c_str(), argsV.data(), workingDirectory );
+		execshell( program.c_str(), argsV.data(), workingDirectory, env );
 	} else {
 		pseudoTerminal.mSlave.release();
 		return std::unique_ptr<Process>( new Process( pid ) );
@@ -414,10 +419,14 @@ std::unique_ptr<Process> Process::createWithPipe( const std::string& program,
 std::unique_ptr<Process>
 Process::createWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
 								   const std::string& workingDirectory,
-								   Terminal::PseudoTerminal& pseudoTerminal ) {
+								   Terminal::PseudoTerminal& pseudoTerminal,
+								   const std::unordered_map<std::string, std::string>& env ) {
 	SetEnvironmentVariableA( "WSLENV", "TERM/u" );
 	SetEnvironmentVariableA( "TERM", "xterm-256color" );
 	SetEnvironmentVariableA( "COLORTERM", "24bit" );
+
+	for ( const auto& e : env )
+		SetEnvironmentVariableA( e.first.c_str(), e.second.c_str() );
 
 	HRESULT hr{ E_UNEXPECTED };
 

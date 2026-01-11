@@ -96,6 +96,8 @@ class EE_API URI {
 
 	bool operator<( const URI& url ) const;
 
+	static std::string getTempPathFromURI( const URI& uri );
+
 	/** Swaps the URI with another one. */
 	void swap( URI& uri );
 

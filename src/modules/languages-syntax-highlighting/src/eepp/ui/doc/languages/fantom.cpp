@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addFantom() {
+SyntaxDefinition& addFantom() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -94,21 +94,21 @@ void addFantom() {
 			  { "protected", "keyword" },
 			  { "private", "keyword" },
 			  { "abstract", "keyword" },
-			  { "Void", "keyword2" },
-			  { "Bool", "keyword2" },
-			  { "Int", "keyword2" },
-			  { "Float", "keyword2" },
-			  { "Decimal", "keyword2" },
-			  { "Str", "keyword2" },
-			  { "Duration", "keyword2" },
-			  { "Uri", "keyword2" },
-			  { "Type", "keyword2" },
-			  { "Range", "keyword2" },
-			  { "List", "keyword2" },
-			  { "Map", "keyword2" },
-			  { "Obj", "keyword2" },
-			  { "Err", "keyword2" },
-			  { "Env", "keyword2" },
+			  { "Void", "type" },
+			  { "Bool", "type" },
+			  { "Int", "type" },
+			  { "Float", "type" },
+			  { "Decimal", "type" },
+			  { "Str", "type" },
+			  { "Duration", "type" },
+			  { "Uri", "type" },
+			  { "Type", "type" },
+			  { "Range", "type" },
+			  { "List", "type" },
+			  { "Map", "type" },
+			  { "Obj", "type" },
+			  { "Err", "type" },
+			  { "Env", "type" },
 		  },
 		  "//",
 		  {}
@@ -116,6 +116,8 @@ void addFantom() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	sd.setBlockComment( { "/*", "*/" } );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addDiff() {
+SyntaxDefinition& addDiff() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Diff File",
 		  { "%.diff$", "%.patch$" },
@@ -16,7 +16,7 @@ void addDiff() {
 			  { { "^index%s.-\n" }, "comment" },
 			  { { "^@@.-\n" }, "number" },
 			  { { "^%+.-\n" }, "function" },
-			  { { "^%-.-\n" }, "keyword2" },
+			  { { "^%-.-\n" }, "type" },
 
 		  },
 		  {

@@ -13,12 +13,20 @@
 #include <iostream>
 #include <sstream>
 
-// This taints the System module!
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-#include <eepp/window/engine.hpp>
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
+#define EE_USE_POSIX_SPAWN
+#elif defined( __GLIBC__ ) && ( __GLIBC__ > 2 || ( __GLIBC__ == 2 && __GLIBC_MINOR__ >= 29 ) )
+#define EE_USE_POSIX_SPAWN
 #endif
 
-#if defined( EE_PLATFORM_POSIX )
+// This taints the System module!
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+#include <android/configuration.h>
+#include <eepp/window/engine.hpp>
+#include <jni.h>
+#endif
+
+#ifdef EE_PLATFORM_POSIX
 #include <dirent.h>
 #include <dlfcn.h>
 #include <sys/utsname.h>
@@ -35,6 +43,7 @@
 #endif
 #include <stdlib.h>
 #include <windows.h>
+#include <winreg.h>
 #undef GetDiskFreeSpace
 #undef GetTempPath
 
@@ -70,9 +79,15 @@ typedef DWORD( WINAPI* GetModuleBaseName_t )( HANDLE, HMODULE, LPSTR, DWORD );
 #include <sys/user.h>
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
+#if EE_PLATFORM == EE_PLATFORM_MACOS
 #include <libproc.h>
+#endif
+
+#if EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS
 #include <mach-o/dyld.h>
+#endif
+
+#ifdef EE_USE_POSIX_SPAWN
 #include <spawn.h>
 #endif
 
@@ -96,12 +111,16 @@ typedef DWORD( WINAPI* GetModuleBaseName_t )( HANDLE, HMODULE, LPSTR, DWORD );
 using namespace EE::Network;
 #endif
 
+#if EE_PLATFORM == EE_PLATFORM_IOS
+#include <objc/message.h>
+#include <objc/runtime.h>
+#endif
+
 #ifndef PATH_MAX
 #define PATH_MAX 4096
 #endif
 
-std::unordered_map<std::string, std::string> _getEnvironmentVariables() {
-	std::unordered_map<std::string, std::string> ret;
+char** _getEnviron() {
 	char** env;
 #if defined( WIN ) && ( _MSC_VER >= 1900 )
 	env = *__p__environ();
@@ -109,17 +128,20 @@ std::unordered_map<std::string, std::string> _getEnvironmentVariables() {
 	extern char** environ;
 	env = environ;
 #endif
+	return env;
+}
+
+std::unordered_map<std::string, std::string> _getEnvironmentVariables() {
+	std::unordered_map<std::string, std::string> ret;
+	char** env = _getEnviron();
 
 	for ( ; *env; ++env ) {
-		auto var = EE::String::split( *env, "=" );
-
-		if ( var.size() == 2 ) {
-			ret.insert( std::make_pair( var[0], var[1] ) );
-		} else if ( var.size() > 2 ) {
-			auto val( var[1] );
-			for ( size_t i = 2; i < var.size(); ++i )
-				val += var[i];
-			ret.insert( std::make_pair( var[0], val ) );
+		std::string env_var_str( *env );
+		size_t pos = env_var_str.find( '=' );
+		if ( pos != std::string::npos ) {
+			std::string key = env_var_str.substr( 0, pos );
+			std::string value = env_var_str.substr( pos + 1 );
+			ret.emplace( key, value );
 		}
 	}
 
@@ -700,7 +722,7 @@ double Sys::getSystemTime() {
 #endif
 }
 
-Uint64 Sys::getProcessID() {
+ProcessID Sys::getProcessID() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return GetCurrentProcessId();
 #elif EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
@@ -814,12 +836,12 @@ std::string Sys::getConfigPath( const std::string& appname ) {
 }
 
 std::string Sys::getTempPath() {
-	char path[EE_MAX_CFG_PATH_LEN];
+	char path[EE_MAX_CFG_PATH_LEN + 1];
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	DWORD dwRetVal = GetTempPathA( EE_MAX_CFG_PATH_LEN, path );
 
-	if ( 0 <= dwRetVal || dwRetVal > EE_MAX_CFG_PATH_LEN ) {
+	if ( dwRetVal == 0 || dwRetVal > EE_MAX_CFG_PATH_LEN ) {
 		return std::string( "C:\\WINDOWS\\TEMP\\" );
 	}
 #elif EE_PLATFORM == EE_PLATFORM_ANDROID
@@ -1113,9 +1135,9 @@ std::string Sys::which( const std::string& exeName,
 		 FileSystem::fileExists( exeName ) )
 		return exeName;
 
-	std::vector<std::string> PATHS = getEnvSplitted( "PATH" );
+	std::vector<std::string> PATHS = getEnvSplit( "PATH" );
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	static std::vector<std::string> PATHEXTS = getEnvSplitted( "PATHEXT" );
+	static std::vector<std::string> PATHEXTS = getEnvSplit( "PATHEXT" );
 	std::string exePath;
 #endif
 
@@ -1173,7 +1195,7 @@ std::string Sys::getEnv( const std::string& name ) {
 #endif
 }
 
-std::vector<std::string> Sys::getEnvSplitted( const std::string& name ) {
+std::vector<std::string> Sys::getEnvSplit( const std::string& name ) {
 	return String::split( getEnv( name.c_str() ), PATH_SEP_CHAR );
 }
 
@@ -1181,9 +1203,9 @@ std::vector<std::string> Sys::getEnvSplitted( const std::string& name ) {
 static ULONG_PTR GetParentProcessId() {
 	ULONG_PTR pbi[6];
 	ULONG ulSize = 0;
-	LONG( WINAPI * NtQueryInformationProcess )
-	( HANDLE ProcessHandle, ULONG ProcessInformationClass, PVOID ProcessInformation,
-	  ULONG ProcessInformationLength, PULONG ReturnLength );
+	LONG( WINAPI * NtQueryInformationProcess )(
+		HANDLE ProcessHandle, ULONG ProcessInformationClass, PVOID ProcessInformation,
+		ULONG ProcessInformationLength, PULONG ReturnLength );
 	*(FARPROC*)&NtQueryInformationProcess =
 		GetProcAddress( LoadLibraryA( "NTDLL.DLL" ), "NtQueryInformationProcess" );
 	if ( NtQueryInformationProcess ) {
@@ -1257,6 +1279,35 @@ static int windowsSystem( const std::string& programPath, const std::string& wor
 int Sys::execute( const std::string& cmd, const std::string& workingDir ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return windowsSystem( cmd, workingDir );
+#elif defined( EE_USE_POSIX_SPAWN )
+	pid_t pid;
+	std::vector<std::string> cmdArr = String::split( cmd, " ", "", "\"", true );
+	std::vector<char*> strings;
+	for ( size_t i = 0; i < cmdArr.size(); ++i )
+		strings.push_back( const_cast<char*>( cmdArr[i].c_str() ) );
+	strings.push_back( NULL );
+
+	posix_spawn_file_actions_t actions;
+#if EE_PLATFORM != EE_PLATFORM_IOS
+	if ( !workingDir.empty() ) {
+		if ( posix_spawn_file_actions_init( &actions ) != 0 )
+			return -1; // Failed to initialize
+
+		if ( posix_spawn_file_actions_addchdir_np( &actions, workingDir.c_str() ) != 0 ) {
+			posix_spawn_file_actions_destroy( &actions );
+			return -1; // Failed to add chdir action
+		}
+	}
+#endif
+	int status = posix_spawnp( &pid, strings[0], workingDir.empty() ? NULL : &actions, NULL,
+							   strings.data(), _getEnviron() );
+
+	if ( !workingDir.empty() )
+		posix_spawn_file_actions_destroy( &actions );
+
+	if ( status == 0 )
+		return pid;
+	return -1;
 #elif EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	pid_t pid = fork();
 	if ( pid == 0 ) {
@@ -1270,9 +1321,11 @@ int Sys::execute( const std::string& cmd, const std::string& workingDir ) {
 			FileSystem::changeWorkingDirectory( workingDir );
 
 		execvp( strings[0], (char* const*)strings.data() );
-		exit( 0 );
+		exit( 127 );
 	}
 	return pid;
+#else
+	return -1;
 #endif
 }
 
@@ -1308,10 +1361,13 @@ std::string Sys::getProcessFilePath() {
 	/* use realpath to resolve a symlink if the process was launched from one.
 	** This happens when Homebrew installs a cack and creates a symlink in
 	** /usr/loca/bin for launching the executable from the command line. */
+	char exepath[PATH_MAX];
 	unsigned size = PATH_MAX;
-	char exepath[size];
-	_NSGetExecutablePath( exepath, &size );
-	realpath( exepath, exename );
+	int rv = _NSGetExecutablePath( exepath, &size );
+	if ( rv != 0 )
+		return "";
+	if ( realpath( exepath, exename ) == nullptr )
+		return "";
 #elif EE_PLATFORM == EE_PLATFORM_BSD
 	size_t len = PATH_MAX;
 	const int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1 };
@@ -1325,7 +1381,7 @@ std::string Sys::getProcessFilePath() {
 			break;
 	}
 
-	return FileSystem::fileNameFromPath( std::string( info.name ) );
+	return std::string{ info.name };
 #else
 	*exename = 0;
 #endif
@@ -1335,7 +1391,7 @@ std::string Sys::getProcessFilePath() {
 #endif
 }
 
-Int64 Sys::getProcessCreationTime( Uint64 pid ) {
+Int64 Sys::getProcessCreationTime( ProcessID pid ) {
 	Int64 creationTime = -1;
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -1423,10 +1479,10 @@ Int64 Sys::getProcessCreationTime( Uint64 pid ) {
 	return creationTime;
 }
 
-std::vector<Uint64> Sys::pidof( const std::string& processName ) {
+std::vector<ProcessID> Sys::pidof( const std::string& processName ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	std::vector<Uint64> pids;
-	std::vector<std::string> extensions = getEnvSplitted( "PATHEXT" );
+	std::vector<ProcessID> pids;
+	std::vector<std::string> extensions = getEnvSplit( "PATHEXT" );
 
 	HMODULE hPsapi = LoadLibrary( TEXT( "psapi.dll" ) );
 	if ( !hPsapi )
@@ -1486,14 +1542,11 @@ std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 		}
 	}
 
-	for ( auto pid : pids )
-		eePRINTL( "Found pid %d", pid );
-
 	FreeLibrary( hPsapi );
 	return pids;
 #elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
 
-	std::vector<Uint64> pids;
+	std::vector<ProcessID> pids;
 	DIR* dir = opendir( "/proc" );
 	if ( !dir ) {
 		return pids;
@@ -1521,7 +1574,7 @@ std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 	closedir( dir );
 	return pids;
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
-	std::vector<Uint64> pids;
+	std::vector<ProcessID> pids;
 
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0 };
 	size_t len;
@@ -1552,7 +1605,7 @@ std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 	free( procs );
 	return pids;
 #elif EE_PLATFORM == EE_PLATFORM_BSD
-	std::vector<Uint64> pids;
+	std::vector<ProcessID> pids;
 
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PROC, 0 };
 	size_t len;
@@ -1583,7 +1636,7 @@ std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 	free( procs );
 	return pids;
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
-	std::vector<Uint64> pids;
+	std::vector<ProcessID> pids;
 	int32 cookie = 0;
 	team_info teamInfo;
 	while ( get_next_team_info( &cookie, &teamInfo ) == B_OK ) {
@@ -1597,10 +1650,10 @@ std::vector<Uint64> Sys::pidof( const std::string& processName ) {
 #endif
 }
 
-std::vector<std::pair<Uint64, std::string>> Sys::listProcesses() {
+std::vector<std::pair<ProcessID, std::string>> Sys::listProcesses() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	std::vector<std::pair<Uint64, std::string>> pids;
-	std::vector<std::string> extensions = getEnvSplitted( "PATHEXT" );
+	std::vector<std::pair<ProcessID, std::string>> pids;
+	std::vector<std::string> extensions = getEnvSplit( "PATHEXT" );
 
 	HMODULE hPsapi = LoadLibrary( TEXT( "psapi.dll" ) );
 	if ( !hPsapi )
@@ -1652,7 +1705,7 @@ std::vector<std::pair<Uint64, std::string>> Sys::listProcesses() {
 	FreeLibrary( hPsapi );
 	return pids;
 #elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
-	std::vector<std::pair<Uint64, std::string>> pids;
+	std::vector<std::pair<ProcessID, std::string>> pids;
 	DIR* dir = opendir( "/proc" );
 	if ( !dir ) {
 		return pids;
@@ -1678,7 +1731,7 @@ std::vector<std::pair<Uint64, std::string>> Sys::listProcesses() {
 	closedir( dir );
 	return pids;
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
-	std::vector<std::pair<Uint64, std::string>> pids;
+	std::vector<std::pair<ProcessID, std::string>> pids;
 
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0 };
 	size_t len;
@@ -1708,7 +1761,7 @@ std::vector<std::pair<Uint64, std::string>> Sys::listProcesses() {
 	free( procs );
 	return pids;
 #elif EE_PLATFORM == EE_PLATFORM_BSD
-	std::vector<std::pair<Uint64, std::string>> pids;
+	std::vector<std::pair<ProcessID, std::string>> pids;
 
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PROC, 0 };
 	size_t len;
@@ -1738,7 +1791,7 @@ std::vector<std::pair<Uint64, std::string>> Sys::listProcesses() {
 	free( procs );
 	return pids;
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
-	std::vector<std::pair<Uint64, std::string>> pids;
+	std::vector<std::pair<ProcessID, std::string>> pids;
 	int32 cookie = 0;
 	team_info teamInfo;
 	while ( get_next_team_info( &cookie, &teamInfo ) == B_OK ) {
@@ -1827,6 +1880,394 @@ std::string Sys::getUserDirectory() {
 	// On Unix-based systems, use HOME
 	return std::string{ std::getenv( "HOME" ) };
 #endif
+}
+
+bool Sys::processHasChildren( ProcessID pid ) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	HANDLE hSnapshot = CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 );
+	if ( hSnapshot == INVALID_HANDLE_VALUE ) {
+		return false;
+	}
+
+	PROCESSENTRY32 pe32;
+	pe32.dwSize = sizeof( PROCESSENTRY32 );
+
+	if ( !Process32First( hSnapshot, &pe32 ) ) {
+		CloseHandle( hSnapshot );
+		return false;
+	}
+
+	do {
+		if ( pe32.th32ParentProcessID == static_cast<DWORD>( pid ) ) {
+			CloseHandle( hSnapshot );
+			return true; // Found a child
+		}
+	} while ( Process32Next( hSnapshot, &pe32 ) );
+
+	CloseHandle( hSnapshot );
+	return false;
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
+	DIR* dir = opendir( "/proc" );
+	if ( !dir ) {
+		return false;
+	}
+
+	struct dirent* entry;
+	while ( ( entry = readdir( dir ) ) != nullptr ) {
+		char* endptr;
+		long tpid = strtol( entry->d_name, &endptr, 10 );
+		if ( *endptr != '\0' || tpid <= 0 ) { // Skip if not a valid PID directory
+			continue;
+		}
+		std::string status_path = std::string( "/proc/" ) + entry->d_name + "/status";
+		std::ifstream status_file( status_path );
+		if ( status_file.is_open() ) {
+			std::string line;
+			while ( std::getline( status_file, line ) ) {
+				if ( line.rfind( "PPid:", 0 ) == 0 ) {
+					try {
+						long ppid = std::stol( line.substr( 5 ) );
+						if ( ppid == (Int64)pid ) {
+							closedir( dir );
+							return true;
+						}
+					} catch ( const std::invalid_argument& ) {
+					}
+					break;
+				}
+			}
+		}
+	}
+
+	closedir( dir );
+	return false;
+#elif EE_PLATFORM == EE_PLATFORM_MACOS || EE_PLATFORM == EE_PLATFORM_IOS || \
+	EE_PLATFORM == EE_PLATFORM_BSD
+	struct kinfo_proc* proc_list = nullptr;
+	size_t proc_count = 0;
+	int mib[] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL };
+	int err;
+	bool done = false;
+
+	do {
+		// First, call sysctl to get the size of the buffer needed
+		if ( sysctl( mib, 3, nullptr, &proc_count, nullptr, 0 ) < 0 ) {
+			return false;
+		}
+
+		// If a buffer was previously allocated, free it
+		if ( proc_list ) {
+			free( proc_list );
+			proc_list = nullptr;
+		}
+
+		// Allocate the buffer
+		proc_list = (struct kinfo_proc*)malloc( proc_count );
+		if ( !proc_list ) {
+			return false;
+		}
+
+		// Now, call sysctl again to populate the buffer
+		err = sysctl( mib, 3, proc_list, &proc_count, nullptr, 0 );
+
+		if ( err == 0 ) {
+			done = true; // Success
+		} else if ( errno == ENOMEM ) {
+			// The process list grew; loop again to get the new size and re-allocate.
+			err = 0;
+		}
+	} while ( err == 0 && !done );
+
+	if ( err != 0 || !proc_list ) {
+		if ( proc_list ) {
+			free( proc_list );
+		}
+		return false;
+	}
+
+	size_t num_procs = proc_count / sizeof( struct kinfo_proc );
+	for ( size_t i = 0; i < num_procs; i++ ) {
+		pid_t ppid;
+#if defined( __APPLE__ )
+		ppid = proc_list[i].kp_eproc.e_ppid;
+#else // FreeBSD
+		ppid = proc_list[i].ki_ppid;
+#endif
+		if ( static_cast<ProcessID>( ppid ) == pid ) {
+			free( proc_list );
+			return true; // Found a child
+		}
+	}
+
+	free( proc_list );
+	return false;
+
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+	int32 cookie = 0;
+	team_info ti;
+	while ( get_next_team_info( &cookie, &ti ) == B_OK ) {
+		if ( static_cast<ProcessID>( ti.parent ) == pid ) {
+			return true; // Found a child
+		}
+	}
+	return false;
+#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	return false;
+#else
+#warning "Unsupported operating system: processHasChildren not implemented."
+	return false; // To satisfy compiler, though #error should halt compilation.
+#endif
+
+	return false;
+}
+
+static bool _isOSUsingDarkColorScheme() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	// Checks the registry for the "AppsUseLightTheme" key.
+	// 0 = Dark, 1 = Light. If key is missing (Win 7/8), default to Light (false).
+
+	HKEY hKey;
+	const wchar_t* subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
+	const wchar_t* valueName = L"AppsUseLightTheme";
+
+	if ( RegOpenKeyExW( HKEY_CURRENT_USER, subKey, 0, KEY_READ, &hKey ) != ERROR_SUCCESS ) {
+		return false;
+	}
+
+	DWORD value = 1; // Default to Light
+	DWORD size = sizeof( DWORD );
+	LSTATUS status = RegQueryValueExW( hKey, valueName, nullptr, nullptr,
+									   reinterpret_cast<LPBYTE>( &value ), &size );
+
+	RegCloseKey( hKey );
+
+	if ( status == ERROR_SUCCESS ) {
+		return ( value == 0 );
+	}
+	return false;
+
+#elif EE_PLATFORM == EE_PLATFORM_IOS
+	// Logic: [UIScreen.mainScreen.traitCollection userInterfaceStyle] == 2 (Dark)
+
+	// 1. Get UIScreen Class
+	Class uiScreenClass = objc_getClass( "UIScreen" );
+	if ( !uiScreenClass )
+		return false; // Should not happen on iOS
+
+	// 2. Call [UIScreen mainScreen]
+	// We must cast objc_msgSend to the correct function signature
+	typedef id ( *MainScreenMethod )( Class, SEL );
+	SEL mainScreenSel = sel_registerName( "mainScreen" );
+	MainScreenMethod getMainScreen = (MainScreenMethod)objc_msgSend;
+	id mainScreen = getMainScreen( uiScreenClass, mainScreenSel );
+	if ( !mainScreen )
+		return false;
+
+	// 3. Call [screen traitCollection]
+	typedef id ( *TraitCollectionMethod )( id, SEL );
+	SEL traitCollectionSel = sel_registerName( "traitCollection" );
+	TraitCollectionMethod getTraitCollection = (TraitCollectionMethod)objc_msgSend;
+	id traits = getTraitCollection( mainScreen, traitCollectionSel );
+	if ( !traits )
+		return false;
+
+	// 4. Call [traits userInterfaceStyle]
+	// Return type is NSInteger (long)
+	typedef long ( *UserInterfaceStyleMethod )( id, SEL );
+	SEL styleSel = sel_registerName( "userInterfaceStyle" );
+	UserInterfaceStyleMethod getStyle = (UserInterfaceStyleMethod)objc_msgSend;
+	long style = getStyle( traits, styleSel );
+
+	// 5. Check constants: UIUserInterfaceStyleLight = 1, UIUserInterfaceStyleDark = 2
+	return ( style == 2 );
+
+#elif EE_PLATFORM == EE_PLATFORM_MACOS
+	// Checks global user preferences via CoreFoundation (C-API).
+	// This avoids complex Obj-C Runtime casting and works in CLI apps / before UI init.
+	// Key: "AppleInterfaceStyle". Value: "Dark" (exists) or null (Light).
+
+	bool isDark = false;
+	CFStringRef key = CFSTR( "AppleInterfaceStyle" );
+	CFPropertyListRef propertyValue =
+		CFPreferencesCopyAppValue( key, kCFPreferencesAnyApplication );
+
+	if ( propertyValue ) {
+		if ( CFGetTypeID( propertyValue ) == CFStringGetTypeID() ) {
+			CFStringRef style = static_cast<CFStringRef>( propertyValue );
+			// Check if string contains "Dark"
+			if ( CFStringCompare( style, CFSTR( "Dark" ), 0 ) == kCFCompareEqualTo ) {
+				isDark = true;
+			}
+		}
+		CFRelease( propertyValue );
+	}
+	return isDark;
+#elif EE_PLATFORM == EE_PLATFORM_ANDROID
+	// Logic: ActivityThread.currentApplication().getResources().getConfiguration().uiMode
+
+	// 1. Retrieve the environment from your engine
+	void* rawEnv = Window::Engine::instance()->getPlatformHelper()->getJNIEnv();
+	if ( !rawEnv )
+		return false;
+
+	// Cast void* to JNIEnv*
+	JNIEnv* env = static_cast<JNIEnv*>( rawEnv );
+
+	bool isDark = false;
+
+	// 2. Reflection to get the Application Context without passing it as an argument
+	// Note: We use the hidden class "android.app.ActivityThread" to get the current app.
+	jclass activityThreadCls = env->FindClass( "android/app/ActivityThread" );
+
+	if ( activityThreadCls ) {
+		jmethodID currentAppMethod = env->GetStaticMethodID(
+			activityThreadCls, "currentApplication", "()Landroid/app/Application;" );
+
+		if ( currentAppMethod ) {
+			jobject context = env->CallStaticObjectMethod( activityThreadCls, currentAppMethod );
+
+			if ( context ) {
+				// 3. context.getResources()
+				jclass contextCls = env->GetObjectClass( context );
+				jmethodID getResMethod = env->GetMethodID( contextCls, "getResources",
+														   "()Landroid/content/res/Resources;" );
+				jobject resources = env->CallObjectMethod( context, getResMethod );
+
+				if ( resources ) {
+					// 4. resources.getConfiguration()
+					jclass resCls = env->GetObjectClass( resources );
+					jmethodID getConfigMethod = env->GetMethodID(
+						resCls, "getConfiguration", "()Landroid/content/res/Configuration;" );
+					jobject config = env->CallObjectMethod( resources, getConfigMethod );
+
+					if ( config ) {
+						// 5. config.uiMode & UI_MODE_NIGHT_MASK
+						jclass configCls = env->GetObjectClass( config );
+						jfieldID uiModeField = env->GetFieldID( configCls, "uiMode", "I" );
+						int uiMode = env->GetIntField( config, uiModeField );
+
+						// UI_MODE_NIGHT_MASK (0x30) check against UI_MODE_NIGHT_YES (0x20)
+						if ( ( uiMode & 0x30 ) == 0x20 ) {
+							isDark = true;
+						}
+
+						// Cleanup local references to avoid JNI table overflow
+						env->DeleteLocalRef( config );
+						env->DeleteLocalRef( configCls );
+					}
+					env->DeleteLocalRef( resources );
+					env->DeleteLocalRef( resCls );
+				}
+				env->DeleteLocalRef( context );
+				env->DeleteLocalRef( contextCls );
+			}
+		}
+		env->DeleteLocalRef( activityThreadCls );
+	}
+
+	// Safety: Clear any exceptions if something wasn't found (e.g. old Android versions)
+	if ( env->ExceptionCheck() ) {
+		env->ExceptionClear();
+	}
+
+	return isDark;
+
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
+	// Helper to parse INI-style files robustly
+	auto checkFileForDarkTheme = [&]( const std::string& path, const std::string& key ) -> bool {
+		if ( access( path.c_str(), R_OK ) != 0 )
+			return false;
+
+		std::ifstream file( path );
+		std::string line;
+		while ( std::getline( file, line ) ) {
+			// 1. Trim leading whitespace (handle indented keys)
+			size_t keyStart = line.find_first_not_of( " \t" );
+			if ( keyStart == std::string::npos )
+				continue; // Empty line
+
+			// 2. Skip comments
+			if ( line[keyStart] == '#' || line[keyStart] == ';' )
+				continue;
+
+			// 3. Check if the line starts specifically with our key
+			if ( line.compare( keyStart, key.length(), key ) == 0 ) {
+				// 4. Look for '=' after the key
+				size_t afterKeyIndex = keyStart + key.length();
+				size_t eqPos = line.find( '=', afterKeyIndex );
+
+				if ( eqPos != std::string::npos ) {
+					// 5. strict check: ensure only whitespace exists between key and '='
+					// This prevents "Color" matching "ColorScheme" or "gtk-theme" matching
+					// "gtk-theme-backup"
+					bool isValidKey = true;
+					for ( size_t i = afterKeyIndex; i < eqPos; ++i ) {
+						if ( line[i] != ' ' && line[i] != '\t' ) {
+							isValidKey = false;
+							break;
+						}
+					}
+
+					if ( isValidKey ) {
+						std::string value = line.substr( eqPos + 1 );
+						value = String::toLower( value );
+						if ( value.find( "dark" ) != std::string::npos ) {
+							return true;
+						}
+					}
+				}
+			}
+		}
+		return false;
+	};
+
+	// 1. Check Environment Variables (GTK_THEME overrides config files)
+	const char* gtkTheme = std::getenv( "GTK_THEME" );
+	if ( gtkTheme ) {
+		std::string theme( gtkTheme );
+		theme = String::toLower( theme );
+		if ( theme.find( "dark" ) != std::string::npos )
+			return true;
+	}
+
+	const char* home = std::getenv( "HOME" );
+	if ( !home )
+		return false;
+	std::string homeStr( home );
+
+	// 2. KDE Plasma
+	if ( checkFileForDarkTheme( homeStr + "/.config/kdeglobals", "ColorScheme" ) ) {
+		return true;
+	}
+
+	// 3. GTK 3/4 (Gnome, XFCE, Mate, Cinnamon)
+	if ( checkFileForDarkTheme( homeStr + "/.config/gtk-3.0/settings.ini", "gtk-theme-name" ) ) {
+		return true;
+	}
+	if ( checkFileForDarkTheme( homeStr + "/.config/gtk-4.0/settings.ini", "gtk-theme-name" ) ) {
+		return true;
+	}
+
+	return false; // Default to light
+#elif EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+    // Executes JavaScript: window.matchMedia('(prefers-color-scheme: dark)').matches
+    return EM_ASM_INT({
+        if (typeof window !== 'undefined' && window.matchMedia) {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 1 : 0;
+        }
+        return 0;
+    }) != 0;
+#else
+	return true; // Any other OS default to dark
+#endif
+}
+
+bool Sys::isOSUsingDarkColorScheme( bool allowUsingCached ) {
+	static bool isUsingDarkColorScheme = _isOSUsingDarkColorScheme();
+	if ( allowUsingCached )
+		return isUsingDarkColorScheme;
+	isUsingDarkColorScheme = _isOSUsingDarkColorScheme();
+	return isUsingDarkColorScheme;
 }
 
 }} // namespace EE::System

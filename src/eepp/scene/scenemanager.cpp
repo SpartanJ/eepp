@@ -2,10 +2,16 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/window/engine.hpp>
 
 namespace EE { namespace Scene {
 
 SINGLETON_DECLARE_IMPLEMENTATION( SceneManager )
+
+bool SceneManager::isActive() {
+	return EE::Window::Engine::isEngineRunning() && SceneManager::existsSingleton() &&
+		   !SceneManager::instance()->isShuttingDown();
+}
 
 SceneManager::SceneManager() : mUISceneNode( NULL ), mIsShuttingDown( false ) {}
 

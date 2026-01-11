@@ -14,7 +14,9 @@
                                        \
 	static T* instance();              \
                                        \
-	static void destroySingleton();
+	static void destroySingleton();    \
+                                       \
+	static void detachSingleton();
 
 #define SINGLETON_DECLARE_IMPLEMENTATION( T )        \
                                                      \
@@ -32,7 +34,9 @@
                                                      \
 	T* T::instance() { return createSingleton(); }   \
                                                      \
-	void T::destroySingleton() { eeSAFE_DELETE( ms_singleton ); }
+	void T::destroySingleton() { eeSAFE_DELETE( ms_singleton ); } \
+	                                                 \
+	void T::detachSingleton() { ms_singleton = nullptr; }
 
 namespace EE { namespace System {
 
@@ -59,6 +63,9 @@ template <typename T> class Singleton {
 
 	/** Destroy the singleton instance */
 	static void destroySingleton() { eeSAFE_DELETE( ms_singleton ); }
+
+	/** Detaches the existing singleton. Instance will keep existing but not associated */
+	static void detachSingleton() { ms_singleton = nullptr; }
 };
 
 }} // namespace EE::System

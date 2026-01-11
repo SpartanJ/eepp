@@ -2,7 +2,7 @@
   "ecode-linux": {
     "build": [
       {
-        "args": "--with-debug-symbols --disable-static-build --with-text-shaper gmake",
+        "args": "--disable-static-build gmake",
         "command": "premake4",
         "working_dir": "${project_root}"
       },
@@ -24,7 +24,8 @@
       }
     ],
     "config": {
-      "clear_sys_env": false
+      "clear_sys_env": false,
+      "strip_ansi_codes": false
     },
     "os": [
       "linux"
@@ -87,7 +88,8 @@
       }
     ],
     "config": {
-      "clear_sys_env": false
+      "clear_sys_env": false,
+      "strip_ansi_codes": false
     },
     "os": [
       "macos"
@@ -119,7 +121,7 @@
   "ecode-windows": {
     "build": [
       {
-        "args": "--windows-mingw-build gmake2",
+        "args": "--windows-mingw-build gmake",
         "command": "premake5.exe",
         "working_dir": ""
       },
@@ -141,7 +143,8 @@
       }
     ],
     "config": {
-      "clear_sys_env": false
+      "clear_sys_env": false,
+      "strip_ansi_codes": false
     },
     "os": [
       "windows"
@@ -169,7 +172,7 @@
   "eepp-linux": {
     "build": [
       {
-        "args": "--with-debug-symbols --disable-static-build --with-text-shaper gmake",
+        "args": "--disable-static-build --with-mold-linker --with-debug-symbols --address-sanitizer gmake",
         "command": "premake4",
         "working_dir": "${project_root}"
       },
@@ -191,7 +194,8 @@
       }
     ],
     "config": {
-      "clear_sys_env": false
+      "clear_sys_env": false,
+      "strip_ansi_codes": false
     },
     "os": [
       "linux"
@@ -204,20 +208,20 @@
     },
     "run": [
       {
-        "args": "-v",
+        "args": "",
         "command": "${project_root}/bin/ecode-debug",
         "name": "ecode-debug",
         "working_dir": "${project_root}/bin"
       },
       {
-        "args": "-x",
+        "args": "",
         "command": "${project_root}/bin/ecode",
         "name": "ecode-release",
         "working_dir": "${project_root}/bin"
       },
       {
         "args": "",
-        "command": "${project_root}/bin/unit_tests/eepp-unit-tests-debug",
+        "command": "${project_root}/bin/unit_tests/eepp-unit_tests-debug",
         "name": "eepp-unit_tests-debug",
         "run_in_terminal": true,
         "working_dir": "${project_root}/bin/unit_tests/"
@@ -240,6 +244,90 @@
         "command": "${project_root}/bin/eepp-empty-window",
         "name": "eepp-empty_window",
         "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "-u",
+        "command": "${project_root}/bin/eepp-UIEditor-debug",
+        "name": "eepp-UIEditor-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-7guis-cells-debug",
+        "name": "eepp-7guis-cells-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-7guis-temperature-converter-debug",
+        "name": "eepp-7guis-temperature-converter-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-7guis-circle-drawer-debug",
+        "name": "eepp-7guis-circle-drawer-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-7guis-counter-debug",
+        "name": "eepp-7guis-counter-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-7guis-crud-debug",
+        "name": "eepp-7guis-crud-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-7guis-flight-booker-debug",
+        "name": "eepp-7guis-flight-booker-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-7guis-timer-debug",
+        "name": "eepp-7guis-timer-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eeiv-debug",
+        "name": "eeiv-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-fonts-debug",
+        "name": "eepp-fonts-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "--warn-before-closing",
+        "command": "${project_root}/bin/eterm-debug",
+        "name": "eterm-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-sound-debug",
+        "name": "eepp-sound-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-test-debug",
+        "name": "eepp-test-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-perf-test-debug",
+        "name": "eepp-ui-perf-test-debug",
+        "working_dir": "${project_root}/bin"
       }
     ],
     "var": {
@@ -249,7 +337,7 @@
   "eepp-linux-cmake": {
     "build": [
       {
-        "args": "--with-debug-symbols --disable-static-build --with-text-shaper cmake",
+        "args": "--disable-static-build cmake",
         "command": "premake5",
         "working_dir": "${project_root}"
       },
@@ -276,7 +364,8 @@
       }
     ],
     "config": {
-      "clear_sys_env": false
+      "clear_sys_env": false,
+      "strip_ansi_codes": false
     },
     "os": [
       "linux"
@@ -334,7 +423,7 @@
   "eepp-linux-ninja": {
     "build": [
       {
-        "args": "--with-debug-symbols --disable-static-build --with-text-shaper ninja",
+        "args": "--disable-static-build --with-debug-symbols ninja",
         "command": "premake5",
         "working_dir": "${project_root}"
       },
@@ -350,13 +439,14 @@
     ],
     "clean": [
       {
-        "args": "config=${build_type} clean",
-        "command": "make",
+        "args": "-t clean ${build_type}",
+        "command": "ninja",
         "working_dir": "${build_dir}"
       }
     ],
     "config": {
-      "clear_sys_env": false
+      "clear_sys_env": false,
+      "strip_ansi_codes": false
     },
     "os": [
       "linux"
@@ -431,7 +521,8 @@
       }
     ],
     "config": {
-      "clear_sys_env": false
+      "clear_sys_env": false,
+      "strip_ansi_codes": false
     },
     "os": [
       "macos"
@@ -444,7 +535,7 @@
     },
     "run": [
       {
-        "args": "-x",
+        "args": "",
         "command": "${project_root}/bin/ecode-debug",
         "name": "ecode-debug",
         "working_dir": "${project_root}/bin/"
@@ -453,6 +544,12 @@
         "args": "-x",
         "command": "${project_root}/bin/ecode",
         "name": "ecode-release",
+        "working_dir": "${project_root}/bin/"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/unit_tests/eepp-unit_tests-debug",
+        "name": "eepp-unit_test-debug",
         "working_dir": "${project_root}/bin/"
       }
     ],
@@ -463,7 +560,7 @@
   "eepp-windows": {
     "build": [
       {
-        "args": "--windows-mingw-build gmake2",
+        "args": "--windows-mingw-build gmake",
         "command": "premake5.exe",
         "working_dir": ""
       },
@@ -485,7 +582,8 @@
       }
     ],
     "config": {
-      "clear_sys_env": false
+      "clear_sys_env": false,
+      "strip_ansi_codes": false
     },
     "os": [
       "windows"

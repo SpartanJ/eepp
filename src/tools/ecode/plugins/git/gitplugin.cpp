@@ -1,5 +1,5 @@
-#include "gitbranchmodel.hpp"
 #include "gitplugin.hpp"
+#include "gitbranchmodel.hpp"
 #include "gitstatusmodel.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/scene/scenemanager.hpp>
@@ -26,11 +26,6 @@ using namespace EE::UI::Doc;
 using namespace std::literals;
 
 using json = nlohmann::json;
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-#define GIT_THREADED 1
-#else
-#define GIT_THREADED 0
-#endif
 
 namespace ecode {
 
@@ -74,11 +69,7 @@ GitPlugin::GitPlugin( PluginManager* pluginManager, bool sync ) :
 	if ( sync ) {
 		load( pluginManager );
 	} else {
-#if defined( GIT_THREADED ) && GIT_THREADED == 1
 		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
-#else
-		load( pluginManager );
-#endif
 	}
 }
 
@@ -95,6 +86,9 @@ GitPlugin::~GitPlugin() {
 
 	if ( getUISceneNode() )
 		getUISceneNode()->removeActionsByTag( GIT_STATUS_UPDATE_TAG );
+
+	if ( mStatusBar && mRepositionCbId )
+		mStatusBar->removeEventListener( mRepositionCbId );
 
 	{
 		Lock l( mGitBranchMutex );
@@ -196,9 +190,9 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 		}
 
 		if ( config.contains( "silent" ) )
-			mSilence = config.value( "silent", true );
+			mSilent = config.value( "silent", true );
 		else {
-			config["silent"] = mSilence;
+			config["silent"] = mSilent;
 			updateConfigFile = true;
 		}
 	}
@@ -230,7 +224,7 @@ void GitPlugin::load( PluginManager* pluginManager ) {
 	}
 
 	mGit = std::make_unique<Git>( pluginManager->getWorkspaceFolder() );
-	mGit->setLogLevel( mSilence ? LogLevel::Warning : LogLevel::Info );
+	mGit->setSilent( mSilent );
 	mGitFound = !mGit->getGitPath().empty();
 	mProjectPath = mRepoSelected = mGit->getProjectPath();
 
@@ -259,7 +253,7 @@ void GitPlugin::initModelStyler() {
 			projectView->on( Event::OnModelChanged, [this]( auto ) { initModelStyler(); } );
 	}
 
-	mModelStylerId = projectView->getModel()->subsribeModelStyler(
+	mModelStylerId = projectView->getModel()->subscribeModelStyler(
 		[this]( const ModelIndex& index, const void* data ) -> Variant {
 			static const char* STYLE_MODIFIED = "git_highlight_style";
 			static const char* STYLE_NONE = "git_highlight_style_clear";
@@ -292,7 +286,7 @@ void GitPlugin::endModelStyler() {
 	}
 
 	if ( projectView->getModel() ) {
-		projectView->getModel()->unsubsribeModelStyler( mModelStylerId );
+		projectView->getModel()->unsubscribeModelStyler( mModelStylerId );
 		mModelStylerId = 0;
 	}
 }
@@ -349,7 +343,7 @@ void GitPlugin::updateStatusBarSync() {
 		mStatusButton->setClass( "status_but" );
 		mStatusButton->setIcon( iconDrawable( "source-control", 10 ) );
 		mStatusButton->reloadStyle( true, true );
-		mStatusButton->getTextBox()->setUsingCustomStyling( true );
+		mStatusButton->getTextView()->setUsingCustomStyling( true );
 
 		mStatusButton->on( Event::MouseClick, [this]( const Event* event ) {
 			if ( nullptr == mTab )
@@ -360,11 +354,24 @@ void GitPlugin::updateStatusBarSync() {
 			else if ( mGitStatus.totalInserts || mGitStatus.totalDeletions )
 				mPanelSwicher->getListBox()->setSelected( 1 );
 		} );
-	}
 
-	if ( mStatusBar->getChildCount() >= 2 &&
-		 mStatusButton->getNodeIndex() != mStatusBar->getChildCount() - 2 )
-		mStatusButton->toPosition( mStatusBar->getChildCount() - 2 );
+		const auto reposition = [this] {
+			if ( mStatusBar == nullptr )
+				return;
+			if ( mStatusButton->getNextNode() == nullptr ||
+				 mStatusButton->getNextNode()->getId() != "doc_info" ) {
+				auto docInfo = mStatusBar->find( "doc_info" );
+				if ( docInfo != nullptr && docInfo->getParent() == mStatusButton->getParent() ) {
+					mStatusButton->toPosition( docInfo->getNodeIndex() );
+				}
+			}
+		};
+
+		reposition();
+
+		mRepositionCbId =
+			mStatusBar->on( Event::OnChildCountChanged, [reposition]( auto ) { reposition(); } );
+	}
 
 	mStatusButton->setVisible( !mGit->getGitFolder().empty() );
 
@@ -391,18 +398,18 @@ void GitPlugin::updateStatusBarSync() {
 		auto insertedColor( getVarColor( "--theme-success" ) );
 		auto deletedColor( getVarColor( "--theme-error" ) );
 		patterns.emplace_back(
-			SyntaxPattern( { ".*%((%+%d+)%s/%s(%-%d+)%)" }, { "normal", "keyword", "keyword2" } ) );
+			SyntaxPattern( { ".*%((%+%d+)%s/%s(%-%d+)%)" }, { "normal", "keyword", "type" } ) );
 		SyntaxDefinition syntaxDef( "custom_build", {}, std::move( patterns ) );
 		SyntaxColorScheme scheme( "status_bar_git",
 								  { { "normal"_sst, { fontColor } },
 									{ "keyword"_sst, { insertedColor } },
-									{ "keyword2"_sst, { deletedColor } } },
+									{ "type"_sst, { deletedColor } } },
 								  {} );
 		mStatusCustomTokenizer = { std::move( syntaxDef ), std::move( scheme ) };
 	}
 
 	SyntaxTokenizer::tokenizeText( mStatusCustomTokenizer->def, mStatusCustomTokenizer->scheme,
-								   *mStatusButton->getTextBox()->getTextCache() );
+								   mStatusButton->getTextView()->getTextCache() );
 
 	mStatusButton->invalidateDraw();
 }
@@ -595,7 +602,7 @@ void GitPlugin::displayTooltip( UICodeEditor* editor, const Git::Blame& blame,
 	}
 
 	SyntaxTokenizer::tokenizeText( *mTooltipCustomSyntaxDef, editor->getColorScheme(),
-								   *tooltip->getTextCache() );
+								   tooltip->getTextCache() );
 
 	tooltip->notifyTextChangedFromTextCache();
 
@@ -632,11 +639,10 @@ std::string GitPlugin::gitBranch() {
 }
 
 void GitPlugin::onRegisterListeners( UICodeEditor* editor, std::vector<Uint32>& listeners ) {
-	listeners.push_back(
-		editor->addEventListener( Event::OnCursorPosChange, [this, editor]( const Event* ) {
-			if ( mTooltipInfoShowing )
-				hideTooltip( editor );
-		} ) );
+	listeners.push_back( editor->on( Event::OnCursorPosChange, [this, editor]( const Event* ) {
+		if ( mTooltipInfoShowing )
+			hideTooltip( editor );
+	} ) );
 }
 
 Color GitPlugin::getVarColor( const std::string& var ) {
@@ -648,7 +654,7 @@ void GitPlugin::blame( UICodeEditor* editor ) {
 	if ( !mGitFound ) {
 		editor->setTooltipText(
 			i18n( "git_not_found",
-				  "Git binary not found.\nPlease check that git is accesible via PATH" ) );
+				  "Git binary not found.\nPlease check that git is accessible via PATH" ) );
 		return;
 	}
 	mThreadPool->run( [this, editor]() {
@@ -698,7 +704,7 @@ void GitPlugin::checkout( Git::Branch branch ) {
 		UIMessageBox* msgBox = UIMessageBox::New(
 			UIMessageBox::YES_NO, i18n( "git_create_local_branch", "Create local branch?" ) );
 		msgBox->on( Event::OnConfirm, [checkOutFn]( const Event* ) { checkOutFn( true ); } );
-		msgBox->on( Event::OnCancel, [checkOutFn]( const Event* ) { checkOutFn( false ); } );
+		msgBox->on( Event::OnDiscard, [checkOutFn]( const Event* ) { checkOutFn( false ); } );
 		msgBox->setTitle( i18n( "git_checkout", "Check Out" ) );
 		msgBox->center();
 		msgBox->showWhenReady();
@@ -838,16 +844,16 @@ void GitPlugin::commit( const std::string& repoPath ) {
 	txtEdit->setLineWrapMode( LineWrapMode::Letter );
 	txtEdit->setText( mLastCommitMsg );
 
-	UICheckBox* chkAmmend = UICheckBox::New();
-	chkAmmend->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
+	UICheckBox* chkAmend = UICheckBox::New();
+	chkAmend->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
 		->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent )
 		->setLayoutGravity( UI_HALIGN_LEFT | UI_VALIGN_CENTER )
 		->setClipType( ClipType::None )
 		->setParent( msgBox->getLayoutCont()->getFirstChild() )
-		->setId( "git-ammend" );
-	chkAmmend->setText( i18n( "git_ammend", "Ammend last commit" ) );
-	chkAmmend->toPosition( 2 );
-	chkAmmend->setTooltipText( getUISceneNode()->getKeyBindings().getShortcutString(
+		->setId( "git-amend" );
+	chkAmend->setText( i18n( "git_amend", "Amend last commit" ) );
+	chkAmend->toPosition( 2 );
+	chkAmend->setTooltipText( getUISceneNode()->getKeyBindings().getShortcutString(
 		{ KEY_A, KeyMod::getDefaultModifier() }, true ) );
 
 	UICheckBox* chkBypassHook = UICheckBox::New();
@@ -875,9 +881,8 @@ void GitPlugin::commit( const std::string& repoPath ) {
 		{ KEY_P, KeyMod::getDefaultModifier() }, true ) );
 
 	txtEdit->getDocument().setCommand(
-		"commit-ammend", [chkAmmend] { chkAmmend->setChecked( !chkAmmend->isChecked() ); } );
-	txtEdit->getKeyBindings().addKeybind( { KEY_L, KeyMod::getDefaultModifier() },
-										  "commit-ammend" );
+		"commit-amend", [chkAmend] { chkAmend->setChecked( !chkAmend->isChecked() ); } );
+	txtEdit->getKeyBindings().addKeybind( { KEY_L, KeyMod::getDefaultModifier() }, "commit-amend" );
 
 	txtEdit->getDocument().setCommand(
 		"commit-push", [chkPush] { chkPush->setChecked( !chkPush->isChecked() ); } );
@@ -889,21 +894,21 @@ void GitPlugin::commit( const std::string& repoPath ) {
 	txtEdit->getKeyBindings().addKeybind( { KEY_B, KeyMod::getDefaultModifier() },
 										  "commit-bypass-hook" );
 
-	msgBox->on( Event::OnConfirm, [this, msgBox, chkAmmend, chkBypassHook, chkPush,
+	msgBox->on( Event::OnConfirm, [this, msgBox, chkAmend, chkBypassHook, chkPush,
 								   repoPath]( const Event* ) {
 		std::string msg( msgBox->getTextEdit()->getText().toUtf8() );
 		if ( msg.empty() )
 			return;
-		bool ammend = chkAmmend->isChecked();
+		bool amend = chkAmend->isChecked();
 		bool bypassHook = chkBypassHook->isChecked();
 		bool pushCommit = chkPush->isChecked();
 
 		msgBox->closeWindow();
 		runAsync(
-			[this, msg, ammend, bypassHook, pushCommit, repoPath]() {
+			[this, msg, amend, bypassHook, pushCommit, repoPath]() {
 				std::optional<Git::Branch> branch = getBranchFromRepoPath( repoPath );
 				bool pushNewBranch = branch && !branch->name.empty() && branch->remote.empty();
-				auto res = mGit->commit( msg, ammend, bypassHook, repoPath );
+				auto res = mGit->commit( msg, amend, bypassHook, repoPath );
 				if ( res.success() ) {
 					mLastCommitMsg.clear();
 					if ( pushCommit ) {
@@ -918,7 +923,7 @@ void GitPlugin::commit( const std::string& repoPath ) {
 			true, true, true, true, true );
 	} );
 
-	msgBox->on( Event::OnCancel, [this, msgBox]( const Event* ) {
+	msgBox->on( Event::OnDiscard, [this, msgBox]( const Event* ) {
 		mLastCommitMsg = msgBox->getTextEdit()->getText();
 	} );
 
@@ -1506,7 +1511,7 @@ void GitPlugin::buildSidePanelTab() {
 	mBranchesTree->setHeadersVisible( false );
 	mBranchesTree->setExpandersAsIcons( true );
 	mBranchesTree->setIndentWidth( PixelDensity::dpToPx( 16 ) );
-	mBranchesTree->setScrollViewType( UIScrollableWidget::Inclusive );
+	mBranchesTree->setScrollViewType( ScrollViewType::Overlay );
 	mBranchesTree->on( Event::OnModelEvent, [this]( const Event* event ) {
 		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
 		if ( !modelEvent->getModelIndex().hasParent() )
@@ -1572,7 +1577,7 @@ void GitPlugin::buildSidePanelTab() {
 	mStatusTree->setAutoColumnsWidth( true );
 	mStatusTree->setHeadersVisible( false );
 	mStatusTree->setExpandersAsIcons( true );
-	mStatusTree->setScrollViewType( UIScrollableWidget::Inclusive );
+	mStatusTree->setScrollViewType( ScrollViewType::Overlay );
 	mStatusTree->setIndentWidth( PixelDensity::dpToPx( 4 ) );
 	mStatusTree->on( Event::OnRowCreated, [this]( const Event* event ) {
 		UITableRow* row = event->asRowCreatedEvent()->getRow();

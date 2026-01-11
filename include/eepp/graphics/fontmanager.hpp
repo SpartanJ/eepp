@@ -11,7 +11,7 @@ using namespace EE::System;
 namespace EE { namespace Graphics {
 
 /** @brief The Font Manager is a singleton class that manages all the instance of fonts
-   instanciated. And releases the font instances automatically. So the user doesn't need to release
+   instantiated. And releases the font instances automatically. So the user doesn't need to release
    any font instance.
 */
 class EE_API FontManager : public ResourceManager<Font> {
@@ -46,6 +46,8 @@ class EE_API FontManager : public ResourceManager<Font> {
 	FontAntialiasing getAntialiasing() const;
 
 	void setAntialiasing( FontAntialiasing antialiasing );
+
+	Font* getByInternalId( Uint32 internalId ) const;
 
   protected:
 	Font* mColorEmojiFont{ nullptr };

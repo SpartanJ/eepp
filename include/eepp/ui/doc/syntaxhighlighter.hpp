@@ -34,6 +34,9 @@ class EE_API SyntaxHighlighter {
 	const std::vector<SyntaxTokenPosition>& getLine( const size_t& index,
 													 bool mustTokenize = true );
 
+	void copyLineToBuffer( const size_t& index, std::vector<SyntaxTokenPosition>& buffer,
+						   bool mustTokenize = true );
+
 	Int64 getFirstInvalidLine() const;
 
 	Int64 getMaxWantedLine() const;

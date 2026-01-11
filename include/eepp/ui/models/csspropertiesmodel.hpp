@@ -70,7 +70,7 @@ class CSSPropertiesModel final : public Model {
 			mProps[prop] = def;
 		}
 		if ( mWidget )
-			mCloseCb = mWidget->addEventListener( Event::OnClose, [this]( const Event* ) {
+			mCloseCb = mWidget->on( Event::OnClose, [this]( const Event* ) {
 				mWidget = nullptr;
 				mCloseCb = 0;
 			} );

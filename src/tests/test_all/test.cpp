@@ -45,7 +45,7 @@ class UIBlurredWindow : public UIWindow {
 											   mScreenPos.y + mSize.y ) );
 
 			RGB cc = getSceneNode()->getWindow()->getClearColor();
-			mFboBlur->setClearColor( ColorAf( cc.r / 255.f, cc.g / 255.f, cc.b / 255.f, 0 ) );
+			mFboBlur->setClearColor( ColorAf( cc.r / 255.f, cc.g / 255.f, cc.b / 255.f, 1.f ) );
 			mFboBlur->bind();
 			mFboBlur->clear();
 			textureRegion.draw( Vector2f( 0, 0 ), mFboBlur->getSizef() );
@@ -188,7 +188,7 @@ void EETest::init() {
 		WP.setDuration( Milliseconds( 5000 ) );
 		WP.start();
 
-		Batch.allocVertexs( 2048 );
+		Batch.allocVertices( 2048 );
 		Batch.setBlendMode( BlendMode::Add() );
 
 		mFBO = FrameBuffer::New( 256, 256 );
@@ -240,7 +240,7 @@ void EETest::createUIThemeTextureAtlas() {
 		TexturePacker tp( 2048, 2048, PixelDensity::toFloat( PD ), true, false, 2 );
 		tp.addTexturesPath( Path );
 		tp.packTextures();
-		tp.save( tgpath + ".png", Image::SaveType::SAVE_TYPE_PNG );
+		tp.save( tgpath + ".png", Image::SaveType::PNG );
 	} else {
 		TextureAtlasLoader tgl;
 		tgl.updateTextureAtlas( tgpath + EE_TEXTURE_ATLAS_EXTENSION, Path );
@@ -265,7 +265,7 @@ void EETest::onFontLoaded() {
 	eeASSERT( TTF != NULL );
 	eeASSERT( monospace != NULL );
 
-	mBuda = String::fromUtf8(
+	mBuddha = String::fromUtf8(
 		"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el "
 		"mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está "
 		"ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. "
@@ -362,7 +362,7 @@ void EETest::createBaseUI() {
 	UIWindow* tWin = UIWindow::New();
 	tWin->setSize( 530, 405 )->setPosition( 320, 240 );
 	UIWindow::StyleConfig windowStyleConfig = tWin->getStyleConfig();
-	windowStyleConfig.WinFlags = UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
+	windowStyleConfig.WinFlags = UI_WIN_DRAGGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = Sizef( 530, 405 );
 	windowStyleConfig.BaseAlpha = 200;
 	tWin->setStyleConfig( windowStyleConfig );
@@ -372,8 +372,8 @@ void EETest::createBaseUI() {
 
 	tWin->setTitle( "Widgets Test" );
 
-	tWin->addEventListener( Event::MouseUp, [this]( auto event ) { onWinMouseUp( event ); } );
-	C->addEventListener( Event::MouseUp, [this]( auto event ) { onWinMouseUp( event ); } );
+	tWin->on( Event::MouseUp, [this]( auto event ) { onWinMouseUp( event ); } );
+	C->on( Event::MouseUp, [this]( auto event ) { onWinMouseUp( event ); } );
 
 	UISprite* sprite = UISprite::New();
 	sprite->setFlags( UI_AUTO_SIZE );
@@ -397,7 +397,7 @@ void EETest::createBaseUI() {
 	Button->setParent( C )->setPosition( 225, 215 )->setSize( 90, 0 );
 	Button->setIcon( mSceneNode->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) ) );
 	Button->setText( "Click Me" );
-	Button->addEventListener( Event::MouseClick, [this]( auto event ) { onButtonClick( event ); } );
+	Button->on( Event::MouseClick, [this]( auto event ) { onButtonClick( event ); } );
 	Button->setTooltipText( "Click and see what happens..." );
 
 	UICheckBox* Checkbox = UICheckBox::New();
@@ -417,8 +417,7 @@ void EETest::createBaseUI() {
 		->setParent( C )
 		->setPosition( 220, 80 )
 		->setSize( 80, 24 );
-	mSlider->addEventListener( Event::OnValueChange,
-							   [this]( auto event ) { onSliderValueChange( event ); } );
+	mSlider->on( Event::OnValueChange, [this]( auto event ) { onSliderValueChange( event ); } );
 
 	UISlider::New()
 		->setOrientation( UIOrientation::Vertical )
@@ -437,8 +436,7 @@ void EETest::createBaseUI() {
 
 	mScrollBar = UIScrollBar::New();
 	mScrollBar->setParent( C )->setSize( 0, 240 );
-	mScrollBar->addEventListener( Event::OnValueChange,
-								  [this]( auto event ) { onValueChange( event ); } );
+	mScrollBar->on( Event::OnValueChange, [this]( auto event ) { onValueChange( event ); } );
 
 	mProgressBar = UIProgressBar::New();
 	mProgressBar->setParent( C )->setSize( 200, 24 )->setPosition( 20, 190 );
@@ -479,7 +477,7 @@ void EETest::createBaseUI() {
 	UITextEdit* TextEdit = UITextEdit::New();
 	TextEdit->setFlags( UI_WORD_WRAP );
 	TextEdit->setParent( C )->setPosition( 5, 245 )->setSize( 315, 130 );
-	TextEdit->setText( mBuda );
+	TextEdit->setText( mBuddha );
 
 	UIWidgetTable* genGrid = UIWidgetTable::New();
 	genGrid->setSmoothScroll( true )->setFlags( UI_TOUCH_DRAG_ENABLED );
@@ -560,21 +558,18 @@ void EETest::createBaseUI() {
 	Menu->addSeparator();
 	Menu->add( "Quit" );
 
-	Menu->addEventListener( Event::OnItemClicked, [this]( auto event ) { onItemClick( event ); } );
-	Menu->getItem( "Quit" )->addEventListener( Event::MouseUp,
-											   [this]( auto event ) { onQuitClick( event ); } );
+	Menu->on( Event::OnItemClicked, [this]( auto event ) { onItemClick( event ); } );
+	Menu->getItem( "Quit" )->on( Event::MouseUp, [this]( auto event ) { onQuitClick( event ); } );
 
-	SceneManager::instance()->getUISceneNode()->getRoot()->addEventListener(
+	SceneManager::instance()->getUISceneNode()->getRoot()->on(
 		Event::MouseClick, [this]( auto event ) { onMainClick( event ); } );
 
 #ifdef EE_PLATFORM_TOUCH
 	UISkin nSkin( "button-te" );
-	nSkin.setStateDrawable(
-		UIState::getStateNumber( "normal" ),
-		TF->getTexture( TF->loadFromFile( MyPath + "sprites/button-te_normal.png" ) ) );
-	nSkin.setStateDrawable(
-		UIState::getStateNumber( "pressed" ),
-		TF->getTexture( TF->loadFromFile( MyPath + "sprites/button-te_mdown.png" ) ) );
+	nSkin.setStateDrawable( UIState::getStateNumber( "normal" ),
+							TF->loadFromFile( MyPath + "sprites/button-te_normal.png" ) );
+	nSkin.setStateDrawable( UIState::getStateNumber( "pressed" ),
+							TF->loadFromFile( MyPath + "sprites/button-te_mdown.png" ) );
 	Sizef screenSize = SceneManager::instance()->getUISceneNode()->getSize();
 
 	mShowMenu = UIPushButton::New();
@@ -585,7 +580,7 @@ void EETest::createBaseUI() {
 	mShowMenu->setPosition( screenSize.getWidth() - mShowMenu->getSize().getWidth() - 32,
 							screenSize.getHeight() - mShowMenu->getSize().getHeight() - 9 );
 	mShowMenu->setAnchors( UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
-	mShowMenu->addEventListener( Event::MouseClick, [this]( auto event ) { onShowMenu( event ); } );
+	mShowMenu->on( Event::MouseClick, [this]( auto event ) { onShowMenu( event ); } );
 #endif
 }
 
@@ -659,11 +654,10 @@ void EETest::createNewUI() {
 	scrollView->setTouchDragEnabled( true );
 	scrollView->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent )
 		->setParent( relLay );
-	scrollView->getContainer()->addEventListener( Event::MouseClick,
-												  [this]( auto event ) { onMainClick( event ); } );
+	scrollView->getContainer()->on( Event::MouseClick,
+									[this]( auto event ) { onMainClick( event ); } );
 	container->setParent( scrollView );
-	container->addEventListener( Event::MouseClick,
-								 [this]( auto event ) { onMainClick( event ); } );
+	container->on( Event::MouseClick, [this]( auto event ) { onMainClick( event ); } );
 
 	UILoader* loader = UILoader::New();
 	loader->setOutlineThickness( 4 )
@@ -681,7 +675,7 @@ void EETest::createNewUI() {
 		->setParent( container );
 	radioButton->setBackgroundColor( 0x33333333 );
 	radioButton->setBorderColor( 0x66666666 );
-	radioButton->setText( "Happy RadioButon :)" );
+	radioButton->setText( "Happy RadioButton :)" );
 	radioButton->setFontColor( Color::Black );
 
 	UICheckBox* cbox = UICheckBox::New();
@@ -740,7 +734,7 @@ void EETest::createNewUI() {
 	pushButton->setPosition( 50, 560 )->setSize( 200, 0 )->setParent( container );
 	pushButton->setText( "PushButton" );
 	pushButton->setIcon( mSceneNode->findIconDrawable( "ok", PixelDensity::dpToPxI( 16 ) ) );
-	pushButton->addEventListener( Event::MouseClick, [this, pushButton]( const Event* event ) {
+	pushButton->on( Event::MouseClick, [this, pushButton]( const Event* event ) {
 		if ( static_cast<const MouseEvent*>( event )->getFlags() & EE_BUTTON_LMASK )
 			createColorPicker( pushButton );
 	} );
@@ -778,7 +772,7 @@ void EETest::createNewUI() {
 	UITextEdit* textEdit = UITextEdit::New();
 	textEdit->setFlags( UI_WORD_WRAP );
 	textEdit->setPosition( 350, 4 )->setSize( 200, 200 )->setParent( container );
-	textEdit->setText( mBuda );
+	textEdit->setText( mBuddha );
 
 	UISpinBox* spinBox = UISpinBox::New();
 	spinBox->setPosition( 350, 210 )->setSize( 200, 0 )->setParent( container );
@@ -1008,7 +1002,7 @@ void EETest::createMapEditor() {
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	UIWindow::StyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
-								 UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
+								 UI_WIN_DRAGGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = tWin->getSizeWithoutDecoration();
 	tWin->setStyleConfig( windowStyleConfig );
 
@@ -1028,7 +1022,7 @@ void EETest::createETGEditor() {
 	tWin->setSizeWithDecoration( 1024, 768 )->setPosition( 0, 0 );
 	UIWindow::StyleConfig windowStyleConfig = tWin->getStyleConfig();
 	windowStyleConfig.WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
-								 UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
+								 UI_WIN_DRAGGABLE_CONTAINER | UI_WIN_SHADOW | UI_WIN_FRAME_BUFFER;
 	windowStyleConfig.MinWindowSize = tWin->getSizeWithoutDecoration();
 	tWin->setStyleConfig( windowStyleConfig );
 
@@ -1041,7 +1035,7 @@ void EETest::createColorPicker( Node* node ) {
 	mColorPicker = Tools::UIColorPicker::NewModal( node, []( Color color ) {
 		UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::OK, color.toHexString() );
 		msgBox->center();
-		msgBox->show();
+		msgBox->showWhenReady();
 	} );
 	// mColorPicker->getUIWindow()->center();
 }
@@ -1078,11 +1072,10 @@ void EETest::createDecoratedWindow() {
 		->setMinWindowSize( 530, 350 )
 		->setPosition( 200, 50 );
 
-	mUIWindow->addEventListener( Event::OnWindowClose,
-								 [this]( auto event ) { onCloseClick( event ); } );
+	mUIWindow->on( Event::OnWindowClose, [this]( auto event ) { onCloseClick( event ); } );
 	mUIWindow->setTitle( "Test Window" );
-	mUIWindow->addEventListener( Event::OnDragStart, onWinDragStart );
-	mUIWindow->addEventListener( Event::OnDragStop, onWinDragStop );
+	mUIWindow->on( Event::OnDragStart, onWinDragStart );
+	mUIWindow->on( Event::OnDragStop, onWinDragStop );
 
 	UILinearLayout* lay = UILinearLayout::NewVertical();
 	lay->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
@@ -1095,7 +1088,7 @@ void EETest::createDecoratedWindow() {
 	UIPopUpMenu* PopMenu = UIPopUpMenu::New();
 	PopMenu->add( "Hide Border" );
 	PopMenu->add( "Close" );
-	PopMenu->addEventListener( Event::OnItemClicked, []( const Event* Event ) {
+	PopMenu->on( Event::OnItemClicked, []( const Event* Event ) {
 		if ( !Event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 
@@ -1141,7 +1134,7 @@ void EETest::createDecoratedWindow() {
 	Button->setText( "Click Me" );
 	Button->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 		->setParent( lay );
-	Button->addEventListener( Event::MouseClick, [this]( auto event ) { onButtonClick( event ); } );
+	Button->on( Event::MouseClick, [this]( auto event ) { onButtonClick( event ); } );
 
 	mUIWindow->setKeyBindingCommand( "button-click", [this] { addFlyingIcon(); } );
 	mUIWindow->addKeyBinding( { KEY_C, KEYMOD_LALT }, "button-click" );
@@ -1156,31 +1149,31 @@ void EETest::createDecoratedWindow() {
 	UITextEdit* TEdit = UITextEdit::New();
 	TEdit->setFlags( UI_WORD_WRAP );
 	TEdit->setParent( TabWidget );
-	TEdit->addEventListener( Event::OnSizeChange,
-							 [this, TEdit]( const Event* ) { TEdit->setText( mBuda ); } );
+	TEdit->on( Event::OnSizeChange, [this, TEdit]( const Event* ) { TEdit->setText( mBuddha ); } );
 	TabWidget->add( "TextEdit", TEdit );
 
 	UITextInput* Txt = UITextInput::New();
 	Txt->setFlags( UI_WORD_WRAP );
 	Txt->setParent( TabWidget );
-	Txt->setText( mBuda );
+	Txt->setText( mBuddha );
 	TabWidget->add( "TextInput", Txt );
 
 	UITextView* txtBox = UITextView::New();
 	txtBox->resetFlags( UI_HALIGN_LEFT | UI_VALIGN_TOP | UI_AUTO_PADDING | UI_WORD_WRAP |
 						UI_TEXT_SELECTION_ENABLED );
 	txtBox->setParent( TabWidget );
-	txtBox->setText( mBuda );
+	txtBox->setText( mBuddha );
 	TabWidget->add( "TextBox", txtBox );
 
 	UICodeEditor* codeEditor = UICodeEditor::New();
 	codeEditor->setParent( TabWidget );
-	codeEditor->getDocument().textInput( mBuda );
+	codeEditor->getDocument().textInput( mBuddha );
 	TabWidget->add( "CodeEditor", codeEditor );
 }
 
 void EETest::onCloseClick( const Event* ) {
-	mUIWindow = NULL;
+	if ( TestInstance )
+		mUIWindow = NULL;
 }
 
 void EETest::onItemClick( const Event* event ) {
@@ -1375,7 +1368,9 @@ void EETest::loadTextures() {
 		std::string name( files[i] );
 
 		if ( "jpg" == FileSystem::fileExtension( name ) ) {
-			mResLoad.add( [=] { TextureFactory::instance()->loadFromPack( PakTest, name ); } );
+			mResLoad.add( [this, name = std::move( name )] {
+				TextureFactory::instance()->loadFromPack( PakTest, name );
+			} );
 		}
 	}
 #endif
@@ -1481,8 +1476,8 @@ void EETest::loadTextures() {
 
 	mTGL = TextureAtlasLoader::New( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION );
 
-	mBlindy.addFramesByPattern( "rn" );
-	mBlindy.setPosition( Vector2f( 320.f, 0.f ) );
+	mMonster.addFramesByPattern( "rn" );
+	mMonster.setPosition( Vector2f( 320.f, 0.f ) );
 
 	mBoxSprite =
 		Sprite::New( GlobalTextureAtlas::instance()->add( TextureRegion::New( TN[3], "ilmare" ) ) );
@@ -1493,7 +1488,7 @@ void EETest::loadTextures() {
 
 	Map.loadFromFile( MyPath + "maps/test.eem" );
 	Map.setDrawGrid( false );
-	Map.setClipedArea( false );
+	Map.setClippedArea( false );
 	Map.setDrawBackground( false );
 	Map.setViewSize( mWindow->getSize().asFloat() );
 
@@ -1756,8 +1751,8 @@ void EETest::screen4() {
 	mFBO->clear();
 
 	if ( NULL != mVBO ) {
-		mBlindy.setPosition( Vector2f( 128 - 16, 128 - 16 ) );
-		mBlindy.draw();
+		mMonster.setPosition( Vector2f( 128 - 16, 128 - 16 ) );
+		mMonster.draw();
 
 		mVBO->bind();
 		mVBO->draw();
@@ -1939,6 +1934,9 @@ void EETest::input() {
 
 	if ( KM->isKeyUp( KEY_F8 ) )
 		uiSceneNode->setDrawDebugData( !uiSceneNode->getDrawDebugData() );
+
+	if ( KM->isKeyUp( KEY_F11 ) )
+		UIWidgetInspector::create( uiSceneNode, PixelDensity::dpToPx( 12 ) );
 
 	if ( !mWindow->isVisible() ) {
 		mWasMinimized = true;
@@ -2374,21 +2372,21 @@ void EETest::demo2Create() {
 	mSpace->setIterations( 10 );
 	mSpace->setGravity( cVectNew( 0, 100 ) );
 
-	Body* statiBody = mSpace->getStaticBody();
+	Body* staticBody = mSpace->getStaticBody();
 	Shape* shape;
 
 	emitterInstance.queue = 5;
 	emitterInstance.blocked = 0;
 	emitterInstance.position = cVectNew( mWindow->getWidth() / 2, 150 );
 
-	shape = mSpace->addShape( ShapeCircle::New( statiBody, 15.0f, emitterInstance.position ) );
+	shape = mSpace->addShape( ShapeCircle::New( staticBody, 15.0f, emitterInstance.position ) );
 	shape->setSensor( 1 );
 	shape->setCollisionType( BLOCKING_SENSOR_TYPE );
 	shape->setData( &emitterInstance );
 
 	// Create our catch sensor to requeue the balls when they reach the bottom of the screen
 	shape = mSpace->addShape(
-		ShapeSegment::New( statiBody, cVectNew( -4000, 600 ), cVectNew( 4000, 600 ), 15.0f ) );
+		ShapeSegment::New( staticBody, cVectNew( -4000, 600 ), cVectNew( 4000, 600 ), 15.0f ) );
 	shape->setSensor( 1 );
 	shape->setCollisionType( CATCH_SENSOR_TYPE );
 	shape->setData( &emitterInstance );
@@ -2559,6 +2557,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 
 	Test->process();
 
+	TestInstance = nullptr;
 	eeDelete( Test );
 
 	PhysicsManager::destroySingleton();

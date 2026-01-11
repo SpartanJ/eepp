@@ -6,7 +6,7 @@
 
 namespace EE { namespace System { namespace Platform {
 
-ConditionImpl::ConditionImpl( int var ) : mIsValid( true ), mConditionnedVar( var ), mMutex() {
+ConditionImpl::ConditionImpl( int var ) : mIsValid( true ), mConditionedVar( var ), mMutex() {
 	mCond = CreateEvent( NULL, FALSE, FALSE, NULL );
 
 	if ( mCond == NULL )
@@ -28,7 +28,7 @@ void ConditionImpl::unlock() {
 bool ConditionImpl::waitAndRetain( int value ) {
 	mMutex.lock();
 
-	while ( mConditionnedVar != value && mIsValid ) {
+	while ( mConditionedVar != value && mIsValid ) {
 		mMutex.unlock();
 
 		WaitForSingleObject( mCond, INFINITE );
@@ -45,7 +45,7 @@ bool ConditionImpl::waitAndRetain( int value ) {
 }
 
 void ConditionImpl::release( int value ) {
-	mConditionnedVar = value;
+	mConditionedVar = value;
 	mMutex.unlock();
 
 	signal();
@@ -54,14 +54,14 @@ void ConditionImpl::release( int value ) {
 void ConditionImpl::setValue( int value ) {
 	// Make sure the Condition's value is not modified while retained
 	mMutex.lock();
-	mConditionnedVar = value;
+	mConditionedVar = value;
 	mMutex.unlock();
 
 	signal();
 }
 
 int ConditionImpl::value() const {
-	return mConditionnedVar;
+	return mConditionedVar;
 }
 
 void ConditionImpl::signal() {

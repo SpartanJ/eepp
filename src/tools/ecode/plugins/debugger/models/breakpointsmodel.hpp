@@ -19,9 +19,7 @@ class BreakpointsModel : public Model {
   public:
 	enum Columns { Enabled, SourcePath, Line, Remove, Count };
 
-	BreakpointsModel(
-		const UnorderedMap<std::string, UnorderedSet<SourceBreakpointStateful>>& breakpoints,
-		UISceneNode* sceneNode );
+	BreakpointsModel( const BreakpointsHolder& breakpoints, UISceneNode* sceneNode );
 
 	virtual size_t rowCount( const ModelIndex& ) const;
 
@@ -41,6 +39,7 @@ class BreakpointsModel : public Model {
 	void move( const std::string& doc, Int64 fromLine, Int64 toLine, Int64 numLines );
 
 	const std::pair<std::string, SourceBreakpointStateful>& get( ModelIndex index );
+
   protected:
 	std::vector<std::pair<std::string, SourceBreakpointStateful>> mBreakpoints;
 	UISceneNode* mSceneNode{ nullptr };

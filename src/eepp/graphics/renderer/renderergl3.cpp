@@ -40,7 +40,7 @@ RendererGL3::RendererGL3() :
 	mLoaded( false ) {
 #if defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
 	mQuadsSupported = false;
-	mQuadVertexs = 6;
+	mQuadVertex = 6;
 #endif
 	Renderer::enable( GL_VERTEX_PROGRAM_POINT_SIZE );
 }
@@ -334,7 +334,7 @@ void RendererGL3::vertexPointer( int size, unsigned int type, int stride, const 
 			glEnableVertexAttribArray( index );
 		}
 
-		glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, pointer );
+		glVertexAttribPointer( index, size, type, GL_FALSE, stride, pointer );
 	}
 }
 
@@ -350,9 +350,9 @@ void RendererGL3::colorPointer( int size, unsigned int type, int stride, const v
 		}
 
 		if ( type == GL_UNSIGNED_BYTE ) {
-			glVertexAttribPointerARB( index, size, type, GL_TRUE, stride, pointer );
+			glVertexAttribPointer( index, size, type, GL_TRUE, stride, pointer );
 		} else {
-			glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, pointer );
+			glVertexAttribPointer( index, size, type, GL_FALSE, stride, pointer );
 		}
 	}
 }
@@ -368,7 +368,7 @@ void RendererGL3::texCoordPointer( int size, unsigned int type, int stride, cons
 			glEnableVertexAttribArray( index );
 		}
 
-		glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, pointer );
+		glVertexAttribPointer( index, size, type, GL_FALSE, stride, pointer );
 	}
 }
 

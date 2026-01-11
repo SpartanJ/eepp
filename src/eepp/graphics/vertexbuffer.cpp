@@ -10,7 +10,7 @@ namespace EE { namespace Graphics {
 VertexBuffer* VertexBuffer::New( const Uint32& vertexFlags, PrimitiveType drawType,
 								 const Int32& reserveVertexSize, const Int32& reserveIndexSize,
 								 VertexBufferUsageType usageType ) {
-	if ( GLi->isExtension( EEGL_ARB_vertex_buffer_object ) )
+	if ( GLi->isExtension( EEGL_ARB_vertex_buffer_object ) || GLi->version() == GLv_3CP )
 		return eeNew( VertexBufferVBO,
 					  ( vertexFlags, drawType, reserveVertexSize, reserveIndexSize, usageType ) );
 
@@ -150,7 +150,7 @@ void VertexBuffer::resizeIndices( const Uint32& size ) {
 }
 
 void VertexBuffer::addQuad( const Vector2f& pos, const Sizef& size, const Color& color ) {
-	if ( GLi->quadVertexs() == 6 ) {
+	if ( GLi->quadVertex() == 6 ) {
 		addColor( color );
 		addColor( color );
 		addColor( color );
@@ -181,14 +181,14 @@ void VertexBuffer::setQuad( const Vector2u& gridPos, const Vector2f& pos, const 
 			  mDrawType == PrimitiveType::PRIMITIVE_QUAD_STRIP ||
 			  mDrawType == PrimitiveType::PRIMITIVE_TRIANGLES );
 	eeASSERT( mGridSize != Sizei::Zero );
-	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertexs() +
-								   gridPos.y * mGridSize.x * GLi->quadVertexs() +
-								   GLi->quadVertexs() - 1 ) < mPosArray.size() );
-	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertexs() +
-								   gridPos.y * mGridSize.x * GLi->quadVertexs() +
-								   GLi->quadVertexs() - 1 ) < mColorArray.size() );
-	int idx = ( gridPos.x * GLi->quadVertexs() + gridPos.y * mGridSize.x * GLi->quadVertexs() );
-	if ( GLi->quadVertexs() == 6 ) {
+	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertex() +
+								   gridPos.y * mGridSize.x * GLi->quadVertex() + GLi->quadVertex() -
+								   1 ) < mPosArray.size() );
+	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertex() +
+								   gridPos.y * mGridSize.x * GLi->quadVertex() + GLi->quadVertex() -
+								   1 ) < mColorArray.size() );
+	int idx = ( gridPos.x * GLi->quadVertex() + gridPos.y * mGridSize.x * GLi->quadVertex() );
+	if ( GLi->quadVertex() == 6 ) {
 		setColor( idx + 0, color );
 		setColor( idx + 1, color );
 		setColor( idx + 2, color );
@@ -218,14 +218,14 @@ void VertexBuffer::setQuadColor( const Vector2u& gridPos, const Color& color ) {
 			  mDrawType == PrimitiveType::PRIMITIVE_QUAD_STRIP ||
 			  mDrawType == PrimitiveType::PRIMITIVE_TRIANGLES );
 	eeASSERT( mGridSize != Sizei::Zero );
-	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertexs() +
-								   gridPos.y * mGridSize.x * GLi->quadVertexs() +
-								   GLi->quadVertexs() - 1 ) < mPosArray.size() );
-	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertexs() +
-								   gridPos.y * mGridSize.x * GLi->quadVertexs() +
-								   GLi->quadVertexs() - 1 ) < mColorArray.size() );
-	int idx = ( gridPos.x * GLi->quadVertexs() + gridPos.y * mGridSize.x * GLi->quadVertexs() );
-	if ( GLi->quadVertexs() == 6 ) {
+	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertex() +
+								   gridPos.y * mGridSize.x * GLi->quadVertex() + GLi->quadVertex() -
+								   1 ) < mPosArray.size() );
+	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertex() +
+								   gridPos.y * mGridSize.x * GLi->quadVertex() + GLi->quadVertex() -
+								   1 ) < mColorArray.size() );
+	int idx = ( gridPos.x * GLi->quadVertex() + gridPos.y * mGridSize.x * GLi->quadVertex() );
+	if ( GLi->quadVertex() == 6 ) {
 		setColor( idx + 0, color );
 		setColor( idx + 1, color );
 		setColor( idx + 2, color );
@@ -246,14 +246,14 @@ void VertexBuffer::setQuadFree( const Vector2u& gridPos, const Vector2f& pos0, c
 			  mDrawType == PrimitiveType::PRIMITIVE_QUAD_STRIP ||
 			  mDrawType == PrimitiveType::PRIMITIVE_TRIANGLES );
 	eeASSERT( mGridSize != Sizei::Zero );
-	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertexs() +
-								   gridPos.y * mGridSize.x * GLi->quadVertexs() +
-								   GLi->quadVertexs() - 1 ) < mPosArray.size() );
-	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertexs() +
-								   gridPos.y * mGridSize.x * GLi->quadVertexs() +
-								   GLi->quadVertexs() - 1 ) < mColorArray.size() );
-	int idx = ( gridPos.x * GLi->quadVertexs() + gridPos.y * mGridSize.x * GLi->quadVertexs() );
-	if ( GLi->quadVertexs() == 6 ) {
+	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertex() +
+								   gridPos.y * mGridSize.x * GLi->quadVertex() + GLi->quadVertex() -
+								   1 ) < mPosArray.size() );
+	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertex() +
+								   gridPos.y * mGridSize.x * GLi->quadVertex() + GLi->quadVertex() -
+								   1 ) < mColorArray.size() );
+	int idx = ( gridPos.x * GLi->quadVertex() + gridPos.y * mGridSize.x * GLi->quadVertex() );
+	if ( GLi->quadVertex() == 6 ) {
 		setColor( idx + 0, color );
 		setColor( idx + 1, color );
 		setColor( idx + 2, color );
@@ -284,11 +284,11 @@ void VertexBuffer::setQuadTexCoords( const Vector2u& gridPos, const Rectf& coord
 			  mDrawType == PrimitiveType::PRIMITIVE_QUAD_STRIP ||
 			  mDrawType == PrimitiveType::PRIMITIVE_TRIANGLES );
 	eeASSERT( mGridSize != Sizei::Zero );
-	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertexs() +
-								   gridPos.y * mGridSize.x * GLi->quadVertexs() +
-								   GLi->quadVertexs() - 1 ) < mTexCoordArray[textureLevel].size() );
-	int idx = ( gridPos.x * GLi->quadVertexs() + gridPos.y * mGridSize.x * GLi->quadVertexs() );
-	if ( GLi->quadVertexs() == 6 ) {
+	eeASSERT( static_cast<Uint32>( gridPos.x * GLi->quadVertex() +
+								   gridPos.y * mGridSize.x * GLi->quadVertex() + GLi->quadVertex() -
+								   1 ) < mTexCoordArray[textureLevel].size() );
+	int idx = ( gridPos.x * GLi->quadVertex() + gridPos.y * mGridSize.x * GLi->quadVertex() );
+	if ( GLi->quadVertex() == 6 ) {
 		// 1 0 3 1 2 3
 		setTextureCoord( idx + 0, { coords.Left, coords.Bottom }, textureLevel );
 		setTextureCoord( idx + 1, { coords.Left, coords.Top }, textureLevel );
@@ -356,6 +356,10 @@ const Int32& VertexBuffer::getElementNum() const {
 }
 
 void VertexBuffer::clear() {
+	clearData();
+}
+
+void VertexBuffer::clearData() {
 	mPosArray.clear();
 	for ( auto& texCoord : mTexCoordArray )
 		texCoord.clear();

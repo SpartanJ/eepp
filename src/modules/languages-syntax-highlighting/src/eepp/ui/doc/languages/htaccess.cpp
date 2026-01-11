@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addHtaccessFile() {
+SyntaxDefinition& addHtaccessFile() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 		{ ".htaccess",
 		  { "^%.htaccess$" },
 		  {
@@ -17,27 +17,26 @@ void addHtaccessFile() {
 				  "?[%w_.~!*:@&+$/?%%#=-]*)%)%]%((https?://[%w_.~!*:@&+$/"
 				  "?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/?%%#=-]*)%)" },
 				{ "keyword", "function", "link", "link" } },
-			  { { "%f[%w]application/[%w%._+-]+" }, "keyword2" },
-			  { { "%f[%w]font/[%w%._+-]+" }, "keyword2" },
-			  { { "%f[%w]image/[%w%._+-]+" }, "keyword2" },
-			  { { "%f[%w]text/[%w%._+-]+" }, "keyword2" },
-			  { { "%f[%w]audio/[%w%._+-]+" }, "keyword2" },
-			  { { "%f[%w]video/[%w%._+-]+" }, "keyword2" },
-			  { { "%d+%.%d+%.%d+%.%d+" }, "keyword2" },
-			  { { "%d+%.%d+%.%d+%.%d+/%d+" }, "keyword2" },
-			  { { "%w+@%w+%.%w+" }, "keyword2" },
+			  { { "%f[%w]application/[%w%._+-]+" }, "type" },
+			  { { "%f[%w]font/[%w%._+-]+" }, "type" },
+			  { { "%f[%w]image/[%w%._+-]+" }, "type" },
+			  { { "%f[%w]text/[%w%._+-]+" }, "type" },
+			  { { "%f[%w]audio/[%w%._+-]+" }, "type" },
+			  { { "%f[%w]video/[%w%._+-]+" }, "type" },
+			  { { "%d+%.%d+%.%d+%.%d+" }, "type" },
+			  { { "%d+%.%d+%.%d+%.%d+/%d+" }, "type" },
+			  { { "%w+@%w+%.%w+" }, "type" },
 			  { { "%f[%S]%b[]" }, "number" },
 			  { { "</?%w+", ">" }, "literal" },
-			  { { "[%%$]%d+" }, "keyword2" },
-			  { { "[%%$]%{[%w_:%-]+%}" }, "keyword2" },
+			  { { "[%%$]%d+" }, "type" },
+			  { { "[%%$]%{[%w_:%-]+%}" }, "type" },
 			  { { "A?%d+" }, "number" },
 			  { { "%f[%S][!=+%-]+" }, "operator" },
 			  { { "%f[^%s!]%^%S*" }, "literal" },
 			  { { "%f[^%s!]%S*%$" }, "literal" },
 			  { { "%f[^%s!]%b()" }, "literal" },
 			  { { "[%a_][%w_-]*" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
+
 		  },
 		  {
 			  { "xml2EncDefault", "keyword" },

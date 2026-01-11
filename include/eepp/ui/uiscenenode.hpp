@@ -4,6 +4,7 @@
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/system/translator.hpp>
+#include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
 
@@ -22,8 +23,6 @@ class UIWindow;
 class UIWidget;
 class UILayout;
 class UIIcon;
-
-enum class ColorSchemePreference { Light, Dark };
 
 class EE_API UISceneNode : public SceneNode {
   public:
@@ -149,6 +148,8 @@ class EE_API UISceneNode : public SceneNode {
 
 	ColorSchemePreference getColorSchemePreference() const;
 
+	void setColorSchemePreference( const ColorSchemeExtPreference& colorSchemePreference );
+
 	void setColorSchemePreference( const ColorSchemePreference& colorSchemePreference );
 
 	const Uint32& getMaxInvalidationDepth() const;
@@ -157,7 +158,8 @@ class EE_API UISceneNode : public SceneNode {
 
 	void nodeToWorldTranslation( Vector2f& Pos ) const;
 
-	void reloadStyle( bool disableAnimations = false, bool forceReApplyProperties = false );
+	void reloadStyle( bool disableAnimations = false, bool forceReApplyProperties = false,
+					  bool resetPropertiesCache = false );
 
 	bool hasThreadPool() const;
 

@@ -40,17 +40,17 @@
 #define PSFT_H_
 
 
+#include <freetype/internal/compiler-macros.h>
 #include "pstypes.h"
-
 
   /* TODO: disable asserts for now */
 #define CF2_NDEBUG
 
 
-#include FT_SYSTEM_H
+#include <freetype/ftsystem.h>
 
 #include "psglue.h"
-#include FT_INTERNAL_POSTSCRIPT_AUX_H    /* for PS_Decoder */
+#include <freetype/internal/psaux.h>    /* for PS_Decoder */
 
 
 FT_BEGIN_HEADER
@@ -92,19 +92,19 @@ FT_BEGIN_HEADER
   FT_LOCAL( void )
   cf2_getBlueValues( PS_Decoder*  decoder,
                      size_t*      count,
-                     FT_Pos*     *data );
+                     FT_Fixed*   *data );
   FT_LOCAL( void )
   cf2_getOtherBlues( PS_Decoder*  decoder,
                      size_t*      count,
-                     FT_Pos*     *data );
+                     FT_Fixed*   *data );
   FT_LOCAL( void )
   cf2_getFamilyBlues( PS_Decoder*  decoder,
                       size_t*      count,
-                      FT_Pos*     *data );
+                      FT_Fixed*   *data );
   FT_LOCAL( void )
   cf2_getFamilyOtherBlues( PS_Decoder*  decoder,
                            size_t*      count,
-                           FT_Pos*     *data );
+                           FT_Fixed*   *data );
 
   FT_LOCAL( CF2_Int )
   cf2_getLanguageGroup( PS_Decoder*  decoder );

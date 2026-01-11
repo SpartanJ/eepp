@@ -2,6 +2,7 @@
 #define EE_SYSTEM_REGEX
 
 #include <eepp/core/containers.hpp>
+#include <eepp/system/mutex.hpp>
 #include <eepp/system/patternmatcher.hpp>
 #include <eepp/system/singleton.hpp>
 
@@ -18,13 +19,15 @@ class EE_API RegExCache {
 
 	void insert( std::string_view, Uint32 options, void* cache );
 
-	void* find( const std::string_view&, Uint32 options );
+	void* find( std::string_view, Uint32 options );
 
 	void clear();
 
   protected:
 	bool mEnabled{ true };
-	UnorderedMap<String::HashType, void*> mCache;
+	std::unordered_map<size_t, void*> mCache;
+	std::unordered_map<size_t, Uint32> mCacheOpt;
+	Mutex mMutex;
 };
 
 class EE_API RegEx : public PatternMatcher {
@@ -58,9 +61,17 @@ class EE_API RegEx : public PatternMatcher {
 		ExtendedMore = 0x01000000u,		 // C
 		Literal = 0x02000000u,			 // C
 		MatchInvalidUtf = 0x04000000u,	 // J M D
+		Anchored = 0x80000000u,
+		NoUtfCheck = 0x40000000u,
+		Endanchored = 0x20000000u,
+		FilterOutCaptures =
+			0x08000000u, // It will filter out repeated captures and same range captures
+		AllowFallback = 0x10000000u,
+		UseOniguruma = 0x20000000u,
 	};
 
-	RegEx( const std::string_view& pattern, Options options = Options::Utf, bool useCache = true );
+	RegEx( std::string_view pattern, Uint32 options = Options::Utf | Options::AllowFallback,
+		   bool useCache = true );
 
 	virtual ~RegEx();
 
@@ -80,9 +91,14 @@ class EE_API RegEx : public PatternMatcher {
 	std::string_view mPattern;
 	mutable size_t mMatchNum;
 	void* mCompiledPattern;
-	int mCaptureCount;
-	bool mValid{ false };
-	bool mCached{ false };
+	int mCaptureCount{ 0 };
+	Uint32 mOptions{ Options::Utf | Options::AllowFallback };
+	bool mOnigEngine : 1 { false };
+	bool mValid : 1 { false };
+	bool mCached : 1 { false };
+	bool mFilterOutCaptures : 1 { false };
+
+	bool initWithOnigumura( std::string_view pattern, bool useCache );
 };
 
 }} // namespace EE::System

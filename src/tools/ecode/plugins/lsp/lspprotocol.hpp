@@ -10,7 +10,7 @@ using namespace EE::UI::Doc;
 using namespace EE::Network;
 
 // The LSP protocol will be consumed by any plugin, and it's not exclusive to the LSP plugin
-// The protocol should be taken as a reference on how to implement the comunication between plugins
+// The protocol should be taken as a reference on how to implement the communication between plugins
 
 namespace ecode {
 

@@ -49,33 +49,6 @@ Uint32 equationToGlConstant( BlendMode::Equation blendEquation ) {
 	return GL_FUNC_ADD;
 }
 
-BlendMode BlendMode::Alpha() {
-	static const BlendMode BlendAlpha{ BlendMode::Factor::SrcAlpha,
-									   BlendMode::Factor::OneMinusSrcAlpha,
-									   BlendMode::Equation::Add,
-									   BlendMode::Factor::One,
-									   BlendMode::Factor::OneMinusSrcAlpha,
-									   BlendMode::Equation::Add };
-	return BlendAlpha;
-}
-
-BlendMode BlendMode::Add() {
-	static const BlendMode BlendAdd{ BlendMode::Factor::SrcAlpha, BlendMode::Factor::One,
-									 BlendMode::Equation::Add,	  BlendMode::Factor::One,
-									 BlendMode::Factor::One,	  BlendMode::Equation::Add };
-	return BlendAdd;
-}
-
-BlendMode BlendMode::Multiply() {
-	static const BlendMode BlendMultiply{ BlendMode::Factor::DstColor, BlendMode::Factor::Zero };
-	return BlendMultiply;
-}
-
-BlendMode BlendMode::None() {
-	static const BlendMode BlendNone{ BlendMode::Factor::One, BlendMode::Factor::Zero };
-	return BlendNone;
-}
-
 BlendMode BlendMode::sLastBlend = BlendMode::Add();
 
 std::string BlendMode::equationToString( const Equation& eq ) {
@@ -83,7 +56,7 @@ std::string BlendMode::equationToString( const Equation& eq ) {
 		case BlendMode::Equation::Add:
 			return "Add";
 		case BlendMode::Equation::Subtract:
-			return "Substract";
+			return "Subtract";
 		case BlendMode::Equation::ReverseSubtract:
 			return "ReverseSubtract";
 	}
@@ -114,45 +87,6 @@ std::string BlendMode::factorToString( const Factor& fc ) {
 			return "OneMinusDstAlpha";
 	}
 	return "";
-}
-
-BlendMode::BlendMode() :
-	colorSrcFactor( BlendMode::Factor::SrcAlpha ),
-	colorDstFactor( BlendMode::Factor::OneMinusSrcAlpha ),
-	colorEquation( BlendMode::Equation::Add ),
-	alphaSrcFactor( BlendMode::Factor::One ),
-	alphaDstFactor( BlendMode::Factor::OneMinusSrcAlpha ),
-	alphaEquation( BlendMode::Equation::Add ) {}
-
-BlendMode::BlendMode( Factor sourceFactor, Factor destinationFactor, Equation blendEquation ) :
-	colorSrcFactor( sourceFactor ),
-	colorDstFactor( destinationFactor ),
-	colorEquation( blendEquation ),
-	alphaSrcFactor( sourceFactor ),
-	alphaDstFactor( destinationFactor ),
-	alphaEquation( blendEquation ) {}
-
-BlendMode::BlendMode( Factor colorSourceFactor, Factor colorDestinationFactor,
-					  Equation colorBlendEquation, Factor alphaSourceFactor,
-					  Factor alphaDestinationFactor, Equation alphaBlendEquation ) :
-	colorSrcFactor( colorSourceFactor ),
-	colorDstFactor( colorDestinationFactor ),
-	colorEquation( colorBlendEquation ),
-	alphaSrcFactor( alphaSourceFactor ),
-	alphaDstFactor( alphaDestinationFactor ),
-	alphaEquation( alphaBlendEquation ) {}
-
-bool operator==( const BlendMode& left, const BlendMode& right ) {
-	return ( left.colorSrcFactor == right.colorSrcFactor ) &&
-		   ( left.colorDstFactor == right.colorDstFactor ) &&
-		   ( left.colorEquation == right.colorEquation ) &&
-		   ( left.alphaSrcFactor == right.alphaSrcFactor ) &&
-		   ( left.alphaDstFactor == right.alphaDstFactor ) &&
-		   ( left.alphaEquation == right.alphaEquation );
-}
-
-bool operator!=( const BlendMode& left, const BlendMode& right ) {
-	return !( left == right );
 }
 
 void BlendMode::setMode( const BlendMode& mode, bool force ) {

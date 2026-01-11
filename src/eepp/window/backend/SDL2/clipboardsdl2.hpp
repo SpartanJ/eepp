@@ -21,6 +21,12 @@ class EE_API ClipboardSDL : public Clipboard {
 
 	void setText( const std::string& text );
 
+	bool hasPrimarySelection() const;
+
+	std::string getPrimarySelectionText();
+
+	void setPrimarySelectionText( const std::string& text );
+
   protected:
 	friend class WindowSDL;
 

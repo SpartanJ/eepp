@@ -17,12 +17,6 @@ using json = nlohmann::json;
 
 namespace ecode {
 
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-#define FORMATTER_THREADED 1
-#else
-#define FORMATTER_THREADED 0
-#endif
-
 Plugin* FormatterPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( FormatterPlugin, ( pluginManager, false ) );
 }
@@ -36,11 +30,7 @@ FormatterPlugin::FormatterPlugin( PluginManager* pluginManager, bool sync ) :
 	if ( sync ) {
 		load( pluginManager );
 	} else {
-#if defined( FORMATTER_THREADED ) && FORMATTER_THREADED == 1
 		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
-#else
-		load( pluginManager );
-#endif
 	}
 }
 
@@ -80,30 +70,27 @@ void FormatterPlugin::onRegister( UICodeEditor* editor ) {
 		} );
 	}
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
-			tryRequestCapabilities( editor->getDocumentRef() );
-		} ) );
+	listeners.push_back( editor->on( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
+		tryRequestCapabilities( editor->getDocumentRef() );
+	} ) );
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* ) {
-			TextDocument* newDoc = editor->getDocumentRef().get();
-			mEditorDocs[editor] = newDoc;
-		} ) );
+	listeners.push_back( editor->on( Event::OnDocumentChanged, [this, editor]( const Event* ) {
+		TextDocument* newDoc = editor->getDocumentRef().get();
+		mEditorDocs[editor] = newDoc;
+	} ) );
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentSave, [this]( const Event* event ) {
-			if ( mAutoFormatOnSave && event->getNode()->isType( UI_TYPE_CODEEDITOR ) ) {
-				UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
-				auto isAutoFormatting = mIsAutoFormatting.find( &editor->getDocument() );
-				if ( ( isAutoFormatting == mIsAutoFormatting.end() ||
-					   isAutoFormatting->second == false ) &&
-					 mPluginManager &&
-					 !String::startsWith( editor->getDocument().getFilePath(),
-										  mPluginManager->getPluginsPath() ) )
-					formatDocAsync( editor );
-			}
-		} ) );
+	listeners.push_back( editor->on( Event::OnDocumentSave, [this]( const Event* event ) {
+		if ( mAutoFormatOnSave && event->getNode()->isType( UI_TYPE_CODEEDITOR ) ) {
+			UICodeEditor* editor = event->getNode()->asType<UICodeEditor>();
+			auto isAutoFormatting = mIsAutoFormatting.find( &editor->getDocument() );
+			if ( ( isAutoFormatting == mIsAutoFormatting.end() ||
+				   isAutoFormatting->second == false ) &&
+				 mPluginManager &&
+				 !String::startsWith( editor->getDocument().getFilePath(),
+									  mPluginManager->getPluginsPath() ) )
+				formatDocAsync( editor );
+		}
+	} ) );
 
 	mEditors.insert( { editor, listeners } );
 	mEditorDocs[editor] = editor->getDocumentRef().get();
@@ -237,6 +224,7 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 
 		formatter.command = obj["command"].get<std::string>();
 		formatter.url = obj.value( "url", "" );
+		formatter.preferLSPFormatter = obj.value( "prefer_lsp_formatter", false );
 
 		if ( obj.contains( "type" ) ) {
 			std::string typeStr( obj["type"].get<std::string>() );
@@ -313,8 +301,8 @@ bool FormatterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 		return false;
 
 	menu->addSeparator();
-	menu->add( editor->getUISceneNode()->i18n( "formatter_format_document", "Format Document" ),
-			   nullptr, KeyBindings::keybindFormat( mKeyBindings["format-doc"] ) )
+	menu->add( i18n( "formatter_format_document", "Format Document" ), nullptr,
+			   KeyBindings::keybindFormat( mKeyBindings["format-doc"] ) )
 		->setId( "format-doc" );
 
 	return false;
@@ -356,7 +344,7 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 	Clock clock;
 	std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 	auto formatter = supportsFormatter( doc );
-	if ( formatter.command.empty() ) {
+	if ( formatter.preferLSPFormatter || formatter.command.empty() ) {
 		if ( supportsLSPFormatter( doc ) )
 			formatDocWithLSP( doc );
 		return;
@@ -394,12 +382,13 @@ void FormatterPlugin::formatDoc( UICodeEditor* editor ) {
 					std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 					auto pos = doc->getSelection();
 					auto scroll = editor->getScroll();
-					doc->resetCursor();
+					doc->resetSelection();
 					doc->selectAll();
 					doc->setRunningTransaction( true );
 					doc->textInput( data, false );
 					doc->setSelection( pos );
 					editor->setScroll( scroll );
+					doc->execute( "lsp-refresh-semantic-highlighting", editor );
 					if ( mAutoFormatOnSave && mPluginManager &&
 						 !String::startsWith( doc->getFilePath(),
 											  mPluginManager->getPluginsPath() ) ) {
@@ -433,7 +422,7 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 			std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 			TextPosition pos = doc->getSelection().start();
 			auto scroll = editor->getScroll();
-			doc->resetCursor();
+			doc->resetSelection();
 			doc->selectAll();
 			doc->setRunningTransaction( true );
 			doc->textInput( res.result, false );
@@ -479,7 +468,7 @@ void FormatterPlugin::runFormatter( UICodeEditor* editor, const Formatter& forma
 					std::shared_ptr<TextDocument> doc = editor->getDocumentRef();
 					TextPosition pos = doc->getSelection().start();
 					auto scroll = editor->getScroll();
-					doc->resetCursor();
+					doc->resetSelection();
 					doc->selectAll();
 					doc->setRunningTransaction( true );
 					doc->textInput( data, false );

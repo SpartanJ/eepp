@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addElixir() {
+SyntaxDefinition& addElixir() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Elixir",
 		  { "%.ex$", "%.exs$" },
@@ -23,14 +23,14 @@ void addElixir() {
 			  { { ":\"?[%a_][%w_]*\"?" }, "number" },
 			  { { "[%a][%w_!?]*%f[(]" }, "function" },
 			  { { "%u%w+" }, "normal" },
-			  { { "@[%a_][%w_]*" }, "keyword2" },
-			  { { "_%a[%w_]*" }, "keyword2" },
+			  { { "@[%a_][%w_]*" }, "type" },
+			  { { "_%a[%w_]*" }, "type" },
 			  { { "[%+%-=/%*<>!|&]" }, "operator" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 
 		  },
 		  {
-			  { "raise", "keyword" },		 { "use", "keyword2" },
+			  { "raise", "keyword" },		 { "use", "type" },
 			  { "try", "keyword" },			 { "defrecordp", "keyword" },
 			  { "unless", "keyword" },		 { "for", "keyword" },
 			  { "receive", "keyword" },		 { "or", "operator" },
@@ -42,8 +42,8 @@ void addElixir() {
 			  { "defdelegate", "keyword" },	 { "else", "keyword" },
 			  { "end", "keyword" },			 { "quote", "keyword" },
 			  { "super", "keyword" },		 { "do", "keyword" },
-			  { "require", "keyword2" },	 { "unquote_splicing", "keyword" },
-			  { "alias", "keyword2" },		 { "nil", "literal" },
+			  { "require", "type" },		 { "unquote_splicing", "keyword" },
+			  { "alias", "type" },			 { "nil", "literal" },
 			  { "true", "literal" },		 { "unquote", "keyword" },
 			  { "defmacro", "keyword" },	 { "def", "keyword" },
 			  { "defrecord", "keyword" },	 { "false", "literal" },
@@ -52,7 +52,7 @@ void addElixir() {
 			  { "defmodule", "keyword" },	 { "defguardp", "keyword" },
 			  { "defmacrop", "keyword" },	 { "defimpl", "keyword" },
 			  { "defstruct", "keyword" },	 { "catch", "keyword" },
-			  { "import", "keyword2" },		 { "defguard", "keyword" },
+			  { "import", "type" },			 { "defguard", "keyword" },
 
 		  },
 		  "#",

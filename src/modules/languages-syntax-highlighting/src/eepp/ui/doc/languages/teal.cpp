@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addTeal() {
+SyntaxDefinition& addTeal() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -18,7 +18,7 @@ void addTeal() {
 			  { { "-?0x%x+" }, "number" },
 			  { { "-?%d+[%d%.eE]*" }, "number" },
 			  { { "-?%.?%d+" }, "number" },
-			  { { "<%a+>" }, "keyword2" },
+			  { { "<%a+>" }, "type" },
 			  { { "%.%.%.?" }, "operator" },
 			  { { "[<>~=]=" }, "operator" },
 			  { { "[%+%-=/%*%^%%#<>]" }, "operator" },
@@ -28,16 +28,16 @@ void addTeal() {
 
 		  },
 		  {
-			  { "true", "literal" },	 { "if", "keyword" },		{ "any", "keyword2" },
-			  { "boolean", "keyword2" }, { "while", "keyword" },	{ "end", "keyword" },
-			  { "else", "keyword" },	 { "number", "keyword2" },	{ "break", "keyword" },
-			  { "not", "keyword" },		 { "local", "keyword" },	{ "elseif", "keyword" },
-			  { "then", "keyword" },	 { "return", "keyword" },	{ "do", "keyword" },
-			  { "until", "keyword" },	 { "function", "keyword" }, { "string", "keyword2" },
-			  { "global", "keyword" },	 { "false", "literal" },	{ "repeat", "keyword" },
-			  { "in", "keyword" },		 { "and", "keyword" },		{ "for", "keyword" },
-			  { "or", "keyword" },		 { "goto", "keyword" },		{ "record", "keyword" },
-			  { "nil", "literal" },		 { "enum", "keyword" },		{ "thread", "keyword2" },
+			  { "true", "literal" },   { "if", "keyword" },		  { "any", "type" },
+			  { "boolean", "type" },   { "while", "keyword" },	  { "end", "keyword" },
+			  { "else", "keyword" },   { "number", "type" },	  { "break", "keyword" },
+			  { "not", "keyword" },	   { "local", "keyword" },	  { "elseif", "keyword" },
+			  { "then", "keyword" },   { "return", "keyword" },	  { "do", "keyword" },
+			  { "until", "keyword" },  { "function", "keyword" }, { "string", "type" },
+			  { "global", "keyword" }, { "false", "literal" },	  { "repeat", "keyword" },
+			  { "in", "keyword" },	   { "and", "keyword" },	  { "for", "keyword" },
+			  { "or", "keyword" },	   { "goto", "keyword" },	  { "record", "keyword" },
+			  { "nil", "literal" },	   { "enum", "keyword" },	  { "thread", "type" },
 
 		  },
 		  "--",
@@ -46,6 +46,7 @@ void addTeal() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

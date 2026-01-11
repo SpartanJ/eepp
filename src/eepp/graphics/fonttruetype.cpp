@@ -1,4 +1,4 @@
-
+#include <eepp/core/retainsymbol.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/text.hpp>
@@ -12,6 +12,8 @@
 using namespace EE::Window;
 
 #include <freetype/ftlcdfil.h>
+#include <freetype/ftmodapi.h>
+#include <freetype/otsvg.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
@@ -28,7 +30,159 @@ using namespace EE::Window;
 #include <harfbuzz/hb.h>
 #endif
 
+#include <thirdparty/nanosvg/nanosvg.h>
+#include <thirdparty/nanosvg/nanosvgrast.h>
+
 namespace {
+
+RETAIN_SYMBOL( FT_Palette_Select );
+
+using namespace EE;
+
+#ifdef EE_TRUETYPE_SVG_FONT_ENABLED
+struct SVG_Data {
+	NSVGrasterizer* rasterizer;
+};
+
+FT_Error svg_init( FT_Pointer* data_pointer ) {
+	SVG_Data* data = new SVG_Data();
+	data->rasterizer = nsvgCreateRasterizer();
+	if ( !data->rasterizer ) {
+		delete data;
+		return FT_Err_Out_Of_Memory;
+	}
+	*data_pointer = data;
+	return FT_Err_Ok;
+}
+
+void svg_free( FT_Pointer* data_pointer ) {
+	SVG_Data* data = static_cast<SVG_Data*>( *data_pointer );
+	if ( data ) {
+		nsvgDeleteRasterizer( data->rasterizer );
+		delete data;
+		*data_pointer = nullptr;
+	}
+}
+
+FT_Error svg_preset( FT_GlyphSlot slot, FT_Bool cache, FT_Pointer* data_pointer ) {
+	FT_UNUSED( data_pointer );
+	FT_UNUSED( cache );
+	FT_SVG_Document document = (FT_SVG_Document)slot->other;
+	FT_Pos ascender = document->metrics.ascender;
+	FT_Pos descender = document->metrics.descender;
+
+	// The total height of the glyph's design space in pixels is ascender - descender.
+	// We convert from 26.6 format to integer pixels using ceiling division.
+	unsigned int pixel_height = ( ascender - descender + 63 ) >> 6;
+	unsigned int pixel_width = pixel_height;
+
+	if ( pixel_width == 0 || pixel_height == 0 ) {
+		slot->bitmap.width = 0;
+		slot->bitmap.rows = 0;
+		return FT_Err_Ok;
+	}
+
+	slot->bitmap.width = pixel_width;
+	slot->bitmap.rows = pixel_height;
+	slot->bitmap.pitch = pixel_width * 4;
+	slot->bitmap.pixel_mode = FT_PIXEL_MODE_BGRA;
+	slot->bitmap_top = ascender >> 6;
+	slot->bitmap_left = 0;
+	slot->metrics.width = (FT_Pos)( pixel_width * 64 );
+	slot->metrics.height = (FT_Pos)( pixel_height * 64 );
+	slot->metrics.horiBearingX = (FT_Pos)( slot->bitmap_left * 64 );
+	slot->metrics.horiBearingY = (FT_Pos)( slot->bitmap_top * 64 );
+
+	return FT_Err_Ok;
+}
+
+FT_Error svg_render( FT_GlyphSlot slot, FT_Pointer* data_pointer ) {
+	SVG_Data* svg_data = static_cast<SVG_Data*>( *data_pointer );
+	if ( !svg_data || !svg_data->rasterizer ) {
+		return FT_Err_Invalid_Handle;
+	}
+
+	FT_SVG_Document document = (FT_SVG_Document)slot->other;
+
+	memset( slot->bitmap.buffer, 0, slot->bitmap.pitch * slot->bitmap.rows );
+
+	// Handle empty glyphs
+	if ( document->svg_document_length == 0 ) {
+		return FT_Err_Ok;
+	}
+
+	std::string svg_string( (const char*)document->svg_document, document->svg_document_length );
+	NSVGimage* image = nsvgParse( &svg_string[0], "px", 96.0f, 0xFFFFFFFF );
+	if ( !image ) {
+		return FT_Err_Invalid_File_Format;
+	}
+
+	if ( !image->shapes ) {
+		nsvgDelete( image );
+		return FT_Err_Ok; // No shapes to render
+	}
+
+	float overallBounds[4];
+	memcpy( overallBounds, image->shapes->bounds, sizeof( float ) * 4 );
+
+	// Iterate through the rest of the shapes to find the union of all bounding boxes
+	for ( NSVGshape* shape = image->shapes->next; shape != nullptr; shape = shape->next ) {
+		overallBounds[0] = std::min( overallBounds[0], shape->bounds[0] ); // min-x
+		overallBounds[1] = std::min( overallBounds[1], shape->bounds[1] ); // min-y
+		overallBounds[2] = std::max( overallBounds[2], shape->bounds[2] ); // max-x
+		overallBounds[3] = std::max( overallBounds[3], shape->bounds[3] ); // max-y
+	}
+
+	float svgMinX = overallBounds[0];
+	float svgMinY = overallBounds[1];
+	float svgWidth = overallBounds[2] - svgMinX;
+	float svgHeight = overallBounds[3] - svgMinY;
+
+	if ( svgWidth == 0 || svgHeight == 0 ) {
+		nsvgDelete( image );
+		return FT_Err_Ok; // Nothing to render
+	}
+
+	// Calculate the scale to fit the target bitmap size, preserving aspect ratio
+	float scaleX = (float)slot->bitmap.width / svgWidth;
+	float scaleY = (float)slot->bitmap.rows / svgHeight;
+	float scale = std::min( scaleX, scaleY );
+
+	// Calculate the translation needed to align the SVG's content with the bitmap's origin (0,0)
+	float tx = -svgMinX * scale;
+	float ty = -svgMinY * scale;
+
+	// Center the glyph within the bitmap slot
+	float centered_tx = tx + ( (float)slot->bitmap.width - svgWidth * scale ) * 0.5f;
+	float centered_ty = ty + ( (float)slot->bitmap.rows - svgHeight * scale ) * 0.5f;
+
+	// Rasterize directly into a temporary RGBA buffer.
+	std::vector<unsigned char> rgba_buffer( slot->bitmap.width * slot->bitmap.rows * 4 );
+	nsvgRasterize( svg_data->rasterizer, image, centered_tx, centered_ty, scale, rgba_buffer.data(),
+				   slot->bitmap.width, slot->bitmap.rows, slot->bitmap.width * 4 );
+	nsvgDelete( image );
+
+	// Swizzle from RGBA (nanosvg) to BGRA (FreeType bitmap).
+	// Your original code performed RGBA -> RGBA copy.
+	// FT_PIXEL_MODE_BGRA requires Blue in the first byte.
+	for ( unsigned int y = 0; y < slot->bitmap.rows; ++y ) {
+		for ( unsigned int x = 0; x < slot->bitmap.width; ++x ) {
+			unsigned char* src = &rgba_buffer[( y * slot->bitmap.width + x ) * 4];
+			unsigned char* dst = &slot->bitmap.buffer[( y * slot->bitmap.pitch ) + x * 4];
+			dst[0] = src[2]; // Blue
+			dst[1] = src[1]; // Green
+			dst[2] = src[0]; // Red
+			dst[3] = src[3]; // Alpha
+		}
+	}
+
+	slot->format = FT_GLYPH_FORMAT_BITMAP;
+
+	return FT_Err_Ok;
+}
+
+static SVG_RendererHooks svg_hooks = { svg_init, svg_free, svg_render, svg_preset };
+#endif
 
 // FreeType callbacks that operate on a IOStream
 unsigned long read( FT_Stream rec, unsigned long offset, unsigned char* buffer,
@@ -46,7 +200,7 @@ unsigned long read( FT_Stream rec, unsigned long offset, unsigned char* buffer,
 
 void close( FT_Stream ) {}
 
-// Helper to intepret memory as a specific type
+// Helper to interpret memory as a specific type
 template <typename T, typename U> inline T reinterpret( const U& input ) {
 	T output;
 	std::memcpy( &output, &input, sizeof( U ) );
@@ -106,8 +260,22 @@ FontTrueType::~FontTrueType() {
 	cleanup();
 }
 
-bool checkIsColorEmojiFont( const FT_Face& face ) {
+static bool checkHasSvgTable( const FT_Face& face ) {
+	static const uint32_t tag = FT_MAKE_TAG( 'S', 'V', 'G', ' ' ); // The tag for the SVG table
+	unsigned long length = 0;
+	FT_Load_Sfnt_Table( face, tag, 0, nullptr, &length );
+	return length > 0;
+}
+
+static bool checkIsColorEmojiFont( const FT_Face& face ) {
 	static const uint32_t tag = FT_MAKE_TAG( 'C', 'B', 'D', 'T' );
+	unsigned long length = 0;
+	FT_Load_Sfnt_Table( face, tag, 0, nullptr, &length );
+	return length > 0;
+}
+
+static bool checkHasColrTable( const FT_Face& face ) {
+	static const uint32_t tag = FT_MAKE_TAG( 'C', 'O', 'L', 'R' );
 	unsigned long length = 0;
 	FT_Load_Sfnt_Table( face, tag, 0, nullptr, &length );
 	return length > 0;
@@ -256,12 +424,24 @@ bool FontTrueType::setFontFace( void* _face ) {
 	mHBFont = hb_ft_font_create( static_cast<FT_Face>( face ), NULL );
 #endif
 	mIsMonospaceComplete = mIsMonospace = FT_IS_FIXED_WIDTH( face );
-	mIsColorEmojiFont = checkIsColorEmojiFont( face );
+	mIsColorEmojiFont = checkIsColorEmojiFont( face ); // For CBDT (COLRv0)
+	mHasSvgGlyphs = checkHasSvgTable( face );		   // For SVG table
+	mHasColrGlyphs = checkHasColrTable( face );		   // For COLR table (COLRv1)
+	mIsBitmapOnly = !FT_IS_SCALABLE( face ) && ( face->num_fixed_sizes > 0 );
 	mIsEmojiFont = FT_Get_Char_Index( face, 0x1F600 ) != 0;
 	mIsBold = face->style_flags & FT_STYLE_FLAG_BOLD;
 	mIsItalic = face->style_flags & FT_STYLE_FLAG_ITALIC;
 
-	if ( mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() == nullptr )
+	if ( mHasSvgGlyphs ) {
+#ifdef EE_TRUETYPE_SVG_FONT_ENABLED
+		 FT_Property_Set( static_cast<FT_Library>( mLibrary ), "ot-svg", "svg-hooks", &svg_hooks );
+#else
+		return false;
+#endif
+	}
+
+	if ( ( mIsColorEmojiFont || mHasSvgGlyphs || mHasColrGlyphs ) &&
+		 FontManager::instance()->getColorEmojiFont() == nullptr )
 		FontManager::instance()->setColorEmojiFont( this );
 
 	if ( mIsEmojiFont && FontManager::instance()->getEmojiFont() == nullptr )
@@ -329,50 +509,36 @@ Uint32 FontTrueType::getGlyphIndex( const Uint32& codePoint ) const {
 	return index;
 }
 
-const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-									 bool italic, Float outlineThickness, Float maxWidth ) const {
+Glyph FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
+							  Float outlineThickness ) const {
 	Uint32 idx = 0;
-	if ( mEnableEmojiFallback && !mIsColorEmojiFont && !mIsEmojiFont &&
-		 Font::isEmojiCodePoint( codePoint ) ) {
+	if ( mEnableEmojiFallback && !mIsColorEmojiFont && !mHasSvgGlyphs && !mHasColrGlyphs &&
+		 !mIsEmojiFont && Font::isEmojiCodePoint( codePoint ) ) {
 		if ( !mIsColorEmojiFont && FontManager::instance()->getColorEmojiFont() != nullptr &&
 			 FontManager::instance()->getColorEmojiFont()->getType() == FontType::TTF ) {
-
-			if ( isMonospace() && maxWidth == 0.f && !Text::TextShaperEnabled ) {
-				const Glyph& monospaceGlyph =
-					getGlyph( ' ', characterSize, bold, italic, outlineThickness );
-				maxWidth = monospaceGlyph.advance;
-			}
 
 			FontTrueType* fontEmoji =
 				static_cast<FontTrueType*>( FontManager::instance()->getColorEmojiFont() );
 			if ( ( idx = fontEmoji->getGlyphIndex( codePoint ) ) ) {
-				if ( mIsMonospace && mEnableDynamicMonospace && 0.f == maxWidth ) {
+				if ( mIsMonospace && mEnableDynamicMonospace ) {
 					mIsMonospaceComplete = false;
 					mUsingFallback = true;
 				}
 				return fontEmoji->getGlyphByIndex( idx, characterSize, bold, italic,
-												   outlineThickness, getPage( characterSize ),
-												   maxWidth );
+												   outlineThickness, getPage( characterSize ) );
 			}
 		} else if ( !mIsEmojiFont && FontManager::instance()->getEmojiFont() != nullptr &&
 					FontManager::instance()->getEmojiFont()->getType() == FontType::TTF ) {
 
-			if ( isMonospace() && maxWidth == 0.f && !Text::TextShaperEnabled ) {
-				const Glyph& monospaceGlyph =
-					getGlyph( ' ', characterSize, bold, italic, outlineThickness );
-				maxWidth = monospaceGlyph.advance;
-			}
-
 			FontTrueType* fontEmoji =
 				static_cast<FontTrueType*>( FontManager::instance()->getEmojiFont() );
 			if ( ( idx = fontEmoji->getGlyphIndex( codePoint ) ) ) {
-				if ( mIsMonospace && mEnableDynamicMonospace && 0.f == maxWidth ) {
+				if ( mIsMonospace && mEnableDynamicMonospace ) {
 					mIsMonospaceComplete = false;
 					mUsingFallback = true;
 				}
 				return fontEmoji->getGlyphByIndex( idx, characterSize, bold, italic,
-												   outlineThickness, getPage( characterSize ),
-												   maxWidth );
+												   outlineThickness, getPage( characterSize ) );
 			}
 		}
 	}
@@ -380,19 +546,19 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 	if ( bold && italic && mFontBoldItalic != nullptr &&
 		 ( idx = mFontBoldItalic->getGlyphIndex( codePoint ) ) ) {
 		return mFontBoldItalic->getGlyphByIndex( idx, characterSize, true, true, outlineThickness,
-												 getPage( characterSize ), maxWidth );
+												 getPage( characterSize ) );
 	}
 
 	if ( bold && !italic && mFontBold != nullptr &&
 		 ( idx = mFontBold->getGlyphIndex( codePoint ) ) ) {
 		return mFontBold->getGlyphByIndex( idx, characterSize, true, false, outlineThickness,
-										   getPage( characterSize ), maxWidth );
+										   getPage( characterSize ) );
 	}
 
 	if ( italic && !bold && mFontItalic != nullptr &&
 		 ( idx = mFontItalic->getGlyphIndex( codePoint ) ) ) {
 		return mFontItalic->getGlyphByIndex( idx, characterSize, false, true, outlineThickness,
-											 getPage( characterSize ), maxWidth );
+											 getPage( characterSize ) );
 	}
 
 	idx = getGlyphIndex( codePoint );
@@ -407,8 +573,7 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 					mUsingFallback = true;
 				}
 				return fallbackFont->getGlyphByIndex( idx, characterSize, bold, italic,
-													  outlineThickness, getPage( characterSize ),
-													  maxWidth );
+													  outlineThickness, getPage( characterSize ) );
 			}
 		}
 	}
@@ -416,17 +581,15 @@ const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSiz
 	return getGlyphByIndex( idx, characterSize, bold, italic, outlineThickness );
 }
 
-const Glyph& FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold,
-									 bool italic, Float outlineThickness, Page& page,
-									 const Float& maxWidth ) const {
+Glyph FontTrueType::getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
+							  Float outlineThickness, Page& page ) const {
 	Uint32 index = getGlyphIndex( codePoint );
-	return getGlyphByIndex( index, characterSize, bold, italic, outlineThickness, page, maxWidth );
+	return getGlyphByIndex( index, characterSize, bold, italic, outlineThickness, page );
 }
 
-const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
-											bool italic, Float outlineThickness, Page& page,
-											const Float& maxWidth ) const {
-	eeASSERT( Engine::isRunninMainThread() );
+Glyph FontTrueType::getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
+									 bool italic, Float outlineThickness, Page& page ) const {
+	eeASSERT( Engine::isMainThread() );
 
 	// Get the page corresponding to the character size
 	GlyphTable& glyphs = page.glyphs;
@@ -441,22 +604,22 @@ const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int character
 		return it->second;
 	} else {
 		// Not found: we have to load it
-		Glyph glyph = loadGlyphByIndex( index, characterSize, bold, italic, outlineThickness, page,
-										maxWidth );
+		Glyph glyph =
+			loadGlyphByIndex( index, characterSize, bold, italic, outlineThickness, page );
 
 		return glyphs.emplace( key, glyph ).first->second;
 	}
 }
 
-const Glyph& FontTrueType::getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
-											bool italic, Float outlineThickness ) const {
+Glyph FontTrueType::getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
+									 bool italic, Float outlineThickness ) const {
 	return getGlyphByIndex( index, characterSize, bold, italic, outlineThickness,
-							getPage( characterSize ), 0.f );
+							getPage( characterSize ) );
 }
 
 GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
-											   bool bold, bool italic, Float outlineThickness,
-											   const Float& maxWidth ) const {
+											   bool bold, bool italic,
+											   Float outlineThickness ) const {
 	// mKeyCache
 	Page& page = getPage( characterSize );
 	GlyphDrawableTable& drawables = page.drawables;
@@ -556,14 +719,14 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 	if ( it != drawables.end() ) {
 		return it->second;
 	} else {
-		const Glyph& glyph =
-			getGlyph( codePoint, characterSize, bold, italic, outlineThickness, maxWidth );
+		auto glyph = getGlyph( codePoint, characterSize, bold, italic, outlineThickness );
 		GlyphDrawable* region = GlyphDrawable::New(
 			page.texture, glyph.textureRect, glyph.size,
 			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, glyphIndex ) );
 
-		region->setGlyphOffset( { glyph.bounds.Left - outlineThickness,
-								  characterSize + glyph.bounds.Top - outlineThickness } );
+		region->setGlyphOffset(
+			{ glyph.bounds.Left - outlineThickness,
+			  getGlyphTopOffset( characterSize ) + glyph.bounds.Top - outlineThickness } );
 		region->setAdvance( glyph.advance );
 		region->setIsItalic( isItalic );
 
@@ -576,8 +739,7 @@ GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int ch
 GlyphDrawable* FontTrueType::getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex,
 															 unsigned int characterSize, bool bold,
 															 bool italic, Float outlineThickness,
-															 Page& page,
-															 const Float& maxWidth ) const {
+															 Page& page ) const {
 	GlyphDrawableTable& drawables = page.drawables;
 	Uint64 key = getIndexKey( mFontInternalId, glyphIndex, bold, italic, outlineThickness );
 
@@ -585,14 +747,15 @@ GlyphDrawable* FontTrueType::getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex,
 	if ( it != drawables.end() ) {
 		return it->second;
 	} else {
-		const Glyph& glyph = getGlyphByIndex( glyphIndex, characterSize, bold, italic,
-											  outlineThickness, page, maxWidth );
+		auto glyph =
+			getGlyphByIndex( glyphIndex, characterSize, bold, italic, outlineThickness, page );
 		GlyphDrawable* region = GlyphDrawable::New(
 			page.texture, glyph.textureRect, glyph.size,
 			String::format( "%s_%d_%u", mFontName.c_str(), characterSize, glyphIndex ) );
 
-		region->setGlyphOffset( { glyph.bounds.Left - outlineThickness,
-								  characterSize + glyph.bounds.Top - outlineThickness } );
+		region->setGlyphOffset(
+			{ glyph.bounds.Left - outlineThickness,
+			  getGlyphTopOffset( characterSize ) + glyph.bounds.Top - outlineThickness } );
 		region->setAdvance( glyph.advance );
 		region->setIsItalic( italic );
 
@@ -604,10 +767,10 @@ GlyphDrawable* FontTrueType::getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex,
 
 GlyphDrawable* FontTrueType::getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex,
 															 unsigned int characterSize, bool bold,
-															 bool italic, Float outlineThickness,
-															 const Float& maxWidth ) const {
+															 bool italic,
+															 Float outlineThickness ) const {
 	return getGlyphDrawableFromGlyphIndex( glyphIndex, characterSize, bold, italic,
-										   outlineThickness, getPage( characterSize ), maxWidth );
+										   outlineThickness, getPage( characterSize ) );
 }
 
 Float FontTrueType::getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
@@ -619,8 +782,8 @@ Float FontTrueType::getKerning( Uint32 first, Uint32 second, unsigned int charac
 	FT_Face face = static_cast<FT_Face>( mFace );
 
 	if ( face && setCurrentSize( characterSize ) ) {
-		const Glyph& glyph1 = getGlyph( first, characterSize, bold, italic, outlineThickness );
-		const Glyph& glyph2 = getGlyph( second, characterSize, bold, italic, outlineThickness );
+		auto glyph1 = getGlyph( first, characterSize, bold, italic, outlineThickness );
+		auto glyph2 = getGlyph( second, characterSize, bold, italic, outlineThickness );
 
 		if ( glyph1.font != glyph2.font )
 			return 0.f;
@@ -704,6 +867,11 @@ Float FontTrueType::getLineSpacing( unsigned int characterSize ) const {
 	}
 }
 
+Float FontTrueType::getGlyphTopOffset( unsigned int characterSize ) const {
+	FT_Face face = static_cast<FT_Face>( mFace );
+	return FT_IS_SCALABLE( face ) || mIsColorEmojiFont ? characterSize : getAscent( characterSize );
+}
+
 Float FontTrueType::getAscent( unsigned int characterSize ) const {
 	FT_Face face = static_cast<FT_Face>( mFace );
 
@@ -763,7 +931,7 @@ Float FontTrueType::getUnderlinePosition( unsigned int characterSize ) const {
 	if ( face && setCurrentSize( characterSize ) ) {
 		// Return a fixed position if font is a bitmap font
 		if ( !FT_IS_SCALABLE( face ) )
-			return characterSize / 10.f;
+			return -1; // getGlyphTopOffset( characterSize ) / 10.f;
 
 		return -static_cast<Float>(
 				   FT_MulFix( face->underline_position, face->size->metrics.y_scale ) ) /
@@ -779,7 +947,7 @@ Float FontTrueType::getUnderlineThickness( unsigned int characterSize ) const {
 	if ( face && setCurrentSize( characterSize ) ) {
 		// Return a fixed thickness if font is a bitmap font
 		if ( !FT_IS_SCALABLE( face ) )
-			return characterSize / 14.f;
+			return getGlyphTopOffset( characterSize ) / 14.f;
 
 		return static_cast<Float>(
 				   FT_MulFix( face->underline_thickness, face->size->metrics.y_scale ) ) /
@@ -874,10 +1042,14 @@ static int fontSetLoadOptions( FontAntialiasing antialiasing, FontHinting hintin
 	return load_target | hint;
 }
 
-static constexpr FT_Render_Mode
-fontSetRenderOptions( FT_Library library, FontAntialiasing antialiasing, FontHinting hinting ) {
+static constexpr FT_Render_Mode fontSetRenderOptions( FT_Library library,
+													  FontAntialiasing antialiasing,
+													  FontHinting hinting,
+													  FT_Glyph_Format glyphFormat ) {
 	if ( antialiasing == FontAntialiasing::None )
 		return FT_RENDER_MODE_MONO;
+	if ( glyphFormat == FT_GLYPH_FORMAT_SVG )
+		return FT_RENDER_MODE_NORMAL;
 	if ( antialiasing == FontAntialiasing::Subpixel ) {
 		unsigned char weights[] = { 0x10, 0x40, 0x70, 0x40, 0x10 };
 		switch ( hinting ) {
@@ -907,8 +1079,7 @@ fontSetRenderOptions( FT_Library library, FontAntialiasing antialiasing, FontHin
 }
 
 Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold,
-									  bool /*italic*/, Float outlineThickness, Page& page,
-									  const Float& maxWidth ) const {
+									  bool /*italic*/, Float outlineThickness, Page& page ) const {
 	// The glyph to return
 	Glyph glyph;
 
@@ -931,8 +1102,8 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 	FT_Error err = 0;
 
 	auto loadOptions = fontSetLoadOptions( mAntialiasing, mHinting );
-	auto renderOptions =
-		fontSetRenderOptions( static_cast<FT_Library>( mLibrary ), mAntialiasing, mHinting );
+	if ( mIsColorEmojiFont || mHasSvgGlyphs )
+		loadOptions = FT_LOAD_TARGET_NORMAL;
 
 	// Load the glyph corresponding to the code point
 	FT_Int32 flags = loadOptions | FT_LOAD_COLOR;
@@ -973,8 +1144,11 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 		}
 	}
 
+	FT_Render_Mode finalRenderMode = fontSetRenderOptions(
+		static_cast<FT_Library>( mLibrary ), mAntialiasing, mHinting, glyphDesc->format );
+
 	// Convert the glyph to a bitmap (i.e. rasterize it)
-	FT_Glyph_To_Bitmap( &glyphDesc, renderOptions, 0, 1 );
+	FT_Glyph_To_Bitmap( &glyphDesc, finalRenderMode, 0, 1 );
 	FT_Bitmap& bitmap = reinterpret_cast<FT_BitmapGlyph>( glyphDesc )->bitmap;
 
 	// Apply bold if necessary -- fallback technique using bitmap (lower quality)
@@ -988,9 +1162,6 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 
 	// Compute the glyph's advance offset
 	glyph.advance = static_cast<Float>( slot->metrics.horiAdvance ) / static_cast<Float>( 1 << 6 );
-
-	if ( maxWidth > 0.f )
-		glyph.advance = maxWidth;
 
 	if ( bold && !mBoldAdvanceSameAsRegular )
 		glyph.advance += static_cast<Float>( weight ) / static_cast<Float>( 1 << 6 );
@@ -1011,17 +1182,24 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 		const int padding = 2;
 
 		Float scale = 1.f;
-
-		if ( mIsColorEmojiFont || mIsEmojiFont ) {
-			scale = eemin( 1.f, (Float)( maxWidth > 0.f ? maxWidth : characterSize ) /
-									(Float)( maxWidth > 0.f ? width : height ) );
-		}
-
 		int destWidth = width;
 		int destHeight = height;
 
-		if ( maxWidth <= 0.f )
-			glyph.advance = eeceil( glyph.advance * scale );
+		if ( mIsColorEmojiFont ) {
+			// Browsers scale emojis slightly larger than the EM size to match the visual weight
+			// of the text's Ascender.
+			// Noto Sans Ascent is ~1.07em. Applying 1.1x scaling results in ~1.18em,
+			// which matches Chrome/Firefox rendering behavior for Noto Color Emoji.
+			Float targetSize = ( page.font != this )
+								   ? (Float)page.font->getAscent( characterSize ) * 1.1f
+								   : (Float)characterSize;
+
+			scale = eemin( 1.f, targetSize / height );
+		} else if ( mIsEmojiFont ) {
+			scale = eemin( 1.f, (Float)characterSize / height );
+		}
+
+		glyph.advance = eeceil( glyph.advance * scale );
 
 		if ( scale >= 1.f ) {
 			destWidth *= scale;
@@ -1053,21 +1231,8 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 		Uint8* current = pixelPtr;
 		Uint8* end = current + bufferSize;
 
-		if ( bitmap.pixel_mode == FT_PIXEL_MODE_LCD ) {
-			while ( current != end ) {
-				( *current++ ) = 0;
-				( *current++ ) = 0;
-				( *current++ ) = 0;
-				( *current++ ) = 0;
-			}
-		} else {
-			while ( current != end ) {
-				( *current++ ) = 255;
-				( *current++ ) = 255;
-				( *current++ ) = 255;
-				( *current++ ) = 0;
-			}
-		}
+		std::fill( (Uint32*)pixelPtr, (Uint32*)end,
+				   bitmap.pixel_mode == FT_PIXEL_MODE_LCD ? 0x00000000 : 0x00FFFFFF );
 
 		// Extract the glyph's pixels from the bitmap
 		const Uint8* pixels = bitmap.buffer;
@@ -1186,7 +1351,7 @@ Glyph FontTrueType::loadGlyphByIndex( Uint32 index, unsigned int characterSize, 
 		page.texture->update( pixelPtr, w, h, x, y );
 
 		if ( scale < 1.f )
-			eeFree( pixelPtr );
+			eeSAFE_DELETE_ARRAY( pixelPtr );
 	}
 
 	// Delete the FT glyph
@@ -1254,7 +1419,7 @@ Rect FontTrueType::findGlyphRect( Page& page, unsigned int width, unsigned int h
 	// Find the glyph's rectangle on the selected row
 	Rect rect( row->width, row->top, width, height );
 
-	// Update the row informations
+	// Update the row information
 	row->width += width;
 
 	return rect;
@@ -1275,6 +1440,17 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 				int ndiff = eeabs( characterSize - face->available_sizes[i].width );
 				if ( ndiff < diff ) {
 					bestMatch = i;
+					diff = ndiff;
+				}
+			}
+			characterSize = bestMatch;
+		} else if ( mIsBitmapOnly ) {
+			int bestMatch = face->available_sizes[0].height;
+			int diff = eeabs( characterSize - face->available_sizes[0].height );
+			for ( int i = 1; i < face->num_fixed_sizes; ++i ) {
+				int ndiff = eeabs( characterSize - face->available_sizes[i].height );
+				if ( ndiff < diff ) {
+					bestMatch = face->available_sizes[i].height;
 					diff = ndiff;
 				}
 			}
@@ -1316,11 +1492,17 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 					}
 				} else if ( characterSize != currentSize &&
 							( result = FT_Set_Pixel_Sizes( face, 0, it->second ) ) == FT_Err_Ok ) {
+#ifdef EE_TEXT_SHAPER_ENABLED
+					hb_ft_font_changed( (hb_font_t*)mHBFont );
+#endif
 					return true;
 				}
 			}
 		}
 
+#ifdef EE_TEXT_SHAPER_ENABLED
+		hb_ft_font_changed( (hb_font_t*)mHBFont );
+#endif
 		return result == FT_Err_Ok;
 	} else {
 		return true;
@@ -1336,7 +1518,7 @@ FontTrueType::Page& FontTrueType::getPage( unsigned int characterSize ) const {
 			name += ":bold";
 		if ( mIsItalic )
 			name += ":italic";
-		mPages[characterSize] = std::make_unique<Page>( mFontInternalId, name );
+		mPages[characterSize] = std::make_unique<Page>( mFontInternalId, name, this );
 		pageIt = mPages.find( characterSize );
 	}
 	return *pageIt->second;
@@ -1347,7 +1529,10 @@ FontAntialiasing FontTrueType::getAntialiasing() const {
 }
 
 void FontTrueType::setAntialiasing( FontAntialiasing antialiasing ) {
-	mAntialiasing = antialiasing;
+	if ( antialiasing != mAntialiasing ) {
+		mAntialiasing = antialiasing;
+		clearCache();
+	}
 }
 
 FontHinting FontTrueType::getHinting() const {
@@ -1355,7 +1540,10 @@ FontHinting FontTrueType::getHinting() const {
 }
 
 void FontTrueType::setHinting( FontHinting hinting ) {
-	mHinting = hinting;
+	if ( hinting != mHinting ) {
+		mHinting = hinting;
+		clearCache();
+	}
 }
 
 bool FontTrueType::getEnableDynamicMonospace() const {
@@ -1408,8 +1596,12 @@ bool FontTrueType::isMonospace() const {
 	return mIsMonospaceComplete;
 }
 
+bool FontTrueType::isIdentifiedAsMonospace() const {
+	return mIsMonospace;
+}
+
 bool FontTrueType::isScalable() const {
-	return FT_IS_SCALABLE( static_cast<FT_Face>( mFace ) );
+	return mFace ? FT_IS_SCALABLE( static_cast<FT_Face>( mFace ) ) : false;
 }
 
 bool FontTrueType::isEmojiFont() const {
@@ -1497,8 +1689,17 @@ void FontTrueType::setBoldItalicFont( FontTrueType* fontBoldItalic ) {
 	updateMonospaceState();
 }
 
-FontTrueType::Page::Page( const Uint32 fontInternalId, const std::string& pageName ) :
-	texture( NULL ), nextRow( 3 ), fontInternalId( fontInternalId ) {
+bool FontTrueType::hasSvgGlyphs() const {
+	return mHasSvgGlyphs;
+}
+
+bool FontTrueType::hasColrGlyphs() const {
+	return mHasColrGlyphs;
+}
+
+FontTrueType::Page::Page( const Uint32 fontInternalId, const std::string& pageName,
+						  const FontTrueType* font ) :
+	texture( NULL ), fontInternalId( fontInternalId ), nextRow( 3 ), font( font ) {
 	// Make sure that the texture is initialized by default
 	Image image;
 	image.create( 128, 128, 4 );
@@ -1529,6 +1730,7 @@ void FontTrueType::clearCache() {
 	mClosestCharacterSize.clear();
 	mCodePointIndexCache.clear();
 	mKeyCache.clear();
+	Text::GlobalInvalidationId++;
 }
 
 }} // namespace EE::Graphics

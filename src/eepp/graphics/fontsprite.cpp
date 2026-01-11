@@ -26,11 +26,6 @@ FontSprite::FontSprite( const std::string FontName ) :
 void FontSprite::cleanup() {
 	sendEvent( Event::Unload );
 
-	Texture* texture = mPages[mFontSize].texture;
-
-	if ( NULL != texture && TextureFactory::existsSingleton() )
-		TextureFactory::instance()->remove( texture->getTextureId() );
-
 	mPages.clear();
 	mFontSize = 0;
 	mFilePath = "";
@@ -164,8 +159,8 @@ const FontSprite::Info& FontSprite::getInfo() const {
 	return mInfo;
 }
 
-const Glyph& FontSprite::getGlyph( Uint32 codePoint, unsigned int characterSize, bool, bool, Float,
-								   Float ) const {
+Glyph FontSprite::getGlyph( Uint32 codePoint, unsigned int characterSize, bool, bool,
+							Float ) const {
 	GlyphTable& glyphs = mPages[characterSize].glyphs;
 
 	GlyphTable::const_iterator it = glyphs.find( codePoint );
@@ -179,14 +174,14 @@ const Glyph& FontSprite::getGlyph( Uint32 codePoint, unsigned int characterSize,
 }
 
 GlyphDrawable* FontSprite::getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
-											 bool bold, bool italic, Float outlineThickness,
-											 const Float& ) const {
+											 bool bold, bool italic,
+											 Float outlineThickness ) const {
 	GlyphDrawableTable& drawables = mPages[characterSize].drawables;
 	auto it = drawables.find( codePoint );
 	if ( it != drawables.end() ) {
 		return it->second;
 	} else {
-		const Glyph& glyph = getGlyph( codePoint, characterSize, bold, italic, outlineThickness );
+		auto glyph = getGlyph( codePoint, characterSize, bold, italic, outlineThickness );
 		const auto& page = mPages[characterSize];
 		GlyphDrawable* region = GlyphDrawable::New(
 			page.texture, glyph.textureRect, glyph.bounds.getSize(),
@@ -204,7 +199,7 @@ Glyph FontSprite::loadGlyph( Uint32 codePoint, unsigned int characterSize ) cons
 	GlyphTable::const_iterator it = glyphs.find( codePoint );
 
 	if ( it != glyphs.end() ) {
-		const Glyph& oriGlyph = it->second;
+		auto oriGlyph = it->second;
 
 		Float scale = (Float)characterSize / (Float)mFontSize;
 

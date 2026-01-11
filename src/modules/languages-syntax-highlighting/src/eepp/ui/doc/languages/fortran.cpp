@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addFortran() {
+SyntaxDefinition& addFortran() {
 	// Based in Lite-XL Rohan Vashisht implementation
 	// https://github.com/RohanVashisht1234/fortran_syntax_highlighter_lite-xl
 	auto& sd = SyntaxDefinitionManager::instance()->add(
@@ -23,36 +23,59 @@ void addFortran() {
 			  { { "(struct)(%s+)([%a_][%w_]*)" }, { "normal", "keyword", "normal", "literal" } },
 			  { { "-?%d+[%d%.eE_]*" }, "number" },
 			  { { "-?%.?%d+" }, "number" },
-			  { { "[%a_][%w_]*" }, "normal" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
+			  { { "[%a_][%w_]*" }, "symbol" },
 
 		  },
-		  { { "then", "keyword" },		  { "public", "keyword" },
-			{ "allocatable", "keyword" }, { "private", "keyword" },
-			{ "concurrent", "keyword" },  { "only", "keyword" },
-			{ "none", "keyword2" },		  { ".or.", "keyword2" },
-			{ "cycle", "keyword" },		  { "len", "keyword2" },
-			{ ".le.", "keyword2" },		  { ".not.", "keyword2" },
-			{ "sequence", "keyword" },	  { ".false.", "keyword2" },
-			{ ".eq.", "keyword2" },		  { ".lt.", "keyword2" },
-			{ "end", "keyword" },		  { "subroutine", "keyword" },
-			{ "extends", "keyword" },	  { ".neqv.", "keyword2" },
-			{ "complex", "keyword" },	  { "module", "keyword" },
-			{ "result", "keyword" },	  { "call", "keyword" },
-			{ ".true.", "keyword2" },	  { "function", "keyword" },
-			{ "logical", "keyword" },	  { "else", "keyword" },
-			{ ".ge", "keyword2" },		  { "parameter", "keyword" },
-			{ "contains", "keyword" },	  { "print", "keyword" },
-			{ "write", "keyword" },		  { ".eqv.", "keyword2" },
-			{ ".and.", "keyword2" },	  { "struct", "keyword" },
-			{ "character", "keyword" },	  { "integer", "keyword" },
-			{ ".ne.", "keyword2" },		  { "real", "keyword" },
-			{ "use", "keyword" },		  { "if", "keyword" },
-			{ "protected", "keyword" },	  { "do", "keyword" },
-			{ ".gt.", "keyword2" },		  { "program", "keyword" },
-			{ "implicit", "keyword" },	  { "stop", "keyword" },
-			{ "type", "keyword" },		  { "endif", "keyword" },
+		  { { "then", "keyword" },
+			{ "public", "keyword" },
+			{ "allocatable", "keyword" },
+			{ "private", "keyword" },
+			{ "concurrent", "keyword" },
+			{ "only", "keyword" },
+			{ "none", "type" },
+			{ ".or.", "type" },
+			{ "cycle", "keyword" },
+			{ "len", "type" },
+			{ ".le.", "type" },
+			{ ".not.", "type" },
+			{ "sequence", "keyword" },
+			{ ".false.", "type" },
+			{ ".eq.", "type" },
+			{ ".lt.", "type" },
+			{ "end", "keyword" },
+			{ "subroutine", "keyword" },
+			{ "extends", "keyword" },
+			{ ".neqv.", "type" },
+			{ "complex", "keyword" },
+			{ "module", "keyword" },
+			{ "result", "keyword" },
+			{ "call", "keyword" },
+			{ ".true.", "type" },
+			{ "function", "keyword" },
+			{ "logical", "keyword" },
+			{ "else", "keyword" },
+			{ ".ge", "type" },
+			{ "parameter", "keyword" },
+			{ "contains", "keyword" },
+			{ "print", "keyword" },
+			{ "write", "keyword" },
+			{ ".eqv.", "type" },
+			{ ".and.", "type" },
+			{ "struct", "keyword" },
+			{ "character", "keyword" },
+			{ "integer", "keyword" },
+			{ ".ne.", "type" },
+			{ "real", "keyword" },
+			{ "use", "keyword" },
+			{ "if", "keyword" },
+			{ "protected", "keyword" },
+			{ "do", "keyword" },
+			{ ".gt.", "type" },
+			{ "program", "keyword" },
+			{ "implicit", "keyword" },
+			{ "stop", "keyword" },
+			{ "type", "keyword" },
+			{ "endif", "keyword" },
 			{ "enddo", "keyword" }
 
 		  },
@@ -62,6 +85,7 @@ void addFortran() {
 		} );
 	sd.setCaseInsensitive( true );
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

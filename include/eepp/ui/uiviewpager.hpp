@@ -43,7 +43,7 @@ class EE_API UIViewPager : public UIWidget {
 	const Float& getMaxEdgeResistance() const;
 
 	/** The normalized porcentage (0..1) that the edge pages are allowed to go outside the limits.
-	 * Default 0% ( childs can't go outside the edge limits ).
+	 * Default 0% ( children can't go outside the edge limits ).
 	 */
 	void setMaxEdgeResistance( const Float& maxEdgeResistance );
 
@@ -90,7 +90,7 @@ class EE_API UIViewPager : public UIWidget {
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
-	void updateChilds();
+	void updateChildren();
 
 	void limitDisplacement();
 

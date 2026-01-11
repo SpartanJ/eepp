@@ -49,7 +49,7 @@ void StyleSheetSelector::parseSelector( std::string selector ) {
 		// Remove spaces that means nothing to the selector logic
 		// for example:
 		// Element > .class #id
-		// shold be
+		// should be
 		// Element>.class #id
 		removeExtraSpaces( selector );
 
@@ -159,7 +159,7 @@ bool StyleSheetSelector::select( UIWidget* element, const bool& applyPseudo ) co
 
 				break; // continue evaluating
 			}
-			case StyleSheetSelectorRule::DIRECT_SIBLING: {
+			case StyleSheetSelectorRule::PREVIOUS_SIBLING: {
 				curElement = curElement->getStyleSheetPreviousSiblingElement();
 
 				if ( NULL == curElement || !selectorRule.matches( curElement, applyPseudo ) )
@@ -167,7 +167,7 @@ bool StyleSheetSelector::select( UIWidget* element, const bool& applyPseudo ) co
 
 				break; // continue evaluating
 			}
-			case StyleSheetSelectorRule::PREVIOUS_SIBLING: {
+			case StyleSheetSelectorRule::DIRECT_SIBLING: {
 				curElement = curElement->getStyleSheetNextSiblingElement();
 
 				if ( NULL == curElement || !selectorRule.matches( curElement, applyPseudo ) )

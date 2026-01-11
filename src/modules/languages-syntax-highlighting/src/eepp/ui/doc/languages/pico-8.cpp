@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addPICO8() {
+SyntaxDefinition& addPICO8() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "PICO-8",
 		  { "%.p8$" },
@@ -26,18 +26,16 @@ void addPICO8() {
 			  { { "[%a_][%w_]*%s*%f[(\"{]" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 			  { { "::[%a_][%w_]*::" }, "function" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {
-			  { "true", "literal" },   { "self", "keyword2" }, { "return", "keyword" },
-			  { "repeat", "keyword" }, { "or", "keyword" },	   { "and", "keyword" },
-			  { "break", "keyword" },  { "else", "keyword" },  { "until", "keyword" },
-			  { "do", "keyword" },	   { "in", "keyword" },	   { "while", "keyword" },
-			  { "end", "keyword" },	   { "nil", "literal" },   { "elseif", "keyword" },
-			  { "false", "literal" },  { "not", "keyword" },   { "local", "keyword" },
-			  { "for", "keyword" },	   { "then", "keyword" },  { "function", "keyword" },
+			  { "true", "literal" },   { "self", "type" },	  { "return", "keyword" },
+			  { "repeat", "keyword" }, { "or", "keyword" },	  { "and", "keyword" },
+			  { "break", "keyword" },  { "else", "keyword" }, { "until", "keyword" },
+			  { "do", "keyword" },	   { "in", "keyword" },	  { "while", "keyword" },
+			  { "end", "keyword" },	   { "nil", "literal" },  { "elseif", "keyword" },
+			  { "false", "literal" },  { "not", "keyword" },  { "local", "keyword" },
+			  { "for", "keyword" },	   { "then", "keyword" }, { "function", "keyword" },
 			  { "goto", "keyword" },   { "if", "keyword" },
 
 		  },

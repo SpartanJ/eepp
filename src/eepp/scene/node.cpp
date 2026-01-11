@@ -17,6 +17,7 @@ Node* Node::New() {
 Node::Node() :
 	mIdHash( 0 ),
 	mSize( 0, 0 ),
+	mAlpha( 255.f ),
 	mData( 0 ),
 	mParentNode( NULL ),
 	mSceneNode( NULL ),
@@ -27,10 +28,9 @@ Node::Node() :
 	mPrev( NULL ),
 	mNodeFlags( NODE_FLAG_POSITION_DIRTY | NODE_FLAG_POLYGON_DIRTY ),
 	mBlend( BlendMode::Alpha() ),
-	mNumCallBacks( 0 ),
 	mVisible( true ),
 	mEnabled( true ),
-	mAlpha( 255.f ) {}
+	mNumCallBacks( 0 ) {}
 
 Node::~Node() {
 	if ( !SceneManager::instance()->isShuttingDown() && NULL != mSceneNode ) {
@@ -40,7 +40,7 @@ Node::~Node() {
 		if ( mNodeFlags & NODE_FLAG_SCHEDULED_UPDATE )
 			mSceneNode->unsubscribeScheduledUpdate( this );
 
-		if ( isMouseOverMeOrChilds() )
+		if ( isMouseOverMeOrChildren() )
 			mSceneNode->removeMouseOverNode( this );
 	}
 
@@ -138,18 +138,16 @@ void Node::setInternalSize( const Sizef& size ) {
 	mSize = size;
 	mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
 	updateCenter();
+	onSizeChange();
 	sendCommonEvent( Event::OnSizeChange );
 	invalidateDraw();
 }
 
 void Node::scheduledUpdate( const Time& ) {}
 
-Node* Node::setSize( const Sizef& Size ) {
-	if ( Size != mSize ) {
-		setInternalSize( Size );
-
-		onSizeChange();
-	}
+Node* Node::setSize( const Sizef& size ) {
+	if ( size != mSize )
+		setInternalSize( size );
 
 	return this;
 }
@@ -183,7 +181,7 @@ Node* Node::setVisible( const bool& visible, bool emitEventNotification ) {
 	return this;
 }
 
-Node* Node::setChildsVisibility( bool visible, bool emitEventNotification ) {
+Node* Node::setChildrenVisibility( bool visible, bool emitEventNotification ) {
 	Node* child = mChild;
 	if ( emitEventNotification ) {
 		while ( child ) {
@@ -203,8 +201,14 @@ bool Node::isVisible() const {
 	return mVisible;
 }
 
-bool Node::isHided() const {
-	return !mVisible;
+bool Node::hasVisibility() const {
+	const Node* cur = this;
+	while ( cur ) {
+		if ( !cur->isVisible() )
+			return false;
+		cur = cur->getParent();
+	}
+	return true;
 }
 
 Node* Node::setEnabled( const bool& enabled ) {
@@ -374,7 +378,7 @@ bool Node::isMouseOver() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_MOUSEOVER );
 }
 
-bool Node::isMouseOverMeOrChilds() const {
+bool Node::isMouseOverMeOrChildren() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_MOUSEOVER_ME_OR_CHILD );
 }
 
@@ -384,7 +388,7 @@ Uint32 Node::onMouseDoubleClick( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 Uint32 Node::onMouseOver( const Vector2i& Pos, const Uint32& Flags ) {
-	if ( NULL != mParentNode && mParentNode->isMouseOverMeOrChilds() )
+	if ( NULL != mParentNode && mParentNode->isMouseOverMeOrChildren() )
 		mParentNode->onMouseOver( Pos, Flags );
 
 	writeNodeFlag( NODE_FLAG_MOUSEOVER, 1 );
@@ -400,7 +404,7 @@ Uint32 Node::onMouseOver( const Vector2i& Pos, const Uint32& Flags ) {
 }
 
 Uint32 Node::onMouseLeave( const Vector2i& Pos, const Uint32& Flags ) {
-	if ( NULL != mParentNode && !mParentNode->isMouseOverMeOrChilds() )
+	if ( NULL != mParentNode && !mParentNode->isMouseOverMeOrChildren() )
 		mParentNode->onMouseLeave( Pos, Flags );
 
 	writeNodeFlag( NODE_FLAG_MOUSEOVER, 0 );
@@ -443,7 +447,10 @@ Node* Node::getNextNodeLoop() const {
 }
 
 Node* Node::setData( const UintPtr& data ) {
-	mData = data;
+	if ( data != mData ) {
+		mData = data;
+		sendCommonEvent( Event::OnDataChanged );
+	}
 	return this;
 }
 
@@ -470,7 +477,7 @@ Node* Node::toFront() {
 }
 
 Node* Node::toBack() {
-	if ( NULL != mParentNode ) {
+	if ( NULL != mParentNode && mParentNode->mChild != this ) {
 		mParentNode->childAddAt( this, 0 );
 	}
 	return this;
@@ -512,8 +519,8 @@ void Node::onSizeChange() {
 }
 
 Rectf Node::getScreenBounds() const {
-	return Rectf( Vector2f( mScreenPosi.x, mScreenPosi.y ),
-				  Sizef( (Float)(int)mSize.getWidth(), (Float)(int)mSize.getHeight() ) );
+	return Rectf( mScreenPos.trunc(),
+				  Sizef( std::trunc( mSize.getWidth() ), std::trunc( mSize.getHeight() ) ) );
 }
 
 Rectf Node::getLocalBounds() const {
@@ -528,7 +535,7 @@ void Node::setNodeFlags( const Uint32& flags ) {
 	mNodeFlags = flags;
 }
 
-void Node::drawChilds() {
+void Node::drawChildren() {
 	if ( isReverseDraw() ) {
 		Node* child = mChildLast;
 
@@ -565,7 +572,7 @@ void Node::nodeDraw() {
 
 		draw();
 
-		drawChilds();
+		drawChildren();
 
 		clipEnd( needsClipPlanes );
 
@@ -659,14 +666,12 @@ void Node::childAdd( Node* node ) {
 void Node::childAddAt( Node* node, Uint32 index ) {
 	eeASSERT( NULL != node );
 
-	Node* nodeLoop = mChild;
-
 	node->setParent( this );
-
 	childRemove( node );
-
 	node->mParentNode = this;
 	node->mSceneNode = node->findSceneNode();
+
+	Node* nodeLoop = mChild;
 
 	if ( nodeLoop == NULL ) {
 		mChild = node;
@@ -675,9 +680,8 @@ void Node::childAddAt( Node* node, Uint32 index ) {
 		node->mPrev = NULL;
 	} else {
 		if ( index == 0 ) {
-			if ( NULL != mChild ) {
+			if ( NULL != mChild )
 				mChild->mPrev = node;
-			}
 
 			node->mNext = mChild;
 			node->mPrev = NULL;
@@ -742,7 +746,7 @@ void Node::childRemove( Node* node ) {
 	onChildCountChange( node, true );
 }
 
-void Node::childsCloseAll() {
+void Node::closeAllChildren() {
 	Node* childLoop = mChild;
 	writeNodeFlag( NODE_FLAG_CLOSING_CHILDREN, 1 );
 	while ( NULL != childLoop ) {
@@ -885,6 +889,26 @@ bool Node::inParentTreeOf( Node* child ) const {
 		node = node->mParentNode;
 	}
 	return false;
+}
+
+bool Node::inParentTreeOfType( Uint32 type ) const {
+	Node* node = mParentNode;
+	while ( NULL != node ) {
+		if ( node->isType( type ) )
+			return true;
+		node = node->mParentNode;
+	}
+	return false;
+}
+
+Node* Node::getParentOfType( Uint32 type ) const {
+	Node* node = mParentNode;
+	while ( NULL != node ) {
+		if ( node->isType( type ) )
+			return node;
+		node = node->mParentNode;
+	}
+	return nullptr;
 }
 
 void Node::setLoadingState( bool loading ) {
@@ -1261,7 +1285,6 @@ void Node::updateScreenPos() {
 	nodeToWorldTranslation( Pos );
 
 	mScreenPos = Pos;
-	mScreenPosi = Vector2i( Pos.x, Pos.y );
 
 	updateCenter();
 
@@ -1362,6 +1385,8 @@ void Node::updateOriginPoint() {
 		}
 	}
 
+	eeASSERT( !std::isnan( mScaleOriginPoint.x ) && !std::isnan( mScaleOriginPoint.y ) );
+
 	setDirty();
 }
 
@@ -1371,10 +1396,10 @@ void Node::setDirty() {
 
 	mNodeFlags |= NODE_FLAG_POSITION_DIRTY | NODE_FLAG_POLYGON_DIRTY;
 
-	setChildsDirty();
+	setChildrenDirty();
 }
 
-void Node::setChildsDirty() {
+void Node::setChildrenDirty() {
 	Node* ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
@@ -1405,6 +1430,12 @@ Color Node::getColor( const Color& Col ) {
 
 const OriginPoint& Node::getRotationOriginPoint() const {
 	return mRotationOriginPoint;
+}
+
+void Node::setRotationOriginPointPixels( const OriginPoint& center ) {
+	mRotationOriginPoint = center;
+	updateOriginPoint();
+	Transformable::setRotationOrigin( getRotationOriginPoint().x, getRotationOriginPoint().y );
 }
 
 void Node::setRotationOriginPoint( const OriginPoint& center ) {
@@ -1462,6 +1493,7 @@ void Node::setRotation( const Float& angle, const OriginPoint& center ) {
 }
 
 void Node::setScale( const Vector2f& scale ) {
+	eeASSERT( !std::isnan( scale.x ) && !std::isnan( scale.y ) );
 	Transformable::setScale( scale.x, scale.y );
 
 	updateOriginPoint();
@@ -1481,6 +1513,12 @@ void Node::setScale( const Vector2f& scale ) {
 
 const OriginPoint& Node::getScaleOriginPoint() const {
 	return mScaleOriginPoint;
+}
+
+void Node::setScaleOriginPointPixels( const OriginPoint& center ) {
+	mScaleOriginPoint = center;
+	updateOriginPoint();
+	Transformable::setScaleOrigin( getScaleCenter().x, getScaleCenter().y );
 }
 
 void Node::setScaleOriginPoint( const OriginPoint& center ) {
@@ -1514,7 +1552,7 @@ Vector2f Node::getScaleCenter() const {
 }
 
 void Node::setScale( const Vector2f& scale, const OriginPoint& center ) {
-	mScaleOriginPoint = PixelDensity::dpToPx( center );
+	mScaleOriginPoint = center;
 	updateOriginPoint();
 	Transformable::setScaleOrigin( getScaleOriginPoint().x, getScaleOriginPoint().y );
 	setScale( Vector2f( scale.x, scale.y ) );
@@ -1522,6 +1560,10 @@ void Node::setScale( const Vector2f& scale, const OriginPoint& center ) {
 
 void Node::setScale( const Float& scale, const OriginPoint& center ) {
 	setScale( Vector2f( scale, scale ), center );
+}
+
+void Node::setScale( const Float& scale ) {
+	setScale( Vector2f( scale, scale ) );
 }
 
 const Float& Node::getAlpha() const {
@@ -1536,11 +1578,11 @@ void Node::setAlpha( const Float& alpha ) {
 	}
 }
 
-void Node::setChildsAlpha( const Float& alpha ) {
+void Node::setChildrenAlpha( const Float& alpha ) {
 	Node* child = mChild;
 	while ( NULL != child ) {
 		child->setAlpha( alpha );
-		child->setChildsAlpha( alpha );
+		child->setChildrenAlpha( alpha );
 		child = child->getNextNode();
 	}
 }
@@ -1569,7 +1611,7 @@ bool Node::removeActions( const std::vector<Action*>& actions ) {
 	return getActionManager()->removeActions( actions );
 }
 
-bool Node::removeActionsByTag( const String::HashType& tag ) {
+bool Node::removeActionsByTag( const Action::UniqueID& tag ) {
 	return getActionManager()->removeActionsByTagFromTarget( this, tag );
 }
 
@@ -1577,7 +1619,7 @@ std::vector<Action*> Node::getActions() {
 	return getActionManager()->getActionsFromTarget( this );
 }
 
-std::vector<Action*> Node::getActionsByTag( const Uint32& tag ) {
+std::vector<Action*> Node::getActionsByTag( const Action::UniqueID& tag ) {
 	return getActionManager()->getActionsByTagFromTarget( this, tag );
 }
 
@@ -1594,7 +1636,7 @@ void Node::runOnMainThread( Actions::Runnable::RunnableFunc runnable, const Time
 
 bool Node::ensureMainThread( Actions::Runnable::RunnableFunc runnable,
 							 const Action::UniqueID& uniqueIdentifier ) {
-	if ( Engine::isRunninMainThread() ) {
+	if ( Engine::isMainThread() ) {
 		runnable();
 		return true;
 	} else {
@@ -1728,7 +1770,7 @@ Node* Node::getParentWidget() const {
 }
 
 void Node::sendParentSizeChange( const Vector2f& sizeChange ) {
-	if ( reportSizeChangeToChilds() ) {
+	if ( reportSizeChangeToChildren() ) {
 		Node* child = mChild;
 
 		while ( NULL != child ) {
@@ -1738,16 +1780,16 @@ void Node::sendParentSizeChange( const Vector2f& sizeChange ) {
 	}
 }
 
-bool Node::reportSizeChangeToChilds() const {
-	return 0 != ( mNodeFlags & NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS );
+bool Node::reportSizeChangeToChildren() const {
+	return 0 != ( mNodeFlags & NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDREN );
 }
 
-void Node::enableReportSizeChangeToChilds() {
-	writeNodeFlag( NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS, 1 );
+void Node::enableReportSizeChangeToChildren() {
+	writeNodeFlag( NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDREN, 1 );
 }
 
-void Node::disableReportSizeChangeToChilds() {
-	writeNodeFlag( NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS, 0 );
+void Node::disableReportSizeChangeToChildren() {
+	writeNodeFlag( NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDREN, 0 );
 }
 
 Node* Node::centerHorizontal() {

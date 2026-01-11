@@ -1,6 +1,7 @@
 #ifndef EE_UIEDITOR_HPP
 #define EE_UIEDITOR_HPP
 
+#include <eepp/ui/iconmanager.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 
 #include <eepp/ee.hpp>
@@ -204,7 +205,7 @@ class App : public UICodeEditorSplitter::Client {
 	UILayout* mPreviewLayout{ nullptr };
 	UIWidget* mSidePanel{ nullptr };
 	std::unordered_set<Doc::TextDocument*> mTmpDocs;
-	ColorSchemePreference mUIColorScheme;
+	ColorSchemeExtPreference mUIColorScheme;
 
 	Drawable* findIcon( const std::string& icon );
 };

@@ -90,9 +90,10 @@ void UITextView::draw() {
 		}
 
 		mTextCache->setAlign( Font::getHorizontalAlign( getFlags() ) );
-		mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
-						  (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
-						  Vector2f::One, 0.f, getBlendMode() );
+		mTextCache->draw(
+			std::trunc( mScreenPos.x ) + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
+			std::trunc( mScreenPos.y ) + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
+			Vector2f::One, 0.f, getBlendMode() );
 
 		if ( isClipped() )
 			clipSmartDisable();
@@ -194,6 +195,21 @@ const String& UITextView::getText() const {
 UITextView* UITextView::setText( const String& text ) {
 	if ( mString != text ) {
 		mString = text;
+		mTextDrawHints = mString.getTextHints();
+		mTextCache->setString( mString );
+
+		recalculate();
+		onTextChanged();
+		notifyLayoutAttrChange();
+	}
+
+	return this;
+}
+
+UITextView* UITextView::setText( String&& text ) {
+	if ( mString != text ) {
+		mString = std::move( text );
+		mTextDrawHints = mString.getTextHints();
 		mTextCache->setString( mString );
 
 		recalculate();
@@ -448,6 +464,7 @@ void UITextView::onAlphaChange() {
 
 void UITextView::onPaddingChange() {
 	autoWrap();
+	alignFix();
 	UIWidget::onPaddingChange();
 }
 
@@ -458,7 +475,7 @@ void UITextView::setTheme( UITheme* Theme ) {
 }
 
 Float UITextView::getTextWidth() {
-	return hasTextOverflow() ? Text::getTextWidth( mString, mFontStyleConfig )
+	return hasTextOverflow() ? Text::getTextWidth( mString, mFontStyleConfig, 4, mTextDrawHints )
 							 : mTextCache->getTextWidth();
 }
 
@@ -686,6 +703,7 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 		return false;
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Value:
 		case PropertyId::Text:
 			setText( getTranslatorString( attribute.value() ) );
 			break;
@@ -785,6 +803,7 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 		return "";
 
 	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Value:
 		case PropertyId::Text:
 			return getText().toUtf8();
 		case PropertyId::TextTransform:
@@ -828,21 +847,14 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 
 std::vector<PropertyId> UITextView::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
-	auto local = { PropertyId::Text,
-				   PropertyId::TextTransform,
-				   PropertyId::Color,
-				   PropertyId::TextShadowColor,
-				   PropertyId::TextShadowOffset,
-				   PropertyId::SelectionColor,
-				   PropertyId::SelectionBackColor,
-				   PropertyId::FontFamily,
-				   PropertyId::FontSize,
-				   PropertyId::FontStyle,
-				   PropertyId::Wordwrap,
-				   PropertyId::TextStrokeWidth,
-				   PropertyId::TextStrokeColor,
-				   PropertyId::TextSelection,
-				   PropertyId::TextAlign,
+	auto local = { PropertyId::Value,			PropertyId::Text,
+				   PropertyId::TextTransform,	PropertyId::Color,
+				   PropertyId::TextShadowColor, PropertyId::TextShadowOffset,
+				   PropertyId::SelectionColor,	PropertyId::SelectionBackColor,
+				   PropertyId::FontFamily,		PropertyId::FontSize,
+				   PropertyId::FontStyle,		PropertyId::Wordwrap,
+				   PropertyId::TextStrokeWidth, PropertyId::TextStrokeColor,
+				   PropertyId::TextSelection,	PropertyId::TextAlign,
 				   PropertyId::TextOverflow };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
@@ -868,16 +880,18 @@ void UITextView::loadFromXmlNode( const pugi::xml_node& node ) {
 
 void UITextView::updateTextOverflow() {
 	if ( hasTextOverflow() ) {
-		mTextOverflowWidth = Text::getTextWidth( mTextOverflow, mFontStyleConfig );
+		mTextOverflowWidth =
+			Text::getTextWidth( mTextOverflow, mFontStyleConfig, 4, mTextDrawHints );
 
 		Float maxWidth = mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right;
 
-		std::size_t charPos =
-			Text::findLastCharPosWithinLength( mString, maxWidth, mFontStyleConfig );
+		std::size_t charPos = Text::findLastCharPosWithinLength(
+			mString, maxWidth, mFontStyleConfig, 4, {}, mTextDrawHints );
 
 		if ( charPos != mString.size() ) {
 			maxWidth -= mTextOverflowWidth;
-			charPos = Text::findLastCharPosWithinLength( mString, maxWidth, mFontStyleConfig );
+			charPos = Text::findLastCharPosWithinLength( mString, maxWidth, mFontStyleConfig, 4, {},
+														 mTextDrawHints );
 			mTextCache->setString( mString.view().substr( 0, charPos ) + mTextOverflow );
 		} else {
 			if ( mFlags & UI_WORD_WRAP ) {
@@ -898,12 +912,13 @@ void UITextView::updateTextOverflow() {
 }
 
 UITextView* UITextView::setTextOverflow( const std::string_view& textOverflow ) {
+	static String EllipsisChar( u8"…"s ); // U+2026
 	if ( textOverflow == mTextOverflow ||
-		 ( mTextOverflow == u8"…" && textOverflow == "ellipsis"sv ) )
+		 ( mTextOverflow == EllipsisChar && textOverflow == "ellipsis"sv ) )
 		return this;
 
 	if ( "ellipsis"sv == textOverflow ) {
-		mTextOverflow = u8"…"; // U+2026
+		mTextOverflow = EllipsisChar;
 	} else {
 		mTextOverflow = textOverflow;
 	}

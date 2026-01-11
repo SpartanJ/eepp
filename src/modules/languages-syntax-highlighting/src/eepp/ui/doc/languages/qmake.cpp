@@ -1,0 +1,87 @@
+#include <eepp/ui/doc/languages/qmake.hpp>
+#include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+
+namespace EE { namespace UI { namespace Doc { namespace Language {
+
+SyntaxDefinition& addQmake() {
+
+	return SyntaxDefinitionManager::instance()->add(
+
+		{ "QMake",
+		  { "%.pro$", "%.pri$" },
+		  {
+			  { { "\\b(CONFIG|DEFINES|DEF_FILE|DEPENDPATH|DESTDIR|DISTFILES|DLLDESTDIR|EXTRA_"
+				  "TRANSLATIONS|FORMS|GUID|HEADERS|ICON|IDLSOURCES|INCLUDEPATH|INSTALLS|LEXIMPLS|"
+				  "LEXOBJECTS|LEXSOURCES|LIBS|LIBS_PRIVATE|LITERAL_HASH|MAKEFILE|MAKEFILE_"
+				  "GENERATOR|MSVCPROJ_*|MOC_DIR|OBJECTIVE_HEADERS|OBJECTIVE_SOURCES|OBJECTS|"
+				  "OBJECTS_DIR|POST_TARGETDEPS|PRE_TARGETDEPS|PRECOMPILED_HEADER|PWD|OUT_PWD|QM_"
+				  "FILES_RESOURCE_PREFIX|QM_FILES_INSTALL_PATH|QMAKE|QMAKESPEC|QMAKE_AR_CMD|QMAKE_"
+				  "BUNDLE_DATA|QMAKE_BUNDLE_EXTENSION|QMAKE_CC|QMAKE_CFLAGS|QMAKE_CFLAGS_DEBUG|"
+				  "QMAKE_CFLAGS_RELEASE|QMAKE_CFLAGS_RELEASE_WITH_DEBUGINFO|QMAKE_CFLAGS_SHLIB|"
+				  "QMAKE_CFLAGS_THREAD|QMAKE_CFLAGS_WARN_OFF|QMAKE_CFLAGS_WARN_ON|QMAKE_CLEAN|"
+				  "QMAKE_CXX|QMAKE_CXXFLAGS|QMAKE_CXXFLAGS_DEBUG|QMAKE_CXXFLAGS_RELEASE|QMAKE_"
+				  "CXXFLAGS_RELEASE_WITH_DEBUGINFO|QMAKE_CXXFLAGS_SHLIB|QMAKE_CXXFLAGS_THREAD|"
+				  "QMAKE_CXXFLAGS_WARN_OFF|QMAKE_CXXFLAGS_WARN_ON|QMAKE_DEVELOPMENT_TEAM|QMAKE_"
+				  "DISTCLEAN|QMAKE_EXTENSION_SHLIB|QMAKE_EXTENSION_STATICLIB|QMAKE_EXT_MOC|QMAKE_"
+				  "EXT_UI|QMAKE_EXT_PRL|QMAKE_EXT_LEX|QMAKE_EXT_YACC|QMAKE_EXT_OBJ|QMAKE_EXT_CPP|"
+				  "QMAKE_EXT_H|QMAKE_EXTRA_COMPILERS|QMAKE_EXTRA_TARGETS|QMAKE_FAILED_REQUIREMENTS|"
+				  "QMAKE_FRAMEWORK_BUNDLE_NAME|QMAKE_FRAMEWORK_VERSION|QMAKE_HOST|QMAKE_INCDIR|"
+				  "QMAKE_INCDIR_EGL|QMAKE_INCDIR_OPENGL|QMAKE_INCDIR_OPENGL_ES2|QMAKE_INCDIR_"
+				  "OPENVG|QMAKE_INCDIR_X11|QMAKE_INFO_PLIST|QMAKE_IOS_DEPLOYMENT_TARGET|QMAKE_"
+				  "LFLAGS|QMAKE_LFLAGS_CONSOLE|QMAKE_LFLAGS_DEBUG|QMAKE_LFLAGS_PLUGIN|QMAKE_LFLAGS_"
+				  "RPATH|QMAKE_LFLAGS_REL_RPATH|QMAKE_REL_RPATH_BASE|QMAKE_LFLAGS_RPATHLINK|QMAKE_"
+				  "LFLAGS_RELEASE|QMAKE_LFLAGS_RELEASE_WITH_DEBUGINFO|QMAKE_LFLAGS_APP|QMAKE_"
+				  "LFLAGS_SHLIB|QMAKE_LFLAGS_SONAME|QMAKE_LFLAGS_THREAD|QMAKE_LFLAGS_WINDOWS|QMAKE_"
+				  "LIBDIR|QMAKE_LIBDIR_POST|QMAKE_LIBDIR_FLAGS|QMAKE_LIBDIR_EGL|QMAKE_LIBDIR_"
+				  "OPENGL|QMAKE_LIBDIR_OPENVG|QMAKE_LIBDIR_X11|QMAKE_LIBS|QMAKE_LIBS_PRIVATE|QMAKE_"
+				  "LIBS_EGL|QMAKE_LIBS_OPENGL|QMAKE_LIBS_OPENGL_ES1, "
+				  "QMAKE_LIBS_OPENGL_ES2|QMAKE_LIBS_OPENVG|QMAKE_LIBS_THREAD|QMAKE_LIBS_X11|QMAKE_"
+				  "LIB_FLAG|QMAKE_LINK|QMAKE_LINK_SHLIB_CMD|QMAKE_LN_SHLIB|QMAKE_LRELEASE_FLAGS|"
+				  "QMAKE_OBJECTIVE_CFLAGS|QMAKE_POST_LINK|QMAKE_PRE_LINK|QMAKE_PROJECT_NAME|QMAKE_"
+				  "PROVISIONING_PROFILE|QMAKE_MAC_SDK|QMAKE_MACOSX_DEPLOYMENT_TARGET|QMAKE_"
+				  "MAKEFILE|QMAKE_QMAKE|QMAKE_RESOURCE_FLAGS|QMAKE_RPATHDIR|QMAKE_RPATHLINKDIR|"
+				  "QMAKE_RUN_CC|QMAKE_RUN_CC_IMP|QMAKE_RUN_CXX|QMAKE_RUN_CXX_IMP|QMAKE_SONAME_"
+				  "PREFIX|QMAKE_TARGET|QMAKE_TARGET_COMPANY|QMAKE_TARGET_DESCRIPTION|QMAKE_TARGET_"
+				  "COPYRIGHT|QMAKE_TARGET_PRODUCT|QMAKE_TVOS_DEPLOYMENT_TARGET|QMAKE_UIC_FLAGS|"
+				  "QMAKE_WATCHOS_DEPLOYMENT_TARGET|QT|QTPLUGIN|QT_VERSION|QT_MAJOR_VERSION|QT_"
+				  "MINOR_VERSION|QT_PATCH_VERSION|RC_FILE|RC_CODEPAGE|RC_DEFINES|RC_ICONS|RC_LANG|"
+				  "RC_INCLUDEPATH|RCC_DIR|REQUIRES|RESOURCES|RES_FILE|SOURCES|SUBDIRS|TARGET|"
+				  "TARGET_EXT|TARGET_x|TARGET_x.y.z|TEMPLATE|TRANSLATIONS|UI_DIR|VERSION|VERSION_"
+				  "PE_HEADER|VER_MAJ|VER_MIN|VER_PAT|VPATH|WINRT_MANIFEST|YACCSOURCES|_PRO_FILE_|_"
+				  "PRO_FILE_PWD_)\\b" },
+				"keyword",
+				"",
+				SyntaxPatternMatchType::RegEx },
+			  { { "#.*$" }, "comment", "", SyntaxPatternMatchType::RegEx },
+			  { { "\\b(absolute_path|basename|cat|clean_path|dirname|enumerate_vars|escape_expand|"
+				  "find|files|first|format_number|fromfile|getenv|join|last|list|lower|member|num_"
+				  "add|prompt|quote|re_escape|read_registry|relative_path|replace|resolve_depends|"
+				  "reverse|section|shadowed|shell_path|shell_quote|size|sort_depends|sorted|split|"
+				  "sprintf|str_member|str_size|system|system_path|system_quote|take_first|take_"
+				  "last|unique|upper|val_escape|cache|CONFIG|contains|count|debug|defined|equals|"
+				  "error|eval|exists|export|for|greaterThan|if|include|infile|isActiveConfig|"
+				  "isEmpty|isEqual|lessThan|load|log|message|mkpath|requires|system|touch|unset|"
+				  "versionAtLeast|versionAtMost|warning|write_file|packagesExist|"
+				  "prepareRecursiveTarget|qtCompileTest|qtHaveModule)\\b" },
+				"function",
+				"",
+				SyntaxPatternMatchType::RegEx },
+			  { { "\\b(true|false)\\b" }, "literal", "", SyntaxPatternMatchType::RegEx },
+			  { { "\\$\\$[a-zA-Z_][a-zA-Z0-9_]*" }, "literal", "", SyntaxPatternMatchType::RegEx },
+			  { { "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b" },
+				"parameter",
+				"",
+				SyntaxPatternMatchType::RegEx },
+			  { { "\".*\"" }, "string", "", SyntaxPatternMatchType::RegEx },
+
+		  },
+		  {
+
+		  },
+		  "",
+		  {}
+
+		} );
+}
+
+}}}} // namespace EE::UI::Doc::Language

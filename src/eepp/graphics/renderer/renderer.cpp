@@ -118,7 +118,9 @@ std::vector<GraphicsLibraryVersion> Renderer::getAvailableGraphicsLibraryVersion
 	vers.emplace_back( GLv_2 );
 #endif
 #ifdef EE_GL3_ENABLED
+#if EE_PLATFORM != EE_PLATFORM_MACOS
 	vers.emplace_back( GLv_3 );
+#endif
 	vers.emplace_back( GLv_3CP );
 	vers.emplace_back( GLv_ES2 );
 #endif
@@ -196,7 +198,7 @@ Renderer::Renderer() :
 	mExtensions( 0 ),
 	mStateFlags( 1 << RSF_LINE_SMOOTH ),
 	mQuadsSupported( true ),
-	mQuadVertexs( 4 ),
+	mQuadVertex( 4 ),
 	mLineWidth( 1 ),
 	mCurVAO( 0 ),
 	mClippingMask( eeNew( ClippingMask, () ) ) {
@@ -705,8 +707,8 @@ void Renderer::colorMask( Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha ) {
 	glColorMask( red, green, blue, alpha );
 }
 
-const int& Renderer::quadVertexs() const {
-	return mQuadVertexs;
+const int& Renderer::quadVertex() const {
+	return mQuadVertex;
 }
 
 ClippingMask* Renderer::getClippingMask() const {
@@ -884,6 +886,10 @@ void Renderer::genVertexArrays( int n, unsigned int* arrays ) {
 
 const bool& Renderer::quadsSupported() const {
 	return mQuadsSupported;
+}
+
+void Renderer::waitForIdle() {
+	glFinish();
 }
 
 }} // namespace EE::Graphics

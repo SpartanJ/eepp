@@ -12,7 +12,7 @@ using namespace EE::System;
 namespace EE { namespace Graphics {
 
 /** @brief The Texture Atlas Manager is a singleton class that manages all the instances of Texture
-   Atlases instanciated. Releases the Texture Atlases instances automatically. So the user doesn't
+   Atlases instantiated. Releases the Texture Atlases instances automatically. So the user doesn't
    need to release any Texture Atlas instance. */
 class EE_API TextureAtlasManager : public ResourceManagerMulti<TextureAtlas> {
 	SINGLETON_DECLARE_HEADERS( TextureAtlasManager )

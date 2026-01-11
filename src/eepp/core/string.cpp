@@ -1,8 +1,10 @@
 #include <eepp/core/string.hpp>
 #include <eepp/core/utf.hpp>
-// #include <eepp/core/simd.hpp>
+#include <eepp/system/cpu.hpp>
 
 #include <thirdparty/fast_float/include/fast_float/fast_float.h>
+#define FTS_FUZZY_MATCH_IMPLEMENTATION
+#include <thirdparty/fts_fuzzy_match/fts_fuzzy_match.h>
 #include <thirdparty/utf8cpp/utf8.h>
 
 #include <algorithm>
@@ -10,10 +12,13 @@
 #include <charconv>
 #include <climits>
 #include <cstdarg>
+#include <cstdint>
 #include <iostream>
 #include <iterator>
 #include <limits>
 #include <random>
+
+#include <cpp-unicodelib/unicodelib.h>
 
 #if ( __GNUC__ >= 11 || ( __clang__ && __clang_major__ >= 12 ) ) && \
 	EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
@@ -22,6 +27,27 @@
 
 #ifndef STD_SUPPORTS_FIXED_TO_CHARS
 #include <sstream>
+#endif
+
+#ifdef EE_ARCH_X86_64
+#if defined( _MSC_VER )
+#define COMPILER_MSVC 1
+#include <intrin.h>
+#elif ( defined( __GNUC__ ) || defined( __clang__ ) )
+#define COMPILER_GCC_CLANG 1
+#include <cpuid.h>
+#endif
+#endif
+
+#if defined( EE_ARCH_X86_64 )
+#if defined( _MSC_VER )
+#include <intrin.h>
+#elif defined( __GNUC__ ) || defined( __clang__ )
+#include <emmintrin.h>
+#include <immintrin.h>
+#endif
+#elif defined( EE_ARCH_ARM64 )
+#include <arm_neon.h>
 #endif
 
 namespace EE {
@@ -225,8 +251,7 @@ const std::size_t String::InvalidPos = StringType::npos;
 #define PATHSEP '/'
 #define CASE( c, caseInsensitive ) ( caseInsensitive ? std::tolower( c ) : ( c ) )
 
-bool String::globMatch( const std::string_view& text, const std::string_view& glob,
-						bool caseInsensitive ) {
+bool String::globMatch( std::string_view text, std::string_view glob, bool caseInsensitive ) {
 	size_t i = 0;
 	size_t j = 0;
 	size_t n = text.size();
@@ -622,6 +647,10 @@ String::HashType String::hash( const std::string& str ) {
 	return String::hash( str.c_str() );
 }
 
+String::HashType String::hash( const std::string_view& str ) {
+	return String::hash( str.data(), str.length() );
+}
+
 String::HashType String::hash( const String& str ) {
 	return String::hash( reinterpret_cast<const char*>( str.mString.data() ),
 						 str.size() * sizeof( String::StringBaseType ) );
@@ -942,6 +971,8 @@ std::string String::join( const std::vector<const char*>& strArray, const Int8& 
 
 	if ( s > 0 ) {
 		for ( size_t i = 0; i < s; i++ ) {
+			if ( strArray[i] == nullptr )
+				continue;
 			str += strArray[i];
 
 			if ( joinchar >= 0 && ( i != s - 1 || appendLastJoinChar ) ) {
@@ -987,6 +1018,23 @@ std::string_view String::trim( const std::string_view& str, char character ) {
 					   pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1 );
 }
 
+String::View String::lTrim( const String::View& str, char character ) {
+	String::View::size_type pos1 = str.find_first_not_of( character );
+	return ( pos1 == String::View::npos ) ? str : str.substr( pos1 );
+}
+
+String::View String::rTrim( const String::View& str, char character ) {
+	String::View::size_type pos1 = str.find_last_not_of( character );
+	return ( pos1 == String::View::npos ) ? str : str.substr( 0, pos1 + 1 );
+}
+
+String::View String::trim( const String::View& str, char character ) {
+	String::View::size_type pos1 = str.find_first_not_of( character );
+	String::View::size_type pos2 = str.find_last_not_of( character );
+	return str.substr( pos1 == String::View::npos ? 0 : pos1,
+					   pos2 == String::View::npos ? str.length() - 1 : pos2 - pos1 + 1 );
+}
+
 void String::trimInPlace( std::string& str, char character ) {
 	// Trim only if there's something to trim
 	if ( !str.empty() && ( str[0] == character || str[str.size() - 1] == character ) )
@@ -1012,6 +1060,82 @@ String String::trim( const String& str, char character ) {
 
 void String::trimInPlace( String& str, char character ) {
 	str = trim( str, character );
+}
+
+std::string String::lTrim( const std::string& str, std::string_view characters ) {
+	std::string::size_type pos1 = str.find_first_not_of( characters );
+	return ( pos1 == std::string::npos ) ? str : str.substr( pos1 );
+}
+
+std::string String::rTrim( const std::string& str, std::string_view characters ) {
+	std::string::size_type pos1 = str.find_last_not_of( characters );
+	return ( pos1 == std::string::npos ) ? str : str.substr( 0, pos1 + 1 );
+}
+
+std::string String::trim( const std::string& str, std::string_view characters ) {
+	std::string::size_type pos1 = str.find_first_not_of( characters );
+	std::string::size_type pos2 = str.find_last_not_of( characters );
+	return str.substr( pos1 == std::string::npos ? 0 : pos1,
+					   pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1 );
+}
+
+std::string_view String::lTrim( const std::string_view& str, std::string_view characters ) {
+	std::string::size_type pos1 = str.find_first_not_of( characters );
+	return ( pos1 == std::string::npos ) ? str : str.substr( pos1 );
+}
+
+std::string_view String::rTrim( const std::string_view& str, std::string_view characters ) {
+	std::string::size_type pos1 = str.find_last_not_of( characters );
+	return ( pos1 == std::string::npos ) ? str : str.substr( 0, pos1 + 1 );
+}
+
+std::string_view String::trim( const std::string_view& str, std::string_view characters ) {
+	std::string::size_type pos1 = str.find_first_not_of( characters );
+	std::string::size_type pos2 = str.find_last_not_of( characters );
+	return str.substr( pos1 == std::string::npos ? 0 : pos1,
+					   pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1 );
+}
+
+String::View String::lTrim( const String::View& str, String::View characters ) {
+	String::View::size_type pos1 = str.find_first_not_of( characters );
+	return ( pos1 == String::View::npos ) ? str : str.substr( pos1 );
+}
+
+String::View String::rTrim( const String::View& str, String::View characters ) {
+	String::View::size_type pos1 = str.find_last_not_of( characters );
+	return ( pos1 == String::View::npos ) ? str : str.substr( 0, pos1 + 1 );
+}
+
+String::View String::trim( const String::View& str, String::View characters ) {
+	String::View::size_type pos1 = str.find_first_not_of( characters );
+	String::View::size_type pos2 = str.find_last_not_of( characters );
+	return str.substr( pos1 == String::View::npos ? 0 : pos1,
+					   pos2 == String::View::npos ? str.length() - 1 : pos2 - pos1 + 1 );
+}
+
+void String::trimInPlace( std::string& str, std::string_view characters ) {
+	str = trim( str, characters );
+}
+
+String String::lTrim( const String& str, std::string_view characters ) {
+	StringType::size_type pos1 = str.find_first_not_of( characters );
+	return ( pos1 == String::InvalidPos ) ? str : str.substr( pos1 );
+}
+
+String String::rTrim( const String& str, std::string_view characters ) {
+	StringType::size_type pos1 = str.find_last_not_of( characters );
+	return ( pos1 == String::InvalidPos ) ? str : str.substr( 0, pos1 + 1 );
+}
+
+String String::trim( const String& str, std::string_view characters ) {
+	StringType::size_type pos1 = str.find_first_not_of( characters );
+	StringType::size_type pos2 = str.find_last_not_of( characters );
+	return str.substr( pos1 == String::InvalidPos ? 0 : pos1,
+					   pos2 == String::InvalidPos ? str.length() - 1 : pos2 - pos1 + 1 );
+}
+
+void String::trimInPlace( String& str, std::string_view characters ) {
+	str = trim( str, characters );
 }
 
 void String::toUpperInPlace( std::string& str ) {
@@ -1133,9 +1257,16 @@ constexpr int tFuzzyMatch( const T* str, const T* ptn, bool allowUneven, bool pe
 	return score - ( permissive ? 0 : strlen( str ) );
 }
 
-int String::fuzzyMatch( const std::string& string, const std::string& pattern, bool allowUneven,
-						bool permissive ) {
+int String::fuzzyMatchSimple( const std::string& pattern, const std::string& string,
+							  bool allowUneven, bool permissive ) {
 	return tFuzzyMatch<char>( string.c_str(), pattern.c_str(), allowUneven, permissive );
+}
+
+int String::fuzzyMatch( const std::string& pattern, const std::string& string ) {
+	int score = std::numeric_limits<int>::min();
+	uint8_t matches[256];
+	fts::fuzzy_match( pattern.c_str(), string.c_str(), score, matches, sizeof( matches ) );
+	return score;
 }
 
 std::vector<Uint8> String::stringToUint8( const std::string& str ) {
@@ -1187,6 +1318,10 @@ bool String::contains( const String& haystack, const String& needle ) {
 	return haystack.find( needle ) != String::InvalidPos;
 }
 
+bool String::contains( std::string_view haystack, std::string_view needle ) {
+	return haystack.find( needle ) != String::InvalidPos;
+}
+
 bool String::icontains( const std::string& haystack, const std::string& needle ) {
 	return std::search( haystack.begin(), haystack.end(), needle.begin(), needle.end(),
 						[]( char ch1, char ch2 ) {
@@ -1197,6 +1332,13 @@ bool String::icontains( const std::string& haystack, const std::string& needle )
 bool String::icontains( const String& haystack, const String& needle ) {
 	return std::search( haystack.begin(), haystack.end(), needle.begin(), needle.end(),
 						[]( String::StringBaseType ch1, String::StringBaseType ch2 ) {
+							return std::tolower( ch1 ) == std::tolower( ch2 );
+						} ) != haystack.end();
+}
+
+bool String::icontains( std::string_view haystack, std::string_view needle ) {
+	return std::search( haystack.begin(), haystack.end(), needle.begin(), needle.end(),
+						[]( char ch1, char ch2 ) {
 							return std::tolower( ch1 ) == std::tolower( ch2 );
 						} ) != haystack.end();
 }
@@ -1256,29 +1398,100 @@ bool String::contains( const String& needle ) const {
 	return String::contains( *this, needle );
 }
 
-bool String::isAscii() const {
-	auto data = mString.data();
-	size_t len = mString.size();
-	size_t i = 0;
+#ifdef EE_ARCH_X86_64
+#if defined( __GNUC__ ) || defined( __clang__ )
+__attribute__( ( target( "avx2" ) ) )
+#endif
+static bool isAsciiAVX2( const char32_t* data, size_t len, uint32_t limit ) {
+	const char32_t* end = data + len;
+	const __m256i maskVec = _mm256_set1_epi32( ~limit );
 
-	// #ifdef EE_STD_SIMD
-	// 	using simd_type = simd::native_simd<char32_t>;
-	// 	constexpr size_t simd_size = simd_type::size();
-	// 	const simd_type ascii_limit = 127;
-	// 	for ( ; i + simd_size - 1 < len; i += simd_size ) {
-	// 		simd_type chunk;
-	// 		chunk.copy_from( &data[i], simd::element_aligned );
-	// 		auto mask = chunk > ascii_limit;
-	// 		if ( simd::any_of( mask ) )
-	// 			return false;
-	// 	}
-	// #endif
-
-	for ( ; i < len; ++i )
-		if ( data[i] > 127 )
+	while ( data + 8 <= end ) {
+		__m256i chunk = _mm256_loadu_si256( (const __m256i*)data );
+		if ( _mm256_testz_si256( chunk, maskVec ) == 0 )
 			return false;
+		data += 8;
+	}
 
+	while ( data < end ) {
+		if ( *data > limit )
+			return false;
+		data++;
+	}
 	return true;
+}
+#endif
+
+#ifdef EE_ARCH_ARM64
+static bool isAsciiNEON( const char32_t* data, size_t len, uint32_t limit ) {
+	const char32_t* end = data + len;
+	const uint32x4_t maskVec = vdupq_n_u32( ~limit );
+
+	while ( data + 4 <= end ) {
+		uint32x4_t chunk = vld1q_u32( (const uint32_t*)data );
+		uint32x4_t tst = vtstq_u32( chunk, maskVec );
+		if ( vmaxvq_u32( tst ) != 0 )
+			return false;
+		data += 4;
+	}
+
+	while ( data < end ) {
+		if ( *data > limit )
+			return false;
+		data++;
+	}
+	return true;
+}
+#endif
+
+template <typename StringType, auto Limit = 127>
+static inline bool isAsciiTpl( const StringType& str ) {
+#ifdef EE_ARCH_X86_64
+	if ( System::CPU::hasAVX2() ) {
+		return isAsciiAVX2( (const char32_t*)str.data(), str.size(), Limit );
+	}
+#elif defined( EE_ARCH_ARM64 )
+	if ( System::CPU::hasNEON() ) {
+		return isAsciiNEON( (const char32_t*)str.data(), str.size(), Limit );
+	}
+#endif
+
+	for ( const auto& codepoint : str )
+		if ( codepoint > Limit )
+			return false;
+	return true;
+}
+
+bool String::isAscii( String::View str ) {
+	return isAsciiTpl<String::View>( str );
+}
+
+bool String::isAscii() const {
+	return isAsciiTpl<String::StringType>( mString );
+}
+
+bool String::isLatin1() const {
+	return isAsciiTpl<String::StringType, 255>( mString );
+}
+
+bool String::isLatin1( String::View str ) {
+	return isAsciiTpl<String::View, 255>( str );
+}
+
+Uint32 String::getTextHints() {
+	if ( isAscii() )
+		return TextHints::AllAscii | TextHints::AllLatin1;
+	if ( isLatin1() )
+		return TextHints::AllLatin1;
+	return 0;
+}
+
+Uint32 String::getTextHints( String::View str ) {
+	if ( isAscii( str ) )
+		return TextHints::AllAscii | TextHints::AllLatin1;
+	if ( isLatin1( str ) )
+		return TextHints::AllLatin1;
+	return 0;
 }
 
 String::View String::view() const {
@@ -1380,6 +1593,8 @@ std::string String::numberClean( const std::string& number ) {
 }
 
 void String::numberCleanInPlace( std::string& strNumber ) {
+	if ( strNumber.empty() )
+		return;
 	while ( strNumber.back() == '0' )
 		strNumber.pop_back();
 	if ( strNumber.back() == '.' )
@@ -1417,6 +1632,8 @@ String::String( StringBaseType utf32Char ) {
 	mString += utf32Char;
 }
 
+String::String( size_t count, StringBaseType utf32Char ) : mString( count, utf32Char ) {}
+
 String::String( const char* utf8String ) {
 	if ( utf8String ) {
 		std::size_t length = strlen( utf8String );
@@ -1452,6 +1669,19 @@ String::String( const std::string& utf8String ) {
 	// Skip BOM
 	if ( utf8String.size() >= 3 && (char)0xef == utf8String[0] && (char)0xbb == utf8String[1] &&
 		 (char)0xbf == utf8String[2] ) {
+		skip = 3;
+	}
+
+	Utf8::toUtf32( utf8String.begin() + skip, utf8String.end(), std::back_inserter( mString ) );
+}
+
+String::String( const std::basic_string<char8_t>& utf8String ) {
+	mString.reserve( utf8String.length() + 1 );
+
+	int skip = 0;
+	// Skip BOM
+	if ( utf8String.size() >= 3 && (char8_t)0xef == utf8String[0] &&
+		 (char8_t)0xbb == utf8String[1] && (char8_t)0xbf == utf8String[2] ) {
 		skip = 3;
 	}
 
@@ -1676,7 +1906,7 @@ String& String::operator=( const String& right ) {
 	return *this;
 }
 
-String& String::operator=( String&& right ) {
+String& String::operator=( String&& right ) noexcept {
 	mString = std::move( right.mString );
 	return *this;
 }
@@ -2121,6 +2351,327 @@ size_t String::toUtf32( std::string_view utf8str, String::StringBaseType* buffer
 	while ( start < end && pos < bufferSize )
 		buffer[pos++] = utf8::unchecked::next( start );
 	return pos;
+}
+
+void String::readBySeparator( std::string_view buf,
+							  std::function<void( std::string_view )> onSepChunkRead, char sep ) {
+	auto lastNL = 0;
+	auto nextNL = buf.find_first_of( sep );
+	if ( nextNL != std::string_view::npos ) {
+		while ( nextNL != std::string_view::npos ) {
+			onSepChunkRead( buf.substr( lastNL, nextNL - lastNL ) );
+			lastNL = nextNL + 1;
+			nextNL = buf.find_first_of( sep, nextNL + 1 );
+		}
+
+		if ( lastNL < static_cast<int>( buf.size() ) ) {
+			onSepChunkRead( buf.substr( lastNL ) );
+		}
+	} else {
+		onSepChunkRead( buf );
+	}
+}
+
+void String::readBySeparatorStoppable( std::string_view buf,
+									   std::function<bool( std::string_view )> onSepChunkRead,
+									   char sep ) {
+	auto lastNL = 0;
+	auto nextNL = buf.find_first_of( sep );
+	if ( nextNL != std::string_view::npos ) {
+		while ( nextNL != std::string_view::npos ) {
+			if ( onSepChunkRead( buf.substr( lastNL, nextNL - lastNL ) ) )
+				return;
+			lastNL = nextNL + 1;
+			nextNL = buf.find_first_of( sep, nextNL + 1 );
+		}
+
+		if ( lastNL < static_cast<int>( buf.size() ) ) {
+			if ( onSepChunkRead( buf.substr( lastNL ) ) )
+				return;
+		}
+	} else {
+		if ( onSepChunkRead( buf ) )
+			return;
+	}
+}
+
+size_t String::countLines( std::string_view text ) {
+	const char* startPtr = text.data();
+	const char* endPtr = text.data() + text.size();
+	size_t count = 0;
+	if ( startPtr != endPtr ) {
+		count = 1 + *startPtr == '\n' ? 1 : 0;
+		while ( ++startPtr && startPtr != endPtr )
+			count += ( '\n' == *startPtr ) ? 1 : 0;
+	}
+	return count;
+}
+
+void String::readBySeparator( String::View buf, std::function<void( String::View )> onSepChunkRead,
+							  String::StringBaseType sep ) {
+	auto lastNL = 0;
+	auto nextNL = buf.find_first_of( sep );
+	while ( nextNL != String::View::npos ) {
+		onSepChunkRead( buf.substr( lastNL, nextNL - lastNL ) );
+		lastNL = nextNL + 1;
+		nextNL = buf.find_first_of( sep, nextNL + 1 );
+	}
+}
+
+void String::readBySeparatorStoppable( String::View buf,
+									   std::function<bool( String::View )> onSepChunkRead,
+									   String::StringBaseType sep ) {
+	auto lastNL = 0;
+	auto nextNL = buf.find_first_of( sep );
+	while ( nextNL != String::View::npos ) {
+		if ( onSepChunkRead( buf.substr( lastNL, nextNL - lastNL ) ) )
+			return;
+		lastNL = nextNL + 1;
+		nextNL = buf.find_first_of( sep, nextNL + 1 );
+	}
+}
+
+size_t String::countLines( String::View text ) {
+	const String::StringBaseType* startPtr = text.data();
+	const String::StringBaseType* endPtr = text.data() + text.size();
+	size_t count = 0;
+	if ( startPtr != endPtr ) {
+		count = 1 + *startPtr == '\n' ? 1 : 0;
+		while ( ++startPtr && startPtr != endPtr )
+			count += ( '\n' == *startPtr ) ? 1 : 0;
+	}
+	return count;
+}
+
+bool String::iequals( std::string_view str1, std::string_view str2 ) {
+	return str1.length() == str2.length() &&
+		   std::equal( str1.begin(), str1.end(), str2.begin(), []( char c1, char c2 ) {
+			   return std::tolower( c1 ) == std::tolower( c2 );
+		   } );
+}
+
+bool String::iequals( String::View str1, String::View str2 ) {
+	return str1.length() == str2.length() &&
+		   std::equal( str1.begin(), str1.end(), str2.begin(),
+					   []( String::StringBaseType c1, String::StringBaseType c2 ) {
+						   return std::tolower( c1 ) == std::tolower( c2 );
+					   } );
+}
+
+bool String::isGraphemeBoundary( std::size_t position ) const {
+	return unicode::is_grapheme_boundary( mString.data(), mString.size(), position );
+}
+
+bool String::isGraphemeBoundary( String::View string, std::size_t position ) {
+	return unicode::is_grapheme_boundary( string.data(), string.size(), position );
+}
+
+bool String::isWordBoundary( std::size_t position ) const {
+	return unicode::is_word_boundary( mString.data(), mString.size(), position );
+}
+
+bool String::isWordBoundary( String::View string, std::size_t position ) {
+	return unicode::is_word_boundary( string.data(), string.size(), position );
+}
+
+bool String::isSentenceBoundary( std::size_t position ) const {
+	return unicode::is_sentence_boundary( mString.data(), mString.size(), position );
+}
+
+bool String::isSentenceBoundary( String::View string, std::size_t position ) {
+	return unicode::is_sentence_boundary( string.data(), string.size(), position );
+}
+
+void strip_ansi_scalar( std::string& str ) {
+	if ( str.empty() )
+		return;
+
+	char* data = &str[0];
+	const size_t len = str.size();
+	size_t read_idx = 0;
+	size_t write_idx = 0;
+
+	while ( read_idx < len ) {
+		// Fast scan for ESC
+		if ( unlikely( data[read_idx] == '\x1B' ) ) {
+			// Check for CSI sequence: ESC + [
+			if ( read_idx + 1 < len && data[read_idx + 1] == '[' ) {
+				size_t scan = read_idx + 2;
+				// Scan for the terminator byte (0x40 - 0x7E)
+				while ( scan < len ) {
+					unsigned char c = static_cast<unsigned char>( data[scan] );
+					if ( c >= 0x40 && c <= 0x7E ) {
+						scan++; // Include the terminator
+						break;
+					}
+					scan++;
+				}
+				read_idx = scan;
+				continue;
+			}
+		}
+
+		// Copy char if indices diverged
+		if ( read_idx != write_idx ) {
+			data[write_idx] = data[read_idx];
+		}
+		write_idx++;
+		read_idx++;
+	}
+	str.resize( write_idx );
+}
+
+#ifdef EE_ARCH_X86
+
+// Force AVX2 generation for this function on GCC/Clang
+#if defined( COMPILER_GCC_CLANG )
+__attribute__( ( target( "avx2" ) ) )
+#endif
+void strip_ansi_avx2( std::string& str ) {
+	if ( str.empty() )
+		return;
+
+	char* data = &str[0];
+	const size_t len = str.size();
+	size_t read_idx = 0;
+	size_t write_idx = 0;
+
+	const __m256i esc_vec = _mm256_set1_epi8( '\x1B' );
+
+	// Process 32-byte chunks
+	while ( read_idx + 32 <= len ) {
+		__m256i chunk = _mm256_loadu_si256( reinterpret_cast<const __m256i*>( data + read_idx ) );
+		__m256i cmp = _mm256_cmpeq_epi8( chunk, esc_vec );
+		int mask = _mm256_movemask_epi8( cmp );
+
+		if ( likely( mask == 0 ) ) {
+			if ( read_idx != write_idx ) {
+				_mm256_storeu_si256( reinterpret_cast<__m256i*>( data + write_idx ), chunk );
+			}
+			read_idx += 32;
+			write_idx += 32;
+		} else {
+			// Found ESC. Let the scalar loop handle the complexity of finding EXACT location
+			// and parsing the variable length ANSI code.
+			break;
+		}
+	}
+
+	// Finish remaining with Scalar Logic
+	while ( read_idx < len ) {
+		if ( unlikely( data[read_idx] == '\x1B' ) ) {
+			if ( read_idx + 1 < len && data[read_idx + 1] == '[' ) {
+				size_t scan = read_idx + 2;
+				while ( scan < len ) {
+					unsigned char c = static_cast<unsigned char>( data[scan] );
+					if ( c >= 0x40 && c <= 0x7E ) {
+						scan++;
+						break;
+					}
+					scan++;
+				}
+				read_idx = scan;
+				continue;
+			}
+		}
+		if ( read_idx != write_idx ) {
+			data[write_idx] = data[read_idx];
+		}
+		write_idx++;
+		read_idx++;
+	}
+	str.resize( write_idx );
+}
+#endif // ARCH_X86
+
+#ifdef EE_ARCH_ARM64
+
+void strip_ansi_neon( std::string& str ) {
+	if ( str.empty() )
+		return;
+
+	char* data = &str[0];
+	const size_t len = str.size();
+	size_t read_idx = 0;
+	size_t write_idx = 0;
+
+	const uint8x16_t esc_vec = vdupq_n_u8( '\x1B' );
+
+	// Process 16-byte chunks (NEON register size is 128-bit)
+	while ( read_idx + 16 <= len ) {
+		// Load 16 bytes
+		uint8x16_t chunk = vld1q_u8( reinterpret_cast<const uint8_t*>( data + read_idx ) );
+
+		// Compare with ESC (0xFF if equal, 0x00 if not)
+		uint8x16_t cmp = vceqq_u8( chunk, esc_vec );
+
+		// Check if any byte matched.
+		// vmaxvq_u32 checks 32-bit lanes, but if any byte is 0xFF, the 32-bit lane will be
+		// non-zero. This is a fast reduction instruction on AArch64.
+		uint32_t has_esc = vmaxvq_u32( vreinterpretq_u32_u8( cmp ) );
+
+		if ( likely( has_esc == 0 ) ) {
+			// No escape codes found
+			if ( read_idx != write_idx ) {
+				vst1q_u8( reinterpret_cast<uint8_t*>( data + write_idx ), chunk );
+			}
+			read_idx += 16;
+			write_idx += 16;
+		} else {
+			// Found ESC. Break to scalar to handle specific parsing.
+			break;
+		}
+	}
+
+	// Scalar fallback for the rest
+	while ( read_idx < len ) {
+		if ( unlikely( data[read_idx] == '\x1B' ) ) {
+			if ( read_idx + 1 < len && data[read_idx + 1] == '[' ) {
+				size_t scan = read_idx + 2;
+				while ( scan < len ) {
+					unsigned char c = static_cast<unsigned char>( data[scan] );
+					if ( c >= 0x40 && c <= 0x7E ) {
+						scan++;
+						break;
+					}
+					scan++;
+				}
+				read_idx = scan;
+				continue;
+			}
+		}
+		if ( read_idx != write_idx ) {
+			data[write_idx] = data[read_idx];
+		}
+		write_idx++;
+		read_idx++;
+	}
+	str.resize( write_idx );
+}
+#endif // EE_ARCH_ARM64
+
+typedef void ( *stripper_func )( std::string& );
+
+stripper_func resolve_ansi_strip_fn() {
+#ifdef EE_ARCH_ARM64
+	return strip_ansi_neon;
+#endif
+
+#ifdef EE_ARCH_X86
+	if ( CPU::hasAVX2() ) {
+		return strip_ansi_avx2;
+	}
+#endif
+
+	return strip_ansi_scalar;
+}
+
+/** Strips any ANSI code found in the string.
+ *	@param str The string to strip
+ */
+void String::stripAnsiCodes( std::string& str ) {
+	static const stripper_func implementation = resolve_ansi_strip_fn();
+	implementation( str );
 }
 
 } // namespace EE

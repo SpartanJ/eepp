@@ -95,7 +95,7 @@ class EE_API Interpolation2d {
 	/** @return If the animation ended */
 	bool ended() const;
 
-	/** Instead if setting the time between every waypoing, this set a total time for all the
+	/** Instead if setting the time between every waypoint, this set a total time for all the
 	 * movement interpolation. */
 	Interpolation2d& setDuration( const Time& TotTime );
 

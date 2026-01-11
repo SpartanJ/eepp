@@ -15,10 +15,10 @@ UITableHeaderColumn::UITableHeaderColumn( const std::string& parentTag, UIAbstra
 		->setFlags( UI_VALIGN_CENTER | UI_HALIGN_CENTER )
 		->setParent( this );
 	mImage->setEnabled( false );
-	mImage->addEventListener( Event::OnPaddingChange, cb );
-	mImage->addEventListener( Event::OnMarginChange, cb );
-	mImage->addEventListener( Event::OnSizeChange, cb );
-	mImage->addEventListener( Event::OnVisibleChange, cb );
+	mImage->on( Event::OnPaddingChange, cb );
+	mImage->on( Event::OnMarginChange, cb );
+	mImage->on( Event::OnSizeChange, cb );
+	mImage->on( Event::OnVisibleChange, cb );
 }
 
 Uint32 UITableHeaderColumn::onCalculateDrag( const Vector2f& position, const Uint32& flags ) {
@@ -83,7 +83,7 @@ Uint32 UITableHeaderColumn::onDrag( const Vector2f& position, const Uint32&,
 	if ( isDragging() || localPos.x >= mSize.getWidth() - mView->getDragBorderDistance() ) {
 		setPixelsSize( mSize.x - dragDiff.x, mSize.getHeight() );
 		if ( mSize.getWidth() != mView->columnData( mColIndex ).width ) {
-			mView->columnData( mColIndex ).width = mSize.getWidth();
+			mView->columnData( mColIndex ).setWidth( mSize.getWidth(), true );
 			mView->updateHeaderSize();
 			mView->onColumnSizeChange( mColIndex, true );
 		}
@@ -117,7 +117,7 @@ Uint32 UITableHeaderColumn::onMouseDoubleClick( const Vector2i& position, const 
 
 Uint32 UITableHeaderColumn::onDragStop( const Vector2i& pos, const Uint32& flags ) {
 	getUISceneNode()->setCursor( Cursor::Arrow );
-	mView->columnData( mColIndex ).width = mSize.getWidth();
+	mView->columnData( mColIndex ).setWidth( mSize.getWidth(), true );
 	mView->updateHeaderSize();
 	mView->onColumnSizeChange( mColIndex, true );
 	return UIPushButton::onDragStop( pos, flags );

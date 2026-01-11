@@ -41,13 +41,13 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 	mUIThemeManager( UIThemeManager::New() ),
 	mUIIconThemeManager( UIIconThemeManager::New()->setFallbackThemeManager( mUIThemeManager ) ),
 	mKeyBindings( mWindow->getInput() ) {
-	// Reset size since the SceneNode already set it but needs to set the size from zero to emmit
-	// the required events to its childs.
+	// Reset size since the SceneNode already set it but needs to set the size from zero to emit
+	// the required events to its children.
 	mSize = Sizef();
 	mDpSize = Sizef();
 
 	// Update only UI elements that requires it.
-	setUpdateAllChilds( false );
+	setUpdateAllChildren( false );
 
 	mNodeFlags |= NODE_FLAG_UISCENENODE | NODE_FLAG_OVER_FIND_ALLOWED;
 
@@ -55,7 +55,7 @@ UISceneNode::UISceneNode( EE::Window::Window* window ) :
 
 	mRoot = UIRoot::New();
 	mRoot->setParent( this )->setPosition( 0, 0 )->setId( "uiscenenode_root_node" );
-	mRoot->enableReportSizeChangeToChilds();
+	mRoot->enableReportSizeChangeToChildren();
 
 	resizeNode( mWindow );
 }
@@ -69,8 +69,8 @@ UISceneNode::~UISceneNode() {
 	}
 
 	// UISceneNode can now destroy the ThreadPool shared to him. If that's the case,
-	// We need to ensure that the childs are destroyed before the thread pool,
-	// since its childs could be consuming it and need to uninitialize gracefully.
+	// We need to ensure that the children are destroyed before the thread pool,
+	// since its children could be consuming it and need to uninitialize gracefully.
 	childDeleteAll();
 }
 
@@ -147,13 +147,12 @@ void UISceneNode::onParentChange() {
 	setDirty();
 	setPixelsSize( getParent()->getPixelsSize() );
 
-	mCurOnSizeChangeListener =
-		getParent()->addEventListener( Event::OnSizeChange, [this]( const Event* ) {
-			setDirty();
-			setPixelsSize( getParent()->getPixelsSize() );
-			onMediaChanged();
-			sendMsg( this, NodeMessage::WindowResize );
-		} );
+	mCurOnSizeChangeListener = getParent()->on( Event::OnSizeChange, [this]( const Event* ) {
+		setDirty();
+		setPixelsSize( getParent()->getPixelsSize() );
+		onMediaChanged();
+		sendMsg( this, NodeMessage::WindowResize );
+	} );
 }
 
 void UISceneNode::setTranslator( Translator translator ) {
@@ -396,14 +395,15 @@ bool UISceneNode::hasStyleSheet() {
 	return !mStyleSheet.isEmpty();
 }
 
-void UISceneNode::reloadStyle( bool disableAnimations, bool forceReApplyProperties ) {
+void UISceneNode::reloadStyle( bool disableAnimations, bool forceReApplyProperties,
+							   bool resetPropertiesCache ) {
 	if ( NULL != mChild ) {
 		Node* child = mChild;
 
 		while ( NULL != child ) {
 			if ( child->isWidget() ) {
-				child->asType<UIWidget>()->reloadStyle( true, disableAnimations, true,
-														forceReApplyProperties );
+				child->asType<UIWidget>()->reloadStyle(
+					true, disableAnimations, true, forceReApplyProperties, resetPropertiesCache );
 			}
 
 			child = child->getNextNode();
@@ -524,6 +524,7 @@ void UISceneNode::setInternalSize( const Sizef& size ) {
 		mDpSize = size;
 		mSize = PixelDensity::dpToPx( size );
 		updateCenter();
+		onSizeChange();
 		sendCommonEvent( Event::OnSizeChange );
 		invalidateDraw();
 	}
@@ -535,9 +536,7 @@ Node* UISceneNode::setSize( const Sizef& Size ) {
 
 		setInternalSize( Size );
 
-		onSizeChange();
-
-		if ( reportSizeChangeToChilds() ) {
+		if ( reportSizeChangeToChildren() ) {
 			sendParentSizeChange( sizeChange );
 		}
 	}
@@ -559,9 +558,7 @@ UISceneNode* UISceneNode::setPixelsSize( const Sizef& size ) {
 
 		setInternalPixelsSize( size );
 
-		onSizeChange();
-
-		if ( reportSizeChangeToChilds() ) {
+		if ( reportSizeChangeToChildren() ) {
 			sendParentSizeChange( PixelDensity::pxToDp( sizeChange ) );
 		}
 	}
@@ -609,7 +606,7 @@ void UISceneNode::update( const Time& elapsed ) {
 	// This is required in some very edge cases where widgets are being created during the update
 	// of any of these 3 steps. Usually during the layout update, this could trigger resizes that
 	// provokes the creation of dynamic elements. This is the case of the UIListBox for example
-	// that creates childs dynamically only when they are visible.
+	// that creates children dynamically only when they are visible.
 	int invalidationDepth = mMaxInvalidationDepth;
 	while ( ( !mDirtyStyle.empty() || !mDirtyStyleState.empty() || !mDirtyLayouts.empty() ) &&
 			invalidationDepth > 0 ) {
@@ -748,9 +745,11 @@ void UISceneNode::invalidateLayout( UILayout* node ) {
 		return;
 
 	if ( node->getParent()->isLayout() ) {
-		for ( auto& dirtyNode : mDirtyLayouts )
-			if ( NULL != dirtyNode && dirtyNode->isParentOf( node ) )
+		for ( auto& dirtyNode : mDirtyLayouts ) {
+			if ( NULL != dirtyNode && dirtyNode == node->getParent() ) {
 				return;
+			}
+		}
 
 		std::vector<UILayout*> eraseList;
 
@@ -1009,6 +1008,7 @@ void UISceneNode::setInternalPixelsSize( const Sizef& size ) {
 		mSize = s;
 		mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
 		updateCenter();
+		onSizeChange();
 		sendCommonEvent( Event::OnSizeChange );
 		invalidateDraw();
 	}
@@ -1078,13 +1078,30 @@ ColorSchemePreference UISceneNode::getColorSchemePreference() const {
 	return mColorSchemePreference;
 }
 
+void UISceneNode::setColorSchemePreference(
+	const ColorSchemeExtPreference& colorSchemePreference ) {
+	switch ( colorSchemePreference ) {
+		case ColorSchemeExtPreference::Light:
+			setColorSchemePreference( ColorSchemePreference::Light );
+			break;
+		case ColorSchemeExtPreference::Dark:
+			setColorSchemePreference( ColorSchemePreference::Dark );
+			break;
+		case ColorSchemeExtPreference::System:
+			setColorSchemePreference( Sys::isOSUsingDarkColorScheme()
+										  ? ColorSchemePreference::Dark
+										  : ColorSchemePreference::Light );
+			break;
+	}
+}
+
 void UISceneNode::setColorSchemePreference( const ColorSchemePreference& colorSchemePreference ) {
 	if ( mColorSchemePreference != colorSchemePreference ) {
 		mColorSchemePreference = colorSchemePreference;
 		if ( !mStyleSheet.isMediaQueryListEmpty() ) {
 			if ( mStyleSheet.updateMediaLists( getMediaFeatures() ) ) {
 				mStyleSheet.invalidateCache();
-				mRoot->reloadStyle( true, true, true, true );
+				mRoot->reloadStyle( true, true, true, true, true );
 			}
 		}
 	}

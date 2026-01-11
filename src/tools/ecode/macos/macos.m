@@ -78,14 +78,3 @@ void macOS_changeTitleBarColor( void* window, double red, double green, double b
 	nsWindow.titlebarAppearsTransparent = YES;
 	nsWindow.backgroundColor = [NSColor colorWithRed:red green:green blue:blue alpha:1.];
 }
-
-int macOS_isDarkModeEnabled() {
-	if ( @available( macOS 10.14, * ) ) {
-		NSAppearance* appearance =
-			[NSAppearance performSelector:@selector( currentDrawingAppearance )];
-		if ( [appearance.name isEqualToString:NSAppearanceNameDarkAqua] ) {
-			return 1;
-		}
-	}
-	return 0;
-}

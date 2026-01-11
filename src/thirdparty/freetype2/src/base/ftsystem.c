@@ -4,7 +4,7 @@
  *
  *   ANSI-specific FreeType low-level system interface (body).
  *
- * Copyright (C) 1996-2019 by
+ * Copyright (C) 1996-2025 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -27,11 +27,11 @@
 
 #include <ft2build.h>
 #include FT_CONFIG_CONFIG_H
-#include FT_INTERNAL_DEBUG_H
-#include FT_INTERNAL_STREAM_H
-#include FT_SYSTEM_H
-#include FT_ERRORS_H
-#include FT_TYPES_H
+#include <freetype/internal/ftdebug.h>
+#include <freetype/internal/ftstream.h>
+#include <freetype/ftsystem.h>
+#include <freetype/fterrors.h>
+#include <freetype/fttypes.h>
 
 
   /**************************************************************************
@@ -206,7 +206,7 @@
    *     The number of bytes to read from the stream.
    *
    * @Return:
-   *   The number of bytes actually read.  If `count' is zero (this is,
+   *   The number of bytes actually read.  If `count' is zero (that is,
    *   the function is used for seeking), a non-zero return value
    *   indicates an error.
    */
@@ -219,13 +219,18 @@
     FT_FILE*  file;
 
 
-    if ( !count && offset > stream->size )
+    if ( offset > stream->size && !count )
       return 1;
 
     file = STREAM_FILE( stream );
 
     if ( stream->pos != offset )
       ft_fseek( file, (long)offset, SEEK_SET );
+
+    /* Avoid calling `fread` with `buffer=NULL` and `count=0`, */
+    /* which is undefined behaviour.                           */
+    if ( !count )
+      return 0;
 
     return (unsigned long)ft_fread( buffer, 1, count, file );
   }
@@ -275,7 +280,7 @@
     stream->close = ft_ansi_stream_close;
 
     FT_TRACE1(( "FT_Stream_Open:" ));
-    FT_TRACE1(( " opened `%s' (%d bytes) successfully\n",
+    FT_TRACE1(( " opened `%s' (%lu bytes) successfully\n",
                 filepathname, stream->size ));
 
     return FT_Err_Ok;

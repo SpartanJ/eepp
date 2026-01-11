@@ -11,7 +11,7 @@ namespace EE { namespace Graphics {
 /** @brief The basic shader class. */
 class EE_API Shader {
   public:
-	/** Activates/Deactivates shader convertion from fixed pipeline to programmable pipeline (
+	/** Activates/Deactivates shader conversion from fixed pipeline to programmable pipeline (
 	 * activated by default ) */
 	static void ensure( bool ensure );
 

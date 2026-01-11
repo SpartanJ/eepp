@@ -14,7 +14,6 @@
 #include <eterm/terminal/terminalcolorscheme.hpp>
 #include <eterm/terminal/terminalemulator.hpp>
 
-#include <atomic>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -33,6 +32,7 @@ namespace eterm { namespace Terminal {
 
 enum class TerminalShortcutAction {
 	PASTE,
+	PASTE_SELECTION,
 	COPY,
 	SCROLLUP_ROW,
 	SCROLLDOWN_ROW,
@@ -70,7 +70,7 @@ struct TerminalShortcut {
 };
 
 struct TerminalMouseShortcut {
-	MouseButtonsMask button;
+	MouseButtonMask button;
 	Uint32 mask;
 	TerminalShortcutAction action;
 	int appkey;
@@ -154,8 +154,8 @@ class TerminalDisplay : public ITerminalDisplay {
 	create( EE::Window::Window* window, Font* font, const Float& fontSize, const Sizef& pixelsSize,
 			std::string program = "", std::vector<std::string> args = {},
 			const std::string& workingDir = "", const size_t& historySize = 10000,
-			IProcessFactory* processFactory = nullptr, const bool& useFrameBuffer = false,
-			const bool& keepAlive = true );
+			IProcessFactory* processFactory = nullptr, bool useFrameBuffer = false,
+			bool keepAlive = true, const std::unordered_map<std::string, std::string>& env = {} );
 
 	virtual ~TerminalDisplay();
 
@@ -173,7 +173,7 @@ class TerminalDisplay : public ITerminalDisplay {
 	virtual void drawCursor( int cx, int cy, TerminalGlyph g, int ox, int oy, TerminalGlyph og );
 	virtual void drawEnd();
 
-	virtual bool update();
+	virtual bool update( bool isMouseOverMe = true );
 
 	void executeFile( const std::string& cmd );
 
@@ -199,6 +199,8 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	virtual void onKeyDown( const Keycode& keyCode, const Uint32& chr, const Uint32& mod,
 							const Scancode& scancode );
+
+	bool isRegisteredShortcut( const Keycode& keyCode, const Uint32& mod ) const;
 
 	Font* getFont() const;
 
@@ -264,12 +266,25 @@ class TerminalDisplay : public ITerminalDisplay {
 
 	void setKeepAlive( bool keepAlive );
 
+	bool useFrameBuffer() const;
+
+	const std::string& getProgram() const { return mProgram; }
+
+	const std::vector<std::string>& getArgs() const { return mArgs; }
+
+	const std::unordered_map<std::string, std::string>& getEnv() { return mEnv; }
+
+	const std::string& getWorkingDir() const { return mWorkingDir; }
+
+	bool isAppCapturingMouse() const;
+
+	std::size_t getHistorySize() const { return mHistorySize; }
+
   protected:
 	EE::Window::Window* mWindow;
 	std::vector<TerminalGlyph> mBuffer;
 	std::vector<Color> mColors;
 	std::shared_ptr<TerminalEmulator> mTerminal;
-	mutable String mClipboard;
 	mutable std::string mClipboardUtf8;
 	Uint32 mNumCallBacks;
 	std::map<Uint32, EventFunc> mCallbacks;
@@ -283,6 +298,7 @@ class TerminalDisplay : public ITerminalDisplay {
 	bool mDirty{ true };
 	bool mDirtyCursor{ true };
 	bool mDrawing{ false };
+	bool mFullDirty{ false };
 	Vector2i mCursor;
 	TerminalGlyph mCursorGlyph;
 	bool mUseColorEmoji{ true };
@@ -303,12 +319,15 @@ class TerminalDisplay : public ITerminalDisplay {
 	VertexBuffer* mVBForeground{ nullptr };
 	std::vector<VertexBuffer*> mVBStyles;
 	TerminalColorScheme mColorScheme;
-	Uint32 mQuadVertexs{ 6 };
+	Uint32 mQuadVertex{ 6 };
 	Primitives mPrimitives;
 	Vector2u mCurGridPos;
+	Clock mLastAutoScroll;
+	std::size_t mHistorySize{ 0 };
 
 	std::string mProgram;
 	std::vector<std::string> mArgs;
+	std::unordered_map<std::string, std::string> mEnv;
 	std::string mWorkingDir;
 
 	TerminalDisplay( EE::Window::Window* window, Font* font, const Float& fontSize,
@@ -323,6 +342,8 @@ class TerminalDisplay : public ITerminalDisplay {
 	void onSizeChange();
 
 	virtual void onProcessExit( int exitCode );
+
+	virtual void onScrollPositionChange();
 
 	void sendEvent( const TerminalDisplay::Event& event );
 
@@ -349,6 +370,11 @@ class TerminalDisplay : public ITerminalDisplay {
 	void drawboxlines( float x, float y, float w, float h, Color fg, ushort bd );
 
 	Rectf updateIMELocation();
+
+	void drawBg( bool toFBO = false );
+
+	void sanitizeInput( std::string& input );
+
 };
 
 }} // namespace eterm::Terminal

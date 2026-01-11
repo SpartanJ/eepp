@@ -35,7 +35,7 @@ static AllocatedPointerMap sMapPointers;
 static size_t sTotalMemoryUsage = 0;
 static size_t sPeakMemoryUsage = 0;
 static AllocatedPointer sBiggestAllocation = AllocatedPointer( NULL, "", 0, 0 );
-static Mutex sAlloMutex;
+static Mutex sAllocMutex;
 
 AllocatedPointer::AllocatedPointer( void* data, const std::string& file, int line, size_t memory,
 									bool track ) {
@@ -65,7 +65,7 @@ void* MemoryManager::addPointerInPlace( void* place, const AllocatedPointer& aAl
 }
 
 void* MemoryManager::addPointer( const AllocatedPointer& aAllocatedPointer ) {
-	ConditionalLock l( sHasInit, &sAlloMutex );
+	ConditionalLock l( sHasInit, &sAllocMutex );
 
 	sMapPointers.insert(
 		AllocatedPointerMap::value_type( aAllocatedPointer.mData, aAllocatedPointer ) );
@@ -92,7 +92,7 @@ void* MemoryManager::addPointer( const AllocatedPointer& aAllocatedPointer ) {
 }
 
 void* MemoryManager::reallocPointer( void* data, const AllocatedPointer& aAllocatedPointer ) {
-	Lock l( sAlloMutex );
+	Lock l( sAllocMutex );
 
 	AllocatedPointerMapIt it = sMapPointers.find( data );
 
@@ -132,7 +132,7 @@ void* MemoryManager::reallocPointer( void* data, const AllocatedPointer& aAlloca
 }
 
 bool MemoryManager::removePointer( void* data, const char* file, const size_t& line ) {
-	Lock l( sAlloMutex );
+	Lock l( sAllocMutex );
 
 	AllocatedPointerMapIt it = sMapPointers.find( data );
 

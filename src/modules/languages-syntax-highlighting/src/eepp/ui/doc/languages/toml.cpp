@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addToml() {
+SyntaxDefinition& addToml() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -28,8 +28,6 @@ void addToml() {
 			  { { "[%-+]?nan" }, "number" },
 			  { { "[%-+]?inf" }, "number" },
 			  { { "[a-z]+" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {
@@ -43,6 +41,7 @@ void addToml() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

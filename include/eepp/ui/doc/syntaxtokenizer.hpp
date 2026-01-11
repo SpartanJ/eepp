@@ -3,14 +3,18 @@
 
 #include <eepp/config.hpp>
 #include <eepp/core/string.hpp>
-#include <eepp/graphics/text.hpp>
 #include <eepp/ui/doc/syntaxcolorscheme.hpp>
-#include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <string>
 
+namespace EE { namespace Graphics {
+class Text;
+}} // namespace EE::Graphics
 using namespace EE::Graphics;
 
 namespace EE { namespace UI { namespace Doc {
+
+class SyntaxDefinition;
+struct SyntaxPattern;
 
 using SyntaxTokenLen = Uint32;
 
@@ -41,28 +45,40 @@ struct EE_API SyntaxTokenComplete {
 
 #define SYNTAX_TOKENIZER_STATE_NONE ( 0 )
 
+using SyntaxSyateHolderType = Uint16;
+
+struct SyntaxStateType {
+	SyntaxSyateHolderType state{ SYNTAX_TOKENIZER_STATE_NONE };
+	SyntaxSyateHolderType repositoryIdx{ SYNTAX_TOKENIZER_STATE_NONE };
+
+	bool operator==( const SyntaxStateType& other ) const {
+		return state == other.state && repositoryIdx == other.repositoryIdx;
+	}
+
+	bool operator!=( const SyntaxStateType& other ) const { return !( *this == other ); }
+};
+
 struct SyntaxStateRestored {
 	const SyntaxDefinition* currentSyntax{ nullptr };
 	const SyntaxPattern* subsyntaxInfo{ nullptr };
-	Uint32 currentPatternIdx{ 0 };
+	SyntaxStateType currentPatternIdx{};
 	Uint32 currentLevel{ 0 };
 };
 
-#define MAX_SUB_SYNTAXS 4
+#define MAX_SUB_SYNTAXS 16
 
 struct SyntaxState {
-	// 8 bits per pattern - max 4 sub-languages - max 254 patterns per language
-	Uint8 state[MAX_SUB_SYNTAXS]{ SYNTAX_TOKENIZER_STATE_NONE, SYNTAX_TOKENIZER_STATE_NONE,
-								  SYNTAX_TOKENIZER_STATE_NONE, SYNTAX_TOKENIZER_STATE_NONE };
+	// 16 bits per pattern - max 8 sub-languages - max 254 patterns per language or repository
+	SyntaxStateType state[MAX_SUB_SYNTAXS]{};
 
-	// 8 bits per language (language index) - max 4 sub-languages - max 255 languages
-	Uint8 langStack[MAX_SUB_SYNTAXS]{ 0, 0, 0, 0 };
+	// 16 bits per language (language index) - max 8 sub-languages - max 65k languages
+	Uint16 langStack[MAX_SUB_SYNTAXS]{};
 
-	bool operator==( const SyntaxState& other ) {
+	bool operator==( const SyntaxState& other ) const {
 		return memcmp( this, &other, sizeof( SyntaxState ) ) == 0;
 	}
 
-	bool operator!=( const SyntaxState& other ) { return !( *this == other ); }
+	bool operator!=( const SyntaxState& other ) const { return !( *this == other ); }
 };
 
 class EE_API SyntaxTokenizer {
@@ -81,8 +97,8 @@ class EE_API SyntaxTokenizer {
 					  const SyntaxState& state, const size_t& startIndex = 0,
 					  bool skipSubSyntaxSeparator = false );
 
-	static Text& tokenizeText( const SyntaxDefinition& syntax, const SyntaxColorScheme& colorScheme,
-							   Text& text, const size_t& startIndex = 0,
+	static Text* tokenizeText( const SyntaxDefinition& syntax, const SyntaxColorScheme& colorScheme,
+							   Text* text, const size_t& startIndex = 0,
 							   const size_t& endIndex = 0xFFFFFFFF,
 							   bool skipSubSyntaxSeparator = false,
 							   const std::string& trimChars = "" );

@@ -476,7 +476,7 @@ void Texture::reload() {
 															 : flags;
 
 			if ( ( mFlags & TEX_FLAG_COMPRESSED ) ) {
-				if ( isGrabed() )
+				if ( isGrabbed() )
 					mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>( &mPixels[0] ),
 														&width, &height, mChannels, mTexture,
 														flags | SOIL_FLAG_COMPRESS_TO_DXT );
@@ -634,18 +634,18 @@ bool Texture::getMipmap() const {
 	return mFlags & TEX_FLAG_MIPMAP;
 }
 
-void Texture::setGrabed( const bool& isGrabed ) {
-	if ( mFlags & TEX_FLAG_GRABED ) {
-		if ( !isGrabed )
-			mFlags &= ~TEX_FLAG_GRABED;
+void Texture::setGrabbed( const bool& isGrabbed ) {
+	if ( mFlags & TEX_FLAG_GRABBED ) {
+		if ( !isGrabbed )
+			mFlags &= ~TEX_FLAG_GRABBED;
 	} else {
-		if ( isGrabed )
-			mFlags |= TEX_FLAG_GRABED;
+		if ( isGrabbed )
+			mFlags |= TEX_FLAG_GRABBED;
 	}
 }
 
-bool Texture::isGrabed() const {
-	return 0 != ( mFlags & TEX_FLAG_GRABED );
+bool Texture::isGrabbed() const {
+	return 0 != ( mFlags & TEX_FLAG_GRABBED );
 }
 
 bool Texture::isCompressed() const {

@@ -28,7 +28,7 @@ struct DapConfig {
 struct DapTool {
 	std::string name;
 	std::string url;
-	std::string type;
+	std::vector<std::string> type;
 	std::vector<std::string> languagesSupported;
 	DapRunConfig run;
 	std::vector<DapConfig> configurations;
@@ -37,6 +37,7 @@ struct DapTool {
 	bool redirectStdout{ false };
 	bool redirectStderr{ false };
 	bool supportsSourceRequest{ false };
+	bool unstableFrameId{ false };
 };
 
 struct DapConfigurationInput {
@@ -51,7 +52,7 @@ class DebuggerPlugin : public PluginBase {
   public:
 	static PluginDefinition Definition() {
 		return { "debugger",		  "Debugger",  "Debugger integration",
-				 DebuggerPlugin::New, { 0, 0, 1 }, DebuggerPlugin::NewSync };
+				 DebuggerPlugin::New, { 0, 0, 4 }, DebuggerPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
@@ -103,7 +104,8 @@ class DebuggerPlugin : public PluginBase {
 	UIDropDownList* mUIDebuggerList{ nullptr };
 	UIDropDownList* mUIDebuggerConfList{ nullptr };
 	UIPushButton* mRunButton{ nullptr };
-	UnorderedMap<std::string, UnorderedSet<SourceBreakpointStateful>> mBreakpoints;
+	UIPushButton* mBuildAndRunButton{ nullptr };
+	BreakpointsHolder mBreakpoints;
 	UnorderedSet<std::string> mPendingBreakpoints;
 	std::shared_ptr<BreakpointsModel> mBreakpointsModel;
 	Mutex mDapsMutex;
@@ -133,6 +135,7 @@ class DebuggerPlugin : public PluginBase {
 	std::string mLastStateJsonDump;
 	std::string mCurDebugger;
 	std::string mCurConfiguration;
+	std::vector<std::string> mRegisteredCommands;
 
 	class DebuggerPluginClient : public TextDocument::Client {
 	  public:
@@ -150,6 +153,7 @@ class DebuggerPlugin : public PluginBase {
 		virtual void onDocumentDirtyOnFileSystem( TextDocument* ) {}
 		virtual void onDocumentMoved( TextDocument* ) {}
 		virtual void onDocumentReset( TextDocument* ) {}
+		Client::Type getTextDocumentClientType() { return TextDocument::Client::Auxiliary; }
 
 		virtual void onDocumentLineMove( const Int64& fromLine, const Int64& toLine,
 										 const Int64& numLines ) {
@@ -190,14 +194,15 @@ class DebuggerPlugin : public PluginBase {
 	void runConfig( const std::string& debugger, const std::string& configuration );
 
 	void run( const std::string& debugger, ProtocolSettings&& protocolSettings,
-			  DapRunConfig&& runConfig, int randPort, bool forceUseProgram, bool usesPorts );
+			  DapRunConfig&& runConfig, int randPort, bool forceUseProgram, bool usesPorts,
+			  bool unstableFrameId );
 
 	void exitDebugger( bool requestDisconnect = false );
 
 	void replaceKeysInJson( nlohmann::json& json, int randomPort,
 							const std::unordered_map<std::string, std::string>& solvedInputs );
 
-	std::vector<std::string>
+	std::pair<bool, std::vector<std::string>>
 	replaceKeyInString( std::string val, int randomPort,
 						const std::unordered_map<std::string, std::string>& solvedInputs );
 
@@ -284,8 +289,14 @@ class DebuggerPlugin : public PluginBase {
 	void onDocumentLineMove( TextDocument* doc, const Int64& fromLine, const Int64& toLine,
 							 const Int64& numLines );
 
-	void replaceInVal( std::string& val, const std::optional<ProjectBuildStep>& runConfig,
+	bool replaceInVal( std::string& val, const std::optional<ProjectBuildStep>& runConfig,
 					   ProjectBuild* buildConfig, int randomPort );
+
+	template<typename TCommandRegister, typename Cmd, typename CmdCb>
+	void registerCommand( TCommandRegister* doc, Cmd cmd, CmdCb cb );
+
+	template<typename TCommandRegister>
+	void registerCommands( TCommandRegister* doc );
 };
 
 } // namespace ecode

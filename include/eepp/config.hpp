@@ -64,7 +64,8 @@
 	defined( __OpenBSD__ ) || defined( __NetBSD__ ) || defined( __DragonFly__ ) || \
 	defined( __SVR4 ) || defined( __sun )
 
-#if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
+#if !defined( EE_GLES1 ) && !defined( EE_GLES2 ) && defined( __has_include ) && \
+	__has_include( <X11/Xlib.h> )
 #define EE_X11_PLATFORM
 #endif
 
@@ -111,6 +112,7 @@
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS || \
 	( EE_PLATFORM == EE_PLATFORM_WIN && defined( EE_COMPILER_MSVC ) )
+#define EE_OVERRIDES_MAIN
 #if defined( EE_BACKEND_SDL_ACTIVE )
 #if EE_PLATFORM == EE_PLATFORM_WIN && defined( EE_COMPILER_MSVC )
 #define main SDL_main
@@ -120,7 +122,7 @@
 #endif
 #endif
 
-#ifdef __cplusplus
+#if defined( __cplusplus ) && defined( EE_OVERRIDES_MAIN )
 #define EE_MAIN_FUNC extern "C"
 #else
 #define EE_MAIN_FUNC
@@ -314,6 +316,12 @@ typedef signed long long Int64;
 typedef unsigned long long Uint64;
 #endif
 
+#if defined( __x86_64__ ) || defined( _M_X64 )
+	#define EE_ARCH_X86_64
+#elif defined( __aarch64__ ) || defined( _M_ARM64 )
+	#define EE_ARCH_ARM64
+#endif
+
 #if defined( EE_LINUX_64 ) || defined( EE_SPARC_64 ) || defined( __osf__ ) ||                  \
 	( defined( _WIN64 ) && !defined( _XBOX ) ) || defined( __64BIT__ ) || defined( __LP64 ) || \
 	defined( __LP64__ ) || defined( _LP64 ) || defined( _ADDR64 ) || defined( _CRAYC )
@@ -335,6 +343,13 @@ typedef Uint32 UintPtr;
 #define EE_1MB ( 1048576 )
 #define EE_1GB ( 1073741824 )
 #define EE_1TB ( 1099511627776 )
+
+#define EE_TAG( c1, c2, c3, c4 )                                                            \
+	( (Uint32)( ( ( (Uint32)( c1 ) & 0xFF ) << 24 ) | ( ( (Uint32)( c2 ) & 0xFF ) << 16 ) | \
+				( ( (Uint32)( c3 ) & 0xFF ) << 8 ) | ( (Uint32)( c4 ) & 0xFF ) ) )
+
+#define EE_TAG_NONE EE_TAG( 0, 0, 0, 0 )
+
 } // namespace EE
 
 #endif

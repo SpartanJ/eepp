@@ -225,7 +225,7 @@ struct PluginMessage {
 	bool isBroadcast() const { return -1 == responseID; }
 };
 
-struct PluginInmediateResponse {
+struct PluginImmediateResponse {
 	PluginMessageType type{ PluginMessageType::Undefined };
 	nlohmann::json data;
 };
@@ -240,7 +240,7 @@ class PluginRequestHandle {
 
 	PluginRequestHandle( PluginIDType id ) : mId( std::move( id ) ) {}
 
-	explicit PluginRequestHandle( PluginInmediateResponse msg ) :
+	explicit PluginRequestHandle( PluginImmediateResponse msg ) :
 		mId( -2 ), mResponse( std::move( msg ) ) {}
 
 	virtual const PluginIDType& id() const { return mId; }
@@ -251,14 +251,14 @@ class PluginRequestHandle {
 
 	bool isBroadcast() const { return mId == -1; }
 
-	const PluginInmediateResponse& getResponse() const { return mResponse; }
+	const PluginImmediateResponse& getResponse() const { return mResponse; }
 
 	bool isResponse() const { return mId == -2 && !mResponse.data.empty(); }
 
   protected:
 	PluginIDType mId{ 0 };
-	PluginInmediateResponse
-		mResponse; //! Some requests can be responded inmediatly, so the message comes in the handle
+	PluginImmediateResponse mResponse; //! Some requests can be responded immediately, so the
+									   //! message comes in the handle
 };
 
 class PluginManager {
@@ -275,9 +275,8 @@ class PluginManager {
 	using OnLoadFileCb = std::function<void( const std::string&, const OnFileLoadedCb& )>;
 
 	PluginManager( const std::string& resourcesPath, const std::string& pluginsPath,
-				   const std::string& configPath,
-				   std::shared_ptr<ThreadPool> pool, const OnLoadFileCb& loadFileCb,
-				   PluginContextProvider* context );
+				   const std::string& configPath, std::shared_ptr<ThreadPool> pool,
+				   const OnLoadFileCb& loadFileCb, PluginContextProvider* context );
 
 	~PluginManager();
 
@@ -368,6 +367,10 @@ class PluginManager {
 
 	void forEachPlugin( std::function<void( Plugin* )> fn );
 
+	void setPluginsDisabled( bool pluginsDisabled ) { mPluginsDisabled = pluginsDisabled; }
+
+	bool pluginsDisabled() const { return mPluginsDisabled; }
+
   protected:
 	using SubscribedPlugins =
 		std::map<std::string, std::function<PluginRequestHandle( const PluginMessage& )>>;
@@ -392,6 +395,7 @@ class PluginManager {
 	UnorderedSet<Plugin*> mPluginsFSSubs;
 	bool mClosing{ false };
 	bool mPluginReloadEnabled{ false };
+	bool mPluginsDisabled{ false };
 
 	bool hasDefinition( const std::string& id );
 

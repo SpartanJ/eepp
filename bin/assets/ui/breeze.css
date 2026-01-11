@@ -123,6 +123,7 @@ Tooltip,
 MenuBar::button,
 Window::title,
 ListView::cell,
+table::cell::text,
 tableview::cell::text,
 treeview::cell::text,
 listview::cell::text {
@@ -199,6 +200,7 @@ checkbox:disabled {
 
 PushButton::icon,
 SelectButton::icon,
+table::cell::icon,
 TableView::cell::icon,
 TreeView::cell::icon,
 TreeView::cell::expander,
@@ -679,7 +681,7 @@ Window {
 	window-titlebar-size: 24dp 24dp;
 	window-buttons-offset: -6dp 0dp;
 	window-buttons-separation: 8dp;
-	window-flags: shadow;
+	window-flags: default|shadow;
 }
 
 Window::decoration {
@@ -757,8 +759,8 @@ PopUpMenu {
 }
 
 MenuBar::Button {
-	padding-left: 4dp;
-	padding-right: 4dp;
+	padding-left: 6dp;
+	padding-right: 6dp;
 	min-height: 18dp;
 }
 
@@ -975,6 +977,7 @@ treeview.selection_type_cell tableview::cell:selected {
 	background-color: var(--primary);
 }
 
+table::cell,
 tableview::cell,
 treeview::cell {
 	padding-left: 4dp;
@@ -1087,6 +1090,11 @@ console {
 TextInput.table_cell_edit {
 	padding-top: 0!important;
 	padding-bottom: 0!important;
+}
+
+ImageViewer > TextView {
+	text-stroke-width: 1dp;
+	text-stroke-color: var(--back);
 }
 
 @media (prefers-color-scheme: light) {

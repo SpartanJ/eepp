@@ -8,7 +8,7 @@ void addPython() {
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Python",
-		  { "%.py$", "%.pyw$", "%.bry$" },
+		  { "%.py$", "%.pyw$", "%.bry$", "^SConstruct$" },
 		  {
 			  { { "#", "\n" }, "comment" },
 			  { { "[ruU]?\"", "\"", "\\" }, "string" },
@@ -31,7 +31,7 @@ void addPython() {
 			  { "raise", "keyword" },	{ "yield", "keyword" }, { "with", "keyword" },
 			  { "for", "keyword" },		{ "while", "keyword" }, { "assert", "keyword" },
 			  { "from", "keyword" },	{ "elif", "keyword" },	{ "def", "keyword" },
-			  { "self", "keyword2" },	{ "else", "keyword" },	{ "global", "keyword" },
+			  { "self", "type" },	{ "else", "keyword" },	{ "global", "keyword" },
 			  { "not", "keyword" },		{ "break", "keyword" }, { "nonlocal", "keyword" },
 			  { "is", "keyword" },		{ "or", "keyword" },	{ "if", "keyword" },
 			  { "except", "keyword" },
@@ -43,6 +43,7 @@ void addPython() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	sd.setBlockComment( { "\"\"\"", "\"\"\"" } );
 }
 
 }}}} // namespace EE::UI::Doc::Language

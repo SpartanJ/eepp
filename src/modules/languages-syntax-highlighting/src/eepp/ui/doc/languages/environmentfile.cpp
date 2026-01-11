@@ -3,24 +3,23 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addEnvironmentFile() {
+SyntaxDefinition& addEnvironmentFile() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Environment File",
 		  { "%.env$", "%.env.[%w%-%_]*$" },
 		  {
-			  { { "^#.-\n" }, "comment" },
-			  { { "%s#.-\n" }, "comment" },
+			  { { "#.-\n" }, "comment" },
 			  { { "\\[nrtfb\\\"']" }, "literal" },
 			  { { "'?\\u%x%x%x%x'?" }, "literal" },
-			  { { "(%${)([%w]+[%w_]*)(})" }, { "keyword", "keyword", "keyword2", "keyword" } },
-			  { { "%$[%w]+[%w_]*" }, "keyword2" },
+			  { { "(%${)([%w]+[%w_]*)(})" }, { "keyword", "keyword", "type", "keyword" } },
+			  { { "%$[%w]+[%w_]*" }, "type" },
 			  { { "[%a_][%w-+_%s%p]-%f[=]" }, "keyword" },
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },
-			  { { "^%[.-%]" }, "keyword2" },
-			  { { "%s%[.-%]" }, "keyword2" },
+			  { { "^%[.-%]" }, "type" },
+			  { { "%s%[.-%]" }, "type" },
 			  { { "=" }, "operator" },
 			  { { "https?://[%w_.~!*:@&+$/?%%#-]-%w[-.%w]*%.%w%w%w?%w?:?%d*/?[%w_.~!*:@&+$/"
 				  "?%%#=-]*" },

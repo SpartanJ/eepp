@@ -8,6 +8,8 @@
 
 namespace EE { namespace System {
 
+using ProcessID = Uint64;
+
 class EE_API Sys {
   public:
 	enum class PlatformType {
@@ -28,12 +30,12 @@ class EE_API Sys {
 	};
 
 	/** @return The current process id */
-	static Uint64 getProcessID();
+	static ProcessID getProcessID();
 
 	/** @return the current date time */
 	static std::string getDateTimeStr();
 
-	/** Converts any epoch timestmap to a formatted string. */
+	/** Converts any epoch timestamp to a formatted string. */
 	static std::string epochToString( const Uint64& epochTimestamp,
 									  const std::string& format = "%Y-%m-%d %H:%M" );
 
@@ -108,8 +110,8 @@ class EE_API Sys {
 	/** @return An environment variable */
 	static std::string getEnv( const std::string& name );
 
-	/** @return A splitted environment variable */
-	static std::vector<std::string> getEnvSplitted( const std::string& name );
+	/** @return A split environment variable */
+	static std::vector<std::string> getEnvSplit( const std::string& name );
 
 	/** It will attach the console to the parent process console if any. Windows only function.
 	 * Other platforms will do nothing.
@@ -125,20 +127,26 @@ class EE_API Sys {
 	/** @return The process environment variables */
 	static std::unordered_map<std::string, std::string> getEnvironmentVariables();
 
-	/** @return The process ids found with the correspoding process / binary / executable name */
-	static std::vector<Uint64> pidof( const std::string& processName );
+	/** @return The process ids found with the corresponding process / binary / executable name */
+	static std::vector<ProcessID> pidof( const std::string& processName );
 
 	/** @return A list of the current running processes */
-	static std::vector<std::pair<Uint64, std::string>> listProcesses();
+	static std::vector<std::pair<ProcessID, std::string>> listProcesses();
 
 	/** @returns The unix timestamp of the process creation time */
-	static Int64 getProcessCreationTime( Uint64 pid );
+	static Int64 getProcessCreationTime( ProcessID pid );
 
 	/** @returns The target destination of a windows shortcut path (.lnk files) */
 	static std::string getShortcutTarget( const std::string& lnkFilePath );
 
 	/** @returns The user home directory */
 	static std::string getUserDirectory();
+
+	/** @returns True if the process has any childrens */
+	static bool processHasChildren( ProcessID pid );
+
+	/** @returns True if the operating system is using a dark color scheme */
+	static bool isOSUsingDarkColorScheme( bool allowUsingCached = true );
 };
 
 }} // namespace EE::System

@@ -23,13 +23,13 @@ UILinearLayout* UILinearLayout::NewHorizontal() {
 
 UILinearLayout::UILinearLayout() :
 	UILayout( "linearlayout" ), mOrientation( UIOrientation::Vertical ) {
-	mFlags |= UI_OWNS_CHILDS_POSITION;
+	mFlags |= UI_OWNS_CHILDREN_POSITION;
 	setClipType( ClipType::ContentBox );
 }
 
 UILinearLayout::UILinearLayout( const std::string& tag, const UIOrientation& orientation ) :
 	UILayout( tag ), mOrientation( orientation ) {
-	mFlags |= UI_OWNS_CHILDS_POSITION;
+	mFlags |= UI_OWNS_CHILDREN_POSITION;
 	setClipType( ClipType::ContentBox );
 }
 
@@ -51,7 +51,7 @@ UILinearLayout* UILinearLayout::setOrientation( const UIOrientation& orientation
 }
 
 void UILinearLayout::updateLayout() {
-	if ( !mVisible ) {
+	if ( !mVisible && !mUpdateLayoutEvenIfNotVisible ) {
 		if ( mPacking )
 			return;
 		mPacking = true;
@@ -67,7 +67,7 @@ void UILinearLayout::updateLayout() {
 	mDirtyLayout = false;
 }
 
-void UILinearLayout::applyWidthPolicyOnChilds() {
+void UILinearLayout::applyWidthPolicyOnChildren() {
 	Node* child = mChild;
 
 	while ( NULL != child ) {
@@ -116,7 +116,7 @@ void UILinearLayout::applyWidthPolicyOnChilds() {
 	}
 }
 
-void UILinearLayout::applyHeightPolicyOnChilds() {
+void UILinearLayout::applyHeightPolicyOnChildren() {
 	Node* child = mChild;
 
 	while ( NULL != child ) {
@@ -192,7 +192,7 @@ void UILinearLayout::packVertical() {
 	if ( sizeChanged )
 		setInternalPixelsSize( size );
 
-	applyWidthPolicyOnChilds();
+	applyWidthPolicyOnChildren();
 
 	Float curY = mPaddingPx.Top;
 	Float maxX = 0;
@@ -210,13 +210,14 @@ void UILinearLayout::packVertical() {
 			Vector2f pos( mPaddingPx.Left, curY );
 
 			if ( widget->getLayoutWeight() != 0 ) {
-				Int32 totSize =
-					( getLayoutHeightPolicy() == SizePolicy::MatchParent )
+				Float totSize =
+					( getLayoutHeightPolicy() == SizePolicy::MatchParent ||
+					  getLayoutHeightPolicy() == SizePolicy::Fixed )
 						? getPixelsSize().getHeight() - mPaddingPx.Top - mPaddingPx.Bottom
 						: getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Bottom -
 							  mLayoutMarginPx.Top - mPaddingPx.Top - mPaddingPx.Bottom;
-				Float newSize =
-					eeceil( totSize - freeSize.getHeight() ) * widget->getLayoutWeight();
+				Float newSize = eemax(
+					eeceil( totSize - freeSize.getHeight() ) * widget->getLayoutWeight(), 0.f );
 
 				widget->setPixelsSize( widget->getPixelsSize().getWidth(), newSize );
 			}
@@ -322,7 +323,7 @@ void UILinearLayout::packHorizontal() {
 	if ( sizeChanged )
 		setInternalPixelsSize( size );
 
-	applyHeightPolicyOnChilds();
+	applyHeightPolicyOnChildren();
 
 	Float curX = mPaddingPx.Left;
 	Float maxY = 0;
@@ -340,12 +341,14 @@ void UILinearLayout::packHorizontal() {
 			Vector2f pos( curX, mPaddingPx.Top );
 
 			if ( widget->getLayoutWeight() != 0 ) {
-				Int32 totSize =
-					( getLayoutWidthPolicy() == SizePolicy::MatchParent )
+				Float totSize =
+					( getLayoutWidthPolicy() == SizePolicy::MatchParent ||
+					  getLayoutWidthPolicy() == SizePolicy::Fixed )
 						? getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right
 						: getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Right -
 							  mLayoutMarginPx.Left - mPaddingPx.Left - mPaddingPx.Right;
-				Float newSize = eeceil( totSize - freeSize.getWidth() ) * widget->getLayoutWeight();
+				Float newSize = eemax(
+					eeceil( totSize - freeSize.getWidth() ) * widget->getLayoutWeight(), 0.f );
 
 				widget->setPixelsSize( newSize, widget->getPixelsSize().getHeight() );
 			}

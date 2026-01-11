@@ -12,7 +12,7 @@ permissions: write-all
 jobs:
   release:
     name: Create Nightly Release
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
       version: ${{ steps.tag.outputs.version }}
@@ -32,7 +32,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.2.2
         with:
           tag_name: ${{ steps.tag.outputs.version }}
           name: ecode ${{ steps.tag.outputs.version }}
@@ -49,48 +49,57 @@ jobs:
       matrix:
         config:
           - arch: x86_64
-            container: ubuntu-20.04
+            container: ubuntu-22.04
     runs-on: ${{ matrix.config.container }}
+    container:
+      image: ubuntu:20.04
     env:
       CC: gcc
       CXX: g++
     steps:
+      - name: Install essentials
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get install -y --no-install-recommends software-properties-common build-essential git ca-certificates
       - name: Checkout Code
         uses: actions/checkout@v4
-        with: { fetch-depth: 0, submodules: 'recursive' }
+        with: { fetch-depth: 0, submodules: 'recursive', set-safe-directory: true }
       - name: Set Environment Variables
         run: |
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          echo "/usr/lib/ccache" >> "$GITHUB_PATH"
           echo "INSTALL_REF=${{ needs.release.outputs.version }}" >> "$GITHUB_ENV"
           echo "RARCH=$(uname -m)" >> "$GITHUB_ENV"
           echo $(ldd --version)
-          echo $(gcc --version)
-      - name: Update Packages
+      - name: Mark Git directory as safe
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Patch commit number
         run: |
-          sudo add-apt-repository -y universe
-          sudo add-apt-repository -y multiverse
-          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-          sudo apt-get update
+          bash projects/scripts/patch_commit_number.sh
       - name: Install dependencies
         run: |
-          sudo apt-get install -y gcc-11 g++-11
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 10
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 10
-          sudo update-alternatives --install /usr/bin/cc cc /usr/bin/gcc 30
-          sudo update-alternatives --set cc /usr/bin/gcc
-          sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++ 30
-          sudo update-alternatives --set c++ /usr/bin/g++
-          sudo update-alternatives --config gcc
-          sudo update-alternatives --config g++
-          sudo apt-get install -y libfuse2 fuse premake4 mesa-common-dev libgl1-mesa-dev
+          apt-get install -y curl libfuse2 fuse premake4 mesa-common-dev libgl1-mesa-dev sudo file appstream
+          curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+          apt-get install -y nodejs
+          add-apt-repository -y universe
+          add-apt-repository -y multiverse
+          add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          apt-get update
+          apt-get install -y gcc-13 g++-13 libdw-dev
+          update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 10
+          update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 10
+          update-alternatives --install /usr/bin/cc cc /usr/bin/gcc 30
+          update-alternatives --set cc /usr/bin/gcc
+          update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++ 30
+          update-alternatives --set c++ /usr/bin/g++
+          update-alternatives --config gcc
+          update-alternatives --config g++
           bash projects/linux/scripts/install_sdl2.sh
       - name: Build ecode
         run: |
-          bash projects/scripts/patch_commit_number.sh
-          bash projects/linux/ecode/build.app.sh --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }}
+          bash projects/linux/ecode/build.app.sh --with-static-cpp --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }}
       - name: Upload Files
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.2.2
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -143,14 +152,13 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get install -y premake4 libfuse2 fuse gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-          # sudo apt-get install -y libsdl2-dev:arm64 libsdl2-2.0-0:arm64
           bash projects/linux/scripts/install_sdl2.sh --aarch64
       - name: Build ecode
         run: |
           bash projects/scripts/patch_commit_number.sh
           bash projects/linux/ecode/build.app.sh --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }}
       - name: Upload Files
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.2.2
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -189,8 +197,8 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get install -y premake4 libfuse2 fuse mingw-w64 gcc-12 g++-12
-          wget https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-linux.tar.gz
-          tar xvzf premake-5.0.0-beta2-linux.tar.gz
+          wget https://cdn.ensoft.dev/eepp-assets/premake-5.0.0-beta6-linux.tar.gz
+          tar xvzf premake-5.0.0-beta6-linux.tar.gz
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 10
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 10
           sudo update-alternatives --install /usr/bin/cc cc /usr/bin/gcc 30
@@ -204,7 +212,7 @@ jobs:
           bash projects/scripts/patch_commit_number.sh
           bash projects/mingw32/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
       - name: Upload Files
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.2.2
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -238,14 +246,14 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get install -y libfuse2 fuse
-          wget https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-linux.tar.gz
-          tar xvzf premake-5.0.0-beta2-linux.tar.gz
+          wget https://cdn.ensoft.dev/eepp-assets/premake-5.0.0-beta6-linux.tar.gz
+          tar xvzf premake-5.0.0-beta6-linux.tar.gz
       - name: Build ecode
         run: |
           bash projects/scripts/patch_commit_number.sh
           bash projects/mingw32/ecode/build.app.sh --arch=arm64 --version ${{ env.INSTALL_REF }}
       - name: Upload Files
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.2.2
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -263,6 +271,11 @@ jobs:
     env:
       CC: clang
       CXX: clang++
+      MACOS_CERTIFICATE_P12_B64: ${{ secrets.MACOS_CERTIFICATE_P12_B64 }}
+      MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+      MACOS_APPLE_ID: ${{ secrets.MACOS_APPLE_ID }}
+      MACOS_NOTARIZATION_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+      MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -285,11 +298,22 @@ jobs:
         run: |
           bash projects/scripts/patch_commit_number.sh
           bash projects/macos/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
+      - name: Sign Application
+        if: env.MACOS_CERTIFICATE_P12_B64 != ''
+        working-directory: projects/macos/ecode
+        run: |
+          bash ./sign.sh ecode.app
       - name: Create DMG Image
         run: |
           bash projects/macos/ecode/create.dmg.sh --version ${{ env.INSTALL_REF }}
+      - name: Notarize DMG
+        if: env.MACOS_CERTIFICATE_P12_B64 != ''
+        working-directory: projects/macos/ecode
+        run: |
+          DMG_NAME="ecode-macos-${{ env.INSTALL_REF }}-arm64.dmg"
+          bash ./sign.sh "$DMG_NAME"
       - name: Upload Files
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.2.2
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -307,6 +331,11 @@ jobs:
     env:
       CC: clang
       CXX: clang++
+      MACOS_CERTIFICATE_P12_B64: ${{ secrets.MACOS_CERTIFICATE_P12_B64 }}
+      MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+      MACOS_APPLE_ID: ${{ secrets.MACOS_APPLE_ID }}
+      MACOS_NOTARIZATION_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+      MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -325,22 +354,129 @@ jobs:
       - name: Install Dependencies
         run: |
           brew install bash create-dmg premake p7zip
-          curl -OL https://github.com/libsdl-org/SDL/releases/download/release-2.30.9/SDL2-2.30.9.dmg
-          hdiutil attach SDL2-2.30.9.dmg
+          curl -OL https://github.com/libsdl-org/SDL/releases/download/release-2.32.10/SDL2-2.32.10.dmg
+          hdiutil attach SDL2-2.32.10.dmg
           sudo cp -r /Volumes/SDL2/SDL2.framework /Library/Frameworks/
           hdiutil detach /Volumes/SDL2
       - name: Build
         run: |
           bash projects/scripts/patch_commit_number.sh
           bash projects/macos/ecode/cross.build.app.sh --version ${{ env.INSTALL_REF }}
+      - name: Sign Application
+        if: env.MACOS_CERTIFICATE_P12_B64 != ''
+        working-directory: projects/macos/ecode
+        run: |
+          bash ./sign.sh ecode.app
       - name: Create DMG Image
         run: |
           bash projects/macos/ecode/cross.create.dmg.sh --version ${{ env.INSTALL_REF }}
+      - name: Notarize DMG
+        if: env.MACOS_CERTIFICATE_P12_B64 != ''
+        working-directory: projects/macos/ecode
+        run: |
+          DMG_NAME="ecode-macos-${{ env.INSTALL_REF }}-x86_64.dmg"
+          bash ./sign.sh "$DMG_NAME"
       - name: Upload Files
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.2.2
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
           prerelease: true
           files: |
             projects/macos/ecode/ecode-macos-${{ env.INSTALL_REF }}-x86_64.dmg
+
+  build_freebsd_x86_64:
+    name: FreeBSD x86_64 Nightly
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with: { fetch-depth: 0, submodules: 'recursive' }
+      - name: Set Environment Variables
+        run: |
+          echo "INSTALL_REF=${{ needs.release.outputs.version }}" >> "$GITHUB_ENV"
+          echo "RARCH=$(uname -m)" >> "$GITHUB_ENV"
+      - uses: vmactions/freebsd-vm@v1
+        env:
+          INSTALL_REF: ${{ needs.release.outputs.version }}
+        with:
+          release: '14.1'
+          envs: 'INSTALL_REF'
+          sync: sshfs
+          usesh: true
+          mem: 8192
+          prepare: |
+            pkg install -y bash git sdl2 curl premake5 gsed gmake
+          run: |
+            export CC=clang
+            export CXX=clang++
+            git config --global --add safe.directory "$GITHUB_WORKSPACE"
+            bash projects/scripts/patch_commit_number.sh
+            sh projects/freebsd/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
+      - name: Upload Files
+        uses: softprops/action-gh-release@v2.2.2
+        with:
+          tag_name: ${{ needs.release.outputs.version }}
+          draft: false
+          prerelease: true
+          files: |
+            projects/freebsd/ecode/ecode-freebsd-${{ env.INSTALL_REF }}-x86_64.tar.gz
+
+  build_windows_msvc:
+    name: Windows x86_64 MSVC Nightly
+    needs: release
+    runs-on: windows-latest
+    env:
+      MSBUILD_PATH: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin
+    steps:
+    - name: Configure Git
+      shell: pwsh
+      run: |
+        git config --system core.autocrlf false
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with: { fetch-depth: 0, submodules: 'recursive' }
+    - name: Build
+      shell: pwsh
+      run: |
+        .\projects\scripts\patch_commit_number.ps1
+        .\projects\windows\ecode\build.app.ps1
+    - name: Upload Files
+      uses: softprops/action-gh-release@v2.2.2
+      with:
+        tag_name: ${{ needs.release.outputs.version }}
+        draft: false
+        prerelease: true
+        files: |
+          ./projects/windows/ecode/ecode-windows-nightly-msvc-x86_64.zip
+          ./projects/windows/ecode/ecode-windows-nightly-msvc-x86_64-pdb.zip
+
+  build_windows_arm64_msvc:
+    name: Windows arm64 MSVC Nightly
+    needs: release
+    runs-on: windows-latest
+    env:
+      MSBUILD_PATH: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin
+    steps:
+    - name: Configure Git
+      shell: pwsh
+      run: |
+        git config --system core.autocrlf false
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with: { fetch-depth: 0, submodules: 'recursive' }
+    - name: Build
+      shell: pwsh
+      run: |
+        .\projects\scripts\patch_commit_number.ps1
+        .\projects\windows\ecode\build.app.ps1 -arch arm64
+    - name: Upload Files
+      uses: softprops/action-gh-release@v2.2.2
+      with:
+        tag_name: ${{ needs.release.outputs.version }}
+        draft: false
+        prerelease: true
+        files: |
+          ./projects/windows/ecode/ecode-windows-nightly-msvc-arm64.zip
+          ./projects/windows/ecode/ecode-windows-nightly-msvc-arm64-pdb.zip

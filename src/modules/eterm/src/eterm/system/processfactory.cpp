@@ -17,7 +17,8 @@ std::unique_ptr<IProcess> ProcessFactory::createWithStdioPipe( const std::string
 std::unique_ptr<IProcess> ProcessFactory::createWithPseudoTerminal(
 	const std::string& program, const std::vector<std::string>& args,
 	const std::string& workingDirectory, int numColumns, int numRows,
-	std::unique_ptr<IPseudoTerminal>& outPseudoTerminal ) {
+	std::unique_ptr<IPseudoTerminal>& outPseudoTerminal,
+	const std::unordered_map<std::string, std::string>& env ) {
 	outPseudoTerminal = nullptr;
 
 	auto pseudoTerminal = Terminal::PseudoTerminal::create( numColumns, numRows );
@@ -28,7 +29,7 @@ std::unique_ptr<IProcess> ProcessFactory::createWithPseudoTerminal(
 	}
 
 	auto process = System::Process::createWithPseudoTerminal( program, args, workingDirectory,
-															  *pseudoTerminal );
+															  *pseudoTerminal, env );
 	if ( !process ) {
 		fprintf( stderr, "ProcessFactory::createWithPseudoTerminal: Failed to spawn process\n" );
 		return nullptr;
@@ -38,4 +39,4 @@ std::unique_ptr<IProcess> ProcessFactory::createWithPseudoTerminal(
 	return process;
 }
 
-}}
+}} // namespace eterm::System

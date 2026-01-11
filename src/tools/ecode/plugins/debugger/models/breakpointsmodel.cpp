@@ -3,9 +3,7 @@
 
 namespace ecode {
 
-BreakpointsModel::BreakpointsModel(
-	const UnorderedMap<std::string, UnorderedSet<SourceBreakpointStateful>>& breakpoints,
-	UISceneNode* sceneNode ) :
+BreakpointsModel::BreakpointsModel( const BreakpointsHolder& breakpoints, UISceneNode* sceneNode ) :
 	mSceneNode( sceneNode ) {
 	for ( const auto& bpf : breakpoints )
 		for ( const auto& bp : bpf.second )

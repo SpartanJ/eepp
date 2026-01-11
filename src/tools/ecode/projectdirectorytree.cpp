@@ -6,6 +6,7 @@
 namespace ecode {
 
 #define PRJ_ALLOWED_PATH ".ecode/.prjallowed"
+#define PRJ_DISALLOWED_PATH ".ecode/.prjdisallowed"
 
 ProjectDirectoryTree::ProjectDirectoryTree(
 	const std::string& path, std::shared_ptr<ThreadPool> threadPool, PluginManager* pluginManager,
@@ -39,10 +40,8 @@ ProjectDirectoryTree::~ProjectDirectoryTree() {
 void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& scanComplete,
 								 const std::vector<std::string>& acceptedPatterns,
 								 const bool& ignoreHidden ) {
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 	mPool->run(
 		[this, acceptedPatterns = std::move( acceptedPatterns ), ignoreHidden] {
-#endif
 			Lock l( mFilesMutex );
 			mRunning = true;
 			mIgnoreHidden = ignoreHidden;
@@ -51,9 +50,15 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 				mDirectories.push_back( mPath );
 			}
 
-			if ( !mAllowedMatcher && FileSystem::fileExists( mPath + PRJ_ALLOWED_PATH ) )
+			if ( !mAllowedMatcher && FileSystem::fileExists( mPath + PRJ_ALLOWED_PATH ) ) {
 				mAllowedMatcher =
 					std::make_unique<GitIgnoreMatcher>( mPath, PRJ_ALLOWED_PATH, false );
+			}
+
+			if ( !mDisallowedMatcher && FileSystem::fileExists( mPath + PRJ_DISALLOWED_PATH ) ) {
+				mDisallowedMatcher =
+					std::make_unique<GitIgnoreMatcher>( mPath, PRJ_DISALLOWED_PATH, false );
+			}
 
 			if ( !acceptedPatterns.empty() ) {
 				std::vector<std::string> files;
@@ -64,7 +69,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 					mAcceptedPatterns.emplace_back( std::string{ strPattern } );
 				std::set<std::string> info;
 				getDirectoryFiles( files, names, mPath, info, false, mIgnoreMatcher,
-								   mAllowedMatcher.get() );
+								   mAllowedMatcher.get(), mDisallowedMatcher.get() );
 				size_t namesCount = names.size();
 				bool found;
 				for ( size_t i = 0; i < namesCount; i++ ) {
@@ -75,6 +80,18 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 							break;
 						}
 					}
+					if ( !found && mAllowedMatcher ) {
+						std::string_view file{ files[i] };
+						if ( String::startsWith( file, mAllowedMatcher->getPath() ) ) {
+							std::string_view localPath( std::string_view{ file }.substr(
+								mAllowedMatcher->getPath().size() ) );
+							if ( mAllowedMatcher->match( localPath ) ) {
+								found = true;
+							}
+						} else if ( mAllowedMatcher->match( file ) ) {
+							found = true;
+						}
+					}
 					if ( found ) {
 						mFiles.emplace_back( std::move( files[i] ) );
 						mNames.emplace_back( std::move( names[i] ) );
@@ -83,7 +100,7 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 			} else {
 				std::set<std::string> info;
 				getDirectoryFiles( mFiles, mNames, mPath, info, ignoreHidden, mIgnoreMatcher,
-								   mAllowedMatcher.get() );
+								   mAllowedMatcher.get(), mDisallowedMatcher.get() );
 			}
 			mIsReady = true;
 			if ( mPluginManager ) {
@@ -93,11 +110,6 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 						return processMessage( msg );
 					} );
 			}
-#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN && !defined( __EMSCRIPTEN_PTHREADS__ )
-			if ( scanComplete )
-				scanComplete( *this );
-#endif
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		},
 		[scanComplete, this]( const auto& ) {
 			if ( !mClosing && scanComplete ) {
@@ -106,7 +118,6 @@ void ProjectDirectoryTree::scan( const ProjectDirectoryTree::ScanCompleteEvent& 
 			}
 			mRunning = false;
 		} );
-#endif
 }
 
 std::shared_ptr<FileListModel>
@@ -118,9 +129,11 @@ ProjectDirectoryTree::fuzzyMatchTree( const std::vector<std::string>& matches, c
 	std::vector<std::string> names;
 	for ( const auto& match : matches ) {
 		for ( size_t i = 0; i < mNames.size(); i++ ) {
-			int matchName = String::fuzzyMatch( mNames[i], match );
-			int matchPath = String::fuzzyMatch( mFiles[i], match );
-			matchesMap.insert( { std::max( matchName, matchPath ), i } );
+			int matchName = String::fuzzyMatch( match, mNames[i] );
+			int matchPath = String::fuzzyMatch( match, mFiles[i] );
+			int matchScore = std::max( matchName, matchPath );
+			if ( matchScore > std::numeric_limits<int>::min() )
+				matchesMap.insert( { matchScore, i } );
 		}
 	}
 	for ( auto& res : matchesMap ) {
@@ -144,12 +157,14 @@ ProjectDirectoryTree::fuzzyMatchTree( const std::string& match, const size_t& ma
 	std::vector<std::string> files;
 	std::vector<std::string> names;
 	for ( size_t i = 0; i < mNames.size(); i++ ) {
-		int matchName = String::fuzzyMatch( mNames[i], match );
-		int matchPath = String::fuzzyMatch( mFiles[i], match );
-		matchesMap.insert( { std::max( matchName, matchPath ), i } );
+		int matchName = String::fuzzyMatch( match, mNames[i] );
+		int matchPath = String::fuzzyMatch( match, mFiles[i] );
+		int matchScore = std::max( matchName, matchPath );
+		if ( matchScore > std::numeric_limits<int>::min() )
+			matchesMap.insert( { matchScore, i } );
 	}
 	for ( auto& res : matchesMap ) {
-		if ( names.size() < max ) {
+		if ( names.size() < max && res.first > std::numeric_limits<int>::min() ) {
 			names.emplace_back( mNames[res.second] );
 			files.emplace_back( mFiles[res.second] );
 		} else {
@@ -324,7 +339,8 @@ bool ProjectDirectoryTree::isDirInTree( const std::string& dirTree ) const {
 void ProjectDirectoryTree::getDirectoryFiles(
 	std::vector<std::string>& files, std::vector<std::string>& names, std::string directory,
 	std::set<std::string> currentDirs, const bool& ignoreHidden,
-	IgnoreMatcherManager& ignoreMatcher, GitIgnoreMatcher* allowedMatcher ) {
+	IgnoreMatcherManager& ignoreMatcher, GitIgnoreMatcher* allowedMatcher,
+	GitIgnoreMatcher* disallowedMatcher ) {
 	if ( !mRunning )
 		return;
 	currentDirs.insert( directory );
@@ -333,14 +349,23 @@ void ProjectDirectoryTree::getDirectoryFiles(
 	for ( auto& file : pathFiles ) {
 		std::string fullpath( directory + file );
 		if ( ignoreMatcher.foundMatch() && ignoreMatcher.match( directory, file ) ) {
-			if ( !allowedMatcher )
+			if ( !allowedMatcher || !allowedMatcher->hasPatterns() )
 				continue;
-			std::string localPath;
+			std::string_view localPath( fullpath );
 			if ( String::startsWith( directory, allowedMatcher->getPath() ) )
-				localPath = directory.substr( allowedMatcher->getPath().size() );
-			if ( !allowedMatcher->match( localPath + file ) )
+				localPath = std::string_view{ fullpath }.substr( allowedMatcher->getPath().size() );
+			if ( !allowedMatcher->match( localPath ) )
+				continue;
+		} else if ( disallowedMatcher && disallowedMatcher->hasPatterns() ) {
+			std::string_view localPath( fullpath );
+			if ( String::startsWith( directory, disallowedMatcher->getPath() ) ) {
+				localPath =
+					std::string_view{ fullpath }.substr( disallowedMatcher->getPath().size() );
+			}
+			if ( disallowedMatcher->match( localPath ) )
 				continue;
 		}
+
 		if ( FileSystem::isDirectory( fullpath ) ) {
 			fullpath += FileSystem::getOSSlash();
 			FileInfo dirInfo( fullpath, true );
@@ -367,7 +392,7 @@ void ProjectDirectoryTree::getDirectoryFiles(
 				ignoreMatcher.addChild( childMatch );
 			}
 			getDirectoryFiles( files, names, fullpath, currentDirs, ignoreHidden, ignoreMatcher,
-							   allowedMatcher );
+							   allowedMatcher, disallowedMatcher );
 			if ( childMatch ) {
 				ignoreMatcher.removeChild( childMatch );
 				eeSAFE_DELETE( childMatch );
@@ -439,7 +464,7 @@ void ProjectDirectoryTree::addFile( const FileInfo& file ) {
 		std::set<std::string> info;
 		if ( !mAcceptedPatterns.empty() ) {
 			getDirectoryFiles( files, names, mPath, info, false, mIgnoreMatcher,
-							   mAllowedMatcher.get() );
+							   mAllowedMatcher.get(), mDisallowedMatcher.get() );
 			size_t namesCount = names.size();
 			bool found;
 			for ( size_t i = 0; i < namesCount; i++ ) {
@@ -457,7 +482,7 @@ void ProjectDirectoryTree::addFile( const FileInfo& file ) {
 			}
 		} else {
 			getDirectoryFiles( mFiles, mNames, mPath, info, false, mIgnoreMatcher,
-							   mAllowedMatcher.get() );
+							   mAllowedMatcher.get(), mDisallowedMatcher.get() );
 		}
 	} else {
 		tryAddFile( file );
@@ -627,7 +652,7 @@ PluginRequestHandle ProjectDirectoryTree::processMessage( const PluginMessage& m
 				std::string closestDataPath;
 				int max{ std::numeric_limits<int>::min() };
 				for ( const auto& paths : tentativePaths ) {
-					int res = String::fuzzyMatch( filePath.c_str(), paths.c_str(), true );
+					int res = String::fuzzyMatch( filePath.c_str(), paths.c_str() );
 					if ( res > max ) {
 						closestDataPath = filePath;
 						max = res;

@@ -36,10 +36,17 @@
 #include <eterm/terminal/boxdrawdata.hpp>
 #include <eterm/terminal/terminalemulator.hpp>
 
+#include <eepp/core/memorymanager.hpp>
+#include <eepp/network/uri.hpp>
+#include <eepp/system/filesystem.hpp>
+#include <eepp/system/sys.hpp>
+
+using namespace EE::Network;
+using namespace EE::System;
+
 #include <assert.h>
 #include <cmath>
 #include <ctype.h>
-#include <eepp/core/memorymanager.hpp>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -89,6 +96,7 @@ const static unsigned int worddelimiters[] = { ' ', 0 };
 static const unsigned int tabspaces = 4;
 
 #ifdef _WIN32
+#define MICROSOFT_WINDOWS_WINBASE_H_DEFINE_INTERLOCKED_CPLUSPLUS_OVERLOADS 0
 #include <windows.h>
 #endif
 
@@ -359,6 +367,9 @@ void TerminalEmulator::selinit( void ) {
 }
 
 int TerminalEmulator::tlinelen( int y ) const {
+	if ( y < 0 )
+		return 0;
+
 	int i = mTerm.col;
 
 	if ( TLINE( y )[i - 1].mode & ATTR_WRAP )
@@ -440,8 +451,8 @@ void TerminalEmulator::selnormalize( void ) {
 	selsnap( &mSel.ne.x, &mSel.ne.y, +1 );
 
 	/* selection is over terminal size? */
-	mSel.nb.y = MIN( mTerm.bot, mSel.nb.y );
-	mSel.ne.y = MIN( mTerm.bot, mSel.ne.y );
+	// mSel.nb.y = MIN( mTerm.bot, mSel.nb.y );
+	// mSel.ne.y = MIN( mTerm.bot, mSel.ne.y );
 
 	/* expand selection over line breaks */
 	if ( mSel.type == SEL_RECTANGULAR )
@@ -543,7 +554,7 @@ char* TerminalEmulator::getsel( void ) const {
 	ptr = str = (char*)xmalloc( bufsize );
 
 	/* append every set & selected glyph to the selection */
-	for ( y = mSel.nb.y; y <= mSel.ne.y && y < mTerm.row; y++ ) {
+	for ( y = mSel.nb.y; y <= mSel.ne.y; y++ ) {
 		if ( ( linelen = tlinelen( y ) ) == 0 ) {
 			*ptr++ = '\n';
 			continue;
@@ -662,6 +673,7 @@ void TerminalEmulator::kscrolldown( const TerminalArg* a ) {
 		mTerm.scr -= n;
 		selmove( -n );
 		tfulldirt();
+		onScrollPositionChange();
 	}
 }
 
@@ -684,6 +696,7 @@ void TerminalEmulator::kscrollup( const TerminalArg* a ) {
 		mTerm.scr += n;
 		selmove( n );
 		tfulldirt();
+		onScrollPositionChange();
 	}
 }
 
@@ -694,6 +707,7 @@ void TerminalEmulator::kscrollto( const TerminalArg* a ) {
 		mTerm.scr = n;
 		selscroll( 0, n );
 		tfulldirt();
+		onScrollPositionChange();
 	}
 }
 
@@ -710,7 +724,7 @@ int TerminalEmulator::rowCount() const {
 }
 
 void TerminalEmulator::trimMemory() {
-#if EE_PLATFORM == EE_PLATFORM_LINUX
+#if EE_PLATFORM == EE_PLATFORM_LINUX && defined( __GLIBC__ )
 	if ( mAllowMemoryTrimnming ) {
 		malloc_trim( 0 );
 	}
@@ -869,6 +883,12 @@ void TerminalEmulator::treset( void ) {
 		tclearregion( 0, 0, mTerm.col - 1, mTerm.row - 1 );
 		tswapscreen();
 	}
+
+	xsetmode( 0, MODE_MOUSE | MODE_MOUSESGR | MODE_APPKEYPAD | MODE_APPCURSOR | MODE_FOCUS |
+					 MODE_BRCKTPASTE | MODE_MOUSEX10 | MODE_MOUSEMANY );
+	auto dpy = mDpy.lock();
+	if ( dpy )
+		dpy->setMode( MODE_VISIBLE, 1 );
 }
 
 void TerminalEmulator::tnew( int col, int row, size_t historySize ) {
@@ -963,6 +983,8 @@ void TerminalEmulator::tscrollup( int top, int n, int copyhist ) {
 
 	if ( mTerm.scr == 0 )
 		selscroll( top, -n );
+
+	onScrollPositionChange();
 }
 
 void TerminalEmulator::selmove( int n ) {
@@ -971,18 +993,20 @@ void TerminalEmulator::selmove( int n ) {
 }
 
 void TerminalEmulator::selscroll( int top, int n ) {
-	if ( mSel.ob.x == -1 )
+	if ( mSel.ob.x == -1 || mSel.alt != IS_SET( MODE_ALTSCREEN ) )
 		return;
 
-	top += mTerm.scr;
-	int bot = mTerm.bot + mTerm.scr;
-
-	if ( BETWEEN( mSel.nb.y, top, bot ) != BETWEEN( mSel.ne.y, top, bot ) ) {
+	if ( BETWEEN( mSel.nb.y, top, mTerm.bot ) != BETWEEN( mSel.ne.y, top, mTerm.bot ) ) {
 		selclear();
-	} else if ( BETWEEN( mSel.nb.y, top, bot ) ) {
-		selmove( n );
-		if ( mSel.nb.y < top || mSel.ne.y > bot )
+	} else if ( BETWEEN( mSel.nb.y, top, mTerm.bot ) ) {
+		mSel.ob.y += n;
+		mSel.oe.y += n;
+		if ( mSel.ob.y < mTerm.top || mSel.ob.y > mTerm.bot || mSel.oe.y < mTerm.top ||
+			 mSel.oe.y > mTerm.bot ) {
 			selclear();
+		} else {
+			selnormalize();
+		}
 	}
 }
 
@@ -1000,6 +1024,7 @@ void TerminalEmulator::tnewline( int first_col ) {
 void TerminalEmulator::csiparse( void ) {
 	char *p = mCsiescseq.buf, *np;
 	long int v;
+	int sep = ';'; /* colon or semi-colon, but not both */
 
 	mCsiescseq.narg = 0;
 	if ( *p == '?' ) {
@@ -1017,7 +1042,9 @@ void TerminalEmulator::csiparse( void ) {
 			v = -1;
 		mCsiescseq.arg[mCsiescseq.narg++] = v;
 		p = np;
-		if ( *p != ';' || mCsiescseq.narg == ESC_ARG_SIZ )
+		if ( sep == ';' && *p == ':' )
+			sep = ':'; /* allow override to colon once */
+		if ( *p != sep || mCsiescseq.narg == ESC_ARG_SIZ )
 			break;
 		p++;
 	}
@@ -1196,6 +1223,14 @@ int32_t TerminalEmulator::tdefcolor( int* attr, int* npar, int l ) {
 }
 
 void TerminalEmulator::tsetattr( int* attr, int l ) {
+	// Check if this is a private sequence (should be ignored for SGR)
+	// Private sequences start with '?' and should not affect text attributes
+	if ( mCsiescseq.priv ) {
+		// Private mode queries/commands don't set text attributes
+		// Just return without changing any attributes
+		return;
+	}
+
 	int i;
 	int32_t idx;
 
@@ -1258,15 +1293,21 @@ void TerminalEmulator::tsetattr( int* attr, int l ) {
 				if ( ( idx = tdefcolor( attr, &i, l ) ) >= 0 )
 					mTerm.c.attr.fg = idx;
 				break;
-			case 39:
+			case 39: /* set foreground color to default */
 				mTerm.c.attr.fg = mDefaultFg;
 				break;
 			case 48:
 				if ( ( idx = tdefcolor( attr, &i, l ) ) >= 0 )
 					mTerm.c.attr.bg = idx;
 				break;
-			case 49:
+			case 49: /* set background color to default */
 				mTerm.c.attr.bg = mDefaultBg;
+				break;
+			case 58:
+				/* This starts a sequence to change the color of
+				 * "underline" pixels. We don't support that and
+				 * instead eat up a following "5;n" or "2;r;g;b". */
+				tdefcolor( attr, &i, l );
 				break;
 			default:
 				if ( BETWEEN( attr[i], 30, 37 ) ) {
@@ -1327,6 +1368,8 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 				case 18: /* DECPFF -- Printer feed (IGNORED) */
 				case 19: /* DECPEX -- Printer extent (IGNORED) */
 				case 42: /* DECNRCM -- National characters (IGNORED) */
+				case 45: /* Reverse wrap-around (IGNORED) */
+				case 67: /* DECBKM -- Backarrow key sends backspace vs DEL (IGNORED) */
 				case 12: /* att610 -- Start blinking cursor (IGNORED) */
 					break;
 				case 25: /* DECTCEM -- Text Cursor Enable Mode */
@@ -1379,7 +1422,7 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 					if ( *args != 1049 )
 						break;
 					/* FALLTHROUGH */
-				case 1048:
+				case 1048: /* save/restore cursor (like DECSC/DECRC) */
 					tcursor( ( set ) ? CURSOR_SAVE : CURSOR_LOAD );
 					break;
 				case 2004: /* 2004: bracketed paste mode */
@@ -1394,12 +1437,15 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 				case 1015: /* urxvt mangled mouse mode; incompatible
 						  and can be mistaken for other control
 						  codes. */
+				case 1039: /* ESC to Meta (not implemented) */
 					break;
 				case 2026: // IGNORE DECSET/DECRST 2026 for sync updates
 						   // (https://codeberg.org/dnkl/foot/pulls/461/files)
 					break;
 				default:
+#ifdef EE_DEBUG
 					fprintf( stderr, "erresc: unknown private set/reset mode %d\n", *args );
+#endif
 					break;
 			}
 		} else {
@@ -1419,10 +1465,42 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 					MODBIT( mTerm.mode, set, MODE_CRLF );
 					break;
 				default:
+#ifdef EE_DEBUG
 					fprintf( stderr, "erresc: unknown set/reset mode %d\n", *args );
+#endif
 					break;
 			}
 		}
+	}
+}
+
+void TerminalEmulator::handleDeviceAttributes() {
+	if ( mCsiescseq.priv ) {
+		char buf[64];
+		int len;
+		// Private Device Attributes - respond with terminal capabilities
+		switch ( mCsiescseq.arg[0] ) {
+			case 0: // Primary DA
+			case 1: // Secondary DA
+				// Respond with VT220 emulation
+				len = snprintf( buf, sizeof( buf ), "\033[?1;2c" );
+				ttywrite( buf, len, 0 );
+				break;
+			case 62: // Request terminfo/termcap name
+				// Respond with our terminal name
+				len = snprintf( buf, sizeof( buf ), "\033P1+r%s\033\\", "st-256color" );
+				ttywrite( buf, len, 0 );
+				break;
+			case 63: // Request terminfo/termcap name (secondary)
+				// Similar response
+				break;
+			default:
+				// Unknown private DA query
+				break;
+		}
+	} else {
+		// Standard DA - respond with VT100 identification
+		ttywrite( vtiden, strlen( vtiden ), 0 );
 	}
 }
 
@@ -1435,8 +1513,10 @@ void TerminalEmulator::csihandle( void ) {
 	switch ( mCsiescseq.mode[0] ) {
 		default:
 		unknown:
+#ifdef EE_DEBUG
 			fprintf( stderr, "erresc: unknown csi " );
 			csidump();
+#endif
 			/* die(""); */
 			break;
 		case '@': /* ICH -- Insert <n> blank char */
@@ -1472,8 +1552,7 @@ void TerminalEmulator::csihandle( void ) {
 			}
 			break;
 		case 'c': /* DA -- Device Attributes */
-			if ( mCsiescseq.arg[0] == 0 )
-				ttywrite( vtiden, strlen( vtiden ), 0 );
+			handleDeviceAttributes();
 			break;
 		case 'b': /* REP -- if last char is printable print it <n> more times */
 			DEFAULT( mCsiescseq.arg[0], 1 );
@@ -1534,7 +1613,7 @@ void TerminalEmulator::csihandle( void ) {
 					}
 					break;
 				case 1: /* above */
-					if ( mTerm.c.y > 1 )
+					if ( mTerm.c.y > 0 )
 						tclearregion( 0, 0, mTerm.col - 1, mTerm.c.y - 1 );
 					tclearregion( 0, mTerm.c.y, mTerm.c.x, mTerm.c.y );
 					break;
@@ -1602,6 +1681,34 @@ void TerminalEmulator::csihandle( void ) {
 		case 'm': /* SGR -- Terminal attribute (color) */
 			tsetattr( mCsiescseq.arg, mCsiescseq.narg );
 			break;
+		case '>': /* Private sequences */
+			switch ( mCsiescseq.mode[1] ) {
+				case '4': /* Extended underline styles ESC[>4;Nm */
+					// Extended underline styles - fallback to standard underline
+					/* DEFAULT( mCsiescseq.arg[0], 1 );
+					switch ( mCsiescseq.arg[0] ) {
+						case 0: // No underline - fallback to ESC[24m
+						{
+							int fallback_args[] = { 24 }; // Reset underline
+							tsetattr( fallback_args, 1 );
+						} break;
+						case 1: // Straight underline - fallback to ESC[4m
+						case 2: // Double underline
+						case 3: // Curly underline
+						case 4: // Dotted underline
+						case 5: // Dashed underline
+						{
+							int fallback_args[] = { 4 }; // Standard underline
+							tsetattr( fallback_args, 1 );
+						} break;
+						default:
+							goto unknown;
+					} */
+					break;
+				default:
+					goto unknown;
+			}
+			break;
 		case 'n': /* DSR – Device Status Report (cursor position) */
 			if ( mCsiescseq.arg[0] == 6 ) {
 				len = snprintf( buf, sizeof( buf ), "\033[%i;%iR", mTerm.c.y + 1, mTerm.c.x + 1 );
@@ -1622,7 +1729,11 @@ void TerminalEmulator::csihandle( void ) {
 			tcursor( CURSOR_SAVE );
 			break;
 		case 'u': /* DECRC -- Restore cursor position (ANSI.SYS) */
-			tcursor( CURSOR_LOAD );
+			if ( mCsiescseq.priv ) {
+				goto unknown;
+			} else {
+				tcursor( CURSOR_LOAD );
+			}
 			break;
 		case ' ':
 			switch ( mCsiescseq.mode[1] ) {
@@ -1637,6 +1748,39 @@ void TerminalEmulator::csihandle( void ) {
 				default:
 					goto unknown;
 			}
+			break;
+		case '=': /* Progressive enhancement sequences */
+			/* Keyboard protocol ESC[=Nu */
+			/* Do nothing for the moment */
+			break;
+		case 't': /* Window manipulation */
+			switch ( mCsiescseq.arg[0] ) {
+				case 22: /* Save window title */
+					// Push current title to title stack
+					mTerm.title_stack.push_back( mTerm.title );
+					break;
+				case 23: /* Restore window title */
+					// Pop title from stack and set it
+					if ( !mTerm.title_stack.empty() ) {
+						mTerm.title = mTerm.title_stack.back();
+						mTerm.title_stack.pop_back();
+						// Notify display to update title
+						dpy = mDpy.lock();
+						if ( dpy ) {
+							dpy->setTitle( mTerm.title.data() );
+						}
+					}
+					break;
+				// Add other window manipulation codes as needed
+				default:
+					goto unknown;
+			}
+			break;
+		case '?':
+			/* Private mode queries - ignore or handle appropriately */
+			/* For XTQMODKEYS and similar queries, we should either:
+			   1. Ignore completely (do nothing)
+			   2. Send a proper response if required */
 			break;
 	}
 }
@@ -1675,6 +1819,15 @@ void TerminalEmulator::strhandle( void ) {
 	strparse();
 	par = ( narg = mStrescseq.narg ) ? atoi( mStrescseq.args[0] ) : 0;
 
+	static constexpr unsigned int defaultfg = 258;
+	static constexpr unsigned int defaultbg = 259;
+	static constexpr unsigned int defaultcs = 256;
+	const struct {
+		int idx;
+		const char* str;
+	} osc_table[] = {
+		{ defaultfg, "foreground" }, { defaultbg, "background" }, { defaultcs, "cursor" } };
+
 	std::shared_ptr<ITerminalDisplay> dpy = mDpy.lock();
 
 	if ( !dpy )
@@ -1687,6 +1840,7 @@ void TerminalEmulator::strhandle( void ) {
 					if ( narg > 1 ) {
 						dpy->setTitle( mStrescseq.args[1] );
 						dpy->setIconTitle( mStrescseq.args[1] );
+						mTerm.title = mStrescseq.args[1];
 					}
 					return;
 				case 1:
@@ -1696,17 +1850,35 @@ void TerminalEmulator::strhandle( void ) {
 				case 2:
 					if ( narg > 1 ) {
 						dpy->setTitle( mStrescseq.args[1] );
+						mTerm.title = mStrescseq.args[1];
 					}
 					return;
-				case 52:
+				case 52: /* manipulate selection data */
 					if ( narg > 2 && mAllowWindowOps ) {
 						dec = base64dec( mStrescseq.args[2] );
 						if ( dec ) {
 							setClipboard( dec );
-							free( dec );
+							xfree( dec );
 						} else {
 							fprintf( stderr, "erresc: invalid base64\n" );
 						}
+					}
+					return;
+				case 10: /* set dynamic VT100 text foreground color */
+				case 11: /* set dynamic VT100 text background color */
+				case 12: /* set dynamic text cursor color */
+					if ( narg < 2 )
+						break;
+					p = mStrescseq.args[1];
+					if ( ( j = par - 10 ) < 0 || j >= (int)LEN( osc_table ) )
+						break; /* shouldn't be possible */
+
+					if ( !strcmp( p, "?" ) ) {
+						osc_color_response( par, osc_table[j].idx, 0 );
+					} else if ( xsetcolorname( osc_table[j].idx, p ) ) {
+						fprintf( stderr, "erresc: invalid %s color: %s\n", osc_table[j].str, p );
+					} else {
+						tfulldirt();
 					}
 					return;
 				case 4: /* color set */
@@ -1729,19 +1901,74 @@ void TerminalEmulator::strhandle( void ) {
 						redraw();
 					}
 					return;
+				case 110: /* reset dynamic VT100 text foreground color */
+				case 111: /* reset dynamic VT100 text background color */
+				case 112: /* reset dynamic text cursor color */
+					if ( narg != 1 )
+						break;
+					if ( ( j = par - 110 ) < 0 || j >= (int)LEN( osc_table ) )
+						break; /* shouldn't be possible */
+					if ( resetColor( osc_table[j].idx, NULL ) ) {
+						fprintf( stderr, "erresc: %s color not found\n", osc_table[j].str );
+					} else {
+						tfulldirt();
+					}
+					return;
+				case 7: {
+					if ( narg > 1 )
+						mCurrentWorkingDirectory = URI( mStrescseq.args[1] ).getPath();
+					return;
+				}
+				case 133: {
+					if ( narg > 1 ) {
+						j = ( narg > 1 ) ? mStrescseq.args[1][0] : -1;
+						bool valid = false;
+						switch ( j ) {
+							case 'A': {
+								mPromptState = PromptState::WaitingPrompt;
+								valid = true;
+							}
+							case 'B': {
+								mPromptState = PromptState::PromptEnded;
+								valid = true;
+							}
+							case 'C': {
+								mPromptState = PromptState::CommandExecuting;
+								valid = true;
+							}
+							case 'D': {
+								mPromptState = PromptState::CommandExecuted;
+								valid = true;
+							}
+						}
+
+						if ( valid && mPromptStateChangedCb ) {
+							mPromptStateChangedCb( mPromptState,
+												   narg > 2 ? std::string_view{ mStrescseq.args[2] }
+															: "" );
+						}
+					}
+					return;
+				}
 			}
 			break;
-		case 'k': /* old title set compatibility */
-			dpy->setTitle( mStrescseq.args[0] );
+		case 'k': /* old title set compatibility */ {
+			if ( mStrescseq.args[0] ) {
+				dpy->setTitle( mStrescseq.args[0] );
+				mTerm.title = mStrescseq.args[0];
+			}
 			return;
+		}
 		case 'P': /* DCS -- Device Control String */
 		case '_': /* APC -- Application Program Command */
 		case '^': /* PM -- Privacy Message */
 			return;
 	}
 
+#ifdef EE_DEBUG
 	logError( "erresc: unknown str " );
 	strdump();
+#endif
 }
 
 void TerminalEmulator::strparse( void ) {
@@ -2399,8 +2626,10 @@ void TerminalEmulator::tresize( int col, int row ) {
 
 void TerminalEmulator::resettitle( void ) {
 	auto dpy = mDpy.lock();
-	if ( dpy )
+	if ( dpy ) {
 		dpy->setTitle( NULL );
+		mTerm.title = "";
+	}
 }
 
 void TerminalEmulator::drawregion( ITerminalDisplay& dpy, int x1, int y1, int x2, int y2 ) {
@@ -2457,6 +2686,10 @@ void TerminalEmulator::redraw() {
 	draw();
 }
 
+int TerminalEmulator::xsetcolorname( int x, const char* name ) {
+	return resetColor( x, name );
+}
+
 void TerminalEmulator::xsetmode( int set, unsigned int mode ) {
 	auto dpy = mDpy.lock();
 	if ( dpy )
@@ -2470,12 +2703,62 @@ bool TerminalEmulator::xgetmode( const TerminalWinMode& mode ) {
 	return false;
 }
 
+int TerminalEmulator::xgetcolor( int x, unsigned char* r, unsigned char* g, unsigned char* b ) {
+	// if ( !BETWEEN( x, 0, dc.collen - 1 ) )
+	// 	return 1;
+
+	// *r = dc.col[x].color.red >> 8;
+	// *g = dc.col[x].color.green >> 8;
+	// *b = dc.col[x].color.blue >> 8;
+
+	// return 0;
+
+	return 1;
+}
+
+void TerminalEmulator::osc_color_response( int num, int index, int is_osc4 ) {
+	int n;
+	char buf[32];
+	unsigned char r, g, b;
+
+	if ( xgetcolor( is_osc4 ? num : index, &r, &g, &b ) ) {
+		fprintf( stderr, "erresc: failed to fetch %s color %d\n", is_osc4 ? "osc4" : "osc",
+				 is_osc4 ? num : index );
+		return;
+	}
+
+	n = snprintf( buf, sizeof buf, "\033]%s%d;rgb:%02x%02x/%02x%02x/%02x%02x\007",
+				  is_osc4 ? "4;" : "", num, r, r, g, g, b, b );
+	if ( n < 0 || n >= (int)sizeof( buf ) ) {
+		fprintf( stderr, "error: %s while printing %s response\n",
+				 n < 0 ? "snprintf failed" : "truncation occurred", is_osc4 ? "osc4" : "osc" );
+	} else {
+		ttywrite( buf, n, 1 );
+	}
+}
+
 void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Vector2i& pos,
 									const Uint32& flags, const Uint32& mod ) {
-	if ( !xgetmode( MODE_MOUSEBTN ) && !xgetmode( MODE_MOUSESGR ) &&
+	if ( !xgetmode( (TerminalWinMode)MODE_MOUSE ) && !xgetmode( MODE_MOUSESGR ) &&
 		 ( TerminalMouseEventType::MouseButtonDown == type ||
-		   TerminalMouseEventType::MouseButtonRelease == type ) )
+		   TerminalMouseEventType::MouseButtonRelease == type ) ) {
+		/* If mouse mode is not enabled, we send arrow keys for scroll events */
+		if ( type == TerminalMouseEventType::MouseButtonDown &&
+			 ( flags & ( EE_BUTTON_WUMASK | EE_BUTTON_WDMASK ) ) && tisaltscr() ) {
+			char buf[64];
+			int len = 0;
+			if ( flags & EE_BUTTON_WUMASK ) {
+				len = snprintf( buf, sizeof( buf ), "%s",
+								xgetmode( MODE_APPKEYPAD ) ? "\033OA" : "\033[A" );
+			} else if ( flags & EE_BUTTON_WDMASK ) {
+				len = snprintf( buf, sizeof( buf ), "%s",
+								xgetmode( MODE_APPKEYPAD ) ? "\033OB" : "\033[B" );
+			}
+			if ( len > 0 )
+				ttywrite( buf, len, 0 );
+		}
 		return;
+	}
 
 	if ( !xgetmode( MODE_MOUSEMOTION ) && TerminalMouseEventType::MouseMotion == type )
 		return;
@@ -2529,7 +2812,7 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 			if ( xgetmode( MODE_MOUSEX10 ) )
 				return;
 			/* Don't send release events for the scroll wheel */
-			if ( btn >= 28 && btn <= 31 )
+			if ( btn >= 4 && btn <= 7 )
 				return;
 		}
 		code = 0;
@@ -2599,7 +2882,6 @@ TerminalEmulator::TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
 	mDpy( display ),
 	mPty( std::move( pty ) ),
 	mProcess( std::move( process ) ),
-	mColorsLoaded( false ),
 	mExitCode( 1 ),
 	mStatus( STARTING ),
 	mBuflen( 0 ),
@@ -2664,6 +2946,12 @@ void TerminalEmulator::onProcessExit( int exitCode ) {
 		dpy->onProcessExit( exitCode );
 }
 
+void TerminalEmulator::onScrollPositionChange() {
+	auto dpy = mDpy.lock();
+	if ( dpy )
+		dpy->onScrollPositionChange();
+}
+
 void TerminalEmulator::setClipboard( const char* str ) {
 	auto dpy = mDpy.lock();
 	if ( dpy )
@@ -2723,6 +3011,9 @@ bool TerminalEmulator::update() {
 	if ( mStatus == TerminalEmulator::STARTING ) {
 		mStatus = TerminalEmulator::RUNNING;
 	} else if ( mStatus != TerminalEmulator::RUNNING ) {
+		if ( mDirty )
+			draw();
+
 		return true;
 	}
 

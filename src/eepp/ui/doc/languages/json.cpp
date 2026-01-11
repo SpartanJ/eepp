@@ -8,8 +8,17 @@ void addJSON() {
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "JSON",
-		  { "%.json$", "%.cson$", "%.webmanifest$" },
 		  {
+			  "%.json$",
+			  "%.cson$"
+			  "%.jsonc$",
+			  "%.ipynb$",
+			  "%.webmanifest$",
+		  },
+		  {
+			  { { "//.-\n" }, "comment" },
+			  { { "/%*", "%*/" }, "comment" },
+
 			  { { "(%b\"\")(:)" }, { "normal", "keyword", "operator" } },
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },
@@ -24,6 +33,7 @@ void addJSON() {
 		  {
 			  { "false", "literal" },
 			  { "true", "literal" },
+			  { "null", "literal" },
 
 		  },
 		  "//",
@@ -32,6 +42,7 @@ void addJSON() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' }, { '[', ']' } } );
+	sd.setBlockComment( {"/*", "*/"} );
 }
 
 }}}} // namespace EE::UI::Doc::Language

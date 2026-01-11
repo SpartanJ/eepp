@@ -18,17 +18,18 @@ UITab::UITab() :
 	UISelectButton( "tab" ), mOwnedWidget( NULL ), mDragTotalDiff( 0.f ), mTabWidget( NULL ) {
 	mTextBox->setElementTag( mTag + "::text" );
 	auto cb = [this]( const Event* ) { onSizeChange(); };
-	mTextBox->addEventListener( Event::OnSizeChange, cb );
+	mTextBox->on( Event::OnSizeChange, cb );
 	mCloseButton = UIWidget::NewWithTag( mTag + "::close" );
 	mCloseButton->setParent( const_cast<UITab*>( this ) );
 	mCloseButton->setEnabled( false );
 	mCloseButton->setVisible( false );
-	mCloseButton->addEventListener( Event::OnPaddingChange, cb );
-	mCloseButton->addEventListener( Event::OnMarginChange, cb );
-	mCloseButton->addEventListener( Event::OnSizeChange, cb );
-	mCloseButton->addEventListener( Event::OnVisibleChange, cb );
+	mCloseButton->on( Event::OnPaddingChange, cb );
+	mCloseButton->on( Event::OnMarginChange, cb );
+	mCloseButton->on( Event::OnSizeChange, cb );
+	mCloseButton->on( Event::OnVisibleChange, cb );
 	applyDefaultTheme();
 	unsetFlags( UI_DRAG_VERTICAL );
+	mNodeFlags |= NODE_FLAG_DISABLE_CLICK_FOCUS;
 }
 
 UITab::~UITab() {}
@@ -268,7 +269,7 @@ void UITab::onAutoSize() {
 			w = eemin( w, getMaxSize().getWidth() );
 
 		if ( textW > w - nonTextW )
-			getTextBox()->setMaxWidthEq( String::format( "%.0fdp", w - nonTextW ) );
+			getTextView()->setMaxWidthEq( String::format( "%.0fdp", w - nonTextW ) );
 	}
 
 	setInternalWidth( w );
@@ -278,8 +279,8 @@ void UITab::onAutoSize() {
 			getTabWidget()->orderTabs();
 	}
 
-	if ( getTextBox()->getTextWidth() > getTextBox()->getSize().getWidth() )
-		getTextBox()->setHorizontalAlign( UI_HALIGN_LEFT );
+	if ( getTextView()->getTextWidth() > getTextView()->getSize().getWidth() )
+		getTextView()->setHorizontalAlign( UI_HALIGN_LEFT );
 }
 
 std::string UITab::getPropertyString( const PropertyDefinition* propertyDef,
@@ -356,8 +357,7 @@ bool UITab::onCreateContextMenu( const Vector2i& position, const Uint32& flags )
 	UIMenu::findBestMenuPos( pos, menu );
 	menu->setPixelsPosition( pos );
 	menu->show();
-	menu->addEventListener( Event::OnClose,
-							[tTabW]( const Event* ) { tTabW->mCurrentMenu = nullptr; } );
+	menu->on( Event::OnClose, [tTabW]( const Event* ) { tTabW->mCurrentMenu = nullptr; } );
 	tTabW->mCurrentMenu = menu;
 	return true;
 }
@@ -382,12 +382,10 @@ Uint32 UITab::onMessage( const NodeMessage* message ) {
 			break;
 		}
 		case NodeMessage::MouseUp: {
-			if ( flags & EE_BUTTON_LMASK && message->getSender() != mCloseButton ) {
-				tTabW->setTabSelected( this );
-			} else if ( tTabW->getTabsClosable() && ( flags & EE_BUTTON_MMASK ) ) {
+			if ( tTabW->getTabsClosable() && ( flags & EE_BUTTON_MMASK ) ) {
 				tTabW->tryCloseTab( this, UITabWidget::FocusTabBehavior::Closest );
 			} else if ( flags & EE_BUTTONS_WUWD ) {
-				Input* input = getUISceneNode()->getWindow()->getInput();
+				Input* input = getInput();
 				if ( input->isModState( KeyMod::getDefaultModifier() ) ) {
 					UISlider* slider = tTabW->getTabScroll()->getSlider();
 					if ( flags & EE_BUTTON_WUMASK ) {

@@ -12,11 +12,10 @@ namespace EE { namespace UI { namespace Tools {
 TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNewTGCb( NewTGCb ) {
 	mUIWindow = UIWindow::New();
 	mUIWindow->setSizeWithDecoration( 378, 0 )->setMinWindowSize( 378, 0 )->setWindowFlags(
-		UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_SHARE_ALPHA_WITH_CHILDS |
-		UI_WIN_MODAL );
+		UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS |
+		UI_WIN_SHARE_ALPHA_WITH_CHILDREN | UI_WIN_MODAL );
 
-	mUIWindow->addEventListener( Event::OnWindowClose,
-								 [this] ( auto event ) { windowClose( event ); } );
+	mUIWindow->on( Event::OnWindowClose, [this]( auto event ) { windowClose( event ); } );
 	mUIWindow->setTitle( "New Texture Atlas" );
 
 	static const auto layout = R"xml(
@@ -68,7 +67,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 		<CheckBox id="forcePow2" layout_width='match_parent' layout_height='wrap_content' text="Force power of 2 textures." />
 		<CheckBox id="scalableSVG" layout_width='match_parent' layout_height='wrap_content' text="Scale SVG source files using the pixel-density provided." />
 		<CheckBox id="saveExtensions" layout_width='match_parent' layout_height='wrap_content' text="Save the images extensions in regions names." tooltip="Save the image files extensions as part of the texture regions names." />
-		<CheckBox id="allowChilds" layout_width='match_parent' layout_height='wrap_content' text="Allow create multiple texture atlases on save."
+		<CheckBox id="allowChildren" layout_width='match_parent' layout_height='wrap_content' text="Allow create multiple texture atlases on save."
 			tooltip="When enabled in the case of an atlas not having enough space in the&#10;image to fit all the source input images it will create new child&#10;atlas images to save them."
 		/>
 		<LinearLayout layout_gravity='center_vertical|right' layout_width='wrap_content' layout_height='wrap_content' orientation='horizontal' margin-top="8dp" margin-bottom='16dp'>
@@ -91,7 +90,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 	mUIWindow->bind( "forcePow2", mForcePow2 );
 	mUIWindow->bind( "scalableSVG", mScalableSVG );
 	mUIWindow->bind( "saveExtensions", mSaveExtensions );
-	mUIWindow->bind( "allowChilds", mAllowChilds );
+	mUIWindow->bind( "allowChildren", mAllowChildren );
 
 	std::vector<String> Sizes;
 
@@ -104,14 +103,16 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) : mUIWindow( NULL ), mNew
 	mComboWidth->getListBox()->setSelected( "2048" );
 	mComboHeight->getListBox()->setSelected( "2048" );
 
-	mSetPathButton->addEventListener( Event::MouseClick,
-									  [this] ( auto event ) { onDialogFolderSelect( event ); } );
-	mUIWindow->find<UIPushButton>( "okButton" )
-		->addEventListener( Event::MouseClick, [this] ( auto event ) { okClick( event ); } );
-	mUIWindow->find<UIPushButton>( "cancelButton" )
-		->addEventListener( Event::MouseClick, [this] ( auto event ) { cancelClick( event ); } );
+	mSetPathButton->on( Event::MouseClick,
+						[this]( auto event ) { onDialogFolderSelect( event ); } );
+	mUIWindow->find<UIPushButton>( "okButton" )->on( Event::MouseClick, [this]( auto event ) {
+		okClick( event );
+	} );
+	mUIWindow->find<UIPushButton>( "cancelButton" )->on( Event::MouseClick, [this]( auto event ) {
+		cancelClick( event );
+	} );
 
-	container->addEventListener( Event::OnLayoutUpdate, [this]( const Event* event ) {
+	container->on( Event::OnLayoutUpdate, [this]( const Event* event ) {
 		mUIWindow->setMinWindowSize( event->getNode()->getSize() );
 		mUIWindow->center();
 		mUIWindow->show();
@@ -132,8 +133,7 @@ void TextureAtlasNew::okClick( const Event* event ) {
 			UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::SaveDialog, "*." + ext );
 		TGDialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Save Texture Atlas" );
-		TGDialog->addEventListener( Event::SaveFile,
-									[this] ( auto event ) { textureAtlasSave( event ); } );
+		TGDialog->on( Event::SaveFile, [this]( auto event ) { textureAtlasSave( event ); } );
 		TGDialog->center();
 		TGDialog->show();
 	}
@@ -172,7 +172,7 @@ void TextureAtlasNew::textureAtlasSave( const Event* Event ) {
 			TexturePacker* texturePacker = TexturePacker::New(
 				w, h, PixelDensity::toFloat( PixelDensity::fromString( mPixelDensity->getText() ) ),
 				mForcePow2->isChecked(), mScalableSVG->isChecked(), b, textureFilter,
-				mAllowChilds->isChecked(), false );
+				mAllowChildren->isChecked(), false );
 
 			texturePacker->addTexturesPath( mTGPath->getText() );
 
@@ -211,8 +211,7 @@ void TextureAtlasNew::onDialogFolderSelect( const Event* event ) {
 			UIFileDialog::New( UIFileDialog::DefaultFlags | UIFileDialog::AllowFolderSelect, "*" );
 		TGDialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		TGDialog->setTitle( "Create Texture Atlas ( Select Folder Containing Textures )" );
-		TGDialog->addEventListener( Event::OpenFile,
-									[this] ( auto event ) { onSelectFolder( event ); } );
+		TGDialog->on( Event::OpenFile, [this]( auto event ) { onSelectFolder( event ); } );
 		TGDialog->center();
 		TGDialog->show();
 	}
@@ -254,13 +253,13 @@ void TextureAtlasNew::onSelectFolder( const Event* Event ) {
 										"The folder must contain at least one image!" );
 			MsgBox->setTitle( "Error" );
 			MsgBox->center();
-			MsgBox->show();
+			MsgBox->showWhenReady();
 		}
 	} else {
 		MsgBox = UIMessageBox::New( UIMessageBox::OK, "You must select a folder!" );
 		MsgBox->setTitle( "Error" );
 		MsgBox->center();
-		MsgBox->show();
+		MsgBox->showWhenReady();
 	}
 }
 

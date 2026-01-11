@@ -1,6 +1,7 @@
 #include "statusappoutputcontroller.hpp"
 #include "notificationcenter.hpp"
 #include "plugins/plugincontextprovider.hpp"
+#include "widgetcommandexecuter.hpp"
 #include <eepp/ui/tools/uidocfindreplace.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 
@@ -28,6 +29,15 @@ UIPushButton* StatusAppOutputController::getRunButton() {
 		UIWidget* tab = mContext->getSidePanel()->find<UIWidget>( "build_tab_view" );
 		if ( tab )
 			return tab->find<UIPushButton>( "run_button" );
+	}
+	return nullptr;
+}
+
+UIPushButton* StatusAppOutputController::getBuildAndRunButton() {
+	if ( mContext->getSidePanel() ) {
+		UIWidget* tab = mContext->getSidePanel()->find<UIWidget>( "build_tab_view" );
+		if ( tab )
+			return tab->find<UIPushButton>( "build_and_run_button" );
 	}
 	return nullptr;
 }
@@ -73,6 +83,11 @@ void StatusAppOutputController::initNewOutput( const ProjectBuildOutputParser& o
 
 		if ( runButton )
 			runButton->setText( mContext->i18n( "cancel_run", "Cancel Run" ) );
+
+		UIPushButton* buildAndRunButton = getBuildAndRunButton();
+
+		if ( buildAndRunButton )
+			buildAndRunButton->setEnabled( false );
 	}
 
 	mRunButton->setEnabled( false );
@@ -140,18 +155,19 @@ void StatusAppOutputController::createContainer() {
 	if ( mContainer )
 		return;
 	const auto XML = R"xml(
-	<hbox id="app_output" class="vertical_bar" lw="mp" lh="mp" visible="false">
+	<hboxce id="app_output" class="vertical_bar" lw="mp" lh="mp" visible="false">
 		<rellayce id="app_command_executer" lw="0" lw8="1" lh="mp">
 			<CodeEditor id="app_output_output" lw="mp" lh="mp" />
 		</rellayce>
 		<vbox lw="16dp" lh="mp">
+			<PushButton class="expand_status_bar_panel" lw="mp" tooltip="@string(expand_panel, Expand Panel)" />
 			<PushButton id="app_output_clear" lw="mp" icon="icon(eraser, 12dp)" tooltip="@string(clear, Clear)" />
 			<PushButton id="app_output_run" lw="mp" icon="icon(play, 12dp)" tooltip="@string(run, Run)" />
 			<PushButton id="app_output_stop" lw="mp" icon="icon(stop, 12dp)" enabled="false" />
 			<PushButton id="app_output_find" lw="mp" icon="icon(search, 12dp)" tooltip="@string(find, Find)" />
 			<PushButton id="app_output_configure" lw="mp" icon="icon(settings, 12dp)" tooltip="@string(configure_ellipsis, Configure...)" />
 		</vbox>
-	</hbox>
+	</hboxce>
 	)xml";
 
 	if ( mMainSplitter->getLastWidget() != nullptr ) {
@@ -161,18 +177,33 @@ void StatusAppOutputController::createContainer() {
 
 	mContainer = mContext->getUISceneNode()
 					 ->loadLayoutFromString( XML, mMainSplitter )
-					 ->asType<UILinearLayout>();
+					 ->asType<UIHLinearLayoutCommandExecuter>();
+
+	mContext->getStatusBar()->registerStatusBarPanel( mContainer, mContainer );
+
 	auto editor = mContainer->find<UICodeEditor>( "app_output_output" );
+	mContainer->getKeyBindings().addKeybindsStringUnordered( mContext->getStatusBarKeybindings() );
+	editor->getKeyBindings().addKeybindsStringUnordered( mContext->getStatusBarKeybindings() );
+
 	editor->setLocked( true );
 	editor->setLineBreakingColumn( 0 );
 	editor->setShowLineNumber( false );
 	editor->getDocument().reset();
 	editor->setScrollY( editor->getMaxScroll().y );
+	editor->setColorScheme( mContext->getSplitter()->getCurrentColorScheme() );
 	mAppOutput = editor;
 	mAppOutput->on( Event::OnScrollChange, [this]( auto ) {
 		mScrollLocked = mAppOutput->getMaxScroll().y == mAppOutput->getScroll().y;
 	} );
 	mContainer->setVisible( false );
+	mContainer->on( Event::OnFocus, [this]( auto ) { mAppOutput->setFocus(); } );
+	mContainer->on( Event::KeyDown, [this]( const Event* event ) {
+		auto ke = event->asKeyEvent();
+		if ( ke->getSanitizedMod() == 0 && ke->getKeyCode() == EE::Window::KEY_ESCAPE &&
+			 mSplitter->getCurEditor() ) {
+			mSplitter->getCurEditor()->setFocus();
+		}
+	} );
 
 	mContainer->bind( "app_output_clear", mClearButton );
 	mContainer->bind( "app_output_run", mRunButton );
@@ -239,6 +270,12 @@ void StatusAppOutputController::updateRunButton() {
 		runButton->runOnMainThread(
 			[this, runButton] { runButton->setText( mContext->i18n( "run", "Run" ) ); } );
 	}
+
+	UIPushButton* buildAndRunButton = getBuildAndRunButton();
+
+	if ( buildAndRunButton )
+		buildAndRunButton->setEnabled( true );
+
 	mRunButton->setEnabled( true );
 	mStopButton->setEnabled( false );
 }

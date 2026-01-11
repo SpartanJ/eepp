@@ -74,3 +74,14 @@ UTEST( TextDocument, multicursor ) {
 	doc.resetUndoRedo();
 	doc.resetSelection( TextRange{ { 0, 0 }, { 0, 0 } } );
 }
+
+UTEST( TextDocument, fileMightBeBinary ) {
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	auto files = FileSystem::filesInfoGetInPath( "assets/textfiles" );
+	for ( const auto& file : files ) {
+		EXPECT_FALSE_MSG(
+			TextDocument::fileMightBeBinary( file.getFilepath() ),
+			String::format( "File %s should be detected as text file", file.getFilepath() )
+				.c_str() );
+	}
+}

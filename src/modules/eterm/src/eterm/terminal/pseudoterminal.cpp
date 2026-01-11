@@ -42,11 +42,13 @@
 #include <unistd.h>
 using namespace EE::System;
 
+#if defined( EE_PLATFORM_POSIX )
+#include <fcntl.h>
+#endif
+
 namespace eterm { namespace Terminal {
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-#include <fcntl.h>
-
 int openpty( int* amaster, int* aslave, char* name, struct termios* termp, struct winsize* winp ) {
 	int master, slave;
 	char* name_slave;
@@ -94,7 +96,8 @@ fail:
 
 PseudoTerminal::~PseudoTerminal() {}
 
-PseudoTerminal::PseudoTerminal( int columns, int rows, AutoHandle&& master, AutoHandle&& slave ) :
+PseudoTerminal::PseudoTerminal( int columns, int rows, AutoHandle&& master,
+								AutoHandle&& slave ) noexcept :
 	mColumns( columns ),
 	mRows( rows ),
 	mMaster( std::move( master ) ),
@@ -129,20 +132,29 @@ int PseudoTerminal::getNumRows() const {
 }
 
 int PseudoTerminal::write( const char* s, size_t n ) {
-	size_t c = n;
-	while ( n > 0 ) {
-		ssize_t r = ::write( (int)mMaster, s, n );
-		if ( r < 0 ) {
-			return -1;
-		}
-		n -= r;
-		s += r;
+	if ( !mWriteBuffer.empty() ) {
+		mWriteBuffer.append( s, n );
+		return n;
 	}
-	return c;
+
+	ssize_t r = ::write( (int)mMaster, s, n );
+	if ( r < 0 ) {
+		if ( errno == EAGAIN || errno == EWOULDBLOCK ) {
+			mWriteBuffer.append( s, n );
+			return n;
+		}
+		return -1;
+	}
+
+	if ( (size_t)r < n ) {
+		mWriteBuffer.append( s + r, n - r );
+	}
+
+	return n;
 }
 
 int PseudoTerminal::read( char* s, size_t n, bool block ) {
-	if ( !block ) {
+	if ( mWriteBuffer.empty() && !block ) {
 		struct pollfd pfd;
 		pfd.fd = mMaster.handle();
 		pfd.events = POLLIN;
@@ -155,7 +167,36 @@ int PseudoTerminal::read( char* s, size_t n, bool block ) {
 			perror( "PseudoTerminal::read(poll)" );
 			return -1;
 		}
+	} else if ( !mWriteBuffer.empty() || block ) {
+		struct pollfd pfd;
+		pfd.fd = mMaster.handle();
+		pfd.events = POLLIN;
+		if ( !mWriteBuffer.empty() )
+			pfd.events |= POLLOUT;
+		pfd.revents = 0;
+		auto i = poll( &pfd, 1, block ? -1 : 0 );
+		if ( i < 0 && errno != EAGAIN && errno != EINTR ) {
+			perror( "PseudoTerminal::read(poll)" );
+			return -1;
+		}
+
+		if ( ( pfd.revents & POLLOUT ) && !mWriteBuffer.empty() ) {
+			ssize_t r = ::write( (int)mMaster, mWriteBuffer.c_str(), mWriteBuffer.size() );
+			if ( r > 0 ) {
+				if ( (size_t)r == mWriteBuffer.size() ) {
+					mWriteBuffer.clear();
+				} else {
+					mWriteBuffer = mWriteBuffer.substr( r );
+				}
+			} else if ( r < 0 && errno != EAGAIN && errno != EWOULDBLOCK ) {
+				perror( "PseudoTerminal::read(write)" ); // Log error but don't fail read
+			}
+		}
+
+		if ( !( pfd.revents & POLLIN ) )
+			return 0;
 	}
+
 	ssize_t r = ::read( mMaster.handle(), s, n );
 	return (int)r;
 }
@@ -179,6 +220,9 @@ std::unique_ptr<PseudoTerminal> PseudoTerminal::create( int columns, int rows ) 
 		Log::error( "PseudoTerminal::create(openpty)" );
 		return nullptr;
 	}
+
+	int flags = fcntl( master, F_GETFL, 0 );
+	fcntl( master, F_SETFL, flags | O_NONBLOCK );
 
 	return std::unique_ptr<PseudoTerminal>(
 		new PseudoTerminal( columns, rows, std::move( master ), std::move( slave ) ) );
@@ -221,7 +265,7 @@ PseudoTerminal::~PseudoTerminal() {
 }
 
 PseudoTerminal::PseudoTerminal( int columns, int rows, AutoHandle&& hInput, AutoHandle&& hOutput,
-								void* hPC ) :
+								void* hPC ) noexcept :
 	mInputHandle( std::move( hInput ) ),
 	mOutputHandle( std::move( hOutput ) ),
 	mPHPC( hPC ),

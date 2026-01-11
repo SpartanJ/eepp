@@ -1,5 +1,4 @@
 #include "autocompleteplugin.hpp"
-#include <algorithm>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -8,7 +7,10 @@
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+
+#include <algorithm>
 #include <nlohmann/json.hpp>
 using namespace EE::Graphics;
 using namespace EE::System;
@@ -20,12 +22,6 @@ namespace ecode {
 static constexpr auto SNIPPET_PTRN1 = "%$%{%d+%}"sv;
 static constexpr auto SNIPPET_PTRN2 = "%$%{%d+%:([%w,.%s%+%-]+)}"sv;
 static constexpr auto SNIPPET_PTRN3 = "%$%d+"sv;
-
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-#define AUTO_COMPLETE_THREADED 1
-#else
-#define AUTO_COMPLETE_THREADED 0
-#endif
 
 static json getURIJSON( TextDocument* doc, const PluginIDType& id ) {
 	json data;
@@ -48,32 +44,35 @@ static json getURIAndPositionJSON( UICodeEditor* editor ) {
 
 static AutoCompletePlugin::SymbolsList
 fuzzyMatchSymbols( const std::vector<const AutoCompletePlugin::SymbolsList*>& symbolsVec,
-				   const std::string& match, const size_t& max ) {
+				   const std::string& pattern, const size_t& max ) {
 	AutoCompletePlugin::SymbolsList matches;
 	matches.reserve( max );
 	int score = 0;
 	for ( const auto& symbols : symbolsVec ) {
 		for ( const auto& symbol : *symbols ) {
 			if ( symbol.kind == LSPCompletionItemKind::Snippet ||
-				 ( score = String::fuzzyMatch( symbol.text, match, false,
-											   symbol.kind != LSPCompletionItemKind::Text ) ) >
+				 ( score = String::fuzzyMatchSimple(
+					   pattern, symbol.text, false, symbol.kind != LSPCompletionItemKind::Text ) ) >
 					 0 ) {
 				if ( std::find( matches.begin(), matches.end(), symbol ) == matches.end() ) {
-					symbol.setScore( score );
+					symbol.setScore( score +
+									 ( symbol.kind != LSPCompletionItemKind::Text ? score : 0 ) );
 					matches.push_back( symbol );
+
+					if ( matches.size() >= max )
+						break;
 				}
 			}
 		}
 
-		if ( matches.size() > max )
+		if ( matches.size() >= max )
 			break;
 	}
 
-	std::sort( matches.begin(), matches.end(),
-			   []( const AutoCompletePlugin::Suggestion& left,
-				   const AutoCompletePlugin::Suggestion& right ) {
-				   return left.score > right.score && left.kind != LSPCompletionItemKind::Text;
-			   } );
+	std::sort(
+		matches.begin(), matches.end(),
+		[]( const AutoCompletePlugin::Suggestion& left,
+			const AutoCompletePlugin::Suggestion& right ) { return left.score > right.score; } );
 
 	return matches;
 }
@@ -97,11 +96,7 @@ AutoCompletePlugin::AutoCompletePlugin( PluginManager* pluginManager, bool sync 
 	if ( sync ) {
 		load( pluginManager );
 	} else {
-#if defined( AUTO_COMPLETE_THREADED ) && AUTO_COMPLETE_THREADED == 1
 		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
-#else
-		load( pluginManager );
-#endif
 	}
 }
 
@@ -154,7 +149,7 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 		Log::error(
 			"AutoCompletePlugin::load - Error parsing config from path %s, error: %s, config "
 			"file content:\n%s",
-			path.c_str(), e.what(), data.c_str() );
+			path, e.what(), data );
 		// Recreate it
 		j = json::parse( "{\n  \"config\":{},\n  \"keybindings\":{},\n}\n", nullptr, true, true );
 	}
@@ -169,6 +164,7 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 			config["suggestions_syntax_highlight"] = mHighlightSuggestions;
 			updateConfigFile = true;
 		}
+
 		if ( config.contains( "max_label_characters" ) )
 			mMaxLabelCharacters = config.value( "max_label_characters", 100 );
 		else {
@@ -212,6 +208,7 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 			"autocomplete-close-signature-help",
 			"autocomplete-prev-signature-help",
 			"autocomplete-next-signature-help",
+			"autocomplete-from-current-doc-symbols",
 		};
 		// clang-format on
 		for ( const auto& key : list ) {
@@ -246,37 +243,45 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 	Lock l( mDocMutex );
 	std::vector<Uint32> listeners;
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
-			mDirty = true;
-			mDocs.insert( editor->getDocumentRef().get() );
-			mEditorDocs[editor] = editor->getDocumentRef().get();
-			tryRequestCapabilities( editor );
-		} ) );
+	listeners.push_back( editor->on( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
+		mDirty = true;
+		mDocs.insert( editor->getDocumentRef().get() );
+		mEditorDocs[editor] = editor->getDocumentRef().get();
+		tryRequestCapabilities( editor );
+	} ) );
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentClosed, [this]( const Event* event ) {
-			Lock l( mDocMutex );
-			const DocEvent* docEvent = static_cast<const DocEvent*>( event );
-			TextDocument* doc = docEvent->getDoc();
-			mDocs.erase( doc );
-			mDocCache.erase( doc );
-			mDirty = true;
-		} ) );
+	listeners.push_back( editor->on( Event::OnDocumentClosed, [this]( const Event* event ) {
+		const DocEvent* docEvent = static_cast<const DocEvent*>( event );
+		TextDocument* doc = docEvent->getDoc();
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* ) {
-			TextDocument* oldDoc = mEditorDocs[editor];
-			TextDocument* newDoc = editor->getDocumentRef().get();
-			Lock l( mDocMutex );
-			mDocs.erase( oldDoc );
-			mDocCache.erase( oldDoc );
-			mEditorDocs[editor] = newDoc;
-			mDirty = true;
-		} ) );
+		{
+			Lock ls( mDocUsesOwnSymbolsMutex );
+			mDocUsesOwnSymbols.erase( doc );
+		}
 
-	listeners.push_back( editor->addEventListener( Event::OnCursorPosChange, [this, editor](
-																				 const Event* ) {
+		Lock l( mDocMutex );
+		mDocs.erase( doc );
+		mDocCache.erase( doc );
+		mDirty = true;
+	} ) );
+
+	listeners.push_back( editor->on( Event::OnDocumentChanged, [this, editor]( const Event* ) {
+		TextDocument* oldDoc = mEditorDocs[editor];
+		TextDocument* newDoc = editor->getDocumentRef().get();
+
+		{
+			Lock ls( mDocUsesOwnSymbolsMutex );
+			mDocUsesOwnSymbols.erase( oldDoc );
+		}
+
+		Lock l( mDocMutex );
+		mDocs.erase( oldDoc );
+		mDocCache.erase( oldDoc );
+		mEditorDocs[editor] = newDoc;
+		mDirty = true;
+	} ) );
+
+	listeners.push_back( editor->on( Event::OnCursorPosChange, [this, editor]( const Event* ) {
 		if ( !mReplacing )
 			resetSuggestions( editor );
 
@@ -287,27 +292,32 @@ void AutoCompletePlugin::onRegister( UICodeEditor* editor ) {
 		}
 	} ) );
 
-	listeners.push_back( editor->addEventListener(
-		Event::OnFocusLoss, [this]( const Event* ) { resetSignatureHelp(); } ) );
+	listeners.push_back(
+		editor->on( Event::OnFocusLoss, [this]( const Event* ) { resetSignatureHelp(); } ) );
 
-	listeners.push_back( editor->addEventListener(
-		Event::OnDocumentUndoRedo, [this]( const Event* ) { resetSignatureHelp(); } ) );
+	listeners.push_back(
+		editor->on( Event::OnDocumentUndoRedo, [this]( const Event* ) { resetSignatureHelp(); } ) );
 
-	listeners.push_back( editor->addEventListener(
-		Event::OnDocumentSyntaxDefinitionChange, [this]( const Event* ev ) {
+	listeners.push_back(
+		editor->on( Event::OnDocumentSyntaxDefinitionChange, [this]( const Event* ev ) {
 			const DocSyntaxDefEvent* event = static_cast<const DocSyntaxDefEvent*>( ev );
 			std::string oldLang = event->getOldLang();
 			std::string newLang = event->getNewLang();
-#if defined( AUTO_COMPLETE_THREADED ) && AUTO_COMPLETE_THREADED == 1
 			mThreadPool->run( [this, oldLang, newLang] {
 				updateLangCache( oldLang );
 				updateLangCache( newLang );
 			} );
-#else
-			updateLangCache( oldLang );
-			updateLangCache( newLang );
-#endif
 		} ) );
+
+	if ( editor->hasDocument() ) {
+		editor->getDocument().setCommand(
+			"autocomplete-from-current-doc-symbols", [this]( TextDocument::Client* client ) {
+				Lock l( mDocUsesOwnSymbolsMutex );
+				auto& usesOwnSymbols =
+					mDocUsesOwnSymbols[&static_cast<UICodeEditor*>( client )->getDocument()];
+				usesOwnSymbols = !usesOwnSymbols;
+			} );
+	}
 
 	mEditors.insert( { editor, listeners } );
 	mDocs.insert( editor->getDocumentRef().get() );
@@ -322,18 +332,29 @@ void AutoCompletePlugin::onUnregister( UICodeEditor* editor ) {
 		resetSuggestions( editor );
 	if ( mSignatureHelpEditor == editor )
 		resetSignatureHelp();
-	Lock l( mDocMutex );
-	TextDocument* doc = mEditorDocs[editor];
-	auto cbs = mEditors[editor];
-	for ( auto listener : cbs )
-		editor->removeEventListener( listener );
-	mEditors.erase( editor );
-	mEditorDocs.erase( editor );
-	for ( auto ceditor : mEditorDocs )
-		if ( ceditor.second == doc )
-			return;
-	mDocs.erase( doc );
-	mDocCache.erase( doc );
+
+	TextDocument* doc = nullptr;
+
+	{
+		Lock l( mDocMutex );
+		doc = mEditorDocs[editor];
+		auto cbs = mEditors[editor];
+		for ( auto listener : cbs )
+			editor->removeEventListener( listener );
+		mEditors.erase( editor );
+		mEditorDocs.erase( editor );
+		for ( auto ceditor : mEditorDocs )
+			if ( ceditor.second == doc )
+				return;
+		mDocs.erase( doc );
+		mDocCache.erase( doc );
+	}
+
+	{
+		Lock l( mDocUsesOwnSymbolsMutex );
+		mDocUsesOwnSymbols.erase( doc );
+	}
+
 	mDirty = true;
 }
 
@@ -585,7 +606,7 @@ void AutoCompletePlugin::updateDocCache( TextDocument* doc ) {
 				lang.insert( lang.end(), d.second.symbols.begin(), d.second.symbols.end() );
 		}
 	}
-	Log::debug( "Dictionary for %s updated in: %.2fms", doc->getFilename().c_str(),
+	Log::debug( "Dictionary for %s updated in: %.2fms", doc->getFilename(),
 				clock.getElapsedTime().asMilliseconds() );
 }
 
@@ -599,7 +620,7 @@ void AutoCompletePlugin::updateLangCache( const std::string& langName ) {
 		if ( d.first->getSyntaxDefinition().getLanguageName() == langName )
 			lang.insert( lang.end(), d.second.symbols.begin(), d.second.symbols.end() );
 	}
-	Log::debug( "Lang dictionary for %s updated in: %.2fms", langName.c_str(),
+	Log::debug( "Lang dictionary for %s updated in: %.2fms", langName,
 				clock.getElapsedTime().asMilliseconds() );
 }
 
@@ -857,7 +878,7 @@ AutoCompletePlugin::processSignatureHelp( const LSPSignatureHelp& signatureHelp 
 			while ( 0 != doc.replaceAll( "  ", " " ) )
 				;
 
-			nsig.label = doc.line( 0 ).getTextWithoutNewLine();
+			nsig.label = doc.getLineTextWithoutNewLine( 0 );
 
 			for ( const auto& param : parameters ) {
 				auto res = doc.find( param );
@@ -879,6 +900,8 @@ AutoCompletePlugin::processSignatureHelp( const LSPSignatureHelp& signatureHelp 
 	editor->runOnMainThread( [this, editor, signatures = std::move( signatures )] {
 		mSignatureHelpVisible = true;
 		mSignatureHelp = signatures;
+		if ( mSignatureHelpSelected >= static_cast<Int32>( mSignatureHelp.signatures.size() ) )
+			mSignatureHelpSelected = -1;
 		if ( mSignatureHelp.signatures.empty() )
 			resetSignatureHelp();
 		editor->invalidateDraw();
@@ -969,11 +992,7 @@ void AutoCompletePlugin::update( UICodeEditor* ) {
 					if ( du != mDocsUpdating.end() && du->second == true )
 						continue;
 				}
-#if AUTO_COMPLETE_THREADED
 				mThreadPool->run( [this, doc] { updateDocCache( doc ); } );
-#else
-				updateDocCache( doc );
-#endif
 			}
 		}
 	}
@@ -1064,7 +1083,7 @@ void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f
 	text.setFillColor( normalStyle.color );
 	text.setStyle( normalStyle.style );
 	text.setString( str );
-	SyntaxTokenizer::tokenizeText( doc.getSyntaxDefinition(), editor->getColorScheme(), text );
+	SyntaxTokenizer::tokenizeText( doc.getSyntaxDefinition(), editor->getColorScheme(), &text );
 	text.draw( boxRect.getPosition().x + mBoxPadding.Left,
 			   boxRect.getPosition().y + mBoxPadding.Top );
 }
@@ -1164,7 +1183,7 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 
 		if ( mHighlightSuggestions && suggestion.kind != LSPCompletionItemKind::Text ) {
 			SyntaxTokenizer::tokenizeText( doc.getSyntaxDefinition(), editor->getColorScheme(),
-										   text );
+										   &text );
 		}
 
 		text.draw( cursorPos.x + iconSpace.getWidth() + mBoxPadding.Left,
@@ -1206,7 +1225,7 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 						forceHTML ? SyntaxDefinitionManager::instance()->getByLSPName( "html" )
 								  : SyntaxDefinitionManager::instance()->getByLSPName( "markdown" );
 					SyntaxTokenizer::tokenizeText( syntaxDef, editor->getColorScheme(),
-												   mSuggestionDoc, 0, 0xFFFFFFFF, true, "\n\t " );
+												   &mSuggestionDoc, 0, 0xFFFFFFFF, true, "\n\t " );
 				}
 			}
 
@@ -1370,18 +1389,27 @@ void AutoCompletePlugin::resetSignatureHelp() {
 }
 
 AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocument* doc ) {
-	static constexpr auto MAX_LINE_LENGTH = EE_1KB * 10;
-	LuaPattern pattern( mSymbolPattern );
+	static constexpr auto MAX_LINE_COUNT = EE_1KB * 10;
 	AutoCompletePlugin::SymbolsList symbols;
+	std::shared_ptr<TextDocument> docRef =
+		getPluginContext()->getSplitter()->getTextDocumentRef( doc ); // acquire a doc
+	if ( docRef == nullptr )
+		return symbols;
+	LuaPattern pattern( mSymbolPattern );
 	if ( doc->linesCount() == 0 || doc->isHuge() || mShuttingDown )
 		return symbols;
 	std::string current( getPartialSymbol( doc ) );
 	TextPosition end = doc->getSelection().end();
-	for ( Int64 i = 0; i < static_cast<Int64>( doc->linesCount() ); i++ ) {
-		const auto& line = doc->line( i );
-		if ( line.size() > MAX_LINE_LENGTH )
+	auto lineCount = doc->linesCount();
+	std::string string;
+	for ( Int64 i = 0; i < static_cast<Int64>( lineCount ); i++ ) {
+		auto len = doc->getLineLength( i );
+		if ( len == 0 || len > MAX_LINE_COUNT ) {
+			if ( len == 0 ) // Line count must have changed
+				lineCount = doc->linesCount();
 			continue;
-		auto string = line.toUtf8();
+		}
+		doc->getLineTextToBufferUtf8( i, string );
 		for ( auto& match : pattern.gmatch( string ) ) {
 			std::string matchStr( match[0] );
 			// Ignore the symbol if is actually the current symbol being written
@@ -1393,14 +1421,15 @@ AutoCompletePlugin::SymbolsList AutoCompletePlugin::getDocumentSymbols( TextDocu
 							   } ) )
 				symbols.push_back( std::move( matchStr ) );
 		}
-		if ( mShuttingDown )
+		if ( mShuttingDown || mDocs.find( doc ) == mDocs.end() )
 			break;
 	}
 	return symbols;
 }
 
 void AutoCompletePlugin::runUpdateSuggestions( const std::string& symbol,
-											   const SymbolsList& symbols, UICodeEditor* editor ) {
+											   const SymbolsList& symbols, UICodeEditor* editor,
+											   bool fromDocCache ) {
 	{
 		{
 			Lock l( mSuggestionsEditorMutex );
@@ -1410,7 +1439,8 @@ void AutoCompletePlugin::runUpdateSuggestions( const std::string& symbol,
 			requestCodeCompletion( editor );
 		if ( symbol.empty() || symbols.empty() )
 			return;
-		Lock l( mLangSymbolsMutex );
+
+		Lock l( fromDocCache ? mDocMutex : mLangSymbolsMutex );
 		Lock l2( mSuggestionsMutex );
 		mSuggestions = fuzzyMatchSymbols( { &symbols }, symbol, mSuggestionsMaxVisible );
 	}
@@ -1418,20 +1448,73 @@ void AutoCompletePlugin::runUpdateSuggestions( const std::string& symbol,
 }
 
 void AutoCompletePlugin::updateSuggestions( const std::string& symbol, UICodeEditor* editor ) {
-	const std::string& lang = editor->getDocument().getSyntaxDefinition().getLanguageName();
+	TextDocument& doc = editor->getDocument();
+	bool usesOwnSymbols = false;
+
+	{
+		Lock l( mDocUsesOwnSymbolsMutex );
+		usesOwnSymbols = mDocUsesOwnSymbols[&doc];
+	}
+
+	if ( usesOwnSymbols ) {
+		Lock l( mDocMutex );
+		auto docCache = mDocCache.find( &doc );
+		if ( docCache == mDocCache.end() || mShuttingDown )
+			return;
+		const auto& symbols = docCache->second.symbols;
+		{
+			mThreadPool->run( [this, symbol, &symbols, editor] {
+				runUpdateSuggestions( symbol, symbols, editor, true );
+			} );
+		}
+	}
+
+	const std::string& lang = doc.getSyntaxDefinition().getLanguageName();
 	Lock l( mLangSymbolsMutex );
 	auto langSuggestions = mLangCache.find( lang );
 	if ( langSuggestions == mLangCache.end() )
 		return;
 	const auto& symbols = langSuggestions->second;
 	{
-#if AUTO_COMPLETE_THREADED
-		mThreadPool->run(
-			[this, symbol, &symbols, editor] { runUpdateSuggestions( symbol, symbols, editor ); } );
-#else
-		runUpdateSuggestions( symbol, symbols, editor );
-#endif
+		mThreadPool->run( [this, symbol, &symbols, editor] {
+			runUpdateSuggestions( symbol, symbols, editor, false );
+		} );
 	}
+}
+
+bool AutoCompletePlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
+											  const Vector2i& /*position*/,
+											  const Uint32& /*flags*/ ) {
+	menu->addSeparator();
+
+	bool usesOwnSymbols = false;
+
+	{
+		Lock l( mDocUsesOwnSymbolsMutex );
+		usesOwnSymbols = mDocUsesOwnSymbols[&editor->getDocument()];
+	}
+
+	auto* subMenu = UIPopUpMenu::New();
+	subMenu->addClass( "autocomplete_plugin_menu" );
+	subMenu
+		->addCheckBox(
+			i18n( "autocomplete_from_doc_symbols",
+				  "Limit autocomplete to symbols in this document" ),
+			usesOwnSymbols,
+			KeyBindings::keybindFormat( mKeyBindings["autocomplete-from-current-doc-symbols"] ) )
+		->setTooltipText(
+			i18n( "autocomplete_from_doc_symbols_tooltip",
+				  "Instead of using the complete current language dictionary symbols\nit will use "
+				  "only the dictionary symbols from the current document." ) )
+		->setId( "autocomplete-from-current-doc-symbols" );
+
+	menu->addSubMenu( i18n( "autocomplete", "Auto-Complete" ),
+					  mManager->getUISceneNode()
+						  ->findIcon( "symbol-string" )
+						  ->getSize( PixelDensity::dpToPxI( 12 ) ),
+					  subMenu );
+
+	return false;
 }
 
 } // namespace ecode

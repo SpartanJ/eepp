@@ -81,6 +81,10 @@ bool SoundFileReaderWav::check( IOStream& stream ) {
 		   ( header[10] == 'V' ) && ( header[11] == 'E' );
 }
 
+bool SoundFileReaderWav::usesFileExtension( std::string_view ext ) {
+	return "wav" == ext;
+}
+
 SoundFileReaderWav::SoundFileReaderWav() :
 	mStream( NULL ), mBytesPerSample( 0 ), mDataStart( 0 ), mDataEnd( 0 ) {}
 

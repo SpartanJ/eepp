@@ -9,7 +9,7 @@ namespace EE { namespace System {
 template <typename T> class ThreadLocalPtr : private ThreadLocal {
   public:
 	/** @brief Default constructor
-	**  @param value Optional value to initalize the variable */
+	**  @param value Optional value to initialize the variable */
 	ThreadLocalPtr( T* value = NULL );
 
 	/** @brief Overload of unary operator *
@@ -24,7 +24,7 @@ template <typename T> class ThreadLocalPtr : private ThreadLocal {
 	**  @return Pointed object */
 	T* operator->() const;
 
-	/** @brief Cast operator to implicitely convert the pointer to its raw pointer type (T*)
+	/** @brief Cast operator to implicitly convert the pointer to its raw pointer type (T*)
 	**  @return Pointer to the actual object */
 	operator T*() const;
 

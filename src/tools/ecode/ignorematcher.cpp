@@ -57,7 +57,7 @@ bool GitIgnoreMatcher::parse() {
 	return !mPatterns.empty();
 }
 
-bool GitIgnoreMatcher::match( const std::string& value ) const {
+bool GitIgnoreMatcher::match( std::string_view value ) const {
 	if ( mPatterns.empty() )
 		return false;
 	bool match = false;
@@ -95,8 +95,8 @@ std::string GitIgnoreMatcher::findRepositoryRootPath() const {
 	return FileSystem::fileExists( rootPath + ".git" ) ? rootPath : "";
 }
 
-IgnoreMatcherManager::IgnoreMatcherManager( IgnoreMatcherManager&& ignoreMatcher ) :
-	mMatchers( ignoreMatcher.mMatchers ) {
+IgnoreMatcherManager::IgnoreMatcherManager( IgnoreMatcherManager&& ignoreMatcher ) noexcept :
+	mMatchers( std::move( ignoreMatcher.mMatchers ) ) {
 	ignoreMatcher.mMatchers.clear();
 }
 
@@ -108,8 +108,8 @@ IgnoreMatcherManager::IgnoreMatcherManager( std::string rootPath ) {
 		mMatchers.emplace_back( eeNew( GitIgnoreMatcher, ( rootPath ) ) );
 }
 
-IgnoreMatcherManager& IgnoreMatcherManager::operator=( IgnoreMatcherManager&& other ) {
-	mMatchers = other.mMatchers;
+IgnoreMatcherManager& IgnoreMatcherManager::operator=( IgnoreMatcherManager&& other ) noexcept {
+	mMatchers = std::move( other.mMatchers );
 	other.mMatchers.clear();
 	return *this;
 }

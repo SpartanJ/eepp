@@ -45,7 +45,7 @@ class EE_API UITouchDraggableWidget : public UIWidget {
 
 	virtual void onTouchDragValueChange( Vector2f diff );
 
-	virtual bool isTouchOverAllowedChilds();
+	virtual bool isTouchOverAllowedChildren();
 
 	virtual void scheduledUpdate( const Time& time );
 

@@ -18,7 +18,7 @@ StyleSheetProperty::StyleSheetProperty() :
 
 StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
 										const std::string& value, const Uint32& index,
-										bool trimValue ) :
+										bool trimValue, bool cachedProperty ) :
 	mName( definition->getName() ),
 	mNameHash( definition->getId() ),
 	mValue( trimValue ? String::trim( value ) : value ),
@@ -28,6 +28,7 @@ StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
 	mVolatile( false ),
 	mImportant( false ),
 	mIsVarValue( false ),
+	mCachedProperty( cachedProperty ),
 	mPropertyDefinition( definition ),
 	mShorthandDefinition( NULL ) {
 	if ( trimValue )
@@ -41,8 +42,7 @@ StyleSheetProperty::StyleSheetProperty( const PropertyDefinition* definition,
 	}
 }
 
-StyleSheetProperty::StyleSheetProperty( const bool& isVolatile,
-										const PropertyDefinition* definition,
+StyleSheetProperty::StyleSheetProperty( bool isVolatile, const PropertyDefinition* definition,
 										const std::string& value, const Uint32& /*specificity*/,
 										const Uint32& index ) :
 	mName( definition->getName() ),
@@ -66,7 +66,7 @@ StyleSheetProperty::StyleSheetProperty( const bool& isVolatile,
 }
 
 StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value,
-										const bool& trimValue, const Uint32& specificity,
+										bool trimValue, const Uint32& specificity,
 										const Uint32& index ) :
 	mName( String::toLower( String::trim( name ) ) ),
 	mNameHash( String::hash( mName ) ),
@@ -92,7 +92,7 @@ StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::stri
 }
 
 StyleSheetProperty::StyleSheetProperty( const std::string& name, const std::string& value,
-										const Uint32& specificity, const bool& isVolatile,
+										const Uint32& specificity, bool isVolatile,
 										const Uint32& index ) :
 	mName( String::toLower( String::trim( name ) ) ),
 	mNameHash( String::hash( mName ) ),
@@ -164,11 +164,11 @@ void StyleSheetProperty::setValue( const std::string& value, bool updateHash ) {
 	createIndexed();
 }
 
-const bool& StyleSheetProperty::isVolatile() const {
+bool StyleSheetProperty::isVolatile() const {
 	return mVolatile;
 }
 
-void StyleSheetProperty::setVolatile( const bool& isVolatile ) {
+void StyleSheetProperty::setVolatile( bool isVolatile ) {
 	mVolatile = isVolatile;
 }
 
@@ -214,6 +214,8 @@ void StyleSheetProperty::checkVars() {
 		mIsVarValue = true;
 		mVarCache = std::move( varCache );
 	}
+
+	mIsLightDarkValue = mValue.find( "light-dark(" ) != std::string::npos;
 }
 
 static void varToVal( VariableFunctionCache& varCache, const std::string& varDef ) {
@@ -406,17 +408,14 @@ Vector2f StyleSheetProperty::asVector2f( const Vector2f& defaultValue ) const {
 		if ( xySplit.size() == 2 ) {
 			Float val;
 
-			vector.x =
-				String::fromString( val, String::trim( xySplit[0] ) ) ? val : defaultValue.x;
-			vector.y =
-				String::fromString( val, String::trim( xySplit[1] ) ) ? val : defaultValue.y;
+			vector.x = String::fromString( val, String::trim( xySplit[0] ) ) ? val : defaultValue.x;
+			vector.y = String::fromString( val, String::trim( xySplit[1] ) ) ? val : defaultValue.y;
 
 			return vector;
 		} else if ( xySplit.size() == 1 ) {
 			Float val;
 
-			vector.x = vector.y =
-				String::fromString( val, xySplit[0] ) ? val : defaultValue.x;
+			vector.x = vector.y = String::fromString( val, xySplit[0] ) ? val : defaultValue.x;
 
 			return vector;
 		}
@@ -433,10 +432,8 @@ Vector2i StyleSheetProperty::asVector2i( const Vector2i& defaultValue ) const {
 		if ( xySplit.size() == 2 ) {
 			int val;
 
-			vector.x =
-				String::fromString( val, String::trim( xySplit[0] ) ) ? val : defaultValue.x;
-			vector.y =
-				String::fromString( val, String::trim( xySplit[1] ) ) ? val : defaultValue.y;
+			vector.x = String::fromString( val, String::trim( xySplit[0] ) ) ? val : defaultValue.x;
+			vector.y = String::fromString( val, String::trim( xySplit[1] ) ) ? val : defaultValue.y;
 
 			return vector;
 		} else if ( xySplit.size() == 1 ) {
@@ -540,8 +537,12 @@ const ShorthandDefinition* StyleSheetProperty::getShorthandDefinition() const {
 	return mShorthandDefinition;
 }
 
-const bool& StyleSheetProperty::isVarValue() const {
+bool StyleSheetProperty::isVarValue() const {
 	return mIsVarValue;
+}
+
+bool StyleSheetProperty::isLightDarkValue() const {
+	return mIsLightDarkValue;
 }
 
 size_t StyleSheetProperty::getPropertyIndexCount() const {
@@ -667,6 +668,15 @@ const String::HashType& StyleSheetProperty::getValueHash() const {
 
 const std::vector<VariableFunctionCache>& StyleSheetProperty::getVarCache() const {
 	return mVarCache;
+}
+
+StyleSheetProperty& StyleSheetProperty::setCachedProperty( bool cached ) {
+	mCachedProperty = cached;
+	return *this;
+}
+
+bool StyleSheetProperty::isCachedProperty() const {
+	return mCachedProperty;
 }
 
 }}} // namespace EE::UI::CSS

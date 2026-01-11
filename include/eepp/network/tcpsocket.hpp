@@ -162,7 +162,7 @@ It ensures that your data will always be received in order
 and without errors (no data corrupted, lost or duplicated).
 
 When a socket is connected to a remote host, you can
-retrieve informations about this host with the
+retrieve information about this host with the
 GetRemoteAddress and GetRemotePort functions. You can
 also get the local port to which the socket is bound
 (which is automatically chosen when the socket is connected),
@@ -180,7 +180,7 @@ the data that is exchanged. You can look at the Packet
 class to get more details about how they work.
 
 The socket is automatically disconnected when it is destroyed,
-but if you want to explicitely close the connection while
+but if you want to explicitly close the connection while
 the socket instance is still alive, you can call disconnect.
 
 Usage example:

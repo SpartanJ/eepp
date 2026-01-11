@@ -11,7 +11,7 @@ The layout files can be edited with any editor, and the layout changes can be se
 editor. So this is a layout preview app. The layout is updated every time the layout file is
 modified by the user. You'll need to save the file in your editor to see the changes. This was
 done in a rush for a personal project ( hence the horrendous code ), but it's quite useful and
-functional. Project files are created by hand for the moment, and they shuld look like this one:
+functional. Project files are created by hand for the moment, and they should look like this one:
 
 <uiproject>
 	<basepath>/optional/project/root/path</basepath>
@@ -296,7 +296,7 @@ void App::tryUpdateWatch( const std::string& file ) {
 }
 
 std::pair<UITab*, UICodeEditor*> App::loadLayout( std::string file, bool updateCurrentLayout ) {
-	mUIContainer->getContainer()->childsCloseAll();
+	mUIContainer->getContainer()->closeAllChildren();
 	mUISceneNode->update( Time::Zero );
 
 	Uint32 marker = String::hash( updateCurrentLayout ? file : mCurrentLayout );
@@ -435,10 +435,8 @@ void App::refreshStyleSheet() {
 		setUserDefaultTheme();
 	}
 
-	if ( !mCurrentLayout.empty() && FileSystem::fileExists( mCurrentLayout ) &&
-		 mUIContainer != NULL ) {
-		loadLayout( mCurrentLayout );
-	}
+	mInvalidationLayout = InvalidationType::Memory;
+	reloadLayout();
 
 	mUpdateStyleSheet = false;
 	mUpdateBaseStyleSheet = false;
@@ -491,7 +489,7 @@ void App::updateRecentFiles() {
 		if ( 0xFFFFFFFF != mRecentFilesEventClickId )
 			menu->removeEventListener( mRecentFilesEventClickId );
 
-		mRecentFilesEventClickId = menu->addEventListener(
+		mRecentFilesEventClickId = menu->on(
 			Event::OnItemClicked, [this]( const Event* event ) { onRecentFilesClick( event ); } );
 	}
 
@@ -520,7 +518,7 @@ void App::updateRecentProjects() {
 		if ( 0xFFFFFFFF != mRecentProjectEventClickId )
 			menu->removeEventListener( mRecentProjectEventClickId );
 
-		mRecentProjectEventClickId = menu->addEventListener(
+		mRecentProjectEventClickId = menu->on(
 			Event::OnItemClicked, [this]( const Event* event ) { onRecentProjectClick( event ); } );
 	}
 
@@ -633,8 +631,8 @@ void App::refreshLayoutList() {
 
 			mUIMenuBar->addMenuButton( "Layouts", uiLayoutsMenu );
 
-			uiLayoutsMenu->addEventListener(
-				Event::OnItemClicked, [this]( const Event* event ) { onLayoutSelected( event ); } );
+			uiLayoutsMenu->on( Event::OnItemClicked,
+							   [this]( const Event* event ) { onLayoutSelected( event ); } );
 		} else {
 			uiLayoutsMenu = mUIMenuBar->getPopUpMenu( "Layouts" );
 		}
@@ -850,7 +848,7 @@ void App::closeProject() {
 
 	mCurrentLayout = "";
 	mCurrentStyleSheet = "";
-	mUIContainer->getContainer()->childsCloseAll();
+	mUIContainer->getContainer()->closeAllChildren();
 	mUISceneNode->update( Time::Zero );
 	mUISceneNode->setStyleSheet( CSS::StyleSheet() );
 
@@ -874,11 +872,11 @@ bool App::onCloseRequestCallback( EE::Window::Window* ) {
 		UIMessageBox::OK_CANCEL,
 		"Do you really want to close the current file?\nAll changes will be lost." );
 	mMsgBox->setTheme( mTheme );
-	mMsgBox->addEventListener( Event::OnConfirm, [this]( const Event* ) { mWindow->close(); } );
-	mMsgBox->addEventListener( Event::OnWindowClose, [this]( const Event* ) { mMsgBox = NULL; } );
+	mMsgBox->on( Event::OnConfirm, [this]( const Event* ) { mWindow->close(); } );
+	mMsgBox->on( Event::OnWindowClose, [this]( const Event* ) { mMsgBox = NULL; } );
 	mMsgBox->setTitle( "Close Editor?" );
 	mMsgBox->center();
-	mMsgBox->show();
+	mMsgBox->showWhenReady();
 
 	SceneManager::instance()->setCurrentUISceneNode( mUISceneNode );
 	return false;
@@ -970,7 +968,7 @@ void App::showFileDialog( const String& title, const std::function<void( const E
 	dialog->setTheme( mTheme );
 	dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 	dialog->setTitle( title );
-	dialog->addEventListener( Event::OpenFile, cb );
+	dialog->on( Event::OpenFile, cb );
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->center();
 	dialog->show();
@@ -998,7 +996,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 	if ( FileSystem::fileExtension( editor->getDocument().getFilename() ).empty() )
 		filename += editor->getSyntaxDefinition().getFileExtension();
 	dialog->setFileName( filename );
-	dialog->addEventListener( Event::SaveFile, [this, editor]( const Event* event ) {
+	dialog->on( Event::SaveFile, [this, editor]( const Event* event ) {
 		if ( editor ) {
 			std::string path( event->getNode()->asType<UIFileDialog>()->getFullPath() );
 			if ( !path.empty() && !FileSystem::isDirectory( path ) &&
@@ -1016,7 +1014,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 					updateEditorState();
 				} else {
 					UIMessageBox* msg =
-						UIMessageBox::New( UIMessageBox::OK, i18n( "coudlnt_write_the_file",
+						UIMessageBox::New( UIMessageBox::OK, i18n( "couldnt_write_the_file",
 																   "Couldn't write the file." ) );
 					msg->setTitle( "Error" );
 					msg->show();
@@ -1031,7 +1029,7 @@ UIFileDialog* App::saveFileDialog( UICodeEditor* editor, bool focusOnClose ) {
 		}
 	} );
 	if ( focusOnClose ) {
-		dialog->addEventListener( Event::OnWindowClose, [editor]( const Event* ) {
+		dialog->on( Event::OnWindowClose, [editor]( const Event* ) {
 			if ( editor && !SceneManager::instance()->isShuttingDown() )
 				editor->setFocus();
 		} );
@@ -1140,8 +1138,7 @@ void App::createAppMenu() {
 	uiPopMenu->add( "Quit", findIcon( "quit" ) )->setId( "quit" );
 
 	mUIMenuBar->addMenuButton( "File", uiPopMenu );
-	uiPopMenu->addEventListener( Event::OnItemClicked,
-								 [this]( const Event* event ) { fileMenuClick( event ); } );
+	uiPopMenu->on( Event::OnItemClicked, [this]( const Event* event ) { fileMenuClick( event ); } );
 
 	UIPopUpMenu* uiResourceMenu = UIPopUpMenu::New();
 	uiResourceMenu->add( "Load images from path...", findIcon( "document-open" ) )
@@ -1153,22 +1150,26 @@ void App::createAppMenu() {
 	uiResourceMenu->add( "Load style sheet from path...", findIcon( "document-open" ) )
 		->setId( "load-css-from-path" );
 	mUIMenuBar->addMenuButton( "Resources", uiResourceMenu );
-	uiResourceMenu->addEventListener( Event::OnItemClicked,
-									  [this]( const Event* event ) { fileMenuClick( event ); } );
+	uiResourceMenu->on( Event::OnItemClicked,
+						[this]( const Event* event ) { fileMenuClick( event ); } );
 
 	UIPopUpMenu* colorsMenu = UIPopUpMenu::New();
 	colorsMenu
-		->addRadioButton( i18n( "light", "Light" ), mUIColorScheme == ColorSchemePreference::Light )
+		->addRadioButton( i18n( "system", "System" ),
+						  mUIColorScheme == ColorSchemeExtPreference::System )
+		->setId( "system" );
+	colorsMenu
+		->addRadioButton( i18n( "light", "Light" ),
+						  mUIColorScheme == ColorSchemeExtPreference::Light )
 		->setId( "light" );
 	colorsMenu
-		->addRadioButton( i18n( "dark", "Dark" ), mUIColorScheme == ColorSchemePreference::Dark )
+		->addRadioButton( i18n( "dark", "Dark" ), mUIColorScheme == ColorSchemeExtPreference::Dark )
 		->setId( "dark" );
 	colorsMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		mUIColorScheme =
-			item->getId() == "light" ? ColorSchemePreference::Light : ColorSchemePreference::Dark;
+		mUIColorScheme = ColorSchemePreferences::fromStringExt( item->getId() );
 		mUISceneNode->setColorSchemePreference( mUIColorScheme );
 		updateLayoutFunc( InvalidationType::Memory );
 	} );
@@ -1185,8 +1186,7 @@ void App::createAppMenu() {
 	viewMenu->add( "Toggle Console", findIcon( "terminal" ), "F3" )->setId( "toggle-console" );
 	viewMenu->add( "Toggle Editor", findIcon( "editor" ), "F9" )->setId( "toggle-editor" );
 	mUIMenuBar->addMenuButton( "View", viewMenu );
-	viewMenu->addEventListener( Event::OnItemClicked,
-								[this]( const Event* event ) { fileMenuClick( event ); } );
+	viewMenu->on( Event::OnItemClicked, [this]( const Event* event ) { fileMenuClick( event ); } );
 	mConsole = UIConsole::New();
 	mConsole->setQuakeMode( true );
 	mConsole->setVisible( false );
@@ -1291,81 +1291,19 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 		mAppUISceneNode->enableDrawInvalidation();
 		mUISceneNode->enableDrawInvalidation();
 
-		mUIColorScheme =
-			colorScheme == "light" ? ColorSchemePreference::Light : ColorSchemePreference::Dark;
+		mUIColorScheme = ColorSchemePreferences::fromStringExt( colorScheme );
 		mUISceneNode->setColorSchemePreference( mUIColorScheme );
 
-		FontTrueType* iconFont = loadFont( "icon", "fonts/remixicon.ttf" );
-		UIIconTheme* iconTheme = UIIconTheme::New( "ecode" );
-		UIIconTheme* iconTheme2 = UIIconTheme::New( "ecode" );
+		FontTrueType* remixIconFont = loadFont( "icon", "fonts/remixicon.ttf" );
+		FontTrueType* noniconsFont = loadFont( "nonicons", "fonts/nonicons.ttf" );
+		FontTrueType* codIconFont = loadFont( "codicon", "fonts/codicon.ttf" );
+
+		UIIconTheme* iconTheme =
+			IconManager::init( "icons", remixIconFont, noniconsFont, codIconFont );
+		UIIconTheme* iconTheme2 =
+			IconManager::init( "icons", remixIconFont, noniconsFont, codIconFont );
 		StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 		mMenuIconSize = fontSize.asPixels( 0, Sizef(), mDisplayDPI );
-		std::unordered_map<std::string, Uint32> icons = {
-			{ "document-new", 0xecc3 },
-			{ "document-open", 0xed70 },
-			{ "document-save", 0xf0b3 },
-			{ "document-save-as", 0xf0b3 },
-			{ "document-close", 0xeb99 },
-			{ "quit", 0xeb97 },
-			{ "undo", 0xea58 },
-			{ "redo", 0xea5a },
-			{ "cut", 0xf0c1 },
-			{ "copy", 0xecd5 },
-			{ "paste", 0xeb91 },
-			{ "edit", 0xec86 },
-			{ "split-horizontal", 0xf17a },
-			{ "split-vertical", 0xf17b },
-			{ "find-replace", 0xed2b },
-			{ "folder", 0xed54 },
-			{ "folder-open", 0xed70 },
-			{ "folder-add", 0xed5a },
-			{ "file", 0xecc3 },
-			{ "file-add", 0xecc9 },
-			{ "file-copy", 0xecd3 },
-			{ "file-code", 0xecd1 },
-			{ "file-edit", 0xecdb },
-			{ "font-size", 0xed8d },
-			{ "delete-bin", 0xec1e },
-			{ "delete-text", 0xec1e },
-			{ "zoom-in", 0xf2db },
-			{ "zoom-out", 0xf2dd },
-			{ "zoom-reset", 0xeb47 },
-			{ "fullscreen", 0xed9c },
-			{ "keybindings", 0xee75 },
-			{ "tree-expanded", 0xea50 },
-			{ "tree-contracted", 0xea54 },
-			{ "search", 0xf0d1 },
-			{ "go-up", 0xea78 },
-			{ "ok", 0xeb7a },
-			{ "cancel", 0xeb98 },
-			{ "color-picker", 0xf13d },
-			{ "pixel-density", 0xed8c },
-			{ "go-to-line", 0xf1f8 },
-			{ "table-view", 0xf1de },
-			{ "list-view", 0xecf1 },
-			{ "menu-unfold", 0xef40 },
-			{ "menu-fold", 0xef3d },
-			{ "download-cloud", 0xec58 },
-			{ "layout-left", 0xee94 },
-			{ "layout-right", 0xee9b },
-			{ "color-scheme", 0xebd4 },
-			{ "global-settings", 0xedcf },
-			{ "folder-user", 0xed84 },
-			{ "help", 0xf045 },
-			{ "terminal", 0xf1f6 },
-			{ "earth", 0xec7a },
-			{ "arrow-down", 0xea4c },
-			{ "arrow-up", 0xea76 },
-			{ "arrow-down-s", 0xea4e },
-			{ "arrow-right-s", 0xea6e },
-			{ "match-case", 0xed8d },
-			{ "cursor-pointer", 0xec09 },
-		};
-		for ( const auto& icon : icons ) {
-			iconTheme->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
-			iconTheme2->add( UIGlyphIcon::New( icon.first, iconFont, icon.second ) );
-		}
-
 		mAppUISceneNode->setStyleSheet( mTheme->getStyleSheet() );
 		mAppUISceneNode->getUIThemeManager()
 			->setDefaultEffectsEnabled( true )
@@ -1385,7 +1323,7 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 		mUIContainer = UIWindow::NewOpt( UIWindow::SIMPLE_LAYOUT, winStyle );
 		mUIContainer->setId( "appContainer" )->setSize( mUISceneNode->getSize() );
 		mUIContainer->setParent( mUISceneNode->getRoot() );
-		mUISceneNode->addEventListener( Event::OnSizeChange, [this]( const Event* ) {
+		mUISceneNode->on( Event::OnSizeChange, [this]( const Event* ) {
 			mUIContainer->setPixelsSize( mUISceneNode->getPixelsSize() );
 		} );
 
@@ -1433,8 +1371,7 @@ void App::init( const Float& pixelDensityConf, const bool& useAppTheme, const st
 
 		resizeCb();
 
-		mUISceneNode->addEventListener( Event::OnSizeChange,
-										[this]( const Event* ) { resizeCb(); } );
+		mUISceneNode->on( Event::OnSizeChange, [this]( const Event* ) { resizeCb(); } );
 
 		mUseDefaultTheme = useAppTheme;
 
@@ -1538,12 +1475,12 @@ void App::saveAllProcess() {
 				mTmpDocs.erase( &editor->getDocument() );
 			} else {
 				UIFileDialog* dialog = saveFileDialog( editor, false );
-				dialog->addEventListener( Event::SaveFile, [this, editor]( const Event* ) {
+				dialog->on( Event::SaveFile, [this, editor]( const Event* ) {
 					updateEditorTabTitle( editor );
 					if ( mSplitter->getCurEditor() == editor )
 						updateEditorTitle( editor );
 				} );
-				dialog->addEventListener( Event::OnWindowClose, [this, editor]( const Event* ) {
+				dialog->on( Event::OnWindowClose, [this, editor]( const Event* ) {
 					mTmpDocs.erase( &editor->getDocument() );
 					if ( !SceneManager::instance()->isShuttingDown() && !mTmpDocs.empty() )
 						saveAllProcess();
@@ -1608,7 +1545,8 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 							"Use the default application theme in the editor.",
 							{ 'u', "use-app-theme" } );
 	args::ValueFlag<std::string> prefersColorScheme(
-		parser, "prefers-color-scheme", "Set the preferred color scheme (\"light\" or \"dark\")",
+		parser, "prefers-color-scheme",
+		"Set the preferred color scheme (\"light\", \"dark\" or \"system\")",
 		{ 'c', "prefers-color-scheme" } );
 
 	try {

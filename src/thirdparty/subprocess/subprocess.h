@@ -39,6 +39,7 @@
 /* disable warning: '__cplusplus' is not defined as a preprocessor macro,
  * replacing with '0' for '#if/#elif' */
 #pragma warning(disable : 4668)
+#define _WINBASE_
 #endif
 
 #include <stdio.h>
@@ -182,7 +183,7 @@ subprocess_weak int subprocess_terminate(struct subprocess_s *const process);
 ///
 /// The only safe way to read from the standard output of a process during it's
 /// execution is to use the `subprocess_option_enable_async` option in
-/// conjuction with this method.
+/// conjunction with this method.
 subprocess_weak unsigned
 subprocess_read_stdout(struct subprocess_s *const process, char *const buffer,
                        unsigned size);
@@ -196,7 +197,7 @@ subprocess_read_stdout(struct subprocess_s *const process, char *const buffer,
 ///
 /// The only safe way to read from the standard error of a process during it's
 /// execution is to use the `subprocess_option_enable_async` option in
-/// conjuction with this method.
+/// conjunction with this method.
 subprocess_weak unsigned
 subprocess_read_stderr(struct subprocess_s *const process, char *const buffer,
                        unsigned size);
@@ -233,6 +234,7 @@ subprocess_weak void subprocess_init_shutdown(struct subprocess_s *const process
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <poll.h>
 #endif
 
 #if defined(_WIN32)
@@ -282,9 +284,9 @@ struct subprocess_security_attributes_s {
 
 struct subprocess_startup_info_s {
   unsigned long cb;
-  char *lpReserved;
-  char *lpDesktop;
-  char *lpTitle;
+  wchar_t* lpReserved;
+  wchar_t* lpDesktop;
+  wchar_t* lpTitle;
   unsigned long dwX;
   unsigned long dwY;
   unsigned long dwXSize;
@@ -300,6 +302,48 @@ struct subprocess_startup_info_s {
   void *hStdOutput;
   void *hStdError;
 };
+
+typedef unsigned char BYTE;
+typedef unsigned short WORD;
+typedef unsigned long DWORD;
+typedef int BOOL;
+typedef wchar_t* LPWSTR;
+typedef const wchar_t* LPCWSTR;
+typedef unsigned char* LPBYTE;
+typedef void* HANDLE;
+typedef void* LPVOID;
+typedef char CHAR;
+
+#define OFS_MAXPATHNAME 128
+typedef struct _OFSTRUCT {
+	BYTE cBytes;
+	BYTE fFixedDisk;
+	WORD nErrCode;
+	WORD Reserved1;
+	WORD Reserved2;
+	CHAR szPathName[OFS_MAXPATHNAME];
+} OFSTRUCT, *LPOFSTRUCT, *POFSTRUCT;
+
+typedef struct _STARTUPINFOW {
+	DWORD cb;
+	LPWSTR lpReserved;
+	LPWSTR lpDesktop;
+	LPWSTR lpTitle;
+	DWORD dwX;
+	DWORD dwY;
+	DWORD dwXSize;
+	DWORD dwYSize;
+	DWORD dwXCountChars;
+	DWORD dwYCountChars;
+	DWORD dwFillAttribute;
+	DWORD dwFlags;
+	WORD wShowWindow;
+	WORD cbReserved2;
+	LPBYTE lpReserved2;
+	HANDLE hStdInput;
+	HANDLE hStdOutput;
+	HANDLE hStdError;
+} STARTUPINFOW, *LPSTARTUPINFOW;
 
 struct subprocess_overlapped_s {
   uintptr_t Internal;
@@ -345,6 +389,7 @@ __declspec(dllimport) int __stdcall CreateProcessA(
 __declspec(dllimport) int __stdcall CloseHandle(void *);
 __declspec(dllimport) unsigned long __stdcall WaitForSingleObject(
     void *, unsigned long);
+__declspec( dllimport ) int __stdcall CancelIo( void* );
 __declspec(dllimport) int __stdcall GetExitCodeProcess(
     void *, unsigned long *lpExitCode);
 __declspec(dllimport) int __stdcall TerminateProcess(void *, unsigned int);
@@ -353,6 +398,74 @@ __declspec(dllimport) unsigned long __stdcall WaitForMultipleObjects(
 __declspec(dllimport) int __stdcall GetOverlappedResult(void *, LPOVERLAPPED,
                                                         unsigned long *, int);
 __declspec(dllimport) int __stdcall FlushFileBuffers(void *);
+
+__declspec(dllimport) int __stdcall CreateProcessW(
+	const wchar_t* lpApplicationName, wchar_t* lpCommandLine,
+	LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes,
+	BOOL bInheritHandles,
+	DWORD dwCreationFlags,
+	LPVOID lpEnvironment,
+	const wchar_t* lpCurrentDirectory,
+	LPSTARTUPINFOW lpStartupInfo,
+	LPPROCESS_INFORMATION lpProcessInformation );
+
+#ifndef CP_UTF8
+#define CP_UTF8 65001 // UTF-8 translation
+#endif
+
+#ifndef MB_ERR_INVALID_CHARS
+#define MB_ERR_INVALID_CHARS 0x00000008 // error for invalid chars
+#endif
+
+#ifndef CREATE_UNICODE_ENVIRONMENT
+#define CREATE_UNICODE_ENVIRONMENT 0x00000400
+#endif
+
+__declspec( dllimport ) int __stdcall MultiByteToWideChar(
+	unsigned int CodePage,		// UINT
+	unsigned long dwFlags,		// DWORD
+	const char* lpMultiByteStr, // LPCCH -> const char*
+	int cbMultiByte,
+	wchar_t* lpWideCharStr, // LPWSTR -> wchar_t*
+	int cchWideChar );
+
+wchar_t* Utf8ToUtf16_C( const char* utf8Str ) {
+	if ( utf8Str == NULL ) {
+		return NULL;
+	}
+
+	int wideCharCount = MultiByteToWideChar(
+		CP_UTF8,
+		MB_ERR_INVALID_CHARS,
+		utf8Str,
+		-1,
+		NULL,
+		0
+	);
+
+	if ( wideCharCount == 0 ) {
+		return NULL;
+	}
+
+	wchar_t* wideStr = (wchar_t*)malloc( wideCharCount * sizeof( wchar_t ) );
+	if ( wideStr == NULL ) {
+		return NULL;
+	}
+
+	int result = MultiByteToWideChar( CP_UTF8,
+									  MB_ERR_INVALID_CHARS, // Use same flags
+									  utf8Str, -1,
+									  wideStr,		// Destination buffer
+									  wideCharCount // Size of destination buffer in WCHARs
+	);
+
+	if ( result == 0 ) {
+		free( wideStr );
+		return NULL;
+	}
+
+	return wideStr;
+}
 
 #if defined(_DLL)
 #define SUBPROCESS_DLLIMPORT __declspec(dllimport)
@@ -500,15 +613,15 @@ int subprocess_create_ex(const char *const commandLine[], int options,
   subprocess_size_t len;
   int i, j;
   int need_quoting;
-  unsigned long flags = 0;
+  unsigned long flags = CREATE_UNICODE_ENVIRONMENT;
   const unsigned long startFUseStdHandles = 0x00000100;
   const unsigned long handleFlagInherit = 0x00000001;
   const unsigned long createNoWindow = 0x08000000;
   struct subprocess_subprocess_information_s processInfo;
   struct subprocess_security_attributes_s saAttr = {sizeof(saAttr),
                                                     SUBPROCESS_NULL, 1};
-  char *used_environment = SUBPROCESS_NULL;
-  struct subprocess_startup_info_s startInfo = {0,
+  wchar_t *used_environment = SUBPROCESS_NULL;
+  STARTUPINFOW startInfo = { 0,
                                                 SUBPROCESS_NULL,
                                                 SUBPROCESS_NULL,
                                                 SUBPROCESS_NULL,
@@ -537,36 +650,57 @@ int subprocess_create_ex(const char *const commandLine[], int options,
   if (subprocess_option_inherit_environment !=
       (options & subprocess_option_inherit_environment)) {
     if (SUBPROCESS_NULL == environment) {
-      used_environment = SUBPROCESS_CONST_CAST(char *, "\0\0");
+      used_environment = SUBPROCESS_NULL;
     } else {
-      // We always end with two null terminators.
-      len = 2;
+		if ( environment[0] == NULL ) {
+			used_environment = SUBPROCESS_NULL;
+		} else {
+			size_t total_wchars_for_env = 0;
+			for ( i = 0; environment[i] != NULL; i++ ) {
+				int wchars_for_str = MultiByteToWideChar( CP_UTF8, 0, environment[i], -1, NULL, 0 );
+				if ( wchars_for_str == 0 ) {
+					if ( environment[i][0] != '\0' )
+						return -1;
+					wchars_for_str = 1;
+				}
+				total_wchars_for_env += wchars_for_str;
+			}
+			total_wchars_for_env += 1;
 
-      for (i = 0; environment[i]; i++) {
-        for (j = 0; '\0' != environment[i][j]; j++) {
-          len++;
-        }
+			used_environment = (wchar_t*)malloc( total_wchars_for_env * sizeof( wchar_t ) );
+			if ( !used_environment )
+				return -1;
 
-        // For the null terminator too.
-        len++;
-      }
+			wchar_t* current_env_ptr = used_environment;
+			size_t remaining_wchar_capacity = total_wchars_for_env;
+			for ( i = 0; environment[i] != NULL; i++ ) {
+				int wchars_for_str = MultiByteToWideChar( CP_UTF8, 0, environment[i], -1, NULL, 0 );
+				if ( wchars_for_str == 0 ) {
+					if ( environment[i][0] != '\0' )
+						return -1;
+					wchars_for_str = 1;
+				}
 
-      used_environment = SUBPROCESS_CAST(char *, _alloca(len));
+				if ( wchars_for_str > remaining_wchar_capacity ) {
+					return -1;
+				}
 
-      // Re-use len for the insertion position
-      len = 0;
+				int wchars_written = MultiByteToWideChar(
+					CP_UTF8, 0, environment[i], -1, current_env_ptr, remaining_wchar_capacity );
+				if ( wchars_written == 0 ||
+					 wchars_written != wchars_for_str ) {
+					return -1;
+				}
+				current_env_ptr += wchars_written;
+				remaining_wchar_capacity -= wchars_written;
+			}
 
-      for (i = 0; environment[i]; i++) {
-        for (j = 0; '\0' != environment[i][j]; j++) {
-          used_environment[len++] = environment[i][j];
-        }
-
-        used_environment[len++] = '\0';
-      }
-
-      // End with the two null terminators.
-      used_environment[len++] = '\0';
-      used_environment[len++] = '\0';
+			if ( remaining_wchar_capacity > 0 ) {
+				*current_env_ptr = L'\0';
+			} else {
+				return -1;
+			}
+		}
     }
   } else {
     if (SUBPROCESS_NULL != environment) {
@@ -744,20 +878,30 @@ int subprocess_create_ex(const char *const commandLine[], int options,
 
   commandLineCombined[len] = '\0';
 
-  if (!CreateProcessA(
+  wchar_t* commandLineCombinedW = Utf8ToUtf16_C( commandLineCombined );
+  wchar_t* working_directoryW = Utf8ToUtf16_C( working_directory );
+
+  if (!CreateProcessW(
           SUBPROCESS_NULL,
-          commandLineCombined, // command line
+          commandLineCombinedW, // command line
           SUBPROCESS_NULL,     // process security attributes
           SUBPROCESS_NULL,     // primary thread security attributes
           1,                   // handles are inherited
           flags,               // creation flags
-          used_environment,    // used environment
-          working_directory,   // set process working directory
-          SUBPROCESS_PTR_CAST(LPSTARTUPINFOA,
+          used_environment,   // used environment
+          working_directoryW,  // set process working directory
+						SUBPROCESS_PTR_CAST( LPSTARTUPINFOW,
                               &startInfo), // STARTUPINFO pointer
           SUBPROCESS_PTR_CAST(LPPROCESS_INFORMATION, &processInfo))) {
+	  free( commandLineCombinedW );
+	  free( used_environment );
+	  free( working_directoryW );
     return -1;
   }
+
+  free( commandLineCombinedW );
+  free( used_environment );
+  free( working_directoryW );
 
   out_process->hProcess = processInfo.hProcess;
 
@@ -881,12 +1025,14 @@ int subprocess_create_ex(const char *const commandLine[], int options,
     }
   }
 
+#if !defined( __IPHONE__ ) && !defined( TARGET_OS_IPHONE )
   if (working_directory) {
     if (0 != posix_spawn_file_actions_addchdir_np(&actions, working_directory)) {
       posix_spawn_file_actions_destroy(&actions);
       return -1;
     }
   }
+#endif
 
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -1113,10 +1259,31 @@ int subprocess_destroy(struct subprocess_s *const process) {
     process->stdin_file = SUBPROCESS_NULL;
   }
 
-  if (process->stdout_file) {
+  if ( process->stdout_file ) {
+#if defined(_WIN32)
+	  if ( process->options & subprocess_option_enable_async ) {
+		  /* Get the underlying OS handle from the FILE stream */
+		  int fd = _fileno( process->stdout_file );
+		  void* handle = SUBPROCESS_PTR_CAST( void*, _get_osfhandle( fd ) );
+
+		  if ( handle != (void*)-1 ) {
+			  CancelIo( handle );
+		  }
+	  }
+#endif
     fclose(process->stdout_file);
 
     if (process->stdout_file != process->stderr_file) {
+#if defined(_WIN32)
+		if ( process->options & subprocess_option_enable_async ) {
+			int fd = _fileno( process->stderr_file );
+			void* handle = SUBPROCESS_PTR_CAST( void*, _get_osfhandle( fd ) );
+
+			if ( handle != (void*)-1 ) {
+				CancelIo( handle );
+			}
+		}
+#endif
       fclose(process->stderr_file);
     }
 
@@ -1345,28 +1512,33 @@ subprocess_write_stdin(struct subprocess_s *const process, char *const buffer,
     }
     return SUBPROCESS_CAST(unsigned, bytes_write);
 #else
-    const int fd = fileno(process->stdin_file);
-    int bytes_to_write = size;
-    char* buffer_to_write = buffer;
-    do {
-       const ssize_t ret = write(fd, buffer_to_write, bytes_to_write);
+  const int fd = fileno(process->stdin_file);
+  int bytes_to_write = size;
+  char* buffer_to_write = buffer;
+  do {
+     const ssize_t ret = write(fd, buffer_to_write, bytes_to_write);
 
-       if (ret > 0) {
-          bytes_to_write -= ret;
-          buffer_to_write += ret;
-          fsync(fd);
-       } else if (ret <= 0) {
-          if (ret == -1) {
-             if (((errno == EAGAIN ) || (errno == EINPROGRESS)) && !process->shutting_down) {
-                continue;
-             }
-             return -1;
-          }
-          if (ret == 0)
-             return 0;
-       }
-    } while ( bytes_to_write );
-    return bytes_to_write == 0 ? size : -1;
+     if (ret > 0) {
+        bytes_to_write -= ret;
+        buffer_to_write += ret;
+        fsync(fd);
+     } else if (ret <= 0) {
+        if (ret == -1) {
+           if (((errno == EAGAIN ) || (errno == EINPROGRESS)) && !process->shutting_down) {
+              struct pollfd pfd;
+              pfd.fd = fd;
+              pfd.events = POLLOUT;
+              // Wait up to 1ms, then check shutting_down again
+              poll(&pfd, 1, 1);
+              continue;
+           }
+           return -1;
+        }
+        if (ret == 0)
+           return 0;
+     }
+  } while ( bytes_to_write );
+  return bytes_to_write == 0 ? size : -1;
 #endif
 }
 

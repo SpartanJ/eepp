@@ -72,7 +72,7 @@ class LSPClientServerManager {
 
 	void getSymbolReferences( std::shared_ptr<TextDocument> doc );
 
-	void codeAction( std::shared_ptr<TextDocument> doc, const nlohmann::json& diagnostics,
+	bool codeAction( std::shared_ptr<TextDocument> doc, const nlohmann::json& diagnostics,
 					 const LSPClientServer::CodeActionHandler& h );
 
 	void memoryUsage( std::shared_ptr<TextDocument> doc );
@@ -96,7 +96,7 @@ class LSPClientServerManager {
 
 	bool isServerRunning( const LSPClientServer* server );
 
-	void requestSymanticHighlighting( std::shared_ptr<TextDocument> doc );
+	void requestSemanticHighlighting( std::shared_ptr<TextDocument> doc );
 
 	void rangeFormatting( std::shared_ptr<TextDocument> doc );
 
@@ -111,7 +111,7 @@ class LSPClientServerManager {
 	std::map<String::HashType, std::unique_ptr<Clock>> mLSPsToClose;
 	LSPWorkspaceFolder mLSPWorkspaceFolder;
 	Clock mUpdateClock;
-	Mutex mClientsMutex;
+	mutable Mutex mClientsMutex;
 	Time mLSPDecayTime{ Minutes( 1 ) };
 
 	std::vector<LSPDefinition> supportsLSP( const std::shared_ptr<TextDocument>& doc );

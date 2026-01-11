@@ -11,6 +11,7 @@ EEPP_C_INCLUDES			:= \
 	$(EEPP_THIRD_PARTY_PATH) \
 	$(EEPP_THIRD_PARTY_PATH)/freetype2/include \
 	$(EEPP_THIRD_PARTY_PATH)/libpng \
+	$(EEPP_THIRD_PARTY_PATH)/libwebp/src \
 	$(SDL_PATH)/include \
 	$(EEPP_THIRD_PARTY_PATH)/chipmunk \
 	$(EEPP_INC_PATH)/eepp/thirdparty \
@@ -23,6 +24,8 @@ EEPP_C_INCLUDES			:= \
 	$(EEPP_THIRD_PARTY_PATH)/mbedtls/include \
 	$(EEPP_THIRD_PARTY_PATH)/mojoAL \
 	$(EEPP_THIRD_PARTY_PATH)/pcre2/src \
+	$(EEPP_THIRD_PARTY_PATH)/oniguruma \
+	$(EEPP_THIRD_PARTY_PATH)/SheenBidi/Headers \
 	$(EEPP_THIRD_PARTY_PATH)/efsw/include \
 	$(EEPP_BASE_PATH)/modules/eterm/include \
 	$(EEPP_BASE_PATH)/modules/eterm/src \
@@ -30,12 +33,14 @@ EEPP_C_INCLUDES			:= \
 	$(EEPP_BASE_PATH)/modules/maps/src \
 	$(EEPP_BASE_PATH)/modules/physics/include \
 	$(EEPP_BASE_PATH)/modules/physics/src \
-	$(EEPP_BASE_PATH)/modules/physics/include/eepp/thirdparty/chipmunk/
+	$(EEPP_BASE_PATH)/modules/physics/include/eepp/thirdparty/chipmunk \
+	$(EEPP_BASE_PATH)/modules/languages-syntax-highlighting/src
 
 EEPP_C_FLAGS				:= \
 	-Wl,--undefined=Java_org_libsdl_app_SDLActivity_nativeInit \
 	-DANDROID \
 	-DANDROID_NDK \
+	-DZ_HAVE_UNISTD_H \
 	-DDISABLE_IMPORTGL \
 	-Wall \
 	-Wno-unknown-pragmas \
@@ -45,10 +50,12 @@ EEPP_C_FLAGS				:= \
 	-DEE_MBEDTLS \
 	-D$(EE_SDL_VERSION) \
 	-DAL_LIBTYPE_STATIC \
+	-DEE_MOJOAL \
 	-I$(EEPP_INC_PATH) \
 	-I$(EEPP_BASE_PATH) \
 	-DPCRE2_STATIC \
 	-DPCRE2_CODE_UNIT_WIDTH=8 \
+	-DONIG_STATIC \
 	-DEE_TEXT_SHAPER_ENABLED
 
 EEPP_LDLIBS				:= $(APP_LDLIBS)
@@ -103,7 +110,7 @@ LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES)
 
 LOCAL_SRC_FILES			:= $(foreach F, $(CODE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES	:= freetype libpng pcre2 harfbuzz
+LOCAL_STATIC_LIBRARIES	:= freetype libpng libwebp pcre2 oniguruma harfbuzz sheenbidi
 
 LOCAL_SHARED_LIBRARIES	:= SDL2
 
@@ -174,6 +181,31 @@ LOCAL_SRC_FILES			:= $(foreach F, $(LIBPNG_SRCS), $(addprefix $(dir $(F)),$(notd
 include $(BUILD_STATIC_LIBRARY)
 #*************** LIBPNG ***************
 
+#*************** LIBWEBP ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
+
+LOCAL_MODULE			:= libwebp
+
+LIBWEBP_SRCS			:= \
+	libwebp/src/dec/*.c \
+	libwebp/src/demux/*.c \
+	libwebp/src/dsp/*.c \
+	libwebp/src/enc/*.c \
+	libwebp/src/mux/*.c \
+	libwebp/src/utils/*.c \
+	libwebp/src/webp/*.c \
+	libwebp/sharpyuv/*.c
+
+LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/libwebp $(LOCAL_PATH)/libwebp/src $(LOCAL_PATH)/sharpyuv
+LOCAL_CFLAGS			:= -Os
+
+LOCAL_SRC_FILES			:= $(foreach F, $(LIBWEBP_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** LIBWEBP ***************
+
 #**************** PCRE2 ***************
 include $(CLEAR_VARS)
 
@@ -217,6 +249,72 @@ LOCAL_SRC_FILES			:=   \
 include $(BUILD_STATIC_LIBRARY)
 #**************** PCRE2 ***************
 
+#**************** Oniguruma ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
+
+LOCAL_MODULE			:= oniguruma
+
+LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/oniguruma
+LOCAL_CFLAGS			:= -Os -DONIG_STATIC
+
+LOCAL_SRC_FILES			:=   \
+	oniguruma/regcomp.c \
+	oniguruma/regenc.c \
+	oniguruma/regerror.c \
+	oniguruma/regext.c \
+	oniguruma/regexec.c \
+	oniguruma/regparse.c \
+	oniguruma/regsyntax.c \
+	oniguruma/regtrav.c \
+	oniguruma/regversion.c \
+	oniguruma/st.c \
+	oniguruma/reggnu.c \
+	oniguruma/regposerr.c \
+	oniguruma/regposix.c \
+	oniguruma/mktable.c \
+	oniguruma/ascii.c \
+	oniguruma/euc_jp.c \
+	oniguruma/euc_tw.c \
+	oniguruma/euc_kr.c \
+	oniguruma/sjis.c \
+	oniguruma/big5.c \
+	oniguruma/gb18030.c \
+	oniguruma/koi8.c \
+	oniguruma/koi8_r.c \
+	oniguruma/cp1251.c \
+	oniguruma/iso8859_1.c \
+	oniguruma/iso8859_2.c \
+	oniguruma/iso8859_3.c \
+	oniguruma/iso8859_4.c \
+	oniguruma/iso8859_5.c \
+	oniguruma/iso8859_6.c \
+	oniguruma/iso8859_7.c \
+	oniguruma/iso8859_8.c \
+	oniguruma/iso8859_9.c \
+	oniguruma/iso8859_10.c \
+	oniguruma/iso8859_11.c \
+	oniguruma/iso8859_13.c \
+	oniguruma/iso8859_14.c \
+	oniguruma/iso8859_15.c \
+	oniguruma/iso8859_16.c \
+	oniguruma/utf8.c \
+	oniguruma/utf16_be.c \
+	oniguruma/utf16_le.c \
+	oniguruma/utf32_be.c \
+	oniguruma/utf32_le.c \
+	oniguruma/unicode.c \
+	oniguruma/unicode_fold_data.c \
+	oniguruma/unicode_fold1_key.c \
+	oniguruma/unicode_fold2_key.c \
+	oniguruma/unicode_fold3_key.c \
+	oniguruma/onig_init.c \
+	oniguruma/unicode_unfold_key.c
+
+include $(BUILD_STATIC_LIBRARY)
+#**************** Oniguruma ***************
+
 #*************** HARFBUZZ *************
 include $(CLEAR_VARS)
 
@@ -233,6 +331,23 @@ LOCAL_SRC_FILES			:= $(foreach F, $(HARFBUZZ_SRCS), $(addprefix $(dir $(F)),$(no
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** HARFBUZZ *************
+
+#*************** SHEENBIDI *************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
+
+LOCAL_MODULE			:= sheenbidi
+
+SHEENBIDI_SRCS			:=  SheenBidi/Source/**.c
+
+LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/SheenBidi/Headers
+LOCAL_CFLAGS			:= -Os -I$(LOCAL_PATH)/freetype2/include
+
+LOCAL_SRC_FILES			:= $(foreach F, $(SHEENBIDI_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** SHEENBIDI *************
 
 #**************** SDL 2 ***************
 include $(CLEAR_VARS)
@@ -414,3 +529,22 @@ LOCAL_SRC_FILES			:= $(foreach F, $(LIBETERM_SRCS), $(addprefix $(dir $(F)),$(no
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** ETERM ***************
+
+#*************** LANGUAGES SYNTAX HIGHLIGHTING ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_MODULES_PATH)
+
+LOCAL_MODULE			:= languages-syntax-highlighting
+
+LIBETERM_SRCS			:=  \
+	languages-syntax-highlighting/src/eepp/ui/doc/*.cpp \
+	languages-syntax-highlighting/src/eepp/ui/doc/languages/*.cpp
+
+LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES) $(EEPP_INC_PATH)
+LOCAL_CFLAGS			:= -Os
+
+LOCAL_SRC_FILES			:= $(foreach F, $(LIBETERM_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** LANGUAGES SYNTAX HIGHLIGHTING ***************

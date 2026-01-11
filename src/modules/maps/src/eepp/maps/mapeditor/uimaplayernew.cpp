@@ -27,8 +27,7 @@ UIMapLayerNew::UIMapLayerNew( UIMap* Map, EE_LAYER_TYPE Type, NewLayerCb newLaye
 		->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL )
 		->setMinWindowSize( 278, 114 );
 
-	mUIWindow->addEventListener( Event::OnWindowClose,
-								 [this] ( auto event ) { onWindowClose( event ); } );
+	mUIWindow->on( Event::OnWindowClose, [this]( auto event ) { onWindowClose( event ); } );
 
 	if ( MAP_LAYER_TILED == mType )
 		mUIWindow->setTitle( "New Tile Layer" );
@@ -57,9 +56,8 @@ UIMapLayerNew::UIMapLayerNew( UIMap* Map, EE_LAYER_TYPE Type, NewLayerCb newLaye
 	OKButton->setPosition(
 		mUIWindow->getContainer()->getSize().getWidth() - OKButton->getSize().getWidth() - 4,
 		mUIWindow->getContainer()->getSize().getHeight() - OKButton->getSize().getHeight() - 4 );
-	OKButton->addEventListener( Event::MouseClick, [this] ( auto event ) { onOKClick( event ); } );
-	mUILayerName->addEventListener( Event::OnPressEnter,
-									[this] ( auto event ) { onOKClick( event ); } );
+	OKButton->on( Event::MouseClick, [this]( auto event ) { onOKClick( event ); } );
+	mUILayerName->on( Event::OnPressEnter, [this]( auto event ) { onOKClick( event ); } );
 
 	OKButton->setText( "Add" );
 
@@ -69,11 +67,10 @@ UIMapLayerNew::UIMapLayerNew( UIMap* Map, EE_LAYER_TYPE Type, NewLayerCb newLaye
 		->setPosition( OKButton->getPosition().x - OKButton->getSize().getWidth() - 4,
 					   OKButton->getPosition().y );
 	CancelButton->setIcon( sceneNode->findIconDrawable( "cancel", PixelDensity::dpToPxI( 16 ) ) );
-	CancelButton->addEventListener( Event::MouseClick,
-									[this] ( auto event ) { onCancelClick( event ); } );
+	CancelButton->on( Event::MouseClick, [this]( auto event ) { onCancelClick( event ); } );
 	CancelButton->setText( "Cancel" );
 
-	mUIWindow->addEventListener( Event::KeyUp, [this] ( auto event ) { onOnKeyUp( event ); } );
+	mUIWindow->on( Event::KeyUp, [this]( auto event ) { onOnKeyUp( event ); } );
 
 	mUIWindow->center();
 	mUIWindow->show();

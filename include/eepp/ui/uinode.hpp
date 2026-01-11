@@ -189,7 +189,7 @@ class EE_API UINode : public Node {
 
 	virtual UINode* setThemeSkin( const std::string& skinName );
 
-	void setThemeToChilds( UITheme* Theme );
+	void setThemeToChildren( UITheme* Theme );
 
 	UISkin* getSkin() const;
 
@@ -217,7 +217,7 @@ class EE_API UINode : public Node {
 
 	bool isDragging() const;
 
-	void setDragging( const bool& dragging );
+	void setDragging( bool dragging, bool emitDropEvent = true );
 
 	void startDragging( const Vector2f& position );
 
@@ -263,6 +263,8 @@ class EE_API UINode : public Node {
 							   const Float& defaultValue = 0 ) const;
 
 	UISceneNode* getUISceneNode() const;
+
+	Input* getInput() const;
 
 	void setMinWidth( const Float& width );
 

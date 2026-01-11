@@ -15,16 +15,18 @@ class TerminalManager {
   public:
 	TerminalManager( App* app );
 
-	UITerminal* createTerminalInSplitter( const std::string& workingDir = "",
-										  std::string program = "",
-										  const std::vector<std::string>& args = {},
-										  bool fallback = true );
+	UITerminal*
+	createTerminalInSplitter( const std::string& workingDir = "", std::string program = "",
+							  std::vector<std::string> args = {},
+							  const std::unordered_map<std::string, std::string>& env = {},
+							  bool fallback = true, bool keepAlive = true );
 
 	UITerminal* createNewTerminal( const std::string& title = "",
 								   UITabWidget* inTabWidget = nullptr,
 								   const std::string& workingDir = "", std::string program = "",
-								   const std::vector<std::string>& args = {},
-								   bool fallback = true );
+								   std::vector<std::string> args = {},
+								   const std::unordered_map<std::string, std::string>& env = {},
+								   bool fallback = true, bool keepAlive = true );
 
 	void applyTerminalColorScheme( const TerminalColorScheme& colorScheme );
 
@@ -70,8 +72,8 @@ class TerminalManager {
 	std::map<std::string, TerminalColorScheme> mTerminalColorSchemes;
 	std::string mTerminalCurrentColorScheme;
 
-	Float mColorSchemeMenuesCreatedWithHeight{ 0 };
-	std::vector<UIPopUpMenu*> mColorSchemeMenues;
+	Float mColorSchemeMenusCreatedWithHeight{ 0 };
+	std::vector<UIPopUpMenu*> mColorSchemeMenus;
 	bool mUseFrameBuffer{ false };
 };
 

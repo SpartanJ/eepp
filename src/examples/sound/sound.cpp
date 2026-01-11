@@ -1,5 +1,12 @@
 #include <eepp/ee.hpp>
 #include <iostream>
+#include <signal.h>
+
+bool STOP = false;
+
+void sigend( int ) {
+	STOP = true;
+}
 
 /// Play a sound
 void playSound() {
@@ -12,7 +19,7 @@ void playSound() {
 		// Get the sound buffer to display the buffer information
 		SoundBuffer& buffer = soundManager.getBuffer( "sound" );
 
-		// Display sound informations
+		// Display sound information
 		std::cout << "sound.ogg :" << std::endl;
 		std::cout << " " << buffer.getDuration().asSeconds() << " seconds" << std::endl;
 		std::cout << " " << buffer.getSampleRate() << " samples / sec" << std::endl;
@@ -21,7 +28,7 @@ void playSound() {
 		// Play the sound
 		Sound* sound = soundManager.play( "sound" );
 
-		while ( sound->getStatus() == Sound::Playing ) {
+		while ( !STOP && sound->getStatus() == Sound::Playing ) {
 			Sys::sleep( Milliseconds( 100 ) );
 
 			// Display the playing position
@@ -39,7 +46,7 @@ void playMusic( std::string path = "assets/sounds/music.ogg" ) {
 	if ( !music.openFromFile( path ) )
 		return;
 
-	// Display music informations
+	// Display music information
 	std::cout << FileSystem::fileNameFromPath( path ) << " :" << std::endl;
 	std::cout << " " << music.getDuration().asSeconds() << " seconds" << std::endl;
 	std::cout << " " << music.getSampleRate() << " samples / sec" << std::endl;
@@ -49,7 +56,7 @@ void playMusic( std::string path = "assets/sounds/music.ogg" ) {
 	music.play();
 
 	// Loop while the music is playing
-	while ( music.getStatus() == Sound::Playing ) {
+	while ( !STOP && music.getStatus() == Sound::Playing ) {
 		// Leave some CPU time for other processes
 		Sys::sleep( Milliseconds( 100 ) );
 
@@ -63,6 +70,10 @@ void playMusic( std::string path = "assets/sounds/music.ogg" ) {
 
 /// Entry point of application
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
+	signal( SIGABRT, sigend );
+	signal( SIGINT, sigend );
+	signal( SIGTERM, sigend );
+
 	if ( argc >= 2 ) {
 		playMusic( argv[1] );
 	} else {
@@ -72,10 +83,6 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		// Play a music
 		playMusic();
 	}
-
-	// Wait until the user presses 'enter' key
-	std::cout << "Press enter to exit..." << std::endl;
-	std::cin.ignore( 10000, '\n' );
 
 	// If was compiled in debug mode it will print the memory manager report
 	MemoryManager::showResults();

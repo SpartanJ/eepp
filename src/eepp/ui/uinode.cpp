@@ -151,6 +151,7 @@ void UINode::setInternalSize( const Sizef& size ) {
 		mSize = PixelDensity::dpToPx( s );
 		mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
 		updateCenter();
+		onSizeChange();
 		sendCommonEvent( Event::OnSizeChange );
 		invalidateDraw();
 	}
@@ -171,6 +172,7 @@ void UINode::setInternalPixelsSize( const Sizef& size ) {
 		mSize = s;
 		mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
 		updateCenter();
+		onSizeChange();
 		sendCommonEvent( Event::OnSizeChange );
 		invalidateDraw();
 	}
@@ -190,9 +192,7 @@ Node* UINode::setSize( const Sizef& size ) {
 
 		setInternalSize( s );
 
-		onSizeChange();
-
-		if ( reportSizeChangeToChilds() ) {
+		if ( reportSizeChangeToChildren() ) {
 			sendParentSizeChange( sizeChange );
 		}
 	}
@@ -219,9 +219,7 @@ UINode* UINode::setPixelsSize( const Sizef& size ) {
 
 		setInternalPixelsSize( s );
 
-		onSizeChange();
-
-		if ( reportSizeChangeToChilds() ) {
+		if ( reportSizeChangeToChildren() ) {
 			sendParentSizeChange( PixelDensity::pxToDp( sizeChange ) );
 		}
 	}
@@ -635,12 +633,14 @@ void UINode::drawSkin() {
 				PixelDensity::dpToPx( getSkinSize( getSkin(), mSkinState->getCurrentState() ) );
 			Sizef diff = ( mSize - rSize ) * 0.5f;
 
-			mSkinState->draw( mScreenPosi.x + eefloor( diff.x ), mScreenPosi.y + eefloor( diff.y ),
+			mSkinState->draw( std::trunc( mScreenPos.x ) + eefloor( diff.x ),
+							  std::trunc( mScreenPos.y ) + eefloor( diff.y ),
 							  eefloor( rSize.getWidth() ), eefloor( rSize.getHeight() ),
 							  (Uint32)mAlpha );
 		} else {
-			mSkinState->draw( mScreenPosi.x, mScreenPosi.y, eefloor( mSize.getWidth() ),
-							  eefloor( mSize.getHeight() ), (Uint32)mAlpha );
+			mSkinState->draw( std::trunc( mScreenPos.x ), std::trunc( mScreenPos.y ),
+							  eefloor( mSize.getWidth() ), eefloor( mSize.getHeight() ),
+							  (Uint32)mAlpha );
 		}
 	}
 }
@@ -976,20 +976,20 @@ UINode* UINode::resetFlags( Uint32 newFlags ) {
 
 void UINode::drawBackground() {
 	if ( ( mFlags & UI_FILL_BACKGROUND ) && NULL != mBackground ) {
-		mBackground->draw( mScreenPosi.asFloat(), mSize.floor(), mAlpha );
+		mBackground->draw( mScreenPos.trunc(), mSize.floor(), mAlpha );
 	}
 }
 
 void UINode::drawForeground() {
 	if ( ( mFlags & UI_FILL_FOREGROUND ) && NULL != mForeground ) {
-		mForeground->draw( mScreenPosi.asFloat(), mSize.floor(), (Uint32)mAlpha );
+		mForeground->draw( mScreenPos.trunc(), mSize.floor(), (Uint32)mAlpha );
 	}
 }
 
 void UINode::drawBorder() {
 	if ( ( mFlags & UI_BORDER ) && NULL != mBorder ) {
 		mBorder->setAlpha( mAlpha );
-		mBorder->draw( mScreenPosi.asFloat(), mSize.floor() );
+		mBorder->draw( mScreenPos.trunc(), mSize.floor() );
 	}
 }
 
@@ -1086,7 +1086,7 @@ void UINode::nodeDraw() {
 
 			draw();
 
-			drawChilds();
+			drawChildren();
 
 			smartClipEnd( ClipType::PaddingBox, needsClipPlanes );
 
@@ -1095,7 +1095,7 @@ void UINode::nodeDraw() {
 
 			smartClipEnd( ClipType::ContentBox, needsClipPlanes );
 		} else if ( !isClipped() ) {
-			drawChilds();
+			drawChildren();
 		}
 
 		if ( intersected )
@@ -1315,15 +1315,15 @@ void UINode::popState( const Uint32& State, bool emitEvent ) {
 	}
 }
 
-void UINode::setThemeToChilds( UITheme* Theme ) {
+void UINode::setThemeToChildren( UITheme* Theme ) {
 	Node* ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
 		if ( ChildLoop->isUINode() ) {
 			UINode* node = static_cast<UINode*>( ChildLoop );
-			node->setThemeToChilds( Theme );
-			node->setTheme( Theme ); // First set the theme to childs to let the father override the
-									 // childs forced themes
+			node->setThemeToChildren( Theme );
+			node->setTheme( Theme ); // First set the theme to children to let the father override
+									 // the children forced themes
 		}
 
 		ChildLoop = ChildLoop->getNextNode();
@@ -1508,7 +1508,7 @@ bool UINode::isDragging() const {
 	return 0 != ( mNodeFlags & NODE_FLAG_DRAGGING );
 }
 
-void UINode::setDragging( const bool& dragging ) {
+void UINode::setDragging( bool dragging, bool emitDropEvent ) {
 	if ( NULL == getEventDispatcher() )
 		return;
 
@@ -1525,15 +1525,17 @@ void UINode::setDragging( const bool& dragging ) {
 
 		onDragStop( getEventDispatcher()->getMousePos(), getEventDispatcher()->getPressTrigger() );
 
-		bool enabled = isEnabled();
-		mEnabled = false;
-		Node* found = getUISceneNode()->overFind( getEventDispatcher()->getMousePosf() );
-		if ( found && found->isUINode() ) {
-			NodeDropMessage msg( found, NodeMessage::Drop, this );
-			found->messagePost( &msg );
-			found->asType<UINode>()->onDrop( this );
+		if ( emitDropEvent ) {
+			bool enabled = isEnabled();
+			mEnabled = false;
+			Node* found = getUISceneNode()->overFind( getEventDispatcher()->getMousePosf() );
+			if ( found && found->isUINode() ) {
+				NodeDropMessage msg( found, NodeMessage::Drop, this );
+				found->messagePost( &msg );
+				found->asType<UINode>()->onDrop( this );
+			}
+			mEnabled = enabled;
 		}
-		mEnabled = enabled;
 	}
 }
 
@@ -1547,7 +1549,7 @@ void UINode::startDragging( const Vector2f& position ) {
 }
 
 bool UINode::ownsChildPosition() const {
-	return 0 != ( mFlags & UI_OWNS_CHILDS_POSITION );
+	return 0 != ( mFlags & UI_OWNS_CHILDREN_POSITION );
 }
 
 void UINode::setDragButton( const Uint32& Button ) {
@@ -1756,6 +1758,10 @@ Float UINode::convertLengthAsDp( const CSS::StyleSheetLength& length,
 
 UISceneNode* UINode::getUISceneNode() const {
 	return mUISceneNode;
+}
+
+Input* UINode::getInput() const {
+	return mUISceneNode->getWindow()->getInput();
 }
 
 Rectf UINode::getLocalDpBounds() const {

@@ -15,5 +15,7 @@
 ../../src/tools/ecode
 ../../src/thirdparty/mojoAL/
 ../../src/thirdparty/pcre2/src
+../../src/thirdparty/SheenBidi/Headers
+../../src/thirdparty/SheenBidi/Headers/SheenBidi
 ../../src/modules/languages-syntax-highlighting/src
 /usr/include/freetype2/

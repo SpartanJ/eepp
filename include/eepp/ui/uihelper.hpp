@@ -8,12 +8,11 @@ using namespace EE::Graphics;
 
 namespace EE { namespace UI {
 
-#define UI_HALIGN_LEFT TEXT_ALIGN_LEFT
-#define UI_HALIGN_MASK TEXT_HALIGN_MASK
-#define UI_VALIGN_TOP TEXT_ALIGN_TOP
-#define UI_VALIGN_MASK TEXT_VALIGN_MASK
-
-enum UIFlag {
+enum UIFlag : Uint32 {
+	UI_HALIGN_LEFT = TEXT_ALIGN_LEFT,
+	UI_VALIGN_TOP = TEXT_ALIGN_TOP,
+	UI_HALIGN_MASK = TEXT_HALIGN_MASK,
+	UI_VALIGN_MASK = TEXT_VALIGN_MASK,
 	UI_HALIGN_RIGHT = TEXT_ALIGN_RIGHT,
 	UI_HALIGN_CENTER = TEXT_ALIGN_CENTER,
 	UI_VALIGN_BOTTOM = TEXT_ALIGN_BOTTOM,
@@ -36,13 +35,14 @@ enum UIFlag {
 	UI_TEXT_SELECTION_ENABLED = ( 1 << 19 ),
 	UI_ATTRIBUTE_CHANGED = ( 1 << 20 ),
 	UI_CHECKED = ( 1 << 21 ),
-	UI_OWNS_CHILDS_POSITION = ( 1 << 22 ),
+	UI_OWNS_CHILDREN_POSITION = ( 1 << 22 ),
 	UI_DRAG_VERTICAL = ( 1 << 23 ),
 	UI_DRAG_HORIZONTAL = ( 1 << 24 ),
 	UI_TAB_FOCUSABLE = ( 1 << 25 ),
 	UI_TOOLTIP_ENABLED = ( 1 << 26 ),
 	UI_SCROLLABLE = ( 1 << 27 ),
 	UI_HIGHLIGHT = ( 1 << 28 ),
+	UI_PARENT_ATTRIBUTE_CHANGED = ( 1 << 29 ),
 };
 
 enum UINodeType {
@@ -103,12 +103,19 @@ enum UINodeType {
 	UI_TYPE_LISTVIEW,
 	UI_TYPE_CONSOLE,
 	UI_TYPE_STACK_LAYOUT,
+	UI_TYPE_STACK_WIDGET,
+	UI_TYPE_IMAGE_VIEWER,
+	UI_TYPE_AUDIO_PLAYER,
+	UI_TYPE_NODELINK,
 	UI_TYPE_MODULES = 10000,
 	UI_TYPE_TERMINAL = 10001,
-	UI_TYPE_USER = 200000
+	UI_TYPE_USER = 200000,
+	UI_TYPE_UNKNOWN = 0xFFFFFFFF
 };
 
 enum class ScrollBarMode : Uint32 { Auto, AlwaysOn, AlwaysOff };
+
+enum class ScrollViewType { Overlay, Outside };
 
 enum class UIOrientation : Uint32 { Vertical, Horizontal };
 
@@ -132,10 +139,7 @@ static const Uint32 UI_NODE_DEFAULT_FLAGS =
 static const Uint32 UI_NODE_DEFAULT_FLAGS_CENTERED =
 	UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
 
-enum class HintDisplay {
-	Always,
-	Focus
-};
+enum class HintDisplay { Always, Focus };
 
 }} // namespace EE::UI
 

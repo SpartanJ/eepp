@@ -37,7 +37,7 @@ static constexpr const char* GIT_STASH_TOOLTIP_CLASS = "git-stash-tooltip";
 class GitPlugin : public PluginBase {
   public:
 	static PluginDefinition Definition() {
-		return { "git", "Git", "Git integration", GitPlugin::New, { 0, 1, 2 }, GitPlugin::NewSync };
+		return { "git", "Git", "Git integration", GitPlugin::New, { 0, 1, 4 }, GitPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
@@ -75,7 +75,7 @@ class GitPlugin : public PluginBase {
 
 	void updateRepos();
 
-	bool isSilent() const { return mSilence; }
+	bool isSilent() const { return mSilent; }
 
   protected:
 	std::unique_ptr<Git> mGit;
@@ -97,7 +97,7 @@ class GitPlugin : public PluginBase {
 	bool mOldDontAutoHideOnMouseMove{ false };
 	bool mOldUsingCustomStyling{ false };
 	bool mInitialized{ false };
-	bool mSilence{ true };
+	bool mSilent{ true };
 	Uint32 mOldTextStyle{ 0 };
 	Uint32 mOldTextAlign{ 0 };
 	Color mOldBackgroundColor;
@@ -125,6 +125,7 @@ class GitPlugin : public PluginBase {
 	Mutex mRepoMutex;
 	Mutex mReposMutex;
 	String mLastCommitMsg;
+	Uint32 mRepositionCbId{ 0 };
 
 	struct CustomTokenizer {
 		SyntaxDefinition def;

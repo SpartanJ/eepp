@@ -51,6 +51,16 @@ template <typename T> static std::pair<T, TextPosition> getPathAndPosition( cons
 	return { path, { 0, 0 } };
 }
 
+struct PathHelper {
+	static bool isVideoExtension( std::string_view ext );
+
+	static bool isDocumentExtension( std::string_view ext );
+
+	static bool isOpenExternalExtension( std::string_view ext );
+
+	static bool isCompressedArchiveExtension( std::string_view ext );
+};
+
 } // namespace ecode
 
 #endif // ECODE_PATHHELPER_HPP

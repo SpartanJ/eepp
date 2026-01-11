@@ -2,59 +2,29 @@
 
 namespace ecode {
 
-void DebuggerClient::stateChanged( State state ) {
+void DebuggerClient::stateChanged( State state, const SessionId& sessionId ) {
 	for ( auto listener : mListeners )
-		listener->stateChanged( state );
+		listener->stateChanged( state, sessionId );
 }
 
-void DebuggerClient::initialized() {
+void DebuggerClient::initialized( const SessionId& sessionId ) {
 	for ( auto listener : mListeners )
-		listener->initialized();
+		listener->initialized( sessionId );
 }
 
-void DebuggerClient::debuggeeRunning() {
+void DebuggerClient::debuggeeRunning( const SessionId& sessionId ) {
 	for ( auto listener : mListeners )
-		listener->debuggeeRunning();
+		listener->debuggeeRunning( sessionId );
 }
 
-void DebuggerClient::debuggeeTerminated() {
+void DebuggerClient::debuggeeTerminated( const SessionId& sessionId ) {
 	for ( auto listener : mListeners )
-		listener->debuggeeTerminated();
+		listener->debuggeeTerminated( sessionId );
 }
 
-void DebuggerClient::failed() {
+void DebuggerClient::failed( const SessionId& sessionId ) {
 	for ( auto listener : mListeners )
-		listener->failed();
-}
-
-void DebuggerClient::setState( const State& state ) {
-	if ( state != mState ) {
-		mState = state;
-		stateChanged( mState );
-
-		switch ( mState ) {
-			case State::Initialized:
-				initialized();
-				checkRunning();
-				break;
-			case State::Running:
-				debuggeeRunning();
-				break;
-			case State::Terminated:
-				debuggeeTerminated();
-				break;
-			case State::Failed:
-				failed();
-				break;
-			default:;
-		}
-	}
-}
-
-void DebuggerClient::checkRunning() {
-	if ( mLaunched && mConfigured && mState == State::Initialized ) {
-		setState( State::Running );
-	}
+		listener->failed( sessionId );
 }
 
 void DebuggerClient::addListener( Listener* listener ) {

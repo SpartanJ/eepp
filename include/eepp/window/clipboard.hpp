@@ -21,6 +21,15 @@ class EE_API Clipboard {
 	/** @return The parent window of the clipboard */
 	EE::Window::Window* getWindow() const;
 
+	/** @return True if primary selection is available */
+	virtual bool hasPrimarySelection() const { return false; }
+
+	/** @return The Clipboard Primary Selection Text if available */
+	virtual std::string getPrimarySelectionText() { return ""; }
+
+	/** Set the current clipboard primary selection text */
+	virtual void setPrimarySelectionText( const std::string& text ) {}
+
   protected:
 	friend class Window;
 

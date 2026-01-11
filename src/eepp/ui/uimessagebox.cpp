@@ -46,8 +46,8 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 		mTextInput->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent )
 			->setLayoutMargin( Rectf( 0, 4, 0, 4 ) )
 			->setParent( vlay )
-			->addEventListener( Event::OnPressEnter,
-								[this]( const Event* ) { sendCommonEvent( Event::OnConfirm ); } );
+			->on( Event::OnPressEnter,
+				  [this]( const Event* ) { sendCommonEvent( Event::OnConfirm ); } );
 	} else if ( mMsgBoxType == TEXT_EDIT ) {
 		mTextEdit = UITextEdit::New();
 		mTextEdit->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::Fixed )
@@ -92,7 +92,8 @@ UIMessageBox::UIMessageBox( const Type& type, const String& message, const Uint3
 		} );
 	}
 
-	on( Event::OnWindowCloseClick, [this]( const Event* ) { sendCommonEvent( Event::OnCancel ); } );
+	on( Event::OnWindowCloseClick,
+		[this]( const Event* ) { sendCommonEvent( Event::OnDiscard ); } );
 
 	UILinearLayout* hlay = UILinearLayout::NewHorizontal();
 	hlay->setLayoutMargin( Rectf( 0, 8, 0, 0 ) )
@@ -178,6 +179,7 @@ Uint32 UIMessageBox::onMessage( const NodeMessage* Msg ) {
 					sendCommonEvent( Event::OnConfirm );
 					closeWindow();
 				} else if ( Msg->getSender() == mButtonCancel ) {
+					sendCommonEvent( Event::OnDiscard );
 					sendCommonEvent( Event::OnCancel );
 					closeWindow();
 				}
@@ -205,7 +207,7 @@ UIPushButton* UIMessageBox::getButtonCancel() const {
 Uint32 UIMessageBox::onKeyUp( const KeyEvent& event ) {
 	if ( mCloseShortcut && event.getKeyCode() == mCloseShortcut &&
 		 ( mCloseShortcut.mod == 0 || ( event.getMod() & mCloseShortcut.mod ) ) ) {
-		sendCommonEvent( Event::OnCancel );
+		sendCommonEvent( Event::OnDiscard );
 		closeWindow();
 	}
 

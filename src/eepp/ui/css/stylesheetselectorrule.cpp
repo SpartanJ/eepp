@@ -4,6 +4,7 @@
 
 namespace EE { namespace UI { namespace CSS {
 
+// This will be optimized as popcnt
 static int numberOfSetBits( Uint32 i ) {
 	i = i - ( ( i >> 1 ) & 0x55555555 );				  // add pairs of bits
 	i = ( i & 0x33333333 ) + ( ( i >> 2 ) & 0x33333333 ); // quads

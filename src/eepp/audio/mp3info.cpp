@@ -3,30 +3,30 @@
 
 namespace EE { namespace Audio {
 
-/* Inpired in the mp3info library */
+/* Inspired in the mp3info library */
 
-static const int frame_size_index[] = {24000, 72000, 72000};
+static const int frame_size_index[] = { 24000, 72000, 72000 };
 
 static const int frequencies[3][4] = {
-	{22050, 24000, 16000, 50000}, /* MPEG 2.0 */
-	{44100, 48000, 32000, 50000}, /* MPEG 1.0 */
-	{11025, 12000, 8000, 50000}	  /* MPEG 2.5 */
+	{ 22050, 24000, 16000, 50000 }, /* MPEG 2.0 */
+	{ 44100, 48000, 32000, 50000 }, /* MPEG 1.0 */
+	{ 11025, 12000, 8000, 50000 }	/* MPEG 2.5 */
 };
 
 static const int bitrate[2][3][15] = {
 	{
 		/* MPEG 2.0 */
-		{0, 32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256}, /* layer 1 */
-		{0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160},		 /* layer 2 */
-		{0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160}		 /* layer 3 */
+		{ 0, 32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256 }, /* layer 1 */
+		{ 0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160 },	   /* layer 2 */
+		{ 0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160 }	   /* layer 3 */
 	},
 
 	{
 		/* MPEG 1.0 */
-		{0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448}, /* layer 1 */
-		{0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384},	/* layer 2 */
-		{0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320}		/* layer 3 */
-	}};
+		{ 0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448 }, /* layer 1 */
+		{ 0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384 },	  /* layer 2 */
+		{ 0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320 }	  /* layer 3 */
+	} };
 
 static bool is_same_constant( Mp3Info::Header* h1, Mp3Info::Header* h2 ) {
 	if ( ( *(unsigned int*)h1 ) == ( *(unsigned int*)h2 ) )
@@ -89,7 +89,7 @@ bool Mp3Info::isValidMp3() {
 
 bool Mp3Info::fetchInfo() {
 	bool isValid = true;
-	int frameType[15] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	int frameType[15] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	float seconds = 0, totalRate = 0;
 	int frames = 0, frameTypes = 0, framesSoFar = 0;
 	int vbrMedian = -1;
@@ -166,7 +166,7 @@ bool Mp3Info::getFirstHeader( long startpos ) {
 				break;
 			}
 
-			// If read 1MB and not 255 found, asume error
+			// If read 1MB and not 255 found, assume error
 			if ( mStream.tell() >= EE_1MB ) {
 				return false;
 			}

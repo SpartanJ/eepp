@@ -9,6 +9,18 @@ using namespace EE;
 using namespace EE::UI;
 using namespace EE::UI::Models;
 
+namespace EE::System {
+class IniFile;
+}
+
+namespace EE::UI {
+class UIListView;
+}
+
+namespace EE::UI::Abstract {
+class ModelEvent;
+}
+
 namespace ecode {
 
 class PluginManager;
@@ -53,6 +65,8 @@ class Plugin : public UICodeEditorPlugin {
 	void showMessage( LSPMessageType type, const std::string& message,
 					  const std::string& title = "" );
 
+	virtual void onSaveState( IniFile* state ) {}
+
 	virtual void onSaveProject( const std::string& /*projectFolder*/,
 								const std::string& /*projectStatePath*/,
 								bool /*rewriteStateOnlyIfNeeded*/ ) {}
@@ -73,6 +87,15 @@ class Plugin : public UICodeEditorPlugin {
 	void setReady( Time loadTime = Seconds( 0 ) );
 
 	void waitUntilLoaded();
+
+	typedef std::function<void( const ModelEvent* )> ModelEventCallback;
+
+	bool editorExists( UICodeEditor* editor );
+
+	void createListView( UICodeEditor* editor, std::shared_ptr<Model> model,
+						 const ModelEventCallback& onModelEventCb,
+						 const std::function<void( UIListView* )> onCreateCb = {} );
+
 };
 
 class PluginBase : public Plugin {
@@ -86,6 +109,8 @@ class PluginBase : public Plugin {
 	virtual void onUnregister( UICodeEditor* ) override;
 
 	virtual String::HashType getConfigFileHash() override { return mConfigHash; }
+
+	const std::map<std::string, std::string>& getKeybindings() { return mKeyBindings; }
 
   protected:
 	//! Keep track of the registered editors + all the listeners registered to each editor
@@ -120,7 +145,6 @@ class PluginBase : public Plugin {
 
 	//! Usually used to unregister commands in a document
 	virtual void onUnregisterDocument( TextDocument* );
-	;
 };
 
 } // namespace ecode

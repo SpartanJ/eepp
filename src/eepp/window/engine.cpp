@@ -14,6 +14,7 @@
 #include <eepp/system/inifile.hpp>
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/parsermatcher.hpp>
 #include <eepp/system/regex.hpp>
 #include <eepp/system/thread.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
@@ -41,13 +42,14 @@
 
 namespace EE { namespace Window {
 
+static UintPtr sMainThreadId{ 0 };
+
 SINGLETON_DECLARE_IMPLEMENTATION( Engine )
 
 Engine::Engine() :
 	mBackend( NULL ),
 	mWindow( NULL ),
 	mSharedGLContext( true ),
-	mMainThreadId( 0 ),
 	mPlatformHelper( NULL ),
 	mZip( NULL ),
 	mDisplayManager( NULL ) {
@@ -62,9 +64,9 @@ Engine::Engine() :
 }
 
 Engine::~Engine() {
-	GlobalBatchRenderer::destroySingleton();
+	mIsShuttingDown = true;
 
-	TextureAtlasManager::destroySingleton();
+	GlobalBatchRenderer::destroySingleton();
 
 	NinePatchManager::destroySingleton();
 
@@ -75,6 +77,8 @@ Engine::~Engine() {
 	Doc::SyntaxDefinitionManager::destroySingleton();
 
 	FontManager::destroySingleton();
+
+	TextureAtlasManager::destroySingleton();
 
 	TextureFactory::destroySingleton();
 
@@ -109,6 +113,8 @@ Engine::~Engine() {
 	eeSAFE_DELETE( mBackend );
 
 	RegExCache::destroySingleton();
+
+	ParserMatcherManager::destroySingleton();
 
 	Log::destroySingleton();
 }
@@ -159,7 +165,7 @@ EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettin
 	if ( NULL != mWindow ) {
 		Settings.Backend = mWindow->getWindowInfo()->WindowConfig.Backend;
 	} else {
-		mMainThreadId = Thread::getCurrentThreadId();
+		sMainThreadId = Thread::getCurrentThreadId();
 	}
 
 	switch ( Settings.Backend ) {
@@ -238,12 +244,8 @@ bool Engine::isEngineRunning() {
 	return existsSingleton() && Engine::instance()->isRunning();
 }
 
-bool Engine::isRunninMainThread() {
-	return isEngineRunning() && Engine::instance()->isMainThread();
-}
-
 bool Engine::isRunning() const {
-	return NULL != mWindow;
+	return NULL != mWindow && !mIsShuttingDown;
 }
 
 WindowBackend Engine::getDefaultBackend() const {
@@ -367,12 +369,12 @@ bool Engine::isThreaded() {
 #endif
 }
 
-Uint32 Engine::getMainThreadId() {
-	return mMainThreadId;
+UintPtr Engine::getMainThreadId() {
+	return sMainThreadId;
 }
 
-bool Engine::isMainThread() const {
-	return Thread::getCurrentThreadId() == Engine::instance()->getMainThreadId();
+bool Engine::isMainThread() {
+	return Thread::getCurrentThreadId() == Engine::getMainThreadId();
 }
 
 PlatformHelper* Engine::getPlatformHelper() {
@@ -429,9 +431,7 @@ struct EngineInitializer {
 	~EngineInitializer() { Engine::destroySingleton(); }
 };
 
-#if EE_PLATFORM != EE_PLATFORM_ANDROID && EE_PLATFORM != EE_PLATFORM_IOS
-
-#else
+#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
 
 extern "C" int EE_SDL_main( int argc, char* argv[] );
 

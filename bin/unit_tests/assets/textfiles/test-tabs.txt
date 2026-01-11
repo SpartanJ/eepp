@@ -1,0 +1,21 @@
+
+		  {
+			  { "u8", "type" },			  { "u16", "type" },		{ "u32", "type" },
+			  { "u64", "type" },		  { "s8", "type" },			{ "s16", "type" },
+			  { "s32", "type" },		  { "s64", "type" },		{ "int", "type" },
+			  { "float", "type" },		  { "float32", "type" },	{ "float64", "type" },
+			  { "Any", "type" },		  { "array", "type" },		{ "bool", "type" },
+			  { "enum", "keyword" },	  { "null", "type" },		{ "pointer", "type" },
+			  { "procedure", "keyword" }, { "string", "type" },		{ "struct", "keyword" },
+			  { "void", "type" },		  { "complex", "type" },	{ "const", "keyword" },
+			  { "union", "keyword" },	  { "defer", "keyword" },	{ "do", "keyword" },
+			  { "for", "keyword" },		  { "macro", "keyword" },	{ "remove", "keyword" },
+			  { "bit_set", "keyword" },	  { "switch", "keyword" },	{ "if", "keyword" },
+			  { "case", "keyword" },	  { "foreign", "keyword" }, { "new", "keyword" },
+			  { "inline", "keyword" },	  { "import", "keyword" },	{ "false", "literal" },
+			  { "assert", "type" },		  { "return", "keyword" },	{ "true", "literal" },
+			  { "when", "keyword" },	  { "using", "keyword" },	{ "continue", "keyword" },
+			  { "in", "keyword" },		  { "break", "keyword" },	{ "else", "keyword" },
+			  { "while", "keyword" },	  { "count", "keyword" },	{ "delete", "keyword" },
+
+		  },

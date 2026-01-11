@@ -5,6 +5,7 @@
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/system/sys.hpp>
 
@@ -134,10 +135,10 @@ bool Process::create( const std::string& command, const std::vector<std::string>
 	if ( mProcess )
 		return false;
 	std::vector<const char*> strings;
+	std::string rcommand;
 	mProcess = eeMalloc( sizeof( subprocess_s ) );
 	memset( mProcess, 0, sizeof( subprocess_s ) );
 	if ( !environment.empty() ) {
-		std::string rcommand;
 		if ( FileSystem::fileExists( command ) ) {
 			rcommand = command;
 		} else {
@@ -180,6 +181,7 @@ bool Process::create( const std::string& command, const std::vector<std::string>
 		}
 
 		envStrings.push_back( NULL );
+		mCmdLine = rcommand.empty() ? command : rcommand;
 
 		auto ret = 0 == subprocess_create_ex( strings.data(), options, envStrings.data(),
 											  !workingDirectory.empty() ? workingDirectory.c_str()
@@ -188,10 +190,27 @@ bool Process::create( const std::string& command, const std::vector<std::string>
 		return ret;
 	}
 
-	strings.push_back( command.c_str() );
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+	if ( isFlatpakEnv() ) {
+		strings.push_back( "/usr/bin/flatpak-spawn" );
+		strings.push_back( "--host" );
+	}
+#endif
+
+	if ( ( options & UseAbsolutePath ) && command.find_first_of( "\\/" ) == std::string::npos ) {
+		rcommand = Sys::which( command );
+		if ( !rcommand.empty() )
+			strings.push_back( rcommand.c_str() );
+		else
+			strings.push_back( command.c_str() );
+	} else {
+		strings.push_back( command.c_str() );
+	}
+
 	for ( size_t i = 0; i < cmdArr.size(); ++i )
 		strings.push_back( cmdArr[i].c_str() );
 	strings.push_back( NULL );
+	mCmdLine = rcommand.empty() ? command : rcommand;
 
 	auto ret =
 		0 == subprocess_create_ex( strings.data(), options, nullptr,
@@ -228,7 +247,7 @@ size_t Process::readStdErr( char* const buffer, const size_t& size ) {
 
 size_t Process::write( const char* buffer, const size_t& size ) {
 	eeASSERT( mProcess != nullptr );
-	eeASSERT( isAlive()  );
+	eeASSERT( isAlive() );
 	if ( mShuttingDown )
 		return 0;
 	Lock l( mStdInMutex );
@@ -244,31 +263,33 @@ size_t Process::write( const std::string_view& buffer ) {
 }
 
 bool Process::join( int* const returnCodeOut ) {
-	eeASSERT( mProcess != nullptr );
-	return 0 == subprocess_join( PROCESS_PTR, returnCodeOut );
+	return mProcess != nullptr && 0 == subprocess_join( PROCESS_PTR, returnCodeOut );
 }
 
 bool Process::kill() {
-	if ( mProcess == nullptr )
+	if ( mProcess == nullptr || mKilled || mKilling )
 		return true;
-	eeASSERT( mProcess != nullptr );
+	mKilling = true;
 	mShuttingDown = true;
 	subprocess_init_shutdown( PROCESS_PTR );
 	if ( PROCESS_PTR->alive ) {
+		int ret = subprocess_terminate( PROCESS_PTR );
 		destroy();
-		return 0 == subprocess_terminate( PROCESS_PTR );
+		eeSAFE_FREE( mProcess );
+		mKilled = true;
+		return 0 == ret;
 	}
 	return false;
 }
 
 bool Process::destroy() {
-	eeASSERT( mProcess != nullptr );
+	if ( mProcess == nullptr )
+		return true;
 	return 0 == subprocess_destroy( PROCESS_PTR );
 }
 
 bool Process::isAlive() {
-	eeASSERT( mProcess != nullptr );
-	return 0 != subprocess_alive( PROCESS_PTR );
+	return mProcess && 0 != subprocess_alive( PROCESS_PTR );
 }
 
 FILE* Process::getStdIn() const {
@@ -294,20 +315,28 @@ bool Process::isShuttingDown() const {
 	return mShuttingDown;
 }
 
+bool Process::killed() const {
+	return mKilled;
+}
+
 size_t Process::readAll( std::string& buffer, bool readErr, Time timeout ) {
 	eeASSERT( mProcess != nullptr );
+	if ( ( readErr && PROCESS_PTR->stderr_file == nullptr ) ||
+		 ( !readErr && PROCESS_PTR->stdout_file == nullptr ) ) {
+		return 0;
+	}
 	if ( buffer.empty() || buffer.size() < CHUNK_SIZE )
 		buffer.resize( CHUNK_SIZE );
 	size_t totalBytesRead = 0;
 	Clock clock;
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	while ( !mShuttingDown && isAlive() ) {
+	while ( !mShuttingDown ) {
 		unsigned n =
 			readErr
 				? subprocess_read_stderr( PROCESS_PTR, buffer.data() + totalBytesRead, CHUNK_SIZE )
 				: subprocess_read_stdout( PROCESS_PTR, buffer.data() + totalBytesRead, CHUNK_SIZE );
-		if ( n == 0 ) {
-			if ( timeout != Time::Zero && clock.getElapsedTime() >= timeout )
+		if ( n <= 0 ) {
+			if ( !isAlive() || ( timeout != Time::Zero && clock.getElapsedTime() >= timeout ) )
 				break;
 			continue;
 		}
@@ -317,8 +346,6 @@ size_t Process::readAll( std::string& buffer, bool readErr, Time timeout ) {
 		clock.restart();
 	}
 #elif defined( EE_PLATFORM_POSIX )
-	if ( !isAlive() )
-		return 0;
 	auto stdOutFd = fileno( readErr ? PROCESS_PTR->stderr_file : PROCESS_PTR->stdout_file );
 	pollfd pollfd = {};
 	pollfd.fd =
@@ -327,11 +354,11 @@ size_t Process::readAll( std::string& buffer, bool readErr, Time timeout ) {
 	buffer.resize( mBufferSize );
 	bool anyOpen = pollfd.fd != -1;
 	ssize_t n = 0;
-	while ( anyOpen && !mShuttingDown && isAlive() ) {
+	while ( anyOpen && !mShuttingDown ) {
 		int res = poll( &pollfd, static_cast<nfds_t>( 1 ), 100 );
 		if ( res <= 0 ) {
 			if ( ( timeout != Time::Zero && clock.getElapsedTime() >= timeout ) ||
-				 ( res < 0 && errno != EINTR ) )
+				 ( res < 0 && errno != EINTR ) || !isAlive() )
 				break;
 			continue;
 		}
@@ -350,6 +377,14 @@ size_t Process::readAll( std::string& buffer, bool readErr, Time timeout ) {
 			}
 		}
 		if ( pollfd.revents & ( POLLERR | POLLHUP | POLLNVAL ) ) {
+			if ( pollfd.revents & POLLHUP ) {
+				while ( ( n = read( pollfd.fd, buffer.data() + totalBytesRead, CHUNK_SIZE ) ) >
+						0 ) {
+					totalBytesRead += n;
+					if ( totalBytesRead + CHUNK_SIZE > buffer.size() )
+						buffer.resize( totalBytesRead + CHUNK_SIZE );
+				}
+			}
 			pollfd.fd = -1;
 			continue;
 		}
@@ -364,6 +399,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 	eeASSERT( mProcess != nullptr );
 	mReadStdOutFn = readStdOut;
 	mReadStdErrFn = readStdErr;
+	Log::info( "Process::startAsyncRead called for command: %s", mCmdLine );
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	void* stdOutFd =
 		SUBPROCESS_PTR_CAST( void*, _get_osfhandle( _fileno( PROCESS_PTR->stdout_file ) ) );
@@ -371,6 +407,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 		SUBPROCESS_PTR_CAST( void*, _get_osfhandle( _fileno( PROCESS_PTR->stderr_file ) ) );
 	if ( stdOutFd ) {
 		mStdOutThread = std::thread( [this, stdOutFd]() {
+			Log::info( "Process::startAsyncRead thread started for command: %s", mCmdLine );
 			unsigned n;
 			std::string buffer;
 			buffer.resize( mBufferSize );
@@ -394,7 +431,7 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 			while ( !mShuttingDown ) {
 				n = subprocess_read_stderr( PROCESS_PTR, static_cast<char* const>( &buffer[0] ),
 											mBufferSize );
-				if ( n == 0 )
+				if ( n <= 0 )
 					break;
 				if ( n < mBufferSize - 1 )
 					buffer[n] = '\0';
@@ -406,28 +443,66 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 	}
 #elif defined( EE_PLATFORM_POSIX )
 	mStdOutThread = std::thread( [this] {
+		Log::info( "Process::startAsyncRead thread started for command: %s", mCmdLine );
 		auto stdOutFd = fileno( PROCESS_PTR->stdout_file );
 		auto stdErrFd = PROCESS_PTR->stderr_file ? fileno( PROCESS_PTR->stderr_file ) : 0;
 		std::vector<pollfd> pollfds;
 		std::bitset<2> fdIsStdOut;
 		if ( stdOutFd ) {
 			fdIsStdOut.set( pollfds.size() );
-			pollfds.emplace_back();
-			pollfds.back().fd =
-				fcntl( stdOutFd, F_SETFL, fcntl( stdOutFd, F_GETFL ) | O_NONBLOCK ) == 0 ? stdOutFd
-																						 : -1;
+			pollfds.emplace_back(); // Get current flags
+			int currentFlags = fcntl( stdOutFd, F_GETFL );
+			if ( currentFlags == -1 ) {
+				pollfds.back().fd = -1; // Invalid FD
+				Log::error( "Process::startAsyncRead %s Failed to get flags for stdout fd",
+							mCmdLine );
+			} else {
+				// Set non-blocking
+				if ( fcntl( stdOutFd, F_SETFL, currentFlags | O_NONBLOCK ) == 0 ) {
+					pollfds.back().fd = stdOutFd;
+				} else {
+					pollfds.back().fd = -1;
+					Log::error( "Process::startAsyncRead %s Failed to set O_NONBLOCK on stdout",
+								mCmdLine );
+				}
+			}
 			pollfds.back().events = POLLIN;
+		} else {
+			Log::error( "Process::startAsyncRead %s stdOutFd PROCESS_PTR->stdout_file: %p fd: %d",
+						mCmdLine, PROCESS_PTR->stdout_file, stdOutFd );
 		}
+
 		if ( stdErrFd && stdOutFd != stdErrFd ) {
 			pollfds.emplace_back();
-			pollfds.back().fd =
-				fcntl( stdErrFd, F_SETFL, fcntl( stdErrFd, F_GETFL ) | O_NONBLOCK ) == 0 ? stdErrFd
-																						 : -1;
+			int currentFlags = fcntl( stdErrFd, F_GETFL );
+			if ( currentFlags == -1 ) {
+				pollfds.back().fd = -1; // Invalid FD
+				Log::error( "Process::startAsyncRead %s Failed to get flags for stdout fd",
+							mCmdLine );
+			} else {
+				// Set non-blocking
+				if ( fcntl( stdErrFd, F_SETFL, currentFlags | O_NONBLOCK ) == 0 ) {
+					pollfds.back().fd = stdErrFd;
+				} else {
+					pollfds.back().fd = -1;
+					Log::error( "Process::startAsyncRead %s Failed to set O_NONBLOCK on stdout",
+								mCmdLine );
+				}
+			}
 			pollfds.back().events = POLLIN;
+		} else if ( !stdErrFd ) {
+			Log::error( "Process::startAsyncRead %s stdOutFd PROCESS_PTR->stderr_file: %p fd: %d",
+						PROCESS_PTR->stderr_file, stdErrFd );
 		}
 		std::string buffer;
 		buffer.resize( mBufferSize );
 		bool anyOpen = !pollfds.empty();
+		if ( !anyOpen ) {
+			Log::error( "Process::startAsyncRead no fds open, aborting for command: %s", mCmdLine );
+		} else {
+			Log::info( "Process::startAsyncRead fds open, starting polling command: %s", mCmdLine );
+		}
+
 		while ( anyOpen && !mShuttingDown ) {
 			int res = poll( pollfds.data(), static_cast<nfds_t>( pollfds.size() ), 100 );
 			if ( res > 0 ) {
@@ -445,20 +520,43 @@ void Process::startAsyncRead( ReadFn readStdOut, ReadFn readStdErr ) {
 									mReadStdErrFn( buffer.c_str(), static_cast<size_t>( n ) );
 							} else if ( n == 0 || ( n < 0 && errno != EINTR && errno != EAGAIN &&
 													errno != EWOULDBLOCK ) ) {
+								Log::info(
+									"Process::startAsyncRead %s read failed for fd: %d, read "
+									"result was %d, errno is %d",
+									mCmdLine, pollfds[i].fd, n, errno );
 								pollfds[i].fd = -1;
 								continue;
 							}
 						}
 						if ( pollfds[i].revents & ( POLLERR | POLLHUP | POLLNVAL ) ) {
+							if ( pollfds[i].revents & POLLHUP ) {
+								ssize_t n = 0;
+								while ( ( n = read( pollfds[i].fd, &buffer[0], mBufferSize ) ) >
+										0 ) {
+									if ( n < static_cast<long>( mBufferSize - 1 ) )
+										buffer[n] = '\0';
+									if ( fdIsStdOut[i] )
+										mReadStdOutFn( buffer.c_str(), static_cast<size_t>( n ) );
+									else
+										mReadStdErrFn( buffer.c_str(), static_cast<size_t>( n ) );
+								}
+							}
+							Log::info( "Process::startAsyncRead %s polling POLLHUP for fd: %d",
+									   mCmdLine, pollfds[i].fd );
 							pollfds[i].fd = -1;
 							continue;
 						}
 						anyOpen = true;
 					}
 				}
-			} else if ( res < 0 && errno != EINTR )
+			} else if ( res < 0 && errno != EINTR ) {
+				Log::error( "Process::startAsyncRead polling interrupted for: %s", mCmdLine );
 				break;
+			}
 		}
+
+		Log::info( "Process::startAsyncRead polling ended for: %s, any open: %s, shutting down: %s",
+				   mCmdLine, anyOpen ? "true" : "false", mShuttingDown ? "true" : "false" );
 	} );
 #endif
 }

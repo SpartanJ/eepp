@@ -17,6 +17,11 @@ enum class TokenType {
 	COMMA = 6,
 	COLON = 7,
 	CELL = 8,
+	PLUS = 9,
+    MINUS = 10,
+    STAR = 11,
+    SLASH = 12,
+    PERCENT = 13,
 };
 
 struct Token {
@@ -60,6 +65,10 @@ class FormulaParser {
 	std::shared_ptr<Formula> expression();
 
 	std::shared_ptr<Formula> formula();
+
+	std::shared_ptr<Formula> factor();
+
+    std::shared_ptr<Formula> term();
 };
 
 #endif // PARSER_HPP

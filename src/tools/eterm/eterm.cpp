@@ -9,8 +9,14 @@ Clock lastRender;
 Clock secondsCounter;
 Time frameTime{ Time::Zero };
 bool benchmarkMode{ false };
+bool warnBeforeClose{ false };
 std::string windowStringData;
 std::map<std::string, TerminalColorScheme> terminalColorSchemes;
+bool displayingWarnBeforeClose{ false };
+bool yesPicked{ true };
+bool needsRedraw{ false };
+Rectf yesBtn;
+Rectf noBtn;
 
 void loadColorSchemes( const std::string& resPath ) {
 	auto configPath = Sys::getConfigPath( "eterm" );
@@ -40,11 +46,22 @@ void inputCallback( InputEvent* event ) {
 			break;
 		}
 		case InputEvent::MouseButtonDown: {
-			terminal->onMouseDown( win->getInput()->getMousePos(),
-								   win->getInput()->getPressTrigger() );
+			if ( displayingWarnBeforeClose ) {
+				if ( ( win->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
+					if ( yesBtn.contains( win->getInput()->getMousePos().asFloat() ) ) {
+						win->close();
+					} else if ( noBtn.contains( win->getInput()->getMousePos().asFloat() ) ) {
+						displayingWarnBeforeClose = false;
+						needsRedraw = true;
+					}
+				}
+			} else {
+				terminal->onMouseDown( win->getInput()->getMousePos(),
+									   win->getInput()->getPressTrigger() );
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-			win->startTextInput();
+				win->startTextInput();
 #endif
+			}
 			break;
 		}
 		case InputEvent::MouseButtonUp: {
@@ -72,8 +89,34 @@ void inputCallback( InputEvent* event ) {
 			break;
 		}
 		case InputEvent::KeyDown: {
-			terminal->onKeyDown( event->key.keysym.sym, event->key.keysym.unicode,
-								 event->key.keysym.mod, event->key.keysym.scancode );
+			if ( displayingWarnBeforeClose ) {
+				if ( event->key.keysym.sym == EE::Window::KEY_TAB ||
+					 event->key.keysym.sym == EE::Window::KEY_LEFT ||
+					 event->key.keysym.sym == EE::Window::KEY_RIGHT ) {
+					yesPicked = !yesPicked;
+					needsRedraw = true;
+				} else if ( event->key.keysym.sym == EE::Window::KEY_Y ) {
+					win->close();
+				} else if ( event->key.keysym.sym == EE::Window::KEY_N ) {
+					displayingWarnBeforeClose = false;
+					needsRedraw = true;
+				} else if ( event->key.keysym.sym == EE::Window::KEY_RETURN ||
+							event->key.keysym.sym == EE::Window::KEY_KP_ENTER ) {
+					if ( yesPicked )
+						win->close();
+					else {
+						displayingWarnBeforeClose = false;
+						needsRedraw = true;
+					}
+				} else if ( event->key.keysym.sym == EE::Window::KEY_ESCAPE ) {
+					displayingWarnBeforeClose = false;
+					needsRedraw = true;
+				}
+			} else {
+				terminal->onKeyDown( event->key.keysym.sym, event->key.keysym.unicode,
+									 event->key.keysym.mod, event->key.keysym.scancode );
+			}
+
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 			if ( event->key.keysym.sym == KEY_RETURN ||
 				 event->key.keysym.scancode == SCANCODE_RETURN ) {
@@ -104,6 +147,16 @@ void inputCallback( InputEvent* event ) {
 	}
 }
 
+bool onCloseRequestCallback( EE::Window::Window* ) {
+	if ( warnBeforeClose &&
+		 Sys::processHasChildren( terminal->getTerminal()->getProcess()->pid() ) ) {
+		displayingWarnBeforeClose = true;
+		needsRedraw = true;
+		return false;
+	}
+	return true;
+}
+
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 #ifdef EE_DEBUG
 	Log::instance()->setLogToStdOut( true );
@@ -126,7 +179,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ValueFlag<Float> width( parser, "winwidth", "Window width (in dp)", { "width" }, 1280 );
 	args::ValueFlag<Float> height( parser, "winheight", "Window height (in dp)", { "height" },
 								   720 );
-	args::ValueFlag<Float> pixelDenstiyConf( parser, "pixel-density",
+	args::ValueFlag<Float> pixelDensityConf( parser, "pixel-density",
 											 "Set default application pixel density",
 											 { 'd', "pixel-density" } );
 	args::Positional<std::string> wd( parser, "wording-dir", "Working Directory / executable" );
@@ -143,9 +196,19 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 									"Maximum rendering frames per second of the terminal. Default "
 									"value will be the refresh rate of the screen.",
 									{ "max-fps" }, 0 );
+	args::MapFlag<std::string, TerminalCursorMode> cursorStyle(
+		parser, "cursor-style",
+		"Sets the cursor-style (accepted values: blinking_block, steady_block, blink_underline, "
+		"steady_underline, blink_bar, steady_bar)",
+		{ "cursor-style" }, TerminalCursorHelper::getTerminalCursorModeMap(),
+		TerminalCursorMode::SteadyUnderline );
 	args::Flag benchmarkModeFlag(
 		parser, "benchmark-mode",
 		"Render as much as possible to measure the rendering performance.", { "benchmark-mode" } );
+	args::Flag warnBeforeCloseFlag(
+		parser, "warn-before-closing",
+		"Prompts for confirmation if a program is still running when closing the terminal.",
+		{ "warn-before-closing" } );
 
 	try {
 		parser.ParseCLI( argc, argv );
@@ -200,7 +263,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	win = Engine::instance()->createWindow(
 		WindowSettings( winSize.getWidth(), winSize.getHeight(), "eterm", WindowStyle::Default,
 						WindowBackend::Default, 32, resPath + "icon/eterm.png",
-						pixelDenstiyConf ? pixelDenstiyConf.Get()
+						pixelDensityConf ? pixelDensityConf.Get()
 										 : currentDisplay->getPixelDensity() ),
 		ContextSettings( vsync.Get() ) );
 
@@ -208,6 +271,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		win->setClearColor( RGB( 0, 0, 0 ) );
 
 		benchmarkMode = benchmarkModeFlag.Get();
+		warnBeforeClose = warnBeforeCloseFlag.Get();
 
 		FontTrueType* fontMono = nullptr;
 		if ( fontPath && FileSystem::fileExists( fontPath.Get() ) ) {
@@ -264,6 +328,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		}
 
 		terminal->getTerminal()->setAllowMemoryTrimnming( true );
+		terminal->setCursorMode( cursorStyle.Get() );
 		terminal->pushEventCallback( [&closeOnExit]( const TerminalDisplay::Event& event ) {
 			if ( event.type == TerminalDisplay::EventType::TITLE ) {
 				windowStringData = event.eventData;
@@ -289,19 +354,83 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 		win->getInput()->pushCallback( &inputCallback );
 
-		win->runMainLoop( [] {
+		win->setCloseRequestCallback(
+			[]( EE::Window::Window* win ) -> bool { return onCloseRequestCallback( win ); } );
+
+		win->runMainLoop( [fontMono] {
 			bool termNeedsUpdate = false;
 			win->getInput()->update();
+			auto mousePos = win->getInput()->getRelativeMousePos();
+			bool mouseOutsideBounds = mousePos.y < 0 || mousePos.y > win->getSize().getHeight();
 
 			if ( terminal )
-				termNeedsUpdate = !terminal->update();
+				termNeedsUpdate = !terminal->update( !mouseOutsideBounds );
 
-			if ( terminal && ( benchmarkMode || terminal->isDirty() ) &&
-				 ( !termNeedsUpdate || lastRender.getElapsedTime() >= frameTime ) ) {
+			if ( ( terminal && ( benchmarkMode || terminal->isDirty() ) &&
+				   ( !termNeedsUpdate || lastRender.getElapsedTime() >= frameTime ) ) ||
+				 needsRedraw ) {
 				lastRender.restart();
 				win->clear();
 				terminal->draw();
+
+				if ( displayingWarnBeforeClose ) {
+					Sizef winSize{ win->getSize().asFloat() };
+					Sizef buttonSize{ PixelDensity::dpToPx( 100 ), PixelDensity::dpToPx( 32 ) };
+					Primitives p;
+					p.setColor( Color( terminal->getColorScheme().getBackground(), 200 ) );
+					p.drawRectangle( { { 0, 0 }, winSize } );
+
+					Text text( "Are you sure you want to close this window? It is still running a "
+							   "process.",
+							   fontMono );
+
+					text.draw( ( winSize.getWidth() - text.getLocalBounds().getWidth() ) * 0.5f,
+							   winSize.getHeight() * 0.5f - text.getTextHeight() -
+								   PixelDensity::dpToPx( 32 ) );
+
+					yesBtn = Rectf{ { ( winSize.getWidth() * 0.5f - buttonSize.getWidth() * 0.5f -
+										PixelDensity::dpToPx( 75 ) ),
+									  win->getHeight() * 0.5f },
+									buttonSize }
+								 .floor();
+
+					p.setColor( terminal->getColorScheme().getBackground() );
+					p.drawRoundedRectangle( yesBtn );
+
+					noBtn = { Vector2f( yesBtn.getPosition().x + yesBtn.getSize().getWidth(),
+										yesBtn.getPosition().y ) +
+								  Vector2f( PixelDensity::dpToPx( 50 ), 0 ),
+							  yesBtn.getSize() };
+
+					p.drawRoundedRectangle( noBtn );
+
+					Text yes( "Yes", fontMono );
+					yes.draw(
+						eefloor( yesBtn.getPosition().x +
+								 ( yesBtn.getSize().getWidth() - yes.getLocalBounds().getWidth() ) *
+									 0.5f ),
+						eefloor( yesBtn.getPosition().y +
+								 ( yesBtn.getSize().getHeight() - yes.getTextHeight() ) * 0.5f ) );
+
+					Text no( "No", fontMono );
+					no.draw(
+						eeceil( noBtn.getPosition().x +
+								( noBtn.getSize().getWidth() - no.getLocalBounds().getWidth() ) *
+									0.5f ),
+						eefloor( noBtn.getPosition().y +
+								 ( noBtn.getSize().getHeight() - no.getTextHeight() ) * 0.5f ) );
+
+					p.setFillMode( PrimitiveFillMode::DRAW_LINE );
+					p.setColor( terminal->getColorScheme().getForeground() );
+					p.drawRoundedRectangle( yesBtn );
+					p.drawRoundedRectangle( noBtn );
+					p.setColor( terminal->getColorScheme().getPaletteIndex( 5 ) );
+					p.drawRoundedRectangle( yesPicked ? yesBtn : noBtn );
+				}
+
 				win->display();
+
+				needsRedraw = false;
 			} else if ( !benchmarkMode && !termNeedsUpdate ) {
 				win->getInput()->waitEvent( Milliseconds( win->hasFocus() ? 16 : 100 ) );
 			}

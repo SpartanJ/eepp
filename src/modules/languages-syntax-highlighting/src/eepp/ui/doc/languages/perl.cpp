@@ -3,20 +3,20 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addPerl() {
+SyntaxDefinition& addPerl() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Perl",
 		  { "%.pm$", "%.pl$" },
 		  {
-			  { { "%#.-\n" }, "comment" },
+			  { { "#.-\n" }, "comment" },
 			  { { "\"", "\"", "\\" }, "string" },
 			  { { "'", "'", "\\" }, "string" },
 			  { { "-?%d+[%d%.eE]*" }, "number" },
 			  { { "-?%.?%d+" }, "number" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
-			  { { "[%@%$%*]+[%a_][%w_]*" }, "keyword2" },
+			  { { "[%@%$%*]+[%a_][%w_]*" }, "type" },
 			  { { "%--[%a_][%w_]*" }, "symbol" },
 
 		  },

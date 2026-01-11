@@ -3,12 +3,12 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addGroovy() {
+SyntaxDefinition& addGroovy() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "Groovy",
-		  { "%.groovy$" },
+		  { "%.groovy$", "^Jenkinsfile$" },
 		  {
 			  { { "//.*" }, "comment" },
 			  { { "/%*", "%*/" }, "comment" },
@@ -26,11 +26,9 @@ void addGroovy() {
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "[%a_][%w_]*%f[%[]" }, "function" },
-			  { { "[A-Z]+_?[A-Z]+" }, "keyword2" },
+			  { { "[A-Z]+_?[A-Z]+" }, "type" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 			  { { "[a-zA-Z]+%.+" }, "function" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {
@@ -109,6 +107,8 @@ void addGroovy() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	sd.setBlockComment( {"/*", "*/"} );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

@@ -7,6 +7,7 @@
 #include <cstring>
 #include <functional>
 #include <string>
+#include <uchar.h>
 #include <vector>
 
 namespace EE {
@@ -96,6 +97,9 @@ class EE_API String {
 	/** @return string hash */
 	static String::HashType hash( const std::string& str );
 
+	/** @return string hash */
+	static String::HashType hash( const std::string_view& str );
+
 	/** @return string hash. Note: String::hash( std::string( "text" ) ) is != to String::hash(
 	 * String( "text" ) ) */
 	static String::HashType hash( const String& str );
@@ -171,7 +175,7 @@ class EE_API String {
 	static std::string lTrim( const std::string& str, char character = ' ' );
 
 	/** Removes the trailing suffix. */
-	static std::string rTrim( const std::string& str, char character );
+	static std::string rTrim( const std::string& str, char character = ' ' );
 
 	/** Removes all spaces ( or the specified character ) on the string */
 	static std::string trim( const std::string& str, char character = ' ' );
@@ -180,10 +184,19 @@ class EE_API String {
 	static std::string_view lTrim( const std::string_view& str, char character = ' ' );
 
 	/** Removes the trailing suffix. */
-	static std::string_view rTrim( const std::string_view& str, char character );
+	static std::string_view rTrim( const std::string_view& str, char character = ' ' );
 
 	/** Removes all spaces ( or the specified character ) on the string */
 	static std::string_view trim( const std::string_view& str, char character = ' ' );
+
+	/** Removes the trailing prefix. */
+	static String::View lTrim( const String::View& str, char character = ' ' );
+
+	/** Removes the trailing suffix. */
+	static String::View rTrim( const String::View& str, char character = ' ' );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static String::View trim( const String::View& str, char character = ' ' );
 
 	/** Removes all spaces ( or the specified character ) on the string */
 	static void trimInPlace( std::string& str, char character = ' ' );
@@ -199,6 +212,48 @@ class EE_API String {
 
 	/** Removes all spaces ( or the specified character ) on the string */
 	static void trimInPlace( String& str, char character = ' ' );
+
+	/** Removes the trailing prefix. */
+	static std::string lTrim( const std::string& str, std::string_view characters );
+
+	/** Removes the trailing suffix. */
+	static std::string rTrim( const std::string& str, std::string_view characters );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static std::string trim( const std::string& str, std::string_view characters );
+
+	/** Removes the trailing prefix. */
+	static std::string_view lTrim( const std::string_view& str, std::string_view characters );
+
+	/** Removes the trailing suffix. */
+	static std::string_view rTrim( const std::string_view& str, std::string_view characters );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static std::string_view trim( const std::string_view& str, std::string_view characters );
+
+	/** Removes the trailing prefix. */
+	static String::View lTrim( const String::View& str, String::View characters );
+
+	/** Removes the trailing suffix. */
+	static String::View rTrim( const String::View& str, String::View characters );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static String::View trim( const String::View& str, String::View characters );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static void trimInPlace( std::string& str, std::string_view characters );
+
+	/** Removes the trailing prefix. */
+	static String lTrim( const String& str, std::string_view characters );
+
+	/** Removes the trailing suffix. */
+	static String rTrim( const String& str, std::string_view characters );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static String trim( const String& str, std::string_view characters );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static void trimInPlace( String& str, std::string_view characters );
 
 	/** Convert the string into upper case string */
 	static void toUpperInPlace( std::string& str );
@@ -297,6 +352,12 @@ class EE_API String {
 	 */
 	static bool contains( const String& haystack, const String& needle );
 
+	/** @return True if a string contains a substring.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 */
+	static bool contains( std::string_view haystack, std::string_view needle );
+
 	/** @return True if a string contains a substring. Case-insensitive check.
 	 * @param haystack The string to search in.
 	 * @param needle The searched string.
@@ -309,8 +370,16 @@ class EE_API String {
 	 */
 	static bool icontains( const String& haystack, const String& needle );
 
-	static int fuzzyMatch( const std::string& string, const std::string& pattern,
-						   bool allowUneven = false, bool permissive = false );
+	/** @return True if a string contains a substring. Case-insensitive check.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 */
+	static bool icontains( std::string_view haystack, std::string_view needle );
+
+	static int fuzzyMatchSimple( const std::string& pattern, const std::string& string,
+								 bool allowUneven = false, bool permissive = false );
+
+	static int fuzzyMatch( const std::string& pattern, const std::string& string );
 
 	/** Replace all occurrences of the search string with the replacement string. */
 	static void replaceAll( std::string& target, const std::string& that, const std::string& with );
@@ -318,10 +387,10 @@ class EE_API String {
 	/** Replace all occurrences of the search string with the replacement string. */
 	static void replaceAll( String& target, const String& that, const String& with );
 
-	/** Replace the first ocurrence of the search string with the replacement string. */
+	/** Replace the first occurrence of the search string with the replacement string. */
 	static void replace( std::string& target, const std::string& that, const std::string& with );
 
-	/** Replace the first ocurrence of the search string with the replacement string. */
+	/** Replace the first occurrence of the search string with the replacement string. */
 	static void replace( String& target, const String& that, const String& with );
 
 	/** Removes the numbers at the end of the string */
@@ -336,7 +405,7 @@ class EE_API String {
 	/** Removes the trailing 0 and . in a string number */
 	static void numberCleanInPlace( std::string& strNumber );
 
-	/** Searchs the position of the corresponding close bracket in a string. */
+	/** Searches the position of the corresponding close bracket in a string. */
 	static std::size_t findCloseBracket( const std::string& string, std::size_t startOffset,
 										 char openBracket, char closeBracket );
 
@@ -344,6 +413,10 @@ class EE_API String {
 	 * searched value */
 	static int valueIndex( const std::string& val, const std::string& strings, int defValue = -1,
 						   char delim = ';' );
+
+	static bool iequals( std::string_view str1, std::string_view str2 );
+
+	static bool iequals( String::View str1, String::View str2 );
 
 	/** Creates a random string using the dictionary characters. */
 	static std::string randString(
@@ -398,18 +471,33 @@ class EE_API String {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat-security"
 #elif defined( __GNUC__ )
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
-		int size =
+
+		int reqSize =
 			std::snprintf( nullptr, 0, format.data(),
-						   FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... ) +
-			1;
-		std::string result( size, 0 );
-		if ( size > 0 ) {
-			std::snprintf( &result[0], size, format.data(),
 						   FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
-			result.resize( size - 1 );
+
+		if ( reqSize < 0 )
+			return "";
+
+		std::size_t bufSize = static_cast<std::size_t>( reqSize ) + 1;
+		std::string result( bufSize, '\0' );
+
+		int writtenChars =
+			std::snprintf( &result[0], bufSize, format.data(),
+						   FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... );
+
+		if ( writtenChars < 0 )
+			return "";
+
+		if ( static_cast<std::size_t>( writtenChars ) < bufSize ) {
+			result.resize( static_cast<std::size_t>( writtenChars ) );
+		} else {
+			result.resize( bufSize - 1 );
 		}
+
 #ifdef __clang__
 #pragma clang diagnostic pop
 #elif defined( __GNUC__ )
@@ -443,7 +531,7 @@ class EE_API String {
 	/** @return The next character in a utf8 null terminated string */
 	static Uint32 utf8Next( char*& utf8String );
 
-	/** Converts an UTF-8 string view into an UTF-32 by using a currently allocated buffer (usefull
+	/** Converts an UTF-8 string view into an UTF-32 by using a currently allocated buffer (useful
 	 * for stack allocated buffers)
 	 * @return The number of elements written into the buffer (the string length)
 	 **/
@@ -453,7 +541,7 @@ class EE_API String {
 	/** glob matches a string against a glob
 	** @return True if matches
 	*/
-	static bool globMatch( const std::string_view& text, const std::string_view& glob,
+	static bool globMatch( std::string_view text, std::string_view glob,
 						   bool caseInsensitive = false );
 
 	/** glob matches a string against a set of globs
@@ -484,6 +572,11 @@ class EE_API String {
 	**/
 	String( StringBaseType utf32Char );
 
+	/** @brief Construct from single UTF-32 character repeated count times
+	** @param utf32Char UTF-32 character to convert
+	**/
+	String( size_t count, StringBaseType utf32Char );
+
 	/** @brief Construct from an from a null-terminated C-style UTF-8 string to UTF-32
 	** @param uf8String UTF-8 string to convert
 	**/
@@ -498,6 +591,11 @@ class EE_API String {
 	** @param utf8String UTF-8 string to convert
 	**/
 	String( const std::string& utf8String );
+
+	/** @brief Construct from an UTF-8 string to UTF-32 according
+	** @param utf8String UTF-8 string to convert
+	**/
+	String( const std::basic_string<char8_t>& utf8String );
 
 	/** @brief Construct from an UTF-8 string to UTF-32 according
 	** @param utf8String UTF-8 string to convert
@@ -545,7 +643,7 @@ class EE_API String {
 
 	/** @brief Implicit cast operator to std::string (ANSI string)
 	** The current global locale is used for conversion. If you
-	** want to explicitely specify a locale, see toAnsiString.
+	** want to explicitly specify a locale, see toAnsiString.
 	** Characters that do not fit in the target encoding are
 	** discarded from the returned string.
 	** This operator is defined for convenience, and is equivalent
@@ -580,7 +678,7 @@ class EE_API String {
 	**/
 	String& operator=( const String& right );
 
-	String& operator=( String&& right );
+	String& operator=( String&& right ) noexcept;
 
 	String& operator=( const StringBaseType& right );
 
@@ -932,7 +1030,68 @@ class EE_API String {
 
 	bool isAscii() const;
 
+	static bool isAscii( String::View str );
+
+	bool isLatin1() const;
+
+	static bool isLatin1( String::View str );
+
+	Uint32 getTextHints();
+
+	static Uint32 getTextHints( String::View str );
+
 	String::View view() const;
+
+	/* \brief Check if the position before a character is a grapheme boundary
+	**
+	** When manipulating unicode strings, removing single codepoints
+	** does not always make sense since they might be a part
+	** of a grapheme composed of multiple codepoints. In the case of
+	** a text editor, it is more intuitive to the user if entire
+	** graphemes are removed when e.g. delete or backspace is pressed
+	** rather than single codepoints. For this reason, the visual caret
+	** that marks the insertion/deletion point should only be
+	** positioned at a grapheme boundaries.
+	**
+	** \param position The position of the character to check
+	**
+	** \return `true` if the position before a character is a grapheme boundary
+	**
+	** \see `isWordBoundary`, `isSentenceBoundary`
+	*/
+	bool isGraphemeBoundary( std::size_t position ) const;
+	static bool isGraphemeBoundary( String::View string, std::size_t position );
+
+	/* \brief Check if the position before a character is a word boundary
+	**
+	** When breaking text into multiple lines, it is important to know
+	** where each word ends so that lines aren't broken in the middle
+	** of a word. This should be used in combination with
+	** `isSentenceBoundary` to ensure punctuation isn't broken into a
+	** new line by itself.
+	**
+	** \param position The position of the character to check
+	**
+	** \return `true` if the position before a character is a word boundary
+	**
+	** \see `isGraphemeBoundary`, `isSentenceBoundary`
+	*/
+	bool isWordBoundary( std::size_t position ) const;
+	static bool isWordBoundary( String::View string, std::size_t position );
+
+	/* \brief Check if the position before a character is a sentence boundary
+	**
+	** This can be used together with `isWordBoundary` to break
+	** lines. See `isWordBoundary` for more information.
+	**
+	** \param position The position of the character to check
+	**
+	** \return `true` if the position before a character is a sentence boundary
+	**
+	** \see `isGraphemeBoundary`, `isWordBoundary`
+	*/
+	bool isSentenceBoundary( std::size_t position ) const;
+	static bool isSentenceBoundary( String::View string, std::size_t position );
 
 	// No allocation int to str
 	template <typename IntType, typename StrType>
@@ -990,6 +1149,32 @@ class EE_API String {
 
 	const StringType& getString() const { return mString; }
 
+	StringType& getString() { return mString; }
+
+	static void readBySeparator( std::string_view buf,
+								 std::function<void( std::string_view )> onSepChunkRead,
+								 char sep = '\n' );
+
+	static void readBySeparatorStoppable( std::string_view buf,
+										  std::function<bool( std::string_view )> onSepChunkRead,
+										  char sep = '\n' );
+
+	static void readBySeparator( String::View buf,
+								 std::function<void( String::View )> onSepChunkRead,
+								 String::StringBaseType sep = L'\n' );
+
+	static void readBySeparatorStoppable( String::View buf,
+										  std::function<bool( String::View )> onSepChunkRead,
+										  String::StringBaseType sep = L'\n' );
+
+	static size_t countLines( std::string_view text );
+
+	static size_t countLines( String::View text );
+
+	/** Strips any ANSI code found in the string.
+	 *	@param str The string to strip
+	 */
+	static void stripAnsiCodes( std::string& str );
   private:
 	friend EE_API bool operator==( const String& left, const String& right );
 	friend EE_API bool operator<( const String& left, const String& right );
@@ -1053,7 +1238,26 @@ EE_API bool operator>=( const String& left, const String& right );
 **/
 EE_API String operator+( const String& left, const String& right );
 
+struct TextHints {
+	enum Hints {
+		None = 0,
+		AllAscii = 1 << 0,
+		AllLatin1 = 1 << 1,
+		NoKerning = 1 << 2,
+	};
+};
+
 } // namespace EE
+
+namespace std {
+
+template <> struct hash<EE::String> {
+	std::size_t operator()( const EE::String& s ) const noexcept {
+		return std::hash<EE::String::StringType>()( s.getString() );
+	}
+};
+
+} // namespace std
 
 #endif
 

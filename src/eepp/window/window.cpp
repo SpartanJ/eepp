@@ -252,56 +252,86 @@ RGB Window::getClearColor() const {
 	return mWindow.ClearColor;
 }
 
-bool Window::takeScreenshot( std::string filepath, const Image::SaveType& Format ) {
+bool Window::takeScreenshot( std::string filepath, const Image::SaveType& format ) {
 	GlobalBatchRenderer::instance()->draw();
 
-	bool CreateNewFile = false;
-	std::string File, Ext;
+	bool createNewFile = false;
+	std::string file;
+	std::string ext;
 
 	if ( filepath.size() ) {
-		File = filepath.substr( filepath.find_last_of( "/\\" ) + 1 );
-		Ext = File.substr( File.find_last_of( "." ) + 1 );
-
-		if ( FileSystem::isDirectory( filepath ) || !Ext.size() )
-			CreateNewFile = true;
+		file = filepath.substr( filepath.find_last_of( "/\\" ) + 1 );
+		ext = file.substr( file.find_last_of( "." ) + 1 );
+		if ( FileSystem::isDirectory( filepath ) || !ext.size() )
+			createNewFile = true;
 	} else {
 		filepath = Sys::getProcessPath();
-		CreateNewFile = true;
+		createNewFile = true;
 	}
 
-	if ( CreateNewFile ) { // Search if file path is given, and if have and extension
+	std::string finalPath;
+
+	if ( createNewFile ) { // Search if file path is given, and if have and extension
 		bool find = false;
-		Int32 FileNum = 1;
-		std::string TmpPath = filepath;
+		int fileNum = 1;
+		std::string tmpPath = filepath;
 
 		if ( !FileSystem::isDirectory( filepath ) )
 			FileSystem::makeDir( filepath );
 
-		Ext = "." + Image::saveTypeToExtension( Format );
+		ext = "." + Image::saveTypeToExtension( format );
 
-		while ( !find && FileNum < 10000 ) {
-			TmpPath = String::format( "%s%05d%s", filepath.c_str(), FileNum, Ext.c_str() );
+		while ( !find && fileNum < 10000 ) {
+			tmpPath = String::format( "%s%05d%s", filepath.c_str(), fileNum, ext.c_str() );
+			fileNum++;
 
-			FileNum++;
-
-			if ( !FileSystem::fileExists( TmpPath ) )
+			if ( !FileSystem::fileExists( tmpPath ) )
 				find = true;
 
-			if ( FileNum == 10000 && find == false )
+			if ( fileNum == 10000 && find == false )
 				return false;
 		}
 
-		return 0 != SOIL_save_screenshot( TmpPath.c_str(), Format, 0, 0, mWindow.WindowConfig.Width,
-										  mWindow.WindowConfig.Height );
+		finalPath = std::move( tmpPath );
 	} else {
 		std::string Direc = FileSystem::fileRemoveFileName( filepath );
-
 		if ( !FileSystem::isDirectory( Direc ) )
 			FileSystem::makeDir( Direc );
-
-		return 0 != SOIL_save_screenshot( filepath.c_str(), Format, 0, 0,
-										  mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
+		finalPath = filepath;
 	}
+
+	return getFrontBufferImage().saveToFile( finalPath, format );
+}
+
+Image Window::getFrontBufferImage() {
+	GlobalBatchRenderer::instance()->draw();
+	Image fb( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, 3 );
+
+	GLint pack_alignment;
+	glGetIntegerv( GL_PACK_ALIGNMENT, &pack_alignment );
+	if ( 1 != pack_alignment )
+		glPixelStorei( GL_PACK_ALIGNMENT, 1 );
+
+	Uint8* pixelData = fb.getPixels();
+	glReadPixels( 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, GL_RGB,
+				  GL_UNSIGNED_BYTE, pixelData );
+
+	if ( 1 != pack_alignment )
+		glPixelStorei( GL_PACK_ALIGNMENT, pack_alignment );
+
+	for ( unsigned int j = 0; j * 2 < fb.getHeight(); ++j ) {
+		int index1 = j * fb.getWidth() * fb.getChannels();
+		int index2 = ( fb.getHeight() - 1 - j ) * fb.getWidth() * fb.getChannels();
+		for ( int i = fb.getWidth() * fb.getChannels(); i > 0; --i ) {
+			Uint8 temp = pixelData[index1];
+			pixelData[index1] = pixelData[index2];
+			pixelData[index2] = temp;
+			++index1;
+			++index2;
+		}
+	}
+
+	return fb;
 }
 
 bool Window::isRunning() const {
@@ -481,7 +511,7 @@ void Window::sendVideoResizeCb() {
 
 void Window::logSuccessfulInit( const std::string& BackendName ) {
 	std::string msg( String::format(
-		"Engine Initialized Succesfully.\n\tVersion: %s (codename: \"%s\")\n\tBuild time: "
+		"Engine Initialized Successfully.\n\tVersion: %s (codename: \"%s\")\n\tBuild time: "
 		"%s\n\tPlatform: %s\n\tOS: %s\n\tArch: %s\n\tCPU Cores: %d\n\tProcess Path: %s\n\tCurrent "
 		"Working Directory: %s\n\tHome Directory: %s\n\tDisk Free Space: %s\n\tWindow/Input "
 		"Backend: %s\n\tGL Backend: %s\n\tGL Vendor: %s\n\tGL Renderer: %s\n\tGL Version: "
@@ -521,7 +551,7 @@ const std::string& Window::getTitle() const {
 	return mWindow.WindowConfig.Title;
 }
 
-eeWindowContex Window::getContext() const {
+eeWindowContext Window::getContext() const {
 #if defined( EE_GLEW_AVAILABLE ) &&                                   \
 	( EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM ) || \
 	  EE_PLATFORM == EE_PLATFORM_MACOS )
@@ -567,7 +597,7 @@ Vector2i Window::getPosition() const {
 	return Vector2i::Zero;
 }
 
-void Window::setCurrentContext( eeWindowContex ) {}
+void Window::setCurrentContext( eeWindowContext ) {}
 
 void Window::setCurrent() {}
 

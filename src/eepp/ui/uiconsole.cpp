@@ -39,7 +39,7 @@ UIConsole* UIConsole::NewOpt( Font* font, const bool& makeDefaultCommands, const
 
 UIConsole::UIConsole( Font* font, const bool& makeDefaultCommands, const bool& attachToLog,
 					  const unsigned int& maxLogLines ) :
-	UIWidget( "console" ), mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {
+	UIWidget( "console" ), mKeyBindings( getInput() ) {
 	setFlags( UI_AUTO_PADDING );
 	mFlags |= UI_TAB_STOP | UI_SCROLLABLE | UI_TEXT_SELECTION_ENABLED;
 	setClipType( ClipType::ContentBox );
@@ -100,9 +100,9 @@ void UIConsole::setTheme( UITheme* Theme ) {
 
 void UIConsole::scheduledUpdate( const Time& ) {
 	if ( mMouseDown ) {
-		if ( !( getUISceneNode()->getWindow()->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
+		if ( !( getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
 			mMouseDown = false;
-			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
+			getInput()->captureMouse( false );
 		} else {
 			onMouseDown( getUISceneNode()->getEventDispatcher()->getMousePos(),
 						 getUISceneNode()->getEventDispatcher()->getPressTrigger() );
@@ -596,13 +596,14 @@ void UIConsole::createDefaultCommands() {
 		executeArr.erase( executeArr.begin() );
 		std::string execute = String::join( executeArr );
 		Process p;
-		p.create( execute, Process::CombinedStdoutStderr | Process::getDefaultOptions() );
-		std::string buffer;
-		p.readAllStdOut( buffer, Seconds( 1 ) );
-		auto lines = String::split( buffer );
-		for ( const auto& line : lines )
-			privPushText( line );
+		if ( p.create( execute, Process::CombinedStdoutStderr | Process::getDefaultOptions() ) ) {
+			std::string buffer;
+			p.readAllStdOut( buffer, Seconds( 1 ) );
+			String::readBySeparator( std::string_view{ buffer },
+									 [this]( std::string_view line ) { privPushText( line ); } );
+		}
 	} );
+	addCommand( "crash_application_for_real", []( const auto& ) { std::terminate(); } );
 }
 
 void UIConsole::cmdClear() {
@@ -919,14 +920,15 @@ Uint32 UIConsole::onKeyDown( const KeyEvent& event ) {
 	std::string cmd = mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
 	if ( !cmd.empty() ) {
 		mDoc.execute( cmd );
-		mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
+		mLastCmdHash = String::hash( cmd );
+		mLastExecuteEventId = getInput()->getEventsSentId();
 		return 1;
 	}
 	return UIWidget::onKeyDown( event );
 }
 
 Uint32 UIConsole::onTextInput( const TextInputEvent& event ) {
-	Input* input = getUISceneNode()->getWindow()->getInput();
+	Input* input = getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
 		 ( input->isLeftControlPressed() && !input->isLeftAltPressed() &&
@@ -934,7 +936,8 @@ Uint32 UIConsole::onTextInput( const TextInputEvent& event ) {
 		 input->isMetaPressed() || ( input->isLeftAltPressed() && !input->isLeftControlPressed() ) )
 		return 0;
 
-	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() )
+	if ( mLastExecuteEventId == getInput()->getEventsSentId() &&
+		 !TextDocument::isTextDocumentCommand( mLastCmdHash ) )
 		return 0;
 
 	const String& text = event.getText();
@@ -1029,7 +1032,7 @@ Uint32 UIConsole::onFocus( NodeFocusReason reason ) {
 
 	getSceneNode()->getWindow()->startTextInput();
 
-	mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
+	mLastExecuteEventId = getInput()->getEventsSentId();
 
 	return 1;
 }
@@ -1069,7 +1072,7 @@ Uint32 UIConsole::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 
 	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) &&
 		 getEventDispatcher()->getMouseDownNode() == this && !mMouseDown ) {
-		getUISceneNode()->getWindow()->getInput()->captureMouse( true );
+		getInput()->captureMouse( true );
 		mMouseDown = true;
 		auto pos = getPositionOnScreen( position.asFloat() );
 		auto prevSelection = mSelection;
@@ -1141,7 +1144,7 @@ Uint32 UIConsole::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 	} else if ( flags & EE_BUTTON_LMASK ) {
 		if ( mMouseDown ) {
 			mMouseDown = false;
-			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
+			getInput()->captureMouse( false );
 		}
 	} else if ( ( flags & EE_BUTTON_RMASK ) ) {
 		onCreateContextMenu( position, flags );
@@ -1248,7 +1251,7 @@ bool UIConsole::onCreateContextMenu( const Vector2i& position, const Uint32& fla
 	}
 
 	menu->setCloseOnHide( true );
-	menu->addEventListener( Event::OnItemClicked, [this, menu]( const Event* event ) {
+	menu->on( Event::OnItemClicked, [this, menu]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -1267,11 +1270,11 @@ bool UIConsole::onCreateContextMenu( const Vector2i& position, const Uint32& fla
 		menu->show();
 		mCurrentMenu = menu;
 	} );
-	menu->addEventListener( Event::OnMenuHide, [this]( const Event* ) {
+	menu->on( Event::OnMenuHide, [this]( const Event* ) {
 		if ( !isClosing() )
 			setFocus();
 	} );
-	menu->addEventListener( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
+	menu->on( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
 	return true;
 }
 

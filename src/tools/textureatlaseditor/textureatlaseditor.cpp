@@ -26,11 +26,11 @@ bool onCloseRequestCallback( EE::Window::Window* ) {
 		MsgBox = UIMessageBox::New(
 			UIMessageBox::OK_CANCEL,
 			"Do you really want to close the texture atlas editor?\nAll changes will be lost." );
-		MsgBox->addEventListener( Event::OnConfirm, []( const Event* ) { win->close(); } );
-		MsgBox->addEventListener( Event::OnClose, []( const Event* ) { MsgBox = NULL; } );
+		MsgBox->on( Event::OnConfirm, []( const Event* ) { win->close(); } );
+		MsgBox->on( Event::OnClose, []( const Event* ) { MsgBox = NULL; } );
 		MsgBox->setTitle( "Close Texture Atlas Editor?" );
 		MsgBox->center();
-		MsgBox->show();
+		MsgBox->showWhenReady();
 		return false;
 	} else {
 		return true;

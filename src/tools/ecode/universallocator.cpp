@@ -94,12 +94,10 @@ LSPSymbolInformationList fuzzyMatchTextDocumentSymbol( const LSPSymbolInformatio
 	std::map<int, LSPSymbolInformation, std::greater<int>> matchesMap;
 
 	for ( const auto& l : list ) {
-		int matchName = String::fuzzyMatch( l.name, query );
-		matchesMap.insert( { matchName, l } );
+		int score = String::fuzzyMatch( query, l.name );
+		if ( score > std::numeric_limits<int>::min() )
+			matchesMap.insert( { score, l } );
 	}
-
-	while ( matchesMap.size() > limit )
-		matchesMap.erase( std::prev( matchesMap.end() ) );
 
 	for ( auto& m : matchesMap ) {
 		m.second.score = m.first;
@@ -357,7 +355,6 @@ void UniversalLocator::updateFilesTable( bool useGlob ) {
 			ProjectDirectoryTree::emptyModel( getLocatorCommands(), mApp->getCurrentProject() ) );
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	} else if ( !mLocateInput->getText().empty() ) {
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		mApp->getDirTree()->asyncMatchTree(
 			useGlob ? ProjectDirectoryTree::MatchType::Glob
 					: ProjectDirectoryTree::MatchType::Fuzzy,
@@ -371,15 +368,6 @@ void UniversalLocator::updateFilesTable( bool useGlob ) {
 				} );
 			},
 			mApp->getCurrentProject() );
-#else
-		mLocateTable->setModel(
-			useGlob ? mApp->getDirTree()->globMatchTree( text, LOCATEBAR_MAX_RESULTS,
-														 mApp->getCurrentProject() )
-					: mApp->getDirTree()->fuzzyMatchTree( text, LOCATEBAR_MAX_RESULTS,
-														  mApp->getCurrentProject() ) );
-		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-		mLocateTable->scrollToTop();
-#endif
 	} else {
 		mLocateTable->setModel( mApp->getDirTree()->asModel(
 			LOCATEBAR_MAX_RESULTS, getLocatorCommands(), mApp->getCurrentProject(),
@@ -405,22 +393,18 @@ void UniversalLocator::updateCommandPaletteTable() {
 	txt.trim();
 
 	if ( txt.size() > 1 ) {
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 		mCommandPalette.asyncFuzzyMatch( txt.substr( 1 ).trim(), 10000, [this]( auto res ) {
 			mUISceneNode->runOnMainThread( [this, res] {
 				mLocateTable->setModel( res );
-				mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+				if ( mLocateTable->getModel()->hasChildren() )
+					mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 				mLocateTable->scrollToTop();
 			} );
 		} );
-#else
-		mLocateTable->setModel( mCommandPalette.fuzzyMatch( txt.substr( 1 ).trim(), 10000 ) );
-		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-		mLocateTable->scrollToTop();
-#endif
 	} else if ( mCommandPalette.getCurModel() ) {
 		mLocateTable->setModel( mCommandPalette.getCurModel() );
-		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
+		if ( mLocateTable->getModel()->hasChildren() )
+			mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	}
 }
 
@@ -585,8 +569,7 @@ void UniversalLocator::initLocateBar( UILocateBar* locateBar, UITextInput* locat
 				path = mApp->getCurrentProject() + path;
 
 			if ( !range.isValid() && !FileSystem::isRelativePath( path ) &&
-				 pathHasPosition( mLocateInput->getText() ) &&
-				 String::startsWith( mLocateInput->getText().toUtf8(), path ) ) {
+				 pathHasPosition( mLocateInput->getText() ) ) {
 				auto pathAndPos = getPathAndPosition( mLocateInput->getText() );
 				range = { pathAndPos.second, pathAndPos.second };
 			}
@@ -715,7 +698,7 @@ void UniversalLocator::showOpenDocuments() {
 	mApp->getStatusBar()->updateState();
 }
 
-std::shared_ptr<FileListModel> UniversalLocator::openDocumentsModel( const std::string& match ) {
+std::shared_ptr<FileListModel> UniversalLocator::openDocumentsModel( const std::string& pattern ) {
 	std::vector<std::string> docs;
 
 	mApp->getSplitter()->forEachDoc( [&docs]( TextDocument& doc ) {
@@ -739,15 +722,17 @@ std::shared_ptr<FileListModel> UniversalLocator::openDocumentsModel( const std::
 		files.emplace_back( std::move( doc ) );
 	}
 
-	if ( match.empty() )
+	if ( pattern.empty() )
 		return std::make_shared<FileListModel>( std::move( files ), std::move( names ) );
 
 	std::multimap<int, int, std::greater<int>> matchesMap;
 
 	for ( size_t i = 0; i < names.size(); i++ ) {
-		int matchName = String::fuzzyMatch( names[i], match, true, true );
-		int matchPath = String::fuzzyMatch( files[i], match, true, true );
-		matchesMap.insert( { std::max( matchName, matchPath ), i } );
+		int matchName = String::fuzzyMatch( pattern, names[i] );
+		int matchPath = String::fuzzyMatch( pattern, files[i] );
+		int matchScore = std::max( matchName, matchPath );
+		if ( matchScore > std::numeric_limits<int>::min() )
+			matchesMap.insert( { std::max( matchName, matchPath ), i } );
 	}
 
 	std::vector<std::string> ffiles;
@@ -766,7 +751,7 @@ std::shared_ptr<FileListModel> UniversalLocator::openDocumentsModel( const std::
 void UniversalLocator::updateOpenDocumentsTable() {
 	mLocateTable->setModel(
 		openDocumentsModel( mLocateInput->getText().substr( 2 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->hasChilds() )
+	if ( mLocateTable->getModel()->hasChildren() )
 		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
 	mLocateTable->scrollToTop();
 }
@@ -784,7 +769,7 @@ void UniversalLocator::showSwitchBuild() {
 }
 
 std::shared_ptr<ItemListOwnerModel<std::string>>
-UniversalLocator::openBuildModel( const std::string& match ) {
+UniversalLocator::openBuildModel( const std::string& pattern ) {
 	if ( nullptr == mApp->getProjectBuildManager() )
 		return ItemListOwnerModel<std::string>::create( {} );
 	const auto& builds = mApp->getProjectBuildManager()->getBuilds();
@@ -793,8 +778,8 @@ UniversalLocator::openBuildModel( const std::string& match ) {
 		return ItemListOwnerModel<std::string>::create( {} );
 	buildNames.reserve( builds.size() );
 	for ( const auto& build : builds ) {
-		if ( match.empty() ||
-			 String::startsWith( String::toLower( build.first ), String::toLower( match ) ) )
+		if ( pattern.empty() ||
+			 String::startsWith( String::toLower( build.first ), String::toLower( pattern ) ) )
 			buildNames.push_back( build.first );
 	}
 	std::sort( buildNames.begin(), buildNames.end() );
@@ -803,7 +788,7 @@ UniversalLocator::openBuildModel( const std::string& match ) {
 
 void UniversalLocator::updateSwitchBuildTable() {
 	mLocateTable->setModel( openBuildModel( mLocateInput->getText().substr( 3 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->hasChilds() ) {
+	if ( mLocateTable->getModel()->hasChildren() ) {
 		ModelIndex idx =
 			mLocateTable->findRowWithText( mApp->getProjectBuildManager()->getConfig().buildName );
 		mLocateTable->getSelection().set( idx.isValid() ? idx
@@ -837,7 +822,7 @@ void UniversalLocator::showSwitchRunTarget() {
 }
 
 std::shared_ptr<ItemListOwnerModel<std::string>>
-UniversalLocator::openBuildTypeModel( const std::string& match ) {
+UniversalLocator::openBuildTypeModel( const std::string& pattern ) {
 	if ( nullptr == mApp->getProjectBuildManager() )
 		return ItemListOwnerModel<std::string>::create( {} );
 	const auto& builds = mApp->getProjectBuildManager()->getBuilds();
@@ -854,8 +839,8 @@ UniversalLocator::openBuildTypeModel( const std::string& match ) {
 	std::vector<std::string> buildTypeNames;
 	buildTypeNames.reserve( buildTypes.size() );
 	for ( const auto& build : buildTypes ) {
-		if ( match.empty() ||
-			 String::startsWith( String::toLower( build ), String::toLower( match ) ) )
+		if ( pattern.empty() ||
+			 String::startsWith( String::toLower( build ), String::toLower( pattern ) ) )
 			buildTypeNames.push_back( build );
 	}
 	std::sort( buildTypeNames.begin(), buildTypeNames.end() );
@@ -863,7 +848,7 @@ UniversalLocator::openBuildTypeModel( const std::string& match ) {
 }
 
 std::shared_ptr<ItemListOwnerModel<std::string>>
-UniversalLocator::openRunTargetModel( const std::string& match ) {
+UniversalLocator::openRunTargetModel( const std::string& pattern ) {
 	if ( nullptr == mApp->getProjectBuildManager() )
 		return ItemListOwnerModel<std::string>::create( {} );
 	const auto& builds = mApp->getProjectBuildManager()->getBuilds();
@@ -879,8 +864,8 @@ UniversalLocator::openRunTargetModel( const std::string& match ) {
 	std::vector<std::string> runTargetNames;
 	runTargetNames.reserve( runs.size() );
 	for ( const auto& run : runs ) {
-		if ( match.empty() ||
-			 String::startsWith( String::toLower( run->name ), String::toLower( match ) ) )
+		if ( pattern.empty() ||
+			 String::startsWith( String::toLower( run->name ), String::toLower( pattern ) ) )
 			runTargetNames.push_back( run->name );
 	}
 	std::sort( runTargetNames.begin(), runTargetNames.end() );
@@ -890,7 +875,7 @@ UniversalLocator::openRunTargetModel( const std::string& match ) {
 void UniversalLocator::updateSwitchBuildTypeTable() {
 	mLocateTable->setModel(
 		openBuildTypeModel( mLocateInput->getText().substr( 4 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->hasChilds() && nullptr != mApp->getProjectBuildManager() ) {
+	if ( mLocateTable->getModel()->hasChildren() && nullptr != mApp->getProjectBuildManager() ) {
 		ModelIndex idx =
 			mLocateTable->findRowWithText( mApp->getProjectBuildManager()->getConfig().buildType );
 		mLocateTable->getSelection().set( idx.isValid() ? idx
@@ -903,7 +888,7 @@ void UniversalLocator::updateSwitchBuildTypeTable() {
 void UniversalLocator::updateSwitchRunTargetTable() {
 	mLocateTable->setModel(
 		openRunTargetModel( mLocateInput->getText().substr( 4 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->hasChilds() && nullptr != mApp->getProjectBuildManager() ) {
+	if ( mLocateTable->getModel()->hasChildren() && nullptr != mApp->getProjectBuildManager() ) {
 		ModelIndex idx =
 			mLocateTable->findRowWithText( mApp->getProjectBuildManager()->getConfig().runName );
 		mLocateTable->getSelection().set( idx.isValid() ? idx
@@ -926,25 +911,33 @@ void UniversalLocator::showSwitchFileType() {
 }
 
 std::shared_ptr<ItemListOwnerModel<std::string>>
-UniversalLocator::openFileTypeModel( const std::string& match ) {
+UniversalLocator::openFileTypeModel( const std::string& pattern ) {
 	if ( nullptr == mApp->getSplitter()->getCurEditor() )
 		return ItemListOwnerModel<std::string>::create( {} );
+	const auto& preDefs = SyntaxDefinitionManager::instance()->getPreDefinitions();
 	const auto& defs = SyntaxDefinitionManager::instance()->getDefinitions();
-	std::vector<std::string> fileTypeNames;
-	fileTypeNames.reserve( defs.size() );
-	for ( const auto& def : defs ) {
-		if ( match.empty() || String::startsWith( String::toLower( def.getLanguageName() ),
-												  String::toLower( match ) ) )
-			fileTypeNames.push_back( def.getLanguageName() );
+	std::set<std::string> fileTypeNames;
+	for ( const auto& def : preDefs ) {
+		if ( pattern.empty() || String::startsWith( String::toLower( def.getLanguageName() ),
+													String::toLower( pattern ) ) )
+			fileTypeNames.insert( def.getLanguageName() );
 	}
-	std::sort( fileTypeNames.begin(), fileTypeNames.end() );
-	return ItemListOwnerModel<std::string>::create( fileTypeNames );
+	for ( const auto& def : defs ) {
+		if ( !def->isVisible() )
+			continue;
+		if ( pattern.empty() || String::startsWith( String::toLower( def->getLanguageName() ),
+													String::toLower( pattern ) ) )
+			fileTypeNames.insert( def->getLanguageName() );
+	}
+	return ItemListOwnerModel<std::string>::create(
+		std::vector<std::string>( std::make_move_iterator( fileTypeNames.begin() ),
+								  std::make_move_iterator( fileTypeNames.end() ) ) );
 }
 
 void UniversalLocator::updateSwitchFileTypeTable() {
 	mLocateTable->setModel(
 		openFileTypeModel( mLocateInput->getText().substr( 3 ).trim().toUtf8() ) );
-	if ( mLocateTable->getModel()->hasChilds() && mApp->getSplitter()->getCurEditor() ) {
+	if ( mLocateTable->getModel()->hasChildren() && mApp->getSplitter()->getCurEditor() ) {
 		ModelIndex idx = mLocateTable->findRowWithText( mApp->getSplitter()
 															->getCurEditor()
 															->getDocumentRef()
@@ -975,7 +968,7 @@ std::shared_ptr<LSPSymbolInfoModel> UniversalLocator::emptyModel( const String& 
 }
 
 bool UniversalLocator::findCapability( PluginCapability capability ) {
-	json capa;
+	nlohmann::json capa;
 	capa["capability"] = capability;
 	capa["uri"] = getCurDocURI();
 	PluginRequestHandle resp = mApp->getPluginManager()->sendRequest(
@@ -993,7 +986,7 @@ String UniversalLocator::getDefQueryText( PluginCapability capability ) {
 }
 
 nlohmann::json UniversalLocator::pluginID( const PluginIDType& id ) {
-	json r;
+	nlohmann::json r;
 	r["uri"] = getCurDocURI();
 	if ( id.isInteger() )
 		r["id"] = id.asInt();
@@ -1016,13 +1009,13 @@ void UniversalLocator::requestWorkspaceSymbol() {
 		mLocateTable->setModel( mWorkspaceSymbolModel );
 
 		if ( mQueryWorkspaceLastId.isValid() ) {
-			json r( pluginID( mQueryWorkspaceLastId ) );
+			nlohmann::json r( pluginID( mQueryWorkspaceLastId ) );
 			mApp->getPluginManager()->sendBroadcast( PluginMessageType::CancelRequest,
 													 PluginMessageFormat::JSON, &r );
 		}
 
 		mApp->getThreadPool()->run( [this] {
-			json j;
+			nlohmann::json j;
 			j["query"] = mWorkspaceSymbolQuery;
 			auto hdl = mApp->getPluginManager()->sendRequest( PluginMessageType::WorkspaceSymbol,
 															  PluginMessageFormat::JSON, &j );
@@ -1067,7 +1060,7 @@ void UniversalLocator::requestDocumentSymbol() {
 				emptyModel( getDefQueryText( PluginCapability::TextDocumentSymbol ) );
 			mLocateTable->setModel( mTextDocumentSymbolModel );
 
-			json j;
+			nlohmann::json j;
 			j["uri"] = mCurDocURI = getCurDocURI();
 			auto hdl = mApp->getPluginManager()->sendRequest(
 				PluginMessageType::TextDocumentFlattenSymbol, PluginMessageFormat::JSON, &j );
@@ -1086,7 +1079,6 @@ void UniversalLocator::requestDocumentSymbol() {
 }
 
 void UniversalLocator::updateDocumentSymbol( const LSPSymbolInformationList& res ) {
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 	if ( mCurDocQuery.empty() ) {
 		mTextDocumentSymbolModel =
 			LSPSymbolInfoModel::create( mApp->getUISceneNode(), mCurDocQuery, res, true );
@@ -1103,21 +1095,6 @@ void UniversalLocator::updateDocumentSymbol( const LSPSymbolInformationList& res
 			} );
 		} );
 	}
-#else
-	mUISceneNode->runOnMainThread( [this, res] {
-		if ( mCurDocQuery.empty() ) {
-			mTextDocumentSymbolModel =
-				LSPSymbolInfoModel::create( mApp->getUISceneNode(), mCurDocQuery, res, true );
-		} else {
-			mTextDocumentSymbolModel = LSPSymbolInfoModel::create(
-				mApp->getUISceneNode(), mCurDocQuery,
-				fuzzyMatchTextDocumentSymbol( res, mCurDocQuery, 100 ), true );
-		}
-		mLocateTable->setModel( mTextDocumentSymbolModel );
-		mLocateTable->getSelection().set( mLocateTable->getModel()->index( 0 ) );
-		mLocateTable->scrollToTop();
-	} );
-#endif
 }
 
 std::string UniversalLocator::getCurDocURI() {

@@ -12,7 +12,7 @@ if [ -z "$SYSROOTPATH" ]; then
 export SYSROOTPATH=`xcrun --sdk iphoneos --show-sdk-platform-path`/Developer/SDKs/iPhoneOS$IOSVERSION.sdk/
 fi
 
-premake4 --file=../../premake4.lua --platform=ios-arm64 --with-static-eepp --with-gles1 --with-gles2 --with-static-backend --use-frameworks gmake 
+premake5 --file=../../premake5.lua --os=ios --with-static-eepp --with-gles1 --with-gles2 --with-static-backend gmake
 
-cd ../../make/ios-arm64/
-make -j`nproc` $@ eepp-static
+cd ../../make/ios/
+make -j$(sysctl -n hw.ncpu) $@ eepp-static

@@ -15,6 +15,8 @@
 
 namespace EE { namespace UI {
 
+struct NativeFileDialogHandler;
+
 class EE_API UIFileDialog : public UIWindow {
   public:
 	enum Flags {
@@ -25,6 +27,8 @@ class EE_API UIFileDialog : public UIWindow {
 		ShowOnlyFolders = ( 1 << 4 ),
 		ShowHidden = ( 1 << 5 ),
 		AllowMultiFileSelection = ( 1 << 6 ),
+		UseNativeFileDialog =
+			( 1 << 7 ), //< Uses the OS native file dialog if exists and it's available
 	};
 
 	static const Uint32 DefaultFlags = UIFileDialog::Flags::FoldersFirst |
@@ -107,18 +111,6 @@ class EE_API UIFileDialog : public UIWindow {
 
 	void setCloseShortcut( const KeyBindings::Shortcut& closeWithKey );
 
-	UIIcon* getIconNewFolder() const;
-
-	void setIconNewFolder( UIIcon* iconNewFolder );
-
-	UIIcon* getIconListView() const;
-
-	void setIconListView( UIIcon* iconListView );
-
-	UIIcon* getIconTableView() const;
-
-	void setIconTableView( UIIcon* iconTableView );
-
 	void setViewMode( const UIMultiModelView::ViewMode& viewMode );
 
 	const UIMultiModelView::ViewMode& getViewMode() const;
@@ -129,32 +121,42 @@ class EE_API UIFileDialog : public UIWindow {
 
 	void setSingleClickNavigation( bool singleClickNavigation );
 
+	virtual bool show();
+
+	virtual bool hide( bool immediate = false );
+
+	bool usingNativeFileDialog() const;
+
+	virtual void scheduledUpdate( const Time& time );
+
   protected:
 	std::string mCurPath;
-	UIPushButton* mButtonOpen;
-	UIPushButton* mButtonCancel;
-	UIPushButton* mButtonUp;
-	UIPushButton* mButtonNewFolder;
-	UISelectButton* mButtonListView;
-	UISelectButton* mButtonTableView;
-	UIMultiModelView* mMultiView;
-	UITextInput* mPath;
-	UITextInput* mFile;
-	UIDropDownList* mFiletype;
+	std::string mFilePatterns;
+	UIPushButton* mButtonOpen{ nullptr };
+	UIPushButton* mButtonCancel{ nullptr };
+	UIPushButton* mButtonUp{ nullptr };
+	UIPushButton* mButtonNewFolder{ nullptr };
+	UISelectButton* mButtonListView{ nullptr };
+	UISelectButton* mButtonTableView{ nullptr };
+	UIMultiModelView* mMultiView{ nullptr };
+	UITextInput* mPath{ nullptr };
+	UITextInput* mFile{ nullptr };
+	std::string mFileName;
+	UIDropDownList* mFiletype{ nullptr };
 	Uint32 mDialogFlags;
 	KeyBindings::Shortcut mCloseShortcut;
 	KeyBindings::Shortcut mOpenShortut{ KEY_RETURN, KeyMod::getDefaultModifier() };
 	std::shared_ptr<FileSystemModel> mModel;
 	std::shared_ptr<DiskDrivesModel> mDiskDrivesModel;
 	bool mDisplayingDrives{ false };
+	NativeFileDialogHandler* mHandler{ nullptr };
+	std::vector<std::string> mRes;
 
 	UIFileDialog( Uint32 dialogFlags = UIFileDialog::DefaultFlags,
 				  const std::string& defaultFilePattern = "*",
 				  const std::string& defaultDirectory = Sys::getProcessPath() );
 
 	virtual void onWindowReady();
-
-	virtual Uint32 onKeyUp( const KeyEvent& event );
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
 

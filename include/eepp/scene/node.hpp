@@ -51,7 +51,7 @@ enum NodeFlags {
 	NODE_FLAG_REVERSE_DRAW = ( 1 << 16 ),
 	NODE_FLAG_FRAME_BUFFER = ( 1 << 17 ),
 	NODE_FLAG_CLIP_ENABLE = ( 1 << 18 ),
-	NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDS = ( 1 << 19 ),
+	NODE_FLAG_REPORT_SIZE_CHANGE_TO_CHILDREN = ( 1 << 19 ),
 	NODE_FLAG_OVER_FIND_ALLOWED = ( 1 << 20 ),
 
 	NODE_FLAG_SCENENODE = ( 1 << 21 ),
@@ -63,7 +63,8 @@ enum NodeFlags {
 
 	NODE_FLAG_LOADING = ( 1 << 27 ),
 	NODE_FLAG_CLOSING_CHILDREN = ( 1 << 28 ),
-	NODE_FLAG_FREE_USE = ( 1 << 29 )
+	NODE_FLAG_DISABLE_CLICK_FOCUS = ( 1 << 29 ),
+	NODE_FLAG_FREE_USE = ( 1 << 30 )
 };
 
 class EE_API Node : public Transformable {
@@ -108,11 +109,11 @@ class EE_API Node : public Transformable {
 
 	Node* setVisible( const bool& visible, bool emitEventNotification = true );
 
-	Node* setChildsVisibility( bool visible, bool emitEventNotification = true );
+	Node* setChildrenVisibility( bool visible, bool emitEventNotification = true );
 
 	bool isVisible() const;
 
-	bool isHided() const;
+	bool hasVisibility() const;
 
 	Node* setEnabled( const bool& enabled );
 
@@ -179,7 +180,7 @@ class EE_API Node : public Transformable {
 
 	bool isMouseOver() const;
 
-	bool isMouseOverMeOrChilds() const;
+	bool isMouseOverMeOrChildren() const;
 
 	bool isMeOrParentTreeVisible() const;
 
@@ -227,7 +228,7 @@ class EE_API Node : public Transformable {
 
 	void sendTextEvent( const Uint32& event, const std::string& text );
 
-	void childsCloseAll();
+	void closeAllChildren();
 
 	const std::string& getId() const;
 
@@ -292,6 +293,8 @@ class EE_API Node : public Transformable {
 
 	void setRotationOriginPoint( const OriginPoint& center );
 
+	void setRotationOriginPointPixels( const OriginPoint& center );
+
 	void setRotationOriginPointX( const std::string& xEq );
 
 	void setRotationOriginPointY( const std::string& yEq );
@@ -302,11 +305,15 @@ class EE_API Node : public Transformable {
 
 	void setScale( const Vector2f& scale, const OriginPoint& center );
 
-	void setScale( const Float& scale, const OriginPoint& center = OriginPoint::OriginCenter );
+	void setScale( const Float& scale, const OriginPoint& center );
+
+	void setScale( const Float& scale );
 
 	const OriginPoint& getScaleOriginPoint() const;
 
 	void setScaleOriginPoint( const OriginPoint& center );
+
+	void setScaleOriginPointPixels( const OriginPoint& center );
 
 	void setScaleOriginPointX( const std::string& xEq );
 
@@ -324,7 +331,7 @@ class EE_API Node : public Transformable {
 
 	virtual void setAlpha( const Float& alpha );
 
-	virtual void setChildsAlpha( const Float& alpha );
+	virtual void setChildrenAlpha( const Float& alpha );
 
 	ActionManager* getActionManager() const;
 
@@ -334,11 +341,11 @@ class EE_API Node : public Transformable {
 
 	bool removeActions( const std::vector<Action*>& actions );
 
-	bool removeActionsByTag( const String::HashType& tag );
+	bool removeActionsByTag( const Action::UniqueID& tag );
 
 	std::vector<Action*> getActions();
 
-	std::vector<Action*> getActionsByTag( const Uint32& tag );
+	std::vector<Action*> getActionsByTag( const Action::UniqueID& tag );
 
 	void clearActions();
 
@@ -366,11 +373,11 @@ class EE_API Node : public Transformable {
 
 	Node* getParentWidget() const;
 
-	void enableReportSizeChangeToChilds();
+	void enableReportSizeChangeToChildren();
 
-	void disableReportSizeChangeToChilds();
+	void disableReportSizeChangeToChildren();
 
-	bool reportSizeChangeToChilds() const;
+	bool reportSizeChangeToChildren() const;
 
 	Node* centerHorizontal();
 
@@ -411,8 +418,8 @@ class EE_API Node : public Transformable {
 						  const Action::UniqueID& uniqueIdentifier = 0 );
 
 	//! Does the same as runOnMainThread if called from a none main thread, otherwise it will be
-	//! executed inmediatelly.
-	//! @return True if runnable was inmediatelly executed.
+	//! executed immediately.
+	//! @return True if runnable was immediately executed.
 	bool ensureMainThread( Actions::Runnable::RunnableFunc runnable,
 						   const Action::UniqueID& uniqueIdentifier = 0 );
 
@@ -434,6 +441,10 @@ class EE_API Node : public Transformable {
 	bool isChild( Node* child ) const;
 
 	bool inParentTreeOf( Node* child ) const;
+
+	bool inParentTreeOfType( Uint32 type ) const;
+
+	Node* getParentOfType( Uint32 type ) const;
 
 	void setLoadingState( bool loading );
 
@@ -473,21 +484,23 @@ class EE_API Node : public Transformable {
 	friend class EventDispatcher;
 
 	std::string mId;
-	String::HashType mIdHash;
+	String::HashType mIdHash{ 0 };
 	Vector2f mScreenPos;
-	Vector2i mScreenPosi;
 	Sizef mSize;
-	UintPtr mData;
-	Node* mParentNode;
-	SceneNode* mSceneNode;
-	Node* mNodeDrawInvalidator;
-	Node* mChild;	  //! Pointer to the first child of the node
-	Node* mChildLast; //! Pointer to the last child added
-	Node* mNext;	  //! Pointer to the next child of the father
-	Node* mPrev;	  //! Pointer to the prev child of the father
-	Uint32 mNodeFlags;
-	BlendMode mBlend;
-	Uint32 mNumCallBacks;
+	Float mAlpha{ 255.f };
+	UintPtr mData{ 0 };
+	Node* mParentNode{ nullptr };
+	SceneNode* mSceneNode{ nullptr };
+	Node* mNodeDrawInvalidator{ nullptr };
+	Node* mChild{ nullptr };	  //! Pointer to the first child of the node
+	Node* mChildLast{ nullptr }; //! Pointer to the last child added
+	Node* mNext{ nullptr };	  //! Pointer to the next child of the father
+	Node* mPrev{ nullptr };	  //! Pointer to the prev child of the father
+	Uint32 mNodeFlags{ NODE_FLAG_POSITION_DIRTY | NODE_FLAG_POLYGON_DIRTY };
+	BlendMode mBlend{ BlendMode::Alpha() };
+	bool mVisible{ true };
+	bool mEnabled{ true };
+	Uint32 mNumCallBacks{ 0 };
 
 	mutable Polygon2f mPoly;
 	mutable Rectf mWorldBounds;
@@ -495,12 +508,9 @@ class EE_API Node : public Transformable {
 
 	EventsMap mEvents;
 
-	bool mVisible;
-	bool mEnabled;
 
 	OriginPoint mRotationOriginPoint;
 	OriginPoint mScaleOriginPoint;
-	Float mAlpha;
 
 	virtual Uint32 onMessage( const NodeMessage* msg );
 
@@ -552,7 +562,7 @@ class EE_API Node : public Transformable {
 
 	virtual void matrixUnset();
 
-	virtual void drawChilds();
+	virtual void drawChildren();
 
 	virtual void onChildCountChange( Node* child, const bool& removed );
 
@@ -606,7 +616,7 @@ class EE_API Node : public Transformable {
 
 	void setDirty();
 
-	void setChildsDirty();
+	void setChildrenDirty();
 
 	void clipSmartEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height,
 						  bool needsClipPlanes );

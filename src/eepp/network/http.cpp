@@ -27,6 +27,20 @@ namespace EE { namespace Network {
 
 #define PACKET_BUFFER_SIZE ( 16384 )
 
+std::string Http::Request::statusToString( Http::Request::Status status ) {
+	switch ( status ) {
+		case Connected:
+			return "Connected";
+		case Sent:
+			return "Sent";
+		case HeaderReceived:
+			return "HeaderReceived";
+		case ContentReceived:
+			return "ContentReceived";
+	}
+	return "";
+}
+
 Http::Request::Method Http::Request::methodFromString( std::string methodString ) {
 	String::toLowerInPlace( methodString );
 	if ( "get" == methodString )
@@ -173,12 +187,21 @@ void Http::Request::setProgressCallback( const Http::Request::ProgressCallback& 
 	mProgressCallback = progressCallback;
 }
 
+void Http::Request::setCancelCallback( const Http::Request::CancelCallback& cancelCallback ) {
+	mCancelCallback = cancelCallback;
+}
+
 const Http::Request::ProgressCallback& Http::Request::getProgressCallback() const {
 	return mProgressCallback;
 }
 
+const Http::Request::CancelCallback& Http::Request::getCancelCallback() const {
+	return mCancelCallback;
+}
+
 void Http::Request::cancel() {
 	mCancel = true;
+	setProgressCallback( {} );
 }
 
 const bool& Http::Request::isCancelled() const {
@@ -205,6 +228,11 @@ std::string Http::Request::prepareTunnel( const Http& http ) {
 	out << "\r\n";
 
 	return out.str();
+}
+
+void Http::onCancel( const Http::Request& request ) {
+	if ( request.getCancelCallback() )
+		request.getCancelCallback()( *this, request );
 }
 
 bool Http::Request::isVerbose() const {
@@ -428,7 +456,7 @@ const char* Http::Response::getStatusDescription() const {
 	switch ( mStatus ) {
 		// 2xx: success
 		case Ok:
-			return "Successfull";
+			return "Successful";
 		case Created:
 			return "The resource has successfully been created";
 		case Accepted:
@@ -450,16 +478,16 @@ const char* Http::Response::getStatusDescription() const {
 		case MovedTemporarily:
 			return "The requested page has temporarily moved to a new location";
 		case NotModified:
-			return "For conditionnal requests, means the requested page hasn't changed and doesn't "
+			return "For conditional requests, means the requested page hasn't changed and doesn't "
 				   "need to be refreshed";
 
 		// 4xx: client error
 		case BadRequest:
 			return "The server couldn't understand the request (syntax error)";
 		case Unauthorized:
-			return "The requested page needs an authentification to be accessed";
+			return "The requested page needs an authentication to be accessed";
 		case Forbidden:
-			return "The requested page cannot be accessed at all, even with authentification";
+			return "The requested page cannot be accessed at all, even with authentication";
 		case NotFound:
 			return "The requested page doesn't exist";
 		case RangeNotSatisfiable:
@@ -569,7 +597,7 @@ Http::Response Http::request( const URI& uri, Request::Method method, const Time
 							  const Http::Request::ProgressCallback& progressCallback,
 							  const Http::Request::FieldTable& headers, const std::string& body,
 							  const bool& validateCertificate, const URI& proxy ) {
-	Http* http = sGlobalHttpPool.get( uri, proxy );
+	auto http = sGlobalHttpPool.get( uri, proxy );
 	Request request( uri.getPathAndQuery(), method, body, validateCertificate, validateCertificate,
 					 true, true );
 	request.setProgressCallback( progressCallback );
@@ -596,12 +624,12 @@ Http::Response Http::post( const URI& uri, const Time& timeout,
 					validateCertificate, proxy );
 }
 
-void Http::requestAsync( const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout,
-						 Request::Method method,
-						 const Http::Request::ProgressCallback& progressCallback,
-						 const Http::Request::FieldTable& headers, const std::string& body,
-						 const bool& validateCertificate, const URI& proxy ) {
-	Http* http = sGlobalHttpPool.get( uri, proxy );
+Uint64 Http::requestAsync( const Http::AsyncResponseCallback& cb, const URI& uri,
+						   const Time& timeout, Request::Method method,
+						   const Http::Request::ProgressCallback& progressCallback,
+						   const Http::Request::FieldTable& headers, const std::string& body,
+						   const bool& validateCertificate, const URI& proxy ) {
+	auto http = sGlobalHttpPool.get( uri, proxy );
 	Request request( uri.getPathAndQuery(), method, body, validateCertificate, validateCertificate,
 					 true, true );
 	request.setProgressCallback( progressCallback );
@@ -609,23 +637,23 @@ void Http::requestAsync( const Http::AsyncResponseCallback& cb, const URI& uri, 
 	for ( const auto& field : headers )
 		request.setField( field.first, field.second );
 
-	http->sendAsyncRequest( cb, request, timeout );
+	return http->sendAsyncRequest( cb, request, timeout );
 }
 
-void Http::getAsync( const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout,
-					 const Http::Request::ProgressCallback& progressCallback,
-					 const Http::Request::FieldTable& headers, const std::string& body,
-					 const bool& validateCertificate, const URI& proxy ) {
-	requestAsync( cb, uri, timeout, Request::Method::Get, progressCallback, headers, body,
-				  validateCertificate, proxy );
+Uint64 Http::getAsync( const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout,
+					   const Http::Request::ProgressCallback& progressCallback,
+					   const Http::Request::FieldTable& headers, const std::string& body,
+					   const bool& validateCertificate, const URI& proxy ) {
+	return requestAsync( cb, uri, timeout, Request::Method::Get, progressCallback, headers, body,
+						 validateCertificate, proxy );
 }
 
-void Http::postAsync( const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout,
-					  const Http::Request::ProgressCallback& progressCallback,
-					  const Http::Request::FieldTable& headers, const std::string& body,
-					  const bool& validateCertificate, const URI& proxy ) {
-	requestAsync( cb, uri, timeout, Request::Method::Post, progressCallback, headers, body,
-				  validateCertificate, proxy );
+Uint64 Http::postAsync( const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout,
+						const Http::Request::ProgressCallback& progressCallback,
+						const Http::Request::FieldTable& headers, const std::string& body,
+						const bool& validateCertificate, const URI& proxy ) {
+	return requestAsync( cb, uri, timeout, Request::Method::Post, progressCallback, headers, body,
+						 validateCertificate, proxy );
 }
 
 Http::Http() : mConnection( NULL ), mHost(), mPort( 0 ), mIsSSL( false ), mHostSolved( false ) {}
@@ -641,13 +669,27 @@ Http::Http( const std::string& host, unsigned short port, bool useSSL, URI proxy
 }
 
 Http::~Http() {
-	// First we wait to finish any request pending
-	for ( auto&& itt : mThreads ) {
-		itt->wait();
+
+	{
+		Lock l( mThreadsMutex );
+		// First we wait to finish any request pending
+		for ( auto&& itt : mThreads ) {
+			itt->cancel();
+			itt->wait();
+		}
 	}
 
-	for ( auto&& itt : mThreads ) {
-		eeDelete( itt );
+	{
+		Lock l( mThreadsMutex );
+		for ( auto&& itt : mThreads ) {
+			eeDelete( itt );
+		}
+	}
+
+	{
+		Lock l( mCurRequestsMutex );
+		for ( auto [_, req] : mCurRequests )
+			req->cancel();
 	}
 
 	// Then we destroy the last open connection
@@ -703,6 +745,10 @@ void Http::setHost( const std::string& host, unsigned short port, bool useSSL, U
 		eeSAFE_DELETE( connection );
 		mConnection = NULL;
 	}
+}
+
+void Http::setHost( const URI& uri, URI proxy ) {
+	setHost( uri.getHost(), uri.getPort(), uri.getScheme() == "https" );
 }
 
 Http::Response Http::sendRequest( const Http::Request& request, Time timeout ) {
@@ -776,14 +822,21 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 	// Prepare the response
 	Response received;
 
+	if ( request.isCancelled() ) {
+		onCancel( request );
+		endConnection();
+		return Response();
+	}
+
 	// If not connected, try to connect to the server
-	if ( !mConnection->isConnected() ) {
+	if ( mConnection && !mConnection->isConnected() ) {
 		// We need to create an HTTP Tunnel?
 		if ( isProxied() && mIsSSL && SSLSocket::isSupported() ) {
 			SSLSocket* sslSocket = reinterpret_cast<SSLSocket*>( mConnection->getSocket() );
 
 			// For an HTTP Tunnel first we need to connect to the proxy server ( without TLS )
 			if ( sslSocket->tcpConnect( mHost, mProxy.getPort(), timeout ) != Socket::Done ) {
+				endConnection();
 				return received;
 			} else {
 				mConnection->setConnected( true );
@@ -791,6 +844,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 		} else {
 			if ( mConnection->getSocket()->connect(
 					 mHost, mProxy.empty() ? mPort : mProxy.getPort(), timeout ) != Socket::Done ) {
+				endConnection();
 				return received;
 			} else {
 				mConnection->setConnected( true );
@@ -799,13 +853,13 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 
 		if ( mConnection->isConnected() &&
 			 !sendProgress( *this, request, received, Request::Connected, 0, 0 ) ) {
-			mConnection->disconnect();
+			endConnection();
 			return received;
 		}
 	}
 
 	// Connect the socket to the host
-	if ( mConnection->isConnected() ) {
+	if ( mConnection && mConnection->isConnected() ) {
 		// Create a HTTP Tunnel for SSL connections if not ready
 		if ( isProxied() && mIsSSL && !mConnection->isTunneled() ) {
 			// Create the HTTP Tunnel request
@@ -818,14 +872,14 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 			// Send the request
 			if ( sslSocket->tcpSend( tunnelStr.c_str(), tunnelStr.size(), sent ) == Socket::Done ) {
 				char buffer[PACKET_BUFFER_SIZE + 1];
-				std::size_t readed = 0;
+				std::size_t read = 0;
 
 				// Get the proxy server response
-				if ( sslSocket->tcpReceive( buffer, PACKET_BUFFER_SIZE, readed ) == Socket::Done ) {
+				if ( sslSocket->tcpReceive( buffer, PACKET_BUFFER_SIZE, read ) == Socket::Done ) {
 					// Parse the HTTP Tunnel request response
 					Response tunnelResponse;
 					std::string header;
-					header.append( buffer, readed );
+					header.append( buffer, read );
 					tunnelResponse.parse( header );
 
 					if ( tunnelResponse.getStatus() == Response::Ok ) {
@@ -885,16 +939,17 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 			Socket::Status status;
 
 			// Send it through the socket
-			if ( mConnection->getSocket()->send( requestStr.c_str(), requestStr.size() ) ==
-				 Socket::Done ) {
-				if ( !sendProgress( *this, request, received, Request::Sent, 0, 0 ) ) {
+			if ( mConnection && mConnection->getSocket()->send(
+									requestStr.c_str(), requestStr.size() ) == Socket::Done ) {
+				if ( !request.isCancelled() &&
+					 !sendProgress( *this, request, received, Request::Sent, 0, 0 ) ) {
 					request.mCancel = true;
 				}
 
 				// Wait for the server's response
 				std::size_t currentTotalBytes = 0;
 				std::size_t len = 0;
-				std::size_t readed = 0;
+				std::size_t read = 0;
 				char* eol = NULL; // end of line
 				char* bol = NULL; // beginning of line
 				char buffer[PACKET_BUFFER_SIZE + 1];
@@ -907,16 +962,16 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 				IOStreamInflate* inflateStream = NULL;
 				IOStream* bufferStream = NULL;
 
-				while ( !request.isCancelled() &&
+				while ( !request.isCancelled() && mConnection &&
 						( status = mConnection->getSocket()->receive( buffer, PACKET_BUFFER_SIZE,
-																	  readed ) ) == Socket::Done ) {
+																	  read ) ) == Socket::Done ) {
 					char* readBuffer = buffer;
 
 					// If we didn't receive the header yet, we will try to find the end of the
 					// header
 					if ( !isnheader ) {
 						// calculate combined length of unprocessed data and new data
-						len += readed;
+						len += read;
 
 						// NULL terminate buffer for string functions
 						readBuffer[len] = '\0';
@@ -941,7 +996,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 								bol += 1;
 
 								// calculate the amount of data remaining in the buffer
-								len = readed - ( bol - readBuffer );
+								len = read - ( bol - readBuffer );
 
 								// Fill the header buffer
 								headerBuffer.append( readBuffer, ( bol - readBuffer ) );
@@ -985,7 +1040,8 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 											contentLength = 0;
 									}
 
-									if ( received.getField( "connection" ) == "closed" ) {
+									if ( mConnection &&
+										 received.getField( "connection" ) == "closed" ) {
 										mConnection->setConnected( false );
 										mConnection->setTunneled( false );
 									}
@@ -1004,7 +1060,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 											URI uri( location );
 
 											// Close the connection
-											if ( !mConnection->isKeepAlive() )
+											if ( mConnection && !mConnection->isKeepAlive() )
 												mConnection->disconnect();
 
 											eeSAFE_DELETE( chunkedStream );
@@ -1033,7 +1089,8 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 										}
 									}
 
-									if ( !sendProgress( *this, request, received,
+									if ( !request.isCancelled() &&
+										 !sendProgress( *this, request, received,
 														Request::HeaderReceived, contentLength,
 														0 ) ) {
 										request.mCancel = true;
@@ -1043,9 +1100,9 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 									// of the file buffer
 									if ( len > 0 ) {
 										readBuffer = bol;
-										readed = len;
+										read = len;
 									} else {
-										readed = 0;
+										read = 0;
 									}
 
 									headerBuffer.clear();
@@ -1059,12 +1116,13 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 					}
 
 					if ( isnheader ) {
-						currentTotalBytes += readed;
+						currentTotalBytes += read;
 
-						if ( readed > 0 )
-							bufferStream->write( readBuffer, readed );
+						if ( read > 0 && !request.isCancelled() )
+							bufferStream->write( readBuffer, read );
 
-						if ( !sendProgress( *this, request, received, Request::ContentReceived,
+						if ( !request.isCancelled() &&
+							 !sendProgress( *this, request, received, Request::ContentReceived,
 											contentLength, currentTotalBytes ) ) {
 							request.mCancel = true;
 							break;
@@ -1089,25 +1147,40 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 					received.parseFields( in );
 				}
 
-				if ( status == Socket::Status::Disconnected ) {
+				if ( mConnection && status == Socket::Status::Disconnected ) {
 					mConnection->setConnected( false );
 					mConnection->setTunneled( false );
 				}
 
 				eeSAFE_DELETE( chunkedStream );
 				eeSAFE_DELETE( inflateStream );
-			} else {
+			} else if ( mConnection ) {
 				mConnection->setConnected( false );
 				mConnection->setTunneled( false );
 			}
 		}
 
+		if ( request.isCancelled() )
+			onCancel( request );
+
 		// Close the connection
-		if ( !mConnection->isKeepAlive() )
-			mConnection->disconnect();
+		endConnection();
 	}
 
 	return received;
+}
+
+void Http::endConnection() {
+	if ( mConnection && !mConnection->isKeepAlive() ) {
+		if ( mConnection->isConnected() )
+			mConnection->disconnect();
+
+		if ( mConnection ) {
+			HttpConnection* connection = mConnection;
+			eeSAFE_DELETE( connection );
+			mConnection = NULL;
+		}
+	}
 }
 
 Http::Response Http::downloadRequest( const Http::Request& request, std::string writePath,
@@ -1120,8 +1193,11 @@ void Http::setThreadPool( std::shared_ptr<ThreadPool> pool ) {
 	sGlobalThreadPool = pool;
 }
 
-Http::AsyncRequest::AsyncRequest( Http* http, const Http::AsyncResponseCallback& cb,
-								  Http::Request request, Time timeout ) :
+std::atomic<Uint64> Http::AsyncRequest::IdCounter = 1;
+
+Http::AsyncRequest::AsyncRequest( Uint64 id, Http* http, const Http::AsyncResponseCallback& cb,
+								  Http::Request request, Time timeout, bool fromLocalPool ) :
+	mId( id ),
 	mHttp( http ),
 	mCb( cb ),
 	mRequest( request ),
@@ -1129,10 +1205,13 @@ Http::AsyncRequest::AsyncRequest( Http* http, const Http::AsyncResponseCallback&
 	mRunning( true ),
 	mStreamed( false ),
 	mStreamOwned( false ),
+	mFromLocalPool( fromLocalPool ),
 	mStream( NULL ) {}
 
-Http::AsyncRequest::AsyncRequest( Http* http, const Http::AsyncResponseCallback& cb,
-								  Http::Request request, IOStream& writeTo, Time timeout ) :
+Http::AsyncRequest::AsyncRequest( Uint64 id, Http* http, const Http::AsyncResponseCallback& cb,
+								  Http::Request request, IOStream& writeTo, Time timeout,
+								  bool fromLocalPool ) :
+	mId( id ),
 	mHttp( http ),
 	mCb( cb ),
 	mRequest( request ),
@@ -1140,10 +1219,13 @@ Http::AsyncRequest::AsyncRequest( Http* http, const Http::AsyncResponseCallback&
 	mRunning( true ),
 	mStreamed( true ),
 	mStreamOwned( false ),
+	mFromLocalPool( fromLocalPool ),
 	mStream( &writeTo ) {}
 
-Http::AsyncRequest::AsyncRequest( Http* http, const Http::AsyncResponseCallback& cb,
-								  Http::Request request, std::string writePath, Time timeout ) :
+Http::AsyncRequest::AsyncRequest( Uint64 id, Http* http, const Http::AsyncResponseCallback& cb,
+								  Http::Request request, std::string writePath, Time timeout,
+								  bool fromLocalPool ) :
+	mId( id ),
 	mHttp( http ),
 	mCb( cb ),
 	mRequest( request ),
@@ -1151,6 +1233,7 @@ Http::AsyncRequest::AsyncRequest( Http* http, const Http::AsyncResponseCallback&
 	mRunning( true ),
 	mStreamed( true ),
 	mStreamOwned( true ),
+	mFromLocalPool( fromLocalPool ),
 	mStream( IOStreamFile::New( writePath, "wb" ) ) {}
 
 Http::AsyncRequest::~AsyncRequest() {
@@ -1158,41 +1241,39 @@ Http::AsyncRequest::~AsyncRequest() {
 		eeSAFE_DELETE( mStream );
 }
 
+void Http::AsyncRequest::cancel() {
+	mRequest.cancel();
+}
+
 void Http::AsyncRequest::run() {
 	Http::Response response = mStreamed ? mHttp->downloadRequest( mRequest, *mStream, mTimeout )
 										: mHttp->sendRequest( mRequest, mTimeout );
 
-	mCb( *mHttp, mRequest, response );
+	if ( !mRequest.isCancelled() )
+		mCb( *mHttp, mRequest, response );
 
 	if ( mStreamed && mStreamOwned ) {
 		eeSAFE_DELETE( mStream );
 	}
 
-	// The Async Request destroys the socket used to create the request
-	HttpConnection* connection = mHttp->mConnection;
-	eeSAFE_DELETE( connection );
-	mHttp->mConnection = NULL;
-
 	mRunning = false;
+
+	if ( mFromLocalPool ) {
+		mHttp->removeAsyncRequest( this );
+		auto me = this;
+		eeSAFE_DELETE( me );
+	}
 }
 
-void Http::removeOldThreads() {
-	std::vector<AsyncRequest*> remove;
-
-	for ( AsyncRequest* ar : mThreads ) {
-		if ( ar->mRunning )
-			continue;
-		// We need to be sure, since the state is set in the thread, this will not block the
-		// thread anyway
-		ar->wait();
-
-		eeDelete( ar );
-
-		remove.push_back( ar );
+void Http::removeAsyncRequest( AsyncRequest* req ) {
+	{
+		Lock l( mCurRequestsMutex );
+		mCurRequests.erase( req->id() );
 	}
 
-	for ( auto rem : remove ) {
-		auto found = std::find( mThreads.begin(), mThreads.end(), rem );
+	{
+		Lock l( mThreadsMutex );
+		auto found = std::find( mThreads.begin(), mThreads.end(), req );
 		if ( found != mThreads.end() )
 			mThreads.erase( found );
 	}
@@ -1255,6 +1336,16 @@ bool Http::isProxied() const {
 	return !mProxy.empty();
 }
 
+bool Http::setCancelRequest( Uint64 reqId ) {
+	Lock l( mCurRequestsMutex );
+	auto found = mCurRequests.find( reqId );
+	if ( found != mCurRequests.end() ) {
+		found->second->cancel();
+		return true;
+	}
+	return false;
+}
+
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 struct WGetAsyncRequest {
 	Http* http;
@@ -1312,8 +1403,9 @@ void emscripten_async_wget2_got_error_file( unsigned int, void* vwget, int error
 }
 #endif
 
-void Http::sendAsyncRequest( const Http::AsyncResponseCallback& cb, const Http::Request& request,
-							 Time timeout ) {
+Uint64 Http::sendAsyncRequest( const Http::AsyncResponseCallback& cb, const Http::Request& request,
+							   Time timeout ) {
+	Uint64 id = Http::AsyncRequest::IdCounter.fetch_add( 1, std::memory_order_relaxed );
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	WGetAsyncRequest* wget = new WGetAsyncRequest();
 	wget->http = this;
@@ -1324,24 +1416,40 @@ void Http::sendAsyncRequest( const Http::AsyncResponseCallback& cb, const Http::
 								 URI( request.getUri() ).getQuery().c_str(), wget, 1,
 								 emscripten_async_wget2_got_data,
 								 emscripten_async_wget2_got_error_data, NULL );
+	return id;
 #else
 	if ( sGlobalThreadPool ) {
-		sGlobalThreadPool->run( [this, cb, request, timeout] {
-			AsyncRequest asyncRequest( this, cb, request, timeout );
+		sGlobalThreadPool->run( [this, cb, request, timeout, id] {
+			AsyncRequest asyncRequest( id, this, cb, request, timeout, false );
+			{
+				Lock l( mCurRequestsMutex );
+				mCurRequests[id] = &asyncRequest;
+			}
 			asyncRequest.run();
+			{
+				Lock l( mCurRequestsMutex );
+				mCurRequests.erase( id );
+			}
 		} );
-		return;
+		return id;
 	}
-	AsyncRequest* thread = eeNew( AsyncRequest, ( this, cb, request, timeout ) );
+	AsyncRequest* thread = eeNew( AsyncRequest, ( id, this, cb, request, timeout, true ) );
+	{
+		Lock l( mCurRequestsMutex );
+		mCurRequests[id] = thread;
+	}
 	thread->launch();
-	Lock l( mThreadsMutex );
-	removeOldThreads();
-	mThreads.push_back( thread );
+	{
+		Lock l( mThreadsMutex );
+		mThreads.push_back( thread );
+	}
+	return id;
 #endif
 }
 
-void Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
-								 const Http::Request& request, IOStream& writeTo, Time timeout ) {
+Uint64 Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
+								   const Http::Request& request, IOStream& writeTo, Time timeout ) {
+	Uint64 id = Http::AsyncRequest::IdCounter.fetch_add( 1, std::memory_order_relaxed );
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	WGetAsyncRequest* wget = new WGetAsyncRequest();
 	wget->http = this;
@@ -1353,25 +1461,41 @@ void Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
 								 URI( request.getUri() ).getQuery().c_str(), wget, 1,
 								 emscripten_async_wget2_got_data,
 								 emscripten_async_wget2_got_error_data, NULL );
+	return id;
 #else
 	if ( sGlobalThreadPool ) {
-		sGlobalThreadPool->run( [this, cb, request, &writeTo, timeout] {
-			AsyncRequest asyncRequest( this, cb, request, writeTo, timeout );
+		sGlobalThreadPool->run( [this, cb, request, &writeTo, timeout, id] {
+			AsyncRequest asyncRequest( id, this, cb, request, writeTo, timeout, false );
+			{
+				Lock l( mCurRequestsMutex );
+				mCurRequests[id] = &asyncRequest;
+			}
 			asyncRequest.run();
+			{
+				Lock l( mCurRequestsMutex );
+				mCurRequests.erase( id );
+			}
 		} );
-		return;
+		return id;
 	}
-	AsyncRequest* thread = eeNew( AsyncRequest, ( this, cb, request, writeTo, timeout ) );
+	AsyncRequest* thread = eeNew( AsyncRequest, ( id, this, cb, request, writeTo, timeout, true ) );
+	{
+		Lock l( mCurRequestsMutex );
+		mCurRequests[id] = thread;
+	}
 	thread->launch();
-	Lock l( mThreadsMutex );
-	removeOldThreads();
-	mThreads.push_back( thread );
+	{
+		Lock l( mThreadsMutex );
+		mThreads.push_back( thread );
+	}
+	return id;
 #endif
 }
 
-void Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
-								 const Http::Request& request, std::string writePath,
-								 Time timeout ) {
+Uint64 Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
+								   const Http::Request& request, std::string writePath,
+								   Time timeout ) {
+	Uint64 id = Http::AsyncRequest::IdCounter.fetch_add( 1, std::memory_order_relaxed );
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	WGetAsyncRequest* wget = new WGetAsyncRequest();
 	wget->http = this;
@@ -1384,18 +1508,33 @@ void Http::downloadAsyncRequest( const Http::AsyncResponseCallback& cb,
 							NULL );
 #else
 	if ( sGlobalThreadPool ) {
-		sGlobalThreadPool->run( [this, cb, request, writePath, timeout] {
-			AsyncRequest asyncRequest( this, cb, request, writePath, timeout );
+		sGlobalThreadPool->run( [this, cb, request, writePath, timeout, id] {
+			AsyncRequest asyncRequest( id, this, cb, request, writePath, timeout, false );
+			{
+				Lock l( mCurRequestsMutex );
+				mCurRequests[id] = &asyncRequest;
+			}
 			asyncRequest.run();
+			{
+				Lock l( mCurRequestsMutex );
+				mCurRequests.erase( id );
+			}
 		} );
-		return;
+		return id;
 	}
-	AsyncRequest* thread = eeNew( AsyncRequest, ( this, cb, request, writePath, timeout ) );
+	AsyncRequest* thread =
+		eeNew( AsyncRequest, ( id, this, cb, request, writePath, timeout, true ) );
+	{
+		Lock l( mCurRequestsMutex );
+		mCurRequests[id] = thread;
+	}
 	thread->launch();
-	Lock l( mThreadsMutex );
-	removeOldThreads();
-	mThreads.push_back( thread );
+	{
+		Lock l( mThreadsMutex );
+		mThreads.push_back( thread );
+	}
 #endif
+	return id;
 }
 
 const IpAddress& Http::getHost() const {
@@ -1492,12 +1631,6 @@ Http::Pool::~Pool() {
 
 void Http::Pool::clear() {
 	Lock l( mMutex );
-	for ( auto& connection : mHttps ) {
-		Http* con = connection.second;
-
-		eeSAFE_DELETE( con );
-	}
-
 	mHttps.clear();
 }
 
@@ -1516,7 +1649,7 @@ bool Http::Pool::exists( const URI& host, const URI& proxy ) {
 	return mHttps.find( getHostHash( host, proxy ) ) != mHttps.end();
 }
 
-Http* Http::Pool::get( const URI& host, const URI& proxy ) {
+std::shared_ptr<Http> Http::Pool::get( const URI& host, const URI& proxy ) {
 	{
 		Lock l( mMutex );
 		auto hostInstance = mHttps.find( Http::Pool::getHostHash( host, proxy ) );
@@ -1526,7 +1659,8 @@ Http* Http::Pool::get( const URI& host, const URI& proxy ) {
 		}
 	}
 
-	Http* http = eeNew( Http, ( host.getHost(), host.getPort(), host.getScheme() == "https" ) );
+	auto http =
+		std::make_shared<Http>( host.getHost(), host.getPort(), host.getScheme() == "https" );
 	Lock l( mMutex );
 	mHttps[getHostHash( host, proxy )] = http;
 	return http;

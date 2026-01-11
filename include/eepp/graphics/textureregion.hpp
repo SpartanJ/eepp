@@ -94,7 +94,7 @@ class EE_API TextureRegion : public DrawableResource {
 	void setDestSize( const Sizef& destSize );
 
 	/** @return The TextureRegion default offset. The offset is added to the position passed when is
-	 * drawed. */
+	 * drew. */
 	const Vector2i& getOffset() const;
 
 	/** Set the TextureRegion offset. */

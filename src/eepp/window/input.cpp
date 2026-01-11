@@ -22,7 +22,7 @@ Input::Input( EE::Window::Window* window, JoystickManager* joystickmanager ) :
 	mTClick( 0 ),
 	mNumCallBacks( 0 ),
 	mMouseSpeed( 1.0f ),
-	mInputGrabed( false ) {
+	mInputGrabbed( false ) {
 	memset( mScancodeDown, 0, EE_KEYS_SPACE );
 	memset( mScancodeUp, 0, EE_KEYS_SPACE );
 }
@@ -87,13 +87,15 @@ void Input::processEvent( InputEvent* Event ) {
 			break;
 		}
 		case InputEvent::MouseMotion: {
-			if ( !mInputGrabed ) {
+			if ( !mInputGrabbed ) {
 				mMousePos.x = Event->motion.x;
 				mMousePos.y = Event->motion.y;
 			} else {
 				mMousePos.x += static_cast<Int32>( (Float)Event->motion.xrel * mMouseSpeed );
 				mMousePos.y += static_cast<Int32>( (Float)Event->motion.yrel * mMouseSpeed );
 			}
+
+			mRealMousePos = mMousePos;
 
 			if ( mMousePos.x >= (int)mWindow->getWidth() ) {
 				mMousePos.x = mWindow->getWidth();
@@ -308,6 +310,10 @@ Vector2i Input::getMousePos() const {
 	return mMousePos;
 }
 
+Vector2i Input::getRelativeMousePos() const {
+	return mRealMousePos;
+}
+
 void Input::setMousePos( const Vector2i& Pos ) {
 	mMousePos = Pos;
 }
@@ -506,7 +512,7 @@ const Uint32& Input::getModState() const {
 	return mInputMod;
 }
 
-static Uint32 sanitizeMod( const Uint32& mod ) {
+Uint32 Input::sanitizeMod( const Uint32& mod ) {
 	Uint32 smod = 0;
 	if ( mod & KEYMOD_CTRL )
 		smod |= KEYMOD_CTRL;

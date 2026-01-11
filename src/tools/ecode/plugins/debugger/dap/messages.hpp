@@ -54,6 +54,7 @@ static const auto DAP_THREADS = "threads"sv;
 
 // request commands
 static const auto DAP_RUN_IN_TERMINAL = "runInTerminal";
+static const auto DAP_START_DEBUGGING = "startDebugging";
 
 // event values
 static const auto DAP_OUTPUT = "output"sv;
@@ -102,5 +103,6 @@ static const auto DAP_RESULT = "result"sv;
 static const auto DAP_TARGET_ID = "targetId"sv;
 static const auto DAP_END_LINE = "endLine"sv;
 static const auto DAP_END_COLUMN = "endColumn"sv;
+static const auto DAP_TARGETS = "targets"sv;
 
 } // namespace dap

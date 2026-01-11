@@ -1,5 +1,4 @@
 ﻿#include "linterplugin.hpp"
-#include "../../stringhelper.hpp"
 #include <algorithm>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
@@ -21,12 +20,6 @@ using json = nlohmann::json;
 
 namespace ecode {
 
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-#define LINTER_THREADED 1
-#else
-#define LINTER_THREADED 0
-#endif
-
 Plugin* LinterPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( LinterPlugin, ( pluginManager, false ) );
 }
@@ -39,11 +32,7 @@ LinterPlugin::LinterPlugin( PluginManager* pluginManager, bool sync ) : Plugin( 
 	if ( sync ) {
 		load( pluginManager );
 	} else {
-#if defined( LINTER_THREADED ) && LINTER_THREADED == 1
 		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
-#else
-		load( pluginManager );
-#endif
 	}
 }
 
@@ -53,10 +42,16 @@ LinterPlugin::~LinterPlugin() {
 	mManager->unsubscribeMessages( this );
 	unsubscribeFileSystemListener();
 
-	if ( mWorkersCount != 0 ) {
-		std::unique_lock<std::mutex> lock( mWorkMutex );
-		mWorkerCondition.wait( lock, [this]() { return mWorkersCount <= 0; } );
+	{
+		std::lock_guard l( mRunningProcessesMutex );
+		for ( auto const& [doc, process] : mRunningProcesses ) {
+			if ( process )
+				process->kill();
+		}
 	}
+
+	std::unique_lock<std::mutex> lock( mWorkMutex );
+	mWorkerCondition.wait( lock, [this]() { return mWorkersCount <= 0; } );
 
 	for ( const auto& editor : mEditors ) {
 		for ( auto& kb : mKeyBindings ) {
@@ -482,9 +477,10 @@ PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notificat
 		const auto& matches = foundLine->second;
 
 		for ( const auto& match : matches ) {
-			if ( pos.column() >= match.range.start().column() &&
-				 pos.column() <= match.range.end().column() ) {
-				PluginInmediateResponse msg;
+			if ( ( pos.column() >= match.range.start().column() &&
+				   pos.column() <= match.range.end().column() ) ||
+				 matches.size() == 1 ) {
+				PluginImmediateResponse msg;
 				msg.type = PluginMessageType::GetErrorOrWarning;
 				json rj;
 				rj["text"] = match.text;
@@ -526,7 +522,7 @@ PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notificat
 		for ( const auto& match : matches ) {
 			if ( pos.column() >= match.range.start().column() &&
 				 pos.column() <= match.range.end().column() ) {
-				PluginInmediateResponse msg;
+				PluginImmediateResponse msg;
 				msg.type = PluginMessageType::GetDiagnostics;
 				json rj;
 				rj["diagnostics"] = json::array( { toJson( match.diagnostic ) } );
@@ -542,25 +538,26 @@ PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notificat
 		 notification.format != PluginMessageFormat::Diagnostics )
 		return PluginRequestHandle::empty();
 	const auto& diags = notification.asDiagnostics();
-	TextDocument* doc = getDocumentFromURI( diags.uri );
-	if ( doc == nullptr ||
-		 mLSPLanguagesDisabled.find( String::toLower( doc->getSyntaxDefinition().getLSPName() ) ) !=
-			 mLSPLanguagesDisabled.end() )
-		return PluginRequestHandle::empty();
-
 	std::map<Int64, std::vector<LinterMatch>> matches;
+	TextDocument* doc = getDocumentFromURI( diags.uri );
+	{
+		Lock l( mDocMutex );
+		if ( doc == nullptr || mLSPLanguagesDisabled.find(
+								   String::toLower( doc->getSyntaxDefinition().getLSPName() ) ) !=
+								   mLSPLanguagesDisabled.end() )
+			return PluginRequestHandle::empty();
 
-	for ( const auto& diag : diags.diagnostics ) {
-		LinterMatch match;
-		match.range = diag.range;
-		match.text = diag.message;
-		match.type = getLinterTypeFromSeverity( diag.severity );
-		match.lineCache = doc->line( match.range.start().line() ).getHash();
-		match.origin = MatchOrigin::Diagnostics;
-		match.diagnostic = std::move( diag );
-		matches[match.range.start().line()].emplace_back( std::move( match ) );
+		for ( const auto& diag : diags.diagnostics ) {
+			LinterMatch match;
+			match.range = diag.range;
+			match.text = diag.message;
+			match.type = getLinterTypeFromSeverity( diag.severity );
+			match.lineHash = doc->getLineHash( match.range.start().line() );
+			match.origin = MatchOrigin::Diagnostics;
+			match.diagnostic = std::move( diag );
+			matches[match.range.start().line()].emplace_back( std::move( match ) );
+		}
 	}
-
 	setMatches( doc, MatchOrigin::Diagnostics, matches );
 	return PluginRequestHandle::empty();
 }
@@ -616,41 +613,38 @@ void LinterPlugin::onRegister( UICodeEditor* editor ) {
 
 	std::vector<Uint32> listeners;
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* event ) {
-			Lock l( mDocMutex );
-			const DocEvent* docEvent = static_cast<const DocEvent*>( event );
-			mDocs.insert( docEvent->getDoc() );
-			mEditorDocs[editor] = docEvent->getDoc();
-			setDocDirty( docEvent->getDoc() );
-		} ) );
+	listeners.push_back( editor->on( Event::OnDocumentLoaded, [this, editor]( const Event* event ) {
+		Lock l( mDocMutex );
+		const DocEvent* docEvent = static_cast<const DocEvent*>( event );
+		mDocs.insert( docEvent->getDoc() );
+		mEditorDocs[editor] = docEvent->getDoc();
+		setDocDirty( docEvent->getDoc() );
+	} ) );
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentClosed, [this]( const Event* event ) {
-			Lock l( mDocMutex );
-			const DocEvent* docEvent = static_cast<const DocEvent*>( event );
-			TextDocument* doc = docEvent->getDoc();
-			mDocs.erase( doc );
-			mDirtyDoc.erase( doc );
-			Lock matchesLock( mMatchesMutex );
-			mMatches.erase( doc );
-		} ) );
+	listeners.push_back( editor->on( Event::OnDocumentClosed, [this]( const Event* event ) {
+		Lock l( mDocMutex );
+		const DocEvent* docEvent = static_cast<const DocEvent*>( event );
+		TextDocument* doc = docEvent->getDoc();
+		mDocs.erase( doc );
+		mDirtyDoc.erase( doc );
+		Lock matchesLock( mMatchesMutex );
+		mMatches.erase( doc );
+	} ) );
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* ) {
-			TextDocument* oldDoc = mEditorDocs[editor];
-			TextDocument* newDoc = editor->getDocumentRef().get();
-			Lock l( mDocMutex );
-			mDocs.erase( oldDoc );
-			mDirtyDoc.erase( oldDoc );
-			mEditorDocs[editor] = newDoc;
-			mDocs.insert( newDoc );
-			Lock matchesLock( mMatchesMutex );
-			mMatches.erase( oldDoc );
-		} ) );
+	listeners.push_back( editor->on( Event::OnDocumentChanged, [this, editor]( const Event* ) {
+		TextDocument* oldDoc = mEditorDocs[editor];
+		TextDocument* newDoc = editor->getDocumentRef().get();
+		Lock l( mDocMutex );
+		mDocs.erase( oldDoc );
+		mDirtyDoc.erase( oldDoc );
+		mEditorDocs[editor] = newDoc;
+		mDocs.insert( newDoc );
+		Lock matchesLock( mMatchesMutex );
+		mMatches.erase( oldDoc );
+	} ) );
 
-	listeners.push_back( editor->addEventListener(
-		Event::OnTextChanged, [this, editor]( const Event* ) { setDocDirty( editor ); } ) );
+	listeners.push_back( editor->on( Event::OnTextChanged,
+									 [this, editor]( const Event* ) { setDocDirty( editor ); } ) );
 
 	for ( auto& kb : mKeyBindings ) {
 		if ( !kb.second.empty() )
@@ -714,11 +708,7 @@ void LinterPlugin::update( UICodeEditor* editor ) {
 	auto it = mDirtyDoc.find( doc.get() );
 	if ( it != mDirtyDoc.end() && it->second->getElapsedTime() >= mDelayTime ) {
 		mDirtyDoc.erase( doc.get() );
-#if LINTER_THREADED
 		mThreadPool->run( [this, doc] { lintDoc( doc ); } );
-#else
-		lintDoc( doc );
-#endif
 	}
 }
 
@@ -762,6 +752,9 @@ Linter LinterPlugin::getLinterForLang( const std::string& lang ) {
 }
 
 void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
+	if ( mShuttingDown )
+		return;
+
 	if ( !mLanguagesDisabled.empty() &&
 		 mLanguagesDisabled.find( doc->getSyntaxDefinition().getLSPName() ) !=
 			 mLanguagesDisabled.end() )
@@ -779,7 +772,8 @@ void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
 			}
 			mWorkerCondition.notify_all();
 		} );
-	if ( !mReady )
+
+	if ( !mReady || mShuttingDown )
 		return;
 	auto linter = supportsLinter( doc );
 	if ( linter.command.empty() )
@@ -798,6 +792,7 @@ void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
 		return;
 
 	IOStreamString fileString;
+	mClock.restart();
 	if ( doc->isDirty() || !doc->hasFilepath() ) {
 		std::string tmpPath;
 		if ( !doc->hasFilepath() ) {
@@ -828,7 +823,6 @@ void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
 
 void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& linter,
 							  const std::string& path ) {
-	Clock clock;
 	std::string cmd( linter.command );
 	std::string pathstr( "\"" + path + "\"" );
 	String::replaceAll( cmd, "$FILENAME", pathstr );
@@ -839,35 +833,40 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 		mNativeLinters[cmd]( doc, path );
 		return;
 	}
-	Process process;
+	std::unique_ptr<Process> process = std::make_unique<Process>();
 	TextDocument* docPtr = doc.get();
 	ScopedOp op(
 		[this, &process, &docPtr] {
 			std::lock_guard l( mRunningProcessesMutex );
 			auto found = mRunningProcesses.find( docPtr );
-			if ( found != mRunningProcesses.end() )
+			if ( found != mRunningProcesses.end() ) {
 				found->second->kill();
-			mRunningProcesses[docPtr] = &process;
+				eeASSERT( found->second != process.get() );
+			}
+			mRunningProcesses[docPtr] = process.get();
 		},
 		[this, &docPtr] {
 			std::lock_guard l( mRunningProcessesMutex );
 			mRunningProcesses.erase( docPtr );
 		} );
-	;
 
-	if ( process.create( cmd, Process::getDefaultOptions() | Process::CombinedStdoutStderr, {},
-						 mManager->getWorkspaceFolder() ) ) {
+	if ( process->create( cmd, Process::getDefaultOptions() | Process::CombinedStdoutStderr, {},
+						  mManager->getWorkspaceFolder() ) ) {
 		int returnCode;
 		std::string data;
-		process.readAllStdOut( data, Seconds( 30 ) );
+		process->readAllStdOut( data, Seconds( 30 ) );
 
 		if ( mShuttingDown ) {
-			process.kill();
+			process->kill();
 			return;
 		}
 
-		process.join( &returnCode );
-		process.destroy();
+		if ( process->isAlive() ) {
+			process->join( &returnCode );
+			process->destroy();
+		} else if ( process->killed() ) {
+			return;
+		}
 
 		if ( linter.hasNoErrorsExitCode && linter.noErrorsExitCode == returnCode ) {
 			Lock matchesLock( mMatchesMutex );
@@ -881,7 +880,7 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 						returnCode ) == linter.expectedExitCodes.end() )
 			return;
 
-		// Log::info( "Linter result:\n%s", data.c_str() );
+		// Log::debug( "Linter result:\n%s", data.c_str() );
 
 		std::map<Int64, std::vector<LinterMatch>> matches;
 		size_t totalMatches = 0;
@@ -926,7 +925,7 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 					linterMatch.range.setStart(
 						{ line > 0 ? line - 1 : 0, col > 0 ? col - 1 : 0 } );
 
-					const String& text = doc->line( linterMatch.range.start().line() ).getText();
+					String text = doc->getLineText( linterMatch.range.start().line() );
 					size_t minCol =
 						text.find_first_not_of( " \t\f\v\n\r", linterMatch.range.start().column() );
 					if ( minCol == String::InvalidPos )
@@ -947,7 +946,7 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 
 					linterMatch.range.setEnd( endPos );
 					linterMatch.range = linterMatch.range.normalized();
-					linterMatch.lineCache = doc->line( linterMatch.range.start().line() ).getHash();
+					linterMatch.lineHash = doc->getLineHash( linterMatch.range.start().line() );
 					bool skip = false;
 
 					if ( linter.deduplicate && matches.find( line - 1 ) != matches.end() ) {
@@ -986,9 +985,10 @@ void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& l
 
 		setMatches( doc.get(), MatchOrigin::Linter, matches );
 
-		Log::info( "LinterPlugin::runLinter for %s took %.2fms. Found: %d matches. Errors: %d, "
+		Log::info( "LinterPlugin::runLinter with binary %s for %s took %.2fms. Found: %d matches. "
+				   "Errors: %d, "
 				   "Warnings: %d, Notices: %d.",
-				   path.c_str(), clock.getElapsedTime().asMilliseconds(), totalMatches, totalErrors,
+				   cmd, path, mClock.getElapsedTime().asMilliseconds(), totalMatches, totalErrors,
 				   totalWarns, totalNotice );
 	}
 }
@@ -1042,7 +1042,7 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		if ( isDuplicate )
 			continue;
 
-		if ( match.lineCache != doc->line( index ).getHash() )
+		if ( match.lineHash != doc->getLineHash( index ) )
 			return;
 
 		Text line( "", editor->getFont(), editor->getFontSize() );
@@ -1066,17 +1066,40 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 			std::string str( strSize, '~' );
 			String string( str );
 			line.setString( string );
-			Rectf box( pos - editor->getScreenPos(),
-					   { editor->getTextWidth( string ), lineHeight } );
+			line.setTextHints( TextHints::AllAscii );
+			Rectf box(
+				pos - editor->getScreenPos(),
+				{ editor->getTextWidth( string, std::optional<Float>{}, TextHints::AllAscii ),
+				  lineHeight } );
 			match.box[editor] = box;
-			line.draw( pos.x, pos.y + lineHeight * 0.5f );
+			line.draw( pos.x, eeceil( pos.y + lineHeight * 0.5f + editor->getLineOffset() ) );
 		}
 
-		Float rLineWidth = 0;
+		if ( match.range.start().line() != match.range.end().line() )
+			continue;
 
-		if ( !quickFixRendered && doc->getSelection().start().line() == index ) {
+		bool wrapped = editor->getDocumentView().isWrappedLine( index );
+		auto info = editor->getDocumentView().getVisibleLineRange( match.range.start() );
+
+		Float rLineWidth = 0;
+		bool willRenderQuickFix = !quickFixRendered && doc->getSelection().start().line() == index;
+		bool willRenderErrorLens = mErrorLens && i == 0;
+
+		if ( willRenderQuickFix || willRenderErrorLens ) {
+			Float lw =
+				wrapped && info.range.start().column() <
+							   static_cast<Int64>( editor->getDocument().getLineLength( index ) )
+					? Text::getTextWidth(
+						  editor->getDocument().line( index ).getText().view().substr(
+							  info.range.start().column(),
+							  info.range.end().column() - info.range.start().column() ),
+						  line.getFontStyleConfig() )
+					: editor->getLineWidth( index );
+			rLineWidth = lw + editor->getGlyphWidth();
+		}
+
+		if ( willRenderQuickFix ) {
 			if ( !match.diagnostic.codeActions.empty() ) {
-				rLineWidth = editor->getLineWidth( index ) + editor->getGlyphWidth();
 				Color wcolor(
 					editor->getColorScheme().getEditorSyntaxStyle( "warning"_sst ).color );
 				if ( nullptr == mLightbulbIcon ) {
@@ -1101,12 +1124,11 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 			}
 		}
 
-		if ( !mErrorLens || i != 0 )
+		if ( !willRenderErrorLens || rects.empty() )
 			continue;
 
-		if ( rLineWidth == 0 )
-			rLineWidth = editor->getLineWidth( index );
-		Float lineWidth = rLineWidth + sepSpace;
+		Float vpPadding = wrapped ? editor->getDocumentView().getLinePadding( index ) : 0;
+		Float lineWidth = rLineWidth + vpPadding + sepSpace;
 		Float realSpace = editor->getViewportWidth();
 		Float spaceWidth = realSpace - lineWidth;
 		if ( spaceWidth < sepSpace )
@@ -1117,14 +1139,26 @@ void LinterPlugin::drawAfterLineText( UICodeEditor* editor, const Int64& index, 
 		line.setString( nlPos != std::string::npos ? match.text.substr( 0, nlPos ) : match.text );
 		Float txtWidth = line.getTextWidth();
 		Float distWidth = realSpace - txtWidth;
-		if ( txtWidth > spaceWidth )
+		if ( txtWidth > spaceWidth ) {
 			distWidth = lineWidth;
+			std::size_t ch = Text::findLastCharPosWithinLength( line.getString(), spaceWidth,
+																line.getFontStyleConfig() );
+			if ( ch > 0 && ch < line.getString().size() ) {
+				auto cutString( line.getString().substr( 0, ch ) );
+				cutString[cutString.size() - 1] = 0x2026 /*'…'*/;
+				line.setString( cutString );
+				txtWidth = spaceWidth;
+			}
+		}
 
 		Color blendedColor( Color( color, 50 ) );
-		p.drawRectangle( Rectf( { position.x + distWidth, position.y }, { txtWidth, lineHeight } ),
-						 Color::Transparent, Color::Transparent, blendedColor, blendedColor );
+		Vector2f pos{ position.x + distWidth, rects[0].getPosition().y };
+		p.drawRectangle( Rectf( pos, { txtWidth, lineHeight } ), Color::Transparent,
+						 Color::Transparent, blendedColor, blendedColor );
 		line.setColor( Color( color, 180 ) );
-		line.draw( position.x + distWidth, position.y );
+		line.draw( pos.x, pos.y );
+		Rectf box( pos - editor->getScreenPos(), { txtWidth, lineHeight } );
+		match.lensBox[editor] = box;
 	}
 }
 
@@ -1142,7 +1176,7 @@ void LinterPlugin::minimapDrawBefore( UICodeEditor* editor, const DocumentLineRa
 	for ( const auto& matches : matchIt->second ) {
 		for ( const auto& match : matches.second ) {
 			if ( match.range.intersectsLineRange( docLineRange ) ) {
-				if ( match.lineCache != doc->line( match.range.start().line() ).getHash() )
+				if ( match.lineHash != doc->getLineHash( match.range.start().line() ) )
 					return;
 				Color col( editor->getColorScheme()
 							   .getEditorSyntaxStyle( getMatchString( match.type ) )
@@ -1172,11 +1206,15 @@ void LinterPlugin::goToNextError( UICodeEditor* editor ) {
 
 	Lock l( mMatchesMutex );
 	auto fMatch = mMatches.find( doc );
-	if ( fMatch == mMatches.end() )
+	if ( fMatch == mMatches.end() ) {
+		doc->execute( "spellchecker-go-to-next-error", editor );
 		return;
+	}
 	const auto& matches = fMatch->second;
-	if ( matches.empty() )
+	if ( matches.empty() ) {
+		doc->execute( "spellchecker-go-to-next-error", editor );
 		return;
+	}
 
 	const LinterMatch* matched = nullptr;
 	for ( const auto& match : matches ) {
@@ -1188,6 +1226,9 @@ void LinterPlugin::goToNextError( UICodeEditor* editor ) {
 						break;
 					}
 				}
+
+				if ( matched )
+					break;
 			} else {
 				matched = &match.second.front();
 				break;
@@ -1198,6 +1239,7 @@ void LinterPlugin::goToNextError( UICodeEditor* editor ) {
 	if ( matched != nullptr ) {
 		editor->goToLine( matched->range.start() );
 		mManager->getSplitter()->addCurrentPositionToNavigationHistory();
+		return;
 	} else {
 		if ( mGoToIgnoreWarnings ) {
 			for ( const auto& m : matches ) {
@@ -1206,7 +1248,7 @@ void LinterPlugin::goToNextError( UICodeEditor* editor ) {
 						if ( lm.type == LinterType::Error ) {
 							editor->goToLine( lm.range.start() );
 							mManager->getSplitter()->addCurrentPositionToNavigationHistory();
-							break;
+							return;
 						}
 					}
 				} else {
@@ -1216,7 +1258,14 @@ void LinterPlugin::goToNextError( UICodeEditor* editor ) {
 		} else if ( matches.begin()->second.front().range.start().line() != pos.line() ) {
 			editor->goToLine( matches.begin()->second.front().range.start() );
 			mManager->getSplitter()->addCurrentPositionToNavigationHistory();
+			return;
 		}
+	}
+
+	if ( mGoToIgnoreWarnings ) {
+		mGoToIgnoreWarnings = false;
+		goToNextError( editor );
+		mGoToIgnoreWarnings = true;
 	}
 }
 
@@ -1228,11 +1277,15 @@ void LinterPlugin::goToPrevError( UICodeEditor* editor ) {
 
 	Lock l( mMatchesMutex );
 	auto fMatch = mMatches.find( doc );
-	if ( fMatch == mMatches.end() )
+	if ( fMatch == mMatches.end() ) {
+		doc->execute( "spellchecker-go-to-previous-error", editor );
 		return;
+	}
 	auto& matches = fMatch->second;
-	if ( matches.empty() )
+	if ( matches.empty() ) {
+		doc->execute( "spellchecker-go-to-previous-error", editor );
 		return;
+	}
 
 	const LinterMatch* matched = nullptr;
 	for ( auto match = matches.rbegin(); match != matches.rend(); ++match ) {
@@ -1244,6 +1297,9 @@ void LinterPlugin::goToPrevError( UICodeEditor* editor ) {
 						break;
 					}
 				}
+
+				if ( matched )
+					break;
 			} else {
 				matched = &match->second.front();
 				break;
@@ -1254,6 +1310,7 @@ void LinterPlugin::goToPrevError( UICodeEditor* editor ) {
 	if ( matched != nullptr ) {
 		editor->goToLine( matched->range.start() );
 		mManager->getSplitter()->addCurrentPositionToNavigationHistory();
+		return;
 	} else {
 		if ( mGoToIgnoreWarnings ) {
 			for ( auto m = matches.rbegin(); m != matches.rend(); ++m ) {
@@ -1262,7 +1319,7 @@ void LinterPlugin::goToPrevError( UICodeEditor* editor ) {
 						if ( lm.type == LinterType::Error ) {
 							editor->goToLine( lm.range.start() );
 							mManager->getSplitter()->addCurrentPositionToNavigationHistory();
-							break;
+							return;
 						}
 					}
 				} else {
@@ -1272,7 +1329,14 @@ void LinterPlugin::goToPrevError( UICodeEditor* editor ) {
 		} else if ( matches.rbegin()->second.front().range.start().line() != pos.line() ) {
 			editor->goToLine( matches.rbegin()->second.front().range.start() );
 			mManager->getSplitter()->addCurrentPositionToNavigationHistory();
+			return;
 		}
+	}
+
+	if ( mGoToIgnoreWarnings ) {
+		mGoToIgnoreWarnings = false;
+		goToPrevError( editor );
+		mGoToIgnoreWarnings = true;
 	}
 }
 
@@ -1311,7 +1375,8 @@ bool LinterPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& pos, const
 		if ( matchIt != it->second.end() ) {
 			auto& matches = matchIt->second;
 			for ( auto& match : matches ) {
-				if ( match.box[editor].contains( localPos ) ) {
+				if ( match.box[editor].contains( localPos ) ||
+					 match.lensBox[editor].contains( localPos ) ) {
 					if ( match.text.empty() )
 						return false;
 					mHoveringMatch = true;
@@ -1390,7 +1455,8 @@ bool LinterPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* menu,
 
 	auto& matches = matchIt->second;
 	for ( auto& match : matches ) {
-		if ( match.box[editor].contains( localPos ) ) {
+		if ( match.box[editor].contains( localPos ) ||
+			 match.lensBox[editor].contains( localPos ) ) {
 			menu->addSeparator();
 			menu->add( editor->i18n( "linter_copy_error_message", "Copy Error Message" ),
 					   mManager->getUISceneNode()->findIcon( "copy" )->getSize(
@@ -1425,7 +1491,7 @@ void LinterPlugin::registerNativeLinters() {
 			std::string file;
 			FileSystem::fileGet( path, file );
 			std::string_view filesv{ file };
-			Int64 line = StringHelper::countLines( filesv.substr( 0, result.offset ) );
+			Int64 line = String::countLines( filesv.substr( 0, result.offset ) );
 			Int64 offset = 0;
 			auto lastNL = filesv.substr( 0, result.offset ).find_last_of( '\n' );
 			if ( lastNL != std::string_view::npos )
@@ -1436,7 +1502,7 @@ void LinterPlugin::registerNativeLinters() {
 							doc->previousWordBoundary( match.range.start(), false ) };
 			match.text = result.description();
 			match.type = getLinterTypeFromSeverity( LSPDiagnosticSeverity::Error );
-			match.lineCache = doc->line( match.range.start().line() ).getHash();
+			match.lineHash = doc->getLineHash( match.range.start().line() );
 			match.origin = MatchOrigin::Linter;
 			matches[line] = { match };
 		}

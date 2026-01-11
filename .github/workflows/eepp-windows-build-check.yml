@@ -23,17 +23,29 @@ jobs:
     - name: Install dependencies
       shell: powershell
       run: |
-        Invoke-WebRequest -Uri "https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-windows.zip" -OutFile "premake-5.0.0-beta2-windows.zip"
-        Expand-Archive -DestinationPath . -Path premake-5.0.0-beta2-windows.zip
+        Invoke-WebRequest -Uri "https://github.com/premake/premake-core/releases/download/v5.0.0-beta6/premake-5.0.0-beta6-windows.zip" -OutFile "premake-5.0.0-beta6-windows.zip"
+        Expand-Archive -DestinationPath . -Path premake-5.0.0-beta6-windows.zip
     - name: Create project
       shell: powershell
       run: |
-        ./premake5.exe --windows-vc-build --with-text-shaper --disable-static-build vs2022
+        ./premake5.exe --windows-vc-build --disable-static-build vs2022
     - name: Build
       shell: cmd
       run: |
         "%MSBUILD_PATH%\MSBuild.exe" .\make\windows\eepp.sln -m /p:Platform="x64" /p:Configuration="release"
+    - name: Install Mesa for software rendering
+      uses: f3d-app/install-mesa-windows-action@v1
+      with:
+        path: ${{ github.workspace }}/bin/unit_tests
     - name: Unit Tests
       shell: cmd
+      env:
+        GALLIUM_DRIVER: llvmpipe
       run: |
         bin\unit_tests\eepp-unit_tests.exe
+    - name: Upload artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-test-output
+        path: bin\unit_tests\output\*

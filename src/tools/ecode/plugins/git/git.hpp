@@ -229,7 +229,11 @@ class Git {
 		int64_t ahead{ 0 };
 		int64_t behind{ 0 };
 
+		bool gone{ false };
+
 		const char* typeStr() const { return refTypeToString( type ); }
+
+		bool isEmpty() const { return name.empty(); }
 	};
 
 	enum DiffMode { DiffHead, DiffStaged };
@@ -275,7 +279,7 @@ class Git {
 	Result mergeBranch( const std::string& branch, bool fastForward = false,
 						const std::string& projectDir = "" );
 
-	Result commit( const std::string& commitMsg, bool ammend, bool byPassCommitHook,
+	Result commit( const std::string& commitMsg, bool amend, bool byPassCommitHook,
 				   const std::string& projectDir = "" );
 
 	Result fetch( const std::string& projectDir = "" );
@@ -345,9 +349,9 @@ class Git {
 
 	GitStatusReport statusFromShortStatusStr( const std::string_view& statusStr );
 
-	void setLogLevel( LogLevel logLevel ) { mLogLevel = logLevel; }
+	void setSilent( bool set ) { mSilent = set; }
 
-	LogLevel getLogLevel() const { return mLogLevel; }
+	bool isSilent() const { return mSilent; }
 
 	Result stashPush( std::vector<std::string> files, const std::string& name, bool keepIndex,
 					  const std::string& projectDir = "" );
@@ -362,9 +366,9 @@ class Git {
 	std::string mProjectPath;
 	std::string mGitFolder;
 	std::vector<std::string> mSubModules;
-	LogLevel mLogLevel{ LogLevel::Error };
 	Mutex mSubModulesMutex;
 	bool mSubModulesUpdated{ false };
+	bool mSilent{ false };
 };
 
 } // namespace ecode

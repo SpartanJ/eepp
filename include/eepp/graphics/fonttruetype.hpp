@@ -31,20 +31,19 @@ class EE_API FontTrueType : public Font {
 
 	const Font::Info& getInfo() const;
 
-	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
-						   Float outlineThickness = 0, Float maxWidth = 0 ) const;
+	Glyph getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
+					Float outlineThickness = 0 ) const;
 
-	const Glyph& getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold, bool italic,
-								  Float outlineThickness = 0 ) const;
+	Glyph getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold, bool italic,
+						   Float outlineThickness = 0 ) const;
 
 	GlyphDrawable* getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
 									 bool bold = false, bool italic = false,
-									 Float outlineThickness = 0, const Float& maxWidth = 0 ) const;
+									 Float outlineThickness = 0 ) const;
 
 	GlyphDrawable* getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex, unsigned int characterSize,
 												   bool bold = false, bool italic = false,
-												   Float outlineThickness = 0,
-												   const Float& maxWidth = 0 ) const;
+												   Float outlineThickness = 0 ) const;
 
 	Float getKerning( Uint32 first, Uint32 second, unsigned int characterSize, bool bold,
 					  bool italic, Float outlineThickness = 0 ) const;
@@ -78,7 +77,16 @@ class EE_API FontTrueType : public Font {
 
 	bool isColorEmojiFont() const;
 
+	bool hasSvgGlyphs() const;
+
+	bool hasColrGlyphs() const;
+
+	/** @return True if the font identifies itself as a monospace font and currently does not hold
+	 * any non-monospaced glyph (from a fallback font) */
 	bool isMonospace() const;
+
+	/** @return True if the font identifies itself as a monospace font */
+	bool isIdentifiedAsMonospace() const;
 
 	bool isScalable() const;
 
@@ -146,8 +154,11 @@ class EE_API FontTrueType : public Font {
 
 	void clearCache();
 
+	Uint32 getGlyphIndex( const Uint32& codePoint ) const;
+
   protected:
 	friend class Text;
+	friend class TextLayout;
 
 	explicit FontTrueType( const std::string& FontName );
 
@@ -164,35 +175,35 @@ class EE_API FontTrueType : public Font {
 	typedef UnorderedMap<Uint64, GlyphDrawable*> GlyphDrawableTable;
 
 	struct Page {
-		explicit Page( const Uint32 fontInternalId, const std::string& pageName );
+		explicit Page( const Uint32 fontInternalId, const std::string& pageName,
+					   const FontTrueType* font );
 
 		~Page();
 
 		GlyphTable glyphs; ///< Table mapping code points to their corresponding glyph
 		GlyphDrawableTable
-			drawables;		  ///> Table mapping code points to their corresponding glyph drawables.
-		Texture* texture;	  ///< Texture containing the pixels of the glyphs
-		unsigned int nextRow; ///< Y position of the next new row in the texture
+			drawables;	  ///> Table mapping code points to their corresponding glyph drawables.
+		Texture* texture; ///< Texture containing the pixels of the glyphs
 		std::vector<Row> rows; ///< List containing the position of all the existing rows
-		Uint32 fontInternalId{ 0 };
+		Uint32 fontInternalId{ 0 }; // The font internal id
+		unsigned int nextRow; ///< Y position of the next new row in the texture
+		const FontTrueType* font{ nullptr };
 	};
 
 	void cleanup();
 
-	const Glyph& getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold, bool italic,
-								  Float outlineThickness, Page& page, const Float& maxWidth ) const;
+	Glyph getGlyphByIndex( Uint32 index, unsigned int characterSize, bool bold, bool italic,
+						   Float outlineThickness, Page& page ) const;
 
-	const Glyph& getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
-						   Float outlineThickness, Page& page, const Float& maxWidth ) const;
+	Glyph getGlyph( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
+					Float outlineThickness, Page& page ) const;
 
 	GlyphDrawable* getGlyphDrawableFromGlyphIndex( Uint32 glyphIndex, unsigned int characterSize,
 												   bool bold, bool italic, Float outlineThickness,
-												   Page& page, const Float& maxWidth = 0 ) const;
-
-	Uint32 getGlyphIndex( const Uint32& codePoint ) const;
+												   Page& page ) const;
 
 	Glyph loadGlyphByIndex( Uint32 codePoint, unsigned int characterSize, bool bold, bool italic,
-							Float outlineThickness, Page& page, const Float& maxWidth = 0.f ) const;
+							Float outlineThickness, Page& page ) const;
 
 	Rect findGlyphRect( Page& page, unsigned int width, unsigned int height ) const;
 
@@ -216,9 +227,12 @@ class EE_API FontTrueType : public Font {
 	mutable PageTable mPages; ///< Table containing the glyphs pages by character size
 	mutable std::vector<Uint8>
 		mPixelBuffer; ///< Pixel buffer holding a glyph's pixels before being written to the texture
-	bool mBoldAdvanceSameAsRegular;
+	bool mBoldAdvanceSameAsRegular{ false };
 	bool mIsColorEmojiFont{ false };
 	bool mIsEmojiFont{ false };
+	bool mHasSvgGlyphs{ false };
+	bool mHasColrGlyphs{ false };
+	bool mIsBitmapOnly{ false };
 	mutable bool mIsMonospace{ false };
 	mutable bool mIsMonospaceComplete{ false };
 	mutable bool mUsingFallback{ false };
@@ -239,6 +253,8 @@ class EE_API FontTrueType : public Font {
 	Uint32 mFontBoldCb{ 0 };
 	Uint32 mFontItalicCb{ 0 };
 	Uint32 mFontBoldItalicCb{ 0 };
+
+	Float getGlyphTopOffset( unsigned int characterSize ) const;
 
 	void updateFontInternalId();
 

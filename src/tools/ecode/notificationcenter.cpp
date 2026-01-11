@@ -8,8 +8,15 @@ using namespace EE::Scene;
 
 namespace ecode {
 
+NotificationCenter* sInstance = nullptr;
+
+NotificationCenter* NotificationCenter::instance() {
+	return sInstance;
+}
+
 NotificationCenter::NotificationCenter( UILayout* layout, PluginManager* pluginManager ) :
 	mLayout( layout ), mPluginManager( pluginManager ) {
+	sInstance = this;
 	mPluginManager->subscribeMessages(
 		"notificationcenter", [this]( const PluginMessage& msg ) -> PluginRequestHandle {
 			if ( !msg.isBroadcast() )
@@ -45,6 +52,7 @@ void NotificationCenter::addNotification( const String& text, const Time& delay,
 		tv->setText( text );
 		tv->addClass( "notification" );
 		tv->setTextSelection( allowCopy );
+		mLayout->toFront();
 		Action* sequence = Actions::Sequence::New(
 			{ Actions::FadeIn::New( Seconds( 0.125 ) ), Actions::Delay::New( delay ),
 			  Actions::FadeOut::New( Seconds( 0.125 ) ), Actions::Close::New() } );
@@ -81,6 +89,7 @@ void NotificationCenter::addShowRequest( const String& uri, const String& action
 		Action* sequence = Actions::Sequence::New(
 			{ Actions::FadeIn::New( Seconds( 0.125 ) ), Actions::Delay::New( delay ),
 			  Actions::FadeOut::New( Seconds( 0.125 ) ), Actions::Close::New() } );
+		mLayout->toFront();
 		lay->runAction( sequence );
 	};
 
@@ -114,14 +123,14 @@ void NotificationCenter::addInteractiveNotification( String text, String actionT
 		} );
 		UIPushButton* pb = lay->findByType( UI_TYPE_PUSHBUTTON )->asType<UIPushButton>();
 		pb->setText( actionText );
-		pb->onClick(
-			[actionText, onInteraction = std::move( onInteraction )]( const MouseEvent* event ) {
-				if ( onInteraction )
-					onInteraction();
-			} );
+		pb->onClick( [actionText, onInteraction = std::move( onInteraction )]( const MouseEvent* ) {
+			if ( onInteraction )
+				onInteraction();
+		} );
 		Action* sequence = Actions::Sequence::New(
 			{ Actions::FadeIn::New( Seconds( 0.125 ) ), Actions::Delay::New( delay ),
 			  Actions::FadeOut::New( Seconds( 0.125 ) ), Actions::Close::New() } );
+		mLayout->toFront();
 		lay->runAction( sequence );
 	};
 

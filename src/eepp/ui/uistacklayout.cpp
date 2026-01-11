@@ -14,7 +14,7 @@ UIStackLayout* UIStackLayout::New() {
 UIStackLayout::UIStackLayout() : UIStackLayout( "stacklayout" ) {}
 
 UIStackLayout::UIStackLayout( const std::string& tag ) : UILayout( tag ) {
-	mFlags |= UI_OWNS_CHILDS_POSITION;
+	mFlags |= UI_OWNS_CHILDREN_POSITION;
 	setClipType( ClipType::ContentBox );
 	setGravity( UI_HALIGN_LEFT | UI_VALIGN_TOP );
 	listenParent();
@@ -32,7 +32,7 @@ bool UIStackLayout::isType( const Uint32& type ) const {
 	return UIStackLayout::getType() == type ? true : UILayout::isType( type );
 }
 
-void UIStackLayout::applySizePolicyOnChilds() {
+void UIStackLayout::applySizePolicyOnChildren() {
 	Node* child = mChild;
 
 	while ( NULL != child ) {
@@ -119,16 +119,15 @@ void UIStackLayout::listenParent() {
 	clearListeners();
 
 	mParentRef = getParent();
-	mParentSizeChangeCb =
-		mParentRef->addEventListener( Event::OnSizeChange, [this]( const Event* ) {
-			if ( getLayoutWidthPolicy() == SizePolicy::WrapContent &&
-				 getUISceneNode()->isUpdatingLayouts() &&
-				 getParent()->getPixelsSize().getWidth() > 0 && mSize.x != getMatchParentWidth() ) {
-				runOnMainThread( [this]() { setLayoutDirty(); } );
-			}
-		} );
-	mParentCloseCb = mParentRef->addEventListener(
-		Event::OnClose, [this]( const Event* ) { mParentRef = nullptr; } );
+	mParentSizeChangeCb = mParentRef->on( Event::OnSizeChange, [this]( const Event* ) {
+		if ( getLayoutWidthPolicy() == SizePolicy::WrapContent &&
+			 getUISceneNode()->isUpdatingLayouts() && getParent()->getPixelsSize().getWidth() > 0 &&
+			 mSize.x != getMatchParentWidth() ) {
+			runOnMainThread( [this]() { setLayoutDirty(); } );
+		}
+	} );
+	mParentCloseCb =
+		mParentRef->on( Event::OnClose, [this]( const Event* ) { mParentRef = nullptr; } );
 }
 
 void UIStackLayout::onParentChange() {
@@ -215,7 +214,7 @@ void UIStackLayout::updateLayout() {
 	if ( size != getPixelsSize() )
 		setInternalPixelsSize( size );
 
-	applySizePolicyOnChilds();
+	applySizePolicyOnChildren();
 
 	Float curX = mPaddingPx.Left;
 	Node* child = mChild;

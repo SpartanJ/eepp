@@ -4,15 +4,15 @@
 namespace EE { namespace Scene { namespace Actions {
 
 Fade* Fade::New( const Float& start, const Float& end, const Time& duration,
-				 const Ease::Interpolation& type, const bool& alphaChilds ) {
-	return eeNew( Fade, ( start, end, duration, type, alphaChilds ) );
+				 const Ease::Interpolation& type, const bool& alphaChildren ) {
+	return eeNew( Fade, ( start, end, duration, type, alphaChildren ) );
 }
 
-Fade::Fade() : mAffectChilds( true ) {}
+Fade::Fade() : mAffectChildren( true ) {}
 
 Fade::Fade( const Float& start, const Float& end, const Time& duration,
-			const Ease::Interpolation& type, const bool& alphaChilds ) :
-	mAffectChilds( alphaChilds ) {
+			const Ease::Interpolation& type, const bool& alphaChildren ) :
+	mAffectChildren( alphaChildren ) {
 	mInterpolation.clear().add( start, duration ).add( end ).setType( type );
 }
 
@@ -20,7 +20,7 @@ void Fade::onStart() {
 	if ( NULL != mNode ) {
 		mNode->setAlpha( mInterpolation.getPosition() );
 
-		if ( mAffectChilds ) {
+		if ( mAffectChildren ) {
 			Node* CurChild = mNode->getFirstChild();
 
 			while ( NULL != CurChild ) {
@@ -39,26 +39,26 @@ void Fade::onUpdate( const Time& ) {
 
 Action* Fade::clone() const {
 	Fade* action = eeNew( Fade, () );
-	action->mAffectChilds = mAffectChilds;
+	action->mAffectChildren = mAffectChildren;
 	action->setInterpolation( mInterpolation );
 	return action;
 }
 
 Action* Fade::reverse() const {
 	Fade* action = eeNew( Fade, () );
-	action->mAffectChilds = mAffectChilds;
+	action->mAffectChildren = mAffectChildren;
 	action->setInterpolation( Interpolation1d( mInterpolation.getReversePoints() ) );
 	return action;
 }
 
 FadeIn* FadeIn::New( const Time& duration, const Ease::Interpolation& type,
-					 const bool& alphaChilds ) {
-	return eeNew( FadeIn, ( duration, type, alphaChilds ) );
+					 const bool& alphaChildren ) {
+	return eeNew( FadeIn, ( duration, type, alphaChildren ) );
 }
 
 Action* FadeIn::clone() const {
 	FadeIn* action = eeNew( FadeIn, () );
-	action->mAffectChilds = mAffectChilds;
+	action->mAffectChildren = mAffectChildren;
 	action->mDuration = mDuration;
 	action->mType = mType;
 	action->setInterpolation( mInterpolation );
@@ -67,7 +67,7 @@ Action* FadeIn::clone() const {
 
 Action* FadeIn::reverse() const {
 	FadeIn* action = eeNew( FadeIn, () );
-	action->mAffectChilds = mAffectChilds;
+	action->mAffectChildren = mAffectChildren;
 	action->mDuration = mDuration;
 	action->mType = mType;
 	action->setInterpolation( Interpolation1d( mInterpolation.getReversePoints() ) );
@@ -82,19 +82,19 @@ void FadeIn::start() {
 
 FadeIn::FadeIn() : Fade() {}
 
-FadeIn::FadeIn( const Time& duration, const Ease::Interpolation& type, const bool& alphaChilds ) :
+FadeIn::FadeIn( const Time& duration, const Ease::Interpolation& type, const bool& alphaChildren ) :
 	Fade(), mDuration( duration ), mType( type ) {
-	mAffectChilds = alphaChilds;
+	mAffectChildren = alphaChildren;
 }
 
 FadeOut* FadeOut::New( const Time& duration, const Ease::Interpolation& type,
-					   const bool& alphaChilds ) {
-	return eeNew( FadeOut, ( duration, type, alphaChilds ) );
+					   const bool& alphaChildren ) {
+	return eeNew( FadeOut, ( duration, type, alphaChildren ) );
 }
 
 Action* FadeOut::clone() const {
 	FadeOut* action = eeNew( FadeOut, () );
-	action->mAffectChilds = mAffectChilds;
+	action->mAffectChildren = mAffectChildren;
 	action->mDuration = mDuration;
 	action->mType = mType;
 	action->setInterpolation( mInterpolation );
@@ -103,7 +103,7 @@ Action* FadeOut::clone() const {
 
 Action* FadeOut::reverse() const {
 	FadeOut* action = eeNew( FadeOut, () );
-	action->mAffectChilds = mAffectChilds;
+	action->mAffectChildren = mAffectChildren;
 	action->mDuration = mDuration;
 	action->mType = mType;
 	action->setInterpolation( Interpolation1d( mInterpolation.getReversePoints() ) );
@@ -118,9 +118,10 @@ void FadeOut::start() {
 
 FadeOut::FadeOut() : Fade() {}
 
-FadeOut::FadeOut( const Time& duration, const Ease::Interpolation& type, const bool& alphaChilds ) :
+FadeOut::FadeOut( const Time& duration, const Ease::Interpolation& type,
+				  const bool& alphaChildren ) :
 	Fade(), mDuration( duration ), mType( type ) {
-	mAffectChilds = alphaChilds;
+	mAffectChildren = alphaChildren;
 }
 
 }}} // namespace EE::Scene::Actions

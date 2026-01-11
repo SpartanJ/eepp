@@ -126,7 +126,7 @@ connecting once to a remote host, like TCP sockets,
 it can send to and receive from any host at any time.
 
 It is a datagram protocol: bounded blocks of data (datagrams)
-are transfered over the network rather than a continuous
+are transferred over the network rather than a continuous
 stream of data (TCP). Therefore, one call to send will always
 match one call to receive (if the datagram is not lost),
 with the same data that was sent.
@@ -158,7 +158,7 @@ lead to a big mess when trying to recompose a packet).
 
 If the socket is bound to a port, it is automatically
 unbound from it when the socket is destroyed. However,
-you can unbind the socket explicitely with the Unbind
+you can unbind the socket explicitly with the Unbind
 function if necessary, to stop receiving messages or
 make the port available for other sockets.
 

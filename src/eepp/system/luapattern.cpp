@@ -68,8 +68,11 @@ bool LuaPattern::hasMatches( const std::string& string, const std::string_view& 
 	return LuaPattern::firstMatch( string, pattern ).isValid();
 }
 
-LuaPattern::LuaPattern( const std::string_view& pattern ) :
-	PatternMatcher( PatternType::LuaPattern ), mPattern( pattern ), mMatchNum( 0 ) {
+LuaPattern::LuaPattern( std::string_view pattern, Uint32 options ) :
+	PatternMatcher( PatternType::LuaPattern ),
+	mPattern( pattern ),
+	mMatchNum( 0 ),
+	mOptions( options ) {
 	if ( !sFailHandlerInitialized ) {
 		sFailHandlerInitialized = true;
 		lua_str_fail_func( failHandler );
@@ -84,16 +87,18 @@ bool LuaPattern::matches( const char* stringSearch, int stringStartOffset,
 	if ( matchList == nullptr ) {
 		PatternMatcher::Range matchesBuffer[MAX_DEFAULT_MATCHES];
 		try {
-			mMatchNum = lua_str_match( stringSearch, stringStartOffset, stringLength,
-									   mPattern.data(), (LuaMatch*)matchesBuffer );
-		} catch ( const std::string& patternError ) {
+			mMatchNum =
+				lua_str_match( stringSearch, stringStartOffset, stringLength, mPattern.data(),
+							   (LuaMatch*)matchesBuffer, ( mOptions & Options::Anchored ) ? 1 : 0 );
+		} catch ( const std::string& ) {
 			mMatchNum = 0;
 		}
 	} else {
 		try {
-			mMatchNum = lua_str_match( stringSearch, stringStartOffset, stringLength,
-									   mPattern.data(), (LuaMatch*)matchList );
-		} catch ( const std::string& patternError ) {
+			mMatchNum =
+				lua_str_match( stringSearch, stringStartOffset, stringLength, mPattern.data(),
+							   (LuaMatch*)matchList, ( mOptions & Options::Anchored ) ? 1 : 0 );
+		} catch ( const std::string& ) {
 			mMatchNum = 0;
 		}
 	}

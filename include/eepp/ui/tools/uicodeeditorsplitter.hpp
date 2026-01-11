@@ -59,6 +59,10 @@ class EE_API UICodeEditorSplitter {
 	virtual bool tryTabClose( UIWidget* widget, UITabWidget::FocusTabBehavior focusTabBehavior,
 							  std::function<void()> onMsgBoxCloseCb = {} );
 
+	virtual bool tryCodeEditorClose( UICodeEditor* editor,
+									 UITabWidget::FocusTabBehavior focusTabBehavior,
+									 std::function<void()> onMsgBoxCloseCb = {} );
+
 	virtual bool tryCloseAllTabs( UIWidget* widget,
 								  UITabWidget::FocusTabBehavior focusTabBehavior );
 
@@ -112,6 +116,8 @@ class EE_API UICodeEditorSplitter {
 
 	std::vector<std::pair<UITab*, UITabWidget*>> getTabFromOwnedWidgetId( const std::string& id );
 
+	bool ownedWidgetExists( UIWidget* widget );
+
 	bool removeTabWithOwnedWidgetId( const std::string& id, bool destroyOwnedNode = true,
 									 bool immediateClose = false );
 
@@ -142,7 +148,7 @@ class EE_API UICodeEditorSplitter {
 		UITabWidget* tabWidget );
 
 	void removeUnusedTab( UITabWidget* tabWidge, bool destroyOwnedNode = true,
-						  bool immediateCloset = true );
+						  bool immediateClose = true );
 
 	UITabWidget* createEditorWithTabWidget( Node* parent, bool openCurEditor = true );
 
@@ -160,6 +166,9 @@ class EE_API UICodeEditorSplitter {
 
 	void forEachWidgetClass( const std::string& className,
 							 std::function<void( UIWidget* )> run ) const;
+
+	void forEachWidgetClassStoppable( const std::string& className,
+									  std::function<bool( UIWidget* )> run ) const;
 
 	void forEachWidgetType( const UINodeType& nodeType,
 							std::function<void( UIWidget* )> run ) const;
@@ -180,6 +189,8 @@ class EE_API UICodeEditorSplitter {
 	void forEachTabWidget( std::function<void( UITabWidget* )> run ) const;
 
 	void forEachTabWidgetStoppable( std::function<bool( UITabWidget* )> run ) const;
+
+	void forEachTab( std::function<void( UITab* )> run ) const;
 
 	void zoomIn();
 
@@ -225,6 +236,8 @@ class EE_API UICodeEditorSplitter {
 
 	void setHideTabBarOnSingleTab( bool hideTabBarOnSingleTab );
 
+	void setHideTabBar( bool hideTabBar );
+
 	const std::vector<UITabWidget*>& getTabWidgets() const;
 
 	Node* getBaseLayout() const;
@@ -246,7 +259,8 @@ class EE_API UICodeEditorSplitter {
 		t.setCommand( "switch-to-previous-split", [this] { switchPreviousSplit( mCurWidget ); } );
 		t.setCommand( "switch-to-next-split", [this] { switchNextSplit( mCurWidget ); } );
 		t.setCommand( "close-tab", [this] {
-			tryTabClose( mCurWidget, UITabWidget::FocusTabBehavior::Default );
+			if ( tryTabClose( mCurWidget, UITabWidget::FocusTabBehavior::Default ) )
+				closeTab( mCurWidget, UITabWidget::FocusTabBehavior::Default );
 		} );
 		t.setCommand( "close-other-tabs", [this] {
 			tryCloseOtherTabs( mCurWidget, UITabWidget::FocusTabBehavior::Default );
@@ -264,7 +278,7 @@ class EE_API UICodeEditorSplitter {
 			tryCloseTabsToDirection( mCurWidget, UITabWidget::FocusTabBehavior::Default, true );
 		} );
 		t.setCommand( "create-new", [this] {
-			auto d = createCodeEditorInTabWidget( tabWidgetFromWidget( mCurWidget ) );
+			auto d = createCodeEditorInTabWidget( getPreferredTabWidget() );
 			if ( d.first != nullptr && d.second != nullptr ) {
 				d.first->getTabWidget()->setTabSelected( d.first );
 			} else if ( !mTabWidgets.empty() ) {
@@ -275,21 +289,13 @@ class EE_API UICodeEditorSplitter {
 		} );
 		t.setCommand( "next-tab", [this] {
 			UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
-			if ( tabWidget && tabWidget->getTabCount() > 1 ) {
-				UITab* tab = (UITab*)mCurWidget->getData();
-				Uint32 tabIndex = tabWidget->getTabIndex( tab );
-				switchToTab( ( tabIndex + 1 ) % tabWidget->getTabCount() );
-			}
+			if ( tabWidget )
+				tabWidget->focusNextTab();
 		} );
 		t.setCommand( "previous-tab", [this] {
 			UITabWidget* tabWidget = tabWidgetFromWidget( mCurWidget );
-			if ( tabWidget && tabWidget->getTabCount() > 1 ) {
-				UITab* tab = (UITab*)mCurWidget->getData();
-				Uint32 tabIndex = tabWidget->getTabIndex( tab );
-				Int32 newTabIndex = (Int32)tabIndex - 1;
-				switchToTab( newTabIndex < 0 ? tabWidget->getTabCount() - newTabIndex
-											 : newTabIndex );
-			}
+			if ( tabWidget )
+				tabWidget->focusPreviousTab();
 		} );
 		for ( int i = 1; i <= 10; i++ )
 			t.setCommand( String::format( "switch-to-tab-%d", i ),
@@ -355,10 +361,38 @@ class EE_API UICodeEditorSplitter {
 	void setOnTabWidgetCreateCb( std::function<void( UITabWidget* )> cb );
 
 	bool getVisualSplitting() const;
+
 	void setVisualSplitting( bool visualSplitting );
 
 	Float getVisualSplitEdgePercent() const;
+
 	void setVisualSplitEdgePercent( Float visualSplitEdgePercent );
+
+	UITabWidget* splitTabWidget( SplitDirection, UITabWidget* );
+
+	std::shared_ptr<TextDocument> getTextDocumentRef( TextDocument* doc );
+
+	// @return True if can be removed
+	typedef std::function<bool( UIWidget*, UITabWidget::FocusTabBehavior,
+								std::function<void()> onMsgBoxCloseCb )>
+		TabTryCloseCallback;
+
+	void setTabTryCloseCallback( TabTryCloseCallback cb );
+
+	bool isWidgetInAnyWidget( UIWidget* ) const;
+
+	void setOpenDocumentsInMainSplit( bool open ) { mOpenDocumentsInMainSplit = open; }
+
+	bool openDocumentsInMainSplit() const { return mOpenDocumentsInMainSplit; }
+
+	UITabWidget* getFirstTabWidget() const;
+
+	UITabWidget* getPreferredTabWidget() const;
+
+	UITabWidget* getCurTabWidget() const;
+
+	void
+	setCanCreateSplitFn( std::function<bool( SplitDirection direction, UIWidget* widget )> fn );
 
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
@@ -370,9 +404,11 @@ class EE_API UICodeEditorSplitter {
 	std::vector<UITabWidget*> mTabWidgets;
 	Node* mBaseLayout{ nullptr };
 	Client* mClient;
+	bool mHideTabBar{ false };
 	bool mHideTabBarOnSingleTab{ true };
 	bool mFirstCodeEditor{ true };
 	bool mVisualSplitting{ true };
+	bool mOpenDocumentsInMainSplit{ false };
 	UICodeEditor* mAboutToAddEditor{ nullptr };
 	UIMessageBox* mTryCloseMsgBox{ nullptr };
 	Mutex mTabWidgetMutex;
@@ -385,6 +421,8 @@ class EE_API UICodeEditorSplitter {
 	size_t mNavigationHistoryPos{ std::numeric_limits<size_t>::max() };
 	std::function<void( UITabWidget* )> mOnTabWidgetCreateCb;
 	Float mVisualSplitEdgePercent{ 0.1 };
+	TabTryCloseCallback mTabTryCloseCb;
+	std::function<bool( SplitDirection direction, UIWidget* widget )> mCanCreateSplitFn;
 
 	UICodeEditorSplitter( UICodeEditorSplitter::Client* client, UISceneNode* sceneNode,
 						  std::shared_ptr<ThreadPool> threadPool,
@@ -396,8 +434,6 @@ class EE_API UICodeEditorSplitter {
 	void closeAllTabs( std::vector<UITab*> tabs, UITabWidget::FocusTabBehavior focusTabBehavior );
 
 	UITabWidget* createTabWidget( Node* parent );
-
-	UITabWidget* splitTabWidget( SplitDirection, UITabWidget* );
 
 	void updateTabWidgetVisualSplitting();
 };

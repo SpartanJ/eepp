@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addLatex() {
+SyntaxDefinition& addLatex() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "LaTeX",
 		  { "%.tex$", "%.sty$", "%.ltx$" },
@@ -16,7 +16,7 @@ void addLatex() {
 			  { { "%$", "%$" }, "operator" },
 			  { { "\\%[", "\\]" }, "operator" },
 			  { { "{", "}" }, "keyword" },
-			  { { "\\%w*" }, "keyword2" },
+			  { { "\\%w*" }, "type" },
 
 		  },
 		  {

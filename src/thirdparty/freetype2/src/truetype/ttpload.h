@@ -4,7 +4,7 @@
  *
  *   TrueType-specific tables loader (specification).
  *
- * Copyright (C) 1996-2019 by
+ * Copyright (C) 1996-2025 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -20,8 +20,7 @@
 #define TTPLOAD_H_
 
 
-#include <ft2build.h>
-#include FT_INTERNAL_TRUETYPE_TYPES_H
+#include <freetype/internal/tttypes.h>
 
 
 FT_BEGIN_HEADER
@@ -32,9 +31,9 @@ FT_BEGIN_HEADER
                      FT_Stream  stream );
 
   FT_LOCAL( FT_ULong )
-  tt_face_get_location( TT_Face   face,
-                        FT_UInt   gindex,
-                        FT_UInt  *asize );
+  tt_face_get_location( FT_Face    face,
+                        FT_UInt    gindex,
+                        FT_ULong  *asize );
 
   FT_LOCAL( void )
   tt_face_done_loca( TT_Face  face );

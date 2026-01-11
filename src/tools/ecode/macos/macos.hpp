@@ -13,8 +13,6 @@ void macOS_removeTitleBarSeparator( void* nsWindow );
 
 void macOS_changeTitleBarColor( void* window, double red, double green, double blue );
 
-int macOS_isDarkModeEnabled();
-
 #ifdef __cplusplus
 }
 #endif

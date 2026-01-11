@@ -62,7 +62,7 @@ class EE_API Pack : protected Mutex {
 	 * -1. */
 	virtual Int32 exists( const std::string& path ) = 0;
 
-	/** Check the integrity of the pack file. \n If return 0 integrity OK. -1 wrong indentifier. -2
+	/** Check the integrity of the pack file. \n If return 0 integrity OK. -1 wrong identifier. -2
 	 * wrong header. */
 	virtual Int8 checkPack() = 0;
 

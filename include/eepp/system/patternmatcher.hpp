@@ -7,15 +7,16 @@
 
 namespace EE { namespace System {
 
-// Inpired in rx-cpp (https://github.com/stevedonovan/rx-cpp/).
+// Inspired in rx-cpp (https://github.com/stevedonovan/rx-cpp/).
 
 class EE_API PatternMatcher {
   public:
-	enum class PatternType { LuaPattern, PCRE };
+	enum class PatternType { LuaPattern, PCRE, Parser };
 
 	struct EE_API Range {
 		int start{ -1 };
 		int end{ -1 };
+		int length() const { return end - start; }
 		bool isValid() { return -1 != start && -1 != end; }
 	};
 
@@ -113,6 +114,12 @@ class EE_API PatternMatcher {
 
 	bool find( const char* stringSearch, int& startMatch, int& endMatch, int stringStartOffset = 0,
 			   int stringLength = 0, int returnMatchIndex = 0 ) const;
+
+	bool find( const std::string& s, int& startMatch, int& endMatch, int offset,
+			   int returnedMatchIndex, PatternMatcher::Range* matchesBuffer ) const;
+
+	bool find( const char* stringSearch, int& startMatch, int& endMatch, int stringStartOffset,
+			   int stringLength, int returnMatchIndex, PatternMatcher::Range* matchesBuffer ) const;
 
 	std::string gsub( const char* text, const char* replace );
 

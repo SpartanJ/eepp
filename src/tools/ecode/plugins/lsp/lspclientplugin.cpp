@@ -1,5 +1,5 @@
-#include "../../version.hpp"
 #include "lspclientplugin.hpp"
+#include "../../version.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
@@ -24,12 +24,6 @@ using namespace EE::Window;
 using json = nlohmann::json;
 
 namespace ecode {
-
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-#define LSPCLIENT_THREADED 1
-#else
-#define LSPCLIENT_THREADED 0
-#endif
 
 static Action::UniqueID getMouseMoveHash( UICodeEditor* editor ) {
 	return hashCombine( String::hash( "LSPClientPlugin::onMouseMove-" ),
@@ -245,11 +239,7 @@ LSPClientPlugin::LSPClientPlugin( PluginManager* pluginManager, bool sync ) :
 	if ( sync ) {
 		load( pluginManager );
 	} else {
-#if defined( LSPCLIENT_THREADED ) && LSPCLIENT_THREADED == 1
 		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
-#else
-		load( pluginManager );
-#endif
 	}
 }
 
@@ -305,17 +295,6 @@ static LSPURIAndServer getServerURIFromTextDocumentURI( LSPClientServerManager& 
 		return {};
 	URI uri( data["textDocument"]["uri"] );
 	return { uri, manager.getOneLSPClientServer( uri ) };
-}
-
-static void sanitizeCommand( std::string& cmd, const std::string& workspaceFolder ) {
-	static std::string cpucount( String::toString( Sys::getCPUCount() ) );
-	static std::string userdir = Sys::getUserDirectory();
-	String::replaceAll( cmd, "$NPROC", cpucount );
-	String::replaceAll( cmd, "${nproc}", cpucount );
-	String::replaceAll( cmd, "$PROJECTPATH", workspaceFolder );
-	String::replaceAll( cmd, "${project_root}", workspaceFolder );
-	String::replaceAll( cmd, "$HOME", userdir );
-	String::replaceAll( cmd, "${home}", userdir );
 }
 
 LSPPositionAndServer getLSPLocationFromJSON( LSPClientServerManager& manager, const json& data ) {
@@ -410,7 +389,7 @@ PluginRequestHandle LSPClientPlugin::processWorkspaceSymbol( const PluginMessage
 					if ( !query.empty() ) {
 						for ( auto& i : info ) {
 							if ( i.score == 0.f )
-								i.score = String::fuzzyMatch( i.name, query );
+								i.score = String::fuzzyMatch( query, i.name );
 						}
 					}
 					mManager->sendResponse( this, PluginMessageType::WorkspaceSymbol,
@@ -422,7 +401,7 @@ PluginRequestHandle LSPClientPlugin::processWorkspaceSymbol( const PluginMessage
 					if ( !query.empty() ) {
 						for ( auto& i : info ) {
 							if ( i.score == 0.f )
-								i.score = String::fuzzyMatch( i.name, query );
+								i.score = String::fuzzyMatch( query, i.name );
 						}
 					}
 					mManager->sendResponse( this, PluginMessageType::WorkspaceSymbol,
@@ -488,12 +467,8 @@ PluginRequestHandle LSPClientPlugin::processTextDocumentSymbol( const PluginMess
 	auto handler = [uri, this]( const PluginIDType& id, LSPSymbolInformationList&& res ) {
 		setDocumentSymbolsFromResponse( id, uri, std::move( res ) );
 	};
-	if ( Engine::instance()->isMainThread() ) {
-		server->getThreadPool()->run(
-			[server, uri, handler]() { server->documentSymbols( uri, handler ); } );
-	} else {
-		server->documentSymbols( uri, handler );
-	}
+
+	server->documentSymbols( uri, handler );
 
 	return { uri.toString() };
 }
@@ -530,7 +505,7 @@ void processFormattingResponse( const std::shared_ptr<TextDocument>& doc,
 								std::vector<LSPTextEdit> edits ) {
 	TextRanges ranges = doc->getSelections();
 
-	doc->resetCursor();
+	doc->resetSelection();
 	doc->setRunningTransaction( true );
 
 	// Sort from bottom to top, this way we don't have to compute any position deltas
@@ -562,11 +537,12 @@ bool LSPClientPlugin::processDocumentFormattingResponse( const URI& uri,
 
 	auto doc = mManager->getSplitter()->findDocFromURI( uri );
 	if ( !doc ) {
-		mManager->getLoadFileFn()( uri.getFSPath(), [this, edits]( UICodeEditor* editor, auto ) {
-			auto documentRef = editor->getDocumentRef();
-			mManager->getSplitter()->getUISceneNode()->runOnMainThread(
-				[documentRef, edits]() { processFormattingResponse( documentRef, edits ); } );
-		} );
+		mManager->getLoadFileFn()(
+			uri.getFSPath(), [this, edits = std::move( edits )]( UICodeEditor* editor, auto ) {
+				auto documentRef = editor->getDocumentRef();
+				mManager->getSplitter()->getUISceneNode()->runOnMainThread(
+					[documentRef, edits]() { processFormattingResponse( documentRef, edits ); } );
+			} );
 		return false;
 	}
 
@@ -653,7 +629,7 @@ bool LSPClientPlugin::onMouseClick( UICodeEditor* editor, const Vector2i& pos,
 		}
 	}
 
-	Input* input = editor->getUISceneNode()->getWindow()->getInput();
+	Input* input = editor->getInput();
 	Uint32 mod = input->getSanitizedModState();
 	if ( mod != ( KEYMOD_LALT | KeyMod::getDefaultModifier() ) || ( flags & EE_BUTTON_LMASK ) == 0 )
 		return false;
@@ -695,79 +671,6 @@ bool LSPClientPlugin::trimLogs() const {
 
 void LSPClientPlugin::setTrimLogs( bool trimLogs ) {
 	mTrimLogs = trimLogs;
-}
-
-bool LSPClientPlugin::editorExists( UICodeEditor* editor ) {
-	return mManager->getSplitter()->editorExists( editor );
-}
-
-void LSPClientPlugin::createListView( UICodeEditor* editor, const std::shared_ptr<Model>& model,
-									  const ModelEventCallback& onModelEventCb,
-									  const std::function<void( UIListView* )> onCreateCb ) {
-	UICodeEditorSplitter* splitter = getManager()->getSplitter();
-	if ( nullptr == splitter || !editorExists( editor ) )
-		return;
-	editor->runOnMainThread( [model, editor, splitter, onModelEventCb, onCreateCb] {
-		auto lvs = editor->findAllByClass( "editor_listview" );
-		for ( auto* ilv : lvs )
-			ilv->close();
-
-		UIListView* lv = UIListView::New();
-		lv->setParent( editor );
-		lv->addClass( "editor_listview" );
-		auto pos =
-			editor->getRelativeScreenPosition( editor->getDocumentRef()->getSelection().start() );
-		lv->setPixelsPosition( { pos.x, pos.y + editor->getLineHeight() } );
-		if ( !lv->getParent()->getLocalBounds().contains(
-				 lv->getLocalBounds().setPosition( lv->getPixelsPosition() ) ) ) {
-			lv->setPixelsPosition( { pos.x, pos.y - lv->getPixelsSize().getHeight() } );
-		}
-		lv->setVisible( true );
-		lv->getVerticalScrollBar()->reloadStyle( true, true, true );
-		lv->setAutoExpandOnSingleColumn( false );
-		lv->setModel( model );
-		Float height = std::min( lv->getContentSize().y, lv->getRowHeight() * 8 );
-		Float colWidth = lv->getMaxColumnContentWidth( 0 ) + PixelDensity::dpToPx( 4 );
-		bool needsVScroll = lv->getContentSize().y > lv->getRowHeight() * 8;
-		Float width = colWidth + lv->getPixelsPadding().getWidth() +
-					  ( needsVScroll ? lv->getVerticalScrollBar()->getPixelsSize().getWidth() : 0 );
-		lv->setPixelsSize( { width, height } );
-		lv->setColumnWidth( 0, colWidth );
-		lv->setScrollMode( needsVScroll ? ScrollBarMode::Auto : ScrollBarMode::AlwaysOff,
-						   ScrollBarMode::AlwaysOff );
-		if ( onCreateCb )
-			onCreateCb( lv );
-		lv->setSelection( model->index( 0 ) );
-		lv->setFocus();
-		Uint32 focusCb = lv->getUISceneNode()->getUIEventDispatcher()->addFocusEventCallback(
-			[lv]( const auto&, Node* focus, Node* ) {
-				if ( !lv->inParentTreeOf( focus ) && !lv->isClosing() )
-					lv->close();
-			} );
-		Uint32 cursorCb =
-			editor->on( Event::OnCursorPosChange, [lv, editor, splitter]( const Event* ) {
-				if ( !lv->isClosing() ) {
-					lv->close();
-					if ( splitter->editorExists( editor ) )
-						editor->setFocus();
-				}
-			} );
-		lv->on( Event::KeyDown, [lv, splitter, editor]( const Event* event ) {
-			if ( event->asKeyEvent()->getKeyCode() == EE::Window::KEY_ESCAPE && !lv->isClosing() )
-				lv->close();
-			if ( splitter->editorExists( editor ) )
-				editor->setFocus();
-		} );
-		lv->on( Event::OnModelEvent, [onModelEventCb]( const Event* event ) {
-			const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
-			if ( onModelEventCb )
-				onModelEventCb( modelEvent );
-		} );
-		lv->on( Event::OnClose, [lv, editor, cursorCb, focusCb]( const Event* ) {
-			lv->getUISceneNode()->getUIEventDispatcher()->removeFocusEventCallback( focusCb );
-			editor->removeEventListener( cursorCb );
-		} );
-	} );
 }
 
 void LSPClientPlugin::createLocationsView( UICodeEditor* editor,
@@ -902,7 +805,7 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 				URI uri;
 				if ( data.contains( "uri" ) && data["uri"].is_string() )
 					uri = data["uri"];
-				PluginInmediateResponse rmsg;
+				PluginImmediateResponse rmsg;
 				rmsg.type = PluginMessageType::QueryPluginCapability;
 				auto servers = mClientManager.getFilteredServers(
 					[capability, uri]( LSPClientServer* server ) {
@@ -1054,7 +957,7 @@ static std::string parseCommand( nlohmann::json cmd, const std::string& workspac
 				command = cmd[platform].get<std::string>();
 		}
 	}
-	sanitizeCommand( command, workspaceFolder );
+	LSPClientServer::sanitizeCommand( command, workspaceFolder );
 	return command;
 }
 
@@ -1173,7 +1076,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		auto list = { "lsp-go-to-definition",
 					  "lsp-go-to-declaration",
 					  "lsp-go-to-implementation",
-					  "lspz-go-to-type-definition",
+					  "lsp-go-to-type-definition",
 					  "lsp-switch-header-source",
 					  "lsp-symbol-info",
 					  "lsp-symbol-references",
@@ -1226,7 +1129,8 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			   ( obj.contains( "command_parameters" ) &&
 				 obj.at( "command_parameters" ).is_string() ) ||
 			   ( obj.contains( "host" ) && obj.at( "host" ).is_string() &&
-				 obj.contains( "port " ) && obj.at( "port" ).is_number_integer() ) ) ) {
+				 obj.contains( "port " ) && obj.at( "port" ).is_number_integer() ) ||
+			   obj.contains( "settings" ) || obj.contains( "initializationOptions" ) ) ) {
 			for ( auto& lspR : lsps ) {
 				std::string name = obj.contains( "name" ) ? obj["name"] : obj["use"];
 				if ( lspR.name == name ) {
@@ -1245,11 +1149,18 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 						if ( !cmdParam.empty() && cmdParam.front() != ' ' )
 							cmdParam = " " + cmdParam;
 						lspR.commandParameters += cmdParam;
-						sanitizeCommand( lspR.commandParameters, mManager->getWorkspaceFolder() );
+						LSPClientServer::sanitizeCommand( lspR.commandParameters,
+														  mManager->getWorkspaceFolder() );
 					}
 					if ( obj.contains( "host" ) ) {
 						lspR.host = obj.value( "host", "" );
 						lspR.port = obj.value( "port", 0 );
+					}
+					if ( obj.contains( "settings" ) ) {
+						lspR.settings = obj["settings"];
+					}
+					if ( obj.contains( "initializationOptions" ) ) {
+						lspR.initializationOptions = obj["initializationOptions"];
 					}
 					tryAddEnv( obj, lspR );
 				}
@@ -1284,6 +1195,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 					lsp.host = tlsp.host;
 					lsp.port = tlsp.port;
 					lsp.initializationOptions = tlsp.initializationOptions;
+					lsp.settings = tlsp.settings;
 					lsp.extraTriggerChars = tlsp.extraTriggerChars;
 					lsp.usesLSP = use;
 					if ( obj.contains( "share_process" ) && obj["share_process"].is_boolean() ) {
@@ -1315,8 +1227,12 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		}
 
 		lsp.commandParameters = obj.value( "command_parameters", lsp.commandParameters );
+
 		if ( obj.contains( "initializationOptions" ) )
 			lsp.initializationOptions = obj["initializationOptions"];
+
+		if ( obj.contains( "settings" ) )
+			lsp.settings = obj["settings"];
 
 		auto& fp = obj["file_patterns"];
 
@@ -1339,8 +1255,8 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 			}
 		}
 
-		sanitizeCommand( lsp.command, mManager->getWorkspaceFolder() );
-		sanitizeCommand( lsp.commandParameters, mManager->getWorkspaceFolder() );
+		LSPClientServer::sanitizeCommand( lsp.command, mManager->getWorkspaceFolder() );
+		LSPClientServer::sanitizeCommand( lsp.commandParameters, mManager->getWorkspaceFolder() );
 
 		tryAddEnv( obj, lsp );
 
@@ -1410,11 +1326,14 @@ void LSPClientPlugin::codeAction( UICodeEditor* editor ) {
 	if ( resp.isResponse() )
 		diagnostics = std::move( resp.getResponse().data );
 
-	mClientManager.codeAction(
+	bool sent = mClientManager.codeAction(
 		editor->getDocumentRef(), diagnostics,
 		[this, editor]( const LSPClientServer::IdType&, const std::vector<LSPCodeAction>& res ) {
 			createCodeActionsView( editor, res );
 		} );
+
+	if ( !sent )
+		editor->getDocument().execute( "spellchecker-fix-typo", editor );
 }
 
 void LSPClientPlugin::renameSymbol( UICodeEditor* editor ) {
@@ -1430,12 +1349,12 @@ void LSPClientPlugin::renameSymbol( UICodeEditor* editor ) {
 		selection.hasSelection() ? selection.end() : selStart ) );
 	msgBox->getTextInput()->getDocument().selectAll();
 	msgBox->showWhenReady();
-	msgBox->addEventListener( Event::OnConfirm, [this, selStart, editor, msgBox]( const Event* ) {
+	msgBox->on( Event::OnConfirm, [this, selStart, editor, msgBox]( const Event* ) {
 		String newName( msgBox->getTextInput()->getText() );
 		mClientManager.renameSymbol( editor->getDocumentRef()->getURI(), selStart, newName );
 		msgBox->closeWindow();
 	} );
-	msgBox->addEventListener( Event::OnClose, [this]( const Event* ) {
+	msgBox->on( Event::OnClose, [this]( const Event* ) {
 		if ( mManager->getSplitter() && mManager->getSplitter()->getCurWidget() )
 			mManager->getSplitter()->getCurWidget()->setFocus();
 	} );
@@ -1498,7 +1417,7 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 
 		doc.setCommand( "lsp-refresh-semantic-highlighting",
 						[this]( TextDocument::Client* client ) {
-							mClientManager.requestSymanticHighlighting(
+							mClientManager.requestSemanticHighlighting(
 								static_cast<UICodeEditor*>( client )->getDocumentRef() );
 						} );
 
@@ -1516,22 +1435,20 @@ void LSPClientPlugin::onRegister( UICodeEditor* editor ) {
 
 	std::vector<Uint32> listeners;
 
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
-			mEditorDocs[editor] = editor->getDocumentRef().get();
-			mClientManager.run( editor->getDocumentRef() );
-			updateCurrentSymbol( editor->getDocument() );
-		} ) );
+	listeners.push_back( editor->on( Event::OnDocumentLoaded, [this, editor]( const Event* ) {
+		mEditorDocs[editor] = editor->getDocumentRef().get();
+		mClientManager.run( editor->getDocumentRef() );
+		updateCurrentSymbol( editor->getDocument() );
+	} ) );
+
+	listeners.push_back( editor->on( Event::OnCursorPosChange, [this, editor]( const Event* ) {
+		if ( mSymbolInfoShowing )
+			hideTooltip( editor );
+		updateCurrentSymbol( editor->getDocument() );
+	} ) );
 
 	listeners.push_back(
-		editor->addEventListener( Event::OnCursorPosChange, [this, editor]( const Event* ) {
-			if ( mSymbolInfoShowing )
-				hideTooltip( editor );
-			updateCurrentSymbol( editor->getDocument() );
-		} ) );
-
-	listeners.push_back(
-		editor->addEventListener( Event::OnDocumentChanged, [this, editor]( const Event* event ) {
+		editor->on( Event::OnDocumentChanged, [this, editor]( const Event* event ) {
 			const DocChangedEvent* docChangedEvent = static_cast<const DocChangedEvent*>( event );
 			TextDocument* oldDoc = mEditorDocs[editor];
 			TextDocument* newDoc = editor->getDocumentRef().get();
@@ -1576,57 +1493,11 @@ void LSPClientPlugin::getSymbolInfo( UICodeEditor* editor ) {
 	auto server = mClientManager.getOneLSPClientServer( editor );
 	if ( server == nullptr )
 		return;
-	server->documentHover(
-		editor->getDocument().getURI(), editor->getDocument().getSelection().start(),
-		[this, editor]( const Int64&, const LSPHover& resp ) {
-			json j;
-			auto& doc = editor->getDocument();
-			j["uri"] = doc.getURI().toString();
-			j["line"] = doc.getSelection().start().line();
-			j["character"] = doc.getSelection().start().column();
-			auto errResp = mManager->sendRequest( PluginMessageType::GetErrorOrWarning,
-												  PluginMessageFormat::JSON, &j );
-			if ( !resp.contents.empty() && !resp.contents[0].value.empty() ) {
-				editor->runOnMainThread( [editor, resp, errResp, this]() {
-					mSymbolInfoShowing = true;
-					if ( errResp.isResponse() ) {
-						LSPHover cresp( resp );
-						cresp.contents[0].value =
-							errResp.getResponse().data["text"].get<std::string>() + "\n\n" +
-							cresp.contents[0].value;
-						displayTooltip(
-							editor, cresp,
-							editor
-								->getScreenPosition( editor->getDocument().getSelection().start() )
-								.getPosition() );
-					} else {
-						displayTooltip(
-							editor, resp,
-							editor
-								->getScreenPosition( editor->getDocument().getSelection().start() )
-								.getPosition() );
-					}
-				} );
-			} else if ( errResp.isResponse() ) {
-				LSPHover tresp;
-				tresp.range =
-					TextRange::fromString( errResp.getResponse().data["range"].get<std::string>() );
-				tresp.contents.push_back(
-					{ LSPMarkupKind::MarkDown,
-					  errResp.getResponse().data["text"].get<std::string>() } );
-				editor->runOnMainThread( [editor, tresp, this]() {
-					mSymbolInfoShowing = true;
-					displayTooltip(
-						editor, tresp,
-						editor->getScreenPosition( editor->getDocument().getSelection().start() )
-							.getPosition() );
-				} );
-			} else {
-				json data = getURIAndPositionJSON( editor );
-				mManager->sendRequest( PluginMessageType::SignatureHelp, PluginMessageFormat::JSON,
-									   &data );
-			}
-		} );
+	server->documentHover( editor->getDocument().getURI(),
+						   editor->getDocument().getSelection().start(),
+						   [this, editor]( const Int64&, const LSPHover& resp ) {
+							   onDocumentHoverResponse( editor, resp, false );
+						   } );
 }
 
 void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
@@ -1635,6 +1506,8 @@ void LSPClientPlugin::onUnregister( UICodeEditor* editor ) {
 
 	if ( mShuttingDown )
 		return;
+
+	editor->removeActionsByTag( getMouseMoveHash( editor ) );
 
 	URI docURI;
 	{
@@ -1734,7 +1607,7 @@ bool LSPClientPlugin::onCreateContextMenu( UICodeEditor* editor, UIPopUpMenu* me
 		addFn( "lsp-switch-header-source",
 			   i18n( "lsp_switch_header_source", "Switch Header/Source" ), "filetype-hpp" );
 
-	addFn( "lsp-plugin-restart", i18n( "lsp_restart_lsp_client", "Restart LSP Client" ),
+	addFn( "lsp-plugin-restart", i18n( "lsp_restart_lsp_server", "Restart LSP Server" ),
 		   "refresh" );
 
 #ifdef EE_DEBUG
@@ -1764,9 +1637,8 @@ void LSPClientPlugin::hideTooltip( UICodeEditor* editor ) {
 	}
 }
 
-TextPosition currentMouseTextPosition( UICodeEditor* editor ) {
-	return editor->resolveScreenPosition(
-		editor->getUISceneNode()->getWindow()->getInput()->getMousePos().asFloat() );
+static TextPosition currentMouseTextPosition( UICodeEditor* editor ) {
+	return editor->resolveScreenPosition( editor->getInput()->getMousePos().asFloat() );
 }
 
 void LSPClientPlugin::tryHideTooltip( UICodeEditor* editor, const Vector2i& position ) {
@@ -1816,7 +1688,7 @@ void LSPClientPlugin::displayTooltip( UICodeEditor* editor, const LSPHover& resp
 								? SyntaxDefinitionManager::instance()->getByLSPName( "markdown" )
 								: editor->getSyntaxDefinition();
 
-	SyntaxTokenizer::tokenizeText( syntaxDef, editor->getColorScheme(), *tooltip->getTextCache(), 0,
+	SyntaxTokenizer::tokenizeText( syntaxDef, editor->getColorScheme(), tooltip->getTextCache(), 0,
 								   0xFFFFFFFF, true, "\n\t " );
 
 	tooltip->notifyTextChangedFromTextCache();
@@ -1837,6 +1709,66 @@ void LSPClientPlugin::tryDisplayTooltip( UICodeEditor* editor, const LSPHover& r
 		return;
 	mCurrentHover = resp;
 	displayTooltip( editor, resp, position.asFloat() );
+}
+
+void LSPClientPlugin::onDocumentHoverResponse( UICodeEditor* editor, const LSPHover& resp,
+											   bool fromMousePos,
+											   std::optional<Vector2f> screenPos ) {
+	const auto& displayTooltipFn = [this, fromMousePos]( UICodeEditor* editor, const LSPHover& resp,
+														 const Vector2f& position ) {
+		if ( fromMousePos )
+			tryDisplayTooltip( editor, resp, position.asInt() );
+		else
+			displayTooltip( editor, resp, position );
+	};
+
+	const auto& getFinalPosFn = [screenPos]( UICodeEditor* editor ) {
+		return screenPos ? *screenPos
+						 : editor->getScreenPosition( editor->getDocument().getSelection().start() )
+							   .getPosition();
+	};
+
+	auto& doc = editor->getDocument();
+	json j;
+	TextPosition textPosition =
+		fromMousePos ? currentMouseTextPosition( editor ) : doc.getSelection().start();
+	j["uri"] = doc.getURI().toString();
+	j["line"] = textPosition.line();
+	j["character"] = textPosition.column();
+	auto errResp = mManager->sendRequest( PluginMessageType::GetErrorOrWarning,
+										  PluginMessageFormat::JSON, &j );
+	if ( !resp.contents.empty() && !resp.contents[0].value.empty() ) {
+		editor->runOnMainThread( [editor, resp, errResp, this, screenPos, displayTooltipFn,
+								  getFinalPosFn]() {
+			mSymbolInfoShowing = true;
+			auto pos =
+				screenPos
+					? *screenPos
+					: editor->getScreenPosition( editor->getDocument().getSelection().start() )
+						  .getPosition();
+			if ( errResp.isResponse() ) {
+				LSPHover cresp( resp );
+				cresp.contents[0].value = errResp.getResponse().data["text"].get<std::string>() +
+										  "\n---\n\n" + cresp.contents[0].value;
+				displayTooltipFn( editor, cresp, getFinalPosFn( editor ) );
+			} else {
+				displayTooltipFn( editor, resp, pos );
+			}
+		} );
+	} else if ( errResp.isResponse() ) {
+		LSPHover tresp;
+		tresp.range =
+			TextRange::fromString( errResp.getResponse().data["range"].get<std::string>() );
+		tresp.contents.push_back(
+			{ LSPMarkupKind::MarkDown, errResp.getResponse().data["text"].get<std::string>() } );
+		editor->runOnMainThread( [editor, tresp, this, displayTooltipFn, getFinalPosFn]() {
+			mSymbolInfoShowing = true;
+			displayTooltipFn( editor, tresp, getFinalPosFn( editor ) );
+		} );
+	} else {
+		json data = getURIAndPositionJSON( editor );
+		mManager->sendRequest( PluginMessageType::SignatureHelp, PluginMessageFormat::JSON, &data );
+	}
 }
 
 bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position,
@@ -1871,7 +1803,7 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 			if ( !editorExists( editor ) )
 				return;
 			auto server = mClientManager.getOneLSPClientServer( editor );
-			if ( server == nullptr )
+			if ( server == nullptr || !server->getCapabilities().hoverProvider )
 				return;
 			server->documentHover(
 				editor->getDocument().getURI(), currentMouseTextPosition( editor ),
@@ -1879,11 +1811,14 @@ bool LSPClientPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& positio
 					if ( editorExists( editor ) && !resp.contents.empty() &&
 						 !resp.contents[0].value.empty() ) {
 						editor->runOnMainThread( [editor, resp, this]() {
-							auto mousePos =
-								editor->getUISceneNode()->getWindow()->getInput()->getMousePos();
-							if ( !editor->getScreenRect().contains( mousePos.asFloat() ) )
+							auto mousePos = editor->getUISceneNode()
+												->getWindow()
+												->getInput()
+												->getMousePos()
+												.asFloat();
+							if ( !editor->getScreenRect().contains( mousePos ) )
 								return;
-							tryDisplayTooltip( editor, resp, mousePos );
+							onDocumentHoverResponse( editor, resp, true, mousePos );
 						} );
 					}
 				} );
@@ -1970,7 +1905,10 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 	Vector2f pos( screenStart.x + eefloor( PixelDensity::dpToPx( 8 ) ),
 				  screenStart.y + textOffsetY );
 
-	auto drawn = Text::draw( String::View( utf32Path, pathLen ), pos, font, fontSize, textColor );
+	String::View pathView{ utf32Path, pathLen };
+	auto drawn = Text::draw( String::View( utf32Path, pathLen ), pos, font, fontSize, textColor, 0,
+							 0.f, Color::Black, Color::Black, { 1, 1 }, 4,
+							 String::isAscii( pathView ) ? TextHints::AllAscii : 0 );
 
 	Lock l( mDocCurrentSymbolsMutex );
 	auto symbolsInfoIt = mDocCurrentSymbols.find( editor->getDocument().getURI() );
@@ -2014,50 +1952,46 @@ void LSPClientPlugin::drawTop( UICodeEditor* editor, const Vector2f& screenStart
 			iconDrawable->setColor( c );
 		}
 
-		drawn = Text::draw( info.name, pos, font, fontSize, textColor );
+		drawn =
+			Text::draw( info.name, pos, font, fontSize, textColor, 0, 0.f, Color::Black,
+						Color::Black, { 1, 1 }, 4, info.name.isAscii() ? TextHints::AllAscii : 0 );
 		pos.x += drawn.getWidth();
 	}
 }
 
 void LSPClientPlugin::updateCurrentSymbol( TextDocument& doc ) {
-	if ( !mBreadcrumb )
+	if ( !mBreadcrumb || mShuttingDown )
 		return;
 
 	std::vector<DisplaySymbolInfo> symbolsInfo;
 	URI uri = doc.getURI();
 
 	{
-		mDocSymbolsMutex.lock();
-
+		Lock l( mDocSymbolsMutex );
 		auto symbolsIt = mDocSymbols.find( uri );
-		if ( symbolsIt == mDocSymbols.end() ) {
-			mDocSymbolsMutex.unlock();
-			Lock l( mDocCurrentSymbolsMutex );
-			mDocCurrentSymbols[uri] = {};
-			return;
-		}
+		if ( symbolsIt != mDocSymbols.end() ) {
+			LSPSymbolInformationList* list = &symbolsIt->second;
+			auto sel = doc.getSelection();
+			LSPSymbolInformationList::iterator foundIt;
 
-		LSPSymbolInformationList* list = &symbolsIt->second;
-		auto sel = doc.getSelection();
-		LSPSymbolInformationList::iterator foundIt;
-
-		bool found = false;
-		do {
-			foundIt = std::lower_bound( list->begin(), list->end(), sel,
-										[]( const LSPSymbolInformation& cur,
-											const TextRange& sel ) { return cur.range < sel; } );
-			found = foundIt != list->end() && foundIt->range.contains( sel );
-			if ( found ) {
-				symbolsInfo.push_back( { String::fromUtf8( foundIt->name ),
-										 LSPSymbolKindHelper::toIconString( foundIt->kind ) } );
-				if ( foundIt->children.empty() )
+			bool found = false;
+			do {
+				foundIt =
+					std::lower_bound( list->begin(), list->end(), sel,
+									  []( const LSPSymbolInformation& cur, const TextRange& sel ) {
+										  return cur.range < sel;
+									  } );
+				found = foundIt != list->end() && foundIt->range.contains( sel );
+				if ( found ) {
+					symbolsInfo.push_back( { String::fromUtf8( foundIt->name ),
+											 LSPSymbolKindHelper::toIconString( foundIt->kind ) } );
+					if ( foundIt->children.empty() )
+						break;
+					list = &foundIt->children;
+				} else
 					break;
-				list = &foundIt->children;
-			} else
-				break;
-		} while ( found );
-
-		mDocSymbolsMutex.unlock();
+			} while ( found );
+		}
 	}
 
 	Lock l( mDocCurrentSymbolsMutex );

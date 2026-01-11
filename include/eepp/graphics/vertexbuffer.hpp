@@ -20,9 +20,9 @@ class EE_API VertexBuffer {
 	 *VertexFlags
 	 *	@param drawType The type of the primitive to draw.
 	 *	@param reserveVertexSize If the vertex size is known is possible to reserve the space in
-	 *memory to avoid resizeing the array.
+	 *memory to avoid resizing the array.
 	 *	@param reserveIndexSize If the vertex size is known is possible to reserve the space in
-	 *memory for the indices to avoid resizeing the array.
+	 *memory for the indices to avoid resizing the array.
 	 *	@param usageType This indicates the kind of usage VBO will have. It's only useful if VBO
 	 *extensions are supported ( almost for sure that it's supported ). More information here:
 	 *http://www.opengl.org/sdk/docs/man/xhtml/glBufferData.xml
@@ -68,18 +68,18 @@ class EE_API VertexBuffer {
 	void addIndex( const Uint32& indexValue );
 
 	/** @brief Set a vertex index of the type indicated to the buffer
-	 *  @param index The array index of the vertext to set
+	 *  @param index The array index of the vertex to set
 	 *	@param type Can be the position or texture coordinates.
 	 *	@param vertex The vexter data */
 	void setVertex( const Uint32& index, const Uint32& type, const Vector2f& vertex );
 
 	/** @brief Adds a vertex position to the buffer
-	 *  @param index The array index of the vertext to set
+	 *  @param index The array index of the vertex to set
 	 *	@param vertex The vexter data */
 	void setVertex( const Uint32& index, const Vector2f& vertex );
 
 	/** @brief Adds a vertex texture coordinate.
-	 *  @param index The array index of the vertext to set
+	 *  @param index The array index of the vertex to set
 	 *	@param vertexCoord The vertex texture coordinate.
 	 *	@param textureLevel Indicates the texture level if it's using multitextures.
 	 */
@@ -87,13 +87,13 @@ class EE_API VertexBuffer {
 						  const Uint32& textureLevel = 0 );
 
 	/** @brief Adds a color to the buffer.
-	 *  @param index The array index of the vertext to set
+	 *  @param index The array index of the vertex to set
 	 *	@param color The color value.
 	 */
 	void setColor( const Uint32& index, const Color& color );
 
 	/** @brief Adds an index to the buffer.
-	 *  @param index The array index of the vertext to set
+	 *  @param index The array index of the vertex to set
 	 *	@param indexValue The index value.
 	 */
 	void setIndex( const Uint32& index, const Uint32& indexValue );
@@ -182,6 +182,8 @@ class EE_API VertexBuffer {
 
 	/** Clear the cached data and destroy the buffers */
 	virtual void clear();
+
+	void clearData();
 
   protected:
 	Uint32 mVertexFlags;

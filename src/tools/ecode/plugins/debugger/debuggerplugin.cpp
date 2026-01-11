@@ -1,3 +1,5 @@
+#include "debuggerplugin.hpp"
+#include "../../jsonhelper.hpp"
 #include "../../notificationcenter.hpp"
 #include "../../terminalmanager.hpp"
 #include "../../uistatusbar.hpp"
@@ -6,7 +8,6 @@
 #include "bussocket.hpp"
 #include "bussocketprocess.hpp"
 #include "dap/debuggerclientdap.hpp"
-#include "debuggerplugin.hpp"
 #include "models/breakpointsmodel.hpp"
 #include "models/processesmodel.hpp"
 #include "models/variablesmodel.hpp"
@@ -16,7 +17,6 @@
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uitooltip.hpp>
-#include <nlohmann/json.hpp>
 
 using namespace EE::UI;
 using namespace EE::UI::Doc;
@@ -28,15 +28,10 @@ using json = nlohmann::json;
 static constexpr auto REQUEST_TYPE_LAUNCH = "launch";
 static constexpr auto REQUEST_TYPE_ATTACH = "attach";
 
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
-#define DEBUGGER_THREADED 1
-#else
-#define DEBUGGER_THREADED 0
-#endif
-
 namespace ecode {
 
 static constexpr auto INPUT_PATTERN = "%$%{input%:([%w_]+)%}"sv;
+static constexpr auto ENV_PATTERN = "%$%{env%:([%w_]+)%}"sv;
 static constexpr auto COMMAND_PATTERN = "%$%{command%:([%w_]+)%}"sv;
 static constexpr auto CMD_PICK_PROCESS = "${command:pickProcess}"sv;
 static constexpr auto CMD_PROMPT_STRING = "${command:promptString}"sv;
@@ -44,12 +39,14 @@ static constexpr auto CMD_PICK_FILE = "${command:pickFile}"sv;
 
 static LuaPattern inputPtrn( INPUT_PATTERN );
 static LuaPattern commandPtrn( COMMAND_PATTERN );
+static LuaPattern envPtrn( ENV_PATTERN );
 static constexpr auto KEY_FILE = "${file}";
 static constexpr auto KEY_ARGS = "${args}";
 static constexpr auto KEY_CWD = "${cwd}";
 static constexpr auto KEY_ENV = "${env}";
 static constexpr auto KEY_STOPONENTRY = "${stopOnEntry}";
 static constexpr auto KEY_WORKSPACEFOLDER = "${workspaceFolder}";
+static constexpr auto KEY_WORKSPACEROOT = "${workspaceRoot}";
 static constexpr auto KEY_FILEDIRNAME = "${fileDirname}";
 static constexpr auto KEY_RANDPORT = "${randPort}";
 static constexpr auto KEY_PID = "${pid}";
@@ -70,30 +67,63 @@ static constexpr auto KEY_DEFAULT_BUILD_TASK = "${defaultBuildTask}";
 static constexpr auto KEY_PATH_SEPARATOR = "${pathSeparator}";
 static constexpr auto KEY_PATH_SEPARATOR_ABBR = "${/}";
 
-/*
+static constexpr auto KEY_UUID = "${uuid}";
+static constexpr auto KEY_TIMESTAMP = "${timestamp}";
 
-- **${userHome}** - the path of the user's home folder
-- **${workspaceFolder}** - the path of the folder opened in VS Code
-- **${workspaceFolderBasename}** - the name of the folder opened in VS Code without any slashes (/)
-- **${file}** - the current opened file
-- **${fileWorkspaceFolder}** - the current opened file's workspace folder
-- **${relativeFile}** - the current opened file relative to `workspaceFolder`
-- **${relativeFileDirname}** - the current opened file's dirname relative to `workspaceFolder`
-- **${fileBasename}** - the current opened file's basename
-- **${fileBasenameNoExtension}** - the current opened file's basename with no file extension
-- **${fileExtname}** - the current opened file's extension
-- **${fileDirname}** - the current opened file's folder path
-- **${fileDirnameBasename}** - the current opened file's folder name
-- **${cwd}** - the task runner's current working directory upon the startup of VS Code
-- **${lineNumber}** - the current selected line number in the active file
-- **${selectedText}** - the current selected text in the active file
-- **${execPath}** - the path to the running VS Code executable
-- **${defaultBuildTask}** - the name of the default build task
-- **${pathSeparator}** - the character used by the operating system to separate components in file
-paths
-- **${/}** - shorthand for **${pathSeparator}**
+static constexpr auto KEY_DEBUG_SERVER = "debugServer";
 
-*/
+static void replaceExecutableArgs( std::string& arg ) {
+	LuaPattern ptrn( "%$%b()" );
+	PatternMatcher::Range match[4];
+	while ( ptrn.matches( arg, match ) ) {
+		auto cmd = arg.substr( match[0].start, match[0].end - match[0].start );
+		if ( cmd.size() > 3 ) {
+			auto rcmd = cmd.substr( 2, cmd.size() - 3 );
+			std::string out;
+			Process p;
+			if ( p.create( rcmd ) ) {
+				p.readAllStdOut( out );
+				String::trimInPlace( out, '\n' );
+				String::trimInPlace( out, '\t' );
+				String::replaceAll( arg, cmd, out );
+			}
+		}
+	};
+}
+
+static bool replaceEnvVars( std::string& arg, PluginContextProvider* ctx ) {
+	PatternMatcher::Range match[4];
+	while ( envPtrn.matches( arg, match ) ) {
+		auto envCall = arg.substr( match[0].start, match[0].end - match[0].start );
+		if ( envCall.size() > 6 ) {
+			auto envName = envCall.substr( 6, envCall.size() - 7 );
+			const char* env = getenv( envName.c_str() );
+			if ( env && strlen( env ) != 0 ) {
+				std::string out{ env };
+				String::trimInPlace( out, '\n' );
+				String::trimInPlace( out, '\t' );
+				String::replaceAll( arg, envCall, out );
+			} else {
+				arg = "";
+				ctx->getNotificationCenter()->addNotification( String::format(
+					ctx->i18n( "command_parameter_env_var_not_found",
+							   "The environment variable \"%s\" was not found but it's needed in "
+							   "order to run the debugger." )
+						.toUtf8(),
+					envName ) );
+				return false;
+			}
+		}
+	};
+	return true;
+}
+
+// Mouse Hover Tooltip
+static Action::UniqueID getMouseMoveHash( UICodeEditor* editor ) {
+	return hashCombine( String::hash( "DebuggerPlugin::onMouseMove-" ),
+						reinterpret_cast<Action::UniqueID>( editor ) );
+}
+
 Plugin* DebuggerPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( DebuggerPlugin, ( pluginManager, false ) );
 }
@@ -107,11 +137,7 @@ DebuggerPlugin::DebuggerPlugin( PluginManager* pluginManager, bool sync ) :
 	if ( sync ) {
 		load( pluginManager );
 	} else {
-#if defined( DEBUGGER_THREADED ) && DEBUGGER_THREADED == 1
 		mThreadPool->run( [this, pluginManager] { load( pluginManager ); } );
-#else
-		load( pluginManager );
-#endif
 	}
 }
 
@@ -126,7 +152,7 @@ DebuggerPlugin::~DebuggerPlugin() {
 	}
 
 	if ( mSidePanel && mTab ) {
-		if ( Engine::isRunninMainThread() )
+		if ( Engine::isMainThread() )
 			mSidePanel->removeTab( mTab );
 		else {
 			auto sidePanel = mSidePanel;
@@ -148,7 +174,10 @@ DebuggerPlugin::~DebuggerPlugin() {
 	mDebugger.reset();
 	mListener.reset();
 
-	if ( !isShuttingDown() && getPluginContext()->getMainLayout() ) {
+	if ( SceneManager::existsSingleton() && !SceneManager::instance()->isShuttingDown() &&
+		 getPluginContext() && getPluginContext()->getMainLayout() ) {
+		getPluginContext()->getMainLayout()->unsetCommands( mRegisteredCommands );
+
 		for ( const auto& kb : mKeyBindings )
 			getPluginContext()->getMainLayout()->getKeyBindings().removeCommandKeybind( kb.first );
 	}
@@ -160,7 +189,7 @@ void DebuggerPlugin::onSaveProject( const std::string& /*projectFolder*/,
 	std::string debugger( mCurDebugger );
 	std::string configuration( mCurConfiguration );
 	auto expressions( mExpressions );
-	UnorderedMap<std::string, UnorderedSet<SourceBreakpointStateful>> breakpoints;
+	BreakpointsHolder breakpoints;
 	{
 		Lock l( mBreakpointsMutex );
 		breakpoints = mBreakpoints;
@@ -187,7 +216,8 @@ void DebuggerPlugin::onSaveProject( const std::string& /*projectFolder*/,
 					jbp["enabled"] = bp.enabled;
 					bpArr.push_back( jbp );
 				}
-				bpsArr[bpSet.first] = std::move( bpArr );
+				if ( !bpArr.empty() )
+					bpsArr[bpSet.first] = std::move( bpArr );
 			}
 			config["breakpoints"] = std::move( bpsArr );
 
@@ -252,16 +282,19 @@ void DebuggerPlugin::onLoadProject( const std::string& projectFolder,
 			}
 
 			if ( config.contains( "breakpoints" ) && config["breakpoints"].is_object() ) {
-				UnorderedMap<std::string, UnorderedSet<SourceBreakpointStateful>> breakpoints;
+				BreakpointsHolder breakpoints;
 				for ( auto& [key, value] : config["breakpoints"].items() ) {
-					auto& bps = breakpoints[key];
 					if ( value.is_array() ) {
+						BreakpointsSet set;
 						for ( auto& jbp : value ) {
 							SourceBreakpointStateful bp;
 							bp.line = jbp.value( "line", 1 );
 							bp.enabled = jbp.value( "enabled", true );
-							bps.insert( std::move( bp ) );
+							if ( bp.line > 0 )
+								set.insert( std::move( bp ) );
 						}
+						if ( !set.empty() )
+							breakpoints[key] = std::move( set );
 					}
 				}
 
@@ -299,11 +332,11 @@ void DebuggerPlugin::resetExpressions() {
 	if ( !mExpressionsHolder )
 		return;
 	mExpressionsHolder->clear( true );
-	std::vector<ModelVariableNode::NodePtr> childs;
-	childs.reserve( mExpressions.size() );
+	std::vector<ModelVariableNode::NodePtr> children;
+	children.reserve( mExpressions.size() );
 	for ( const auto& expression : mExpressions )
-		childs.emplace_back( std::make_shared<ModelVariableNode>( expression, 0 ) );
-	mExpressionsHolder->addChilds( childs );
+		children.emplace_back( std::make_shared<ModelVariableNode>( expression, 0 ) );
+	mExpressionsHolder->addChildren( children );
 }
 
 void DebuggerPlugin::closeProject() {
@@ -328,6 +361,7 @@ void DebuggerPlugin::closeProject() {
 		sdc->getUIStack()->setModel( nullptr );
 		sdc->getUIThreads()->setModel( nullptr );
 		sdc->getUIVariables()->setModel( nullptr );
+		sdc->getUIVariables()->clearViewMetadata();
 	}
 }
 
@@ -426,7 +460,16 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 		for ( const auto& dap : dapArr ) {
 			DapTool dapTool;
 			dapTool.name = dap.value( "name", "" );
-			dapTool.type = dap.value( "type", "" );
+			dapTool.unstableFrameId = dap.value( "unstable_frame_id", false );
+
+			if ( dap.contains( "type" ) && dap["type"].is_array() ) {
+				for ( const auto& obj : dap["type"] )
+					if ( obj.is_string() )
+						dapTool.type.emplace_back( obj.get<std::string>() );
+			} else if ( dap.contains( "type" ) && dap["type"].is_string() ) {
+				dapTool.type.emplace_back( dap.value( "type", "" ) );
+			}
+
 			dapTool.url = dap.value( "url", "" );
 
 			if ( dap.contains( "run" ) ) {
@@ -559,8 +602,9 @@ void DebuggerPlugin::loadProjectConfiguration( const std::string& path ) {
 		DapConfig dapConfig;
 		auto type = conf.value( "type", "" );
 
-		if ( !std::any_of( mDaps.begin(), mDaps.end(),
-						   [&type]( const DapTool& dap ) { return dap.type == type; } ) )
+		if ( !std::any_of( mDaps.begin(), mDaps.end(), [&type]( const DapTool& dap ) {
+				 return dap.type.end() != std::find( dap.type.begin(), dap.type.end(), type );
+			 } ) )
 			continue;
 
 		dapConfig.name = conf.value( "name", "" );
@@ -653,6 +697,7 @@ PluginRequestHandle DebuggerPlugin::processMessage( const PluginMessage& msg ) {
 			break;
 		}
 		case ecode::PluginMessageType::UIReady: {
+			registerCommands( getPluginContext()->getMainLayout() );
 			for ( const auto& kb : mKeyBindings ) {
 				getPluginContext()->getMainLayout()->getKeyBindings().addKeybindString( kb.second,
 																						kb.first );
@@ -728,7 +773,8 @@ void DebuggerPlugin::buildSidePanelTab() {
 			<DropDownList id="debugger_list" layout_width="mp" layout_height="wrap_content" margin-top="2dp" />
 			<TextView text="@string(debugger_configuration, Debugger Configuration)" focusable="false" margin-top="8dp" />
 			<DropDownList id="debugger_conf_list" layout_width="mp" layout_height="wrap_content" margin-top="2dp" />
-			<PushButton id="debugger_run_button" lw="mp" lh="wc" text="@string(run, Run)" margin-top="8dp" icon="icon(debug-alt, 12dp)" />
+			<PushButton id="debugger_run_button" lw="mp" lh="wc" text="@string(debug, Debug)" margin-top="8dp" icon="icon(debug-alt, 12dp)" />
+			<PushButton id="debugger_build_and_run_button" lw="mp" lh="wc" text="@string(build_and_debug, Build & Debug)" margin-top="8dp" icon="icon(debug-alt, 12dp)" />
 			<hbox id="panel_debugger_buttons" lw="wc" lh="wc" layout_gravity="center_horizontal" visible="false" clip="none" margin-top="8dp">
 				<PushButton id="panel_debugger_continue" class="debugger_continue" lw="24dp" lh="24dp" icon="icon(debug-continue, 12dp)" tooltip="@string(continue, Continue)" />
 				<PushButton id="panel_debugger_pause" class="debugger_pause" lw="24dp" lh="24dp" icon="icon(debug-pause, 12dp)" tooltip="@string(pause, Pause)" />
@@ -800,13 +846,18 @@ void DebuggerPlugin::buildSidePanelTab() {
 
 	mTabContents->bind( "debugger_run_button", mRunButton );
 
-	mRunButton->onClick( [this]( auto ) {
-		if ( mDebugger && mDebugger->started() ) {
-			exitDebugger( true );
-		} else {
-			runCurrentConfig();
-		}
-	} );
+	mTabContents->bind( "debugger_build_and_run_button", mBuildAndRunButton );
+
+	mRunButton->setTooltipText( getPluginContext()->getKeybind( "debugger-start-stop" ) );
+
+	mBuildAndRunButton->setTooltipText(
+		getPluginContext()->getKeybind( "debugger-continue-interrupt" ) );
+
+	mRunButton->onClick(
+		[this]( auto ) { getPluginContext()->runCommand( "debugger-start-stop" ); } );
+
+	mBuildAndRunButton->onClick(
+		[this]( auto ) { getPluginContext()->runCommand( "debugger-continue-interrupt" ); } );
 
 	setUIDebuggingState( StatusDebuggerController::State::NotStarted );
 
@@ -872,6 +923,10 @@ void DebuggerPlugin::openExpressionMenu( ModelIndex idx ) {
 					mExpressionsHolder->addChild(
 						std::make_shared<ModelVariableNode>( expression, 0 ) );
 					msgBox->closeWindow();
+
+					if ( mDebuggingState == StatusDebuggerController::State::Paused && mListener ) {
+						mListener->evaluateExpression( expression );
+					}
 				}
 			} );
 		}
@@ -1062,7 +1117,10 @@ void DebuggerPlugin::updateDebuggerConfigurationList() {
 	{
 		Lock l( mDapsMutex );
 		for ( const auto& conf : mDapConfigs ) {
-			if ( conf.args.value( "type", "" ) != debuggerIt->type )
+			auto type( conf.args.value( "type", "" ) );
+
+			if ( std::find( debuggerIt->type.begin(), debuggerIt->type.end(), type ) ==
+				 debuggerIt->type.end() )
 				continue;
 
 			confNames.emplace_back( conf.name );
@@ -1081,7 +1139,7 @@ void DebuggerPlugin::updateDebuggerConfigurationList() {
 	}
 }
 
-void DebuggerPlugin::replaceInVal( std::string& val,
+bool DebuggerPlugin::replaceInVal( std::string& val,
 								   const std::optional<ProjectBuildStep>& runConfig,
 								   ProjectBuild* buildConfig, int randomPort ) {
 
@@ -1110,6 +1168,7 @@ void DebuggerPlugin::replaceInVal( std::string& val,
 	}
 
 	String::replaceAll( val, KEY_WORKSPACEFOLDER, mProjectPath );
+	String::replaceAll( val, KEY_WORKSPACEROOT, mProjectPath );
 	String::replaceAll( val, KEY_USER_HOME, Sys::getUserDirectory() );
 	String::replaceAll( val, KEY_WORKSPACEFOLDER_BASENAME,
 						FileSystem::fileNameFromPath( mProjectPath ) );
@@ -1117,6 +1176,10 @@ void DebuggerPlugin::replaceInVal( std::string& val,
 	String::replaceAll( val, KEY_EXEC_PATH, Sys::getProcessFilePath() );
 	String::replaceAll( val, KEY_PATH_SEPARATOR, FileSystem::getOSSlash() );
 	String::replaceAll( val, KEY_PATH_SEPARATOR_ABBR, FileSystem::getOSSlash() );
+	String::replaceAll( val, KEY_UUID, UUID().toString() );
+	String::replaceAll( val, KEY_TIMESTAMP,
+						std::to_string( std::chrono::system_clock::to_time_t(
+							std::chrono::system_clock::now() ) ) );
 
 	auto* editor = getPluginContext()->getSplitter()->getCurEditor();
 	if ( getPluginContext()->getSplitter()->getCurEditor() ) {
@@ -1129,9 +1192,11 @@ void DebuggerPlugin::replaceInVal( std::string& val,
 
 	if ( String::contains( val, KEY_RANDPORT ) )
 		String::replaceAll( val, KEY_RANDPORT, String::toString( randomPort ) );
+
+	return replaceEnvVars( val, this->getPluginContext() );
 }
 
-std::vector<std::string> DebuggerPlugin::replaceKeyInString(
+std::pair<bool, std::vector<std::string>> DebuggerPlugin::replaceKeyInString(
 	std::string val, int randomPort,
 	const std::unordered_map<std::string, std::string>& solvedInputs ) {
 	auto pbm = getPluginContext()->getProjectBuildManager();
@@ -1139,8 +1204,9 @@ std::vector<std::string> DebuggerPlugin::replaceKeyInString(
 	auto buildConfig = pbm ? pbm->getCurrentBuild() : nullptr;
 
 	const auto replaceVal = [this, &runConfig, &buildConfig, &solvedInputs,
-							 randomPort]( std::string& val ) {
-		replaceInVal( val, runConfig, buildConfig, randomPort );
+							 randomPort]( std::string& val ) -> bool {
+		if ( !replaceInVal( val, runConfig, buildConfig, randomPort ) )
+			return false;
 
 		LuaPattern::Range matches[2];
 		if ( inputPtrn.matches( val, matches ) ) {
@@ -1158,6 +1224,8 @@ std::vector<std::string> DebuggerPlugin::replaceKeyInString(
 			if ( solvedIdIt != solvedInputs.end() )
 				val = solvedIdIt->second;
 		}
+
+		return true;
 	};
 
 	if ( runConfig && val == KEY_ARGS ) {
@@ -1167,12 +1235,13 @@ std::vector<std::string> DebuggerPlugin::replaceKeyInString(
 			replaceVal( arg );
 			argsArr.push_back( arg );
 		}
-		return argsArr;
+		return { true, argsArr };
 	}
 
-	replaceVal( val );
+	if ( !replaceVal( val ) )
+		return { false, {} };
 
-	return { val };
+	return { true, { val } };
 }
 
 void DebuggerPlugin::replaceKeysInJson(
@@ -1217,6 +1286,8 @@ void DebuggerPlugin::replaceKeysInJson(
 		return true;
 	};
 
+	std::vector<std::string> keysToRemove;
+
 	for ( auto& j : json ) {
 		if ( j.is_object() ) {
 			replaceKeysInJson( j, randomPort, solvedInputs );
@@ -1241,9 +1312,13 @@ void DebuggerPlugin::replaceKeysInJson(
 				j = std::move( argsArr );
 				continue;
 			} else if ( runConfig && val == KEY_ENV && buildConfig ) {
-				j = nlohmann::json{};
-				for ( const auto& env : buildConfig->envs() )
-					j[env.first] = env.second;
+				if ( !buildConfig->envs().empty() ) {
+					j = nlohmann::json::object();
+					for ( const auto& env : buildConfig->envs() )
+						j[env.first] = env.second;
+				} else {
+					keysToRemove.push_back( "env" );
+				}
 			} else if ( val == KEY_STOPONENTRY ) {
 				j = false;
 			} else {
@@ -1266,6 +1341,10 @@ void DebuggerPlugin::replaceKeysInJson(
 					j = std::move( val );
 			}
 		}
+	}
+
+	for ( const auto& key : keysToRemove ) {
+		json.erase( key );
 	}
 }
 
@@ -1322,8 +1401,15 @@ DebuggerPlugin::needsToResolveInputs( nlohmann::json& json,
 	return inputs;
 }
 
-void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
-	doc->setCommand( "debugger-continue-interrupt", [this] {
+template <typename TCommandRegister, typename Cmd, typename CmdCb>
+void DebuggerPlugin::registerCommand( TCommandRegister* doc, Cmd cmd, CmdCb cb ) {
+	doc->setCommand( cmd, cb );
+	mRegisteredCommands.push_back( cmd );
+}
+
+template <typename TCommandRegister>
+void DebuggerPlugin::registerCommands( TCommandRegister* executer ) {
+	registerCommand( executer, "debugger-continue-interrupt", [this] {
 		if ( mDebugger && mListener ) {
 			if ( mListener->isStopped() ) {
 				resume( mListener->getCurrentThreadId() );
@@ -1343,34 +1429,66 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 					if ( exitCode == 0 ) {
 						runCurrentConfig();
 					} else {
-						auto msgBox =
-							UIMessageBox::New( UIMessageBox::YES_NO,
-											   i18n( "build_failed_debug_anyways",
-													 "Building the project failed, do you want to "
-													 "debug the binary anyways?" ) );
-						msgBox->setTitle( i18n( "build_failed", "Build Failed" ) );
-						msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
-						msgBox->on( Event::OnConfirm, [this]( auto ) { runCurrentConfig(); } );
-						msgBox->showWhenReady();
+						getPluginContext()->getUISceneNode()->runOnMainThread( [this] {
+							auto msgBox = UIMessageBox::New(
+								UIMessageBox::YES_NO,
+								i18n( "build_failed_debug_anyways",
+									  "Building the project failed, do you want to "
+									  "debug the binary anyways?" ) );
+							msgBox->setTitle( i18n( "build_failed", "Build Failed" ) );
+							msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
+							msgBox->on( Event::OnConfirm, [this]( auto ) { runCurrentConfig(); } );
+							msgBox->showWhenReady();
+						} );
 					}
 				} );
 		}
 	} );
 
-	doc->setCommand( "debugger-start", [this] {
+	registerCommand( executer, "debugger-start", [this] {
 		if ( mDebugger )
 			exitDebugger( true );
 		runCurrentConfig();
 	} );
 
-	doc->setCommand( "debugger-stop", [this] { exitDebugger( true ); } );
+	registerCommand( executer, "debugger-stop", [this] { exitDebugger( true ); } );
 
-	doc->setCommand( "debugger-start-stop", [this] {
-		if ( mDebugger )
+	registerCommand( executer, "debugger-start-stop", [this] {
+		if ( mDebugger && mDebugger->started() ) {
 			exitDebugger( true );
-		else
+		} else {
 			runCurrentConfig();
+		}
 	} );
+
+	registerCommand( executer, "debugger-step-over", [this] {
+		if ( mDebugger && mListener && mListener->isStopped() )
+			mDebugger->stepOver( mListener->getCurrentThreadId() );
+	} );
+
+	registerCommand( executer, "debugger-step-into", [this] {
+		if ( mDebugger && mListener && mListener->isStopped() )
+			mDebugger->stepInto( mListener->getCurrentThreadId() );
+	} );
+
+	registerCommand( executer, "debugger-step-out", [this] {
+		if ( mDebugger && mListener && mListener->isStopped() )
+			mDebugger->stepOut( mListener->getCurrentThreadId() );
+	} );
+
+	registerCommand( executer, "toggle-status-app-debugger", [this] {
+		if ( getStatusDebuggerController() )
+			getStatusDebuggerController()->toggle();
+	} );
+
+	registerCommand( executer, "show-debugger-tab", [this] {
+		if ( mTab )
+			mTab->setTabSelected();
+	} );
+}
+
+void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
+	registerCommands( doc );
 
 	doc->setCommand( "debugger-breakpoint-toggle", [doc, this] {
 		if ( setBreakpoint( doc, doc->getSelection().start().line() + 1 ) )
@@ -1380,31 +1498,6 @@ void DebuggerPlugin::onRegisterDocument( TextDocument* doc ) {
 	doc->setCommand( "debugger-breakpoint-enable-toggle", [this, doc] {
 		if ( breakpointToggleEnabled( doc, doc->getSelection().start().line() + 1 ) )
 			getUISceneNode()->getRoot()->invalidateDraw();
-	} );
-
-	doc->setCommand( "debugger-step-over", [this] {
-		if ( mDebugger && mListener && mListener->isStopped() )
-			mDebugger->stepOver( mListener->getCurrentThreadId() );
-	} );
-
-	doc->setCommand( "debugger-step-into", [this] {
-		if ( mDebugger && mListener && mListener->isStopped() )
-			mDebugger->stepInto( mListener->getCurrentThreadId() );
-	} );
-
-	doc->setCommand( "debugger-step-out", [this] {
-		if ( mDebugger && mListener && mListener->isStopped() )
-			mDebugger->stepOut( mListener->getCurrentThreadId() );
-	} );
-
-	doc->setCommand( "toggle-status-app-debugger", [this] {
-		if ( getStatusDebuggerController() )
-			getStatusDebuggerController()->toggle();
-	} );
-
-	doc->setCommand( "show-debugger-tab", [this]() {
-		if ( mTab )
-			mTab->setTabSelected();
 	} );
 
 	Lock l( mClientsMutex );
@@ -1430,6 +1523,8 @@ void DebuggerPlugin::onUnregisterEditor( UICodeEditor* editor ) {
 	editor->removeUnlockedCommands( DebuggerCommandList );
 
 	editor->unregisterGutterSpace( this );
+
+	editor->removeActionsByTag( getMouseMoveHash( editor ) );
 }
 
 void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
@@ -1442,6 +1537,12 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 	Float radius = lineHeight * 0.5f;
 	Float lineOffset = editor->getLineOffset();
 	Float offset = editor->getGutterLocalStartOffset( this );
+
+	p.setColor( Color( editor->getLineNumberBackgroundColor() ).blendAlpha( editor->getAlpha() ) );
+	p.drawRectangle( Rectf( { screenStart.x - editor->getPluginsGutterSpace() + offset,
+							  screenStart.y + editor->getPluginsTopSpace() },
+							Sizef( gutterSpace, editor->getPixelsSize().getHeight() -
+													editor->getPluginsTopSpace() ) ) );
 
 	if ( editor->getDocument().hasFilepath() ) {
 		auto docIt = mBreakpoints.find( editor->getDocument().getFilePath() );
@@ -1494,9 +1595,9 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 		}
 	}
 
-	if ( mDebugger && mListener && mListener->isStopped() && mListener->getCurrentScopePos() &&
-		 editor->getDocument().getFilePath() == mListener->getCurrentScopePos()->first ) {
-		int line = mListener->getCurrentScopePos()->second - 1;
+	if ( mDebugger && mListener && mListener->isStopped() &&
+		 mListener->isCurrentScopePos( editor->getDocument().getFilePath() ) ) {
+		int line = mListener->getCurrentScopePosLine() - 1;
 		if ( line >= 0 && line >= lineRange.first && line <= lineRange.second &&
 			 editor->getDocumentView().isLineVisible( line ) ) {
 
@@ -1538,9 +1639,8 @@ void DebuggerPlugin::drawLineNumbersBefore( UICodeEditor* editor,
 void DebuggerPlugin::drawBeforeLineText( UICodeEditor* editor, const Int64& index,
 										 Vector2f position, const Float& /*fontSize*/,
 										 const Float& lineHeight ) {
-	if ( !mDebugger || !mListener || !mListener->isStopped() || !mListener->getCurrentScopePos() ||
-		 editor->getDocument().getFilePath() != mListener->getCurrentScopePos()->first ||
-		 mListener->getCurrentScopePos()->second - 1 != index ||
+	if ( !mDebugger || !mListener || !mListener->isStopped() ||
+		 !mListener->isCurrentScopePos( editor->getDocument().getFilePath(), index + 1 ) ||
 		 !editor->getDocumentView().isLineVisible( index ) )
 		return;
 
@@ -1677,14 +1777,15 @@ static std::string findCommand( const std::string& findBinary, const std::string
 	std::string findCmd = findBinary;
 	String::replaceAll( findCmd, "${command}", cmd );
 	Process p;
-	p.create( findCmd );
-	std::string path;
-	p.readAllStdOut( path, Seconds( 5 ) );
-	int retCode = -1;
-	p.join( &retCode );
-	if ( retCode == 0 && !path.empty() ) {
-		String::trimInPlace( path, '\n' );
-		return path;
+	if ( p.create( findCmd ) ) {
+		std::string path;
+		p.readAllStdOut( path, Seconds( 5 ) );
+		int retCode = -1;
+		p.join( &retCode );
+		if ( retCode == 0 && !path.empty() ) {
+			String::trimInPlace( path, '\n' );
+			return path;
+		}
 	}
 	return "";
 }
@@ -1708,7 +1809,7 @@ void DebuggerPlugin::runConfig( const std::string& debugger, const std::string& 
 			mDapConfigs.begin(), mDapConfigs.end(),
 			[&configuration]( const DapConfig& conf ) { return conf.name == configuration; } );
 
-		if ( configIt == debuggerIt->configurations.end() )
+		if ( configIt == mDapConfigs.end() )
 			return;
 
 		usingExternalConfig = true;
@@ -1764,7 +1865,10 @@ void DebuggerPlugin::resolveInputsBeforeRun(
 		} );
 	} else if ( input.type == "pickfile" ) {
 		UIFileDialog* dialog = UIFileDialog::New(
-			UIFileDialog::DefaultFlags, "*", getPluginContext()->getDefaultFileDialogFolder() );
+			UIFileDialog::DefaultFlags | ( getPluginContext()->getConfig().ui.nativeFileDialogs
+											   ? UIFileDialog::UseNativeFileDialog
+											   : 0 ),
+			"*", getPluginContext()->getDefaultFileDialogFolder() );
 		dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL );
 		dialog->setTitle( i18n( "open_file", "Open File" ) );
 		dialog->setCloseShortcut( KEY_ESCAPE );
@@ -1815,6 +1919,26 @@ void DebuggerPlugin::resolveInputsBeforeRun(
 	}
 }
 
+std::optional<Connection> getDebugServer( nlohmann::json& json ) {
+	auto debugServerInt = json_get_if<int>( json, KEY_DEBUG_SERVER );
+
+	if ( debugServerInt )
+		return Connection{ *debugServerInt, "localhost" };
+
+	auto debugServerStr = json_get_if<std::string>( json, KEY_DEBUG_SERVER );
+	if ( debugServerStr ) {
+		int port;
+		if ( String::isNumber( *debugServerStr ) && String::fromString( port, *debugServerStr ) )
+			return Connection( port, "localhost" );
+
+		auto split = String::split( *debugServerStr, ':' );
+		if ( split.size() == 2 && String::fromString( port, split[1] ) )
+			return Connection( port, split[1] );
+	}
+
+	return {};
+}
+
 void DebuggerPlugin::prepareAndRun( DapTool debugger, DapConfig config,
 									std::unordered_map<std::string, std::string> solvedInputs ) {
 	int randomPort = Math::randi( 44000, 45000 );
@@ -1823,7 +1947,7 @@ void DebuggerPlugin::prepareAndRun( DapTool debugger, DapConfig config,
 	protocolSettings.runTarget = config.runTarget;
 	auto args = config.args;
 	replaceKeysInJson( args, randomPort, solvedInputs );
-	protocolSettings.launchArgs = args;
+	protocolSettings.launchArgs = std::move( args );
 	protocolSettings.redirectStdout = debugger.redirectStdout;
 	protocolSettings.redirectStderr = debugger.redirectStderr;
 	protocolSettings.supportsSourceRequest = debugger.supportsSourceRequest;
@@ -1831,9 +1955,15 @@ void DebuggerPlugin::prepareAndRun( DapTool debugger, DapConfig config,
 	bool usesPorts = false;
 
 	for ( auto& arg : debugger.run.args ) {
-		auto res( replaceKeyInString( arg, randomPort, solvedInputs ) );
+		auto ret( replaceKeyInString( arg, randomPort, solvedInputs ) );
+
+		// No success? Abort
+		if ( !ret.first )
+			return;
+
+		auto res( ret.second );
 		if ( res.size() == 1 && res[0] != arg ) {
-			if ( arg == KEY_RANDPORT )
+			if ( String::contains( arg, KEY_RANDPORT ) )
 				usesPorts = true;
 			arg = res[0];
 		}
@@ -1843,16 +1973,25 @@ void DebuggerPlugin::prepareAndRun( DapTool debugger, DapConfig config,
 		if ( cmdArg == KEY_FILE || cmdArg == KEY_ARGS || cmdArg == CMD_PICK_PROCESS ||
 			 cmdArg == CMD_PROMPT_STRING )
 			forceUseProgram = true;
-		auto args = replaceKeyInString( cmdArg, randomPort, solvedInputs );
+		auto ret = replaceKeyInString( cmdArg, randomPort, solvedInputs );
+
+		// No success? Abort
+		if ( !ret.first )
+			return;
+
+		auto args = ret.second;
 		for ( const auto& arg : args )
 			debugger.run.args.emplace_back( arg );
 	}
+
+	if ( getDebugServer( protocolSettings.launchArgs ) )
+		usesPorts = true;
 
 	mThreadPool->run(
 		[this, protocolSettings = std::move( protocolSettings ), randomPort,
 		 debugger = std::move( debugger ), forceUseProgram, usesPorts]() mutable {
 			run( debugger.name, std::move( protocolSettings ), std::move( debugger.run ),
-				 randomPort, forceUseProgram, usesPorts );
+				 randomPort, forceUseProgram, usesPorts, debugger.unstableFrameId );
 		},
 		[this]( const Uint64& ) {
 			if ( !mDebugger || !mDebugger->started() ) {
@@ -1869,7 +2008,7 @@ UIWindow* DebuggerPlugin::processPicker() {
 <window id="process_picker" lw="450dp" lh="450dp" padding="4dp" window-title="@string(list_of_processes, List of Processes)">
 	<vbox lw="mp" lh="mp">
 		<hbox lw="mp" lh="wc" margin-bottom="4dp">
-			<TextView text="@string(filter_semicolon, Filter:)" lh="mp" margin-right="8dp" />
+			<TextView text="@string(filter_colon, Filter:)" lh="mp" margin-right="8dp" />
 			<TextInput id="processes_filter" lw="0dp" lw8="1" />
 		</hbox>
 		<TableView id="processes_list" lw="mp" lh="0dp" lw8="1" />
@@ -1997,7 +2136,7 @@ void DebuggerPlugin::initStatusDebuggerController() {
 
 void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protocolSettings,
 						  DapRunConfig&& runConfig, int randPort, bool forceUseProgram,
-						  bool usesPorts ) {
+						  bool usesPorts, bool unstableFrameId ) {
 	std::optional<Command> cmdOpt = debuggerBinaryExists( debugger, runConfig );
 
 	if ( !cmdOpt && ( protocolSettings.launchRequestType == REQUEST_TYPE_LAUNCH ||
@@ -2016,18 +2155,41 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 
 	Command cmd = std::move( *cmdOpt );
 	bool isRemote = false;
+	bool runsDapServer = false;
+
+	for ( auto& arg : cmd.arguments )
+		replaceExecutableArgs( arg );
+
+	Connection con;
+	con.host = protocolSettings.launchArgs.value( "host", "localhost" );
+	con.port = randPort;
+
+	auto debugServer = getDebugServer( protocolSettings.launchArgs );
+	if ( debugServer ) {
+		runsDapServer = true;
+		con.host = debugServer->host;
+		con.port = debugServer->port;
+	} else if ( protocolSettings.launchArgs.contains( "port" ) &&
+				protocolSettings.launchArgs["port"].is_number_integer() ) {
+		con.port = protocolSettings.launchArgs.value( "port", randPort );
+	}
+
+	std::string localRoot = mProjectPath;
+	std::string remoteRoot;
 
 	if ( protocolSettings.launchRequestType == REQUEST_TYPE_LAUNCH ) {
-		auto bus = std::make_unique<BusProcess>( cmd );
-		mDebugger = std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
+		if ( usesPorts ) {
+			auto bus = std::make_unique<BusSocketProcess>( cmd, con );
+			mDebugger = std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
+		} else {
+			auto bus = std::make_unique<BusProcess>( cmd );
+			mDebugger = std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
+		}
 	} else if ( protocolSettings.launchRequestType == REQUEST_TYPE_ATTACH ) {
 		auto mode = protocolSettings.launchArgs.value( "mode", "" );
 		if ( mode.empty() )
 			mode = "local";
 
-		Connection con;
-		con.host = protocolSettings.launchArgs.value( "host", "localhost" );
-		con.port = protocolSettings.launchArgs.value( "port", 0 );
 		bool useSocket = !con.host.empty() && con.port != 0;
 		if ( ( protocolSettings.launchArgs.contains( "host" ) ||
 			   protocolSettings.launchArgs.contains( "port" ) ) &&
@@ -2052,7 +2214,20 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 								 !protocolSettings.launchArgs.value( "program", "" ).empty() );
 
 		if ( mode == "local" ) {
-			if ( useSocket ) {
+			if ( runsDapServer ) {
+				if ( protocolSettings.launchArgs.contains( "remoteRoot" ) &&
+					 protocolSettings.launchArgs["remoteRoot"].is_string() ) {
+					isRemote = true;
+					remoteRoot = protocolSettings.launchArgs["remoteRoot"].get<std::string>();
+				}
+				if ( protocolSettings.launchArgs.contains( "localRoot" ) &&
+					 protocolSettings.launchArgs["localRoot"].is_string() ) {
+					localRoot = protocolSettings.launchArgs["localRoot"].get<std::string>();
+				}
+				auto bus = std::make_unique<BusSocketProcess>( cmd, con );
+				mDebugger =
+					std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
+			} else if ( useSocket ) {
 				auto bus = std::make_unique<BusSocketProcess>( cmd, con );
 				mDebugger =
 					std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
@@ -2061,7 +2236,7 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 				mDebugger =
 					std::make_unique<DebuggerClientDap>( protocolSettings, std::move( bus ) );
 			} else {
-				// Unsuported
+				// Unsupported
 			}
 		} else if ( mode == "remote" ) {
 			auto bus = std::make_unique<BusSocket>( con );
@@ -2084,21 +2259,29 @@ void DebuggerPlugin::run( const std::string& debugger, ProtocolSettings&& protoc
 
 	mListener = std::make_unique<DebuggerClientListener>( mDebugger.get(), this );
 	mListener->setIsRemote( isRemote );
+	mListener->setUnstableFrameId( unstableFrameId );
+
+	if ( isRemote ) {
+		// mListener->setLocalRoot( localRoot );
+		// mListener->setRemoteRoot( remoteRoot );
+	}
+
 	mDebugger->addListener( mListener.get() );
 	mDebugger->setSilent( mSilence );
 
 	DebuggerClientDap* dap = static_cast<DebuggerClientDap*>( mDebugger.get() );
 	dap->runInTerminalCb = [this]( bool isIntegrated, std::string cmd,
 								   const std::vector<std::string>& args, const std::string& cwd,
-								   const std::unordered_map<std::string, std::string>& /*env*/,
+								   const std::unordered_map<std::string, std::string>& env,
 								   std::function<void( int )> doneFn ) {
 		if ( !FileSystem::fileExists( cmd ) )
 			cmd = FileSystem::fileNameFromPath( cmd );
-		getUISceneNode()->runOnMainThread( [=] {
-			if ( isIntegrated ) {
+		getUISceneNode()->runOnMainThread( [this, isIntegrated, cmd = std::move( cmd ), cwd, args,
+											doneFn = std::move( doneFn ), env = std::move( env )] {
+			if ( isIntegrated || !env.empty() ) {
 				UITerminal* term =
 					getPluginContext()->getTerminalManager()->createTerminalInSplitter(
-						cwd, cmd, args, false );
+						cwd, cmd, args, env, false, false );
 
 				doneFn( term && term->getTerm() && term->getTerm()->getTerminal() &&
 								term->getTerm()->getTerminal()->getProcess()
@@ -2174,6 +2357,8 @@ void DebuggerPlugin::updatePanelUIState( StatusDebuggerController::State state )
 
 	mRunButton->setText( isDebugging ? i18n( "Stop Debugger", "Stop Debugger" )
 									 : i18n( "debug", "Debug" ) );
+
+	mBuildAndRunButton->setEnabled( !isDebugging );
 }
 
 void DebuggerPlugin::setUIDebuggingState( StatusDebuggerController::State state ) {
@@ -2187,7 +2372,7 @@ void DebuggerPlugin::setUIDebuggingState( StatusDebuggerController::State state 
 	}
 
 	if ( mPanelBoxButtons.box ) {
-		if ( Engine::isRunninMainThread() )
+		if ( Engine::isMainThread() )
 			updatePanelUIState( state );
 		else
 			mPanelBoxButtons.box->runOnMainThread( [this, state] { updatePanelUIState( state ); } );
@@ -2197,12 +2382,6 @@ void DebuggerPlugin::setUIDebuggingState( StatusDebuggerController::State state 
 		 state == StatusDebuggerController::State::Running ) {
 		resetExpressions();
 	}
-}
-
-// Mouse Hover Tooltip
-static Action::UniqueID getMouseMoveHash( UICodeEditor* editor ) {
-	return hashCombine( String::hash( "DebuggerPlugin::onMouseMove-" ),
-						reinterpret_cast<Action::UniqueID>( editor ) );
 }
 
 void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const std::string& expression,
@@ -2220,7 +2399,7 @@ void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const std::string& ex
 		win->getKeyBindings().addKeybind( { KEY_ESCAPE }, "closeWindow" );
 		win->setWindowFlags( UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS |
 							 UI_WIN_SHADOW | UI_WIN_EPHEMERAL | UI_WIN_RESIZEABLE |
-							 UI_WIN_DRAGABLE_CONTAINER | UI_WIN_SHARE_ALPHA_WITH_CHILDS );
+							 UI_WIN_DRAGGABLE_CONTAINER | UI_WIN_SHARE_ALPHA_WITH_CHILDREN );
 		win->center();
 		win->on( Event::OnWindowClose, [this]( auto ) { mHoverTooltip = nullptr; } );
 		win->on( Event::OnWindowReady, [win]( auto ) { win->setFocus(); } );
@@ -2241,9 +2420,11 @@ void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const std::string& ex
 		tv->setFocusOnSelection( false );
 
 		tv->on( Event::OnModelEvent, [this]( const Event* event ) {
+			if ( !mDebugger || !mListener )
+				return;
 			const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
-			if ( mDebugger && mListener &&
-				 modelEvent->getModelEventType() == Abstract::ModelEventType::OpenTree ) {
+			auto idx( modelEvent->getModelIndex() );
+			if ( modelEvent->getModelEventType() == Abstract::ModelEventType::OpenTree ) {
 				ModelVariableNode* node =
 					static_cast<ModelVariableNode*>( modelEvent->getModelIndex().internalData() );
 				mDebugger->variables(
@@ -2252,6 +2433,9 @@ void DebuggerPlugin::displayTooltip( UICodeEditor* editor, const std::string& ex
 						mHoverExpressionsHolder->addVariables( variablesReference,
 															   std::move( vars ) );
 					} );
+			} else if ( modelEvent->getModelEventType() == Abstract::ModelEventType::OpenMenu &&
+						idx.isValid() ) {
+				mListener->createAndShowVariableMenu( idx );
 			}
 		} );
 
@@ -2318,22 +2502,21 @@ bool DebuggerPlugin::onMouseMove( UICodeEditor* editor, const Vector2i& position
 											const std::optional<EvaluateInfo>& info ) {
 					if ( info && mManager->getSplitter()->editorExists( editor ) &&
 						 !info->result.empty() ) {
-						editor->runOnMainThread( [this, editor, info = std::move( *info ),
-												  expression]() {
-							auto mousePos =
-								editor->getUISceneNode()->getWindow()->getInput()->getMousePos();
-							if ( !editor->getScreenRect().contains( mousePos.asFloat() ) )
-								return;
+						editor->runOnMainThread(
+							[this, editor, info = std::move( *info ), expression]() {
+								auto mousePos = editor->getInput()->getMousePos();
+								if ( !editor->getScreenRect().contains( mousePos.asFloat() ) )
+									return;
 
-							auto docPos = editor->resolveScreenPosition( mousePos.asFloat() );
-							auto range =
-								editor->getDocument().getWordRangeInPosition( docPos, true );
+								auto docPos = editor->resolveScreenPosition( mousePos.asFloat() );
+								auto range =
+									editor->getDocument().getWordRangeInPosition( docPos, true );
 
-							if ( mCurrentHover.contains( range ) ) {
-								mCurrentHover = range;
-								displayTooltip( editor, expression, info, mousePos.asFloat() );
-							}
-						} );
+								if ( mCurrentHover.contains( range ) ) {
+									mCurrentHover = range;
+									displayTooltip( editor, expression, info, mousePos.asFloat() );
+								}
+							} );
 					}
 				} );
 		},

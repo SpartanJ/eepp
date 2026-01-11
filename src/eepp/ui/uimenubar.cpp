@@ -85,10 +85,10 @@ void UIMenuBar::showPrevMenu() {
 }
 
 UIMenuBar::~UIMenuBar() {
-	destroyMenues();
+	destroyMenus();
 }
 
-void UIMenuBar::destroyMenues() {
+void UIMenuBar::destroyMenus() {
 	if ( !SceneManager::instance()->isShuttingDown() ) {
 		for ( MenuBarList::iterator it = mButtons.begin(); it != mButtons.end(); ++it ) {
 			if ( it->second && it->second->getParent() != this ) {

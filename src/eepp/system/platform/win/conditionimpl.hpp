@@ -40,7 +40,7 @@ class ConditionImpl {
 
   private:
 	int mIsValid;
-	int mConditionnedVar;
+	int mConditionedVar;
 
 	HANDLE mCond;
 	Mutex mMutex;

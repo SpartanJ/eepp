@@ -27,7 +27,7 @@ class LSPClientPlugin : public Plugin {
   public:
 	static PluginDefinition Definition() {
 		return { "lspclient",		   "LSP Client", "Language Server Protocol Client.",
-				 LSPClientPlugin::New, { 0, 2, 8 },	 LSPClientPlugin::NewSync };
+				 LSPClientPlugin::New, { 0, 3, 0 },	 LSPClientPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
@@ -185,8 +185,6 @@ class LSPClientPlugin : public Plugin {
 
 	void switchSourceHeader( UICodeEditor* editor );
 
-	bool editorExists( UICodeEditor* editor );
-
 	void createLocationsView( UICodeEditor* editor, const std::vector<LSPLocation>& locs );
 
 	void getAndGoToLocation( UICodeEditor* editor, const std::string& search );
@@ -194,12 +192,6 @@ class LSPClientPlugin : public Plugin {
 	void codeAction( UICodeEditor* editor );
 
 	void createCodeActionsView( UICodeEditor* editor, const std::vector<LSPCodeAction>& cas );
-
-	typedef std::function<void( const ModelEvent* )> ModelEventCallback;
-
-	void createListView( UICodeEditor* editor, const std::shared_ptr<Model>& model,
-						 const ModelEventCallback& onModelEventCb,
-						 const std::function<void( UIListView* )> onCreateCb = {} );
 
 	PluginRequestHandle processTextDocumentSymbol( const PluginMessage& msg );
 
@@ -220,6 +212,9 @@ class LSPClientPlugin : public Plugin {
 
 	std::shared_ptr<LSPSymbolInfoTreeModel> createDocSymbolsModel( URI uri,
 																   const std::string& query = "" );
+
+	void onDocumentHoverResponse( UICodeEditor* editor, const LSPHover& resp, bool fromMousePos,
+								  std::optional<Vector2f> screenPos = {} );
 };
 
 } // namespace ecode

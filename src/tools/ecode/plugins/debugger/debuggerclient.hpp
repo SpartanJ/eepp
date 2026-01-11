@@ -6,6 +6,8 @@ namespace ecode {
 
 using namespace dap;
 
+using SessionId = std::string;
+
 class DebuggerClient {
   public:
 	enum class State { None, Initializing, Initialized, Running, Terminated, Failed };
@@ -15,43 +17,74 @@ class DebuggerClient {
 
 	class Listener {
 	  public:
-		virtual void stateChanged( State ) = 0;
-		virtual void initialized() = 0;
-		virtual void launched() = 0;
-		virtual void configured() = 0;
-		virtual void failed() = 0;
-		virtual void debuggeeRunning() = 0;
-		virtual void debuggeeTerminated() = 0;
+		virtual void stateChanged( State, const SessionId& sessionId ) = 0;
+
+		virtual void initialized( const SessionId& sessionId ) = 0;
+
+		virtual void launched( const SessionId& sessionId ) = 0;
+
+		virtual void configured( const SessionId& sessionId ) = 0;
+
+		virtual void failed( const SessionId& sessionId ) = 0;
+
+		virtual void debuggeeRunning( const SessionId& sessionId ) = 0;
+
+		virtual void debuggeeTerminated( const SessionId& sessionId ) = 0;
 
 		virtual void capabilitiesReceived( const Capabilities& capabilities ) = 0;
-		virtual void debuggeeExited( int exitCode ) = 0;
-		virtual void debuggeeStopped( const StoppedEvent& ) = 0;
-		virtual void debuggeeContinued( const ContinuedEvent& ) = 0;
-		virtual void outputProduced( const Output& ) = 0;
-		virtual void debuggingProcess( const ProcessInfo& ) = 0;
-		virtual void errorResponse( const std::string& command, const std::string& summary,
-									const std::optional<Message>& message ) = 0;
-		virtual void threadChanged( const ThreadEvent& ) = 0;
-		virtual void moduleChanged( const ModuleEvent& ) = 0;
-		virtual void threads( std::vector<DapThread>&& ) = 0;
-		virtual void stackTrace( const int threadId, StackTraceInfo&& ) = 0;
-		virtual void scopes( const int frameId, std::vector<Scope>&& ) = 0;
-		virtual void variables( const int variablesReference, std::vector<Variable>&& ) = 0;
-		virtual void modules( ModulesInfo&& ) = 0;
-		virtual void serverDisconnected() = 0;
-		virtual void sourceContent( const std::string& path, int reference = 0,
-									const SourceContent& content = SourceContent() ) = 0;
-		virtual void
-		sourceBreakpoints( const std::string& path, int reference,
-						   const std::optional<std::vector<Breakpoint>>& breakpoints ) = 0;
-		virtual void breakpointChanged( const BreakpointEvent& ) = 0;
-		virtual void expressionEvaluated( const std::string& expression,
-										  const std::optional<EvaluateInfo>& ) = 0;
-		virtual void gotoTargets( const Source& source, const int line,
-								  const std::vector<GotoTarget>& targets ) = 0;
-	};
 
-	State state() const { return mState; }
+		virtual void debuggeeExited( int exitCode, const SessionId& sessionId ) = 0;
+
+		virtual void debuggeeStopped( const StoppedEvent&, const SessionId& sessionId ) = 0;
+
+		virtual void debuggeeContinued( const ContinuedEvent&, const SessionId& sessionId ) = 0;
+
+		virtual void outputProduced( const Output& ) = 0;
+
+		virtual void debuggingProcess( const ProcessInfo&, const SessionId& sessionId ) = 0;
+
+		virtual void errorResponse( const std::string& command, const std::string& summary,
+									const std::optional<Message>& message,
+									const SessionId& sessionId ) = 0;
+
+		virtual void threadChanged( const ThreadEvent&, const SessionId& sessionId ) = 0;
+
+		virtual void moduleChanged( const ModuleEvent&, const SessionId& sessionId ) = 0;
+
+		virtual void threads( std::vector<DapThread>&&, const SessionId& sessionId ) = 0;
+
+		virtual void stackTrace( const int threadId, StackTraceInfo&&,
+								 const SessionId& sessionId ) = 0;
+
+		virtual void scopes( const int frameId, std::vector<Scope>&&,
+							 const SessionId& sessionId ) = 0;
+
+		virtual void variables( const int variablesReference, std::vector<Variable>&&,
+								const SessionId& sessionId ) = 0;
+
+		virtual void modules( ModulesInfo&&, const SessionId& sessionId ) = 0;
+
+		virtual void serverDisconnected( const SessionId& sessionId ) = 0;
+
+		virtual void sourceContent( const std::string& path, int reference = 0,
+									const SourceContent& content = SourceContent(),
+									const SessionId& sessionId = "" ) = 0;
+
+		virtual void sourceBreakpoints( const std::string& path, int reference,
+										const std::optional<std::vector<Breakpoint>>& breakpoints,
+										const SessionId& sessionId ) = 0;
+
+		virtual void breakpointChanged( const BreakpointEvent&, const SessionId& sessionId ) = 0;
+
+		virtual void expressionEvaluated( const std::string& expression,
+										  const std::optional<EvaluateInfo>&,
+										  const SessionId& sessionId ) = 0;
+
+		virtual void gotoTargets( const Source& source, const int line,
+								  const std::vector<GotoTarget>& targets,
+								  const SessionId& sessionId ) = 0;
+
+	};
 
 	virtual bool start() = 0;
 
@@ -113,7 +146,7 @@ class DebuggerClient {
 
 	virtual bool watch( const std::string& expression, std::optional<int> frameId ) = 0;
 
-	virtual bool configurationDone() = 0;
+	virtual bool configurationDone( const SessionId& sessionId ) = 0;
 
 	virtual void setSilent( bool silent ) = 0;
 
@@ -123,22 +156,20 @@ class DebuggerClient {
 
 	virtual ~DebuggerClient() {}
 
-  protected:
-	void setState( const State& state );
+	virtual size_t sessionsActive() = 0;
 
-	State mState{ State::None };
-	bool mLaunched{ false };
-	bool mConfigured{ false };
-	bool mWaitingToAttach{ false };
+  protected:
+	virtual void setState( const State& state, const SessionId& sessionId = "" ) = 0;
+
+	virtual void checkRunning( const SessionId& sessionId = "" ) = 0;
+
 	std::vector<Listener*> mListeners;
 
-	void checkRunning();
-
-	void stateChanged( State );
-	void initialized();
-	void debuggeeRunning();
-	void debuggeeTerminated();
-	void failed();
+	void stateChanged( State, const SessionId& sessionId = "" );
+	void initialized( const SessionId& sessionId = "" );
+	void debuggeeRunning( const SessionId& sessionId = "" );
+	void debuggeeTerminated( const SessionId& sessionId = "" );
+	void failed( const SessionId& sessionId = "" );
 };
 
 } // namespace ecode

@@ -1,5 +1,4 @@
 #include "git.hpp"
-#include "../../stringhelper.hpp"
 #include <eepp/system/clock.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/lock.hpp>
@@ -15,7 +14,7 @@ using namespace std::literals;
 
 namespace ecode {
 
-static constexpr auto sNotCommitedYetHash = "0000000000000000000000000000000000000000";
+static constexpr auto sNotCommittedYetHash = "0000000000000000000000000000000000000000";
 
 Git::Blame::Blame( const std::string& error ) : error( error ), line( 0 ) {}
 
@@ -41,19 +40,21 @@ int Git::git( const std::string& args, const std::string& projectDir, std::strin
 	Clock clock;
 	buf.clear();
 	Process p;
-	p.create( mGitPath, args,
-			  Process::CombinedStdoutStderr | Process::Options::NoWindow |
-				  Process::Options::EnableAsync | Process::Options::InheritEnvironment,
-			  { { "LC_ALL", "en_US.UTF-8" } }, projectDir.empty() ? mProjectPath : projectDir );
+	if ( !p.create( mGitPath, args,
+					Process::CombinedStdoutStderr | Process::Options::NoWindow |
+						Process::Options::EnableAsync | Process::Options::InheritEnvironment,
+					{ { "LC_ALL", "en_US.UTF-8" } },
+					projectDir.empty() ? mProjectPath : projectDir ) ) {
+		return EXIT_FAILURE;
+	}
 	p.readAllStdOut( buf );
 	int retCode = 0;
 	p.join( &retCode );
-	if ( mLogLevel == LogLevel::Info ||
-		 ( mLogLevel >= LogLevel::Warning && retCode != EXIT_SUCCESS ) ) {
-		Log::instance()->writef( mLogLevel, "GitPlugin cmd in %s (%d): %s %s",
+	if ( !mSilent || retCode != EXIT_SUCCESS ) {
+		Log::instance()->writef( retCode != EXIT_SUCCESS ? LogLevel::Info : LogLevel::Debug,
+								 "GitPlugin cmd in %s (%d): %s %s",
 								 clock.getElapsedTime().toString(), retCode, mGitPath, args );
 	}
-	Log::debug( "%s", buf );
 	return retCode;
 }
 
@@ -269,7 +270,7 @@ Git::Result Git::mergeBranch( const std::string& branch, bool fastForward,
 					  projectDir );
 }
 
-Git::Result Git::commit( const std::string& commitMsg, bool ammend, bool byPassCommitHook,
+Git::Result Git::commit( const std::string& commitMsg, bool amend, bool byPassCommitHook,
 						 const std::string& projectDir ) {
 	auto tmpPath = Sys::getTempPath() + ".ecode-git-commit-" + String::randString( 16 );
 	if ( !FileSystem::fileWrite( tmpPath, commitMsg ) ) {
@@ -280,8 +281,8 @@ Git::Result Git::commit( const std::string& commitMsg, bool ammend, bool byPassC
 	}
 	std::string buf;
 	std::string opts;
-	if ( ammend )
-		opts += " --ammend";
+	if ( amend )
+		opts += " --amend";
 
 	if ( byPassCommitHook )
 		opts += " --no-verify";
@@ -367,6 +368,10 @@ static void parseAheadBehind( std::string_view aheadBehind, Git::Branch& branch 
 	static constexpr auto AHEAD = "ahead "sv;
 	if ( aheadBehind.empty() )
 		return;
+	if ( aheadBehind == "gone" ) {
+		branch.gone = true;
+		return;
+	}
 	auto split = String::split( aheadBehind, ',' );
 	for ( auto s : split ) {
 		s = String::trim( s );
@@ -446,27 +451,33 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 	std::string buf;
 
 	if ( EXIT_SUCCESS == git( args, projectDir, buf ) ) {
-		branches.reserve( StringHelper::countLines( buf ) );
+		branches.reserve( String::countLines( buf ) );
 
-		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
+		String::readBySeparator( std::string_view{ buf }, [&]( std::string_view line ) {
 			auto branch = String::trim( String::trim( line, '\'' ), '\t' );
 			if ( ( ref & Head ) && String::startsWith( branch, "refs/heads/" ) ) {
-				branches.emplace_back( parseLocalBranch( branch ) );
+				auto parsedBranch = parseLocalBranch( branch );
+				if ( !parsedBranch.isEmpty() )
+					branches.emplace_back( std::move( parsedBranch ) );
 			} else if ( ( ref & Remote ) && String::startsWith( branch, "refs/remotes/" ) ) {
-				branches.emplace_back( parseRemoteBranch( branch ) );
+				auto parsedBranch = parseRemoteBranch( branch );
+				if ( !parsedBranch.isEmpty() )
+					branches.emplace_back( std::move( parsedBranch ) );
 			} else if ( ( ref & Tag ) && String::startsWith( branch, "refs/tags/" ) ) {
-				branches.emplace_back( parseTag( branch ) );
+				auto parsedBranch = parseTag( branch );
+				if ( !parsedBranch.isEmpty() )
+					branches.emplace_back( std::move( parsedBranch ) );
 			}
 		} );
 	}
 
 	if ( ( ref & RefType::Stash ) &&
 		 EXIT_SUCCESS == git( "stash list --date=format:\"%Y-%m-%d %H:%M\"", projectDir, buf ) ) {
-		branches.reserve( branches.size() + StringHelper::countLines( buf ) );
+		branches.reserve( branches.size() + String::countLines( buf ) );
 		std::string ptrn( "stash@{(.*)}:%s(.*)" );
 		LuaPattern pattern( ptrn );
 		Uint64 id = 0;
-		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
+		String::readBySeparator( std::string_view{ buf }, [&]( std::string_view line ) {
 			PatternMatcher::Range matches[3];
 			if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
 				std::string date(
@@ -478,7 +489,8 @@ std::vector<Git::Branch> Git::getAllBranchesAndTags( RefType ref, std::string_vi
 				newBranch.name = std::move( name );
 				newBranch.remote = String::format( "stash@{%llu}", id );
 				newBranch.date = date;
-				branches.emplace_back( std::move( newBranch ) );
+				if ( !newBranch.isEmpty() )
+					branches.emplace_back( std::move( newBranch ) );
 				id++;
 			}
 		} );
@@ -493,13 +505,14 @@ std::vector<std::string> Git::fetchSubModules( const std::string& projectDir ) {
 	FileSystem::fileGet( ( !projectDir.empty() ? projectDir : mProjectPath ) + ".gitmodules", buf );
 	std::string ptrn( "^%s*path%s*=%s*(.+)" );
 	LuaPattern pattern( ptrn );
-	StringHelper::readBySeparator( buf, [&pattern, &submodules]( const std::string_view& line ) {
-		PatternMatcher::Range matches[2];
-		if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
-			submodules.emplace_back( String::trim(
-				line.substr( matches[1].start, matches[1].end - matches[1].start ), '\n' ) );
-		}
-	} );
+	String::readBySeparator(
+		std::string_view{ buf }, [&pattern, &submodules]( std::string_view line ) {
+			PatternMatcher::Range matches[2];
+			if ( pattern.matches( line.data(), 0, matches, line.size() ) ) {
+				submodules.emplace_back( String::trim(
+					line.substr( matches[1].start, matches[1].end - matches[1].start ), '\n' ) );
+			}
+		} );
 	return submodules;
 }
 
@@ -578,12 +591,12 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 		std::string subModulePath = "";
 		std::string ptrn = "^([mMARTUD?%s][mMARTUD?%s])%s(.*)";
 		LuaPattern pattern( ptrn );
-		size_t changesCount = StringHelper::countLines( buf );
+		size_t changesCount = String::countLines( buf );
 
 		if ( changesCount > 1000 )
 			return;
 
-		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
+		String::readBySeparator( std::string_view{ buf }, [&]( std::string_view line ) {
 			PatternMatcher::Range matches[3];
 			if ( subModulePattern.matches( line.data(), 0, matches, line.size() ) ) {
 				subModulePath = String::trim(
@@ -659,7 +672,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 		std::string ptrn( "(%d+)%s+(%d+)%s+(.+)" );
 		LuaPattern pattern( ptrn );
 		std::string subModulePath = "";
-		StringHelper::readBySeparator( buf, [&]( const std::string_view& line ) {
+		String::readBySeparator( std::string_view{ buf }, [&]( std::string_view line ) {
 			PatternMatcher::Range matches[4];
 			if ( subModulePattern.matches( line.data(), 0, matches, line.size() ) ) {
 				subModulePath = String::trim(
@@ -734,7 +747,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				std::string fileText;
 				FileSystem::fileGet( ( projectDir.empty() ? mProjectPath : projectDir ) + val.file,
 									 fileText );
-				val.inserts = StringHelper::countLines( fileText );
+				val.inserts = String::countLines( fileText );
 				s.totalInserts += val.inserts;
 			}
 		}
@@ -773,7 +786,7 @@ Git::Blame Git::blame( const std::string& filepath, std::size_t line ) const {
 
 	auto commitHash = buf.substr( 0, hashEnd );
 
-	if ( commitHash == sNotCommitedYetHash )
+	if ( commitHash == sNotCommittedYetHash )
 		return { "Not Committed Yet" };
 
 	auto author = getText( "author"sv );

@@ -27,6 +27,7 @@ class GlobalSearchController {
 			{ "mod+shift+e", "collapse-all" },
 			{ "mod+e", "change-escape-sequence" },
 			{ "mod+h", "global-search-clear-history" },
+			{ "mod+b", "buffer-only-mode" },
 		};
 	}
 
@@ -52,12 +53,9 @@ class GlobalSearchController {
 						 TextDocument::FindReplaceType searchType, bool escapeSequence,
 						 bool searchReplace, bool searchAgain = false );
 
-	size_t replaceInFiles( const std::string& replaceText,
-						   std::shared_ptr<ProjectSearch::ResultModel> model );
-
 	void showGlobalSearch();
 
-	void showGlobalSearch( bool searchAndReplace );
+	void showGlobalSearch( bool searchAndReplace, std::optional<std::string> pathFilters = {} );
 
 	void updateColorScheme( const SyntaxColorScheme& colorScheme );
 
@@ -88,6 +86,8 @@ class GlobalSearchController {
 	};
 	std::deque<SearchHistoryItem> mGlobalSearchHistory;
 	bool mValueChanging{ false };
+	ProjectSearch::SearchConfig mLastSearchConfig;
+	ProjectSearch::FindData* mCurSearch{ nullptr };
 
 	void onLoadDone( const Variant& lineNum, const Variant& colNum );
 
@@ -98,6 +98,16 @@ class GlobalSearchController {
 									bool searchReplace, bool searchAgain, bool escapeSequence );
 
 	std::vector<GlobMatch> parseGlobMatches( const String& str );
+
+	void replaceInFiles( std::string replaceText, std::shared_ptr<ProjectSearch::ResultModel> model,
+						 std::function<void( int )> onDoneCb, bool bufferOnlyMode,
+						 ProjectSearch::SearchConfig searchConfig );
+
+	void processNextReplaceInBuffer( std::string&& replaceText,
+									 ProjectSearch::SearchConfig&& searchConfig,
+									 std::function<void( int )>&& onDoneCb, int count,
+									 std::vector<ProjectSearch::ResultData>&& pendingRes,
+									 bool hasCaptures );
 };
 
 } // namespace ecode

@@ -3,13 +3,19 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addXit() {
+SyntaxDefinition& addXit() {
+	auto dynSyntax = []( const SyntaxPattern&, const std::string_view& match ) -> std::string {
+		return SyntaxDefinitionManager::instance()
+			->findFromString( String::trim( match.substr( 3 ) ) )
+			.getLanguageName();
+	};
 
-	SyntaxDefinitionManager::instance()->add(
+	auto& sd = SyntaxDefinitionManager::instance()->add(
 
 		{ "[x]it!",
 		  { "%.xit$" },
 		  {
+			  { { "```[%w \t%+%-#]+", "```" }, "function", dynSyntax },
 			  { { "%f[^%s%(]%-%>%s%d%d%d%d%-%d%d%-%d%d%f[\n%s%!%?%)]" }, "number" },
 			  { { "%f[^%s%(]%-%>%s%d%d%d%d%/%d%d%/%d%d%f[\n%s%!%?%)]" }, "number" },
 			  { { "%f[^%s%(]%-%>%s%d%d%d%d%-[wWqQ]?%d%d?%f[\n%s%!%?%)]" }, "number" },
@@ -48,6 +54,8 @@ void addXit() {
 		  {}
 
 		} );
+	sd.setFoldRangeType( FoldRangeType::Markdown );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

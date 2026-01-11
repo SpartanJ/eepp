@@ -9,8 +9,10 @@
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/window/window.hpp>
 
-#include <nlohmann/json.hpp>
-using json = nlohmann::json;
+#include <eterm/terminal/terminaltypes.hpp>
+#include <eterm/ui/uiterminal.hpp>
+
+#include <nlohmann/json_fwd.hpp>
 
 using namespace EE;
 using namespace EE::Math;
@@ -19,6 +21,8 @@ using namespace EE::UI::CSS;
 using namespace EE::UI::Tools;
 using namespace EE::System;
 using namespace EE::Window;
+using namespace eterm::Terminal;
+using namespace eterm::UI;
 
 namespace ecode {
 class App;
@@ -34,14 +38,20 @@ struct UIConfig {
 	bool showMenuBar{ false };
 	bool welcomeScreen{ true };
 	bool openFilesInNewWindow{ false };
+	bool openProjectInNewWindow{ false };
+	bool nativeFileDialogs{ false };
+	bool imagesQuickPreview{ false };
+	bool editorFontInInputFields{ true };
 	PanelPosition panelPosition{ PanelPosition::Left };
-	std::string serifFont;
+	std::string sansSerifFont;
 	std::string monospaceFont;
 	std::string terminalFont;
 	std::string fallbackFont;
-	ColorSchemePreference colorScheme{ ColorSchemePreference::Dark };
+	ColorSchemeExtPreference colorScheme{ ColorSchemeExtPreference::Dark };
 	std::string theme;
 	std::string language;
+	FontHinting fontHinting{ FontHinting::Full };
+	FontAntialiasing fontAntialiasing{ FontAntialiasing::Grayscale };
 };
 
 struct WindowStateConfig {
@@ -75,6 +85,11 @@ struct CodeEditorConfig {
 	bool minimap{ true };
 	bool showDocInfo{ true };
 	bool hideTabBarOnSingleTab{ true };
+	bool hideTabBar{ false };
+	bool tabSwitcher{ false };
+	bool openDocumentsInMainSplit{ false };
+	UITabWidget::TabJumpMode tabJumpMode{ UITabWidget::TabJumpMode::Linear };
+
 	bool singleClickNavigation{ false };
 	bool syncProjectTreeWithEditor{ true };
 	bool autoCloseXMLTags{ true };
@@ -82,7 +97,6 @@ struct CodeEditorConfig {
 	bool autoReloadOnDiskChange{ false };
 	bool codeFoldingEnabled{ true };
 	bool codeFoldingAlwaysVisible{ false };
-	bool flashCursor{ false };
 	LineWrapMode wrapMode{ LineWrapMode::NoWrap };
 	LineWrapType wrapType{ LineWrapType::Viewport };
 	bool wrapKeepIndentation{ true };
@@ -99,6 +113,7 @@ struct DocumentConfig {
 	bool autoDetectIndentType{ true };
 	bool writeUnicodeBOM{ false };
 	bool indentSpaces{ false };
+	bool tabStops{ true };
 	TextFormat::LineEnding lineEndings{ TextFormat::LineEnding::LF };
 	int indentWidth{ 4 };
 	int tabWidth{ 4 };
@@ -119,14 +134,20 @@ struct GlobalSearchBarConfig {
 	bool luaPattern{ false };
 	bool wholeWord{ false };
 	bool escapeSequence{ false };
+	bool bufferOnlyMode{ false };
 };
 
-struct ProjectDocumentConfig {
+struct LanguagesExtensions {
+	std::map<std::string, std::string> priorities;
+};
+
+struct ProjectConfig {
 	bool useGlobalSettings{ true };
-	bool hAsCPP{ false };
+	HExtLanguageType hExtLanguageType{ HExtLanguageType::AutoDetect };
 	DocumentConfig doc;
-	ProjectDocumentConfig() {}
-	ProjectDocumentConfig( const DocumentConfig& doc ) { this->doc = doc; }
+	LanguagesExtensions languagesExtensions;
+	ProjectConfig() {}
+	ProjectConfig( const DocumentConfig& doc ) { this->doc = doc; }
 };
 
 struct ProjectBuildConfiguration {
@@ -137,13 +158,15 @@ struct ProjectBuildConfiguration {
 
 class NewTerminalOrientation {
   public:
-	enum Orientation { Same, Vertical, Horizontal };
+	enum Orientation { Same, Vertical, Horizontal, StatusBarPanel };
 
 	static NewTerminalOrientation::Orientation fromString( const std::string& orientation ) {
 		if ( "same" == orientation )
 			return Orientation::Same;
 		if ( "horizontal" == orientation )
 			return Orientation::Horizontal;
+		if ( "statusbar_panel" == orientation )
+			return Orientation::StatusBarPanel;
 		return Orientation::Vertical;
 	}
 
@@ -153,6 +176,8 @@ class NewTerminalOrientation {
 				return "vertical";
 			case Orientation::Horizontal:
 				return "horizontal";
+			case Orientation::StatusBarPanel:
+				return "statusbar_panel";
 			case Orientation::Same:
 			default:
 				return "same";
@@ -162,12 +187,19 @@ class NewTerminalOrientation {
 
 struct TerminalConfig {
 	std::string shell;
+	std::string shellArgs;
 	std::string colorScheme{ "eterm" };
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 	NewTerminalOrientation::Orientation newTerminalOrientation{
 		NewTerminalOrientation::Horizontal };
 	Uint64 scrollback{ 10000 };
 	bool unsupportedOSWarnDisabled{ false };
+	bool closeTerminalTabOnExit{ false };
+	bool warnBeforeClosingTab{ true };
+	bool exclusiveMode{ false };
+	TerminalCursorMode cursorStyle{ TerminalCursorMode::SteadyUnderline };
+	ScrollViewType scrollBarType{ ScrollViewType::Overlay };
+	ScrollBarMode scrollBarMode{ ScrollBarMode::Auto };
 };
 
 struct WorkspaceConfig {
@@ -176,17 +208,24 @@ struct WorkspaceConfig {
 	bool sessionSnapshot{ true };
 };
 
-struct LanguagesExtensions {
-	std::map<std::string, std::string> priorities;
-};
-
 struct SessionSnapshotFile {
 	std::string cachePath;
 	std::string fspath;
-	Uint64 fsmtime{ 0 };
+	Int64 fsmtime{ 0 };
 	std::string fshash;
 	std::string name;
 	std::string selection;
+};
+
+struct TabWidgetData {
+	UIWidget* widget{ nullptr };
+	Drawable* icon{ nullptr };
+	std::string title;
+};
+
+struct TabWidgetCbs {
+	std::function<nlohmann::json( UIWidget* )> onSave;
+	std::function<TabWidgetData( const nlohmann::json& )> onLoad;
 };
 
 class AppConfig {
@@ -216,25 +255,43 @@ class AppConfig {
 			   const std::vector<std::string>& recentFolders, const std::string& panelPartition,
 			   const std::string& statusBarPartition, EE::Window::Window* win,
 			   const std::string& colorSchemeName, const SearchBarConfig& searchBarConfig,
-			   const GlobalSearchBarConfig& globalSearchBarConfig, PluginManager* pluginManager );
+			   const GlobalSearchBarConfig& globalSearchBarConfig, PluginManager* pluginManager,
+			   bool terminalMode );
 
 	void saveProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
-					  const std::string& configPath, const ProjectDocumentConfig& docConfig,
+					  const std::string& configPath, const ProjectConfig& docConfig,
 					  const ProjectBuildConfiguration& buildConfig, bool onlyIfNeeded,
 					  bool sessionSnapshot, PluginManager* );
 
 	void loadProject( std::string projectFolder, UICodeEditorSplitter* editorSplitter,
-					  const std::string& configPath, ProjectDocumentConfig& docConfig,
+					  const std::string& configPath, ProjectConfig& docConfig,
 					  ecode::App* app, bool sessionSnapshot, PluginManager* pluginManager );
+
+	void addTabWidgetType( const std::string& type, TabWidgetCbs tabWidget ) {
+		Lock l( tabWidgetTypesMutex );
+		tabWidgetTypes[type] = tabWidget;
+	}
+
+	void removeTabWidgetType( const std::string& type ) {
+		Lock l( tabWidgetTypesMutex );
+		tabWidgetTypes.erase( type );
+	}
 
   protected:
 	Int64 editorsToLoad{ 0 };
 
-	void loadDocuments( UICodeEditorSplitter* editorSplitter, json j, UITabWidget* curTabWidget,
-						ecode::App* app,
+	void loadDocuments( UICodeEditorSplitter* editorSplitter, nlohmann::json j,
+						UITabWidget* curTabWidget, ecode::App* app,
 						const std::vector<SessionSnapshotFile>& sessionSnapshotFiles );
 
 	void editorLoadedCounter( ecode::App* app );
+
+	void loadFileAssociations( const std::string& projectFolder );
+
+	nlohmann::json saveNode( Node* node );
+
+	Mutex tabWidgetTypesMutex;
+	std::unordered_map<std::string, TabWidgetCbs> tabWidgetTypes;
 };
 
 } // namespace ecode

@@ -60,8 +60,7 @@ UIScrollBar::UIScrollBar( const std::string& tag, const UIOrientation& orientati
 	mSlider->setParent( this );
 	mSlider->setAllowHalfSliderOut( false );
 	mSlider->setExpandBackground( false );
-	mSlider->addEventListener( Event::OnValueChange,
-							   [this] ( auto event ) { onValueChangeCb( event ); } );
+	mSlider->on( Event::OnValueChange, [this]( auto event ) { onValueChangeCb( event ); } );
 	if ( orientation == UIOrientation::Vertical ) {
 		mSlider->getSliderButton()->setElementTag( mTag + "::vbutton" );
 		mSlider->getBackSlider()->setElementTag( mTag + "::vback" );
@@ -114,9 +113,9 @@ void UIScrollBar::setTheme( UITheme* Theme ) {
 		mBtnDown->setSize( tSkin->getSize() );
 	}
 
-	adjustChilds();
+	adjustChildren();
 
-	mSlider->adjustChilds();
+	mSlider->adjustChildren();
 
 	onThemeLoaded();
 }
@@ -177,19 +176,19 @@ void UIScrollBar::onAutoSize() {
 			setInternalPixelsHeight( size.getHeight() );
 		}
 
-		adjustChilds();
+		adjustChildren();
 	}
 }
 
 void UIScrollBar::onSizeChange() {
 	onAutoSize();
 
-	adjustChilds();
+	adjustChildren();
 
 	UIWidget::onSizeChange();
 }
 
-void UIScrollBar::adjustChilds() {
+void UIScrollBar::adjustChildren() {
 	if ( mNodeFlags & NODE_FLAG_FREE_USE )
 		return;
 
@@ -252,7 +251,7 @@ void UIScrollBar::adjustChilds() {
 		}
 	}
 
-	mSlider->adjustChilds();
+	mSlider->adjustChildren();
 
 	mNodeFlags &= ~NODE_FLAG_FREE_USE;
 }
@@ -283,8 +282,8 @@ Uint32 UIScrollBar::onMessage( const NodeMessage* Msg ) {
 	return 0;
 }
 
-void UIScrollBar::setValue( Float val, const bool& emmitEvent ) {
-	mSlider->setValue( val, emmitEvent );
+void UIScrollBar::setValue( Float val, const bool& emitEvent ) {
+	mSlider->setValue( val, emitEvent );
 }
 
 const Float& UIScrollBar::getValue() const {
@@ -353,7 +352,7 @@ void UIScrollBar::setExpandBackground( bool expandBackground ) {
 
 		onAutoSize();
 
-		adjustChilds();
+		adjustChildren();
 	}
 }
 
@@ -458,7 +457,7 @@ void UIScrollBar::setScrollBarStyle( const ScrollBarType& scrollBarType ) {
 
 		onAutoSize();
 
-		adjustChilds();
+		adjustChildren();
 	}
 }
 
@@ -482,7 +481,7 @@ UINode* UIScrollBar::setOrientation( const UIOrientation& orientation ) {
 
 		applyDefaultTheme();
 
-		adjustChilds();
+		adjustChildren();
 	}
 
 	return this;
@@ -499,7 +498,7 @@ void UIScrollBar::onAlphaChange() {
 void UIScrollBar::onPaddingChange() {
 	onAutoSize();
 
-	adjustChilds();
+	adjustChildren();
 
 	UIWidget::onPaddingChange();
 }

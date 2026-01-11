@@ -49,14 +49,14 @@ class EE_API Http : NonCopyable {
 			MultipleChoices = 300,	///< The requested page can be accessed from several locations
 			MovedPermanently = 301, ///< The requested page has permanently moved to a new location
 			MovedTemporarily = 302, ///< The requested page has temporarily moved to a new location
-			NotModified = 304,		///< For conditionnal requests, means the requested page hasn't
+			NotModified = 304,		///< For conditional requests, means the requested page hasn't
 									///< changed and doesn't need to be refreshed
 
 			// 4xx: client error
 			BadRequest = 400,	///< The server couldn't understand the request (syntax error)
-			Unauthorized = 401, ///< The requested page needs an authentification to be accessed
+			Unauthorized = 401, ///< The requested page needs an authentication to be accessed
 			Forbidden =
-				403, ///< The requested page cannot be accessed at all, even with authentification
+				403, ///< The requested page cannot be accessed at all, even with authentication
 			NotFound = 404,			   ///< The requested page doesn't exist
 			RangeNotSatisfiable = 407, ///< The server can't satisfy the partial GET request (with a
 									   ///< "Range" header field)
@@ -185,6 +185,8 @@ class EE_API Http : NonCopyable {
 			ContentReceived ///< Content received.
 		};
 
+		static std::string statusToString( Status status );
+
 		/** @return Method from a method name string. */
 		static Method methodFromString( std::string methodString );
 
@@ -236,7 +238,7 @@ class EE_API Http : NonCopyable {
 
 		/** @brief Set the request method
 		**  See the Method enumeration for a complete list of all
-		**  the availale methods.
+		**  the available methods.
 		**  The method is Http::Request::Get by default.
 		**  @param method Method to use for the request */
 		void setMethod( Method method );
@@ -292,10 +294,10 @@ class EE_API Http : NonCopyable {
 		/** Enables/Disables follow redirects */
 		void setFollowRedirect( bool follow );
 
-		/** @return The maximun number of redirects allowd if follow redirect is enabled. */
+		/** @return The maximum number of redirects allowed if follow redirect is enabled. */
 		const unsigned int& getMaxRedirects() const;
 
-		/** Set the maximun number of redirects allowed if follow redirect is enabled. */
+		/** Set the maximum number of redirects allowed if follow redirect is enabled. */
 		void setMaxRedirects( unsigned int maxRedirects );
 
 		/** Definition of the current progress callback
@@ -315,8 +317,21 @@ class EE_API Http : NonCopyable {
 		/** Sets a progress callback */
 		void setProgressCallback( const ProgressCallback& progressCallback );
 
+		/** Definition of the cancel callback
+		 * @param http The http client
+		 * @param request The http request
+		 */
+		typedef std::function<void( const Http& http, const Http::Request& request )>
+			CancelCallback;
+
+		/** Sets a cancel callback */
+		void setCancelCallback( const CancelCallback& cancelCb );
+
 		/** Get the progress callback */
 		const ProgressCallback& getProgressCallback() const;
+
+		/** Get the cancel callback */
+		const CancelCallback& getCancelCallback() const;
 
 		/** Cancels the current request if being processed */
 		void cancel();
@@ -370,12 +385,13 @@ class EE_API Http : NonCopyable {
 		bool mValidateCertificate;	///< Validates the SSL certificate in case of an HTTPS request
 		bool mValidateHostname;		///< Validates the hostname in case of an HTTPS request
 		bool mFollowRedirect;		///< Follows redirect response codes
-		bool mCompressedResponse;	///< Request comrpessed response
+		bool mCompressedResponse;	///< Request compressed response
 		bool mContinue;				///< Resume download
 		mutable bool mCancel;		///< Cancel state of current request
 		bool mVerbose{ false };		///< Enable/Disable verbosity
 		ProgressCallback mProgressCallback;		///< Progress callback
-		unsigned int mMaxRedirections;			///< Maximun number of redirections allowed
+		CancelCallback mCancelCallback;			///< Cancel callback
+		unsigned int mMaxRedirections;			///< Maximum number of redirections allowed
 		mutable unsigned int mRedirectionCount; ///< Number of redirections followed by the request
 		URI mProxy;								///< Proxy information
 	};
@@ -418,6 +434,12 @@ class EE_API Http : NonCopyable {
 	void setHost( const std::string& host, unsigned short port = 0, bool useSSL = false,
 				  URI proxy = URI() );
 
+	/** @brief Sets the host from an URI (this is the equivalent of calling setHost(
+	 * uri.getHost(),
+
+	 * * uri.getPort(), uri.getScheme() == "https" ) ) */
+	void setHost( const URI& uri, URI proxy = URI() );
+
 	/** @brief Send a HTTP request and return the server's response.
 	**  You must have a valid host before sending a request (see setHost).
 	**  Any missing mandatory header field in the request will be added
@@ -425,7 +447,7 @@ class EE_API Http : NonCopyable {
 	**  Warning: this function waits for the server's response and may
 	**  not return instantly; use a thread if you don't want to block your
 	**  application, or use a timeout to limit the time to wait. A value
-	**  of Time::Zero means that the client will use the system defaut timeout
+	**  of Time::Zero means that the client will use the system default timeout
 	**  (which is usually pretty long).
 	**  @param request Request to send
 	**  @param timeout Maximum time to wait
@@ -439,7 +461,7 @@ class EE_API Http : NonCopyable {
 	**  Warning: this function waits for the server's response and may
 	**  not return instantly; use a thread if you don't want to block your
 	**  application, or use a timeout to limit the time to wait. A value
-	**  of Time::Zero means that the client will use the system defaut timeout
+	**  of Time::Zero means that the client will use the system default timeout
 	**  (which is usually pretty long).
 	**  @param request Request to send
 	**  @param writeTo The IO stream to write the downloaded content
@@ -455,7 +477,7 @@ class EE_API Http : NonCopyable {
 	**  Warning: this function waits for the server's response and may
 	**  not return instantly; use a thread if you don't want to block your
 	**  application, or use a timeout to limit the time to wait. A value
-	**  of Time::Zero means that the client will use the system defaut timeout
+	**  of Time::Zero means that the client will use the system default timeout
 	**  (which is usually pretty long).
 	**  @param request Request to send
 	**  @param writePath The path of the file to write the downloaded content
@@ -469,22 +491,25 @@ class EE_API Http : NonCopyable {
 		AsyncResponseCallback;
 
 	/** @brief Sends the request and creates a new thread, when got the response informs the result
-	 *to the callback. *	This function does not lock the caller thread.
-	 **  @see sendRequest */
-	void sendAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
-						   Time timeout = Time::Zero );
+	 ** to the callback. *	This function does not lock the caller thread.
+	 ** @see sendRequest
+	 ** @return Unique Id of the request added */
+	Uint64 sendAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
+							 Time timeout = Time::Zero );
 
 	/** @brief Sends the request and creates a new thread, when got the response informs the result
 	 *to the callback. *	This function does not lock the caller thread.
-	 **  @see downloadRequest */
-	void downloadAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
-							   IOStream& writeTo, Time timeout = Time::Zero );
+	 **  @see downloadRequest
+	 **  @return Unique Id of the request added */
+	Uint64 downloadAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
+								 IOStream& writeTo, Time timeout = Time::Zero );
 
 	/** @brief Sends the request and creates a new thread, when got the response informs the result
 	 *to the callback. *	This function does not lock the caller thread.
-	 **  @see downloadRequest */
-	void downloadAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
-							   std::string writePath, Time timeout = Time::Zero );
+	 **  @see downloadRequest
+	 **  @return Unique Id of the request added */
+	Uint64 downloadAsyncRequest( const AsyncResponseCallback& cb, const Http::Request& request,
+								 std::string writePath, Time timeout = Time::Zero );
 
 	/** @return The host address */
 	const IpAddress& getHost() const;
@@ -509,6 +534,9 @@ class EE_API Http : NonCopyable {
 
 	/** @return Is a proxy is need to be used */
 	bool isProxied() const;
+
+	/** @return If request has been found and canceled */
+	bool setCancelRequest( Uint64 reqId );
 
 	/** Helper class to build the body of a multipart/form-data request. */
 	class EE_API MultipartEntitiesBuilder {
@@ -594,11 +622,11 @@ class EE_API Http : NonCopyable {
 		 * @param host The scheme + hostname + port represented as an URI.
 		 * @param proxy The client proxy if any, scheme + hostname + post as URI.
 		 */
-		Http* get( const URI& host, const URI& proxy = URI() );
+		std::shared_ptr<Http> get( const URI& host, const URI& proxy = URI() );
 
 	  protected:
 		Mutex mMutex;
-		UnorderedMap<Uint32, Http*> mHttps;
+		UnorderedMap<Uint32, std::shared_ptr<Http>> mHttps;
 
 		static std::string getHostKey( const URI& host, const URI& proxy );
 
@@ -628,8 +656,10 @@ class EE_API Http : NonCopyable {
 		  const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "",
 		  const bool& validateCertificate = true, const URI& proxy = URI() );
 
-	/** Creates an async HTTP Request using the global HTTP Client Pool */
-	static void
+	/** Creates an async HTTP Request using the global HTTP Client Pool
+	** @return The unique async request id
+	*/
+	static Uint64
 	requestAsync( const Http::AsyncResponseCallback& cb, const URI& uri,
 				  const Time& timeout = Time::Zero, Request::Method method = Request::Method::Get,
 				  const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
@@ -637,15 +667,19 @@ class EE_API Http : NonCopyable {
 				  const std::string& body = "", const bool& validateCertificate = true,
 				  const URI& proxy = URI() );
 
-	/** Creates an async HTTP GET Request using the global HTTP Client Pool */
-	static void getAsync(
+	/** Creates an async HTTP GET Request using the global HTTP Client Pool
+	** @return The unique async request id
+	*/
+	static Uint64 getAsync(
 		const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout = Time::Zero,
 		const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
 		const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "",
 		const bool& validateCertificate = true, const URI& proxy = URI() );
 
-	/** Creates an async HTTP POST Request using the global HTTP Client Pool */
-	static void postAsync(
+	/** Creates an async HTTP POST Request using the global HTTP Client Pool
+	** @return The unique async request id
+	*/
+	static Uint64 postAsync(
 		const Http::AsyncResponseCallback& cb, const URI& uri, const Time& timeout = Time::Zero,
 		const Request::ProgressCallback& progressCallback = Request::ProgressCallback(),
 		const Request::FieldTable& headers = Request::FieldTable(), const std::string& body = "",
@@ -660,21 +694,28 @@ class EE_API Http : NonCopyable {
   private:
 	class AsyncRequest : public Thread {
 	  public:
-		AsyncRequest( Http* http, const AsyncResponseCallback& cb, Http::Request request,
-					  Time timeout );
+		static std::atomic<Uint64> IdCounter;
 
-		AsyncRequest( Http* http, const AsyncResponseCallback& cb, Http::Request request,
-					  IOStream& writeTo, Time timeout );
+		AsyncRequest( Uint64 id, Http* http, const AsyncResponseCallback& cb, Http::Request request,
+					  Time timeout, bool fromLocalPool );
 
-		AsyncRequest( Http* http, const AsyncResponseCallback& cb, Http::Request request,
-					  std::string writePath, Time timeout );
+		AsyncRequest( Uint64 id, Http* http, const AsyncResponseCallback& cb, Http::Request request,
+					  IOStream& writeTo, Time timeout, bool fromLocalPool );
+
+		AsyncRequest( Uint64 id, Http* http, const AsyncResponseCallback& cb, Http::Request request,
+					  std::string writePath, Time timeout, bool fromLocalPool );
 
 		~AsyncRequest();
 
 		void run();
 
+		Uint64 id() const { return mId; }
+
+		void cancel();
+
 	  protected:
 		friend class Http;
+		Uint64 mId{ 0 };
 		Http* mHttp;
 		AsyncResponseCallback mCb;
 		Http::Request mRequest;
@@ -682,6 +723,7 @@ class EE_API Http : NonCopyable {
 		bool mRunning;
 		bool mStreamed;
 		bool mStreamOwned;
+		bool mFromLocalPool;
 		IOStream* mStream;
 	};
 
@@ -733,10 +775,16 @@ class EE_API Http : NonCopyable {
 	bool mIsSSL;
 	bool mHostSolved;
 	URI mProxy;
+	Mutex mCurRequestsMutex;
+	std::unordered_map<Uint64, AsyncRequest*> mCurRequests;
 
-	void removeOldThreads();
+	void removeAsyncRequest( AsyncRequest* req );
 
 	Request prepareFields( const Http::Request& request );
+
+	void onCancel( const Http::Request& request );
+
+	void endConnection();
 };
 
 }} // namespace EE::Network

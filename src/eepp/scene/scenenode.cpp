@@ -23,7 +23,7 @@ SceneNode::SceneNode( EE::Window::Window* window ) :
 	mFrameBufferBound( false ),
 	mUseInvalidation( false ),
 	mUseGlobalCursors( true ),
-	mUpdateAllChilds( true ),
+	mUpdateAllChildren( true ),
 	mResizeCb( -1 ),
 	mDrawDebugData( false ),
 	mDrawBoxes( false ),
@@ -36,7 +36,7 @@ SceneNode::SceneNode( EE::Window::Window* window ) :
 	mNodeFlags |= NODE_FLAG_SCENENODE;
 	mSceneNode = this;
 
-	enableReportSizeChangeToChilds();
+	enableReportSizeChangeToChildren();
 
 	if ( NULL == mWindow ) {
 		mWindow = Engine::instance()->getCurrentWindow();
@@ -109,7 +109,7 @@ void SceneNode::draw() {
 
 			clipStart( needsClipPlanes );
 
-			drawChilds();
+			drawChildren();
 
 			clipEnd( needsClipPlanes );
 		}
@@ -152,12 +152,15 @@ void SceneNode::update( const Time& time ) {
 		mScheduledUpdateRemove.clear();
 	}
 
+	// TODO: Handle the case where one of the nodes updated generates the deletion of any of the
+	// following nodes. As a rule user should always delete elements with a `close()` call.
+	// But it's still allowed to just delete any running node.
 	if ( !mScheduledUpdate.empty() ) {
 		for ( auto& node : mScheduledUpdate )
 			node->scheduledUpdate( time );
 	}
 
-	if ( mUpdateAllChilds ) {
+	if ( mUpdateAllChildren ) {
 		Node::update( time );
 	} else {
 		for ( auto& nodeOver : mMouseOverNodes )
@@ -267,7 +270,7 @@ void SceneNode::createFrameBuffer() {
 		FrameBuffer::New( fboSize.getWidth(), fboSize.getHeight(), true, false, false, 4, mWindow );
 
 	// Frame buffer failed to create?
-	if ( !mFrameBuffer->created() ) {
+	if ( mFrameBuffer == nullptr || !mFrameBuffer->created() ) {
 		eeSAFE_DELETE( mFrameBuffer );
 	}
 }
@@ -281,8 +284,8 @@ void SceneNode::drawFrameBuffer() {
 		} else {
 			Rect r = Rect( 0, 0, mSize.getWidth(), mSize.getHeight() );
 			TextureRegion textureRegion( mFrameBuffer->getTexture(), r, r.getSize().asFloat() );
-			textureRegion.draw( mScreenPosi.x, mScreenPosi.y, Color::White, getRotation(),
-								getScale() );
+			Vector2f pos( mScreenPos.trunc() );
+			textureRegion.draw( pos.x, pos.y, Color::White, getRotation(), getScale() );
 		}
 	}
 }
@@ -493,12 +496,12 @@ void SceneNode::removeMouseOverNode( Node* node ) {
 	mMouseOverNodes.erase( node );
 }
 
-const bool& SceneNode::getUpdateAllChilds() const {
-	return mUpdateAllChilds;
+const bool& SceneNode::getUpdateAllChildren() const {
+	return mUpdateAllChildren;
 }
 
-void SceneNode::setUpdateAllChilds( const bool& updateAllChilds ) {
-	mUpdateAllChilds = updateAllChilds;
+void SceneNode::setUpdateAllChildren( bool updateAllChildren ) {
+	mUpdateAllChildren = updateAllChildren;
 }
 
 const Float& SceneNode::getDPI() const {

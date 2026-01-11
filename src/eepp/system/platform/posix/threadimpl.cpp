@@ -49,7 +49,7 @@ void* ThreadImpl::entryPoint( void* userData ) {
 	// The Thread instance is stored in the user data
 	Thread* owner = static_cast<Thread*>( userData );
 
-// Tell the thread to handle cancel requests immediatly
+// Tell the thread to handle cancel requests immediately
 #ifdef PTHREAD_CANCEL_ASYNCHRONOUS
 	pthread_setcanceltype( PTHREAD_CANCEL_ASYNCHRONOUS, NULL );
 #endif

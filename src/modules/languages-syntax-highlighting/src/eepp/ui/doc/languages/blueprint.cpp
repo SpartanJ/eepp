@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addBlueprint() {
+SyntaxDefinition& addBlueprint() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Blueprint",
 		  { "%.blp$" },
@@ -19,57 +19,55 @@ void addBlueprint() {
 			  { { "%$" }, "operator" },
 			  { { "(=>%s*%$)(.*)(%(%))" }, { "normal", "operator", "function", "normal" } },
 			  { { "([%w-_]+)(%s*:)" }, { "normal", "keyword", "normal" } },
-			  { { "([%w_-%.]+%s*)({)" }, { "normal", "keyword2", "normal" } },
-			  { { "([%w_-%.]+%s*)([%w_-]+%s*{)" }, { "normal", "keyword2", "normal" } },
+			  { { "([%w_-%.]+%s*)({)" }, { "normal", "type", "normal" } },
+			  { { "([%w_-%.]+%s*)([%w_-]+%s*{)" }, { "normal", "type", "normal" } },
 			  { { "[%w-_]+" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {
 			  { "no-sync-create", "keyword" },
 			  { "section", "keyword" },
 			  { "bind", "keyword" },
-			  { "setters", "keyword2" },
+			  { "setters", "type" },
 			  { "default", "keyword" },
 			  { "suggested", "keyword" },
 			  { "using", "keyword" },
-			  { "strings", "keyword2" },
+			  { "strings", "type" },
 			  { "swapped", "keyword" },
-			  { "accessibility", "keyword2" },
-			  { "responses", "keyword2" },
-			  { "mime-types", "keyword2" },
+			  { "accessibility", "type" },
+			  { "responses", "type" },
+			  { "mime-types", "type" },
 			  { "after", "keyword" },
 			  { "menu", "keyword" },
-			  { "mark", "keyword2" },
+			  { "mark", "type" },
 			  { "destructive", "keyword" },
 			  { "submenu", "keyword" },
-			  { "suffixes", "keyword2" },
-			  { "patterns", "keyword2" },
-			  { "item", "keyword2" },
+			  { "suffixes", "type" },
+			  { "patterns", "type" },
+			  { "item", "type" },
 			  { "false", "literal" },
-			  { "condition", "keyword2" },
+			  { "condition", "type" },
 			  { "null", "literal" },
 			  { "bidirectional", "keyword" },
 			  { "inverted", "keyword" },
 			  { "true", "literal" },
 			  { "bind-property", "keyword" },
-			  { "marks", "keyword2" },
+			  { "marks", "type" },
 			  { "C_", "operator" },
 			  { "sync-create", "keyword" },
 			  { "template", "keyword" },
-			  { "widgets", "keyword2" },
+			  { "widgets", "type" },
 			  { "_", "operator" },
-			  { "styles", "keyword2" },
-			  { "items", "keyword2" },
-			  { "layout", "keyword2" },
+			  { "styles", "type" },
+			  { "items", "type" },
+			  { "layout", "type" },
 			  { "disabled", "keyword" },
 
 		  },
 		  "//",
 		  {}
 
-		} );
+		} ).setBlockComment( {"/*", "*/"} );
 }
 
 }}}} // namespace EE::UI::Doc::Language

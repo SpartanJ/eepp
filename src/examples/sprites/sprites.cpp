@@ -11,7 +11,7 @@ Interpolation1d PlanetAngle;
 Primitives P;
 Sprite Rock;
 Sprite Planet;
-Sprite Blindy;
+Sprite Monster;
 
 // Define a user sprite event
 static const Uint32 USER_SPRITE_EVENT = Sprite::SPRITE_EVENT_USER + 1;
@@ -73,8 +73,8 @@ void mainLoop() {
 	// Draw the animated Rock sprite
 	Rock.draw();
 
-	// Draw the blindy animation
-	Blindy.draw();
+	// Draw the monster animation
+	Monster.draw();
 
 	// Draw the Rock Axis-Aligned Bounding Box
 	P.setColor( Color( 255, 255, 255, 255 ) );
@@ -125,17 +125,17 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		// ) animation by its name, it will search for "gn00" to "gnXX" to create a new animation
 		// see TextureAtlasManager::GetTextureRegionsByPattern for more information.
 		// This is the easiest way to load animated sprites.
-		Blindy.addFramesByPattern( "gn" );
+		Monster.addFramesByPattern( "gn" );
 
 		// Set the sprite animation speed, set in Frames per Second
 		// Sprites are auto-animated by default.
 		Rock.setAnimationSpeed( 32 );
 
 		// Set the render mode of the sprite
-		Blindy.setRenderMode( RENDER_MIRROR );
+		Monster.setRenderMode( RENDER_MIRROR );
 
 		// Set the Blend Mode of the sprite
-		Blindy.setBlendMode( BlendMode::Add() );
+		Monster.setBlendMode( BlendMode::Add() );
 
 		// Set the primitive fill mode
 		P.setFillMode( DRAW_LINE );
@@ -151,9 +151,9 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		Rock.setPosition( Vector2f( ScreenCenter.x - Rock.getAABB().getSize().getWidth() / 2,
 									ScreenCenter.y - Rock.getAABB().getSize().getHeight() / 2 ) );
 
-		Blindy.setPosition(
-			Vector2f( ScreenCenter.x - Blindy.getAABB().getSize().getWidth() / 2,
-					  ScreenCenter.y - Blindy.getAABB().getSize().getHeight() / 2 ) );
+		Monster.setPosition(
+			Vector2f( ScreenCenter.x - Monster.getAABB().getSize().getWidth() / 2,
+					  ScreenCenter.y - Monster.getAABB().getSize().getHeight() / 2 ) );
 
 		// Set the planet angle interpolation
 		PlanetAngle.add( 0 );

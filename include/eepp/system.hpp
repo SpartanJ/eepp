@@ -26,6 +26,7 @@
 #include <eepp/system/pack.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/pak.hpp>
+#include <eepp/system/parsermatcher.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/system/rc4.hpp>
 #include <eepp/system/regex.hpp>
@@ -41,6 +42,7 @@
 #include <eepp/system/threadpool.hpp>
 #include <eepp/system/time.hpp>
 #include <eepp/system/translator.hpp>
+#include <eepp/system/uuid.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/system/zip.hpp>
 

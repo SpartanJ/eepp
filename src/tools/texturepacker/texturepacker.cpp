@@ -22,12 +22,12 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		parser, "output-file", "Texture atlas file output path. Extension must be: \".eta\"",
 		{ 'o', "output-file" }, "", args::Options::Required | args::Options::Single );
 	std::unordered_map<std::string, Image::SaveType> saveTypeFormat{
-		{ "PNG", Image::SaveType::SAVE_TYPE_PNG }, { "DDS", Image::SaveType::SAVE_TYPE_DDS },
-		{ "TGA", Image::SaveType::SAVE_TYPE_TGA }, { "BMP", Image::SaveType::SAVE_TYPE_BMP },
-		{ "JPG", Image::SaveType::SAVE_TYPE_JPG }, { "QOI", Image::SaveType::SAVE_TYPE_QOI } };
+		{ "PNG", Image::SaveType::PNG }, { "DDS", Image::SaveType::DDS },
+		{ "TGA", Image::SaveType::TGA }, { "BMP", Image::SaveType::BMP },
+		{ "JPG", Image::SaveType::JPG }, { "QOI", Image::SaveType::QOI } };
 	args::MapFlag<std::string, Image::SaveType> saveType(
 		parser, "image-format", "Output image format.", { 'f', "image-format" }, saveTypeFormat,
-		Image::SaveType::SAVE_TYPE_PNG, args::Options::Single );
+		Image::SaveType::PNG, args::Options::Single );
 	std::unordered_map<std::string, PixelDensitySize> pixelDensityMap{
 		{ "MDPI", PixelDensitySize::MDPI },
 		{ "HDPI", PixelDensitySize::HDPI },
@@ -47,11 +47,11 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::Flag saveExtensions( parser, "save-extensions",
 							   "Save the file extensions as part of the texture regions names.",
 							   { "save-extensions" } );
-	args::Flag allowChilds(
-		parser, "allow-childs",
+	args::Flag allowChildren(
+		parser, "allow-children",
 		"When enabled in the case of an atlas not having enough space in the image to fit all the "
 		"source input images it will create new child atlas images to save them.",
-		{ "allow-childs" } );
+		{ "allow-children" } );
 	args::ValueFlag<Uint32> height( parser, "max-width", "Texture Atlas maximum allowed height.",
 									{ 'h', "max-height" }, 4096, args::Options::Single );
 	args::ValueFlag<Uint32> width( parser, "max-width", "Texture Atlas maximum allowed width.",
@@ -140,7 +140,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	if ( !FileSystem::fileExists( outputFile.Get() ) ) {
 		TexturePacker tp( width.Get(), height.Get(), PixelDensity::toFloat( pixelDensity.Get() ),
 						  forcePow2.Get(), scalableSVG.Get(), pixelsBorder.Get(),
-						  textureFilter.Get(), allowChilds.Get() );
+						  textureFilter.Get(), allowChildren.Get() );
 		std::cout << "Packing directory: " << texturesPathSafe << std::endl;
 		tp.addTexturesPath( texturesPathSafe );
 		for ( auto& image : imagesList ) {

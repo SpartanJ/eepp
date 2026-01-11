@@ -8,32 +8,39 @@ namespace ecode {
 
 TerminalManager::TerminalManager( App* app ) : mApp( app ) {}
 
-UITerminal* TerminalManager::createTerminalInSplitter( const std::string& workingDir,
-													   std::string program,
-													   const std::vector<std::string>& args,
-													   bool fallback ) {
+UITerminal* TerminalManager::createTerminalInSplitter(
+	const std::string& workingDir, std::string program, std::vector<std::string> args,
+	const std::unordered_map<std::string, std::string>& env, bool fallback, bool keepAlive ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	std::string os = Sys::getOSName( true );
 	if ( !LuaPattern::hasMatches( os, "Windows 1%d"sv ) &&
 		 !LuaPattern::hasMatches( os, "Windows Server 201[69]"sv ) &&
-		 !LuaPattern::hasMatches( os, "Windows Server 202%d"sv ) )
+		 !LuaPattern::hasMatches( os, "Windows Server 202%d"sv ) ) {
+		if ( fallback )
+			displayError( workingDir );
 		return nullptr;
+	}
 #endif
 
 	UITerminal* term = nullptr;
 	auto splitter = mApp->getSplitter();
 	auto& config = mApp->getConfig();
-	if ( splitter && splitter->hasSplit() ) {
+
+	if ( config.term.newTerminalOrientation == NewTerminalOrientation::StatusBarPanel &&
+		 mApp->getStatusTerminalController() ) {
+		mApp->getStatusTerminalController()->show();
+		mApp->getStatusTerminalController()->createTerminal();
+	} else if ( splitter && splitter->hasSplit() ) {
 		if ( splitter->getTabWidgets().size() == 2 ) {
 			UIOrientation orientation = splitter->getMainSplitOrientation();
 			if ( config.term.newTerminalOrientation == NewTerminalOrientation::Vertical &&
 				 orientation == UIOrientation::Horizontal ) {
 				term = createNewTerminal( "", splitter->getTabWidgets()[1], workingDir, program,
-										  args, fallback );
+										  args, env, fallback, keepAlive );
 			} else if ( config.term.newTerminalOrientation == NewTerminalOrientation::Horizontal &&
 						orientation == UIOrientation::Vertical ) {
 				term = createNewTerminal( "", splitter->getTabWidgets()[1], workingDir, program,
-										  args, fallback );
+										  args, env, fallback, keepAlive );
 			} else {
 				term = createNewTerminal( "", nullptr, workingDir, program, args );
 			}
@@ -45,19 +52,24 @@ UITerminal* TerminalManager::createTerminalInSplitter( const std::string& workin
 			case NewTerminalOrientation::Vertical: {
 				auto cwd = workingDir.empty() ? mApp->getCurrentWorkingDir() : workingDir;
 				splitter->split( SplitDirection::Right, splitter->getCurWidget(), false );
-				term = createNewTerminal( "", nullptr, cwd, program, args, fallback );
+				term =
+					createNewTerminal( "", nullptr, cwd, program, args, env, fallback, keepAlive );
 				break;
 			}
 			case NewTerminalOrientation::Horizontal: {
 				auto cwd = workingDir.empty() ? mApp->getCurrentWorkingDir() : workingDir;
 				splitter->split( SplitDirection::Bottom, splitter->getCurWidget(), false );
-				term = createNewTerminal( "", nullptr, cwd, program, args, fallback );
+				term =
+					createNewTerminal( "", nullptr, cwd, program, args, env, fallback, keepAlive );
 				break;
 			}
 			case NewTerminalOrientation::Same: {
-				term = createNewTerminal( "", nullptr, "", program, args, fallback );
+				term =
+					createNewTerminal( "", nullptr, "", program, args, env, fallback, keepAlive );
 				break;
 			}
+			case NewTerminalOrientation::StatusBarPanel:
+				break;
 		}
 	}
 	return term;
@@ -70,8 +82,13 @@ void TerminalManager::applyTerminalColorScheme( const TerminalColorScheme& color
 	} );
 
 	if ( mApp->getStatusTerminalController() &&
-		 mApp->getStatusTerminalController()->getUITerminal() ) {
-		mApp->getStatusTerminalController()->getUITerminal()->setColorScheme( colorScheme );
+		 mApp->getStatusTerminalController()->getTabWidget() ) {
+		mApp->getStatusTerminalController()->getTabWidget()->forEachTab(
+			[colorScheme]( UITab* tab ) {
+				tab->getOwnedWidget()->asType<UITerminal>()->getTerm()->setColorScheme(
+					colorScheme );
+			},
+			UI_TYPE_TERMINAL );
 	}
 }
 
@@ -132,7 +149,7 @@ void TerminalManager::setTerminalColorSchemesPath( const std::string& terminalCo
 }
 
 void TerminalManager::updateColorSchemeMenu() {
-	for ( UIPopUpMenu* menu : mColorSchemeMenues ) {
+	for ( UIPopUpMenu* menu : mColorSchemeMenus ) {
 		for ( size_t i = 0; i < menu->getCount(); i++ ) {
 			UIWidget* widget = menu->getItem( i );
 			if ( widget->isType( UI_TYPE_MENURADIOBUTTON ) ) {
@@ -156,18 +173,20 @@ void TerminalManager::configureTerminalShell() {
 		<window layout_width="300dp" layout_height="150dp" window-flags="default|shadow" window-title='@string(shell_configuration, "Shell Configuration")'>
 		<vbox lw="mp" lh="mp" padding="4dp">
 			<vbox lw="mp" lh="0" lw8="1">
-			<textview text='@string(configure_default_shell, "Configure default shell")' font-size="14dp" margin-bottom="8dp" />
-			<ComboBox id="shell_combo" layout_width="match_parent" layout_height="wrap_content" selectedIndex="0" popup-to-root="true"></ComboBox>
+				<TextView text='@string(configure_default_shell, "Configure default shell")' font-size="14dp" margin-bottom="8dp" />
+				<ComboBox id="shell_combo" layout_width="match_parent" layout_height="wrap_content" selectedIndex="0" popup-to-root="true" />
+				<TextInput id="shell_args" layout_width="match_parent" layout_height="wrap_content" margin-top="8dp" hint="@string(shell_arguments, Shell Command Line Arguments)" />
 			</vbox>
 			<hbox layout_gravity="right">
-				<pushbutton id="ok" text="@string(msg_box_ok, Ok)" icon="ok" />
-				<pushbutton id="cancel" text="@string(msg_box_cancel, Cancel)" margin-left="8dp" icon="cancel" />
+				<PushButton id="ok" text="@string(msg_box_ok, Ok)" icon="ok" />
+				<PushButton id="cancel" text="@string(msg_box_cancel, Cancel)" margin-left="8dp" icon="cancel" />
 			</hbox>
 		</vbox>
 		</window>
 	)xml" );
 	UIWindow* window = mApp->getUISceneNode()->loadLayoutFromString( layout )->asType<UIWindow>();
 	UIComboBox* shellCombo = window->find<UIComboBox>( "shell_combo" );
+	UITextInput* shellArgs = window->find<UITextInput>( "shell_args" );
 	UIPushButton* ok = window->find<UIPushButton>( "ok" );
 	UIPushButton* cancel = window->find<UIPushButton>( "cancel" );
 	const std::vector<std::string> list{
@@ -180,6 +199,7 @@ void TerminalManager::configureTerminalShell() {
 			found.emplace_back( std::move( f ) );
 	}
 	shellCombo->getListBox()->addListBoxItems( found );
+	shellArgs->setText( mApp->termConfig().shellArgs );
 	const char* shellEnv = std::getenv( "SHELL" );
 	if ( !mApp->termConfig().shell.empty() ) {
 		shellCombo->getListBox()->setSelected( mApp->termConfig().shell );
@@ -189,15 +209,17 @@ void TerminalManager::configureTerminalShell() {
 																	: Sys::which( shellEnv ) );
 		if ( !shellEnvStr.empty() )
 			shellCombo->getListBox()->setSelected( shellEnvStr );
-	} else if ( Sys::getPlatform() == "Windows" ) {
+	} else if ( Sys::getPlatformType() == Sys::PlatformType::Windows ) {
 		std::string shellEnvStr( Sys::which( "powershell" ) );
 		if ( !shellEnvStr.empty() )
 			shellCombo->getListBox()->setSelected( shellEnvStr );
 	}
-	const auto setShellFn = []( App* app, UIWindow* window, UIComboBox* shellCombo ) {
+	const auto setShellFn = []( App* app, UIWindow* window, UIComboBox* shellCombo,
+								UITextInput* shellArgs ) {
 		std::string shell( shellCombo->getText().toUtf8() );
 		if ( !Sys::which( shell ).empty() || FileSystem::fileExists( shell ) ) {
 			app->getConfig().term.shell = shell;
+			app->getConfig().term.shellArgs = shellArgs->getText().toUtf8();
 			window->closeWindow();
 		} else {
 			app->errorMsgBox( app->i18n(
@@ -210,8 +232,8 @@ void TerminalManager::configureTerminalShell() {
 		shellCombo->getListBox()->getVerticalScrollBar()->setClickStep(
 			shellCombo->getDropDownList()->getMaxNumVisibleItems() / (Float)found.size() );
 	ok->setFocus();
-	ok->onClick( [this, setShellFn, window,
-				  shellCombo]( const MouseEvent* ) { setShellFn( mApp, window, shellCombo ); },
+	ok->onClick( [this, setShellFn, window, shellCombo, shellArgs](
+					 const MouseEvent* ) { setShellFn( mApp, window, shellCombo, shellArgs ); },
 				 MouseButton::EE_BUTTON_LEFT );
 	cancel->onClick( [window]( const MouseEvent* ) { window->closeWindow(); }, EE_BUTTON_LEFT );
 	window->on( Event::KeyDown, [window]( const Event* event ) {
@@ -242,7 +264,7 @@ void TerminalManager::configureTerminalScrollback() {
 }
 
 UIMenu* TerminalManager::createColorSchemeMenu( bool emptyMenu ) {
-	mColorSchemeMenuesCreatedWithHeight =
+	mColorSchemeMenusCreatedWithHeight =
 		emptyMenu ? 0 : mApp->uiSceneNode()->getPixelsSize().getHeight();
 	size_t maxItems = 19;
 	auto cb = [this]( const Event* event ) {
@@ -252,18 +274,18 @@ UIMenu* TerminalManager::createColorSchemeMenu( bool emptyMenu ) {
 	};
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
-	menu->addEventListener( Event::OnItemClicked, cb );
-	mColorSchemeMenues.push_back( menu );
+	menu->on( Event::OnItemClicked, cb );
+	mColorSchemeMenus.push_back( menu );
 	size_t total = 0;
 	const auto& colorSchemes = mTerminalColorSchemes;
 
 	if ( emptyMenu )
-		return mColorSchemeMenues[0];
+		return mColorSchemeMenus[0];
 
 	for ( auto& colorScheme : colorSchemes ) {
 		menu->addRadioButton( colorScheme.first, mTerminalCurrentColorScheme == colorScheme.first );
 
-		if ( mColorSchemeMenues.size() == 1 && menu->getCount() == 1 ) {
+		if ( mColorSchemeMenus.size() == 1 && menu->getCount() == 1 ) {
 			menu->reloadStyle( true, true );
 			Float height = menu->getPixelsSize().getHeight();
 			Float tHeight = mApp->uiSceneNode()->getPixelsSize().getHeight();
@@ -275,20 +297,20 @@ UIMenu* TerminalManager::createColorSchemeMenu( bool emptyMenu ) {
 		if ( menu->getCount() == maxItems && colorSchemes.size() - total > 1 ) {
 			UIPopUpMenu* newMenu = UIPopUpMenu::New();
 			menu->addSubMenu( mApp->i18n( "more_ellipsis", "More..." ), nullptr, newMenu );
-			newMenu->addEventListener( Event::OnItemClicked, cb );
-			mColorSchemeMenues.push_back( newMenu );
+			newMenu->on( Event::OnItemClicked, cb );
+			mColorSchemeMenus.push_back( newMenu );
 			menu = newMenu;
 		}
 	}
 
-	return mColorSchemeMenues[0];
+	return mColorSchemeMenus[0];
 }
 
 void TerminalManager::updateMenuColorScheme( UIMenuSubMenu* colorSchemeMenu ) {
-	if ( mColorSchemeMenuesCreatedWithHeight != mApp->uiSceneNode()->getPixelsSize().getHeight() ) {
-		for ( UIPopUpMenu* menu : mColorSchemeMenues )
+	if ( mColorSchemeMenusCreatedWithHeight != mApp->uiSceneNode()->getPixelsSize().getHeight() ) {
+		for ( UIPopUpMenu* menu : mColorSchemeMenus )
 			menu->close();
-		mColorSchemeMenues.clear();
+		mColorSchemeMenus.clear();
 		auto* newMenu = createColorSchemeMenu();
 		newMenu->reloadStyle( true, true );
 		colorSchemeMenu->setSubMenu( newMenu );
@@ -307,9 +329,9 @@ std::string quoteString( std::string str ) {
 }
 
 static int openExternal( const std::string& defShell, const std::string& cmd,
-						  const std::string& scriptsPath, const std::string& workingDir ) {
+						 const std::string& scriptsPath, const std::string& workingDir ) {
 	// This is an utility bat script based in the Geany utility script called "geany-run-helper"
-	static const std::string RUN_HELPER =
+	static const std::string_view RUN_HELPER =
 		R"shellscript(REM USAGE: ecode-run-helper DIRECTORY AUTOCLOSE COMMAND...
 
 REM unnecessary, but we get the directory
@@ -344,9 +366,9 @@ if not %autoclose%==1 pause
 	if ( !cmd.empty() && !scriptsPath.empty() ) {
 		std::string runHelperPath = scriptsPath + "ecode-run-helper.bat";
 		bool canContinue = true;
-		if ( !FileSystem::fileExists( runHelperPath ) ) {
-			if ( !FileSystem::fileWrite( runHelperPath, RUN_HELPER ) )
-				canContinue = false;
+		if ( !FileSystem::fileExists( runHelperPath ) &&
+			 !FileSystem::fileWrite( runHelperPath, RUN_HELPER ) ) {
+			canContinue = false;
 		}
 		if ( canContinue ) {
 			std::string cmdDir = String::trim( FileSystem::fileRemoveFileName( cmd ) );
@@ -363,6 +385,7 @@ if not %autoclose%==1 pause
 	}
 
 	std::vector<std::string> options;
+	options.reserve( 3 );
 	if ( !defShell.empty() )
 		options.push_back( defShell );
 	options.push_back( "cmd" );
@@ -383,8 +406,23 @@ if not %autoclose%==1 pause
 }
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
 static int openExternal( const std::string&, const std::string& cmd, const std::string&,
-						  const std::string& workingDir ) {
-	static const std::string externalShell = "open -a terminal";
+						 const std::string& workingDir ) {
+
+	std::vector<std::string> options = { "ghostty", "iTerm2", "eterm" };
+	for ( const auto& option : options ) {
+		auto externalShell( Sys::which( option ) );
+		if ( !externalShell.empty() ) {
+			if ( !cmd.empty() ) {
+				auto fcmd = externalShell + " -e \"" + cmd + "\"";
+				Log::info( "Running: %s", fcmd );
+				return Sys::execute( fcmd, workingDir );
+			} else {
+				return Sys::execute( externalShell, workingDir );
+			}
+		}
+	}
+
+	static const std::string externalShell = "open -a terminal --args";
 	if ( !cmd.empty() ) {
 		std::string fcmd = externalShell + " \"" + cmd + "\"";
 		Log::info( "Running: %s", fcmd );
@@ -394,8 +432,8 @@ static int openExternal( const std::string&, const std::string& cmd, const std::
 }
 #else
 static int openExternal( const std::string&, const std::string& cmd, const std::string&,
-						  const std::string& workingDir ) {
-	std::vector<std::string> options = { "gnome-terminal", "konsole", "xterm", "st" };
+						 const std::string& workingDir ) {
+	std::vector<std::string> options = { "gnome-terminal", "konsole", "eterm", "xterm", "st" };
 	for ( const auto& option : options ) {
 		auto externalShell( Sys::which( option ) );
 		if ( !externalShell.empty() ) {
@@ -413,7 +451,7 @@ static int openExternal( const std::string&, const std::string& cmd, const std::
 #endif
 
 int TerminalManager::openInExternalTerminal( const std::string& cmd,
-											  const std::string& workingDir ) {
+											 const std::string& workingDir ) {
 	Log::info( "Trying to open in external terminal: %s %s", cmd, workingDir );
 	return openExternal( mApp->termConfig().shell, cmd, mApp->getScriptsPath(), workingDir );
 }
@@ -447,10 +485,10 @@ void TerminalManager::displayError( const std::string& workingDir ) {
 	}
 }
 
-UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabWidget* inTabWidget,
-												const std::string& workingDir, std::string program,
-												const std::vector<std::string>& args,
-												bool fallback ) {
+UITerminal* TerminalManager::createNewTerminal(
+	const std::string& title, UITabWidget* inTabWidget, const std::string& workingDir,
+	std::string program, std::vector<std::string> args,
+	const std::unordered_map<std::string, std::string>& env, bool fallback, bool keepAlive ) {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	UIMessageBox* msgBox = UIMessageBox::New(
 		UIMessageBox::OK,
@@ -492,17 +530,25 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 	if ( program.empty() && !mApp->termConfig().shell.empty() )
 		program = mApp->termConfig().shell;
 
+	if ( args.empty() && !mApp->termConfig().shellArgs.empty() )
+		args = Process::parseArgs( mApp->termConfig().shellArgs );
+
 	UITerminal* term = UITerminal::New(
 		mApp->getTerminalFont() ? mApp->getTerminalFont() : mApp->getFontMono(),
 		mApp->termConfig().fontSize.asPixels( 0, Sizef(), mApp->getDisplayDPI() ), initialSize,
-		program, args, !workingDir.empty() ? workingDir : mApp->getCurrentWorkingDir(),
-		mApp->termConfig().scrollback, nullptr, mUseFrameBuffer );
+		program, args, env, !workingDir.empty() ? workingDir : mApp->getCurrentWorkingDir(),
+		mApp->termConfig().scrollback, nullptr, mUseFrameBuffer, keepAlive );
 
 	if ( term == nullptr || term->getTerm() == nullptr ) {
 		if ( fallback )
 			displayError( workingDir );
 		return nullptr;
 	}
+
+	term->getTerm()->setCursorMode( mApp->termConfig().cursorStyle );
+	term->setExclusiveMode( mApp->termConfig().exclusiveMode );
+	term->setScrollViewType( mApp->termConfig().scrollBarType );
+	term->setVerticalScrollMode( mApp->termConfig().scrollBarMode );
 
 	auto ret = mApp->getSplitter()->createWidgetInTabWidget(
 		tabWidget, term, title.empty() ? mApp->i18n( "shell", "Shell" ).toUtf8() : title, true );
@@ -512,10 +558,20 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 	term->setTitle( title );
 	auto csIt = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );
 	term->getTerm()->getTerminal()->setAllowMemoryTrimnming( true );
+	term->getTerm()->setKeepAlive( !mApp->getConfig().term.closeTerminalTabOnExit );
+	term->getTerm()->pushEventCallback( [this, term]( const TerminalDisplay::Event& event ) {
+		if ( event.type == TerminalDisplay::EventType::PROCESS_EXIT &&
+			 mApp->getConfig().term.closeTerminalTabOnExit && term->getData() != 0 ) {
+			UITab* tab = (UITab*)term->getData();
+			auto* tabWidget = mApp->getSplitter()->tabWidgetFromWidget( term );
+			if ( tabWidget )
+				tabWidget->removeTab( tab );
+		}
+	} );
 	term->setColorScheme( csIt != mTerminalColorSchemes.end()
 							  ? mTerminalColorSchemes.at( mTerminalCurrentColorScheme )
 							  : TerminalColorScheme::getDefault() );
-	term->addEventListener( Event::OnTitleChange, [this]( const Event* event ) {
+	term->on( Event::OnTitleChange, [this]( const Event* event ) {
 		if ( event->getNode() != mApp->getSplitter()->getCurWidget() )
 			return;
 		mApp->setAppTitle( event->getNode()->asType<UITerminal>()->getTitle() );
@@ -528,7 +584,7 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 		msgBox->getTextInput()->setHint( mApp->i18n( "any_name_ellipsis", "Any name..." ) );
 		msgBox->setCloseShortcut( { KEY_ESCAPE, KEYMOD_NONE } );
 		msgBox->showWhenReady();
-		msgBox->addEventListener( Event::OnConfirm, [msgBox, term]( const Event* ) {
+		msgBox->on( Event::OnConfirm, [msgBox, term]( const Event* ) {
 			std::string title( msgBox->getTextInput()->getText().toUtf8() );
 			term->setTitle( title );
 			msgBox->close();
@@ -550,12 +606,31 @@ UITerminal* TerminalManager::createNewTerminal( const std::string& title, UITabW
 									? it->first
 									: mTerminalColorSchemes.begin()->first );
 	} );
-	term->setCommand( UITerminal::getExclusiveModeToggleCommandName(), [term, this] {
-		term->setExclusiveMode( !term->getExclusiveMode() );
-		mApp->updateTerminalMenu();
+	term->setCommand( UITerminal::getExclusiveModeToggleCommandName(),
+					  [term] { term->setExclusiveMode( !term->getExclusiveMode() ); } );
+	term->setCommand( "move-tab-to-start", [this] {
+		auto widget = mApp->getSplitter()->getCurWidget();
+		if ( widget == nullptr || widget->getData() == 0 )
+			return;
+		UITabWidget* tabWidget = mApp->getSplitter()->tabWidgetFromWidget( widget );
+		if ( tabWidget ) {
+			UITab* tab = (UITab*)widget->getData();
+			tabWidget->moveTab( tab, 0 );
+		}
+	} );
+	term->setCommand( "move-tab-to-end", [this] {
+		auto widget = mApp->getSplitter()->getCurWidget();
+		if ( widget == nullptr || widget->getData() == 0 )
+			return;
+		UITabWidget* tabWidget = mApp->getSplitter()->tabWidgetFromWidget( widget );
+		if ( tabWidget ) {
+			UITab* tab = (UITab*)widget->getData();
+			tabWidget->moveTab( tab, tabWidget->getTabCount() );
+		}
 	} );
 	mApp->registerUnlockedCommands( *term );
-	mApp->getSplitter()->registerSplitterCommands( *term );
+	term->getKeyBindings().removeCommandKeybind( "find-replace" );
+	term->getKeyBindings().removeCommandKeybind( "open-locatebar" );
 	term->setFocus();
 	return term;
 #endif
@@ -572,7 +647,7 @@ void TerminalManager::setKeybindings( UITerminal* term ) {
 		  "debug-draw-boxes-toggle", "debug-draw-debug-data", "debug-widget-tree-view",
 		  "open-locatebar", "open-command-palette", "open-global-search", "menu-toggle",
 		  "console-toggle", "go-to-line", "editor-go-back", "editor-go-forward",
-		  "project-run-executable" } );
+		  "project-run-executable", "project-build-and-run" } );
 }
 
 } // namespace ecode

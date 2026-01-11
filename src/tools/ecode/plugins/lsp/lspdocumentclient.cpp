@@ -5,6 +5,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxhighlighter.hpp>
 #include <eepp/window/engine.hpp>
 
@@ -18,14 +19,17 @@ LSPDocumentClient::LSPDocumentClient( LSPClientServer* server, TextDocument* doc
 	notifyOpen();
 	requestSymbolsDelayed();
 	requestSemanticHighlightingDelayed();
-	if ( mServer->isReady() )
+	if ( mServer->isReady() ) {
+		mAlreadyRequestedFoldingRanges = true;
 		setupFoldRangeService();
+	}
 }
 
 void LSPDocumentClient::onServerInitialized() {
 	requestSymbols();
 	requestSemanticHighlighting();
-	setupFoldRangeService();
+	if ( !mAlreadyRequestedFoldingRanges )
+		setupFoldRangeService();
 	// requestCodeLens();
 }
 
@@ -44,7 +48,7 @@ LSPDocumentClient::~LSPDocumentClient() {
 	if ( nullptr != sceneNode && 0 != mTagSemanticTokens )
 		sceneNode->removeActionsByTag( mTagSemanticTokens );
 	mShutdown = true;
-	while ( mRunningSemanticTokens )
+	while ( mRunningSemanticTokens || mProcessingSemanticTokensResponse )
 		Sys::sleep( Milliseconds( 0.1f ) );
 }
 
@@ -69,8 +73,7 @@ void LSPDocumentClient::onDocumentTextChanged( const DocumentContentChange& chan
 	++mVersion;
 	// If several change event are being fired, the thread pool can't guaranteed that it will be
 	// executed in FIFO. Se we accumulate the events in a queue and fire them in correct order.
-	mServer->queueDidChange( mDoc->getURI(), mVersion, "", { change } );
-	mServer->getThreadPool()->run( [this, change]() { mServer->processDidChangeQueue(); } );
+	mServer->queueAndProcess( mDoc->getURI(), mVersion, { change } );
 	requestSymbolsDelayed();
 	requestSemanticHighlightingDelayed();
 }
@@ -102,6 +105,10 @@ void LSPDocumentClient::onDocumentClosed( TextDocument* ) {
 }
 
 void LSPDocumentClient::onDocumentDirtyOnFileSystem( TextDocument* ) {}
+
+void LSPDocumentClient::onDocumentSyntaxDefinitionChange( const SyntaxDefinition& ) {
+	requestSemanticHighlightingDelayed( true );
+}
 
 void LSPDocumentClient::onDocumentMoved( TextDocument* ) {
 	refreshTag();
@@ -175,7 +182,8 @@ void LSPDocumentClient::requestSemanticHighlighting( bool reqFull ) {
 	mServer->documentSemanticTokensFull(
 		mDoc->getURI(), delta, reqId, range,
 		[docClient, uri, server, docModId]( const auto&, LSPSemanticTokensDelta&& deltas ) {
-			if ( server->hasDocument( uri ) ) {
+			if ( server->hasDocumentClient( docClient ) && server->hasDocument( uri ) ) {
+				BoolScopedOp op( docClient->mProcessingSemanticTokensResponse, true );
 				docClient->mWaitingSemanticTokensResponse = false;
 				docClient->processTokens( std::move( deltas ), docModId );
 			}
@@ -194,9 +202,8 @@ void LSPDocumentClient::requestSemanticHighlightingDelayed( bool reqFull ) {
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( sceneNode ) {
 		mWaitingSemanticTokensResponse = true;
-		sceneNode->removeActionsByTag( mTagSemanticTokens );
-		sceneNode->runOnMainThread( [this, reqFull]() { requestSemanticHighlighting( reqFull ); },
-									Seconds( 0.5f ), mTagSemanticTokens );
+		sceneNode->debounce( [this, reqFull]() { requestSemanticHighlighting( reqFull ); },
+							 Seconds( 0.5f ), mTagSemanticTokens );
 	}
 }
 
@@ -240,22 +247,22 @@ static SyntaxStyleType semanticTokenTypeToSyntaxType( const std::string& type ) 
 		case SemanticTokenTypes::Interface:
 		case SemanticTokenTypes::Struct:
 		case SemanticTokenTypes::TypeParameter:
-			return "keyword2"_sst;
+			return "type"_sst;
 		case SemanticTokenTypes::Parameter:
-			return "keyword3"_sst;
+			return "parameter"_sst;
 		case SemanticTokenTypes::Variable:
 			return "symbol"_sst;
 		case SemanticTokenTypes::Property:
 			return "symbol"_sst;
 		case SemanticTokenTypes::EnumMember:
 		case SemanticTokenTypes::Event:
-			return "keyword2"_sst;
+			return "type"_sst;
 		case SemanticTokenTypes::Function:
 		case SemanticTokenTypes::Method:
 		case SemanticTokenTypes::Member:
 			return "function"_sst;
 		case SemanticTokenTypes::Macro:
-			return "keyword2"_sst;
+			return "type"_sst;
 		case SemanticTokenTypes::Keyword:
 		case SemanticTokenTypes::Modifier:
 			return "keyword"_sst;
@@ -286,7 +293,7 @@ void LSPDocumentClient::processTokens( LSPSemanticTokensDelta&& tokens,
 	if ( docModificationId != mDoc->getModificationId() )
 		return requestSemanticHighlightingDelayed();
 
-	mRunningSemanticTokens = true;
+	BoolScopedOp op( mRunningSemanticTokens, true );
 
 	if ( !tokens.resultId.empty() )
 		mSemanticeResultId = tokens.resultId;
@@ -298,6 +305,9 @@ void LSPDocumentClient::processTokens( LSPSemanticTokensDelta&& tokens,
 							 curTokens.begin() + edit.start + edit.deleteCount );
 		}
 		curTokens.insert( curTokens.begin() + edit.start, edit.data.begin(), edit.data.end() );
+
+		if ( mShutdown )
+			return;
 	}
 
 	if ( !tokens.data.empty() ) {
@@ -305,8 +315,6 @@ void LSPDocumentClient::processTokens( LSPSemanticTokensDelta&& tokens,
 	}
 
 	highlight();
-
-	mRunningSemanticTokens = false;
 }
 
 void LSPDocumentClient::highlight() {
@@ -352,7 +360,7 @@ void LSPDocumentClient::highlight() {
 		} else {
 			line->tokens.push_back( { SyntaxStyleTypes::Normal, start, len } );
 		}
-		line->hash = mDoc->line( currentLine ).getHash();
+		line->hash = mDoc->getLineHash( currentLine );
 		line->updateSignature();
 
 		auto curSignature = mDoc->getHighlighter()->getTokenizedLineSignature( lastLine );
@@ -406,12 +414,7 @@ void LSPDocumentClient::requestSymbols() {
 	if ( !server->getCapabilities().documentSymbolProvider )
 		return;
 	URI uri = mDoc->getURI();
-	if ( Engine::instance()->isMainThread() ) {
-		mServer->getThreadPool()->run(
-			[server, uri]() { server->documentSymbolsBroadcast( uri ); } );
-	} else {
-		server->documentSymbolsBroadcast( uri );
-	}
+	server->documentSymbolsBroadcast( uri );
 }
 
 void LSPDocumentClient::requestFoldRange() {
@@ -434,12 +437,7 @@ void LSPDocumentClient::requestFoldRange() {
 		doc->getFoldRangeService().setFoldingRegions( regions );
 	};
 
-	if ( Engine::instance()->isMainThread() ) {
-		server->getThreadPool()->run(
-			[server, uri, handler]() { server->documentFoldingRange( uri, handler ); } );
-	} else {
-		server->documentFoldingRange( uri, handler );
-	}
+	server->documentFoldingRange( uri, handler );
 }
 
 void LSPDocumentClient::requestSymbolsDelayed() {
@@ -447,11 +445,10 @@ void LSPDocumentClient::requestSymbolsDelayed() {
 		return;
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( sceneNode ) {
-		sceneNode->removeActionsByTag( mTag );
 		LSPDocumentClient* docClient = this;
 		URI uri = mDoc->getURI();
 		LSPClientServer* server = mServer;
-		sceneNode->runOnMainThread(
+		sceneNode->debounce(
 			[docClient, server, uri]() {
 				if ( server->hasDocument( uri ) )
 					docClient->requestSymbols();

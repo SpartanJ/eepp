@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addContainerFile() {
+SyntaxDefinition& addContainerFile() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -19,22 +19,22 @@ void addContainerFile() {
 
 		  },
 		  {
-			  { "EXPOSE", "keyword2" },
+			  { "EXPOSE", "type" },
 			  { "FROM", "keyword" },
-			  { "STOPSIGNAL", "keyword2" },
-			  { "HEALTHCHECK", "keyword2" },
-			  { "SHELL", "keyword2" },
-			  { "ENV", "keyword2" },
-			  { "RUN", "keyword2" },
+			  { "STOPSIGNAL", "type" },
+			  { "HEALTHCHECK", "type" },
+			  { "SHELL", "type" },
+			  { "ENV", "type" },
+			  { "RUN", "type" },
 			  { "ENTRYPOINT", "function" },
-			  { "VOLUME", "keyword2" },
-			  { "WORKDIR", "keyword2" },
-			  { "LABEL", "keyword2" },
-			  { "USER", "keyword2" },
-			  { "ONBUILD", "keyword2" },
-			  { "COPY", "keyword2" },
-			  { "ARG", "keyword2" },
-			  { "ADD", "keyword2" },
+			  { "VOLUME", "type" },
+			  { "WORKDIR", "type" },
+			  { "LABEL", "type" },
+			  { "USER", "type" },
+			  { "ONBUILD", "type" },
+			  { "COPY", "type" },
+			  { "ARG", "type" },
+			  { "ADD", "type" },
 			  { "CMD", "function" },
 
 		  },
@@ -43,6 +43,7 @@ void addContainerFile() {
 		  "dockerfile" } );
 
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

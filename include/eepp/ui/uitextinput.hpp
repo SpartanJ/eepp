@@ -123,6 +123,8 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	void setSelectAllDocOnTabNavigate( bool selectAllDocOnTabNavigate );
 
+	Client::Type getTextDocumentClientType() { return TextDocument::Client::Core; }
+
   protected:
 	TextDocument mDoc;
 	Float mWaitCursorTime;
@@ -145,6 +147,7 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	size_t mMenuIconSize{ 16 };
 	UIPopUpMenu* mCurrentMenu{ nullptr };
 	Uint64 mLastExecuteEventId{ 0 };
+	String::HashType mLastCmdHash{ 0 };
 	HintDisplay mHintDisplay{ HintDisplay::Always };
 
 	void resetWaitCursor();

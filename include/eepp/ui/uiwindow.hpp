@@ -20,8 +20,8 @@ enum UIWindowFlags {
 	UI_WIN_MAXIMIZE_BUTTON = ( 1 << 3 ),
 	UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS = ( 1 << 4 ),
 	UI_WIN_RESIZEABLE = ( 1 << 5 ),
-	UI_WIN_DRAGABLE_CONTAINER = ( 1 << 6 ),
-	UI_WIN_SHARE_ALPHA_WITH_CHILDS = ( 1 << 7 ),
+	UI_WIN_DRAGGABLE_CONTAINER = ( 1 << 6 ),
+	UI_WIN_SHARE_ALPHA_WITH_CHILDREN = ( 1 << 7 ),
 	UI_WIN_MODAL = ( 1 << 8 ),
 	UI_WIN_SHADOW = ( 1 << 9 ),
 	UI_WIN_FRAME_BUFFER = ( 1 << 10 ),
@@ -31,7 +31,7 @@ enum UIWindowFlags {
 
 static const Uint32 UI_WIN_DEFAULT_FLAGS = UI_WIN_CLOSE_BUTTON |
 										   UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_RESIZEABLE |
-										   UI_WIN_SHARE_ALPHA_WITH_CHILDS;
+										   UI_WIN_SHARE_ALPHA_WITH_CHILDREN;
 
 class EE_API UIWindow : public UIWidget {
   public:
@@ -105,7 +105,7 @@ class EE_API UIWindow : public UIWidget {
 
 	virtual bool show();
 
-	virtual bool hide();
+	virtual bool hide( bool immediate = false /* ignores animations */ );
 
 	UIWindow* showWhenReady();
 
@@ -200,6 +200,12 @@ class EE_API UIWindow : public UIWidget {
 
 	void executeKeyBindingCommand( const std::string& command );
 
+	void setStealFocusOnShow( bool steal );
+
+	bool stealsFocusOnShow() const;
+
+	void setCheckEphemeralCloseFn( std::function<bool( Node* focusNode )> fn );
+
   protected:
 	enum UI_RESIZE_TYPE {
 		RESIZE_NONE,
@@ -236,9 +242,13 @@ class EE_API UIWindow : public UIWidget {
 	bool mFrameBufferBound;
 	bool mWindowReady{ false };
 	bool mShowWhenReady{ false };
+	bool mStealFocusOnShow{ true };
+	bool mClosing{ false };
+	bool mLoadedFromXML{ false };
 
 	KeyBindings mKeyBindings;
 	std::map<std::string, KeyBindingCommand> mKeyBindingCommands;
+	std::function<bool( Node* focusNode )> mCheckEphemeralCloseFn;
 
 	virtual void onSizeChange();
 
@@ -256,7 +266,7 @@ class EE_API UIWindow : public UIWidget {
 
 	virtual Uint32 onFocusLoss();
 
-	void fixChildsSize();
+	void fixChildrenSize();
 
 	void doResize( const NodeMessage* Msg );
 

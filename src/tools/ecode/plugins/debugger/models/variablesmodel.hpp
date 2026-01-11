@@ -68,6 +68,7 @@ namespace ecode {
 
 struct ModelVariableNode : public std::enable_shared_from_this<ModelVariableNode> {
 	using NodePtr = std::shared_ptr<ModelVariableNode>;
+	using WeakNodePtr = std::weak_ptr<ModelVariableNode>;
 
 	ModelVariableNode( Variable&& var, NodePtr parent );
 
@@ -93,7 +94,7 @@ struct ModelVariableNode : public std::enable_shared_from_this<ModelVariableNode
 
 	NodePtr getParent() const;
 
-	NodePtr parent{ nullptr };
+	WeakNodePtr parent;
 	Variable var;
 	std::vector<NodePtr> children;
 };
@@ -110,7 +111,7 @@ class VariablesModel : public Model {
 
 	size_t rowCount( const ModelIndex& index = ModelIndex() ) const override;
 
-	bool hasChilds( const ModelIndex& index = ModelIndex() ) const override;
+	bool hasChildren( const ModelIndex& index = ModelIndex() ) const override;
 
 	size_t columnCount( const ModelIndex& ) const override;
 
@@ -118,20 +119,26 @@ class VariablesModel : public Model {
 
 	Variant data( const ModelIndex& index, ModelRole role ) const override;
 
+	void invalidate( unsigned int flags ) override;
+
   protected:
-	ModelVariableNode::NodePtr rootNode;
+	ModelVariableNode::NodePtr mRootNode;
+	mutable std::unordered_map<ModelVariableNode*, ModelVariableNode::NodePtr> mChildMap;
 	UISceneNode* mSceneNode;
+
 };
 
 class VariablesHolder {
   public:
 	VariablesHolder( UISceneNode* sceneNode );
 
+	~VariablesHolder();
+
 	void addVariables( const int variablesReference, std::vector<Variable>&& vars );
 
 	void addChild( ModelVariableNode::NodePtr child );
 
-	void addChilds( const std::vector<ModelVariableNode::NodePtr>& childs );
+	void addChildren( const std::vector<ModelVariableNode::NodePtr>& children );
 
 	void upsertRootChild( Variable&& );
 
@@ -142,12 +149,12 @@ class VariablesHolder {
 	void removeExpandedState( const ModelIndex& index, bool uniqueLocation = false );
 
 	bool restoreExpandedState( const ExpandedState::Location& location, DebuggerClient* client,
-							   UITreeView* uiVariables, bool uniqueLocation = false );
+							   UITreeView* uiVariables, bool uniqueLocation = false,
+							   bool unstableFrameId = false );
 
 	std::shared_ptr<VariablesModel> getModel() { return mModel; }
 
   protected:
-	Mutex mMutex;
 	std::shared_ptr<ModelVariableNode> mRootNode;
 	std::shared_ptr<VariablesModel> mModel;
 	std::unordered_map<int, ModelVariableNode::NodePtr> mNodeMap;

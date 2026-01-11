@@ -7,16 +7,16 @@ framework heavily focused on the development of rich graphical user interfaces.
 [![Linux status](https://img.shields.io/github/actions/workflow/status/SpartanJ/eepp/eepp-linux-build-check.yml?branch=develop&label=Linux)](https://github.com/SpartanJ/eepp/actions?query=workflow%3ALinux)
 [![Windows status](https://img.shields.io/github/actions/workflow/status/SpartanJ/eepp/eepp-windows-build-check.yml?branch=develop&label=Windows)](https://github.com/SpartanJ/eepp/actions?query=workflow%3AWindows)
 [![macOS status](https://img.shields.io/github/actions/workflow/status/SpartanJ/eepp/eepp-macos-build-check.yml?branch=develop&label=macOS)](https://github.com/SpartanJ/eepp/actions?query=workflow%3AmacOS)
+[![iOS status](https://img.shields.io/github/actions/workflow/status/SpartanJ/eepp/eepp-ios-build-check.yml?branch=develop&label=iOS)](https://github.com/SpartanJ/eepp/actions?query=workflow%3AiOS)
+[![Android status](https://img.shields.io/github/actions/workflow/status/SpartanJ/eepp/eepp-android-build-check.yml?branch=develop&label=Android)](https://github.com/SpartanJ/eepp/actions?query=workflow%3AAndroid)
 
 ## Features
 
 ### Cross platform functionality
 
-* Official support for Linux, Windows, macOS, Android and iOS.
+* Official support for Linux, Windows, macOS, FreeBSD, Haiku, Android and iOS.
 
 * Exports to HTML5 using emscripten with some minor limitations.
-
-* Also works on BSD and Haiku.
 
 ### UI Module
 
@@ -399,18 +399,18 @@ Notice: eepp uses [mojoAL](https://icculus.org/mojoAL/) by default as an OpenAL 
 OpenAL is optionally available as an audio backend. If you want to use it, you
 have the alternative to enable it. To enable it and disable the mojoAL drop-in replacemente, you
 need to add the parameter `--without-mojoal` to any `premake` call
-( ex: `premake5 --without-mojoal gmake2` ).
+( ex: `premake5 --without-mojoal gmake` ).
 
 ### GNU/Linux
 
 In a Ubuntu system it would be something like ( also you will need gcc but it
 will be installed anyways ):
 
-`sudo apt-get install premake5 libsdl2-2.0-0 libsdl2-dev libopenal1 libopenal-dev`
+`sudo apt-get install premake5 libsdl2-2.0-0 libsdl2-dev`
 
 Clone the repository and run on the repository root directory:
 
-`premake5 gmake2`
+`premake5 gmake`
 
 or if you have premake4 installed you can run:
 
@@ -418,7 +418,13 @@ or if you have premake4 installed you can run:
 
 Then just build the library:
 
-`make -C make/linux`
+if `premake4` was used:
+
+`make -C make/linux config=release` (`config=debug` for debug build)
+
+if `premake5` was used:
+
+`make -C make/linux config=release_x86_64` (`debug_x86_64` for debug build, or `release_arm64`/`debug_arm64` if building from arm64)
 
 That's it. That will build the whole project.
 
@@ -442,7 +448,7 @@ Then the project files should be found in `make/windows/`. A complete solution
 and all the project will be available. Having installed everything, you'll be
 able to build the *Visual Studio* solution as any other project.
 
-Using the commnad line argument `--windows-vc-build` will download the SDL2 dependency automatically
+Using the command line argument `--windows-vc-build` will download the SDL2 dependency automatically
 and add the paths to the build process to link against it without the need to download manually any
 external dependency.
 
@@ -467,7 +473,7 @@ Execute `C:\w64devkit\w64devkit.exe` as an administrator (`right click` -> `Run 
 
 Then go to the `eepp` cloned repository directory and run:
 
-`premake5.exe --windows-mingw-build gmake2`
+`premake5.exe --windows-mingw-build gmake`
 
 `--windows-mingw-build` will automatically download and link external dependencies (SDL2).
 
@@ -498,11 +504,11 @@ files with [premake4 or premake5](https://premake.github.io/download.html).
 
 Generate the project:
 
-`premake5 --use-frameworks gmake2`
+`premake5 --use-frameworks gmake`
 
 And build it:
 
-`make -C make/macosx`
+`make -C make/macosx config=release_x86_64` (or `config=debug_x86_64` for a debug build, or `release_arm64`/`debug_arm64` if building from arm64)
 
 ##### Using premake4
 
@@ -571,8 +577,8 @@ click in the plus icon (+), then go to _Add Other..._ and locate and select the
 
 This script can be used to build the SDL2 and eepp as two fat static libraries
 with arm64 and x86_64 architectures in it (arm64 for iPhone/iPad and x86_64 for
-the simulators). To generate a release build pass `config=release` as a parameter
-fo the script (`sh compile-all.sh config=release`). The built files will be
+the simulators). To generate a release build pass `config=release_arm64` as a parameter
+for the script (`sh compile-all.sh config=release_arm64`). The built files will be
 located in `libs/ios/`, as `libSDL2.a` and `libeepp.a` (or `libeepp-debug.a` for
 debug build). This two files can be integrated in your project.
 
@@ -581,12 +587,12 @@ debug build). This two files can be integrated in your project.
 You will first need to [download and install emscripten](https://emscripten.org/docs/getting_started/downloads.html).
 Then there's a script for building the **emscripten** project in
 `projects/emscripten/make.sh`. Before running this script remember to set the
-emsdk enviroment, it should be something like: `source /path/to/emsdk/emsdk_env.sh`.
+emsdk environment, it should be something like: `source /path/to/emsdk/emsdk_env.sh`.
 That should be enough in **GNU/Linux** or **macOS** ( only tested this on GNU/Linux ).
 
 ## How to run the demos and tools?
 
-All the binaries are located at the `bin` directory after built. The binaries requiere two files:
+All the binaries are located at the `bin` directory after built. The binaries require two files:
 the eepp library and the SDL2 library. The eepp library will be located in `libs/{OS}/`. The build
 script will try to symlink the eepp library into `bin`, if that fails it should be copied or
 symlinked manually. Regarding the SDL2 library is not provided in the repository, so in order to run
@@ -633,7 +639,7 @@ course of the support+community that you can get from *Godot* or *cocos2d-x* to
 mention a couple.
 
 The main idea of this library is to focus on a better general approach to
-develop heavily UI based apps ands games than the other options, with cleaner
+develop heavily UI based apps and games than the other options, with cleaner
 code and implementation.
 
 The main reason I developed the library is for _fun_ and to _learn_ new

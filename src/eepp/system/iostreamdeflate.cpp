@@ -7,7 +7,7 @@ namespace EE { namespace System {
 struct LocalStreamData {
 	z_stream strm;
 	int state;
-	bool writedStream;
+	bool writtenStream;
 };
 
 IOStreamDeflate* IOStreamDeflate::New( IOStream& inOutStream, Compression::Mode mode,
@@ -25,14 +25,14 @@ IOStreamDeflate::IOStreamDeflate( IOStream& inOutStream, Compression::Mode mode,
 	int level = mode == Compression::MODE_DEFLATE ? config.zlib.level : config.gzip.level;
 
 	mLocalStream->strm = z_stream{};
-	mLocalStream->writedStream = false;
+	mLocalStream->writtenStream = false;
 
 	mLocalStream->state =
 		deflateInit2( &mLocalStream->strm, level, Z_DEFLATED, windowBits, 8, Z_DEFAULT_STRATEGY );
 }
 
 IOStreamDeflate::~IOStreamDeflate() {
-	if ( mStream.isOpen() && mLocalStream->writedStream ) {
+	if ( mStream.isOpen() && mLocalStream->writtenStream ) {
 		z_stream& zstr = mLocalStream->strm;
 
 		if ( zstr.next_out ) {
@@ -132,7 +132,7 @@ ios_size IOStreamDeflate::read( char* buffer, ios_size length ) {
 }
 
 ios_size IOStreamDeflate::write( const char* buffer, ios_size length ) {
-	mLocalStream->writedStream = true;
+	mLocalStream->writtenStream = true;
 
 	if ( mLocalStream->state != Z_OK || !mStream.isOpen() || length == 0 )
 		return 0;

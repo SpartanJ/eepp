@@ -1,5 +1,7 @@
 #include "uiwelcomescreen.hpp"
+#include "customwidgets.hpp"
 #include "ecode.hpp"
+#include "version.hpp"
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/window.hpp>
 
@@ -19,22 +21,33 @@ static const auto LAYOUT = R"xml(
 	color: var(--font);
 	cursor: hand;
 }
-#home_logo {
+#welcome_ecode #home_logo {
 	focusable: false;
 	background-image: icon(ecode,256dp);
 	background-position: center center;
 	background-tint: var(--font-hint);
 	background-size: 100% 100%;
 }
-#home_logo:hover {
+#welcome_ecode #home_logo:hover {
 	background-tint: var(--primary);
 }
-#home_title {
+#welcome_ecode #home_title {
 	font-size: 24dp;
 	color: var(--font-hint);
-	font-family: DejaVuSansMono;
 	font-style: bold|shadow;
-	text-shadow-color: rgba(0,0,0,0.4);
+}
+#welcome_ecode #home_title,
+#welcome_ecode #version_number {
+	cursor: pointer;
+	font-family: DejaVuSansMono;
+	text-shadow-color: light-dark(#00000019, #00000066);
+}
+#welcome_ecode #version_number {
+	font-style: shadow;
+}
+#welcome_ecode #version_number:hover {
+	color: var(--primary);
+	cursor: hand;
 }
 #welcome_ecode PushButton {
 	min-width: 128dp;
@@ -74,6 +87,26 @@ static const auto LAYOUT = R"xml(
 #welcome_ecode .right > PushButton:last-of-type {
 	margin-bottom: 0dp;
 }
+#welcome_ecode .color_scheme_icon {
+	lw: 24dp;
+	lh: 24dp;
+	background-color: transparent;
+	border-radius: 12dp;
+	foreground-position: center;
+	foreground-tint: var(--font-hint);
+	transition: all 0.1s;
+}
+#welcome_ecode .color_scheme_icon:hover {
+	background-color: var(--primary);
+	foreground-tint: light-dark(var(--back), var(--font));
+	cursor: hand;
+}
+#welcome_ecode #light_color_scheme_but {
+	foreground-image: icon("sun", 16dp);
+}
+#welcome_ecode #dark_color_scheme_but {
+	foreground-image: icon("moon", 16dp);
+}
 ]]>
 </style>
 <RelativeLayout lw="mp" lh="mp" max-width="512dp" layout_gravity="center">
@@ -81,7 +114,10 @@ static const auto LAYOUT = R"xml(
 		<vbox class="left" lw="0" lh="wc" lw8="0.5" lg="center">
 			<hbox lw="wc" lh="wc" lg="center">
 				<image id="home_logo" lw="wc" min-width="128dp" lh="128dp" lg="center" />
-				<tv id="home_title" text="ecode" lg="center" />
+				<vbox lg="center">
+					<tv id="home_title" text="ecode" lg="center" />
+					<tv id="version_number" text="version x.x.x" lg="center" />
+				</vbox>
 			</hbox>
 			<tv class="bold" text="@string(shortcuts, Shortcuts)" lg="center" margin-top="16dp" />
 			<vbox lw="mp" lh="wc" lg="center">
@@ -108,6 +144,10 @@ static const auto LAYOUT = R"xml(
 				<hbox class="shortcut" lg="center">
 					<tv class="name" id="open_file" text="@string(open_file, Open File)" />
 					<tv class="shortcut" id="open_file_shortcut" text="Ctrl + O" />
+				</hbox>
+				<hbox layout-gravity="center">
+					<Widget id="light_color_scheme_but" class="color_scheme_icon" />
+					<Widget id="dark_color_scheme_but" class="color_scheme_icon" />
 				</hbox>
 			</vbox>
 		</vbox>
@@ -186,9 +226,7 @@ bool UIWelcomeScreen::isType( const Uint32& type ) const {
 }
 
 UIWelcomeScreen::UIWelcomeScreen( App* app ) :
-	UIRelativeLayout(),
-	WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ),
-	mApp( app ) {
+	UIRelativeLayout(), WidgetCommandExecuter( getInput() ), mApp( app ) {
 	setId( "welcome_ecode" );
 	addClass( "welcome_tab" );
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
@@ -222,6 +260,10 @@ UIWelcomeScreen::UIWelcomeScreen( App* app ) :
 		mApp->createAndShowRecentFilesPopUpMenu( event->getNode() );
 	} );
 
+	find<UITextView>( "version_number" )
+		->setText( String::format( "version %s", ecode::Version::getVersionNumString() ) )
+		->onClick( [this]( auto ) { mApp->runCommand( "check-for-updates" ); } );
+
 	find<UITextView>( "main_menu_shortcut" )->setText( mApp->getKeybind( "menu-toggle" ) );
 
 	find<UITextView>( "command_palette_shortcut" )
@@ -235,6 +277,14 @@ UIWelcomeScreen::UIWelcomeScreen( App* app ) :
 	find<UITextView>( "open_folder_shortcut" )->setText( mApp->getKeybind( "open-folder" ) );
 
 	find<UITextView>( "open_file_shortcut" )->setText( mApp->getKeybind( "open-file" ) );
+
+	find( "light_color_scheme_but" )->onClick( [this]( auto ) {
+		mApp->setUIColorSchemeFromUserInteraction( ColorSchemeExtPreference::Light );
+	} );
+
+	find( "dark_color_scheme_but" )->onClick( [this]( auto ) {
+		mApp->setUIColorSchemeFromUserInteraction( ColorSchemeExtPreference::Dark );
+	} );
 
 	auto welcomeDisabledChk = find<UICheckBox>( "disable_welcome_screen" );
 	welcomeDisabledChk->on( Event::OnValueChange, [welcomeDisabledChk, this]( auto ) {

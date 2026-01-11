@@ -26,6 +26,7 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 using namespace eterm::System;
@@ -56,9 +57,10 @@ class IProcessFactory {
 	virtual std::unique_ptr<IProcess>
 	createWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
 							  const std::string& workingDirectory, int numColumns, int numRows,
-							  std::unique_ptr<IPseudoTerminal>& outPseudoTerminal ) = 0;
+							  std::unique_ptr<IPseudoTerminal>& outPseudoTerminalconst,
+							  const std::unordered_map<std::string, std::string>& env = {} ) = 0;
 };
 
-}} // namespace EE::System
+}} // namespace eterm::System
 
 #endif

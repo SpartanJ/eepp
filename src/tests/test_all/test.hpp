@@ -120,7 +120,7 @@ class EETest : private Thread {
 	Uint32 mLastFPSLimit;
 	bool mWasMinimized;
 
-	String mBuda;
+	String mBuddha;
 
 	ResourceLoader mResLoad;
 	void onTextureLoaded( ResourceLoader* ObjLoaded );
@@ -137,7 +137,7 @@ class EETest : private Thread {
 	Float mAxisY;
 
 	TextureAtlasLoader* mTGL;
-	Sprite mBlindy;
+	Sprite mMonster;
 
 	FrameBuffer* mFBO;
 	VertexBuffer* mVBO;

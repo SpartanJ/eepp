@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addMeson() {
+SyntaxDefinition& addMeson() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Meson",
 		  { "meson%.build$", "^meson_options%.txt$" },

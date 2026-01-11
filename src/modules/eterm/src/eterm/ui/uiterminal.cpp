@@ -15,12 +15,14 @@ namespace eterm { namespace UI {
 
 UITerminal* UITerminal::New( Font* font, const Float& fontSize, const Sizef& pixelsSize,
 							 const std::string& program, const std::vector<std::string>& args,
+							 const std::unordered_map<std::string, std::string>& env,
 							 const std::string& workingDir, const size_t& historySize,
-							 IProcessFactory* processFactory, const bool& useFrameBuffer ) {
+							 IProcessFactory* processFactory, bool useFrameBuffer,
+							 bool keepAlive ) {
 	auto win = SceneManager::instance()->getUISceneNode()->getWindow();
 	auto terminal =
 		TerminalDisplay::create( win, font, fontSize, pixelsSize, program, args, workingDir,
-								 historySize, processFactory, useFrameBuffer );
+								 historySize, processFactory, useFrameBuffer, keepAlive, env );
 	return UITerminal::New( terminal );
 }
 
@@ -40,18 +42,13 @@ bool UITerminal::isType( const Uint32& type ) const {
 
 void UITerminal::draw() {
 	if ( mTerm ) {
-		mTerm->setPosition( mScreenPosi.asFloat() );
+		mTerm->setPosition( mScreenPos.trunc() );
 		mTerm->draw();
 	}
 }
 
-UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay ) :
-	UIWidget( "terminal" ),
-	mKeyBindings( getUISceneNode()->getWindow()->getInput() ),
-	mVScroll( UIScrollBar::NewVertical() ),
-	mTerm( terminalDisplay ) {
-	mFlags |= UI_TAB_STOP | UI_SCROLLABLE;
-	if ( !terminalDisplay )
+void UITerminal::registerNewTerminal() {
+	if ( !mTerm )
 		return;
 	mTerm->pushEventCallback( [this]( const TerminalDisplay::Event& event ) {
 		switch ( event.type ) {
@@ -75,9 +72,19 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 			}
 		}
 	} );
+}
 
+UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay ) :
+	UIWidget( "terminal" ),
+	mKeyBindings( getInput() ),
+	mVScroll( UIScrollBar::NewVertical() ),
+	mTerm( terminalDisplay ) {
+	mFlags |= UI_TAB_STOP | UI_SCROLLABLE;
+	if ( !terminalDisplay )
+		return;
+	registerNewTerminal();
 	mVScroll->setParent( this );
-	mVScroll->addEventListener( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
+	mVScroll->on( Event::OnValueChange, [this]( const Event* ) { updateScroll(); } );
 
 	setCommand( "terminal-scroll-up-screen",
 				[this] { mTerm->action( TerminalShortcutAction::SCROLLUP_SCREEN ); } );
@@ -96,6 +103,8 @@ UITerminal::UITerminal( const std::shared_ptr<TerminalDisplay>& terminalDisplay 
 	setCommand( "terminal-font-size-shrink",
 				[this] { mTerm->action( TerminalShortcutAction::FONTSIZE_SHRINK ); } );
 	setCommand( "terminal-paste", [this] { mTerm->action( TerminalShortcutAction::PASTE ); } );
+	setCommand( "terminal-paste-selection",
+				[this] { mTerm->action( TerminalShortcutAction::PASTE_SELECTION ); } );
 	setCommand( "terminal-copy", [this] { mTerm->action( TerminalShortcutAction::COPY ); } );
 	setCommand( "terminal-open-link",
 				[this] { Engine::instance()->openURI( mTerm->getTerminal()->getSelection() ); } );
@@ -138,14 +147,14 @@ const ScrollBarMode& UITerminal::getVerticalScrollMode() const {
 	return mVScrollMode;
 }
 
-const UITerminal::ScrollViewType& UITerminal::getViewType() const {
+const ScrollViewType& UITerminal::getScrollViewType() const {
 	return mViewType;
 }
 
-void UITerminal::setViewType( const ScrollViewType& viewType ) {
+void UITerminal::setScrollViewType( const ScrollViewType& viewType ) {
 	if ( viewType != mViewType ) {
 		mViewType = viewType;
-		onContentSizeChange();
+		onSizeChange();
 	}
 }
 
@@ -162,7 +171,7 @@ void UITerminal::onPaddingChange() {
 	mTerm->setPadding(
 		{ mPaddingPx.Left, mPaddingPx.Top,
 		  mPaddingPx.Right +
-			  ( mViewType == Exclusive ? mVScroll->getPixelsSize().getWidth() : 0.f ),
+			  ( mViewType == ScrollViewType::Outside ? mVScroll->getPixelsSize().getWidth() : 0.f ),
 		  mPaddingPx.Bottom } );
 	onContentSizeChange();
 	UIWidget::onPaddingChange();
@@ -226,7 +235,7 @@ std::string UITerminal::getPropertyString( const PropertyDefinition* propertyDef
 			return mVScroll->getScrollBarType() == UIScrollBar::NoButtons ? "no-buttons"
 																		  : "two-buttons";
 		case PropertyId::ScrollBarMode:
-			return getViewType() == Inclusive ? "inclusive" : "exclusive";
+			return getScrollViewType() == ScrollViewType::Overlay ? "overlay" : "outside";
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -265,10 +274,10 @@ bool UITerminal::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::ScrollBarMode: {
 			std::string val( attribute.asString() );
 			String::toLowerInPlace( val );
-			if ( "inclusive" == val || "inside" == val )
-				setViewType( Inclusive );
-			else if ( "exclusive" == val || "outside" == val )
-				setViewType( Exclusive );
+			if ( "overlay" == val || "inclusive" == val || "inside" == val )
+				setScrollViewType( ScrollViewType::Overlay );
+			else if ( "outside" == val || "exclusive" == val || "outside" == val )
+				setScrollViewType( ScrollViewType::Outside );
 			break;
 		}
 		case PropertyId::VScrollMode: {
@@ -308,7 +317,11 @@ const std::shared_ptr<TerminalDisplay>& UITerminal::getTerm() const {
 void UITerminal::scheduledUpdate( const Time& ) {
 	if ( !mTerm )
 		return;
-	mTerm->update();
+
+	auto mousePos = getInput()->getRelativeMousePos();
+	bool mouseOutsideBounds =
+		mousePos.y < 0 || mousePos.y > getUISceneNode()->getWindow()->getSize().getHeight();
+	mTerm->update( isMouseOverMeOrChildren() && !mouseOutsideBounds );
 
 	if ( mTerm->isDirty() && isVisible() )
 		invalidateDraw();
@@ -317,7 +330,7 @@ void UITerminal::scheduledUpdate( const Time& ) {
 		mVScroll->setVisible( !mTerm->getTerminal()->tisaltscr() )
 			->setEnabled( !mTerm->getTerminal()->tisaltscr() );
 	} else if ( ScrollBarMode::Auto == mVScrollMode ) {
-		if ( mViewType == Inclusive && mMouseClock.getElapsedTime() > Seconds( 1 ) &&
+		if ( mViewType == ScrollViewType::Overlay && mMouseClock.getElapsedTime() > Seconds( 1 ) &&
 			 !mVScroll->isDragging() )
 			mVScroll->setVisible( false )->setEnabled( false );
 	}
@@ -386,11 +399,13 @@ void UITerminal::addKeyBinds( const std::map<KeyBindings::Shortcut, std::string>
 	mKeyBindings.addKeybinds( binds );
 }
 
-void UITerminal::execute( const std::string& command ) {
+bool UITerminal::execute( const std::string& command ) {
 	auto cmdIt = mCommands.find( command );
 	if ( cmdIt != mCommands.end() ) {
 		cmdIt->second();
+		return true;
 	}
+	return false;
 }
 
 void UITerminal::setCommands( const std::map<std::string, TerminalCommand>& cmds ) {
@@ -418,7 +433,7 @@ bool UITerminal::isUsingCustomTitle() const {
 }
 
 Uint32 UITerminal::onTextInput( const TextInputEvent& event ) {
-	Input* input = getUISceneNode()->getWindow()->getInput();
+	Input* input = getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
 		 ( input->isLeftControlPressed() && !input->isLeftAltPressed() &&
@@ -444,11 +459,13 @@ Uint32 UITerminal::onKeyDown( const KeyEvent& event ) {
 	if ( mUISceneNode->getUIEventDispatcher()->justGainedFocus() )
 		return 0;
 
-	std::string cmd = mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
-	if ( !cmd.empty() ) {
-		if ( !mExclusiveMode || cmd == getExclusiveModeToggleCommandName() )
+	if ( !mTerm->isRegisteredShortcut( event.getKeyCode(), event.getMod() ) ) {
+		std::string cmd =
+			mKeyBindings.getCommandFromKeyBind( { event.getKeyCode(), event.getMod() } );
+		if ( !cmd.empty() && ( !mExclusiveMode || cmd == getExclusiveModeToggleCommandName() ) ) {
 			execute( cmd );
-		return 1;
+			return 1;
+		}
 	}
 
 	mTerm->onKeyDown( event.getKeyCode(), event.getChar(), event.getMod(), event.getScancode() );
@@ -460,7 +477,7 @@ Uint32 UITerminal::onKeyUp( const KeyEvent& ) {
 }
 
 Uint32 UITerminal::onMouseMove( const Vector2i& position, const Uint32& flags ) {
-	if ( mViewType == Inclusive && ScrollBarMode::Auto == mVScrollMode ) {
+	if ( mViewType == ScrollViewType::Overlay && ScrollBarMode::Auto == mVScrollMode ) {
 		mMouseClock.restart();
 		bool visible = !mTerm->getTerminal()->tisaltscr() && getContentSize() > getVisibleArea() &&
 					   !mTerm->getTerminal()->hasSelection();
@@ -497,7 +514,7 @@ Uint32 UITerminal::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 }
 
 void UITerminal::onPositionChange() {
-	mTerm->setPosition( mScreenPosi.asFloat() );
+	mTerm->setPosition( mScreenPos.trunc() );
 	UIWidget::onPositionChange();
 }
 
@@ -506,7 +523,7 @@ void UITerminal::onSizeChange() {
 	mTerm->setPadding(
 		{ mPaddingPx.Left, mPaddingPx.Top,
 		  mPaddingPx.Right +
-			  ( mViewType == Exclusive ? mVScroll->getPixelsSize().getWidth() : 0.f ),
+			  ( mViewType == ScrollViewType::Outside ? mVScroll->getPixelsSize().getWidth() : 0.f ),
 		  mPaddingPx.Bottom } );
 	onContentSizeChange();
 	UIWidget::onSizeChange();
@@ -515,7 +532,7 @@ void UITerminal::onSizeChange() {
 Uint32 UITerminal::onFocus( NodeFocusReason reason ) {
 	getUISceneNode()->getWindow()->startTextInput();
 	updateScreenPos();
-	mTerm->setPosition( mScreenPosi.asFloat() );
+	mTerm->setPosition( mScreenPos.trunc() );
 	mTerm->setFocus( true );
 	invalidateDraw();
 	return UIWidget::onFocus( reason );
@@ -579,7 +596,7 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 	}
 
 	menu->setCloseOnHide( true );
-	menu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	menu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -592,9 +609,17 @@ bool UITerminal::onCreateContextMenu( const Vector2i& position, const Uint32& fl
 	UIMenu::findBestMenuPos( pos, menu );
 	menu->setPixelsPosition( pos );
 	menu->show();
-	menu->addEventListener( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
+	menu->on( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
 	mCurrentMenu = menu;
 	return true;
+}
+
+void UITerminal::restart() {
+	auto win = SceneManager::instance()->getUISceneNode()->getWindow();
+	mTerm = TerminalDisplay::create( win, mTerm->getFont(), mTerm->getFontSize(), mTerm->getSize(),
+									 mTerm->getProgram(), mTerm->getArgs(), mTerm->getWorkingDir(),
+									 mTerm->getHistorySize(), nullptr, mTerm->useFrameBuffer(),
+									 mTerm->getKeepAlive(), mTerm->getEnv() );
 }
 
 }} // namespace eterm::UI

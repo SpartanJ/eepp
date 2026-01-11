@@ -19,15 +19,12 @@
 #include "uistatusbar.hpp"
 #include "universallocator.hpp"
 #include <eepp/ee.hpp>
+#include <eepp/ui/uinodelink.hpp>
 #include <efsw/efsw.hpp>
 #include <eterm/ui/uiterminal.hpp>
 #include <stack>
 
 using namespace eterm::UI;
-
-enum class CustomWidgets {
-	UI_TYPE_WELCOME_TAB = UI_TYPE_USER + 1,
-};
 
 namespace ecode {
 
@@ -38,16 +35,35 @@ class SettingsMenu;
 
 class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
   public:
+	static App* instance();
+
 	explicit App( const size_t& jobs = 0, const std::vector<std::string>& args = {} );
 
 	~App();
 
-	void init( const LogLevel& logLevel, std::string file, const Float& pidelDensity,
-			   const std::string& colorScheme, bool terminal, bool frameBuffer, bool benchmarkMode,
-			   std::string css, bool health, const std::string& healthLang,
-			   ecode::FeaturesHealth::OutputFormat healthFormat, const std::string& fileToOpen,
-			   bool stdOutLogs, bool disableFileLogs, bool openClean, bool portable,
-			   std::string language, bool incognito );
+	struct InitParameters {
+		LogLevel logLevel{ LogLevel::Info };
+		std::string file;
+		Float pidelDensity{ 0.f };
+		std::string colorScheme;
+		bool terminal{ false };
+		bool frameBuffer{ false };
+		bool benchmarkMode{ false };
+		std::string css;
+		std::string fileToOpen;
+		bool stdOutLogs{ false };
+		bool disableFileLogs{ false };
+		bool openClean{ false };
+		bool portable{ false };
+		std::string language;
+		bool incognito{ false };
+		bool prematureExit{ false };
+		std::string profile;
+		bool disablePlugins{ false };
+		bool redirectToFirstInstance{ false };
+	};
+
+	void init( InitParameters& );
 
 	void createWidgetInspector();
 
@@ -59,7 +75,10 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void openFolderDialog();
 
-	void openFontDialog( std::string& fontPath, bool loadingMonoFont, bool terminalFont = false );
+	void openFontDialog( std::string& fontPath, bool loadingMonoFont, bool terminalFont = false,
+						 std::function<void()> onFinish = {} );
+
+	void updateInputFonts();
 
 	void downloadFileWeb( const std::string& url );
 
@@ -88,10 +107,13 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	std::shared_ptr<ThreadPool> getThreadPool() const;
 
+	void openFileFromPath( const std::string& path );
+
 	bool loadFileFromPath( std::string path, bool inNewTab = true,
 						   UICodeEditor* codeEditor = nullptr,
 						   std::function<void( UICodeEditor*, const std::string& )> onLoaded =
-							   std::function<void( UICodeEditor*, const std::string& )>() );
+							   std::function<void( UICodeEditor*, const std::string& )>(),
+						   bool openBinaryAsDocument = false, bool tryFindMimeType = false );
 
 	void hideGlobalSearchBar();
 
@@ -107,7 +129,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void downloadFileWebDialog();
 
-	void showGlobalSearch( bool searchAndReplace );
+	void showGlobalSearch( bool searchAndReplace, std::optional<std::string> pathFilters = {} );
 
 	void showFindView();
 
@@ -265,10 +287,23 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 				mProjectBuildManager->buildCurrentConfig( mStatusBuildOutputController.get() );
 			}
 		} );
+		t.setCommand( "project-build-start-cancel", [this] {
+			if ( mProjectBuildManager && mStatusBuildOutputController ) {
+				if ( mProjectBuildManager->isBuilding() ) {
+					mProjectBuildManager->cancelBuild();
+				} else {
+					mProjectBuildManager->buildCurrentConfig( mStatusBuildOutputController.get() );
+				}
+			}
+		} );
 		t.setCommand( "project-build-cancel", [this] {
 			if ( mProjectBuildManager && mProjectBuildManager->isBuilding() ) {
 				mProjectBuildManager->cancelBuild();
 			}
+		} );
+		t.setCommand( "project-build-clean", [this] {
+			if ( mProjectBuildManager && mStatusBuildOutputController )
+				mProjectBuildManager->cleanCurrentConfig( mStatusBuildOutputController.get() );
 		} );
 		t.setCommand( "project-run-executable", [this] {
 			if ( mProjectBuildManager && mStatusAppOutputController )
@@ -307,13 +342,21 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		t.setCommand( "terminal-font-size", [this] { mSettingsActions->setTerminalFontSize(); } );
 		t.setCommand( "ui-font-size", [this] { mSettingsActions->setUIFontSize(); } );
 		t.setCommand( "ui-panel-font-size", [this] { mSettingsActions->setUIPanelFontSize(); } );
-		t.setCommand( "serif-font", [this] { openFontDialog( mConfig.ui.serifFont, false ); } );
+		t.setCommand( "sans-serif-font",
+					  [this] { openFontDialog( mConfig.ui.sansSerifFont, false ); } );
 		t.setCommand( "monospace-font",
 					  [this] { openFontDialog( mConfig.ui.monospaceFont, true ); } );
 		t.setCommand( "terminal-font",
 					  [this] { openFontDialog( mConfig.ui.terminalFont, true, true ); } );
-		t.setCommand( "fallback-font",
-					  [this] { openFontDialog( mConfig.ui.fallbackFont, false ); } );
+		t.setCommand( "fallback-font", [this] {
+			openFontDialog( mConfig.ui.fallbackFont, false, false, [this] {
+				UIMessageBox::New( UIMessageBox::OK,
+								   i18n( "new_fallback_font_requires_restart",
+										 "New fallback font has been set. Application must be "
+										 "restarted in order to see the changes." ) )
+					->showWhenReady();
+			} );
+		} );
 		t.setCommand( "tree-view-configure-ignore-files",
 					  [this] { treeViewConfigureIgnoreFiles(); } );
 		t.setCommand( "check-languages-health", [this] { checkLanguagesHealth(); } );
@@ -326,16 +369,93 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 				mTerminalManager->configureTerminalScrollback();
 		} );
 		t.setCommand( "check-for-updates", [this] { mSettingsActions->checkForUpdates( false ); } );
-		t.setCommand( "create-new-window", [] {
-			std::string processPath = Sys::getProcessFilePath();
-			if ( !processPath.empty() ) {
-				std::string cmd( processPath + " -x" );
-				Sys::execute( cmd );
+		t.setCommand( "create-new-window", [this] { openInNewWindow(); } );
+		t.setCommand( "create-new-welcome-tab", [this] { createWelcomeTab(); } );
+
+		mSplitter->registerSplitterCommands( t );
+
+		// Overwrite it
+		t.setCommand( "next-tab", [this] {
+			UITabWidget* tabWidget =
+				getSplitter()->tabWidgetFromWidget( getSplitter()->getCurWidget() );
+			if ( tabWidget ) {
+				tabWidget->setTabJumpMode( mConfig.editor.tabJumpMode );
+				tabWidget->setEnableTabSwitcher( mConfig.editor.tabSwitcher );
+				std::vector<Keycode> triggerCodes;
+				auto kb = getKeybind( "next-tab" );
+				if ( !kb.empty() ) {
+					auto shortcut =
+						KeyBindings::toShortcut( mWindow->getInput(), getKeybind( "next-tab" ) );
+					if ( !shortcut.empty() ) {
+						if ( shortcut.mod & KeyMod::getDefaultModifier() ) {
+							triggerCodes =
+								KeyMod::getKeyCodesFromModifier( KeyMod::getDefaultModifier() );
+						}
+					}
+				}
+				tabWidget->focusNextTab( triggerCodes );
 			}
 		} );
-		t.setCommand( "create-new-welcome-tab", [this] { createWelcomeTab(); } );
-		mSplitter->registerSplitterCommands( t );
+
+		t.setCommand( "previous-tab", [this] {
+			UITabWidget* tabWidget =
+				getSplitter()->tabWidgetFromWidget( getSplitter()->getCurWidget() );
+			if ( tabWidget ) {
+				tabWidget->setTabJumpMode( mConfig.editor.tabJumpMode );
+				tabWidget->setEnableTabSwitcher( mConfig.editor.tabSwitcher );
+				std::vector<Keycode> triggerCodes;
+				auto kb = getKeybind( "next-tab" );
+				if ( !kb.empty() ) {
+					auto shortcut =
+						KeyBindings::toShortcut( mWindow->getInput(), getKeybind( "next-tab" ) );
+					if ( !shortcut.empty() ) {
+						if ( shortcut.mod & KeyMod::getDefaultModifier() ) {
+							triggerCodes =
+								KeyMod::getKeyCodesFromModifier( KeyMod::getDefaultModifier() );
+						}
+					}
+				}
+				tabWidget->focusPreviousTab( triggerCodes );
+			}
+		} );
+
+		t.setCommand( "reset-global-file-associations", [this] {
+			mConfig.languagesExtensions.priorities.clear();
+			saveConfig();
+			mNotificationCenter->addNotification(
+				i18n( "global_file_associations_has_been_reset",
+					  "Global file associations has been reset" ) );
+		} );
+
+		t.setCommand( "reset-project-file-associations", [this] {
+			if ( !mCurrentProject.empty() && mCurrentProject != getPlaygroundPath() ) {
+				mProjectDocConfig.languagesExtensions.priorities.clear();
+				saveProject();
+				mNotificationCenter->addNotification(
+					i18n( "project_file_associations_has_been_reset",
+						  "Project file associations has been reset" ) );
+			} else {
+				mNotificationCenter->addNotification(
+					i18n( "no_project_loaded", "No project loaded" ) );
+			}
+		} );
+
+		t.setCommand( "maximize-tab-widget", [this] { maximizeTabWidget(); } );
+
+		t.setCommand( "restore-maximized-tab-widget", [this] { restoreMaximizedTabWidget(); } );
+
+		t.setCommand( "reset-panel-layout", [this] {
+			resetPanelsPartitions();
+			mNotificationCenter->addNotification(
+				i18n( "panels_partitions_has_been_reset", "Panels partitions has been reset" ) );
+		} );
 	}
+
+	void resetPanelsPartitions();
+
+	void maximizeTabWidget();
+
+	void restoreMaximizedTabWidget();
 
 	PluginManager* getPluginManager() const;
 
@@ -345,7 +465,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 							 std::function<void( UICodeEditor*, const std::string& )> onLoaded =
 								 std::function<void( UICodeEditor*, const std::string& )>() );
 
-	void focusOrLoadFile( const std::string& path, const TextRange& range = {} );
+	void focusOrLoadFile( const std::string& path, const TextRange& range = {},
+						  bool searchInSameContext = true );
 
 	UISceneNode* getUISceneNode() const { return mUISceneNode; }
 
@@ -366,15 +487,17 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::vector<std::pair<String::StringBaseType, String::StringBaseType>>
 	makeAutoClosePairs( const std::string& strPairs );
 
-	ProjectDocumentConfig& getProjectDocConfig();
+	ProjectConfig& getProjectConfig();
 
 	const std::string& getWindowTitle() const;
 
 	void setFocusEditorOnClose( UIMessageBox* msgBox );
 
-	void setUIColorScheme( const ColorSchemePreference& colorScheme );
+	void setUIColorScheme( const ColorSchemeExtPreference& colorScheme );
 
-	ColorSchemePreference getUIColorScheme() const;
+	void setUIColorSchemeFromUserInteraction( const ColorSchemeExtPreference& colorSchemeExt );
+
+	ColorSchemeExtPreference getUIColorScheme() const;
 
 	EE::Window::Window* getWindow() const;
 
@@ -390,13 +513,13 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void renameFile( const FileInfo& file );
 
+	void openAllFilesInFolder( const FileInfo& folder );
+
 	UIMessageBox* newInputMsgBox( const String& title, const String& msg );
 
 	std::string getNewFilePath( const FileInfo& file, UIMessageBox* msgBox, bool keepDir = true );
 
 	const std::stack<std::string>& getRecentClosedFiles() const;
-
-	void updateTerminalMenu();
 
 	void refreshFolderView();
 
@@ -424,11 +547,14 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void setTheme( const std::string& path );
 
-	void loadImageFromMedium( const std::string& path, bool isMemory );
+	void loadImageFromMedium( const std::string& path, bool isMemory, bool forcePreview = false,
+							  bool forceTab = false );
 
 	void loadImageFromPath( const std::string& path );
 
 	void loadImageFromMemory( const std::string& content );
+
+	void loadAudioFromPath( const std::string& path, bool autoPlay = true );
 
 	void createAndShowRecentFolderPopUpMenu( Node* recentFoldersBut );
 
@@ -482,6 +608,26 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	SettingsActions* getSettingsActions() { return mSettingsActions.get(); }
 
+	const std::string& getLanguagesPath() const { return mLanguagesPath; }
+
+	bool pluginsDisabled() const { return mDisablePlugins; }
+
+	void loadFolder( std::string path, bool forceNewWindow = false );
+
+	const std::unordered_map<std::string, std::string>& getStatusBarKeybindings() const {
+		return mStatusBarKeybindings;
+	}
+
+	void updateLanguageExtensionsPriorities();
+
+	std::map<std::string, std::string>& getCurrentLanguageExtensionsPriorities();
+
+	bool isDestroyingApp() const { return mDestroyingApp; }
+
+	bool projectIsOpen() const {
+		return !mCurrentProject.empty() && mCurrentProject != getPlaygroundPath();
+	}
+
   protected:
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
@@ -505,10 +651,13 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::unordered_map<std::string, std::string> mKeybindingsInvert;
 	std::unordered_map<std::string, std::string> mGlobalSearchKeybindings;
 	std::unordered_map<std::string, std::string> mDocumentSearchKeybindings;
+	std::unordered_map<std::string, std::string> mStatusBarKeybindings;
 	std::map<KeyBindings::Shortcut, std::string> mRealLocalKeybindings;
 	std::map<KeyBindings::Shortcut, std::string> mRealSplitterKeybindings;
 	std::map<KeyBindings::Shortcut, std::string> mRealTerminalKeybindings;
 	std::map<KeyBindings::Shortcut, std::string> mRealDefaultKeybindings;
+	std::unordered_map<std::string, std::string> mMousebindings;
+	std::unordered_map<std::string, std::string> mMousebindingsInvert;
 	std::string mConfigPath;
 	std::string mPluginsPath;
 	std::string mColorSchemesPath;
@@ -533,6 +682,9 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	bool mDirTreeReady{ false };
 	bool mUseFrameBuffer{ false };
 	bool mBenchmarkMode{ false };
+	bool mDisablePlugins{ false };
+	bool mRedirectToFirstInstance{ false };
+	bool mFirstInstance{ false };
 	bool mPortableMode{ false };
 	bool mPortableModeFailed{ false };
 	bool mDestroyingApp{ false };
@@ -540,7 +692,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	bool mIncognito{ false };
 	Clock mLastRender;
 	Clock mSecondsCounter;
-	ProjectDocumentConfig mProjectDocConfig;
+	ProjectConfig mProjectDocConfig;
 	std::unordered_set<Doc::TextDocument*> mTmpDocs;
 	std::string mCurrentProject;
 	std::string mCurrentProjectName;
@@ -548,8 +700,9 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	FontTrueType* mFontMono{ nullptr };
 	FontTrueType* mTerminalFont{ nullptr };
 	FontTrueType* mFallbackFont{ nullptr };
-	FontTrueType* mIconFont{ nullptr };
-	FontTrueType* mMimeIconFont{ nullptr };
+	FontTrueType* mUserFallbackFont{ nullptr };
+	FontTrueType* mRemixIconFont{ nullptr };
+	FontTrueType* mNoniconsFont{ nullptr };
 	FontTrueType* mCodIconFont{ nullptr };
 	efsw::FileWatcher* mFileWatcher{ nullptr };
 	FileSystemListener* mFileSystemListener{ nullptr };
@@ -565,7 +718,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::unique_ptr<StatusAppOutputController> mStatusAppOutputController;
 	std::unique_ptr<ProjectBuildManager> mProjectBuildManager;
 	std::string mLastFileFolder;
-	ColorSchemePreference mUIColorScheme;
+	ColorSchemeExtPreference mUIColorScheme;
 	std::unique_ptr<TerminalManager> mTerminalManager;
 	std::unique_ptr<PluginManager> mPluginManager;
 	std::unique_ptr<SettingsMenu> mSettings;
@@ -583,6 +736,9 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::condition_variable mAsyncResourcesLoadCond;
 	std::vector<SyntaxColorScheme> mColorSchemes;
 	bool mAsyncResourcesLoaded{ false };
+	bool mTerminalMode{ false };
+	bool mTerminalModeSidePanelWasVisible{ false };
+	std::string mProfilePath;
 
 	void sortSidePanel();
 
@@ -592,6 +748,10 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void initLocateBar();
 
+	void initProjectViewEmptyCont();
+
+	void initProjectTreeViewUI();
+
 	void initProjectTreeView( std::string path, bool openClean );
 
 	void initImageView();
@@ -600,7 +760,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void showSidePanel( bool show );
 
-	void onFileDropped( std::string file );
+	void onFileDropped( std::string file, bool openBinaryAsDocument );
 
 	void onTextDropped( String text );
 
@@ -612,6 +772,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	std::string titleFromEditor( UICodeEditor* editor );
 
+	bool isAnyTerminalDirty() const;
+
 	bool onCloseRequestCallback( EE::Window::Window* );
 
 	void addRemainingTabWidgets( Node* widget );
@@ -619,8 +781,6 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	void updateEditorState();
 
 	void saveDoc();
-
-	void loadFolder( std::string path );
 
 	void loadKeybindings();
 
@@ -695,6 +855,12 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	std::function<void( UICodeEditor*, const std::string& )>
 	getForcePositionFn( TextPosition initialPosition );
+
+	void openInNewWindow( const std::string& params = "" );
+
+	std::string firstInstanceIndicatorPath() const;
+
+	void tintTitleBar();
 };
 
 } // namespace ecode

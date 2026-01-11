@@ -50,7 +50,6 @@
 	<string name="build_os_not_supported">系统不支持此构建！</string>
 	<string name="build_output_show_build_issues">Build Output Show Build Issues</string>
 	<string name="build_output_show_build_output">Build Output Show Build Output</string>
-	<string name="build_seetings">Build Settings</string>
 	<string name="build_settings">构建设置</string>
 	<string name="build_settings_save_clarification">* 修改已自动保存</string>
 	<string name="build_step_num">Step %u: %s</string>
@@ -82,7 +81,7 @@
 </string>
 	<string name="clear_history">清理历史</string>
 	<string name="clear_menu">清空菜单</string>
-	<string name="clear_system_enviroment">Clear System Environment</string>
+	<string name="clear_system_environment">Clear System Environment</string>
 	<string name="clone_setting">Clone Setting</string>
 	<string name="cloned_name_must_be_different">Cloned name must be different from any existing build name.</string>
 	<string name="close">关闭</string>
@@ -130,7 +129,7 @@
 	<string name="copy_error_message">复制错误信息</string>
 	<string name="copy_file_path">复制文件路径</string>
 	<string name="copy_file_path_and_position">复制文件路径</string>
-	<string name="coudlnt_write_the_file">无法写入文件。</string>
+	<string name="couldnt_write_the_file">无法写入文件。</string>
 	<string name="could_not_write_file">无法向磁盘写入文件
 请检查文件是否被只读保护或ecode没有足够权限。
 文件路径：</string>
@@ -244,7 +243,7 @@
 	<string name="fullscreen_toggle">切换全屏</string>
 	<string name="git">Git</string>
 	<string name="git_add_branch">添加分支</string>
-	<string name="git_ammend">Ammend last commit</string>
+	<string name="git_amend">Amend last commit</string>
 	<string name="git_apply_stash">Apply Stash</string>
 	<string name="git_apply_stash_title">Apply Stash</string>
 	<string name="git_blame">Git Blame</string>
@@ -424,8 +423,7 @@ Restart ecode to see the changes.</string>
 	<string name="open_a_file">打开一个文件</string>
 	<string name="open_a_folder">打开一个文件夹</string>
 	<string name="open_command_palette">打开命令网络</string>
-	<string name="open_containing_folder">打开当前文件夹</string>
-	<string name="open_containing_folder_ellipsis">打开当前文件夹...</string>
+	<string name="open_containing_folder_in_fm">打开当前文件夹</string>
 	<string name="open_context_menu">打开上下文菜单</string>
 	<string name="open_document_symbol_search">打开文档符号查找</string>
 	<string name="open_documents">打开文档</string>
@@ -434,7 +432,8 @@ Restart ecode to see the changes.</string>
 	<string name="open_file_from_web_ellipsis">从网络打开文件...</string>
 	<string name="open_first_a_folder">请先打开文件夹。</string>
 	<string name="open_folder">打开文件夹</string>
-	<string name="open_folder_ellipsis">打开文件夹...</string>
+	<string name="open_folder_ellipsis">打开文件夹</string>
+	<string name="open_folder_in_fm">在文件管理器中打开文件夹</string>
 	<string name="open_global_search">全局搜索</string>
 	<string name="open_in_horizontal_split">在新水平分页中打开</string>
 	<string name="open_in_new_window">在新窗口中打开</string>
@@ -524,8 +523,8 @@ Restart ecode to see the changes.</string>
 	<string name="select_font_file">选择字体文件</string>
 	<string name="select_to_next_line">选择下一行</string>
 	<string name="select_to_previous_line">选择上一行</string>
-	<string name="serif_font">Serif字体</string>
-	<string name="serif_font_ellipsis">Serif字体...</string>
+	<string name="sans-serif_font">Sans-Serif字体</string>
+	<string name="sans-serif_font_ellipsis">Sans-Serif字体...</string>
 	<string name="set_cursor_blinking_time">设置光标闪烁时间：设置0禁用
 </string>
 	<string name="set_editor_font_size">设置字体大小：</string>
@@ -587,7 +586,7 @@ Restart ecode to see the changes.</string>
 	<string name="switch_to_previous_split">Switch To Previous Split</string>
 	<string name="symlink_target">软链接目标</string>
 	<string name="sync_project_tree">Synchronize project tree with editor</string>
-	<string name="sync_project_tree_tooltip">Syncronizes the current focused document as the selected
+	<string name="sync_project_tree_tooltip">Synchronizes the current focused document as the selected
 file in the directory tree.</string>
 	<string name="syntax_color_scheme">语法高亮配色</string>
 	<string name="tab_width">页宽</string>
@@ -645,7 +644,7 @@ file in the directory tree.</string>
 	<string name="uicodeeditor_copy_file_path_and_position">Copy File Path and Position</string>
 	<string name="uicodeeditor_cut">Paste</string>
 	<string name="uicodeeditor_delete">Delete</string>
-	<string name="uicodeeditor_open_containing_folder_ellipsis">Open Containing Folder...</string>
+	<string name="uicodeeditor_open_containing_folder_in_fm">Open Containing Folder in File Manager</string>
 	<string name="uicodeeditor_paste">粘贴</string>
 	<string name="uicodeeditor_redo">重做</string>
 	<string name="uicodeeditor_select_all">全选</string>

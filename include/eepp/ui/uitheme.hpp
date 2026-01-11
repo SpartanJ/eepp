@@ -40,10 +40,10 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 	static UITheme* loadFromTextureAtlas( Graphics::TextureAtlas* getTextureAtlas,
 										  const std::string& Name, const std::string& NameAbbr );
 
-	static UITheme* loadFromDirectroy( UITheme* tTheme, const std::string& Path,
+	static UITheme* loadFromDirectory( UITheme* tTheme, const std::string& Path,
 									   const Float& pixelDensity = 1 );
 
-	static UITheme* loadFromDirectroy( const std::string& Path, const std::string& Name,
+	static UITheme* loadFromDirectory( const std::string& Path, const std::string& Name,
 									   const std::string& NameAbbr, const Float& pixelDensity = 1 );
 
 	virtual ~UITheme();

@@ -69,7 +69,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	mUISceneNode->setIsLoading( true );
 
 	mNodeFlags |= NODE_FLAG_WINDOW | NODE_FLAG_VIEW_DIRTY;
-	mFlags |= UI_OWNS_CHILDS_POSITION;
+	mFlags |= UI_OWNS_CHILDREN_POSITION;
 
 	setHorizontalAlign( UI_HALIGN_CENTER );
 
@@ -99,9 +99,9 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 	mContainer->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
 	mContainer->setParent( this );
 	mContainer->setClipType( ClipType::ContentBox );
-	mContainer->enableReportSizeChangeToChilds();
-	mContainer->addEventListener( Event::OnPositionChange,
-								  [this]( auto event ) { onContainerPositionChange( event ); } );
+	mContainer->enableReportSizeChangeToChildren();
+	mContainer->on( Event::OnPositionChange,
+					[this]( auto event ) { onContainerPositionChange( event ); } );
 
 	updateWinFlags();
 
@@ -115,6 +115,7 @@ UIWindow::UIWindow( UIWindow::WindowBaseContainerType type, const StyleConfig& w
 }
 
 UIWindow::~UIWindow() {
+	mClosing = true;
 	if ( NULL != getUISceneNode() && !SceneManager::instance()->isShuttingDown() ) {
 		if ( NULL != mModalNode ) {
 			mModalNode->setEnabled( false );
@@ -166,7 +167,7 @@ void UIWindow::updateWinFlags() {
 		eeSAFE_DELETE( mFrameBuffer );
 	}
 
-	if ( NULL != mContainer && ( mStyleConfig.WinFlags & UI_WIN_DRAGABLE_CONTAINER ) ) {
+	if ( NULL != mContainer && ( mStyleConfig.WinFlags & UI_WIN_DRAGGABLE_CONTAINER ) ) {
 		mContainer->setDragEnabled( true );
 	} else {
 		setDragEnabled( false );
@@ -215,7 +216,7 @@ void UIWindow::updateWinFlags() {
 			if ( NULL == mButtonClose ) {
 				mButtonClose = UIWidget::NewWithTag( "window::close" );
 				mButtonClose->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
-				mButtonClose->addEventListener( Event::OnSizeChange, cb );
+				mButtonClose->on( Event::OnSizeChange, cb );
 				needsUpdate = true;
 			}
 
@@ -231,7 +232,7 @@ void UIWindow::updateWinFlags() {
 			if ( NULL == mButtonMaximize ) {
 				mButtonMaximize = UIWidget::NewWithTag( "window::maximize" );
 				mButtonMaximize->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
-				mButtonMaximize->addEventListener( Event::OnSizeChange, cb );
+				mButtonMaximize->on( Event::OnSizeChange, cb );
 				needsUpdate = true;
 			}
 
@@ -247,7 +248,7 @@ void UIWindow::updateWinFlags() {
 			if ( NULL == mButtonMinimize ) {
 				mButtonMinimize = UIWidget::NewWithTag( "window::minimize" );
 				mButtonMinimize->writeNodeFlag( NODE_FLAG_OWNED_BY_NODE, 1 );
-				mButtonMinimize->addEventListener( Event::OnSizeChange, cb );
+				mButtonMinimize->on( Event::OnSizeChange, cb );
 				needsUpdate = true;
 			}
 
@@ -312,7 +313,7 @@ void UIWindow::updateWinFlags() {
 		if ( NULL != mTitle )
 			mTitle->setVisible( false );
 
-		fixChildsSize();
+		fixChildrenSize();
 	}
 
 	updateDrawInvalidator( true );
@@ -352,8 +353,8 @@ void UIWindow::drawFrameBuffer() {
 		} else {
 			Rect r( 0, 0, mSize.getWidth(), mSize.getHeight() );
 			TextureRegion textureRegion( mFrameBuffer->getTexture(), r, r.getSize().asFloat() );
-			textureRegion.draw( mScreenPosi.x, mScreenPosi.y, Color::White, getRotation(),
-								getScale() );
+			textureRegion.draw( std::trunc( mScreenPos.x ), std::trunc( mScreenPos.y ),
+								Color::White, getRotation(), getScale() );
 		}
 	}
 }
@@ -375,71 +376,19 @@ void UIWindow::drawHighlightInvalidation() {
 }
 
 void UIWindow::drawShadow() {
-	if ( mStyleConfig.WinFlags & UI_WIN_SHADOW ) {
-		UIWidget::matrixSet();
-
-		Primitives P;
-		P.setForceDraw( false );
-
-		Color BeginC( 0, 0, 0, 25 * ( getAlpha() / (Float)255 ) );
-		Color EndC( 0, 0, 0, 0 );
-		Float SSize = PixelDensity::dpToPx( 16.f );
-
-		Vector2f ShadowPos = mScreenPos + Vector2f( 0, SSize );
-
-		P.drawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y ),
-								Sizef( mSize.getWidth(), mSize.getHeight() ) ),
-						 BeginC, BeginC, BeginC, BeginC );
-
-		P.drawRectangle(
-			Rectf( Vector2f( ShadowPos.x, ShadowPos.y - SSize ), Sizef( mSize.getWidth(), SSize ) ),
-			EndC, BeginC, BeginC, EndC );
-
-		P.drawRectangle( Rectf( Vector2f( ShadowPos.x - SSize, ShadowPos.y ),
-								Sizef( SSize, mSize.getHeight() ) ),
-						 EndC, EndC, BeginC, BeginC );
-
-		P.drawRectangle( Rectf( Vector2f( ShadowPos.x + mSize.getWidth(), ShadowPos.y ),
-								Sizef( SSize, mSize.getHeight() ) ),
-						 BeginC, BeginC, EndC, EndC );
-
-		P.drawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y + mSize.getHeight() ),
-								Sizef( mSize.getWidth(), SSize ) ),
-						 BeginC, EndC, EndC, BeginC );
-
-		P.drawTriangle(
-			Triangle2f( Vector2f( ShadowPos.x + mSize.getWidth(), ShadowPos.y ),
-						Vector2f( ShadowPos.x + mSize.getWidth(), ShadowPos.y - SSize ),
-						Vector2f( ShadowPos.x + mSize.getWidth() + SSize, ShadowPos.y ) ),
-			BeginC, EndC, EndC );
-
-		P.drawTriangle( Triangle2f( Vector2f( ShadowPos.x, ShadowPos.y ),
-									Vector2f( ShadowPos.x, ShadowPos.y - SSize ),
-									Vector2f( ShadowPos.x - SSize, ShadowPos.y ) ),
-						BeginC, EndC, EndC );
-
-		P.drawTriangle(
-			Triangle2f(
-				Vector2f( ShadowPos.x + mSize.getWidth(), ShadowPos.y + mSize.getHeight() ),
-				Vector2f( ShadowPos.x + mSize.getWidth(), ShadowPos.y + mSize.getHeight() + SSize ),
-				Vector2f( ShadowPos.x + mSize.getWidth() + SSize,
-						  ShadowPos.y + mSize.getHeight() ) ),
-			BeginC, EndC, EndC );
-
-		P.drawTriangle(
-			Triangle2f( Vector2f( ShadowPos.x, ShadowPos.y + mSize.getHeight() ),
-						Vector2f( ShadowPos.x - SSize, ShadowPos.y + mSize.getHeight() ),
-						Vector2f( ShadowPos.x, ShadowPos.y + mSize.getHeight() + SSize ) ),
-			BeginC, EndC, EndC );
-
-		P.setForceDraw( true );
-
-		UIWidget::matrixUnset();
-	}
+	UIWidget::matrixSet();
+	Primitives p;
+	Color shadowColor( 0, 0, 0, 25 * ( getAlpha() / 255.f ) );
+	Float shadowSize = PixelDensity::dpToPx( 16.f );
+	Vector2f shadowOffset( 0, shadowSize );
+	Rectf windowRect( mScreenPos, mSize );
+	p.setColor( shadowColor );
+	p.drawSoftShadow( windowRect, shadowOffset, shadowSize, shadowSize / 2 );
+	UIWidget::matrixUnset();
 }
 
 void UIWindow::onPaddingChange() {
-	fixChildsSize();
+	fixChildrenSize();
 
 	UIWidget::onPaddingChange();
 }
@@ -500,6 +449,9 @@ bool UIWindow::isType( const Uint32& type ) const {
 }
 
 void UIWindow::closeWindow() {
+	if ( mClosing )
+		return;
+
 	if ( NULL != mButtonClose )
 		mButtonClose->setEnabled( false );
 
@@ -563,7 +515,7 @@ void UIWindow::setTheme( UITheme* Theme ) {
 		calcMinWinSize();
 	}
 
-	fixChildsSize();
+	fixChildrenSize();
 	onThemeLoaded();
 }
 
@@ -619,7 +571,7 @@ void UIWindow::onSizeChange() {
 			setSize( Sizef( getSize().getWidth(), mStyleConfig.MinWindowSize.getHeight() ) );
 		}
 	} else {
-		fixChildsSize();
+		fixChildrenSize();
 
 		if ( ownsFrameBuffer() && NULL != mFrameBuffer &&
 			 ( mFrameBuffer->getWidth() < mSize.getWidth() ||
@@ -670,7 +622,7 @@ const Sizef& UIWindow::getSize() const {
 	return UIWidget::getSize();
 }
 
-void UIWindow::fixChildsSize() {
+void UIWindow::fixChildrenSize() {
 	Sizef size( PixelDensity::dpToPx( getMinWindowSizeWithDecoration() ) );
 
 	if ( mSize.getWidth() < size.getWidth() || mSize.getHeight() < size.getHeight() ) {
@@ -1101,7 +1053,8 @@ bool UIWindow::show() {
 		setEnabled( true );
 		setVisible( true );
 
-		setFocus();
+		if ( mStealFocusOnShow )
+			setFocus();
 
 		UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
 		if ( themeManager->getDefaultEffectsEnabled() ) {
@@ -1119,10 +1072,10 @@ bool UIWindow::show() {
 	return false;
 }
 
-bool UIWindow::hide() {
+bool UIWindow::hide( bool immediate ) {
 	if ( isVisible() ) {
 		UIThemeManager* themeManager = getUISceneNode()->getUIThemeManager();
-		if ( themeManager->getDefaultEffectsEnabled() ) {
+		if ( !immediate && themeManager->getDefaultEffectsEnabled() ) {
 			runAction( Actions::Sequence::New(
 				Actions::FadeOut::New( themeManager->getWidgetsFadeOutTime() ),
 				Actions::Spawn::New( Actions::Disable::New(), Actions::Visible::New( false ) ) ) );
@@ -1131,7 +1084,7 @@ bool UIWindow::hide() {
 			setVisible( false );
 		}
 
-		if ( NULL != mSceneNode )
+		if ( NULL != mSceneNode && hasFocusWithin() )
 			mSceneNode->setFocus();
 
 		if ( NULL != mModalNode ) {
@@ -1150,13 +1103,13 @@ UIWindow* UIWindow::showWhenReady() {
 		show();
 	} else {
 		mShowWhenReady = true;
-		hide();
+		hide( true );
 	}
 	return this;
 }
 
 void UIWindow::onAlphaChange() {
-	if ( mStyleConfig.WinFlags & UI_WIN_SHARE_ALPHA_WITH_CHILDS ) {
+	if ( mStyleConfig.WinFlags & UI_WIN_SHARE_ALPHA_WITH_CHILDREN ) {
 		Node* CurChild = mChild;
 
 		while ( NULL != CurChild ) {
@@ -1178,7 +1131,7 @@ void UIWindow::onChildCountChange( Node* child, const bool& removed ) {
 }
 
 void UIWindow::onPositionChange() {
-	// Invalidate the buffer since a position change can get childs into a drawable position
+	// Invalidate the buffer since a position change can get children into a drawable position
 	// (on screen), when the drawable could have been outside the viewport and not drawn in the
 	// previous position.
 	invalidate( this );
@@ -1279,7 +1232,8 @@ void UIWindow::nodeDraw() {
 
 		preDraw();
 
-		drawShadow();
+		if ( mStyleConfig.WinFlags & UI_WIN_SHADOW )
+			drawShadow();
 
 		ClippingMask* clippingMask = GLi->getClippingMask();
 
@@ -1306,7 +1260,7 @@ void UIWindow::nodeDraw() {
 
 			draw();
 
-			drawChilds();
+			drawChildren();
 
 			smartClipEnd( ClipType::PaddingBox );
 
@@ -1376,9 +1330,9 @@ void UIWindow::matrixSet() {
 				mFrameBuffer->clear();
 			}
 
-			if ( 0 != mScreenPosi ) {
+			if ( Vector2f::Zero != mScreenPos ) {
 				GLi->pushMatrix();
-				GLi->translatef( -mScreenPosi.x, -mScreenPosi.y, 0.f );
+				GLi->translatef( std::trunc( -mScreenPos.x ), std::trunc( -mScreenPos.y ), 0.f );
 			}
 		}
 	} else {
@@ -1390,7 +1344,7 @@ void UIWindow::matrixUnset() {
 	if ( ownsFrameBuffer() ) {
 		GlobalBatchRenderer::instance()->draw();
 
-		if ( 0 != mScreenPosi )
+		if ( Vector2f::Zero != mScreenPos )
 			GLi->popMatrix();
 
 		if ( mFrameBufferBound ) {
@@ -1522,7 +1476,7 @@ UIWidget* UIWindow::getModalWidget() const {
 void UIWindow::resizeCursor() {
 	UISceneNode* sceneNode = getUISceneNode();
 
-	if ( NULL == sceneNode || !isMouseOverMeOrChilds() || !sceneNode->getUseGlobalCursors() ||
+	if ( NULL == sceneNode || !isMouseOverMeOrChildren() || !sceneNode->getUseGlobalCursors() ||
 		 ( mStyleConfig.WinFlags & UI_WIN_NO_DECORATION ) || !isResizeable() )
 		return;
 
@@ -1581,7 +1535,7 @@ std::string UIWindow::getWindowFlagsString() const {
 		flags.push_back( "close" );
 	if ( getWinFlags() & UI_WIN_MAXIMIZE_BUTTON )
 		flags.push_back( "maximize" );
-	if ( getWinFlags() & UI_WIN_DRAGABLE_CONTAINER )
+	if ( getWinFlags() & UI_WIN_DRAGGABLE_CONTAINER )
 		flags.push_back( "draggable" );
 	if ( getWinFlags() & UI_WIN_SHADOW )
 		flags.push_back( "shadow" );
@@ -1591,7 +1545,7 @@ std::string UIWindow::getWindowFlagsString() const {
 		flags.push_back( "borderless" );
 	if ( getWinFlags() & UI_WIN_RESIZEABLE )
 		flags.push_back( "resizeable" );
-	if ( getWinFlags() & UI_WIN_SHARE_ALPHA_WITH_CHILDS )
+	if ( getWinFlags() & UI_WIN_SHARE_ALPHA_WITH_CHILDREN )
 		flags.push_back( "shareopacity" );
 	if ( getWinFlags() & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS )
 		flags.push_back( "buttonactions" );
@@ -1683,7 +1637,7 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		case PropertyId::WindowButtonsOffset:
 			mStyleConfig.ButtonsOffset = attribute.asDpDimensionVector2i( this );
-			fixChildsSize();
+			fixChildrenSize();
 			break;
 		case PropertyId::WindowFlags: {
 			std::string flagsStr = attribute.asString();
@@ -1704,7 +1658,7 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 					else if ( "minimize" == cur )
 						winflags |= UI_WIN_MINIMIZE_BUTTON;
 					else if ( "draggable" == cur )
-						winflags |= UI_WIN_DRAGABLE_CONTAINER;
+						winflags |= UI_WIN_DRAGGABLE_CONTAINER;
 					else if ( "shadow" == cur )
 						winflags |= UI_WIN_SHADOW;
 					else if ( "modal" == cur )
@@ -1714,7 +1668,7 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 					else if ( "resizeable" == cur )
 						winflags |= UI_WIN_RESIZEABLE;
 					else if ( "shareopacity" == cur )
-						winflags |= UI_WIN_SHARE_ALPHA_WITH_CHILDS;
+						winflags |= UI_WIN_SHARE_ALPHA_WITH_CHILDREN;
 					else if ( "buttonactions" == cur )
 						winflags |= UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS;
 					else if ( "framebuffer" == cur )
@@ -1725,9 +1679,11 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 						winflags |= UI_WIN_EPHEMERAL;
 				}
 
-				/// TODO: WinFlags should replace old winFlags
 				if ( winflags != mStyleConfig.WinFlags ) {
-					mStyleConfig.WinFlags |= winflags;
+					if ( mLoadedFromXML )
+						mStyleConfig.WinFlags = winflags;
+					else
+						mStyleConfig.WinFlags |= winflags;
 					updateWinFlags();
 				}
 			}
@@ -1736,31 +1692,31 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::WindowTitlebarSize:
 			mStyleConfig.TitlebarSize = attribute.asDpDimensionSizei( this );
 			mStyleConfig.TitlebarAutoSize = false;
-			fixChildsSize();
+			fixChildrenSize();
 			break;
 		case PropertyId::WindowBorderSize:
 			mStyleConfig.BorderSize = attribute.asDpDimensionSizei( this );
 			mStyleConfig.BorderAutoSize = false;
-			fixChildsSize();
+			fixChildrenSize();
 			break;
 		case PropertyId::WindowMinSize:
 			mStyleConfig.MinWindowSize = attribute.asDpDimensionSizef( this );
-			fixChildsSize();
+			fixChildrenSize();
 			break;
 		case PropertyId::WindowButtonsSeparation:
 			mStyleConfig.ButtonsSeparation = attribute.asDpDimensionUint( this );
-			fixChildsSize();
+			fixChildrenSize();
 			break;
 		case PropertyId::WindowCornerDistance:
 			mStyleConfig.MinCornerDistance = attribute.asDpDimensionI( this );
 			break;
 		case PropertyId::WindowTitlebarAutoSize:
 			mStyleConfig.TitlebarAutoSize = attribute.asBool();
-			fixChildsSize();
+			fixChildrenSize();
 			break;
 		case PropertyId::WindowBorderAutoSize:
 			mStyleConfig.BorderAutoSize = attribute.asBool();
-			fixChildsSize();
+			fixChildrenSize();
 			break;
 		default:
 			return UIWidget::applyProperty( attribute );
@@ -1771,8 +1727,9 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 
 void UIWindow::loadFromXmlNode( const pugi::xml_node& node ) {
 	UIWidget::loadFromXmlNode( node );
-
-	show();
+	mLoadedFromXML = true;
+	setStealFocusOnShow( false );
+	showWhenReady();
 }
 
 void UIWindow::preDraw() {}
@@ -1841,8 +1798,21 @@ void UIWindow::sendWindowToFront() {
 void UIWindow::checkEphemeralClose() {
 	Node* focusNode = getUISceneNode()->getUIEventDispatcher()->getFocusNode();
 	if ( !mShowWhenReady && ( mStyleConfig.WinFlags & UI_WIN_EPHEMERAL ) && focusNode != this &&
-		 !inParentTreeOf( focusNode ) )
+		 !inParentTreeOf( focusNode ) &&
+		 ( !mCheckEphemeralCloseFn || mCheckEphemeralCloseFn( focusNode ) ) )
 		closeWindow();
+}
+
+void UIWindow::setStealFocusOnShow( bool steal ) {
+	mStealFocusOnShow = steal;
+}
+
+bool UIWindow::stealsFocusOnShow() const {
+	return mStealFocusOnShow;
+}
+
+void UIWindow::setCheckEphemeralCloseFn( std::function<bool( Node* focusNode )> fn ) {
+	mCheckEphemeralCloseFn = fn;
 }
 
 }} // namespace EE::UI

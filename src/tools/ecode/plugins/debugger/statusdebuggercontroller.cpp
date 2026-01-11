@@ -1,4 +1,5 @@
 #include "statusdebuggercontroller.hpp"
+#include "../../widgetcommandexecuter.hpp"
 #include "../plugincontextprovider.hpp"
 #include "eepp/ui/uiwidgetcreator.hpp"
 #include <eepp/ui/uicheckbox.hpp>
@@ -64,7 +65,7 @@ UIWidget* UIBreakpointsTableView::createCell( UIWidget* rowWidget, const ModelIn
 	if ( index.column() == BreakpointsModel::Enabled ) {
 		UIBreakpointsTableCell* widget = UIBreakpointsTableCell::New(
 			mTag + "::cell", (const BreakpointsModel*)getModel(), index );
-		widget->getTextBox()->setEnabled( true );
+		widget->getTextView()->setEnabled( true );
 		widget->setDontAutoHideEmptyTextBox( true );
 		return setupCell( widget, rowWidget, index );
 	} else if ( index.column() == BreakpointsModel::Remove ) {
@@ -87,6 +88,19 @@ UIWidget* UIBreakpointsTableView::createCell( UIWidget* rowWidget, const ModelIn
 		return cell;
 	}
 	return UITableView::createCell( rowWidget, index );
+}
+
+const std::map<KeyBindings::Shortcut, std::string>
+StatusDebuggerController::getLocalDefaultKeybindings() {
+	return {
+		{ { KEY_TAB, KeyMod::getDefaultModifier() }, "next-tab" },
+		{ { KEY_TAB, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "previous-tab" },
+		{ { KEY_1, KeyMod::getDefaultModifier() }, "switch-to-tab-1" },
+		{ { KEY_2, KeyMod::getDefaultModifier() }, "switch-to-tab-2" },
+		{ { KEY_3, KeyMod::getDefaultModifier() }, "switch-to-tab-3" },
+		{ { KEY_4, KeyMod::getDefaultModifier() }, "switch-to-tab-4" },
+		{ { KEY_5, KeyMod::getDefaultModifier() }, "switch-to-tab-5" },
+	};
 }
 
 StatusDebuggerController::StatusDebuggerController( UISplitter* mainSplitter,
@@ -190,7 +204,7 @@ void StatusDebuggerController::createContainer() {
 		background-color: none;
 	}
 	</style>
-	<hbox id="app_debugger" lw="mp" lh="mp" visible="false">
+	<hboxce id="app_debugger" lw="mp" lh="mp" visible="false">
 		<TabWidget id="app_debugger_tab_widget" lw="0" lw8="1" lh="mp">
 			<Splitter id="debugger_threads_and_stack" layout_width="mp" lh="mp" splitter-partition="15%">
 				<TableView id="debugger_threads" layout_width="mp" layout_height="mp" />
@@ -207,6 +221,7 @@ void StatusDebuggerController::createContainer() {
 			<Tab id="debugger_tab_console" text="@string(console_output, Console Output)" owns="debugger_console" />
 		</TabWidget>
 		<vbox id="app_debugger_buttons" class="vertical_bar" lw="16dp" lh="mp">
+			<PushButton class="expand_status_bar_panel" lw="mp" tooltip="@string(expand_panel, Expand Panel)" />
 			<PushButton id="app_debugger_start" class="debugger_start" lw="mp" icon="icon(debug-start, 12dp)" tooltip="@string(start, Start)" />
 			<PushButton id="app_debugger_stop" class="debugger_stop" lw="mp" icon="icon(debug-stop, 12dp)" tooltip="@string(stop, Stop)" />
 			<PushButton id="app_debugger_continue" class="debugger_continue" lw="mp" icon="icon(debug-continue, 12dp)" tooltip="@string(continue, Continue)" />
@@ -215,7 +230,7 @@ void StatusDebuggerController::createContainer() {
 			<PushButton id="app_debugger_step_into" class="debugger_step_into" lw="mp" icon="icon(debug-step-into, 12dp)" tooltip="@string(step_into, Step Into)" />
 			<PushButton id="app_debugger_step_out" class="debugger_step_out" lw="mp" icon="icon(debug-step-out, 12dp)" tooltip="@string(step_out, Step Out)" />
 		</vbox>
-	</hbox>
+	</hboxce>
 	)xml";
 
 	UIWidgetCreator::registerWidget( "BreakpointsTableView", UIBreakpointsTableView::New );
@@ -227,7 +242,8 @@ void StatusDebuggerController::createContainer() {
 
 	mContainer = mContext->getUISceneNode()
 					 ->loadLayoutFromString( XML, mMainSplitter )
-					 ->asType<UILinearLayout>();
+					 ->asType<UIHLinearLayoutCommandExecuter>();
+	mContext->getStatusBar()->registerStatusBarPanel( mContainer, mContainer );
 
 	mContainer->bind( "app_debugger_tab_widget", mUITabWidget );
 	mContainer->bind( "debugger_threads_and_stack", mUIThreadsSplitter );
@@ -244,6 +260,34 @@ void StatusDebuggerController::createContainer() {
 	mContainer->bind( "app_debugger_step_over", mUIButStepOver );
 	mContainer->bind( "app_debugger_step_into", mUIButStepInto );
 	mContainer->bind( "app_debugger_step_out", mUIButStepOut );
+
+	mContainer->setCommand( "next-tab", [this] {
+		if ( mUITabWidget )
+			mUITabWidget->focusNextTab();
+	} );
+
+	mContainer->setCommand( "previous-tab", [this] {
+		if ( mUITabWidget )
+			mUITabWidget->focusPreviousTab();
+	} );
+
+	for ( int i = 1; i <= 5; i++ ) {
+		mContainer->setCommand( String::format( "switch-to-tab-%d", i ), [this, i] {
+			if ( mUITabWidget )
+				mUITabWidget->setTabSelected(
+					eeclamp<Int32>( i - 1, 0, mUITabWidget->getTabCount() - 1 ) );
+		} );
+	}
+
+	mContainer->on( Event::KeyDown, [this]( const Event* event ) {
+		auto ke = event->asKeyEvent();
+		if ( ke->getSanitizedMod() == 0 && ke->getKeyCode() == EE::Window::KEY_ESCAPE &&
+			 mSplitter->getCurEditor() ) {
+			mSplitter->getCurEditor()->setFocus();
+		}
+	} );
+
+	mContainer->getKeyBindings().addKeybinds( getLocalDefaultKeybindings() );
 
 	setDebuggingState( State::NotStarted );
 

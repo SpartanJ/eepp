@@ -14,8 +14,8 @@ inline Uint32 setRandomSeed( Uint32 seed ) {
 }
 
 /** Generate a floating point random number
- * @param fMin The minimun value
- * @param fMax the maximun value
+ * @param fMin The minimum value
+ * @param fMax the maximum value
  * @return The random number generated
  */
 inline Float randf( const Float& fMin = 0.0f, const Float& fMax = 1.0f ) {
@@ -23,24 +23,24 @@ inline Float randf( const Float& fMin = 0.0f, const Float& fMax = 1.0f ) {
 }
 
 /** Generate a integer random number
- * @param fMin The minimun value
- * @param fMax the maximun value
+ * @param fMin The minimum value
+ * @param fMax the maximum value
  * @return The random number generated
  */
 inline int randi( const int& fMin = 0, const int& fMax = 1 ) {
 	return (int)( fMin + ( fMax - fMin + 1 ) * ( rand() / ( (Float)RAND_MAX + 1 ) ) );
 }
 
-/** Cosine from an Angle in Degress */
+/** Cosine from an Angle in Degrees */
 inline Float cosAng( const Float& Ang ) {
 	return eecos( Ang * EE_PI_180 );
 }
-/** Sinus from an Angle in Degress */
+/** Sinus from an Angle in Degrees */
 inline Float sinAng( const Float& Ang ) {
 	return eesin( Ang * EE_PI_180 );
 }
 
-/** Tangen from an Angle in Degress */
+/** Tangen from an Angle in Degrees */
 inline Float tanAng( const Float& Ang ) {
 	return tan( Ang * EE_PI_180 );
 }

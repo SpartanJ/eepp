@@ -17,6 +17,8 @@ class EE_API ClippingMask {
 	/** Disable the Clipping area */
 	void clipDisable();
 
+	bool isScissorsClipEnabled() const;
+
 	/** Clip the area with a plane. */
 	void clipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
 

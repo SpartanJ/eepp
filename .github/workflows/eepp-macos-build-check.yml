@@ -19,10 +19,15 @@ jobs:
         brew install wget SDL2 premake
     - name: Build
       run: |
-        premake5 --with-text-shaper --disable-static-build gmake2
+        premake5 --disable-static-build gmake
         make -C make/macosx/ -e config=release_arm64
     - name: Unit Tests
       run: |
         cd bin/unit_tests
         ./eepp-unit_tests
-
+    - name: Upload artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-test-output
+        path: bin/unit_tests/output/*

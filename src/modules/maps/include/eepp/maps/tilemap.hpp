@@ -102,9 +102,9 @@ class EE_MAPS_API TileMap {
 
 	void setClampBorders( const bool& clamp );
 
-	bool getClipedArea() const;
+	bool getClippedArea() const;
 
-	void setClipedArea( const bool& clip );
+	void setClippedArea( const bool& clip );
 
 	Uint32 getDrawGrid() const;
 

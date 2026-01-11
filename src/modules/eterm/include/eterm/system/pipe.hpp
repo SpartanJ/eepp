@@ -61,6 +61,6 @@ class Pipe : public IPipe {
 #endif
 };
 
-}} // namespace EE::System
+}} // namespace eterm::System
 
 #endif

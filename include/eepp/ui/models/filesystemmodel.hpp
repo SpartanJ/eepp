@@ -79,7 +79,7 @@ class EE_API FileSystemModel : public Model {
 
 	struct EE_API Node {
 	  public:
-		Node( const std::string& rootPath, const FileSystemModel& model,
+		Node( const std::string& rootPath, FileSystemModel& model,
 			  const std::shared_ptr<ThreadPool>& threadPool = {} );
 
 		Node( FileInfo&& info, Node* parent );
@@ -129,6 +129,8 @@ class EE_API FileSystemModel : public Model {
 		Node* createChild( const std::string& childName, const FileSystemModel& model );
 
 		void rename( const FileInfo& file );
+
+		void updateChildren( const FileInfo& oldParentFile, const FileInfo& newParentFile );
 
 		friend class FileSystemModel;
 		std::string mName;
@@ -182,7 +184,7 @@ class EE_API FileSystemModel : public Model {
 	virtual size_t treeColumn() const { return Column::Name; }
 	virtual size_t rowCount( const ModelIndex& = ModelIndex() ) const;
 	virtual size_t columnCount( const ModelIndex& = ModelIndex() ) const;
-	virtual bool hasChilds( const ModelIndex& = ModelIndex() ) const;
+	virtual bool hasChildren( const ModelIndex& = ModelIndex() ) const;
 	virtual std::string columnName( const size_t& column ) const;
 	virtual Variant data( const ModelIndex&, ModelRole role = ModelRole::Display ) const;
 	virtual ModelIndex parentIndex( const ModelIndex& ) const;
@@ -209,7 +211,7 @@ class EE_API FileSystemModel : public Model {
 
   protected:
 	std::atomic<bool> mInitOK;
-	std::atomic<bool> mShutingDown{ false };
+	std::atomic<bool> mShuttingDown{ false };
 	std::string mRootPath;
 	std::string mRealRootPath;
 	std::unique_ptr<Node> mRoot{ nullptr };

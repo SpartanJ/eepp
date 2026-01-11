@@ -25,6 +25,7 @@
 #include <eterm/system/autohandle.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
 #include <memory>
+#include <string>
 
 using namespace EE::Math;
 using namespace eterm::System;
@@ -71,7 +72,8 @@ class PseudoTerminal final : public IPseudoTerminal {
 
 	bool mAttached;
 
-	PseudoTerminal( int columns, int rows, AutoHandle&& hInput, AutoHandle&& hOutput, void* hPC );
+	PseudoTerminal( int columns, int rows, AutoHandle&& hInput, AutoHandle&& hOutput,
+					void* hPC ) noexcept;
 #else
 	int mColumns;
 	int mRows;
@@ -79,7 +81,9 @@ class PseudoTerminal final : public IPseudoTerminal {
 	AutoHandle mMaster;
 	AutoHandle mSlave;
 
-	PseudoTerminal( int columns, int rows, AutoHandle&& master, AutoHandle&& slave );
+	std::string mWriteBuffer;
+
+	PseudoTerminal( int columns, int rows, AutoHandle&& master, AutoHandle&& slave ) noexcept;
 #endif
 };
 } // namespace Terminal

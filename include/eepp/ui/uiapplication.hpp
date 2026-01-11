@@ -13,12 +13,17 @@ class UISceneNode;
 
 class EE_API UIApplication {
   public:
-	struct Settings {
+	struct EE_API Settings {
 		Settings() {}
 
-		Settings( std::optional<Float> pixelDensity, bool loadBaseResources = true,
-				  Font* baseFont = nullptr, std::optional<std::string> baseStyleSheetPath = {}, Font* emojiFont = nullptr );
+		Settings( std::optional<std::string> basePath, std::optional<Float> pixelDensity = {},
+				  bool loadBaseResources = true, Font* baseFont = nullptr,
+				  std::optional<std::string> baseStyleSheetPath = {}, Font* emojiFont = nullptr,
+				  Font* fallbackFont = nullptr );
 
+		//! By default it will use the current process path as the base path. This will set the
+		//! default working directory.
+		std::optional<std::string> basePath;
 		//! Not setting anything will automatically try to detect the main screen pixel density
 		std::optional<Float> pixelDensity;
 		//! Must be set to true in order to initialize the basic UI resources (font and UI theme).
@@ -27,12 +32,19 @@ class EE_API UIApplication {
 		//! The default base font for the UI. If not provided it will load NotoSans-Regular ( will
 		//! look at "assets/fonts/NotoSans-Regular.ttf" )
 		Font* baseFont{ nullptr };
+		//! The default base monospace font for the UI. If not provided it will load DejaVuSansMono
+		//! ( will look at "assets/fonts/DejaVuSansMono.ttf" )
+		Font* monospaceFont{ nullptr };
 		//! The style sheet path is the path of the base UI theme stylesheet ( will look at
 		//! "assets/ui/breeze.css" by default )
 		std::optional<std::string> baseStyleSheetPath;
-		//! The default emoji font for the UI. If not provided it will load NotoEmoji-Regular ( will
-		//! look at "assets/fonts/NotoEmoji-Regular.ttf" )
+		//! The default emoji font for the UI. If not provided it will load Noto Color Emoji ( it
+		//! will look at "assets/fonts/NotoColorEmoji.ttf" ) otherwise it will try NotoEmoji-Regular
+		//! ( it will look at "assets/fonts/NotoEmoji-Regular.ttf" )
 		Font* emojiFont{ nullptr };
+		//! The default fallback font for the UI. If not provided it will load Droid Sans Fallback
+		//! Full ( it will look at "assets/fonts/DroidSansFallbackFull.ttf" )
+		Font* fallbackFont{ nullptr };
 	};
 
 	UIApplication( const WindowSettings& windowSettings, const Settings& appSettings = Settings(),
@@ -48,12 +60,19 @@ class EE_API UIApplication {
 	//! Document
 	UISceneNode* getUI() const;
 
+	//! Runs the application until window is closed
+	//! @return EXIT_SUCCESS if application run successfully
 	int run();
+
+	//! Set if the application must show the memory manager result after closing the main window.
+	void setShowMemoryManagerResult( bool show );
+	bool showMemoryManagerResult() const;
 
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
 	EE::Window::Window* mWindow{ nullptr };
 	bool mDidRun{ false };
+	bool mShowMemoryManagerResult{ false };
 };
 
 }} // namespace EE::UI

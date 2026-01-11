@@ -76,8 +76,8 @@ Uint32 UIMenuItem::onMouseLeave( const Vector2i& pos, const Uint32& flags ) {
 }
 
 Uint32 UIMenuItem::onMouseClick( const Vector2i&, const Uint32& flags ) {
-	if ( !getUISceneNode()->getWindow()->getInput()->isShiftPressed() &&
-		 ( flags & EE_BUTTON_LMASK ) && ( !mOnShouldCloseCb || mOnShouldCloseCb( this ) ) ) {
+	if ( !getInput()->isShiftPressed() && ( flags & EE_BUTTON_LMASK ) &&
+		 ( !mOnShouldCloseCb || mOnShouldCloseCb( this ) ) ) {
 		getParent()->asType<UIMenu>()->backpropagateHide();
 	}
 	return 1;
@@ -103,9 +103,9 @@ void UIMenuItem::createShortcutView() {
 	mShortcutView->setParent( this )->setVisible( true )->setEnabled( false );
 	mShortcutView->setFlags( UI_AUTO_SIZE | UI_HALIGN_RIGHT );
 	auto cb = [this]( const Event* ) { onSizeChange(); };
-	mShortcutView->addEventListener( Event::OnPaddingChange, cb );
-	mShortcutView->addEventListener( Event::OnMarginChange, cb );
-	mShortcutView->addEventListener( Event::OnSizeChange, cb );
+	mShortcutView->on( Event::OnPaddingChange, cb );
+	mShortcutView->on( Event::OnMarginChange, cb );
+	mShortcutView->on( Event::OnSizeChange, cb );
 }
 
 void UIMenuItem::refreshShortcut() {

@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addRuby() {
+SyntaxDefinition& addRuby() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -18,10 +18,10 @@ void addRuby() {
 			  { { "-?%.?%d+f?" }, "number" },
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
-			  { { "@?@[%a_][%w_]*" }, "keyword2" },
+			  { { "@?@[%a_][%w_]*" }, "type" },
 			  { { "::[%w_]*" }, "symbol" },
-			  { { ":[%w_]*" }, "keyword2" },
-			  { { "[%a_][%w_]*:[^:]" }, "keyword2" },
+			  { { ":[%w_]*" }, "type" },
+			  { { "[%a_][%w_]*:[^:]" }, "type" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 
 		  },
@@ -80,6 +80,7 @@ void addRuby() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Indentation );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

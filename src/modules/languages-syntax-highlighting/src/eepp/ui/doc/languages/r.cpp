@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addR() {
+SyntaxDefinition& addR() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "R",
 		  { "%.r$", "%.rds$", "%.rda$", "%.rdata$", "%.R$" },
@@ -19,8 +19,6 @@ void addR() {
 			  { { "0x[%da-fA-F]+" }, "number" },
 			  { { "-?%d+[%d%.eE]*" }, "number" },
 			  { { "-?%.?%d+" }, "number" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {

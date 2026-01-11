@@ -64,7 +64,7 @@ class EE_API Model {
 
 	virtual ~Model() {};
 
-	virtual bool hasChilds( const ModelIndex& modelIndex = ModelIndex() ) const {
+	virtual bool hasChildren( const ModelIndex& modelIndex = ModelIndex() ) const {
 		return rowCount( modelIndex ) > 0;
 	}
 
@@ -130,7 +130,7 @@ class EE_API Model {
 
 	void setOnUpdate( const std::function<void()>& onUpdate );
 
-	void invalidate( unsigned int flags = Model::UpdateFlag::InvalidateAllIndexes );
+	virtual void invalidate( unsigned int flags = Model::UpdateFlag::InvalidateAllIndexes );
 
 	std::weak_ptr<PersistentHandle> registerPersistentIndex( ModelIndex const& );
 
@@ -156,9 +156,9 @@ class EE_API Model {
 
 	void releaseResourceMutex();
 
-	Uint32 subsribeModelStyler( const ModelStyler& styler );
+	Uint32 subscribeModelStyler( const ModelStyler& styler );
 
-	void unsubsribeModelStyler( Uint32 id );
+	void unsubscribeModelStyler( Uint32 id );
 
   protected:
 	Model() {};

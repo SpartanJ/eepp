@@ -53,13 +53,13 @@ RendererGL3CP::RendererGL3CP() :
 	mBiggestAlloc( 0 ),
 	mLoaded( false ) {
 	mQuadsSupported = false;
-	mQuadVertexs = 6;
+	mQuadVertex = 6;
 }
 
 RendererGL3CP::~RendererGL3CP() {
 	for ( Uint32 i = 0; i < eeARRAY_SIZE( mVBO ); i++ ) {
 		if ( 0 != mVBO[i] ) {
-			glDeleteBuffersARB( 1, &mVBO[i] );
+			glDeleteBuffers( 1, &mVBO[i] );
 		}
 	}
 
@@ -128,7 +128,7 @@ void RendererGL3CP::init() {
 	genVertexArrays( 1, &mVAO );
 	bindVertexArray( mVAO );
 
-	glGenBuffersARB( EEGL_ARRAY_STATES_COUNT + 5, &mVBO[0] );
+	glGenBuffers( EEGL_ARRAY_STATES_COUNT + 5, &mVBO[0] );
 
 	allocateBuffers( mVBOSizeAlloc );
 
@@ -365,8 +365,8 @@ void RendererGL3CP::vertexPointer( int size, unsigned int type, int stride, cons
 			allocateBuffers( allocate );
 		}
 
-		glBindBufferARB( GL_ARRAY_BUFFER, mVBO[EEGL_VERTEX_ARRAY] );
-		glBufferSubDataARB( GL_ARRAY_BUFFER, 0, allocate, pointer );
+		glBindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_VERTEX_ARRAY] );
+		glBufferSubData( GL_ARRAY_BUFFER, 0, allocate, pointer );
 
 		if ( 0 == mAttribsLocStates[EEGL_VERTEX_ARRAY] ) {
 			mAttribsLocStates[EEGL_VERTEX_ARRAY] = 1;
@@ -375,9 +375,9 @@ void RendererGL3CP::vertexPointer( int size, unsigned int type, int stride, cons
 		}
 
 		if ( type == GL_UNSIGNED_BYTE ) {
-			glVertexAttribPointerARB( index, size, type, GL_TRUE, stride, 0 );
+			glVertexAttribPointer( index, size, type, GL_TRUE, stride, 0 );
 		} else {
-			glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, 0 );
+			glVertexAttribPointer( index, size, type, GL_FALSE, stride, 0 );
 		}
 	}
 }
@@ -397,8 +397,8 @@ void RendererGL3CP::colorPointer( int size, unsigned int type, int stride, const
 			allocateBuffers( allocate );
 		}
 
-		glBindBufferARB( GL_ARRAY_BUFFER, mVBO[EEGL_COLOR_ARRAY] );
-		glBufferSubDataARB( GL_ARRAY_BUFFER, 0, allocate, pointer );
+		glBindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_COLOR_ARRAY] );
+		glBufferSubData( GL_ARRAY_BUFFER, 0, allocate, pointer );
 
 		if ( 0 == mAttribsLocStates[EEGL_COLOR_ARRAY] ) {
 			mAttribsLocStates[EEGL_COLOR_ARRAY] = 1;
@@ -407,9 +407,9 @@ void RendererGL3CP::colorPointer( int size, unsigned int type, int stride, const
 		}
 
 		if ( type == GL_UNSIGNED_BYTE ) {
-			glVertexAttribPointerARB( index, size, type, GL_TRUE, stride, 0 );
+			glVertexAttribPointer( index, size, type, GL_TRUE, stride, 0 );
 		} else {
-			glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, 0 );
+			glVertexAttribPointer( index, size, type, GL_FALSE, stride, 0 );
 		}
 	}
 }
@@ -429,8 +429,8 @@ void RendererGL3CP::texCoordPointer( int size, unsigned int type, int stride, co
 			allocateBuffers( allocate );
 		}
 
-		glBindBufferARB( GL_ARRAY_BUFFER, mCurTexCoordArray );
-		glBufferSubDataARB( GL_ARRAY_BUFFER, 0, allocate, pointer );
+		glBindBuffer( GL_ARRAY_BUFFER, mCurTexCoordArray );
+		glBufferSubData( GL_ARRAY_BUFFER, 0, allocate, pointer );
 
 		if ( 0 == mTextureUnitsStates[mCurActiveTex] ) {
 			mTextureUnitsStates[mCurActiveTex] = 1;
@@ -438,12 +438,12 @@ void RendererGL3CP::texCoordPointer( int size, unsigned int type, int stride, co
 			glEnableVertexAttribArray( index );
 		}
 
-		glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, 0 );
+		glVertexAttribPointer( index, size, type, GL_FALSE, stride, 0 );
 	}
 }
 
 int RendererGL3CP::getStateIndex( const Uint32& State ) {
-	eeASSERT( State < EEGL_ARRAY_STATES_COUNT );
+	eeASSERT( State < EEGL_ARRAY_STATES_COUNT || State == EEGL_TEXTURE_COORD_ARRAY );
 
 	if ( EEGL_TEXTURE_COORD_ARRAY == State )
 		return mTextureUnits[mCurActiveTex];
@@ -573,23 +573,23 @@ void RendererGL3CP::allocateBuffers( const Uint32& size ) {
 
 	mVBOSizeAlloc = size;
 
-	glBindBufferARB( GL_ARRAY_BUFFER, mVBO[EEGL_VERTEX_ARRAY] );
-	glBufferDataARB( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+	glBindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_VERTEX_ARRAY] );
+	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 
-	glBindBufferARB( GL_ARRAY_BUFFER, mVBO[EEGL_COLOR_ARRAY] );
-	glBufferDataARB( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+	glBindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_COLOR_ARRAY] );
+	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 
-	glBindBufferARB( GL_ARRAY_BUFFER, mVBO[EEGL_TEXTURE_COORD_ARRAY] );
-	glBufferDataARB( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+	glBindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_TEXTURE_COORD_ARRAY] );
+	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 
-	glBindBufferARB( GL_ARRAY_BUFFER, mVBO[EEGL_TEXTURE_COORD_ARRAY + 1] );
-	glBufferDataARB( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+	glBindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_TEXTURE_COORD_ARRAY + 1] );
+	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 
-	glBindBufferARB( GL_ARRAY_BUFFER, mVBO[EEGL_TEXTURE_COORD_ARRAY + 2] );
-	glBufferDataARB( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+	glBindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_TEXTURE_COORD_ARRAY + 2] );
+	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 
-	glBindBufferARB( GL_ARRAY_BUFFER, mVBO[EEGL_TEXTURE_COORD_ARRAY + 3] );
-	glBufferDataARB( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+	glBindBuffer( GL_ARRAY_BUFFER, mVBO[EEGL_TEXTURE_COORD_ARRAY + 3] );
+	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 }
 
 }} // namespace EE::Graphics

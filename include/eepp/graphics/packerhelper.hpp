@@ -28,7 +28,7 @@ struct sTextureRegionHdr {
 	Uint32 PixelDensity;
 };
 
-#define HDR_TEXTUREREGION_FLAG_FLIPED ( 1 << 0 )
+#define HDR_TEXTUREREGION_FLAG_FLIPPED ( 1 << 0 )
 
 struct sTextureHdr {
 	char Name[HDR_NAME_SIZE];

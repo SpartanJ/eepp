@@ -34,7 +34,7 @@ UITextInput::UITextInput( const std::string& tag ) :
 	mOnlyNumbers( false ),
 	mAllowFloat( false ),
 	mMouseDown( false ),
-	mKeyBindings( getUISceneNode()->getWindow()->getInput() ) {
+	mKeyBindings( getInput() ) {
 	mHintCache = Text::New();
 
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
@@ -86,10 +86,10 @@ bool UITextInput::isType( const Uint32& type ) const {
 void UITextInput::scheduledUpdate( const Time& time ) {
 	updateWaitingCursor( time );
 	if ( mMouseDown ) {
-		if ( !( getUISceneNode()->getWindow()->getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
+		if ( !( getInput()->getPressTrigger() & EE_BUTTON_LMASK ) ) {
 			mMouseDown = false;
 			mSelecting = false;
-			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
+			getInput()->captureMouse( false );
 		} else {
 			onMouseDown( getUISceneNode()->getEventDispatcher()->getMousePos(),
 						 getUISceneNode()->getEventDispatcher()->getPressTrigger() );
@@ -135,14 +135,16 @@ void UITextInput::draw() {
 		if ( mTextCache->getTextWidth() ) {
 			drawSelection( mTextCache );
 			mTextCache->setAlign( getFlags() );
-			mTextCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
-							  (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
-							  Vector2f::One, 0.f, getBlendMode() );
+			mTextCache->draw(
+				std::trunc( mScreenPos.x ) + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
+				std::trunc( mScreenPos.y ) + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
+				Vector2f::One, 0.f, getBlendMode() );
 		} else if ( !mHintCache->getString().empty() &&
 					( mHintDisplay == HintDisplay::Always || hasFocus() ) ) {
-			mHintCache->draw( (Float)mScreenPosi.x + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
-							  (Float)mScreenPosi.y + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
-							  Vector2f::One, 0.f, getBlendMode() );
+			mHintCache->draw(
+				std::trunc( mScreenPos.x ) + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
+				std::trunc( mScreenPos.y ) + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
+				Vector2f::One, 0.f, getBlendMode() );
 		}
 	}
 
@@ -168,7 +170,7 @@ Uint32 UITextInput::onFocus( NodeFocusReason reason ) {
 
 		getSceneNode()->getWindow()->startTextInput();
 
-		mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
+		mLastExecuteEventId = getInput()->getEventsSentId();
 
 		updateIMELocation();
 	}
@@ -198,7 +200,7 @@ void UITextInput::alignFix() {
 	Vector2f rOffset( mRealAlignOffset );
 	UITextView::alignFix();
 
-	if ( Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT ) {
+	if ( mAllowEditing && Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT ) {
 		Float tW = getVisibleTextCache()->findCharacterPos( selCurInit() ).x;
 		mCurPos.x = tW;
 		mCurPos.y = 0;
@@ -290,14 +292,14 @@ void UITextInput::updateText() {}
 Uint32 UITextInput::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 	int endPos = selCurEnd();
 
-	if ( getUISceneNode()->getWindow()->getInput()->isShiftPressed() )
+	if ( getInput()->isShiftPressed() )
 		mSelecting = true;
 
 	UITextView::onMouseDown( position, flags );
 
 	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) &&
 		 getEventDispatcher()->getMouseDownNode() == this && !mMouseDown ) {
-		getUISceneNode()->getWindow()->getInput()->captureMouse( true );
+		getInput()->captureMouse( true );
 		mMouseDown = true;
 	}
 
@@ -312,7 +314,7 @@ Uint32 UITextInput::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 	if ( flags & EE_BUTTON_LMASK ) {
 		if ( mMouseDown ) {
 			mMouseDown = false;
-			getUISceneNode()->getWindow()->getInput()->captureMouse( false );
+			getInput()->captureMouse( false );
 		}
 	} else if ( ( flags & EE_BUTTON_RMASK ) && mEnabledCreateContextMenu ) {
 		onCreateContextMenu( position, flags );
@@ -770,7 +772,8 @@ Uint32 UITextInput::onKeyDown( const KeyEvent& event ) {
 		// Allow copy selection on locked mode
 		if ( mAllowEditing ) {
 			mDoc.execute( cmd );
-			mLastExecuteEventId = getUISceneNode()->getWindow()->getInput()->getEventsSentId();
+			mLastCmdHash = String::hash( cmd );
+			mLastExecuteEventId = getInput()->getEventsSentId();
 			return 1;
 		}
 	}
@@ -780,7 +783,7 @@ Uint32 UITextInput::onKeyDown( const KeyEvent& event ) {
 Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 	if ( !mAllowEditing )
 		return 0;
-	Input* input = getUISceneNode()->getWindow()->getInput();
+	Input* input = getInput();
 
 	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
 		 ( input->isLeftControlPressed() && !input->isLeftAltPressed() &&
@@ -788,7 +791,8 @@ Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 		 input->isMetaPressed() || ( input->isLeftAltPressed() && !input->isLeftControlPressed() ) )
 		return 0;
 
-	if ( mLastExecuteEventId == getUISceneNode()->getWindow()->getInput()->getEventsSentId() )
+	if ( mLastExecuteEventId == getInput()->getEventsSentId() &&
+		 !TextDocument::isTextDocumentCommand( mLastCmdHash ) )
 		return 0;
 
 	const String& text = event.getText();
@@ -810,7 +814,7 @@ Uint32 UITextInput::onTextInput( const TextInputEvent& event ) {
 }
 
 void UITextInput::updateIMELocation() {
-	if ( mDoc.getActiveClient() != this || !Engine::isRunninMainThread() )
+	if ( mDoc.getActiveClient() != this || !Engine::isMainThread() )
 		return;
 	Vector2f cursor( eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + mPaddingPx.Left ),
 					 mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mPaddingPx.Top );
@@ -915,7 +919,7 @@ bool UITextInput::onCreateContextMenu( const Vector2i& position, const Uint32& f
 	}
 
 	menu->setCloseOnHide( true );
-	menu->addEventListener( Event::OnItemClicked, [this]( const Event* event ) {
+	menu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -930,7 +934,7 @@ bool UITextInput::onCreateContextMenu( const Vector2i& position, const Uint32& f
 	UIMenu::findBestMenuPos( pos, menu );
 	menu->setPixelsPosition( pos );
 	menu->show();
-	menu->addEventListener( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
+	menu->on( Event::OnClose, [this]( const Event* ) { mCurrentMenu = nullptr; } );
 	mCurrentMenu = menu;
 	selCurInit( init );
 	selCurEnd( end );

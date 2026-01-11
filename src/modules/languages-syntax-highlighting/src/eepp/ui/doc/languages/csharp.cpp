@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addCSharp() {
+SyntaxDefinition& addCSharp() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -24,41 +24,62 @@ void addCSharp() {
 			  { { "%?%?" }, "operator" },
 			  { { "%?%." }, "operator" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
-			  { { "[%a_][%w_]*" }, "symbol" },
+			  { { "[#%[]?[%a_][%w_]*%]?" }, "symbol" },
 
 		  },
 		  {
-			  { "internal", "keyword" },  { "int", "keyword2" },	   { "new", "keyword" },
-			  { "continue", "keyword" },  { "default", "keyword" },	   { "remove", "keyword" },
-			  { "sizeof", "keyword" },	  { "char", "keyword2" },	   { "set", "keyword" },
-			  { "bool", "keyword2" },	  { "this", "keyword" },	   { "extern", "keyword" },
-			  { "long", "keyword2" },	  { "foreach", "keyword" },	   { "namespace", "keyword" },
-			  { "partial", "keyword" },	  { "short", "keyword2" },	   { "typeof", "keyword" },
-			  { "object", "keyword2" },	  { "false", "literal" },	   { "for", "keyword" },
-			  { "goto", "keyword" },	  { "while", "keyword" },	   { "const", "keyword" },
-			  { "get", "keyword" },		  { "delegate", "keyword" },   { "add", "keyword" },
-			  { "null", "literal" },	  { "unsafe", "keyword" },	   { "fixed", "keyword" },
-			  { "else", "keyword" },	  { "stackalloc", "keyword" }, { "global", "keyword" },
-			  { "record", "keyword" },	  { "enum", "keyword" },	   { "value", "keyword" },
-			  { "lock", "keyword" },	  { "operator", "keyword" },   { "when", "keyword" },
-			  { "struct", "keyword" },	  { "break", "keyword" },	   { "is", "keyword" },
-			  { "decimal", "keyword2" },  { "string", "keyword2" },	   { "if", "keyword" },
-			  { "await", "keyword" },	  { "in", "keyword" },		   { "public", "keyword" },
-			  { "virtual", "keyword" },	  { "dynamic", "keyword" },	   { "private", "keyword" },
-			  { "finally", "keyword" },	  { "abstract", "keyword" },   { "unchecked", "keyword" },
-			  { "volatile", "keyword" },  { "switch", "keyword" },	   { "using", "keyword" },
-			  { "checked", "keyword" },	  { "double", "keyword2" },	   { "event", "keyword" },
-			  { "ulong", "keyword2" },	  { "return", "keyword" },	   { "var", "keyword" },
-			  { "out", "keyword" },		  { "try", "keyword" },		   { "as", "keyword" },
-			  { "class", "keyword" },	  { "void", "keyword" },	   { "byte", "keyword2" },
-			  { "yield", "keyword" },	  { "static", "keyword" },	   { "uint", "keyword2" },
-			  { "explicit", "keyword" },  { "sbyte", "keyword2" },	   { "throw", "keyword" },
-			  { "where", "keyword" },	  { "catch", "keyword" },	   { "true", "literal" },
-			  { "ushort", "keyword2" },	  { "override", "keyword" },   { "sealed", "keyword" },
-			  { "float", "keyword2" },	  { "params", "keyword" },	   { "readonly", "keyword" },
-			  { "base", "keyword" },	  { "case", "keyword" },	   { "interface", "keyword" },
-			  { "protected", "keyword" }, { "do", "keyword" },		   { "implicit", "keyword" },
-			  { "ref", "keyword" },
+			  { "internal", "keyword" },	{ "int", "type" },			 { "new", "keyword" },
+			  { "continue", "keyword" },	{ "default", "keyword" },	 { "remove", "keyword" },
+			  { "sizeof", "keyword" },		{ "char", "type" },			 { "set", "keyword" },
+			  { "bool", "type" },			{ "this", "keyword" },		 { "extern", "keyword" },
+			  { "long", "type" },			{ "foreach", "keyword" },	 { "namespace", "keyword" },
+			  { "partial", "keyword" },		{ "short", "type" },		 { "typeof", "keyword" },
+			  { "object", "type" },			{ "false", "literal" },		 { "for", "keyword" },
+			  { "goto", "keyword" },		{ "while", "keyword" },		 { "const", "keyword" },
+			  { "get", "keyword" },			{ "delegate", "keyword" },	 { "add", "keyword" },
+			  { "null", "literal" },		{ "unsafe", "keyword" },	 { "fixed", "keyword" },
+			  { "else", "keyword" },		{ "stackalloc", "keyword" }, { "global", "keyword" },
+			  { "record", "keyword" },		{ "enum", "keyword" },		 { "value", "keyword" },
+			  { "lock", "keyword" },		{ "operator", "keyword" },	 { "when", "keyword" },
+			  { "struct", "keyword" },		{ "break", "keyword" },		 { "is", "keyword" },
+			  { "decimal", "type" },		{ "string", "type" },		 { "if", "keyword" },
+			  { "await", "keyword" },		{ "in", "keyword" },		 { "public", "keyword" },
+			  { "virtual", "keyword" },		{ "dynamic", "keyword" },	 { "private", "keyword" },
+			  { "finally", "keyword" },		{ "abstract", "keyword" },	 { "unchecked", "keyword" },
+			  { "volatile", "keyword" },	{ "switch", "keyword" },	 { "using", "keyword" },
+			  { "checked", "keyword" },		{ "double", "type" },		 { "event", "keyword" },
+			  { "ulong", "type" },			{ "return", "keyword" },	 { "var", "keyword" },
+			  { "out", "keyword" },			{ "try", "keyword" },		 { "as", "keyword" },
+			  { "class", "keyword" },		{ "void", "keyword" },		 { "byte", "type" },
+			  { "yield", "keyword" },		{ "static", "keyword" },	 { "uint", "type" },
+			  { "explicit", "keyword" },	{ "sbyte", "type" },		 { "throw", "keyword" },
+			  { "where", "keyword" },		{ "catch", "keyword" },		 { "true", "literal" },
+			  { "ushort", "type" },			{ "override", "keyword" },	 { "sealed", "keyword" },
+			  { "float", "type" },			{ "params", "keyword" },	 { "readonly", "keyword" },
+			  { "base", "keyword" },		{ "case", "keyword" },		 { "interface", "keyword" },
+			  { "protected", "keyword" },	{ "do", "keyword" },		 { "implicit", "keyword" },
+			  { "ref", "keyword" },			{ "nint", "keyword" },		 { "nuint", "keyword" },
+
+			  { "allows", "keyword" },		{ "and", "keyword" },		 { "alias", "keyword" },
+			  { "args", "keyword" },		{ "ascending", "keyword" },	 { "async", "keyword" },
+			  { "by", "keyword" },			{ "descending", "keyword" }, { "equals", "keyword" },
+			  { "extension", "keyword" },	{ "field", "keyword" },		 { "file", "keyword" },
+			  { "from", "keyword" },		{ "group", "keyword" },		 { "init", "keyword" },
+			  { "into", "keyword" },		{ "join", "keyword" },		 { "let", "keyword" },
+			  { "managed", "keyword" },		{ "nameof", "keyword" },	 { "not", "keyword" },
+			  { "notnull", "keyword" },		{ "on", "keyword" },		 { "or", "keyword" },
+			  { "orderby", "keyword" },		{ "required", "keyword" },	 { "scoped", "keyword" },
+			  { "select", "keyword" },		{ "unmanaged", "keyword" },	 { "with", "keyword" },
+
+			  { "#if", "keyword" },			{ "#else", "keyword" },		 { "#elif", "keyword" },
+			  { "#endif", "keyword" },		{ "#define", "keyword" },	 { "#undef", "keyword" },
+			  { "#warning", "keyword" },	{ "#error", "keyword" },	 { "#line", "keyword" },
+			  { "#pragma", "keyword" },		{ "#nullable", "keyword" },	 { "#region", "keyword" },
+			  { "#endregion", "keyword" },
+
+			  { "[assembly:]", "keyword" }, { "[module:]", "keyword" },	 { "[field:]", "keyword" },
+			  { "[event:]", "keyword" },	{ "[method:]", "keyword" },	 { "[param:]", "keyword" },
+			  { "[property:]", "keyword" }, { "[return:]", "keyword" },	 { "[type:]", "keyword" },
 
 		  },
 		  "//",
@@ -66,6 +87,8 @@ void addCSharp() {
 		  "csharp" } );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	sd.setBlockComment( { "/*", "*/" } );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

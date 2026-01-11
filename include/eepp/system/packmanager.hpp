@@ -7,7 +7,7 @@
 
 namespace EE { namespace System {
 
-/** @brief The Pack Manager keep track of the instanciated Packs.
+/** @brief The Pack Manager keep track of the instantiated Packs.
 	It's used to find files from any open pack.
 */
 class EE_API PackManager : protected Container<Pack> {
@@ -16,7 +16,7 @@ class EE_API PackManager : protected Container<Pack> {
   public:
 	virtual ~PackManager();
 
-	/** @brief Searchs for the filepath in the packs, if the file is found it will return the pack
+	/** @brief Searches for the filepath in the packs, if the file is found it will return the pack
 	 *that belongs to. *	@return The pack where the file exists. If the file is not found,
 	 *returns NULL. *	@param path The file path to search. */
 	Pack* exists( std::string& path );

@@ -1,4 +1,5 @@
 #include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/fonttruetype.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -8,9 +9,9 @@ FontManager::FontManager() {}
 
 FontManager::~FontManager() {}
 
-Graphics::Font* FontManager::add( Graphics::Font* Font ) {
-	eeASSERT( NULL != Font );
-	return ResourceManager<Graphics::Font>::add( Font );
+Graphics::Font* FontManager::add( Graphics::Font* font ) {
+	eeASSERT( NULL != font );
+	return ResourceManager<Graphics::Font>::add( font );
 }
 
 void FontManager::setColorEmojiFont( Font* font ) {
@@ -61,6 +62,14 @@ FontHinting FontManager::getHinting() const {
 
 void FontManager::setHinting( FontHinting hinting ) {
 	mHinting = hinting;
+
+	for ( auto [_, font] : mResources ) {
+		if ( font->getType() == FontType::TTF ) {
+			auto ttf = static_cast<FontTrueType*>( font );
+			if ( !ttf->isEmojiFont() )
+				ttf->setHinting( hinting );
+		}
+	}
 }
 
 FontAntialiasing FontManager::getAntialiasing() const {
@@ -69,6 +78,23 @@ FontAntialiasing FontManager::getAntialiasing() const {
 
 void FontManager::setAntialiasing( FontAntialiasing antialiasing ) {
 	mAntialiasing = antialiasing;
+
+	for ( auto [_, font] : mResources ) {
+		if ( font->getType() == FontType::TTF ) {
+			auto ttf = static_cast<FontTrueType*>( font );
+			if ( !ttf->isEmojiFont() )
+				ttf->setAntialiasing( antialiasing );
+		}
+	}
+}
+
+Font* FontManager::getByInternalId( Uint32 internalId ) const {
+	for ( auto [_, font] : mResources ) {
+		if ( font->getType() == FontType::TTF &&
+			 static_cast<FontTrueType*>( font )->getFontInternalId() == internalId )
+			return font;
+	}
+	return nullptr;
 }
 
 }} // namespace EE::Graphics

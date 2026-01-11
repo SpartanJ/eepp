@@ -3,8 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addAdept() {
+SyntaxDefinition& addAdept() {
 	auto& sd = SyntaxDefinitionManager::instance()->add(
+
 		{ "Adept",
 		  { "%.adept$" },
 		  {
@@ -18,8 +19,8 @@ void addAdept() {
 			  { { "-?%d+[%d%.eE]*f?" }, "number" },
 			  { { "-?%.?%d+f?" }, "number" },
 			  { { "[%+%-=/%*%^%%<>!~|&]" }, "operator" },
-			  { { ":=" }, "operator" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
+			  { { "#[%a_][%w_]*" }, "symbol" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 		  },
 		  {
@@ -98,34 +99,60 @@ void addAdept() {
 			  { "this", "keyword" },
 			  { "it", "keyword" },
 			  { "idx", "keyword" },
-			  { "bool", "keyword2" },
-			  { "ptr", "keyword2" },
-			  { "byte", "keyword2" },
-			  { "ubyte", "keyword2" },
-			  { "short", "keyword2" },
-			  { "ushort", "keyword2" },
-			  { "int", "keyword2" },
-			  { "uint", "keyword2" },
-			  { "long", "keyword2" },
-			  { "ulong", "keyword2" },
-			  { "usize", "keyword2" },
-			  { "double", "keyword2" },
-			  { "float", "keyword2" },
-			  { "String", "keyword2" },
-			  { "List", "keyword2" },
-			  { "Array", "keyword2" },
-			  { "Matrix4f", "keyword2" },
-			  { "Vector3f", "keyword2" },
-			  { "FILE", "keyword2" },
-			  { "va_list", "keyword2" },
-			  { "successful", "keyword2" },
+			  { "volatile", "keyword" },
+			  { "bool", "type" },
+			  { "ptr", "type" },
+			  { "byte", "type" },
+			  { "ubyte", "type" },
+			  { "short", "type" },
+			  { "ushort", "type" },
+			  { "int", "type" },
+			  { "uint", "type" },
+			  { "long", "type" },
+			  { "ulong", "type" },
+			  { "usize", "type" },
+			  { "double", "type" },
+			  { "float", "type" },
+			  { "String", "type" },
+			  { "List", "type" },
+			  { "Array", "type" },
+			  { "Matrix4f", "type" },
+			  { "Vector3f", "type" },
+			  { "FILE", "type" },
+			  { "va_list", "type" },
+			  { "successful", "type" },
 			  { "true", "literal" },
 			  { "false", "literal" },
 			  { "null", "literal" },
+			  { "#define", "keyword" },
+			  { "#default", "keyword" },
+			  { "#set", "keyword" },
+			  { "#print", "keyword" },
+			  { "#print_error", "keyword" },
+			  { "#print_warning", "keyword" },
+			  { "#place", "keyword" },
+			  { "#place_error", "keyword" },
+			  { "#place_warning", "keyword" },
+			  { "#input", "keyword" },
+			  { "#done", "keyword" },
+			  { "#halt", "keyword" },
+			  { "#if", "keyword" },
+			  { "#elif", "keyword" },
+			  { "#else", "keyword" },
+			  { "#end", "keyword" },
+			  { "#unless", "keyword" },
+			  { "#import", "keyword" },
+			  { "#error", "keyword" },
+			  { "#warning", "keyword" },
+			  { "#get", "keyword" },
+			  { "#runtime_resource", "keyword" },
+			  { "#pragma", "keyword" },
 		  },
 		  "//" } );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	sd.setBlockComment( { "/*", "*/" } );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

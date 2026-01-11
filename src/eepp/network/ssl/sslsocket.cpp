@@ -60,8 +60,8 @@ bool SSLSocket::init() {
 			} else if ( FileSystem::fileExists( "/usr/share/ssl/certs/ca-bundle.crt" ) ) {
 				CertificatesPath = "/usr/share/ssl/certs/ca-bundle.crt";
 			}
-#elif EE_PLATFORM == EE_PLATFORM_BSD
-			// FreeBSD and OpenBSD
+#elif EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_MACOS
+			// FreeBSD and OpenBSD, also macOS keeps compatibility
 			if ( FileSystem::fileExists( "/etc/ssl/cert.pem" ) ) {
 				CertificatesPath = "/etc/ssl/cert.pem";
 			}
@@ -74,6 +74,10 @@ bool SSLSocket::init() {
 			if ( CertificatesPath.empty() ) {
 				if ( FileSystem::fileExists( Sys::getProcessPath() + "assets/ca-bundle.pem" ) ) {
 					CertificatesPath = Sys::getProcessPath() + "assets/ca-bundle.pem";
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+				} else if ( FileSystem::fileExists( Sys::getProcessPath() + "/../Resources/assets/ca-bundle.pem" ) ) {
+					CertificatesPath = Sys::getProcessPath() + "/../Resources/assets/ca-bundle.pem";
+#endif
 				} else {
 					CertificatesPath = "assets/ca-bundle.pem";
 				}

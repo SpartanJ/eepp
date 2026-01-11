@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addVerilog() {
+SyntaxDefinition& addVerilog() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Verilog",
 		  { "%.V$", "%.vl$", "%.vh$", "%.v$" },

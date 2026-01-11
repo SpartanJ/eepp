@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addAngelScript() {
+SyntaxDefinition& addAngelScript() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -23,31 +23,31 @@ void addAngelScript() {
 			  { { "&inout" }, "keyword" },
 			  { { "&in" }, "keyword" },
 			  { { "&out" }, "keyword" },
-			  { { "[%a_][%w_]*@" }, "keyword2" },
+			  { { "[%a_][%w_]*@" }, "type" },
 			  { { "[%-%+!~@%?:&|%^<>%*/=%%]" }, "operator" },
 			  { { "[%a_][%w_]*%f[(]" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
 
 		  },
 		  {
-			  { "float", "keyword2" },	  { "uint64", "keyword2" },	  { "uint", "keyword2" },
-			  { "int64", "keyword2" },	  { "mixin", "keyword" },	  { "set", "keyword" },
-			  { "get", "keyword" },		  { "uint16", "keyword2" },	  { "funcdef", "keyword" },
-			  { "false", "literal" },	  { "shared", "keyword" },	  { "uint32", "keyword2" },
-			  { "override", "keyword" },  { "class", "keyword" },	  { "int16", "keyword2" },
-			  { "external", "keyword" },  { "default", "keyword" },	  { "uint8", "keyword2" },
-			  { "protected", "keyword" }, { "int8", "keyword2" },	  { "typedef", "keyword" },
+			  { "float", "type" },		  { "uint64", "type" },		  { "uint", "type" },
+			  { "int64", "type" },		  { "mixin", "keyword" },	  { "set", "keyword" },
+			  { "get", "keyword" },		  { "uint16", "type" },		  { "funcdef", "keyword" },
+			  { "false", "literal" },	  { "shared", "keyword" },	  { "uint32", "type" },
+			  { "override", "keyword" },  { "class", "keyword" },	  { "int16", "type" },
+			  { "external", "keyword" },  { "default", "keyword" },	  { "uint8", "type" },
+			  { "protected", "keyword" }, { "int8", "type" },		  { "typedef", "keyword" },
 			  { "switch", "keyword" },	  { "private", "keyword" },	  { "final", "keyword" },
-			  { "if", "keyword" },		  { "int", "keyword2" },	  { "import", "keyword" },
+			  { "if", "keyword" },		  { "int", "type" },		  { "import", "keyword" },
 			  { "catch", "keyword" },	  { "return", "keyword" },	  { "case", "keyword" },
 			  { "and", "operator" },	  { "while", "keyword" },	  { "do", "keyword" },
 			  { "cast", "keyword" },	  { "break", "keyword" },	  { "continue", "keyword" },
 			  { "else", "keyword" },	  { "try", "keyword" },		  { "true", "literal" },
-			  { "function", "keyword" },  { "bool", "keyword2" },	  { "is", "operator" },
-			  { "property", "keyword" },  { "const", "keyword" },	  { "void", "keyword2" },
+			  { "function", "keyword" },  { "bool", "type" },		  { "is", "operator" },
+			  { "property", "keyword" },  { "const", "keyword" },	  { "void", "type" },
 			  { "abstract", "keyword" },  { "or", "operator" },		  { "for", "keyword" },
-			  { "explicit", "keyword" },  { "int32", "keyword2" },	  { "xor", "operator" },
-			  { "auto", "keyword" },	  { "namespace", "keyword" }, { "double", "keyword2" },
+			  { "explicit", "keyword" },  { "int32", "type" },		  { "xor", "operator" },
+			  { "auto", "keyword" },	  { "namespace", "keyword" }, { "double", "type" },
 			  { "null", "literal" },	  { "enum", "keyword" },	  { "interface", "keyword" },
 
 		  },
@@ -57,6 +57,8 @@ void addAngelScript() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
+	sd.setBlockComment( { "/*", "*/" } );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

@@ -40,7 +40,10 @@ class EE_API Image {
 		HDR = 12,
 		QOI = 13,
 		SVG = 14,
+		WEBP = 15,
 	};
+
+	static std::string formatToString( Format format );
 
 	/** @enum PixelFormat Format Pixel formats to write into a texture image. */
 	enum PixelFormat {
@@ -73,19 +76,20 @@ class EE_API Image {
 	};
 
 	/** @enum SaveType Defines the format to save a texture. */
-	enum SaveType {
-		SAVE_TYPE_UNKNOWN = -1,
-		SAVE_TYPE_TGA = 0,
-		SAVE_TYPE_BMP = 1,
-		SAVE_TYPE_PNG = 2,
-		SAVE_TYPE_DDS = 3,
-		SAVE_TYPE_JPG = 4,
-		SAVE_TYPE_QOI = 5
+	enum class SaveType {
+		Unknown = -1,
+		TGA = 0,
+		BMP = 1,
+		PNG = 2,
+		DDS = 3,
+		JPG = 4,
+		QOI = 5,
+		WEBP = 6,
 	};
 
 	class FormatConfiguration {
 	  public:
-		FormatConfiguration() : mSvgScale( 1.f ), mJpegSaveQuality( 85 ) {}
+		FormatConfiguration() {}
 
 		/** @return The current Jpeg save quality */
 		const Uint32& jpegSaveQuality() const { return mJpegSaveQuality; }
@@ -96,6 +100,38 @@ class EE_API Image {
 			mJpegSaveQuality = level;
 		}
 
+		/** @return The current WebP save quality */
+		int webpSaveQuality() const { return mWebPSaveQuality; }
+
+		/** Set the save quality of WebP files ( between 0 and 100 )
+		 * For lossy, 0 gives the smallest
+		 * size and 100 the largest. For lossless, this
+		 * parameter is the amount of effort put into the
+		 * compression: 0 is the fastest but gives larger
+		 * files compared to the slowest, but best, 100.
+		 */
+		void webpSaveQuality( int level ) {
+			level = eeclamp<int>( level, 0, 100 );
+			mWebPSaveQuality = level;
+		}
+
+		/** @return The current WebP save compression method. */
+		int webpCompressionMethod() const { return mWebPCompressionMethod; }
+
+		/** Set the save compression method of WebP files ( between 0 and 6 )
+		 * quality/speed trade-off (0=fast, 6=slower-better)
+		 */
+		void webpCompressionMethod( int method ) {
+			method = eeclamp<int>( method, 0, 6 );
+			mWebPCompressionMethod = method;
+		}
+
+		/** @return True if WebP should be saved in loseless format */
+		bool webpSaveLossless() const { return mWebPSaveLossless; }
+
+		/** Set if WebP should be saved in loseless format */
+		void webpSaveLossless( bool set ) { mWebPSaveLossless = set; }
+
 		/** @return The current SVG default scale */
 		const Float& svgScale() const { return mSvgScale; }
 
@@ -103,15 +139,18 @@ class EE_API Image {
 		void svgScale( Float scale ) { mSvgScale = scale; }
 
 	  protected:
-		Float mSvgScale;
-		Uint32 mJpegSaveQuality;
+		Float mSvgScale{ 1.f };
+		Uint32 mJpegSaveQuality{ 85 };
+		int mWebPSaveQuality{ 85 };
+		int mWebPCompressionMethod{ 3 };
+		bool mWebPSaveLossless{ false };
 	};
 
 	/* @return an array of images and the delay of the first frame */
 	static std::pair<std::vector<Image>, int> loadGif( IOStream& stream );
 
 	/** @return The File Extension of a Save Type */
-	static std::string saveTypeToExtension( const Int32& Format );
+	static std::string saveTypeToExtension( SaveType Format );
 
 	/** @return The save type from a given extension ( example: "png" => SaveType::SAVE_TYPE_PNG )
 	 */
@@ -166,6 +205,11 @@ class EE_API Image {
 	 * @param path the image path
 	 */
 	static Image::Format getFormat( const unsigned char* data, const size_t& dataSize );
+
+	/** @return The image format if valid
+	 * @param stream the image stream
+	 */
+	static Image::Format getFormat( IOStream& stream );
 
 	/** @return If the path or file name has a supported image file extension
 	 *   @param path the image path or file name
@@ -266,6 +310,17 @@ class EE_API Image {
 	Image( IOStream& stream, const unsigned int& forceChannels = 0,
 		   const FormatConfiguration& formatConfiguration = FormatConfiguration() );
 
+	Image( const Image& other );
+
+	/** Overload the assignment operator to ensure the image copy */
+	Image& operator=( const Image& right );
+
+    /** @brief Move constructor */
+    Image( Image&& other ) noexcept;
+
+    /** @brief Move assignment operator */
+    Image& operator=( Image&& other ) noexcept;
+
 	virtual ~Image();
 
 	/** Create an empty image data */
@@ -349,7 +404,7 @@ class EE_API Image {
 	/** Flip the image ( rotate the image 90º ) */
 	virtual void flip();
 
-	/** Create a thumnail of the image */
+	/** Create a thumbnail of the image */
 	Graphics::Image* thumbnail( const Uint32& maxWidth, const Uint32& maxHeight,
 								ResamplerFilter filter = ResamplerFilter::RESAMPLER_LANCZOS4 );
 
@@ -369,14 +424,35 @@ class EE_API Image {
 	/** @return A copy of the original image */
 	Graphics::Image* copy();
 
-	/** Overload the assigment operator to ensure the image copy */
-	Graphics::Image& operator=( const Image& right );
-
 	/** Set the image format configuration */
 	void setImageFormatConfiguration( const FormatConfiguration& imageFormatConfiguration );
 
 	/** @return The image format configuration */
 	const FormatConfiguration& getImageFormatConfiguration() const;
+
+	struct DiffResult {
+		Image* diffImage{ nullptr }; ///< The visual diff image. Null if dimensions mismatched.
+		long long numDifferentPixels{ 0 }; ///< The number of pixels that exceeded the threshold.
+		double maxDeltaE{ 0.0 };		   ///< The maximum perceptual difference (Delta E) found.
+		bool areSame() const { return numDifferentPixels == 0; }
+		~DiffResult() { eeSAFE_DELETE( diffImage ); }
+	};
+
+	/**
+	 * @brief Performs a visual and perceptual diff against another image.
+	 *
+	 * This method compares the current image with another using the CIEDE2000 Delta E formula,
+	 * which mimics human perception of color differences.
+	 *
+	 * @param other The image to compare against.
+	 * @param threshold The Delta E threshold. Differences below this value are ignored.
+	 *        A value of 1.0 is roughly the limit of human perception.
+	 *        A common default for tests is 2.3 (a "just noticeable difference").
+	 * @param diffColor The color used to highlight differing pixels in the output image.
+	 * @return A DiffResult struct containing the diff image and statistics.
+	 */
+	DiffResult diff( const Image& other, float threshold = 2.3f,
+					 const Color& diffColor = Color( 255, 0, 255, 255 ) ) const;
 
   protected:
 	Uint8* mPixels;
@@ -394,6 +470,8 @@ class EE_API Image {
 	void loadFromPack( Pack* Pack, const std::string& FilePackPath );
 
 	void svgLoad( NSVGimage* image );
+
+	void webpLoad( const Uint8* imageData, size_t imageDataSize );
 };
 
 }} // namespace EE::Graphics

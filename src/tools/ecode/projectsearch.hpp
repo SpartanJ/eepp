@@ -21,10 +21,26 @@ using GlobMatch = std::pair<std::string, bool>; // where string is the glob and 
 
 class ProjectSearch {
   public:
+	struct SearchConfig {
+		std::string searchString;
+		bool caseSensitive{ false };
+		bool wholeWord{ false };
+		TextDocument::FindReplaceType type{ TextDocument::FindReplaceType::Normal };
+
+		SearchConfig() {}
+
+		SearchConfig( std::string searchString, bool caseSensitive, bool wholeWord,
+					  TextDocument::FindReplaceType type ) :
+			searchString( std::move( searchString ) ),
+			caseSensitive( caseSensitive ),
+			wholeWord( wholeWord ),
+			type( type ) {}
+	};
+
 	struct ResultData {
 		struct Result {
-			Result( const String& line, const TextRange& pos, Int64 s, Int64 e ) :
-				line( line ), position( pos ), start( s ), end( e ) {}
+			Result( String&& line, const TextRange& pos, Int64 s, Int64 e ) :
+				line( std::move( line ) ), position( pos ), start( s ), end( e ) {}
 			Result() {}
 			String line;
 			TextRange position;
@@ -32,11 +48,20 @@ class ProjectSearch {
 			Int64 end{ 0 };
 			bool selected{ true };
 			std::vector<std::string> captures;
-			std::shared_ptr<TextDocument> openDoc;
 		};
 		std::string file;
 		std::vector<Result> results;
+		std::shared_ptr<TextDocument> openDoc{ nullptr };
 		bool selected{ true };
+
+		ResultData() {}
+
+		ResultData( std::string&& file, std::vector<Result>&& results,
+					std::shared_ptr<TextDocument> openDoc = {}, bool selected = true ) :
+			file( std::move( file ) ),
+			results( std::move( results ) ),
+			openDoc( std::move( openDoc ) ),
+			selected( selected ) {}
 
 		void setResultsSelected( bool selected ) {
 			this->selected = selected;
@@ -61,8 +86,9 @@ class ProjectSearch {
 		}
 	};
 
-	typedef std::vector<ResultData> Result;
-	typedef std::function<void( const Result& )> ResultCb;
+	using Result = std::vector<ResultData>;
+	using ConsolidatedResult = std::pair<SearchConfig, Result>;
+	using ResultCb = std::function<void( const ConsolidatedResult& )>;
 
 	class ResultModel : public Model {
 	  public:
@@ -213,14 +239,20 @@ class ProjectSearch {
 		return std::make_shared<ResultModel>( result );
 	}
 
-	static void
-	find( const std::vector<std::string> files, const std::string& string, ResultCb result,
-		  bool caseSensitive, bool wholeWord = false,
-		  const TextDocument::FindReplaceType& type = TextDocument::FindReplaceType::Normal,
-		  const std::vector<GlobMatch>& pathFilters = {}, std::string basePath = "",
-		  std::vector<std::shared_ptr<TextDocument>> openDocs = {} );
+	static std::vector<ProjectSearch::ResultData::Result>
+	fileResFromDoc( const std::string& string, bool caseSensitive, bool wholeWord,
+					TextDocument::FindReplaceType type, std::shared_ptr<TextDocument> doc );
 
-	static void
+	struct FindData {
+		Mutex resMutex;
+		Mutex countMutex;
+		int resCount{ 0 };
+		ProjectSearch::Result res;
+		bool active{ true };
+		Uint64 taskTag{ 0 };
+	};
+
+	static FindData*
 	find( const std::vector<std::string> files, std::string string,
 		  std::shared_ptr<ThreadPool> pool, ResultCb result, bool caseSensitive,
 		  bool wholeWord = false,

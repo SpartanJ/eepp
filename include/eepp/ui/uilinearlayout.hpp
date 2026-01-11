@@ -32,8 +32,13 @@ class EE_API UILinearLayout : public UILayout {
 
 	void updateLayout();
 
+	void setUpdateLayoutEvenIfNotVisible( bool update ) { mUpdateLayoutEvenIfNotVisible = update; }
+
+	bool updatesLayoutEvenIfNotVisible() const { return mUpdateLayoutEvenIfNotVisible; }
+
   protected:
 	UIOrientation mOrientation;
+	bool mUpdateLayoutEvenIfNotVisible{ false };
 
 	UILinearLayout();
 
@@ -47,9 +52,9 @@ class EE_API UILinearLayout : public UILayout {
 
 	Sizei getTotalUsedSize();
 
-	void applyWidthPolicyOnChilds();
+	void applyWidthPolicyOnChildren();
 
-	void applyHeightPolicyOnChilds();
+	void applyHeightPolicyOnChildren();
 };
 
 }} // namespace EE::UI

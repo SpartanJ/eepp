@@ -324,12 +324,12 @@ void Model::releaseResourceMutex() {
 	mResourceLock.unlock();
 }
 
-Uint32 Model::subsribeModelStyler( const ModelStyler& styler ) {
+Uint32 Model::subscribeModelStyler( const ModelStyler& styler ) {
 	mStylers[++mLastStylerId] = styler;
 	return mLastStylerId;
 }
 
-void Model::unsubsribeModelStyler( Uint32 id ) {
+void Model::unsubscribeModelStyler( Uint32 id ) {
 	mStylers.erase( id );
 }
 

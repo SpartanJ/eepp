@@ -17,10 +17,11 @@ namespace EE { namespace UI {
 
 class UIWidget;
 
-typedef std::map<Uint64, std::string> ShortcutMap;
-
 class EE_API KeyBindings {
+
   public:
+	typedef std::map<Uint64, std::string> ShortcutMap;
+
 	struct Shortcut {
 		Shortcut() {}
 		Shortcut( Keycode key, Uint32 mod ) : key( key ), mod( mod ) {}
@@ -66,6 +67,8 @@ class EE_API KeyBindings {
 
 	void removeKeybind( const Shortcut& keys );
 
+	void removeKeybind( const std::string& kb );
+
 	bool existsKeybind( const Shortcut& keys );
 
 	bool hasCommand( const std::string& command );
@@ -82,7 +85,9 @@ class EE_API KeyBindings {
 
 	const ShortcutMap& getShortcutMap() const;
 
-	const std::map<std::string, Uint64> getKeybindings() const;
+	const std::map<std::string, Uint64>& getKeybindings() const;
+
+	Shortcut getShortcutFromCommand( const std::string& cmd ) const;
 
 	std::string getShortcutString( Shortcut shortcut, bool format = false ) const;
 

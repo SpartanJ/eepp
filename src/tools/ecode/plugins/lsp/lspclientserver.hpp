@@ -28,6 +28,10 @@ class LSPClientServerManager;
 
 class LSPClientServer {
   public:
+	static void sanitizeCommand( std::string& cmd, const std::string& workspaceFolder );
+
+	static void sanitizeCommand( nlohmann::json& jsonObj, const std::string& workspaceFolder );
+
 	static PluginIDType getID( const json& json );
 
 	using IdType = PluginIDType;
@@ -75,6 +79,8 @@ class LSPClientServer {
 
 	bool isReady() const;
 
+	bool isShuttingDown() const;
+
 	const LSPServerCapabilities& getCapabilities() const;
 
 	LSPClientServerManager* getManager() const;
@@ -91,22 +97,20 @@ class LSPClientServer {
 
 	const LSPDefinition& getDefinition() const { return mLSP; }
 
-	LSPRequestHandle documentSymbols( const URI& document, const JsonReplyHandler& h,
-									  const JsonReplyHandler& eh );
+	void documentSymbols( const URI& document, const JsonReplyHandler& h,
+						  const JsonReplyHandler& eh );
 
-	LSPRequestHandle documentSymbols( const URI& document,
-									  const WReplyHandler<LSPSymbolInformationList>& h,
-									  const ReplyHandler<LSPResponseError>& eh = {} );
+	void documentSymbols( const URI& document, const WReplyHandler<LSPSymbolInformationList>& h,
+						  const ReplyHandler<LSPResponseError>& eh = {} );
 
-	LSPClientServer::LSPRequestHandle documentFoldingRange( const URI& document,
-															const JsonReplyHandler& h,
-															const JsonReplyHandler& eh );
+	void documentFoldingRange( const URI& document, const JsonReplyHandler& h,
+							   const JsonReplyHandler& eh );
 
-	LSPRequestHandle documentFoldingRange( const URI& document,
-										   const ReplyHandler<std::vector<LSPFoldingRange>>& h,
-										   const ReplyHandler<LSPResponseError>& eh = {} );
+	void documentFoldingRange( const URI& document,
+							   const ReplyHandler<std::vector<LSPFoldingRange>>& h,
+							   const ReplyHandler<LSPResponseError>& eh = {} );
 
-	LSPRequestHandle documentSymbolsBroadcast( const URI& document );
+	void documentSymbolsBroadcast( const URI& document );
 
 	LSPRequestHandle didOpen( const URI& document, const std::string& text, int version );
 
@@ -124,8 +128,8 @@ class LSPClientServer {
 	LSPRequestHandle didChange( TextDocument* doc,
 								const std::vector<DocumentContentChange>& change = {} );
 
-	void queueDidChange( const URI& document, int version, const std::string& text,
-						 const std::vector<DocumentContentChange>& change = {} );
+	void queueAndProcess( const URI& document, int version,
+						  const std::vector<DocumentContentChange>& change = {} );
 
 	void processDidChangeQueue();
 
@@ -141,7 +145,12 @@ class LSPClientServer {
 
 	bool hasDocument( const URI& uri ) const;
 
+	bool hasDocumentClient( LSPDocumentClient* client ) const;
+
 	bool hasDocuments() const;
+
+	LSPRequestHandle didChangeConfiguration( const nlohmann::json& settings,
+											 const std::string& workspaceFolder, bool async );
 
 	LSPRequestHandle didChangeWorkspaceFolders( const std::vector<LSPWorkspaceFolder>& added,
 												const std::vector<LSPWorkspaceFolder>& removed,
@@ -271,13 +280,16 @@ class LSPClientServer {
 	std::unordered_map<TextDocument*, std::unique_ptr<LSPDocumentClient>> mClients;
 	using HandlersMap = std::map<PluginIDType, std::pair<JsonReplyHandler, JsonReplyHandler>>;
 	HandlersMap mHandlers;
-	Mutex mClientsMutex;
+	mutable Mutex mClientsMutex;
 	Mutex mHandlersMutex;
 	bool mReady{ false };
 	bool mEnded{ false };
 	bool mUsingProcess{ false };
 	bool mUsingSocket{ false };
 	bool mNotifiedServerError{ false };
+	bool mShuttingDown{ false };
+	bool mIsProcessingQueue{ false };
+	std::atomic<int> mWritingStdIn{ 0 };
 	struct QueueMessage {
 		json msg;
 		JsonReplyHandler h;
@@ -297,9 +309,9 @@ class LSPClientServer {
 	};
 	std::queue<DidChangeQueue> mDidChangeQueue;
 	Mutex mDidChangeMutex;
+	Mutex mQueuedMessagesMutex;
 	std::mutex mShutdownMutex;
 	std::condition_variable mShutdownCond;
-
 	std::atomic<int> mLastMsgId{ 0 };
 
 	void readStdOut( const char* bytes, size_t n );
@@ -309,9 +321,12 @@ class LSPClientServer {
 	LSPRequestHandle write( json&& msg, const JsonReplyHandler& h = nullptr,
 							const JsonReplyHandler& eh = nullptr, const int id = 0 );
 
+	void writeAsync( json&& msg, const JsonReplyHandler& h = nullptr,
+					 const JsonReplyHandler& eh = nullptr, const int id = 0 );
+
 	void initialize();
 
-	void sendQueuedMessages();
+	void sendQueuedMessagesAsync();
 
 	void processNotification( const json& msg );
 

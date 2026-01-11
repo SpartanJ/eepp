@@ -16,6 +16,7 @@ void SoundFileFactory::registerReader()
 	// Create a new factory with the functions provided by the class
 	ReaderFactory factory;
 	factory.check = &T::check;
+	factory.usesFileExtension = &T::usesFileExtension;
 	factory.create = &priv::createReader<T>;
 
 	// Add it

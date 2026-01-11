@@ -29,10 +29,10 @@ UIViewPager::UIViewPager() :
 	mCurrentPage( 0 ),
 	mTotalPages( 0 ),
 	mTimingFunction( Ease::Interpolation::SineIn ) {
-	mFlags |= UI_OWNS_CHILDS_POSITION;
+	mFlags |= UI_OWNS_CHILDREN_POSITION;
 	mContainer = UIWidget::New();
 	mContainer->setParent( this );
-	mContainer->setFlags( UI_OWNS_CHILDS_POSITION );
+	mContainer->setFlags( UI_OWNS_CHILDREN_POSITION );
 	setClipType( ClipType::ContentBox );
 }
 
@@ -56,11 +56,11 @@ void UIViewPager::onChildCountChange( Node* child, const bool& removed ) {
 
 	if ( child != mContainer ) {
 		mTotalPages = mContainer->getChildCount();
-		updateChilds();
+		updateChildren();
 	}
 
 	if ( !removed && child != mContainer ) {
-		child->on( Event::OnPositionChange, [this]( const Event* ) { updateChilds(); } );
+		child->on( Event::OnPositionChange, [this]( const Event* ) { updateChildren(); } );
 	}
 
 	UIWidget::onChildCountChange( child, removed );
@@ -116,7 +116,7 @@ void UIViewPager::setTimingFunction( const Ease::Interpolation& timingFunction )
 }
 
 void UIViewPager::onSizeChange() {
-	updateChilds();
+	updateChildren();
 	UIWidget::onSizeChange();
 }
 
@@ -141,7 +141,7 @@ Uint32 UIViewPager::onMessage( const NodeMessage* Msg ) {
 	return UIWidget::onMessage( Msg );
 }
 
-void UIViewPager::updateChilds() {
+void UIViewPager::updateChildren() {
 	Float containerLength = mOrientation == UIOrientation::Horizontal
 								? getSize().getWidth() * mTotalPages
 								: getSize().getHeight() * mTotalPages;
@@ -239,7 +239,7 @@ Uint32 UIViewPager::onCalculateDrag( const Vector2f&, const Uint32& flags ) {
 void UIViewPager::onMouseDownEvent() {
 	if ( !mDragging && !mLocked && !getEventDispatcher()->isNodeDragging() ) {
 		mDragging = true;
-		mMouseDownPos = getEventDispatcher()->getMousePos().asFloat();
+		mMouseDownPos = getEventDispatcher()->getMousePosf();
 		mContainer->clearActions();
 		mInitialDisplacement = mOrientation == UIOrientation::Horizontal
 								   ? -mContainer->getPixelsPosition().x
@@ -253,8 +253,8 @@ void UIViewPager::onMouseMoveEvent() {
 	if ( mDragging ) {
 		mDisplacement = mInitialDisplacement +
 						( mOrientation == UIOrientation::Horizontal
-							  ? mMouseDownPos.x - getEventDispatcher()->getMousePos().asFloat().x
-							  : mMouseDownPos.y - getEventDispatcher()->getMousePos().asFloat().y );
+							  ? mMouseDownPos.x - getEventDispatcher()->getMousePosf().x
+							  : mMouseDownPos.y - getEventDispatcher()->getMousePosf().y );
 
 		limitDisplacement();
 

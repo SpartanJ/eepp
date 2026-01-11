@@ -6,6 +6,7 @@
 #include <eepp/audio/soundfilewriterogg.hpp>
 #include <eepp/audio/soundfilewriterwav.hpp>
 #include <eepp/core/debug.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/lock.hpp>
@@ -37,6 +38,36 @@ namespace EE { namespace Audio {
 
 SoundFileFactory::ReaderFactoryArray SoundFileFactory::s_readers;
 SoundFileFactory::WriterFactoryArray SoundFileFactory::s_writers;
+
+bool SoundFileFactory::isKnownFileExtension( const std::string& path ) {
+	ensureDefaultReadersWritersRegistered();
+
+	auto ext = FileSystem::fileExtension( path, true );
+	for ( const auto& reader : s_readers ) {
+		if ( reader.usesFileExtension( ext ) )
+			return true;
+	}
+	return false;
+
+}
+
+bool SoundFileFactory::isValidAudio( IOStream& stream ) {
+	ensureDefaultReadersWritersRegistered();
+
+	for ( const auto& reader : s_readers ) {
+		stream.seek( 0 );
+		if ( reader.check( stream ) )
+			return true;
+	}
+	return false;
+}
+
+bool SoundFileFactory::isValidAudioFile( const std::string& path ) {
+	IOStreamFile f( path );
+	if ( !f.isOpen() )
+		return false;
+	return isValidAudio( f );
+}
 
 SoundFileReader* SoundFileFactory::createReaderFromFilename( const std::string& filename ) {
 	// Register the built-in readers/writers on first call

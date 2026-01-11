@@ -134,9 +134,9 @@ void UITextureRegion::draw() {
 }
 
 void UITextureRegion::drawTextureRegion() {
-	mTextureRegion->draw( (Float)mScreenPosi.x + (int)mAlignOffset.x,
-						  (Float)mScreenPosi.y + (int)mAlignOffset.y, mColor, 0.f, Vector2f::One,
-						  getBlendMode(), mRender );
+	mTextureRegion->draw( std::trunc( mScreenPos.x ) + (int)mAlignOffset.x,
+						  std::trunc( mScreenPos.y ) + (int)mAlignOffset.y, mColor, 0.f,
+						  Vector2f::One, getBlendMode(), mRender );
 }
 
 void UITextureRegion::setAlpha( const Float& alpha ) {

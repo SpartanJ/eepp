@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   Linux:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
@@ -19,23 +19,21 @@ jobs:
         sudo add-apt-repository -y universe
         sudo add-apt-repository -y multiverse
         sudo apt update
-        sudo apt install -y gcc-12 g++-12 wget libsdl2-2.0-0 libsdl2-dev
-        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 10
-        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 10
-        sudo update-alternatives --install /usr/bin/cc cc /usr/bin/gcc 30
-        sudo update-alternatives --set cc /usr/bin/gcc
-        sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++ 30
-        sudo update-alternatives --set c++ /usr/bin/g++
-        sudo update-alternatives --config gcc
-        sudo update-alternatives --config g++
-        wget https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-linux.tar.gz
-        tar xvzf premake-5.0.0-beta2-linux.tar.gz
+        sudo apt install -y gcc-13 g++-13 wget libsdl2-2.0-0 libsdl2-dev mesa-utils xvfb
+        wget https://cdn.ensoft.dev/eepp-assets/premake-5.0.0-beta6-linux.tar.gz
+        tar xvzf premake-5.0.0-beta6-linux.tar.gz
     - name: Build
       run: |
-        ./premake5 --with-text-shaper --disable-static-build gmake2
+        ./premake5 --disable-static-build gmake
         cd make/linux
         make all -j$(nproc) -e config=release_x86_64
     - name: Unit Tests
       run: |
         cd bin/unit_tests
-        ./eepp-unit_tests
+        xvfb-run ./eepp-unit_tests
+    - name: Upload artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-test-output
+        path: bin/unit_tests/output/*

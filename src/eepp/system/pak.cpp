@@ -61,9 +61,9 @@ bool Pak::open( const std::string& path ) {
 		if ( checkPack() == 0 ) {
 			mPak.pakFilesNum = mPak.header.dir_length / 64; // Number of files in the PAK
 
-			mPak.fs->seek( mPak.header.dir_offset ); // Seek to read the pakEntrys
+			mPak.fs->seek( mPak.header.dir_offset ); // Seek to read the pakEntries
 
-			for ( Uint32 i = 0; i < mPak.pakFilesNum; i++ ) { // Read all the pakEntrys
+			for ( Uint32 i = 0; i < mPak.pakFilesNum; i++ ) { // Read all the pakEntries
 				pakEntry Entry;
 
 				mPak.fs->read( reinterpret_cast<char*>( &Entry ), sizeof( pakEntry ) );
@@ -238,11 +238,11 @@ bool Pak::addFile( const Uint8* data, const Uint32& dataSize, const std::string&
 
 			std::vector<pakEntry> pakE;
 			pakE.resize( mPak.pakFilesNum +
-						 1 ); // Alloc space for all the pakEntrys and the new one
+						 1 ); // Alloc space for all the pakEntries and the new one
 
-			mPak.fs->seek( mPak.header.dir_offset ); // seek to the file pakEntrys
+			mPak.fs->seek( mPak.header.dir_offset ); // seek to the file pakEntries
 			mPak.fs->read( reinterpret_cast<char*>( &pakE[0] ),
-						   sizeof( pakEntry ) * mPak.pakFilesNum ); // get all the pakEntrys
+						   sizeof( pakEntry ) * mPak.pakFilesNum ); // get all the pakEntries
 
 			mPak.header.dir_offset = mPak.header.dir_offset + fsize; // Update the new dir_offset
 			mPak.header.dir_length =
@@ -263,7 +263,7 @@ bool Pak::addFile( const Uint8* data, const Uint32& dataSize, const std::string&
 			pakE[mPak.pakFilesNum].file_position = mPak.header.dir_offset - fsize;
 			pakE[mPak.pakFilesNum].file_length = fsize;
 
-			// Update the new pakEntrys on pakFile
+			// Update the new pakEntries on pakFile
 			mPak.fs->write( reinterpret_cast<const char*>( &pakE[0] ),
 							(ios_size)( sizeof( pakEntry ) * pakE.size() ) );
 

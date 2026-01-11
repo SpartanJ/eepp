@@ -8,6 +8,8 @@ namespace EE { namespace Math {
 
 template <typename T> class tRECT {
   public:
+	static const tRECT<T> Zero;
+
 	T Left, Right, Top, Bottom;
 
 	tRECT( T left, T top, T right, T bottom );
@@ -19,6 +21,18 @@ template <typename T> class tRECT {
 	tRECT<T> copy() const;
 
 	tRECT<T>& setPosition( const Vector2<T>& pos );
+
+	tRECT<T>& setPositionX( const T& posX );
+
+	tRECT<T>& setPositionY( const T& posY );
+
+	tRECT<T>& setSize( const tSize<T>& size );
+
+	tRECT<T>& move( const Vector2<T>& offset );
+
+	tRECT<T>& moveX( const T& offsetX );
+
+	tRECT<T>& moveY( const T& offsetY );
 
 	bool intersect( const tRECT<T>& rect ) const;
 
@@ -65,6 +79,8 @@ template <typename T> class tRECT {
 
 	T getHeight() const;
 
+	void normalize();
+
 	tRECT<T> ceil() const;
 
 	tRECT<T> floor() const;
@@ -87,6 +103,8 @@ template <typename T> class tRECT {
 
 	tRECT<int> asInt() const;
 };
+
+template <typename T> const tRECT<T> tRECT<T>::Zero = tRECT<T>( 0, 0, 0, 0 );
 
 template <typename T> tRECT<Float> tRECT<T>::asFloat() const {
 	return tRECT<Float>( Left, Top, Right, Bottom );
@@ -249,6 +267,11 @@ template <typename T> tSize<T> tRECT<T>::getSize() const {
 	return tSize<T>( eeabs( Right - Left ), eeabs( Bottom - Top ) );
 }
 
+template <typename T> void tRECT<T>::normalize() {
+	if ( Left > Right ) std::swap( Left, Right );
+	if ( Top > Bottom ) std::swap( Top, Bottom );
+}
+
 template <typename T> T tRECT<T>::getWidth() const {
 	return eeabs( Right - Left );
 }
@@ -263,6 +286,46 @@ template <typename T> tRECT<T>& tRECT<T>::setPosition( const Vector2<T>& pos ) {
 	Bottom = pos.y + size.y;
 	Right = pos.x + size.x;
 	Top = pos.y;
+	return *this;
+}
+
+template <typename T> tRECT<T>& tRECT<T>::setPositionX( const T& posX ) {
+	auto size = getSize();
+	Left = posX;
+	Right = posX + size.x;
+	return *this;
+}
+
+template <typename T> tRECT<T>& tRECT<T>::setPositionY( const T& posY ) {
+	auto size = getSize();
+	Bottom = posY + size.y;
+	Top = posY;
+	return *this;
+}
+
+template <typename T> tRECT<T>& tRECT<T>::setSize( const tSize<T>& size ) {
+	Bottom = Top + size.y;
+	Right = Left + size.x;
+	return *this;
+}
+
+template <typename T> tRECT<T>& tRECT<T>::move( const Vector2<T>& offset ) {
+	Left += offset.x;
+	Bottom += offset.y;
+	Right += offset.x;
+	Top += offset.y;
+	return *this;
+}
+
+template <typename T> tRECT<T>& tRECT<T>::moveX( const T& offsetX ) {
+	Left += offsetX;
+	Right += offsetX;
+	return *this;
+}
+
+template <typename T> tRECT<T>& tRECT<T>::moveY( const T& offsetY ) {
+	Bottom += offsetY;
+	Top += offsetY;
 	return *this;
 }
 
@@ -355,13 +418,13 @@ template <typename T> Vector2<T> tRECT<T>::clampVector( const Vector2<T>& Vect )
 }
 
 template <typename T> Vector2<T> tRECT<T>::wrapVector( const Vector2<T>& Vect ) const {
-	T ix = eeabs( Right - Left );
-	T modx = eemod( Vect.x - Left, ix );
-	T x = ( modx > 0 ) ? modx : modx + ix;
+	T iX = eeabs( Right - Left );
+	T modx = eemod( Vect.x - Left, iX );
+	T x = ( modx > 0 ) ? modx : modx + iX;
 
-	T iy = eeabs( Top - Top );
-	T mody = eemod( Vect.y - Top, iy );
-	T y = ( mody > 0 ) ? mody : mody + iy;
+	T iY = eeabs( Top - Top );
+	T mody = eemod( Vect.y - Top, iY );
+	T y = ( mody > 0 ) ? mody : mody + iY;
 
 	return Vector2<T>( x + Left, y + Top );
 }

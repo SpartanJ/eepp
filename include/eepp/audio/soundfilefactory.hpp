@@ -22,6 +22,15 @@ class SoundFileWriter;
 ////////////////////////////////////////////////////////////
 class EE_API SoundFileFactory {
   public:
+  	// @return True if the file path or extension passed is a known sound file extension
+  	static bool isKnownFileExtension( const std::string& pathOrExtension );
+
+  	// @return True if the file path contains a valid sound file
+  	static bool isValidAudioFile( const std::string& path );
+
+  	// @return True if the stream contains a valid sound file
+  	static bool isValidAudio( IOStream& stream );
+
 	/// \brief Register a new reader
 	/// \see unregisterReader
 	template <typename T> static void registerReader();
@@ -100,6 +109,7 @@ class EE_API SoundFileFactory {
   private:
 	struct ReaderFactory {
 		bool ( *check )( IOStream& );
+		bool ( *usesFileExtension )( std::string_view );
 		SoundFileReader* ( *create )();
 	};
 	typedef std::vector<ReaderFactory> ReaderFactoryArray;

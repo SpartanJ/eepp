@@ -39,6 +39,8 @@ class LSPDocumentClient : public TextDocument::Client, public FoldRangeProvider 
 	virtual void onDocumentMoved( TextDocument* );
 	virtual void onDocumentReloaded( TextDocument* );
 	virtual void onDocumentReset( TextDocument* );
+	virtual void onDocumentSyntaxDefinitionChange( const SyntaxDefinition& );
+	Client::Type getTextDocumentClientType() { return TextDocument::Client::Auxiliary; }
 
 	void notifyOpen();
 
@@ -82,8 +84,10 @@ class LSPDocumentClient : public TextDocument::Client, public FoldRangeProvider 
 	std::vector<LSPCodeLens> mCodeLens;
 	bool mRunningSemanticTokens{ false };
 	bool mWaitingSemanticTokensResponse{ false };
+	bool mProcessingSemanticTokensResponse{ false };
 	bool mShutdown{ false };
 	bool mFirstHighlight{ true };
+	bool mAlreadyRequestedFoldingRanges{ false };
 
 	void refreshTag();
 

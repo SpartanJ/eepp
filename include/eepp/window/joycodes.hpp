@@ -16,7 +16,7 @@ enum JoystickHatPosition {
 	HAT_LEFTDOWN = ( HAT_LEFT | HAT_DOWN )
 };
 
-/** @enum JoystickAxis enumarates the joysticks axis */
+/** @enum JoystickAxis enumerates the joysticks axis */
 enum JoystickAxis { AXIS_X = 0, AXIS_Y = 1, AXIS_X2 = 3, AXIS_Y2 = 2 };
 
 #define AXIS_MAX ( 1 )

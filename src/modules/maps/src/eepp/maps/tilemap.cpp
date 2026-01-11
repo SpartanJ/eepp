@@ -210,7 +210,7 @@ MapLayer* TileMap::getLayer( const std::string& name ) {
 void TileMap::draw() {
 	GlobalBatchRenderer::instance()->draw();
 
-	if ( getClipedArea() ) {
+	if ( getClippedArea() ) {
 		GLi->getClippingMask()->clipPlaneEnable( mScreenPos.x, mScreenPos.y, mViewSize.x,
 												 mViewSize.y );
 	}
@@ -248,7 +248,7 @@ void TileMap::draw() {
 
 	GLi->popMatrix();
 
-	if ( getClipedArea() ) {
+	if ( getClippedArea() ) {
 		GLi->getClippingMask()->clipPlaneDisable();
 	}
 }
@@ -565,11 +565,11 @@ Uint32 TileMap::getDrawBackground() const {
 	return mFlags & MAP_FLAG_DRAW_BACKGROUND;
 }
 
-bool TileMap::getClipedArea() const {
+bool TileMap::getClippedArea() const {
 	return 0 != ( mFlags & MAP_FLAG_CLIP_AREA );
 }
 
-void TileMap::setClipedArea( const bool& clip ) {
+void TileMap::setClippedArea( const bool& clip ) {
 	BitOp::setBitFlagValue( &mFlags, MAP_FLAG_CLIP_AREA, clip ? 1 : 0 );
 }
 

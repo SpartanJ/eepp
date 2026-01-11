@@ -1,3 +1,15 @@
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <string>
+#include <tabulate/tabulate.hpp>
+#ifdef UUID
+#undef UUID
+#endif
+#ifdef KEY_EXECUTE
+#undef KEY_EXECUTE
+#endif
+
 #include "featureshealth.hpp"
 #include "plugins/debugger/debuggerplugin.hpp"
 #include "plugins/formatter/formatterplugin.hpp"
@@ -9,12 +21,10 @@
 #include <eepp/ui/uiiconthememanager.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitableview.hpp>
-#include <tabulate/tabulate.hpp>
 
 using namespace EE::System;
 using namespace EE::UI::Doc;
 using namespace EE::UI;
-using namespace tabulate;
 
 namespace ecode {
 
@@ -32,6 +42,16 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 	bool ownsDebugger = false;
 
 	const auto& definitions = SyntaxDefinitionManager::instance()->getDefinitions();
+	const auto& preDefinitions = SyntaxDefinitionManager::instance()->getPreDefinitions();
+
+	std::set<std::string> languages;
+
+	for ( const auto& def : definitions )
+		if ( def->isVisible() )
+			languages.insert( def->getLSPName() );
+
+	for ( const auto& pdef : preDefinitions )
+		languages.insert( pdef.getLSPName() );
 
 	LinterPlugin* linter = static_cast<LinterPlugin*>( pluginManager->get( "linter" ) );
 
@@ -61,19 +81,16 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 		debugger = static_cast<DebuggerPlugin*>( DebuggerPlugin::NewSync( pluginManager ) );
 	}
 
-	for ( const auto& def : definitions ) {
-		if ( !def.isVisible() )
-			continue;
-
-		if ( !langFilter.empty() && langFilter != def.getLSPName() )
+	for ( const auto& name : languages ) {
+		if ( !langFilter.empty() && langFilter != name )
 			continue;
 
 		FeaturesHealth::LangHealth lang;
-		lang.lang = def.getLSPName();
+		lang.lang = name;
 		lang.syntaxHighlighting = true;
 
 		if ( linter ) {
-			Linter found = linter->getLinterForLang( def.getLSPName() );
+			Linter found = linter->getLinterForLang( lang.lang );
 			if ( !found.command.empty() ) {
 				lang.linter.name =
 					found.isNative ? "native" : String::split( found.command, ' ' )[0];
@@ -84,7 +101,7 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 		}
 
 		if ( formatter ) {
-			FormatterPlugin::Formatter found = formatter->getFormatterForLang( def.getLSPName() );
+			FormatterPlugin::Formatter found = formatter->getFormatterForLang( lang.lang );
 			if ( !found.command.empty() ) {
 				lang.formatter.name = found.type == FormatterPlugin::FormatterType::Native
 										  ? "native"
@@ -97,7 +114,7 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 		}
 
 		if ( lsp ) {
-			LSPDefinition found = lsp->getClientManager().getLSPForLang( def.getLSPName() );
+			LSPDefinition found = lsp->getClientManager().getLSPForLang( lang.lang );
 			if ( !found.command.empty() ) {
 				lang.lsp.name = found.name;
 				lang.lsp.url = found.url;
@@ -107,7 +124,7 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 		}
 
 		if ( debugger ) {
-			std::vector<DapTool> found = debugger->getDebuggersForLang( def.getLSPName() );
+			std::vector<DapTool> found = debugger->getDebuggersForLang( lang.lang );
 			for ( const auto& dbg : found ) {
 				FeatureStatus fdbg;
 				fdbg.name = dbg.name;
@@ -142,7 +159,7 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 std::string FeaturesHealth::generateHealthStatus( PluginManager* pluginManager,
 												  OutputFormat format ) {
 	auto status( getHealth( pluginManager ) );
-	Table table;
+	tabulate::Table table;
 	table.format().border_top( "" ).border_bottom( "" ).border_left( "" ).border_right( "" ).corner(
 		"" );
 
@@ -154,8 +171,8 @@ std::string FeaturesHealth::generateHealthStatus( PluginManager* pluginManager,
 		table[0][i]
 			.format()
 			.font_color( tabulate::Color::white )
-			.font_align( FontAlign::center )
-			.font_style( { FontStyle::bold } );
+			.font_align( tabulate::FontAlign::center )
+			.font_style( { tabulate::FontStyle::bold } );
 	}
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -235,10 +252,10 @@ std::string FeaturesHealth::generateHealthStatus( PluginManager* pluginManager,
 	}
 
 	if ( OutputFormat::Markdown == format ) {
-		MarkdownExporter exporter;
+		tabulate::MarkdownExporter exporter;
 		return exporter.dump( table );
 	} else if ( OutputFormat::AsciiDoc == format ) {
-		AsciiDocExporter exporter;
+		tabulate::AsciiDocExporter exporter;
 		return exporter.dump( table );
 	} else if ( OutputFormat::Terminal == format ) {
 		std::cout << table << "\n";
@@ -442,11 +459,10 @@ void FeaturesHealth::displayHealth( PluginManager* pluginManager, UISceneNode* s
 	<window
 		id="health-window"
 		lw="600dp" lh="600dp"
-		padding="8dp"
 		window-title="@string(languages_health, Languages Health)"
 		window-flags="default|maximize|shadow"
 		window-min-size="300dp 300dp">
-		<RelativeLayout lw="mp" lh="mp">
+		<RelativeLayout lw="mp" lh="mp" margin="8dp">
 			<vbox id="health_container" lw="mp" lh="mp" visible="false">
 				<TableView id="health_table" lw="mp" lh="0" lw8="1" />
 				<vbox id="health_lang_info" lw="mp" lh="wc" min-height="118dp" visible="false"></vbox>
@@ -492,7 +508,7 @@ void FeaturesHealth::displayHealth( PluginManager* pluginManager, UISceneNode* s
 
 		HealthModel* model = static_cast<HealthModel*>( table->getModel() );
 		const auto& lang = model->getHealthRow( index.row() );
-		healthLangInfo->childsCloseAll();
+		healthLangInfo->closeAllChildren();
 		std::string type =
 			lang.lsp.url.empty() ? "TextView" : String::format( "Anchor href='%s'", lang.lsp.url );
 		std::string l = String::format(
@@ -576,6 +592,7 @@ void FeaturesHealth::displayHealth( PluginManager* pluginManager, UISceneNode* s
 
 	win->setKeyBindingCommand( "close-window", [win]() { win->closeWindow(); } );
 	win->addKeyBinding( { KEY_ESCAPE }, "close-window" );
+	win->on( Event::OnWindowReady, [table]( auto ) { table->setFocus(); } );
 	win->showWhenReady();
 	win->center();
 }

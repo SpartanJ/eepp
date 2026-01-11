@@ -1,14 +1,18 @@
+#include "uistatusbar.hpp"
 #include "globalsearchcontroller.hpp"
 #include "plugins/plugincontextprovider.hpp"
 #include "statusappoutputcontroller.hpp"
 #include "statusbuildoutputcontroller.hpp"
 #include "statusterminalcontroller.hpp"
-#include "uistatusbar.hpp"
 #include "universallocator.hpp"
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/window/window.hpp>
 
 namespace ecode {
+
+std::unordered_map<std::string, std::string> UIStatusBar::getDefaultKeybindings() {
+	return { { "alt+shift+9", "statusbar-panel-expand-contract-toggle" } };
+}
 
 StatusBarElement::StatusBarElement( UISplitter* mainSplitter, UISceneNode* uiSceneNode,
 									PluginContextProvider* app ) :
@@ -73,8 +77,7 @@ UIStatusBar* UIStatusBar::New() {
 }
 
 UIStatusBar::UIStatusBar() :
-	UILinearLayout( "statusbar", UIOrientation::Horizontal ),
-	WidgetCommandExecuter( getUISceneNode()->getWindow()->getInput() ) {}
+	UILinearLayout( "statusbar", UIOrientation::Horizontal ), WidgetCommandExecuter( getInput() ) {}
 
 void UIStatusBar::updateState() {
 	forEachChild( [this]( Node* node ) {
@@ -133,7 +136,7 @@ Uint32 UIStatusBar::onMessage( const NodeMessage* msg ) {
 	} else if ( widget->getId() == "status_global_search_bar" ) {
 		mContext->getGlobalSearchController()->toggleGlobalSearchBar();
 		ret = 1;
-	} else if ( widget->getId() == "status_terminal" ) {
+	} else if ( widget->getId() == "status_terminal_panel" ) {
 		mContext->getStatusTerminalController()->toggle();
 		ret = 1;
 	} else if ( widget->getId() == "status_build_output" ) {
@@ -157,7 +160,14 @@ Uint32 UIStatusBar::onMessage( const NodeMessage* msg ) {
 
 void UIStatusBar::setPluginContextProvider( PluginContextProvider* app ) {
 	mContext = app;
+	mPanelContractedPartition = mContext->getConfig().windowState.statusBarPartition;
 	updateState();
+}
+
+StyleSheetLength UIStatusBar::getPanelContractedPartition() const {
+	if ( isPanelExpanded() )
+		return mPanelContractedPartition;
+	return mContext->getMainSplitter()->getSplitPartition();
 }
 
 std::shared_ptr<StatusBarElement> UIStatusBar::getStatusBarElement( const std::string& id ) const {
@@ -216,6 +226,60 @@ void UIStatusBar::removeStatusBarElement( const std::string& id ) {
 void UIStatusBar::hideAllElements() {
 	for ( auto& [_, el] : mElements )
 		el.second->hide();
+}
+
+bool UIStatusBar::isPanelExpanded() const {
+	return mPanelExpanded;
+}
+
+void UIStatusBar::expandPanel() {
+	mPanelExpanded = true;
+	mPanelContractedPartition = mContext->getMainSplitter()->getSplitPartition();
+	auto allBtns =
+		mContext->getUISceneNode()->getRoot()->findAllByClass( "expand_status_bar_panel" );
+	for ( auto btn : allBtns )
+		btn->addClass( "expanded" );
+	mContext->getMainSplitter()->setSplitPartition( StyleSheetLength( 48, StyleSheetLength::Dp ) );
+}
+
+void UIStatusBar::contractPanel() {
+	mPanelExpanded = false;
+	mContext->getMainSplitter()->setSplitPartition( mPanelContractedPartition );
+	auto allBtns =
+		mContext->getUISceneNode()->getRoot()->findAllByClass( "expand_status_bar_panel" );
+	for ( auto btn : allBtns )
+		btn->removeClass( "expanded" );
+}
+
+void UIStatusBar::togglePanelExpansion() {
+	if ( isPanelExpanded() ) {
+		contractPanel();
+	} else {
+		expandPanel();
+	}
+}
+
+void UIStatusBar::registerStatusBarPanel( WidgetCommandExecuter* container, UIWidget* widget ) {
+	if ( !container )
+		return;
+
+	container->setCommand( "statusbar-panel-expand-contract-toggle",
+						   [this] { togglePanelExpansion(); } );
+	container->getKeyBindings().addKeybindsStringUnordered( mContext->getStatusBarKeybindings() );
+
+	if ( widget ) {
+		auto expCntPanelBtn =
+			widget->findByClass( "expand_status_bar_panel" )->asType<UIPushButton>();
+		if ( expCntPanelBtn ) {
+			expCntPanelBtn->setTooltipText(
+				String::format( "%s (%s)", expCntPanelBtn->getTooltipText().toUtf8(),
+								container->getKeyBindings().getCommandKeybindString(
+									"statusbar-panel-expand-contract-toggle" ) ) );
+			expCntPanelBtn->onClick( [container]( auto event ) {
+				container->execute( "statusbar-panel-expand-contract-toggle" );
+			} );
+		}
+	}
 }
 
 } // namespace ecode

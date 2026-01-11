@@ -20,7 +20,7 @@ class EE_API UIEventDispatcher : public EventDispatcher {
 
 	void inputCallback( InputEvent* Event );
 
-	void checkTabPress( const Uint32& KeyCode, const Uint32& mod );
+	void checkTabPress( Uint32 KeyCode, Uint32 mod );
 };
 
 }} // namespace EE::UI

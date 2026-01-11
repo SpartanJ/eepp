@@ -5,7 +5,11 @@
 #include <eepp/core/containers.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/system/bitop.hpp>
+
+#include <array>
 #include <string>
+#include <type_traits>
+
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #undef RGB
 #endif
@@ -44,8 +48,10 @@ template <typename T> class tRGB {
 /** @brief Template class for a RGBA color */
 template <typename T> class tColor {
   public:
+	using ValueType = std::conditional_t<std::is_same_v<T, Uint8>, Uint32, std::array<T, 4>>;
+
 	union {
-		Uint32 Value;
+		ValueType Value;
 
 		struct {
 			T r;
@@ -92,10 +98,17 @@ template <typename T> class tColor {
 	tColor( const tColor<T>& Col ) : Value( Col.Value ) {}
 
 	/** From a 32 bits value with RGBA byte order */
+	template <typename U = T, std::enable_if_t<std::is_same_v<U, Uint8>, int> = 0>
 	tColor( const Uint32& Col ) : Value( BitOp::swapBE32( Col ) ) {}
 
 	//! @return The color represented as an Uint32 ( as 0xRRGGBBAA for Little Endian )
-	Uint32 getValue() const { return BitOp::swapBE32( Value ); }
+	ValueType getValue() const {
+		if constexpr ( std::is_same_v<T, Uint8> ) {
+			return BitOp::swapBE32( Value );
+		} else {
+			return Value;
+		}
+	}
 
 	/** @brief Assign the RGBA colors, from each component. */
 	void assign( T r, T g, T b, T a ) {

@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addOCaml() {
+SyntaxDefinition& addOCaml() {
 
 	auto& sd = SyntaxDefinitionManager::instance()->add(
 
@@ -29,7 +29,7 @@ void addOCaml() {
 		  {
 			  { "and", "keyword" },		  { "as", "keyword" },		 { "asr", "operator" },
 			  { "assert", "keyword" },	  { "begin", "keyword" },	 { "class", "keyword" },
-			  { "constaint", "keyword" }, { "do", "keyword" },		 { "done", "keyword" },
+			  { "constraint", "keyword" }, { "do", "keyword" },		 { "done", "keyword" },
 			  { "downto", "keyword" },	  { "else", "keyword" },	 { "end", "keyword" },
 			  { "exception", "keyword" }, { "external", "keyword" }, { "false", "literal" },
 			  { "for", "keyword" },		  { "fun", "keyword" },		 { "function", "keyword" },
@@ -46,10 +46,10 @@ void addOCaml() {
 			  { "struct", "keyword" },	  { "to", "keyword" },		 { "true", "literal" },
 			  { "try", "keyword" },		  { "type", "keyword" },	 { "val", "keyword" },
 			  { "virtual", "keyword" },	  { "when", "keyword" },	 { "while", "keyword" },
-			  { "with", "keyword" },	  { "float", "keyword2" },	 { "bool", "keyword2" },
-			  { "int", "keyword2" },	  { "char", "keyword2" },	 { "string", "keyword2" },
-			  { "bytes", "keyword2" },	  { "unit", "keyword2" },	 { "array", "keyword3" },
-			  { "list", "keyword3" },	  { "option", "keyword3" },	 { "result", "keyword3" },
+			  { "with", "keyword" },	  { "float", "type" },		 { "bool", "type" },
+			  { "int", "type" },		  { "char", "type" },		 { "string", "type" },
+			  { "bytes", "type" },		  { "unit", "type" },		 { "array", "parameter" },
+			  { "list", "parameter" },	  { "option", "parameter" }, { "result", "parameter" },
 
 		  },
 		  "//",
@@ -58,6 +58,7 @@ void addOCaml() {
 		} );
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '(', ')' } } );
+	return sd;
 }
 
 }}}} // namespace EE::UI::Doc::Language

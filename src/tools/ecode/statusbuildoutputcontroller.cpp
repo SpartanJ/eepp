@@ -1,7 +1,7 @@
+#include "statusbuildoutputcontroller.hpp"
 #include "notificationcenter.hpp"
 #include "plugins/plugincontextprovider.hpp"
 #include "projectdirectorytree.hpp"
-#include "statusbuildoutputcontroller.hpp"
 #include "widgetcommandexecuter.hpp"
 #include <eepp/ui/uicodeeditor.hpp>
 
@@ -29,6 +29,15 @@ UIPushButton* StatusBuildOutputController::getBuildButton() {
 		UIWidget* tab = mContext->getSidePanel()->find<UIWidget>( "build_tab_view" );
 		if ( tab )
 			return tab->find<UIPushButton>( "build_button" );
+	}
+	return nullptr;
+}
+
+UIPushButton* StatusBuildOutputController::getBuildAndRunButton() {
+	if ( mContext->getSidePanel() ) {
+		UIWidget* tab = mContext->getSidePanel()->find<UIWidget>( "build_tab_view" );
+		if ( tab )
+			return tab->find<UIPushButton>( "build_and_run_button" );
 	}
 	return nullptr;
 }
@@ -141,10 +150,11 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 		}
 	}
 
-	patterns.emplace_back(
-		SyntaxPattern( { "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:.*error.*[^\n]+" }, "error" ) );
 	patterns.emplace_back( SyntaxPattern(
-		{ "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:.*warning.*[^\n]+" }, "warning" ) );
+		{ "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:.*[Ee][Rr][Rr][Oo][Rr].*[^\n]+" }, "error" ) );
+	patterns.emplace_back( SyntaxPattern(
+		{ "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:.*[Ww][Aa][Rr][Nn][Ii][Nn][Gg].*[^\n]+" },
+		"warning" ) );
 	patterns.emplace_back(
 		SyntaxPattern( { "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:[^\n]+" }, "notice" ) );
 
@@ -158,6 +168,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 	mScrollLocked = true;
 
 	UIPushButton* buildButton = getBuildButton();
+	UIPushButton* buildAndRunButton = getBuildAndRunButton();
 	UIPushButton* cleanButton = getCleanButton();
 
 	bool enableBuildButton = false;
@@ -181,11 +192,15 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 			buildButton->setText( mContext->i18n( "cancel_build", "Cancel Build" ) );
 	}
 
+	buildAndRunButton->setEnabled( false );
+
 	mBuildButton->setEnabled( false );
+
 	mStopButton->setEnabled( true );
 
 	const auto updateBuildButton = [this, isClean, enableBuildButton, enableCleanButton]() {
 		UIPushButton* buildButton = getBuildButton();
+		UIPushButton* buildAndRunButton = getBuildAndRunButton();
 		UIPushButton* cleanButton = getCleanButton();
 
 		if ( !isClean && buildButton ) {
@@ -206,6 +221,7 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 		if ( enableCleanButton && cleanButton )
 			cleanButton->runOnMainThread( [cleanButton] { cleanButton->setEnabled( true ); } );
 
+		buildAndRunButton->setEnabled( true );
 		mBuildButton->setEnabled( true );
 		mStopButton->setEnabled( false );
 	};
@@ -413,7 +429,7 @@ void StatusBuildOutputController::createContainer() {
 	if ( mContainer )
 		return;
 	const auto XML = R"xml(
-	<hbox id="build_output" class="vertical_bar" lw="mp" lh="mp" visible="false">
+	<hboxce id="build_output" class="vertical_bar" lw="mp" lh="mp" visible="false">
 		<rellayce id="build_output_command_executer" lw="0" lw8="1" lh="mp" class="status_build_output_cont">
 			<CodeEditor id="build_output_output" lw="mp" lh="mp" />
 			<TableView id="build_output_issues" lw="mp" lh="mp" visible="false" />
@@ -421,13 +437,14 @@ void StatusBuildOutputController::createContainer() {
 			<SelectButton id="but_build_output_output" text="@string(output_capitalized, Output)" layout-to-left-of="but_build_output_issues" selected="true" />
 		</rellayce>
 		<vbox lw="16dp" lh="mp">
+			<PushButton class="expand_status_bar_panel" lw="mp" tooltip="@string(expand_panel, Expand Panel)" />
 			<PushButton id="build_output_clear" lw="mp" icon="icon(eraser, 12dp)" tooltip="@string(clear, Clear)" />
 			<PushButton id="build_output_build" lw="mp" icon="icon(hammer, 12dp)" tooltip="@string(build, Build)" />
 			<PushButton id="build_output_stop" lw="mp" icon="icon(stop, 12dp)" enabled="false" />
 			<PushButton id="build_output_find" lw="mp" icon="icon(search, 12dp)" tooltip="@string(find, Find)" />
 			<PushButton id="build_output_configure" lw="mp" icon="icon(settings, 12dp)" tooltip="@string(configure_ellipsis, Configure...)" />
 		</vbox>
-	</hbox>
+	</hboxce>
 	)xml";
 
 	if ( mMainSplitter->getLastWidget() != nullptr ) {
@@ -437,10 +454,25 @@ void StatusBuildOutputController::createContainer() {
 
 	mContainer = mContext->getUISceneNode()
 					 ->loadLayoutFromString( XML, mMainSplitter )
-					 ->asType<UILinearLayout>();
+					 ->asType<UIHLinearLayoutCommandExecuter>();
+
+	mContainer->on( Event::KeyDown, [this]( const Event* event ) {
+		auto ke = event->asKeyEvent();
+		if ( ke->getSanitizedMod() == 0 && ke->getKeyCode() == EE::Window::KEY_ESCAPE &&
+			 mSplitter->getCurEditor() ) {
+			mSplitter->getCurEditor()->setFocus();
+		}
+	} );
+
 	mRelLayCE = mContainer->find( "build_output_command_executer" )
 					->asType<UIRelativeLayoutCommandExecuter>();
+
+	mContext->getStatusBar()->registerStatusBarPanel( mContainer, mContainer );
+
 	auto editor = mContainer->find<UICodeEditor>( "build_output_output" );
+	mContainer->getKeyBindings().addKeybindsStringUnordered( mContext->getStatusBarKeybindings() );
+	editor->getKeyBindings().addKeybindsStringUnordered( mContext->getStatusBarKeybindings() );
+
 	editor->setLocked( true );
 	editor->setLineBreakingColumn( 0 );
 	editor->setShowLineNumber( false );
@@ -448,6 +480,7 @@ void StatusBuildOutputController::createContainer() {
 	editor->getDocument().textInput(
 		mContext->i18n( "no_build_has_been_run", "No build has been run" ), false );
 	editor->setScrollY( editor->getMaxScroll().y );
+	editor->setColorScheme( mContext->getSplitter()->getCurrentColorScheme() );
 	mButOutput = mContainer->find<UISelectButton>( "but_build_output_output" );
 	mButIssues = mContainer->find<UISelectButton>( "but_build_output_issues" );
 	mTableIssues = mContainer->find<UITableView>( "build_output_issues" );
@@ -477,7 +510,6 @@ void StatusBuildOutputController::createContainer() {
 								onLoadDone( lineNum, colNum );
 							} );
 					} else {
-#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN || defined( __EMSCRIPTEN_PTHREADS__ )
 						removeRelativeSubPaths( path );
 						mContext->getDirTree()->asyncMatchTree(
 							ProjectDirectoryTree::MatchType::Fuzzy, path, 1,
@@ -502,7 +534,6 @@ void StatusBuildOutputController::createContainer() {
 									}
 								} );
 							} );
-#endif
 					}
 				} else {
 					tab->getTabWidget()->setTabSelected( tab );
@@ -550,18 +581,28 @@ void StatusBuildOutputController::createContainer() {
 		mScrollLocked = mBuildOutput->getMaxScroll().y == mBuildOutput->getScroll().y;
 	} );
 	mContainer->setVisible( false );
-	mRelLayCE->setCommand( "build-output-show-build-output", [this]() { showBuildOutput(); } );
-	mRelLayCE->setCommand( "build-output-show-build-issues", [this]() { showIssues(); } );
-	mRelLayCE->getKeyBindings().addKeybind( { KEY_1, KeyMod::getDefaultModifier() },
-											"build-output-show-build-output" );
-	mRelLayCE->getKeyBindings().addKeybind( { KEY_2, KeyMod::getDefaultModifier() },
-											"build-output-show-build-issues" );
+
+	mContainer->setCommand( "build-output-show-build-output", [this]() { showBuildOutput(); } );
+	mContainer->setCommand( "build-output-show-build-issues", [this]() { showIssues(); } );
+	mContainer->getKeyBindings().addKeybind( { KEY_1, KeyMod::getDefaultModifier() },
+											 "build-output-show-build-output" );
+	mContainer->getKeyBindings().addKeybind( { KEY_2, KeyMod::getDefaultModifier() },
+											 "build-output-show-build-issues" );
+
+	mBuildOutput->getDocument().setCommand( "build-output-show-build-output",
+											[this]() { showBuildOutput(); } );
+	mBuildOutput->getDocument().setCommand( "build-output-show-build-issues",
+											[this]() { showIssues(); } );
+	mBuildOutput->getKeyBindings().addKeybind( { KEY_1, KeyMod::getDefaultModifier() },
+											   "build-output-show-build-output" );
+	mBuildOutput->getKeyBindings().addKeybind( { KEY_2, KeyMod::getDefaultModifier() },
+											   "build-output-show-build-issues" );
 	mButOutput->onClick( [this]( auto ) { showBuildOutput(); } );
 	mButIssues->onClick( [this]( auto ) { showIssues(); } );
 	mButOutput->setTooltipText(
-		mRelLayCE->getKeyBindings().getCommandKeybindString( "build-output-show-build-output" ) );
+		mContainer->getKeyBindings().getCommandKeybindString( "build-output-show-build-output" ) );
 	mButIssues->setTooltipText(
-		mRelLayCE->getKeyBindings().getCommandKeybindString( "build-output-show-build-issues" ) );
+		mContainer->getKeyBindings().getCommandKeybindString( "build-output-show-build-issues" ) );
 
 	mContainer->bind( "build_output_clear", mClearButton );
 	mContainer->bind( "build_output_build", mBuildButton );

@@ -23,6 +23,7 @@
 //  DEALINGS IN THE SOFTWARE.
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <eterm/system/iprocess.hpp>
@@ -63,7 +64,8 @@ class Process final : public IProcess {
 	static std::unique_ptr<Process>
 	createWithPseudoTerminal( const std::string& program, const std::vector<std::string>& args,
 							  const std::string& workingDirectory,
-							  Terminal::PseudoTerminal& pseudoTerminal );
+							  Terminal::PseudoTerminal& pseudoTerminal,
+							  const std::unordered_map<std::string, std::string>& env = {} );
 
   private:
 	ProcessStatus mStatus{ ProcessStatus::RUNNING };
@@ -82,6 +84,6 @@ class Process final : public IProcess {
 #endif
 };
 
-}} // namespace EE::System
+}} // namespace eterm::System
 
 #endif

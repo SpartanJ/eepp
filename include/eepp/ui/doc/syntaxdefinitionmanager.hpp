@@ -5,6 +5,7 @@
 #include <eepp/system/iostream.hpp>
 #include <eepp/system/pack.hpp>
 #include <eepp/system/singleton.hpp>
+#include <eepp/ui/doc/hextlanguagetype.hpp>
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <optional>
 #include <vector>
@@ -16,13 +17,15 @@ namespace EE { namespace UI { namespace Doc {
 class EE_API SyntaxDefinitionManager {
 	SINGLETON_DECLARE_HEADERS( SyntaxDefinitionManager )
   public:
+  	using FileAssociations = std::unordered_map<std::string /* path or pattern */, std::string /* language name */>;
+
 	static SyntaxDefinitionManager* createSingleton( std::size_t reserveSpaceForLanguages );
 
 	static std::pair<std::string, std::string> toCPP( const SyntaxDefinition& def );
 
 	std::size_t count() const;
 
-	void reserveSpaceForLanguages( std::size_t totalLangs );
+	SyntaxPreDefinition& addPreDefinition( SyntaxPreDefinition&& preDefinition );
 
 	SyntaxDefinition& add( SyntaxDefinition&& syntaxStyle );
 
@@ -33,39 +36,36 @@ class EE_API SyntaxDefinitionManager {
 
 	bool extensionCanRepresentManyLanguages( std::string extension ) const;
 
-	const SyntaxDefinition& getByExtension( const std::string& filePath,
-											bool hFileAsCPP = false ) const;
+	const SyntaxDefinition& getByExtension( const std::string& filePath ) const;
 
-	const SyntaxDefinition& getByHeader( const std::string& header, bool hFileAsCPP = false ) const;
+	const SyntaxDefinition& getByPath( const std::string& filePath ) const;
 
-	const SyntaxDefinition& find( const std::string& filePath, const std::string& header,
-								  bool hFileAsCPP = false );
+	const SyntaxDefinition& getByFileAssociations( const std::string& filePath ) const;
 
-	const SyntaxDefinition& findFromString( const std::string& str ) const;
+	const SyntaxDefinition&
+	getByHeader( std::string_view header, const std::string& filePath = "",
+				 HExtLanguageType hLangType = HExtLanguageType::AutoDetect ) const;
+
+	const SyntaxDefinition& find( const std::string& filePath, std::string_view header,
+								  HExtLanguageType hLangType = HExtLanguageType::AutoDetect );
+
+	const SyntaxDefinition& findFromString( const std::string_view& str ) const;
 
 	SyntaxDefinition& getByExtensionRef( const std::string& filePath );
 
-	const SyntaxDefinition& getByLanguageName( const std::string& name ) const;
+	const SyntaxDefinition& getByLanguageName( const std::string_view& name ) const;
 
 	const SyntaxDefinition& getByLanguageIndex( const Uint32& index ) const;
 
-	const SyntaxDefinition& getByLanguageNameInsensitive( std::string name ) const;
+	const SyntaxDefinition& getByLanguageNameInsensitive( const std::string_view& name ) const;
 
-	const SyntaxDefinition& getByLSPName( const std::string& name ) const;
-
-	const SyntaxDefinition& getByLanguageId( const String::HashType& id ) const;
-
-	SyntaxDefinition& getByLanguageNameRef( const std::string& name );
+	const SyntaxDefinition& getByLSPName( const std::string_view& name ) const;
 
 	std::vector<std::string> getLanguageNames() const;
 
 	std::vector<std::string> getExtensionsPatternsSupported() const;
 
-	const SyntaxDefinition* getPtrByLanguageName( const std::string& name ) const;
-
 	const SyntaxDefinition* getPtrByLSPName( const std::string& name ) const;
-
-	const SyntaxDefinition* getPtrByLanguageId( const String::HashType& id ) const;
 
 	bool loadFromStream( IOStream& stream, std::vector<std::string>* addedLangs );
 
@@ -79,7 +79,9 @@ class EE_API SyntaxDefinitionManager {
 
 	void loadFromFolder( const std::string& folderPath );
 
-	const std::vector<SyntaxDefinition>& getDefinitions() const;
+	const std::vector<std::shared_ptr<SyntaxDefinition>>& getDefinitions() const;
+
+	const std::vector<SyntaxPreDefinition>& getPreDefinitions() const;
 
 	/* empty = all */
 	bool save( const std::string& path, const std::vector<SyntaxDefinition>& def = {} );
@@ -88,13 +90,28 @@ class EE_API SyntaxDefinitionManager {
 
 	const std::map<std::string, std::string>& getLanguageExtensionsPriority();
 
+	bool isFileFormatSupported( const std::string& filePath, std::string_view header );
+
+	void resetFileAssociations();
+
+	void setFileAssociations( FileAssociations&& fa );
+
+	FileAssociations getFileAssociations() const;
+
   protected:
 	SyntaxDefinitionManager( std::size_t reserveSpaceForLanguages = 12 );
 
-	std::vector<SyntaxDefinition> mDefinitions;
+	std::vector<std::shared_ptr<SyntaxDefinition>> mDefinitions;
+	std::vector<SyntaxPreDefinition> mPreDefinitions;
 	std::map<std::string, std::string> mPriorities;
+	FileAssociations mFileAssociations;
+	mutable Mutex mMutex;
+	mutable Mutex mFileAssociationsMutex;
 
 	std::optional<size_t> getLanguageIndex( const std::string& langName );
+
+	const SyntaxDefinition* needsHFallback( HExtLanguageType langType, const std::string& lspName,
+											const std::string& ext, std::string_view buffer ) const;
 };
 
 }}} // namespace EE::UI::Doc

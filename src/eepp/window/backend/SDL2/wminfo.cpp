@@ -3,8 +3,8 @@
 #ifdef EE_BACKEND_SDL2
 
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOS || \
-	defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS ||        \
-	EE_PLATFORM_ANDROID == EE_PLATFORM
+	( defined( SDL_VIDEO_DRIVER_X11 ) && defined( EE_X11_PLATFORM ) ) ||  \
+	EE_PLATFORM == EE_PLATFORM_IOS || EE_PLATFORM_ANDROID == EE_PLATFORM
 #define EE_WMINFO
 
 #if !defined( EE_COMPILER_MSVC ) && EE_PLATFORM != EE_PLATFORM_ANDROID && \
@@ -33,7 +33,7 @@ WMInfo::~WMInfo() {
 #endif
 }
 
-#if defined( EE_X11_PLATFORM )
+#if defined( SDL_VIDEO_DRIVER_X11 ) && defined( EE_X11_PLATFORM )
 X11Window WMInfo::getWindow() const {
 	SDL_SysWMinfo* info = static_cast<SDL_SysWMinfo*>( mWMInfo );
 	return info->info.x11.window;
@@ -41,14 +41,13 @@ X11Window WMInfo::getWindow() const {
 #endif
 
 eeWindowHandle WMInfo::getWindowHandler() const {
-#if EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM ) || \
-	EE_PLATFORM == EE_PLATFORM_MACOS
+#if EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_MACOS
 	SDL_SysWMinfo* info = static_cast<SDL_SysWMinfo*>( mWMInfo );
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return info->info.win.window;
-#elif defined( EE_X11_PLATFORM )
+#elif defined( SDL_VIDEO_DRIVER_X11 ) && defined( EE_X11_PLATFORM )
 	return info->info.x11.display;
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
 	return info->info.cocoa.window;

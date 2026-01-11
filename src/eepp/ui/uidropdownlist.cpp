@@ -10,6 +10,35 @@
 
 namespace EE { namespace UI {
 
+UIDropDownList::MenuWidthMode
+UIDropDownList::menuWidthModeFromString( std::string_view str ) {
+	if ( "contents" == str || "fit-to-contents" == str )
+		return MenuWidthMode::Contents;
+	if ( "contents-centered" == str || "fit-to-contents-centered" == str )
+		return MenuWidthMode::ContentsCentered;
+	if ( "expand-if-needed" == str || "fit-to-drop-down-expand-if-needed" == str )
+		return MenuWidthMode::ExpandIfNeeded;
+	if ( "expand-if-needed-centered" == str || "fit-to-drop-down-expand-if-needed-centered" == str )
+		return MenuWidthMode::ExpandIfNeededCentered;
+	return MenuWidthMode::DropDown; // "dropdown"
+}
+
+std::string UIDropDownList::menuWidthModeToString( MenuWidthMode rule ) {
+	switch ( rule ) {
+		case MenuWidthMode::DropDown:
+			return "dropdown";
+		case MenuWidthMode::Contents:
+			return "contents";
+		case MenuWidthMode::ContentsCentered:
+			return "contents-centered";
+		case MenuWidthMode::ExpandIfNeeded:
+			return "expand-if-needed";
+		case MenuWidthMode::ExpandIfNeededCentered:
+			return "expand-if-needed-centered";
+	}
+	return "dropdown";
+}
+
 UIDropDownList* UIDropDownList::NewWithTag( const std::string& tag ) {
 	return eeNew( UIDropDownList, ( tag ) );
 }
@@ -37,24 +66,20 @@ UIDropDownList::UIDropDownList( const std::string& tag ) :
 	// This will force to change the parent when shown, and force the CSS style reload.
 	mListBox->setParent( this );
 
-	mListBox->addEventListener( Event::OnWidgetFocusLoss,
-								[this]( auto event ) { onListBoxFocusLoss( event ); } );
-	mListBox->addEventListener( Event::OnItemSelected,
-								[this]( auto event ) { onItemSelected( event ); } );
-	mListBox->addEventListener( Event::OnItemClicked,
-								[this]( auto event ) { onItemClicked( event ); } );
-	mListBox->addEventListener( Event::OnItemKeyDown,
-								[this]( auto event ) { onItemKeyDown( event ); } );
-	mListBox->addEventListener( Event::KeyDown, [this]( auto event ) { onItemKeyDown( event ); } );
-	mListBox->addEventListener( Event::OnClear, [this]( auto event ) { onWidgetClear( event ); } );
-	mListBoxCloseCb = mListBox->addEventListener( Event::OnClose,
-												  [this]( const Event* ) { mListBox = nullptr; } );
-	mListBox->addEventListener( Event::OnSelectionChanged, [this]( auto ) {
+	mListBox->on( Event::OnWidgetFocusLoss, [this]( auto event ) { onListBoxFocusLoss( event ); } );
+	mListBox->on( Event::OnItemSelected, [this]( auto event ) { onItemSelected( event ); } );
+	mListBox->on( Event::OnItemClicked, [this]( auto event ) { onItemClicked( event ); } );
+	mListBox->on( Event::OnItemKeyDown, [this]( auto event ) { onItemKeyDown( event ); } );
+	mListBox->on( Event::KeyDown, [this]( auto event ) { onItemKeyDown( event ); } );
+	mListBox->on( Event::OnClear, [this]( auto event ) { onWidgetClear( event ); } );
+	mListBoxCloseCb =
+		mListBox->on( Event::OnClose, [this]( const Event* ) { mListBox = nullptr; } );
+	mListBox->on( Event::OnSelectionChanged, [this]( auto ) {
 		if ( !mListBox->hasSelection() )
 			mListBox->setSelected( 0 );
 		sendCommonEvent( Event::OnSelectionChanged );
 	} );
-	mListBox->addEventListener( Event::OnItemValueChange, [this]( const Event* event ) {
+	mListBox->on( Event::OnItemValueChange, [this]( const Event* event ) {
 		if ( mListBox->getItemSelectedIndex() == event->asItemValueEvent()->getItemIndex() )
 			setText( mListBox->getItemSelectedText() );
 	} );
@@ -142,9 +167,9 @@ Uint32 UIDropDownList::onMouseClick( const Vector2i& Pos, const Uint32& Flags ) 
 	return 1;
 }
 
-void UIDropDownList::showList() {
+UIDropDownList* UIDropDownList::showList() {
 	if ( NULL == mListBox )
-		return;
+		return this;
 
 	if ( !mListBox->isVisible() ) {
 		if ( mListBox->getCount() ) {
@@ -154,6 +179,36 @@ void UIDropDownList::showList() {
 
 			Float width =
 				NULL != mFriendNode ? mFriendNode->getSize().getWidth() : getSize().getWidth();
+
+			bool center =
+				mStyleConfig.menuWidthRule == MenuWidthMode::ContentsCentered ||
+				mStyleConfig.menuWidthRule ==
+					MenuWidthMode::ExpandIfNeededCentered;
+
+			Float contentsWidth = 0;
+			if ( mStyleConfig.menuWidthRule == MenuWidthMode::Contents ||
+				 mStyleConfig.menuWidthRule == MenuWidthMode::ContentsCentered ||
+				 mStyleConfig.menuWidthRule == MenuWidthMode::ExpandIfNeeded ||
+				 mStyleConfig.menuWidthRule ==
+					 MenuWidthMode::ExpandIfNeededCentered ) {
+				contentsWidth = eeceil( PixelDensity::pxToDp(
+					mListBox->getMaxTextWidth() +
+					PixelDensity::dpToPx( mListBox->getContainerPadding().getWidth() ) +
+					mListBox->getReferenceItem()->getPixelsPadding().getWidth() +
+					mListBox->getVerticalScrollBar()->getPixelsSize().getWidth() ) );
+			}
+
+			if ( mStyleConfig.menuWidthRule == MenuWidthMode::Contents ||
+				 mStyleConfig.menuWidthRule == MenuWidthMode::ContentsCentered ) {
+				width = contentsWidth;
+			}
+
+			if ( ( mStyleConfig.menuWidthRule == MenuWidthMode::ExpandIfNeeded ||
+				   mStyleConfig.menuWidthRule ==
+					   MenuWidthMode::ExpandIfNeededCentered ) &&
+				 contentsWidth > width ) {
+				width = contentsWidth;
+			}
 
 			mListBox->setSize(
 				width, (Int32)( eemin( mListBox->getCount(), mStyleConfig.MaxNumVisibleItems ) *
@@ -174,13 +229,15 @@ void UIDropDownList::showList() {
 
 			mListBox->toFront();
 
-			Vector2f pos( mDpPos.x, mDpPos.y + getSize().getHeight() );
+			Float offsetX = center ? eefloor( ( getSize().getWidth() - width ) * 0.5f ) : 0;
+
+			Vector2f pos( mDpPos.x + offsetX, mDpPos.y + getSize().getHeight() );
 			Vector2f posCpy( pos );
 			nodeToWorld( posCpy );
 
 			if ( !getUISceneNode()->getWorldBounds().contains(
 					 Rectf( posCpy, mListBox->getSize() ) ) ) {
-				pos = Vector2f( mDpPos.x, mDpPos.y - mListBox->getSize().getHeight() );
+				pos = Vector2f( mDpPos.x + offsetX, mDpPos.y - mListBox->getSize().getHeight() );
 			}
 
 			if ( mStyleConfig.PopUpToRoot ) {
@@ -204,21 +261,23 @@ void UIDropDownList::showList() {
 	} else {
 		hide();
 	}
+	return this;
 }
 
 bool UIDropDownList::getPopUpToRoot() const {
 	return mStyleConfig.PopUpToRoot;
 }
 
-void UIDropDownList::setPopUpToRoot( bool popUpToRoot ) {
+UIDropDownList* UIDropDownList::setPopUpToRoot( bool popUpToRoot ) {
 	mStyleConfig.PopUpToRoot = popUpToRoot;
+	return this;
 }
 
 Uint32 UIDropDownList::getMaxNumVisibleItems() const {
 	return mStyleConfig.MaxNumVisibleItems;
 }
 
-void UIDropDownList::setMaxNumVisibleItems( const Uint32& maxNumVisibleItems ) {
+UIDropDownList* UIDropDownList::setMaxNumVisibleItems( const Uint32& maxNumVisibleItems ) {
 	if ( maxNumVisibleItems != mStyleConfig.MaxNumVisibleItems ) {
 		mStyleConfig.MaxNumVisibleItems = maxNumVisibleItems;
 
@@ -227,17 +286,20 @@ void UIDropDownList::setMaxNumVisibleItems( const Uint32& maxNumVisibleItems ) {
 															   getListBox()->getCount() ) *
 														 mListBox->getRowHeight() );
 	}
+	return this;
 }
 
 const UIDropDownList::StyleConfig& UIDropDownList::getStyleConfig() const {
 	return mStyleConfig;
 }
 
-void UIDropDownList::setStyleConfig( const StyleConfig& styleConfig ) {
+UIDropDownList* UIDropDownList::setStyleConfig( const StyleConfig& styleConfig ) {
 	mStyleConfig = styleConfig;
 
 	setMaxNumVisibleItems( mStyleConfig.MaxNumVisibleItems );
 	setPopUpToRoot( mStyleConfig.PopUpToRoot );
+	setMenuWidthMode( mStyleConfig.menuWidthRule );
+	return this;
 }
 
 void UIDropDownList::onWidgetClear( const Event* ) {
@@ -356,6 +418,9 @@ bool UIDropDownList::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::MaxVisibleItems:
 			setMaxNumVisibleItems( attribute.asUint() );
 			break;
+		case PropertyId::MenuWidthMode:
+			setMenuWidthMode( menuWidthModeFromString( attribute.getValue() ) );
+			break;
 		case PropertyId::SelectedIndex:
 		case PropertyId::SelectedText:
 		case PropertyId::ScrollBarStyle:
@@ -383,6 +448,8 @@ std::string UIDropDownList::getPropertyString( const PropertyDefinition* propert
 			return mStyleConfig.PopUpToRoot ? "true" : "false";
 		case PropertyId::MaxVisibleItems:
 			return String::toString( mStyleConfig.MaxNumVisibleItems );
+		case PropertyId::MenuWidthMode:
+			return menuWidthModeToString( mStyleConfig.menuWidthRule );
 		case PropertyId::SelectedIndex:
 		case PropertyId::SelectedText:
 		case PropertyId::ScrollBarStyle:
@@ -402,7 +469,7 @@ std::vector<PropertyId> UIDropDownList::getPropertiesImplemented() const {
 	auto props = UITextInput::getPropertiesImplemented();
 	auto local = { PropertyId::PopUpToRoot,	 PropertyId::MaxVisibleItems, PropertyId::SelectedIndex,
 				   PropertyId::SelectedText, PropertyId::ScrollBarStyle,  PropertyId::RowHeight,
-				   PropertyId::VScrollMode,	 PropertyId::HScrollMode };
+				   PropertyId::VScrollMode,	 PropertyId::HScrollMode, PropertyId::MenuWidthMode };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -416,6 +483,20 @@ void UIDropDownList::loadFromXmlNode( const pugi::xml_node& node ) {
 	UITextInput::loadFromXmlNode( node );
 
 	endAttributesTransaction();
+}
+
+void UIDropDownList::onClassChange() {
+	if ( mListBox )
+		mListBox->setClasses( getClasses() );
+}
+
+UIDropDownList* UIDropDownList::setMenuWidthMode( MenuWidthMode rule ) {
+	mStyleConfig.menuWidthRule = rule;
+	return this;
+}
+
+UIDropDownList::MenuWidthMode UIDropDownList::getMenuWidthMode() const {
+	return mStyleConfig.menuWidthRule;
 }
 
 }} // namespace EE::UI

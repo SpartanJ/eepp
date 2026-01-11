@@ -57,7 +57,7 @@ UISlider::UISlider( const std::string& tag, const UIOrientation& orientation ) :
 
 	auto cb = [this]( const Event* ) {
 		if ( !mUpdating )
-			adjustChilds();
+			adjustChildren();
 	};
 
 	mBackSlider->setParent( this );
@@ -71,7 +71,7 @@ UISlider::UISlider( const std::string& tag, const UIOrientation& orientation ) :
 	mSlider->setDragEnabled( true );
 	mSlider->setSize( 4, 4 );
 	mSlider->setPosition( 0, 0 );
-	mSlider->addEventListener( Event::OnPositionChange, [this]( const Event* ) {
+	mSlider->on( Event::OnPositionChange, [this]( const Event* ) {
 		if ( !mUpdating && !mOnPosChange )
 			fixSliderPos();
 	} );
@@ -81,10 +81,10 @@ UISlider::UISlider( const std::string& tag, const UIOrientation& orientation ) :
 	else
 		mSlider->centerHorizontal();
 
-	mBackSlider->addEventListener( Event::OnSizeChange, cb );
-	mSlider->addEventListener( Event::OnSizeChange, cb );
-	mBackSlider->addEventListener( Event::OnPaddingChange, cb );
-	mSlider->addEventListener( Event::OnPaddingChange, cb );
+	mBackSlider->on( Event::OnSizeChange, cb );
+	mSlider->on( Event::OnSizeChange, cb );
+	mBackSlider->on( Event::OnPaddingChange, cb );
+	mSlider->on( Event::OnPaddingChange, cb );
 
 	applyDefaultTheme();
 }
@@ -114,7 +114,7 @@ void UISlider::setTheme( UITheme* Theme ) {
 		mSlider->setThemeSkin( Theme, "vslider_button" );
 	}
 
-	adjustChilds();
+	adjustChildren();
 
 	setValue( mValue );
 
@@ -123,11 +123,11 @@ void UISlider::setTheme( UITheme* Theme ) {
 
 void UISlider::onSizeChange() {
 	UIWidget::onSizeChange();
-	adjustChilds();
+	adjustChildren();
 }
 
 void UISlider::onPaddingChange() {
-	adjustChilds();
+	adjustChildren();
 	UIWidget::onPaddingChange();
 }
 
@@ -147,7 +147,7 @@ Uint32 UISlider::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 	return UIWidget::onMouseDown( position, flags );
 }
 
-void UISlider::adjustChilds() {
+void UISlider::adjustChildren() {
 	mUpdating = true;
 
 	UISkin* tSkin = mSlider->getSkin();
@@ -340,7 +340,7 @@ void UISlider::adjustSliderPos() {
 	mOnPosChange = false;
 }
 
-void UISlider::setValue( Float val, bool emmitEvent ) {
+void UISlider::setValue( Float val, bool emitEvent ) {
 	if ( val < mMinValue )
 		val = mMinValue;
 	if ( val > mMaxValue )
@@ -360,7 +360,7 @@ void UISlider::setValue( Float val, bool emmitEvent ) {
 			mOnPosChange = false;
 		}
 
-		if ( emmitEvent )
+		if ( emitEvent )
 			onValueChange();
 	}
 }
@@ -466,10 +466,11 @@ UIOrientation UISlider::getOrientation() const {
 	return mOrientation;
 }
 
-UISlider* UISlider::setOrientation( const UIOrientation& orientation, std::string childsBaseTag ) {
+UISlider* UISlider::setOrientation( const UIOrientation& orientation,
+									std::string childrenBaseTag ) {
 	if ( orientation != mOrientation ) {
-		if ( childsBaseTag.empty() )
-			childsBaseTag = mTag;
+		if ( childrenBaseTag.empty() )
+			childrenBaseTag = mTag;
 
 		mOrientation = orientation;
 
@@ -483,14 +484,14 @@ UISlider* UISlider::setOrientation( const UIOrientation& orientation, std::strin
 		applyDefaultTheme();
 
 		if ( UIOrientation::Horizontal == mOrientation ) {
-			mBackSlider->setElementTag( childsBaseTag + "::hback" );
-			mSlider->setElementTag( childsBaseTag + "::hbutton" );
+			mBackSlider->setElementTag( childrenBaseTag + "::hback" );
+			mSlider->setElementTag( childrenBaseTag + "::hbutton" );
 		} else {
-			mBackSlider->setElementTag( childsBaseTag + "::vback" );
-			mSlider->setElementTag( childsBaseTag + "::hbutton" );
+			mBackSlider->setElementTag( childrenBaseTag + "::vback" );
+			mSlider->setElementTag( childrenBaseTag + "::hbutton" );
 		}
 
-		adjustChilds();
+		adjustChildren();
 	}
 
 	return this;
@@ -504,7 +505,7 @@ void UISlider::setAllowHalfSliderOut( bool allowHalfSliderOut ) {
 	if ( mAllowHalfSliderOut != allowHalfSliderOut ) {
 		mAllowHalfSliderOut = allowHalfSliderOut;
 
-		adjustChilds();
+		adjustChildren();
 
 		setValue( mValue );
 	}
@@ -518,7 +519,7 @@ void UISlider::setExpandBackground( bool expandBackground ) {
 	if ( mExpandBackground != expandBackground ) {
 		mExpandBackground = expandBackground;
 
-		adjustChilds();
+		adjustChildren();
 
 		setValue( mValue );
 	}
@@ -532,7 +533,7 @@ void UISlider::setPageStep( const Float& pageStep ) {
 	if ( pageStep != mPageStep ) {
 		mPageStep = eemin( eemax( pageStep, mMinValue ), mMaxValue );
 
-		adjustChilds();
+		adjustChildren();
 
 		setValue( mValue );
 	}
@@ -672,7 +673,7 @@ void UISlider::onAutoSize() {
 		}
 
 		if ( modified )
-			adjustChilds();
+			adjustChildren();
 	}
 }
 

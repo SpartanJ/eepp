@@ -19,8 +19,8 @@ UIMenuSubMenu::UIMenuSubMenu() :
 	mArrow->setParent( this );
 	mArrow->setFlags( UI_AUTO_SIZE );
 	applyDefaultTheme();
-	mArrow->addEventListener( Event::OnSizeChange, [this]( const Event* ) { onSizeChange(); } );
-	mArrow->addEventListener( Event::OnMarginChange, [this]( const Event* ) { onSizeChange(); } );
+	mArrow->on( Event::OnSizeChange, [this]( const Event* ) { onSizeChange(); } );
+	mArrow->on( Event::OnMarginChange, [this]( const Event* ) { onSizeChange(); } );
 	mArrow->setVisible( true );
 	mArrow->setEnabled( false );
 }

@@ -5,6 +5,7 @@ TextInput#search_find,
 TextInput#search_replace,
 TextInput#locate_find,
 TextInput#global_search_find,
+TextInput#global_search_where,
 TextInput.small_input,
 .search_str {
 	padding-top: 0;
@@ -65,7 +66,7 @@ StatusBar > #doc_info {
 	margin-right: 0dp;
 	border-radius: 0dp;
 	border: 0dp solid transparent;
-	padding: 0dp 4dp 0dp 4dp;
+	padding: 0dp 6dp 0dp 6dp;
 	opacity: 1;
 	layout-gravity: center;
 	layout-height: match_parent;
@@ -73,6 +74,11 @@ StatusBar > #doc_info {
 }
 #doc_info {
 	color: var(--font);
+	border-right-color: transparent;
+}
+.status_but + #doc_info {
+	border-right-width: 1dp;
+	border-right-color: var(--tab-line);
 }
 #search_find.error,
 #search_replace.error {
@@ -149,7 +155,7 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 	border-top-right-radius: 0dp;
 }
 #check_for_updates .check_at_startup {
-	margin: 6dp 0dp 6p 0dp;
+	margin: 6dp 0dp 6dp 0dp;
 }
 #project_view_empty {
 	padding-top: 8dp;
@@ -179,6 +185,15 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 }
 #status_bar > .status_but.selected {
 	background-color: var(--primary);
+}
+#status_bar > .status_but:last-child {
+	border-right-color: transparent;
+}
+#status_bar > #ai_assistant_but.status_but {
+	padding: 0dp 4dp 0dp 6dp;
+}
+#status_bar > #ai_assistant_but.status_but > PushButton::icon {
+	margin-right: 0dp;
 }
 .vertical_bar {
 	background-color: var(--list-back);
@@ -319,6 +334,12 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 	icon: icon(arrow-up-s, 10dp);
 	inner-widget-orientation: widgettextboxicon;
 }
+.expand_status_bar_panel {
+	icon: icon(arrow-up-s, 16dp);
+}
+.expand_status_bar_panel.expanded {
+	icon: icon(arrow-down-s, 16dp);
+}
 .settings_panel .details_but.contracted {
 	icon: icon(arrow-down-s, 10dp);
 }
@@ -414,17 +435,17 @@ Anchor.error:hover {
 .texture-preview {
 	border: 1dp solid var(--list-back);
 }
-#code_container TabWidget {
+.tab_widget_cont TabWidget {
 	max-tab-width: 200dp;
 }
-#code_container Tab > Tab::Text {
+.tab_widget_cont Tab > Tab::Text {
 	text-overflow: ellipsis;
 }
-#code_container Tab > Tab::close {
+.tab_widget_cont Tab > Tab::close {
 	opacity: 0;
 }
-#code_container Tab:selected > Tab::close,
-#code_container Tab:hover > Tab::close {
+.tab_widget_cont Tab:selected > Tab::close,
+.tab_widget_cont Tab:hover > Tab::close {
 	opacity: 1;
 }
 #project_view ScrollBar {
@@ -436,35 +457,42 @@ Anchor.error:hover {
 #project_view ScrollBar:focus-within {
 	opacity: 1;
 }
-#code_container Tab > Tab::close {
+.tab_widget_cont Tab > Tab::close {
 	foreground-image: url("data:image/svg,<svg width='16' height='16' viewBox='0 0 16 16'><path fill='#ffffff' fill-rule='evenodd' d='M 2.3432061,13.657206 A 8.0002061,8.0002061 0 1 1 13.657206,2.3432061 8.0002061,8.0002061 0 0 1 2.3432061,13.657206 Z m 3.687,-8.6869999 a 0.75,0.75 0 0 0 -1.06,1.06 l 1.97,1.97 -1.97,1.97 a 0.75,0.75 0 1 0 1.06,1.0599999 l 1.97,-1.9699999 1.97,1.9699999 A 0.75,0.75 0 1 0 11.030206,9.9702061 l -1.9699999,-1.97 1.9699999,-1.97 a 0.75,0.75 0 1 0 -1.0599999,-1.06 l -1.97,1.97 z' /></svg>");
 	foreground-tint: var(--tab-close);
 	foreground-size: 10dp 10dp;
 	foreground-position: center;
 }
-#code_container Tab > Tab::close:hover {
+.tab_widget_cont Tab > Tab::close:hover {
 	foreground-tint: var(--tab-close-hover);
 }
-#code_container Tab.tab_modified > tab::close {
+.tab_widget_cont Tab.tab_modified > tab::close {
 	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' width='12' height='12' fill='#ffffff'><path d='M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z'></path></svg>");
 	foreground-tint: var(--primary);
 	foreground-size: 6dp 6dp;
 	foreground-position: center;
 	opacity: 1;
 }
-#code_container Tab.tab_modified > Tab::close:hover {
+.tab_widget_cont Tab.tab_modified > Tab::close:hover {
 	foreground-image: url("data:image/svg,<svg width='16' height='16' viewBox='0 0 16 16'><path fill='#ffffff' fill-rule='evenodd' d='M 2.3432061,13.657206 A 8.0002061,8.0002061 0 1 1 13.657206,2.3432061 8.0002061,8.0002061 0 0 1 2.3432061,13.657206 Z m 3.687,-8.6869999 a 0.75,0.75 0 0 0 -1.06,1.06 l 1.97,1.97 -1.97,1.97 a 0.75,0.75 0 1 0 1.06,1.0599999 l 1.97,-1.9699999 1.97,1.9699999 A 0.75,0.75 0 1 0 11.030206,9.9702061 l -1.9699999,-1.97 1.9699999,-1.97 a 0.75,0.75 0 1 0 -1.0599999,-1.06 l -1.97,1.97 z' /></svg>");
 	foreground-tint: var(--tab-close-hover);
 	foreground-size: 10dp 10dp;
 	foreground-position: center;
 }
-#code_container TabWidget::TabBar ScrollBarMini {
+.tab_widget_cont Tab {
+	text-decoration: none;
+}
+.tab_widget_cont Tab.tab_file_deleted {
+	color: var(--theme-error);
+	text-decoration: strikethrough;
+}
+.tab_widget_cont TabWidget::TabBar ScrollBarMini {
 	opacity: 0;
 	transition: opacity 0.15;
 }
-#code_container TabWidget::TabBar:hover ScrollBarMini,
-#code_container TabWidget::TabBar ScrollBarMini.dragging,
-#code_container TabWidget::TabBar ScrollBarMini:focus-within {
+.tab_widget_cont TabWidget::TabBar:hover ScrollBarMini,
+.tab_widget_cont TabWidget::TabBar ScrollBarMini.dragging,
+.tab_widget_cont TabWidget::TabBar ScrollBarMini:focus-within {
 	opacity: 1;
 }
 .notbold {
@@ -491,6 +519,38 @@ Anchor.error:hover {
 }
 .git-stash-tooltip {
 	text-align: left;
+}
+window::modaldialog.shadowbg {
+	background-color: #00000066;
+}
+textview.dragged_cell {
+	background-color: var(--button-back);
+	border-radius: 4dp;
+	padding: 4dp;
+}
+ImageViewer {
+	display-options: name|pos|dimensions;
+}
+ImageViewer > TextView {
+	x: 4dp;
+	y: 24dp;
+}
+TabWidget::container > ImageViewer {
+	background-color: var(--list-back);
+}
+TabWidget::container > ImageViewer > TextView {
+	y: 4dp;
+}
+.audio_player {
+	layout-width: 300dp;
+}
+.pseudo_anchor {
+	tint: var(--floating-icon);
+	cursor: arrow;
+}
+.pseudo_anchor:hover {
+	tint: var(--primary);
+	cursor: hand;
 }
 
 @media (prefers-color-scheme: light) {
@@ -521,7 +581,7 @@ R"html(
 <Splitter id="project_splitter" lw="mp" lh="mp">
 	<TabWidget id="panel" tabbar-hide-on-single-tab="true" tabbar-allow-rearrange="true" min-tab-width="32dp" max-tab-width="32dp">
 		<RelativeLayout id="project_view_cont" lw="mp" lh="mp">
-			<TreeView id="project_view" lw="mp" lh="mp" />
+			<TreeViewFS id="project_view" lw="mp" lh="mp" />
 			<vbox id="project_view_empty" lg="top|center_horizontal" lw="mp" lh="wc">
 				<TextView text-align="center" lw="mp" lg="center" text='@string(you_have_not_yet_opened_a_folder, "You have not yet opened a folder.")' word-wrap="true"  />
 				<PushButton lw="mp" lg="center" id="open_folder" text='@string(open_folder, "Open Folder")' margin-top="4dp" />
@@ -533,16 +593,12 @@ R"html(
 	<vbox>
 		<Splitter id="main_splitter" lw="mp" lh="0" lw8="1" orientation="vertical">
 			<RelativeLayout id="main_splitter_cont">
-				<vbox id="code_container" lw="mp" lh="mp"></vbox>
+				<vbox id="code_container" class="tab_widget_cont" lw="mp" lh="mp"></vbox>
 				<TextView id="doc_info" enabled="false" />
 				<RelativeLayout id="image_container" lw="mp" lh="mp" visible="false" enabled="false">
-					<Image lw="mp" lh="mp" scaleType="fit_inside" gravity="center" enabled="false" lg="center" />
-					<TextView id="image_close" lw="wc" lh="wc" text="&#xeb99;" lg="top|right" enabled="false" />
-					<Loader id="image_loader" lw="64dp" lh="64dp" outline-thickness="6dp" lg="center" visible="false" />
+					<ImageViewer lw="mp" lh="mp" scaleType="fit_inside" gravity="center" enabled="true" lg="center" />
+					<TextView id="image_close" lw="wc" lh="wc" text="&#xeb99;" lg="top|right" enabled="true" />
 				</RelativeLayout>
-				<vbox id="notification_center" lw="256dp" lh="wc"
-					  lg="right|bottom" margin-right="22dp" margin-bottom="56dp">
-				</vbox>
 			</RelativeLayout>
 		</Splitter>
 		<searchbar id="search_bar" lw="mp" lh="wc">
@@ -603,6 +659,7 @@ R"html(
 						<CheckBox id="lua_pattern" text='@string(lua_pattern, "Lua Pattern")' selected="false" margin-right="8dp" />
 						<CheckBox id="escape_sequence" text='@string(use_escape_sequences, "Use escape sequences")' margin-right="8dp" selected="false"
 								  tooltip='@string(escape_sequence_tooltip, "Replace \\, \t, \n, \r and \uXXXX (Unicode characters) with the corresponding control")' />
+						<CheckBox id="buffer_only_mode" text="@string(buffer_only_mode, Buffer Only Mode)" selected="false" tooltip="@string(buffer_only_mode_tooltip, Apply replacements to file buffers only.&#10;Changes won't be saved to disk until you explicitly save the files.)" visible="false" />
 					</StackLayout>
 					<hbox lw="mp" lh="wc">
 						<TextView text='@string(history, "History:")' margin-right="4dp" lh="18dp" focusable="false" />
@@ -618,7 +675,7 @@ R"html(
 		<statusbar lw="mp" lh="wc" id="status_bar">
 			<PushButton class="status_but" id="status_locate_bar" text="@string(locate, Locate)" icon="icon(search-fuzzy, 11dp)" />
 			<PushButton class="status_but" id="status_global_search_bar" text="@string(search, Search)" icon="icon(file-search, 11dp)" />
-			<PushButton class="status_but" id="status_terminal" text="@string(terminal, Terminal)" icon="icon(terminal, 11dp)" />
+			<PushButton class="status_but" id="status_terminal_panel" text="@string(terminal, Terminal)" icon="icon(terminal, 11dp)" />
 			<PushButton class="status_but" id="status_build_output" text="@string(build, Build)" icon="icon(symbol-property, 11dp)"  />
 			<PushButton class="status_but" id="status_app_output" text="@string(app_output, App Output)" icon="icon(output, 11dp)"  />
 			<Widget class="status_sep" lw="0" lw8="1" lh="1dp" />
@@ -630,5 +687,8 @@ R"html(
 		  text='@string(menu_hold_shift_hint, "Hold \"Shift\" to keep menu open)"'
 		  tooltip='@string(menu_hold_shift_hint_desc, "Keeping \"Shift\" clicked while changing any options it will keep the menu open.")' />
 </MainLayout>
+</vbox>
+<vbox id="notification_center" lw="256dp" lh="wc"
+	  lg="right|bottom" margin-right="22dp" margin-bottom="56dp">
 </vbox>
 )html"

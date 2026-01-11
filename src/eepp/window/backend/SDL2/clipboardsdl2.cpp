@@ -49,6 +49,35 @@ std::string ClipboardSDL::getText() {
 #endif
 }
 
+bool ClipboardSDL::hasPrimarySelection() const {
+#if SDL_VERSION_ATLEAST( 2, 26, 0 )
+	return SDL_HasPrimarySelectionText();
+#else
+	return false;
+#endif
+}
+
+std::string ClipboardSDL::getPrimarySelectionText() {
+#if SDL_VERSION_ATLEAST( 2, 26, 0 )
+	if ( SDL_HasPrimarySelectionText() ) {
+		char* text = SDL_GetPrimarySelectionText();
+		std::string str( text );
+		SDL_free( text );
+		return str;
+	}
+#endif
+
+	return getText();
+}
+
+void ClipboardSDL::setPrimarySelectionText( const std::string& text ) {
+#if SDL_VERSION_ATLEAST( 2, 26, 0 )
+	if ( SDL_HasPrimarySelectionText() ) {
+		SDL_SetPrimarySelectionText( text.c_str() );
+	}
+#endif
+}
+
 String ClipboardSDL::getWideText() {
 	return String::fromUtf8( getText() );
 }

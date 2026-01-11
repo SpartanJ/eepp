@@ -22,6 +22,7 @@
 #include <eepp/ui/uimenuseparator.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uinode.hpp>
+#include <eepp/ui/uinodelink.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uipushbutton.hpp>
@@ -73,9 +74,11 @@
 #include <eepp/ui/doc/textdocument.hpp>
 
 #include <eepp/ui/tools/textureatlaseditor.hpp>
+#include <eepp/ui/tools/uiaudioplayer.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/tools/uicolorpicker.hpp>
 #include <eepp/ui/tools/uidocfindreplace.hpp>
+#include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
 
 #include <eepp/ui/models/csspropertiesmodel.hpp>
@@ -86,8 +89,11 @@
 #include <eepp/ui/models/widgettreemodel.hpp>
 
 #include <eepp/ui/uidatabind.hpp>
+#include <eepp/ui/uiproperty.hpp>
 
 #include <eepp/ui/undostack.hpp>
+
+#include <eepp/ui/iconmanager.hpp>
 
 #include <eepp/ui/uiapplication.hpp>
 

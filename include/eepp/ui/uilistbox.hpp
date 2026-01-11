@@ -51,6 +51,8 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 
 	UIListBoxItem* getItem( const Uint32& Index ) const;
 
+	const String& getItemText( const Uint32& Index ) const;
+
 	Uint32 getItemIndex( UIListBoxItem* Item );
 
 	Uint32 getItemIndex( const String& Text );
@@ -113,6 +115,8 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 	Uint32 getMaxTextWidth() const;
 
 	void setItemText( const Uint32& index, const String& newText );
+
+	UIListBoxItem* getReferenceItem() const { return mDummyItem; }
 
   protected:
 	friend class UIListBoxItem;
@@ -194,7 +198,7 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 
 	virtual void onTouchDragValueChange( Vector2f diff );
 
-	virtual bool isTouchOverAllowedChilds();
+	virtual bool isTouchOverAllowedChildren();
 };
 
 }} // namespace EE::UI

@@ -429,8 +429,8 @@ bool TextureRegion::saveToFile( const std::string& filepath, const Image::SaveTy
 	lock();
 
 	if ( NULL != mTexture ) {
-		if ( Image::SaveType::SAVE_TYPE_JPG != Format ) {
-			Res = 0 != ( SOIL_save_image( filepath.c_str(), Format, getRealSize().getWidth(),
+		if ( Image::SaveType::JPG != Format ) {
+			Res = 0 != ( SOIL_save_image( filepath.c_str(), (int)Format, getRealSize().getWidth(),
 										  getRealSize().getHeight(), mTexture->getChannels(),
 										  getPixelsPtr() ) );
 		} else {

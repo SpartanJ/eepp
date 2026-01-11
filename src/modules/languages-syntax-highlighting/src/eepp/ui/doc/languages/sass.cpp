@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addSass() {
+SyntaxDefinition& addSass() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Sass",
 		  { "%.sass$", "%.scss$" },
@@ -15,23 +15,21 @@ void addSass() {
 			  { { "'", "'", "\\" }, "string" },
 			  { { "$%w+" }, "keyword" },
 			  { { "@%w+" }, "literal" },
-			  { { "&" }, "keyword2" },
+			  { { "&" }, "type" },
 			  { { "[:%/%*%-]" }, "operator" },
-			  { { "[%a][%w-]*%s*%f[:]" }, "keyword2" },
+			  { { "[%a][%w-]*%s*%f[:]" }, "type" },
 			  { { "-?%d+[%d%.]*p[xt]" }, "number" },
 			  { { "-?%d+[%d%.]*deg" }, "number" },
 			  { { "-?%d+[%d%.]*[s%%]" }, "number" },
 			  { { "-?%d+[%d%.]*" }, "number" },
-			  { { "^%s*#[%a%_%-][%w%_%-]*" }, "keyword2" },
-			  { { ",%s*#[%a%_%-][%w%_%-]*" }, "keyword2" },
 			  { { "#%x%x?%x?%x?%x?%x?%x?%x?" }, "string" },
-			  { { "#[%a%_%-][%w%_%-]*" }, "keyword2" },
-			  { { "%-%-%a[%w%-%_]*" }, "keyword2" },
+			  { { "#[%a%_%-][%w%_%-]*" }, "type" },
+			  { { "%-%-%a[%w%-%_]*" }, "type" },
 			  { { "-?%d+[%d%.]*p[xt]" }, "number" },
 			  { { "-?%d+[%d%.]*deg" }, "number" },
 			  { { "-?%d+[%d%.]*" }, "number" },
-			  { { "@[%a][%w%_%-]*" }, "keyword2" },
-			  { { "%.[%a%_%-][%w%_%-]*" }, "keyword2" },
+			  { { "@[%a][%w%_%-]*" }, "type" },
+			  { { "%.[%a%_%-][%w%_%-]*" }, "type" },
 			  { { "(:)(hover)" }, { "normal", "operator", "literal" } },
 			  { { "(:)(focus%-within)" }, { "normal", "operator", "literal" } },
 			  { { "(:)(focus)" }, { "normal", "operator", "literal" } },

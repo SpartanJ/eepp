@@ -1,7 +1,7 @@
 #include "spreadsheet.hpp"
 #include <eepp/ee.hpp>
 
-// Referece https://eugenkiss.github.io/7guis/tasks/#cells
+// Reference https://eugenkiss.github.io/7guis/tasks/#cells
 EE_MAIN_FUNC int main( int, char** ) {
 	UIApplication app( { 1280, 768, "eepp - 7GUIs - Cells" } );
 	UIWidget* rlay = app.getUI()->loadLayoutFromString( R"xml(

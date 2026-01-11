@@ -47,6 +47,7 @@ std::unique_ptr<LSPClientServer>
 LSPClientServerManager::runLSPServer( const String::HashType& id, const LSPDefinition& lsp,
 									  const std::string& rootPath,
 									  std::vector<std::string> languagesSupported ) {
+	Log::info( "Starting LSP server: %s", lsp.name );
 	auto server = std::make_unique<LSPClientServer>( this, id, lsp, rootPath, languagesSupported );
 	server->start();
 	return server;
@@ -116,6 +117,11 @@ void LSPClientServerManager::tryRunServer( const std::shared_ptr<TextDocument>& 
 				if ( ( server = serverUP.get() ) ) {
 					mClients[id] = std::move( serverUP );
 					if ( server->isRunning() ) {
+						if ( !server->getDefinition().settings.empty() ) {
+							server->didChangeConfiguration( server->getDefinition().settings,
+															rootPath, true );
+						}
+
 						if ( !mLSPWorkspaceFolder.uri.empty() )
 							server->didChangeWorkspaceFolders( { mLSPWorkspaceFolder }, {}, true );
 					} else {
@@ -141,8 +147,7 @@ void LSPClientServerManager::closeLSPServer( const String::HashType& id ) {
 		auto it = mClients.find( id );
 		if ( it != mClients.end() ) {
 			const auto& def = it->second->getDefinition();
-			Log::debug( "Closing LSP server: %s for language %s", def.name.c_str(),
-						def.language.c_str() );
+			Log::info( "Closing LSP server: %s for language %s", def.name, def.language );
 			mClients.erase( it );
 			mLSPsToClose.erase( id );
 			mErasingClients.erase( id );
@@ -240,7 +245,7 @@ bool LSPClientServerManager::isServerRunning( const LSPClientServer* server ) {
 	return false;
 }
 
-void LSPClientServerManager::requestSymanticHighlighting( std::shared_ptr<TextDocument> doc ) {
+void LSPClientServerManager::requestSemanticHighlighting( std::shared_ptr<TextDocument> doc ) {
 	auto* server = getOneLSPClientServer( doc );
 	if ( server ) {
 		LSPDocumentClient* client = server->getLSPDocumentClient( doc.get() );
@@ -394,7 +399,7 @@ void LSPClientServerManager::sendSymbolReferenceBroadcast( const std::vector<LSP
 
 		auto curDoc = mPluginManager->getSplitter()->findDocFromURI( r.uri );
 		if ( curDoc ) {
-			ProjectSearch::ResultData::Result rs( curDoc->line( r.range.start().line() ).getText(),
+			ProjectSearch::ResultData::Result rs( curDoc->getLineText( r.range.start().line() ),
 												  r.range, -1, -1 );
 
 			rd.results.emplace_back( std::move( rs ) );
@@ -406,14 +411,14 @@ void LSPClientServerManager::sendSymbolReferenceBroadcast( const std::vector<LSP
 				if ( TextDocument::LoadStatus::Loaded != doc->loadFromFile( fspath ) )
 					continue;
 
-				lineText = doc->line( r.range.start().line() ).getText();
+				lineText = doc->getLineText( r.range.start().line() );
 
 				tmpDocs.insert( { std::move( fspath ), std::move( doc ) } );
 			} else {
-				lineText = foundDoc->second->line( r.range.start().line() ).getText();
+				lineText = foundDoc->second->getLineText( r.range.start().line() );
 			}
 
-			ProjectSearch::ResultData::Result rs( lineText, r.range, -1, -1 );
+			ProjectSearch::ResultData::Result rs( std::move( lineText ), r.range, -1, -1 );
 
 			rd.results.emplace_back( std::move( rs ) );
 		}
@@ -440,12 +445,12 @@ void LSPClientServerManager::getSymbolReferences( std::shared_ptr<TextDocument> 
 		} );
 }
 
-void LSPClientServerManager::codeAction( std::shared_ptr<TextDocument> doc,
+bool LSPClientServerManager::codeAction( std::shared_ptr<TextDocument> doc,
 										 const nlohmann::json& diagnostics,
 										 const LSPClientServer::CodeActionHandler& h ) {
 	auto* server = getOneLSPClientServer( doc );
-	if ( !server )
-		return;
+	if ( !server || !server->isRunning() )
+		return false;
 
 	auto range = doc->getSelection();
 	if ( !diagnostics.empty() && diagnostics.contains( "diagnostics" ) &&
@@ -458,6 +463,7 @@ void LSPClientServerManager::codeAction( std::shared_ptr<TextDocument> doc,
 	}
 
 	server->documentCodeAction( doc->getURI(), range, {}, diagnostics, h );
+	return true;
 }
 
 void LSPClientServerManager::memoryUsage( std::shared_ptr<TextDocument> doc ) {
@@ -487,6 +493,11 @@ void LSPClientServerManager::didChangeWorkspaceFolders( const std::string& folde
 	std::vector<LSPWorkspaceFolder> newWorkspaceFolder = { mLSPWorkspaceFolder };
 	Lock l( mClientsMutex );
 	for ( auto& server : mClients ) {
+		if ( !server.second->getDefinition().settings.empty() ) {
+			server.second->didChangeConfiguration( server.second->getDefinition().settings, folder,
+												   true );
+		}
+
 		server.second->didChangeWorkspaceFolders( newWorkspaceFolder, oldLSPWorkspaceFolder, true );
 		if ( server.second->getCapabilities().diagnosticProvider.workspaceDiagnostics ) {
 			mPlugin->getManager()->sendRequest( PluginMessageType::WorkspaceDiagnostic,

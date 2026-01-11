@@ -4,6 +4,7 @@
 #include <eepp/scene/node.hpp>
 #include <eepp/system/translator.hpp>
 #include <eepp/window/cursor.hpp>
+#include <unordered_set>
 
 namespace EE { namespace Graphics {
 class FrameBuffer;
@@ -102,9 +103,9 @@ class EE_API SceneNode : public Node {
 
 	void removeMouseOverNode( Node* node );
 
-	const bool& getUpdateAllChilds() const;
+	const bool& getUpdateAllChildren() const;
 
-	void setUpdateAllChilds( const bool& updateAllChilds );
+	void setUpdateAllChildren( bool updateAllChildren );
 
 	const Float& getDPI() const;
 
@@ -114,7 +115,7 @@ class EE_API SceneNode : public Node {
 
   protected:
 	friend class Node;
-	typedef UnorderedSet<Node*> CloseList;
+	typedef std::unordered_set<Node*> CloseList;
 
 	EE::Window::Window* mWindow;
 	ActionManager* mActionManager;
@@ -125,7 +126,7 @@ class EE_API SceneNode : public Node {
 	bool mFrameBufferBound;
 	bool mUseInvalidation;
 	bool mUseGlobalCursors;
-	bool mUpdateAllChilds;
+	bool mUpdateAllChildren;
 	Int32 mResizeCb;
 	bool mDrawDebugData;
 	bool mDrawBoxes;

@@ -19,6 +19,7 @@ UITextEdit::UITextEdit() : UICodeEditor( "textedit", true, true ) {
 	setClipType( ClipType::ContentBox );
 	mFont = NULL;
 	mHorizontalScrollBarEnabled = true;
+	mKerningEnabled = true;
 
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 

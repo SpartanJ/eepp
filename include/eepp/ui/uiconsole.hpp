@@ -107,7 +107,7 @@ class EE_API UIConsole : public UIWidget,
 	/** Add Text to Console */
 	void pushText( const String& str );
 
-	/** Add formated Text to console */
+	/** Add formatted Text to console */
 	template <typename... Args> void pushText( std::string_view format, Args&&... args ) {
 		pushText( String::format(
 			format, FormatArg<std::decay_t<Args>>::get( std::forward<Args>( args ) )... ) );
@@ -144,6 +144,8 @@ class EE_API UIConsole : public UIWidget,
 	KeyBindings& getKeyBindings();
 
 	TextDocument& getDoc();
+
+	Client::Type getTextDocumentClientType() { return TextDocument::Client::Core; }
 
   protected:
 	struct TextCache {
@@ -189,6 +191,7 @@ class EE_API UIConsole : public UIWidget,
 	Float mQuakeModeHeightPercent{ 0.6f };
 #endif
 	Uint64 mLastExecuteEventId{ 0 };
+	String::HashType mLastCmdHash{ 0 };
 	UIPopUpMenu* mCurrentMenu{ nullptr };
 	size_t mMenuIconSize{ 16 };
 

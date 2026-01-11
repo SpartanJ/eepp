@@ -27,7 +27,7 @@ bool UITableView::isType( const Uint32& type ) const {
 	return UITableView::getType() == type ? true : UIAbstractTableView::isType( type );
 }
 
-void UITableView::drawChilds() {
+void UITableView::drawChildren() {
 	int realRowIndex = 0;
 	int realColIndex = 0;
 	ConditionalLock l( getModel() != nullptr, getModel() ? &getModel()->resourceMutex() : nullptr );
@@ -50,7 +50,7 @@ void UITableView::drawChilds() {
 			if ( yOffset - mScrollOffset.y + rowHeight < 0 )
 				continue;
 			UITableRow* rowNode = updateRow( realRowIndex, rowIndex, yOffset );
-			rowNode->setChildsVisibility( false, false );
+			rowNode->setChildrenVisibility( false, false );
 			realColIndex = 0;
 			for ( size_t colIndex = 0; colIndex < colCount; colIndex++ ) {
 				auto& colData = columnData( colIndex );
@@ -133,7 +133,7 @@ Node* UITableView::overFind( const Vector2f& point ) {
 Float UITableView::getMaxColumnContentWidth( const size_t& colIndex, bool bestGuess ) {
 	Float lWidth = 0;
 	ConditionalLock l( getModel() != nullptr, getModel() ? &getModel()->resourceMutex() : nullptr );
-	if ( nullptr == getModel() || !getModel()->hasChilds() )
+	if ( nullptr == getModel() || !getModel()->hasChildren() )
 		return lWidth;
 	ScopedOp op( [this] { mUISceneNode->setIsLoading( true ); },
 				 [this] { mUISceneNode->setIsLoading( false ); } );
@@ -385,7 +385,7 @@ ModelIndex UITableView::findRowWithText( const std::string& text, const bool& ca
 	const Model* model = getModel();
 	ConditionalLock l( getModel() != nullptr,
 					   getModel() ? &const_cast<Model*>( getModel() )->resourceMutex() : nullptr );
-	if ( !model || !model->hasChilds() )
+	if ( !model || !model->hasChildren() )
 		return {};
 	size_t rc = model->rowCount();
 	for ( size_t i = 0; i < rc; i++ ) {

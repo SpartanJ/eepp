@@ -54,6 +54,8 @@ eepp.geany
 ecode.dmg
 /projects/linux/ecode/ecode.app
 /projects/freebsd/ecode/ecode.app
+/projects/windows/ecode/ecode
+/projects/windows/ecode/ecode-*
 *.AppImage
 /projects/mingw32/ecode/ecode/
 /projects/mingw32/ecode/ecode-*
@@ -69,4 +71,12 @@ ecode.dmg
 /compile_commands.json
 /bin/unit_tests/eepp*
 /bin/unit_tests/lib*
-
+/bin/unit_tests/output/*
+/projects/linux/ecode/polyfill-glibc
+/bin/crashes/*
+/bin/config/*
+/projects/android-project/.settings/*
+/projects/android-project/app/.settings/*
+/projects/android-project/app/.classpath
+/projects/android-project/.project
+/projects/android-project/app/.project

@@ -22,6 +22,10 @@ class BusSocket : public Bus {
 
 	bool hasProcess() override { return false; }
 
+	Type type() const override { return Bus::Type::Socket; }
+
+	const Connection& getConnection() const { return mConnection; }
+
   protected:
 	Connection mConnection;
 	TcpSocket mSocket;

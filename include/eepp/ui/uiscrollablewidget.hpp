@@ -9,8 +9,6 @@ class UIScrollBar;
 
 class EE_API UIScrollableWidget : public UIWidget {
   public:
-	enum ScrollViewType { Inclusive, Exclusive };
-
 	virtual Uint32 getType() const;
 
 	virtual bool isType( const Uint32& type ) const;

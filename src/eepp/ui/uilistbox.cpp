@@ -57,18 +57,17 @@ UIListBox::UIListBox( const std::string& tag ) :
 	mVScrollBar->setPosition( getSize().getWidth() - 8, 0 );
 	mVScrollBar->setSize( 8, getSize().getHeight() );
 	mVScrollBar->setEnabled( false )->setVisible( false );
-	mVScrollBar->addEventListener( Event::OnSizeChange, cb );
-	mVScrollBar->addEventListener( Event::OnValueChange,
-								   [this] ( auto event ) { onScrollValueChange( event ); } );
+	mVScrollBar->on( Event::OnSizeChange, cb );
+	mVScrollBar->on( Event::OnValueChange, [this]( auto event ) { onScrollValueChange( event ); } );
 
 	mHScrollBar = UIScrollBar::NewHorizontal();
 	mHScrollBar->setParent( this );
 	mHScrollBar->setSize( getSize().getWidth() - mVScrollBar->getSize().getWidth(), 8 );
 	mHScrollBar->setPosition( 0, getSize().getHeight() - 8 );
 	mHScrollBar->setEnabled( false )->setVisible( false );
-	mHScrollBar->addEventListener( Event::OnSizeChange, cb );
-	mHScrollBar->addEventListener( Event::OnValueChange,
-								   [this] ( auto event ) { onHScrollValueChange( event ); } );
+	mHScrollBar->on( Event::OnSizeChange, cb );
+	mHScrollBar->on( Event::OnValueChange,
+					 [this]( auto event ) { onHScrollValueChange( event ); } );
 
 	mDummyItem = createListBoxItem( "" );
 	mDummyItem->setSize( 0, 0 );
@@ -133,22 +132,23 @@ void UIListBox::addListBoxItems( std::vector<String> texts ) {
 		mItems.push_back( NULL );
 	}
 
+	findMaxWidth();
 	updatePageStep();
 	updateScroll();
 }
 
-Uint32 UIListBox::addListBoxItem( UIListBoxItem* Item ) {
-	mItems.push_back( Item );
-	mTexts.push_back( Item->getText() );
+Uint32 UIListBox::addListBoxItem( UIListBoxItem* item ) {
+	mItems.push_back( item );
+	mTexts.push_back( item->getText() );
 
-	if ( Item->getParent() != mContainer )
-		Item->setParent( mContainer );
+	if ( item->getParent() != mContainer )
+		item->setParent( mContainer );
 
 	updateScroll();
 
 	Uint32 tMaxTextWidth = mMaxTextWidth;
 
-	itemUpdateSize( Item );
+	itemUpdateSize( item );
 
 	if ( tMaxTextWidth != mMaxTextWidth ) {
 		updateListBoxItemsSize();
@@ -250,11 +250,11 @@ Uint32 UIListBox::getListBoxItemIndex( const String& Name ) {
 	return eeINDEX_NOT_FOUND;
 }
 
-Uint32 UIListBox::getListBoxItemIndex( UIListBoxItem* Item ) {
+Uint32 UIListBox::getListBoxItemIndex( UIListBoxItem* item ) {
 	Uint32 size = (Uint32)mItems.size();
 
 	for ( Uint32 i = 0; i < size; i++ ) {
-		if ( Item == mItems[i] )
+		if ( item == mItems[i] )
 			return i;
 	}
 
@@ -346,9 +346,9 @@ void UIListBox::onTouchDragValueChange( Vector2f diff ) {
 		mHScrollBar->setValue( mHScrollBar->getValue() + ( -diff.x / mMaxTextWidth ) );
 }
 
-bool UIListBox::isTouchOverAllowedChilds() {
-	return isMouseOverMeOrChilds() && !mVScrollBar->isMouseOverMeOrChilds() &&
-		   !mHScrollBar->isMouseOverMeOrChilds();
+bool UIListBox::isTouchOverAllowedChildren() {
+	return isMouseOverMeOrChildren() && !mVScrollBar->isMouseOverMeOrChildren() &&
+		   !mHScrollBar->isMouseOverMeOrChildren();
 }
 
 void UIListBox::findMaxWidth() {
@@ -358,9 +358,7 @@ void UIListBox::findMaxWidth() {
 		return;
 
 	Uint32 size = (Uint32)mItems.size();
-	Int32 width;
-	Text textCache;
-	textCache.setStyleConfig( fontStyleConfig );
+	Float width;
 
 	mMaxTextWidth = 0;
 
@@ -368,11 +366,10 @@ void UIListBox::findMaxWidth() {
 		if ( NULL != mItems[i] ) {
 			width = (Int32)mItems[i]->getTextWidth();
 		} else {
-			textCache.setString( mTexts[i] );
-			width = textCache.getTextWidth();
+			width = Text::getTextWidth( mTexts[i], fontStyleConfig );
 		}
 
-		if ( width > (Int32)mMaxTextWidth )
+		if ( width > (Float)mMaxTextWidth )
 			mMaxTextWidth = width;
 	}
 }
@@ -384,27 +381,28 @@ void UIListBox::updateListBoxItemsSize() {
 		itemUpdateSize( mItems[i] );
 }
 
-void UIListBox::itemUpdateSize( UIListBoxItem* Item ) {
-	if ( NULL != Item ) {
-		Int32 width = (Int32)Item->getTextWidth();
+void UIListBox::itemUpdateSize( UIListBoxItem* item ) {
+	if ( NULL == item )
+		return;
 
-		if ( width > (Int32)mMaxTextWidth ) {
-			mMaxTextWidth = width;
-		}
+	Float width = eeceil( item->getTextWidth() );
 
-		if ( !mHScrollBar->isVisible() ) {
-			if ( width < mContainer->getSize().getWidth() )
-				width = mContainer->getSize().getWidth();
-
-			if ( ( mItemsNotVisible > 0 && ScrollBarMode::Auto == mVScrollMode ) ||
-				 ScrollBarMode::AlwaysOn == mVScrollMode )
-				width -= mVScrollBar->getSize().getWidth();
-		} else {
-			width = mMaxTextWidth;
-		}
-
-		Item->setSize( width, mRowHeight );
+	if ( width > (Float)mMaxTextWidth ) {
+		mMaxTextWidth = width;
 	}
+
+	if ( !mHScrollBar->isVisible() ) {
+		if ( width < mContainer->getPixelsSize().getWidth() )
+			width = mContainer->getPixelsSize().getWidth();
+
+		if ( ( mItemsNotVisible > 0 && ScrollBarMode::Auto == mVScrollMode ) ||
+			 ScrollBarMode::AlwaysOn == mVScrollMode )
+			width -= mVScrollBar->getPixelsSize().getWidth();
+	} else {
+		width = mMaxTextWidth;
+	}
+
+	item->setPixelsSize( width, PixelDensity::dpToPx( mRowHeight ) );
 }
 
 void UIListBox::containerResize() {
@@ -697,6 +695,12 @@ UIListBoxItem* UIListBox::getItem( const Uint32& Index ) const {
 	eeASSERT( Index < mItems.size() );
 
 	return mItems[Index];
+}
+
+const String& UIListBox::getItemText( const Uint32& Index ) const {
+	eeASSERT( Index < mItems.size() );
+
+	return mTexts[Index];
 }
 
 UIListBoxItem* UIListBox::getItemSelected() {

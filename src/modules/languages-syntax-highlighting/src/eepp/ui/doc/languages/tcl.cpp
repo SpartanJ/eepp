@@ -3,9 +3,9 @@
 
 namespace EE { namespace UI { namespace Doc { namespace Language {
 
-void addTcl() {
+SyntaxDefinition& addTcl() {
 
-	SyntaxDefinitionManager::instance()->add(
+	return SyntaxDefinitionManager::instance()->add(
 
 		{ "Tcl",
 		  { "%.tcl$" },
@@ -20,21 +20,19 @@ void addTcl() {
 			  { { "::[%a_][%w_]*" }, "function" },
 			  { { "[%a_][%w_]*%f[:]" }, "function" },
 			  { { "[%a_][%w_]*" }, "symbol" },
-			  { { "%s+" }, "normal" },
-			  { { "%w+%f[%s]" }, "normal" },
 
 		  },
 		  {
 			  { "elseif", "keyword" },	 { "lsearch", "keyword" }, { "lreverse", "keyword" },
-			  { "continue", "keyword" }, { "lset", "keyword" },	   { "finally", "keyword2" },
-			  { "on", "keyword2" },		 { "dict", "keyword" },	   { "set", "keyword" },
+			  { "continue", "keyword" }, { "lset", "keyword" },	   { "finally", "type" },
+			  { "on", "type" },			 { "dict", "keyword" },	   { "set", "keyword" },
 			  { "lappend", "keyword" },	 { "lrepeat", "keyword" }, { "return", "keyword" },
-			  { "error", "keyword2" },	 { "rename", "keyword" },  { "split", "join" },
-			  { "try", "keyword2" },	 { "foreach", "keyword" }, { "concat", "keyword" },
+			  { "error", "type" },		 { "rename", "keyword" },  { "split", "join" },
+			  { "try", "type" },		 { "foreach", "keyword" }, { "concat", "keyword" },
 			  { "incr", "keyword" },	 { "unset", "keyword" },   { "proc", "keyword" },
 			  { "lindex", "keyword" },	 { "for", "keyword" },	   { "array", "keyword" },
 			  { "while", "keyword" },	 { "eval", "keyword" },	   { "gets", "keyword" },
-			  { "list", "keyword" },	 { "throw", "keyword2" },  { "else", "keyword" },
+			  { "list", "keyword" },	 { "throw", "type" },	   { "else", "keyword" },
 			  { "package", "keyword" },	 { "linsert", "keyword" }, { "lassign", "keyword" },
 			  { "source", "keyword" },	 { "break", "keyword" },   { "puts", "keyword" },
 			  { "lreplace", "keyword" }, { "upvar", "keyword" },   { "case", "keyword" },

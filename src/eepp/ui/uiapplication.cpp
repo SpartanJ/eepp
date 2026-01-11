@@ -37,7 +37,13 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 					 displayManager->getDisplayIndex( mWindow->getCurrentDisplayIndex() )
 						 ->getPixelDensity() ) );
 
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	if ( !appSettings.basePath || appSettings.basePath->empty() ) {
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	} else {
+		std::string path( *appSettings.basePath );
+		FileSystem::dirAddSlashAtEnd( path );
+		FileSystem::changeWorkingDirectory( path );
+	}
 
 	mUISceneNode = UISceneNode::New();
 	SceneManager::instance()->add( mUISceneNode );
@@ -52,8 +58,25 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 	if ( font && font->getType() == FontType::TTF )
 		FontFamily::loadFromRegular( static_cast<FontTrueType*>( font ) );
 
-	if ( appSettings.emojiFont == nullptr )
-		FontTrueType::New( "NotoEmoji-Regular", "assets/fonts/NotoEmoji-Regular.ttf" );
+	Font* monospaceFont = appSettings.monospaceFont
+							  ? appSettings.monospaceFont
+							  : FontTrueType::New( "monospace", "assets/fonts/DejaVuSansMono.ttf" );
+
+	if ( monospaceFont && monospaceFont->getType() == FontType::TTF ) {
+		static_cast<FontTrueType*>( monospaceFont )->setEnableDynamicMonospace( true );
+		FontFamily::loadFromRegular( static_cast<FontTrueType*>( monospaceFont ) );
+	}
+
+	if ( appSettings.emojiFont == nullptr ) {
+		if ( FileSystem::fileExists( "assets/fonts/NotoColorEmoji.ttf" ) )
+			FontTrueType::New( "NotoColorEmoji", "assets/fonts/NotoColorEmoji.ttf" );
+		else if ( FileSystem::fileExists( "assets/fonts/NotoEmoji-Regular.ttf" ) )
+			FontTrueType::New( "NotoEmoji-Regular", "assets/fonts/NotoEmoji-Regular.ttf" );
+	}
+
+	if ( appSettings.fallbackFont == nullptr &&
+		 FileSystem::fileExists( "assets/fonts/DroidSansFallbackFull.ttf" ) )
+		FontTrueType::New( "DroidSansFallbackFull", "assets/fonts/DroidSansFallbackFull.ttf" );
 
 	mUISceneNode->getUIThemeManager()->setDefaultFont( font );
 	mUISceneNode->getRoot()->addClass( "appbackground" );
@@ -69,7 +92,8 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 
 UIApplication::~UIApplication() {
 	Engine::destroySingleton();
-	MemoryManager::showResults();
+	if ( mShowMemoryManagerResult )
+		MemoryManager::showResults();
 }
 
 EE::Window::Window* UIApplication::getWindow() const {
@@ -101,13 +125,24 @@ int UIApplication::run() {
 	return mDidRun ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
-UIApplication::Settings::Settings( std::optional<Float> pixelDensity, bool loadBaseResources,
+UIApplication::Settings::Settings( std::optional<std::string> basePath,
+								   std::optional<Float> pixelDensity, bool loadBaseResources,
 								   Font* baseFont, std::optional<std::string> baseStyleSheetPath,
-								   Font* emojiFont ) :
+								   Font* emojiFont, Font* fallbackFont ) :
+	basePath( basePath ),
 	pixelDensity( pixelDensity ),
 	loadBaseResources( loadBaseResources ),
 	baseFont( baseFont ),
 	baseStyleSheetPath( baseStyleSheetPath ),
-	emojiFont( emojiFont ) {}
+	emojiFont( emojiFont ),
+	fallbackFont( fallbackFont ) {}
+
+void UIApplication::setShowMemoryManagerResult( bool show ) {
+	mShowMemoryManagerResult = show;
+}
+
+bool UIApplication::showMemoryManagerResult() const {
+	return mShowMemoryManagerResult;
+}
 
 }} // namespace EE::UI

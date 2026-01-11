@@ -30,7 +30,11 @@ class EE_API Process {
 		// Search for program names in the PATH variable. Always enabled on Windows.
 		// Note: this will **not** search for paths in any provided custom environment
 		// and instead uses the PATH of the spawning process.
-		SearchUserPath = 0x10
+		SearchUserPath = 0x10,
+
+		// If command path is not absolute it will try to resolve the absolute path
+		// and use that.
+		UseAbsolutePath = 0x20
 	};
 
 	static inline constexpr Uint32 getDefaultOptions() {
@@ -104,7 +108,7 @@ class EE_API Process {
 	 **
 	 ** The only safe way to read from the standard output of a process during it's
 	 ** execution is to use the `Option::EnableAsync` option in
-	 ** conjuction with this method. */
+	 ** conjunction with this method. */
 	size_t readAllStdOut( std::string& buffer, Time timeout = Time::Zero );
 
 	/** @brief Read the standard output from the child process.
@@ -114,7 +118,7 @@ class EE_API Process {
 	 **
 	 ** The only safe way to read from the standard output of a process during it's
 	 ** execution is to use the `Option::EnableAsync` option in
-	 ** conjuction with this method. */
+	 ** conjunction with this method. */
 	size_t readStdOut( std::string& buffer );
 
 	/** @brief Read the standard output from the child process.
@@ -125,7 +129,7 @@ class EE_API Process {
 	 **
 	 ** The only safe way to read from the standard output of a process during it's
 	 ** execution is to use the `Option::EnableAsync` option in
-	 ** conjuction with this method. */
+	 ** conjunction with this method. */
 	size_t readStdOut( char* const buffer, const size_t& size );
 
 	/** @brief Read all the standard error from the child process.
@@ -135,7 +139,7 @@ class EE_API Process {
 	 **
 	 ** The only safe way to read from the standard error of a process during it's
 	 ** execution is to use the `Option::EnableAsync` option in
-	 ** conjuction with this method. */
+	 ** conjunction with this method. */
 	size_t readAllStdErr( std::string& buffer, Time timeout = Time::Zero );
 
 	/** @brief Read the standard error from the child process.
@@ -145,7 +149,7 @@ class EE_API Process {
 	 **
 	 ** The only safe way to read from the standard error of a process during it's
 	 ** execution is to use the `Option::EnableAsync` option in
-	 ** conjuction with this method. */
+	 ** conjunction with this method. */
 	size_t readStdErr( std::string& buffer );
 
 	/** @brief Read the standard error from the child process.
@@ -156,7 +160,7 @@ class EE_API Process {
 	 **
 	 ** The only safe way to read from the standard error of a process during it's
 	 ** execution is to use the `Option::EnableAsync` option in
-	 ** conjuction with this method. */
+	 ** conjunction with this method. */
 	size_t readStdErr( char* const buffer, const size_t& size );
 
 	/** @brief Write the standard output from the child process.
@@ -231,11 +235,17 @@ class EE_API Process {
 	/** Indicates if the process started its shutdown */
 	bool isShuttingDown() const;
 
+	/** @return True if the process has been manually killed via a kill() call  */
+	bool killed() const;
+
   protected:
 	void* mProcess{ nullptr };
 	bool mShuttingDown{ false };
+	bool mKilled{ false };
 	bool mIsAsync{ false };
+	bool mKilling{ false };
 	size_t mBufferSize{ 131072 };
+	std::string mCmdLine;
 	std::thread mStdOutThread;
 	std::thread mStdErrThread;
 	Mutex mStdInMutex;

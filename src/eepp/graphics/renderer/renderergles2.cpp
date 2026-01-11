@@ -50,7 +50,7 @@ RendererGLES2::RendererGLES2() :
 	mLoaded( false ),
 	mCurShaderLocal( true ) {
 	mQuadsSupported = false;
-	mQuadVertexs = 6;
+	mQuadVertex = 6;
 #if !defined( EE_GLES2 )
 	Renderer::enable( GL_VERTEX_PROGRAM_POINT_SIZE );
 #endif
@@ -405,7 +405,7 @@ void RendererGLES2::vertexPointer( int size, unsigned int type, int stride, cons
 			glEnableVertexAttribArray( index );
 		}
 
-		glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, pointer );
+		glVertexAttribPointer( index, size, type, GL_FALSE, stride, pointer );
 	}
 }
 
@@ -421,9 +421,9 @@ void RendererGLES2::colorPointer( int size, unsigned int type, int stride, const
 		}
 
 		if ( type == GL_UNSIGNED_BYTE ) {
-			glVertexAttribPointerARB( index, size, type, GL_TRUE, stride, pointer );
+			glVertexAttribPointer( index, size, type, GL_TRUE, stride, pointer );
 		} else {
-			glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, pointer );
+			glVertexAttribPointer( index, size, type, GL_FALSE, stride, pointer );
 		}
 	}
 }
@@ -453,7 +453,7 @@ void RendererGLES2::texCoordPointer( int size, unsigned int type, int stride, co
 			glEnableVertexAttribArray( index );
 		}
 
-		glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, pointer );
+		glVertexAttribPointer( index, size, type, GL_FALSE, stride, pointer );
 	}
 }
 

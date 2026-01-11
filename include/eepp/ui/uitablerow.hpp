@@ -50,7 +50,7 @@ class EE_API UITableRow : public UIWidget {
 		auto eventType = isMouseEvent( msg->getMsg() );
 		if ( eventType != Event::NoEvent &&
 			 ( mouseDownNode == nullptr || mouseDownNode == this || isParentOf( mouseDownNode ) ) &&
-			 draggingNode == nullptr ) {
+			 ( draggingNode == nullptr || mouseDownNode == draggingNode ) ) {
 			sendMouseEvent( eventType, eventDispatcher->getMousePos(), msg->getFlags() );
 		}
 		return 0;

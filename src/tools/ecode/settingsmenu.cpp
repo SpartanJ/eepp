@@ -1,4 +1,5 @@
 #include "settingsmenu.hpp"
+
 #include <filesystem>
 namespace fs = std::filesystem;
 
@@ -73,7 +74,7 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 		->add( i18n( "save_all", "Save All" ), findIcon( "document-save-as" ),
 			   getKeybind( "save-all" ) )
 		->setId( "save-all" );
-	mSettingsMenu->addSeparator()->setId( "settings-submenues-sep" );
+	mSettingsMenu->addSeparator()->setId( "settings-submenus-sep" );
 
 	mProjectMenu = UIPopUpMenu::New();
 	auto projectMenuButton = mSettingsMenu
@@ -167,8 +168,17 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 									: menuButton );
 		} );
 
-		if ( menuBarIndex == 0 )
-			menu->on( Event::OnMenuHide, [menuHint]( auto ) { menuHint->setVisible( false ); } );
+		if ( menuBarIndex == 0 ) {
+			menu->on( Event::OnMenuHide, [menuHint, this]( auto ) {
+				menuHint->setVisible( false );
+
+				if ( mSplitter->getUISceneNode()->getEventDispatcher()->getFocusNode() ==
+						 mSettingsMenu &&
+					 mSplitter->getCurWidget() ) {
+					mSplitter->getCurWidget()->setFocus();
+				}
+			} );
+		}
 
 		menu->on( Event::OnVisibleChange, [this, menuBarIndex]( const Event* event ) {
 			if ( mApp->getConfig().ui.showMenuBar ) {
@@ -205,7 +215,7 @@ void SettingsMenu::createSettingsMenu( App* app, UIMenuBar* menuBar ) {
 }
 
 UIMenu* SettingsMenu::createFileTypeMenu( bool emptyMenu ) {
-	mFileTypeMenuesCreatedWithHeight = emptyMenu ? 0 : mUISceneNode->getPixelsSize().getHeight();
+	mFileTypeMenusCreatedWithHeight = emptyMenu ? 0 : mUISceneNode->getPixelsSize().getHeight();
 	size_t maxItems = 19;
 	auto* dM = SyntaxDefinitionManager::instance();
 	auto names = dM->getLanguageNames();
@@ -213,28 +223,31 @@ UIMenu* SettingsMenu::createFileTypeMenu( bool emptyMenu ) {
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		const String& name = item->getText();
 		if ( mSplitter->curEditorExistsAndFocused() ) {
-			mSplitter->getCurEditor()->setSyntaxDefinition( dM->getByLanguageName( name ) );
+			mSplitter->getCurEditor()->setSyntaxDefinition(
+				dM->getByLanguageName( name.toUtf8() ) );
 			updateCurrentFileType();
 		}
 	};
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 	menu->on( Event::OnItemClicked, cb );
-	mFileTypeMenues.push_back( menu );
+	mFileTypeMenus.push_back( menu );
 	size_t total = 0;
 
 	if ( emptyMenu )
-		return mFileTypeMenues[0];
+		return mFileTypeMenus[0];
 
 	for ( const auto& name : names ) {
 		menu->addRadioButton(
 			name, mSplitter->curEditorExistsAndFocused() &&
 					  mSplitter->getCurEditor()->getSyntaxDefinition().getLanguageName() == name );
 
-		if ( mFileTypeMenues.size() == 1 && menu->getCount() == 1 ) {
+		if ( mFileTypeMenus.size() == 1 && menu->getCount() == 1 ) {
+			auto menuBar = mUISceneNode->findByType( UI_TYPE_MENUBAR );
 			menu->reloadStyle( true, true );
 			Float height = menu->getPixelsSize().getHeight();
-			Float tHeight = mUISceneNode->getPixelsSize().getHeight();
+			Float tHeight = mUISceneNode->getPixelsSize().getHeight() -
+							( menuBar ? menuBar->getPixelsSize().getHeight() : 0 );
 			maxItems = (int)eeceil( tHeight / height ) - 2;
 		}
 
@@ -244,16 +257,16 @@ UIMenu* SettingsMenu::createFileTypeMenu( bool emptyMenu ) {
 			UIPopUpMenu* newMenu = UIPopUpMenu::New();
 			menu->addSubMenu( i18n( "more_ellipsis", "More..." ), nullptr, newMenu );
 			newMenu->on( Event::OnItemClicked, cb );
-			mFileTypeMenues.push_back( newMenu );
+			mFileTypeMenus.push_back( newMenu );
 			menu = newMenu;
 		}
 	}
 
-	return mFileTypeMenues[0];
+	return mFileTypeMenus[0];
 }
 
 UIMenu* SettingsMenu::createColorSchemeMenu( bool emptyMenu ) {
-	mColorSchemeMenuesCreatedWithHeight = emptyMenu ? 0 : mUISceneNode->getPixelsSize().getHeight();
+	mColorSchemeMenusCreatedWithHeight = emptyMenu ? 0 : mUISceneNode->getPixelsSize().getHeight();
 	size_t maxItems = 19;
 	auto cb = [this]( const Event* event ) {
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
@@ -263,21 +276,23 @@ UIMenu* SettingsMenu::createColorSchemeMenu( bool emptyMenu ) {
 
 	UIPopUpMenu* menu = UIPopUpMenu::New();
 	menu->on( Event::OnItemClicked, cb );
-	mColorSchemeMenues.push_back( menu );
+	mColorSchemeMenus.push_back( menu );
 	size_t total = 0;
 	const auto& colorSchemes = mSplitter->getColorSchemes();
 
 	if ( emptyMenu )
-		return mColorSchemeMenues[0];
+		return mColorSchemeMenus[0];
 
 	for ( auto& colorScheme : colorSchemes ) {
 		menu->addRadioButton( colorScheme.first,
 							  mSplitter->getCurrentColorSchemeName() == colorScheme.first );
 
-		if ( mColorSchemeMenues.size() == 1 && menu->getCount() == 1 ) {
+		if ( mColorSchemeMenus.size() == 1 && menu->getCount() == 1 ) {
+			auto menuBar = mUISceneNode->findByType( UI_TYPE_MENUBAR );
 			menu->reloadStyle( true, true );
 			Float height = menu->getPixelsSize().getHeight();
-			Float tHeight = mUISceneNode->getPixelsSize().getHeight();
+			Float tHeight = mUISceneNode->getPixelsSize().getHeight() -
+							( menuBar ? menuBar->getPixelsSize().getHeight() : 0 );
 			maxItems = (int)eeceil( tHeight / height ) - 2;
 		}
 
@@ -287,12 +302,42 @@ UIMenu* SettingsMenu::createColorSchemeMenu( bool emptyMenu ) {
 			UIPopUpMenu* newMenu = UIPopUpMenu::New();
 			menu->addSubMenu( i18n( "more_ellipsis", "More..." ), nullptr, newMenu );
 			newMenu->on( Event::OnItemClicked, cb );
-			mColorSchemeMenues.push_back( newMenu );
+			mColorSchemeMenus.push_back( newMenu );
 			menu = newMenu;
 		}
 	}
 
-	return mColorSchemeMenues[0];
+	return mColorSchemeMenus[0];
+}
+
+void SettingsMenu::forEachTerminal( const std::function<void( UITerminal* )> fn ) {
+	mSplitter->forEachWidgetType(
+		UI_TYPE_TERMINAL, [&fn]( UIWidget* widget ) { fn( widget->asType<UITerminal>() ); } );
+
+	if ( mApp->getStatusTerminalController() &&
+		 mApp->getStatusTerminalController()->getTabWidget() ) {
+		mApp->getStatusTerminalController()->getTabWidget()->forEachTab(
+			[&fn]( UITab* tab ) { fn( tab->getOwnedWidget()->asType<UITerminal>() ); },
+			UI_TYPE_TERMINAL );
+	}
+}
+
+UITerminal* SettingsMenu::getCurrentTerminal() const {
+	UITerminal* splitterTerm =
+		mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL )
+			? mSplitter->getCurWidget()->asType<UITerminal>()
+			: nullptr;
+	/* TODO: Think in a better way to detect if the "Current Terminal" is the tab widget terminal */
+	if ( splitterTerm == nullptr ) {
+		auto stc = mApp->getStatusTerminalController();
+		if ( stc && stc->getTabWidget() && stc->getTabWidget()->getTabSelected() &&
+			 stc->getTabWidget()->getTabSelected()->getOwnedWidget() &&
+			 stc->getTabWidget()->getTabSelected()->getOwnedWidget()->isType( UI_TYPE_TERMINAL ) &&
+			 stc->getTabWidget()->getTabSelected()->getOwnedWidget()->hasVisibility() ) {
+			return stc->getTabWidget()->getTabSelected()->getOwnedWidget()->asType<UITerminal>();
+		}
+	}
+	return splitterTerm;
 }
 
 UIMenu* SettingsMenu::createDocumentMenu() {
@@ -314,10 +359,10 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		i18n( "file_type", "File Type" ), findIcon( "file-code" ), createFileTypeMenu( true ) );
 
 	fileTypeMenu->on( Event::OnMenuShow, [this, fileTypeMenu]( const Event* ) {
-		if ( mFileTypeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
-			for ( UIPopUpMenu* menu : mFileTypeMenues )
+		if ( mFileTypeMenusCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
+			for ( UIPopUpMenu* menu : mFileTypeMenus )
 				menu->close();
-			mFileTypeMenues.clear();
+			mFileTypeMenus.clear();
 			auto* newMenu = createFileTypeMenu();
 			newMenu->reloadStyle( true, true );
 			fileTypeMenu->setSubMenu( newMenu );
@@ -476,10 +521,10 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		mDocMenu->addSubMenu( i18n( "syntax_color_scheme", "Syntax Color Scheme" ),
 							  findIcon( "palette" ), createColorSchemeMenu( true ) );
 	colorSchemeMenu->on( Event::OnMenuShow, [this, colorSchemeMenu]( const Event* ) {
-		if ( mColorSchemeMenuesCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
-			for ( UIPopUpMenu* menu : mColorSchemeMenues )
+		if ( mColorSchemeMenusCreatedWithHeight != mUISceneNode->getPixelsSize().getHeight() ) {
+			for ( UIPopUpMenu* menu : mColorSchemeMenus )
 				menu->close();
-			mColorSchemeMenues.clear();
+			mColorSchemeMenus.clear();
 			auto* newMenu = createColorSchemeMenu();
 			newMenu->reloadStyle( true, true );
 			colorSchemeMenu->setSubMenu( newMenu );
@@ -633,6 +678,14 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 					   mApp->getConfig().doc.trimTrailingWhitespaces )
 		->setId( "trim_whitespaces" );
 
+	mGlobalMenu->addCheckBox( i18n( "tab_stops", "Tab Stops" ), mApp->getConfig().doc.tabStops )
+		->setTooltipText(
+			i18n( "tab_stops_desc",
+				  "Enabling \"Tab Stops\" ensures that tabs align text at consistent column "
+				  "positions according to the tab grid,\nwhile disabling them makes tabs behave "
+				  "like a fixed number of spaces regardless of their position." ) )
+		->setId( "tab_stops" );
+
 	mGlobalMenu
 		->addCheckBox( i18n( "force_new_line_at_end_of_file", "Force New Line at End of File" ),
 					   mApp->getConfig().doc.forceNewLineAtEndOfFile )
@@ -657,17 +710,6 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 				  "the document buffer changes between sessions, even if they are not saved\n"
 				  "before exiting the program." ) )
 		->setId( "session_snapshot" );
-
-	mGlobalMenu
-		->addCheckBox( i18n( "allow_flash_cursor", "Allow Flashing Cursor" ),
-					   mApp->getConfig().editor.flashCursor )
-		->setTooltipText( i18n(
-			"allow_flash_cursor_desc",
-			"When enabled, pressing the default modifier key 5 times within 1.5 seconds will\n"
-			"trigger a visual effect that highlights the current cursor position. A large,\n"
-			"transparent rectangle will briefly animate, shrinking down to the cursor, making it\n"
-			"easier to locate when it's hard to see." ) )
-		->setId( "allow_flash_cursor" );
 
 	mGlobalMenu->addSeparator();
 
@@ -727,8 +769,11 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 				mApp->getConfig().editor.autoReloadOnDiskChange = item->isActive();
 			} else if ( "session_snapshot" == id ) {
 				mApp->getConfig().workspace.sessionSnapshot = item->isActive();
-			} else if ( "allow_flash_cursor" == id ) {
-				mApp->getConfig().editor.flashCursor = item->isActive();
+			} else if ( "tab_stops" == id ) {
+				mApp->getConfig().doc.tabStops = item->isActive();
+				mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
+					editor->setTabStops( mApp->getConfig().doc.tabStops );
+				} );
 			}
 		} else if ( "line_breaking_column" == id ) {
 			mApp->getSettingsActions()->setLineBreakingColumn();
@@ -747,7 +792,7 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 	mProjectDocMenu = UIPopUpMenu::New();
 	mProjectDocMenu
 		->addCheckBox( i18n( "use_global_settings", "Use Global Settings" ),
-					   mApp->getProjectDocConfig().useGlobalSettings )
+					   mApp->getProjectConfig().useGlobalSettings )
 		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "use_global_settings" );
 
@@ -756,73 +801,72 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			i18n( "auto_detect_indent_type_and_width", "Auto Detect Indent Type & Width" ),
 			mApp->getConfig().doc.autoDetectIndentType )
 		->setId( "auto_indent" )
-		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
+		->setEnabled( !mApp->getProjectConfig().useGlobalSettings );
 
 	UIPopUpMenu* tabTypeMenuProject = UIPopUpMenu::New();
 	tabTypeMenuProject->addRadioButton( i18n( "tabs", "Tabs" ) )
-		->setActive( !mApp->getProjectDocConfig().doc.indentSpaces )
+		->setActive( !mApp->getProjectConfig().doc.indentSpaces )
 		->setId( "tabs" );
 	tabTypeMenuProject->addRadioButton( i18n( "spaces", "Spaces" ) )
-		->setActive( mApp->getProjectDocConfig().doc.indentSpaces )
+		->setActive( mApp->getProjectConfig().doc.indentSpaces )
 		->setId( "spaces" );
 	mProjectDocMenu
 		->addSubMenu( i18n( "indentation_type", "Indentation Type" ), nullptr, tabTypeMenuProject )
 		->setId( "indent_type" )
-		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
+		->setEnabled( !mApp->getProjectConfig().useGlobalSettings );
 	tabTypeMenuProject->on( Event::OnItemClicked, [this]( const Event* event ) {
 		const String& text = event->getNode()->asType<UIMenuRadioButton>()->getId();
-		mApp->getProjectDocConfig().doc.indentSpaces = text != "tabs";
+		mApp->getProjectConfig().doc.indentSpaces = text != "tabs";
 	} );
 
 	UIPopUpMenu* indentWidthMenuProject = UIPopUpMenu::New();
 	for ( int w = 2; w <= 12; w++ )
 		indentWidthMenuProject
-			->addRadioButton( String::toString( w ),
-							  mApp->getProjectDocConfig().doc.indentWidth == w )
+			->addRadioButton( String::toString( w ), mApp->getProjectConfig().doc.indentWidth == w )
 			->setId( String::format( "indent_width_%d", w ) )
 			->setData( w );
 	mProjectDocMenu
 		->addSubMenu( i18n( "indent_width", "Indent Width" ), nullptr, indentWidthMenuProject )
 		->setId( "indent_width" )
-		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
+		->setEnabled( !mApp->getProjectConfig().useGlobalSettings );
 	indentWidthMenuProject->on( Event::OnItemClicked, [this]( const Event* event ) {
 		int width = event->getNode()->getData();
-		mApp->getProjectDocConfig().doc.indentWidth = width;
+		mApp->getProjectConfig().doc.indentWidth = width;
 	} );
 
 	UIPopUpMenu* tabWidthMenuProject = UIPopUpMenu::New();
 	for ( int w = 2; w <= 12; w++ )
 		tabWidthMenuProject
-			->addRadioButton( String::toString( w ), mApp->getProjectDocConfig().doc.tabWidth == w )
+			->addRadioButton( String::toString( w ), mApp->getProjectConfig().doc.tabWidth == w )
 			->setId( String::format( "tab_width_%d", w ) )
 			->setData( w );
 	mProjectDocMenu->addSubMenu( i18n( "tab_width", "Tab Width" ), nullptr, tabWidthMenuProject )
 		->setId( "tab_width" )
-		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
+		->setEnabled( !mApp->getProjectConfig().useGlobalSettings );
 	tabWidthMenuProject->on( Event::OnItemClicked, [this]( const Event* event ) {
 		int width = event->getNode()->getData();
-		mApp->getProjectDocConfig().doc.tabWidth = width;
+		mApp->getProjectConfig().doc.tabWidth = width;
 	} );
 
 	UIPopUpMenu* lineEndingsProjectMenu = UIPopUpMenu::New();
 	lineEndingsProjectMenu
-		->addRadioButton( "Windows (CR/LF)", mApp->getProjectDocConfig().doc.lineEndings ==
-												 TextFormat::LineEnding::CRLF )
+		->addRadioButton( "Windows (CR/LF)",
+						  mApp->getProjectConfig().doc.lineEndings == TextFormat::LineEnding::CRLF )
 		->setId( "CRLF" );
 	lineEndingsProjectMenu
-		->addRadioButton( "Unix (LF)", mApp->getProjectDocConfig().doc.lineEndings ==
-										   TextFormat::LineEnding::LF )
+		->addRadioButton( "Unix (LF)",
+						  mApp->getProjectConfig().doc.lineEndings == TextFormat::LineEnding::LF )
 		->setId( "LF" );
 	lineEndingsProjectMenu
-		->addRadioButton( "Macintosh (CR)", mApp->getProjectDocConfig().doc.lineEndings ==
-												TextFormat::LineEnding::CR )
+		->addRadioButton( "Macintosh (CR)",
+						  mApp->getProjectConfig().doc.lineEndings == TextFormat::LineEnding::CR )
 		->setId( "CR" );
 	mProjectDocMenu
 		->addSubMenu( i18n( "line_endings", "Line Endings" ), nullptr, lineEndingsProjectMenu )
 		->setId( "line_endings" )
-		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
+		->setEnabled( !mApp->getProjectConfig().useGlobalSettings );
 	lineEndingsProjectMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
-		mApp->getProjectDocConfig().doc.lineEndings =
+		mApp->getProjectConfig().doc.lineEndings =
 			TextFormat::stringToLineEnding( event->getNode()->asType<UIRadioButton>()->getId() );
 	} );
 
@@ -830,19 +874,19 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		->addCheckBox( i18n( "trim_trailing_whitespaces", "Trim Trailing Whitespaces" ),
 					   mApp->getConfig().doc.trimTrailingWhitespaces )
 		->setId( "trim_whitespaces" )
-		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
+		->setEnabled( !mApp->getProjectConfig().useGlobalSettings );
 
 	mProjectDocMenu
 		->addCheckBox( i18n( "force_new_line_at_end_of_file", "Force New Line at End of File" ),
 					   mApp->getConfig().doc.forceNewLineAtEndOfFile )
 		->setId( "force_nl" )
-		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
+		->setEnabled( !mApp->getProjectConfig().useGlobalSettings );
 
 	mProjectDocMenu
 		->addCheckBox( i18n( "write_unicode_bom", "Write Unicode BOM" ),
 					   mApp->getConfig().doc.writeUnicodeBOM )
 		->setId( "write_bom" )
-		->setEnabled( !mApp->getProjectDocConfig().useGlobalSettings );
+		->setEnabled( !mApp->getProjectConfig().useGlobalSettings );
 
 	mProjectDocMenu->addSeparator();
 
@@ -859,16 +903,16 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 		if ( event->getNode()->isType( UI_TYPE_MENUCHECKBOX ) ) {
 			UIMenuCheckBox* item = event->getNode()->asType<UIMenuCheckBox>();
 			if ( "use_global_settings" == id ) {
-				mApp->getProjectDocConfig().useGlobalSettings = item->isActive();
+				mApp->getProjectConfig().useGlobalSettings = item->isActive();
 				updateProjectSettingsMenu();
 			} else if ( "trim_whitespaces" == id ) {
-				mApp->getProjectDocConfig().doc.trimTrailingWhitespaces = item->isActive();
+				mApp->getProjectConfig().doc.trimTrailingWhitespaces = item->isActive();
 			} else if ( "force_nl" == id ) {
-				mApp->getProjectDocConfig().doc.forceNewLineAtEndOfFile = item->isActive();
+				mApp->getProjectConfig().doc.forceNewLineAtEndOfFile = item->isActive();
 			} else if ( "write_bom" == id ) {
-				mApp->getProjectDocConfig().doc.writeUnicodeBOM = item->isActive();
+				mApp->getProjectConfig().doc.writeUnicodeBOM = item->isActive();
 			} else if ( "auto_indent" == id ) {
-				mApp->getProjectDocConfig().doc.autoDetectIndentType = item->isActive();
+				mApp->getProjectConfig().doc.autoDetectIndentType = item->isActive();
 			}
 		} else if ( "line_breaking_column" == id ) {
 			UIMessageBox* msgBox = UIMessageBox::New(
@@ -879,12 +923,12 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			msgBox->setCloseShortcut( { KEY_ESCAPE, 0 } );
 			msgBox->getTextInput()->setAllowOnlyNumbers( true, false );
 			msgBox->getTextInput()->setText(
-				String::toString( mApp->getProjectDocConfig().doc.lineBreakingColumn ) );
+				String::toString( mApp->getProjectConfig().doc.lineBreakingColumn ) );
 			msgBox->showWhenReady();
 			msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 				int val;
 				if ( String::fromString( val, msgBox->getTextInput()->getText() ) && val >= 0 ) {
-					mApp->getProjectDocConfig().doc.lineBreakingColumn = val;
+					mApp->getProjectConfig().doc.lineBreakingColumn = val;
 					mSplitter->forEachEditor(
 						[val]( UICodeEditor* editor ) { editor->setLineBreakingColumn( val ); } );
 					msgBox->closeWindow();
@@ -906,6 +950,8 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 
 UIMenu* SettingsMenu::createTerminalMenu() {
 	mTerminalMenu = UIPopUpMenu::New();
+
+	mTerminalMenu->on( Event::OnMenuShow, [this]( auto ) { updateTerminalMenu(); } );
 
 	mTerminalMenu->add( i18n( "current_terminal", "Current Terminal" ) )
 		->setTextAlign( UI_HALIGN_CENTER );
@@ -938,24 +984,184 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 #endif
 
 	UIPopUpMenu* newTerminalBehaviorSubMenu = UIPopUpMenu::New();
-	auto currentOrientation =
-		NewTerminalOrientation::toString( mApp->getConfig().term.newTerminalOrientation );
+	auto currentOrientation = mApp->getConfig().term.newTerminalOrientation;
 
 	newTerminalBehaviorSubMenu
 		->addRadioButton( i18n( "open_in_same_tabbar", "Open In Current Tab Bar" ) )
-		->setActive( currentOrientation == "same" )
+		->setActive( currentOrientation == NewTerminalOrientation::Same )
 		->setId( "same" );
 	newTerminalBehaviorSubMenu
 		->addRadioButton( i18n( "open_in_vertical_split", "Open In New Vertical Split" ) )
-		->setActive( currentOrientation == "vertical" )
+		->setActive( currentOrientation == NewTerminalOrientation::Vertical )
 		->setId( "vertical" );
 	newTerminalBehaviorSubMenu
 		->addRadioButton( i18n( "open_in_horizontal_split", "Open In New Horizontal Split" ) )
-		->setActive( currentOrientation == "horizontal" )
+		->setActive( currentOrientation == NewTerminalOrientation::Horizontal )
 		->setId( "horizontal" );
+	newTerminalBehaviorSubMenu
+		->addRadioButton( i18n( "open_in_statusbar_panel", "Open In Status Bar Panel" ) )
+		->setActive( currentOrientation == NewTerminalOrientation::StatusBarPanel )
+		->setId( "statusbar_panel" );
 
 	mTerminalMenu->addSubMenu( i18n( "new_terminal_behavior", "New Terminal Behavior" ),
 							   findIcon( "terminal" ), newTerminalBehaviorSubMenu );
+
+	newTerminalBehaviorSubMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		const std::string& id( event->getNode()->getId() );
+		mApp->getConfig().term.newTerminalOrientation = NewTerminalOrientation::fromString( id );
+	} );
+
+	UIPopUpMenu* cursorStyleMenu = UIPopUpMenu::New();
+
+	mTerminalMenu->addSubMenu( i18n( "cursor_style", "Cursor Style" ), findIcon( "terminal" ),
+							   cursorStyleMenu );
+
+	const auto cursorStyleMenuRefresh = [this, cursorStyleMenu] {
+		const auto& cfg = mApp->getConfig();
+		auto el = cursorStyleMenu->find(
+			"tcursor_" + TerminalCursorHelper::modeToString( cfg.term.cursorStyle ) );
+		if ( el && el->isType( UI_TYPE_MENURADIOBUTTON ) )
+			el->asType<UIMenuRadioButton>()->setActive( true );
+	};
+
+	cursorStyleMenu->on(
+		Event::OnMenuShow, [this, cursorStyleMenu, cursorStyleMenuRefresh]( auto ) {
+			if ( cursorStyleMenu->getCount() == 0 ) {
+				cursorStyleMenu->addRadioButton( i18n( "blinking_block", "Blinking Block" ) )
+					->setId( "tcursor_blinking_block" );
+				cursorStyleMenu->addRadioButton( i18n( "steady_block", "Steady Block" ) )
+					->setId( "tcursor_steady_block" );
+				cursorStyleMenu->addRadioButton( i18n( "blink_underline", "Blink Underline" ) )
+					->setId( "tcursor_blink_underline" );
+				cursorStyleMenu->addRadioButton( i18n( "steady_underline", "Steady Underline" ) )
+					->setId( "tcursor_steady_underline" );
+				cursorStyleMenu->addRadioButton( i18n( "blink_bar", "Blink Bar" ) )
+					->setId( "tcursor_blink_bar" );
+				cursorStyleMenu->addRadioButton( i18n( "steady_bar", "Steady Bar" ) )
+					->setId( "tcursor_steady_bar" );
+			}
+			cursorStyleMenuRefresh();
+		} );
+
+	cursorStyleMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		const std::string& id( event->getNode()->getId() );
+		std::string cursor = id.substr( 8 );
+		mApp->getConfig().term.cursorStyle = TerminalCursorHelper::modeFromString( cursor );
+		forEachTerminal( [this]( UITerminal* term ) {
+			term->getTerm()->setCursorMode( mApp->getConfig().term.cursorStyle );
+		} );
+	} );
+
+	UIPopUpMenu* scrollBarTypeMenu = UIPopUpMenu::New();
+
+	const auto scrollBarTypeMenuRefresh = [this, scrollBarTypeMenu] {
+		const auto& cfg = mApp->getConfig();
+		auto el = scrollBarTypeMenu->find(
+			"tscrolltype_" +
+			( cfg.term.scrollBarType == ScrollViewType::Overlay ? "overlay"sv : "outside"sv ) );
+		if ( el && el->isType( UI_TYPE_MENURADIOBUTTON ) )
+			el->asType<UIMenuRadioButton>()->setActive( true );
+	};
+
+	scrollBarTypeMenu->on(
+		Event::OnMenuShow, [this, scrollBarTypeMenu, scrollBarTypeMenuRefresh]( auto ) {
+			if ( scrollBarTypeMenu->getCount() == 0 ) {
+				scrollBarTypeMenu->addRadioButton( i18n( "overlay", "Overlay" ) )
+					->setTooltipText(
+						i18n( "scroll_overlay_tooltip", "Scrollbar appears over content." ) )
+					->setId( "tscrolltype_overlay" );
+				scrollBarTypeMenu->addRadioButton( i18n( "outside", "Outside" ) )
+					->setTooltipText( i18n( "scroll_outside_tooltip",
+											"Scrollbar has its own space, never covers content." ) )
+					->setId( "tscrolltype_outside" );
+			}
+			scrollBarTypeMenuRefresh();
+		} );
+
+	scrollBarTypeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		const std::string& id( event->getNode()->getId() );
+		std::string cursor = id.substr( 12 );
+		mApp->getConfig().term.scrollBarType =
+			cursor == "overlay" ? ScrollViewType::Overlay : ScrollViewType::Outside;
+		forEachTerminal( [this]( UITerminal* term ) {
+			term->setScrollViewType( mApp->getConfig().term.scrollBarType );
+		} );
+	} );
+
+	mTerminalMenu->addSubMenu( i18n( "scrollbar_type", "ScrollBar Type" ), nullptr,
+							   scrollBarTypeMenu );
+
+	UIPopUpMenu* scrollBarModeMenu = UIPopUpMenu::New();
+
+	const auto scrollBarModeMenuRefresh = [this, scrollBarModeMenu] {
+		const auto& cfg = mApp->getConfig();
+		auto el = scrollBarModeMenu->find(
+			"tscrollmode_" +
+			( cfg.term.scrollBarMode == ScrollBarMode::Auto
+				  ? "auto"sv
+				  : ( cfg.term.scrollBarMode == ScrollBarMode::AlwaysOn ? "on"sv : "off"sv ) ) );
+		if ( el && el->isType( UI_TYPE_MENURADIOBUTTON ) )
+			el->asType<UIMenuRadioButton>()->setActive( true );
+	};
+
+	scrollBarModeMenu->on(
+		Event::OnMenuShow, [this, scrollBarModeMenu, scrollBarModeMenuRefresh]( auto ) {
+			if ( scrollBarModeMenu->getCount() == 0 ) {
+				scrollBarModeMenu->addRadioButton( i18n( "auto", "Auto" ) )
+					->setTooltipText( i18n( "scrollbar_mode_auto_tooltip",
+											"In overlay type Scrollbar will be visible only when "
+											"mouse moves over the terminal.\nIn outside type it "
+											"will be visible if there's any scrollable area." ) )
+					->setId( "tscrollmode_auto" );
+				scrollBarModeMenu->addRadioButton( i18n( "always_visible", "Always Visible" ) )
+					->setId( "tscrollmode_on" );
+				scrollBarModeMenu->addRadioButton( i18n( "always_hidden", "Always Hidden" ) )
+					->setId( "tscrollmode_off" );
+			}
+			scrollBarModeMenuRefresh();
+		} );
+
+	scrollBarModeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		const std::string& id( event->getNode()->getId() );
+		std::string mode = id.substr( 12 );
+		mApp->getConfig().term.scrollBarMode =
+			mode == "auto" ? ScrollBarMode::Auto
+						   : ( mode == "on" ? ScrollBarMode::AlwaysOn : ScrollBarMode::AlwaysOff );
+		forEachTerminal( [this]( UITerminal* term ) {
+			term->setVerticalScrollMode( mApp->getConfig().term.scrollBarMode );
+		} );
+	} );
+
+	mTerminalMenu->addSubMenu( i18n( "scrollbar_mode", "ScrollBar Mode" ), nullptr,
+							   scrollBarModeMenu );
+
+	mTerminalMenu->addSeparator();
+
+	mTerminalMenu
+		->addCheckBox(
+			i18n( "enable_exclusive_mode_by_default", "Enable Exclusive Mode by Default" ),
+			mApp->getConfig().term.exclusiveMode )
+		->setTooltipText( i18n( "enable_exclusive_mode_by_default_tooltip",
+								"New terminals will have the exclusive mode enabled by default" ) )
+		->setId( "enable-exclusive-mode-by-default" );
+
+	mTerminalMenu
+		->addCheckBox( i18n( "close_terminal_tab_on_exit", "Close Terminal Tab on Exit" ),
+					   mApp->getConfig().term.closeTerminalTabOnExit )
+		->setTooltipText( i18n( "close_terminal_tab_on_exit_tooltip",
+								"Closes the terminal tab when the main process exits.\nIf "
+								"disabled, a new shell process starts instead." ) )
+		->setId( "close-terminal-tab-on-exit" );
+
+	mTerminalMenu
+		->addCheckBox( i18n( "warn_before_closing_tab", "Warn Before Closing Tab" ),
+					   mApp->getConfig().term.warnBeforeClosingTab )
+		->setTooltipText( i18n( "warn_before_closing_tab_tooltip",
+								"Prompts for confirmation if a program is still running when "
+								"closing a terminal tab." ) )
+		->setId( "warn-before-closing-tab" );
+
+	mTerminalMenu->addSeparator();
 
 	mTerminalMenu
 		->add( i18n( "configure_terminal_shell", "Configure Terminal Shell" ),
@@ -967,15 +1173,22 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 			   findIcon( "terminal" ), getKeybind( "configure-terminal-scrollback" ) )
 		->setId( "configure-terminal-scrollback" );
 
-	newTerminalBehaviorSubMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
-		const std::string& id( event->getNode()->getId() );
-		mApp->getConfig().term.newTerminalOrientation = NewTerminalOrientation::fromString( id );
-	} );
-
 	mTerminalMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		const std::string& id( event->getNode()->getId() );
-		if ( mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL ) ) {
-			UITerminal* terminal = mSplitter->getCurWidget()->asType<UITerminal>();
+		if ( "close-terminal-tab-on-exit" == id ) {
+			bool active = event->getNode()->asType<UIMenuCheckBox>()->isActive();
+			mApp->getConfig().term.closeTerminalTabOnExit = active;
+			mSplitter->forEachWidgetType( UI_TYPE_TERMINAL, [active]( UIWidget* widget ) {
+				widget->asType<UITerminal>()->getTerm()->setKeepAlive( !active );
+			} );
+		} else if ( "enable-exclusive-mode-by-default" == id ) {
+			bool active = event->getNode()->asType<UIMenuCheckBox>()->isActive();
+			mApp->getConfig().term.exclusiveMode = active;
+		} else if ( "warn-before-closing-tab" == id ) {
+			bool active = event->getNode()->asType<UIMenuCheckBox>()->isActive();
+			mApp->getConfig().term.warnBeforeClosingTab = active;
+		} else if ( getCurrentTerminal() ) {
+			UITerminal* terminal = getCurrentTerminal();
 			if ( "exclusive-mode" == id ) {
 				terminal->setExclusiveMode(
 					event->getNode()->asType<UIMenuCheckBox>()->isActive() );
@@ -992,6 +1205,7 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 
 UIMenu* SettingsMenu::createEditMenu() {
 	mEditMenu = UIPopUpMenu::New();
+	mEditMenu->setId( "edit_menu" );
 	mEditMenu->add( i18n( "undo", "Undo" ), findIcon( "undo" ), getKeybind( "undo" ) )
 		->setId( "undo" );
 	mEditMenu->add( i18n( "redo", "Redo" ), findIcon( "redo" ), getKeybind( "redo" ) )
@@ -1016,15 +1230,13 @@ UIMenu* SettingsMenu::createEditMenu() {
 		->add( i18n( "find_replace", "Find/Replace" ), findIcon( "find-replace" ),
 			   getKeybind( "find-replace" ) )
 		->setId( "find-replace" );
+
 	mEditMenu->addSeparator();
+
 	mEditMenu
-		->add( i18n( "open_containing_folder_ellipsis", "Open Containing Folder..." ),
+		->add( i18n( "open_containing_folder_in_fm", "Open Containing Folder in File Manager" ),
 			   findIcon( "folder-open" ), getKeybind( "open-containing-folder" ) )
 		->setId( "open-containing-folder" );
-	mEditMenu
-		->add( i18n( "open_in_new_window_ellipsis", "Open in New Window..." ), findIcon( "window" ),
-			   getKeybind( "open-in-new-window" ) )
-		->setId( "open-in-new-window" );
 	mEditMenu
 		->add( i18n( "copy_containing_folder_path_ellipsis", "Copy Containing Folder Path..." ),
 			   findIcon( "copy" ), getKeybind( "copy-containing-folder-path" ) )
@@ -1033,17 +1245,32 @@ UIMenu* SettingsMenu::createEditMenu() {
 		->add( i18n( "copy_file_path", "Copy File Path" ), findIcon( "copy" ),
 			   getKeybind( "copy-file-path" ) )
 		->setId( "copy-file-path" );
+
+	UIMenuSeparator* moveSep = mEditMenu->addSeparator();
+
+	mEditMenu
+		->add( i18n( "open_in_new_window", "Open in New Window" ), findIcon( "window" ),
+			   getKeybind( "open-in-new-window" ) )
+		->setId( "open-in-new-window" );
+
+	mEditMenu
+		->add( i18n( "move_to_new_window", "Move to New Window" ), findIcon( "window" ),
+			   getKeybind( "move-to-new-window" ) )
+		->setId( "move-to-new-window" );
+
 	UIMenuSeparator* fileSep = mEditMenu->addSeparator();
 	mEditMenu
 		->add( i18n( "key_bindings", "Key Bindings" ), findIcon( "keybindings" ),
 			   getKeybind( "keybindings" ) )
 		->setId( "keybindings" );
+
 	mEditMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		runCommand( event->getNode()->getId() );
 	} );
-	mEditMenu->on( Event::OnMenuShow, [this, fileSep]( const Event* ) {
+
+	mEditMenu->on( Event::OnMenuShow, [this, fileSep, moveSep]( const Event* ) {
 		if ( !mSplitter->curEditorExistsAndFocused() ) {
 			mEditMenu->getItemId( "undo" )->setEnabled( false );
 			mEditMenu->getItemId( "redo" )->setEnabled( false );
@@ -1051,9 +1278,11 @@ UIMenu* SettingsMenu::createEditMenu() {
 			mEditMenu->getItemId( "cut" )->setEnabled( false );
 			mEditMenu->getItemId( "open-containing-folder" )->setVisible( false );
 			mEditMenu->getItemId( "copy-containing-folder-path" )->setVisible( false );
+			moveSep->setEnabled( false )->setVisible( false );
 			mEditMenu->getItemId( "open-in-new-window" )->setVisible( false );
+			mEditMenu->getItemId( "move-to-new-window" )->setVisible( false );
+			fileSep->setEnabled( false )->setVisible( false );
 			mEditMenu->getItemId( "copy-file-path" )->setVisible( false );
-			fileSep->setVisible( false );
 			return;
 		}
 		auto doc = mSplitter->getCurEditor()->getDocumentRef();
@@ -1063,9 +1292,11 @@ UIMenu* SettingsMenu::createEditMenu() {
 		mEditMenu->getItemId( "cut" )->setEnabled( doc->hasSelection() );
 		mEditMenu->getItemId( "open-containing-folder" )->setVisible( doc->hasFilepath() );
 		mEditMenu->getItemId( "copy-containing-folder-path" )->setVisible( doc->hasFilepath() );
+		moveSep->setEnabled( true )->setVisible( true );
 		mEditMenu->getItemId( "open-in-new-window" )->setVisible( doc->hasFilepath() );
+		mEditMenu->getItemId( "move-to-new-window" )->setVisible( doc->hasFilepath() );
+		fileSep->setEnabled( doc->hasFilepath() )->setVisible( doc->hasFilepath() );
 		mEditMenu->getItemId( "copy-file-path" )->setVisible( doc->hasFilepath() );
-		fileSep->setVisible( doc->hasFilepath() );
 	} );
 	return mEditMenu;
 }
@@ -1075,53 +1306,46 @@ UIMenu* SettingsMenu::createWindowMenu() {
 	auto shouldCloseCb = []( UIMenuItem* ) -> bool { return false; };
 	UIPopUpMenu* colorsMenu = UIPopUpMenu::New();
 	colorsMenu
+		->addRadioButton( i18n( "system", "System" ),
+						  mApp->getUIColorScheme() == ColorSchemeExtPreference::System )
+		->setOnShouldCloseCb( shouldCloseCb )
+		->setTooltipText( i18n(
+			"prefers_color_scheme_system_tooltip",
+			"System options will try to pick the system-wide currently preferred color scheme." ) )
+		->setId( "system" );
+	colorsMenu
 		->addRadioButton( i18n( "light", "Light" ),
-						  mApp->getUIColorScheme() == ColorSchemePreference::Light )
+						  mApp->getUIColorScheme() == ColorSchemeExtPreference::Light )
 		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "light" );
 	colorsMenu
 		->addRadioButton( i18n( "dark", "Dark" ),
-						  mApp->getUIColorScheme() == ColorSchemePreference::Dark )
+						  mApp->getUIColorScheme() == ColorSchemeExtPreference::Dark )
 		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "dark" );
 	colorsMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-		mApp->setUIColorScheme( item->getId() == "light" ? ColorSchemePreference::Light
-														 : ColorSchemePreference::Dark );
+		auto colorSchemeExt = ColorSchemePreferences::fromStringExt( item->getId() );
+		mApp->setUIColorSchemeFromUserInteraction( colorSchemeExt );
 	} );
-	mWindowMenu->addSubMenu( i18n( "ui_language", "UI Language" ), findIcon( "globe" ),
-							 createLanguagesMenu() );
+	mWindowMenu->addSubMenu( i18n( "fonts_configuration", "Fonts Configuration" ),
+							 findIcon( "font-size" ), createFontsMenu() );
 	mWindowMenu->addSubMenu( i18n( "ui_prefes_color_scheme", "UI Prefers Color Scheme" ),
 							 findIcon( "color-scheme" ), colorsMenu );
 	mWindowMenu->addSubMenu( i18n( "ui_thene", "UI Theme" ), findIcon( "palette" ),
 							 createThemesMenu() );
+	mWindowMenu->addSubMenu( i18n( "ui_language", "UI Language" ), findIcon( "globe" ),
+							 createLanguagesMenu() );
 	mWindowMenu->addSubMenu( i18n( "ui_renderer", "Renderer" ), findIcon( "package" ),
 							 createRendererMenu() );
+
 	mWindowMenu
 		->add( i18n( "ui_scale_factor", "UI Scale Factor (Pixel Density)" ),
 			   findIcon( "pixel-density" ) )
 		->setId( "ui-scale-factor" );
-	mWindowMenu->add( i18n( "ui_font_size", "UI Font Size" ), findIcon( "font-size" ) )
-		->setId( "ui-font-size" );
-	mWindowMenu->add( i18n( "ui_panel_font_size", "UI Panel Font Size" ), findIcon( "font-size" ) )
-		->setId( "ui-panel-font-size" );
-	mWindowMenu->add( i18n( "editor_font_size", "Editor Font Size" ), findIcon( "font-size" ) )
-		->setId( "editor-font-size" );
-	mWindowMenu->add( i18n( "terminal_font_size", "Terminal Font Size" ), findIcon( "font-size" ) )
-		->setId( "terminal-font-size" );
-	mWindowMenu->add( i18n( "serif_font_ellipsis", "Serif Font..." ), findIcon( "font-size" ) )
-		->setId( "serif-font" );
-	mWindowMenu
-		->add( i18n( "monospace_font_ellipsis", "Monospace Font..." ), findIcon( "font-size" ) )
-		->setId( "monospace-font" );
-	mWindowMenu
-		->add( i18n( "terminal_font_ellipsis", "Terminal Font..." ), findIcon( "font-size" ) )
-		->setId( "terminal-font" );
-	mWindowMenu
-		->add( i18n( "fallback_font_ellipsis", "Fallback Font..." ), findIcon( "font-size" ) )
-		->setId( "fallback-font" );
+
 	mWindowMenu->addSeparator();
 	mWindowMenu
 		->add( i18n( "key_bindings", "Key Bindings" ), findIcon( "keybindings" ),
@@ -1178,19 +1402,36 @@ UIMenu* SettingsMenu::createWindowMenu() {
 	mWindowMenu->addSubMenu( i18n( "split", "Split" ), findIcon( "split-horizontal" ), splitMenu );
 
 	mWindowMenu->addSeparator();
+
 	mWindowMenu
 		->add( i18n( "zoom_in", "Zoom In" ), findIcon( "zoom-in" ), getKeybind( "font-size-grow" ) )
 		->setId( "zoom-in" );
+
 	mWindowMenu
 		->add( i18n( "zoom_out", "Zoom Out" ), findIcon( "zoom-out" ),
 			   getKeybind( "font-size-shrink" ) )
 		->setId( "zoom-out" );
+
 	mWindowMenu
 		->add( i18n( "zoom_reset", "Zoom Reset" ), findIcon( "zoom-reset" ),
 			   getKeybind( "font-size-reset" ) )
 		->setId( "zoom-reset" );
 
 	mWindowMenu->addSeparator();
+
+	mWindowMenu
+		->addCheckBox(
+			i18n( "use_editor_font_in_input_fields", "Use the editor font in input fields" ),
+			mApp->getConfig().ui.editorFontInInputFields,
+			getKeybind( "use-editor-font-in-input-fields" ) )
+		->setTooltipText(
+			i18n( "use_editor_font_in_input_fields_desc",
+				  "When enabled all main input fields will use the same monospace font as the "
+				  "editor,\notherwise they will use the default sans-serif font." ) )
+		->setId( "use-editor-font-in-input-fields" );
+
+	mWindowMenu->addSeparator();
+
 	mWindowMenu
 		->addCheckBox( i18n( "open_files_in_new_window_enable", "Open Files in New Window" ),
 					   mApp->getConfig().ui.openFilesInNewWindow )
@@ -1198,6 +1439,56 @@ UIMenu* SettingsMenu::createWindowMenu() {
 								"When files are opened from a file explorer or from the command "
 								"line, this\ncontrols whether a new window is created or not." ) )
 		->setId( "open-files-in-new-window-enable" );
+
+	mWindowMenu
+		->addCheckBox( i18n( "open_project_in_new_window", "Open Project in New Window" ),
+					   mApp->getConfig().ui.openProjectInNewWindow )
+		->setTooltipText( i18n( "open_project_in_new_window_tooltip",
+								"Opened Project / Folders will be opened in a new window instead "
+								"of the current window unless no project is currently loaded." ) )
+		->setId( "open-project-in-new-window" );
+
+	mWindowMenu
+		->addCheckBox( i18n( "open_documents_in_main_split", "Open Documents in Main Split" ),
+					   mApp->getConfig().editor.openDocumentsInMainSplit )
+		->setTooltipText( i18n( "open_documents_in_main_split_tooltip",
+								"Always open new documents in the main split (top-left), "
+								"instead of the last active split." ) )
+		->setId( "open-documents-in-main-split" );
+
+	mWindowMenu
+		->addCheckBox( i18n( "use_native_file_dialogs", "Enable Native File Dialogs" ),
+					   mApp->getConfig().ui.nativeFileDialogs )
+		->setTooltipText( i18n( "use_native_file_dialogs_tooltip",
+								"Try to use the OS native file dialogs if they are available." ) )
+		->setId( "native-file-dialogs" );
+
+	mWindowMenu
+		->addCheckBox( i18n( "quick_preview_images", "Quick Preview Images" ),
+					   mApp->getConfig().ui.imagesQuickPreview )
+		->setTooltipText(
+			i18n( "quick_preview_images_tooltip",
+				  "Instead of opening a new tab to view an image uses a quick-preview." ) )
+		->setId( "quick-preview-images" );
+
+	mWindowMenu->addSeparator();
+
+	mWindowMenu->add( i18n( "reset_panel_layout", "Reset Panel Layout" ) )
+		->setTooltipText( i18n( "reset_panel_layout_tooltip",
+								"Restores all panels to their default sizes "
+								"(e.g. sidebar, statusbar)." ) )
+		->setId( "reset-panel-layout" );
+
+	mWindowMenu->add( i18n( "reset_global_file_associations", "Reset Global File Associations" ) )
+		->setTooltipText( i18n( "reset_global_file_associations_tooltip",
+								"Clears your saved language choices for ambiguous file extensions\n"
+								"(e.g. choosing C++ for .h files). This only affects files opened\n"
+								"outside of project folders. After resetting, you'll be prompted\n"
+								"to choose a language again when opening these files." ) )
+		->setId( "reset-global-file-associations" );
+
+	mWindowMenu->addSeparator();
+
 	mWindowMenu
 		->addCheckBox( i18n( "welcome_screen_enable", "Enable Welcome Screen" ),
 					   mApp->getConfig().ui.welcomeScreen )
@@ -1216,10 +1507,32 @@ UIMenu* SettingsMenu::createWindowMenu() {
 		} else if ( "welcome-screen-enable" == item->getId() ) {
 			bool active = item->asType<UIMenuCheckBox>()->isActive();
 			mApp->getConfig().ui.welcomeScreen = active;
+			mApp->saveConfig();
 		} else if ( "open-files-in-new-window-enable" == item->getId() ) {
 			bool active = item->asType<UIMenuCheckBox>()->isActive();
 			mApp->getConfig().ui.openFilesInNewWindow = active;
 			mApp->saveConfig();
+		} else if ( "open-project-in-new-window" == item->getId() ) {
+			bool active = item->asType<UIMenuCheckBox>()->isActive();
+			mApp->getConfig().ui.openProjectInNewWindow = active;
+			mApp->saveConfig();
+		} else if ( "open-documents-in-main-split" == item->getId() ) {
+			bool active = item->asType<UIMenuCheckBox>()->isActive();
+			mApp->getConfig().editor.openDocumentsInMainSplit = active;
+			mApp->saveConfig();
+			mApp->getSplitter()->setOpenDocumentsInMainSplit( active );
+		} else if ( "native-file-dialogs" == item->getId() ) {
+			bool active = item->asType<UIMenuCheckBox>()->isActive();
+			mApp->getConfig().ui.nativeFileDialogs = active;
+			mApp->saveConfig();
+		} else if ( "quick-preview-images" == item->getId() ) {
+			bool active = item->asType<UIMenuCheckBox>()->isActive();
+			mApp->getConfig().ui.imagesQuickPreview = active;
+			mApp->saveConfig();
+		} else if ( "use-editor-font-in-input-fields" == item->getId() ) {
+			bool active = item->asType<UIMenuCheckBox>()->isActive();
+			mApp->getConfig().ui.editorFontInInputFields = active;
+			mApp->updateInputFonts();
 		} else {
 			String text = String( event->getNode()->asType<UIMenuItem>()->getId() ).toLower();
 			String::replaceAll( text, " ", "-" );
@@ -1474,6 +1787,111 @@ UIMenu* SettingsMenu::createViewMenu() {
 
 	mViewMenu->addSeparator();
 
+	mTabBarMenu = UIPopUpMenu::New();
+
+	const auto tabBarMenuRefresh = [this] {
+		const auto& cfg = mApp->getConfig();
+
+		mTabBarMenu->getItemId( "hide-tabbar" )
+			->asType<UIMenuCheckBox>()
+			->setActive( cfg.editor.hideTabBar );
+
+		mTabBarMenu->getItemId( "hide-tabbar-on-single-tab" )
+			->asType<UIMenuCheckBox>()
+			->setActive( cfg.editor.hideTabBarOnSingleTab );
+
+		mTabBarMenu->getItemId( "tab-switcher" )
+			->asType<UIMenuCheckBox>()
+			->setActive( cfg.editor.tabSwitcher );
+
+		auto tjmi = mTabBarMenu->getItemId( "tab_jump_mode" );
+		UIPopUpMenu* tabJumpModeMenu =
+			tjmi ? tjmi->asType<UIMenuSubMenu>()->getSubMenu()->asType<UIPopUpMenu>() : nullptr;
+		if ( tabJumpModeMenu ) {
+			tabJumpModeMenu->getItemId( "tab_jump_linear" )
+				->asType<UIMenuRadioButton>()
+				->setActive( cfg.editor.tabJumpMode == UITabWidget::TabJumpMode::Linear );
+			tabJumpModeMenu->getItemId( "tab_jump_chronological" )
+				->asType<UIMenuRadioButton>()
+				->setActive( cfg.editor.tabJumpMode == UITabWidget::TabJumpMode::Chronological );
+		}
+	};
+
+	mViewMenu->addSubMenu( i18n( "tab_bar", "Tab Bar" ), findIcon( "tabbar" ), mTabBarMenu )
+		->on( Event::OnMenuShow, [this, tabBarMenuRefresh]( auto ) {
+			if ( mTabBarMenu->getCount() == 0 ) {
+				mTabBarMenu->addCheckBox( i18n( "hide_tabbar", "Hide Tab Bar" ) )
+					->setActive( mApp->getConfig().editor.hideTabBarOnSingleTab )
+					->setTooltipText( i18n( "hide_tabbar_tooltip", "Always Hide the Tab Bar." ) )
+					->setId( "hide-tabbar" );
+
+				mTabBarMenu
+					->addCheckBox(
+						i18n( "hide_tabbar_on_single_tab", "Hide Tab Bar on single tab" ) )
+					->setActive( mApp->getConfig().editor.hideTabBarOnSingleTab )
+					->setTooltipText(
+						i18n( "hide_tabbar_on_single_tab_tooltip",
+							  "Hides the tabbar if there's only one element in the tab widget." ) )
+					->setId( "hide-tabbar-on-single-tab" );
+
+				mTabBarMenu->addCheckBox( i18n( "display_tab_switcher", "Display Tab Switcher" ) )
+					->setActive( mApp->getConfig().editor.tabSwitcher )
+					->setTooltipText(
+						i18n( "display_tab_switcher_tooltip",
+							  "Displays a tab switcher at the center of the tab widget." ) )
+					->setId( "tab-switcher" );
+
+				auto tabJumpModeMenu = UIPopUpMenu::New();
+				tabJumpModeMenu->setId( "tab-jump-mode" );
+				tabJumpModeMenu->addRadioButton( i18n( "linear", "Linear" ) )
+					->setTooltipText( i18n(
+						"jump_mode_linear_tooltip",
+						"Linear Jump Mode will switch tabs in the order they are displayed" ) )
+					->setId( "tab_jump_linear" );
+				tabJumpModeMenu->addRadioButton( i18n( "chronological", "Chronological" ) )
+					->setTooltipText( i18n( "jump_mode_chronological_tooltip",
+											"Chronological Jump Mode will switch tabs in the last "
+											"focused / visited order." ) )
+					->setId( "tab_jump_chronological" );
+
+				mTabBarMenu
+					->addSubMenu( i18n( "tab_jump_mode", "Tab Jump Mode" ), nullptr,
+								  tabJumpModeMenu )
+					->setId( "tab_jump_mode" );
+
+				tabJumpModeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+					if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+						return;
+					UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+					mApp->getConfig().editor.tabJumpMode =
+						"tab_jump_linear" != item->getId() ? UITabWidget::TabJumpMode::Chronological
+														   : UITabWidget::TabJumpMode::Linear;
+				} );
+
+				mTabBarMenu->on(
+					Event::OnItemClicked, [tabBarMenuRefresh, this]( const Event* event ) {
+						if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+							return;
+						UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+						if ( "hide-tabbar" == item->getId() ) {
+							mApp->getConfig().editor.hideTabBar =
+								item->asType<UIMenuCheckBox>()->isActive();
+							mSplitter->setHideTabBar( mApp->getConfig().editor.hideTabBar );
+							if ( mApp->getConfig().editor.hideTabBar )
+								mApp->getConfig().editor.tabSwitcher = true;
+							tabBarMenuRefresh();
+						} else if ( "tab-switcher" == item->getId() ) {
+							mApp->getConfig().editor.tabSwitcher =
+								item->asType<UIMenuCheckBox>()->isActive();
+						}
+					} );
+			}
+
+			tabBarMenuRefresh();
+		} );
+
+	mViewMenu->addSeparator();
+
 	mViewMenu->addCheckBox( i18n( "show_line_numbers", "Show Line Numbers" ) )
 		->setActive( mApp->getConfig().editor.showLineNumbers )
 		->setId( "show-line-numbers" );
@@ -1522,12 +1940,6 @@ UIMenu* SettingsMenu::createViewMenu() {
 								"Enables the color picker tool when a double click selection\n"
 								"is done over a word representing a color." ) )
 		->setId( "enable-color-picker" );
-	mViewMenu->addCheckBox( i18n( "hide_tabbar_on_single_tab", "Hide tabbar on single tab" ) )
-		->setActive( mApp->getConfig().editor.hideTabBarOnSingleTab )
-		->setTooltipText(
-			i18n( "hide_tabbar_on_single_tab_tooltip",
-				  "Hides the tabbar if there's only one element in the tab widget." ) )
-		->setId( "hide-tabbar-on-single-tab" );
 	mViewMenu->addCheckBox( i18n( "treeview_single_click_nav", "Single Click Navigation" ) )
 		->setActive( mApp->getConfig().editor.singleClickNavigation )
 		->setTooltipText( i18n( "treeview_single_click_nav_tooltip",
@@ -1538,7 +1950,7 @@ UIMenu* SettingsMenu::createViewMenu() {
 		->setActive( mApp->getConfig().editor.syncProjectTreeWithEditor )
 		->setTooltipText(
 			i18n( "sync_project_tree_tooltip",
-				  "Syncronizes the current focused document as the selected\nfile in the "
+				  "Synchronizes the current focused document as the selected\nfile in the "
 				  "directory tree." ) )
 		->setId( "sync-project-tree" );
 
@@ -1566,7 +1978,7 @@ UIMenu* SettingsMenu::createViewMenu() {
 		->setVisible( mApp->getConfig().ui.panelPosition == PanelPosition::Right );
 	mViewMenu
 		->add( i18n( "move_panel_right_ellipsis", "Move panel to right..." ),
-			   findIcon( "layout-right" ), getKeybind( "layout-rigth" ) )
+			   findIcon( "layout-right" ), getKeybind( "layout-right" ) )
 		->setId( "move-panel-right" )
 		->setVisible( mApp->getConfig().ui.panelPosition == PanelPosition::Left );
 
@@ -1704,7 +2116,7 @@ UIPopUpMenu* SettingsMenu::createToolsMenu() {
 			   findIcon( "search" ), getKeybind( "show-open-documents" ) )
 		->setId( "show-open-documents" );
 	mToolsMenu
-		->add( i18n( "workspace_symbol_find_ellipsis", "Search Worskspace Symbol..." ),
+		->add( i18n( "workspace_symbol_find_ellipsis", "Search Workspace Symbol..." ),
 			   findIcon( "search" ), getKeybind( "open-workspace-symbol-search" ) )
 		->setId( "open-workspace-symbol-search" );
 	mToolsMenu
@@ -1870,45 +2282,44 @@ void SettingsMenu::updateProjectSettingsMenu() {
 	mSettingsMenu->getItemId( "project_settings" )
 		->setEnabled( !mApp->getCurrentProject().empty() );
 
-	mProjectMenu->getItemId( "h_as_cpp" )
-		->asType<UIMenuCheckBox>()
-		->setActive( mApp->getProjectDocConfig().hAsCPP );
-
-	mDocMenu->getItemId( "project_doc_settings" )->setEnabled( !mApp->getCurrentProject().empty() );
+	auto item = mHExtLanguageTypeMenu->find(
+		HExtLanguageTypeHelper::toString( mApp->getProjectConfig().hExtLanguageType ) );
+	if ( item && item->isType( UI_TYPE_MENURADIOBUTTON ) )
+		item->asType<UIMenuRadioButton>()->setActive( true );
 
 	for ( size_t i = 0; i < mProjectDocMenu->getCount(); i++ ) {
 		mProjectDocMenu->getItem( i )->setEnabled( !mApp->getCurrentProject().empty() &&
-												   !mApp->getProjectDocConfig().useGlobalSettings );
+												   !mApp->getProjectConfig().useGlobalSettings );
 	}
 
 	mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
 		editor->setLineBreakingColumn( !mApp->getCurrentProject().empty() &&
-											   !mApp->getProjectDocConfig().useGlobalSettings
-										   ? mApp->getProjectDocConfig().doc.lineBreakingColumn
+											   !mApp->getProjectConfig().useGlobalSettings
+										   ? mApp->getProjectConfig().doc.lineBreakingColumn
 										   : mApp->getConfig().doc.lineBreakingColumn );
 	} );
 
 	mProjectDocMenu->getItemId( "trim_whitespaces" )
 		->asType<UIMenuCheckBox>()
-		->setActive( mApp->getProjectDocConfig().doc.trimTrailingWhitespaces );
+		->setActive( mApp->getProjectConfig().doc.trimTrailingWhitespaces );
 
 	mProjectDocMenu->getItemId( "force_nl" )
 		->asType<UIMenuCheckBox>()
-		->setActive( mApp->getProjectDocConfig().doc.forceNewLineAtEndOfFile );
+		->setActive( mApp->getProjectConfig().doc.forceNewLineAtEndOfFile );
 
 	mProjectDocMenu->getItemId( "write_bom" )
 		->asType<UIMenuCheckBox>()
-		->setActive( mApp->getProjectDocConfig().doc.writeUnicodeBOM );
+		->setActive( mApp->getProjectConfig().doc.writeUnicodeBOM );
 
 	mProjectDocMenu->getItemId( "auto_indent" )
 		->asType<UIMenuCheckBox>()
-		->setActive( mApp->getProjectDocConfig().doc.autoDetectIndentType );
+		->setActive( mApp->getProjectConfig().doc.autoDetectIndentType );
 
-	auto* curIndent = mProjectDocMenu->find( "indent_width" )
-						  ->asType<UIMenuSubMenu>()
-						  ->getSubMenu()
-						  ->find( String::format( "indent_width_%d",
-												  mApp->getProjectDocConfig().doc.indentWidth ) );
+	auto* curIndent =
+		mProjectDocMenu->find( "indent_width" )
+			->asType<UIMenuSubMenu>()
+			->getSubMenu()
+			->find( String::format( "indent_width_%d", mApp->getProjectConfig().doc.indentWidth ) );
 
 	if ( curIndent )
 		curIndent->asType<UIMenuRadioButton>()->setActive( true );
@@ -1916,33 +2327,35 @@ void SettingsMenu::updateProjectSettingsMenu() {
 	mProjectDocMenu->find( "indent_type" )
 		->asType<UIMenuSubMenu>()
 		->getSubMenu()
-		->find( !mApp->getProjectDocConfig().doc.indentSpaces ? "tabs" : "spaces" )
+		->find( !mApp->getProjectConfig().doc.indentSpaces ? "tabs" : "spaces" )
 		->asType<UIMenuRadioButton>()
 		->setActive( true );
 
 	mProjectDocMenu->find( "tab_width" )
 		->asType<UIMenuSubMenu>()
 		->getSubMenu()
-		->find( String::format( "tab_width_%d", mApp->getProjectDocConfig().doc.tabWidth ) )
+		->find( String::format( "tab_width_%d", mApp->getProjectConfig().doc.tabWidth ) )
 		->asType<UIMenuRadioButton>()
 		->setActive( true );
 
 	mProjectDocMenu->find( "line_endings" )
 		->asType<UIMenuSubMenu>()
 		->getSubMenu()
-		->find( TextFormat::lineEndingToString( mApp->getProjectDocConfig().doc.lineEndings ) )
+		->find( TextFormat::lineEndingToString( mApp->getProjectConfig().doc.lineEndings ) )
 		->asType<UIMenuRadioButton>()
 		->setActive( true );
 
 	mProjectDocMenu->getItemId( "use_global_settings" )
 		->setEnabled( true )
 		->asType<UIMenuCheckBox>()
-		->setActive( mApp->getProjectDocConfig().useGlobalSettings );
+		->setActive( mApp->getProjectConfig().useGlobalSettings );
+
+	mProjectMenu->getItemId( "reset-project-file-associations" )
+		->setEnabled( mApp->projectIsOpen() );
 }
 
 void SettingsMenu::updateTerminalMenu() {
-	bool enabled =
-		mSplitter->getCurWidget() && mSplitter->getCurWidget()->isType( UI_TYPE_TERMINAL );
+	bool enabled = getCurrentTerminal() != nullptr;
 
 	Node* child = mTerminalMenu->getFirstChild();
 	while ( child && child->getId() != "end_current_terminal" ) {
@@ -1955,7 +2368,7 @@ void SettingsMenu::updateTerminalMenu() {
 
 	mTerminalMenu->getItemId( "exclusive-mode" )
 		->asType<UIMenuCheckBox>()
-		->setActive( mSplitter->getCurWidget()->asType<UITerminal>()->getExclusiveMode() );
+		->setActive( getCurrentTerminal()->getExclusiveMode() );
 }
 
 void SettingsMenu::updateDocumentMenu() {
@@ -2069,9 +2482,15 @@ void SettingsMenu::createProjectTreeMenu() {
 		mProjectTreeMenu
 			->add( i18n( "new_folder_ellipsis", "New Folder..." ), findIcon( "folder-add" ) )
 			->setId( "new_folder" );
+		mProjectTreeMenu->addSeparator();
 		mProjectTreeMenu
-			->add( i18n( "open_folder_ellipsis", "Open Folder..." ), findIcon( "folder-open" ) )
+			->add( i18n( "open_folder_in_fm", "Open Folder in File Manager" ),
+				   findIcon( "folder-open" ) )
 			->setId( "open_folder" );
+		mProjectTreeMenu
+			->add( i18n( "open_folder_in_new_window", "Open Folder in New ecode Window" ),
+				   findIcon( "folder-open" ) )
+			->setId( "open-folder-in-new-window" );
 		mProjectTreeMenu
 			->add( i18n( "execute_dir_in_terminal", "Open directory in terminal" ),
 				   findIcon( "filetype-bash" ) )
@@ -2096,8 +2515,13 @@ void SettingsMenu::createProjectTreeMenu() {
 			->setId( "configure-ignore-files" );
 	} else if ( !mApp->getFileSystemModel() ) {
 		mProjectTreeMenu
-			->add( i18n( "open_folder_ellipsis", "Open Folder..." ), findIcon( "folder-open" ) )
+			->add( i18n( "open_folder_in_fm", "Open Folder in File Manager" ),
+				   findIcon( "folder-open" ) )
 			->setId( "open-folder" );
+		mProjectTreeMenu
+			->add( i18n( "open_folder_in_new_window", "Open Folder in New ecode Window" ),
+				   findIcon( "folder-open" ) )
+			->setId( "open_folder_in_new_window" );
 	}
 
 	mProjectTreeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
@@ -2105,12 +2529,16 @@ void SettingsMenu::createProjectTreeMenu() {
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		std::string id( item->getId() );
+		if ( id.empty() )
+			return;
 		if ( "new_file" == id || "new_file_in_place" == id ) {
 			mApp->newFile( FileInfo( mApp->getCurrentProject() ) );
 		} else if ( "new_folder" == id ) {
 			mApp->newFolder( FileInfo( mApp->getCurrentProject() ) );
 		} else if ( "open_folder" == id ) {
 			Engine::instance()->openURI( mApp->getCurrentProject() );
+		} else if ( "open_folder_in_new_window" == id ) {
+			mApp->loadFolder( mApp->getCurrentProject(), true );
 		} else if ( "execute_dir_in_terminal" == id ) {
 			mApp->getTerminalManager()->createNewTerminal( "", nullptr, mApp->getCurrentProject() );
 		} else if ( "show-hidden-files" == id ) {
@@ -2150,27 +2578,31 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 		mProjectTreeMenu
 			->add( i18n( "new_folder_ellipsis", "New Folder..." ), findIcon( "folder-add" ) )
 			->setId( "new_folder" );
+		mProjectTreeMenu->addSeparator();
 		mProjectTreeMenu
-			->add( i18n( "open_folder_ellipsis", "Open Folder..." ), findIcon( "folder-open" ) )
+			->add( i18n( "open_folder_in_fm", "Open Folder in File Manager" ),
+				   findIcon( "folder-open" ) )
 			->setId( "open_folder" );
+		mProjectTreeMenu
+			->add( i18n( "open_folder_in_new_window", "Open Folder in New ecode Window" ),
+				   findIcon( "folder-open" ) )
+			->setId( "open_folder_in_new_window" );
+		mProjectTreeMenu
+			->add( i18n( "open_all_files_in_folder", "Open All Files in Folder" ),
+				   findIcon( "folder-open" ) )
+			->setId( "open_all_files_in_folder" );
+		mProjectTreeMenu->addSeparator();
+		mProjectTreeMenu
+			->add( i18n( "find_in_folder_ellipsis", "Find in Folder..." ),
+				   findIcon( "file-search" ) )
+			->setId( "find_in_folder" );
 	} else {
-		if ( file.isRegularFile() ) {
-			auto curDir( mApp->getCurrentWorkingDir() );
-			FileSystem::dirAddSlashAtEnd( curDir );
-			if ( curDir == file.getDirectoryPath() ) {
-				mProjectTreeMenu
-					->add( i18n( "new_file_in_file_folder_ellipsis", "New File in File Folder..." ),
-						   findIcon( "file-add" ) )
-					->setId( "new_file" );
-			}
-		}
-
 		mProjectTreeMenu->add( i18n( "open_file", "Open File" ), findIcon( "document-open" ) )
 			->setId( "open_file" );
 		mProjectTreeMenu
-			->add( i18n( "open_containing_folder_ellipsis", "Open Containing Folder..." ),
+			->add( i18n( "open_containing_folder_in_fm", "Open Containing Folder in File Manager" ),
 				   findIcon( "folder-open" ) )
-			->setId( "open_containing_folder" );
+			->setId( "open_containing_folder_in_fm" );
 		mProjectTreeMenu
 			->add( i18n( "new_file_in_directory_ellipsis", "New File in directory..." ),
 				   findIcon( "file-add" ) )
@@ -2235,7 +2667,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 		} else if ( "new_folder" == id ) {
 			mApp->newFolder( file );
 		} else if ( "open_file" == id ) {
-			mApp->loadFileFromPath( file.getFilepath() );
+			mApp->openFileFromPath( file.getFilepath() );
 		} else if ( "remove" == id ) {
 			deleteFileDialog( file );
 		} else if ( "duplicate_file" == id ) {
@@ -2256,10 +2688,20 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 			} );
 		} else if ( "rename" == id ) {
 			mApp->renameFile( file );
-		} else if ( "open_containing_folder" == id ) {
+		} else if ( "open_containing_folder_in_fm" == id ) {
 			Engine::instance()->openURI( file.getDirectoryPath() );
 		} else if ( "open_folder" == id ) {
 			Engine::instance()->openURI( file.getFilepath() );
+		} else if ( "open_folder_in_new_window" == id ) {
+			mApp->loadFolder( file.getFilepath(), true );
+		} else if ( "open_all_files_in_folder" == id ) {
+			mApp->openAllFilesInFolder( file );
+		} else if ( "find_in_folder" == id ) {
+			std::string folder = file.getFilepath();
+			FileSystem::filePathRemoveBasePath( mApp->getCurrentProject(), folder );
+			FileSystem::dirAddSlashAtEnd( folder );
+			folder += "*";
+			mApp->showGlobalSearch( false, folder );
 		} else if ( "show-hidden-files" == id ) {
 			mApp->toggleHiddenFiles();
 		} else if ( "execute_in_terminal" == id ) {
@@ -2285,7 +2727,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 }
 
 void SettingsMenu::updateColorSchemeMenu() {
-	for ( UIPopUpMenu* menu : mColorSchemeMenues ) {
+	for ( UIPopUpMenu* menu : mColorSchemeMenus ) {
 		for ( size_t i = 0; i < menu->getCount(); i++ ) {
 			UIWidget* widget = menu->getItem( i );
 			if ( widget->isType( UI_TYPE_MENURADIOBUTTON ) ) {
@@ -2301,7 +2743,7 @@ void SettingsMenu::updateCurrentFileType() {
 	if ( !mSplitter->curEditorExistsAndFocused() )
 		return;
 	std::string curLang( mSplitter->getCurEditor()->getSyntaxDefinition().getLanguageName() );
-	for ( UIPopUpMenu* menu : mFileTypeMenues ) {
+	for ( UIPopUpMenu* menu : mFileTypeMenus ) {
 		for ( size_t i = 0; i < menu->getCount(); i++ ) {
 			if ( menu->getItem( i )->isType( UI_TYPE_MENURADIOBUTTON ) ) {
 				UIMenuRadioButton* menuItem = menu->getItem( i )->asType<UIMenuRadioButton>();
@@ -2394,33 +2836,174 @@ void SettingsMenu::createProjectMenu() {
 	owner->on( Event::OnMenuShow,
 			   [owner, this]( auto ) { mProjectDocMenu->setOwnerNode( owner ); } );
 
-	mProjectMenu
-		->addCheckBox( i18n( "h_as_cpp", "Treat .h files as C++ code." ),
-					   mApp->getProjectDocConfig().hAsCPP )
-		->setId( "h_as_cpp" );
+	HExtLanguageType hExtLanguageType = mApp->getProjectConfig().hExtLanguageType;
+	mHExtLanguageTypeMenu = UIPopUpMenu::New();
+	mHExtLanguageTypeMenu->setId( "h_ext_files_submenu" );
+	mHExtLanguageTypeMenu
+		->addRadioButton( i18n( "auto-detect", "Auto-Detect" ),
+						  hExtLanguageType == HExtLanguageType::AutoDetect )
+		->setId( "autodetect" );
+	mHExtLanguageTypeMenu->addRadioButton( "C", hExtLanguageType == HExtLanguageType::C )
+		->setId( "c" );
+	mHExtLanguageTypeMenu->addRadioButton( "C++", hExtLanguageType == HExtLanguageType::CPP )
+		->setId( "cpp" );
+	mHExtLanguageTypeMenu
+		->addRadioButton( "Objective-C", hExtLanguageType == HExtLanguageType::ObjectiveC )
+		->setId( "objective-c" );
+	mHExtLanguageTypeMenu
+		->addRadioButton( "Objective-C++", hExtLanguageType == HExtLanguageType::ObjectiveCPP )
+		->setId( "objective-cpp" );
 
-	mProjectMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+	mProjectMenu->addSubMenu( i18n( "treat_h_files_as_ellipsis", "Treat .h files as..." ), nullptr,
+							  mHExtLanguageTypeMenu );
+
+	mProjectMenu->addSeparator();
+
+	mProjectMenu
+		->add( i18n( "reset_project_file_associations", "Reset Project File Associations" ) )
+		->setTooltipText( i18n( "reset_project_file_associations_tooltip",
+								"Clears your saved language choices for ambiguous file extensions\n"
+								"(e.g. choosing C++ for .h files) in the current project.\n"
+								"After resetting, you'll be prompted to choose a language again\n"
+								"when opening these files within this project." ) )
+		->setId( "reset-project-file-associations" );
+
+	mHExtLanguageTypeMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		if ( event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) ||
 			 event->getNode()->isType( UI_TYPE_MENUSUBMENU ) )
 			return;
 		const String& id = event->getNode()->getId();
 
-		if ( event->getNode()->isType( UI_TYPE_MENUCHECKBOX ) ) {
+		if ( event->getNode()->isType( UI_TYPE_MENURADIOBUTTON ) ) {
 			UIMenuCheckBox* item = event->getNode()->asType<UIMenuCheckBox>();
-			if ( "h_as_cpp" == id ) {
-				mApp->getProjectDocConfig().hAsCPP = item->isActive();
-				mApp->getSplitter()->forEachEditor( [this]( UICodeEditor* editor ) {
-					editor->getDocument().setHAsCpp( mApp->getProjectDocConfig().hAsCPP );
-					if ( editor->getDocument().getFileInfo().getExtension() == "h" ) {
-						editor->resetSyntaxDefinition();
-						if ( mSplitter->isCurEditor( editor ) )
-							updateCurrentFileType();
-					}
-				} );
-				updateProjectSettingsMenu();
-			}
+			mApp->getProjectConfig().hExtLanguageType =
+				HExtLanguageTypeHelper::fromString( item->getId() );
+			mApp->getSplitter()->forEachEditor( [this]( UICodeEditor* editor ) {
+				editor->getDocument().setHExtLanguageType(
+					mApp->getProjectConfig().hExtLanguageType );
+				if ( editor->getDocument().getFileInfo().getExtension() == "h" ) {
+					editor->resetSyntaxDefinition();
+					if ( mSplitter->isCurEditor( editor ) )
+						updateCurrentFileType();
+				}
+			} );
+			updateProjectSettingsMenu();
 		}
 	} );
+}
+
+UIMenu* SettingsMenu::createFontHintMenu() {
+	if ( mFontHintMenu )
+		return mFontHintMenu;
+
+	mFontHintMenu = UIPopUpMenu::New();
+
+	const auto fontHintMenuRefresh = [this] {
+		const auto& cfg = mApp->getConfig();
+		auto el = mFontHintMenu->find( "hint_" +
+									   FontTrueType::fontHintingToString( cfg.ui.fontHinting ) );
+		if ( el && el->isType( UI_TYPE_MENURADIOBUTTON ) )
+			el->asType<UIMenuRadioButton>()->setActive( true );
+	};
+
+	mFontHintMenu->on( Event::OnMenuShow, [this, fontHintMenuRefresh]( auto ) {
+		if ( mFontHintMenu->getCount() == 0 ) {
+			mFontHintMenu->addRadioButton( i18n( "none", "None" ) )->setId( "hint_none" );
+			mFontHintMenu->addRadioButton( i18n( "slight", "Slight" ) )->setId( "hint_slight" );
+			mFontHintMenu->addRadioButton( i18n( "full", "Full" ) )->setId( "hint_full" );
+		}
+
+		fontHintMenuRefresh();
+	} );
+
+	mFontHintMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		const String& id = event->getNode()->asType<UIMenuItem>()->getId();
+		if ( String::startsWith( id, "hint_" ) ) {
+			auto hint = id.substr( 5 ).toUtf8();
+			mApp->getConfig().ui.fontHinting = FontTrueType::fontHintingFromString( hint );
+			FontManager::instance()->setHinting( mApp->getConfig().ui.fontHinting );
+		}
+	} );
+
+	return mFontHintMenu;
+}
+
+UIMenu* SettingsMenu::createFontAntiAliasingMenu() {
+	if ( mFontAntiAliasingMenu )
+		return mFontAntiAliasingMenu;
+
+	mFontAntiAliasingMenu = UIPopUpMenu::New();
+
+	const auto fontAntialiasingMenuRefresh = [this] {
+		const auto& cfg = mApp->getConfig();
+		auto el = mFontAntiAliasingMenu->find(
+			"aa_" + FontTrueType::fontAntialiasingToString( cfg.ui.fontAntialiasing ) );
+		if ( el && el->isType( UI_TYPE_MENURADIOBUTTON ) )
+			el->asType<UIMenuRadioButton>()->setActive( true );
+	};
+
+	mFontAntiAliasingMenu->on( Event::OnMenuShow, [this, fontAntialiasingMenuRefresh]( auto ) {
+		if ( mFontAntiAliasingMenu->getCount() == 0 ) {
+			mFontAntiAliasingMenu->addRadioButton( i18n( "none", "None" ) )->setId( "aa_none" );
+			mFontAntiAliasingMenu->addRadioButton( i18n( "grayscale", "Grayscale" ) )
+				->setId( "aa_grayscale" );
+			mFontAntiAliasingMenu->addRadioButton( i18n( "subpixel", "SubPixel (not working)" ) )
+				->setId( "aa_subpixel" );
+		}
+
+		fontAntialiasingMenuRefresh();
+	} );
+
+	mFontAntiAliasingMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		const String& id = event->getNode()->asType<UIMenuItem>()->getId();
+		if ( String::startsWith( id, "aa_" ) ) {
+			auto hint = id.substr( 3 ).toUtf8();
+			mApp->getConfig().ui.fontAntialiasing =
+				FontTrueType::fontAntialiasingFromString( hint );
+			FontManager::instance()->setAntialiasing( mApp->getConfig().ui.fontAntialiasing );
+		}
+	} );
+
+	return mFontAntiAliasingMenu;
+}
+
+UIMenu* SettingsMenu::createFontsMenu() {
+	mFontsMenu = UIPopUpMenu::New();
+	mFontsMenu->addSubMenu( i18n( "ui_font_hint", "Font Hint" ), findIcon( "font-size" ),
+							createFontHintMenu() );
+	mFontsMenu->addSubMenu( i18n( "ui_font_antialiasing", "Font Anti-Aliasing" ),
+							findIcon( "font-size" ), createFontAntiAliasingMenu() );
+	mFontsMenu->add( i18n( "ui_font_size", "UI Font Size" ), findIcon( "font-size" ) )
+		->setId( "ui-font-size" );
+	mFontsMenu->add( i18n( "ui_panel_font_size", "UI Panel Font Size" ), findIcon( "font-size" ) )
+		->setId( "ui-panel-font-size" );
+	mFontsMenu->add( i18n( "editor_font_size", "Editor Font Size" ), findIcon( "font-size" ) )
+		->setId( "editor-font-size" );
+	mFontsMenu->add( i18n( "terminal_font_size", "Terminal Font Size" ), findIcon( "font-size" ) )
+		->setId( "terminal-font-size" );
+	mFontsMenu
+		->add( i18n( "sans-serif_font_ellipsis", "Sans-Serif Font..." ), findIcon( "font-size" ) )
+		->setId( "sans-serif-font" );
+	mFontsMenu
+		->add( i18n( "monospace_font_ellipsis", "Monospace Font..." ), findIcon( "font-size" ) )
+		->setId( "monospace-font" );
+	mFontsMenu->add( i18n( "terminal_font_ellipsis", "Terminal Font..." ), findIcon( "font-size" ) )
+		->setId( "terminal-font" );
+	mFontsMenu->add( i18n( "fallback_font_ellipsis", "Fallback Font..." ), findIcon( "font-size" ) )
+		->setId( "fallback-font" );
+	mFontsMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+			return;
+		String text = String( event->getNode()->asType<UIMenuItem>()->getId() ).toLower();
+		String::replaceAll( text, " ", "-" );
+		String::replaceAll( text, "/", "-" );
+		runCommand( text );
+	} );
+	return mFontsMenu;
 }
 
 void SettingsMenu::updateMenu() {
@@ -2445,7 +3028,7 @@ void SettingsMenu::updateMenu() {
 	setMenuParent( mWindowMenu );
 	setMenuParent( mHelpMenu );
 
-	mSettingsMenu->find( "settings-submenues-sep" )->setVisible( !showMenuBar );
+	mSettingsMenu->find( "settings-submenus-sep" )->setVisible( !showMenuBar );
 	mSettingsMenu->getItemId( "project_settings" )->setVisible( !showMenuBar );
 	mSettingsMenu->getItemId( "doc-menu" )->setVisible( !showMenuBar );
 	mSettingsMenu->getItemId( "term-menu" )->setVisible( !showMenuBar );
