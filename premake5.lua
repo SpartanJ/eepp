@@ -29,7 +29,7 @@ newoption {
 newoption {
     trigger     = "sharedir",
     value       = "PATH",
-    description = "Set the shared data directory (default: /usr/share/ecode)",
+    description = "Set the shared data directory",
 }
 newoption { trigger = "with-static-cpp", description = "Builds statically libstdc++" }
 
@@ -394,6 +394,10 @@ function build_link_configuration( package_name, use_ee_icon )
 		linkoptions { "-static-libgcc -static-libstdc++" }
 	end
 
+	if _OPTIONS["sharedir"] then
+		defines { 'ECODE_SHAREDIR="' .. _OPTIONS["sharedir"] .. '"' }
+	end
+
 	cppdialect "C++20"
 	set_ios_config()
 	set_apple_config()
@@ -491,10 +495,6 @@ function build_link_configuration( package_name, use_ee_icon )
 	filter { "action:export-compile-commands", "system:macosx" }
 		buildoptions { "-std=c++20" }
 
-	filter { "options:sharedir" }
-		if _OPTIONS["sharedir"] then
-			defines { "ECODE_SHAREDIR='\"" .. _OPTIONS["sharedir"] .. "\"'" }
-		end
 	filter {}
 end
 

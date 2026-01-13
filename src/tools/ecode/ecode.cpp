@@ -2842,7 +2842,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 					: mSplitter->tabWidgetFromWidget( editor ) );
 			if ( d.first == nullptr && d.second == nullptr && !mSplitter->getTabWidgets().empty() )
 				d = mSplitter->createCodeEditorInTabWidget( mSplitter->getTabWidgets()[0] );
-			if ( d.first != nullptr || d.second != nullptr ) {
+			if ( d.first != nullptr && d.second != nullptr ) {
 				d.first->getTabWidget()->setTabSelected( d.first );
 				d.second->getDocument().textInput( editor->getDocument().getText() );
 				d.second->getDocument().setSyntaxDefinition(
