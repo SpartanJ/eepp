@@ -795,3 +795,33 @@ UTEST( FontRendering, textSetFillColor ) {
 
 	Engine::destroySingleton();
 }
+
+UTEST( FontRendering, UITextTest ) {
+	const auto runTest = [&]() {
+		UIApplication app(
+			WindowSettings( 1024, 650, "eepp - UI Text Test", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ),
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+		app.getUI()->loadLayoutFromFile( "assets/layouts/ui_text_test.xml" );
+		SceneManager::instance()->update();
+		SceneManager::instance()->draw();
+		compareImages( utest_state, utest_result, app.getWindow(), "eepp-ui-text-test" );
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+
+		UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
+		runTest();
+	}
+}

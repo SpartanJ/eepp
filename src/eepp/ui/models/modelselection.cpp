@@ -5,6 +5,7 @@
 namespace EE { namespace UI { namespace Models {
 
 void ModelSelection::removeAllMatching( std::function<bool( const ModelIndex& )> filter ) {
+	Lock l( mMutex );
 	std::vector<ModelIndex> notMatching;
 	for ( auto& index : mIndexes ) {
 		if ( !filter( index ) )
@@ -18,6 +19,7 @@ void ModelSelection::removeAllMatching( std::function<bool( const ModelIndex& )>
 
 void ModelSelection::set( const ModelIndex& index ) {
 	eeASSERT( index.isValid() );
+	Lock l( mMutex );
 	if ( mIndexes.size() == 1 && contains( index ) )
 		return;
 	mIndexes.clear();
@@ -30,6 +32,7 @@ void ModelSelection::set( const std::vector<ModelIndex>& indexes, bool notify ) 
 	for ( auto& index : indexes )
 		eeASSERT( index.isValid() );
 #endif
+	Lock l( mMutex );
 	mIndexes.clear();
 	mIndexes = indexes;
 	if ( notify )
@@ -38,6 +41,7 @@ void ModelSelection::set( const std::vector<ModelIndex>& indexes, bool notify ) 
 
 void ModelSelection::add( const ModelIndex& index ) {
 	eeASSERT( index.isValid() );
+	Lock l( mMutex );
 	auto contains = std::find( mIndexes.begin(), mIndexes.end(), index );
 	if ( contains == mIndexes.end() )
 		return;
@@ -47,6 +51,7 @@ void ModelSelection::add( const ModelIndex& index ) {
 
 void ModelSelection::toggle( const ModelIndex& index ) {
 	eeASSERT( index.isValid() );
+	Lock l( mMutex );
 	auto contains = std::find( mIndexes.begin(), mIndexes.end(), index );
 	if ( contains != mIndexes.end() )
 		mIndexes.erase( contains );
@@ -57,6 +62,7 @@ void ModelSelection::toggle( const ModelIndex& index ) {
 
 bool ModelSelection::remove( const ModelIndex& index ) {
 	eeASSERT( index.isValid() );
+	Lock l( mMutex );
 	auto contains = std::find( mIndexes.begin(), mIndexes.end(), index );
 	if ( contains == mIndexes.end() )
 		return false;
@@ -66,6 +72,7 @@ bool ModelSelection::remove( const ModelIndex& index ) {
 }
 
 void ModelSelection::clear( bool notify ) {
+	Lock l( mMutex );
 	if ( mIndexes.empty() )
 		return;
 	mIndexes.clear();
@@ -74,6 +81,7 @@ void ModelSelection::clear( bool notify ) {
 }
 
 void ModelSelection::notifySelectionChanged() {
+	Lock l( mMutex );
 	if ( !mDisableNotify ) {
 		mView->notifySelectionChange();
 		mNotifyPending = false;

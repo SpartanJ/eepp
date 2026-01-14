@@ -2,6 +2,8 @@
 #define EE_UI_MODEL_MODELSELECTION_HPP
 
 #include <algorithm>
+#include <eepp/system/lock.hpp>
+#include <eepp/system/mutex.hpp>
 #include <eepp/ui/models/modelindex.hpp>
 #include <functional>
 
@@ -17,12 +19,20 @@ class EE_API ModelSelection {
   public:
 	ModelSelection( UIAbstractView* view ) : mView( view ) {}
 
-	int size() const { return mIndexes.size(); }
-	bool isEmpty() const { return mIndexes.empty(); }
+	int size() const {
+		Lock l( mMutex );
+		return mIndexes.size();
+	}
+	bool isEmpty() const {
+		Lock l( mMutex );
+		return mIndexes.empty();
+	}
 	bool contains( const ModelIndex& index ) const {
+		Lock l( mMutex );
 		return std::find( mIndexes.begin(), mIndexes.end(), index ) != mIndexes.end();
 	}
 	bool containsRow( int row ) const {
+		Lock l( mMutex );
 		for ( auto& index : mIndexes ) {
 			if ( index.row() == row )
 				return true;
@@ -48,13 +58,16 @@ class EE_API ModelSelection {
 	}
 
 	std::vector<ModelIndex> indexes() const {
+		Lock l( mMutex );
 		std::vector<ModelIndex> indexes;
+		indexes.reserve( mIndexes.size() );
 		for ( auto& index : mIndexes )
 			indexes.push_back( index );
 		return indexes;
 	}
 
 	ModelIndex first() const {
+		Lock l( mMutex );
 		if ( mIndexes.empty() )
 			return {};
 		return *mIndexes.begin();
@@ -79,6 +92,8 @@ class EE_API ModelSelection {
 	bool mDisableNotify{ false };
 	bool mNotifyPending{ false };
 	void notifySelectionChanged();
+
+	mutable Mutex mMutex;
 };
 
 }}} // namespace EE::UI::Models

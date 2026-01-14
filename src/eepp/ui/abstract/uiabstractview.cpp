@@ -151,6 +151,12 @@ void UIAbstractView::onModelSelectionChange() {
 }
 
 void UIAbstractView::notifySelectionChange() {
+	if ( !Engine::isMainThread() ) {
+		debounce( [this] { notifySelectionChange(); }, Time::Zero,
+				  String::hash( "notifySelectionChange" ) );
+		return;
+	}
+
 	onModelSelectionChange();
 	sendCommonEvent( Event::OnSelectionChanged );
 	if ( mOnSelectionChange )
