@@ -18,13 +18,12 @@ class EE_API FunctionString {
 
 	const std::vector<std::string>& getParameters() const;
 
-	bool parameterWasString( const Uint32& index ) const;
+	bool parameterWasString( Uint32 index ) const;
 
 	bool isEmpty() const;
 
   protected:
 	std::string name;
-
 	std::vector<std::string> parameters;
 	std::vector<bool> typeStringData;
 };

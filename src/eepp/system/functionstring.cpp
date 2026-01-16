@@ -5,72 +5,91 @@
 namespace EE { namespace System {
 
 FunctionString FunctionString::parse( const std::string& function ) {
-	size_t posFuncStart = function.find_first_of( '(' );
-	if ( posFuncStart == std::string::npos )
+	size_t funcSep = function.find( '(' );
+	if ( funcSep == std::string::npos )
 		return FunctionString( "", {}, {} );
-	size_t posFuncEnd = function.find_last_of( ')' );
-	std::string funcName;
-	std::vector<std::string> parameters;
+
+	std::string funcName = function.substr( 0, funcSep );
+	String::trimInPlace( funcName );
+
+	std::vector<std::string> funcParameters;
 	std::vector<bool> typeStringData;
 
-	if ( std::string::npos != posFuncStart && std::string::npos != posFuncEnd && posFuncStart > 1 &&
-		 posFuncStart + 1 < function.size() ) {
-		funcName = function.substr( 0, posFuncStart );
+	std::string parametersString = function.substr( funcSep + 1 );
+	size_t paramClose = parametersString.find_last_of( ')' );
+	if ( paramClose == std::string::npos )
+		return FunctionString( "", {}, {} );
 
-		if ( !funcName.empty() ) {
-			std::string funcParameters =
-				function.substr( posFuncStart + 1, posFuncEnd - posFuncStart - 1 );
-			std::string curParameter = "";
-			bool parsingString = false;
-			bool lastWasBackslash = false;
+	parametersString = parametersString.substr( 0, paramClose );
 
-			funcParameters = String::trim( funcParameters );
+	bool stateParsingString = false;
+	std::string buffer = "";
+	char prevChar = 0;
+	bool currentParamIsString = false;
+	int parenDepth = 0;
 
-			for ( size_t i = 0; i < funcParameters.size(); i++ ) {
-				const char& curChar = funcParameters.at( i );
+	for ( size_t i = 0; i < parametersString.length(); ++i ) {
+		char c = parametersString[i];
 
-				if ( !parsingString ) {
-					if ( ',' == curChar ) {
-						curParameter = String::trim( curParameter );
-
-						if ( !curParameter.empty() ) {
-							parameters.push_back( curParameter );
-							typeStringData.push_back( false );
-							curParameter = "";
-						}
-					} else if ( '"' == curChar ) {
-						parsingString = true;
-						curParameter = "";
-					} else {
-						curParameter += curChar;
+		if ( !stateParsingString ) {
+			if ( c == '(' ) {
+				parenDepth++;
+				buffer += c;
+			} else if ( c == ')' ) {
+				if ( parenDepth > 0 )
+					parenDepth--;
+				buffer += c;
+			} else if ( c == ',' ) {
+				if ( parenDepth == 0 ) {
+					if ( !buffer.empty() ) {
+						if ( !currentParamIsString )
+							String::trimInPlace( buffer );
+						funcParameters.push_back( buffer );
+						typeStringData.push_back( currentParamIsString );
+						buffer = "";
+						currentParamIsString = false;
 					}
 				} else {
-					if ( '"' == curChar && !lastWasBackslash ) {
-						parsingString = false;
-
-						if ( !curParameter.empty() ) {
-							parameters.push_back( curParameter );
-							typeStringData.push_back( true );
-							curParameter = "";
-						}
-					} else if ( '\\' != curChar || lastWasBackslash ) {
-						curParameter += curChar;
-					}
+					buffer += c;
 				}
-
-				lastWasBackslash = '\\' == curChar;
+			} else if ( c == '"' ) {
+				stateParsingString = true;
+				if ( parenDepth == 0 && buffer.empty() ) {
+					currentParamIsString = true;
+				} else {
+					buffer += c;
+				}
+			} else if ( c == ' ' ) {
+				if ( buffer.empty() || currentParamIsString )
+					continue;
+				else
+					buffer += c;
+			} else {
+				buffer += c;
 			}
-
-			String::trimInPlace( curParameter );
-
-			if ( !curParameter.empty() ) {
-				parameters.push_back( curParameter );
-				typeStringData.push_back( false );
+		} else {
+			if ( c == '\\' && i + 1 < parametersString.length() &&
+				 parametersString[i + 1] == '"' ) {
+			} else if ( prevChar != '\\' && c == '"' ) {
+				stateParsingString = false;
+				if ( !currentParamIsString ) {
+					buffer += c;
+				}
+			} else {
+				buffer += c;
 			}
+			prevChar = c;
 		}
 	}
 
-	return FunctionString( funcName, parameters, typeStringData );
+	if ( !buffer.empty() ) {
+		if ( !currentParamIsString )
+			String::trimInPlace( buffer );
+		funcParameters.push_back( buffer );
+		typeStringData.push_back( currentParamIsString );
+	}
+
+	return FunctionString( funcName, funcParameters, typeStringData );
 }
 
 FunctionString::FunctionString( const std::string& name, const std::vector<std::string>& parameters,
@@ -85,7 +104,7 @@ const std::vector<std::string>& FunctionString::getParameters() const {
 	return parameters;
 }
 
-bool FunctionString::parameterWasString( const Uint32& index ) const {
+bool FunctionString::parameterWasString( Uint32 index ) const {
 	eeASSERT( index < parameters.size() );
 	eeASSERT( index < typeStringData.size() );
 	return typeStringData[index];
