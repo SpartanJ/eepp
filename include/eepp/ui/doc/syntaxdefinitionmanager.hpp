@@ -30,6 +30,8 @@ class EE_API SyntaxDefinitionManager {
 	SyntaxDefinition& add( SyntaxDefinition&& syntaxStyle );
 
 	const SyntaxDefinition& getPlainDefinition() const;
+	std::shared_ptr<SyntaxDefinition> getPlainDefinitionPtr() const;
+
 
 	std::vector<const SyntaxDefinition*>
 	languagesThatSupportExtension( std::string extension ) const;

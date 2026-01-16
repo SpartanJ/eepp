@@ -203,6 +203,7 @@ SyntaxDefinitionManager::SyntaxDefinitionManager( std::size_t reserveSpaceForLan
 
 const std::vector<std::shared_ptr<SyntaxDefinition>>&
 SyntaxDefinitionManager::getDefinitions() const {
+	// TODO: Fix This is unsafe
 	return mDefinitions;
 }
 
@@ -345,6 +346,7 @@ bool SyntaxDefinitionManager::save( const std::string& path,
 		return FileSystem::fileWrite( path, j.dump( 2 ) );
 	} else {
 		json j = json::array();
+		Lock l( mMutex );
 		for ( const auto& d : mDefinitions )
 			j.emplace_back( toJson( *d.get() ) );
 		return FileSystem::fileWrite( path, j.dump( 2 ) );
@@ -565,7 +567,13 @@ SyntaxDefinitionManager::addPreDefinition( SyntaxPreDefinition&& preDefinition )
 }
 
 const SyntaxDefinition& SyntaxDefinitionManager::getPlainDefinition() const {
+	Lock l( mMutex );
 	return *mDefinitions[0].get();
+}
+
+std::shared_ptr<SyntaxDefinition> SyntaxDefinitionManager::getPlainDefinitionPtr() const {
+	Lock l( mMutex );
+	return mDefinitions[0];
 }
 
 SyntaxDefinition& SyntaxDefinitionManager::getByExtensionRef( const std::string& filePath ) {
@@ -1066,8 +1074,8 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 					} else {
 						if ( addedLangs )
 							addedLangs->push_back( res.getLanguageName() );
-						res.mLanguageIndex = mDefinitions.size();
 						Lock l( mMutex );
+						res.mLanguageIndex = mDefinitions.size();
 						mDefinitions.emplace_back(
 							std::make_shared<SyntaxDefinition>( std::move( res ) ) );
 					}
@@ -1087,8 +1095,8 @@ bool SyntaxDefinitionManager::loadFromStream( IOStream& stream,
 				} else {
 					if ( addedLangs )
 						addedLangs->push_back( res.getLanguageName() );
-					res.mLanguageIndex = mDefinitions.size();
 					Lock l( mMutex );
+					res.mLanguageIndex = mDefinitions.size();
 					mDefinitions.emplace_back(
 						std::make_shared<SyntaxDefinition>( std::move( res ) ) );
 				}
@@ -1366,6 +1374,7 @@ SyntaxDefinitionManager::getByExtension( const std::string& filePath ) const {
 		}
 	}
 
+	Lock l( mMutex );
 	return def != nullptr ? *def : *mDefinitions[0].get();
 }
 
@@ -1409,6 +1418,8 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( std::string_view h
 			}
 		}
 	}
+
+	Lock l( mMutex );
 	return *mDefinitions[0].get();
 }
 
@@ -1421,6 +1432,7 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByPath( const std::string& f
 		if ( String::globMatch( filePath, path, true ) )
 			return findFromString( "cpp" );
 
+	Lock l( mMutex );
 	return *mDefinitions[0].get();
 }
 
@@ -1483,12 +1495,18 @@ const std::map<std::string, std::string>& SyntaxDefinitionManager::getLanguageEx
 }
 
 std::size_t SyntaxDefinitionManager::count() const {
+	Lock l( mMutex );
 	return mDefinitions.size();
 }
 
 bool SyntaxDefinitionManager::isFileFormatSupported( const std::string& filePath,
 													 std::string_view header ) {
-	return &find( filePath, header ) != mDefinitions[0].get() ||
+	SyntaxDefinition* plainTextPtr = nullptr;
+	{
+		Lock l( mMutex );
+		plainTextPtr = mDefinitions[0].get();
+	}
+	return &find( filePath, header ) != plainTextPtr ||
 		   FileSystem::fileExtension( filePath ) == "txt";
 }
 
