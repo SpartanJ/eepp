@@ -201,16 +201,6 @@ SyntaxDefinitionManager::SyntaxDefinitionManager( std::size_t reserveSpaceForLan
 	addXML();
 }
 
-const std::vector<std::shared_ptr<SyntaxDefinition>>&
-SyntaxDefinitionManager::getDefinitions() const {
-	// TODO: Fix This is unsafe
-	return mDefinitions;
-}
-
-const std::vector<SyntaxPreDefinition>& SyntaxDefinitionManager::getPreDefinitions() const {
-	return mPreDefinitions;
-}
-
 static std::optional<nlohmann::json> serializePattern( const SyntaxPattern& ptrn,
 													   const SyntaxDefinition& def ) {
 	json pattern;
@@ -560,10 +550,9 @@ SyntaxDefinition& SyntaxDefinitionManager::add( SyntaxDefinition&& syntaxStyle )
 	return *mDefinitions.back().get();
 }
 
-SyntaxPreDefinition&
-SyntaxDefinitionManager::addPreDefinition( SyntaxPreDefinition&& preDefinition ) {
+void SyntaxDefinitionManager::addPreDefinition( SyntaxPreDefinition&& preDefinition ) {
+	Lock l( mMutex );
 	mPreDefinitions.emplace_back( std::move( preDefinition ) );
-	return mPreDefinitions.back();
 }
 
 const SyntaxDefinition& SyntaxDefinitionManager::getPlainDefinition() const {
@@ -603,6 +592,13 @@ SyntaxDefinitionManager::getByLanguageName( const std::string_view& name ) const
 	}
 
 	return *mDefinitions[0].get();
+}
+
+std::shared_ptr<SyntaxDefinition>
+SyntaxDefinitionManager::getLanguageDefinition( const Uint32& index ) const {
+	Lock l( mMutex );
+	eeASSERT( index < mDefinitions.size() );
+	return mDefinitions[index];
 }
 
 const SyntaxDefinition& SyntaxDefinitionManager::getByLanguageIndex( const Uint32& index ) const {
@@ -1186,25 +1182,29 @@ SyntaxDefinitionManager::languagesThatSupportExtension( std::string extension ) 
 		}
 	}
 
-	for ( const auto& preDefinition : mPreDefinitions ) {
-		for ( const auto& ext : preDefinition.getFiles() ) {
-			if ( std::find_if( langs.begin(), langs.end(),
-							   [&preDefinition]( const SyntaxDefinition* sdf ) {
-								   return preDefinition.getLanguageName() == sdf->getLanguageName();
-							   } ) != langs.end() )
-				continue;
+	{
+		Lock l( mMutex );
+		for ( const auto& preDefinition : mPreDefinitions ) {
+			for ( const auto& ext : preDefinition.getFiles() ) {
+				if ( std::find_if( langs.begin(), langs.end(),
+								   [&preDefinition]( const SyntaxDefinition* sdf ) {
+									   return preDefinition.getLanguageName() ==
+											  sdf->getLanguageName();
+								   } ) != langs.end() )
+					continue;
 
-			if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
-				 String::endsWith( ext, "$" ) ) {
-				LuaPattern words( ext );
-				int start, end;
-				if ( words.find( extension, start, end ) ) {
+				if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
+					 String::endsWith( ext, "$" ) ) {
+					LuaPattern words( ext );
+					int start, end;
+					if ( words.find( extension, start, end ) ) {
+						langs.insert( &preDefinition.load() );
+						break;
+					}
+				} else if ( extension == ext ) {
 					langs.insert( &preDefinition.load() );
 					break;
 				}
-			} else if ( extension == ext ) {
-				langs.insert( &preDefinition.load() );
-				break;
 			}
 		}
 	}
@@ -1247,23 +1247,26 @@ bool SyntaxDefinitionManager::extensionCanRepresentManyLanguages( std::string ex
 		}
 	}
 
-	for ( const auto& preDefinition : mPreDefinitions ) {
-		for ( const auto& ext : preDefinition.getFiles() ) {
-			if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
-				 String::endsWith( ext, "$" ) ) {
-				LuaPattern words( ext );
-				int start, end;
-				if ( words.find( extension, start, end ) ) {
+	{
+		Lock l( mMutex );
+		for ( const auto& preDefinition : mPreDefinitions ) {
+			for ( const auto& ext : preDefinition.getFiles() ) {
+				if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
+					 String::endsWith( ext, "$" ) ) {
+					LuaPattern words( ext );
+					int start, end;
+					if ( words.find( extension, start, end ) ) {
+						count.insert( preDefinition.getLanguageName() );
+						if ( count.size() > 1 )
+							return true;
+						break;
+					}
+				} else if ( extension == ext ) {
 					count.insert( preDefinition.getLanguageName() );
 					if ( count.size() > 1 )
 						return true;
 					break;
 				}
-			} else if ( extension == ext ) {
-				count.insert( preDefinition.getLanguageName() );
-				if ( count.size() > 1 )
-					return true;
-				break;
 			}
 		}
 	}
@@ -1316,27 +1319,18 @@ SyntaxDefinitionManager::getByExtension( const std::string& filePath ) const {
 
 	const SyntaxDefinition* def = nullptr;
 
+	Lock l( mMutex );
 	if ( !extension.empty() ) {
-		{
-			Lock l( mMutex );
-			for ( const auto& definition : mDefinitions ) {
-				if ( &definition == &mDefinitions[0] ) // Ignore Plain text
-					continue;
+		for ( const auto& definition : mDefinitions ) {
+			if ( &definition == &mDefinitions[0] ) // Ignore Plain text
+				continue;
 
-				for ( const auto& ext : definition->getFiles() ) {
-					if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
-						 String::endsWith( ext, "$" ) ) {
-						LuaPattern words( ext );
-						int start, end;
-						if ( words.find( fileName, start, end ) ) {
-							if ( extHasMultipleLangs && !definition->hasExtensionPriority() ) {
-								def = definition.get();
-								continue;
-							}
-
-							return *definition.get();
-						}
-					} else if ( extension == ext ) {
+			for ( const auto& ext : definition->getFiles() ) {
+				if ( String::startsWith( ext, "%." ) || String::startsWith( ext, "^" ) ||
+					 String::endsWith( ext, "$" ) ) {
+					LuaPattern words( ext );
+					int start, end;
+					if ( words.find( fileName, start, end ) ) {
 						if ( extHasMultipleLangs && !definition->hasExtensionPriority() ) {
 							def = definition.get();
 							continue;
@@ -1344,6 +1338,13 @@ SyntaxDefinitionManager::getByExtension( const std::string& filePath ) const {
 
 						return *definition.get();
 					}
+				} else if ( extension == ext ) {
+					if ( extHasMultipleLangs && !definition->hasExtensionPriority() ) {
+						def = definition.get();
+						continue;
+					}
+
+					return *definition.get();
 				}
 			}
 		}
@@ -1374,30 +1375,26 @@ SyntaxDefinitionManager::getByExtension( const std::string& filePath ) const {
 		}
 	}
 
-	Lock l( mMutex );
 	return def != nullptr ? *def : *mDefinitions[0].get();
 }
 
 const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( std::string_view header,
 															  const std::string& filePath,
 															  HExtLanguageType langType ) const {
+	Lock l( mMutex );
 	if ( !header.empty() ) {
+		for ( auto definition = mDefinitions.rbegin(); definition != mDefinitions.rend();
+			  ++definition ) {
+			auto needsHDef = needsHFallback( langType, definition->get()->getLSPName(),
+											 FileSystem::fileExtension( filePath ), header );
+			if ( needsHDef )
+				return *needsHDef;
 
-		{
-			Lock l( mMutex );
-			for ( auto definition = mDefinitions.rbegin(); definition != mDefinitions.rend();
-				  ++definition ) {
-				auto needsHDef = needsHFallback( langType, definition->get()->getLSPName(),
-												 FileSystem::fileExtension( filePath ), header );
-				if ( needsHDef )
-					return *needsHDef;
-
-				for ( const auto& hdr : definition->get()->getHeaders() ) {
-					LuaPattern words( hdr );
-					int start, end;
-					if ( words.find( header.data(), start, end, 0, header.size(), 0 ) ) {
-						return *definition->get();
-					}
+			for ( const auto& hdr : definition->get()->getHeaders() ) {
+				LuaPattern words( hdr );
+				int start, end;
+				if ( words.find( header.data(), start, end, 0, header.size(), 0 ) ) {
+					return *definition->get();
 				}
 			}
 		}
@@ -1419,7 +1416,6 @@ const SyntaxDefinition& SyntaxDefinitionManager::getByHeader( std::string_view h
 		}
 	}
 
-	Lock l( mMutex );
 	return *mDefinitions[0].get();
 }
 
@@ -1472,6 +1468,13 @@ const SyntaxDefinition& SyntaxDefinitionManager::find( const std::string& filePa
 		return *def;
 
 	return *def;
+}
+
+std::shared_ptr<SyntaxDefinition> SyntaxDefinitionManager::findPtr( const std::string& filePath,
+																	std::string_view header,
+																	HExtLanguageType hLangType ) {
+	auto def = find( filePath, header, hLangType );
+	return mDefinitions[def.getLanguageIndex()];
 }
 
 const SyntaxDefinition&

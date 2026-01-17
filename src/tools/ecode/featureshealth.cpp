@@ -41,17 +41,16 @@ std::vector<FeaturesHealth::LangHealth> FeaturesHealth::getHealth( PluginManager
 	bool ownsLSP = false;
 	bool ownsDebugger = false;
 
-	const auto& definitions = SyntaxDefinitionManager::instance()->getDefinitions();
-	const auto& preDefinitions = SyntaxDefinitionManager::instance()->getPreDefinitions();
-
+	auto sdm = SyntaxDefinitionManager::instance();
 	std::set<std::string> languages;
 
-	for ( const auto& def : definitions )
+	sdm->forEachDefinition( [&languages]( auto def ) {
 		if ( def->isVisible() )
 			languages.insert( def->getLSPName() );
+	} );
 
-	for ( const auto& pdef : preDefinitions )
-		languages.insert( pdef.getLSPName() );
+	sdm->forEachPreDefinition(
+		[&languages]( auto pdef ) { languages.insert( pdef.getLSPName() ); } );
 
 	LinterPlugin* linter = static_cast<LinterPlugin*>( pluginManager->get( "linter" ) );
 

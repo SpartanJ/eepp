@@ -4700,13 +4700,11 @@ static void exportLanguages( const std::string& path, const std::string& langs,
 	SyntaxDefinitionManager::instance()->loadFromFolder( langsPath );
 	std::vector<SyntaxDefinition> defs;
 
-	for ( auto& preDef : sdm->getPreDefinitions() )
-		preDef.load();
+	sdm->forEachPreDefinition( []( auto preDef ) { preDef.load(); } );
 
 	if ( !langs.empty() ) {
 		if ( langs == "all" ) {
-			for ( const auto& def : sdm->getDefinitions() )
-				defs.push_back( *def.get() );
+			sdm->forEachDefinition( [&defs]( auto def ) { defs.push_back( *def.get() ); } );
 		} else {
 			auto langss = String::split( langs, ',' );
 			for ( const auto& l : langss ) {

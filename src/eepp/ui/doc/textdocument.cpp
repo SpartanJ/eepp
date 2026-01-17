@@ -314,8 +314,8 @@ TextDocument::TextDocument( bool verbose ) :
 	mNonWordChars( DEFAULT_NON_WORD_CHARS ),
 	mHighlighter( std::make_unique<SyntaxHighlighter>( this ) ),
 	mFoldRangeService( this ) {
-	initializeCommands();
 	reset();
+	initializeCommands();
 }
 
 TextDocument::~TextDocument() {
@@ -380,7 +380,7 @@ void TextDocument::reset() {
 
 	{
 		Lock l( mSyntaxDefinitionMutex );
-		mSyntaxDefinition = SyntaxDefinitionManager::instance()->getPlainDefinition();
+		mSyntaxDefinition = SyntaxDefinitionManager::instance()->getPlainDefinitionPtr();
 	}
 	mUndoStack.clear();
 	cleanChangeId();
@@ -713,7 +713,7 @@ void TextDocument::mergeSelection() {
 
 bool TextDocument::hasSyntaxDefinition() const {
 	Lock l( mSyntaxDefinitionMutex );
-	return !mSyntaxDefinition.getPatterns().empty();
+	return mSyntaxDefinition && !mSyntaxDefinition->getPatterns().empty();
 }
 
 const SyntaxDefinition& TextDocument::guessSyntax() const {
@@ -730,13 +730,13 @@ void TextDocument::resetSyntax() {
 		{ { 0, 0 },
 		  positionOffset( { 0, 0 },
 						  FileSystem::fileExtension( mFilePath ) == "h" ? 5 * 1024 : 128 ) } ) );
-	std::string oldDef = mSyntaxDefinition.getLSPName();
+	auto oldDef = mSyntaxDefinition ? mSyntaxDefinition->getLanguageIndex() : 0;
 	{
 		Lock l( mSyntaxDefinitionMutex );
-		mSyntaxDefinition = SyntaxDefinitionManager::instance()->find( mFilePath, header.toUtf8(),
-																	   mHExtLanguageType );
+		mSyntaxDefinition = SyntaxDefinitionManager::instance()->findPtr(
+			mFilePath, header.toUtf8(), mHExtLanguageType );
 	}
-	if ( mSyntaxDefinition.getLSPName() != oldDef )
+	if ( mSyntaxDefinition->getLanguageIndex() != oldDef )
 		notifySyntaxDefinitionChange();
 }
 
@@ -2917,14 +2917,16 @@ void TextDocument::redo() {
 
 const SyntaxDefinition& TextDocument::getSyntaxDefinition() const {
 	Lock l( mSyntaxDefinitionMutex );
-	return mSyntaxDefinition;
+	return mSyntaxDefinition ? *mSyntaxDefinition.get()
+							 : SyntaxDefinitionManager::instance()->getPlainDefinition();
 }
 
 void TextDocument::setSyntaxDefinition( const SyntaxDefinition& definition ) {
-	if ( mSyntaxDefinition.getLSPName() != definition.getLSPName() ) {
+	if ( mSyntaxDefinition->getLanguageIndex() != definition.getLanguageIndex() ) {
 		{
 			Lock l( mSyntaxDefinitionMutex );
-			mSyntaxDefinition = definition;
+			mSyntaxDefinition = SyntaxDefinitionManager::instance()->getLanguageDefinition(
+				definition.getLanguageIndex() );
 		}
 		notifySyntaxDefinitionChange();
 	}
@@ -3914,7 +3916,7 @@ const String& TextDocument::getNonWordChars() const {
 }
 
 void TextDocument::toggleLineComments() {
-	std::string comment = mSyntaxDefinition.getComment();
+	std::string comment = mSyntaxDefinition ? mSyntaxDefinition->getComment() : "";
 	if ( comment.empty() )
 		return;
 	const std::string commentText = comment + " ";
@@ -3966,7 +3968,8 @@ void TextDocument::toggleLineComments() {
 }
 
 void TextDocument::toggleBlockComments() {
-	const auto& blockComment = mSyntaxDefinition.getBlockComment();
+	const auto& blockComment =
+		mSyntaxDefinition ? mSyntaxDefinition->getBlockComment() : SyntaxDefinition::BlockComment{};
 	if ( blockComment.open.empty() || blockComment.close.empty() )
 		return;
 
@@ -4196,9 +4199,11 @@ void TextDocument::notifyDocumentMoved() {
 }
 
 void TextDocument::notifySyntaxDefinitionChange() {
+	if ( !mSyntaxDefinition )
+		return;
 	Lock l( mClientsMutex );
 	for ( auto& client : mClients ) {
-		client->onDocumentSyntaxDefinitionChange( mSyntaxDefinition );
+		client->onDocumentSyntaxDefinitionChange( *mSyntaxDefinition.get() );
 	}
 }
 

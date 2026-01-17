@@ -773,7 +773,7 @@ class EE_API TextDocument {
 	Uint32 mIndentWidth{ 4 };
 	IndentType mIndentType{ IndentType::IndentTabs };
 	Clock mTimer;
-	SyntaxDefinition mSyntaxDefinition;
+	std::shared_ptr<SyntaxDefinition> mSyntaxDefinition;
 	std::string mDefaultFileName;
 	Uint64 mCleanChangeId{ 0 };
 	Uint32 mPageSize{ 10 };

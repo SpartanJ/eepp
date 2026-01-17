@@ -14,7 +14,6 @@
 	--list-back: #232629;
 	--separator: #383a3d;
 	--item-hover: #284150;
-	--scroll-button: #6b6d6f;
 	--slider-back: #676a6e;
 	--slider-button: #31363b;
 	--slider-border: #787b80;
@@ -31,14 +30,14 @@
 	--icon: #b6bbc2;
 	--icon-active: white;
 	--icon-back-hover: #eff0f1;
-	--icon-line-hover: #3d4246;
 	--icon-back-alert: #e49aa2;
+	--icon-line: #dbdbdd;
+	--icon-line-hover: #3d4246;
 	--menu-back: #2d3136;
 	--menu-font: #eff0f1;
 	--menu-border: #616569;
 	--menu-font-active: white;
 	--menu-font-disabled: #6e7275;
-	--win-icon: #dbdbdd;
 	--floating-icon: #96999c;
 	--term-back-color: #1e2127;
 	--term-font-color: #abb2bf;
@@ -650,7 +649,7 @@ Window::maximize {
 	height: 12dp;
 	border-radius: 6dp;
 	background-color: transparent;
-	foreground-image: poly(line, var(--win-icon), "0dp 4dp, 4dp 0dp", 1dp), poly(line, var(--win-icon), "4dp 0dp, 8dp 4dp", 1dp);
+	foreground-image: poly(line, var(--icon-line), "0dp 4dp, 4dp 0dp", 1dp), poly(line, var(--icon-line), "4dp 0dp, 8dp 4dp", 1dp);
 	foreground-position: 2dp 4dp, 2dp 4dp;
 	transition: all 0.15s;
 }
@@ -665,7 +664,7 @@ Window::minimize {
 	height: 12dp;
 	border-radius: 6dp;
 	background-color: transparent;
-	foreground-image: poly(line, var(--win-icon), "0dp 0dp, 4dp 4dp", 1dp), poly(line, var(--win-icon), "4dp 4dp, 8dp 0dp", 1dp);
+	foreground-image: poly(line, var(--icon-line), "0dp 0dp, 4dp 4dp", 1dp), poly(line, var(--icon-line), "4dp 4dp, 8dp 0dp", 1dp);
 	foreground-position: 2dp 4dp, 2dp 4dp;
 	transition: all 0.15s;
 }
@@ -1114,7 +1113,6 @@ ImageViewer > TextView {
 	--list-back: #ffffff;
 	--separator: #cbcdcd;
 	--item-hover: #93cee9;
-	--scroll-button: #cbcdcd;
 	--slider-back: #e9e9e9;
 	--slider-button: #cbcdcd;
 	--slider-border: #e6e6e6;
@@ -1138,7 +1136,7 @@ ImageViewer > TextView {
 	--menu-border: #b3b4b5;
 	--menu-font-active: #fcfcfc;
 	--menu-font-disabled: #a8a9aa;
-	--win-icon: #232627;
+	--icon-line: #232627;
 	--floating-icon: #666666;
 	--term-back-color: #eff0f1;
 	--term-font-color: #232627;

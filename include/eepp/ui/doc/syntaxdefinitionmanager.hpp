@@ -17,7 +17,8 @@ namespace EE { namespace UI { namespace Doc {
 class EE_API SyntaxDefinitionManager {
 	SINGLETON_DECLARE_HEADERS( SyntaxDefinitionManager )
   public:
-  	using FileAssociations = std::unordered_map<std::string /* path or pattern */, std::string /* language name */>;
+	using FileAssociations =
+		std::unordered_map<std::string /* path or pattern */, std::string /* language name */>;
 
 	static SyntaxDefinitionManager* createSingleton( std::size_t reserveSpaceForLanguages );
 
@@ -25,13 +26,12 @@ class EE_API SyntaxDefinitionManager {
 
 	std::size_t count() const;
 
-	SyntaxPreDefinition& addPreDefinition( SyntaxPreDefinition&& preDefinition );
+	void addPreDefinition( SyntaxPreDefinition&& preDefinition );
 
 	SyntaxDefinition& add( SyntaxDefinition&& syntaxStyle );
 
 	const SyntaxDefinition& getPlainDefinition() const;
 	std::shared_ptr<SyntaxDefinition> getPlainDefinitionPtr() const;
-
 
 	std::vector<const SyntaxDefinition*>
 	languagesThatSupportExtension( std::string extension ) const;
@@ -50,6 +50,12 @@ class EE_API SyntaxDefinitionManager {
 
 	const SyntaxDefinition& find( const std::string& filePath, std::string_view header,
 								  HExtLanguageType hLangType = HExtLanguageType::AutoDetect );
+
+	std::shared_ptr<SyntaxDefinition> getLanguageDefinition( const Uint32& index ) const;
+
+	std::shared_ptr<SyntaxDefinition>
+	findPtr( const std::string& filePath, std::string_view header,
+			 HExtLanguageType hLangType = HExtLanguageType::AutoDetect );
 
 	const SyntaxDefinition& findFromString( const std::string_view& str ) const;
 
@@ -81,10 +87,6 @@ class EE_API SyntaxDefinitionManager {
 
 	void loadFromFolder( const std::string& folderPath );
 
-	const std::vector<std::shared_ptr<SyntaxDefinition>>& getDefinitions() const;
-
-	const std::vector<SyntaxPreDefinition>& getPreDefinitions() const;
-
 	/* empty = all */
 	bool save( const std::string& path, const std::vector<SyntaxDefinition>& def = {} );
 
@@ -99,6 +101,18 @@ class EE_API SyntaxDefinitionManager {
 	void setFileAssociations( FileAssociations&& fa );
 
 	FileAssociations getFileAssociations() const;
+
+	template <typename Fn> void forEachDefinition( Fn cb ) {
+		Lock l( mMutex );
+		for ( auto def : mDefinitions )
+			cb( def );
+	}
+
+	template <typename Fn> void forEachPreDefinition( Fn cb ) {
+		Lock l( mMutex );
+		for ( const auto& def : mPreDefinitions )
+			cb( def );
+	}
 
   protected:
 	SyntaxDefinitionManager( std::size_t reserveSpaceForLanguages = 12 );
