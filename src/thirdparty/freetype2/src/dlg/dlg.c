@@ -58,7 +58,7 @@ static void dlg_free_data(void* data);
 static struct dlg_data* dlg_create_data(void);
 
 // platform-specific
-#if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
+#if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__) || defined(__HAIKU__)
 	#define DLG_OS_UNIX
 	#include <unistd.h>
 	#include <pthread.h>
