@@ -84,16 +84,25 @@ StatusBar > #doc_info {
 #search_replace.error {
 	border-color: #ff4040;
 }
-TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(2),
-TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(3) {
+TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(2) > tableview::cell::text,
+TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(3) > tableview::cell::text {
 	color: var(--font-hint);
 }
-TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(2),
-TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(3) {
-	color: var(--font);
+TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(2) > tableview::cell::text,
+TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(3) > tableview::cell::text {
+	color: var(--list-row-active)
 }
 .search_tree treeview::cell {
 	font-family: monospace;
+}
+.search_tree treeview::row:selected treeview::cell::text {
+	color: var(--font);
+}
+.search_tree treeview::row:selected treeview::cell::expander {
+	tint: var(--font);
+}
+.search_tree treeview::row:selected {
+	background-color: var(--tab-hover);
 }
 #global_search_history {
 	padding-top: 0dp;
@@ -171,6 +180,8 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 #status_bar > .status_but {
 	padding: 0dp 5dp 0dp 4dp;
 	background-color: var(--list-back);
+	color: var(--font);
+	tint: var(--font);
 	border-radius: 0dp;
 	border-left-color: transparent;
 	border-top-color: transparent;
@@ -185,6 +196,8 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 }
 #status_bar > .status_but.selected {
 	background-color: var(--primary);
+	color: var(--list-row-active);
+	tint: var(--list-row-active);
 }
 #status_bar > .status_but:last-child {
 	border-right-color: transparent;
@@ -427,10 +440,10 @@ Anchor.error:hover {
 	tint: var(--theme-error);
 }
 #build_output_issues TableView::row:selected TableView::cell.theme-error > TableView::cell::text {
-	color: var(--font);
+	color: var(--list-row-active);
 }
 #build_output_issues TableView::row:selected TableView::cell.theme-error > TableView::cell::icon {
-	tint: var(--font);
+	tint: var(--list-row-active);
 }
 .texture-preview {
 	border: 1dp solid var(--list-back);
@@ -564,7 +577,7 @@ TabWidget::container > ImageViewer > TextView {
 </style>
 )html"
 
-R"html(
+	R"html(
 <vbox id="" lw="mp" lh="mp">
 <MenuBar id="main_menubar" visible="false">
 	<Menu id="menubar_file" text="@string(file, File)" nomenu="true" />

@@ -628,6 +628,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 		return !mCurrentProject.empty() && mCurrentProject != getPlaygroundPath();
 	}
 
+	const SyntaxColorScheme* getCurrentColorScheme() const;
+
   protected:
 	std::vector<std::string> mArgs;
 	EE::Window::Window* mWindow{ nullptr };
@@ -726,7 +728,6 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	UITheme* mTheme{ nullptr };
 	UIStatusBar* mStatusBar{ nullptr };
 	UISplitter* mMainSplitter{ nullptr };
-	StyleSheet mAppStyleSheet;
 	UIMessageBox* mCloseMsgBox{ nullptr };
 	UIMenuBar* mMenuBar{ nullptr };
 	std::unique_ptr<SettingsActions> mSettingsActions;

@@ -212,8 +212,10 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	setClass( "llm_chatui" );
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 
-	mChatSplitter =
-		getUISceneNode()->loadLayoutFromString( DEFAULT_LAYOUT, this )->asType<UISplitter>();
+	mChatSplitter = getUISceneNode()
+						->loadLayoutFromString( DEFAULT_LAYOUT, this,
+												String::hash( "ai_assistant_plugin_chat_ui" ) )
+						->asType<UISplitter>();
 
 	mChatsList = findByClass( "llm_chats" );
 	mModelDDL = findByClass<UIDropDownList>( "model_ui" );

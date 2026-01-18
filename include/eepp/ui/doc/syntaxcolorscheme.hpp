@@ -39,6 +39,7 @@ class SyntaxStyleTypes {
 	static constexpr auto Link = "link"_sst;
 	static constexpr auto LinkHover = "link_hover"_sst;
 	static constexpr auto Background = "background"_sst;
+	static constexpr auto WidgetBackground = "widget_background"_sst;
 	static constexpr auto Text = "text"_sst;
 	static constexpr auto Caret = "caret"_sst;
 	static constexpr auto Selection = "selection"_sst;
@@ -84,6 +85,7 @@ class SyntaxStyleTypes {
 				case SyntaxStyleTypes::Link:
 				case SyntaxStyleTypes::LinkHover:
 				case SyntaxStyleTypes::Background:
+				case SyntaxStyleTypes::WidgetBackground:
 				case SyntaxStyleTypes::Text:
 				case SyntaxStyleTypes::Caret:
 				case SyntaxStyleTypes::Selection:
@@ -150,6 +152,8 @@ class SyntaxStyleTypes {
 					return "link_hover";
 				case SyntaxStyleTypes::Background:
 					return "background";
+				case SyntaxStyleTypes::WidgetBackground:
+					return "widget_background";
 				case SyntaxStyleTypes::Text:
 					return "text";
 				case SyntaxStyleTypes::Caret:
@@ -246,7 +250,7 @@ constexpr auto SyntaxStyleEmpty() {
  * "link"
  *
  * Editor colors types accepted/used are:
- * "background", "text", "caret"
+ * "background", "widget_background", "text", "caret"
  * "selection", "gutter_background",
  * "line_number", "line_number2", "line_highlight",
  * "gutter_background", "whitespace", "line_break_column",
@@ -268,7 +272,7 @@ class EE_API SyntaxColorScheme {
 	static std::vector<SyntaxColorScheme> loadFromPack( Pack* pack, std::string filePackPath );
 
 	struct Style {
-		Style(){};
+		Style() {};
 		Style( const Color& color ) : color( color ) {}
 		Style( const Color& color, const Color& background, const Uint32& style ) :
 			color( color ), background( background ), style( style ) {}

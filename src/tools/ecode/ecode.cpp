@@ -1,4 +1,5 @@
 #include "ecode.hpp"
+#include "colorschemetranslator.hpp"
 #include "customwidgets.hpp"
 #include "featureshealth.hpp"
 #include "keybindingshelper.hpp"
@@ -1801,6 +1802,9 @@ void App::onColorSchemeChanged( const std::string& ) {
 			mSplitter->getCurrentColorScheme() );
 	}
 
+	if ( "syntax_color_scheme" == mConfig.ui.theme )
+		setTheme( "syntax_color_scheme" );
+
 	mNotificationCenter->addNotification(
 		String::format( i18n( "color_scheme_set", "Color scheme: %s" ).toUtf8(),
 						mSplitter->getCurrentColorScheme().getName() ) );
@@ -1888,6 +1892,9 @@ std::string App::getThemePath() const {
 	if ( mConfig.ui.theme.empty() || "default_theme" == mConfig.ui.theme )
 		return getDefaultThemePath();
 
+	if ( "syntax_color_scheme" == mConfig.ui.theme )
+		return mConfig.ui.theme;
+
 	auto themePath( mThemesPath + mConfig.ui.theme + ".css" );
 	if ( !FileSystem::fileExists( themePath ) )
 		return getDefaultThemePath();
@@ -1899,8 +1906,36 @@ std::string App::getDefaultThemePath() const {
 	return mResPath + "ui/breeze.css";
 }
 
+const SyntaxColorScheme* App::getCurrentColorScheme() const {
+	const SyntaxColorScheme* colorScheme = nullptr;
+	if ( mSplitter ) {
+		colorScheme = &mSplitter->getCurrentColorScheme();
+	} else {
+		auto found = std::find_if( mColorSchemes.begin(), mColorSchemes.end(),
+								   [this]( const SyntaxColorScheme& colorScheme ) {
+									   return colorScheme.getName() == mInitColorScheme;
+								   } );
+		if ( found != mColorSchemes.end() ) {
+			colorScheme = &*found;
+		}
+	}
+	return colorScheme;
+}
+
 void App::setTheme( const std::string& path ) {
-	UITheme* theme = UITheme::load( "uitheme", "uitheme", "", mFont, path );
+	UITheme* theme = nullptr;
+
+	if ( path == "syntax_color_scheme" ) {
+		const SyntaxColorScheme* colorScheme = getCurrentColorScheme();
+		if ( colorScheme ) {
+			std::string themeString( ColorSchemeTranslator::fromSyntaxColorScheme( *colorScheme ) );
+			theme = UITheme::loadFromString( "uitheme", "uitheme", "", mFont, themeString );
+		} else {
+			theme = UITheme::load( "uitheme", "uitheme", "", mFont, getDefaultThemePath() );
+		}
+	} else {
+		theme = UITheme::load( "uitheme", "uitheme", "", mFont, path );
+	}
 	theme->setDefaultFontSize( mConfig.ui.fontSize.asPixels( 0, Sizef(), mDisplayDPI ) );
 
 	if ( path != getDefaultThemePath() ) {
@@ -1926,16 +1961,27 @@ void App::setTheme( const std::string& path ) {
 				}
 				theme->getStyleSheet().addKeyframes( parser.getStyleSheet().getKeyframes() );
 			}
+
+			/* auto inheritsEditorColors = style->getVariableByName( "--inherit-editor-colors" );
+			if ( !inheritsEditorColors.isEmpty() ) {
+				const SyntaxColorScheme* colorScheme = getCurrentColorScheme();
+				std::string themeString(
+					ColorSchemeTranslator::fromSyntaxColorScheme( *colorScheme ) );
+				StyleSheetParser parser;
+				if ( parser.loadFromString( themeString ) )
+					theme->getStyleSheet().combineStyleSheet( parser.getStyleSheet() );
+			} */
 		}
 	}
 
 	theme->getStyleSheet().invalidateCache();
-	mAppStyleSheet.invalidateCache();
+
+	auto oldMarkers = mUISceneNode->getStyleSheet().getAllWithMarkers();
+	oldMarkers.invalidateCache();
 
 	mUISceneNode->setStyleSheet( theme->getStyleSheet(), false );
 
-	if ( !mAppStyleSheet.isEmpty() )
-		mUISceneNode->getStyleSheet().combineStyleSheet( mAppStyleSheet );
+	mUISceneNode->getStyleSheet().combineStyleSheet( oldMarkers );
 
 	mUISceneNode->getStyleSheet().updateMediaLists( mUISceneNode->getMediaFeatures() );
 
@@ -4469,7 +4515,6 @@ void App::init( InitParameters& params ) {
 		UIWidgetCreator::registerWidget( "treeviewfs", UITreeViewFS::New );
 
 		mUISceneNode->loadLayoutFromString( baseUI, nullptr, APP_LAYOUT_STYLE_MARKER );
-		mAppStyleSheet = mUISceneNode->getStyleSheet().getAllWithMarker( APP_LAYOUT_STYLE_MARKER );
 		mUISceneNode->bind( "main_layout", mMainLayout );
 		mUISceneNode->bind( "code_container", mBaseLayout );
 		mUISceneNode->bind( "image_container", mImageLayout );

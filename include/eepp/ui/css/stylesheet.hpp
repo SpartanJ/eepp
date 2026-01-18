@@ -62,6 +62,8 @@ class EE_API StyleSheet {
 
 	StyleSheet getAllWithMarker( const Uint32& marker ) const;
 
+	StyleSheet getAllWithMarkers() const;
+
 	std::vector<std::shared_ptr<StyleSheetStyle>>
 	findStyleFromSelectorName( const std::string& selector ) const;
 

@@ -119,6 +119,16 @@ StyleSheet StyleSheet::getAllWithMarker( const Uint32& marker ) const {
 	return style;
 }
 
+StyleSheet StyleSheet::getAllWithMarkers() const {
+	StyleSheet style;
+	std::vector<std::shared_ptr<StyleSheetStyle>> hits;
+	for ( auto node : mNodes ) {
+		if ( node->getMarker() != 0 )
+			style.addStyle( node );
+	}
+	return style;
+}
+
 bool StyleSheet::markerExists( const Uint32& marker ) const {
 	for ( auto node : mNodes ) {
 		if ( node->getMarker() == marker )

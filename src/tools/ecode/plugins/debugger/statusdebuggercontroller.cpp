@@ -241,8 +241,10 @@ void StatusDebuggerController::createContainer() {
 	}
 
 	mContainer = mContext->getUISceneNode()
-					 ->loadLayoutFromString( XML, mMainSplitter )
+					 ->loadLayoutFromString( XML, mMainSplitter,
+											 String::hash( "status_debugger_controller" ) )
 					 ->asType<UIHLinearLayoutCommandExecuter>();
+
 	mContext->getStatusBar()->registerStatusBarPanel( mContainer, mContainer );
 
 	mContainer->bind( "app_debugger_tab_widget", mUITabWidget );

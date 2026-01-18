@@ -1447,10 +1447,10 @@ void GitPlugin::buildSidePanelTab() {
 	.git_highlight_style > treeview::cell::text {
 		color: %s;
 	}
-	treeview::row treeview::cell.git_highlight_style_clear,
 	treeview::row:selected .git_highlight_style > treeview::cell::text,
 	treeview::row:selected .git_highlight_style > treeview::cell::text {
-		color: var(--font);
+		color: var(--list-row-active);
+		tint: var(--list-row-active);
 	}
 	.git_highlight_style > treeview::cell::icon {
 		foreground-image: icon(circle, 8dpru), icon(circle-filled, 8dpru);
@@ -1488,7 +1488,10 @@ void GitPlugin::buildSidePanelTab() {
 		!mHighlightStyleColor.empty() && Color::isColorString( mHighlightStyleColor )
 			? mHighlightStyleColor
 			: std::string{ DEFAULT_HIGHLIGHT_COLOR };
-	mTabContents = getUISceneNode()->loadLayoutFromString( String::format( STYLE, color, color ) );
+
+	mTabContents = getUISceneNode()->loadLayoutFromString(
+		String::format( STYLE, color, color ), nullptr, String::hash( "git_plugin_style" ) );
+
 	mTab = mSidePanel->add( i18n( "source_control", "Source Control" ), mTabContents,
 							icon ? icon->getSize( PixelDensity::dpToPx( 12 ) ) : nullptr );
 	mTab->setId( "source_control_tab" );

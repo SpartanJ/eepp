@@ -12,8 +12,9 @@
 	--base-vertical-padding: 5dp;
 	--border-width: 1dp;
 	--list-back: #232629;
-	--separator: #383a3d;
+	--separator: #31363b;
 	--item-hover: #284150;
+	--list-row-active: #eff0f1;
 	--slider-back: #676a6e;
 	--slider-button: #31363b;
 	--slider-border: #787b80;
@@ -26,6 +27,7 @@
 	--tab-hover: #334e5e;
 	--tab-close: #909396;
 	--tab-close-hover: #863d47;
+	--tab-font-active: white;
 	--tab-font-inactive: #c0c5cc;
 	--icon: #b6bbc2;
 	--icon-active: white;
@@ -56,21 +58,13 @@ tableview::cell::icon,
 treeview::cell::icon,
 treeview::cell::expander,
 listview::cell::icon,
-Menu::Item:selected,
-Menu::CheckBox:selected,
-Menu::SubMenu:selected,
-Menu::RadioButton:selected,
-Menu::Item:hover > Menu::Item::text,
-Menu::Item:hover > Menu::Item::shortcut,
-Menu::CheckBox:hover > Menu::CheckBox::text,
-Menu::CheckBox:hover > Menu::CheckBox::shortcut,
-Menu::RadioButton:hover > Menu::RadioButton::text,
-Menu::RadioButton:hover > Menu::RadioButton::shortcut,
-Menu::SubMenu:hover > Menu::SubMenu::text,
-Menu::item:hover > Menu::Item::icon,
-Menu::SubMenu:hover > Menu::SubMenu::icon,
-Menu::item:hover > Menu::CheckBox::icon,
-Menu::item:hover > Menu::RadioButton::icon,
+tableview::header::column:hover,
+treeview::header::column:hover,
+listview::header::column:hover {
+	color: var(--font);
+	tint: var(--font);
+}
+
 PushButton:pressed > PushButton::icon,
 SelectButton:pressed > SelectButton::icon,
 SelectButton:selected > SelectButton::icon,
@@ -83,21 +77,9 @@ treeview::row:selected treeview::cell::icon,
 listview::row:selected listview::cell::icon,
 tableview::row:selected tableview::cell::expander,
 treeview::row:selected treeview::cell::expander,
-listview::row:selected listview::cell::expander,
-tableview::row:hover tableview::cell::text,
-treeview::row:hover treeview::cell::text,
-listview::row:hover listview::cell::text,
-tableview::row:hover tableview::cell::icon,
-treeview::row:hover treeview::cell::icon,
-listview::row:hover listview::cell::icon,
-tableview::row:hover tableview::cell::expander,
-treeview::row:hover treeview::cell::expander,
-listview::row:hover listview::cell::expander,
-tableview::header::column:hover,
-treeview::header::column:hover,
-listview::header::column:hover {
-	color: var(--font);
-	tint: var(--font);
+listview::row:selected listview::cell::expander {
+	color: var(--list-row-active);
+	tint: var(--list-row-active);
 }
 
 CheckBox,
@@ -136,6 +118,7 @@ TextInput,
 TextInputPassword,
 ComboBox::DropDownList,
 SpinBox::input, {
+	selection-color: var(--list-row-active);
 	selection-back-color: var(--primary);
 }
 
@@ -684,16 +667,16 @@ Window {
 }
 
 Window::decoration {
-	background-color: var(--back);
+	background-color: var(--separator);
 }
 
 Window::border::left,
 Window::border::right {
-	background-color: var(--back);
+	background-color: var(--separator);
 }
 
 Window::border::bottom {
-	background-color: var(--back);
+	background-color: var(--separator);
 }
 
 DropDownList,
@@ -758,6 +741,7 @@ PopUpMenu {
 }
 
 MenuBar::Button {
+	background-color: transparent;
 	padding-left: 6dp;
 	padding-right: 6dp;
 	min-height: 18dp;
@@ -766,6 +750,8 @@ MenuBar::Button {
 MenuBar::Button:selected,
 MenuBar::Button:hover {
 	background-color: var(--primary);
+	color: var(--menu-font-active);
+	tint: var(--menu-font-active);
 }
 
 Menu::Item,
@@ -818,12 +804,21 @@ Menu::SubMenu:disabled > Menu::SubMenu::icon {
 	tint: var(--menu-font-disabled);
 }
 
-Menu::Item:hover > Menu::Item::text,
-Menu::CheckBox:hover > Menu::Item::text,
-Menu::RadioButton:hover > Menu::Item::text,
-Menu::SubMenu:hover > Menu::Item::text,
+Menu::Item:selected > Menu::Item::text,
+Menu::CheckBox:selected > Menu::CheckBox::text,
+Menu::RadioButton:selected > Menu::RadioButton::text,
+Menu::SubMenu:selected > Menu::SubMenu::text,
+Menu::Item:selected > Menu::Item::icon,
+Menu::CheckBox:selected > Menu::CheckBox::icon,
+Menu::RadioButton:selected > Menu::RadioButton::icon,
+Menu::SubMenu:selected > Menu::SubMenu::icon,
+Menu::Item:selected > Menu::Item::shortcut,
+Menu::CheckBox:selected > Menu::CheckBox::shortcut,
+Menu::RadioButton:selected > Menu::RadioButton::shortcut,
+Menu::SubMenu:selected > Menu::SubMenu::shortcut,
 ListBox::item:hover {
 	color: var(--menu-font-active);
+	tint: var(--menu-font-active);
 }
 
 Menu::Separator {
@@ -839,6 +834,10 @@ Menu::SubMenu::Arrow {
 	height: 16dp;
 	margin-right: 1dp;
 	foreground-image: poly(line, var(--icon), "5dp 3dp, 10dp 8dp", 1dp), poly(line, var(--icon), "5dp 13dp, 10dp 8dp", 1dp);
+}
+
+Menu::SubMenu:hover > Menu::SubMenu::arrow {
+	foreground-image: poly(line, var(--menu-font-active), "5dp 3dp, 10dp 8dp", 1dp), poly(line, var(--menu-font-active), "5dp 13dp, 10dp 8dp", 1dp);
 }
 
 Menu::Item::icon,
@@ -890,7 +889,7 @@ Table > ScrollBar {
 }
 
 Splitter::separator {
-	background-color: var(--back);
+	background-color: var(--separator);
 }
 
 Splitter::separator:selected,
@@ -938,7 +937,7 @@ listview::header::column:hover,
 tableview::rowheader::row:hover,
 treeview::rowheader::row:hover,
 listview::rowheader::row:hover {
-	background-color: var(--tab-hover);
+		background-color: var(--item-hover);
 }
 
 tableview::row,
@@ -948,7 +947,7 @@ treeview::row {
 
 tableview::row:hover,
 treeview::row:hover {
-	background-color: var(--tab-hover);
+	background-color: var(--item-hover);
 }
 
 tableview::row:selected,
@@ -1069,7 +1068,7 @@ tab::icon {
 
 tab:selected > tab::icon,
 tab:not(:selected):hover > tab::icon {
-	tint: var(--menu-font-active);
+	tint: var(--tab-font-active);
 }
 
 console {
@@ -1081,6 +1080,11 @@ console {
 	border-bottom-width: var(--border-width);
 }
 
+ImageViewer > TextView {
+	text-stroke-width: 1dp;
+	text-stroke-color: var(--back);
+}
+
 /* Reserved classes used by themes */
 .appbackground {
 	background-color: var(--back);
@@ -1089,11 +1093,6 @@ console {
 TextInput.table_cell_edit {
 	padding-top: 0!important;
 	padding-bottom: 0!important;
-}
-
-ImageViewer > TextView {
-	text-stroke-width: 1dp;
-	text-stroke-color: var(--back);
 }
 
 @media (prefers-color-scheme: light) {
@@ -1113,6 +1112,7 @@ ImageViewer > TextView {
 	--list-back: #ffffff;
 	--separator: #cbcdcd;
 	--item-hover: #93cee9;
+	--list-row-active: #eff0f1;
 	--slider-back: #e9e9e9;
 	--slider-button: #cbcdcd;
 	--slider-border: #e6e6e6;
@@ -1125,6 +1125,7 @@ ImageViewer > TextView {
 	--tab-hover: #93cee9;
 	--tab-close: #e6e6e6;
 	--tab-close-hover: #e49aa2;
+	--tab-font-active: white;
 	--tab-font-inactive: #444;
 	--icon: #232627;
 	--icon-active: #3daee9;
@@ -1148,55 +1149,6 @@ ImageViewer > TextView {
 	droppable-hovering-color: #00000020;
 }
 
-Menu::Item:selected,
-Menu::CheckBox:selected,
-Menu::SubMenu:selected,
-Menu::RadioButton:selected,
-Menu::Item:hover > Menu::Item::text,
-Menu::Item:hover > Menu::Item::shortcut,
-Menu::CheckBox:hover > Menu::CheckBox::text,
-Menu::CheckBox:hover > Menu::CheckBox::shortcut,
-Menu::RadioButton:hover > Menu::RadioButton::text,
-Menu::RadioButton:hover > Menu::RadioButton::shortcut,
-Menu::SubMenu:hover > Menu::SubMenu::text,
-Menu::item:hover > Menu::Item::icon,
-Menu::SubMenu:hover > Menu::SubMenu::icon,
-Menu::item:hover > Menu::CheckBox::icon,
-Menu::item:hover > Menu::RadioButton::icon,
-PushButton:pressed > PushButton::icon,
-SelectButton:pressed > SelectButton::icon,
-SelectButton:selected > SelectButton::icon,
-SelectButton:selected:pressed > SelectButton::icon,
-tableview::row:selected tableview::cell::text,
-treeview::row:selected treeview::cell::text,
-listview::row:selected listview::cell::text,
-tableview::row:selected tableview::cell::icon,
-treeview::row:selected treeview::cell::icon,
-listview::row:selected listview::cell::icon,
-tableview::row:selected tableview::cell::expander,
-treeview::row:selected treeview::cell::expander,
-listview::row:selected listview::cell::expander,
-tableview::row:selected tableview::cell checkbox,
-treeview::row:selected treeview::cell checkbox,
-listview::row:selected listview::cell checkbox,
-tableview::row:hover tableview::cell::text,
-treeview::row:hover treeview::cell::text,
-listview::row:hover listview::cell::text,
-tableview::row:hover tableview::cell::icon,
-treeview::row:hover treeview::cell::icon,
-listview::row:hover listview::cell::icon,
-tableview::row:hover tableview::cell::expander,
-treeview::row:hover treeview::cell::expander,
-listview::row:hover listview::cell::expander,
-tableview::row:hover tableview::cell checkbox,
-treeview::row:hover treeview::cell checkbox,
-listview::row:hover listview::cell checkbox,
-tableview::header::column:hover,
-treeview::header::column:hover,
-listview::header::column:hover {
-	tint: var(--menu-font-active);
-}
-
 Tab:selected,
 Tab:hover,
 Tab:pressed {
@@ -1204,7 +1156,7 @@ Tab:pressed {
 }
 
 Tab:not(:selected):hover {
-	color: var(--menu-font-active);
+	color: var(--tab-font-active);
 }
 
 tab::icon,
@@ -1213,7 +1165,7 @@ tab:selected > tab::icon, {
 }
 
 tab:not(:selected):hover > tab::icon {
-	tint: var(--menu-font-active);
+	tint: var(--tab-font-active);
 }
 
 }

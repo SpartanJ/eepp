@@ -2186,7 +2186,17 @@ UIMenu* SettingsMenu::createThemesMenu() {
 		->setOnShouldCloseCb( shouldCloseCb )
 		->setId( "default_theme" );
 
+	menu->addRadioButton( i18n( "syntax_color_scheme", "Syntax Color Scheme" ),
+						  "syntax_color_scheme" == curTheme )
+		->setOnShouldCloseCb( shouldCloseCb )
+		->setTooltipText( i18n( "syntax_color_scheme_tool",
+								"Uses the editor color scheme colors to create a UI theme." ) )
+		->setId( "syntax_color_scheme" );
+
 	auto files = FileSystem::filesInfoGetInPath( mApp->getThemesPath(), true, true, true );
+
+	if ( !files.empty() )
+		menu->addSeparator();
 
 	for ( const auto& file : files ) {
 		if ( file.getExtension() != "css" )
@@ -2198,11 +2208,14 @@ UIMenu* SettingsMenu::createThemesMenu() {
 	}
 
 	menu->on( Event::OnItemClicked, [this]( const Event* event ) {
+		if ( event->getNode()->isType( UI_TYPE_MENU_SEPARATOR ) )
+			return;
 		auto id = event->getNode()->getId();
 		mApp->getConfig().ui.theme = "default_theme" != id ? id : "";
-		std::string path( mApp->getConfig().ui.theme.empty()
-							  ? mApp->getDefaultThemePath()
-							  : mApp->getThemesPath() + id + ".css" );
+		std::string path(
+			mApp->getConfig().ui.theme.empty()
+				? mApp->getDefaultThemePath()
+				: ( "syntax_color_scheme" == id ? id : mApp->getThemesPath() + id + ".css" ) );
 		mApp->setTheme( path );
 	} );
 

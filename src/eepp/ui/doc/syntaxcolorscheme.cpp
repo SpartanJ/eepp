@@ -56,6 +56,7 @@ SyntaxColorScheme SyntaxColorScheme::getDefault() {
 			{ "link_hover"_sst, { Color::Transparent, Color::Transparent, Text::Underlined } },
 		},
 		{ { "background"_sst, Color( "#282a36" ) },
+		  { "widget_background"_sst, Color( "#1e202c" ) },
 		  { "text"_sst, Color( "#e1e1e6" ) },
 		  { "caret"_sst, Color( "#93DDFA" ) },
 		  { "selection"_sst, Color( "#394484" ) },
@@ -259,7 +260,9 @@ SyntaxColorScheme::getEditorSyntaxStyle( const SyntaxStyleType& type ) const {
 	auto it = mEditorColors.find( type );
 	if ( it != mEditorColors.end() )
 		return it->second;
-	if ( type == "gutter_background"_sst || type == "minimap_background"_sst )
+	if ( type == "widget_background"_sst )
+		return getEditorSyntaxStyle( "gutter_background"_sst );
+	else if ( type == "gutter_background"_sst || type == "minimap_background"_sst )
 		return getEditorSyntaxStyle( "background"_sst );
 	else if ( type == "whitespace"_sst || type == "line_break_column"_sst ||
 			  type == "matching_bracket"_sst || type == "matching_selection"_sst ||

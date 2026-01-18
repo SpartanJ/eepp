@@ -34,6 +34,11 @@ class EE_API UITheme : protected ResourceManagerMulti<UISkin> {
 						  const std::string& textureAtlasPath, Graphics::Font* defaultFont,
 						  const std::string& styleSheetPath );
 
+	static UITheme* loadFromString( const std::string& name, const std::string& abbr,
+									const std::string& textureAtlasPath,
+									Graphics::Font* defaultFont,
+									const std::string& styleSheetString );
+
 	static UITheme* loadFromTextureAtlas( UITheme* tTheme,
 										  Graphics::TextureAtlas* getTextureAtlas );
 

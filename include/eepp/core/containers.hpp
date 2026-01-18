@@ -1,6 +1,10 @@
 #ifndef EE_CONTAINERS_HPP
 #define EE_CONTAINERS_HPP
 
+#ifdef EE_DEBUG
+#define EEPP_NO_THIRDPARTY_CONTAINERS
+#endif
+
 #ifdef EEPP_NO_THIRDPARTY_CONTAINERS
 #include <unordered_map>
 #include <unordered_set>

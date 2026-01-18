@@ -57,6 +57,25 @@ UITheme* UITheme::load( const std::string& name, const std::string& abbr,
 	return loadFromTextureAtlas( theme, tgl.getTextureAtlas() );
 }
 
+UITheme* UITheme::loadFromString( const std::string& name, const std::string& abbr,
+						const std::string& textureAtlasPath, Font* defaultFont,
+						const std::string& styleSheetString ) {
+	UITheme* theme = UITheme::New( name, abbr, defaultFont );
+
+	CSS::StyleSheetParser styleSheetParser;
+
+	if ( styleSheetParser.loadFromString( styleSheetString ) ) {
+		theme->setStyleSheet( styleSheetParser.getStyleSheet() );
+	}
+
+	if ( textureAtlasPath.empty() )
+		return theme;
+
+	TextureAtlasLoader tgl( textureAtlasPath );
+
+	return loadFromTextureAtlas( theme, tgl.getTextureAtlas() );
+}
+
 UITheme* UITheme::loadFromTextureAtlas( UITheme* tTheme, Graphics::TextureAtlas* textureAtlas ) {
 	eeASSERT( NULL != tTheme && NULL != textureAtlas );
 

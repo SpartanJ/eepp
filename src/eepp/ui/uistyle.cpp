@@ -214,7 +214,6 @@ void UIStyle::applyLightDarkValue( std::string& value ) {
 	std::string::size_type tokenEnd = 0;
 
 	while ( true ) {
-		// TODO: add support to inner-function calls like: light-dark(rgba(0,0,0,1), rgba(1,1,1,1))
 		tokenStart = value.find( "light-dark(", tokenStart );
 		if ( tokenStart != std::string::npos ) {
 			tokenEnd = String::findCloseBracket( value, tokenStart, '(', ')' );
