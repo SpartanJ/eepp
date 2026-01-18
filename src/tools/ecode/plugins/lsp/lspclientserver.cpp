@@ -1471,10 +1471,11 @@ LSPClientServer::LSPRequestHandle LSPClientServer::write( json&& msg, const Json
 	ret.server = this;
 
 	// If it's shutting down but the write comes from a different thread, means that this is an
-	// old enqueued message and needs to be ignored. The shutdown messages happen in the main
-	// thread.
-	if ( mShuttingDown && !Engine::isMainThread() )
+	// old enqueued message and needs to be ignored except is the exit message.
+	if ( mShuttingDown && !Engine::isMainThread() &&
+		 ( !msg.contains( MEMBER_METHOD ) || msg[MEMBER_METHOD] != "exit" ) ) {
 		return ret;
+	}
 
 	if ( !isRunning() ) {
 		notifyServerError();
@@ -2639,7 +2640,7 @@ void LSPClientServer::shutdown() {
 	{
 		Lock l( mHandlersMutex );
 		Clock clock;
-		// Give the handler a changes to answer (max 100ms)
+		// Give the handler a chance to answer (max 100ms)
 		while ( !mHandlers.empty() && clock.getElapsedTime().asMilliseconds() < 100.f ) {
 			Sys::sleep( Milliseconds( 10 ) );
 		}
