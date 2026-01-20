@@ -4,7 +4,6 @@
 #include <eepp/network/ssl/sslsocket.hpp>
 #include <eepp/system/log.hpp>
 #include <fstream>
-#include <iterator>
 #include <sstream>
 
 using namespace EE::Network::SSL;
