@@ -845,8 +845,8 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool nearest ) const {
 }
 
 static bool isStopSelChar( Uint32 c ) {
-	return ( !String::isCharacter( c ) && !String::isNumber( c ) ) || ' ' == c || '.' == c ||
-		   ',' == c || ';' == c || ':' == c || '\n' == c || '"' == c || '\'' == c || '\t' == c;
+	static std::string_view DEFAULT_NON_WORD_CHARS( " \t\n/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-" );
+	return DEFAULT_NON_WORD_CHARS.find_first_of( c ) != std::string_view::npos;
 }
 
 void Text::findWordFromCharacterIndex( Int32 characterIndex, Int32& initCur, Int32& endCur ) const {

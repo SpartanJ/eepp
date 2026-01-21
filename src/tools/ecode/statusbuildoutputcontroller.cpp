@@ -158,9 +158,10 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 	patterns.emplace_back(
 		SyntaxPattern( { "%d%d%d%d%-%d%d%-%d%d%s%d%d%:%d%d%:%d%d%:[^\n]+" }, "notice" ) );
 
-	SyntaxDefinition synDef( "custom_build", {}, std::move( patterns ) );
+	auto syntaxDef = std::make_shared<SyntaxDefinition>( "custom_build", std::vector<std::string>{},
+														 std::move( patterns ) );
 
-	mBuildOutput->getDocument().setSyntaxDefinition( synDef );
+	mBuildOutput->getDocument().setSyntaxDefinition( syntaxDef );
 	mBuildOutput->getVScrollBar()->setValue( 1.f );
 	mBuildOutput->getDocument().getHighlighter()->setMaxTokenizationLength( 2048 );
 	mBuildOutput->setLineWrapMode( LineWrapMode::Word );

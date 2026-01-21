@@ -188,10 +188,8 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.linesRelativePosition = ini.getValueB( "editor", "lines_relative_position", false );
 	editor.autoReloadOnDiskChange = ini.getValueB( "editor", "auto_reload_on_disk_change", false );
 
-	editor.wrapMode =
-		DocumentView::toLineWrapMode( ini.getValue( "editor", "wrap_mode", "nowrap" ) );
-	editor.wrapType =
-		DocumentView::toLineWrapType( ini.getValue( "editor", "wrap_type", "viewport" ) );
+	editor.wrapMode = LineWrap::toLineWrapMode( ini.getValue( "editor", "wrap_mode", "nowrap" ) );
+	editor.wrapType = LineWrap::toLineWrapType( ini.getValue( "editor", "wrap_type", "viewport" ) );
 	editor.wrapKeepIndentation = ini.getValueB( "editor", "wrap_keep_indentation", true );
 
 	editor.codeFoldingEnabled = ini.getValueB( "editor", "code_folding_enabled", true );
@@ -374,8 +372,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "lines_relative_position", editor.linesRelativePosition );
 	ini.setValueB( "editor", "auto_reload_on_disk_change", editor.autoReloadOnDiskChange );
 
-	ini.setValue( "editor", "wrap_mode", DocumentView::fromLineWrapMode( editor.wrapMode ) );
-	ini.setValue( "editor", "wrap_type", DocumentView::fromLineWrapType( editor.wrapType ) );
+	ini.setValue( "editor", "wrap_mode", LineWrap::fromLineWrapMode( editor.wrapMode ) );
+	ini.setValue( "editor", "wrap_type", LineWrap::fromLineWrapType( editor.wrapType ) );
 	ini.setValueB( "editor", "wrap_keep_indentation", editor.wrapKeepIndentation );
 
 	ini.setValueB( "editor", "code_folding_enabled", editor.codeFoldingEnabled );

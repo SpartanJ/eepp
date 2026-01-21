@@ -479,6 +479,8 @@ class EE_API TextDocument {
 
 	const SyntaxDefinition& getSyntaxDefinition() const;
 
+	void setSyntaxDefinition( std::shared_ptr<SyntaxDefinition> definition );
+
 	void setSyntaxDefinition( const SyntaxDefinition& definition );
 
 	Uint64 getCurrentChangeId() const;

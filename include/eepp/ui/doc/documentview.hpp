@@ -2,6 +2,7 @@
 #define EE_UI_DOCUMENTVIEW_HPP
 
 #include <eepp/graphics/fontstyleconfig.hpp>
+#include <eepp/graphics/linewrap.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/doc/textposition.hpp>
 #include <optional>
@@ -10,10 +11,6 @@ using namespace EE::Graphics;
 using namespace EE::UI::Doc;
 
 namespace EE { namespace UI { namespace Doc {
-
-enum class LineWrapMode { NoWrap, Letter, Word };
-
-enum class LineWrapType { Viewport, LineBreakingColumn };
 
 enum class VisibleIndex : Int64 { first = 0, invalid = std::numeric_limits<Int64>::max() };
 
@@ -24,14 +21,6 @@ inline VisibleIndex visibleIndexOffset( VisibleIndex idx, Int64 offset ) {
 
 class EE_API DocumentView {
   public:
-	static LineWrapMode toLineWrapMode( std::string mode );
-
-	static std::string fromLineWrapMode( LineWrapMode mode );
-
-	static LineWrapType toLineWrapType( std::string type );
-
-	static std::string fromLineWrapType( LineWrapType type );
-
 	struct Config {
 		LineWrapMode mode{ LineWrapMode::NoWrap };
 		bool keepIndentation{ true };
@@ -45,11 +34,6 @@ class EE_API DocumentView {
 		bool operator!=( const Config& other ) { return !( *this == other ); }
 	};
 
-	struct LineWrapInfo {
-		std::vector<Int64> wraps;
-		Float paddingStart{ 0 };
-	};
-
 	struct VisibleLineInfo {
 		VisibleIndex visibleIndex{ VisibleIndex::invalid };
 		Float paddingStart{ 0 };
@@ -61,27 +45,11 @@ class EE_API DocumentView {
 		TextRange range;
 	};
 
-	static LineWrapInfo
-	computeLineBreaks( const String::View& string, const FontStyleConfig& fontStyle, Float maxWidth,
-					   LineWrapMode mode, bool keepIndentation, Uint32 tabWidth = 4,
-					   Float whiteSpaceWidth = 0.f /* 0 = should calculate it */,
-					   Uint32 textHints = TextHints::None, bool tabStops = false,
-					   Float initialXOffset = 0.f );
-
-	static LineWrapInfo computeLineBreaks( const String& string, const FontStyleConfig& fontStyle,
-										   Float maxWidth, LineWrapMode mode, bool keepIndentation,
-										   Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f,
-										   Uint32 textHints = TextHints::None,
-										   bool tabStops = false, Float initialXOffset = 0.f );
-
 	static LineWrapInfo computeLineBreaks( const TextDocument& doc, size_t line,
 										   const FontStyleConfig& fontStyle, Float maxWidth,
 										   LineWrapMode mode, bool keepIndentation,
 										   Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f,
 										   bool tabStops = false, Float initialXOffset = 0.f );
-
-	static Float computeOffsets( const String::View& string, const FontStyleConfig& fontStyle,
-								 Uint32 tabWidth, Float maxWidth = 0.f, bool tabStops = false );
 
 	DocumentView( std::shared_ptr<TextDocument> doc, FontStyleConfig fontStyle, Config config );
 

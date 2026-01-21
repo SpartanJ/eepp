@@ -2921,6 +2921,14 @@ const SyntaxDefinition& TextDocument::getSyntaxDefinition() const {
 							 : SyntaxDefinitionManager::instance()->getPlainDefinition();
 }
 
+void TextDocument::setSyntaxDefinition( std::shared_ptr<SyntaxDefinition> definition ) {
+	{
+		Lock l( mSyntaxDefinitionMutex );
+		mSyntaxDefinition = definition;
+	}
+	notifySyntaxDefinitionChange();
+}
+
 void TextDocument::setSyntaxDefinition( const SyntaxDefinition& definition ) {
 	if ( mSyntaxDefinition->getLanguageIndex() != definition.getLanguageIndex() ) {
 		{

@@ -20,6 +20,7 @@
 #include <eepp/maps/mapobjectlayer.hpp>
 #include <eepp/maps/tilemaplayer.hpp>
 #include <eepp/scene/scenemanager.hpp>
+#include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 
 using namespace EE::Graphics;
@@ -57,7 +58,6 @@ MapEditor::MapEditor( UIWindow* AttachTo, const MapEditorCloseCb& callback ) :
 	mGOTypeList( NULL ),
 	mChkAnim( NULL ),
 	mCurLayer( NULL ),
-	mLastSelButtonY( 2 ),
 	mMouseScrolling( false ) {
 	if ( SceneManager::instance()->getUISceneNode() == NULL )
 		return;
@@ -232,7 +232,8 @@ void MapEditor::createETGMenu() {
 	mLightCont->setSize( mTextureRegionCont->getSize() );
 	mLightCont->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 
-	mObjectCont = UIWidget::New();
+	mObjectCont = UILinearLayout::New();
+	mObjectCont->setPadding( Rectf( 4, 4, 4, 4 ) );
 	mObjectCont->setParent( mWinContainer );
 	mObjectCont->setSize( mTextureRegionCont->getSize() );
 	mObjectCont->setAnchors( UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
@@ -597,18 +598,13 @@ void MapEditor::createLightContainer() {
 
 UISelectButton* MapEditor::addObjContButton( String text, Uint32 mode ) {
 	UISelectButton* Button = UISelectButton::New();
-	Button->setFlags( UI_AUTO_SIZE )->setParent( mObjectCont );
-	Button->setSize( mObjectCont->getSize().getWidth() - TAB_CONT_X_DIST * 2, 0 )
-		->setPosition( TAB_CONT_X_DIST, mLastSelButtonY );
+	Button->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
+	Button->setLayoutMarginBottom( 4 );
+	Button->setParent( mObjectCont );
 	Button->setText( text );
 	Button->setData( mode );
-
 	Button->on( Event::MouseClick, [this]( auto event ) { onObjectModeSel( event ); } );
-
-	mLastSelButtonY += Button->getSize().getHeight() + 4;
-
 	mObjContButton.push_back( Button );
-
 	return Button;
 }
 
@@ -1250,10 +1246,10 @@ void MapEditor::mapMenuClick( const Event* Event ) {
 
 	if ( "New Texture Atlas..." == txt ) {
 		UIWindow* tWin = UIWindow::New();
-		tWin->setSizeWithDecoration( 1024, 768 );
+		tWin->setSizeWithDecoration( 1024, 700 );
 		tWin->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON |
 							  UI_WIN_DRAGGABLE_CONTAINER );
-		tWin->setMinWindowSize( 1024, 768 );
+		tWin->setMinWindowSize( 1024, 700 );
 
 		eeNew( Tools::TextureAtlasEditor, ( tWin ) );
 		tWin->center();

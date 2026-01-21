@@ -2991,10 +2991,10 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 			setCodeEditorFlags( attribute.asString(), false );
 			break;
 		case PropertyId::LineWrapMode:
-			setLineWrapMode( DocumentView::toLineWrapMode( attribute.asString() ) );
+			setLineWrapMode( LineWrap::toLineWrapMode( attribute.asString() ) );
 			break;
 		case PropertyId::LineWrapType:
-			setLineWrapType( DocumentView::toLineWrapType( attribute.asString() ) );
+			setLineWrapType( LineWrap::toLineWrapType( attribute.asString() ) );
 			break;
 		case PropertyId::Text:
 			mDoc->textInput( attribute.asString() );
@@ -3044,9 +3044,9 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::DisableCodeEditorFlags:
 			return getCodeEditorFlags( false );
 		case PropertyId::LineWrapMode:
-			return DocumentView::fromLineWrapMode( getLineWrapMode() );
+			return LineWrap::fromLineWrapMode( getLineWrapMode() );
 		case PropertyId::LineWrapType:
-			return DocumentView::fromLineWrapType( getLineWrapType() );
+			return LineWrap::fromLineWrapType( getLineWrapType() );
 		case PropertyId::Text:
 			return mDoc->getLineTextUtf8( 0 );
 		default:

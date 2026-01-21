@@ -88,7 +88,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 	win = Engine::instance()->createWindow(
 		WindowSettings( 1280, 720, "eepp - Map Editor", WindowStyle::Default,
 						WindowBackend::Default, 32, resPath + "assets/icon/ee.png", pixelDensity ),
-		ContextSettings( true, GLv_default, true, 24, 1, 0, false ) );
+		ContextSettings( true, GLv_default, true, 24 ) );
 
 	if ( win->isOpen() ) {
 		PixelDensity::setPixelDensity( eemax( win->getScale(), pixelDensity ) );
@@ -112,6 +112,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 			UITheme* theme = UITheme::load( "uitheme" + pd, "uitheme" + pd,
 											resPath + "assets/ui/uitheme" + pd + ".eta", font,
 											resPath + "assets/ui/uitheme.css" );
+
 			/*UITheme* theme =
 				UITheme::load( "uitheme", "uitheme", "", font, resPath + "assets/ui/breeze.css" );*/
 

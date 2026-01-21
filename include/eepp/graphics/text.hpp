@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fontstyleconfig.hpp>
+#include <eepp/graphics/linewrap.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/texttransform.hpp>
