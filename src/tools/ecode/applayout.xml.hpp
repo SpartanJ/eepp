@@ -317,10 +317,18 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 	background-color: rgba(0,0,0, 0.1);
 }
 .settings_panel .advanced_options .title {
-	padding-bottom: 4dp;
+	padding-right: 4dp;
 	border-radius: 4dp;
 	background-color: transparent;
 	transition: background-color 100ms;
+}
+.settings_panel .advanced_options .title > * {
+	color: var(--font);
+	tint: var(--font);
+}
+.settings_panel .advanced_options .title:hover > * {
+	color: var(--list-row-active);
+	tint: var(--list-row-active);
 }
 .settings_panel .advanced_options .title:hover {
 	background-color: var(--primary);

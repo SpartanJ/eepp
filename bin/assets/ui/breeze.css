@@ -143,6 +143,8 @@ DropDownList {
 	border-radius: var(--button-radius);
 	border-width: var(--border-width);
 	transition: all 0.125s cubic-bezier(0.77, 0.77, 0.38, 0.38);
+	color: var(--font);
+	tint: var(--font);
 }
 
 DropDownList,
@@ -166,6 +168,8 @@ SelectButton:pressed,
 SelectButton:selected,
 SelectButton:selected:pressed {
 	background-color: var(--primary);
+	color: var(--list-row-active);
+	tint: var(--list-row-active);
 }
 
 pushbutton:disabled,
@@ -306,6 +310,8 @@ DropDownList::ListBox::item,
 ComboBox::DropDownList::ListBox::item {
 	padding-left: 4dp;
 	background-color: transparent;
+	color: var(--font);
+	tint: var(--font);
 }
 
 DropDownList::ListBox::item:hover,
@@ -313,6 +319,8 @@ DropDownList::ListBox::item:selected,
 ComboBox::DropDownList::ListBox::item:hover,
 ComboBox::DropDownList::ListBox::item:selected {
 	background-color: var(--primary);
+	color: var(--list-row-active);
+	tint: var(--list-row-active);
 }
 
 TextInput,
@@ -937,7 +945,7 @@ listview::header::column:hover,
 tableview::rowheader::row:hover,
 treeview::rowheader::row:hover,
 listview::rowheader::row:hover {
-		background-color: var(--item-hover);
+	background-color: var(--item-hover);
 }
 
 tableview::row,

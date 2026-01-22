@@ -509,6 +509,10 @@ class EE_API String {
 	/** Format a char buffer */
 	static void formatBuffer( char* Buffer, int BufferSize, const char* format, ... );
 
+	/** Format a UTF-32 buffer */
+	static String::View formatBuffer( String::StringBaseType* Buffer, int BufferSize,
+									  const char* format, ... );
+
 	/** @brief Construct from an UTF-8 string to UTF-32 according
 	** @param utf8String UTF-8 string to convert
 	**/
@@ -1175,6 +1179,7 @@ class EE_API String {
 	 *	@param str The string to strip
 	 */
 	static void stripAnsiCodes( std::string& str );
+
   private:
 	friend EE_API bool operator==( const String& left, const String& right );
 	friend EE_API bool operator<( const String& left, const String& right );

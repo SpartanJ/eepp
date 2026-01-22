@@ -16,6 +16,7 @@
 #include <iostream>
 #include <iterator>
 #include <limits>
+#include <memory_resource>
 #include <random>
 
 #include <cpp-unicodelib/unicodelib.h>
@@ -1614,6 +1615,40 @@ void String::formatBuffer( char* Buffer, int BufferSize, const char* format, ...
 	vsnprintf( Buffer, BufferSize - 1, format, args );
 #endif
 	va_end( args );
+}
+
+String::View String::formatBuffer( String::StringBaseType* Buffer, int BufferSize,
+								   const char* format, ... ) {
+	static constexpr std::size_t PMR_LOCAL_BUFFER_SIZE = 512;
+	alignas( std::max_align_t ) std::array<std::byte, PMR_LOCAL_BUFFER_SIZE> stack_buffer;
+	std::pmr::monotonic_buffer_resource mbr( stack_buffer.data(), stack_buffer.size(),
+											 std::pmr::get_default_resource() );
+	std::pmr::vector<char> pmrBuf( static_cast<std::size_t>( BufferSize ), &mbr );
+	if ( !pmrBuf.empty() )
+		pmrBuf[0] = '\0';
+	va_list args;
+	va_start( args, format );
+	int result_len = 0;
+#ifdef EE_COMPILER_MSVC
+	result_len = _vsnprintf_s( pmrBuf.data(), pmrBuf.size(), pmrBuf.size() - 1, format, args );
+	if ( result_len < 0 && !pmrBuf.empty() ) {
+		pmrBuf.back() = '\0';
+		result_len = static_cast<int>( pmrBuf.size() - 1 );
+	} else if ( result_len < 0 ) {
+		result_len = 0;
+	}
+#else
+	result_len = vsnprintf( pmrBuf.data(), pmrBuf.size(), format, args );
+	if ( result_len >= static_cast<int>( pmrBuf.size() ) ) {
+		result_len = static_cast<int>( pmrBuf.size() - 1 );
+	} else if ( result_len < 0 ) {
+		result_len = 0;
+		if ( !pmrBuf.empty() )
+			pmrBuf[0] = '\0';
+	}
+#endif
+	va_end( args );
+	return String::View{ Buffer, String::toUtf32( pmrBuf.data(), Buffer, BufferSize ) };
 }
 
 String::String() {}
