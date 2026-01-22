@@ -8,6 +8,7 @@
 #include <thirdparty/utf8cpp/utf8.h>
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <charconv>
 #include <climits>
