@@ -222,7 +222,9 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 		if ( enableCleanButton && cleanButton )
 			cleanButton->runOnMainThread( [cleanButton] { cleanButton->setEnabled( true ); } );
 
-		buildAndRunButton->setEnabled( true );
+		if ( buildAndRunButton )
+			buildAndRunButton->setEnabled( true );
+
 		mBuildButton->setEnabled( true );
 		mStopButton->setEnabled( false );
 	};
