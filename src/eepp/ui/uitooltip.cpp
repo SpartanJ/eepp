@@ -627,7 +627,7 @@ void UITooltip::wrapText( const Uint32& maxWidth ) {
 		mTextCache->setString( mStringBuffer );
 	}
 
-	mTextCache->wrapText( maxWidth );
+	mTextCache->hardWrapText( maxWidth );
 	invalidateDraw();
 }
 

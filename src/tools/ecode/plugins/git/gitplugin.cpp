@@ -562,8 +562,8 @@ void GitPlugin::displayTooltip( UICodeEditor* editor, const Git::Blame& blame,
 									  blame.commitMessage.c_str() )
 					: blame.error );
 
-	Text::wrapText( str, PixelDensity::dpToPx( 400 ), tooltip->getFontStyleConfig(),
-					editor->getTabWidth() );
+	Text::hardWrapText( str, PixelDensity::dpToPx( 400 ), tooltip->getFontStyleConfig(),
+						editor->getTabWidth() );
 
 	editor->setTooltipText( str );
 

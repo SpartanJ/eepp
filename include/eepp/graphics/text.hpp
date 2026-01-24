@@ -153,13 +153,13 @@ class EE_API Text {
 								 std::optional<Float> tabOffset = {}, Uint32 textHints = 0,
 								 TextDirection direction = TextDirection::Unspecified );
 
-	static bool wrapText( Font* font, const Uint32& fontSize, String& string, const Float& maxWidth,
-						  const Uint32& style, const Uint32& tabWidth = 4,
-						  const Float& outlineThickness = 0.f,
-						  std::optional<Float> tabOffset = {} );
+	static bool hardWrapText( Font* font, const Uint32& fontSize, String& string,
+							  const Float& maxWidth, const Uint32& style,
+							  const Uint32& tabWidth = 4, const Float& outlineThickness = 0.f,
+							  std::optional<Float> tabOffset = {} );
 
-	static bool wrapText( String& string, const Float& maxWidth, const FontStyleConfig& config,
-						  const Uint32& tabWidth = 4, std::optional<Float> tabOffset = {} );
+	static bool hardWrapText( String& string, const Float& maxWidth, const FontStyleConfig& config,
+							  const Uint32& tabWidth = 4, std::optional<Float> tabOffset = {} );
 
 	static Text* New();
 
@@ -279,7 +279,7 @@ class EE_API Text {
 	/** Shrink the String to a max width
 	 * @param MaxWidth The maximum possible width
 	 */
-	void wrapText( const Uint32& maxWidth );
+	void hardWrapText( const Uint32& maxWidth );
 
 	/** Invalidates the color cache */
 	void invalidateColors();
@@ -411,16 +411,6 @@ class EE_API Text {
 								 const Float& outlineThickness = 0.f,
 								 std::optional<Float> tabOffset = {}, Uint32 textHints = 0,
 								 TextDirection direction = TextDirection::Unspecified );
-
-	template <typename StringType>
-	static bool wrapText( Font* font, const Uint32& fontSize, StringType& string,
-						  const Float& maxWidth, const Uint32& style, const Uint32& tabWidth = 4,
-						  const Float& outlineThickness = 0.f,
-						  std::optional<Float> tabOffset = {} );
-
-	template <typename StringType>
-	static bool wrapText( StringType& string, const Float& maxWidth, const FontStyleConfig& config,
-						  const Uint32& tabWidth = 4, std::optional<Float> tabOffset = {} );
 };
 
 }} // namespace EE::Graphics

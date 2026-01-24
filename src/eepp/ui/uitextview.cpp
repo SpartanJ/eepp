@@ -333,7 +333,7 @@ void UITextView::wrapText( const Uint32& maxWidth ) {
 		mTextCache->setString( mString );
 	}
 
-	mTextCache->wrapText( maxWidth );
+	mTextCache->hardWrapText( maxWidth );
 	invalidateDraw();
 }
 

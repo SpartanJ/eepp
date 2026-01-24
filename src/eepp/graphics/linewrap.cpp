@@ -101,6 +101,13 @@ LineWrapInfo LineWrap::computeLineBreaks( const String::View& string, Font* font
 	size_t idx = 0;
 
 	for ( const auto& curChar : string ) {
+		if ( curChar == '\n' ) {
+			xoffset = 0;
+			lastSpace = idx;
+			idx++;
+			continue;
+		}
+
 		Float w =
 			!isMonospace
 				? font->getGlyph( curChar, characterSize, bold, italic, outlineThickness ).advance

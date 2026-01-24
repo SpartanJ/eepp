@@ -49,11 +49,11 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		text.setFontSize( 24 );
 		text.setAlign( TEXT_ALIGN_CENTER );
 		text.setString( Txt );
-		text.wrapText( win->getWidth() - 96 );
+		text.hardWrapText( win->getWidth() - 96 );
 
 		// Set the font color to a substring of the text
 		// Create a gradient
-		int size = (int)Txt.size();
+		int size = (int)text.getString().size();
 
 		for ( int i = 0; i < size; i++ ) {
 			text.setFillColor( Color( 255 * i / size, 0, 0, 255 ), i, i + 1 );

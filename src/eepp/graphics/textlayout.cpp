@@ -241,6 +241,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 
 	if ( !font || string.empty() ) {
 		auto layout = std::make_shared<TextLayout>();
+		layout->paragraphs.push_back( {} );
 		layout->size = { 0.f, font ? (Float)font->getFontHeight( characterSize ) : 0.f };
 		return layout;
 	}
@@ -265,6 +266,8 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 
 	auto resultPtr = std::make_shared<TextLayout>();
 	TextLayout& result = *resultPtr;
+	result.paragraphs.push_back( {} );
+	ShapedTextParagraph* curParagraph = &result.paragraphs.back();
 	struct GlyphDirCounter {
 		int ltr{ 0 };
 		int rtl{ 0 };
@@ -286,7 +289,9 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 				FontTrueType* currentRunFont = run.font();
 				if ( !currentRunFont )
 					return true;
-				result.shapedGlyphs.reserve( result.shapedGlyphs.size() + glyphCount );
+
+				curParagraph->shapedGlyphs.reserve( curParagraph->shapedGlyphs.size() +
+													glyphCount );
 				Uint32 prevGlyphIndex = 0;
 
 				if ( isSimpleScript( props.script ) ) {
@@ -310,7 +315,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 							sg.advance = { advance, 0 };
 							sg.direction = (TextDirection)segment.direction;
 							sg.script = (LangScript)props.script;
-							result.shapedGlyphs.emplace_back( std::move( sg ) );
+							curParagraph->shapedGlyphs.emplace_back( std::move( sg ) );
 
 							pen.x += advance;
 							prevGlyphIndex = 0; // Reset kerning after a tab
@@ -337,7 +342,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 						sg.script = (LangScript)props.script;
 						sg.position.x = pen.x + ( glyphPos[i].x_offset / 64.f );
 						sg.position.y = pen.y - ( glyphPos[i].y_offset / 64.f );
-						result.shapedGlyphs.emplace_back( std::move( sg ) );
+						curParagraph->shapedGlyphs.emplace_back( std::move( sg ) );
 
 						pen.x += currentGlyph.advance;
 						prevGlyphIndex = glyphInfo[i].codepoint;
@@ -377,7 +382,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 							sg.direction = (TextDirection)segment.direction;
 							sg.script = (LangScript)props.script;
 							sg.position = pen;
-							result.shapedGlyphs.emplace_back( std::move( sg ) );
+							curParagraph->shapedGlyphs.emplace_back( std::move( sg ) );
 
 							pen.x += advance;
 							prevGlyphIndex = 0; // Reset kerning after a tab
@@ -401,17 +406,20 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 						sg.script = (LangScript)props.script;
 						sg.position.x = std::round( pen.x + ( glyphPos[i].x_offset / 64.f ) );
 						sg.position.y = std::round( pen.y - ( glyphPos[i].y_offset / 64.f ) );
-						result.shapedGlyphs.emplace_back( std::move( sg ) );
+						curParagraph->shapedGlyphs.emplace_back( std::move( sg ) );
 						pen.x += sg.advance.x;
 						pen.y += sg.advance.y;
 					}
 				}
 
 				if ( run.runIsNewLine() ) {
-					result.linesWidth.push_back( std::ceil( pen.x ) );
-					maxWidth = eemax( maxWidth, result.linesWidth[result.linesWidth.size() - 1] );
+					curParagraph->size.x = std::ceil( pen.x );
+					maxWidth = eemax( maxWidth, curParagraph->size.x );
 					pen.x = 0;
 					pen.y += vspace;
+					curParagraph->size.y = pen.y;
+					result.paragraphs.push_back( {} );
+					curParagraph = &result.paragraphs.back();
 				}
 				return true;
 			} );
@@ -423,11 +431,14 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 		for ( size_t i = 0; i < string.size(); ++i ) {
 			Uint32 curChar = string[i];
 			if ( curChar == '\n' ) {
-				result.linesWidth.push_back( pen.x );
+				curParagraph->size.x = pen.x;
 				maxWidth = eemax( maxWidth, pen.x );
 				pen.x = 0;
 				pen.y += vspace;
+				curParagraph->size.y = pen.y;
 				prevChar = 0;
+				result.paragraphs.push_back( {} );
+				curParagraph = &result.paragraphs.back();
 				continue;
 			}
 			if ( curChar == '\r' ) {
@@ -454,7 +465,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 				sg.script = LangScript::LATIN;
 				sg.position = pen;
 				pen.x += sg.advance.x;
-				result.shapedGlyphs.emplace_back( std::move( sg ) );
+				curParagraph->shapedGlyphs.emplace_back( std::move( sg ) );
 				continue;
 			}
 
@@ -469,7 +480,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 			sg.script = LangScript::LATIN;
 			sg.position = pen;
 			pen.x += sg.advance.x;
-			result.shapedGlyphs.emplace_back( std::move( sg ) );
+			curParagraph->shapedGlyphs.emplace_back( std::move( sg ) );
 		}
 	}
 
@@ -477,8 +488,9 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 	if ( string[string.size() - 1] != '\n' )
 		pen.y += vspace;
 
-	result.linesWidth.push_back( std::ceil( pen.x ) );
-	maxWidth = eemax( maxWidth, result.linesWidth[result.linesWidth.size() - 1] );
+	curParagraph->size.x = std::ceil( pen.x );
+	curParagraph->size.y = pen.y;
+	maxWidth = eemax( maxWidth, curParagraph->size.x );
 	result.size = { maxWidth, std::ceil( pen.y ) };
 	result.hasMixedDirection = !!gdc.ltr + !!gdc.rtl + !!gdc.ttb + !!gdc.btt + !!gdc.other > 1;
 
@@ -502,6 +514,14 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 	return TextLayout::layout<String::View>( string, font, fontSize, style, tabWidth,
 											 outlineThickness, tabOffset, textDrawHints,
 											 baseDirection );
+}
+
+std::vector<Float> TextLayout::getLinesWidth() const {
+	std::vector<Float> lw;
+	lw.reserve( paragraphs.size() );
+	for ( const auto& sp : paragraphs )
+		lw.push_back( sp.size.x );
+	return lw;
 }
 
 } // namespace EE::Graphics

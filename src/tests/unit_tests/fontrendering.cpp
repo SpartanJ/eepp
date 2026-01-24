@@ -119,9 +119,9 @@ UTEST( FontRendering, fontsTest ) {
 	text.setFontSize( 24 );
 	text.setAlign( TEXT_ALIGN_CENTER );
 	text.setString( Txt );
-	text.wrapText( win->getWidth() - 96 );
+	text.hardWrapText( win->getWidth() - 96 );
 
-	int size = (int)Txt.size();
+	int size = (int)text.getString().size();
 
 	for ( int i = 0; i < size; i++ ) {
 		text.setFillColor( Color( 255 * i / size, 0, 0, 255 ), i, i + 1 );
@@ -853,7 +853,7 @@ UTEST( FontRendering, TextWrap ) {
 		text.setFontSize( 16 );
 		text.setColor( Color::Black );
 		text.setString( loremIpsum );
-		text.wrapText( 500 );
+		text.hardWrapText( 500 );
 		text.draw( pos.x, pos.y );
 
 		text.setAlign( TEXT_ALIGN_CENTER );
