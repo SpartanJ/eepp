@@ -342,6 +342,7 @@ class EE_API Text {
 	mutable bool mColorsNeedUpdate : 1 { false };
 	mutable bool mContainsColorEmoji : 1 { false };
 	bool mTabStops : 1 { false };
+	TextDirection mDirection{ TextDirection::Unspecified };
 
 	Float mCachedWidth{ 0 };
 	Uint32 mAlign{ TEXT_ALIGN_LEFT };
@@ -354,7 +355,6 @@ class EE_API Text {
 	std::vector<VertexCoords> mOutlineVertices;
 	std::vector<Color> mOutlineColors;
 	std::vector<Float> mLinesWidth;
-	TextDirection mDirection{ TextDirection::Unspecified };
 
 	void ensureGeometryUpdate();
 

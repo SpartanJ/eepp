@@ -6,6 +6,7 @@
 #include <eepp/graphics/fontsprite.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/image.hpp>
+#include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderergl.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/scene/scenemanager.hpp>
@@ -807,6 +808,63 @@ UTEST( FontRendering, UITextTest ) {
 		SceneManager::instance()->update();
 		SceneManager::instance()->draw();
 		compareImages( utest_state, utest_result, app.getWindow(), "eepp-ui-text-test" );
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+
+		UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
+		runTest();
+	}
+}
+
+UTEST( FontRendering, TextWrap ) {
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	std::string loremIpsum;
+	FileSystem::fileGet( "assets/textfiles/lorem-ipsum.uext", loremIpsum );
+
+	const auto runTest = [&]() {
+		UIApplication app(
+			WindowSettings( 512, 512, "eepp - Text Wrap", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ),
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+		app.getWindow()->setClearColor( RGB( 255, 255, 255 ) );
+		app.getWindow()->clear();
+		Vector2f pos{ 5, 5 };
+		Primitives p;
+		p.setColor( Color::Red );
+		p.drawRectangle( Rectf( pos - 1.f, { 1, 501 } ) );
+		p.drawRectangle( Rectf( pos - 1.f, { 501, 1 } ) );
+		p.drawRectangle( Rectf( { pos.x - 1.f, 500 + pos.y }, { 502, 1 } ) );
+		p.drawRectangle( Rectf( { 500 + pos.x, pos.y - 1.f }, { 1, 501 } ) );
+
+		Text text;
+		text.setFont( app.getUI()->getUIThemeManager()->getDefaultFont() );
+		text.setFontSize( 16 );
+		text.setColor( Color::Black );
+		text.setString( loremIpsum );
+		text.wrapText( 500 );
+		text.draw( pos.x, pos.y );
+
+		text.setAlign( TEXT_ALIGN_CENTER );
+		pos.y += text.getTextHeight() + 8;
+		text.draw( pos.x, pos.y );
+
+		pos.y += text.getTextHeight() + 8;
+		text.setAlign( TEXT_ALIGN_RIGHT );
+		text.draw( pos.x, pos.y );
+
+		compareImages( utest_state, utest_result, app.getWindow(), "eepp-text-wrap" );
 	};
 
 	UTEST_PRINT_STEP( "Text Shaper disabled" );

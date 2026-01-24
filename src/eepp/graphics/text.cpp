@@ -657,7 +657,7 @@ void Text::onNewString() {
 	mCachedWidthNeedUpdate = true;
 	mContainsColorEmoji = false;
 	mTextHints = mString.getTextHints();
-	if ( FontManager::instance()->getColorEmojiFont() != nullptr ) {
+	if ( mFontStyleConfig.Font && FontManager::instance()->getColorEmojiFont() != nullptr ) {
 		if ( mFontStyleConfig.Font->getType() == FontType::TTF ) {
 			FontTrueType* fontTrueType = static_cast<FontTrueType*>( mFontStyleConfig.Font );
 			if ( fontTrueType->isColorEmojiFont() || !fontTrueType->isEmojiFont() )
@@ -922,7 +922,7 @@ Float Text::getTextWidth( Font* font, const Uint32& fontSize, const StringType& 
 	if ( TextShaperEnabled && font->getType() == FontType::TTF &&
 		 !canSkipShaping( textDrawHints ) ) {
 		return TextLayout::layout( string, static_cast<FontTrueType*>( font ), fontSize, style,
-								   tabWidth, outlineThickness, tabOffset, textDrawHints )
+								   tabWidth, outlineThickness, tabOffset, textDrawHints, direction )
 			->size.getWidth();
 	}
 #endif
