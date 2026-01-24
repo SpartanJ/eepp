@@ -1,6 +1,7 @@
 #pragma once
 
 #include <eepp/core/string.hpp>
+#include <eepp/graphics/linewrap.hpp>
 #include <eepp/graphics/shapedglyph.hpp>
 #include <eepp/math/size.hpp>
 

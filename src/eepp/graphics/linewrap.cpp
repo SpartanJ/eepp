@@ -128,7 +128,7 @@ LineWrapInfo LineWrap::computeLineBreaks( const String::View& string, Font* font
 				xoffset = w + info.paddingStart;
 			}
 			lastSpace = 0;
-		} else if ( curChar == ' ' || curChar == '.' || curChar == '-' || curChar == ',' ) {
+		} else if ( isWrapChar( curChar ) ) {
 			lastSpace = idx;
 			lastWidth = xoffset;
 		}
@@ -137,6 +137,22 @@ LineWrapInfo LineWrap::computeLineBreaks( const String::View& string, Font* font
 	}
 
 	return info;
+}
+
+bool LineWrap::isWrapChar( String::StringBaseType ch ) {
+	return ch == ' ' || ch == '.' || ch == '-' || ch == ',';
+}
+
+LineWrapInfo LineWrap::computeLineBreaks( const String& string, Font* font, Uint32 characterSize,
+										  Float maxWidth, LineWrapMode mode, Uint32 fontStyle,
+										  Float outlineThickness, bool keepIndentation,
+										  Uint32 tabWidth,
+										  Float whiteSpaceWidth /* 0 = should calculate it */,
+										  Uint32 textDrawHints, bool tabStops,
+										  Float initialXOffset ) {
+	return computeLineBreaks( string.view(), font, characterSize, maxWidth, mode, fontStyle,
+							  outlineThickness, keepIndentation, tabWidth, whiteSpaceWidth,
+							  textDrawHints, tabStops, initialXOffset );
 }
 
 LineWrapInfo LineWrap::computeLineBreaks( const String::View& string,

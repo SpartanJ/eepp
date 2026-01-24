@@ -309,7 +309,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 							sg.position = pen;
 							sg.advance = { advance, 0 };
 							sg.direction = (TextDirection)segment.direction;
-							sg.script = (LangScript)segment.script;
+							sg.script = (LangScript)props.script;
 							result.shapedGlyphs.emplace_back( std::move( sg ) );
 
 							pen.x += advance;
@@ -334,7 +334,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 						sg.stringIndex = segment.offset + run.pos() + glyphInfo[i].cluster;
 						sg.advance = { currentGlyph.advance, 0 };
 						sg.direction = (TextDirection)segment.direction;
-						sg.script = (LangScript)segment.script;
+						sg.script = (LangScript)props.script;
 						sg.position.x = pen.x + ( glyphPos[i].x_offset / 64.f );
 						sg.position.y = pen.y - ( glyphPos[i].y_offset / 64.f );
 						result.shapedGlyphs.emplace_back( std::move( sg ) );
@@ -375,7 +375,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 							sg.stringIndex = segment.offset + run.pos() + cluster;
 							sg.advance = { advance, 0 };
 							sg.direction = (TextDirection)segment.direction;
-							sg.script = (LangScript)segment.script;
+							sg.script = (LangScript)props.script;
 							sg.position = pen;
 							result.shapedGlyphs.emplace_back( std::move( sg ) );
 
@@ -388,19 +388,21 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 						sg.font = currentRunFont;
 						sg.glyphIndex = glyphInfo[i].codepoint;
 						sg.stringIndex = segment.offset + run.pos() + glyphInfo[i].cluster;
-						sg.advance = { glyphPos[i].x_advance / 64.f, glyphPos[i].y_advance / 64.f };
+						sg.advance = {
+							Font::isEmojiCodePoint( ch )
+								? currentRunFont
+									  ->getGlyphByIndex( glyphInfo[i].codepoint, characterSize,
+														 bold, italic, outlineThickness,
+														 rFont->getPage( characterSize ) )
+									  .advance
+								: glyphPos[i].x_advance / 64.f,
+							glyphPos[i].y_advance / 64.f };
 						sg.direction = (TextDirection)segment.direction;
-						sg.script = (LangScript)segment.script;
+						sg.script = (LangScript)props.script;
 						sg.position.x = std::round( pen.x + ( glyphPos[i].x_offset / 64.f ) );
 						sg.position.y = std::round( pen.y - ( glyphPos[i].y_offset / 64.f ) );
 						result.shapedGlyphs.emplace_back( std::move( sg ) );
-						pen.x += Font::isEmojiCodePoint( ch )
-									 ? currentRunFont
-										   ->getGlyphByIndex( glyphInfo[i].codepoint, characterSize,
-															  bold, italic, outlineThickness,
-															  rFont->getPage( characterSize ) )
-										   .advance
-									 : sg.advance.x;
+						pen.x += sg.advance.x;
 						pen.y += sg.advance.y;
 					}
 				}

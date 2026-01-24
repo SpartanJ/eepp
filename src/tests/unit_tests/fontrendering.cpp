@@ -834,7 +834,7 @@ UTEST( FontRendering, TextWrap ) {
 
 	const auto runTest = [&]() {
 		UIApplication app(
-			WindowSettings( 512, 512, "eepp - Text Wrap", WindowStyle::Default,
+			WindowSettings( 512, 555, "eepp - Text Wrap", WindowStyle::Default,
 							WindowBackend::Default, 32, {}, 1, false, true ),
 			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
@@ -843,10 +843,10 @@ UTEST( FontRendering, TextWrap ) {
 		Vector2f pos{ 5, 5 };
 		Primitives p;
 		p.setColor( Color::Red );
-		p.drawRectangle( Rectf( pos - 1.f, { 1, 501 } ) );
+		p.drawRectangle( Rectf( pos - 1.f, { 1, 546 } ) );
 		p.drawRectangle( Rectf( pos - 1.f, { 501, 1 } ) );
-		p.drawRectangle( Rectf( { pos.x - 1.f, 500 + pos.y }, { 502, 1 } ) );
-		p.drawRectangle( Rectf( { 500 + pos.x, pos.y - 1.f }, { 1, 501 } ) );
+		p.drawRectangle( Rectf( { pos.x - 1.f, 544 + pos.y }, { 502, 1 } ) );
+		p.drawRectangle( Rectf( { 500 + pos.x, pos.y - 1.f }, { 1, 546 } ) );
 
 		Text text;
 		text.setFont( app.getUI()->getUIThemeManager()->getDefaultFont() );
