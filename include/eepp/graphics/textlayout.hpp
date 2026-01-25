@@ -15,6 +15,7 @@ class Font;
 
 struct ShapedTextParagraph {
 	std::vector<ShapedGlyph> shapedGlyphs;
+	LineWrapInfo wrapInfo;
 	Sizef size;
 };
 
@@ -35,21 +36,23 @@ class EE_API TextLayout {
 						 const Uint32& style, const Uint32& tabWidth = 4,
 						 const Float& outlineThickness = 0.f, std::optional<Float> tabOffset = {},
 						 Uint32 textDrawHints = 0,
-						 TextDirection baseDirection = TextDirection::LeftToRight );
+						 TextDirection baseDirection = TextDirection::LeftToRight,
+						 LineWrapMode lineWrapMode = LineWrapMode::NoWrap, Uint32 wrapWidth = 0,
+						 bool keepIndentation = false, Float initialXOffset = 0 );
 
 	static Cache layout( const String::View& string, Font* font, const Uint32& fontSize,
 						 const Uint32& style, const Uint32& tabWidth = 4,
 						 const Float& outlineThickness = 0.f, std::optional<Float> tabOffset = {},
 						 Uint32 textDrawHints = 0,
-						 TextDirection baseDirection = TextDirection::LeftToRight );
+						 TextDirection baseDirection = TextDirection::LeftToRight,
+						 LineWrapMode lineWrapMode = LineWrapMode::NoWrap, Uint32 wrapWidth = 0,
+						 bool keepIndentation = false, Float initialXOffset = 0 );
 
   protected:
-	template <typename StringType>
-	static Cache layout( const StringType& string, Font* font, const Uint32& fontSize,
-						 const Uint32& style, const Uint32& tabWidth = 4,
-						 const Float& outlineThickness = 0.f, std::optional<Float> tabOffset = {},
-						 Uint32 textDrawHints = 0,
-						 TextDirection baseDirection = TextDirection::LeftToRight );
+	static void wrapLayout( const String::View& string, TextLayout&, LineWrapMode lineWrapMode,
+							Float wrapWidth, Float vspace, bool keepIndentation, Font* font,
+							const Uint32& characterSize, const Uint32& fontStyle,
+							const Uint32& tabWidth, const Float& outlineThickness, Float hspace );
 };
 
 } // namespace EE::Graphics

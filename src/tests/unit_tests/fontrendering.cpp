@@ -1,10 +1,12 @@
 #include "utest.hpp"
 
+#include <eepp/graphics/batchrenderer.hpp>
 #include <eepp/graphics/fontbmfont.hpp>
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/fontsprite.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/graphics/image.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/renderer/renderergl.hpp>
@@ -865,6 +867,86 @@ UTEST( FontRendering, TextWrap ) {
 		text.draw( pos.x, pos.y );
 
 		compareImages( utest_state, utest_result, app.getWindow(), "eepp-text-wrap" );
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+
+		UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
+		runTest();
+	}
+}
+
+UTEST( FontRendering, TextLayoutWrap ) {
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	std::string loremIpsum;
+	FileSystem::fileGet( "assets/textfiles/lorem-ipsum.uext", loremIpsum );
+
+	const auto runTest = [&]() {
+		UIApplication app(
+			WindowSettings( 512, 555, "eepp - Text Layout Wrap", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ),
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+		BatchRenderer* BR = GlobalBatchRenderer::instance();
+		auto drawGlyph = [BR]( GlyphDrawable* gd, const Vector2f& position, const Color& color ) {
+			BR->quadsSetColor( color );
+			BR->quadsSetTexCoord( gd->getSrcRect().Left, gd->getSrcRect().Top,
+								  gd->getSrcRect().Left + gd->getSrcRect().Right,
+								  gd->getSrcRect().Top + gd->getSrcRect().Bottom );
+			BR->batchQuad( position.x + gd->getGlyphOffset().x, position.y + gd->getGlyphOffset().y,
+						   gd->getDestSize().getWidth(), gd->getDestSize().getHeight() );
+		};
+
+		app.getWindow()->setClearColor( RGB( 255, 255, 255 ) );
+		app.getWindow()->clear();
+
+		Vector2f pos{ 5, 5 };
+		Primitives p;
+		p.setColor( Color::Red );
+		p.drawRectangle( Rectf( pos - 1.f, { 1, 546 } ) );
+		p.drawRectangle( Rectf( pos - 1.f, { 501, 1 } ) );
+		p.drawRectangle( Rectf( { pos.x - 1.f, 544 + pos.y }, { 502, 1 } ) );
+		p.drawRectangle( Rectf( { 500 + pos.x, pos.y - 1.f }, { 1, 546 } ) );
+
+		FontTrueType* font =
+			static_cast<FontTrueType*>( app.getUI()->getUIThemeManager()->getDefaultFont() );
+		auto fontSize = 16;
+		Texture* fontTexture = font->getTexture( fontSize );
+		BR->setBlendMode( BlendMode::Alpha() );
+		BR->quadsBegin();
+		BR->setTexture( fontTexture, fontTexture->getCoordinateType() );
+
+		String string( loremIpsum );
+
+		// Remove the emoji since it won't work in this context
+		if ( Font::isEmojiCodePoint( string[string.size() - 1] ) )
+			string.pop_back();
+
+		auto layout = TextLayout::layout( string, font, fontSize, 0, 4, 0, {}, 0,
+										  TextDirection::LeftToRight, LineWrapMode::Word, 500 );
+
+		for ( const auto& sp : layout->paragraphs ) {
+			for ( const auto& sg : sp.shapedGlyphs ) {
+				auto* gd = sg.font->getGlyphDrawableFromGlyphIndex( sg.glyphIndex, fontSize );
+				if ( gd )
+					drawGlyph( gd, pos + sg.position, Color::Black );
+			}
+		}
+
+		BR->draw();
+
+		compareImages( utest_state, utest_result, app.getWindow(), "eepp-text-layout-wrap" );
 	};
 
 	UTEST_PRINT_STEP( "Text Shaper disabled" );

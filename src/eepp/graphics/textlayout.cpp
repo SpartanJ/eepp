@@ -218,25 +218,30 @@ static void shapeAndRun( TextLayout& result, const String& string, FontTrueType*
 
 #endif
 
-template <typename StringType>
-static inline Uint64 textLayoutHash( const StringType& string, Font* font,
+static inline Uint64 textLayoutHash( const String::View& string, Font* font,
 									 const Uint32& characterSize, const Uint32& style,
 									 const Uint32& tabWidth, const Float& outlineThickness,
-									 std::optional<Float> tabOffset, TextDirection direction ) {
-	return hashCombine( std::hash<StringType>()( string ), std::hash<Font*>()( font ),
+									 std::optional<Float> tabOffset, TextDirection direction,
+									 LineWrapMode wrapMode, Uint32 wrapWidth,
+									 bool keepIndentation ) {
+	return hashCombine( std::hash<String::View>()( string ), std::hash<Font*>()( font ),
 						std::hash<Uint32>()( characterSize ), std::hash<Uint32>()( style ),
 						std::hash<Uint32>()( tabWidth ), std::hash<Float>()( outlineThickness ),
 						std::hash<std::optional<Float>>()( tabOffset ),
 						std::hash<std::underlying_type_t<TextDirection>>()(
-							static_cast<std::underlying_type_t<TextDirection>>( direction ) ) );
+							static_cast<std::underlying_type_t<TextDirection>>( direction ) ),
+						std::hash<std::underlying_type_t<LineWrapMode>>()(
+							static_cast<std::underlying_type_t<LineWrapMode>>( wrapMode ) ),
+						std::hash<Uint32>()( wrapWidth ), std::hash<bool>()( keepIndentation ) );
 }
 
-template <typename StringType>
-TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
+TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 									  const Uint32& characterSize, const Uint32& style,
 									  const Uint32& tabWidth, const Float& outlineThickness,
 									  std::optional<Float> tabOffset, Uint32 textDrawHints,
-									  TextDirection baseDirection ) {
+									  TextDirection baseDirection, LineWrapMode wrapMode,
+									  Uint32 wrapWidth, bool keepIndentation,
+									  Float initialXOffset ) {
 	static LRULayoutCache sLayoutCache;
 
 	if ( !font || string.empty() ) {
@@ -249,7 +254,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 	Uint64 hash = 0;
 	if ( !Text::canSkipShaping( textDrawHints ) ) {
 		hash = textLayoutHash( string, font, characterSize, style, tabWidth, outlineThickness,
-							   tabOffset, baseDirection );
+							   tabOffset, baseDirection, wrapMode, wrapWidth, keepIndentation );
 
 		auto cacheHit = sLayoutCache.get( hash );
 		if ( cacheHit.has_value() )
@@ -261,7 +266,7 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 	Uint32 spaceGlyphIndex = 0;
 	Float hspace = font->getGlyph( ' ', characterSize, bold, italic, outlineThickness ).advance;
 	Float vspace = font->getLineSpacing( characterSize );
-	Vector2f pen;
+	Vector2f pen{ initialXOffset, 0 };
 	Float maxWidth = 0;
 
 	auto resultPtr = std::make_shared<TextLayout>();
@@ -494,6 +499,14 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 	result.size = { maxWidth, std::ceil( pen.y ) };
 	result.hasMixedDirection = !!gdc.ltr + !!gdc.rtl + !!gdc.ttb + !!gdc.btt + !!gdc.other > 1;
 
+	if ( wrapMode != LineWrapMode::NoWrap && wrapWidth ) {
+		wrapLayout( string, result, wrapMode, wrapWidth, vspace, keepIndentation, font,
+					characterSize, style, tabWidth, outlineThickness, hspace );
+	} else {
+		for ( auto& sp : result.paragraphs )
+			sp.wrapInfo.wraps.push_back( 0 );
+	}
+
 	sLayoutCache.put( hash, resultPtr );
 	return resultPtr;
 }
@@ -501,19 +514,12 @@ TextLayout::Cache TextLayout::layout( const StringType& string, Font* font,
 TextLayout::Cache TextLayout::layout( const String& string, Font* font, const Uint32& fontSize,
 									  const Uint32& style, const Uint32& tabWidth,
 									  const Float& outlineThickness, std::optional<Float> tabOffset,
-									  Uint32 textDrawHints, TextDirection baseDirection ) {
-	return TextLayout::layout<String>( string, font, fontSize, style, tabWidth, outlineThickness,
-									   tabOffset, textDrawHints, baseDirection );
-}
-
-TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
-									  const Uint32& fontSize, const Uint32& style,
-									  const Uint32& tabWidth, const Float& outlineThickness,
-									  std::optional<Float> tabOffset, Uint32 textDrawHints,
-									  TextDirection baseDirection ) {
-	return TextLayout::layout<String::View>( string, font, fontSize, style, tabWidth,
-											 outlineThickness, tabOffset, textDrawHints,
-											 baseDirection );
+									  Uint32 textDrawHints, TextDirection baseDirection,
+									  LineWrapMode wrapMode, Uint32 wrapWidth, bool keepIndentation,
+									  Float initialXOffset ) {
+	return TextLayout::layout( string.view(), font, fontSize, style, tabWidth, outlineThickness,
+							   tabOffset, textDrawHints, baseDirection, wrapMode, wrapWidth,
+							   keepIndentation, initialXOffset );
 }
 
 std::vector<Float> TextLayout::getLinesWidth() const {
@@ -522,6 +528,74 @@ std::vector<Float> TextLayout::getLinesWidth() const {
 	for ( const auto& sp : paragraphs )
 		lw.push_back( sp.size.x );
 	return lw;
+}
+
+void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
+							 LineWrapMode lineWrapMode, Float wrapWidth, Float vspace,
+							 bool keepIndentation, Font* font, const Uint32& characterSize,
+							 const Uint32& fontStyle, const Uint32& tabWidth,
+							 const Float& outlineThickness, Float hspace ) {
+	std::size_t paragraphCount = result.paragraphs.size();
+
+	if ( paragraphCount )
+		result.paragraphs[0].wrapInfo.wraps.push_back( 0 );
+
+	for ( std::size_t paragraphIdx = 0; paragraphIdx < paragraphCount; paragraphIdx++ ) {
+		ShapedTextParagraph& sp = result.paragraphs[paragraphIdx];
+		std::size_t shapedGlyphCount = sp.shapedGlyphs.size();
+		std::size_t lastSpace = std::string::npos;
+		Vector2f currentOffset( 0.f, 0.f );
+		Sizef maxSize{ 0, vspace };
+
+		if ( keepIndentation && shapedGlyphCount ) {
+			sp.wrapInfo.paddingStart = LineWrap::computeOffsets(
+				string.substr( sp.shapedGlyphs[0].stringIndex ), font, characterSize, fontStyle,
+				outlineThickness, tabWidth, eemax( wrapWidth - hspace, hspace ) );
+		}
+
+		for ( std::size_t idx = 0; idx < shapedGlyphCount; idx++ ) {
+			ShapedGlyph& sg = sp.shapedGlyphs[idx];
+			auto curChar = string[sg.stringIndex];
+
+			sg.position += currentOffset;
+
+			if ( sg.position.x + sg.advance.x > wrapWidth ) {
+				std::size_t breakIndex = idx;
+				bool performWordWrap =
+					( lineWrapMode == LineWrapMode::Word && lastSpace != std::string::npos );
+
+				ShapedGlyph& prevBreakGlyph = sp.shapedGlyphs[lastSpace];
+				maxSize.x =
+					std::max( prevBreakGlyph.position.x + prevBreakGlyph.advance.x, maxSize.x );
+
+				// Break after the last space (start of the current word)
+				if ( performWordWrap )
+					breakIndex = lastSpace + 1;
+
+				if ( breakIndex > idx )
+					breakIndex = idx;
+
+				sp.wrapInfo.wraps.push_back( breakIndex );
+
+				ShapedGlyph& breakGlyph = sp.shapedGlyphs[breakIndex];
+				Vector2f adjustment( -breakGlyph.position.x + sp.wrapInfo.paddingStart, vspace );
+
+				for ( std::size_t k = breakIndex; k <= idx; ++k )
+					sp.shapedGlyphs[k].position += adjustment;
+
+				maxSize.y = std::max( breakGlyph.position.y + vspace, maxSize.y );
+
+				currentOffset += adjustment;
+				lastSpace = std::string::npos;
+			} else if ( LineWrap::isWrapChar( curChar ) ) {
+				lastSpace = idx;
+			}
+		}
+
+		sp.size = maxSize;
+	}
+
+	result.size = result.paragraphs[result.paragraphs.size() - 1].size;
 }
 
 } // namespace EE::Graphics

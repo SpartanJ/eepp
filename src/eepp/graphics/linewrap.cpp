@@ -73,8 +73,31 @@ LineWrapInfo LineWrap::computeLineBreaks( const String::View& string, Font* font
 										  Float initialXOffset ) {
 	LineWrapInfo info;
 	info.wraps.push_back( 0 );
-	if ( string.empty() || nullptr == font || mode == LineWrapMode::NoWrap )
+
+	if ( string.empty() || nullptr == font || mode == LineWrapMode::NoWrap || maxWidth == 0 )
 		return info;
+
+#ifdef EE_TEXT_SHAPER_ENABLED
+	if ( Text::TextShaperEnabled && font->getType() == FontType::TTF &&
+		 !Text::canSkipShaping( textDrawHints ) ) {
+		auto layout = TextLayout::layout(
+			string, font, characterSize, fontStyle, tabWidth, outlineThickness,
+			tabStops ? initialXOffset : std::optional<Float>{}, textDrawHints,
+			TextDirection::LeftToRight, mode, maxWidth, keepIndentation, initialXOffset );
+		LineWrapInfo info;
+		if ( layout->paragraphs.empty() )
+			return info;
+
+		info.paddingStart = layout->paragraphs.front().wrapInfo.paddingStart;
+
+		for ( auto& paragraph : layout->paragraphs ) {
+			for ( const auto& wrap : paragraph.wrapInfo.wraps )
+				info.wraps.push_back( wrap );
+		}
+
+		return info;
+	}
+#endif
 
 	bool bold = ( fontStyle & Text::Style::Bold ) != 0;
 	bool italic = ( fontStyle & Text::Style::Italic ) != 0;
@@ -129,10 +152,10 @@ LineWrapInfo LineWrap::computeLineBreaks( const String::View& string, Font* font
 		if ( xoffset > maxWidth ) {
 			if ( mode == LineWrapMode::Word && lastSpace ) {
 				info.wraps.push_back( lastSpace + 1 );
-				xoffset = w + info.paddingStart + ( xoffset - lastWidth );
+				xoffset = info.paddingStart + ( xoffset - lastWidth );
 			} else {
 				info.wraps.push_back( idx );
-				xoffset = w + info.paddingStart;
+				xoffset = info.paddingStart;
 			}
 			lastSpace = 0;
 		} else if ( isWrapChar( curChar ) ) {

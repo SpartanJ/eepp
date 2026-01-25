@@ -20,7 +20,7 @@ jobs:
     - name: Build
       run: |
         premake5 --disable-static-build gmake
-        make -C make/macosx/ -e config=release_arm64
+        make -C make/macosx/ -j$(sysctl -n hw.ncpu) -e config=release_arm64
     - name: Unit Tests
       run: |
         cd bin/unit_tests
