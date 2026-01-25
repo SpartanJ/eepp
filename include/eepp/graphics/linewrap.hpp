@@ -27,28 +27,31 @@ class EE_API LineWrap {
 
 	static bool isWrapChar( String::StringBaseType ch );
 
-	static LineWrapInfo computeLineBreaks(
-		const String::View& string, Font* font, Uint32 characterSize, Float maxWidth,
-		LineWrapMode mode, Uint32 fontStyle, Float outlineThickness, bool keepIndentation,
-		Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f /* 0 = should calculate it */,
-		Uint32 textHints = TextHints::None, bool tabStops = false, Float initialXOffset = 0.f );
+	static LineWrapInfo
+	computeLineBreaks( const String::View& string, Font* font, Uint32 characterSize, Float maxWidth,
+					   LineWrapMode mode, Uint32 fontStyle = 0, Float outlineThickness = 0.f,
+					   bool keepIndentation = false, Uint32 tabWidth = 4,
+					   Float whiteSpaceWidth = 0.f /* 0 = should calculate it */,
+					   Uint32 textHints = TextHints::None, bool tabStops = false,
+					   Float initialXOffset = 0.f );
 
 	static LineWrapInfo computeLineBreaks(
 		const String& string, Font* font, Uint32 characterSize, Float maxWidth, LineWrapMode mode,
-		Uint32 fontStyle, Float outlineThickness, bool keepIndentation, Uint32 tabWidth = 4,
-		Float whiteSpaceWidth = 0.f /* 0 = should calculate it */,
+		Uint32 fontStyle = 0, Float outlineThickness = 0.f, bool keepIndentation = false,
+		Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f /* 0 = should calculate it */,
 		Uint32 textHints = TextHints::None, bool tabStops = false, Float initialXOffset = 0.f );
 
 	static LineWrapInfo
 	computeLineBreaks( const String::View& string, const FontStyleConfig& fontStyle, Float maxWidth,
-					   LineWrapMode mode, bool keepIndentation, Uint32 tabWidth = 4,
+					   LineWrapMode mode, bool keepIndentation = false, Uint32 tabWidth = 4,
 					   Float whiteSpaceWidth = 0.f /* 0 = should calculate it */,
 					   Uint32 textHints = TextHints::None, bool tabStops = false,
 					   Float initialXOffset = 0.f );
 
 	static LineWrapInfo computeLineBreaks( const String& string, const FontStyleConfig& fontStyle,
-										   Float maxWidth, LineWrapMode mode, bool keepIndentation,
-										   Uint32 tabWidth = 4, Float whiteSpaceWidth = 0.f,
+										   Float maxWidth, LineWrapMode mode,
+										   bool keepIndentation = false, Uint32 tabWidth = 4,
+										   Float whiteSpaceWidth = 0.f,
 										   Uint32 textHints = TextHints::None,
 										   bool tabStops = false, Float initialXOffset = 0.f );
 

@@ -20,6 +20,8 @@ class EE_API TextShapeRun {
 
 	std::size_t pos() const;
 
+	std::size_t length() const;
+
 	void next();
 
 	bool runIsNewLine() const;

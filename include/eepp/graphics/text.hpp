@@ -156,10 +156,11 @@ class EE_API Text {
 	static bool hardWrapText( Font* font, const Uint32& fontSize, String& string,
 							  const Float& maxWidth, const Uint32& style,
 							  const Uint32& tabWidth = 4, const Float& outlineThickness = 0.f,
-							  std::optional<Float> tabOffset = {} );
+							  std::optional<Float> tabOffset = {}, Uint32 textHints = 0 );
 
 	static bool hardWrapText( String& string, const Float& maxWidth, const FontStyleConfig& config,
-							  const Uint32& tabWidth = 4, std::optional<Float> tabOffset = {} );
+							  const Uint32& tabWidth = 4, std::optional<Float> tabOffset = {},
+							  Uint32 textHints = 0 );
 
 	static Text* New();
 

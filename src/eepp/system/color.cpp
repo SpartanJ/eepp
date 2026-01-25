@@ -199,6 +199,8 @@ RGB::RGB( Uint8 r, Uint8 g, Uint8 b ) : tRGB<Uint8>( r, g, b ) {}
 
 RGB::RGB( const tRGB<Uint8>& color ) : tRGB<Uint8>( color.r, color.g, color.b ) {}
 
+RGB::RGB( const Color& color ) : tRGB<Uint8>( color.r, color.g, color.b ) {}
+
 RGB::RGB( Uint32 Col ) {
 	Col = BitOp::swapLE32( Col );
 	r = static_cast<Uint8>( Col >> 16 );
@@ -378,6 +380,10 @@ Colorf Color::toHsl() const {
 	hsl.hsl.a = a;
 
 	return hsl;
+}
+
+RGB Color::toRGB() const {
+	return RGB( r, g, b );
 }
 
 Color Color::clone() const {

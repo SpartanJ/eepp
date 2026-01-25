@@ -15,6 +15,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -947,6 +948,94 @@ UTEST( FontRendering, TextLayoutWrap ) {
 		BR->draw();
 
 		compareImages( utest_state, utest_result, app.getWindow(), "eepp-text-layout-wrap" );
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+
+		UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
+		runTest();
+	}
+}
+
+UTEST( FontRendering, LineWrapInfo ) {
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	std::string string;
+	FileSystem::fileGet( "assets/textfiles/test-hard-wrap.uext", string );
+
+	UIApplication app(
+		WindowSettings( 1024, 650, "eepp - LineWrapInfo Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	Font* font = app.getUI()->getUIThemeManager()->getDefaultFont();
+	Float width = app.getWindow()->getSize().getWidth();
+	LineWrapMode mode = LineWrapMode::Word;
+
+	LineWrapInfo lineWrapShaperDisabled;
+	LineWrapInfo lineWrapShaperEnabled;
+	{
+		UTEST_PRINT_STEP( "Text Shaper disabled" );
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		String str( string );
+		lineWrapShaperDisabled = LineWrap::computeLineBreaks( string, font, 16, width, mode );
+	}
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		String str( string );
+		lineWrapShaperEnabled = LineWrap::computeLineBreaks( string, font, 16, width, mode );
+
+		{
+			UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+			BoolScopedOp op2( Text::TextShaperOptimizations, false );
+			String str( string );
+			lineWrapShaperEnabled = LineWrap::computeLineBreaks( string, font, 16, width, mode );
+		}
+	}
+
+	EXPECT_VECTOREQ( lineWrapShaperDisabled.wraps, lineWrapShaperEnabled.wraps );
+}
+
+UTEST( FontRendering, TextHardWrap ) {
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	std::string string;
+	FileSystem::fileGet( "assets/textfiles/test-hard-wrap.uext", string );
+
+	const auto runTest = [&]() {
+		UIApplication app(
+			WindowSettings( 1024, 650, "eepp - Text Hard Wrap", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ),
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+		auto colors = SyntaxColorScheme::getDefault();
+		auto syntax = SyntaxDefinitionManager::instance()->getByLanguageName( "Markdown" );
+
+		app.getWindow()->setClearColor( colors.getEditorColor( "background"_sst ).toRGB() );
+		app.getWindow()->clear();
+
+		Text text;
+		text.setFont( app.getUI()->getUIThemeManager()->getDefaultFont() );
+		text.setFontSize( 16 );
+		text.setColor( Color::Black );
+		text.setString( string );
+		text.hardWrapText( app.getWindow()->getSize().getWidth() );
+		SyntaxTokenizer::tokenizeText( syntax, colors, &text );
+		text.draw( 0, 0 );
+
+		compareImages( utest_state, utest_result, app.getWindow(), "eepp-text-hard-wrap" );
 	};
 
 	UTEST_PRINT_STEP( "Text Shaper disabled" );

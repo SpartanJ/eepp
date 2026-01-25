@@ -518,28 +518,31 @@ Sizef Text::draw( const StringType& string, const Vector2f& pos, const FontStyle
 
 bool Text::hardWrapText( Font* font, const Uint32& fontSize, String& string, const Float& maxWidth,
 						 const Uint32& style, const Uint32& tabWidth, const Float& outlineThickness,
-						 std::optional<Float> tabOffset ) {
+						 std::optional<Float> tabOffset, Uint32 textHints ) {
 
 	if ( string.empty() || NULL == font )
 		return false;
 
 	LineWrapInfo lineWrap = LineWrap::computeLineBreaks(
 		string, font, fontSize, maxWidth, LineWrapMode::Word, style, outlineThickness,
-		tabOffset.has_value(), tabWidth, tabOffset ? *tabOffset : 0.f );
+		tabOffset.has_value(), tabWidth, tabOffset ? *tabOffset : 0.f, textHints );
 
 	if ( lineWrap.wraps.size() <= 1 )
 		return false;
 
-	for ( Int64 i = lineWrap.wraps.size() - 1; i > 0; i-- )
-		string.insert( lineWrap.wraps[i], '\n' );
+	for ( Int64 i = lineWrap.wraps.size() - 1; i > 0; i-- ) {
+		if ( string[lineWrap.wraps[i]] != '\n' ) // Skip real line-breaks!
+			string.insert( lineWrap.wraps[i], '\n' );
+	}
 
 	return true;
 }
 
 bool Text::hardWrapText( String& string, const Float& maxWidth, const FontStyleConfig& config,
-						 const Uint32& tabWidth, std::optional<Float> tabOffset ) {
+						 const Uint32& tabWidth, std::optional<Float> tabOffset,
+						 Uint32 textHints ) {
 	return hardWrapText( config.Font, config.CharacterSize, string, maxWidth, config.Style,
-						 tabWidth, config.OutlineThickness, tabOffset );
+						 tabWidth, config.OutlineThickness, tabOffset, textHints );
 }
 
 Text::Text() {}
@@ -1309,7 +1312,7 @@ void Text::updateWidthCache() {
 }
 
 void Text::hardWrapText( const Uint32& maxWidth ) {
-	if ( hardWrapText( mString, maxWidth, mFontStyleConfig, mTabWidth ) )
+	if ( hardWrapText( mString, maxWidth, mFontStyleConfig, mTabWidth, {}, mTextHints ) )
 		invalidate();
 }
 

@@ -148,6 +148,8 @@ template <typename T> class tColor {
 typedef tColor<Float> ColorAf;
 typedef tColor<Float> Colorf;
 
+class RGB;
+
 class EE_API Color : public tColor<Uint8> {
   public:
 	Color();
@@ -175,6 +177,8 @@ class EE_API Color : public tColor<Uint8> {
 	static Color fromHsv( const Colorf& hsv );
 
 	Colorf toHsl() const;
+
+	RGB toRGB() const;
 
 	Color clone() const;
 
@@ -401,6 +405,8 @@ class EE_API RGB : public tRGB<Uint8> {
 	RGB( Uint8 r, Uint8 g, Uint8 b );
 
 	RGB( const tRGB<Uint8>& color );
+
+	RGB( const Color& color );
 
 	RGB( Uint32 Col );
 

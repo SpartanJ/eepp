@@ -36,6 +36,10 @@ std::size_t TextShapeRun::pos() const {
 	return mIndex;
 }
 
+std::size_t TextShapeRun::length() const {
+	return mLen;
+}
+
 void TextShapeRun::next() {
 	if ( mIsRTL ) {
 		mIndex -= mLen;

@@ -273,6 +273,7 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 	TextLayout& result = *resultPtr;
 	result.paragraphs.push_back( {} );
 	ShapedTextParagraph* curParagraph = &result.paragraphs.back();
+	curParagraph->wrapInfo.wraps.push_back( 0 );
 	struct GlyphDirCounter {
 		int ltr{ 0 };
 		int rtl{ 0 };
@@ -425,6 +426,7 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 					curParagraph->size.y = pen.y;
 					result.paragraphs.push_back( {} );
 					curParagraph = &result.paragraphs.back();
+					curParagraph->wrapInfo.wraps.push_back( segment.offset + segment.length - 1 );
 				}
 				return true;
 			} );
@@ -444,6 +446,7 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 				prevChar = 0;
 				result.paragraphs.push_back( {} );
 				curParagraph = &result.paragraphs.back();
+				curParagraph->wrapInfo.wraps.push_back( i );
 				continue;
 			}
 			if ( curChar == '\r' ) {
@@ -502,9 +505,6 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 	if ( wrapMode != LineWrapMode::NoWrap && wrapWidth ) {
 		wrapLayout( string, result, wrapMode, wrapWidth, vspace, keepIndentation, font,
 					characterSize, style, tabWidth, outlineThickness, hspace );
-	} else {
-		for ( auto& sp : result.paragraphs )
-			sp.wrapInfo.wraps.push_back( 0 );
 	}
 
 	sLayoutCache.put( hash, resultPtr );
@@ -537,13 +537,11 @@ void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
 							 const Float& outlineThickness, Float hspace ) {
 	std::size_t paragraphCount = result.paragraphs.size();
 
-	if ( paragraphCount )
-		result.paragraphs[0].wrapInfo.wraps.push_back( 0 );
-
 	for ( std::size_t paragraphIdx = 0; paragraphIdx < paragraphCount; paragraphIdx++ ) {
 		ShapedTextParagraph& sp = result.paragraphs[paragraphIdx];
 		std::size_t shapedGlyphCount = sp.shapedGlyphs.size();
 		std::size_t lastSpace = std::string::npos;
+		std::size_t lastSpaceStringIdx = std::string::npos;
 		Vector2f currentOffset( 0.f, 0.f );
 		Sizef maxSize{ 0, vspace };
 
@@ -561,21 +559,30 @@ void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
 
 			if ( sg.position.x + sg.advance.x > wrapWidth ) {
 				std::size_t breakIndex = idx;
+				std::size_t breakStringIdx = sg.stringIndex;
+
 				bool performWordWrap =
 					( lineWrapMode == LineWrapMode::Word && lastSpace != std::string::npos );
 
-				ShapedGlyph& prevBreakGlyph = sp.shapedGlyphs[lastSpace];
-				maxSize.x =
-					std::max( prevBreakGlyph.position.x + prevBreakGlyph.advance.x, maxSize.x );
+				if ( performWordWrap ) {
+					ShapedGlyph& prevBreakGlyph = sp.shapedGlyphs[lastSpace];
+					maxSize.x =
+						std::max( prevBreakGlyph.position.x + prevBreakGlyph.advance.x, maxSize.x );
+				}
 
 				// Break after the last space (start of the current word)
-				if ( performWordWrap )
+				if ( performWordWrap ) {
 					breakIndex = lastSpace + 1;
+					breakStringIdx = lastSpaceStringIdx + 1;
+				}
 
 				if ( breakIndex > idx )
 					breakIndex = idx;
 
-				sp.wrapInfo.wraps.push_back( breakIndex );
+				if ( breakStringIdx > string.size() )
+					breakStringIdx = string.size();
+
+				sp.wrapInfo.wraps.push_back( breakStringIdx );
 
 				ShapedGlyph& breakGlyph = sp.shapedGlyphs[breakIndex];
 				Vector2f adjustment( -breakGlyph.position.x + sp.wrapInfo.paddingStart, vspace );
@@ -587,8 +594,10 @@ void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
 
 				currentOffset += adjustment;
 				lastSpace = std::string::npos;
+				lastSpaceStringIdx = std::string::npos;
 			} else if ( LineWrap::isWrapChar( curChar ) ) {
 				lastSpace = idx;
+				lastSpaceStringIdx = sg.stringIndex;
 			}
 		}
 

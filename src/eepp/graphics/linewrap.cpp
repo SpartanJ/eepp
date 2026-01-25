@@ -90,10 +90,17 @@ LineWrapInfo LineWrap::computeLineBreaks( const String::View& string, Font* font
 
 		info.paddingStart = layout->paragraphs.front().wrapInfo.paddingStart;
 
+		std::size_t reserve = 0;
+		for ( auto& paragraph : layout->paragraphs )
+			reserve += paragraph.wrapInfo.wraps.size();
+		info.wraps.reserve( reserve );
+
 		for ( auto& paragraph : layout->paragraphs ) {
 			for ( const auto& wrap : paragraph.wrapInfo.wraps )
 				info.wraps.push_back( wrap );
 		}
+
+		std::sort( info.wraps.begin(), info.wraps.end() );
 
 		return info;
 	}
@@ -127,6 +134,7 @@ LineWrapInfo LineWrap::computeLineBreaks( const String::View& string, Font* font
 		if ( curChar == '\n' ) {
 			xoffset = 0;
 			lastSpace = idx;
+			info.wraps.push_back( lastSpace );
 			idx++;
 			continue;
 		}
