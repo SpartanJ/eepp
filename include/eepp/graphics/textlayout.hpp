@@ -15,7 +15,7 @@ class Font;
 
 struct ShapedTextParagraph {
 	std::vector<ShapedGlyph> shapedGlyphs;
-	LineWrapInfo wrapInfo;
+	LineWrapInfoEx wrapInfo;
 	Sizef size;
 };
 
