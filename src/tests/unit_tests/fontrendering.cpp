@@ -969,8 +969,6 @@ UTEST( FontRendering, TextLayoutWrap ) {
 
 UTEST( FontRendering, LineWrapInfo ) {
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-	std::string string;
-	FileSystem::fileGet( "assets/textfiles/test-hard-wrap.uext", string );
 
 	UIApplication app(
 		WindowSettings( 1024, 650, "eepp - LineWrapInfo Test", WindowStyle::Default,
@@ -980,32 +978,67 @@ UTEST( FontRendering, LineWrapInfo ) {
 
 	Font* font = app.getUI()->getUIThemeManager()->getDefaultFont();
 	Float width = app.getWindow()->getSize().getWidth();
+	int fontSize = 16;
 	LineWrapMode mode = LineWrapMode::Word;
 
-	LineWrapInfo lineWrapShaperDisabled;
-	LineWrapInfo lineWrapShaperEnabled;
-	{
-		UTEST_PRINT_STEP( "Text Shaper disabled" );
-		BoolScopedOp op( Text::TextShaperEnabled, false );
-		String str( string );
-		lineWrapShaperDisabled = LineWrap::computeLineBreaks( string, font, 16, width, mode );
-	}
+	const auto runTest = [&]( const std::string& path ) {
+		UTEST_PRINT_STEP( String::format( "Test File: %s", path.c_str() ).c_str() );
+		UTEST_PRINT_STEP( "Line Breaks" );
 
-	UTEST_PRINT_STEP( "Text Shaper enabled" );
-	{
-		BoolScopedOp op( Text::TextShaperEnabled, true );
-		String str( string );
-		lineWrapShaperEnabled = LineWrap::computeLineBreaks( string, font, 16, width, mode );
+		std::string string;
+		FileSystem::fileGet( path, string );
+		LineWrapInfoEx lineWrapShaperDisabled;
+		LineWrapInfoEx lineWrapShaperEnabled;
+		LineWrapInfoEx lineWrapShaperEnabledWOO;
 
 		{
-			UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
-			BoolScopedOp op2( Text::TextShaperOptimizations, false );
+			UTEST_PRINT_STEP( "Text Shaper disabled" );
+			BoolScopedOp op( Text::TextShaperEnabled, false );
 			String str( string );
-			lineWrapShaperEnabled = LineWrap::computeLineBreaks( string, font, 16, width, mode );
+			lineWrapShaperDisabled =
+				LineWrap::computeLineBreaksEx( string, font, fontSize, width, mode );
 		}
-	}
 
-	EXPECT_VECTOREQ( lineWrapShaperDisabled.wraps, lineWrapShaperEnabled.wraps );
+		UTEST_PRINT_STEP( "Text Shaper enabled" );
+		{
+			BoolScopedOp op( Text::TextShaperEnabled, true );
+			String str( string );
+			lineWrapShaperEnabled =
+				LineWrap::computeLineBreaksEx( string, font, fontSize, width, mode );
+
+			EXPECT_VECTOREQ( lineWrapShaperDisabled.wraps, lineWrapShaperEnabled.wraps );
+
+			{
+				UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+				BoolScopedOp op2( Text::TextShaperOptimizations, false );
+				String str( string );
+				lineWrapShaperEnabledWOO =
+					LineWrap::computeLineBreaksEx( string, font, fontSize, width, mode );
+				EXPECT_VECTOREQ( lineWrapShaperDisabled.wraps, lineWrapShaperEnabledWOO.wraps );
+			}
+		}
+
+		UTEST_PRINT_STEP( "Test Widths" );
+
+		Text text;
+		text.setFont( font );
+		text.setFontSize( fontSize );
+		text.setString( string );
+		text.hardWrapText( width );
+
+		const auto linesWidth = text.getLinesWidth();
+
+		UTEST_PRINT_STEP( "Text Shaper disabled" );
+		EXPECT_VECTOREQ( linesWidth, lineWrapShaperDisabled.wrapsWidth );
+		UTEST_PRINT_STEP( "Text Shaper enabled" );
+		EXPECT_VECTOREQ( linesWidth, lineWrapShaperEnabled.wrapsWidth );
+		UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+		EXPECT_VECTOREQ( linesWidth, lineWrapShaperEnabledWOO.wrapsWidth );
+	};
+
+	runTest( "assets/textfiles/test-hard-wrap.uext" );
+	runTest( "assets/textfiles/lorem-ipsum.uext" );
+	// runTest( "assets/textfiles/test-tabs.txt" );
 }
 
 UTEST( FontRendering, TextHardWrap ) {

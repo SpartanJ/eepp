@@ -420,7 +420,8 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 
 				if ( run.runIsNewLine() ) {
 					curParagraph->size.x = std::ceil( pen.x );
-					curParagraph->wrapInfo.wrapsWidth.push_back( curParagraph->size.x );
+					curParagraph->wrapInfo.wrapsWidth.push_back(
+						std::ceil( curParagraph->size.x ) );
 					maxWidth = eemax( maxWidth, curParagraph->size.x );
 					pen.x = 0;
 					pen.y += vspace;
@@ -440,7 +441,7 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 			Uint32 curChar = string[i];
 			if ( curChar == '\n' ) {
 				curParagraph->size.x = std::ceil( pen.x );
-				curParagraph->wrapInfo.wrapsWidth.push_back( curParagraph->size.x );
+				curParagraph->wrapInfo.wrapsWidth.push_back( std::ceil( curParagraph->size.x ) );
 				maxWidth = eemax( maxWidth, pen.x );
 				pen.x = 0;
 				pen.y += vspace;
@@ -495,12 +496,12 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 	}
 
 	// pen.y doesn't have the last line height counted unless the last run ended with a new line
-	if ( string[string.size() - 1] != '\n' )
+	if ( string[string.size() - 1] != '\n' ) {
 		pen.y += vspace;
-
+		curParagraph->wrapInfo.wrapsWidth.push_back( std::ceil( curParagraph->size.x ) );
+	}
 	curParagraph->size.x = std::ceil( pen.x );
 	curParagraph->size.y = pen.y;
-	curParagraph->wrapInfo.wrapsWidth.push_back( curParagraph->size.x );
 	maxWidth = eemax( maxWidth, curParagraph->size.x );
 	result.size = { maxWidth, std::ceil( pen.y ) };
 	result.hasMixedDirection = !!gdc.ltr + !!gdc.rtl + !!gdc.ttb + !!gdc.btt + !!gdc.other > 1;
@@ -591,7 +592,7 @@ void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
 				ShapedGlyph& breakGlyph = sp.shapedGlyphs[breakIndex];
 
 				sp.wrapInfo.wraps.push_back( breakStringIdx );
-				sp.wrapInfo.wrapsWidth.push_back( breakGlyph.position.x + breakGlyph.advance.x );
+				sp.wrapInfo.wrapsWidth.push_back( std::ceil( breakGlyph.position.x ) );
 
 				Vector2f adjustment( -breakGlyph.position.x + sp.wrapInfo.paddingStart, vspace );
 				for ( std::size_t k = breakIndex; k <= idx; ++k )
@@ -612,8 +613,8 @@ void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
 			// Restore the original wraps which are the paragraph wraps (no wrapping occurred)
 			sp.wrapInfo.wrapsWidth = std::move( wrapsWidth );
 		} else if ( !sp.shapedGlyphs.empty() ) {
-			sp.wrapInfo.wrapsWidth.push_back( sp.shapedGlyphs.back().position.x +
-											  sp.shapedGlyphs.back().advance.x );
+			sp.wrapInfo.wrapsWidth.push_back(
+				std::ceil( sp.shapedGlyphs.back().position.x + sp.shapedGlyphs.back().advance.x ) );
 		}
 
 		sp.size = maxSize;

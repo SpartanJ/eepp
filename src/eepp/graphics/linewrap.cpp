@@ -64,14 +64,14 @@ Float LineWrap::computeOffsets( const String::View& string, Font* font, Uint32 c
 	return 0.f;
 }
 
-template <typename T>
-T LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, Uint32 characterSize,
-									   Float maxWidth, LineWrapMode mode, Uint32 fontStyle,
-									   Float outlineThickness, bool keepIndentation,
-									   Uint32 tabWidth,
-									   Float whiteSpaceWidth /* 0 = should calculate it */,
-									   Uint32 textDrawHints, bool tabStops, Float initialXOffset ) {
-	T info;
+template <typename LineWrapType>
+LineWrapType
+LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, Uint32 characterSize,
+									 Float maxWidth, LineWrapMode mode, Uint32 fontStyle,
+									 Float outlineThickness, bool keepIndentation, Uint32 tabWidth,
+									 Float whiteSpaceWidth /* 0 = should calculate it */,
+									 Uint32 textDrawHints, bool tabStops, Float initialXOffset ) {
+	LineWrapType info;
 	info.wraps.push_back( 0 );
 
 	if ( string.empty() || nullptr == font || mode == LineWrapMode::NoWrap || maxWidth == 0 )
@@ -84,7 +84,7 @@ T LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, U
 			string, font, characterSize, fontStyle, tabWidth, outlineThickness,
 			tabStops ? initialXOffset : std::optional<Float>{}, textDrawHints,
 			TextDirection::LeftToRight, mode, maxWidth, keepIndentation, initialXOffset );
-		T info;
+		LineWrapType info;
 		if ( layout->paragraphs.empty() )
 			return info;
 
@@ -101,7 +101,7 @@ T LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, U
 			}
 		}
 
-		if constexpr ( std::is_same_v<T, LineWrapInfoEx> ) {
+		if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
 			for ( auto& paragraph : layout->paragraphs ) {
 				for ( const auto& wrapWidth : paragraph.wrapInfo.wrapsWidth ) {
 					info.wrapsWidth.push_back( wrapWidth );
@@ -142,16 +142,21 @@ T LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, U
 
 	for ( const auto& curChar : string ) {
 		if ( curChar == '\n' ) {
-			if constexpr ( std::is_same_v<T, LineWrapInfoEx> ) {
-				info.wrapsWidth.back() = xoffset; // Finalize width of current line
+			if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
+				if ( info.wrapsWidth.empty() )
+					info.wrapsWidth.push_back( std::ceil( xoffset ) );
+				else
+					info.wrapsWidth.back() = std::ceil( xoffset ); // Finalize width of current line
 			}
 			xoffset = 0;
-			if constexpr ( std::is_same_v<T, LineWrapInfoEx> ) {
-				info.wrapsWidth.push_back( 0.f ); // Placeholder for new line's width
+			if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
+				if ( idx + 1 != string.size() )
+					info.wrapsWidth.push_back( 0.f ); // Placeholder for new line's width
 			}
 			lastSpace = idx;
 			info.wraps.push_back( lastSpace );
 			idx++;
+			prevChar = 0;
 			continue;
 		}
 
@@ -175,26 +180,35 @@ T LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, U
 
 		if ( xoffset > maxWidth ) {
 			if ( mode == LineWrapMode::Word && lastSpace ) {
-				if constexpr ( std::is_same_v<T, LineWrapInfoEx> ) {
-					info.wrapsWidth.back() = lastWordWrapWidth;
+				if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
+					if ( info.wrapsWidth.empty() )
+						info.wrapsWidth.push_back( std::ceil( lastWordWrapWidth ) );
+					else
+						info.wrapsWidth.back() = std::ceil( lastWordWrapWidth );
 				}
 
 				info.wraps.push_back( lastSpace + 1 );
 
-				if constexpr ( std::is_same_v<T, LineWrapInfoEx> ) {
-					info.wrapsWidth.push_back( 0.f );
+				if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
+					if ( idx + 1 != string.size() )
+						info.wrapsWidth.push_back( 0.f );
 				}
 
 				xoffset = info.paddingStart + ( xoffset - lastWidth );
 			} else {
-				if constexpr ( std::is_same_v<T, LineWrapInfoEx> ) {
-					info.wrapsWidth.back() = xoffset - w; // Width up to char *before* current one
+				if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
+					// Width up to char *before* current one
+					if ( info.wrapsWidth.empty() )
+						info.wrapsWidth.push_back( std::ceil( xoffset - w ) );
+					else
+						info.wrapsWidth.back() = std::ceil( xoffset - w );
 				}
 
 				info.wraps.push_back( idx );
 
-				if constexpr ( std::is_same_v<T, LineWrapInfoEx> ) {
-					info.wrapsWidth.push_back( 0.f );
+				if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
+					if ( idx + 1 != string.size() )
+						info.wrapsWidth.push_back( 0.f );
 				}
 
 				xoffset = info.paddingStart;
@@ -210,10 +224,9 @@ T LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, U
 		idx++;
 	}
 
-	if constexpr ( std::is_same_v<T, LineWrapInfoEx> ) {
-		if ( !info.wrapsWidth.empty() ) { // Ensure there's at least one line
-			info.wrapsWidth.back() = xoffset;
-		}
+	if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
+		if ( !string.empty() && string[string.size() - 1] != '\n' && !info.wrapsWidth.empty() )
+			info.wrapsWidth.back() = std::ceil( xoffset );
 	}
 
 	return info;
