@@ -1038,7 +1038,7 @@ UTEST( FontRendering, LineWrapInfo ) {
 
 	runTest( "assets/textfiles/test-hard-wrap.uext" );
 	runTest( "assets/textfiles/lorem-ipsum.uext" );
-	// runTest( "assets/textfiles/test-tabs.txt" );
+	runTest( "assets/textfiles/test-tabs.txt" );
 }
 
 UTEST( FontRendering, TextHardWrap ) {

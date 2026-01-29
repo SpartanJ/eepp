@@ -165,10 +165,10 @@ LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, Uin
 				? font->getGlyph( curChar, characterSize, bold, italic, outlineThickness ).advance
 				: hspace;
 
-		if ( curChar == '\t' )
+		if ( curChar == '\t' ) {
 			w = Text::tabAdvance( hspace, tabWidth, tabStops ? xoffset : std::optional<Float>{} );
-
-		if ( !isMonospace && curChar != '\r' ) {
+			prevChar = 0;
+		} else if ( !isMonospace && curChar != '\r' ) {
 			if ( !( textDrawHints & TextHints::NoKerning ) ) {
 				w += font->getKerning( prevChar, curChar, characterSize, bold, italic,
 									   outlineThickness );

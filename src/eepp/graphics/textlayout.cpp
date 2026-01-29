@@ -464,7 +464,6 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 			prevChar = curChar;
 
 			if ( curChar == '\t' ) {
-
 				ShapedGlyph sg;
 				sg.stringIndex = i;
 				sg.advance = { Text::tabAdvance( hspace, tabWidth,
@@ -477,6 +476,7 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 				sg.position = pen;
 				pen.x += sg.advance.x;
 				curParagraph->shapedGlyphs.emplace_back( std::move( sg ) );
+				prevChar = 0;
 				continue;
 			}
 

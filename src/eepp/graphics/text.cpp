@@ -1290,6 +1290,7 @@ void Text::updateWidthCache() {
 			width += glyph.advance;
 		} else if ( codepoint == '\t' ) {
 			width += tabAdvance( hspace, mTabWidth, mTabStops ? width : std::optional<Float>{} );
+			codepoint = 0;
 		} else if ( codepoint == '\r' ) {
 			prevChar = 0;
 			continue;
