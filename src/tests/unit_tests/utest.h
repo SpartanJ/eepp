@@ -1330,62 +1330,57 @@ UTEST_WEAK int utest_should_filter_test(const char *filter,
   if (filter) {
     const char *filter_cur = filter;
     const char *testcase_cur = testcase;
-    const char *filter_wildcard = UTEST_NULL;
+    const char *star_filter = UTEST_NULL;
+    const char *star_testcase = UTEST_NULL;
 
-    while (('\0' != *filter_cur) && ('\0' != *testcase_cur)) {
+    while ('\0' != *testcase_cur) {
       if ('*' == *filter_cur) {
-        /* store the position of the wildcard */
-        filter_wildcard = filter_cur;
-
-        /* skip the wildcard character */
+        /*
+           Found a wildcard:
+           1. Store the location of the wildcard in the filter.
+           2. Store the current location in the testcase.
+           3. Advance the filter (assume initially it matches 0 characters).
+        */
+        star_filter = filter_cur;
+        star_testcase = testcase_cur;
         filter_cur++;
+      } else if (*testcase_cur == *filter_cur) {
+        /* Characters match: advance both pointers */
+        testcase_cur++;
+        filter_cur++;
+      } else if (star_filter != UTEST_NULL) {
+        /*
+           Mismatch, but we have a previous wildcard.
+           This means the wildcard needs to absorb more characters.
 
-        while (('\0' != *filter_cur) && ('\0' != *testcase_cur)) {
-          if ('*' == *filter_cur) {
-            /*
-               we found another wildcard (filter is something like *foo*) so we
-               exit the current loop, and return to the parent loop to handle
-               the wildcard case
-            */
-            break;
-          } else if (*filter_cur != *testcase_cur) {
-            /* otherwise our filter didn't match, so reset it */
-            filter_cur = filter_wildcard;
-          }
-
-          /* move testcase along */
-          testcase_cur++;
-
-          /* move filter along */
-          filter_cur++;
-        }
-
-        if (('\0' == *filter_cur) && ('\0' == *testcase_cur)) {
-          return 0;
-        }
-
-        /* if the testcase has been exhausted, we don't have a match! */
-        if ('\0' == *testcase_cur) {
-          return 1;
-        }
+           1. Reset filter just after the last star.
+           2. Advance the 'star match' position in testcase by 1.
+           3. Reset current testcase pointer to that position.
+        */
+        filter_cur = star_filter + 1;
+        star_testcase++;
+        testcase_cur = star_testcase;
       } else {
-        if (*testcase_cur != *filter_cur) {
-          /* test case doesn't match filter */
-          return 1;
-        } else {
-          /* move our filter and testcase forward */
-          testcase_cur++;
-          filter_cur++;
-        }
+        /* Mismatch and no open wildcard: Fail */
+        return 1;
       }
     }
 
-    if (('\0' != *filter_cur) ||
-        (('\0' != *testcase_cur) &&
-         ((filter == filter_cur) || ('*' != filter_cur[-1])))) {
-      /* we have a mismatch! */
-      return 1;
+    /*
+       The testcase is exhausted.
+       Allow any trailing wildcards in the filter to match empty strings.
+       (e.g. filter "test*" matches "test")
+    */
+    while ('*' == *filter_cur) {
+      filter_cur++;
     }
+
+    /* If the filter is also exhausted, it is a match (return 0) */
+    if ('\0' == *filter_cur) {
+      return 0;
+    }
+
+    return 1;
   }
 
   return 0;

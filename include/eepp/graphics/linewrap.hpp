@@ -11,12 +11,12 @@ enum class LineWrapMode { NoWrap, Letter, Word };
 enum class LineWrapType { Viewport, LineBreakingColumn };
 
 struct LineWrapInfo {
-	std::vector<Int64> wraps;
-	Float paddingStart{ 0 };
+	std::vector<Int64> wraps; // Each wrap character position (where the wrap must happen)
+	Float paddingStart{ 0 }; // Padding of the wrapped lines
 };
 
 struct LineWrapInfoEx : public LineWrapInfo {
-	std::vector<Float> wrapsWidth;
+	std::vector<Float> wrapsWidth; // Each wrap width
 };
 
 class EE_API LineWrap {
