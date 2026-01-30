@@ -143,6 +143,8 @@ AIAssistantPlugin::~AIAssistantPlugin() {
 
 	waitUntilLoaded();
 	mShuttingDown = true;
+	unsubscribeFileSystemListener();
+
 	if ( mAIChatButton ) {
 		if ( mAIChatButtonPosCbId )
 			mAIChatButton->getParent()->removeEventListener( mAIChatButtonPosCbId );
