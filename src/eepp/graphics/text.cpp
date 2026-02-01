@@ -581,6 +581,7 @@ void Text::onNewString() {
 	mGeometryNeedUpdate = true;
 	mCachedWidthNeedUpdate = true;
 	mContainsColorEmoji = false;
+	mVisualLinesNeedUpdate = true;
 	mTextHints = mString.getTextHints();
 	if ( mFontStyleConfig.Font && FontManager::instance()->getColorEmojiFont() != nullptr ) {
 		if ( mFontStyleConfig.Font->getType() == FontType::TTF ) {
@@ -627,6 +628,7 @@ void Text::setFont( Font* font ) {
 		}
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
+		mVisualLinesNeedUpdate = true;
 	}
 }
 
@@ -639,6 +641,7 @@ void Text::setFontSize( unsigned int size ) {
 		}
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
+		mVisualLinesNeedUpdate = true;
 	}
 }
 
@@ -648,6 +651,7 @@ void Text::setStyle( Uint32 style ) {
 		mColorsNeedUpdate = true;
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
+		mVisualLinesNeedUpdate = true;
 	}
 }
 
@@ -675,6 +679,7 @@ void Text::setOutlineThickness( Float thickness ) {
 		mColorsNeedUpdate = true;
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
+		mVisualLinesNeedUpdate = true;
 	}
 }
 
@@ -683,6 +688,7 @@ void Text::setTabStops( bool enabled ) {
 		mTabStops = enabled;
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
+		mVisualLinesNeedUpdate = true;
 	}
 }
 
@@ -1325,6 +1331,7 @@ void Text::invalidate() {
 	mCachedWidthNeedUpdate = true;
 	mGeometryNeedUpdate = true;
 	mColorsNeedUpdate = true;
+	mVisualLinesNeedUpdate = true;
 }
 
 void Text::setTabWidth( const Uint32& tabWidth ) {
@@ -1333,6 +1340,7 @@ void Text::setTabWidth( const Uint32& tabWidth ) {
 
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
+		mVisualLinesNeedUpdate = true;
 	}
 }
 
@@ -1514,6 +1522,9 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 }
 
 void Text::ensureGeometryUpdate() {
+	// For soft wrapping, pre-compute visual line info and wrapping padding
+	bool useSoftWrap = mLineWrapMode != LineWrapMode::NoWrap && mMaxWrapWidth > 0;
+
 	if ( mCachedWidthNeedUpdate && mAlign != TEXT_ALIGN_LEFT )
 		cacheWidth();
 
@@ -1589,12 +1600,14 @@ void Text::ensureGeometryUpdate() {
 	if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF &&
 		 !canSkipShaping( mTextHints ) ) {
 		FontTrueType* rFont = static_cast<FontTrueType*>( mFontStyleConfig.Font );
-		auto layout = TextLayout::layout(
-			mString, rFont, mFontStyleConfig.CharacterSize, mFontStyleConfig.Style, mTabWidth,
-			mFontStyleConfig.OutlineThickness, {}, mTextHints, mDirection );
+		auto layout = TextLayout::layout( mString, rFont, mFontStyleConfig.CharacterSize,
+										  mFontStyleConfig.Style, mTabWidth,
+										  mFontStyleConfig.OutlineThickness, {}, mTextHints,
+										  mDirection, mLineWrapMode, mMaxWrapWidth );
 
 		mLinesWidth = layout->getLinesWidth();
 		mCachedWidth = layout->size.getWidth();
+
 		for ( const ShapedTextParagraph& sp : layout->paragraphs ) {
 			for ( const ShapedGlyph& sg : sp.shapedGlyphs ) {
 				if ( mString[sg.stringIndex] == '\t' )
@@ -1747,21 +1760,94 @@ void Text::ensureGeometryUpdate() {
 	}
 #endif
 
-	switch ( Font::getHorizontalAlign( mAlign ) ) {
-		case TEXT_ALIGN_CENTER:
-			centerDiffX = line < mLinesWidth.size()
-							  ? (Float)( (Int32)( ( mCachedWidth - mLinesWidth[line] ) * 0.5f ) )
-							  : 0.f;
-			line++;
-			break;
-		case TEXT_ALIGN_RIGHT:
-			centerDiffX = line < mLinesWidth.size() ? mCachedWidth - mLinesWidth[line] : 0.f;
-			line++;
-			break;
+	Float wrappedLinePadding = 0.f;
+	size_t currentVisualLine = 0;
+
+	if ( useSoftWrap ) {
+		ensureVisualLinesUpdate();
+		// Compute indentation padding for wrapped lines
+		if ( mLineWrapKeepIndentation && !mVisualLines.empty() && mVisualLines.size() > 1 ) {
+			// Find the first paragraph's indentation
+			wrappedLinePadding = LineWrap::computeOffsets( mString.view(), mFontStyleConfig,
+														   mTabWidth, mMaxWrapWidth, mTabStops );
+		}
 	}
+
+	// Helper lambda to check if index starts a soft-wrapped line (not a real newline)
+	auto isSoftWrapLineStart = [this, &useSoftWrap, &currentVisualLine]( Int64 idx ) -> bool {
+		if ( !useSoftWrap || currentVisualLine + 1 >= mVisualLines.size() )
+			return false;
+		// Check if this is the start of the next visual line
+		if ( idx == mVisualLines[currentVisualLine + 1] ) {
+			// It's a soft wrap if the previous char wasn't a newline
+			if ( idx > 0 && mString[idx - 1] != '\n' ) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	// Helper to update alignment for current visual line
+	auto updateAlignmentForLine = [this, &centerDiffX, &line]() {
+		switch ( Font::getHorizontalAlign( mAlign ) ) {
+			case TEXT_ALIGN_CENTER:
+				centerDiffX =
+					line < mLinesWidth.size()
+						? (Float)( (Int32)( ( mCachedWidth - mLinesWidth[line] ) * 0.5f ) )
+						: 0.f;
+				break;
+			case TEXT_ALIGN_RIGHT:
+				centerDiffX = line < mLinesWidth.size() ? mCachedWidth - mLinesWidth[line] : 0.f;
+				break;
+			default:
+				centerDiffX = 0.f;
+				break;
+		}
+	};
+
+	updateAlignmentForLine();
+	line++;
 
 	for ( std::size_t i = 0; i < size; ++i ) {
 		Uint32 curChar = mString[i];
+
+		// Check for soft wrap at this position (before processing the character)
+		if ( isSoftWrapLineStart( i ) ) {
+			// Draw underline/strikethrough for the previous visual line
+			if ( underlined && x > 0 ) {
+				addLine( mVertices, x, y, underlineOffset, underlineThickness, 0, centerDiffX );
+				if ( mFontStyleConfig.OutlineThickness != 0 )
+					addLine( mOutlineVertices, x, y, underlineOffset, underlineThickness,
+							 mFontStyleConfig.OutlineThickness, centerDiffX );
+			}
+			if ( strikeThrough && x > 0 ) {
+				addLine( mVertices, x, y, strikeThroughOffset, underlineThickness, 0, centerDiffX );
+				if ( mFontStyleConfig.OutlineThickness != 0 )
+					addLine( mOutlineVertices, x, y, strikeThroughOffset, underlineThickness,
+							 mFontStyleConfig.OutlineThickness, centerDiffX );
+			}
+
+			// Move to next visual line
+			currentVisualLine++;
+			y += vspace;
+
+			// Apply wrapping indentation if keeping indentation
+			// Only apply padding to continuation lines within the same paragraph
+			bool isParagraphContinuation = currentVisualLine > 0 &&
+										   mVisualLines[currentVisualLine] > 0 &&
+										   mString[mVisualLines[currentVisualLine] - 1] != '\n';
+			x = ( mLineWrapKeepIndentation && isParagraphContinuation ) ? wrappedLinePadding : 0.f;
+
+			prevChar = 0;
+
+			// Update alignment for new line
+			updateAlignmentForLine();
+			line++;
+
+			// Update bounds
+			minX = std::min( minX, x );
+			minY = std::min( minY, y );
+		}
 
 		// Apply the kerning offset
 		if ( curChar != '\n' && curChar != '\r' ) {
@@ -1794,19 +1880,12 @@ void Text::ensureGeometryUpdate() {
 		}
 
 		if ( curChar == L'\n' ) {
-			switch ( Font::getHorizontalAlign( mAlign ) ) {
-				case TEXT_ALIGN_CENTER:
-					centerDiffX =
-						line < mLinesWidth.size()
-							? (Float)( (Int32)( ( mCachedWidth - mLinesWidth[line] ) * 0.5f ) )
-							: 0.f;
-					break;
-				case TEXT_ALIGN_RIGHT:
-					centerDiffX =
-						line < mLinesWidth.size() ? mCachedWidth - mLinesWidth[line] : 0.f;
-					break;
+			// Advance to next visual line (the one after the newline)
+			if ( useSoftWrap ) {
+				currentVisualLine++;
 			}
 
+			updateAlignmentForLine();
 			line++;
 		}
 
@@ -1826,7 +1905,7 @@ void Text::ensureGeometryUpdate() {
 				case '\n':
 					y += vspace;
 
-					if ( mCachedWidthNeedUpdate )
+					if ( mCachedWidthNeedUpdate && !useSoftWrap )
 						mLinesWidth.push_back( x );
 
 					x = 0;
@@ -1840,7 +1919,7 @@ void Text::ensureGeometryUpdate() {
 			maxX = std::max( maxX, x );
 			maxY = std::max( maxY, y );
 
-			if ( mCachedWidthNeedUpdate )
+			if ( mCachedWidthNeedUpdate && !useSoftWrap )
 				maxW = std::max( maxW, x );
 
 			// Next glyph, no need to create a quad for whitespace
@@ -1917,7 +1996,8 @@ void Text::ensureGeometryUpdate() {
 					 mFontStyleConfig.OutlineThickness, centerDiffX );
 	}
 
-	if ( mCachedWidthNeedUpdate && !mString.empty() && mString[mString.size() - 1] != '\n' )
+	if ( mCachedWidthNeedUpdate && !useSoftWrap && !mString.empty() &&
+		 mString[mString.size() - 1] != '\n' )
 		mLinesWidth.push_back( x );
 
 	// Update the bounding rectangle
@@ -1926,8 +2006,13 @@ void Text::ensureGeometryUpdate() {
 	mBounds.Right = maxX;
 	mBounds.Bottom = maxY;
 
-	if ( mCachedWidthNeedUpdate ) {
+	if ( mCachedWidthNeedUpdate && !useSoftWrap ) {
 		mCachedWidth = maxW;
+		mCachedWidthNeedUpdate = false;
+	}
+
+	// For soft wrap, the width cache was already handled by ensureVisualLinesUpdate
+	if ( useSoftWrap && mCachedWidthNeedUpdate ) {
 		mCachedWidthNeedUpdate = false;
 	}
 }
@@ -1994,6 +2079,13 @@ const Uint32& Text::getAlign() const {
 void Text::cacheWidth() {
 	if ( !mCachedWidthNeedUpdate )
 		return;
+
+	bool useSoftWrap = mLineWrapMode != LineWrapMode::NoWrap && mMaxWrapWidth > 0;
+
+	if ( useSoftWrap ) {
+		ensureVisualLinesUpdate();
+		return;
+	}
 
 	if ( NULL != mFontStyleConfig.Font && !mString.empty() ) {
 		updateWidthCache();
@@ -2433,6 +2525,98 @@ void Text::setDirection( TextDirection direction ) {
 
 TextDirection Text::getDirection() const {
 	return mDirection;
+}
+
+void Text::setLineWrapMode( LineWrapMode mode ) {
+	if ( mLineWrapMode != mode ) {
+		mLineWrapMode = mode;
+		mVisualLinesNeedUpdate = true;
+		mGeometryNeedUpdate = true;
+		mCachedWidthNeedUpdate = true;
+	}
+}
+
+void Text::setMaxWrapWidth( Float maxWidth ) {
+	if ( mMaxWrapWidth != maxWidth ) {
+		mMaxWrapWidth = maxWidth;
+		if ( mLineWrapMode != LineWrapMode::NoWrap ) {
+			mVisualLinesNeedUpdate = true;
+			mGeometryNeedUpdate = true;
+			mCachedWidthNeedUpdate = true;
+		}
+	}
+}
+
+void Text::setLineWrapKeepIndentation( bool keep ) {
+	if ( mLineWrapKeepIndentation != keep ) {
+		mLineWrapKeepIndentation = keep;
+		if ( mLineWrapMode != LineWrapMode::NoWrap ) {
+			mVisualLinesNeedUpdate = true;
+			mGeometryNeedUpdate = true;
+			mCachedWidthNeedUpdate = true;
+		}
+	}
+}
+
+void Text::ensureVisualLinesUpdate() {
+	if ( mVisualLinesNeedUpdate ) {
+		computeVisualLines();
+		mVisualLinesNeedUpdate = false;
+	}
+}
+
+void Text::computeVisualLines() {
+	mVisualLines.clear();
+
+	if ( mString.empty() || !mFontStyleConfig.Font ) {
+		mVisualLines.push_back( { 0 } );
+		mCachedWidth = 0;
+		return;
+	}
+
+	LineWrapInfoEx wrapInfo = LineWrap::computeLineBreaksEx(
+		mString, mFontStyleConfig, mMaxWrapWidth, mLineWrapMode, mLineWrapKeepIndentation,
+		mTabWidth, 0.f, mTextHints, mTabStops, 0.f );
+
+	mVisualLines = std::move( wrapInfo.wraps );
+	mLinesWidth = std::move( wrapInfo.wrapsWidth );
+	if ( !mLinesWidth.empty() )
+		mCachedWidth = *std::max_element( mLinesWidth.begin(), mLinesWidth.end() );
+
+	mCachedWidthNeedUpdate = false;
+	mVisualLinesNeedUpdate = false;
+}
+
+Uint32 Text::getVisualLineCount() {
+	ensureVisualLinesUpdate();
+	return static_cast<Uint32>( mVisualLines.size() );
+}
+
+void Text::forEachVisualLine( const VisualLineCallback& callback ) {
+	ensureVisualLinesUpdate();
+	for ( size_t i = 0; i < mVisualLines.size(); ++i ) {
+		const auto& vl = mVisualLines[i];
+		const auto& lw = mLinesWidth[i];
+		callback( i, vl, lw );
+	}
+}
+
+size_t Text::findVisualLineFromCharIndex( size_t charIndex ) {
+	ensureVisualLinesUpdate();
+	Int64 visualLinesSize = mVisualLines.size();
+	for ( Int64 i = 0; i < visualLinesSize; ++i ) {
+		if ( static_cast<Int64>( charIndex ) >= mVisualLines[i] &&
+			 static_cast<Int64>( charIndex ) < ( i + 1 < visualLinesSize
+													 ? mVisualLines[i + 1]
+													 : static_cast<Int64>( mString.size() ) ) ) {
+			return i;
+		}
+	}
+	// If at end of text, return last line
+	if ( !mVisualLines.empty() && charIndex == mString.size() ) {
+		return visualLinesSize - 1;
+	}
+	return 0;
 }
 
 }} // namespace EE::Graphics

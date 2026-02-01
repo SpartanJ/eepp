@@ -498,7 +498,7 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 	// pen.y doesn't have the last line height counted unless the last run ended with a new line
 	if ( string[string.size() - 1] != '\n' ) {
 		pen.y += vspace;
-		curParagraph->wrapInfo.wrapsWidth.push_back( std::ceil( curParagraph->size.x ) );
+		curParagraph->wrapInfo.wrapsWidth.push_back( std::ceil( pen.x ) );
 	}
 	curParagraph->size.x = std::ceil( pen.x );
 	curParagraph->size.y = pen.y;
@@ -528,9 +528,13 @@ TextLayout::Cache TextLayout::layout( const String& string, Font* font, const Ui
 
 std::vector<Float> TextLayout::getLinesWidth() const {
 	std::vector<Float> lw;
-	lw.reserve( paragraphs.size() );
+	std::size_t total = 0;
 	for ( const auto& sp : paragraphs )
-		lw.push_back( sp.size.x );
+		total += sp.wrapInfo.wrapsWidth.size();
+	lw.reserve( total );
+	for ( const auto& sp : paragraphs )
+		for ( const auto& ww : sp.wrapInfo.wrapsWidth )
+			lw.push_back( ww );
 	return lw;
 }
 

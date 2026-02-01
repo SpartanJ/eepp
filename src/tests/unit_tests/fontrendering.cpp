@@ -856,7 +856,8 @@ UTEST( FontRendering, TextWrap ) {
 		text.setFontSize( 16 );
 		text.setColor( Color::Black );
 		text.setString( loremIpsum );
-		text.hardWrapText( 500 );
+		text.setLineWrapMode( LineWrapMode::Word );
+		text.setMaxWrapWidth( 500 );
 		text.draw( pos.x, pos.y );
 
 		text.setAlign( TEXT_ALIGN_CENTER );

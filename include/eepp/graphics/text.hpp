@@ -8,6 +8,7 @@
 #include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/texttransform.hpp>
 
+#include <functional>
 #include <optional>
 
 namespace EE { namespace Graphics {
@@ -327,6 +328,46 @@ class EE_API Text {
 
 	TextDirection getDirection() const;
 
+	/** Sets the line wrap mode for soft wrapping.
+	 * When enabled, text will wrap at the specified max width without modifying the string.
+	 * @param mode The wrap mode (NoWrap, Letter, or Word)
+	 */
+	void setLineWrapMode( LineWrapMode mode );
+
+	/** @return The current line wrap mode */
+	LineWrapMode getLineWrapMode() const { return mLineWrapMode; }
+
+	/** Sets the maximum width for line wrapping.
+	 * Only used when line wrap mode is not NoWrap.
+	 * @param maxWidth The maximum width in pixels before wrapping
+	 */
+	void setMaxWrapWidth( Float maxWidth );
+
+	/** @return The current max wrap width */
+	Float getMaxWrapWidth() const { return mMaxWrapWidth; }
+
+	/** Sets whether to preserve indentation on wrapped lines. */
+	void setLineWrapKeepIndentation( bool keep );
+
+	/** @return Whether indentation is preserved on wrapped lines */
+	bool getLineWrapKeepIndentation() const { return mLineWrapKeepIndentation; }
+
+	/** @return The number of visual lines (considering soft wraps) */
+	Uint32 getVisualLineCount();
+
+	/** Callback type for iterating over visual lines.
+	 * Parameters: visual line index, start char index, line width
+	 */
+	using VisualLineCallback = std::function<void( size_t, size_t, Float )>;
+
+	/** Iterates over each visual line, calling the callback with line info.
+	 * This is useful for selection drawing and other operations that need visual line info.
+	 */
+	void forEachVisualLine( const VisualLineCallback& callback );
+
+	/** Finds the visual line index that contains the given character index. */
+	size_t findVisualLineFromCharIndex( size_t charIndex );
+
   protected:
 	struct VertexCoords {
 		Vector2f texCoords;
@@ -339,23 +380,29 @@ class EE_API Text {
 
 	mutable Rectf mBounds; ///< Bounding rectangle of the text (in local coordinates)
 	mutable bool mGeometryNeedUpdate : 1 { false }; ///< Does the geometry need to be recomputed?
-	mutable bool mCachedWidthNeedUpdate : 1 { false };
 	mutable bool mColorsNeedUpdate : 1 { false };
 	mutable bool mContainsColorEmoji : 1 { false };
+	mutable bool mVisualLinesNeedUpdate : 1 { true };
+	mutable bool mCachedWidthNeedUpdate: 1 { true };
 	bool mTabStops : 1 { false };
-	TextDirection mDirection{ TextDirection::Unspecified };
+	bool mLineWrapKeepIndentation : 1 { false };
 
 	Float mCachedWidth{ 0 };
 	Uint32 mAlign{ TEXT_ALIGN_LEFT };
 	Uint32 mTabWidth{ 4 };
 	Uint32 mInvalidationId{ 0 };
 	Uint32 mTextHints{ 0 };
+	LineWrapMode mLineWrapMode{ LineWrapMode::NoWrap };
+	Float mMaxWrapWidth{ 0 };
+
+	mutable std::vector<Int64> mVisualLines;
+	mutable std::vector<Float> mLinesWidth;
 
 	std::vector<VertexCoords> mVertices;
 	std::vector<Color> mColors;
 	std::vector<VertexCoords> mOutlineVertices;
 	std::vector<Color> mOutlineColors;
-	std::vector<Float> mLinesWidth;
+	TextDirection mDirection{ TextDirection::Unspecified };
 
 	void ensureGeometryUpdate();
 
@@ -412,6 +459,14 @@ class EE_API Text {
 								 const Float& outlineThickness = 0.f,
 								 std::optional<Float> tabOffset = {}, Uint32 textHints = 0,
 								 TextDirection direction = TextDirection::Unspecified );
+
+	/** Computes visual line info for soft wrapping.
+	 * Populates mVisualLines with start/end indices and widths.
+	 */
+	void computeVisualLines();
+
+	/** Ensures visual line info is up to date. */
+	void ensureVisualLinesUpdate();
 };
 
 }} // namespace EE::Graphics
