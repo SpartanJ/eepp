@@ -4214,6 +4214,7 @@ void App::init( InitParameters& params ) {
 			   ecode::Version::getCodename() );
 
 	Log::info( "ecode resources path: %s", mResPath );
+	Log::info( "ecode config path: %s", mConfigPath );
 
 	if ( mWindow && mWindow->isOpen() ) {
 		// Only verify GPU driver availability on Windows.
