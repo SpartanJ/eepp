@@ -4945,6 +4945,9 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		Text::TextShaperEnabled = false;
 #endif
 
+	if ( verbose.Get() )
+		Sys::windowAttachConsole();
+
 	App::InitParameters params;
 	params.logLevel = logLevel.Get();
 	params.file = folder ? folder.Get() : fileOrFolderPos.Get();
