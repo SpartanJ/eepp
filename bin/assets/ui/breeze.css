@@ -52,12 +52,12 @@
 	droppable-hovering-color: #FFFFFF20;
 }
 
-pushbutton::icon,
-selectbutton::icon,
-tableview::cell::icon,
-treeview::cell::icon,
+pushbutton,
+selectbutton,
+tableview::cell,
+treeview::cell,
 treeview::cell::expander,
-listview::cell::icon,
+listview::cell,
 tableview::header::column:hover,
 treeview::header::column:hover,
 listview::header::column:hover {
@@ -65,16 +65,16 @@ listview::header::column:hover {
 	tint: var(--font);
 }
 
-PushButton:pressed > PushButton::icon,
-SelectButton:pressed > SelectButton::icon,
-SelectButton:selected > SelectButton::icon,
-SelectButton:selected:pressed > SelectButton::icon,
-tableview::row:selected tableview::cell::text,
-treeview::row:selected treeview::cell::text,
-listview::row:selected listview::cell::text,
-tableview::row:selected tableview::cell::icon,
-treeview::row:selected treeview::cell::icon,
-listview::row:selected listview::cell::icon,
+PushButton:pressed > PushButton,
+SelectButton:pressed > SelectButton,
+SelectButton:selected > SelectButton,
+SelectButton:selected:pressed > SelectButton,
+tableview::row:selected tableview::cell,
+treeview::row:selected treeview::cell,
+listview::row:selected listview::cell,
+tableview::row:selected tableview::cell,
+treeview::row:selected treeview::cell,
+listview::row:selected listview::cell,
 tableview::row:selected tableview::cell::expander,
 treeview::row:selected treeview::cell::expander,
 listview::row:selected listview::cell::expander {
@@ -104,10 +104,10 @@ Tooltip,
 MenuBar::button,
 Window::title,
 ListView::cell,
-table::cell::text,
-tableview::cell::text,
-treeview::cell::text,
-listview::cell::text {
+table::cell,
+tableview::cell,
+treeview::cell,
+listview::cell {
 	color: var(--font);
 }
 

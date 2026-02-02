@@ -761,18 +761,144 @@ Vector2f Text::findCharacterPos( std::size_t index ) const {
 	if ( index > mString.size() )
 		index = mString.size();
 
-	return Text::findCharacterPos( index, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
-								   mString, mFontStyleConfig.Style, mTabWidth,
-								   mFontStyleConfig.OutlineThickness, {}, true, mTextHints );
+	if ( mLineWrapMode == LineWrapMode::NoWrap || mMaxWrapWidth <= 0 ) {
+		return Text::findCharacterPos( index, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
+									   mString, mFontStyleConfig.Style, mTabWidth,
+									   mFontStyleConfig.OutlineThickness, {}, true, mTextHints );
+	}
+
+#ifdef EE_TEXT_SHAPER_ENABLED
+	if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF &&
+		 !canSkipShaping( mTextHints ) ) {
+		return Text::findCharacterPos( index, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize,
+									   mString, mFontStyleConfig.Style, mTabWidth,
+									   mFontStyleConfig.OutlineThickness, {}, true, mTextHints,
+									   TextDirection::Unspecified, mLineWrapMode, mMaxWrapWidth );
+	}
+#endif
+
+	const_cast<Text*>( this )->ensureVisualLinesUpdate();
+
+	std::size_t visualLinesSize = mVisualLines.size();
+	std::size_t lineIndex = const_cast<Text*>( this )->findVisualLineFromCharIndex( index );
+	Float vspace = static_cast<Float>(
+		mFontStyleConfig.Font->getLineSpacing( mFontStyleConfig.CharacterSize ) );
+	Float y = lineIndex * vspace;
+	Float centerDiffX = 0;
+
+	if ( lineIndex < mLinesWidth.size() ) {
+		switch ( Font::getHorizontalAlign( mAlign ) ) {
+			case TEXT_ALIGN_CENTER:
+				centerDiffX = std::trunc( ( mCachedWidth - mLinesWidth[lineIndex] ) * 0.5f );
+				break;
+			case TEXT_ALIGN_RIGHT:
+				centerDiffX = mCachedWidth - mLinesWidth[lineIndex];
+				break;
+		}
+	}
+
+	if ( mLineWrapKeepIndentation && lineIndex > 0 ) {
+		Int64 prevLineStart = mVisualLines[lineIndex];
+		if ( prevLineStart > 0 && mString[prevLineStart - 1] != '\n' ) {
+			centerDiffX += LineWrap::computeOffsets( mString.view(), mFontStyleConfig, mTabWidth,
+													 mMaxWrapWidth, mTabStops );
+		}
+	}
+
+	Int64 startIdx = mVisualLines[lineIndex];
+	Int64 endIdx =
+		( lineIndex + 1 < visualLinesSize ) ? mVisualLines[lineIndex + 1] : (Int64)mString.size();
+	if ( endIdx > (Int64)mString.size() )
+		endIdx = mString.size();
+
+	if ( index < (size_t)startIdx )
+		index = startIdx;
+
+	String strWrapper(
+		String::View( mString.view().data() + startIdx, (std::size_t)( endIdx - startIdx ) ) );
+
+	Vector2f pos = Text::findCharacterPos(
+		index - startIdx, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, strWrapper,
+		mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness, {}, true,
+		mTextHints );
+
+	return Vector2f( pos.x + centerDiffX, y );
 }
 
-Int32 Text::findCharacterFromPos( const Vector2i& pos, bool nearest ) const {
+Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest ) const {
 	if ( NULL == mFontStyleConfig.Font || mString.empty() )
 		return 0;
 
-	return Text::findCharacterFromPos(
-		pos, nearest, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, mString,
-		mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness );
+	if ( mLineWrapMode == LineWrapMode::NoWrap || mMaxWrapWidth <= 0 ) {
+		return Text::findCharacterFromPos(
+			pos, returnNearest, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, mString,
+			mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness );
+	}
+
+#ifdef EE_TEXT_SHAPER_ENABLED
+	if ( TextShaperEnabled && mFontStyleConfig.Font->getType() == FontType::TTF &&
+		 !canSkipShaping( mTextHints ) ) {
+		return Text::findCharacterFromPos(
+			pos, returnNearest, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, mString,
+			mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness, {}, mTextHints,
+			TextDirection::Unspecified, mLineWrapMode, mMaxWrapWidth );
+	}
+#endif
+
+	const_cast<Text*>( this )->ensureVisualLinesUpdate();
+
+	Float vspace = mFontStyleConfig.Font->getLineSpacing( mFontStyleConfig.CharacterSize );
+	int lineIndex = std::floor( pos.y / vspace );
+	std::size_t visualLinesSize = mVisualLines.size();
+
+	if ( lineIndex < 0 )
+		lineIndex = 0;
+	if ( lineIndex >= (int)visualLinesSize ) {
+		if ( returnNearest )
+			lineIndex = visualLinesSize - 1;
+		else
+			return -1;
+	}
+
+	Float centerDiffX = 0;
+
+	if ( lineIndex < (int)mLinesWidth.size() ) {
+		switch ( Font::getHorizontalAlign( mAlign ) ) {
+			case TEXT_ALIGN_CENTER:
+				centerDiffX = std::trunc( ( mCachedWidth - mLinesWidth[lineIndex] ) * 0.5f );
+				break;
+			case TEXT_ALIGN_RIGHT:
+				centerDiffX = mCachedWidth - mLinesWidth[lineIndex];
+				break;
+		}
+	}
+
+	if ( mLineWrapKeepIndentation && lineIndex > 0 ) {
+		Int64 prevLineStart = mVisualLines[lineIndex];
+		if ( prevLineStart > 0 && mString[prevLineStart - 1] != '\n' ) {
+			centerDiffX += LineWrap::computeOffsets( mString.view(), mFontStyleConfig, mTabWidth,
+													 mMaxWrapWidth, mTabStops );
+		}
+	}
+
+	Int64 startIdx = mVisualLines[lineIndex];
+	Int64 endIdx = ( lineIndex + 1 < (int)visualLinesSize ) ? mVisualLines[lineIndex + 1]
+															: (Int64)mString.size();
+	if ( endIdx > (Int64)mString.size() )
+		endIdx = mString.size();
+
+	String strWrapper(
+		String::View( mString.view().data() + startIdx, (std::size_t)( endIdx - startIdx ) ) );
+	Vector2i localPos( pos.x - centerDiffX, 0 ); // Y is treated as 0 in single line
+
+	Int32 foundIndex = Text::findCharacterFromPos(
+		localPos, returnNearest, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, strWrapper,
+		mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness, {}, mTextHints );
+
+	if ( foundIndex != -1 )
+		return startIdx + foundIndex;
+
+	return -1;
 }
 
 static bool isStopSelChar( Uint32 c ) {
@@ -942,6 +1068,16 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 								 const Float& outlineThickness, std::optional<Float> tabOffset,
 								 bool allowNewLine, Uint32 textDrawHints,
 								 TextDirection direction ) {
+	return findCharacterPos( index, font, fontSize, string, style, tabWidth, outlineThickness,
+							 tabOffset, allowNewLine, textDrawHints, direction,
+							 LineWrapMode::NoWrap, 0.f );
+}
+
+Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
+								 const String& string, const Uint32& style, const Uint32& tabWidth,
+								 const Float& outlineThickness, std::optional<Float> tabOffset,
+								 bool allowNewLine, Uint32 textDrawHints, TextDirection direction,
+								 LineWrapMode lineWrapMode, Float maxWrapWidth ) {
 	// Make sure that we have a valid font
 	if ( !font )
 		return Vector2f();
@@ -963,8 +1099,22 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( TextShaperEnabled && font->getType() == FontType::TTF &&
 		 !canSkipShaping( textDrawHints ) ) {
-		auto layout = TextLayout::layout( string, font, fontSize, style, tabWidth, outlineThickness,
-										  tabOffset, 0, direction );
+		auto layout =
+			TextLayout::layout( string, font, fontSize, style, tabWidth, outlineThickness,
+								tabOffset, textDrawHints, direction, lineWrapMode, maxWrapWidth );
+		bool hasGlyphs =
+			allowNewLine
+				? !layout->paragraphs.empty() && !layout->paragraphs.back().shapedGlyphs.empty()
+				: !layout->paragraphs.empty() && !layout->paragraphs.front().shapedGlyphs.empty();
+
+		if ( index == string.size() && hasGlyphs ) {
+			return allowNewLine
+					   ? Vector2f{ layout->paragraphs.back().shapedGlyphs.back().position +
+								   layout->paragraphs.back().shapedGlyphs.back().advance }
+					   : Vector2f{ layout->paragraphs.front().shapedGlyphs.back().position +
+								   layout->paragraphs.front().shapedGlyphs.back().advance };
+		}
+
 		Uint32 maxStringIndex = 0;
 		Uint32 closestDist = std::numeric_limits<Uint32>::max();
 
@@ -991,8 +1141,7 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 			}
 		}
 
-		if ( layout->paragraphs.empty() && !layout->paragraphs.back().shapedGlyphs.empty() &&
-			 !layout->isRTL() && index >= maxStringIndex + 1 && msg ) {
+		if ( hasGlyphs && !layout->isRTL() && index >= maxStringIndex + 1 && msg ) {
 			Glyph metrics = msg->font->getGlyphByIndex( msg->glyphIndex, fontSize, bold, italic,
 														outlineThickness );
 			if ( string[msg->stringIndex] == '\t' ) {
@@ -1059,6 +1208,17 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 								  const Uint32& tabWidth, const Float& outlineThickness,
 								  std::optional<Float> tabOffset, Uint32 textDrawHints,
 								  TextDirection direction ) {
+	return findCharacterFromPos( pos, returnNearest, font, fontSize, string, style, tabWidth,
+								 outlineThickness, tabOffset, textDrawHints, direction,
+								 LineWrapMode::NoWrap, 0.f );
+}
+
+Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font* font,
+								  const Uint32& fontSize, const String& string, const Uint32& style,
+								  const Uint32& tabWidth, const Float& outlineThickness,
+								  std::optional<Float> tabOffset, Uint32 textDrawHints,
+								  TextDirection direction, LineWrapMode lineWrapMode,
+								  Float maxWrapWidth ) {
 	if ( NULL == font )
 		return 0;
 
@@ -1080,15 +1240,16 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 #ifdef EE_TEXT_SHAPER_ENABLED
 	if ( TextShaperEnabled && font->getType() == FontType::TTF &&
 		 !canSkipShaping( textDrawHints ) ) {
-		auto layout = TextLayout::layout( string, font, fontSize, style, tabWidth, outlineThickness,
-										  tabOffset, 0, direction );
+		auto layout =
+			TextLayout::layout( string, font, fontSize, style, tabWidth, outlineThickness,
+								tabOffset, textDrawHints, direction, lineWrapMode, maxWrapWidth );
 
-		int sgs;
+		int sgs = 0;
 
 		if ( pos.x < 0 )
 			return layout->isRTL() ? tSize : 0;
 
-		Float charLeft, charTop, charBottom, charRight;
+		Float charLeft = 0, charTop = 0, charBottom = 0, charRight = 0;
 		for ( const ShapedTextParagraph& sp : layout->paragraphs ) {
 			sgs = sp.shapedGlyphs.size();
 			if ( sgs == 0 )
@@ -1100,7 +1261,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 				charLeft = sg->position.x;
 				charTop = sg->position.y;
 				charBottom = charTop + vspace;
-				charRight = charLeft + sg->advance.x;
+				charRight = sg->position.x + sg->advance.x;
 
 				// Expand bounds over the whole cluster (multiple glyphs for one string index)
 				while ( i + 1 < sgs && sp.shapedGlyphs[i + 1].stringIndex == sg->stringIndex ) {
@@ -1137,6 +1298,10 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 							return findNextInsertionIndex();
 						}
 					}
+				}
+
+				if ( i == sgs - 1 && fpos.x > charRight ) {
+					return tSize;
 				}
 
 				if ( returnNearest ) {
@@ -2595,9 +2760,10 @@ Uint32 Text::getVisualLineCount() {
 void Text::forEachVisualLine( const VisualLineCallback& callback ) {
 	ensureVisualLinesUpdate();
 	for ( size_t i = 0; i < mVisualLines.size(); ++i ) {
-		const auto& vl = mVisualLines[i];
-		const auto& lw = mLinesWidth[i];
-		callback( i, vl, lw );
+		auto vl = mVisualLines[i];
+		auto vle = i + 1 < mVisualLines.size() ? mVisualLines[i + 1] : mString.size();
+		auto lw = mLinesWidth[i];
+		callback( i, vl, vle, lw );
 	}
 }
 

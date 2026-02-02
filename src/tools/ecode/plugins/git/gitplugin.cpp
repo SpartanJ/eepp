@@ -1444,11 +1444,11 @@ void GitPlugin::buildSidePanelTab() {
 	#git_status_tree ScrollBar:focus-within {
 		opacity: 1;
 	}
-	.git_highlight_style > treeview::cell::text {
+	.git_highlight_style > treeview::cell {
 		color: %s;
 	}
-	treeview::row:selected .git_highlight_style > treeview::cell::text,
-	treeview::row:selected .git_highlight_style > treeview::cell::text {
+	treeview::row:selected .git_highlight_style > treeview::cell,
+	treeview::row:selected .git_highlight_style > treeview::cell {
 		color: var(--list-row-active);
 		tint: var(--list-row-active);
 	}

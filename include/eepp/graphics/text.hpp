@@ -356,9 +356,9 @@ class EE_API Text {
 	Uint32 getVisualLineCount();
 
 	/** Callback type for iterating over visual lines.
-	 * Parameters: visual line index, start char index, line width
+	 * Parameters: visual line index, start char index, end char index (exclusive), line width
 	 */
-	using VisualLineCallback = std::function<void( size_t, size_t, Float )>;
+	using VisualLineCallback = std::function<void( size_t, size_t, size_t, Float )>;
 
 	/** Iterates over each visual line, calling the callback with line info.
 	 * This is useful for selection drawing and other operations that need visual line info.
@@ -467,6 +467,21 @@ class EE_API Text {
 
 	/** Ensures visual line info is up to date. */
 	void ensureVisualLinesUpdate();
+
+	static Vector2f findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
+									  const String& string, const Uint32& style,
+									  const Uint32& tabWidth, const Float& outlineThickness,
+									  std::optional<Float> tabOffset, bool allowNewLine,
+									  Uint32 textHints, TextDirection direction,
+									  LineWrapMode lineWrapMode, Float maxWrapWidth );
+
+	static Int32 findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font* font,
+									   const Uint32& fontSize, const String& string,
+									   const Uint32& style, const Uint32& tabWidth,
+									   const Float& outlineThickness,
+									   std::optional<Float> tabOffset, Uint32 textHints,
+									   TextDirection direction, LineWrapMode lineWrapMode,
+									   Float maxWrapWidth );
 };
 
 }} // namespace EE::Graphics

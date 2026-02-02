@@ -1088,3 +1088,52 @@ UTEST( FontRendering, TextHardWrap ) {
 		runTest();
 	}
 }
+
+UTEST( FontRendering, TextSoftWrapPos ) {
+	const auto runTest = [&]() {
+		UIApplication app(
+			WindowSettings( 1024, 768, "eepp - Text Soft Wrap Pos", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ),
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+		FontTrueType* font = FontTrueType::New( "DejaVuSansMono" );
+		font->loadFromFile( "../assets/fonts/DejaVuSansMono.ttf" );
+
+		Text text;
+		text.setFont( font );
+		text.setFontSize( 20 );
+		text.setString( "This is a long string that should wrap when the width is restricted." );
+		text.setColor( Color::White );
+		text.setLineWrapMode( LineWrapMode::Word );
+		text.setMaxWrapWidth( 200.f );
+
+		Vector2f pos = text.findCharacterPos( 30 );
+		EXPECT_GT( pos.y, 0 );
+
+		Float vspace = text.getFont()->getLineSpacing( text.getCharacterSize() );
+		Vector2i queryPos( 10, (int)vspace + 5 );
+		Int32 foundIndex = text.findCharacterFromPos( queryPos );
+
+		EXPECT_GT( foundIndex, 14 );
+
+		Vector2f foundPos = text.findCharacterPos( foundIndex );
+		EXPECT_GT( foundPos.y, 0 );
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+
+		UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
+		runTest();
+	}
+}

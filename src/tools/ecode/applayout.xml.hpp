@@ -84,18 +84,18 @@ StatusBar > #doc_info {
 #search_replace.error {
 	border-color: #ff4040;
 }
-TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(2) > tableview::cell::text,
-TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(3) > tableview::cell::text {
+TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(2),
+TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(3) {
 	color: var(--font-hint);
 }
-TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(2) > tableview::cell::text,
-TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(3) > tableview::cell::text {
+TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(2),
+TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(3) {
 	color: var(--list-row-active)
 }
 .search_tree treeview::cell {
 	font-family: monospace;
 }
-.search_tree treeview::row:selected treeview::cell::text {
+.search_tree treeview::row:selected treeview::cell {
 	color: var(--font);
 }
 .search_tree treeview::row:selected treeview::cell::expander {
@@ -397,30 +397,30 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 .custom_output_parser_cont > .capture_positions_cont > * {
 	padding: 2dp;
 }
-.theme-error > tableview::cell::text,
-.theme-error > treeview::cell::text,
-.theme-error > listview::cell::text,
+.theme-error > tableview::cell,
+.theme-error > treeview::cell,
+.theme-error > listview::cell,
 .error {
 	color: var(--theme-error);
 }
 
-.theme-warning > tableview::cell::text,
-.theme-warning > treeview::cell::text,
-.theme-warning > listview::cell::text,
+.theme-warning > tableview::cell,
+.theme-warning > treeview::cell,
+.theme-warning > listview::cell,
 .warning {
 	color: var(--theme-warning);
 }
 
-.theme-success > tableview::cell::text,
-.theme-success > treeview::cell::text,
-.theme-success > listview::cell::text,
+.theme-success > tableview::cell,
+.theme-success > treeview::cell,
+.theme-success > listview::cell,
 .success {
 	color: var(--theme-success);
 }
 
-.theme-none > tableview::cell::text,
-.theme-none > treeview::cell::text,
-.theme-none > listview::cell::text,
+.theme-none > tableview::cell,
+.theme-none > treeview::cell,
+.theme-none > listview::cell,
 .none {
 	color: #d48838;
 }
@@ -447,10 +447,8 @@ Anchor.error:hover {
 #build_output_issues TableView::cell.theme-error > TableView::cell::icon {
 	tint: var(--theme-error);
 }
-#build_output_issues TableView::row:selected TableView::cell.theme-error > TableView::cell::text {
+#build_output_issues TableView::row:selected TableView::cell.theme-error > TableView::cell {
 	color: var(--list-row-active);
-}
-#build_output_issues TableView::row:selected TableView::cell.theme-error > TableView::cell::icon {
 	tint: var(--list-row-active);
 }
 .texture-preview {

@@ -4486,8 +4486,8 @@ void App::init( InitParameters& params ) {
 		}
 
 		std::string panelUI( String::format( R"css(
-		#panel treeview > treeview::row > treeview::cell > treeview::cell::text,
-		#panel treeview > treeview::row > table::cell > table::cell::text {
+		#panel treeview > treeview::row > treeview::cell,
+		#panel treeview > treeview::row > table::cell {
 			font-size: %s;
 		}
 		)css",
