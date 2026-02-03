@@ -4701,7 +4701,7 @@ String UICodeEditor::checkMouseOverLink( const Vector2i& position, bool checkMod
 	if ( !mInteractiveLinks || ( checkModifiers && !getInput()->isKeyModPressed() ) )
 		return resetLinkOver( position );
 
-	TextPosition pos( resolveScreenPosition( position.asFloat(), false ) );
+	TextPosition pos( resolveScreenPosition( position.asFloat() ) );
 	if ( pos.line() >= (Int64)mDoc->linesCount() )
 		return resetLinkOver( position );
 

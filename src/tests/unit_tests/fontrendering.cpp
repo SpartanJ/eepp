@@ -1089,6 +1089,46 @@ UTEST( FontRendering, TextHardWrap ) {
 	}
 }
 
+UTEST( FontRendering, UITextViewWrappedSelection ) {
+	const auto runTest = [&]() {
+		UIApplication app(
+			WindowSettings( 1024, 650, "eepp - TextView Wrapped Selection", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ),
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(),
+									 1.5f ) );
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+		std::string buffer;
+		FileSystem::fileGet( "assets/textfiles/lorem-ipsum.uext", buffer );
+		auto textView = UITextView::New();
+		textView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
+		textView->setPixelsSize( app.getUI()->getPixelsSize() );
+		textView->setText( buffer );
+		textView->setWordWrap( true );
+		textView->setTextSelection( true );
+		textView->setSelection( { 51, 286 } );
+		SceneManager::instance()->update();
+		SceneManager::instance()->draw();
+		compareImages( utest_state, utest_result, app.getWindow(),
+					   "eepp-textview-wrapped-selection" );
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+
+		UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
+		runTest();
+	}
+}
+
 UTEST( FontRendering, TextSoftWrapPos ) {
 	const auto runTest = [&]() {
 		UIApplication app(
@@ -1109,16 +1149,16 @@ UTEST( FontRendering, TextSoftWrapPos ) {
 		text.setMaxWrapWidth( 200.f );
 
 		Vector2f pos = text.findCharacterPos( 30 );
-		EXPECT_GT( pos.y, 0 );
+		EXPECT_GT( pos.y, 0.f );
 
 		Float vspace = text.getFont()->getLineSpacing( text.getCharacterSize() );
 		Vector2i queryPos( 10, (int)vspace + 5 );
 		Int32 foundIndex = text.findCharacterFromPos( queryPos );
 
-		EXPECT_GT( foundIndex, 14 );
+		EXPECT_GT( foundIndex, (Int32)14 );
 
 		Vector2f foundPos = text.findCharacterPos( foundIndex );
-		EXPECT_GT( foundPos.y, 0 );
+		EXPECT_GT( foundPos.y, 0.f );
 	};
 
 	UTEST_PRINT_STEP( "Text Shaper disabled" );
@@ -1136,4 +1176,83 @@ UTEST( FontRendering, TextSoftWrapPos ) {
 		BoolScopedOp op2( Text::TextShaperOptimizations, false );
 		runTest();
 	}
+}
+
+UTEST( FontRendering, TextSelection ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 650, "eepp - Text Selection", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ) );
+	ASSERT_TRUE_MSG( win->isOpen(), "Failed to create Window" );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	Text::TextShaperEnabled = false;
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	bool loaded = font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( loaded );
+	FontFamily::loadFromRegular( font );
+
+	FontStyleConfig config;
+	config.Font = font;
+	config.CharacterSize = 20;
+	config.FontColor = Color::Black;
+	config.Style = Text::Regular;
+
+	String txt( "Line 1\nLine 2 is longer\nLine 3" );
+
+	Text text;
+	text.setStyleConfig( config );
+	text.setString( txt );
+
+	// Test 1: Single line selection (Line 1)
+	{
+		std::vector<Rectf> rects = text.getSelectionRects( 0, 4 ); // "Line"
+		EXPECT_EQ( 1ul, rects.size() );
+		if ( !rects.empty() ) {
+			EXPECT_EQ( 0, rects[0].Top );
+			EXPECT_GT( rects[0].getWidth(), 0 );
+			EXPECT_EQ( text.findCharacterPos( 0 ).x, rects[0].Left );
+			EXPECT_EQ( text.findCharacterPos( 4 ).x, rects[0].Right );
+		}
+	}
+
+	// Test 2: Multi-line selection (Line 1 to Line 2)
+	{
+		// "Line 1\nLine 2" -> Indices: "Line 1" (0-5), "\n" (6), "Line 2" (7-12)
+		// Select from index 2 ("n" in "Line 1") to index 9 ("i" in "Line 2")
+		std::vector<Rectf> rects = text.getSelectionRects( 2, 9 );
+		EXPECT_EQ( 2ul, rects.size() );
+		if ( rects.size() >= 2 ) {
+			// First line rect: From index 2 to end of line 1
+			EXPECT_EQ( text.findCharacterPos( 2 ).x, rects[0].Left );
+			EXPECT_GT( rects[0].Right, rects[0].Left );
+
+			// Second line rect: From start of line 2 to index 9
+			EXPECT_EQ( 0, rects[1].Left ); // Left aligned
+			EXPECT_EQ( text.findCharacterPos( 9 ).x, rects[1].Right );
+		}
+	}
+
+	// Test 3: Full selection
+	{
+		std::vector<Rectf> rects = text.getSelectionRects( 0, txt.size() );
+		EXPECT_EQ( 3ul, rects.size() );
+	}
+
+	// Test 4: Soft wrap
+	{
+		text.setLineWrapMode( LineWrapMode::Word );
+		text.setMaxWrapWidth( 50 ); // Force wrap
+
+		text.setString( "This is a very long string that should wrap multiple times." );
+		// Ensure layout is updated
+		text.getVisualLineCount();
+
+		EXPECT_GT( text.getVisualLineCount(), (Uint32)1 );
+
+		std::vector<Rectf> rects = text.getSelectionRects( 0, text.getString().size() );
+		EXPECT_EQ( (size_t)text.getVisualLineCount(), rects.size() );
+	}
+
+	Engine::destroySingleton();
 }

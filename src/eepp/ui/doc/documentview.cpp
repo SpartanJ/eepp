@@ -272,7 +272,8 @@ TextRange DocumentView::getVisibleIndexRange( VisibleIndex visibleIndex ) const 
 	Int64 idx = static_cast<Int64>( visibleIndex );
 	auto start = getVisibleIndexPosition( visibleIndex );
 	auto end = start;
-	if ( idx + 1 < static_cast<Int64>( mVisibleLines.size() ) &&
+	eeASSERT( visibleIndex >= static_cast<VisibleIndex>( 0 ) );
+	if ( idx >= 0 && idx + 1 < static_cast<Int64>( mVisibleLines.size() ) &&
 		 mVisibleLines[idx + 1].line() == start.line() ) {
 		end.setColumn( mVisibleLines[idx + 1].column() );
 	} else {

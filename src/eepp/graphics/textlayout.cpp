@@ -545,6 +545,8 @@ void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
 							 const Float& outlineThickness, Float hspace ) {
 	std::size_t paragraphCount = result.paragraphs.size();
 
+	result.size = Sizef::Zero;
+
 	for ( std::size_t paragraphIdx = 0; paragraphIdx < paragraphCount; paragraphIdx++ ) {
 		ShapedTextParagraph& sp = result.paragraphs[paragraphIdx];
 		std::size_t shapedGlyphCount = sp.shapedGlyphs.size();
@@ -614,6 +616,9 @@ void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
 		}
 
 		if ( sp.wrapInfo.wrapsWidth.empty() ) {
+			if ( shapedGlyphCount )
+				maxSize = sp.shapedGlyphs.back().position + sp.shapedGlyphs.back().advance;
+
 			// Restore the original wraps which are the paragraph wraps (no wrapping occurred)
 			sp.wrapInfo.wrapsWidth = std::move( wrapsWidth );
 		} else if ( !sp.shapedGlyphs.empty() ) {
@@ -622,9 +627,10 @@ void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
 		}
 
 		sp.size = maxSize;
-	}
 
-	result.size = result.paragraphs[result.paragraphs.size() - 1].size;
+		result.size = { std::max( sp.size.x, result.size.x ),
+						std::max( sp.size.y, result.size.y ) };
+	}
 }
 
 } // namespace EE::Graphics

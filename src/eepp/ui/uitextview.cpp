@@ -323,6 +323,9 @@ UITextView* UITextView::setSelectionBackColor( const Color& color ) {
 }
 
 void UITextView::autoWrap() {
+	mTextCache->setLineWrapMode( mFlags & UI_WORD_WRAP ? LineWrapMode::Word
+													   : LineWrapMode::NoWrap );
+
 	if ( mFlags & UI_WORD_WRAP ) {
 		wrapText( mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right );
 	}
@@ -333,7 +336,8 @@ void UITextView::wrapText( const Uint32& maxWidth ) {
 		mTextCache->setString( mString );
 	}
 
-	mTextCache->hardWrapText( maxWidth );
+	mTextCache->setLineWrapMode( LineWrapMode::Word );
+	mTextCache->setMaxWrapWidth( maxWidth );
 	invalidateDraw();
 }
 
@@ -564,46 +568,26 @@ void UITextView::drawSelection( Text* textCache ) {
 			return;
 		}
 
-		Int32 lastEnd;
-		Vector2f initPos, endPos;
-
 		if ( mLastSelCurInit != selCurInit() || mLastSelCurEnd != selCurEnd() ) {
-			mSelPosCache.clear();
+			mSelRectsCache.clear();
 			mLastSelCurInit = selCurInit();
 			mLastSelCurEnd = selCurEnd();
-
-			do {
-				initPos = textCache->findCharacterPos( init );
-				lastEnd = textCache->getString().find_first_of( '\n', init );
-
-				if ( lastEnd < end && -1 != lastEnd ) {
-					endPos = textCache->findCharacterPos( lastEnd );
-					init = lastEnd + 1;
-				} else {
-					endPos = textCache->findCharacterPos( end );
-					lastEnd = end;
-				}
-
-				mSelPosCache.push_back( SelPosCache( initPos, endPos ) );
-			} while ( end != lastEnd );
+			mSelRectsCache = mTextCache->getSelectionRects( selCurInit(), selCurEnd() );
 		}
 
-		if ( !mSelPosCache.empty() ) {
+		if ( !mSelRectsCache.empty() ) {
+			Vector2f initPos, endPos;
 			Primitives P;
 			P.setColor( mFontStyleConfig.FontSelectionBackColor );
-			Float vspace = textCache->getFont()->getLineSpacing( mTextCache->getCharacterSize() );
-			Float height = mSize.y - mPaddingPx.Top - mPaddingPx.Bottom;
-			Float offsetY = eefloor( ( height - mTextCache->getTextHeight() ) * 0.5f );
+			for ( size_t i = 0; i < mSelRectsCache.size(); i++ ) {
+				initPos = mSelRectsCache[i].getPosition();
+				endPos = mSelRectsCache[i].getPosition() + mSelRectsCache[i].getSize();
 
-			for ( size_t i = 0; i < mSelPosCache.size(); i++ ) {
-				initPos = mSelPosCache[i].initPos;
-				endPos = mSelPosCache[i].endPos;
-
-				P.drawRectangle(
-					Rectf( mScreenPos.x + initPos.x + mRealAlignOffset.x + mPaddingPx.Left,
-						   mScreenPos.y + initPos.y + offsetY + mPaddingPx.Top,
-						   mScreenPos.x + endPos.x + mRealAlignOffset.x + mPaddingPx.Left,
-						   mScreenPos.y + endPos.y + offsetY + mPaddingPx.Top + vspace ) );
+				P.drawRectangle( Rectf(
+					mScreenPos.x + initPos.x + mRealAlignOffset.x + mPaddingPx.Left,
+					mScreenPos.y + initPos.y + mRealAlignOffset.y + mPaddingPx.Top,
+					mScreenPos.x + endPos.x + mRealAlignOffset.x + mPaddingPx.Left,
+					mScreenPos.y + endPos.y + mRealAlignOffset.y + mPaddingPx.Top ) );
 			}
 		}
 	}
@@ -635,6 +619,15 @@ void UITextView::setFontStyleConfig( const UIFontStyleConfig& fontStyleConfig ) 
 	setOutlineColor( fontStyleConfig.getOutlineColor() );
 	setFontStyle( fontStyleConfig.getFontStyle() );
 	onFontStyleChanged();
+}
+
+std::pair<int, int> UITextView::getSelection() const {
+	return { mSelCurInit, mSelCurEnd };
+}
+
+void UITextView::setSelection( std::pair<int, int> sel ) {
+	selCurInit( std::clamp( sel.first, 0, (Int32)mString.size() ) );
+	selCurEnd( std::clamp( sel.second, 0, (Int32)mString.size() ) );
 }
 
 void UITextView::selCurInit( const Int32& init ) {

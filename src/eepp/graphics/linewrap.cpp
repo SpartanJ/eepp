@@ -74,7 +74,7 @@ LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, Uin
 	LineWrapType info;
 	info.wraps.push_back( 0 );
 
-	if ( string.empty() || nullptr == font || mode == LineWrapMode::NoWrap || maxWidth == 0 ) {
+	if ( string.empty() || nullptr == font ) {
 		if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
 			info.wrapsWidth.push_back( 0 );
 		}
@@ -143,6 +143,7 @@ LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, Uin
 	size_t lastSpace = 0;
 	Uint32 prevChar = 0;
 	size_t idx = 0;
+	bool hasWrap = maxWidth > 0 && mode != LineWrapMode::NoWrap;
 
 	for ( const auto& curChar : string ) {
 		if ( curChar == '\n' ) {
@@ -175,7 +176,7 @@ LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, Uin
 
 		xoffset += w;
 
-		if ( xoffset > maxWidth ) {
+		if ( hasWrap && xoffset > maxWidth ) {
 			if ( mode == LineWrapMode::Word && lastSpace ) {
 				if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
 					info.wrapsWidth.push_back( std::ceil( lastWordWrapWidth ) );

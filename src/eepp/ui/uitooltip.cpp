@@ -159,7 +159,7 @@ void UITooltip::draw() {
 		UINode::draw();
 
 		if ( mTextCache->getTextWidth() ) {
-			mTextCache->setAlign( getFlags() );
+			mTextCache->setAlign( getHorizontalAlign() | getVerticalAlign() );
 			mTextCache->draw( std::trunc( mScreenPos.x ) + (int)mAlignOffset.x,
 							  std::trunc( mScreenPos.y ) + (int)mAlignOffset.y, Vector2f::One, 0.f,
 							  getBlendMode() );
@@ -615,6 +615,9 @@ void UITooltip::onAlphaChange() {
 }
 
 void UITooltip::autoWrap() {
+	mTextCache->setLineWrapMode( mFlags & UI_WORD_WRAP ? LineWrapMode::Word
+													   : LineWrapMode::NoWrap );
+
 	if ( mFlags & UI_WORD_WRAP && !mMaxWidthEq.empty() ) {
 		Float length =
 			lengthFromValue( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
@@ -627,7 +630,8 @@ void UITooltip::wrapText( const Uint32& maxWidth ) {
 		mTextCache->setString( mStringBuffer );
 	}
 
-	mTextCache->hardWrapText( maxWidth );
+	mTextCache->setLineWrapMode( LineWrapMode::Word );
+	mTextCache->setMaxWrapWidth( maxWidth );
 	invalidateDraw();
 }
 

@@ -124,6 +124,10 @@ class EE_API UITextView : public UIWidget {
 
 	bool isWordWrap() const;
 
+	std::pair<int, int> getSelection() const;
+
+	void setSelection( std::pair<int, int> sel );
+
   protected:
 	Text* mTextCache;
 	String mString;
@@ -132,13 +136,7 @@ class EE_API UITextView : public UIWidget {
 	Int32 mSelCurInit;
 	Int32 mSelCurEnd;
 	Uint32 mTextDrawHints{ 0 };
-	struct SelPosCache {
-		SelPosCache( Vector2f ip, Vector2f ep ) : initPos( ip ), endPos( ep ) {}
-
-		Vector2f initPos;
-		Vector2f endPos;
-	};
-	std::vector<SelPosCache> mSelPosCache;
+	std::vector<Rectf> mSelRectsCache;
 	Int32 mLastSelCurInit;
 	Int32 mLastSelCurEnd;
 	bool mSelecting;

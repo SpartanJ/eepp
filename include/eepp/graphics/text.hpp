@@ -368,6 +368,11 @@ class EE_API Text {
 	/** Finds the visual line index that contains the given character index. */
 	size_t findVisualLineFromCharIndex( size_t charIndex );
 
+	/** @return A list of rectangles that cover the selection of the string, each rectangle
+	 * has the line spacing height and covers the width of the selection.
+	 */
+	std::vector<Rectf> getSelectionRects( size_t selectionStartIndex, size_t selectionEndIndex );
+
   protected:
 	struct VertexCoords {
 		Vector2f texCoords;
@@ -383,7 +388,7 @@ class EE_API Text {
 	mutable bool mColorsNeedUpdate : 1 { false };
 	mutable bool mContainsColorEmoji : 1 { false };
 	mutable bool mVisualLinesNeedUpdate : 1 { true };
-	mutable bool mCachedWidthNeedUpdate: 1 { true };
+	mutable bool mCachedWidthNeedUpdate : 1 { true };
 	bool mTabStops : 1 { false };
 	bool mLineWrapKeepIndentation : 1 { false };
 

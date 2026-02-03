@@ -8,6 +8,7 @@
 #include <eepp/graphics/renderer/opengl.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <limits>
@@ -1938,21 +1939,11 @@ void Text::ensureGeometryUpdate() {
 		}
 	}
 
-	// Helper lambda to check if index starts a soft-wrapped line (not a real newline)
 	auto isSoftWrapLineStart = [this, &useSoftWrap, &currentVisualLine]( Int64 idx ) -> bool {
-		if ( !useSoftWrap || currentVisualLine + 1 >= mVisualLines.size() )
-			return false;
-		// Check if this is the start of the next visual line
-		if ( idx == mVisualLines[currentVisualLine + 1] ) {
-			// It's a soft wrap if the previous char wasn't a newline
-			if ( idx > 0 && mString[idx - 1] != '\n' ) {
-				return true;
-			}
-		}
-		return false;
+		return !( !useSoftWrap || currentVisualLine + 1 >= mVisualLines.size() ) &&
+			   idx == mVisualLines[currentVisualLine + 1] && idx > 0 && mString[idx] != '\n';
 	};
 
-	// Helper to update alignment for current visual line
 	auto updateAlignmentForLine = [this, &centerDiffX, &line]() {
 		switch ( Font::getHorizontalAlign( mAlign ) ) {
 			case TEXT_ALIGN_CENTER:
@@ -2179,6 +2170,8 @@ void Text::ensureGeometryUpdate() {
 	// For soft wrap, the width cache was already handled by ensureVisualLinesUpdate
 	if ( useSoftWrap && mCachedWidthNeedUpdate ) {
 		mCachedWidthNeedUpdate = false;
+		if ( !mLinesWidth.empty() )
+			mCachedWidth = *std::max_element( mLinesWidth.begin(), mLinesWidth.end() );
 	}
 }
 
@@ -2783,6 +2776,74 @@ size_t Text::findVisualLineFromCharIndex( size_t charIndex ) {
 		return visualLinesSize - 1;
 	}
 	return 0;
+}
+
+std::vector<Rectf> Text::getSelectionRects( size_t selectionStartIndex, size_t selectionEndIndex ) {
+	std::vector<Rectf> rects;
+
+	if ( selectionStartIndex == selectionEndIndex || !mFontStyleConfig.Font )
+		return rects;
+
+	if ( selectionStartIndex > selectionEndIndex )
+		std::swap( selectionStartIndex, selectionEndIndex );
+
+	ensureVisualLinesUpdate();
+	cacheWidth();
+
+	size_t startLine = findVisualLineFromCharIndex( selectionStartIndex );
+	size_t endLine = findVisualLineFromCharIndex( selectionEndIndex );
+	Float hspace =
+		mFontStyleConfig.Font
+			->getGlyph( ' ', mFontStyleConfig.CharacterSize, mFontStyleConfig.Style & Text::Bold,
+						mFontStyleConfig.Style & Text::Italic )
+			.advance;
+	Float vspace = static_cast<Float>(
+		mFontStyleConfig.Font->getLineSpacing( mFontStyleConfig.CharacterSize ) );
+
+	for ( size_t i = startLine; i <= endLine; ++i ) {
+		Float top = i * vspace;
+		Float bottom = top + vspace;
+		Float left = 0;
+		Float right = 0;
+		Float centerDiffX = 0;
+
+		if ( i < mLinesWidth.size() ) {
+			switch ( Font::getHorizontalAlign( mAlign ) ) {
+				case TEXT_ALIGN_CENTER:
+					centerDiffX = std::trunc( ( mCachedWidth - mLinesWidth[i] ) * 0.5f );
+					break;
+				case TEXT_ALIGN_RIGHT:
+					centerDiffX = mCachedWidth - mLinesWidth[i];
+					break;
+			}
+		}
+
+		// Calculate Left
+		if ( i == startLine ) {
+			left = findCharacterPos( selectionStartIndex ).x;
+		} else {
+			left = centerDiffX;
+		}
+
+		// Calculate Right
+		if ( i == endLine ) {
+			// If it's a newline character, we select a small chunk to indicate the newline
+			// selection
+			if ( selectionEndIndex < mString.size() && mString[selectionEndIndex] == '\n' ) {
+				right = findCharacterPos( selectionEndIndex ).x + hspace;
+			} else {
+				right = findCharacterPos( selectionEndIndex ).x;
+			}
+		} else {
+			right = centerDiffX + ( i < mLinesWidth.size() ? mLinesWidth[i] : 0 );
+		}
+
+		if ( left != right ) {
+			rects.push_back( Rectf( left, top, right, bottom ) );
+		}
+	}
+
+	return rects;
 }
 
 }} // namespace EE::Graphics

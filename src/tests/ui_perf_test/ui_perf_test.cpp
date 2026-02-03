@@ -161,8 +161,11 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 		auto ll = UILinearLayout::NewVertical();
 		ll->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+		auto editor = UITextView::New();
+		/*
 		auto editor = UITextEdit::New();
 		editor->setShowLineNumber( false );
+		*/
 		editor->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 		editor->setParent( ll );
 		editor->setFontSize( PixelDensity::dpToPx( 12 ) );
@@ -170,7 +173,8 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 			FontTrueType::New( "arabic", "unit_tests/assets/fonts/NotoNaskhArabic-Regular.ttf" ) );
 		FontManager::instance()->addFallbackFont( FontTrueType::New(
 			"NotoSerifBengali-Regular", "unit_tests/assets/fonts/NotoSansBengali-Regular.ttf" ) );
-		editor->setLineWrapMode( LineWrapMode::Word );
+		editor->setWordWrap( true );
+		// editor->setLineWrapMode( LineWrapMode::Word );
 		// editor->setFont( FontManager::instance()->getByName( "monospace" ) );
 		// editor->loadFromFile( "unit_tests/assets/textfiles/test-arabic-simple.uext" );
 		// editor->loadFromFile( "unit_tests/assets/textfiles/test-arabic.uext" );
@@ -179,7 +183,11 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		// editor->loadFromFile( "unit_tests/assets/textformat/english.utf8.lf.nobom.txt" );
 		// editor->loadFromFile( "unit_tests/assets/textfiles/test-arabic-mixed.uext" );
 		// editor->loadFromFile( "unit_tests/assets/textfiles/test-mixed-text.uext" );
-		editor->loadFromFile( "unit_tests/assets/textfiles/lorem-ipsum.uext" );
+		// editor->loadFromFile( "unit_tests/assets/textfiles/lorem-ipsum.uext" );
+		std::string buffer;
+		FileSystem::fileGet( "unit_tests/assets/textfiles/lorem-ipsum.uext", buffer );
+		editor->setText( buffer );
+		editor->setTextSelection( true );
 
 		editor->setFont( app.getUI()->getUIThemeManager()->getDefaultFont() );
 		editor->on( Event::KeyUp, [&]( const Event* event ) {
