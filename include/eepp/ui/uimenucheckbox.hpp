@@ -9,8 +9,6 @@ class EE_API UIMenuCheckBox : public UIMenuItem {
   public:
 	static UIMenuCheckBox* New();
 
-	UIMenuCheckBox();
-
 	virtual ~UIMenuCheckBox();
 
 	virtual Uint32 getType() const;
@@ -36,6 +34,8 @@ class EE_API UIMenuCheckBox : public UIMenuItem {
 	bool mActive;
 	UISkin* mSkinActive;
 	UISkin* mSkinInactive;
+
+	UIMenuCheckBox();
 
 	Uint32 onMessage( const NodeMessage* msg );
 

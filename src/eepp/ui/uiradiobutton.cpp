@@ -82,7 +82,7 @@ void UIRadioButton::onAutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( getSize().getWidth() == 0 ) {
 			setInternalPixelsWidth(
-				(int)mTextCache->getTextWidth() + mActiveButton->getPixelsSize().getWidth() +
+				(int)mTextCache.getTextWidth() + mActiveButton->getPixelsSize().getWidth() +
 				PixelDensity::dpToPx( mTextSeparation ) + mPaddingPx.Left + mPaddingPx.Right );
 		}
 
@@ -93,13 +93,13 @@ void UIRadioButton::onAutoSize() {
 	}
 
 	if ( mWidthPolicy == SizePolicy::WrapContent ) {
-		setInternalPixelsWidth( (int)mTextCache->getTextWidth() + mPaddingPx.Left +
+		setInternalPixelsWidth( (int)mTextCache.getTextWidth() + mPaddingPx.Left +
 								mPaddingPx.Right + mActiveButton->getPixelsSize().getWidth() +
 								PixelDensity::dpToPx( mTextSeparation ) );
 	}
 
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
-		setInternalPixelsHeight( (int)mTextCache->getTextHeight() + mPaddingPx.Top +
+		setInternalPixelsHeight( (int)mTextCache.getTextHeight() + mPaddingPx.Top +
 								 mPaddingPx.Bottom );
 	}
 
@@ -239,7 +239,7 @@ void UIRadioButton::alignFix() {
 	switch ( Font::getHorizontalAlign( getFlags() ) ) {
 		case UI_HALIGN_CENTER:
 			mRealAlignOffset.x = (Float)( (Int32)( ( mSize.x - mPaddingPx.Left - mPaddingPx.Right -
-													 mTextCache->getTextWidth() -
+													 mTextCache.getTextWidth() -
 													 mActiveButton->getPixelsSize().getWidth() +
 													 PixelDensity::dpToPx( mTextSeparation ) ) /
 												   2.f ) ) +
@@ -248,7 +248,7 @@ void UIRadioButton::alignFix() {
 			break;
 		case UI_HALIGN_RIGHT:
 			mRealAlignOffset.x = ( (Float)mSize.x - mPaddingPx.Left - mPaddingPx.Right -
-								   (Float)mTextCache->getTextWidth() );
+								   (Float)mTextCache.getTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
 			mRealAlignOffset.x =

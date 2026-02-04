@@ -11,8 +11,6 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
   public:
 	static UIMenuSubMenu* New();
 
-	UIMenuSubMenu();
-
 	virtual ~UIMenuSubMenu();
 
 	virtual Uint32 getType() const;
@@ -40,6 +38,8 @@ class EE_API UIMenuSubMenu : public UIMenuItem {
 	UIWidget* mArrow;
 	Time mMaxTime;
 	Action* mCurWait;
+
+	UIMenuSubMenu();
 
 	virtual Uint32 onMouseOver( const Vector2i& pos, const Uint32& flags );
 

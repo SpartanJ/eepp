@@ -10,8 +10,6 @@ class EE_API UITextEdit : public UICodeEditor {
   public:
 	static UITextEdit* New();
 
-	UITextEdit();
-
 	virtual ~UITextEdit();
 
 	virtual Uint32 getType() const;
@@ -27,6 +25,8 @@ class EE_API UITextEdit : public UICodeEditor {
 	void setWordWrap( bool enabled );
 
   protected:
+	UITextEdit();
+
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual void drawCursor( const Vector2f& startScroll, const Float& lineHeight,

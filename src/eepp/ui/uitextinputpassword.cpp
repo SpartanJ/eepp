@@ -12,20 +12,16 @@ UITextInputPassword* UITextInputPassword::New() {
 
 UITextInputPassword::UITextInputPassword() :
 	UITextInput( "textinputpassword" ), mBulletCharacter( "●" ) {
-	mPassCache = Text::New();
-
 	updateFontStyleConfig();
 }
 
-UITextInputPassword::~UITextInputPassword() {
-	eeSAFE_DELETE( mPassCache );
-}
+UITextInputPassword::~UITextInputPassword() {}
 
 void UITextInputPassword::draw() {
 	if ( mVisible && 0.f != mAlpha ) {
 		UINode::draw();
 
-		if ( mPassCache->getTextWidth() ) {
+		if ( mPassCache.getTextWidth() ) {
 			drawSelection( mPassCache );
 
 			if ( isClipped() ) {
@@ -34,8 +30,8 @@ void UITextInputPassword::draw() {
 								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
 			}
 
-			mPassCache->setAlign( getFlags() );
-			mPassCache->draw(
+			mPassCache.setAlign( getFlags() );
+			mPassCache.draw(
 				std::trunc( mScreenPos.x ) + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
 				std::trunc( mScreenPos.y ) + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
 				Vector2f::One, 0.f, getBlendMode() );
@@ -64,17 +60,17 @@ void UITextInputPassword::draw() {
 	drawWaitingCursor();
 }
 
-Text* UITextInputPassword::getVisibleTextCache() const {
+Text& UITextInputPassword::getVisibleTextCache() {
 	return mPassCache;
 }
 
 void UITextInputPassword::updateText() {
-	updatePass( mTextCache->getString() );
+	updatePass( mTextCache.getString() );
 }
 
 void UITextInputPassword::updatePass( const String& pass ) {
-	if ( mBulletCharacter.size() == 1 && mPassCache->getFont()->getType() == FontType::TTF &&
-		 !static_cast<FontTrueType*>( mPassCache->getFont() )
+	if ( mBulletCharacter.size() == 1 && mPassCache.getFont()->getType() == FontType::TTF &&
+		 !static_cast<FontTrueType*>( mPassCache.getFont() )
 			  ->hasGlyph( mBulletCharacter.front() ) ) {
 		mBulletCharacter = "•";
 	}
@@ -84,7 +80,7 @@ void UITextInputPassword::updatePass( const String& pass ) {
 	for ( size_t i = 0; i < pass.size(); i++ )
 		newTxt += mBulletCharacter;
 
-	mPassCache->setString( newTxt );
+	mPassCache.setString( newTxt );
 }
 
 UITextView* UITextInputPassword::setText( const String& text ) {
@@ -95,7 +91,7 @@ UITextView* UITextInputPassword::setText( const String& text ) {
 	return this;
 }
 
-Text* UITextInputPassword::getPassCache() const {
+const Text& UITextInputPassword::getPassCache() const {
 	return mPassCache;
 }
 
@@ -108,12 +104,12 @@ void UITextInputPassword::setBulletCharacter( const String& bulletCharacter ) {
 }
 
 void UITextInputPassword::updateFontStyleConfig() {
-	mPassCache->setFontSize( mFontStyleConfig.CharacterSize );
-	mPassCache->setFont( mFontStyleConfig.getFont() );
-	mPassCache->setFillColor( mFontStyleConfig.getFontColor() );
-	mPassCache->setShadowColor( mFontStyleConfig.getFontShadowColor() );
-	mPassCache->setOutlineColor( mFontStyleConfig.getOutlineColor() );
-	mPassCache->setOutlineThickness( mFontStyleConfig.getOutlineThickness() );
+	mPassCache.setFontSize( mFontStyleConfig.CharacterSize );
+	mPassCache.setFont( mFontStyleConfig.getFont() );
+	mPassCache.setFillColor( mFontStyleConfig.getFontColor() );
+	mPassCache.setShadowColor( mFontStyleConfig.getFontShadowColor() );
+	mPassCache.setOutlineColor( mFontStyleConfig.getOutlineColor() );
+	mPassCache.setOutlineThickness( mFontStyleConfig.getOutlineThickness() );
 }
 
 void UITextInputPassword::onStateChange() {

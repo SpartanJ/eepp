@@ -111,8 +111,8 @@ void UITextInput::drawWaitingCursor() {
 		Primitives primitives;
 		primitives.setColor( Color( mFontStyleConfig.FontColor ).blendAlpha( mAlpha ) );
 		primitives.drawRectangle( Rectf(
-			cursor, Sizef( PixelDensity::dpToPx( 1 ), mTextCache->getFont()->getFontHeight(
-														  mTextCache->getCharacterSize() ) ) ) );
+			cursor, Sizef( PixelDensity::dpToPx( 1 ), mTextCache.getFont()->getFontHeight(
+														  mTextCache.getCharacterSize() ) ) ) );
 	}
 }
 
@@ -132,10 +132,10 @@ void UITextInput::draw() {
 	if ( mVisible && 0.f != mAlpha ) {
 		UINode::draw();
 
-		if ( mTextCache->getTextWidth() ) {
+		if ( mTextCache.getTextWidth() ) {
 			drawSelection( mTextCache );
-			mTextCache->setAlign( getFlags() );
-			mTextCache->draw(
+			mTextCache.setAlign( getFlags() );
+			mTextCache.draw(
 				std::trunc( mScreenPos.x ) + (int)mRealAlignOffset.x + (int)mPaddingPx.Left,
 				std::trunc( mScreenPos.y ) + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
 				Vector2f::One, 0.f, getBlendMode() );
@@ -201,7 +201,7 @@ void UITextInput::alignFix() {
 	UITextView::alignFix();
 
 	if ( mAllowEditing && Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT ) {
-		Float tW = getVisibleTextCache()->findCharacterPos( selCurInit() ).x;
+		Float tW = getVisibleTextCache().findCharacterPos( selCurInit() ).x;
 		mCurPos.x = tW;
 		mCurPos.y = 0;
 
@@ -240,7 +240,7 @@ void UITextInput::onThemeLoaded() {
 
 void UITextInput::onAutoSize() {
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
-		int minHeight = eemax<int>( mTextCache->getLineSpacing(),
+		int minHeight = eemax<int>( mTextCache.getLineSpacing(),
 									PixelDensity::dpToPxI( getSkinSize().getHeight() ) );
 		setInternalPixelsHeight( minHeight + mPaddingPx.Top + mPaddingPx.Bottom );
 	} else if ( ( mFlags & UI_AUTO_SIZE ) && 0 == getSize().getHeight() ) {
@@ -818,7 +818,7 @@ void UITextInput::updateIMELocation() {
 		return;
 	Vector2f cursor( eefloor( mScreenPos.x + mRealAlignOffset.x + mCurPos.x + mPaddingPx.Left ),
 					 mScreenPos.y + mRealAlignOffset.y + mCurPos.y + mPaddingPx.Top );
-	Float h = mTextCache->getFont()->getFontHeight( mTextCache->getCharacterSize() );
+	Float h = mTextCache.getFont()->getFontHeight( mTextCache.getCharacterSize() );
 	getUISceneNode()->getWindow()->getIME().setLocation( Rectf( cursor, { 0, h } ).asInt() );
 }
 

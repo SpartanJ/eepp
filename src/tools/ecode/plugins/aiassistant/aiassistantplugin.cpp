@@ -327,6 +327,11 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 			mApiKeys["openrouter"] = config.value( "openrouter_api_key", "" );
 		else if ( updateConfigFile )
 			config["openrouter_api_key"] = mApiKeys["openrouter"];
+
+		if ( config.contains( "moonshot_api_key" ) )
+			mApiKeys["moonshot"] = config.value( "moonshot_api_key", "" );
+		else if ( updateConfigFile )
+			config["moonshot_api_key"] = mApiKeys["moonshot"];
 	}
 
 	if ( mKeyBindings.empty() ) {
@@ -520,6 +525,8 @@ std::optional<std::string> AIAssistantPlugin::getApiKeyFromProvider( const std::
 		ret = getenv( "PERPLEXITY_API_KEY" );
 	} else if ( provider == "openrouter" ) {
 		ret = getenv( "OPENROUTER_API_KEY" );
+	} else if ( provider == "moonshot" ) {
+		ret = getenv( "MOONSHOT_API_KEY" );
 	}
 
 	if ( ret )

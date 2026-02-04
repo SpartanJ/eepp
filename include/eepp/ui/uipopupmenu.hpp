@@ -9,8 +9,6 @@ class EE_API UIPopUpMenu : public UIMenu {
   public:
 	static UIPopUpMenu* New();
 
-	UIPopUpMenu();
-
 	virtual ~UIPopUpMenu();
 
 	virtual Uint32 getType() const;
@@ -43,6 +41,8 @@ class EE_API UIPopUpMenu : public UIMenu {
 	Action* mHidingAction{ nullptr };
 	bool mCloseOnHide{ false };
 	bool mCloseSubMenusOnClose{ false };
+
+	UIPopUpMenu();
 };
 
 class EE_API ContextMenuEvent : public MouseEvent {

@@ -15,7 +15,7 @@ class EE_API UITextureViewer : public UIRelativeLayout {
   public:
 	static UITextureViewer* New();
 
-	~UITextureViewer();
+	virtual ~UITextureViewer();
 
   protected:
 	UIGridLayout* mGridLayout{ nullptr };
@@ -33,6 +33,7 @@ class EE_API UITextureViewer : public UIRelativeLayout {
 };
 
 } // namespace Tools
+
 }} // namespace EE::UI
 
 #endif // EE_UITEXTUREVIEWER_HPP

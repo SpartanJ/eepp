@@ -9,8 +9,6 @@ class EE_API UIMenuSeparator : public UIWidget {
   public:
 	static UIMenuSeparator* New();
 
-	UIMenuSeparator();
-
 	virtual ~UIMenuSeparator();
 
 	virtual Uint32 getType() const;
@@ -20,6 +18,8 @@ class EE_API UIMenuSeparator : public UIWidget {
 	virtual void setTheme( UITheme* Theme );
 
   protected:
+	UIMenuSeparator();
+
 };
 
 }} // namespace EE::UI

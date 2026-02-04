@@ -40,7 +40,6 @@ class EE_API UIStackLayout : public UILayout {
 
 	UIStackLayout();
 
-
 	explicit UIStackLayout( const std::string& tag );
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );

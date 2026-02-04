@@ -9,8 +9,6 @@ class EE_API UIMenuRadioButton : public UIMenuItem {
   public:
 	static UIMenuRadioButton* New();
 
-	UIMenuRadioButton();
-
 	virtual ~UIMenuRadioButton();
 
 	virtual Uint32 getType() const;
@@ -36,6 +34,8 @@ class EE_API UIMenuRadioButton : public UIMenuItem {
 	bool mActive;
 	UISkin* mSkinActive;
 	UISkin* mSkinInactive;
+
+	UIMenuRadioButton();
 
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 

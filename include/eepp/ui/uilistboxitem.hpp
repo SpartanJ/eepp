@@ -14,10 +14,6 @@ class EE_API UIListBoxItem : public UITextView {
 
 	static UIListBoxItem* NewWithTag( const std::string& tag );
 
-	UIListBoxItem();
-
-	UIListBoxItem( const std::string& tag );
-
 	virtual ~UIListBoxItem();
 
 	virtual Uint32 getType() const;
@@ -34,6 +30,10 @@ class EE_API UIListBoxItem : public UITextView {
 
   protected:
 	friend class UIItemContainer<UIListBox>;
+
+	UIListBoxItem();
+
+	UIListBoxItem( const std::string& tag );
 
 	virtual void onStateChange();
 

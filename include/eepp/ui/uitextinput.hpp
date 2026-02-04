@@ -19,10 +19,6 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 
 	static UITextInput* NewWithTag( const std::string& tag );
 
-	UITextInput();
-
-	explicit UITextInput( const std::string& tag );
-
 	virtual ~UITextInput();
 
 	virtual Uint32 getType() const;
@@ -149,6 +145,10 @@ class EE_API UITextInput : public UITextView, public TextDocument::Client {
 	Uint64 mLastExecuteEventId{ 0 };
 	String::HashType mLastCmdHash{ 0 };
 	HintDisplay mHintDisplay{ HintDisplay::Always };
+
+	UITextInput();
+
+	explicit UITextInput( const std::string& tag );
 
 	void resetWaitCursor();
 

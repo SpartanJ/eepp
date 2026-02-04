@@ -441,13 +441,15 @@ Anchor.error:hover {
 	border-width: 1dp;
 	border-color: var(--primary);
 }
-#build_output_issues TableView::cell.theme-warning > TableView::cell::icon {
+#build_output_issues TableView::row TableView::cell.theme-warning {
 	tint: var(--theme-warning);
+	color: var(--theme-warning);
 }
-#build_output_issues TableView::cell.theme-error > TableView::cell::icon {
+#build_output_issues TableView::row TableView::cell.theme-error {
 	tint: var(--theme-error);
+	color: var(--theme-error);
 }
-#build_output_issues TableView::row:selected TableView::cell.theme-error > TableView::cell {
+#build_output_issues TableView::row:selected TableView::cell.theme-error {
 	color: var(--list-row-active);
 	tint: var(--list-row-active);
 }

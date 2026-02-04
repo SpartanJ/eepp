@@ -187,7 +187,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		std::string buffer;
 		FileSystem::fileGet( "unit_tests/assets/textfiles/lorem-ipsum.uext", buffer );
 		editor->setText( buffer );
-		editor->setTextSelection( true );
+		editor->setTextSelectionEnabled( true );
 
 		editor->setFont( app.getUI()->getUIThemeManager()->getDefaultFont() );
 		editor->on( Event::KeyUp, [&]( const Event* event ) {

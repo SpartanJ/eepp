@@ -27,8 +27,6 @@ class EE_API UIWidget : public UINode {
 
 	static UIWidget* NewWithTag( const std::string& tag );
 
-	UIWidget();
-
 	virtual ~UIWidget();
 
 	virtual Uint32 getType() const;
@@ -312,6 +310,8 @@ class EE_API UIWidget : public UINode {
 	std::string mSkinName;
 	std::vector<std::string> mClasses;
 	String mTooltipText;
+
+	UIWidget();
 
 	explicit UIWidget( const std::string& tag );
 

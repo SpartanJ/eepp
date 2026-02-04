@@ -25,6 +25,11 @@ struct WhitespaceDisplayConfig {
 	std::optional<Float> tabOffset;
 };
 
+struct TextSelectionRange {
+	Int64 start{ 0 };
+	Int64 end{ 0 };
+};
+
 class EE_API Text {
   public:
 	static bool TextShaperEnabled;
@@ -371,7 +376,7 @@ class EE_API Text {
 	/** @return A list of rectangles that cover the selection of the string, each rectangle
 	 * has the line spacing height and covers the width of the selection.
 	 */
-	std::vector<Rectf> getSelectionRects( size_t selectionStartIndex, size_t selectionEndIndex );
+	std::vector<Rectf> getSelectionRects( TextSelectionRange range );
 
   protected:
 	struct VertexCoords {
@@ -397,8 +402,9 @@ class EE_API Text {
 	Uint32 mTabWidth{ 4 };
 	Uint32 mInvalidationId{ 0 };
 	Uint32 mTextHints{ 0 };
-	LineWrapMode mLineWrapMode{ LineWrapMode::NoWrap };
 	Float mMaxWrapWidth{ 0 };
+	LineWrapMode mLineWrapMode{ LineWrapMode::NoWrap };
+	TextDirection mDirection{ TextDirection::Unspecified };
 
 	mutable std::vector<Int64> mVisualLines;
 	mutable std::vector<Float> mLinesWidth;
@@ -407,7 +413,6 @@ class EE_API Text {
 	std::vector<Color> mColors;
 	std::vector<VertexCoords> mOutlineVertices;
 	std::vector<Color> mOutlineColors;
-	TextDirection mDirection{ TextDirection::Unspecified };
 
 	void ensureGeometryUpdate();
 

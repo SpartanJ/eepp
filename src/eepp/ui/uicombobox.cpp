@@ -14,7 +14,7 @@ UIComboBox::UIComboBox() : UIWidget( "combobox" ), mDropDownList( NULL ), mButto
 	mDropDownList->setVisible( true );
 	mDropDownList->setEnabled( true );
 	mDropDownList->setAllowEditing( true );
-	mDropDownList->setTextSelection( true );
+	mDropDownList->setTextSelectionEnabled( true );
 	mDropDownList->on( Event::OnPaddingChange, [this]( const Event* ) { onPaddingChange(); } );
 	mDropDownList->on( Event::OnSizeChange, [this]( const Event* ) { onSizeChange(); } );
 	mDropDownList->on( Event::OnValueChange,

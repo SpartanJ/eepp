@@ -11,8 +11,6 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
   public:
 	static UIScrollView* New();
 
-	UIScrollView();
-
 	virtual Uint32 getType() const;
 
 	virtual bool isType( const Uint32& type ) const;
@@ -65,6 +63,8 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 	bool mAutoSetClipStep{ true };
 	bool mAnchorScroll{ false };
 	Sizef mLastScrollViewSize;
+
+	UIScrollView();
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 

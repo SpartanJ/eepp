@@ -10,8 +10,6 @@ class EE_API StateListDrawable : public StatefulDrawable {
   public:
 	static StateListDrawable* New( const std::string& name = "" );
 
-	explicit StateListDrawable( const std::string& name = "" );
-
 	virtual ~StateListDrawable();
 
 	virtual Sizef getSize();
@@ -61,6 +59,8 @@ class EE_API StateListDrawable : public StatefulDrawable {
 	std::map<Uint32, Drawable*> mDrawables;
 	std::map<Drawable*, bool> mDrawablesOwnership;
 	std::map<Uint32, Color> mDrawableColors;
+
+	explicit StateListDrawable( const std::string& name = "" );
 
 	StateListDrawable( Type type, const std::string& name = "" );
 

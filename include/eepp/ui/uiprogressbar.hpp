@@ -13,12 +13,13 @@ class EE_API UIProgressBarFiller : public UIWidget {
   public:
 	static UIProgressBarFiller* New( UIProgressBar* parent );
 
-	UIProgressBarFiller( UIProgressBar* parent );
-
 	void draw() override;
 
 	UIProgressBar* mProgressBar;
 	UISkin* mFillerSkin;
+
+  protected:
+	UIProgressBarFiller( UIProgressBar* parent );
 };
 
 class EE_API UIProgressBar : public UIWidget {
@@ -31,8 +32,6 @@ class EE_API UIProgressBar : public UIWidget {
 	};
 
 	static UIProgressBar* New();
-
-	UIProgressBar();
 
 	virtual ~UIProgressBar();
 
@@ -85,6 +84,8 @@ class EE_API UIProgressBar : public UIWidget {
 	UITextView* mTextBox;
 	Vector2f mOffset;
 	UIProgressBarFiller* mFiller;
+
+	UIProgressBar();
 
 	virtual Uint32 onValueChange();
 

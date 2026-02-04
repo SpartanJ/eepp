@@ -27,8 +27,6 @@ class EE_API UIStyle : public UIState {
   public:
 	static UIStyle* New( UIWidget* widget );
 
-	explicit UIStyle( UIWidget* widget );
-
 	virtual ~UIStyle();
 
 	bool stateExists( const Uint32& state ) const;
@@ -96,6 +94,8 @@ class EE_API UIStyle : public UIState {
 	bool mForceReapplyProperties;
 	bool mDisableAnimations;
 	bool mFirstState;
+
+	explicit UIStyle( UIWidget* widget );
 
 	void applyVarValues( CSS::StyleSheetProperty* style );
 

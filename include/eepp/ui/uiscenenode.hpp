@@ -28,8 +28,6 @@ class EE_API UISceneNode : public SceneNode {
   public:
 	static UISceneNode* New( EE::Window::Window* window = NULL );
 
-	explicit UISceneNode( EE::Window::Window* window = NULL );
-
 	virtual ~UISceneNode();
 
 	virtual Node* setSize( const Sizef& size );
@@ -197,6 +195,8 @@ class EE_API UISceneNode : public SceneNode {
 	Node* mCurParent{ nullptr };
 	Uint32 mCurOnSizeChangeListener{ 0 };
 	std::shared_ptr<ThreadPool> mThreadPool;
+
+	explicit UISceneNode( EE::Window::Window* window = NULL );
 
 	virtual void resizeNode( EE::Window::Window* win );
 

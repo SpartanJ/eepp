@@ -62,8 +62,6 @@ class EE_API UITabWidget : public UIWidget {
 
 	static UITabWidget* New();
 
-	UITabWidget();
-
 	virtual ~UITabWidget();
 
 	virtual Uint32 getType() const;
@@ -262,6 +260,8 @@ class EE_API UITabWidget : public UIWidget {
 	UIListView* mTabSwitcher{ nullptr };
 	TabJumpMode mTabJumpMode{ TabJumpMode::Linear };
 	std::function<bool( const UIWidget* widget )> mAcceptsDropOfWidgetFn;
+
+	UITabWidget();
 
 	void onThemeLoaded();
 

@@ -11,9 +11,7 @@ class EE_API UILoader : public UIWidget {
   public:
 	static UILoader* New();
 
-	UILoader();
-
-	~UILoader();
+	virtual ~UILoader();
 
 	virtual Uint32 getType() const;
 
@@ -75,6 +73,8 @@ class EE_API UILoader : public UIWidget {
 	Float mAnimationSpeed;
 	IntPtr mOp;
 	bool mIndeterminate;
+
+	UILoader();
 
 	virtual void onAutoSize();
 

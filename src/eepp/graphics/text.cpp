@@ -2778,20 +2778,20 @@ size_t Text::findVisualLineFromCharIndex( size_t charIndex ) {
 	return 0;
 }
 
-std::vector<Rectf> Text::getSelectionRects( size_t selectionStartIndex, size_t selectionEndIndex ) {
+std::vector<Rectf> Text::getSelectionRects( TextSelectionRange range ) {
 	std::vector<Rectf> rects;
 
-	if ( selectionStartIndex == selectionEndIndex || !mFontStyleConfig.Font )
+	if ( range.start == range.end || !mFontStyleConfig.Font )
 		return rects;
 
-	if ( selectionStartIndex > selectionEndIndex )
-		std::swap( selectionStartIndex, selectionEndIndex );
+	if ( range.start > range.end )
+		std::swap( range.start, range.end );
 
 	ensureVisualLinesUpdate();
 	cacheWidth();
 
-	size_t startLine = findVisualLineFromCharIndex( selectionStartIndex );
-	size_t endLine = findVisualLineFromCharIndex( selectionEndIndex );
+	size_t startLine = findVisualLineFromCharIndex( range.start );
+	size_t endLine = findVisualLineFromCharIndex( range.end );
 	Float hspace =
 		mFontStyleConfig.Font
 			->getGlyph( ' ', mFontStyleConfig.CharacterSize, mFontStyleConfig.Style & Text::Bold,
@@ -2820,7 +2820,7 @@ std::vector<Rectf> Text::getSelectionRects( size_t selectionStartIndex, size_t s
 
 		// Calculate Left
 		if ( i == startLine ) {
-			left = findCharacterPos( selectionStartIndex ).x;
+			left = findCharacterPos( range.start ).x;
 		} else {
 			left = centerDiffX;
 		}
@@ -2829,10 +2829,10 @@ std::vector<Rectf> Text::getSelectionRects( size_t selectionStartIndex, size_t s
 		if ( i == endLine ) {
 			// If it's a newline character, we select a small chunk to indicate the newline
 			// selection
-			if ( selectionEndIndex < mString.size() && mString[selectionEndIndex] == '\n' ) {
-				right = findCharacterPos( selectionEndIndex ).x + hspace;
+			if ( range.end < (Int64)mString.size() && mString[range.end] == '\n' ) {
+				right = findCharacterPos( range.end ).x + hspace;
 			} else {
-				right = findCharacterPos( selectionEndIndex ).x;
+				right = findCharacterPos( range.end ).x;
 			}
 		} else {
 			right = centerDiffX + ( i < mLinesWidth.size() ? mLinesWidth[i] : 0 );

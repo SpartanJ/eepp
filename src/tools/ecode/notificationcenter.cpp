@@ -51,7 +51,7 @@ void NotificationCenter::addNotification( const String& text, const Time& delay,
 		tv->setFlags( UI_WORD_WRAP );
 		tv->setText( text );
 		tv->addClass( "notification" );
-		tv->setTextSelection( allowCopy );
+		tv->setTextSelectionEnabled( allowCopy );
 		mLayout->toFront();
 		Action* sequence = Actions::Sequence::New(
 			{ Actions::FadeIn::New( Seconds( 0.125 ) ), Actions::Delay::New( delay ),
@@ -114,7 +114,7 @@ void NotificationCenter::addInteractiveNotification( String text, String actionT
 								  ->asType<UILinearLayout>();
 		UITextView* tv = lay->findByType( UI_TYPE_TEXTVIEW )->asType<UITextView>();
 		tv->setText( text );
-		tv->setTextSelection( allowCopy );
+		tv->setTextSelectionEnabled( allowCopy );
 		tv->on( Event::MouseClick, [allowCopy, lay]( const Event* event ) {
 			const MouseEvent* mouseEvent = static_cast<const MouseEvent*>( event );
 			if ( mouseEvent->getFlags() &

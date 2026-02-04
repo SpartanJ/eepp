@@ -14,8 +14,6 @@ class EE_API UISprite : public UIWidget {
   public:
 	static UISprite* New();
 
-	UISprite();
-
 	virtual ~UISprite();
 
 	virtual Uint32 getType() const;
@@ -61,6 +59,8 @@ class EE_API UISprite : public UIWidget {
 	Vector2f mAlignOffset;
 	TextureRegion* mTextureRegionLast;
 	bool mDealloc;
+
+	UISprite();
 
 	void updateSize();
 

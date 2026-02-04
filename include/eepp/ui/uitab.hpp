@@ -11,8 +11,6 @@ class EE_API UITab : public UISelectButton {
   public:
 	static UITab* New();
 
-	UITab();
-
 	Node* getOwnedWidget() const;
 
 	void setOwnedWidget( Node* ownedWidget );
@@ -57,6 +55,8 @@ class EE_API UITab : public UISelectButton {
 	UITabWidget* mTabWidget{ nullptr };
 	UIWidget* mCurDropWidget{ nullptr };
 	bool mWasToolipEnabled{ true };
+
+	UITab();
 
 	Uint32 onDrag( const Vector2f& position, const Uint32& flags, const Sizef& dragDiff );
 

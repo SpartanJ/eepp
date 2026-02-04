@@ -11,8 +11,6 @@ class EE_API UIMenuItem : public UIPushButton {
 
 	static UIMenuItem* New();
 
-	UIMenuItem();
-
 	virtual ~UIMenuItem();
 
 	virtual Uint32 getType() const;
@@ -34,6 +32,8 @@ class EE_API UIMenuItem : public UIPushButton {
   protected:
 	UITextView* mShortcutView;
 	OnShouldCloseCb mOnShouldCloseCb;
+
+	UIMenuItem();
 
 	explicit UIMenuItem( const std::string& tag );
 

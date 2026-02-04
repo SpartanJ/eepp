@@ -9,8 +9,6 @@ class EE_API UIComboBox : public UIWidget {
   public:
 	static UIComboBox* New();
 
-	UIComboBox();
-
 	virtual ~UIComboBox();
 
 	virtual Uint32 getType() const;
@@ -41,6 +39,8 @@ class EE_API UIComboBox : public UIWidget {
   protected:
 	UIDropDownList* mDropDownList;
 	UINode* mButton;
+
+	UIComboBox();
 
 	Uint32 onMessage( const NodeMessage* Msg );
 

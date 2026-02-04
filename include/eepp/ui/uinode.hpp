@@ -35,8 +35,6 @@ class EE_API UINode : public Node {
 
 	typedef std::function<void( const Event* )> EventCallback;
 
-	UINode();
-
 	virtual ~UINode();
 
 	void worldToNodeTranslation( Vector2f& position ) const;
@@ -345,6 +343,8 @@ class EE_API UINode : public Node {
 	std::string mMinHeightEq;
 	std::string mMaxWidthEq;
 	std::string mMaxHeightEq;
+
+	UINode();
 
 	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 

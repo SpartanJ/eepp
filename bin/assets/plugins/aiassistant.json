@@ -412,8 +412,22 @@
         {
           "name": "openai/gpt-5.2-pro",
           "display_name": "OpenAI: GPT-5 Pro"
+        },
+        {
+          "name": "moonshotai/kimi-k2.5",
+          "display_name": "kimi-k2.5"
+        }
+      ]
+    },
+    "moonshot": {
+      "api_url": "https://api.moonshot.ai/v1/chat/completions",
+      "display_name": "Moonshot",
+      "models": [
+        {
+          "name": "kimi-k2.5"
         }
       ]
     }
+
   }
 }

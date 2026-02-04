@@ -9,9 +9,7 @@ class EE_API UITextInputPassword : public UITextInput {
   public:
 	static UITextInputPassword* New();
 
-	UITextInputPassword();
-
-	~UITextInputPassword();
+	virtual ~UITextInputPassword();
 
 	virtual void draw();
 
@@ -19,14 +17,16 @@ class EE_API UITextInputPassword : public UITextInput {
 
 	virtual UITextView* setText( const String& text );
 
-	Text* getPassCache() const;
+	const Text& getPassCache() const;
 
 	const String& getBulletCharacter() const;
 
 	void setBulletCharacter( const String& bulletCharacter );
 
   protected:
-	Text* mPassCache;
+	UITextInputPassword();
+
+	Text mPassCache;
 	Vector2f mHintAlignOffset;
 	String mBulletCharacter;
 
@@ -42,7 +42,7 @@ class EE_API UITextInputPassword : public UITextInput {
 
 	virtual void onFontStyleChanged();
 
-	virtual Text* getVisibleTextCache() const;
+	virtual Text& getVisibleTextCache();
 };
 
 }} // namespace EE::UI

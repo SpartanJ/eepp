@@ -13,8 +13,6 @@ class EE_API UIListBox : public UITouchDraggableWidget {
   public:
 	static UIListBox* New();
 
-	UIListBox();
-
 	static UIListBox* NewWithTag( const std::string& tag );
 
 	explicit UIListBox( const std::string& tag );
@@ -143,6 +141,8 @@ class EE_API UIListBox : public UITouchDraggableWidget {
 	std::vector<Uint32> mSelected;
 	std::vector<UIListBoxItem*> mItems;
 	std::vector<String> mTexts;
+
+	UIListBox();
 
 	void updateScroll( bool fromScrollChange = false );
 

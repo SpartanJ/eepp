@@ -10,8 +10,7 @@
 
 namespace EE { namespace UI {
 
-UIDropDownList::MenuWidthMode
-UIDropDownList::menuWidthModeFromString( std::string_view str ) {
+UIDropDownList::MenuWidthMode UIDropDownList::menuWidthModeFromString( std::string_view str ) {
 	if ( "contents" == str || "fit-to-contents" == str )
 		return MenuWidthMode::Contents;
 	if ( "contents-centered" == str || "fit-to-contents-centered" == str )
@@ -125,7 +124,7 @@ void UIDropDownList::setFriendNode( UINode* friendNode ) {
 
 void UIDropDownList::onAutoSize() {
 	Float max = eemax<Float>( PixelDensity::dpToPxI( getSkinSize().getHeight() ),
-							  mTextCache->getLineSpacing() );
+							  mTextCache.getLineSpacing() );
 
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
 		setInternalPixelsHeight( eeceil( max + mPaddingPx.Top + mPaddingPx.Bottom ) );
@@ -180,17 +179,14 @@ UIDropDownList* UIDropDownList::showList() {
 			Float width =
 				NULL != mFriendNode ? mFriendNode->getSize().getWidth() : getSize().getWidth();
 
-			bool center =
-				mStyleConfig.menuWidthRule == MenuWidthMode::ContentsCentered ||
-				mStyleConfig.menuWidthRule ==
-					MenuWidthMode::ExpandIfNeededCentered;
+			bool center = mStyleConfig.menuWidthRule == MenuWidthMode::ContentsCentered ||
+						  mStyleConfig.menuWidthRule == MenuWidthMode::ExpandIfNeededCentered;
 
 			Float contentsWidth = 0;
 			if ( mStyleConfig.menuWidthRule == MenuWidthMode::Contents ||
 				 mStyleConfig.menuWidthRule == MenuWidthMode::ContentsCentered ||
 				 mStyleConfig.menuWidthRule == MenuWidthMode::ExpandIfNeeded ||
-				 mStyleConfig.menuWidthRule ==
-					 MenuWidthMode::ExpandIfNeededCentered ) {
+				 mStyleConfig.menuWidthRule == MenuWidthMode::ExpandIfNeededCentered ) {
 				contentsWidth = eeceil( PixelDensity::pxToDp(
 					mListBox->getMaxTextWidth() +
 					PixelDensity::dpToPx( mListBox->getContainerPadding().getWidth() ) +
@@ -204,8 +200,7 @@ UIDropDownList* UIDropDownList::showList() {
 			}
 
 			if ( ( mStyleConfig.menuWidthRule == MenuWidthMode::ExpandIfNeeded ||
-				   mStyleConfig.menuWidthRule ==
-					   MenuWidthMode::ExpandIfNeededCentered ) &&
+				   mStyleConfig.menuWidthRule == MenuWidthMode::ExpandIfNeededCentered ) &&
 				 contentsWidth > width ) {
 				width = contentsWidth;
 			}
@@ -467,9 +462,10 @@ std::string UIDropDownList::getPropertyString( const PropertyDefinition* propert
 
 std::vector<PropertyId> UIDropDownList::getPropertiesImplemented() const {
 	auto props = UITextInput::getPropertiesImplemented();
-	auto local = { PropertyId::PopUpToRoot,	 PropertyId::MaxVisibleItems, PropertyId::SelectedIndex,
-				   PropertyId::SelectedText, PropertyId::ScrollBarStyle,  PropertyId::RowHeight,
-				   PropertyId::VScrollMode,	 PropertyId::HScrollMode, PropertyId::MenuWidthMode };
+	auto local = {
+		PropertyId::PopUpToRoot,  PropertyId::MaxVisibleItems, PropertyId::SelectedIndex,
+		PropertyId::SelectedText, PropertyId::ScrollBarStyle,  PropertyId::RowHeight,
+		PropertyId::VScrollMode,  PropertyId::HScrollMode,	   PropertyId::MenuWidthMode };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }

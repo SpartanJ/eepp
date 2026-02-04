@@ -1408,7 +1408,7 @@ void LLMChatUI::showMsg( String msg ) {
 	msgBox->getTextBox()->setPixelsSize(
 		{ PixelDensity::dpToPx( 600 ), msgBox->getTextBox()->getPixelsSize().getHeight() } );
 	msgBox->getTextBox()->setWordWrap( true );
-	msgBox->getTextBox()->setTextSelection( true );
+	msgBox->getTextBox()->setTextSelectionEnabled( true );
 	msgBox->getTextBox()->onClick(
 		[]( const MouseEvent* event ) {
 			auto tv = event->getNode()->asType<UITextView>();

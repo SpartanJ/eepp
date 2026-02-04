@@ -31,8 +31,6 @@ class EE_API UIDropDownList : public UITextInput {
 
 	static UIDropDownList* New();
 
-	UIDropDownList( const std::string& tag = "dropdownlist" );
-
 	virtual ~UIDropDownList();
 
 	virtual Uint32 getType() const;
@@ -77,6 +75,8 @@ class EE_API UIDropDownList : public UITextInput {
 	UIListBox* mListBox;
 	UINode* mFriendNode;
 	Uint32 mListBoxCloseCb{ 0 };
+
+	UIDropDownList( const std::string& tag = "dropdownlist" );
 
 	void onListBoxFocusLoss( const Event* Event );
 

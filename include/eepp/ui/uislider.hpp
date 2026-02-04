@@ -19,9 +19,6 @@ class EE_API UISlider : public UIWidget {
 
 	static UISlider* NewHorizontalWithTag( const std::string& tag );
 
-	UISlider( const std::string& tag,
-			  const UIOrientation& orientation = UIOrientation::Horizontal );
-
 	virtual ~UISlider();
 
 	virtual Uint32 getType() const;
@@ -99,6 +96,9 @@ class EE_API UISlider : public UIWidget {
 	bool mOnPosChange;
 
 	Uint32 mLastTickMove;
+
+	UISlider( const std::string& tag,
+			  const UIOrientation& orientation = UIOrientation::Horizontal );
 
 	virtual void onAutoSize();
 

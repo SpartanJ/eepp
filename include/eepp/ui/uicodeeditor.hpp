@@ -194,9 +194,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	static const MouseBindings::ShortcutMap getDefaultMousebindings();
 
-	UICodeEditor( const bool& autoRegisterBaseCommands = true,
-				  const bool& autoRegisterBaseKeybindings = true );
-
 	virtual ~UICodeEditor();
 
 	virtual Uint32 getType() const;
@@ -963,6 +960,9 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	CharacterAlignment mTabIndentAlignment{ CharacterAlignment::Center };
 	std::vector<SyntaxTokenPosition> mTokens;
 	TextDirection mTextDirection{ TextDirection::LeftToRight };
+
+	UICodeEditor( const bool& autoRegisterBaseCommands = true,
+				  const bool& autoRegisterBaseKeybindings = true );
 
 	UICodeEditor( const std::string& elementTag, const bool& autoRegisterBaseCommands = true,
 				  const bool& autoRegisterBaseKeybindings = true );

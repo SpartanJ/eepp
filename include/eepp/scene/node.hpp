@@ -73,8 +73,6 @@ class EE_API Node : public Transformable {
 
 	typedef std::function<void( const Event* )> EventCallback;
 
-	Node();
-
 	virtual ~Node();
 
 	virtual void worldToNodeTranslation( Vector2f& position ) const;
@@ -511,6 +509,8 @@ class EE_API Node : public Transformable {
 
 	OriginPoint mRotationOriginPoint;
 	OriginPoint mScaleOriginPoint;
+
+	Node();
 
 	virtual Uint32 onMessage( const NodeMessage* msg );
 
