@@ -5,6 +5,8 @@
 #include <eepp/ui/doc/syntaxdefinition.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 
+#include <algorithm>
+
 using namespace std::literals;
 
 namespace EE { namespace UI { namespace Doc {

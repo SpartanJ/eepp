@@ -7,6 +7,8 @@
 #include <eepp/system/process.hpp>
 #include <eepp/system/sys.hpp>
 
+#include <algorithm>
+
 using namespace EE;
 using namespace EE::System;
 

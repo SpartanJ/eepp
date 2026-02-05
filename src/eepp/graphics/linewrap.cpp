@@ -2,6 +2,8 @@
 #include <eepp/graphics/linewrap.hpp>
 #include <eepp/graphics/text.hpp>
 
+#include <algorithm>
+
 namespace EE::Graphics {
 
 LineWrapMode LineWrap::toLineWrapMode( std::string mode ) {

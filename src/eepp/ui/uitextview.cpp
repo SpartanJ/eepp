@@ -15,6 +15,8 @@
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
+#include <algorithm>
+
 using namespace std::literals;
 
 namespace EE { namespace UI {

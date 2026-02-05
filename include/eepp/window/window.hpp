@@ -89,7 +89,7 @@ class WindowSettings {
 /** @brief ContextSettings Small class that contains the renderer context information */
 class ContextSettings {
   public:
-	static constexpr Int32 FrameRateLimitScreenRefreshRate = std::numeric_limits<Int32>::max() - 1;
+	static constexpr Int32 FrameRateLimitScreenRefreshRate = (std::numeric_limits<Int32>::max)() - 1;
 
 	inline ContextSettings( bool vsync, Int32 frameRateLimit = FrameRateLimitScreenRefreshRate,
 							Uint32 multisamples = 0, GraphicsLibraryVersion version = GLv_default,
