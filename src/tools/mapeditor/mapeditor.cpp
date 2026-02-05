@@ -85,10 +85,9 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 
 	std::string resPath( Sys::getProcessPath() );
 
-	win = Engine::instance()->createWindow(
-		WindowSettings( 1280, 720, "eepp - Map Editor", WindowStyle::Default,
-						WindowBackend::Default, 32, resPath + "assets/icon/ee.png", pixelDensity ),
-		ContextSettings( true, GLv_default, true, 24 ) );
+	win = Engine::instance()->createWindow( WindowSettings(
+		1280, 720, "eepp - Map Editor", WindowStyle::Default, WindowBackend::Default, 32,
+		resPath + "assets/icon/ee.png", pixelDensity ) );
 
 	if ( win->isOpen() ) {
 		PixelDensity::setPixelDensity( eemax( win->getScale(), pixelDensity ) );

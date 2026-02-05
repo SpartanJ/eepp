@@ -346,7 +346,12 @@ void Window::close() {
 	mWindow.Created = false;
 }
 
-void Window::setFrameRateLimit( const Uint32& FrameRateLimit ) {
+void Window::setFrameRateLimit( Uint32 FrameRateLimit ) {
+	if ( FrameRateLimit == ContextSettings::FrameRateLimitScreenRefreshRate ) {
+		Display* currentDisplay = Engine::instance()->getDisplayManager()->getDisplayIndex(
+			isOpen() ? getCurrentDisplayIndex() : 0 );
+		FrameRateLimit = currentDisplay->getRefreshRate();
+	}
 	mFrameData.FPS.Limit = (Float)FrameRateLimit;
 }
 

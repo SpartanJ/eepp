@@ -332,6 +332,11 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 			mApiKeys["moonshot"] = config.value( "moonshot_api_key", "" );
 		else if ( updateConfigFile )
 			config["moonshot_api_key"] = mApiKeys["moonshot"];
+
+		if ( config.contains( "nvidia_api_key" ) )
+			mApiKeys["nvidia"] = config.value( "nvidia_api_key", "" );
+		else if ( updateConfigFile )
+			config["nvidia_api_key"] = mApiKeys["nvidia"];
 	}
 
 	if ( mKeyBindings.empty() ) {
@@ -527,6 +532,8 @@ std::optional<std::string> AIAssistantPlugin::getApiKeyFromProvider( const std::
 		ret = getenv( "OPENROUTER_API_KEY" );
 	} else if ( provider == "moonshot" ) {
 		ret = getenv( "MOONSHOT_API_KEY" );
+	} else if ( provider == "nvidia" ) {
+		ret = getenv( "NVIDIA_API_KEY" );
 	}
 
 	if ( ret )

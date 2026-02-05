@@ -654,7 +654,7 @@ void mainLoop() {
 
 EE_MAIN_FUNC int main( int, char*[] ) {
 	mWindow = Engine::instance()->createWindow( WindowSettings( 1024, 768, "eepp - Physics" ),
-												ContextSettings( true, EE::Graphics::GLv_ES2 ) );
+												ContextSettings( true ) );
 
 	if ( mWindow->isOpen() ) {
 		KM = mWindow->getInput();

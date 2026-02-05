@@ -78,15 +78,21 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 
 				for ( const auto& choice : choices ) {
 					if ( choice["delta"].contains( "reasoning_content" ) ) {
-						std::string delta = choice["delta"]["reasoning_content"];
-						if ( streamedResponseCb )
-							streamedResponseCb( delta, true );
-						mReasoningResponse += std::move( delta );
+						const auto& reasoningContent = choice["delta"]["reasoning_content"];
+						if ( reasoningContent.is_string() ) {
+							std::string delta = choice["delta"]["reasoning_content"];
+							if ( streamedResponseCb )
+								streamedResponseCb( delta, true );
+							mReasoningResponse += std::move( delta );
+						}
 					} else if ( choice["delta"].contains( "content" ) ) {
-						std::string delta = choice["delta"]["content"];
-						if ( streamedResponseCb )
-							streamedResponseCb( delta, false );
-						mResponse += std::move( delta );
+						const auto& content = choice["delta"]["content"];
+						if ( content.is_string() ) {
+							std::string delta = choice["delta"]["content"];
+							if ( streamedResponseCb )
+								streamedResponseCb( delta, false );
+							mResponse += std::move( delta );
+						}
 					}
 				}
 				// Anthropic

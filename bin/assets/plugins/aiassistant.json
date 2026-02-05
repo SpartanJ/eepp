@@ -349,13 +349,13 @@
       "display_name": "Perplexity",
       "models": [
         {
-          "name": "sonar-reasoning",
-          "display_name": "Sonar Reasoning",
+          "name": "sonar-reasoning-pro",
+          "display_name": "Sonar Reasoning Pro",
           "tool_calling": true
         },
         {
-          "name": "sonar-deep-research",
-          "display_name": "Sonar Deep Research",
+          "name": "sonar-pro",
+          "display_name": "Sonar Pro",
           "tool_calling": true
         },
         {
@@ -427,7 +427,16 @@
           "name": "kimi-k2.5"
         }
       ]
+    },
+    "nvidia": {
+      "api_url": "https://integrate.api.nvidia.com/v1/chat/completions",
+      "display_name": "NVIDIA",
+      "models": [
+        {
+          "name": "moonshotai/kimi-k2.5",
+          "display_name": "kimi-k2.5"
+        }
+      ]
     }
-
   }
 }

@@ -199,8 +199,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		return app.run();
 	}
 
-	win = Engine::instance()->createWindow( WindowSettings( 1366, 768, "eepp - UI Perf Test" ),
-											ContextSettings( false ) );
+	win = Engine::instance()->createWindow( WindowSettings( 1366, 768, "eepp - UI Perf Test" ) );
 
 	if ( win->isOpen() ) {
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );

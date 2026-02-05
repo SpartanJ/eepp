@@ -87,10 +87,12 @@ class WindowSettings {
 /** @brief ContextSettings Small class that contains the renderer context information */
 class ContextSettings {
   public:
-	inline ContextSettings( bool vsync, GraphicsLibraryVersion version = GLv_default,
-							bool doubleBuffering = true, Uint32 depthBufferSize = 24,
-							Uint32 stencilBufferSize = 1, Uint32 multisamples = 0,
-							bool sharedGLContext = true, Int32 frameRateLimit = 0 ) :
+	static constexpr Int32 FrameRateLimitScreenRefreshRate = std::numeric_limits<Int32>::max() - 1;
+
+	inline ContextSettings( bool vsync, Int32 frameRateLimit = FrameRateLimitScreenRefreshRate,
+							Uint32 multisamples = 0, GraphicsLibraryVersion version = GLv_default,
+							bool sharedGLContext = true, bool doubleBuffering = true,
+							Uint32 depthBufferSize = 24, Uint32 stencilBufferSize = 1 ) :
 		Version( version ),
 		DepthBufferSize( depthBufferSize ),
 		StencilBufferSize( stencilBufferSize ),
@@ -100,24 +102,16 @@ class ContextSettings {
 		DoubleBuffering( doubleBuffering ),
 		SharedGLContext( sharedGLContext ) {}
 
-	inline ContextSettings() :
-		Version( GLv_default ),
-		DepthBufferSize( 24 ),
-		StencilBufferSize( 1 ),
-		Multisamples( 0 ),
-		FrameRateLimit( 0 ),
-		VSync( false ),
-		DoubleBuffering( true ),
-		SharedGLContext( true ) {}
+	ContextSettings() = default;
 
-	GraphicsLibraryVersion Version;
-	Uint32 DepthBufferSize;
-	Uint32 StencilBufferSize;
-	Uint32 Multisamples;
-	Int32 FrameRateLimit;
-	bool VSync;
-	bool DoubleBuffering;
-	bool SharedGLContext;
+	GraphicsLibraryVersion Version{ GLv_default };
+	Uint32 DepthBufferSize{ 24 };
+	Uint32 StencilBufferSize{ 1 };
+	Uint32 Multisamples{ 0 };
+	Int32 FrameRateLimit{ FrameRateLimitScreenRefreshRate };
+	bool VSync{ false };
+	bool DoubleBuffering{ true };
+	bool SharedGLContext{ true };
 };
 
 /** @brief WindowInfo Contains the window state information */
@@ -379,8 +373,8 @@ class EE_API Window {
 	/** @return The pointer to the Window Info ( read only ) */
 	const WindowInfo* getWindowInfo() const;
 
-	/** Set a frame per second limit. It's not 100 % accurate. */
-	void setFrameRateLimit( const Uint32& setFrameRateLimit );
+	/** Set a frame per second limit. */
+	void setFrameRateLimit( Uint32 setFrameRateLimit );
 
 	/** Get a frame per second limit. */
 	Uint32 getFrameRateLimit() const;
