@@ -7,6 +7,8 @@
 #include <eepp/window/base.hpp>
 #include <eepp/window/inputmethod.hpp>
 
+#include <limits>
+
 namespace EE { namespace Window {
 
 namespace Platform {
@@ -108,7 +110,7 @@ class ContextSettings {
 	Uint32 DepthBufferSize{ 24 };
 	Uint32 StencilBufferSize{ 1 };
 	Uint32 Multisamples{ 0 };
-	Int32 FrameRateLimit{ FrameRateLimitScreenRefreshRate };
+	Int32 FrameRateLimit{ ContextSettings::FrameRateLimitScreenRefreshRate };
 	bool VSync{ false };
 	bool DoubleBuffering{ true };
 	bool SharedGLContext{ true };
