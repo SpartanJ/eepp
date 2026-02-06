@@ -5,6 +5,10 @@
       "api_url": "https://api.anthropic.com/v1/messages",
       "models": [
         {
+          "display_name": "Claude Opus 4.6",
+          "name": "claude-opus-4-6"
+        },
+        {
           "cache_configuration": {
             "max_cache_anchors": 4,
             "min_total_token": 2048,
@@ -240,6 +244,12 @@
         },
         {
           "name": "gpt-5.1-codex"
+        },
+        {
+          "name": "gpt-5.2-codex"
+        },
+        {
+          "name": "gpt-5.3-codex"
         }
       ],
       "version": 1
@@ -416,6 +426,10 @@
         {
           "name": "moonshotai/kimi-k2.5",
           "display_name": "kimi-k2.5"
+        },
+        {
+          "name": "stepfun/step-3.5-flash:free",
+          "display_name": "StepFun: Step 3.5 Flash"
         }
       ]
     },

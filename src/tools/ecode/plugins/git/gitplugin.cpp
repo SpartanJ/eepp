@@ -1444,20 +1444,20 @@ void GitPlugin::buildSidePanelTab() {
 	#git_status_tree ScrollBar:focus-within {
 		opacity: 1;
 	}
-	.git_highlight_style > treeview::cell {
+	treeview::cell.git_highlight_style {
 		color: %s;
 	}
-	treeview::row:selected .git_highlight_style > treeview::cell,
-	treeview::row:selected .git_highlight_style > treeview::cell {
+	treeview::row:selected treeview::cell.git_highlight_style,
+	treeview::row:selected treeview::cell.git_highlight_style {
 		color: var(--list-row-active);
 		tint: var(--list-row-active);
 	}
-	.git_highlight_style > treeview::cell::icon {
+	treeview::cell.git_highlight_style > treeview::cell::icon {
 		foreground-image: icon(circle, 8dpru), icon(circle-filled, 8dpru);
 		foreground-position: 80%% 80%%, 80%% 80%%;
 		foreground-tint: black, %s;
 	}
-	.git_highlight_style_clear > treeview::cell::icon {
+	treeview::cell.git_highlight_style_clear > treeview::cell::icon {
 		foreground-image: none, none;
 	}
 	</style>

@@ -501,6 +501,7 @@ void AIAssistantPlugin::initUI() {
 std::optional<std::string> AIAssistantPlugin::getApiKeyFromProvider( const std::string& provider,
 																	 AIAssistantPlugin* instance ) {
 	static const char* OPEN_API_KEY = "";
+
 	const char* ret = nullptr;
 	if ( provider == "openai" ) {
 		ret = getenv( "OPENAI_API_KEY" );
@@ -516,8 +517,6 @@ std::optional<std::string> AIAssistantPlugin::getApiKeyFromProvider( const std::
 		ret = getenv( "DEEPSEEK_API_KEY" );
 	} else if ( provider == "mistral" ) {
 		ret = getenv( "MISTRAL_API_KEY" );
-	} else if ( provider == "lmstudio" || provider == "ollama" ) {
-		ret = OPEN_API_KEY;
 	} else if ( provider == "xai" ) {
 		const char* apiKey = getenv( "XAI_API_KEY" );
 		if ( apiKey != nullptr )
@@ -534,6 +533,10 @@ std::optional<std::string> AIAssistantPlugin::getApiKeyFromProvider( const std::
 		ret = getenv( "MOONSHOT_API_KEY" );
 	} else if ( provider == "nvidia" ) {
 		ret = getenv( "NVIDIA_API_KEY" );
+	} else {
+		const auto& providerModelIt = instance->mProviders.find( provider );
+		if ( providerModelIt != instance->mProviders.end() && providerModelIt->second.openApi )
+			ret = OPEN_API_KEY;
 	}
 
 	if ( ret )
