@@ -123,7 +123,8 @@ class EE_API Text {
 									   const Uint32& style, const Uint32& tabWidth = 4,
 									   const Float& outlineThickness = 0.f,
 									   std::optional<Float> tabOffset = {}, Uint32 textHints = 0,
-									   TextDirection direction = TextDirection::Unspecified );
+									   TextDirection direction = TextDirection::Unspecified,
+									   const Vector2f& initialOffset = {} );
 
 	static Vector2f findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
 									  const String& string, const Uint32& style,
@@ -131,7 +132,8 @@ class EE_API Text {
 									  const Float& outlineThickness = 0.f,
 									  std::optional<Float> tabOffset = {}, bool allowNewLine = true,
 									  Uint32 textHints = 0,
-									  TextDirection direction = TextDirection::Unspecified );
+									  TextDirection direction = TextDirection::Unspecified,
+									  const Vector2f& initialOffset = {} );
 
 	static std::size_t
 	findLastCharPosWithinLength( Font* font, const Uint32& fontSize, const String& string,
@@ -265,6 +267,9 @@ class EE_API Text {
 	/** @return Every cached text line width */
 	const std::vector<Float>& getLinesWidth();
 
+	/** @return The last line width */
+	Float getLastLineWidth();
+
 	/** Set the text draw align */
 	void setAlign( const Uint32& align );
 
@@ -332,6 +337,15 @@ class EE_API Text {
 	void setDirection( TextDirection direction );
 
 	TextDirection getDirection() const;
+
+	/** Sets the initial position offset for this text.
+	 * This is useful for RichText where spans continue from a previous text segment.
+	 * @param offset The initial X/Y offset to apply to all position calculations
+	 */
+	void setInitialOffset( const Vector2f& offset );
+
+	/** @return The current initial position offset */
+	const Vector2f& getInitialOffset() const { return mInitialOffset; }
 
 	/** Sets the line wrap mode for soft wrapping.
 	 * When enabled, text will wrap at the specified max width without modifying the string.
@@ -405,6 +419,7 @@ class EE_API Text {
 	Float mMaxWrapWidth{ 0 };
 	LineWrapMode mLineWrapMode{ LineWrapMode::NoWrap };
 	TextDirection mDirection{ TextDirection::Unspecified };
+	Vector2f mInitialOffset{ 0.f, 0.f };
 
 	mutable std::vector<Int64> mVisualLines;
 	mutable std::vector<Float> mLinesWidth;
@@ -483,7 +498,8 @@ class EE_API Text {
 									  const Uint32& tabWidth, const Float& outlineThickness,
 									  std::optional<Float> tabOffset, bool allowNewLine,
 									  Uint32 textHints, TextDirection direction,
-									  LineWrapMode lineWrapMode, Float maxWrapWidth );
+									  LineWrapMode lineWrapMode, Float maxWrapWidth,
+									  const Vector2f& initialOffset = {} );
 
 	static Int32 findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font* font,
 									   const Uint32& fontSize, const String& string,
@@ -491,7 +507,7 @@ class EE_API Text {
 									   const Float& outlineThickness,
 									   std::optional<Float> tabOffset, Uint32 textHints,
 									   TextDirection direction, LineWrapMode lineWrapMode,
-									   Float maxWrapWidth );
+									   Float maxWrapWidth, const Vector2f& initialOffset = {} );
 };
 
 }} // namespace EE::Graphics

@@ -222,8 +222,8 @@ static inline Uint64 textLayoutHash( const String::View& string, Font* font,
 									 const Uint32& characterSize, const Uint32& style,
 									 const Uint32& tabWidth, const Float& outlineThickness,
 									 std::optional<Float> tabOffset, TextDirection direction,
-									 LineWrapMode wrapMode, Uint32 wrapWidth,
-									 bool keepIndentation ) {
+									 LineWrapMode wrapMode, Uint32 wrapWidth, bool keepIndentation,
+									 Float initialXOffset ) {
 	return hashCombine( std::hash<String::View>()( string ), std::hash<Font*>()( font ),
 						std::hash<Uint32>()( characterSize ), std::hash<Uint32>()( style ),
 						std::hash<Uint32>()( tabWidth ), std::hash<Float>()( outlineThickness ),
@@ -232,7 +232,8 @@ static inline Uint64 textLayoutHash( const String::View& string, Font* font,
 							static_cast<std::underlying_type_t<TextDirection>>( direction ) ),
 						std::hash<std::underlying_type_t<LineWrapMode>>()(
 							static_cast<std::underlying_type_t<LineWrapMode>>( wrapMode ) ),
-						std::hash<Uint32>()( wrapWidth ), std::hash<bool>()( keepIndentation ) );
+						std::hash<Uint32>()( wrapWidth ), std::hash<bool>()( keepIndentation ),
+						std::hash<Float>()( initialXOffset ) );
 }
 
 TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
@@ -254,7 +255,8 @@ TextLayout::Cache TextLayout::layout( const String::View& string, Font* font,
 	Uint64 hash = 0;
 	if ( !Text::canSkipShaping( textDrawHints ) ) {
 		hash = textLayoutHash( string, font, characterSize, style, tabWidth, outlineThickness,
-							   tabOffset, baseDirection, wrapMode, wrapWidth, keepIndentation );
+							   tabOffset, baseDirection, wrapMode, wrapWidth, keepIndentation,
+							   initialXOffset );
 
 		auto cacheHit = sLayoutCache.get( hash );
 		if ( cacheHit.has_value() )

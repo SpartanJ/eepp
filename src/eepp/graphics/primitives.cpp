@@ -571,4 +571,18 @@ void Primitives::drawSoftShadow( const Rectf& boxRect, const Vector2f& shadowOff
 	drawBatch();
 }
 
+void Primitives::drawPixelPerfectLineRectangle( const Rectf& rect ) {
+	auto fillMode = getFillMode();
+	auto lw = getLineWidth();
+	setFillMode( PrimitiveFillMode::DRAW_FILL );
+	drawRectangle( { rect.getPosition(), { lw, rect.getHeight() } } );
+	drawRectangle( { { rect.getPosition().x + lw, rect.getPosition().y },
+	 				   { rect.getWidth() - lw, lw } } );
+	drawRectangle( { { rect.getPosition().x + lw, rect.getPosition().y + rect.getHeight() - lw },
+					   { rect.getWidth() - lw, lw } } );
+	drawRectangle( { { rect.getPosition().x + rect.getWidth() - lw, rect.getPosition().y + lw },
+					   { lw, rect.getHeight() - lw } } );
+	setFillMode( fillMode );
+}
+
 }} // namespace EE::Graphics

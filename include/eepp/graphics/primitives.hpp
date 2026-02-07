@@ -111,6 +111,10 @@ class EE_API Primitives {
 							   const Float& Angle = 0, const Vector2f& Scale = Vector2f::One,
 							   const unsigned int& Corners = 8 );
 
+	/** Draw a pixel perfect line rectangle. In contrast with drawRectangle with
+	 * PrimitiveFillMode::DRAW_FILL this version draw filled rectangles of the line-width set.  */
+	void drawPixelPerfectLineRectangle( const Rectf& rect );
+
 	/** Draw a four edges polygon on screen
 	 * @param q The Quad
 	 * @param OffsetX X offset for the quad

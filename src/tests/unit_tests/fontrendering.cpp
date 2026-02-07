@@ -916,10 +916,7 @@ UTEST( FontRendering, TextLayoutWrap ) {
 		Vector2f pos{ 5, 5 };
 		Primitives p;
 		p.setColor( Color::Red );
-		p.drawRectangle( Rectf( pos - 1.f, { 1, 546 } ) );
-		p.drawRectangle( Rectf( pos - 1.f, { 501, 1 } ) );
-		p.drawRectangle( Rectf( { pos.x - 1.f, 544 + pos.y }, { 502, 1 } ) );
-		p.drawRectangle( Rectf( { 500 + pos.x, pos.y - 1.f }, { 1, 546 } ) );
+		p.drawPixelPerfectLineRectangle( { { 4, 4 }, { 502, 546 } } );
 
 		FontTrueType* font =
 			static_cast<FontTrueType*>( app.getUI()->getUIThemeManager()->getDefaultFont() );
@@ -1257,4 +1254,188 @@ UTEST( FontRendering, TextSelection ) {
 	}
 
 	Engine::destroySingleton();
+}
+
+UTEST( FontRendering, TextInitialOffset ) {
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+	std::string loremIpsum;
+	FileSystem::fileGet( "assets/textfiles/lorem-ipsum.uext", loremIpsum );
+	String string( loremIpsum );
+	string.pop_back();
+
+	const auto runTest = [&]() {
+		auto win = Engine::instance()->createWindow(
+			WindowSettings( 512, 400, "eepp - Text Initial Offset", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ) );
+
+		ASSERT_TRUE_MSG( win->isOpen(), "Failed to create Window" );
+
+		win->setClearColor( RGB( 255, 255, 255 ) );
+		win->clear();
+
+		FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+		font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+
+		Primitives p;
+		Float lw = p.getLineWidth();
+		p.setColor( Color::Red );
+		p.setFillMode( PrimitiveFillMode::DRAW_LINE );
+
+		// Test 1: Text with paragraph indent (initial X offset)
+		Float paragraphIndent = 40.f;
+		Float maxWidth = 400.f;
+		Vector2f pos{ 20, 20 };
+
+		Text text;
+		text.setFont( font );
+		text.setFontSize( 14 );
+		text.setColor( Color::Black );
+		text.setString( string );
+		text.setLineWrapMode( LineWrapMode::Word );
+		text.setMaxWrapWidth( maxWidth );
+		text.setInitialOffset( { paragraphIndent, 0 } );
+		p.drawPixelPerfectLineRectangle(
+			text.getLocalBounds().move( pos ).move( { -lw, -lw } ).enlarge( { lw * 2, lw * 2 } ) );
+		text.draw( pos.x, pos.y );
+
+		// Test 2: Text with Y offset (simulating a text block shifted down)
+		pos.y += text.getTextHeight() + 30;
+		text.setInitialOffset( { paragraphIndent * 2, 0 } ); // Larger indent
+		p.drawPixelPerfectLineRectangle(
+			text.getLocalBounds().move( pos ).move( { -lw, -lw } ).enlarge( { lw * 2, lw * 2 } ) );
+		text.draw( pos.x, pos.y );
+
+		compareImages( utest_state, utest_result, win, "eepp-text-initial-offset" );
+
+		Engine::destroySingleton();
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+
+		UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
+		runTest();
+	}
+}
+
+UTEST( FontRendering, TextContiguousOffset ) {
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	const auto runTest = [&]() {
+		auto win = Engine::instance()->createWindow(
+			WindowSettings( 512, 300, "eepp - Text Contiguous Offset", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ) );
+
+		ASSERT_TRUE_MSG( win->isOpen(), "Failed to create Window" );
+
+		win->setClearColor( RGB( 255, 255, 255 ) );
+		win->clear();
+
+		FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+		font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+
+		Float maxWidth = 450.f;
+		Vector2f pos{ 20, 20 };
+		Float paragraphIndent = 30.f;
+
+		Primitives p;
+		p.setColor( Color::Red );
+		Float lw = p.getLineWidth();
+
+		// Simulate RichText: Two contiguous Text instances
+		// First Text: "Hello " in black (with paragraph indent)
+		Text text1;
+		text1.setFont( font );
+		text1.setFontSize( 16 );
+		text1.setColor( Color::seagreen );
+		text1.setString( "Hello " );
+		text1.setInitialOffset( { paragraphIndent, 0 } );
+		text1.draw( pos.x, pos.y );
+
+		Float text1EndX = text1.getLastLineWidth();
+
+		// Second Text: "World! This is a long text that should wrap to a second visual line..."
+		// in red, continuing from text1's end position
+		Text text2;
+		text2.setFont( font );
+		text2.setFontSize( 16 );
+		text2.setColor( Color::darkmagenta );
+		text2.setString( "World! This is a RichText simulation where the second Text segment "
+						 "continues from where the first left off and should wrap correctly "
+						 "to multiple visual lines. The wrap should respect the initial offset." );
+		text2.setLineWrapMode( LineWrapMode::Word );
+		text2.setMaxWrapWidth( maxWidth );
+		text2.setInitialOffset( { text1EndX, 0 } ); // Continue from text1's end
+		text2.draw( pos.x, pos.y );
+
+		p.drawPixelPerfectLineRectangle( text1.getLocalBounds()
+											 .move( pos )
+											 .expand( text2.getLocalBounds().move( pos ) )
+											 .move( { -lw, -lw } )
+											 .enlarge( { lw * 2, lw * 2 } ) );
+
+		// Verify the second text wrapped
+		EXPECT_GT( text2.getVisualLineCount(), (Uint32)1 );
+
+		// Second example: Without paragraph indent
+		pos.y += text2.getTextHeight() + 30;
+
+		Text text3;
+		text3.setFont( font );
+		text3.setFontSize( 16 );
+		text3.setColor( Color::Blue );
+		text3.setString( "Start: " );
+		text3.draw( pos.x, pos.y );
+
+		Float text3EndX = text3.getLastLineWidth();
+
+		Text text4;
+		text4.setFont( font );
+		text4.setFontSize( 16 );
+		text4.setColor( Color::darkorchid );
+		text4.setString( "This text continues from \"Start: \" and also wraps to show "
+						 "that the initial X offset is correctly applied only to the first "
+						 "visual line, while subsequent lines start at x=0." );
+		text4.setLineWrapMode( LineWrapMode::Word );
+		text4.setMaxWrapWidth( maxWidth );
+		text4.setInitialOffset( { text3EndX, 0 } );
+		text4.draw( pos.x, pos.y );
+
+		p.drawPixelPerfectLineRectangle( text3.getLocalBounds()
+											 .move( pos )
+											 .expand( text4.getLocalBounds().move( pos ) )
+											 .move( { -lw, -lw } )
+											 .enlarge( { lw * 2, lw * 2 } ) );
+
+		EXPECT_GT( text4.getVisualLineCount(), (Uint32)1 );
+
+		compareImages( utest_state, utest_result, win, "eepp-text-contiguous-offset" );
+
+		Engine::destroySingleton();
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+
+		UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
+		runTest();
+	}
 }
