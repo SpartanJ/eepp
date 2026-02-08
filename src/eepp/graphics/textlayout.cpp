@@ -549,13 +549,16 @@ void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
 
 	result.size = Sizef::Zero;
 
+	Float yShift = 0.f;
+
 	for ( std::size_t paragraphIdx = 0; paragraphIdx < paragraphCount; paragraphIdx++ ) {
 		ShapedTextParagraph& sp = result.paragraphs[paragraphIdx];
 		std::size_t shapedGlyphCount = sp.shapedGlyphs.size();
 		std::size_t lastSpace = std::string::npos;
 		std::size_t lastSpaceStringIdx = std::string::npos;
 		Vector2f currentOffset( 0.f, 0.f );
-		Sizef maxSize{ 0, vspace };
+		Sizef maxSize{ 0, vspace + yShift };
+		std::size_t startWrapsCount = sp.wrapInfo.wraps.size();
 
 		std::vector<Float> wrapsWidth = std::move( sp.wrapInfo.wrapsWidth );
 		sp.wrapInfo.wrapsWidth.clear();
@@ -564,6 +567,11 @@ void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
 			sp.wrapInfo.paddingStart = LineWrap::computeOffsets(
 				string.substr( sp.shapedGlyphs[0].stringIndex ), font, characterSize, fontStyle,
 				outlineThickness, tabWidth, eemax( wrapWidth - hspace, hspace ) );
+		}
+
+		if ( yShift != 0.f ) {
+			for ( auto& sg : sp.shapedGlyphs )
+				sg.position.y += yShift;
 		}
 
 		for ( std::size_t idx = 0; idx < shapedGlyphCount; idx++ ) {
@@ -646,6 +654,8 @@ void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
 
 		result.size = { std::max( sp.size.x, result.size.x ),
 						std::max( sp.size.y, result.size.y ) };
+
+		yShift += ( sp.wrapInfo.wraps.size() - startWrapsCount ) * vspace;
 	}
 }
 

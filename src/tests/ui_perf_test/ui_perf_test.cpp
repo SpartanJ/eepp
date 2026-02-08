@@ -153,11 +153,11 @@ void mainLoop() {
 
 EE_MAIN_FUNC int main( int, char*[] ) {
 	{
-		Text::TextShaperEnabled = true;
-		Text::TextShaperOptimizations = false;
+		// Text::TextShaperEnabled = true;
+		// Text::TextShaperOptimizations = false;
 		UIApplication app( WindowSettings( 1024, 650, "eepp - TextEdit", WindowStyle::Default,
 										   WindowBackend::Default, 32, {}, 1, false, true ),
-						   UIApplication::Settings( {}, 1.33f ) );
+						   UIApplication::Settings( {}, 1.5f ) );
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 		auto ll = UILinearLayout::NewVertical();
 		ll->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
@@ -168,7 +168,7 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		*/
 		editor->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 		editor->setParent( ll );
-		editor->setFontSize( PixelDensity::dpToPx( 12 ) );
+		// editor->setFontSize( PixelDensity::dpToPx( 12 ) );
 		FontManager::instance()->addFallbackFont(
 			FontTrueType::New( "arabic", "unit_tests/assets/fonts/NotoNaskhArabic-Regular.ttf" ) );
 		FontManager::instance()->addFallbackFont( FontTrueType::New(
@@ -185,14 +185,16 @@ EE_MAIN_FUNC int main( int, char*[] ) {
 		// editor->loadFromFile( "unit_tests/assets/textfiles/test-mixed-text.uext" );
 		// editor->loadFromFile( "unit_tests/assets/textfiles/lorem-ipsum.uext" );
 		std::string buffer;
-		FileSystem::fileGet( "unit_tests/assets/textfiles/lorem-ipsum.uext", buffer );
+		FileSystem::fileGet( "unit_tests/assets/textfiles/quota.uext", buffer );
 		editor->setText( buffer );
 		editor->setTextSelectionEnabled( true );
+		editor->setTextSelectionRange( { 51, 286 } );
 
 		editor->setFont( app.getUI()->getUIThemeManager()->getDefaultFont() );
 		editor->on( Event::KeyUp, [&]( const Event* event ) {
 			if ( event->asKeyEvent()->getKeyCode() == KEY_F1 ) {
-				Text::TextShaperEnabled = !Text::TextShaperEnabled;
+				// Text::TextShaperEnabled = !Text::TextShaperEnabled;
+				// Text::TextShaperOptimizations = !Text::TextShaperOptimizations;
 				app.getUI()->getRoot()->invalidateDraw();
 			}
 		} );

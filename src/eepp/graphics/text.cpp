@@ -808,6 +808,8 @@ Vector2f Text::findCharacterPos( std::size_t index ) const {
 	}
 
 	Int64 startIdx = mVisualLines[lineIndex];
+	if ( mString[startIdx] == '\n' )
+		startIdx++;
 	Int64 endIdx =
 		( lineIndex + 1 < visualLinesSize ) ? mVisualLines[lineIndex + 1] : (Int64)mString.size();
 	if ( endIdx > (Int64)mString.size() )
@@ -885,6 +887,9 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest ) cons
 	}
 
 	Int64 startIdx = mVisualLines[lineIndex];
+	if ( mString[startIdx] == '\n' )
+		startIdx++;
+
 	Int64 endIdx = ( lineIndex + 1 < (int)visualLinesSize ) ? mVisualLines[lineIndex + 1]
 															: (Int64)mString.size();
 	if ( endIdx > (Int64)mString.size() )
@@ -1210,7 +1215,7 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 
 	Uint32 prevChar = 0;
 	bool isMonospace = font->isMonospace();
-	for ( std::size_t i = 0; i < index; ++i ) {
+	for ( std::size_t i = 0; i <= index; ++i ) {
 		String::StringBaseType curChar = string[i];
 
 		// Apply the kerning offset
@@ -1219,6 +1224,9 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 						  : static_cast<Float>( font->getKerning( prevChar, curChar, fontSize, bold,
 																  italic, outlineThickness ) );
 		prevChar = curChar;
+
+		if ( index == i )
+			break;
 
 		// Handle special characters
 		switch ( curChar ) {
@@ -1387,9 +1395,11 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 		} else if ( codepoint == '\t' ) {
 			width += tabAdvance( hspace, tabWidth, tabOffset ? *tabOffset + width : tabOffset );
 		}
+
 		if ( codepoint == '\n' ) {
 			lWidth = 0;
 			width = 0;
+			fpos.x = static_cast<Float>( pos.x );
 		}
 
 		if ( fpos.x <= width && fpos.x >= lWidth && fpos.y <= height && fpos.y >= lHeight ) {
@@ -1416,9 +1426,6 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest, Font*
 			height += vspace;
 			// After newline, X offset no longer applies (subsequent lines start at x=0)
 			fpos.x = static_cast<Float>( pos.x );
-			if ( fpos.x > width && fpos.y <= lHeight ) {
-				return i;
-			}
 		}
 	}
 

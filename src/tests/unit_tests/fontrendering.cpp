@@ -991,6 +991,7 @@ UTEST( FontRendering, LineWrapInfo ) {
 	runTest( "assets/textfiles/test-hard-wrap.uext" );
 	runTest( "assets/textfiles/lorem-ipsum.uext" );
 	runTest( "assets/textfiles/test-tabs.txt" );
+	runTest( "assets/textfiles/quota.uext" );
 }
 
 UTEST( FontRendering, TextHardWrap ) {
@@ -1061,6 +1062,46 @@ UTEST( FontRendering, UITextViewWrappedSelection ) {
 		SceneManager::instance()->draw();
 		compareImages( utest_state, utest_result, app.getWindow(),
 					   "eepp-textview-wrapped-selection" );
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+
+		UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
+		runTest();
+	}
+}
+
+UTEST( FontRendering, UITextViewWrappedSelection2 ) {
+	const auto runTest = [&]() {
+		UIApplication app(
+			WindowSettings( 1024, 650, "eepp - TextView Wrapped Selection", WindowStyle::Default,
+							WindowBackend::Default, 32, {}, 1, false, true ),
+			UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(),
+									 1.5f ) );
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+		std::string buffer;
+		FileSystem::fileGet( "assets/textfiles/quota.uext", buffer );
+		auto textView = UITextView::New();
+		textView->setLayoutSizePolicy( SizePolicy::Fixed, SizePolicy::WrapContent );
+		textView->setPixelsSize( app.getUI()->getPixelsSize() );
+		textView->setText( buffer );
+		textView->setWordWrap( true );
+		textView->setTextSelectionEnabled( true );
+		textView->setTextSelectionRange( { 51, 286 } );
+		SceneManager::instance()->update();
+		SceneManager::instance()->draw();
+		compareImages( utest_state, utest_result, app.getWindow(),
+					   "eepp-textview-wrapped-selection-2" );
 	};
 
 	UTEST_PRINT_STEP( "Text Shaper disabled" );
