@@ -446,7 +446,7 @@ jobs:
           mem: 8192
           disable-cache: true
           prepare: |
-            pkgman install -y libsdl2 libsdl2-devel git gcc
+            pkgman install -y libsdl2 libsdl2_devel git gcc
           run: |
             git config --global --add safe.directory "$GITHUB_WORKSPACE"
             bash projects/scripts/patch_commit_number.sh
