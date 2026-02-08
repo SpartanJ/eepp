@@ -202,11 +202,13 @@ UTEST( RichText, RichTextTest ) {
 		p.setColor( Color::Black );
 
 		Float line1X = richText.getPosition().x + boxWidth;
-		p.drawLine( { { line1X, 0 }, { line1X, (Float)win->getHeight() } } );
+		p.drawPixelPerfectLineRectangle(
+			{ line1X, 0, line1X + p.getLineWidth(), (Float)win->getHeight() } );
 
 		Float line2X =
 			richText2.getPosition().x + static_cast<Float>( std::ceil( win->getWidth() * 0.15 ) );
-		p.drawLine( { { line2X, 0 }, { line2X, (Float)win->getHeight() } } );
+		p.drawPixelPerfectLineRectangle(
+			{ line2X, 0, line2X + p.getLineWidth(), (Float)win->getHeight() } );
 
 		richText.draw();
 		richText2.draw();
