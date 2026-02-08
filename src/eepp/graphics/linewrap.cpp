@@ -129,6 +129,9 @@ LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, Uin
 			: whiteSpaceWidth;
 
 	if ( keepIndentation ) {
+		// paddingStart is the offset added to the wrapped lines based on the initial intendation of
+		// the line. This is to keep the indented wrapped lines aligned with the line indentation.
+		// Useful for code editors.
 		info.paddingStart =
 			LineWrap::computeOffsets( string, font, characterSize, fontStyle, outlineThickness,
 									  tabWidth, eemax( maxWidth - hspace, hspace ), tabStops );
@@ -142,7 +145,7 @@ LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, Uin
 								   static_cast<FontTrueType*>( font )->isIdentifiedAsMonospace() &&
 								   Text::canSkipShaping( textDrawHints ) ) );
 
-	size_t lastSpace = 0;
+	size_t lastSpace = std::string::npos;
 	Uint32 prevChar = 0;
 	size_t idx = 0;
 	bool hasWrap = maxWidth > 0 && mode != LineWrapMode::NoWrap;
@@ -179,7 +182,7 @@ LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, Uin
 		xoffset += w;
 
 		if ( hasWrap && xoffset > maxWidth ) {
-			if ( mode == LineWrapMode::Word && lastSpace ) {
+			if ( mode == LineWrapMode::Word && lastSpace != std::string::npos ) {
 				if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
 					info.wrapsWidth.push_back( std::ceil( lastWordWrapWidth ) );
 				}
@@ -187,14 +190,32 @@ LineWrap::computeLineBreaksInternal( const String::View& string, Font* font, Uin
 				info.wraps.push_back( lastSpace + 1 );
 				xoffset = info.paddingStart + ( xoffset - lastWidth );
 			} else {
-				if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
-					info.wrapsWidth.push_back( std::ceil( xoffset - w ) );
-				}
+				// If we are about to split a word, check if we can move it to the next line
+				if ( mode == LineWrapMode::Word && info.wraps.size() == 1 &&
+					 xoffset - initialXOffset <= maxWidth ) {
+					// We can move it to the next line
+					if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
+						info.wrapsWidth.push_back( 0 ); // Empty line width
+					}
 
-				info.wraps.push_back( idx );
-				xoffset = info.paddingStart;
+					// Wrap at the beginning of the line
+					size_t splitIdx = info.wraps.back();
+					info.wraps.push_back( splitIdx );
+
+					// xoffset on next line = paddingStart + (width of content from splitIdx to
+					// idx). width of content from splitIdx to idx = (xoffset - initialXOffset)
+					Float pendingWidth = xoffset - initialXOffset;
+					xoffset = info.paddingStart + pendingWidth;
+				} else {
+					if constexpr ( std::is_same_v<LineWrapType, LineWrapInfoEx> ) {
+						info.wrapsWidth.push_back( std::ceil( xoffset - w ) );
+					}
+
+					info.wraps.push_back( idx );
+					xoffset = info.paddingStart;
+				}
 			}
-			lastSpace = 0;
+			lastSpace = std::string::npos;
 			lastWordWrapWidth = 0.f;
 		} else if ( isWrapChar( curChar ) ) {
 			lastSpace = idx;

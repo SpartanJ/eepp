@@ -21,6 +21,7 @@
 #include <eepp/graphics/globaltextureatlas.hpp>
 #include <eepp/graphics/glyphdrawable.hpp>
 #include <eepp/graphics/image.hpp>
+#include <eepp/graphics/linewrap.hpp>
 #include <eepp/graphics/ninepatch.hpp>
 #include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/graphics/particle.hpp>
@@ -33,13 +34,16 @@
 #include <eepp/graphics/renderer/renderergl.hpp>
 #include <eepp/graphics/renderer/renderergl3.hpp>
 #include <eepp/graphics/rendermode.hpp>
+#include <eepp/graphics/richtext.hpp>
 #include <eepp/graphics/scopedtexture.hpp>
 #include <eepp/graphics/scrollparallax.hpp>
 #include <eepp/graphics/shader.hpp>
 #include <eepp/graphics/shaderprogram.hpp>
 #include <eepp/graphics/shaderprogrammanager.hpp>
+#include <eepp/graphics/shapedglyph.hpp>
 #include <eepp/graphics/sprite.hpp>
 #include <eepp/graphics/text.hpp>
+#include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/texture.hpp>
 #include <eepp/graphics/textureatlas.hpp>
 #include <eepp/graphics/textureatlasloader.hpp>

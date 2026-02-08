@@ -578,6 +578,17 @@ void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
 
 				bool performWordWrap =
 					( lineWrapMode == LineWrapMode::Word && lastSpace != std::string::npos );
+				bool forceNextLine = false;
+
+				if ( !performWordWrap && lineWrapMode == LineWrapMode::Word &&
+					 sp.wrapInfo.wraps.size() == 1 ) {
+					// Check if fits in next line
+					Float currentWordWidth =
+						sg.position.x + sg.advance.x - sp.shapedGlyphs[0].position.x;
+					if ( currentWordWidth <= wrapWidth - sp.wrapInfo.paddingStart ) {
+						forceNextLine = true;
+					}
+				}
 
 				if ( performWordWrap ) {
 					ShapedGlyph& prevBreakGlyph = sp.shapedGlyphs[lastSpace];
@@ -589,6 +600,9 @@ void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
 				if ( performWordWrap ) {
 					breakIndex = lastSpace + 1;
 					breakStringIdx = lastSpaceStringIdx + 1;
+				} else if ( forceNextLine ) {
+					breakIndex = 0;
+					breakStringIdx = sp.shapedGlyphs[0].stringIndex;
 				}
 
 				if ( breakIndex > idx )

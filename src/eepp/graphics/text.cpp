@@ -821,8 +821,8 @@ Vector2f Text::findCharacterPos( std::size_t index ) const {
 
 	Vector2f pos = Text::findCharacterPos(
 		index - startIdx, mFontStyleConfig.Font, mFontStyleConfig.CharacterSize, strWrapper,
-		mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness, {}, true,
-		mTextHints );
+		mFontStyleConfig.Style, mTabWidth, mFontStyleConfig.OutlineThickness, {}, true, mTextHints,
+		TextDirection::Unspecified, lineIndex == 0 ? mInitialOffset : Vector2f::Zero );
 
 	return Vector2f( pos.x + centerDiffX, y );
 }
@@ -1166,6 +1166,47 @@ Vector2f Text::findCharacterPos( std::size_t index, Font* font, const Uint32& fo
 		return position;
 	}
 #endif
+
+	// If soft-wrap is enabled and we are not using the shaper (or it's skipped), we need to compute
+	// line breaks to correctly calculate the position.
+	if ( lineWrapMode != LineWrapMode::NoWrap ) {
+		if ( index == 0 )
+			return position;
+
+		LineWrapInfo info = LineWrap::computeLineBreaks(
+			string, font, fontSize, maxWrapWidth, lineWrapMode, style, outlineThickness, false,
+			tabWidth, 0.f, textDrawHints, false, initialOffset.x );
+
+		size_t lineIndex = 0;
+		size_t lineStartIdx = 0;
+
+		for ( size_t i = 1; i < info.wraps.size(); ++i ) {
+			if ( index < static_cast<size_t>( info.wraps[i] ) ) {
+				break;
+			}
+			lineIndex = i;
+			lineStartIdx = info.wraps[i];
+		}
+
+		if ( lineIndex > 0 ) {
+			position.x = info.paddingStart;
+			position.x += info.paddingStart;
+			position.y += vspace * lineIndex;
+		}
+
+		Float segmentWidth = 0;
+		if ( index > lineStartIdx ) {
+			std::optional<Float> currentTabOffset =
+				lineIndex == 0 ? initialOffset.x : info.paddingStart;
+			String::View segment = string.view().substr( lineStartIdx, index - lineStartIdx );
+			segmentWidth =
+				Text::getTextWidth( font, fontSize, segment, style, tabWidth, outlineThickness,
+									textDrawHints, direction, currentTabOffset );
+		}
+
+		position.x += segmentWidth;
+		return position;
+	}
 
 	Uint32 prevChar = 0;
 	bool isMonospace = font->isMonospace();

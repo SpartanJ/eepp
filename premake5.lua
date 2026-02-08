@@ -1435,6 +1435,12 @@ workspace "eepp"
 		files { "src/examples/ui_hello_world/*.cpp" }
 		build_link_configuration( "eepp-ui-hello-world", true )
 
+	project "eepp-richtext"
+		set_kind()
+		language "C++"
+		files { "src/examples/richtext/*.cpp" }
+		build_link_configuration( "eepp-richtext", true )
+
 	project "eepp-7guis-counter"
 		set_kind()
 		language "C++"
