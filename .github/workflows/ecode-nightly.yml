@@ -406,7 +406,9 @@ jobs:
           sync: sshfs
           usesh: true
           mem: 8192
+          disable-cache: true
           prepare: |
+            pkg upgrade -y
             pkg install -y bash git sdl2 curl premake5 gsed gmake
           run: |
             export CC=clang
