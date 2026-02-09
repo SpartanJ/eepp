@@ -687,6 +687,11 @@ Window::border::bottom {
 	background-color: var(--separator);
 }
 
+DropDownList {
+	padding-right: 16dp;
+	text-overflow: ellipsis;
+}
+
 DropDownList,
 ComboBox::Button {
 	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M12 15.6315L20.9679 10.8838L20.0321 9.11619L12 13.3685L3.96788 9.11619L3.0321 10.8838L12 15.6315Z'></path></svg>");

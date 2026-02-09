@@ -339,6 +339,12 @@
         "command": "${project_root}/bin/eepp-richtext-debug",
         "name": "eepp-richtext-debug",
         "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-treeviewmodel-debug",
+        "name": "eepp-treeviewmodel-debug",
+        "working_dir": "${project_root}/bin"
       }
     ],
     "var": {

@@ -1607,6 +1607,12 @@ solution "eepp"
 		files { "src/examples/7guis/cells/*.cpp" }
 		build_link_configuration( "eepp-7guis-cells", true )
 
+	project "eepp-treeviewmodel"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_treeview_model/*.cpp" }
+		build_link_configuration( "eepp-treeviewmodel", true )
+
 	-- Tools
 	project "eepp-textureatlaseditor"
 		set_kind()

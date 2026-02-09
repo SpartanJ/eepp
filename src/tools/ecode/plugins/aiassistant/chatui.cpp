@@ -72,8 +72,11 @@ LLMChat::Role LLMChat::stringToRole( UIPushButton* userBut ) {
 static const char* DEFAULT_LAYOUT = R"xml(
 <style>
 .llm_chatui DropDownList {
-	border: 0;
+	border-color: transparent;
 	background-color: var(--tab-back);
+}
+.llm_chatui DropDownList:hover {
+	border-color: var(--primary);
 }
 .llm_conversation {
 	margin-bottom: 8dp;

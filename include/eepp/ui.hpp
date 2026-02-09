@@ -86,6 +86,7 @@
 #include <eepp/ui/models/model.hpp>
 #include <eepp/ui/models/modelselection.hpp>
 #include <eepp/ui/models/sortingproxymodel.hpp>
+#include <eepp/ui/models/stringmapmodel.hpp>
 #include <eepp/ui/models/widgettreemodel.hpp>
 
 #include <eepp/ui/uidatabind.hpp>
