@@ -185,10 +185,7 @@ UITextView* UITextView::setFontStyle( const Uint32& fontStyle ) {
 }
 
 const String& UITextView::getText() const {
-	if ( mFlags & UI_WORD_WRAP )
-		return mString;
-
-	return mTextCache.getString();
+	return mString;
 }
 
 UITextView* UITextView::setText( const String& text ) {
