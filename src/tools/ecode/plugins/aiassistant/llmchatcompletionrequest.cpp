@@ -32,7 +32,16 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 		std::string chunk =
 			mReadBytes ? mStream.getStream().substr( mReadBytes ) : mStream.getStream();
 		mReadBytes = mStream.getStream().size();
-		String::readBySeparator( chunk, [this]( std::string_view subchunk ) {
+
+		mBuffer += chunk;
+		auto lastNL = mBuffer.find_last_of( '\n' );
+
+		if ( lastNL == std::string::npos )
+			return true;
+
+		std::string_view processChunk = std::string_view{ mBuffer }.substr( 0, lastNL );
+
+		String::readBySeparator( processChunk, [this]( std::string_view subchunk ) {
 			if ( subchunk.empty() )
 				return;
 			// OpenAI format?
@@ -104,6 +113,8 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 				mResponse += std::move( delta );
 			}
 		} );
+
+		mBuffer.erase( 0, lastNL + 1 );
 		return true;
 	} );
 }
@@ -116,6 +127,7 @@ void LLMChatCompletionRequest::request() {
 	mCancel = false;
 	mCancelled = false;
 	mHadProgress = false;
+	mBuffer.clear();
 	Http::Response res = mHttp->downloadRequest( mRequest, mStream, Seconds( 5 ) );
 	if ( doneCb )
 		doneCb( *this, res );
@@ -125,6 +137,7 @@ void LLMChatCompletionRequest::requestAsync() {
 	mCancel = false;
 	mCancelled = false;
 	mHadProgress = false;
+	mBuffer.clear();
 	mRequestId = mHttp->downloadAsyncRequest(
 		[this]( const Http&, Http::Request&, Http::Response& res ) {
 			if ( doneCb )

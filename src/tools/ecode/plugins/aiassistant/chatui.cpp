@@ -1127,9 +1127,7 @@ std::string LLMChatUI::prepareApiUrl( const std::string& apiKey ) {
 }
 
 static bool allNewLines( const std::string& s ) {
-	if ( s.empty() )
-		return false;
-	return std::all_of( s.begin(), s.end(), []( char c ) { return c == '\n'; } );
+	return !s.empty() && std::all_of( s.begin(), s.end(), []( char c ) { return c == '\n'; } );
 }
 
 void LLMChatUI::doRequest() {

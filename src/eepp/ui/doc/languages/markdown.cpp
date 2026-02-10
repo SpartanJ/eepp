@@ -172,14 +172,6 @@ void addMarkdown() {
 				{
 					{ { "include", "$self" }, "type,strikethrough" },
 				} },
-			  { { "~", "(~|\n)" },
-				{ "type,strikethrough" },
-				{},
-				"",
-				SyntaxPatternMatchType::RegEx,
-				{
-					{ { "include", "$self" }, "type,strikethrough" },
-				} },
 		  } },
 
 		{ "decorations",
