@@ -434,7 +434,19 @@
         },
         {
           "name": "stepfun/step-3.5-flash:free",
-          "display_name": "StepFun: Step 3.5 Flash"
+          "display_name": "StepFun: Step 3.5 Flash (free)"
+        },
+        {
+          "name": "z-ai/glm-4.7",
+          "display_name": "GLM 4.7"
+        },
+        {
+          "name": "z-ai/glm-5",
+          "display_name": "GLM 5"
+        },
+        {
+          "name": "qwen/qwen3-coder:free",
+          "display_name": "Qwen3 Coder 480B A35B (free)"
         }
       ]
     },
