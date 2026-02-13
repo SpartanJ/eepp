@@ -20,8 +20,7 @@ class EE_API UIDropDownList : public UITextInput {
 
 	static std::string menuWidthModeToString( MenuWidthMode rule );
 
-	class StyleConfig {
-	  public:
+	struct StyleConfig {
 		Uint32 MaxNumVisibleItems = 10;
 		bool PopUpToRoot = false;
 		MenuWidthMode menuWidthRule{ MenuWidthMode::DropDown };

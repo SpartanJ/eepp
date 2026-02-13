@@ -1,17 +1,29 @@
 
-# TODO - Short and mid term plans.
+# TODO
+
+## Graphics Module
+
+* Implement shared pointers for resource management in eepp
 
 ## UI Module
 
+* Implement a better DropDownList (model/view approach)
+
 * Implement a Rich Text View.
-
-* Implement a Flex layout.
-
-* Implement support for very simple state-changes from the XML file (ex: onclick="toggleclass(x)").
 
 * Implement TableView and TreeView properties.
 
+* Add automatic font-fallback for lang scripts
+
 * Implement support for setting and creating a model from the XML.
+
+* Implement support for very simple state-changes from the XML file (ex: onclick="toggleclass(x)").
+
+* Implement a Markdown View
+
+* Implement smooth-scrolling for macOS
+
+* Implement UITabWidgetSplitter
 
 ### CSS
 
