@@ -4,9 +4,9 @@
 	author: 'NullPlane'
 	author_link: 'github.com/NullPlane'
 	collaborators: [ 'SpartanJ', 'NullPlane' ]
-	version: '0.7.2_r01'
+	version: '0.7.4_r00'
 	created: 2024-02-08
-	updated: 2025-08-26
+	updated: 2026-02-14
 	language: 'de'
 	format: 'xml'
 	file: 'de.xml'
@@ -409,7 +409,7 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="go_to_line_in_current_document">In aktuellem Dokument zu Zeile springen</string>
 	<string name="gone">verschwunden</string>  <!-- ###STATE### -->
 	<string name="group">Gruppierung</string>
-	<string name="h_as_cpp">.h-Dateien als C++-Code ansehen.</string>
+	<string name="treat_h_files_as_ellipsis">.h-Dateien als C++-Code ansehen.</string>
 	<string name="help">Hilfe</string>
 	<string name="hide">Ausblenden</string>
 	<string name="hide_tabbar_on_single_tab">Tableiste bei einzelnem Tab ausblenden</string>
