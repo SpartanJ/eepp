@@ -868,7 +868,7 @@ void LLMChatUI::fillApiModels( UIDropDownList* modelDDL ) {
 		modelDDL->runOnMainThread( [pname = std::move( pname ), modelDDL, this] {
 			String providerName( pname );
 			std::vector<String> removeValues;
-			size_t count = modelDDL->getListBox()->getCount();
+			size_t count = modelDDL->getListBox()->getItemsCount();
 			for ( size_t i = 0; i < count; i++ ) {
 				const String& txt = modelDDL->getListBox()->getItemText( i );
 				if ( txt.contains( providerName ) )

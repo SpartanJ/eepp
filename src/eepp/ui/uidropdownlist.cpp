@@ -171,7 +171,7 @@ UIDropDownList* UIDropDownList::showList() {
 		return this;
 
 	if ( !mListBox->isVisible() ) {
-		if ( mListBox->getCount() ) {
+		if ( mListBox->getItemsCount() ) {
 			Rectf tPadding = mListBox->getContainerPadding();
 
 			Float sliderValue = mListBox->getVerticalScrollBar()->getValue();
@@ -206,7 +206,7 @@ UIDropDownList* UIDropDownList::showList() {
 			}
 
 			mListBox->setSize(
-				width, (Int32)( eemin( mListBox->getCount(), mStyleConfig.MaxNumVisibleItems ) *
+				width, (Int32)( eemin( mListBox->getItemsCount(), mStyleConfig.MaxNumVisibleItems ) *
 								mListBox->getRowHeight() ) +
 						   tPadding.Top + tPadding.Bottom +
 						   ( mListBox->getHorizontalScrollBar() &&
@@ -278,7 +278,7 @@ UIDropDownList* UIDropDownList::setMaxNumVisibleItems( const Uint32& maxNumVisib
 
 		if ( NULL != mListBox )
 			mListBox->setSize( getSize().getWidth(), std::min( mStyleConfig.MaxNumVisibleItems,
-															   getListBox()->getCount() ) *
+															   getListBox()->getItemsCount() ) *
 														 mListBox->getRowHeight() );
 	}
 	return this;

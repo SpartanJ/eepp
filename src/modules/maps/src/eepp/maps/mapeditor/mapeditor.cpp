@@ -922,7 +922,7 @@ void MapEditor::addNewGOType( const Event* ) {
 
 void MapEditor::onNewGOTypeAdded( std::string name, String::HashType ) {
 	if ( "" != name ) {
-		for ( Uint32 i = 0; i < mGOTypeList->getListBox()->getCount(); i++ ) {
+		for ( Uint32 i = 0; i < mGOTypeList->getListBox()->getItemsCount(); i++ ) {
 			UIListBoxItem* Item = mGOTypeList->getListBox()->getItem( i );
 
 			if ( Item->getText() == name )
@@ -956,7 +956,7 @@ void MapEditor::fillSGCombo() {
 		mTextureAtlasesList->getListBox()->addListBoxItems( items );
 	}
 
-	if ( mTextureAtlasesList->getListBox()->getCount() &&
+	if ( mTextureAtlasesList->getListBox()->getItemsCount() &&
 		 NULL == mTextureAtlasesList->getListBox()->getItemSelected() ) {
 		mTextureAtlasesList->getListBox()->setSelected( 0 );
 	}
@@ -985,7 +985,7 @@ void MapEditor::fillTextureRegionList() {
 	}
 
 	mTextureRegionList->getVerticalScrollBar()->setClickStep(
-		8.f / (Float)mTextureRegionList->getCount() );
+		8.f / (Float)mTextureRegionList->getItemsCount() );
 }
 
 void MapEditor::onTextureRegionChange( const Event* ) {
@@ -1389,7 +1389,7 @@ void MapEditor::cextureAtlasOpen( const Event* Event ) {
 }
 
 void MapEditor::onLayerAdd( UIMapLayerNew* UILayer ) {
-	bool SetSelected = ( 0 == mLayerList->getListBox()->getCount() ) ? true : false;
+	bool SetSelected = ( 0 == mLayerList->getListBox()->getItemsCount() ) ? true : false;
 
 	mLayerList->getListBox()->addListBoxItem( UILayer->getName() );
 
