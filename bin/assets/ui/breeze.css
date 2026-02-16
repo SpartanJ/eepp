@@ -672,6 +672,8 @@ Window {
 	window-buttons-offset: -6dp 0dp;
 	window-buttons-separation: 8dp;
 	window-flags: default|shadow;
+	window-shadow-offset: 0dp 0dp;
+	window-shadow-size: 16dp;
 }
 
 Window::decoration {

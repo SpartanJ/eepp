@@ -378,12 +378,11 @@ void UIWindow::drawHighlightInvalidation() {
 void UIWindow::drawShadow() {
 	UIWidget::matrixSet();
 	Primitives p;
-	Color shadowColor( 0, 0, 0, 25 * ( getAlpha() / 255.f ) );
-	Float shadowSize = PixelDensity::dpToPx( 16.f );
-	Vector2f shadowOffset( 0, shadowSize );
+	Color shadowColor( mShadowColor.blendAlpha( getAlpha() ) );
+	Float shadowSize = convertLength( mShadowSize, mSize.getWidth() );
 	Rectf windowRect( mScreenPos, mSize );
 	p.setColor( shadowColor );
-	p.drawSoftShadow( windowRect, shadowOffset, shadowSize, shadowSize / 2 );
+	p.drawSoftShadow( windowRect, mShadowOffset, shadowSize, shadowSize / 2 );
 	UIWidget::matrixUnset();
 }
 
@@ -1594,6 +1593,13 @@ std::string UIWindow::getPropertyString( const PropertyDefinition* propertyDef,
 			return mStyleConfig.TitlebarAutoSize ? "true" : "false";
 		case PropertyId::WindowBorderAutoSize:
 			return mStyleConfig.BorderAutoSize ? "true" : "false";
+		case PropertyId::WindowShadowColor:
+			return mShadowColor.toHexString();
+		case PropertyId::WindowShadowSize:
+			return mShadowSize.toString();
+		case PropertyId::WindowShadowOffset:
+			return String::fromFloat( PixelDensity::pxToDp( mShadowOffset.x ), "dp" ) + " " +
+				   String::fromFloat( PixelDensity::pxToDp( mShadowOffset.y ), "dp" );
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -1613,7 +1619,10 @@ std::vector<PropertyId> UIWindow::getPropertiesImplemented() const {
 				   PropertyId::WindowButtonsSeparation,
 				   PropertyId::WindowCornerDistance,
 				   PropertyId::WindowTitlebarAutoSize,
-				   PropertyId::WindowBorderAutoSize };
+				   PropertyId::WindowBorderAutoSize,
+				   PropertyId::WindowShadowSize,
+				   PropertyId::WindowShadowColor,
+				   PropertyId::WindowShadowOffset };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -1717,6 +1726,18 @@ bool UIWindow::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::WindowBorderAutoSize:
 			mStyleConfig.BorderAutoSize = attribute.asBool();
 			fixChildrenSize();
+			break;
+		case PropertyId::WindowShadowColor:
+			mShadowColor = attribute.asColor();
+			invalidateDraw();
+			break;
+		case PropertyId::WindowShadowOffset:
+			mShadowOffset = attribute.asVector2f( this, mShadowOffset );
+			invalidateDraw();
+			break;
+		case PropertyId::WindowShadowSize:
+			mShadowSize = attribute.asStyleSheetLength();
+			invalidateDraw();
 			break;
 		default:
 			return UIWidget::applyProperty( attribute );

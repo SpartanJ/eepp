@@ -235,7 +235,11 @@ class EE_API UIWindow : public UIWidget {
 	UI_RESIZE_TYPE mResizeType;
 	Vector2f mResizePos;
 
-	bool mFrameBufferBound;
+	Color mShadowColor{ 0, 0, 0, 25 };
+	CSS::StyleSheetLength mShadowSize{ "16dp" };
+	Vector2f mShadowOffset{ 0, PixelDensity::dpToPx( 16.f ) };
+
+	bool mFrameBufferBound{ false };
 	bool mWindowReady{ false };
 	bool mShowWhenReady{ false };
 	bool mStealFocusOnShow{ true };

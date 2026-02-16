@@ -309,6 +309,9 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "window-corner-distance", "" ).setType( PropertyType::NumberLength );
 	registerProperty( "window-decoration-auto-size", "" ).setType( PropertyType::Bool );
 	registerProperty( "window-border-auto-size", "" ).setType( PropertyType::Bool );
+	registerProperty( "window-shadow-color", "" ).setType( PropertyType::Color );
+	registerProperty( "window-shadow-offset", "" ).setType( PropertyType::Vector2 );
+	registerProperty( "window-shadow-size", "" ).setType( PropertyType::NumberLength );
 
 	registerProperty( "word-wrap", "" ).setType( PropertyType::Bool );
 

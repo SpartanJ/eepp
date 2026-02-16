@@ -908,7 +908,7 @@ Sets the hint font shadow offset.
   (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
   EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton), EE::UI::UIToolti
   (Tooltip)
-* Data Type: [vector2-number](#vector2-number-data-type)
+* Data Type: [vector2-length](#vector2-length-data-type)
 * Default offset: `1dp 1dp`
 
 ---
@@ -1984,7 +1984,7 @@ Sets the text shadow offset.
   (TextInput), EE::UI::UIListBoxItem (ListBox::item), EE::UI::UIDropDownList (DropDownList),
   EE::UI::UITextInputPassword (TextInputPassword), EE::UI::UIPushButton (PushButton), EE::UI::UIToolti
   (Tooltip)
-* Data Type: [vector2-number](#vector2-number-data-type)
+* Data Type: [vector2-length](#vector2-length-data-type)
 * Default offset: `1dp 1dp`
 
 ---
@@ -2289,6 +2289,36 @@ And the opacity property applied to the window will be multiplied by this value.
 
 ---
 
+### window-shadow-color
+
+Sets the window shadow color.
+
+* Applicable to: EE::UI::UIWindow (window)
+* Data Type: [color](#color-data-type)
+* Default value: `rgba(0,0,0,0.1)`
+
+---
+
+### window-shadow-offset
+
+Sets the window shadow offset.
+
+* Applicable to: EE::UI::UIWindow (window)
+* Data Type: [vector2-length](#vector2-length-data-type)
+* Default value: `16dp 16dp`
+
+---
+
+### window-shadow-size
+
+Sets the window shadow size.
+
+* Applicable to: EE::UI::UIWindow (window)
+* Data Type: [length](#length-data-type)
+* Default value: `16dp`
+
+---
+
 ### window-title
 
 Sets the window title.
@@ -2296,6 +2326,8 @@ Sets the window title.
 * Applicable to: EE::UI::UIWindow (Window)
 * Data Type: [string](#string-data-type)
 * Default value: _No value_
+
+---
 
 ### window-titlebar-auto-size
 
