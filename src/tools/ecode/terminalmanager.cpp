@@ -555,6 +555,11 @@ UITerminal* TerminalManager::createNewTerminal(
 	ret.first->setIcon( mApp->findIcon( "filetype-bash" ) );
 	mApp->getSplitter()->removeUnusedTab( tabWidget, true, false );
 
+	term->removeEventsOfType( Event::OnFocus );
+	term->on( Event::OnFocus, [this, term]( const Event* ) {
+		mApp->getSplitter()->setCurrentWidget(
+			mApp->getSplitter()->getBaseLayout()->inParentTreeOf( term ) ? term : nullptr );
+	} );
 	term->setTitle( title );
 	auto csIt = mTerminalColorSchemes.find( mTerminalCurrentColorScheme );
 	term->getTerm()->getTerminal()->setAllowMemoryTrimnming( true );
