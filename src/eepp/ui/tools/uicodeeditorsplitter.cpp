@@ -517,6 +517,19 @@ void UICodeEditorSplitter::setCurrentEditor( UICodeEditor* editor ) {
 }
 
 void UICodeEditorSplitter::setCurrentWidget( UIWidget* curWidget ) {
+	if ( curWidget == nullptr ) {
+		if ( mCurEditor ) {
+			mCurWidget = mCurEditor;
+			mClient->onWidgetFocusChange( curWidget );
+		} else {
+			// Should never happen: curWidget == nullptr is passed when a terminal is moved outside
+			// the splitter
+			auto editor = getSomeEditor();
+			if ( editor )
+				setCurrentWidget( editor );
+		}
+		return;
+	}
 	if ( curWidget->isType( UI_TYPE_CODEEDITOR ) ) {
 		setCurrentEditor( curWidget->asType<UICodeEditor>() );
 		return;
