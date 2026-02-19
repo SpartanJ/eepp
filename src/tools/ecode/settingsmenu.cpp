@@ -2689,6 +2689,13 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 								i18n( "duplicate_file", "Duplicate file" ).toUtf8().c_str(),
 								file.getFileName().c_str() ),
 				i18n( "enter_duplicate_file_name", "Enter duplicate file name:" ) );
+			std::string newFileName( file.getFileName() );
+			std::string ext( file.getExtension( false ) );
+			newFileName = FileSystem::fileRemoveExtension( newFileName );
+			newFileName += " (" + i18n( "filename_copy", "Copy" ) + ")";
+			if ( !ext.empty() )
+				newFileName += "." + ext;
+			msgBox->getTextInput()->setText( newFileName );
 			msgBox->on( Event::OnConfirm, [this, file, msgBox]( const Event* ) {
 				auto newFilePath( mApp->getNewFilePath( file, msgBox ) );
 				if ( !FileSystem::fileExists( newFilePath ) ) {
