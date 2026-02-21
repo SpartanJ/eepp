@@ -21,7 +21,6 @@
 This operation cannot be reverted!</string>
 	<string name="ai_conversations_history">AI Conversations History</string>
 	<string name="ai_llm_presentation">What can I help with?</string>
-	<string name="ai_rename_chat">Rename Conversation</string>
 	<string name="any_https_or_http_url">Any https or http URL</string>
 	<string name="any_name_ellipsis">Any name...</string>
 	<string name="app_output">App Output</string>

@@ -89,6 +89,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void setManager( PluginManager* manager ) { mManager = manager; }
 
+	bool chatExistsInDisk() const;
+
   protected:
 	UUID mUUID;
 	std::string mSummary;
@@ -195,6 +197,10 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	void insertFileToDocument( std::string path, std::shared_ptr<TextDocument> cdoc );
 
 	void replaceFileLinksToContents( std::string& text );
+
+	void generateChatName( bool isRenaming );
+
+	void regenerateChatName();
 };
 
 } // namespace ecode

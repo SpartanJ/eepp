@@ -402,8 +402,8 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	setCmd( "ai-toggle-lock-chat", [this] { renameChat( mSummary, true ); } );
 
 	setCmd( "ai-rename-chat", [this] {
-		UIMessageBox* msgBox = UIMessageBox::New( UIMessageBox::INPUT,
-												  i18n( "ai_rename_chat", "Rename Conversation" ) );
+		UIMessageBox* msgBox = UIMessageBox::New(
+			UIMessageBox::INPUT, i18n( "rename_conversation", "Rename Conversation" ) );
 		msgBox->on( Event::OnConfirm, [this, msgBox]( const Event* ) {
 			std::string newName( msgBox->getTextInput()->getText().toUtf8() );
 			if ( newName.empty() || mSummary == newName )
@@ -419,6 +419,8 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		msgBox->getTextInput()->setText( summary );
 		msgBox->showWhenReady();
 	} );
+
+	setCmd( "ai-regenerate-title", [this] { regenerateChatName(); } );
 
 	setCmd( "new-ai-assistant", [this] {
 		if ( getPlugin() == nullptr )
@@ -507,6 +509,13 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 			->setId( "ai-toggle-private-chat" );
 
 		menu->addSeparator();
+
+		if ( chatExistsInDisk() ) {
+			menu->add( i18n( "regenerate_conversation_title", "Regenerate Conversation Title" ),
+					   getUISceneNode()->findIconDrawable( "refresh", PixelDensity::dpToPxI( 12 ) ),
+					   getKeyBindings().getCommandKeybindString( "ai-regenerate-title" ) )
+				->setId( "ai-regenerate-title" );
+		}
 
 		menu->add( i18n( "refresh_model_ui", "Refresh Local Models" ),
 				   getUISceneNode()->findIconDrawable( "refresh", PixelDensity::dpToPxI( 12 ) ),
@@ -1130,6 +1139,73 @@ static bool allNewLines( const std::string& s ) {
 	return !s.empty() && std::all_of( s.begin(), s.end(), []( char c ) { return c == '\n'; } );
 }
 
+void LLMChatUI::generateChatName( bool isRenaming ) {
+	auto apiKey = AIAssistantPlugin::getApiKeyFromProvider( mCurModel.provider, getPlugin() );
+	if ( !apiKey ) {
+		showMsg( getUISceneNode()->i18n( "configure_api_key",
+										 "You must first configure your provider api key." ) );
+		return;
+	}
+	std::string apiKeyStr{ *apiKey };
+	std::string apiUrl( prepareApiUrl( apiKeyStr ) );
+	auto model = mCurModel;
+
+	static const std::string SummaryPrompt =
+		"Generate a concise 3-7 word title for this conversation, omitting punctuation. Go "
+		"straight to the title, without any preamble and prefix like `Here's a concise "
+		"suggestion:...` or `Title:`. Ignore this message for the summary generation.";
+
+	auto jchat = serializeChat( getCheapestModelFromCurrentProvider(), true );
+
+	jchat["messages"].push_back( { { "role", LLMChat::roleToString( LLMChat::Role::User ) },
+								   { "content", SummaryPrompt } } );
+
+	auto chatstr = jchat.dump();
+
+	mSummaryRequest =
+		std::make_unique<LLMChatCompletionRequest>( apiUrl, apiKeyStr, chatstr, model.provider );
+
+	mSummaryRequest->doneCb = [this, isRenaming]( const LLMChatCompletionRequest& req,
+												  Http::Response& response ) {
+		auto status = response.getStatus();
+		String oldSummary = std::move( mSummary );
+
+		if ( status == Http::Response::Ok ) {
+			mSummary = String::trim( req.getResponse() );
+			String::trimInPlace( mSummary, '\n' );
+			String::trimInPlace( mSummary, ' ' );
+			String::trimInPlace( mSummary, '"' );
+		} else {
+			// TODO: Implement generating a summary based on the user prompt (take the
+			// first few words)
+			mSummary = i18n( "untitled_conversation", "Untitled Conversation" );
+		}
+
+		if ( isRenaming ) {
+			String newSummary = std::move( mSummary );
+			mSummary = std::move( oldSummary );
+			runOnMainThread(
+				[this, newSummary = std::move( newSummary )] { renameChat( newSummary ); } );
+		} else
+			saveChat();
+
+		runOnMainThread( [this] {
+			updateTabTitle();
+			mSummaryRequest.reset();
+		} );
+	};
+	mSummaryRequest->requestAsync();
+}
+
+bool LLMChatUI::chatExistsInDisk() const {
+	return FileSystem::fileExists( getFilePath() );
+}
+
+void LLMChatUI::regenerateChatName() {
+	if ( chatExistsInDisk() )
+		generateChatName( true );
+}
+
 void LLMChatUI::doRequest() {
 	if ( mRequest )
 		return;
@@ -1193,86 +1269,50 @@ void LLMChatUI::doRequest() {
 		removeLastChat();
 	};
 
-	mRequest->doneCb = [this, editor, apiUrl = std::move( apiUrl ),
-						apiKeyStr = std::move( apiKeyStr ), model = std::move( model )](
-						   const LLMChatCompletionRequest&, Http::Response& response ) {
-		auto status = response.getStatus();
-		auto statusDesc = response.getStatusDescription();
+	mRequest->doneCb =
+		[this, editor, apiUrl = std::move( apiUrl ), apiKeyStr = std::move( apiKeyStr ),
+		 model = std::move( model )]( const LLMChatCompletionRequest&, Http::Response& response ) {
+			auto status = response.getStatus();
+			auto statusDesc = response.getStatusDescription();
 
-		runOnMainThread( [this, editor, status, statusDesc, apiUrl = std::move( apiUrl ),
-						  apiKeyStr = std::move( apiKeyStr ), model = std::move( model )] {
-			if ( status != Http::Response::Ok ) {
-				auto resp = nlohmann::json::parse( mRequest->getStream(), nullptr, false );
-				if ( resp.contains( "error" ) && resp["error"].contains( "message" ) ) {
-					showMsg( resp["error"].value( "message", "" ) );
-				} else if ( resp.contains( "error" ) && resp["error"].is_string() ) {
-					showMsg( URI::decode( resp.value( "error", "" ) ) );
-				} else if ( resp.is_array() && !resp.empty() ) {
-					const auto& first = resp.at( 0 );
-					if ( first.contains( "error" ) && first["error"].contains( "message" ) )
-						showMsg( first["error"].value( "message", "" ) );
-					else
-						showMsg( statusDesc );
-				} else {
-					showMsg( statusDesc );
-				}
-
-				removeLastChat();
-			}
-			mRequest.reset();
-			toggleEnableChats( true );
-			editor->setEnabled( true );
-
-			mChatStop->setVisible( false )->setEnabled( false );
-			mChatRun->setVisible( true )->setEnabled( true );
-
-			if ( editor->hasFocus() )
-				mChatInput->setFocus();
-
-			if ( !mChatIsPrivate && !mSummaryRequest && mSummary.empty() &&
-				 status == Http::Response::Ok ) {
-				static const std::string SummaryPrompt =
-					"Generate a concise 3-7 word title for this conversation, omitting "
-					"punctuation. Go "
-					"straight to the title, without any preamble and prefix like `Here's a concise "
-					"suggestion:...` or `Title:`. Ignore this message for the summary generation.";
-
-				auto jchat = serializeChat( getCheapestModelFromCurrentProvider(), true );
-
-				jchat["messages"].push_back(
-					{ { "role", LLMChat::roleToString( LLMChat::Role::User ) },
-					  { "content", SummaryPrompt } } );
-
-				auto chatstr = jchat.dump();
-
-				mSummaryRequest = std::make_unique<LLMChatCompletionRequest>(
-					apiUrl, apiKeyStr, chatstr, model.provider );
-
-				mSummaryRequest->doneCb = [this]( const LLMChatCompletionRequest& req,
-												  Http::Response& response ) {
-					auto status = response.getStatus();
-					if ( status == Http::Response::Ok ) {
-						mSummary = String::trim( req.getResponse() );
-						String::trimInPlace( mSummary, '\n' );
-						String::trimInPlace( mSummary, ' ' );
-						String::trimInPlace( mSummary, '"' );
+			runOnMainThread( [this, editor, status, statusDesc, apiUrl = std::move( apiUrl ),
+							  apiKeyStr = std::move( apiKeyStr ), model = std::move( model )] {
+				if ( status != Http::Response::Ok ) {
+					auto resp = nlohmann::json::parse( mRequest->getStream(), nullptr, false );
+					if ( resp.contains( "error" ) && resp["error"].contains( "message" ) ) {
+						showMsg( resp["error"].value( "message", "" ) );
+					} else if ( resp.contains( "error" ) && resp["error"].is_string() ) {
+						showMsg( URI::decode( resp.value( "error", "" ) ) );
+					} else if ( resp.is_array() && !resp.empty() ) {
+						const auto& first = resp.at( 0 );
+						if ( first.contains( "error" ) && first["error"].contains( "message" ) )
+							showMsg( first["error"].value( "message", "" ) );
+						else
+							showMsg( statusDesc );
 					} else {
-						// TODO: Implement generating a summary based on the user prompt (take the
-						// first few words)
-						mSummary = i18n( "untitled_conversation", "Untitled Conversation" );
+						showMsg( statusDesc );
 					}
+
+					removeLastChat();
+				}
+				mRequest.reset();
+				toggleEnableChats( true );
+				editor->setEnabled( true );
+
+				mChatStop->setVisible( false )->setEnabled( false );
+				mChatRun->setVisible( true )->setEnabled( true );
+
+				if ( editor->hasFocus() )
+					mChatInput->setFocus();
+
+				if ( !mChatIsPrivate && !mSummaryRequest && mSummary.empty() &&
+					 status == Http::Response::Ok ) {
+					generateChatName( false );
+				} else {
 					saveChat();
-					runOnMainThread( [this] {
-						updateTabTitle();
-						mSummaryRequest.reset();
-					} );
-				};
-				mSummaryRequest->requestAsync();
-			} else {
-				saveChat();
-			}
-		} );
-	};
+				}
+			} );
+		};
 	mRequest->requestAsync();
 }
 
@@ -1284,7 +1324,7 @@ void LLMChatUI::toggleEnableChat( UIWidget* chat, bool enabled ) {
 	chat->findByClass( "erase_but" )->setEnabled( enabled );
 	chat->findByClass( "move_up" )->setEnabled( enabled );
 	chat->findByClass( "move_down" )->setEnabled( enabled );
-	chat->findByClass( "copy_contents" )->setEnabled( enabled );
+	// chat->findByClass( "copy_contents" )->setEnabled( enabled );
 }
 
 void LLMChatUI::toggleEnableChats( bool enabled ) {
