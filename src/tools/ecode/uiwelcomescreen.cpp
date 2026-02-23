@@ -56,6 +56,10 @@ static const auto LAYOUT = R"xml(
 #welcome_ecode PushButton:hover {
 	border-color: var(--primary);
 }
+#welcome_ecode PushButton:pressed {
+	background-color: var(--primary);
+	color: var(--font-selected-pressed);
+}
 #welcome_ecode .separator {
 	focusable: false;
 	background-image: rectangle(solid, var(--tab-line));

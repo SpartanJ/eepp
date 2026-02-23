@@ -90,7 +90,7 @@ TableView#locate_bar_table > tableview::row > tableview::cell:nth-child(3) {
 }
 TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(2),
 TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child(3) {
-	color: var(--list-row-active)
+	color: var(--font-selected-pressed)
 }
 .search_tree treeview::cell {
 	font-family: monospace;
@@ -196,8 +196,8 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 }
 #status_bar > .status_but.selected {
 	background-color: var(--primary);
-	color: var(--list-row-active);
-	tint: var(--list-row-active);
+	color: var(--font-selected-pressed);
+	tint: var(--font-selected-pressed);
 }
 #status_bar > .status_but:last-child {
 	border-right-color: transparent;
@@ -327,8 +327,8 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 	tint: var(--font);
 }
 .settings_panel .advanced_options .title:hover > * {
-	color: var(--list-row-active);
-	tint: var(--list-row-active);
+	color: var(--font-selected-pressed);
+	tint: var(--font-selected-pressed);
 }
 .settings_panel .advanced_options .title:hover {
 	background-color: var(--primary);
@@ -450,8 +450,8 @@ Anchor.error:hover {
 	color: var(--theme-error);
 }
 #build_output_issues TableView::row:selected TableView::cell.theme-error {
-	color: var(--list-row-active);
-	tint: var(--list-row-active);
+	color: var(--font-selected-pressed);
+	tint: var(--font-selected-pressed);
 }
 .texture-preview {
 	border: 1dp solid var(--list-back);

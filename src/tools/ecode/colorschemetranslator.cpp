@@ -15,6 +15,7 @@ static const auto BASE_UI_THEME = R"css(
 	--font: text;
 	--font-highlight: type;
 	--font-hint: line_number2;
+	--font-selected-pressed: line_highlight;
 
 	/* Button styling */
 	--button-back: line_highlight;
@@ -24,7 +25,6 @@ static const auto BASE_UI_THEME = R"css(
 	--list-back: widget_background;
 	--separator: line_highlight;
 	--item-hover: selection;
-	--list-row-active: widget_background;
 
 	/* Sliders */
 	--slider-back: line_number;

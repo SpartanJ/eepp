@@ -1449,8 +1449,8 @@ void GitPlugin::buildSidePanelTab() {
 	}
 	treeview::row:selected treeview::cell.git_highlight_style,
 	treeview::row:selected treeview::cell.git_highlight_style {
-		color: var(--list-row-active);
-		tint: var(--list-row-active);
+		color: var(--font-selected-pressed);
+		tint: var(--font-selected-pressed);
 	}
 	treeview::cell.git_highlight_style > treeview::cell::icon {
 		foreground-image: icon(circle, 8dpru), icon(circle-filled, 8dpru);

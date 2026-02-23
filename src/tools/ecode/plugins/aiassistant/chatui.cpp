@@ -969,7 +969,7 @@ void LLMChatUI::resizeToFit( UICodeEditor* editor ) {
 }
 
 void LLMChatUI::replaceFileLinksToContents( std::string& text ) {
-	LuaPattern ptrn( "\n```file://([^`]*)```\n" );
+	LuaPattern ptrn( "\n```file://([^`]*)```\n?" );
 	PatternMatcher::Range matches[2];
 	while ( ptrn.matches( text, matches ) ) {
 		std::string path( text.substr( matches[1].start, matches[1].length() ) );

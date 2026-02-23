@@ -5,6 +5,7 @@
 	--font: #eff0f1;
 	--font-highlight: #8bdcfd;
 	--font-hint: #898b8d;
+	--font-selected-pressed: #eff0f1;
 	--button-back: #30353a;
 	--button-border: #6b6f73;
 	--button-radius: 2dp;
@@ -14,7 +15,6 @@
 	--list-back: #232629;
 	--separator: #31363b;
 	--item-hover: #284150;
-	--list-row-active: #eff0f1;
 	--slider-back: #676a6e;
 	--slider-button: #31363b;
 	--slider-border: #787b80;
@@ -65,10 +65,6 @@ listview::header::column:hover {
 	tint: var(--font);
 }
 
-PushButton:pressed > PushButton,
-SelectButton:pressed > SelectButton,
-SelectButton:selected > SelectButton,
-SelectButton:selected:pressed > SelectButton,
 tableview::row:selected tableview::cell,
 treeview::row:selected treeview::cell,
 listview::row:selected listview::cell,
@@ -78,8 +74,8 @@ listview::row:selected listview::cell,
 tableview::row:selected tableview::cell::expander,
 treeview::row:selected treeview::cell::expander,
 listview::row:selected listview::cell::expander {
-	color: var(--list-row-active);
-	tint: var(--list-row-active);
+	color: var(--font-selected-pressed);
+	tint: var(--font-selected-pressed);
 }
 
 CheckBox,
@@ -118,7 +114,7 @@ TextInput,
 TextInputPassword,
 ComboBox::DropDownList,
 SpinBox::input, {
-	selection-color: var(--list-row-active);
+	selection-color: var(--font-selected-pressed);
 	selection-back-color: var(--primary);
 }
 
@@ -168,8 +164,8 @@ SelectButton:pressed,
 SelectButton:selected,
 SelectButton:selected:pressed {
 	background-color: var(--primary);
-	color: var(--list-row-active);
-	tint: var(--list-row-active);
+	color: var(--font-selected-pressed);
+	tint: var(--font-selected-pressed);
 }
 
 pushbutton:disabled,
@@ -319,8 +315,8 @@ DropDownList::ListBox::item:selected,
 ComboBox::DropDownList::ListBox::item:hover,
 ComboBox::DropDownList::ListBox::item:selected {
 	background-color: var(--primary);
-	color: var(--list-row-active);
-	tint: var(--list-row-active);
+	color: var(--font-selected-pressed);
+	tint: var(--font-selected-pressed);
 }
 
 TextInput,
@@ -1118,6 +1114,7 @@ TextInput.table_cell_edit {
 	--font: #232627;
 	--font-highlight: #3daee9;
 	--font-hint: #232627;
+	--font-selected-pressed: #eff0f1;
 	--button-back: #fcfcfc;
 	--button-border: #b3b4b5;
 	--button-radius: 2dp;
@@ -1127,7 +1124,6 @@ TextInput.table_cell_edit {
 	--list-back: #ffffff;
 	--separator: #cbcdcd;
 	--item-hover: #93cee9;
-	--list-row-active: #eff0f1;
 	--slider-back: #e9e9e9;
 	--slider-button: #cbcdcd;
 	--slider-border: #e6e6e6;
