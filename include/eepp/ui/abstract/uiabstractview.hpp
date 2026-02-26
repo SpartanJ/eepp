@@ -53,6 +53,8 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	enum SelectionKind { Single, Multiple };
 
+	enum class FindRowWithTextMatchKind { Equals, StartsWith, Contains };
+
 	bool isCellSelection() const;
 
 	bool isRowSelection() const;
@@ -85,8 +87,9 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 
 	void setOnSelection( const std::function<void( const ModelIndex& )>& onSelection );
 
-	virtual ModelIndex findRowWithText( const std::string& text, const bool& caseSensitive = false,
-										const bool& exactMatch = false ) const;
+	virtual ModelIndex findRowWithText(
+		const std::string& text, const bool& caseSensitive = false,
+		FindRowWithTextMatchKind matchKind = FindRowWithTextMatchKind::StartsWith ) const;
 
 	bool isEditable() const;
 

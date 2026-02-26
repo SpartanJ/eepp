@@ -1559,6 +1559,12 @@ solution "eepp"
 		files { "src/examples/ui_hello_world/*.cpp" }
 		build_link_configuration( "eepp-ui-hello-world", true )
 
+	project "eepp-ui-application-hello-world"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_application_hello_world/*.cpp" }
+		build_link_configuration( "eepp-ui-application-hello-world", true )
+
 	project "eepp-richtext"
 		set_kind()
 		language "C++"

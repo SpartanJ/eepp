@@ -345,6 +345,18 @@
         "command": "${project_root}/bin/eepp-treeviewmodel-debug",
         "name": "eepp-treeviewmodel-debug",
         "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-hello-world",
+        "name": "eepp-ui-hello-world-debug",
+        "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-application-hello-world",
+        "name": "eepp-ui-application-hello-world-debug",
+        "working_dir": "${project_root}/bin"
       }
     ],
     "var": {

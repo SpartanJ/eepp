@@ -447,7 +447,8 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool term
 		FileSystem::fileRemoveFileName( absoluteFontPath ) );
 	if ( dialog->getMultiView() ) {
 		ModelIndex index = dialog->getMultiView()->getListView()->findRowWithText(
-			FileSystem::fileNameFromPath( fontPath ), true, true );
+			FileSystem::fileNameFromPath( fontPath ), true,
+			UIAbstractView::FindRowWithTextMatchKind::Equals );
 		if ( index.isValid() )
 			dialog->runOnMainThread(
 				[dialog, index]() { dialog->getMultiView()->setSelection( index ); } );

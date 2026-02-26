@@ -778,8 +778,7 @@ UniversalLocator::openBuildModel( const std::string& pattern ) {
 		return ItemListOwnerModel<std::string>::create( {} );
 	buildNames.reserve( builds.size() );
 	for ( const auto& build : builds ) {
-		if ( pattern.empty() ||
-			 String::startsWith( String::toLower( build.first ), String::toLower( pattern ) ) )
+		if ( pattern.empty() || String::icontains( build.first, pattern ) )
 			buildNames.push_back( build.first );
 	}
 	std::sort( buildNames.begin(), buildNames.end() );
@@ -839,8 +838,7 @@ UniversalLocator::openBuildTypeModel( const std::string& pattern ) {
 	std::vector<std::string> buildTypeNames;
 	buildTypeNames.reserve( buildTypes.size() );
 	for ( const auto& build : buildTypes ) {
-		if ( pattern.empty() ||
-			 String::startsWith( String::toLower( build ), String::toLower( pattern ) ) )
+		if ( pattern.empty() || String::icontains( build, pattern ) )
 			buildTypeNames.push_back( build );
 	}
 	std::sort( buildTypeNames.begin(), buildTypeNames.end() );
@@ -864,8 +862,7 @@ UniversalLocator::openRunTargetModel( const std::string& pattern ) {
 	std::vector<std::string> runTargetNames;
 	runTargetNames.reserve( runs.size() );
 	for ( const auto& run : runs ) {
-		if ( pattern.empty() ||
-			 String::startsWith( String::toLower( run->name ), String::toLower( pattern ) ) )
+		if ( pattern.empty() || String::icontains( run->name, pattern ) )
 			runTargetNames.push_back( run->name );
 	}
 	std::sort( runTargetNames.begin(), runTargetNames.end() );

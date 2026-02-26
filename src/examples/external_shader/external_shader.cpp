@@ -42,7 +42,7 @@ void videoResize( EE::Window::Window* ) {
 	float x = ( 2 * nearPlane ) / ( right - left );
 	float y = ( 2 * nearPlane ) / ( top - bottom );
 
-	float perspectiveMatrix[16] = {x, 0, a, 0, 0, y, b, 0, 0, 0, c, d, 0, 0, -1, 0};
+	float perspectiveMatrix[16] = { x, 0, a, 0, 0, y, b, 0, 0, 0, c, d, 0, 0, -1, 0 };
 
 	/// Load the our default projection
 	GLi->matrixMode( GL_PROJECTION );
@@ -155,7 +155,7 @@ void mainLoop() {
 #if !defined( EE_ARM ) && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 			Float d = eesqrt( distance );
 #else
-			Float d = sqrt_approx[( Int32 )( distance * 1000 )];
+			Float d = sqrt_approx[(Int32)( distance * 1000 )];
 #endif
 
 			if ( d < 2.f ) {
@@ -201,25 +201,27 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	win = Engine::instance()->createWindow( WindowSettings( 960, 640, "eepp - External Shaders" ),
 											ContextSettings( true ) );
 
-	if ( win->isOpen() ) {
-		/// This will work without shaders too
-		ShadersSupported = GLi->shadersSupported();
+	if ( !win->isOpen() )
+		return EXIT_FAILURE;
 
-		imp = win->getInput();
+	/// This will work without shaders too
+	ShadersSupported = GLi->shadersSupported();
 
-		/// We really don't need shaders for this, but the purpose of the example is to show how to
-		/// work with external shaders
-		if ( ShadersSupported ) {
-			/// Disable the automatic shader conversion from fixed-pipeline to programmable-pipeline
-			Shader::ensure( false );
+	imp = win->getInput();
 
-			std::string fs( "#ifdef GL_ES\n\
+	/// We really don't need shaders for this, but the purpose of the example is to show how to
+	/// work with external shaders
+	if ( ShadersSupported ) {
+		/// Disable the automatic shader conversion from fixed-pipeline to programmable-pipeline
+		Shader::ensure( false );
+
+		std::string fs( "#ifdef GL_ES\n\
 				precision highp float;\n\
 				#endif\n\
 				varying	vec4 dgl_Color;\n\
 				void main() { gl_FragColor = dgl_Color; }" );
 
-			std::string vs( "#ifdef GL_ES\n\
+		std::string vs( "#ifdef GL_ES\n\
 				precision highp float;\n\
 				#endif\n\
 				attribute vec3 dgl_Vertex;\n\
@@ -232,49 +234,46 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 					gl_Position = dgl_ProjectionMatrix * dgl_ModelViewMatrix * vec4(dgl_Vertex, 1.0);\n\
 				}" );
 
-			/// Since fixed-pipeline OpenGL use gl_FrontColor for glColorPointer, we need to replace
-			/// the color attribute This is all to show how it works, in a real world scenario, you
-			/// will choose to work fixed-pipeline or programmable-pipeline.
-			if ( GLi->version() == GLv_2 ) {
-				String::replaceAll( fs, "gl_FragColor = dgl_Color",
-									"gl_FragColor = gl_FrontColor" );
-			}
-
-			/// Create the new shader program
-			shaderProgram = ShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
+		/// Since fixed-pipeline OpenGL use gl_FrontColor for glColorPointer, we need to replace
+		/// the color attribute This is all to show how it works, in a real world scenario, you
+		/// will choose to work fixed-pipeline or programmable-pipeline.
+		if ( GLi->version() == GLv_2 ) {
+			String::replaceAll( fs, "gl_FragColor = dgl_Color", "gl_FragColor = gl_FrontColor" );
 		}
 
-		/// Set the projection
-		videoResize( win );
+		/// Create the new shader program
+		shaderProgram = ShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
+	}
 
-		/// Push a window resize callback the reset the projection when needed
-		win->pushResizeCallback( videoResize );
+	/// Set the projection
+	videoResize( win );
 
-		Uint32 i;
+	/// Push a window resize callback the reset the projection when needed
+	win->pushResizeCallback( videoResize );
 
-		for ( i = 0; i < ParticlesNum; i++ ) {
-			vertices[i] = Vector3ff( 0, 0, 1.83f );
-			velocities[i] =
-				Vector3ff( ( Math::randf() * 2 - 1 ) * .05f, ( Math::randf() * 2 - 1 ) * .05f,
-						   .93f + Math::randf() * .02f );
-			colors[i] = ColorAf( Math::randf() * 0.5f, 0.1f, 0.8f, 0.5f );
-		}
+	Uint32 i;
+
+	for ( i = 0; i < ParticlesNum; i++ ) {
+		vertices[i] = Vector3ff( 0, 0, 1.83f );
+		velocities[i] = Vector3ff( ( Math::randf() * 2 - 1 ) * .05f,
+								   ( Math::randf() * 2 - 1 ) * .05f, .93f + Math::randf() * .02f );
+		colors[i] = ColorAf( Math::randf() * 0.5f, 0.1f, 0.8f, 0.5f );
+	}
 
 /** Optimized for ARM ( pre-cache sqrt ) */
 #if defined( EE_ARM ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-		Float tFloat = 0;
-		for ( int i = 0; i <= 20000; i++ ) {
-			sqrt_approx[i] = eesqrt( tFloat );
-			tFloat += 0.001;
-		}
+	Float tFloat = 0;
+	for ( int i = 0; i <= 20000; i++ ) {
+		sqrt_approx[i] = eesqrt( tFloat );
+		tFloat += 0.001;
+	}
 #endif
 
-		win->runMainLoop( &mainLoop );
+	win->runMainLoop( &mainLoop );
 
-		eeSAFE_DELETE_ARRAY( vertices );
-		eeSAFE_DELETE_ARRAY( velocities );
-		eeSAFE_DELETE_ARRAY( colors );
-	}
+	eeSAFE_DELETE_ARRAY( vertices );
+	eeSAFE_DELETE_ARRAY( velocities );
+	eeSAFE_DELETE_ARRAY( colors );
 
 	Engine::destroySingleton();
 

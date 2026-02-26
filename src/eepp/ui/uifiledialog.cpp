@@ -138,8 +138,8 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 					 FileSystem::makeDir( newFolderPath ) ) {
 					refreshFolder();
 
-					ModelIndex index =
-						mMultiView->getCurrentView()->findRowWithText( folderName, true, true );
+					ModelIndex index = mMultiView->getCurrentView()->findRowWithText(
+						folderName, true, UIAbstractView::FindRowWithTextMatchKind::Equals );
 					if ( index.isValid() )
 						mMultiView->setSelection( index );
 				}
@@ -565,7 +565,8 @@ void UIFileDialog::goFolderUp() {
 	} else {
 		setCurPath( newPath );
 	}
-	ModelIndex index = mMultiView->getCurrentView()->findRowWithText( prevFolderName, true, true );
+	ModelIndex index = mMultiView->getCurrentView()->findRowWithText(
+		prevFolderName, true, UIAbstractView::FindRowWithTextMatchKind::Equals );
 	if ( index.isValid() )
 		mMultiView->setSelection( index );
 }
@@ -675,7 +676,8 @@ void UIFileDialog::onPressEnter( const Event* ) {
 		if ( FileSystem::isDirectory( folderPath ) ) {
 			setCurPath( folderPath );
 			setFileName( fileName );
-			auto index = mMultiView->getCurrentView()->findRowWithText( fileName, true, true );
+			auto index = mMultiView->getCurrentView()->findRowWithText(
+				fileName, true, UIAbstractView::FindRowWithTextMatchKind::Equals );
 			if ( index.isValid() )
 				mMultiView->setSelection( index );
 		}
@@ -945,8 +947,8 @@ bool UIFileDialog::show() {
 			if ( mFilePatterns != "*" )
 				ptrns.push_back( mFilePatterns );
 
-			mHandler->saveFile = std::make_unique<pfd::save_file>(
-				getTitle().toUtf8(), savePath, ptrns );
+			mHandler->saveFile =
+				std::make_unique<pfd::save_file>( getTitle().toUtf8(), savePath, ptrns );
 		} else {
 			pfd::opt opt = pfd::opt::none;
 			if ( mDialogFlags & UIFileDialog::AllowMultiFileSelection )

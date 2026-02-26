@@ -163,7 +163,8 @@ void UIAbstractView::notifySelectionChange() {
 		mOnSelectionChange();
 }
 
-ModelIndex UIAbstractView::findRowWithText( const std::string&, const bool&, const bool& ) const {
+ModelIndex UIAbstractView::findRowWithText( const std::string&, const bool&,
+											FindRowWithTextMatchKind ) const {
 	return {};
 }
 
