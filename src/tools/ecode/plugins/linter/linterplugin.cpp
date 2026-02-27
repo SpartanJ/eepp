@@ -810,13 +810,15 @@ void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
 	if ( linter.command.empty() )
 		return;
 
-	bool binaryFound = false;
-	auto parts = String::split( linter.command, ' ' );
-	if ( !parts.empty() ) {
-		if ( parts[0].find_first_of( "\\/" ) != std::string::npos ) {
-			binaryFound = FileSystem::fileExists( parts[0] );
-		} else {
-			binaryFound = !Sys::which( parts[0] ).empty();
+	bool binaryFound = linter.isNative;
+	if ( !linter.isNative ) {
+		auto parts = String::split( linter.command, ' ' );
+		if ( !parts.empty() ) {
+			if ( parts[0].find_first_of( "\\/" ) != std::string::npos ) {
+				binaryFound = FileSystem::fileExists( parts[0] );
+			} else {
+				binaryFound = !Sys::which( parts[0] ).empty();
+			}
 		}
 	}
 	if ( !binaryFound )
@@ -855,15 +857,15 @@ void LinterPlugin::lintDoc( std::shared_ptr<TextDocument> doc ) {
 void LinterPlugin::runLinter( std::shared_ptr<TextDocument> doc, const Linter& linter,
 							  const std::string& path ) {
 	std::string cmd( linter.command );
+	if ( linter.isNative && mNativeLinters.find( cmd ) != mNativeLinters.end() ) {
+		mNativeLinters[cmd]( doc, path );
+		return;
+	}
 	std::string pathstr( "\"" + path + "\"" );
 	String::replaceAll( cmd, "$FILENAME", pathstr );
 	String::replaceAll( cmd, "${file_path}", pathstr );
 	String::replaceAll( cmd, "$PROJECTPATH", mManager->getWorkspaceFolder() );
 	String::replaceAll( cmd, "${project_root}", mManager->getWorkspaceFolder() );
-	if ( linter.isNative && mNativeLinters.find( cmd ) != mNativeLinters.end() ) {
-		mNativeLinters[cmd]( doc, path );
-		return;
-	}
 	std::unique_ptr<Process> process = std::make_unique<Process>();
 	TextDocument* docPtr = doc.get();
 	ScopedOp op(
@@ -1538,6 +1540,45 @@ void LinterPlugin::registerNativeLinters() {
 			matches[line] = { match };
 		}
 		setMatches( doc.get(), MatchOrigin::Linter, matches );
+	};
+
+	mNativeLinters["json"] = [this]( std::shared_ptr<TextDocument> doc, const std::string& path ) {
+		std::map<Int64, std::vector<LinterMatch>> ret;
+
+		std::string file;
+		FileSystem::fileGet( path, file );
+
+		json j;
+		try {
+			j = json::parse( file, nullptr, true, true );
+		} catch ( const json::exception& e ) {
+			LuaPattern ptrn( "line%s(%d+),%scolumn%s(%d+)" );
+			PatternMatcher::Range matches[4];
+			std::string_view err( e.what() );
+			if ( ptrn.matches( err.data(), matches ) ) {
+				auto lineStr( err.substr( matches[1].start, matches[1].end - matches[1].start ) );
+				auto offsetStr( err.substr( matches[2].start, matches[2].end - matches[2].start ) );
+				Int64 line;
+				Int64 offset;
+				String::fromString( line, lineStr );
+				String::fromString( offset, offsetStr );
+				if ( line )
+					line--;
+				LinterMatch match;
+				match.range = { { line, offset }, { line, offset } };
+				match.range = { doc->nextWordBoundary( match.range.start(), false ),
+								doc->previousWordBoundary( match.range.start(), false ) };
+				if ( !match.range.hasSelection() )
+					match.range.setEnd( { line, offset + 1 } );
+				match.text = err;
+				match.type = getLinterTypeFromSeverity( LSPDiagnosticSeverity::Error );
+				match.lineHash = doc->getLineHash( match.range.start().line() );
+				match.origin = MatchOrigin::Linter;
+				ret[line] = { match };
+			}
+		}
+
+		setMatches( doc.get(), MatchOrigin::Linter, ret );
 	};
 }
 
