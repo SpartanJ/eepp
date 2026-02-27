@@ -416,13 +416,27 @@ static std::initializer_list<std::string> DebuggerCommandList = {
 	"toggle-status-app-debugger",
 };
 
+void DebuggerPlugin::displayBrokenUserConfigFileWarning() {
+	if ( nullptr == getUISceneNode() )
+		return;
+
+	NotificationCenter::instance()->addNotification(
+		String::format( i18n( "error_debugger_config_parsing",
+							  "Debugger Plugin - Error parsing Debugger config:\n%s" )
+							.toUtf8(),
+						mConfigFileError ),
+		Seconds( 5 ) );
+}
+
 void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFile ) {
 	std::string data;
 	if ( !FileSystem::fileGet( path, data ) )
 		return;
 
-	if ( updateConfigFile )
+	if ( updateConfigFile ) {
 		mConfigHash = String::hash( data );
+		mBrokenUserConfigFile = false;
+	}
 
 	json j;
 	try {
@@ -431,6 +445,16 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 		Log::error( "DebuggerPlugin::load - Error parsing config from path %s, error: %s, config "
 					"file content:\n%s",
 					path.c_str(), e.what(), data.c_str() );
+		if ( !updateConfigFile )
+			return;
+		else {
+			// updateConfigFile = true is always the user config file
+			// file recreation logic has been disabled
+			mBrokenUserConfigFile = true;
+			mConfigFileError = e.what();
+			displayBrokenUserConfigFileWarning();
+			return;
+		}
 		// Recreate it
 		j = json::parse( "{\n  \"config\":{},\n  \"dap\":{},\n  \"keybindings\":{},\n}\n", nullptr,
 						 true, true );
@@ -705,6 +729,9 @@ PluginRequestHandle DebuggerPlugin::processMessage( const PluginMessage& msg ) {
 
 			if ( !mInitialized )
 				updateUI();
+
+			if ( mBrokenUserConfigFile )
+				displayBrokenUserConfigFileWarning();
 
 			break;
 		}

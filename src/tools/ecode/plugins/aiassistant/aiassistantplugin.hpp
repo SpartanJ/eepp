@@ -51,11 +51,13 @@ class AIAssistantPlugin : public PluginBase {
   protected:
 	LLMProviders mProviders;
 	bool mUIInit{ false };
+	bool mBrokenUserConfigFile{ false };
 	UIWidget* mStatusBar{ nullptr };
 	UIPushButton* mAIChatButton{ nullptr };
 	UnorderedMap<std::string, std::string> mApiKeys;
 	AIAssistantConfig mConfig;
 	Uint32 mAIChatButtonPosCbId{ 0 };
+	std::string mConfigFileError;
 
 	AIAssistantPlugin( PluginManager* pluginManager, bool sync );
 
@@ -72,6 +74,8 @@ class AIAssistantPlugin : public PluginBase {
 	void onRegisterDocument( TextDocument* doc ) override;
 
 	void initUI();
+
+	void displayBrokenUserConfigFileWarning();
 };
 
 } // namespace ecode

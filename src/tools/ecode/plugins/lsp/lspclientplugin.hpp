@@ -123,6 +123,7 @@ class LSPClientPlugin : public Plugin {
 	bool mSilence{ false };
 	bool mTrimLogs{ false };
 	bool mBreadcrumb{ true };
+	bool mBrokenUserConfigFile{ false };
 	UICodeEditor* mHoveringBreadcrumb{ nullptr };
 	StyleSheetLength mBreadcrumbHeight{ "20dp" };
 	std::unordered_map<std::string, std::string> mKeyBindings; /* cmd, shortcut */
@@ -148,6 +149,7 @@ class LSPClientPlugin : public Plugin {
 	};
 	UnorderedMap<URI, std::vector<DisplaySymbolInfo>> mDocCurrentSymbols;
 	UIIcon* mDrawSepIcon{ nullptr };
+	std::string mConfigFileError;
 
 	LSPClientPlugin( PluginManager* pluginManager, bool sync );
 
@@ -215,6 +217,8 @@ class LSPClientPlugin : public Plugin {
 
 	void onDocumentHoverResponse( UICodeEditor* editor, const LSPHover& resp, bool fromMousePos,
 								  std::optional<Vector2f> screenPos = {} );
+
+	void displayBrokenUserConfigFileWarning();
 };
 
 } // namespace ecode

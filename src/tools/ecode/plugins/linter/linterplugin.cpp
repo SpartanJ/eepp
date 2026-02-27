@@ -1,4 +1,5 @@
 ﻿#include "linterplugin.hpp"
+#include "../../notificationcenter.hpp"
 #include <algorithm>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/text.hpp>
@@ -78,10 +79,26 @@ size_t LinterPlugin::linterFilePatternPosition( const std::vector<std::string>& 
 	return std::string::npos;
 }
 
+void LinterPlugin::displayBrokenUserConfigFileWarning() {
+	if ( nullptr == getUISceneNode() )
+		return;
+
+	NotificationCenter::instance()->addNotification(
+		String::format( i18n( "error_linter_config_parsing",
+							  "Linter Plugin - Error parsing Linter config:\n%s" )
+							.toUtf8(),
+						mConfigFileError ),
+		Seconds( 5 ) );
+}
+
 void LinterPlugin::loadLinterConfig( const std::string& path, bool updateConfigFile ) {
 	std::string data;
 	if ( !FileSystem::fileGet( path, data ) )
 		return;
+
+	if ( updateConfigFile )
+		mBrokenUserConfigFile = false;
+
 	json j;
 	try {
 		j = json::parse( data, nullptr, true, true );
@@ -91,6 +108,14 @@ void LinterPlugin::loadLinterConfig( const std::string& path, bool updateConfigF
 					path.c_str(), e.what(), data.c_str() );
 		if ( !updateConfigFile )
 			return;
+		else {
+			// updateConfigFile = true is always the user config file
+			// file recreation logic has been disabled
+			mBrokenUserConfigFile = true;
+			mConfigFileError = e.what();
+			displayBrokenUserConfigFileWarning();
+			return;
+		}
 		// Recreate it
 		j = json::parse( "{\n\"config\":{},\n  \"keybindings\":{},\n\"linters\":[]\n}\n", nullptr,
 						 true, true );
@@ -410,6 +435,12 @@ static json toJson( const LSPDiagnostic& diagnostic ) {
 }
 
 PluginRequestHandle LinterPlugin::processMessage( const PluginMessage& notification ) {
+	if ( notification.type == PluginMessageType::UIReady ) {
+		if ( mBrokenUserConfigFile )
+			displayBrokenUserConfigFileWarning();
+		return {};
+	}
+
 	if ( notification.type == PluginMessageType::FileSystemListenerReady ) {
 		subscribeFileSystemListener();
 		return {};

@@ -3,6 +3,7 @@
 #include "protocol.hpp"
 
 #include "../../appconfig.hpp"
+#include "../../notificationcenter.hpp"
 #include "../../widgetcommandexecuter.hpp"
 
 #include <eepp/system/filesystem.hpp>
@@ -257,10 +258,24 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 	}
 }
 
+void AIAssistantPlugin::displayBrokenUserConfigFileWarning() {
+	if ( nullptr == getUISceneNode() )
+		return;
+
+	NotificationCenter::instance()->addNotification(
+		String::format( i18n( "error_aiassistant_config_parsing",
+							  "AI Assistant Plugin - Error parsing AI Assistant config:\n%s" )
+							.toUtf8(),
+						mConfigFileError ),
+		Seconds( 5 ) );
+}
+
 void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool updateConfigFile ) {
 	std::string data;
 	if ( !FileSystem::fileGet( path, data ) )
 		return;
+	if ( updateConfigFile )
+		mBrokenUserConfigFile = false;
 	json j;
 	try {
 		j = json::parse( data, nullptr, true, true );
@@ -271,6 +286,14 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 			path.c_str(), e.what(), data.c_str() );
 		if ( !updateConfigFile )
 			return;
+		else {
+			// updateConfigFile = true is always the user config file
+			// file recreation logic has been disabled
+			mBrokenUserConfigFile = true;
+			mConfigFileError = e.what();
+			displayBrokenUserConfigFileWarning();
+			return;
+		}
 		// Recreate it
 		j = json::parse( "{\n\"config\":{},\n  \"keybindings\":{},\n\"providers\":[]\n}\n", nullptr,
 						 true, true );
@@ -457,6 +480,9 @@ PluginRequestHandle AIAssistantPlugin::processMessage( const PluginMessage& msg 
 
 			if ( !mUIInit )
 				initUI();
+
+			if ( mBrokenUserConfigFile )
+				displayBrokenUserConfigFileWarning();
 
 			break;
 		}

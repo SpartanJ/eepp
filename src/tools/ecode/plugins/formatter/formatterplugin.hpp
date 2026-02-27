@@ -90,6 +90,8 @@ class FormatterPlugin : public Plugin {
 	PluginManager* mPluginManager{ nullptr };
 
 	bool mAutoFormatOnSave{ false };
+	bool mBrokenUserConfigFile{ false };
+	std::string mConfigFileError;
 
 	FormatterPlugin( PluginManager* pluginManager, bool sync );
 
@@ -116,6 +118,8 @@ class FormatterPlugin : public Plugin {
 	bool tryRequestCapabilities( const std::shared_ptr<TextDocument>& doc );
 
 	PluginRequestHandle processMessage( const PluginMessage& msg );
+
+	void displayBrokenUserConfigFileWarning();
 };
 
 } // namespace ecode

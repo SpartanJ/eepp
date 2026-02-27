@@ -1,4 +1,5 @@
 #include "lspclientplugin.hpp"
+#include "../../notificationcenter.hpp"
 #include "../../version.hpp"
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -872,6 +873,11 @@ PluginRequestHandle LSPClientPlugin::processMessage( const PluginMessage& msg ) 
 			processWorkspaceDiagnostic( msg );
 			break;
 		}
+		case ecode::PluginMessageType::UIReady: {
+			if ( mBrokenUserConfigFile )
+				displayBrokenUserConfigFileWarning();
+			break;
+		}
 		default:
 			break;
 	}
@@ -977,8 +983,22 @@ static void tryAddEnv( const json& obj, LSPDefinition& lsp ) {
 	}
 }
 
+void LSPClientPlugin::displayBrokenUserConfigFileWarning() {
+	if ( nullptr == getUISceneNode() )
+		return;
+
+	NotificationCenter::instance()->addNotification(
+		String::format(
+			i18n( "error_lsp_config_parsing", "LSP Client Plugin - Error parsing LSP config:\n%s" )
+				.toUtf8(),
+			mConfigFileError ),
+		Seconds( 5 ) );
+}
+
 void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std::string& path,
 									 bool updateConfigFile ) {
+	if ( updateConfigFile )
+		mBrokenUserConfigFile = false;
 	std::string data;
 	if ( !FileSystem::fileGet( path, data ) )
 		return;
@@ -991,6 +1011,14 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 					path.c_str(), e.what(), data.c_str() );
 		if ( !updateConfigFile )
 			return;
+		else {
+			// updateConfigFile = true is always the user config file
+			// file recreation logic has been disabled
+			mBrokenUserConfigFile = true;
+			mConfigFileError = e.what();
+			displayBrokenUserConfigFileWarning();
+			return;
+		}
 		// Recreate it
 		j = json::parse( "{\n  \"config\":{},\n  \"keybindings\":{},\n  \"servers\":[]\n}\n",
 						 nullptr, true, true );

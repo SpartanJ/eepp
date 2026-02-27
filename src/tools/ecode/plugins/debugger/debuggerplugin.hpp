@@ -90,7 +90,9 @@ class DebuggerPlugin : public PluginBase {
 	bool mFetchGlobals{ false };
 	bool mChangingBreakpoint{ false };
 	bool mSilence{ true };
+	bool mBrokenUserConfigFile{ false };
 	std::string mProjectPath;
+	std::string mConfigFileError;
 
 	std::vector<DapTool> mDaps;
 	std::vector<DapConfig> mDapConfigs;
@@ -297,6 +299,8 @@ class DebuggerPlugin : public PluginBase {
 
 	template<typename TCommandRegister>
 	void registerCommands( TCommandRegister* doc );
+
+	void displayBrokenUserConfigFileWarning();
 };
 
 } // namespace ecode
