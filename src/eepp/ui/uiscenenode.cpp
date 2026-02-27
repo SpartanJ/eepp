@@ -159,6 +159,10 @@ void UISceneNode::setTranslator( Translator translator ) {
 	mTranslator = translator;
 }
 
+void UISceneNode::setTranslator( Translator&& translator ) {
+	mTranslator = std::move( translator );
+}
+
 const Translator& UISceneNode::getTranslator() const {
 	return mTranslator;
 }
@@ -367,8 +371,7 @@ void UISceneNode::setStyleSheet( const std::string& inlineStyleSheet ) {
 		setStyleSheet( parser.getStyleSheet() );
 }
 
-void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet,
-									 const bool& forceReloadStyle ) {
+void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet, bool forceReloadStyle ) {
 	mStyleSheet.combineStyleSheet( styleSheet );
 	processStyleSheetAtRules( styleSheet );
 	onMediaChanged();
@@ -376,8 +379,8 @@ void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet,
 		reloadStyle();
 }
 
-void UISceneNode::combineStyleSheet( const std::string& inlineStyleSheet,
-									 const bool& forceReloadStyle, const Uint32& marker ) {
+void UISceneNode::combineStyleSheet( const std::string& inlineStyleSheet, bool forceReloadStyle,
+									 const Uint32& marker ) {
 	CSS::StyleSheetParser parser;
 
 	if ( parser.loadFromString( inlineStyleSheet ) ) {
@@ -639,7 +642,7 @@ void UISceneNode::onWidgetDelete( Node* node ) {
 	}
 }
 
-const bool& UISceneNode::isLoading() const {
+bool UISceneNode::isLoading() const {
 	return mIsLoading;
 }
 
@@ -814,7 +817,7 @@ void UISceneNode::updateDirtyStyleStates() {
 	}
 }
 
-const bool& UISceneNode::isUpdatingLayouts() const {
+bool UISceneNode::isUpdatingLayouts() const {
 	return mUpdatingLayouts;
 }
 
