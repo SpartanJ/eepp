@@ -52,7 +52,7 @@ class DebuggerPlugin : public PluginBase {
   public:
 	static PluginDefinition Definition() {
 		return { "debugger",		  "Debugger",  "Debugger integration",
-				 DebuggerPlugin::New, { 0, 0, 4 }, DebuggerPlugin::NewSync };
+				 DebuggerPlugin::New, { 0, 1, 0 }, DebuggerPlugin::NewSync };
 	}
 
 	static Plugin* New( PluginManager* pluginManager );
@@ -294,11 +294,10 @@ class DebuggerPlugin : public PluginBase {
 	bool replaceInVal( std::string& val, const std::optional<ProjectBuildStep>& runConfig,
 					   ProjectBuild* buildConfig, int randomPort );
 
-	template<typename TCommandRegister, typename Cmd, typename CmdCb>
+	template <typename TCommandRegister, typename Cmd, typename CmdCb>
 	void registerCommand( TCommandRegister* doc, Cmd cmd, CmdCb cb );
 
-	template<typename TCommandRegister>
-	void registerCommands( TCommandRegister* doc );
+	template <typename TCommandRegister> void registerCommands( TCommandRegister* doc );
 
 	void displayBrokenUserConfigFileWarning();
 };

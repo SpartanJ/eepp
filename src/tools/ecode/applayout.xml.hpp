@@ -397,30 +397,30 @@ TableView#locate_bar_table > tableview::row:selected > tableview::cell:nth-child
 .custom_output_parser_cont > .capture_positions_cont > * {
 	padding: 2dp;
 }
-.theme-error > tableview::cell,
-.theme-error > treeview::cell,
-.theme-error > listview::cell,
+tableview::cell.theme-error,
+treeview::cell.theme-error,
+listview::cell.theme-error,
 .error {
 	color: var(--theme-error);
 }
 
-.theme-warning > tableview::cell,
-.theme-warning > treeview::cell,
-.theme-warning > listview::cell,
+tableview::cell.theme-warning,
+treeview::cell.theme-warning,
+listview::cell.theme-warning,
 .warning {
 	color: var(--theme-warning);
 }
 
-.theme-success > tableview::cell,
-.theme-success > treeview::cell,
-.theme-success > listview::cell,
+tableview::cell.theme-success,
+treeview::cell.theme-success,
+listview::cell.theme-success,
 .success {
 	color: var(--theme-success);
 }
 
-.theme-none > tableview::cell,
-.theme-none > treeview::cell,
-.theme-none > listview::cell,
+tableview::cell.theme-none,
+treeview::cell.theme-none,
+listview::cell.theme-none,
 .none {
 	color: #d48838;
 }
