@@ -18,6 +18,7 @@
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
+#define YAML_DECLARE_STATIC
 #include <libyaml/include/yaml.h>
 
 using json = nlohmann::json;
