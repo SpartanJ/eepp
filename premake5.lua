@@ -1220,7 +1220,7 @@ workspace "eepp"
 	project "libyaml-static"
 		kind "StaticLib"
 		language "C"
-		defines { "HAVE_CONFIG_H" }
+		defines { "HAVE_CONFIG_H", "YAML_DECLARE_STATIC" }
 		files { "src/thirdparty/libyaml/**.c" }
 		incdirs { "src/thirdparty/libyaml/include" }
 		build_base_configuration( "libyaml" )

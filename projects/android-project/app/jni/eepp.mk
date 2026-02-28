@@ -360,7 +360,7 @@ LOCAL_MODULE			:= libyaml
 LIBYAML_SRCS			:= libyaml/src/*.c
 
 LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/libyaml $(LOCAL_PATH)/libyaml/src $(LOCAL_PATH)/libyaml/include
-LOCAL_CFLAGS			:= -Os -DHAVE_CONFIG_H
+LOCAL_CFLAGS			:= -Os -DHAVE_CONFIG_H -DYAML_DECLARE_STATIC
 
 LOCAL_SRC_FILES			:= $(foreach F, $(LIBYAML_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 

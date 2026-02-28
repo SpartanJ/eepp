@@ -1325,7 +1325,7 @@ solution "eepp"
 		kind "StaticLib"
 		language "C"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
-		defines { "HAVE_CONFIG_H" }
+		defines { "HAVE_CONFIG_H", "YAML_DECLARE_STATIC" }
 		files { "src/thirdparty/libyaml/**.c" }
 		includedirs { "src/thirdparty/libyaml/include" }
 		build_base_configuration( "libyaml" )
