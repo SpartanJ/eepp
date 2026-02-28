@@ -77,7 +77,7 @@ CORE_SRCS				:= tools/ecode/*.cpp \
 
 LOCAL_SRC_FILES			:= $(SDL_MAIN_PATH) $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES	:= efsw eterm languages-syntax-highlighting eepp
+LOCAL_STATIC_LIBRARIES	:= libyaml efsw eterm languages-syntax-highlighting eepp
 
 include $(BUILD_SHARED_LIBRARY)
 #************ ecode ************

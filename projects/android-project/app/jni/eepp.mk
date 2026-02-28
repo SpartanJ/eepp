@@ -12,6 +12,7 @@ EEPP_C_INCLUDES			:= \
 	$(EEPP_THIRD_PARTY_PATH)/freetype2/include \
 	$(EEPP_THIRD_PARTY_PATH)/libpng \
 	$(EEPP_THIRD_PARTY_PATH)/libwebp/src \
+	$(EEPP_THIRD_PARTY_PATH)/libyaml/include \
 	$(SDL_PATH)/include \
 	$(EEPP_THIRD_PARTY_PATH)/chipmunk \
 	$(EEPP_INC_PATH)/eepp/thirdparty \
@@ -348,6 +349,23 @@ LOCAL_SRC_FILES			:= $(foreach F, $(SHEENBIDI_SRCS), $(addprefix $(dir $(F)),$(n
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** SHEENBIDI *************
+
+#*************** LIBYAML ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
+
+LOCAL_MODULE			:= libyaml
+
+LIBYAML_SRCS			:= libyaml/src/*.c
+
+LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/libyaml $(LOCAL_PATH)/libyaml/src $(LOCAL_PATH)/libyaml/include
+LOCAL_CFLAGS			:= -Os -DHAVE_CONFIG_H
+
+LOCAL_SRC_FILES			:= $(foreach F, $(LIBYAML_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** LIBYAML ***************
 
 #**************** SDL 2 ***************
 include $(CLEAR_VARS)

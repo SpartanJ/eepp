@@ -13,9 +13,12 @@
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/window.hpp>
+
 #include <nlohmann/json.hpp>
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
+
+#include <libyaml/include/yaml.h>
 
 using json = nlohmann::json;
 
@@ -1513,6 +1516,41 @@ void LinterPlugin::unregisterNativeLinter( const std::string& cmd ) {
 	mNativeLinters.erase( cmd );
 }
 
+static bool lint_yaml( const std::string& contents, int& out_line, int& out_col,
+					   std::string& out_msg ) {
+	yaml_parser_t parser;
+	yaml_parser_initialize( &parser );
+	yaml_parser_set_input_string(
+		&parser, reinterpret_cast<const unsigned char*>( contents.data() ), contents.size() );
+
+	yaml_event_t event;
+	bool done = false;
+	bool valid = true;
+
+	while ( !done ) {
+		if ( !yaml_parser_parse( &parser, &event ) ) {
+			valid = false;
+			out_line = parser.problem_mark.line;  // 0-based
+			out_col = parser.problem_mark.column; // 0-based
+			out_msg = std::string( parser.problem ) + " at " + std::to_string( out_line + 1 ) +
+					  ":" + std::to_string( out_col + 1 );
+			break;
+		}
+
+		switch ( event.type ) {
+			case YAML_STREAM_END_EVENT:
+				done = true;
+				break;
+			default:
+				break;
+		}
+		yaml_event_delete( &event );
+	}
+
+	yaml_parser_delete( &parser );
+	return valid;
+}
+
 void LinterPlugin::registerNativeLinters() {
 	if ( !mNativeLinters.empty() )
 		return;
@@ -1545,12 +1583,12 @@ void LinterPlugin::registerNativeLinters() {
 	mNativeLinters["json"] = [this]( std::shared_ptr<TextDocument> doc, const std::string& path ) {
 		std::map<Int64, std::vector<LinterMatch>> ret;
 
-		std::string file;
-		FileSystem::fileGet( path, file );
+		std::string contents;
+		FileSystem::fileGet( path, contents );
 
 		json j;
 		try {
-			j = json::parse( file, nullptr, true, true );
+			j = json::parse( contents, nullptr, true, true );
 		} catch ( const json::exception& e ) {
 			LuaPattern ptrn( "line%s(%d+),%scolumn%s(%d+)" );
 			PatternMatcher::Range matches[4];
@@ -1576,6 +1614,33 @@ void LinterPlugin::registerNativeLinters() {
 				match.origin = MatchOrigin::Linter;
 				ret[line] = { match };
 			}
+		}
+
+		setMatches( doc.get(), MatchOrigin::Linter, ret );
+	};
+
+	mNativeLinters["yaml"] = [this]( std::shared_ptr<TextDocument> doc, const std::string& path ) {
+		std::map<Int64, std::vector<LinterMatch>> ret;
+
+		std::string contents;
+		if ( !FileSystem::fileGet( path, contents ) )
+			return;
+
+		int line = 0, column = 0;
+		std::string msg;
+
+		if ( !lint_yaml( contents, line, column, msg ) ) {
+			LinterMatch match;
+			match.type = getLinterTypeFromSeverity( LSPDiagnosticSeverity::Error );
+			match.origin = MatchOrigin::Linter;
+			match.text = std::move( msg );
+			match.range = { { line, column }, { line, column } };
+			match.range = { doc->nextWordBoundary( match.range.start(), false ),
+							doc->previousWordBoundary( match.range.start(), false ) };
+			match.lineHash = doc->getLineHash( match.range.start().line() );
+			if ( !match.range.hasSelection() )
+				match.range.setEnd( { line, column + 1 } );
+			ret[line] = { match };
 		}
 
 		setMatches( doc.get(), MatchOrigin::Linter, ret );

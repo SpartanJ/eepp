@@ -1217,6 +1217,15 @@ workspace "eepp"
 		filter { "options:windows-mingw-build", "options:arch=arm64" }
 			incdirs { remote_sdl2_arm64_cross_tools_path .."/include/" }
 
+	project "libyaml-static"
+		kind "StaticLib"
+		language "C"
+		defines { "HAVE_CONFIG_H" }
+		files { "src/thirdparty/libyaml/**.c" }
+		incdirs { "src/thirdparty/libyaml/include" }
+		build_base_configuration( "libyaml" )
+		target_dir_thirdparty()
+
 	project "efsw-static"
 		kind "StaticLib"
 		language "C++"
@@ -1546,7 +1555,7 @@ workspace "eepp"
 		language "C++"
 		files { "src/tools/ecode/**.cpp" }
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
-		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static" }
+		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static" }
 		build_link_configuration( "ecode", false )
 		filter { "system:windows", "action:not vs*" }
 			buildoptions{ "-Wa,-mbig-obj" }

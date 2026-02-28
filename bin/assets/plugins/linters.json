@@ -125,6 +125,14 @@
       "command": "xml",
       "type": "native",
       "url": "#native"
+    },
+    {
+      "language": "yaml",
+      "file_patterns": ["%.yml$", "%.yaml$"],
+      "warning_pattern": "",
+      "command": "yaml",
+      "type": "native",
+      "url": "#native"
     }
   ]
 }

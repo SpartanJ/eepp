@@ -1321,6 +1321,15 @@ solution "eepp"
 			build_base_configuration( "mojoal" )
 	end
 
+	project "libyaml-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		defines { "HAVE_CONFIG_H" }
+		files { "src/thirdparty/libyaml/**.c" }
+		includedirs { "src/thirdparty/libyaml/include" }
+		build_base_configuration( "libyaml" )
+
 	project "efsw-static"
 		kind "StaticLib"
 		language "C++"
@@ -1676,7 +1685,7 @@ solution "eepp"
 		language "C++"
 		files { "src/tools/ecode/**.cpp" }
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
-		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static" }
+		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static" }
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }
 		end
