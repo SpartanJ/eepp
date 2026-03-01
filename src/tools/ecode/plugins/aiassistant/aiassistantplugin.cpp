@@ -178,7 +178,7 @@ void AIAssistantPlugin::load( PluginManager* pluginManager ) {
 	path = pluginManager->getPluginsPath() + "aiassistant.json";
 	if ( FileSystem::fileExists( path ) ||
 		 FileSystem::fileWrite(
-			 path, "{\n\"config\":{},\n  \"keybindings\":{},\n\"providers\":[]\n}\n" ) ) {
+			 path, "{\n\"config\":{},\n  \"keybindings\":{},\n\"providers\":{}\n}\n" ) ) {
 		mConfigPath = path;
 		paths.emplace_back( path );
 	}

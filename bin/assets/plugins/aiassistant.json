@@ -490,6 +490,11 @@
           "display_name": "kimi-k2.5"
         }
       ]
+    },
+    "llama.cpp": {
+      "api_url": "http://localhost:8080/api/chat",
+      "fetch_models_url": "http://localhost:8080/api/tags",
+      "open_api": true
     }
   }
 }

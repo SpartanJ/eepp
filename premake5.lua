@@ -410,7 +410,11 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	filter { "system:bsd" }
 		if package_name ~= "eepp" and package_name ~= "eepp-static" then
-			flags { "RelativeLinks" }
+			if type(userelativelinks) == "function" then
+				userelativelinks "On"
+			else
+				flags { "RelativeLinks" }
+			end
 		end
 
 	filter { "system:windows", "action:not vs*", "architecture:x86" }
@@ -957,7 +961,11 @@ workspace "eepp"
 		symbols "On"
 
 	filter { "system:windows", "action:vs*" }
-		flags { "MultiProcessorCompile" }
+		if type(multiprocessorcompile) == "function" then
+			multiprocessorcompile "On"
+		else
+			flags { "MultiProcessorCompile" }
+		end
 		disablewarnings{ "4305", "4146", "4996", "4244", "4267" }
 
 	filter "system:bsd"
