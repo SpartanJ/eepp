@@ -2536,7 +2536,9 @@ void App::createDocManyLangsAlert( UICodeEditor* editor ) {
 
 void App::loadImageFromMedium( const std::string& path, bool isMemory, bool forcePreview,
 							   bool forceTab ) {
-	if ( !FileSystem::fileExists( path ) || !Image::isImage( path ) )
+	if ( ( isMemory && !Image::isImage( reinterpret_cast<const unsigned char*>( path.data() ),
+										path.size() ) ) ||
+		 ( !isMemory && ( !FileSystem::fileExists( path ) || !Image::isImage( path ) ) ) )
 		return;
 
 	if ( !forceTab && ( mConfig.ui.imagesQuickPreview || forcePreview ) ) {
@@ -3040,8 +3042,9 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		if ( editor->getDocument().getFileInfo().getExtension() == "svg" ) {
 			editor->getDocument().setCommand(
 				"show-image-preview", [this]( TextDocument::Client* client ) {
-					loadImageFromMemory(
-						static_cast<UICodeEditor*>( client )->getDocument().getText().toUtf8() );
+					loadImageFromMedium(
+						static_cast<UICodeEditor*>( client )->getDocument().getText().toUtf8(),
+						true, true );
 				} );
 			editor->on( Event::OnCreateContextMenu, [this]( const Event* event ) {
 				auto cevent = static_cast<const ContextMenuEvent*>( event );
