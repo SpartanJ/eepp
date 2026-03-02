@@ -69,7 +69,32 @@ class EE_API UITextSpan : public UIWidget {
 
 	UITextSpan* setFontShadowOffset( const Vector2f& offset );
 
+	void setInheritedStyle( const UIFontStyleConfig& fontStyleConfig );
+
+	enum StyleState {
+		StyleStateNone = 0,
+		StyleStateFont = 1 << 0,
+		StyleStateFontSize = 1 << 1,
+		StyleStateFontStyle = 1 << 2,
+		StyleStateFontColor = 1 << 3,
+		StyleStateOutlineThickness = 1 << 4,
+		StyleStateOutlineColor = 1 << 5,
+		StyleStateFontShadowColor = 1 << 6,
+		StyleStateFontShadowOffset = 1 << 7,
+		StyleStateAll = 0xFFFFFFFF
+	};
+
+	bool hasFont() const;
+	bool hasFontSize() const;
+	bool hasFontStyle() const;
+	bool hasFontColor() const;
+	bool hasOutlineThickness() const;
+	bool hasOutlineColor() const;
+	bool hasFontShadowColor() const;
+	bool hasFontShadowOffset() const;
+
   protected:
+	Uint32 mStyleState{ StyleStateNone };
 	String mText;
 	UIFontStyleConfig mFontStyleConfig;
 

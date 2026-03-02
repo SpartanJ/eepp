@@ -14,8 +14,6 @@ class EE_API UIRichText : public UILayout {
 
 	explicit UIRichText( const std::string& tag = "richtext" );
 
-	virtual ~UIRichText();
-
 	virtual Uint32 getType() const;
 
 	virtual bool isType( const Uint32& type ) const;
@@ -31,7 +29,7 @@ class EE_API UIRichText : public UILayout {
 
 	virtual std::vector<PropertyId> getPropertiesImplemented() const;
 
-	Graphics::RichText* getRichText();
+	const Graphics::RichText& getRichText();
 
 	Graphics::Font* getFont() const;
 
@@ -70,7 +68,7 @@ class EE_API UIRichText : public UILayout {
 	UIRichText* setTextAlign( const Uint32& align );
 
   protected:
-	Graphics::RichText* mRichText;
+	RichText mRichText;
 
 	virtual void onSizeChange();
 	virtual void onPaddingChange();
@@ -82,6 +80,7 @@ class EE_API UIRichText : public UILayout {
 
 	void rebuildRichText();
 	void positionChildren();
+	void updateDefaultSpansStyle();
 };
 
 }} // namespace EE::UI

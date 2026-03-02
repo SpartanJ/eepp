@@ -5,9 +5,11 @@
 #include <eepp/graphics/fonttruetype.hpp>
 #include <eepp/graphics/primitives.hpp>
 #include <eepp/graphics/richtext.hpp>
+#include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextspan.hpp>
@@ -17,6 +19,8 @@
 using namespace EE;
 using namespace EE::Graphics;
 using namespace EE::Window;
+using namespace EE::Scene;
+using namespace EE::UI;
 
 UTEST( RichText, basicFunctionality ) {
 	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
@@ -268,8 +272,8 @@ UTEST( UIRichText, IntegrationAndLayoutVerification ) {
 	// force layout
 	sceneNode->update( Time::Zero );
 
-	auto* graphicsRt = rt->getRichText();
-	const auto& blocks = graphicsRt->getBlocks();
+	auto graphicsRt = rt->getRichText();
+	const auto& blocks = graphicsRt.getBlocks();
 
 	ASSERT_EQ( blocks.size(), (size_t)4 );
 	EXPECT_EQ( blocks[1].type, Graphics::RichText::BlockType::Text );
@@ -287,4 +291,101 @@ UTEST( UIRichText, IntegrationAndLayoutVerification ) {
 
 	eeDelete( sceneNode );
 	Engine::destroySingleton();
+}
+
+UTEST( UIRichText, DefaultStyleInheritance ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+	    <RichText id="rt" font-size="24dp" color="#FF0000" layout_width="300dp" layout_height="wrap_content">Default size<span font-size="16dp" color="#00FF00">Small</span></RichText>
+    )xml";
+
+	sceneNode->loadLayoutFromString( xml );
+
+	UI::UIRichText* rt = sceneNode->find<UI::UIRichText>( "rt" );
+	ASSERT_TRUE( rt != nullptr );
+
+	// force layout
+	sceneNode->update( Time::Zero );
+
+	auto graphicsRt = rt->getRichText();
+	const auto& blocks = graphicsRt.getBlocks();
+
+	// blocks[0] should be "Default size" with parent's size and color
+	// blocks[1] should be "Small" with overridden size and color
+	ASSERT_TRUE( blocks.size() >= 2 );
+	EXPECT_EQ( blocks[0].type, Graphics::RichText::BlockType::Text );
+	EXPECT_EQ( blocks[0].text->getCharacterSize(), rt->getFontSize() );
+	EXPECT_EQ( blocks[0].text->getFillColor().getValue(), rt->getFontColor().getValue() );
+	EXPECT_EQ( blocks[0].text->getFillColor().getValue(),
+			   Color::fromString( "#FF0000" ).getValue() );
+
+	EXPECT_EQ( blocks[1].type, Graphics::RichText::BlockType::Text );
+	EXPECT_EQ( blocks[1].text->getCharacterSize(), (unsigned int)PixelDensity::dpToPxI( 16 ) );
+	EXPECT_EQ( blocks[1].text->getFillColor().getValue(),
+			   Color::fromString( "#00FF00" ).getValue() );
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
+UTEST( UIRichText, RichTextTest ) {
+	const auto runTest = [&]() {
+		UIApplication app( WindowSettings( 800, 600, "eepp - UIRichText Test", WindowStyle::Default,
+										   WindowBackend::Default, 32, {}, 1, false, true ),
+						   UIApplication::Settings(
+							   Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1.5 ) );
+
+		app.getUI()->loadLayoutFromString( R"xml(
+			<LinearLayout layout_width="match_parent"
+						  layout_height="match_parent"
+						  orientation="vertical">
+				<RichText font-size="12dp"
+					font-color="#cecece">Welcome to the <span color="#FFD700" font-style="bold">UIRichText</span> example!
+					This component supports <span color="#00FF00" font-style="italic">styled text</span>,
+					<span color="#00BFFF" font-style="shadow">shadows</span>,
+					and <span color="#FF4500" text-stroke-width="1dp" text-stroke-color="black">outlines</span> using <span font-family="monospace" color="#A9A9A9">HTML-like tags</span>.
+				</RichText>
+				<Image src="file://assets/icon/ee.png" margin="4dp" layout-gravity="center_horizontal" />
+				<RichText font-size="12dp"
+				font-color="#ccc">We can also mix <span color="#FFD700" font-style="bold">contents</span> with more <span color="#00FF00" font-style="italic">text</span>!
+				</RichText>
+			</LinearLayout>
+		)xml" );
+
+		SceneManager::instance()->update();
+		SceneManager::instance()->draw();
+
+		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+		compareImages( utest_state, utest_result, app.getWindow(), "eepp-uirichtext" );
+	};
+
+	UTEST_PRINT_STEP( "Text Shaper disabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, false );
+		runTest();
+	}
+
+	UTEST_PRINT_STEP( "Text Shaper enabled" );
+	{
+		BoolScopedOp op( Text::TextShaperEnabled, true );
+		runTest();
+
+		UTEST_PRINT_STEP( "Text Shaper enabled w/o optimizations" );
+		BoolScopedOp op2( Text::TextShaperOptimizations, false );
+		runTest();
+	}
 }

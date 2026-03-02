@@ -4,6 +4,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
+
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
@@ -126,10 +127,14 @@ std::string UITextSpan::getPropertyString( const PropertyDefinition* propertyDef
 
 std::vector<PropertyId> UITextSpan::getPropertiesImplemented() const {
 	auto props = UIWidget::getPropertiesImplemented();
-	auto local = { PropertyId::Text,			PropertyId::FontFamily,
-				   PropertyId::FontSize,		PropertyId::FontStyle,
-				   PropertyId::Color,			PropertyId::TextShadowColor,
-				   PropertyId::TextShadowOffset, PropertyId::TextStrokeWidth,
+	auto local = { PropertyId::Text,
+				   PropertyId::FontFamily,
+				   PropertyId::FontSize,
+				   PropertyId::FontStyle,
+				   PropertyId::Color,
+				   PropertyId::TextShadowColor,
+				   PropertyId::TextShadowOffset,
+				   PropertyId::TextStrokeWidth,
 				   PropertyId::TextStrokeColor };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
@@ -154,6 +159,7 @@ const UIFontStyleConfig& UITextSpan::getFontStyleConfig() const {
 
 void UITextSpan::setFontStyleConfig( const UIFontStyleConfig& fontStyleConfig ) {
 	mFontStyleConfig = fontStyleConfig;
+	mStyleState = StyleStateAll;
 	onFontStyleChanged();
 	onFontChanged();
 	notifyLayoutAttrChange();
@@ -166,6 +172,7 @@ Graphics::Font* UITextSpan::getFont() const {
 UITextSpan* UITextSpan::setFont( Graphics::Font* font ) {
 	if ( mFontStyleConfig.Font != font ) {
 		mFontStyleConfig.Font = font;
+		mStyleState |= StyleStateFont;
 		onFontChanged();
 		notifyLayoutAttrChange();
 	}
@@ -179,6 +186,7 @@ Uint32 UITextSpan::getFontSize() const {
 UITextSpan* UITextSpan::setFontSize( const Uint32& characterSize ) {
 	if ( mFontStyleConfig.CharacterSize != characterSize ) {
 		mFontStyleConfig.CharacterSize = characterSize;
+		mStyleState |= StyleStateFontSize;
 		onFontStyleChanged();
 		notifyLayoutAttrChange();
 	}
@@ -192,6 +200,7 @@ const Uint32& UITextSpan::getFontStyle() const {
 UITextSpan* UITextSpan::setFontStyle( const Uint32& fontStyle ) {
 	if ( mFontStyleConfig.Style != fontStyle ) {
 		mFontStyleConfig.Style = fontStyle;
+		mStyleState |= StyleStateFontStyle;
 		onFontStyleChanged();
 		notifyLayoutAttrChange();
 	}
@@ -205,6 +214,7 @@ const Float& UITextSpan::getOutlineThickness() const {
 UITextSpan* UITextSpan::setOutlineThickness( const Float& outlineThickness ) {
 	if ( mFontStyleConfig.OutlineThickness != outlineThickness ) {
 		mFontStyleConfig.OutlineThickness = outlineThickness;
+		mStyleState |= StyleStateOutlineThickness;
 		onFontStyleChanged();
 		notifyLayoutAttrChange();
 	}
@@ -218,6 +228,7 @@ const Color& UITextSpan::getOutlineColor() const {
 UITextSpan* UITextSpan::setOutlineColor( const Color& outlineColor ) {
 	if ( mFontStyleConfig.OutlineColor != outlineColor ) {
 		mFontStyleConfig.OutlineColor = outlineColor;
+		mStyleState |= StyleStateOutlineColor;
 		onFontStyleChanged();
 	}
 	return this;
@@ -230,6 +241,7 @@ const Color& UITextSpan::getFontColor() const {
 UITextSpan* UITextSpan::setFontColor( const Color& color ) {
 	if ( mFontStyleConfig.FontColor != color ) {
 		mFontStyleConfig.FontColor = color;
+		mStyleState |= StyleStateFontColor;
 		onFontStyleChanged();
 	}
 	return this;
@@ -246,6 +258,7 @@ UITextSpan* UITextSpan::setFontShadowColor( const Color& color ) {
 			mFontStyleConfig.Style |= Graphics::Text::Shadow;
 		else
 			mFontStyleConfig.Style &= ~Graphics::Text::Shadow;
+		mStyleState |= StyleStateFontShadowColor;
 		onFontStyleChanged();
 		notifyLayoutAttrChange();
 	}
@@ -259,6 +272,7 @@ const Vector2f& UITextSpan::getFontShadowOffset() const {
 UITextSpan* UITextSpan::setFontShadowOffset( const Vector2f& offset ) {
 	if ( mFontStyleConfig.ShadowOffset != offset ) {
 		mFontStyleConfig.ShadowOffset = offset;
+		mStyleState |= StyleStateFontShadowOffset;
 		onFontStyleChanged();
 		notifyLayoutAttrChange();
 	}
@@ -294,6 +308,93 @@ void UITextSpan::loadFromXmlNode( const pugi::xml_node& node ) {
 	}
 
 	endAttributesTransaction();
+}
+
+void UITextSpan::setInheritedStyle( const UIFontStyleConfig& fontStyleConfig ) {
+	bool fontChanged = false;
+	bool fontStyleChanged = false;
+
+	if ( !hasFont() && mFontStyleConfig.Font != fontStyleConfig.Font ) {
+		mFontStyleConfig.Font = fontStyleConfig.Font;
+		fontChanged = true;
+	}
+
+	if ( !hasFontSize() && mFontStyleConfig.CharacterSize != fontStyleConfig.CharacterSize ) {
+		mFontStyleConfig.CharacterSize = fontStyleConfig.CharacterSize;
+		fontStyleChanged = true;
+	}
+
+	if ( !hasFontStyle() && mFontStyleConfig.Style != fontStyleConfig.Style ) {
+		mFontStyleConfig.Style = fontStyleConfig.Style;
+		fontStyleChanged = true;
+	}
+
+	if ( !hasFontColor() && mFontStyleConfig.FontColor != fontStyleConfig.FontColor ) {
+		mFontStyleConfig.FontColor = fontStyleConfig.FontColor;
+		fontStyleChanged = true;
+	}
+
+	if ( !hasOutlineThickness() &&
+		 mFontStyleConfig.OutlineThickness != fontStyleConfig.OutlineThickness ) {
+		mFontStyleConfig.OutlineThickness = fontStyleConfig.OutlineThickness;
+		fontStyleChanged = true;
+	}
+
+	if ( !hasOutlineColor() && mFontStyleConfig.OutlineColor != fontStyleConfig.OutlineColor ) {
+		mFontStyleConfig.OutlineColor = fontStyleConfig.OutlineColor;
+		fontStyleChanged = true;
+	}
+
+	if ( !hasFontShadowColor() && mFontStyleConfig.ShadowColor != fontStyleConfig.ShadowColor ) {
+		mFontStyleConfig.ShadowColor = fontStyleConfig.ShadowColor;
+		fontStyleChanged = true;
+	}
+
+	if ( !hasFontShadowOffset() && mFontStyleConfig.ShadowOffset != fontStyleConfig.ShadowOffset ) {
+		mFontStyleConfig.ShadowOffset = fontStyleConfig.ShadowOffset;
+		fontStyleChanged = true;
+	}
+
+	if ( fontChanged )
+		onFontChanged();
+
+	if ( fontStyleChanged )
+		onFontStyleChanged();
+
+	if ( fontChanged || fontStyleChanged )
+		notifyLayoutAttrChange();
+}
+
+bool UITextSpan::hasFont() const {
+	return 0 != ( mStyleState & StyleStateFont );
+}
+
+bool UITextSpan::hasFontSize() const {
+	return 0 != ( mStyleState & StyleStateFontSize );
+}
+
+bool UITextSpan::hasFontStyle() const {
+	return 0 != ( mStyleState & StyleStateFontStyle );
+}
+
+bool UITextSpan::hasFontColor() const {
+	return 0 != ( mStyleState & StyleStateFontColor );
+}
+
+bool UITextSpan::hasOutlineThickness() const {
+	return 0 != ( mStyleState & StyleStateOutlineThickness );
+}
+
+bool UITextSpan::hasOutlineColor() const {
+	return 0 != ( mStyleState & StyleStateOutlineColor );
+}
+
+bool UITextSpan::hasFontShadowColor() const {
+	return 0 != ( mStyleState & StyleStateFontShadowColor );
+}
+
+bool UITextSpan::hasFontShadowOffset() const {
+	return 0 != ( mStyleState & StyleStateFontShadowOffset );
 }
 
 }} // namespace EE::UI

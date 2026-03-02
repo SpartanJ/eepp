@@ -52,6 +52,9 @@ class EE_API RichText : public Drawable {
 	/** @return The default font style configuration. */
 	FontStyleConfig& getFontStyleConfig() { return mDefaultStyle; }
 
+	/** @return The default font style configuration. */
+	const FontStyleConfig& getFontStyleConfig() const { return mDefaultStyle; }
+
 	/** @brief Sets the text alignment (Left, Center, Right). */
 	void setAlign( Uint32 align );
 
