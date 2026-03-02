@@ -497,6 +497,11 @@ class EE_API UIWidget : public UINode {
 	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
 	/**
+	* @brief Boolean that indicates if the widget is in charge of loading its children nodes
+	*/
+	bool loadsItsChildren() const;
+
+	/**
 	 * @brief Notifies that layout attributes have changed.
 	 *
 	 * Triggers layout recalculation when layout-related properties change.

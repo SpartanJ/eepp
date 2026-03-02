@@ -292,7 +292,7 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
 					clock.getElapsedTime().asMilliseconds(), std::string( name ) ) );
 			}
 
-			if ( widget.first_child() ) {
+			if ( widget.first_child() && !uiwidget->loadsItsChildren() ) {
 				loadNode( widget.first_child(), uiwidget, marker );
 			}
 

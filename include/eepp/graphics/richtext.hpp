@@ -55,14 +55,38 @@ class EE_API RichText : public Drawable {
 	/** @brief Sets the text alignment (Left, Center, Right). */
 	void setAlign( Uint32 align );
 
+	/** @return The text alignment. */
+	Uint32 getAlign() const { return mAlign; }
+
 	/** @brief Sets the maximum width for wrapping. If 0, wrapping is disabled. */
 	void setMaxWidth( Float width );
 
 	/** @return The maximum width for wrapping. */
 	Float getMaxWidth() const { return mMaxWidth; }
 
-	/** @return The list of text spans. */
-	std::vector<std::shared_ptr<Text>>& getSpans() { return mSpans; }
+	enum class BlockType { Text, Drawable, CustomSize };
+
+	struct Block {
+		BlockType type{ BlockType::Text };
+		std::shared_ptr<Text> text;
+		std::shared_ptr<Drawable> drawable;
+		Sizef customSize;
+	};
+
+	/**
+	 * @brief Adds a drawable (e.g., an image) into the text flow.
+	 * @param drawable The drawable to add.
+	 */
+	void addDrawable( std::shared_ptr<Drawable> drawable );
+
+	/**
+	 * @brief Adds a custom size spacer into the text flow.
+	 * @param size The physical dimensions of the spacer.
+	 */
+	void addCustomSize( const Sizef& size );
+
+	/** @return The list of blocks. */
+	const std::vector<Block>& getBlocks() { return mBlocks; }
 
 	virtual void draw( const Float& X, const Float& Y, const Vector2f& scale = Vector2f::One,
 					   const Float& rotation = 0, BlendMode effect = BlendMode::Alpha(),
@@ -86,8 +110,9 @@ class EE_API RichText : public Drawable {
 
 	/** @brief Structure representing a rendered span within a line. */
 	struct RenderSpan {
-		std::shared_ptr<Text> text;
+		Block block;
 		Vector2f position; // Local position relative to RichText origin
+		Sizef size;
 	};
 
 	/** @brief Structure representing a rendered paragraph (line). */
@@ -103,7 +128,7 @@ class EE_API RichText : public Drawable {
 	const std::vector<RenderParagraph>& getLines() const { return mLines; }
 
   protected:
-	std::vector<std::shared_ptr<Text>> mSpans;
+	std::vector<Block> mBlocks;
 	std::vector<RenderParagraph> mLines;
 	FontStyleConfig mDefaultStyle;
 	Uint32 mAlign{ TEXT_ALIGN_LEFT };

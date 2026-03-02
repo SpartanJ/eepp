@@ -42,13 +42,20 @@ void RichText::draw( const Float& X, const Float& Y, const Vector2f& scale, cons
 
 			Vector2f pos = span.position;
 
-			if ( rotation == 0 && scale == Vector2f::One ) {
-				span.text->draw( std::trunc( X + pos.x ), std::trunc( Y + line.y + pos.y ),
-								 Vector2f::One, 0, effect );
-			} else {
-				span.text->draw( std::trunc( X + pos.x * scale.x ),
-								 std::trunc( Y + ( line.y + pos.y ) * scale.y ), scale, rotation,
-								 effect, rotationCenter, scaleCenter );
+			if ( span.block.type == BlockType::Text ) {
+				if ( rotation == 0 && scale == Vector2f::One ) {
+					span.block.text->draw( std::trunc( X + pos.x ),
+										   std::trunc( Y + line.y + pos.y ), Vector2f::One, 0,
+										   effect );
+				} else {
+					span.block.text->draw( std::trunc( X + pos.x * scale.x ),
+										   std::trunc( Y + ( line.y + pos.y ) * scale.y ), scale,
+										   rotation, effect, rotationCenter, scaleCenter );
+				}
+			} else if ( span.block.type == BlockType::Drawable && span.block.drawable ) {
+				span.block.drawable->draw(
+					Vector2f( std::trunc( X + pos.x ), std::trunc( Y + line.y + pos.y ) ),
+					span.size );
 			}
 		}
 	}
@@ -65,7 +72,28 @@ void RichText::addSpan( const String& text, const FontStyleConfig& style ) {
 	auto span = std::make_shared<Text>();
 	span->setString( text );
 	span->setStyleConfig( style );
-	mSpans.push_back( span );
+	Block block;
+	block.type = BlockType::Text;
+	block.text = span;
+	mBlocks.push_back( block );
+	mNeedsLayoutUpdate = true;
+}
+
+void RichText::addDrawable( std::shared_ptr<Drawable> drawable ) {
+	if ( !drawable )
+		return;
+	Block block;
+	block.type = BlockType::Drawable;
+	block.drawable = drawable;
+	mBlocks.push_back( block );
+	mNeedsLayoutUpdate = true;
+}
+
+void RichText::addCustomSize( const Sizef& size ) {
+	Block block;
+	block.type = BlockType::CustomSize;
+	block.customSize = size;
+	mBlocks.push_back( block );
 	mNeedsLayoutUpdate = true;
 }
 
@@ -85,7 +113,7 @@ void RichText::addSpan( const String& text, Font* font, Uint32 characterSize, Co
 }
 
 void RichText::clear() {
-	mSpans.clear();
+	mBlocks.clear();
 	mLines.clear();
 	mNeedsLayoutUpdate = true;
 }
@@ -111,8 +139,10 @@ void RichText::setMaxWidth( Float width ) {
 
 void RichText::invalidate() {
 	mNeedsLayoutUpdate = true;
-	for ( auto& span : mSpans ) {
-		span->invalidate();
+	for ( auto& block : mBlocks ) {
+		if ( block.type == BlockType::Text && block.text ) {
+			block.text->invalidate();
+		}
 	}
 }
 
@@ -126,62 +156,96 @@ void RichText::updateLayout() {
 	Float curX = 0;
 	Float maxWidth = 0;
 
-	for ( auto& span : mSpans ) {
-		if ( span->getString().empty() )
-			continue;
+	for ( auto& block : mBlocks ) {
+		if ( block.type == BlockType::Text ) {
+			auto& span = block.text;
+			if ( !span || span->getString().empty() )
+				continue;
 
-		auto& fontStyle = span->getFontStyleConfig();
-		if ( !fontStyle.Font )
-			continue;
+			auto& fontStyle = span->getFontStyleConfig();
+			if ( !fontStyle.Font )
+				continue;
 
-		Uint32 textHints = span->getTextHints();
+			Uint32 textHints = span->getTextHints();
 
-		LineWrapInfoEx wrapInfo = LineWrap::computeLineBreaksEx(
-			span->getString(), fontStyle, mMaxWidth > 0 ? mMaxWidth : 1e9f,
-			mMaxWidth > 0 ? LineWrapMode::Word : LineWrapMode::NoWrap, false, 4, 0.f, textHints,
-			false, curX );
+			LineWrapInfoEx wrapInfo = LineWrap::computeLineBreaksEx(
+				span->getString(), fontStyle, mMaxWidth > 0 ? mMaxWidth : 1e9f,
+				mMaxWidth > 0 ? LineWrapMode::Word : LineWrapMode::NoWrap, false, 4, 0.f, textHints,
+				false, curX );
 
-		// Make sure we have the end of the string as a "wrap" point for the loop
-		if ( wrapInfo.wraps.empty() || wrapInfo.wraps.back() != (Float)span->getString().size() )
-			wrapInfo.wraps.push_back( span->getString().size() );
+			// Make sure we have the end of the string as a "wrap" point for the loop
+			if ( wrapInfo.wraps.empty() ||
+				 wrapInfo.wraps.back() != (Float)span->getString().size() )
+				wrapInfo.wraps.push_back( span->getString().size() );
 
-		for ( size_t i = 0; i < wrapInfo.wraps.size() - 1; ++i ) {
-			size_t startIdx = wrapInfo.wraps[i];
-			size_t endIdx = wrapInfo.wraps[i + 1];
-			bool isNewline = ( endIdx - startIdx == 1 && span->getString()[startIdx] == '\n' );
+			for ( size_t i = 0; i < wrapInfo.wraps.size() - 1; ++i ) {
+				size_t startIdx = wrapInfo.wraps[i];
+				size_t endIdx = wrapInfo.wraps[i + 1];
+				bool isNewline = ( endIdx - startIdx == 1 && span->getString()[startIdx] == '\n' );
 
-			if ( !isNewline ) {
-				std::shared_ptr<Text> renderSpanText = std::make_shared<Text>();
-				renderSpanText->setString(
-					span->getString().substr( startIdx, endIdx - startIdx ) );
-				renderSpanText->setStyleConfig( fontStyle );
+				if ( !isNewline ) {
+					std::shared_ptr<Text> renderSpanText = std::make_shared<Text>();
+					renderSpanText->setString(
+						span->getString().substr( startIdx, endIdx - startIdx ) );
+					renderSpanText->setStyleConfig( fontStyle );
 
-				RenderSpan renderSpan;
-				renderSpan.text = renderSpanText;
-				renderSpan.position = { curX, 0 }; // Y adjusted later
+					Block newBlock;
+					newBlock.type = BlockType::Text;
+					newBlock.text = renderSpanText;
 
-				RenderParagraph& currentLine = mLines.back();
-				currentLine.spans.push_back( renderSpan );
+					RenderSpan renderSpan;
+					renderSpan.block = newBlock;
+					renderSpan.position = { curX, 0 }; // Y adjusted later
 
-				Float ascent = fontStyle.Font->getAscent( fontStyle.CharacterSize );
-				Float height = fontStyle.Font->getLineSpacing( fontStyle.CharacterSize );
+					RenderParagraph& currentLine = mLines.back();
+					currentLine.spans.push_back( renderSpan );
 
-				currentLine.maxAscent = std::max( currentLine.maxAscent, ascent );
-				currentLine.height = std::max( currentLine.height, height );
+					Float ascent = fontStyle.Font->getAscent( fontStyle.CharacterSize );
+					Float height = fontStyle.Font->getLineSpacing( fontStyle.CharacterSize );
 
-				Float spanWidth = renderSpan.text->getTextWidth();
-				curX += spanWidth;
-				currentLine.width += spanWidth;
+					currentLine.maxAscent = std::max( currentLine.maxAscent, ascent );
+					currentLine.height = std::max( currentLine.height, height );
+
+					Float spanWidth = renderSpan.block.text->getTextWidth();
+					renderSpan.size = Sizef( spanWidth, height );
+					curX += spanWidth;
+					currentLine.width += spanWidth;
+				}
+
+				// If it's a newline, or if it's not the very last segment (which means it wrapped),
+				// start a new line. Exception: If the last segment was just a newline, we already
+				// handled it.
+				if ( i < wrapInfo.wraps.size() - 2 || isNewline ) {
+					maxWidth = std::max( maxWidth, curX );
+					mLines.push_back( RenderParagraph() );
+					curX = 0;
+				}
 			}
+		} else if ( block.type == BlockType::Drawable || block.type == BlockType::CustomSize ) {
+			Sizef blockSize = block.type == BlockType::Drawable
+								  ? ( block.drawable ? block.drawable->getPixelsSize() : Sizef() )
+								  : block.customSize;
 
-			// If it's a newline, or if it's not the very last segment (which means it wrapped),
-			// start a new line. Exception: If the last segment was just a newline, we already
-			// handled it.
-			if ( i < wrapInfo.wraps.size() - 2 || isNewline ) {
+			// Wrap if needed
+			if ( mMaxWidth > 0 && curX + blockSize.getWidth() > mMaxWidth && curX > 0 ) {
 				maxWidth = std::max( maxWidth, curX );
 				mLines.push_back( RenderParagraph() );
 				curX = 0;
 			}
+
+			RenderSpan renderSpan;
+			renderSpan.block = block;
+			renderSpan.position = { curX, 0 };
+			renderSpan.size = blockSize;
+
+			RenderParagraph& currentLine = mLines.back();
+			currentLine.spans.push_back( renderSpan );
+
+			currentLine.maxAscent = std::max( currentLine.maxAscent, blockSize.getHeight() );
+			currentLine.height = std::max( currentLine.height, blockSize.getHeight() );
+
+			curX += blockSize.getWidth();
+			currentLine.width += blockSize.getWidth();
 		}
 	}
 
@@ -206,10 +270,19 @@ void RichText::updateLayout() {
 		}
 
 		for ( auto& span : line.spans ) {
-			Float ascent = span.text->getFont()->getAscent( span.text->getCharacterSize() );
-			Float offsetY = line.maxAscent - ascent;
-			span.position.x += xOffset;
-			span.position.y = offsetY;
+			if ( span.block.type == BlockType::Text ) {
+				Float ascent =
+					span.block.text->getFont()->getAscent( span.block.text->getCharacterSize() );
+				Float offsetY = line.maxAscent - ascent;
+				span.position.x += xOffset;
+				span.position.y = offsetY;
+			} else {
+				Float offsetY = line.height - span.size.getHeight();
+				if ( offsetY < 0 )
+					offsetY = 0;
+				span.position.x += xOffset;
+				span.position.y = offsetY;
+			}
 		}
 
 		curY += line.height;

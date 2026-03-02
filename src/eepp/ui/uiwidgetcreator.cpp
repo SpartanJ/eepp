@@ -42,6 +42,8 @@
 #include <eepp/ui/uiwidgettable.hpp>
 #include <eepp/ui/uiwidgettablerow.hpp>
 #include <eepp/ui/uiwindow.hpp>
+#include <eepp/ui/uirichtext.hpp>
+#include <eepp/ui/uitextspan.hpp>
 
 namespace EE { namespace UI {
 
@@ -106,6 +108,8 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["nodelink"] = UINodeLink::New;
 		registeredWidget["textureviewer"] = Tools::UITextureViewer::New;
 		registeredWidget["imageviewer"] = Tools::UIImageViewer::New;
+		registeredWidget["richtext"] = UIRichText::New;
+		registeredWidget["textspan"] = UITextSpan::New;
 
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;
@@ -122,6 +126,8 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["tooltip"] = UITooltip::New;
 		registeredWidget["tv"] = UITextView::New;
 		registeredWidget["a"] = UIAnchor::New;
+		registeredWidget["span"] = UITextSpan::New;
+		registeredWidget["p"] = UIRichText::New;
 
 		sBaseListCreated = true;
 	}

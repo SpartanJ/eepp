@@ -2024,6 +2024,10 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 	endAttributesTransaction();
 }
 
+bool UIWidget::loadsItsChildren() const {
+	return ( mFlags & UI_LOADS_ITS_CHILDREN ) != 0;
+}
+
 std::string UIWidget::getLayoutWidthPolicyString() const {
 	SizePolicy rules = getLayoutWidthPolicy();
 
