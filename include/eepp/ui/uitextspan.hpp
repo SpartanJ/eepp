@@ -12,6 +12,20 @@ class EE_API UITextSpan : public UIWidget {
 
 	static UITextSpan* NewWithTag( const std::string& tag );
 
+	static UITextSpan* NewStrong() { return NewWithTag( "strong" ); }
+
+	static UITextSpan* NewBold() { return NewWithTag( "b" ); }
+
+	static UITextSpan* NewItalics() { return NewWithTag( "i" ); }
+
+	static UITextSpan* NewEmphasis() { return NewWithTag( "em" ); }
+
+	static UITextSpan* NewUnderline() { return NewWithTag( "u" ); }
+
+	static UITextSpan* NewStrikethrough() { return NewWithTag( "s" ); }
+
+	static UITextSpan* NewMark() { return NewWithTag( "mark" ); }
+
 	virtual ~UITextSpan();
 
 	virtual Uint32 getType() const;

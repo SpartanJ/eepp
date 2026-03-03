@@ -12,6 +12,22 @@ class EE_API UIRichText : public UILayout {
 
 	static UIRichText* NewWithTag( const std::string& tag );
 
+	static UIRichText* NewParagraph() { return UIRichText::NewWithTag( "p" ); };
+
+	static UIRichText* NewH1() { return UIRichText::NewWithTag( "h1" ); };
+
+	static UIRichText* NewH2() { return UIRichText::NewWithTag( "h2" ); };
+
+	static UIRichText* NewH3() { return UIRichText::NewWithTag( "h3" ); };
+
+	static UIRichText* NewH4() { return UIRichText::NewWithTag( "h4" ); };
+
+	static UIRichText* NewH5() { return UIRichText::NewWithTag( "h5" ); };
+
+	static UIRichText* NewH6() { return UIRichText::NewWithTag( "h6" ); };
+
+	static UIRichText* NewListItem() { return UIRichText::NewWithTag( "li" ); };
+
 	explicit UIRichText( const std::string& tag = "richtext" );
 
 	virtual Uint32 getType() const;

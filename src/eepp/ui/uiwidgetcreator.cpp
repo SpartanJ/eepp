@@ -17,6 +17,7 @@
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uirelativelayout.hpp>
+#include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
@@ -32,6 +33,7 @@
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uitextinput.hpp>
 #include <eepp/ui/uitextinputpassword.hpp>
+#include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitextureregion.hpp>
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitooltip.hpp>
@@ -42,8 +44,6 @@
 #include <eepp/ui/uiwidgettable.hpp>
 #include <eepp/ui/uiwidgettablerow.hpp>
 #include <eepp/ui/uiwindow.hpp>
-#include <eepp/ui/uirichtext.hpp>
-#include <eepp/ui/uitextspan.hpp>
 
 namespace EE { namespace UI {
 
@@ -127,7 +127,23 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["tv"] = UITextView::New;
 		registeredWidget["a"] = UIAnchor::New;
 		registeredWidget["span"] = UITextSpan::New;
-		registeredWidget["p"] = UIRichText::New;
+		registeredWidget["em"] = UITextSpan::NewEmphasis;
+		registeredWidget["b"] = UITextSpan::NewBold;
+		registeredWidget["i"] = UITextSpan::NewItalics;
+		registeredWidget["u"] = UITextSpan::NewUnderline;
+		registeredWidget["s"] = UITextSpan::NewStrikethrough;
+		registeredWidget["mark"] = UITextSpan::NewMark;
+		registeredWidget["div"] = UIRichText::New;
+		registeredWidget["p"] = UIRichText::NewParagraph;
+		registeredWidget["h1"] = UIRichText::NewH1;
+		registeredWidget["h2"] = UIRichText::NewH2;
+		registeredWidget["h3"] = UIRichText::NewH3;
+		registeredWidget["h4"] = UIRichText::NewH4;
+		registeredWidget["h5"] = UIRichText::NewH5;
+		registeredWidget["h6"] = UIRichText::NewH6;
+		registeredWidget["ul"] = UILinearLayout::NewVertical;
+		registeredWidget["ol"] = UILinearLayout::NewVertical;
+		registeredWidget["li"] = UIRichText::NewListItem;
 
 		sBaseListCreated = true;
 	}
