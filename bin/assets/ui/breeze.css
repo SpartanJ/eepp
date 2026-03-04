@@ -57,11 +57,13 @@ strong {
 	font-style: bold;
 }
 
-u {
+u,
+ins {
 	text-decoration: underline;
 }
 
-s {
+s,
+del {
 	text-decoration: strikethrough;
 }
 

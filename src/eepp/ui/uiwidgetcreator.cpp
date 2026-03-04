@@ -134,7 +134,9 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["strong"] = UITextSpan::NewBold;
 		registeredWidget["i"] = UITextSpan::NewItalics;
 		registeredWidget["u"] = UITextSpan::NewUnderline;
+		registeredWidget["ins"] = UITextSpan::NewUnderline;
 		registeredWidget["s"] = UITextSpan::NewStrikethrough;
+		registeredWidget["del"] = UITextSpan::NewStrikethrough;
 		registeredWidget["code"] = UITextSpan::NewCode;
 		registeredWidget["mark"] = UITextSpan::NewMark;
 		registeredWidget["div"] = UIRichText::New;
