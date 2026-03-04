@@ -293,6 +293,63 @@ UTEST( UIRichText, IntegrationAndLayoutVerification ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIRichText, NestedWidgetsIntegration ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+	    <RichText id="rt" layout_width="300dp" layout_height="wrap_content">Hello <strong id="strong"><span>Beautiful </span><Widget id="placeholder" layout_width="50dp" layout_height="50dp"/> World</strong></RichText>
+    )xml";
+
+	sceneNode->loadLayoutFromString( xml );
+
+	UI::UIRichText* rt = sceneNode->find<UI::UIRichText>( "rt" );
+	ASSERT_TRUE( rt != nullptr );
+
+	// force layout
+	sceneNode->update( Time::Zero );
+
+	auto graphicsRt = rt->getRichText();
+	const auto& blocks = graphicsRt.getBlocks();
+
+	ASSERT_EQ( blocks.size(), (size_t)4 );
+	EXPECT_EQ( blocks[0].type, Graphics::RichText::BlockType::Text );
+	EXPECT_EQ( blocks[1].type, Graphics::RichText::BlockType::Text );
+	EXPECT_EQ( blocks[2].type, Graphics::RichText::BlockType::CustomSize );
+	EXPECT_EQ( blocks[3].type, Graphics::RichText::BlockType::Text );
+
+	EXPECT_EQ( blocks[2].customSize.getWidth(), PixelDensity::dpToPx( 50 ) );
+
+	UI::UIWidget* strongNode = rt->find<UI::UIWidget>( "strong" );
+	ASSERT_TRUE( strongNode != nullptr );
+
+	UI::UIWidget* placeholder = rt->find<UI::UIWidget>( "placeholder" );
+	ASSERT_TRUE( placeholder != nullptr );
+
+	Vector2f pos = placeholder->getPixelsPosition();
+	Float expectedX = blocks[0].text->getTextWidth() + blocks[1].text->getTextWidth();
+
+	EXPECT_NEAR( pos.x, expectedX, 2.0f );
+	
+	// Determine if strong got its bounds correctly
+	EXPECT_GT( strongNode->getPixelsSize().getWidth(), 0 );
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
 UTEST( UIRichText, DefaultStyleInheritance ) {
 	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
 													  WindowStyle::Default, WindowBackend::Default,

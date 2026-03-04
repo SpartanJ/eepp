@@ -116,10 +116,17 @@ class EE_API UITextSpan : public UIWidget {
 
 	explicit UITextSpan( const std::string& tag = "span" );
 
-	virtual void onAlphaChange();
-	virtual void onFontChanged();
-	virtual void onFontStyleChanged();
 	virtual void onTextChanged();
+
+	virtual void onFontChanged();
+
+	virtual void onFontStyleChanged();
+
+	virtual void onAlphaChange();
+
+	virtual void onChildCountChange( Node* child, const bool& removed );
+
+	virtual Uint32 onMessage( const NodeMessage* Msg );
 };
 
 }} // namespace EE::UI

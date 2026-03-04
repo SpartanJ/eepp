@@ -403,21 +403,33 @@ void UIRichText::rebuildRichText() {
 		mRichText.setMaxWidth( maxWidth );
 	}
 
+	auto processWidget = [&]( UIWidget* widget, auto& processWidgetRef ) -> void {
+		if ( widget->isType( UI_TYPE_TEXTSPAN ) ) {
+			UITextSpan* span = static_cast<UITextSpan*>( widget );
+			if ( !span->getText().empty() ) {
+				mRichText.addSpan( span->getText(), span->getFontStyleConfig() );
+			}
+			Node* spanChild = span->getFirstChild();
+			while ( spanChild != NULL ) {
+				if ( spanChild->isWidget() ) {
+					processWidgetRef( static_cast<UIWidget*>( spanChild ), processWidgetRef );
+				}
+				spanChild = spanChild->getNextNode();
+			}
+		} else {
+			if ( mSize.getWidth() != 0 &&
+				 widget->getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
+				widget->setPixelsSize( mSize.getWidth(), widget->getPixelsSize().getHeight() );
+			}
+
+			mRichText.addCustomSize( widget->getPixelsSize() );
+		}
+	};
+
 	Node* child = mChild;
 	while ( NULL != child ) {
 		if ( child->isWidget() ) {
-			UIWidget* widget = static_cast<UIWidget*>( child );
-			if ( widget->isType( UI_TYPE_TEXTSPAN ) ) {
-				UITextSpan* span = static_cast<UITextSpan*>( widget );
-				mRichText.addSpan( span->getText(), span->getFontStyleConfig() );
-			} else {
-				if ( mSize.getWidth() != 0 &&
-					 widget->getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
-					widget->setPixelsSize( mSize.getWidth(), widget->getPixelsSize().getHeight() );
-				}
-
-				mRichText.addCustomSize( widget->getPixelsSize() );
-			}
+			processWidget( static_cast<UIWidget*>( child ), processWidget );
 		}
 		child = child->getNextNode();
 	}
@@ -448,19 +460,71 @@ void UIRichText::positionChildren() {
 		return nullptr;
 	};
 
+	auto processWidget = [&]( UIWidget* widget, auto& processWidgetRef ) -> Rectf {
+		Rectf bounds( std::numeric_limits<Float>::max(), std::numeric_limits<Float>::max(),
+					  std::numeric_limits<Float>::min(), std::numeric_limits<Float>::min() );
+		if ( widget->isType( UI_TYPE_TEXTSPAN ) ) {
+			Node* spanChild = widget->getFirstChild();
+			while ( spanChild != NULL ) {
+				if ( spanChild->isWidget() ) {
+					Rectf childBounds =
+						processWidgetRef( static_cast<UIWidget*>( spanChild ), processWidgetRef );
+					if ( childBounds.Left < bounds.Left )
+						bounds.Left = childBounds.Left;
+					if ( childBounds.Top < bounds.Top )
+						bounds.Top = childBounds.Top;
+					if ( childBounds.Right > bounds.Right )
+						bounds.Right = childBounds.Right;
+					if ( childBounds.Bottom > bounds.Bottom )
+						bounds.Bottom = childBounds.Bottom;
+				}
+				spanChild = spanChild->getNextNode();
+			}
+
+			// Ensure the parent span at least has enough size to cover its children
+			if ( bounds.Left <= bounds.Right && bounds.Top <= bounds.Bottom ) {
+				Vector2f offset( 0, 0 );
+				Node* p = widget->getParent();
+				while ( p && p != this ) {
+					offset += p->isWidget() ? p->asType<UIWidget>()->getPixelsPosition()
+											: p->getPosition();
+					p = p->getParent();
+				}
+				widget->setPixelsPosition( Vector2f( bounds.Left, bounds.Top ) - offset );
+				widget->setPixelsSize(
+					Sizef( bounds.Right - bounds.Left, bounds.Bottom - bounds.Top ) );
+			}
+
+		} else {
+			const auto* span = getNextCustomSpan();
+			if ( span ) {
+				size_t lineIdx = currentSpan > 0 ? currentLine : currentLine - 1;
+				Float lineY = lines[lineIdx].y;
+
+				Vector2f targetPos( mPaddingPx.Left + span->position.x,
+									mPaddingPx.Top + lineY + span->position.y );
+
+				Vector2f offset( 0, 0 );
+				Node* p = widget->getParent();
+				while ( p && p != this ) {
+					offset += p->isWidget() ? p->asType<UIWidget>()->getPixelsPosition()
+											: p->getPosition();
+					p = p->getParent();
+				}
+
+				widget->setPixelsPosition( targetPos - offset );
+				bounds = Rectf( targetPos.x, targetPos.y,
+								targetPos.x + widget->getPixelsSize().getWidth(),
+								targetPos.y + widget->getPixelsSize().getHeight() );
+			}
+		}
+		return bounds;
+	};
+
+	child = mChild;
 	while ( NULL != child ) {
 		if ( child->isWidget() ) {
-			UIWidget* widget = static_cast<UIWidget*>( child );
-			if ( !widget->isType( UI_TYPE_TEXTSPAN ) ) {
-				const auto* span = getNextCustomSpan();
-				if ( span ) {
-					size_t lineIdx = currentSpan > 0 ? currentLine : currentLine - 1;
-					Float lineY = lines[lineIdx].y;
-
-					widget->setPixelsPosition( mPaddingPx.Left + span->position.x,
-											   mPaddingPx.Top + lineY + span->position.y );
-				}
-			}
+			processWidget( static_cast<UIWidget*>( child ), processWidget );
 		}
 		child = child->getNextNode();
 	}

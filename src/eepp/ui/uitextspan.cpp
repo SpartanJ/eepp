@@ -4,6 +4,7 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/ui/uiwidgetcreator.hpp>
 
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -297,14 +298,62 @@ void UITextSpan::onTextChanged() {
 	sendCommonEvent( Event::OnValueChange );
 }
 
+void UITextSpan::onChildCountChange( Node* child, const bool& removed ) {
+	UIWidget::onChildCountChange( child, removed );
+	if ( !removed && child->isWidget() && child->isType( UI_TYPE_TEXTSPAN ) ) {
+		static_cast<UITextSpan*>( child )->setInheritedStyle( mFontStyleConfig );
+	}
+	notifyLayoutAttrChange();
+	notifyLayoutAttrChangeParent();
+}
+
+Uint32 UITextSpan::onMessage( const NodeMessage* Msg ) {
+	switch ( Msg->getMsg() ) {
+		case NodeMessage::LayoutAttributeChange: {
+			notifyLayoutAttrChangeParent();
+			return 1;
+		}
+	}
+	return UIWidget::onMessage( Msg );
+}
+
 void UITextSpan::loadFromXmlNode( const pugi::xml_node& node ) {
 	beginAttributesTransaction();
 
 	UIWidget::loadFromXmlNode( node );
 
+	bool hasElements = false;
 	for ( pugi::xml_node child = node.first_child(); child; child = child.next_sibling() ) {
-		if ( child.type() == pugi::node_pcdata )
-			mText += getTranslatorString( child.value() );
+		if ( child.type() == pugi::node_element ) {
+			hasElements = true;
+			break;
+		}
+	}
+
+	if ( hasElements ) {
+		for ( pugi::xml_node child = node.first_child(); child; child = child.next_sibling() ) {
+			if ( child.type() == pugi::node_element ) {
+				UIWidget* widget = UIWidgetCreator::createFromName( child.name() );
+				if ( widget ) {
+					widget->setParent( this );
+					widget->loadFromXmlNode( child );
+				}
+			} else if ( child.type() == pugi::node_pcdata ) {
+				String text = getTranslatorString( child.value() );
+				if ( !text.empty() ) {
+					UITextSpan* span = UITextSpan::New();
+					span->setParent( this );
+					span->setInheritedStyle( mFontStyleConfig );
+					span->setText( text );
+				}
+			}
+		}
+	} else {
+		for ( pugi::xml_node child = node.first_child(); child; child = child.next_sibling() ) {
+			if ( child.type() == pugi::node_pcdata ) {
+				mText += getTranslatorString( child.value() );
+			}
+		}
 	}
 
 	endAttributesTransaction();
@@ -363,6 +412,14 @@ void UITextSpan::setInheritedStyle( const UIFontStyleConfig& fontStyleConfig ) {
 
 	if ( fontChanged || fontStyleChanged )
 		notifyLayoutAttrChange();
+
+	Node* child = mChild;
+	while ( NULL != child ) {
+		if ( child->isWidget() && child->isType( UI_TYPE_TEXTSPAN ) ) {
+			static_cast<UITextSpan*>( child )->setInheritedStyle( mFontStyleConfig );
+		}
+		child = child->getNextNode();
+	}
 }
 
 bool UITextSpan::hasFont() const {
