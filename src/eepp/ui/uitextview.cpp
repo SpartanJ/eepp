@@ -406,8 +406,9 @@ void UITextView::alignFix() {
 			break;
 		}
 		case UI_VALIGN_BOTTOM:
-			mRealAlignOffset.y = ( (Float)mSize.y - mPaddingPx.Top - mPaddingPx.Bottom -
-								   (Float)mTextCache.getTextHeight() );
+			mRealAlignOffset.y =
+				( (Float)mSize.y - mPaddingPx.Top - mPaddingPx.Bottom -
+				  (Float)mTextCache.getFont()->getAscent( mTextCache.getCharacterSize() ) );
 			break;
 		case UI_VALIGN_TOP:
 			mRealAlignOffset.y = 0;
@@ -950,7 +951,11 @@ UIAnchor* UIAnchor::New() {
 	return eeNew( UIAnchor, () );
 }
 
-UIAnchor::UIAnchor() : UITextView( "anchor" ) {
+UIAnchor* UIAnchor::NewA() {
+	return eeNew( UIAnchor, ( "a" ) );
+}
+
+UIAnchor::UIAnchor( const std::string& tag ) : UITextView( tag ) {
 	onClick(
 		[this]( const MouseEvent* ) {
 			if ( !mHref.empty() )

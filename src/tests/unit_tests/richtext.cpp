@@ -354,14 +354,14 @@ UTEST( UIRichText, RichTextTest ) {
 						  layout_height="match_parent"
 						  orientation="vertical">
 				<RichText font-size="12dp"
-					font-color="#cecece">Welcome to the <span color="#FFD700" font-style="bold">UIRichText</span> example!
+					color="white">Welcome to the <span color="#FFD700" font-style="bold">UIRichText</span> example!
 					This component supports <span color="#00FF00" font-style="italic">styled text</span>,
 					<span color="#00BFFF" font-style="shadow">shadows</span>,
 					and <span color="#FF4500" text-stroke-width="1dp" text-stroke-color="black">outlines</span> using <span font-family="monospace" color="#A9A9A9">HTML-like tags</span>.
 				</RichText>
 				<Image src="file://assets/icon/ee.png" margin="4dp" layout-gravity="center_horizontal" />
 				<RichText font-size="12dp"
-				font-color="#ccc">We can also mix <span color="#FFD700" font-style="bold">contents</span> with more <span color="#00FF00" font-style="italic">text</span>!
+				color="#efefef">We can also mix <span color="#FFD700" font-style="bold">contents</span> with more <span color="#00FF00" font-style="italic">text</span>!
 				</RichText>
 			</LinearLayout>
 		)xml" );
@@ -370,7 +370,7 @@ UTEST( UIRichText, RichTextTest ) {
 		SceneManager::instance()->draw();
 
 		FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-		compareImages( utest_state, utest_result, app.getWindow(), "eepp-uirichtext" );
+		compareImages( utest_state, utest_result, app.getWindow(), "eepp-ui-richtext" );
 	};
 
 	UTEST_PRINT_STEP( "Text Shaper disabled" );

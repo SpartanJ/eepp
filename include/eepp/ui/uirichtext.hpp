@@ -83,12 +83,15 @@ class EE_API UIRichText : public UILayout {
 
 	UIRichText* setTextAlign( const Uint32& align );
 
+	virtual void updateLayout();
+
   protected:
 	RichText mRichText;
 
+	virtual Uint32 onMessage( const NodeMessage* Msg );
+
 	virtual void onSizeChange();
 	virtual void onPaddingChange();
-	virtual void onLayoutUpdate();
 	virtual void onChildCountChange( Node* child, const bool& removed );
 	virtual void onFontChanged();
 	virtual void onFontStyleChanged();

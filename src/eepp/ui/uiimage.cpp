@@ -93,13 +93,15 @@ void UIImage::onAutoSize() {
 
 		Sizef size( getPixelsSize() );
 
-		if ( mWidthPolicy == SizePolicy::WrapContent )
+		if ( mWidthPolicy == SizePolicy::WrapContent ) {
 			size.x =
 				( (int)mDrawable->getPixelsSize().getWidth() + mPaddingPx.Left + mPaddingPx.Right );
+		}
 
-		if ( mHeightPolicy == SizePolicy::WrapContent )
+		if ( mHeightPolicy == SizePolicy::WrapContent ) {
 			size.y = ( (int)mDrawable->getPixelsSize().getHeight() + mPaddingPx.Top +
 					   mPaddingPx.Bottom );
+		}
 
 		setPixelsSize( size );
 	}
@@ -210,7 +212,15 @@ void UIImage::safeDeleteDrawable() {
 
 void UIImage::onDrawableResourceEvent( DrawableResource::Event event, DrawableResource* ) {
 	if ( event == DrawableResource::Change ) {
-		invalidateDraw();
+		runOnMainThread( [this] {
+			auto s = mSize;
+			onAutoSize();
+			calcDestSize();
+			if ( mSize != s ) {
+				invalidateDraw();
+				notifyLayoutAttrChangeParent();
+			}
+		} );
 	} else if ( event == DrawableResource::Unload ) {
 		mDrawable = NULL;
 	}

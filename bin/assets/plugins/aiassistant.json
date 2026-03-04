@@ -113,6 +113,11 @@
           "cheapest": true
         },
         {
+          "name": "gemini-3.1-flash-lite-preview",
+          "display_name": "Gemini 3.1 Flash Lite Preview",
+          "max_tokens": 1000000
+        },
+        {
           "name": "gemini-2.5-pro",
           "display_name": "Gemini 2.5 Pro",
           "max_tokens": 1000000

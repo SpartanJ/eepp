@@ -200,6 +200,8 @@ class EE_API UIAnchor : public UITextView {
   public:
 	static UIAnchor* New();
 
+	static UIAnchor* NewA();
+
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
@@ -212,7 +214,7 @@ class EE_API UIAnchor : public UITextView {
 	const std::string& getHref() const;
 
   protected:
-	UIAnchor();
+	UIAnchor( const std::string& tag = "anchor" );
 
 	std::string mHref;
 

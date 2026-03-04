@@ -21,6 +21,12 @@ UILinearLayout* UILinearLayout::NewHorizontal() {
 	return ( eeNew( UILinearLayout, () ) )->setOrientation( UIOrientation::Horizontal );
 }
 
+UILinearLayout* UILinearLayout::NewVerticalWidthMatchParent() {
+	return ( eeNew( UILinearLayout, () ) )
+		->setLayoutWidthPolicy( SizePolicy::MatchParent )
+		->asType<UILinearLayout>();
+}
+
 UILinearLayout::UILinearLayout() :
 	UILayout( "linearlayout" ), mOrientation( UIOrientation::Vertical ) {
 	mFlags |= UI_OWNS_CHILDREN_POSITION;

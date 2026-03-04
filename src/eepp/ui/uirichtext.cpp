@@ -176,7 +176,8 @@ UIRichText* UIRichText::setFont( Graphics::Font* font ) {
 	if ( NULL != font && mRichText.getFontStyleConfig().Font != font ) {
 		mRichText.getFontStyleConfig().Font = font;
 		mRichText.invalidate();
-		setLayoutDirty();
+		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 		updateDefaultSpansStyle();
 	}
 	return this;
@@ -190,7 +191,9 @@ UIRichText* UIRichText::setFontSize( const Uint32& characterSize ) {
 	if ( mRichText.getFontStyleConfig().CharacterSize != characterSize ) {
 		mRichText.getFontStyleConfig().CharacterSize = characterSize;
 		mRichText.invalidate();
-		setLayoutDirty();
+
+		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 		updateDefaultSpansStyle();
 	}
 	return this;
@@ -204,7 +207,9 @@ UIRichText* UIRichText::setFontStyle( const Uint32& fontStyle ) {
 	if ( mRichText.getFontStyleConfig().Style != fontStyle ) {
 		mRichText.getFontStyleConfig().Style = fontStyle;
 		mRichText.invalidate();
-		setLayoutDirty();
+
+		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 		updateDefaultSpansStyle();
 	}
 	return this;
@@ -261,7 +266,9 @@ UIRichText* UIRichText::setOutlineThickness( const Float& outlineThickness ) {
 	if ( mRichText.getFontStyleConfig().OutlineThickness != outlineThickness ) {
 		mRichText.getFontStyleConfig().OutlineThickness = outlineThickness;
 		mRichText.invalidate();
-		setLayoutDirty();
+
+		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 		updateDefaultSpansStyle();
 	}
 	return this;
@@ -287,7 +294,9 @@ Uint32 UIRichText::getTextAlign() const {
 UIRichText* UIRichText::setTextAlign( const Uint32& align ) {
 	if ( mRichText.getAlign() != align ) {
 		mRichText.setAlign( align );
-		setLayoutDirty();
+
+		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
 	}
 	return this;
 }
@@ -343,17 +352,18 @@ void UIRichText::loadFromXmlNode( const pugi::xml_node& node ) {
 	}
 
 	endAttributesTransaction();
-	setLayoutDirty();
 }
 
 void UIRichText::onSizeChange() {
 	UILayout::onSizeChange();
-	setLayoutDirty(); // Re-wrap if size changes
+	notifyLayoutAttrChange();
+	notifyLayoutAttrChangeParent();
 }
 
 void UIRichText::onPaddingChange() {
 	UILayout::onPaddingChange();
-	setLayoutDirty();
+	notifyLayoutAttrChange();
+	notifyLayoutAttrChangeParent();
 }
 
 void UIRichText::onChildCountChange( Node* child, const bool& removed ) {
@@ -361,15 +371,19 @@ void UIRichText::onChildCountChange( Node* child, const bool& removed ) {
 	if ( !removed && child->isWidget() && child->isType( UI_TYPE_TEXTSPAN ) ) {
 		static_cast<UITextSpan*>( child )->setInheritedStyle( mRichText.getFontStyleConfig() );
 	}
-	setLayoutDirty();
+
+	notifyLayoutAttrChange();
+	notifyLayoutAttrChangeParent();
 }
 
 void UIRichText::onFontChanged() {
-	setLayoutDirty();
+	notifyLayoutAttrChange();
+	notifyLayoutAttrChangeParent();
 }
 
 void UIRichText::onFontStyleChanged() {
-	setLayoutDirty();
+	notifyLayoutAttrChange();
+	notifyLayoutAttrChangeParent();
 }
 
 void UIRichText::onAlphaChange() {
@@ -397,6 +411,11 @@ void UIRichText::rebuildRichText() {
 				UITextSpan* span = static_cast<UITextSpan*>( widget );
 				mRichText.addSpan( span->getText(), span->getFontStyleConfig() );
 			} else {
+				if ( mSize.getWidth() != 0 &&
+					 widget->getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
+					widget->setPixelsSize( mSize.getWidth(), widget->getPixelsSize().getHeight() );
+				}
+
 				mRichText.addCustomSize( widget->getPixelsSize() );
 			}
 		}
@@ -457,14 +476,17 @@ void UIRichText::updateDefaultSpansStyle() {
 	}
 }
 
-void UIRichText::onLayoutUpdate() {
+void UIRichText::updateLayout() {
+	if ( mPacking )
+		return;
+	mPacking = true;
+
 	rebuildRichText();
 
 	mRichText.getSize(); // Forces an updateLayout internally
 
 	positionChildren();
 
-	// Resize logic
 	if ( mWidthPolicy == SizePolicy::WrapContent ) {
 		setInternalPixelsWidth( mRichText.getSize().getWidth() + mPaddingPx.Left +
 								mPaddingPx.Right );
@@ -474,7 +496,19 @@ void UIRichText::onLayoutUpdate() {
 								 mPaddingPx.Bottom );
 	}
 
-	UILayout::onLayoutUpdate();
+	mPacking = false;
+	mDirtyLayout = false;
+}
+
+Uint32 UIRichText::onMessage( const NodeMessage* Msg ) {
+	switch ( Msg->getMsg() ) {
+		case NodeMessage::LayoutAttributeChange: {
+			tryUpdateLayout();
+			return 1;
+		}
+	}
+
+	return 0;
 }
 
 }} // namespace EE::UI

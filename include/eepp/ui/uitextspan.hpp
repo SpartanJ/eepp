@@ -26,6 +26,8 @@ class EE_API UITextSpan : public UIWidget {
 
 	static UITextSpan* NewMark() { return NewWithTag( "mark" ); }
 
+	static UITextSpan* NewCode() { return NewWithTag( "code" ); }
+
 	virtual ~UITextSpan();
 
 	virtual Uint32 getType() const;

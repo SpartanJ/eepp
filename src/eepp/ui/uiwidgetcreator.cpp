@@ -125,13 +125,17 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["rlay"] = UIRelativeLayout::New;
 		registeredWidget["tooltip"] = UITooltip::New;
 		registeredWidget["tv"] = UITextView::New;
-		registeredWidget["a"] = UIAnchor::New;
+
+		// HTML elements
+		registeredWidget["a"] = UIAnchor::NewA;
 		registeredWidget["span"] = UITextSpan::New;
 		registeredWidget["em"] = UITextSpan::NewEmphasis;
 		registeredWidget["b"] = UITextSpan::NewBold;
+		registeredWidget["strong"] = UITextSpan::NewBold;
 		registeredWidget["i"] = UITextSpan::NewItalics;
 		registeredWidget["u"] = UITextSpan::NewUnderline;
 		registeredWidget["s"] = UITextSpan::NewStrikethrough;
+		registeredWidget["code"] = UITextSpan::NewCode;
 		registeredWidget["mark"] = UITextSpan::NewMark;
 		registeredWidget["div"] = UIRichText::New;
 		registeredWidget["p"] = UIRichText::NewParagraph;
@@ -141,9 +145,11 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["h4"] = UIRichText::NewH4;
 		registeredWidget["h5"] = UIRichText::NewH5;
 		registeredWidget["h6"] = UIRichText::NewH6;
-		registeredWidget["ul"] = UILinearLayout::NewVertical;
-		registeredWidget["ol"] = UILinearLayout::NewVertical;
+		registeredWidget["ul"] = UILinearLayout::NewVerticalWidthMatchParent;
+		registeredWidget["ol"] = UILinearLayout::NewVerticalWidthMatchParent;
 		registeredWidget["li"] = UIRichText::NewListItem;
+		registeredWidget["pre"] = UITextSpan::New;
+		registeredWidget["img"] = [] { return UIImage::NewWithTag( "img" ); };
 
 		sBaseListCreated = true;
 	}

@@ -169,18 +169,18 @@ static const auto LAYOUT = R"xml(
 			<vbox lw="wc" lh="wc" lg="center">
 				<hbox>
 					<tv text='@string(the_ecode_nbsp, "The ecode ")' />
-					<a id="home_doc" text="@string(documentation, documentation)" href="https://github.com/SpartanJ/ecode" />
+					<Anchor id="home_doc" text="@string(documentation, documentation)" href="https://github.com/SpartanJ/ecode" />
 				</hbox>
 				<hbox>
 					<tv text='@string(the_ecode_nbsp, "The ecode ")' />
-					<a id="home_forum" text="@string(forum, forum)" href="https://github.com/SpartanJ/ecode/discussions" />
+					<Anchor id="home_forum" text="@string(forum, forum)" href="https://github.com/SpartanJ/ecode/discussions" />
 				</hbox>
 				<hbox>
 					<tv text='@string(the_ecode_nbsp, "The ecode ")' />
-					<a id="home_issues" text="@string(issues, issues)" href="https://github.com/SpartanJ/ecode/issues" />
+					<Anchor id="home_issues" text="@string(issues, issues)" href="https://github.com/SpartanJ/ecode/issues" />
 				</hbox>
 				<hbox>
-					<a id="check-for-updates" text="@string(check_for_updates, Check for Updates)" />
+					<Anchor id="check-for-updates" text="@string(check_for_updates, Check for Updates)" />
 				</hbox>
 			</vbox>
 		</vbox>

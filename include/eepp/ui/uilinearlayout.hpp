@@ -15,6 +15,8 @@ class EE_API UILinearLayout : public UILayout {
 
 	static UILinearLayout* NewHorizontal();
 
+	static UILinearLayout* NewVerticalWidthMatchParent();
+
 	virtual Uint32 getType() const;
 
 	virtual bool isType( const Uint32& type ) const;

@@ -52,6 +52,93 @@
 	droppable-hovering-color: #FFFFFF20;
 }
 
+b,
+strong {
+	font-style: bold;
+}
+
+u {
+	text-decoration: underline;
+}
+
+s {
+	text-decoration: strikethrough;
+}
+
+i,
+em {
+	font-style: italic;
+}
+
+h1 {
+	font-size: 32dp;
+	margin: 0.67em 0;
+}
+
+h2 {
+	font-size: 24dp;
+	margin: 0.83em 0;
+}
+
+h3 {
+	font-size: 18dp;
+	margin: 1.00em 0;
+}
+
+h4 {
+	font-size: 16dp;
+	margin: 1.33em 0;
+}
+
+h5 {
+	font-size: 13dp;
+	margin: 1.67em 0;
+}
+
+h6 {
+	font-size: 11dp;
+	margin: 1.67em 0;
+}
+
+code {
+	font-family: monospace;
+}
+
+p, ol, ul, pre {
+  margin: 1em 0;
+}
+
+li {
+  padding-left: 2em;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='currentColor'/></svg>");
+  background-tint: var(--font);
+  background-position: 0.6em 0.5em;
+  background-size: 0.8em 0.8em;
+}
+
+a {
+	color: var(--primary);
+	selection-color: var(--font-selected-pressed);
+	selection-back-color: var(--primary);
+	cursor: arrow;
+	text-decoration: none;
+	gravity: bottom;
+}
+
+a:hover {
+	color: var(--font-highlight);
+	cursor: hand;
+	text-decoration: underline;
+}
+
+img {
+	scale-type: fit-inside;
+	layout-width: match_parent;
+	layout-height: wrap_content;
+	max-height: 100vh;
+	clip: true;
+}
+
 pushbutton,
 selectbutton,
 tableview::cell,
