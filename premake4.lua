@@ -763,6 +763,7 @@ function add_static_links()
 			"oniguruma-static",
 			"libwebp-static",
 			"libpng-static",
+			"md4c-static",
 	}
 
 	if not _OPTIONS["without-mojoal"] then
@@ -1321,6 +1322,13 @@ solution "eepp"
 			build_base_configuration( "mojoal" )
 	end
 
+	project "md4c-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/md4c/**.c" }
+		build_base_configuration( "md4c" )
+
 	project "libyaml-static"
 		kind "StaticLib"
 		language "C"
@@ -1579,6 +1587,12 @@ solution "eepp"
 		language "C++"
 		files { "src/examples/ui_richtext/*.cpp" }
 		build_link_configuration( "eepp-ui-richtext", true )
+
+	project "eepp-ui-markdownview"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_markdownview/*.cpp" }
+		build_link_configuration( "eepp-ui-markdownview", true )
 
 	project "eepp-richtext"
 		set_kind()

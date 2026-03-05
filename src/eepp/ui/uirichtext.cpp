@@ -1,6 +1,7 @@
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextspan.hpp>
@@ -332,6 +333,25 @@ void UIRichText::loadFromXmlNode( const pugi::xml_node& node ) {
 				UITextSpan* span = UITextSpan::New();
 				span->setParent( this );
 				span->loadFromXmlNode( child );
+			} else if ( mTag == "pre" && String::iequals( child.name(), "code" ) ) {
+				// Use a UICodeEditor for <pre><code>
+				UICodeEditor* editor = UICodeEditor::New();
+				if ( editor ) {
+					editor->setParent( this );
+					editor->loadFromXmlNode( child );
+					editor->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
+					editor->setLineWrapMode( LineWrapMode::Word );
+					editor->setLineWrapType( LineWrapType::Viewport );
+					editor->disableEditorFeatures( false );
+					editor->setCursorVisible( false );
+					editor->setAllowSelectingTextFromGutter( false );
+					editor->setDisableCursorBlinkingAfterAMinuteOfInactivity( false );
+					editor->setCursorBlinkTime( Time::Zero );
+					editor->setShowLineNumber( false );
+					editor->setShowFoldingRegion( false );
+					editor->setLocked( true );
+
+				}
 			} else {
 				// Let parent logic load standard child widget
 				UIWidget* widget = UIWidgetCreator::createFromName( child.name() );

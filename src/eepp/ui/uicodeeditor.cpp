@@ -26,6 +26,9 @@
 #include <eepp/window/input.hpp>
 #include <eepp/window/window.hpp>
 
+#define PUGIXML_HEADER_ONLY
+#include <pugixml/pugixml.hpp>
+
 using namespace EE::UI::Tools;
 
 namespace EE { namespace UI {
@@ -142,12 +145,16 @@ UICodeEditor::UICodeEditor( const std::string& elementTag, const bool& autoRegis
 	mPreviewColor( Color::Transparent ),
 	mKeyBindings( getInput() ),
 	mFindLongestLineWidthUpdateFrequency( Seconds( 1 ) ) {
+	mWidthPolicy = SizePolicy::Fixed;
+	mHeightPolicy = SizePolicy::Fixed;
 	mFlags |= UI_TAB_STOP | UI_OWNS_CHILDREN_POSITION | UI_SCROLLABLE;
 	setTextSelection( true );
 	setColorScheme( SyntaxColorScheme::getDefault() );
 	refreshTag();
-	mDocView.setOnVisibleLineCountChange(
-		[this] { sendCommonEvent( Event::OnVisibleLinesCountChange ); } );
+	mDocView.setOnVisibleLineCountChange( [this] {
+		onAutoSize();
+		sendCommonEvent( Event::OnVisibleLinesCountChange );
+	} );
 	mDocView.setOnFoldUnfoldCb(
 		[this]( auto, auto ) { sendCommonEvent( Event::OnFoldUnfoldRange ); } );
 	mVScrollBar = UIScrollBar::NewVertical();
@@ -725,7 +732,7 @@ Uint32 UICodeEditor::onMessage( const NodeMessage* msg ) {
 	return UIWidget::onMessage( msg );
 }
 
-void UICodeEditor::disableEditorFeatures() {
+void UICodeEditor::disableEditorFeatures( bool useDefaultStyle ) {
 	mShowLineNumber = false;
 	mShowWhitespaces = false;
 	mShowFoldingRegion = false;
@@ -736,7 +743,7 @@ void UICodeEditor::disableEditorFeatures() {
 	mMinimapEnabled = false;
 	mFindReplaceEnabled = false;
 	mLineBreakingColumn = 0;
-	mUseDefaultStyle = true;
+	mUseDefaultStyle = useDefaultStyle;
 }
 
 Float UICodeEditor::getViewportWidth( bool forceVScroll, bool includeMinimap ) const {
@@ -3386,6 +3393,10 @@ Float UICodeEditor::getGlyphWidth() const {
 }
 
 void UICodeEditor::updateGlyphWidth() {
+	if ( !mFont ) {
+		mGlyphWidth = 0;
+		return;
+	}
 	mGlyphWidth = mFont->getGlyph( '@', getCharacterSize(), false, false ).advance;
 	mMouseWheelScroll = 3 * getLineHeight();
 	invalidateLongestLineWidth();
@@ -5508,6 +5519,40 @@ void UICodeEditor::setTextDirection( TextDirection direction ) {
 
 TextDirection UICodeEditor::getTextDirection() const {
 	return mTextDirection;
+}
+
+void UICodeEditor::loadFromXmlNode( const pugi::xml_node& node ) {
+	beginAttributesTransaction();
+
+	UIWidget::loadFromXmlNode( node );
+
+	if ( !node.text().empty() ) {
+		std::string_view str{ node.text().as_string() };
+		if ( '\n' == str.back() )
+			str = str.substr( 0, str.size() - 1 );
+		mDoc->textInput( str );
+	}
+
+	endAttributesTransaction();
+}
+
+void UICodeEditor::onAutoSize() {
+	if ( mHeightPolicy == SizePolicy::WrapContent ) {
+		auto visibleLineCount = getDocumentView().getVisibleLinesCount();
+		Float lineHeight = getLineHeight();
+		Float height =
+			lineHeight * visibleLineCount + getPixelsPadding().Top + getPixelsPadding().Bottom;
+		setPixelsSize( getPixelsSize().getWidth(), height );
+	}
+}
+
+void UICodeEditor::onClassChange() {
+	for ( const auto& name : mClasses ) {
+		if ( String::startsWith( name, "language-" ) ) {
+			auto langname = std::string_view{ name }.substr( 9 );
+			setSyntaxDefinition( SyntaxDefinitionManager::instance()->findFromString( langname ) );
+		}
+	}
 }
 
 }} // namespace EE::UI

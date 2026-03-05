@@ -2,6 +2,7 @@
 
 EE_MAIN_FUNC int main( int, char** ) {
 	UIApplication app( { 800, 600, "eepp - UIRichText Example" } );
+
 	app.getUI()->loadLayoutFromString( R"xml(
 	<vbox layout_width="match_parent" layout_height="match_parent">
 		<ScrollView lw="mp" lh="mp">

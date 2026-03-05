@@ -111,7 +111,7 @@ LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES)
 
 LOCAL_SRC_FILES			:= $(foreach F, $(CODE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES	:= freetype libpng libwebp pcre2 oniguruma harfbuzz sheenbidi
+LOCAL_STATIC_LIBRARIES	:= freetype libpng libwebp md4c pcre2 oniguruma harfbuzz sheenbidi
 
 LOCAL_SHARED_LIBRARIES	:= SDL2
 
@@ -366,6 +366,23 @@ LOCAL_SRC_FILES			:= $(foreach F, $(LIBYAML_SRCS), $(addprefix $(dir $(F)),$(not
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** LIBYAML ***************
+
+#*************** MD4C ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
+
+LOCAL_MODULE			:= md4c
+
+MD4C_SRCS			:= md4c/src/*.c
+
+LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/md4c
+LOCAL_CFLAGS			:= -Os
+
+LOCAL_SRC_FILES			:= $(foreach F, $(MD4C_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** MD4C ***************
 
 #**************** SDL 2 ***************
 include $(CLEAR_VARS)

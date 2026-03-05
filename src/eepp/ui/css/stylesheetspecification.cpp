@@ -218,7 +218,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setType( PropertyType::Color )
 		.addAlias( "fontoutlinecolor" );
 	registerProperty( "text-selection", "" ).setType( PropertyType::Bool );
-	registerProperty( "text-align", "" );
+	registerProperty( "text-align", "" ).addAlias( "align" );
 	registerProperty( "icon", "" );
 	registerProperty( "min-icon-size", "" ).setType( PropertyType::Vector2 );
 	registerProperty( "src", "" ).setType( PropertyType::String );

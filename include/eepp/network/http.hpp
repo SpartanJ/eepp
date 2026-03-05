@@ -774,6 +774,7 @@ class EE_API Http : NonCopyable {
 	Mutex mThreadsMutex;
 	bool mIsSSL;
 	bool mHostSolved;
+	std::atomic<bool> mShuttingDown{ false };
 	URI mProxy;
 	Mutex mCurRequestsMutex;
 	std::unordered_map<Uint64, AsyncRequest*> mCurRequests;

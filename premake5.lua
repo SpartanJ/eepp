@@ -603,6 +603,7 @@ function add_static_links()
 			"oniguruma-static",
 			"libwebp-static",
 			"libpng-static",
+			"md4c-static",
 	}
 
 	if not _OPTIONS["without-mojoal"] then
@@ -1225,6 +1226,13 @@ workspace "eepp"
 		filter { "options:windows-mingw-build", "options:arch=arm64" }
 			incdirs { remote_sdl2_arm64_cross_tools_path .."/include/" }
 
+	project "md4c-static"
+		kind "StaticLib"
+		language "C"
+		files { "src/thirdparty/md4c/**.c" }
+		build_base_configuration( "md4c" )
+		target_dir_thirdparty()
+
 	project "libyaml-static"
 		kind "StaticLib"
 		language "C"
@@ -1463,6 +1471,12 @@ workspace "eepp"
 		language "C++"
 		files { "src/examples/ui_richtext/*.cpp" }
 		build_link_configuration( "eepp-ui-richtext", true )
+
+	project "eepp-ui-markdownview"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_markdownview/*.cpp" }
+		build_link_configuration( "eepp-ui-markdownview", true )
 
 	project "eepp-richtext"
 		set_kind()

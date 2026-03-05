@@ -669,27 +669,22 @@ Http::Http( const std::string& host, unsigned short port, bool useSSL, URI proxy
 }
 
 Http::~Http() {
-
-	{
-		Lock l( mThreadsMutex );
-		// First we wait to finish any request pending
-		for ( auto&& itt : mThreads ) {
-			itt->cancel();
-			itt->wait();
-		}
-	}
-
-	{
-		Lock l( mThreadsMutex );
-		for ( auto&& itt : mThreads ) {
-			eeDelete( itt );
-		}
-	}
+	mShuttingDown = true;
 
 	{
 		Lock l( mCurRequestsMutex );
 		for ( auto [_, req] : mCurRequests )
 			req->cancel();
+	}
+
+	{
+		Lock l( mThreadsMutex );
+		// First we wait to finish any request pending
+		for ( auto& thread : mThreads ) {
+			thread->cancel();
+			thread->wait();
+			eeDelete( thread );
+		}
 	}
 
 	// Then we destroy the last open connection
@@ -1258,7 +1253,7 @@ void Http::AsyncRequest::run() {
 
 	mRunning = false;
 
-	if ( mFromLocalPool ) {
+	if ( mFromLocalPool && !mHttp->mShuttingDown ) {
 		mHttp->removeAsyncRequest( this );
 		auto me = this;
 		eeSAFE_DELETE( me );

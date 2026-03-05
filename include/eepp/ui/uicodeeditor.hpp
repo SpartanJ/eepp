@@ -828,6 +828,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	TextDirection getTextDirection() const;
 
+	virtual void loadFromXmlNode( const pugi::xml_node& node );
+
+	void disableEditorFeatures( bool useDefaultStyle = true );
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -1109,8 +1113,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void resetPreviewColor();
 
-	void disableEditorFeatures();
-
 	void updateGlyphWidth();
 
 	Drawable* findIcon( const std::string& name );
@@ -1190,6 +1192,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	}
 
 	bool setInternalFontSize( const Float& size );
+
+	virtual void onAutoSize();
+
+	virtual void onClassChange();
 };
 
 }} // namespace EE::UI

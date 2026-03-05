@@ -363,6 +363,12 @@
         "command": "${project_root}/bin/eepp-ui-richtext-debug",
         "name": "eepp-ui-richtext-debug",
         "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-markdownview-debug",
+        "name": "eepp-ui-markdownview-debug",
+        "working_dir": "${project_root}/bin"
       }
     ],
     "var": {

@@ -11,6 +11,7 @@
 #include <eepp/ui/uilistbox.hpp>
 #include <eepp/ui/uilistview.hpp>
 #include <eepp/ui/uiloader.hpp>
+#include <eepp/ui/uimarkdownview.hpp>
 #include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uinodelink.hpp>
 #include <eepp/ui/uiprogressbar.hpp>
@@ -110,6 +111,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["imageviewer"] = Tools::UIImageViewer::New;
 		registeredWidget["richtext"] = UIRichText::New;
 		registeredWidget["textspan"] = UITextSpan::New;
+		registeredWidget["markdownview"] = UIMarkdownView::New;
 
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;
@@ -150,7 +152,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["ul"] = UILinearLayout::NewVerticalWidthMatchParent;
 		registeredWidget["ol"] = UILinearLayout::NewVerticalWidthMatchParent;
 		registeredWidget["li"] = UIRichText::NewListItem;
-		registeredWidget["pre"] = UITextSpan::New;
+		registeredWidget["pre"] = [] { return UIRichText::NewWithTag( "pre" ); };
 		registeredWidget["img"] = [] { return UIImage::NewWithTag( "img" ); };
 
 		sBaseListCreated = true;
