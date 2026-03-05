@@ -374,7 +374,7 @@ LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
 
 LOCAL_MODULE			:= md4c
 
-MD4C_SRCS			:= md4c/src/*.c
+MD4C_SRCS			:= md4c/*.c
 
 LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/md4c
 LOCAL_CFLAGS			:= -Os
