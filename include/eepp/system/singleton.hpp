@@ -33,7 +33,6 @@
 	}                                         \
                                               \
 	T* T::existsSingleton() {                 \
-		Lock l( ms_mutex );                   \
 		return ms_singleton;                  \
 	}                                         \
                                               \
@@ -62,7 +61,6 @@ template <typename T> class Singleton {
   public:
 	/** Get the singleton pointer (without instance verification) */
 	static T* existsSingleton() {
-		Lock l( ms_mutex );
 		return ms_singleton;
 	}
 

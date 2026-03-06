@@ -345,8 +345,15 @@ Float DocumentView::getWhiteSpaceWidth() const {
 }
 
 void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
-	if ( 0 == mMaxWidth || isOneToOne() )
+	if ( 0 == mMaxWidth || isOneToOne() || !mDoc )
 		return;
+
+	// Safety check: ensure fromLine and toLine are within bounds of the old state
+	if ( fromLine < 0 || fromLine >= (Int64)mVisibleLinesOffset.size() ||
+		 toLine < 0 || toLine >= (Int64)mVisibleLinesOffset.size() || fromLine > toLine ) {
+		invalidateCache();
+		return;
+	}
 
 	// Unfold ANY modification over a folded range
 	if ( numLines < 0 ) {
@@ -361,6 +368,15 @@ void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 	// Get affected visible range
 	Int64 oldIdxFrom = static_cast<Int64>( toVisibleIndex( fromLine, false ) );
 	Int64 oldIdxTo = static_cast<Int64>( toVisibleIndex( toLine, true ) );
+
+	if ( oldIdxFrom == static_cast<Int64>( VisibleIndex::invalid ) ||
+		 oldIdxTo == static_cast<Int64>( VisibleIndex::invalid ) ||
+		 oldIdxFrom > oldIdxTo ||
+		 oldIdxFrom >= (Int64)mVisibleLines.size() ||
+		 oldIdxTo >= (Int64)mVisibleLines.size() ) {
+		invalidateCache();
+		return;
+	}
 
 	auto visibleLinesCount = mVisibleLines.size();
 
@@ -383,6 +399,10 @@ void DocumentView::updateCache( Int64 fromLine, Int64 toLine, Int64 numLines ) {
 	// Recompute line breaks
 	auto netLines = toLine + numLines;
 	auto idxOffset = oldIdxFrom;
+
+	if ( netLines >= (Int64)mDocLineToVisibleIndex.size() )
+		mDocLineToVisibleIndex.resize( netLines + 1, static_cast<Int64>( VisibleIndex::invalid ) );
+
 	for ( auto i = fromLine; i <= netLines; i++ ) {
 		if ( isFolded( i ) ) {
 			mVisibleLinesOffset.insert(
@@ -423,18 +443,25 @@ void DocumentView::recomputeDocLineToVisibleIndex( Int64 fromVisibleIndex, bool 
 	Int64 visibleLinesCount = mVisibleLines.size();
 	if ( ensureDocSize )
 		mDocLineToVisibleIndex.resize( mDoc->linesCount() );
+
+	if ( fromVisibleIndex < 0 || fromVisibleIndex >= visibleLinesCount )
+		return;
+
 	Int64 previousLineIdx = mVisibleLines[fromVisibleIndex].line();
 	for ( Int64 visibleIdx = fromVisibleIndex; visibleIdx < visibleLinesCount; visibleIdx++ ) {
 		const auto& visibleLine = mVisibleLines[visibleIdx];
 		if ( visibleLine.column() == 0 ) {
 			// Non-contiguous lines means hidden lines
 			if ( visibleLine.line() - previousLineIdx > 1 ) {
-				for ( Int64 i = previousLineIdx + 1; i < visibleLine.line(); i++ )
-					mDocLineToVisibleIndex[i] = static_cast<Int64>( VisibleIndex::invalid );
+				for ( Int64 i = previousLineIdx + 1; i < visibleLine.line(); i++ ) {
+					if ( i < (Int64)mDocLineToVisibleIndex.size() )
+						mDocLineToVisibleIndex[i] = static_cast<Int64>( VisibleIndex::invalid );
+				}
 			}
-			mDocLineToVisibleIndex[visibleLine.line()] =
-				isFolded( visibleLine.line(), true ) ? static_cast<Int64>( VisibleIndex::invalid )
-													 : visibleIdx;
+			if ( visibleLine.line() < (Int64)mDocLineToVisibleIndex.size() )
+				mDocLineToVisibleIndex[visibleLine.line()] =
+					isFolded( visibleLine.line(), true ) ? static_cast<Int64>( VisibleIndex::invalid )
+														 : visibleIdx;
 			previousLineIdx = visibleLine.line();
 		}
 	}
@@ -448,7 +475,8 @@ void DocumentView::foldRegion( Int64 foldDocIdx ) {
 	auto foldRegion = mDoc->getFoldRangeService().find( foldDocIdx );
 	if ( !foldRegion )
 		return;
-	if ( isOneToOne() && mDocLineToVisibleIndex.empty() )
+	if ( isOneToOne() || mDocLineToVisibleIndex.empty() || mVisibleLines.empty() ||
+		 mVisibleLinesOffset.empty() )
 		invalidateCache();
 	Int64 toDocIdx = foldRegion->end().line();
 	changeVisibility( foldDocIdx + 1, toDocIdx, false );
@@ -467,6 +495,8 @@ void DocumentView::unfoldRegion( Int64 foldDocIdx, bool verifyConsistency, bool 
 	auto foldRegion = mDoc->getFoldRangeService().find( foldDocIdx );
 	if ( !foldRegion )
 		return;
+	if ( mDocLineToVisibleIndex.empty() || mVisibleLines.empty() || mVisibleLinesOffset.empty() )
+		invalidateCache();
 	Int64 toDocIdx = foldRegion->end().line();
 	removeFoldedRegion( *foldRegion );
 	changeVisibility( foldDocIdx + 1, toDocIdx, true, recomputeOffset,
@@ -559,7 +589,7 @@ void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visi
 		auto idxOffset = oldIdxFrom;
 		for ( auto i = fromDocIdx; i <= toDocIdx; i++ ) {
 			if ( isFolded( i, true ) ) {
-				if ( recomputeOffset ) {
+				if ( recomputeOffset && i < (Int64)mVisibleLinesOffset.size() ) {
 					mVisibleLinesOffset[i] = LineWrap::computeOffsets(
 						mDoc->line( i ).getText().view(), mFontStyle, mConfig.tabWidth,
 						eemax( mMaxWidth - mWhiteSpaceWidth, mWhiteSpaceWidth ) );
@@ -571,11 +601,13 @@ void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visi
 											   mConfig.keepIndentation, mConfig.tabWidth,
 											   mWhiteSpaceWidth, mConfig.tabStops )
 						  : LineWrapInfo{ { 0 }, 0 };
-			if ( recomputeOffset )
+			if ( recomputeOffset && i < (Int64)mVisibleLinesOffset.size() )
 				mVisibleLinesOffset[i] = lb.paddingStart;
 			for ( const auto& col : lb.wraps ) {
-				mVisibleLines.insert( mVisibleLines.begin() + idxOffset, { i, col } );
-				idxOffset++;
+				if ( idxOffset >= 0 && idxOffset <= (Int64)mVisibleLines.size() ) {
+					mVisibleLines.insert( mVisibleLines.begin() + idxOffset, { i, col } );
+					idxOffset++;
+				}
 			}
 		}
 
@@ -585,17 +617,22 @@ void DocumentView::changeVisibility( Int64 fromDocIdx, Int64 toDocIdx, bool visi
 		auto oldIdxToVI = toVisibleIndex( toDocIdx, true );
 		Int64 oldIdxFrom = static_cast<Int64>( oldIdxFromVI );
 		Int64 oldIdxTo = static_cast<Int64>( oldIdxToVI );
-		if ( VisibleIndex::invalid == oldIdxFromVI || VisibleIndex::invalid == oldIdxToVI )
+		if ( VisibleIndex::invalid == oldIdxFromVI || VisibleIndex::invalid == oldIdxToVI ||
+			 oldIdxFrom < 0 || oldIdxTo < 0 ||
+			 oldIdxFrom > oldIdxTo || oldIdxFrom >= (Int64)mVisibleLines.size() ||
+			 oldIdxTo >= (Int64)mVisibleLines.size() )
 			return;
 		mVisibleLines.erase( mVisibleLines.begin() + oldIdxFrom,
 							 mVisibleLines.begin() + oldIdxTo + 1 );
 		for ( Int64 idx = fromDocIdx; idx <= toDocIdx; idx++ ) {
-			mDocLineToVisibleIndex[idx] = static_cast<Int64>( VisibleIndex::invalid );
+			if ( idx < (Int64)mDocLineToVisibleIndex.size() )
+				mDocLineToVisibleIndex[idx] = static_cast<Int64>( VisibleIndex::invalid );
 		}
 		Int64 linesCount = mDoc->linesCount();
 		Int64 idxOffset = oldIdxTo - oldIdxFrom + 1;
 		for ( Int64 idx = toDocIdx + 1; idx < linesCount; idx++ ) {
-			if ( mDocLineToVisibleIndex[idx] != static_cast<Int64>( VisibleIndex::invalid ) )
+			if ( idx < (Int64)mDocLineToVisibleIndex.size() &&
+				 mDocLineToVisibleIndex[idx] != static_cast<Int64>( VisibleIndex::invalid ) )
 				mDocLineToVisibleIndex[idx] -= idxOffset;
 		}
 	}

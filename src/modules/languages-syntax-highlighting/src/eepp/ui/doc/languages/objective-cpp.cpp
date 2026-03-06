@@ -235,6 +235,8 @@ SyntaxDefinition& addObjectiveCPP() {
 
 	sd.setFoldRangeType( FoldRangeType::Braces ).setFoldBraces( { { '{', '}' } } );
 	sd.setBlockComment( { "/*", "*/" } );
+	sd.addAlternativeName( "objective-cpp" );
+	sd.addAlternativeName( "objcpp" );
 	return sd;
 }
 

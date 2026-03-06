@@ -139,6 +139,10 @@ class EE_API DocumentView {
 
 	bool usesTabStops() const { return mConfig.tabStops; }
 
+	const std::vector<Int64> getDocLineToVisibleIndex() const { return mDocLineToVisibleIndex; }
+
+	const std::vector<Float> getVisibleLinesOffset() const { return mVisibleLinesOffset; }
+
   protected:
 	std::shared_ptr<TextDocument> mDoc;
 	FontStyleConfig mFontStyle;

@@ -279,18 +279,54 @@ bool FoldRangeService::isFoldingRegionInLine( Int64 docIdx ) {
 }
 
 void FoldRangeService::shiftFoldingRegions( Int64 fromLine, Int64 numLines ) {
-	// TODO: Optimize this
 	Lock l( mMutex );
 	FoldingRegions foldingRegions;
-	for ( auto& foldingRegion : mFoldingRegions ) {
-		if ( foldingRegion.second.start().line() > fromLine ) {
-			foldingRegion.second.start().setLine( foldingRegion.second.start().line() + numLines );
-			foldingRegion.second.end().setLine( foldingRegion.second.end().line() + numLines );
-			foldingRegions[foldingRegion.second.start().line()] = foldingRegion.second;
+	
+	if ( numLines < 0 ) {
+		Int64 removedLines = -numLines;
+		Int64 toLine = fromLine + removedLines;
+
+		for ( auto& foldingRegion : mFoldingRegions ) {
+			auto& range = foldingRegion.second;
+			
+			if ( range.start().line() >= toLine ) {
+				range.start().setLine( range.start().line() + numLines );
+				range.end().setLine( range.end().line() + numLines );
+				foldingRegions[range.start().line()] = range;
+			} else if ( range.start().line() <= fromLine ) {
+				if ( range.end().line() >= toLine ) {
+					range.end().setLine( range.end().line() + numLines );
+					foldingRegions[range.start().line()] = range;
+				} else if ( range.end().line() > fromLine ) {
+					range.end().setLine( fromLine );
+					if ( range.start().line() < range.end().line() )
+						foldingRegions[range.start().line()] = range;
+				} else {
+					foldingRegions[range.start().line()] = range;
+				}
+			} else {
+				if ( range.end().line() >= toLine ) {
+					range.start().setLine( fromLine );
+					range.end().setLine( range.end().line() + numLines );
+					if ( range.start().line() < range.end().line() )
+						foldingRegions[range.start().line()] = range;
+				}
+			}
 		}
-		foldingRegions[foldingRegion.second.start().line()] = foldingRegion.second;
+	} else {
+		for ( auto& foldingRegion : mFoldingRegions ) {
+			auto& range = foldingRegion.second;
+			if ( range.start().line() >= fromLine ) {
+				range.start().setLine( range.start().line() + numLines );
+				range.end().setLine( range.end().line() + numLines );
+			} else if ( range.end().line() >= fromLine ) {
+				range.end().setLine( range.end().line() + numLines );
+			}
+			foldingRegions[range.start().line()] = range;
+		}
 	}
-	mFoldingRegions = foldingRegions;
+
+	mFoldingRegions = std::move( foldingRegions );
 }
 
 void FoldRangeService::setFoldingRegions( std::vector<TextRange> regions ) {

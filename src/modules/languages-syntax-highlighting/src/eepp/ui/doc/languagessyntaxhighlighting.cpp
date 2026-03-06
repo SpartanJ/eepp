@@ -544,17 +544,18 @@ static void preDefinitionLangsChunk2( SyntaxDefinitionManager* sdm ) {
 	sdm->addPreDefinition(
 		{ "Objeck", []() -> SyntaxDefinition& { return addObjeck(); }, { "%.obs$" } } );
 
-	sdm->addPreDefinition( {
-		"Objective-C",
-		[]() -> SyntaxDefinition& { return addObjectiveC(); },
-		{ "%.m$" },
-	} );
+	sdm->addPreDefinition( { "Objective-C",
+							 []() -> SyntaxDefinition& { return addObjectiveC(); },
+							 { "%.m$" },
+							 {},
+							 { "objc" } } );
 
 	sdm->addPreDefinition( { "Objective-C++",
 							 []() -> SyntaxDefinition& { return addObjectiveCPP(); },
 							 { "%.mm$" },
 							 {},
-							 "objective-cpp" } );
+							 "objective-cpp",
+							 { "objc++", "objcpp" } } );
 
 	sdm->addPreDefinition( {
 		"OCaml",
