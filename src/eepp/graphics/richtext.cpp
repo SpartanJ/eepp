@@ -58,6 +58,7 @@ void RichText::draw( const Float& X, const Float& Y, const Vector2f& scale, cons
 				Overloaded{
 
 					[&]( const std::shared_ptr<Text>& text ) {
+						bool selectionApplied = false;
 						if ( mSelectionColor != Color::Transparent ) {
 							TextSelectionRange spanSel = {
 								std::clamp( mSelection.start, span.startCharIndex,
@@ -71,8 +72,7 @@ void RichText::draw( const Float& X, const Float& Y, const Vector2f& scale, cons
 								text->setFillColor(
 									mSelectionColor, (Uint32)std::min( spanSel.start, spanSel.end ),
 									(Uint32)std::max( spanSel.start, spanSel.end ) - 1 );
-							} else {
-								text->setFillColor( text->getFontStyleConfig().FontColor );
+								selectionApplied = true;
 							}
 						}
 
@@ -84,6 +84,9 @@ void RichText::draw( const Float& X, const Float& Y, const Vector2f& scale, cons
 										std::trunc( Y + ( line.y + pos.y ) * scale.y ), scale,
 										rotation, effect, rotationCenter, scaleCenter );
 						}
+
+						if ( selectionApplied )
+							text->invalidateColors();
 					},
 					[&]( const std::shared_ptr<Drawable>& drawable ) {
 						if ( drawable ) {

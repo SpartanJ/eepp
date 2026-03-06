@@ -167,7 +167,7 @@ class EE_API RichText : public Drawable {
 	std::vector<RenderParagraph> mLines;
 	FontStyleConfig mDefaultStyle;
 	TextSelectionRange mSelection{ 0, 0 };
-	Color mSelectionColor{ Color::Transparent };
+	Color mSelectionColor{ Color::White };
 	Color mSelectionBackColor{ 0, 0, 255, 150 };
 	Uint32 mAlign{ TEXT_ALIGN_LEFT };
 	Float mMaxWidth{ 0.f };
