@@ -87,12 +87,37 @@ class EE_API UIRichText : public UILayout {
 
 	UIRichText* setTextAlign( const Uint32& align );
 
+	bool isTextSelectionEnabled() const;
+
+	void setTextSelectionEnabled( bool active );
+
+	const Color& getSelectionBackColor() const;
+
+	void setSelectionBackColor( const Color& color );
+
+	const Color& getSelectionColor() const;
+
+	void setSelectionColor( const Color& color );
+
+	std::pair<Int64, Int64> getTextSelectionRange() const;
+
+	void setTextSelectionRange( TextSelectionRange range );
+
+	String getSelectionString() const;
+
 	virtual void updateLayout();
 
   protected:
 	RichText mRichText;
+	Int64 mSelCurInit{ 0 };
+	Int64 mSelCurEnd{ 0 };
+	bool mSelecting{ false };
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
+	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onFocusLoss();
 
 	virtual void onSizeChange();
 	virtual void onPaddingChange();
@@ -100,6 +125,12 @@ class EE_API UIRichText : public UILayout {
 	virtual void onFontChanged();
 	virtual void onFontStyleChanged();
 	virtual void onAlphaChange();
+	virtual void onSelectionChange();
+
+	void selCurInit( const Int64& init );
+	void selCurEnd( const Int64& end );
+	Int64 selCurInit() const { return mSelCurInit; }
+	Int64 selCurEnd() const { return mSelCurEnd; }
 
 	void rebuildRichText();
 	void positionChildren();

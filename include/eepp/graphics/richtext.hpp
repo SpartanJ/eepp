@@ -4,6 +4,7 @@
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/text.hpp>
 #include <memory>
+#include <variant>
 #include <vector>
 
 namespace EE { namespace Graphics {
@@ -70,12 +71,7 @@ class EE_API RichText : public Drawable {
 
 	enum class BlockType { Text, Drawable, CustomSize };
 
-	struct Block {
-		BlockType type{ BlockType::Text };
-		std::shared_ptr<Text> text;
-		std::shared_ptr<Drawable> drawable;
-		Sizef customSize;
-	};
+	using Block = std::variant<std::shared_ptr<Text>, std::shared_ptr<Drawable>, Sizef>;
 
 	/**
 	 * @brief Adds a drawable (e.g., an image) into the text flow.
@@ -117,6 +113,8 @@ class EE_API RichText : public Drawable {
 		Block block;
 		Vector2f position; // Local position relative to RichText origin
 		Sizef size;
+		Int64 startCharIndex{ 0 };
+		Int64 endCharIndex{ 0 };
 	};
 
 	/** @brief Structure representing a rendered paragraph (line). */
@@ -131,13 +129,50 @@ class EE_API RichText : public Drawable {
 	/** @return The list of rendered lines. */
 	const std::vector<RenderParagraph>& getLines() const { return mLines; }
 
+	/** @brief Sets the text selection range. */
+	void setSelection( TextSelectionRange range );
+
+	/** @return The current text selection range. */
+	TextSelectionRange getSelection() const { return mSelection; }
+
+	/** @brief Sets the selection text color. */
+	void setSelectionColor( const Color& color );
+
+	/** @return The selection text color. */
+	const Color& getSelectionColor() const { return mSelectionColor; }
+
+	/** @brief Sets the selection background color. */
+	void setSelectionBackColor( const Color& color );
+
+	/** @return The selection background color. */
+	const Color& getSelectionBackColor() const { return mSelectionBackColor; }
+
+	/** @return The total number of characters in the RichText. */
+	Int64 getCharacterCount() const;
+
+	/** @return The character index at the given position. */
+	Int64 findCharacterFromPos( const Vector2i& pos ) const;
+
+	/** @return The position of the character at the given index. */
+	Vector2f findCharacterPos( Int64 index ) const;
+
+	/** @return A list of rectangles that cover the selection. */
+	std::vector<Rectf> getSelectionRects() const;
+
+	/** @return The current selection as a string. */
+	String getSelectionString() const;
+
   protected:
 	std::vector<Block> mBlocks;
 	std::vector<RenderParagraph> mLines;
 	FontStyleConfig mDefaultStyle;
+	TextSelectionRange mSelection{ 0, 0 };
+	Color mSelectionColor{ Color::Transparent };
+	Color mSelectionBackColor{ 0, 0, 255, 150 };
 	Uint32 mAlign{ TEXT_ALIGN_LEFT };
 	Float mMaxWidth{ 0.f };
 	Sizef mSize;
+	Int64 mTotalCharacterCount{ 0 };
 	bool mNeedsLayoutUpdate{ true };
 
 	void updateLayout();

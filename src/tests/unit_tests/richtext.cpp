@@ -69,6 +69,87 @@ UTEST( RichText, basicFunctionality ) {
 	Engine::destroySingleton();
 }
 
+UTEST( RichText, selection ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font->loaded() );
+
+	RichText richText;
+	richText.getFontStyleConfig().Font = font;
+	richText.getFontStyleConfig().CharacterSize = 20;
+
+	richText.addSpan( "Hello " );
+	richText.addSpan( "world" );
+
+	// "Hello world" is 11 characters
+	EXPECT_EQ( richText.getCharacterCount(), (Int64)11 );
+
+	// Test findCharacterFromPos
+	richText.getSize(); // Force layout
+
+	// First character 'H' at (0, 0)
+	EXPECT_EQ( richText.findCharacterFromPos( { 0, 5 } ), (Int64)0 );
+
+	// Somewhere in "Hello "
+	Int64 pos5 = richText.findCharacterFromPos( { 20, 5 } );
+	EXPECT_GT( pos5, 0 );
+	EXPECT_LT( pos5, 6 );
+
+	// End of string
+	EXPECT_EQ( richText.findCharacterFromPos( { 1000, 5 } ), (Int64)11 );
+
+	// Test findCharacterPos
+	Vector2f char0Pos = richText.findCharacterPos( 0 );
+	EXPECT_EQ( char0Pos.x, 0.f );
+
+	Vector2f char11Pos = richText.findCharacterPos( 11 );
+	EXPECT_GT( char11Pos.x, 0.f );
+
+	// Test selection rects
+	richText.setSelection( { 0, 5 } ); // "Hello"
+	auto rects = richText.getSelectionRects();
+	EXPECT_FALSE( rects.empty() );
+	if ( !rects.empty() ) {
+		EXPECT_NEAR( rects[0].getWidth(), richText.findCharacterPos( 5 ).x, 1.0f );
+	}
+
+	// Test multi-span selection
+	richText.setSelection( { 0, 11 } ); // "Hello world"
+	rects = richText.getSelectionRects();
+	EXPECT_FALSE( rects.empty() );
+
+	// Test selection across lines
+	richText.setMaxWidth( 50 ); // Should wrap
+	richText.getSize();
+	richText.setSelection( { 0, 11 } );
+	rects = richText.getSelectionRects();
+	EXPECT_GT( rects.size(), (size_t)1 );
+
+	// Test getSelectionString
+	EXPECT_STRINGEQ( richText.getSelectionString(), "Hello world" );
+	richText.setSelection( { 0, 5 } );
+	EXPECT_STRINGEQ( richText.getSelectionString(), "Hello" );
+	richText.setSelection( { 6, 11 } );
+	EXPECT_STRINGEQ( richText.getSelectionString(), "world" );
+
+	// Test with explicit newlines
+	richText.clear();
+	richText.addSpan( "Hello\n" );
+	richText.addSpan( "world" );
+	EXPECT_EQ( richText.getCharacterCount(), (Int64)11 );
+	richText.setSelection( { 0, 11 } );
+	EXPECT_STRINGEQ( richText.getSelectionString(), "Hello\nworld" );
+	richText.setSelection( { 5, 7 } );
+	EXPECT_STRINGEQ( richText.getSelectionString(), "\nw" );
+
+	Engine::destroySingleton();
+}
+
 UTEST( RichText, BaselineAlignment ) {
 	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Baseline",
 													  WindowStyle::Default, WindowBackend::Default,
@@ -276,18 +357,69 @@ UTEST( UIRichText, IntegrationAndLayoutVerification ) {
 	const auto& blocks = graphicsRt.getBlocks();
 
 	ASSERT_EQ( blocks.size(), (size_t)4 );
-	EXPECT_EQ( blocks[1].type, Graphics::RichText::BlockType::Text );
-	EXPECT_TRUE( blocks[1].text->getFillColor() == Color::fromString( "#FF0000" ) );
 
-	EXPECT_EQ( blocks[2].type, Graphics::RichText::BlockType::CustomSize );
-	EXPECT_EQ( blocks[2].customSize.getWidth(), PixelDensity::dpToPx( 50 ) );
+	// Check Text block
+	EXPECT_TRUE( std::holds_alternative<std::shared_ptr<Graphics::Text>>( blocks[1] ) );
+	auto text1 = std::get<std::shared_ptr<Graphics::Text>>( blocks[1] );
+	EXPECT_TRUE( text1->getFillColor() == Color::fromString( "#FF0000" ) );
+
+	// Check CustomSize block
+	EXPECT_TRUE( std::holds_alternative<Sizef>( blocks[2] ) );
+	EXPECT_EQ( std::get<Sizef>( blocks[2] ).getWidth(), PixelDensity::dpToPx( 50 ) );
 
 	UI::UIWidget* placeholder = rt->find<UI::UIWidget>( "placeholder" );
 	ASSERT_TRUE( placeholder != nullptr );
 
+	auto text0 = std::get<std::shared_ptr<Graphics::Text>>( blocks[0] );
 	Vector2f pos = placeholder->getPixelsPosition();
-	Float expectedX = blocks[0].text->getTextWidth() + blocks[1].text->getTextWidth();
+	Float expectedX = text0->getTextWidth() + text1->getTextWidth();
 	EXPECT_NEAR( pos.x, expectedX, 2.0f );
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
+UTEST( UIRichText, selection ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+	    <RichText id="rt" layout_width="300dp" layout_height="wrap_content" text-selection="true">Hello <span color="#FF0000">Red</span> World</RichText>
+    )xml";
+
+	sceneNode->loadLayoutFromString( xml );
+
+	UI::UIRichText* rt = sceneNode->find<UI::UIRichText>( "rt" );
+	ASSERT_TRUE( rt != nullptr );
+	EXPECT_TRUE( rt->isTextSelectionEnabled() );
+
+	// Force layout
+	sceneNode->update( Time::Zero );
+
+	// Test findCharacterFromPos
+	Int64 charPos = rt->getRichText().findCharacterFromPos( { 0, 5 } );
+	EXPECT_EQ( charPos, 0 );
+
+	// Test selection manually
+	rt->setTextSelectionRange( { 0, 5 } );
+	auto range = rt->getTextSelectionRange();
+	EXPECT_EQ( range.first, 0 );
+	EXPECT_EQ( range.second, 5 );
+	EXPECT_STRINGEQ( rt->getSelectionString(), "Hello" );
+
+	rt->setTextSelectionRange( { 0, 11 } );
+	EXPECT_STRINGEQ( rt->getSelectionString(), "Hello Red W" );
 
 	eeDelete( sceneNode );
 	Engine::destroySingleton();
@@ -325,12 +457,14 @@ UTEST( UIRichText, NestedWidgetsIntegration ) {
 	const auto& blocks = graphicsRt.getBlocks();
 
 	ASSERT_EQ( blocks.size(), (size_t)4 );
-	EXPECT_EQ( blocks[0].type, Graphics::RichText::BlockType::Text );
-	EXPECT_EQ( blocks[1].type, Graphics::RichText::BlockType::Text );
-	EXPECT_EQ( blocks[2].type, Graphics::RichText::BlockType::CustomSize );
-	EXPECT_EQ( blocks[3].type, Graphics::RichText::BlockType::Text );
 
-	EXPECT_EQ( blocks[2].customSize.getWidth(), PixelDensity::dpToPx( 50 ) );
+	// Check block types
+	EXPECT_TRUE( std::holds_alternative<std::shared_ptr<Graphics::Text>>( blocks[0] ) );
+	EXPECT_TRUE( std::holds_alternative<std::shared_ptr<Graphics::Text>>( blocks[1] ) );
+	EXPECT_TRUE( std::holds_alternative<Sizef>( blocks[2] ) );
+	EXPECT_TRUE( std::holds_alternative<std::shared_ptr<Graphics::Text>>( blocks[3] ) );
+
+	EXPECT_EQ( std::get<Sizef>( blocks[2] ).getWidth(), PixelDensity::dpToPx( 50 ) );
 
 	UI::UIWidget* strongNode = rt->find<UI::UIWidget>( "strong" );
 	ASSERT_TRUE( strongNode != nullptr );
@@ -338,11 +472,14 @@ UTEST( UIRichText, NestedWidgetsIntegration ) {
 	UI::UIWidget* placeholder = rt->find<UI::UIWidget>( "placeholder" );
 	ASSERT_TRUE( placeholder != nullptr );
 
+	auto text0 = std::get<std::shared_ptr<Graphics::Text>>( blocks[0] );
+	auto text1 = std::get<std::shared_ptr<Graphics::Text>>( blocks[1] );
+
 	Vector2f pos = placeholder->getPixelsPosition();
-	Float expectedX = blocks[0].text->getTextWidth() + blocks[1].text->getTextWidth();
+	Float expectedX = text0->getTextWidth() + text1->getTextWidth();
 
 	EXPECT_NEAR( pos.x, expectedX, 2.0f );
-	
+
 	// Determine if strong got its bounds correctly
 	EXPECT_GT( strongNode->getPixelsSize().getWidth(), 0 );
 
@@ -384,16 +521,17 @@ UTEST( UIRichText, DefaultStyleInheritance ) {
 	// blocks[0] should be "Default size" with parent's size and color
 	// blocks[1] should be "Small" with overridden size and color
 	ASSERT_TRUE( blocks.size() >= 2 );
-	EXPECT_EQ( blocks[0].type, Graphics::RichText::BlockType::Text );
-	EXPECT_EQ( blocks[0].text->getCharacterSize(), rt->getFontSize() );
-	EXPECT_EQ( blocks[0].text->getFillColor().getValue(), rt->getFontColor().getValue() );
-	EXPECT_EQ( blocks[0].text->getFillColor().getValue(),
-			   Color::fromString( "#FF0000" ).getValue() );
 
-	EXPECT_EQ( blocks[1].type, Graphics::RichText::BlockType::Text );
-	EXPECT_EQ( blocks[1].text->getCharacterSize(), (unsigned int)PixelDensity::dpToPxI( 16 ) );
-	EXPECT_EQ( blocks[1].text->getFillColor().getValue(),
-			   Color::fromString( "#00FF00" ).getValue() );
+	EXPECT_TRUE( std::holds_alternative<std::shared_ptr<Graphics::Text>>( blocks[0] ) );
+	auto text0 = std::get<std::shared_ptr<Graphics::Text>>( blocks[0] );
+	EXPECT_EQ( text0->getCharacterSize(), rt->getFontSize() );
+	EXPECT_EQ( text0->getFillColor().getValue(), rt->getFontColor().getValue() );
+	EXPECT_EQ( text0->getFillColor().getValue(), Color::fromString( "#FF0000" ).getValue() );
+
+	EXPECT_TRUE( std::holds_alternative<std::shared_ptr<Graphics::Text>>( blocks[1] ) );
+	auto text1 = std::get<std::shared_ptr<Graphics::Text>>( blocks[1] );
+	EXPECT_EQ( text1->getCharacterSize(), (unsigned int)PixelDensity::dpToPxI( 16 ) );
+	EXPECT_EQ( text1->getFillColor().getValue(), Color::fromString( "#00FF00" ).getValue() );
 
 	eeDelete( sceneNode );
 	Engine::destroySingleton();

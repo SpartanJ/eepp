@@ -113,6 +113,15 @@ bool UIRichText::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::TextStrokeColor:
 			setOutlineColor( attribute.asColor() );
 			break;
+		case PropertyId::SelectionColor:
+			setSelectionColor( attribute.asColor() );
+			break;
+		case PropertyId::SelectionBackColor:
+			setSelectionBackColor( attribute.asColor() );
+			break;
+		case PropertyId::TextSelection:
+			setTextSelectionEnabled( attribute.asBool() );
+			break;
 		case PropertyId::TextAlign: {
 			std::string align = String::toLower( attribute.value() );
 			if ( align == "center" )
@@ -155,6 +164,12 @@ std::string UIRichText::getPropertyString( const PropertyDefinition* propertyDef
 			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
+		case PropertyId::SelectionColor:
+			return getSelectionColor().toHexString();
+		case PropertyId::SelectionBackColor:
+			return getSelectionBackColor().toHexString();
+		case PropertyId::TextSelection:
+			return isTextSelectionEnabled() ? "true" : "false";
 		case PropertyId::TextAlign:
 			return getTextAlign() == TEXT_ALIGN_CENTER
 					   ? "center"
@@ -166,10 +181,13 @@ std::string UIRichText::getPropertyString( const PropertyDefinition* propertyDef
 
 std::vector<PropertyId> UIRichText::getPropertiesImplemented() const {
 	auto props = UILayout::getPropertiesImplemented();
-	auto local = { PropertyId::FontFamily,		 PropertyId::FontSize,		  PropertyId::FontStyle,
-				   PropertyId::Color,			 PropertyId::BackgroundColor, PropertyId::TextShadowColor,
-				   PropertyId::TextShadowOffset, PropertyId::TextStrokeWidth, PropertyId::TextStrokeColor,
-				   PropertyId::TextAlign };
+	auto local = { PropertyId::FontFamily,		 PropertyId::FontSize,
+				   PropertyId::FontStyle,		 PropertyId::Color,
+				   PropertyId::BackgroundColor,	 PropertyId::TextShadowColor,
+				   PropertyId::TextShadowOffset, PropertyId::TextStrokeWidth,
+				   PropertyId::TextStrokeColor,	 PropertyId::TextAlign,
+				   PropertyId::SelectionColor,	 PropertyId::SelectionBackColor,
+				   PropertyId::TextSelection };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -368,7 +386,6 @@ void UIRichText::loadFromXmlNode( const pugi::xml_node& node ) {
 					editor->setShowLineNumber( false );
 					editor->setShowFoldingRegion( false );
 					editor->setLocked( true );
-
 				}
 			} else {
 				// Let parent logic load standard child widget
@@ -488,9 +505,8 @@ void UIRichText::positionChildren() {
 			while ( currentSpan < line.spans.size() ) {
 				const auto& span = line.spans[currentSpan];
 				currentSpan++;
-				if ( span.block.type == Graphics::RichText::BlockType::CustomSize ) {
+				if ( std::holds_alternative<Sizef>( span.block ) )
 					return &span;
-				}
 			}
 			currentSpan = 0;
 			currentLine++;
@@ -611,6 +627,118 @@ Uint32 UIRichText::onMessage( const NodeMessage* Msg ) {
 	}
 
 	return 0;
+}
+
+bool UIRichText::isTextSelectionEnabled() const {
+	return 0 != ( mFlags & UI_TEXT_SELECTION_ENABLED );
+}
+
+void UIRichText::setTextSelectionEnabled( bool active ) {
+	if ( active ) {
+		mFlags |= UI_TEXT_SELECTION_ENABLED;
+	} else {
+		mFlags &= ~UI_TEXT_SELECTION_ENABLED;
+	}
+}
+
+const Color& UIRichText::getSelectionBackColor() const {
+	return mRichText.getSelectionBackColor();
+}
+
+void UIRichText::setSelectionBackColor( const Color& color ) {
+	mRichText.setSelectionBackColor( color );
+	invalidateDraw();
+}
+
+const Color& UIRichText::getSelectionColor() const {
+	return mRichText.getSelectionColor();
+}
+
+void UIRichText::setSelectionColor( const Color& color ) {
+	mRichText.setSelectionColor( color );
+	invalidateDraw();
+}
+
+std::pair<Int64, Int64> UIRichText::getTextSelectionRange() const {
+	return { mSelCurInit, mSelCurEnd };
+}
+
+void UIRichText::setTextSelectionRange( TextSelectionRange range ) {
+	selCurInit( std::clamp( range.start, (Int64)0, mRichText.getCharacterCount() ) );
+	selCurEnd( std::clamp( range.end, (Int64)0, mRichText.getCharacterCount() ) );
+	onSelectionChange();
+}
+
+String UIRichText::getSelectionString() const {
+	return mRichText.getSelectionString();
+}
+
+Uint32 UIRichText::onMouseDown( const Vector2i& position, const Uint32& flags ) {
+	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) &&
+		 getEventDispatcher()->getMouseDownNode() == this ) {
+		Vector2f nodePos( Vector2f( position.x, position.y ) );
+		worldToNode( nodePos );
+		nodePos = PixelDensity::dpToPx( nodePos ) - Vector2f( mPaddingPx.Left, mPaddingPx.Top );
+		nodePos.x = eemax( 0.f, nodePos.x );
+		nodePos.y = eemax( 0.f, nodePos.y );
+
+		Int64 curPos = mRichText.findCharacterFromPos( nodePos.asInt() );
+
+		if ( -1 != curPos ) {
+			if ( !mSelecting ) {
+				selCurInit( curPos );
+				selCurEnd( curPos );
+			} else {
+				selCurInit( curPos );
+			}
+
+			onSelectionChange();
+		}
+
+		mSelecting = true;
+	}
+
+	return UILayout::onMouseDown( position, flags );
+}
+
+Uint32 UIRichText::onMouseClick( const Vector2i& position, const Uint32& flags ) {
+	if ( isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) ) {
+		mSelecting = false;
+	}
+
+	return UILayout::onMouseClick( position, flags );
+}
+
+Uint32 UIRichText::onMouseDoubleClick( const Vector2i& position, const Uint32& flags ) {
+	return UILayout::onMouseDoubleClick( position, flags );
+}
+
+Uint32 UIRichText::onFocusLoss() {
+	UILayout::onFocusLoss();
+
+	selCurEnd( selCurInit() );
+	onSelectionChange();
+
+	return 1;
+}
+
+void UIRichText::onSelectionChange() {
+	mRichText.setSelection( { mSelCurInit, mSelCurEnd } );
+	invalidateDraw();
+}
+
+void UIRichText::selCurInit( const Int64& init ) {
+	if ( mSelCurInit != init ) {
+		mSelCurInit = init;
+		invalidateDraw();
+	}
+}
+
+void UIRichText::selCurEnd( const Int64& end ) {
+	if ( mSelCurEnd != end ) {
+		mSelCurEnd = end;
+		invalidateDraw();
+	}
 }
 
 }} // namespace EE::UI

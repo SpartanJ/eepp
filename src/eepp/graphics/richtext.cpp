@@ -1,3 +1,4 @@
+#include <eepp/core/overloaded.hpp>
 #include <eepp/graphics/font.hpp>
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/linewrap.hpp>
@@ -35,6 +36,17 @@ void RichText::draw( const Float& X, const Float& Y, const Vector2f& scale, cons
 					 const OriginPoint& scaleCenter ) {
 	updateLayout();
 
+	if ( mSelection.start != mSelection.end ) {
+		auto rects = getSelectionRects();
+		Primitives p;
+		p.setColor( mSelectionBackColor );
+		for ( const auto& rect : rects ) {
+			p.drawRectangle(
+				Rectf( rect.getPosition() * scale + Vector2f( X, Y ), rect.getSize() * scale ), 0.f,
+				scale );
+		}
+	}
+
 	for ( auto& line : mLines ) {
 		for ( auto& span : line.spans ) {
 			// span.position is local to the line (x) + baseline offset (y) line.Y is the line
@@ -42,23 +54,207 @@ void RichText::draw( const Float& X, const Float& Y, const Vector2f& scale, cons
 
 			Vector2f pos = span.position;
 
-			if ( span.block.type == BlockType::Text ) {
-				if ( rotation == 0 && scale == Vector2f::One ) {
-					span.block.text->draw( std::trunc( X + pos.x ),
-										   std::trunc( Y + line.y + pos.y ), Vector2f::One, 0,
-										   effect );
-				} else {
-					span.block.text->draw( std::trunc( X + pos.x * scale.x ),
-										   std::trunc( Y + ( line.y + pos.y ) * scale.y ), scale,
-										   rotation, effect, rotationCenter, scaleCenter );
+			std::visit(
+				Overloaded{
+
+					[&]( const std::shared_ptr<Text>& text ) {
+						if ( mSelectionColor != Color::Transparent ) {
+							TextSelectionRange spanSel = {
+								std::clamp( mSelection.start, span.startCharIndex,
+											span.endCharIndex ) -
+									span.startCharIndex,
+								std::clamp( mSelection.end, span.startCharIndex,
+											span.endCharIndex ) -
+									span.startCharIndex };
+
+							if ( spanSel.start != spanSel.end ) {
+								text->setFillColor(
+									mSelectionColor, (Uint32)std::min( spanSel.start, spanSel.end ),
+									(Uint32)std::max( spanSel.start, spanSel.end ) - 1 );
+							} else {
+								text->setFillColor( text->getFontStyleConfig().FontColor );
+							}
+						}
+
+						if ( rotation == 0 && scale == Vector2f::One ) {
+							text->draw( std::trunc( X + pos.x ), std::trunc( Y + line.y + pos.y ),
+										Vector2f::One, 0, effect );
+						} else {
+							text->draw( std::trunc( X + pos.x * scale.x ),
+										std::trunc( Y + ( line.y + pos.y ) * scale.y ), scale,
+										rotation, effect, rotationCenter, scaleCenter );
+						}
+					},
+					[&]( const std::shared_ptr<Drawable>& drawable ) {
+						if ( drawable ) {
+							drawable->draw( Vector2f( std::trunc( X + pos.x ),
+													  std::trunc( Y + line.y + pos.y ) ),
+											span.size );
+						}
+					},
+					[]( const Sizef& ) {} },
+				span.block );
+		}
+	}
+}
+
+void RichText::setSelection( TextSelectionRange range ) {
+	if ( mSelection.start != range.start || mSelection.end != range.end ) {
+		mSelection = range;
+	}
+}
+
+void RichText::setSelectionColor( const Color& color ) {
+	mSelectionColor = color;
+}
+
+void RichText::setSelectionBackColor( const Color& color ) {
+	mSelectionBackColor = color;
+}
+
+Int64 RichText::getCharacterCount() const {
+	const_cast<RichText*>( this )->updateLayout();
+	return mTotalCharacterCount;
+}
+
+Int64 RichText::findCharacterFromPos( const Vector2i& pos ) const {
+	const_cast<RichText*>( this )->updateLayout();
+
+	for ( const auto& line : mLines ) {
+		if ( pos.y >= line.y && pos.y < line.y + line.height ) {
+			for ( const auto& span : line.spans ) {
+				if ( pos.x >= span.position.x && pos.x < span.position.x + span.size.getWidth() ) {
+					if ( auto pText = std::get_if<std::shared_ptr<Text>>( &span.block ) ) {
+						return span.startCharIndex +
+							   ( *pText )->findCharacterFromPos( Vector2i(
+								   pos.x - span.position.x, pos.y - line.y - span.position.y ) );
+					} else {
+						return ( pos.x < span.position.x + span.size.getWidth() * 0.5f )
+								   ? span.startCharIndex
+								   : span.endCharIndex;
+					}
 				}
-			} else if ( span.block.type == BlockType::Drawable && span.block.drawable ) {
-				span.block.drawable->draw(
-					Vector2f( std::trunc( X + pos.x ), std::trunc( Y + line.y + pos.y ) ),
-					span.size );
+			}
+			// If we are in the line but past the last span
+			if ( !line.spans.empty() ) {
+				if ( pos.x >= line.spans.back().position.x + line.spans.back().size.getWidth() ) {
+					return line.spans.back().endCharIndex;
+				} else if ( pos.x < line.spans.front().position.x ) {
+					return line.spans.front().startCharIndex;
+				}
 			}
 		}
 	}
+
+	// If we are past the last line
+	if ( !mLines.empty() ) {
+		if ( pos.y >= mLines.back().y + mLines.back().height ) {
+			return getCharacterCount();
+		} else if ( pos.y < mLines.front().y ) {
+			return 0;
+		}
+	}
+
+	return 0;
+}
+
+Vector2f RichText::findCharacterPos( Int64 index ) const {
+	const_cast<RichText*>( this )->updateLayout();
+	for ( const auto& line : mLines ) {
+		for ( const auto& span : line.spans ) {
+			if ( index >= span.startCharIndex && index < span.endCharIndex ) {
+				if ( auto pText = std::get_if<std::shared_ptr<Text>>( &span.block ) ) {
+					Vector2f p = ( *pText )->findCharacterPos( index - span.startCharIndex );
+					return { span.position.x + p.x, line.y + span.position.y + p.y };
+				} else {
+					return { span.position.x, line.y + span.position.y };
+				}
+			}
+		}
+	}
+	if ( index >= getCharacterCount() && !mLines.empty() && !mLines.back().spans.empty() ) {
+		const auto& span = mLines.back().spans.back();
+		return { span.position.x + span.size.getWidth(), mLines.back().y };
+	}
+	return { 0, 0 };
+}
+
+std::vector<Rectf> RichText::getSelectionRects() const {
+	const_cast<RichText*>( this )->updateLayout();
+	std::vector<Rectf> rects;
+	if ( mSelection.start == mSelection.end )
+		return rects;
+
+	Int64 start = std::min( mSelection.start, mSelection.end );
+	Int64 end = std::max( mSelection.start, mSelection.end );
+
+	for ( const auto& line : mLines ) {
+		for ( const auto& span : line.spans ) {
+			Int64 spanStart = std::max( start, span.startCharIndex );
+			Int64 spanEnd = std::min( end, span.endCharIndex );
+
+			if ( spanStart < spanEnd ) {
+				if ( auto pText = std::get_if<std::shared_ptr<Text>>( &span.block ) ) {
+					auto spanRects = ( *pText )->getSelectionRects(
+						{ spanStart - span.startCharIndex, spanEnd - span.startCharIndex } );
+					for ( auto& rect : spanRects ) {
+						rect.move( { span.position.x, line.y + span.position.y } );
+						rects.push_back( rect );
+					}
+				} else {
+					rects.push_back( Rectf( { span.position.x, line.y }, span.size ) );
+				}
+			}
+		}
+	}
+	return rects;
+}
+
+String RichText::getSelectionString() const {
+	const_cast<RichText*>( this )->updateLayout();
+	if ( mSelection.start == mSelection.end )
+		return "";
+
+	Int64 start = std::min( mSelection.start, mSelection.end );
+	Int64 end = std::max( mSelection.start, mSelection.end );
+	String res;
+
+	Int64 lastEndIdx = 0;
+	for ( const auto& line : mLines ) {
+		for ( const auto& span : line.spans ) {
+			// Check if there was a newline before this span
+			while ( lastEndIdx < span.startCharIndex ) {
+				if ( lastEndIdx >= start && lastEndIdx < end ) {
+					res += '\n';
+				}
+				lastEndIdx++;
+			}
+
+			Int64 spanStart = std::max( start, span.startCharIndex );
+			Int64 spanEnd = std::min( end, span.endCharIndex );
+
+			if ( spanStart < spanEnd ) {
+				if ( auto pText = std::get_if<std::shared_ptr<Text>>( &span.block ) ) {
+					res += ( *pText )->getString().substr( spanStart - span.startCharIndex,
+														   spanEnd - spanStart );
+				} else {
+					// It's a drawable or custom size, it takes 1 "character" index.
+					res += ' ';
+				}
+			}
+			lastEndIdx = span.endCharIndex;
+		}
+	}
+
+	// Check for trailing newlines
+	while ( lastEndIdx < mTotalCharacterCount ) {
+		if ( lastEndIdx >= start && lastEndIdx < end ) {
+			res += '\n';
+		}
+		lastEndIdx++;
+	}
+
+	return res;
 }
 
 Sizef RichText::getPixelsSize() {
@@ -72,28 +268,19 @@ void RichText::addSpan( const String& text, const FontStyleConfig& style ) {
 	auto span = std::make_shared<Text>();
 	span->setString( text );
 	span->setStyleConfig( style );
-	Block block;
-	block.type = BlockType::Text;
-	block.text = span;
-	mBlocks.push_back( block );
+	mBlocks.push_back( span ); // Implicitly constructs the variant's Text alternative
 	mNeedsLayoutUpdate = true;
 }
 
 void RichText::addDrawable( std::shared_ptr<Drawable> drawable ) {
 	if ( !drawable )
 		return;
-	Block block;
-	block.type = BlockType::Drawable;
-	block.drawable = drawable;
-	mBlocks.push_back( block );
+	mBlocks.push_back( drawable );
 	mNeedsLayoutUpdate = true;
 }
 
 void RichText::addCustomSize( const Sizef& size ) {
-	Block block;
-	block.type = BlockType::CustomSize;
-	block.customSize = size;
-	mBlocks.push_back( block );
+	mBlocks.push_back( size );
 	mNeedsLayoutUpdate = true;
 }
 
@@ -116,6 +303,7 @@ void RichText::addSpan( const String& text, Font* font, Uint32 characterSize, Co
 void RichText::clear() {
 	mBlocks.clear();
 	mLines.clear();
+	mSelection = { 0, 0 };
 	mNeedsLayoutUpdate = true;
 }
 
@@ -141,8 +329,9 @@ void RichText::setMaxWidth( Float width ) {
 void RichText::invalidate() {
 	mNeedsLayoutUpdate = true;
 	for ( auto& block : mBlocks ) {
-		if ( block.type == BlockType::Text && block.text ) {
-			block.text->invalidate();
+		if ( auto pText = std::get_if<std::shared_ptr<Text>>( &block ) ) {
+			if ( *pText )
+				( *pText )->invalidate();
 		}
 	}
 }
@@ -156,10 +345,11 @@ void RichText::updateLayout() {
 
 	Float curX = 0;
 	Float maxWidth = 0;
+	Int64 curCharIdx = 0;
 
 	for ( auto& block : mBlocks ) {
-		if ( block.type == BlockType::Text ) {
-			auto& span = block.text;
+		if ( auto pText = std::get_if<std::shared_ptr<Text>>( &block ) ) {
+			auto& span = *pText;
 			if ( !span || span->getString().empty() )
 				continue;
 
@@ -190,25 +380,25 @@ void RichText::updateLayout() {
 						span->getString().substr( startIdx, endIdx - startIdx ) );
 					renderSpanText->setStyleConfig( fontStyle );
 
-					Block newBlock;
-					newBlock.type = BlockType::Text;
-					newBlock.text = renderSpanText;
+					Float ascent = fontStyle.Font->getAscent( fontStyle.CharacterSize );
+					Float height = fontStyle.Font->getLineSpacing( fontStyle.CharacterSize );
+					Float spanWidth = renderSpanText->getTextWidth();
 
 					RenderSpan renderSpan;
-					renderSpan.block = newBlock;
+					renderSpan.block = renderSpanText;
 					renderSpan.position = { curX, 0 }; // Y adjusted later
+					renderSpan.size =
+						Sizef( spanWidth, height ); // Configured BEFORE pushing to vector
+					renderSpan.startCharIndex = curCharIdx;
+					renderSpan.endCharIndex = curCharIdx + ( endIdx - startIdx );
+					curCharIdx = renderSpan.endCharIndex;
 
 					RenderParagraph& currentLine = mLines.back();
 					currentLine.spans.push_back( renderSpan );
 
-					Float ascent = fontStyle.Font->getAscent( fontStyle.CharacterSize );
-					Float height = fontStyle.Font->getLineSpacing( fontStyle.CharacterSize );
-
 					currentLine.maxAscent = std::max( currentLine.maxAscent, ascent );
 					currentLine.height = std::max( currentLine.height, height );
 
-					Float spanWidth = renderSpan.block.text->getTextWidth();
-					renderSpan.size = Sizef( spanWidth, height );
 					curX += spanWidth;
 					currentLine.width += spanWidth;
 				}
@@ -217,15 +407,22 @@ void RichText::updateLayout() {
 				// start a new line. Exception: If the last segment was just a newline, we already
 				// handled it.
 				if ( i < wrapInfo.wraps.size() - 2 || isNewline ) {
+					if ( isNewline ) {
+						curCharIdx++;
+					}
 					maxWidth = std::max( maxWidth, curX );
 					mLines.push_back( RenderParagraph() );
 					curX = 0;
 				}
 			}
-		} else if ( block.type == BlockType::Drawable || block.type == BlockType::CustomSize ) {
-			Sizef blockSize = block.type == BlockType::Drawable
-								  ? ( block.drawable ? block.drawable->getPixelsSize() : Sizef() )
-								  : block.customSize;
+		} else { // Drawable or CustomSize
+			Sizef blockSize;
+			if ( auto pDrawable = std::get_if<std::shared_ptr<Drawable>>( &block ) ) {
+				auto& drawable = *pDrawable;
+				blockSize = drawable ? drawable->getPixelsSize() : Sizef();
+			} else if ( auto pSize = std::get_if<Sizef>( &block ) ) {
+				blockSize = *pSize;
+			}
 
 			// Wrap if needed
 			if ( mMaxWidth > 0 && curX + blockSize.getWidth() > mMaxWidth && curX > 0 ) {
@@ -238,6 +435,9 @@ void RichText::updateLayout() {
 			renderSpan.block = block;
 			renderSpan.position = { curX, 0 };
 			renderSpan.size = blockSize;
+			renderSpan.startCharIndex = curCharIdx;
+			renderSpan.endCharIndex = curCharIdx + 1;
+			curCharIdx = renderSpan.endCharIndex;
 
 			RenderParagraph& currentLine = mLines.back();
 			currentLine.spans.push_back( renderSpan );
@@ -271,9 +471,9 @@ void RichText::updateLayout() {
 		}
 
 		for ( auto& span : line.spans ) {
-			if ( span.block.type == BlockType::Text ) {
-				Float ascent =
-					span.block.text->getFont()->getAscent( span.block.text->getCharacterSize() );
+			if ( auto pText = std::get_if<std::shared_ptr<Text>>( &span.block ) ) {
+				auto& textBlock = *pText;
+				Float ascent = textBlock->getFont()->getAscent( textBlock->getCharacterSize() );
 				Float offsetY = line.maxAscent - ascent;
 				span.position.x += xOffset;
 				span.position.y = offsetY;
@@ -290,6 +490,7 @@ void RichText::updateLayout() {
 	}
 
 	mSize = Sizef( maxWidth, curY );
+	mTotalCharacterCount = curCharIdx;
 	mNeedsLayoutUpdate = false;
 }
 

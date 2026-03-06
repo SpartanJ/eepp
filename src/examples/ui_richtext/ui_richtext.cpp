@@ -7,7 +7,7 @@ EE_MAIN_FUNC int main( int, char** ) {
 	<vbox layout_width="match_parent" layout_height="match_parent">
 		<ScrollView lw="mp" lh="mp">
 			<vbox layout_width="match_parent" layout_height="wrap_content" padding="8dp">
-				<RichText font-size="12dp"
+				<RichText text-selection="true" font-size="12dp"
 					color="white">Welcome to the <span color="#FFD700" font-style="bold">UIRichText</span> example!
 					This component supports <span color="#00FF00" font-style="italic">styled text</span>,
 					<span color="#00BFFF" font-style="shadow">shadows</span>,
