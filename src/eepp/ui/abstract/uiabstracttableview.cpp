@@ -118,11 +118,12 @@ size_t UIAbstractTableView::getItemCount() const {
 }
 
 void UIAbstractTableView::onModelUpdate( unsigned flags ) {
+	mPendingUpdateFlags.fetch_or( flags );
 	if ( !Engine::instance()->isMainThread() ) {
 		removeActionsByTag( onModelUpdateTag );
 		runOnMainThread(
-			[this, flags] {
-				modelUpdate( flags );
+			[this] {
+				modelUpdate( mPendingUpdateFlags.exchange( 0 ) );
 				createOrUpdateColumns( true );
 			},
 			Time::Zero, onModelUpdateTag );

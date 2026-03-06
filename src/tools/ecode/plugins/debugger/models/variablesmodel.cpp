@@ -2,6 +2,7 @@
 #include "../debuggerclient.hpp"
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitreeview.hpp>
+#include <eepp/window/engine.hpp>
 
 namespace ecode {
 
@@ -73,6 +74,7 @@ VariablesModel::VariablesModel( ModelVariableNode::NodePtr rootNode, UISceneNode
 	mRootNode( rootNode ), mSceneNode( sceneNode ) {}
 
 ModelIndex VariablesModel::index( int row, int column, const ModelIndex& parent ) const {
+	checkQueuedClear( parent );
 	if ( !mRootNode )
 		return ModelIndex();
 
@@ -115,6 +117,7 @@ ModelIndex VariablesModel::parentIndex( const ModelIndex& index ) const {
 }
 
 size_t VariablesModel::rowCount( const ModelIndex& index ) const {
+	checkQueuedClear( index );
 	ModelVariableNode* parentNode =
 		index.isValid() ? static_cast<ModelVariableNode*>( index.internalData() ) : mRootNode.get();
 
@@ -122,6 +125,7 @@ size_t VariablesModel::rowCount( const ModelIndex& index ) const {
 }
 
 bool VariablesModel::hasChildren( const ModelIndex& index ) const {
+	checkQueuedClear( index );
 	if ( !index.isValid() )
 		return !mRootNode->children.empty();
 	ModelVariableNode* node = static_cast<ModelVariableNode*>( index.internalData() );
@@ -165,9 +169,21 @@ Variant VariablesModel::data( const ModelIndex& index, ModelRole role ) const {
 	return EMPTY;
 }
 
+void VariablesModel::checkQueuedClear( const ModelIndex& index ) const {
+	if ( !index.isValid() && mQueuedClear && Engine::instance()->isMainThread() ) {
+		mChildMap.clear();
+		mQueuedClear = false;
+	}
+}
+
 void VariablesModel::invalidate( unsigned int flags ) {
 	if ( flags & Model::UpdateFlag::InvalidateAllIndexes ) {
-		mChildMap.clear();
+		if ( Engine::instance()->isMainThread() ) {
+			mChildMap.clear();
+			mQueuedClear = false;
+		} else {
+			mQueuedClear = true;
+		}
 	}
 	Model::invalidate( flags );
 }
@@ -246,7 +262,7 @@ void VariablesHolder::upsertRootChild( Variable&& var ) {
 			auto newChild = std::make_shared<ModelVariableNode>( std::move( var ), mRootNode );
 			mNodeMap[newChild->var.variablesReference] = newChild;
 			mRootNode->children[i] = std::move( newChild );
-			mModel->invalidate( Model::UpdateFlag::DontInvalidateIndexes );
+			mModel->invalidate( Model::UpdateFlag::InvalidateAllIndexes );
 			return;
 		}
 	}

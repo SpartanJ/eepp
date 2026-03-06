@@ -1,6 +1,7 @@
 #ifndef EE_UI_UIABSTRACTVIEW_HPP
 #define EE_UI_UIABSTRACTVIEW_HPP
 
+#include <atomic>
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/models/model.hpp>
 #include <eepp/ui/models/modeleditingdelegate.hpp>
@@ -150,6 +151,7 @@ class EE_API UIAbstractView : public UIScrollableWidget {
 	std::vector<KeyBindings::Shortcut> mEditShortcuts{ { KEY_F2 } };
 	SelectionType mSelectionType{ SelectionType::Row };
 	SelectionKind mSelectionKind{ SelectionKind::Single };
+	std::atomic<unsigned> mPendingUpdateFlags{ 0 };
 
 	virtual void editingWidgetDidChange( const ModelIndex& ) {}
 };

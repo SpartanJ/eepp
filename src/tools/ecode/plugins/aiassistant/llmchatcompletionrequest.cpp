@@ -120,6 +120,9 @@ LLMChatCompletionRequest::LLMChatCompletionRequest( const std::string& uri, cons
 }
 
 LLMChatCompletionRequest::~LLMChatCompletionRequest() {
+	cancelCb = nullptr;
+	doneCb = nullptr;
+	streamedResponseCb = nullptr;
 	cancel();
 }
 

@@ -595,6 +595,16 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 }
 
 LLMChatUI::~LLMChatUI() {
+	if ( mRequest ) {
+		mRequest->cancelCb = nullptr;
+		mRequest->doneCb = nullptr;
+		mRequest->streamedResponseCb = nullptr;
+	}
+	if ( mSummaryRequest ) {
+		mSummaryRequest->cancelCb = nullptr;
+		mSummaryRequest->doneCb = nullptr;
+		mSummaryRequest->streamedResponseCb = nullptr;
+	}
 	if ( getPlugin() ) {
 		AIAssistantPlugin::AIAssistantConfig config;
 		config.partition = getSplitter()->getSplitPartition();
@@ -1168,28 +1178,27 @@ void LLMChatUI::generateChatName( bool isRenaming ) {
 	mSummaryRequest->doneCb = [this, isRenaming]( const LLMChatCompletionRequest& req,
 												  Http::Response& response ) {
 		auto status = response.getStatus();
-		String oldSummary = std::move( mSummary );
+		runOnMainThread( [this, isRenaming, status, responseText = req.getResponse()] {
+			String oldSummary = std::move( mSummary );
 
-		if ( status == Http::Response::Ok ) {
-			mSummary = String::trim( req.getResponse() );
-			String::trimInPlace( mSummary, '\n' );
-			String::trimInPlace( mSummary, ' ' );
-			String::trimInPlace( mSummary, '"' );
-		} else {
-			// TODO: Implement generating a summary based on the user prompt (take the
-			// first few words)
-			mSummary = i18n( "untitled_conversation", "Untitled Conversation" );
-		}
+			if ( status == Http::Response::Ok ) {
+				mSummary = String::trim( responseText );
+				String::trimInPlace( mSummary, '\n' );
+				String::trimInPlace( mSummary, ' ' );
+				String::trimInPlace( mSummary, '"' );
+			} else {
+				// TODO: Implement generating a summary based on the user prompt (take the
+				// first few words)
+				mSummary = i18n( "untitled_conversation", "Untitled Conversation" );
+			}
 
-		if ( isRenaming ) {
-			String newSummary = std::move( mSummary );
-			mSummary = std::move( oldSummary );
-			runOnMainThread(
-				[this, newSummary = std::move( newSummary )] { renameChat( newSummary ); } );
-		} else
-			saveChat();
+			if ( isRenaming ) {
+				String newSummary = std::move( mSummary );
+				mSummary = std::move( oldSummary );
+				renameChat( newSummary );
+			} else
+				saveChat();
 
-		runOnMainThread( [this] {
 			updateTabTitle();
 			mSummaryRequest.reset();
 		} );
@@ -1258,15 +1267,17 @@ void LLMChatUI::doRequest() {
 	};
 
 	mRequest->cancelCb = [this, thinking, thinkingID, editor]( const LLMChatCompletionRequest& ) {
-		thinking->removeActionsByTag( thinkingID );
-		thinking->setVisible( false );
-		mChatStop->setVisible( false )->setEnabled( false );
-		mChatRun->setVisible( true )->setEnabled( true );
-		toggleEnableChats( true );
-		editor->setEnabled( true );
-		if ( editor->hasFocus() )
-			mChatInput->setFocus();
-		removeLastChat();
+		runOnMainThread( [this, thinking, thinkingID, editor] {
+			thinking->removeActionsByTag( thinkingID );
+			thinking->setVisible( false );
+			mChatStop->setVisible( false )->setEnabled( false );
+			mChatRun->setVisible( true )->setEnabled( true );
+			toggleEnableChats( true );
+			editor->setEnabled( true );
+			if ( editor->hasFocus() )
+				mChatInput->setFocus();
+			removeLastChat();
+		} );
 	};
 
 	mRequest->doneCb =

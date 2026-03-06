@@ -4,6 +4,8 @@
 
 namespace EE { namespace UI { namespace Abstract {
 
+static constexpr String::HashType OnModelUpdateTag = String::hash( "onModelUpdate" );
+
 UIAbstractView::UIAbstractView( const std::string& tag ) :
 	UIScrollableWidget( tag ), mSelection( this ) {}
 
@@ -126,7 +128,8 @@ void UIAbstractView::setModel( const std::shared_ptr<Model>& model ) {
 }
 
 void UIAbstractView::modelUpdate( unsigned flags ) {
-	if ( !getModel() || ( flags & Model::InvalidateAllIndexes ) ) {
+	mPendingUpdateFlags = 0;
+	if ( !getModel() || ( flags & Model::UpdateFlag::InvalidateAllIndexes ) ) {
 		getSelection().clear();
 	} else {
 		getSelection().removeAllMatching(
@@ -135,12 +138,13 @@ void UIAbstractView::modelUpdate( unsigned flags ) {
 }
 
 void UIAbstractView::onModelUpdate( unsigned flags ) {
+	mPendingUpdateFlags.fetch_or( flags );
 	if ( !Engine::instance()->isMainThread() ) {
-		static constexpr String::HashType tag = String::hash( "onModelUpdate" );
-		removeActionsByTag( tag );
-		runOnMainThread( [this, flags] { modelUpdate( flags ); }, Time::Zero, tag );
+		removeActionsByTag( OnModelUpdateTag );
+		runOnMainThread( [this] { modelUpdate( mPendingUpdateFlags.exchange( 0 ) ); }, Time::Zero,
+						 OnModelUpdateTag );
 	} else {
-		modelUpdate( flags );
+		modelUpdate( mPendingUpdateFlags.exchange( 0 ) );
 	}
 }
 
