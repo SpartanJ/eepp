@@ -1575,11 +1575,11 @@ const Uint32& Text::getTabWidth() const {
 }
 
 Color Text::getBackgroundColor() const {
-	return mBackgroundColor;
+	return mFontStyleConfig.BackgroundColor;
 }
 
 void Text::setBackgroundColor( const Color& backgroundColor ) {
-	mBackgroundColor = backgroundColor;
+	mFontStyleConfig.BackgroundColor = backgroundColor;
 }
 
 const Vector2f& Text::getShadowOffset() const {
@@ -1629,10 +1629,10 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 				 BlendMode effect, const OriginPoint& rotationCenter,
 				 const OriginPoint& scaleCenter, const std::vector<Color>& colors,
 				 const std::vector<Color>& outlineColors, const Color& backgroundColor ) {
-	unsigned int numvert = mVertices.size();
-
-	if ( 0 == numvert )
+	if ( NULL == mFontStyleConfig.Font || mString.empty() )
 		return;
+
+	unsigned int numvert = mVertices.size();
 
 	GlobalBatchRenderer::instance()->draw();
 
@@ -1670,7 +1670,32 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 		Primitives p;
 		p.setForceDraw( true );
 		p.setColor( backgroundColor );
-		p.drawRectangle( getLocalBounds() );
+		ensureVisualLinesUpdate();
+		Float vspace = getLineSpacing();
+		for ( size_t i = 0; i < mVisualLines.size(); ++i ) {
+			Float centerDiffX = 0;
+			if ( i < mLinesWidth.size() ) {
+				switch ( Font::getHorizontalAlign( mAlign ) ) {
+					case TEXT_ALIGN_CENTER:
+						centerDiffX = std::trunc( ( mCachedWidth - mLinesWidth[i] ) * 0.5f );
+						break;
+					case TEXT_ALIGN_RIGHT:
+						centerDiffX = mCachedWidth - mLinesWidth[i];
+						break;
+				}
+			}
+			p.drawRectangle( Rectf( centerDiffX, i * vspace, centerDiffX + mLinesWidth[i],
+									( i + 1 ) * vspace ) );
+		}
+	}
+
+	if ( 0 == numvert ) {
+		if ( rotation != 0.0f || scale != 1.0f ) {
+			GLi->popMatrix();
+		} else {
+			GLi->translatef( -X, -Y, 0 );
+		}
+		return;
 	}
 
 	Texture* texture = mFontStyleConfig.Font->getTexture( mFontStyleConfig.CharacterSize );
@@ -1744,7 +1769,7 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 	}
 
 	draw( X, Y, scale, rotation, effect, rotationCenter, scaleCenter, mColors, mOutlineColors,
-		  mBackgroundColor );
+		  mFontStyleConfig.BackgroundColor );
 }
 
 void Text::ensureGeometryUpdate() {
@@ -2330,6 +2355,7 @@ void Text::setStyleConfig( const FontStyleConfig& styleConfig ) {
 	setOutlineColor( styleConfig.OutlineColor );
 	setShadowColor( styleConfig.ShadowColor );
 	setShadowOffset( styleConfig.ShadowOffset );
+	setBackgroundColor( styleConfig.BackgroundColor );
 }
 
 bool Text::hasSameFontStyleConfig( const FontStyleConfig& styleConfig ) {

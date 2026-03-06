@@ -98,6 +98,9 @@ bool UIRichText::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Color:
 			setFontColor( attribute.asColor() );
 			break;
+		case PropertyId::BackgroundColor:
+			setFontBackgroundColor( attribute.asColor() );
+			break;
 		case PropertyId::TextShadowColor:
 			setFontShadowColor( attribute.asColor() );
 			break;
@@ -141,6 +144,8 @@ std::string UIRichText::getPropertyString( const PropertyDefinition* propertyDef
 			return Graphics::Text::styleFlagToString( getFontStyle() );
 		case PropertyId::Color:
 			return getFontColor().toHexString();
+		case PropertyId::BackgroundColor:
+			return getFontBackgroundColor().toHexString();
 		case PropertyId::TextShadowColor:
 			return getFontShadowColor().toHexString();
 		case PropertyId::TextShadowOffset:
@@ -161,10 +166,10 @@ std::string UIRichText::getPropertyString( const PropertyDefinition* propertyDef
 
 std::vector<PropertyId> UIRichText::getPropertiesImplemented() const {
 	auto props = UILayout::getPropertiesImplemented();
-	auto local = {
-		PropertyId::FontFamily,		 PropertyId::FontSize,		  PropertyId::FontStyle,
-		PropertyId::Color,			 PropertyId::TextShadowColor, PropertyId::TextShadowOffset,
-		PropertyId::TextStrokeWidth, PropertyId::TextStrokeColor, PropertyId::TextAlign };
+	auto local = { PropertyId::FontFamily,		 PropertyId::FontSize,		  PropertyId::FontStyle,
+				   PropertyId::Color,			 PropertyId::BackgroundColor, PropertyId::TextShadowColor,
+				   PropertyId::TextShadowOffset, PropertyId::TextStrokeWidth, PropertyId::TextStrokeColor,
+				   PropertyId::TextAlign };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -223,6 +228,19 @@ const Color& UIRichText::getFontColor() const {
 UIRichText* UIRichText::setFontColor( const Color& color ) {
 	if ( mRichText.getFontStyleConfig().FontColor != color ) {
 		mRichText.getFontStyleConfig().FontColor = color;
+		mRichText.invalidate();
+		updateDefaultSpansStyle();
+	}
+	return this;
+}
+
+const Color& UIRichText::getFontBackgroundColor() const {
+	return mRichText.getFontStyleConfig().BackgroundColor;
+}
+
+UIRichText* UIRichText::setFontBackgroundColor( const Color& color ) {
+	if ( mRichText.getFontStyleConfig().BackgroundColor != color ) {
+		mRichText.getFontStyleConfig().BackgroundColor = color;
 		mRichText.invalidate();
 		updateDefaultSpansStyle();
 	}

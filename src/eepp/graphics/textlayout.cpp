@@ -620,11 +620,18 @@ void TextLayout::wrapLayout( const String::View& string, TextLayout& result,
 					breakStringIdx = string.size();
 
 				ShapedGlyph& breakGlyph = sp.shapedGlyphs[breakIndex];
+				Float breakPos = breakGlyph.position.x;
+				Float kerning = 0;
+				if ( breakIndex > 0 ) {
+					ShapedGlyph& prevBreakGlyph = sp.shapedGlyphs[breakIndex - 1];
+					kerning = ( prevBreakGlyph.position.x + prevBreakGlyph.advance.x ) -
+							  breakGlyph.position.x;
+				}
 
 				sp.wrapInfo.wraps.push_back( breakStringIdx );
-				sp.wrapInfo.wrapsWidth.push_back( std::ceil( breakGlyph.position.x ) );
+				sp.wrapInfo.wrapsWidth.push_back( std::ceil( breakPos + kerning ) );
 
-				Vector2f adjustment( -breakGlyph.position.x + sp.wrapInfo.paddingStart, vspace );
+				Vector2f adjustment( sp.wrapInfo.paddingStart - breakGlyph.position.x, vspace );
 				for ( std::size_t k = breakIndex; k <= idx; ++k )
 					sp.shapedGlyphs[k].position += adjustment;
 

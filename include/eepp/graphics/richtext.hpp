@@ -41,7 +41,8 @@ class EE_API RichText : public Drawable {
 	 * @param style The text style (optional, uses default if Regular).
 	 */
 	void addSpan( const String& text, Font* font = nullptr, Uint32 characterSize = 0,
-				  Color color = Color::White, Uint32 style = Text::Regular );
+				  Color color = Color::White, Uint32 style = Text::Regular,
+				  Color backgroundColor = Color::Transparent );
 
 	/** @brief Clears all text spans. */
 	void clear();

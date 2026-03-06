@@ -400,7 +400,6 @@ class EE_API Text {
 
 	String mString; ///< String to display
 	FontStyleConfig mFontStyleConfig;
-	Color mBackgroundColor{ Color::Transparent };
 
 	mutable Rectf mBounds; ///< Bounding rectangle of the text (in local coordinates)
 	mutable bool mGeometryNeedUpdate : 1 { false }; ///< Does the geometry need to be recomputed?

@@ -29,13 +29,15 @@ class FontStyleConfig {
 
 	const Vector2f& getFontShadowOffset() const { return ShadowOffset; }
 
+	const Color& getBackgroundColor() const { return BackgroundColor; }
+
 	FontStyleConfig() {}
 
 	bool operator==( const FontStyleConfig& other ) {
 		return Font == other.Font && CharacterSize == other.CharacterSize && Style == other.Style &&
 			   FontColor == other.FontColor && ShadowColor == other.ShadowColor &&
 			   ShadowOffset == other.ShadowOffset && OutlineThickness == other.OutlineThickness &&
-			   OutlineColor == other.OutlineColor;
+			   OutlineColor == other.OutlineColor && BackgroundColor == other.BackgroundColor;
 	}
 
 	bool operator!=( const FontStyleConfig& other ) { return !( *this == other ); }
@@ -49,6 +51,7 @@ class FontStyleConfig {
 		ShadowOffset = fontStyleConfig.ShadowOffset;
 		OutlineThickness = fontStyleConfig.OutlineThickness;
 		OutlineColor = fontStyleConfig.OutlineColor;
+		BackgroundColor = fontStyleConfig.BackgroundColor;
 	}
 
 	Graphics::Font* Font{ nullptr };
@@ -59,6 +62,7 @@ class FontStyleConfig {
 	Vector2f ShadowOffset{ PixelDensity::dpToPx( 1 ), PixelDensity::dpToPx( 1 ) };
 	Float OutlineThickness{ 0 };
 	Color OutlineColor{ 0, 0, 0, 255 };
+	Color BackgroundColor{ Color::Transparent };
 };
 
 }} // namespace EE::Graphics

@@ -63,6 +63,9 @@ bool UITextSpan::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Color:
 			setFontColor( attribute.asColor() );
 			break;
+		case PropertyId::BackgroundColor:
+			setFontBackgroundColor( attribute.asColor() );
+			break;
 		case PropertyId::TextShadowColor:
 			setFontShadowColor( attribute.asColor() );
 			break;
@@ -112,6 +115,8 @@ std::string UITextSpan::getPropertyString( const PropertyDefinition* propertyDef
 			return Graphics::Text::styleFlagToString( getFontStyle() );
 		case PropertyId::Color:
 			return getFontColor().toHexString();
+		case PropertyId::BackgroundColor:
+			return getFontBackgroundColor().toHexString();
 		case PropertyId::TextShadowColor:
 			return getFontShadowColor().toHexString();
 		case PropertyId::TextShadowOffset:
@@ -133,6 +138,7 @@ std::vector<PropertyId> UITextSpan::getPropertiesImplemented() const {
 				   PropertyId::FontSize,
 				   PropertyId::FontStyle,
 				   PropertyId::Color,
+				   PropertyId::BackgroundColor,
 				   PropertyId::TextShadowColor,
 				   PropertyId::TextShadowOffset,
 				   PropertyId::TextStrokeWidth,
@@ -243,6 +249,19 @@ UITextSpan* UITextSpan::setFontColor( const Color& color ) {
 	if ( mFontStyleConfig.FontColor != color ) {
 		mFontStyleConfig.FontColor = color;
 		mStyleState |= StyleStateFontColor;
+		onFontStyleChanged();
+	}
+	return this;
+}
+
+const Color& UITextSpan::getFontBackgroundColor() const {
+	return mFontStyleConfig.getBackgroundColor();
+}
+
+UITextSpan* UITextSpan::setFontBackgroundColor( const Color& color ) {
+	if ( mFontStyleConfig.BackgroundColor != color ) {
+		mFontStyleConfig.BackgroundColor = color;
+		mStyleState |= StyleStateFontBackgroundColor;
 		onFontStyleChanged();
 	}
 	return this;
@@ -404,6 +423,12 @@ void UITextSpan::setInheritedStyle( const UIFontStyleConfig& fontStyleConfig ) {
 		fontStyleChanged = true;
 	}
 
+	if ( !hasFontBackgroundColor() &&
+		 mFontStyleConfig.BackgroundColor != fontStyleConfig.BackgroundColor ) {
+		mFontStyleConfig.BackgroundColor = fontStyleConfig.BackgroundColor;
+		fontStyleChanged = true;
+	}
+
 	if ( fontChanged )
 		onFontChanged();
 
@@ -452,6 +477,10 @@ bool UITextSpan::hasFontShadowColor() const {
 
 bool UITextSpan::hasFontShadowOffset() const {
 	return 0 != ( mStyleState & StyleStateFontShadowOffset );
+}
+
+bool UITextSpan::hasFontBackgroundColor() const {
+	return 0 != ( mStyleState & StyleStateFontBackgroundColor );
 }
 
 }} // namespace EE::UI

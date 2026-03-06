@@ -98,7 +98,7 @@ void RichText::addCustomSize( const Sizef& size ) {
 }
 
 void RichText::addSpan( const String& text, Font* font, Uint32 characterSize, Color color,
-						Uint32 style ) {
+						Uint32 style, Color backgroundColor ) {
 	FontStyleConfig config;
 	config.Font = font ? font : mDefaultStyle.Font;
 	config.CharacterSize = characterSize != 0 ? characterSize : mDefaultStyle.CharacterSize;
@@ -108,6 +108,7 @@ void RichText::addSpan( const String& text, Font* font, Uint32 characterSize, Co
 	config.ShadowOffset = mDefaultStyle.ShadowOffset;
 	config.OutlineThickness = mDefaultStyle.OutlineThickness;
 	config.OutlineColor = mDefaultStyle.OutlineColor;
+	config.BackgroundColor = backgroundColor;
 
 	addSpan( text, config );
 }

@@ -77,6 +77,10 @@ class EE_API UITextSpan : public UIWidget {
 
 	UITextSpan* setFontColor( const Color& color );
 
+	const Color& getFontBackgroundColor() const;
+
+	UITextSpan* setFontBackgroundColor( const Color& color );
+
 	const Color& getFontShadowColor() const;
 
 	UITextSpan* setFontShadowColor( const Color& color );
@@ -97,6 +101,7 @@ class EE_API UITextSpan : public UIWidget {
 		StyleStateOutlineColor = 1 << 5,
 		StyleStateFontShadowColor = 1 << 6,
 		StyleStateFontShadowOffset = 1 << 7,
+		StyleStateFontBackgroundColor = 1 << 8,
 		StyleStateAll = 0xFFFFFFFF
 	};
 
@@ -108,6 +113,7 @@ class EE_API UITextSpan : public UIWidget {
 	bool hasOutlineColor() const;
 	bool hasFontShadowColor() const;
 	bool hasFontShadowOffset() const;
+	bool hasFontBackgroundColor() const;
 
   protected:
 	Uint32 mStyleState{ StyleStateNone };

@@ -63,6 +63,10 @@ class EE_API UIRichText : public UILayout {
 
 	UIRichText* setFontColor( const Color& color );
 
+	const Color& getFontBackgroundColor() const;
+
+	UIRichText* setFontBackgroundColor( const Color& color );
+
 	const Color& getFontShadowColor() const;
 
 	UIRichText* setFontShadowColor( const Color& color );
