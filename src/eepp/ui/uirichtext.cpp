@@ -99,6 +99,7 @@ bool UIRichText::applyProperty( const StyleSheetProperty& attribute ) {
 			setFontColor( attribute.asColor() );
 			break;
 		case PropertyId::BackgroundColor:
+			setBackgroundColor( attribute.asColor() );
 			setFontBackgroundColor( attribute.asColor() );
 			break;
 		case PropertyId::TextShadowColor:

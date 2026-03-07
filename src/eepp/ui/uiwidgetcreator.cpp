@@ -143,6 +143,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["mark"] = UITextSpan::NewMark;
 		registeredWidget["div"] = UIRichText::New;
 		registeredWidget["p"] = UIRichText::NewParagraph;
+		registeredWidget["blockquote"] = [] { return UIRichText::NewWithTag( "blockquote" ); };
 		registeredWidget["h1"] = UIRichText::NewH1;
 		registeredWidget["h2"] = UIRichText::NewH2;
 		registeredWidget["h3"] = UIRichText::NewH3;

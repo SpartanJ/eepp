@@ -1181,7 +1181,7 @@ UIBorderDrawable* UINode::getBorder() const {
 	if ( NULL == mBorder ) {
 		mBorder = UIBorderDrawable::New( this );
 		mBorder->setColor( Color::Transparent );
-		mBorder->setLineWidth( PixelDensity::dpToPx( 1 ) );
+		// mBorder->setLineWidth( PixelDensity::dpToPx( 1 ) );
 	}
 
 	return mBorder;

@@ -25,7 +25,7 @@ This is a **bold** text and this is an *italic* text.
 1. Ordered 1
 2. Ordered 2
 
-&gt; This is a blockquote.
+> This is a blockquote.
 
 `inline code`
 
@@ -36,7 +36,6 @@ void main() {
 	printf("Hello World");
 }
 ```
-
 			</MarkdownView>
 		</ScrollView>
 	</vbox>
