@@ -584,3 +584,53 @@ UTEST( UIRichText, RichTextTest ) {
 		runTest();
 	}
 }
+
+UTEST( UIRichText, UIAnchorTest ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+	    <RichText id="rt" font-size="24dp" color="#FF0000" layout_width="300dp" layout_height="wrap_content">Default size <a id="anchor1" href="https://example.com" color="#00FF00">Link text</a> and <a id="anchor2" href="https://example.org">Another link</a></RichText>
+    )xml";
+
+	sceneNode->loadLayoutFromString( xml );
+
+	UI::UIRichText* rt = sceneNode->find<UI::UIRichText>( "rt" );
+	ASSERT_TRUE( rt != nullptr );
+
+	// force layout
+	sceneNode->update( Time::Zero );
+
+	UI::UIAnchorSpan* anchor1 = sceneNode->find<UI::UIAnchorSpan>( "anchor1" );
+	ASSERT_TRUE( anchor1 != nullptr );
+	EXPECT_STRINGEQ( anchor1->getHref(), "https://example.com" );
+	EXPECT_TRUE( anchor1->getHitBoxes().size() >= 1 );
+
+	UI::UIAnchorSpan* anchor2 = sceneNode->find<UI::UIAnchorSpan>( "anchor2" );
+	ASSERT_TRUE( anchor2 != nullptr );
+	EXPECT_STRINGEQ( anchor2->getHref(), "https://example.org" );
+	EXPECT_TRUE( anchor2->getHitBoxes().size() >= 1 );
+
+	// Test that overFind correctly returns the anchor
+	if ( !anchor1->getHitBoxes().empty() ) {
+		Vector2f hitPos = anchor1->convertToWorldSpace(
+			{ anchor1->getHitBoxes()[0].Left + 1, anchor1->getHitBoxes()[0].Top + 1 } );
+		Node* hitNode = rt->overFind( hitPos );
+		EXPECT_EQ( hitNode, anchor1 );
+	}
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}

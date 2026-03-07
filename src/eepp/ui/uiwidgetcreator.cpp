@@ -129,7 +129,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["tv"] = UITextView::New;
 
 		// HTML elements
-		registeredWidget["a"] = UIAnchor::NewA;
+		registeredWidget["a"] = UIAnchorSpan::New;
 		registeredWidget["span"] = UITextSpan::New;
 		registeredWidget["em"] = UITextSpan::NewEmphasis;
 		registeredWidget["b"] = UITextSpan::NewBold;

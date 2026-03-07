@@ -115,10 +115,19 @@ class EE_API UITextSpan : public UIWidget {
 	bool hasFontShadowOffset() const;
 	bool hasFontBackgroundColor() const;
 
+	std::vector<Rectf>& getHitBoxes();
+
+	const std::vector<Rectf>& getHitBoxes() const;
+
+	void setHitBoxes( std::vector<Rectf>&& hitBoxes );
+
+	virtual Node* overFind( const Vector2f& point );
+
   protected:
 	Uint32 mStyleState{ StyleStateNone };
 	String mText;
 	UIFontStyleConfig mFontStyleConfig;
+	std::vector<Rectf> mHitBoxes;
 
 	explicit UITextSpan( const std::string& tag = "span" );
 
@@ -133,6 +142,29 @@ class EE_API UITextSpan : public UIWidget {
 	virtual void onChildCountChange( Node* child, const bool& removed );
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
+};
+
+class EE_API UIAnchorSpan : public UITextSpan {
+  public:
+	static UIAnchorSpan* New();
+
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
+										   const Uint32& propertyIndex = 0 ) const;
+
+	virtual std::vector<PropertyId> getPropertiesImplemented() const;
+
+	void setHref( const std::string& href );
+
+	const std::string& getHref() const;
+
+  protected:
+	UIAnchorSpan( const std::string& tag = "a" );
+
+	std::string mHref;
+
+	virtual Uint32 onKeyDown( const KeyEvent& event );
 };
 
 }} // namespace EE::UI

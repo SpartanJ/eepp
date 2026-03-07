@@ -492,7 +492,6 @@ void UIRichText::rebuildRichText() {
 
 void UIRichText::positionChildren() {
 	const auto& lines = mRichText.getLines();
-
 	Node* child = mChild;
 
 	size_t currentLine = 0;
@@ -514,42 +513,80 @@ void UIRichText::positionChildren() {
 		return nullptr;
 	};
 
+	Int64 curCharIdx = 0;
+
 	auto processWidget = [&]( UIWidget* widget, auto& processWidgetRef ) -> Rectf {
-		Rectf bounds( std::numeric_limits<Float>::max(), std::numeric_limits<Float>::max(),
-					  std::numeric_limits<Float>::min(), std::numeric_limits<Float>::min() );
+		constexpr Float maxF = std::numeric_limits<Float>::max();
+		constexpr Float lowF = std::numeric_limits<Float>::lowest();
+		Rectf bounds( maxF, maxF, lowF, lowF );
+
+		Vector2f offset( 0, 0 );
+		Node* p = widget->getParent();
+		while ( p && p != this ) {
+			offset += p->isWidget() ? p->asType<UIWidget>()->getPixelsPosition() : p->getPosition();
+			p = p->getParent();
+		}
+
 		if ( widget->isType( UI_TYPE_TEXTSPAN ) ) {
+			UITextSpan* textSpan = static_cast<UITextSpan*>( widget );
+			Int64 startChar = curCharIdx;
+			Int64 endChar = curCharIdx;
+			if ( !textSpan->getText().empty() ) {
+				endChar += textSpan->getText().length();
+				curCharIdx = endChar;
+			}
+
+			std::vector<Rectf>& hitBoxes = textSpan->getHitBoxes();
+			hitBoxes.clear();
+
+			if ( startChar < endChar ) {
+				for ( const auto& line : lines ) {
+					bool passedText = false;
+					for ( const auto& rspan : line.spans ) {
+						if ( rspan.startCharIndex >= startChar && rspan.endCharIndex <= endChar ) {
+							Rectf hb( mPaddingPx.Left + rspan.position.x,
+									  mPaddingPx.Top + line.y + rspan.position.y,
+									  mPaddingPx.Left + rspan.position.x + rspan.size.getWidth(),
+									  mPaddingPx.Top + line.y + rspan.position.y +
+										  rspan.size.getHeight() );
+
+							hitBoxes.push_back( hb );
+							bounds.expand( hb );
+						} else if ( rspan.startCharIndex > endChar ) {
+							passedText = true;
+							break;
+						}
+					}
+					if ( passedText )
+						break;
+				}
+			}
+
 			Node* spanChild = widget->getFirstChild();
 			while ( spanChild != NULL ) {
 				if ( spanChild->isWidget() ) {
-					Rectf childBounds =
-						processWidgetRef( static_cast<UIWidget*>( spanChild ), processWidgetRef );
-					if ( childBounds.Left < bounds.Left )
-						bounds.Left = childBounds.Left;
-					if ( childBounds.Top < bounds.Top )
-						bounds.Top = childBounds.Top;
-					if ( childBounds.Right > bounds.Right )
-						bounds.Right = childBounds.Right;
-					if ( childBounds.Bottom > bounds.Bottom )
-						bounds.Bottom = childBounds.Bottom;
+					bounds.expand(
+						processWidgetRef( static_cast<UIWidget*>( spanChild ), processWidgetRef ) );
 				}
 				spanChild = spanChild->getNextNode();
 			}
 
 			// Ensure the parent span at least has enough size to cover its children
 			if ( bounds.Left <= bounds.Right && bounds.Top <= bounds.Bottom ) {
-				Vector2f offset( 0, 0 );
-				Node* p = widget->getParent();
-				while ( p && p != this ) {
-					offset += p->isWidget() ? p->asType<UIWidget>()->getPixelsPosition()
-											: p->getPosition();
-					p = p->getParent();
-				}
-				widget->setPixelsPosition( Vector2f( bounds.Left, bounds.Top ) - offset );
-				widget->setPixelsSize(
-					Sizef( bounds.Right - bounds.Left, bounds.Bottom - bounds.Top ) );
+				Vector2f boundsPos = bounds.getPosition();
+
+				widget->setPixelsPosition( boundsPos - offset );
+				widget->setPixelsSize( bounds.getSize() );
+
+				for ( auto& hb : hitBoxes )
+					hb.move( -boundsPos );
+
+			} else {
+				hitBoxes.clear();
 			}
 
 		} else {
+			curCharIdx += 1;
 			const auto* span = getNextCustomSpan();
 			if ( span ) {
 				size_t lineIdx = currentSpan > 0 ? currentLine : currentLine - 1;
@@ -558,18 +595,9 @@ void UIRichText::positionChildren() {
 				Vector2f targetPos( mPaddingPx.Left + span->position.x,
 									mPaddingPx.Top + lineY + span->position.y );
 
-				Vector2f offset( 0, 0 );
-				Node* p = widget->getParent();
-				while ( p && p != this ) {
-					offset += p->isWidget() ? p->asType<UIWidget>()->getPixelsPosition()
-											: p->getPosition();
-					p = p->getParent();
-				}
-
 				widget->setPixelsPosition( targetPos - offset );
-				bounds = Rectf( targetPos.x, targetPos.y,
-								targetPos.x + widget->getPixelsSize().getWidth(),
-								targetPos.y + widget->getPixelsSize().getHeight() );
+
+				bounds = Rectf( targetPos, widget->getPixelsSize() );
 			}
 		}
 		return bounds;

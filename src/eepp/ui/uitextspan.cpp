@@ -5,6 +5,7 @@
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
+#include <eepp/window/engine.hpp>
 
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -481,6 +482,132 @@ bool UITextSpan::hasFontShadowOffset() const {
 
 bool UITextSpan::hasFontBackgroundColor() const {
 	return 0 != ( mStyleState & StyleStateFontBackgroundColor );
+}
+
+std::vector<Rectf>& UITextSpan::getHitBoxes() {
+	return mHitBoxes;
+}
+
+const std::vector<Rectf>& UITextSpan::getHitBoxes() const {
+	return mHitBoxes;
+}
+
+void UITextSpan::setHitBoxes( std::vector<Rectf>&& hitBoxes ) {
+	mHitBoxes = std::move( hitBoxes );
+}
+
+Node* UITextSpan::overFind( const Vector2f& point ) {
+	Node* pOver = NULL;
+	if ( ( mNodeFlags & NODE_FLAG_OVER_FIND_ALLOWED ) && mEnabled && mVisible ) {
+		updateWorldPolygon();
+		if ( mWorldBounds.contains( point ) && mPoly.pointInside( point ) ) {
+			bool hit = false;
+			if ( !mHitBoxes.empty() ) {
+				Vector2f localPoint = convertToNodeSpace( point );
+				for ( const auto& rect : mHitBoxes ) {
+					if ( rect.contains( localPoint ) ) {
+						hit = true;
+						break;
+					}
+				}
+			} else {
+				hit = true;
+			}
+
+			if ( hit ) {
+				writeNodeFlag( NODE_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
+				mSceneNode->addMouseOverNode( this );
+
+				Node* child = mChildLast;
+
+				while ( NULL != child ) {
+					Node* childOver = child->overFind( point );
+
+					if ( NULL != childOver ) {
+						pOver = childOver;
+						break;
+					}
+
+					child = child->getPrevNode();
+				}
+
+				if ( NULL == pOver )
+					pOver = this;
+			}
+		}
+	}
+
+	return pOver;
+}
+
+UIAnchorSpan* UIAnchorSpan::New() {
+	return eeNew( UIAnchorSpan, () );
+}
+
+UIAnchorSpan::UIAnchorSpan( const std::string& tag ) : UITextSpan( tag ) {
+	onClick(
+		[this]( const MouseEvent* ) {
+			if ( !mHref.empty() )
+				Engine::instance()->openURI( mHref );
+		},
+		EE_BUTTON_LEFT );
+}
+
+bool UIAnchorSpan::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Href:
+			setHref( attribute.asString() );
+			break;
+		default:
+			UITextSpan::applyProperty( attribute );
+			break;
+	}
+
+	return true;
+}
+
+void UIAnchorSpan::setHref( const std::string& href ) {
+	if ( href != mHref ) {
+		mHref = href;
+	}
+}
+
+const std::string& UIAnchorSpan::getHref() const {
+	return mHref;
+}
+
+Uint32 UIAnchorSpan::onKeyDown( const KeyEvent& event ) {
+	if ( event.getKeyCode() == KEY_KP_ENTER || event.getKeyCode() == KEY_RETURN ) {
+		if ( !mHref.empty() ) {
+			Engine::instance()->openURI( mHref );
+			return 1;
+		}
+	}
+
+	return UIWidget::onKeyDown( event );
+}
+
+std::string UIAnchorSpan::getPropertyString( const PropertyDefinition* propertyDef,
+											 const Uint32& propertyIndex ) const {
+	if ( NULL == propertyDef )
+		return "";
+
+	switch ( propertyDef->getPropertyId() ) {
+		case PropertyId::Href:
+			return mHref;
+		default:
+			return UITextSpan::getPropertyString( propertyDef, propertyIndex );
+	}
+}
+
+std::vector<PropertyId> UIAnchorSpan::getPropertiesImplemented() const {
+	auto props = UITextSpan::getPropertiesImplemented();
+	auto local = { PropertyId::Href };
+	props.insert( props.end(), local.begin(), local.end() );
+	return props;
 }
 
 }} // namespace EE::UI
