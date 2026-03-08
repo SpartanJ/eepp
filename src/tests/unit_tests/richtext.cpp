@@ -452,6 +452,7 @@ UTEST( UIRichText, NestedWidgetsIntegration ) {
 
 	// force layout
 	sceneNode->update( Time::Zero );
+	sceneNode->draw();
 
 	auto graphicsRt = rt->getRichText();
 	const auto& blocks = graphicsRt.getBlocks();
@@ -475,10 +476,10 @@ UTEST( UIRichText, NestedWidgetsIntegration ) {
 	auto text0 = std::get<std::shared_ptr<Graphics::Text>>( blocks[0] );
 	auto text1 = std::get<std::shared_ptr<Graphics::Text>>( blocks[1] );
 
-	Vector2f pos = placeholder->getPixelsPosition();
+	Vector2f pos = placeholder->getScreenPos();
 	Float expectedX = text0->getTextWidth() + text1->getTextWidth();
 
-	EXPECT_NEAR( pos.x, expectedX, 2.0f );
+	EXPECT_NEAR( expectedX, pos.x, 2.0f );
 
 	// Determine if strong got its bounds correctly
 	EXPECT_GT( strongNode->getPixelsSize().getWidth(), 0 );
