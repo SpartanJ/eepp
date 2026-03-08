@@ -9,6 +9,7 @@
 #include <eepp/ui/uiwidgetcreator.hpp>
 
 #define PUGIXML_HEADER_ONLY
+#include <eepp/ui/tools/htmlformatter.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -344,52 +345,6 @@ void UIRichText::loadFromXmlNode( const pugi::xml_node& node ) {
 
 	UIWidget::loadFromXmlNode( node );
 
-	auto collapseXmlWhitespace = []( const String& text, const pugi::xml_node& node ) -> String {
-		auto isInlineNode = []( const pugi::xml_node& node ) {
-			if ( !node )
-				return false;
-			if ( node.type() == pugi::node_pcdata )
-				return true;
-			if ( node.type() != pugi::node_element )
-				return false;
-			std::string_view name( node.name() );
-			return String::iequals( name, "a" ) || String::iequals( name, "span" ) ||
-				   String::iequals( name, "textspan" ) || String::iequals( name, "b" ) ||
-				   String::iequals( name, "i" ) || String::iequals( name, "strong" ) ||
-				   String::iequals( name, "em" ) || String::iequals( name, "s" ) ||
-				   String::iequals( name, "u" ) || String::iequals( name, "br" ) ||
-				   String::iequals( name, "code" ) || String::iequals( name, "img" ) ||
-				   String::iequals( name, "mark" );
-		};
-
-		String res;
-		res.reserve( text.size() );
-		bool inSpace = false;
-		for ( size_t i = 0; i < text.size(); ++i ) {
-			if ( text[i] == ' ' || text[i] == '\t' || text[i] == '\n' || text[i] == '\r' ||
-				 text[i] == '\v' ) {
-				if ( !inSpace ) {
-					res += ' ';
-					inSpace = true;
-				}
-			} else {
-				res += text[i];
-				inSpace = false;
-			}
-		}
-
-		bool prevInline = isInlineNode( node.previous_sibling() );
-		bool nextInline = isInlineNode( node.next_sibling() );
-
-		if ( !prevInline && !res.empty() && res[0] == ' ' )
-			res = res.substr( 1 );
-
-		if ( !nextInline && !res.empty() && res.back() == ' ' )
-			res = res.substr( 0, res.size() - 1 );
-
-		return res;
-	};
-
 	for ( pugi::xml_node child = node.first_child(); child; child = child.next_sibling() ) {
 		if ( child.type() == pugi::node_element ) {
 			if ( String::iequals( child.name(), "span" ) ||
@@ -432,7 +387,7 @@ void UIRichText::loadFromXmlNode( const pugi::xml_node& node ) {
 				}
 			}
 		} else if ( child.type() == pugi::node_pcdata ) {
-			String text = collapseXmlWhitespace( child.value(), child );
+			String text = Tools::HTMLFormatter::collapseXmlWhitespace( child.value(), child );
 			if ( !text.empty() ) {
 				UITextSpan* span = UITextSpan::New();
 				span->setParent( this );

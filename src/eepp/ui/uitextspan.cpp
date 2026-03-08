@@ -1,6 +1,7 @@
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
@@ -359,7 +360,7 @@ void UITextSpan::loadFromXmlNode( const pugi::xml_node& node ) {
 					widget->loadFromXmlNode( child );
 				}
 			} else if ( child.type() == pugi::node_pcdata ) {
-				String text = getTranslatorString( child.value() );
+				String text = Tools::HTMLFormatter::collapseXmlWhitespace( child.value(), child );
 				if ( !text.empty() ) {
 					UITextSpan* span = UITextSpan::New();
 					span->setParent( this );
@@ -371,7 +372,7 @@ void UITextSpan::loadFromXmlNode( const pugi::xml_node& node ) {
 	} else {
 		for ( pugi::xml_node child = node.first_child(); child; child = child.next_sibling() ) {
 			if ( child.type() == pugi::node_pcdata ) {
-				mText += getTranslatorString( child.value() );
+				mText += Tools::HTMLFormatter::collapseXmlWhitespace( child.value(), child );
 			}
 		}
 	}

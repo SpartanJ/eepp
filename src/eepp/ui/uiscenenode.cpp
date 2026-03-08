@@ -30,6 +30,9 @@ using namespace EE::Network;
 
 namespace EE { namespace UI {
 
+static constexpr std::string_view VOIDTAG_REGEX =
+	"(<(?:img|br|hr|input|meta|link)\\b[^>]*?)(?<!/)>";
+
 UISceneNode* UISceneNode::New( EE::Window::Window* window ) {
 	return eeNew( UISceneNode, ( window ) );
 }
@@ -300,8 +303,15 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
 			uiwidget->onWidgetCreated();
 		} else if ( String::toLower( std::string( widget.name() ) ) == "style" ) {
 			CSS::StyleSheetParser parser;
+			std::string styleContent;
+			for ( pugi::xml_node child = widget.first_child(); child;
+				  child = child.next_sibling() ) {
+				if ( child.type() == pugi::node_pcdata || child.type() == pugi::node_cdata ) {
+					styleContent += child.value();
+				}
+			}
 
-			if ( parser.loadFromString( std::string_view{ widget.text().as_string() } ) ) {
+			if ( parser.loadFromString( std::string_view{ styleContent } ) ) {
 				parser.getStyleSheet().setMarker( marker );
 				combineStyleSheet( parser.getStyleSheet(), false );
 			}
@@ -455,7 +465,7 @@ UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* 
 
 UIWidget* UISceneNode::loadLayoutFromString( const char* layoutString, Node* parent,
 											 const Uint32& marker ) {
-	RegEx voidTagsRegex( "(<(?:img|br|hr|input|meta|link)\\b[^>]*?)(?<!/)>" );
+	RegEx voidTagsRegex( VOIDTAG_REGEX );
 
 	pugi::xml_document doc;
 	pugi::xml_parse_result result;
@@ -486,7 +496,7 @@ UIWidget* UISceneNode::loadLayoutFromString( const std::string& layoutString, No
 
 UIWidget* UISceneNode::loadLayoutFromMemory( const void* buffer, Int32 bufferSize, Node* parent,
 											 const Uint32& marker ) {
-	RegEx voidTagsRegex( "(<(?:img|br|hr|input|meta|link)\\b[^>]*?)(?<!/)>" );
+	RegEx voidTagsRegex( VOIDTAG_REGEX );
 
 	pugi::xml_document doc;
 	pugi::xml_parse_result result;
@@ -520,7 +530,7 @@ UIWidget* UISceneNode::loadLayoutFromStream( IOStream& stream, Node* parent,
 	TScopedBuffer<char> scopedBuffer( bufferSize );
 	stream.read( scopedBuffer.get(), scopedBuffer.length() );
 
-	RegEx voidTagsRegex( "(<(?:img|br|hr|input|meta|link)\\b[^>]*?)(?<!/)>" );
+	RegEx voidTagsRegex( VOIDTAG_REGEX );
 
 	pugi::xml_document doc;
 	pugi::xml_parse_result result;

@@ -4,10 +4,6 @@
 EE_MAIN_FUNC int main( int, char** ) {
 	UIApplication app( { 1280, 720, "eepp - UIMarkdownView Example" } );
 
-	Log::instance()->setLogLevelThreshold( LogLevel::Debug );
-	Log::instance()->setLogToStdOut( true );
-	Log::instance()->setLiveWrite( true );
-
 	app.getUI()->loadLayoutFromString( R"xml(
 	<ScrollView layout_width="match_parent" layout_height="match_parent">
 		<MarkdownView id="markdown_view" layout_width="match_parent" layout_height="wrap_content" padding="16dp">
