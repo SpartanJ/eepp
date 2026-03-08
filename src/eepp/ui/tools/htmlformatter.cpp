@@ -1,6 +1,9 @@
 #include <eepp/ui/tools/htmlformatter.hpp>
-#include <pugixml/pugixml.hpp>
+
 #include <string_view>
+
+#define PUGIXML_HEADER_ONLY
+#include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 
