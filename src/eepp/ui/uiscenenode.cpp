@@ -455,8 +455,7 @@ UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* 
 
 UIWidget* UISceneNode::loadLayoutFromString( const char* layoutString, Node* parent,
 											 const Uint32& marker ) {
-	thread_local static EE::System::RegEx voidTagsRegex(
-		"(<(?:img|br|hr|input|meta|link)\\b[^>]*?)(?<!/)>" );
+	RegEx voidTagsRegex( "(<(?:img|br|hr|input|meta|link)\\b[^>]*?)(?<!/)>" );
 
 	pugi::xml_document doc;
 	pugi::xml_parse_result result;
@@ -487,8 +486,7 @@ UIWidget* UISceneNode::loadLayoutFromString( const std::string& layoutString, No
 
 UIWidget* UISceneNode::loadLayoutFromMemory( const void* buffer, Int32 bufferSize, Node* parent,
 											 const Uint32& marker ) {
-	thread_local static EE::System::RegEx voidTagsRegex(
-		"(<(?:img|br|hr|input|meta|link)\\b[^>]*?)(?<!/)>" );
+	RegEx voidTagsRegex( "(<(?:img|br|hr|input|meta|link)\\b[^>]*?)(?<!/)>" );
 
 	pugi::xml_document doc;
 	pugi::xml_parse_result result;
@@ -522,8 +520,7 @@ UIWidget* UISceneNode::loadLayoutFromStream( IOStream& stream, Node* parent,
 	TScopedBuffer<char> scopedBuffer( bufferSize );
 	stream.read( scopedBuffer.get(), scopedBuffer.length() );
 
-	thread_local static EE::System::RegEx voidTagsRegex(
-		"(<(?:img|br|hr|input|meta|link)\\b[^>]*?)(?<!/)>" );
+	RegEx voidTagsRegex( "(<(?:img|br|hr|input|meta|link)\\b[^>]*?)(?<!/)>" );
 
 	pugi::xml_document doc;
 	pugi::xml_parse_result result;
