@@ -151,15 +151,19 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["h5"] = UIRichText::NewH5;
 		registeredWidget["h6"] = UIRichText::NewH6;
 		registeredWidget["br"] = UIRichText::NewBr;
-		registeredWidget["ul"] = UILinearLayout::NewVerticalWidthMatchParent;
-		registeredWidget["ol"] = UILinearLayout::NewVerticalWidthMatchParent;
+		registeredWidget["ul"] = [] { return UILinearLayout::NewVerticalWidthMatchParent( "ul" ); };
+		registeredWidget["ol"] = [] { return UILinearLayout::NewVerticalWidthMatchParent( "ol" ); };
 		registeredWidget["li"] = UIRichText::NewListItem;
 		registeredWidget["pre"] = UIRichText::NewPre;
 		registeredWidget["img"] = [] { return UIImage::NewWithTag( "img" ); };
 		registeredWidget["input"] = UITextInput::New;
 
-		registeredWidget["html"] = UILinearLayout::NewVerticalWidthMatchParent;
-		registeredWidget["body"] = UILinearLayout::NewVerticalWidthMatchParent;
+		registeredWidget["html"] = [] {
+			return UILinearLayout::NewVerticalWidthMatchParent( "html" );
+		};
+		registeredWidget["body"] = [] {
+			return UILinearLayout::NewVerticalWidthMatchParent( "body" );
+		};
 
 		sBaseListCreated = true;
 	}

@@ -9,6 +9,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/functionstring.hpp>
 #include <eepp/system/packmanager.hpp>
+#include <eepp/system/regex.hpp>
 #include <eepp/system/virtualfilesystem.hpp>
 #include <eepp/ui/css/mediaquery.hpp>
 #include <eepp/ui/css/stylesheetparser.hpp>
@@ -430,7 +431,8 @@ UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* 
 										   const Uint32& marker ) {
 	if ( FileSystem::fileExists( layoutPath ) ) {
 		pugi::xml_document doc;
-		pugi::xml_parse_result result = doc.load_file( layoutPath.c_str() );
+		pugi::xml_parse_result result =
+			doc.load_file( layoutPath.c_str(), pugi::parse_default | pugi::parse_ws_pcdata );
 
 		if ( result ) {
 			return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this, marker );
@@ -453,8 +455,19 @@ UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* 
 
 UIWidget* UISceneNode::loadLayoutFromString( const char* layoutString, Node* parent,
 											 const Uint32& marker ) {
+	thread_local static EE::System::RegEx voidTagsRegex(
+		"(<(?:img|br|hr|input|meta|link)\\b[^>]*?)(?<!/)>" );
+
 	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_string( layoutString );
+	pugi::xml_parse_result result;
+
+	if ( voidTagsRegex.matches( layoutString ) ) {
+		std::string fixedLayout = voidTagsRegex.gsub( layoutString, "%1 />" );
+		result =
+			doc.load_string( fixedLayout.c_str(), pugi::parse_default | pugi::parse_ws_pcdata );
+	} else {
+		result = doc.load_string( layoutString, pugi::parse_default | pugi::parse_ws_pcdata );
+	}
 
 	if ( result ) {
 		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this, marker );
@@ -474,8 +487,20 @@ UIWidget* UISceneNode::loadLayoutFromString( const std::string& layoutString, No
 
 UIWidget* UISceneNode::loadLayoutFromMemory( const void* buffer, Int32 bufferSize, Node* parent,
 											 const Uint32& marker ) {
+	thread_local static EE::System::RegEx voidTagsRegex(
+		"(<(?:img|br|hr|input|meta|link)\\b[^>]*?)(?<!/)>" );
+
 	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_buffer( buffer, bufferSize );
+	pugi::xml_parse_result result;
+
+	if ( voidTagsRegex.matches( static_cast<const char*>( buffer ), 0, nullptr, bufferSize ) ) {
+		std::string strBuffer( static_cast<const char*>( buffer ), bufferSize );
+		std::string fixedLayout = voidTagsRegex.gsub( strBuffer, "%1 />" );
+		result = doc.load_buffer( fixedLayout.c_str(), fixedLayout.size(),
+								  pugi::parse_default | pugi::parse_ws_pcdata );
+	} else {
+		result = doc.load_buffer( buffer, bufferSize, pugi::parse_default | pugi::parse_ws_pcdata );
+	}
 
 	if ( result ) {
 		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this, marker );
@@ -497,12 +522,26 @@ UIWidget* UISceneNode::loadLayoutFromStream( IOStream& stream, Node* parent,
 	TScopedBuffer<char> scopedBuffer( bufferSize );
 	stream.read( scopedBuffer.get(), scopedBuffer.length() );
 
+	thread_local static EE::System::RegEx voidTagsRegex(
+		"(<(?:img|br|hr|input|meta|link)\\b[^>]*?)(?<!/)>" );
+
 	pugi::xml_document doc;
-	pugi::xml_parse_result result = doc.load_buffer( scopedBuffer.get(), scopedBuffer.length() );
+	pugi::xml_parse_result result;
+
+	if ( voidTagsRegex.matches( scopedBuffer.get(), 0, nullptr, scopedBuffer.length() ) ) {
+		std::string strBuffer( scopedBuffer.get(), scopedBuffer.length() );
+		std::string fixedLayout = voidTagsRegex.gsub( strBuffer, "%1 />" );
+		result = doc.load_buffer( fixedLayout.c_str(), fixedLayout.size(),
+								  pugi::parse_default | pugi::parse_ws_pcdata );
+	} else {
+		result = doc.load_buffer( scopedBuffer.get(), scopedBuffer.length(),
+								  pugi::parse_default | pugi::parse_ws_pcdata );
+	}
 
 	if ( result ) {
 		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this, marker );
 	} else {
+		// Preserves the unique stream error log
 		Log::error( "Couldn't load UI Layout from stream" );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );

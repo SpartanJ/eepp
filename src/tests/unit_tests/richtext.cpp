@@ -635,3 +635,106 @@ UTEST( UIRichText, UIAnchorTest ) {
 	eeDelete( sceneNode );
 	Engine::destroySingleton();
 }
+
+UTEST( UIRichText, WhitespaceCollapseTest ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+	    <RichText id="rt">
+           <span>Hello</span>
+           <ul>
+               <li>Item</li>
+           </ul>
+
+        </RichText>
+    )xml";
+
+	sceneNode->loadLayoutFromString( xml );
+
+	UI::UIRichText* rt = sceneNode->find<UI::UIRichText>( "rt" );
+	ASSERT_TRUE( rt != nullptr );
+
+	// force layout
+	sceneNode->update( Time::Zero );
+
+	int spanCount = 0;
+	Node* child = rt->getFirstChild();
+	while ( child ) {
+		if ( child->isWidget() && child->isType( UI_TYPE_TEXTSPAN ) ) {
+			UI::UITextSpan* span = static_cast<UI::UITextSpan*>( child );
+			if ( !span->getText().empty() ) {
+				spanCount++;
+			}
+		}
+		child = child->getNextNode();
+	}
+
+	// Only 1 text span ("Hello") should be generated,
+	// the whitespace between <span> and <ul>, and after <ul>
+	// should be correctly collapsed into nothing since they aren't adjacent to inline elements on both sides.
+	EXPECT_EQ( spanCount, 1 );
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
+UTEST( UIRichText, WhitespaceCollapseCodeTest ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+	    <vbox lw="mp" lh="mp">
+		<RichText id="rt">Hello <a href="#">World</a>. <code>HI in monospace!</code></RichText>
+		</vbox>
+	)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+
+	UI::UIRichText* rt = sceneNode->find<UI::UIRichText>( "rt" );
+	ASSERT_TRUE( rt != nullptr );
+
+	// force layout
+	sceneNode->update( Time::Zero );
+
+	bool foundDotSpace = false;
+	Node* child = rt->getFirstChild();
+	while ( child ) {
+		if ( child->isWidget() && child->isType( UI_TYPE_TEXTSPAN ) ) {
+			UI::UITextSpan* span = static_cast<UI::UITextSpan*>( child );
+			if ( span->getText() == ". " ) {
+				foundDotSpace = true;
+			}
+		}
+		child = child->getNextNode();
+	}
+
+	EXPECT_TRUE( foundDotSpace );
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}

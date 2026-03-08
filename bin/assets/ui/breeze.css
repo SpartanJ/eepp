@@ -111,10 +111,14 @@ p, ol, ul, pre {
   margin: 1em 0;
 }
 
+ol, ul {
+  margin-left: 2em;
+}
+
 li {
   margin: 0.67em 0;
   padding-left: 2em;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='currentColor'/></svg>");
+  background-image: url("data:image/svg,<svg viewBox='0 0 24 24' width='12' height='12' fill='#ffffff'><path d='M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z'></path></svg>");
   background-tint: var(--font);
   background-position: 0.6em 0.5em;
   background-size: 0.8em 0.8em;

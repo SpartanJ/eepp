@@ -21,8 +21,8 @@ UILinearLayout* UILinearLayout::NewHorizontal() {
 	return ( eeNew( UILinearLayout, () ) )->setOrientation( UIOrientation::Horizontal );
 }
 
-UILinearLayout* UILinearLayout::NewVerticalWidthMatchParent() {
-	return ( eeNew( UILinearLayout, () ) )
+UILinearLayout* UILinearLayout::NewVerticalWidthMatchParent( const std::string& tag ) {
+	return ( eeNew( UILinearLayout, ( tag, UIOrientation::Vertical ) ) )
 		->setLayoutWidthPolicy( SizePolicy::MatchParent )
 		->asType<UILinearLayout>();
 }

@@ -1257,6 +1257,15 @@ class EE_API UIWidget : public UINode {
 	 */
 	String i18n( const std::string& str, const String& defaultValue );
 
+	/**
+	 * @brief Handles widget creation events.
+	 *
+	 * Called after the widget is created and initialized. This can be overridden
+	 * to implement custom initialization behavior.
+	 * WARNING: Do not manually call.
+	 */
+	virtual void onWidgetCreated();
+
   protected:
 	friend class UIManager;
 	friend class UISceneNode;
@@ -1417,14 +1426,6 @@ class EE_API UIWidget : public UINode {
 	 * be overridden to implement custom auto-sizing behavior.
 	 */
 	virtual void onAutoSize();
-
-	/**
-	 * @brief Handles widget creation events.
-	 *
-	 * Called after the widget is created and initialized. This can be overridden
-	 * to implement custom initialization behavior.
-	 */
-	virtual void onWidgetCreated();
 
 	/**
 	 * @brief Handles padding change events.

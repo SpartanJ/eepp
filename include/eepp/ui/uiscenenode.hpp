@@ -671,6 +671,18 @@ class EE_API UISceneNode : public SceneNode {
 	 */
 	CSS::MediaFeatures getMediaFeatures() const;
 
+	/**
+	 * @brief Loads UI nodes from XML.
+	 *
+	 * Core method that parses XML and creates widget hierarchy.
+	 *
+	 * @param node The XML node to parse.
+	 * @param parent The parent to attach widgets to.
+	 * @param marker Marker for style association.
+	 * @return Vector of root widgets created.
+	 */
+	std::vector<UIWidget*> loadNode( pugi::xml_node node, Node* parent, const Uint32& marker = 0 );
+
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
@@ -884,18 +896,6 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param node The node to reset tooltips for.
 	 */
 	void resetTooltips( Node* node );
-
-	/**
-	 * @brief Loads UI nodes from XML.
-	 *
-	 * Core method that parses XML and creates widget hierarchy.
-	 *
-	 * @param node The XML node to parse.
-	 * @param parent The parent to attach widgets to.
-	 * @param marker Marker for style association.
-	 * @return Vector of root widgets created.
-	 */
-	std::vector<UIWidget*> loadNode( pugi::xml_node node, Node* parent, const Uint32& marker );
 
 	/**
 	 * @brief Applies a theme to a node and its subtree.

@@ -14,6 +14,7 @@ std::string Markdown::toXHTML( std::string_view markdown, Dialect dialect, int f
 		( dialect == Dialect::CommonMark ? MD_DIALECT_COMMONMARK : MD_DIALECT_GITHUB ) | flags;
 	md_html( markdown.data(), markdown.size(), process_output, &out, dialectFlag,
 			 MD_HTML_FLAG_XHTML );
+
 	return out;
 }
 
