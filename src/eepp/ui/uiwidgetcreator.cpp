@@ -113,9 +113,9 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["textspan"] = UITextSpan::New;
 		registeredWidget["markdownview"] = UIMarkdownView::New;
 
+		// Aliases
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;
-		registeredWidget["input"] = UITextInput::New;
 		registeredWidget["inputpassword"] = UITextInputPassword::New;
 		registeredWidget["viewpagerhorizontal"] = UIViewPager::NewHorizontal;
 		registeredWidget["viewpagervertical"] = UIViewPager::NewHorizontal;
@@ -141,20 +141,25 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["del"] = UITextSpan::NewStrikethrough;
 		registeredWidget["code"] = UITextSpan::NewCode;
 		registeredWidget["mark"] = UITextSpan::NewMark;
-		registeredWidget["div"] = UIRichText::New;
+		registeredWidget["div"] = UIRichText::NewDiv;
 		registeredWidget["p"] = UIRichText::NewParagraph;
-		registeredWidget["blockquote"] = [] { return UIRichText::NewWithTag( "blockquote" ); };
+		registeredWidget["blockquote"] = UIRichText::NewBlockquote;
 		registeredWidget["h1"] = UIRichText::NewH1;
 		registeredWidget["h2"] = UIRichText::NewH2;
 		registeredWidget["h3"] = UIRichText::NewH3;
 		registeredWidget["h4"] = UIRichText::NewH4;
 		registeredWidget["h5"] = UIRichText::NewH5;
 		registeredWidget["h6"] = UIRichText::NewH6;
+		registeredWidget["br"] = UIRichText::NewBr;
 		registeredWidget["ul"] = UILinearLayout::NewVerticalWidthMatchParent;
 		registeredWidget["ol"] = UILinearLayout::NewVerticalWidthMatchParent;
 		registeredWidget["li"] = UIRichText::NewListItem;
-		registeredWidget["pre"] = [] { return UIRichText::NewWithTag( "pre" ); };
+		registeredWidget["pre"] = UIRichText::NewPre;
 		registeredWidget["img"] = [] { return UIImage::NewWithTag( "img" ); };
+		registeredWidget["input"] = UITextInput::New;
+
+		registeredWidget["html"] = UILinearLayout::NewVerticalWidthMatchParent;
+		registeredWidget["body"] = UILinearLayout::NewVerticalWidthMatchParent;
 
 		sBaseListCreated = true;
 	}

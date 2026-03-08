@@ -28,7 +28,8 @@ bool UIMarkdownView::isType( const Uint32& type ) const {
 
 void UIMarkdownView::loadFromString( std::string_view markdown ) {
 	closeAllChildren();
-	std::string xhtml = Markdown::toXHTML( markdown );
+	auto xhtml = Markdown::toXHTML( markdown );
+	// printf( "%s", xhtml.c_str() );
 	getUISceneNode()->loadLayoutFromString( xhtml, this );
 }
 

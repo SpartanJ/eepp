@@ -2,16 +2,11 @@
 #include <eepp/ui/uimarkdownview.hpp>
 
 EE_MAIN_FUNC int main( int, char** ) {
-	UIApplication app( { 800, 600, "eepp - UIMarkdownView Example" } );
-
-	Log::instance()->setLiveWrite( true );
-	Log::instance()->setLogToStdOut( true );
-
+	UIApplication app( { 1280, 720, "eepp - UIMarkdownView Example" } );
 
 	app.getUI()->loadLayoutFromString( R"xml(
-	<vbox layout_width="match_parent" layout_height="match_parent">
-		<ScrollView lw="mp" lh="mp">
-			<MarkdownView id="markdown_view" layout_width="match_parent" layout_height="wrap_content" padding="16dp">
+	<ScrollView layout_width="match_parent" layout_height="match_parent">
+		<MarkdownView id="markdown_view" layout_width="match_parent" layout_height="wrap_content" padding="16dp">
 # Markdown Header 1
 ## Markdown Header 2
 ### Markdown Header 3
@@ -36,9 +31,8 @@ void main() {
 	printf("Hello World");
 }
 ```
-			</MarkdownView>
-		</ScrollView>
-	</vbox>
+		</MarkdownView>
+	</ScrollView>
 	)xml" );
 
 	auto markdownView = app.getUI()->find<UIMarkdownView>( "markdown_view" );

@@ -544,13 +544,17 @@ UIAnchorSpan* UIAnchorSpan::New() {
 	return eeNew( UIAnchorSpan, () );
 }
 
-UIAnchorSpan::UIAnchorSpan( const std::string& tag ) : UITextSpan( tag ) {
-	onClick(
-		[this]( const MouseEvent* ) {
-			if ( !mHref.empty() )
+UIAnchorSpan::UIAnchorSpan( const std::string& tag ) : UITextSpan( tag ) {}
+
+Uint32 UIAnchorSpan::onMessage( const NodeMessage* Msg ) {
+	switch ( Msg->getMsg() ) {
+		case NodeMessage::MouseClick: {
+			if ( !mHref.empty() && ( Msg->getFlags() & EE_BUTTON_LMASK ) )
 				Engine::instance()->openURI( mHref );
-		},
-		EE_BUTTON_LEFT );
+			return 1;
+		}
+	}
+	return UITextSpan::onMessage( Msg );
 }
 
 bool UIAnchorSpan::applyProperty( const StyleSheetProperty& attribute ) {

@@ -26,7 +26,15 @@ class EE_API UIRichText : public UILayout {
 
 	static UIRichText* NewH6() { return UIRichText::NewWithTag( "h6" ); };
 
+	static UIRichText* NewBr() { return UIRichText::NewWithTag( "br" ); };
+
+	static UIRichText* NewDiv() { return UIRichText::NewWithTag( "div" ); };
+
+	static UIRichText* NewPre() { return UIRichText::NewWithTag( "pre" ); };
+
 	static UIRichText* NewListItem() { return UIRichText::NewWithTag( "li" ); };
+
+	static UIRichText* NewBlockquote() { return UIRichText::NewWithTag( "blockquote" ); };
 
 	explicit UIRichText( const std::string& tag = "richtext" );
 
@@ -112,10 +120,11 @@ class EE_API UIRichText : public UILayout {
 	Int64 mSelCurInit{ 0 };
 	Int64 mSelCurEnd{ 0 };
 	bool mSelecting{ false };
+	size_t mResizedCount{ 0 };
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
-	virtual Uint32 onMouseClick( const Vector2i& position, const Uint32& flags );
+	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
 	virtual Uint32 onMouseDoubleClick( const Vector2i& position, const Uint32& flags );
 	virtual Uint32 onFocusLoss();
 

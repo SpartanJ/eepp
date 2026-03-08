@@ -250,6 +250,7 @@ UIWidget* UIWidget::setLayoutWidthPolicy( const SizePolicy& widthPolicy ) {
 		mWidthPolicy = widthPolicy;
 		if ( mWidthPolicy == SizePolicy::WrapContent )
 			onAutoSize();
+		onSizePolicyChange();
 		notifyLayoutAttrChange();
 	}
 
@@ -265,6 +266,7 @@ UIWidget* UIWidget::setLayoutHeightPolicy( const SizePolicy& heightPolicy ) {
 		mHeightPolicy = heightPolicy;
 		if ( mHeightPolicy == SizePolicy::WrapContent )
 			onAutoSize();
+		onSizePolicyChange();
 		notifyLayoutAttrChange();
 	}
 
@@ -279,6 +281,7 @@ UIWidget* UIWidget::setLayoutSizePolicy( const SizePolicy& widthPolicy,
 		if ( mWidthPolicy == SizePolicy::WrapContent || mHeightPolicy == SizePolicy::WrapContent ) {
 			onAutoSize();
 		}
+		onSizePolicyChange();
 		notifyLayoutAttrChange();
 	}
 
@@ -560,6 +563,8 @@ void UIWidget::onSizeChange() {
 
 	notifyLayoutAttrChange();
 }
+
+void UIWidget::onSizePolicyChange() {}
 
 void UIWidget::onAutoSize() {}
 
@@ -2089,7 +2094,7 @@ std::string UIWidget::getFlagsString() const {
 	if ( mFlags & UI_AUTO_PADDING )
 		flagvec.push_back( "autopadding" );
 	if ( reportSizeChangeToChildren() )
-		flagvec.push_back( "reportsizechangetochilds" );
+		flagvec.push_back( "reportsizechangetochildren" );
 	if ( isClipped() )
 		flagvec.push_back( "clip" );
 
@@ -2288,6 +2293,64 @@ void UIWidget::onFocusNextWidget() {
 	} else {
 		sendCommonEvent( Event::OnTabNavigate );
 	}
+}
+
+Float UIWidget::getMatchParentWidth() const {
+	Rectf padding = Rectf();
+
+	if ( getParent()->isWidget() )
+		padding = static_cast<UIWidget*>( getParent() )->getPixelsPadding();
+
+	Float width = getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Left -
+				  mLayoutMarginPx.Right - padding.Left - padding.Right;
+
+	if ( !mMaxWidthEq.empty() ) {
+		Float maxWidth( getMaxSizePx().getWidth() - mLayoutMarginPx.Left - mLayoutMarginPx.Right -
+						padding.Left - padding.Right );
+		if ( maxWidth > 0 && maxWidth < width )
+			width = maxWidth;
+	}
+
+	return eemax( 0.f, width );
+}
+
+Float UIWidget::getMatchParentHeight() const {
+	Rectf padding = Rectf();
+
+	if ( getParent()->isWidget() )
+		padding = static_cast<UIWidget*>( getParent() )->getPadding();
+
+	Float height = getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Top -
+				   mLayoutMarginPx.Bottom - padding.Top - padding.Bottom;
+
+	if ( !mMaxHeightEq.empty() ) {
+		Float maxHeight( getMaxSizePx().getHeight() - mLayoutMarginPx.Left - mLayoutMarginPx.Right -
+						 padding.Left - padding.Right );
+		if ( maxHeight > 0 && maxHeight < height )
+			height = maxHeight;
+	}
+
+	return eemax( 0.f, height );
+}
+
+Sizef UIWidget::getSizeFromLayoutPolicy() {
+	Sizef size( getPixelsSize() );
+
+	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
+		Float w = getMatchParentWidth();
+
+		if ( (int)w != (int)getPixelsSize().getWidth() )
+			size.setWidth( w );
+	}
+
+	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
+		Float h = getMatchParentHeight();
+
+		if ( (int)h != (int)getPixelsSize().getHeight() )
+			size.setHeight( h );
+	}
+
+	return size;
 }
 
 }} // namespace EE::UI

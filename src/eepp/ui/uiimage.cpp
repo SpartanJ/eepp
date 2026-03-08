@@ -216,9 +216,10 @@ void UIImage::onDrawableResourceEvent( DrawableResource::Event event, DrawableRe
 			auto s = mSize;
 			onAutoSize();
 			calcDestSize();
+
 			if ( mSize != s ) {
-				invalidateDraw();
 				notifyLayoutAttrChangeParent();
+				invalidateDraw();
 			}
 		} );
 	} else if ( event == DrawableResource::Unload ) {

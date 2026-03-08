@@ -1,18 +1,26 @@
----
-trigger: always_on
----
+# Unit Testing Requirements & Guidelines
 
-Project provide a good range of unit-tests that they must pass to guarantee that changes made do not break functionality.
-To run the tests you must execute the binary:
-`bin/unit_tests/eepp-unit_tests-debug`
+This project relies on a comprehensive suite of unit tests to prevent regressions. You must ensure all existing tests pass after making modifications.
 
-This path is from the root directory, you can run it from anywhere, current working directory is managed by the binary.
+## Running Tests
+The test binary manages its own current working directory, so you can execute it from anywhere.
 
-If you need to run an specific test you can use the filter parameter, it supports glob patterns, for example:
+*   **Standard Execution:**
+    `bin/unit_tests/eepp-unit_tests-debug`
+*   **Linux & FreeBSD Execution (Required for Desktop Environments):**
+    Tests open ~50 individual windows. To prevent disrupting the desktop environment, run them in an isolated framebuffer using `xvfb-run`:
+    `xvfb-run -a -s "-screen 0 1280x1024x24" bin/unit_tests/eepp-unit_tests-debug`
+*   **Filtering Tests:**
+    Use the `--filter` parameter to run specific tests (supports glob patterns).
+    *Example (runs all tests with "Offset" in the name):*
+    `bin/unit_tests/eepp-unit_tests-debug --filter="FontRendering.*Offset*"`
 
-`bin/unit_tests/eepp-unit_tests-debug --filter="FontRendering.*Offset*"`
+## Writing New Tests
+Writing new tests is highly encouraged, but depends on the context of your changes:
+*   **Core Framework (`eepp`):** If you add new logic, math, or framework-level features, you are **expected** to write unit tests for them.
+*   **Application/Tools (`ecode`):** Application-level UI changes or tool integrations are often difficult to mock/test. Tests for these are **optional** and should only be added if practical to set up.
 
-Will run all tests with "Offset" in its name.
-It's expected that for *any* requested new functionality you must add new tests and also tests with previously existing ones. Initially always test with the most relevant to the change that's has been made.
-
-Tests can be found at: `src/tests/unit_tests`. Being `src/tests/unit_tests/fontrendering.cpp` the most complete set of tests related to text rendering.
+**Testing Workflow:**
+1.  All tests are located in `src/tests/unit_tests/`.
+2.  Before modifying code, run the existing tests most relevant to your change to ensure a baseline.
+3.  For reference on how tests are structured in this project, review `src/tests/unit_tests/fontrendering.cpp` (the most complete set of text rendering tests).

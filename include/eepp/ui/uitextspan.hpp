@@ -165,6 +165,8 @@ class EE_API UIAnchorSpan : public UITextSpan {
 	std::string mHref;
 
 	virtual Uint32 onKeyDown( const KeyEvent& event );
+
+	virtual Uint32 onMessage( const NodeMessage* Msg );
 };
 
 }} // namespace EE::UI

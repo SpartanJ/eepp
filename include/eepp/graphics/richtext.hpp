@@ -162,6 +162,8 @@ class EE_API RichText : public Drawable {
 	/** @return The current selection as a string. */
 	String getSelectionString() const;
 
+	void updateLayout();
+
   protected:
 	std::vector<Block> mBlocks;
 	std::vector<RenderParagraph> mLines;
@@ -174,8 +176,6 @@ class EE_API RichText : public Drawable {
 	Sizef mSize;
 	Int64 mTotalCharacterCount{ 0 };
 	bool mNeedsLayoutUpdate{ true };
-
-	void updateLayout();
 };
 
 }} // namespace EE::Graphics

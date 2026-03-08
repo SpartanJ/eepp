@@ -34,6 +34,64 @@ UIScrollView::UIScrollView() :
 	mHScroll->on( Event::OnValueChange, [this]( auto event ) { onValueChangeCb( event ); } );
 
 	applyDefaultTheme();
+	listenParent();
+}
+
+UIScrollView::~UIScrollView() {
+	clearListeners();
+}
+
+void UIScrollView::updateInternalSize() {
+	Sizef size( getSizeFromLayoutPolicy() );
+	if ( size != getPixelsSize() )
+		setInternalPixelsSize( size );
+}
+
+void UIScrollView::listenParent() {
+	clearListeners();
+
+	mParentRef = getParent();
+
+	if ( !mParentRef->isLayout() ) {
+		mParentSizeChangeCb = mParentRef->on( Event::OnSizeChange, [this]( const Event* ) {
+			if ( !getParent()->isLayout() &&
+				 ( getLayoutWidthPolicy() == SizePolicy::MatchParent ||
+				   getLayoutHeightPolicy() == SizePolicy::MatchParent ) &&
+				 getParent()->getPixelsSize() != Sizef::Zero &&
+				 getParent()->getPixelsSize() != mSize ) {
+				runOnMainThread( [this]() { updateInternalSize(); } );
+			}
+		} );
+
+		mParentCloseCb =
+			mParentRef->on( Event::OnClose, [this]( const Event* ) { mParentRef = nullptr; } );
+
+		updateInternalSize();
+	}
+}
+
+void UIScrollView::onParentChange() {
+	listenParent();
+}
+
+void UIScrollView::clearListeners() {
+	if ( mParentRef ) {
+		if ( mParentSizeChangeCb > 0 ) {
+			mParentRef->removeEventListener( mParentSizeChangeCb );
+			mParentSizeChangeCb = 0;
+		}
+		if ( mParentCloseCb > 0 ) {
+			mParentRef->removeEventListener( mParentCloseCb );
+			mParentCloseCb = 0;
+		}
+	}
+}
+
+void UIScrollView::onSizePolicyChange() {
+	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent ||
+		 getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
+		updateInternalSize();
+	}
 }
 
 Uint32 UIScrollView::getType() const {

@@ -47,11 +47,6 @@ class EE_API UILayout : public UIWidget {
 
 	void setLayoutDirty();
 
-	Sizef getSizeFromLayoutPolicy();
-
-	Float getMatchParentWidth() const;
-
-	Float getMatchParentHeight() const;
 };
 
 }} // namespace EE::UI

@@ -701,7 +701,7 @@ Multiple flags can be set, flags are separated by `|`.
   * `clip`: Enables clipping of the element box.
   * `multiselect`: Enables multiple selection on elements that support selection. EE::UI::UIListBox (ListBox) for the moment.
   * `autopadding`: Enables the element to calculate the padding based on the skin size.
-  * `reportsizechangetochilds`: When enabled the element will emit a event (`OnParentSizeChange`) to its children reporting the size change of the parent.
+  * `reportsizechangetochildren`: When enabled the element will emit a event (`OnParentSizeChange`) to its children reporting the size change of the parent.
 * Default value: _No value_
 
 ---

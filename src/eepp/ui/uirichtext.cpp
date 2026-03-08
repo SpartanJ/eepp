@@ -577,7 +577,10 @@ void UIRichText::positionChildren() {
 				Vector2f boundsPos = bounds.getPosition();
 
 				widget->setPixelsPosition( boundsPos - offset );
-				widget->setPixelsSize( bounds.getSize() );
+				if ( bounds.getSize() != widget->getPixelsSize() ) {
+					widget->setPixelsSize( bounds.getSize() );
+					mResizedCount++;
+				}
 
 				for ( auto& hb : hitBoxes )
 					hb.move( -boundsPos );
@@ -626,11 +629,12 @@ void UIRichText::updateDefaultSpansStyle() {
 void UIRichText::updateLayout() {
 	if ( mPacking )
 		return;
+	mResizedCount = 0;
 	mPacking = true;
 
 	rebuildRichText();
 
-	mRichText.getSize(); // Forces an updateLayout internally
+	mRichText.updateLayout();
 
 	positionChildren();
 
@@ -643,8 +647,12 @@ void UIRichText::updateLayout() {
 								 mPaddingPx.Bottom );
 	}
 
+	if ( mResizedCount )
+		positionChildren();
+
 	mPacking = false;
 	mDirtyLayout = false;
+	mResizedCount = 0;
 }
 
 Uint32 UIRichText::onMessage( const NodeMessage* Msg ) {
@@ -652,6 +660,24 @@ Uint32 UIRichText::onMessage( const NodeMessage* Msg ) {
 		case NodeMessage::LayoutAttributeChange: {
 			tryUpdateLayout();
 			return 1;
+		}
+		case NodeMessage::MouseDown: {
+			if ( Msg->getSender()->isType( UI_TYPE_TEXTSPAN ) )
+				return onMouseDown( getEventDispatcher()->getMousePos(), Msg->getFlags() );
+		}
+		case NodeMessage::MouseUp: {
+			if ( Msg->getSender()->isType( UI_TYPE_TEXTSPAN ) ) {
+				onMouseUp( getEventDispatcher()->getMousePos(), Msg->getFlags() );
+				return 0;
+			}
+		}
+		case NodeMessage::MouseClick: {
+			if ( Msg->getSender()->isType( UI_TYPE_TEXTSPAN ) )
+				return onMouseClick( getEventDispatcher()->getMousePos(), Msg->getFlags() );
+		}
+		case NodeMessage::MouseDoubleClick: {
+			if ( Msg->getSender()->isType( UI_TYPE_TEXTSPAN ) )
+				return onMouseDoubleClick( getEventDispatcher()->getMousePos(), Msg->getFlags() );
 		}
 	}
 
@@ -704,7 +730,8 @@ String UIRichText::getSelectionString() const {
 
 Uint32 UIRichText::onMouseDown( const Vector2i& position, const Uint32& flags ) {
 	if ( NULL != getEventDispatcher() && isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) &&
-		 getEventDispatcher()->getMouseDownNode() == this ) {
+		 ( getEventDispatcher()->getMouseDownNode() == this ||
+		   inParentTreeOf( getEventDispatcher()->getMouseDownNode() ) ) ) {
 		Vector2f nodePos( Vector2f( position.x, position.y ) );
 		worldToNode( nodePos );
 		nodePos = PixelDensity::dpToPx( nodePos ) - Vector2f( mPaddingPx.Left, mPaddingPx.Top );
@@ -730,7 +757,7 @@ Uint32 UIRichText::onMouseDown( const Vector2i& position, const Uint32& flags ) 
 	return UILayout::onMouseDown( position, flags );
 }
 
-Uint32 UIRichText::onMouseClick( const Vector2i& position, const Uint32& flags ) {
+Uint32 UIRichText::onMouseUp( const Vector2i& position, const Uint32& flags ) {
 	if ( isTextSelectionEnabled() && ( flags & EE_BUTTON_LMASK ) ) {
 		mSelecting = false;
 	}

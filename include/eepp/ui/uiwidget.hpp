@@ -1403,6 +1403,14 @@ class EE_API UIWidget : public UINode {
 	virtual void onSizeChange();
 
 	/**
+	 * @brief Handles size policy change events.
+	 *
+	 * Called when this widget's size policy changes. This can be overridden to
+	 * implement custom handling of size policy changes.
+	 */
+	virtual void onSizePolicyChange();
+
+	/**
 	 * @brief Handles auto-size events.
 	 *
 	 * Called when the widget automatically resizes to fit its content. This can
@@ -1623,6 +1631,16 @@ class EE_API UIWidget : public UINode {
 	 * Reloads the font family for this widget, typically after a theme change.
 	 */
 	void reloadFontFamily();
+
+	/* @return The width of the widget when size policy is match_parent */
+	Float getMatchParentWidth() const;
+
+	/* @return The height of the widget when size policy is match_parent */
+	Float getMatchParentHeight() const;
+
+	/* @return The size of the widget when size policy is match_parent */
+	Sizef getSizeFromLayoutPolicy();
+
 };
 
 }} // namespace EE::UI
