@@ -450,6 +450,12 @@ void RichText::updateLayout() {
 
 			curX += blockSize.getWidth();
 			currentLine.width += blockSize.getWidth();
+
+			if ( mMaxWidth > 0 && curX + blockSize.getWidth() > mMaxWidth && curX > 0 ) {
+				maxWidth = std::max( maxWidth, curX );
+				mLines.push_back( RenderParagraph() );
+				curX = 0;
+			}
 		}
 	}
 
