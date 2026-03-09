@@ -284,7 +284,6 @@ class TerminalEmulator final {
 	PromptState mPromptState{ PromptState::Unknown };
 	PromptStateChangedCb mPromptStateChangedCb;
 
-	void resizeHistory();
 	void setClipboard( const char* str );
 
 	void loadColors();
@@ -326,7 +325,7 @@ class TerminalEmulator final {
 	void tputc( Rune );
 	void treset();
 	void tscrollup( int, int, int );
-	void tscrolldown( int, int, int );
+	void tscrolldown( int, int );
 	void historyPush( Line line, int col );
 	void historyReflow( int old_col, int new_col );
 	void historyPopToScreen( int loaded, int col );

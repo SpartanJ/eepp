@@ -747,6 +747,7 @@ void TerminalEmulator::clearHistory() {
 	mTerm.histi = 0;
 	mTerm.histlen = 0;
 	mTerm.max_width = 0;
+	mTerm.scr = 0;
 	trimMemory();
 }
 
@@ -925,35 +926,11 @@ void TerminalEmulator::tswapscreen( void ) {
 	tfulldirt();
 }
 
-void TerminalEmulator::resizeHistory() {
-	size_t oriSize = mTerm.histcursize;
-	if ( mTerm.histi >= (int)mTerm.histcursize ) {
-		int newSize = eemin( mTerm.histi + mTerm.row, mTerm.histsize );
-		mTerm.hist = (Line*)xrealloc( mTerm.hist, newSize * sizeof( Line ) );
-		mTerm.histcursize = newSize;
-
-		for ( int i = oriSize; i < mTerm.histcursize; i++ ) {
-			mTerm.hist[i] = (TerminalGlyph*)xmalloc( mTerm.col * sizeof( TerminalGlyph ) );
-			for ( int j = 0; j < mTerm.col; j++ ) {
-				mTerm.hist[i][j] = mTerm.c.attr;
-				mTerm.hist[i][j].u = ' ';
-			}
-		}
-	}
-}
-
-void TerminalEmulator::tscrolldown( int top, int n, int copyhist ) {
+void TerminalEmulator::tscrolldown( int top, int n ) {
 	int i;
 	Line temp;
 
 	LIMIT( n, 0, mTerm.bot - top + 1 );
-	if ( copyhist && mTerm.histsize > 0 ) {
-		mTerm.histi = ( mTerm.histi - 1 + mTerm.histsize ) % mTerm.histsize;
-		resizeHistory();
-		temp = mTerm.hist[mTerm.histi];
-		mTerm.hist[mTerm.histi] = mTerm.line[mTerm.bot];
-		mTerm.line[mTerm.bot] = temp;
-	}
 
 	tsetdirt( top, mTerm.bot - n );
 	tclearregion( 0, mTerm.bot - n + 1, mTerm.col - 1, mTerm.bot );
@@ -1153,6 +1130,8 @@ void TerminalEmulator::selmove( int n ) {
 }
 
 void TerminalEmulator::selscroll( int top, int n ) {
+	if ( mTerm.scr != 0 )
+		return;
 	if ( mSel.ob.x == -1 || mSel.alt != IS_SET( MODE_ALTSCREEN ) )
 		return;
 
@@ -1332,7 +1311,7 @@ void TerminalEmulator::tinsertblank( int n ) {
 
 void TerminalEmulator::tinsertblankline( int n ) {
 	if ( BETWEEN( mTerm.c.y, mTerm.top, mTerm.bot ) )
-		tscrolldown( mTerm.c.y, n, 0 );
+		tscrolldown( mTerm.c.y, n );
 }
 
 void TerminalEmulator::tdeleteline( int n ) {
@@ -1806,7 +1785,7 @@ void TerminalEmulator::csihandle( void ) {
 			break;
 		case 'T': /* SD -- Scroll <n> line down */
 			DEFAULT( mCsiescseq.arg[0], 1 );
-			tscrolldown( mTerm.top, mCsiescseq.arg[0], 1 );
+			tscrolldown( mTerm.top, mCsiescseq.arg[0] );
 			break;
 		case 'L': /* IL -- Insert <n> blank lines */
 			DEFAULT( mCsiescseq.arg[0], 1 );
@@ -2450,7 +2429,7 @@ int TerminalEmulator::eschandle( uchar ascii ) {
 			break;
 		case 'M': /* RI -- Reverse index */
 			if ( mTerm.c.y == mTerm.top ) {
-				tscrolldown( mTerm.top, 1, 1 );
+				tscrolldown( mTerm.top, 1 );
 			} else {
 				tmoveto( mTerm.c.x, mTerm.c.y - 1 );
 			}
