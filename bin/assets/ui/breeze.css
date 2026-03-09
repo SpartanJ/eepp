@@ -147,6 +147,11 @@ img {
 	scale-type: fit-inside;
 }
 
+markdownview h1,
+markdownview h2 {
+	border-bottom: 1dp solid var(--tab-line);
+}
+
 markdownview img {
 	max-height: 100vh;
 }
