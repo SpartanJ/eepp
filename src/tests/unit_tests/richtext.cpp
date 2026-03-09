@@ -836,3 +836,55 @@ UTEST( UIHTMLTable, basicLayout ) {
 	eeDelete( sceneNode );
 	Engine::destroySingleton();
 }
+
+UTEST( UIRichText, WhitespaceCollapseBRTest ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+<h1 align="center" id="rt">
+  <img src="icon" /><br/>
+  ecode
+</h1>
+	)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+
+	UI::UIRichText* rt = sceneNode->find<UI::UIRichText>( "rt" );
+	ASSERT_TRUE( rt != nullptr );
+
+	sceneNode->update( Time::Zero );
+
+	// The "ecode" text span should NOT have a leading space.
+	bool foundEcodeWithLeadingSpace = false;
+	auto checkSpansRecursive = [&]( Node* n, auto&& checkSpansRecursiveRef ) -> void {
+		if ( !n ) return;
+		if ( n->isWidget() && n->isType( UI_TYPE_TEXTSPAN ) ) {
+			UI::UITextSpan* span = static_cast<UI::UITextSpan*>( n );
+			if ( span->getText().size() > 0 && span->getText()[0] == ' ' &&
+				 span->getText().find( "ecode" ) != String::InvalidPos ) {
+				foundEcodeWithLeadingSpace = true;
+			}
+		}
+		for ( Node* child = n->getFirstChild(); child; child = child->getNextNode() ) {
+			checkSpansRecursiveRef( child, checkSpansRecursiveRef );
+		}
+	};
+	checkSpansRecursive( rt, checkSpansRecursive );
+	EXPECT_FALSE( foundEcodeWithLeadingSpace );
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}

@@ -25,17 +25,15 @@ void UIHTMLTable::updateLayout() {
 		return;
 	mPacking = true;
 
-	// TODO: Optimize this horrendous implementation (fix the heap-allocation crazyness)
 	UIHTMLTableHead* head = nullptr;
 	UIHTMLTableBody* body = nullptr;
 	UIHTMLTableFooter* footer = nullptr;
 
-	std::vector<UIHTMLTableRow*> rows;
-	std::function<void( Node* )> collectRows = [&]( Node* node ) {
-		Node* child = node->getFirstChild();
-		while ( child ) {
+	mRows.clear();
+	auto collectRows = [&]( auto self, Node* node ) -> void {
+		for ( Node* child = node->getFirstChild(); child; child = child->getNextNode() ) {
 			if ( child->getType() == UI_TYPE_HTML_TABLE_ROW ) {
-				rows.push_back( child->asType<UIHTMLTableRow>() );
+				mRows.push_back( child->asType<UIHTMLTableRow>() );
 			} else if ( child->getType() != UI_TYPE_HTML_TABLE ) {
 				if ( child->getType() == UI_TYPE_HTML_TABLE_HEAD )
 					head = child->asType<UIHTMLTableHead>();
@@ -44,30 +42,31 @@ void UIHTMLTable::updateLayout() {
 				else if ( child->getType() == UI_TYPE_HTML_TABLE_FOOTER )
 					footer = child->asType<UIHTMLTableFooter>();
 
-				collectRows( child );
+				self( self, child );
 			}
-			child = child->getNextNode();
 		}
 	};
-	collectRows( this );
+	collectRows( collectRows, this );
 
-	if ( rows.empty() ) {
+	if ( mRows.empty() ) {
 		mPacking = false;
 		return;
 	}
 
-	std::vector<std::vector<UIHTMLTableCell*>> grid;
+	mCells.clear();
+	mRowCellOffsets.clear();
+	mRowCellOffsets.push_back( 0 );
 	size_t maxCols = 0;
-	for ( auto* row : rows ) {
-		std::vector<UIHTMLTableCell*> cells;
-		Node* child = row->getFirstChild();
-		while ( child ) {
-			if ( child->getType() == UI_TYPE_HTML_TABLE_CELL )
-				cells.push_back( child->asType<UIHTMLTableCell>() );
-			child = child->getNextNode();
+	for ( auto* row : mRows ) {
+		size_t cellCount = 0;
+		for ( Node* child = row->getFirstChild(); child; child = child->getNextNode() ) {
+			if ( child->getType() == UI_TYPE_HTML_TABLE_CELL ) {
+				mCells.push_back( child->asType<UIHTMLTableCell>() );
+				cellCount++;
+			}
 		}
-		grid.push_back( cells );
-		maxCols = std::max( maxCols, cells.size() );
+		mRowCellOffsets.push_back( (Uint32)mCells.size() );
+		maxCols = std::max( maxCols, cellCount );
 	}
 
 	if ( maxCols == 0 ) {
@@ -75,31 +74,29 @@ void UIHTMLTable::updateLayout() {
 		return;
 	}
 
-	std::vector<Float> colWidths( maxCols, 0.f );
+	mColWidths.assign( maxCols, 0.f );
 
 	// Get natural width for each column (without wrapping)
-	for ( const auto& rowCells : grid ) {
-		for ( size_t i = 0; i < rowCells.size(); ++i ) {
-			UIHTMLTableCell* cell = rowCells[i];
+	for ( size_t r = 0; r < mRows.size(); ++r ) {
+		Uint32 start = mRowCellOffsets[r];
+		Uint32 end = mRowCellOffsets[r + 1];
+		for ( Uint32 i = 0; i < end - start; ++i ) {
+			UIHTMLTableCell* cell = mCells[start + i];
 			cell->setLayoutWidthPolicy( SizePolicy::WrapContent );
 			cell->updateLayout();
-			colWidths[i] = std::max( colWidths[i], cell->getPixelsSize().getWidth() );
+			mColWidths[i] = std::max( mColWidths[i], cell->getPixelsSize().getWidth() );
 		}
 	}
 
 	Float availableWidth = getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right;
 	Float totalUnwrappedWidth = 0;
-	for ( Float w : colWidths )
+	for ( Float w : mColWidths )
 		totalUnwrappedWidth += w;
 
-	if ( totalUnwrappedWidth > availableWidth && totalUnwrappedWidth > 0 ) {
+	if ( totalUnwrappedWidth > 0 ) {
 		Float scale = availableWidth / totalUnwrappedWidth;
 		for ( size_t i = 0; i < maxCols; ++i )
-			colWidths[i] *= scale;
-	} else if ( totalUnwrappedWidth < availableWidth && maxCols > 0 && totalUnwrappedWidth > 0 ) {
-		Float scale = availableWidth / totalUnwrappedWidth;
-		for ( size_t i = 0; i < maxCols; ++i )
-			colWidths[i] *= scale;
+			mColWidths[i] *= scale;
 	}
 
 	Float headHeight = 0;
@@ -107,35 +104,37 @@ void UIHTMLTable::updateLayout() {
 	Float footerHeight = 0;
 
 	// Apply layout and calculate heights
-	size_t rowCount = grid.size();
+	size_t rowCount = mRows.size();
 	for ( size_t r = 0; r < rowCount; ++r ) {
 		Float rowHeight = 0;
-		size_t columnCount = grid[r].size();
-		for ( size_t c = 0; c < columnCount; ++c ) {
-			UIHTMLTableCell* cell = grid[r][c];
+		Uint32 start = mRowCellOffsets[r];
+		Uint32 end = mRowCellOffsets[r + 1];
+		Uint32 columnCount = end - start;
+		for ( Uint32 c = 0; c < columnCount; ++c ) {
+			UIHTMLTableCell* cell = mCells[start + c];
 			cell->setLayoutWidthPolicy( SizePolicy::Fixed );
-			cell->setPixelsSize( colWidths[c], cell->getPixelsSize().getHeight() );
+			cell->setPixelsSize( mColWidths[c], cell->getPixelsSize().getHeight() );
 			cell->updateLayout();
 			rowHeight = std::max( rowHeight, cell->getPixelsSize().getHeight() );
 		}
 
 		// Position cells inside the row and equalize height
 		Float currentX = 0;
-		for ( size_t c = 0; c < columnCount; ++c ) {
-			UIHTMLTableCell* cell = grid[r][c];
+		for ( Uint32 c = 0; c < columnCount; ++c ) {
+			UIHTMLTableCell* cell = mCells[start + c];
 			cell->setPixelsPosition( currentX, 0 );
 			cell->setPixelsSize( cell->getPixelsSize().getWidth(), rowHeight );
-			currentX += colWidths[c];
+			currentX += mColWidths[c];
 		}
 
 		// Set row height and width
-		UIHTMLTableRow* row = rows[r];
+		UIHTMLTableRow* row = mRows[r];
 		row->setPixelsSize( availableWidth, rowHeight );
 
 		if ( r == 0 ) {
 			headHeight = rowHeight;
 		} else if ( r == rowCount - 1 && columnCount &&
-					grid[r][0]->getParent()->isType( UI_TYPE_HTML_TABLE_FOOTER ) ) {
+					mCells[start]->getParent()->isType( UI_TYPE_HTML_TABLE_FOOTER ) ) {
 			footerHeight = rowHeight;
 		} else {
 			bodyHeight += rowHeight;
@@ -143,8 +142,8 @@ void UIHTMLTable::updateLayout() {
 	}
 
 	// Position rows vertically
-	// We also need to ensure that the containers (thead, tbody, etc.) are positioned at 0,0
-	// and have the correct size, so the absolute positioning of the rows works as expected.
+	// We also need to ensure that the containers (thead, tbody, etc.) are positioned correctly and
+	// have the correct size, so the absolute positioning of the rows works as expected.
 	if ( head ) {
 		head->setPixelsPosition( 0, 0 );
 		head->setPixelsSize( { getPixelsSize().x, headHeight } );
@@ -161,15 +160,18 @@ void UIHTMLTable::updateLayout() {
 	}
 
 	Float currentY = mPaddingPx.Top - headHeight;
-	for ( auto* row : rows ) {
+	for ( size_t r = 0; r < rowCount; ++r ) {
+		UIHTMLTableRow* row = mRows[r];
 		row->setPixelsPosition( mPaddingPx.Left, currentY );
 		currentY += row->getPixelsSize().getHeight();
 	}
-	if ( head && !rows.empty() )
-		rows[0]->setPixelsPosition( mPaddingPx.Left, 0 );
 
-	if ( footer && !rows.empty() )
-		rows[rowCount - 1]->setPixelsPosition( mPaddingPx.Left, 0 );
+	// Reset positions if they are inside specialized containers
+	if ( head && !mRows.empty() )
+		mRows[0]->setPixelsPosition( mPaddingPx.Left, 0 );
+
+	if ( footer && !mRows.empty() )
+		mRows[rowCount - 1]->setPixelsPosition( mPaddingPx.Left, 0 );
 
 	if ( mWidthPolicy == SizePolicy::MatchParent )
 		setInternalPixelsWidth( getMatchParentWidth() );

@@ -175,22 +175,24 @@ String HTMLFormatter::collapseXmlWhitespace( const String& text, const pugi::xml
 		}
 	}
 
-	// Step 2: Determine if the left boundary is a block element.
+	// Step 2: Determine if the left boundary is a block element or a forced line break (<br/>).
 	// We use getLogicalPrev, and if the previous node is just empty space
 	// (lacks significant text), we keep looking further back.
 	pugi::xml_node prev = getLogicalPrev( node );
 	while ( prev && prev.type() == pugi::node_pcdata && !hasSignificantText( prev ) ) {
 		prev = getLogicalPrev( prev );
 	}
-	bool prevInline = isInlineNode( prev );
+	// A node is a valid inline neighbor only if it is an inline node AND not a <br/>
+	// (because <br/> strips adjacent whitespace).
+	bool prevInline = isInlineNode( prev ) && !String::iequals( prev.name(), "br" );
 
-	// Step 3: Determine if the right boundary is a block element.
+	// Step 3: Determine if the right boundary is a block element or a forced line break.
 	// We use getLogicalNext, skipping over any non-significant text nodes.
 	pugi::xml_node next = getLogicalNext( node );
 	while ( next && next.type() == pugi::node_pcdata && !hasSignificantText( next ) ) {
 		next = getLogicalNext( next );
 	}
-	bool nextInline = isInlineNode( next );
+	bool nextInline = isInlineNode( next ) && !String::iequals( next.name(), "br" );
 
 	// Step 4: Trim leading and trailing spaces if they adjoin a block boundary.
 	if ( !prevInline && !res.empty() && res[0] == ' ' )

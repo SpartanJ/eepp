@@ -6,6 +6,9 @@
 
 namespace EE { namespace UI {
 
+class UIHTMLTableRow;
+class UIHTMLTableCell;
+
 class EE_API UIHTMLTable : public UILayout {
   public:
 	static UIHTMLTable* New();
@@ -20,6 +23,11 @@ class EE_API UIHTMLTable : public UILayout {
 
   protected:
 	virtual Uint32 onMessage( const NodeMessage* Msg );
+
+	std::vector<UIHTMLTableRow*> mRows;
+	std::vector<Float> mColWidths;
+	std::vector<UIHTMLTableCell*> mCells;
+	std::vector<Uint32> mRowCellOffsets;
 };
 
 class EE_API UIHTMLTableCell : public UIRichText {
