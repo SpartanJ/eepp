@@ -67,6 +67,8 @@ struct Term {
 	int histcursize{ 0 };		   /* history current size */
 	int histsize{ 0 };			   /* history max size */
 	int histi{ 0 };				   /* history index */
+	int histlen{ 0 };			   /* history valid length */
+	int max_width{ 0 };			   /* max width of lines in history */
 	int scr{ 0 };				   /* scroll back */
 	int* dirty{ nullptr };		   /* dirtyness of lines */
 	TerminalCursor c{};			   /* cursor */
@@ -312,10 +314,11 @@ class TerminalEmulator final {
 	void tcursor( int );
 	void tdeletechar( int );
 	void tdeleteline( int );
-	void tinsertblank( int );
-	void tinsertblankline( int );
-	int tlinelen( int ) const;
-	int tiswrapped( int );
+	void tinsertblank( int n );
+	void tinsertblankline( int n );
+	int tlinelen( int y ) const;
+	int tlinelen( Line line, int col ) const;
+	int tiswrapped( int y );
 	void tmoveto( int, int );
 	void tmoveato( int, int );
 	void tnewline( int );
@@ -324,6 +327,9 @@ class TerminalEmulator final {
 	void treset();
 	void tscrollup( int, int, int );
 	void tscrolldown( int, int, int );
+	void historyPush( Line line, int col );
+	void historyReflow( int old_col, int new_col );
+	void historyPopToScreen( int loaded, int col );
 	void tsetattr( int*, int );
 	void tsetchar( Rune, TerminalGlyph*, int, int );
 	void tsetdirt( int, int );

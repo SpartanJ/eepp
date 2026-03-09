@@ -381,6 +381,15 @@ int TerminalEmulator::tlinelen( int y ) const {
 	return i;
 }
 
+int TerminalEmulator::tlinelen( Line line, int col ) const {
+	int i = col;
+	if ( line[i - 1].mode & ATTR_WRAP )
+		return i;
+	while ( i > 0 && line[i - 1].u == ' ' )
+		--i;
+	return i;
+}
+
 int TerminalEmulator::tiswrapped( int y ) {
 	int len = tlinelen( y );
 
@@ -681,18 +690,18 @@ void TerminalEmulator::kscrollup( const TerminalArg* a ) {
 	int n = a->i;
 
 	if ( n == INT_MAX )
-		n = mTerm.histi - mTerm.scr;
+		n = mTerm.histlen - mTerm.scr;
 
 	if ( n < 0 )
 		n = mTerm.row + n;
 
-	if ( mTerm.scr + n > mTerm.histi )
-		n = mTerm.histi - mTerm.scr;
+	if ( mTerm.scr + n > mTerm.histlen )
+		n = mTerm.histlen - mTerm.scr;
 
 	if ( n == 0 )
 		return;
 
-	if ( mTerm.scr <= mTerm.histsize - n && mTerm.scr + n <= mTerm.histi ) {
+	if ( mTerm.scr <= mTerm.histsize - n && mTerm.scr + n <= mTerm.histlen ) {
 		mTerm.scr += n;
 		selmove( n );
 		tfulldirt();
@@ -703,9 +712,8 @@ void TerminalEmulator::kscrollup( const TerminalArg* a ) {
 void TerminalEmulator::kscrollto( const TerminalArg* a ) {
 	int n = a->i;
 
-	if ( 0 <= n && n <= mTerm.histi ) {
+	if ( 0 <= n && n <= mTerm.histlen ) {
 		mTerm.scr = n;
-		selscroll( 0, n );
 		tfulldirt();
 		onScrollPositionChange();
 	}
@@ -716,7 +724,7 @@ int TerminalEmulator::tisaltscr() {
 }
 
 int TerminalEmulator::scrollSize() const {
-	return mTerm.histi;
+	return mTerm.histlen;
 }
 
 int TerminalEmulator::rowCount() const {
@@ -737,6 +745,8 @@ void TerminalEmulator::clearHistory() {
 	eeSAFE_FREE( mTerm.hist );
 	mTerm.histcursize = 0;
 	mTerm.histi = 0;
+	mTerm.histlen = 0;
+	mTerm.max_width = 0;
 	trimMemory();
 }
 
@@ -819,6 +829,9 @@ int TerminalEmulator::tattrset( int attr ) {
 
 void TerminalEmulator::tsetdirt( int top, int bot ) {
 	int i;
+
+	if ( mTerm.row < 1 )
+		return;
 
 	LIMIT( top, 0, mTerm.row - 1 );
 	LIMIT( bot, 0, mTerm.row - 1 );
@@ -961,16 +974,20 @@ void TerminalEmulator::tscrollup( int top, int n, int copyhist ) {
 
 	LIMIT( n, 0, mTerm.bot - top + 1 );
 
-	if ( copyhist && mTerm.histsize > 0 ) {
-		mTerm.histi = ( mTerm.histi + 1 ) % mTerm.histsize;
-		resizeHistory();
-		temp = mTerm.hist[mTerm.histi];
-		mTerm.hist[mTerm.histi] = mTerm.line[top];
-		mTerm.line[top] = temp;
-	}
+	if ( copyhist && mTerm.histsize > 0 && !IS_SET( MODE_ALTSCREEN ) && top == mTerm.top ) {
+		bool attop = ( mTerm.histlen != 0 && mTerm.scr == mTerm.histlen );
 
-	if ( mTerm.scr > 0 && mTerm.scr < mTerm.histsize )
-		mTerm.scr = MIN( mTerm.scr + n, mTerm.histsize - 1 );
+		if ( mTerm.scr > 0 && !attop )
+			mTerm.scr += n;
+
+		for ( i = 0; i < n; i++ )
+			historyPush( mTerm.line[top + i], mTerm.col );
+
+		if ( attop )
+			mTerm.scr = mTerm.histlen;
+		else if ( mTerm.scr > mTerm.histlen )
+			mTerm.scr = mTerm.histlen;
+	}
 
 	tclearregion( 0, top, mTerm.col - 1, top + n - 1 );
 	tsetdirt( top + n, mTerm.bot );
@@ -985,6 +1002,149 @@ void TerminalEmulator::tscrollup( int top, int n, int copyhist ) {
 		selscroll( top, -n );
 
 	onScrollPositionChange();
+}
+
+void TerminalEmulator::historyPush( Line line, int col ) {
+	if ( mTerm.histsize <= 0 )
+		return;
+
+	int width = tlinelen( line, col );
+	if ( width > mTerm.max_width )
+		mTerm.max_width = width;
+
+	mTerm.histi = ( mTerm.histi + 1 ) % mTerm.histsize;
+	if ( mTerm.histlen < mTerm.histsize ) {
+		mTerm.histlen++;
+		if ( mTerm.histi >= (int)mTerm.histcursize ) {
+			int newSize = eemin( mTerm.histi + mTerm.row, mTerm.histsize );
+			mTerm.hist = (Line*)xrealloc( mTerm.hist, newSize * sizeof( Line ) );
+			for ( int i = mTerm.histcursize; i < newSize; i++ )
+				mTerm.hist[i] = nullptr;
+			mTerm.histcursize = newSize;
+		}
+	} else if ( mTerm.hist[mTerm.histi] ) {
+		eeSAFE_FREE( mTerm.hist[mTerm.histi] );
+	}
+
+	mTerm.hist[mTerm.histi] = (Line)eeMalloc( col * sizeof( TerminalGlyph ) );
+	memcpy( mTerm.hist[mTerm.histi], line, col * sizeof( TerminalGlyph ) );
+}
+
+void TerminalEmulator::historyReflow( int old_col, int new_col ) {
+	int i, j;
+	int new_len = 0;
+	int new_histi = -1;
+	int new_max_width = 0;
+
+	if ( mTerm.histlen == 0 )
+		return;
+
+	Line* new_hist = (Line*)eeMalloc( mTerm.histsize * sizeof( Line ) );
+	for ( i = 0; i < mTerm.histsize; i++ )
+		new_hist[i] = nullptr;
+
+	int logical_cap = old_col * 2;
+	Line logical = (Line)eeMalloc( logical_cap * sizeof( TerminalGlyph ) );
+	int logical_len = 0;
+
+	for ( i = 0; i < mTerm.histlen; i++ ) {
+		int idx = ( mTerm.histi - mTerm.histlen + 1 + i + mTerm.histsize ) % mTerm.histsize;
+		Line line = mTerm.hist[idx];
+		int is_wrapped = ( line[old_col - 1].mode & ATTR_WRAP );
+
+		if ( logical_len + old_col > logical_cap ) {
+			logical_cap *= 2;
+			logical = (Line)eeRealloc( logical, logical_cap * sizeof( TerminalGlyph ) );
+		}
+
+		memcpy( logical + logical_len, line, old_col * sizeof( TerminalGlyph ) );
+		for ( j = 0; j < old_col; j++ )
+			logical[logical_len + j].mode &= ~ATTR_WRAP;
+
+		logical_len += old_col;
+
+		if ( is_wrapped )
+			continue;
+
+		while ( logical_len > 0 ) {
+			TerminalGlyph* g = &logical[logical_len - 1];
+			if ( g->u == ' ' && g->bg == mDefaultBg && ( g->mode & ATTR_BOLD ) == 0 )
+				logical_len--;
+			else
+				break;
+		}
+		if ( logical_len == 0 )
+			logical_len = 1;
+
+		int cursor = 0;
+		while ( cursor < logical_len ) {
+			Line nl = (Line)eeMalloc( new_col * sizeof( TerminalGlyph ) );
+			for ( j = 0; j < new_col; j++ ) {
+				nl[j] = mTerm.c.attr;
+				nl[j].u = ' ';
+				nl[j].mode = 0;
+			}
+
+			int copy_width = logical_len - cursor;
+			if ( copy_width > new_col )
+				copy_width = new_col;
+
+			if ( copy_width > 1 && copy_width == new_col && copy_width < logical_len - cursor &&
+				 ( logical[cursor + copy_width - 1].mode & ATTR_WIDE ) ) {
+				copy_width--;
+			}
+
+			memcpy( nl, logical + cursor, copy_width * sizeof( TerminalGlyph ) );
+			for ( j = 0; j < copy_width; j++ )
+				nl[j].mode &= ~ATTR_WRAP;
+
+			if ( cursor + copy_width < logical_len )
+				nl[new_col - 1].mode |= ATTR_WRAP;
+			else
+				nl[new_col - 1].mode &= ~ATTR_WRAP;
+
+			new_histi = ( new_histi + 1 ) % mTerm.histsize;
+			if ( new_len < mTerm.histsize ) {
+				new_len++;
+			} else {
+				eeSAFE_FREE( new_hist[new_histi] );
+			}
+			new_hist[new_histi] = nl;
+
+			int current_width = ( cursor + copy_width < logical_len ) ? new_col : copy_width;
+			if ( current_width > new_max_width )
+				new_max_width = current_width;
+
+			cursor += copy_width;
+		}
+		logical_len = 0;
+	}
+	eeSAFE_FREE( logical );
+
+	for ( i = 0; i < mTerm.histcursize; i++ )
+		eeSAFE_FREE( mTerm.hist[i] );
+	eeSAFE_FREE( mTerm.hist );
+
+	mTerm.hist = new_hist;
+	mTerm.histcursize = mTerm.histsize;
+	mTerm.histlen = new_len;
+	mTerm.histi = ( new_histi == -1 ) ? 0 : new_histi;
+	mTerm.max_width = new_max_width;
+}
+
+void TerminalEmulator::historyPopToScreen( int loaded, int col ) {
+	int i;
+	int start_logical = mTerm.histlen - loaded;
+	for ( i = 0; i < loaded; i++ ) {
+		int idx =
+			( mTerm.histi - mTerm.histlen + 1 + start_logical + i + mTerm.histsize ) % mTerm.histsize;
+		Line line = mTerm.hist[idx];
+		memcpy( mTerm.line[i], line, col * sizeof( TerminalGlyph ) );
+		eeSAFE_FREE( mTerm.hist[idx] );
+		mTerm.hist[idx] = nullptr;
+	}
+	mTerm.histi = ( mTerm.histi - loaded + mTerm.histsize ) % mTerm.histsize;
+	mTerm.histlen -= loaded;
 }
 
 void TerminalEmulator::selmove( int n ) {
@@ -2478,6 +2638,7 @@ check_control_code:
 		memmove( gp + width, gp, ( mTerm.col - mTerm.c.x - width ) * sizeof( TerminalGlyph ) );
 
 	if ( mTerm.c.x + width > mTerm.col ) {
+		mTerm.line[mTerm.c.y][mTerm.col - 1].mode |= ATTR_WRAP;
 		tnewline( 1 );
 		gp = &mTerm.line[mTerm.c.y][mTerm.c.x];
 	}
@@ -2535,93 +2696,117 @@ int TerminalEmulator::twrite( const char* buf, int buflen, int show_ctrl ) {
 
 void TerminalEmulator::tresize( int col, int row ) {
 	int i, j;
-	int minrow = MIN( row, mTerm.row );
-	int mincol = MIN( col, mTerm.col );
-	int* bp;
-	TerminalCursor c;
+	int old_row = mTerm.row;
+	int old_col = mTerm.col;
+	int save_end = 0;
+	int loaded = 0;
+	bool is_alt = IS_SET( MODE_ALTSCREEN );
 
 	if ( col < 1 || row < 1 ) {
 		fprintf( stderr, "tresize: error resizing to %dx%d\n", col, row );
 		return;
 	}
 
-	/*
-	 * slide screen to keep cursor where we expect it -
-	 * tscrollup would work here, but we can optimize to
-	 * memmove because we're freeing the earlier lines
-	 */
-	for ( i = 0; i <= mTerm.c.y - row; i++ ) {
-		xfree( mTerm.line[i] );
-		xfree( mTerm.alt[i] );
-	}
-	/* ensure that both src and dst are not NULL */
-	if ( i > 0 ) {
-		memmove( mTerm.line, mTerm.line + i, row * sizeof( Line ) );
-		memmove( mTerm.alt, mTerm.alt + i, row * sizeof( Line ) );
-	}
-	for ( i += row; i < mTerm.row; i++ ) {
-		xfree( mTerm.line[i] );
-		xfree( mTerm.alt[i] );
-	}
+	if ( mSel.ob.x != -1 )
+		selclear();
 
-	/* resize to new height */
-	mTerm.line = (Line*)xrealloc( mTerm.line, row * sizeof( Line ) );
-	mTerm.alt = (Line*)xrealloc( mTerm.alt, row * sizeof( Line ) );
-	mTerm.dirty = (int*)xrealloc( mTerm.dirty, row * sizeof( *mTerm.dirty ) );
-	mTerm.tabs = (int*)xrealloc( mTerm.tabs, col * sizeof( *mTerm.tabs ) );
+	if ( is_alt )
+		tswapscreen();
 
-	/* resize each row to new width, zero-pad if needed */
-	for ( i = 0; i < minrow; i++ ) {
-		mTerm.line[i] = (Line)xrealloc( mTerm.line[i], col * sizeof( TerminalGlyph ) );
-		mTerm.alt[i] = (Line)xrealloc( mTerm.alt[i], col * sizeof( TerminalGlyph ) );
-	}
+	save_end = mTerm.row;
+	if ( mTerm.row != 0 && mTerm.col != 0 ) {
+		if ( !is_alt && mTerm.c.y > 0 && mTerm.c.y < mTerm.row )
+			mTerm.line[mTerm.c.y - 1][mTerm.col - 1].mode &= ~ATTR_WRAP;
 
-	/* allocate any new rows */
-	for ( /* i = minrow */; i < row; i++ ) {
-		mTerm.line[i] = (Line)xmalloc( col * sizeof( TerminalGlyph ) );
-		mTerm.alt[i] = (Line)xmalloc( col * sizeof( TerminalGlyph ) );
-	}
+		for ( i = mTerm.row - 1; i >= 0; i-- ) {
+			if ( tlinelen( mTerm.line[i], mTerm.col ) > 0 )
+				break;
+		}
+		save_end = i + 1;
+		if ( !is_alt && save_end < mTerm.c.y + 1 )
+			save_end = mTerm.c.y + 1;
 
-	/* add new columns to history */
-	for ( int i = 0; i < mTerm.histcursize; i++ ) {
-		mTerm.hist[i] = (TerminalGlyph*)xrealloc( mTerm.hist[i], col * sizeof( TerminalGlyph ) );
-		for ( j = mincol; j < col; j++ ) {
-			mTerm.hist[i][j] = mTerm.c.attr;
-			mTerm.hist[i][j].u = ' ';
+		for ( i = 0; i < save_end; i++ )
+			historyPush( mTerm.line[i], mTerm.col );
+
+		bool needs_reflow = false;
+		if ( col > mTerm.col ) {
+			needs_reflow = mTerm.max_width >= mTerm.col;
+		} else if ( col < mTerm.col ) {
+			if ( mTerm.max_width > col )
+				needs_reflow = true;
+		}
+
+		if ( needs_reflow ) {
+			historyReflow( mTerm.col, col );
+		} else {
+			for ( i = 0; i < mTerm.histcursize; i++ ) {
+				if ( mTerm.hist[i] ) {
+					mTerm.hist[i] = (Line)eeRealloc( mTerm.hist[i], col * sizeof( TerminalGlyph ) );
+					if ( col > old_col ) {
+						for ( j = old_col; j < col; j++ ) {
+							mTerm.hist[i][j] = mTerm.c.attr;
+							mTerm.hist[i][j].u = ' ';
+							mTerm.hist[i][j].mode = 0;
+						}
+					}
+				}
+			}
 		}
 	}
 
-	if ( col > mTerm.col ) {
-		bp = mTerm.tabs + mTerm.col;
-
-		memset( bp, 0, sizeof( *mTerm.tabs ) * ( col - mTerm.col ) );
-		while ( --bp > mTerm.tabs && !*bp )
-			/* nothing */;
-		for ( bp += tabspaces; bp < mTerm.tabs + col; bp += tabspaces )
-			*bp = 1;
+	for ( i = 0; i < mTerm.row; i++ ) {
+		eeSAFE_FREE( mTerm.line[i] );
+		eeSAFE_FREE( mTerm.alt[i] );
 	}
+	eeSAFE_FREE( mTerm.line );
+	eeSAFE_FREE( mTerm.alt );
+	eeSAFE_FREE( mTerm.dirty );
+	eeSAFE_FREE( mTerm.tabs );
 
-	/* update terminal size */
 	mTerm.col = col;
 	mTerm.row = row;
-	/* reset scrolling region */
-	tsetscroll( 0, row - 1 );
-	/* make use of the LIMIT in tmoveto */
-	tmoveto( mTerm.c.x, mTerm.c.y );
-	/* Clearing both screens (it makes dirty all lines) */
-	c = mTerm.c;
-	for ( i = 0; i < 2; i++ ) {
-		if ( mincol < col && 0 < minrow ) {
-			tclearregion( mincol, 0, col - 1, minrow - 1 );
+	mTerm.line = (Line*)eeMalloc( mTerm.row * sizeof( Line ) );
+	mTerm.alt = (Line*)eeMalloc( mTerm.row * sizeof( Line ) );
+	mTerm.dirty = (int*)eeMalloc( mTerm.row * sizeof( int ) );
+	mTerm.tabs = (int*)eeMalloc( mTerm.col * sizeof( int ) );
+
+	for ( i = 0; i < mTerm.row; i++ ) {
+		mTerm.line[i] = (Line)eeMalloc( mTerm.col * sizeof( TerminalGlyph ) );
+		mTerm.alt[i] = (Line)eeMalloc( mTerm.col * sizeof( TerminalGlyph ) );
+		mTerm.dirty[i] = 1;
+		for ( j = 0; j < mTerm.col; j++ ) {
+			mTerm.line[i][j] = mTerm.c.attr;
+			mTerm.line[i][j].u = ' ';
+			mTerm.line[i][j].mode = 0;
+			mTerm.alt[i][j] = mTerm.c.attr;
+			mTerm.alt[i][j].u = ' ';
+			mTerm.alt[i][j].mode = 0;
 		}
-		if ( 0 < col && minrow < row ) {
-			tclearregion( 0, minrow, col - 1, row - 1 );
-		}
-		tswapscreen();
-		tcursor( CURSOR_LOAD );
 	}
-	mTerm.c = c;
+
+	memset( mTerm.tabs, 0, mTerm.col * sizeof( int ) );
+	for ( i = tabspaces; i < mTerm.col; i += tabspaces )
+		mTerm.tabs[i] = 1;
+
+	tsetscroll( 0, mTerm.row - 1 );
+
+	if ( old_row > 0 ) {
+		loaded = MIN( mTerm.histlen, mTerm.row );
+		historyPopToScreen( loaded, col );
+		if ( !is_alt )
+			mTerm.c.y += ( loaded - save_end );
+	}
+
+	if ( is_alt )
+		tswapscreen();
+
+	LIMIT( mTerm.scr, 0, mTerm.histlen );
+	LIMIT( mTerm.c.y, 0, mTerm.row - 1 );
+	LIMIT( mTerm.c.x, 0, mTerm.col - 1 );
+
 	mDirty = true;
+	onScrollPositionChange();
 }
 
 void TerminalEmulator::resettitle( void ) {
@@ -2899,13 +3084,13 @@ TerminalEmulator::TerminalEmulator( PtyPtr&& pty, ProcPtr&& process,
 	int col = mPty->getNumColumns();
 	int row = mPty->getNumRows();
 
+	selinit();
 	tnew( col, row, historySize );
 	if ( display ) {
 		display->setCursorMode( TerminalCursorMode::SteadyUnderline );
 		display->attach( this );
 		loadColors();
 	}
-	selinit();
 	resettitle();
 }
 
