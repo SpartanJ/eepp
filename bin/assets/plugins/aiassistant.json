@@ -501,5 +501,26 @@
       "fetch_models_url": "http://localhost:8080/api/tags",
       "open_api": true
     }
+  },
+  "agents": {
+    "gemini-cli": {
+      "enabled": true,
+      "command": "gemini",
+      "args": ["--experimental-acp"]
+    },
+    "opencode": {
+      "enabled": true,
+      "command": "opencode",
+      "args": ["acp"]
+    },
+    "claude-agent": {
+      "enabled": true,
+      "command": "claude-agent-acp"
+    },
+    "cursor": {
+      "enabled": true,
+      "command": "cursor",
+      "args": ["acp"]
+    }
   }
 }

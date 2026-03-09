@@ -179,8 +179,10 @@ DropDownList.role_ui {
 			<PushButton id="llm_more" class="llm_button" tooltip="@string(more_options, More Options)" icon="icon(more-fill, 14dp)" min-width="32dp" />
 			<hbox lw="0" lw8="1" lh="mp" layout_gravity="center" padding-left="4dp" padding-right="4dp">
 				<DropDownList class="model_ui" menu-width-mode="expand-if-needed-centered" lw="0" lw8="1" selected-index="0"></DropDownList>
+				<DropDownList class="agent_ui" menu-width-mode="expand-if-needed-centered" lw="0" lw8="1" selected-index="0" visible="false"></DropDownList>
 				<!-- <PushButton id="refresh_model_ui" tooltip="@string(refresh_model_ui, Refresh Local Models)" icon="icon(refresh, 14dp)" /> -->
 			</hbox>
+			<SelectButton id="llm_agent_mode" class="llm_button" tooltip="@string(toggle_agent_mode, Toggle Agent Mode)" icon="icon(robot, 14dp)" min-width="32dp" margin-right="4dp" select-on-click="true" />
 			<PushButton id="llm_settings_but" class="llm_button" text="@string(settings, Settings)" tooltip="@string(settings, Settings)" icon="icon(settings, 14dp)" min-width="32dp" margin-right="4dp" />
 			<!-- <SelectButton id="llm_private_chat" class="llm_button" tooltip="@string(private_chat, Toggle Private Chat)" icon="icon(chat-private, 14dp)" min-width="32dp" margin-right="8dp" select-on-click="true" /> -->
 			<PushButton id="llm_add_chat" class="llm_button" text="@string(add, Add)" tooltip="@string(add_message, Add Message)" icon="icon(add, 15dp)" min-width="32dp" margin-right="4dp" />
@@ -208,6 +210,18 @@ static const char* DEFAULT_CHAT_GLOBE = R"xml(
 </vbox>
 )xml";
 
+static const char* DEFAULT_PERMISSION_GLOBE = R"xml(
+<vbox class="llm_conversation tool_permission" lw="mp" lh="wc" margin-bottom="8dp">
+	<hbox class="llm_conversation_opt" lw="mp" lh="wc" background-color="var(--primary)" padding="4dp">
+		<TextView text="Tool Call Permission Request" font-style="bold" margin-left="4dp" />
+	</hbox>
+	<vbox class="data_ui" lw="mp" lh="wc" padding="8dp" background-color="var(--tab-back)">
+		<TextView class="permission_desc" lw="mp" lh="wc" word-wrap="true" />
+		<hbox class="permission_options" lw="mp" lh="wc" margin-top="8dp" />
+	</vbox>
+</vbox>
+)xml";
+
 LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	UILinearLayout(), WidgetCommandExecuter( getInput() ), mManager( manager ) {
 	setClass( "llm_chatui" );
@@ -220,6 +234,14 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 
 	mChatsList = findByClass( "llm_chats" );
 	mModelDDL = findByClass<UIDropDownList>( "model_ui" );
+	mAgentDDL = findByClass<UIDropDownList>( "agent_ui" );
+
+	mChatAgentMode = find<UISelectButton>( "llm_agent_mode" );
+	mChatAgentMode->on( Event::OnValueChange, [this]( auto ) {
+		mIsAgentMode = mChatAgentMode->isSelected();
+		mModelDDL->setVisible( !mIsAgentMode );
+		mAgentDDL->setVisible( mIsAgentMode );
+	} );
 
 	// mRefreshModels = find<UIPushButton>( "refresh_model_ui" );
 	// mRefreshModels->onClick( [this]( auto ) { execute( "ai-refresh-local-models" ); } );
@@ -314,12 +336,16 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 
 	setCmd( "ai-prompt", [this] {
 		// "ai-prompt-stop"
-		if ( mRequest ) {
-			if ( !mRequest->isCancelled() ) {
+		if ( mRequest || ( mAgentSession && mAgentSession->isPrompting() ) ) {
+			if ( mRequest && !mRequest->isCancelled() ) {
 				mRequest->cancel();
 				return;
-			} else
+			} else if ( mAgentSession && mAgentSession->isPrompting() ) {
+				mAgentSession->cancel();
+				return;
+			} else {
 				mRequest.reset();
+			}
 		}
 
 		auto chats = findAllByClass( "llm_conversation" );
@@ -344,7 +370,12 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		}
 
 		execute( "ai-add-chat" );
-		doRequest();
+
+		if ( mIsAgentMode ) {
+			doAgentRequest();
+		} else {
+			doRequest();
+		}
 	} );
 
 	setCmd( "ai-prompt-stop", [this] {
@@ -550,6 +581,8 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	setProviders( std::move( providers ) );
 	mCurModel = getDefaultModel();
 
+	mAgents = getPlugin()->getAgents();
+
 	AppConfig& config = getPlugin()->getPluginContext()->getConfig();
 	auto partition = config.iniState.getValue( "aiassistant", "split_partition", "" );
 
@@ -558,6 +591,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 
 	auto modelProvider = config.iniState.getValue( "aiassistant", "default_provider", "" );
 	auto modelName = config.iniState.getValue( "aiassistant", "default_model", "" );
+	auto agentName = config.iniState.getValue( "aiassistant", "default_agent", "" );
 
 	if ( !modelProvider.empty() && !modelName.empty() ) {
 		auto modelOpt = getModel( modelProvider, modelName );
@@ -566,7 +600,14 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		}
 	}
 
+	if ( !agentName.empty() && mAgents.find( agentName ) != mAgents.end() ) {
+		mCurAgent = agentName;
+	} else if ( !mAgents.empty() ) {
+		mCurAgent = mAgents.begin()->first;
+	}
+
 	fillModelDropDownList( mModelDDL );
+	fillAgentDropDownList( mAgentDDL );
 
 	const auto appendShortcutToTooltip = [this]( UIPushButton* but, const std::string& cmd ) {
 		auto kb = getKeyBindings().getCommandKeybindString( cmd );
@@ -968,6 +1009,187 @@ void LLMChatUI::fillModelDropDownList( UIDropDownList* modelDDL ) {
 		[this, modelDDL] { fillApiModels( modelDDL ); } );
 }
 
+void LLMChatUI::fillAgentDropDownList( UIDropDownList* agentDDL ) {
+	std::vector<String> agents;
+	std::size_t selectedIndex = 0;
+	for ( const auto& [name, data] : mAgents ) {
+		if ( !data.enabled )
+			continue;
+
+		String agentName( String::format( "%s", data.name ) );
+		if ( data.name == mCurAgent )
+			selectedIndex = agents.size();
+		agents.push_back( std::move( agentName ) );
+	}
+	agentDDL->getListBox()->clear();
+	agentDDL->getListBox()->addListBoxItems( std::move( agents ) );
+	agentDDL->getListBox()->setSelected( selectedIndex );
+	agentDDL->on( Event::OnValueChange, [this, agentDDL]( auto ) {
+		mCurAgent = agentDDL->getListBox()->getItemSelectedText().toUtf8();
+	} );
+}
+
+void LLMChatUI::writeToLastChat( const std::string& text ) {
+	runOnMainThread( [this, text] {
+		auto chats = mChatsList->findAllByClass( "llm_conversation" );
+		if ( chats.empty() )
+			return;
+		auto* chat = chats.back();
+		auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
+		auto* thinking = editor->findByClass<UIImage>( "thinking" );
+		auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
+
+		editor->getDocument().textInput( String::fromUtf8( text ) );
+		editor->setCursorVisible( false );
+		thinking->removeActionsByTag( thinkingID );
+		thinking->setVisible( false );
+		resizeToFit( editor );
+	} );
+}
+
+void LLMChatUI::doAgentRequest() {
+	if ( !mAgentSession ) {
+		auto it = mAgents.find( mCurAgent );
+		if ( it == mAgents.end() ) {
+			showMsg( "Agent not configured." );
+			return;
+		}
+
+		mChatRun->setVisible( false )->setEnabled( false );
+		mChatStop->setVisible( true )->setEnabled( true );
+
+		acp::ACPClient::Config config;
+		config.command = it->second.command;
+		config.args = it->second.args;
+		config.environment = it->second.environment;
+		config.workingDirectory = getPlugin()->getPluginContext()->getCurrentProject();
+
+		mAgentSession =
+			std::make_unique<acp::AgentSession>( getUISceneNode()->getThreadPool(), config );
+
+		UIWidget* chat = addChatUI( LLMChat::Role::Assistant );
+		toggleEnableChats( false );
+		auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
+		editor->setEnabled( false );
+		auto* thinking = editor->findByClass<UIImage>( "thinking" );
+		auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
+		thinking->setVisible( true );
+		thinking->setPosition( { PixelDensity::dpToPx( 8 ), PixelDensity::dpToPx( 3 ) } );
+		thinking->setInterval( [thinking] { thinking->rotate( 360 / 32 ); }, Seconds( 0.125 ),
+							   thinkingID );
+
+		mAgentSession->onSessionUpdate = [this]( const nlohmann::json& msg ) {
+			auto sessionUpdate = msg.value( "sessionUpdate", "" );
+			if ( sessionUpdate == "agent_message_chunk" ||
+				 sessionUpdate == "agent_thought_chunk" ) {
+				if ( msg.contains( "content" ) && msg["content"].contains( "text" ) ) {
+					auto chunk = msg["content"].value( "text", "" );
+					writeToLastChat( chunk );
+				}
+			} else if ( sessionUpdate == "tool_call" ) {
+				std::string toolStr = "\n> Tool Call: " + msg.value( "title", "" ) + "\n";
+				writeToLastChat( toolStr );
+			} else if ( sessionUpdate == "plan" ) {
+				std::string planStr = "\n> Plan Updated:\n";
+				writeToLastChat( planStr );
+			}
+		};
+
+		mAgentSession->onRequestPermission = [this]( const auto& req, auto cb ) {
+			runOnMainThread( [this, req, cb]() { addPermissionUI( req, cb ); } );
+		};
+
+		mAgentSession->onTerminalCreated = []( UITerminal* term, const std::string& termId ) {
+			// This will be called from AgentSession.
+		};
+
+		mAgentSession->start( [this]( bool ready ) {
+			runOnMainThread( [this, ready]() {
+				if ( ready ) {
+					sendAgentPrompt();
+				} else {
+					auto chats = mChatsList->findAllByClass( "llm_conversation" );
+					if ( !chats.empty() ) {
+						auto* chat = chats.back();
+						auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
+						auto* thinking = editor->findByClass<UIImage>( "thinking" );
+						auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
+						thinking->removeActionsByTag( thinkingID );
+						thinking->setVisible( false );
+						editor->setEnabled( true );
+					}
+					mChatStop->setVisible( false )->setEnabled( false );
+					mChatRun->setVisible( true )->setEnabled( true );
+					toggleEnableChats( true );
+					showMsg( "Failed to start agent process." );
+					mAgentSession.reset();
+				}
+			} );
+		} );
+	} else {
+		// Existing session, just send the prompt
+		mChatRun->setVisible( false )->setEnabled( false );
+		mChatStop->setVisible( true )->setEnabled( true );
+
+		UIWidget* chat = addChatUI( LLMChat::Role::Assistant );
+		toggleEnableChats( false );
+		auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
+		editor->setEnabled( false );
+		auto* thinking = editor->findByClass<UIImage>( "thinking" );
+		auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
+		thinking->setVisible( true );
+		thinking->setPosition( { PixelDensity::dpToPx( 8 ), PixelDensity::dpToPx( 3 ) } );
+		thinking->setInterval( [thinking] { thinking->rotate( 360 / 32 ); }, Seconds( 0.125 ),
+							   thinkingID );
+		sendAgentPrompt();
+	}
+}
+
+void LLMChatUI::sendAgentPrompt() {
+	acp::PromptRequest req;
+	req.sessionId = mAgentSession->getSessionId();
+
+	// Create prompt from the last user message
+	auto chats = findAllByClass( "llm_conversation" );
+	if ( !chats.empty() ) {
+		auto* lastChat =
+			chats[chats.size() - 2]; // Assistant is the last one (added in doAgentRequest)
+		auto* editor = lastChat->findByClass<UICodeEditor>( "data_ui" );
+		std::string text = editor->getDocument().getText().toUtf8();
+		replaceFileLinksToContents( text );
+		req.prompt = { { { "type", "text" }, { "text", text } } };
+	} else {
+		req.prompt = { { { "type", "text" }, { "text", "" } } };
+	}
+
+	mAgentSession->prompt( req, [this]( const acp::PromptResponse& res ) {
+		runOnMainThread( [this, res]() {
+			auto chats = mChatsList->findAllByClass( "llm_conversation" );
+			if ( !chats.empty() ) {
+				auto* chat = chats[chats.size() - 1];
+				auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
+				auto* thinking = editor->findByClass<UIImage>( "thinking" );
+				if ( thinking ) {
+					auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
+					thinking->removeActionsByTag( thinkingID );
+					thinking->setVisible( false );
+				}
+				editor->setEnabled( true );
+				if ( editor->hasFocus() )
+					mChatInput->setFocus();
+			}
+
+			toggleEnableChats( true );
+			mChatStop->setVisible( false )->setEnabled( false );
+			mChatRun->setVisible( true )->setEnabled( true );
+
+			if ( res.stopReason != "cancelled" ) {
+				saveChat();
+			}
+		} );
+	} );
+}
+
 void LLMChatUI::resizeToFit( UICodeEditor* editor ) {
 	Float visibleLineCount = editor->getDocumentView().getVisibleLinesCount();
 	Float lineHeight = editor->getLineHeight();
@@ -1349,6 +1571,55 @@ Drawable* LLMChatUI::findIcon( const std::string& name, const size_t iconSize ) 
 	if ( icon )
 		return icon->getSize( iconSize );
 	return nullptr;
+}
+
+void LLMChatUI::addPermissionUI( const acp::RequestPermissionRequest& req,
+								 std::function<void( const acp::RequestPermissionResponse& )> cb ) {
+	find( "chat_presentation" )->setVisible( false );
+
+	UIWidget* chat =
+		mChatsList->getUISceneNode()->loadLayoutFromString( DEFAULT_PERMISSION_GLOBE, mChatsList );
+
+	UITextView* desc = chat->findByClass<UITextView>( "permission_desc" );
+	std::string descStr = "The agent wants to execute a tool call:\n";
+	descStr += "Title: " + req.toolCall.title + "\n";
+	descStr += "Kind: " + req.toolCall.kind + "\n";
+	if ( !req.toolCall.rawInput.is_null() ) {
+		descStr += "Input:\n" + req.toolCall.rawInput.dump( 2 ) + "\n";
+	}
+	desc->setText( descStr );
+
+	UIWidget* optionsBox = chat->findByClass( "permission_options" );
+
+	bool isFirst = true;
+	for ( const auto& opt : req.options ) {
+		UIPushButton* but = UIPushButton::New();
+		but->setParent( optionsBox );
+		but->setText( opt.name );
+		but->setTooltipText( opt.kind );
+		but->setLayoutMargin( Rectf( 0, 0, 8, 0 ) );
+
+		auto cbCopy = cb;
+		auto optId = opt.optionId;
+		but->onClick( [chat, cbCopy, optId, this]( const Event* ) {
+			chat->close(); // Close the permission request UI once selected
+			acp::RequestPermissionResponse res;
+			res.outcome = "selected";
+			res.optionId = optId;
+			cbCopy( res );
+
+			if ( mChatInput ) {
+				mChatInput->setFocus();
+			}
+		} );
+
+		if ( isFirst ) {
+			isFirst = false;
+			but->setFocus();
+		}
+	}
+
+	mChatScrollView->setAnchorScroll( true );
 }
 
 UIWidget* LLMChatUI::addChatUI( LLMChat::Role role ) {

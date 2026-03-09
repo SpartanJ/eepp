@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../pluginmanager.hpp"
+#include "agentsession.hpp"
 #include "llmchatcompletionrequest.hpp"
 #include "protocol.hpp"
 
@@ -91,6 +92,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	bool chatExistsInDisk() const;
 
+	const std::string& getCurAgent() const { return mCurAgent; }
+
   protected:
 	UUID mUUID;
 	std::string mSummary;
@@ -109,8 +112,10 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	UIPushButton* mRefreshModels{ nullptr };
 	UIPushButton* mChatAttach{ nullptr };
 	UISelectButton* mChatPrivate{ nullptr };
+	UISelectButton* mChatAgentMode{ nullptr };
 	UIScrollView* mChatScrollView{ nullptr };
 	UIDropDownList* mModelDDL{ nullptr };
+	UIDropDownList* mAgentDDL{ nullptr };
 	UIVLinearLayoutCommandExecuter* mLocateBarLayout{ nullptr };
 	UITextInput* mLocateInput{ nullptr };
 	UITableView* mLocateTable{ nullptr };
@@ -120,8 +125,15 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	LLMProviders mProviders;
 	LLMModel mCurModel;
 	std::unordered_map<String::HashType, LLMModel> mModelsMap;
+
+	std::map<std::string, ACPAgent> mAgents;
+	std::string mCurAgent;
+
+	std::unique_ptr<acp::AgentSession> mAgentSession;
+
 	int mPendingModelsToLoad{ 0 };
 	bool mChatIsPrivate{ false };
+	bool mIsAgentMode{ false };
 	bool mChatLocked{ false };
 	bool mLinkMode{ false };
 
@@ -143,6 +155,10 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void doRequest();
 
+	void doAgentRequest();
+
+	void sendAgentPrompt();
+
 	void toggleEnableChat( UIWidget* chat, bool enabled );
 
 	void toggleEnableChats( bool enabled );
@@ -150,6 +166,9 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	Drawable* findIcon( const std::string& name, const size_t iconSize );
 
 	UIWidget* addChatUI( LLMChat::Role role );
+
+	void addPermissionUI( const acp::RequestPermissionRequest& req,
+						  std::function<void( const acp::RequestPermissionResponse& )> cb );
 
 	void fillApiModels( UIDropDownList* modelDDL );
 
@@ -159,9 +178,13 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void fillModelDropDownList( UIDropDownList* modelDDL );
 
+	void fillAgentDropDownList( UIDropDownList* agentDDL );
+
 	void resizeToFit( UICodeEditor* editor );
 
 	void addChat( LLMChat::Role role, std::string conversation );
+
+	void writeToLastChat( const std::string& text );
 
 	void removeLastChat();
 

@@ -14,6 +14,7 @@ class AIAssistantPlugin : public PluginBase {
 		StyleSheetLength partition;
 		std::string modelProvider;
 		std::string modelName;
+		std::string agentName;
 	};
 
 	static PluginDefinition Definition() {
@@ -37,6 +38,7 @@ class AIAssistantPlugin : public PluginBase {
 	std::string getDescription() override { return Definition().description; }
 
 	const LLMProviders& getProviders() { return mProviders; }
+	const ACPAgents& getAgents() { return mAgents; }
 
 	std::string getPluginStatePath() const;
 
@@ -50,6 +52,7 @@ class AIAssistantPlugin : public PluginBase {
 
   protected:
 	LLMProviders mProviders;
+	ACPAgents mAgents;
 	bool mUIInit{ false };
 	bool mBrokenUserConfigFile{ false };
 	UIWidget* mStatusBar{ nullptr };
