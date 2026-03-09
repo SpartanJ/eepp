@@ -6,6 +6,7 @@
 #include <eepp/ui/uiconsole.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uigridlayout.hpp>
+#include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uiimage.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uilistbox.hpp>
@@ -43,7 +44,6 @@
 #include <eepp/ui/uiviewpager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwidgettable.hpp>
-#include <eepp/ui/uiwidgettablerow.hpp>
 #include <eepp/ui/uiwindow.hpp>
 
 namespace EE { namespace UI {
@@ -157,13 +157,22 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["pre"] = UIRichText::NewPre;
 		registeredWidget["img"] = [] { return UIImage::NewWithTag( "img" ); };
 		registeredWidget["input"] = UITextInput::New;
-
+		registeredWidget["center"] = [] {
+			return UILinearLayout::NewVerticalWidthMatchParent( "center" );
+		};
 		registeredWidget["html"] = [] {
 			return UILinearLayout::NewVerticalWidthMatchParent( "html" );
 		};
 		registeredWidget["body"] = [] {
 			return UILinearLayout::NewVerticalWidthMatchParent( "body" );
 		};
+		registeredWidget["table"] = UIHTMLTable::New;
+		registeredWidget["tr"] = UIHTMLTableRow::New;
+		registeredWidget["thead"] = UIHTMLTableHead::New;
+		registeredWidget["tbody"] = UIHTMLTableBody::New;
+		registeredWidget["tfoot"] = UIHTMLTableFooter::New;
+		registeredWidget["th"] = [] { return UIHTMLTableCell::New( "th" ); };
+		registeredWidget["td"] = [] { return UIHTMLTableCell::New( "td" ); };
 
 		sBaseListCreated = true;
 	}

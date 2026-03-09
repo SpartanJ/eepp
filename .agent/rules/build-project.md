@@ -5,14 +5,14 @@ All build commands must be executed from the **root project directory**. Follow 
 ## Step 1: Update Makefiles (Conditional)
 If you have **added, renamed, or deleted** any source files, you must regenerate the makefiles before compiling.
 
-*   **Tool:** Use `premake5` if installed; otherwise, fallback to `premake4` (the parameters are identical).
+*   **Tool:** Use `premake4` if installed; otherwise, fallback to `premake5` (the parameters are identical).
 *   **Linker Flag (`--with-mold-linker`):** This flag is conditional. If the `mold` linker is installed on the system, you **must** include it to speed up linking. If `mold` is not installed, omit the flag.
 
 **Command (if `mold` is installed):**
-`premake5 --disable-static-build --with-mold-linker --with-debug-symbols --address-sanitizer gmake`
+`premake4 --disable-static-build --with-mold-linker --with-debug-symbols --address-sanitizer gmake`
 
 **Command (if `mold` is NOT installed):**
-`premake5 --disable-static-build --with-debug-symbols --address-sanitizer gmake`
+`premake4 --disable-static-build --with-debug-symbols --address-sanitizer gmake`
 
 *(If no files were added/removed, you may skip Step 1).*
 

@@ -9,6 +9,7 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uiapplication.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -734,6 +735,103 @@ UTEST( UIRichText, WhitespaceCollapseCodeTest ) {
 	}
 
 	EXPECT_TRUE( foundDotSpace );
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLTable, basicLayout ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "HTML Table Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+		<table id="table" layout_width="400dp" layout_height="wrap_content">
+			<thead>
+				<tr>
+					<th>Header 1</th>
+					<th>Header 2</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>Row 1 Col 1</td>
+					<td>Row 1 Col 2</td>
+				</tr>
+				<tr>
+					<td>Row 2 Col 1 which is very long and should cause wrapping if the table is narrow enough</td>
+					<td>Row 2 Col 2</td>
+				</tr>
+			</tbody>
+		</table>
+	)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+
+	UI::UIHTMLTable* table = sceneNode->find<UI::UIHTMLTable>( "table" );
+	ASSERT_TRUE( table != nullptr );
+
+	// Force layout
+	sceneNode->update( Time::Zero );
+
+	// Check that we have rows and cells
+	int rowCount = 0;
+	std::function<void( Node* )> countRows = [&]( Node* node ) {
+		Node* child = node->getFirstChild();
+		while ( child ) {
+			if ( child->isWidget() ) {
+				UIWidget* widget = static_cast<UIWidget*>( child );
+				if ( widget->getType() == UI_TYPE_HTML_TABLE_ROW ) {
+					rowCount++;
+				} else if ( widget->getType() != UI_TYPE_HTML_TABLE ) {
+					countRows( widget );
+				}
+			}
+			child = child->getNextNode();
+		}
+	};
+	countRows( table );
+	EXPECT_EQ( rowCount, 3 );
+
+	// Verify that the table has a height greater than zero
+	EXPECT_GT( table->getPixelsSize().getHeight(), 0 );
+
+	// Check column synchronization
+	std::vector<UIHTMLTableRow*> rows;
+	std::function<void( Node* )> collectRows = [&]( Node* node ) {
+		Node* child = node->getFirstChild();
+		while ( child ) {
+			if ( child->isWidget() ) {
+				UIWidget* widget = static_cast<UIWidget*>( child );
+				if ( widget->getType() == UI_TYPE_HTML_TABLE_ROW ) {
+					rows.push_back( static_cast<UIHTMLTableRow*>( widget ) );
+				} else if ( widget->getType() != UI_TYPE_HTML_TABLE ) {
+					collectRows( widget );
+				}
+			}
+			child = child->getNextNode();
+		}
+	};
+	collectRows( table );
+
+	if ( rows.size() >= 2 ) {
+		Node* cell00 = rows[0]->getFirstChild();
+		Node* cell10 = rows[1]->getFirstChild();
+		if ( cell00 && cell10 && cell00->isWidget() && cell10->isWidget() ) {
+			EXPECT_EQ( cell00->asType<UIWidget>()->getPixelsPosition().x,
+					   cell10->asType<UIWidget>()->getPixelsPosition().x );
+		}
+	}
 
 	eeDelete( sceneNode );
 	Engine::destroySingleton();
