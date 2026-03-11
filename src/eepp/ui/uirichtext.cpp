@@ -23,7 +23,7 @@ UIRichText* UIRichText::NewWithTag( const std::string& tag ) {
 }
 
 UIRichText::UIRichText( const std::string& tag ) : UILayout( tag ) {
-	mFlags |= UI_LOADS_ITS_CHILDREN;
+	mFlags |= UI_LOADS_ITS_CHILDREN | UI_OWNS_CHILDREN_POSITION;
 
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
@@ -622,6 +622,8 @@ void UIRichText::updateLayout() {
 	mResizedCount = 0;
 	mPacking = true;
 
+	setMatchParentIfNeededVerticalGrowth();
+
 	rebuildRichText();
 
 	mRichText.updateLayout();
@@ -632,6 +634,7 @@ void UIRichText::updateLayout() {
 		setInternalPixelsWidth( mRichText.getSize().getWidth() + mPaddingPx.Left +
 								mPaddingPx.Right );
 	}
+
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
 		setInternalPixelsHeight( mRichText.getSize().getHeight() + mPaddingPx.Top +
 								 mPaddingPx.Bottom );

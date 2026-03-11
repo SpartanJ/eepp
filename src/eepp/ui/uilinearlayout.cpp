@@ -174,29 +174,7 @@ void UILinearLayout::packVertical() {
 	if ( mPacking )
 		return;
 	mPacking = true;
-	bool sizeChanged = false;
-	Sizef size( getPixelsSize() );
-
-	if ( getLayoutWidthPolicy() == SizePolicy::MatchParent && 0 == getLayoutWeight() ) {
-		Float w = getMatchParentWidth();
-
-		if ( (int)w != (int)getPixelsSize().getWidth() ) {
-			sizeChanged = true;
-			size.setWidth( w );
-		}
-	}
-
-	if ( getLayoutHeightPolicy() == SizePolicy::MatchParent ) {
-		Float h = getMatchParentHeight();
-
-		if ( (int)h != (int)getPixelsSize().getHeight() ) {
-			sizeChanged = true;
-			size.setHeight( h );
-		}
-	}
-
-	if ( sizeChanged )
-		setInternalPixelsSize( size );
+	setMatchParentIfNeededVerticalGrowth();
 
 	applyWidthPolicyOnChildren();
 

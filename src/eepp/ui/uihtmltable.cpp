@@ -8,6 +8,7 @@ UIHTMLTable* UIHTMLTable::New() {
 }
 
 UIHTMLTable::UIHTMLTable() : UILayout( "table" ) {
+	mFlags |= UI_OWNS_CHILDREN_POSITION;
 	mWidthPolicy = SizePolicy::MatchParent;
 	mHeightPolicy = SizePolicy::WrapContent;
 }
@@ -24,6 +25,7 @@ void UIHTMLTable::updateLayout() {
 	if ( mPacking || !mVisible )
 		return;
 	mPacking = true;
+	setMatchParentIfNeededVerticalGrowth();
 
 	UIHTMLTableHead* head = nullptr;
 	UIHTMLTableBody* body = nullptr;
@@ -75,6 +77,10 @@ void UIHTMLTable::updateLayout() {
 	}
 
 	mColWidths.assign( maxCols, 0.f );
+
+	if ( maxCols == 1 ) {
+		mColWidths[0] = mSize.getWidth();
+	}
 
 	// Get natural width for each column (without wrapping)
 	for ( size_t r = 0; r < mRows.size(); ++r ) {
@@ -131,7 +137,7 @@ void UIHTMLTable::updateLayout() {
 		UIHTMLTableRow* row = mRows[r];
 		row->setPixelsSize( availableWidth, rowHeight );
 
-		if ( r == 0 ) {
+		if ( r == 0 && mCells[start]->getParent()->isType( UI_TYPE_HTML_TABLE_HEAD ) ) {
 			headHeight = rowHeight;
 		} else if ( r == rowCount - 1 && columnCount &&
 					mCells[start]->getParent()->isType( UI_TYPE_HTML_TABLE_FOOTER ) ) {
@@ -173,13 +179,8 @@ void UIHTMLTable::updateLayout() {
 	if ( footer && !mRows.empty() )
 		mRows[rowCount - 1]->setPixelsPosition( mPaddingPx.Left, 0 );
 
-	if ( mWidthPolicy == SizePolicy::MatchParent )
-		setInternalPixelsWidth( getMatchParentWidth() );
-
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
 		setInternalPixelsHeight( headHeight + bodyHeight + footerHeight + mPaddingPx.Bottom );
-	} else if ( mHeightPolicy == SizePolicy::MatchParent ) {
-		setInternalPixelsHeight( getMatchParentHeight() );
 	}
 
 	mPacking = false;
