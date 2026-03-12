@@ -301,7 +301,7 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
 			}
 
 			uiwidget->onWidgetCreated();
-		} else if ( String::toLower( std::string( widget.name() ) ) == "style" ) {
+		} else if ( String::iequals( widget.name(), "style" ) ) {
 			CSS::StyleSheetParser parser;
 			std::string styleContent;
 			for ( pugi::xml_node child = widget.first_child(); child;
@@ -314,6 +314,12 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
 			if ( parser.loadFromString( std::string_view{ styleContent } ) ) {
 				parser.getStyleSheet().setMarker( marker );
 				combineStyleSheet( parser.getStyleSheet(), false );
+			}
+		} else if ( String::iequals( widget.name(), "link" ) ) {
+			auto type = widget.attribute( "type" );
+			auto href = widget.attribute( "href" );
+			if ( !type.empty() && !href.empty() && String::iequals( type.value(), "text/css" ) ) {
+				loadCSS( href.as_string() );
 			}
 		}
 	}
@@ -1050,6 +1056,43 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 	}
 }
 
+void UISceneNode::loadCSS( URI uri ) {
+	std::string scheme = uri.getScheme();
+	if ( !mURI.empty() && scheme.empty() ) {
+		std::string pathStart = mURI.getPath();
+		FileSystem::dirAddSlashAtEnd( pathStart );
+		std::string pathEnd = pathStart + uri.getPath();
+		uri = mURI;
+		uri.setPath( pathEnd );
+	}
+
+	if ( "file" == scheme || ( scheme.empty() && FileSystem::fileExists( uri.getPath() ) ) ) {
+		std::string filePath( uri.getPath() );
+		std::string css;
+		if ( FileSystem::fileExists( filePath ) && FileSystem::fileGet( filePath, css ) ) {
+			combineStyleSheet( css, true, String::hash( uri.toString() ) );
+		}
+	} else if ( "http" == scheme || "https" == scheme ) {
+		Http::getAsync(
+			[this, uri]( const Http&, Http::Request&, Http::Response& response ) {
+				if ( !response.getBody().empty() ) {
+					std::string css( response.getBody() );
+					runOnMainThread( [css = std::move( css ), uri = std::move( uri ), this] {
+						combineStyleSheet( css, true, String::hash( uri.toString() ) );
+					} );
+				}
+			},
+			uri, Seconds( 5 ) );
+	} else if ( VFS::instance()->fileExists( uri.getPath() ) ) {
+		IOStream* stream = VFS::instance()->getFileFromPath( uri.getPath() );
+		CSS::StyleSheetParser parser;
+		if ( parser.loadFromStream( *stream ) ) {
+			parser.getStyleSheet().setMarker( String::hash( uri.toString() ) );
+			combineStyleSheet( parser.getStyleSheet() );
+		}
+	}
+}
+
 void UISceneNode::setInternalPixelsSize( const Sizef& size ) {
 	Sizef s( size );
 	if ( s != mSize ) {
@@ -1162,6 +1205,10 @@ const Uint32& UISceneNode::getMaxInvalidationDepth() const {
 
 void UISceneNode::setMaxInvalidationDepth( const Uint32& maxInvalidationDepth ) {
 	mMaxInvalidationDepth = maxInvalidationDepth;
+}
+
+void UISceneNode::setURI( const URI& uri ) {
+	mURI = uri;
 }
 
 }} // namespace EE::UI
