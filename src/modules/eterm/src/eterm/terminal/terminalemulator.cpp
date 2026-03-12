@@ -1047,10 +1047,17 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 		}
 
 		if ( has_sel ) {
-			if ( i == ob_abs_y )
-				ob_logical_offset = logical_len + ob_x;
-			if ( i == oe_abs_y )
-				oe_logical_offset = logical_len + oe_x;
+			if ( mSel.type == SEL_RECTANGULAR ) {
+				if ( i == ob_abs_y )
+					mSel.ob.y = new_len;
+				if ( i == oe_abs_y )
+					mSel.oe.y = new_len;
+			} else {
+				if ( i == ob_abs_y )
+					ob_logical_offset = logical_len + ob_x;
+				if ( i == oe_abs_y )
+					oe_logical_offset = logical_len + oe_x;
+			}
 		}
 
 		memcpy( logical + logical_len, line, old_col * sizeof( TerminalGlyph ) );
@@ -2741,8 +2748,8 @@ void TerminalEmulator::tresize( int col, int row ) {
 	}
 
 	bool has_sel = mSel.ob.x != -1;
-	// Rectangular selections and alt-screen selections are not reflowed.
-	if ( has_sel && ( mSel.type == SEL_RECTANGULAR || mSel.alt || is_alt ) ) {
+	// Alt-screen selections are not reflowed.
+	if ( has_sel && ( mSel.alt || is_alt ) ) {
 		selclear();
 		has_sel = false;
 	}

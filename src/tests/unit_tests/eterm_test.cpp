@@ -568,7 +568,32 @@ UTEST(eterm, selection_rectangular_reflow) {
     // Resize to 5 columns.
     term->resize(5, 24);
     
-    // Rectangular selections are currently cleared on resize.
-    EXPECT_FALSE(term->hasSelection());
-    EXPECT_STDSTREQ("", term->getSelection());
+    // Rectangular selections should be preserved.
+    EXPECT_TRUE(term->hasSelection());
+    EXPECT_STDSTREQ("BC\nGH", term->getSelection());
+}
+
+UTEST(eterm, selection_rectangular_resize_no_reflow) {
+    auto pty = std::make_unique<MockPty>();
+    auto process = std::make_unique<MockProcess>();
+    auto display = std::make_shared<MockDisplay>();
+    auto term = TerminalEmulator::create(std::move(pty), std::move(process), display, 100);
+
+    // Initial 80x24.
+    term->write("ABCDE\r\n", 7);
+    term->write("FGHIJ\r\n", 7);
+    term->update();
+
+    // Select BC and GH (Rectangular)
+    term->selstart(1, 0, 0);
+    term->selextend(2, 1, 2, 0); // type 2 = Rectangular
+    
+    EXPECT_STDSTREQ("BC\nGH", term->getSelection());
+
+    // Resize to 90 columns (wider, no reflow needed)
+    term->resize(90, 24);
+    
+    // It should still be selected
+    EXPECT_TRUE(term->hasSelection());
+    EXPECT_STDSTREQ("BC\nGH", term->getSelection());
 }
