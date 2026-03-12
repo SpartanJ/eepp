@@ -554,7 +554,7 @@ void TerminalEmulator::selsnap( int* x, int* y, int direction ) {
 char* TerminalEmulator::getsel( void ) const {
 	char *str, *ptr;
 	int y, bufsize, lastx, linelen;
-	TerminalGlyph *gp, *last;
+	TerminalGlyph *gp, *last, *it;
 
 	if ( mSel.ob.x == -1 )
 		return NULL;
@@ -576,15 +576,18 @@ char* TerminalEmulator::getsel( void ) const {
 			gp = &TLINE( y )[mSel.nb.y == y ? mSel.nb.x : 0];
 			lastx = ( mSel.ne.y == y ) ? mSel.ne.x : mTerm.col - 1;
 		}
+		bool wrapped = ( TLINE( y )[mTerm.col - 1].mode & ATTR_WRAP );
 		last = &TLINE( y )[MIN( lastx, linelen - 1 )];
-		while ( last >= gp && last->u == ' ' )
-			--last;
+		if ( !wrapped ) {
+			while ( last >= gp && last->u == ' ' )
+				--last;
+		}
 
-		for ( ; gp <= last; ++gp ) {
-			if ( gp->mode & ATTR_WDUMMY )
+		for ( it = gp; it <= last; ++it ) {
+			if ( it->mode & ATTR_WDUMMY )
 				continue;
 
-			ptr += utf8encode( gp->u, ptr );
+			ptr += utf8encode( it->u, ptr );
 		}
 
 		/*
@@ -597,7 +600,7 @@ char* TerminalEmulator::getsel( void ) const {
 		 * FIXME: Fix the computer world.
 		 */
 		if ( ( y < mSel.ne.y || lastx >= linelen ) &&
-			 ( !( last->mode & ATTR_WRAP ) || mSel.type == SEL_RECTANGULAR ) )
+			 ( last < gp || !wrapped || mSel.type == SEL_RECTANGULAR ) )
 			*ptr++ = '\n';
 	}
 	*ptr = 0;
@@ -605,7 +608,7 @@ char* TerminalEmulator::getsel( void ) const {
 }
 
 bool TerminalEmulator::hasSelection() const {
-	return mSel.mode == SEL_READY;
+	return mSel.mode != SEL_EMPTY && mSel.ob.x != -1;
 }
 
 std::string TerminalEmulator::getSelection() const {
@@ -875,6 +878,7 @@ void TerminalEmulator::treset( void ) {
 
 	mTerm.c = TerminalCursor{};
 	mTerm.c.attr = TerminalGlyph{};
+	mTerm.c.attr.u = ' ';
 	mTerm.c.attr.mode = ATTR_NULL;
 	mTerm.c.attr.fg = mDefaultFg;
 	mTerm.c.attr.bg = mDefaultBg;
@@ -909,6 +913,7 @@ void TerminalEmulator::tnew( int col, int row, size_t historySize ) {
 	mTerm = Term{};
 	mTerm.c = TerminalCursor{};
 	mTerm.c.attr = TerminalGlyph{};
+	mTerm.c.attr.u = ' ';
 	mTerm.c.attr.fg = mDefaultFg;
 	mTerm.c.attr.bg = mDefaultBg;
 	mTerm.histsize = historySize;
@@ -966,7 +971,7 @@ void TerminalEmulator::tscrollup( int top, int n, int copyhist ) {
 			mTerm.scr = mTerm.histlen;
 	}
 
-	tclearregion( 0, top, mTerm.col - 1, top + n - 1 );
+	tclearregion( 0, top, mTerm.col - 1, top + n - 1, copyhist != 0 );
 	tsetdirt( top + n, mTerm.bot );
 
 	for ( i = top; i <= mTerm.bot - n; i++ ) {
@@ -1093,20 +1098,22 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 			}
 
 			if ( has_sel ) {
-				if ( ob_logical_offset >= cursor &&
-					 ob_logical_offset < cursor + copy_width +
-											 ( ( cursor + copy_width == logical_len ) ? 1 : 0 ) ) {
+				if ( ob_logical_offset >= cursor && ob_logical_offset < cursor + copy_width ) {
 					mSel.ob.y = new_len;
 					mSel.ob.x = ob_logical_offset - cursor;
+				} else if ( ob_logical_offset == logical_len &&
+							cursor + copy_width == logical_len ) {
+					mSel.ob.y = new_len;
+					mSel.ob.x = eemin( copy_width, new_col - 1 );
 				}
-				if ( oe_logical_offset >= cursor &&
-					 oe_logical_offset < cursor + copy_width +
-											 ( ( cursor + copy_width == logical_len ) ? 1 : 0 ) ) {
+				if ( oe_logical_offset >= cursor && oe_logical_offset < cursor + copy_width ) {
 					mSel.oe.y = new_len;
 					mSel.oe.x = oe_logical_offset - cursor;
+				} else if ( oe_logical_offset == logical_len &&
+							cursor + copy_width == logical_len ) {
+					mSel.oe.y = new_len;
+					mSel.oe.x = eemin( copy_width, new_col - 1 );
 				}
-				mSel.ob.x = eemin( ob_logical_offset - cursor, new_col - 1 );
-				mSel.oe.x = eemin( oe_logical_offset - cursor, new_col - 1 );
 			}
 
 			memcpy( nl, logical + cursor, copy_width * sizeof( TerminalGlyph ) );
@@ -1175,17 +1182,17 @@ void TerminalEmulator::selscroll( int top, int n ) {
 	if ( mSel.ob.x == -1 || mSel.alt != IS_SET( MODE_ALTSCREEN ) )
 		return;
 
-	if ( BETWEEN( mSel.nb.y, top, mTerm.bot ) != BETWEEN( mSel.ne.y, top, mTerm.bot ) ) {
-		selclear();
-	} else if ( BETWEEN( mSel.nb.y, top, mTerm.bot ) ) {
+	if ( top == 0 || ( BETWEEN( mSel.nb.y, top, mTerm.bot ) && BETWEEN( mSel.ne.y, top, mTerm.bot ) ) ) {
 		mSel.ob.y += n;
 		mSel.oe.y += n;
-		if ( mSel.ob.y < mTerm.top || mSel.ob.y > mTerm.bot || mSel.oe.y < mTerm.top ||
-			 mSel.oe.y > mTerm.bot ) {
+		int miny = ( mTerm.histsize > 0 && !IS_SET( MODE_ALTSCREEN ) ) ? -mTerm.histsize : 0;
+		if ( mSel.ob.y < miny || mSel.ob.y > mTerm.bot || mSel.oe.y < miny || mSel.oe.y > mTerm.bot ) {
 			selclear();
 		} else {
 			selnormalize();
 		}
+	} else if ( BETWEEN( mSel.nb.y, top, mTerm.bot ) || BETWEEN( mSel.ne.y, top, mTerm.bot ) ) {
+		selclear();
 	}
 }
 

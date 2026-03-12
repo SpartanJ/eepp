@@ -265,7 +265,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 						WindowBackend::Default, 32, resPath + "icon/eterm.png",
 						pixelDensityConf ? pixelDensityConf.Get()
 										 : currentDisplay->getPixelDensity() ),
-		ContextSettings( vsync.Get() ) );
+		ContextSettings( vsync.Get(), benchmarkModeFlag.Get() ? 0 : maxFPS.Get() ) );
 
 	if ( win->isOpen() ) {
 		win->setClearColor( RGB( 0, 0, 0 ) );
