@@ -317,7 +317,7 @@ class TerminalEmulator final {
 	void tdumpsel();
 	void tdumpline( int );
 	void tdump();
-	void tclearregion( int, int, int, int );
+	void tclearregion( int, int, int, int, bool skip_clear = false );
 	void tcursor( int );
 	void tdeletechar( int );
 	void tdeleteline( int );

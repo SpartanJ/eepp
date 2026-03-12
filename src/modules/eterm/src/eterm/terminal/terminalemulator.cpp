@@ -367,7 +367,7 @@ void TerminalEmulator::selinit( void ) {
 }
 
 int TerminalEmulator::tlinelen( int y ) const {
-	if ( y < 0 )
+	if ( y < mTerm.scr - mTerm.histlen || y >= mTerm.scr + mTerm.row )
 		return 0;
 
 	int i = mTerm.col;
@@ -1012,6 +1012,13 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 	int new_len = 0;
 	int new_histi = -1;
 	int new_max_width = 0;
+	bool has_sel = mSel.ob.x != -1;
+	int ob_abs_y = mSel.ob.y;
+	int oe_abs_y = mSel.oe.y;
+	int ob_x = mSel.ob.x;
+	int oe_x = mSel.oe.x;
+	int ob_logical_offset = -1;
+	int oe_logical_offset = -1;
 
 	if ( mTerm.histlen == 0 )
 		return;
@@ -1034,6 +1041,13 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 			logical = (Line)eeRealloc( logical, logical_cap * sizeof( TerminalGlyph ) );
 		}
 
+		if ( has_sel ) {
+			if ( i == ob_abs_y )
+				ob_logical_offset = logical_len + ob_x;
+			if ( i == oe_abs_y )
+				oe_logical_offset = logical_len + oe_x;
+		}
+
 		memcpy( logical + logical_len, line, old_col * sizeof( TerminalGlyph ) );
 		for ( j = 0; j < old_col; j++ )
 			logical[logical_len + j].mode &= ~ATTR_WRAP;
@@ -1053,6 +1067,13 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 		if ( logical_len == 0 )
 			logical_len = 1;
 
+		if ( has_sel ) {
+			if ( ob_logical_offset != -1 && ob_logical_offset > logical_len )
+				ob_logical_offset = logical_len;
+			if ( oe_logical_offset != -1 && oe_logical_offset > logical_len )
+				oe_logical_offset = logical_len;
+		}
+
 		int cursor = 0;
 		while ( cursor < logical_len ) {
 			Line nl = (Line)eeMalloc( new_col * sizeof( TerminalGlyph ) );
@@ -1069,6 +1090,23 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 			if ( copy_width > 1 && copy_width == new_col && copy_width < logical_len - cursor &&
 				 ( logical[cursor + copy_width - 1].mode & ATTR_WIDE ) ) {
 				copy_width--;
+			}
+
+			if ( has_sel ) {
+				if ( ob_logical_offset >= cursor &&
+					 ob_logical_offset < cursor + copy_width +
+											 ( ( cursor + copy_width == logical_len ) ? 1 : 0 ) ) {
+					mSel.ob.y = new_len;
+					mSel.ob.x = ob_logical_offset - cursor;
+				}
+				if ( oe_logical_offset >= cursor &&
+					 oe_logical_offset < cursor + copy_width +
+											 ( ( cursor + copy_width == logical_len ) ? 1 : 0 ) ) {
+					mSel.oe.y = new_len;
+					mSel.oe.x = oe_logical_offset - cursor;
+				}
+				mSel.ob.x = eemin( ob_logical_offset - cursor, new_col - 1 );
+				mSel.oe.x = eemin( oe_logical_offset - cursor, new_col - 1 );
 			}
 
 			memcpy( nl, logical + cursor, copy_width * sizeof( TerminalGlyph ) );
@@ -1095,6 +1133,8 @@ void TerminalEmulator::historyReflow( int old_col, int new_col ) {
 			cursor += copy_width;
 		}
 		logical_len = 0;
+		ob_logical_offset = -1;
+		oe_logical_offset = -1;
 	}
 	eeSAFE_FREE( logical );
 
@@ -1250,7 +1290,7 @@ void TerminalEmulator::tsetchar( Rune u, TerminalGlyph* attr, int x, int y ) {
 		TLINE( y )[x].mode |= ATTR_BOXDRAW;
 }
 
-void TerminalEmulator::tclearregion( int x1, int y1, int x2, int y2 ) {
+void TerminalEmulator::tclearregion( int x1, int y1, int x2, int y2, bool skip_clear ) {
 	int x, y, temp;
 	TerminalGlyph* gp;
 
@@ -1269,7 +1309,7 @@ void TerminalEmulator::tclearregion( int x1, int y1, int x2, int y2 ) {
 		mDirty = true;
 		for ( x = x1; x <= x2; x++ ) {
 			gp = &TLINE( y )[x];
-			if ( selected( x, y ) )
+			if ( !skip_clear && selected( x, y ) )
 				selclear();
 			gp->fg = mTerm.c.attr.fg;
 			gp->bg = mTerm.c.attr.bg;
@@ -2693,8 +2733,25 @@ void TerminalEmulator::tresize( int col, int row ) {
 		return;
 	}
 
-	if ( mSel.ob.x != -1 )
+	bool has_sel = mSel.ob.x != -1;
+	// Rectangular selections and alt-screen selections are not reflowed.
+	if ( has_sel && ( mSel.type == SEL_RECTANGULAR || mSel.alt || is_alt ) ) {
 		selclear();
+		has_sel = false;
+	}
+
+	int old_histlen = mTerm.histlen;
+	if ( has_sel ) {
+		if ( mTerm.histsize < mTerm.row ) {
+			// Back-conversion breaks when histsize < row because
+			// loaded < save_end; safer to drop the selection.
+			selclear();
+			has_sel = false;
+		} else {
+			mSel.ob.y += old_histlen - mTerm.scr;
+			mSel.oe.y += old_histlen - mTerm.scr;
+		}
+	}
 
 	if ( is_alt )
 		tswapscreen();
@@ -2702,7 +2759,7 @@ void TerminalEmulator::tresize( int col, int row ) {
 	save_end = mTerm.row;
 	if ( mTerm.row != 0 && mTerm.col != 0 ) {
 		if ( !is_alt ) {
-			tclearregion( mTerm.c.x, mTerm.c.y, mTerm.col - 1, mTerm.c.y );
+			tclearregion( mTerm.c.x, mTerm.c.y, mTerm.col - 1, mTerm.c.y, true );
 		}
 
 		if ( !is_alt && mTerm.c.y > 0 && mTerm.c.y < mTerm.row )
@@ -2715,9 +2772,22 @@ void TerminalEmulator::tresize( int col, int row ) {
 		save_end = i + 1;
 		if ( !is_alt && save_end < mTerm.c.y + 1 )
 			save_end = mTerm.c.y + 1;
+		if ( has_sel )
+			save_end = mTerm.row;
 
 		for ( i = 0; i < save_end; i++ )
 			historyPush( mTerm.line[i], mTerm.col );
+
+		if ( has_sel && old_histlen + save_end > mTerm.histsize ) {
+			int dropped = ( old_histlen + save_end ) - mTerm.histsize;
+			if ( eemax( mSel.ob.y, mSel.oe.y ) < dropped ) {
+				selclear();
+				has_sel = false;
+			} else {
+				mSel.ob.y = eemax( 0, mSel.ob.y - dropped );
+				mSel.oe.y = eemax( 0, mSel.oe.y - dropped );
+			}
+		}
 
 		bool needs_reflow = false;
 		if ( col > mTerm.col ) {
@@ -2741,6 +2811,12 @@ void TerminalEmulator::tresize( int col, int row ) {
 						}
 					}
 				}
+			}
+			if ( has_sel ) {
+				if ( mSel.ob.x >= col )
+					mSel.ob.x = col - 1;
+				if ( mSel.oe.x >= col )
+					mSel.oe.x = col - 1;
 			}
 		}
 	}
@@ -2794,6 +2870,17 @@ void TerminalEmulator::tresize( int col, int row ) {
 	LIMIT( mTerm.scr, 0, mTerm.histlen );
 	LIMIT( mTerm.c.y, 0, mTerm.row - 1 );
 	LIMIT( mTerm.c.x, 0, mTerm.col - 1 );
+
+	if ( has_sel ) {
+		mSel.ob.y = mSel.ob.y - mTerm.histlen + mTerm.scr;
+		mSel.oe.y = mSel.oe.y - mTerm.histlen + mTerm.scr;
+		// Clamp to the full available range (history + screen)
+		mSel.ob.y =
+			eemax( mTerm.scr - mTerm.histlen, eemin( mTerm.scr + mTerm.row - 1, mSel.ob.y ) );
+		mSel.oe.y =
+			eemax( mTerm.scr - mTerm.histlen, eemin( mTerm.scr + mTerm.row - 1, mSel.oe.y ) );
+		selnormalize();
+	}
 
 	mDirty = true;
 	onScrollPositionChange();
