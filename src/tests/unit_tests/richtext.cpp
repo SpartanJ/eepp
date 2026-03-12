@@ -178,11 +178,10 @@ UTEST( RichText, BaselineAlignment ) {
 	// Large span should be at the top of the line (offset 0 relative to ascent difference)
 	// Small span should be pushed down
 	Float largeAscent = font->getAscent( 30 );
-	Float smallAscent = font->getAscent( 12 );
 
 	// Expected offsets
-	Float expectedLargeY = 0; // maxAscent - largeAscent = 0
-	Float expectedSmallY = largeAscent - smallAscent;
+	Float expectedLargeY = largeAscent - 30;
+	Float expectedSmallY = largeAscent - 12;
 
 	EXPECT_NEAR( largeSpan.position.y, expectedLargeY, 0.001f );
 	EXPECT_NEAR( smallSpan.position.y, expectedSmallY, 0.001f );
