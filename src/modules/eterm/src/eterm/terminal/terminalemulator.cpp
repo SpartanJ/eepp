@@ -1113,8 +1113,8 @@ void TerminalEmulator::historyPopToScreen( int loaded, int col ) {
 	int i;
 	int start_logical = mTerm.histlen - loaded;
 	for ( i = 0; i < loaded; i++ ) {
-		int idx =
-			( mTerm.histi - mTerm.histlen + 1 + start_logical + i + mTerm.histsize ) % mTerm.histsize;
+		int idx = ( mTerm.histi - mTerm.histlen + 1 + start_logical + i + mTerm.histsize ) %
+				  mTerm.histsize;
 		Line line = mTerm.hist[idx];
 		memcpy( mTerm.line[i], line, col * sizeof( TerminalGlyph ) );
 		eeSAFE_FREE( mTerm.hist[idx] );
@@ -1578,9 +1578,16 @@ void TerminalEmulator::tsetmode( int priv, int set, int* args, int narg ) {
 						  codes. */
 				case 1039: /* ESC to Meta (not implemented) */
 					break;
-				case 2026: // IGNORE DECSET/DECRST 2026 for sync updates
-						   // (https://codeberg.org/dnkl/foot/pulls/461/files)
+				case 2026: {
+					// IGNORE DECSET/DECRST 2026 for sync updates?
+					// (https://codeberg.org/dnkl/foot/pulls/461/files)
+					// mTerm.is_syncing = ( set == 1 );
+					/* if ( !mTerm.is_syncing ) {
+						// When syncing ends, we must perform the deferred draw
+						draw();
+					} */
 					break;
+				}
 				default:
 #ifdef EE_DEBUG
 					fprintf( stderr, "erresc: unknown private set/reset mode %d\n", *args );
@@ -2694,6 +2701,10 @@ void TerminalEmulator::tresize( int col, int row ) {
 
 	save_end = mTerm.row;
 	if ( mTerm.row != 0 && mTerm.col != 0 ) {
+		if ( !is_alt ) {
+			tclearregion( mTerm.c.x, mTerm.c.y, mTerm.col - 1, mTerm.c.y );
+		}
+
 		if ( !is_alt && mTerm.c.y > 0 && mTerm.c.y < mTerm.row )
 			mTerm.line[mTerm.c.y - 1][mTerm.col - 1].mode &= ~ATTR_WRAP;
 
@@ -2812,6 +2823,10 @@ void TerminalEmulator::drawregion( ITerminalDisplay& dpy, int x1, int y1, int x2
 }
 
 void TerminalEmulator::draw() {
+	// If a synchronized update is in progress, skip the physical render
+	// if ( mTerm.is_syncing )
+	// 	return;
+
 	int cx = mTerm.c.x /*, ocx = term.ocx, ocy = term.ocy*/;
 
 	{
@@ -3161,17 +3176,49 @@ int TerminalEmulator::write( const char* buf, size_t buflen ) {
 }
 
 void TerminalEmulator::resize( int columns, int rows ) {
-	if ( !mPty->resize( columns, rows ) ) {
-		_die( "Failed to resize pty!" );
+	bool is_alt = IS_SET( MODE_ALTSCREEN );
+
+	// Alt doesn't need reflow, we can resize and redraw instantly which looks and feels better
+	if ( is_alt ) {
+		if ( !mPty->resize( columns, rows ) ) {
+			_die( "Failed to resize pty!" );
+			return;
+		}
+		tresize( columns, rows );
+		redraw();
 		return;
 	}
+
+	// 1. Manually set sync mode to avoid flickering during internal restructuring
+	mTerm.is_syncing = true;
 	tresize( columns, rows );
+
+	// 2. Nudge the shell to redraw the prompt immediately
+	// Sending DSR (Cursor Position) forces the shell to refresh the line
+	ttywrite( "\033[6n", 4, 0 );
+
 	redraw();
+	mPendingPtyColumns = columns;
+	mPendingPtyRows = rows;
+	mPendingPtyResize = true;
+	mPendingPtyResizeClock.restart();
 }
 
 #define MAX_TTY_READS ( 1024 )
 
 bool TerminalEmulator::update() {
+	if ( mPendingPtyResize && mPendingPtyResizeClock.getElapsedTime() >= Milliseconds( 100 ) ) {
+		mPendingPtyResize = false;
+
+		if ( !mPty->resize( mPendingPtyColumns, mPendingPtyRows ) ) {
+			_die( "Failed to resize pty!" );
+		}
+
+		// 3. End sync mode and trigger the final draw
+		mTerm.is_syncing = false;
+		redraw();
+	}
+
 	if ( mStatus == TerminalEmulator::STARTING ) {
 		mStatus = TerminalEmulator::RUNNING;
 	} else if ( mStatus != TerminalEmulator::RUNNING ) {

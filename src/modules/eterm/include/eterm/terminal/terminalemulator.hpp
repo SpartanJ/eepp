@@ -36,6 +36,7 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
 #include <eepp/math/vector2.hpp>
+#include <eepp/system/clock.hpp>
 #include <eepp/window/keycodes.hpp>
 #include <eterm/system/iprocess.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
@@ -48,6 +49,7 @@
 using namespace EE;
 using namespace EE::Math;
 using namespace EE::Window;
+using namespace EE::System;
 using namespace eterm::System;
 
 namespace eterm { namespace Terminal {
@@ -85,6 +87,7 @@ struct Term {
 	Rune lastc{ 0 }; /* last printed char outside of sequence, 0 if control */
 	std::string title;
 	std::vector<std::string> title_stack;
+	bool is_syncing{ false }; // Track DEC mode 2026
 
 	~Term();
 };
@@ -257,6 +260,11 @@ class TerminalEmulator final {
 	DpyPtr mDpy;
 	PtyPtr mPty;
 	ProcPtr mProcess;
+
+	bool mPendingPtyResize{ false };
+	int mPendingPtyColumns{ 0 };
+	int mPendingPtyRows{ 0 };
+	Clock mPendingPtyResizeClock;
 
 	bool mDirty{ true };
 	bool mAllowMemoryTrimnming{ false };
