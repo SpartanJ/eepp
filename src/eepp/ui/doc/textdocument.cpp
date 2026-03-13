@@ -4165,8 +4165,14 @@ void TextDocument::notifyDocumentSaved() {
 }
 
 void TextDocument::notifyDocumentClosed() {
-	Lock l( mClientsMutex );
-	for ( auto& client : mClients ) {
+	std::vector<Client*> clientsCopy;
+	{
+		Lock l( mClientsMutex );
+		clientsCopy.reserve( mClients.size() );
+		for ( auto& client : mClients )
+			clientsCopy.push_back( client );
+	}
+	for ( auto& client : clientsCopy ) {
 		client->onDocumentClosed( this );
 	}
 }
