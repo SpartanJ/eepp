@@ -1189,11 +1189,13 @@ void TerminalEmulator::selscroll( int top, int n ) {
 	if ( mSel.ob.x == -1 || mSel.alt != IS_SET( MODE_ALTSCREEN ) )
 		return;
 
-	if ( top == 0 || ( BETWEEN( mSel.nb.y, top, mTerm.bot ) && BETWEEN( mSel.ne.y, top, mTerm.bot ) ) ) {
+	if ( top == 0 ||
+		 ( BETWEEN( mSel.nb.y, top, mTerm.bot ) && BETWEEN( mSel.ne.y, top, mTerm.bot ) ) ) {
 		mSel.ob.y += n;
 		mSel.oe.y += n;
 		int miny = ( mTerm.histsize > 0 && !IS_SET( MODE_ALTSCREEN ) ) ? -mTerm.histsize : 0;
-		if ( mSel.ob.y < miny || mSel.ob.y > mTerm.bot || mSel.oe.y < miny || mSel.oe.y > mTerm.bot ) {
+		if ( mSel.ob.y < miny || mSel.ob.y > mTerm.bot || mSel.oe.y < miny ||
+			 mSel.oe.y > mTerm.bot ) {
 			selclear();
 		} else {
 			selnormalize();
@@ -2984,16 +2986,11 @@ bool TerminalEmulator::xgetmode( const TerminalWinMode& mode ) {
 }
 
 int TerminalEmulator::xgetcolor( int x, unsigned char* r, unsigned char* g, unsigned char* b ) {
-	// if ( !BETWEEN( x, 0, dc.collen - 1 ) )
-	// 	return 1;
+	auto dpy = mDpy.lock();
+	if ( !dpy )
+		return 1;
 
-	// *r = dc.col[x].color.red >> 8;
-	// *g = dc.col[x].color.green >> 8;
-	// *b = dc.col[x].color.blue >> 8;
-
-	// return 0;
-
-	return 1;
+	return dpy->getColor( x, r, g, b ) ? 0 : 1;
 }
 
 void TerminalEmulator::osc_color_response( int num, int index, int is_osc4 ) {

@@ -54,6 +54,9 @@ class ITerminalDisplay {
 
 	virtual int resetColor( const Uint32& index, const char* name );
 
+	virtual bool getColor( const Uint32& index, unsigned char* r, unsigned char* g,
+						   unsigned char* b );
+
 	virtual void setMode( TerminalWinMode mode, int set );
 
 	inline bool getMode( TerminalWinMode mode ) const { return mMode & mode; }

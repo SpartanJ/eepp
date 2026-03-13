@@ -113,6 +113,27 @@ size_t TerminalColorScheme::getPaletteSize() const {
 	return mPalette.size();
 }
 
+void TerminalColorScheme::setForeground( const Color& foreground ) {
+	mForeground = foreground;
+}
+
+void TerminalColorScheme::setBackground( const Color& background ) {
+	mBackground = background;
+}
+
+void TerminalColorScheme::setCursor( const Color& cursor ) {
+	mCursor = cursor;
+}
+
+void TerminalColorScheme::setPaletteIndex( const size_t& index, const Color& color ) {
+	if ( index < mPalette.size() ) {
+		mPalette[index] = color;
+	} else {
+		mPalette.resize( index + 1 );
+		mPalette[index] = color;
+	}
+}
+
 void TerminalColorScheme::setName( const std::string& name ) {
 	mName = name;
 }

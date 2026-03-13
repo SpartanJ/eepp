@@ -504,42 +504,92 @@ void TerminalDisplay::resetColors() {
 }
 
 int TerminalDisplay::resetColor( const Uint32& index, const char* name ) {
-	if ( !name && index < mColors.size() ) {
-		Color col = 0x000000FF;
+	if ( !name ) {
+		if ( index < mColors.size() ) {
+			Color col = 0x000000FF;
 
-		if ( index < 256 )
-			col = colormapped[index];
+			if ( index < 256 )
+				col = colormapped[index];
 
-		mColors[index] = col;
-		return 0;
+			mColors[index] = col;
+			mColorScheme.setPaletteIndex( index, col );
+			return 0;
+		}
+		// Reset to default for 256, 257, 258, 259 is not well defined here without original
+		// defaults
+		return 1;
 	}
 
-	if ( index < mColors.size() ) {
-		if ( name && String::startsWith( name, "rgb:" ) ) {
-			auto split = String::split( std::string( name ), ':' );
-			if ( split.size() == 2 ) {
-				auto splitRgb = String::split( split[1], '/' );
-				if ( splitRgb.size() == 3 ) {
-					char* pr = NULL;
-					char* pg = NULL;
-					char* pb = NULL;
-					long r = 0, g = 0, b = 0;
-					r = std::strtol( splitRgb[0].c_str(), &pr, 16 );
-					g = std::strtol( splitRgb[1].c_str(), &pg, 16 );
-					b = std::strtol( splitRgb[2].c_str(), &pb, 16 );
-					if ( pr && pg && pb ) {
-						mColors[index] = Color( r, g, b );
-						return 0;
-					}
+	Color col;
+	bool colorParsed = false;
+
+	if ( name && String::startsWith( name, "rgb:" ) ) {
+		auto split = String::split( std::string( name ), ':' );
+		if ( split.size() == 2 ) {
+			auto splitRgb = String::split( split[1], '/' );
+			if ( splitRgb.size() == 3 ) {
+				char* pr = NULL;
+				char* pg = NULL;
+				char* pb = NULL;
+				long r = 0, g = 0, b = 0;
+				r = std::strtol( splitRgb[0].c_str(), &pr, 16 );
+				g = std::strtol( splitRgb[1].c_str(), &pg, 16 );
+				b = std::strtol( splitRgb[2].c_str(), &pb, 16 );
+				if ( pr && pg && pb ) {
+					col = Color( r, g, b );
+					colorParsed = true;
 				}
 			}
-		} else {
-			mColors[index] = Color::fromString( name );
+		}
+	} else {
+		col = Color::fromString( name );
+		colorParsed = true;
+	}
+
+	if ( colorParsed ) {
+		if ( index < mColors.size() ) {
+			mColors[index] = col;
+			mColorScheme.setPaletteIndex( index, col );
+			return 0;
+		} else if ( index == 256 || index == 257 ) {
+			mColorScheme.setCursor( col );
+			return 0;
+		} else if ( index == 258 ) {
+			mColorScheme.setForeground( col );
+			return 0;
+		} else if ( index == 259 ) {
+			mColorScheme.setBackground( col );
 			return 0;
 		}
 	}
 
 	return 1;
+}
+
+bool TerminalDisplay::getColor( const Uint32& index, unsigned char* r, unsigned char* g,
+								unsigned char* b ) {
+	if ( index < mColors.size() ) {
+		*r = mColors[index].r;
+		*g = mColors[index].g;
+		*b = mColors[index].b;
+		return true;
+	} else if ( index == 256 || index == 257 ) {
+		*r = mColorScheme.getCursor().r;
+		*g = mColorScheme.getCursor().g;
+		*b = mColorScheme.getCursor().b;
+		return true;
+	} else if ( index == 258 ) {
+		*r = mColorScheme.getForeground().r;
+		*g = mColorScheme.getForeground().g;
+		*b = mColorScheme.getForeground().b;
+		return true;
+	} else if ( index == 259 ) {
+		*r = mColorScheme.getBackground().r;
+		*g = mColorScheme.getBackground().g;
+		*b = mColorScheme.getBackground().b;
+		return true;
+	}
+	return false;
 }
 
 bool TerminalDisplay::isBlinkingCursor() {
