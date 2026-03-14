@@ -3557,6 +3557,8 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 	}
 
 	if ( !path.empty() ) {
+		path = FileSystem::expandTilde( path );
+
 		if ( FileSystem::isDirectory( path ) ) {
 			loadFolder( path );
 		} else if ( String::startsWith( path, "https://" ) ||
@@ -4708,7 +4710,7 @@ void App::init( InitParameters& params ) {
 			initProjectTreeView( params.file, params.openClean );
 		}
 
-		mFileToOpen = params.fileToOpen;
+		mFileToOpen = FileSystem::expandTilde( params.fileToOpen );
 
 		Log::info( "Init ProjectTreeView took: %.2f ms",
 				   globalClock.getElapsedTime().asMilliseconds() );

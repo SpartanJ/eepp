@@ -179,6 +179,8 @@ class EE_API FileSystem {
 	/** Opens a file path with a path and mode encoded in UTF-8 */
 	static FILE* fopenUtf8( const std::string& path, const std::string& mode );
 
+	/** Expands tildes (~) in paths */
+	static std::string expandTilde( const std::string& path );
 };
 
 }} // namespace EE::System

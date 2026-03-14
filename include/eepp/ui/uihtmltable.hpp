@@ -1,6 +1,7 @@
 #ifndef EE_UI_UIHTMLTABLE_HPP
 #define EE_UI_UIHTMLTABLE_HPP
 
+#include <eepp/core/small_vector.hpp>
 #include <eepp/ui/uilayout.hpp>
 #include <eepp/ui/uirichtext.hpp>
 
@@ -24,10 +25,10 @@ class EE_API UIHTMLTable : public UILayout {
   protected:
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
-	std::vector<UIHTMLTableRow*> mRows;
-	std::vector<Float> mColWidths;
-	std::vector<UIHTMLTableCell*> mCells;
-	std::vector<Uint32> mRowCellOffsets;
+	SmallVector<UIHTMLTableRow*> mRows;
+	SmallVector<Float> mColWidths;
+	SmallVector<UIHTMLTableCell*> mCells;
+	SmallVector<Uint32> mRowCellOffsets;
 };
 
 class EE_API UIHTMLTableCell : public UIRichText {

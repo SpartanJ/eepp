@@ -3,8 +3,8 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/sys.hpp>
-#include <sys/stat.h>
 #include <filesystem>
+#include <sys/stat.h>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #ifndef WIN32_LEAN_AND_MEAN
@@ -718,6 +718,40 @@ bool FileSystem::fileMove( const std::string& fpath, const std::string& newFileP
 	}
 
 	return true;
+}
+
+std::string FileSystem::expandTilde( const std::string& path ) {
+	if ( path.empty() || path.front() != '~' )
+		return path;
+
+	static const std::string home = []() -> std::string {
+		const char* h = std::getenv( "HOME" );
+		if ( h && h[0] != '\0' ) {
+			return h;
+		}
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		h = std::getenv( "USERPROFILE" );
+		if ( h && h[0] != '\0' ) {
+			return h;
+		}
+#endif
+		return {};
+	}();
+
+	if ( home.empty() )
+		return path;
+
+	// "~" alone
+	if ( path.size() == 1 )
+		return home;
+
+	// "~/..." or "~\..." (both separators accepted everywhere)
+	const char next = path[1];
+	if ( next == '/' || next == '\\' )
+		return home + path.substr( 1 );
+
+	return path;
 }
 
 }} // namespace EE::System
