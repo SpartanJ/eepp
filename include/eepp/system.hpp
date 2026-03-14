@@ -7,7 +7,10 @@
 #include <eepp/system/color.hpp>
 #include <eepp/system/compression.hpp>
 #include <eepp/system/condition.hpp>
+#include <eepp/system/container.hpp>
+#include <eepp/system/cpu.hpp>
 #include <eepp/system/directorypack.hpp>
+#include <eepp/system/fileinfo.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/functionstring.hpp>
 #include <eepp/system/inifile.hpp>
@@ -15,6 +18,7 @@
 #include <eepp/system/iostreamdeflate.hpp>
 #include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/iostreaminflate.hpp>
+#include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/iostreampak.hpp>
 #include <eepp/system/iostreamstring.hpp>
 #include <eepp/system/iostreamzip.hpp>
@@ -27,6 +31,7 @@
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/pak.hpp>
 #include <eepp/system/parsermatcher.hpp>
+#include <eepp/system/patternmatcher.hpp>
 #include <eepp/system/process.hpp>
 #include <eepp/system/rc4.hpp>
 #include <eepp/system/regex.hpp>
