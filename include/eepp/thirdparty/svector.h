@@ -134,7 +134,7 @@ public:
 template <typename T>
 struct storage : public header {
     static constexpr auto alignment_of_t = std::alignment_of_v<T>;
-    static constexpr auto max_alignment = std::max(std::alignment_of_v<header>, std::alignment_of_v<T>);
+    static constexpr auto max_alignment = (std::max)(std::alignment_of_v<header>, std::alignment_of_v<T>);
     static constexpr auto offset_to_data = detail::round_up(sizeof(header), alignment_of_t);
     static_assert(max_alignment <= __STDCPP_DEFAULT_NEW_ALIGNMENT__);
 
@@ -164,7 +164,7 @@ struct storage : public header {
             throw std::bad_alloc();
         }
         mem += offset_to_data;
-        if (static_cast<uint64_t>(mem) > static_cast<uint64_t>(std::numeric_limits<std::ptrdiff_t>::max())) {
+        if (static_cast<uint64_t>(mem) > static_cast<uint64_t>((std::numeric_limits<std::ptrdiff_t>::max)())) {
             throw std::bad_alloc();
         }
 
@@ -317,7 +317,7 @@ class svector {
             // got an overflow, set capacity to max
             new_capacity = max_size();
         }
-        return std::min(new_capacity, max_size());
+        return (std::min)(new_capacity, max_size());
     }
 
     template <direction D>
@@ -846,7 +846,7 @@ public:
     }
 
     [[nodiscard]] static auto max_size() -> size_t {
-        return std::numeric_limits<std::ptrdiff_t>::max();
+        return (std::numeric_limits<std::ptrdiff_t>::max)();
     }
 
     void swap(svector& other) {
