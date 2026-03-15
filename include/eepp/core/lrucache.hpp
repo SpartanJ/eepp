@@ -1,6 +1,9 @@
 #pragma once
 #include <eepp/core/containers.hpp>
 
+#ifdef max
+#undef max
+#endif
 #include <array>
 #include <cstddef>
 #include <cstdint>

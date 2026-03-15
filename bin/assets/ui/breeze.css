@@ -140,12 +140,24 @@ a:hover {
 }
 
 br {
-	layout-height: 1em;
+	layout-height: 0;
+}
+
+img {
+	scale-type: fit-inside;
+}
+
+markdownview h1,
+markdownview h2 {
+	border-bottom: 1dp solid var(--tab-line);
 }
 
 markdownview img {
-	scale-type: fit-inside;
 	max-height: 100vh;
+}
+
+markdownview table > thead > tr > th {
+	font-style: bold;
 }
 
 blockquote {

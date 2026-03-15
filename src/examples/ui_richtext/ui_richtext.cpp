@@ -29,6 +29,9 @@ EE_MAIN_FUNC int main( int, char** ) {
 				std::string data;
 				FileSystem::fileGet( file, data );
 				mainContainer->closeAllChildren();
+				std::string uri( "file://" + FileSystem::fileRemoveFileName( file ) );
+				FileSystem::dirAddSlashAtEnd( uri );
+				app.getUI()->setURI( URI( uri ) );
 				app.getUI()->loadLayoutFromString( data, mainContainer );
 				break;
 			}

@@ -204,9 +204,7 @@ static const char* DEFAULT_CHAT_GLOBE = R"xml(
 		<PushButton class="move_down" text="@string(move_down, Move Down)" icon="icon(arrow-down-s, 12dp)"  tooltip="@string(move_down, Move Down)" />
 		<PushButton class="erase_but" text="@string(remove_chat, Remove Chat)" icon="icon(chrome-close, 10dp)" tooltip="@string(remove_chat, Remove Chat)" />
 	</hbox>
-	<CodeEditor class="data_ui" lw="mp" lh="32dp">
-		<Image class="image thinking" icon="icon(loader-2, 24dp)" visible="false" />
-	</CodeEditor>
+	<CodeEditor class="data_ui" lw="mp" lh="32dp"><Image class="image thinking" icon="icon(loader-2, 24dp)" visible="false" /></CodeEditor>
 </vbox>
 )xml";
 

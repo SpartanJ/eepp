@@ -19,6 +19,7 @@
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 
 #include <nlohmann/json.hpp>
+#include <unordered_set>
 
 using namespace EE::System;
 using namespace EE::UI::Doc::Language;

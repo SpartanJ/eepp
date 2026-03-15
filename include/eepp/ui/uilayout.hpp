@@ -47,6 +47,7 @@ class EE_API UILayout : public UIWidget {
 
 	void setLayoutDirty();
 
+	bool setMatchParentIfNeededVerticalGrowth();
 };
 
 }} // namespace EE::UI

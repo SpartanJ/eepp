@@ -1734,14 +1734,7 @@ bool DebuggerPlugin::breakpointSetEnabled( const std::string& doc, Uint32 lineNu
 	auto breakpointIt = breakpoints.find( sb );
 	if ( breakpointIt != breakpoints.end() ) {
 		if ( enabled != breakpointIt->enabled ) {
-#ifdef EEPP_NO_THIRDPARTY_CONTAINERS
-			SourceBreakpointStateful existingBreakpoint = *breakpointIt;
-			breakpoints.erase( breakpointIt );
-			existingBreakpoint.enabled = enabled;
-			breakpoints.insert( existingBreakpoint );
-#else
 			breakpointIt->enabled = enabled;
-#endif
 			mBreakpointsModel->enable( doc, lineNumber, enabled );
 			mThreadPool->run( [this, doc] { sendFileBreakpoints( doc ); } );
 			getUISceneNode()->getRoot()->invalidateDraw();

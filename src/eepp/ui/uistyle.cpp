@@ -218,7 +218,7 @@ void UIStyle::applyLightDarkValue( std::string& value ) {
 		if ( tokenStart != std::string::npos ) {
 			tokenEnd = String::findCloseBracket( value, tokenStart, '(', ')' );
 			if ( tokenEnd != std::string::npos ) {
-				auto fn( value.substr( tokenStart, tokenEnd + 1 ) );
+				auto fn( value.substr( tokenStart, tokenEnd - tokenStart + 1 ) );
 				auto function( FunctionString::parse( fn ) );
 				auto size = function.getParameters().size();
 				if ( size > 0 ) {

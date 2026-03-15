@@ -5391,20 +5391,31 @@ bool UICodeEditor::stopMinimapDragging( const Vector2f& mousePos ) {
 	return false;
 }
 
+static void debounceFindRegions( UISceneNode* sceneNode, std::weak_ptr<TextDocument> weakDoc,
+								 Time refreshTime, String::HashType tag ) {
+	sceneNode->debounce(
+		[sceneNode, weakDoc, refreshTime, tag]() {
+			auto doc = weakDoc.lock();
+			if ( doc ) {
+				if ( doc->getHighlighter()->isTokenizingAsync() ) {
+					debounceFindRegions( sceneNode, weakDoc, refreshTime, tag );
+				} else {
+					doc->getFoldRangeService().findRegions();
+				}
+			}
+		},
+		refreshTime, tag );
+}
+
 void UICodeEditor::findRegionsDelayed() {
 	if ( !mDoc->getFoldRangeService().canFold() )
 		return;
 	UISceneNode* sceneNode = getUISceneNode();
 	if ( sceneNode ) {
-		TextDocument* doc = mDoc.get();
-		sceneNode->debounce(
-			[this, doc]() {
-				if ( doc->getHighlighter()->isTokenizingAsync() )
-					findRegionsDelayed();
-				else
-					doc->getFoldRangeService().findRegions();
-			},
-			mFoldsIsFirst ? Milliseconds( 100 ) : mFoldsRefreshTime, mTagFoldRange );
+		std::weak_ptr<TextDocument> weakDoc = mDoc;
+		debounceFindRegions( sceneNode, weakDoc,
+							 mFoldsIsFirst ? Milliseconds( 100 ) : mFoldsRefreshTime,
+							 mTagFoldRange );
 
 		mFoldsIsFirst = false;
 	}

@@ -1,12 +1,15 @@
 #ifndef EE_UISCENENODE_HPP
 #define EE_UISCENENODE_HPP
 
+#include <eepp/network/uri.hpp>
 #include <eepp/scene/scenenode.hpp>
 #include <eepp/system/threadpool.hpp>
 #include <eepp/system/translator.hpp>
 #include <eepp/ui/colorschemepreferences.hpp>
 #include <eepp/ui/css/stylesheet.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
+
+using namespace EE::Network;
 
 namespace EE { namespace Graphics {
 class Font;
@@ -683,6 +686,9 @@ class EE_API UISceneNode : public SceneNode {
 	 */
 	std::vector<UIWidget*> loadNode( pugi::xml_node node, Node* parent, const Uint32& marker = 0 );
 
+	/** Sets the document / scene URI used to resolve paths of inner elements */
+	void setURI( const URI& uri );
+
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
@@ -710,6 +716,7 @@ class EE_API UISceneNode : public SceneNode {
 	Node* mCurParent{ nullptr };
 	Uint32 mCurOnSizeChangeListener{ 0 };
 	std::shared_ptr<ThreadPool> mThreadPool;
+	URI mURI;
 
 	/**
 	 * @brief Protected constructor.
@@ -858,6 +865,16 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param styles Vector of stylesheet styles from @font-face rules.
 	 */
 	void loadFontFaces( const CSS::StyleSheetStyleVector& styles );
+
+	/**
+	 * @brief Loads CSS files from URI
+	 *
+	 * Parses CSS and loads the CSS from various sources
+	 * (files, URLs, VFS).
+	 *
+	 * @param uri URI to load
+	 */
+	void loadCSS( URI uri );
 
 	/**
 	 * @brief Loads glyph icons from @glyph-icon rules.
