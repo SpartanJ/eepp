@@ -115,11 +115,16 @@ bool PseudoTerminal::resize( int columns, int rows ) {
 	w.ws_xpixel = 0;
 	w.ws_ypixel = 0;
 
-	if ( ioctl( (int)mMaster, TIOCSWINSZ, &w ) < 0 ) {
+	bool masterResized = ioctl( (int)mMaster, TIOCSWINSZ, &w ) >= 0;
+	bool slaveResized = mSlave.handle() != -1 ? ioctl( mSlave.handle(), TIOCSWINSZ, &w ) >= 0 : false;
+
+	if ( !masterResized && !slaveResized ) {
 		perror( "PseudoTerminal::Resize" );
 		return false;
 	}
 
+	mColumns = columns;
+	mRows = rows;
 	return true;
 }
 

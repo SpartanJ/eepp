@@ -1663,6 +1663,8 @@ workspace "eepp"
 	project "eepp-unit_tests"
 		kind "ConsoleApp"
 		targetdir(_MAIN_SCRIPT_DIR .. "/bin/unit_tests")
+		links { "eterm-static", "languages-syntax-highlighting-static" }
+		incdirs { "src/modules/eterm/include/" }
 		language "C++"
 		files { "src/tests/unit_tests/*.cpp" }
 		build_link_configuration( "eepp-unit_tests", true )

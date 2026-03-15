@@ -36,6 +36,7 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //  DEALINGS IN THE SOFTWARE.
 #include <eepp/math/vector2.hpp>
+#include <eepp/system/clock.hpp>
 #include <eepp/window/keycodes.hpp>
 #include <eterm/system/iprocess.hpp>
 #include <eterm/terminal/ipseudoterminal.hpp>
@@ -48,6 +49,7 @@
 using namespace EE;
 using namespace EE::Math;
 using namespace EE::Window;
+using namespace EE::System;
 using namespace eterm::System;
 
 namespace eterm { namespace Terminal {
@@ -67,6 +69,8 @@ struct Term {
 	int histcursize{ 0 };		   /* history current size */
 	int histsize{ 0 };			   /* history max size */
 	int histi{ 0 };				   /* history index */
+	int histlen{ 0 };			   /* history valid length */
+	int max_width{ 0 };			   /* max width of lines in history */
 	int scr{ 0 };				   /* scroll back */
 	int* dirty{ nullptr };		   /* dirtyness of lines */
 	TerminalCursor c{};			   /* cursor */
@@ -83,6 +87,7 @@ struct Term {
 	Rune lastc{ 0 }; /* last printed char outside of sequence, 0 if control */
 	std::string title;
 	std::vector<std::string> title_stack;
+	bool is_syncing{ false }; // Track DEC mode 2026
 
 	~Term();
 };
@@ -256,6 +261,11 @@ class TerminalEmulator final {
 	PtyPtr mPty;
 	ProcPtr mProcess;
 
+	bool mPendingPtyResize{ false };
+	int mPendingPtyColumns{ 0 };
+	int mPendingPtyRows{ 0 };
+	Clock mPendingPtyResizeClock;
+
 	bool mDirty{ true };
 	bool mAllowMemoryTrimnming{ false };
 	int mExitCode;
@@ -282,7 +292,6 @@ class TerminalEmulator final {
 	PromptState mPromptState{ PromptState::Unknown };
 	PromptStateChangedCb mPromptStateChangedCb;
 
-	void resizeHistory();
 	void setClipboard( const char* str );
 
 	void loadColors();
@@ -308,14 +317,15 @@ class TerminalEmulator final {
 	void tdumpsel();
 	void tdumpline( int );
 	void tdump();
-	void tclearregion( int, int, int, int );
+	void tclearregion( int, int, int, int, bool skip_clear = false );
 	void tcursor( int );
 	void tdeletechar( int );
 	void tdeleteline( int );
-	void tinsertblank( int );
-	void tinsertblankline( int );
-	int tlinelen( int ) const;
-	int tiswrapped( int );
+	void tinsertblank( int n );
+	void tinsertblankline( int n );
+	int tlinelen( int y ) const;
+	int tlinelen( Line line, int col ) const;
+	int tiswrapped( int y );
 	void tmoveto( int, int );
 	void tmoveato( int, int );
 	void tnewline( int );
@@ -323,7 +333,10 @@ class TerminalEmulator final {
 	void tputc( Rune );
 	void treset();
 	void tscrollup( int, int, int );
-	void tscrolldown( int, int, int );
+	void tscrolldown( int, int );
+	void historyPush( Line line, int col );
+	void historyReflow( int old_col, int new_col );
+	void historyPopToScreen( int loaded, int col );
 	void tsetattr( int*, int );
 	void tsetchar( Rune, TerminalGlyph*, int, int );
 	void tsetdirt( int, int );
