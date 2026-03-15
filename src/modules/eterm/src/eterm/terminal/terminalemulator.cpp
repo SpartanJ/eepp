@@ -51,7 +51,6 @@ using namespace EE::System;
 #include <fcntl.h>
 #include <limits.h>
 #include <memory.h>
-#include <signal.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -653,9 +652,10 @@ size_t TerminalEmulator::ttyread( void ) {
 		case -1:
 			_die( "couldn't read from shell: %s\n", strerror( errno ) );
 			return 0;
-		default:
-			TerminalArg arg = { (int)mTerm.scr };
-			kscrolldown( &arg );
+		default: {
+			int old_scr = mTerm.scr;
+			int old_histi = mTerm.histi;
+			mTerm.scr = 0;
 
 			mBuflen += ret;
 			written = twrite( mBuf, mBuflen, 0 );
@@ -663,7 +663,23 @@ size_t TerminalEmulator::ttyread( void ) {
 			/* keep any incomplete UTF-8 byte sequence for the next call */
 			if ( mBuflen > 0 )
 				memmove( mBuf, mBuf + written, mBuflen );
+
+			if ( old_scr > 0 ) {
+				int lines_pushed = 0;
+				if ( mTerm.histsize > 0 ) {
+					lines_pushed = ( mTerm.histi - old_histi + mTerm.histsize ) % mTerm.histsize;
+				}
+				mTerm.scr = eemin( mTerm.histlen, old_scr + lines_pushed );
+				if ( lines_pushed > 0 ) {
+					mSel.ob.y += lines_pushed;
+					mSel.oe.y += lines_pushed;
+
+					onScrollPositionChange();
+				}
+			}
+
 			return ret;
+		}
 	}
 
 	return 0;
@@ -2757,6 +2773,12 @@ void TerminalEmulator::tresize( int col, int row ) {
 	}
 
 	int old_histlen = mTerm.histlen;
+	int old_scr = mTerm.scr;
+	mTerm.scr = 0;
+	int temp_histlen = 0;
+	int bottom_dist = 0;
+	bool needs_reflow = false;
+
 	if ( has_sel ) {
 		if ( mTerm.histsize < mTerm.row ) {
 			// Back-conversion breaks when histsize < row because
@@ -2764,8 +2786,8 @@ void TerminalEmulator::tresize( int col, int row ) {
 			selclear();
 			has_sel = false;
 		} else {
-			mSel.ob.y += old_histlen - mTerm.scr;
-			mSel.oe.y += old_histlen - mTerm.scr;
+			mSel.ob.y += old_histlen - old_scr;
+			mSel.oe.y += old_histlen - old_scr;
 		}
 	}
 
@@ -2794,6 +2816,11 @@ void TerminalEmulator::tresize( int col, int row ) {
 		for ( i = 0; i < save_end; i++ )
 			historyPush( mTerm.line[i], mTerm.col );
 
+		temp_histlen = mTerm.histlen;
+		bottom_dist = old_scr + save_end;
+		if ( bottom_dist > temp_histlen )
+			bottom_dist = temp_histlen;
+
 		if ( has_sel && old_histlen + save_end > mTerm.histsize ) {
 			int dropped = ( old_histlen + save_end ) - mTerm.histsize;
 			if ( eemax( mSel.ob.y, mSel.oe.y ) < dropped ) {
@@ -2805,7 +2832,7 @@ void TerminalEmulator::tresize( int col, int row ) {
 			}
 		}
 
-		bool needs_reflow = false;
+		needs_reflow = false;
 		if ( col > mTerm.col ) {
 			needs_reflow = mTerm.max_width >= mTerm.col;
 		} else if ( col < mTerm.col ) {
@@ -2882,6 +2909,20 @@ void TerminalEmulator::tresize( int col, int row ) {
 
 	if ( is_alt )
 		tswapscreen();
+
+	if ( mTerm.row != 0 && mTerm.col != 0 ) {
+		int reflowed_histlen = mTerm.histlen + loaded;
+		int new_bottom_dist = bottom_dist;
+		if ( needs_reflow && temp_histlen > 0 ) {
+			new_bottom_dist = std::round( (double)bottom_dist * reflowed_histlen / temp_histlen );
+		}
+		if ( old_scr > 0 ) {
+			int new_scr = new_bottom_dist - loaded;
+			mTerm.scr = eemax( 0, new_scr );
+		} else {
+			mTerm.scr = 0;
+		}
+	}
 
 	LIMIT( mTerm.scr, 0, mTerm.histlen );
 	LIMIT( mTerm.c.y, 0, mTerm.row - 1 );
@@ -3287,13 +3328,8 @@ void TerminalEmulator::resize( int columns, int rows ) {
 		return;
 	}
 
-	// 1. Manually set sync mode to avoid flickering during internal restructuring
 	mTerm.is_syncing = true;
 	tresize( columns, rows );
-
-	// 2. Nudge the shell to redraw the prompt immediately
-	// Sending DSR (Cursor Position) forces the shell to refresh the line
-	ttywrite( "\033[6n", 4, 0 );
 
 	redraw();
 	mPendingPtyColumns = columns;
@@ -3312,7 +3348,6 @@ bool TerminalEmulator::update() {
 			_die( "Failed to resize pty!" );
 		}
 
-		// 3. End sync mode and trigger the final draw
 		mTerm.is_syncing = false;
 		redraw();
 	}

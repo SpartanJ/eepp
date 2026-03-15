@@ -1886,6 +1886,7 @@ void TerminalDisplay::invalidateLines() {
 	mDirty = true;
 	mFullDirty = true;
 }
+
 void TerminalDisplay::setFocus( bool focus ) {
 	if ( focus )
 		updateIMELocation();
