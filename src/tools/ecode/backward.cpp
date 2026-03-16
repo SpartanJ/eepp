@@ -176,17 +176,26 @@ class WindowsSignalHandling {
 	}
 
 	static void handle_stacktrace( int skip_frames = 0 ) {
+		const auto appendCrashesPath = []( std::string& crashesPath ) {
+			FileSystem::dirAddSlashAtEnd( crashesPath );
+			crashesPath += "crashes";
+			FileSystem::dirAddSlashAtEnd( crashesPath );
+		};
+
 		std::string crashesPath( Sys::getConfigPath( "ecode" ) );
-		FileSystem::dirAddSlashAtEnd( crashesPath );
-		crashesPath += "crashes";
-		FileSystem::dirAddSlashAtEnd( crashesPath );
+		appendCrashesPath( crashesPath );
+
+		if ( !FileSystem::fileExists( crashesPath ) && !FileSystem::makeDir( crashesPath, true ) ) {
+			crashesPath = Sys::getProcessPath();
+			appendCrashesPath( crashesPath );
+			FileSystem::makeDir( crashesPath, true );
+		}
+		
 		std::string dateTimeStr( Sys::getDateTimeStr() );
 		String::replaceAll( dateTimeStr, " ", "_" );
 		String::replaceAll( dateTimeStr, ":", "-" );
 		std::string crashFilePath(
 			String::format( "%sstacktrace_%s.log", crashesPath, dateTimeStr ) );
-
-		FileSystem::makeDir( crashesPath );
 
 		std::ofstream outFile( crashFilePath );
 		if ( !outFile.is_open() ) {
