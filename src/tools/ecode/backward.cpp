@@ -1,6 +1,7 @@
 #include <eepp/config.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <sstream>
 
 using namespace EE;
 using namespace EE::System;
@@ -12,6 +13,11 @@ using namespace EE::System;
 #endif
 
 #include <backward-cpp/backward.hpp>
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#include <windows.h>
+#include <shellapi.h> // Added for ShellExecuteW
+#endif
 
 namespace backward {
 
@@ -159,20 +165,100 @@ class WindowsSignalHandling {
 			cv().wait( lk, [] { return crashed() != crash_status::crashed; } );
 		}
 	}
+	// Helper to safely convert UTF-8 strings to std::wstring for the Windows API
+	static std::wstring utf8_to_wstring( const std::string& str ) {
+		if ( str.empty() )
+			return std::wstring();
+		int size_needed = MultiByteToWideChar( CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0 );
+		std::wstring wstrTo( size_needed, 0 );
+		MultiByteToWideChar( CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed );
+		return wstrTo;
+	}
 
-	static void display_crash_message( const std::string& crashFilePath ) {
-		std::string crashMsg(
-			String::format( "ecode has encountered an unrecoverable error and crashed! :'(\n"
-							"A crash log has been saved at:\n%s\n"
-							"Please feel free to use this file to report a bug at the ecode Github "
-							"page so it can be fixed as soon as possible.",
-							crashFilePath ) );
+	// Custom Window Procedure to handle button clicks on our crash dialog
+	static LRESULT CALLBACK CrashDialogProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
+		switch ( msg ) {
+			case WM_COMMAND: {
+				if ( LOWORD( wParam ) == 1 ) { // Report Button
+					MessageBoxW(
+						hwnd,
+						L"Please quickly verify if this stack trace has already been reported to "
+						L"avoid duplicate issues.\n\nClick OK to open the issue tracker.",
+						L"Notice", MB_OK | MB_ICONINFORMATION );
 
-		std::wstring wCrashMsg( crashMsg.begin(), crashMsg.end() );
-		std::wstring wTitle = L"ecode crashed!";
+					// Replace this URL with the actual ecode issue tracker URL
+					ShellExecuteW( NULL, L"open", L"https://github.com/SpartanJ/ecode/issues", NULL,
+								   NULL, SW_SHOWNORMAL );
+				} else if ( LOWORD( wParam ) == 2 ) { // Close Button
+					PostQuitMessage( 0 );
+				}
+				break;
+			}
+			case WM_DESTROY:
+				PostQuitMessage( 0 );
+				break;
+			default:
+				return DefWindowProcW( hwnd, msg, wParam, lParam );
+		}
+		return 0;
+	}
 
-		MessageBoxW( nullptr, wCrashMsg.c_str(), wTitle.c_str(),
-					 MB_OK | MB_ICONERROR | MB_TOPMOST );
+	static void display_crash_message( const std::string& crashFilePath,
+									   const std::string& stackTrace ) {
+		HINSTANCE hInstance = GetModuleHandleW( NULL );
+
+		// 1. Register a custom Window Class
+		WNDCLASSEXW wc = { 0 };
+		wc.cbSize = sizeof( WNDCLASSEXW );
+		wc.lpfnWndProc = CrashDialogProc;
+		wc.hInstance = hInstance;
+		wc.hCursor = LoadCursor( NULL, IDC_ARROW );
+		wc.hbrBackground = (HBRUSH)( COLOR_BTNFACE + 1 );
+		wc.lpszClassName = L"EcodeCrashReporter";
+		RegisterClassExW( &wc );
+
+		// 2. Create the main Dialog Window
+		HWND hwnd =
+			CreateWindowExW( WS_EX_TOPMOST, L"EcodeCrashReporter", L"ecode crashed!",
+							 WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_VISIBLE, CW_USEDEFAULT,
+							 CW_USEDEFAULT, 640, 480, NULL, NULL, hInstance, NULL );
+
+		HFONT hFont = (HFONT)GetStockObject( DEFAULT_GUI_FONT );
+
+		// 3. Add the Label
+		std::string crashMsg = "ecode has encountered an unrecoverable error and crashed! :'(\n"
+							   "A crash log has been saved at:\n" +
+							   crashFilePath + "\nError crash log:";
+		HWND hLabel =
+			CreateWindowExW( 0, L"STATIC", utf8_to_wstring( crashMsg ).c_str(),
+							 WS_CHILD | WS_VISIBLE, 10, 10, 600, 56, hwnd, NULL, hInstance, NULL );
+		SendMessage( hLabel, WM_SETFONT, (WPARAM)hFont, TRUE );
+
+		// 4. Add the Text Area (Edit Control) for the Stack Trace
+		HWND hEdit = CreateWindowExW( 0, L"EDIT", utf8_to_wstring( stackTrace ).c_str(),
+							WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_HSCROLL | WS_BORDER |
+							ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
+									  10, 68, 600, 320, hwnd, NULL, hInstance, NULL );
+		SendMessage( hEdit, WM_SETFONT, (WPARAM)hFont, TRUE );
+
+		// 5. Add "Close" Button (Now on the left)
+		HWND hCloseBtn =
+			CreateWindowExW( 0, L"BUTTON", L"Close", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 10, 395,
+							 150, 30, hwnd, (HMENU)2, hInstance, NULL );
+		SendMessage( hCloseBtn, WM_SETFONT, (WPARAM)hFont, TRUE );
+
+		// 6. Add "Report" Button (Now on the right)
+		HWND hReportBtn = CreateWindowExW( 0, L"BUTTON", L"Report Issue...",
+										   WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 460, 395, 150, 30,
+										   hwnd, (HMENU)1, hInstance, NULL );
+		SendMessage( hReportBtn, WM_SETFONT, (WPARAM)hFont, TRUE );
+
+		// 7. Run the Message Loop for this window
+		MSG msg;
+		while ( GetMessage( &msg, NULL, 0, 0 ) > 0 ) {
+			TranslateMessage( &msg );
+			DispatchMessage( &msg );
+		}
 	}
 
 	static void handle_stacktrace( int skip_frames = 0 ) {
@@ -190,20 +276,12 @@ class WindowsSignalHandling {
 			appendCrashesPath( crashesPath );
 			FileSystem::makeDir( crashesPath, true );
 		}
-		
+
 		std::string dateTimeStr( Sys::getDateTimeStr() );
 		String::replaceAll( dateTimeStr, " ", "_" );
 		String::replaceAll( dateTimeStr, ":", "-" );
 		std::string crashFilePath(
 			String::format( "%sstacktrace_%s.log", crashesPath, dateTimeStr ) );
-
-		std::ofstream outFile( crashFilePath );
-		if ( !outFile.is_open() ) {
-			print_to_console( "Error: Failed to open " + crashFilePath +
-							  " for writing stack trace\n" );
-			print_stacktrace_to_console( skip_frames, nullptr );
-			return;
-		}
 
 		Printer printer;
 		printer.address = true;
@@ -212,40 +290,30 @@ class WindowsSignalHandling {
 		StackTrace st;
 		st.set_machine_type( printer.resolver().machine_type() );
 		st.set_thread_handle( thread_handle() );
-		st.load_here( 64 + skip_frames, ctx() ); // Increased frame limit
+		st.load_here( 64 + skip_frames, ctx() );
 		st.skip_n_firsts( skip_frames );
 
-		printer.print( st, outFile );
-		print_stacktrace_to_console( skip_frames, &st );
+		// Capture stacktrace to a string in memory
+		std::ostringstream oss;
+		printer.print( st, oss );
+		std::string stackTraceStr = oss.str();
 
-		outFile.close();
+		// Print to console (Keeping your existing logic active)
+		print_to_console( stackTraceStr );
 
-		display_crash_message( crashFilePath );
-	}
-
-	static void print_stacktrace_to_console( int skip_frames, const StackTrace* st = nullptr ) {
-		if ( AttachConsole( ATTACH_PARENT_PROCESS ) ) {
-			FILE* console = nullptr;
-			freopen_s( &console, "CONOUT$", "w", stderr );
-			if ( console ) {
-				Printer printer;
-				printer.address = true;
-				printer.object = true;
-
-				if ( st ) {
-					printer.print( *st, std::cerr );
-				} else {
-					StackTrace new_st;
-					new_st.set_machine_type( printer.resolver().machine_type() );
-					new_st.set_thread_handle( thread_handle() );
-					new_st.load_here( 64 + skip_frames, ctx() );
-					new_st.skip_n_firsts( skip_frames );
-					printer.print( new_st, std::cerr );
-				}
-				fflush( stderr );
-			}
-			FreeConsole();
+		// Write string to file
+		std::ofstream outFile( crashFilePath );
+		if ( !outFile.is_open() ) {
+			print_to_console( "Error: Failed to open " + crashFilePath + 
+				" for writing stack trace\n" + stackTraceStr );
+		} else {
+			outFile << stackTraceStr;
+			outFile.close();
 		}
+
+		// Display the custom Windows dialog
+		String::replaceAll( stackTraceStr, "\n", "\r\n" );
+		display_crash_message( crashFilePath, stackTraceStr );
 	}
 
 	static void print_to_console( const std::string& message ) {
