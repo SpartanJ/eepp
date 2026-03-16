@@ -133,11 +133,6 @@
           "max_tokens": 1000000
         },
         {
-          "name": "gemini-3-pro-preview",
-          "display_name": "Gemini 3 Pro Preview",
-          "max_tokens": 1000000
-        },
-        {
           "name": "gemini-3.1-pro-preview",
           "display_name": "Gemini 3.1 Pro Preview",
           "max_tokens": 1000000

@@ -6,50 +6,73 @@ class EESmallVectorSyntheticProvider:
         self.valobj = valobj
         self.update()
 
+    def _get_m_data(self):
+        # 1. Try direct access
+        m_data = self.valobj.GetChildMemberWithName("m_data")
+        if m_data and m_data.IsValid():
+            return m_data
+
+        # 2. Try looking inside the base class (ankerl::svector)
+        for i in range(self.valobj.GetNumChildren()):
+            child = self.valobj.GetChildAtIndex(i)
+            if child.GetName() and "svector" in child.GetName():
+                m_data = child.GetChildMemberWithName("m_data")
+                if m_data and m_data.IsValid():
+                    return m_data
+        return None
+
     def update(self):
         self.size = 0
         self.capacity = 0
         self.is_direct = True
         self.data_addr = lldb.LLDB_INVALID_ADDRESS
 
-        # 1. Get the type of T (e.g., Client*)
         self.type_t = self.valobj.GetType().GetTemplateArgumentType(0)
+        self.m_data = self._get_m_data()
 
-        # 2. Find the m_data array
-        self.m_data = self.valobj.GetChildMemberWithName("m_data")
-        if not self.m_data.IsValid():
+        if not self.m_data or not self.m_data.IsValid():
             return
 
-        process = self.valobj.GetProcess()
-        addr = self.m_data.GetLoadAddress()
+        # Use SBData instead of direct memory reading to support variables in registers
+        sb_data = self.m_data.GetData()
         error = lldb.SBError()
-
-        if addr == lldb.LLDB_INVALID_ADDRESS or not process.IsValid():
+        if sb_data.GetByteSize() == 0:
             return
 
-        # 3. Read the first byte (the discriminator & size)
-        first_byte = process.ReadUnsignedIntegerFromMemory(addr, 1, error)
+        first_byte = sb_data.GetUnsignedInt8(error, 0)
+        if error.Fail():
+            return
+
         self.is_direct = (first_byte & 1) != 0
 
-        ptr_size = process.GetAddressByteSize()
+        target = self.valobj.GetTarget()
+        ptr_size = target.GetAddressByteSize()
+
+        # Safely get alignment
+        align_t = 0
+        if hasattr(self.type_t, "GetByteAlign"):
+            align_t = self.type_t.GetByteAlign()
+        if align_t == 0:
+            align_t = self.type_t.GetByteSize()
+        if align_t == 0:
+            align_t = ptr_size
 
         if self.is_direct:
             self.size = first_byte >> 1
-            self.capacity = 0  # Implied by N, but not explicitly stored
+            self.capacity = 0
 
             # Data starts at offset equal to the alignment of T
-            align_t = self.type_t.GetByteAlign()
-            if align_t == 0:
-                align_t = self.type_t.GetByteSize()  # Fallback
-            if align_t == 0:
-                align_t = ptr_size
-
-            self.data_addr = addr + align_t
+            addr = self.m_data.GetLoadAddress()
+            if addr != lldb.LLDB_INVALID_ADDRESS:
+                self.data_addr = addr + align_t
         else:
-            # 4. Indirect Mode: read the pointer to the heap storage
-            void_ptr = process.ReadPointerFromMemory(addr, error)
+            # Indirect Mode: read the pointer to the heap storage
+            void_ptr = sb_data.GetAddress(error, 0)
+            process = self.valobj.GetProcess()
 
-            # The storage header contains: size_t m_size, size_t m_capacity
+            if error.Fail() or void_ptr == 0 or not process.IsValid():
+                return
+
             self.size = process.ReadUnsignedIntegerFromMemory(void_ptr, ptr_size, error)
             self.capacity = process.ReadUnsignedIntegerFromMemory(
                 void_ptr + ptr_size, ptr_size, error
@@ -57,12 +80,6 @@ class EESmallVectorSyntheticProvider:
 
             # Calculate offset_to_data: round_up(sizeof(header), alignment_of_t)
             header_size = 2 * ptr_size
-            align_t = self.type_t.GetByteAlign()
-            if align_t == 0:
-                align_t = self.type_t.GetByteSize()
-            if align_t == 0:
-                align_t = ptr_size
-
             offset = ((header_size + (align_t - 1)) // align_t) * align_t
             self.data_addr = void_ptr + offset
 
@@ -86,20 +103,53 @@ class EESmallVectorSyntheticProvider:
 
 
 def EESmallVectorSummaryProvider(valobj, internal_dict):
-    provider = EESmallVectorSyntheticProvider(valobj, internal_dict)
-    if provider.is_direct:
-        return f"[Direct] size={provider.size}"
+    """
+    Standalone summary provider. It's an LLDB anti-pattern to initialize the
+    SyntheticProvider class inside here, so we duplicate the tiny bit of logic
+    needed to read the state efficiently.
+    """
+    # Find m_data, handling base classes
+    m_data = valobj.GetChildMemberWithName("m_data")
+    if not m_data or not m_data.IsValid():
+        for i in range(valobj.GetNumChildren()):
+            child = valobj.GetChildAtIndex(i)
+            if child.GetName() and "svector" in child.GetName():
+                m_data = child.GetChildMemberWithName("m_data")
+                break
+
+    if not m_data or not m_data.IsValid():
+        return f"size={valobj.GetNumChildren()}"
+
+    sb_data = m_data.GetData()
+    error = lldb.SBError()
+    first_byte = sb_data.GetUnsignedInt8(error, 0)
+
+    if error.Fail():
+        return f"size={valobj.GetNumChildren()}"
+
+    is_direct = (first_byte & 1) != 0
+
+    if is_direct:
+        size = first_byte >> 1
+        return f"[Direct] size={size}"
     else:
-        return f"[Indirect] size={provider.size}, capacity={provider.capacity}"
+        target = valobj.GetTarget()
+        ptr_size = target.GetAddressByteSize()
+        void_ptr = sb_data.GetAddress(error, 0)
+        process = valobj.GetProcess()
+
+        if process.IsValid() and void_ptr != 0:
+            size = process.ReadUnsignedIntegerFromMemory(void_ptr, ptr_size, error)
+            capacity = process.ReadUnsignedIntegerFromMemory(void_ptr + ptr_size, ptr_size, error)
+            return f"[Indirect] size={size}, capacity={capacity}"
+
+        return "[Indirect]"
 
 
 def __lldb_init_module(debugger, internal_dict):
-    # Register the Summary (the text next to the variable)
     debugger.HandleCommand(
         'type summary add -x "^EE::SmallVector<.+>$" -F eepp_lldb.EESmallVectorSummaryProvider'
     )
-
-    # Register the Synthetic Children (the expandable array elements)
     debugger.HandleCommand(
         'type synthetic add -x "^EE::SmallVector<.+>$" -l eepp_lldb.EESmallVectorSyntheticProvider'
     )
