@@ -150,7 +150,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.addAlias( "layout-margin-bottom" )
 		.addAlias( "layout_marginbottom" )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
-	registerProperty( "tooltip", "" ).setType( PropertyType::String );
+	registerProperty( "tooltip", "" ).setType( PropertyType::String ).addAlias( "alt" );
 	registerProperty( "layout-weight", "" )
 		.addAlias( "layout_weight" )
 		.addAlias( "lw8" )

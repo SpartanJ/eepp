@@ -475,9 +475,11 @@ UIWidget* UISceneNode::loadLayoutFromString( const char* layoutString, Node* par
 
 	pugi::xml_document doc;
 	pugi::xml_parse_result result;
+	std::string fixedLayout;
+	bool needsReplacements = voidTagsRegex.matches( layoutString );
 
-	if ( voidTagsRegex.matches( layoutString ) ) {
-		std::string fixedLayout = voidTagsRegex.gsub( layoutString, "%1 />" );
+	if ( needsReplacements ) {
+		fixedLayout = voidTagsRegex.gsub( layoutString, "%1 />" );
 		result =
 			doc.load_string( fixedLayout.c_str(), pugi::parse_default | pugi::parse_ws_pcdata );
 	} else {
@@ -487,7 +489,8 @@ UIWidget* UISceneNode::loadLayoutFromString( const char* layoutString, Node* par
 	if ( result ) {
 		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this, marker );
 	} else {
-		Log::error( "Couldn't load UI Layout from string: %s", layoutString );
+		Log::error( "Couldn't load UI Layout from string: %s",
+					needsReplacements ? fixedLayout.c_str() : layoutString );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );
 	}
@@ -506,10 +509,13 @@ UIWidget* UISceneNode::loadLayoutFromMemory( const void* buffer, Int32 bufferSiz
 
 	pugi::xml_document doc;
 	pugi::xml_parse_result result;
+	std::string_view layoutString( static_cast<const char*>( buffer ), bufferSize );
+	std::string fixedLayout;
+	bool needsReplacements =
+		voidTagsRegex.matches( static_cast<const char*>( buffer ), 0, nullptr, bufferSize );
 
-	if ( voidTagsRegex.matches( static_cast<const char*>( buffer ), 0, nullptr, bufferSize ) ) {
-		std::string strBuffer( static_cast<const char*>( buffer ), bufferSize );
-		std::string fixedLayout = voidTagsRegex.gsub( strBuffer, "%1 />" );
+	if ( needsReplacements ) {
+		fixedLayout = voidTagsRegex.gsub( layoutString.data(), "%1 />" );
 		result = doc.load_buffer( fixedLayout.c_str(), fixedLayout.size(),
 								  pugi::parse_default | pugi::parse_ws_pcdata );
 	} else {
@@ -519,7 +525,8 @@ UIWidget* UISceneNode::loadLayoutFromMemory( const void* buffer, Int32 bufferSiz
 	if ( result ) {
 		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this, marker );
 	} else {
-		Log::error( "Couldn't load UI Layout from buffer" );
+		Log::error( "Couldn't load UI Layout from memory: %s",
+					needsReplacements ? fixedLayout.c_str() : layoutString.data() );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );
 	}
@@ -540,10 +547,13 @@ UIWidget* UISceneNode::loadLayoutFromStream( IOStream& stream, Node* parent,
 
 	pugi::xml_document doc;
 	pugi::xml_parse_result result;
+	std::string_view layoutString( scopedBuffer.get(), scopedBuffer.length() );
+	std::string fixedLayout;
+	bool needsReplacements =
+		voidTagsRegex.matches( scopedBuffer.get(), 0, nullptr, scopedBuffer.length() );
 
-	if ( voidTagsRegex.matches( scopedBuffer.get(), 0, nullptr, scopedBuffer.length() ) ) {
-		std::string strBuffer( scopedBuffer.get(), scopedBuffer.length() );
-		std::string fixedLayout = voidTagsRegex.gsub( strBuffer, "%1 />" );
+	if ( needsReplacements ) {
+		fixedLayout = voidTagsRegex.gsub( layoutString.data(), "%1 />" );
 		result = doc.load_buffer( fixedLayout.c_str(), fixedLayout.size(),
 								  pugi::parse_default | pugi::parse_ws_pcdata );
 	} else {
@@ -554,8 +564,8 @@ UIWidget* UISceneNode::loadLayoutFromStream( IOStream& stream, Node* parent,
 	if ( result ) {
 		return loadLayoutNodes( doc.first_child(), NULL != parent ? parent : this, marker );
 	} else {
-		// Preserves the unique stream error log
-		Log::error( "Couldn't load UI Layout from stream" );
+		Log::error( "Couldn't load UI Layout from stream: %s",
+					needsReplacements ? fixedLayout.c_str() : layoutString.data() );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );
 	}

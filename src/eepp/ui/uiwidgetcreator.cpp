@@ -157,6 +157,9 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["pre"] = UIRichText::NewPre;
 		registeredWidget["img"] = [] { return UIImage::NewWithTag( "img" ); };
 		registeredWidget["input"] = UITextInput::New;
+		registeredWidget["article"] = [] {
+			return UILinearLayout::NewVerticalWidthMatchParent( "article" );
+		};
 		registeredWidget["center"] = [] {
 			return UILinearLayout::NewVerticalWidthMatchParent( "center" );
 		};
