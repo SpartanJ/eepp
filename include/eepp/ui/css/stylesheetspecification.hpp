@@ -5,6 +5,7 @@
 #include <eepp/system/functionstring.hpp>
 #include <eepp/system/singleton.hpp>
 #include <eepp/ui/css/drawableimageparser.hpp>
+#include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/css/shorthanddefinition.hpp>
 #include <functional>
 
@@ -42,6 +43,8 @@ class EE_API StyleSheetSpecification {
 	const PropertyDefinition* getProperty( const Uint32& id ) const;
 
 	const PropertyDefinition* getProperty( const std::string& name ) const;
+
+	const SmallVector<CSS::PropertyId>& getInheritableProperties() const;
 
 	ShorthandDefinition& registerShorthand( const std::string& name,
 											const std::vector<std::string>& properties,

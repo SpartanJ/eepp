@@ -166,7 +166,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["html"] = [] {
 			return UILinearLayout::NewVerticalWidthMatchParent( "html" );
 		};
-		registeredWidget["head"] = [] { return UIWidget::New(); };
+		registeredWidget["head"] = [] { return UIWidget::NewWithTag( "head" ); };
 		registeredWidget["body"] = [] {
 			return UILinearLayout::NewVerticalWidthMatchParent( "body" );
 		};

@@ -451,14 +451,14 @@ void UIRichText::rebuildRichText() {
 
 	auto processWidget = [&]( UIWidget* widget, auto& processWidgetRef ) -> void {
 		if ( widget->isType( UI_TYPE_TEXTSPAN ) ) {
-			UITextSpan* span = static_cast<UITextSpan*>( widget );
+			UITextSpan* span = widget->asType<UITextSpan>();
 			if ( !span->getText().empty() ) {
 				mRichText.addSpan( span->getText(), span->getFontStyleConfig() );
 			}
 			Node* spanChild = span->getFirstChild();
 			while ( spanChild != NULL ) {
 				if ( spanChild->isWidget() ) {
-					processWidgetRef( static_cast<UIWidget*>( spanChild ), processWidgetRef );
+					processWidgetRef( spanChild->asType<UIWidget>(), processWidgetRef );
 				}
 				spanChild = spanChild->getNextNode();
 			}
@@ -475,7 +475,7 @@ void UIRichText::rebuildRichText() {
 	Node* child = mChild;
 	while ( NULL != child ) {
 		if ( child->isWidget() ) {
-			processWidget( static_cast<UIWidget*>( child ), processWidget );
+			processWidget( child->asType<UIWidget>(), processWidget );
 		}
 		child = child->getNextNode();
 	}
@@ -489,7 +489,7 @@ void UIRichText::positionChildren() {
 	size_t currentSpan = 0;
 
 	// Helper to find the next RenderSpan of type CustomSize
-	auto getNextCustomSpan = [&]() -> const Graphics::RichText::RenderSpan* {
+	auto getNextCustomSpan = [&]() -> const RichText::RenderSpan* {
 		while ( currentLine < lines.size() ) {
 			const auto& line = lines[currentLine];
 			while ( currentSpan < line.spans.size() ) {
@@ -511,7 +511,7 @@ void UIRichText::positionChildren() {
 		constexpr Float lowF = std::numeric_limits<Float>::lowest();
 		Rectf bounds( maxF, maxF, lowF, lowF );
 
-		Vector2f offset( 0, 0 );
+		Vector2f offset;
 		Node* p = widget->getParent();
 		while ( p && p != this ) {
 			offset += p->isWidget() ? p->asType<UIWidget>()->getPixelsPosition() : p->getPosition();
@@ -519,7 +519,7 @@ void UIRichText::positionChildren() {
 		}
 
 		if ( widget->isType( UI_TYPE_TEXTSPAN ) ) {
-			UITextSpan* textSpan = static_cast<UITextSpan*>( widget );
+			UITextSpan* textSpan = widget->asType<UITextSpan>();
 			Int64 startChar = curCharIdx;
 			Int64 endChar = curCharIdx;
 			if ( !textSpan->getText().empty() ) {
@@ -527,7 +527,7 @@ void UIRichText::positionChildren() {
 				curCharIdx = endChar;
 			}
 
-			std::vector<Rectf>& hitBoxes = textSpan->getHitBoxes();
+			auto& hitBoxes = textSpan->getHitBoxes();
 			hitBoxes.clear();
 
 			if ( startChar < endChar ) {
@@ -557,7 +557,7 @@ void UIRichText::positionChildren() {
 			while ( spanChild != NULL ) {
 				if ( spanChild->isWidget() ) {
 					bounds.expand(
-						processWidgetRef( static_cast<UIWidget*>( spanChild ), processWidgetRef ) );
+						processWidgetRef( spanChild->asType<UIWidget>(), processWidgetRef ) );
 				}
 				spanChild = spanChild->getNextNode();
 			}
@@ -600,7 +600,7 @@ void UIRichText::positionChildren() {
 	child = mChild;
 	while ( NULL != child ) {
 		if ( child->isWidget() ) {
-			processWidget( static_cast<UIWidget*>( child ), processWidget );
+			processWidget( child->asType<UIWidget>(), processWidget );
 		}
 		child = child->getNextNode();
 	}

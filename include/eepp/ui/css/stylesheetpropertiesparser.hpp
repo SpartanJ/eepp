@@ -9,11 +9,11 @@ namespace EE { namespace UI { namespace CSS {
 
 class EE_API StyleSheetPropertiesParser {
   public:
-	StyleSheetPropertiesParser();
+	StyleSheetPropertiesParser() = default;
 
-	explicit StyleSheetPropertiesParser( const std::string& propsstr );
+	explicit StyleSheetPropertiesParser( std::string_view propsstr );
 
-	void parse( const std::string& propsstr );
+	void parse( std::string_view propsstr );
 
 	void print();
 
@@ -24,18 +24,18 @@ class EE_API StyleSheetPropertiesParser {
   protected:
 	enum ReadState { ReadingPropertyName, ReadingPropertyValue, ReadingComment };
 
-	ReadState mPrevRs;
+	ReadState mPrevRs{ ReadingPropertyName };
 
 	StyleSheetProperties mProperties;
 	StyleSheetVariables mVariables;
 
 	int readPropertyName( ReadState& rs, std::size_t pos, std::string& buffer,
-						  const std::string& str );
+						  std::string_view str );
 
 	int readPropertyValue( ReadState& rs, std::size_t pos, std::string& buffer,
-						   const std::string& str );
+						   std::string_view str );
 
-	int readComment( ReadState& rs, std::size_t pos, std::string& buffer, const std::string& str );
+	int readComment( ReadState& rs, std::size_t pos, std::string& buffer, std::string_view str );
 
 	void addProperty( std::string name, std::string value );
 };

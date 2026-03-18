@@ -30,7 +30,7 @@ const std::string& PropertyDefinition::getDefaultValue() const {
 	return mDefaultValue;
 }
 
-bool PropertyDefinition::getInherited() const {
+bool PropertyDefinition::isInherited() const {
 	return mInherited;
 }
 

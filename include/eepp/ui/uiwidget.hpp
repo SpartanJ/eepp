@@ -543,6 +543,8 @@ class EE_API UIWidget : public UINode {
 	 */
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
+	void propagateInheritedProperty( const CSS::StyleSheetProperty& property );
+
 	/**
 	 * @brief Gets the padding in density-independent pixels (dp).
 	 *
