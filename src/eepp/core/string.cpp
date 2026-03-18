@@ -2710,4 +2710,36 @@ void String::stripAnsiCodes( std::string& str ) {
 	implementation( str );
 }
 
+void String::removeExtraSpaces( std::string& str ) {
+	size_t write_idx = 0;
+	size_t read_idx = 0;
+	size_t n = str.length();
+	bool is_first_word = true;
+
+	while ( read_idx < n ) {
+		// 1. Skip all leading spaces for the current word
+		while ( read_idx < n && std::isspace( str[read_idx] ) ) {
+			read_idx++;
+		}
+
+		if ( read_idx == n )
+			break; // Reached the end of the string
+
+		// 2. If it's not the first word, add a single separating space
+		if ( !is_first_word ) {
+			str[write_idx++] = ' ';
+		}
+
+		// 3. Copy the actual word
+		while ( read_idx < n && !std::isspace( str[read_idx] ) ) {
+			str[write_idx++] = str[read_idx++];
+		}
+
+		is_first_word = false;
+	}
+
+	// 4. Shrink the string to the new size (this is O(1) and doesn't reallocate)
+	str.resize( write_idx );
+}
+
 } // namespace EE

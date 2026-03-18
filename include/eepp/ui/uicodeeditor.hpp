@@ -263,6 +263,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	const Uint32& getFontStyle() const;
 
+	Uint32 getTextDecoration() const;
+
+	UICodeEditor* setTextDecoration( const Uint32& textDecoration );
+
 	const Float& getOutlineThickness() const;
 
 	UICodeEditor* setOutlineThickness( const Float& outlineThickness );

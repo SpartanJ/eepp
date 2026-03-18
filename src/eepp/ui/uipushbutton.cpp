@@ -618,6 +618,7 @@ std::string UIPushButton::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::FontFamily:
 		case PropertyId::FontSize:
 		case PropertyId::FontStyle:
+		case PropertyId::TextDecoration:
 		case PropertyId::Wordwrap:
 		case PropertyId::TextStrokeWidth:
 		case PropertyId::TextStrokeColor:
@@ -646,6 +647,7 @@ std::vector<PropertyId> UIPushButton::getPropertiesImplemented() const {
 				   PropertyId::FontFamily,
 				   PropertyId::FontSize,
 				   PropertyId::FontStyle,
+				   PropertyId::TextDecoration,
 				   PropertyId::Wordwrap,
 				   PropertyId::TextStrokeWidth,
 				   PropertyId::TextStrokeColor,
@@ -719,6 +721,7 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::FontFamily:
 		case PropertyId::FontSize:
 		case PropertyId::FontStyle:
+		case PropertyId::TextDecoration:
 		case PropertyId::Wordwrap:
 		case PropertyId::TextStrokeWidth:
 		case PropertyId::TextStrokeColor:

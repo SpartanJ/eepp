@@ -689,6 +689,9 @@ class EE_API UISceneNode : public SceneNode {
 	/** Sets the document / scene URI used to resolve paths of inner elements */
 	void setURI( const URI& uri );
 
+	/** @return the document / scene URI used to resolve paths of inner elements */
+	const URI& getURI() const { return mURI; }
+
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;

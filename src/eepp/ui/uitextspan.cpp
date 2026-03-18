@@ -114,7 +114,7 @@ std::string UITextSpan::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::FontSize:
 			return String::format( "%dpx", getFontSize() );
 		case PropertyId::FontStyle:
-			return Graphics::Text::styleFlagToString( getFontStyle() );
+			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::Color:
 			return getFontColor().toHexString();
 		case PropertyId::BackgroundColor:

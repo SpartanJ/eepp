@@ -2897,6 +2897,22 @@ UICodeEditor* UICodeEditor::setFontStyle( const Uint32& fontStyle ) {
 	return this;
 }
 
+Uint32 UICodeEditor::getTextDecoration() const {
+	Uint32 flags = mFontStyleConfig.Style;
+	flags &= ~( Text::Style::Bold | Text::Style::Italic | Text::Style::Shadow );
+	return flags;
+}
+
+UICodeEditor* UICodeEditor::setTextDecoration( const Uint32& textDecoration ) {
+	if ( mFontStyleConfig.Style != textDecoration ) {
+		mFontStyleConfig.Style &= ~( Text::Underlined | Text::StrikeThrough );
+		mFontStyleConfig.Style |= textDecoration;
+		invalidateDraw();
+		onFontStyleChanged();
+	}
+	return this;
+}
+
 const Uint32& UICodeEditor::getFontStyle() const {
 	return mFontStyleConfig.getFontStyle();
 }
@@ -2975,6 +2991,9 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::FontSize:
 			setFontSize( lengthFromValue( attribute ) );
 			break;
+		case PropertyId::TextDecoration:
+			setTextDecoration( attribute.asTextDecoration() );
+			break;
 		case PropertyId::FontStyle: {
 			setFontStyle( attribute.asFontStyle() );
 			break;
@@ -3036,6 +3055,8 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
 			return String::fromFloat( getFontSize(), "px" );
+		case PropertyId::TextDecoration:
+			return Text::styleFlagToString( getTextDecoration() );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::TextStrokeWidth:
@@ -3080,7 +3101,8 @@ std::vector<PropertyId> UICodeEditor::getPropertiesImplemented() const {
 				   PropertyId::DisableCodeEditorFlags,
 				   PropertyId::LineWrapMode,
 				   PropertyId::LineWrapType,
-				   PropertyId::Text };
+				   PropertyId::Text,
+				   PropertyId::TextDecoration };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }

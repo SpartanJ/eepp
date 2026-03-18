@@ -92,7 +92,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "height", "" )
 		.setType( PropertyType::NumberLength )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
-	registerProperty( "background-color", "" ).setType( PropertyType::Color );
+	registerProperty( "background-color", "" ).setType( PropertyType::Color ).addAlias( "bgcolor" );
 	registerProperty( "background-image", "none" ).setIndexed();
 	registerProperty( "background-tint", "" ).setIndexed().setType( PropertyType::Color );
 	registerProperty( "background-position-x", "center" )
@@ -215,9 +215,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.setType( PropertyType::NumberLength )
 		.addAlias( "text-size" )
 		.addAlias( "textsize" );
-	registerProperty( "font-style", "", true )
-		.addAlias( "text-style" )
-		.addAlias( "text-decoration" );
+	registerProperty( "font-style", "", true ).addAlias( "font-weight" );
+	registerProperty( "text-decoration", "", true );
 	registerProperty( "line-spacing", "", true ).setType( PropertyType::NumberLength );
 	registerProperty( "text-stroke-width", "", true )
 		.setType( PropertyType::NumberLength )
@@ -728,7 +727,7 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 
 	mShorthandParsers["box"] = []( const ShorthandDefinition* shorthand,
 								   std::string value ) -> std::vector<StyleSheetProperty> {
-		value = String::trim( value );
+		String::removeExtraSpaces( value );
 		if ( value.empty() )
 			return {};
 		std::vector<StyleSheetProperty> properties;

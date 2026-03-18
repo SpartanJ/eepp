@@ -1,6 +1,7 @@
 #include <eepp/graphics/drawable.hpp>
 #include <eepp/graphics/drawablesearcher.hpp>
 #include <eepp/graphics/sprite.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/ui/css/drawableimageparser.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/uiicon.hpp>
@@ -295,9 +296,21 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 		}
 		case PropertyId::Src: {
 			std::string path( attribute.getValue() );
+			URI uri( path );
 			bool ownIt;
+
+			if ( uri.getScheme().empty() && !getUISceneNode()->getURI().empty() ) {
+				uri = getUISceneNode()->getURI();
+				std::string newPath = uri.getPath();
+				if ( !path.empty() && path[0] != '/' )
+					FileSystem::dirAddSlashAtEnd( newPath );
+				newPath += path;
+				uri.setPath( newPath );
+				path = uri.toString();
+			}
+
 			Drawable* createdDrawable =
-				CSS::StyleSheetSpecification::instance()->getDrawableImageParser().createDrawable(
+				StyleSheetSpecification::instance()->getDrawableImageParser().createDrawable(
 					path, mSize, ownIt, this );
 			if ( createdDrawable ) {
 				setDrawable( createdDrawable, ownIt );
@@ -317,7 +330,7 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 				setDrawable(
 					iconF->getSize( mSize.getHeight() - mPaddingPx.Top - mPadding.Bottom ) );
 			} else if ( NULL !=
-						( icon = CSS::StyleSheetSpecification::instance()
+						( icon = StyleSheetSpecification::instance()
 									 ->getDrawableImageParser()
 									 .createDrawable( val, getPixelsSize(), ownIt, this ) ) ) {
 				setDrawable( icon, ownIt );

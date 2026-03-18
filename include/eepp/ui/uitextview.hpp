@@ -35,6 +35,10 @@ class EE_API UITextView : public UIWidget {
 
 	UITextView* setFontStyle( const Uint32& fontStyle );
 
+	Uint32 getTextDecoration() const;
+
+	UITextView* setTextDecoration( const Uint32& textDecoration );
+
 	const Float& getOutlineThickness() const;
 
 	UITextView* setOutlineThickness( const Float& outlineThickness );

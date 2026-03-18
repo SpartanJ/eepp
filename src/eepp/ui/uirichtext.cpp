@@ -52,7 +52,7 @@ bool UIRichText::isType( const Uint32& type ) const {
 	return UIRichText::getType() == type ? true : UILayout::isType( type );
 }
 
-const Graphics::RichText& UIRichText::getRichText() {
+const RichText& UIRichText::getRichText() {
 	return mRichText;
 }
 
@@ -83,8 +83,7 @@ bool UIRichText::applyProperty( const StyleSheetProperty& attribute ) {
 
 	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
 		case PropertyId::FontFamily: {
-			Graphics::Font* font =
-				Graphics::FontManager::instance()->getByName( attribute.value() );
+			Font* font = FontManager::instance()->getByName( attribute.value() );
 			if ( NULL != font && font->loaded() ) {
 				setFont( font );
 			}
@@ -92,6 +91,9 @@ bool UIRichText::applyProperty( const StyleSheetProperty& attribute ) {
 		}
 		case PropertyId::FontSize:
 			setFontSize( lengthFromValue( attribute ) );
+			break;
+		case PropertyId::TextDecoration:
+			setTextDecoration( attribute.asTextDecoration() );
 			break;
 		case PropertyId::FontStyle:
 			setFontStyle( attribute.asFontStyle() );
@@ -152,7 +154,9 @@ std::string UIRichText::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::FontSize:
 			return String::format( "%dpx", getFontSize() );
 		case PropertyId::FontStyle:
-			return Graphics::Text::styleFlagToString( getFontStyle() );
+			return Text::styleFlagToString( getFontStyle() );
+		case PropertyId::TextDecoration:
+			return Text::styleFlagToString( getTextDecoration() );
 		case PropertyId::Color:
 			return getFontColor().toHexString();
 		case PropertyId::BackgroundColor:
@@ -189,16 +193,16 @@ std::vector<PropertyId> UIRichText::getPropertiesImplemented() const {
 				   PropertyId::TextShadowOffset, PropertyId::TextStrokeWidth,
 				   PropertyId::TextStrokeColor,	 PropertyId::TextAlign,
 				   PropertyId::SelectionColor,	 PropertyId::SelectionBackColor,
-				   PropertyId::TextSelection };
+				   PropertyId::TextSelection,	 PropertyId::TextDecoration };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
 
-Graphics::Font* UIRichText::getFont() const {
+Font* UIRichText::getFont() const {
 	return mRichText.getFontStyleConfig().Font;
 }
 
-UIRichText* UIRichText::setFont( Graphics::Font* font ) {
+UIRichText* UIRichText::setFont( Font* font ) {
 	if ( NULL != font && mRichText.getFontStyleConfig().Font != font ) {
 		mRichText.getFontStyleConfig().Font = font;
 		mRichText.invalidate();
@@ -227,6 +231,25 @@ UIRichText* UIRichText::setFontSize( const Uint32& characterSize ) {
 
 const Uint32& UIRichText::getFontStyle() const {
 	return mRichText.getFontStyleConfig().Style;
+}
+
+Uint32 UIRichText::getTextDecoration() const {
+	Uint32 flags = mRichText.getFontStyleConfig().Style;
+	flags &= ~( Text::Style::Bold | Text::Style::Italic | Text::Style::Shadow );
+	return flags;
+}
+
+UIRichText* UIRichText::setTextDecoration( const Uint32& textDecoration ) {
+	if ( mRichText.getFontStyleConfig().Style != textDecoration ) {
+		mRichText.getFontStyleConfig().Style &= ~( Text::Underlined | Text::StrikeThrough );
+		mRichText.getFontStyleConfig().Style |= textDecoration;
+		mRichText.invalidate();
+
+		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
+		updateDefaultSpansStyle();
+	}
+	return this;
 }
 
 UIRichText* UIRichText::setFontStyle( const Uint32& fontStyle ) {
@@ -275,9 +298,9 @@ UIRichText* UIRichText::setFontShadowColor( const Color& color ) {
 	if ( mRichText.getFontStyleConfig().ShadowColor != color ) {
 		mRichText.getFontStyleConfig().ShadowColor = color;
 		if ( mRichText.getFontStyleConfig().ShadowColor != Color::Transparent )
-			mRichText.getFontStyleConfig().Style |= Graphics::Text::Shadow;
+			mRichText.getFontStyleConfig().Style |= Text::Shadow;
 		else
-			mRichText.getFontStyleConfig().Style &= ~Graphics::Text::Shadow;
+			mRichText.getFontStyleConfig().Style &= ~Text::Shadow;
 		mRichText.invalidate();
 		updateDefaultSpansStyle();
 	}
@@ -463,12 +486,17 @@ void UIRichText::rebuildRichText() {
 				spanChild = spanChild->getNextNode();
 			}
 		} else {
+			Rectf margin = widget->getLayoutPixelsMargin();
+
 			if ( mSize.getWidth() != 0 &&
 				 widget->getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
-				widget->setPixelsSize( mSize.getWidth(), widget->getPixelsSize().getHeight() );
+				widget->setPixelsSize( mSize.getWidth() - margin.Left - margin.Right,
+									   widget->getPixelsSize().getHeight() );
 			}
 
-			mRichText.addCustomSize( widget->getPixelsSize() );
+			Sizef size = widget->getPixelsSize();
+			mRichText.addCustomSize( Sizef( size.getWidth() + margin.Left + margin.Right,
+											size.getHeight() + margin.Top + margin.Bottom ) );
 		}
 	};
 
@@ -585,9 +613,10 @@ void UIRichText::positionChildren() {
 			if ( span ) {
 				size_t lineIdx = currentSpan > 0 ? currentLine : currentLine - 1;
 				Float lineY = lines[lineIdx].y;
+				Rectf margin = widget->getLayoutPixelsMargin();
 
-				Vector2f targetPos( mPaddingPx.Left + span->position.x,
-									mPaddingPx.Top + lineY + span->position.y );
+				Vector2f targetPos( mPaddingPx.Left + span->position.x + margin.Left,
+									mPaddingPx.Top + lineY + span->position.y + margin.Top );
 
 				widget->setPixelsPosition( targetPos - offset );
 

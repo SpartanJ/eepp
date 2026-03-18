@@ -72,6 +72,10 @@ class EE_API UIConsole : public UIWidget,
 
 	UIConsole* setFontStyle( const Uint32& fontStyle );
 
+	Uint32 getTextDecoration() const;
+
+	UIConsole* setTextDecoration( const Uint32& textDecoration );
+
 	UIConsole* setFontOutlineThickness( const Float& outlineThickness );
 
 	const Float& getFontOutlineThickness() const;

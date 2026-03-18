@@ -887,3 +887,70 @@ UTEST( UIRichText, WhitespaceCollapseBRTest ) {
 	eeDelete( sceneNode );
 	Engine::destroySingleton();
 }
+
+UTEST( UIRichText, MarginsTest ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+<richtext id="rt" layout-width="wrap_content" layout-height="wrap_content">
+	<div id="d1" margin="10px 20px 30px 40px" width="50px" height="50px" />
+	<div id="d2" margin="5px" width="50px" height="50px" />
+</richtext>
+	)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+
+	UI::UIRichText* rt = sceneNode->find<UI::UIRichText>( "rt" );
+	ASSERT_TRUE( rt != nullptr );
+	UI::UIWidget* d1 = sceneNode->find<UI::UIWidget>( "d1" );
+	ASSERT_TRUE( d1 != nullptr );
+	UI::UIWidget* d2 = sceneNode->find<UI::UIWidget>( "d2" );
+	ASSERT_TRUE( d2 != nullptr );
+
+	sceneNode->update( Time::Zero );
+	
+	// Check the layout position of the first div
+	Vector2f pos1 = d1->getPixelsPosition();
+	// margin left is 40px, top is 10px, so position inside richtext should be (40, 10)
+	// (CSS order is: top right bottom left -> 10px 20px 30px 40px)
+	EXPECT_EQ( 40.f, pos1.x );
+	EXPECT_EQ( 10.f, pos1.y );
+
+	// Check the layout position of the second div
+	Vector2f pos2 = d2->getPixelsPosition();
+	// The widgets flow inline (horizontally) since total width < 800.
+	// d1 footprint width: 40 (left) + 50 (width) + 20 (right) = 110.
+	// d2 left margin: 5. 
+	// Therefore d2 x position = 110 + 5 = 115.
+	// Line height is determined by max footprint height.
+	// d1 footprint height: 10 + 50 + 30 = 90.
+	// d2 footprint height: 5 + 50 + 5 = 60.
+	// Max ascent = 90.
+	// RichText baseline aligns elements to the bottom by default.
+	// d2 offsetY = 90 - 60 = 30.
+	// d2 y position = offsetY (30) + d2 margin top (5) = 35.
+	EXPECT_EQ( 115.f, pos2.x );
+	EXPECT_EQ( 35.f, pos2.y );
+
+	// Check UIRichText bounds
+	// Width = d1 footprint (110) + d2 footprint (60) = 170.
+	// Height = line height (90).
+	EXPECT_EQ( 170.f, rt->getPixelsSize().getWidth() );
+	EXPECT_EQ( 90.f, rt->getPixelsSize().getHeight() );
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
