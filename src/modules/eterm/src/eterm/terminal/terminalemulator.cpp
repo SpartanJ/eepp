@@ -3078,15 +3078,33 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 		return;
 	}
 
-	if ( !xgetmode( MODE_MOUSEMOTION ) && TerminalMouseEventType::MouseMotion == type )
-		return;
-
 	int len, btn, code;
 	char buf[40];
 	static int ox, oy;
 
 	for ( btn = 1; btn <= 31 && !( flags & ( 1 << ( btn - 1 ) ) ); btn++ )
 		;
+
+	/* Fix button numbers from ee to tty */
+	switch ( btn ) {
+		case 28:
+			btn = 4;
+			break;
+		case 29:
+			btn = 5;
+			break;
+		case 30:
+			btn = 6;
+			break;
+		case 31:
+			btn = 7;
+			break;
+		default: {
+			if ( btn >= 4 && btn <= 7 )
+				btn += 4;
+			break;
+		}
+	}
 
 	if ( type == TerminalMouseEventType::MouseMotion ) {
 		if ( pos.x == ox && pos.y == oy )
@@ -3098,30 +3116,11 @@ void TerminalEmulator::mousereport( const TerminalMouseEventType& type, const Ve
 			return;
 		/* Set btn to lowest-numbered pressed button, or 12 if no
 		 * buttons are pressed. */
+		if ( flags == 0 )
+			btn = 12;
 
 		code = 32;
 	} else {
-		/* Fix button numbers from ee to tty */
-		switch ( btn ) {
-			case 28:
-				btn = 4;
-				break;
-			case 29:
-				btn = 5;
-				break;
-			case 30:
-				btn = 6;
-				break;
-			case 31:
-				btn = 7;
-				break;
-			default: {
-				if ( btn >= 4 && btn <= 7 )
-					btn += 4;
-				break;
-			}
-		}
-
 		/* Only buttons 1 through 11 can be encoded */
 		if ( btn < 1 || btn > 11 )
 			return;
