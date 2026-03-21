@@ -217,16 +217,20 @@ void StatusBuildOutputController::runBuild( const std::string& buildName,
 		}
 
 		if ( enableBuildButton && buildButton )
-			buildButton->setEnabled( true );
+			buildButton->ensureMainThread( [buildButton] { buildButton->setEnabled( true ); } );
 
 		if ( enableCleanButton && cleanButton )
-			cleanButton->runOnMainThread( [cleanButton] { cleanButton->setEnabled( true ); } );
+			cleanButton->ensureMainThread( [cleanButton] { cleanButton->setEnabled( true ); } );
 
-		if ( buildAndRunButton )
-			buildAndRunButton->setEnabled( true );
+		if ( buildAndRunButton ) {
+			buildAndRunButton->ensureMainThread(
+				[buildAndRunButton] { buildAndRunButton->setEnabled( true ); } );
+		}
 
-		mBuildButton->setEnabled( true );
-		mStopButton->setEnabled( false );
+		mBuildButton->ensureMainThread( [this] {
+			mBuildButton->setEnabled( true );
+			mStopButton->setEnabled( false );
+		} );
 	};
 
 	auto res = pbm->build(

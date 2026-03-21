@@ -110,20 +110,28 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	UIPushButton* mChatAttach{ nullptr };
 	UISelectButton* mChatPrivate{ nullptr };
 	UIScrollView* mChatScrollView{ nullptr };
-	UIDropDownList* mModelDDL{ nullptr };
+	UIPushButton* mModelBtn{ nullptr };
+
+	// Locate file
 	UIVLinearLayoutCommandExecuter* mLocateBarLayout{ nullptr };
 	UITextInput* mLocateInput{ nullptr };
 	UITableView* mLocateTable{ nullptr };
+
+	// Select model
+	UIVLinearLayoutCommandExecuter* mLocateModelBarLayout{ nullptr };
+	UITextInput* mLocateModelInput{ nullptr };
+	UITableView* mLocateModelTable{ nullptr };
 
 	std::unique_ptr<LLMChatCompletionRequest> mRequest;
 	std::unique_ptr<LLMChatCompletionRequest> mSummaryRequest;
 	LLMProviders mProviders;
 	LLMModel mCurModel;
-	std::unordered_map<String::HashType, LLMModel> mModelsMap;
+	std::vector<LLMModel> mModels;
 	int mPendingModelsToLoad{ 0 };
 	bool mChatIsPrivate{ false };
 	bool mChatLocked{ false };
 	bool mLinkMode{ false };
+	std::vector<LLMModel> mNewModels;
 
 	LLMModel findModel( const std::string& provider, const std::string& model );
 
@@ -151,13 +159,13 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	UIWidget* addChatUI( LLMChat::Role role );
 
-	void fillApiModels( UIDropDownList* modelDDL );
+	void fillApiModels();
 
 	String getModelDisplayName( const LLMModel& model ) const;
 
-	bool selectModel( UIDropDownList* modelDDL, const LLMModel& model );
+	bool selectModel( std::optional<LLMModel> model );
 
-	void fillModelDropDownList( UIDropDownList* modelDDL );
+	void fillModelDropDownList();
 
 	void resizeToFit( UICodeEditor* editor );
 
@@ -172,6 +180,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	const LLMModel& getCheapestModelFromCurrentProvider() const;
 
 	std::optional<LLMModel> getModel( const std::string& provider, const std::string& modelName );
+
+	std::optional<LLMModel> getModel( Uint64 hash );
 
 	void saveChat();
 
@@ -188,11 +198,21 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void initAttachFile();
 
+	void initSelectModel();
+
 	void updateLocateBarColumns();
 
 	void showAttachFile();
 
 	void hideAttachFile();
+
+	void updateLocateModelBarColumns();
+
+	void loadSelectModel();
+
+	void showSelectModel();
+
+	void hideSelectModel();
 
 	void insertFileToDocument( std::string path, std::shared_ptr<TextDocument> cdoc );
 

@@ -384,6 +384,7 @@ void addCSS() {
 			  { "RadioButton", "keyword" },
 			  { "ComboBox", "keyword" },
 			  { "DropDownList", "keyword" },
+			  { "DropDownModelList", "keyword" },
 			  { "Image", "keyword" },
 			  { "ListBox", "keyword" },
 			  { "MenuBar", "keyword" },
@@ -425,6 +426,7 @@ void addCSS() {
 			  { "PopUpMenu", "keyword" },
 			  { "ImageViewer", "keyword" },
 			  { "AudioPlayer", "keyword" },
+			  { "Table", "keyword" },
 
 		  },
 		  "",

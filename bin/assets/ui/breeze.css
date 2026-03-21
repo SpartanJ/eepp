@@ -244,7 +244,8 @@ Anchor:hover {
 
 PushButton,
 SelectButton,
-DropDownList {
+DropDownList,
+DropDownModelList {
 	padding-left: var(--base-horizontal-padding);
 	padding-right: var(--base-horizontal-padding);
 	padding-top: var(--base-vertical-padding);
@@ -259,6 +260,7 @@ DropDownList {
 }
 
 DropDownList,
+DropDownModelList,
 ComboBox::DropDownList {
 	max-visible-items: 6;
 }
@@ -267,6 +269,8 @@ PushButton:hover,
 PushButton:focus,
 DropDownList:hover,
 DropDownList:focus,
+DropDownModelList:hover,
+DropDownModelList:focus,
 SelectButton:hover,
 SelectButton:focus,
 ComboBox:hover,
@@ -800,12 +804,14 @@ Window::border::bottom {
 	background-color: var(--separator);
 }
 
-DropDownList {
+DropDownList,
+DropDownModelList {
 	padding-right: 16dp;
 	text-overflow: ellipsis;
 }
 
 DropDownList,
+DropDownModelList,
 ComboBox::Button {
 	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M12 15.6315L20.9679 10.8838L20.0321 9.11619L12 13.3685L3.96788 9.11619L3.0321 10.8838L12 15.6315Z'></path></svg>");
 	foreground-position-x: right 6dp;
@@ -816,6 +822,8 @@ ComboBox::Button {
 
 DropDownList:hover,
 DropDownList:focus,
+DropDownModelList:hover,
+DropDownModelList:focus,
 ComboBox::Button:focus,
 ComboBox::Button:hover {
 	foreground-tint: var(--icon-active);
