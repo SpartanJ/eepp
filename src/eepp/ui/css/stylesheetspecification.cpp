@@ -32,6 +32,10 @@ const PropertyDefinition* StyleSheetSpecification::getProperty( const std::strin
 	return mPropertySpecification->getProperty( name );
 }
 
+const SmallVector<PropertyId>& StyleSheetSpecification::getInheritableProperties() const {
+	return mPropertySpecification->getInheritableProperties();
+}
+
 ShorthandDefinition&
 StyleSheetSpecification::registerShorthand( const std::string& name,
 											const std::vector<std::string>& properties,
@@ -88,7 +92,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "height", "" )
 		.setType( PropertyType::NumberLength )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
-	registerProperty( "background-color", "" ).setType( PropertyType::Color );
+	registerProperty( "background-color", "" ).setType( PropertyType::Color ).addAlias( "bgcolor" );
 	registerProperty( "background-image", "none" ).setIndexed();
 	registerProperty( "background-tint", "" ).setIndexed().setType( PropertyType::Color );
 	registerProperty( "background-position-x", "center" )
@@ -150,7 +154,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 		.addAlias( "layout-margin-bottom" )
 		.addAlias( "layout_marginbottom" )
 		.setRelativeTarget( PropertyRelativeTarget::ContainingBlockHeight );
-	registerProperty( "tooltip", "" ).setType( PropertyType::String );
+	registerProperty( "tooltip", "" ).setType( PropertyType::String ).addAlias( "alt" );
 	registerProperty( "layout-weight", "" )
 		.addAlias( "layout_weight" )
 		.addAlias( "lw8" )
@@ -195,30 +199,33 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "opacity", "" ).setType( PropertyType::NumberFloat );
 	registerProperty( "cursor", "arrow" );
 	registerProperty( "text", "" ).setType( PropertyType::String );
-	registerProperty( "text-transform", "" ).setType( PropertyType::String );
-	registerProperty( "color", "" )
+	registerProperty( "text-transform", "", true ).setType( PropertyType::String );
+	registerProperty( "color", "", true )
 		.setType( PropertyType::Color )
 		.addAlias( "text-color" )
 		.addAlias( "textcolor" );
-	registerProperty( "text-shadow-color", "" ).setType( PropertyType::Color );
-	registerProperty( "text-shadow-offset", "" ).setType( PropertyType::Vector2 );
+	registerProperty( "text-shadow-color", "", true ).setType( PropertyType::Color );
+	registerProperty( "text-shadow-offset", "", true ).setType( PropertyType::Vector2 );
 	registerProperty( "selection-color", "" ).setType( PropertyType::Color );
 	registerProperty( "selection-back-color", "" ).setType( PropertyType::Color );
-	registerProperty( "font-family", "" ).addAlias( "font-name" ).setType( PropertyType::String );
-	registerProperty( "font-size", "" )
+	registerProperty( "font-family", "", true )
+		.addAlias( "font-name" )
+		.setType( PropertyType::String );
+	registerProperty( "font-size", "", true )
 		.setType( PropertyType::NumberLength )
 		.addAlias( "text-size" )
 		.addAlias( "textsize" );
-	registerProperty( "font-style", "" ).addAlias( "text-style" ).addAlias( "text-decoration" );
-	registerProperty( "line-spacing", "" ).setType( PropertyType::NumberLength );
-	registerProperty( "text-stroke-width", "" )
+	registerProperty( "font-style", "", true ).addAlias( "font-weight" );
+	registerProperty( "text-decoration", "", true );
+	registerProperty( "line-spacing", "", true ).setType( PropertyType::NumberLength );
+	registerProperty( "text-stroke-width", "", true )
 		.setType( PropertyType::NumberLength )
 		.addAlias( "fontoutlinethickness" );
-	registerProperty( "text-stroke-color", "" )
+	registerProperty( "text-stroke-color", "", true )
 		.setType( PropertyType::Color )
 		.addAlias( "fontoutlinecolor" );
-	registerProperty( "text-selection", "" ).setType( PropertyType::Bool );
-	registerProperty( "text-align", "" ).addAlias( "align" );
+	registerProperty( "text-selection", "", true ).setType( PropertyType::Bool );
+	registerProperty( "text-align", "", true ).addAlias( "align" );
 	registerProperty( "icon", "" );
 	registerProperty( "min-icon-size", "" ).setType( PropertyType::Vector2 );
 	registerProperty( "src", "" ).setType( PropertyType::String );
@@ -720,7 +727,7 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 
 	mShorthandParsers["box"] = []( const ShorthandDefinition* shorthand,
 								   std::string value ) -> std::vector<StyleSheetProperty> {
-		value = String::trim( value );
+		String::removeExtraSpaces( value );
 		if ( value.empty() )
 			return {};
 		std::vector<StyleSheetProperty> properties;

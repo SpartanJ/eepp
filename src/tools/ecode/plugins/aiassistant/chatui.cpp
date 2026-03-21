@@ -31,6 +31,107 @@ using namespace EE::Window;
 
 namespace ecode {
 
+class LLMModelsModel : public Model {
+  public:
+	enum Columns { Name, Provider, Hash };
+
+	LLMModelsModel( const std::vector<LLMModel>& models, UISceneNode* uiSceneNode = nullptr ) :
+		mModels( models ), mUISceneNode( uiSceneNode ) {
+		mCurModels.reserve( mModels.size() );
+		for ( const auto& model : mModels ) {
+			mCurModels.emplace_back( &model );
+		}
+	}
+
+	virtual size_t rowCount( const ModelIndex& = ModelIndex() ) const override {
+		return mCurModels.size();
+	}
+
+	virtual size_t columnCount( const ModelIndex& = ModelIndex() ) const override { return 2; }
+
+	virtual std::string columnName( const size_t& column ) const override {
+		switch ( column ) {
+			case Columns::Name:
+				return mUISceneNode ? mUISceneNode->i18n( "name", "Name" ) : "Name";
+			case Columns::Provider:
+				return mUISceneNode ? mUISceneNode->i18n( "provider", "Provider" ) : "Provider";
+			case Columns::Hash:
+				return mUISceneNode ? mUISceneNode->i18n( "hash", "Hash" ) : "Hash";
+		}
+		return "";
+	}
+
+	virtual Variant data( const ModelIndex& index,
+						  ModelRole role = ModelRole::Display ) const override {
+		if ( role != ModelRole::Display )
+			return {};
+
+		if ( index.row() < 0 || static_cast<size_t>( index.row() ) >= mCurModels.size() )
+			return {};
+
+		const auto& model = *mCurModels[index.row()];
+
+		switch ( index.column() ) {
+			case Columns::Name: {
+				if ( model.displayName.has_value() && !model.displayName->empty() ) {
+					return Variant( model.displayName->c_str() );
+				}
+				return Variant( model.name.c_str() );
+			}
+			case Columns::Provider: {
+				return Variant( model.provider.c_str() );
+			}
+			case Columns::Hash: {
+				return Variant( static_cast<Uint64>( model.hash ) );
+			}
+		}
+
+		return {};
+	}
+
+	ModelIndex getFromHash( Uint64 hash ) {
+		auto it = std::find_if( mCurModels.begin(), mCurModels.end(),
+								[hash]( const LLMModel* model ) { return hash == model->hash; } );
+		return it != mCurModels.end() ? index( std::distance( mCurModels.begin(), it ) )
+									  : index( 0 );
+	}
+
+	void setFilter( const std::string& filter ) {
+		if ( mCurFilter == filter )
+			return;
+		mCurFilter = filter;
+		mCurModels.clear();
+
+		for ( const auto& model : mModels ) {
+			if ( filter.empty() ) {
+				mCurModels.emplace_back( &model );
+				continue;
+			}
+
+			bool matchesName = String::icontains( model.name, filter );
+			bool matchesDisplayName =
+				model.displayName.has_value() && String::icontains( *model.displayName, filter );
+			bool matchesProvider = String::icontains( model.provider, filter );
+
+			if ( matchesName || matchesDisplayName || matchesProvider ) {
+				mCurModels.emplace_back( &model );
+			}
+		}
+
+		invalidate();
+	}
+
+	const std::vector<const LLMModel*>& getCurModels() const { return mCurModels; }
+
+	void refresh() { setFilter( mCurFilter ); }
+
+  protected:
+	const std::vector<LLMModel>& mModels;
+	std::vector<const LLMModel*> mCurModels;
+	std::string mCurFilter;
+	UISceneNode* mUISceneNode;
+};
+
 static const char* DEFAULT_PROVIDER = "google";
 static const char* DEFAULT_MODEL = "gemini-2.5-flash";
 
@@ -72,13 +173,7 @@ LLMChat::Role LLMChat::stringToRole( UIPushButton* userBut ) {
 
 static const char* DEFAULT_LAYOUT = R"xml(
 <style>
-.llm_chatui DropDownList {
-	border-color: transparent;
-	background-color: var(--tab-back);
-}
-.llm_chatui DropDownList:hover {
-	border-color: var(--primary);
-}
+<![CDATA[
 .llm_conversation {
 	margin-bottom: 8dp;
 }
@@ -138,14 +233,17 @@ DropDownList.role_ui {
 .llm_chatui .image {
 	tint: var(--font);
 }
-.llm_chat_attach {
+.llm_chat_attach,
+.llm_chat_select_model {
 	padding: 8dp 8dp 38dp 8dp;
 }
-.llm_chat_locate_input {
+.llm_chat_locate_input,
+.llm_chat_select_model_input {
 	margin-bottom: 2dp;
 	padding: 0 0 0 4dp;
 }
-.llm_chat_attach_locate {
+.llm_chat_attach_locate,
+.llm_chat_model_locate {
 	border-radius: 8dp;
 	margin-bottom: 4dp;
 }
@@ -156,6 +254,27 @@ DropDownList.role_ui {
 	background-image: icon(spy-line, 16dp);
 	background-position: top 8dp right 8dp;
 }
+.llm_chatui DropDownList,
+.model_ui {
+	border-color: transparent;
+	background-color: var(--tab-back);
+}
+.llm_chatui DropDownList:hover,
+.model_ui:hover {
+	border-color: var(--primary);
+}
+.model_ui {
+	padding-right: 16dp;
+	text-align: left;
+	text-overflow: ellipsis;
+	expand-text: true;
+	foreground-image: url("data:image/svg,<svg viewBox='0 0 24 24' fill='white'><path d='M12 15.6315L20.9679 10.8838L20.0321 9.11619L12 13.3685L3.96788 9.11619L3.0321 10.8838L12 15.6315Z'></path></svg>");
+	foreground-position-x: right 6dp;
+	foreground-position-y: center 1dp;
+	foreground-size: 12dp 16dp;
+	foreground-tint: var(--icon);
+}
+]]>
 </style>
 <Splitter lw="mp" lh="mp" orientation="vertical" splitter-partition="75%" padding="4dp">
 	<RelativeLayout lw="mp">
@@ -173,19 +292,21 @@ DropDownList.role_ui {
 			<TableView lw="mp" lh="0dp" lw8="1" class="llm_chat_attach_locate" />
 			<TextInput class="llm_chat_locate_input" lw="mp" lh="18dp" hint='@string(type_to_locate, "Type to Locate")' />
 		</vboxce>
+		<vboxce class="llm_chat_select_model" lw="mp" lh="mp" visible="false">
+			<TableView lw="mp" lh="0dp" lw8="1" class="llm_chat_model_locate" />
+			<TextInput class="llm_chat_select_model_input" lw="mp" lh="18dp" hint='@string(select_a_model_ellipsis, "Select a model...")' />
+		</vboxce>
 		<hbox lw="mp" lh="wc" layout_gravity="bottom|left" layout_margin="8dp" clip="false">
 			<PushButton id="llm_user" class="llm_button" text="@string(user, User)" tooltip="@string(change_role, Change Role)" min-width="60dp" margin-right="4dp" />
 			<PushButton id="llm_attach" class="llm_button" text="@string(add_context, Add Context)" tooltip="@string(add_context, Add Context)" icon="icon(attach, 14dp)" min-width="32dp" margin-right="4dp" />
 			<PushButton id="llm_chat_history" class="llm_button" text="@string(chat_history, Chat History)" tooltip="@string(chat_history, Chat History)" icon="icon(chat-history, 14dp)" min-width="32dp" margin-right="4dp" />
 			<PushButton id="llm_more" class="llm_button" tooltip="@string(more_options, More Options)" icon="icon(more-fill, 14dp)" min-width="32dp" />
 			<hbox lw="0" lw8="1" lh="mp" layout_gravity="center" padding-left="4dp" padding-right="4dp">
-				<DropDownList class="model_ui" menu-width-mode="expand-if-needed-centered" lw="0" lw8="1" selected-index="0"></DropDownList>
+				<PushButton class="model_ui" lw="0" lw8="1" lh="mp" margin-left="4dp" margin-right="4dp" tooltip="@string(select_model, Select Model)" />
 				<DropDownList class="agent_ui" menu-width-mode="expand-if-needed-centered" lw="0" lw8="1" selected-index="0" visible="false"></DropDownList>
-				<!-- <PushButton id="refresh_model_ui" tooltip="@string(refresh_model_ui, Refresh Local Models)" icon="icon(refresh, 14dp)" /> -->
 			</hbox>
 			<SelectButton id="llm_agent_mode" class="llm_button" tooltip="@string(toggle_agent_mode, Toggle Agent Mode)" icon="icon(robot, 14dp)" min-width="32dp" margin-right="4dp" select-on-click="true" />
 			<PushButton id="llm_settings_but" class="llm_button" text="@string(settings, Settings)" tooltip="@string(settings, Settings)" icon="icon(settings, 14dp)" min-width="32dp" margin-right="4dp" />
-			<!-- <SelectButton id="llm_private_chat" class="llm_button" tooltip="@string(private_chat, Toggle Private Chat)" icon="icon(chat-private, 14dp)" min-width="32dp" margin-right="8dp" select-on-click="true" /> -->
 			<PushButton id="llm_add_chat" class="llm_button" text="@string(add, Add)" tooltip="@string(add_message, Add Message)" icon="icon(add, 15dp)" min-width="32dp" margin-right="4dp" />
 			<PushButton id="llm_run" class="llm_button primary" text="@string(run, Run)" tooltip="@string(add_message_and_run_prompt, Add Message and Run Prompt)" icon="icon(play-filled, 14dp)" />
 			<PushButton id="llm_stop" class="llm_button primary" text="@string(stop, Stop)" icon="icon(stop, 12dp)" min-width="32dp" visible="false" enabled="false" />
@@ -234,7 +355,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 						->asType<UISplitter>();
 
 	mChatsList = findByClass( "llm_chats" );
-	mModelDDL = findByClass<UIDropDownList>( "model_ui" );
+	mModelBtn = findByClass<UIPushButton>( "model_ui" );
 	mAgentDDL = findByClass<UIDropDownList>( "agent_ui" );
 
 	mChatAgentMode = find<UISelectButton>( "llm_agent_mode" );
@@ -242,9 +363,6 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		mIsAgentMode = mChatAgentMode->isSelected();
 		updateAgentModeUI();
 	} );
-
-	// mRefreshModels = find<UIPushButton>( "refresh_model_ui" );
-	// mRefreshModels->onClick( [this]( auto ) { execute( "ai-refresh-local-models" ); } );
 
 	mChatMore = find<UIPushButton>( "llm_more" );
 	mChatMore->onClick( [this]( auto ) { execute( "ai-show-menu" ); } );
@@ -297,10 +415,6 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 
 	mChatUserRole = find<UIPushButton>( "llm_user" );
 	mChatUserRole->onClick( [this]( auto ) { execute( "ai-chat-toggle-role" ); } );
-
-	/* mChatPrivate = find<UISelectButton>( "llm_private_chat" );
-	mChatPrivate->on( Event::OnValueChange,
-					  [this]( auto ) { mChatIsPrivate = mChatPrivate->isSelected(); } ); */
 
 	auto setCmd = [this]( const std::string& name, const CommandCallback& cb ) {
 		setCommand( name, cb );
@@ -418,9 +532,26 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		mLocateInput->getDocument().selectAll();
 	} );
 
+	setCmd( "ai-select-model", [this] {
+		if ( !mLocateModelBarLayout->isVisible() ) {
+			if ( mLocateModelTable->getModel() ) {
+				mLocateModelInput->setText( "" );
+				static_cast<LLMModelsModel*>( mLocateModelTable->getModel() )->setFilter( "" );
+			}
+
+			showSelectModel();
+
+			mLocateModelTable->runOnMainThread( [this] {
+				auto model = static_cast<LLMModelsModel*>( mLocateModelTable->getModel() );
+				if ( model )
+					mLocateModelTable->setSelection( model->getFromHash( mCurModel.hash ) );
+			} );
+		} else
+			hideSelectModel();
+	} );
+
 	setCmd( "ai-toggle-private-chat", [this] {
 		mChatIsPrivate = !mChatIsPrivate;
-		/* mChatPrivate->toggleSelection(); */
 
 		if ( mChatIsPrivate )
 			mChatInput->addClass( "incognito" );
@@ -564,7 +695,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		} );
 	} );
 
-	setCmd( "ai-refresh-local-models", [this] { fillApiModels( mModelDDL ); } );
+	setCmd( "ai-refresh-local-models", [this] { fillApiModels(); } );
 
 	mChatHistory = find<UIPushButton>( "llm_chat_history" );
 	mChatHistory->onClick( [this]( auto ) { showChatHistory(); } );
@@ -572,10 +703,13 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mChatAttach = find<UIPushButton>( "llm_attach" );
 	mChatAttach->onClick( [this]( auto ) { execute( "ai-show-add-context-menu" ); } );
 
+	mModelBtn->onClick( [this]( auto ) { execute( "ai-select-model" ); } );
+
 	if ( getPlugin() == nullptr )
 		return;
 
 	initAttachFile();
+	initSelectModel();
 
 	auto providers = getPlugin()->getProviders();
 	setProviders( std::move( providers ) );
@@ -606,7 +740,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		mCurAgent = mAgents.begin()->first;
 	}
 
-	fillModelDropDownList( mModelDDL );
+	fillModelDropDownList();
 	fillAgentDropDownList( mAgentDDL );
 
 	const auto appendShortcutToTooltip = [this]( UIPushButton* but, const std::string& cmd ) {
@@ -624,10 +758,9 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	appendShortcutToTooltip( mChatStop, "ai-prompt" );
 	appendShortcutToTooltip( mChatAdd, "ai-add-chat" );
 	appendShortcutToTooltip( mChatSettings, "ai-settings" );
-	// appendShortcutToTooltip( mChatPrivate, "ai-toggle-private-chat" );
 	appendShortcutToTooltip( mChatMore, "ai-show-menu" );
 	appendShortcutToTooltip( mChatUserRole, "ai-chat-toggle-role" );
-	// appendShortcutToTooltip( mRefreshModels, "ai-refresh-local-models" );
+	appendShortcutToTooltip( mModelBtn, "ai-select-model" );
 
 	addKb( mChatInput, "mod+keypad enter", "ai-prompt", true, false );
 	addKb( mChatInput, "mod+shift+keypad enter", "ai-add-chat", true, false );
@@ -685,6 +818,7 @@ void LLMChatUI::bindCmds( UICodeEditor* editor, bool bindToChatUI ) {
 	addKb( editor, "mod+shift+l", "ai-refresh-local-models", bindToChatUI );
 	addKb( editor, "mod+shift+a", "ai-attach-file", bindToChatUI );
 	addKb( editor, "mod+shift+z", "ai-link-file", bindToChatUI );
+	addKb( editor, "mod+shift+x", "ai-select-model", bindToChatUI );
 
 	if ( bindToChatUI )
 		addKb( editor, "mod+shift+return", "ai-add-chat", bindToChatUI );
@@ -702,6 +836,14 @@ std::optional<LLMModel> LLMChatUI::getModel( const std::string& provider,
 		if ( modelIt != models.end() )
 			return *modelIt;
 	}
+	return {};
+}
+
+std::optional<LLMModel> LLMChatUI::getModel( Uint64 hash ) {
+	auto modelIt = std::find_if( mModels.begin(), mModels.end(),
+								 [hash]( const LLMModel& model ) { return hash == model.hash; } );
+	if ( modelIt != mModels.end() )
+		return *modelIt;
 	return {};
 }
 
@@ -874,8 +1016,10 @@ void LLMChatUI::showChatHistory() {
 	} );
 }
 
-void LLMChatUI::fillApiModels( UIDropDownList* modelDDL ) {
+void LLMChatUI::fillApiModels() {
 	mPendingModelsToLoad = 0;
+	mNewModels.clear();
+
 	for ( auto& [name, data] : mProviders ) {
 		if ( !data.enabled || !data.fetchModelsUrl )
 			continue;
@@ -911,6 +1055,8 @@ void LLMChatUI::fillApiModels( UIDropDownList* modelDDL ) {
 				model.displayName = el.value( "display_name", "" );
 
 			model.isEphemeral = true;
+			model.hash = hashCombine( std::hash<std::string>()( model.name ),
+									  std::hash<std::string>()( model.provider ) );
 
 			if ( model.name.empty() )
 				continue;
@@ -919,39 +1065,25 @@ void LLMChatUI::fillApiModels( UIDropDownList* modelDDL ) {
 				model.maxOutputTokens = el.value( "max_context_length", 0 );
 
 			data.models.emplace_back( model );
+			mNewModels.push_back( model );
 		}
 
 		mPendingModelsToLoad++;
 
-		std::string pname = name;
-		modelDDL->runOnMainThread( [pname = std::move( pname ), modelDDL, this] {
-			String providerName( pname );
-			std::vector<String> removeValues;
-			size_t count = modelDDL->getListBox()->getItemsCount();
-			for ( size_t i = 0; i < count; i++ ) {
-				const String& txt = modelDDL->getListBox()->getItemText( i );
-				if ( txt.contains( providerName ) )
-					removeValues.emplace_back( txt );
-			}
-
-			for ( const auto& val : removeValues )
-				modelDDL->getListBox()->removeListBoxItem( val );
-
-			const auto& models = mProviders[pname].models;
-			std::vector<String> newModels;
-			for ( const auto& model : models ) {
-				if ( !model.isEphemeral )
-					continue;
-				newModels.emplace_back( String::format( "%s (%s)", model.name, pname ) );
-				mModelsMap[newModels[newModels.size() - 1].getHash()] = model;
-			}
-
-			modelDDL->getListBox()->addListBoxItems( newModels );
-
+		runOnMainThread( [this] {
 			mPendingModelsToLoad--;
+			if ( mPendingModelsToLoad == 0 ) {
+				mModels.erase(
+					std::remove_if( mModels.begin(), mModels.end(),
+									[]( const LLMModel& model ) { return model.isEphemeral; } ),
+					mModels.end() );
 
-			if ( mPendingModelsToLoad == 0 )
+				mModels.insert( mModels.end(), mNewModels.begin(), mNewModels.end() );
+
+				if ( mLocateModelTable && mLocateModelTable->getModel() )
+					loadSelectModel();
 				onInit();
+			}
 		} );
 	}
 
@@ -968,46 +1100,28 @@ String LLMChatUI::getModelDisplayName( const LLMModel& model ) const {
 						   data.displayName ? *data.displayName : String::capitalize( data.name ) );
 }
 
-bool LLMChatUI::selectModel( UIDropDownList* modelDDL, const LLMModel& model ) {
-	auto modelName = getModelDisplayName( model );
-	auto index = modelDDL->getListBox()->getItemIndex( modelName );
-	if ( index != eeINDEX_NOT_FOUND ) {
-		modelDDL->getListBox()->setSelected( index );
+bool LLMChatUI::selectModel( std::optional<LLMModel> model ) {
+	if ( model ) {
+		mModelBtn->setText( getModelDisplayName( *model ) );
+		mCurModel = *model;
 		return true;
 	}
 	return false;
 }
 
-void LLMChatUI::fillModelDropDownList( UIDropDownList* modelDDL ) {
-	std::vector<String> models;
-	std::size_t selectedIndex = 0;
+void LLMChatUI::fillModelDropDownList() {
+	mModels.clear();
+	std::size_t reserve = 0;
+	for ( const auto& [_, data] : mProviders )
+		reserve += data.models.size();
+	mModels.reserve( reserve + 8 /* extra space for local models */ );
 	for ( const auto& [name, data] : mProviders ) {
 		if ( !data.enabled )
 			continue;
-
-		for ( const auto& model : data.models ) {
-			String modelName( String::format(
-				"%s (%s)", model.displayName ? *model.displayName : model.name,
-				data.displayName ? *data.displayName : String::capitalize( data.name ) ) );
-			mModelsMap[modelName.getHash()] = model;
-			if ( model.provider == mCurModel.provider && model.name == mCurModel.name )
-				selectedIndex = models.size();
-			models.push_back( std::move( modelName ) );
-		}
+		for ( const auto& model : data.models )
+			mModels.push_back( model );
 	}
-	modelDDL->getListBox()->clear();
-	modelDDL->getListBox()->addListBoxItems( std::move( models ) );
-	modelDDL->getListBox()->setSelected( selectedIndex );
-	modelDDL->on( Event::OnValueChange, [this, modelDDL]( auto ) {
-		auto selectedModel =
-			mModelsMap.find( modelDDL->getListBox()->getItemSelectedText().getHash() );
-		if ( selectedModel != mModelsMap.end() ) {
-			mCurModel = selectedModel->second;
-		}
-	} );
-
-	modelDDL->getUISceneNode()->getThreadPool()->run(
-		[this, modelDDL] { fillApiModels( modelDDL ); } );
+	getUISceneNode()->getThreadPool()->run( [this] { fillApiModels(); } );
 }
 
 void LLMChatUI::fillAgentDropDownList( UIDropDownList* agentDDL ) {
@@ -1057,7 +1171,7 @@ void LLMChatUI::writeToLastChat( const std::string& text ) {
 }
 
 void LLMChatUI::updateAgentModeUI() {
-	mModelDDL->setVisible( !mIsAgentMode );
+	mModelBtn->setVisible( !mIsAgentMode );
 	mAgentDDL->setVisible( mIsAgentMode );
 	mChatAdd->setVisible( !mIsAgentMode );
 	mChatUserRole->setVisible( !mIsAgentMode );
@@ -1464,8 +1578,8 @@ std::string LLMChatUI::unserialize( const nlohmann::json& payload ) {
 			}
 		}
 	} else {
-		if ( !selectModel( mModelDDL, mCurModel ) )
-			fillModelDropDownList( mModelDDL );
+		if ( !selectModel( mCurModel ) )
+			fillModelDropDownList();
 	}
 
 	if ( payload.contains( "chat" ) && payload["chat"].is_object() ) {
@@ -1932,10 +2046,10 @@ const LLMModel& LLMChatUI::getCheapestModelFromCurrentProvider() const {
 }
 
 void LLMChatUI::onInit() {
-	if ( !mModelDDL )
+	if ( !mModelBtn )
 		return;
-	if ( getModelDisplayName( mCurModel ) != mModelDDL->getListBox()->getItemSelectedText() )
-		selectModel( mModelDDL, mCurModel );
+	if ( getModelDisplayName( mCurModel ) != mModelBtn->getText() )
+		selectModel( mCurModel );
 }
 
 void LLMChatUI::updateTabTitle() {
@@ -1996,9 +2110,12 @@ void LLMChatUI::updateLocateBarColumns() {
 	mLocateTable->setColumnWidth( 1, width - mLocateTable->getColumnWidth( 0 ) );
 }
 
+// File picker
+
 void LLMChatUI::showAttachFile() {
 	if ( getPlugin() == nullptr )
 		return;
+	hideSelectModel();
 	auto text = mLocateInput->getText();
 	auto ctx = getPlugin()->getPluginContext();
 	if ( !ctx->isDirTreeReady() ) {
@@ -2130,6 +2247,92 @@ void LLMChatUI::initAttachFile() {
 			}
 
 			mLocateBarLayout->execute( "close-locatebar" );
+		}
+	} );
+}
+
+// Model Picker
+
+void LLMChatUI::updateLocateModelBarColumns() {
+	Float width = eeceil( mLocateModelTable->getPixelsSize().getWidth() );
+	width -= mLocateModelTable->getVerticalScrollBar()->getPixelsSize().getWidth();
+	mLocateModelTable->setColumnsVisible( { 0, 1 } );
+	mLocateModelTable->setColumnWidth( 0, eeceil( width * 0.8 ) );
+	mLocateModelTable->setColumnWidth( 1, width - mLocateModelTable->getColumnWidth( 0 ) );
+}
+
+void LLMChatUI::loadSelectModel() {
+	auto ctx = getPlugin()->getPluginContext();
+	mLocateModelTable->setModel(
+		std::make_shared<LLMModelsModel>( mModels, ctx->getUISceneNode() ) );
+
+	static_cast<LLMModelsModel*>( mLocateModelTable->getModel() )
+		->setFilter( mLocateModelInput->getText() );
+}
+
+void LLMChatUI::showSelectModel() {
+	if ( getPlugin() == nullptr )
+		return;
+	hideAttachFile();
+
+	if ( nullptr == mLocateModelTable->getModel() )
+		loadSelectModel();
+
+	static_cast<LLMModelsModel*>( mLocateModelTable->getModel() )
+		->setFilter( mLocateModelInput->getText() );
+
+	mLocateModelBarLayout->setVisible( true );
+	mLocateModelInput->setFocus();
+	updateLocateModelBarColumns();
+}
+
+void LLMChatUI::hideSelectModel() {
+	mLocateModelBarLayout->setVisible( false );
+}
+
+void LLMChatUI::initSelectModel() {
+	mLocateModelBarLayout = findByClass<UIVLinearLayoutCommandExecuter>( "llm_chat_select_model" );
+	mLocateModelInput = findByClass<UITextInput>( "llm_chat_select_model_input" );
+	mLocateModelTable = findByClass<UITableView>( "llm_chat_model_locate" );
+	mLocateModelTable->setHeadersVisible( false );
+
+	mLocateModelTable->on( Event::OnSizeChange,
+						   [this]( const Event* ) { updateLocateModelBarColumns(); } );
+
+	mLocateModelInput->on( Event::OnTextChanged, [this]( const Event* ) {
+		showSelectModel();
+		updateLocateModelBarColumns();
+	} );
+	mLocateModelInput->on( Event::OnPressEnter, [this]( const Event* ) {
+		KeyEvent keyEvent( mLocateModelTable, Event::KeyDown, KEY_RETURN, SCANCODE_UNKNOWN, 0, 0 );
+		mLocateModelTable->forceKeyDown( keyEvent );
+	} );
+	mLocateModelInput->on( Event::KeyDown, [this]( const Event* event ) {
+		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
+		mLocateModelTable->forceKeyDown( *keyEvent );
+	} );
+	mLocateModelBarLayout->setCommand( "close-locatebar", [this] {
+		hideSelectModel();
+		if ( mChatInput )
+			mChatInput->setFocus();
+	} );
+	mLocateModelBarLayout->getKeyBindings().addKeybindsString( {
+		{ "escape", "close-locatebar" },
+	} );
+	mLocateModelTable->on( Event::KeyDown, [this]( const Event* event ) {
+		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
+		if ( keyEvent->getKeyCode() == KEY_ESCAPE )
+			mLocateModelBarLayout->execute( "close-locatebar" );
+	} );
+	mLocateModelTable->on( Event::OnModelEvent, [this]( const Event* event ) {
+		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
+		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
+			Variant vHash( modelEvent->getModel()->data(
+				modelEvent->getModel()->index( modelEvent->getModelIndex().row(),
+											   LLMModelsModel::Hash ),
+				ModelRole::Display ) );
+			selectModel( getModel( vHash.asUint64() ) );
+			mLocateModelBarLayout->execute( "close-locatebar" );
 		}
 	} );
 }

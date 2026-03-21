@@ -31,11 +31,14 @@ class EE_API PropertySpecification {
 
 	bool isShorthand( const Uint32& id ) const;
 
+	const SmallVector<PropertyId>& getInheritableProperties() const;
+
   protected:
 	friend class PropertyDefinition;
 
 	std::unordered_map<Uint32, std::shared_ptr<PropertyDefinition>> mProperties;
 	std::unordered_map<Uint32, std::shared_ptr<ShorthandDefinition>> mShorthands;
+	SmallVector<PropertyId> mInheritableProperties;
 
 	const PropertyDefinition* addPropertyAlias( Uint32 aliasId, const PropertyDefinition* propDef );
 };

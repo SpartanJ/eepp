@@ -376,6 +376,24 @@ UITooltip* UITooltip::setFontStyle( const Uint32& fontStyle ) {
 	return this;
 }
 
+Uint32 UITooltip::getTextDecoration() const {
+	Uint32 flags = mStyleConfig.Style;
+	flags &= ~( Text::Style::Bold | Text::Style::Italic | Text::Style::Shadow );
+	return flags;
+}
+
+UITooltip* UITooltip::setTextDecoration( const Uint32& textDecoration ) {
+	if ( mStyleConfig.Style != textDecoration ) {
+		mStyleConfig.Style &= ~( Text::Underlined | Text::StrikeThrough );
+		mStyleConfig.Style |= textDecoration;
+		mTextCache->setStyle( mStyleConfig.Style );
+		onAutoSize();
+		autoAlign();
+		invalidateDraw();
+	}
+	return this;
+}
+
 const Uint32& UITooltip::getFontStyle() const {
 	return mStyleConfig.Style;
 }
@@ -441,6 +459,8 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
 			return String::format( "%dpx", getCharacterSize() );
+		case PropertyId::TextDecoration:
+			return Text::styleFlagToString( getTextDecoration() );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::TextStrokeWidth:
@@ -465,7 +485,7 @@ std::vector<PropertyId> UITooltip::getPropertiesImplemented() const {
 		PropertyId::TextTransform,	  PropertyId::Color,		   PropertyId::TextShadowColor,
 		PropertyId::TextShadowOffset, PropertyId::FontFamily,	   PropertyId::FontSize,
 		PropertyId::FontStyle,		  PropertyId::TextStrokeWidth, PropertyId::TextStrokeColor,
-		PropertyId::TextAlign,		  PropertyId::Wordwrap };
+		PropertyId::TextAlign,		  PropertyId::Wordwrap,		   PropertyId::TextDecoration };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -568,6 +588,10 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::FontStyle:
 			if ( !mUsingCustomStyling )
 				setFontStyle( attribute.asFontStyle() );
+			break;
+		case PropertyId::TextDecoration:
+			if ( !mUsingCustomStyling )
+				setTextDecoration( attribute.asTextDecoration() );
 			break;
 		case PropertyId::TextStrokeWidth:
 			if ( !mUsingCustomStyling )

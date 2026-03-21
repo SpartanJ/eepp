@@ -48,6 +48,11 @@ int ITerminalDisplay::resetColor( const Uint32& /*index*/, const char* /*name*/ 
 	return 0;
 }
 
+bool ITerminalDisplay::getColor( const Uint32& /*index*/, unsigned char* /*r*/,
+								 unsigned char* /*g*/, unsigned char* /*b*/ ) {
+	return false;
+}
+
 void ITerminalDisplay::setMode( TerminalWinMode mode, int set ) {
 	int m = mMode;
 	MODBIT( ( (int&)mMode ), set, mode );
@@ -78,4 +83,4 @@ void ITerminalDisplay::onProcessExit( int /*exitCode*/ ) {}
 
 void ITerminalDisplay::onScrollPositionChange() {}
 
-}}
+}} // namespace eterm::Terminal

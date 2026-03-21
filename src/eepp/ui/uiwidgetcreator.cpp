@@ -5,6 +5,7 @@
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uiconsole.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uigridlayout.hpp>
 #include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uiimage.hpp>
@@ -67,6 +68,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["radiobutton"] = UIRadioButton::New;
 		registeredWidget["combobox"] = UIComboBox::New;
 		registeredWidget["dropdownlist"] = UIDropDownList::New;
+		registeredWidget["dropdownmodellist"] = UIDropDownModelList::New;
 		registeredWidget["image"] = UIImage::New;
 		registeredWidget["listbox"] = UIListBox::New;
 		registeredWidget["menubar"] = UIMenuBar::New;
@@ -157,12 +159,16 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["pre"] = UIRichText::NewPre;
 		registeredWidget["img"] = [] { return UIImage::NewWithTag( "img" ); };
 		registeredWidget["input"] = UITextInput::New;
+		registeredWidget["article"] = [] {
+			return UILinearLayout::NewVerticalWidthMatchParent( "article" );
+		};
 		registeredWidget["center"] = [] {
 			return UILinearLayout::NewVerticalWidthMatchParent( "center" );
 		};
 		registeredWidget["html"] = [] {
 			return UILinearLayout::NewVerticalWidthMatchParent( "html" );
 		};
+		registeredWidget["head"] = [] { return UIWidget::NewWithTag( "head" ); };
 		registeredWidget["body"] = [] {
 			return UILinearLayout::NewVerticalWidthMatchParent( "body" );
 		};

@@ -184,6 +184,26 @@ UITextView* UITextView::setFontStyle( const Uint32& fontStyle ) {
 	return this;
 }
 
+Uint32 UITextView::getTextDecoration() const {
+	Uint32 flags = mFontStyleConfig.Style;
+	flags &= ~( Text::Style::Bold | Text::Style::Italic | Text::Style::Shadow );
+	return flags;
+}
+
+UITextView* UITextView::setTextDecoration( const Uint32& textDecoration ) {
+	if ( mFontStyleConfig.Style != textDecoration ) {
+		mFontStyleConfig.Style &= ~( Text::Underlined | Text::StrikeThrough );
+		mFontStyleConfig.Style |= textDecoration;
+		mTextCache.setStyle( mFontStyleConfig.Style );
+
+		recalculate();
+		onFontStyleChanged();
+		notifyLayoutAttrChange();
+		invalidateDraw();
+	}
+	return this;
+}
+
 const String& UITextView::getText() const {
 	return mString;
 }
@@ -733,6 +753,10 @@ bool UITextView::applyProperty( const StyleSheetProperty& attribute ) {
 			if ( !mUsingCustomStyling )
 				setFontSize( lengthFromValue( attribute ) );
 			break;
+		case PropertyId::TextDecoration:
+			if ( !mUsingCustomStyling )
+				setTextDecoration( attribute.asTextDecoration() );
+			break;
 		case PropertyId::FontStyle: {
 			if ( !mUsingCustomStyling ) {
 				Uint32 flags = attribute.asFontStyle();
@@ -812,6 +836,8 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
 			return String::format( "%dpx", getFontSize() );
+		case PropertyId::TextDecoration:
+			return Text::styleFlagToString( getTextDecoration() );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::TextStrokeWidth:
@@ -844,7 +870,7 @@ std::vector<PropertyId> UITextView::getPropertiesImplemented() const {
 				   PropertyId::FontStyle,		PropertyId::Wordwrap,
 				   PropertyId::TextStrokeWidth, PropertyId::TextStrokeColor,
 				   PropertyId::TextSelection,	PropertyId::TextAlign,
-				   PropertyId::TextOverflow };
+				   PropertyId::TextOverflow,	PropertyId::TextDecoration };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }

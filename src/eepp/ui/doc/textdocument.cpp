@@ -1,4 +1,5 @@
-﻿#include <eepp/core/utf.hpp>
+﻿#include <eepp/core/small_vector.hpp>
+#include <eepp/core/utf.hpp>
 #include <eepp/network/uri.hpp>
 #include <eepp/system/base64.hpp>
 #include <eepp/system/filesystem.hpp>
@@ -4165,8 +4166,13 @@ void TextDocument::notifyDocumentSaved() {
 }
 
 void TextDocument::notifyDocumentClosed() {
-	Lock l( mClientsMutex );
-	for ( auto& client : mClients ) {
+	SmallVector<Client*> clientsCopy;
+	{
+		Lock l( mClientsMutex );
+		for ( auto& client : mClients )
+			clientsCopy.push_back( client );
+	}
+	for ( auto& client : clientsCopy ) {
 		client->onDocumentClosed( this );
 	}
 }

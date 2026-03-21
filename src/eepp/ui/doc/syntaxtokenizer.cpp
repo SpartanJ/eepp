@@ -7,7 +7,6 @@
 #include <eepp/ui/doc/syntaxtokenizer.hpp>
 
 #include <array>
-#include <memory_resource>
 #include <variant>
 
 using namespace EE::System;
@@ -123,6 +122,10 @@ struct NonEscapedMatch {
 	std::pair<int, int> range{ -1, -1 };
 	PatternMatcher::Range matches[6];
 	int numMatches{ 0 };
+
+	inline bool isZeroWidthMatch() const {
+		return range.first != -1 && range.first == range.second;
+	}
 };
 
 static NonEscapedMatch findNonEscaped( const std::string& text, const std::string& pattern,
@@ -403,12 +406,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 	std::string_view patternText;
 	size_t numMatches = 0;
 	std::optional<NonEscapedMatch> shouldCloseSubSyntax;
-
-	static constexpr auto TRIED_PATTERNS_BUFFER = MAX_TRIED_PATTERNS * sizeof( SyntaxStateType );
-	std::array<std::byte, TRIED_PATTERNS_BUFFER> triedPatternsBuffer;
-	std::pmr::monotonic_buffer_resource triedPatternsRes(
-		triedPatternsBuffer.data(), triedPatternsBuffer.size(), std::pmr::null_memory_resource() );
-	std::pmr::vector<SyntaxStateType> triedPatterns( &triedPatternsRes );
+	SmallVector<SyntaxStateType, MAX_TRIED_PATTERNS> triedPatterns;
 
 	const auto matchPattern = [&]( const SyntaxPattern& pattern, size_t& startIdx,
 								   SyntaxStateType patternIndex,
@@ -678,16 +676,13 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 	size_t startIdx = startIndex;
 	const SyntaxPattern* activePattern = nullptr;
 
-	static constexpr auto PATTERN_STACK_BUFFER =
-		MAX_PATTERN_STACK_SIZE * sizeof( PatternStackItem );
-	std::array<std::byte, PATTERN_STACK_BUFFER> patternStackBuffer;
-	std::pmr::monotonic_buffer_resource patternStackRes(
-		patternStackBuffer.data(), patternStackBuffer.size(), std::pmr::null_memory_resource() );
-	std::pmr::vector<PatternStackItem> patternStack( &patternStackRes );
+	SmallVector<PatternStackItem, MAX_PATTERN_STACK_SIZE> patternStack;
 	std::string emptyStr;
+	bool forceReevaluate = false;
 
-	while ( startIdx < size ) {
+	while ( startIdx < size || forceReevaluate ) {
 		bool matched = false;
+		forceReevaluate = false;
 		patternStack.clear();
 		activePattern = nullptr;
 
@@ -704,91 +699,121 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 				activePattern->matchType, false );
 
 			if ( activePattern->hasContentScope() ) {
-				if ( endRange.range.first == static_cast<Int64>( startIdx ) ) {
+				bool applyEndLast = activePattern->isApplyEndPatternLast();
+				bool endMatchesAtStart = endRange.range.first == static_cast<Int64>( startIdx );
+
+				if ( endMatchesAtStart && !applyEndLast ) {
 					pushTokensToOpenCloseSubsyntax( startIdx, textv, activePattern, endRange,
 													tokens, priorityMap, true );
 					popStack( curState, retState, syntax, *activePattern );
 					startIdx = endRange.range.second;
 					triedPatterns.clear(); // Position advanced
+					// forceReevaluate = true;
 					continue;
 				}
 
-				const auto& contentScopeRepository =
-					curState.currentSyntax->getRepository( activePattern->contentScopeRepoHash );
+				if ( startIdx < size ) {
+					const auto& contentScopeRepository = curState.currentSyntax->getRepository(
+						activePattern->contentScopeRepoHash );
 
-				auto contentScopeRepoGlobalIndex = curState.currentSyntax->getRepositoryIndex(
-					activePattern->contentScopeRepoHash );
+					auto contentScopeRepoGlobalIndex = curState.currentSyntax->getRepositoryIndex(
+						activePattern->contentScopeRepoHash );
 
-				patternStack.push_back(
-					{ &contentScopeRepository.patterns, 0,
-					  static_cast<SyntaxSyateHolderType>( contentScopeRepoGlobalIndex ) } );
+					patternStack.push_back(
+						{ &contentScopeRepository.patterns, 0,
+						  static_cast<SyntaxSyateHolderType>( contentScopeRepoGlobalIndex ) } );
 
-				while ( !patternStack.empty() && !matched ) {
-					PatternStackItem& current = patternStack.back();
-					if ( current.index >= current.patterns->size() ) {
-						patternStack.pop_back();
-						continue;
-					}
-					const SyntaxPattern* innerPtrn = &current.patterns->data()[current.index];
-					SyntaxStateType patternState = {
-						static_cast<SyntaxSyateHolderType>( current.index + 1 ),
-						current.repositoryIdx };
-					current.index++;
+					while ( !patternStack.empty() && !matched ) {
+						PatternStackItem& current = patternStack.back();
+						if ( current.index >= current.patterns->size() ) {
+							patternStack.pop_back();
+							continue;
+						}
+						const SyntaxPattern* innerPtrn = &current.patterns->data()[current.index];
+						SyntaxStateType patternState = {
+							static_cast<SyntaxSyateHolderType>( current.index + 1 ),
+							current.repositoryIdx };
+						current.index++;
 
-					if ( innerPtrn->isRepositoryInclude() ) {
-						if ( patternStack.size() + 1 >= MAX_PATTERN_STACK_SIZE )
-							break;
-						const auto& targetRepo =
-							curState.currentSyntax->getRepository( innerPtrn->getRepositoryName() );
+						if ( innerPtrn->isRepositoryInclude() ) {
+							if ( patternStack.size() + 1 > MAX_PATTERN_STACK_SIZE )
+								break;
+							const auto& targetRepo = curState.currentSyntax->getRepository(
+								innerPtrn->getRepositoryName() );
 #ifdef EE_DEBUG
-						const auto repoIndex = curState.currentSyntax->getRepositoryIndex(
-							innerPtrn->getRepositoryName() );
-						eeASSERT( repoIndex == innerPtrn->repositoryIdx );
+							const auto repoIndex = curState.currentSyntax->getRepositoryIndex(
+								innerPtrn->getRepositoryName() );
+							eeASSERT( repoIndex == innerPtrn->repositoryIdx );
 #endif
-						patternStack.push_back(
-							{ &targetRepo.patterns, 0,
-							  static_cast<SyntaxSyateHolderType>( innerPtrn->repositoryIdx ) } );
-						continue;
-					} else if ( innerPtrn->isRootSelfInclude() ) {
-						if ( patternStack.size() + 1 >= MAX_PATTERN_STACK_SIZE )
-							break;
-						patternStack.push_back( { &curState.currentSyntax->getPatterns(), 0, 0 } );
-						continue;
-					} else if ( innerPtrn->isSourceInclude() ) {
-						if ( patternStack.size() + 1 >= MAX_PATTERN_STACK_SIZE )
-							break;
-						const auto& targetRepo =
-							curState.currentSyntax->getRepository( innerPtrn->getRepositoryName() );
+							patternStack.push_back( { &targetRepo.patterns, 0,
+													  static_cast<SyntaxSyateHolderType>(
+														  innerPtrn->repositoryIdx ) } );
+							continue;
+						} else if ( innerPtrn->isRootSelfInclude() ) {
+							if ( patternStack.size() + 1 > MAX_PATTERN_STACK_SIZE )
+								break;
+							patternStack.push_back(
+								{ &curState.currentSyntax->getPatterns(), 0, 0 } );
+							continue;
+						} else if ( innerPtrn->isSourceInclude() ) {
+							if ( patternStack.size() + 1 > MAX_PATTERN_STACK_SIZE )
+								break;
+							const auto& targetRepo = curState.currentSyntax->getRepository(
+								innerPtrn->getRepositoryName() );
 
-						const auto repoIndex = curState.currentSyntax->getRepositoryIndex(
-							innerPtrn->getRepositoryName() );
+							const auto repoIndex = curState.currentSyntax->getRepositoryIndex(
+								innerPtrn->getRepositoryName() );
 
-						patternStack.push_back(
-							{ &targetRepo.patterns, 0,
-							  static_cast<SyntaxSyateHolderType>( repoIndex ) } );
-						continue;
+							patternStack.push_back(
+								{ &targetRepo.patterns, 0,
+								  static_cast<SyntaxSyateHolderType>( repoIndex ) } );
+							continue;
+						}
+
+						if ( startIdx != 0 &&
+							 innerPtrn->matchType == SyntaxPatternMatchType::LuaPattern &&
+							 innerPtrn->patterns[0][0] == '^' )
+							continue;
+
+						if ( patternStack.size() > 1 && innerPtrn->isAutomaticallyAdded() )
+							continue;
+
+						if ( std::find( triedPatterns.begin(), triedPatterns.end(),
+										patternState ) != triedPatterns.end() )
+							continue;
+
+						if ( matchPattern( *innerPtrn, startIdx, patternState,
+										   endRange.numMatches && !applyEndLast ? &endRange
+																				: nullptr ) ) {
+							matched = true;
+						}
 					}
 
-					if ( startIdx != 0 &&
-						 innerPtrn->matchType == SyntaxPatternMatchType::LuaPattern &&
-						 innerPtrn->patterns[0][0] == '^' )
+					if ( matched && endRange.isZeroWidthMatch() && startIdx == size &&
+						 static_cast<Int64>( startIdx ) == endRange.range.second ) {
+						forceReevaluate = true;
 						continue;
-
-					if ( patternStack.size() > 1 && innerPtrn->isAutomaticallyAdded() )
-						continue;
-
-					if ( std::find( triedPatterns.begin(), triedPatterns.end(), patternState ) !=
-						 triedPatterns.end() )
-						continue;
-
-					if ( matchPattern( *innerPtrn, startIdx, patternState,
-									   endRange.numMatches ? &endRange : nullptr ) ) {
-						matched = true;
 					}
 				}
 
 				if ( matched )
 					continue;
+
+				// If applyEndLast is true, and NO inner pattern matched, the end pattern takes
+				// effect here.
+				bool isZeroWidthMatch = endRange.isZeroWidthMatch() &&
+										endRange.range.second == static_cast<Int64>( startIdx );
+				endMatchesAtStart |= isZeroWidthMatch;
+
+				if ( endMatchesAtStart && applyEndLast ) {
+					pushTokensToOpenCloseSubsyntax( startIdx, textv, activePattern, endRange,
+													tokens, priorityMap, true );
+					popStack( curState, retState, syntax, *activePattern );
+					startIdx = endRange.range.second;
+					triedPatterns.clear(); // Position advanced
+					forceReevaluate = true;
+					continue;
+				}
 
 				if ( !matched && startIdx < text.size() ) {
 					char* strStart = const_cast<char*>( text.c_str() + startIdx );
@@ -845,6 +870,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 						popStack( curState, retState, syntax, *activePattern );
 						startIdx = endRange.range.second;
 						triedPatterns.clear(); // Position advanced
+						// forceReevaluate = true;
 						continue;
 					} else {
 						pushToken( tokens, activePattern->types[0], textv.substr( startIdx ) );
@@ -852,6 +878,12 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 					}
 				}
 			}
+		}
+
+		// Prevent executing the rest of the loop (which tries to match new root patterns)
+		// if we've reached the end of the text and didn't trigger a pop cascade.
+		if ( startIdx >= size ) {
+			break;
 		}
 
 		if ( curState.subsyntaxInfo != nullptr && curState.subsyntaxInfo->patterns.size() > 1 ) {
@@ -878,7 +910,7 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 			current.index++;
 
 			if ( pattern->isRepositoryInclude() ) {
-				if ( patternStack.size() + 1 >= MAX_PATTERN_STACK_SIZE )
+				if ( patternStack.size() + 1 > MAX_PATTERN_STACK_SIZE )
 					break;
 
 				const auto& repo =
@@ -887,12 +919,12 @@ _tokenize( const SyntaxDefinition& syntax, const std::string& text, const Syntax
 					{ &repo.patterns, 0,
 					  static_cast<SyntaxSyateHolderType>( pattern->repositoryIdx ) } );
 			} else if ( pattern->isRootSelfInclude() ) {
-				if ( patternStack.size() + 1 >= MAX_PATTERN_STACK_SIZE )
+				if ( patternStack.size() + 1 > MAX_PATTERN_STACK_SIZE )
 					break;
 
 				patternStack.push_back( { &curState.currentSyntax->getPatterns(), 0, 0 } );
 			} else if ( pattern->isSourceInclude() ) {
-				if ( patternStack.size() + 1 >= MAX_PATTERN_STACK_SIZE )
+				if ( patternStack.size() + 1 > MAX_PATTERN_STACK_SIZE )
 					break;
 
 				const auto& repo =

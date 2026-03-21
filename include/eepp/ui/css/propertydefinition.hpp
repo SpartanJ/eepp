@@ -280,7 +280,7 @@ class EE_API PropertyDefinition {
 
 	const std::string& getDefaultValue() const;
 
-	bool getInherited() const;
+	bool isInherited() const;
 
 	const PropertyRelativeTarget& getRelativeTarget() const;
 

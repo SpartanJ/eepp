@@ -3557,6 +3557,8 @@ void App::initProjectTreeView( std::string path, bool openClean ) {
 	}
 
 	if ( !path.empty() ) {
+		path = FileSystem::expandTilde( path );
+
 		if ( FileSystem::isDirectory( path ) ) {
 			loadFolder( path );
 		} else if ( String::startsWith( path, "https://" ) ||
@@ -4564,7 +4566,11 @@ void App::init( InitParameters& params ) {
 			} else if ( mConfig.term.warnBeforeClosingTab && widget->isType( UI_TYPE_TERMINAL ) ) {
 				UITerminal* term = widget->asType<UITerminal>();
 				ProcessID pid = term->getTerm()->getTerminal()->getProcess()->pid();
+				std::string msgBoxId = String::format( "msgbox_%p", this );
 				if ( Sys::processHasChildren( pid ) ) {
+					if ( nullptr != getUISceneNode()->find( msgBoxId ) )
+						return false;
+
 					UIMessageBox* msgBox = UIMessageBox::New(
 						UIMessageBox::OK_CANCEL,
 						i18n( "terminal_close_warn", "Are you sure you want to close this "
@@ -4582,6 +4588,7 @@ void App::init( InitParameters& params ) {
 					msgBox->setTitle( "ecode" );
 					msgBox->center();
 					msgBox->showWhenReady();
+					msgBox->setId( msgBoxId );
 					return false;
 				}
 			}
@@ -4708,7 +4715,7 @@ void App::init( InitParameters& params ) {
 			initProjectTreeView( params.file, params.openClean );
 		}
 
-		mFileToOpen = params.fileToOpen;
+		mFileToOpen = FileSystem::expandTilde( params.fileToOpen );
 
 		Log::info( "Init ProjectTreeView took: %.2f ms",
 				   globalClock.getElapsedTime().asMilliseconds() );

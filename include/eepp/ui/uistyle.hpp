@@ -73,6 +73,10 @@ class EE_API UIStyle : public UIState {
 
 	bool hasProperty( const CSS::PropertyId& propertyId ) const;
 
+	bool hasLocalProperty( CSS::PropertyId propId ) const;
+
+	CSS::StyleSheetProperty* getInheritedProperty( CSS::PropertyId propId ) const;
+
 	void resetGlobalDefinition();
 
 	void resetCachedProperties();
@@ -121,6 +125,8 @@ class EE_API UIStyle : public UIState {
 
 	void applyStyleSheetProperty( const CSS::StyleSheetProperty& property,
 								  std::shared_ptr<CSS::ElementDefinition> prevDefinition );
+
+	void applyInheritedProperties();
 
 	void updateAnimationsPlayState();
 

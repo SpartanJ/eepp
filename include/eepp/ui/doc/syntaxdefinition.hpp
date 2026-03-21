@@ -43,6 +43,7 @@ struct EE_API SyntaxPattern {
 		IsRangedMatch = 1 << 5,
 		IsSourceInclude = 1 << 6,
 		IsAutomaticallyAdded = 1 << 7,
+		IsApplyEndPatternLast = 1 << 8,
 	};
 
 	static SyntaxDefMap<SyntaxStyleType, std::string> SyntaxStyleTypeCache;
@@ -81,7 +82,8 @@ struct EE_API SyntaxPattern {
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, std::vector<std::string>&& _types,
 				   std::vector<std::string>&& _endTypes, const std::string& _syntax,
-				   SyntaxPatternMatchType matchType, std::vector<SyntaxPattern>&& _subPatterns );
+				   SyntaxPatternMatchType matchType, std::vector<SyntaxPattern>&& _subPatterns,
+				   Uint16 flags = 0 );
 
 	SyntaxPattern( std::vector<std::string>&& _patterns, const std::string& _type,
 				   DynamicSyntax&& _syntax,
@@ -116,6 +118,8 @@ struct EE_API SyntaxPattern {
 	inline bool isSimpleRangedMatch() const {
 		return isRangedMatch() && !hasContentScope() && !hasSyntax();
 	}
+
+	inline bool isApplyEndPatternLast() const { return flags & Flags::IsApplyEndPatternLast; }
 
 	std::string_view getRepositoryName() const {
 		eeASSERT( isRepositoryInclude() || isSourceInclude() );

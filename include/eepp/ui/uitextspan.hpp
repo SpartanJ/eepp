@@ -6,6 +6,8 @@
 
 namespace EE { namespace UI {
 
+using SpanHitBoxes = SmallVector<Rectf, 4>;
+
 class EE_API UITextSpan : public UIWidget {
   public:
 	static UITextSpan* New();
@@ -115,11 +117,11 @@ class EE_API UITextSpan : public UIWidget {
 	bool hasFontShadowOffset() const;
 	bool hasFontBackgroundColor() const;
 
-	std::vector<Rectf>& getHitBoxes();
+	SpanHitBoxes& getHitBoxes();
 
-	const std::vector<Rectf>& getHitBoxes() const;
+	const SpanHitBoxes& getHitBoxes() const;
 
-	void setHitBoxes( std::vector<Rectf>&& hitBoxes );
+	void setHitBoxes( SpanHitBoxes&& hitBoxes );
 
 	virtual Node* overFind( const Vector2f& point );
 
@@ -127,7 +129,7 @@ class EE_API UITextSpan : public UIWidget {
 	Uint32 mStyleState{ StyleStateNone };
 	String mText;
 	UIFontStyleConfig mFontStyleConfig;
-	std::vector<Rectf> mHitBoxes;
+	SpanHitBoxes mHitBoxes;
 
 	explicit UITextSpan( const std::string& tag = "span" );
 

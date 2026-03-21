@@ -114,17 +114,24 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	UISelectButton* mChatPrivate{ nullptr };
 	UISelectButton* mChatAgentMode{ nullptr };
 	UIScrollView* mChatScrollView{ nullptr };
-	UIDropDownList* mModelDDL{ nullptr };
 	UIDropDownList* mAgentDDL{ nullptr };
+	UIPushButton* mModelBtn{ nullptr };
+
+	// Locate file
 	UIVLinearLayoutCommandExecuter* mLocateBarLayout{ nullptr };
 	UITextInput* mLocateInput{ nullptr };
 	UITableView* mLocateTable{ nullptr };
+
+	// Select model
+	UIVLinearLayoutCommandExecuter* mLocateModelBarLayout{ nullptr };
+	UITextInput* mLocateModelInput{ nullptr };
+	UITableView* mLocateModelTable{ nullptr };
 
 	std::unique_ptr<LLMChatCompletionRequest> mRequest;
 	std::unique_ptr<LLMChatCompletionRequest> mSummaryRequest;
 	LLMProviders mProviders;
 	LLMModel mCurModel;
-	std::unordered_map<String::HashType, LLMModel> mModelsMap;
+	std::vector<LLMModel> mModels;
 
 	std::map<std::string, ACPAgent> mAgents;
 	std::string mCurAgent;
@@ -136,12 +143,12 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	std::vector<SlashCommand> mAvailableCommands;
 
 	std::unique_ptr<acp::AgentSession> mAgentSession;
-
 	int mPendingModelsToLoad{ 0 };
 	bool mChatIsPrivate{ false };
 	bool mIsAgentMode{ false };
 	bool mChatLocked{ false };
 	bool mLinkMode{ false };
+	std::vector<LLMModel> mNewModels;
 
 	LLMModel findModel( const std::string& provider, const std::string& model );
 
@@ -176,13 +183,13 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	void addPermissionUI( const acp::RequestPermissionRequest& req,
 						  std::function<void( const acp::RequestPermissionResponse& )> cb );
 
-	void fillApiModels( UIDropDownList* modelDDL );
+	void fillApiModels();
 
 	String getModelDisplayName( const LLMModel& model ) const;
 
-	bool selectModel( UIDropDownList* modelDDL, const LLMModel& model );
+	bool selectModel( std::optional<LLMModel> model );
 
-	void fillModelDropDownList( UIDropDownList* modelDDL );
+	void fillModelDropDownList();
 
 	void fillAgentDropDownList( UIDropDownList* agentDDL );
 
@@ -206,6 +213,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	std::optional<LLMModel> getModel( const std::string& provider, const std::string& modelName );
 
+	std::optional<LLMModel> getModel( Uint64 hash );
+
 	void saveChat();
 
 	void onInit();
@@ -221,11 +230,21 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void initAttachFile();
 
+	void initSelectModel();
+
 	void updateLocateBarColumns();
 
 	void showAttachFile();
 
 	void hideAttachFile();
+
+	void updateLocateModelBarColumns();
+
+	void loadSelectModel();
+
+	void showSelectModel();
+
+	void hideSelectModel();
 
 	void insertFileToDocument( std::string path, std::shared_ptr<TextDocument> cdoc );
 

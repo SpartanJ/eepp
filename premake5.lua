@@ -1466,6 +1466,12 @@ workspace "eepp"
 		files { "src/examples/ui_application_hello_world/*.cpp" }
 		build_link_configuration( "eepp-ui-application-hello-world", true )
 
+	project "eepp-ui-dropdownmodellist"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_dropdownmodellist/*.cpp" }
+		build_link_configuration( "eepp-ui-dropdownmodellist", true )
+
 	project "eepp-ui-richtext"
 		set_kind()
 		language "C++"
@@ -1663,6 +1669,8 @@ workspace "eepp"
 	project "eepp-unit_tests"
 		kind "ConsoleApp"
 		targetdir(_MAIN_SCRIPT_DIR .. "/bin/unit_tests")
+		links { "eterm-static", "languages-syntax-highlighting-static" }
+		incdirs { "src/modules/eterm/include/" }
 		language "C++"
 		files { "src/tests/unit_tests/*.cpp" }
 		build_link_configuration( "eepp-unit_tests", true )

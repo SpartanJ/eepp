@@ -19,6 +19,7 @@
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 
 #include <nlohmann/json.hpp>
+#include <unordered_set>
 
 using namespace EE::System;
 using namespace EE::UI::Doc::Language;
@@ -254,6 +255,9 @@ static std::optional<nlohmann::json> serializePattern( const SyntaxPattern& ptrn
 	if ( !ptrn.contentTypeName.empty() )
 		pattern["contentName"] = ptrn.contentTypeName;
 
+	if ( ptrn.isApplyEndPatternLast() )
+		pattern["applyEndPatternLast"] = 1;
+
 	return pattern;
 }
 
@@ -398,11 +402,12 @@ static std::string funcName( std::string name ) {
 
 static void patternToCPP( std::string& buf, const SyntaxPattern& pattern,
 						  const SyntaxDefinition& def ) {
-	bool allowReduce = ( pattern.patterns.size() == 1 && pattern.typesNames.size() <= 1 &&
-						 pattern.endTypesNames.empty() ) ||
-					   ( pattern.patterns.size() <= 3 && pattern.typesNames.size() <= 1 &&
-						 pattern.endTypesNames.empty() &&
-						 pattern.matchType == SyntaxPatternMatchType::LuaPattern );
+	bool allowReduce = ( ( pattern.patterns.size() == 1 && pattern.typesNames.size() <= 1 &&
+						   pattern.endTypesNames.empty() ) ||
+						 ( pattern.patterns.size() <= 3 && pattern.typesNames.size() <= 1 &&
+						   pattern.endTypesNames.empty() &&
+						   pattern.matchType == SyntaxPatternMatchType::LuaPattern ) ) &&
+					   !pattern.isApplyEndPatternLast();
 	bool setType = allowReduce && pattern.matchType != SyntaxPatternMatchType::LuaPattern;
 	bool addPatternType = pattern.matchType != SyntaxPatternMatchType::LuaPattern ||
 						  ( pattern.patterns.size() == 2 && pattern.patterns[0] == "include" );
@@ -433,6 +438,13 @@ static void patternToCPP( std::string& buf, const SyntaxPattern& pattern,
 			patternToCPP( buf, ptrn, def );
 		buf += "\n}";
 	}
+
+	if ( pattern.isApplyEndPatternLast() ) {
+		if ( !pattern.hasContentScope() )
+			buf = ", {}";
+		buf += ", SyntaxPattern::IsApplyEndPatternLast";
+	}
+
 	buf += " },\n";
 }
 
@@ -706,6 +718,7 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 	std::string contentTypeName;
 	SyntaxStyleType contentType{ SyntaxStyleEmpty() };
 	std::string syntax;
+	bool applyEndPatternLast{ false };
 
 	const auto fillTypes = []( const nlohmann::json& captures, std::vector<std::string>& type,
 							   const nlohmann::json& parent ) {
@@ -757,7 +770,7 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 		if ( pattern.contains( "endCaptures" ) )
 			fillTypes( pattern["endCaptures"], endType, pattern );
 
-		if ( type.empty() && pattern.contains( "captures" ) )
+		if ( pattern.contains( "captures" ) )
 			fillTypes( pattern["captures"], type, pattern );
 
 		if ( pattern.contains( "match" ) && pattern["match"].is_string() ) {
@@ -770,9 +783,12 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 		if ( pattern.contains( "begin" ) )
 			ptrns.emplace_back( pattern.value( "begin", "" ) );
 
-		if ( pattern.contains( "end" ) )
+		if ( pattern.contains( "end" ) ) {
 			ptrns.emplace_back( pattern.value( "end", "" ) );
 
+			if ( pattern.contains( "applyEndPatternLast" ) )
+				applyEndPatternLast = true;
+		}
 		// Sub-languages / Sub patterns?
 		if ( pattern.contains( "patterns" ) && !pattern["patterns"].empty() &&
 			 pattern["patterns"].is_array() ) {
@@ -873,6 +889,9 @@ static SyntaxPattern parsePattern( const nlohmann::json& pattern ) {
 	SyntaxPattern ptrn( std::move( ptrns ), std::move( type ), std::move( endType ), syntax, ctype,
 						std::move( subPatterns ) );
 
+	if ( applyEndPatternLast )
+		ptrn.flags |= SyntaxPattern::Flags::IsApplyEndPatternLast;
+
 	if ( contentType != SyntaxStyleEmpty() ) {
 		ptrn.contentTypeName = std::move( contentTypeName );
 		ptrn.contentType = contentType;
@@ -916,7 +935,17 @@ static void parseRepositoryItem( SyntaxDefinition& def, const std::string& name,
 		for ( const auto& pattern : patterns ) {
 			if ( pattern.size() == 1 && pattern.contains( "comment" ) )
 				continue;
-			ptrns.emplace_back( parsePattern( pattern ) );
+			if ( !( pattern.contains( "match" ) || pattern.contains( "begin" ) ) &&
+				 pattern.contains( "patterns" ) && pattern["patterns"].is_array() ) {
+				// Maybe do this recursive later, not a very common pattern
+				const auto& subPatterns = pattern["patterns"];
+				for ( const auto& subPattern : subPatterns ) {
+					if ( subPattern.size() == 1 && subPattern.contains( "comment" ) )
+						continue;
+					ptrns.emplace_back( parsePattern( subPattern ) );
+				}
+			} else
+				ptrns.emplace_back( parsePattern( pattern ) );
 		}
 	} else if ( item.is_array() ) {
 		for ( const auto& pattern : item )

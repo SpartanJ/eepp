@@ -114,7 +114,7 @@ std::string UITextSpan::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::FontSize:
 			return String::format( "%dpx", getFontSize() );
 		case PropertyId::FontStyle:
-			return Graphics::Text::styleFlagToString( getFontStyle() );
+			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::Color:
 			return getFontColor().toHexString();
 		case PropertyId::BackgroundColor:
@@ -485,15 +485,15 @@ bool UITextSpan::hasFontBackgroundColor() const {
 	return 0 != ( mStyleState & StyleStateFontBackgroundColor );
 }
 
-std::vector<Rectf>& UITextSpan::getHitBoxes() {
+SpanHitBoxes& UITextSpan::getHitBoxes() {
 	return mHitBoxes;
 }
 
-const std::vector<Rectf>& UITextSpan::getHitBoxes() const {
+const SpanHitBoxes& UITextSpan::getHitBoxes() const {
 	return mHitBoxes;
 }
 
-void UITextSpan::setHitBoxes( std::vector<Rectf>&& hitBoxes ) {
+void UITextSpan::setHitBoxes( SpanHitBoxes&& hitBoxes ) {
 	mHitBoxes = std::move( hitBoxes );
 }
 

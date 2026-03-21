@@ -2,6 +2,7 @@
 #include <eepp/scene/actions/actions.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/ui/css/shorthanddefinition.hpp>
+#include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/css/stylesheetproperty.hpp>
 #include <eepp/ui/css/stylesheetselector.hpp>
 #include <eepp/ui/css/stylesheetspecification.hpp>
@@ -1125,6 +1126,9 @@ void UIWidget::reloadStyle( bool reloadChildren, bool disableAnimations, bool re
 	if ( resetPropertyCache )
 		mStyle->resetCachedProperties();
 
+	if ( reportStateChange )
+		reportStyleStateChange( disableAnimations, forceReApplyProperties );
+
 	if ( NULL != getFirstChild() && reloadChildren ) {
 		Node* child = getFirstChild();
 
@@ -1137,9 +1141,6 @@ void UIWidget::reloadStyle( bool reloadChildren, bool disableAnimations, bool re
 			child = child->getNextNode();
 		}
 	}
-
-	if ( reportStateChange )
-		reportStyleStateChange( disableAnimations, forceReApplyProperties );
 }
 
 void UIWidget::onPaddingChange() {
@@ -1597,6 +1598,23 @@ void UIWidget::setStyleSheetInlineProperty( const std::string& name, const std::
 			CSS::StyleSheetProperty( name, value, specificity, false, 0 ) );
 }
 
+void UIWidget::propagateInheritedProperty( const CSS::StyleSheetProperty& property ) {
+	Node* child = getFirstChild();
+	while ( child ) {
+		if ( child->isWidget() ) {
+			UIWidget* childWidget = child->asType<UIWidget>();
+			UIStyle* childStyle = childWidget->getUIStyle();
+			// Only propagate if the child doesn't explicitly override it
+			if ( childStyle && !childStyle->hasLocalProperty(
+								   property.getPropertyDefinition()->getPropertyId() ) ) {
+				childWidget->applyProperty( property );
+				childWidget->propagateInheritedProperty( property );
+			}
+		}
+		child = child->getNextNode();
+	}
+}
+
 bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 	if ( !checkPropertyDefinition( attribute ) )
 		return false;
@@ -2008,6 +2026,19 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 
 	for ( pugi::xml_attribute_iterator ait = node.attributes_begin(); ait != node.attributes_end();
 		  ++ait ) {
+		if ( String::iequals( ait->name(), "style" ) ) {
+			StyleSheetPropertiesParser propertiesParser;
+			propertiesParser.parse( std::string_view{ ait->value() } );
+			if ( !propertiesParser.getProperties().empty() ) {
+				for ( auto& [_, property] : propertiesParser.getProperties() ) {
+					if ( mStyle )
+						mStyle->setStyleSheetProperty( property );
+					applyProperty( property );
+				}
+			}
+			continue;
+		}
+
 		// Create a property without trimming its value
 		StyleSheetProperty prop( ait->name(), ait->value(), false,
 								 StyleSheetSelectorRule::SpecificityInline );

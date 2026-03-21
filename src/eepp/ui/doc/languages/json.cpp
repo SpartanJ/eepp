@@ -14,6 +14,7 @@ void addJSON() {
 			  "%.jsonc$",
 			  "%.ipynb$",
 			  "%.webmanifest$",
+			  "%.cps$",
 		  },
 		  {
 			  { { "//.-\n" }, "comment" },

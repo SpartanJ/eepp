@@ -1760,12 +1760,15 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 	if ( mFontStyleConfig.Style & Shadow ) {
 		std::vector<Color> colors;
 		Color shadowColor( getShadowColor() );
-		if ( getFillColor().a != 255 )
+		if ( getFillColor().a != 255 ) {
 			shadowColor.a =
 				(Uint8)( (Float)shadowColor.a * ( (Float)getFillColor().a / (Float)255 ) );
+		}
 		colors.assign( mColors.size(), shadowColor );
 		draw( X + mFontStyleConfig.ShadowOffset.x, Y + mFontStyleConfig.ShadowOffset.y, scale,
-			  rotation, effect, rotationCenter, scaleCenter, colors, {}, Color::Transparent );
+			  rotation, effect, rotationCenter, scaleCenter, colors,
+			  mFontStyleConfig.OutlineThickness > 0 ? mOutlineColors : std::vector<Color>{},
+			  Color::Transparent );
 	}
 
 	draw( X, Y, scale, rotation, effect, rotationCenter, scaleCenter, mColors, mOutlineColors,

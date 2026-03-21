@@ -127,6 +127,8 @@ class EE_API StyleSheetProperty {
 
 	Rectf asRectf( const Rectf& defaultValue = Rectf() ) const;
 
+	Uint32 asTextDecoration() const;
+
 	Uint32 asFontStyle() const;
 
 	Time asTime( const Time& defaultTime = Seconds( 0 ) );

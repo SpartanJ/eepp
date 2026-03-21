@@ -15,6 +15,7 @@ struct LLMCacheConfiguration {
 };
 
 struct LLMModel {
+	std::size_t hash{ 0 };
 	std::string name;
 	std::string provider;
 	std::optional<std::string> displayName;

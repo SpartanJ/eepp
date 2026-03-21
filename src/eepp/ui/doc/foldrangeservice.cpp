@@ -281,14 +281,14 @@ bool FoldRangeService::isFoldingRegionInLine( Int64 docIdx ) {
 void FoldRangeService::shiftFoldingRegions( Int64 fromLine, Int64 numLines ) {
 	Lock l( mMutex );
 	FoldingRegions foldingRegions;
-	
+
 	if ( numLines < 0 ) {
 		Int64 removedLines = -numLines;
 		Int64 toLine = fromLine + removedLines;
 
 		for ( auto& foldingRegion : mFoldingRegions ) {
 			auto& range = foldingRegion.second;
-			
+
 			if ( range.start().line() >= toLine ) {
 				range.start().setLine( range.start().line() + numLines );
 				range.end().setLine( range.end().line() + numLines );

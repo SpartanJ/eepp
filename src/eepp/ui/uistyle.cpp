@@ -82,6 +82,19 @@ void UIStyle::load() {
 	subscribeNonCacheableStyles();
 
 	addStructurallyVolatileWidgetFromParent();
+
+	// applyInheritedProperties();
+}
+
+void UIStyle::applyInheritedProperties() {
+	const auto& props = StyleSheetSpecification::instance()->getInheritableProperties();
+	for ( const auto& propId : props ) {
+		if ( !hasLocalProperty( propId ) ) {
+			auto inheritedProp = getInheritedProperty( propId );
+			if ( inheritedProp )
+				mWidget->applyProperty( *inheritedProp );
+		}
+	}
 }
 
 void UIStyle::setStyleSheetProperties( const CSS::StyleSheetProperties& properties ) {
@@ -201,6 +214,26 @@ bool UIStyle::hasProperty( const CSS::PropertyId& propertyId ) const {
 		   ( mElementStyle && mElementStyle->getPropertyById( propertyId ) );
 }
 
+bool UIStyle::hasLocalProperty( PropertyId propId ) const {
+	return ( mElementStyle && mElementStyle->getPropertyById( propId ) ) ||
+		   ( mDefinition && mDefinition->getProperty( (Uint32)propId ) );
+}
+
+CSS::StyleSheetProperty* UIStyle::getInheritedProperty( CSS::PropertyId propId ) const {
+	Node* parentNode = mWidget->getParent();
+	while ( parentNode && parentNode->isWidget() ) {
+		UIWidget* parent = parentNode->asType<UIWidget>();
+		UIStyle* parentStyle = parent->getUIStyle();
+		if ( parentStyle ) {
+			auto prop = parentStyle->getLocalProperty( (Uint32)propId );
+			if ( prop )
+				return prop;
+		}
+		parentNode = parent->getParent();
+	}
+	return nullptr;
+}
+
 void UIStyle::subscribeRelated( UIWidget* widget ) {
 	mRelatedWidgets.insert( widget );
 }
@@ -218,7 +251,7 @@ void UIStyle::applyLightDarkValue( std::string& value ) {
 		if ( tokenStart != std::string::npos ) {
 			tokenEnd = String::findCloseBracket( value, tokenStart, '(', ')' );
 			if ( tokenEnd != std::string::npos ) {
-				auto fn( value.substr( tokenStart, tokenEnd + 1 ) );
+				auto fn( value.substr( tokenStart, tokenEnd - tokenStart + 1 ) );
 				auto function( FunctionString::parse( fn ) );
 				auto size = function.getParameters().size();
 				if ( size > 0 ) {
@@ -327,8 +360,18 @@ void UIStyle::onStateChange() {
 		for ( auto prop : changedProperties ) {
 			StyleSheetProperty* property = getLocalProperty( prop );
 
-			if ( nullptr == property || NULL == property->getPropertyDefinition() )
+			if ( nullptr == property || NULL == property->getPropertyDefinition() ) {
+				const auto def = StyleSheetSpecification::instance()->getProperty( prop );
+				if ( def && def->isInherited() ) {
+					StyleSheetProperty* inheritedProp =
+						getInheritedProperty( static_cast<PropertyId>( prop ) );
+					if ( inheritedProp ) {
+						mWidget->applyProperty( *inheritedProp );
+						mWidget->propagateInheritedProperty( *inheritedProp );
+					}
+				}
 				continue;
+			}
 
 			applyVarValues( property );
 
@@ -341,6 +384,9 @@ void UIStyle::onStateChange() {
 			} else {
 				applyStyleSheetProperty( *property, prevDefinition );
 			}
+
+			if ( property->getPropertyDefinition()->isInherited() )
+				mWidget->propagateInheritedProperty( *property );
 		}
 
 		updateAnimations();

@@ -479,22 +479,25 @@ void RichText::updateLayout() {
 			}
 		}
 
+		Float maxLineHeight = 0;
 		for ( auto& span : line.spans ) {
 			if ( auto pText = std::get_if<std::shared_ptr<Text>>( &span.block ) ) {
 				auto& textBlock = *pText;
-				Float ascent = textBlock->getFont()->getAscent( textBlock->getCharacterSize() );
-				Float offsetY = line.maxAscent - ascent;
+				Float offsetY = line.maxAscent - textBlock->getCharacterSize();
 				span.position.x += xOffset;
 				span.position.y = offsetY;
+				maxLineHeight = std::max( maxLineHeight, offsetY + span.size.getHeight() );
 			} else {
-				Float offsetY = line.height - span.size.getHeight();
+				Float offsetY = line.maxAscent - span.size.getHeight();
 				if ( offsetY < 0 )
 					offsetY = 0;
 				span.position.x += xOffset;
 				span.position.y = offsetY;
+				maxLineHeight = std::max( maxLineHeight, offsetY + span.size.getHeight() );
 			}
 		}
 
+		line.height = std::max( line.height, maxLineHeight );
 		curY += line.height;
 	}
 

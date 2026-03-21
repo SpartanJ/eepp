@@ -65,6 +65,10 @@ class EE_API UIRichText : public UILayout {
 
 	const Uint32& getFontStyle() const;
 
+	Uint32 getTextDecoration() const;
+
+	UIRichText* setTextDecoration( const Uint32& textDecoration );
+
 	UIRichText* setFontStyle( const Uint32& fontStyle );
 
 	const Color& getFontColor() const;

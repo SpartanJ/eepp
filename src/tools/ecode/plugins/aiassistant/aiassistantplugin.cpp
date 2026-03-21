@@ -98,7 +98,10 @@ static std::map<std::string, LLMProvider> parseLLMProviders( const nlohmann::jso
 					model.cacheConfiguration = cache;
 				}
 
-				provider.models.push_back( model );
+				model.hash = hashCombine( std::hash<std::string>()( model.name ),
+										  std::hash<std::string>()( model.provider ) );
+
+				provider.models.emplace_back( std::move( model ) );
 			}
 		}
 

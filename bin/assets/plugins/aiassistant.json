@@ -133,11 +133,6 @@
           "max_tokens": 1000000
         },
         {
-          "name": "gemini-3-pro-preview",
-          "display_name": "Gemini 3 Pro Preview",
-          "max_tokens": 1000000
-        },
-        {
           "name": "gemini-3.1-pro-preview",
           "display_name": "Gemini 3.1 Pro Preview",
           "max_tokens": 1000000
@@ -474,6 +469,10 @@
         {
           "name": "arcee-ai/trinity-large-preview:free",
           "display_name": "Arcee AI: Trinity Large Preview (free)"
+        },
+        {
+          "name": "nvidia/nemotron-3-super-120b-a12b:free",
+          "display_name": "NVIDIA: Nemotron 3 Super (free)"
         }
       ]
     },
