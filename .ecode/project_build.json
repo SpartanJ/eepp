@@ -172,7 +172,7 @@
   "eepp-linux": {
     "build": [
       {
-        "args": "--disable-static-build --with-mold-linker --with-debug-symbols --address-sanitizer gmake",
+        "args": "--disable-static-build --with-mold-linker --with-debug-symbols --address-sanitizer --with-backend=SDL3 gmake",
         "command": "premake4",
         "working_dir": "${project_root}"
       },
@@ -464,7 +464,7 @@
   "eepp-linux-ninja": {
     "build": [
       {
-        "args": "--disable-static-build --with-debug-symbols ninja",
+        "args": "--disable-static-build --with-debug-symbols  --with-backend=SDL3 ninja",
         "command": "premake5",
         "working_dir": "${project_root}"
       },

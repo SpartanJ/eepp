@@ -166,6 +166,13 @@ class EE_API Engine {
 	EE::Window::Window* createSDL2Window( const WindowSettings& Settings,
 										  const ContextSettings& Context );
 
+#ifdef EE_BACKEND_SDL3
+	Backend::WindowBackendLibrary* createSDL3Backend( const WindowSettings& Settings );
+
+	EE::Window::Window* createSDL3Window( const WindowSettings& Settings,
+										  const ContextSettings& Context );
+#endif
+
 	EE::Window::Window* createDefaultWindow( const WindowSettings& Settings,
 											 const ContextSettings& Context );
 
