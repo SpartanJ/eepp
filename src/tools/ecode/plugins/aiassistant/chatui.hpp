@@ -129,6 +129,12 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	std::map<std::string, ACPAgent> mAgents;
 	std::string mCurAgent;
 
+	struct SlashCommand {
+		std::string name;
+		std::string description;
+	};
+	std::vector<SlashCommand> mAvailableCommands;
+
 	std::unique_ptr<acp::AgentSession> mAgentSession;
 
 	int mPendingModelsToLoad{ 0 };
@@ -180,6 +186,10 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void fillAgentDropDownList( UIDropDownList* agentDDL );
 
+	void updateAgentModeUI();
+
+	void setupAgentSession();
+
 	void resizeToFit( UICodeEditor* editor );
 
 	void addChat( LLMChat::Role role, std::string conversation );
@@ -220,6 +230,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	void insertFileToDocument( std::string path, std::shared_ptr<TextDocument> cdoc );
 
 	void replaceFileLinksToContents( std::string& text );
+
+	nlohmann::json promptToContentBlocks( std::string text );
 
 	void generateChatName( bool isRenaming );
 

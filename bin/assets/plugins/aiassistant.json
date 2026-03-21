@@ -506,7 +506,7 @@
     "gemini-cli": {
       "enabled": true,
       "command": "gemini",
-      "args": ["--experimental-acp"]
+      "args": ["--experimental-acp", "--model=auto"]
     },
     "opencode": {
       "enabled": true,

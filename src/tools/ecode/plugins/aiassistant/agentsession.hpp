@@ -21,6 +21,7 @@ class AgentSession {
 	~AgentSession();
 
 	bool start( const std::function<void( bool )>& onReady );
+	bool startLoaded( const std::string& sessionId, const std::function<void( bool )>& onReady );
 	void stop();
 
 	void prompt( const PromptRequest& req, const std::function<void( const PromptResponse& )>& cb );
@@ -32,10 +33,13 @@ class AgentSession {
 	std::function<void( const RequestPermissionRequest&,
 						std::function<void( const RequestPermissionResponse& )> )>
 		onRequestPermission;
-	std::function<void( UITerminal*, const std::string& terminalId )> onTerminalCreated;
+	std::function<void( const CreateTerminalRequest&, const std::string& terminalId )>
+		onTerminalCreated;
 
 	std::string getSessionId() const { return mSessionId; }
 	ACPClient* getClient() const { return mClient.get(); }
+
+	void setTerminalData( const std::string& terminalId, UITerminal* uiTerm );
 
   protected:
 	std::shared_ptr<ThreadPool> mThreadPool;

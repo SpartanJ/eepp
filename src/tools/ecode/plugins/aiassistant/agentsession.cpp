@@ -37,6 +37,38 @@ bool AgentSession::start( const std::function<void( bool )>& onReady ) {
 	return false;
 }
 
+bool AgentSession::startLoaded( const std::string& sessionId,
+								const std::function<void( bool )>& onReady ) {
+	if ( mClient->start() ) {
+		InitializeRequest req;
+		req.clientCapabilities.terminal = true;
+		req.clientCapabilities.fsReadTextFile = true;
+		req.clientCapabilities.fsWriteTextFile = true;
+
+		mClient->initialize( req, [this, sessionId, onReady]( const InitializeResponse& ires ) {
+			if ( ires.agentCapabilities.loadSession ) {
+				LoadSessionRequest lreq;
+				lreq.sessionId = sessionId;
+				lreq.cwd = mClient->isReady() ? mClient->getConfig().workingDirectory : "";
+				mClient->loadSession( lreq, [this, sessionId, onReady]( const LoadSessionResponse& ) {
+					mSessionId = sessionId;
+					if ( onReady )
+						onReady( true );
+				} );
+			} else {
+				// Agent doesn't support loading, fallback to new session?
+				// For now let's just fail or call onReady(false)
+				if ( onReady )
+					onReady( false );
+			}
+		} );
+		return true;
+	}
+	if ( onReady )
+		onReady( false );
+	return false;
+}
+
 void AgentSession::stop() {
 	if ( mClient )
 		mClient->stop();
@@ -56,6 +88,11 @@ void AgentSession::cancel() {
 	if ( mClient && !mSessionId.empty() ) {
 		mClient->cancel( mSessionId );
 	}
+}
+
+void AgentSession::setTerminalData( const std::string& terminalId, UITerminal* uiTerm ) {
+	mTerminals[terminalId] =
+		TermData{ uiTerm->getTerm(), uiTerm->getTerm()->getTerminal(), uiTerm };
 }
 
 void AgentSession::setupClient() {
@@ -92,10 +129,8 @@ void AgentSession::setupClient() {
 		CreateTerminalResponse res;
 		std::string termId = String::format( "term-%u", String::hash( req.command ) );
 		res.terminalId = termId;
-		// Wait for UI? No, ACPClient is running in threads. We just trigger the event
-		// and return the ID.
 		if ( onTerminalCreated ) {
-			onTerminalCreated( nullptr, termId );
+			onTerminalCreated( req, termId );
 		}
 		cb( res );
 	};

@@ -63,6 +63,22 @@ struct NewSessionResponse {
 	NewSessionResponse( const json& body );
 };
 
+struct LoadSessionRequest {
+	std::string sessionId;
+	std::string cwd;
+	json mcpServers;
+
+	LoadSessionRequest() = default;
+	json toJson() const;
+};
+
+struct LoadSessionResponse {
+	json configOptions;
+
+	LoadSessionResponse() = default;
+	LoadSessionResponse( const json& body );
+};
+
 struct PromptRequest {
 	std::string sessionId;
 	json prompt; // Array of ContentBlock

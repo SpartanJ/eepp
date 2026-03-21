@@ -47,6 +47,8 @@ class ACPClient {
 					 const std::function<void( const InitializeResponse& )>& cb );
 	void newSession( const NewSessionRequest& req,
 					 const std::function<void( const NewSessionResponse& )>& cb );
+	void loadSession( const LoadSessionRequest& req,
+					  const std::function<void( const LoadSessionResponse& )>& cb );
 	void prompt( const PromptRequest& req, const std::function<void( const PromptResponse& )>& cb );
 
 	// Notifications to agent

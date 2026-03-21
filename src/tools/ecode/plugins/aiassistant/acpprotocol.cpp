@@ -60,6 +60,21 @@ NewSessionResponse::NewSessionResponse( const json& body ) {
 		configOptions = body["configOptions"];
 }
 
+json LoadSessionRequest::toJson() const {
+	json j = { { "sessionId", sessionId }, { "cwd", cwd } };
+	if ( mcpServers.is_null() ) {
+		j["mcpServers"] = json::array();
+	} else {
+		j["mcpServers"] = mcpServers;
+	}
+	return j;
+}
+
+LoadSessionResponse::LoadSessionResponse( const json& body ) {
+	if ( body.contains( "configOptions" ) )
+		configOptions = body["configOptions"];
+}
+
 json PromptRequest::toJson() const {
 	return { { "sessionId", sessionId }, { "prompt", prompt } };
 }
