@@ -47,7 +47,7 @@ class LLMModelsModel : public Model {
 		return mCurModels.size();
 	}
 
-	virtual size_t columnCount( const ModelIndex& = ModelIndex() ) const override { return 2; }
+	virtual size_t columnCount( const ModelIndex& = ModelIndex() ) const override { return 3; }
 
 	virtual std::string columnName( const size_t& column ) const override {
 		switch ( column ) {
@@ -128,6 +128,106 @@ class LLMModelsModel : public Model {
   protected:
 	const std::vector<LLMModel>& mModels;
 	std::vector<const LLMModel*> mCurModels;
+	std::string mCurFilter;
+	UISceneNode* mUISceneNode;
+};
+
+class ACPAgentsModel : public Model {
+  public:
+	enum Columns { Name, Command };
+
+	ACPAgentsModel( const std::map<std::string, ACPAgent>& agents,
+					UISceneNode* uiSceneNode = nullptr ) :
+		mAgents( agents ), mUISceneNode( uiSceneNode ) {
+		mCurAgents.reserve( mAgents.size() );
+		for ( const auto& [name, agent] : mAgents ) {
+			if ( agent.enabled )
+				mCurAgents.emplace_back( name );
+		}
+	}
+
+	virtual size_t rowCount( const ModelIndex& = ModelIndex() ) const override {
+		return mCurAgents.size();
+	}
+
+	virtual size_t columnCount( const ModelIndex& = ModelIndex() ) const override { return 2; }
+
+	virtual std::string columnName( const size_t& column ) const override {
+		switch ( column ) {
+			case Columns::Name:
+				return mUISceneNode ? mUISceneNode->i18n( "name", "Name" ) : "Name";
+			case Columns::Command:
+				return mUISceneNode ? mUISceneNode->i18n( "command", "Command" ) : "Command";
+		}
+		return "";
+	}
+
+	virtual Variant data( const ModelIndex& index,
+						  ModelRole role = ModelRole::Display ) const override {
+		if ( role != ModelRole::Display )
+			return {};
+
+		if ( index.row() < 0 || static_cast<size_t>( index.row() ) >= mCurAgents.size() )
+			return {};
+
+		const auto& agentName = mCurAgents[index.row()];
+		auto it = mAgents.find( agentName );
+		if ( it == mAgents.end() )
+			return {};
+
+		switch ( index.column() ) {
+			case Columns::Name: {
+				return Variant( it->second.name.c_str() );
+			}
+			case Columns::Command: {
+				return Variant( it->second.command.c_str() );
+			}
+		}
+
+		return {};
+	}
+
+	ModelIndex getFromName( const std::string& name ) {
+		auto it =
+			std::find_if( mCurAgents.begin(), mCurAgents.end(),
+						  [&name]( const std::string& agentName ) { return name == agentName; } );
+		return it != mCurAgents.end() ? index( std::distance( mCurAgents.begin(), it ) )
+									  : index( 0 );
+	}
+
+	void setFilter( const std::string& filter ) {
+		if ( mCurFilter == filter )
+			return;
+		mCurFilter = filter;
+		mCurAgents.clear();
+
+		for ( const auto& [name, agent] : mAgents ) {
+			if ( !agent.enabled )
+				continue;
+
+			if ( filter.empty() ) {
+				mCurAgents.emplace_back( name );
+				continue;
+			}
+
+			bool matchesName = String::icontains( agent.name, filter );
+			bool matchesCommand = String::icontains( agent.command, filter );
+
+			if ( matchesName || matchesCommand ) {
+				mCurAgents.emplace_back( name );
+			}
+		}
+
+		invalidate();
+	}
+
+	const std::vector<std::string>& getCurAgents() const { return mCurAgents; }
+
+	void refresh() { setFilter( mCurFilter ); }
+
+  protected:
+	const std::map<std::string, ACPAgent>& mAgents;
+	std::vector<std::string> mCurAgents;
 	std::string mCurFilter;
 	UISceneNode* mUISceneNode;
 };
@@ -234,16 +334,19 @@ DropDownList.role_ui {
 	tint: var(--font);
 }
 .llm_chat_attach,
-.llm_chat_select_model {
+.llm_chat_select_model,
+.llm_chat_select_agent {
 	padding: 8dp 8dp 38dp 8dp;
 }
 .llm_chat_locate_input,
-.llm_chat_select_model_input {
+.llm_chat_select_model_input,
+.llm_chat_select_agent_input {
 	margin-bottom: 2dp;
 	padding: 0 0 0 4dp;
 }
 .llm_chat_attach_locate,
-.llm_chat_model_locate {
+.llm_chat_model_locate,
+.llm_chat_agent_locate {
 	border-radius: 8dp;
 	margin-bottom: 4dp;
 }
@@ -296,16 +399,18 @@ DropDownList.role_ui {
 			<TableView lw="mp" lh="0dp" lw8="1" class="llm_chat_model_locate" />
 			<TextInput class="llm_chat_select_model_input" lw="mp" lh="18dp" hint='@string(select_a_model_ellipsis, "Select a model...")' />
 		</vboxce>
+		<vboxce class="llm_chat_select_agent" lw="mp" lh="mp" visible="false">
+			<TableView lw="mp" lh="0dp" lw8="1" class="llm_chat_agent_locate" />
+			<TextInput class="llm_chat_select_agent_input" lw="mp" lh="18dp" hint='@string(select_an_agent_ellipsis, "Select an agent...")' />
+		</vboxce>
 		<hbox lw="mp" lh="wc" layout_gravity="bottom|left" layout_margin="8dp" clip="false">
 			<PushButton id="llm_user" class="llm_button" text="@string(user, User)" tooltip="@string(change_role, Change Role)" min-width="60dp" margin-right="4dp" />
 			<PushButton id="llm_attach" class="llm_button" text="@string(add_context, Add Context)" tooltip="@string(add_context, Add Context)" icon="icon(attach, 14dp)" min-width="32dp" margin-right="4dp" />
 			<PushButton id="llm_chat_history" class="llm_button" text="@string(chat_history, Chat History)" tooltip="@string(chat_history, Chat History)" icon="icon(chat-history, 14dp)" min-width="32dp" margin-right="4dp" />
 			<PushButton id="llm_more" class="llm_button" tooltip="@string(more_options, More Options)" icon="icon(more-fill, 14dp)" min-width="32dp" />
-			<hbox lw="0" lw8="1" lh="mp" layout_gravity="center" padding-left="4dp" padding-right="4dp">
-				<PushButton class="model_ui" lw="0" lw8="1" lh="mp" margin-left="4dp" margin-right="4dp" tooltip="@string(select_model, Select Model)" />
-				<DropDownList class="agent_ui" menu-width-mode="expand-if-needed-centered" lw="0" lw8="1" selected-index="0" visible="false"></DropDownList>
-			</hbox>
-			<SelectButton id="llm_agent_mode" class="llm_button" tooltip="@string(toggle_agent_mode, Toggle Agent Mode)" icon="icon(robot, 14dp)" min-width="32dp" margin-right="4dp" select-on-click="true" />
+			<PushButton class="model_ui" lw="0" lw8="1" lh="mp" margin-left="4dp" margin-right="4dp" tooltip="@string(select_model, Select Model)" />
+			<PushButton class="agent_ui" lw="0" lw8="1" lh="mp" margin-left="4dp" margin-right="4dp" tooltip="@string(select_agent, Select Agent)" visible="false" />
+			<SelectButton id="llm_agent_mode" class="llm_button" tooltip="@string(toggle_agent_mode, Toggle Agent Mode)" icon="icon(robot-2, 14dp)" min-width="32dp" margin-right="4dp" select-on-click="true" />
 			<PushButton id="llm_settings_but" class="llm_button" text="@string(settings, Settings)" tooltip="@string(settings, Settings)" icon="icon(settings, 14dp)" min-width="32dp" margin-right="4dp" />
 			<PushButton id="llm_add_chat" class="llm_button" text="@string(add, Add)" tooltip="@string(add_message, Add Message)" icon="icon(add, 15dp)" min-width="32dp" margin-right="4dp" />
 			<PushButton id="llm_run" class="llm_button primary" text="@string(run, Run)" tooltip="@string(add_message_and_run_prompt, Add Message and Run Prompt)" icon="icon(play-filled, 14dp)" />
@@ -356,7 +461,9 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 
 	mChatsList = findByClass( "llm_chats" );
 	mModelBtn = findByClass<UIPushButton>( "model_ui" );
-	mAgentDDL = findByClass<UIDropDownList>( "agent_ui" );
+	mModelBtn->onClick( [this]( auto ) { execute( "ai-select-model" ); } );
+	mAgentBtn = findByClass<UIPushButton>( "agent_ui" );
+	mAgentBtn->onClick( [this]( auto ) { execute( "ai-select-agent" ); } );
 
 	mChatAgentMode = find<UISelectButton>( "llm_agent_mode" );
 	mChatAgentMode->on( Event::OnValueChange, [this]( auto ) {
@@ -550,6 +657,26 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 			hideSelectModel();
 	} );
 
+	setCmd( "ai-select-agent", [this] {
+		if ( !mLocateAgentBarLayout->isVisible() ) {
+			if ( mLocateAgentTable->getModel() ) {
+				mLocateAgentInput->setText( "" );
+				static_cast<ACPAgentsModel*>( mLocateAgentTable->getModel() )->setFilter( "" );
+			}
+
+			showSelectAgent();
+
+			mLocateAgentTable->runOnMainThread( [this] {
+				auto model = static_cast<ACPAgentsModel*>( mLocateAgentTable->getModel() );
+				if ( model ) {
+					mLocateAgentTable->setSelection( model->getFromName( mCurAgent ) );
+					mAgentBtn->setText( mCurAgent );
+				}
+			} );
+		} else
+			hideSelectAgent();
+	} );
+
 	setCmd( "ai-toggle-private-chat", [this] {
 		mChatIsPrivate = !mChatIsPrivate;
 
@@ -703,13 +830,12 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mChatAttach = find<UIPushButton>( "llm_attach" );
 	mChatAttach->onClick( [this]( auto ) { execute( "ai-show-add-context-menu" ); } );
 
-	mModelBtn->onClick( [this]( auto ) { execute( "ai-select-model" ); } );
-
 	if ( getPlugin() == nullptr )
 		return;
 
 	initAttachFile();
 	initSelectModel();
+	initSelectAgent();
 
 	auto providers = getPlugin()->getProviders();
 	setProviders( std::move( providers ) );
@@ -735,13 +861,12 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	}
 
 	if ( !agentName.empty() && mAgents.find( agentName ) != mAgents.end() ) {
-		mCurAgent = agentName;
+		selectAgent( agentName );
 	} else if ( !mAgents.empty() ) {
-		mCurAgent = mAgents.begin()->first;
+		selectAgent( mAgents.begin()->first );
 	}
 
 	fillModelDropDownList();
-	fillAgentDropDownList( mAgentDDL );
 
 	const auto appendShortcutToTooltip = [this]( UIPushButton* but, const std::string& cmd ) {
 		auto kb = getKeyBindings().getCommandKeybindString( cmd );
@@ -853,6 +978,8 @@ void LLMChatUI::showChatHistory() {
 		return;
 
 	hideAttachFile();
+	hideSelectModel();
+	hideSelectAgent();
 
 	static const char* CHAT_HISTORY_LAYOUT = R"xml(
 		<window window-flags="default|shadow|modal|ephemeral|maximize"
@@ -1109,6 +1236,14 @@ bool LLMChatUI::selectModel( std::optional<LLMModel> model ) {
 	return false;
 }
 
+bool LLMChatUI::selectAgent( const std::string& agent ) {
+	if ( !agent.empty() && mAgents.find( agent ) != mAgents.end() ) {
+		mAgentBtn->setText( agent );
+		mCurAgent = agent;
+		return true;
+	}
+	return false;
+}
 void LLMChatUI::fillModelDropDownList() {
 	mModels.clear();
 	std::size_t reserve = 0;
@@ -1124,30 +1259,99 @@ void LLMChatUI::fillModelDropDownList() {
 	getUISceneNode()->getThreadPool()->run( [this] { fillApiModels(); } );
 }
 
-void LLMChatUI::fillAgentDropDownList( UIDropDownList* agentDDL ) {
-	std::vector<String> agents;
-	std::size_t selectedIndex = 0;
-	for ( const auto& [name, data] : mAgents ) {
-		if ( !data.enabled )
-			continue;
+// Agent Picker
 
-		String agentName( String::format( "%s", data.name ) );
-		if ( data.name == mCurAgent )
-			selectedIndex = agents.size();
-		agents.push_back( std::move( agentName ) );
-	}
-	agentDDL->getListBox()->clear();
-	agentDDL->getListBox()->addListBoxItems( std::move( agents ) );
-	agentDDL->getListBox()->setSelected( selectedIndex );
-	agentDDL->on( Event::OnValueChange, [this, agentDDL]( auto ) {
-		auto newAgent = agentDDL->getListBox()->getItemSelectedText().toUtf8();
-		if ( newAgent != mCurAgent ) {
-			mCurAgent = newAgent;
-			if ( mAgentSession ) {
-				mAgentSession->stop();
-				mAgentSession.reset();
+void LLMChatUI::updateLocateAgentBarColumns() {
+	Float width = eeceil( mLocateAgentTable->getPixelsSize().getWidth() );
+	width -= mLocateAgentTable->getVerticalScrollBar()->getPixelsSize().getWidth();
+	mLocateAgentTable->setColumnsVisible( { 0 } );
+	mLocateAgentTable->setColumnWidth( 0, eeceil( width ) );
+}
+
+void LLMChatUI::loadSelectAgent() {
+	auto ctx = getPlugin()->getPluginContext();
+	mLocateAgentTable->setModel(
+		std::make_shared<ACPAgentsModel>( mAgents, ctx->getUISceneNode() ) );
+
+	static_cast<ACPAgentsModel*>( mLocateAgentTable->getModel() )
+		->setFilter( mLocateAgentInput->getText().toUtf8() );
+}
+
+void LLMChatUI::showSelectAgent() {
+	if ( getPlugin() == nullptr )
+		return;
+	hideAttachFile();
+	hideSelectModel();
+
+	if ( nullptr == mLocateAgentTable->getModel() )
+		loadSelectAgent();
+
+	static_cast<ACPAgentsModel*>( mLocateAgentTable->getModel() )
+		->setFilter( mLocateAgentInput->getText().toUtf8() );
+	mLocateAgentBarLayout->setVisible( true );
+	mLocateAgentInput->setFocus();
+	updateLocateAgentBarColumns();
+}
+
+void LLMChatUI::hideSelectAgent() {
+	mLocateAgentBarLayout->setVisible( false );
+}
+
+void LLMChatUI::initSelectAgent() {
+	mLocateAgentBarLayout = findByClass<UIVLinearLayoutCommandExecuter>( "llm_chat_select_agent" );
+	mLocateAgentInput = findByClass<UITextInput>( "llm_chat_select_agent_input" );
+	mLocateAgentTable = findByClass<UITableView>( "llm_chat_agent_locate" );
+	mLocateAgentTable->setHeadersVisible( false );
+
+	mLocateAgentTable->on( Event::OnSizeChange,
+						   [this]( const Event* ) { updateLocateAgentBarColumns(); } );
+
+	mLocateAgentInput->on( Event::OnTextChanged, [this]( const Event* ) {
+		showSelectAgent();
+		updateLocateAgentBarColumns();
+	} );
+	mLocateAgentInput->on( Event::OnPressEnter, [this]( const Event* ) {
+		KeyEvent keyEvent( mLocateAgentTable, Event::KeyDown, KEY_RETURN, SCANCODE_UNKNOWN, 0, 0 );
+		mLocateAgentTable->forceKeyDown( keyEvent );
+	} );
+	mLocateAgentInput->on( Event::KeyDown, [this]( const Event* event ) {
+		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
+		mLocateAgentTable->forceKeyDown( *keyEvent );
+	} );
+	mLocateAgentBarLayout->setCommand( "close-locatebar", [this] {
+		hideSelectAgent();
+		if ( mChatInput )
+			mChatInput->setFocus();
+	} );
+	mLocateAgentBarLayout->getKeyBindings().addKeybindsString( {
+		{ "escape", "close-locatebar" },
+	} );
+	mLocateAgentTable->on( Event::KeyDown, [this]( const Event* event ) {
+		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
+		if ( keyEvent->getKeyCode() == KEY_ESCAPE )
+			mLocateAgentBarLayout->execute( "close-locatebar" );
+	} );
+	mLocateAgentTable->on( Event::OnModelEvent, [this]( const Event* event ) {
+		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
+		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
+			Variant vName( modelEvent->getModel()->data(
+				modelEvent->getModel()->index( modelEvent->getModelIndex().row(),
+											   ACPAgentsModel::Name ),
+				ModelRole::Display ) );
+
+			if ( vName.isValid() ) {
+				std::string name( vName.toString() );
+				if ( name != mCurAgent ) {
+					selectAgent( name );
+					if ( mAgentSession ) {
+						mAgentSession->stop();
+						mAgentSession.reset();
+					}
+					updateTabTitle();
+				}
 			}
-			updateTabTitle();
+
+			mLocateAgentBarLayout->execute( "close-locatebar" );
 		}
 	} );
 }
@@ -1172,7 +1376,7 @@ void LLMChatUI::writeToLastChat( const std::string& text ) {
 
 void LLMChatUI::updateAgentModeUI() {
 	mModelBtn->setVisible( !mIsAgentMode );
-	mAgentDDL->setVisible( mIsAgentMode );
+	mAgentBtn->setVisible( mIsAgentMode );
 	mChatAdd->setVisible( !mIsAgentMode );
 	mChatUserRole->setVisible( !mIsAgentMode );
 
@@ -1252,13 +1456,10 @@ void LLMChatUI::setupAgentSession() {
 
 			auto* uiTerm = eterm::UI::UITerminal::New(
 				getPlugin()->getPluginContext()->getTerminalFont(),
-				getPlugin()
-					->getPluginContext()
-					->termConfig()
-					.fontSize.asPixels(
-						getUISceneNode()->getPixelsSize().getWidth(),
-						getUISceneNode()->getPixelsSize(), getUISceneNode()->getDPI(),
-						getUISceneNode()->getUIThemeManager()->getDefaultFontSize() ),
+				getPlugin()->getPluginContext()->termConfig().fontSize.asPixels(
+					getUISceneNode()->getPixelsSize().getWidth(), getUISceneNode()->getPixelsSize(),
+					getUISceneNode()->getDPI(),
+					getUISceneNode()->getUIThemeManager()->getDefaultFontSize() ),
 				Sizef( 0, 0 ), req.command, req.args, env,
 				req.cwd ? *req.cwd : getPlugin()->getPluginContext()->getCurrentProject(), 10000,
 				nullptr, false, false );
@@ -1351,19 +1552,17 @@ void LLMChatUI::sendAgentPrompt() {
 		bool isSlashCommand = false;
 		if ( String::startsWith( text, "/" ) ) {
 			auto spacePos = text.find( ' ' );
-			std::string cmdName = text.substr( 1, spacePos == std::string::npos ? std::string::npos
-																				: spacePos - 1 );
+			std::string cmdName =
+				text.substr( 1, spacePos == std::string::npos ? std::string::npos : spacePos - 1 );
 			std::string arg = spacePos == std::string::npos ? "" : text.substr( spacePos + 1 );
 
-			auto it = std::find_if( mAvailableCommands.begin(), mAvailableCommands.end(),
-									[&cmdName]( const SlashCommand& c ) {
-										return c.name == cmdName;
-									} );
+			auto it =
+				std::find_if( mAvailableCommands.begin(), mAvailableCommands.end(),
+							  [&cmdName]( const SlashCommand& c ) { return c.name == cmdName; } );
 
 			if ( it != mAvailableCommands.end() ) {
-				req.prompt = { { { "type", "slash_command" },
-								 { "name", cmdName },
-								 { "argument", arg } } };
+				req.prompt = {
+					{ { "type", "slash_command" }, { "name", cmdName }, { "argument", arg } } };
 				isSlashCommand = true;
 			}
 		}
@@ -1454,8 +1653,8 @@ nlohmann::json LLMChatUI::promptToContentBlocks( std::string text ) {
 	while ( ptrn.matches( text, matches, lastPos ) ) {
 		// Text before the file
 		if ( (size_t)matches[0].start > lastPos ) {
-			j.push_back(
-				{ { "type", "text" }, { "text", text.substr( lastPos, matches[0].start - lastPos ) } } );
+			j.push_back( { { "type", "text" },
+						   { "text", text.substr( lastPos, matches[0].start - lastPos ) } } );
 		}
 
 		std::string path( text.substr( matches[1].start, matches[1].length() ) );
@@ -1550,6 +1749,8 @@ std::string LLMChatUI::unserialize( const nlohmann::json& payload ) {
 	mIsAgentMode = payload.value( "agent_mode", false );
 	mCurAgent = payload.value( "agent_name", "" );
 
+	selectAgent( mCurAgent );
+
 	std::string provider = payload.value( "provider", "" );
 	if ( payload.contains( "chat" ) && payload["chat"].is_object() ) {
 		const auto& chat = payload["chat"];
@@ -1563,11 +1764,6 @@ std::string LLMChatUI::unserialize( const nlohmann::json& payload ) {
 	if ( mIsAgentMode ) {
 		mChatAgentMode->setSelected( true );
 		updateAgentModeUI();
-		if ( !mCurAgent.empty() ) {
-			auto index = mAgentDDL->getListBox()->getItemIndex( mCurAgent );
-			if ( index != eeINDEX_NOT_FOUND )
-				mAgentDDL->getListBox()->setSelected( index );
-		}
 
 		std::string sessionId = payload.value( "session_id", "" );
 		if ( !sessionId.empty() ) {
@@ -2116,6 +2312,7 @@ void LLMChatUI::showAttachFile() {
 	if ( getPlugin() == nullptr )
 		return;
 	hideSelectModel();
+	hideSelectAgent();
 	auto text = mLocateInput->getText();
 	auto ctx = getPlugin()->getPluginContext();
 	if ( !ctx->isDirTreeReady() ) {
@@ -2274,6 +2471,7 @@ void LLMChatUI::showSelectModel() {
 	if ( getPlugin() == nullptr )
 		return;
 	hideAttachFile();
+	hideSelectAgent();
 
 	if ( nullptr == mLocateModelTable->getModel() )
 		loadSelectModel();

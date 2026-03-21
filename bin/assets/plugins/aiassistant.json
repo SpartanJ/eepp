@@ -520,6 +520,11 @@
       "enabled": true,
       "command": "cursor",
       "args": ["acp"]
+    },
+    "pi-acp": {
+      "enabled": true,
+      "command": "pi-acp",
+      "args": []
     }
   }
 }

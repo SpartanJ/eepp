@@ -114,8 +114,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	UISelectButton* mChatPrivate{ nullptr };
 	UISelectButton* mChatAgentMode{ nullptr };
 	UIScrollView* mChatScrollView{ nullptr };
-	UIDropDownList* mAgentDDL{ nullptr };
 	UIPushButton* mModelBtn{ nullptr };
+	UIPushButton* mAgentBtn{ nullptr };
 
 	// Locate file
 	UIVLinearLayoutCommandExecuter* mLocateBarLayout{ nullptr };
@@ -126,6 +126,11 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	UIVLinearLayoutCommandExecuter* mLocateModelBarLayout{ nullptr };
 	UITextInput* mLocateModelInput{ nullptr };
 	UITableView* mLocateModelTable{ nullptr };
+
+	// Select agent
+	UIVLinearLayoutCommandExecuter* mLocateAgentBarLayout{ nullptr };
+	UITextInput* mLocateAgentInput{ nullptr };
+	UITableView* mLocateAgentTable{ nullptr };
 
 	std::unique_ptr<LLMChatCompletionRequest> mRequest;
 	std::unique_ptr<LLMChatCompletionRequest> mSummaryRequest;
@@ -189,9 +194,19 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	bool selectModel( std::optional<LLMModel> model );
 
+	bool selectAgent( const std::string& agent );
+
 	void fillModelDropDownList();
 
-	void fillAgentDropDownList( UIDropDownList* agentDDL );
+	void loadSelectAgent();
+
+	void showSelectAgent();
+
+	void initSelectAgent();
+
+	void hideSelectAgent();
+
+	void updateLocateAgentBarColumns();
 
 	void updateAgentModeUI();
 
