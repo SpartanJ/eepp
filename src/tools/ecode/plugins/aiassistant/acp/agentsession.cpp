@@ -21,15 +21,28 @@ bool AgentSession::start( const std::function<void( bool )>& onReady ) {
 		req.clientCapabilities.fsReadTextFile = true;
 		req.clientCapabilities.fsWriteTextFile = true;
 
-		mClient->initialize( req, [this, onReady]( const InitializeResponse& ) {
-			NewSessionRequest nreq;
-			nreq.cwd = mClient->isReady() ? mClient->getConfig().workingDirectory : "";
-			mClient->newSession( nreq, [this, onReady]( const NewSessionResponse& nres ) {
-				mSessionId = nres.sessionId;
-				if ( onReady )
-					onReady( true );
+		mClient->initialize(
+			req, [this, onReady]( const InitializeResponse&, const std::optional<ResponseError>& err ) {
+				if ( err ) {
+					if ( onReady )
+						onReady( false );
+					return;
+				}
+				NewSessionRequest nreq;
+				nreq.cwd = mClient->isReady() ? mClient->getConfig().workingDirectory : "";
+				mClient->newSession(
+					nreq, [this, onReady]( const NewSessionResponse& nres,
+										   const std::optional<ResponseError>& err ) {
+						if ( err ) {
+							if ( onReady )
+								onReady( false );
+							return;
+						}
+						mSessionId = nres.sessionId;
+						if ( onReady )
+							onReady( true );
+					} );
 			} );
-		} );
 		return true;
 	}
 	if ( onReady )
@@ -45,23 +58,35 @@ bool AgentSession::startLoaded( const std::string& sessionId,
 		req.clientCapabilities.fsReadTextFile = true;
 		req.clientCapabilities.fsWriteTextFile = true;
 
-		mClient->initialize( req, [this, sessionId, onReady]( const InitializeResponse& ires ) {
-			if ( ires.agentCapabilities.loadSession ) {
-				LoadSessionRequest lreq;
-				lreq.sessionId = sessionId;
-				lreq.cwd = mClient->isReady() ? mClient->getConfig().workingDirectory : "";
-				mClient->loadSession( lreq, [this, sessionId, onReady]( const LoadSessionResponse& ) {
-					mSessionId = sessionId;
+		mClient->initialize(
+			req, [this, sessionId, onReady]( const InitializeResponse& ires,
+											 const std::optional<ResponseError>& err ) {
+				if ( err ) {
 					if ( onReady )
-						onReady( true );
-				} );
-			} else {
-				// Agent doesn't support loading, fallback to new session?
-				// For now let's just fail or call onReady(false)
-				if ( onReady )
-					onReady( false );
-			}
-		} );
+						onReady( false );
+					return;
+				}
+				if ( ires.agentCapabilities.loadSession ) {
+					LoadSessionRequest lreq;
+					lreq.sessionId = sessionId;
+					lreq.cwd = mClient->isReady() ? mClient->getConfig().workingDirectory : "";
+					mClient->loadSession(
+						lreq, [this, sessionId, onReady]( const LoadSessionResponse&,
+														  const std::optional<ResponseError>& err ) {
+							if ( err ) {
+								if ( onReady )
+									onReady( false );
+								return;
+							}
+							mSessionId = sessionId;
+							if ( onReady )
+								onReady( true );
+						} );
+				} else {
+					if ( onReady )
+						onReady( false );
+				}
+			} );
 		return true;
 	}
 	if ( onReady )
@@ -69,16 +94,21 @@ bool AgentSession::startLoaded( const std::string& sessionId,
 	return false;
 }
 
-void AgentSession::listSessions( const std::function<void( const std::vector<SessionInfo>& )>& cb ) {
+void AgentSession::listSessions(
+	const std::function<void( const std::vector<SessionInfo>&, const std::optional<ResponseError>& )>&
+		cb ) {
 	if ( !mClient->isReady() ) {
-		if ( cb ) cb( {} );
+		if ( cb )
+			cb( {}, std::nullopt );
 		return;
 	}
 	ListSessionsRequest req;
 	req.cwd = mClient->getConfig().workingDirectory;
-	mClient->listSessions( req, [cb]( const ListSessionsResponse& res ) {
-		if ( cb ) cb( res.sessions );
-	} );
+	mClient->listSessions(
+		req, [cb]( const ListSessionsResponse& res, const std::optional<ResponseError>& err ) {
+			if ( cb )
+				cb( res.sessions, err );
+		} );
 }
 
 void AgentSession::stop() {
@@ -86,14 +116,16 @@ void AgentSession::stop() {
 		mClient->stop();
 }
 
-void AgentSession::prompt( const PromptRequest& req,
-						   const std::function<void( const PromptResponse& )>& cb ) {
+void AgentSession::prompt(
+	const PromptRequest& req,
+	const std::function<void( const PromptResponse&, const std::optional<ResponseError>& )>& cb ) {
 	mIsPrompting = true;
-	mClient->prompt( req, [this, cb](const PromptResponse& res) {
-		mIsPrompting = false;
-		if ( cb )
-			cb(res);
-	} );
+	mClient->prompt(
+		req, [this, cb]( const PromptResponse& res, const std::optional<ResponseError>& err ) {
+			mIsPrompting = false;
+			if ( cb )
+				cb( res, err );
+		} );
 }
 
 void AgentSession::cancel() {
@@ -108,6 +140,11 @@ void AgentSession::setTerminalData( const std::string& terminalId, UITerminal* u
 }
 
 void AgentSession::setupClient() {
+	mClient->onError = [this]( const ResponseError& err ) {
+		if ( onError )
+			onError( err );
+	};
+
 	mClient->onSessionUpdate = [this]( const json& msg ) {
 		if ( onSessionUpdate )
 			onSessionUpdate( msg );

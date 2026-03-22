@@ -152,6 +152,8 @@ void ACPClient::processResponse( const json& msg ) {
 
 	if ( handler ) {
 		handler( id, msg );
+	} else if ( msg.contains( "error" ) && onError ) {
+		onError( ResponseError( msg["error"] ) );
 	}
 }
 
@@ -194,54 +196,74 @@ void ACPClient::sendError( const json& id, int code, const std::string& message 
 	}
 }
 
-void ACPClient::initialize( const InitializeRequest& req,
-							const std::function<void( const InitializeResponse& )>& cb ) {
+void ACPClient::initialize(
+	const InitializeRequest& req,
+	const std::function<void( const InitializeResponse&, const std::optional<ResponseError>& )>&
+		cb ) {
 	write( { { "method", "initialize" }, { "params", req.toJson() } },
 		   [this, cb]( const IdType&, const json& resp ) {
 			   if ( resp.contains( "result" ) ) {
 				   mReady = true;
 				   if ( cb )
-					   cb( InitializeResponse( resp["result"] ) );
+					   cb( InitializeResponse( resp["result"] ), std::nullopt );
+			   } else if ( resp.contains( "error" ) ) {
+				   if ( cb )
+					   cb( {}, ResponseError( resp["error"] ) );
 			   }
 		   } );
 }
 
-void ACPClient::newSession( const NewSessionRequest& req,
-							const std::function<void( const NewSessionResponse& )>& cb ) {
+void ACPClient::newSession(
+	const NewSessionRequest& req,
+	const std::function<void( const NewSessionResponse&, const std::optional<ResponseError>& )>&
+		cb ) {
 	write( { { "method", "session/new" }, { "params", req.toJson() } },
 		   [cb]( const IdType&, const json& resp ) {
 			   if ( resp.contains( "result" ) && cb ) {
-				   cb( NewSessionResponse( resp["result"] ) );
+				   cb( NewSessionResponse( resp["result"] ), std::nullopt );
+			   } else if ( resp.contains( "error" ) && cb ) {
+				   cb( {}, ResponseError( resp["error"] ) );
 			   }
 		   } );
 }
 
-void ACPClient::loadSession( const LoadSessionRequest& req,
-							 const std::function<void( const LoadSessionResponse& )>& cb ) {
+void ACPClient::loadSession(
+	const LoadSessionRequest& req,
+	const std::function<void( const LoadSessionResponse&, const std::optional<ResponseError>& )>&
+		cb ) {
 	write( { { "method", "session/load" }, { "params", req.toJson() } },
 		   [cb]( const IdType&, const json& resp ) {
 			   if ( resp.contains( "result" ) && cb ) {
-				   cb( LoadSessionResponse( resp["result"] ) );
+				   cb( LoadSessionResponse( resp["result"] ), std::nullopt );
+			   } else if ( resp.contains( "error" ) && cb ) {
+				   cb( {}, ResponseError( resp["error"] ) );
 			   }
 		   } );
 }
 
-void ACPClient::listSessions( const ListSessionsRequest& req,
-							  const std::function<void( const ListSessionsResponse& )>& cb ) {
+void ACPClient::listSessions(
+	const ListSessionsRequest& req,
+	const std::function<void( const ListSessionsResponse&, const std::optional<ResponseError>& )>&
+		cb ) {
 	write( { { "method", "session/list" }, { "params", req.toJson() } },
 		   [cb]( const IdType&, const json& resp ) {
 			   if ( resp.contains( "result" ) && cb ) {
-				   cb( ListSessionsResponse( resp["result"] ) );
+				   cb( ListSessionsResponse( resp["result"] ), std::nullopt );
+			   } else if ( resp.contains( "error" ) && cb ) {
+				   cb( {}, ResponseError( resp["error"] ) );
 			   }
 		   } );
 }
 
-void ACPClient::prompt( const PromptRequest& req,
-						const std::function<void( const PromptResponse& )>& cb ) {
+void ACPClient::prompt(
+	const PromptRequest& req,
+	const std::function<void( const PromptResponse&, const std::optional<ResponseError>& )>& cb ) {
 	write( { { "method", "session/prompt" }, { "params", req.toJson() } },
 		   [cb]( const IdType&, const json& resp ) {
 			   if ( resp.contains( "result" ) && cb ) {
-				   cb( PromptResponse( resp["result"] ) );
+				   cb( PromptResponse( resp["result"] ), std::nullopt );
+			   } else if ( resp.contains( "error" ) && cb ) {
+				   cb( {}, ResponseError( resp["error"] ) );
 			   }
 		   } );
 }

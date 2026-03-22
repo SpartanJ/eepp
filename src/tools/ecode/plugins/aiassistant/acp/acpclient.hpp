@@ -44,19 +44,26 @@ class ACPClient {
 	const Config& getConfig() const { return mConfig; }
 
 	void initialize( const InitializeRequest& req,
-					 const std::function<void( const InitializeResponse& )>& cb );
+					 const std::function<void( const InitializeResponse&,
+											   const std::optional<ResponseError>& )>& cb );
 	void newSession( const NewSessionRequest& req,
-					 const std::function<void( const NewSessionResponse& )>& cb );
+					 const std::function<void( const NewSessionResponse&,
+											   const std::optional<ResponseError>& )>& cb );
 	void loadSession( const LoadSessionRequest& req,
-					  const std::function<void( const LoadSessionResponse& )>& cb );
+					  const std::function<void( const LoadSessionResponse&,
+												const std::optional<ResponseError>& )>& cb );
 	void listSessions( const ListSessionsRequest& req,
-					   const std::function<void( const ListSessionsResponse& )>& cb );
-	void prompt( const PromptRequest& req, const std::function<void( const PromptResponse& )>& cb );
+					   const std::function<void( const ListSessionsResponse&,
+												 const std::optional<ResponseError>& )>& cb );
+	void prompt( const PromptRequest& req,
+				 const std::function<void( const PromptResponse&,
+										   const std::optional<ResponseError>& )>& cb );
 
 	// Notifications to agent
 	void cancel( const std::string& sessionId );
 
 	// Callbacks from agent
+	std::function<void( const ResponseError& )> onError;
 	std::function<void( const json& )> onSessionUpdate;
 	std::function<void( const ReadTextFileRequest&,
 						std::function<void( const ReadTextFileResponse& )> )>

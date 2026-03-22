@@ -105,6 +105,22 @@ struct ListSessionsResponse {
 	ListSessionsResponse( const json& body );
 };
 
+struct ResponseError {
+	int code{ 0 };
+	std::string message;
+	json data;
+
+	ResponseError() = default;
+	ResponseError( const json& body ) {
+		if ( body.contains( "code" ) )
+			code = body["code"].get<int>();
+		if ( body.contains( "message" ) )
+			message = body["message"].get<std::string>();
+		if ( body.contains( "data" ) )
+			data = body["data"];
+	}
+};
+
 struct PromptRequest {
 	std::string sessionId;
 	json prompt; // Array of ContentBlock

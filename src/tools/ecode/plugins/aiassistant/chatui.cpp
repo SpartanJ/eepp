@@ -281,8 +281,11 @@ class AgentSessionHistoryModel : public Model {
 
 		switch ( index.column() ) {
 			case Columns::Title: {
-				return Variant( session.title.empty() ? "Untitled Session"
-													  : session.title.c_str() );
+				return Variant( session.title.empty()
+									? ( mUISceneNode ? mUISceneNode->i18n( "untitled_session",
+																		   "Untitled Session" )
+													 : "Untitled Session" )
+									: session.title.c_str() );
 			}
 			case Columns::UpdatedAt: {
 				return Variant( session.updatedAt.c_str() );
@@ -532,9 +535,10 @@ static const char* DEFAULT_CHAT_GLOBE = R"xml(
 
 static const char* DEFAULT_PERMISSION_GLOBE = R"xml(
 <vbox class="llm_conversation tool_permission" lw="mp" lh="wc" margin-bottom="8dp">
-	<hbox class="llm_conversation_opt" lw="mp" lh="wc" background-color="var(--primary)" padding="4dp">
-		<TextView text="Tool Call Permission Request" font-style="bold" margin-left="4dp" />
-	</hbox>
+    <hbox class="llm_conversation_opt" lw="mp" lh="wc" background-color="var(--primary)" padding="4dp">
+            <TextView text="@string(tool_call_permission_request, Tool Call Permission Request)" font-style="bold" margin-left="4dp" />
+    </hbox>
+
 	<vbox class="data_ui" lw="mp" lh="wc" padding="8dp" background-color="var(--tab-back)">
 		<TextView class="permission_desc" lw="mp" lh="wc" word-wrap="true" />
 		<hbox class="permission_options" lw="mp" lh="wc" margin-top="8dp" />
@@ -561,6 +565,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mChatAgentMode = find<UISelectButton>( "llm_agent_mode" );
 	mChatAgentMode->on( Event::OnValueChange, [this]( auto ) {
 		mIsAgentMode = mChatAgentMode->isSelected();
+		updateTabTitle();
 		updateAgentModeUI();
 	} );
 
@@ -1232,9 +1237,34 @@ void LLMChatUI::showChatHistory() {
 	UISceneNode* uiSceneNode = getUISceneNode();
 
 	if ( mIsAgentMode ) {
+		auto listSessionsCb = [winId, uiSceneNode, tv, loader, input](
+								  const std::vector<acp::SessionInfo>& sessions,
+								  const std::optional<acp::ResponseError>& err ) {
+			uiSceneNode->runOnMainThread( [winId, uiSceneNode, tv, loader, input, sessions, err] {
+				auto win = uiSceneNode->find( winId );
+				if ( win == nullptr )
+					return;
+				if ( err ) {
+					loader->setVisible( false );
+					NotificationCenter::instance()->addNotification(
+						uiSceneNode->i18n( "ai_assistant_agent_error", "Agent Error: " ) +
+						err->message );
+					win->asType<UIWindow>()->closeWindow();
+					return;
+				}
+				auto model = std::make_shared<AgentSessionHistoryModel>( sessions, uiSceneNode );
+				loader->setVisible( false );
+				input->setVisible( true );
+				tv->setVisible( true );
+				tv->setModel( model );
+				input->setFocus();
+			} );
+		};
+
 		if ( !mAgentSession ) {
 			setupAgentSession();
-			mAgentSession->start( [this, winId, uiSceneNode, tv, loader, input]( bool ready ) {
+
+			mAgentSession->start( [this, winId, uiSceneNode, loader, listSessionsCb]( bool ready ) {
 				if ( !ready ) {
 					uiSceneNode->runOnMainThread( [loader, winId, uiSceneNode] {
 						if ( uiSceneNode->find( winId ) == nullptr )
@@ -1243,37 +1273,10 @@ void LLMChatUI::showChatHistory() {
 					} );
 					return;
 				}
-				mAgentSession->listSessions( [winId, uiSceneNode, tv, loader, input](
-												 const std::vector<acp::SessionInfo>& sessions ) {
-					uiSceneNode->runOnMainThread(
-						[sessions, winId, uiSceneNode, tv, loader, input] {
-							if ( uiSceneNode->find( winId ) == nullptr )
-								return;
-							auto model =
-								std::make_shared<AgentSessionHistoryModel>( sessions, uiSceneNode );
-							loader->setVisible( false );
-							input->setVisible( true );
-							tv->setVisible( true );
-							tv->setModel( model );
-							input->setFocus();
-						} );
-				} );
+				mAgentSession->listSessions( listSessionsCb );
 			} );
 		} else {
-			mAgentSession->listSessions( [winId, uiSceneNode, tv, loader,
-										  input]( const std::vector<acp::SessionInfo>& sessions ) {
-				uiSceneNode->runOnMainThread( [sessions, winId, uiSceneNode, tv, loader, input] {
-					if ( uiSceneNode->find( winId ) == nullptr )
-						return;
-					auto model =
-						std::make_shared<AgentSessionHistoryModel>( sessions, uiSceneNode );
-					loader->setVisible( false );
-					input->setVisible( true );
-					tv->setVisible( true );
-					tv->setModel( model );
-					input->setFocus();
-				} );
-			} );
+			mAgentSession->listSessions( listSessionsCb );
 		}
 	} else {
 		getUISceneNode()->getThreadPool()->run(
@@ -1596,10 +1599,11 @@ void LLMChatUI::setupAgentSession() {
 				writeToLastChat( chunk );
 			}
 		} else if ( sessionUpdate == "tool_call" ) {
-			std::string toolStr = "\n> Tool Call: " + msg.value( "title", "" ) + "\n";
+			std::string toolStr = "\n> " + i18n( "tool_call", "Tool Call: " ) +
+								  msg.value( "title", "" ) + "\n";
 			writeToLastChat( toolStr );
 		} else if ( sessionUpdate == "plan" ) {
-			std::string planStr = "\n> Plan Updated:\n";
+			std::string planStr = "\n> " + i18n( "plan_updated", "Plan Updated:" ) + "\n";
 			if ( msg.contains( "plan" ) && msg["plan"].contains( "steps" ) &&
 				 msg["plan"]["steps"].is_array() ) {
 				for ( const auto& step : msg["plan"]["steps"] ) {
@@ -1623,7 +1627,13 @@ void LLMChatUI::setupAgentSession() {
 		runOnMainThread( [this, req, cb]() { addPermissionUI( req, cb ); } );
 	};
 
+	mAgentSession->onError = [this]( const acp::ResponseError& err ) {
+		NotificationCenter::instance()->addNotification(
+			i18n( "ai_assistant_agent_error", "Agent Error: " ) + err.message );
+	};
+
 	mAgentSession->onTerminalCreated = [this]( const acp::CreateTerminalRequest& req,
+
 											   const std::string& termId ) {
 		runOnMainThread( [this, req, termId] {
 			find( "chat_presentation" )->setVisible( false );
@@ -1755,7 +1765,22 @@ void LLMChatUI::sendAgentPrompt() {
 		req.prompt = { { { "type", "text" }, { "text", "" } } };
 	}
 
-	mAgentSession->prompt( req, [this]( const acp::PromptResponse& res ) {
+	mAgentSession->prompt( req, [this]( const acp::PromptResponse& res,
+										const std::optional<acp::ResponseError>& err ) {
+		if ( err ) {
+			runOnMainThread( [this] {
+				mChatStop->setVisible( false )->setEnabled( false );
+				mChatRun->setVisible( true )->setEnabled( true );
+				toggleEnableChats( true );
+				auto lastChat = getLastConversation();
+				if ( lastChat ) {
+					auto* thinking = lastChat->findByClass<UIImage>( "thinking" );
+					if ( thinking )
+						thinking->setVisible( false );
+				}
+			} );
+			return;
+		}
 		runOnMainThread( [this, res]() {
 			auto chat = getLastConversation();
 			if ( chat ) {
@@ -2241,14 +2266,15 @@ void LLMChatUI::addPermissionUI( const acp::RequestPermissionRequest& req,
 		mChatsList->getUISceneNode()->loadLayoutFromString( DEFAULT_PERMISSION_GLOBE, mChatsList );
 
 	UITextView* desc = chat->findByClass<UITextView>( "permission_desc" );
-	std::string descStr = "The agent wants to execute a tool call:\n";
-	descStr += "Title: " + req.toolCall.title + "\n";
-	descStr += "Kind: " + req.toolCall.kind + "\n";
+	std::string descStr =
+		i18n( "agent_wants_to_execute_tool_call", "The agent wants to execute a tool call:" ) +
+		"\n";
+	descStr += i18n( "title", "Title" ) + ": " + req.toolCall.title + "\n";
+	descStr += i18n( "kind", "Kind" ) + ": " + req.toolCall.kind + "\n";
 	if ( !req.toolCall.rawInput.is_null() ) {
-		descStr += "Input:\n" + req.toolCall.rawInput.dump( 2 ) + "\n";
+		descStr += i18n( "input", "Input" ) + ":\n" + req.toolCall.rawInput.dump( 2 ) + "\n";
 	}
 	desc->setText( descStr );
-
 	UIWidget* optionsBox = chat->findByClass( "permission_options" );
 
 	bool isFirst = true;
