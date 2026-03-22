@@ -305,7 +305,7 @@ json RequestPermissionResponse::toJson() const {
 	json j = { { "outcome", outcome } };
 	if ( optionId )
 		j["optionId"] = *optionId;
-	return j;
+	return { { "outcome", j } };
 }
 
 }} // namespace ecode::acp

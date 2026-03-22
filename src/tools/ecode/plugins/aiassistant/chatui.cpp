@@ -416,7 +416,9 @@ CodeEditor.llm_chat_input {
 	text-as-fallback: true;
 }
 .llm_chatui PushButton:hover,
-.llm_chatui SelectButton:hover {
+.llm_chatui SelectButton:hover,
+.llm_chatui .permission_options PushButton:focus,
+.llm_chatui .permission_options SelectButton:focus {
 	border-color: var(--primary);
 }
 .llm_conversation_opt PushButton {
@@ -481,6 +483,21 @@ DropDownList.role_ui {
 	foreground-position-y: center 1dp;
 	foreground-size: 12dp 16dp;
 	foreground-tint: var(--icon);
+}
+.tool_permission {
+	background-color: var(--list-back);
+	border-radius: 8dp;
+	padding: 4dp;
+}
+.tool_permission .llm_conversation_opt {
+	background-color: var(--back);
+	border-radius: 4dp;
+}
+.tool_permission .permission_options {
+	margin-top: 8dp;
+}
+.tool_permission .permission_options > PushButton {
+	margin-right: 8dp;
 }
 ]]>
 </style>
@@ -555,14 +572,13 @@ static const char* DEFAULT_CHAT_GLOBE = R"xml(
 )xml";
 
 static const char* DEFAULT_PERMISSION_GLOBE = R"xml(
-<vbox class="llm_conversation tool_permission" lw="mp" lh="wc" margin-bottom="8dp">
-    <hbox class="llm_conversation_opt" lw="mp" lh="wc" background-color="var(--primary)" padding="4dp">
-            <TextView text="@string(tool_call_permission_request, Tool Call Permission Request)" font-style="bold" margin-left="4dp" />
-    </hbox>
-
-	<vbox class="data_ui" lw="mp" lh="wc" padding="8dp" background-color="var(--tab-back)">
-		<TextView class="permission_desc" lw="mp" lh="wc" word-wrap="true" />
-		<hbox class="permission_options" lw="mp" lh="wc" margin-top="8dp" />
+<vbox class="llm_conversation tool_permission" lw="mp" lh="wc">
+	<hbox class="llm_conversation_opt" lw="mp" lh="wc" padding="4dp">
+		<TextView text="@string(tool_call_permission_request, Tool Call Permission Request)" font-style="bold" margin-left="4dp" />
+	</hbox>
+	<vbox class="data_ui" lw="mp" lh="wc" padding="8dp">
+		<MarkdownView class="permission_desc" lw="mp" lh="wc" />
+		<StackLayout class="permission_options" lw="mp" lh="wc" />
 	</vbox>
 </vbox>
 )xml";
@@ -2400,27 +2416,29 @@ void LLMChatUI::addPermissionUI( const acp::RequestPermissionRequest& req,
 	UIWidget* chat =
 		mChatsList->getUISceneNode()->loadLayoutFromString( DEFAULT_PERMISSION_GLOBE, mChatsList );
 
-	UITextView* desc = chat->findByClass<UITextView>( "permission_desc" );
+	UIMarkdownView* desc = chat->findByClass<UIMarkdownView>( "permission_desc" );
 	std::string descStr =
+		"#####	 " +
 		i18n( "agent_wants_to_execute_tool_call", "The agent wants to execute a tool call:" ) +
-		"\n";
-	descStr += i18n( "title", "Title" ) + ": " + req.toolCall.title + "\n";
-	descStr += i18n( "kind", "Kind" ) + ": " + req.toolCall.kind + "\n";
+		"\n\n";
+	descStr += "**" + i18n( "title", "Title" ) + ":** " + req.toolCall.title + "\n\n";
+	descStr += "**" + i18n( "kind", "Kind" ) + ":** `" + req.toolCall.kind + "`\n\n";
 	if ( !req.toolCall.rawInput.is_null() ) {
-		descStr += i18n( "input", "Input" ) + ":\n" + req.toolCall.rawInput.dump( 2 ) + "\n";
+		descStr +=
+			"**" + i18n( "input", "Input" ) + ":**\n\n" + req.toolCall.rawInput.dump( 2 ) + "\n";
 	}
-	desc->setText( descStr );
+	desc->loadFromString( descStr );
 	UIWidget* optionsBox = chat->findByClass( "permission_options" );
 	if ( !optionsBox )
 		return;
 
 	bool isFirst = true;
+	UIPushButton* firstBut = nullptr;
+	UIPushButton* lastBut = nullptr;
 	for ( const auto& opt : req.options ) {
 		UIPushButton* but = UIPushButton::New();
 		but->setParent( optionsBox );
 		but->setText( opt.name );
-		but->setTooltipText( opt.kind );
-		but->setLayoutMargin( Rectf( 0, 0, 8, 0 ) );
 
 		auto cbCopy = cb;
 		auto optId = opt.optionId;
@@ -2431,15 +2449,22 @@ void LLMChatUI::addPermissionUI( const acp::RequestPermissionRequest& req,
 			res.optionId = optId;
 			cbCopy( res );
 
-			if ( mChatInput ) {
+			if ( mChatInput )
 				mChatInput->setFocus();
-			}
 		} );
 
 		if ( isFirst ) {
 			isFirst = false;
-			but->setFocus();
+			firstBut = but;
+			but->runOnMainThread( [but] { but->setFocus(); } );
 		}
+
+		lastBut = but;
+	}
+
+	if ( lastBut && firstBut != lastBut ) {
+		lastBut->on( Event::OnTabNavigate,
+					 [firstBut]( const Event* event ) { firstBut->setFocus(); } );
 	}
 
 	mChatScrollView->getVerticalScrollBar()->setValue( 1.0f );
