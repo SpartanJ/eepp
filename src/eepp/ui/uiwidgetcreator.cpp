@@ -5,6 +5,7 @@
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uiconsole.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uigridlayout.hpp>
 #include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uiimage.hpp>
@@ -67,6 +68,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["radiobutton"] = UIRadioButton::New;
 		registeredWidget["combobox"] = UIComboBox::New;
 		registeredWidget["dropdownlist"] = UIDropDownList::New;
+		registeredWidget["dropdownmodellist"] = UIDropDownModelList::New;
 		registeredWidget["image"] = UIImage::New;
 		registeredWidget["listbox"] = UIListBox::New;
 		registeredWidget["menubar"] = UIMenuBar::New;

@@ -1,7 +1,9 @@
 #ifndef EE_CONTAINERS_HPP
 #define EE_CONTAINERS_HPP
 
-#ifdef EEPP_NO_THIRDPARTY_CONTAINERS
+#include <eepp/config.hpp>
+
+#if defined( EEPP_NO_THIRDPARTY_CONTAINERS ) || ( defined( EE_DEBUG ) && defined( EE_COMPILER_MSVC ) )
 #include <unordered_map>
 #include <unordered_set>
 #else
@@ -11,7 +13,7 @@
 
 namespace EE {
 
-#ifdef EEPP_NO_THIRDPARTY_CONTAINERS
+#if defined( EEPP_NO_THIRDPARTY_CONTAINERS ) || ( defined( EE_DEBUG ) && defined( EE_COMPILER_MSVC ) )
 
 template <typename Key, typename Value> using UnorderedMap = std::unordered_map<Key, Value>;
 

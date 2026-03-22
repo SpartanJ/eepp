@@ -13,6 +13,7 @@ using namespace EE::Math;
 namespace EE { namespace UI {
 class UIPushButton;
 class UILinearLayout;
+class UIDropDownModelList;
 }} // namespace EE::UI
 
 namespace EE { namespace UI { namespace Abstract {
@@ -146,6 +147,7 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
   protected:
 	friend class EE::UI::UITableHeaderColumn;
+	friend class EE::UI::UIDropDownModelList;
 
 	struct ColumnData {
 		Float minWidth{ 0 };

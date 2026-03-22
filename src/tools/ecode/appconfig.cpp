@@ -732,6 +732,15 @@ void AppConfig::loadDocuments( UICodeEditorSplitter* editorSplitter, json j,
 
 					editorLoadedCounter( app );
 				} else {
+					auto isSnapshotFile =
+						std::find_if( sessionSnapshotFiles.begin(), sessionSnapshotFiles.end(),
+									  [&path]( const SessionSnapshotFile& file ) {
+										  return file.cachePath == path;
+									  } );
+
+					if ( isSnapshotFile != sessionSnapshotFiles.end() )
+						return; // snapshot files are loaded later
+
 					editorSplitter->loadAsyncFileFromPathInNewTab(
 						path,
 						[this, curTabWidget, selection, totalToLoad, currentPage, app, path,

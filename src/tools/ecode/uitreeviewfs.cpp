@@ -148,6 +148,8 @@ UITreeViewFS::UITreeViewFS() : UITreeView(), mKeyBindings( getInput() ) {
 	mCommands["paste"] = [this] {
 		if ( mWasCut )
 			moveFile( mSrcCopy, getSelectionPath() );
+		else
+			copyFile( mSrcCopy, getSelectionPath() );
 	};
 
 	mKeyBindings.addKeybinds( getDefaultKeybindings() );

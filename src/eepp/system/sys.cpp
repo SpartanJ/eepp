@@ -643,7 +643,7 @@ static std::string sGetProcessPath() {
 	_splitpath_s( dllstrName.c_str(), szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFilename, _MAX_DIR,
 				  szExt, _MAX_DIR );
 #else
-	_splitpath( szDllName, szDrive, szDir, szFilename, szExt );
+	_splitpath( dllstrName.c_str(), szDrive, szDir, szFilename, szExt );
 #endif
 
 	return std::string( szDrive ) + std::string( szDir );

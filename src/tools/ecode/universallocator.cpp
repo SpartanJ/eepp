@@ -317,7 +317,8 @@ UniversalLocator::UniversalLocator( UICodeEditorSplitter* editorSplitter, UIScen
 				  mApp->getSettingsMenu()->updateCurrentFileType();
 				  mLocateBarLayout->execute( "close-locatebar" );
 			  }
-		  } } );
+		  },
+		  nullptr, false } );
 
 	mApp->getPluginManager()->subscribeMessages(
 		"universallocator", [this]( const PluginMessage& msg ) -> PluginRequestHandle {
