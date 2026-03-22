@@ -1593,6 +1593,7 @@ workspace "eepp"
 		build_link_configuration( "ecode", false )
 		filter { "system:windows", "action:not vs*" }
 			buildoptions{ "-Wa,-mbig-obj" }
+			linkoptions { "-Wl,--export-all-symbols" }
 		filter { "system:windows", "action:vs*" }
 			files { "bin/assets/icon/ecode.rc", "bin/assets/icon/ecode.ico" }
 			vpaths { ['Resources/*'] = { "ecode.rc", "ecode.ico" } }

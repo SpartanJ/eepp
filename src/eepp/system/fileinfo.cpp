@@ -115,8 +115,11 @@ void FileInfo::getInfo() {
 	struct stat st;
 	int res = stat( mFilepath.c_str(), &st );
 #else
-	struct _stat st;
-	int res = _wstat( String::fromUtf8( mFilepath ).toWideString().c_str(), &st );
+	std::string_view fp( mFilepath );
+	if ( fp.size() > 3 && ( fp.back() == '/' || fp.back() == '\\' ) )
+		fp.remove_suffix( 1 );
+	struct __stat64 st;
+	int res = _wstat64( String( fp ).toWideString().c_str(), &st );
 #endif
 
 	if ( 0 == res ) {
@@ -261,8 +264,11 @@ bool FileInfo::exists() const {
 	struct stat st;
 	int res = stat( mFilepath.c_str(), &st );
 #else
-	struct _stat st;
-	int res = _wstat( String::fromUtf8( mFilepath ).toWideString().c_str(), &st );
+	std::string_view fp( mFilepath );
+	if ( fp.size() > 3 && ( fp.back() == '/' || fp.back() == '\\' ) )
+		fp.remove_suffix( 1 );
+	struct __stat64 st;
+	int res = _wstat64( String( fp ).toWideString().c_str(), &st );
 #endif
 
 	if ( isDirectory() )
