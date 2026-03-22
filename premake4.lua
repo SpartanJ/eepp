@@ -1738,6 +1738,7 @@ solution "eepp"
 				linkoptions { "../../bin/assets/icon/ecode.res" }
 			end
 			buildoptions{ "-Wa,-mbig-obj" }
+			linkoptions { "-Wl,--export-all-symbols" }
 		end
 		build_link_configuration( "ecode", false )
 		configuration { "release", "windows" }
