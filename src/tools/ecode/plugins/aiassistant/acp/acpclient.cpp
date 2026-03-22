@@ -226,6 +226,16 @@ void ACPClient::loadSession( const LoadSessionRequest& req,
 		   } );
 }
 
+void ACPClient::listSessions( const ListSessionsRequest& req,
+							  const std::function<void( const ListSessionsResponse& )>& cb ) {
+	write( { { "method", "session/list" }, { "params", req.toJson() } },
+		   [cb]( const IdType&, const json& resp ) {
+			   if ( resp.contains( "result" ) && cb ) {
+				   cb( ListSessionsResponse( resp["result"] ) );
+			   }
+		   } );
+}
+
 void ACPClient::prompt( const PromptRequest& req,
 						const std::function<void( const PromptResponse& )>& cb ) {
 	write( { { "method", "session/prompt" }, { "params", req.toJson() } },

@@ -79,6 +79,32 @@ struct LoadSessionResponse {
 	LoadSessionResponse( const json& body );
 };
 
+struct SessionInfo {
+	std::string sessionId;
+	std::string cwd;
+	std::string title;
+	std::string updatedAt;
+
+	SessionInfo() = default;
+	SessionInfo( const json& body );
+};
+
+struct ListSessionsRequest {
+	std::string cursor;
+	std::string cwd;
+
+	ListSessionsRequest() = default;
+	json toJson() const;
+};
+
+struct ListSessionsResponse {
+	std::string nextCursor;
+	std::vector<SessionInfo> sessions;
+
+	ListSessionsResponse() = default;
+	ListSessionsResponse( const json& body );
+};
+
 struct PromptRequest {
 	std::string sessionId;
 	json prompt; // Array of ContentBlock

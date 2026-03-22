@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../pluginmanager.hpp"
-#include "agentsession.hpp"
+#include "acp/agentsession.hpp"
 #include "llmchatcompletionrequest.hpp"
 #include "protocol.hpp"
 
@@ -270,6 +270,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	void generateChatName( bool isRenaming );
 
 	void regenerateChatName();
+
+	UIWidget* getLastConversation() const;
 };
 
 } // namespace ecode

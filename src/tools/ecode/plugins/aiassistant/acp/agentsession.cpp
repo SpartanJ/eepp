@@ -69,6 +69,18 @@ bool AgentSession::startLoaded( const std::string& sessionId,
 	return false;
 }
 
+void AgentSession::listSessions( const std::function<void( const std::vector<SessionInfo>& )>& cb ) {
+	if ( !mClient->isReady() ) {
+		if ( cb ) cb( {} );
+		return;
+	}
+	ListSessionsRequest req;
+	req.cwd = mClient->getConfig().workingDirectory;
+	mClient->listSessions( req, [cb]( const ListSessionsResponse& res ) {
+		if ( cb ) cb( res.sessions );
+	} );
+}
+
 void AgentSession::stop() {
 	if ( mClient )
 		mClient->stop();

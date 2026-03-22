@@ -75,6 +75,36 @@ LoadSessionResponse::LoadSessionResponse( const json& body ) {
 		configOptions = body["configOptions"];
 }
 
+SessionInfo::SessionInfo( const json& body ) {
+	if ( body.contains( "sessionId" ) && body["sessionId"].is_string() )
+		sessionId = body["sessionId"].get<std::string>();
+	if ( body.contains( "cwd" ) && body["cwd"].is_string() )
+		cwd = body["cwd"].get<std::string>();
+	if ( body.contains( "title" ) && body["title"].is_string() )
+		title = body["title"].get<std::string>();
+	if ( body.contains( "updatedAt" ) && body["updatedAt"].is_string() )
+		updatedAt = body["updatedAt"].get<std::string>();
+}
+
+json ListSessionsRequest::toJson() const {
+	json j = json::object();
+	if ( !cursor.empty() )
+		j["cursor"] = cursor;
+	if ( !cwd.empty() )
+		j["cwd"] = cwd;
+	return j;
+}
+
+ListSessionsResponse::ListSessionsResponse( const json& body ) {
+	if ( body.contains( "nextCursor" ) && body["nextCursor"].is_string() )
+		nextCursor = body["nextCursor"].get<std::string>();
+	if ( body.contains( "sessions" ) && body["sessions"].is_array() ) {
+		for ( const auto& item : body["sessions"] ) {
+			sessions.emplace_back( SessionInfo( item ) );
+		}
+	}
+}
+
 json PromptRequest::toJson() const {
 	return { { "sessionId", sessionId }, { "prompt", prompt } };
 }
