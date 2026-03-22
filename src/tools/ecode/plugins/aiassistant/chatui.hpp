@@ -148,6 +148,9 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	std::vector<SlashCommand> mAvailableCommands;
 
 	std::unique_ptr<acp::AgentSession> mAgentSession;
+	UIWidget* mThinkingBubble{ nullptr };
+	std::string mCurThinking;
+	std::string mCurToolCall;
 	int mPendingModelsToLoad{ 0 };
 	bool mChatIsPrivate{ false };
 	bool mIsAgentMode{ false };
@@ -184,6 +187,16 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	Drawable* findIcon( const std::string& name, const size_t iconSize );
 
 	UIWidget* addChatUI( LLMChat::Role role );
+
+	UIWidget* addMarkdownBubble( const std::string& layout, const std::string& markdown );
+
+	void addPlanBubble( const std::string& markdown );
+
+	void addToolCallBubble( const std::string& markdown );
+
+	void addThinkingBubble();
+
+	void updateThinkingBubble( const std::string& chunk );
 
 	void addPermissionUI( const acp::RequestPermissionRequest& req,
 						  std::function<void( const acp::RequestPermissionResponse& )> cb );
@@ -271,7 +284,9 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void regenerateChatName();
 
-	UIWidget* getLastConversation() const;
+	void removeWaitingBubble();
+
+	UIWidget* getLastConversation( bool skipEmpty = false ) const;
 };
 
 } // namespace ecode

@@ -12,6 +12,7 @@
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiloader.hpp>
+#include <eepp/ui/uimarkdownview.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uipushbutton.hpp>
@@ -399,6 +400,11 @@ static const char* DEFAULT_LAYOUT = R"xml(
 .llm_chat_input {
 	border-radius: 8dp 0dp 8dp 8dp;
 }
+.llm_thought {
+	background-color: var(--list-back);
+	padding: 4dp 4dp 4dp 8dp;
+	border-left: 2dp solid var(--tab-line);
+}
 CodeEditor.llm_chat_input {
 	font-family: monospace;
 	border-radius: 8dp;
@@ -454,15 +460,18 @@ DropDownList.role_ui {
 	background-position: top 8dp right 8dp;
 }
 .llm_chatui DropDownList,
-.model_ui {
+.model_ui,
+.agent_ui {
 	border-color: transparent;
 	background-color: var(--tab-back);
 }
 .llm_chatui DropDownList:hover,
-.model_ui:hover {
+.model_ui:hover,
+.agent_ui:hover {
 	border-color: var(--primary);
 }
-.model_ui {
+.model_ui,
+.agent_ui {
 	padding-right: 16dp;
 	text-align: left;
 	text-overflow: ellipsis;
@@ -514,6 +523,18 @@ DropDownList.role_ui {
 		</hbox>
 	</RelativeLayout>
 </Splitter>
+)xml";
+
+static const char* DEFAULT_PLAN_GLOBE = R"xml(
+	<MarkdownView class="llm_conversation llm_plan" lw="mp" lh="wc" />
+)xml";
+
+static const char* DEFAULT_TOOL_CALL_GLOBE = R"xml(
+	<MarkdownView class="llm_conversation llm_tool_call" lw="mp" lh="wc" />
+)xml";
+
+static const char* DEFAULT_THINKING_GLOBE = R"xml(
+	<MarkdownView class="llm_conversation llm_thought" lw="mp" lh="wc" />
 )xml";
 
 static const char* DEFAULT_CHAT_GLOBE = R"xml(
@@ -738,6 +759,11 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	} );
 
 	setCmd( "ai-select-model", [this] {
+		if ( mIsAgentMode ) {
+			execute( "ai-select-agent" );
+			return;
+		}
+
 		if ( !mLocateModelBarLayout->isVisible() ) {
 			if ( mLocateModelTable->getModel() ) {
 				mLocateModelInput->setText( "" );
@@ -1237,9 +1263,9 @@ void LLMChatUI::showChatHistory() {
 	UISceneNode* uiSceneNode = getUISceneNode();
 
 	if ( mIsAgentMode ) {
-		auto listSessionsCb = [winId, uiSceneNode, tv, loader, input](
-								  const std::vector<acp::SessionInfo>& sessions,
-								  const std::optional<acp::ResponseError>& err ) {
+		auto listSessionsCb = [winId, uiSceneNode, tv, loader,
+							   input]( const std::vector<acp::SessionInfo>& sessions,
+									   const std::optional<acp::ResponseError>& err ) {
 			uiSceneNode->runOnMainThread( [winId, uiSceneNode, tv, loader, input, sessions, err] {
 				auto win = uiSceneNode->find( winId );
 				if ( win == nullptr )
@@ -1536,25 +1562,68 @@ void LLMChatUI::initSelectAgent() {
 	} );
 }
 
-UIWidget* LLMChatUI::getLastConversation() const {
-	return mChatsList->querySelector( ".llm_conversation:last-child" );
+UIWidget* LLMChatUI::getLastConversation( bool skipEmpty ) const {
+	auto conversations = mChatsList->findAllByClass( "llm_conversation" );
+	for ( int i = (int)conversations.size() - 1; i >= 0; --i ) {
+		auto* chat = conversations[i];
+		if ( !chat->hasClass( "llm_plan" ) && !chat->hasClass( "llm_tool_call" ) &&
+			 !chat->hasClass( "llm_thought" ) ) {
+			if ( skipEmpty ) {
+				auto* editorNode = chat->findByClass( "data_ui" );
+				if ( editorNode && editorNode->isType( UI_TYPE_CODEEDITOR ) ) {
+					if ( editorNode->asType<UICodeEditor>()->getDocument().isEmpty() )
+						continue;
+				}
+			}
+			return chat;
+		}
+	}
+	return nullptr;
+}
+
+void LLMChatUI::removeWaitingBubble() {
+	auto waitingNodes = mChatsList->findAllByClass( "llm_waiting" );
+	for ( auto* node : waitingNodes ) {
+		node->close();
+	}
 }
 
 void LLMChatUI::writeToLastChat( const std::string& text ) {
 	runOnMainThread( [this, text] {
-		UIWidget* chatAdded = getLastConversation();
-		if ( nullptr == chatAdded )
+		removeWaitingBubble();
+
+		UIWidget* chatAdded = nullptr;
+		if ( mChatsList->getChildCount() > 0 ) {
+			auto* lastChild = mChatsList->getLastChild()->asType<UIWidget>();
+			if ( lastChild->hasClass( "llm_conversation" ) && !lastChild->hasClass( "llm_plan" ) &&
+				 !lastChild->hasClass( "llm_tool_call" ) &&
+				 !lastChild->hasClass( "llm_thought" ) ) {
+				auto* roleDDL = lastChild->findByClass<UIDropDownList>( "role_ui" );
+				if ( roleDDL && roleDDL->getListBox()->getItemSelectedIndex() == 1 ) {
+					chatAdded = lastChild;
+				}
+			}
+		}
+
+		if ( nullptr == chatAdded ) {
 			chatAdded = addChatUI( LLMChat::Role::Assistant );
-		auto* chat = chatAdded;
-		auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
+		}
+
+		auto* editor = chatAdded->findByClass<UICodeEditor>( "data_ui" );
+		if ( !editor )
+			return;
+
 		auto* thinking = editor->findByClass<UIImage>( "thinking" );
-		auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
+		if ( thinking ) {
+			auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
+			thinking->removeActionsByTag( thinkingID );
+			thinking->setVisible( false );
+		}
 
 		editor->getDocument().textInput( String::fromUtf8( text ) );
 		editor->setCursorVisible( false );
-		thinking->removeActionsByTag( thinkingID );
-		thinking->setVisible( false );
 		resizeToFit( editor );
+		mChatScrollView->getVerticalScrollBar()->setValue( 1.0f );
 	} );
 }
 
@@ -1593,25 +1662,39 @@ void LLMChatUI::setupAgentSession() {
 
 	mAgentSession->onSessionUpdate = [this]( const nlohmann::json& msg ) {
 		auto sessionUpdate = msg.value( "sessionUpdate", "" );
-		if ( sessionUpdate == "agent_message_chunk" || sessionUpdate == "agent_thought_chunk" ) {
+		if ( sessionUpdate == "agent_message_chunk" ) {
 			if ( msg.contains( "content" ) && msg["content"].contains( "text" ) ) {
+				mThinkingBubble = nullptr; // Reset thinking bubble so next thought gets a new one
 				auto chunk = msg["content"].value( "text", "" );
 				writeToLastChat( chunk );
 			}
+		} else if ( sessionUpdate == "agent_thought_chunk" ) {
+			if ( msg.contains( "content" ) && msg["content"].contains( "text" ) ) {
+				auto chunk = msg["content"].value( "text", "" );
+				runOnMainThread( [this, chunk] { updateThinkingBubble( chunk ); } );
+			}
 		} else if ( sessionUpdate == "tool_call" ) {
-			std::string toolStr = "\n> " + i18n( "tool_call", "Tool Call: " ) +
-								  msg.value( "title", "" ) + "\n";
-			writeToLastChat( toolStr );
+			std::string toolMarkdown =
+				"> 🛠️ " + i18n( "tool_call", "Tool Call: " ) + msg.value( "title", "" ) + "\n";
+			addToolCallBubble( toolMarkdown );
 		} else if ( sessionUpdate == "plan" ) {
-			std::string planStr = "\n> " + i18n( "plan_updated", "Plan Updated:" ) + "\n";
+			std::string planMarkdown = "> 📋 " + i18n( "plan_updated", "Plan Updated:" ) + "\n";
 			if ( msg.contains( "plan" ) && msg["plan"].contains( "steps" ) &&
 				 msg["plan"]["steps"].is_array() ) {
 				for ( const auto& step : msg["plan"]["steps"] ) {
-					planStr += "- [" + step.value( "status", "" ) + "] " +
-							   step.value( "title", "" ) + "\n";
+					std::string status = step.value( "status", "" );
+					std::string statusIcon = "⏳";
+					if ( status == "completed" )
+						statusIcon = "✅";
+					else if ( status == "running" )
+						statusIcon = "🔄";
+					else if ( status == "failed" )
+						statusIcon = "❌";
+
+					planMarkdown += "- " + statusIcon + " " + step.value( "title", "" ) + "\n";
 				}
 			}
-			writeToLastChat( planStr );
+			addPlanBubble( planMarkdown );
 		} else if ( sessionUpdate == "available_commands_update" ) {
 			if ( msg.contains( "availableCommands" ) && msg["availableCommands"].is_array() ) {
 				mAvailableCommands.clear();
@@ -1676,6 +1759,7 @@ void LLMChatUI::doAgentRequest() {
 		setupAgentSession();
 
 		UIWidget* chat = addChatUI( LLMChat::Role::Assistant );
+		chat->addClass( "llm_waiting" );
 		toggleEnableChats( false );
 		auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
 		editor->setEnabled( false );
@@ -1691,20 +1775,10 @@ void LLMChatUI::doAgentRequest() {
 				if ( ready ) {
 					sendAgentPrompt();
 				} else {
-					auto chats = mChatsList->findAllByClass( "llm_conversation" );
-					if ( !chats.empty() ) {
-						auto* chat = chats.back();
-						auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
-						auto* thinking = editor->findByClass<UIImage>( "thinking" );
-						auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
-						thinking->removeActionsByTag( thinkingID );
-						thinking->setVisible( false );
-						editor->setEnabled( true );
-					}
 					mChatStop->setVisible( false )->setEnabled( false );
 					mChatRun->setVisible( true )->setEnabled( true );
 					toggleEnableChats( true );
-					showMsg( "Failed to start agent process." );
+					showMsg( i18n( "failed_to_start_agent", "Failed to start agent process." ) );
 					mAgentSession.reset();
 				}
 			} );
@@ -1715,6 +1789,7 @@ void LLMChatUI::doAgentRequest() {
 		mChatStop->setVisible( true )->setEnabled( true );
 
 		UIWidget* chat = addChatUI( LLMChat::Role::Assistant );
+		chat->addClass( "llm_waiting" );
 		toggleEnableChats( false );
 		auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
 		editor->setEnabled( false );
@@ -1724,6 +1799,7 @@ void LLMChatUI::doAgentRequest() {
 		thinking->setPosition( { PixelDensity::dpToPx( 8 ), PixelDensity::dpToPx( 3 ) } );
 		thinking->setInterval( [thinking] { thinking->rotate( 360 / 32 ); }, Seconds( 0.125 ),
 							   thinkingID );
+
 		sendAgentPrompt();
 	}
 }
@@ -1733,33 +1809,69 @@ void LLMChatUI::sendAgentPrompt() {
 	req.sessionId = mAgentSession->getSessionId();
 
 	// Create prompt from the last user message
-	auto chats = findAllByClass( "llm_conversation" );
-	if ( !chats.empty() ) {
-		auto* lastChat =
-			chats[chats.size() - 2]; // Assistant is the last one (added in doAgentRequest)
-		auto* editor = lastChat->findByClass<UICodeEditor>( "data_ui" );
-		std::string text = editor->getDocument().getText().toUtf8();
+	auto lastChat = getLastConversation( true );
+	if ( lastChat ) {
+		auto* editorNode = lastChat->findByClass( "data_ui" );
+		if ( !editorNode || !editorNode->isType( UI_TYPE_CODEEDITOR ) ) {
+			req.prompt = { { { "type", "text" }, { "text", "" } } };
+		} else {
+			auto* editor = editorNode->asType<UICodeEditor>();
+			std::string text = editor->getDocument().getText().toUtf8();
 
-		bool isSlashCommand = false;
-		if ( String::startsWith( text, "/" ) ) {
-			auto spacePos = text.find( ' ' );
-			std::string cmdName =
-				text.substr( 1, spacePos == std::string::npos ? std::string::npos : spacePos - 1 );
-			std::string arg = spacePos == std::string::npos ? "" : text.substr( spacePos + 1 );
+			bool isSlashCommand = false;
+			bool showHelp = false;
+			if ( String::startsWith( text, "/" ) ) {
+				auto spacePos = text.find( ' ' );
+				std::string cmdName = text.substr(
+					1, spacePos == std::string::npos ? std::string::npos : spacePos - 1 );
+				std::string arg = spacePos == std::string::npos ? "" : text.substr( spacePos + 1 );
 
-			auto it =
-				std::find_if( mAvailableCommands.begin(), mAvailableCommands.end(),
-							  [&cmdName]( const SlashCommand& c ) { return c.name == cmdName; } );
+				auto it = std::find_if(
+					mAvailableCommands.begin(), mAvailableCommands.end(),
+					[&cmdName]( const SlashCommand& c ) { return c.name == cmdName; } );
 
-			if ( it != mAvailableCommands.end() ) {
-				req.prompt = {
-					{ { "type", "slash_command" }, { "name", cmdName }, { "argument", arg } } };
-				isSlashCommand = true;
+				if ( it != mAvailableCommands.end() ) {
+					req.prompt = {
+						{ { "type", "slash_command" }, { "name", cmdName }, { "argument", arg } } };
+					isSlashCommand = true;
+				} else {
+					showHelp = true;
+				}
 			}
-		}
 
-		if ( !isSlashCommand ) {
-			req.prompt = promptToContentBlocks( text );
+			if ( !isSlashCommand && !showHelp ) {
+				req.prompt = promptToContentBlocks( text );
+			}
+
+			if ( showHelp && !mAvailableCommands.empty() ) {
+				std::string help = i18n( "available_commands", "Available Commands:" ) + "\n";
+				for ( const auto& cmd : mAvailableCommands ) {
+					help += "- **/" + cmd.name + "**: " + cmd.description + "\n";
+				}
+				help += "\n" + i18n( "type_slash_command_to_use",
+									 "Type / followed by the command name to use it." );
+				writeToLastChat( help );
+
+				runOnMainThread( [this] {
+					mChatStop->setVisible( false )->setEnabled( false );
+					mChatRun->setVisible( true )->setEnabled( true );
+					toggleEnableChats( true );
+					auto lastChat = getLastConversation();
+					if ( lastChat ) {
+						auto* editorNode = lastChat->findByClass( "data_ui" );
+						if ( editorNode && editorNode->isType( UI_TYPE_CODEEDITOR ) ) {
+							auto* editor = editorNode->asType<UICodeEditor>();
+							auto* thinking = editor->findByClass<UIImage>( "thinking" );
+							if ( thinking )
+								thinking->setVisible( false );
+							editor->setEnabled( true );
+							if ( editor->hasFocus() )
+								mChatInput->setFocus();
+						}
+					}
+				} );
+				return;
+			}
 		}
 	} else {
 		req.prompt = { { { "type", "text" }, { "text", "" } } };
@@ -1785,6 +1897,8 @@ void LLMChatUI::sendAgentPrompt() {
 			auto chat = getLastConversation();
 			if ( chat ) {
 				auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
+				if ( !editor )
+					return;
 				auto* thinking = editor->findByClass<UIImage>( "thinking" );
 				if ( thinking ) {
 					auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
@@ -1893,7 +2007,10 @@ nlohmann::json LLMChatUI::chatToJson( bool forRequest ) {
 	auto chats = findAllByClass( "llm_conversation" );
 	for ( const auto& chat : chats ) {
 		UIDropDownList* roleDDL = chat->findByClass<UIDropDownList>( "role_ui" );
-		UICodeEditor* codeEditor = chat->findByClass<UICodeEditor>( "data_ui" );
+		UIWidget* editorNode = chat->findByClass( "data_ui" );
+		if ( !roleDDL || !editorNode || !editorNode->isType( UI_TYPE_CODEEDITOR ) )
+			continue;
+		UICodeEditor* codeEditor = editorNode->asType<UICodeEditor>();
 		std::string role = LLMChat::roleToString(
 			static_cast<LLMChat::Role>( roleDDL->getListBox()->getItemSelectedIndex() ) );
 		auto text = codeEditor->getDocument().getText().toUtf8();
@@ -2136,10 +2253,14 @@ void LLMChatUI::doRequest() {
 	mChatStop->setVisible( true )->setEnabled( true );
 
 	UIWidget* chat = addChatUI( LLMChat::Role::Assistant );
+	chat->addClass( "llm_waiting" );
 	toggleEnableChats( false ); // editor is not disabled (to allow copy with locked document)
 
 	auto model = mCurModel;
 	auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
+
+	if ( !editor )
+		return;
 
 	// new editor must be disabled because even on locked document it's possible to move the cursor
 	editor->setEnabled( false );
@@ -2155,14 +2276,21 @@ void LLMChatUI::doRequest() {
 	mRequest = std::make_unique<LLMChatCompletionRequest>(
 		apiUrl, apiKeyStr, serializeChat( model, true ).dump(), model.provider );
 
+	mThinkingBubble = nullptr;
 	mRequest->streamedResponseCb = [this, editor, thinking, thinkingID]( const std::string& chunk,
 																		 bool fromReasoning ) {
-		if ( fromReasoning ||
-			 ( mRequest && mRequest->getResponse().empty() && allNewLines( chunk ) ) )
+		if ( fromReasoning ) {
+			runOnMainThread( [this, chunk] { updateThinkingBubble( chunk ); } );
 			return;
+		}
+
+		if ( mRequest && mRequest->getResponse().empty() && allNewLines( chunk ) )
+			return;
+
 		auto conversation = chunk;
 		editor->runOnMainThread(
 			[this, conversation = std::move( conversation ), editor, thinking, thinkingID] {
+				mThinkingBubble = nullptr;
 				editor->getDocument().textInput( String::fromUtf8( conversation ) );
 				editor->setCursorVisible( false );
 				thinking->removeActionsByTag( thinkingID );
@@ -2233,14 +2361,21 @@ void LLMChatUI::doRequest() {
 }
 
 void LLMChatUI::toggleEnableChat( UIWidget* chat, bool enabled ) {
-	chat->findByClass( "role_ui" )->setEnabled( enabled );
-	UICodeEditor* editor = chat->findByClass( "data_ui" )->asType<UICodeEditor>();
-	// editor->setEnabled( enabled );
-	editor->setLocked( !enabled );
-	chat->findByClass( "erase_but" )->setEnabled( enabled );
-	chat->findByClass( "move_up" )->setEnabled( enabled );
-	chat->findByClass( "move_down" )->setEnabled( enabled );
-	// chat->findByClass( "copy_contents" )->setEnabled( enabled );
+	auto* roleDDL = chat->findByClass( "role_ui" );
+	if ( roleDDL )
+		roleDDL->setEnabled( enabled );
+	auto* editorNode = chat->findByClass( "data_ui" );
+	if ( editorNode && editorNode->isType( UI_TYPE_CODEEDITOR ) )
+		editorNode->asType<UICodeEditor>()->setLocked( !enabled );
+	auto* eraseBut = chat->findByClass( "erase_but" );
+	if ( eraseBut )
+		eraseBut->setEnabled( enabled );
+	auto* moveUp = chat->findByClass( "move_up" );
+	if ( moveUp )
+		moveUp->setEnabled( enabled );
+	auto* moveDown = chat->findByClass( "move_down" );
+	if ( moveDown )
+		moveDown->setEnabled( enabled );
 }
 
 void LLMChatUI::toggleEnableChats( bool enabled ) {
@@ -2276,6 +2411,8 @@ void LLMChatUI::addPermissionUI( const acp::RequestPermissionRequest& req,
 	}
 	desc->setText( descStr );
 	UIWidget* optionsBox = chat->findByClass( "permission_options" );
+	if ( !optionsBox )
+		return;
 
 	bool isFirst = true;
 	for ( const auto& opt : req.options ) {
@@ -2305,7 +2442,81 @@ void LLMChatUI::addPermissionUI( const acp::RequestPermissionRequest& req,
 		}
 	}
 
-	mChatScrollView->setAnchorScroll( true );
+	mChatScrollView->getVerticalScrollBar()->setValue( 1.0f );
+}
+
+UIWidget* LLMChatUI::addMarkdownBubble( const std::string& layout, const std::string& markdown ) {
+	find( "chat_presentation" )->setVisible( false );
+	UIWidget* chat = mChatsList->getUISceneNode()->loadLayoutFromString( layout, mChatsList );
+	if ( chat )
+		chat->asType<UIMarkdownView>()->loadFromString( markdown );
+	return chat;
+}
+
+void LLMChatUI::addPlanBubble( const std::string& markdown ) {
+	runOnMainThread( [this, markdown] {
+		removeWaitingBubble();
+
+		UIWidget* bubble = nullptr;
+		if ( mChatsList->getLastChild() ) {
+			auto* lastChild = mChatsList->getLastChild()->asType<UIWidget>();
+			if ( lastChild->hasClass( "llm_plan" ) )
+				bubble = lastChild;
+		}
+
+		if ( !bubble ) {
+			bubble = addMarkdownBubble( DEFAULT_PLAN_GLOBE, markdown );
+		} else {
+			bubble->asType<UIMarkdownView>()->loadFromString( markdown );
+		}
+		mChatScrollView->getVerticalScrollBar()->setValue( 1.0f );
+	} );
+}
+
+void LLMChatUI::addToolCallBubble( const std::string& markdown ) {
+	runOnMainThread( [this, markdown] {
+		removeWaitingBubble();
+
+		UIWidget* bubble = nullptr;
+		if ( mChatsList->getLastChild() ) {
+			auto* lastChild = mChatsList->getLastChild()->asType<UIWidget>();
+			if ( lastChild->hasClass( "llm_tool_call" ) )
+				bubble = lastChild;
+		}
+
+		if ( !bubble ) {
+			mCurToolCall = markdown;
+			bubble = addMarkdownBubble( DEFAULT_TOOL_CALL_GLOBE, mCurToolCall );
+		} else {
+			mCurToolCall += "\n" + markdown;
+			bubble->asType<UIMarkdownView>()->loadFromString( mCurToolCall );
+		}
+
+		mChatScrollView->getVerticalScrollBar()->setValue( 1.0f );
+	} );
+}
+
+void LLMChatUI::updateThinkingBubble( const std::string& chunk ) {
+	runOnMainThread( [this, chunk] {
+		removeWaitingBubble();
+
+		UIWidget* bubble = nullptr;
+		if ( mChatsList->getLastChild() ) {
+			auto* lastChild = mChatsList->getLastChild()->asType<UIWidget>();
+			if ( lastChild->hasClass( "llm_thought" ) ) {
+				bubble = lastChild;
+			}
+		}
+
+		if ( !bubble ) {
+			mCurThinking = "";
+			bubble = addMarkdownBubble( DEFAULT_THINKING_GLOBE, mCurThinking );
+		}
+
+		mCurThinking += chunk;
+		bubble->asType<UIMarkdownView>()->loadFromString( mCurThinking );
+		mChatScrollView->getVerticalScrollBar()->setValue( 1.0f );
+	} );
 }
 
 UIWidget* LLMChatUI::addChatUI( LLMChat::Role role ) {
