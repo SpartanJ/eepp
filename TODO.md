@@ -7,8 +7,6 @@
 
 ## UI Module
 
-* Implement a better DropDownList (model/view approach)
-
 * Implement TableView and TreeView properties.
 
 * Add automatic font-fallback for lang scripts

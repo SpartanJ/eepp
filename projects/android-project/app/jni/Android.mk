@@ -62,6 +62,7 @@ LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES)
 CORE_SRCS				:= tools/ecode/*.cpp \
 							tools/ecode/plugins/*.cpp \
 							tools/ecode/plugins/aiassistant/*.cpp \
+							tools/ecode/plugins/aiassistant/acp/*.cpp \
 							tools/ecode/plugins/autocomplete/*.cpp \
 							tools/ecode/plugins/debugger/*.cpp \
 							tools/ecode/plugins/debugger/dap/*.cpp \

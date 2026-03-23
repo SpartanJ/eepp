@@ -251,10 +251,31 @@ FontTrueType::FontTrueType( const std::string& FontName ) :
 	mFace( NULL ),
 	mStreamRec( NULL ),
 	mStroker( NULL ),
-	mInfo(),
+	mHBFont( NULL ),
+	mFontInternalId( 0 ),
 	mBoldAdvanceSameAsRegular( false ),
+	mIsColorEmojiFont( false ),
+	mIsEmojiFont( false ),
+	mHasSvgGlyphs( false ),
+	mHasColrGlyphs( false ),
+	mIsBitmapOnly( false ),
+	mIsMonospace( false ),
+	mIsMonospaceComplete( false ),
+	mUsingFallback( false ),
+	mEnableEmojiFallback( true ),
+	mEnableFallbackFont( true ),
+	mEnableDynamicMonospace( false ),
+	mIsBold( false ),
+	mIsItalic( false ),
+	mIsMonospaceCompletePending( false ),
 	mHinting( FontManager::instance()->getHinting() ),
-	mAntialiasing( FontManager::instance()->getAntialiasing() ) {}
+	mAntialiasing( FontManager::instance()->getAntialiasing() ),
+	mFontBold( nullptr ),
+	mFontItalic( nullptr ),
+	mFontBoldItalic( nullptr ),
+	mFontBoldCb( 0 ),
+	mFontItalicCb( 0 ),
+	mFontBoldItalicCb( 0 ) {}
 
 FontTrueType::~FontTrueType() {
 	cleanup();
@@ -965,20 +986,6 @@ bool FontTrueType::loaded() const {
 	return NULL != mFace;
 }
 
-FontTrueType& FontTrueType::operator=( const FontTrueType& right ) {
-	FontTrueType temp( right.getName() );
-
-	temp.mMemCopy.swap( right.mMemCopy );
-	std::swap( mLibrary, temp.mLibrary );
-	std::swap( mFace, temp.mFace );
-	std::swap( mStreamRec, temp.mStreamRec );
-	std::swap( mStroker, temp.mStroker );
-	std::swap( mInfo, temp.mInfo );
-	std::swap( mPages, temp.mPages );
-	std::swap( mPixelBuffer, temp.mPixelBuffer );
-	return *this;
-}
-
 void FontTrueType::cleanup() {
 	sendEvent( Event::Unload );
 
@@ -1028,9 +1035,36 @@ void FontTrueType::cleanup() {
 	mLibrary = NULL;
 	mFace = NULL;
 	mStroker = NULL;
+	mHBFont = NULL;
 	mStreamRec = NULL;
+	mInfo = Info();
+	mFontInternalId = 0;
+	mBoldAdvanceSameAsRegular = false;
+	mIsColorEmojiFont = false;
+	mIsEmojiFont = false;
+	mHasSvgGlyphs = false;
+	mHasColrGlyphs = false;
+	mIsBitmapOnly = false;
+	mIsMonospace = false;
+	mIsMonospaceComplete = false;
+	mUsingFallback = false;
+	mEnableEmojiFallback = true;
+	mEnableFallbackFont = true;
+	mEnableDynamicMonospace = false;
+	mIsBold = false;
+	mIsItalic = false;
+	mIsMonospaceCompletePending = false;
+	mFontBold = nullptr;
+	mFontItalic = nullptr;
+	mFontBoldItalic = nullptr;
+	mFontBoldCb = 0;
+	mFontItalicCb = 0;
+	mFontBoldItalicCb = 0;
 	mPages.clear();
 	std::vector<Uint8>().swap( mPixelBuffer );
+	mCodePointIndexCache.clear();
+	mKeyCache.clear();
+	mClosestCharacterSize.clear();
 }
 
 static int fontSetLoadOptions( FontAntialiasing antialiasing, FontHinting hinting ) {
@@ -1430,6 +1464,10 @@ bool FontTrueType::setCurrentSize( unsigned int characterSize ) const {
 	// only when necessary to avoid killing performances
 
 	FT_Face face = static_cast<FT_Face>( mFace );
+
+	if ( !face || !face->size )
+		return false;
+
 	FT_UShort currentSize = face->size->metrics.x_ppem;
 
 	if ( currentSize != characterSize ) {

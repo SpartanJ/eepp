@@ -167,14 +167,14 @@ UIDropDownModelList* UIDropDownModelList::showList() {
 
 		Float width = getPopUpWidth( contentsWidth );
 
-		Float height =
-			(Int32)( eemin( (Uint32)mModel->rowCount(), mStyleConfig.MaxNumVisibleItems ) *
-					 mListView->getRowHeight() ) +
+		Float height = std::ceil(
+			std::ceil( eemin( (Uint32)mModel->rowCount(), mStyleConfig.MaxNumVisibleItems ) *
+					   PixelDensity::pxToDp( mListView->getRowHeight() ) ) +
 			tPadding.Top + tPadding.Bottom + mListView->getHeaderHeight() +
 			( mListView->getHorizontalScrollBar() &&
 					  mListView->getHorizontalScrollBar()->isVisible()
 				  ? mListView->getHorizontalScrollBar()->getSize().getHeight()
-				  : 0.f );
+				  : 0.f ) );
 
 		mListView->setSize( width, height );
 

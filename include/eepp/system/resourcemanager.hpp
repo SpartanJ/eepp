@@ -316,7 +316,15 @@ template <class T> T* ResourceManagerMulti<T>::add( T* resource ) {
 
 template <class T> bool ResourceManagerMulti<T>::remove( T* resource, bool remove ) {
 	if ( NULL != resource ) {
-		mResources.erase( resource->getId() );
+		auto range = mResources.equal_range( resource->getId() );
+		auto it = range.first;
+		while ( it != range.second ) {
+			if ( it->second == resource ) {
+				mResources.erase( it );
+				break;
+			}
+			it++;
+		}
 
 		if ( remove )
 			eeSAFE_DELETE( resource );

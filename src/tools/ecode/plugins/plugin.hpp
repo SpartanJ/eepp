@@ -74,6 +74,12 @@ class Plugin : public UICodeEditorPlugin {
 	virtual void onLoadProject( const std::string& /*projectFolder*/,
 								const std::string& /*projectStatePath*/ ) {}
 
+	typedef std::function<void( const ModelEvent* )> ModelEventCallback;
+
+	void createListView( UICodeEditor* editor, std::shared_ptr<Model> model,
+						 const ModelEventCallback& onModelEventCb,
+						 const std::function<void( UIListView* )> onCreateCb = {} );
+
   protected:
 	PluginManager* mManager{ nullptr };
 	std::shared_ptr<ThreadPool> mThreadPool;
@@ -88,14 +94,10 @@ class Plugin : public UICodeEditorPlugin {
 
 	void waitUntilLoaded();
 
-	typedef std::function<void( const ModelEvent* )> ModelEventCallback;
-
 	bool editorExists( UICodeEditor* editor );
 
-	void createListView( UICodeEditor* editor, std::shared_ptr<Model> model,
-						 const ModelEventCallback& onModelEventCb,
-						 const std::function<void( UIListView* )> onCreateCb = {} );
-
+	static UIListView* createListViewHelper( UICodeEditor* editor, std::shared_ptr<Model> model,
+											 const ModelEventCallback& onModelEventCb );
 };
 
 class PluginBase : public Plugin {

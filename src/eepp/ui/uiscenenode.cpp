@@ -443,6 +443,13 @@ void UISceneNode::setThreadPool( const std::shared_ptr<ThreadPool>& threadPool )
 	mThreadPool = threadPool;
 }
 
+static std::string getErrorContext( size_t offset, std::string_view content ) {
+	static constexpr auto CONTEXT_LENGTH = 40;
+	std::size_t left = std::max( 0ul, offset >= CONTEXT_LENGTH ? offset - CONTEXT_LENGTH : 0ul );
+	std::size_t right = std::min( content.size(), offset + 40 );
+	return std::string{ content.substr( left, right - left ) };
+}
+
 UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* parent,
 										   const Uint32& marker ) {
 	if ( FileSystem::fileExists( layoutPath ) ) {
@@ -456,6 +463,9 @@ UIWidget* UISceneNode::loadLayoutFromFile( const std::string& layoutPath, Node* 
 			Log::error( "Couldn't load UI Layout: %s", layoutPath.c_str() );
 			Log::error( "Error description: %s", result.description() );
 			Log::error( "Error offset: %d", result.offset );
+			std::string data;
+			FileSystem::fileGet( layoutPath, data );
+			Log::error( "Error context: %s", getErrorContext( result.offset, data ) );
 		}
 	} else if ( PackManager::instance()->isFallbackToPacksActive() ) {
 		std::string path( layoutPath );
@@ -493,6 +503,7 @@ UIWidget* UISceneNode::loadLayoutFromString( const char* layoutString, Node* par
 					needsReplacements ? fixedLayout.c_str() : layoutString );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );
+		Log::error( "Error context: %s", getErrorContext( result.offset, layoutString ) );
 	}
 
 	return NULL;
@@ -529,6 +540,10 @@ UIWidget* UISceneNode::loadLayoutFromMemory( const void* buffer, Int32 bufferSiz
 					needsReplacements ? fixedLayout.c_str() : layoutString.data() );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );
+		Log::error( "Error context: %s",
+					getErrorContext( result.offset,
+									 std::string_view{ static_cast<const char*>( buffer ),
+													   static_cast<std::size_t>( bufferSize ) } ) );
 	}
 
 	return NULL;
@@ -551,14 +566,17 @@ UIWidget* UISceneNode::loadLayoutFromStream( IOStream& stream, Node* parent,
 	std::string fixedLayout;
 	bool needsReplacements =
 		voidTagsRegex.matches( scopedBuffer.get(), 0, nullptr, scopedBuffer.length() );
+	std::string_view contents;
 
 	if ( needsReplacements ) {
 		fixedLayout = voidTagsRegex.gsub( layoutString.data(), "%1 />" );
 		result = doc.load_buffer( fixedLayout.c_str(), fixedLayout.size(),
 								  pugi::parse_default | pugi::parse_ws_pcdata );
+		contents = fixedLayout;
 	} else {
 		result = doc.load_buffer( scopedBuffer.get(), scopedBuffer.length(),
 								  pugi::parse_default | pugi::parse_ws_pcdata );
+		contents = std::string_view( scopedBuffer.get(), scopedBuffer.length() );
 	}
 
 	if ( result ) {
@@ -568,6 +586,7 @@ UIWidget* UISceneNode::loadLayoutFromStream( IOStream& stream, Node* parent,
 					needsReplacements ? fixedLayout.c_str() : layoutString.data() );
 		Log::error( "Error description: %s", result.description() );
 		Log::error( "Error offset: %d", result.offset );
+		Log::error( "Error context: %s", getErrorContext( result.offset, contents ) );
 	}
 
 	return NULL;
