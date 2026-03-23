@@ -112,15 +112,15 @@ UIDropDownList* UIDropDownList::showList() {
 
 			Float width = getPopUpWidth( contentsWidth );
 
-			Float height =
-				(Int32)( eemin( mListBox->getItemsCount(), mStyleConfig.MaxNumVisibleItems ) *
-						 mListBox->getRowHeight() ) +
+			Float height = std::ceil(
+				std::ceil( eemin( mListBox->getItemsCount(), mStyleConfig.MaxNumVisibleItems ) *
+						   PixelDensity::pxToDp( mListBox->getRowHeight() ) ) +
 				tPadding.Top + tPadding.Bottom +
 				( mListBox->getHorizontalScrollBar() &&
 						  mListBox->getHorizontalScrollBar()->isVisible() &&
 						  PixelDensity::dpToPx( width ) < mListBox->getMaxTextWidth()
 					  ? mListBox->getHorizontalScrollBar()->getSize().getHeight()
-					  : 0.f );
+					  : 0.f ) );
 
 			mListBox->setSize( width, height );
 			mListBox->getVerticalScrollBar()->setValue( sliderValue );

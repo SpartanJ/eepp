@@ -8,19 +8,25 @@
 
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/models/itemlistmodel.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiloader.hpp>
+#include <eepp/ui/uimarkdownview.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uipushbutton.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uitableview.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitooltip.hpp>
+#include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/window.hpp>
+#include <eterm/ui/uiterminal.hpp>
 
 #include <chrono>
 #include <nlohmann/json.hpp>
@@ -46,7 +52,7 @@ class LLMModelsModel : public Model {
 		return mCurModels.size();
 	}
 
-	virtual size_t columnCount( const ModelIndex& = ModelIndex() ) const override { return 2; }
+	virtual size_t columnCount( const ModelIndex& = ModelIndex() ) const override { return 3; }
 
 	virtual std::string columnName( const size_t& column ) const override {
 		switch ( column ) {
@@ -131,6 +137,202 @@ class LLMModelsModel : public Model {
 	UISceneNode* mUISceneNode;
 };
 
+class ACPAgentsModel : public Model {
+  public:
+	enum Columns { Name, Command };
+
+	ACPAgentsModel( const std::map<std::string, ACPAgent>& agents,
+					UISceneNode* uiSceneNode = nullptr ) :
+		mAgents( agents ), mUISceneNode( uiSceneNode ) {
+		mCurAgents.reserve( mAgents.size() );
+		for ( const auto& [name, agent] : mAgents ) {
+			if ( agent.enabled )
+				mCurAgents.emplace_back( name );
+		}
+	}
+
+	virtual size_t rowCount( const ModelIndex& = ModelIndex() ) const override {
+		return mCurAgents.size();
+	}
+
+	virtual size_t columnCount( const ModelIndex& = ModelIndex() ) const override { return 2; }
+
+	virtual std::string columnName( const size_t& column ) const override {
+		switch ( column ) {
+			case Columns::Name:
+				return mUISceneNode ? mUISceneNode->i18n( "name", "Name" ) : "Name";
+			case Columns::Command:
+				return mUISceneNode ? mUISceneNode->i18n( "command", "Command" ) : "Command";
+		}
+		return "";
+	}
+
+	virtual Variant data( const ModelIndex& index,
+						  ModelRole role = ModelRole::Display ) const override {
+		if ( role != ModelRole::Display )
+			return {};
+
+		if ( index.row() < 0 || static_cast<size_t>( index.row() ) >= mCurAgents.size() )
+			return {};
+
+		const auto& agentName = mCurAgents[index.row()];
+		auto it = mAgents.find( agentName );
+		if ( it == mAgents.end() )
+			return {};
+
+		switch ( index.column() ) {
+			case Columns::Name: {
+				return Variant( it->second.name.c_str() );
+			}
+			case Columns::Command: {
+				return Variant( it->second.command.c_str() );
+			}
+		}
+
+		return {};
+	}
+
+	ModelIndex getFromName( const std::string& name ) {
+		auto it =
+			std::find_if( mCurAgents.begin(), mCurAgents.end(),
+						  [&name]( const std::string& agentName ) { return name == agentName; } );
+		return it != mCurAgents.end() ? index( std::distance( mCurAgents.begin(), it ) )
+									  : index( 0 );
+	}
+
+	void setFilter( const std::string& filter ) {
+		if ( mCurFilter == filter )
+			return;
+		mCurFilter = filter;
+		mCurAgents.clear();
+
+		for ( const auto& [name, agent] : mAgents ) {
+			if ( !agent.enabled )
+				continue;
+
+			if ( filter.empty() ) {
+				mCurAgents.emplace_back( name );
+				continue;
+			}
+
+			bool matchesName = String::icontains( agent.name, filter );
+			bool matchesCommand = String::icontains( agent.command, filter );
+
+			if ( matchesName || matchesCommand ) {
+				mCurAgents.emplace_back( name );
+			}
+		}
+
+		invalidate();
+	}
+
+	const std::vector<std::string>& getCurAgents() const { return mCurAgents; }
+
+	void refresh() { setFilter( mCurFilter ); }
+
+  protected:
+	const std::map<std::string, ACPAgent>& mAgents;
+	std::vector<std::string> mCurAgents;
+	std::string mCurFilter;
+	UISceneNode* mUISceneNode;
+};
+
+class AgentSessionHistoryModel : public Model {
+  public:
+	enum Columns { Title, UpdatedAt, SessionId };
+
+	AgentSessionHistoryModel( const std::vector<acp::SessionInfo>& sessions,
+							  UISceneNode* uiSceneNode = nullptr ) :
+		mSessions( sessions ), mUISceneNode( uiSceneNode ) {
+		mCurSessions.reserve( mSessions.size() );
+		for ( const auto& session : mSessions ) {
+			mCurSessions.emplace_back( &session );
+		}
+	}
+
+	virtual size_t rowCount( const ModelIndex& = ModelIndex() ) const override {
+		return mCurSessions.size();
+	}
+
+	virtual size_t columnCount( const ModelIndex& = ModelIndex() ) const override { return 3; }
+
+	virtual std::string columnName( const size_t& column ) const override {
+		switch ( column ) {
+			case Columns::Title:
+				return mUISceneNode ? mUISceneNode->i18n( "title", "Title" ) : "Title";
+			case Columns::UpdatedAt:
+				return mUISceneNode ? mUISceneNode->i18n( "updated_at", "Updated At" )
+									: "Updated At";
+			case Columns::SessionId:
+				return mUISceneNode ? mUISceneNode->i18n( "session_id", "Session ID" )
+									: "Session ID";
+		}
+		return "";
+	}
+
+	virtual Variant data( const ModelIndex& index,
+						  ModelRole role = ModelRole::Display ) const override {
+		if ( role != ModelRole::Display && role != ModelRole::Custom )
+			return {};
+
+		if ( index.row() < 0 || static_cast<size_t>( index.row() ) >= mCurSessions.size() )
+			return {};
+
+		const auto& session = *mCurSessions[index.row()];
+
+		if ( role == ModelRole::Custom ) {
+			return Variant( session.sessionId.c_str() );
+		}
+
+		switch ( index.column() ) {
+			case Columns::Title: {
+				return Variant( session.title.empty()
+									? ( mUISceneNode ? mUISceneNode->i18n( "untitled_session",
+																		   "Untitled Session" )
+													 : "Untitled Session" )
+									: session.title.c_str() );
+			}
+			case Columns::UpdatedAt: {
+				return Variant( session.updatedAt.c_str() );
+			}
+			case Columns::SessionId: {
+				return Variant( session.sessionId.c_str() );
+			}
+		}
+
+		return {};
+	}
+
+	void setFilter( const std::string& filter ) {
+		if ( mCurFilter == filter )
+			return;
+		mCurFilter = filter;
+		mCurSessions.clear();
+
+		for ( const auto& session : mSessions ) {
+			if ( filter.empty() ) {
+				mCurSessions.emplace_back( &session );
+				continue;
+			}
+
+			bool matchesTitle = String::icontains( session.title, filter );
+			bool matchesId = String::icontains( session.sessionId, filter );
+
+			if ( matchesTitle || matchesId ) {
+				mCurSessions.emplace_back( &session );
+			}
+		}
+
+		invalidate();
+	}
+
+  protected:
+	std::vector<acp::SessionInfo> mSessions;
+	std::vector<const acp::SessionInfo*> mCurSessions;
+	std::string mCurFilter;
+	UISceneNode* mUISceneNode;
+};
+
 static const char* DEFAULT_PROVIDER = "google";
 static const char* DEFAULT_MODEL = "gemini-2.5-flash";
 
@@ -202,6 +404,11 @@ static const char* DEFAULT_LAYOUT = R"xml(
 .llm_chat_input {
 	border-radius: 8dp 0dp 8dp 8dp;
 }
+.llm_thought {
+	background-color: var(--list-back);
+	padding: 4dp 4dp 4dp 8dp;
+	border-left: 2dp solid var(--tab-line);
+}
 CodeEditor.llm_chat_input {
 	font-family: monospace;
 	border-radius: 8dp;
@@ -213,7 +420,9 @@ CodeEditor.llm_chat_input {
 	text-as-fallback: true;
 }
 .llm_chatui PushButton:hover,
-.llm_chatui SelectButton:hover {
+.llm_chatui SelectButton:hover,
+.llm_chatui .permission_options PushButton:focus,
+.llm_chatui .permission_options SelectButton:focus {
 	border-color: var(--primary);
 }
 .llm_conversation_opt PushButton {
@@ -233,16 +442,19 @@ DropDownList.role_ui {
 	tint: var(--font);
 }
 .llm_chat_attach,
-.llm_chat_select_model {
+.llm_chat_select_model,
+.llm_chat_select_agent {
 	padding: 8dp 8dp 38dp 8dp;
 }
 .llm_chat_locate_input,
-.llm_chat_select_model_input {
+.llm_chat_select_model_input,
+.llm_chat_select_agent_input {
 	margin-bottom: 2dp;
 	padding: 0 0 0 4dp;
 }
 .llm_chat_attach_locate,
-.llm_chat_model_locate {
+.llm_chat_model_locate,
+.llm_chat_agent_locate {
 	border-radius: 8dp;
 	margin-bottom: 4dp;
 }
@@ -254,15 +466,18 @@ DropDownList.role_ui {
 	background-position: top 8dp right 8dp;
 }
 .llm_chatui DropDownList,
-.model_ui {
+.model_ui,
+.agent_ui {
 	border-color: transparent;
 	background-color: var(--tab-back);
 }
 .llm_chatui DropDownList:hover,
-.model_ui:hover {
+.model_ui:hover,
+.agent_ui:hover {
 	border-color: var(--primary);
 }
-.model_ui {
+.model_ui,
+.agent_ui {
 	padding-right: 16dp;
 	text-align: left;
 	text-overflow: ellipsis;
@@ -272,6 +487,28 @@ DropDownList.role_ui {
 	foreground-position-y: center 1dp;
 	foreground-size: 12dp 16dp;
 	foreground-tint: var(--icon);
+}
+.tool_permission {
+	background-color: var(--list-back);
+	border-radius: 8dp;
+	padding: 4dp;
+}
+.tool_permission .llm_conversation_opt {
+	background-color: var(--back);
+	border-radius: 4dp;
+}
+.tool_permission .permission_options {
+	margin-top: 8dp;
+}
+.tool_permission .permission_options > PushButton {
+	margin-right: 8dp;
+}
+.agent_config_label {
+	font-weight: bold;
+	margin-bottom: 4dp;
+}
+.agent_config_dropdown {
+	margin-bottom: 8dp;
 }
 ]]>
 </style>
@@ -295,12 +532,19 @@ DropDownList.role_ui {
 			<TableView lw="mp" lh="0dp" lw8="1" class="llm_chat_model_locate" />
 			<TextInput class="llm_chat_select_model_input" lw="mp" lh="18dp" hint='@string(select_a_model_ellipsis, "Select a model...")' />
 		</vboxce>
+		<vboxce class="llm_chat_select_agent" lw="mp" lh="mp" visible="false">
+			<TableView lw="mp" lh="0dp" lw8="1" class="llm_chat_agent_locate" />
+			<TextInput class="llm_chat_select_agent_input" lw="mp" lh="18dp" hint='@string(select_an_agent_ellipsis, "Select an agent...")' />
+		</vboxce>
 		<hbox lw="mp" lh="wc" layout_gravity="bottom|left" layout_margin="8dp" clip="false">
 			<PushButton id="llm_user" class="llm_button" text="@string(user, User)" tooltip="@string(change_role, Change Role)" min-width="60dp" margin-right="4dp" />
 			<PushButton id="llm_attach" class="llm_button" text="@string(add_context, Add Context)" tooltip="@string(add_context, Add Context)" icon="icon(attach, 14dp)" min-width="32dp" margin-right="4dp" />
 			<PushButton id="llm_chat_history" class="llm_button" text="@string(chat_history, Chat History)" tooltip="@string(chat_history, Chat History)" icon="icon(chat-history, 14dp)" min-width="32dp" margin-right="4dp" />
 			<PushButton id="llm_more" class="llm_button" tooltip="@string(more_options, More Options)" icon="icon(more-fill, 14dp)" min-width="32dp" />
 			<PushButton class="model_ui" lw="0" lw8="1" lh="mp" margin-left="4dp" margin-right="4dp" tooltip="@string(select_model, Select Model)" />
+			<PushButton class="agent_ui" lw="0" lw8="1" lh="mp" margin-left="4dp" margin-right="4dp" tooltip="@string(select_agent, Select Agent)" visible="false" />
+			<SelectButton id="llm_agent_mode" class="llm_button" tooltip="@string(toggle_agent_mode, Toggle Agent Mode)" icon="icon(robot-2, 14dp)" min-width="32dp" margin-right="4dp" select-on-click="true" />
+			<PushButton class="agent_config_ui" tooltip="@string(agent_config, Agent Config)" icon="icon(agent, 14dp)" min-width="32dp" margin-right="4dp" visible="false" />
 			<PushButton id="llm_settings_but" class="llm_button" text="@string(settings, Settings)" tooltip="@string(settings, Settings)" icon="icon(settings, 14dp)" min-width="32dp" margin-right="4dp" />
 			<PushButton id="llm_add_chat" class="llm_button" text="@string(add, Add)" tooltip="@string(add_message, Add Message)" icon="icon(add, 15dp)" min-width="32dp" margin-right="4dp" />
 			<PushButton id="llm_run" class="llm_button primary" text="@string(run, Run)" tooltip="@string(add_message_and_run_prompt, Add Message and Run Prompt)" icon="icon(play-filled, 14dp)" />
@@ -308,6 +552,18 @@ DropDownList.role_ui {
 		</hbox>
 	</RelativeLayout>
 </Splitter>
+)xml";
+
+static const char* DEFAULT_PLAN_GLOBE = R"xml(
+	<MarkdownView class="llm_conversation llm_plan" lw="mp" lh="wc" />
+)xml";
+
+static const char* DEFAULT_TOOL_CALL_GLOBE = R"xml(
+	<MarkdownView class="llm_conversation llm_tool_call" lw="mp" lh="wc" />
+)xml";
+
+static const char* DEFAULT_THINKING_GLOBE = R"xml(
+	<MarkdownView class="llm_conversation llm_thought" lw="mp" lh="wc" />
 )xml";
 
 static const char* DEFAULT_CHAT_GLOBE = R"xml(
@@ -327,6 +583,18 @@ static const char* DEFAULT_CHAT_GLOBE = R"xml(
 </vbox>
 )xml";
 
+static const char* DEFAULT_PERMISSION_GLOBE = R"xml(
+<vbox class="llm_conversation tool_permission" lw="mp" lh="wc">
+	<hbox class="llm_conversation_opt" lw="mp" lh="wc" padding="4dp">
+		<TextView text="@string(tool_call_permission_request, Tool Call Permission Request)" font-style="bold" margin-left="4dp" />
+	</hbox>
+	<vbox class="data_ui" lw="mp" lh="wc" padding="8dp">
+		<MarkdownView class="permission_desc" lw="mp" lh="wc" />
+		<StackLayout class="permission_options" lw="mp" lh="wc" />
+	</vbox>
+</vbox>
+)xml";
+
 LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	UILinearLayout(), WidgetCommandExecuter( getInput() ), mManager( manager ) {
 	setClass( "llm_chatui" );
@@ -339,6 +607,18 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 
 	mChatsList = findByClass( "llm_chats" );
 	mModelBtn = findByClass<UIPushButton>( "model_ui" );
+	mModelBtn->onClick( [this]( auto ) { execute( "ai-select-model" ); } );
+	mAgentBtn = findByClass<UIPushButton>( "agent_ui" );
+	mAgentBtn->onClick( [this]( auto ) { execute( "ai-select-agent" ); } );
+	mAgentConfigBtn = findByClass<UIPushButton>( "agent_config_ui" );
+	mAgentConfigBtn->onClick( [this]( auto ) { showAgentConfigWindow(); } );
+
+	mChatAgentMode = find<UISelectButton>( "llm_agent_mode" );
+	mChatAgentMode->on( Event::OnValueChange, [this]( auto ) {
+		mIsAgentMode = mChatAgentMode->isSelected();
+		updateTabTitle();
+		updateAgentModeUI();
+	} );
 
 	mChatMore = find<UIPushButton>( "llm_more" );
 	mChatMore->onClick( [this]( auto ) { execute( "ai-show-menu" ); } );
@@ -426,12 +706,16 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 
 	setCmd( "ai-prompt", [this] {
 		// "ai-prompt-stop"
-		if ( mRequest ) {
-			if ( !mRequest->isCancelled() ) {
+		if ( mRequest || ( mAgentSession && mAgentSession->isPrompting() ) ) {
+			if ( mRequest && !mRequest->isCancelled() ) {
 				mRequest->cancel();
 				return;
-			} else
+			} else if ( mAgentSession && mAgentSession->isPrompting() ) {
+				mAgentSession->cancel();
+				return;
+			} else {
 				mRequest.reset();
+			}
 		}
 
 		auto chats = findAllByClass( "llm_conversation" );
@@ -440,14 +724,12 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 			return;
 
 		auto inputUserRole = LLMChat::stringToRole( mChatUserRole );
-		if ( ( !chats.empty() &&
-			   ( mChatInput->getDocument().isEmpty() || inputUserRole != LLMChat::Role::User ) ) ||
-			 ( chats.empty() && inputUserRole != LLMChat::Role::User ) ) {
-			if ( chats[chats.size() - 1]
-					 ->findByClass( "role_ui" )
-					 ->asType<UIDropDownList>()
-					 ->getListBox()
-					 ->getItemSelectedIndex() != 0 ) {
+		if ( !mIsAgentMode && ( ( !chats.empty() && ( mChatInput->getDocument().isEmpty() ||
+													  inputUserRole != LLMChat::Role::User ) ) ||
+								( chats.empty() && inputUserRole != LLMChat::Role::User ) ) ) {
+			auto rolePicker = chats[chats.size() - 1]->findByClass( "role_ui" );
+			if ( rolePicker &&
+				 rolePicker->asType<UIDropDownList>()->getListBox()->getItemSelectedIndex() != 0 ) {
 				showMsg( getUISceneNode()->i18n(
 					"llm_last_message_must_be_from_user",
 					"The last chat message must be from a \"User\" role" ) );
@@ -456,7 +738,12 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		}
 
 		execute( "ai-add-chat" );
-		doRequest();
+
+		if ( mIsAgentMode ) {
+			doAgentRequest();
+		} else {
+			doRequest();
+		}
 	} );
 
 	setCmd( "ai-prompt-stop", [this] {
@@ -500,6 +787,11 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	} );
 
 	setCmd( "ai-select-model", [this] {
+		if ( mIsAgentMode ) {
+			execute( "ai-select-agent" );
+			return;
+		}
+
 		if ( !mLocateModelBarLayout->isVisible() ) {
 			if ( mLocateModelTable->getModel() ) {
 				mLocateModelInput->setText( "" );
@@ -515,6 +807,26 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 			} );
 		} else
 			hideSelectModel();
+	} );
+
+	setCmd( "ai-select-agent", [this] {
+		if ( !mLocateAgentBarLayout->isVisible() ) {
+			if ( mLocateAgentTable->getModel() ) {
+				mLocateAgentInput->setText( "" );
+				static_cast<ACPAgentsModel*>( mLocateAgentTable->getModel() )->setFilter( "" );
+			}
+
+			showSelectAgent();
+
+			mLocateAgentTable->runOnMainThread( [this] {
+				auto model = static_cast<ACPAgentsModel*>( mLocateAgentTable->getModel() );
+				if ( model ) {
+					mLocateAgentTable->setSelection( model->getFromName( mCurAgent ) );
+					mAgentBtn->setText( mCurAgent );
+				}
+			} );
+		} else
+			hideSelectAgent();
 	} );
 
 	setCmd( "ai-toggle-private-chat", [this] {
@@ -670,17 +982,18 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mChatAttach = find<UIPushButton>( "llm_attach" );
 	mChatAttach->onClick( [this]( auto ) { execute( "ai-show-add-context-menu" ); } );
 
-	mModelBtn->onClick( [this]( auto ) { execute( "ai-select-model" ); } );
-
 	if ( getPlugin() == nullptr )
 		return;
 
 	initAttachFile();
 	initSelectModel();
+	initSelectAgent();
 
 	auto providers = getPlugin()->getProviders();
 	setProviders( std::move( providers ) );
 	mCurModel = getDefaultModel();
+
+	mAgents = getPlugin()->getAgents();
 
 	AppConfig& config = getPlugin()->getPluginContext()->getConfig();
 	auto partition = config.iniState.getValue( "aiassistant", "split_partition", "" );
@@ -690,12 +1003,19 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 
 	auto modelProvider = config.iniState.getValue( "aiassistant", "default_provider", "" );
 	auto modelName = config.iniState.getValue( "aiassistant", "default_model", "" );
+	auto agentName = config.iniState.getValue( "aiassistant", "default_agent", "" );
 
 	if ( !modelProvider.empty() && !modelName.empty() ) {
 		auto modelOpt = getModel( modelProvider, modelName );
 		if ( modelOpt ) {
 			mCurModel = *modelOpt;
 		}
+	}
+
+	if ( !agentName.empty() && mAgents.find( agentName ) != mAgents.end() ) {
+		selectAgent( agentName );
+	} else if ( !mAgents.empty() ) {
+		selectAgent( mAgents.begin()->first );
 	}
 
 	fillModelDropDownList();
@@ -739,6 +1059,7 @@ LLMChatUI::~LLMChatUI() {
 		config.partition = getSplitter()->getSplitPartition();
 		config.modelProvider = mCurModel.provider;
 		config.modelName = mCurModel.name;
+		config.agentName = mCurAgent;
 		getPlugin()->setConfig( std::move( config ) );
 	}
 }
@@ -809,6 +1130,8 @@ void LLMChatUI::showChatHistory() {
 		return;
 
 	hideAttachFile();
+	hideSelectModel();
+	hideSelectAgent();
 
 	static const char* CHAT_HISTORY_LAYOUT = R"xml(
 		<window window-flags="default|shadow|modal|ephemeral|maximize"
@@ -831,6 +1154,9 @@ void LLMChatUI::showChatHistory() {
 
 	UIWindow* win =
 		getUISceneNode()->loadLayoutFromString( CHAT_HISTORY_LAYOUT )->asType<UIWindow>();
+	if ( mIsAgentMode ) {
+		win->setTitle( i18n( "ai_agent_sessions_history", "AI Agent Sessions" ) );
+	}
 	UITextInput* input = win->find( "search_input" )->asType<UITextInput>();
 	UILoader* loader = win->find( "loader" )->asType<UILoader>();
 	UITableView* tv = win->find( "table" )->asType<UITableView>();
@@ -838,6 +1164,11 @@ void LLMChatUI::showChatHistory() {
 	UILinearLayout* deleteCont = win->find( "delete_history_cont" )->asType<UILinearLayout>();
 	UITextInput* daysNum = win->find( "days_num" )->asType<UITextInput>();
 	UIPushButton* deleteChatsBut = win->find( "delete_but" )->asType<UIPushButton>();
+
+	if ( mIsAgentMode ) {
+		clearHistory->setVisible( false );
+		clearHistory->setEnabled( false );
+	}
 
 	win->setMinWindowSize( getUISceneNode()->getSize().getWidth() * 0.5f,
 						   getUISceneNode()->getSize().getHeight() * 0.7f );
@@ -855,61 +1186,89 @@ void LLMChatUI::showChatHistory() {
 
 	tv->setAutoColumnsWidth( true );
 	tv->setFitAllColumnsToWidget( true );
-	tv->setSetupCellCb( [this, tv, win, input]( UITableCell* cell ) {
-		if ( cell->getCurIndex().column() != ChatHistoryModel::Delete )
-			return;
-
-		cell->onClick( [this, tv, cell, win, input]( const MouseEvent* ) {
-			ChatHistoryModel* model = static_cast<ChatHistoryModel*>( tv->getModel() );
-			auto summary =
-				model->data( model->index( cell->getCurIndex().row(), ChatHistoryModel::Summary ) )
-					.toString();
-			auto msgBox =
-				UIMessageBox::New( UIMessageBox::OK_CANCEL,
-								   String::format( i18n( "confirm_del_llm_chat",
-														 "Are you sure you want to remove \"%s?\"" )
-													   .toUtf8(),
-												   summary ) );
-			msgBox->setParent( win );
-			msgBox->center();
-			msgBox->showWhenReady();
-			msgBox->on( Event::OnConfirm, [model, cell, input]( auto ) {
-				model->remove( cell->getCurIndex() );
-				input->setFocus();
-			} );
+	if ( !mIsAgentMode ) {
+		tv->setSetupCellCb( [this, tv, win, input]( UITableCell* cell ) {
+			if ( cell->getCurIndex().column() == ChatHistoryModel::Delete ) {
+				cell->onClick( [this, tv, cell, win, input]( const MouseEvent* ) {
+					ChatHistoryModel* model = static_cast<ChatHistoryModel*>( tv->getModel() );
+					auto summary = model
+									   ->data( model->index( cell->getCurIndex().row(),
+															 ChatHistoryModel::Summary ) )
+									   .toString();
+					auto msgBox = UIMessageBox::New(
+						UIMessageBox::OK_CANCEL,
+						String::format( i18n( "confirm_del_llm_chat",
+											  "Are you sure you want to remove \"%s?\"" )
+											.toUtf8(),
+										summary ) );
+					msgBox->setParent( win );
+					msgBox->center();
+					msgBox->showWhenReady();
+					msgBox->on( Event::OnConfirm, [model, cell, input]( auto ) {
+						model->remove( cell->getCurIndex() );
+						input->setFocus();
+					} );
+				} );
+			}
 		} );
-	} );
+	}
 
 	input->on( Event::KeyDown, [tv, input]( const Event* event ) {
 		tv->forceKeyDown( *event->asKeyEvent() );
 		input->setFocus();
 	} );
 
-	input->on( Event::OnTextChanged, [tv, input]( const Event* ) {
-		ChatHistoryModel* model = static_cast<ChatHistoryModel*>( tv->getModel() );
-		model->setFilter( input->getText().toUtf8() );
-		if ( tv->getSelection().isEmpty() && !model->getCurHistory().empty() )
-			tv->setSelection( model->index( 0, 0 ) );
+	input->on( Event::OnTextChanged, [this, tv, input]( const Event* ) {
+		if ( mIsAgentMode ) {
+			AgentSessionHistoryModel* model =
+				static_cast<AgentSessionHistoryModel*>( tv->getModel() );
+			model->setFilter( input->getText().toUtf8() );
+			if ( tv->getSelection().isEmpty() && model->rowCount() > 0 )
+				tv->setSelection( model->index( 0, 0 ) );
+		} else {
+			ChatHistoryModel* model = static_cast<ChatHistoryModel*>( tv->getModel() );
+			model->setFilter( input->getText().toUtf8() );
+			if ( tv->getSelection().isEmpty() && !model->getCurHistory().empty() )
+				tv->setSelection( model->index( 0, 0 ) );
+		}
 	} );
 
 	const auto openCurrentSelectedModelItem = [this, tv] {
-		auto* model = static_cast<const ChatHistoryModel*>( tv->getModel() );
 		ModelIndex index;
 		if ( !tv->getSelection().isEmpty() )
 			index = tv->getSelection().first();
-		else if ( !model->getCurHistory().empty() )
-			index = model->index( 0, 0 );
+		else if ( tv->getModel() && tv->getModel()->rowCount() > 0 )
+			index = tv->getModel()->index( 0, 0 );
 		if ( getPlugin() == nullptr || !index.isValid() )
 			return;
-		auto* chatUI = getPlugin()->newAIAssistant();
-		auto path = model->data( model->index( index.row(), ChatHistoryModel::Path ) );
-		std::string data;
-		FileSystem::fileGet( path.toString(), data );
-		nlohmann::json j = nlohmann::json::parse( data, nullptr, false );
-		auto input = chatUI->unserialize( j );
-		if ( !input.empty() )
-			chatUI->mChatInput->getDocument().textInput( input );
-		chatUI->setFocus();
+
+		if ( mIsAgentMode ) {
+			auto* model = static_cast<const AgentSessionHistoryModel*>( tv->getModel() );
+			auto sessionId =
+				model
+					->data( model->index( index.row(), AgentSessionHistoryModel::SessionId ),
+							ModelRole::Custom )
+					.toString();
+			if ( !sessionId.empty() ) {
+				auto* chatUI = getPlugin()->newAIAssistant();
+				nlohmann::json fakePayload = { { "agent_mode", true },
+											   { "agent_name", mCurAgent },
+											   { "session_id", sessionId } };
+				chatUI->unserialize( fakePayload );
+				chatUI->setFocus();
+			}
+		} else {
+			auto* model = static_cast<const ChatHistoryModel*>( tv->getModel() );
+			auto* chatUI = getPlugin()->newAIAssistant();
+			auto path = model->data( model->index( index.row(), ChatHistoryModel::Path ) );
+			std::string data;
+			FileSystem::fileGet( path.toString(), data );
+			nlohmann::json j = nlohmann::json::parse( data, nullptr, false );
+			auto input = chatUI->unserialize( j );
+			if ( !input.empty() )
+				chatUI->mChatInput->getDocument().textInput( input );
+			chatUI->setFocus();
+		}
 	};
 
 	input->on( Event::OnPressEnter, [win, openCurrentSelectedModelItem]( const Event* ) {
@@ -930,24 +1289,66 @@ void LLMChatUI::showChatHistory() {
 
 	std::string winId = win->getId();
 	UISceneNode* uiSceneNode = getUISceneNode();
-	getUISceneNode()->getThreadPool()->run(
-		[plugin, loader, input, tv, winId = std::move( winId ), uiSceneNode, clearHistory] {
-			std::string conversationsPath = plugin->getConversationsPath();
-			auto model = std::make_shared<ChatHistoryModel>(
-				ChatHistory::getHistory( conversationsPath ), uiSceneNode );
-			if ( uiSceneNode->find( winId ) == nullptr ) // Window closed?
-				return;
-			tv->runOnMainThread( [tv, loader, input, model, clearHistory] {
+
+	if ( mIsAgentMode ) {
+		auto listSessionsCb = [winId, uiSceneNode, tv, loader,
+							   input]( const std::vector<acp::SessionInfo>& sessions,
+									   const std::optional<acp::ResponseError>& err ) {
+			uiSceneNode->runOnMainThread( [winId, uiSceneNode, tv, loader, input, sessions, err] {
+				auto win = uiSceneNode->find( winId );
+				if ( win == nullptr )
+					return;
+				if ( err ) {
+					loader->setVisible( false );
+					win->asType<UIWindow>()->closeWindow();
+					return;
+				}
+				auto model = std::make_shared<AgentSessionHistoryModel>( sessions, uiSceneNode );
 				loader->setVisible( false );
 				input->setVisible( true );
 				tv->setVisible( true );
-				clearHistory->setVisible( true );
 				tv->setModel( model );
-				tv->setColumnsVisible( { ChatHistoryModel::Summary, ChatHistoryModel::DateTime,
-										 ChatHistoryModel::Delete } );
 				input->setFocus();
 			} );
-		} );
+		};
+
+		if ( !mAgentSession ) {
+			setupAgentSession();
+
+			mAgentSession->start( [this, winId, uiSceneNode, loader, listSessionsCb]( bool ready ) {
+				if ( !ready ) {
+					uiSceneNode->runOnMainThread( [loader, winId, uiSceneNode] {
+						if ( uiSceneNode->find( winId ) == nullptr )
+							return;
+						loader->setVisible( false );
+					} );
+					return;
+				}
+				mAgentSession->listSessions( listSessionsCb );
+			} );
+		} else {
+			mAgentSession->listSessions( listSessionsCb );
+		}
+	} else {
+		getUISceneNode()->getThreadPool()->run(
+			[plugin, loader, input, tv, winId = std::move( winId ), uiSceneNode, clearHistory] {
+				std::string conversationsPath = plugin->getConversationsPath();
+				auto model = std::make_shared<ChatHistoryModel>(
+					ChatHistory::getHistory( conversationsPath ), uiSceneNode );
+				if ( uiSceneNode->find( winId ) == nullptr ) // Window closed?
+					return;
+				tv->runOnMainThread( [tv, loader, input, model, clearHistory] {
+					loader->setVisible( false );
+					input->setVisible( true );
+					tv->setVisible( true );
+					clearHistory->setVisible( true );
+					tv->setModel( model );
+					tv->setColumnsVisible( { ChatHistoryModel::Summary, ChatHistoryModel::DateTime,
+											 ChatHistoryModel::Delete } );
+					input->setFocus();
+				} );
+			} );
+	}
 
 	deleteChatsBut->onClick( [this, daysNum]( auto ) {
 		int days = 0;
@@ -1065,6 +1466,15 @@ bool LLMChatUI::selectModel( std::optional<LLMModel> model ) {
 	return false;
 }
 
+bool LLMChatUI::selectAgent( const std::string& agent ) {
+	if ( !agent.empty() && mAgents.find( agent ) != mAgents.end() ) {
+		mAgentBtn->setText( agent );
+		mCurAgent = agent;
+		updateTabTitle();
+		return true;
+	}
+	return false;
+}
 void LLMChatUI::fillModelDropDownList() {
 	mModels.clear();
 	std::size_t reserve = 0;
@@ -1078,6 +1488,605 @@ void LLMChatUI::fillModelDropDownList() {
 			mModels.push_back( model );
 	}
 	getUISceneNode()->getThreadPool()->run( [this] { fillApiModels(); } );
+}
+
+// Agent Picker
+
+void LLMChatUI::updateLocateAgentBarColumns() {
+	Float width = eeceil( mLocateAgentTable->getPixelsSize().getWidth() );
+	width -= mLocateAgentTable->getVerticalScrollBar()->getPixelsSize().getWidth();
+	mLocateAgentTable->setColumnsVisible( { 0 } );
+	mLocateAgentTable->setColumnWidth( 0, eeceil( width ) );
+}
+
+void LLMChatUI::loadSelectAgent() {
+	auto ctx = getPlugin()->getPluginContext();
+	mLocateAgentTable->setModel(
+		std::make_shared<ACPAgentsModel>( mAgents, ctx->getUISceneNode() ) );
+
+	static_cast<ACPAgentsModel*>( mLocateAgentTable->getModel() )
+		->setFilter( mLocateAgentInput->getText().toUtf8() );
+}
+
+void LLMChatUI::showSelectAgent() {
+	if ( getPlugin() == nullptr )
+		return;
+	hideAttachFile();
+	hideSelectModel();
+
+	if ( nullptr == mLocateAgentTable->getModel() )
+		loadSelectAgent();
+
+	static_cast<ACPAgentsModel*>( mLocateAgentTable->getModel() )
+		->setFilter( mLocateAgentInput->getText().toUtf8() );
+	mLocateAgentBarLayout->setVisible( true );
+	mLocateAgentInput->setFocus();
+	updateLocateAgentBarColumns();
+}
+
+void LLMChatUI::hideSelectAgent() {
+	mLocateAgentBarLayout->setVisible( false );
+}
+
+void LLMChatUI::showAgentConfigWindow() {
+	if ( !mAgentSession )
+		setupAgentSession();
+
+	static const char* AGENT_CONFIG_LAYOUT = R"xml(
+		<window window-flags="default|shadow|modal|ephemeral"
+				window-title="@string(ai_agent_config, Agent Configuration)">
+			<Loader id="loader" radius="48" outline-thickness="6dp" indeterminate="true" />
+			<vbox id="config_container" lw="mp" lh="wc" padding="8dp" visible="false"></vbox>
+		</window>
+	)xml";
+
+	UIWindow* win =
+		getUISceneNode()->loadLayoutFromString( AGENT_CONFIG_LAYOUT )->asType<UIWindow>();
+	UILoader* loader = win->find( "loader" )->asType<UILoader>();
+	UILinearLayout* container = win->find( "config_container" )->asType<UILinearLayout>();
+
+	win->setMinWindowSize( getUISceneNode()->getSize().getWidth() * 0.4f,
+						   getUISceneNode()->getSize().getHeight() * 0.3f );
+	win->setKeyBindingCommand( "closeWindow", [win, this] {
+		win->closeWindow();
+		setFocus();
+	} );
+	win->getKeyBindings().addKeybind( { KEY_ESCAPE }, "closeWindow" );
+	win->center();
+	win->getModalWidget()->addClass( "shadowbg" );
+	win->on( Event::OnWindowReady, [win, loader]( auto ) {
+		win->setFocus();
+		loader->center();
+	} );
+
+	auto setupConfig = [this, loader, container, win]() {
+		auto configOptions = mAgentSession->getConfigOptions();
+		if ( !configOptions.is_array() || configOptions.empty() ) {
+			NotificationCenter::instance()->addNotification(
+				i18n( "no_agent_configs", "No Config Options Available" ) );
+			win->closeWindow();
+			return;
+		}
+
+		loader->setVisible( false );
+		container->setVisible( true );
+
+		for ( const auto& opt : configOptions ) {
+			if ( !opt.is_object() || !opt.contains( "id" ) || !opt.contains( "name" ) ||
+				 !opt.contains( "options" ) || !opt["options"].is_array() )
+				continue;
+
+			std::string optId = opt["id"].get<std::string>();
+			std::string currentValId = opt.value( "currentValue", "" );
+			std::string currentValName = "";
+
+			UITextView* label = UITextView::New();
+			label->setParent( container );
+			label->setText( opt["name"].get<std::string>() );
+			label->addClass( "agent_config_label" );
+
+			UIDropDownModelList* dropdown = UIDropDownModelList::New();
+			dropdown->setParent( container );
+			dropdown->setLayoutWidthPolicy( SizePolicy::MatchParent );
+			dropdown->addClass( "agent_config_dropdown" );
+
+			std::vector<std::pair<std::string, std::string>> options;
+			int selectedIndex = -1;
+			int count = 0;
+			for ( const auto& subopt : opt["options"] ) {
+				if ( !subopt.is_object() || !subopt.contains( "id" ) || !subopt.contains( "name" ) )
+					continue;
+				std::string subId = subopt["id"].get<std::string>();
+				std::string subName = subopt["name"].get<std::string>();
+				options.push_back( { subName, subId } );
+				if ( subId == currentValId ) {
+					selectedIndex = count;
+					currentValName = subName;
+				}
+				count++;
+			}
+
+			auto model = Models::ItemPairListOwnerModel<std::string, std::string>::create(
+				std::move( options ) );
+			dropdown->setModel( model );
+			dropdown->getListView()->setColumnsVisible( { 0 } );
+			dropdown->getListView()->setAutoExpandOnSingleColumn( true );
+			if ( selectedIndex != -1 ) {
+				dropdown->setText( currentValName );
+			}
+
+			dropdown->on( Event::OnItemSelected, [this, optId, model, dropdown]( const Event* ) {
+				auto* listView = dropdown->getListView();
+				if ( !listView || listView->getSelection().isEmpty() )
+					return;
+				ModelIndex index = listView->getSelection().first();
+				std::string subId = model->data( model->index( index.row(), 1 ) ).toString();
+
+				acp::SetConfigOptionRequest req;
+				req.sessionId = mAgentSession->getSessionId();
+				req.configId = optId;
+				req.optionId = subId;
+				mAgentSession->setConfigOption(
+					req, [this, optId, subId]( const acp::SetConfigOptionResponse& res,
+											   const std::optional<acp::ResponseError>& err ) {
+						if ( !err ) {
+							auto newOpts = res.configOptions;
+							if ( newOpts.empty() ) {
+								newOpts = acp::parseLegacyConfigOptions(
+									{}, mAgentSession->getConfigOptions(), optId, subId );
+							}
+							mAgentSession->setConfigOptions( newOpts );
+						}
+					} );
+			} );
+		}
+	};
+
+	if ( mAgentSession && !mAgentSession->getClient()->isReady() ) {
+		mAgentConfigBtn->setEnabled( false );
+		mAgentSession->start( [this, setupConfig, win]( bool ready ) {
+			runOnMainThread( [this, setupConfig, win, ready]() {
+				mAgentConfigBtn->setEnabled( true );
+				if ( ready && win->isVisible() ) {
+					setupConfig();
+				} else {
+					if ( !ready ) {
+						NotificationCenter::instance()->addNotification(
+							i18n( "failed_to_start_agent", "Failed to start agent process." ) );
+						mAgentSession.reset();
+					}
+					win->closeWindow();
+				}
+			} );
+		} );
+	} else if ( mAgentSession && mAgentSession->getClient()->isReady() ) {
+		setupConfig();
+	}
+}
+
+void LLMChatUI::initSelectAgent() {
+	mLocateAgentBarLayout = findByClass<UIVLinearLayoutCommandExecuter>( "llm_chat_select_agent" );
+	mLocateAgentInput = findByClass<UITextInput>( "llm_chat_select_agent_input" );
+	mLocateAgentTable = findByClass<UITableView>( "llm_chat_agent_locate" );
+	mLocateAgentTable->setHeadersVisible( false );
+
+	mLocateAgentTable->on( Event::OnSizeChange,
+						   [this]( const Event* ) { updateLocateAgentBarColumns(); } );
+
+	mLocateAgentInput->on( Event::OnTextChanged, [this]( const Event* ) {
+		showSelectAgent();
+		updateLocateAgentBarColumns();
+	} );
+	mLocateAgentInput->on( Event::OnPressEnter, [this]( const Event* ) {
+		KeyEvent keyEvent( mLocateAgentTable, Event::KeyDown, KEY_RETURN, SCANCODE_UNKNOWN, 0, 0 );
+		mLocateAgentTable->forceKeyDown( keyEvent );
+	} );
+	mLocateAgentInput->on( Event::KeyDown, [this]( const Event* event ) {
+		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
+		mLocateAgentTable->forceKeyDown( *keyEvent );
+	} );
+	mLocateAgentBarLayout->setCommand( "close-locatebar", [this] {
+		hideSelectAgent();
+		if ( mChatInput )
+			mChatInput->setFocus();
+	} );
+	mLocateAgentBarLayout->getKeyBindings().addKeybindsString( {
+		{ "escape", "close-locatebar" },
+	} );
+	mLocateAgentTable->on( Event::KeyDown, [this]( const Event* event ) {
+		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
+		if ( keyEvent->getKeyCode() == KEY_ESCAPE )
+			mLocateAgentBarLayout->execute( "close-locatebar" );
+	} );
+	mLocateAgentTable->on( Event::OnModelEvent, [this]( const Event* event ) {
+		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
+		if ( modelEvent->getModelEventType() == ModelEventType::Open ) {
+			Variant vName( modelEvent->getModel()->data(
+				modelEvent->getModel()->index( modelEvent->getModelIndex().row(),
+											   ACPAgentsModel::Name ),
+				ModelRole::Display ) );
+
+			if ( vName.isValid() ) {
+				std::string name( vName.toString() );
+				if ( name != mCurAgent ) {
+					selectAgent( name );
+					if ( mAgentSession ) {
+						mAgentSession->stop();
+						mAgentSession.reset();
+					}
+					updateTabTitle();
+				}
+			}
+
+			mLocateAgentBarLayout->execute( "close-locatebar" );
+		}
+	} );
+}
+
+UIWidget* LLMChatUI::getLastConversation( bool skipEmpty ) const {
+	auto conversations = mChatsList->findAllByClass( "llm_conversation" );
+	for ( int i = (int)conversations.size() - 1; i >= 0; --i ) {
+		auto* chat = conversations[i];
+		if ( !chat->hasClass( "llm_plan" ) && !chat->hasClass( "llm_tool_call" ) &&
+			 !chat->hasClass( "llm_thought" ) ) {
+			if ( skipEmpty ) {
+				auto* editorNode = chat->findByClass( "data_ui" );
+				if ( editorNode && editorNode->isType( UI_TYPE_CODEEDITOR ) ) {
+					if ( editorNode->asType<UICodeEditor>()->getDocument().isEmpty() )
+						continue;
+				}
+			}
+			return chat;
+		}
+	}
+	return nullptr;
+}
+
+void LLMChatUI::removeWaitingBubble() {
+	auto waitingNodes = mChatsList->findAllByClass( "llm_waiting" );
+	for ( auto* node : waitingNodes ) {
+		node->close();
+	}
+}
+
+void LLMChatUI::writeToLastChat( const std::string& text ) {
+	runOnMainThread( [this, text] {
+		removeWaitingBubble();
+
+		UIWidget* chatAdded = nullptr;
+		if ( mChatsList->getChildCount() > 0 ) {
+			auto* lastChild = mChatsList->getLastChild()->asType<UIWidget>();
+			if ( lastChild->hasClass( "llm_conversation" ) && !lastChild->hasClass( "llm_plan" ) &&
+				 !lastChild->hasClass( "llm_tool_call" ) &&
+				 !lastChild->hasClass( "llm_thought" ) ) {
+				auto* roleDDL = lastChild->findByClass<UIDropDownList>( "role_ui" );
+				if ( roleDDL && roleDDL->getListBox()->getItemSelectedIndex() == 1 ) {
+					chatAdded = lastChild;
+				}
+			}
+		}
+
+		if ( nullptr == chatAdded ) {
+			chatAdded = addChatUI( LLMChat::Role::Assistant );
+		}
+
+		auto* editor = chatAdded->findByClass<UICodeEditor>( "data_ui" );
+		if ( !editor )
+			return;
+
+		auto* thinking = editor->findByClass<UIImage>( "thinking" );
+		if ( thinking ) {
+			auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
+			thinking->removeActionsByTag( thinkingID );
+			thinking->setVisible( false );
+		}
+
+		editor->getDocument().textInput( String::fromUtf8( text ) );
+		editor->setCursorVisible( false );
+		resizeToFit( editor );
+		mChatScrollView->getVerticalScrollBar()->setValue( 1.0f );
+	} );
+}
+
+void LLMChatUI::updateAgentModeUI() {
+	mModelBtn->setVisible( !mIsAgentMode );
+	mAgentBtn->setVisible( mIsAgentMode );
+	mAgentConfigBtn->setVisible( mIsAgentMode );
+	mChatAdd->setVisible( !mIsAgentMode );
+	mChatUserRole->setVisible( !mIsAgentMode );
+
+	auto chats = mChatsList->findAllByClass( "llm_conversation" );
+	for ( auto chat : chats ) {
+		if ( auto roleUi = chat->findByClass( "role_ui" ) )
+			roleUi->setVisible( !mIsAgentMode );
+		if ( auto moveUp = chat->findByClass( "move_up" ) )
+			moveUp->setVisible( !mIsAgentMode );
+		if ( auto moveDown = chat->findByClass( "move_down" ) )
+			moveDown->setVisible( !mIsAgentMode );
+		if ( auto eraseBut = chat->findByClass( "erase_but" ) )
+			eraseBut->setVisible( !mIsAgentMode );
+	}
+}
+
+void LLMChatUI::setupAgentSession() {
+	auto it = mAgents.find( mCurAgent );
+	if ( it == mAgents.end() )
+		return;
+
+	acp::ACPClient::Config config;
+	config.command = it->second.command;
+	config.args = it->second.args;
+	config.environment = it->second.environment;
+	config.workingDirectory = getPlugin()->getPluginContext()->getCurrentProject();
+
+	mAgentSession =
+		std::make_unique<acp::AgentSession>( getUISceneNode()->getThreadPool(), config );
+
+	mAgentSession->onSessionUpdate = [this]( const nlohmann::json& msg ) {
+		auto sessionUpdate = msg.value( "sessionUpdate", "" );
+		if ( sessionUpdate == "agent_message_chunk" ) {
+			if ( msg.contains( "content" ) && msg["content"].contains( "text" ) ) {
+				mThinkingBubble = nullptr; // Reset thinking bubble so next thought gets a new one
+				auto chunk = msg["content"].value( "text", "" );
+				writeToLastChat( chunk );
+			}
+		} else if ( sessionUpdate == "agent_thought_chunk" ) {
+			if ( msg.contains( "content" ) && msg["content"].contains( "text" ) ) {
+				auto chunk = msg["content"].value( "text", "" );
+				runOnMainThread( [this, chunk] { updateThinkingBubble( chunk ); } );
+			}
+		} else if ( sessionUpdate == "tool_call" ) {
+			std::string toolMarkdown =
+				"> 🛠️ " + i18n( "tool_call", "Tool Call: " ) + msg.value( "title", "" ) + "\n";
+			addToolCallBubble( toolMarkdown );
+		} else if ( sessionUpdate == "plan" ) {
+			std::string planMarkdown = "> 📋 " + i18n( "plan_updated", "Plan Updated:" ) + "\n";
+			if ( msg.contains( "plan" ) && msg["plan"].contains( "steps" ) &&
+				 msg["plan"]["steps"].is_array() ) {
+				for ( const auto& step : msg["plan"]["steps"] ) {
+					std::string status = step.value( "status", "" );
+					std::string statusIcon = "⏳";
+					if ( status == "completed" )
+						statusIcon = "✅";
+					else if ( status == "running" )
+						statusIcon = "🔄";
+					else if ( status == "failed" )
+						statusIcon = "❌";
+
+					planMarkdown += "- " + statusIcon + " " + step.value( "title", "" ) + "\n";
+				}
+			}
+			addPlanBubble( planMarkdown );
+		} else if ( sessionUpdate == "available_commands_update" ) {
+			if ( msg.contains( "availableCommands" ) && msg["availableCommands"].is_array() ) {
+				runOnMainThread( [this, msg] {
+					mAvailableCommands.clear();
+					for ( const auto& cmd : msg["availableCommands"] ) {
+						mAvailableCommands.push_back(
+							{ cmd.value( "name", "" ), cmd.value( "description", "" ) } );
+					}
+				} );
+			}
+		}
+	};
+
+	mAgentSession->onRequestPermission = [this]( const auto& req, auto cb ) {
+		runOnMainThread( [this, req, cb]() { addPermissionUI( req, cb ); } );
+	};
+
+	mAgentSession->onError = [this]( const acp::ResponseError& err ) {
+		NotificationCenter::instance()->addNotification(
+			i18n( "ai_assistant_agent_error", "Agent Error: " ) + err.message );
+	};
+
+	mAgentSession->onTerminalCreated = [this]( const acp::CreateTerminalRequest& req,
+
+											   const std::string& termId ) {
+		runOnMainThread( [this, req, termId] {
+			find( "chat_presentation" )->setVisible( false );
+			UIWidget* bubble = mChatsList->getUISceneNode()->loadLayoutFromString(
+				R"xml(<vbox class="llm_conversation terminal_bubble" lw="mp" lh="300dp" padding="8dp" background-color="var(--tab-back)" />)xml",
+				mChatsList );
+
+			std::unordered_map<std::string, std::string> env;
+			for ( const auto& e : req.env )
+				env[e.name] = e.value;
+
+			auto* uiTerm = eterm::UI::UITerminal::New(
+				getPlugin()->getPluginContext()->getTerminalFont(),
+				getPlugin()->getPluginContext()->termConfig().fontSize.asPixels(
+					getUISceneNode()->getPixelsSize().getWidth(), getUISceneNode()->getPixelsSize(),
+					getUISceneNode()->getDPI(),
+					getUISceneNode()->getUIThemeManager()->getDefaultFontSize() ),
+				Sizef( 0, 0 ), req.command, req.args, env,
+				req.cwd ? *req.cwd : getPlugin()->getPluginContext()->getCurrentProject(), 10000,
+				nullptr, false, false );
+			uiTerm->setParent( bubble );
+			uiTerm->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
+
+			mAgentSession->setTerminalData( termId, uiTerm );
+		} );
+	};
+}
+
+void LLMChatUI::doAgentRequest() {
+	if ( !mAgentSession ) {
+		auto it = mAgents.find( mCurAgent );
+		if ( it == mAgents.end() ) {
+			showMsg( "Agent not configured." );
+			return;
+		}
+
+		mChatRun->setVisible( false )->setEnabled( false );
+		mChatStop->setVisible( true )->setEnabled( true );
+
+		setupAgentSession();
+
+		UIWidget* chat = addChatUI( LLMChat::Role::Assistant );
+		chat->addClass( "llm_waiting" );
+		toggleEnableChats( false );
+		auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
+		editor->setEnabled( false );
+		auto* thinking = editor->findByClass<UIImage>( "thinking" );
+		auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
+		thinking->setVisible( true );
+		thinking->setPosition( { PixelDensity::dpToPx( 8 ), PixelDensity::dpToPx( 3 ) } );
+		thinking->setInterval( [thinking] { thinking->rotate( 360 / 32 ); }, Seconds( 0.125 ),
+							   thinkingID );
+
+		mAgentSession->start( [this]( bool ready ) {
+			runOnMainThread( [this, ready]() {
+				if ( ready ) {
+					sendAgentPrompt();
+				} else {
+					mChatStop->setVisible( false )->setEnabled( false );
+					mChatRun->setVisible( true )->setEnabled( true );
+					toggleEnableChats( true );
+					showMsg( i18n( "failed_to_start_agent", "Failed to start agent process." ) );
+					mAgentSession.reset();
+				}
+			} );
+		} );
+	} else {
+		// Existing session, just send the prompt
+		mChatRun->setVisible( false )->setEnabled( false );
+		mChatStop->setVisible( true )->setEnabled( true );
+
+		UIWidget* chat = addChatUI( LLMChat::Role::Assistant );
+		chat->addClass( "llm_waiting" );
+		toggleEnableChats( false );
+		auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
+		editor->setEnabled( false );
+		auto* thinking = editor->findByClass<UIImage>( "thinking" );
+		auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
+		thinking->setVisible( true );
+		thinking->setPosition( { PixelDensity::dpToPx( 8 ), PixelDensity::dpToPx( 3 ) } );
+		thinking->setInterval( [thinking] { thinking->rotate( 360 / 32 ); }, Seconds( 0.125 ),
+							   thinkingID );
+
+		sendAgentPrompt();
+	}
+}
+
+void LLMChatUI::sendAgentPrompt() {
+	acp::PromptRequest req;
+	req.sessionId = mAgentSession->getSessionId();
+
+	// Create prompt from the last user message
+	auto lastChat = getLastConversation( true );
+	if ( lastChat ) {
+		auto* editorNode = lastChat->findByClass( "data_ui" );
+		if ( !editorNode || !editorNode->isType( UI_TYPE_CODEEDITOR ) ) {
+			req.prompt = { { { "type", "text" }, { "text", "" } } };
+		} else {
+			auto* editor = editorNode->asType<UICodeEditor>();
+			std::string text = editor->getDocument().getText().toUtf8();
+
+			bool isSlashCommand = false;
+			bool showHelp = false;
+			if ( String::startsWith( text, "/" ) ) {
+				auto spacePos = text.find( ' ' );
+				std::string cmdName = text.substr(
+					1, spacePos == std::string::npos ? std::string::npos : spacePos - 1 );
+				std::string arg = spacePos == std::string::npos ? "" : text.substr( spacePos + 1 );
+
+				auto it = std::find_if(
+					mAvailableCommands.begin(), mAvailableCommands.end(),
+					[&cmdName]( const SlashCommand& c ) { return c.name == cmdName; } );
+
+				if ( it != mAvailableCommands.end() ) {
+					req.prompt = {
+						{ { "type", "slash_command" }, { "name", cmdName }, { "argument", arg } } };
+					isSlashCommand = true;
+				} else {
+					showHelp = true;
+				}
+			}
+
+			if ( !isSlashCommand && !showHelp ) {
+				req.prompt = promptToContentBlocks( text );
+			}
+
+			if ( showHelp && !mAvailableCommands.empty() ) {
+				std::string help = i18n( "available_commands", "Available Commands:" ) + "\n";
+				for ( const auto& cmd : mAvailableCommands ) {
+					help += "- **/" + cmd.name + "**: " + cmd.description + "\n";
+				}
+				help += "\n" + i18n( "type_slash_command_to_use",
+									 "Type / followed by the command name to use it." );
+				writeToLastChat( help );
+
+				runOnMainThread( [this] {
+					mChatStop->setVisible( false )->setEnabled( false );
+					mChatRun->setVisible( true )->setEnabled( true );
+					toggleEnableChats( true );
+					auto lastChat = getLastConversation();
+					if ( lastChat ) {
+						auto* editorNode = lastChat->findByClass( "data_ui" );
+						if ( editorNode && editorNode->isType( UI_TYPE_CODEEDITOR ) ) {
+							auto* editor = editorNode->asType<UICodeEditor>();
+							auto* thinking = editor->findByClass<UIImage>( "thinking" );
+							if ( thinking )
+								thinking->setVisible( false );
+							editor->setEnabled( true );
+							if ( editor->hasFocus() )
+								mChatInput->setFocus();
+						}
+					}
+				} );
+				return;
+			}
+		}
+	} else {
+		req.prompt = { { { "type", "text" }, { "text", "" } } };
+	}
+
+	mAgentSession->prompt( req, [this]( const acp::PromptResponse& res,
+										const std::optional<acp::ResponseError>& err ) {
+		if ( err ) {
+			runOnMainThread( [this] {
+				mChatStop->setVisible( false )->setEnabled( false );
+				mChatRun->setVisible( true )->setEnabled( true );
+				toggleEnableChats( true );
+				auto lastChat = getLastConversation();
+				if ( lastChat ) {
+					auto* thinking = lastChat->findByClass<UIImage>( "thinking" );
+					if ( thinking )
+						thinking->setVisible( false );
+				}
+			} );
+			return;
+		}
+		runOnMainThread( [this, res]() {
+			auto chat = getLastConversation();
+			if ( chat ) {
+				auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
+				if ( !editor )
+					return;
+				auto* thinking = editor->findByClass<UIImage>( "thinking" );
+				if ( thinking ) {
+					auto thinkingID = String::hash( String::format( "thinking-%p", thinking ) );
+					thinking->removeActionsByTag( thinkingID );
+					thinking->setVisible( false );
+				}
+				editor->setEnabled( true );
+				if ( editor->hasFocus() )
+					mChatInput->setFocus();
+			}
+
+			toggleEnableChats( true );
+			mChatStop->setVisible( false )->setEnabled( false );
+			mChatRun->setVisible( true )->setEnabled( true );
+
+			if ( res.stopReason != "cancelled" ) {
+				if ( !mChatIsPrivate && !mSummaryRequest && mSummary.empty() ) {
+					generateChatName( false );
+				} else {
+					saveChat();
+				}
+			}
+		} );
+	} );
 }
 
 void LLMChatUI::resizeToFit( UICodeEditor* editor ) {
@@ -1119,12 +2128,53 @@ void LLMChatUI::replaceFileLinksToContents( std::string& text ) {
 	}
 }
 
+nlohmann::json LLMChatUI::promptToContentBlocks( std::string text ) {
+	auto j = nlohmann::json::array();
+	LuaPattern ptrn( "\n```file://([^`]*)```\n?" );
+	PatternMatcher::Range matches[2];
+	size_t lastPos = 0;
+	while ( ptrn.matches( text, matches, lastPos ) ) {
+		// Text before the file
+		if ( (size_t)matches[0].start > lastPos ) {
+			j.push_back( { { "type", "text" },
+						   { "text", text.substr( lastPos, matches[0].start - lastPos ) } } );
+		}
+
+		std::string path( text.substr( matches[1].start, matches[1].length() ) );
+		if ( FileSystem::isRelativePath( path ) ) {
+			std::string prjPath( getPlugin()->getPluginContext()->getCurrentProject() );
+			path = prjPath + path;
+		}
+
+		if ( FileSystem::fileExists( path ) ) {
+			j.push_back( { { "type", "resource_link" },
+						   { "name", FileSystem::fileNameFromPath( path ) },
+						   { "uri", "file://" + path } } );
+		}
+
+		lastPos = matches[0].end;
+	}
+
+	if ( lastPos < text.size() ) {
+		j.push_back( { { "type", "text" }, { "text", text.substr( lastPos ) } } );
+	}
+
+	if ( j.empty() && !text.empty() ) {
+		j.push_back( { { "type", "text" }, { "text", text } } );
+	}
+
+	return j;
+}
+
 nlohmann::json LLMChatUI::chatToJson( bool forRequest ) {
 	auto j = nlohmann::json::array();
 	auto chats = findAllByClass( "llm_conversation" );
 	for ( const auto& chat : chats ) {
 		UIDropDownList* roleDDL = chat->findByClass<UIDropDownList>( "role_ui" );
-		UICodeEditor* codeEditor = chat->findByClass<UICodeEditor>( "data_ui" );
+		UIWidget* editorNode = chat->findByClass( "data_ui" );
+		if ( !roleDDL || !editorNode || !editorNode->isType( UI_TYPE_CODEEDITOR ) )
+			continue;
+		UICodeEditor* codeEditor = editorNode->asType<UICodeEditor>();
 		std::string role = LLMChat::roleToString(
 			static_cast<LLMChat::Role>( roleDDL->getListBox()->getItemSelectedIndex() ) );
 		auto text = codeEditor->getDocument().getText().toUtf8();
@@ -1161,13 +2211,19 @@ nlohmann::json LLMChatUI::serialize() {
 	mTimestamp = std::chrono::system_clock::to_time_t( std::chrono::system_clock::now() );
 	nlohmann::json j;
 	j["uuid"] = mUUID.toString();
-	j["chat"] = serializeChat( mCurModel );
+	if ( !mIsAgentMode ) {
+		j["chat"] = serializeChat( mCurModel );
+	}
 	j["provider"] = mCurModel.provider;
 	j["timestamp"] = mTimestamp;
 	j["summary"] = mSummary;
 	std::string inputText( mChatInput->getDocument().getText().toUtf8() );
 	j["input"] = std::move( inputText );
 	j["locked"] = mChatLocked;
+	j["agent_mode"] = mIsAgentMode;
+	j["agent_name"] = mCurAgent;
+	if ( mAgentSession && !mAgentSession->getSessionId().empty() )
+		j["session_id"] = mAgentSession->getSessionId();
 	return j;
 }
 
@@ -1178,6 +2234,10 @@ std::string LLMChatUI::unserialize( const nlohmann::json& payload ) {
 	mTimestamp = payload.value( "timestamp", 0 );
 	mSummary = payload.value( "summary", "" );
 	mChatLocked = payload.value( "locked", false );
+	mIsAgentMode = payload.value( "agent_mode", false );
+	mCurAgent = payload.value( "agent_name", "" );
+
+	selectAgent( mCurAgent );
 
 	std::string provider = payload.value( "provider", "" );
 	if ( payload.contains( "chat" ) && payload["chat"].is_object() ) {
@@ -1186,13 +2246,27 @@ std::string LLMChatUI::unserialize( const nlohmann::json& payload ) {
 		mCurModel = findModel( provider, model );
 	}
 
-	if ( mCurModel.name.empty() )
+	if ( mCurModel.name.empty() && !mIsAgentMode )
 		return payload.value( "input", "" );
 
-	if ( !selectModel( mCurModel ) )
-		fillModelDropDownList();
+	if ( mIsAgentMode ) {
+		mChatAgentMode->setSelected( true );
+		updateAgentModeUI();
 
-	if ( payload.contains( "chat" ) && payload["chat"].is_object() ) {
+		std::string sessionId = payload.value( "session_id", "" );
+		if ( !sessionId.empty() ) {
+			auto it = mAgents.find( mCurAgent );
+			if ( it != mAgents.end() ) {
+				setupAgentSession();
+				mAgentSession->startLoaded( sessionId, []( bool ) {} );
+			}
+		}
+	} else {
+		if ( !selectModel( mCurModel ) )
+			fillModelDropDownList();
+	}
+
+	if ( !mIsAgentMode && payload.contains( "chat" ) && payload["chat"].is_object() ) {
 		const auto& chat = payload["chat"];
 		const auto& messages = chat["messages"];
 		for ( const auto& chat : messages ) {
@@ -1241,6 +2315,8 @@ std::string LLMChatUI::getFilePath() const {
 }
 
 void LLMChatUI::saveChat() {
+	if ( mIsAgentMode )
+		return;
 	auto plugin = getPlugin();
 	if ( plugin == nullptr || mChatIsPrivate )
 		return;
@@ -1341,10 +2417,14 @@ void LLMChatUI::doRequest() {
 	mChatStop->setVisible( true )->setEnabled( true );
 
 	UIWidget* chat = addChatUI( LLMChat::Role::Assistant );
+	chat->addClass( "llm_waiting" );
 	toggleEnableChats( false ); // editor is not disabled (to allow copy with locked document)
 
 	auto model = mCurModel;
 	auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
+
+	if ( !editor )
+		return;
 
 	// new editor must be disabled because even on locked document it's possible to move the cursor
 	editor->setEnabled( false );
@@ -1360,14 +2440,21 @@ void LLMChatUI::doRequest() {
 	mRequest = std::make_unique<LLMChatCompletionRequest>(
 		apiUrl, apiKeyStr, serializeChat( model, true ).dump(), model.provider );
 
+	mThinkingBubble = nullptr;
 	mRequest->streamedResponseCb = [this, editor, thinking, thinkingID]( const std::string& chunk,
 																		 bool fromReasoning ) {
-		if ( fromReasoning ||
-			 ( mRequest && mRequest->getResponse().empty() && allNewLines( chunk ) ) )
+		if ( fromReasoning ) {
+			runOnMainThread( [this, chunk] { updateThinkingBubble( chunk ); } );
 			return;
+		}
+
+		if ( mRequest && mRequest->getResponse().empty() && allNewLines( chunk ) )
+			return;
+
 		auto conversation = chunk;
 		editor->runOnMainThread(
 			[this, conversation = std::move( conversation ), editor, thinking, thinkingID] {
+				mThinkingBubble = nullptr;
 				editor->getDocument().textInput( String::fromUtf8( conversation ) );
 				editor->setCursorVisible( false );
 				thinking->removeActionsByTag( thinkingID );
@@ -1438,14 +2525,21 @@ void LLMChatUI::doRequest() {
 }
 
 void LLMChatUI::toggleEnableChat( UIWidget* chat, bool enabled ) {
-	chat->findByClass( "role_ui" )->setEnabled( enabled );
-	UICodeEditor* editor = chat->findByClass( "data_ui" )->asType<UICodeEditor>();
-	// editor->setEnabled( enabled );
-	editor->setLocked( !enabled );
-	chat->findByClass( "erase_but" )->setEnabled( enabled );
-	chat->findByClass( "move_up" )->setEnabled( enabled );
-	chat->findByClass( "move_down" )->setEnabled( enabled );
-	// chat->findByClass( "copy_contents" )->setEnabled( enabled );
+	auto* roleDDL = chat->findByClass( "role_ui" );
+	if ( roleDDL )
+		roleDDL->setEnabled( enabled );
+	auto* editorNode = chat->findByClass( "data_ui" );
+	if ( editorNode && editorNode->isType( UI_TYPE_CODEEDITOR ) )
+		editorNode->asType<UICodeEditor>()->setLocked( !enabled );
+	auto* eraseBut = chat->findByClass( "erase_but" );
+	if ( eraseBut )
+		eraseBut->setEnabled( enabled );
+	auto* moveUp = chat->findByClass( "move_up" );
+	if ( moveUp )
+		moveUp->setEnabled( enabled );
+	auto* moveDown = chat->findByClass( "move_down" );
+	if ( moveDown )
+		moveDown->setEnabled( enabled );
 }
 
 void LLMChatUI::toggleEnableChats( bool enabled ) {
@@ -1461,6 +2555,141 @@ Drawable* LLMChatUI::findIcon( const std::string& name, const size_t iconSize ) 
 	if ( icon )
 		return icon->getSize( iconSize );
 	return nullptr;
+}
+
+void LLMChatUI::addPermissionUI( const acp::RequestPermissionRequest& req,
+								 std::function<void( const acp::RequestPermissionResponse& )> cb ) {
+	find( "chat_presentation" )->setVisible( false );
+
+	UIWidget* chat =
+		mChatsList->getUISceneNode()->loadLayoutFromString( DEFAULT_PERMISSION_GLOBE, mChatsList );
+
+	UIMarkdownView* desc = chat->findByClass<UIMarkdownView>( "permission_desc" );
+	std::string descStr =
+		"#####	 " +
+		i18n( "agent_wants_to_execute_tool_call", "The agent wants to execute a tool call:" ) +
+		"\n\n";
+	descStr += "**" + i18n( "title", "Title" ) + ":** " + req.toolCall.title + "\n\n";
+	descStr += "**" + i18n( "kind", "Kind" ) + ":** `" + req.toolCall.kind + "`\n\n";
+	if ( !req.toolCall.rawInput.is_null() ) {
+		descStr +=
+			"**" + i18n( "input", "Input" ) + ":**\n\n" + req.toolCall.rawInput.dump( 2 ) + "\n";
+	}
+	desc->loadFromString( descStr );
+	UIWidget* optionsBox = chat->findByClass( "permission_options" );
+	if ( !optionsBox )
+		return;
+
+	bool isFirst = true;
+	UIPushButton* firstBut = nullptr;
+	UIPushButton* lastBut = nullptr;
+	for ( const auto& opt : req.options ) {
+		UIPushButton* but = UIPushButton::New();
+		but->setParent( optionsBox );
+		but->setText( opt.name );
+
+		auto cbCopy = cb;
+		auto optId = opt.optionId;
+		but->onClick( [chat, cbCopy, optId, this]( const Event* ) {
+			chat->close(); // Close the permission request UI once selected
+			acp::RequestPermissionResponse res;
+			res.outcome = "selected";
+			res.optionId = optId;
+			cbCopy( res );
+
+			if ( mChatInput )
+				mChatInput->setFocus();
+		} );
+
+		if ( isFirst ) {
+			isFirst = false;
+			firstBut = but;
+			but->runOnMainThread( [but] { but->setFocus(); } );
+		}
+
+		lastBut = but;
+	}
+
+	if ( lastBut && firstBut != lastBut ) {
+		lastBut->on( Event::OnTabNavigate,
+					 [firstBut]( const Event* event ) { firstBut->setFocus(); } );
+	}
+
+	mChatScrollView->getVerticalScrollBar()->setValue( 1.0f );
+}
+
+UIWidget* LLMChatUI::addMarkdownBubble( const std::string& layout, const std::string& markdown ) {
+	find( "chat_presentation" )->setVisible( false );
+	UIWidget* chat = mChatsList->getUISceneNode()->loadLayoutFromString( layout, mChatsList );
+	if ( chat )
+		chat->asType<UIMarkdownView>()->loadFromString( markdown );
+	return chat;
+}
+
+void LLMChatUI::addPlanBubble( const std::string& markdown ) {
+	runOnMainThread( [this, markdown] {
+		removeWaitingBubble();
+
+		UIWidget* bubble = nullptr;
+		if ( mChatsList->getLastChild() ) {
+			auto* lastChild = mChatsList->getLastChild()->asType<UIWidget>();
+			if ( lastChild->hasClass( "llm_plan" ) )
+				bubble = lastChild;
+		}
+
+		if ( !bubble ) {
+			bubble = addMarkdownBubble( DEFAULT_PLAN_GLOBE, markdown );
+		} else {
+			bubble->asType<UIMarkdownView>()->loadFromString( markdown );
+		}
+		mChatScrollView->getVerticalScrollBar()->setValue( 1.0f );
+	} );
+}
+
+void LLMChatUI::addToolCallBubble( const std::string& markdown ) {
+	runOnMainThread( [this, markdown] {
+		removeWaitingBubble();
+
+		UIWidget* bubble = nullptr;
+		if ( mChatsList->getLastChild() ) {
+			auto* lastChild = mChatsList->getLastChild()->asType<UIWidget>();
+			if ( lastChild->hasClass( "llm_tool_call" ) )
+				bubble = lastChild;
+		}
+
+		if ( !bubble ) {
+			mCurToolCall = markdown;
+			bubble = addMarkdownBubble( DEFAULT_TOOL_CALL_GLOBE, mCurToolCall );
+		} else {
+			mCurToolCall += "\n" + markdown;
+			bubble->asType<UIMarkdownView>()->loadFromString( mCurToolCall );
+		}
+
+		mChatScrollView->getVerticalScrollBar()->setValue( 1.0f );
+	} );
+}
+
+void LLMChatUI::updateThinkingBubble( const std::string& chunk ) {
+	runOnMainThread( [this, chunk] {
+		removeWaitingBubble();
+
+		UIWidget* bubble = nullptr;
+		if ( mChatsList->getLastChild() ) {
+			auto* lastChild = mChatsList->getLastChild()->asType<UIWidget>();
+			if ( lastChild->hasClass( "llm_thought" ) ) {
+				bubble = lastChild;
+			}
+		}
+
+		if ( !bubble ) {
+			mCurThinking = "";
+			bubble = addMarkdownBubble( DEFAULT_THINKING_GLOBE, mCurThinking );
+		}
+
+		mCurThinking += chunk;
+		bubble->asType<UIMarkdownView>()->loadFromString( mCurThinking );
+		mChatScrollView->getVerticalScrollBar()->setValue( 1.0f );
+	} );
 }
 
 UIWidget* LLMChatUI::addChatUI( LLMChat::Role role ) {
@@ -1537,6 +2766,13 @@ UIWidget* LLMChatUI::addChatUI( LLMChat::Role role ) {
 			i18n( "chat_copied", "Chat Copied" ) );
 	} );
 	resizeToFit( editor );
+	if ( mIsAgentMode ) {
+		chat->findByClass( "role_ui" )->setVisible( false );
+		chat->findByClass( "erase_but" )->setVisible( false );
+		chat->findByClass( "move_up" )->setVisible( false );
+		chat->findByClass( "move_down" )->setVisible( false );
+	}
+
 	return chat;
 }
 
@@ -1551,9 +2787,8 @@ void LLMChatUI::addChat( LLMChat::Role role, std::string conversation ) {
 }
 
 void LLMChatUI::removeLastChat() {
-	auto chats = mChatsList->findAllByClass( "llm_conversation" );
-	if ( !chats.empty() ) {
-		auto* chat = chats[chats.size() - 1];
+	auto* chat = getLastConversation();
+	if ( chat ) {
 		auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
 		if ( editor->getDocument().isEmpty() )
 			chat->close();
@@ -1611,6 +2846,9 @@ void LLMChatUI::updateTabTitle() {
 		return;
 	UITab* tab = reinterpret_cast<UITab*>( getData() );
 	auto title = i18n( "ai_assistant", "AI Assistant" );
+	if ( mIsAgentMode && !mCurAgent.empty() ) {
+		title = i18n( "agent", "Agent" ) + ": " + mCurAgent;
+	}
 	if ( !mSummary.empty() )
 		title += " - " + mSummary;
 	tab->setText( title );
@@ -1667,6 +2905,7 @@ void LLMChatUI::showAttachFile() {
 	if ( getPlugin() == nullptr )
 		return;
 	hideSelectModel();
+	hideSelectAgent();
 	auto text = mLocateInput->getText();
 	auto ctx = getPlugin()->getPluginContext();
 	if ( !ctx->isDirTreeReady() ) {
@@ -1825,6 +3064,7 @@ void LLMChatUI::showSelectModel() {
 	if ( getPlugin() == nullptr )
 		return;
 	hideAttachFile();
+	hideSelectAgent();
 
 	if ( nullptr == mLocateModelTable->getModel() )
 		loadSelectModel();

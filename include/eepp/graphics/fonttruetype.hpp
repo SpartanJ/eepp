@@ -67,7 +67,8 @@ class EE_API FontTrueType : public Font {
 
 	bool loaded() const;
 
-	FontTrueType& operator=( const FontTrueType& right );
+	FontTrueType( const FontTrueType& ) = delete;
+	FontTrueType& operator=( const FontTrueType& ) = delete;
 
 	bool getBoldAdvanceSameAsRegular() const;
 
@@ -182,11 +183,11 @@ class EE_API FontTrueType : public Font {
 
 		GlyphTable glyphs; ///< Table mapping code points to their corresponding glyph
 		GlyphDrawableTable
-			drawables;	  ///> Table mapping code points to their corresponding glyph drawables.
-		Texture* texture; ///< Texture containing the pixels of the glyphs
-		std::vector<Row> rows; ///< List containing the position of all the existing rows
-		Uint32 fontInternalId{ 0 }; // The font internal id
-		unsigned int nextRow; ///< Y position of the next new row in the texture
+			drawables; ///> Table mapping code points to their corresponding glyph drawables.
+		Texture* texture{ nullptr }; ///< Texture containing the pixels of the glyphs
+		std::vector<Row> rows;		 ///< List containing the position of all the existing rows
+		Uint32 fontInternalId{ 0 };	 // The font internal id
+		unsigned int nextRow;		 ///< Y position of the next new row in the texture
 		const FontTrueType* font{ nullptr };
 	};
 
@@ -212,14 +213,14 @@ class EE_API FontTrueType : public Font {
 	typedef UnorderedMap<unsigned int, std::unique_ptr<Page>>
 		PageTable; ///< Table mapping a character size to its page (texture)
 
-	void* mLibrary; ///< Pointer to the internal library interface (it is typeless to avoid exposing
-					///< implementation details)
-	void* mFace; ///< Pointer to the internal font face (it is typeless to avoid exposing
-				 ///< implementation details)
-	void* mStreamRec; ///< Pointer to the stream rec instance (it is typeless to avoid exposing
-					  ///< implementation details)
-	void* mStroker;	  ///< Pointer to the stroker (it is typeless to avoid exposing implementation
-					  ///< details)
+	void* mLibrary{ nullptr }; ///< Pointer to the internal library interface (it is typeless to
+							   ///< avoid exposing implementation details)
+	void* mFace{ nullptr }; ///< Pointer to the internal font face (it is typeless to avoid exposing
+							///< implementation details)
+	void* mStreamRec{ nullptr }; ///< Pointer to the stream rec instance (it is typeless to avoid
+								 ///< exposing implementation details)
+	void* mStroker{ nullptr };	 ///< Pointer to the stroker (it is typeless to avoid exposing
+								 ///< implementation details)
 	void* mHBFont{ nullptr };
 	mutable ScopedBuffer mMemCopy; ///< If loaded from memory, this is the file copy in memory
 	Font::Info mInfo;			   ///< Information about the font

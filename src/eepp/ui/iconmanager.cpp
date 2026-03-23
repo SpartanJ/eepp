@@ -299,6 +299,7 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 				  { "chat-sparkle", 0xec4f },
 				  { "inspect", 0xebd1 },
 				  { "link", 0xeb15 },
+				  { "agent", 0xec67 },
 
 			  } ) {
 			iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );

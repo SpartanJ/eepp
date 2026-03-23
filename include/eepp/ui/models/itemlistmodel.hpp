@@ -155,6 +155,13 @@ template <typename K, typename V> class ItemPairListOwnerModel final : public Mo
 		return std::make_shared<ItemPairListOwnerModel<K, V>>( data );
 	}
 
+	static std::shared_ptr<ItemPairListOwnerModel> create( std::vector<std::pair<K, V>>&& data ) {
+		return std::make_shared<ItemPairListOwnerModel<K, V>>( std::move( data ) );
+	}
+
+	explicit ItemPairListOwnerModel( std::vector<std::pair<K, V>>&& data ) :
+		mData( std::move( data ) ) {}
+
 	explicit ItemPairListOwnerModel( const std::vector<std::pair<K, V>>& data ) : mData( data ) {}
 
 	virtual ~ItemPairListOwnerModel() {}

@@ -653,6 +653,9 @@ size_t TerminalEmulator::ttyread( void ) {
 			_die( "couldn't read from shell: %s\n", strerror( errno ) );
 			return 0;
 		default: {
+			if ( mDataCb )
+				mDataCb( mBuf + mBuflen, ret );
+
 			int old_scr = mTerm.scr;
 			int old_histi = mTerm.histi;
 			mTerm.scr = 0;

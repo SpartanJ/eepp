@@ -111,6 +111,34 @@ static std::map<std::string, LLMProvider> parseLLMProviders( const nlohmann::jso
 	return providers;
 }
 
+static std::map<std::string, ACPAgent> parseACPAgents( const nlohmann::json& j ) {
+	std::map<std::string, ACPAgent> agents;
+	for ( const auto& item : j.items() ) {
+		std::string agentName = item.key();
+		const auto& agentJson = item.value();
+
+		ACPAgent agent;
+		agent.name = agentName;
+		agent.enabled = agentJson.value( "enabled", true );
+		agent.command = agentJson.value( "command", "" );
+		
+		if ( agentJson.contains( "args" ) && agentJson["args"].is_array() ) {
+			for ( const auto& arg : agentJson["args"] ) {
+				agent.args.push_back( arg.get<std::string>() );
+			}
+		}
+
+		if ( agentJson.contains( "environment" ) && agentJson["environment"].is_object() ) {
+			for ( const auto& envItem : agentJson["environment"].items() ) {
+				agent.environment[envItem.key()] = envItem.value().get<std::string>();
+			}
+		}
+		
+		agents[agentName] = agent;
+	}
+	return agents;
+}
+
 Plugin* AIAssistantPlugin::New( PluginManager* pluginManager ) {
 	return eeNew( AIAssistantPlugin, ( pluginManager, false ) );
 }
@@ -398,6 +426,13 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 		}
 	}
 
+	if ( j.contains( "agents" ) ) {
+		auto agents = parseACPAgents( j["agents"] );
+		for ( const auto& [key, value] : agents ) {
+			mAgents[key] = value;
+		}
+	}
+
 	if ( !j.contains( "providers" ) )
 		return;
 
@@ -601,6 +636,7 @@ void AIAssistantPlugin::onSaveState( IniFile* state ) {
 		config.partition = mainChat->getSplitter()->getSplitPartition();
 		config.modelProvider = mainChat->getCurModel().provider;
 		config.modelName = mainChat->getCurModel().name;
+		config.agentName = mainChat->getCurAgent();
 	} else {
 		config = mConfig;
 	}
@@ -613,6 +649,7 @@ void AIAssistantPlugin::onSaveState( IniFile* state ) {
 	state->setValue( keyname, "split_partition", config.partition.toString() );
 	state->setValue( keyname, "default_provider", config.modelProvider );
 	state->setValue( keyname, "default_model", config.modelName );
+	state->setValue( keyname, "default_agent", config.agentName );
 }
 
 } // namespace ecode

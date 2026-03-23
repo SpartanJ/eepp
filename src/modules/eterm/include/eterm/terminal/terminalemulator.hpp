@@ -254,6 +254,10 @@ class TerminalEmulator final {
 		mPromptStateChangedCb = promptStateChangedCb;
 	}
 
+	using DataCb = std::function<void( const char*, size_t )>;
+
+	void setDataCb( DataCb cb ) { mDataCb = cb; }
+
 	int getTerminalMode() const { return mTerm.mode; }
 
   private:
@@ -291,6 +295,7 @@ class TerminalEmulator final {
 	std::string mCurrentWorkingDirectory;
 	PromptState mPromptState{ PromptState::Unknown };
 	PromptStateChangedCb mPromptStateChangedCb;
+	DataCb mDataCb;
 
 	void setClipboard( const char* str );
 
