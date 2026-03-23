@@ -886,7 +886,7 @@ void UITextView::loadFromXmlNode( const pugi::xml_node& node ) {
 
 	UIWidget::loadFromXmlNode( node );
 
-	if ( !node.text().empty() ) {
+	if ( node.first_child().empty() && !node.text().empty() ) {
 		setText( getTranslatorString( node.text().as_string() ) );
 	}
 
