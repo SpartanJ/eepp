@@ -11,6 +11,7 @@
 #include "uitreeviewfs.hpp"
 #include "uiwelcomescreen.hpp"
 #include "version.hpp"
+#include <eepp/ui/tools/uidiffview.hpp>
 #include <algorithm>
 #include <args/args.hxx>
 #include <eepp/graphics/fontfamily.hpp>
@@ -2606,6 +2607,19 @@ void App::loadAudioFromPath( const std::string& path, bool autoPlay ) {
 	audioPlayer->loadFromPath( path, autoPlay );
 }
 
+void App::loadDiffFromPath( const std::string& path ) {
+	auto* diffView = Tools::UIDiffView::New();
+	auto [tab, iv] = mSplitter->createWidget( diffView, i18n( "diff_viewer", "Diff Viewer" ) );
+	tab->setText( FileSystem::fileNameFromPath( path ) )->setTooltipText( path );
+	auto icon = findIcon( "filetype-patch" );
+	tab->setIcon( icon ? icon : findIcon( "file" ) );
+
+	std::string text;
+	if ( FileSystem::fileGet( path, text ) ) {
+		diffView->loadFromPatch( text );
+	}
+}
+
 void App::openFileFromPath( const std::string& path ) {
 	std::string ext = FileSystem::fileExtension( path );
 	if ( !Image::isImageExtension( path ) && !SoundFileFactory::isKnownFileExtension( path ) &&
@@ -2658,6 +2672,8 @@ bool App::loadFileFromPath(
 	} else if ( ( SoundFileFactory::isKnownFileExtension( path ) || tryFindMimeType ) &&
 				SoundFileFactory::isValidAudioFile( path ) ) {
 		loadAudioFromPath( path );
+	} else if ( ext == "diff" || ext == "patch" ) {
+		loadDiffFromPath( path );
 	} else if ( !openBinaryAsDocument && PathHelper::isOpenExternalExtension( ext ) ) {
 		Engine::instance()->openURI( path );
 	} else if ( tryFindMimeType && TextDocument::fileMightBeBinary( path ) ) {

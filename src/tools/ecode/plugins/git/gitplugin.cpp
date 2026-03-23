@@ -7,6 +7,7 @@
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
@@ -1115,14 +1116,18 @@ void GitPlugin::diff( const std::string& file, bool isStaged ) {
 			return;
 
 		getUISceneNode()->runOnMainThread( [this, file, res] {
-			auto ret = mManager->getSplitter()->createEditorInNewTab();
-			auto doc = ret.second->getDocumentRef();
-			doc->setDefaultFileName( FileSystem::fileNameFromPath( file ) + ".diff" );
-			doc->textInput( res.result, false );
-			doc->moveToStartOfDoc();
-			doc->resetUndoRedo();
-			ret.second->setSyntaxDefinition(
-				SyntaxDefinitionManager::instance()->getByLSPName( "diff" ) );
+			auto* diffView = Tools::UIDiffView::New();
+			auto [tab, iv] = getPluginContext()->getSplitter()->createWidget(
+				diffView, i18n( "diff_viewer", "Diff Viewer" ) );
+			std::string fileName = FileSystem::fileNameFromPath( file );
+			tab->setText( fileName )->setTooltipText( file );
+			UIIcon* icon = getUISceneNode()->findIcon(
+				UIIconThemeManager::getIconNameFromFileName( fileName ) );
+			if ( !icon )
+				icon = getUISceneNode()->findIcon( "file" );
+			if ( icon )
+				tab->setIcon( icon->getSize( getPluginContext()->getMenuIconSize() ) );
+			diffView->loadFromPatch( res.result );
 		} );
 	} );
 }

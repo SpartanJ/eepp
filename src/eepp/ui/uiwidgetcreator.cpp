@@ -1,5 +1,6 @@
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/tools/uitextureviewer.hpp>
+#include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uicombobox.hpp>
@@ -97,6 +98,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["stacklayout"] = UIStackLayout::New;
 		registeredWidget["viewpager"] = UIViewPager::New;
 		registeredWidget["codeeditor"] = UICodeEditor::New;
+		registeredWidget["diffview"] = Tools::UIDiffView::New;
 		registeredWidget["splitter"] = UISplitter::New;
 		registeredWidget["treeview"] = UITreeView::New;
 		registeredWidget["tableview"] = UITableView::New;
