@@ -2006,7 +2006,7 @@ Vector2f UICodeEditor::getRelativeScreenPosition( const TextPosition& pos ) {
 	Vector2f startScroll( start - mScroll );
 	auto offset = getTextPositionOffset( pos );
 	return { static_cast<Float>( startScroll.x + offset.x ),
-			 static_cast<Float>( startScroll.y + offset.y + getLineOffset() ) };
+			 static_cast<Float>( startScroll.y + offset.y + mPaddingPx.Top + getLineOffset() ) };
 }
 
 bool UICodeEditor::getShowLinesRelativePosition() const {

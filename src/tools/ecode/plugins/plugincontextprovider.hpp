@@ -144,6 +144,8 @@ class PluginContextProvider {
 
 	virtual void loadImageFromPath( const std::string& path ) = 0;
 
+	virtual void loadDiffFromPath( const std::string& path ) = 0;
+
 	virtual void loadFolder( std::string path, bool forceNewWindow = false ) = 0;
 
 	virtual void showGlobalSearch( bool searchAndReplace,
@@ -152,6 +154,8 @@ class PluginContextProvider {
 	virtual const std::unordered_map<std::string, std::string>& getStatusBarKeybindings() const = 0;
 
 	virtual bool projectIsOpen() const = 0;
+
+	virtual size_t getMenuIconSize() const = 0;
 };
 
 } // namespace ecode

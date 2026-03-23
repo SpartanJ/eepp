@@ -404,7 +404,8 @@ static const char* DEFAULT_LAYOUT = R"xml(
 .llm_chat_input {
 	border-radius: 8dp 0dp 8dp 8dp;
 }
-.llm_thought {
+.llm_thought,
+.llm_plan {
 	background-color: var(--list-back);
 	padding: 4dp 4dp 4dp 8dp;
 	border-left: 2dp solid var(--tab-line);
@@ -509,6 +510,9 @@ DropDownList.role_ui {
 }
 .agent_config_dropdown {
 	margin-bottom: 8dp;
+}
+.llm_chats Terminal {
+	margin-top: 8dp;
 }
 ]]>
 </style>
@@ -630,6 +634,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mChatScrollView->getVerticalScrollBar()->setValue( 1 );
 
 	mChatInput = findByClass<UICodeEditor>( "llm_chat_input" );
+	mChatInput->setId( String::format( "chat_input_%p", mChatInput ) );
 
 	on( Event::OnFocus, [this]( auto ) { mChatInput->setFocus(); } );
 
@@ -654,6 +659,18 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mChatInput->setFindReplaceEnabled( true );
 
 	mChatInput->setSyntaxDefinition( markdown );
+
+	mChatInput->on( Event::OnTextChanged, [this]( const Event* ) {
+		if ( !mIsAgentMode || mAvailableCommands.empty() )
+			return;
+		auto& doc = mChatInput->getDocument();
+		auto cursor = doc.getSelection().start();
+		auto lineText = doc.getLineTextUtf8( cursor.line() );
+		if ( ( cursor.column() == 0 || cursor.column() == 1 ) && !lineText.empty() &&
+			 lineText == "/\n" ) {
+			showSlashCommands();
+		}
+	} );
 
 	mChatRun = find<UIPushButton>( "llm_run" );
 	mChatRun->onClick( [this]( auto ) {
@@ -1828,35 +1845,19 @@ void LLMChatUI::setupAgentSession() {
 			if ( msg.contains( "content" ) && msg["content"].contains( "text" ) ) {
 				mThinkingBubble = nullptr; // Reset thinking bubble so next thought gets a new one
 				auto chunk = msg["content"].value( "text", "" );
-				writeToLastChat( chunk );
+				if ( !chunk.empty() )
+					writeToLastChat( chunk );
 			}
 		} else if ( sessionUpdate == "agent_thought_chunk" ) {
 			if ( msg.contains( "content" ) && msg["content"].contains( "text" ) ) {
 				auto chunk = msg["content"].value( "text", "" );
-				runOnMainThread( [this, chunk] { updateThinkingBubble( chunk ); } );
+				if ( !chunk.empty() )
+					runOnMainThread( [this, chunk] { updateThinkingBubble( chunk ); } );
 			}
-		} else if ( sessionUpdate == "tool_call" ) {
-			std::string toolMarkdown =
-				"> 🛠️ " + i18n( "tool_call", "Tool Call: " ) + msg.value( "title", "" ) + "\n";
-			addToolCallBubble( toolMarkdown );
+		} else if ( sessionUpdate == "tool_call" || sessionUpdate == "tool_call_update" ) {
+			addToolCallUpdate( msg );
 		} else if ( sessionUpdate == "plan" ) {
-			std::string planMarkdown = "> 📋 " + i18n( "plan_updated", "Plan Updated:" ) + "\n";
-			if ( msg.contains( "plan" ) && msg["plan"].contains( "steps" ) &&
-				 msg["plan"]["steps"].is_array() ) {
-				for ( const auto& step : msg["plan"]["steps"] ) {
-					std::string status = step.value( "status", "" );
-					std::string statusIcon = "⏳";
-					if ( status == "completed" )
-						statusIcon = "✅";
-					else if ( status == "running" )
-						statusIcon = "🔄";
-					else if ( status == "failed" )
-						statusIcon = "❌";
-
-					planMarkdown += "- " + statusIcon + " " + step.value( "title", "" ) + "\n";
-				}
-			}
-			addPlanBubble( planMarkdown );
+			addPlanUpdate( msg );
 		} else if ( sessionUpdate == "available_commands_update" ) {
 			if ( msg.contains( "availableCommands" ) && msg["availableCommands"].is_array() ) {
 				runOnMainThread( [this, msg] {
@@ -1901,15 +1902,19 @@ void LLMChatUI::setupAgentSession() {
 				Sizef( 0, 0 ), req.command, req.args, env,
 				req.cwd ? *req.cwd : getPlugin()->getPluginContext()->getCurrentProject(), 10000,
 				nullptr, false, false );
+			uiTerm->setClass( "eterm" );
 			uiTerm->setParent( bubble );
 			uiTerm->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 
+			mTerminalBubbles[termId] = bubble;
 			mAgentSession->setTerminalData( termId, uiTerm );
 		} );
 	};
 }
 
 void LLMChatUI::doAgentRequest() {
+	mToolCallBubbles.clear();
+	mTerminalBubbles.clear();
 	if ( !mAgentSession ) {
 		auto it = mAgents.find( mCurAgent );
 		if ( it == mAgents.end() ) {
@@ -2087,6 +2092,31 @@ void LLMChatUI::sendAgentPrompt() {
 			}
 		} );
 	} );
+}
+
+void LLMChatUI::showSlashCommands() {
+	if ( !getPlugin() || mAvailableCommands.empty() )
+		return;
+
+	std::vector<std::string> commands;
+	for ( const auto& cmd : mAvailableCommands ) {
+		commands.push_back( cmd.name + " - " + cmd.description );
+	}
+
+	getPlugin()->createListView(
+		mChatInput, ItemListOwnerModel<std::string>::create( std::move( commands ) ),
+		[this]( const ModelEvent* event ) {
+			if ( event->getModelEventType() == ModelEventType::Open ) {
+				auto row = event->getModelIndex().row();
+				if ( row >= 0 && row < (int)mAvailableCommands.size() ) {
+					auto& doc = mChatInput->getDocument();
+					auto cursor = doc.getSelection().start();
+					doc.setSelection( { cursor.line(), 0 }, cursor );
+					doc.textInput( "/" + mAvailableCommands[row].name + " " );
+				}
+				event->getNode()->close();
+			}
+		} );
 }
 
 void LLMChatUI::resizeToFit( UICodeEditor* editor ) {
@@ -2621,12 +2651,15 @@ void LLMChatUI::addPermissionUI( const acp::RequestPermissionRequest& req,
 UIWidget* LLMChatUI::addMarkdownBubble( const std::string& layout, const std::string& markdown ) {
 	find( "chat_presentation" )->setVisible( false );
 	UIWidget* chat = mChatsList->getUISceneNode()->loadLayoutFromString( layout, mChatsList );
-	if ( chat )
+	if ( chat && !markdown.empty() )
 		chat->asType<UIMarkdownView>()->loadFromString( markdown );
 	return chat;
 }
 
 void LLMChatUI::addPlanBubble( const std::string& markdown ) {
+	if ( markdown.empty() )
+		return;
+
 	runOnMainThread( [this, markdown] {
 		removeWaitingBubble();
 
@@ -2643,6 +2676,37 @@ void LLMChatUI::addPlanBubble( const std::string& markdown ) {
 			bubble->asType<UIMarkdownView>()->loadFromString( markdown );
 		}
 		mChatScrollView->getVerticalScrollBar()->setValue( 1.0f );
+	} );
+}
+
+void LLMChatUI::addPlanUpdate( const nlohmann::json& msg ) {
+	runOnMainThread( [this, msg] {
+		removeWaitingBubble();
+		std::string planMarkdown = "📋 " + i18n( "plan_updated", "Plan Updated:" ) + "\n";
+		if ( msg.contains( "plan" ) ) {
+			const auto& plan = msg["plan"];
+			const auto& entries =
+				plan.contains( "entries" )
+					? plan["entries"]
+					: ( plan.contains( "steps" ) ? plan["steps"] : nlohmann::json::array() );
+			if ( entries.is_array() ) {
+				for ( const auto& step : entries ) {
+					std::string status = step.value( "status", "" );
+					std::string statusIcon = "⏳";
+					if ( status == "completed" || status == "success" )
+						statusIcon = "✅";
+					else if ( status == "running" || status == "in_progress" )
+						statusIcon = "🔄";
+					else if ( status == "failed" || status == "error" )
+						statusIcon = "❌";
+					else if ( status == "cancelled" )
+						statusIcon = "🚫";
+
+					planMarkdown += "- " + statusIcon + " " + step.value( "title", "" ) + "\n";
+				}
+			}
+		}
+		addPlanBubble( planMarkdown );
 	} );
 }
 
@@ -2669,8 +2733,90 @@ void LLMChatUI::addToolCallBubble( const std::string& markdown ) {
 	} );
 }
 
+void LLMChatUI::addToolCallUpdate( const nlohmann::json& msg ) {
+	runOnMainThread( [this, msg] {
+		removeWaitingBubble();
+		std::string toolCallId = msg.value( "toolCallId", "" );
+		std::string terminalId = msg.value( "terminalId", "" );
+		std::string status = msg.value( "status", "" );
+		std::string title = msg.value( "title", "" );
+
+		UIWidget* bubble = nullptr;
+		if ( !toolCallId.empty() ) {
+			auto it = mToolCallBubbles.find( toolCallId );
+			if ( it != mToolCallBubbles.end() )
+				bubble = it->second;
+		}
+
+		if ( !bubble ) {
+			if ( mChatsList->getLastChild() ) {
+				auto* lastChild = mChatsList->getLastChild()->asType<UIWidget>();
+				if ( lastChild->hasClass( "llm_tool_call" ) && toolCallId.empty() )
+					bubble = lastChild;
+			}
+		}
+
+		std::string statusIcon = "⏳";
+		if ( status == "completed" || status == "success" )
+			statusIcon = "✅";
+		else if ( status == "running" || status == "in_progress" )
+			statusIcon = "🔄";
+		else if ( status == "failed" || status == "error" )
+			statusIcon = "❌";
+		else if ( status == "cancelled" )
+			statusIcon = "🚫";
+
+		std::string toolMarkdown = "> " + statusIcon + " 🛠️ " + i18n( "tool_call", "Tool Call: " ) +
+								   ( title.empty() ? toolCallId : title ) + "\n\n";
+
+		if ( msg.contains( "rawInput" ) ) {
+			auto rawInput = msg["rawInput"];
+			toolMarkdown +=
+				"\n```json\n" +
+				( rawInput.is_string() ? rawInput.get<std::string>() : rawInput.dump( 2 ) ) +
+				"\n```\n";
+		}
+		if ( msg.contains( "rawOutput" ) ) {
+			auto rawOutput = msg["rawOutput"];
+			toolMarkdown +=
+				"\n```json\n" +
+				( rawOutput.is_string() ? rawOutput.get<std::string>() : rawOutput.dump( 2 ) ) +
+				"\n```\n";
+		}
+
+		if ( !bubble ) {
+			bubble = addMarkdownBubble( DEFAULT_TOOL_CALL_GLOBE, toolMarkdown );
+			if ( !toolCallId.empty() )
+				mToolCallBubbles[toolCallId] = bubble;
+		} else {
+			bubble->asType<UIMarkdownView>()->loadFromString( toolMarkdown );
+		}
+
+		if ( !terminalId.empty() ) {
+			auto it = mTerminalBubbles.find( terminalId );
+			if ( it != mTerminalBubbles.end() ) {
+				UIWidget* terminalBubble = it->second;
+				eterm::UI::UITerminal* uiTerm =
+					terminalBubble->findByClass<eterm::UI::UITerminal>( "eterm" );
+				if ( uiTerm ) {
+					uiTerm->setParent( bubble );
+					uiTerm->setLayoutHeightPolicy( SizePolicy::Fixed );
+					uiTerm->setPixelsSize( uiTerm->getPixelsSize().getWidth(),
+										   PixelDensity::dpToPx( 300 ) );
+					terminalBubble->close();
+					mTerminalBubbles.erase( it );
+				}
+			}
+		}
+		mChatScrollView->getVerticalScrollBar()->setValue( 1.0f );
+	} );
+}
+
 void LLMChatUI::updateThinkingBubble( const std::string& chunk ) {
-	runOnMainThread( [this, chunk] {
+	if ( chunk.empty() )
+		return;
+
+	runOnMainThread( [this, chunk = std::move( chunk )] {
 		removeWaitingBubble();
 
 		UIWidget* bubble = nullptr;
