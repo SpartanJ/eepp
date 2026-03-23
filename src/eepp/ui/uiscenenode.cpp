@@ -444,9 +444,11 @@ void UISceneNode::setThreadPool( const std::shared_ptr<ThreadPool>& threadPool )
 }
 
 static std::string getErrorContext( size_t offset, std::string_view content ) {
-	static constexpr auto CONTEXT_LENGTH = 40;
-	std::size_t left = std::max( 0ul, offset >= CONTEXT_LENGTH ? offset - CONTEXT_LENGTH : 0ul );
-	std::size_t right = std::min( content.size(), offset + 40 );
+	static constexpr std::size_t CONTEXT_LENGTH = 40;
+	std::size_t minVal = offset >= CONTEXT_LENGTH ? offset - CONTEXT_LENGTH : 0;
+	std::size_t maxVal = offset + CONTEXT_LENGTH;
+	std::size_t left = std::max( static_cast<std::size_t>( 0ul ), minVal );
+	std::size_t right = std::min( content.size(), maxVal );
 	return std::string{ content.substr( left, right - left ) };
 }
 
