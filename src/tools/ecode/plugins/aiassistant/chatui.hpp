@@ -275,7 +275,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void hideSelectModel();
 
-	void showAgentConfigMenu();
+	void showAgentConfigWindow();
 
 	void insertFileToDocument( std::string path, std::shared_ptr<TextDocument> cdoc );
 

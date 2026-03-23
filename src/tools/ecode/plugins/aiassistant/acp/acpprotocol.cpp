@@ -31,8 +31,8 @@ json parseLegacyConfigOptions( const json& body, json configOptions, const std::
 								 { "category", "model" },
 								 { "options", json::array() } };
 			for ( const auto& model : models["availableModels"] ) {
-				modelConfig["options"].push_back(
-					{ { "id", model.value( "modelId", "" ) }, { "name", model.value( "name", "" ) } } );
+				modelConfig["options"].push_back( { { "id", model.value( "modelId", "" ) },
+													{ "name", model.value( "name", "" ) } } );
 			}
 			if ( models.contains( "currentModelId" ) ) {
 				modelConfig["currentValue"] = models.value( "currentModelId", "" );
@@ -160,7 +160,7 @@ json SetConfigOptionRequest::toJson() const {
 }
 
 SetConfigOptionResponse::SetConfigOptionResponse( const json& body, const std::string& configId,
-												 const std::string& optionId ) {
+												  const std::string& optionId ) {
 	if ( body.contains( "configOptions" ) )
 		configOptions = body["configOptions"];
 	configOptions = parseLegacyConfigOptions( body, configOptions, configId, optionId );

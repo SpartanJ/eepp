@@ -8,8 +8,10 @@
 
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/models/itemlistmodel.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uiicon.hpp>
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uimarkdownview.hpp>
@@ -19,7 +21,9 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uitableview.hpp>
+#include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uitooltip.hpp>
+#include <eepp/ui/uiwindow.hpp>
 #include <eepp/window/clipboard.hpp>
 #include <eepp/window/window.hpp>
 #include <eterm/ui/uiterminal.hpp>
@@ -499,6 +503,13 @@ DropDownList.role_ui {
 .tool_permission .permission_options > PushButton {
 	margin-right: 8dp;
 }
+.agent_config_label {
+	font-weight: bold;
+	margin-bottom: 4dp;
+}
+.agent_config_dropdown {
+	margin-bottom: 8dp;
+}
 ]]>
 </style>
 <Splitter lw="mp" lh="mp" orientation="vertical" splitter-partition="75%" padding="4dp">
@@ -532,8 +543,8 @@ DropDownList.role_ui {
 			<PushButton id="llm_more" class="llm_button" tooltip="@string(more_options, More Options)" icon="icon(more-fill, 14dp)" min-width="32dp" />
 			<PushButton class="model_ui" lw="0" lw8="1" lh="mp" margin-left="4dp" margin-right="4dp" tooltip="@string(select_model, Select Model)" />
 			<PushButton class="agent_ui" lw="0" lw8="1" lh="mp" margin-left="4dp" margin-right="4dp" tooltip="@string(select_agent, Select Agent)" visible="false" />
-			<PushButton class="agent_config_ui" tooltip="@string(agent_config, Agent Config)" icon="icon(agent, 14dp)" min-width="32dp" margin-right="4dp" visible="false" />
 			<SelectButton id="llm_agent_mode" class="llm_button" tooltip="@string(toggle_agent_mode, Toggle Agent Mode)" icon="icon(robot-2, 14dp)" min-width="32dp" margin-right="4dp" select-on-click="true" />
+			<PushButton class="agent_config_ui" tooltip="@string(agent_config, Agent Config)" icon="icon(agent, 14dp)" min-width="32dp" margin-right="4dp" visible="false" />
 			<PushButton id="llm_settings_but" class="llm_button" text="@string(settings, Settings)" tooltip="@string(settings, Settings)" icon="icon(settings, 14dp)" min-width="32dp" margin-right="4dp" />
 			<PushButton id="llm_add_chat" class="llm_button" text="@string(add, Add)" tooltip="@string(add_message, Add Message)" icon="icon(add, 15dp)" min-width="32dp" margin-right="4dp" />
 			<PushButton id="llm_run" class="llm_button primary" text="@string(run, Run)" tooltip="@string(add_message_and_run_prompt, Add Message and Run Prompt)" icon="icon(play-filled, 14dp)" />
@@ -600,7 +611,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mAgentBtn = findByClass<UIPushButton>( "agent_ui" );
 	mAgentBtn->onClick( [this]( auto ) { execute( "ai-select-agent" ); } );
 	mAgentConfigBtn = findByClass<UIPushButton>( "agent_config_ui" );
-	mAgentConfigBtn->onClick( [this]( auto ) { showAgentConfigMenu(); } );
+	mAgentConfigBtn->onClick( [this]( auto ) { showAgentConfigWindow(); } );
 
 	mChatAgentMode = find<UISelectButton>( "llm_agent_mode" );
 	mChatAgentMode->on( Event::OnValueChange, [this]( auto ) {
@@ -1522,104 +1533,147 @@ void LLMChatUI::hideSelectAgent() {
 	mLocateAgentBarLayout->setVisible( false );
 }
 
-void LLMChatUI::showAgentConfigMenu() {
-	if ( !mAgentSession || !mAgentSession->getClient()->isReady() ) {
-		if ( !mAgentSession )
-			setupAgentSession();
+void LLMChatUI::showAgentConfigWindow() {
+	if ( !mAgentSession )
+		setupAgentSession();
 
-		if ( mAgentSession && !mAgentSession->getClient()->isReady() ) {
-			mAgentConfigBtn->setEnabled( false );
-			mAgentSession->start( [this]( bool ready ) {
-				runOnMainThread( [this, ready]() {
-					mAgentConfigBtn->setEnabled( true );
-					if ( ready ) {
-						showAgentConfigMenu();
-					} else {
+	static const char* AGENT_CONFIG_LAYOUT = R"xml(
+		<window window-flags="default|shadow|modal|ephemeral"
+				window-title="@string(ai_agent_config, Agent Configuration)">
+			<Loader id="loader" radius="48" outline-thickness="6dp" indeterminate="true" />
+			<vbox id="config_container" lw="mp" lh="wc" padding="8dp" visible="false"></vbox>
+		</window>
+	)xml";
+
+	UIWindow* win =
+		getUISceneNode()->loadLayoutFromString( AGENT_CONFIG_LAYOUT )->asType<UIWindow>();
+	UILoader* loader = win->find( "loader" )->asType<UILoader>();
+	UILinearLayout* container = win->find( "config_container" )->asType<UILinearLayout>();
+
+	win->setMinWindowSize( getUISceneNode()->getSize().getWidth() * 0.4f,
+						   getUISceneNode()->getSize().getHeight() * 0.3f );
+	win->setKeyBindingCommand( "closeWindow", [win, this] {
+		win->closeWindow();
+		setFocus();
+	} );
+	win->getKeyBindings().addKeybind( { KEY_ESCAPE }, "closeWindow" );
+	win->center();
+	win->getModalWidget()->addClass( "shadowbg" );
+	win->on( Event::OnWindowReady, [win, loader]( auto ) {
+		win->setFocus();
+		loader->center();
+	} );
+
+	auto setupConfig = [this, loader, container, win]() {
+		auto configOptions = mAgentSession->getConfigOptions();
+		if ( !configOptions.is_array() || configOptions.empty() ) {
+			NotificationCenter::instance()->addNotification(
+				i18n( "no_agent_configs", "No Config Options Available" ) );
+			win->closeWindow();
+			return;
+		}
+
+		loader->setVisible( false );
+		container->setVisible( true );
+
+		for ( const auto& opt : configOptions ) {
+			if ( !opt.is_object() || !opt.contains( "id" ) || !opt.contains( "name" ) ||
+				 !opt.contains( "options" ) || !opt["options"].is_array() )
+				continue;
+
+			std::string optId = opt["id"].get<std::string>();
+			std::string currentValId = opt.value( "currentValue", "" );
+			std::string currentValName = "";
+
+			UITextView* label = UITextView::New();
+			label->setParent( container );
+			label->setText( opt["name"].get<std::string>() );
+			label->addClass( "agent_config_label" );
+
+			UIDropDownModelList* dropdown = UIDropDownModelList::New();
+			dropdown->setParent( container );
+			dropdown->setLayoutWidthPolicy( SizePolicy::MatchParent );
+			dropdown->addClass( "agent_config_dropdown" );
+
+			std::vector<std::pair<std::string, std::string>> options;
+			int selectedIndex = -1;
+			int count = 0;
+			for ( const auto& subopt : opt["options"] ) {
+				if ( !subopt.is_object() || !subopt.contains( "id" ) || !subopt.contains( "name" ) )
+					continue;
+				std::string subId = subopt["id"].get<std::string>();
+				std::string subName = subopt["name"].get<std::string>();
+				options.push_back( { subName, subId } );
+				if ( subId == currentValId ) {
+					selectedIndex = count;
+					currentValName = subName;
+				}
+				count++;
+			}
+
+			auto model = Models::ItemPairListOwnerModel<std::string, std::string>::create(
+				std::move( options ) );
+			dropdown->setModel( model );
+			dropdown->getListView()->setColumnsVisible( { 0 } );
+			dropdown->getListView()->setAutoExpandOnSingleColumn( true );
+			if ( selectedIndex != -1 ) {
+				dropdown->setText( currentValName );
+			}
+
+			dropdown->on( Event::OnItemSelected, [this, optId, model, dropdown]( const Event* ) {
+				auto* listView = dropdown->getListView();
+				if ( !listView || listView->getSelection().isEmpty() )
+					return;
+				ModelIndex index = listView->getSelection().first();
+				std::string subId = model->data( model->index( index.row(), 1 ) ).toString();
+
+				acp::SetConfigOptionRequest req;
+				req.sessionId = mAgentSession->getSessionId();
+				req.configId = optId;
+				req.optionId = subId;
+				mAgentSession->getClient()->setConfigOption(
+					req, [this, optId, subId]( const acp::SetConfigOptionResponse& res,
+											   const std::optional<acp::ResponseError>& err ) {
+						if ( err ) {
+							runOnMainThread( [this, err]() {
+								NotificationCenter::instance()->addNotification(
+									i18n( "agent_config_error",
+										  "Failed to update agent config: " ) +
+									err->message );
+							} );
+						} else {
+							auto newOpts = res.configOptions;
+							if ( newOpts.empty() ) {
+								newOpts = acp::parseLegacyConfigOptions(
+									{}, mAgentSession->getConfigOptions(), optId, subId );
+							}
+							mAgentSession->setConfigOptions( newOpts );
+						}
+					} );
+			} );
+		}
+	};
+
+	if ( mAgentSession && !mAgentSession->getClient()->isReady() ) {
+		mAgentConfigBtn->setEnabled( false );
+		mAgentSession->start( [this, setupConfig, win]( bool ready ) {
+			runOnMainThread( [this, setupConfig, win, ready]() {
+				mAgentConfigBtn->setEnabled( true );
+				if ( ready && win->isVisible() ) {
+					setupConfig();
+				} else {
+					if ( !ready ) {
 						NotificationCenter::instance()->addNotification(
 							i18n( "failed_to_start_agent", "Failed to start agent process." ) );
 						mAgentSession.reset();
 					}
-				} );
+					win->closeWindow();
+				}
 			} );
-			return;
-		}
-		return;
-	}
-
-	auto configOptions = mAgentSession->getConfigOptions();
-	if ( !configOptions.is_array() || configOptions.empty() ) {
-		NotificationCenter::instance()->addNotification(
-			i18n( "no_agent_configs", "No Config Options Available" ) );
-		return;
-	}
-
-	UIPopUpMenu* menu = UIPopUpMenu::New();
-
-	for ( const auto& opt : configOptions ) {
-		if ( !opt.is_object() || !opt.contains( "id" ) || !opt.contains( "name" ) ||
-			 !opt.contains( "options" ) || !opt["options"].is_array() )
-			continue;
-
-		UIPopUpMenu* subMenu = UIPopUpMenu::New();
-		std::string optId = opt["id"].get<std::string>();
-		std::string currentVal =
-			opt.contains( "currentValue" ) ? opt["currentValue"].get<std::string>() : "";
-
-		for ( const auto& subopt : opt["options"] ) {
-			if ( !subopt.is_object() || !subopt.contains( "id" ) || !subopt.contains( "name" ) )
-				continue;
-
-			std::string subId = subopt["id"].get<std::string>();
-			std::string subName = subopt["name"].get<std::string>();
-
-			Drawable* icon = nullptr;
-			if ( subId == currentVal ) {
-				icon = getUISceneNode()->findIconDrawable( "ok", PixelDensity::dpToPxI( 12 ) );
-			}
-
-			auto* item = subMenu->add( subName, icon );
-			item->setId( subId );
-		}
-
-		subMenu->on( Event::OnItemClicked, [this, optId]( const Event* event ) {
-			UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
-			std::string subId( item->getId() );
-			acp::SetConfigOptionRequest req;
-			req.sessionId = mAgentSession->getSessionId();
-			req.configId = optId;
-			req.optionId = subId;
-			mAgentSession->getClient()->setConfigOption(
-				req, [this, optId, subId]( const acp::SetConfigOptionResponse& res,
-										   const std::optional<acp::ResponseError>& err ) {
-					if ( err ) {
-						runOnMainThread( [this, err]() {
-							NotificationCenter::instance()->addNotification(
-								i18n( "agent_config_error", "Failed to update agent config: " ) +
-								err->message );
-						} );
-					} else {
-						auto newOpts = res.configOptions;
-						if ( newOpts.empty() ) {
-							newOpts = acp::parseLegacyConfigOptions(
-								{}, mAgentSession->getConfigOptions(), optId, subId );
-						}
-						mAgentSession->setConfigOptions( newOpts );
-					}
-				} );
 		} );
-
-		menu->addSubMenu( opt["name"].get<std::string>(), nullptr, subMenu );
+	} else if ( mAgentSession && mAgentSession->getClient()->isReady() ) {
+		setupConfig();
 	}
-
-	if ( menu->getCount() == 0 ) {
-		menu->add( i18n( "no_agent_configs", "No Config Options Available" ) )->setEnabled( false );
-	}
-
-	menu->runOnMainThread( [this, menu] {
-		auto pos( mAgentConfigBtn->getScreenPos() );
-		UIMenu::findBestMenuPos( pos, menu, nullptr, nullptr, mAgentConfigBtn );
-		menu->showAtScreenPosition( pos );
-	} );
 }
 
 void LLMChatUI::initSelectAgent() {

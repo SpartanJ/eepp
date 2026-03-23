@@ -11,7 +11,8 @@ using json = nlohmann::json;
 
 namespace ecode { namespace acp {
 
-json parseLegacyConfigOptions( const json& body, json configOptions, const std::string& forceId = "",
+json parseLegacyConfigOptions( const json& body, json configOptions,
+							   const std::string& forceId = "",
 							   const std::string& forceValue = "" );
 
 struct ClientCapabilities {

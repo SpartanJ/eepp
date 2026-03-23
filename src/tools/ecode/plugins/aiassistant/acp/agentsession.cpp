@@ -21,29 +21,28 @@ bool AgentSession::start( const std::function<void( bool )>& onReady ) {
 		req.clientCapabilities.fsReadTextFile = true;
 		req.clientCapabilities.fsWriteTextFile = true;
 
-		mClient->initialize(
-			req, [this, onReady]( const InitializeResponse&, const std::optional<ResponseError>& err ) {
+		mClient->initialize( req, [this, onReady]( const InitializeResponse&,
+												   const std::optional<ResponseError>& err ) {
+			if ( err ) {
+				if ( onReady )
+					onReady( false );
+				return;
+			}
+			NewSessionRequest nreq;
+			nreq.cwd = mClient->isReady() ? mClient->getConfig().workingDirectory : "";
+			mClient->newSession( nreq, [this, onReady]( const NewSessionResponse& nres,
+														const std::optional<ResponseError>& err ) {
 				if ( err ) {
 					if ( onReady )
 						onReady( false );
 					return;
 				}
-				NewSessionRequest nreq;
-				nreq.cwd = mClient->isReady() ? mClient->getConfig().workingDirectory : "";
-				mClient->newSession(
-					nreq, [this, onReady]( const NewSessionResponse& nres,
-										   const std::optional<ResponseError>& err ) {
-						if ( err ) {
-							if ( onReady )
-								onReady( false );
-							return;
-						}
-						mSessionId = nres.sessionId;
-						mConfigOptions = nres.configOptions;
-						if ( onReady )
-							onReady( true );
-					} );
+				mSessionId = nres.sessionId;
+				mConfigOptions = nres.configOptions;
+				if ( onReady )
+					onReady( true );
 			} );
+		} );
 		return true;
 	}
 	if ( onReady )
@@ -59,36 +58,36 @@ bool AgentSession::startLoaded( const std::string& sessionId,
 		req.clientCapabilities.fsReadTextFile = true;
 		req.clientCapabilities.fsWriteTextFile = true;
 
-		mClient->initialize(
-			req, [this, sessionId, onReady]( const InitializeResponse& ires,
+		mClient->initialize( req, [this, sessionId,
+								   onReady]( const InitializeResponse& ires,
 											 const std::optional<ResponseError>& err ) {
-				if ( err ) {
-					if ( onReady )
-						onReady( false );
-					return;
-				}
-				if ( ires.agentCapabilities.loadSession ) {
-					LoadSessionRequest lreq;
-					lreq.sessionId = sessionId;
-					lreq.cwd = mClient->isReady() ? mClient->getConfig().workingDirectory : "";
-					mClient->loadSession(
-						lreq, [this, sessionId, onReady]( const LoadSessionResponse& lres,
-														  const std::optional<ResponseError>& err ) {
-							if ( err ) {
-								if ( onReady )
-									onReady( false );
-								return;
-							}
-							mSessionId = sessionId;
-							mConfigOptions = lres.configOptions;
+			if ( err ) {
+				if ( onReady )
+					onReady( false );
+				return;
+			}
+			if ( ires.agentCapabilities.loadSession ) {
+				LoadSessionRequest lreq;
+				lreq.sessionId = sessionId;
+				lreq.cwd = mClient->isReady() ? mClient->getConfig().workingDirectory : "";
+				mClient->loadSession(
+					lreq, [this, sessionId, onReady]( const LoadSessionResponse& lres,
+													  const std::optional<ResponseError>& err ) {
+						if ( err ) {
 							if ( onReady )
-								onReady( true );
-						} );
-				} else {
-					if ( onReady )
-						onReady( false );
-				}
-			} );
+								onReady( false );
+							return;
+						}
+						mSessionId = sessionId;
+						mConfigOptions = lres.configOptions;
+						if ( onReady )
+							onReady( true );
+					} );
+			} else {
+				if ( onReady )
+					onReady( false );
+			}
+		} );
 		return true;
 	}
 	if ( onReady )
@@ -97,8 +96,8 @@ bool AgentSession::startLoaded( const std::string& sessionId,
 }
 
 void AgentSession::listSessions(
-	const std::function<void( const std::vector<SessionInfo>&, const std::optional<ResponseError>& )>&
-		cb ) {
+	const std::function<void( const std::vector<SessionInfo>&,
+							  const std::optional<ResponseError>& )>& cb ) {
 	if ( !mClient->isReady() ) {
 		if ( cb )
 			cb( {}, std::nullopt );

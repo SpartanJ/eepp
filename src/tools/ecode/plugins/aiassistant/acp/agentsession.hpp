@@ -22,14 +22,13 @@ class AgentSession {
 
 	bool start( const std::function<void( bool )>& onReady );
 	bool startLoaded( const std::string& sessionId, const std::function<void( bool )>& onReady );
-	void listSessions(
-		const std::function<void( const std::vector<SessionInfo>&, const std::optional<ResponseError>& )>&
-			cb );
+	void listSessions( const std::function<void( const std::vector<SessionInfo>&,
+												 const std::optional<ResponseError>& )>& cb );
 	void stop();
 
 	void prompt( const PromptRequest& req,
-				 const std::function<void( const PromptResponse&, const std::optional<ResponseError>& )>&
-					 cb );
+				 const std::function<void( const PromptResponse&,
+										   const std::optional<ResponseError>& )>& cb );
 	void cancel();
 
 	bool isPrompting() const { return mIsPrompting; }

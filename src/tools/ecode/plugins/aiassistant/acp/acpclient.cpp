@@ -196,10 +196,9 @@ void ACPClient::sendError( const json& id, int code, const std::string& message 
 	}
 }
 
-void ACPClient::initialize(
-	const InitializeRequest& req,
-	const std::function<void( const InitializeResponse&, const std::optional<ResponseError>& )>&
-		cb ) {
+void ACPClient::initialize( const InitializeRequest& req,
+							const std::function<void( const InitializeResponse&,
+													  const std::optional<ResponseError>& )>& cb ) {
 	write( { { "method", "initialize" }, { "params", req.toJson() } },
 		   [this, cb]( const IdType&, const json& resp ) {
 			   if ( resp.contains( "result" ) ) {
@@ -213,10 +212,9 @@ void ACPClient::initialize(
 		   } );
 }
 
-void ACPClient::newSession(
-	const NewSessionRequest& req,
-	const std::function<void( const NewSessionResponse&, const std::optional<ResponseError>& )>&
-		cb ) {
+void ACPClient::newSession( const NewSessionRequest& req,
+							const std::function<void( const NewSessionResponse&,
+													  const std::optional<ResponseError>& )>& cb ) {
 	write( { { "method", "session/new" }, { "params", req.toJson() } },
 		   [cb]( const IdType&, const json& resp ) {
 			   if ( resp.contains( "result" ) && cb ) {
@@ -247,29 +245,29 @@ void ACPClient::setConfigOption(
 							  const std::optional<ResponseError>& )>& cb ) {
 	auto fallback = [this, req, cb]() {
 		if ( req.configId == "model" ) {
-			write( { { "method", "session/set_model" },
-					 { "params", { { "sessionId", req.sessionId }, { "modelId", req.optionId } } } },
-				   [req, cb]( const IdType&, const json& resp2 ) {
-					   if ( resp2.contains( "result" ) && cb ) {
-						   cb( SetConfigOptionResponse( resp2["result"], req.configId,
-														req.optionId ),
-							   std::nullopt );
-					   } else if ( resp2.contains( "error" ) && cb ) {
-						   cb( {}, ResponseError( resp2["error"] ) );
-					   }
-				   } );
+			write(
+				{ { "method", "session/set_model" },
+				  { "params", { { "sessionId", req.sessionId }, { "modelId", req.optionId } } } },
+				[req, cb]( const IdType&, const json& resp2 ) {
+					if ( resp2.contains( "result" ) && cb ) {
+						cb( SetConfigOptionResponse( resp2["result"], req.configId, req.optionId ),
+							std::nullopt );
+					} else if ( resp2.contains( "error" ) && cb ) {
+						cb( {}, ResponseError( resp2["error"] ) );
+					}
+				} );
 		} else if ( req.configId == "mode" ) {
-			write( { { "method", "session/set_mode" },
-					 { "params", { { "sessionId", req.sessionId }, { "modeId", req.optionId } } } },
-				   [req, cb]( const IdType&, const json& resp2 ) {
-					   if ( resp2.contains( "result" ) && cb ) {
-						   cb( SetConfigOptionResponse( resp2["result"], req.configId,
-														req.optionId ),
-							   std::nullopt );
-					   } else if ( resp2.contains( "error" ) && cb ) {
-						   cb( {}, ResponseError( resp2["error"] ) );
-					   }
-				   } );
+			write(
+				{ { "method", "session/set_mode" },
+				  { "params", { { "sessionId", req.sessionId }, { "modeId", req.optionId } } } },
+				[req, cb]( const IdType&, const json& resp2 ) {
+					if ( resp2.contains( "result" ) && cb ) {
+						cb( SetConfigOptionResponse( resp2["result"], req.configId, req.optionId ),
+							std::nullopt );
+					} else if ( resp2.contains( "error" ) && cb ) {
+						cb( {}, ResponseError( resp2["error"] ) );
+					}
+				} );
 		} else if ( cb ) {
 			cb( {}, ResponseError{ -32601, "Method not found" } );
 		}
