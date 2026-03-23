@@ -70,6 +70,19 @@ def main():
                 }}) + "\n")
                 sys.stdout.flush()
 
+                # Send available commands
+                send_notification("session/update", {
+                    "sessionId": "test-session",
+                    "update": {
+                        "sessionUpdate": "available_commands_update",
+                        "availableCommands": [
+                            {"name": "search", "description": "Search in codebase"},
+                            {"name": "build", "description": "Build the project"},
+                            {"name": "test", "description": "Run tests"}
+                        ]
+                    }
+                })
+
             elif method == "session/prompt":
                 # 1. Send Plan
                 send_notification("session/update", {

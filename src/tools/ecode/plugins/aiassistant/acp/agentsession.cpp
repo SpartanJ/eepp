@@ -115,16 +115,22 @@ void AgentSession::listSessions(
 	}
 	ListSessionsRequest req;
 	req.cwd = mClient->getConfig().workingDirectory;
-	mClient->listSessions(
-		req, [this, cb]( const ListSessionsResponse& res, const std::optional<ResponseError>& err ) {
-			if ( err && onError )
-				onError( *err );
-			if ( cb )
-				cb( res.sessions, err );
-		} );
+	mClient->listSessions( req, [this, cb]( const ListSessionsResponse& res,
+											const std::optional<ResponseError>& err ) {
+		if ( err && onError )
+			onError( *err );
+		if ( cb )
+			cb( res.sessions, err );
+	} );
 }
 
 void AgentSession::stop() {
+	for ( auto& term : mTerminals ) {
+		if ( term.second.display && term.second.eventCbId )
+			term.second.display->popEventCallback( term.second.eventCbId );
+	}
+	mTerminals.clear();
+
 	if ( mClient )
 		mClient->stop();
 }
@@ -164,7 +170,9 @@ void AgentSession::cancel() {
 
 void AgentSession::setTerminalData( const std::string& terminalId, UITerminal* uiTerm ) {
 	auto& termData = mTerminals[terminalId];
-	termData = { uiTerm->getTerm(), uiTerm->getTerm()->getTerminal(), uiTerm, "" };
+	termData.display = uiTerm->getTerm();
+	termData.emulator = uiTerm->getTerm()->getTerminal();
+	termData.uiTerm = uiTerm;
 	if ( termData.emulator ) {
 		termData.emulator->setDataCb( [this, terminalId]( const char* data, size_t size ) {
 			auto it = mTerminals.find( terminalId );
@@ -172,6 +180,23 @@ void AgentSession::setTerminalData( const std::string& terminalId, UITerminal* u
 				it->second.outputBuffer.append( data, size );
 			}
 		} );
+	}
+	if ( termData.display ) {
+		termData.eventCbId =
+			termData.display->pushEventCallback( [this, terminalId]( const auto& event ) {
+				if ( event.type == TerminalDisplay::EventType::PROCESS_EXIT ) {
+					auto it = mTerminals.find( terminalId );
+					if ( it != mTerminals.end() ) {
+						WaitForTerminalExitResponse res;
+						res.exitCode = it->second.emulator ? it->second.emulator->getExitCode() : 0;
+						auto callbacks = std::move( it->second.exitCallbacks );
+						it->second.exitCallbacks.clear();
+						for ( const auto& cb : callbacks ) {
+							cb( res );
+						}
+					}
+				}
+			} );
 	}
 }
 
@@ -263,6 +288,8 @@ void AgentSession::setupClient() {
 	mClient->onReleaseTerminal = [this]( const ReleaseTerminalRequest& req, auto cb ) {
 		auto it = mTerminals.find( req.terminalId );
 		if ( it != mTerminals.end() ) {
+			if ( it->second.display && it->second.eventCbId )
+				it->second.display->popEventCallback( it->second.eventCbId );
 			if ( it->second.emulator )
 				it->second.emulator->terminate();
 			if ( it->second.uiTerm )
@@ -273,14 +300,18 @@ void AgentSession::setupClient() {
 	};
 
 	mClient->onWaitForTerminalExit = [this]( const WaitForTerminalExitRequest& req, auto cb ) {
-		WaitForTerminalExitResponse res;
 		auto it = mTerminals.find( req.terminalId );
 		if ( it != mTerminals.end() && it->second.emulator ) {
 			if ( it->second.emulator->hasExited() ) {
+				WaitForTerminalExitResponse res;
 				res.exitCode = it->second.emulator->getExitCode();
+				cb( res );
+			} else {
+				it->second.exitCallbacks.push_back( cb );
 			}
+		} else {
+			cb( WaitForTerminalExitResponse() );
 		}
-		cb( res );
 	};
 }
 

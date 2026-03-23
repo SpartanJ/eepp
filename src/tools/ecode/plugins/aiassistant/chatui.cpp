@@ -634,6 +634,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mChatScrollView->getVerticalScrollBar()->setValue( 1 );
 
 	mChatInput = findByClass<UICodeEditor>( "llm_chat_input" );
+	mChatInput->setId( String::format( "chat_input_%p", mChatInput ) );
 
 	on( Event::OnFocus, [this]( auto ) { mChatInput->setFocus(); } );
 
@@ -658,6 +659,18 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mChatInput->setFindReplaceEnabled( true );
 
 	mChatInput->setSyntaxDefinition( markdown );
+
+	mChatInput->on( Event::OnTextChanged, [this]( const Event* ) {
+		if ( !mIsAgentMode || mAvailableCommands.empty() )
+			return;
+		auto& doc = mChatInput->getDocument();
+		auto cursor = doc.getSelection().start();
+		auto lineText = doc.getLineTextUtf8( cursor.line() );
+		if ( ( cursor.column() == 0 || cursor.column() == 1 ) && !lineText.empty() &&
+			 lineText == "/\n" ) {
+			showSlashCommands();
+		}
+	} );
 
 	mChatRun = find<UIPushButton>( "llm_run" );
 	mChatRun->onClick( [this]( auto ) {
@@ -2079,6 +2092,31 @@ void LLMChatUI::sendAgentPrompt() {
 			}
 		} );
 	} );
+}
+
+void LLMChatUI::showSlashCommands() {
+	if ( !getPlugin() || mAvailableCommands.empty() )
+		return;
+
+	std::vector<std::string> commands;
+	for ( const auto& cmd : mAvailableCommands ) {
+		commands.push_back( cmd.name + " - " + cmd.description );
+	}
+
+	getPlugin()->createListView(
+		mChatInput, ItemListOwnerModel<std::string>::create( std::move( commands ) ),
+		[this]( const ModelEvent* event ) {
+			if ( event->getModelEventType() == ModelEventType::Open ) {
+				auto row = event->getModelIndex().row();
+				if ( row >= 0 && row < (int)mAvailableCommands.size() ) {
+					auto& doc = mChatInput->getDocument();
+					auto cursor = doc.getSelection().start();
+					doc.setSelection( { cursor.line(), 0 }, cursor );
+					doc.textInput( "/" + mAvailableCommands[row].name + " " );
+				}
+				event->getNode()->close();
+			}
+		} );
 }
 
 void LLMChatUI::resizeToFit( UICodeEditor* editor ) {

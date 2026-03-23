@@ -125,44 +125,92 @@ bool Plugin::editorExists( UICodeEditor* editor ) {
 	return mManager->getSplitter() && mManager->getSplitter()->editorExists( editor );
 }
 
+UIListView* Plugin::createListViewHelper( UICodeEditor* editor, std::shared_ptr<Model> model,
+										  const ModelEventCallback& onModelEventCb ) {
+	auto lvs = editor->findAllByClass( "editor_listview" );
+	for ( auto* ilv : lvs )
+		ilv->close();
+	std::string id = editor->getId(); // ID must be stable and unique
+	UIListView* lv = UIListView::New();
+	lv->setParent( editor );
+	lv->addClass( "editor_listview" );
+	auto pos =
+		editor->getRelativeScreenPosition( editor->getDocumentRef()->getSelection().start() );
+	lv->setPixelsPosition( { pos.x, pos.y + editor->getLineHeight() } );
+	if ( !lv->getParent()->getLocalBounds().contains(
+			 lv->getLocalBounds().setPosition( lv->getPixelsPosition() ) ) ) {
+		lv->setPixelsPosition( { pos.x, pos.y - lv->getPixelsSize().getHeight() } );
+	}
+	lv->setVisible( true );
+	lv->getVerticalScrollBar()->reloadStyle( true, true, true );
+	lv->setAutoExpandOnSingleColumn( false );
+	lv->setModel( model );
+	Float height = std::min( lv->getContentSize().y, lv->getRowHeight() * 8 );
+	Float colWidth = lv->getMaxColumnContentWidth( 0 ) + PixelDensity::dpToPx( 4 );
+	bool needsVScroll = lv->getContentSize().y > lv->getRowHeight() * 8;
+	Float width = colWidth + lv->getPixelsPadding().getWidth() +
+				  ( needsVScroll ? lv->getVerticalScrollBar()->getPixelsSize().getWidth() : 0 );
+	lv->setPixelsSize( { width, height } );
+	lv->setColumnWidth( 0, colWidth );
+	lv->setScrollMode( needsVScroll ? ScrollBarMode::Auto : ScrollBarMode::AlwaysOff,
+					   ScrollBarMode::AlwaysOff );
+	lv->on( Event::OnModelEvent, [onModelEventCb]( const Event* event ) {
+		const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
+		if ( onModelEventCb )
+			onModelEventCb( modelEvent );
+	} );
+	lv->setSelection( model->index( 0 ) );
+	lv->setFocus();
+	return lv;
+}
+
 void Plugin::createListView( UICodeEditor* editor, std::shared_ptr<Model> model,
 							 const ModelEventCallback& onModelEventCb,
 							 const std::function<void( UIListView* )> onCreateCb ) {
 	UICodeEditorSplitter* splitter = getManager()->getSplitter();
-	if ( nullptr == splitter || !editorExists( editor ) )
-		return;
-	editor->runOnMainThread( [model, editor, splitter, onModelEventCb, onCreateCb] {
-		auto lvs = editor->findAllByClass( "editor_listview" );
-		for ( auto* ilv : lvs )
-			ilv->close();
 
-		UIListView* lv = UIListView::New();
-		lv->setParent( editor );
-		lv->addClass( "editor_listview" );
-		auto pos =
-			editor->getRelativeScreenPosition( editor->getDocumentRef()->getSelection().start() );
-		lv->setPixelsPosition( { pos.x, pos.y + editor->getLineHeight() } );
-		if ( !lv->getParent()->getLocalBounds().contains(
-				 lv->getLocalBounds().setPosition( lv->getPixelsPosition() ) ) ) {
-			lv->setPixelsPosition( { pos.x, pos.y - lv->getPixelsSize().getHeight() } );
-		}
-		lv->setVisible( true );
-		lv->getVerticalScrollBar()->reloadStyle( true, true, true );
-		lv->setAutoExpandOnSingleColumn( false );
-		lv->setModel( model );
-		Float height = std::min( lv->getContentSize().y, lv->getRowHeight() * 8 );
-		Float colWidth = lv->getMaxColumnContentWidth( 0 ) + PixelDensity::dpToPx( 4 );
-		bool needsVScroll = lv->getContentSize().y > lv->getRowHeight() * 8;
-		Float width = colWidth + lv->getPixelsPadding().getWidth() +
-					  ( needsVScroll ? lv->getVerticalScrollBar()->getPixelsSize().getWidth() : 0 );
-		lv->setPixelsSize( { width, height } );
-		lv->setColumnWidth( 0, colWidth );
-		lv->setScrollMode( needsVScroll ? ScrollBarMode::Auto : ScrollBarMode::AlwaysOff,
-						   ScrollBarMode::AlwaysOff );
+	if ( nullptr == splitter || !editorExists( editor ) ) {
+		if ( editor->getId().empty() )
+			return;
+
+		UISceneNode* uiSceneNode = getUISceneNode();
+		editor->runOnMainThread( [model, editor, onModelEventCb, onCreateCb, uiSceneNode] {
+			UIListView* lv = createListViewHelper( editor, model, onModelEventCb );
+			std::string id = editor->getId();
+			if ( onCreateCb )
+				onCreateCb( lv );
+			Uint32 focusCb = lv->getUISceneNode()->getUIEventDispatcher()->addFocusEventCallback(
+				[lv]( const auto&, Node* focus, Node* ) {
+					if ( !lv->inParentTreeOf( focus ) && !lv->isClosing() )
+						lv->close();
+				} );
+			Uint32 cursorCb = editor->on( Event::OnCursorPosChange,
+										  [lv, editor, id, uiSceneNode]( const Event* ) {
+											  if ( !lv->isClosing() ) {
+												  lv->close();
+												  if ( uiSceneNode->find( id ) )
+													  editor->setFocus();
+											  }
+										  } );
+			lv->on( Event::KeyDown, [lv, uiSceneNode, editor, id]( const Event* event ) {
+				if ( event->asKeyEvent()->getKeyCode() == EE::Window::KEY_ESCAPE &&
+					 !lv->isClosing() )
+					lv->close();
+				if ( uiSceneNode->find( id ) )
+					editor->setFocus();
+			} );
+			lv->on( Event::OnClose, [lv, editor, cursorCb, focusCb]( const Event* ) {
+				lv->getUISceneNode()->getUIEventDispatcher()->removeFocusEventCallback( focusCb );
+				editor->removeEventListener( cursorCb );
+			} );
+		} );
+		return;
+	}
+
+	editor->runOnMainThread( [model, editor, splitter, onModelEventCb, onCreateCb] {
+		UIListView* lv = createListViewHelper( editor, model, onModelEventCb );
 		if ( onCreateCb )
 			onCreateCb( lv );
-		lv->setSelection( model->index( 0 ) );
-		lv->setFocus();
 		Uint32 focusCb = lv->getUISceneNode()->getUIEventDispatcher()->addFocusEventCallback(
 			[lv]( const auto&, Node* focus, Node* ) {
 				if ( !lv->inParentTreeOf( focus ) && !lv->isClosing() )
@@ -181,11 +229,6 @@ void Plugin::createListView( UICodeEditor* editor, std::shared_ptr<Model> model,
 				lv->close();
 			if ( splitter->editorExists( editor ) )
 				editor->setFocus();
-		} );
-		lv->on( Event::OnModelEvent, [onModelEventCb]( const Event* event ) {
-			const ModelEvent* modelEvent = static_cast<const ModelEvent*>( event );
-			if ( onModelEventCb )
-				onModelEventCb( modelEvent );
 		} );
 		lv->on( Event::OnClose, [lv, editor, cursorCb, focusCb]( const Event* ) {
 			lv->getUISceneNode()->getUIEventDispatcher()->removeFocusEventCallback( focusCb );

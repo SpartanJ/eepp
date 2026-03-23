@@ -29,10 +29,9 @@ class AgentSession {
 	void prompt( const PromptRequest& req,
 				 const std::function<void( const PromptResponse&,
 										   const std::optional<ResponseError>& )>& cb );
-	void setConfigOption(
-		const SetConfigOptionRequest& req,
-		const std::function<void( const SetConfigOptionResponse&,
-								  const std::optional<ResponseError>& )>& cb );
+	void setConfigOption( const SetConfigOptionRequest& req,
+						  const std::function<void( const SetConfigOptionResponse&,
+													const std::optional<ResponseError>& )>& cb );
 	void cancel();
 
 	bool isPrompting() const { return mIsPrompting; }
@@ -64,6 +63,8 @@ class AgentSession {
 		std::shared_ptr<TerminalEmulator> emulator;
 		UITerminal* uiTerm{ nullptr };
 		std::string outputBuffer;
+		Uint32 eventCbId{ 0 };
+		std::vector<std::function<void( const WaitForTerminalExitResponse& )>> exitCallbacks;
 	};
 	std::unordered_map<std::string, TermData> mTerminals;
 

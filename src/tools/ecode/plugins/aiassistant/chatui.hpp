@@ -235,6 +235,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void resizeToFit( UICodeEditor* editor );
 
+	void showSlashCommands();
+
 	void addChat( LLMChat::Role role, std::string conversation );
 
 	void writeToLastChat( const std::string& text );
