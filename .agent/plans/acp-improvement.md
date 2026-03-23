@@ -32,11 +32,11 @@ We need a way to capture the output from the terminal process to satisfy `termin
     - Respect `outputByteLimit`.
 
 ### 3. Phase 2: UI & Protocol Updates
-- [ ] Update `src/tools/ecode/plugins/aiassistant/chatui.cpp`:
+- [x] Update `src/tools/ecode/plugins/aiassistant/chatui.cpp`:
     - Fix `plan` update handling to use the standard `entries` schema.
     - Implement `tool_call_update` handling.
     - Update tool call UI to reflect status (pending, in_progress, completed, failed, cancelled).
-- [ ] Implement embedded terminals in tool calls:
+- [x] Implement embedded terminals in tool calls:
     - When a `tool_call_update` contains a `terminalId`, link the terminal UI to that tool call bubble if possible.
 
 ### 4. Phase 3: UX Improvements

@@ -8,6 +8,7 @@
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/widgetcommandexecuter.hpp>
 
+#include <eepp/core/containers.hpp>
 #include <nlohmann/json_fwd.hpp>
 
 namespace EE { namespace UI {
@@ -148,6 +149,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	};
 	std::vector<SlashCommand> mAvailableCommands;
 
+	UnorderedMap<std::string, UIWidget*> mToolCallBubbles;
+	UnorderedMap<std::string, UIWidget*> mTerminalBubbles;
 	std::unique_ptr<acp::AgentSession> mAgentSession;
 	UIWidget* mThinkingBubble{ nullptr };
 	std::string mCurThinking;
@@ -193,7 +196,11 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void addPlanBubble( const std::string& markdown );
 
+	void addPlanUpdate( const nlohmann::json& msg );
+
 	void addToolCallBubble( const std::string& markdown );
+
+	void addToolCallUpdate( const nlohmann::json& msg );
 
 	void addThinkingBubble();
 
