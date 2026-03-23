@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "efsw": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1768918917,
+        "narHash": "sha256-BuuQDpqtVMuWrhkNnELnz8JlFGv0fE0Rdtkgad0Wprs=",
+        "owner": "SpartanJ",
+        "repo": "efsw",
+        "rev": "22f17a0bcdf3a4edf61f8b14328391463389e548",
+        "type": "github"
+      },
+      "original": {
+        "owner": "SpartanJ",
+        "repo": "efsw",
+        "rev": "22f17a0bcdf3a4edf61f8b14328391463389e548",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1774243609,
@@ -16,9 +33,64 @@
         "type": "github"
       }
     },
+    "premakeCMake": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1729592510,
+        "narHash": "sha256-lhAIY4FUzM+xMTjGVKvcEVDUjYozRfachYSiSkoPwC8=",
+        "owner": "Jarod42",
+        "repo": "premake-cmake",
+        "rev": "8e02bb91a4d0f29d7540de7357574cf3b7c454f9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Jarod42",
+        "repo": "premake-cmake",
+        "rev": "8e02bb91a4d0f29d7540de7357574cf3b7c454f9",
+        "type": "github"
+      }
+    },
+    "premakeNinja": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1760273558,
+        "narHash": "sha256-0xKwOU7pF9ByNgfsmesQ/+IBw1Z3j3tJJtJnCAP2BBE=",
+        "owner": "jimon",
+        "repo": "premake-ninja",
+        "rev": "3d214bf1fd7d2c867cdf02b4ab50fb921fdd1155",
+        "type": "github"
+      },
+      "original": {
+        "owner": "jimon",
+        "repo": "premake-ninja",
+        "rev": "3d214bf1fd7d2c867cdf02b4ab50fb921fdd1155",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
-        "nixpkgs": "nixpkgs"
+        "efsw": "efsw",
+        "nixpkgs": "nixpkgs",
+        "premakeCMake": "premakeCMake",
+        "premakeNinja": "premakeNinja",
+        "soil2": "soil2"
+      }
+    },
+    "soil2": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1767192923,
+        "narHash": "sha256-5IB3zoLnqJhWv16YfY6ni+uqbSznsaONyWIhlkNy4uI=",
+        "owner": "SpartanJ",
+        "repo": "SOIL2",
+        "rev": "e9ae69d4aadaefcca0a7c0ca43bfcee0d4c09b79",
+        "type": "github"
+      },
+      "original": {
+        "owner": "SpartanJ",
+        "repo": "SOIL2",
+        "rev": "e9ae69d4aadaefcca0a7c0ca43bfcee0d4c09b79",
+        "type": "github"
       }
     }
   },
