@@ -2651,12 +2651,15 @@ void LLMChatUI::addPermissionUI( const acp::RequestPermissionRequest& req,
 UIWidget* LLMChatUI::addMarkdownBubble( const std::string& layout, const std::string& markdown ) {
 	find( "chat_presentation" )->setVisible( false );
 	UIWidget* chat = mChatsList->getUISceneNode()->loadLayoutFromString( layout, mChatsList );
-	if ( chat )
+	if ( chat && !markdown.empty() )
 		chat->asType<UIMarkdownView>()->loadFromString( markdown );
 	return chat;
 }
 
 void LLMChatUI::addPlanBubble( const std::string& markdown ) {
+	if ( markdown.empty() )
+		return;
+
 	runOnMainThread( [this, markdown] {
 		removeWaitingBubble();
 
@@ -2810,7 +2813,10 @@ void LLMChatUI::addToolCallUpdate( const nlohmann::json& msg ) {
 }
 
 void LLMChatUI::updateThinkingBubble( const std::string& chunk ) {
-	runOnMainThread( [this, chunk] {
+	if ( chunk.empty() )
+		return;
+
+	runOnMainThread( [this, chunk = std::move( chunk )] {
 		removeWaitingBubble();
 
 		UIWidget* bubble = nullptr;
