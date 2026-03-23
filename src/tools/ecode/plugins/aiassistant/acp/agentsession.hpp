@@ -44,6 +44,8 @@ class AgentSession {
 
 	std::string getSessionId() const { return mSessionId; }
 	ACPClient* getClient() const { return mClient.get(); }
+	json getConfigOptions() const { return mConfigOptions; }
+	void setConfigOptions( const json& opts ) { mConfigOptions = opts; }
 
 	void setTerminalData( const std::string& terminalId, UITerminal* uiTerm );
 
@@ -51,6 +53,7 @@ class AgentSession {
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::unique_ptr<ACPClient> mClient;
 	std::string mSessionId;
+	json mConfigOptions;
 	bool mIsPrompting{ false };
 
 	struct TermData {

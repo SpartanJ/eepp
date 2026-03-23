@@ -241,6 +241,63 @@ void ACPClient::loadSession(
 		   } );
 }
 
+void ACPClient::setConfigOption(
+	const SetConfigOptionRequest& req,
+	const std::function<void( const SetConfigOptionResponse&,
+							  const std::optional<ResponseError>& )>& cb ) {
+	auto fallback = [this, req, cb]() {
+		if ( req.configId == "model" ) {
+			write( { { "method", "session/set_model" },
+					 { "params", { { "sessionId", req.sessionId }, { "modelId", req.optionId } } } },
+				   [req, cb]( const IdType&, const json& resp2 ) {
+					   if ( resp2.contains( "result" ) && cb ) {
+						   cb( SetConfigOptionResponse( resp2["result"], req.configId,
+														req.optionId ),
+							   std::nullopt );
+					   } else if ( resp2.contains( "error" ) && cb ) {
+						   cb( {}, ResponseError( resp2["error"] ) );
+					   }
+				   } );
+		} else if ( req.configId == "mode" ) {
+			write( { { "method", "session/set_mode" },
+					 { "params", { { "sessionId", req.sessionId }, { "modeId", req.optionId } } } },
+				   [req, cb]( const IdType&, const json& resp2 ) {
+					   if ( resp2.contains( "result" ) && cb ) {
+						   cb( SetConfigOptionResponse( resp2["result"], req.configId,
+														req.optionId ),
+							   std::nullopt );
+					   } else if ( resp2.contains( "error" ) && cb ) {
+						   cb( {}, ResponseError( resp2["error"] ) );
+					   }
+				   } );
+		} else if ( cb ) {
+			cb( {}, ResponseError{ -32601, "Method not found" } );
+		}
+	};
+
+	if ( mLegacyConfigOnly ) {
+		fallback();
+		return;
+	}
+
+	write( { { "method", "session/set_config_option" }, { "params", req.toJson() } },
+		   [this, req, fallback, cb]( const IdType&, const json& resp ) {
+			   if ( resp.contains( "result" ) && cb ) {
+				   cb( SetConfigOptionResponse( resp["result"], req.configId, req.optionId ),
+					   std::nullopt );
+			   } else if ( resp.contains( "error" ) ) {
+				   ResponseError err( resp["error"] );
+				   if ( err.code == -32601 ) {
+					   mLegacyConfigOnly = true;
+					   fallback();
+					   return;
+				   }
+				   if ( cb )
+					   cb( {}, err );
+			   }
+		   } );
+}
+
 void ACPClient::listSessions(
 	const ListSessionsRequest& req,
 	const std::function<void( const ListSessionsResponse&, const std::optional<ResponseError>& )>&

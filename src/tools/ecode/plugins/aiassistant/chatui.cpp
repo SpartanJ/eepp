@@ -532,6 +532,7 @@ DropDownList.role_ui {
 			<PushButton id="llm_more" class="llm_button" tooltip="@string(more_options, More Options)" icon="icon(more-fill, 14dp)" min-width="32dp" />
 			<PushButton class="model_ui" lw="0" lw8="1" lh="mp" margin-left="4dp" margin-right="4dp" tooltip="@string(select_model, Select Model)" />
 			<PushButton class="agent_ui" lw="0" lw8="1" lh="mp" margin-left="4dp" margin-right="4dp" tooltip="@string(select_agent, Select Agent)" visible="false" />
+			<PushButton class="agent_config_ui" tooltip="@string(agent_config, Agent Config)" icon="icon(agent, 14dp)" min-width="32dp" margin-right="4dp" visible="false" />
 			<SelectButton id="llm_agent_mode" class="llm_button" tooltip="@string(toggle_agent_mode, Toggle Agent Mode)" icon="icon(robot-2, 14dp)" min-width="32dp" margin-right="4dp" select-on-click="true" />
 			<PushButton id="llm_settings_but" class="llm_button" text="@string(settings, Settings)" tooltip="@string(settings, Settings)" icon="icon(settings, 14dp)" min-width="32dp" margin-right="4dp" />
 			<PushButton id="llm_add_chat" class="llm_button" text="@string(add, Add)" tooltip="@string(add_message, Add Message)" icon="icon(add, 15dp)" min-width="32dp" margin-right="4dp" />
@@ -598,6 +599,8 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mModelBtn->onClick( [this]( auto ) { execute( "ai-select-model" ); } );
 	mAgentBtn = findByClass<UIPushButton>( "agent_ui" );
 	mAgentBtn->onClick( [this]( auto ) { execute( "ai-select-agent" ); } );
+	mAgentConfigBtn = findByClass<UIPushButton>( "agent_config_ui" );
+	mAgentConfigBtn->onClick( [this]( auto ) { showAgentConfigMenu(); } );
 
 	mChatAgentMode = find<UISelectButton>( "llm_agent_mode" );
 	mChatAgentMode->on( Event::OnValueChange, [this]( auto ) {
@@ -1519,6 +1522,106 @@ void LLMChatUI::hideSelectAgent() {
 	mLocateAgentBarLayout->setVisible( false );
 }
 
+void LLMChatUI::showAgentConfigMenu() {
+	if ( !mAgentSession || !mAgentSession->getClient()->isReady() ) {
+		if ( !mAgentSession )
+			setupAgentSession();
+
+		if ( mAgentSession && !mAgentSession->getClient()->isReady() ) {
+			mAgentConfigBtn->setEnabled( false );
+			mAgentSession->start( [this]( bool ready ) {
+				runOnMainThread( [this, ready]() {
+					mAgentConfigBtn->setEnabled( true );
+					if ( ready ) {
+						showAgentConfigMenu();
+					} else {
+						NotificationCenter::instance()->addNotification(
+							i18n( "failed_to_start_agent", "Failed to start agent process." ) );
+						mAgentSession.reset();
+					}
+				} );
+			} );
+			return;
+		}
+		return;
+	}
+
+	auto configOptions = mAgentSession->getConfigOptions();
+	if ( !configOptions.is_array() || configOptions.empty() ) {
+		NotificationCenter::instance()->addNotification(
+			i18n( "no_agent_configs", "No Config Options Available" ) );
+		return;
+	}
+
+	UIPopUpMenu* menu = UIPopUpMenu::New();
+
+	for ( const auto& opt : configOptions ) {
+		if ( !opt.is_object() || !opt.contains( "id" ) || !opt.contains( "name" ) ||
+			 !opt.contains( "options" ) || !opt["options"].is_array() )
+			continue;
+
+		UIPopUpMenu* subMenu = UIPopUpMenu::New();
+		std::string optId = opt["id"].get<std::string>();
+		std::string currentVal =
+			opt.contains( "currentValue" ) ? opt["currentValue"].get<std::string>() : "";
+
+		for ( const auto& subopt : opt["options"] ) {
+			if ( !subopt.is_object() || !subopt.contains( "id" ) || !subopt.contains( "name" ) )
+				continue;
+
+			std::string subId = subopt["id"].get<std::string>();
+			std::string subName = subopt["name"].get<std::string>();
+
+			Drawable* icon = nullptr;
+			if ( subId == currentVal ) {
+				icon = getUISceneNode()->findIconDrawable( "ok", PixelDensity::dpToPxI( 12 ) );
+			}
+
+			auto* item = subMenu->add( subName, icon );
+			item->setId( subId );
+		}
+
+		subMenu->on( Event::OnItemClicked, [this, optId]( const Event* event ) {
+			UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
+			std::string subId( item->getId() );
+			acp::SetConfigOptionRequest req;
+			req.sessionId = mAgentSession->getSessionId();
+			req.configId = optId;
+			req.optionId = subId;
+			mAgentSession->getClient()->setConfigOption(
+				req, [this, optId, subId]( const acp::SetConfigOptionResponse& res,
+										   const std::optional<acp::ResponseError>& err ) {
+					if ( err ) {
+						runOnMainThread( [this, err]() {
+							NotificationCenter::instance()->addNotification(
+								i18n( "agent_config_error", "Failed to update agent config: " ) +
+								err->message );
+						} );
+					} else {
+						auto newOpts = res.configOptions;
+						if ( newOpts.empty() ) {
+							newOpts = acp::parseLegacyConfigOptions(
+								{}, mAgentSession->getConfigOptions(), optId, subId );
+						}
+						mAgentSession->setConfigOptions( newOpts );
+					}
+				} );
+		} );
+
+		menu->addSubMenu( opt["name"].get<std::string>(), nullptr, subMenu );
+	}
+
+	if ( menu->getCount() == 0 ) {
+		menu->add( i18n( "no_agent_configs", "No Config Options Available" ) )->setEnabled( false );
+	}
+
+	menu->runOnMainThread( [this, menu] {
+		auto pos( mAgentConfigBtn->getScreenPos() );
+		UIMenu::findBestMenuPos( pos, menu, nullptr, nullptr, mAgentConfigBtn );
+		menu->showAtScreenPosition( pos );
+	} );
+}
+
 void LLMChatUI::initSelectAgent() {
 	mLocateAgentBarLayout = findByClass<UIVLinearLayoutCommandExecuter>( "llm_chat_select_agent" );
 	mLocateAgentInput = findByClass<UITextInput>( "llm_chat_select_agent_input" );
@@ -1646,6 +1749,7 @@ void LLMChatUI::writeToLastChat( const std::string& text ) {
 void LLMChatUI::updateAgentModeUI() {
 	mModelBtn->setVisible( !mIsAgentMode );
 	mAgentBtn->setVisible( mIsAgentMode );
+	mAgentConfigBtn->setVisible( mIsAgentMode );
 	mChatAdd->setVisible( !mIsAgentMode );
 	mChatUserRole->setVisible( !mIsAgentMode );
 
@@ -1998,10 +2102,10 @@ nlohmann::json LLMChatUI::promptToContentBlocks( std::string text ) {
 			path = prjPath + path;
 		}
 
-		std::string fileBuffer;
-		if ( FileSystem::fileGet( path, fileBuffer ) ) {
-			j.push_back( { { "type", "resource" },
-						   { "resource", { { "path", path }, { "content", fileBuffer } } } } );
+		if ( FileSystem::fileExists( path ) ) {
+			j.push_back( { { "type", "resource_link" },
+						   { "name", FileSystem::fileNameFromPath( path ) },
+						   { "uri", "file://" + path } } );
 		}
 
 		lastPos = matches[0].end;

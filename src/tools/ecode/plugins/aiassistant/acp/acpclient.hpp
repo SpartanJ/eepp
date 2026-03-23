@@ -52,6 +52,9 @@ class ACPClient {
 	void loadSession( const LoadSessionRequest& req,
 					  const std::function<void( const LoadSessionResponse&,
 												const std::optional<ResponseError>& )>& cb );
+	void setConfigOption( const SetConfigOptionRequest& req,
+						  const std::function<void( const SetConfigOptionResponse&,
+													const std::optional<ResponseError>& )>& cb );
 	void listSessions( const ListSessionsRequest& req,
 					   const std::function<void( const ListSessionsResponse&,
 												 const std::optional<ResponseError>& )>& cb );
@@ -102,6 +105,7 @@ class ACPClient {
 	std::map<IdType, JsonReplyHandler> mHandlers;
 
 	std::string mReceiveBuffer;
+	bool mLegacyConfigOnly{ false };
 
 	void readStdOut( const char* bytes, size_t n );
 	void readStdErr( const char* bytes, size_t n );

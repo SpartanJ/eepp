@@ -116,6 +116,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	UIScrollView* mChatScrollView{ nullptr };
 	UIPushButton* mModelBtn{ nullptr };
 	UIPushButton* mAgentBtn{ nullptr };
+	UIPushButton* mAgentConfigBtn{ nullptr };
 
 	// Locate file
 	UIVLinearLayoutCommandExecuter* mLocateBarLayout{ nullptr };
@@ -273,6 +274,8 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	void showSelectModel();
 
 	void hideSelectModel();
+
+	void showAgentConfigMenu();
 
 	void insertFileToDocument( std::string path, std::shared_ptr<TextDocument> cdoc );
 

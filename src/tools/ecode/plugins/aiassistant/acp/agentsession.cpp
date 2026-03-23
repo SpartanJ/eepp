@@ -39,6 +39,7 @@ bool AgentSession::start( const std::function<void( bool )>& onReady ) {
 							return;
 						}
 						mSessionId = nres.sessionId;
+						mConfigOptions = nres.configOptions;
 						if ( onReady )
 							onReady( true );
 					} );
@@ -71,7 +72,7 @@ bool AgentSession::startLoaded( const std::string& sessionId,
 					lreq.sessionId = sessionId;
 					lreq.cwd = mClient->isReady() ? mClient->getConfig().workingDirectory : "";
 					mClient->loadSession(
-						lreq, [this, sessionId, onReady]( const LoadSessionResponse&,
+						lreq, [this, sessionId, onReady]( const LoadSessionResponse& lres,
 														  const std::optional<ResponseError>& err ) {
 							if ( err ) {
 								if ( onReady )
@@ -79,6 +80,7 @@ bool AgentSession::startLoaded( const std::string& sessionId,
 								return;
 							}
 							mSessionId = sessionId;
+							mConfigOptions = lres.configOptions;
 							if ( onReady )
 								onReady( true );
 						} );
@@ -146,6 +148,12 @@ void AgentSession::setupClient() {
 	};
 
 	mClient->onSessionUpdate = [this]( const json& msg ) {
+		auto sessionUpdate = msg.value( "sessionUpdate", "" );
+		if ( sessionUpdate == "config_options_update" && msg.contains( "configOptions" ) ) {
+			mConfigOptions = msg["configOptions"];
+		} else if ( msg.contains( "models" ) || msg.contains( "modes" ) ) {
+			mConfigOptions = parseLegacyConfigOptions( msg, mConfigOptions );
+		}
 		if ( onSessionUpdate )
 			onSessionUpdate( msg );
 	};

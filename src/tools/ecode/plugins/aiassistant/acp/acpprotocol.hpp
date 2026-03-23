@@ -11,6 +11,9 @@ using json = nlohmann::json;
 
 namespace ecode { namespace acp {
 
+json parseLegacyConfigOptions( const json& body, json configOptions, const std::string& forceId = "",
+							   const std::string& forceValue = "" );
+
 struct ClientCapabilities {
 	bool terminal{ false };
 	bool fsReadTextFile{ false };
@@ -79,6 +82,23 @@ struct LoadSessionResponse {
 	LoadSessionResponse( const json& body );
 };
 
+struct SetConfigOptionRequest {
+	std::string sessionId;
+	std::string configId;
+	std::string optionId;
+
+	SetConfigOptionRequest() = default;
+	json toJson() const;
+};
+
+struct SetConfigOptionResponse {
+	json configOptions;
+
+	SetConfigOptionResponse() = default;
+	SetConfigOptionResponse( const json& body, const std::string& configId = "",
+							 const std::string& optionId = "" );
+};
+
 struct SessionInfo {
 	std::string sessionId;
 	std::string cwd;
@@ -111,6 +131,8 @@ struct ResponseError {
 	json data;
 
 	ResponseError() = default;
+	ResponseError( int code, std::string message, json data = {} ) :
+		code( code ), message( std::move( message ) ), data( std::move( data ) ) {}
 	ResponseError( const json& body ) {
 		if ( body.contains( "code" ) )
 			code = body["code"].get<int>();

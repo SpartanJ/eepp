@@ -2,6 +2,84 @@
 
 namespace ecode { namespace acp {
 
+json parseLegacyConfigOptions( const json& body, json configOptions, const std::string& forceId,
+							   const std::string& forceValue ) {
+	if ( configOptions.is_null() ) {
+		configOptions = json::array();
+	}
+
+	auto updateOrAdd = [&configOptions]( json newOpt ) {
+		bool found = false;
+		for ( auto& opt : configOptions ) {
+			if ( opt.is_object() && opt.contains( "id" ) && opt["id"] == newOpt["id"] ) {
+				opt = std::move( newOpt );
+				found = true;
+				break;
+			}
+		}
+		if ( !found ) {
+			configOptions.push_back( std::move( newOpt ) );
+		}
+	};
+
+	if ( body.contains( "models" ) && body["models"].is_object() ) {
+		auto models = body["models"];
+		if ( models.contains( "availableModels" ) && models["availableModels"].is_array() ) {
+			json modelConfig = { { "id", "model" },
+								 { "name", "Model" },
+								 { "type", "select" },
+								 { "category", "model" },
+								 { "options", json::array() } };
+			for ( const auto& model : models["availableModels"] ) {
+				modelConfig["options"].push_back(
+					{ { "id", model.value( "modelId", "" ) }, { "name", model.value( "name", "" ) } } );
+			}
+			if ( models.contains( "currentModelId" ) ) {
+				modelConfig["currentValue"] = models.value( "currentModelId", "" );
+				modelConfig["default"] = models.value( "currentModelId", "" );
+			} else if ( !modelConfig["options"].empty() ) {
+				modelConfig["currentValue"] = modelConfig["options"][0]["id"];
+				modelConfig["default"] = modelConfig["options"][0]["id"];
+			}
+			updateOrAdd( std::move( modelConfig ) );
+		}
+	}
+
+	if ( body.contains( "modes" ) && body["modes"].is_object() ) {
+		auto modes = body["modes"];
+		if ( modes.contains( "availableModes" ) && modes["availableModes"].is_array() ) {
+			json modeConfig = { { "id", "mode" },
+								{ "name", "Mode" },
+								{ "type", "select" },
+								{ "category", "mode" },
+								{ "options", json::array() } };
+			for ( const auto& mode : modes["availableModes"] ) {
+				modeConfig["options"].push_back(
+					{ { "id", mode.value( "id", "" ) }, { "name", mode.value( "name", "" ) } } );
+			}
+			if ( modes.contains( "currentModeId" ) ) {
+				modeConfig["currentValue"] = modes.value( "currentModeId", "" );
+				modeConfig["default"] = modes.value( "currentModeId", "" );
+			} else if ( !modeConfig["options"].empty() ) {
+				modeConfig["currentValue"] = modeConfig["options"][0]["id"];
+				modeConfig["default"] = modeConfig["options"][0]["id"];
+			}
+			updateOrAdd( std::move( modeConfig ) );
+		}
+	}
+
+	if ( !forceId.empty() ) {
+		for ( auto& opt : configOptions ) {
+			if ( opt.is_object() && opt.contains( "id" ) && opt["id"] == forceId ) {
+				opt["currentValue"] = forceValue;
+				break;
+			}
+		}
+	}
+
+	return configOptions;
+}
+
 ClientCapabilities::ClientCapabilities( const json& body ) {
 	if ( body.contains( "terminal" ) )
 		terminal = body.value( "terminal", false );
@@ -58,6 +136,7 @@ NewSessionResponse::NewSessionResponse( const json& body ) {
 		sessionId = body.value( "sessionId", "" );
 	if ( body.contains( "configOptions" ) )
 		configOptions = body["configOptions"];
+	configOptions = parseLegacyConfigOptions( body, configOptions );
 }
 
 json LoadSessionRequest::toJson() const {
@@ -73,6 +152,18 @@ json LoadSessionRequest::toJson() const {
 LoadSessionResponse::LoadSessionResponse( const json& body ) {
 	if ( body.contains( "configOptions" ) )
 		configOptions = body["configOptions"];
+	configOptions = parseLegacyConfigOptions( body, configOptions );
+}
+
+json SetConfigOptionRequest::toJson() const {
+	return { { "sessionId", sessionId }, { "configId", configId }, { "optionId", optionId } };
+}
+
+SetConfigOptionResponse::SetConfigOptionResponse( const json& body, const std::string& configId,
+												 const std::string& optionId ) {
+	if ( body.contains( "configOptions" ) )
+		configOptions = body["configOptions"];
+	configOptions = parseLegacyConfigOptions( body, configOptions, configId, optionId );
 }
 
 SessionInfo::SessionInfo( const json& body ) {
