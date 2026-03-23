@@ -285,10 +285,10 @@ render_open_li_block(MD_HTML* r, const MD_BLOCK_LI_DETAIL* det)
 {
     if(det->is_task) {
         RENDER_VERBATIM(r, "<li class=\"task-list-item\">"
-                          "<input type=\"checkbox\" class=\"task-list-item-checkbox\" disabled");
+                          "<input type=\"checkbox\" class=\"task-list-item-checkbox\" disabled=\"true\"");
         if(det->task_mark == 'x' || det->task_mark == 'X')
-            RENDER_VERBATIM(r, " checked");
-        RENDER_VERBATIM(r, ">");
+            RENDER_VERBATIM(r, " checked=\"true\"");
+        RENDER_VERBATIM(r, " />");
     } else {
         RENDER_VERBATIM(r, "<li>");
     }
