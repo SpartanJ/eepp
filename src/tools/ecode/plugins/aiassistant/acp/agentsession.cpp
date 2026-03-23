@@ -24,6 +24,8 @@ bool AgentSession::start( const std::function<void( bool )>& onReady ) {
 		mClient->initialize( req, [this, onReady]( const InitializeResponse&,
 												   const std::optional<ResponseError>& err ) {
 			if ( err ) {
+				if ( onError )
+					onError( *err );
 				if ( onReady )
 					onReady( false );
 				return;
@@ -33,6 +35,8 @@ bool AgentSession::start( const std::function<void( bool )>& onReady ) {
 			mClient->newSession( nreq, [this, onReady]( const NewSessionResponse& nres,
 														const std::optional<ResponseError>& err ) {
 				if ( err ) {
+					if ( onError )
+						onError( *err );
 					if ( onReady )
 						onReady( false );
 					return;
@@ -62,6 +66,8 @@ bool AgentSession::startLoaded( const std::string& sessionId,
 								   onReady]( const InitializeResponse& ires,
 											 const std::optional<ResponseError>& err ) {
 			if ( err ) {
+				if ( onError )
+					onError( *err );
 				if ( onReady )
 					onReady( false );
 				return;
@@ -74,6 +80,8 @@ bool AgentSession::startLoaded( const std::string& sessionId,
 					lreq, [this, sessionId, onReady]( const LoadSessionResponse& lres,
 													  const std::optional<ResponseError>& err ) {
 						if ( err ) {
+							if ( onError )
+								onError( *err );
 							if ( onReady )
 								onReady( false );
 							return;
@@ -84,6 +92,8 @@ bool AgentSession::startLoaded( const std::string& sessionId,
 							onReady( true );
 					} );
 			} else {
+				if ( onError )
+					onError( { -1, "Agent does not support loading sessions" } );
 				if ( onReady )
 					onReady( false );
 			}
@@ -106,7 +116,9 @@ void AgentSession::listSessions(
 	ListSessionsRequest req;
 	req.cwd = mClient->getConfig().workingDirectory;
 	mClient->listSessions(
-		req, [cb]( const ListSessionsResponse& res, const std::optional<ResponseError>& err ) {
+		req, [this, cb]( const ListSessionsResponse& res, const std::optional<ResponseError>& err ) {
+			if ( err && onError )
+				onError( *err );
 			if ( cb )
 				cb( res.sessions, err );
 		} );
@@ -124,9 +136,24 @@ void AgentSession::prompt(
 	mClient->prompt(
 		req, [this, cb]( const PromptResponse& res, const std::optional<ResponseError>& err ) {
 			mIsPrompting = false;
+			if ( err && onError )
+				onError( *err );
 			if ( cb )
 				cb( res, err );
 		} );
+}
+
+void AgentSession::setConfigOption(
+	const SetConfigOptionRequest& req,
+	const std::function<void( const SetConfigOptionResponse&,
+							  const std::optional<ResponseError>& )>& cb ) {
+	mClient->setConfigOption( req, [this, cb]( const SetConfigOptionResponse& res,
+											   const std::optional<ResponseError>& err ) {
+		if ( err && onError )
+			onError( *err );
+		if ( cb )
+			cb( res, err );
+	} );
 }
 
 void AgentSession::cancel() {
@@ -136,8 +163,16 @@ void AgentSession::cancel() {
 }
 
 void AgentSession::setTerminalData( const std::string& terminalId, UITerminal* uiTerm ) {
-	mTerminals[terminalId] =
-		TermData{ uiTerm->getTerm(), uiTerm->getTerm()->getTerminal(), uiTerm };
+	auto& termData = mTerminals[terminalId];
+	termData = { uiTerm->getTerm(), uiTerm->getTerm()->getTerminal(), uiTerm, "" };
+	if ( termData.emulator ) {
+		termData.emulator->setDataCb( [this, terminalId]( const char* data, size_t size ) {
+			auto it = mTerminals.find( terminalId );
+			if ( it != mTerminals.end() ) {
+				it->second.outputBuffer.append( data, size );
+			}
+		} );
+	}
 }
 
 void AgentSession::setupClient() {
@@ -196,8 +231,19 @@ void AgentSession::setupClient() {
 		res.output = "";
 		res.truncated = false;
 		auto it = mTerminals.find( req.terminalId );
-		if ( it != mTerminals.end() && it->second.emulator ) {
-			if ( it->second.emulator->hasExited() ) {
+		if ( it != mTerminals.end() ) {
+			size_t limit = req.outputByteLimit.value_or( 0 );
+			if ( limit > 0 && it->second.outputBuffer.size() > limit ) {
+				res.output = it->second.outputBuffer.substr( 0, limit );
+				it->second.outputBuffer.erase( 0, limit );
+				res.truncated = true;
+			} else {
+				res.output = std::move( it->second.outputBuffer );
+				it->second.outputBuffer.clear();
+				res.truncated = false;
+			}
+
+			if ( it->second.emulator && it->second.emulator->hasExited() ) {
 				TerminalExitStatus status;
 				status.exitCode = it->second.emulator->getExitCode();
 				res.exitStatus = status;

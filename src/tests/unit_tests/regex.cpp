@@ -82,6 +82,7 @@ UTEST( LuaPattern, basicTest ) {
 		EXPECT_EQ( start, 14 );
 		EXPECT_EQ( end, 16 );
 	}
+	RegExCache::destroySingleton();
 }
 
 UTEST( RegExEngines, basicTest ) {
@@ -96,4 +97,5 @@ UTEST( RegExEngines, basicTest ) {
 	EXPECT_EQ( 38, matchesPCRE2[0].end );
 	EXPECT_EQ( 38, matchesOniguruma[0].start );
 	EXPECT_EQ( 38, matchesOniguruma[0].end );
+	RegExCache::destroySingleton();
 }

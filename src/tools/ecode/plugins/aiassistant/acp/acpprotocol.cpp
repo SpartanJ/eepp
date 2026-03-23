@@ -317,6 +317,8 @@ TerminalOutputRequest::TerminalOutputRequest( const json& body ) {
 		sessionId = body.value( "sessionId", "" );
 	if ( body.contains( "terminalId" ) )
 		terminalId = body.value( "terminalId", "" );
+	if ( body.contains( "outputByteLimit" ) && !body["outputByteLimit"].is_null() )
+		outputByteLimit = body["outputByteLimit"].get<uint64_t>();
 }
 
 json TerminalOutputResponse::toJson() const {

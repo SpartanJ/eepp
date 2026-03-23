@@ -249,6 +249,7 @@ struct TerminalExitStatus {
 struct TerminalOutputRequest {
 	std::string sessionId;
 	std::string terminalId;
+	std::optional<uint64_t> outputByteLimit;
 
 	TerminalOutputRequest() = default;
 	TerminalOutputRequest( const json& body );

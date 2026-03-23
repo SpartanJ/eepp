@@ -724,14 +724,12 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 			return;
 
 		auto inputUserRole = LLMChat::stringToRole( mChatUserRole );
-		if ( ( !chats.empty() &&
-			   ( mChatInput->getDocument().isEmpty() || inputUserRole != LLMChat::Role::User ) ) ||
-			 ( chats.empty() && inputUserRole != LLMChat::Role::User ) ) {
-			if ( chats[chats.size() - 1]
-					 ->findByClass( "role_ui" )
-					 ->asType<UIDropDownList>()
-					 ->getListBox()
-					 ->getItemSelectedIndex() != 0 ) {
+		if ( !mIsAgentMode && ( ( !chats.empty() && ( mChatInput->getDocument().isEmpty() ||
+													  inputUserRole != LLMChat::Role::User ) ) ||
+								( chats.empty() && inputUserRole != LLMChat::Role::User ) ) ) {
+			auto rolePicker = chats[chats.size() - 1]->findByClass( "role_ui" );
+			if ( rolePicker &&
+				 rolePicker->asType<UIDropDownList>()->getListBox()->getItemSelectedIndex() != 0 ) {
 				showMsg( getUISceneNode()->i18n(
 					"llm_last_message_must_be_from_user",
 					"The last chat message must be from a \"User\" role" ) );
@@ -1302,9 +1300,6 @@ void LLMChatUI::showChatHistory() {
 					return;
 				if ( err ) {
 					loader->setVisible( false );
-					NotificationCenter::instance()->addNotification(
-						uiSceneNode->i18n( "ai_assistant_agent_error", "Agent Error: " ) +
-						err->message );
 					win->asType<UIWindow>()->closeWindow();
 					return;
 				}
@@ -1631,17 +1626,10 @@ void LLMChatUI::showAgentConfigWindow() {
 				req.sessionId = mAgentSession->getSessionId();
 				req.configId = optId;
 				req.optionId = subId;
-				mAgentSession->getClient()->setConfigOption(
+				mAgentSession->setConfigOption(
 					req, [this, optId, subId]( const acp::SetConfigOptionResponse& res,
 											   const std::optional<acp::ResponseError>& err ) {
-						if ( err ) {
-							runOnMainThread( [this, err]() {
-								NotificationCenter::instance()->addNotification(
-									i18n( "agent_config_error",
-										  "Failed to update agent config: " ) +
-									err->message );
-							} );
-						} else {
+						if ( !err ) {
 							auto newOpts = res.configOptions;
 							if ( newOpts.empty() ) {
 								newOpts = acp::parseLegacyConfigOptions(
@@ -1871,11 +1859,13 @@ void LLMChatUI::setupAgentSession() {
 			addPlanBubble( planMarkdown );
 		} else if ( sessionUpdate == "available_commands_update" ) {
 			if ( msg.contains( "availableCommands" ) && msg["availableCommands"].is_array() ) {
-				mAvailableCommands.clear();
-				for ( const auto& cmd : msg["availableCommands"] ) {
-					mAvailableCommands.push_back(
-						{ cmd.value( "name", "" ), cmd.value( "description", "" ) } );
-				}
+				runOnMainThread( [this, msg] {
+					mAvailableCommands.clear();
+					for ( const auto& cmd : msg["availableCommands"] ) {
+						mAvailableCommands.push_back(
+							{ cmd.value( "name", "" ), cmd.value( "description", "" ) } );
+					}
+				} );
 			}
 		}
 	};
