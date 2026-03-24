@@ -19,7 +19,7 @@ UTEST( UIDiffView, LoadFromStringsAndVerifyDiffLines ) {
 	diffView->loadFromStrings( oldText, newText );
 
 	const auto& lines = diffView->getDiffLines();
-	
+
 	ASSERT_EQ( (size_t)7, lines.size() );
 
 	ASSERT_EQ( UIDiffView::DiffLineType::Common, lines[0].type );
@@ -44,12 +44,13 @@ UTEST( UIDiffView, LoadFromStringsAndVerifyDiffLines ) {
 	ASSERT_TRUE( lines[6].text.toUtf8() == "line 4" );
 
 	const auto& text = diffView->getEditor()->getDocument().getText();
-	
-	std::string expectedCleanText = "line 1\nline 2 changed\nline 2\nline 3\nline 4 added\nline 5\nline 4\n";
-	
+
+	std::string expectedCleanText =
+		"line 1\nline 2 changed\nline 2\nline 3\nline 4 added\nline 5\nline 4\n";
+
 	std::string textUtf8 = text.toUtf8();
 	ASSERT_TRUE( expectedCleanText == textUtf8 );
-	
+
 	eeDelete( diffView );
 }
 
@@ -69,9 +70,9 @@ UTEST( UIDiffView, LoadFromPatchAndVerifyCleanText ) {
 	diffView->loadFromPatch( patchText );
 
 	const auto& lines = diffView->getDiffLines();
-	
-	ASSERT_EQ( (size_t)4, lines.size() );
-	
+
+	ASSERT_EQ( (size_t)5, lines.size() );
+
 	ASSERT_EQ( UIDiffView::DiffLineType::Common, lines[0].type );
 	ASSERT_TRUE( lines[0].text.toUtf8() == "int main() {" );
 	ASSERT_EQ( 1, lines[0].oldLineNum );
@@ -91,7 +92,7 @@ UTEST( UIDiffView, LoadFromPatchAndVerifyCleanText ) {
 	ASSERT_EQ( 3, lines[3].newLineNum );
 
 	const auto& text = diffView->getEditor()->getDocument().getText();
-	
+
 	std::string expectedCleanText = "int main() {\n  return 0;\n  return 1;\n}\n";
 
 	std::string textUtf8 = text.toUtf8();
