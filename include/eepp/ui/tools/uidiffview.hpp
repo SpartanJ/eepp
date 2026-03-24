@@ -3,6 +3,7 @@
 
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
+#include <eepp/ui/uipushbutton.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 
@@ -10,9 +11,10 @@ class UIDiffEditorPlugin;
 
 class EE_API UIDiffView : public UIWidget {
   public:
+	enum class ViewMode { Unified, SideBySide };
+
 	static UIDiffView* New();
 
-	UIDiffView();
 	virtual ~UIDiffView();
 
 	virtual Uint32 getType() const override;
@@ -23,6 +25,8 @@ class EE_API UIDiffView : public UIWidget {
 	void loadFromFile( const std::string& oldFilePath, const std::string& newFilePath );
 
 	UICodeEditor* getEditor() const { return mEditor; }
+	UICodeEditor* getLeftEditor() const { return mLeftEditor; }
+	UICodeEditor* getRightEditor() const { return mRightEditor; }
 
 	enum class DiffLineType { Common, Added, Removed, Header };
 	struct DiffLine {
@@ -34,14 +38,31 @@ class EE_API UIDiffView : public UIWidget {
 
 	const std::vector<DiffLine>& getDiffLines() const { return mLines; }
 
+	void setViewMode( ViewMode mode );
+	ViewMode getViewMode() const { return mViewMode; }
+
+	void setViewModeToggleVisible( bool visible );
+	bool isViewModeToggleVisible() const { return mViewModeToggleVisible; }
+
   protected:
+	UICodeEditor* mEditor{ nullptr };
+	UICodeEditor* mLeftEditor{ nullptr };
+	UICodeEditor* mRightEditor{ nullptr };
+	UIPushButton* mModeToggle{ nullptr };
+	std::unique_ptr<UIDiffEditorPlugin> mPlugin;
+	std::unique_ptr<UIDiffEditorPlugin> mLeftPlugin;
+	std::unique_ptr<UIDiffEditorPlugin> mRightPlugin;
+	std::vector<DiffLine> mLines;
+	ViewMode mViewMode{ ViewMode::Unified };
+	bool mViewModeToggleVisible{ true };
+
+	UIDiffView();
+
 	virtual void onSizeChange() override;
 
-	UICodeEditor* mEditor{ nullptr };
-	std::shared_ptr<UIDiffEditorPlugin> mPlugin;
-	std::vector<DiffLine> mLines;
-
-	void buildEditor();
+	void createEditor( UICodeEditor*& editor, std::unique_ptr<UIDiffEditorPlugin>& plugin );
+	void syncScroll( UICodeEditor* source, UICodeEditor* target, bool emitEvent = false );
+	void updateModeButton();
 };
 
 }}} // namespace EE::UI::Tools

@@ -558,6 +558,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void loadDiffFromPath( const std::string& path );
 
+	void loadDiffFromMemory( const std::string& content, const std::string& originalFilePath = "" );
+
 	void createAndShowRecentFolderPopUpMenu( Node* recentFoldersBut );
 
 	void createAndShowRecentFilesPopUpMenu( Node* recentFilesBut );

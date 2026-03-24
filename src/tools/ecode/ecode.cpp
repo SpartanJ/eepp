@@ -11,7 +11,6 @@
 #include "uitreeviewfs.hpp"
 #include "uiwelcomescreen.hpp"
 #include "version.hpp"
-#include <eepp/ui/tools/uidiffview.hpp>
 #include <algorithm>
 #include <args/args.hxx>
 #include <eepp/graphics/fontfamily.hpp>
@@ -19,6 +18,7 @@
 #include <eepp/ui/doc/languagessyntaxhighlighting.hpp>
 #include <eepp/ui/iconmanager.hpp>
 #include <eepp/ui/tools/uiaudioplayer.hpp>
+#include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <filesystem>
 #include <iostream>
@@ -2607,17 +2607,41 @@ void App::loadAudioFromPath( const std::string& path, bool autoPlay ) {
 	audioPlayer->loadFromPath( path, autoPlay );
 }
 
+void App::loadDiffFromMemory( const std::string& content, const std::string& originalFilePath ) {
+	auto diffViewTitle = i18n( "diff_viewer", "Diff Viewer" );
+	auto* diffView = Tools::UIDiffView::New();
+	auto [tab, iv] = getSplitter()->createWidget( diffView, diffViewTitle );
+	if ( !originalFilePath.empty() ) {
+		std::string fileName = FileSystem::fileNameFromPath( originalFilePath );
+		tab->setText( diffViewTitle + ": " + fileName );
+		tab->setTooltipText( originalFilePath );
+	} else {
+		tab->setText( diffViewTitle );
+	}
+	UIIcon* icon = getUISceneNode()->findIcon( "filetype-diff" );
+	if ( !icon )
+		icon = getUISceneNode()->findIcon( "file" );
+	if ( icon )
+		tab->setIcon( icon->getSize( getMenuIconSize() ) );
+	diffView->loadFromPatch( content );
+}
+
 void App::loadDiffFromPath( const std::string& path ) {
+	auto diffViewTitle = i18n( "diff_viewer", "Diff Viewer" );
 	auto* diffView = Tools::UIDiffView::New();
 	auto [tab, iv] = mSplitter->createWidget( diffView, i18n( "diff_viewer", "Diff Viewer" ) );
-	tab->setText( FileSystem::fileNameFromPath( path ) )->setTooltipText( path );
-	auto icon = findIcon( "filetype-patch" );
-	tab->setIcon( icon ? icon : findIcon( "file" ) );
-
-	std::string text;
-	if ( FileSystem::fileGet( path, text ) ) {
-		diffView->loadFromPatch( text );
+	if ( !path.empty() ) {
+		std::string fileName = FileSystem::fileNameFromPath( path );
+		tab->setText( diffViewTitle + ": " + fileName );
+		tab->setTooltipText( path );
+	} else {
+		tab->setText( diffViewTitle );
 	}
+	auto icon = findIcon( "filetype-diff" );
+	tab->setIcon( icon ? icon : findIcon( "file" ) );
+	std::string text;
+	if ( FileSystem::fileGet( path, text ) )
+		diffView->loadFromPatch( text );
 }
 
 void App::openFileFromPath( const std::string& path ) {

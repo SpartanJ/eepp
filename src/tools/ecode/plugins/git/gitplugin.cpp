@@ -1115,20 +1115,8 @@ void GitPlugin::diff( const std::string& file, bool isStaged ) {
 		if ( res.fail() )
 			return;
 
-		getUISceneNode()->runOnMainThread( [this, file, res] {
-			auto* diffView = Tools::UIDiffView::New();
-			auto [tab, iv] = getPluginContext()->getSplitter()->createWidget(
-				diffView, i18n( "diff_viewer", "Diff Viewer" ) );
-			std::string fileName = FileSystem::fileNameFromPath( file );
-			tab->setText( fileName )->setTooltipText( file );
-			UIIcon* icon = getUISceneNode()->findIcon(
-				UIIconThemeManager::getIconNameFromFileName( fileName ) );
-			if ( !icon )
-				icon = getUISceneNode()->findIcon( "file" );
-			if ( icon )
-				tab->setIcon( icon->getSize( getPluginContext()->getMenuIconSize() ) );
-			diffView->loadFromPatch( res.result );
-		} );
+		getUISceneNode()->runOnMainThread(
+			[this, file, res] { getPluginContext()->loadDiffFromMemory( res.result, file ); } );
 	} );
 }
 

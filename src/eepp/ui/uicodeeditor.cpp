@@ -2251,7 +2251,7 @@ void UICodeEditor::scrollToCursor( bool centered ) {
 
 void UICodeEditor::updateEditor() {
 	mDoc->setPageSize( getViewPortLineCount().y );
-	if ( mDirtyScroll && mDoc->getActiveClient() == this )
+	if ( !mDisableScrollInvalidation && mDirtyScroll && mDoc->getActiveClient() == this )
 		scrollTo( mDoc->getSelection().start() );
 
 	updateScrollBar();
