@@ -3,12 +3,13 @@
 #include <eepp/graphics/text.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
-#include <eepp/thirdparty/dtl/dtl.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uiscrollbar.hpp>
+
+#include <dtl/dtl.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 
@@ -16,14 +17,16 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
   public:
 	UIDiffEditorPlugin( UIDiffView* view ) : mView( view ) {}
 
-	inline Color getBackgroundColor( UIDiffView::DiffLineType type ) {
+	inline Color getBackgroundColor( UIDiffView::DiffLineType type, bool isHighlight = false ) {
+		static constexpr auto NORMAL_ALPHA = 40;
+		static constexpr auto HIGHLIGHT_ALPHA = 80;
 		switch ( type ) {
 			case UIDiffView::DiffLineType::Added:
-				return Color( 0, 150, 32, 30 );
+				return Color( 0, 150, 32, isHighlight ? HIGHLIGHT_ALPHA : NORMAL_ALPHA );
 			case UIDiffView::DiffLineType::Removed:
-				return Color( 180, 0, 32, 30 );
+				return Color( 180, 0, 32, isHighlight ? HIGHLIGHT_ALPHA : NORMAL_ALPHA );
 			case UIDiffView::DiffLineType::Header:
-				return Color( 100, 100, 100, 30 );
+				return Color( 100, 100, 100, isHighlight ? HIGHLIGHT_ALPHA : NORMAL_ALPHA );
 			case UIDiffView::DiffLineType::Common:
 				break;
 		}
@@ -62,6 +65,24 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 			p.setColor( bgColor );
 			p.drawRectangle( Rectf( Vector2f( editor->getScreenPos().x, position.y ),
 									Sizef( editor->getPixelsSize().getWidth(), lineHeight ) ) );
+
+			if ( !line.subLineChanges.empty() ) {
+				p.setColor( getBackgroundColor( line.type, true ) );
+
+				for ( const auto& range : line.subLineChanges ) {
+					Vector2f startPos =
+						editor
+							->getTextPositionOffset( { index, range.start().column() }, lineHeight )
+							.asFloat();
+
+					Vector2f endPos =
+						editor->getTextPositionOffset( { index, range.end().column() }, lineHeight )
+							.asFloat();
+
+					p.drawRectangle( Rectf( { position.x + startPos.x, position.y },
+											{ endPos.x - startPos.x, lineHeight } ) );
+				}
+			}
 		}
 	}
 
@@ -250,6 +271,68 @@ void UIDiffView::onSizeChange() {
 	updateModeButton();
 }
 
+void UIDiffView::computeSubLineDiff( DiffLine& oldLine, DiffLine& newLine ) {
+	dtl::Diff<String::StringBaseType, String::View> diff( oldLine.text.view(),
+														  newLine.text.view() );
+	diff.compose();
+	auto ses = diff.getSes().getSequence();
+
+	Int64 oldIdx = 0;
+	Int64 newIdx = 0;
+	for ( const auto& pair : ses ) {
+		switch ( pair.second.type ) {
+			case dtl::SES_COMMON:
+				oldIdx++;
+				newIdx++;
+				break;
+			case dtl::SES_ADD:
+				if ( !newLine.subLineChanges.empty() &&
+					 newLine.subLineChanges.back().end().column() == newIdx ) {
+					newLine.subLineChanges.back().setEnd( { 0, newIdx + 1 } );
+				} else {
+					newLine.subLineChanges.push_back( { { 0, newIdx }, { 0, newIdx + 1 } } );
+				}
+				newIdx++;
+				break;
+			case dtl::SES_DELETE:
+				if ( !oldLine.subLineChanges.empty() &&
+					 oldLine.subLineChanges.back().end().column() == oldIdx ) {
+					oldLine.subLineChanges.back().setEnd( { 0, oldIdx + 1 } );
+				} else {
+					oldLine.subLineChanges.push_back( { { 0, oldIdx }, { 0, oldIdx + 1 } } );
+				}
+				oldIdx++;
+				break;
+		}
+	}
+}
+
+static void applySubLineDiff(
+	std::vector<UIDiffView::DiffLine>& lines,
+	std::function<void( UIDiffView::DiffLine&, UIDiffView::DiffLine& )> computeSubLineDiff ) {
+	size_t i = 0;
+	while ( i < lines.size() ) {
+		if ( lines[i].type == UIDiffView::DiffLineType::Removed ) {
+			size_t j = i;
+			while ( j < lines.size() && lines[j].type == UIDiffView::DiffLineType::Removed )
+				j++;
+			size_t k = j;
+			while ( k < lines.size() && lines[k].type == UIDiffView::DiffLineType::Added )
+				k++;
+
+			size_t numRemoved = j - i;
+			size_t numAdded = k - j;
+			size_t numToCompare = std::min( numRemoved, numAdded );
+			for ( size_t m = 0; m < numToCompare; m++ ) {
+				computeSubLineDiff( lines[i + m], lines[j + m] );
+			}
+			i = k;
+		} else {
+			i++;
+		}
+	}
+}
+
 void UIDiffView::loadFromPatch( const std::string& patchText ) {
 	mLines.clear();
 	auto lines = String::split( patchText, '\n' );
@@ -334,6 +417,10 @@ void UIDiffView::loadFromPatch( const std::string& patchText ) {
 		mLines.push_back( dline );
 	}
 
+	applySubLineDiff( mLines, [this]( DiffLine& oldLine, DiffLine& newLine ) {
+		computeSubLineDiff( oldLine, newLine );
+	} );
+
 	mEditor->getDocument().reset();
 	mEditor->getDocument().textInput( cleanText );
 	mLeftEditor->getDocument().reset();
@@ -395,6 +482,10 @@ void UIDiffView::loadFromStrings( const std::string& oldText, const std::string&
 		cleanText += dline.text + "\n";
 		mLines.push_back( dline );
 	}
+
+	applySubLineDiff( mLines, [this]( DiffLine& oldLine, DiffLine& newLine ) {
+		computeSubLineDiff( oldLine, newLine );
+	} );
 
 	mEditor->getDocument().reset();
 	mEditor->getDocument().textInput( cleanText );

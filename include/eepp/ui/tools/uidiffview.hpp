@@ -34,6 +34,7 @@ class EE_API UIDiffView : public UIWidget {
 		String text;
 		Int64 oldLineNum{ 0 };
 		Int64 newLineNum{ 0 };
+		std::vector<TextRange> subLineChanges;
 	};
 
 	const std::vector<DiffLine>& getDiffLines() const { return mLines; }
@@ -63,6 +64,7 @@ class EE_API UIDiffView : public UIWidget {
 	void createEditor( UICodeEditor*& editor, std::unique_ptr<UIDiffEditorPlugin>& plugin );
 	void syncScroll( UICodeEditor* source, UICodeEditor* target, bool emitEvent = false );
 	void updateModeButton();
+	void computeSubLineDiff( DiffLine& oldLine, DiffLine& newLine );
 };
 
 }}} // namespace EE::UI::Tools
