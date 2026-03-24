@@ -82,10 +82,6 @@
                     libx11
                   ];
 
-                  propagatedBuildInputs = [
-                    glew
-                  ];
-
                   configurePhase = ''
                     rm -rf src/thirdparty/efsw
                     rm -rf src/thirdparty/SOIL2
