@@ -42,58 +42,89 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 	bool isReady() const override { return true; }
 
 	void onRegister( UICodeEditor* editor ) override {
-		if ( mView->getViewMode() == UIDiffView::ViewMode::Unified ) {
-			editor->registerGutterSpace( this, PixelDensity::dpToPx( 80 ), 0 );
-		} else {
-			editor->registerGutterSpace( this, PixelDensity::dpToPx( 40 ), 0 );
-		}
+		Float glyphWidth = editor->getGlyphWidth();
+		Float totalChars = mView->getViewMode() == UIDiffView::ViewMode::Unified ? 10 : 5;
+		mGutterWidth = PixelDensity::dpToPx( glyphWidth * totalChars );
+		editor->registerGutterSpace( this, mGutterWidth, 0 );
 	}
 
 	void onUnregister( UICodeEditor* editor ) override { editor->unregisterGutterSpace( this ); }
 
+	void registerUpdate( UICodeEditor* editor ) {
+		onUnregister( editor );
+		onRegister( editor );
+	}
+
 	void drawBeforeLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
 							 const Float& /*fontSize*/, const Float& lineHeight ) override {
-		if ( !mView || index < 0 || index >= (Int64)mView->getDiffLines().size() )
+		const auto& viewLines = mView->getViewLines();
+		if ( !mView || index < 0 || index >= (Int64)viewLines.size() )
 			return;
 
 		const auto& lines = mView->getDiffLines();
-		const auto& line = lines[index];
+		const auto& line = lines[viewLines[index]];
 		Color bgColor( getBackgroundColor( line.type ) );
 
-		if ( bgColor != Color::Transparent ) {
-			Primitives p;
-			p.setColor( bgColor );
-			p.drawRectangle( Rectf( Vector2f( editor->getScreenPos().x, position.y ),
-									Sizef( editor->getPixelsSize().getWidth(), lineHeight ) ) );
+		if ( bgColor == Color::Transparent )
+			return;
 
-			if ( !line.subLineChanges.empty() ) {
-				p.setColor( getBackgroundColor( line.type, true ) );
+		Primitives p;
+		p.setColor( bgColor );
+		p.drawRectangle(
+			Rectf( Vector2f( editor->getScreenPos().x + mGutterWidth, position.y ),
+				   Sizef( editor->getPixelsSize().getWidth() - mGutterWidth, lineHeight ) ) );
 
-				for ( const auto& range : line.subLineChanges ) {
-					Vector2f startPos =
-						editor
-							->getTextPositionOffset( { index, range.start().column() }, lineHeight )
-							.asFloat();
+		if ( line.subLineChanges.empty() )
+			return;
 
-					Vector2f endPos =
-						editor->getTextPositionOffset( { index, range.end().column() }, lineHeight )
-							.asFloat();
+		p.setColor( getBackgroundColor( line.type, true ) );
 
-					p.drawRectangle( Rectf( { position.x + startPos.x, position.y },
-											{ endPos.x - startPos.x, lineHeight } ) );
-				}
-			}
+		for ( const auto& range : line.subLineChanges ) {
+			Vector2f startPos =
+				editor->getTextPositionOffset( { index, range.start().column() }, lineHeight )
+					.asFloat();
+
+			Vector2f endPos =
+				editor->getTextPositionOffset( { index, range.end().column() }, lineHeight )
+					.asFloat();
+
+			p.drawRectangle( Rectf( { position.x + startPos.x, position.y },
+									{ endPos.x - startPos.x, lineHeight } ) );
 		}
+	}
+
+	void drawAfterLineText( UICodeEditor* editor, const Int64& index, Vector2f position,
+							const Float& /*fontSize*/, const Float& lineHeight ) override {
+		const auto& viewLines = mView->getViewLines();
+		if ( !mView || index < 0 || index >= (Int64)viewLines.size() )
+			return;
+		const auto& lines = mView->getDiffLines();
+		const auto& line = lines[viewLines[index]];
+		Primitives p;
+		Vector2f startScroll = Vector2f{ editor->getScreenStart().x, position.y };
+		Rectf rect( startScroll, Sizef( mGutterWidth, lineHeight ) );
+		Color bgColor( editor->getLineNumberBackgroundColor() );
+		if ( editor->getScroll().x != 0 ) {
+			bgColor.blendAlpha( editor->getAlpha() );
+			p.setColor( bgColor );
+			p.drawRectangle( rect );
+		}
+		bgColor = getBackgroundColor( line.type );
+		if ( bgColor == Color::Transparent )
+			return;
+		p.setColor( bgColor );
+		p.drawRectangle( rect );
 	}
 
 	void drawGutter( UICodeEditor* editor, const Int64& index, const Vector2f& screenStart,
 					 const Float& lineHeight, const Float& gutterWidth,
-					 const Float& fontSize ) override {
-		if ( !mView || index < 0 || index >= (Int64)mView->getDiffLines().size() )
+					 const Float& /*fontSize*/ ) override {
+		const auto& viewLines = mView->getViewLines();
+		if ( !mView || index < 0 || index >= (Int64)viewLines.size() )
 			return;
 
 		const auto& lines = mView->getDiffLines();
-		const auto& line = lines[index];
+		const auto& line = lines[viewLines[index]];
 
 		static constexpr auto bufSize = 16;
 		String::StringBaseType buf[bufSize] = {};
@@ -112,7 +143,9 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 										  (long long)line.newLineNum );
 					break;
 				case UIDiffView::DiffLineType::Common:
-					return;
+					String::formatBuffer( buf, bufSize, "%5lld %5s", (long long)line.oldLineNum,
+										  "" );
+					break;
 			}
 		} else {
 			if ( editor == mView->getLeftEditor() ) {
@@ -124,7 +157,7 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 			}
 		}
 
-		String::View text{ buf, bufSize };
+		String::View text{ buf };
 		if ( text.empty() )
 			return;
 
@@ -133,7 +166,7 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 
 		Float textWidth = Text::getTextWidth( text, config, 4, TextHints::AllAscii );
 
-		Vector2f pos( screenStart.x + std::floor( ( gutterWidth - textWidth ) * 0.5f ),
+		Vector2f pos( screenStart.x + std::floor( ( mGutterWidth - textWidth ) * 0.5f ),
 					  screenStart.y + std::floor( ( lineHeight - config.Font->getLineSpacing(
 																	 config.CharacterSize ) ) *
 												  0.5f ) );
@@ -143,6 +176,7 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 
   protected:
 	UIDiffView* mView;
+	Float mGutterWidth{ 0 };
 };
 
 UIDiffView* UIDiffView::New() {
@@ -154,6 +188,18 @@ UIDiffView::UIDiffView() : UIWidget( "diffview" ) {
 	createEditor( mEditor, mPlugin );
 	createEditor( mLeftEditor, mLeftPlugin );
 	createEditor( mRightEditor, mRightPlugin );
+
+	mEditor->on( Event::OnFontChanged, [this]( auto ) { mPlugin->registerUpdate( mEditor ); } );
+	mLeftEditor->on( Event::OnFontChanged, [this]( auto ) {
+		mLeftPlugin->registerUpdate( mLeftEditor );
+		mRightEditor->setFontSize( mLeftEditor->getFontSize() );
+		mRightPlugin->registerUpdate( mRightEditor );
+	} );
+	mRightEditor->on( Event::OnFontChanged, [this]( auto ) {
+		mRightPlugin->registerUpdate( mRightEditor );
+		mLeftEditor->setFontSize( mRightEditor->getFontSize() );
+		mLeftPlugin->registerUpdate( mLeftEditor );
+	} );
 
 	mLeftEditor->setVisible( false );
 	mRightEditor->setVisible( false );
@@ -177,12 +223,20 @@ UIDiffView::UIDiffView() : UIWidget( "diffview" ) {
 
 	mModeToggle = UIPushButton::New();
 	mModeToggle->setParent( this );
-	mModeToggle->setText( "Unified" );
-	mModeToggle->onClick( [this]( const Event* event ) {
+	mModeToggle->onClick( [this]( const Event* ) {
 		setViewMode( mViewMode == ViewMode::Unified ? ViewMode::SideBySide : ViewMode::Unified );
 	} );
 
 	mModeToggle->on( Event::OnSizeChange, [this]( auto ) { updateModeButton(); } );
+
+	mCompleteViewToggle = UIPushButton::New();
+	mCompleteViewToggle->setParent( this );
+	mCompleteViewToggle->onClick(
+		[this]( const Event* ) { setCompleteView( !mShowCompleteView ); } );
+
+	mCompleteViewToggle->on( Event::OnSizeChange, [this]( auto ) { updateModeButton(); } );
+
+	updateButtonsText();
 }
 
 UIDiffView::~UIDiffView() {
@@ -222,27 +276,49 @@ void UIDiffView::setViewMode( ViewMode mode ) {
 
 	mViewMode = mode;
 
+	mLeftPlugin->registerUpdate( mLeftEditor );
+	mRightPlugin->registerUpdate( mRightEditor );
+
 	if ( mViewMode == ViewMode::Unified ) {
 		mEditor->setVisible( true );
 		mLeftEditor->setVisible( false );
 		mRightEditor->setVisible( false );
-		mModeToggle->setText( i18n( "diffview_unified", "Unified" ) );
 		onSizeChange();
 		syncScroll( mRightEditor, mEditor, true );
 	} else {
 		mEditor->setVisible( false );
 		mLeftEditor->setVisible( true );
 		mRightEditor->setVisible( true );
-		mModeToggle->setText( i18n( "diffview_split", "Split" ) );
 		onSizeChange();
 		syncScroll( mEditor, mRightEditor, true );
 		syncScroll( mEditor, mLeftEditor, true );
 	}
+
+	updateButtonsText();
 }
 
 void UIDiffView::setViewModeToggleVisible( bool visible ) {
 	mViewModeToggleVisible = visible;
 	mModeToggle->setVisible( visible );
+	updateModeButton();
+}
+
+void UIDiffView::setCompleteView( bool complete ) {
+	if ( mShowCompleteView == complete )
+		return;
+	mShowCompleteView = complete;
+	updateButtonsText();
+	updateEditorsText();
+}
+
+void UIDiffView::setCompleteViewToggleVisible( bool visible ) {
+	mCompleteViewToggleVisible = visible;
+	mCompleteViewToggle->setVisible( visible );
+	updateModeButton();
+}
+
+void UIDiffView::setSubLineDiffAlgorithm( SubLineDiffAlgorithm algo ) {
+	mSubLineDiffAlgorithm = algo;
 }
 
 void UIDiffView::syncScroll( UICodeEditor* source, UICodeEditor* target, bool emitEvent ) {
@@ -251,10 +327,21 @@ void UIDiffView::syncScroll( UICodeEditor* source, UICodeEditor* target, bool em
 }
 
 void UIDiffView::updateModeButton() {
-	mModeToggle->setPixelsPosition(
-		getPixelsSize().getWidth() - mModeToggle->getPixelsSize().getWidth() -
-			mRightEditor->getVScrollBar()->getPixelsSize().getWidth() - PixelDensity::dpToPx( 8 ),
-		PixelDensity::dpToPx( 8 ) );
+	auto margin = PixelDensity::dpToPx( 8 );
+
+	Float currentX = getPixelsSize().getWidth() - margin;
+	currentX -= mRightEditor->getVScrollBar()->getPixelsSize().getWidth();
+
+	if ( mViewModeToggleVisible && mModeToggle ) {
+		currentX -= mModeToggle->getPixelsSize().getWidth();
+		mModeToggle->setPixelsPosition( currentX, margin );
+		currentX -= margin;
+	}
+
+	if ( mCompleteViewToggleVisible && mCompleteViewToggle ) {
+		currentX -= mCompleteViewToggle->getPixelsSize().getWidth();
+		mCompleteViewToggle->setPixelsPosition( currentX, margin );
+	}
 }
 
 void UIDiffView::onSizeChange() {
@@ -271,38 +358,132 @@ void UIDiffView::onSizeChange() {
 	updateModeButton();
 }
 
+void UIDiffView::updateEditorsText() {
+	String cleanText;
+	String leftText;
+	String rightText;
+	mViewLines.clear();
+
+	for ( size_t i = 0; i < mLines.size(); ++i ) {
+		bool showLine = mShowCompleteView;
+
+		if ( !showLine ) {
+			int ctx = 3;
+			int start = std::max( 0, (int)i - ctx );
+			int end = std::min( (int)mLines.size() - 1, (int)i + ctx );
+			for ( int j = start; j <= end; ++j ) {
+				if ( mLines[j].type != DiffLineType::Common &&
+					 mLines[j].type != DiffLineType::Header ) {
+					showLine = true;
+					break;
+				}
+			}
+		}
+
+		if ( showLine ) {
+			mViewLines.push_back( i );
+			if ( mLines[i].type == DiffLineType::Added ) {
+				leftText += "\n";
+				rightText += mLines[i].text + "\n";
+			} else if ( mLines[i].type == DiffLineType::Removed ) {
+				leftText += mLines[i].text + "\n";
+				rightText += "\n";
+			} else {
+				leftText += mLines[i].text + "\n";
+				rightText += mLines[i].text + "\n";
+			}
+			cleanText += mLines[i].text + "\n";
+		}
+	}
+
+	mEditor->getDocument().reset();
+	mEditor->getDocument().textInput( cleanText );
+	mLeftEditor->getDocument().reset();
+	mLeftEditor->getDocument().textInput( leftText );
+	mRightEditor->getDocument().reset();
+	mRightEditor->getDocument().textInput( rightText );
+	mEditor->getDocument().setSelection( TextPosition( 0, 0 ) );
+	mLeftEditor->getDocument().setSelection( TextPosition( 0, 0 ) );
+	mRightEditor->getDocument().setSelection( TextPosition( 0, 0 ) );
+
+	if ( mSyntaxDef ) {
+		mEditor->getDocument().setSyntaxDefinition( mSyntaxDef );
+		mLeftEditor->getDocument().setSyntaxDefinition( mSyntaxDef );
+		mRightEditor->getDocument().setSyntaxDefinition( mSyntaxDef );
+	}
+}
+
 void UIDiffView::computeSubLineDiff( DiffLine& oldLine, DiffLine& newLine ) {
 	dtl::Diff<String::StringBaseType, String::View> diff( oldLine.text.view(),
 														  newLine.text.view() );
 	diff.compose();
-	auto ses = diff.getSes().getSequence();
 
-	Int64 oldIdx = 0;
-	Int64 newIdx = 0;
-	for ( const auto& pair : ses ) {
-		switch ( pair.second.type ) {
-			case dtl::SES_COMMON:
+	if ( mSubLineDiffAlgorithm == SubLineDiffAlgorithm::SES ) {
+		auto ses = diff.getSes().getSequence();
+		Int64 oldIdx = 0;
+		Int64 newIdx = 0;
+
+		for ( const auto& pair : ses ) {
+			switch ( pair.second.type ) {
+				case dtl::SES_COMMON:
+					oldIdx++;
+					newIdx++;
+					break;
+				case dtl::SES_ADD:
+					if ( !newLine.subLineChanges.empty() &&
+						 newLine.subLineChanges.back().end().column() == newIdx ) {
+						newLine.subLineChanges.back().setEnd( { 0, newIdx + 1 } );
+					} else {
+						newLine.subLineChanges.push_back( { { 0, newIdx }, { 0, newIdx + 1 } } );
+					}
+					newIdx++;
+					break;
+				case dtl::SES_DELETE:
+					if ( !oldLine.subLineChanges.empty() &&
+						 oldLine.subLineChanges.back().end().column() == oldIdx ) {
+						oldLine.subLineChanges.back().setEnd( { 0, oldIdx + 1 } );
+					} else {
+						oldLine.subLineChanges.push_back( { { 0, oldIdx }, { 0, oldIdx + 1 } } );
+					}
+					oldIdx++;
+					break;
+			}
+		}
+	} else {
+		auto lcs = diff.getLcsVec();
+		Int64 oldIdx = 0;
+		Int64 newIdx = 0;
+		Int64 lcsIdx = 0;
+
+		while ( oldIdx < (Int64)oldLine.text.size() || newIdx < (Int64)newLine.text.size() ) {
+			if ( lcsIdx < (Int64)lcs.size() && oldIdx < (Int64)oldLine.text.size() &&
+				 newIdx < (Int64)newLine.text.size() && oldLine.text[oldIdx] == lcs[lcsIdx] &&
+				 newLine.text[newIdx] == lcs[lcsIdx] ) {
 				oldIdx++;
 				newIdx++;
-				break;
-			case dtl::SES_ADD:
-				if ( !newLine.subLineChanges.empty() &&
-					 newLine.subLineChanges.back().end().column() == newIdx ) {
-					newLine.subLineChanges.back().setEnd( { 0, newIdx + 1 } );
-				} else {
-					newLine.subLineChanges.push_back( { { 0, newIdx }, { 0, newIdx + 1 } } );
+				lcsIdx++;
+			} else {
+				if ( oldIdx < (Int64)oldLine.text.size() &&
+					 ( lcsIdx == (Int64)lcs.size() || oldLine.text[oldIdx] != lcs[lcsIdx] ) ) {
+					if ( !oldLine.subLineChanges.empty() &&
+						 oldLine.subLineChanges.back().end().column() == oldIdx ) {
+						oldLine.subLineChanges.back().setEnd( { 0, oldIdx + 1 } );
+					} else {
+						oldLine.subLineChanges.push_back( { { 0, oldIdx }, { 0, oldIdx + 1 } } );
+					}
+					oldIdx++;
 				}
-				newIdx++;
-				break;
-			case dtl::SES_DELETE:
-				if ( !oldLine.subLineChanges.empty() &&
-					 oldLine.subLineChanges.back().end().column() == oldIdx ) {
-					oldLine.subLineChanges.back().setEnd( { 0, oldIdx + 1 } );
-				} else {
-					oldLine.subLineChanges.push_back( { { 0, oldIdx }, { 0, oldIdx + 1 } } );
+				if ( newIdx < (Int64)newLine.text.size() &&
+					 ( lcsIdx == (Int64)lcs.size() || newLine.text[newIdx] != lcs[lcsIdx] ) ) {
+					if ( !newLine.subLineChanges.empty() &&
+						 newLine.subLineChanges.back().end().column() == newIdx ) {
+						newLine.subLineChanges.back().setEnd( { 0, newIdx + 1 } );
+					} else {
+						newLine.subLineChanges.push_back( { { 0, newIdx }, { 0, newIdx + 1 } } );
+					}
+					newIdx++;
 				}
-				oldIdx++;
-				break;
+			}
 		}
 	}
 }
@@ -333,15 +514,24 @@ static void applySubLineDiff(
 	}
 }
 
-void UIDiffView::loadFromPatch( const std::string& patchText ) {
+void UIDiffView::loadFromPatch( const std::string& patchText,
+								const std::string& originalFilePath ) {
 	mLines.clear();
-	auto lines = String::split( patchText, '\n' );
-	String cleanText;
-	String leftText;
-	String rightText;
+	auto lines = String::split( patchText, '\n', true );
+
+	std::string fileText;
+	bool hasCompleteFile = false;
+	std::vector<std::string> fileLines;
+	if ( !originalFilePath.empty() && FileSystem::fileExists( originalFilePath ) ) {
+		FileSystem::fileGet( originalFilePath, fileText );
+		fileLines = String::split( fileText, '\n', true );
+		hasCompleteFile = true;
+	}
 
 	Int64 oldLineNum = 0;
 	Int64 newLineNum = 0;
+	Int64 expectedOldLineNum = 1;
+	Int64 expectedNewLineNum = 1;
 	std::string filename;
 
 	for ( const auto& line : lines ) {
@@ -379,6 +569,20 @@ void UIDiffView::loadFromPatch( const std::string& patchText ) {
 					newLineNum =
 						std::stoll( line.substr( plusPos + 1, spacePos - plusPos - 1 ) ) - 1;
 				}
+
+				if ( hasCompleteFile ) {
+					while ( expectedNewLineNum < newLineNum + 1 &&
+							expectedNewLineNum <= (Int64)fileLines.size() ) {
+						DiffLine dline;
+						dline.type = DiffLineType::Common;
+						dline.text = fileLines[expectedNewLineNum - 1];
+						dline.oldLineNum = expectedOldLineNum++;
+						dline.newLineNum = expectedNewLineNum++;
+						mLines.push_back( dline );
+					}
+				}
+				expectedOldLineNum = oldLineNum + 1;
+				expectedNewLineNum = newLineNum + 1;
 			}
 			continue;
 		}
@@ -390,60 +594,62 @@ void UIDiffView::loadFromPatch( const std::string& patchText ) {
 			dline.type = DiffLineType::Added;
 			dline.text = line.substr( 1 );
 			dline.newLineNum = ++newLineNum;
-			leftText += "\n";
-			rightText += dline.text + "\n";
+			expectedNewLineNum = newLineNum + 1;
 		} else if ( String::startsWith( line, "-" ) ) {
 			dline.type = DiffLineType::Removed;
 			dline.text = line.substr( 1 );
 			dline.oldLineNum = ++oldLineNum;
-			leftText += dline.text + "\n";
-			rightText += "\n";
+			expectedOldLineNum = oldLineNum + 1;
 		} else if ( String::startsWith( line, " " ) ) {
 			dline.type = DiffLineType::Common;
 			dline.text = line.substr( 1 );
 			dline.oldLineNum = ++oldLineNum;
 			dline.newLineNum = ++newLineNum;
-			leftText += dline.text + "\n";
-			rightText += dline.text + "\n";
+			expectedOldLineNum = oldLineNum + 1;
+			expectedNewLineNum = newLineNum + 1;
 		} else {
 			dline.type = DiffLineType::Common;
 			dline.oldLineNum = ++oldLineNum;
 			dline.newLineNum = ++newLineNum;
-			leftText += dline.text + "\n";
-			rightText += dline.text + "\n";
+			expectedOldLineNum = oldLineNum + 1;
+			expectedNewLineNum = newLineNum + 1;
 		}
 
-		cleanText += dline.text + "\n";
 		mLines.push_back( dline );
+	}
+
+	if ( hasCompleteFile ) {
+		while ( expectedNewLineNum <= (Int64)fileLines.size() ) {
+			DiffLine dline;
+			dline.type = DiffLineType::Common;
+			dline.text = fileLines[expectedNewLineNum - 1];
+			dline.oldLineNum = expectedOldLineNum++;
+			dline.newLineNum = expectedNewLineNum++;
+			mLines.push_back( dline );
+		}
 	}
 
 	applySubLineDiff( mLines, [this]( DiffLine& oldLine, DiffLine& newLine ) {
 		computeSubLineDiff( oldLine, newLine );
 	} );
 
-	mEditor->getDocument().reset();
-	mEditor->getDocument().textInput( cleanText );
-	mLeftEditor->getDocument().reset();
-	mLeftEditor->getDocument().textInput( leftText );
-	mRightEditor->getDocument().reset();
-	mRightEditor->getDocument().textInput( rightText );
-	mEditor->getDocument().setSelection( TextPosition( 0, 0 ) );
-	mLeftEditor->getDocument().setSelection( TextPosition( 0, 0 ) );
-	mRightEditor->getDocument().setSelection( TextPosition( 0, 0 ) );
+	setCompleteViewToggleVisible( hasCompleteFile );
 
 	if ( !filename.empty() ) {
-		auto def = Doc::SyntaxDefinitionManager::instance()->getByExtension( filename );
-		mEditor->getDocument().setSyntaxDefinition( def );
-		mLeftEditor->getDocument().setSyntaxDefinition( def );
-		mRightEditor->getDocument().setSyntaxDefinition( def );
+		auto def = SyntaxDefinitionManager::instance()->getByExtension( filename );
+		mSyntaxDef =
+			SyntaxDefinitionManager::instance()->getLanguageDefinition( def.getLanguageIndex() );
 	}
+
+	updateEditorsText();
+	updateButtonsText();
 }
 
 void UIDiffView::loadFromStrings( const std::string& oldText, const std::string& newText ) {
 	mLines.clear();
 
-	std::vector<std::string> leftLines = String::split( oldText, '\n' );
-	std::vector<std::string> rightLines = String::split( newText, '\n' );
+	std::vector<std::string> leftLines = String::split( oldText, '\n', true );
+	std::vector<std::string> rightLines = String::split( newText, '\n', true );
 
 	dtl::Diff<std::string> diff( leftLines, rightLines );
 	diff.compose();
@@ -451,9 +657,6 @@ void UIDiffView::loadFromStrings( const std::string& oldText, const std::string&
 
 	size_t leftIndex = 0;
 	size_t rightIndex = 0;
-	String cleanText;
-	String leftText;
-	String rightText;
 
 	for ( auto& pair : ranges ) {
 		DiffLine dline;
@@ -463,23 +666,16 @@ void UIDiffView::loadFromStrings( const std::string& oldText, const std::string&
 				dline.type = DiffLineType::Common;
 				dline.oldLineNum = ++leftIndex;
 				dline.newLineNum = ++rightIndex;
-				leftText += dline.text + "\n";
-				rightText += dline.text + "\n";
 				break;
 			case dtl::SES_ADD:
 				dline.type = DiffLineType::Added;
 				dline.newLineNum = ++rightIndex;
-				leftText += "\n";
-				rightText += dline.text + "\n";
 				break;
 			case dtl::SES_DELETE:
 				dline.type = DiffLineType::Removed;
 				dline.oldLineNum = ++leftIndex;
-				leftText += dline.text + "\n";
-				rightText += "\n";
 				break;
 		}
-		cleanText += dline.text + "\n";
 		mLines.push_back( dline );
 	}
 
@@ -487,15 +683,32 @@ void UIDiffView::loadFromStrings( const std::string& oldText, const std::string&
 		computeSubLineDiff( oldLine, newLine );
 	} );
 
-	mEditor->getDocument().reset();
-	mEditor->getDocument().textInput( cleanText );
-	mLeftEditor->getDocument().reset();
-	mLeftEditor->getDocument().textInput( leftText );
-	mRightEditor->getDocument().reset();
-	mRightEditor->getDocument().textInput( rightText );
-	mEditor->getDocument().setSelection( TextPosition( 0, 0 ) );
-	mLeftEditor->getDocument().setSelection( TextPosition( 0, 0 ) );
-	mRightEditor->getDocument().setSelection( TextPosition( 0, 0 ) );
+	mShowCompleteView = false;
+	mCompleteViewToggle->setText( i18n( "diffview_complete", "Complete" ) );
+	updateEditorsText();
+}
+
+void UIDiffView::loadFromFile( const std::string& oldFilePath, const std::string& newFilePath ) {
+	std::string oldText, newText;
+	FileSystem::fileGet( oldFilePath, oldText );
+	FileSystem::fileGet( newFilePath, newText );
+
+	auto def = SyntaxDefinitionManager::instance()->getByExtension( oldFilePath );
+	mSyntaxDef =
+		SyntaxDefinitionManager::instance()->getLanguageDefinition( def.getLanguageIndex() );
+	mEditor->getDocument().setSyntaxDefinition( def );
+	mLeftEditor->getDocument().setSyntaxDefinition( def );
+	mRightEditor->getDocument().setSyntaxDefinition( def );
+
+	loadFromStrings( oldText, newText );
+}
+
+void UIDiffView::updateButtonsText() {
+	mModeToggle->setText( mViewMode == ViewMode::Unified ? i18n( "diffview_split", "Split" )
+														 : i18n( "diffview_unified", "Unified" ) );
+
+	mCompleteViewToggle->setText( mShowCompleteView ? i18n( "diffview_reduced", "Reduced" )
+													: i18n( "diffview_complete", "Complete" ) );
 }
 
 }}} // namespace EE::UI::Tools

@@ -2623,7 +2623,7 @@ void App::loadDiffFromMemory( const std::string& content, const std::string& ori
 		icon = getUISceneNode()->findIcon( "file" );
 	if ( icon )
 		tab->setIcon( icon->getSize( getMenuIconSize() ) );
-	diffView->loadFromPatch( content );
+	diffView->loadFromPatch( content, originalFilePath );
 }
 
 void App::loadDiffFromPath( const std::string& path ) {
@@ -2641,7 +2641,7 @@ void App::loadDiffFromPath( const std::string& path ) {
 	tab->setIcon( icon ? icon : findIcon( "file" ) );
 	std::string text;
 	if ( FileSystem::fileGet( path, text ) )
-		diffView->loadFromPatch( text );
+		diffView->loadFromPatch( text, path );
 }
 
 void App::openFileFromPath( const std::string& path ) {

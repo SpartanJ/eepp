@@ -643,6 +643,7 @@ void UICodeEditor::onFontChanged() {
 	updateGlyphWidth();
 	mDocView.setFontStyle( mFontStyleConfig );
 	invalidateDraw();
+	sendCommonEvent( Event::OnFontChanged );
 }
 
 void UICodeEditor::onFontStyleChanged() {

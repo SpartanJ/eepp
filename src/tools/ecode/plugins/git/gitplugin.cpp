@@ -1111,12 +1111,16 @@ void GitPlugin::diff( const Git::DiffMode mode, const std::string& repoPath ) {
 
 void GitPlugin::diff( const std::string& file, bool isStaged ) {
 	mThreadPool->run( [this, file, isStaged] {
-		auto res = mGit->diff( fixFilePath( file ), isStaged, mGit->repoPath( file ) );
+		auto filePath = fixFilePath( file );
+		auto res = mGit->diff( filePath, isStaged, mGit->repoPath( file ) );
 		if ( res.fail() )
 			return;
 
+		auto result = std::move( res.result );
 		getUISceneNode()->runOnMainThread(
-			[this, file, res] { getPluginContext()->loadDiffFromMemory( res.result, file ); } );
+			[this, result = std::move( result ), filePath = std::move( filePath )] {
+				getPluginContext()->loadDiffFromMemory( result, filePath );
+			} );
 	} );
 }
 
