@@ -51,7 +51,6 @@
                   soil2,
                   premakeNinja,
                   premakeCMake,
-                  ninja,
                   glew,
                   libx11,
                   SDL2,
@@ -83,6 +82,10 @@
                     libx11
                   ];
 
+                  propagatedBuildInputs = [
+                    glew
+                  ];
+
                   configurePhase = ''
                     rm -rf src/thirdparty/efsw
                     rm -rf src/thirdparty/SOIL2
@@ -105,6 +108,7 @@
                     mkdir -p $out
                     cp -R ${archLibDir}/ $out/lib
                     cp -R bin $out/bin
+                    cp -R include $out/include
 
                     find "$out/bin" -type l -lname '/build/*' -delete
 
@@ -114,23 +118,20 @@
                   '';
                 }
               );
-            in
-            {
+
               eepp = pkgs.callPackage eepp_pkgs {
                 efsw = efsw;
                 soil2 = soil2;
                 premakeNinja = premakeNinja;
                 premakeCMake = premakeCMake;
               };
+            in
+            {
+              inherit eepp;
+              default = eepp;
             };
         }) systems
       );
 
-      defaultPackage = builtins.listToAttrs (
-        map (system: {
-          name = system;
-          value = self.packages.${system}.eepp;
-        }) systems
-      );
     };
 }
