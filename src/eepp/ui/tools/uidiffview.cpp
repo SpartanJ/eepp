@@ -221,7 +221,7 @@ UIDiffView::UIDiffView() : UIWidget( "diffview" ) {
 	mRightEditor->getVScrollBar()->on(
 		Event::OnValueChange, [this]( const Event* ) { syncScroll( mRightEditor, mLeftEditor ); } );
 
-	mModeToggle = UIPushButton::New();
+	mModeToggle = UISelectButton::New();
 	mModeToggle->setParent( this );
 	mModeToggle->onClick( [this]( const Event* ) {
 		setViewMode( mViewMode == ViewMode::Unified ? ViewMode::SideBySide : ViewMode::Unified );
@@ -229,7 +229,7 @@ UIDiffView::UIDiffView() : UIWidget( "diffview" ) {
 
 	mModeToggle->on( Event::OnSizeChange, [this]( auto ) { updateModeButton(); } );
 
-	mCompleteViewToggle = UIPushButton::New();
+	mCompleteViewToggle = UISelectButton::New();
 	mCompleteViewToggle->setParent( this );
 	mCompleteViewToggle->onClick(
 		[this]( const Event* ) { setCompleteView( !mShowCompleteView ); } );
@@ -327,7 +327,7 @@ void UIDiffView::syncScroll( UICodeEditor* source, UICodeEditor* target, bool em
 }
 
 void UIDiffView::updateModeButton() {
-	auto margin = PixelDensity::dpToPx( 8 );
+	auto margin = PixelDensity::dpToPx( 4 );
 
 	Float currentX = getPixelsSize().getWidth() - margin;
 	currentX -= mRightEditor->getVScrollBar()->getPixelsSize().getWidth();
@@ -704,11 +704,10 @@ void UIDiffView::loadFromFile( const std::string& oldFilePath, const std::string
 }
 
 void UIDiffView::updateButtonsText() {
-	mModeToggle->setText( mViewMode == ViewMode::Unified ? i18n( "diffview_split", "Split" )
-														 : i18n( "diffview_unified", "Unified" ) );
-
-	mCompleteViewToggle->setText( mShowCompleteView ? i18n( "diffview_reduced", "Reduced" )
-													: i18n( "diffview_complete", "Complete" ) );
+	mModeToggle->setText( i18n( "diffview_side_by_side", "Side by Side" ) );
+	mModeToggle->setSelected( mViewMode != ViewMode::Unified );
+	mCompleteViewToggle->setText( i18n( "diffview_compact", "Compact" ) );
+	mCompleteViewToggle->setSelected( !mShowCompleteView );
 }
 
 }}} // namespace EE::UI::Tools

@@ -3,7 +3,7 @@
 
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
-#include <eepp/ui/uipushbutton.hpp>
+#include <eepp/ui/uiselectbutton.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 
@@ -60,8 +60,8 @@ class EE_API UIDiffView : public UIWidget {
 	UICodeEditor* mEditor{ nullptr };
 	UICodeEditor* mLeftEditor{ nullptr };
 	UICodeEditor* mRightEditor{ nullptr };
-	UIPushButton* mModeToggle{ nullptr };
-	UIPushButton* mCompleteViewToggle{ nullptr };
+	UISelectButton* mModeToggle{ nullptr };
+	UISelectButton* mCompleteViewToggle{ nullptr };
 	std::unique_ptr<UIDiffEditorPlugin> mPlugin;
 	std::unique_ptr<UIDiffEditorPlugin> mLeftPlugin;
 	std::unique_ptr<UIDiffEditorPlugin> mRightPlugin;

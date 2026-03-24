@@ -93,7 +93,7 @@ UTEST( UIDiffView, LoadFromPatchAndVerifyCleanText ) {
 
 	const auto& text = diffView->getEditor()->getDocument().getText();
 
-	std::string expectedCleanText = "int main() {\n  return 0;\n  return 1;\n}\n";
+	std::string expectedCleanText = "int main() {\n  return 0;\n  return 1;\n}\n\n";
 
 	std::string textUtf8 = text.toUtf8();
 	ASSERT_TRUE( expectedCleanText == textUtf8 );

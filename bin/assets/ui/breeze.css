@@ -1229,6 +1229,12 @@ TextInput.table_cell_edit {
 	padding-bottom: 0!important;
 }
 
+DiffView > SelectButton {
+	border-color: transparent;
+	padding: 2dp 4dp 2dp 4dp;
+	font-size: 10dp;
+}
+
 @media (prefers-color-scheme: light) {
 
 :root {
