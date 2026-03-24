@@ -836,6 +836,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void disableEditorFeatures( bool useDefaultStyle = true );
 
+	void setDisableScrollInvalidation( bool disable ) { mDisableScrollInvalidation = disable; }
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -883,6 +885,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mAllowSelectingTextFromGutter{ true };
 	bool mTabStops{ false };
 	bool mKerningEnabled{ false };
+	bool mDisableScrollInvalidation{ false };
 	DocumentView mDocView;
 	Clock mBlinkTimer;
 	Time mBlinkTime;

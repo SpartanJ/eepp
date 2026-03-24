@@ -7,6 +7,7 @@
 #include <eepp/system/luapattern.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
+#include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
 #include <eepp/ui/uiiconthememanager.hpp>
@@ -1110,20 +1111,16 @@ void GitPlugin::diff( const Git::DiffMode mode, const std::string& repoPath ) {
 
 void GitPlugin::diff( const std::string& file, bool isStaged ) {
 	mThreadPool->run( [this, file, isStaged] {
-		auto res = mGit->diff( fixFilePath( file ), isStaged, mGit->repoPath( file ) );
+		auto filePath = fixFilePath( file );
+		auto res = mGit->diff( filePath, isStaged, mGit->repoPath( file ) );
 		if ( res.fail() )
 			return;
 
-		getUISceneNode()->runOnMainThread( [this, file, res] {
-			auto ret = mManager->getSplitter()->createEditorInNewTab();
-			auto doc = ret.second->getDocumentRef();
-			doc->setDefaultFileName( FileSystem::fileNameFromPath( file ) + ".diff" );
-			doc->textInput( res.result, false );
-			doc->moveToStartOfDoc();
-			doc->resetUndoRedo();
-			ret.second->setSyntaxDefinition(
-				SyntaxDefinitionManager::instance()->getByLSPName( "diff" ) );
-		} );
+		auto result = std::move( res.result );
+		getUISceneNode()->runOnMainThread(
+			[this, result = std::move( result ), filePath = std::move( filePath )] {
+				getPluginContext()->loadDiffFromMemory( result, filePath );
+			} );
 	} );
 }
 

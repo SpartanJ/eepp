@@ -18,6 +18,7 @@
 #include <eepp/ui/doc/languagessyntaxhighlighting.hpp>
 #include <eepp/ui/iconmanager.hpp>
 #include <eepp/ui/tools/uiaudioplayer.hpp>
+#include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <filesystem>
 #include <iostream>
@@ -2606,6 +2607,43 @@ void App::loadAudioFromPath( const std::string& path, bool autoPlay ) {
 	audioPlayer->loadFromPath( path, autoPlay );
 }
 
+void App::loadDiffFromMemory( const std::string& content, const std::string& originalFilePath ) {
+	auto diffViewTitle = i18n( "diff_viewer", "Diff Viewer" );
+	auto* diffView = Tools::UIDiffView::New();
+	auto [tab, iv] = getSplitter()->createWidget( diffView, diffViewTitle );
+	if ( !originalFilePath.empty() ) {
+		std::string fileName = FileSystem::fileNameFromPath( originalFilePath );
+		tab->setText( diffViewTitle + ": " + fileName );
+		tab->setTooltipText( originalFilePath );
+	} else {
+		tab->setText( diffViewTitle );
+	}
+	UIIcon* icon = getUISceneNode()->findIcon( "filetype-diff" );
+	if ( !icon )
+		icon = getUISceneNode()->findIcon( "file" );
+	if ( icon )
+		tab->setIcon( icon->getSize( getMenuIconSize() ) );
+	diffView->loadFromPatch( content, originalFilePath );
+}
+
+void App::loadDiffFromPath( const std::string& path ) {
+	auto diffViewTitle = i18n( "diff_viewer", "Diff Viewer" );
+	auto* diffView = Tools::UIDiffView::New();
+	auto [tab, iv] = mSplitter->createWidget( diffView, i18n( "diff_viewer", "Diff Viewer" ) );
+	if ( !path.empty() ) {
+		std::string fileName = FileSystem::fileNameFromPath( path );
+		tab->setText( diffViewTitle + ": " + fileName );
+		tab->setTooltipText( path );
+	} else {
+		tab->setText( diffViewTitle );
+	}
+	auto icon = findIcon( "filetype-diff" );
+	tab->setIcon( icon ? icon : findIcon( "file" ) );
+	std::string text;
+	if ( FileSystem::fileGet( path, text ) )
+		diffView->loadFromPatch( text, path );
+}
+
 void App::openFileFromPath( const std::string& path ) {
 	std::string ext = FileSystem::fileExtension( path );
 	if ( !Image::isImageExtension( path ) && !SoundFileFactory::isKnownFileExtension( path ) &&
@@ -2658,6 +2696,8 @@ bool App::loadFileFromPath(
 	} else if ( ( SoundFileFactory::isKnownFileExtension( path ) || tryFindMimeType ) &&
 				SoundFileFactory::isValidAudioFile( path ) ) {
 		loadAudioFromPath( path );
+	} else if ( ext == "diff" || ext == "patch" ) {
+		loadDiffFromPath( path );
 	} else if ( !openBinaryAsDocument && PathHelper::isOpenExternalExtension( ext ) ) {
 		Engine::instance()->openURI( path );
 	} else if ( tryFindMimeType && TextDocument::fileMightBeBinary( path ) ) {

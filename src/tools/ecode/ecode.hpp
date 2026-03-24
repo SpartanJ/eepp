@@ -556,6 +556,10 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void loadAudioFromPath( const std::string& path, bool autoPlay = true );
 
+	void loadDiffFromPath( const std::string& path );
+
+	void loadDiffFromMemory( const std::string& content, const std::string& originalFilePath = "" );
+
 	void createAndShowRecentFolderPopUpMenu( Node* recentFoldersBut );
 
 	void createAndShowRecentFilesPopUpMenu( Node* recentFilesBut );
@@ -629,6 +633,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	}
 
 	const SyntaxColorScheme* getCurrentColorScheme() const;
+
+	size_t getMenuIconSize() const { return mMenuIconSize; }
 
   protected:
 	std::vector<std::string> mArgs;
