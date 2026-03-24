@@ -14,6 +14,20 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
   public:
 	UIDiffEditorPlugin( UIDiffView* view ) : mView( view ) {}
 
+	inline Color getBackgroundColor( UIDiffView::DiffLineType type ) {
+		switch( type ) {
+			case UIDiffView::DiffLineType::Added:
+				return Color( 0, 150, 32, 30 );
+			case UIDiffView::DiffLineType::Removed:
+				return Color( 180, 0, 32, 30 );
+			case UIDiffView::DiffLineType::Header:
+				return Color( 100, 100, 100, 30 );
+			case UIDiffView::DiffLineType::Common:
+				break;
+		}
+		return Color::Transparent;
+	}
+
 	std::string getId() override { return "UIDiffEditorPlugin"; }
 	std::string getTitle() override { return "UIDiffEditorPlugin"; }
 	std::string getDescription() override { return "Highlights diff added/removed lines."; }
@@ -32,15 +46,7 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 
 		const auto& lines = mView->getDiffLines();
 		const auto& line = lines[index];
-
-		Color bgColor( Color::Transparent );
-		if ( line.type == UIDiffView::DiffLineType::Added ) {
-			bgColor = Color( 0, 150, 32, 50 );
-		} else if ( line.type == UIDiffView::DiffLineType::Removed ) {
-			bgColor = Color( 180, 0, 32, 50 );
-		} else if ( line.type == UIDiffView::DiffLineType::Header ) {
-			bgColor = Color( 100, 100, 100, 50 );
-		}
+		Color bgColor( getBackgroundColor( line.type ) );
 
 		if ( bgColor != Color::Transparent ) {
 			Primitives p;
@@ -59,21 +65,6 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 		const auto& lines = mView->getDiffLines();
 		const auto& line = lines[index];
 
-		Color bgColor( Color::Transparent );
-		if ( line.type == UIDiffView::DiffLineType::Added ) {
-			bgColor = Color( 0, 150, 32, 50 );
-		} else if ( line.type == UIDiffView::DiffLineType::Removed ) {
-			bgColor = Color( 180, 0, 32, 50 );
-		} else if ( line.type == UIDiffView::DiffLineType::Header ) {
-			bgColor = Color( 100, 100, 100, 50 );
-		}
-
-		if ( bgColor != Color::Transparent ) {
-			Primitives p;
-			p.setColor( bgColor );
-			p.drawRectangle( Rectf( screenStart, Sizef( gutterWidth, lineHeight ) ) );
-		}
-
 		String text;
 		if ( line.type == UIDiffView::DiffLineType::Added ) {
 			text = String::format( "%5s %5lld", "", (long long)line.newLineNum );
@@ -86,21 +77,21 @@ class UIDiffEditorPlugin : public UICodeEditorPlugin {
 			return;
 		}
 
-		mText.setFont( editor->getFont() );
-		mText.setFontSize( fontSize );
-		mText.setFillColor(
-			editor->getColorScheme().getEditorColor( Doc::SyntaxStyleTypes::LineNumber ) );
-		mText.setString( text );
+		FontStyleConfig config = editor->getFontStyleConfig();
+		config.FontColor = editor->getColorScheme().getEditorColor( SyntaxStyleTypes::LineNumber );
 
-		Float textWidth = mText.getTextWidth();
+		Float textWidth = Text::getTextWidth( text, config, 4, TextHints::AllAscii );
+
 		Vector2f pos( screenStart.x + ( gutterWidth - textWidth ) * 0.5f,
-					  screenStart.y + ( lineHeight - mText.getTextHeight() ) * 0.5f );
-		mText.draw( pos.x, pos.y );
+					  screenStart.y +
+						  ( lineHeight - config.Font->getLineSpacing( config.CharacterSize ) ) *
+							  0.5f );
+
+		Text::draw( text, pos, config, 4, TextHints::AllAscii );
 	}
 
   protected:
 	UIDiffView* mView;
-	Text mText;
 };
 
 UIDiffView* UIDiffView::New() {
@@ -114,6 +105,7 @@ UIDiffView::UIDiffView() : UIWidget( "diffview" ) {
 	mEditor->setDocument( std::make_shared<Doc::TextDocument>() );
 	mEditor->setLocked( true );
 	mEditor->setShowLineNumber( false );
+	mEditor->setShowFoldingRegion( false );
 
 	mPlugin = std::make_shared<UIDiffEditorPlugin>( this );
 	mEditor->registerPlugin( mPlugin.get() );
