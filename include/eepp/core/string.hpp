@@ -1040,7 +1040,7 @@ class EE_API String {
 
 	static bool isLatin1( String::View str );
 
-	Uint32 getTextHints();
+	Uint32 getTextHints() const;
 
 	static Uint32 getTextHints( String::View str );
 

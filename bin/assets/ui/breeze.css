@@ -1231,8 +1231,13 @@ TextInput.table_cell_edit {
 
 DiffView > SelectButton {
 	border-color: transparent;
-	padding: 2dp 4dp 2dp 4dp;
+	padding: 0dp 4dp 0dp 4dp;
 	font-size: 10dp;
+}
+
+DiffView > SelectButton:hover,
+DiffView > SelectButton:focus {
+	border-color: var(--primary);
 }
 
 @media (prefers-color-scheme: light) {

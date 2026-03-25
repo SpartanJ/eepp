@@ -14,6 +14,7 @@
 #include <eepp/ui/uiloader.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiradiobutton.hpp>
+#include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uistackwidget.hpp>
 #include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitextedit.hpp>
@@ -1087,8 +1088,6 @@ void GitPlugin::diff( const Git::DiffMode mode, const std::string& repoPath ) {
 
 		std::string repoName = this->repoName( repoPath );
 		getUISceneNode()->runOnMainThread( [this, mode, res, repoName] {
-			auto ret = mManager->getSplitter()->createEditorInNewTab();
-			auto doc = ret.second->getDocumentRef();
 			std::string modeName;
 			switch ( mode ) {
 				case Git::DiffHead: {
@@ -1099,12 +1098,8 @@ void GitPlugin::diff( const Git::DiffMode mode, const std::string& repoPath ) {
 					modeName = "staged";
 					break;
 			}
-			doc->setDefaultFileName( repoName + "-" + modeName + ".diff" );
-			ret.second->setSyntaxDefinition(
-				SyntaxDefinitionManager::instance()->getByLSPName( "diff" ) );
-			doc->textInput( res.result, false );
-			doc->moveToStartOfDoc();
-			doc->resetUndoRedo();
+			getPluginContext()->loadDiffFromMemory(
+				res.result, UIDiffView::isMultiFileDiff( res.result ) ? modeName : "" );
 		} );
 	} );
 }

@@ -1480,7 +1480,7 @@ bool String::isLatin1( String::View str ) {
 	return isAsciiTpl<String::View, 255>( str );
 }
 
-Uint32 String::getTextHints() {
+Uint32 String::getTextHints() const {
 	if ( isAscii() )
 		return TextHints::AllAscii | TextHints::AllLatin1;
 	if ( isLatin1() )

@@ -2040,6 +2040,7 @@ void UICodeEditor::drawCursor( const Vector2f& startScroll, const Float& lineHei
 }
 
 void UICodeEditor::onSizeChange() {
+	onAutoSize();
 	invalidateEditor( false );
 	invalidateLineWrapMaxWidth( false );
 	if ( !mDocView.isWrapEnabled() )
@@ -3350,6 +3351,16 @@ Float UICodeEditor::getGutterSpace( UICodeEditorPlugin* plugin ) const {
 
 Float UICodeEditor::getPluginsGutterSpace() const {
 	return mPluginsGutterSpace;
+}
+
+Float UICodeEditor::getTotalTopSpace() const {
+	Float space = 0.f;
+	if ( mPluginsTopSpace > 0 ) {
+		for ( auto& plugin : mPluginTopSpaces ) {
+			space += plugin.space;
+		}
+	}
+	return space;
 }
 
 bool UICodeEditor::topSpaceExists( UICodeEditorPlugin* plugin ) const {
@@ -5574,8 +5585,8 @@ void UICodeEditor::onAutoSize() {
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
 		auto visibleLineCount = getDocumentView().getVisibleLinesCount();
 		Float lineHeight = getLineHeight();
-		Float height =
-			lineHeight * visibleLineCount + getPixelsPadding().Top + getPixelsPadding().Bottom;
+		Float height = lineHeight * visibleLineCount + getPixelsPadding().Top +
+					   getPixelsPadding().Bottom + getTotalTopSpace();
 		setPixelsSize( getPixelsSize().getWidth(), height );
 	}
 }

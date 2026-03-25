@@ -5,7 +5,11 @@
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
 
-namespace EE { namespace UI { namespace Tools {
+namespace EE { namespace UI {
+
+class UIScrollView;
+
+namespace Tools {
 
 class UIDiffEditorPlugin;
 
@@ -15,6 +19,12 @@ class EE_API UIDiffView : public UIWidget {
 	enum class SubLineDiffAlgorithm { LCS, SES };
 
 	static UIDiffView* New();
+
+	static UIScrollView* NewMultiFileDiffViewer( const std::string& patchText );
+
+	static std::vector<std::string> splitDiff( const std::string& multiFileDiff );
+
+	static bool isMultiFileDiff( const std::string& diff );
 
 	virtual ~UIDiffView();
 
@@ -56,6 +66,14 @@ class EE_API UIDiffView : public UIWidget {
 	void setSubLineDiffAlgorithm( SubLineDiffAlgorithm algo );
 	SubLineDiffAlgorithm getSubLineDiffAlgorithm() const { return mSubLineDiffAlgorithm; }
 
+	void setSyntaxColorScheme( const SyntaxColorScheme& colorScheme );
+
+	void setHeadersVisible( bool visible );
+
+	bool areHeadersVisible() const { return mHeadersVisible; }
+
+	const String& getFileName() const { return mFileName; }
+
   protected:
 	UICodeEditor* mEditor{ nullptr };
 	UICodeEditor* mLeftEditor{ nullptr };
@@ -72,9 +90,15 @@ class EE_API UIDiffView : public UIWidget {
 	bool mViewModeToggleVisible{ true };
 	bool mShowCompleteView{ false };
 	bool mCompleteViewToggleVisible{ true };
+	bool mHeadersVisible{ false };
 	std::shared_ptr<SyntaxDefinition> mSyntaxDef;
+	String mFileName;
 
 	UIDiffView();
+
+	virtual void onSizePolicyChange() override;
+
+	virtual void onAutoSize() override;
 
 	virtual void onSizeChange() override;
 
