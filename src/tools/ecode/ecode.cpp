@@ -2608,6 +2608,28 @@ void App::loadAudioFromPath( const std::string& path, bool autoPlay ) {
 }
 
 void App::loadDiffFromMemory( const std::string& content, const std::string& originalFilePath ) {
+	if ( UIDiffView::isMultiFileDiff( content ) ) {
+		auto diffViewTitle = i18n( "diff_viewer", "Diff Viewer" ) + ": " + originalFilePath;
+		UIIcon* icon = getUISceneNode()->findIcon( "filetype-diff" );
+		if ( !icon )
+			icon = getUISceneNode()->findIcon( "file" );
+
+		auto scrollView = UIDiffView::NewMultiFileDiffViewer( content );
+		auto [tab, iv] = getSplitter()->createWidget( scrollView, diffViewTitle );
+		if ( icon )
+			tab->setIcon( icon->getSize( getMenuIconSize() ) );
+		tab->setText( diffViewTitle );
+
+		auto diffView = scrollView->getFirstChild()->asType<UILinearLayout>()->getFirstChild();
+
+		while ( diffView ) {
+			if ( diffView->isType( UI_TYPE_DIFF_VIEW ) )
+				diffView->asType<UIDiffView>()->setSyntaxColorScheme( *getCurrentColorScheme() );
+			diffView = diffView->getNextNode();
+		}
+		return;
+	}
+
 	auto diffViewTitle = i18n( "diff_viewer", "Diff Viewer" );
 	auto* diffView = Tools::UIDiffView::New();
 	auto [tab, iv] = getSplitter()->createWidget( diffView, diffViewTitle );
@@ -2623,10 +2645,39 @@ void App::loadDiffFromMemory( const std::string& content, const std::string& ori
 		icon = getUISceneNode()->findIcon( "file" );
 	if ( icon )
 		tab->setIcon( icon->getSize( getMenuIconSize() ) );
+	diffView->setHeadersVisible( true );
 	diffView->loadFromPatch( content, originalFilePath );
+	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
 }
 
 void App::loadDiffFromPath( const std::string& path ) {
+	std::string content;
+	if ( !FileSystem::fileGet( path, content ) )
+		return;
+
+	if ( UIDiffView::isMultiFileDiff( content ) ) {
+		auto diffViewTitle =
+			i18n( "diff_viewer", "Diff Viewer" ) + ": " + FileSystem::fileNameFromPath( path );
+		UIIcon* icon = getUISceneNode()->findIcon( "filetype-diff" );
+		if ( !icon )
+			icon = getUISceneNode()->findIcon( "file" );
+
+		auto scrollView = UIDiffView::NewMultiFileDiffViewer( content );
+		auto [tab, iv] = getSplitter()->createWidget( scrollView, diffViewTitle );
+		if ( icon )
+			tab->setIcon( icon->getSize( getMenuIconSize() ) );
+		tab->setText( diffViewTitle );
+
+		auto diffView = scrollView->getFirstChild()->asType<UILinearLayout>()->getFirstChild();
+
+		while ( diffView ) {
+			if ( diffView->isType( UI_TYPE_DIFF_VIEW ) )
+				diffView->asType<UIDiffView>()->setSyntaxColorScheme( *getCurrentColorScheme() );
+			diffView = diffView->getNextNode();
+		}
+		return;
+	}
+
 	auto diffViewTitle = i18n( "diff_viewer", "Diff Viewer" );
 	auto* diffView = Tools::UIDiffView::New();
 	auto [tab, iv] = mSplitter->createWidget( diffView, i18n( "diff_viewer", "Diff Viewer" ) );
@@ -2639,9 +2690,10 @@ void App::loadDiffFromPath( const std::string& path ) {
 	}
 	auto icon = findIcon( "filetype-diff" );
 	tab->setIcon( icon ? icon : findIcon( "file" ) );
-	std::string text;
-	if ( FileSystem::fileGet( path, text ) )
-		diffView->loadFromPatch( text, path );
+
+	diffView->setHeadersVisible( true );
+	diffView->loadFromPatch( content, path );
+	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
 }
 
 void App::openFileFromPath( const std::string& path ) {

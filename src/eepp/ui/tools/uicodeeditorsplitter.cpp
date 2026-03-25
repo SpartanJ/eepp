@@ -2,6 +2,7 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
+#include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/uimessagebox.hpp>
 #include <eepp/window/displaymanager.hpp>
 #include <eepp/window/engine.hpp>
@@ -812,7 +813,10 @@ UICodeEditor* UICodeEditorSplitter::findEditorFromPath( const std::string& path 
 
 void UICodeEditorSplitter::applyColorScheme( const SyntaxColorScheme& colorScheme ) {
 	forEachEditor(
-		[colorScheme]( UICodeEditor* editor ) { editor->setColorScheme( colorScheme ); } );
+		[&colorScheme]( UICodeEditor* editor ) { editor->setColorScheme( colorScheme ); } );
+	forEachWidgetType( UI_TYPE_DIFF_VIEW, [&colorScheme]( UIWidget* widget ) {
+		widget->asType<UIDiffView>()->setSyntaxColorScheme( colorScheme );
+	} );
 	mClient->onColorSchemeChanged( mCurrentColorScheme );
 }
 

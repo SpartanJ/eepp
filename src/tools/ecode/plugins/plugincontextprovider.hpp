@@ -23,6 +23,10 @@ class UITabWidget;
 class UISceneNode;
 class UICodeEditor;
 
+namespace Doc {
+class SyntaxColorScheme;
+}
+
 namespace Tools {
 class UICodeEditorSplitter;
 }
@@ -159,6 +163,8 @@ class PluginContextProvider {
 	virtual bool projectIsOpen() const = 0;
 
 	virtual size_t getMenuIconSize() const = 0;
+
+	virtual const SyntaxColorScheme* getCurrentColorScheme() const = 0;
 };
 
 } // namespace ecode
