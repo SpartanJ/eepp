@@ -114,7 +114,7 @@ UIDropDownList* UIDropDownList::showList() {
 
 			Float height = std::ceil(
 				std::ceil( eemin( mListBox->getItemsCount(), mStyleConfig.MaxNumVisibleItems ) *
-						   PixelDensity::pxToDp( mListBox->getRowHeight() ) ) +
+						   mListBox->getRowHeight() ) +
 				tPadding.Top + tPadding.Bottom +
 				( mListBox->getHorizontalScrollBar() &&
 						  mListBox->getHorizontalScrollBar()->isVisible() &&

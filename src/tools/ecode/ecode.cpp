@@ -2696,6 +2696,25 @@ void App::loadDiffFromPath( const std::string& path ) {
 	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
 }
 
+void App::loadDiffFromPaths( const std::string& oldPath, const std::string& newPath ) {
+	auto diffViewTitle = i18n( "diff_viewer", "Diff Viewer" );
+	auto* diffView = Tools::UIDiffView::New();
+	auto [tab, iv] = mSplitter->createWidget( diffView, i18n( "diff_viewer", "Diff Viewer" ) );
+	if ( !newPath.empty() ) {
+		std::string fileName = FileSystem::fileNameFromPath( newPath );
+		tab->setText( diffViewTitle + ": " + fileName );
+		tab->setTooltipText( newPath );
+	} else {
+		tab->setText( diffViewTitle );
+	}
+	auto icon = findIcon( "filetype-diff" );
+	tab->setIcon( icon ? icon : findIcon( "file" ) );
+
+	diffView->setHeadersVisible( true );
+	diffView->loadFromFile( oldPath, newPath );
+	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
+}
+
 void App::openFileFromPath( const std::string& path ) {
 	std::string ext = FileSystem::fileExtension( path );
 	if ( !Image::isImageExtension( path ) && !SoundFileFactory::isKnownFileExtension( path ) &&
@@ -3637,79 +3656,107 @@ void App::initProjectTreeViewUI() {
 	mProjectTreeView->setAutoExpandOnSingleColumn( true );
 }
 
-void App::initProjectTreeView( std::string path, bool openClean ) {
+void App::discardEmptyTab() {
+	// If we opened a new tab and the first tab is simply empty, discard it
+	if ( mSplitter->getTabWidgets().size() == 1 &&
+		 mSplitter->getTabWidgets()[0]->getTabCount() == 2 &&
+		 mSplitter->getTabWidgets()[0]->getTab( 0 ) ) {
+		auto tab = mSplitter->getTabWidgets()[0]->getTab( 0 );
+		if ( tab && tab->getOwnedWidget() && tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+			auto editor = tab->getOwnedWidget()->asType<UICodeEditor>();
+			if ( editor->hasDocument() && editor->getDocument().isEmpty() ) {
+				mSplitter->getTabWidgets()[0]->removeTab( tab );
+			}
+		}
+	}
+};
+
+void App::initProjectTreeView( std::vector<std::string>&& paths, bool openClean ) {
 	initProjectTreeViewUI();
 
-	bool hasPosition = pathHasPosition( path );
-	TextPosition initialPosition;
-	if ( hasPosition ) {
-		auto pathAndPosition = getPathAndPosition( path );
-		path = pathAndPosition.first;
-		initialPosition = pathAndPosition.second;
-	}
+	const auto getInitialPosition = []( std::string& path ) -> TextPosition {
+		bool hasPosition = pathHasPosition( path );
+		TextPosition initialPosition;
+		if ( hasPosition ) {
+			auto pathAndPosition = getPathAndPosition( path );
+			path = pathAndPosition.first;
+			initialPosition = pathAndPosition.second;
+		}
+		return initialPosition;
+	};
 
-	if ( !path.empty() ) {
+	for ( auto& path : paths )
 		path = FileSystem::expandTilde( path );
 
-		if ( FileSystem::isDirectory( path ) ) {
-			loadFolder( path );
-		} else if ( String::startsWith( path, "https://" ) ||
-					String::startsWith( path, "http://" ) ) {
-			loadFolder( "." );
-			loadFileFromPath( path, false );
-		} else {
-			std::string rpath( FileSystem::getRealPath( path ) );
-			std::string folderPath( FileSystem::fileRemoveFileName( rpath ) );
+	if ( !paths.empty() ) {
+		bool openedFolder = false;
+		bool inNewTab = paths.size() != 1;
 
-			if ( FileSystem::isDirectory( folderPath ) ) {
-				loadFileSystemMatcher( folderPath );
+		for ( auto& path : paths ) {
+			if ( FileSystem::isDirectory( path ) ) {
+				loadFolder( path, openedFolder );
+				openedFolder = true;
+			} else if ( String::startsWith( path, "https://" ) ||
+						String::startsWith( path, "http://" ) ) {
+				if ( !openedFolder )
+					loadFolder( "." );
+				loadFileFromPath( path, inNewTab );
+			} else {
+				std::string rpath( FileSystem::getRealPath( paths[0] ) );
+				std::string folderPath( FileSystem::fileRemoveFileName( rpath ) );
 
-				mFileSystemModel =
-					FileSystemModel::New( folderPath, FileSystemModel::Mode::FilesAndDirectories,
-										  { true,
-											true,
-											true,
-											{},
-											[this]( const std::string& filePath ) -> bool {
-												return isFileVisibleInTreeView( filePath );
-											} },
-										  &mUISceneNode->getTranslator(), mThreadPool );
+				if ( !inNewTab && FileSystem::isDirectory( folderPath ) ) {
+					loadFileSystemMatcher( folderPath );
 
-				mProjectTreeView->setModel( mFileSystemModel );
-				mProjectViewEmptyCont->setVisible( false );
+					mFileSystemModel = FileSystemModel::New(
+						folderPath, FileSystemModel::Mode::FilesAndDirectories,
+						{ true,
+						  true,
+						  true,
+						  {},
+						  [this]( const std::string& filePath ) -> bool {
+							  return isFileVisibleInTreeView( filePath );
+						  } },
+						&mUISceneNode->getTranslator(), mThreadPool );
 
-				if ( mFileSystemListener )
-					mFileSystemListener->setFileSystemModel( mFileSystemModel );
+					mProjectTreeView->setModel( mFileSystemModel );
+					mProjectViewEmptyCont->setVisible( false );
 
-				auto forcePosition = getForcePositionFn( initialPosition );
-				auto onLoaded = [this, forcePosition]( UICodeEditor* codeEditor,
-													   const std::string& path ) {
-					if ( forcePosition )
-						forcePosition( codeEditor, path );
-					syncProjectTreeWithEditor( mSplitter->getCurEditor() );
-				};
+					if ( mFileSystemListener )
+						mFileSystemListener->setFileSystemModel( mFileSystemModel );
 
-				if ( FileSystem::fileExists( rpath ) ) {
-					loadFileFromPath( rpath, false, nullptr, onLoaded );
-				} else if ( FileSystem::fileCanWrite( folderPath ) ) {
-					loadFileFromPath( rpath, false, nullptr, onLoaded );
-				}
+					auto forcePosition = getForcePositionFn( getInitialPosition( paths[0] ) );
+					auto onLoaded = [this, forcePosition]( UICodeEditor* codeEditor,
+														   const std::string& path ) {
+						if ( forcePosition )
+							forcePosition( codeEditor, path );
+						syncProjectTreeWithEditor( mSplitter->getCurEditor() );
+					};
 
-				// If we opened a new tab and the first tab is simply empty, discard it
-				if ( mSplitter->getTabWidgets().size() == 1 &&
-					 mSplitter->getTabWidgets()[0]->getTabCount() == 2 &&
-					 mSplitter->getTabWidgets()[0]->getTab( 0 ) ) {
-					auto tab = mSplitter->getTabWidgets()[0]->getTab( 0 );
-					if ( tab && tab->getOwnedWidget() &&
-						 tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
-						auto editor = tab->getOwnedWidget()->asType<UICodeEditor>();
-						if ( editor->hasDocument() && editor->getDocument().isEmpty() ) {
-							mSplitter->getTabWidgets()[0]->removeTab( tab );
-						}
+					if ( FileSystem::fileExists( rpath ) ) {
+						loadFileFromPath( rpath, false, nullptr, onLoaded );
+					} else if ( FileSystem::fileCanWrite( folderPath ) ) {
+						loadFileFromPath( rpath, false, nullptr, onLoaded );
+					}
+
+					discardEmptyTab();
+
+					mSettings->updateProjectSettingsMenu();
+				} else {
+					auto forcePosition = getForcePositionFn( getInitialPosition( path ) );
+					auto onLoaded = [this, forcePosition]( UICodeEditor* codeEditor,
+														   const std::string& path ) {
+						if ( forcePosition )
+							forcePosition( codeEditor, path );
+						syncProjectTreeWithEditor( mSplitter->getCurEditor() );
+					};
+
+					if ( FileSystem::fileExists( rpath ) ) {
+						loadFileFromPath( rpath, inNewTab, nullptr, onLoaded );
+					} else if ( FileSystem::fileCanWrite( folderPath ) ) {
+						loadFileFromPath( rpath, inNewTab, nullptr, onLoaded );
 					}
 				}
-
-				mSettings->updateProjectSettingsMenu();
 			}
 		}
 	} else if ( mConfig.workspace.restoreLastSession && !mRecentFolders.empty() && !openClean ) {
@@ -4160,7 +4207,8 @@ void App::init( InitParameters& params ) {
 	if ( params.prematureExit )
 		return;
 
-	if ( !params.openClean && needsRedirectToRunningProcess( params.file ) )
+	if ( !params.openClean && params.files.size() == 1 &&
+		 needsRedirectToRunningProcess( params.files[0] ) )
 		return;
 
 	currentDisplay = displayManager->getDisplayIndex( mConfig.windowState.displayIndex <
@@ -4793,7 +4841,7 @@ void App::init( InitParameters& params ) {
 			params.file = "";
 #endif
 
-		if ( params.terminal && params.file.empty() && params.fileToOpen.empty() ) {
+		if ( params.terminal && params.files.empty() && params.fileToOpen.empty() ) {
 			mTerminalMode = true;
 			mTerminalModeSidePanelWasVisible = mConfig.ui.showSidePanel;
 			mConfig.ui.showSidePanel = false;
@@ -4803,8 +4851,11 @@ void App::init( InitParameters& params ) {
 				getSettingsMenu()->updateViewMenu();
 			initProjectViewEmptyCont();
 			mTerminalManager->createNewTerminal();
+		} else if ( params.diff ) {
+			loadDiffFromPaths( params.files[0], params.files[1] );
+			discardEmptyTab();
 		} else {
-			initProjectTreeView( params.file, params.openClean );
+			initProjectTreeView( std::move( params.files ), params.openClean );
 		}
 
 		mFileToOpen = FileSystem::expandTilde( params.fileToOpen );
@@ -4886,8 +4937,8 @@ using namespace ecode;
 EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	args::ArgumentParser parser( "ecode" );
 	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', '?', "help" } );
-	args::Positional<std::string> fileOrFolderPos( parser, "file_or_folder",
-												   "The file or folder path to open" );
+	args::PositionalList<std::string> fileOrFolderPos( parser, "file_or_folder",
+													   "The file/s or folder/s path to open" );
 	args::ValueFlag<std::string> file(
 		parser, "file",
 		"The file path to open. A file path can also contain the line number and column to "
@@ -4984,6 +5035,9 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		"the earliest launched instance instead of the most recently launched one.",
 		{ "first-instance" } );
 
+	args::Flag diff( parser, "diff <OLD_PATH> <NEW_PATH>", "Pairs of file paths to diff.",
+					 { "diff" } );
+
 #ifdef EE_TEXT_SHAPER_ENABLED
 	args::Flag textShaper( parser, "text-shaper",
 						   "WARNING: Do not use this option. It will be completely "
@@ -5054,7 +5108,7 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 
 	App::InitParameters params;
 	params.logLevel = logLevel.Get();
-	params.file = folder ? folder.Get() : fileOrFolderPos.Get();
+	params.files = folder ? std::vector<std::string>{ folder.Get() } : fileOrFolderPos.Get();
 	params.pidelDensity = pixelDensityConf ? pixelDensityConf.Get() : 0.f;
 	params.colorScheme = prefersColorScheme ? prefersColorScheme.Get() : "";
 	params.terminal = terminal.Get();
@@ -5073,6 +5127,26 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	params.profile = profile.Get();
 	params.disablePlugins = disablePlugins.Get();
 	params.redirectToFirstInstance = redirectToFirstInstance.Get();
+	params.diff = diff.Get();
+
+	if ( params.diff ) {
+		if ( params.files.size() != 2 ) {
+			Sys::windowAttachConsole();
+			std::cout << "error: 2 values required for '--diff <OLD_PATH> <NEW_PATH>' but "
+					  << params.files.size() << " was provided" << std::endl;
+			return EXIT_FAILURE;
+		}
+
+		for ( size_t i = 0; i < params.files.size(); i++ ) {
+			if ( !FileSystem::fileExists( params.files[i] ) ||
+				 FileSystem::isDirectory( params.files[i] ) ) {
+				Sys::windowAttachConsole();
+				std::cout << "error: invalid parameter " << ( i + 1 )
+						  << " for '--diff <OLD_PATH> <NEW_PATH>' " << std::endl;
+				return EXIT_FAILURE;
+			}
+		}
+	}
 
 	appInstance = eeNew( App, ( jobs, args ) );
 	appInstance->init( params );

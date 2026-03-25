@@ -32,7 +32,8 @@ class EE_API UIDiffView : public UIWidget {
 	virtual bool isType( const Uint32& type ) const override;
 
 	void loadFromPatch( const std::string& patchText, const std::string& originalFilePath = "" );
-	void loadFromStrings( const std::string& oldText, const std::string& newText );
+	void loadFromStrings( const std::string& oldText, const std::string& newText,
+						  const std::string& originalFilePath = "" );
 	void loadFromFile( const std::string& oldFilePath, const std::string& newFilePath );
 
 	UICodeEditor* getEditor() const { return mEditor; }
@@ -110,6 +111,7 @@ class EE_API UIDiffView : public UIWidget {
 	void updateButtonsText();
 };
 
-}}} // namespace EE::UI::Tools
+} // namespace Tools
+}} // namespace EE::UI
 
 #endif // EE_UI_TOOLS_UIDIFFVIEW_HPP

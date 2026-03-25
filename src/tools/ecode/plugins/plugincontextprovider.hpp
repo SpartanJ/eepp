@@ -148,6 +148,8 @@ class PluginContextProvider {
 
 	virtual void loadImageFromPath( const std::string& path ) = 0;
 
+	virtual void loadDiffFromPaths( const std::string& oldPath, const std::string& newPath ) = 0;
+
 	virtual void loadDiffFromPath( const std::string& path ) = 0;
 
 	virtual void loadDiffFromMemory( const std::string& content,

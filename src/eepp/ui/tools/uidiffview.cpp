@@ -790,7 +790,8 @@ void UIDiffView::loadFromPatch( const std::string& patchText,
 	onSizeChange();
 }
 
-void UIDiffView::loadFromStrings( const std::string& oldText, const std::string& newText ) {
+void UIDiffView::loadFromStrings( const std::string& oldText, const std::string& newText,
+								  const std::string& originalFilePath ) {
 	mLines.clear();
 
 	std::vector<std::string> leftLines = String::split( oldText, '\n', true );
@@ -828,9 +829,15 @@ void UIDiffView::loadFromStrings( const std::string& oldText, const std::string&
 		computeSubLineDiff( oldLine, newLine );
 	} );
 
-	mShowCompleteView = false;
-	mCompleteViewToggle->setText( i18n( "diffview_complete", "Complete" ) );
+	if ( !originalFilePath.empty() ) {
+		auto def = SyntaxDefinitionManager::instance()->getByExtension( originalFilePath );
+		mSyntaxDef =
+			SyntaxDefinitionManager::instance()->getLanguageDefinition( def.getLanguageIndex() );
+		mFileName = FileSystem::fileNameFromPath( originalFilePath );
+	}
+
 	updateEditorsText();
+	updateButtonsText();
 	onSizeChange();
 }
 
