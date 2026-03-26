@@ -357,7 +357,7 @@ void App::onDocumentUndoRedo( UICodeEditor* editor, TextDocument& doc ) {
 	onDocumentModified( editor, doc );
 }
 
-void App::openFileDialog() {
+UIFileDialog* App::openFileDialog( bool registerEvents ) {
 	UIFileDialog* dialog = UIFileDialog::New(
 		UIFileDialog::DefaultFlags |
 			( mConfig.ui.nativeFileDialogs ? UIFileDialog::UseNativeFileDialog : 0 ),
@@ -366,14 +366,16 @@ void App::openFileDialog() {
 	dialog->setTitle( i18n( "open_file", "Open File" ) );
 	dialog->setCloseShortcut( KEY_ESCAPE );
 	dialog->setSingleClickNavigation( mConfig.editor.singleClickNavigation );
-	dialog->setAllowsMultiFileSelect( true );
-	dialog->on( Event::OpenFile, [this]( const Event* event ) {
-		auto files = event->getNode()->asType<UIFileDialog>()->getFullPaths();
-		for ( const auto& file : files ) {
-			mLastFileFolder = FileSystem::fileRemoveFileName( file );
-			loadFileFromPath( file );
-		}
-	} );
+	if ( registerEvents ) {
+		dialog->setAllowsMultiFileSelect( true );
+		dialog->on( Event::OpenFile, [this]( const Event* event ) {
+			auto files = event->getNode()->asType<UIFileDialog>()->getFullPaths();
+			for ( const auto& file : files ) {
+				mLastFileFolder = FileSystem::fileRemoveFileName( file );
+				loadFileFromPath( file );
+			}
+		} );
+	}
 	dialog->on( Event::OnWindowClose, [this]( const Event* ) {
 		if ( App::instance() && mSplitter && mSplitter->getCurWidget() &&
 			 !SceneManager::instance()->isShuttingDown() )
@@ -381,6 +383,7 @@ void App::openFileDialog() {
 	} );
 	dialog->center();
 	dialog->show();
+	return dialog;
 }
 
 std::string App::getDefaultFileDialogFolder() const {
@@ -1712,6 +1715,8 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 			menuAdd( "split_top", "Split Top", "split-vertical", "split-top" );
 			menuAdd( "split_bottom", "Split Bottom", "split-vertical", "split-bottom" );
 
+			menu->addSeparator();
+
 			menuAdd( "open_containing_folder_in_fm", "Open Containing Folder in File Manager",
 					 "folder-open", "open-containing-folder" );
 
@@ -1728,6 +1733,12 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 			menuAdd( "open_in_new_window", "Open in New Window", "window", "open-in-new-window" );
 
 			menuAdd( "move_to_new_window", "Move to New Window", "window", "move-to-new-window" );
+
+			if ( !tab->isSelected() ) {
+				menu->addSeparator();
+				menuAdd( "compare_with_active_tab", "Compare with Active Tab", "diff",
+						 "compare-with-active-tab" );
+			}
 		}
 
 		if ( tab->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ||
@@ -2715,6 +2726,18 @@ void App::loadDiffFromPaths( const std::string& oldPath, const std::string& newP
 	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
 }
 
+void App::loadDiffFromStrings( const std::string& str, const std::string& otherStr ) {
+	auto diffViewTitle = i18n( "diff_viewer", "Diff Viewer" );
+	auto* diffView = Tools::UIDiffView::New();
+	auto [tab, iv] = mSplitter->createWidget( diffView, i18n( "diff_viewer", "Diff Viewer" ) );
+	tab->setText( diffViewTitle );
+	auto icon = findIcon( "filetype-diff" );
+	tab->setIcon( icon ? icon : findIcon( "file" ) );
+	diffView->setHeadersVisible( true );
+	diffView->loadFromStrings( str, otherStr );
+	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
+}
+
 void App::openFileFromPath( const std::string& path ) {
 	std::string ext = FileSystem::fileExtension( path );
 	if ( !Image::isImageExtension( path ) && !SoundFileFactory::isKnownFileExtension( path ) &&
@@ -3010,6 +3033,26 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			}
 		}
 	} );
+	doc.setCommand( "compare-with-active-tab", [this] {
+		if ( mSplitter->curEditorExistsAndFocused() && mSplitter->getCurEditor() ) {
+			UICodeEditor* editor = mSplitter->getCurEditor();
+			UICodeEditor* otherEditor = nullptr;
+			auto tabWidget = mSplitter->getCurTabWidget();
+			if ( tabWidget && tabWidget->getTabSelected() &&
+				 tabWidget->getTabSelected()->getOwnedWidget() != editor &&
+				 tabWidget->getTabSelected()->getOwnedWidget()->isType( UI_TYPE_CODEEDITOR ) ) {
+				otherEditor = mSplitter->getCurTabWidget()
+								  ->getTabSelected()
+								  ->getOwnedWidget()
+								  ->asType<UICodeEditor>();
+			}
+
+			if ( otherEditor ) {
+				loadDiffFromStrings( editor->getDocument().getText().toUtf8(),
+									 otherEditor->getDocument().getText().toUtf8() );
+			}
+		}
+	} );
 	registerUnlockedCommands( doc );
 
 	editor->on( Event::OnDocumentSave, [this]( const Event* event ) {
@@ -3150,7 +3193,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	};
 
 	auto docLoaded = [this, editor, docChanged]( const Event* event ) {
-		if ( editor->getDocument().getFileInfo().getExtension() == "svg" ) {
+		auto ext = editor->getDocument().getFileInfo().getExtension();
+		if ( ext == "svg" ) {
 			editor->getDocument().setCommand(
 				"show-image-preview", [this]( TextDocument::Client* client ) {
 					loadImageFromMedium(
@@ -3164,7 +3208,69 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 						   findIcon( "filetype-jpg" ) )
 					->setId( "show-image-preview" );
 			} );
+		} else if ( ext == "md" || ext == "markdown" ) {
+			editor->getDocument().setCommand(
+				"show-markdown-preview", [this]( TextDocument::Client* client ) {
+					auto doc = static_cast<UICodeEditor*>( client )->getDocumentRef();
+					auto mdView = UIMarkdownView::New();
+					mdView->loadFromString( doc->getText().toUtf8() );
+					auto title = i18n( "markdown_preview_ellipsis", "Markdown Preview:" ) + " " +
+								 doc->getFilename();
+					auto [tab, _] = getSplitter()->createWidget( mdView, title );
+					tab->setIcon( findIcon( "filetype-md" ) );
+				} );
 		}
+
+		editor->getDocument().setCommand( "compare-to", [this]( TextDocument::Client* client ) {
+			auto dialog = openFileDialog( false );
+			auto editor = static_cast<UICodeEditor*>( client );
+			dialog->on( Event::OpenFile, [this, editor]( const Event* event ) {
+				if ( !getSplitter()->editorExists( editor ) )
+					return;
+				auto files = event->getNode()->asType<UIFileDialog>()->getFullPaths();
+				if ( !files.empty() ) {
+					if ( editor->isDirty() ) {
+						std::string otherStr;
+						if ( FileSystem::fileGet( files[0], otherStr ) ) {
+							loadDiffFromStrings( editor->getDocument().getText().toUtf8(),
+												 otherStr );
+						}
+					} else {
+						loadDiffFromPaths( editor->getDocument().getFilePath(), files[0] );
+					}
+				}
+			} );
+		} );
+
+		editor->getDocument().setCommand(
+			"compare-with-clipboard", [this]( TextDocument::Client* client ) {
+				auto editor = static_cast<UICodeEditor*>( client );
+				loadDiffFromStrings( editor->getDocument().getText().toUtf8(),
+									 getWindow()->getClipboard()->getText() );
+			} );
+
+		editor->on( Event::OnCreateContextMenu, [this]( const Event* event ) {
+			auto editor = event->getNode()->asType<UICodeEditor>();
+			auto ext = editor->getDocument().getFileInfo().getExtension();
+			auto cevent = static_cast<const ContextMenuEvent*>( event );
+			auto menu = cevent->getMenu();
+
+			UIPopUpMenu* compareMenu = UIPopUpMenu::New();
+			compareMenu->add( i18n( "compare_to_ellipsis", "Compare to..." ) )
+				->setId( "compare-to" );
+			compareMenu->add( i18n( "compare_with_clipboard", "Compare with clipboard" ) )
+				->setId( "compare-with-clipboard" );
+
+			menu->addSeparator();
+			menu->addSubMenu( i18n( "compare", "Compare" ), findIcon( "diff" ), compareMenu );
+
+			if ( ext == "md" || ext == "markdown" ) {
+				menu->addSeparator();
+				menu->add( i18n( "show_markdown_preview", "Show Markdown Preview" ),
+						   findIcon( "filetype-md" ) )
+					->setId( "show-markdown-preview" );
+			}
+		} );
 
 		docChanged( event );
 	};

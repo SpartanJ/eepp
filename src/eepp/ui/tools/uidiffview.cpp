@@ -880,4 +880,33 @@ void UIDiffView::setHeadersVisible( bool visible ) {
 	updateModeButton();
 }
 
+Uint32 UIDiffView::onKeyDown( const KeyEvent& event ) {
+	auto editor = mViewMode == ViewMode::Unified ? mEditor : mRightEditor;
+
+	const auto moveLinesOffset = [editor]( int numLines ) {
+		Int64 curLine = static_cast<Int64>( editor->getVisibleLineRange().first );
+		Int64 line = curLine + numLines;
+		editor->scrollToVisibleIndex(
+			std::clamp( line, (Int64)0, (Int64)editor->getTotalVisibleLines() ), false, true );
+	};
+
+	if ( !event.getSanitizedMod() ) {
+		if ( event.getKeyCode() == Window::KEY_PAGEDOWN ) {
+			moveLinesOffset( editor->getViewPortLineCount().y );
+		} else if ( event.getKeyCode() == Window::KEY_PAGEUP ) {
+			moveLinesOffset( -editor->getViewPortLineCount().y );
+		} else if ( event.getKeyCode() == Window::KEY_DOWN ) {
+			moveLinesOffset( 1 );
+		} else if ( event.getKeyCode() == Window::KEY_UP ) {
+			moveLinesOffset( -1 );
+		} else if ( event.getKeyCode() == Window::KEY_HOME ) {
+			editor->scrollToVisibleIndex( 0, false, true );
+		} else if ( event.getKeyCode() == Window::KEY_END ) {
+			editor->scrollToVisibleIndex( (Int64)editor->getTotalVisibleLines(), false, true );
+		}
+	}
+
+	return UIWidget::onKeyDown( event );
+}
+
 }}} // namespace EE::UI::Tools

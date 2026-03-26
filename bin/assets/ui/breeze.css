@@ -111,6 +111,10 @@ p, ol, ul, pre {
   margin: 1em 0;
 }
 
+li > p {
+	margin: 0;
+}
+
 ol, ul {
   margin-left: 2em;
 }

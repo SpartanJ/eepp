@@ -70,7 +70,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void setAppTitle( const std::string& title );
 
-	void openFileDialog();
+	UIFileDialog* openFileDialog( bool registerEvents = true );
 
 	std::string getDefaultFileDialogFolder() const;
 
@@ -562,6 +562,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	void loadDiffFromPaths( const std::string& oldPath, const std::string& newPath );
 
 	void loadDiffFromMemory( const std::string& content, const std::string& originalFilePath = "" );
+
+	void loadDiffFromStrings( const std::string& str, const std::string& otherStr );
 
 	void createAndShowRecentFolderPopUpMenu( Node* recentFoldersBut );
 

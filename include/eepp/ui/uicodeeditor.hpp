@@ -838,6 +838,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setDisableScrollInvalidation( bool disable ) { mDisableScrollInvalidation = disable; }
 
+	size_t getTotalVisibleLines() const;
+
   protected:
 	struct LastXOffset {
 		TextPosition position{ 0, 0 };
@@ -1169,8 +1171,6 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	void updateIMELocation();
 
 	void drawLockedIcon( const Vector2f start );
-
-	size_t getTotalVisibleLines() const;
 
 	void invalidateLineWrapMaxWidth( bool force );
 

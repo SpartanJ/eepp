@@ -300,6 +300,7 @@ UIIconTheme* IconManager::init( const std::string& iconThemeName, FontTrueType* 
 				  { "inspect", 0xebd1 },
 				  { "link", 0xeb15 },
 				  { "agent", 0xec67 },
+				  { "diff", 0xeae1 },
 
 			  } ) {
 			iconTheme->add( UIGlyphIcon::New( icon.first, codIconFont, icon.second ) );

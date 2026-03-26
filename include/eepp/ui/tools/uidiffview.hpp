@@ -103,6 +103,8 @@ class EE_API UIDiffView : public UIWidget {
 
 	virtual void onSizeChange() override;
 
+	virtual Uint32 onKeyDown( const KeyEvent& event ) override;
+
 	void createEditor( UICodeEditor*& editor, std::unique_ptr<UIDiffEditorPlugin>& plugin );
 	void syncScroll( UICodeEditor* source, UICodeEditor* target, bool emitEvent = false );
 	void updateModeButton();
