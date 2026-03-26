@@ -797,9 +797,9 @@ void DebuggerPlugin::buildSidePanelTab() {
 	<vbox id="debugger_panel" lw="mp" lh="wc" padding="4dp">
 		<vbox id="debugger_config_view" lw="mp" lh="wc">
 			<TextView text="@string(debugger, Debugger)" font-size="15dp" focusable="false" />
-			<DropDownList id="debugger_list" layout_width="mp" layout_height="wrap_content" margin-top="2dp" />
+			<DropDownList id="debugger_list" layout_width="mp" layout_height="wrap_content" margin-top="2dp" menu-width-mode="expand-if-needed" />
 			<TextView text="@string(debugger_configuration, Debugger Configuration)" focusable="false" margin-top="8dp" />
-			<DropDownList id="debugger_conf_list" layout_width="mp" layout_height="wrap_content" margin-top="2dp" />
+			<DropDownList id="debugger_conf_list" layout_width="mp" layout_height="wrap_content" margin-top="2dp" menu-width-mode="expand-if-needed" />
 			<PushButton id="debugger_run_button" lw="mp" lh="wc" text="@string(debug, Debug)" margin-top="8dp" icon="icon(debug-alt, 12dp)" />
 			<PushButton id="debugger_build_and_run_button" lw="mp" lh="wc" text="@string(build_and_debug, Build & Debug)" margin-top="8dp" icon="icon(debug-alt, 12dp)" />
 			<hbox id="panel_debugger_buttons" lw="wc" lh="wc" layout_gravity="center_horizontal" visible="false" clip="none" margin-top="8dp">

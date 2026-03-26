@@ -790,7 +790,8 @@ void UIDiffView::loadFromPatch( const std::string& patchText,
 	onSizeChange();
 }
 
-void UIDiffView::loadFromStrings( const std::string& oldText, const std::string& newText ) {
+void UIDiffView::loadFromStrings( const std::string& oldText, const std::string& newText,
+								  const std::string& originalFilePath ) {
 	mLines.clear();
 
 	std::vector<std::string> leftLines = String::split( oldText, '\n', true );
@@ -828,9 +829,15 @@ void UIDiffView::loadFromStrings( const std::string& oldText, const std::string&
 		computeSubLineDiff( oldLine, newLine );
 	} );
 
-	mShowCompleteView = false;
-	mCompleteViewToggle->setText( i18n( "diffview_complete", "Complete" ) );
+	if ( !originalFilePath.empty() ) {
+		auto def = SyntaxDefinitionManager::instance()->getByExtension( originalFilePath );
+		mSyntaxDef =
+			SyntaxDefinitionManager::instance()->getLanguageDefinition( def.getLanguageIndex() );
+		mFileName = FileSystem::fileNameFromPath( originalFilePath );
+	}
+
 	updateEditorsText();
+	updateButtonsText();
 	onSizeChange();
 }
 
@@ -871,6 +878,35 @@ void UIDiffView::setHeadersVisible( bool visible ) {
 	mLeftPlugin->registerUpdate( mLeftEditor );
 	mRightPlugin->registerUpdate( mRightEditor );
 	updateModeButton();
+}
+
+Uint32 UIDiffView::onKeyDown( const KeyEvent& event ) {
+	auto editor = mViewMode == ViewMode::Unified ? mEditor : mRightEditor;
+
+	const auto moveLinesOffset = [editor]( int numLines ) {
+		Int64 curLine = static_cast<Int64>( editor->getVisibleLineRange().first );
+		Int64 line = curLine + numLines;
+		editor->scrollToVisibleIndex(
+			std::clamp( line, (Int64)0, (Int64)editor->getTotalVisibleLines() ), false, true );
+	};
+
+	if ( !event.getSanitizedMod() ) {
+		if ( event.getKeyCode() == Window::KEY_PAGEDOWN ) {
+			moveLinesOffset( editor->getViewPortLineCount().y );
+		} else if ( event.getKeyCode() == Window::KEY_PAGEUP ) {
+			moveLinesOffset( -editor->getViewPortLineCount().y );
+		} else if ( event.getKeyCode() == Window::KEY_DOWN ) {
+			moveLinesOffset( 1 );
+		} else if ( event.getKeyCode() == Window::KEY_UP ) {
+			moveLinesOffset( -1 );
+		} else if ( event.getKeyCode() == Window::KEY_HOME ) {
+			editor->scrollToVisibleIndex( 0, false, true );
+		} else if ( event.getKeyCode() == Window::KEY_END ) {
+			editor->scrollToVisibleIndex( (Int64)editor->getTotalVisibleLines(), false, true );
+		}
+	}
+
+	return UIWidget::onKeyDown( event );
 }
 
 }}} // namespace EE::UI::Tools

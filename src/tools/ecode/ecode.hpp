@@ -43,24 +43,25 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	struct InitParameters {
 		LogLevel logLevel{ LogLevel::Info };
-		std::string file;
+		std::vector<std::string> files;
 		Float pidelDensity{ 0.f };
 		std::string colorScheme;
+		std::string css;
+		std::string fileToOpen;
+		std::string language;
+		std::string profile;
 		bool terminal{ false };
 		bool frameBuffer{ false };
 		bool benchmarkMode{ false };
-		std::string css;
-		std::string fileToOpen;
 		bool stdOutLogs{ false };
 		bool disableFileLogs{ false };
 		bool openClean{ false };
 		bool portable{ false };
-		std::string language;
 		bool incognito{ false };
 		bool prematureExit{ false };
-		std::string profile;
 		bool disablePlugins{ false };
 		bool redirectToFirstInstance{ false };
+		bool diff{ false };
 	};
 
 	void init( InitParameters& );
@@ -69,7 +70,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void setAppTitle( const std::string& title );
 
-	void openFileDialog();
+	UIFileDialog* openFileDialog( bool registerEvents = true );
 
 	std::string getDefaultFileDialogFolder() const;
 
@@ -558,7 +559,11 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void loadDiffFromPath( const std::string& path );
 
+	void loadDiffFromPaths( const std::string& oldPath, const std::string& newPath );
+
 	void loadDiffFromMemory( const std::string& content, const std::string& originalFilePath = "" );
+
+	void loadDiffFromStrings( const std::string& str, const std::string& otherStr );
 
 	void createAndShowRecentFolderPopUpMenu( Node* recentFoldersBut );
 
@@ -759,7 +764,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	void initProjectTreeViewUI();
 
-	void initProjectTreeView( std::string path, bool openClean );
+	void initProjectTreeView( std::vector<std::string>&& paths, bool openClean );
 
 	void initImageView();
 
@@ -868,6 +873,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	std::string firstInstanceIndicatorPath() const;
 
 	void tintTitleBar();
+
+	void discardEmptyTab();
 };
 
 } // namespace ecode

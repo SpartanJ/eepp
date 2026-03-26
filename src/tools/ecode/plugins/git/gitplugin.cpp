@@ -1459,7 +1459,7 @@ void GitPlugin::buildSidePanelTab() {
 			<StackWidget id="git_panel_stack" lw="mp" lh="0" lw8="1">
 				<vbox id="git_branches" lw="mp" lh="wc">
 					<hbox lw="mp" lh="wc" padding="4dp">
-						<DropDownList id="git_repo" lw="0" lh="wc" lw8="1" />
+						<DropDownList id="git_repo" lw="0" lh="wc" lw8="1" menu-width-mode="expand-if-needed" />
 						<PushButton id="branch_pull" text="@string(git_pull, Pull)" tooltip="@string(pull_branch, Pull Branch)" text-as-fallback="true" icon="icon(repo-pull, 12dp)" margin-left="2dp" />
 						<PushButton id="branch_push" text="@string(git_push, Push)" tooltip="@string(push_branch, Push Branch)" text-as-fallback="true" icon="icon(repo-push, 12dp)" margin-left="2dp" />
 						<PushButton id="branch_add" text="@string(git_add_branch, Add Branch)" tooltip="@string(add_branch, Add Branch)" text-as-fallback="true" icon="icon(add, 12dp)" margin-left="2dp" />

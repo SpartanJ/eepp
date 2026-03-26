@@ -469,4 +469,31 @@ void UIScrollView::setAnchorScroll( bool anchor ) {
 	mAnchorScroll = anchor;
 }
 
+Uint32 UIScrollView::onKeyDown( const KeyEvent& event ) {
+	if ( !mDefaultKeybindings || event.getSanitizedMod() )
+		return UITouchDraggableWidget::onKeyDown( event );
+
+	if ( event.getKeyCode() == Window::KEY_UP ) {
+		mVScroll->setValue( mVScroll->getValue() - mVScroll->getClickStep() );
+		return 1;
+	} else if ( event.getKeyCode() == Window::KEY_DOWN ) {
+		mVScroll->setValue( mVScroll->getValue() + mVScroll->getClickStep() );
+		return 1;
+	} else if ( event.getKeyCode() == Window::KEY_PAGEDOWN ) {
+		mVScroll->setValue( mVScroll->getValue() + mVScroll->getPageStep() );
+		return 1;
+	} else if ( event.getKeyCode() == Window::KEY_PAGEUP ) {
+		mVScroll->setValue( mVScroll->getValue() - mVScroll->getPageStep() );
+		return 1;
+	} else if ( event.getKeyCode() == Window::KEY_HOME ) {
+		mVScroll->setValue( mVScroll->getMinValue() );
+		return 1;
+	} else if ( event.getKeyCode() == Window::KEY_END ) {
+		mVScroll->setValue( mVScroll->getMaxValue() );
+		return 1;
+	}
+
+	return UITouchDraggableWidget::onKeyDown( event );
+}
+
 }} // namespace EE::UI

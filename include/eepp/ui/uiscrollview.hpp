@@ -52,6 +52,10 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 
 	void setAnchorScroll( bool anchor );
 
+	void setEnableDefaultKeybindings( bool enable );
+
+	bool areDefaultKeybindingsEnabled() const { return mDefaultKeybindings; }
+
   protected:
 	ScrollViewType mViewType;
 	ScrollBarMode mVScrollMode;
@@ -64,6 +68,7 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 	Uint32 mPosChangeCb;
 	bool mAutoSetClipStep{ true };
 	bool mAnchorScroll{ false };
+	bool mDefaultKeybindings{ true };
 	Sizef mLastScrollViewSize;
 	Node* mParentRef{ nullptr };
 	Uint32 mParentSizeChangeCb{ 0 };
@@ -82,6 +87,8 @@ class EE_API UIScrollView : public UITouchDraggableWidget {
 	virtual void onPaddingChange();
 
 	virtual void onSizePolicyChange();
+
+	virtual Uint32 onKeyDown( const KeyEvent& event );
 
 	void onValueChangeCb( const Event* Event );
 
