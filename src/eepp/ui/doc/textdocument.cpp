@@ -16,6 +16,8 @@
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/window/engine.hpp>
 
+#include <set>
+
 using namespace std::literals;
 
 using namespace EE::Network;
@@ -28,8 +30,6 @@ namespace EE { namespace UI { namespace Doc {
 static constexpr char DEFAULT_NON_WORD_CHARS[] = " \t\n/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-";
 
 static UnorderedSet<String::HashType> TEXT_DOCUMENT_COMMANDS = {};
-
-#include <string_view> // Ensure this is included for std::string_view
 
 bool TextDocument::fileMightBeBinary( const std::string& file ) {
 	static constexpr size_t MAX_READ = 4096;
@@ -4614,6 +4614,35 @@ void TextDocument::convertIndentationToSpaces() {
 	}
 }
 
+void TextDocument::clearIndentation() {
+	TextRanges oldSelections = mSelection;
+	std::set<Int64> linesToClear;
+
+	if ( !hasSelection() ) {
+		linesToClear.insert( getSelection().start().line() );
+	} else {
+		for ( const auto& sel : mSelection ) {
+			TextRange normalizedSel = sel.normalized();
+			for ( Int64 lineNum = normalizedSel.start().line();
+				  lineNum <= normalizedSel.end().line(); ++lineNum ) {
+				linesToClear.insert( lineNum );
+			}
+		}
+	}
+
+	for ( Int64 lineNum : linesToClear ) {
+		TextRange lineRange = getLineRange( lineNum );
+		replace( "^%s+", "", lineRange.start(), true, false, FindReplaceType::LuaPattern,
+				 lineRange );
+	}
+
+	if ( !linesToClear.empty() ) {
+		setSelection( oldSelections );
+		notifySelectionChanged();
+		notifyCursorChanged();
+	}
+}
+
 void TextDocument::initializeCommands() {
 	mCommands["reset-document"] = [this] { reset(); };
 	mCommands["save-doc"] = [this] { save(); };
@@ -4687,6 +4716,7 @@ void TextDocument::initializeCommands() {
 	mCommands["duplicate-line-or-selection"] = [this] { duplicateLineOrSelection(); };
 	mCommands["convert-indentation-to-tabs"] = [this] { convertIndentationToTabs(); };
 	mCommands["convert-indentation-to-spaces"] = [this] { convertIndentationToSpaces(); };
+	mCommands["clear-indentation"] = [this] { clearIndentation(); };
 
 	if ( TEXT_DOCUMENT_COMMANDS.empty() ) {
 		for ( const auto& [cmd, _] : mCommands )

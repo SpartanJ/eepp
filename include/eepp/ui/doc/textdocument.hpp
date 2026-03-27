@@ -733,6 +733,8 @@ class EE_API TextDocument {
 
 	void convertIndentationToSpaces();
 
+	void clearIndentation();
+
   protected:
 	friend class TextUndoStack;
 	friend class FoldRangeService;
