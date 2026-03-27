@@ -2793,8 +2793,6 @@ bool App::loadFileFromPath(
 	} else if ( ( SoundFileFactory::isKnownFileExtension( path ) || tryFindMimeType ) &&
 				SoundFileFactory::isValidAudioFile( path ) ) {
 		loadAudioFromPath( path );
-	} else if ( ext == "diff" || ext == "patch" ) {
-		loadDiffFromPath( path );
 	} else if ( !openBinaryAsDocument && PathHelper::isOpenExternalExtension( ext ) ) {
 		Engine::instance()->openURI( path );
 	} else if ( tryFindMimeType && TextDocument::fileMightBeBinary( path ) ) {
@@ -3264,6 +3262,19 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 					if ( removeUnusedEditor )
 						splitter->removeUnusedTab( tabWidget );
 				} );
+		} else if ( ext == "diff" || ext == "patch" ) {
+			editor->getDocument().setCommand(
+				"show-diff-preview", [this]( TextDocument::Client* client ) {
+					auto editor = static_cast<UICodeEditor*>( client );
+					if ( getSplitter()->editorExists( editor ) ) {
+						if ( !editor->isDirty() ) {
+							loadDiffFromPath( editor->getDocument().getFilePath() );
+						} else {
+							loadDiffFromMemory( editor->getDocument().getText().toUtf8(),
+												editor->getDocument().getFilePath() );
+						}
+					}
+				} );
 		}
 
 		editor->getDocument().setCommand( "compare-to", [this]( TextDocument::Client* client ) {
@@ -3314,6 +3325,11 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 				menu->add( i18n( "show_markdown_preview", "Show Markdown Live Preview" ),
 						   findIcon( "filetype-md" ) )
 					->setId( "show-markdown-preview" );
+			} else if ( ext == "diff" || ext == "patch" ) {
+				menu->addSeparator();
+				menu->add( i18n( "show_diff_preview", "Show Diff Preview" ),
+						   findIcon( "filetype-diff" ) )
+					->setId( "show-diff-preview" );
 			}
 		} );
 
