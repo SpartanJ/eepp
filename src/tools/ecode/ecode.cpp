@@ -2290,6 +2290,9 @@ void App::closeEditors() {
 
 	saveProject();
 
+	mSplitter->setCurrentEditor( nullptr );
+	mSplitter->setCurrentWidget( nullptr );
+
 	std::vector<UICodeEditor*> editors = mSplitter->getAllEditors();
 	while ( !editors.empty() ) {
 		UICodeEditor* editor = editors[0];
@@ -2790,8 +2793,6 @@ bool App::loadFileFromPath(
 	} else if ( ( SoundFileFactory::isKnownFileExtension( path ) || tryFindMimeType ) &&
 				SoundFileFactory::isValidAudioFile( path ) ) {
 		loadAudioFromPath( path );
-	} else if ( ext == "diff" || ext == "patch" ) {
-		loadDiffFromPath( path );
 	} else if ( !openBinaryAsDocument && PathHelper::isOpenExternalExtension( ext ) ) {
 		Engine::instance()->openURI( path );
 	} else if ( tryFindMimeType && TextDocument::fileMightBeBinary( path ) ) {
@@ -3211,13 +3212,68 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		} else if ( ext == "md" || ext == "markdown" ) {
 			editor->getDocument().setCommand(
 				"show-markdown-preview", [this]( TextDocument::Client* client ) {
-					auto doc = static_cast<UICodeEditor*>( client )->getDocumentRef();
+					auto splitter = getSplitter();
+					auto editor = static_cast<UICodeEditor*>( client );
+					auto doc = editor->getDocumentRef();
+					auto scrollView = UIScrollView::New();
 					auto mdView = UIMarkdownView::New();
+					mdView->setParent( scrollView );
+
+					auto tabWidget = splitter->getCurTabWidget();
+					bool removeUnusedEditor = false;
+
+					if ( splitter->getTabWidgets().size() >= 2 ) {
+						tabWidget = splitter->getTabWidgets()[1];
+					} else if ( splitter->getTabWidgets().size() == 1 ) {
+						splitter->split( SplitDirection::Right, splitter->getCurWidget(), false );
+						tabWidget = splitter->getTabWidgets()[1];
+						removeUnusedEditor = true;
+					}
+
+					auto textChangedCb =
+						editor->on( Event::OnTextChanged, [mdView, editor]( const Event* event ) {
+							mdView->debounce(
+								[mdView, editor] {
+									if ( App::instance() &&
+										 !SceneManager::instance()->isShuttingDown() &&
+										 App::instance()->getSplitter()->editorExists( editor ) ) {
+										mdView->loadFromString(
+											editor->getDocument().getText().toUtf8() );
+									}
+								},
+								Milliseconds( 400 ), (Action::UniqueID)mdView );
+						} );
+
+					mdView->on( Event::OnClose, [textChangedCb, editor]( const Event* event ) {
+						if ( App::instance() &&
+							 App::instance()->getSplitter()->editorExists( editor ) ) {
+							editor->removeEventListener( textChangedCb );
+						}
+					} );
+
 					mdView->loadFromString( doc->getText().toUtf8() );
-					auto title = i18n( "markdown_preview_ellipsis", "Markdown Preview:" ) + " " +
-								 doc->getFilename();
-					auto [tab, _] = getSplitter()->createWidget( mdView, title );
+					auto title =
+						i18n( "markdown_live_preview_ellipsis", "Markdown Live Preview:" ) + " " +
+						doc->getFilename();
+					auto [tab, _] =
+						getSplitter()->createWidgetInTabWidget( tabWidget, scrollView, title );
 					tab->setIcon( findIcon( "filetype-md" ) );
+
+					if ( removeUnusedEditor )
+						splitter->removeUnusedTab( tabWidget );
+				} );
+		} else if ( ext == "diff" || ext == "patch" ) {
+			editor->getDocument().setCommand(
+				"show-diff-preview", [this]( TextDocument::Client* client ) {
+					auto editor = static_cast<UICodeEditor*>( client );
+					if ( getSplitter()->editorExists( editor ) ) {
+						if ( !editor->isDirty() ) {
+							loadDiffFromPath( editor->getDocument().getFilePath() );
+						} else {
+							loadDiffFromMemory( editor->getDocument().getText().toUtf8(),
+												editor->getDocument().getFilePath() );
+						}
+					}
 				} );
 		}
 
@@ -3266,9 +3322,14 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 
 			if ( ext == "md" || ext == "markdown" ) {
 				menu->addSeparator();
-				menu->add( i18n( "show_markdown_preview", "Show Markdown Preview" ),
+				menu->add( i18n( "show_markdown_preview", "Show Markdown Live Preview" ),
 						   findIcon( "filetype-md" ) )
 					->setId( "show-markdown-preview" );
+			} else if ( ext == "diff" || ext == "patch" ) {
+				menu->addSeparator();
+				menu->add( i18n( "show_diff_preview", "Show Diff Preview" ),
+						   findIcon( "filetype-diff" ) )
+					->setId( "show-diff-preview" );
 			}
 		} );
 

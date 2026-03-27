@@ -94,6 +94,9 @@ bool UITextSpan::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::TextStrokeColor:
 			setOutlineColor( attribute.asColor() );
 			break;
+		case PropertyId::TextDecoration:
+			setTextDecoration( attribute.asTextDecoration() );
+			break;
 		default:
 			return UIWidget::applyProperty( attribute );
 	}
@@ -128,6 +131,8 @@ std::string UITextSpan::getPropertyString( const PropertyDefinition* propertyDef
 			return String::fromFloat( PixelDensity::dpToPx( getOutlineThickness() ), "px" );
 		case PropertyId::TextStrokeColor:
 			return getOutlineColor().toHexString();
+		case PropertyId::TextDecoration:
+			return Text::styleFlagToString( getTextDecoration() );
 		default:
 			return UIWidget::getPropertyString( propertyDef, propertyIndex );
 	}
@@ -144,7 +149,8 @@ std::vector<PropertyId> UITextSpan::getPropertiesImplemented() const {
 				   PropertyId::TextShadowColor,
 				   PropertyId::TextShadowOffset,
 				   PropertyId::TextStrokeWidth,
-				   PropertyId::TextStrokeColor };
+				   PropertyId::TextStrokeColor,
+				   PropertyId::TextDecoration };
 	props.insert( props.end(), local.begin(), local.end() );
 	return props;
 }
@@ -209,6 +215,23 @@ const Uint32& UITextSpan::getFontStyle() const {
 UITextSpan* UITextSpan::setFontStyle( const Uint32& fontStyle ) {
 	if ( mFontStyleConfig.Style != fontStyle ) {
 		mFontStyleConfig.Style = fontStyle;
+		mStyleState |= StyleStateFontStyle;
+		onFontStyleChanged();
+		notifyLayoutAttrChange();
+	}
+	return this;
+}
+
+Uint32 UITextSpan::getTextDecoration() const {
+	Uint32 flags = mFontStyleConfig.Style;
+	flags &= ~( Text::Style::Bold | Text::Style::Italic | Text::Style::Shadow );
+	return flags;
+}
+
+UITextSpan* UITextSpan::setTextDecoration( const Uint32& textDecoration ) {
+	if ( mFontStyleConfig.Style != textDecoration ) {
+		mFontStyleConfig.Style &= ~( Text::Underlined | Text::StrikeThrough );
+		mFontStyleConfig.Style |= textDecoration;
 		mStyleState |= StyleStateFontStyle;
 		onFontStyleChanged();
 		notifyLayoutAttrChange();

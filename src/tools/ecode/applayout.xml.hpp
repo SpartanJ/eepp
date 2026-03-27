@@ -516,6 +516,9 @@ Anchor.error:hover {
 .tab_widget_cont TabWidget::TabBar ScrollBarMini:focus-within {
 	opacity: 1;
 }
+.tab_widget_cont MarkdownView {
+	padding: 8dp;
+}
 .notbold {
 	font-style: normal;
 }

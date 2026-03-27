@@ -88,24 +88,70 @@ UIImage* UIImage::setDrawable( Drawable* drawable, bool ownIt ) {
 }
 
 void UIImage::onAutoSize() {
-	if ( NULL != mDrawable ) {
-		if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == getPixelsSize() )
-			setInternalPixelsSize( mDrawable->getPixelsSize().asInt().asFloat() );
+	if ( nullptr == mDrawable )
+		return;
 
-		Sizef size( getPixelsSize() );
+	Sizef drawableSize = mDrawable->getPixelsSize();
+	if ( drawableSize.getWidth() <= 0 || drawableSize.getHeight() <= 0 )
+		return;
 
-		if ( mWidthPolicy == SizePolicy::WrapContent ) {
-			size.x =
-				( (int)mDrawable->getPixelsSize().getWidth() + mPaddingPx.Left + mPaddingPx.Right );
+	Sizef size( getPixelsSize() );
+	Sizef initialSize( size );
+
+	if ( ( mFlags & UI_AUTO_SIZE ) && Sizef::Zero == getPixelsSize() )
+		size = drawableSize.asInt().asFloat();
+
+	if ( mWidthPolicy == SizePolicy::WrapContent && mHeightPolicy == SizePolicy::WrapContent ) {
+		size.x = (int)drawableSize.getWidth() + mPaddingPx.Left + mPaddingPx.Right;
+		size.y = (int)drawableSize.getHeight() + mPaddingPx.Top + mPaddingPx.Bottom;
+
+		if ( !mMaxWidthEq.empty() ) {
+			Float maxWidth =
+				lengthFromValue( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth );
+
+			if ( size.x > maxWidth ) {
+				Float scale =
+					( maxWidth - mPaddingPx.Left - mPaddingPx.Right ) / drawableSize.getWidth();
+				size.x = maxWidth;
+				size.y =
+					(int)( drawableSize.getHeight() * scale ) + mPaddingPx.Top + mPaddingPx.Bottom;
+			}
 		}
 
-		if ( mHeightPolicy == SizePolicy::WrapContent ) {
-			size.y = ( (int)mDrawable->getPixelsSize().getHeight() + mPaddingPx.Top +
-					   mPaddingPx.Bottom );
-		}
+		if ( !mMaxHeightEq.empty() ) {
+			Float maxHeight =
+				lengthFromValue( mMaxHeightEq, CSS::PropertyRelativeTarget::ContainingBlockHeight );
 
-		setPixelsSize( size );
+			if ( size.y > maxHeight ) {
+				Float scale =
+					( maxHeight - mPaddingPx.Top - mPaddingPx.Bottom ) / drawableSize.getHeight();
+				size.y = maxHeight;
+				size.x =
+					(int)( drawableSize.getWidth() * scale ) + mPaddingPx.Left + mPaddingPx.Right;
+			}
+		}
+	} else if ( mWidthPolicy == SizePolicy::WrapContent ) {
+		Float contentHeight = std::max( 0.f, size.y - mPaddingPx.Top - mPaddingPx.Bottom );
+		size.x = (int)( contentHeight * ( drawableSize.getWidth() / drawableSize.getHeight() ) ) +
+				 mPaddingPx.Left + mPaddingPx.Right;
+		if ( !mMaxWidthEq.empty() ) {
+			size.x = std::min(
+				size.x,
+				lengthFromValue( mMaxWidthEq, CSS::PropertyRelativeTarget::ContainingBlockWidth ) );
+		}
+	} else if ( mHeightPolicy == SizePolicy::WrapContent ) {
+		Float contentWidth = std::max( 0.f, size.x - mPaddingPx.Left - mPaddingPx.Right );
+		size.y = (int)( contentWidth * ( drawableSize.getHeight() / drawableSize.getWidth() ) ) +
+				 mPaddingPx.Top + mPaddingPx.Bottom;
+		if ( !mMaxHeightEq.empty() ) {
+			size.y = std::min(
+				size.y, lengthFromValue( mMaxHeightEq,
+										 CSS::PropertyRelativeTarget::ContainingBlockHeight ) );
+		}
 	}
+
+	if ( initialSize != size )
+		setInternalPixelsSize( size );
 }
 
 void UIImage::calcDestSize() {
@@ -234,6 +280,11 @@ void UIImage::onSizeChange() {
 	UIWidget::onSizeChange();
 }
 
+void UIImage::onSizePolicyChange() {
+	onAutoSize();
+	UIWidget::onSizePolicyChange();
+}
+
 void UIImage::onAlignChange() {
 	UIWidget::onAlignChange();
 	onAutoSize();
@@ -352,6 +403,10 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Tint:
 			setColor( attribute.asColor() );
 			break;
+		case PropertyId::Width:
+		case PropertyId::Height:
+			unsetFlags( UI_AUTO_SIZE );
+			return UIWidget::applyProperty( attribute );
 		default:
 			return UIWidget::applyProperty( attribute );
 	}

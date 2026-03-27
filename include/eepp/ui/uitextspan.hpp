@@ -67,6 +67,10 @@ class EE_API UITextSpan : public UIWidget {
 
 	UITextSpan* setFontStyle( const Uint32& fontStyle );
 
+	Uint32 getTextDecoration() const;
+
+	UITextSpan* setTextDecoration( const Uint32& textDecoration );
+
 	const Float& getOutlineThickness() const;
 
 	UITextSpan* setOutlineThickness( const Float& outlineThickness );

@@ -71,6 +71,8 @@ class EE_API UIStyle : public UIState {
 
 	UnorderedSet<UIWidget*>& getStructurallyVolatileChildren();
 
+	const CSS::StyleSheetProperty* getProperty( const CSS::PropertyId& id );
+
 	bool hasProperty( const CSS::PropertyId& propertyId ) const;
 
 	bool hasLocalProperty( CSS::PropertyId propId ) const;

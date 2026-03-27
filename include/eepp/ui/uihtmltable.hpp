@@ -40,6 +40,13 @@ class EE_API UIHTMLTableCell : public UIRichText {
 	virtual Uint32 getType() const;
 
 	virtual bool isType( const Uint32& type ) const;
+
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+	Uint32 getColspan() const;
+
+  protected:
+	Uint32 mColspan{ 1 };
 };
 
 class EE_API UIHTMLTableRow : public UIWidget {

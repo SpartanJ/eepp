@@ -122,4 +122,8 @@ bool UILayout::setMatchParentIfNeededVerticalGrowth() {
 	return sizeChanged;
 }
 
+void UILayout::onAutoSizeChild( UIWidget* child ) {
+	child->onAutoSize();
+}
+
 }} // namespace EE::UI

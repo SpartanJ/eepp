@@ -332,7 +332,7 @@ void UINode::setMaxSizeEq( const std::string& maxWidthEq, const std::string& max
 void UINode::setMaxWidthEq( const std::string& maxWidthEq ) {
 	if ( mMaxWidthEq != maxWidthEq ) {
 		mMaxWidthEq = maxWidthEq;
-		setSize( mDpSize );
+		onSizeChange();
 	}
 }
 
@@ -343,7 +343,7 @@ const std::string& UINode::getMaxHeightEq() const {
 void UINode::setMaxHeightEq( const std::string& maxHeightEq ) {
 	if ( mMaxHeightEq != maxHeightEq ) {
 		mMaxHeightEq = maxHeightEq;
-		setSize( mDpSize );
+		onSizeChange();
 	}
 }
 
@@ -1576,12 +1576,20 @@ Float UINode::getPropertyRelativeTargetContainerLength(
 	const Uint32& propertyIndex ) const {
 	Float containerLength = defaultValue;
 	switch ( relativeTarget ) {
-		case PropertyRelativeTarget::ContainingBlockWidth:
-			containerLength = getParent() ? getParent()->getPixelsSize().getWidth() : 0;
+		case PropertyRelativeTarget::ContainingBlockWidth: {
+			Node* parent = getParent(); // Text spans cannot be considered containing blocks
+			while ( parent->isType( UI_TYPE_TEXTSPAN ) )
+				parent = parent->getParent();
+			containerLength = parent ? parent->getPixelsSize().getWidth() : 0;
 			break;
-		case PropertyRelativeTarget::ContainingBlockHeight:
-			containerLength = getParent() ? getParent()->getPixelsSize().getHeight() : 0;
+		}
+		case PropertyRelativeTarget::ContainingBlockHeight: {
+			Node* parent = getParent(); // Text spans cannot be considered containing blocks
+			while ( parent->isType( UI_TYPE_TEXTSPAN ) )
+				parent = parent->getParent();
+			containerLength = parent ? parent->getPixelsSize().getHeight() : 0;
 			break;
+		}
 		case PropertyRelativeTarget::LocalBlockWidth:
 			containerLength = getPixelsSize().getWidth();
 			break;

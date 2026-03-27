@@ -492,6 +492,9 @@ void UIRichText::rebuildRichText() {
 				 widget->getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
 				widget->setPixelsSize( mSize.getWidth() - margin.Left - margin.Right,
 									   widget->getPixelsSize().getHeight() );
+			} else if ( widget->getLayoutWidthPolicy() == SizePolicy::WrapContent ||
+						widget->getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
+				onAutoSizeChild( widget );
 			}
 
 			Sizef size = widget->getPixelsSize();
