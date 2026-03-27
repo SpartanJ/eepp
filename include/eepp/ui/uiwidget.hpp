@@ -1272,6 +1272,7 @@ class EE_API UIWidget : public UINode {
 	friend class UIManager;
 	friend class UISceneNode;
 	friend class UIEventDispatcher;
+	friend class UILayout;
 
 	std::string mTag;
 	UITheme* mTheme;

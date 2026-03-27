@@ -59,6 +59,8 @@ class EE_API UIImage : public UIWidget {
 
 	virtual void onSizeChange();
 
+	virtual void onSizePolicyChange();
+
 	virtual void onAlignChange();
 
 	void onAutoSize();

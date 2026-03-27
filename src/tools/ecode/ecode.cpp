@@ -2290,6 +2290,9 @@ void App::closeEditors() {
 
 	saveProject();
 
+	mSplitter->setCurrentEditor( nullptr );
+	mSplitter->setCurrentWidget( nullptr );
+
 	std::vector<UICodeEditor*> editors = mSplitter->getAllEditors();
 	while ( !editors.empty() ) {
 		UICodeEditor* editor = editors[0];

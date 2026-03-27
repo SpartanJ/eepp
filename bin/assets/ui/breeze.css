@@ -52,6 +52,11 @@
 	droppable-hovering-color: #FFFFFF20;
 }
 
+markdownview > *,
+body {
+	color: var(--font);
+}
+
 b,
 strong {
 	font-style: bold;
@@ -149,6 +154,13 @@ br {
 
 img {
 	scale-type: fit-inside;
+	layout-width: wrap_content;
+	layout-height: wrap_content;
+}
+
+markdownview {
+	background-color: var(--list-back);
+	padding: 4dp;
 }
 
 markdownview h1,
@@ -157,6 +169,7 @@ markdownview h2 {
 }
 
 markdownview img {
+	max-width: 100%;
 	max-height: 100vh;
 }
 

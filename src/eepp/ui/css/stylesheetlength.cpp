@@ -117,7 +117,7 @@ StyleSheetLength::Unit StyleSheetLength::unitFromString( std::string unitStr ) {
 		case UnitHashes::Dpr:
 			return Unit::Dpr;
 	}
-	return Unit::Px;
+	return Unit::Dp;
 }
 
 std::string StyleSheetLength::unitToString( const StyleSheetLength::Unit& unit ) {

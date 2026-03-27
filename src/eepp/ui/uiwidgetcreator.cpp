@@ -1,6 +1,6 @@
+#include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/tools/uitextureviewer.hpp>
-#include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uicombobox.hpp>
@@ -165,7 +165,9 @@ void UIWidgetCreator::createBaseWidgetList() {
 			return UILinearLayout::NewVerticalWidthMatchParent( "article" );
 		};
 		registeredWidget["center"] = [] {
-			return UILinearLayout::NewVerticalWidthMatchParent( "center" );
+			auto center = UIRichText::NewWithTag( "center" );
+			center->setLayoutWidthPolicy( SizePolicy::WrapContent );
+			return center;
 		};
 		registeredWidget["html"] = [] {
 			return UILinearLayout::NewVerticalWidthMatchParent( "html" );

@@ -1,3 +1,4 @@
+#include "eepp/ui/uistyle.hpp"
 #include <algorithm>
 #include <eepp/ui/uihtmltable.hpp>
 
@@ -26,6 +27,12 @@ void UIHTMLTable::updateLayout() {
 		return;
 	mPacking = true;
 	setMatchParentIfNeededVerticalGrowth();
+
+	const StyleSheetProperty* prop = nullptr;
+	if ( getLayoutWidthPolicy() == SizePolicy::Fixed && mStyle &&
+		 ( prop = mStyle->getProperty( PropertyId::Width ) ) ) {
+		setInternalPixelsSize( { lengthFromValue( *prop, mSize.x ), mSize.getHeight() } );
+	}
 
 	UIHTMLTableHead* head = nullptr;
 	UIHTMLTableBody* body = nullptr;
