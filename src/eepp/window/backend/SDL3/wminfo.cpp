@@ -12,18 +12,20 @@ WMInfo::~WMInfo() {}
 
 #if defined( EE_X11_PLATFORM )
 X11Window WMInfo::getWindow() const {
-	return 0;
+	return (X11Window)SDL_GetNumberProperty( mProps, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0 );
 }
 #endif
 
 eeWindowHandle WMInfo::getWindowHandler() const {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	return (eeWindowHandle)SDL_GetPointerProperty( mProps, SDL_PROP_WINDOW_WIN32_HWND_POINTER, 0 );
+	return (eeWindowHandle)SDL_GetPointerProperty( mProps, SDL_PROP_WINDOW_WIN32_HWND_POINTER,
+												   nullptr );
 #elif defined( EE_X11_PLATFORM )
-	return (eeWindowHandle)SDL_GetNumberProperty( mProps, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0 );
+	return (eeWindowHandle)SDL_GetPointerProperty( mProps, SDL_PROP_WINDOW_X11_DISPLAY_POINTER,
+												   nullptr );
 #elif EE_PLATFORM == EE_PLATFORM_MACOS
 	return (eeWindowHandle)SDL_GetPointerProperty( mProps, SDL_PROP_WINDOW_COCOA_WINDOW_POINTER,
-												   0 );
+												   nullptr );
 #else
 	return 0;
 #endif

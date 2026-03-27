@@ -25,6 +25,12 @@ class EE_API JoystickManagerSDL : public JoystickManager {
 
 	void open( OpenCb openCb = nullptr );
 
+	void addJoystick( SDL_JoystickID id );
+
+	void removeJoystick( SDL_JoystickID id );
+
+	void rescan() override;
+
   protected:
 	void create( const Uint32& index ) override;
 

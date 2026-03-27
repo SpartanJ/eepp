@@ -807,6 +807,7 @@ function build_eepp( build_name )
 			"src/eepp/graphics/*.cpp",
 			"src/eepp/graphics/renderer/*.cpp",
 			"src/eepp/window/*.cpp",
+			"src/eepp/window/backend/*.cpp",
 			"src/eepp/network/*.cpp",
 			"src/eepp/network/ssl/*.cpp",
 			"src/eepp/network/http/*.cpp",

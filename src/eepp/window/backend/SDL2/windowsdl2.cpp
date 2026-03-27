@@ -15,6 +15,7 @@
 #include <eepp/window/backend/SDL2/inputsdl2.hpp>
 #include <eepp/window/backend/SDL2/windowsdl2.hpp>
 #include <eepp/window/backend/SDL2/wminfo.hpp>
+#include <eepp/window/backend/backendhelper.hpp>
 #include <eepp/window/engine.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -27,219 +28,28 @@
 #define SDL2_THREADED_GLCONTEXT
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_WIN
-#include <cstdint>
-#include <initguid.h>
-#include <objbase.h>
-#include <shellapi.h>
-#include <tlhelp32.h>
-
-bool WindowsIsProcessRunning( const char* processName, bool killProcess = false ) {
-	bool exists = false;
-	PROCESSENTRY32 entry = {};
-	entry.dwSize = sizeof( PROCESSENTRY32 );
-	HANDLE snapshot = CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 );
-	if ( Process32First( snapshot, &entry ) ) {
-		while ( Process32Next( snapshot, &entry ) ) {
-#ifdef UNICODE
-			if ( EE::String( entry.szExeFile ).toUtf8() == std::string( processName ) ) {
-#else
-			if ( !stricmp( entry.szExeFile, processName ) ) {
-#endif
-				exists = true;
-				if ( killProcess ) {
-					HANDLE aProc = OpenProcess( PROCESS_TERMINATE, 0, entry.th32ProcessID );
-					if ( aProc ) {
-						TerminateProcess( aProc, 9 );
-						CloseHandle( aProc );
-					}
-				}
-				break;
-			}
-		}
-	}
-	CloseHandle( snapshot );
-	return exists;
-}
-
-#ifndef ERROR_ELEVATION_REQUIRED
-#define ERROR_ELEVATION_REQUIRED ( 740 )
-#endif // ERROR_ELEVATION_REQUIRED
-
-bool WindowsProcessLaunch( std::string command, HWND windowHwnd ) {
-#ifdef UNICODE
-	wchar_t expandedCmd[1024] = {};
-#else
-	char expandedCmd[1024] = {};
-#endif
-	static PROCESS_INFORMATION pi = {};
-	static STARTUPINFO si = {};
-	si.cb = sizeof( si );
-#if UNICODE
-	ExpandEnvironmentStrings( EE::String::fromUtf8( command ).toWideString().c_str(), expandedCmd,
-							  1024 );
-#else
-	ExpandEnvironmentStrings( command.c_str(), expandedCmd, 1024 );
-#endif
-	if ( CreateProcess( NULL, expandedCmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi ) ) {
-		// Wait until child process exits.
-		WaitForSingleObject( pi.hProcess, 10000 );
-		CloseHandle( pi.hProcess );
-		CloseHandle( pi.hThread );
-		return true;
-	} else {
-		DWORD error = GetLastError();
-		if ( error == ERROR_ELEVATION_REQUIRED && 0 != windowHwnd ) {
-#ifdef UNICODE
-			std::intptr_t res = reinterpret_cast<std::intptr_t>(
-				ShellExecute( windowHwnd, L"open", expandedCmd, L"", NULL, SW_SHOWDEFAULT ) );
-#else
-			std::intptr_t res = reinterpret_cast<std::intptr_t>(
-				ShellExecute( windowHwnd, "open", expandedCmd, "", NULL, SW_SHOWDEFAULT ) );
-#endif
-			if ( res <= 32 ) {
-				return false;
-			}
-		}
-	}
-	return false;
-}
-
-// 4ce576fa-83dc-4F88-951c-9d0782b4e376
-DEFINE_GUID( CLSID_UIHostNoLaunch, 0x4CE576FA, 0x83DC, 0x4f88, 0x95, 0x1C, 0x9D, 0x07, 0x82, 0xB4,
-			 0xE3, 0x76 );
-
-// 37c994e7_432b_4834_a2f7_dce1f13b834b
-DEFINE_GUID( IID_ITipInvocation, 0x37c994e7, 0x432b, 0x4834, 0xa2, 0xf7, 0xdc, 0xe1, 0xf1, 0x3b,
-			 0x83, 0x4b );
-
-struct ITipInvocation : IUnknown {
-	virtual HRESULT STDMETHODCALLTYPE Toggle( HWND wnd ) = 0;
-};
-
-static bool WIN_OSK_VISIBLE = false;
-
-int showOSK( HWND windowHwnd ) {
-	if ( !WindowsIsProcessRunning( "TabTip.exe" ) ) {
-		WindowsIsProcessRunning(
-			"WindowsInternal.ComposableShell.Experiences.TextInput.InputApp.EXE", true );
-
-		std::string programFiles( Sys::getOSArchitecture() == "x64" ? "%ProgramW6432%"
-																	: "%ProgramFiles(x86)%" );
-		WindowsProcessLaunch( programFiles + "\\Common Files\\microsoft shared\\ink\\TabTip.exe",
-							  windowHwnd );
-	}
-
-	CoInitialize( 0 );
-
-	ITipInvocation* tip;
-	CoCreateInstance( CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER,
-					  IID_ITipInvocation, (void**)&tip );
-	if ( tip != NULL ) {
-		tip->Toggle( GetDesktopWindow() );
-		tip->Release();
-		WIN_OSK_VISIBLE = true;
-	}
-
-	return 0;
-}
-
-int hideOSK() {
-	WIN_OSK_VISIBLE = false;
-	return PostMessage( GetDesktopWindow(), WM_SYSCOMMAND, (int)SC_CLOSE, 0 );
-}
-
-bool isDarkModeEnabled() {
-	HKEY hKey;
-	DWORD value = 1; // Default to light theme
-	DWORD valueSize = sizeof( value );
-
-	if ( RegOpenKeyExA( HKEY_CURRENT_USER,
-						"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", 0,
-						KEY_READ, &hKey ) == ERROR_SUCCESS ) {
-		RegQueryValueExA( hKey, "AppsUseLightTheme", nullptr, nullptr,
-						  reinterpret_cast<LPBYTE>( &value ), &valueSize );
-		RegCloseKey( hKey );
-	}
-
-	return value == 0; // 0 means dark theme is enabled
-}
-
-typedef HRESULT( WINAPI* DwmSetWindowAttributeFunc )( HWND, DWORD, LPCVOID, DWORD );
-
-constexpr DWORD DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
-
-void setUserTheme( HWND hwnd ) {
-	HMODULE hDwmapi = LoadLibraryA( "dwmapi.dll" );
-	if ( !hDwmapi ) {
-		return;
-	}
-
-	auto DwmSetWindowAttribute = reinterpret_cast<DwmSetWindowAttributeFunc>(
-		GetProcAddress( hDwmapi, "DwmSetWindowAttribute" ) );
-	if ( !DwmSetWindowAttribute ) {
-		FreeLibrary( hDwmapi );
-		return;
-	}
-
-	BOOL darkMode = isDarkModeEnabled() ? TRUE : FALSE;
-	DwmSetWindowAttribute( hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkMode, sizeof( darkMode ) );
-
-	FreeLibrary( hDwmapi );
-}
-#elif defined( EE_X11_PLATFORM )
-#include <signal.h>
-#include <unistd.h>
-
-static pid_t ONBOARD_PID = 0;
-
-void showOSK() {
-	if ( ONBOARD_PID == 0 ) {
-		if ( FileSystem::fileExists( "/usr/bin/onboard" ) ) {
-			pid_t pid = fork();
-
-			if ( pid == 0 ) {
-				execl( "/usr/bin/onboard", "onboard", NULL );
-			} else if ( pid != -1 ) {
-				ONBOARD_PID = pid;
-			}
-		} else {
-			EE::System::Log::error(
-				"\"onboard\" must be installed to be able to use the On Screen Keyboard" );
-		}
-	}
-}
-
-void hideOSK() {
-	if ( ONBOARD_PID != 0 ) {
-		kill( ONBOARD_PID, SIGTERM );
-		ONBOARD_PID = 0;
-	}
-}
-#endif
-
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 WindowSDL::WindowSDL( WindowSettings Settings, ContextSettings Context ) :
 	Window( Settings, Context, eeNew( ClipboardSDL, ( this ) ), eeNew( InputSDL, ( this ) ),
 			eeNew( CursorManagerSDL, ( this ) ) ),
-	mSDLWindow( NULL ),
-	mGLContext( NULL ),
-	mGLContextThread( NULL )
+	mSDLWindow( nullptr ),
+	mGLContext( nullptr ),
+	mGLContextThread( nullptr )
 #ifdef EE_USE_WMINFO
 	,
-	mWMinfo( NULL )
+	mWMinfo( nullptr )
 #endif
 {
 	create( Settings, Context );
 }
 
 WindowSDL::~WindowSDL() {
-	if ( NULL != mGLContext ) {
+	if ( nullptr != mGLContext ) {
 		SDL_GL_DeleteContext( mGLContext );
 	}
 
-	if ( NULL != mGLContextThread ) {
+	if ( nullptr != mGLContextThread ) {
 		SDL_GL_DeleteContext( mGLContextThread );
 	}
 
@@ -247,12 +57,12 @@ WindowSDL::~WindowSDL() {
 	eeSAFE_DELETE( mWMinfo );
 #endif
 
-	if ( NULL != mSDLWindow ) {
+	if ( nullptr != mSDLWindow ) {
 		SDL_DestroyWindow( mSDLWindow );
 	}
 
 #if defined( EE_X11_PLATFORM )
-	hideOSK();
+	Backend::BackendHelper::hideOSK();
 #endif
 }
 
@@ -323,7 +133,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 								   SDL_WINDOWPOS_UNDEFINED, mWindow.WindowConfig.Width,
 								   mWindow.WindowConfig.Height, tmpFlags );
 
-	if ( NULL == mSDLWindow ) {
+	if ( nullptr == mSDLWindow ) {
 		Log::error( "Unable to create window: %s", SDL_GetError() );
 
 		logFailureInit( "WindowSDL", getVersion() );
@@ -384,9 +194,9 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	mWindow.ContextConfig.SharedGLContext = false;
 #endif
 
-	if ( NULL == mGLContext
+	if ( nullptr == mGLContext
 #ifdef SDL2_THREADED_GLCONTEXT
-		 || ( mWindow.ContextConfig.SharedGLContext && NULL == mGLContextThread )
+		 || ( mWindow.ContextConfig.SharedGLContext && nullptr == mGLContextThread )
 #endif
 	) {
 		Log::error( "Unable to create context: %s", SDL_GetError() );
@@ -409,7 +219,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	} else {
 		Log::error( "Window failed to create!" );
 
-		if ( NULL != SDL_GetError() ) {
+		if ( nullptr != SDL_GetError() ) {
 			Log::error( "SDL Error: %s", SDL_GetError() );
 		}
 
@@ -426,7 +236,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	mWMinfo = eeNew( WMInfo, ( mSDLWindow ) );
 #endif
 
-	if ( NULL == Renderer::existsSingleton() ) {
+	if ( nullptr == Renderer::existsSingleton() ) {
 		Renderer::createSingleton( mWindow.ContextConfig.Version );
 		Renderer::instance()->init();
 		if ( mWindow.ContextConfig.Multisamples > 0 )
@@ -456,7 +266,7 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 	mCursorManager->set( Cursor::SysArrow );
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	setUserTheme( (HWND)getWindowHandler() );
+	Backend::BackendHelper::setUserTheme( (HWND)getWindowHandler() );
 #endif
 
 	logSuccessfulInit( getVersion() );
@@ -474,9 +284,9 @@ void WindowSDL::makeCurrent() {
 
 void WindowSDL::close() {
 	SDL_DestroyWindow( mSDLWindow );
-	mSDLWindow = NULL;
-	mGLContext = NULL;
-	mGLContextThread = NULL;
+	mSDLWindow = nullptr;
+	mGLContext = nullptr;
+	mGLContextThread = nullptr;
 	Window::close();
 }
 
@@ -498,7 +308,7 @@ void WindowSDL::setGLContextThread() {
 }
 
 void WindowSDL::unsetGLContextThread() {
-	SDL_GL_MakeCurrent( mSDLWindow, NULL );
+	SDL_GL_MakeCurrent( mSDLWindow, nullptr );
 	mGLContextMutex.unlock();
 }
 
@@ -739,7 +549,7 @@ void WindowSDL::setGamma( Float Red, Float Green, Float Blue ) {
 
 eeWindowHandle WindowSDL::getWindowHandler() const {
 #ifdef EE_USE_WMINFO
-	if ( NULL != mWMinfo ) {
+	if ( nullptr != mWMinfo ) {
 		return mWMinfo->getWindowHandler();
 	}
 #endif
@@ -761,7 +571,7 @@ bool WindowSDL::setIcon( const std::string& Path ) {
 
 	Image Img( Path );
 
-	if ( NULL != Img.getPixelsPtr() ) {
+	if ( nullptr != Img.getPixelsPtr() ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 		if ( Img.getWidth() > 64 || Img.getHeight() > 64 ) {
 			Img.resize( 64, 64 );
@@ -921,28 +731,18 @@ SDL_Window* WindowSDL::getSDLWindow() const {
 
 void WindowSDL::startOnScreenKeyboard() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	showOSK( getWindowHandler() );
+	Backend::BackendHelper::showOSK( getWindowHandler() );
 #elif defined( EE_X11_PLATFORM )
-	showOSK();
+	Backend::BackendHelper::showOSK();
 #endif
 }
 
 void WindowSDL::stopOnScreenKeyboard() {
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	hideOSK();
-#elif defined( EE_X11_PLATFORM )
-	hideOSK();
-#endif
+	Backend::BackendHelper::hideOSK();
 }
 
 bool WindowSDL::isOnScreenKeyboardActive() const {
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	return WIN_OSK_VISIBLE;
-#elif defined( EE_X11_PLATFORM )
-	return ONBOARD_PID != 0;
-#else
-	return false;
-#endif
+	return Backend::BackendHelper::isOSKActive();
 }
 
 void WindowSDL::startTextInput() {

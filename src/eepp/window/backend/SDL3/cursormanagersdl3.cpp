@@ -30,7 +30,7 @@ Cursor* CursorManagerSDL::create( const std::string& path, const Vector2i& hotsp
 }
 
 void CursorManagerSDL::set( Cursor* cursor ) {
-	if ( NULL != cursor && cursor != mCurrent ) {
+	if ( nullptr != cursor && cursor != mCurrent ) {
 		SDL_SetCursor( reinterpret_cast<CursorSDL*>( cursor )->GetCursor() );
 		mCurrent = cursor;
 		mCurSysCursor = false;
@@ -41,7 +41,7 @@ void CursorManagerSDL::set( Cursor* cursor ) {
 void CursorManagerSDL::set( Cursor::SysType syscurid ) {
 	if ( syscurid != mSysCursor ) {
 		SDL_SetCursor( getLoadCursor( syscurid ) );
-		mCurrent = NULL;
+		mCurrent = nullptr;
 		mCurSysCursor = true;
 		mSysCursor = syscurid;
 	}

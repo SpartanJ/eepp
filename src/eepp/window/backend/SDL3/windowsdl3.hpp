@@ -118,12 +118,12 @@ class EE_API WindowSDL : public Window {
 	friend class ClipboardSDL;
 
 	SDL_Window* mSDLWindow{ nullptr };
-	SDL_GLContext mGLContext;
-	SDL_GLContext mGLContextThread;
+	SDL_GLContext mGLContext{ nullptr };
+	SDL_GLContext mGLContextThread{ nullptr };
 	Mutex mGLContextMutex;
 	Uint32 mID{ 0 };
 
-	WMInfo* mWMinfo;
+	WMInfo* mWMinfo{ nullptr };
 
 	Vector2i mWinPos;
 

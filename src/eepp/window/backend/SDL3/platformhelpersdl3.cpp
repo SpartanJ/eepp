@@ -40,36 +40,31 @@ void PlatformHelperSDL3::iconvFree( char* buf ) {
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 void* PlatformHelperSDL3::getActivity() {
-	return SDL_AndroidGetActivity();
+	return SDL_GetAndroidActivity();
 }
 
 void* PlatformHelperSDL3::getJNIEnv() {
-	return SDL_AndroidGetJNIEnv();
+	return (void*)SDL_GetAndroidJNIEnv();
 }
 
 std::string PlatformHelperSDL3::getExternalStoragePath() {
-	return std::string( SDL_AndroidGetExternalStoragePath() );
+	return std::string( SDL_GetAndroidExternalStoragePath() );
 }
 
 std::string PlatformHelperSDL3::getInternalStoragePath() {
-	return std::string( SDL_AndroidGetInternalStoragePath() );
+	return std::string( SDL_GetAndroidInternalStoragePath() );
 }
 
 std::string PlatformHelperSDL3::getApkPath() {
-	static std::string apkPath = "";
-	if ( "" == apkPath ) {
-		// Simplified: use SDL_AndroidGetApkPath if available
-		apkPath = std::string( SDL_AndroidGetApkPath() ? SDL_AndroidGetApkPath() : "" );
-	}
-	return apkPath;
+	return "";
 }
 
 bool PlatformHelperSDL3::isExternalStorageReadable() {
-	return 0 != ( SDL_AndroidGetExternalStorageState() & SDL_ANDROID_EXTERNAL_STORAGE_READ );
+	return 0 != ( SDL_GetAndroidExternalStorageState() & SDL_ANDROID_EXTERNAL_STORAGE_READ );
 }
 
 bool PlatformHelperSDL3::isExternalStorageWritable() {
-	return 0 != ( SDL_AndroidGetExternalStorageState() & SDL_ANDROID_EXTERNAL_STORAGE_WRITE );
+	return 0 != ( SDL_GetAndroidExternalStorageState() & SDL_ANDROID_EXTERNAL_STORAGE_WRITE );
 }
 #endif
 

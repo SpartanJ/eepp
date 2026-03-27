@@ -228,15 +228,17 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 		}
 		case SDL_EVENT_TEXT_INPUT: {
 			String txt = String::fromUtf8( std::string_view{ SDLEvent.text.text } );
+			if ( txt.empty() )
+				break;
 			event.Type = InputEvent::TextInput;
 			// Convert from nanoseconds (SDL3) to milliseconds (EE framework)
 			event.text.timestamp = static_cast<Uint32>( SDLEvent.text.timestamp / 1000000ULL );
 			event.WinID = SDLEvent.text.windowID;
-			for ( size_t i = 0; i < txt.size() - 1; i++ ) {
-				event.text.text = txt[i];
+			for ( const auto& character : txt ) {
+				event.text.text = character;
 				processEvent( &event );
 			}
-			event.text.text = txt[txt.size() - 1];
+			event.Type = InputEvent::NoEvent; // Already processed all characters
 			break;
 		}
 		case SDL_EVENT_TEXT_EDITING: {
@@ -382,11 +384,11 @@ void InputSDL::sendEvent( const SDL_Event& SDLEvent ) {
 			break;
 		}
 		case SDL_EVENT_JOYSTICK_ADDED: {
-			// Could be used to dynamically add joysticks, but JoystickManager handles it
+			static_cast<JoystickManagerSDL*>( mJoystickManager )->addJoystick( SDLEvent.jdevice.which );
 			break;
 		}
 		case SDL_EVENT_JOYSTICK_REMOVED: {
-			// Could be used to dynamically remove joysticks
+			static_cast<JoystickManagerSDL*>( mJoystickManager )->removeJoystick( SDLEvent.jdevice.which );
 			break;
 		}
 		case SDL_EVENT_QUIT: {

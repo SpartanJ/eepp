@@ -42,8 +42,13 @@ void JoystickManagerSDL::openAsync() {
 		int count = 0;
 		SDL_JoystickID* ids = SDL_GetJoysticks( &count );
 		if ( ids ) {
-			mIds.assign( ids, ids + count );
 			mCount = static_cast<Uint32>( count );
+			if ( mCount > MAX_JOYSTICKS ) {
+				Log::warning( "Too many joysticks detected (%d), only the first %d will be used.",
+							  mCount, MAX_JOYSTICKS );
+				mCount = MAX_JOYSTICKS;
+			}
+			mIds.assign( ids, ids + mCount );
 			SDL_free( ids );
 		} else {
 			mCount = 0;
@@ -71,6 +76,55 @@ void JoystickManagerSDL::open( OpenCb openCb ) {
 void JoystickManagerSDL::close() {
 	closeSubsystem();
 	mInit = false;
+}
+
+void JoystickManagerSDL::rescan() {
+	if ( !mInit )
+		return;
+
+	int count = 0;
+	SDL_JoystickID* ids = SDL_GetJoysticks( &count );
+	if ( ids ) {
+		for ( int i = 0; i < count; i++ ) {
+			if ( mIdToIndex.find( ids[i] ) == mIdToIndex.end() ) {
+				addJoystick( ids[i] );
+			}
+		}
+		SDL_free( ids );
+	}
+}
+
+void JoystickManagerSDL::addJoystick( SDL_JoystickID id ) {
+	if ( mCount >= MAX_JOYSTICKS ) {
+		Log::warning( "Cannot add more joysticks, MAX_JOYSTICKS limit reached." );
+		return;
+	}
+
+	if ( mIdToIndex.find( id ) != mIdToIndex.end() )
+		return;
+
+	mIds.push_back( id );
+	Uint32 index = mCount;
+	mIdToIndex[id] = index;
+	mCount++;
+	create( index );
+
+	Log::info( "Joystick added: %d", id );
+}
+
+void JoystickManagerSDL::removeJoystick( SDL_JoystickID id ) {
+	auto it = mIdToIndex.find( id );
+	if ( it != mIdToIndex.end() ) {
+		Uint32 index = it->second;
+		Log::info( "Joystick removed: %d (index %d)", id, index );
+
+		eeSAFE_DELETE( mJoysticks[index] );
+		mIdToIndex.erase( it );
+
+		// We do not re-order the remaining joysticks to avoid breaking indices
+		// But we need to handle the hole.
+		// Actually, standard JoystickManager might not handle holes well if it uses a simple array.
+	}
 }
 
 void JoystickManagerSDL::create( const Uint32& index ) {

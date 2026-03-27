@@ -27,7 +27,7 @@ void JoystickManagerSDL::update() {
 		SDL_JoystickUpdate();
 
 		for ( Uint32 i = 0; i < mCount; i++ )
-			if ( NULL != mJoysticks[i] )
+			if ( nullptr != mJoysticks[i] )
 				mJoysticks[i]->update();
 	}
 }
@@ -61,7 +61,7 @@ void JoystickManagerSDL::close() {
 }
 
 void JoystickManagerSDL::create( const Uint32& index ) {
-	if ( NULL != mJoysticks[index] )
+	if ( nullptr != mJoysticks[index] )
 		mJoysticks[index]->reOpen();
 	else
 		mJoysticks[index] = eeNew( JoystickSDL, ( index ) );
