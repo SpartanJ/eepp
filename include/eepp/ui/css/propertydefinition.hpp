@@ -230,6 +230,7 @@ enum class PropertyId : Uint32 {
 	DisplayOptions = String::hash( "display-options" ),
 	MenuWidthMode = String::hash( "menu-width-mode" ),
 	ExpandText = String::hash( "expand-text" ),
+	Colspan = String::hash( "colspan" ),
 };
 
 enum class PropertyType : Uint32 {

@@ -67,15 +67,16 @@ void UIHTMLTable::updateLayout() {
 	mRowCellOffsets.push_back( 0 );
 	size_t maxCols = 0;
 	for ( auto* row : mRows ) {
-		size_t cellCount = 0;
+		size_t colCount = 0;
 		for ( Node* child = row->getFirstChild(); child; child = child->getNextNode() ) {
 			if ( child->getType() == UI_TYPE_HTML_TABLE_CELL ) {
-				mCells.push_back( child->asType<UIHTMLTableCell>() );
-				cellCount++;
+				auto* cell = child->asType<UIHTMLTableCell>();
+				mCells.push_back( cell );
+				colCount += cell->getColspan();
 			}
 		}
 		mRowCellOffsets.push_back( (Uint32)mCells.size() );
-		maxCols = std::max( maxCols, cellCount );
+		maxCols = std::max( maxCols, colCount );
 	}
 
 	if ( maxCols == 0 ) {
@@ -93,11 +94,25 @@ void UIHTMLTable::updateLayout() {
 	for ( size_t r = 0; r < mRows.size(); ++r ) {
 		Uint32 start = mRowCellOffsets[r];
 		Uint32 end = mRowCellOffsets[r + 1];
+		Uint32 colIndex = 0;
 		for ( Uint32 i = 0; i < end - start; ++i ) {
 			UIHTMLTableCell* cell = mCells[start + i];
 			cell->setLayoutWidthPolicy( SizePolicy::WrapContent );
 			cell->updateLayout();
-			mColWidths[i] = std::max( mColWidths[i], cell->getPixelsSize().getWidth() );
+			Uint32 cellColspan = cell->getColspan();
+			if ( cellColspan == 1 ) {
+				mColWidths[colIndex] =
+					std::max( mColWidths[colIndex], cell->getPixelsSize().getWidth() );
+			} else {
+				Float widthPerCol = cell->getPixelsSize().getWidth() / cellColspan;
+				for ( Uint32 j = 0; j < cellColspan; ++j ) {
+					if ( colIndex + j < maxCols ) {
+						mColWidths[colIndex + j] =
+							std::max( mColWidths[colIndex + j], widthPerCol );
+					}
+				}
+			}
+			colIndex += cellColspan;
 		}
 	}
 
@@ -123,21 +138,35 @@ void UIHTMLTable::updateLayout() {
 		Uint32 start = mRowCellOffsets[r];
 		Uint32 end = mRowCellOffsets[r + 1];
 		Uint32 columnCount = end - start;
+		Uint32 colIndex = 0;
 		for ( Uint32 c = 0; c < columnCount; ++c ) {
 			UIHTMLTableCell* cell = mCells[start + c];
 			cell->setLayoutWidthPolicy( SizePolicy::Fixed );
-			cell->setPixelsSize( mColWidths[c], cell->getPixelsSize().getHeight() );
+			Uint32 cellColspan = cell->getColspan();
+			Float cellWidth = 0;
+			for ( Uint32 j = 0; j < cellColspan && ( colIndex + j ) < maxCols; ++j ) {
+				cellWidth += mColWidths[colIndex + j];
+			}
+			cell->setPixelsSize( cellWidth, cell->getPixelsSize().getHeight() );
 			cell->updateLayout();
 			rowHeight = std::max( rowHeight, cell->getPixelsSize().getHeight() );
+			colIndex += cellColspan;
 		}
 
 		// Position cells inside the row and equalize height
 		Float currentX = 0;
+		colIndex = 0;
 		for ( Uint32 c = 0; c < columnCount; ++c ) {
 			UIHTMLTableCell* cell = mCells[start + c];
 			cell->setPixelsPosition( currentX, 0 );
-			cell->setPixelsSize( cell->getPixelsSize().getWidth(), rowHeight );
-			currentX += mColWidths[c];
+			Uint32 cellColspan = cell->getColspan();
+			Float cellWidth = 0;
+			for ( Uint32 j = 0; j < cellColspan && ( colIndex + j ) < maxCols; ++j ) {
+				cellWidth += mColWidths[colIndex + j];
+			}
+			cell->setPixelsSize( cellWidth, rowHeight );
+			currentX += cellWidth;
+			colIndex += cellColspan;
 		}
 
 		// Set row height and width
@@ -237,6 +266,28 @@ Uint32 UIHTMLTableCell::getType() const {
 
 bool UIHTMLTableCell::isType( const Uint32& type ) const {
 	return UIHTMLTableCell::getType() == type || UIRichText::isType( type );
+}
+
+bool UIHTMLTableCell::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( attribute.getPropertyDefinition() == nullptr )
+		return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Colspan: {
+			mColspan = attribute.asUint( 1 );
+			if ( mColspan == 0 )
+				mColspan = 1;
+			notifyLayoutAttrChangeParent();
+			return true;
+		}
+		default:
+			break;
+	}
+	return UIRichText::applyProperty( attribute );
+}
+
+Uint32 UIHTMLTableCell::getColspan() const {
+	return mColspan;
 }
 
 UIHTMLTableHead* UIHTMLTableHead::New() {

@@ -411,6 +411,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "href", "" ).setType( PropertyType::String );
 	registerProperty( "focusable", "true" ).setType( PropertyType::Bool );
 	registerProperty( "expand-text", "false" ).setType( PropertyType::Bool );
+	registerProperty( "colspan", "1" ).setType( PropertyType::NumberInt );
 
 	registerProperty( "inner-widget-orientation", "widgeticontextbox" )
 		.setType( PropertyType::String );
