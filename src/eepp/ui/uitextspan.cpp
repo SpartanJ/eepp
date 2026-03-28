@@ -6,7 +6,6 @@
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
-#include <eepp/window/engine.hpp>
 
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -574,7 +573,7 @@ Uint32 UIAnchorSpan::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::MouseClick: {
 			if ( !mHref.empty() && ( Msg->getFlags() & EE_BUTTON_LMASK ) )
-				Engine::instance()->openURI( mHref );
+				getUISceneNode()->openURL( mHref );
 			return 1;
 		}
 	}
@@ -610,7 +609,7 @@ const std::string& UIAnchorSpan::getHref() const {
 Uint32 UIAnchorSpan::onKeyDown( const KeyEvent& event ) {
 	if ( event.getKeyCode() == KEY_KP_ENTER || event.getKeyCode() == KEY_RETURN ) {
 		if ( !mHref.empty() ) {
-			Engine::instance()->openURI( mHref );
+			getUISceneNode()->openURL( mHref );
 			return 1;
 		}
 	}

@@ -375,6 +375,12 @@
         "command": "${project_root}/bin/eepp-ui-dropdownmodellist-debug",
         "name": "eepp-ui-dropdownmodellist-debug",
         "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-html-debug",
+        "name": "eepp-ui-html-debug",
+        "working_dir": "${project_root}/bin"
       }
     ],
     "var": {

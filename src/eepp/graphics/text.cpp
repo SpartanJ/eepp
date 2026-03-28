@@ -81,7 +81,7 @@ Uint32 Text::stringToStyleFlag( const std::string& str ) {
 				flags |= Text::Bold;
 			else if ( "italic" == cur )
 				flags |= Text::Italic;
-			else if ( "strikethrough" == cur )
+			else if ( "strikethrough" == cur || "line-through" == cur )
 				flags |= Text::StrikeThrough;
 			else if ( "shadowed" == cur || "shadow" == cur )
 				flags |= Text::Shadow;

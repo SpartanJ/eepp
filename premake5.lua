@@ -1478,6 +1478,12 @@ workspace "eepp"
 		files { "src/examples/ui_richtext/*.cpp" }
 		build_link_configuration( "eepp-ui-richtext", true )
 
+	project "eepp-ui-html"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_html/*.cpp" }
+		build_link_configuration( "eepp-ui-html", true )
+
 	project "eepp-ui-markdownview"
 		set_kind()
 		language "C++"

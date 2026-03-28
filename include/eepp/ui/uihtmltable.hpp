@@ -33,6 +33,8 @@ class EE_API UIHTMLTable : public UILayout {
 
 class EE_API UIHTMLTableCell : public UIRichText {
   public:
+  	friend class UIHTMLTable;
+
 	static UIHTMLTableCell* New( const std::string& tag );
 
 	explicit UIHTMLTableCell( const std::string& tag );

@@ -692,6 +692,19 @@ class EE_API UISceneNode : public SceneNode {
 	/** @return the document / scene URI used to resolve paths of inner elements */
 	const URI& getURI() const { return mURI; }
 
+	/** Handles opening an specific URI */
+	void openURL( URI uri );
+
+	/* Sets a callback to intercept the openURL calls, returns true if intercepted, false to leave
+	 * the default openURL implementation handle it.
+	 */
+	void setURLInterceptorCb( std::function<bool( URI uri )> cb ) { mURLInterceptorCb = cb; };
+
+	/**
+	 * Solves a relative path with no scheme or authority into a complete URI.
+	 */
+	URI solveRelativePath( URI uri );
+
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
@@ -720,6 +733,7 @@ class EE_API UISceneNode : public SceneNode {
 	Uint32 mCurOnSizeChangeListener{ 0 };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	URI mURI;
+	std::function<bool( URI uri )> mURLInterceptorCb;
 
 	/**
 	 * @brief Protected constructor.

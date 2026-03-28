@@ -1598,6 +1598,12 @@ solution "eepp"
 		files { "src/examples/ui_markdownview/*.cpp" }
 		build_link_configuration( "eepp-ui-markdownview", true )
 
+	project "eepp-ui-html"
+		set_kind()
+		language "C++"
+		files { "src/examples/ui_html/*.cpp" }
+		build_link_configuration( "eepp-ui-html", true )
+
 	project "eepp-richtext"
 		set_kind()
 		language "C++"

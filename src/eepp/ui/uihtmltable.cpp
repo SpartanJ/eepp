@@ -98,6 +98,7 @@ void UIHTMLTable::updateLayout() {
 		for ( Uint32 i = 0; i < end - start; ++i ) {
 			UIHTMLTableCell* cell = mCells[start + i];
 			cell->setLayoutWidthPolicy( SizePolicy::WrapContent );
+			cell->mSize.x = mSize.x;
 			cell->updateLayout();
 			Uint32 cellColspan = cell->getColspan();
 			if ( cellColspan == 1 ) {
@@ -216,7 +217,8 @@ void UIHTMLTable::updateLayout() {
 		mRows[rowCount - 1]->setPixelsPosition( mPaddingPx.Left, 0 );
 
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
-		setInternalPixelsHeight( headHeight + bodyHeight + footerHeight + mPaddingPx.Bottom );
+		setInternalPixelsHeight( mPaddingPx.Top + headHeight + bodyHeight + footerHeight +
+								 mPaddingPx.Bottom );
 	}
 
 	mPacking = false;

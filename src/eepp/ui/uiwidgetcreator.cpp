@@ -166,16 +166,12 @@ void UIWidgetCreator::createBaseWidgetList() {
 		};
 		registeredWidget["center"] = [] {
 			auto center = UIRichText::NewWithTag( "center" );
-			center->setLayoutWidthPolicy( SizePolicy::WrapContent );
+			// center->setLayoutWidthPolicy( SizePolicy::WrapContent );
 			return center;
 		};
-		registeredWidget["html"] = [] {
-			return UILinearLayout::NewVerticalWidthMatchParent( "html" );
-		};
+		registeredWidget["html"] = [] { return UIRichText::NewWithTag( "html" ); };
 		registeredWidget["head"] = [] { return UIWidget::NewWithTag( "head" ); };
-		registeredWidget["body"] = [] {
-			return UILinearLayout::NewVerticalWidthMatchParent( "body" );
-		};
+		registeredWidget["body"] = [] { return UIRichText::NewWithTag( "body" ); };
 		registeredWidget["table"] = UIHTMLTable::New;
 		registeredWidget["tr"] = UIHTMLTableRow::New;
 		registeredWidget["thead"] = UIHTMLTableHead::New;

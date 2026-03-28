@@ -107,7 +107,7 @@ h6 {
 	margin: 1.67em 0;
 }
 
-code {
+markdownview code {
 	font-family: monospace;
 	background-color: var(--list-back);
 }
@@ -134,18 +134,24 @@ li {
 }
 
 a {
-	color: var(--primary);
-	selection-color: var(--font-selected-pressed);
-	selection-back-color: var(--primary);
 	cursor: arrow;
 	text-decoration: none;
-	gravity: bottom;
 }
 
 a:hover {
-	color: var(--font-highlight);
-	cursor: hand;
 	text-decoration: underline;
+	cursor: hand;
+}
+
+markdownview a {
+	color: var(--primary);
+	selection-color: var(--font-selected-pressed);
+	selection-back-color: var(--primary);
+	gravity: bottom;
+}
+
+markdownview a:hover {
+	color: var(--font-highlight);
 }
 
 br {
@@ -392,7 +398,7 @@ RadioButton::active {
 ListBox,
 DropDownList::ListBox,
 ComboBox::DropDownList::ListBox,
-Table,
+MarkdownView Table,
 ListView {
 	background-color: var(--list-back);
 	border-color: var(--button-border);

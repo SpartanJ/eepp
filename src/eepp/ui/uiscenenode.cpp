@@ -22,7 +22,9 @@
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 #include <eepp/ui/uiwindow.hpp>
+#include <eepp/window/engine.hpp>
 #include <eepp/window/window.hpp>
+
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
@@ -318,7 +320,9 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
 		} else if ( String::iequals( widget.name(), "link" ) ) {
 			auto type = widget.attribute( "type" );
 			auto href = widget.attribute( "href" );
-			if ( !type.empty() && !href.empty() && String::iequals( type.value(), "text/css" ) ) {
+			auto rel = widget.attribute( "rel" );
+			if ( !href.empty() && ( String::iequals( type.value(), "text/css" ) ||
+									String::iequals( rel.value(), "stylesheet" ) ) ) {
 				loadCSS( href.as_string() );
 			}
 		}
@@ -1087,29 +1091,46 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 	}
 }
 
-void UISceneNode::loadCSS( URI uri ) {
-	std::string scheme = uri.getScheme();
-	if ( !mURI.empty() && scheme.empty() ) {
-		std::string pathStart = mURI.getPath();
-		FileSystem::dirAddSlashAtEnd( pathStart );
-		std::string pathEnd = pathStart + uri.getPath();
-		uri = mURI;
-		uri.setPath( pathEnd );
-	}
+URI UISceneNode::solveRelativePath( URI uri ) {
+	if ( mURI.empty() )
+		return uri;
 
-	if ( "file" == scheme || ( scheme.empty() && FileSystem::fileExists( uri.getPath() ) ) ) {
+	if ( mURI.getScheme().empty() )
+		uri.setScheme( "file" );
+
+	if ( uri.getPath().empty() || uri.getPath().back() != '/' )
+		uri.setPath( mURI.getPath() + uri.getPath() );
+
+	if ( uri.getScheme().empty() )
+		uri.setScheme( mURI.getScheme() );
+
+	if ( uri.getAuthority().empty() )
+		uri.setAuthority( mURI.getAuthority() );
+
+	return uri;
+}
+
+void UISceneNode::loadCSS( URI uri ) {
+	uri = solveRelativePath( uri );
+	std::string url = uri.toString();
+	Log::debug( "UISceneNode::loadCSS: %s", url );
+
+	if ( "file" == uri.getScheme() ||
+		 ( uri.getScheme().empty() && FileSystem::fileExists( uri.getPath() ) ) ) {
 		std::string filePath( uri.getPath() );
 		std::string css;
 		if ( FileSystem::fileExists( filePath ) && FileSystem::fileGet( filePath, css ) ) {
-			combineStyleSheet( css, true, String::hash( uri.toString() ) );
+			combineStyleSheet( css, true, String::hash( url ) );
+			Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
 		}
-	} else if ( "http" == scheme || "https" == scheme ) {
+	} else if ( "http" == uri.getScheme() || "https" == uri.getScheme() ) {
 		Http::getAsync(
-			[this, uri]( const Http&, Http::Request&, Http::Response& response ) {
+			[this, url]( const Http&, Http::Request&, Http::Response& response ) {
 				if ( !response.getBody().empty() ) {
 					std::string css( response.getBody() );
-					runOnMainThread( [css = std::move( css ), uri = std::move( uri ), this] {
-						combineStyleSheet( css, true, String::hash( uri.toString() ) );
+					runOnMainThread( [css = std::move( css ), url = std::move( url ), this] {
+						combineStyleSheet( css, true, String::hash( url ) );
+						Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
 					} );
 				}
 			},
@@ -1118,8 +1139,9 @@ void UISceneNode::loadCSS( URI uri ) {
 		IOStream* stream = VFS::instance()->getFileFromPath( uri.getPath() );
 		CSS::StyleSheetParser parser;
 		if ( parser.loadFromStream( *stream ) ) {
-			parser.getStyleSheet().setMarker( String::hash( uri.toString() ) );
+			parser.getStyleSheet().setMarker( String::hash( url ) );
 			combineStyleSheet( parser.getStyleSheet() );
+			Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
 		}
 	}
 }
@@ -1240,6 +1262,12 @@ void UISceneNode::setMaxInvalidationDepth( const Uint32& maxInvalidationDepth ) 
 
 void UISceneNode::setURI( const URI& uri ) {
 	mURI = uri;
+}
+
+void UISceneNode::openURL( URI uri ) {
+	if ( mURLInterceptorCb && mURLInterceptorCb( uri ) )
+		return;
+	Engine::instance()->openURI( uri.toString() );
 }
 
 }} // namespace EE::UI
