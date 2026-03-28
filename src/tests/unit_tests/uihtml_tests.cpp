@@ -46,7 +46,7 @@ UTEST( UIHTMLTable, complexLayout ) {
 	sceneNode->loadLayoutFromFile( "assets/html/hn_thread_test.html" );
 	win->setClearColor( Color::White );
 
-	while ( win->isRunning() ) {
+	/* while ( win->isRunning() ) */ {
 		win->getInput()->update();
 		SceneManager::instance()->update();
 
