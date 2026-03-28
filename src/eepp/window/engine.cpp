@@ -4,6 +4,7 @@
 #include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/shaderprogrammanager.hpp>
+#include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/vertexbuffermanager.hpp>
@@ -117,6 +118,8 @@ Engine::~Engine() {
 	ParserMatcherManager::destroySingleton();
 
 	Log::destroySingleton();
+
+	TextLayout::clearLayoutCache();
 }
 
 void Engine::destroy() {
