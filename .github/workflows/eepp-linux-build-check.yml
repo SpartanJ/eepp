@@ -29,8 +29,8 @@ jobs:
         make all -j$(nproc) -e config=release_x86_64
     - name: Unit Tests
       run: |
-        cd bin/unit_tests
-        xvfb-run -s "-screen 0 1280x1024x24" gdb --batch --quiet --return-child-result -ex "run" -ex "bt full" --args ./eepp-unit_tests
+        cd projects/scripts
+        bash ./run_gdb_tests.sh
     - name: Upload artifacts
       if: always()
       uses: actions/upload-artifact@v4

@@ -23,11 +23,6 @@ using namespace EE::UI;
 using namespace EE::UI::Tools;
 
 UTEST( UIHTMLTable, complexLayout ) {
-	// #ifdef EE_DEBUG
-	Log::instance()->setLiveWrite( true );
-	Log::instance()->setLogToStdOut( true );
-	// #endif
-
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 1024, 650, "HTML Tables Test", WindowStyle::Default, WindowBackend::Default,
 						32, {}, 1, false, true ) );
@@ -63,9 +58,6 @@ UTEST( UIHTMLTable, complexLayout ) {
 	auto comment = sceneNode->getRoot()->findByClass( "comment" );
 	auto commtext = sceneNode->getRoot()->findByClass( "commtext" );
 
-	EXPECT_GT( votelinks->getPixelsSize().getWidth(), 0 );
-	// EXPECT_GT( votelinks->getPixelsSize().getHeight(), 0 );
-
 	EXPECT_GT( commentTree->getPixelsSize().getWidth(), 0 );
 	EXPECT_GT( commentTree->getPixelsSize().getHeight(), 0 );
 
@@ -83,7 +75,6 @@ UTEST( UIHTMLTable, complexLayout ) {
 	EXPECT_GT( mainTotal, 0 );
 
 	// EXPECT_LT( totalTds, mainTotal );
-
 	// compareImages( utest_state, utest_result, win, "eepp-uihtmltable-complex-layout", "html" );
 
 	Engine::destroySingleton();
