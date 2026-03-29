@@ -1342,6 +1342,9 @@ solution "eepp"
 		language "C"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		files { "src/thirdparty/gumbo-parser/**.c" }
+		if is_vs() then
+			includedirs { "src/thirdparty/gumbo-parser/visualc/include/" }
+		end
 		build_base_configuration( "gumbo-parser" )
 
 	project "efsw-static"
@@ -1723,7 +1726,7 @@ solution "eepp"
 		language "C++"
 		files { "src/tools/ecode/**.cpp" }
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
-		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static" }
+		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static", "gumbo-parser-static" }
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }
 		end

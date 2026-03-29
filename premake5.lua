@@ -1249,6 +1249,8 @@ workspace "eepp"
 		files { "src/thirdparty/gumbo-parser/**.c" }
 		build_base_configuration( "gumbo-parser" )
 		target_dir_thirdparty()
+		filter "action:vs*"
+			incdirs { "src/thirdparty/gumbo-parser/visualc/include/" }
 
 	project "efsw-static"
 		kind "StaticLib"
@@ -1603,7 +1605,7 @@ workspace "eepp"
 		language "C++"
 		files { "src/tools/ecode/**.cpp" }
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
-		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static" }
+		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static", "gumbo-parser-static" }
 		build_link_configuration( "ecode", false )
 		filter { "system:windows", "action:not vs*" }
 			buildoptions{ "-Wa,-mbig-obj" }
