@@ -689,6 +689,10 @@ class EE_API UISceneNode : public SceneNode {
 	/** Sets the document / scene URI used to resolve paths of inner elements */
 	void setURI( const URI& uri );
 
+	/** Sets the document / scene URI used to resolve paths from a complete URI (with
+	 * path+query+fragment+etc) */
+	void setURIFromURL( const URI& url );
+
 	/** @return the document / scene URI used to resolve paths of inner elements */
 	const URI& getURI() const { return mURI; }
 

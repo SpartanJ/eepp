@@ -45,6 +45,8 @@ class EE_API UILayout : public UIWidget {
 
 	virtual void updateLayoutTree();
 
+	virtual void updateLayoutWrappingContents();
+
 	void setLayoutDirty();
 
 	bool setMatchParentIfNeededVerticalGrowth();

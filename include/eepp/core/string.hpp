@@ -382,7 +382,7 @@ class EE_API String {
 	static int fuzzyMatch( const std::string& pattern, const std::string& string );
 
 	/** Replace all occurrences of the search string with the replacement string. */
-	static void replaceAll( std::string& target, const std::string& that, const std::string& with );
+	static void replaceAll( std::string& target, std::string_view that, std::string_view with );
 
 	/** Replace all occurrences of the search string with the replacement string. */
 	static void replaceAll( String& target, const String& that, const String& with );

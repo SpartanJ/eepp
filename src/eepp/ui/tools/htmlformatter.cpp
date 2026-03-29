@@ -1,9 +1,12 @@
+#include <eepp/system/regex.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
 
 #include <string_view>
 
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
+
+using namespace EE::System;
 
 namespace EE { namespace UI { namespace Tools {
 
@@ -42,7 +45,7 @@ bool HTMLFormatter::isInlineNode( const pugi::xml_node& node ) {
 		   String::iequals( name, "em" ) || String::iequals( name, "s" ) ||
 		   String::iequals( name, "u" ) || String::iequals( name, "br" ) ||
 		   String::iequals( name, "code" ) || String::iequals( name, "img" ) ||
-		   String::iequals( name, "mark" );
+		   String::iequals( name, "mark" ) || String::iequals( name, "font" );
 }
 
 // "Significant text" in the context of HTML whitespace collapsing means any text
@@ -202,6 +205,69 @@ String HTMLFormatter::collapseXmlWhitespace( const String& text, const pugi::xml
 		res = res.substr( 0, res.size() - 1 );
 
 	return res;
+}
+
+std::string HTMLFormatter::HTMLtoXML( const std::string& layoutString ) {
+	std::string fixedLayout = layoutString;
+
+	static constexpr std::string_view DOCTYPE_REGEX = "(?i)<!DOCTYPE[^>]*>";
+	RegEx doctypeRegex( DOCTYPE_REGEX.data() );
+	if ( doctypeRegex.matches( fixedLayout ) ) {
+		fixedLayout = doctypeRegex.gsub( fixedLayout, "" );
+	}
+
+	// JavaScript operators (<, &&) break XML parsers. We must remove <script> blocks.
+	static constexpr std::string_view SCRIPT_REGEX = "(?si)<script[^>]*>.*?</script>";
+	RegEx scriptRegex( SCRIPT_REGEX.data() );
+	if ( scriptRegex.matches( fixedLayout ) ) {
+		fixedLayout = scriptRegex.gsub( fixedLayout, "" );
+	}
+
+	static constexpr std::string_view VOIDTAG_REGEX =
+		"(<(?:img|br|hr|input|meta|link|area|base|col|embed|param|source|track|wbr)\\b[^>]*?)(?<!/"
+		")>";
+	RegEx voidTagsRegex( VOIDTAG_REGEX.data() );
+	if ( voidTagsRegex.matches( fixedLayout ) ) {
+		fixedLayout = voidTagsRegex.gsub( fixedLayout, "%1 />" );
+	}
+
+	static constexpr std::string_view BOOL_ATTR_REGEX =
+		"(?<=\\s)(checked|disabled|readonly|required|autofocus|multiple|selected|async|defer)\\b(?!"
+		"\\s*=)(?=[^<]*>)";
+	RegEx boolAttrRegex( BOOL_ATTR_REGEX.data() );
+	if ( boolAttrRegex.matches( fixedLayout ) ) {
+		fixedLayout = boolAttrRegex.gsub( fixedLayout, "%1=\"%1\"" );
+	}
+
+	static constexpr std::array<std::pair<std::string_view, std::string_view>, 21> entities = { {
+		{ "&nbsp;", " " },		   // Non-breaking space
+		{ "&copy;", "&#169;" },	   // Copyright
+		{ "&reg;", "&#174;" },	   // Registered trademark
+		{ "&trade;", "&#8482;" },  // Trademark
+		{ "&euro;", "&#8364;" },   // Euro
+		{ "&pound;", "&#163;" },   // Pound
+		{ "&yen;", "&#165;" },	   // Yen
+		{ "&cent;", "&#162;" },	   // Cent
+		{ "&mdash;", "&#8212;" },  // Em dash
+		{ "&ndash;", "&#8211;" },  // En dash
+		{ "&ldquo;", "&#8220;" },  // Left double quote
+		{ "&rdquo;", "&#8221;" },  // Right double quote
+		{ "&lsquo;", "&#8216;" },  // Left single quote
+		{ "&rsquo;", "&#8217;" },  // Right single quote
+		{ "&bull;", "&#8226;" },   // Bullet
+		{ "&middot;", "&#183;" },  // Middle dot
+		{ "&hellip;", "&#8230;" }, // Horizontal ellipsis
+		{ "&deg;", "&#176;" },	   // Degree sign
+		{ "&plusmn;", "&#177;" },  // Plus-minus sign
+		{ "&times;", "&#215;" },   // Multiplication sign
+		{ "&divide;", "&#247;" }   // Division sign
+	} };
+
+	for ( const auto& [html_ent, xml_ent] : entities ) {
+		String::replaceAll( fixedLayout, html_ent, xml_ent );
+	}
+
+	return fixedLayout;
 }
 
 }}} // namespace EE::UI::Tools

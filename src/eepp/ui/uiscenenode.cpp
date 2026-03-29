@@ -448,7 +448,7 @@ void UISceneNode::setThreadPool( const std::shared_ptr<ThreadPool>& threadPool )
 }
 
 static std::string getErrorContext( size_t offset, std::string_view content ) {
-	static constexpr std::size_t CONTEXT_LENGTH = 40;
+	static constexpr std::size_t CONTEXT_LENGTH = 50;
 	std::size_t minVal = offset >= CONTEXT_LENGTH ? offset - CONTEXT_LENGTH : 0;
 	std::size_t maxVal = offset + CONTEXT_LENGTH;
 	std::size_t left = std::max( static_cast<std::size_t>( 0ul ), minVal );
@@ -1027,6 +1027,8 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 		if ( !func.getParameters().empty() && func.getName() == "url" )
 			path = func.getParameters().at( 0 );
 
+		path = solveRelativePath( path ).toString();
+
 		if ( String::startsWith( path, "file://" ) ) {
 			std::string filePath( path.substr( 7 ) );
 
@@ -1092,20 +1094,44 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 }
 
 URI UISceneNode::solveRelativePath( URI uri ) {
-	if ( mURI.empty() )
+	// 1. If base is empty OR the target already has a scheme (it's absolute), return it.
+	if ( mURI.empty() || !uri.getScheme().empty() )
 		return uri;
 
-	if ( mURI.getScheme().empty() )
-		uri.setScheme( "file" );
+	// 2. Inherit Scheme and Authority
+	if ( uri.getScheme().empty() ) {
+		// Default to "file" if the base also lacks a scheme
+		uri.setScheme( mURI.getScheme().empty() ? "file" : mURI.getScheme() );
+	}
 
-	if ( uri.getPath().empty() || uri.getPath().back() != '/' )
-		uri.setPath( mURI.getPath() + uri.getPath() );
-
-	if ( uri.getScheme().empty() )
-		uri.setScheme( mURI.getScheme() );
-
-	if ( uri.getAuthority().empty() )
+	if ( uri.getAuthority().empty() ) {
 		uri.setAuthority( mURI.getAuthority() );
+	}
+
+	// 3. Safely Resolve the Path
+	std::string targetPath = uri.getPath();
+	std::string basePath = mURI.getPath();
+
+	if ( !targetPath.empty() && targetPath.front() == '/' ) {
+		// CASE A: Root-relative path (e.g., "/news.css")
+		// It ignores the base directory entirely and attaches to the root.
+		uri.setPath( targetPath );
+	} else {
+		// CASE B: Directory-relative path (e.g., "news.css" or "assets/style.css")
+		// We must strip the filename from the base path (everything after the last '/')
+		size_t lastSlashPos = basePath.find_last_of( '/' );
+
+		if ( lastSlashPos != std::string::npos ) {
+			// Keep everything up to and including the last '/'
+			basePath = basePath.substr( 0, lastSlashPos + 1 );
+		} else {
+			// If there's no slash at all in the base path, act as root if there's an authority
+			basePath = mURI.getAuthority().empty() ? "" : "/";
+		}
+
+		// Now it's safe to concatenate
+		uri.setPath( basePath + targetPath );
+	}
 
 	return uri;
 }
@@ -1126,12 +1152,16 @@ void UISceneNode::loadCSS( URI uri ) {
 	} else if ( "http" == uri.getScheme() || "https" == uri.getScheme() ) {
 		Http::getAsync(
 			[this, url]( const Http&, Http::Request&, Http::Response& response ) {
-				if ( !response.getBody().empty() ) {
+				if ( !response.getBody().empty() &&
+					 response.getStatus() == Http::Response::Status::Ok ) {
 					std::string css( response.getBody() );
 					runOnMainThread( [css = std::move( css ), url = std::move( url ), this] {
 						combineStyleSheet( css, true, String::hash( url ) );
 						Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
 					} );
+				} else {
+					Log::debug( "UISceneNode::loadCSS: Failed to load %s - %s", url,
+								response.getStatusDescription() );
 				}
 			},
 			uri, Seconds( 5 ) );
@@ -1262,6 +1292,32 @@ void UISceneNode::setMaxInvalidationDepth( const Uint32& maxInvalidationDepth ) 
 
 void UISceneNode::setURI( const URI& uri ) {
 	mURI = uri;
+}
+
+void UISceneNode::setURIFromURL( const URI& url ) {
+	URI baseURI( url );
+	std::string path = baseURI.getPath();
+
+	// If the path isn't empty and doesn't end with a directory slash...
+	if ( !path.empty() && path.back() != '/' ) {
+		size_t lastSlash = path.find_last_of( '/' );
+
+		if ( lastSlash != std::string::npos ) {
+			// Keep everything up to and including the last '/'
+			// Example: "/assets/css/styles.html" -> "/assets/css/"
+			baseURI.setPath( path.substr( 0, lastSlash + 1 ) );
+		} else {
+			// Fallback if there are no slashes in the path at all
+			baseURI.setPath( "/" );
+		}
+	}
+
+	// Clear any query strings (?foo=bar) or fragments (#section) from the base URI,
+	// as they shouldn't be inherited by relative paths.
+	baseURI.setQuery( "" );
+	baseURI.setFragment( "" );
+
+	setURI( baseURI );
 }
 
 void UISceneNode::openURL( URI uri ) {

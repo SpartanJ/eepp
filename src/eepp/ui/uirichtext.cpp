@@ -488,10 +488,13 @@ void UIRichText::rebuildRichText() {
 		} else {
 			Rectf margin = widget->getLayoutPixelsMargin();
 
-			if ( mSize.getWidth() != 0 &&
-				 widget->getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
-				widget->setPixelsSize( mSize.getWidth() - margin.Left - margin.Right,
-									   widget->getPixelsSize().getHeight() );
+			if ( widget->getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
+				if ( mSize.getWidth() != 0 ) {
+					widget->setPixelsSize( mSize.getWidth() - margin.Left - margin.Right,
+										   widget->getPixelsSize().getHeight() );
+				} else {
+					onAutoSizeChild( widget );
+				}
 			} else if ( widget->getLayoutWidthPolicy() == SizePolicy::WrapContent ||
 						widget->getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
 				onAutoSizeChild( widget );

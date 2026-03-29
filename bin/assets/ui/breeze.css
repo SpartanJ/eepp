@@ -107,6 +107,14 @@ h6 {
 	margin: 1.67em 0;
 }
 
+table, td {
+	text-align: left;
+}
+
+center {
+	text-align: center;
+}
+
 markdownview code {
 	font-family: monospace;
 	background-color: var(--list-back);

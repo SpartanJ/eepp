@@ -98,7 +98,7 @@ void UIHTMLTable::updateLayout() {
 		for ( Uint32 i = 0; i < end - start; ++i ) {
 			UIHTMLTableCell* cell = mCells[start + i];
 			cell->setLayoutWidthPolicy( SizePolicy::WrapContent );
-			cell->mSize.x = mSize.x;
+			cell->mSize.x = 0;
 			cell->updateLayout();
 			Uint32 cellColspan = cell->getColspan();
 			if ( cellColspan == 1 ) {

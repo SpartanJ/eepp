@@ -327,12 +327,14 @@ void DrawableImageParser::registerBaseParsers() {
 	};
 
 	mFuncs["url"] = []( const FunctionString& functionType, const Sizef& /*size*/, bool& /*ownIt*/,
-						UINode*
-						/*node*/ ) -> Drawable* {
+						UINode* node ) -> Drawable* {
 		if ( functionType.getParameters().size() < 1 )
 			return NULL;
 
-		return DrawableSearcher::searchByName( functionType.getParameters().at( 0 ) );
+		return DrawableSearcher::searchByName(
+			node->getUISceneNode()
+				->solveRelativePath( functionType.getParameters().at( 0 ) )
+				.toString() );
 	};
 
 	mFuncs["icon"] = []( const FunctionString& functionType, const Sizef& size, bool&,

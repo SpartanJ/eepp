@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/graphics/fonttruetype.hpp>
+#include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
@@ -22,16 +23,15 @@ using namespace EE::UI;
 using namespace EE::UI::Tools;
 
 UTEST( UIHTMLTable, complexLayout ) {
-	auto win = Engine::instance()->createWindow(
-		WindowSettings( 1024, 650, "HTML Tables Test", WindowStyle::Default, WindowBackend::Default,
-						32, {}, 1, false, true ),
-		ContextSettings( false, ContextSettings::FrameRateLimitScreenRefreshRate, 4 ) );
-	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
-#ifdef EE_DEBUG
+	// #ifdef EE_DEBUG
 	Log::instance()->setLiveWrite( true );
 	Log::instance()->setLogToStdOut( true );
-#endif
+	// #endif
+
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 650, "HTML Tables Test", WindowStyle::Default, WindowBackend::Default,
+						32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
 	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );

@@ -143,6 +143,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["ins"] = UITextSpan::NewUnderline;
 		registeredWidget["s"] = UITextSpan::NewStrikethrough;
 		registeredWidget["del"] = UITextSpan::NewStrikethrough;
+		registeredWidget["font"] = UITextSpan::NewFont;
 		registeredWidget["code"] = UITextSpan::NewCode;
 		registeredWidget["mark"] = UITextSpan::NewMark;
 		registeredWidget["div"] = UIRichText::NewDiv;
@@ -161,14 +162,8 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["pre"] = UIRichText::NewPre;
 		registeredWidget["img"] = [] { return UIImage::NewWithTag( "img" ); };
 		registeredWidget["input"] = UITextInput::New;
-		registeredWidget["article"] = [] {
-			return UILinearLayout::NewVerticalWidthMatchParent( "article" );
-		};
-		registeredWidget["center"] = [] {
-			auto center = UIRichText::NewWithTag( "center" );
-			// center->setLayoutWidthPolicy( SizePolicy::WrapContent );
-			return center;
-		};
+		registeredWidget["article"] = [] { return UIRichText::NewWithTag( "article" ); };
+		registeredWidget["center"] = [] { return UIRichText::NewWithTag( "center" ); };
 		registeredWidget["html"] = [] { return UIRichText::NewWithTag( "html" ); };
 		registeredWidget["head"] = [] { return UIWidget::NewWithTag( "head" ); };
 		registeredWidget["body"] = [] { return UIRichText::NewWithTag( "body" ); };

@@ -27,37 +27,45 @@ EE_MAIN_FUNC int main( int, char** ) {
 	auto urlBar = ui->find( "url_bar" )->asType<UITextInput>();
 	auto mainContainer = ui->find( "html_doc" );
 
-	const auto loadDocument = [&]( URI url ) {
+	const auto loadDocumentData = [ui, mainContainer, urlBar]( URI url, std::string& data ) {
+		if ( data.empty() )
+			return;
 		static String::HashType prevURL = 0;
-		std::string data;
-		if ( !url.getScheme().empty() ) {
-			if ( url.getScheme() == "https" || url.getScheme() == "http" ) {
-				auto response = Http::get( url, Seconds( 5 ) );
-				data = response.getBody();
-			} else if ( url.getScheme() == "file" ) {
-				FileSystem::fileGet( url.getPath(), data );
-			}
-		} else if ( !url.getPath().empty() && url.getPath().front() == '/' ) {
-			FileSystem::fileGet( url.getPath(), data );
-		}
-
-		if ( !data.empty() ) {
-			if ( url.getPath().empty() || url.getPath().back() != '/' ) {
-				if ( url.getScheme() == "file" &&
-					 !FileSystem::fileExtension( url.getPath() ).empty() ) {
-					url.setPath( FileSystem::fileRemoveFileName( url.getPath() ) );
-				}
-				url.setPath( url.getPath() + "/" );
-			}
+		ui->ensureMainThread( [=] {
 			mainContainer->closeAllChildren();
 			if ( prevURL )
 				ui->getStyleSheet().removeAllWithMarker( prevURL );
-			ui->setURI( url );
-			auto hash = String::hash( url.toString() );
-			ui->loadLayoutFromString( data, mainContainer, hash );
+			ui->setURIFromURL( url );
+			auto urlStr = url.toString();
+			auto hash = String::hash( urlStr );
+			ui->loadLayoutFromString( HTMLFormatter::HTMLtoXML( data ), mainContainer, hash );
 			prevURL = hash;
+			urlBar->setText( urlStr );
+		} );
+	};
+
+	const auto loadDocument = [&]( URI url ) {
+		if ( !url.getScheme().empty() ) {
+			if ( url.getScheme() == "https" || url.getScheme() == "http" ) {
+				Http::getAsync(
+					[=]( const Http&, Http::Request&, Http::Response& response ) {
+						std::string data = response.getBody();
+						loadDocumentData( url, data );
+					},
+					url, Seconds( 5 ) );
+			} else if ( url.getScheme() == "file" ) {
+				std::string data;
+				FileSystem::fileGet( url.getPath(), data );
+				loadDocumentData( url, data );
+			}
+		} else if ( !url.getPath().empty() && url.getPath().front() == '/' ) {
+			std::string data;
+			FileSystem::fileGet( url.getPath(), data );
+			loadDocumentData( url, data );
 		}
 	};
+
+	loadDocument( "https://news.ycombinator.com" );
 
 	urlBar->on( Event::OnPressEnter,
 				[&]( auto event ) { loadDocument( urlBar->getText().toUtf8() ); } );

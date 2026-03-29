@@ -851,6 +851,12 @@ void UIWidget::updatePseudoClasses() {
 	if ( mState & UIState::StateFlagDisabled )
 		mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::Disabled;
 
+	if ( mState & UIState::StateFlagLink )
+		mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::Link;
+
+	if ( mState & UIState::StateFlagVisited )
+		mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::Visited;
+
 	invalidateDraw();
 }
 

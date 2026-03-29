@@ -1345,7 +1345,7 @@ bool String::icontains( std::string_view haystack, std::string_view needle ) {
 						} ) != haystack.end();
 }
 
-void String::replaceAll( std::string& target, const std::string& that, const std::string& with ) {
+void String::replaceAll( std::string& target, std::string_view that, std::string_view with ) {
 	std::string::size_type pos = 0;
 
 	while ( ( pos = target.find( that, pos ) ) != std::string::npos ) {

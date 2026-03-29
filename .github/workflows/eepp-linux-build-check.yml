@@ -30,15 +30,7 @@ jobs:
     - name: Unit Tests
       run: |
         cd bin/unit_tests
-        xvfb-run -s "-screen 0 1280x1024x24" \
-        gdb --batch --quiet \
-          -ex "set confirm off" \
-          -ex "run" \
-          -ex "bt full" \
-          -ex "thread apply all bt full" \
-          -ex "info registers" \
-          -ex "quit" \
-          --args ./eepp-unit_tests
+        xvfb-run -s "-screen 0 1280x1024x24" gdb --batch --quiet --return-child-result -ex "run" -ex "bt full" --args ./eepp-unit_tests
     - name: Upload artifacts
       if: always()
       uses: actions/upload-artifact@v4

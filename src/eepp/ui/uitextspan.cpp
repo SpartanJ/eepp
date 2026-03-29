@@ -567,7 +567,10 @@ UIAnchorSpan* UIAnchorSpan::New() {
 	return eeNew( UIAnchorSpan, () );
 }
 
-UIAnchorSpan::UIAnchorSpan( const std::string& tag ) : UITextSpan( tag ) {}
+UIAnchorSpan::UIAnchorSpan( const std::string& tag ) : UITextSpan( tag ) {
+	mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::Link;
+	mState |= UIState::StateFlagLink;
+}
 
 Uint32 UIAnchorSpan::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
