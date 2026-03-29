@@ -162,10 +162,6 @@ markdownview a:hover {
 	color: var(--font-highlight);
 }
 
-br {
-	layout-height: 0;
-}
-
 img {
 	scale-type: fit-inside;
 	layout-width: wrap_content;
@@ -189,6 +185,10 @@ markdownview img {
 
 markdownview table > thead > tr > th {
 	font-style: bold;
+}
+
+markdownview CodeEditor {
+	padding: 4dp;
 }
 
 blockquote {

@@ -26,7 +26,7 @@ class EE_API UIRichText : public UILayout {
 
 	static UIRichText* NewH6() { return UIRichText::NewWithTag( "h6" ); };
 
-	static UIRichText* NewBr() { return UIRichText::NewWithTag( "br" ); };
+	static UIRichText* NewBr();
 
 	static UIRichText* NewDiv() { return UIRichText::NewWithTag( "div" ); };
 

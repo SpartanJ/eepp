@@ -1605,12 +1605,13 @@ workspace "eepp"
 		language "C++"
 		files { "src/tools/ecode/**.cpp" }
 		incdirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
-		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static", "gumbo-parser-static" }
+		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static" }
 		build_link_configuration( "ecode", false )
 		filter { "system:windows", "action:not vs*" }
 			buildoptions{ "-Wa,-mbig-obj" }
 			linkoptions { "-Wl,--export-all-symbols" }
 		filter { "system:windows", "action:vs*" }
+			links { "gumbo-parser-static" }
 			files { "bin/assets/icon/ecode.rc", "bin/assets/icon/ecode.ico" }
 			vpaths { ['Resources/*'] = { "ecode.rc", "ecode.ico" } }
 		filter { "system:windows", "action:not vs*", "architecture:x86" }

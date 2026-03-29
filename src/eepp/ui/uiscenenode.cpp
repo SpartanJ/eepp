@@ -271,6 +271,32 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
 	for ( pugi::xml_node widget = node; widget; widget = widget.next_sibling() ) {
 		clock.restart();
 
+		if ( String::iequals( widget.name(), "style" ) ) {
+			CSS::StyleSheetParser parser;
+			std::string styleContent;
+			for ( pugi::xml_node child = widget.first_child(); child;
+				  child = child.next_sibling() ) {
+				if ( child.type() == pugi::node_pcdata || child.type() == pugi::node_cdata ) {
+					styleContent += child.value();
+				}
+			}
+
+			if ( parser.loadFromString( std::string_view{ styleContent } ) ) {
+				parser.getStyleSheet().setMarker( marker );
+				combineStyleSheet( parser.getStyleSheet(), false );
+			}
+			continue;
+		} else if ( String::iequals( widget.name(), "link" ) ) {
+			auto type = widget.attribute( "type" );
+			auto href = widget.attribute( "href" );
+			auto rel = widget.attribute( "rel" );
+			if ( !href.empty() && ( String::iequals( type.value(), "text/css" ) ||
+									String::iequals( rel.value(), "stylesheet" ) ) ) {
+				loadCSS( href.as_string() );
+			}
+			continue;
+		}
+
 		UIWidget* uiwidget = UIWidgetCreator::createFromName( widget.name() );
 
 		if ( NULL != uiwidget ) {
@@ -303,28 +329,6 @@ std::vector<UIWidget*> UISceneNode::loadNode( pugi::xml_node node, Node* parent,
 			}
 
 			uiwidget->onWidgetCreated();
-		} else if ( String::iequals( widget.name(), "style" ) ) {
-			CSS::StyleSheetParser parser;
-			std::string styleContent;
-			for ( pugi::xml_node child = widget.first_child(); child;
-				  child = child.next_sibling() ) {
-				if ( child.type() == pugi::node_pcdata || child.type() == pugi::node_cdata ) {
-					styleContent += child.value();
-				}
-			}
-
-			if ( parser.loadFromString( std::string_view{ styleContent } ) ) {
-				parser.getStyleSheet().setMarker( marker );
-				combineStyleSheet( parser.getStyleSheet(), false );
-			}
-		} else if ( String::iequals( widget.name(), "link" ) ) {
-			auto type = widget.attribute( "type" );
-			auto href = widget.attribute( "href" );
-			auto rel = widget.attribute( "rel" );
-			if ( !href.empty() && ( String::iequals( type.value(), "text/css" ) ||
-									String::iequals( rel.value(), "stylesheet" ) ) ) {
-				loadCSS( href.as_string() );
-			}
 		}
 	}
 

@@ -10,6 +10,12 @@ EE_MAIN_FUNC int main( int, char** ) {
 	auto win = app.getWindow();
 	auto ui = app.getUI();
 
+	FontTrueType* remixIconFont = FontTrueType::New( "icon", "assets/fonts/remixicon.ttf" );
+	FontTrueType* noniconsFont = FontTrueType::New( "nonicons", "assets/fonts/nonicons.ttf" );
+	FontTrueType* codIconFont = FontTrueType::New( "codicon", "assets/fonts/codicon.ttf" );
+	ui->getUIIconThemeManager()->setCurrentTheme(
+		IconManager::init( "icons", remixIconFont, noniconsFont, codIconFont ) );
+
 	ui->setColorSchemePreference( ColorSchemeExtPreference::Light );
 
 	ui->loadLayoutFromString( R"xml(

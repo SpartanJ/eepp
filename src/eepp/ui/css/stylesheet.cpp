@@ -365,22 +365,18 @@ void StyleSheet::addMediaQueryList( MediaQueryList::ptr list ) {
 	}
 }
 
-StyleSheetStyleVector StyleSheet::getStyleSheetStyleByAtRule( const AtRuleType& atRuleType ) const {
+StyleSheetStyleVector
+StyleSheet::getStyleSheetStyleByAtRule( const AtRuleType& atRuleType ) const {
 	StyleSheetStyleVector vector;
 	for ( auto& node : mNodes )
 		if ( node->getAtRuleType() == atRuleType )
 			vector.push_back( node.get() );
 
-	std::sort( vector.begin(), vector.end(),
-			   []( const StyleSheetStyle* left, const StyleSheetStyle* right ) {
-				   bool leftHasIt = left->hasProperty( PropertyId::FontStyle );
-				   bool rightHasIt = right->hasProperty( PropertyId::FontStyle );
-				   if ( leftHasIt && !rightHasIt )
-					   return false;
-				   if ( !leftHasIt && rightHasIt )
-					   return true;
-				   return leftHasIt && rightHasIt;
-			   } );
+	std::sort( vector.begin(), vector.end(), []( const auto& left, const auto& right ) {
+		bool leftHasIt = left->hasProperty( PropertyId::FontStyle );
+		bool rightHasIt = right->hasProperty( PropertyId::FontStyle );
+		return leftHasIt < rightHasIt;
+	} );
 
 	return vector;
 }

@@ -1726,7 +1726,10 @@ solution "eepp"
 		language "C++"
 		files { "src/tools/ecode/**.cpp" }
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
-		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static", "gumbo-parser-static" }
+		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static" }
+		if os.is("windows") and is_vs() then
+			links { "gumbo-parser-static" }
+		end
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }
 		end

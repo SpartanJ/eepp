@@ -162,11 +162,16 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["pre"] = UIRichText::NewPre;
 		registeredWidget["img"] = [] { return UIImage::NewWithTag( "img" ); };
 		registeredWidget["input"] = UITextInput::New;
+		registeredWidget["header"] = [] { return UIRichText::NewWithTag( "header" ); };
 		registeredWidget["article"] = [] { return UIRichText::NewWithTag( "article" ); };
+		registeredWidget["footer"] = [] { return UIRichText::NewWithTag( "footer" ); };
+		registeredWidget["main"] = [] { return UIRichText::NewWithTag( "main" ); };
+		registeredWidget["nav"] = [] { return UIRichText::NewWithTag( "nav" ); };
 		registeredWidget["center"] = [] { return UIRichText::NewWithTag( "center" ); };
 		registeredWidget["html"] = [] { return UIRichText::NewWithTag( "html" ); };
 		registeredWidget["head"] = [] { return UIWidget::NewWithTag( "head" ); };
 		registeredWidget["body"] = [] { return UIRichText::NewWithTag( "body" ); };
+		registeredWidget["form"] = [] { return UIRichText::NewWithTag( "form" ); };
 		registeredWidget["table"] = UIHTMLTable::New;
 		registeredWidget["tr"] = UIHTMLTableRow::New;
 		registeredWidget["thead"] = UIHTMLTableHead::New;
@@ -182,6 +187,9 @@ void UIWidgetCreator::createBaseWidgetList() {
 UIWidget* UIWidgetCreator::createFromName( const std::string& widgetName ) {
 	createBaseWidgetList();
 
+	if ( widgetName.empty() )
+		return nullptr;
+
 	std::string lwidgetName( String::toLower( widgetName ) );
 
 	if ( registeredWidget.find( lwidgetName ) != registeredWidget.end() ) {
@@ -192,7 +200,9 @@ UIWidget* UIWidgetCreator::createFromName( const std::string& widgetName ) {
 		return widgetCallback[lwidgetName]( lwidgetName );
 	}
 
-	return NULL;
+	eePRINTL( "UIWidgetCreator::createFromName: \"%s\" not found", widgetName.c_str() );
+
+	return nullptr;
 }
 
 void UIWidgetCreator::addCustomWidgetCallback( const std::string& widgetName,

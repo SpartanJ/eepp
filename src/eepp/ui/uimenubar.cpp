@@ -4,6 +4,7 @@
 #include <eepp/ui/uimenubar.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
+
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
@@ -15,6 +16,8 @@ UIMenuBar* UIMenuBar::New() {
 
 UIMenuBar::UIMenuBar() :
 	UIWidget( "menubar" ), mMenuHeight( 0 ), mCurrentMenu( nullptr ), mWaitingUp( nullptr ) {
+	mFlags |= UI_LOADS_ITS_CHILDREN;
+
 	if ( !( mFlags & UI_ANCHOR_RIGHT ) )
 		mFlags |= UI_ANCHOR_RIGHT;
 

@@ -921,7 +921,7 @@ UTEST( UIRichText, MarginsTest ) {
 	ASSERT_TRUE( d2 != nullptr );
 
 	sceneNode->update( Time::Zero );
-	
+
 	// Check the layout position of the first div
 	Vector2f pos1 = d1->getPixelsPosition();
 	// margin left is 40px, top is 10px, so position inside richtext should be (40, 10)
@@ -933,7 +933,7 @@ UTEST( UIRichText, MarginsTest ) {
 	Vector2f pos2 = d2->getPixelsPosition();
 	// The widgets flow inline (horizontally) since total width < 800.
 	// d1 footprint width: 40 (left) + 50 (width) + 20 (right) = 110.
-	// d2 left margin: 5. 
+	// d2 left margin: 5.
 	// Therefore d2 x position = 110 + 5 = 115.
 	// Line height is determined by max footprint height.
 	// d1 footprint height: 10 + 50 + 30 = 90.
@@ -954,3 +954,71 @@ UTEST( UIRichText, MarginsTest ) {
 	eeDelete( sceneNode );
 	Engine::destroySingleton();
 }
+
+UTEST( UIRichText, ForcedLineBreak ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "BR Test", WindowStyle::Default,
+													  WindowBackend::Default, 32, {}, 1, false,
+													  true ) );
+
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	String xml = R"xml(<richtext id="rt">Line 1<br/>Line 2</richtext>)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+	UIRichText* rt = sceneNode->find<UIRichText>( "rt" );
+	ASSERT_TRUE( rt != nullptr );
+
+	sceneNode->update( Time::Zero );
+
+	const auto& richText = rt->getRichText();
+	EXPECT_EQ( richText.getLines().size(), (size_t)3 );
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
+UTEST( UIRichText, CustomBRHeight ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "BR Test", WindowStyle::Default,
+													  WindowBackend::Default, 32, {}, 1, false,
+													  true ) );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	String xml = R"xml(<richtext id="rt">Line 1<br font-size="50px"/>Line 2</richtext>)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+	UIRichText* rt = sceneNode->find<UIRichText>( "rt" );
+	ASSERT_TRUE( rt != nullptr );
+
+	sceneNode->update( Time::Zero );
+
+	const auto& richText = rt->getRichText();
+	const auto& lines = richText.getLines();
+	EXPECT_EQ( lines.size(), (size_t)3 );
+
+	if ( lines.size() >= 2 ) {
+		EXPECT_GT( lines[0].height, lines[1].height );
+		EXPECT_GT( lines[2].height, 0.f );
+	}
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
+

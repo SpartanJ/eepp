@@ -14,6 +14,23 @@
 
 namespace EE { namespace UI {
 
+class UILineBreak : public UIRichText {
+  public:
+	static UILineBreak* New() { return eeNew( UILineBreak, () ); }
+
+	UILineBreak() : UIRichText( "br " ) {}
+
+	virtual Uint32 getType() const { return UI_TYPE_BR; }
+
+	bool isType( const Uint32& type ) const {
+		return UILineBreak::getType() == type ? true : UINode::isType( type );
+	}
+};
+
+UIRichText* UIRichText::NewBr() {
+	return UILineBreak::New();
+};
+
 UIRichText* UIRichText::New() {
 	return eeNew( UIRichText, () );
 }
@@ -485,6 +502,9 @@ void UIRichText::rebuildRichText() {
 				}
 				spanChild = spanChild->getNextNode();
 			}
+		} else if ( widget->isType( UI_TYPE_BR ) ) {
+			mRichText.addSpan( "\n",
+							   widget->asType<UILineBreak>()->getRichText().getFontStyleConfig() );
 		} else {
 			Rectf margin = widget->getLayoutPixelsMargin();
 
@@ -613,6 +633,15 @@ void UIRichText::positionChildren() {
 				hitBoxes.clear();
 			}
 
+		} else if ( widget->isType( UI_TYPE_BR ) ) {
+			curCharIdx += 1;
+			Vector2f pos;
+			if ( widget->getPrevNode() && widget->getPrevNode()->isWidget() ) {
+				pos = widget->getPrevNode()->asType<UIWidget>()->getPixelsPosition();
+				pos.y += widget->getPrevNode()->getPixelsSize().getHeight();
+			}
+			widget->setPixelsPosition( pos );
+			widget->setPixelsSize( { mSize.getWidth(), 0 } );
 		} else {
 			curCharIdx += 1;
 			const auto* span = getNextCustomSpan();
