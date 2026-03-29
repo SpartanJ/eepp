@@ -3,9 +3,80 @@
 #include <eepp/ui/doc/foldrangeservice.hpp>
 #include <eepp/ui/doc/textdocument.hpp>
 
+#include <gumbo-parser/gumbo.h>
+
 #include <stack>
 
 namespace EE { namespace UI { namespace Doc {
+
+static void walkGumboASTForFolding( GumboNode* node, std::vector<TextRange>& regions ) {
+	if ( node->type != GUMBO_NODE_ELEMENT && node->type != GUMBO_NODE_DOCUMENT ) {
+		return;
+	}
+
+	if ( node->type == GUMBO_NODE_ELEMENT ) {
+		// 1. Check if both the opening and closing tags physically exist in the source text.
+		// Gumbo will sometimes synthesize missing tags (like <html> or <tbody>) to fix bad HTML.
+		// We only want to fold tags the user actually typed.
+		if ( node->v.element.original_tag.length > 0 &&
+			 node->v.element.original_end_tag.length > 0 ) {
+
+			// 2. Gumbo's source positions are 1-indexed. eepp TextPositions are 0-indexed.
+			Int64 startLine = static_cast<Int64>( node->v.element.start_pos.line ) - 1;
+			Int64 endLine = static_cast<Int64>( node->v.element.end_pos.line ) - 1;
+
+			// 3. Only create a fold region if the tag spans multiple lines.
+			if ( endLine > startLine ) {
+				// We create a range starting from the `<` of the opening tag
+				// to the `<` of the closing tag.
+				Int64 startCol = static_cast<Int64>( node->v.element.start_pos.column ) - 1;
+				Int64 endCol = static_cast<Int64>( node->v.element.end_pos.column ) - 1;
+
+				regions.emplace_back( TextPosition( startLine, startCol ),
+									  TextPosition( endLine, endCol ) );
+			}
+		}
+
+		// 4. Recursively walk children
+		GumboVector* children = &node->v.element.children;
+		for ( unsigned int i = 0; i < children->length; ++i ) {
+			walkGumboASTForFolding( static_cast<GumboNode*>( children->data[i] ), regions );
+		}
+	} else if ( node->type == GUMBO_NODE_DOCUMENT ) {
+		// Root document node, just process children
+		GumboVector* children = &node->v.document.children;
+		for ( unsigned int i = 0; i < children->length; ++i ) {
+			walkGumboASTForFolding( static_cast<GumboNode*>( children->data[i] ), regions );
+		}
+	}
+}
+
+static std::vector<TextRange> findFoldingRangesTag( TextDocument* doc ) {
+	Clock c;
+	std::vector<TextRange> regions;
+
+	if ( doc->linesCount() <= 2 )
+		return regions;
+
+	// Extract the full document text as a UTF-8 string for Gumbo
+	std::string fullText = doc->toUtf8String();
+	Log::debug( "findFoldingRangesTag for \"%s\"  doc to string took: %s", doc->getFilePath(),
+				c.getElapsedTime().toString() );
+
+	// Parse the text
+	GumboOutput* output = gumbo_parse( fullText.c_str() );
+
+	// Walk the AST and populate the folding regions
+	walkGumboASTForFolding( output->root, regions );
+
+	// Clean up
+	gumbo_destroy_output( &kGumboDefaultOptions, output );
+
+	Log::debug( "findFoldingRangesTag for \"%s\" took %s", doc->getFilePath(),
+				c.getElapsedTime().toString() );
+
+	return regions;
+}
 
 static std::vector<TextRange> findFoldingRangesBraces( TextDocument* doc ) {
 	Clock c;
@@ -117,8 +188,7 @@ static std::vector<TextRange> findFoldingRangesMarkdown( TextDocument* doc ) {
 
 	for ( size_t lineIdx = 0; lineIdx < lineCount; lineIdx++ ) {
 		const String& lineText = doc->line( lineIdx ).getText();
-		String::View trimmed =
-			String::trim( lineText.view() );
+		String::View trimmed = String::trim( lineText.view() );
 
 		if ( inCodeBlock ) {
 			if ( String::startsWith( trimmed, "```" ) ) {
@@ -204,9 +274,7 @@ bool FoldRangeService::canFold() const {
 		return false;
 	if ( mProvider && mProvider->foldingRangeProvider() )
 		return true;
-	auto type = mDoc->getSyntaxDefinition().getFoldRangeType();
-	return type == FoldRangeType::Braces || type == FoldRangeType::Indentation ||
-		   type == FoldRangeType::Markdown;
+	return mDoc->getSyntaxDefinition().getFoldRangeType() != FoldRangeType::Undefined;
 }
 
 void FoldRangeService::findRegions() {
@@ -231,9 +299,13 @@ void FoldRangeService::findRegionsNative() {
 			break;
 		case FoldRangeType::Indentation:
 			setFoldingRegions( findFoldingRangesIndentation( mDoc ) );
+			break;
 		case FoldRangeType::Markdown:
 			setFoldingRegions( findFoldingRangesMarkdown( mDoc ) );
+			break;
 		case FoldRangeType::Tag:
+			setFoldingRegions( findFoldingRangesTag( mDoc ) );
+			break;
 		case FoldRangeType::Undefined:
 			break;
 	}

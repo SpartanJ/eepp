@@ -133,6 +133,14 @@
       "command": "yaml",
       "type": "native",
       "url": "#native"
+    },
+    {
+      "language": "html",
+      "file_patterns": ["%.[mpx]?html?$", "%.handlebars$"],
+      "warning_pattern": "",
+      "command": "html",
+      "type": "native",
+      "url": "#native"
     }
   ]
 }

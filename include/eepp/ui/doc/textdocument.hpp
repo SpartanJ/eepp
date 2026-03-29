@@ -735,6 +735,10 @@ class EE_API TextDocument {
 
 	void clearIndentation();
 
+	String toString();
+
+	std::string toUtf8String();
+
   protected:
 	friend class TextUndoStack;
 	friend class FoldRangeService;

@@ -577,13 +577,8 @@ void Text::create( Font* font, const String& text, Color FontColor, Color FontSh
 	invalidate();
 }
 
-void Text::onNewString() {
-	mColorsNeedUpdate = true;
-	mGeometryNeedUpdate = true;
-	mCachedWidthNeedUpdate = true;
+void Text::checkColorEmojis() {
 	mContainsColorEmoji = false;
-	mVisualLinesNeedUpdate = true;
-	mTextHints = mString.getTextHints();
 	if ( mFontStyleConfig.Font && FontManager::instance()->getColorEmojiFont() != nullptr ) {
 		if ( mFontStyleConfig.Font->getType() == FontType::TTF ) {
 			FontTrueType* fontTrueType = static_cast<FontTrueType*>( mFontStyleConfig.Font );
@@ -591,6 +586,15 @@ void Text::onNewString() {
 				mContainsColorEmoji = Font::containsEmojiCodePoint( mString );
 		}
 	}
+}
+
+void Text::onNewString() {
+	mColorsNeedUpdate = true;
+	mGeometryNeedUpdate = true;
+	mCachedWidthNeedUpdate = true;
+	mVisualLinesNeedUpdate = true;
+	mTextHints = mString.getTextHints();
+	checkColorEmojis();
 }
 
 bool Text::setString( const String::View& string ) {
@@ -630,6 +634,7 @@ void Text::setFont( Font* font ) {
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
 		mVisualLinesNeedUpdate = true;
+		checkColorEmojis();
 	}
 }
 

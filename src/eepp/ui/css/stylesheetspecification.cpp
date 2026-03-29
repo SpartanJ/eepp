@@ -742,7 +742,8 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		auto ltrbSplit = String::split( value, ' ', true );
 
 		if ( ltrbSplit.size() >= 2 ) {
-			for ( size_t i = 0; i < ltrbSplit.size(); i++ )
+			auto max = std::min( propNames.size(), ltrbSplit.size() );
+			for ( size_t i = 0; i < max; i++ )
 				properties.emplace_back( StyleSheetProperty( propNames[i], ltrbSplit[i] ) );
 		} else if ( ltrbSplit.size() == 1 ) {
 			for ( size_t i = 0; i < propNames.size(); i++ )

@@ -604,6 +604,7 @@ function add_static_links()
 			"libwebp-static",
 			"libpng-static",
 			"md4c-static",
+			"gumbo-parser-static",
 	}
 
 	if not _OPTIONS["without-mojoal"] then
@@ -1240,6 +1241,13 @@ workspace "eepp"
 		files { "src/thirdparty/libyaml/**.c" }
 		incdirs { "src/thirdparty/libyaml/include" }
 		build_base_configuration( "libyaml" )
+		target_dir_thirdparty()
+
+	project "gumbo-parser-static"
+		kind "StaticLib"
+		language "C"
+		files { "src/thirdparty/gumbo-parser/**.c" }
+		build_base_configuration( "gumbo-parser" )
 		target_dir_thirdparty()
 
 	project "efsw-static"

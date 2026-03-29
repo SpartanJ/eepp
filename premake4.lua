@@ -762,6 +762,7 @@ function add_static_links()
 			"libwebp-static",
 			"libpng-static",
 			"md4c-static",
+			"gumbo-parser-static",
 	}
 
 	if not _OPTIONS["without-mojoal"] then
@@ -1335,6 +1336,13 @@ solution "eepp"
 		files { "src/thirdparty/libyaml/**.c" }
 		includedirs { "src/thirdparty/libyaml/include" }
 		build_base_configuration( "libyaml" )
+
+	project "gumbo-parser-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/gumbo-parser/**.c" }
+		build_base_configuration( "gumbo-parser" )
 
 	project "efsw-static"
 		kind "StaticLib"

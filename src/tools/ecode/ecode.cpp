@@ -3049,8 +3049,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			}
 
 			if ( otherEditor ) {
-				loadDiffFromStrings( editor->getDocument().getText().toUtf8(),
-									 otherEditor->getDocument().getText().toUtf8() );
+				loadDiffFromStrings( editor->getDocument().toUtf8String(),
+									 otherEditor->getDocument().toUtf8String() );
 			}
 		}
 	} );
@@ -3199,8 +3199,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			editor->getDocument().setCommand(
 				"show-image-preview", [this]( TextDocument::Client* client ) {
 					loadImageFromMedium(
-						static_cast<UICodeEditor*>( client )->getDocument().getText().toUtf8(),
-						true, true );
+						static_cast<UICodeEditor*>( client )->getDocument().toUtf8String(), true,
+						true );
 				} );
 			editor->on( Event::OnCreateContextMenu, [this]( const Event* event ) {
 				auto cevent = static_cast<const ContextMenuEvent*>( event );
@@ -3238,7 +3238,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 										 !SceneManager::instance()->isShuttingDown() &&
 										 App::instance()->getSplitter()->editorExists( editor ) ) {
 										mdView->loadFromString(
-											editor->getDocument().getText().toUtf8() );
+											editor->getDocument().toUtf8String() );
 									}
 								},
 								Milliseconds( 400 ), (Action::UniqueID)mdView );
@@ -3251,7 +3251,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 						}
 					} );
 
-					mdView->loadFromString( doc->getText().toUtf8() );
+					mdView->loadFromString( doc->toUtf8String() );
 					auto title =
 						i18n( "markdown_live_preview_ellipsis", "Markdown Live Preview:" ) + " " +
 						doc->getFilename();
@@ -3270,7 +3270,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 						if ( !editor->isDirty() ) {
 							loadDiffFromPath( editor->getDocument().getFilePath() );
 						} else {
-							loadDiffFromMemory( editor->getDocument().getText().toUtf8(),
+							loadDiffFromMemory( editor->getDocument().toUtf8String(),
 												editor->getDocument().getFilePath() );
 						}
 					}
@@ -3288,8 +3288,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 					if ( editor->isDirty() ) {
 						std::string otherStr;
 						if ( FileSystem::fileGet( files[0], otherStr ) ) {
-							loadDiffFromStrings( editor->getDocument().getText().toUtf8(),
-												 otherStr );
+							loadDiffFromStrings( editor->getDocument().toUtf8String(), otherStr );
 						}
 					} else {
 						loadDiffFromPaths( editor->getDocument().getFilePath(), files[0] );
@@ -3301,7 +3300,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		editor->getDocument().setCommand(
 			"compare-with-clipboard", [this]( TextDocument::Client* client ) {
 				auto editor = static_cast<UICodeEditor*>( client );
-				loadDiffFromStrings( editor->getDocument().getText().toUtf8(),
+				loadDiffFromStrings( editor->getDocument().toUtf8String(),
 									 getWindow()->getClipboard()->getText() );
 			} );
 

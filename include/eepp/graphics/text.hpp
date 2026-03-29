@@ -507,6 +507,8 @@ class EE_API Text {
 									   std::optional<Float> tabOffset, Uint32 textHints,
 									   TextDirection direction, LineWrapMode lineWrapMode,
 									   Float maxWrapWidth, const Vector2f& initialOffset = {} );
+
+	void checkColorEmojis();
 };
 
 }} // namespace EE::Graphics

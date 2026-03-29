@@ -714,7 +714,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 			return;
 
 		addChat( LLMChat::stringToRole( mChatUserRole ),
-				 mChatInput->getDocument().getText().toUtf8() );
+				 mChatInput->getDocument().toUtf8String() );
 		mChatInput->getDocument().selectAll();
 		mChatInput->getDocument().textInput( String{} );
 		mChatInput->setFocus();
@@ -1985,7 +1985,7 @@ void LLMChatUI::sendAgentPrompt() {
 			req.prompt = { { { "type", "text" }, { "text", "" } } };
 		} else {
 			auto* editor = editorNode->asType<UICodeEditor>();
-			std::string text = editor->getDocument().getText().toUtf8();
+			std::string text = editor->getDocument().toUtf8String();
 
 			bool isSlashCommand = false;
 			bool showHelp = false;
@@ -2207,7 +2207,7 @@ nlohmann::json LLMChatUI::chatToJson( bool forRequest ) {
 		UICodeEditor* codeEditor = editorNode->asType<UICodeEditor>();
 		std::string role = LLMChat::roleToString(
 			static_cast<LLMChat::Role>( roleDDL->getListBox()->getItemSelectedIndex() ) );
-		auto text = codeEditor->getDocument().getText().toUtf8();
+		auto text = codeEditor->getDocument().toUtf8String();
 
 		if ( text.empty() )
 			continue;
@@ -2247,7 +2247,7 @@ nlohmann::json LLMChatUI::serialize() {
 	j["provider"] = mCurModel.provider;
 	j["timestamp"] = mTimestamp;
 	j["summary"] = mSummary;
-	std::string inputText( mChatInput->getDocument().getText().toUtf8() );
+	std::string inputText( mChatInput->getDocument().toUtf8String() );
 	j["input"] = std::move( inputText );
 	j["locked"] = mChatLocked;
 	j["agent_mode"] = mIsAgentMode;
@@ -2903,7 +2903,7 @@ UIWidget* LLMChatUI::addChatUI( LLMChat::Role role ) {
 			chat->toPosition( chat->getNodeIndex() + 1 );
 	} );
 	chat->findByClass( "copy_contents" )->onClick( [this, editor]( auto ) {
-		auto text = editor->getDocument().getText().toUtf8();
+		auto text = editor->getDocument().toUtf8String();
 		if ( text.empty() )
 			return;
 		replaceFileLinksToContents( text );

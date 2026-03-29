@@ -1043,8 +1043,9 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 	}
 
 	size_t lastLine = linesCount() - 1;
+	std::string text;
 	for ( size_t i = 0; i <= lastLine; i++ ) {
-		std::string text( getLineTextUtf8( i ) );
+		text = getLineTextUtf8( i );
 
 		if ( !keepUndoRedoStatus && mTrimTrailingWhitespaces && text.size() > 1 &&
 			 whitespaces.find( text[text.size() - 2] ) != std::string::npos ) {
@@ -1357,18 +1358,47 @@ std::string TextDocument::getHashHexString() const {
 }
 
 String TextDocument::getText( const TextRange& range ) const {
-	TextRange nrange = sanitizeRange( range.normalized() );
 	Lock l( mLinesMutex );
-	if ( nrange.start().line() == nrange.end().line() ) {
-		return mLines[nrange.start().line()].substr(
-			nrange.start().column(), nrange.end().column() - nrange.start().column() );
+	Lock l2( *mDocumentMutex );
+
+	TextRange nrange = sanitizeRange( range.normalized() );
+	if ( !nrange.hasSelection() )
+		return String();
+
+	Int64 startLine = nrange.start().line();
+	Int64 endLine = nrange.end().line();
+	Int64 startCol = nrange.start().column();
+	Int64 endCol = nrange.end().column();
+
+	std::size_t totalSize = 0;
+	if ( startLine == endLine ) {
+		totalSize = endCol - startCol;
+	} else {
+		totalSize += ( mLines[startLine].size() - startCol );
+		for ( Int64 i = startLine + 1; i < endLine; ++i ) {
+			totalSize += mLines[i].size();
+		}
+		totalSize += endCol;
 	}
-	std::vector<String> lines = { mLines[nrange.start().line()].substr( nrange.start().column() ) };
-	for ( auto i = nrange.start().line() + 1; i <= nrange.end().line() - 1; i++ ) {
-		lines.emplace_back( mLines[i].getText() );
+
+	String result;
+	result.reserve( totalSize );
+
+	if ( startLine == endLine ) {
+		result.append( mLines[startLine].getText(), startCol, endCol - startCol );
+	} else {
+		result.append( mLines[startLine].getText(), startCol, mLines[startLine].size() - startCol );
+
+		for ( Int64 i = startLine + 1; i < endLine; ++i ) {
+			result.append( mLines[i].getText() );
+		}
+
+		if ( endCol > 0 ) {
+			result.append( mLines[endLine].getText(), 0, endCol );
+		}
 	}
-	lines.emplace_back( mLines[nrange.end().line()].substr( 0, nrange.end().column() ) );
-	return String::join( lines, -1 );
+
+	return result;
 }
 
 String TextDocument::getText() const {
@@ -1386,6 +1416,38 @@ String TextDocument::getAllSelectedText() const {
 		}
 	}
 	return text;
+}
+
+String TextDocument::toString() {
+	Lock l( mLinesMutex );
+	Lock l2( *mDocumentMutex );
+	String stream;
+	std::size_t totalSize = 0;
+	for ( const auto& line : mLines )
+		totalSize += line.size();
+	stream.reserve( totalSize );
+	for ( const auto& line : mLines )
+		stream.append( line.getText() );
+	return stream;
+}
+
+std::string TextDocument::toUtf8String() {
+	Lock l( mLinesMutex );
+	Lock l2( *mDocumentMutex );
+	std::string stream;
+	std::size_t totalCodepoints = 0;
+	for ( const auto& line : mLines )
+		totalCodepoints += line.size();
+
+	// Heuristic reserve: Codepoints + 25% to account for UTF-8 expansion
+	stream.reserve( totalCodepoints + ( totalCodepoints >> 2 ) );
+
+	for ( const auto& line : mLines ) {
+		const String& text = line.getText();
+		// Low-level conversion directly into the stream buffer
+		Utf32::toUtf8( text.begin(), text.end(), std::back_inserter( stream ) );
+	}
+	return stream;
 }
 
 std::vector<std::string> TextDocument::getCommandList() const {
