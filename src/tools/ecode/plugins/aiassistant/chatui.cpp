@@ -612,10 +612,73 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	mChatsList = findByClass( "llm_chats" );
 	mModelBtn = findByClass<UIPushButton>( "model_ui" );
 	mModelBtn->onClick( [this]( auto ) { execute( "ai-select-model" ); } );
+	mModelBtn->on( Event::MouseUp, [this]( const Event* event ) {
+		const auto mouseEvent = event->asMouseEvent();
+		if ( !( mouseEvent->getFlags() & ( EE_BUTTON_WUMASK | EE_BUTTON_WDMASK ) ) )
+			return;
+
+		if ( nullptr == mLocateModelTable->getModel() ) {
+			loadSelectModel();
+			auto index = static_cast<LLMModelsModel*>( mLocateModelTable->getModel() )
+							 ->getFromHash( mCurModel.hash );
+			mLocateModelTable->setSelection( index );
+			selectModel( mCurModel );
+		}
+
+		if ( mouseEvent->getFlags() & EE_BUTTON_WUMASK ) {
+			mLocateModelTable->moveSelection( -1 );
+		} else if ( mouseEvent->getFlags() & EE_BUTTON_WDMASK ) {
+			mLocateModelTable->moveSelection( 1 );
+		}
+
+		Variant vHash( mLocateModelTable->getModel()->data(
+			mLocateModelTable->getModel()->index( mLocateModelTable->getSelection().first().row(),
+												  LLMModelsModel::Hash ),
+			ModelRole::Display ) );
+
+		selectModel( getModel( vHash.asUint64() ) );
+	} );
+
 	mAgentBtn = findByClass<UIPushButton>( "agent_ui" );
 	mAgentBtn->onClick( [this]( auto ) { execute( "ai-select-agent" ); } );
 	mAgentConfigBtn = findByClass<UIPushButton>( "agent_config_ui" );
 	mAgentConfigBtn->onClick( [this]( auto ) { showAgentConfigWindow(); } );
+	mAgentBtn->on( Event::MouseUp, [this]( const Event* event ) {
+		const auto mouseEvent = event->asMouseEvent();
+		if ( !( mouseEvent->getFlags() & ( EE_BUTTON_WUMASK | EE_BUTTON_WDMASK ) ) )
+			return;
+
+		if ( nullptr == mLocateAgentTable->getModel() ) {
+			loadSelectAgent();
+			auto index = static_cast<ACPAgentsModel*>( mLocateAgentTable->getModel() )
+							 ->getFromName( mCurAgent );
+			mLocateAgentTable->setSelection( index );
+			selectModel( mCurModel );
+		}
+
+		if ( mouseEvent->getFlags() & EE_BUTTON_WUMASK ) {
+			mLocateAgentTable->moveSelection( -1 );
+		} else if ( mouseEvent->getFlags() & EE_BUTTON_WDMASK ) {
+			mLocateAgentTable->moveSelection( 1 );
+		}
+
+		Variant vName( mLocateAgentTable->getModel()->data(
+			mLocateAgentTable->getModel()->index( mLocateAgentTable->getSelection().first().row(),
+												  ACPAgentsModel::Name ),
+			ModelRole::Display ) );
+
+		if ( vName.isValid() ) {
+			std::string name( vName.toString() );
+			if ( name != mCurAgent ) {
+				selectAgent( name );
+				if ( mAgentSession ) {
+					mAgentSession->stop();
+					mAgentSession.reset();
+				}
+				updateTabTitle();
+			}
+		}
+	} );
 
 	mChatAgentMode = find<UISelectButton>( "llm_agent_mode" );
 	mChatAgentMode->on( Event::OnValueChange, [this]( auto ) {
@@ -713,8 +776,7 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		if ( mChatInput->getDocument().isEmpty() )
 			return;
 
-		addChat( LLMChat::stringToRole( mChatUserRole ),
-				 mChatInput->getDocument().toUtf8String() );
+		addChat( LLMChat::stringToRole( mChatUserRole ), mChatInput->getDocument().toUtf8String() );
 		mChatInput->getDocument().selectAll();
 		mChatInput->getDocument().textInput( String{} );
 		mChatInput->setFocus();

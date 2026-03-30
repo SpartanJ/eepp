@@ -763,13 +763,9 @@ void UISceneNode::invalidateStyle( UIWidget* node, bool tryReinsert ) {
 	if ( node->isClosing() )
 		return;
 
-	// Already invalidated?
-	if ( mDirtyStyle.count( node ) > 0 ) {
-		if ( !tryReinsert )
-			return;
-		else
-			mDirtyStyle.erase( node );
-	}
+	bool alreadyExists = ( mDirtyStyle.count( node ) > 0 );
+	if ( alreadyExists && !tryReinsert )
+		return;
 
 	// Any parent dirty?
 	Node* parent = node->getParent();
@@ -779,7 +775,11 @@ void UISceneNode::invalidateStyle( UIWidget* node, bool tryReinsert ) {
 		parent = parent->getParent();
 	}
 
-	std::vector<UIWidget*> eraseList;
+	// Now that we know we aren't early-outing, handle the reinsertion erase
+	if ( alreadyExists && tryReinsert )
+		mDirtyStyle.erase( node );
+
+	SmallVector<UIWidget*> eraseList;
 
 	// Any child in list? remove it
 	for ( auto widget : mDirtyStyle )
@@ -815,15 +815,17 @@ void UISceneNode::invalidateStyleState( UIWidget* node, bool disableCSSAnimation
 		parent = parent->getParent();
 	}
 
-	std::vector<UIWidget*> eraseList;
+	SmallVector<UIWidget*> eraseList;
 
 	// Any child in list? remove it
 	for ( auto widget : mDirtyStyleState )
 		if ( NULL == widget || node->isParentOf( widget ) )
 			eraseList.push_back( widget );
 
-	for ( auto widget : eraseList )
+	for ( auto widget : eraseList ) {
 		mDirtyStyleState.erase( widget );
+		mDirtyStyleStateCSSAnimations.erase( widget );
+	}
 
 	mDirtyStyleState.insert( node );
 	mDirtyStyleStateCSSAnimations[node] = disableCSSAnimations;
@@ -838,23 +840,57 @@ void UISceneNode::invalidateLayout( UILayout* node ) {
 	if ( mDirtyLayouts.count( node ) > 0 )
 		return;
 
-	if ( node->getParent()->isLayout() ) {
-		for ( auto& dirtyNode : mDirtyLayouts ) {
-			if ( NULL != dirtyNode && dirtyNode == node->getParent() ) {
-				return;
-			}
+	// 1. Walk UP the tree.
+	// If any ancestor is already dirty AND the path to it is entirely layouts,
+	// we can early-out because that ancestor will naturally update this node.
+	Node* ancestorIt = node->getParent();
+	while ( ancestorIt != nullptr ) {
+		if ( !ancestorIt->isLayout() ) {
+			// The invalidation path is broken by a non-layout node.
+			// Any dirty layouts above this won't automatically trickle down to 'node'.
+			break;
 		}
 
-		std::vector<UILayout*> eraseList;
+		if ( mDirtyLayouts.count( ancestorIt->asType<UILayout>() ) > 0 )
+			return; // A valid ancestor is already dirty! Skip adding this node.
 
-		for ( auto layout : mDirtyLayouts )
-			if ( NULL == layout ||
-				 ( node->isParentOf( layout ) && layout->getParent()->isLayout() ) )
-				eraseList.push_back( layout );
-
-		for ( auto layout : eraseList )
-			mDirtyLayouts.erase( layout );
+		ancestorIt = ancestorIt->getParent();
 	}
+
+	// 2. Walk DOWN the dirty list.
+	// Remove any already-dirty layouts that will be naturally updated by THIS node.
+	SmallVector<UILayout*> eraseList;
+
+	for ( auto layout : mDirtyLayouts ) {
+		if ( NULL == layout ) {
+			eraseList.push_back( layout );
+			continue;
+		}
+
+		// Traverse up from 'layout' to 'node'.
+		Node* it = layout->getParent();
+		bool isValidPath = false;
+
+		while ( it != nullptr ) {
+			if ( it == node ) {
+				// We reached 'node', and every node in between was a layout!
+				isValidPath = true;
+				break;
+			}
+			if ( !it->isLayout() ) {
+				// The invalidation path is broken, or 'node' isn't an ancestor.
+				break;
+			}
+			it = it->getParent();
+		}
+
+		if ( isValidPath )
+			eraseList.push_back( layout );
+	}
+
+	// 3. Clean up and insert
+	for ( auto layout : eraseList )
+		mDirtyLayouts.erase( layout );
 
 	mDirtyLayouts.insert( node );
 }

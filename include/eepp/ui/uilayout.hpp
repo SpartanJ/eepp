@@ -21,6 +21,8 @@ class EE_API UILayout : public UIWidget {
 
 	bool isPacking() const { return mPacking; }
 
+	bool isLayoutDirty() const { return mDirtyLayout; }
+
   protected:
 	friend class UISceneNode;
 
