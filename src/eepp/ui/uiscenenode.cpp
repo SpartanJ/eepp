@@ -1138,7 +1138,36 @@ URI UISceneNode::solveRelativePath( URI uri ) {
 	if ( mURI.empty() || !uri.getScheme().empty() )
 		return uri;
 
-	// 2. Inherit Scheme and Authority
+	std::string targetPath = uri.getPath();
+
+	if ( targetPath.length() >= 2 && targetPath[0] == '/' && targetPath[1] == '/' ) {
+		// Find where the authority ends and the real path begins
+		// (looking for the first slash AFTER the initial "//")
+		size_t pathStart = targetPath.find( '/', 2 );
+
+		if ( pathStart != std::string::npos ) {
+			uri.setAuthority( targetPath.substr( 2, pathStart - 2 ) );
+			uri.setPath( targetPath.substr( pathStart ) ); // Keeps the leading '/'
+		} else {
+			// Edge case: "//www.domain.com" with no trailing slash or path
+			uri.setAuthority( targetPath.substr( 2 ) );
+			uri.setPath( "/" );
+		}
+
+		// Set the scheme. It's best practice to inherit the base scheme if it's a web protocol,
+		// but default to "https" if the base is local or undefined.
+		std::string baseScheme = mURI.getScheme();
+		if ( baseScheme == "http" || baseScheme == "https" ) {
+			uri.setScheme( baseScheme );
+		} else {
+			uri.setScheme( "https" );
+		}
+
+		// It's now a fully absolute URL, so we can return it immediately
+		return uri;
+	}
+
+	// 2. Inherit Scheme and Authority for standard relative paths
 	if ( uri.getScheme().empty() ) {
 		// Default to "file" if the base also lacks a scheme
 		uri.setScheme( mURI.getScheme().empty() ? "file" : mURI.getScheme() );
@@ -1149,27 +1178,21 @@ URI UISceneNode::solveRelativePath( URI uri ) {
 	}
 
 	// 3. Safely Resolve the Path
-	std::string targetPath = uri.getPath();
 	std::string basePath = mURI.getPath();
 
 	if ( !targetPath.empty() && targetPath.front() == '/' ) {
 		// CASE A: Root-relative path (e.g., "/news.css")
-		// It ignores the base directory entirely and attaches to the root.
 		uri.setPath( targetPath );
 	} else {
 		// CASE B: Directory-relative path (e.g., "news.css" or "assets/style.css")
-		// We must strip the filename from the base path (everything after the last '/')
 		size_t lastSlashPos = basePath.find_last_of( '/' );
 
 		if ( lastSlashPos != std::string::npos ) {
-			// Keep everything up to and including the last '/'
 			basePath = basePath.substr( 0, lastSlashPos + 1 );
 		} else {
-			// If there's no slash at all in the base path, act as root if there's an authority
 			basePath = mURI.getAuthority().empty() ? "" : "/";
 		}
 
-		// Now it's safe to concatenate
 		uri.setPath( basePath + targetPath );
 	}
 
