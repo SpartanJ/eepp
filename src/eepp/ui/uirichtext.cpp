@@ -476,14 +476,14 @@ void UIRichText::onAlphaChange() {
 	UILayout::onAlphaChange();
 }
 
-void UIRichText::rebuildRichText() {
+void UIRichText::rebuildRichText( IntrinsicMode mode ) {
 	mRichText.clear();
 
 	// Calculate maximum layout width for the RichText block
 	Float maxWidth = mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right;
 	if ( maxWidth < 0 )
 		maxWidth = 0;
-	if ( mWidthPolicy == SizePolicy::WrapContent ) {
+	if ( mWidthPolicy == SizePolicy::WrapContent || mode != IntrinsicMode::None ) {
 		mRichText.setMaxWidth( 0.f ); // Let it grow unbounded to query text bounds later
 	} else {
 		mRichText.setMaxWidth( maxWidth );
@@ -508,19 +508,29 @@ void UIRichText::rebuildRichText() {
 		} else {
 			Rectf margin = widget->getLayoutPixelsMargin();
 
-			if ( widget->getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
-				if ( mSize.getWidth() != 0 ) {
-					widget->setPixelsSize( mSize.getWidth() - margin.Left - margin.Right,
-										   widget->getPixelsSize().getHeight() );
-				} else {
+			if ( mode == IntrinsicMode::None ) {
+				if ( widget->getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
+					if ( mSize.getWidth() != 0 ) {
+						widget->setPixelsSize( mSize.getWidth() - margin.Left - margin.Right,
+											   widget->getPixelsSize().getHeight() );
+					} else {
+						onAutoSizeChild( widget );
+					}
+				} else if ( widget->getLayoutWidthPolicy() == SizePolicy::WrapContent ||
+							widget->getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
 					onAutoSizeChild( widget );
 				}
-			} else if ( widget->getLayoutWidthPolicy() == SizePolicy::WrapContent ||
-						widget->getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
-				onAutoSizeChild( widget );
 			}
 
-			Sizef size = widget->getPixelsSize();
+			Sizef size;
+			if ( mode == IntrinsicMode::Min ) {
+				size = Sizef( widget->getMinIntrinsicWidth(), 0 );
+			} else if ( mode == IntrinsicMode::Max ) {
+				size = Sizef( widget->getMaxIntrinsicWidth(), 0 );
+			} else {
+				size = widget->getPixelsSize();
+			}
+
 			mRichText.addCustomSize( Sizef( size.getWidth() + margin.Left + margin.Right,
 											size.getHeight() + margin.Top + margin.Bottom ) );
 		}
@@ -712,9 +722,51 @@ void UIRichText::updateLayout() {
 	mResizedCount = 0;
 }
 
+Float UIRichText::getMinIntrinsicWidth() const {
+	if ( mWidthPolicy == SizePolicy::Fixed ) {
+		return getPropertyWidth();
+	}
+
+	if ( mIntrinsicWidthsDirty ) {
+		const_cast<UIRichText*>( this )->rebuildRichText( IntrinsicMode::Min );
+		mMinIntrinsicWidth = const_cast<RichText&>( mRichText ).getMinIntrinsicWidth() +
+							 mPaddingPx.Left + mPaddingPx.Right;
+		const_cast<UIRichText*>( this )->rebuildRichText( IntrinsicMode::Max );
+		mMaxIntrinsicWidth = const_cast<RichText&>( mRichText ).getMaxIntrinsicWidth() +
+							 mPaddingPx.Left + mPaddingPx.Right;
+		// We need to rebuild the rich text with the original state, otherwise layout will be broken
+		const_cast<UIRichText*>( this )->rebuildRichText( IntrinsicMode::None );
+		mIntrinsicWidthsDirty = false;
+	}
+	return mMinIntrinsicWidth;
+}
+
+Float UIRichText::getMaxIntrinsicWidth() const {
+	if ( mWidthPolicy == SizePolicy::Fixed ) {
+		return getPropertyWidth();
+	}
+
+	if ( mIntrinsicWidthsDirty ) {
+		const_cast<UIRichText*>( this )->rebuildRichText( IntrinsicMode::Min );
+		mMinIntrinsicWidth = const_cast<RichText&>( mRichText ).getMinIntrinsicWidth() +
+							 mPaddingPx.Left + mPaddingPx.Right;
+		const_cast<UIRichText*>( this )->rebuildRichText( IntrinsicMode::Max );
+		mMaxIntrinsicWidth = const_cast<RichText&>( mRichText ).getMaxIntrinsicWidth() +
+							 mPaddingPx.Left + mPaddingPx.Right;
+		// We need to rebuild the rich text with the original state, otherwise layout will be broken
+		const_cast<UIRichText*>( this )->rebuildRichText( IntrinsicMode::None );
+		mIntrinsicWidthsDirty = false;
+	}
+	return mMaxIntrinsicWidth;
+}
+
 Uint32 UIRichText::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::LayoutAttributeChange: {
+			if ( Msg->getSender() != this && !mPacking ) {
+				mIntrinsicWidthsDirty = true;
+				notifyLayoutAttrChangeParent();
+			}
 			tryUpdateLayout();
 			return 1;
 		}

@@ -1638,7 +1638,7 @@ Float UINode::lengthFromValue( const std::string& value,
 }
 
 Float UINode::lengthFromValue( const CSS::StyleSheetProperty& property,
-							   const Float& defaultValue ) {
+							   const Float& defaultValue ) const {
 	return lengthFromValue( property.getValue(),
 							property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
 							property.getIndex() );

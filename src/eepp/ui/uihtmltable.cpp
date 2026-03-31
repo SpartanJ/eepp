@@ -22,6 +22,195 @@ bool UIHTMLTable::isType( const Uint32& type ) const {
 	return UIHTMLTable::getType() == type || UILayout::isType( type );
 }
 
+void UIHTMLTable::computeIntrinsicWidths() const {
+	if ( !mIntrinsicWidthsDirty )
+		return;
+
+	UIHTMLTable* me = const_cast<UIHTMLTable*>( this );
+
+	me->mRows.clear();
+	me->mHead = nullptr;
+	me->mBody = nullptr;
+	me->mFooter = nullptr;
+	me->mCells.clear();
+	me->mRowCellOffsets.clear();
+
+	auto collectRows = [&]( auto&& self, Node* node ) -> void {
+		for ( Node* child = node->getFirstChild(); child; child = child->getNextNode() ) {
+			if ( child->getType() == UI_TYPE_HTML_TABLE_ROW ) {
+				me->mRows.push_back( child->asType<UIHTMLTableRow>() );
+			} else if ( child->getType() != UI_TYPE_HTML_TABLE ) {
+				if ( child->getType() == UI_TYPE_HTML_TABLE_HEAD )
+					me->mHead = child->asType<UIHTMLTableHead>();
+				else if ( child->getType() == UI_TYPE_HTML_TABLE_BODY )
+					me->mBody = child->asType<UIHTMLTableBody>();
+				else if ( child->getType() == UI_TYPE_HTML_TABLE_FOOTER )
+					me->mFooter = child->asType<UIHTMLTableFooter>();
+
+				self( self, child );
+			}
+		}
+	};
+	collectRows( collectRows, me );
+
+	auto getRecursiveSpecifiedWidth = [&]( auto&& self, Node* node ) -> Float {
+		if ( !node->isWidget() )
+			return 0.f;
+		UIWidget* widget = node->asType<UIWidget>();
+		Float spec = 0.f;
+		if ( widget->getLayoutWidthPolicy() == SizePolicy::Fixed )
+			spec = widget->getPropertyWidth();
+		for ( Node* child = node->getFirstChild(); child; child = child->getNextNode() )
+			spec = std::max( spec, self( self, child ) );
+		return spec;
+	};
+
+	if ( mRows.empty() ) {
+		mMinIntrinsicWidth = mMaxIntrinsicWidth = mPaddingPx.Left + mPaddingPx.Right;
+		mIntrinsicWidthsDirty = false;
+		return;
+	}
+
+	me->mRowCellOffsets.push_back( 0 );
+	size_t maxCols = 0;
+	for ( auto* row : mRows ) {
+		size_t colCount = 0;
+		for ( Node* child = row->getFirstChild(); child; child = child->getNextNode() ) {
+			if ( child->getType() == UI_TYPE_HTML_TABLE_CELL ) {
+				auto* cell = child->asType<UIHTMLTableCell>();
+				me->mCells.push_back( cell );
+				colCount += cell->getColspan();
+			}
+		}
+		me->mRowCellOffsets.push_back( static_cast<Uint32>( mCells.size() ) );
+		maxCols = std::max( maxCols, colCount );
+	}
+
+	if ( maxCols == 0 ) {
+		mMinIntrinsicWidth = mMaxIntrinsicWidth = mPaddingPx.Left + mPaddingPx.Right;
+		mIntrinsicWidthsDirty = false;
+		return;
+	}
+
+	me->mColMinWidths.assign( maxCols, 0.f );
+	me->mColMaxWidths.assign( maxCols, 0.f );
+	me->mColSpecifiedWidths.assign( maxCols, 0.f ); // 0 = no explicit width
+
+	// PASS 1: Collect intrinsic + explicit widths (single colspan first)
+	for ( size_t r = 0; r < mRows.size(); ++r ) {
+		Uint32 start = mRowCellOffsets[r];
+		Uint32 end = mRowCellOffsets[r + 1];
+		Uint32 colIndex = 0;
+
+		for ( Uint32 i = 0; i < end - start; ++i ) {
+			UIHTMLTableCell* cell = mCells[start + i];
+			auto widthPolicy = cell->getLayoutWidthPolicy();
+			cell->mWidthPolicy = SizePolicy::WrapContent;
+			Float cellMin = cell->getMinIntrinsicWidth();
+			Float cellMax = cell->getMaxIntrinsicWidth();
+			Float cellSpecified = std::max( cell->getPropertyWidth(),
+											getRecursiveSpecifiedWidth(
+												getRecursiveSpecifiedWidth, cell ) );
+			cell->mWidthPolicy = widthPolicy;
+
+			Uint32 colspan = cell->getColspan();
+
+			if ( colspan == 1 && colIndex < maxCols ) {
+				mColMinWidths[colIndex] = std::max( mColMinWidths[colIndex], cellMin );
+				mColMaxWidths[colIndex] = std::max( mColMaxWidths[colIndex], cellMax );
+				if ( cellSpecified > 0.f ) {
+					mColSpecifiedWidths[colIndex] =
+						std::max( mColSpecifiedWidths[colIndex], cellSpecified );
+				}
+			}
+			colIndex += colspan;
+		}
+	}
+
+	// PASS 2: Multi-colspan cells - distribute excess only
+	for ( size_t r = 0; r < mRows.size(); ++r ) {
+		Uint32 start = mRowCellOffsets[r];
+		Uint32 end = mRowCellOffsets[r + 1];
+		Uint32 colIndex = 0;
+
+		for ( Uint32 i = 0; i < end - start; ++i ) {
+			UIHTMLTableCell* cell = mCells[start + i];
+			auto widthPolicy = cell->getLayoutWidthPolicy();
+			cell->mWidthPolicy = SizePolicy::WrapContent;
+			Float cellMin = cell->getMinIntrinsicWidth();
+			Float cellMax = cell->getMaxIntrinsicWidth();
+			Float cellSpecified = std::max( cell->getPropertyWidth(),
+											getRecursiveSpecifiedWidth(
+												getRecursiveSpecifiedWidth, cell ) );
+			cell->mWidthPolicy = widthPolicy;
+
+			Uint32 colspan = cell->getColspan();
+
+			if ( colspan > 1 ) {
+				// Min excess
+				Float curMin = 0.f;
+				for ( Uint32 j = 0; j < colspan && colIndex + j < maxCols; ++j )
+					curMin += mColMinWidths[colIndex + j];
+				Float extraMin = std::max( 0.f, cellMin - curMin );
+				if ( extraMin > 0.f ) {
+					Float add = extraMin / colspan;
+					for ( Uint32 j = 0; j < colspan && colIndex + j < maxCols; ++j )
+						mColMinWidths[colIndex + j] += add;
+				}
+
+				// Max excess
+				Float curMax = 0.f;
+				for ( Uint32 j = 0; j < colspan && colIndex + j < maxCols; ++j )
+					curMax += mColMaxWidths[colIndex + j];
+				Float extraMax = std::max( 0.f, cellMax - curMax );
+				if ( extraMax > 0.f ) {
+					Float add = extraMax / colspan;
+					for ( Uint32 j = 0; j < colspan && colIndex + j < maxCols; ++j )
+						mColMaxWidths[colIndex + j] += add;
+				}
+
+				// Specified width excess (simple even distribution for now)
+				if ( cellSpecified > 0.f ) {
+					Float curSpec = 0.f;
+					for ( Uint32 j = 0; j < colspan && colIndex + j < maxCols; ++j )
+						curSpec += mColSpecifiedWidths[colIndex + j];
+					Float extraSpec = std::max( 0.f, cellSpecified - curSpec );
+					if ( extraSpec > 0.f ) {
+						Float add = extraSpec / colspan;
+						for ( Uint32 j = 0; j < colspan && colIndex + j < maxCols; ++j )
+							mColSpecifiedWidths[colIndex + j] =
+								std::max( mColSpecifiedWidths[colIndex + j], add );
+					}
+				}
+			}
+			colIndex += colspan;
+		}
+	}
+
+	Float totalMin = 0.f, totalMax = 0.f;
+	for ( size_t i = 0; i < maxCols; ++i ) {
+		mColMinWidths[i] = std::max( mColMinWidths[i], mColSpecifiedWidths[i] );
+		mColMaxWidths[i] = std::max( mColMaxWidths[i], mColSpecifiedWidths[i] );
+		totalMin += mColMinWidths[i];
+		totalMax += mColMaxWidths[i];
+	}
+
+	mMinIntrinsicWidth = totalMin + mPaddingPx.Left + mPaddingPx.Right;
+	mMaxIntrinsicWidth = totalMax + mPaddingPx.Left + mPaddingPx.Right;
+
+	mIntrinsicWidthsDirty = false;
+}
+
+Float UIHTMLTable::getMinIntrinsicWidth() const {
+	computeIntrinsicWidths();
+	return mMinIntrinsicWidth;
+}
+
+Float UIHTMLTable::getMaxIntrinsicWidth() const {
+	computeIntrinsicWidths();
+	return mMaxIntrinsicWidth;
+}
+
 void UIHTMLTable::updateLayout() {
 	if ( mPacking || !mVisible )
 		return;
@@ -31,101 +220,84 @@ void UIHTMLTable::updateLayout() {
 	const StyleSheetProperty* prop = nullptr;
 	if ( getLayoutWidthPolicy() == SizePolicy::Fixed && mStyle &&
 		 ( prop = mStyle->getProperty( PropertyId::Width ) ) ) {
-		setInternalPixelsSize( { lengthFromValue( *prop, mSize.x ), mSize.getHeight() } );
+		setInternalPixelsSize( { lengthFromValue( *prop ), mSize.getHeight() } );
 	}
 
-	UIHTMLTableHead* head = nullptr;
-	UIHTMLTableBody* body = nullptr;
-	UIHTMLTableFooter* footer = nullptr;
-
-	mRows.clear();
-	auto collectRows = [&]( auto self, Node* node ) -> void {
-		for ( Node* child = node->getFirstChild(); child; child = child->getNextNode() ) {
-			if ( child->getType() == UI_TYPE_HTML_TABLE_ROW ) {
-				mRows.push_back( child->asType<UIHTMLTableRow>() );
-			} else if ( child->getType() != UI_TYPE_HTML_TABLE ) {
-				if ( child->getType() == UI_TYPE_HTML_TABLE_HEAD )
-					head = child->asType<UIHTMLTableHead>();
-				else if ( child->getType() == UI_TYPE_HTML_TABLE_BODY )
-					body = child->asType<UIHTMLTableBody>();
-				else if ( child->getType() == UI_TYPE_HTML_TABLE_FOOTER )
-					footer = child->asType<UIHTMLTableFooter>();
-
-				self( self, child );
-			}
-		}
-	};
-	collectRows( collectRows, this );
+	computeIntrinsicWidths();
 
 	if ( mRows.empty() ) {
 		mPacking = false;
 		return;
 	}
 
-	mCells.clear();
-	mRowCellOffsets.clear();
-	mRowCellOffsets.push_back( 0 );
-	size_t maxCols = 0;
-	for ( auto* row : mRows ) {
-		size_t colCount = 0;
-		for ( Node* child = row->getFirstChild(); child; child = child->getNextNode() ) {
-			if ( child->getType() == UI_TYPE_HTML_TABLE_CELL ) {
-				auto* cell = child->asType<UIHTMLTableCell>();
-				mCells.push_back( cell );
-				colCount += cell->getColspan();
-			}
-		}
-		mRowCellOffsets.push_back( (Uint32)mCells.size() );
-		maxCols = std::max( maxCols, colCount );
-	}
+	size_t maxCols = mColMinWidths.size();
+	mColWidths.assign( maxCols, 0.f );
+	Float paddingH = mPaddingPx.Left + mPaddingPx.Right;
+	Float containerWidth = getPixelsSize().getWidth();
+	Float availableWidth = std::max( 0.f, containerWidth - paddingH );
 
-	if ( maxCols == 0 ) {
+	if ( availableWidth <= 0.f || maxCols == 0 ) {
 		mPacking = false;
 		return;
 	}
 
-	mColWidths.assign( maxCols, 0.f );
-
-	if ( maxCols == 1 ) {
-		mColWidths[0] = mSize.getWidth();
+	Float totalMin = 0.f;
+	Float totalMax = 0.f;
+	for ( size_t i = 0; i < maxCols; ++i ) {
+		totalMin += mColMinWidths[i];
+		totalMax += mColMaxWidths[i];
 	}
 
-	// Get natural width for each column (without wrapping)
-	for ( size_t r = 0; r < mRows.size(); ++r ) {
-		Uint32 start = mRowCellOffsets[r];
-		Uint32 end = mRowCellOffsets[r + 1];
-		Uint32 colIndex = 0;
-		for ( Uint32 i = 0; i < end - start; ++i ) {
-			UIHTMLTableCell* cell = mCells[start + i];
-			cell->setLayoutWidthPolicy( SizePolicy::WrapContent );
-			cell->mSize.x = 0;
-			cell->updateLayout();
-			Uint32 cellColspan = cell->getColspan();
-			if ( cellColspan == 1 ) {
-				mColWidths[colIndex] =
-					std::max( mColWidths[colIndex], cell->getPixelsSize().getWidth() );
-			} else {
-				Float widthPerCol = cell->getPixelsSize().getWidth() / cellColspan;
-				for ( Uint32 j = 0; j < cellColspan; ++j ) {
-					if ( colIndex + j < maxCols ) {
-						mColWidths[colIndex + j] =
-							std::max( mColWidths[colIndex + j], widthPerCol );
-					}
-				}
+	Float tableUsedWidth = availableWidth; // always try to fill the container
+
+	// Assign column widths
+	if ( tableUsedWidth <= totalMin + 0.001f ) {
+		// 1. Too narrow → scale down proportionally
+		Float scale = tableUsedWidth / totalMin;
+		for ( size_t i = 0; i < maxCols; ++i )
+			mColWidths[i] = mColMinWidths[i] * scale;
+	} else {
+		// 2. Extra space → distribute extra by flexibility
+		Float extraSpace = tableUsedWidth - totalMin;
+		Float totalFlex = 0.f;
+
+		for ( size_t i = 0; i < maxCols; ++i ) {
+			Float flex = mColMaxWidths[i] - mColMinWidths[i];
+			if ( mColSpecifiedWidths[i] > 0.f )
+				flex = 0.f; // explicit widths stay rigid here
+			totalFlex += flex;
+		}
+
+		if ( totalFlex > 0.001f ) {
+			for ( size_t i = 0; i < maxCols; ++i ) {
+				Float flex = mColMaxWidths[i] - mColMinWidths[i];
+				if ( mColSpecifiedWidths[i] > 0.f )
+					flex = 0.f;
+				Float added = extraSpace * ( flex / totalFlex );
+				mColWidths[i] = mColMinWidths[i] + added;
 			}
-			colIndex += cellColspan;
+		} else {
+			// No flexibility (all rigid) → stretch proportionally to min widths
+			if ( totalMin > 0.001f ) {
+				Float scale = tableUsedWidth / totalMin;
+				for ( size_t i = 0; i < maxCols; ++i )
+					mColWidths[i] = mColMinWidths[i] * scale;
+			} else {
+				Float w = tableUsedWidth / static_cast<Float>( maxCols );
+				for ( size_t i = 0; i < maxCols; ++i )
+					mColWidths[i] = w;
+			}
 		}
 	}
 
-	Float availableWidth = getPixelsSize().getWidth() - mPaddingPx.Left - mPaddingPx.Right;
-	Float totalUnwrappedWidth = 0;
-	for ( Float w : mColWidths )
-		totalUnwrappedWidth += w;
-
-	if ( totalUnwrappedWidth > 0 ) {
-		Float scale = availableWidth / totalUnwrappedWidth;
+	// Safety fallback (should never trigger now)
+	Float sum = 0.f;
+	for ( float w : mColWidths )
+		sum += w;
+	if ( sum < 1.f && maxCols > 0 ) {
+		Float w = tableUsedWidth / static_cast<Float>( maxCols );
 		for ( size_t i = 0; i < maxCols; ++i )
-			mColWidths[i] *= scale;
+			mColWidths[i] = w;
 	}
 
 	Float headHeight = 0;
@@ -142,7 +314,9 @@ void UIHTMLTable::updateLayout() {
 		Uint32 colIndex = 0;
 		for ( Uint32 c = 0; c < columnCount; ++c ) {
 			UIHTMLTableCell* cell = mCells[start + c];
+			cell->beginAttributesTransaction();
 			cell->setLayoutWidthPolicy( SizePolicy::Fixed );
+			cell->setLayoutHeightPolicy( SizePolicy::WrapContent );
 			Uint32 cellColspan = cell->getColspan();
 			Float cellWidth = 0;
 			for ( Uint32 j = 0; j < cellColspan && ( colIndex + j ) < maxCols; ++j ) {
@@ -150,6 +324,8 @@ void UIHTMLTable::updateLayout() {
 			}
 			cell->setPixelsSize( cellWidth, cell->getPixelsSize().getHeight() );
 			cell->updateLayout();
+			cell->setLayoutHeightPolicy( SizePolicy::Fixed );
+			cell->endAttributesTransaction();
 			rowHeight = std::max( rowHeight, cell->getPixelsSize().getHeight() );
 			colIndex += cellColspan;
 		}
@@ -159,6 +335,7 @@ void UIHTMLTable::updateLayout() {
 		colIndex = 0;
 		for ( Uint32 c = 0; c < columnCount; ++c ) {
 			UIHTMLTableCell* cell = mCells[start + c];
+			cell->beginAttributesTransaction();
 			cell->setPixelsPosition( currentX, 0 );
 			Uint32 cellColspan = cell->getColspan();
 			Float cellWidth = 0;
@@ -166,6 +343,7 @@ void UIHTMLTable::updateLayout() {
 				cellWidth += mColWidths[colIndex + j];
 			}
 			cell->setPixelsSize( cellWidth, rowHeight );
+			cell->endAttributesTransaction();
 			currentX += cellWidth;
 			colIndex += cellColspan;
 		}
@@ -185,21 +363,19 @@ void UIHTMLTable::updateLayout() {
 	}
 
 	// Position rows vertically
-	// We also need to ensure that the containers (thead, tbody, etc.) are positioned correctly and
-	// have the correct size, so the absolute positioning of the rows works as expected.
-	if ( head ) {
-		head->setPixelsPosition( 0, 0 );
-		head->setPixelsSize( { getPixelsSize().x, headHeight } );
+	if ( mHead ) {
+		mHead->setPixelsPosition( 0, 0 );
+		mHead->setPixelsSize( { getPixelsSize().x, headHeight } );
 	}
 
-	if ( body ) {
-		body->setPixelsPosition( 0, headHeight );
-		body->setPixelsSize( { getPixelsSize().x, bodyHeight } );
+	if ( mBody ) {
+		mBody->setPixelsPosition( 0, headHeight );
+		mBody->setPixelsSize( { getPixelsSize().x, bodyHeight } );
 	}
 
-	if ( footer ) {
-		footer->setPixelsPosition( 0, headHeight + bodyHeight );
-		footer->setPixelsSize( { getPixelsSize().x, footerHeight } );
+	if ( mFooter ) {
+		mFooter->setPixelsPosition( 0, headHeight + bodyHeight );
+		mFooter->setPixelsSize( { getPixelsSize().x, footerHeight } );
 	}
 
 	Float currentY = mPaddingPx.Top - headHeight;
@@ -210,10 +386,10 @@ void UIHTMLTable::updateLayout() {
 	}
 
 	// Reset positions if they are inside specialized containers
-	if ( head && !mRows.empty() )
+	if ( mHead && !mRows.empty() )
 		mRows[0]->setPixelsPosition( mPaddingPx.Left, 0 );
 
-	if ( footer && !mRows.empty() )
+	if ( mFooter && !mRows.empty() )
 		mRows[rowCount - 1]->setPixelsPosition( mPaddingPx.Left, 0 );
 
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
@@ -228,6 +404,10 @@ void UIHTMLTable::updateLayout() {
 Uint32 UIHTMLTable::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::LayoutAttributeChange: {
+			if ( Msg->getSender() != this && !mPacking ) {
+				mIntrinsicWidthsDirty = true;
+				notifyLayoutAttrChangeParent();
+			}
 			tryUpdateLayout();
 			return 1;
 		}
@@ -290,6 +470,10 @@ bool UIHTMLTableCell::applyProperty( const StyleSheetProperty& attribute ) {
 
 Uint32 UIHTMLTableCell::getColspan() const {
 	return mColspan;
+}
+
+void UIHTMLTableCell::onSizeChange() {
+	UIRichText::onSizeChange();
 }
 
 UIHTMLTableHead* UIHTMLTableHead::New() {

@@ -9,6 +9,9 @@ namespace EE { namespace UI {
 
 class UIHTMLTableRow;
 class UIHTMLTableCell;
+class UIHTMLTableHead;
+class UIHTMLTableBody;
+class UIHTMLTableFooter;
 
 class EE_API UIHTMLTable : public UILayout {
   public:
@@ -22,13 +25,25 @@ class EE_API UIHTMLTable : public UILayout {
 
 	virtual void updateLayout();
 
+	virtual Float getMinIntrinsicWidth() const;
+
+	virtual Float getMaxIntrinsicWidth() const;
+
   protected:
 	virtual Uint32 onMessage( const NodeMessage* Msg );
+
+	void computeIntrinsicWidths() const;
 
 	SmallVector<UIHTMLTableRow*> mRows;
 	SmallVector<Float> mColWidths;
 	SmallVector<UIHTMLTableCell*> mCells;
 	SmallVector<Uint32> mRowCellOffsets;
+	mutable SmallVector<Float> mColMinWidths;
+	mutable SmallVector<Float> mColMaxWidths;
+	mutable SmallVector<Float> mColSpecifiedWidths;
+	mutable UIHTMLTableHead* mHead{ nullptr };
+	mutable UIHTMLTableBody* mBody{ nullptr };
+	mutable UIHTMLTableFooter* mFooter{ nullptr };
 };
 
 class EE_API UIHTMLTableCell : public UIRichText {
@@ -46,6 +61,8 @@ class EE_API UIHTMLTableCell : public UIRichText {
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
 	Uint32 getColspan() const;
+
+	virtual void onSizeChange();
 
   protected:
 	Uint32 mColspan{ 1 };

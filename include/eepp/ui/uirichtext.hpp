@@ -48,6 +48,10 @@ class EE_API UIRichText : public UILayout {
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
 
+	virtual Float getMinIntrinsicWidth() const;
+
+	virtual Float getMaxIntrinsicWidth() const;
+
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 ) const;
 
@@ -145,7 +149,8 @@ class EE_API UIRichText : public UILayout {
 	Int64 selCurInit() const { return mSelCurInit; }
 	Int64 selCurEnd() const { return mSelCurEnd; }
 
-	void rebuildRichText();
+	enum class IntrinsicMode { None, Min, Max };
+	void rebuildRichText( IntrinsicMode mode = IntrinsicMode::None );
 	void positionChildren();
 	void updateDefaultSpansStyle();
 };

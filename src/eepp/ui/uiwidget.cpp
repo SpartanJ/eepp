@@ -572,6 +572,8 @@ void UIWidget::onAutoSize() {}
 void UIWidget::onWidgetCreated() {}
 
 void UIWidget::notifyLayoutAttrChange() {
+	invalidateIntrinsicSize();
+
 	if ( 0 == mAttributesTransactionCount ) {
 		NodeMessage msg( this, NodeMessage::LayoutAttributeChange );
 		messagePost( &msg );
@@ -584,12 +586,30 @@ void UIWidget::notifyLayoutAttrChangeParent() {
 	if ( NULL == mParentNode )
 		return;
 
+	invalidateIntrinsicSize();
+
 	if ( 0 == mAttributesTransactionCount ) {
 		NodeMessage msg( this, NodeMessage::LayoutAttributeChange );
 		mParentNode->messagePost( &msg );
 	} else {
 		mFlags |= UI_PARENT_ATTRIBUTE_CHANGED;
 	}
+}
+
+Float UIWidget::getMinIntrinsicWidth() const {
+	if ( mWidthPolicy == SizePolicy::Fixed )
+		return mSize.x;
+	return 0.f;
+}
+
+Float UIWidget::getMaxIntrinsicWidth() const {
+	if ( mWidthPolicy == SizePolicy::Fixed )
+		return mSize.x;
+	return 0.f;
+}
+
+void UIWidget::invalidateIntrinsicSize() {
+	mIntrinsicWidthsDirty = true;
 }
 
 void UIWidget::updateAnchors( const Vector2f& sizeChange ) {
@@ -2398,6 +2418,22 @@ Sizef UIWidget::getSizeFromLayoutPolicy() {
 	}
 
 	return size;
+}
+
+Float UIWidget::getPropertyWidth() const {
+	const StyleSheetProperty* prop = nullptr;
+	if ( mStyle && ( prop = mStyle->getProperty( PropertyId::Width ) ) ) {
+		return lengthFromValue( *prop );
+	}
+	return 0.f;
+}
+
+Float UIWidget::getPropertyHeight() const {
+	const StyleSheetProperty* prop = nullptr;
+	if ( mStyle && ( prop = mStyle->getProperty( PropertyId::Height ) ) ) {
+		return lengthFromValue( *prop );
+	}
+	return 0.f;
 }
 
 }} // namespace EE::UI

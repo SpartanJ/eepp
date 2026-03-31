@@ -339,6 +339,69 @@ void RichText::invalidate() {
 	}
 }
 
+Float RichText::getMinIntrinsicWidth() {
+	Float minW = 0;
+	for ( auto& block : mBlocks ) {
+		if ( auto pText = std::get_if<std::shared_ptr<Text>>( &block ) ) {
+			auto& span = *pText;
+			if ( !span || span->getString().empty() )
+				continue;
+			const String& s = span->getString();
+			size_t start = 0;
+			size_t end = 0;
+			while ( start < s.size() ) {
+				while ( start < s.size() && ( s[start] == ' ' || s[start] == '\t' ||
+											  s[start] == '\n' || s[start] == '\r' ) )
+					start++;
+				end = start;
+				while ( end < s.size() &&
+						!( s[end] == ' ' || s[end] == '\t' || s[end] == '\n' || s[end] == '\r' ) )
+					end++;
+				if ( start < end ) {
+					minW = std::max( minW, Text::getTextWidth( s.substr( start, end - start ),
+															   span->getFontStyleConfig() ) );
+				}
+				start = end;
+			}
+		} else if ( auto pDrawable = std::get_if<std::shared_ptr<Drawable>>( &block ) ) {
+			minW = std::max( minW, ( *pDrawable )->getPixelsSize().getWidth() );
+		} else if ( auto pSize = std::get_if<Sizef>( &block ) ) {
+			minW = std::max( minW, pSize->getWidth() );
+		}
+	}
+	return minW;
+}
+
+Float RichText::getMaxIntrinsicWidth() {
+	Float maxW = 0;
+	Float curX = 0;
+	for ( auto& block : mBlocks ) {
+		if ( auto pText = std::get_if<std::shared_ptr<Text>>( &block ) ) {
+			auto& span = *pText;
+			if ( !span || span->getString().empty() )
+				continue;
+
+			const String& s = span->getString();
+			size_t start = 0;
+			size_t end = 0;
+			while ( ( end = s.find( '\n', start ) ) != String::InvalidPos ) {
+				curX += Text::getTextWidth( s.substr( start, end - start ),
+											span->getFontStyleConfig() );
+				maxW = std::max( maxW, curX );
+				curX = 0;
+				start = end + 1;
+			}
+			curX += Text::getTextWidth( s.substr( start ), span->getFontStyleConfig() );
+		} else if ( auto pDrawable = std::get_if<std::shared_ptr<Drawable>>( &block ) ) {
+			curX += ( *pDrawable )->getPixelsSize().getWidth();
+		} else if ( auto pSize = std::get_if<Sizef>( &block ) ) {
+			curX += pSize->getWidth();
+		}
+	}
+	maxW = std::max( maxW, curX );
+	return maxW;
+}
+
 void RichText::updateLayout() {
 	if ( !mNeedsLayoutUpdate )
 		return;
