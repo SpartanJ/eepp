@@ -263,11 +263,9 @@ void UIImage::onDrawableResourceEvent( DrawableResource::Event event, DrawableRe
 			auto s = mSize;
 			onAutoSize();
 			calcDestSize();
-
-			if ( mSize != s ) {
+			if ( mSize != s )
 				notifyLayoutAttrChangeParent();
-				invalidateDraw();
-			}
+			invalidateDraw();
 		} );
 	} else if ( event == DrawableResource::Unload ) {
 		mDrawable = NULL;
@@ -293,6 +291,22 @@ void UIImage::onAlignChange() {
 
 const Vector2f& UIImage::getAlignOffset() const {
 	return mAlignOffset;
+}
+
+Float UIImage::getMinIntrinsicWidth() const {
+	if ( mWidthPolicy == SizePolicy::Fixed )
+		return getPropertyWidth();
+	if ( mDrawable )
+		return mDrawable->getMinIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
+	return mPaddingPx.Left + mPaddingPx.Right;
+}
+
+Float UIImage::getMaxIntrinsicWidth() const {
+	if ( mWidthPolicy == SizePolicy::Fixed )
+		return getPropertyWidth();
+	if ( mDrawable )
+		return mDrawable->getMaxIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
+	return mPaddingPx.Left + mPaddingPx.Right;
 }
 
 std::string UIImage::getPropertyString( const PropertyDefinition* propertyDef,

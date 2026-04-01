@@ -1097,7 +1097,8 @@ class EE_API UINode : public Node {
 	 * @param defaultValue The default value if the property is not set (default: 0).
 	 * @return The computed length in pixels.
 	 */
-	Float lengthFromValue( const CSS::StyleSheetProperty& property, const Float& defaultValue = 0 );
+	Float lengthFromValue( const CSS::StyleSheetProperty& property,
+						   const Float& defaultValue = 0 ) const;
 
 	/**
 	 * @brief Evaluates a CSS length string to a dp value.

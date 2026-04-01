@@ -59,7 +59,7 @@ StyleSheetSelectorRule::toPseudoClass( std::string_view cls ) {
 		return StyleSheetSelectorRule::PseudoClasses::Link;
 	if ( "visited" == cls )
 		return StyleSheetSelectorRule::PseudoClasses::Visited;
-	eeASSERT( false );
+	// eeASSERT( false );
 	return StyleSheetSelectorRule::PseudoClasses::None;
 }
 

@@ -1,7 +1,8 @@
 #include <eepp/ee.hpp>
 
 EE_MAIN_FUNC int main( int, char** ) {
-	UIApplication app( { 1280, 720, "eepp - UI HTML Example" } );
+	UIApplication app( { 1280, 720, "eepp - UI HTML Example" },
+					   UIApplication::Settings( {}, 1.f ) );
 
 	Log::instance()->setLogLevelThreshold( LogLevel::Debug );
 	Log::instance()->setLogToStdOut( true );
@@ -64,13 +65,17 @@ EE_MAIN_FUNC int main( int, char** ) {
 				FileSystem::fileGet( url.getPath(), data );
 				loadDocumentData( url, data );
 			}
-		} else if ( !url.getPath().empty() && url.getPath().front() == '/' ) {
+		} else if ( !url.getPath().empty() ) {
 			std::string data;
 			FileSystem::fileGet( url.getPath(), data );
 			loadDocumentData( url, data );
 		}
 	};
 
+	// loadDocument( "unit_tests/assets/html/hn_thread_test.html" );
+	// loadDocument( "unit_tests/assets/html/hn_threaded_test.html" );
+	// loadDocument( "unit_tests/assets/html/hn_frontpage.html" );
+	// loadDocument( "unit_tests/assets/html/hn_footer.html" );
 	loadDocument( "https://news.ycombinator.com" );
 
 	urlBar->on( Event::OnPressEnter,

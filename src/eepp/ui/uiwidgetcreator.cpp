@@ -179,6 +179,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["tfoot"] = UIHTMLTableFooter::New;
 		registeredWidget["th"] = [] { return UIHTMLTableCell::New( "th" ); };
 		registeredWidget["td"] = [] { return UIHTMLTableCell::New( "td" ); };
+		registeredWidget["textarea"] = UITextEdit::New;
 
 		sBaseListCreated = true;
 	}

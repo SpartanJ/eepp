@@ -79,3 +79,134 @@ UTEST( UIHTMLTable, complexLayout ) {
 
 	Engine::destroySingleton();
 }
+
+UTEST( UIHTMLTable, nestedPerformance ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 650, "HTML Tables Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	// Create nested tables.
+	UIHTMLTable* rootTable = UIHTMLTable::New();
+	rootTable->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
+	rootTable->setParent( sceneNode->getRoot() );
+
+	UIHTMLTable* currentTable = rootTable;
+	for ( int i = 0; i < 10; ++i ) {
+		UIHTMLTableRow* row = UIHTMLTableRow::New();
+		row->setParent( currentTable );
+		UIHTMLTableCell* cell = UIHTMLTableCell::New( "td" );
+		cell->setParent( row );
+
+		UIHTMLTable* childTable = UIHTMLTable::New();
+		childTable->setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::WrapContent );
+		childTable->setParent( cell );
+		currentTable = childTable;
+	}
+
+	UIHTMLTableRow* row = UIHTMLTableRow::New();
+	row->setParent( currentTable );
+	UIHTMLTableCell* cell = UIHTMLTableCell::New( "td" );
+	cell->setParent( row );
+	UITextSpan* span = UITextSpan::New();
+	span->setParent( cell );
+	span->setText( "Deeply nested text" );
+
+	Clock clock;
+	sceneNode->updateDirtyLayouts();
+
+	Log::info( "Time for nested layout (10 levels): %.2f ms",
+			   clock.getElapsedTime().asMilliseconds() );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLTable, specifiedWidth ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 650, "HTML Tables Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	sceneNode->loadLayoutFromString(
+		R"(<table style="width: 500px; height: wrap-content;">
+			<tr>
+				<td id="c1">C1</td>
+				<td id="c2" style="width: 200px;">C2</td>
+			</tr>
+		</table>)" );
+
+	sceneNode->updateDirtyLayouts();
+
+	auto c1 = sceneNode->getRoot()->find( "c1" );
+	auto c2 = sceneNode->getRoot()->find( "c2" );
+
+	ASSERT_TRUE( c1 != nullptr );
+	ASSERT_TRUE( c2 != nullptr );
+
+	// Cell 2 should be at least 200px.
+	EXPECT_GE( c2->getPixelsSize().getWidth(), 200.f );
+	// Total width should be 500px (minus padding if any, but default is 0).
+	EXPECT_NEAR( c1->getPixelsSize().getWidth() + c2->getPixelsSize().getWidth(), 500.f, 1.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLTable, nestedSpecifiedWidth ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 650, "HTML Tables Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	sceneNode->loadLayoutFromString(
+		R"(<table style="width: 500px; height: wrap-content;">
+			<tr>
+				<td id="c1"><img style="width: 50px; height: 10px;" /></td>
+				<td id="c2">Flexible text content that should take the rest of the space</td>
+			</tr>
+		</table>)" );
+
+	sceneNode->updateDirtyLayouts();
+
+	auto c1 = sceneNode->getRoot()->find( "c1" );
+	auto c2 = sceneNode->getRoot()->find( "c2" );
+
+	ASSERT_TRUE( c1 != nullptr );
+	ASSERT_TRUE( c2 != nullptr );
+
+	// Cell 1 should be exactly 50px because it's rigid (only contains fixed-width image)
+	// and Cell 2 is flexible.
+	EXPECT_NEAR( c1->getPixelsSize().getWidth(), 50.f, 1.f );
+	EXPECT_NEAR( c2->getPixelsSize().getWidth(), 450.f, 1.f );
+
+	Engine::destroySingleton();
+}

@@ -69,6 +69,12 @@ class EE_API RichText : public Drawable {
 	/** @return The maximum width for wrapping. */
 	Float getMaxWidth() const { return mMaxWidth; }
 
+	/** @return The minimum intrinsic width of the text block. */
+	Float getMinIntrinsicWidth();
+
+	/** @return The maximum intrinsic width of the text block. */
+	Float getMaxIntrinsicWidth();
+
 	enum class BlockType { Text, Drawable, CustomSize };
 
 	using Block = std::variant<std::shared_ptr<Text>, std::shared_ptr<Drawable>, Sizef>;
