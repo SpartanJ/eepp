@@ -412,6 +412,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "focusable", "true" ).setType( PropertyType::Bool );
 	registerProperty( "expand-text", "false" ).setType( PropertyType::Bool );
 	registerProperty( "colspan", "1" ).setType( PropertyType::NumberInt );
+	registerProperty( "cellpadding", "0" ).setType( PropertyType::NumberLength );
+	registerProperty( "cellspacing", "0" ).setType( PropertyType::NumberLength );
 
 	registerProperty( "inner-widget-orientation", "widgeticontextbox" )
 		.setType( PropertyType::String );

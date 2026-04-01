@@ -22,6 +22,28 @@ bool UIHTMLTable::isType( const Uint32& type ) const {
 	return UIHTMLTable::getType() == type || UILayout::isType( type );
 }
 
+bool UIHTMLTable::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( attribute.getPropertyDefinition() == nullptr )
+		return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::Cellspacing:
+			mCellspacing = lengthFromValue( attribute );
+			invalidateIntrinsicSize();
+			tryUpdateLayout();
+			return true;
+		case PropertyId::Cellpadding:
+			mCellpadding = lengthFromValue( attribute );
+			invalidateIntrinsicSize();
+			tryUpdateLayout();
+			return true;
+		default:
+			break;
+	}
+
+	return UILayout::applyProperty( attribute );
+}
+
 void UIHTMLTable::computeIntrinsicWidths() const {
 	if ( !mIntrinsicWidthsDirty )
 		return;
@@ -80,6 +102,9 @@ void UIHTMLTable::computeIntrinsicWidths() const {
 				auto* cell = child->asType<UIHTMLTableCell>();
 				me->mCells.push_back( cell );
 				colCount += cell->getColspan();
+				if ( mCellpadding > 0 && cell->getPadding() == Rectf() ) {
+					cell->setPadding( { mCellpadding, mCellpadding, mCellpadding, mCellpadding } );
+				}
 			}
 		}
 		me->mRowCellOffsets.push_back( static_cast<Uint32>( mCells.size() ) );
@@ -195,8 +220,8 @@ void UIHTMLTable::computeIntrinsicWidths() const {
 		totalMax += mColMaxWidths[i];
 	}
 
-	mMinIntrinsicWidth = totalMin + mPaddingPx.Left + mPaddingPx.Right;
-	mMaxIntrinsicWidth = totalMax + mPaddingPx.Left + mPaddingPx.Right;
+	mMinIntrinsicWidth = totalMin + mPaddingPx.Left + mPaddingPx.Right + ( maxCols + 1 ) * mCellspacing;
+	mMaxIntrinsicWidth = totalMax + mPaddingPx.Left + mPaddingPx.Right + ( maxCols + 1 ) * mCellspacing;
 
 	mIntrinsicWidthsDirty = false;
 }
@@ -234,7 +259,8 @@ void UIHTMLTable::updateLayout() {
 	mColWidths.assign( maxCols, 0.f );
 	Float paddingH = mPaddingPx.Left + mPaddingPx.Right;
 	Float containerWidth = getPixelsSize().getWidth();
-	Float availableWidth = std::max( 0.f, containerWidth - paddingH );
+	Float availableWidth =
+		std::max( 0.f, containerWidth - paddingH - ( maxCols + 1 ) * mCellspacing );
 
 	if ( availableWidth <= 0.f || maxCols == 0 ) {
 		mPacking = false;
@@ -322,6 +348,8 @@ void UIHTMLTable::updateLayout() {
 			for ( Uint32 j = 0; j < cellColspan && ( colIndex + j ) < maxCols; ++j ) {
 				cellWidth += mColWidths[colIndex + j];
 			}
+			if ( cellColspan > 1 )
+				cellWidth += ( cellColspan - 1 ) * mCellspacing;
 			cell->setPixelsSize( cellWidth, cell->getPixelsSize().getHeight() );
 			cell->updateLayout();
 			cell->setLayoutHeightPolicy( SizePolicy::Fixed );
@@ -331,7 +359,7 @@ void UIHTMLTable::updateLayout() {
 		}
 
 		// Position cells inside the row and equalize height
-		Float currentX = 0;
+		Float currentX = mCellspacing;
 		colIndex = 0;
 		for ( Uint32 c = 0; c < columnCount; ++c ) {
 			UIHTMLTableCell* cell = mCells[start + c];
@@ -342,15 +370,17 @@ void UIHTMLTable::updateLayout() {
 			for ( Uint32 j = 0; j < cellColspan && ( colIndex + j ) < maxCols; ++j ) {
 				cellWidth += mColWidths[colIndex + j];
 			}
+			if ( cellColspan > 1 )
+				cellWidth += ( cellColspan - 1 ) * mCellspacing;
 			cell->setPixelsSize( cellWidth, rowHeight );
 			cell->endAttributesTransaction();
-			currentX += cellWidth;
+			currentX += cellWidth + mCellspacing;
 			colIndex += cellColspan;
 		}
 
 		// Set row height and width
 		UIHTMLTableRow* row = mRows[r];
-		row->setPixelsSize( availableWidth, rowHeight );
+		row->setPixelsSize( containerWidth - paddingH, rowHeight );
 
 		if ( r == 0 && mCells[start]->getParent()->isType( UI_TYPE_HTML_TABLE_HEAD ) ) {
 			headHeight = rowHeight;
@@ -378,11 +408,11 @@ void UIHTMLTable::updateLayout() {
 		mFooter->setPixelsSize( { getPixelsSize().x, footerHeight } );
 	}
 
-	Float currentY = mPaddingPx.Top - headHeight;
+	Float currentY = mPaddingPx.Top + mCellspacing - headHeight;
 	for ( size_t r = 0; r < rowCount; ++r ) {
 		UIHTMLTableRow* row = mRows[r];
 		row->setPixelsPosition( mPaddingPx.Left, currentY );
-		currentY += row->getPixelsSize().getHeight();
+		currentY += row->getPixelsSize().getHeight() + mCellspacing;
 	}
 
 	// Reset positions if they are inside specialized containers
@@ -394,7 +424,7 @@ void UIHTMLTable::updateLayout() {
 
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
 		setInternalPixelsHeight( mPaddingPx.Top + headHeight + bodyHeight + footerHeight +
-								 mPaddingPx.Bottom );
+								 ( rowCount + 1 ) * mCellspacing + mPaddingPx.Bottom );
 	}
 
 	mPacking = false;

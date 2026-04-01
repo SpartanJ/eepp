@@ -29,6 +29,8 @@ class EE_API UIHTMLTable : public UILayout {
 
 	virtual Float getMaxIntrinsicWidth() const;
 
+	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
   protected:
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
@@ -44,6 +46,8 @@ class EE_API UIHTMLTable : public UILayout {
 	mutable UIHTMLTableHead* mHead{ nullptr };
 	mutable UIHTMLTableBody* mBody{ nullptr };
 	mutable UIHTMLTableFooter* mFooter{ nullptr };
+	Float mCellpadding{ 0 };
+	Float mCellspacing{ 0 };
 };
 
 class EE_API UIHTMLTableCell : public UIRichText {
