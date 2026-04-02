@@ -270,15 +270,15 @@ class UIBuildStep : public UILinearLayout {
 	<vbox class="details" lw="mp" lh="wc">
 		<hbox lw="mp">
 			<TextView lh="mp" min-width="100dp" text="@string(command, Command)" focusable="false" />
-			<Input class="input_cmd" lw="0" lw8="1" />
+			<TextInput class="input_cmd" lw="0" lw8="1" />
 		</hbox>
 		<hbox lw="mp">
 			<TextView lh="mp" min-width="100dp" text="@string(arguments, Arguments)" focusable="false" />
-			<Input class="input_args" lw="0" lw8="1" />
+			<TextInput class="input_args" lw="0" lw8="1" />
 		</hbox>
 		<hbox lw="mp">
 			<TextView lh="mp" min-width="100dp" text="@string(working_dir, Working Directory)" focusable="false" />
-			<Input class="input_working_dir" lw="0" lw8="1" />
+			<TextInput class="input_working_dir" lw="0" lw8="1" />
 		</hbox>
 		<StackLayout lw="mp">
 			<CheckBox class="run_in_terminal" text="@string(run_in_terminal, Run in terminal)" visible="false" />
