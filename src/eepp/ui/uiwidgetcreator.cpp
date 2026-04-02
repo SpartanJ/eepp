@@ -1,3 +1,5 @@
+#include <eepp/ui/htmlinput.hpp>
+#include <eepp/ui/htmltextarea.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/tools/uitextureviewer.hpp>
@@ -160,8 +162,12 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["ol"] = [] { return UILinearLayout::NewVerticalWidthMatchParent( "ol" ); };
 		registeredWidget["li"] = UIRichText::NewListItem;
 		registeredWidget["pre"] = UIRichText::NewPre;
-		registeredWidget["img"] = [] { return UIImage::NewWithTag( "img" ); };
-		registeredWidget["input"] = UITextInput::New;
+		registeredWidget["img"] = [] {
+			auto img = UIImage::NewWithTag( "img" );
+			img->setFlags( UI_HTML_ELEMENT );
+			return img;
+		};
+		registeredWidget["input"] = [] { return HTMLInput::New(); };
 		registeredWidget["header"] = [] { return UIRichText::NewWithTag( "header" ); };
 		registeredWidget["article"] = [] { return UIRichText::NewWithTag( "article" ); };
 		registeredWidget["footer"] = [] { return UIRichText::NewWithTag( "footer" ); };
@@ -179,7 +185,8 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["tfoot"] = UIHTMLTableFooter::New;
 		registeredWidget["th"] = [] { return UIHTMLTableCell::New( "th" ); };
 		registeredWidget["td"] = [] { return UIHTMLTableCell::New( "td" ); };
-		registeredWidget["textarea"] = UITextEdit::New;
+		registeredWidget["input"] = HTMLInput::New;
+		registeredWidget["textarea"] = HTMLTextArea::New;
 
 		sBaseListCreated = true;
 	}

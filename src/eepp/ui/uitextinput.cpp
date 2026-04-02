@@ -200,7 +200,7 @@ void UITextInput::alignFix() {
 	Vector2f rOffset( mRealAlignOffset );
 	UITextView::alignFix();
 
-	if ( mAllowEditing && Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT ) {
+	if ( mAllowEditing /* && Font::getHorizontalAlign( getFlags() ) == UI_HALIGN_LEFT */ ) {
 		Float tW = getVisibleTextCache().findCharacterPos( selCurInit() ).x;
 		mCurPos.x = tW;
 		mCurPos.y = 0;
@@ -440,6 +440,7 @@ std::string UITextInput::getPropertyString( const PropertyDefinition* propertyDe
 
 	switch ( propertyDef->getPropertyId() ) {
 		case PropertyId::Text:
+		case PropertyId::Value:
 			return getText().toUtf8();
 		case PropertyId::AllowEditing:
 			return isEditingAllowed() ? "true" : "false";

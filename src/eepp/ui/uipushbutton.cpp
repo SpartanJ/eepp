@@ -671,6 +671,7 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 			setInnerWidgetOrientation( innerWidgetOrientationFromString( attribute.value() ) );
 			break;
 		case PropertyId::Text:
+		case PropertyId::Value:
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
 				setText( getUISceneNode()->getTranslatorString( attribute.value() ) );
 			break;

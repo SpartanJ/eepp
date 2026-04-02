@@ -414,6 +414,10 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "colspan", "1" ).setType( PropertyType::NumberInt );
 	registerProperty( "cellpadding", "0" ).setType( PropertyType::NumberLength );
 	registerProperty( "cellspacing", "0" ).setType( PropertyType::NumberLength );
+	registerProperty( "size", "20" ).setType( PropertyType::NumberInt );
+	registerProperty( "type", "text" ).setType( PropertyType::String );
+	registerProperty( "rows", "2" ).setType( PropertyType::NumberInt );
+	registerProperty( "cols", "20" ).setType( PropertyType::NumberInt );
 
 	registerProperty( "inner-widget-orientation", "widgeticontextbox" )
 		.setType( PropertyType::String );

@@ -1,8 +1,7 @@
 #include <eepp/ee.hpp>
 
 EE_MAIN_FUNC int main( int, char** ) {
-	UIApplication app( { 1280, 720, "eepp - UI HTML Example" },
-					   UIApplication::Settings( {}, 1.f ) );
+	UIApplication app( { 1280, 720, "eepp - UI HTML Example" } );
 
 	Log::instance()->setLogLevelThreshold( LogLevel::Debug );
 	Log::instance()->setLogToStdOut( true );
@@ -22,6 +21,8 @@ EE_MAIN_FUNC int main( int, char** ) {
 	ui->loadLayoutFromString( R"xml(
 	<vbox layout_width="match_parent" layout_height="match_parent">
 		<hbox layout_width="match_parent" layout_height="wrap_content">
+			<PushButton id="backbtn" text="@string(back, Back)" />
+			<PushButton id="fwdbtn" text="@string(forward, Forward)" />
 			<TextInput id="url_bar" layout_width="0" layout_weight="1"
 				hint="@string(enter_address, Enter Address)" />
 		</hbox>
@@ -33,25 +34,48 @@ EE_MAIN_FUNC int main( int, char** ) {
 
 	auto urlBar = ui->find( "url_bar" )->asType<UITextInput>();
 	auto mainContainer = ui->find( "html_doc" );
+	auto backBtn = ui->find( "backbtn" )->asType<UIPushButton>();
+	auto fwdBtn = ui->find( "fwdbtn" )->asType<UIPushButton>();
+	std::vector<URI> history;
+	int historyIndex = -1;
 
-	const auto loadDocumentData = [ui, mainContainer, urlBar]( URI url, std::string& data ) {
+	auto updateNavButtons = [&]() {
+		backBtn->setEnabled( historyIndex > 0 );
+		fwdBtn->setEnabled( historyIndex < static_cast<int>( history.size() ) - 1 );
+	};
+
+	const auto loadDocumentData = [ui, mainContainer, urlBar, &app]( URI url, std::string& data ) {
 		if ( data.empty() )
 			return;
-		static String::HashType prevURL = 0;
-		ui->ensureMainThread( [=] {
+		ui->ensureMainThread( [url, data, mainContainer, urlBar, ui, &app] {
 			mainContainer->closeAllChildren();
-			if ( prevURL )
-				ui->getStyleSheet().removeAllWithMarker( prevURL );
+			ui->getStyleSheet().removeAllWithoutMarker( app.getStyleSheetDefaultMarker() );
 			ui->setURIFromURL( url );
 			auto urlStr = url.toString();
 			auto hash = String::hash( urlStr );
 			ui->loadLayoutFromString( HTMLFormatter::HTMLtoXML( data ), mainContainer, hash );
-			prevURL = hash;
 			urlBar->setText( urlStr );
 		} );
 	};
 
-	const auto loadDocument = [&]( URI url ) {
+	// We add a default `isHistoryNav` parameter to determine if we are pushing to history or just
+	// navigating back/forth
+	const auto loadDocument = [&]( URI url, bool isHistoryNav = false ) {
+		if ( !isHistoryNav ) {
+			// If we navigate to a new URL while in the middle of history, clear out the "forward"
+			// history
+			if ( historyIndex >= 0 && historyIndex < static_cast<int>( history.size() ) - 1 ) {
+				history.resize( historyIndex + 1 );
+			}
+
+			// Don't add to history if we are just reloading the exact same current page manually
+			if ( history.empty() || history.back().toString() != url.toString() ) {
+				history.push_back( url );
+				historyIndex = static_cast<int>( history.size() ) - 1;
+			}
+			updateNavButtons();
+		}
+
 		if ( !url.getScheme().empty() ) {
 			if ( url.getScheme() == "https" || url.getScheme() == "http" ) {
 				Http::getAsync(
@@ -72,10 +96,23 @@ EE_MAIN_FUNC int main( int, char** ) {
 		}
 	};
 
-	// loadDocument( "unit_tests/assets/html/hn_thread_test.html" );
-	// loadDocument( "unit_tests/assets/html/hn_threaded_test.html" );
-	// loadDocument( "unit_tests/assets/html/hn_frontpage.html" );
-	// loadDocument( "unit_tests/assets/html/hn_footer.html" );
+	backBtn->onClick( [&]( const MouseEvent* ) {
+		if ( historyIndex > 0 ) {
+			historyIndex--;
+			updateNavButtons();
+			loadDocument( history[historyIndex], true );
+		}
+	} );
+
+	fwdBtn->onClick( [&]( const MouseEvent* ) {
+		if ( historyIndex < static_cast<int>( history.size() ) - 1 ) {
+			historyIndex++;
+			updateNavButtons();
+			loadDocument( history[historyIndex], true );
+		}
+	} );
+
+	updateNavButtons();
 	loadDocument( "https://news.ycombinator.com" );
 
 	urlBar->on( Event::OnPressEnter,

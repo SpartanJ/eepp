@@ -1,7 +1,7 @@
-#include <eepp/system/luapattern.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/math/math.hpp>
+#include <eepp/system/luapattern.hpp>
 #include <eepp/ui/css/stylesheetlength.hpp>
 
 using namespace EE::Graphics;
@@ -295,7 +295,8 @@ StyleSheetLength& StyleSheetLength::operator=( const StyleSheetLength& val ) {
 	return *this;
 }
 
-StyleSheetLength StyleSheetLength::fromString( const std::string& str, const Float& defaultValue ) {
+StyleSheetLength StyleSheetLength::fromString( const std::string& str, const Float& defaultValue,
+											   bool pxAsDp ) {
 	PercentagePositions isPercentage = isPercentagePosition( String::hash( str ) );
 	if ( PercentagePositions::None != isPercentage )
 		return fromString( positionToPercentage( isPercentage ), defaultValue );
@@ -320,6 +321,9 @@ StyleSheetLength StyleSheetLength::fromString( const std::string& str, const Flo
 		if ( String::fromString( val, num ) )
 			length.setValue( val, unitFromString( unit ) );
 	}
+
+	if ( pxAsDp && length.getUnit() == Unit::Px )
+		length.mUnit = Unit::Dp;
 
 	return length;
 }

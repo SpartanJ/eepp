@@ -233,6 +233,10 @@ enum class PropertyId : Uint32 {
 	Colspan = String::hash( "colspan" ),
 	Cellpadding = String::hash( "cellpadding" ),
 	Cellspacing = String::hash( "cellspacing" ),
+	Size = String::hash( "size" ),
+	Type = String::hash( "type" ),
+	Rows = String::hash( "rows" ),
+	Cols = String::hash( "cols" ),
 };
 
 enum class PropertyType : Uint32 {

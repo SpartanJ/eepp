@@ -45,6 +45,9 @@
 #include <eepp/ui/doc/textposition.hpp>
 #include <eepp/ui/doc/textrange.hpp>
 #include <eepp/ui/doc/textundostack.hpp>
+#include <eepp/ui/htmlinput.hpp>
+#include <eepp/ui/htmltextarea.hpp>
+#include <eepp/ui/htmltextinput.hpp>
 #include <eepp/ui/iconmanager.hpp>
 #include <eepp/ui/keyboardshortcut.hpp>
 #include <eepp/ui/models/csspropertiesmodel.hpp>
@@ -67,6 +70,7 @@
 #include <eepp/ui/tools/uiaudioplayer.hpp>
 #include <eepp/ui/tools/uicodeeditorsplitter.hpp>
 #include <eepp/ui/tools/uicolorpicker.hpp>
+#include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uidocfindreplace.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
@@ -79,7 +83,9 @@
 #include <eepp/ui/uicombobox.hpp>
 #include <eepp/ui/uiconsole.hpp>
 #include <eepp/ui/uidatabind.hpp>
+#include <eepp/ui/uidropdown.hpp>
 #include <eepp/ui/uidropdownlist.hpp>
+#include <eepp/ui/uidropdownmodellist.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
 #include <eepp/ui/uifiledialog.hpp>
 #include <eepp/ui/uifontstyleconfig.hpp>

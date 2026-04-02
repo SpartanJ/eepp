@@ -239,6 +239,7 @@ SpinBox::input,
 Tab,
 TextEdit,
 TextInput,
+TextArea,
 TextInputPassword,
 TextView,
 Anchor,
@@ -256,6 +257,7 @@ listview::cell {
 TextView,
 Anchor,
 TextEdit,
+TextArea,
 TextInput,
 TextInputPassword,
 ComboBox::DropDownList,
@@ -321,7 +323,8 @@ SelectButton:selected:pressed {
 pushbutton:disabled,
 selectbutton:disabled,
 textinput:disabled,
-textedit:disabled {
+textedit:disabled,
+textarea:disabled {
 	color: var(--disabled-color);
 	border-color: var(--disabled-border);
 }
@@ -535,7 +538,8 @@ SpinBox::btndown {
 	height: 13dp;
 }
 
-TextEdit {
+TextEdit,
+TextArea {
 	background-color: var(--list-back);
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
@@ -548,7 +552,9 @@ TextEdit {
 }
 
 TextEdit:focus,
-TextEdit:hover {
+TextEdit:hover,
+TextArea:focus,
+TextArea:hover {
 	border-color: var(--primary);
 }
 
@@ -1049,6 +1055,7 @@ Menu::RadioButton::icon:selected {
 
 ListBox > ScrollBar,
 TextEdit > ScrollBar,
+TextArea > ScrollBar,
 Table > ScrollBar {
 	background-color: var(--list-back);
 }

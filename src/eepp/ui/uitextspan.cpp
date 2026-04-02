@@ -21,7 +21,7 @@ UITextSpan* UITextSpan::NewWithTag( const std::string& tag ) {
 }
 
 UITextSpan::UITextSpan( const std::string& tag ) : UIWidget( tag ) {
-	mFlags |= UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_LOADS_ITS_CHILDREN;
+	mFlags |= UI_HTML_ELEMENT | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_LOADS_ITS_CHILDREN;
 
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 

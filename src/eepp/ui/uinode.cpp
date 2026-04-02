@@ -1634,10 +1634,10 @@ Float UINode::lengthFromValue( const std::string& value,
 							   const Float& defaultValue, const Uint32& propertyIndex ) const {
 	Float containerLength =
 		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue, propertyIndex );
-	return convertLength( CSS::StyleSheetLength( value, defaultValue ), containerLength );
+	return convertLength( StyleSheetLength::fromString( value, defaultValue ), containerLength );
 }
 
-Float UINode::lengthFromValue( const CSS::StyleSheetProperty& property,
+Float UINode::lengthFromValue( const StyleSheetProperty& property,
 							   const Float& defaultValue ) const {
 	return lengthFromValue( property.getValue(),
 							property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
@@ -1649,11 +1649,11 @@ Float UINode::lengthFromValueAsDp( const std::string& value,
 								   const Float& defaultValue, const Uint32& propertyIndex ) const {
 	Float containerLength =
 		getPropertyRelativeTargetContainerLength( relativeTarget, defaultValue, propertyIndex );
-	return convertLengthAsDp( CSS::StyleSheetLength::fromString( value, defaultValue ),
+	return convertLengthAsDp( StyleSheetLength::fromString( value, defaultValue ),
 							  containerLength );
 }
 
-Float UINode::lengthFromValueAsDp( const CSS::StyleSheetProperty& property,
+Float UINode::lengthFromValueAsDp( const StyleSheetProperty& property,
 								   const Float& defaultValue ) const {
 	return lengthFromValueAsDp( property.getValue(),
 								property.getPropertyDefinition()->getRelativeTarget(), defaultValue,

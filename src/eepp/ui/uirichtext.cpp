@@ -40,7 +40,7 @@ UIRichText* UIRichText::NewWithTag( const std::string& tag ) {
 }
 
 UIRichText::UIRichText( const std::string& tag ) : UILayout( tag ) {
-	mFlags |= UI_LOADS_ITS_CHILDREN | UI_OWNS_CHILDREN_POSITION;
+	mFlags |= UI_HTML_ELEMENT | UI_LOADS_ITS_CHILDREN | UI_OWNS_CHILDREN_POSITION;
 
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 

@@ -66,11 +66,14 @@ class EE_API UIApplication {
 
 	//! Set if the application must show the memory manager result after closing the main window.
 	void setShowMemoryManagerResult( bool show );
+
 	bool showMemoryManagerResult() const;
 
+	String::HashType getStyleSheetDefaultMarker() const { return mStyleSheetMarker; }
   protected:
 	UISceneNode* mUISceneNode{ nullptr };
 	EE::Window::Window* mWindow{ nullptr };
+	String::HashType mStyleSheetMarker{ 0 };
 	bool mDidRun{ false };
 	bool mShowMemoryManagerResult{ false };
 };

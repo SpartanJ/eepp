@@ -9,7 +9,7 @@ UIHTMLTable* UIHTMLTable::New() {
 }
 
 UIHTMLTable::UIHTMLTable() : UILayout( "table" ) {
-	mFlags |= UI_OWNS_CHILDREN_POSITION;
+	mFlags |= UI_HTML_ELEMENT | UI_OWNS_CHILDREN_POSITION;
 	mWidthPolicy = SizePolicy::MatchParent;
 	mHeightPolicy = SizePolicy::WrapContent;
 }
@@ -268,10 +268,10 @@ void UIHTMLTable::updateLayout() {
 	}
 
 	Float totalMin = 0.f;
-	Float totalMax = 0.f;
+	// Float totalMax = 0.f;
 	for ( size_t i = 0; i < maxCols; ++i ) {
 		totalMin += mColMinWidths[i];
-		totalMax += mColMaxWidths[i];
+		// totalMax += mColMaxWidths[i];
 	}
 
 	Float tableUsedWidth = availableWidth; // always try to fill the container

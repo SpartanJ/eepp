@@ -86,7 +86,9 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 									appSettings.baseStyleSheetPath ? *appSettings.baseStyleSheetPath
 																   : "assets/ui/breeze.css" );
 
+	mStyleSheetMarker = String::hash( "uitheme" );
 	mUISceneNode->setStyleSheet( theme->getStyleSheet() );
+	mUISceneNode->getStyleSheet().setMarker( mStyleSheetMarker );
 	mUISceneNode->getUIThemeManager()->setDefaultTheme( theme )->add( theme );
 }
 
