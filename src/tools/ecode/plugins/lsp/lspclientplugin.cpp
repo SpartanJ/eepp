@@ -1151,7 +1151,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		}
 
 		// Allow overriding the command for already defined LSP
-		// And allow adding parameters to the already defined LSP
+		// And overriding parameters to the already defined LSP
 		if ( updateConfigFile && ( obj.contains( "name" ) || obj.contains( "use" ) ) &&
 			 ( obj.contains( "command" ) ||
 			   ( obj.contains( "command_parameters" ) &&
@@ -1176,7 +1176,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 						std::string cmdParam( obj.value( "command_parameters", "" ) );
 						if ( !cmdParam.empty() && cmdParam.front() != ' ' )
 							cmdParam = " " + cmdParam;
-						lspR.commandParameters += cmdParam;
+						lspR.commandParameters = cmdParam;
 						LSPClientServer::sanitizeCommand( lspR.commandParameters,
 														  mManager->getWorkspaceFolder() );
 					}

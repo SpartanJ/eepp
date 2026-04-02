@@ -227,6 +227,31 @@ Uint32 FileSystem::fileGetModificationDate( const std::string& filepath ) {
 	return 0;
 }
 
+size_t FileSystem::fileCountLines( const std::string& path, bool* isBinary ) {
+	if ( !fileExists( path ) )
+		return 0;
+	IOStreamFile fs( path );
+	if ( !fs.isOpen() || fs.getSize() == 0 )
+		return 0;
+	size_t count = 1;
+	char buffer[65536];
+	ios_size read;
+	if ( isBinary )
+		*isBinary = false;
+	while ( ( read = fs.read( buffer, sizeof( buffer ) ) ) > 0 ) {
+		for ( ios_size i = 0; i < read; ++i ) {
+			if ( buffer[i] == '\0' ) {
+				if ( isBinary )
+					*isBinary = true;
+				return 0;
+			}
+			if ( buffer[i] == '\n' )
+				count++;
+		}
+	}
+	return count;
+}
+
 bool FileSystem::fileCanWrite( const std::string& filepath ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	auto attrs = GetFileAttributesW( String::fromUtf8( filepath ).toWideString().c_str() );

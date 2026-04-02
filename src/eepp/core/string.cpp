@@ -2432,14 +2432,12 @@ void String::readBySeparatorStoppable( std::string_view buf,
 }
 
 size_t String::countLines( std::string_view text ) {
-	const char* startPtr = text.data();
-	const char* endPtr = text.data() + text.size();
-	size_t count = 0;
-	if ( startPtr != endPtr ) {
-		count = 1 + *startPtr == '\n' ? 1 : 0;
-		while ( ++startPtr && startPtr != endPtr )
-			count += ( '\n' == *startPtr ) ? 1 : 0;
-	}
+	if ( text.empty() )
+		return 0;
+	size_t count = 1;
+	for ( const auto& c : text )
+		if ( c == '\n' )
+			count++;
 	return count;
 }
 
@@ -2468,14 +2466,12 @@ void String::readBySeparatorStoppable( String::View buf,
 }
 
 size_t String::countLines( String::View text ) {
-	const String::StringBaseType* startPtr = text.data();
-	const String::StringBaseType* endPtr = text.data() + text.size();
-	size_t count = 0;
-	if ( startPtr != endPtr ) {
-		count = 1 + *startPtr == '\n' ? 1 : 0;
-		while ( ++startPtr && startPtr != endPtr )
-			count += ( '\n' == *startPtr ) ? 1 : 0;
-	}
+	if ( text.empty() )
+		return 0;
+	size_t count = 1;
+	for ( const auto& c : text )
+		if ( c == '\n' )
+			count++;
 	return count;
 }
 
