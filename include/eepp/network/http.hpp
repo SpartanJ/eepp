@@ -52,6 +52,9 @@ class EE_API Http : NonCopyable {
 			NotModified = 304,		///< For conditional requests, means the requested page hasn't
 									///< changed and doesn't need to be refreshed
 
+			TemporaryRedirect = 307, ///< The requested page has temporarily moved to a new location
+			PermanentRedirect = 308, ///< The requested page has permanently moved to a new location
+
 			// 4xx: client error
 			BadRequest = 400,	///< The server couldn't understand the request (syntax error)
 			Unauthorized = 401, ///< The requested page needs an authentication to be accessed

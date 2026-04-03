@@ -357,6 +357,10 @@ const char* Http::Response::statusToString( const Http::Response::Status& status
 			return "Moved Temporarily";
 		case NotModified:
 			return "Not Modified";
+		case TemporaryRedirect:
+			return "Temporary Redirect";
+		case PermanentRedirect:
+			return "Permanent Redirect";
 
 		// 4xx: client error
 		case BadRequest:
@@ -405,6 +409,8 @@ Http::Response::Status Http::Response::intAsStatus( const int& value ) {
 		case MultipleChoices:
 		case MovedPermanently:
 		case MovedTemporarily:
+		case TemporaryRedirect:
+		case PermanentRedirect:
 		case NotModified:
 		case BadRequest:
 		case Unauthorized:
@@ -485,8 +491,10 @@ const char* Http::Response::getStatusDescription() const {
 		case MultipleChoices:
 			return "The requested page can be accessed from several locations";
 		case MovedPermanently:
+		case PermanentRedirect:
 			return "The requested page has permanently moved to a new location";
 		case MovedTemporarily:
+		case TemporaryRedirect:
 			return "The requested page has temporarily moved to a new location";
 		case NotModified:
 			return "For conditional requests, means the requested page hasn't changed and doesn't "
@@ -1055,7 +1063,9 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 									// If a redirection is requested, and requests follows
 									// redirections, send a new request to the redirection location.
 									if ( ( received.getStatus() == Response::MovedPermanently ||
-										   received.getStatus() == Response::MovedTemporarily ) &&
+										   received.getStatus() == Response::MovedTemporarily ||
+										   received.getStatus() == Response::PermanentRedirect ||
+										   received.getStatus() == Response::TemporaryRedirect ) &&
 										 request.getFollowRedirect() ) {
 
 										// Only continue redirecting if less than 10 redirections
@@ -1081,7 +1091,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 
 											// Same host, expects a path in the same domain
 											if ( uri.getHost().empty() ||
-												 uri.getHost() == getHost() ) {
+												 uri.getHost() == getHostName() ) {
 												return downloadRequest( newRequest, writeTo,
 																		timeout );
 											} else {

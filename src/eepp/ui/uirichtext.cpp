@@ -4,6 +4,7 @@
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
@@ -697,6 +698,12 @@ void UIRichText::updateLayout() {
 	mPacking = true;
 
 	setMatchParentIfNeededVerticalGrowth();
+
+	const StyleSheetProperty* prop = nullptr;
+	if ( getLayoutWidthPolicy() == SizePolicy::Fixed && mStyle &&
+		 ( prop = mStyle->getProperty( PropertyId::Width ) ) ) {
+		setInternalPixelsSize( { lengthFromValue( *prop ), mSize.getHeight() } );
+	}
 
 	rebuildRichText();
 
