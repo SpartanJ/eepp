@@ -412,6 +412,7 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "focusable", "true" ).setType( PropertyType::Bool );
 	registerProperty( "expand-text", "false" ).setType( PropertyType::Bool );
 	registerProperty( "colspan", "1" ).setType( PropertyType::NumberInt );
+	registerProperty( "table-layout", "auto" ).setType( PropertyType::String );
 	registerProperty( "cellpadding", "0" ).setType( PropertyType::NumberLength );
 	registerProperty( "cellspacing", "0" ).setType( PropertyType::NumberLength );
 	registerProperty( "size", "20" ).setType( PropertyType::NumberInt );

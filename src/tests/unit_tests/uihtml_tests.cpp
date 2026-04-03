@@ -309,3 +309,51 @@ UTEST( HTMLTextArea, rowsColsAttribute ) {
 
 	Engine::destroySingleton();
 }
+
+UTEST( UIHTMLTable, tableLayoutFixed ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 650, "HTML Tables Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	sceneNode->loadLayoutFromString(
+		R"(<table style="width: 600px; table-layout: fixed;">
+			<tr>
+				<td id="c1" style="width: 100px;">C1</td>
+				<td id="c2" style="width: 200px;">C2</td>
+				<td id="c3">C3</td>
+			</tr>
+			<tr>
+				<td style="width: 500px;">C4 (Should be ignored)</td>
+				<td>C5</td>
+				<td>C6</td>
+			</tr>
+		</table>)" );
+
+	sceneNode->updateDirtyLayouts();
+
+	auto c1 = sceneNode->getRoot()->find( "c1" );
+	auto c2 = sceneNode->getRoot()->find( "c2" );
+	auto c3 = sceneNode->getRoot()->find( "c3" );
+
+	ASSERT_TRUE( c1 != nullptr );
+	ASSERT_TRUE( c2 != nullptr );
+	ASSERT_TRUE( c3 != nullptr );
+
+	// Total width is 600px. C1=100, C2=200, C3 takes remaining 300px.
+	EXPECT_NEAR( c1->getPixelsSize().getWidth(), 100.f, 1.f );
+	EXPECT_NEAR( c2->getPixelsSize().getWidth(), 200.f, 1.f );
+	EXPECT_NEAR( c3->getPixelsSize().getWidth(), 300.f, 1.f );
+
+	Engine::destroySingleton();
+}

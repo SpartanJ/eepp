@@ -13,11 +13,17 @@ class UIHTMLTableHead;
 class UIHTMLTableBody;
 class UIHTMLTableFooter;
 
+enum class TableLayout { Auto, Fixed };
+
 class EE_API UIHTMLTable : public UILayout {
   public:
 	static UIHTMLTable* New();
 
 	UIHTMLTable();
+
+	void setTableLayout( TableLayout layout );
+
+	TableLayout getTableLayout() const;
 
 	virtual Uint32 getType() const;
 
@@ -43,6 +49,7 @@ class EE_API UIHTMLTable : public UILayout {
 	mutable SmallVector<Float> mColMinWidths;
 	mutable SmallVector<Float> mColMaxWidths;
 	mutable SmallVector<Float> mColSpecifiedWidths;
+	TableLayout mTableLayout{ TableLayout::Auto };
 	mutable UIHTMLTableHead* mHead{ nullptr };
 	mutable UIHTMLTableBody* mBody{ nullptr };
 	mutable UIHTMLTableFooter* mFooter{ nullptr };

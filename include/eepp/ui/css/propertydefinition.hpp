@@ -231,6 +231,7 @@ enum class PropertyId : Uint32 {
 	MenuWidthMode = String::hash( "menu-width-mode" ),
 	ExpandText = String::hash( "expand-text" ),
 	Colspan = String::hash( "colspan" ),
+	TableLayout = String::hash( "table-layout" ),
 	Cellpadding = String::hash( "cellpadding" ),
 	Cellspacing = String::hash( "cellspacing" ),
 	Size = String::hash( "size" ),
