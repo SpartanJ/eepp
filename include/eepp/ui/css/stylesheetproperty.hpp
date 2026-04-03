@@ -186,6 +186,8 @@ class EE_API StyleSheetProperty {
 
 	bool isCachedProperty() const;
 
+	void setImportant( bool important );
+
   protected:
 	std::string mName;
 	String::HashType mNameHash;

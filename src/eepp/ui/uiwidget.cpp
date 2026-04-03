@@ -2067,9 +2067,11 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			propertiesParser.parse( std::string_view{ ait->value() } );
 			if ( !propertiesParser.getProperties().empty() ) {
 				for ( auto& [_, property] : propertiesParser.getProperties() ) {
+					auto propertyImportant( property );
+					propertyImportant.setImportant( true );
 					if ( mStyle )
-						mStyle->setStyleSheetProperty( property );
-					applyProperty( property );
+						mStyle->setStyleSheetProperty( propertyImportant );
+					applyProperty( propertyImportant );
 				}
 			}
 			continue;
