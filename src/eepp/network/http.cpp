@@ -27,6 +27,17 @@ namespace EE { namespace Network {
 
 #define PACKET_BUFFER_SIZE ( 16384 )
 
+static std::string sDefaultUserAgent = "Mozilla/5.0 (Linux; x86_64) eepp-network/1.0 "
+									   "Chrome/146.0.0.0 AppleWebKit/537.36 Safari/537.36";
+
+void Http::setDefaultUserAgent( const std::string& userAgent ) {
+	sDefaultUserAgent = userAgent;
+}
+
+std::string Http::getDefaultUserAgent() {
+	return sDefaultUserAgent;
+}
+
 std::string Http::Request::statusToString( Http::Request::Status status ) {
 	switch ( status ) {
 		case Connected:
@@ -220,7 +231,7 @@ std::string Http::Request::prepareTunnel( const Http& http ) {
 
 	setField( "Host", String::format( "%s:%d", http.getHostName().c_str(), http.getPort() ) );
 	setField( "Proxy-Connection", "Keep-Alive" );
-	setField( "User-Agent", "eepp-network" );
+	setField( "User-Agent", sDefaultUserAgent );
 
 	for ( FieldTable::const_iterator i = mFields.begin(); i != mFields.end(); ++i )
 		out << i->first << ": " << i->second << "\r\n";
@@ -1278,7 +1289,7 @@ Http::Request Http::prepareFields( const Http::Request& request ) {
 	Request toSend( request );
 
 	if ( !toSend.hasField( "User-Agent" ) )
-		toSend.setField( "User-Agent", "eepp-network" );
+		toSend.setField( "User-Agent", sDefaultUserAgent );
 
 	if ( !toSend.hasField( "Accept" ) )
 		toSend.setField( "Accept", "*/*" );

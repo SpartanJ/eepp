@@ -6,7 +6,6 @@
 #include <eepp/ui/uiradiobutton.hpp>
 #include <eepp/ui/uispinbox.hpp>
 #include <eepp/ui/uistyle.hpp>
-#include <eepp/ui/uitextinputpassword.hpp>
 
 namespace EE { namespace UI {
 
@@ -118,7 +117,7 @@ void HTMLInput::createChildWidget() {
 	} else if ( mInputType == "number" ) {
 		mChildWidget = UISpinBox::New();
 	} else if ( mInputType == "password" ) {
-		mChildWidget = UITextInputPassword::New();
+		mChildWidget = HTMLTextInput::New()->setMode( UITextInput::TextInputMode::Password );
 	} else if ( mInputType == "radio" ) {
 		mChildWidget = UIRadioButton::New();
 	} else {

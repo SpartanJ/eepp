@@ -718,7 +718,7 @@ void EETest::createNewUI() {
 	UITextInput* textInput = UITextInput::New();
 	textInput->setPosition( 50, 210 )->setSize( 200, 0 )->setParent( container );
 
-	UITextInputPassword* textInputPass = UITextInputPassword::New();
+	UITextInput* textInputPass = UITextInput::NewPassword();
 	textInputPass->setPosition( 50, 245 )->setSize( 200, 0 )->setParent( container );
 
 	UIListBox* listBox = UIListBox::New();

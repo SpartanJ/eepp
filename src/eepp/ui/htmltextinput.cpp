@@ -9,7 +9,9 @@ HTMLTextInput* HTMLTextInput::New() {
 	return eeNew( HTMLTextInput, () );
 }
 
-HTMLTextInput::HTMLTextInput() : UITextInput( "textinput" ) {
+HTMLTextInput::HTMLTextInput() : HTMLTextInput( "textinput" ) {}
+
+HTMLTextInput::HTMLTextInput( const std::string& tag ) : UITextInput( tag ) {
 	mHtmlSize = 20;
 	mWidthPolicy = SizePolicy::WrapContent;
 	mHeightPolicy = SizePolicy::WrapContent;
@@ -84,14 +86,9 @@ void HTMLTextInput::onAutoSize() {
 			setInternalPixelsWidth( width );
 		}
 	}
-	if ( mHeightPolicy == SizePolicy::WrapContent && getFont() ) {
-		Float height = getFont()->getFontHeight( getFontSize() ) + mPaddingPx.Top +
-								 mPaddingPx.Bottom;
-		if ( height > 0 ) {
-			setInternalPixelsHeight( height );
-		}
-	}
+
 	UITextInput::onAutoSize();
+
 	mPacking = false;
 }
 

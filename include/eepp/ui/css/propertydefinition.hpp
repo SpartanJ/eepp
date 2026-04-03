@@ -237,6 +237,7 @@ enum class PropertyId : Uint32 {
 	Type = String::hash( "type" ),
 	Rows = String::hash( "rows" ),
 	Cols = String::hash( "cols" ),
+	InputMode = String::hash( "input-mode" ),
 };
 
 enum class PropertyType : Uint32 {

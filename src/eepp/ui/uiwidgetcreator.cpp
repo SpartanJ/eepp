@@ -38,7 +38,6 @@
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uitextinput.hpp>
-#include <eepp/ui/uitextinputpassword.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitextureregion.hpp>
 #include <eepp/ui/uitextview.hpp>
@@ -86,7 +85,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["tabwidget"] = UITabWidget::New;
 		registeredWidget["textedit"] = UITextEdit::New;
 		registeredWidget["textinput"] = UITextInput::New;
-		registeredWidget["textinputpassword"] = UITextInputPassword::New;
+		registeredWidget["textinputpassword"] = UITextInput::NewPassword;
 		registeredWidget["loader"] = UILoader::New;
 		registeredWidget["selectbutton"] = UISelectButton::New;
 		registeredWidget["window"] = UIWindow::New;
@@ -122,7 +121,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		// Aliases
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;
-		registeredWidget["inputpassword"] = UITextInputPassword::New;
+		registeredWidget["inputpassword"] = UITextInput::NewPassword;
 		registeredWidget["viewpagerhorizontal"] = UIViewPager::NewHorizontal;
 		registeredWidget["viewpagervertical"] = UIViewPager::NewHorizontal;
 		registeredWidget["vslider"] = UISlider::NewHorizontal;

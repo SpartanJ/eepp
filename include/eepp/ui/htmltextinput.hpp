@@ -33,6 +33,8 @@ class EE_API HTMLTextInput : public UITextInput {
 	void setHtmlSize( Uint32 size );
 
   protected:
+	HTMLTextInput( const std::string& tag );
+
 	Uint32 mHtmlSize{ 20 };
 	bool mPacking{ false };
 };

@@ -396,6 +396,10 @@ class EE_API Http : NonCopyable {
 		URI mProxy;								///< Proxy information
 	};
 
+	static void setDefaultUserAgent( const std::string& userAgent );
+
+	static std::string getDefaultUserAgent();
+
 	/** @brief Default constructor */
 	Http();
 

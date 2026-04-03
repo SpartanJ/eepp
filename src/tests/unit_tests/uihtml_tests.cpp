@@ -14,7 +14,6 @@
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uiscenenode.hpp>
-#include <eepp/ui/uitextinputpassword.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/engine.hpp>
@@ -241,6 +240,7 @@ UTEST( HTMLInput, sizeAttribute ) {
 			<input id="i2" size="20" />
 			<input id="i3" />
 			<input id="i_pwd" type="password" />
+			<input id="i_mode_pwd" input-mode="password" />
 			<input id="i_chk" type="checkbox" />
 		</vbox>
 	)html" );
@@ -249,12 +249,14 @@ UTEST( HTMLInput, sizeAttribute ) {
 	auto c2 = sceneNode->getRoot()->find( "i2" )->asType<HTMLInput>();
 	auto c3 = sceneNode->getRoot()->find( "i3" )->asType<HTMLInput>();
 	auto cp = sceneNode->getRoot()->find( "i_pwd" )->asType<HTMLInput>();
+	auto cm = sceneNode->getRoot()->find( "i_mode_pwd" )->asType<HTMLInput>();
 	auto cc = sceneNode->getRoot()->find( "i_chk" )->asType<HTMLInput>();
 
 	ASSERT_TRUE( c1 != nullptr );
 	ASSERT_TRUE( c2 != nullptr );
 	ASSERT_TRUE( c3 != nullptr );
 	ASSERT_TRUE( cp != nullptr );
+	ASSERT_TRUE( cm != nullptr );
 	ASSERT_TRUE( cc != nullptr );
 
 	auto i1 = c1->getChildWidget()->asType<HTMLTextInput>();
@@ -273,7 +275,12 @@ UTEST( HTMLInput, sizeAttribute ) {
 	EXPECT_NEAR( i2->getPixelsSize().getWidth(), i3->getPixelsSize().getWidth(), 1.f );
 
 	EXPECT_TRUE( cp->getChildWidget()->isType( UI_TYPE_TEXTINPUT ) );
-	EXPECT_TRUE( cp->getChildWidget()->getElementTag() == "textinputpassword" );
+	EXPECT_TRUE( cp->getChildWidget()->asType<UITextInput>()->getMode() ==
+				 UITextInput::TextInputMode::Password );
+	EXPECT_TRUE( cp->getChildWidget()->asType<UITextInput>()->getMode() ==
+				 UITextInput::TextInputMode::Password );
+	EXPECT_TRUE( cm->getChildWidget()->asType<UITextInput>()->getMode() ==
+				 UITextInput::TextInputMode::Password );
 	EXPECT_TRUE( cc->getChildWidget()->isType( UI_TYPE_CHECKBOX ) );
 
 	Engine::destroySingleton();
