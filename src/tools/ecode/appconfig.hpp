@@ -185,6 +185,35 @@ class NewTerminalOrientation {
 	}
 };
 
+class TerminalWorkingDir {
+  public:
+	enum Mode { ProjectRoot, CurrentFileDir, UserHome, Other };
+
+	static Mode fromString( const std::string& mode ) {
+		if ( "current" == mode )
+			return Mode::CurrentFileDir;
+		if ( "home" == mode )
+			return Mode::UserHome;
+		if ( "other" == mode )
+			return Mode::Other;
+		return Mode::ProjectRoot;
+	}
+
+	static std::string toString( const Mode& mode ) {
+		switch ( mode ) {
+			case Mode::CurrentFileDir:
+				return "current";
+			case Mode::UserHome:
+				return "home";
+			case Mode::Other:
+				return "other";
+			case Mode::ProjectRoot:
+			default:
+				return "project";
+		}
+	}
+};
+
 struct TerminalConfig {
 	std::string shell;
 	std::string shellArgs;
@@ -192,6 +221,8 @@ struct TerminalConfig {
 	StyleSheetLength fontSize{ 11, StyleSheetLength::Dp };
 	NewTerminalOrientation::Orientation newTerminalOrientation{
 		NewTerminalOrientation::Horizontal };
+	TerminalWorkingDir::Mode workingDir{ TerminalWorkingDir::ProjectRoot };
+	std::string workingDirOther;
 	Uint64 scrollback{ 10000 };
 	bool unsupportedOSWarnDisabled{ false };
 	bool closeTerminalTabOnExit{ false };

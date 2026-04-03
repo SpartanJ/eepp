@@ -225,6 +225,9 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	term.colorScheme = ini.getValue( "terminal", "colorscheme", "eterm" );
 	term.newTerminalOrientation = NewTerminalOrientation::fromString(
 		ini.getValue( "terminal", "new_terminal_orientation", "vertical" ) );
+	term.workingDir = TerminalWorkingDir::fromString(
+		ini.getValue( "terminal", "working_dir", "project" ) );
+	term.workingDirOther = ini.getValue( "terminal", "working_dir_other", "" );
 	term.scrollback = ini.getValueI( "terminal", "scrollback", 10000 );
 	term.unsupportedOSWarnDisabled =
 		ini.getValueB( "terminal", "unsupported_os_warn_disabled", false );
@@ -403,6 +406,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "terminal", "colorscheme", term.colorScheme );
 	ini.setValue( "terminal", "new_terminal_orientation",
 				  NewTerminalOrientation::toString( term.newTerminalOrientation ) );
+	ini.setValue( "terminal", "working_dir", TerminalWorkingDir::toString( term.workingDir ) );
+	ini.setValue( "terminal", "working_dir_other", term.workingDirOther );
 	ini.setValue( "terminal", "scrollback", String::toString( term.scrollback ) );
 	ini.setValueB( "terminal", "unsupported_os_warn_disabled", term.unsupportedOSWarnDisabled );
 	ini.setValueB( "terminal", "close_terminal_tab_on_exit", term.closeTerminalTabOnExit );

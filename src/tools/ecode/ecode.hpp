@@ -369,6 +369,10 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 			if ( mTerminalManager )
 				mTerminalManager->configureTerminalScrollback();
 		} );
+		t.setCommand( "configure-terminal-working-dir", [this] {
+			if ( mTerminalManager )
+				mTerminalManager->configureTerminalWorkingDir();
+		} );
 		t.setCommand( "check-for-updates", [this] { mSettingsActions->checkForUpdates( false ); } );
 		t.setCommand( "create-new-window", [this] { openInNewWindow(); } );
 		t.setCommand( "create-new-welcome-tab", [this] { createWelcomeTab(); } );

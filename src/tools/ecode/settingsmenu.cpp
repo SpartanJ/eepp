@@ -1173,6 +1173,11 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 			   findIcon( "terminal" ), getKeybind( "configure-terminal-scrollback" ) )
 		->setId( "configure-terminal-scrollback" );
 
+	mTerminalMenu
+		->add( i18n( "configure_terminal_working_dir", "Configure Terminal Default Working Directory" ),
+			   findIcon( "terminal" ), getKeybind( "configure-terminal-working-dir" ) )
+		->setId( "configure-terminal-working-dir" );
+
 	mTerminalMenu->on( Event::OnItemClicked, [this]( const Event* event ) {
 		const std::string& id( event->getNode()->getId() );
 		if ( "close-terminal-tab-on-exit" == id ) {

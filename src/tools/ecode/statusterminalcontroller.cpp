@@ -141,8 +141,9 @@ UITerminal* StatusTerminalController::createTerminal(
 		mContext->getTerminalFont() ? mContext->getTerminalFont() : mContext->getFontMono(),
 		mContext->termConfig().fontSize.asPixels( 0, Sizef(), mContext->getDisplayDPI() ),
 		initialSize, program, args, env,
-		!workingDir.empty() ? workingDir : mContext->getCurrentWorkingDir(), 10000, nullptr,
-		false );
+		!workingDir.empty() ? workingDir
+							: mContext->getTerminalManager()->getSelectedWorkingDir(),
+		10000, nullptr, false );
 
 	if ( term == nullptr || term->getTerm() == nullptr ) {
 		mContext->getTerminalManager()->displayError( workingDir );
