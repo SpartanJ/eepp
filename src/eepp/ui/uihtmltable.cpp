@@ -133,9 +133,9 @@ void UIHTMLTable::computeIntrinsicWidths() const {
 			cell->mWidthPolicy = SizePolicy::WrapContent;
 			Float cellMin = cell->getMinIntrinsicWidth();
 			Float cellMax = cell->getMaxIntrinsicWidth();
-			Float cellSpecified = std::max( cell->getPropertyWidth(),
-											getRecursiveSpecifiedWidth(
-												getRecursiveSpecifiedWidth, cell ) );
+			Float cellSpecified =
+				std::max( cell->getPropertyWidth(),
+						  getRecursiveSpecifiedWidth( getRecursiveSpecifiedWidth, cell ) );
 			cell->mWidthPolicy = widthPolicy;
 
 			Uint32 colspan = cell->getColspan();
@@ -164,9 +164,9 @@ void UIHTMLTable::computeIntrinsicWidths() const {
 			cell->mWidthPolicy = SizePolicy::WrapContent;
 			Float cellMin = cell->getMinIntrinsicWidth();
 			Float cellMax = cell->getMaxIntrinsicWidth();
-			Float cellSpecified = std::max( cell->getPropertyWidth(),
-											getRecursiveSpecifiedWidth(
-												getRecursiveSpecifiedWidth, cell ) );
+			Float cellSpecified =
+				std::max( cell->getPropertyWidth(),
+						  getRecursiveSpecifiedWidth( getRecursiveSpecifiedWidth, cell ) );
 			cell->mWidthPolicy = widthPolicy;
 
 			Uint32 colspan = cell->getColspan();
@@ -220,8 +220,10 @@ void UIHTMLTable::computeIntrinsicWidths() const {
 		totalMax += mColMaxWidths[i];
 	}
 
-	mMinIntrinsicWidth = totalMin + mPaddingPx.Left + mPaddingPx.Right + ( maxCols + 1 ) * mCellspacing;
-	mMaxIntrinsicWidth = totalMax + mPaddingPx.Left + mPaddingPx.Right + ( maxCols + 1 ) * mCellspacing;
+	mMinIntrinsicWidth =
+		totalMin + mPaddingPx.Left + mPaddingPx.Right + ( maxCols + 1 ) * mCellspacing;
+	mMaxIntrinsicWidth =
+		totalMax + mPaddingPx.Left + mPaddingPx.Right + ( maxCols + 1 ) * mCellspacing;
 
 	mIntrinsicWidthsDirty = false;
 }
@@ -266,24 +268,25 @@ void UIHTMLTable::updateLayout() {
 		mPacking = false;
 		return;
 	}
-
 	Float totalMin = 0.f;
-	// Float totalMax = 0.f;
+	Float totalMax = 0.f; // Make sure this is uncommented
 	for ( size_t i = 0; i < maxCols; ++i ) {
 		totalMin += mColMinWidths[i];
-		// totalMax += mColMaxWidths[i];
+		totalMax += mColMaxWidths[i]; // Accumulate max widths
 	}
 
 	Float tableUsedWidth = availableWidth; // always try to fill the container
 
 	// Assign column widths
 	if ( tableUsedWidth <= totalMin + 0.001f ) {
-		// 1. Too narrow → scale down proportionally
-		Float scale = tableUsedWidth / totalMin;
+		// 1. Too narrow → scale down proportionally to min widths
+		Float scale = totalMin > 0.001f ? ( tableUsedWidth / totalMin ) : 0.f;
 		for ( size_t i = 0; i < maxCols; ++i )
 			mColWidths[i] = mColMinWidths[i] * scale;
-	} else {
-		// 2. Extra space → distribute extra by flexibility
+
+	} else if ( tableUsedWidth <= totalMax + 0.001f ) {
+		// 2. Partial flex → space is between min and max. Distribute extra by flexibility (text
+		// wrapping)
 		Float extraSpace = tableUsedWidth - totalMin;
 		Float totalFlex = 0.f;
 
@@ -303,16 +306,54 @@ void UIHTMLTable::updateLayout() {
 				mColWidths[i] = mColMinWidths[i] + added;
 			}
 		} else {
-			// No flexibility (all rigid) → stretch proportionally to min widths
-			if ( totalMin > 0.001f ) {
-				Float scale = tableUsedWidth / totalMin;
-				for ( size_t i = 0; i < maxCols; ++i )
-					mColWidths[i] = mColMinWidths[i] * scale;
-			} else {
-				Float w = tableUsedWidth / static_cast<Float>( maxCols );
-				for ( size_t i = 0; i < maxCols; ++i )
-					mColWidths[i] = w;
+			// Fallback if no flex exists
+			Float scale = totalMin > 0.001f ? ( tableUsedWidth / totalMin ) : 0.f;
+			for ( size_t i = 0; i < maxCols; ++i )
+				mColWidths[i] = mColMinWidths[i] * scale;
+		}
+
+	} else {
+		// 3. Abundant space → table is wider than all max widths combined.
+		// Give everyone their max width, then distribute the leftover space.
+		Float leftOver = tableUsedWidth - totalMax;
+
+		Float totalMaxUnspecified = 0.f;
+		size_t unspecifiedCount = 0;
+
+		for ( size_t i = 0; i < maxCols; ++i ) {
+			if ( mColSpecifiedWidths[i] <= 0.f ) {
+				totalMaxUnspecified += mColMaxWidths[i];
+				unspecifiedCount++;
 			}
+		}
+
+		if ( unspecifiedCount > 0 ) {
+			// Distribute leftover space proportionally to max-widths for a balanced look
+			if ( totalMaxUnspecified > 0.001f ) {
+				for ( size_t i = 0; i < maxCols; ++i ) {
+					if ( mColSpecifiedWidths[i] <= 0.f ) {
+						Float scale = mColMaxWidths[i] / totalMaxUnspecified;
+						mColWidths[i] = mColMaxWidths[i] + ( leftOver * scale );
+					} else {
+						mColWidths[i] = mColMaxWidths[i]; // Rigid explicit column stays rigid
+					}
+				}
+			} else {
+				// Fallback to strict even split if max widths are 0
+				Float share = leftOver / static_cast<Float>( unspecifiedCount );
+				for ( size_t i = 0; i < maxCols; ++i ) {
+					if ( mColSpecifiedWidths[i] <= 0.f ) {
+						mColWidths[i] = mColMaxWidths[i] + share;
+					} else {
+						mColWidths[i] = mColMaxWidths[i];
+					}
+				}
+			}
+		} else {
+			// Absolute fallback: All columns explicitly specified, but space remains. Scale up.
+			Float scale = totalMax > 0.001f ? ( tableUsedWidth / totalMax ) : 0.f;
+			for ( size_t i = 0; i < maxCols; ++i )
+				mColWidths[i] = mColMaxWidths[i] * scale;
 		}
 	}
 

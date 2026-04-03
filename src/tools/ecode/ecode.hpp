@@ -162,6 +162,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	std::string getCurrentWorkingDir() const;
 
+	std::string getCurrentFileDir() const;
+
 	Drawable* findIcon( const std::string& name );
 
 	Drawable* findIcon( const std::string& name, const size_t iconSize );

@@ -531,6 +531,7 @@ Anchor.error:hover {
 	border-top-color: var(--button-border);
 	padding: 4dp 16dp 4dp 16dp;
 	border-top-left-radius: 12dp;
+	border-width: 1dp;
 	margin-bottom: 16dp;
 	margin-right: 2dp;
 	font-style: shadow;

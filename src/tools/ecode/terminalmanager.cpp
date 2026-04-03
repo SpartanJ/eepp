@@ -265,10 +265,11 @@ void TerminalManager::configureTerminalScrollback() {
 
 void TerminalManager::configureTerminalWorkingDir() {
 	static const auto layout( R"xml(
-		<window layout_width="450dp" layout_height="wrap_content" window-flags="default|shadow" window-title='@string(terminal_working_dir_configuration, "Terminal Default Working Directory Configuration")'>
+	<window layout_width="450dp" layout_height="154dp" window-flags="default|shadow"
+		window-title='@string(terminal_working_dir_configuration, "Terminal Default Working Directory Configuration")'>
 		<vbox lw="mp" lh="wrap_content" padding="4dp">
 			<TextView text='@string(configure_terminal_default_working_dir, "Configure Terminal default working directory:")' font-size="14dp" margin-bottom="8dp" />
-			<ComboBox id="working_dir_combo" layout_width="match_parent" layout_height="wrap_content" selectedIndex="0" popup-to-root="true" />
+			<DropDownList id="working_dir_combo" layout_width="match_parent" layout_height="wrap_content" selectedIndex="0" popup-to-root="true" />
 			<hbox id="other_dir_container" lw="mp" lh="wrap_content" margin-top="8dp" visible="false">
 				<TextInput id="other_dir_input" lw="0" lw8="1" lh="wrap_content" hint="@string(other_working_directory, Other Working Directory)" />
 				<PushButton id="other_dir_browse" lw="wrap_content" lh="wrap_content" text="..." margin-left="4dp" />
@@ -278,10 +279,10 @@ void TerminalManager::configureTerminalWorkingDir() {
 				<PushButton id="cancel" text="@string(msg_box_cancel, Cancel)" margin-left="8dp" icon="cancel" />
 			</hbox>
 		</vbox>
-		</window>
+	</window>
 	)xml" );
 	UIWindow* window = mApp->getUISceneNode()->loadLayoutFromString( layout )->asType<UIWindow>();
-	UIComboBox* workingDirCombo = window->find<UIComboBox>( "working_dir_combo" );
+	UIDropDownList* workingDirCombo = window->find<UIDropDownList>( "working_dir_combo" );
 	UIWidget* otherDirContainer = window->find<UIWidget>( "other_dir_container" );
 	UITextInput* otherDirInput = window->find<UITextInput>( "other_dir_input" );
 	UIPushButton* otherDirBrowse = window->find<UIPushButton>( "other_dir_browse" );
@@ -292,8 +293,7 @@ void TerminalManager::configureTerminalWorkingDir() {
 		mApp->i18n( "project_root_directory", "Project Root Directory" ),
 		mApp->i18n( "current_file_directory", "Current File Directory" ),
 		mApp->i18n( "user_home_directory", "User Home" ),
-		mApp->i18n( "other_directory", "Other" )
-	};
+		mApp->i18n( "other_directory", "Other" ) };
 
 	workingDirCombo->getListBox()->addListBoxItems( options );
 	workingDirCombo->getListBox()->setSelected(
@@ -306,14 +306,13 @@ void TerminalManager::configureTerminalWorkingDir() {
 
 	updateOtherVisible( mApp->getConfig().term.workingDir );
 
-	workingDirCombo->on( Event::OnItemSelected, [updateOtherVisible, workingDirCombo]( auto ) {
+	workingDirCombo->on( Event::OnValueChange, [updateOtherVisible, workingDirCombo]( auto ) {
 		updateOtherVisible( static_cast<TerminalWorkingDir::Mode>(
 			workingDirCombo->getListBox()->getItemSelectedIndex() ) );
 	} );
 
 	otherDirBrowse->onClick( [this, otherDirInput]( auto ) {
-		UIFileDialog* dialog = mApp->openFileDialog();
-		dialog->setWindowFlags( UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL );
+		UIFileDialog* dialog = mApp->openFileDialog( false );
 		dialog->setTitle( mApp->i18n( "select_working_directory", "Select Working Directory" ) );
 		dialog->addFilePattern( "*", true );
 		dialog->setAllowFolderSelect( true );
@@ -329,7 +328,6 @@ void TerminalManager::configureTerminalWorkingDir() {
 		mApp->saveConfig();
 		window->closeWindow();
 	} );
-
 
 	cancel->onClick( [window]( auto ) { window->closeWindow(); } );
 
@@ -349,7 +347,7 @@ std::string TerminalManager::getSelectedWorkingDir() const {
 			return !mApp->getCurrentProject().empty() ? mApp->getCurrentProject()
 													  : mApp->getCurrentWorkingDir();
 		case TerminalWorkingDir::CurrentFileDir:
-			return mApp->getCurrentWorkingDir();
+			return mApp->getCurrentFileDir();
 		case TerminalWorkingDir::UserHome:
 			return Sys::getUserDirectory();
 		case TerminalWorkingDir::Other:

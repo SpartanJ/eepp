@@ -1423,6 +1423,19 @@ std::string App::getCurrentWorkingDir() const {
 	return "";
 }
 
+std::string App::getCurrentFileDir() const {
+	if ( mSplitter && mSplitter->curEditorIsNotNull() && mSplitter->curEditorExists() &&
+		 mSplitter->getCurEditor()->hasDocument() &&
+		 mSplitter->getCurEditor()->getDocument().hasFilepath() ) {
+		return mSplitter->getCurEditor()->getDocument().getFileInfo().getDirectoryPath();
+	}
+
+	if ( !mCurrentProject.empty() && mCurrentProject != mPlaygroundPath )
+		return mCurrentProject;
+
+	return "";
+}
+
 std::vector<std::pair<String::StringBaseType, String::StringBaseType>>
 App::makeAutoClosePairs( const std::string& strPairs ) {
 	auto curPairs = String::split( strPairs, ',' );
