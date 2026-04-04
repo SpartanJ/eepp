@@ -168,6 +168,10 @@ img {
 	layout-height: wrap_content;
 }
 
+body img {
+	scale-type: expand;
+}
+
 markdownview {
 	background-color: var(--list-back);
 	padding: 4dp;
@@ -179,6 +183,7 @@ markdownview h2 {
 }
 
 markdownview img {
+	scale-type: fit-inside;
 	max-width: 100%;
 	max-height: 100vh;
 }

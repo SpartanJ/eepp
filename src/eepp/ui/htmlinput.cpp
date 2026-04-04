@@ -14,6 +14,7 @@ HTMLInput* HTMLInput::New() {
 }
 
 HTMLInput::HTMLInput() : UIWidget( "input" ) {
+	mFlags |= UI_HTML_ELEMENT;
 	mWidthPolicy = SizePolicy::WrapContent;
 	mHeightPolicy = SizePolicy::WrapContent;
 	createChildWidget();
@@ -123,6 +124,8 @@ void HTMLInput::createChildWidget() {
 	} else {
 		mChildWidget = HTMLTextInput::New();
 	}
+
+	mChildWidget->setFlags( UI_HTML_ELEMENT );
 
 	if ( mChildWidget ) {
 		mChildWidget->setParent( this );

@@ -12,6 +12,7 @@ HTMLTextArea* HTMLTextArea::New() {
 
 HTMLTextArea::HTMLTextArea() : UITextEdit() {
 	setElementTag( "textarea" );
+	mFlags |= UI_HTML_ELEMENT;
 	mWidthPolicy = SizePolicy::WrapContent;
 	mHeightPolicy = SizePolicy::WrapContent;
 	invalidateIntrinsicSize();

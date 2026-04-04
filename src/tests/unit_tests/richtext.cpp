@@ -9,8 +9,8 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/system/sys.hpp>
-#include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextspan.hpp>
@@ -248,8 +248,9 @@ UTEST( RichText, RichTextTest ) {
 	};
 
 	const auto& runTest = [&createRichText, &utest_result]() {
-		auto win =
-			Engine::instance()->createWindow( WindowSettings( 1024, 650, "RichText Example" ) );
+		auto win = Engine::instance()->createWindow(
+			WindowSettings( 1024, 650, "RichText Example", WindowStyle::Default,
+							WindowBackend::Default, 32, "", 1, EE_SCREEN_KEYBOARD_ENABLED, true ) );
 
 		if ( !win->isOpen() )
 			return;
@@ -684,7 +685,8 @@ UTEST( UIRichText, WhitespaceCollapseTest ) {
 
 	// Only 1 text span ("Hello") should be generated,
 	// the whitespace between <span> and <ul>, and after <ul>
-	// should be correctly collapsed into nothing since they aren't adjacent to inline elements on both sides.
+	// should be correctly collapsed into nothing since they aren't adjacent to inline elements on
+	// both sides.
 	EXPECT_EQ( spanCount, 1 );
 
 	eeDelete( sceneNode );
@@ -869,7 +871,8 @@ UTEST( UIRichText, WhitespaceCollapseBRTest ) {
 	// The "ecode" text span should NOT have a leading space.
 	bool foundEcodeWithLeadingSpace = false;
 	auto checkSpansRecursive = [&]( Node* n, auto&& checkSpansRecursiveRef ) -> void {
-		if ( !n ) return;
+		if ( !n )
+			return;
 		if ( n->isWidget() && n->isType( UI_TYPE_TEXTSPAN ) ) {
 			UI::UITextSpan* span = static_cast<UI::UITextSpan*>( n );
 			if ( span->getText().size() > 0 && span->getText()[0] == ' ' &&
@@ -1020,5 +1023,3 @@ UTEST( UIRichText, CustomBRHeight ) {
 	eeDelete( sceneNode );
 	Engine::destroySingleton();
 }
-
-

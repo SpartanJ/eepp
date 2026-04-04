@@ -1755,8 +1755,13 @@ Float UINode::convertLength( const CSS::StyleSheetLength& length,
 		}
 	}
 
-	return length.asPixels( containerLength, getSceneNode()->getPixelsSize(),
-							getSceneNode()->getDPI(), elFontSize, rootFontSize );
+	auto ret = length.asPixels( containerLength, getSceneNode()->getPixelsSize(),
+								getSceneNode()->getDPI(), elFontSize, rootFontSize );
+
+	if ( ( mFlags & UI_HTML_ELEMENT ) && length.getUnit() == StyleSheetLength::Unit::Px )
+		ret = PixelDensity::dpToPx( ret ); // scale px as if where dp in HTML elements
+
+	return ret;
 }
 
 Float UINode::convertLengthAsDp( const CSS::StyleSheetLength& length,

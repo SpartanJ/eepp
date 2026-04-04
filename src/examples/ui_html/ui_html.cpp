@@ -39,6 +39,7 @@ EE_MAIN_FUNC int main( int, char** ) {
 	auto mainContainer = ui->find( "html_doc" );
 	auto backBtn = ui->find( "backbtn" )->asType<UIPushButton>();
 	auto fwdBtn = ui->find( "fwdbtn" )->asType<UIPushButton>();
+	auto scrollView = ui->find( "html_view" )->asType<UIScrollView>();
 	std::vector<URI> history;
 	int historyIndex = -1;
 
@@ -47,15 +48,17 @@ EE_MAIN_FUNC int main( int, char** ) {
 		fwdBtn->setEnabled( historyIndex < static_cast<int>( history.size() ) - 1 );
 	};
 
-	const auto loadDocumentData = [ui, mainContainer, urlBar, &app]( URI url, std::string& data ) {
+	const auto loadDocumentData = [ui, mainContainer, urlBar, &app,
+								   scrollView]( URI url, std::string& data ) {
 		if ( data.empty() )
 			return;
-		ui->ensureMainThread( [url, data, mainContainer, urlBar, ui, &app] {
+		ui->ensureMainThread( [url, data, mainContainer, urlBar, ui, &app, scrollView] {
 			mainContainer->closeAllChildren();
 			ui->getStyleSheet().removeAllWithoutMarker( app.getStyleSheetDefaultMarker() );
 			ui->setURIFromURL( url );
 			auto urlStr = url.toString();
 			auto hash = String::hash( urlStr );
+			scrollView->getVerticalScrollBar()->setValue( 0 );
 			ui->loadLayoutFromString( HTMLFormatter::HTMLtoXML( data ), mainContainer, hash );
 			urlBar->setText( urlStr );
 		} );
