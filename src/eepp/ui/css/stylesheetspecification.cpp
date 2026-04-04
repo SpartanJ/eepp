@@ -739,24 +739,31 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		String::removeExtraSpaces( value );
 		if ( value.empty() )
 			return {};
+
 		std::vector<StyleSheetProperty> properties;
 		const std::vector<std::string> propNames( shorthand->getProperties() );
+
 		if ( propNames.size() != 4 ) {
-			Log::error( "ShorthandType::Box properties must be 4 for %s",
-						shorthand->getName().c_str() );
+			Log::error( "ShorthandType::Box properties must be 4 for %s", shorthand->getName() );
 			return properties;
 		}
 
 		auto ltrbSplit = String::split( value, ' ', true );
+		if ( ltrbSplit.empty() )
+			return properties;
 
-		if ( ltrbSplit.size() >= 2 ) {
-			auto max = std::min( propNames.size(), ltrbSplit.size() );
-			for ( size_t i = 0; i < max; i++ )
-				properties.emplace_back( StyleSheetProperty( propNames[i], ltrbSplit[i] ) );
-		} else if ( ltrbSplit.size() == 1 ) {
-			for ( size_t i = 0; i < propNames.size(); i++ )
-				properties.emplace_back( StyleSheetProperty( propNames[i], ltrbSplit[0] ) );
-		}
+		// Apply CSS shorthand rules (Top, Right, Bottom, Left)
+		std::string top = ltrbSplit[0];
+		std::string right = ltrbSplit.size() > 1 ? ltrbSplit[1] : top;
+		std::string bottom = ltrbSplit.size() > 2 ? ltrbSplit[2] : top;
+		std::string left = ltrbSplit.size() > 3 ? ltrbSplit[3] : right;
+
+		// propNames order is Top, Right, Bottom, Left
+		properties.emplace_back( StyleSheetProperty( propNames[0], top ) );
+		properties.emplace_back( StyleSheetProperty( propNames[1], right ) );
+		properties.emplace_back( StyleSheetProperty( propNames[2], bottom ) );
+		properties.emplace_back( StyleSheetProperty( propNames[3], left ) );
+
 		return properties;
 	};
 
