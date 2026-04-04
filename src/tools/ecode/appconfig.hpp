@@ -82,6 +82,7 @@ struct CodeEditorConfig {
 	bool highlightSelectionMatch{ true };
 	bool colorPickerSelection{ false };
 	bool colorPreview{ false };
+	bool inlineColorBoxes{ false };
 	bool minimap{ true };
 	bool showDocInfo{ true };
 	bool hideTabBarOnSingleTab{ true };

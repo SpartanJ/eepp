@@ -170,6 +170,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.highlightSelectionMatch = ini.getValueB( "editor", "highlight_selection_match", true );
 	editor.colorPickerSelection = ini.getValueB( "editor", "color_picker_selection", true );
 	editor.colorPreview = ini.getValueB( "editor", "color_preview", true );
+	editor.inlineColorBoxes = ini.getValueB( "editor", "inline_color_boxes", false );
 	editor.minimap = ini.getValueB( "editor", "minimap", true );
 	editor.showDocInfo = ini.getValueB( "editor", "show_doc_info", true );
 	editor.hideTabBarOnSingleTab = ini.getValueB( "editor", "hide_tab_bar_on_single_tab", false );
@@ -360,6 +361,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "highlight_selection_match", editor.highlightSelectionMatch );
 	ini.setValueB( "editor", "color_picker_selection", editor.colorPickerSelection );
 	ini.setValueB( "editor", "color_preview", editor.colorPreview );
+	ini.setValueB( "editor", "inline_color_boxes", editor.inlineColorBoxes );
 	ini.setValueB( "editor", "minimap", editor.minimap );
 	ini.setValueB( "editor", "show_doc_info", editor.showDocInfo );
 	ini.setValueB( "editor", "hide_tab_bar_on_single_tab", editor.hideTabBarOnSingleTab );

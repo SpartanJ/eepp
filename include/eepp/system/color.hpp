@@ -143,6 +143,18 @@ template <typename T> class tColor {
 	}
 
 	tRGB<T> toRGB() { return tRGB<T>( r, g, b ); }
+
+	/**
+	 * @brief Calculates the perceived luminance (Luma) of the color.
+	 * Uses the Rec. 601 luma formula: L = 0.299*R + 0.587*G + 0.114*B.
+	 * Perceived luminance aligns with human vision, making it ideal for UI contrast.
+	 * @note Note on HSL (Colorf): If this object is being used to store HSL values
+	 * (for instance, a Colorf returned by Color::toHsl()), do NOT call this method
+	 * directly. Perceived luminance mathematically requires RGB components.
+	 * You must either call this on the original RGB object, or convert the HSL
+	 * Colorf back to RGB first (e.g., using Color::fromHsl(hslColor)).
+	 */
+	T perceivedLuminance() const { return static_cast<T>( 0.299f * r + 0.587f * g + 0.114f * b ); }
 };
 
 typedef tColor<Float> ColorAf;
@@ -208,13 +220,17 @@ class EE_API Color : public tColor<Uint8> {
 
 	static Color fromString( std::string str );
 
-	static bool isColorString( std::string str );
+	static bool isColorString( std::string str, bool searchColorNames = true );
+
+	static bool isColorString( String::View str, bool searchColorNames = true );
 
 	static void registerColor( const std::string& name, const Color& color );
 
 	static bool unregisterColor( const std::string& name );
 
-	static bool validHexColorString( const std::string& hexColor );
+	static bool validHexColorString( std::string_view hexColor );
+
+	static bool validHexColorString( String::View hexColor );
 
 	static const Color Transparent;
 	static const Color Black;

@@ -272,6 +272,9 @@ Voulez-vous le télécharger maintenant ?</string>
 	<string name="enable_autoreload">Activer le rechargement automatique</string>
 	<string name="enable_color_picker">Activer le sélecteur de couleurs</string>
 	<string name="enable_color_picker_tooltip">Active l'outil de sélection de couleurs lorsqu'un double clic est effectué sur un mot représentant une couleur.</string>
+	<string name="enable_inline_color_boxes">Activer les boîtes de couleur</string>
+	<string name="enable_inline_color_boxes_tooltip">Affiche une zone d'arrière-plan de la couleur analysée directement derrière le
+texte lui-même.</string>
 	<string name="enable_color_preview">Activer l'aperçu des couleurs</string>
 	<string name="enable_color_preview_tooltip">Activer un aperçu rapide d'une couleur lorsque la souris survole un mot qui représente une couleur.</string>
 	<string name="enable_horizontal_scrollbar">Activer la barre de défilement horizontale</string>

@@ -1293,6 +1293,11 @@ bool String::startsWith( const String& haystack, const String& needle ) {
 		   std::equal( needle.begin(), needle.end(), haystack.begin() );
 }
 
+bool String::startsWith( String::View haystack, String::View needle ) {
+	return needle.length() <= haystack.length() &&
+		   std::equal( needle.begin(), needle.end(), haystack.begin() );
+}
+
 bool String::startsWith( const char* haystack, const char* needle ) {
 	return strncmp( needle, haystack, strlen( needle ) ) == 0;
 }
@@ -1302,12 +1307,55 @@ bool String::startsWith( std::string_view haystack, std::string_view needle ) {
 		   std::equal( needle.begin(), needle.end(), haystack.begin() );
 }
 
+bool String::istartsWith( const std::string& haystack, const std::string& needle ) {
+	return needle.length() <= haystack.length() &&
+		   std::equal( needle.begin(), needle.end(), haystack.begin(), []( char c1, char c2 ) {
+			   return std::tolower( c1 ) == std::tolower( c2 );
+		   } );
+}
+
+bool String::istartsWith( const String& haystack, const String& needle ) {
+	return needle.length() <= haystack.length() &&
+		   std::equal( needle.begin(), needle.end(), haystack.begin(),
+					   []( String::StringBaseType c1, String::StringBaseType c2 ) {
+						   return std::tolower( c1 ) == std::tolower( c2 );
+					   } );
+}
+
+bool String::istartsWith( String::View haystack, String::View needle ) {
+	return needle.length() <= haystack.length() &&
+		   std::equal( needle.begin(), needle.end(), haystack.begin(),
+					   []( String::StringBaseType c1, String::StringBaseType c2 ) {
+						   return std::tolower( c1 ) == std::tolower( c2 );
+					   } );
+}
+
+bool String::istartsWith( const char* haystack, const char* needle ) {
+	size_t needleLen = strlen( needle );
+	if ( needleLen > strlen( haystack ) ) return false;
+	return std::equal( needle, needle + needleLen, haystack, []( char c1, char c2 ) {
+		return std::tolower( c1 ) == std::tolower( c2 );
+	} );
+}
+
+bool String::istartsWith( std::string_view haystack, std::string_view needle ) {
+	return needle.length() <= haystack.length() &&
+		   std::equal( needle.begin(), needle.end(), haystack.begin(), []( char c1, char c2 ) {
+			   return std::tolower( c1 ) == std::tolower( c2 );
+		   } );
+}
+
 bool String::endsWith( const std::string& haystack, const std::string& needle ) {
 	return needle.length() <= haystack.length() &&
 		   haystack.compare( haystack.size() - needle.size(), needle.size(), needle ) == 0;
 }
 
 bool String::endsWith( const String& haystack, const String& needle ) {
+	return needle.length() <= haystack.length() &&
+		   haystack.compare( haystack.size() - needle.size(), needle.size(), needle ) == 0;
+}
+
+bool String::endsWith( String::View haystack, String::View needle ) {
 	return needle.length() <= haystack.length() &&
 		   haystack.compare( haystack.size() - needle.size(), needle.size(), needle ) == 0;
 }

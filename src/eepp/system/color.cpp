@@ -714,34 +714,77 @@ Color Color::fromString( std::string str ) {
 	return Color::Transparent;
 }
 
-bool Color::isColorString( std::string str ) {
+bool Color::isColorString( std::string str, bool searchColorNames ) {
 	if ( str.empty() )
 		return false;
 
 	if ( str[0] == '#' )
 		return true;
 
-	String::toLowerInPlace( str );
+	if ( searchColorNames ) {
+		String::toLowerInPlace( str );
+		initColorMap();
+		auto it = sColorMap.find( String::hash( str ) );
+		if ( it != sColorMap.end() )
+			return true;
+	}
 
-	initColorMap();
-	auto it = sColorMap.find( String::hash( str ) );
-	if ( it != sColorMap.end() )
+	if ( String::istartsWith( str, "rgb(" ) )
 		return true;
-	if ( String::startsWith( str, "rgb(" ) )
+	else if ( String::istartsWith( str, "rgba(" ) )
 		return true;
-	else if ( String::startsWith( str, "rgba(" ) )
+	else if ( String::istartsWith( str, "hsl(" ) )
 		return true;
-	else if ( String::startsWith( str, "hsl(" ) )
+	else if ( String::istartsWith( str, "hsla(" ) )
 		return true;
-	else if ( String::startsWith( str, "hsla(" ) )
+	else if ( String::istartsWith( str, "hsv(" ) )
 		return true;
-	else if ( String::startsWith( str, "hsv(" ) )
+	else if ( String::istartsWith( str, "hsva(" ) )
 		return true;
-	else if ( String::startsWith( str, "hsva(" ) )
-		return true;
-	else if ( String::startsWith( str, "@color/" ) )
+	else if ( String::istartsWith( str, "@color/" ) )
 		return true;
 	else if ( sColors.find( str ) != sColors.end() )
+		return true;
+
+	return false;
+}
+
+bool Color::isColorString( String::View str, bool searchColorNames ) {
+	if ( str.empty() )
+		return false;
+
+	if ( str[0] == '#' )
+		return true;
+
+	if ( searchColorNames && str.size() <= 32 ) {
+		initColorMap();
+
+		String::HashType hash = 5381;
+		for ( size_t i = 0; i < str.size(); ++i )
+			hash = ( ( hash << 5 ) + hash ) + std::tolower( str[i] );
+		auto it = sColorMap.find( hash );
+		if ( it != sColorMap.end() )
+			return true;
+
+		std::string lowerStr( String( str ).toUtf8() );
+		String::toLowerInPlace( lowerStr );
+		if ( sColors.find( lowerStr ) != sColors.end() )
+			return true;
+	}
+
+	if ( String::istartsWith( str, "rgb(" ) )
+		return true;
+	else if ( String::istartsWith( str, "rgba(" ) )
+		return true;
+	else if ( String::istartsWith( str, "hsl(" ) )
+		return true;
+	else if ( String::istartsWith( str, "hsla(" ) )
+		return true;
+	else if ( String::istartsWith( str, "hsv(" ) )
+		return true;
+	else if ( String::istartsWith( str, "hsva(" ) )
+		return true;
+	else if ( String::istartsWith( str, "@color/" ) )
 		return true;
 
 	return false;
@@ -755,7 +798,21 @@ bool Color::unregisterColor( const std::string& name ) {
 	return sColors.erase( String::toLower( name ) ) > 0;
 }
 
-bool Color::validHexColorString( const std::string& hexColor ) {
+bool Color::validHexColorString( String::View hexColor ) {
+	if ( hexColor.size() < 2 || hexColor[0] != '#' )
+		return false;
+
+	for ( size_t i = 1; i < hexColor.size(); i++ ) {
+		if ( !( String::isNumber( hexColor[i] ) || ( hexColor[i] >= 'a' && hexColor[i] <= 'f' ) ||
+				( hexColor[i] >= 'A' && hexColor[i] <= 'F' ) ) ) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool Color::validHexColorString( std::string_view hexColor ) {
 	if ( hexColor.size() < 2 || hexColor[0] != '#' )
 		return false;
 

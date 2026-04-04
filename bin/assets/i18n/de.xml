@@ -280,6 +280,9 @@ Soll es jetzt heruntergeladen werden?</string>
 	<string name="enable_color_picker">Farbwähler aktivieren</string>
 	<string name="enable_color_picker_tooltip">Aktiviert den Farbwähler bei Doppelklick
 auf farbenrepräsentierende Wörter.</string>
+	<string name="enable_inline_color_boxes">Farbkästen aktivieren</string>
+	<string name="enable_inline_color_boxes_tooltip">Rendert ein Hintergrundfeld mit der analysierten Farbe direkt hinter dem
+Text selbst.</string>
 	<string name="enable_color_preview">Farbvorschau aktivieren</string>
 	<string name="enable_color_preview_tooltip">Aktiviert die Farbvorschau beim Halten der Maus
 über farbenrepräsentierenden Wörtern.</string>

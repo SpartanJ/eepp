@@ -317,6 +317,13 @@ class EE_API String {
 	 * @param needle The searched string.
 	 * @return true if string starts with the substring
 	 */
+	static bool startsWith( String::View haystack, String::View needle );
+
+	/** Compare two strings from its beginning.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
 	static bool startsWith( const char* haystack, const char* needle );
 
 	/** Compare two strings from its beginning.
@@ -325,6 +332,41 @@ class EE_API String {
 	 * @return true if string starts with the substring
 	 */
 	static bool startsWith( std::string_view haystack, std::string_view needle );
+
+	/** Compare two strings from its beginning. Case-insensitive check.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
+	static bool istartsWith( const std::string& haystack, const std::string& needle );
+
+	/** Compare two strings from its beginning. Case-insensitive check.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
+	static bool istartsWith( const String& haystack, const String& needle );
+
+	/** Compare two strings from its beginning. Case-insensitive check.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
+	static bool istartsWith( String::View haystack, String::View needle );
+
+	/** Compare two strings from its beginning. Case-insensitive check.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
+	static bool istartsWith( const char* haystack, const char* needle );
+
+	/** Compare two strings from its beginning. Case-insensitive check.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
+	static bool istartsWith( std::string_view haystack, std::string_view needle );
 
 	/** Compare two strings from its end.
 	 * @param haystack The string to search in.
@@ -339,6 +381,13 @@ class EE_API String {
 	 * @return true if string starts with the substring
 	 */
 	static bool endsWith( const String& haystack, const String& needle );
+
+	/** Compare two strings from its end.
+	 * @param haystack The string to search in.
+	 * @param needle The searched string.
+	 * @return true if string starts with the substring
+	 */
+	static bool endsWith( String::View haystack, String::View needle );
 
 	/** @return True if a string contains a substring.
 	 * @param haystack The string to search in.

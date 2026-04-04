@@ -1933,6 +1933,12 @@ UIMenu* SettingsMenu::createViewMenu() {
 	mViewMenu->addCheckBox( i18n( "enable_horizontal_scrollbar", "Enable Horizontal ScrollBar" ) )
 		->setActive( mApp->getConfig().editor.horizontalScrollbar )
 		->setId( "enable-horizontal-scrollbar" );
+	mViewMenu->addCheckBox( i18n( "enable_inline_color_boxes", "Enable Color Boxes" ) )
+		->setActive( mApp->getConfig().editor.inlineColorBoxes )
+		->setTooltipText( i18n( "enable_inline_color_boxes_tooltip",
+								"Renders a background box of the parsed color directly behind the\n"
+								"text itself." ) )
+		->setId( "enable-inline-color-boxes" );
 	mViewMenu->addCheckBox( i18n( "enable_color_preview", "Enable Color Preview" ) )
 		->setActive( mApp->getConfig().editor.colorPreview )
 		->setTooltipText( i18n( "enable_color_preview_tooltip",
@@ -2060,6 +2066,11 @@ UIMenu* SettingsMenu::createViewMenu() {
 			mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
 				editor->setHorizontalScrollBarEnabled(
 					mApp->getConfig().editor.horizontalScrollbar );
+			} );
+		} else if ( item->getId() == "enable-inline-color-boxes" ) {
+			mApp->getConfig().editor.inlineColorBoxes = item->asType<UIMenuCheckBox>()->isActive();
+			mSplitter->forEachEditor( [this]( UICodeEditor* editor ) {
+				editor->setEnableInlineColorBoxes( mApp->getConfig().editor.inlineColorBoxes );
 			} );
 		} else if ( item->getId() == "enable-color-preview" ) {
 			mApp->getConfig().editor.colorPreview = item->asType<UIMenuCheckBox>()->isActive();

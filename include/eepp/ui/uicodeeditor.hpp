@@ -423,6 +423,10 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 
 	void setEnableColorPickerOnSelection( const bool& enableColorPickerOnSelection );
 
+	const bool& getEnableInlineColorBoxes() const;
+
+	void setEnableInlineColorBoxes( const bool& enableInlineColorBoxes );
+
 	void setSyntaxDefinition( const SyntaxDefinition& definition );
 
 	void resetSyntaxDefinition();
@@ -862,6 +866,7 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	bool mHighlightMatchingBracket{ true };
 	bool mHighlightSelectionMatch{ true };
 	bool mEnableColorPickerOnSelection{ false };
+	bool mEnableInlineColorBoxes{ false };
 	bool mVerticalScrollBarEnabled{ true };
 	bool mHorizontalScrollBarEnabled{ true };
 	bool mLongestLineWidthDirty{ true };
@@ -949,6 +954,15 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	MinimapConfig mMinimapConfig;
 	Int64 mMinimapScrollOffset{ 0 };
 	std::unordered_map<Int64, std::pair<String::HashType, Float>> mLinesWidthCache;
+
+	struct ColorBoxData {
+		Int64 startColumn;
+		Int64 endColumn;
+		Color color;
+	};
+	std::unordered_map<Int64, std::pair<String::HashType, std::vector<ColorBoxData>>>
+		mColorBoxesCache;
+
 	Tools::UIDocFindReplace* mFindReplace{ nullptr };
 	struct PluginRequestedSpace {
 		UICodeEditorPlugin* plugin;

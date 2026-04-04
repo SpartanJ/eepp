@@ -197,6 +197,8 @@
 	<string name="enable_color_picker">开启颜色选择器</string>
 	<string name="enable_color_picker_tooltip">开启颜色选择工具
 当光标悬浮在颜色字符串上时</string>
+	<string name="enable_inline_color_boxes">启用色框</string>
+	<string name="enable_inline_color_boxes_tooltip">直接在文本后面呈现已解析颜色的背景框。</string>
 	<string name="enable_color_preview">开启颜色预览</string>
 	<string name="enable_color_preview_tooltip">允许颜色预览
 当鼠标悬停在颜色字符串上时</string>
