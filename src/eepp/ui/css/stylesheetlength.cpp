@@ -213,6 +213,11 @@ Float StyleSheetLength::asPixels( const Float& parentSize, const Sizef& viewSize
 								  const Float& displayDpi, const Float& elFontSize,
 								  const Float& globalFontSize ) const {
 	Float ret = 0;
+
+	// CSS dictates a base 96 DPI for logical pixels.
+	// We multiply by the device pixel ratio to get actual physical pixels on screen.
+	const Float CSS_DPI = 96.f * PixelDensity::getPixelDensity();
+
 	switch ( mUnit ) {
 		case Unit::Percentage:
 			ret = parentSize * mValue / 100.f;
@@ -232,19 +237,19 @@ Float StyleSheetLength::asPixels( const Float& parentSize, const Sizef& viewSize
 			ret = Math::round( mValue * elFontSize );
 			break;
 		case Unit::Pt:
-			ret = ( mValue * displayDpi / 72.f );
+			ret = mValue * CSS_DPI / 72.f;
 			break;
 		case Unit::Pc:
-			ret = ( mValue * displayDpi / 72.f ) * 12.f;
+			ret = ( mValue * CSS_DPI / 72.f ) * 12.f;
 			break;
 		case Unit::In:
-			ret = mValue * displayDpi;
+			ret = mValue * CSS_DPI;
 			break;
 		case Unit::Cm:
-			ret = mValue * displayDpi * 0.3937f;
+			ret = ( mValue * CSS_DPI ) / 2.54f;
 			break;
 		case Unit::Mm:
-			ret = mValue * displayDpi * 0.3937f / 10.f;
+			ret = ( mValue * CSS_DPI ) / 25.4f;
 			break;
 		case Unit::Vw:
 			ret = viewSize.getWidth() * mValue / 100.f;
@@ -261,6 +266,7 @@ Float StyleSheetLength::asPixels( const Float& parentSize, const Sizef& viewSize
 		case Unit::Rem:
 			ret = globalFontSize * mValue;
 			break;
+		case Unit::Px:
 		default:
 			ret = mValue;
 			break;

@@ -10,7 +10,7 @@ UIThemeManager* UIThemeManager::New() {
 UIThemeManager::UIThemeManager() :
 	ResourceManager<UITheme>(),
 	mFont( NULL ),
-	mFontSize( PixelDensity::dpToPx( PixelDensity::getPixelDensity() > 1.4 ? 11 : 12 ) ),
+	mFontSize( PixelDensity::dpToPx( 12 ) ),
 	mThemeDefault( NULL ),
 	mAutoApplyDefaultTheme( true ),
 	mEnableDefaultEffects( false ),

@@ -40,6 +40,10 @@ const SmallVector<PropertyId>& PropertySpecification::getInheritableProperties()
 	return mInheritableProperties;
 }
 
+const PropertyDefinition* PropertySpecification::getProperty( const PropertyId& id ) const {
+	return getProperty( static_cast<std::underlying_type_t<PropertyId>>( id ) );
+}
+
 const PropertyDefinition* PropertySpecification::getProperty( const Uint32& id ) const {
 	auto it = mProperties.find( id );
 

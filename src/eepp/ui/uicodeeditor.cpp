@@ -3088,7 +3088,7 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::fromFloat( getFontSize(), "px" );
+			return String::fromFloat( PixelDensity::pxToDp( getFontSize() ), "dp" );
 		case PropertyId::TextDecoration:
 			return Text::styleFlagToString( getTextDecoration() );
 		case PropertyId::FontStyle:
@@ -4077,8 +4077,7 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 							str = str.substr( 1 );
 						if ( !str.empty() && ( str.back() == '"' || str.back() == '\'' ) )
 							str = str.substr( 0, str.size() - 1 );
-						if ( Color::isColorString( str, false ) ||
-							 Color::validHexColorString( str ) ) {
+						if ( Color::isColorString( str, false ) ) {
 							ColorBoxData data;
 							data.startColumn = cachePos;
 							data.endColumn = cachePos + token.len;

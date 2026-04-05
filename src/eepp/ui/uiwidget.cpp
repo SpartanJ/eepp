@@ -1625,6 +1625,46 @@ void UIWidget::setStyleSheetInlineProperty( const std::string& name, const std::
 }
 
 void UIWidget::propagateInheritedProperty( const CSS::StyleSheetProperty& property ) {
+	CSS::StyleSheetProperty propToPropagate = property;
+
+	if ( property.getPropertyDefinition() &&
+		 property.getPropertyDefinition()->getPropertyId() == PropertyId::FontSize ) {
+		StyleSheetLength length( property.value() );
+		Float pxSize = 0;
+
+		if ( length.getUnit() == StyleSheetLength::Unit::Rem ) {
+			Float rootFontSize = 12.f;
+			if ( getUISceneNode() != NULL ) {
+				UIWidget* docRoot = this;
+				while ( docRoot->getParent() && docRoot->getParent()->isWidget() )
+					docRoot = docRoot->getParent()->asType<UIWidget>();
+				rootFontSize = getAbsoluteFontSize( docRoot );
+			}
+			pxSize = length.getValue() * rootFontSize;
+		} else if ( length.getUnit() == StyleSheetLength::Unit::Em ||
+					length.getUnit() == StyleSheetLength::Unit::Percentage ) {
+			Float parentFontSize = 12.f;
+			Node* parentNode = getParent();
+			while ( parentNode ) {
+				if ( parentNode->isWidget() ) {
+					parentFontSize = getAbsoluteFontSize( parentNode->asType<UIWidget>() );
+					break;
+				}
+				parentNode = parentNode->getParent();
+			}
+			if ( length.getUnit() == StyleSheetLength::Unit::Em )
+				pxSize = length.getValue() * parentFontSize;
+			else
+				pxSize = ( length.getValue() / 100.f ) * parentFontSize;
+		} else {
+			pxSize = convertLength( length, 0 );
+		}
+
+		propToPropagate = CSS::StyleSheetProperty(
+			property.getName(), String::fromFloat( PixelDensity::pxToDp( pxSize ), "dp" ),
+			property.getSpecificity() );
+	}
+
 	Node* child = getFirstChild();
 	while ( child ) {
 		if ( child->isWidget() ) {
@@ -1633,8 +1673,8 @@ void UIWidget::propagateInheritedProperty( const CSS::StyleSheetProperty& proper
 			// Only propagate if the child doesn't explicitly override it
 			if ( childStyle && !childStyle->hasLocalProperty(
 								   property.getPropertyDefinition()->getPropertyId() ) ) {
-				childWidget->applyProperty( property );
-				childWidget->propagateInheritedProperty( property );
+				childWidget->applyProperty( propToPropagate );
+				childWidget->propagateInheritedProperty( propToPropagate );
 			}
 		}
 		child = child->getNextNode();

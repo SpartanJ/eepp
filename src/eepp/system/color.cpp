@@ -719,7 +719,7 @@ bool Color::isColorString( std::string str, bool searchColorNames ) {
 		return false;
 
 	if ( str[0] == '#' )
-		return true;
+		return validHexColorString( str );
 
 	if ( searchColorNames ) {
 		String::toLowerInPlace( str );
@@ -754,7 +754,7 @@ bool Color::isColorString( String::View str, bool searchColorNames ) {
 		return false;
 
 	if ( str[0] == '#' )
-		return true;
+		return validHexColorString( str );
 
 	if ( searchColorNames && str.size() <= 32 ) {
 		initColorMap();

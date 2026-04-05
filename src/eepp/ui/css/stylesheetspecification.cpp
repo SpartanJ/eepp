@@ -24,6 +24,10 @@ PropertyDefinition& StyleSheetSpecification::registerProperty( const std::string
 	return mPropertySpecification->registerProperty( propertyVame, defaultValue, inherited );
 }
 
+const PropertyDefinition* StyleSheetSpecification::getProperty( const PropertyId& id ) const {
+	return mPropertySpecification->getProperty( id );
+}
+
 const PropertyDefinition* StyleSheetSpecification::getProperty( const Uint32& id ) const {
 	return mPropertySpecification->getProperty( id );
 }

@@ -409,6 +409,7 @@ void addCSS() {
 			  { "CodeEditor", "keyword" },
 			  { "Splitter", "keyword" },
 			  { "TreeView", "keyword" },
+			  { "TextArea", "keyword" },
 			  { "TableView", "keyword" },
 			  { "ListView", "keyword" },
 			  { "StackWidget", "keyword" },
@@ -424,6 +425,7 @@ void addCSS() {
 			  { "ImageViewer", "keyword" },
 			  { "AudioPlayer", "keyword" },
 			  { "Table", "keyword" },
+			  { "MarkdownView", "keyword" },
 
 		  },
 		  "",
