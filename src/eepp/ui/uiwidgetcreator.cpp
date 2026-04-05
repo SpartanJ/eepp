@@ -85,7 +85,6 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["tabwidget"] = UITabWidget::New;
 		registeredWidget["textedit"] = UITextEdit::New;
 		registeredWidget["textinput"] = UITextInput::New;
-		registeredWidget["textinputpassword"] = UITextInput::NewPassword;
 		registeredWidget["loader"] = UILoader::New;
 		registeredWidget["selectbutton"] = UISelectButton::New;
 		registeredWidget["window"] = UIWindow::New;
@@ -121,7 +120,6 @@ void UIWidgetCreator::createBaseWidgetList() {
 		// Aliases
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;
-		registeredWidget["inputpassword"] = UITextInput::NewPassword;
 		registeredWidget["viewpagerhorizontal"] = UIViewPager::NewHorizontal;
 		registeredWidget["viewpagervertical"] = UIViewPager::NewHorizontal;
 		registeredWidget["vslider"] = UISlider::NewHorizontal;

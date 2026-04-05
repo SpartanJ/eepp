@@ -385,7 +385,7 @@ static const auto SETTINGS_PANEL_XML = R"xml(
 		</hbox>
 		<Widget class="separator" lw="mp" lh="1dp" />
 		<TextView class="subtitle" text="@string(build_name, Build Name)" focusable="false" />
-		<Input id="build_name" lw="mp" lh="wc" text="new_name" />
+		<TextInput id="build_name" lw="mp" lh="wc" text="new_name" />
 		<TextView class="subtitle" text="@string(supported_platforms, Supported Platforms)" focusable="false" />
 		<TextView lw="mp" lh="wc" word-wrap="true" text="@string(supported_platforms_desc, Selecting none means that the build settings will work and be available on any Operating System)" />
 		<StackLayout id="os_select" class="os_select" lw="wc" lh="wc">

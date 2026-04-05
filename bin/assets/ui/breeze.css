@@ -245,7 +245,6 @@ Tab,
 TextEdit,
 TextInput,
 TextArea,
-TextInputPassword,
 TextView,
 Anchor,
 Tooltip,
@@ -264,7 +263,6 @@ Anchor,
 TextEdit,
 TextArea,
 TextInput,
-TextInputPassword,
 ComboBox::DropDownList,
 SpinBox::input, {
 	selection-color: var(--font-selected-pressed);
@@ -477,8 +475,7 @@ ComboBox::DropDownList::ListBox::item:selected {
 	tint: var(--font-selected-pressed);
 }
 
-TextInput,
-TextInputPassword {
+TextInput {
 	padding-left: var(--base-horizontal-padding);
 	padding-right: var(--base-horizontal-padding);
 	padding-top: var(--base-vertical-padding);
@@ -506,8 +503,6 @@ ComboBox::DropDownList {
 	padding-bottom: var(--base-vertical-padding);
 }
 
-TextInputPassword:hover,
-TextInputPassword:focus,
 TextInput:hover,
 TextInput:focus,
 SpinBox:hover,
