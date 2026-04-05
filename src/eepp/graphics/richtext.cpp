@@ -272,19 +272,19 @@ void RichText::addSpan( const String& text, const FontStyleConfig& style ) {
 	span->setString( text );
 	span->setStyleConfig( style );
 	mBlocks.push_back( span ); // Implicitly constructs the variant's Text alternative
-	mNeedsLayoutUpdate = true;
+	invalidateLayout();
 }
 
 void RichText::addDrawable( std::shared_ptr<Drawable> drawable ) {
 	if ( !drawable )
 		return;
 	mBlocks.push_back( drawable );
-	mNeedsLayoutUpdate = true;
+	invalidateLayout();
 }
 
 void RichText::addCustomSize( const Sizef& size ) {
 	mBlocks.push_back( size );
-	mNeedsLayoutUpdate = true;
+	invalidateLayout();
 }
 
 void RichText::addSpan( const String& text, Font* font, Uint32 characterSize, Color color,
@@ -307,30 +307,30 @@ void RichText::clear() {
 	mBlocks.clear();
 	mLines.clear();
 	mSelection = { 0, 0 };
-	mNeedsLayoutUpdate = true;
+	invalidateLayout();
 }
 
 void RichText::setFontStyleConfig( const FontStyleConfig& styleConfig ) {
 	mDefaultStyle = styleConfig;
-	mNeedsLayoutUpdate = true;
+	invalidateLayout();
 }
 
 void RichText::setAlign( Uint32 align ) {
 	if ( mAlign != align ) {
 		mAlign = align;
-		mNeedsLayoutUpdate = true;
+		invalidateLayout();
 	}
 }
 
 void RichText::setMaxWidth( Float width ) {
 	if ( mMaxWidth != width ) {
 		mMaxWidth = width;
-		mNeedsLayoutUpdate = true;
+		invalidateLayout();
 	}
 }
 
 void RichText::invalidate() {
-	mNeedsLayoutUpdate = true;
+	invalidateLayout();
 	for ( auto& block : mBlocks ) {
 		if ( auto pText = std::get_if<std::shared_ptr<Text>>( &block ) ) {
 			if ( *pText )
@@ -572,6 +572,10 @@ void RichText::updateLayout() {
 Sizef RichText::getSize() {
 	updateLayout();
 	return mSize;
+}
+
+void RichText::invalidateLayout() {
+	mNeedsLayoutUpdate = true;
 }
 
 }} // namespace EE::Graphics

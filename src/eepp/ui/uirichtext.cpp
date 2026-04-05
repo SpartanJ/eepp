@@ -1,6 +1,7 @@
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
@@ -10,7 +11,6 @@
 #include <eepp/ui/uiwidgetcreator.hpp>
 
 #define PUGIXML_HEADER_ONLY
-#include <eepp/ui/tools/htmlformatter.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
@@ -388,12 +388,7 @@ void UIRichText::loadFromXmlNode( const pugi::xml_node& node ) {
 
 	for ( pugi::xml_node child = node.first_child(); child; child = child.next_sibling() ) {
 		if ( child.type() == pugi::node_element ) {
-			if ( String::iequals( child.name(), "span" ) ||
-				 String::iequals( child.name(), "textspan" ) ) {
-				UITextSpan* span = UITextSpan::New();
-				span->setParent( this );
-				span->loadFromXmlNode( child );
-			} else if ( mTag == "pre" && String::iequals( child.name(), "code" ) ) {
+			if ( mTag == "pre" && String::iequals( child.name(), "code" ) ) {
 				// Use a UICodeEditor for <pre><code>
 				UICodeEditor* editor = UICodeEditor::New();
 				if ( editor ) {
@@ -477,24 +472,24 @@ void UIRichText::onAlphaChange() {
 	UILayout::onAlphaChange();
 }
 
-void UIRichText::rebuildRichText( IntrinsicMode mode ) {
-	mRichText.clear();
+void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
+	richText.clear();
 
 	// Calculate maximum layout width for the RichText block
 	Float maxWidth = mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right;
 	if ( maxWidth < 0 )
 		maxWidth = 0;
 	if ( mWidthPolicy == SizePolicy::WrapContent || mode != IntrinsicMode::None ) {
-		mRichText.setMaxWidth( 0.f ); // Let it grow unbounded to query text bounds later
+		richText.setMaxWidth( 0.f ); // Let it grow unbounded to query text bounds later
 	} else {
-		mRichText.setMaxWidth( maxWidth );
+		richText.setMaxWidth( maxWidth );
 	}
 
 	auto processWidget = [&]( UIWidget* widget, auto& processWidgetRef ) -> void {
 		if ( widget->isType( UI_TYPE_TEXTSPAN ) ) {
 			UITextSpan* span = widget->asType<UITextSpan>();
 			if ( !span->getText().empty() ) {
-				mRichText.addSpan( span->getText(), span->getFontStyleConfig() );
+				richText.addSpan( span->getText(), span->getFontStyleConfig() );
 			}
 			Node* spanChild = span->getFirstChild();
 			while ( spanChild != NULL ) {
@@ -504,8 +499,8 @@ void UIRichText::rebuildRichText( IntrinsicMode mode ) {
 				spanChild = spanChild->getNextNode();
 			}
 		} else if ( widget->isType( UI_TYPE_BR ) ) {
-			mRichText.addSpan( "\n",
-							   widget->asType<UILineBreak>()->getRichText().getFontStyleConfig() );
+			richText.addSpan( "\n",
+							  widget->asType<UILineBreak>()->getRichText().getFontStyleConfig() );
 		} else {
 			Rectf margin = widget->getLayoutPixelsMargin();
 
@@ -532,8 +527,8 @@ void UIRichText::rebuildRichText( IntrinsicMode mode ) {
 				size = widget->getPixelsSize();
 			}
 
-			mRichText.addCustomSize( Sizef( size.getWidth() + margin.Left + margin.Right,
-											size.getHeight() + margin.Top + margin.Bottom ) );
+			richText.addCustomSize( Sizef( size.getWidth() + margin.Left + margin.Right,
+										   size.getHeight() + margin.Top + margin.Bottom ) );
 		}
 	};
 
@@ -705,7 +700,7 @@ void UIRichText::updateLayout() {
 		setInternalPixelsSize( { lengthFromValue( *prop ), mSize.getHeight() } );
 	}
 
-	rebuildRichText();
+	rebuildRichText( mRichText );
 
 	mRichText.updateLayout();
 
@@ -735,14 +730,11 @@ Float UIRichText::getMinIntrinsicWidth() const {
 	}
 
 	if ( mIntrinsicWidthsDirty ) {
-		const_cast<UIRichText*>( this )->rebuildRichText( IntrinsicMode::Min );
-		mMinIntrinsicWidth = const_cast<RichText&>( mRichText ).getMinIntrinsicWidth() +
-							 mPaddingPx.Left + mPaddingPx.Right;
-		const_cast<UIRichText*>( this )->rebuildRichText( IntrinsicMode::Max );
-		mMaxIntrinsicWidth = const_cast<RichText&>( mRichText ).getMaxIntrinsicWidth() +
-							 mPaddingPx.Left + mPaddingPx.Right;
-		// We need to rebuild the rich text with the original state, otherwise layout will be broken
-		const_cast<UIRichText*>( this )->rebuildRichText( IntrinsicMode::None );
+		RichText richText( mRichText );
+		const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Min );
+		mMinIntrinsicWidth = richText.getMinIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
+		const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Max );
+		mMaxIntrinsicWidth = richText.getMaxIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
 		mIntrinsicWidthsDirty = false;
 	}
 	return mMinIntrinsicWidth;
@@ -754,14 +746,11 @@ Float UIRichText::getMaxIntrinsicWidth() const {
 	}
 
 	if ( mIntrinsicWidthsDirty ) {
-		const_cast<UIRichText*>( this )->rebuildRichText( IntrinsicMode::Min );
-		mMinIntrinsicWidth = const_cast<RichText&>( mRichText ).getMinIntrinsicWidth() +
-							 mPaddingPx.Left + mPaddingPx.Right;
-		const_cast<UIRichText*>( this )->rebuildRichText( IntrinsicMode::Max );
-		mMaxIntrinsicWidth = const_cast<RichText&>( mRichText ).getMaxIntrinsicWidth() +
-							 mPaddingPx.Left + mPaddingPx.Right;
-		// We need to rebuild the rich text with the original state, otherwise layout will be broken
-		const_cast<UIRichText*>( this )->rebuildRichText( IntrinsicMode::None );
+		RichText richText( mRichText );
+		const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Min );
+		mMinIntrinsicWidth = richText.getMinIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
+		const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Max );
+		mMaxIntrinsicWidth = richText.getMaxIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
 		mIntrinsicWidthsDirty = false;
 	}
 	return mMaxIntrinsicWidth;

@@ -150,7 +150,7 @@ class EE_API UIRichText : public UILayout {
 	Int64 selCurEnd() const { return mSelCurEnd; }
 
 	enum class IntrinsicMode { None, Min, Max };
-	void rebuildRichText( IntrinsicMode mode = IntrinsicMode::None );
+	void rebuildRichText( RichText& richText, IntrinsicMode mode = IntrinsicMode::None );
 	void positionChildren();
 	void updateDefaultSpansStyle();
 };

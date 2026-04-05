@@ -186,16 +186,14 @@ void UIImage::calcDestSize() {
 void UIImage::draw() {
 	UINode::draw();
 
-	if ( mVisible ) {
-		if ( NULL != mDrawable && 0.f != mAlpha ) {
-			calcDestSize();
+	if ( mVisible && NULL != mDrawable && 0.f != mAlpha ) {
+		calcDestSize();
 
-			mDrawable->setColor( mColor );
-			mDrawable->draw( Vector2f( std::trunc( mScreenPos.x ) + std::trunc( mAlignOffset.x ),
-									   std::trunc( mScreenPos.y ) + std::trunc( mAlignOffset.y ) ),
-							 mDestSize );
-			mDrawable->clearColor();
-		}
+		mDrawable->setColor( mColor );
+		mDrawable->draw( Vector2f( std::trunc( mScreenPos.x ) + std::trunc( mAlignOffset.x ),
+								   std::trunc( mScreenPos.y ) + std::trunc( mAlignOffset.y ) ),
+						 mDestSize );
+		mDrawable->clearColor();
 	}
 }
 

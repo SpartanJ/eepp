@@ -168,7 +168,12 @@ class EE_API RichText : public Drawable {
 	/** @return The current selection as a string. */
 	String getSelectionString() const;
 
+	/** Tries to update the layout if has been invalidated. This is automatically called before
+	 * draw. */
 	void updateLayout();
+
+	/** Invalidates the current layout */
+	void invalidateLayout();
 
   protected:
 	std::vector<Block> mBlocks;

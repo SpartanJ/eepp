@@ -164,7 +164,8 @@ void UIHTMLTable::computeIntrinsicWidths() const {
 
 				if ( colspan == 1 && colIndex < maxCols ) {
 					if ( cellSpecified > 0.f ) {
-						mColSpecifiedWidths[colIndex] = std::max( mColSpecifiedWidths[colIndex], cellSpecified );
+						mColSpecifiedWidths[colIndex] =
+							std::max( mColSpecifiedWidths[colIndex], cellSpecified );
 					}
 				}
 				colIndex += colspan;

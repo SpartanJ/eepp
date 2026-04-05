@@ -2675,6 +2675,7 @@ void App::loadDiffFromMemory( const std::string& content, const std::string& ori
 	diffView->setHeadersVisible( true );
 	diffView->loadFromPatch( content, originalFilePath );
 	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
+	registerUnlockedCommands( *diffView );
 }
 
 void App::loadDiffFromPath( const std::string& path ) {
@@ -2721,6 +2722,7 @@ void App::loadDiffFromPath( const std::string& path ) {
 	diffView->setHeadersVisible( true );
 	diffView->loadFromPatch( content, path );
 	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
+	registerUnlockedCommands( *diffView );
 }
 
 void App::loadDiffFromPaths( const std::string& oldPath, const std::string& newPath ) {
@@ -2740,6 +2742,7 @@ void App::loadDiffFromPaths( const std::string& oldPath, const std::string& newP
 	diffView->setHeadersVisible( true );
 	diffView->loadFromFile( oldPath, newPath );
 	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
+	registerUnlockedCommands( *diffView );
 }
 
 void App::loadDiffFromStrings( const std::string& str, const std::string& otherStr ) {
@@ -2752,6 +2755,7 @@ void App::loadDiffFromStrings( const std::string& str, const std::string& otherS
 	diffView->setHeadersVisible( true );
 	diffView->loadFromStrings( str, otherStr );
 	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
+	registerUnlockedCommands( *diffView );
 }
 
 void App::openFileFromPath( const std::string& path ) {
