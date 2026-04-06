@@ -478,11 +478,12 @@ void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
 	Float maxWidth = mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right;
 	if ( maxWidth < 0 )
 		maxWidth = 0;
-	
+
 	Float mw = 0.f;
 	if ( !mMaxWidthEq.empty() ) {
 		mw = getMaxSizePx().getWidth() - mPaddingPx.Left - mPaddingPx.Right;
-		if ( mw < 0 ) mw = 0.f;
+		if ( mw < 0 )
+			mw = 0.f;
 	}
 
 	if ( mWidthPolicy == SizePolicy::WrapContent || mode != IntrinsicMode::None ) {
@@ -521,7 +522,9 @@ void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
 			if ( mode == IntrinsicMode::None ) {
 				if ( widget->getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
 					if ( mSize.getWidth() != 0 ) {
-						widget->setPixelsSize( mSize.getWidth() - margin.Left - margin.Right,
+						widget->setPixelsSize( eemax( 0.f, mSize.getWidth() - mPaddingPx.Left -
+															   mPaddingPx.Right - margin.Left -
+															   margin.Right ),
 											   widget->getPixelsSize().getHeight() );
 					} else {
 						onAutoSizeChild( widget );
@@ -661,7 +664,8 @@ void UIRichText::positionChildren() {
 				pos.y += widget->getPrevNode()->getPixelsSize().getHeight();
 			}
 			widget->setPixelsPosition( pos );
-			widget->setPixelsSize( { mSize.getWidth(), 0 } );
+			widget->setPixelsSize(
+				{ eemax( 0.f, mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right ), 0 } );
 		} else {
 			curCharIdx += 1;
 			const auto* span = getNextCustomSpan();

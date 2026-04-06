@@ -1111,6 +1111,47 @@ UTEST( UIRichText, MinMaxWidthChildren ) {
 	Engine::destroySingleton();
 }
 
+UTEST( UIRichText, MatchParentChildPadding ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText MatchParent Child Padding Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+		<LinearLayout id="container" layout_width="match_parent" layout_height="match_parent">
+			<RichText id="rt_parent" layout_width="200dp" layout_height="wrap_content" padding="10dp">
+				<Widget id="child_widget" layout_width="match_parent" layout_height="50dp" />
+			</RichText>
+		</LinearLayout>
+	)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+	UI::UIRichText* rtParent = sceneNode->find<UI::UIRichText>( "rt_parent" );
+	UI::UIWidget* childWidget = sceneNode->find<UI::UIWidget>( "child_widget" );
+	ASSERT_TRUE( rtParent != nullptr );
+	ASSERT_TRUE( childWidget != nullptr );
+
+	sceneNode->update( Time::Zero );
+
+	Float parentWidth = rtParent->getSize().getWidth();
+	Float childWidth = childWidget->getSize().getWidth();
+	Float expectedChildWidth = parentWidth - PixelDensity::dpToPx( 20 );
+
+	EXPECT_EQ( childWidth, expectedChildWidth );
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
 UTEST( UILayout, MinMaxWidthChildren ) {
 	Engine::instance()->createWindow( WindowSettings( 800, 600, "Layout Min/Max Width Children Test",
 													  WindowStyle::Default, WindowBackend::Default,

@@ -1,6 +1,33 @@
 #include <eepp/ee.hpp>
 
-EE_MAIN_FUNC int main( int, char** ) {
+#include <args/args.hxx>
+#include <iostream>
+
+EE_MAIN_FUNC int main( int argc, char** argv ) {
+	args::ArgumentParser parser( "eepp HTML Example" );
+	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
+	args::Flag hnDark( parser, "hn-dark",
+					   "Force a custom CSS style for Hacker News site to be dark.", { "hn-dark" } );
+	args::ValueFlag<std::string> prefersColorScheme(
+		parser, "prefers-color-scheme",
+		"Set the preferred color scheme (\"light\", \"dark\" or \"system\")",
+		{ 'c', "prefers-color-scheme" } );
+
+	try {
+		parser.ParseCLI( Sys::parseArguments( argc, argv ) );
+	} catch ( const args::Help& ) {
+		std::cout << parser;
+		return EXIT_SUCCESS;
+	} catch ( const args::ParseError& e ) {
+		std::cerr << e.what() << std::endl;
+		std::cerr << parser;
+		return EXIT_FAILURE;
+	} catch ( args::ValidationError& e ) {
+		std::cerr << e.what() << std::endl;
+		std::cerr << parser;
+		return EXIT_FAILURE;
+	}
+
 	UIApplication app( { 1280, 720, "eepp - UI HTML Example" } );
 
 	Log::instance()->setLogLevelThreshold( LogLevel::Debug );
@@ -19,7 +46,12 @@ EE_MAIN_FUNC int main( int, char** ) {
 	ui->getUIIconThemeManager()->setCurrentTheme(
 		IconManager::init( "icons", remixIconFont, noniconsFont, codIconFont ) );
 
-	ui->setColorSchemePreference( ColorSchemeExtPreference::Light );
+	ui->setColorSchemePreference(
+		!prefersColorScheme.Get().empty()
+			? ColorSchemePreferences::fromStringExt( prefersColorScheme.Get() )
+			: ColorSchemeExtPreference::Light );
+
+	bool useHNDark = hnDark.Get();
 
 	ui->loadLayoutFromString( R"xml(
 	<vbox layout_width="match_parent" layout_height="match_parent">
@@ -48,11 +80,11 @@ EE_MAIN_FUNC int main( int, char** ) {
 		fwdBtn->setEnabled( historyIndex < static_cast<int>( history.size() ) - 1 );
 	};
 
-	const auto loadDocumentData = [ui, mainContainer, urlBar, &app,
-								   scrollView]( URI url, std::string& data ) {
+	const auto loadDocumentData = [ui, mainContainer, urlBar, &app, scrollView,
+								   useHNDark]( URI url, std::string& data ) {
 		if ( data.empty() )
 			return;
-		ui->ensureMainThread( [url, data, mainContainer, urlBar, ui, &app, scrollView] {
+		ui->ensureMainThread( [url, data, mainContainer, urlBar, ui, &app, scrollView, useHNDark] {
 			mainContainer->closeAllChildren();
 			ui->getStyleSheet().removeAllWithoutMarker( app.getStyleSheetDefaultMarker() );
 			ui->setURIFromURL( url );
@@ -61,6 +93,44 @@ EE_MAIN_FUNC int main( int, char** ) {
 			scrollView->getVerticalScrollBar()->setValue( 0 );
 			ui->loadLayoutFromString( HTMLFormatter::HTMLtoXML( data ), mainContainer, hash );
 			urlBar->setText( urlStr );
+
+			if ( useHNDark && url.getAuthority() == "news.ycombinator.com" ) {
+				static const std::string_view HN_DARK = R"css(
+				  body * {
+				    color: #dcdccc !important;
+				  }
+				  body,
+				  #hnmain,
+				  .pagetop {
+				    background-color: #404040 !important;
+				  }
+				  body > center > table > tbody > tr:first-child * {
+				    background-color: #505050 !important;
+				  }
+				  body > center > table > tbody > tr:first-child * a:hover {
+				    background: #404040 !important;
+				  }
+				  body code, body pre, body input, body textarea {
+				    background: #505050 !important;
+				  }
+				  body a {
+				    color: #7F9F7F !important;
+				  }
+				  body .subtext a {
+				    color: #dcdccc !important;
+				  }
+				  body a:visited, body a:visited span {
+				    color: #CC9393 !important;
+				  }
+				  body a:hover, body a:hover span {
+				    background: #505050 !important;
+				  }
+				)css";
+
+				StyleSheetParser parser;
+				if ( parser.loadFromString( HN_DARK ) )
+					ui->getStyleSheet().combineStyleSheet( parser.getStyleSheet() );
+			}
 		} );
 	};
 
