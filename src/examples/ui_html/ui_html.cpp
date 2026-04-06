@@ -6,12 +6,14 @@
 EE_MAIN_FUNC int main( int argc, char** argv ) {
 	args::ArgumentParser parser( "eepp HTML Example" );
 	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', "help" } );
-	args::Flag hnDark( parser, "hn-dark",
-					   "Force a custom CSS style for Hacker News site to be dark.", { "hn-dark" } );
+
+	args::Positional<std::string> url( parser, "URL", "The URL to request" );
 	args::ValueFlag<std::string> prefersColorScheme(
 		parser, "prefers-color-scheme",
 		"Set the preferred color scheme (\"light\", \"dark\" or \"system\")",
 		{ 'c', "prefers-color-scheme" } );
+	args::Flag hnDark( parser, "hn-dark",
+					   "Force a custom CSS style for Hacker News site to be dark.", { "hn-dark" } );
 
 	try {
 		parser.ParseCLI( Sys::parseArguments( argc, argv ) );
@@ -189,7 +191,7 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	} );
 
 	updateNavButtons();
-	loadDocument( "https://news.ycombinator.com" );
+	loadDocument( !url.Get().empty() ? url.Get() : "https://news.ycombinator.com" );
 
 	urlBar->on( Event::OnPressEnter,
 				[&]( auto event ) { loadDocument( urlBar->getText().toUtf8() ); } );

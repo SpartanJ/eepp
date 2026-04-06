@@ -1612,6 +1612,7 @@ solution "eepp"
 	project "eepp-ui-html"
 		set_kind()
 		language "C++"
+		includedirs { "src/thirdparty" }
 		files { "src/examples/ui_html/*.cpp" }
 		build_link_configuration( "eepp-ui-html", true )
 
