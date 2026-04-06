@@ -18,6 +18,7 @@
 #include <eepp/ui/uilayout.hpp>
 #include <eepp/ui/uiroot.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uitooltip.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
@@ -396,22 +397,25 @@ void UISceneNode::setStyleSheet( const std::string& inlineStyleSheet ) {
 		setStyleSheet( parser.getStyleSheet() );
 }
 
-void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet, bool forceReloadStyle ) {
+void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet, bool forceReloadStyle,
+									 URI baseURI ) {
 	mStyleSheet.combineStyleSheet( styleSheet );
-	processStyleSheetAtRules( styleSheet );
+	if ( mRoot && mRoot->getUIStyle() )
+		mRoot->getUIStyle()->resetGlobalDefinition();
+	processStyleSheetAtRules( styleSheet, baseURI );
 	onMediaChanged();
 	if ( forceReloadStyle )
 		reloadStyle();
 }
 
 void UISceneNode::combineStyleSheet( const std::string& inlineStyleSheet, bool forceReloadStyle,
-									 const Uint32& marker ) {
+									 const Uint32& marker, URI baseURI ) {
 	CSS::StyleSheetParser parser;
 
 	if ( parser.loadFromString( inlineStyleSheet ) ) {
 		parser.getStyleSheet().setMarker( marker );
 
-		combineStyleSheet( parser.getStyleSheet(), forceReloadStyle );
+		combineStyleSheet( parser.getStyleSheet(), forceReloadStyle, baseURI );
 	}
 }
 
@@ -1002,8 +1006,8 @@ void UISceneNode::onSizeChange() {
 	mRoot->setPixelsSize( getPixelsSize() );
 }
 
-void UISceneNode::processStyleSheetAtRules( const StyleSheet& styleSheet ) {
-	loadFontFaces( styleSheet.getStyleSheetStyleByAtRule( AtRuleType::FontFace ) );
+void UISceneNode::processStyleSheetAtRules( const StyleSheet& styleSheet, URI baseURI ) {
+	loadFontFaces( styleSheet.getStyleSheetStyleByAtRule( AtRuleType::FontFace ), baseURI );
 	loadGlyphIcon( styleSheet.getStyleSheetStyleByAtRule( AtRuleType::GlyphIcon ) );
 }
 
@@ -1045,9 +1049,10 @@ void UISceneNode::loadGlyphIcon( const StyleSheetStyleVector& styles ) {
 	}
 }
 
-void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
-	auto loadFont = [this]( const std::string& familyName, const CSS::StyleSheetProperty& srcProp,
-							Font* fontFamily, Uint32 fontStyle ) {
+void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseURI ) {
+	auto loadFont = [this, baseURI]( const std::string& familyName,
+									 const CSS::StyleSheetProperty& srcProp, Font* fontFamily,
+									 Uint32 fontStyle ) {
 		auto trySetFontFamily = []( Font* fontFamily, Uint32 fontStyle, FontTrueType* font ) {
 			if ( fontFamily && fontFamily->getType() == FontType::TTF && fontStyle ) {
 				FontTrueType* ttf = static_cast<FontTrueType*>( fontFamily );
@@ -1064,10 +1069,16 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 		std::string path( srcProp.getValue() );
 		FunctionString func( FunctionString::parse( path ) );
 
-		if ( !func.getParameters().empty() && func.getName() == "url" )
+		if ( !func.getParameters().empty() && func.getName() == "url" ) {
 			path = func.getParameters().at( 0 );
 
-		path = solveRelativePath( path ).toString();
+			if ( !path.empty() && path.front() == '\'' && path.back() == '\'' )
+				String::trimInPlace( path, '\'' );
+			else if ( !path.empty() && path.front() == '"' && path.back() == '"' )
+				String::trimInPlace( path, '"' );
+		}
+
+		path = solveRelativePath( path, baseURI ).toString();
 
 		if ( String::startsWith( path, "file://" ) ) {
 			std::string filePath( path.substr( 7 ) );
@@ -1133,64 +1144,62 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles ) {
 	}
 }
 
-URI UISceneNode::solveRelativePath( URI uri ) {
+URI UISceneNode::solveRelativePath( URI uri, URI baseURI ) {
+	// Determine which base URI to use contextually
+	const URI& base = baseURI.empty() ? mURI : baseURI;
+
 	// 1. If base is empty OR the target already has a scheme (it's absolute), return it.
-	if ( mURI.empty() || !uri.getScheme().empty() )
+	if ( base.empty() || !uri.getScheme().empty() )
 		return uri;
 
 	std::string targetPath = uri.getPath();
 
 	if ( targetPath.length() >= 2 && targetPath[0] == '/' && targetPath[1] == '/' ) {
 		// Find where the authority ends and the real path begins
-		// (looking for the first slash AFTER the initial "//")
 		size_t pathStart = targetPath.find( '/', 2 );
 
 		if ( pathStart != std::string::npos ) {
 			uri.setAuthority( targetPath.substr( 2, pathStart - 2 ) );
-			uri.setPath( targetPath.substr( pathStart ) ); // Keeps the leading '/'
+			uri.setPath( targetPath.substr( pathStart ) );
 		} else {
-			// Edge case: "//www.domain.com" with no trailing slash or path
 			uri.setAuthority( targetPath.substr( 2 ) );
 			uri.setPath( "/" );
 		}
 
-		// Set the scheme. It's best practice to inherit the base scheme if it's a web protocol,
-		// but default to "https" if the base is local or undefined.
-		std::string baseScheme = mURI.getScheme();
+		std::string baseScheme = base.getScheme();
 		if ( baseScheme == "http" || baseScheme == "https" ) {
 			uri.setScheme( baseScheme );
 		} else {
 			uri.setScheme( "https" );
 		}
 
-		// It's now a fully absolute URL, so we can return it immediately
 		return uri;
 	}
 
 	// 2. Inherit Scheme and Authority for standard relative paths
 	if ( uri.getScheme().empty() ) {
-		// Default to "file" if the base also lacks a scheme
-		uri.setScheme( mURI.getScheme().empty() ? "file" : mURI.getScheme() );
+		// Use 'base' instead of 'mURI'
+		uri.setScheme( base.getScheme().empty() ? "file" : base.getScheme() );
 	}
 
 	if ( uri.getAuthority().empty() ) {
-		uri.setAuthority( mURI.getAuthority() );
+		uri.setAuthority( base.getAuthority() );
 	}
 
 	// 3. Safely Resolve the Path
-	std::string basePath = mURI.getPath();
+	std::string basePath = base.getPath();
 
 	if ( !targetPath.empty() && targetPath.front() == '/' ) {
-		// CASE A: Root-relative path (e.g., "/news.css")
+		// CASE A: Root-relative path
 		uri.setPath( targetPath );
 	} else {
-		// CASE B: Directory-relative path (e.g., "news.css" or "assets/style.css")
+		// CASE B: Directory-relative path
 		size_t lastSlashPos = basePath.find_last_of( '/' );
 
 		if ( lastSlashPos != std::string::npos ) {
 			basePath = basePath.substr( 0, lastSlashPos + 1 );
 		} else {
-			basePath = mURI.getAuthority().empty() ? "" : "/";
+			basePath = base.getAuthority().empty() ? "" : "/"; // Use 'base'
 		}
 
 		uri.setPath( basePath + targetPath );
@@ -1209,7 +1218,7 @@ void UISceneNode::loadCSS( URI uri ) {
 		std::string filePath( uri.getPath() );
 		std::string css;
 		if ( FileSystem::fileExists( filePath ) && FileSystem::fileGet( filePath, css ) ) {
-			combineStyleSheet( css, true, String::hash( url ) );
+			combineStyleSheet( css, true, String::hash( url ), getURIFromURL( url ) );
 			Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
 		}
 	} else if ( "http" == uri.getScheme() || "https" == uri.getScheme() ) {
@@ -1219,7 +1228,7 @@ void UISceneNode::loadCSS( URI uri ) {
 					 response.getStatus() == Http::Response::Status::Ok ) {
 					std::string css( response.getBody() );
 					runOnMainThread( [css = std::move( css ), url = std::move( url ), this] {
-						combineStyleSheet( css, true, String::hash( url ) );
+						combineStyleSheet( css, true, String::hash( url ), getURIFromURL( url ) );
 						Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
 					} );
 				} else {
@@ -1357,7 +1366,7 @@ void UISceneNode::setURI( const URI& uri ) {
 	mURI = uri;
 }
 
-void UISceneNode::setURIFromURL( const URI& url ) {
+URI UISceneNode::getURIFromURL( const URI& url ) {
 	URI baseURI( url );
 	std::string path = baseURI.getPath();
 
@@ -1380,7 +1389,11 @@ void UISceneNode::setURIFromURL( const URI& url ) {
 	baseURI.setQuery( "" );
 	baseURI.setFragment( "" );
 
-	setURI( baseURI );
+	return baseURI;
+}
+
+void UISceneNode::setURIFromURL( const URI& url ) {
+	setURI( getURIFromURL( url ) );
 }
 
 void UISceneNode::openURL( URI uri ) {

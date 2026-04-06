@@ -36,6 +36,8 @@ FunctionString FunctionString::parse( const std::string& function ) {
 				parenDepth++;
 				buffer += c;
 			} else if ( c == ')' ) {
+				if ( parenDepth == 0 )
+					break; // early exit, last ) wasn't the function closure
 				if ( parenDepth > 0 )
 					parenDepth--;
 				buffer += c;
