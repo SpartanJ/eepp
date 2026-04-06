@@ -981,7 +981,7 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 						String::isNumber( tok[0] ) || tok[0] == '-' || tok[0] == '.' ||
 						tok[0] == '+' ) {
 				positionStr += tok + " ";
-			} else if ( Color::isColorString( tok ) ) {
+			} else {
 				int pos = getIndexEndingWith( propNames, "-color" );
 				if ( pos != -1 )
 					properties.emplace_back( StyleSheetProperty( propNames[pos], value ) );

@@ -138,16 +138,10 @@ const Vector2f& UINode::getPixelsPosition() const {
 }
 
 void UINode::setInternalSize( const Sizef& size ) {
-	Sizef s( size );
-
-	if ( s.x < mMinSize.x )
-		s.x = mMinSize.x;
-
-	if ( s.y < mMinSize.y )
-		s.y = mMinSize.y;
+	Sizef s( fitMinMaxSizeDp( size ) );
 
 	if ( s != mDpSize ) {
-		mDpSize = size;
+		mDpSize = s;
 		mSize = PixelDensity::dpToPx( s );
 		mNodeFlags |= NODE_FLAG_POLYGON_DIRTY;
 		updateCenter();
@@ -158,14 +152,7 @@ void UINode::setInternalSize( const Sizef& size ) {
 }
 
 void UINode::setInternalPixelsSize( const Sizef& size ) {
-	Sizef s( size );
-	Sizef pMinSize( PixelDensity::dpToPx( mMinSize ) );
-
-	if ( s.x < pMinSize.x )
-		s.x = pMinSize.x;
-
-	if ( s.y < pMinSize.y )
-		s.y = pMinSize.y;
+	Sizef s( fitMinMaxSizePx( size ) );
 
 	if ( s != mSize ) {
 		mDpSize = PixelDensity::pxToDp( s ).ceil();

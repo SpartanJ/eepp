@@ -259,15 +259,18 @@ void UILinearLayout::packVertical() {
 			setInternalPixelsHeight( h );
 	}
 
-	if ( getLayoutWidthPolicy() == SizePolicy::WrapContent && getPixelsSize().getWidth() != maxX ) {
-		if ( !( 0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
-				getParent()->asType<UILinearLayout>()->getOrientation() ==
-					UIOrientation::Horizontal ) ) {
-			if ( mMinWidthEq.empty() || PixelDensity::dpToPx( mMinSize.getWidth() ) < maxX ) {
-				setInternalPixelsWidth( maxX );
-				mPacking = false;
-				packVertical();
-				notifyLayoutAttrChangeParent();
+	if ( getLayoutWidthPolicy() == SizePolicy::WrapContent ) {
+		Float w = fitMinMaxSizePx( Sizef( maxX, 0 ) ).getWidth();
+		if ( getPixelsSize().getWidth() != w ) {
+			if ( !( 0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
+					getParent()->asType<UILinearLayout>()->getOrientation() ==
+						UIOrientation::Horizontal ) ) {
+				if ( mMinWidthEq.empty() || PixelDensity::dpToPx( mMinSize.getWidth() ) < maxX ) {
+					setInternalPixelsWidth( maxX );
+					mPacking = false;
+					packVertical();
+					notifyLayoutAttrChangeParent();
+				}
 			}
 		}
 	}
@@ -383,16 +386,18 @@ void UILinearLayout::packHorizontal() {
 			setInternalPixelsWidth( w );
 	}
 
-	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent &&
-		 getPixelsSize().getHeight() != maxY ) {
-		if ( !( 0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
-				getParent()->asType<UILinearLayout>()->getOrientation() ==
-					UIOrientation::Vertical ) ) {
-			if ( mMinHeightEq.empty() || PixelDensity::dpToPx( mMinSize.getHeight() ) < maxY ) {
-				setInternalPixelsHeight( maxY );
-				mPacking = false;
-				packHorizontal();
-				notifyLayoutAttrChangeParent();
+	if ( getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
+		Float h = fitMinMaxSizePx( Sizef( 0, maxY ) ).getHeight();
+		if ( getPixelsSize().getHeight() != h ) {
+			if ( !( 0 != getLayoutWeight() && getParent()->isType( UI_TYPE_LINEAR_LAYOUT ) &&
+					getParent()->asType<UILinearLayout>()->getOrientation() ==
+						UIOrientation::Vertical ) ) {
+				if ( mMinHeightEq.empty() || PixelDensity::dpToPx( mMinSize.getHeight() ) < maxY ) {
+					setInternalPixelsHeight( maxY );
+					mPacking = false;
+					packHorizontal();
+					notifyLayoutAttrChangeParent();
+				}
 			}
 		}
 	}

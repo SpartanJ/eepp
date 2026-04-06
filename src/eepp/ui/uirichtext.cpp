@@ -475,14 +475,28 @@ void UIRichText::onAlphaChange() {
 void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
 	richText.clear();
 
-	// Calculate maximum layout width for the RichText block
 	Float maxWidth = mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right;
 	if ( maxWidth < 0 )
 		maxWidth = 0;
+	
+	Float mw = 0.f;
+	if ( !mMaxWidthEq.empty() ) {
+		mw = getMaxSizePx().getWidth() - mPaddingPx.Left - mPaddingPx.Right;
+		if ( mw < 0 ) mw = 0.f;
+	}
+
 	if ( mWidthPolicy == SizePolicy::WrapContent || mode != IntrinsicMode::None ) {
-		richText.setMaxWidth( 0.f ); // Let it grow unbounded to query text bounds later
+		if ( mode == IntrinsicMode::None && !mMaxWidthEq.empty() ) {
+			richText.setMaxWidth( mw );
+		} else {
+			richText.setMaxWidth( 0.f ); // Let it grow unbounded to query text bounds later
+		}
 	} else {
-		richText.setMaxWidth( maxWidth );
+		if ( !mMaxWidthEq.empty() && mw < maxWidth ) {
+			richText.setMaxWidth( mw );
+		} else {
+			richText.setMaxWidth( maxWidth );
+		}
 	}
 
 	auto processWidget = [&]( UIWidget* widget, auto& processWidgetRef ) -> void {
@@ -706,15 +720,25 @@ void UIRichText::updateLayout() {
 
 	positionChildren();
 
+	Float totW = mSize.getWidth();
 	if ( mWidthPolicy == SizePolicy::WrapContent ) {
-		setInternalPixelsWidth( mRichText.getSize().getWidth() + mPaddingPx.Left +
-								mPaddingPx.Right );
+		totW = mRichText.getSize().getWidth() + mPaddingPx.Left + mPaddingPx.Right;
+		if ( !mMaxWidthEq.empty() && totW > getMaxSizePx().getWidth() )
+			setClipType( ClipType::ContentBox );
 	}
 
+	if ( totW != mSize.getWidth() || mWidthPolicy == SizePolicy::WrapContent )
+		setInternalPixelsWidth( totW );
+
+	Float totH = mSize.getHeight();
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
-		setInternalPixelsHeight( mRichText.getSize().getHeight() + mPaddingPx.Top +
-								 mPaddingPx.Bottom );
+		totH = mRichText.getSize().getHeight() + mPaddingPx.Top + mPaddingPx.Bottom;
+		if ( !mMaxHeightEq.empty() && totH > getMaxSizePx().getHeight() )
+			setClipType( ClipType::ContentBox );
 	}
+
+	if ( totH != mSize.getHeight() || mHeightPolicy == SizePolicy::WrapContent )
+		setInternalPixelsHeight( totH );
 
 	if ( mResizedCount )
 		positionChildren();
@@ -737,7 +761,13 @@ Float UIRichText::getMinIntrinsicWidth() const {
 		mMaxIntrinsicWidth = richText.getMaxIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
 		mIntrinsicWidthsDirty = false;
 	}
-	return mMinIntrinsicWidth;
+
+	Float minWidth = mMinIntrinsicWidth;
+	if ( !mMinWidthEq.empty() )
+		minWidth = eemax( minWidth, getMinSizePx().getWidth() );
+	if ( !mMaxWidthEq.empty() )
+		minWidth = eemin( minWidth, getMaxSizePx().getWidth() );
+	return minWidth;
 }
 
 Float UIRichText::getMaxIntrinsicWidth() const {
@@ -753,7 +783,13 @@ Float UIRichText::getMaxIntrinsicWidth() const {
 		mMaxIntrinsicWidth = richText.getMaxIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
 		mIntrinsicWidthsDirty = false;
 	}
-	return mMaxIntrinsicWidth;
+
+	Float maxWidth = mMaxIntrinsicWidth;
+	if ( !mMinWidthEq.empty() )
+		maxWidth = eemax( maxWidth, getMinSizePx().getWidth() );
+	if ( !mMaxWidthEq.empty() )
+		maxWidth = eemin( maxWidth, getMaxSizePx().getWidth() );
+	return maxWidth;
 }
 
 Uint32 UIRichText::onMessage( const NodeMessage* Msg ) {

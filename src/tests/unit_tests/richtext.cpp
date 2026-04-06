@@ -1023,3 +1023,134 @@ UTEST( UIRichText, CustomBRHeight ) {
 	eeDelete( sceneNode );
 	Engine::destroySingleton();
 }
+
+UTEST( UIRichText, MinMaxWidth ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Min/Max Width Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+		<LinearLayout id="container" layout_width="match_parent" layout_height="match_parent">
+			<RichText id="rt_min" layout_width="wrap_content" layout_height="wrap_content" min-width="200dp">Short</RichText>
+			<RichText id="rt_max" layout_width="wrap_content" layout_height="wrap_content" max-width="100dp">This is a very long text that should definitely wrap because of the max-width property being set to 100dp.</RichText>
+			<RichText id="rt_max_fixed" layout_width="500dp" layout_height="wrap_content" max-width="100dp">This is another very long text with fixed width policy.</RichText>
+		</LinearLayout>
+	)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+	UI::UIRichText* rtMin = sceneNode->find<UI::UIRichText>( "rt_min" );
+	UI::UIRichText* rtMax = sceneNode->find<UI::UIRichText>( "rt_max" );
+	UI::UIRichText* rtMaxFixed = sceneNode->find<UI::UIRichText>( "rt_max_fixed" );
+	ASSERT_TRUE( rtMin != nullptr );
+	ASSERT_TRUE( rtMax != nullptr );
+	ASSERT_TRUE( rtMaxFixed != nullptr );
+
+	sceneNode->update( Time::Zero );
+
+	EXPECT_EQ( rtMin->getSize().getWidth(), PixelDensity::dpToPx( 200 ) );
+	EXPECT_LE( rtMax->getSize().getWidth(), PixelDensity::dpToPx( 100 ) );
+	EXPECT_GT( rtMax->getSize().getHeight(), PixelDensity::dpToPx( 30 ) ); // should wrap to multiple lines
+	EXPECT_LE( rtMaxFixed->getSize().getWidth(), PixelDensity::dpToPx( 100 ) );
+	EXPECT_GT( rtMaxFixed->getSize().getHeight(), PixelDensity::dpToPx( 30 ) ); // should wrap to multiple lines
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
+UTEST( UIRichText, MinMaxWidthChildren ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Min/Max Width Children Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+		<LinearLayout id="container" layout_width="match_parent" layout_height="match_parent">
+			<RichText id="rt_parent" layout_width="wrap_content" layout_height="wrap_content" max-width="100dp">
+				This is a long text that expands the RichText so its max-width is reached.
+				<Widget id="child_widget" layout_width="match_parent" layout_height="50dp" />
+			</RichText>
+		</LinearLayout>
+	)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+	UI::UIRichText* rtParent = sceneNode->find<UI::UIRichText>( "rt_parent" );
+	UI::UIWidget* childWidget = sceneNode->find<UI::UIWidget>( "child_widget" );
+	ASSERT_TRUE( rtParent != nullptr );
+	ASSERT_TRUE( childWidget != nullptr );
+
+	sceneNode->update( Time::Zero );
+	sceneNode->update( Time::Zero ); // Run a second pass to allow MatchParent to resolve against the new clamped parent size
+	sceneNode->update( Time::Zero );
+
+	EXPECT_LE( rtParent->getSize().getWidth(), PixelDensity::dpToPx( 100 ) );
+	EXPECT_GT( rtParent->getSize().getWidth(), 0 ); // Assert it's not 0
+	EXPECT_EQ( childWidget->getSize().getWidth(), rtParent->getSize().getWidth() );
+	EXPECT_LE( childWidget->getSize().getWidth(), PixelDensity::dpToPx( 100 ) );
+	EXPECT_GT( childWidget->getSize().getWidth(), 0 ); // Assert it's not 0
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
+UTEST( UILayout, MinMaxWidthChildren ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "Layout Min/Max Width Children Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+		<LinearLayout id="container" layout_width="match_parent" layout_height="match_parent">
+			<LinearLayout id="ll_parent" layout_width="wrap_content" layout_height="wrap_content" max-width="150dp">
+				<Widget id="child_widget1" layout_width="300dp" layout_height="50dp" />
+				<Widget id="child_widget2" layout_width="match_parent" layout_height="50dp" />
+			</LinearLayout>
+		</LinearLayout>
+	)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+	UI::UIWidget* llParent = sceneNode->find<UI::UIWidget>( "ll_parent" );
+	UI::UIWidget* childWidget2 = sceneNode->find<UI::UIWidget>( "child_widget2" );
+	ASSERT_TRUE( llParent != nullptr );
+	ASSERT_TRUE( childWidget2 != nullptr );
+
+	sceneNode->update( Time::Zero );
+	sceneNode->update( Time::Zero );
+	sceneNode->update( Time::Zero );
+
+	EXPECT_LE( llParent->getSize().getWidth(), PixelDensity::dpToPx( 150 ) );
+	EXPECT_GT( llParent->getSize().getWidth(), 0 ); // Assert it's not 0
+	EXPECT_EQ( childWidget2->getSize().getWidth(), llParent->getSize().getWidth() );
+	EXPECT_LE( childWidget2->getSize().getWidth(), PixelDensity::dpToPx( 150 ) );
+	EXPECT_GT( childWidget2->getSize().getWidth(), 0 ); // Assert it's not 0
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}

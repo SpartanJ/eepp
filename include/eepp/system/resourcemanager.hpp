@@ -3,6 +3,8 @@
 
 #include <eepp/core/containers.hpp>
 #include <eepp/core/string.hpp>
+#include <eepp/system/lock.hpp>
+#include <eepp/system/mutex.hpp>
 #include <string>
 #include <unordered_map>
 
@@ -81,16 +83,14 @@ template <class T> class ResourceManager {
 			pred( res );
 	}
 
-	template <typename Predicate>
-	T* findIf( Predicate pred ) const {
+	template <typename Predicate> T* findIf( Predicate pred ) const {
 		for ( const auto& res : mResources )
 			if ( pred( res ) )
 				return res.second;
 		return nullptr;
 	}
 
-	template <typename Predicate>
-	T* findIf( Predicate pred ) {
+	template <typename Predicate> T* findIf( Predicate pred ) {
 		for ( auto& res : mResources )
 			if ( pred( res ) )
 				return res.second;
@@ -98,6 +98,7 @@ template <class T> class ResourceManager {
 	}
 
   protected:
+	Mutex mMutex;
 	UnorderedMap<String::HashType, T*> mResources;
 	bool mIsDestroying;
 };
@@ -115,16 +116,19 @@ template <class T> ResourceManager<T>::~ResourceManager() {
 template <class T> void ResourceManager<T>::destroy() {
 	mIsDestroying = true;
 
-	for ( auto& it : mResources ) {
-		T* res = it.second;
-		eeSAFE_DELETE( res );
+	{
+		Lock l( mMutex );
+		for ( auto& it : mResources ) {
+			T* res = it.second;
+			eeSAFE_DELETE( res );
+		}
+		mResources.clear();
 	}
-
-	mResources.clear();
 
 	mIsDestroying = false;
 }
 
+// This is not thread safe
 template <class T> UnorderedMap<String::HashType, T*>& ResourceManager<T>::getResources() {
 	return mResources;
 }
@@ -132,6 +136,7 @@ template <class T> UnorderedMap<String::HashType, T*>& ResourceManager<T>::getRe
 template <class T> T* ResourceManager<T>::add( T* resource ) {
 	if ( NULL != resource ) {
 		if ( !existsId( resource->getId() ) ) {
+			Lock l( mMutex );
 			mResources[resource->getId()] = resource;
 
 			return resource;
@@ -147,6 +152,7 @@ template <class T> T* ResourceManager<T>::add( T* resource ) {
 			return add( resource );
 		}
 
+		Lock l( mMutex );
 		mResources[resource->getId()] = resource;
 		return resource;
 	}
@@ -155,8 +161,11 @@ template <class T> T* ResourceManager<T>::add( T* resource ) {
 
 template <class T> bool ResourceManager<T>::remove( T* resource, bool remove ) {
 	if ( NULL != resource ) {
-		mResources.erase( resource->getId() );
+		{
 
+			Lock l( mMutex );
+			mResources.erase( resource->getId() );
+		}
 		if ( remove )
 			eeSAFE_DELETE( resource );
 
@@ -179,6 +188,7 @@ template <class T> bool ResourceManager<T>::exists( const std::string& name ) {
 }
 
 template <class T> bool ResourceManager<T>::existsId( const String::HashType& id ) {
+	Lock l( mMutex );
 	return mResources.find( id ) != mResources.end();
 }
 
@@ -187,17 +197,20 @@ template <class T> T* ResourceManager<T>::getByName( const std::string& name ) {
 }
 
 template <class T> T* ResourceManager<T>::getById( const String::HashType& id ) {
+	Lock l( mMutex );
 	auto it = mResources.find( id );
 	return it != mResources.end() ? it->second : nullptr;
 }
 
 template <class T> void ResourceManager<T>::printNames() {
+	Lock l( mMutex );
 	for ( auto& it : mResources ) {
 		eePRINTL( "'%s'", it.second->getName().c_str() );
 	}
 }
 
 template <class T> Uint32 ResourceManager<T>::getCount() {
+	Lock l( mMutex );
 	return (Uint32)mResources.size();
 }
 
@@ -274,6 +287,7 @@ template <class T> class ResourceManagerMulti {
 	const bool& isDestroying() const;
 
   protected:
+	Mutex mMutex;
 	std::unordered_multimap<String::HashType, T*> mResources;
 	bool mIsDestroying;
 };
@@ -291,12 +305,15 @@ template <class T> ResourceManagerMulti<T>::~ResourceManagerMulti() {
 template <class T> void ResourceManagerMulti<T>::destroy() {
 	mIsDestroying = true;
 
-	for ( auto& it : mResources ) {
-		T* res = it.second;
-		eeSAFE_DELETE( res );
-	}
+	{
+		Lock l( mMutex );
+		for ( auto& it : mResources ) {
+			T* res = it.second;
+			eeSAFE_DELETE( res );
+		}
 
-	mResources.clear();
+		mResources.clear();
+	}
 
 	mIsDestroying = false;
 }
@@ -308,6 +325,7 @@ std::unordered_multimap<String::HashType, T*>& ResourceManagerMulti<T>::getResou
 
 template <class T> T* ResourceManagerMulti<T>::add( T* resource ) {
 	if ( NULL != resource ) {
+		Lock l( mMutex );
 		mResources.insert( std::pair<String::HashType, T*>( resource->getId(), resource ) );
 		return resource;
 	}
@@ -316,14 +334,17 @@ template <class T> T* ResourceManagerMulti<T>::add( T* resource ) {
 
 template <class T> bool ResourceManagerMulti<T>::remove( T* resource, bool remove ) {
 	if ( NULL != resource ) {
-		auto range = mResources.equal_range( resource->getId() );
-		auto it = range.first;
-		while ( it != range.second ) {
-			if ( it->second == resource ) {
-				mResources.erase( it );
-				break;
+		{
+			Lock l( mMutex );
+			auto range = mResources.equal_range( resource->getId() );
+			auto it = range.first;
+			while ( it != range.second ) {
+				if ( it->second == resource ) {
+					mResources.erase( it );
+					break;
+				}
+				it++;
 			}
-			it++;
 		}
 
 		if ( remove )
@@ -350,6 +371,7 @@ template <class T> bool ResourceManagerMulti<T>::exists( const std::string& name
 }
 
 template <class T> bool ResourceManagerMulti<T>::existsId( const String::HashType& id ) {
+	Lock l( mMutex );
 	return mResources.find( id ) != mResources.end();
 }
 
@@ -358,21 +380,25 @@ template <class T> T* ResourceManagerMulti<T>::getByName( const std::string& nam
 }
 
 template <class T> T* ResourceManagerMulti<T>::getById( const String::HashType& id ) {
+	Lock l( mMutex );
 	auto it = mResources.find( id );
 	return it != mResources.end() ? it->second : nullptr;
 }
 
 template <class T> void ResourceManagerMulti<T>::printNames() {
+	Lock l( mMutex );
 	for ( auto& it : mResources ) {
 		eePRINTL( "'%s'", it.second->getName().c_str() );
 	}
 }
 
 template <class T> Uint32 ResourceManagerMulti<T>::getCount() {
+	Lock l( mMutex );
 	return (Uint32)mResources.size();
 }
 
 template <class T> Uint32 ResourceManagerMulti<T>::getCount( const String::HashType& id ) {
+	Lock l( mMutex );
 	return mResources.count( id );
 }
 
