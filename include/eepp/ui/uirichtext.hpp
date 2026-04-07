@@ -28,6 +28,8 @@ class EE_API UIRichText : public UILayout {
 
 	static UIRichText* NewBr();
 
+	static UIRichText* NewHr();
+
 	static UIRichText* NewDiv() { return UIRichText::NewWithTag( "div" ); };
 
 	static UIRichText* NewPre() { return UIRichText::NewWithTag( "pre" ); };

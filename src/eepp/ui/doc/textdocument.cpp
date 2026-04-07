@@ -662,14 +662,14 @@ void TextDocument::guessIndentType() {
 		int guessCountdown = 10;
 		for ( size_t i = start; i < end; i++ ) {
 			const String& text = mLines[i].getText();
-			std::string match =
-				LuaPattern::match( text.size() > 128 ? text.substr( 0, 12 ) : text, "^  +" );
+			std::string match = LuaPattern::match(
+				text.size() > 128 ? text.substr( 0, 128 ).toUtf8() : text.toUtf8(), "^  +" );
 			if ( !match.empty() ) {
 				guessSpaces++;
 				guessWidth[match.size()]++;
 				guessCountdown--;
 			} else {
-				match = LuaPattern::match( mLines[i].getText(), "^\t+" );
+				match = LuaPattern::match( mLines[i].getText().toUtf8(), "^\t+" );
 				if ( !match.empty() ) {
 					guessTabs++;
 					guessCountdown--;

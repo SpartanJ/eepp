@@ -155,6 +155,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["h5"] = UIRichText::NewH5;
 		registeredWidget["h6"] = UIRichText::NewH6;
 		registeredWidget["br"] = UIRichText::NewBr;
+		registeredWidget["hr"] = UIRichText::NewHr;
 		registeredWidget["ul"] = [] { return UILinearLayout::NewVerticalWidthMatchParent( "ul" ); };
 		registeredWidget["ol"] = [] { return UILinearLayout::NewVerticalWidthMatchParent( "ol" ); };
 		registeredWidget["li"] = UIRichText::NewListItem;

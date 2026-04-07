@@ -66,7 +66,7 @@ void DrawableImageParser::registerBaseParsers() {
 
 		RectangleDrawable* drawable = RectangleDrawable::New();
 		RectColors rectColors;
-		const std::vector<std::string>& params( functionType.getParameters() );
+		const auto& params( functionType.getParameters() );
 
 		if ( Color::isColorString( params.at( 0 ) ) && params.size() >= 2 ) {
 			rectColors.TopLeft = rectColors.TopRight = Color::fromString( params.at( 0 ) );
@@ -112,7 +112,7 @@ void DrawableImageParser::registerBaseParsers() {
 
 		CircleDrawable* drawable = CircleDrawable::New();
 
-		const std::vector<std::string>& params( functionType.getParameters() );
+		const auto& params( functionType.getParameters() );
 
 		CSS::StyleSheetLength length( params[0] );
 		drawable->setRadius( node->convertLength( length, size.getWidth() / 2.f ) );
@@ -145,7 +145,7 @@ void DrawableImageParser::registerBaseParsers() {
 		RectColors rectColors;
 		std::vector<Color> colors;
 
-		const std::vector<std::string>& params( functionType.getParameters() );
+		const auto& params( functionType.getParameters() );
 
 		for ( size_t i = 0; i < params.size(); i++ ) {
 			std::string param( String::toLower( params[i] ) );
@@ -207,7 +207,7 @@ void DrawableImageParser::registerBaseParsers() {
 		std::vector<Color> colors;
 		std::vector<Vector2f> vertices;
 
-		const std::vector<std::string>& params( functionType.getParameters() );
+		const auto& params( functionType.getParameters() );
 		Float lineWidth = PixelDensity::dpToPx( 1.f );
 
 		for ( size_t i = 0; i < params.size(); i++ ) {
@@ -277,7 +277,7 @@ void DrawableImageParser::registerBaseParsers() {
 		std::vector<Color> colors;
 		std::vector<Vector2f> vertices;
 
-		const std::vector<std::string>& params( functionType.getParameters() );
+		const auto& params( functionType.getParameters() );
 		Float lineWidth = PixelDensity::dpToPx( 1.f );
 
 		for ( size_t i = 0; i < params.size(); i++ ) {

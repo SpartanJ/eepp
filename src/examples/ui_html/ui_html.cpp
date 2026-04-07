@@ -14,6 +14,9 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		{ 'c', "prefers-color-scheme" } );
 	args::Flag hnDark( parser, "hn-dark",
 					   "Force a custom CSS style for Hacker News site to be dark.", { "hn-dark" } );
+	args::Flag benchmarkMode( parser, "benchmark-mode",
+							  "Render as much as possible to measure the rendering performance.",
+							  { "benchmark-mode" } );
 
 	try {
 		parser.ParseCLI( Sys::parseArguments( argc, argv ) );
@@ -30,7 +33,10 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		return EXIT_FAILURE;
 	}
 
-	UIApplication app( { 1280, 720, "eepp - UI HTML Example" } );
+	UIApplication app(
+		{ 1280, 720, "eepp - UI HTML Example" }, UIApplication::Settings(),
+		ContextSettings(
+			false, benchmarkMode.Get() ? 0 : ContextSettings::FrameRateLimitScreenRefreshRate ) );
 
 	Log::instance()->setLogLevelThreshold( LogLevel::Debug );
 	Log::instance()->setLogToStdOut( true );
@@ -223,5 +229,20 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 		}
 	} );
 
+	if ( benchmarkMode.Get() ) {
+		app.getWindow()->runMainLoop( [&app]() {
+			app.getWindow()->getInput()->update();
+			SceneManager::instance()->update();
+			app.getWindow()->clear();
+			SceneManager::instance()->draw();
+			auto tm = app.getUI()->getUIThemeManager();
+			String fps( String::format( "FPS: %d", app.getWindow()->getFPS() ) );
+			Text::draw( fps, Vector2f::Zero, tm->getDefaultFont(), tm->getDefaultFontSize(),
+						Color::magenta, 0, 0, Color::Black, Color::Black, Vector2f{ 1, 1 }, 4,
+						TextHints::AllAscii );
+			app.getWindow()->display();
+		} );
+		return EXIT_SUCCESS;
+	}
 	return app.run();
 }

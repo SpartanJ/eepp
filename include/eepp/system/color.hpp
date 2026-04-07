@@ -5,6 +5,7 @@
 #include <eepp/core/containers.hpp>
 #include <eepp/core/string.hpp>
 #include <eepp/system/bitop.hpp>
+#include <eepp/system/functionstring.hpp>
 
 #include <array>
 #include <string>
@@ -220,7 +221,7 @@ class EE_API Color : public tColor<Uint8> {
 
 	static Color fromString( std::string str );
 
-	static bool isColorString( std::string str, bool searchColorNames = true );
+	static bool isColorString( std::string_view str, bool searchColorNames = true );
 
 	static bool isColorString( String::View str, bool searchColorNames = true );
 
@@ -400,9 +401,13 @@ class EE_API Color : public tColor<Uint8> {
 
   private:
 	static UnorderedMap<std::string, Color> sColors;
+	static UnorderedMap<String::HashType, Color> sColorHash;
 	static UnorderedMap<String::HashType, Color> sColorMap;
 
 	static void initColorMap();
+
+	template <AllowedFunctionString StringType>
+	static bool isColorStringT( StringType str, bool searchColorNames );
 };
 
 typedef Color ColorA;

@@ -4,32 +4,54 @@
 
 namespace EE { namespace System {
 
-FunctionString FunctionString::parse( const std::string& function ) {
+#include <concepts>
+#include <string>
+
+template <AllowedFunctionString StringType>
+FunctionString FunctionString::parse( StringType function ) {
+	using CharType = typename StringType::value_type;
+
 	size_t funcSep = function.find( '(' );
-	if ( funcSep == std::string::npos )
+	if ( funcSep == StringType::npos )
 		return FunctionString( "", {}, {} );
 
-	std::string funcName = function.substr( 0, funcSep );
-	String::trimInPlace( funcName );
+	auto funcName = String::trim( function.substr( 0, funcSep ) );
+	Parameters funcParameters;
+	TypeStringVector typeStringData;
 
-	std::vector<std::string> funcParameters;
-	std::vector<bool> typeStringData;
-
-	std::string parametersString = function.substr( funcSep + 1 );
+	auto parametersString = function.substr( funcSep + 1 );
 	size_t paramClose = parametersString.find_last_of( ')' );
-	if ( paramClose == std::string::npos )
+	if ( paramClose == StringType::npos )
 		return FunctionString( "", {}, {} );
 
 	parametersString = parametersString.substr( 0, paramClose );
 
 	bool stateParsingString = false;
-	std::string buffer = "";
-	char prevChar = 0;
+	std::basic_string<CharType> buffer;
+	CharType prevChar = 0;
+
 	bool currentParamIsString = false;
 	int parenDepth = 0;
 
+	auto pushBufferToParams = [&]() {
+		if constexpr ( std::same_as<CharType, char> ) {
+			if ( !currentParamIsString )
+				String::trimInPlace( buffer );
+			funcParameters.push_back( buffer );
+		} else {
+			std::string utf8Buffer = String( buffer ).toUtf8();
+			if ( !currentParamIsString )
+				String::trimInPlace( utf8Buffer );
+			funcParameters.push_back( utf8Buffer );
+		}
+		typeStringData.push_back( currentParamIsString );
+		buffer.clear();
+		currentParamIsString = false;
+	};
+
 	for ( size_t i = 0; i < parametersString.length(); ++i ) {
-		char c = parametersString[i];
+
+		CharType c = parametersString[i];
 
 		if ( !stateParsingString ) {
 			if ( c == '(' ) {
@@ -37,19 +59,14 @@ FunctionString FunctionString::parse( const std::string& function ) {
 				buffer += c;
 			} else if ( c == ')' ) {
 				if ( parenDepth == 0 )
-					break; // early exit, last ) wasn't the function closure
+					break;
 				if ( parenDepth > 0 )
 					parenDepth--;
 				buffer += c;
 			} else if ( c == ',' ) {
 				if ( parenDepth == 0 ) {
 					if ( !buffer.empty() ) {
-						if ( !currentParamIsString )
-							String::trimInPlace( buffer );
-						funcParameters.push_back( buffer );
-						typeStringData.push_back( currentParamIsString );
-						buffer = "";
-						currentParamIsString = false;
+						pushBufferToParams();
 					}
 				} else {
 					buffer += c;
@@ -84,25 +101,39 @@ FunctionString FunctionString::parse( const std::string& function ) {
 		}
 	}
 
-	if ( !buffer.empty() ) {
-		if ( !currentParamIsString )
-			String::trimInPlace( buffer );
-		funcParameters.push_back( buffer );
-		typeStringData.push_back( currentParamIsString );
-	}
+	if ( !buffer.empty() )
+		pushBufferToParams();
 
-	return FunctionString( funcName, funcParameters, typeStringData );
+	if constexpr ( std::same_as<StringType, std::string> ) {
+		return FunctionString( std::string{ funcName }, funcParameters, typeStringData );
+	} else {
+		return FunctionString( String( funcName ).toUtf8(), funcParameters, typeStringData );
+	}
 }
 
-FunctionString::FunctionString( const std::string& name, const std::vector<std::string>& parameters,
-								const std::vector<bool>& typeStringData ) :
+FunctionString FunctionString::parse( std::string_view function ) {
+	return parse<std::string_view>( function );
+}
+
+FunctionString FunctionString::parse( String::View function ) {
+	return parse<String::View>( function );
+}
+
+FunctionString::FunctionString( const std::string& name, const Parameters& parameters,
+								const TypeStringVector& typeStringData ) :
 	name( name ), parameters( parameters ), typeStringData( typeStringData ) {}
+
+FunctionString::FunctionString( const std::string& name, Parameters&& parameters,
+								TypeStringVector&& typeStringData ) :
+	name( name ),
+	parameters( std::move( parameters ) ),
+	typeStringData( std::move( typeStringData ) ) {}
 
 const std::string& FunctionString::getName() const {
 	return name;
 }
 
-const std::vector<std::string>& FunctionString::getParameters() const {
+const FunctionString::Parameters& FunctionString::getParameters() const {
 	return parameters;
 }
 

@@ -658,6 +658,27 @@ String::HashType String::hash( const String& str ) {
 						 str.size() * sizeof( String::StringBaseType ) );
 }
 
+String::HashType String::hashToLower( const std::string& str ) {
+	return String::hashToLower( str.c_str(), str.length() );
+}
+
+String::HashType String::hashToLower( const std::string_view& str ) {
+	return String::hashToLower( str.data(), str.length() );
+}
+
+String::HashType String::hashToLower( const String::View& str ) {
+	String::HashType hash = 5381;
+	for ( size_t i = 0; i < str.size(); ++i ) {
+		int c = str[i];
+		hash = ( ( hash << 5 ) + hash ) + ( c >= 'A' && c <= 'Z' ? c + 32 : c );
+	}
+	return hash;
+}
+
+String::HashType String::hashToLower( const String& str ) {
+	return String::hashToLower( str.view() );
+}
+
 bool String::isCharacter( const int& value ) {
 	return ( value >= 32 && value <= 126 ) || ( value >= 161 && value <= 255 ) || ( value == 9 );
 }
@@ -1332,7 +1353,8 @@ bool String::istartsWith( String::View haystack, String::View needle ) {
 
 bool String::istartsWith( const char* haystack, const char* needle ) {
 	size_t needleLen = strlen( needle );
-	if ( needleLen > strlen( haystack ) ) return false;
+	if ( needleLen > strlen( haystack ) )
+		return false;
 	return std::equal( needle, needle + needleLen, haystack, []( char c1, char c2 ) {
 		return std::tolower( c1 ) == std::tolower( c2 );
 	} );

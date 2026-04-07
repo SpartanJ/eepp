@@ -1703,6 +1703,9 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 		return;
 	}
 
+	if ( mColors.empty() )
+		return;
+
 	Texture* texture = mFontStyleConfig.Font->getTexture( mFontStyleConfig.CharacterSize );
 	if ( !texture )
 		return;

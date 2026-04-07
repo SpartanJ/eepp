@@ -88,6 +88,15 @@ class EE_API String {
 		return hash;
 	}
 
+	static constexpr String::HashType hashToLower( const char* str, Int64 len ) {
+		String::HashType hash = 5381;
+		while ( --len >= 0 ) {
+			int c = *str++;
+			hash = ( ( hash << 5 ) + hash ) + ( c >= 'A' && c <= 'Z' ? c + 32 : c );
+		}
+		return hash;
+	}
+
 	/** Escape string sequence */
 	static String escape( const String& str );
 
@@ -103,6 +112,18 @@ class EE_API String {
 	/** @return string hash. Note: String::hash( std::string( "text" ) ) is != to String::hash(
 	 * String( "text" ) ) */
 	static String::HashType hash( const String& str );
+
+	/** @return string hash to lower. Assumes ASCII */
+	static String::HashType hashToLower( const std::string& str );
+
+	/** @return string hash to lower. Assumes ASCII */
+	static String::HashType hashToLower( const std::string_view& str );
+
+	/** @return string hash to lower. Assumes ASCII */
+	static String::HashType hashToLower( const String::View& str );
+
+	/** @return string hash to lower. Assumes ASCII */
+	static String::HashType hashToLower( const String& str );
 
 	/** @return If the value passed is a character */
 	static bool isCharacter( const int& value );

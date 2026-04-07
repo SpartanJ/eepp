@@ -17,9 +17,9 @@ namespace EE { namespace UI {
 
 class UILineBreak : public UIRichText {
   public:
-	static UILineBreak* New() { return eeNew( UILineBreak, () ); }
+	static UILineBreak* New( const std::string& tag = "" ) { return eeNew( UILineBreak, ( tag ) ); }
 
-	UILineBreak() : UIRichText( "br " ) {}
+	UILineBreak( const std::string& tag = "br" ) : UIRichText( tag ) {}
 
 	virtual Uint32 getType() const { return UI_TYPE_BR; }
 
@@ -30,6 +30,10 @@ class UILineBreak : public UIRichText {
 
 UIRichText* UIRichText::NewBr() {
 	return UILineBreak::New();
+};
+
+UIRichText* UIRichText::NewHr() {
+	return UILineBreak::New( "hr" );
 };
 
 UIRichText* UIRichText::New() {

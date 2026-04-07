@@ -312,6 +312,10 @@ void UINode::setMaxSizeEq( const std::string& maxWidthEq, const std::string& max
 	if ( mMaxWidthEq != maxWidthEq || mMaxHeightEq != maxHeightEq ) {
 		mMaxWidthEq = maxWidthEq;
 		mMaxHeightEq = maxHeightEq;
+		if ( mMaxWidthEq == "none" )
+			mMaxWidthEq.clear();
+		if ( mMaxHeightEq == "none" )
+			mMaxHeightEq.clear();
 		setSize( mDpSize );
 	}
 }
@@ -319,6 +323,8 @@ void UINode::setMaxSizeEq( const std::string& maxWidthEq, const std::string& max
 void UINode::setMaxWidthEq( const std::string& maxWidthEq ) {
 	if ( mMaxWidthEq != maxWidthEq ) {
 		mMaxWidthEq = maxWidthEq;
+		if ( mMaxWidthEq == "none" )
+			mMaxWidthEq.clear();
 		onSizeChange();
 	}
 }
@@ -330,6 +336,8 @@ const std::string& UINode::getMaxHeightEq() const {
 void UINode::setMaxHeightEq( const std::string& maxHeightEq ) {
 	if ( mMaxHeightEq != maxHeightEq ) {
 		mMaxHeightEq = maxHeightEq;
+		if ( mMaxHeightEq == "none" )
+			mMaxHeightEq.clear();
 		onSizeChange();
 	}
 }
