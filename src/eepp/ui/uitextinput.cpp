@@ -142,7 +142,7 @@ void UITextInput::draw() {
 		if ( textCache.getTextWidth() ) {
 			drawSelection( textCache );
 
-			if ( isClipped() ) {
+			if ( mMode == TextInputMode::Password && isClipped() ) {
 				clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y + mPaddingPx.Top,
 								 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
 								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
@@ -154,12 +154,12 @@ void UITextInput::draw() {
 				std::trunc( mScreenPos.y ) + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
 				Vector2f::One, 0.f, getBlendMode() );
 
-			if ( isClipped() ) {
+			if ( mMode == TextInputMode::Password && isClipped() ) {
 				clipSmartDisable();
 			}
 		} else if ( !mHintCache->getString().empty() &&
 					( mHintDisplay == HintDisplay::Always || hasFocus() ) ) {
-			if ( isClipped() ) {
+			if ( mMode == TextInputMode::Password && isClipped() ) {
 				clipSmartEnable( mScreenPos.x + mPaddingPx.Left, mScreenPos.y + mPaddingPx.Top,
 								 mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right,
 								 mSize.getHeight() - mPaddingPx.Top - mPaddingPx.Bottom );
@@ -170,7 +170,7 @@ void UITextInput::draw() {
 				std::trunc( mScreenPos.y ) + (int)mRealAlignOffset.y + (int)mPaddingPx.Top,
 				Vector2f::One, 0.f, getBlendMode() );
 
-			if ( isClipped() ) {
+			if ( mMode == TextInputMode::Password && isClipped() ) {
 				clipSmartDisable();
 			}
 		}

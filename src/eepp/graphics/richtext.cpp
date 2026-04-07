@@ -386,12 +386,13 @@ Float RichText::getMaxIntrinsicWidth() {
 			size_t end = 0;
 			while ( ( end = s.find( '\n', start ) ) != String::InvalidPos ) {
 				curX += Text::getTextWidth( s.substr( start, end - start ),
-											span->getFontStyleConfig() );
+											span->getFontStyleConfig(), 4, span->getTextHints() );
 				maxW = std::max( maxW, curX );
 				curX = 0;
 				start = end + 1;
 			}
-			curX += Text::getTextWidth( s.substr( start ), span->getFontStyleConfig() );
+			curX += Text::getTextWidth( s.substr( start ), span->getFontStyleConfig(), 4,
+										span->getTextHints() );
 		} else if ( auto pDrawable = std::get_if<std::shared_ptr<Drawable>>( &block ) ) {
 			curX += ( *pDrawable )->getPixelsSize().getWidth();
 		} else if ( auto pSize = std::get_if<Sizef>( &block ) ) {
@@ -491,7 +492,8 @@ void RichText::updateLayout() {
 			}
 
 			// Wrap if needed
-			if ( mMaxWidth > 0 && curX + blockSize.getWidth() > mMaxWidth && curX > 0 ) {
+			if ( mMaxWidth > 0 &&
+				 ( curX + blockSize.getWidth() >= mMaxWidth || curX >= mMaxWidth ) && curX > 0 ) {
 				maxWidth = std::max( maxWidth, curX );
 				mLines.push_back( RenderParagraph() );
 				curX = 0;
@@ -514,7 +516,7 @@ void RichText::updateLayout() {
 			curX += blockSize.getWidth();
 			currentLine.width += blockSize.getWidth();
 
-			if ( mMaxWidth > 0 && curX + blockSize.getWidth() > mMaxWidth && curX > 0 ) {
+			if ( mMaxWidth > 0 && curX >= mMaxWidth ) {
 				maxWidth = std::max( maxWidth, curX );
 				mLines.push_back( RenderParagraph() );
 				curX = 0;

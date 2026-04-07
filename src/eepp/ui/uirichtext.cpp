@@ -526,9 +526,10 @@ void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
 			if ( mode == IntrinsicMode::None ) {
 				if ( widget->getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
 					if ( mSize.getWidth() != 0 ) {
-						widget->setPixelsSize( eemax( 0.f, mSize.getWidth() - mPaddingPx.Left -
-															   mPaddingPx.Right - margin.Left -
-															   margin.Right ),
+						Float maxSize =
+							eemax( 0.f, mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
+											margin.Left - margin.Right );
+						widget->setPixelsSize( eemax( 0.f, maxSize ),
 											   widget->getPixelsSize().getHeight() );
 					} else {
 						onAutoSizeChild( widget );
