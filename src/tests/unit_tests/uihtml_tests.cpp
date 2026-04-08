@@ -1,4 +1,4 @@
-// #include "compareimages.hpp"
+#include "compareimages.hpp"
 #include "utest.h"
 
 #include <eepp/graphics/fontfamily.hpp>
@@ -10,6 +10,7 @@
 #include <eepp/ui/htmlinput.hpp>
 #include <eepp/ui/htmltextarea.hpp>
 #include <eepp/ui/htmltextinput.hpp>
+#include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/tools/uiwidgetinspector.hpp>
 #include <eepp/ui/uicheckbox.hpp>
 #include <eepp/ui/uihtmltable.hpp>
@@ -58,7 +59,9 @@ UTEST( UIHTMLTable, complexLayout ) {
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
 	sceneNode->setURI( Sys::getProcessPath() + "assets/html/" );
-	sceneNode->loadLayoutFromFile( "assets/html/hn_thread_test.html" );
+	std::string html;
+	FileSystem::fileGet( "assets/html/hn_thread_test.html", html );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
 	win->setClearColor( Color::White );
 
 	/* while ( win->isRunning() ) */ {
@@ -94,8 +97,74 @@ UTEST( UIHTMLTable, complexLayout ) {
 	EXPECT_GT( totalTds, 0 );
 	EXPECT_GT( mainTotal, 0 );
 
-	// EXPECT_LT( totalTds, mainTotal );
-	// compareImages( utest_state, utest_result, win, "eepp-uihtmltable-complex-layout", "html" );
+	EXPECT_NEAR( totalTds, mainTotal, 0.1 );
+	compareImages( utest_state, utest_result, win, "eepp-uihtmltable-complex-layout", "html" );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLTable, complexLayout2 ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 650, "HTML Tables Test 2", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+	sceneNode->setURI( Sys::getProcessPath() + "assets/html/" );
+	std::string html;
+	FileSystem::fileGet( "assets/html/hn_threaded_test.html", html );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	win->setClearColor( Color::White );
+
+	win->getInput()->update();
+	SceneManager::instance()->update();
+
+	win->clear();
+	SceneManager::instance()->draw();
+	win->display();
+
+	compareImages( utest_state, utest_result, win, "eepp-uihtmltable-complex-layout-2", "html" );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLTable, complexLayout3 ) {
+	auto win = Engine::instance()->createWindow(
+		WindowSettings( 1024, 650, "HTML Tables Test 3", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+	sceneNode->setURI( Sys::getProcessPath() + "assets/html/" );
+	std::string html;
+	FileSystem::fileGet( "assets/html/hn_frontpage.html", html );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
+	win->setClearColor( Color::White );
+
+	win->getInput()->update();
+	SceneManager::instance()->update();
+
+	win->clear();
+	SceneManager::instance()->draw();
+	win->display();
+
+	compareImages( utest_state, utest_result, win, "eepp-uihtmltable-complex-layout-3", "html" );
 
 	Engine::destroySingleton();
 }
