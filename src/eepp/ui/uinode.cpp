@@ -1638,13 +1638,14 @@ Float UINode::lengthFromValue( const StyleSheetProperty& property,
 			return convertLength( length, 0 );
 		}
 
-		static constexpr const std::initializer_list<std::string_view> FontSizeNames = {
+		static constexpr std::string_view FontSizeNames[] = {
 			"xx-small", "x-small",	"small",	 "medium",	"large",
 			"x-large",	"xx-large", "xxx-large", "smaller", "larger" };
 
-		std::initializer_list<std::string_view>::iterator it = FontSizeNames.end();
-		if ( ( it = std::find( FontSizeNames.begin(), FontSizeNames.end(),
-							   property.getValue() ) ) != FontSizeNames.end() ) {
+		auto it = std::find( std::begin( FontSizeNames ), std::end( FontSizeNames ),
+							 property.getValue() );
+
+		if ( it != std::end( FontSizeNames ) ) {
 			std::string_view keyword = *it;
 			StyleSheetLength res;
 			if ( keyword == "xx-small" ) {
