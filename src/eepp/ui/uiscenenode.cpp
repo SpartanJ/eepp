@@ -1214,8 +1214,8 @@ void UISceneNode::loadCSS( URI uri ) {
 	Log::debug( "UISceneNode::loadCSS: %s", url );
 
 	if ( "file" == uri.getScheme() ||
-		 ( uri.getScheme().empty() && FileSystem::fileExists( uri.getPath() ) ) ) {
-		std::string filePath( uri.getPath() );
+		 ( uri.getScheme().empty() && FileSystem::fileExists( uri.getFSPath() ) ) ) {
+		std::string filePath( uri.getFSPath() );
 		std::string css;
 		if ( FileSystem::fileExists( filePath ) && FileSystem::fileGet( filePath, css ) ) {
 			combineStyleSheet( css, true, String::hash( url ), getURIFromURL( url ) );
@@ -1245,6 +1245,8 @@ void UISceneNode::loadCSS( URI uri ) {
 			combineStyleSheet( parser.getStyleSheet() );
 			Log::debug( "UISceneNode::loadCSS: Loaded - %s", url );
 		}
+	} else {
+		Log::debug( "UISceneNode::loadCSS: Failed to load %s - Unknown scheme", url );
 	}
 }
 

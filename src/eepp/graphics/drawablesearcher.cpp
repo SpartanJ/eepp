@@ -147,6 +147,13 @@ Drawable* DrawableSearcher::searchByName( const std::string& name, bool firstSea
 		} else if ( String::startsWith( name, "file://" ) ) {
 			std::string filePath( name.substr( 7 ) );
 
+			#if EE_PLATFORM == EE_PLATFORM_WIN
+			if ( filePath.size() >= 3 && filePath[0] == '/' && String::isLetter( filePath[1] ) &&
+				 filePath[2] == ':' ) {
+				filePath = filePath.substr( 1 );
+			}
+			#endif
+
 			drawable = TextureFactory::instance()->getByName( filePath );
 
 			if ( NULL == drawable ) {

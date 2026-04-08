@@ -46,9 +46,10 @@ static void init_ui_test() {
 UTEST( UIHTMLTable, complexLayout ) {
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 1024, 650, "HTML Tables Test", WindowStyle::Default, WindowBackend::Default,
-						32, {}, 1, false, true ) );
+						32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-
+	
 	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );
@@ -58,7 +59,7 @@ UTEST( UIHTMLTable, complexLayout ) {
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
-	sceneNode->setURI( Sys::getProcessPath() + "assets/html/" );
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
 	std::string html;
 	FileSystem::fileGet( "assets/html/hn_thread_test.html", html );
 	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
@@ -98,7 +99,7 @@ UTEST( UIHTMLTable, complexLayout ) {
 	EXPECT_GT( mainTotal, 0 );
 
 	EXPECT_NEAR( totalTds, mainTotal, 0.1 );
-	// compareImages( utest_state, utest_result, win, "eepp-uihtmltable-complex-layout", "html" );
+	compareImages( utest_state, utest_result, win, "eepp-uihtmltable-complex-layout", "html" );
 
 	Engine::destroySingleton();
 }
@@ -106,7 +107,8 @@ UTEST( UIHTMLTable, complexLayout ) {
 UTEST( UIHTMLTable, complexLayout2 ) {
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 1024, 650, "HTML Tables Test 2", WindowStyle::Default,
-						WindowBackend::Default, 32, {}, 1, false, true ) );
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
 	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
@@ -118,7 +120,7 @@ UTEST( UIHTMLTable, complexLayout2 ) {
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
-	sceneNode->setURI( Sys::getProcessPath() + "assets/html/" );
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
 	std::string html;
 	FileSystem::fileGet( "assets/html/hn_threaded_test.html", html );
 	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
@@ -131,7 +133,7 @@ UTEST( UIHTMLTable, complexLayout2 ) {
 	SceneManager::instance()->draw();
 	win->display();
 
-	// compareImages( utest_state, utest_result, win, "eepp-uihtmltable-complex-layout-2", "html" );
+	compareImages( utest_state, utest_result, win, "eepp-uihtmltable-complex-layout-2", "html" );
 
 	Engine::destroySingleton();
 }
@@ -139,7 +141,8 @@ UTEST( UIHTMLTable, complexLayout2 ) {
 UTEST( UIHTMLTable, complexLayout3 ) {
 	auto win = Engine::instance()->createWindow(
 		WindowSettings( 1024, 650, "HTML Tables Test 3", WindowStyle::Default,
-						WindowBackend::Default, 32, {}, 1, false, true ) );
+						WindowBackend::Default, 32, {}, 1, false, true ),
+		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
 
 	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
@@ -151,7 +154,7 @@ UTEST( UIHTMLTable, complexLayout3 ) {
 	SceneManager::instance()->add( sceneNode );
 	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
 	themeManager->setDefaultFont( font );
-	sceneNode->setURI( Sys::getProcessPath() + "assets/html/" );
+	sceneNode->setURI( "file://" + Sys::getProcessPath() + "assets/html/" );
 	std::string html;
 	FileSystem::fileGet( "assets/html/hn_frontpage.html", html );
 	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ) );
@@ -164,7 +167,7 @@ UTEST( UIHTMLTable, complexLayout3 ) {
 	SceneManager::instance()->draw();
 	win->display();
 
-	// compareImages( utest_state, utest_result, win, "eepp-uihtmltable-complex-layout-3", "html" );
+	compareImages( utest_state, utest_result, win, "eepp-uihtmltable-complex-layout-3", "html" );
 
 	Engine::destroySingleton();
 }
