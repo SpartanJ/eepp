@@ -17,7 +17,7 @@ namespace EE { namespace UI {
 
 class UILineBreak : public UIRichText {
   public:
-	static UILineBreak* New( const std::string& tag = "" ) { return eeNew( UILineBreak, ( tag ) ); }
+	static UILineBreak* New( const std::string& tag ) { return eeNew( UILineBreak, ( tag ) ); }
 
 	UILineBreak( const std::string& tag = "br" ) : UIRichText( tag ) {}
 
@@ -29,7 +29,7 @@ class UILineBreak : public UIRichText {
 };
 
 UIRichText* UIRichText::NewBr() {
-	return UILineBreak::New();
+	return UILineBreak::New( "br" );
 };
 
 UIRichText* UIRichText::NewHr() {
@@ -490,18 +490,14 @@ void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
 			mw = 0.f;
 	}
 
-	if ( mWidthPolicy == SizePolicy::WrapContent || mode != IntrinsicMode::None ) {
-		if ( mode == IntrinsicMode::None && !mMaxWidthEq.empty() ) {
-			richText.setMaxWidth( mw );
-		} else {
-			richText.setMaxWidth( 0.f ); // Let it grow unbounded to query text bounds later
-		}
-	} else {
-		if ( !mMaxWidthEq.empty() && mw < maxWidth ) {
+	if ( mode == IntrinsicMode::None ) {
+		if ( !mMaxWidthEq.empty() && ( maxWidth == 0 || mw < maxWidth ) ) {
 			richText.setMaxWidth( mw );
 		} else {
 			richText.setMaxWidth( maxWidth );
 		}
+	} else {
+		richText.setMaxWidth( 0.f ); // Let it grow unbounded to query text bounds later
 	}
 
 	auto processWidget = [&]( UIWidget* widget, auto& processWidgetRef ) -> void {
@@ -577,7 +573,7 @@ void UIRichText::positionChildren() {
 			while ( currentSpan < line.spans.size() ) {
 				const auto& span = line.spans[currentSpan];
 				currentSpan++;
-				if ( std::holds_alternative<Sizef>( span.block ) )
+				if ( std::holds_alternative<RichText::CustomBlock>( span.block ) )
 					return &span;
 			}
 			currentSpan = 0;

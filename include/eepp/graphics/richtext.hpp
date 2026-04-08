@@ -77,7 +77,12 @@ class EE_API RichText : public Drawable {
 
 	enum class BlockType { Text, Drawable, CustomSize };
 
-	using Block = std::variant<std::shared_ptr<Text>, std::shared_ptr<Drawable>, Sizef>;
+	struct CustomBlock {
+		Sizef size;
+		bool isBlock{ false };
+	};
+
+	using Block = std::variant<std::shared_ptr<Text>, std::shared_ptr<Drawable>, CustomBlock>;
 
 	/**
 	 * @brief Adds a drawable (e.g., an image) into the text flow.
@@ -88,8 +93,9 @@ class EE_API RichText : public Drawable {
 	/**
 	 * @brief Adds a custom size spacer into the text flow.
 	 * @param size The physical dimensions of the spacer.
+	 * @param isBlock Whether this spacer acts as a block-level element.
 	 */
-	void addCustomSize( const Sizef& size );
+	void addCustomSize( const Sizef& size, bool isBlock = false );
 
 	/** @return The list of blocks. */
 	const std::vector<Block>& getBlocks() { return mBlocks; }

@@ -95,7 +95,7 @@ void RichText::draw( const Float& X, const Float& Y, const Vector2f& scale, cons
 											span.size );
 						}
 					},
-					[]( const Sizef& ) {} },
+					[]( const CustomBlock& ) {} },
 				span.block );
 		}
 	}
@@ -282,8 +282,8 @@ void RichText::addDrawable( std::shared_ptr<Drawable> drawable ) {
 	invalidateLayout();
 }
 
-void RichText::addCustomSize( const Sizef& size ) {
-	mBlocks.push_back( size );
+void RichText::addCustomSize( const Sizef& size, bool isBlock ) {
+	mBlocks.push_back( CustomBlock{ size, isBlock } );
 	invalidateLayout();
 }
 
@@ -365,8 +365,8 @@ Float RichText::getMinIntrinsicWidth() {
 			}
 		} else if ( auto pDrawable = std::get_if<std::shared_ptr<Drawable>>( &block ) ) {
 			minW = std::max( minW, ( *pDrawable )->getPixelsSize().getWidth() );
-		} else if ( auto pSize = std::get_if<Sizef>( &block ) ) {
-			minW = std::max( minW, pSize->getWidth() );
+		} else if ( auto pSize = std::get_if<CustomBlock>( &block ) ) {
+			minW = std::max( minW, pSize->size.getWidth() );
 		}
 	}
 	return minW;
@@ -395,8 +395,16 @@ Float RichText::getMaxIntrinsicWidth() {
 										span->getTextHints() );
 		} else if ( auto pDrawable = std::get_if<std::shared_ptr<Drawable>>( &block ) ) {
 			curX += ( *pDrawable )->getPixelsSize().getWidth();
-		} else if ( auto pSize = std::get_if<Sizef>( &block ) ) {
-			curX += pSize->getWidth();
+		} else if ( auto pSize = std::get_if<CustomBlock>( &block ) ) {
+			if ( pSize->isBlock ) {
+				if ( curX > 0 ) {
+					maxW = std::max( maxW, curX );
+					curX = 0;
+				}
+				maxW = std::max( maxW, pSize->size.getWidth() );
+			} else {
+				curX += pSize->size.getWidth();
+			}
 		}
 	}
 	maxW = std::max( maxW, curX );
@@ -484,15 +492,23 @@ void RichText::updateLayout() {
 			}
 		} else { // Drawable or CustomSize
 			Sizef blockSize;
+			bool isBlock = false;
 			if ( auto pDrawable = std::get_if<std::shared_ptr<Drawable>>( &block ) ) {
 				auto& drawable = *pDrawable;
 				blockSize = drawable ? drawable->getPixelsSize() : Sizef();
-			} else if ( auto pSize = std::get_if<Sizef>( &block ) ) {
-				blockSize = *pSize;
+			} else if ( auto pSize = std::get_if<CustomBlock>( &block ) ) {
+				blockSize = pSize->size;
+				isBlock = pSize->isBlock;
+			}
+
+			if ( isBlock && curX > 0 ) {
+				maxWidth = std::max( maxWidth, curX );
+				mLines.push_back( RenderParagraph() );
+				curX = 0;
 			}
 
 			// Wrap if needed
-			if ( mMaxWidth > 0 &&
+			if ( mMaxWidth > 0 && !isBlock &&
 				 ( curX + blockSize.getWidth() >= mMaxWidth || curX >= mMaxWidth ) && curX > 0 ) {
 				maxWidth = std::max( maxWidth, curX );
 				mLines.push_back( RenderParagraph() );
@@ -516,7 +532,7 @@ void RichText::updateLayout() {
 			curX += blockSize.getWidth();
 			currentLine.width += blockSize.getWidth();
 
-			if ( mMaxWidth > 0 && curX >= mMaxWidth ) {
+			if ( ( mMaxWidth > 0 && curX >= mMaxWidth ) || isBlock ) {
 				maxWidth = std::max( maxWidth, curX );
 				mLines.push_back( RenderParagraph() );
 				curX = 0;
