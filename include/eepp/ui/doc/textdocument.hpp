@@ -620,6 +620,9 @@ class EE_API TextDocument {
 
 	TextRange addSelections( TextRanges&& selections );
 
+	/* @return returns the selection index otherwise -1 */
+	int selectionIndex( TextRange selection ) const;
+
 	void popSelection();
 
 	bool deleteSelection( const size_t& cursorIdx );

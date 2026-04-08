@@ -475,10 +475,6 @@
           "display_name": "NVIDIA: Nemotron 3 Super (free)"
         },
         {
-          "name": "qwen/qwen3.6-plus:free",
-          "display_name": "Qwen: Qwen3.6 Plus (free)"
-        },
-        {
           "name": "minimax/minimax-m2.5:free",
           "display_name": "MiniMax: MiniMax M2.5 (free)"
         }

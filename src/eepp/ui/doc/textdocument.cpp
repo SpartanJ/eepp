@@ -1288,6 +1288,15 @@ TextRange TextDocument::addSelection( TextRange selection ) {
 	return selection;
 }
 
+int TextDocument::selectionIndex( TextRange selection ) const {
+	if ( mSelection.exists( selection ) )
+		return mSelection.findIndex( selection );
+	selection = sanitizeRange( selection );
+	if ( mSelection.exists( selection ) )
+		return mSelection.findIndex( selection );
+	return -1;
+}
+
 void TextDocument::popSelection() {
 	mSelection.pop_back();
 	if ( mLastSelection >= mSelection.size() )

@@ -857,18 +857,24 @@ AutoCompletePlugin::processSignatureHelp( const LSPSignatureHelp& signatureHelp 
 		doc.textInput( initialLabel );
 		std::vector<String> parameters;
 		parameters.reserve( sig.parameters.size() );
+		int skippedSelections = 0;
 
 		for ( size_t i = 0; i < sig.parameters.size(); i++ ) {
 			auto start = String::utf8ToCodepointPosition( sig.label, sig.parameters[i].start );
 			auto end = String::utf8ToCodepointPosition( sig.label, sig.parameters[i].end );
 			auto sel = TextRange::convertToLineColumn( initialLabel.view(), start, end );
+			size_t index = i - skippedSelections;
 
-			if ( i == 0 )
+			if ( i == 0 ) {
 				doc.setSelection( i, sel );
-			else
-				doc.addSelection( sel );
+			} else {
+				if ( !doc.addSelection( sel ).isValid() ) {
+					skippedSelections++;
+					continue;
+				}
+			}
 
-			parameters.emplace_back( doc.getSelectedText( i ) );
+			parameters.emplace_back( doc.getSelectedText( index ) );
 		}
 
 		auto selections( doc.getSelections() );
