@@ -566,6 +566,17 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::FontSize:
+			if ( !mUsingCustomStyling )
+				setFontSize( lengthFromValue( attribute ) );
+			break;
+		case PropertyId::Wordwrap:
+			if ( attribute.asBool() )
+				mFlags |= UI_WORD_WRAP;
+			else
+				mFlags &= ~UI_WORD_WRAP;
+			autoWrap();
+			break;
+		case PropertyId::FontStyle: {
 			if ( !mUsingCustomStyling ) {
 				Uint32 flags = attribute.asFontStyle();
 
@@ -578,17 +589,7 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 				setFontStyle( flags );
 			}
 			break;
-		case PropertyId::Wordwrap:
-			if ( attribute.asBool() )
-				mFlags |= UI_WORD_WRAP;
-			else
-				mFlags &= ~UI_WORD_WRAP;
-			autoWrap();
-			break;
-		case PropertyId::FontStyle:
-			if ( !mUsingCustomStyling )
-				setFontStyle( attribute.asFontStyle() );
-			break;
+		}
 		case PropertyId::TextDecoration:
 			if ( !mUsingCustomStyling )
 				setTextDecoration( attribute.asTextDecoration() );

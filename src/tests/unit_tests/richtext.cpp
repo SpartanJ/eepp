@@ -1379,3 +1379,67 @@ UTEST( UIRichText, InvalidWidthLengthComputation3 ) {
 	eeDelete( sceneNode );
 	Engine::destroySingleton();
 }
+
+UTEST( UIRichText, InvalidWidthLengthComputation4 ) {
+	UIApplication app( { 1280, 720, "eepp - UI HTML Example" } );
+
+	auto ui = app.getUI();
+
+	ui->loadLayoutFromString( R"xml(
+		<ScrollView id="html_view" layout_width="match_parent" layout_height="0" layout_weight="1">
+			<vbox layout_width="match_parent" layout_height="wrap_content" id="html_doc"></vbox>
+		</ScrollView>
+	)xml" );
+
+	auto mainContainer = ui->find( "html_doc" );
+
+	bool exit = false;
+	ui->runOnMainThread(
+		[&] {
+			std::string data;
+			URI url( "assets/html/blog_main_incorrect_widths.html" );
+			FileSystem::fileGet( url.getPath(), data );
+			mainContainer->closeAllChildren();
+			ui->getStyleSheet().removeAllWithoutMarker( app.getStyleSheetDefaultMarker() );
+			ui->setURIFromURL( url );
+			auto urlStr = url.toString();
+			auto hash = String::hash( urlStr );
+			ui->loadLayoutFromString( HTMLFormatter::HTMLtoXML( data ), mainContainer, hash );
+			exit = true;
+		},
+		Seconds( 0.2 ) );
+
+	while ( !exit ) {
+		SceneManager::instance()->update();
+		app.getWindow()->clear();
+		SceneManager::instance()->draw();
+		app.getWindow()->display();
+	}
+
+	SceneManager::instance()->update();
+
+	auto container = ui->getRoot()->querySelector( ".container" );
+	auto posts = ui->getRoot()->querySelectorAll( ".post-list > a" );
+	auto items = ui->getRoot()->querySelectorAll( ".post-list > a > .post-item-content" );
+	auto titles =
+		ui->getRoot()->querySelectorAll( ".post-list > a > .post-item-content > .post-header-row" );
+
+	ASSERT_TRUE( container != nullptr );
+	ASSERT_TRUE( posts.size() > 0 );
+	ASSERT_TRUE( items.size() == posts.size() );
+	ASSERT_TRUE( items.size() == titles.size() );
+
+	ui->update( Time::Zero );
+
+	for ( size_t i = 0; i < posts.size(); i++ ) {
+		auto anchor = posts[i];
+		auto item = items[i];
+		auto title = titles[i];
+		EXPECT_GT( anchor->getPixelsSize().getWidth(), 0 );
+		EXPECT_GT( item->getPixelsSize().getWidth(), 0 );
+		EXPECT_GT( title->getPixelsSize().getWidth(), 0 );
+		EXPECT_LE( anchor->getPixelsSize().getWidth(), container->getPixelsSize().getWidth() );
+		EXPECT_LE( item->getPixelsSize().getWidth(), anchor->getPixelsSize().getWidth() );
+		EXPECT_LE( title->getPixelsSize().getWidth(), item->getPixelsSize().getWidth() );
+	}
+}

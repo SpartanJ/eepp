@@ -518,9 +518,10 @@ void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
 							  widget->asType<UILineBreak>()->getRichText().getFontStyleConfig() );
 		} else {
 			Rectf margin = widget->getLayoutPixelsMargin();
+			bool isBlock = widget->getLayoutWidthPolicy() == SizePolicy::MatchParent;
 
 			if ( mode == IntrinsicMode::None ) {
-				if ( widget->getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
+				if ( isBlock ) {
 					if ( mSize.getWidth() != 0 ) {
 						Float maxSize =
 							eemax( 0.f, mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
@@ -545,8 +546,15 @@ void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
 				size = widget->getPixelsSize();
 			}
 
-			richText.addCustomSize( Sizef( size.getWidth() + margin.Left + margin.Right,
-										   size.getHeight() + margin.Top + margin.Bottom ) );
+			Float w = size.getWidth();
+			if ( isBlock && mode == IntrinsicMode::None && mSize.getWidth() != 0 ) {
+				w = eemax( 0.f, mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
+									margin.Left - margin.Right );
+			}
+
+			richText.addCustomSize( Sizef( w + margin.Left + margin.Right,
+										   size.getHeight() + margin.Top + margin.Bottom ),
+								   isBlock );
 		}
 	};
 
@@ -680,7 +688,7 @@ void UIRichText::positionChildren() {
 
 				widget->setPixelsPosition( targetPos - offset );
 
-				bounds = Rectf( targetPos, widget->getPixelsSize() );
+				bounds = Rectf( targetPos, span->size );
 			}
 		}
 		return bounds;

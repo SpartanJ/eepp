@@ -1637,6 +1637,39 @@ Float UINode::lengthFromValue( const StyleSheetProperty& property,
 			length.setValue( length.getValue() / 100.f, StyleSheetLength::Unit::Em );
 			return convertLength( length, 0 );
 		}
+
+		static constexpr const std::initializer_list<std::string_view> FontSizeNames = {
+			"xx-small", "x-small",	"small",	 "medium",	"large",
+			"x-large",	"xx-large", "xxx-large", "smaller", "larger" };
+
+		std::initializer_list<std::string_view>::iterator it = FontSizeNames.end();
+		if ( ( it = std::find( FontSizeNames.begin(), FontSizeNames.end(),
+							   property.getValue() ) ) != FontSizeNames.end() ) {
+			std::string_view keyword = *it;
+			StyleSheetLength res;
+			if ( keyword == "xx-small" ) {
+				res.setValue( 0.6f, StyleSheetLength::Unit::Rem );
+			} else if ( keyword == "x-small" ) {
+				res.setValue( 0.75f, StyleSheetLength::Unit::Rem );
+			} else if ( keyword == "small" ) {
+				res.setValue( 0.89f, StyleSheetLength::Unit::Rem );
+			} else if ( keyword == "medium" ) {
+				res.setValue( 1.0f, StyleSheetLength::Unit::Rem );
+			} else if ( keyword == "large" ) {
+				res.setValue( 1.2f, StyleSheetLength::Unit::Rem );
+			} else if ( keyword == "x-large" ) {
+				res.setValue( 1.5f, StyleSheetLength::Unit::Rem );
+			} else if ( keyword == "xx-large" ) {
+				res.setValue( 2.0f, StyleSheetLength::Unit::Rem );
+			} else if ( keyword == "xxx-large" ) {
+				res.setValue( 3.0f, StyleSheetLength::Unit::Rem );
+			} else if ( keyword == "smaller" ) {
+				res.setValue( 0.85f, StyleSheetLength::Unit::Em );
+			} else if ( keyword == "larger" ) {
+				res.setValue( 1.2f, StyleSheetLength::Unit::Em );
+			}
+			return convertLength( res, 0 );
+		}
 	}
 	return lengthFromValue( property.getValue(),
 							property.getPropertyDefinition()->getRelativeTarget(), defaultValue,
