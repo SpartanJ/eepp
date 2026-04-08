@@ -33,6 +33,7 @@ class EE_API StyleSheetLength {
 		Dprd,
 		Dpru,
 		Dpr,
+		Ch,
 	};
 
 	static Unit unitFromString( std::string unitStr );

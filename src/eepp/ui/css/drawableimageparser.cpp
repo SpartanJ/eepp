@@ -36,7 +36,8 @@ Drawable* DrawableImageParser::createDrawable( const std::string& value, const S
 	if ( !functionType.isEmpty() ) {
 		if ( exists( functionType.getName() ) )
 			return mFuncs[functionType.getName()]( functionType, size, ownIt, node );
-	} else if ( NULL != ( res = DrawableSearcher::searchByName( value ) ) ) {
+	} else if ( NULL != ( res = DrawableSearcher::searchByName(
+							  value, false, node->getUISceneNode()->getReferer() ) ) ) {
 		if ( res->getDrawableType() == Drawable::SPRITE )
 			ownIt = true;
 		return res;
@@ -334,7 +335,8 @@ void DrawableImageParser::registerBaseParsers() {
 		return DrawableSearcher::searchByName(
 			node->getUISceneNode()
 				->solveRelativePath( functionType.getParameters().at( 0 ) )
-				.toString() );
+				.toString(),
+			false, node->getUISceneNode()->getReferer() );
 	};
 
 	mFuncs["icon"] = []( const FunctionString& functionType, const Sizef& size, bool&,

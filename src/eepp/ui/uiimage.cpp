@@ -363,12 +363,7 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 			bool ownIt;
 
 			if ( uri.getScheme().empty() && !getUISceneNode()->getURI().empty() ) {
-				uri = getUISceneNode()->getURI();
-				std::string newPath = uri.getPath();
-				if ( !path.empty() && path[0] != '/' )
-					FileSystem::dirAddSlashAtEnd( newPath );
-				newPath += path;
-				uri.setPath( newPath );
+				uri = getUISceneNode()->solveRelativePath( uri );
 				path = uri.toString();
 			}
 
@@ -379,7 +374,8 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 				setDrawable( createdDrawable, ownIt );
 			} else {
 				Drawable* res = NULL;
-				if ( NULL != ( res = DrawableSearcher::searchByName( path ) ) )
+				if ( NULL != ( res = DrawableSearcher::searchByName(
+								   path, false, getUISceneNode()->getReferer() ) ) )
 					setDrawable( res, res->getDrawableType() == Drawable::SPRITE );
 			}
 			break;

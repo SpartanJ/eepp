@@ -30,6 +30,7 @@ enum UnitHashes : String::HashType {
 	Dprd = String::hash( "dprd" ),
 	Dpru = String::hash( "dpru" ),
 	Dpr = String::hash( "dpr" ),
+	Ch = String::hash( "ch" ),
 };
 
 enum PercentagePositions : String::HashType {
@@ -116,6 +117,8 @@ StyleSheetLength::Unit StyleSheetLength::unitFromString( std::string unitStr ) {
 			return Unit::Dpru;
 		case UnitHashes::Dpr:
 			return Unit::Dpr;
+		case UnitHashes::Ch:
+			return Unit::Ch;
 	}
 	return Unit::Dp;
 }
@@ -162,6 +165,8 @@ std::string StyleSheetLength::unitToString( const StyleSheetLength::Unit& unit )
 			return "dpru";
 		case Unit::Dpr:
 			return "dpr";
+		case Unit::Ch:
+			return "ch";
 	}
 	return "px";
 }
@@ -234,6 +239,7 @@ Float StyleSheetLength::asPixels( const Float& parentSize, const Sizef& viewSize
 			ret = Math::roundUp( PixelDensity::dpToPx( mValue ) );
 			break;
 		case Unit::Em:
+		case Unit::Ch: // Using Em for Ch is incorrect but not that incorrect, close enough
 			ret = Math::round( mValue * elFontSize );
 			break;
 		case Unit::Pt:
@@ -265,6 +271,10 @@ Float StyleSheetLength::asPixels( const Float& parentSize, const Sizef& viewSize
 			break;
 		case Unit::Rem:
 			ret = globalFontSize * mValue;
+			break;
+		case Unit::Dpi:
+		case Unit::Dpcm:
+			ret = (int)( mValue * 2.54 );
 			break;
 		case Unit::Px:
 		default:

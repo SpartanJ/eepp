@@ -115,6 +115,9 @@ class EE_API Http : NonCopyable {
 		**  @return Status code of the response */
 		Status getStatus() const;
 
+		/** @return True if the response status is successful (2XX status) */
+		bool isOK() const;
+
 		/** @brief Get the response status description */
 		const char* getStatusDescription() const;
 

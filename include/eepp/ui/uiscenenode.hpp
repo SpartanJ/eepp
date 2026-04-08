@@ -715,6 +715,9 @@ class EE_API UISceneNode : public SceneNode {
 	 */
 	URI solveRelativePath( URI uri, URI baseURI = {} );
 
+	/** @return The document referer */
+	URI getReferer() const { return mReferer; };
+
   protected:
 	friend class EE::UI::UIWindow;
 	friend class EE::UI::UIWidget;
@@ -743,6 +746,7 @@ class EE_API UISceneNode : public SceneNode {
 	Uint32 mCurOnSizeChangeListener{ 0 };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	URI mURI;
+	URI mReferer;
 	std::function<bool( URI uri )> mURLInterceptorCb;
 
 	/**
@@ -957,8 +961,7 @@ class EE_API UISceneNode : public SceneNode {
 
 	/** @return The document / scene URI used to resolve paths from a complete URI (with
 	 * path+query+fragment+etc) */
-	URI getURIFromURL( const URI& url );
-
+	URI getURIFromURL( const URI& url ) const;
 };
 
 }} // namespace EE::UI

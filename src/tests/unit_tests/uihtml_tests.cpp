@@ -49,7 +49,7 @@ UTEST( UIHTMLTable, complexLayout ) {
 						32, {}, 1, false, true ),
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
-	
+
 	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
 	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
 	ASSERT_TRUE( font != nullptr && font->loaded() );

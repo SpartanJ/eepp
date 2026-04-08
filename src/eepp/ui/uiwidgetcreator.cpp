@@ -170,6 +170,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["article"] = [] { return UIRichText::NewWithTag( "article" ); };
 		registeredWidget["footer"] = [] { return UIRichText::NewWithTag( "footer" ); };
 		registeredWidget["main"] = [] { return UIRichText::NewWithTag( "main" ); };
+		registeredWidget["section"] = [] { return UIRichText::NewWithTag( "section" ); };
 		registeredWidget["nav"] = [] { return UIRichText::NewWithTag( "nav" ); };
 		registeredWidget["center"] = [] { return UIRichText::NewWithTag( "center" ); };
 		registeredWidget["html"] = [] { return UIRichText::NewWithTag( "html" ); };

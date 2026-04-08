@@ -1368,7 +1368,7 @@ void UISceneNode::setURI( const URI& uri ) {
 	mURI = uri;
 }
 
-URI UISceneNode::getURIFromURL( const URI& url ) {
+URI UISceneNode::getURIFromURL( const URI& url ) const {
 	URI baseURI( url );
 	std::string path = baseURI.getPath();
 
@@ -1396,6 +1396,7 @@ URI UISceneNode::getURIFromURL( const URI& url ) {
 
 void UISceneNode::setURIFromURL( const URI& url ) {
 	setURI( getURIFromURL( url ) );
+	mReferer = url;
 }
 
 void UISceneNode::openURL( URI uri ) {

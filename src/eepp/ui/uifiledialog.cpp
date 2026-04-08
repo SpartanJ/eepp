@@ -667,8 +667,12 @@ void UIFileDialog::open() {
 }
 
 void UIFileDialog::onPressEnter( const Event* ) {
-	if ( FileSystem::isDirectory( mPath->getText() ) ||
-		 ( FDLG_DRIVE_PATH == mPath->getText().toUtf8() && !Sys::getLogicalDrives().empty() ) ) {
+	if ( allowFolderSelect() && FileSystem::isDirectory( mPath->getText() ) ) {
+		setCurPath( mPath->getText() );
+		open();
+	} else if ( FileSystem::isDirectory( mPath->getText() ) ||
+				( FDLG_DRIVE_PATH == mPath->getText().toUtf8() &&
+				  !Sys::getLogicalDrives().empty() ) ) {
 		setCurPath( mPath->getText() );
 	} else if ( !allowFolderSelect() && FileSystem::fileExists( mPath->getText() ) ) {
 		String folderPath( FileSystem::fileRemoveFileName( mPath->getText() ) );

@@ -469,6 +469,10 @@ Http::Response::Status Http::Response::getStatus() const {
 	return mStatus;
 }
 
+bool Http::Response::isOK() const {
+	return mStatus >= 200 && mStatus < 300;
+}
+
 const char* Http::Response::getStatusDescription() const {
 	switch ( mStatus ) {
 		// 2xx: success
