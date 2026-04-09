@@ -605,6 +605,7 @@ function add_static_links()
 			"libpng-static",
 			"md4c-static",
 			"gumbo-parser-static",
+			"brotli-static",
 	}
 
 	if not _OPTIONS["without-mojoal"] then
@@ -803,6 +804,7 @@ function build_eepp( build_name )
 		"src/thirdparty/libwebp/src",
 		"src/thirdparty/SheenBidi/Headers",
 		"src/thirdparty/SheenBidi/Headers/SheenBidi",
+		"src/thirdparty/brotli/include",
 	}
 
 	add_static_links()
@@ -1055,7 +1057,7 @@ workspace "eepp"
 		language "C"
 		defines { "FT2_BUILD_LIBRARY" }
 		files { "src/thirdparty/freetype2/src/**.c" }
-		incdirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng" }
+		incdirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng", "src/thirdparty/brotli/include" }
 		build_base_configuration( "freetype" )
 		target_dir_thirdparty()
 
@@ -1226,6 +1228,14 @@ workspace "eepp"
 			end
 		filter { "options:windows-mingw-build", "options:arch=arm64" }
 			incdirs { remote_sdl2_arm64_cross_tools_path .."/include/" }
+
+	project "brotli-static"
+		kind "StaticLib"
+		language "C"
+		incdirs { "src/thirdparty/brotli/include", "src/thirdparty/brotli/include/brotli" }
+		files { "src/thirdparty/brotli/**.c" }
+		build_base_configuration( "brotli" )
+		target_dir_thirdparty()
 
 	project "md4c-static"
 		kind "StaticLib"

@@ -102,7 +102,8 @@ class UpdateListener : public efsw::FileWatchListener {
 
 static bool isFont( const std::string& path ) {
 	std::string ext = FileSystem::fileExtension( path );
-	return ext == "ttf" || ext == "otf" || ext == "wolff";
+	return ext == "ttf" || ext == "otf" || ext == "woff" || ext == "woff2" || ext == "otb" ||
+		   ext == "bdf" || ext == "ttc";
 }
 
 static bool isXML( const std::string& path ) {

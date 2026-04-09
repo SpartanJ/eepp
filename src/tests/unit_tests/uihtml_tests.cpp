@@ -45,7 +45,7 @@ static void init_ui_test() {
 
 UTEST( UIHTMLTable, complexLayout ) {
 	auto win = Engine::instance()->createWindow(
-		WindowSettings( 1024, 600, "HTML Tables Test", WindowStyle::Default, WindowBackend::Default,
+		WindowSettings( 1024, 653, "HTML Tables Test", WindowStyle::Default, WindowBackend::Default,
 						32, {}, 1, false, true ),
 		ContextSettings( false, 0, 0, GLv_default, true, false ) );
 	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );

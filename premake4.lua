@@ -763,6 +763,7 @@ function add_static_links()
 			"libpng-static",
 			"md4c-static",
 			"gumbo-parser-static",
+			"brotli-static",
 	}
 
 	if not _OPTIONS["without-mojoal"] then
@@ -968,6 +969,7 @@ function build_eepp( build_name )
 		"src/thirdparty/libwebp/src",
 		"src/thirdparty/SheenBidi/Headers",
 		"src/thirdparty/SheenBidi/Headers/SheenBidi",
+		"src/thirdparty/brotli/include",
 	}
 
 	defines { "PCRE2_STATIC", "PCRE2_CODE_UNIT_WIDTH=8", "ONIG_STATIC" }
@@ -1155,7 +1157,7 @@ solution "eepp"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		defines { "FT2_BUILD_LIBRARY" }
 		files { "src/thirdparty/freetype2/src/**.c" }
-		includedirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng" }
+		includedirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng", "src/thirdparty/brotli/include" }
 		build_base_configuration( "freetype" )
 
 	project "pcre2-8-static"
@@ -1320,6 +1322,14 @@ solution "eepp"
 			files { "src/thirdparty/mojoAL/*.c" }
 			build_base_configuration( "mojoal" )
 	end
+
+	project "brotli-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		includedirs { "src/thirdparty/brotli/include", "src/thirdparty/brotli/include/brotli" }
+		files { "src/thirdparty/brotli/**.c" }
+		build_base_configuration( "brotli" )
 
 	project "md4c-static"
 		kind "StaticLib"

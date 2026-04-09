@@ -447,7 +447,7 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool term
 	UIFileDialog* dialog = UIFileDialog::New(
 		UIFileDialog::DefaultFlags |
 			( mConfig.ui.nativeFileDialogs ? UIFileDialog::UseNativeFileDialog : 0 ),
-		"*.ttf; *.otf; *.wolff; *.otb; *.bdf; *.ttc",
+		"*.ttf; *.otf; *.woff; *.woff2; *.otb; *.bdf; *.ttc",
 		FileSystem::fileRemoveFileName( absoluteFontPath ) );
 	if ( dialog->getMultiView() ) {
 		ModelIndex index = dialog->getMultiView()->getListView()->findRowWithText(

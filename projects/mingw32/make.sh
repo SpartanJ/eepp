@@ -31,14 +31,14 @@ elif [[ "$CONFIG" == *"arm64"* && "$(uname -m)" == "x86_64" ]]; then
     TAR_FILE_NAME="$FILE_NAME.tar.xz"
     RENAMED_FOLDER="llvm-mingw"
     BIN_PATH="$(pwd)/$RENAMED_FOLDER/bin"
-  
+
     if [[ ! -f "$TAR_FILE_NAME" ]]; then
       echo "Downloading $TAR_FILE_NAME..."
       curl -LO "$URL" || { echo "Download failed!"; exit 1; }
     else
       echo "$TAR_FILE_NAME already exists. Skipping download."
     fi
-  
+
     if [[ ! -d "$RENAMED_FOLDER" ]]; then
       echo "Extracting $TAR_FILE_NAME..."
       tar -xf "$TAR_FILE_NAME" || { echo "Extraction failed!"; exit 1; }
@@ -46,7 +46,7 @@ elif [[ "$CONFIG" == *"arm64"* && "$(uname -m)" == "x86_64" ]]; then
     else
       echo "$RENAMED_FOLDER directory already exists. Skipping extraction."
     fi
-  
+
     export PATH="$PATH:$BIN_PATH"
     echo "Added $BIN_PATH to PATH."
   fi
