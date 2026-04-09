@@ -5021,8 +5021,9 @@ void App::init( InitParameters& params ) {
 		Log::info( "Complete UI took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-		if ( params.file == "./this.program" )
-			params.file = "";
+		if ( !params.files.empty() && params.files[0] == "./this.program" ) {
+			params.files.erase( params.files.begin() );
+		}
 #endif
 
 		if ( params.terminal && params.files.empty() && params.fileToOpen.empty() ) {
@@ -5048,7 +5049,7 @@ void App::init( InitParameters& params ) {
 				   globalClock.getElapsedTime().asMilliseconds() );
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-		if ( params.file.empty() || !mFileToOpen.empty() )
+		if ( params.files.empty() || !mFileToOpen.empty() )
 			downloadFileWeb(
 				mFileToOpen.empty()
 					? "https://raw.githubusercontent.com/SpartanJ/eepp/develop/README.md"
