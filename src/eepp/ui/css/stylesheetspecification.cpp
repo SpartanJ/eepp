@@ -1051,7 +1051,7 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 	mShorthandParsers["border-side"] = []( const ShorthandDefinition* shorthand,
 										   std::string value ) -> std::vector<StyleSheetProperty> {
 		value = String::trim( value );
-		if ( value.empty() || "none" == value )
+		if ( value.empty() )
 			return {};
 
 		std::vector<StyleSheetProperty> properties;
@@ -1062,8 +1062,16 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 			if ( -1 !=
 				 String::valueIndex(
 					 tok, "none;hidden;dotted;dashed;solid;double;groove;ridge;inset;outset" ) ) {
-				int pos = getIndexEndingWith( propNames, "-style" );
+
+				// At least reset the border width if "none" was used
+				if ( "none" == tok ) {
+					int pos = getIndexEndingWith( propNames, "-width" );
+					if ( pos != -1 )
+						properties.emplace_back( StyleSheetProperty( propNames[pos], "0" ) );
+				}
+
 				// boder-style is not implemented yet
+				int pos = getIndexEndingWith( propNames, "-style" );
 				if ( pos != -1 )
 					continue;
 			} else if ( Color::isColorString( tok ) || String::startsWith( tok, "var(" ) ) {

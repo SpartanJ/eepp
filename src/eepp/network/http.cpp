@@ -1028,12 +1028,15 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 
 									// Check if the content is compressed
 									std::string encoding( received.getField( "content-encoding" ) );
-									compressed = encoding == "gzip" || encoding == "deflate";
+									compressed = encoding == "gzip" || encoding == "deflate" ||
+												 encoding == "br";
 
 									if ( compressed ) {
 										Compression::Mode compressionMode =
-											"gzip" == encoding ? Compression::MODE_GZIP
-															   : Compression::MODE_DEFLATE;
+											"gzip" == encoding
+												? Compression::MODE_GZIP
+												: ( "br" == encoding ? Compression::MODE_BROTLI
+																	 : Compression::MODE_DEFLATE );
 
 										inflateStream =
 											IOStreamInflate::New( writeTo, compressionMode );
@@ -1339,7 +1342,7 @@ Http::Request Http::prepareFields( const Http::Request& request ) {
 	}
 
 	if ( request.isCompressedResponse() )
-		toSend.setField( "Accept-Encoding", "gzip, deflate" );
+		toSend.setField( "Accept-Encoding", "gzip, deflate, br" );
 
 	return toSend;
 }

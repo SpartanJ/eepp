@@ -9,7 +9,7 @@ namespace EE { namespace System {
 
 class EE_API Compression {
   public:
-	enum Mode { MODE_DEFLATE, MODE_GZIP };
+	enum Mode { MODE_DEFLATE, MODE_GZIP, MODE_BROTLI };
 
 	enum Status {
 		OK = 0,
@@ -29,10 +29,16 @@ class EE_API Compression {
 		int level = -1;
 	};
 
+	struct BrotliConfig {
+		int quality = -1;
+		int windowBits = -1;
+	};
+
 	struct Config {
 		Config() {}
 		ZlibConfig zlib;
 		GzipConfig gzip;
+		BrotliConfig brotli;
 	};
 
 	static Status compress( Uint8* dst, Uint64 dstMaxSize, const Uint8* src, Uint64 srcSize,
