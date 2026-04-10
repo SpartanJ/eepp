@@ -55,7 +55,6 @@ UIFileDialog::UIFileDialog( Uint32 dialogFlags, const std::string& defaultFilePa
 		mHandler = eeNew( NativeFileDialogHandler, () );
 		String::replaceAll( mFilePatterns, ";", "" );
 		setVisible( false );
-		subscribeScheduledUpdate();
 		return;
 	}
 
@@ -682,8 +681,11 @@ void UIFileDialog::onPressEnter( const Event* ) {
 			setFileName( fileName );
 			auto index = mMultiView->getCurrentView()->findRowWithText(
 				fileName, true, UIAbstractView::FindRowWithTextMatchKind::Equals );
-			if ( index.isValid() )
+			if ( index.isValid() ) {
 				mMultiView->setSelection( index );
+				if ( !allowFolderSelect() && !fileName.empty() )
+					open();
+			}
 		}
 	}
 }
@@ -987,7 +989,7 @@ bool UIFileDialog::usingNativeFileDialog() const {
 
 void UIFileDialog::scheduledUpdate( const Time& time ) {
 	if ( !usingNativeFileDialog() )
-		return;
+		return UIWindow::scheduledUpdate( time );
 
 	if ( mHandler->saveFile == nullptr && mHandler->openFile == nullptr &&
 		 mHandler->selectFolder == nullptr )
