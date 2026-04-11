@@ -31,7 +31,7 @@ UIApplication::UIApplication( const WindowSettings& windowSettings, const Settin
 	mDidRun = true;
 
 	PixelDensity::setPixelDensity(
-		appSettings.pixelDensity
+		appSettings.pixelDensity && *appSettings.pixelDensity > 0
 			? *appSettings.pixelDensity
 			: eemax( mWindow->getScale(),
 					 displayManager->getDisplayIndex( mWindow->getCurrentDisplayIndex() )

@@ -129,7 +129,7 @@ void UIHTMLTable::computeIntrinsicWidths() const {
 				auto* cell = child->asType<UIHTMLTableCell>();
 				me->mCells.push_back( cell );
 				colCount += cell->getColspan();
-				if ( mCellpadding > 0 && cell->getPadding() == Rectf() ) {
+				if ( mCellpadding > 0 && cell->getPadding() == Rectf::Zero ) {
 					cell->setPadding( { mCellpadding, mCellpadding, mCellpadding, mCellpadding } );
 				}
 			}

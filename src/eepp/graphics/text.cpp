@@ -1804,7 +1804,7 @@ void Text::ensureGeometryUpdate() {
 	if ( mCachedWidthNeedUpdate )
 		mLinesWidth.clear();
 
-	mBounds = Rectf();
+	mBounds = Rectf::Zero;
 
 	// No font or text: nothing to draw
 	if ( !mFontStyleConfig.Font || mString.empty() )
@@ -2750,7 +2750,9 @@ Uint32 Text::getTotalVertices() {
 	for ( const auto& ch : mString ) {
 		lineHasChars = true;
 
-		if ( ' ' == ch || '\n' == ch || '\t' == ch || '\r' == ch ) {
+		if ( ' ' == ch  )
+			skipped++;
+		else if ( '\n' == ch || '\t' == ch || '\r' == ch ) {
 			lineHasChars = false;
 			skipped++;
 

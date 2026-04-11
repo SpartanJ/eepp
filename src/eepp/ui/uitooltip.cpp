@@ -120,7 +120,7 @@ void UITooltip::setTheme( UITheme* Theme ) {
 }
 
 void UITooltip::autoPadding() {
-	if ( ( mFlags & UI_AUTO_PADDING ) && mPadding == Rectf() ) {
+	if ( ( mFlags & UI_AUTO_PADDING ) && mPadding == Rectf::Zero ) {
 		setPadding( makePadding( true, true, true, true ) );
 	}
 }

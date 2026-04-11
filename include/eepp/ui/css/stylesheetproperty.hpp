@@ -125,7 +125,7 @@ class EE_API StyleSheetProperty {
 
 	Rect asRect( const Rect& defaultValue = Rect() ) const;
 
-	Rectf asRectf( const Rectf& defaultValue = Rectf() ) const;
+	Rectf asRectf( const Rectf& defaultValue = Rectf::Zero ) const;
 
 	Uint32 asTextDecoration() const;
 

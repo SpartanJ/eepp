@@ -38,8 +38,6 @@ class EE_API UIRichText : public UILayout {
 
 	static UIRichText* NewBlockquote() { return UIRichText::NewWithTag( "blockquote" ); };
 
-	explicit UIRichText( const std::string& tag = "richtext" );
-
 	virtual Uint32 getType() const;
 
 	virtual bool isType( const Uint32& type ) const;
@@ -131,6 +129,8 @@ class EE_API UIRichText : public UILayout {
 	Int64 mSelCurEnd{ 0 };
 	bool mSelecting{ false };
 	size_t mResizedCount{ 0 };
+
+	explicit UIRichText( const std::string& tag = "richtext" );
 
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );

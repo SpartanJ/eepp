@@ -17,6 +17,9 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	args::Flag benchmarkMode( parser, "benchmark-mode",
 							  "Render as much as possible to measure the rendering performance.",
 							  { "benchmark-mode" } );
+	args::ValueFlag<Float> pixelDensityConf( parser, "pixel-density",
+											 "Set default application pixel density",
+											 { 'd', "pixel-density" } );
 
 	try {
 		parser.ParseCLI( Sys::parseArguments( argc, argv ) );
@@ -34,7 +37,8 @@ EE_MAIN_FUNC int main( int argc, char** argv ) {
 	}
 
 	UIApplication app(
-		{ 1280, 720, "eepp - UI HTML Example" }, UIApplication::Settings(),
+		WindowSettings{ 1280, 720, "eepp - UI HTML Example" },
+		UIApplication::Settings( {}, pixelDensityConf ? pixelDensityConf.Get() : 0.f ),
 		ContextSettings(
 			false, benchmarkMode.Get() ? 0 : ContextSettings::FrameRateLimitScreenRefreshRate ) );
 

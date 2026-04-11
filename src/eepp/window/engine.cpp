@@ -186,7 +186,8 @@ EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettin
 
 	mWindows.insert( { mWindow->getWindowID(), mWindow } );
 
-	PixelDensity::setPixelDensity( Settings.PixelDensity );
+	if ( Settings.PixelDensity > 0 )
+		PixelDensity::setPixelDensity( Settings.PixelDensity );
 
 	return window;
 }

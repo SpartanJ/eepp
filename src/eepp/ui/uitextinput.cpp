@@ -284,7 +284,7 @@ void UITextInput::onSizeChange() {
 
 void UITextInput::autoPadding() {
 	if ( mFlags & UI_AUTO_PADDING ) {
-		setPadding( Rectf() );
+		setPadding( Rectf::Zero );
 	}
 }
 

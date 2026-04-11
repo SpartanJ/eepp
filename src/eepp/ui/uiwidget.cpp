@@ -1657,7 +1657,7 @@ void UIWidget::propagateInheritedProperty( const CSS::StyleSheetProperty& proper
 			else
 				pxSize = ( length.getValue() / 100.f ) * parentFontSize;
 		} else {
-			pxSize = convertLength( length, 0 );
+			pxSize = lengthFromValue( property );
 		}
 
 		propToPropagate = CSS::StyleSheetProperty(
@@ -2405,7 +2405,7 @@ void UIWidget::onFocusNextWidget() {
 }
 
 Float UIWidget::getMatchParentWidth() const {
-	Rectf padding = Rectf();
+	Rectf padding = Rectf::Zero;
 
 	if ( getParent()->isWidget() )
 		padding = static_cast<UIWidget*>( getParent() )->getPixelsPadding();
@@ -2424,7 +2424,7 @@ Float UIWidget::getMatchParentWidth() const {
 }
 
 Float UIWidget::getMatchParentHeight() const {
-	Rectf padding = Rectf();
+	Rectf padding = Rectf::Zero;
 
 	if ( getParent()->isWidget() )
 		padding = static_cast<UIWidget*>( getParent() )->getPadding();
