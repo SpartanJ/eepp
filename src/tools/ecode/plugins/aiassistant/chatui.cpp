@@ -3079,6 +3079,10 @@ void LLMChatUI::updateTabTitle() {
 		title += " - " + mSummary;
 	tab->setText( title );
 	tab->setTooltipText( title );
+
+	if ( tab->getOwnedWidget() == getPlugin()->getPluginContext()->getSplitter()->getCurWidget() ) {
+		getPlugin()->getPluginContext()->setAppTitle( title );
+	}
 }
 
 void LLMChatUI::renameChat( const std::string& newName, bool invertLockedState ) {

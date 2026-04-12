@@ -1518,6 +1518,18 @@ bool UICodeEditorSplitter::isWidgetInAnyWidget( UIWidget* checkWidget ) const {
 	return found;
 }
 
+UITab* UICodeEditorSplitter::getTabFromWidget( UIWidget* checkWidget ) const {
+	for ( auto tabWidget : mTabWidgets ) {
+		size_t tabCount = tabWidget->getTabCount();
+		for ( size_t i = 0; i < tabCount; i++ ) {
+			UITab* tab = tabWidget->getTab( i );
+			if ( tab->getOwnedWidget() == checkWidget )
+				return tab;
+		}
+	}
+	return nullptr;
+}
+
 bool UICodeEditorSplitter::curEditorExists() const {
 	bool found = false;
 	forEachEditorStoppable( [&]( UICodeEditor* editor ) {

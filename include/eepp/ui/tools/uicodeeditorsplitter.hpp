@@ -391,6 +391,8 @@ class EE_API UICodeEditorSplitter {
 
 	UITabWidget* getCurTabWidget() const;
 
+	UITab* getTabFromWidget( UIWidget* ) const;
+
 	void
 	setCanCreateSplitFn( std::function<bool( SplitDirection direction, UIWidget* widget )> fn );
 

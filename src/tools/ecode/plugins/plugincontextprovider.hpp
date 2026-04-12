@@ -169,6 +169,8 @@ class PluginContextProvider {
 	virtual size_t getMenuIconSize() const = 0;
 
 	virtual const SyntaxColorScheme* getCurrentColorScheme() const = 0;
+
+	virtual void setAppTitle( const std::string& title ) = 0;
 };
 
 } // namespace ecode

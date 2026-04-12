@@ -1679,8 +1679,14 @@ void App::onWidgetFocusChange( UIWidget* widget ) {
 	if ( widget && !widget->isType( UI_TYPE_CODEEDITOR ) ) {
 		if ( widget->isType( UI_TYPE_TERMINAL ) )
 			setAppTitle( widget->asType<UITerminal>()->getTitle() );
-		else
-			setAppTitle( "" );
+		else {
+			UITab* tab = nullptr;
+			if ( ( tab = mSplitter->getTabFromWidget( widget ) ) ) {
+				setAppTitle( tab->getText() );
+			} else {
+				setAppTitle( "" );
+			}
+		}
 	}
 }
 
