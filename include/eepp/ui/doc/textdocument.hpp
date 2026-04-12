@@ -48,6 +48,8 @@ class EE_API TextDocument {
 
 	enum class IndentType { IndentSpaces, IndentTabs };
 
+	enum class AutoIndentConfig { None, Preserve, Smart };
+
 	enum class FindReplaceType { Normal, LuaPattern, RegEx };
 
 	enum class LoadStatus { Loaded, Interrupted, Failed };
@@ -477,6 +479,10 @@ class EE_API TextDocument {
 
 	void setIndentType( const IndentType& indentType );
 
+	const AutoIndentConfig& getAutoIndent() const;
+
+	void setAutoIndent( const AutoIndentConfig& autoIndent );
+
 	const SyntaxDefinition& getSyntaxDefinition() const;
 
 	void setSyntaxDefinition( std::shared_ptr<SyntaxDefinition> definition );
@@ -783,6 +789,7 @@ class EE_API TextDocument {
 	std::vector<std::pair<String::StringBaseType, String::StringBaseType>> mAutoCloseBracketsPairs;
 	Uint32 mIndentWidth{ 4 };
 	IndentType mIndentType{ IndentType::IndentTabs };
+	AutoIndentConfig mAutoIndent{ AutoIndentConfig::Smart };
 	Clock mTimer;
 	std::shared_ptr<SyntaxDefinition> mSyntaxDefinition;
 	std::string mDefaultFileName;
@@ -876,7 +883,6 @@ class EE_API TextDocument {
 	TextPosition findPreviousEmptyLines( size_t selIdx );
 
 	TextPosition findNextEmptyLines( size_t selIdx );
-
 };
 
 struct TextSearchParams {

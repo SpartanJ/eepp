@@ -116,6 +116,7 @@ struct DocumentConfig {
 	bool indentSpaces{ false };
 	bool tabStops{ true };
 	TextFormat::LineEnding lineEndings{ TextFormat::LineEnding::LF };
+	TextDocument::AutoIndentConfig autoIndent{ TextDocument::AutoIndentConfig::Smart };
 	int indentWidth{ 4 };
 	int tabWidth{ 4 };
 	int lineBreakingColumn{ 100 };

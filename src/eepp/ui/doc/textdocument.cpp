@@ -2724,16 +2724,19 @@ void TextDocument::newLine() {
 
 	for ( int i = (int)mSelection.size() - 1; i >= 0; --i ) {
 		TextPosition start = getSelectionIndex( i ).start();
-		TextPosition indentPos = startOfContent( start );
 		String indentStr;
-		if ( indentPos.column() != 0 )
-			indentStr = line( start.line() ).getText().substr( 0, indentPos.column() );
+		if ( mAutoIndent != AutoIndentConfig::None ) {
+			TextPosition indentPos = startOfContent( start );
+			if ( indentPos.column() != 0 )
+				indentStr = line( start.line() ).getText().substr( 0, indentPos.column() );
+		}
 
 		String input( "\n" );
 		input.append( indentStr );
 
 		bool isPair = false;
-		if ( mAutoCloseBrackets && start > startOfDoc() && start < endOfDoc() ) {
+		if ( mAutoIndent == AutoIndentConfig::Smart && start > startOfDoc() &&
+			 start < endOfDoc() ) {
 			String::StringBaseType curChar = getChar( start );
 			String::StringBaseType prevChar = getPrevChar( start );
 			for ( const auto& pair : mAutoCloseBracketsPairs ) {
@@ -2767,9 +2770,11 @@ void TextDocument::newLineAbove() {
 	for ( size_t i = 0; i < mSelection.size(); ++i ) {
 		String input( "\n" );
 		TextPosition start = getSelectionIndex( i ).start();
-		TextPosition indent = startOfContent( getSelectionIndex( i ).start() );
-		if ( indent.column() != 0 )
-			input.insert( 0, line( start.line() ).getText().substr( 0, indent.column() ) );
+		if ( mAutoIndent != AutoIndentConfig::None ) {
+			TextPosition indent = startOfContent( getSelectionIndex( i ).start() );
+			if ( indent.column() != 0 )
+				input.insert( 0, line( start.line() ).getText().substr( 0, indent.column() ) );
+		}
 		insert( i, { start.line(), 0 }, input );
 		setSelection( i, { start.line(), (Int64)input.size() } );
 	}
@@ -3007,6 +3012,14 @@ const TextDocument::IndentType& TextDocument::getIndentType() const {
 
 void TextDocument::setIndentType( const IndentType& indentType ) {
 	mIndentType = indentType;
+}
+
+const TextDocument::AutoIndentConfig& TextDocument::getAutoIndent() const {
+	return mAutoIndent;
+}
+
+void TextDocument::setAutoIndent( const AutoIndentConfig& autoIndent ) {
+	mAutoIndent = autoIndent;
 }
 
 void TextDocument::undo() {

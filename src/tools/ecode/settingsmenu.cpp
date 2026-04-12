@@ -343,6 +343,53 @@ UITerminal* SettingsMenu::getCurrentTerminal() const {
 UIMenu* SettingsMenu::createDocumentMenu() {
 	auto shouldCloseCb = []( UIMenuItem* ) -> bool { return false; };
 
+	auto setupAutoIndentMenu = [this](
+								   UIPopUpMenu* parentMenu, const std::string& menuId,
+								   std::function<TextDocument::AutoIndentConfig()> getConfig,
+								   std::function<void( TextDocument::AutoIndentConfig )> onClick ) {
+		UIPopUpMenu* autoIndentMenu = UIPopUpMenu::New();
+		auto subMenu =
+			parentMenu->addSubMenu( i18n( "auto_indent", "Auto-Indent" ), nullptr, autoIndentMenu );
+		subMenu
+			->setTooltipText(
+				i18n( "auto_indent_tooltip",
+					  "Configures the automatic indentation behavior when pressing Enter.\n"
+					  "None: No automatic indentation.\n"
+					  "Preserve: Preserves the indentation level of the previous line.\n"
+					  "Smart: Preserves indentation and automatically indents between auto-closed "
+					  "brackets." ) )
+			->setId( menuId );
+		subMenu->on( Event::OnMenuShow, [this, autoIndentMenu, getConfig, onClick]( const Event* ) {
+			if ( autoIndentMenu->getCount() == 0 ) {
+				autoIndentMenu->addRadioButton( i18n( "auto_indent_none", "None" ) )
+					->setId( "auto_indent_none" );
+				autoIndentMenu->addRadioButton( i18n( "auto_indent_preserve", "Preserve" ) )
+					->setId( "auto_indent_preserve" );
+				autoIndentMenu->addRadioButton( i18n( "auto_indent_smart", "Smart" ) )
+					->setId( "auto_indent_smart" );
+				autoIndentMenu->on( Event::OnItemClicked, [onClick]( const Event* event ) {
+					const String& text = event->getNode()->asType<UIMenuRadioButton>()->getId();
+					TextDocument::AutoIndentConfig autoIndent =
+						text == "auto_indent_none"		 ? TextDocument::AutoIndentConfig::None
+						: text == "auto_indent_preserve" ? TextDocument::AutoIndentConfig::Preserve
+														 : TextDocument::AutoIndentConfig::Smart;
+					onClick( autoIndent );
+				} );
+			}
+			TextDocument::AutoIndentConfig currentConfig = getConfig();
+			autoIndentMenu->getItemId( "auto_indent_none" )
+				->asType<UIMenuRadioButton>()
+				->setActive( currentConfig == TextDocument::AutoIndentConfig::None );
+			autoIndentMenu->getItemId( "auto_indent_preserve" )
+				->asType<UIMenuRadioButton>()
+				->setActive( currentConfig == TextDocument::AutoIndentConfig::Preserve );
+			autoIndentMenu->getItemId( "auto_indent_smart" )
+				->asType<UIMenuRadioButton>()
+				->setActive( currentConfig == TextDocument::AutoIndentConfig::Smart );
+		} );
+		return subMenu;
+	};
+
 	mDocMenu = UIPopUpMenu::New();
 
 	// **** CURRENT DOCUMENT ****
@@ -354,6 +401,18 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			i18n( "auto_detect_indent_type_and_width", "Auto Detect Indent Type & Width" ),
 			mApp->getConfig().doc.autoDetectIndentType )
 		->setId( "auto_indent_cur" );
+
+	setupAutoIndentMenu(
+		mDocMenu, "auto_indent_menu_cur",
+		[this]() {
+			return mSplitter->curEditorExistsAndFocused()
+					   ? mSplitter->getCurEditor()->getDocument().getAutoIndent()
+					   : TextDocument::AutoIndentConfig::Smart;
+		},
+		[this]( TextDocument::AutoIndentConfig autoIndent ) {
+			if ( mSplitter->curEditorExistsAndFocused() )
+				mSplitter->getCurEditor()->getDocument().setAutoIndent( autoIndent );
+		} );
 
 	UIMenuSubMenu* fileTypeMenu = mDocMenu->addSubMenu(
 		i18n( "file_type", "File Type" ), findIcon( "file-code" ), createFileTypeMenu( true ) );
@@ -542,6 +601,15 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			i18n( "auto_detect_indent_type_and_width", "Auto Detect Indent Type & Width" ),
 			mApp->getConfig().doc.autoDetectIndentType )
 		->setId( "auto_indent" );
+
+	setupAutoIndentMenu(
+		mGlobalMenu, "auto_indent_menu", [this]() { return mApp->getConfig().doc.autoIndent; },
+		[this]( TextDocument::AutoIndentConfig autoIndent ) {
+			mApp->getConfig().doc.autoIndent = autoIndent;
+			mSplitter->forEachEditor( [autoIndent]( UICodeEditor* editor ) {
+				editor->getDocument().setAutoIndent( autoIndent );
+			} );
+		} );
 
 	UIPopUpMenu* tabTypeMenuGlobal = UIPopUpMenu::New();
 	tabTypeMenuGlobal->addRadioButton( i18n( "tabs", "Tabs" ) )
@@ -802,6 +870,14 @@ UIMenu* SettingsMenu::createDocumentMenu() {
 			mApp->getConfig().doc.autoDetectIndentType )
 		->setId( "auto_indent" )
 		->setEnabled( !mApp->getProjectConfig().useGlobalSettings );
+
+	auto autoIndentProjectSubMenu = setupAutoIndentMenu(
+		mProjectDocMenu, "auto_indent_menu_project",
+		[this]() { return mApp->getProjectConfig().doc.autoIndent; },
+		[this]( TextDocument::AutoIndentConfig autoIndent ) {
+			mApp->getProjectConfig().doc.autoIndent = autoIndent;
+		} );
+	autoIndentProjectSubMenu->setEnabled( !mApp->getProjectConfig().useGlobalSettings );
 
 	UIPopUpMenu* tabTypeMenuProject = UIPopUpMenu::New();
 	tabTypeMenuProject->addRadioButton( i18n( "tabs", "Tabs" ) )
@@ -1174,7 +1250,8 @@ UIMenu* SettingsMenu::createTerminalMenu() {
 		->setId( "configure-terminal-scrollback" );
 
 	mTerminalMenu
-		->add( i18n( "configure_terminal_working_dir", "Configure Terminal Default Working Directory" ),
+		->add( i18n( "configure_terminal_working_dir",
+					 "Configure Terminal Default Working Directory" ),
 			   findIcon( "terminal" ), getKeybind( "configure-terminal-working-dir" ) )
 		->setId( "configure-terminal-working-dir" );
 

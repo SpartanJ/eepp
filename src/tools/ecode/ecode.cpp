@@ -2956,6 +2956,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 										 : TextDocument::IndentType::IndentTabs );
 	doc.setIndentWidth( docc.indentWidth );
 	doc.setAutoDetectIndentType( docc.autoDetectIndentType );
+	doc.setAutoIndent( docc.autoIndent );
 	doc.setBOM( docc.writeUnicodeBOM );
 
 	doc.getFoldRangeService().setEnabled( config.codeFoldingEnabled );
