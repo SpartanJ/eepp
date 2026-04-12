@@ -85,3 +85,64 @@ UTEST( TextDocument, fileMightBeBinary ) {
 				.c_str() );
 	}
 }
+
+UTEST( TextDocument, newLineAutoIndent ) {
+	TextDocument doc;
+	doc.setAutoCloseBrackets( true );
+	doc.setIndentType( TextDocument::IndentType::IndentTabs );
+	doc.insert( 0, { 0, 0 }, "if ( true ) {" );
+	doc.insert( 0, { 0, 13 }, "}" );
+	doc.setSelection( { 0, 13 } ); // Between { and }
+	doc.newLine();
+
+	EXPECT_EQ( doc.linesCount(), 3UL );
+	EXPECT_STRINGEQ( "if ( true ) {\n", doc.line( 0 ).getText() );
+	EXPECT_STRINGEQ( "\t\n", doc.line( 1 ).getText() );
+	EXPECT_STRINGEQ( "}\n", doc.line( 2 ).getText() );
+	EXPECT_STDSTREQ( TextPosition( 1, 1 ).toString(), doc.getSelection().start().toString() );
+}
+
+UTEST( TextDocument, newLineMultiCursorAutoIndent ) {
+	TextDocument doc;
+	doc.setAutoCloseBrackets( true );
+	doc.setIndentType( TextDocument::IndentType::IndentTabs );
+	doc.insert( 0, { 0, 0 }, "{\n\t{\n\t\t(\n" );
+	// Add closing brackets
+	doc.insert( 0, { 0, 1 }, "}" );
+	doc.insert( 0, { 1, 2 }, "}" );
+	doc.insert( 0, { 2, 3 }, ")" );
+
+	// Cursors between all pairs
+	doc.resetSelection( TextRanges( std::vector<TextRange>{
+		TextRange( { 0, 1 }, { 0, 1 } ), TextRange( { 1, 2 }, { 1, 2 } ),
+		TextRange( { 2, 3 }, { 2, 3 } ) } ) );
+
+	doc.newLine();
+
+	EXPECT_EQ( doc.linesCount(), 10UL );
+	EXPECT_STRINGEQ( "{\n", doc.line( 0 ).getText() );
+	EXPECT_STRINGEQ( "\t\n", doc.line( 1 ).getText() );
+	EXPECT_STRINGEQ( "}\n", doc.line( 2 ).getText() );
+	EXPECT_STRINGEQ( "\t{\n", doc.line( 3 ).getText() );
+	EXPECT_STRINGEQ( "\t\t\n", doc.line( 4 ).getText() );
+	EXPECT_STRINGEQ( "\t}\n", doc.line( 5 ).getText() );
+	EXPECT_STRINGEQ( "\t\t(\n", doc.line( 6 ).getText() );
+	EXPECT_STRINGEQ( "\t\t\t\n", doc.line( 7 ).getText() );
+	EXPECT_STRINGEQ( "\t\t)\n", doc.line( 8 ).getText() );
+	EXPECT_STRINGEQ( "\n", doc.line( 9 ).getText() );
+}
+
+UTEST( TextDocument, newLineNormal ) {
+	TextDocument doc;
+	doc.setIndentType( TextDocument::IndentType::IndentTabs );
+	doc.insert( 0, { 0, 0 }, "\t\tif ( true )" );
+	doc.setSelection( { 0, 13 } );
+	doc.newLine();
+
+	EXPECT_EQ( doc.linesCount(), 2UL );
+	EXPECT_STRINGEQ( "\t\tif ( true )\n", doc.line( 0 ).getText() );
+	EXPECT_STRINGEQ( "\t\t\n", doc.line( 1 ).getText() );
+	EXPECT_STDSTREQ( TextPosition( 1, 2 ).toString(), doc.getSelection().start().toString() );
+}
+
+

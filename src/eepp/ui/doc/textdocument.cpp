@@ -2716,12 +2716,51 @@ void TextDocument::selectAll() {
 }
 
 void TextDocument::newLine() {
-	String input( "\n" );
-	TextPosition start = getSelection().start();
-	TextPosition indent = startOfContent( getSelection().start() );
-	if ( indent.column() != 0 )
-		input.append( line( start.line() ).getText().substr( 0, indent.column() ) );
-	textInput( input );
+	BoolScopedOp op( mDoingTextInput, true );
+	BoolScopedOp op2( mInsertingText, true );
+	AtomicBoolScopedOp op3( mRunningTransaction, true );
+	mUndoStack.clearRedoStack();
+	Time time = mTimer.getElapsedTime();
+
+	for ( int i = (int)mSelection.size() - 1; i >= 0; --i ) {
+		TextPosition start = getSelectionIndex( i ).start();
+		TextPosition indentPos = startOfContent( start );
+		String indentStr;
+		if ( indentPos.column() != 0 )
+			indentStr = line( start.line() ).getText().substr( 0, indentPos.column() );
+
+		String input( "\n" );
+		input.append( indentStr );
+
+		bool isPair = false;
+		if ( mAutoCloseBrackets && start > startOfDoc() && start < endOfDoc() ) {
+			String::StringBaseType curChar = getChar( start );
+			String::StringBaseType prevChar = getPrevChar( start );
+			for ( const auto& pair : mAutoCloseBracketsPairs ) {
+				if ( prevChar == pair.first && curChar == pair.second &&
+					 pair.first != pair.second ) {
+					isPair = true;
+					break;
+				}
+			}
+		}
+
+		if ( mSelection[i].hasSelection() )
+			deleteTo( i, 0 );
+
+		if ( isPair ) {
+			String extraIndent = input + getIndentString();
+			String closingLine = "\n" + indentStr;
+
+			insert( i, getSelectionIndex( i ).start(), extraIndent + closingLine,
+					mUndoStack.getUndoStackContainer(), time );
+			setSelection( i, positionOffset( getSelectionIndex( i ).start(), extraIndent.size() ) );
+		} else {
+			setSelection( i, insert( i, getSelectionIndex( i ).start(), input,
+									 mUndoStack.getUndoStackContainer(), time ) );
+		}
+	}
+	mLastCursorChangeWasInteresting = true;
 }
 
 void TextDocument::newLineAbove() {
