@@ -121,7 +121,7 @@ static std::map<std::string, ACPAgent> parseACPAgents( const nlohmann::json& j )
 		agent.name = agentName;
 		agent.enabled = agentJson.value( "enabled", true );
 		agent.command = agentJson.value( "command", "" );
-		
+
 		if ( agentJson.contains( "args" ) && agentJson["args"].is_array() ) {
 			for ( const auto& arg : agentJson["args"] ) {
 				agent.args.push_back( arg.get<std::string>() );
@@ -133,7 +133,7 @@ static std::map<std::string, ACPAgent> parseACPAgents( const nlohmann::json& j )
 				agent.environment[envItem.key()] = envItem.value().get<std::string>();
 			}
 		}
-		
+
 		agents[agentName] = agent;
 	}
 	return agents;
@@ -407,6 +407,8 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 		mKeyBindings["ai-chat-toggle-role"] = "mod+shift+r";
 		mKeyBindings["ai-refresh-local-models"] = "mod+shift+l";
 		mKeyBindings["ai-attach-file"] = "mod+shift+a";
+		mKeyBindings["ai-toggle-agent-mode"] = "mod+shift+d";
+		mKeyBindings["ai-agent-config"] = "shift+alt+c";
 	}
 
 	auto& kb = j["keybindings"];

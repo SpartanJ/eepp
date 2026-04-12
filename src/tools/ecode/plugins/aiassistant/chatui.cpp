@@ -946,6 +946,12 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		getPlugin()->newAIAssistant()->setFocus();
 	} );
 
+	setCmd( "ai-toggle-agent-mode", [this] {
+		if ( getPlugin() == nullptr )
+			return;
+		mChatAgentMode->setSelected( !mChatAgentMode->isSelected() );
+	} );
+
 	setCmd( "ai-show-add-context-menu", [this] {
 		if ( getPlugin() == nullptr )
 			return;
@@ -1055,6 +1061,12 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 
 	setCmd( "ai-refresh-local-models", [this] { fillApiModels(); } );
 
+	setCmd( "ai-agent-config", [this] {
+		if ( mAgentConfigBtn->isVisible() ) {
+			showAgentConfigWindow();
+		}
+	} );
+
 	mChatHistory = find<UIPushButton>( "llm_chat_history" );
 	mChatHistory->onClick( [this]( auto ) { showChatHistory(); } );
 
@@ -1117,6 +1129,9 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 	appendShortcutToTooltip( mChatMore, "ai-show-menu" );
 	appendShortcutToTooltip( mChatUserRole, "ai-chat-toggle-role" );
 	appendShortcutToTooltip( mModelBtn, "ai-select-model" );
+	appendShortcutToTooltip( mAgentBtn, "ai-select-agent" );
+	appendShortcutToTooltip( mChatAgentMode, "ai-toggle-agent-mode" );
+	appendShortcutToTooltip( mAgentConfigBtn, "ai-agent-config" );
 
 	addKb( mChatInput, "mod+keypad enter", "ai-prompt", true, false );
 	addKb( mChatInput, "mod+shift+keypad enter", "ai-add-chat", true, false );
@@ -1175,6 +1190,9 @@ void LLMChatUI::bindCmds( UICodeEditor* editor, bool bindToChatUI ) {
 	addKb( editor, "mod+shift+a", "ai-attach-file", bindToChatUI );
 	addKb( editor, "mod+shift+z", "ai-link-file", bindToChatUI );
 	addKb( editor, "mod+shift+x", "ai-select-model", bindToChatUI );
+	addKb( editor, "mod+shift+x", "ai-select-agent", bindToChatUI );
+	addKb( editor, "mod+shift+d", "ai-toggle-agent-mode", bindToChatUI );
+	addKb( editor, "shift+alt+c", "ai-agent-config", bindToChatUI );
 
 	if ( bindToChatUI )
 		addKb( editor, "mod+shift+return", "ai-add-chat", bindToChatUI );
