@@ -1655,6 +1655,7 @@ void LLMChatUI::showAgentConfigWindow() {
 		win->setFocus();
 		loader->center();
 	} );
+	win->on( Event::OnWindowClose, [this]( auto ) { mAgentConfigBtn->setEnabled( true ); } );
 
 	auto setupConfig = [this, loader, container, win]() {
 		auto configOptions = mAgentSession->getConfigOptions();
@@ -1711,31 +1712,34 @@ void LLMChatUI::showAgentConfigWindow() {
 			if ( selectedIndex != -1 ) {
 				dropdown->setText( currentValName );
 			}
+			auto optType = opt.value( "type", "select" );
+			dropdown->on(
+				Event::OnItemSelected, [this, optId, model, dropdown, optType]( const Event* ) {
+					auto* listView = dropdown->getListView();
+					if ( !listView || listView->getSelection().isEmpty() )
+						return;
+					ModelIndex index = listView->getSelection().first();
+					std::string subId = model->data( model->index( index.row(), 1 ) ).toString();
 
-			dropdown->on( Event::OnItemSelected, [this, optId, model, dropdown]( const Event* ) {
-				auto* listView = dropdown->getListView();
-				if ( !listView || listView->getSelection().isEmpty() )
-					return;
-				ModelIndex index = listView->getSelection().first();
-				std::string subId = model->data( model->index( index.row(), 1 ) ).toString();
-
-				acp::SetConfigOptionRequest req;
-				req.sessionId = mAgentSession->getSessionId();
-				req.configId = optId;
-				req.optionId = subId;
-				mAgentSession->setConfigOption(
-					req, [this, optId, subId]( const acp::SetConfigOptionResponse& res,
-											   const std::optional<acp::ResponseError>& err ) {
-						if ( !err ) {
-							auto newOpts = res.configOptions;
-							if ( newOpts.empty() ) {
-								newOpts = acp::parseLegacyConfigOptions(
-									{}, mAgentSession->getConfigOptions(), optId, subId );
+					acp::SetConfigOptionRequest req;
+					req.sessionId = mAgentSession->getSessionId();
+					req.configId = optId;
+					req.optionId = subId;
+					req.type = optType;
+					req.value = subId;
+					mAgentSession->setConfigOption(
+						req, [this, optId, subId]( const acp::SetConfigOptionResponse& res,
+												   const std::optional<acp::ResponseError>& err ) {
+							if ( !err ) {
+								auto newOpts = res.configOptions;
+								if ( newOpts.empty() ) {
+									newOpts = acp::parseLegacyConfigOptions(
+										{}, mAgentSession->getConfigOptions(), optId, subId );
+								}
+								mAgentSession->setConfigOptions( newOpts );
 							}
-							mAgentSession->setConfigOptions( newOpts );
-						}
-					} );
-			} );
+						} );
+				} );
 		}
 	};
 
@@ -2702,6 +2706,7 @@ void LLMChatUI::addPermissionUI( const acp::RequestPermissionRequest& req,
 		auto optId = opt.optionId;
 		but->onClick( [chat, cbCopy, optId, this]( const Event* ) {
 			chat->close(); // Close the permission request UI once selected
+			updateTabTitle();
 			acp::RequestPermissionResponse res;
 			res.outcome = "selected";
 			res.optionId = optId;
@@ -2726,6 +2731,8 @@ void LLMChatUI::addPermissionUI( const acp::RequestPermissionRequest& req,
 	}
 
 	mChatScrollView->getVerticalScrollBar()->setValue( 1.0f );
+
+	updateTabTitle();
 }
 
 UIWidget* LLMChatUI::addMarkdownBubble( const std::string& layout, const std::string& markdown ) {
@@ -3063,8 +3070,10 @@ const LLMModel& LLMChatUI::getCheapestModelFromCurrentProvider() const {
 void LLMChatUI::onInit() {
 	if ( !mModelBtn )
 		return;
-	if ( getModelDisplayName( mCurModel ) != mModelBtn->getText() )
-		selectModel( mCurModel );
+	mModelBtn->ensureMainThread( [this] {
+		if ( getModelDisplayName( mCurModel ) != mModelBtn->getText() )
+			selectModel( mCurModel );
+	} );
 }
 
 void LLMChatUI::updateTabTitle() {
@@ -3075,8 +3084,22 @@ void LLMChatUI::updateTabTitle() {
 	if ( mIsAgentMode && !mCurAgent.empty() ) {
 		title = i18n( "agent", "Agent" ) + ": " + mCurAgent;
 	}
+
+	auto permissions = mChatsList->findAllByClass( "tool_permission" );
+	bool hasPendingPermissions = false;
+	for ( auto permission : permissions ) {
+		if ( !permission->isClosing() ) {
+			hasPendingPermissions = true;
+			break;
+		}
+	}
+
+	if ( hasPendingPermissions )
+		title += "- ✋ " + i18n( "action_required", "Action Required" ) + " - " + title;
+
 	if ( !mSummary.empty() )
 		title += " - " + mSummary;
+
 	tab->setText( title );
 	tab->setTooltipText( title );
 
