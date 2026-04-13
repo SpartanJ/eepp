@@ -1420,19 +1420,25 @@ UIWindow* UIWindow::setMinWindowSize( Sizef size ) {
 
 Sizef UIWindow::getMinWindowSizeWithDecoration() {
 	Sizef size( getMinWindowSize() );
-	if ( NULL != mWindowDecoration ) {
+
+	if ( mBorderLeft && mBorderRight )
 		size.x += mBorderLeft->getSize().getWidth() + mBorderRight->getSize().getWidth();
+
+	if ( mWindowDecoration && mBorderBottom )
 		size.y += mWindowDecoration->getSize().getHeight() + mBorderBottom->getSize().getHeight();
-	}
+
 	return size;
 }
 
 Sizef UIWindow::getSizeWithoutDecoration() {
 	Sizef size( getSize() );
-	if ( NULL != mWindowDecoration ) {
+
+	if ( mBorderLeft && mBorderRight )
 		size.x -= mBorderLeft->getSize().getWidth() + mBorderRight->getSize().getWidth();
+
+	if ( mWindowDecoration && mBorderBottom )
 		size.y -= mWindowDecoration->getSize().getHeight() + mBorderBottom->getSize().getHeight();
-	}
+
 	return size;
 }
 
@@ -1443,18 +1449,19 @@ Sizef UIWindow::getMinWindowTitleSizeRequired() {
 					mPadding.Left + mPadding.Right,
 				0 );
 
-	if ( NULL != mWindowDecoration ) {
+	if ( mBorderLeft && mBorderRight )
 		size.x += mBorderLeft->getSize().getWidth() + mBorderRight->getSize().getWidth();
-		size.y += mWindowDecoration->getSize().getHeight();
-	}
 
-	if ( NULL != mButtonClose )
+	if ( mWindowDecoration )
+		size.y += mWindowDecoration->getSize().getHeight();
+
+	if ( mButtonClose )
 		size.x += mButtonClose->getSize().getWidth();
 
-	if ( NULL != mButtonMaximize )
+	if ( mButtonMaximize )
 		size.x += mButtonMaximize->getSize().getWidth();
 
-	if ( NULL != mButtonMinimize )
+	if ( mButtonMinimize )
 		size.x += mButtonMinimize->getSize().getWidth();
 
 	return size;
