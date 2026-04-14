@@ -330,15 +330,18 @@ void UITextSpan::onAlphaChange() {
 
 void UITextSpan::onFontChanged() {
 	sendCommonEvent( Event::OnFontChanged );
+	notifyLayoutAttrChange();
 }
 
 void UITextSpan::onFontStyleChanged() {
 	sendCommonEvent( Event::OnFontStyleChanged );
+	notifyLayoutAttrChange();
 }
 
 void UITextSpan::onTextChanged() {
 	sendCommonEvent( Event::OnTextChanged );
 	sendCommonEvent( Event::OnValueChange );
+	notifyLayoutAttrChange();
 }
 
 void UITextSpan::onChildCountChange( Node* child, const bool& removed ) {

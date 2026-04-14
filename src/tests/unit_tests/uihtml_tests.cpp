@@ -478,11 +478,11 @@ UTEST( UIHTMLBody, maxWidthResizingBug ) {
 	SceneManager::instance()->add( sceneNode );
 
 	UI::CSS::StyleSheetParser parser;
-	parser.loadFromFile( "/tmp/style.css" );
+	parser.loadFromFile( "assets/html/dwarmstrong/style.css" );
 	sceneNode->setStyleSheet( parser.getStyleSheet() );
-	
+
 	std::string htmlContent;
-	FileSystem::fileGet( "/tmp/dwarmstrong.html", htmlContent );
+	FileSystem::fileGet( "assets/html/dwarmstrong/dwarmstrong.html", htmlContent );
 	sceneNode->loadLayoutFromString( htmlContent );
 
 	sceneNode->getRoot()->setSize( 1024, 768 );
@@ -491,19 +491,20 @@ UTEST( UIHTMLBody, maxWidthResizingBug ) {
 	auto body_el = sceneNode->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
 	ASSERT_TRUE( body_el != nullptr );
 	Float widthAt1024 = body_el->getPixelsSize().getWidth();
-	EXPECT_NEAR( widthAt1024, 960.f, 10.f ); // It should be around 960px (minus some margins if any)
+	EXPECT_NEAR( widthAt1024, 960.f,
+				 10.f ); // It should be around 960px (minus some margins if any)
 
 	sceneNode->getRoot()->setSize( 2048, 768 );
 	sceneNode->updateDirtyLayouts();
 	Float widthAt2048 = body_el->getPixelsSize().getWidth();
 	EXPECT_NEAR( widthAt2048, 960.f, 10.f ); // Body should stay 960px even when parent is huge
-	
+
 	sceneNode->getRoot()->setSize( 1024, 768 );
 	sceneNode->updateDirtyLayouts();
 
 	Float widthAfterResize = body_el->getPixelsSize().getWidth();
 	EXPECT_NEAR( widthAt1024, widthAfterResize, 1.f );
-	
+
 	Engine::destroySingleton();
 }
 
@@ -538,7 +539,8 @@ UTEST( UILayout, marginAuto ) {
 	childWidget->setSize( 100, 100 );
 	sceneNode->updateDirtyLayouts();
 
-	Float expectedMarginX = ( contWidget->getPixelsSize().getWidth() - childWidget->getPixelsSize().getWidth() ) / 2.f;
+	Float expectedMarginX =
+		( contWidget->getPixelsSize().getWidth() - childWidget->getPixelsSize().getWidth() ) / 2.f;
 
 	// Margin left/right should be auto computed to expectedMarginX
 	EXPECT_NEAR( childWidget->getLayoutPixelsMargin().Left, expectedMarginX, 1.f );
@@ -550,7 +552,8 @@ UTEST( UILayout, marginAuto ) {
 	contWidget->setSize( 800, 800 );
 	sceneNode->updateDirtyLayouts();
 
-	expectedMarginX = ( contWidget->getPixelsSize().getWidth() - childWidget->getPixelsSize().getWidth() ) / 2.f;
+	expectedMarginX =
+		( contWidget->getPixelsSize().getWidth() - childWidget->getPixelsSize().getWidth() ) / 2.f;
 
 	EXPECT_NEAR( childWidget->getLayoutPixelsMargin().Left, expectedMarginX, 1.f );
 	EXPECT_NEAR( childWidget->getLayoutPixelsMargin().Right, expectedMarginX, 1.f );
@@ -559,7 +562,8 @@ UTEST( UILayout, marginAuto ) {
 	childWidget->setSize( 200, 100 );
 	sceneNode->updateDirtyLayouts();
 
-	expectedMarginX = ( contWidget->getPixelsSize().getWidth() - childWidget->getPixelsSize().getWidth() ) / 2.f;
+	expectedMarginX =
+		( contWidget->getPixelsSize().getWidth() - childWidget->getPixelsSize().getWidth() ) / 2.f;
 
 	EXPECT_NEAR( childWidget->getLayoutPixelsMargin().Left, expectedMarginX, 1.f );
 	EXPECT_NEAR( childWidget->getLayoutPixelsMargin().Right, expectedMarginX, 1.f );

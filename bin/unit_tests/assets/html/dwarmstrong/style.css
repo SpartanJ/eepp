@@ -1,0 +1,212 @@
+/*
+ * Reaction Time Is A Factor In This
+ */
+
+body {
+  background-color: #000;
+  color: #d8dee9;
+  max-width: 960px;
+  margin: 1.5rem auto !important;
+  padding: 0 1.5rem;
+  float: none !important;
+  font-family: system-ui, sans-serif;
+  font-size: 1.2rem;
+  line-height: 1.45em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "yanone_kaffeesatz", sans-serif;
+  color: #8fbcbb;
+}
+
+h1 {
+  font-size: 2.75rem;
+  line-height: 2.25rem;
+  margin: 1.9rem 0 0 0;
+}
+
+h2 {font-size: 2.25rem; line-height: 2.15rem;}
+
+h3, h4, h5, h6 {font-size: 1.75rem;}
+
+p.breadcrumbs {color: #8fbcbb;}
+
+p.mastodon {
+  text-align: center;
+}
+
+p.page-next {
+  text-align: right;
+  margin-top: 0.65rem;
+  margin-bottom: -0.5rem;
+}
+
+p.tags {font-size: 1.25rem; line-height: 2rem;}
+
+a {
+  color: #81a1c1;
+  text-decoration: none;
+  border-bottom: 2px dashed #4c566a;
+}
+
+a:hover {color: #bf616a; border-bottom: none;}
+
+header a {
+  font-family: "yanone_kaffeesatz", sans-serif;
+  font-size: 1.5rem;
+  text-decoration: none;
+  border-bottom: none;
+}
+
+blockquote {
+  border-left: 0.4rem solid #8fbcbb;
+  font-style: italic;
+  padding: 0 1.0em;
+}
+
+code {
+  background-color: #2e3440;
+  padding: 0.1rem 0.2rem;
+  font-family: monospace;
+  font-size: 1rem;
+}
+
+pre code {
+  border-left: 0.4rem solid #8fbcbb;
+  page-break-inside: avoid;
+  padding: .5rem 1rem;
+  line-height: 1.2rem;
+  font-size: 1.1rem;
+  max-width: 100%;
+  display: block;
+  overflow: auto;
+  overflow-x: auto;
+}
+
+img {max-width: 100%;}
+
+img.centre {display: block; margin: 1rem auto;}
+
+img.floatleft {float: left; margin: 0 1rem 1rem 0;}
+
+img.floatright {float: right; margin: 0 0 1rem 1rem;}
+
+/* margin: top/right/bottom/left */
+/* img.me {float: right; margin: 0 0 1rem 1rem; border-radius: 5%;} */
+img.me {float: left; margin: 0 1rem 1rem 0; border-radius: 5%;}
+
+.clear-float {
+    clear: both; /* This element will appear below the floated image */
+}
+
+ul {list-style: square; padding-left: 1.2rem;}
+
+ul li {padding-bottom: 0.5rem;}
+
+ul.latest-list {
+  font-size: 1.2rem;
+  line-height: 1.45em;
+}
+
+ul.page-list a, ul.latest-list a {
+  font-size: 1.85rem;
+  font-family: "yanone_kaffeesatz", sans-serif;
+  line-height: 2rem;
+}
+
+hr {color: #8fbcbb;}
+
+footer {
+  text-align: center;
+  font-size: 1rem;
+  margin-top: 1.5em;
+}
+
+#greeting {
+  font-size: 1.35rem;
+  line-height: 1.3em;
+}
+
+#fossBanner {
+  background-image: url(img/foss-banner.png);
+  display: block;
+  /* text-indent: -9999px; */
+  width: 880px;
+  height: 120px;
+  margin: 0 auto;
+  border-bottom: none;
+}
+
+#fossSubtitle p {
+  font-family: monospace;
+  font-size: 1.1rem;
+  text-align: center;
+  margin-top: 0; 
+  color: #ff3131;
+}
+
+#fossQuote p {
+  text-align: right;
+  margin-top: 1.5rem;
+}
+
+#mainMenu {
+  font-size: 1.45rem;
+  margin-bottom: 1.2rem;
+}
+
+.author {font-weight: bold; color: #ebcb8b;}
+
+.rss {color: #f26522;}
+
+.boldWords {font-weight: bold;}
+
+.clear {clear: both;}
+
+.bottomMenu {margin-top: 2em;}
+
+.feed {color: #d08770;}
+
+.love {color: #ff3131;}
+
+.meta {margin-top: 0.5rem; color: #5d6d7e;}
+
+.separator {color: #8fbcbb; padding: 0 0.4rem;}
+
+.tag-count{vertical-align: super; font-size: 1rem;}
+
+/* Separators */
+/* See https://stackoverflow.com/a/26634224 */
+
+.readMore {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #8fbcbb;
+  margin-top: 1.5rem;
+}
+
+.readMore::before,
+.readMore::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #8fbcbb;
+}
+
+.readMore:not(:empty)::before {margin-right: .25em;}
+
+.readMore:not(:empty)::after {margin-left: .25em;}
+
+/* Footnotes */
+
+.footnote-definition p{display:inline}
+
+.footnote-definition+.footnote-definition{margin-top:1em}
+
+.footnote-reference,.footnote-definition-label{text-decoration:none}
+
+.footnote-reference:before,.footnote-definition-label:before{content:"["}
+
+.footnote-reference:after,.footnote-definition-label:after{content:"]"}
+
+.footnote-reference a{text-decoration:none}
