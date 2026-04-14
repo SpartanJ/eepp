@@ -574,7 +574,11 @@ void DebuggerPlugin::loadDAPConfig( const std::string& path, bool updateConfigFi
 		mKeyBindings["debugger-step-over"] = "f10";
 		mKeyBindings["debugger-step-into"] = "f11";
 		mKeyBindings["debugger-step-out"] = "shift+f11";
+		#if EE_PLATFORM == EE_PLATFORM_MACOS
+		mKeyBindings["toggle-status-app-debugger"] = "mod+6";
+		#else
 		mKeyBindings["toggle-status-app-debugger"] = "alt+6";
+		#endif
 	}
 
 	if ( j.contains( "keybindings" ) ) {

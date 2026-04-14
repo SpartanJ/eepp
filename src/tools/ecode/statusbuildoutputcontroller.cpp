@@ -591,19 +591,23 @@ void StatusBuildOutputController::createContainer() {
 
 	mContainer->setCommand( "build-output-show-build-output", [this]() { showBuildOutput(); } );
 	mContainer->setCommand( "build-output-show-build-issues", [this]() { showIssues(); } );
-	mContainer->getKeyBindings().addKeybind( { KEY_1, KeyMod::getDefaultModifier() },
-											 "build-output-show-build-output" );
-	mContainer->getKeyBindings().addKeybind( { KEY_2, KeyMod::getDefaultModifier() },
-											 "build-output-show-build-issues" );
+	mContainer->getKeyBindings().addKeybind(
+		{ KEY_1, UICodeEditorSplitter::getDefaultSwitchToTabModifier() },
+		"build-output-show-build-output" );
+	mContainer->getKeyBindings().addKeybind(
+		{ KEY_2, UICodeEditorSplitter::getDefaultSwitchToTabModifier() },
+		"build-output-show-build-issues" );
 
 	mBuildOutput->getDocument().setCommand( "build-output-show-build-output",
 											[this]() { showBuildOutput(); } );
 	mBuildOutput->getDocument().setCommand( "build-output-show-build-issues",
 											[this]() { showIssues(); } );
-	mBuildOutput->getKeyBindings().addKeybind( { KEY_1, KeyMod::getDefaultModifier() },
-											   "build-output-show-build-output" );
-	mBuildOutput->getKeyBindings().addKeybind( { KEY_2, KeyMod::getDefaultModifier() },
-											   "build-output-show-build-issues" );
+	mBuildOutput->getKeyBindings().addKeybind(
+		{ KEY_1, UICodeEditorSplitter::getDefaultSwitchToTabModifier() },
+		"build-output-show-build-output" );
+	mBuildOutput->getKeyBindings().addKeybind(
+		{ KEY_2, UICodeEditorSplitter::getDefaultSwitchToTabModifier() },
+		"build-output-show-build-issues" );
 	mButOutput->onClick( [this]( auto ) { showBuildOutput(); } );
 	mButIssues->onClick( [this]( auto ) { showIssues(); } );
 	mButOutput->setTooltipText(

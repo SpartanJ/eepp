@@ -2,9 +2,6 @@
   "config": {
     "auto_format_on_save": false
   },
-  "keybindings": {
-    "format-doc": "alt+f"
-  },
   "formatters": [
     {
       "language": ["javascript", "typescript", "jsx", "tsx", "html"],

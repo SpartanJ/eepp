@@ -1993,16 +1993,6 @@ void App::setTheme( const std::string& path ) {
 				}
 				theme->getStyleSheet().addKeyframes( parser.getStyleSheet().getKeyframes() );
 			}
-
-			/* auto inheritsEditorColors = style->getVariableByName( "--inherit-editor-colors" );
-			if ( !inheritsEditorColors.isEmpty() ) {
-				const SyntaxColorScheme* colorScheme = getCurrentColorScheme();
-				std::string themeString(
-					ColorSchemeTranslator::fromSyntaxColorScheme( *colorScheme ) );
-				StyleSheetParser parser;
-				if ( parser.loadFromString( themeString ) )
-					theme->getStyleSheet().combineStyleSheet( parser.getStyleSheet() );
-			} */
 		}
 	}
 
@@ -2150,6 +2140,12 @@ std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 	return local;
 }
 
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+static Uint32 DefaultSwitchToStatusPanelModifier = KeyMod::getDefaultModifier();
+#else
+static Uint32 DefaultSwitchToStatusPanelModifier = KEYMOD_LALT;
+#endif
+
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	return {
 		{ { KEY_RETURN, KEYMOD_LALT | KEYMOD_LCTRL }, "fullscreen-toggle" },
@@ -2185,11 +2181,11 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		  "terminal-split-swap" },
 		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
 		  "reopen-closed-tab" },
-		{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
-		{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
-		{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
-		{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
-		{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
+		{ { KEY_1, DefaultSwitchToStatusPanelModifier }, "toggle-status-locate-bar" },
+		{ { KEY_2, DefaultSwitchToStatusPanelModifier }, "toggle-status-global-search-bar" },
+		{ { KEY_3, DefaultSwitchToStatusPanelModifier }, "toggle-status-terminal" },
+		{ { KEY_4, DefaultSwitchToStatusPanelModifier }, "toggle-status-build-output" },
+		{ { KEY_5, DefaultSwitchToStatusPanelModifier }, "toggle-status-app-output" },
 		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start-cancel" },
 		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
 		{ { KEY_R, KeyMod::getDefaultModifier() }, "project-build-and-run" },

@@ -20,6 +20,8 @@ class EE_API UICodeEditorSplitter {
 
 	static const std::map<KeyBindings::Shortcut, std::string> getLocalDefaultKeybindings();
 
+	static Uint32 getDefaultSwitchToTabModifier();
+
 	class EE_API Client {
 	  public:
 		virtual ~Client() {};
