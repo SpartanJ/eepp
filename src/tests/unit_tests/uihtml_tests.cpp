@@ -7,6 +7,7 @@
 #include <eepp/scene/scenemanager.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/sys.hpp>
+#include <eepp/ui/css/stylesheetparser.hpp>
 #include <eepp/ui/htmlinput.hpp>
 #include <eepp/ui/htmltextarea.hpp>
 #include <eepp/ui/htmltextinput.hpp>
@@ -426,6 +427,142 @@ UTEST( UIHTMLTable, tableLayoutFixed ) {
 	EXPECT_NEAR( c1->getPixelsSize().getWidth(), 100.f, 1.f );
 	EXPECT_NEAR( c2->getPixelsSize().getWidth(), 200.f, 1.f );
 	EXPECT_NEAR( c3->getPixelsSize().getWidth(), 300.f, 1.f );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLBody, backgroundColorPropagation ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 650, "HTML Tables Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	sceneNode->loadLayoutFromString(
+		R"(<html id="html_el">
+			<body id="body_el" style="background-color: red; max-width: 960px;">
+			</body>
+		</html>)" );
+
+	sceneNode->updateDirtyLayouts();
+
+	auto html_el = sceneNode->getRoot()->find( "html_el" );
+	auto body_el = sceneNode->getRoot()->find( "body_el" );
+
+	ASSERT_TRUE( html_el != nullptr );
+	ASSERT_TRUE( body_el != nullptr );
+
+	// HTML element should have inherited the red background color, and body should be transparent
+	EXPECT_TRUE( html_el->asType<UIWidget>()->getBackgroundColor() == Color::Red );
+	EXPECT_TRUE( body_el->asType<UIWidget>()->getBackgroundColor() == Color::Transparent );
+
+	Engine::destroySingleton();
+}
+
+UTEST( UIHTMLBody, maxWidthResizingBug ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 768, "HTML Resize Bug",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+
+	UI::CSS::StyleSheetParser parser;
+	parser.loadFromFile( "/tmp/style.css" );
+	sceneNode->setStyleSheet( parser.getStyleSheet() );
+	
+	std::string htmlContent;
+	FileSystem::fileGet( "/tmp/dwarmstrong.html", htmlContent );
+	sceneNode->loadLayoutFromString( htmlContent );
+
+	sceneNode->getRoot()->setSize( 1024, 768 );
+	sceneNode->updateDirtyLayouts();
+
+	auto body_el = sceneNode->getRoot()->findByType( UI_TYPE_HTML_BODY )->asType<UIWidget>();
+	ASSERT_TRUE( body_el != nullptr );
+	Float widthAt1024 = body_el->getPixelsSize().getWidth();
+	EXPECT_NEAR( widthAt1024, 960.f, 10.f ); // It should be around 960px (minus some margins if any)
+
+	sceneNode->getRoot()->setSize( 2048, 768 );
+	sceneNode->updateDirtyLayouts();
+	Float widthAt2048 = body_el->getPixelsSize().getWidth();
+	EXPECT_NEAR( widthAt2048, 960.f, 10.f ); // Body should stay 960px even when parent is huge
+	
+	sceneNode->getRoot()->setSize( 1024, 768 );
+	sceneNode->updateDirtyLayouts();
+
+	Float widthAfterResize = body_el->getPixelsSize().getWidth();
+	EXPECT_NEAR( widthAt1024, widthAfterResize, 1.f );
+	
+	Engine::destroySingleton();
+}
+
+UTEST( UILayout, marginAuto ) {
+	Engine::instance()->createWindow( WindowSettings( 1024, 650, "Margin Auto Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font != nullptr && font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	SceneManager::instance()->add( sceneNode );
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	auto* container = sceneNode->loadLayoutFromString(
+		R"(<vbox id="container">
+			<widget id="child" style="margin: 0 auto;" />
+		</vbox>)" );
+
+	auto child = sceneNode->getRoot()->find( "child" );
+	ASSERT_TRUE( child != nullptr );
+
+	UIWidget* childWidget = child->asType<UIWidget>();
+	UIWidget* contWidget = container->asType<UIWidget>();
+
+	contWidget->setSize( 500, 500 );
+	childWidget->setSize( 100, 100 );
+	sceneNode->updateDirtyLayouts();
+
+	Float expectedMarginX = ( contWidget->getPixelsSize().getWidth() - childWidget->getPixelsSize().getWidth() ) / 2.f;
+
+	// Margin left/right should be auto computed to expectedMarginX
+	EXPECT_NEAR( childWidget->getLayoutPixelsMargin().Left, expectedMarginX, 1.f );
+	EXPECT_NEAR( childWidget->getLayoutPixelsMargin().Right, expectedMarginX, 1.f );
+	EXPECT_NEAR( childWidget->getLayoutPixelsMargin().Top, 0.f, 1.f );
+	EXPECT_NEAR( childWidget->getLayoutPixelsMargin().Bottom, 0.f, 1.f );
+
+	// Resize parent and see if margins re-evaluate automatically
+	contWidget->setSize( 800, 800 );
+	sceneNode->updateDirtyLayouts();
+
+	expectedMarginX = ( contWidget->getPixelsSize().getWidth() - childWidget->getPixelsSize().getWidth() ) / 2.f;
+
+	EXPECT_NEAR( childWidget->getLayoutPixelsMargin().Left, expectedMarginX, 1.f );
+	EXPECT_NEAR( childWidget->getLayoutPixelsMargin().Right, expectedMarginX, 1.f );
+
+	// Now test resize of child
+	childWidget->setSize( 200, 100 );
+	sceneNode->updateDirtyLayouts();
+
+	expectedMarginX = ( contWidget->getPixelsSize().getWidth() - childWidget->getPixelsSize().getWidth() ) / 2.f;
+
+	EXPECT_NEAR( childWidget->getLayoutPixelsMargin().Left, expectedMarginX, 1.f );
+	EXPECT_NEAR( childWidget->getLayoutPixelsMargin().Right, expectedMarginX, 1.f );
 
 	Engine::destroySingleton();
 }

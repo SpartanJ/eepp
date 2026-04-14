@@ -3095,7 +3095,7 @@ void LLMChatUI::updateTabTitle() {
 	}
 
 	if ( hasPendingPermissions )
-		title += "- ✋ " + i18n( "action_required", "Action Required" ) + " - " + title;
+		title = " - ✋ " + i18n( "action_required", "Action Required" ) + " - " + title;
 
 	if ( !mSummary.empty() )
 		title += " - " + mSummary;

@@ -30,6 +30,10 @@ class EE_API UIRichText : public UILayout {
 
 	static UIRichText* NewHr();
 
+	static UIRichText* NewHtml();
+
+	static UIRichText* NewBody();
+
 	static UIRichText* NewDiv() { return UIRichText::NewWithTag( "div" ); };
 
 	static UIRichText* NewPre() { return UIRichText::NewWithTag( "pre" ); };
@@ -155,6 +159,29 @@ class EE_API UIRichText : public UILayout {
 	void rebuildRichText( RichText& richText, IntrinsicMode mode = IntrinsicMode::None );
 	void positionChildren();
 	void updateDefaultSpansStyle();
+};
+
+class EE_API UIHTMLHtml : public UIRichText {
+  public:
+	static UIHTMLHtml* New( const std::string& tag );
+	virtual Uint32 getType() const override;
+	bool isType( const Uint32& type ) const override;
+
+  protected:
+	UIHTMLHtml( const std::string& tag = "html" );
+};
+
+class EE_API UIHTMLBody : public UIRichText {
+  public:
+	static UIHTMLBody* New( const std::string& tag );
+	virtual Uint32 getType() const override;
+	bool isType( const Uint32& type ) const override;
+	bool applyProperty( const StyleSheetProperty& attribute ) override;
+
+  protected:
+	bool mPropagatedBackground{ false };
+
+	UIHTMLBody( const std::string& tag = "body" );
 };
 
 }} // namespace EE::UI

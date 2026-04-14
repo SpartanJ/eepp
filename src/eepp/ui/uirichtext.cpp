@@ -28,6 +28,72 @@ class UILineBreak : public UIRichText {
 	}
 };
 
+UIHTMLHtml* UIHTMLHtml::New( const std::string& tag ) {
+	return eeNew( UIHTMLHtml, ( tag ) );
+}
+
+UIHTMLHtml::UIHTMLHtml( const std::string& tag ) : UIRichText( tag ) {}
+
+Uint32 UIHTMLHtml::getType() const {
+	return UI_TYPE_HTML_HTML;
+}
+
+bool UIHTMLHtml::isType( const Uint32& type ) const {
+	return UIHTMLHtml::getType() == type ? true : UIRichText::isType( type );
+}
+
+UIHTMLBody* UIHTMLBody::New( const std::string& tag ) {
+	return eeNew( UIHTMLBody, ( tag ) );
+}
+
+UIHTMLBody::UIHTMLBody( const std::string& tag ) : UIRichText( tag ) {}
+
+Uint32 UIHTMLBody::getType() const {
+	return UI_TYPE_HTML_BODY;
+}
+
+bool UIHTMLBody::isType( const Uint32& type ) const {
+	return UIHTMLBody::getType() == type ? true : UIRichText::isType( type );
+}
+
+bool UIHTMLBody::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::BackgroundColor:
+		case PropertyId::BackgroundImage:
+		case PropertyId::BackgroundTint:
+		case PropertyId::BackgroundPositionX:
+		case PropertyId::BackgroundPositionY:
+		case PropertyId::BackgroundRepeat:
+		case PropertyId::BackgroundSize: {
+			if ( getParent() && getParent()->isType( UI_TYPE_HTML_HTML ) ) {
+				UIWidget* htmlParent = getParent()->asType<UIWidget>();
+				if ( htmlParent->getBackgroundColor() == Color::Transparent ||
+					 mPropagatedBackground ) {
+					mPropagatedBackground = true;
+					htmlParent->applyProperty( attribute );
+					return true;
+				}
+			}
+			break;
+		}
+		default:
+			break;
+	}
+
+	return UIRichText::applyProperty( attribute );
+}
+
+UIRichText* UIRichText::NewHtml() {
+	return UIHTMLHtml::New( "html" );
+}
+
+UIRichText* UIRichText::NewBody() {
+	return UIHTMLBody::New( "body" );
+}
+
 UIRichText* UIRichText::NewBr() {
 	return UILineBreak::New( "br" );
 };
@@ -554,7 +620,7 @@ void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
 
 			richText.addCustomSize( Sizef( w + margin.Left + margin.Right,
 										   size.getHeight() + margin.Top + margin.Bottom ),
-								   isBlock );
+									isBlock );
 		}
 	};
 

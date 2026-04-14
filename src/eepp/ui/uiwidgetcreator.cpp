@@ -173,9 +173,9 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["section"] = [] { return UIRichText::NewWithTag( "section" ); };
 		registeredWidget["nav"] = [] { return UIRichText::NewWithTag( "nav" ); };
 		registeredWidget["center"] = [] { return UIRichText::NewWithTag( "center" ); };
-		registeredWidget["html"] = [] { return UIRichText::NewWithTag( "html" ); };
+		registeredWidget["html"] = UIRichText::NewHtml;
 		registeredWidget["head"] = [] { return UIWidget::NewWithTag( "head" ); };
-		registeredWidget["body"] = [] { return UIRichText::NewWithTag( "body" ); };
+		registeredWidget["body"] = UIRichText::NewBody;
 		registeredWidget["form"] = [] { return UIRichText::NewWithTag( "form" ); };
 		registeredWidget["table"] = UIHTMLTable::New;
 		registeredWidget["tr"] = UIHTMLTableRow::New;
