@@ -391,6 +391,11 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 			mApiKeys["nvidia"] = config.value( "nvidia_api_key", "" );
 		else if ( updateConfigFile )
 			config["nvidia_api_key"] = mApiKeys["nvidia"];
+
+		if ( config.contains( "together_api_key" ) )
+			mApiKeys["together"] = config.value( "together_api_key", "" );
+		else if ( updateConfigFile )
+			config["together_api_key"] = mApiKeys["together"];
 	}
 
 	if ( mKeyBindings.empty() ) {
@@ -599,6 +604,8 @@ std::optional<std::string> AIAssistantPlugin::getApiKeyFromProvider( const std::
 		ret = getenv( "MOONSHOT_API_KEY" );
 	} else if ( provider == "nvidia" ) {
 		ret = getenv( "NVIDIA_API_KEY" );
+	} else if ( provider == "together" ) {
+		ret = getenv( "TOGETHER_API_KEY" );
 	} else {
 		const auto& providerModelIt = instance->mProviders.find( provider );
 		if ( providerModelIt != instance->mProviders.end() && providerModelIt->second.openApi )

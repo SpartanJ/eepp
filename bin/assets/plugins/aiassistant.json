@@ -503,6 +503,33 @@
       "api_url": "http://localhost:8080/api/chat",
       "fetch_models_url": "http://localhost:8080/api/tags",
       "open_api": true
+    },
+    "together": {
+      "api_url": "https://api.together.xyz/v1/chat/completions",
+      "display_name": "Together AI",
+      "models": [
+        {
+          "name": "zai-org/GLM-5.1",
+          "display_name": "GLM 5.1 FP4"
+        },
+        {
+          "name": "moonshotai/Kimi-K2.5",
+          "display_name": "Kimi K2.5"
+        },
+        {
+          "name": "MiniMaxAI/MiniMax-M2.7",
+          "display_name": "MiniMax M2.7 FP4"
+        },
+        {
+          "name": "MiniMaxAI/MiniMax-M2.5",
+          "display_name": "MiniMax M2.5 FP4"
+        },
+        {
+          "name": "Qwen/Qwen3.5-9B",
+          "display_name": "Qwen3.5 9B FP8",
+          "cheapest": true
+        }
+      ]
     }
   },
   "agents": {
