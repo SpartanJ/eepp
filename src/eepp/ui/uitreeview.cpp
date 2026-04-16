@@ -105,6 +105,36 @@ size_t UITreeView::getItemCount() const {
 	return count;
 }
 
+std::vector<ModelIndex> UITreeView::getSelectionRange( const ModelIndex& start,
+													   const ModelIndex& end ) const {
+	std::vector<ModelIndex> range;
+	if ( !getModel() )
+		return range;
+
+	bool foundStart = false;
+	traverseTree( [&]( const int&, const ModelIndex& index, const size_t&, const Float& ) {
+		bool isStart = index == start;
+		bool isEnd = index == end;
+
+		if ( isStart || isEnd ) {
+			if ( !foundStart ) {
+				foundStart = true;
+				range.push_back( index );
+				if ( start == end )
+					return IterationDecision::Stop;
+			} else {
+				range.push_back( index );
+				return IterationDecision::Stop;
+			}
+		} else if ( foundStart ) {
+			range.push_back( index );
+		}
+		return IterationDecision::Continue;
+	} );
+
+	return range;
+}
+
 void UITreeView::onColumnSizeChange( const size_t& colIndex, bool fromUserInteraction ) {
 	UIAbstractTableView::onColumnSizeChange( colIndex, fromUserInteraction );
 	updateContentSize();

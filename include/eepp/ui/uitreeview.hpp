@@ -149,6 +149,9 @@ class EE_API UITreeView : public UIAbstractTableView {
 
 	virtual size_t getItemCount() const;
 
+	std::vector<ModelIndex> getSelectionRange( const ModelIndex& start,
+											   const ModelIndex& end ) const override;
+
 	UITreeView::MetadataForIndex& getIndexMetadata( const ModelIndex& index ) const;
 
 	virtual void onColumnSizeChange( const size_t& colIndex, bool fromUserInteraction = false );

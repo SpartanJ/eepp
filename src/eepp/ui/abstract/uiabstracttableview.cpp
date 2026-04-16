@@ -111,6 +111,19 @@ void UIAbstractTableView::selectAll() {
 	}
 }
 
+std::vector<ModelIndex> UIAbstractTableView::getSelectionRange( const ModelIndex& start,
+																const ModelIndex& end ) const {
+	std::vector<ModelIndex> range;
+	if ( !getModel() )
+		return range;
+	int minRow = eemin( start.row(), end.row() );
+	int maxRow = eemax( start.row(), end.row() );
+	for ( int i = minRow; i <= maxRow; ++i ) {
+		range.push_back( getModel()->index( i, start.column() ) );
+	}
+	return range;
+}
+
 size_t UIAbstractTableView::getItemCount() const {
 	if ( !getModel() )
 		return 0;
@@ -507,15 +520,32 @@ UITableRow* UIAbstractTableView::createRow() {
 			return;
 		auto index = event->getNode()->asType<UITableRow>()->getCurIndex();
 		if ( mSelectionKind == SelectionKind::Single &&
-			 getInput()->getSanitizedModState() & KeyMod::getDefaultModifier() ) {
+			 ( getInput()->getSanitizedModState() & KeyMod::getDefaultModifier() ) ) {
 			getSelection().remove( index );
 		} else {
 			if ( mSelectionKind == SelectionKind::Multiple &&
-				 getInput()->getSanitizedModState() & KeyMod::getDefaultModifier() ) {
+				 ( getInput()->getSanitizedModState() & KeyMod::getDefaultModifier() ) ) {
 				getSelection().toggle( index );
+			} else if ( mSelectionKind == SelectionKind::Multiple &&
+						( getInput()->getSanitizedModState() & KEYMOD_SHIFT ) &&
+						!getSelection().isEmpty() ) {
+				getSelection().set( getSelectionRange( getSelection().first(), index ) );
+			} else if ( mSelectionKind == SelectionKind::Multiple ) {
+				if ( !getSelection().contains( index ) )
+					getSelection().set( index );
 			} else {
 				getSelection().set( index );
 			}
+		}
+	} );
+	rowWidget->on( Event::MouseClick, [this]( const Event* event ) {
+		if ( !( event->asMouseEvent()->getFlags() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) ||
+			 !isRowSelection() )
+			return;
+
+		auto index = event->getNode()->asType<UITableRow>()->getCurIndex();
+		if ( 0 == getInput()->getSanitizedModState() ) {
+			getSelection().set( index );
 		}
 	} );
 	onRowCreated( rowWidget );
