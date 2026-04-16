@@ -1,4 +1,5 @@
 #include "settingsmenu.hpp"
+#include "uitreeviewfs.hpp"
 
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -2673,12 +2674,20 @@ static void fsRemoveAll( const std::string& fpath ) {
 #endif
 }
 
-void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
+void SettingsMenu::createProjectTreeMenu( const std::vector<FileInfo>& files ) {
 	if ( mProjectTreeMenu && mProjectTreeMenu->isVisible() )
 		mProjectTreeMenu->close();
 	mProjectTreeMenu = UIPopUpMenu::New();
 
-	if ( file.isDirectory() ) {
+	bool allFiles = true;
+	for ( const auto& file : files ) {
+		if ( file.isDirectory() ) {
+			allFiles = false;
+			break;
+		}
+	}
+
+	if ( files.size() == 1 && files[0].isDirectory() ) {
 		mProjectTreeMenu->add( i18n( "new_file_ellipsis", "New File..." ), findIcon( "file-add" ) )
 			->setId( "new_file" );
 		mProjectTreeMenu
@@ -2702,7 +2711,7 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 			->add( i18n( "find_in_folder_ellipsis", "Find in Folder..." ),
 				   findIcon( "file-search" ) )
 			->setId( "find_in_folder" );
-	} else {
+	} else if ( files.size() == 1 ) {
 		mProjectTreeMenu->add( i18n( "open_file", "Open File" ), findIcon( "document-open" ) )
 			->setId( "open_file" );
 		mProjectTreeMenu
@@ -2714,28 +2723,43 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 				   findIcon( "file-add" ) )
 			->setId( "new_file_in_place" );
 		mProjectTreeMenu
+			->add( i18n( "new_folder_in_directory_ellipsis", "New Folder in directory..." ),
+				   findIcon( "folder-add" ) )
+			->setId( "new_folder_in_place" );
+		mProjectTreeMenu
 			->add( i18n( "duplicate_file_ellipsis", "Duplicate File..." ), findIcon( "file-copy" ) )
 			->setId( "duplicate_file" );
+	} else if ( allFiles && files.size() > 1 ) {
+		mProjectTreeMenu->add( i18n( "open_files", "Open Files" ), findIcon( "document-open" ) )
+			->setId( "open_files" );
 	}
-	mProjectTreeMenu->add( i18n( "rename", "Rename" ), findIcon( "edit" ), "F2" )
-		->setId( "rename" );
+
+	if ( files.size() == 1 ) {
+		mProjectTreeMenu->add( i18n( "rename", "Rename" ), findIcon( "edit" ), "F2" )
+			->setId( "rename" );
+	}
+
 	mProjectTreeMenu
 		->add( i18n( "remove_ellipsis", "Remove..." ), findIcon( "delete-bin" ), "Delete" )
 		->setId( "remove" );
 
-	if ( file.isDirectory() || file.isExecutable() ) {
-		mProjectTreeMenu->addSeparator();
+	if ( files.size() == 1 ) {
+		auto& file = files[0];
 
-		if ( file.isDirectory() ) {
-			mProjectTreeMenu
-				->add( i18n( "execute_dir_in_terminal", "Open directory in terminal" ),
-					   findIcon( "filetype-bash" ) )
-				->setId( "execute_dir_in_terminal" );
-		} else if ( file.isExecutable() ) {
-			mProjectTreeMenu
-				->add( i18n( "execute_in_terminal", "Execute in terminal" ),
-					   findIcon( "filetype-bash" ) )
-				->setId( "execute_in_terminal" );
+		if ( file.isDirectory() || file.isExecutable() ) {
+			mProjectTreeMenu->addSeparator();
+
+			if ( file.isDirectory() ) {
+				mProjectTreeMenu
+					->add( i18n( "execute_dir_in_terminal", "Open directory in terminal" ),
+						   findIcon( "filetype-bash" ) )
+					->setId( "execute_dir_in_terminal" );
+			} else if ( file.isExecutable() ) {
+				mProjectTreeMenu
+					->add( i18n( "execute_in_terminal", "Execute in terminal" ),
+						   findIcon( "filetype-bash" ) )
+					->setId( "execute_in_terminal" );
+			}
 		}
 	}
 
@@ -2762,20 +2786,24 @@ void SettingsMenu::createProjectTreeMenu( const FileInfo& file ) {
 			->setId( "configure-ignore-files" );
 	}
 
-	mProjectTreeMenu->on( Event::OnItemClicked, [this, file]( const Event* event ) {
-		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) )
+	mProjectTreeMenu->on( Event::OnItemClicked, [this, files]( const Event* event ) {
+		if ( !event->getNode()->isType( UI_TYPE_MENUITEM ) || files.empty() )
 			return;
 		UIMenuItem* item = event->getNode()->asType<UIMenuItem>();
 		std::string id( item->getId() );
+		auto file = files[0];
 
 		if ( "new_file" == id || "new_file_in_place" == id ) {
 			mApp->newFile( file );
-		} else if ( "new_folder" == id ) {
+		} else if ( "new_folder" == id || "new_folder_in_place" == id ) {
 			mApp->newFolder( file );
 		} else if ( "open_file" == id ) {
 			mApp->openFileFromPath( file.getFilepath() );
+		} else if ( "open_files" == id ) {
+			for ( const auto& file : files )
+				mApp->openFileFromPath( file.getFilepath() );
 		} else if ( "remove" == id ) {
-			deleteFileDialog( file );
+			mApp->getProjectTreeView()->deleteSelectedFiles();
 		} else if ( "duplicate_file" == id ) {
 			UIMessageBox* msgBox = mApp->newInputMsgBox(
 				String::format( "%s \"%s\"",

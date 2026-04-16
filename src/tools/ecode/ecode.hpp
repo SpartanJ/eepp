@@ -32,6 +32,7 @@ class AutoCompletePlugin;
 class LinterPlugin;
 class FormatterPlugin;
 class SettingsMenu;
+class UITreeViewFS;
 
 class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
   public:
@@ -510,7 +511,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	UITextView* getDocInfo() const;
 
-	UITreeView* getProjectTreeView() const;
+	UITreeViewFS* getProjectTreeView() const;
 
 	void loadCurrentDirectory();
 
@@ -693,7 +694,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	Float mDisplayDPI{ 96 };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;
-	UITreeView* mProjectTreeView{ nullptr };
+	UITreeViewFS* mProjectTreeView{ nullptr };
 	UILinearLayout* mProjectViewEmptyCont{ nullptr };
 	std::shared_ptr<FileSystemModel> mFileSystemModel;
 	std::shared_ptr<GitIgnoreMatcher> mFileSystemMatcher;

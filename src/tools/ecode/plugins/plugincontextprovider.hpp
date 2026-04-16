@@ -56,12 +56,15 @@ class NotificationCenter;
 class ProjectDirectoryTree;
 struct TerminalConfig;
 class UIMainLayout;
+class UITreeViewFS;
 
 class PluginContextProvider {
   public:
 	virtual UIStatusBar* getStatusBar() const = 0;
 
 	virtual UISplitter* getMainSplitter() const = 0;
+
+	virtual UITreeViewFS* getProjectTreeView() const = 0;
 
 	virtual void hideGlobalSearchBar() = 0;
 

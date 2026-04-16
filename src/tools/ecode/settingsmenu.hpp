@@ -64,7 +64,7 @@ class SettingsMenu {
 
 	void createProjectTreeMenu();
 
-	void createProjectTreeMenu( const FileInfo& file );
+	void createProjectTreeMenu( const std::vector<FileInfo>& files );
 
 	void updateColorSchemeMenu();
 

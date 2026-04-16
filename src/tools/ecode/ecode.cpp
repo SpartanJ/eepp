@@ -1378,7 +1378,7 @@ UITextView* App::getDocInfo() const {
 	return mDocInfo;
 }
 
-UITreeView* App::getProjectTreeView() const {
+UITreeViewFS* App::getProjectTreeView() const {
 	return mProjectTreeView;
 }
 
@@ -3778,7 +3778,7 @@ void App::initProjectViewEmptyCont() {
 
 void App::initProjectTreeViewUI() {
 	initProjectViewEmptyCont();
-	mProjectTreeView = mUISceneNode->find<UITreeView>( "project_view" );
+	mProjectTreeView = mUISceneNode->find<UITreeViewFS>( "project_view" );
 	mProjectTreeView->setColumnsHidden(
 		{ FileSystemModel::Icon, FileSystemModel::Size, FileSystemModel::Group,
 		  FileSystemModel::Inode, FileSystemModel::Owner, FileSystemModel::SymlinkTarget,
@@ -3809,8 +3809,9 @@ void App::initProjectTreeViewUI() {
 					} else {
 						tab->getTabWidget()->setTabSelected( tab );
 					}
-				} else { // ModelEventType::OpenMenu
-					mSettings->createProjectTreeMenu( FileInfo( path ) );
+				} else if ( !mProjectTreeView->getSelection().isEmpty() ) {
+					// ModelEventType::OpenMenu
+					mSettings->createProjectTreeMenu( mProjectTreeView->getSelectionsFileInfo() );
 				}
 			}
 		}
@@ -3824,7 +3825,10 @@ void App::initProjectTreeViewUI() {
 		if ( !mFileSystemModel )
 			return;
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
-		if ( keyEvent->getKeyCode() == KEY_F2 || keyEvent->getKeyCode() == KEY_DELETE ) {
+		if ( keyEvent->getKeyCode() == KEY_F2 ||
+			 ( ( keyEvent->getKeyCode() == KEY_DELETE ||
+				 keyEvent->getKeyCode() == KEY_BACKSPACE ) &&
+			   mProjectTreeView->getSelection().size() == 1 ) ) {
 			ModelIndex modelIndex = mProjectTreeView->getSelection().first();
 			if ( !modelIndex.isValid() )
 				return;
@@ -3833,10 +3837,15 @@ void App::initProjectTreeViewUI() {
 				FileInfo fileInfo( vPath.toString() );
 				if ( keyEvent->getKeyCode() == KEY_F2 ) {
 					renameFile( fileInfo );
-				} else {
+				} else if ( keyEvent->getKeyCode() == KEY_DELETE ||
+							keyEvent->getKeyCode() == KEY_BACKSPACE ) {
 					mSettings->deleteFileDialog( fileInfo );
 				}
 			}
+		} else if ( ( keyEvent->getKeyCode() == KEY_DELETE ||
+					  keyEvent->getKeyCode() == KEY_BACKSPACE ) &&
+					!mProjectTreeView->getSelection().isEmpty() ) {
+			mProjectTreeView->asType<UITreeViewFS>()->deleteSelectedFiles();
 		}
 	} );
 	mProjectTreeView->setDisableCellClipping( true );

@@ -539,7 +539,7 @@ UITableRow* UIAbstractTableView::createRow() {
 		}
 	} );
 	rowWidget->on( Event::MouseClick, [this]( const Event* event ) {
-		if ( !( event->asMouseEvent()->getFlags() & ( EE_BUTTON_LMASK | EE_BUTTON_RMASK ) ) ||
+		if ( !( event->asMouseEvent()->getFlags() & ( EE_BUTTON_LMASK ) ) ||
 			 !isRowSelection() )
 			return;
 
