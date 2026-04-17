@@ -4,7 +4,7 @@
 
 namespace EE { namespace System {
 
-struct LocalStreamData {
+struct LocalDeflateStreamData {
 	z_stream strm;
 	int state;
 	bool writtenStream;
@@ -20,7 +20,7 @@ IOStreamDeflate::IOStreamDeflate( IOStream& inOutStream, Compression::Mode mode,
 	mStream( inOutStream ),
 	mMode( mode ),
 	mBuffer( Compression::getModeDefaultChunkSize( mode ) ),
-	mLocalStream( eeNew( LocalStreamData, () ) ) {
+	mLocalStream( eeNew( LocalDeflateStreamData, () ) ) {
 	int windowBits = mode == Compression::MODE_DEFLATE ? MAX_WBITS : MAX_WBITS | 16;
 	int level = mode == Compression::MODE_DEFLATE ? config.zlib.level : config.gzip.level;
 

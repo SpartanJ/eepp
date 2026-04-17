@@ -5,7 +5,7 @@
 
 namespace EE { namespace System {
 
-struct LocalStreamData {
+struct LocalInflateStreamData {
 	z_stream strm;
 	int state;
 	BrotliDecoderState* brotliState;
@@ -22,7 +22,7 @@ IOStreamInflate::IOStreamInflate( IOStream& inOutStream, Compression::Mode mode 
 	mStream( inOutStream ),
 	mMode( mode ),
 	mBuffer( Compression::getModeDefaultChunkSize( mode ) ),
-	mLocalStream( eeNew( LocalStreamData, () ) ) {
+	mLocalStream( eeNew( LocalInflateStreamData, () ) ) {
 
 	if ( mode == Compression::MODE_BROTLI ) {
 		mLocalStream->brotliState = BrotliDecoderCreateInstance( nullptr, nullptr, nullptr );
