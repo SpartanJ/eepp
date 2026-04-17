@@ -21,6 +21,7 @@ static const std::map<KeyBindings::Shortcut, std::string> getDefaultKeybindings(
 		{ { KEY_KP_ENTER }, "open-selected-files" },
 		{ { KEY_DELETE }, "delete-selected-files" },
 		{ { KEY_BACKSPACE }, "delete-selected-files" },
+		{ { KEY_ESCAPE }, "reset-selection" },
 	};
 }
 
@@ -209,6 +210,11 @@ UITreeViewFS::UITreeViewFS() : UITreeView(), mKeyBindings( getInput() ) {
 	mCommands["open-selected-files"] = [this] { openSelectedFiles(); };
 
 	mCommands["delete-selected-files"] = [this] { deleteSelectedFiles(); };
+
+	mCommands["reset-selection"] = [this] {
+		if ( !getSelection().isEmpty() )
+			getSelection().set( getSelection().last() );
+	};
 
 	mKeyBindings.addKeybinds( getDefaultKeybindings() );
 
