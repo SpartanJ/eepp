@@ -38,7 +38,7 @@ struct PopupPlacementResult {
 	PlacementDirection direction = PlacementDirection::None;
 };
 
-class UIPlacementUtils {
+class EE_API UIPlacementUtils {
   public:
 	static PopupPlacementResult
 	findBestPopupPlacement( const PopupPlacementConfig& config,
