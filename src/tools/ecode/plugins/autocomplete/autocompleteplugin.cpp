@@ -7,6 +7,7 @@
 #include <eepp/system/scopedop.hpp>
 #include <eepp/ui/doc/syntaxdefinitionmanager.hpp>
 #include <eepp/ui/uieventdispatcher.hpp>
+#include <eepp/ui/uiplacementutils.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 
@@ -1275,130 +1276,41 @@ Rectf AutoCompletePlugin::findBestDocumentationPlacement( UICodeEditor* editor,
 														  const Rectf& anchorBox,
 														  const Rectf& rowRect, bool drawUp,
 														  Float lineHeight ) {
-	const Rectf& areaRect = editor->getScreenRect();
-	Float userMaxWidth = editor->convertLength(
+	PopupPlacementConfig config;
+	config.areaRect = editor->getScreenRect();
+	config.targetRect = anchorBox;
+	config.alignRect = rowRect;
+	// The avoidRect is the user's cursor line. This ensures Top/Bottom placement skips the line
+	// being typed.
+	Float cursorLineTop =
+		rowRect.Top - lineHeight; // Approximating cursor location based on the suggestion row
+	config.avoidRect =
+		Rectf( anchorBox.Left, cursorLineTop, editor->getPixelsSize().getWidth(), lineHeight );
+	config.userMaxWidth = editor->convertLength(
 		StyleSheetLength( mMaxSuggestionDocumentationWidth ), editor->getPixelsSize().getWidth() );
-	const Float minSideWidth = PixelDensity::dpToPx( 200.f );
-	const Float margin = PixelDensity::dpToPx( 2.f ); // Visual breathing room
-
-	struct PlacementCandidate {
-		enum Type { Right, Left, Bottom, Top } type;
-		Float availableWidth;
-		Float availableHeight;
-		Float score;
+	config.minHorizontalSpace = PixelDensity::dpToPx( 200.f );
+	config.margin = PixelDensity::dpToPx( 2.f );
+	config.minScoreHeight = mRowHeight * 2;
+	config.maxScoreHeight = mRowHeight * 10;
+	auto measureContent = [&]( Float availableMaxWidth ) -> Sizef {
+		Float textWrapWidth =
+			std::max( 0.f, availableMaxWidth - mBoxPadding.Left - mBoxPadding.Right );
+		mSuggestionDoc.setMaxWrapWidth( textWrapWidth );
+		bool changed = mSuggestionDoc.setString( suggestion.documentation.value );
+		if ( changed ) {
+			bool forceHTML = String::startsWith( suggestion.detail, "Emmet" );
+			if ( suggestion.documentation.kind == LSPMarkupKind::MarkDown || forceHTML ) {
+				const auto& syntaxDef =
+					forceHTML ? SyntaxDefinitionManager::instance()->getByLSPName( "html" )
+							  : SyntaxDefinitionManager::instance()->getByLSPName( "markdown" );
+				SyntaxTokenizer::tokenizeText( syntaxDef, editor->getColorScheme(), &mSuggestionDoc,
+											   0, 0xFFFFFFFF, true, "\n\t " );
+			}
+		}
+		return { mSuggestionDoc.getTextWidth() + mBoxPadding.Left + mBoxPadding.Right,
+				 mSuggestionDoc.getTextHeight() + mBoxPadding.Top + mBoxPadding.Bottom };
 	};
-
-	// Calculate available space, strictly removing the cursor's line so we don't cover what the
-	// user is typing.
-	Float topAvail = std::max( 0.f, ( drawUp ? ( anchorBox.Top - areaRect.Top - lineHeight )
-											 : ( anchorBox.Top - areaRect.Top ) ) -
-										margin );
-	Float bottomAvail =
-		std::max( 0.f, ( drawUp ? ( areaRect.Bottom - anchorBox.Bottom )
-								: ( areaRect.Bottom - anchorBox.Bottom - lineHeight ) ) -
-						   margin );
-	Float rightAvail = std::max( 0.f, areaRect.Right - anchorBox.Right - margin );
-	Float leftAvail = std::max( 0.f, anchorBox.Left - areaRect.Left - margin );
-
-	SmallVector<PlacementCandidate, 4> candidates = {
-		{ PlacementCandidate::Right, rightAvail, std::max( 0.f, areaRect.getHeight() - margin * 2 ),
-		  0 },
-		{ PlacementCandidate::Left, leftAvail, std::max( 0.f, areaRect.getHeight() - margin * 2 ),
-		  0 },
-		{ PlacementCandidate::Bottom, std::max( 0.f, areaRect.getWidth() - margin * 2 ),
-		  bottomAvail, 0 },
-		{ PlacementCandidate::Top, std::max( 0.f, areaRect.getWidth() - margin * 2 ), topAvail,
-		  0 } };
-
-	for ( auto& c : candidates ) {
-		Float maxW =
-			std::min( userMaxWidth, c.availableWidth - mBoxPadding.Left - mBoxPadding.Right );
-		if ( maxW < 50 || c.availableHeight < mRowHeight * 2 ) {
-			c.score = 0;
-			continue;
-		}
-		c.score = maxW * std::min( c.availableHeight, mRowHeight * 10 );
-		if ( ( c.type == PlacementCandidate::Right || c.type == PlacementCandidate::Left ) &&
-			 c.availableWidth >= minSideWidth ) {
-			c.score += 1000000; // Prefer side placement if it has enough width
-		}
-	}
-
-	std::sort( candidates.begin(), candidates.end(),
-			   []( const auto& a, const auto& b ) { return a.score > b.score; } );
-
-	const auto& best = candidates.front();
-
-	// Edge case: No space anywhere on screen (zero score)
-	if ( best.score == 0 ) {
-		return Rectf(); // Return empty rect, `postDraw` will skip drawing
-	}
-
-	Float maxWidth = std::max(
-		0.f, std::min( userMaxWidth, best.availableWidth - mBoxPadding.Left - mBoxPadding.Right ) );
-
-	mSuggestionDoc.setMaxWrapWidth( maxWidth );
-	bool changed = mSuggestionDoc.setString( suggestion.documentation.value );
-
-	if ( changed ) {
-		bool forceHTML = String::startsWith( suggestion.detail, "Emmet" );
-		if ( suggestion.documentation.kind == LSPMarkupKind::MarkDown || forceHTML ) {
-			const auto& syntaxDef =
-				forceHTML ? SyntaxDefinitionManager::instance()->getByLSPName( "html" )
-						  : SyntaxDefinitionManager::instance()->getByLSPName( "markdown" );
-			SyntaxTokenizer::tokenizeText( syntaxDef, editor->getColorScheme(), &mSuggestionDoc, 0,
-										   0xFFFFFFFF, true, "\n\t " );
-		}
-	}
-
-	Sizef boxSize = { mSuggestionDoc.getTextWidth() + mBoxPadding.Left + mBoxPadding.Right,
-					  mSuggestionDoc.getTextHeight() + mBoxPadding.Top + mBoxPadding.Bottom };
-
-	// Height Clamping: Prevent background box from bleeding off-screen.
-	// Text that overflows this will simply get clipped or run over gracefully.
-	boxSize.setHeight( std::min( boxSize.getHeight(), best.availableHeight ) );
-
-	Vector2f pos;
-	if ( best.type == PlacementCandidate::Right ) {
-		pos.x = anchorBox.Right + margin;
-		pos.y = rowRect.Top;
-	} else if ( best.type == PlacementCandidate::Left ) {
-		pos.x = anchorBox.Left - boxSize.getWidth() - margin;
-		pos.y = rowRect.Top;
-	} else if ( best.type == PlacementCandidate::Bottom ) {
-		pos.x = anchorBox.Left;
-		pos.y = anchorBox.Bottom + margin + ( !drawUp ? lineHeight : 0 );
-	} else { // Top
-		pos.x = anchorBox.Left;
-		pos.y = anchorBox.Top - boxSize.getHeight() - margin - ( drawUp ? lineHeight : 0 );
-	}
-
-	// Final Clamping: Kept firmly inside `areaRect` but enforcing boundaries to prevent overlap
-	if ( best.type == PlacementCandidate::Right ) {
-		pos.x = std::min( pos.x, areaRect.Right - boxSize.getWidth() );
-		pos.x = std::max( pos.x, anchorBox.Right + margin );
-		pos.y = std::max( areaRect.Top + margin,
-						  std::min( pos.y, areaRect.Bottom - boxSize.getHeight() - margin ) );
-	} else if ( best.type == PlacementCandidate::Left ) {
-		pos.x = std::max( pos.x, areaRect.Left + margin );
-		pos.x = std::min( pos.x, anchorBox.Left - boxSize.getWidth() - margin );
-		pos.y = std::max( areaRect.Top + margin,
-						  std::min( pos.y, areaRect.Bottom - boxSize.getHeight() - margin ) );
-	} else if ( best.type == PlacementCandidate::Bottom ) {
-		pos.y = std::min( pos.y, areaRect.Bottom - boxSize.getHeight() - margin );
-		Float minBottom = anchorBox.Bottom + margin + ( !drawUp ? lineHeight : 0 );
-		pos.y = std::max( pos.y, minBottom );
-		pos.x = std::max( areaRect.Left + margin,
-						  std::min( pos.x, areaRect.Right - boxSize.getWidth() - margin ) );
-	} else { // Top
-		pos.y = std::max( pos.y, areaRect.Top + margin );
-		Float maxTop = anchorBox.Top - boxSize.getHeight() - margin - ( drawUp ? lineHeight : 0 );
-		pos.y = std::min( pos.y, maxTop );
-		pos.x = std::max( areaRect.Left + margin,
-						  std::min( pos.x, areaRect.Right - boxSize.getWidth() - margin ) );
-	}
-
-	return Rectf( pos, boxSize ).round();
+	return UIPlacementUtils::findBestPopupPlacement( config, measureContent ).rect.round();
 }
 
 bool AutoCompletePlugin::onMouseDown( UICodeEditor* editor, const Vector2i& position,
