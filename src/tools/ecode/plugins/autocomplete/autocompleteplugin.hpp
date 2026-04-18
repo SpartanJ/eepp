@@ -45,7 +45,7 @@ class AutoCompletePlugin : public Plugin {
 			sortText( sortText.empty() ? std::string{ this->text } : std::move( sortText ) ),
 			range( range ),
 			insertText( std::move( insertText ) ),
-			documentation( doc ){};
+			documentation( doc ) {};
 
 		bool operator<( const Suggestion& other ) const { return getCmpStr() < other.getCmpStr(); }
 
@@ -173,6 +173,7 @@ class AutoCompletePlugin : public Plugin {
 	String::HashType mConfigHash{ 0 };
 	std::unordered_map<std::string, std::string> mKeyBindings;
 	std::unordered_map<std::string, KeyBindings::Shortcut> mShortcuts;
+	std::string mMaxSuggestionDocumentationWidth;
 
 	Float mRowHeight{ 0 };
 	Rectf mBoxRect;
@@ -219,6 +220,10 @@ class AutoCompletePlugin : public Plugin {
 
 	void tryStartSnippetNav( const Suggestion& suggestion, UICodeEditor* editor,
 							 const TextRanges& prevSels );
+
+	Rectf findBestDocumentationPlacement( UICodeEditor* editor, const Suggestion& suggestion,
+										  const Rectf& anchorBox, const Rectf& rowRect, bool drawUp,
+										  Float lineHeight );
 
 	void updateShortcuts();
 };
