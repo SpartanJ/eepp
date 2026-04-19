@@ -1198,7 +1198,7 @@ UTEST( FontRendering, TextSelection ) {
 
 	// Test 1: Single line selection (Line 1)
 	{
-		std::vector<Rectf> rects = text.getSelectionRects( { 0, 4 } ); // "Line"
+		auto rects = text.getSelectionRects( { 0, 4 } ); // "Line"
 		EXPECT_EQ( 1ul, rects.size() );
 		if ( !rects.empty() ) {
 			EXPECT_EQ( 0, rects[0].Top );
@@ -1212,7 +1212,7 @@ UTEST( FontRendering, TextSelection ) {
 	{
 		// "Line 1\nLine 2" -> Indices: "Line 1" (0-5), "\n" (6), "Line 2" (7-12)
 		// Select from index 2 ("n" in "Line 1") to index 9 ("i" in "Line 2")
-		std::vector<Rectf> rects = text.getSelectionRects( { 2, 9 } );
+		auto rects = text.getSelectionRects( { 2, 9 } );
 		EXPECT_EQ( 2ul, rects.size() );
 		if ( rects.size() >= 2 ) {
 			// First line rect: From index 2 to end of line 1
@@ -1227,8 +1227,7 @@ UTEST( FontRendering, TextSelection ) {
 
 	// Test 3: Full selection
 	{
-		std::vector<Rectf> rects =
-			text.getSelectionRects( { 0, static_cast<Int64>( txt.size() ) } );
+		auto rects = text.getSelectionRects( { 0, static_cast<Int64>( txt.size() ) } );
 		EXPECT_EQ( 3ul, rects.size() );
 	}
 
@@ -1243,8 +1242,7 @@ UTEST( FontRendering, TextSelection ) {
 
 		EXPECT_GT( text.getVisualLineCount(), (Uint32)1 );
 
-		std::vector<Rectf> rects =
-			text.getSelectionRects( { 0, static_cast<Int64>( text.getString().size() ) } );
+		auto rects = text.getSelectionRects( { 0, static_cast<Int64>( text.getString().size() ) } );
 		EXPECT_EQ( (size_t)text.getVisualLineCount(), rects.size() );
 	}
 

@@ -138,7 +138,7 @@ class EE_API UITextView : public UIWidget {
 	Int32 mSelCurInit;
 	Int32 mSelCurEnd;
 	Uint32 mTextDrawHints{ 0 };
-	std::vector<Rectf> mSelRectsCache;
+	SmallVector<Rectf> mSelRectsCache;
 	Int32 mLastSelCurInit;
 	Int32 mLastSelCurEnd;
 	bool mSelecting;

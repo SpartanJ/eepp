@@ -183,6 +183,30 @@ void AutoCompletePlugin::load( PluginManager* pluginManager ) {
 
 		if ( mMaxSuggestionDocumentationWidth.empty() )
 			mMaxSuggestionDocumentationWidth = "100%";
+
+		if ( config.contains( "max_signature_helper_width" ) )
+			mMaxSignatureHelperWidth = config.value( "max_signature_helper_width", "90%" );
+		else {
+			config["max_signature_helper_width"] = "90%";
+			updateConfigFile = true;
+		}
+
+		if ( mMaxSignatureHelperWidth.empty() )
+			mMaxSignatureHelperWidth = "90%";
+
+		if ( config.contains( "signature_help_multi_line" ) )
+			mSignatureHelpMultiLine = config.value( "signature_help_multi_line", true );
+		else {
+			config["signature_help_multi_line"] = mSignatureHelpMultiLine;
+			updateConfigFile = true;
+		}
+
+		if ( config.contains( "suggestion_documentation" ) )
+			mSuggestionDocumentation = config.value( "suggestion_documentation", true );
+		else {
+			config["suggestion_documentation"] = mSuggestionDocumentation;
+			updateConfigFile = true;
+		}
 	}
 
 	if ( mKeyBindings.empty() ) {
@@ -853,7 +877,8 @@ AutoCompletePlugin::processSignatureHelp( const LSPSignatureHelp& signatureHelp 
 
 	// Convert the LSP Signature Help into our own object:
 	// We will convert the UTF-8 label to UTF-32, then we will remove any new lines and extra spaces
-	// This guarantees that we always display a single line signature help
+	// This guarantees that we always display a single line signature help when requested (this is
+	// optional)
 	SignatureHelp signatures;
 	signatures.activeSignature = signatureHelp.activeSignature;
 	signatures.activeParameter = signatureHelp.activeParameter;
@@ -869,12 +894,17 @@ AutoCompletePlugin::processSignatureHelp( const LSPSignatureHelp& signatureHelp 
 		doc.textInput( initialLabel );
 		std::vector<String> parameters;
 		parameters.reserve( sig.parameters.size() );
-		int skippedSelections = 0;
+		nsig.parameters.reserve( sig.parameters.size() );
 
+		int skippedSelections = 0;
 		for ( size_t i = 0; i < sig.parameters.size(); i++ ) {
 			auto start = String::utf8ToCodepointPosition( sig.label, sig.parameters[i].start );
 			auto end = String::utf8ToCodepointPosition( sig.label, sig.parameters[i].end );
 			auto sel = TextRange::convertToLineColumn( initialLabel.view(), start, end );
+
+			nsig.parameters.emplace_back(
+				TextSelectionRange{ static_cast<Int64>( start ), static_cast<Int64>( end ) } );
+
 			size_t index = i - skippedSelections;
 
 			if ( i == 0 ) {
@@ -890,29 +920,26 @@ AutoCompletePlugin::processSignatureHelp( const LSPSignatureHelp& signatureHelp 
 		}
 
 		auto selections( doc.getSelections() );
-		nsig.parameters.reserve( selections.size() );
 
-		if ( 0 != doc.replaceAll( "\n", "" ) ) {
+		if ( !mSignatureHelpMultiLine && 0 != doc.replaceAll( "\n", "" ) ) {
 			while ( 0 != doc.replaceAll( "  ", " " ) )
 				;
 
 			nsig.label = doc.getLineTextWithoutNewLine( 0 );
+			nsig.parameters.clear();
 
 			for ( const auto& param : parameters ) {
 				auto res = doc.find( param );
-				if ( res.isValid() )
-					nsig.parameters.emplace_back( res.result );
+				if ( res.isValid() ) {
+					nsig.parameters.push_back(
+						TextRange::convertToOffset( nsig.label.view(), res.result ) );
+				}
 			}
 		} else {
 			nsig.label = std::move( initialLabel );
-
-			if ( !sig.parameters.empty() ) {
-				for ( auto& sel : selections )
-					nsig.parameters.emplace_back( sel );
-			}
 		}
 
-		signatures.signatures.emplace_back( nsig );
+		signatures.signatures.emplace_back( std::move( nsig ) );
 	}
 
 	editor->runOnMainThread( [this, editor, signatures = std::move( signatures )] {
@@ -1018,7 +1045,6 @@ void AutoCompletePlugin::update( UICodeEditor* ) {
 
 void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f& startScroll,
 											const Float& /*lineHeight*/, bool drawUp ) {
-
 	TextDocument& doc = editor->getDocument();
 	Primitives primitives;
 	const SyntaxColorScheme& scheme = editor->getColorScheme();
@@ -1031,9 +1057,6 @@ void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f
 	if ( curSigIdx >= (int)mSignatureHelp.signatures.size() )
 		return;
 	auto curSig = mSignatureHelp.signatures[curSigIdx];
-	Float vdiff = drawUp ? -mRowHeight : mRowHeight;
-	auto offset = editor->getTextPositionOffset( mSignatureHelpPosition );
-	Vector2f pos( startScroll.x + offset.x, startScroll.y + offset.y + vdiff );
 	primitives.setColor( Color( selectedStyle.background ).blendAlpha( editor->getAlpha() ) );
 	String str;
 	if ( mSignatureHelp.signatures.size() > 1 ) {
@@ -1044,66 +1067,74 @@ void AutoCompletePlugin::drawSignatureHelp( UICodeEditor* editor, const Vector2f
 		str = curSig.label;
 	}
 
-	Rectf boxRect( pos, Sizef( editor->getTextWidth( str ) + mBoxPadding.Left + mBoxPadding.Right,
-							   mRowHeight ) );
-	if ( boxRect.getPosition().x + boxRect.getSize().getWidth() >
-		 editor->getScreenPos().x + editor->getPixelsSize().getWidth() ) {
-		boxRect.setPosition(
-			{ eefloor( editor->getScreenPos().x + editor->getPixelsSize().getWidth() -
-					   boxRect.getSize().getWidth() ),
-			  boxRect.getPosition().y } );
+	mSignatureHelpText.setFont( editor->getFont() );
+	mSignatureHelpText.setFontSize( editor->getFontSize() );
+	mSignatureHelpText.setFillColor( normalStyle.color );
+	mSignatureHelpText.setStyle( normalStyle.style );
+	if ( mSignatureHelpText.setString( str ) ) {
+		SyntaxTokenizer::tokenizeText( doc.getSyntaxDefinition(), editor->getColorScheme(),
+									   &mSignatureHelpText );
+	}
+
+	if ( mSignatureHelpMultiLine ) {
+		mSignatureHelpText.setLineWrapMode( LineWrapMode::Word );
+		mSignatureHelpText.setLineWrapKeepIndentation( true );
+		mSignatureHelpText.setMaxWrapWidth( editor->convertLength(
+			StyleSheetLength( mMaxSignatureHelperWidth ), editor->getPixelsSize().getWidth() ) );
+	}
+
+	Float boxWidth = mSignatureHelpText.getTextWidth() + mBoxPadding.Left + mBoxPadding.Right;
+	Float boxHeight =
+		mSignatureHelpText.getVisualLineCount() * mSignatureHelpText.getLineSpacing() +
+		mBoxPadding.Top + mBoxPadding.Bottom;
+
+	Float vdiff = drawUp ? -boxHeight : mRowHeight;
+	auto offset = editor->getTextPositionOffset( mSignatureHelpPosition );
+
+	Vector2f pos( startScroll.x + offset.x, startScroll.y + offset.y + vdiff );
+	Rectf boxRect( pos, Sizef( boxWidth, boxHeight ) );
+
+	Float screenRight = editor->getScreenPos().x + editor->getPixelsSize().getWidth();
+	if ( boxRect.Right > screenRight ) {
+		boxRect.setPosition( { eefloor( screenRight - boxWidth ), boxRect.getPosition().y } );
 		if ( boxRect.getPosition().x < editor->getScreenPos().x )
 			boxRect.setPosition( { eefloor( editor->getScreenPos().x ), boxRect.getPosition().y } );
 	}
 
 	bool hasParams = !curSig.parameters.empty();
-	TextRange curParam =
+
+	auto curParam =
 		hasParams ? curSig.parameters[mSignatureHelp.activeParameter % curSig.parameters.size()]
-				  : TextRange{};
-	Rectf curParamRect;
+				  : TextSelectionRange{};
+
+	SmallVector<Rectf> paramRects;
 	if ( hasParams ) {
-		curParamRect = Rectf(
-			{ { boxRect.getPosition().x + mBoxPadding.Left +
-					curParam.start().column() * editor->getGlyphWidth(),
-				boxRect.getPosition().y },
-			  { ( curParam.end().column() - curParam.start().column() ) * editor->getGlyphWidth(),
-				mRowHeight } } );
+		paramRects = mSignatureHelpText.getSelectionRects( curParam );
 
-		if ( !editor->getScreenRect().contains(
-				 Rectf{ { curParamRect.getPosition().x +
-							  ( curParam.end().column() - curParam.start().column() ) *
-								  editor->getGlyphWidth(),
-						  curParamRect.getPosition().y },
-						curParamRect.getSize() } ) ) {
-			auto offset = editor->getTextPositionOffset( mSignatureHelpPosition );
-			pos = { static_cast<Float>( startScroll.x -
-										curParam.start().column() * editor->getGlyphWidth() +
-										offset.x ),
-					static_cast<Float>( startScroll.y + offset.y + vdiff ) };
+		if ( !paramRects.empty() ) {
+			for ( auto& r : paramRects )
+				r.move( { boxRect.Left + mBoxPadding.Left, boxRect.Top + mBoxPadding.Top } );
 
-			boxRect.setPosition( pos );
-
-			curParamRect.setPosition( { boxRect.getPosition().x + mBoxPadding.Left +
-											curParam.start().column() * editor->getGlyphWidth(),
-										boxRect.getPosition().y } );
+			if ( !mSignatureHelpMultiLine && !editor->getScreenRect().contains( paramRects[0] ) ) {
+				paramRects[0].move(
+					{ -( boxRect.Left + mBoxPadding.Left ), -( boxRect.Top + mBoxPadding.Top ) } );
+				pos = { static_cast<Float>( startScroll.x + offset.x - paramRects[0].Left ),
+						static_cast<Float>( startScroll.y + offset.y + vdiff ) };
+				boxRect.setPosition( pos );
+				paramRects[0].setPosition( { boxRect.Left + mBoxPadding.Left + paramRects[0].Left,
+											 boxRect.getPosition().y } );
+			}
 		}
 	}
 
 	primitives.drawRoundedRectangle( boxRect, 0.f, Vector2f::One, 6 );
 
-	if ( hasParams && curParam.end() != curParam.start() &&
-		 curParam.end().column() < (int)str.size() ) {
-		primitives.setColor( matchingSelection.color );
-		primitives.drawRoundedRectangle( curParamRect, 0.f, Vector2f::One, 6 );
-	}
+	primitives.setColor( matchingSelection.color );
+	for ( const auto& rect : paramRects )
+		primitives.drawRoundedRectangle( rect, 0.f, Vector2f::One, 6 );
 
-	Text text( "", editor->getFont(), editor->getFontSize() );
-	text.setFillColor( normalStyle.color );
-	text.setStyle( normalStyle.style );
-	text.setString( str );
-	SyntaxTokenizer::tokenizeText( doc.getSyntaxDefinition(), editor->getColorScheme(), &text );
-	text.draw( boxRect.getPosition().x + mBoxPadding.Left,
-			   boxRect.getPosition().y + mBoxPadding.Top );
+	mSignatureHelpText.draw( boxRect.getPosition().x + mBoxPadding.Left,
+							 boxRect.getPosition().y + mBoxPadding.Top );
 }
 
 void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startScroll,
@@ -1220,7 +1251,8 @@ void AutoCompletePlugin::postDraw( UICodeEditor* editor, const Vector2f& startSc
 			icon->setColor( iconColor );
 		}
 
-		if ( mSuggestionIndex == (int)i && !suggestion.documentation.value.empty() ) {
+		if ( mSuggestionDocumentation && mSuggestionIndex == (int)i &&
+			 !suggestion.documentation.value.empty() ) {
 			mSuggestionDoc.setFillColor( normalStyle.color );
 			mSuggestionDoc.setStyle( normalStyle.style );
 			mSuggestionDoc.setFont( editor->getFont() );

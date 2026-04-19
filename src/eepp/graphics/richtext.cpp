@@ -182,9 +182,9 @@ Vector2f RichText::findCharacterPos( Int64 index ) const {
 	return { 0, 0 };
 }
 
-std::vector<Rectf> RichText::getSelectionRects() const {
+SmallVector<Rectf> RichText::getSelectionRects() const {
 	const_cast<RichText*>( this )->updateLayout();
-	std::vector<Rectf> rects;
+	SmallVector<Rectf> rects;
 	if ( mSelection.start == mSelection.end )
 		return rects;
 

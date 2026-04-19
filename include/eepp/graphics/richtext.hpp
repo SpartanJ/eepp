@@ -169,7 +169,7 @@ class EE_API RichText : public Drawable {
 	Vector2f findCharacterPos( Int64 index ) const;
 
 	/** @return A list of rectangles that cover the selection. */
-	std::vector<Rectf> getSelectionRects() const;
+	SmallVector<Rectf> getSelectionRects() const;
 
 	/** @return The current selection as a string. */
 	String getSelectionString() const;
