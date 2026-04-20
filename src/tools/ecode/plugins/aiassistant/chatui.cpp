@@ -600,7 +600,10 @@ static const char* DEFAULT_PERMISSION_GLOBE = R"xml(
 )xml";
 
 LLMChatUI::LLMChatUI( PluginManager* manager ) :
-	UILinearLayout(), WidgetCommandExecuter( getInput() ), mManager( manager ) {
+	UILinearLayout(),
+	WidgetCommandExecuter( getInput() ),
+	mManager( manager ),
+	mDisplayReasoning( getPlugin() && getPlugin()->displayReasoning() ) {
 	setClass( "llm_chatui" );
 	setLayoutSizePolicy( SizePolicy::MatchParent, SizePolicy::MatchParent );
 
@@ -776,7 +779,9 @@ LLMChatUI::LLMChatUI( PluginManager* manager ) :
 		if ( mChatInput->getDocument().isEmpty() )
 			return;
 
-		addChat( LLMChat::stringToRole( mChatUserRole ), mChatInput->getDocument().toUtf8String() );
+		auto chat = mChatInput->getDocument().toString();
+		String::trimInPlace( chat, '\n' );
+		addChat( LLMChat::stringToRole( mChatUserRole ), chat );
 		mChatInput->getDocument().selectAll();
 		mChatInput->getDocument().textInput( String{} );
 		mChatInput->setFocus();
@@ -2557,7 +2562,7 @@ void LLMChatUI::doRequest() {
 	mThinkingBubble = nullptr;
 	mRequest->streamedResponseCb = [this, editor, thinking, thinkingID]( const std::string& chunk,
 																		 bool fromReasoning ) {
-		if ( fromReasoning ) {
+		if ( fromReasoning && !mDisplayReasoning ) {
 			runOnMainThread( [this, chunk] { updateThinkingBubble( chunk ); } );
 			return;
 		}
@@ -2566,15 +2571,20 @@ void LLMChatUI::doRequest() {
 			return;
 
 		auto conversation = chunk;
-		editor->runOnMainThread(
-			[this, conversation = std::move( conversation ), editor, thinking, thinkingID] {
-				mThinkingBubble = nullptr;
-				editor->getDocument().textInput( String::fromUtf8( conversation ) );
-				editor->setCursorVisible( false );
-				thinking->removeActionsByTag( thinkingID );
-				thinking->setVisible( false );
-				resizeToFit( editor );
-			} );
+		editor->runOnMainThread( [this, conversation = std::move( conversation ), editor, thinking,
+								  thinkingID]() mutable {
+			mThinkingBubble = nullptr;
+			if ( editor->getDocument().isEmpty() && !conversation.empty() &&
+				 conversation.front() == '\n' ) {
+				String::trimInPlace( conversation, '\n' );
+			}
+
+			editor->getDocument().textInput( String::fromUtf8( conversation ) );
+			editor->setCursorVisible( false );
+			thinking->removeActionsByTag( thinkingID );
+			thinking->setVisible( false );
+			resizeToFit( editor );
+		} );
 	};
 
 	mRequest->cancelCb = [this, thinking, thinkingID, editor]( const LLMChatCompletionRequest& ) {
@@ -3009,10 +3019,20 @@ UIWidget* LLMChatUI::addChatUI( LLMChat::Role role ) {
 	return chat;
 }
 
-void LLMChatUI::addChat( LLMChat::Role role, std::string conversation ) {
+void LLMChatUI::addChat( LLMChat::Role role, const std::string& conversation ) {
 	UIWidget* chat = addChatUI( role );
 	auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
 	editor->getDocument().textInput( String::fromUtf8( conversation ) );
+	editor->setCursorVisible( false );
+	editor->setAllowSelectingTextFromGutter( false );
+	bindCmds( editor, false );
+	resizeToFit( editor );
+}
+
+void LLMChatUI::addChat( LLMChat::Role role, const String& conversation ) {
+	UIWidget* chat = addChatUI( role );
+	auto* editor = chat->findByClass<UICodeEditor>( "data_ui" );
+	editor->getDocument().textInput( conversation );
 	editor->setCursorVisible( false );
 	editor->setAllowSelectingTextFromGutter( false );
 	bindCmds( editor, false );

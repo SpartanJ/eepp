@@ -337,6 +337,11 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];
 
+		if ( config.contains( "display_reasoning" ) && config["display_reasoning"].is_boolean() )
+			mDisplayReasoning = config.value( "display_reasoning", false );
+		else if ( updateConfigFile )
+			config["display_reasoning"] = mDisplayReasoning;
+
 		if ( config.contains( "openai_api_key" ) )
 			mApiKeys["openai"] = config.value( "openai_api_key", "" );
 		else if ( updateConfigFile )

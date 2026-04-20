@@ -116,6 +116,7 @@
 #include <eepp/ui/uinode.hpp>
 #include <eepp/ui/uinodedrawable.hpp>
 #include <eepp/ui/uinodelink.hpp>
+#include <eepp/ui/uiplacementutils.hpp>
 #include <eepp/ui/uipopupmenu.hpp>
 #include <eepp/ui/uiprogressbar.hpp>
 #include <eepp/ui/uiproperty.hpp>

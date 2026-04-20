@@ -58,6 +58,7 @@
 #include <eepp/graphics/statelistdrawable.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/graphics/textlayout.hpp>
+#include <eepp/graphics/textselectionrange.hpp>
 #include <eepp/graphics/textshaperun.hpp>
 #include <eepp/graphics/texttransform.hpp>
 #include <eepp/graphics/texture.hpp>

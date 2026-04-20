@@ -50,11 +50,14 @@ class AIAssistantPlugin : public PluginBase {
 
 	void setConfig( AIAssistantConfig&& config ) { mConfig = std::move( config ); }
 
+	bool displayReasoning() const { return mDisplayReasoning; }
+
   protected:
 	LLMProviders mProviders;
 	ACPAgents mAgents;
 	bool mUIInit{ false };
 	bool mBrokenUserConfigFile{ false };
+	bool mDisplayReasoning{ false };
 	UIWidget* mStatusBar{ nullptr };
 	UIPushButton* mAIChatButton{ nullptr };
 	UnorderedMap<std::string, std::string> mApiKeys;

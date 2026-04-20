@@ -340,7 +340,7 @@ class EE_API Http : NonCopyable {
 		const CancelCallback& getCancelCallback() const;
 
 		/** Cancels the current request if being processed */
-		void cancel();
+		void cancel( bool resetCancelCallback = false );
 
 		/** @return True if the current request was cancelled */
 		const bool& isCancelled() const;
@@ -546,7 +546,7 @@ class EE_API Http : NonCopyable {
 	bool isProxied() const;
 
 	/** @return If request has been found and canceled */
-	bool setCancelRequest( Uint64 reqId );
+	bool setCancelRequest( Uint64 reqId, bool resetCancelCallback = false );
 
 	/** Helper class to build the body of a multipart/form-data request. */
 	class EE_API MultipartEntitiesBuilder {
@@ -721,7 +721,7 @@ class EE_API Http : NonCopyable {
 
 		Uint64 id() const { return mId; }
 
-		void cancel();
+		void cancel( bool resetCancelCallback = false );
 
 	  protected:
 		friend class Http;

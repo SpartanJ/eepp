@@ -450,9 +450,8 @@
           "display_name": "kimi-k2.5"
         },
         {
-          "name": "stepfun/step-3.5-flash:free",
-          "display_name": "StepFun: Step 3.5 Flash (free)",
-          "cheapest": true
+          "name": "stepfun/step-3.5-flash",
+          "display_name": "StepFun: Step 3.5 Flash"
         },
         {
           "name": "z-ai/glm-4.7",
@@ -468,7 +467,8 @@
         },
         {
           "name": "arcee-ai/trinity-large-preview:free",
-          "display_name": "Arcee AI: Trinity Large Preview (free)"
+          "display_name": "Arcee AI: Trinity Large Preview (free)",
+          "cheapest": true
         },
         {
           "name": "nvidia/nemotron-3-super-120b-a12b:free",
@@ -496,6 +496,22 @@
         {
           "name": "moonshotai/kimi-k2.5",
           "display_name": "kimi-k2.5"
+        },
+        {
+          "name": "z-ai/glm4.7",
+          "display_name": "GLM-4.7"
+        },
+        {
+          "name": "minimaxai/minimax-m2.7",
+          "display_name": "MiniMax M2.7"
+        },
+        {
+          "name": "stepfun-ai/step-3.5-flash",
+          "display_name": "Step 3.5 Flash"
+        },
+        {
+          "name": "deepseek-ai/deepseek-v3.2",
+          "display_name": "DeepSeek-V3.2"
         }
       ]
     },

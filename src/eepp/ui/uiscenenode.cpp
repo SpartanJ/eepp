@@ -1145,67 +1145,13 @@ void UISceneNode::loadFontFaces( const StyleSheetStyleVector& styles, URI baseUR
 }
 
 URI UISceneNode::solveRelativePath( URI uri, URI baseURI ) {
-	// Determine which base URI to use contextually
-	const URI& base = baseURI.empty() ? mURI : baseURI;
+	URI base = baseURI.empty() ? mURI : baseURI;
 
-	// 1. If base is empty OR the target already has a scheme (it's absolute), return it.
-	if ( base.empty() || !uri.getScheme().empty() )
-		return uri;
+	// Automatically handles absolute URLs, protocol-relative URLs,
+	// directory merging, and ".." segment collapsing!
+	base.resolve( uri );
 
-	std::string targetPath = uri.getPath();
-
-	if ( targetPath.length() >= 2 && targetPath[0] == '/' && targetPath[1] == '/' ) {
-		// Find where the authority ends and the real path begins
-		size_t pathStart = targetPath.find( '/', 2 );
-
-		if ( pathStart != std::string::npos ) {
-			uri.setAuthority( targetPath.substr( 2, pathStart - 2 ) );
-			uri.setPath( targetPath.substr( pathStart ) );
-		} else {
-			uri.setAuthority( targetPath.substr( 2 ) );
-			uri.setPath( "/" );
-		}
-
-		std::string baseScheme = base.getScheme();
-		if ( baseScheme == "http" || baseScheme == "https" ) {
-			uri.setScheme( baseScheme );
-		} else {
-			uri.setScheme( "https" );
-		}
-
-		return uri;
-	}
-
-	// 2. Inherit Scheme and Authority for standard relative paths
-	if ( uri.getScheme().empty() ) {
-		// Use 'base' instead of 'mURI'
-		uri.setScheme( base.getScheme().empty() ? "file" : base.getScheme() );
-	}
-
-	if ( uri.getAuthority().empty() ) {
-		uri.setAuthority( base.getAuthority() );
-	}
-
-	// 3. Safely Resolve the Path
-	std::string basePath = base.getPath();
-
-	if ( !targetPath.empty() && targetPath.front() == '/' ) {
-		// CASE A: Root-relative path
-		uri.setPath( targetPath );
-	} else {
-		// CASE B: Directory-relative path
-		size_t lastSlashPos = basePath.find_last_of( '/' );
-
-		if ( lastSlashPos != std::string::npos ) {
-			basePath = basePath.substr( 0, lastSlashPos + 1 );
-		} else {
-			basePath = base.getAuthority().empty() ? "" : "/"; // Use 'base'
-		}
-
-		uri.setPath( basePath + targetPath );
-	}
-
-	return uri;
+	return base;
 }
 
 void UISceneNode::loadCSS( URI uri ) {

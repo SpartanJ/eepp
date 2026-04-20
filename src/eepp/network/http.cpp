@@ -210,9 +210,11 @@ const Http::Request::CancelCallback& Http::Request::getCancelCallback() const {
 	return mCancelCallback;
 }
 
-void Http::Request::cancel() {
+void Http::Request::cancel( bool resetCancelCallback ) {
 	mCancel = true;
 	setProgressCallback( {} );
+	if ( resetCancelCallback )
+		setCancelCallback( {} );
 }
 
 const bool& Http::Request::isCancelled() const {
@@ -1264,8 +1266,8 @@ Http::AsyncRequest::~AsyncRequest() {
 		eeSAFE_DELETE( mStream );
 }
 
-void Http::AsyncRequest::cancel() {
-	mRequest.cancel();
+void Http::AsyncRequest::cancel( bool resetCancelCallback ) {
+	mRequest.cancel( resetCancelCallback );
 }
 
 void Http::AsyncRequest::run() {
@@ -1359,11 +1361,11 @@ bool Http::isProxied() const {
 	return !mProxy.empty();
 }
 
-bool Http::setCancelRequest( Uint64 reqId ) {
+bool Http::setCancelRequest( Uint64 reqId, bool resetCancelCallback ) {
 	Lock l( mCurRequestsMutex );
 	auto found = mCurRequests.find( reqId );
 	if ( found != mCurRequests.end() ) {
-		found->second->cancel();
+		found->second->cancel( resetCancelCallback );
 		return true;
 	}
 	return false;
