@@ -25,11 +25,9 @@ jobs:
         run: |
           echo "version=nightly" >> "$GITHUB_OUTPUT"
       - name: Update Tag
-        uses: richardsimko/update-tag@v1
-        with:
-          tag_name: ${{ steps.tag.outputs.version }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git tag -f ${{ steps.tag.outputs.version }}
+          git push -f origin ${{ steps.tag.outputs.version }}
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v3
