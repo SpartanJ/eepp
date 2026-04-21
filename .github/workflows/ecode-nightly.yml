@@ -32,7 +32,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.tag.outputs.version }}
           name: ecode ${{ steps.tag.outputs.version }}
@@ -99,7 +99,7 @@ jobs:
         run: |
           bash projects/linux/ecode/build.app.sh --with-static-cpp --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }}
       - name: Upload Files
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -158,7 +158,7 @@ jobs:
           bash projects/scripts/patch_commit_number.sh
           bash projects/linux/ecode/build.app.sh --version ${{ env.INSTALL_REF }} --arch ${{ matrix.config.arch }}
       - name: Upload Files
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -212,7 +212,7 @@ jobs:
           bash projects/scripts/patch_commit_number.sh
           bash projects/mingw32/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
       - name: Upload Files
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -253,7 +253,7 @@ jobs:
           bash projects/scripts/patch_commit_number.sh
           bash projects/mingw32/ecode/build.app.sh --arch=arm64 --version ${{ env.INSTALL_REF }}
       - name: Upload Files
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -293,7 +293,7 @@ jobs:
           echo "INSTALL_REF=${{ needs.release.outputs.version }}" >> "$GITHUB_ENV"
       - name: Install Dependencies
         run: |
-          brew install bash sdl2 create-dmg premake p7zip
+          brew install bash sdl2 create-dmg premake
       - name: Build
         run: |
           bash projects/scripts/patch_commit_number.sh
@@ -313,7 +313,7 @@ jobs:
           DMG_NAME="ecode-macos-${{ env.INSTALL_REF }}-arm64.dmg"
           bash ./sign.sh "$DMG_NAME"
       - name: Upload Files
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -377,7 +377,7 @@ jobs:
           DMG_NAME="ecode-macos-${{ env.INSTALL_REF }}-x86_64.dmg"
           bash ./sign.sh "$DMG_NAME"
       - name: Upload Files
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -417,7 +417,7 @@ jobs:
             bash projects/scripts/patch_commit_number.sh
             sh projects/freebsd/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
       - name: Upload Files
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -452,7 +452,7 @@ jobs:
             bash projects/scripts/patch_commit_number.sh
             sh projects/haiku/ecode/build.app.sh --version ${{ env.INSTALL_REF }}
       - name: Upload Files
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.release.outputs.version }}
           draft: false
@@ -480,7 +480,7 @@ jobs:
         .\projects\scripts\patch_commit_number.ps1
         .\projects\windows\ecode\build.app.ps1
     - name: Upload Files
-      uses: softprops/action-gh-release@v2.2.2
+      uses: softprops/action-gh-release@v3
       with:
         tag_name: ${{ needs.release.outputs.version }}
         draft: false
@@ -509,7 +509,7 @@ jobs:
         .\projects\scripts\patch_commit_number.ps1
         .\projects\windows\ecode\build.app.ps1 -arch arm64
     - name: Upload Files
-      uses: softprops/action-gh-release@v2.2.2
+      uses: softprops/action-gh-release@v3
       with:
         tag_name: ${{ needs.release.outputs.version }}
         draft: false
