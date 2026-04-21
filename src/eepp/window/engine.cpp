@@ -245,7 +245,7 @@ Uint32 Engine::getWindowCount() const {
 }
 
 bool Engine::isEngineRunning() {
-	return existsSingleton() && Engine::instance()->isRunning();
+	return existsSingleton() && !isShuttingDown() && Engine::instance()->isRunning();
 }
 
 bool Engine::isRunning() const {

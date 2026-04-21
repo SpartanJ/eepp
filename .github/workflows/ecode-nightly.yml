@@ -18,7 +18,7 @@ jobs:
       version: ${{ steps.tag.outputs.version }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with: { fetch-depth: 0, submodules: 'recursive' }
       - name: Set Tag
         id: tag
@@ -63,7 +63,7 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends software-properties-common build-essential git ca-certificates
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with: { fetch-depth: 0, submodules: 'recursive', set-safe-directory: true }
       - name: Set Environment Variables
         run: |
@@ -122,7 +122,7 @@ jobs:
       CXX: g++
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with: { fetch-depth: 0, submodules: 'recursive' }
       - name: Set Environment Variables
         run: |
@@ -182,7 +182,7 @@ jobs:
       CXX: g++
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with: { fetch-depth: 0, submodules: 'recursive' }
       - name: Set Environment Variables
         run: |
@@ -232,7 +232,7 @@ jobs:
     runs-on: ${{ matrix.config.container }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with: { fetch-depth: 0, submodules: 'recursive' }
       - name: Set Environment Variables
         run: |
@@ -278,7 +278,7 @@ jobs:
       MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with: { fetch-depth: 0, submodules: 'recursive' }
       - name: System Information
         run: |
@@ -338,7 +338,7 @@ jobs:
       MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with: { fetch-depth: 0, submodules: 'recursive' }
       - name: System Information
         run: |
@@ -391,7 +391,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with: { fetch-depth: 0, submodules: 'recursive' }
       - name: Set Environment Variables
         run: |
@@ -431,7 +431,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with: { fetch-depth: 0, submodules: 'recursive' }
       - name: Set Environment Variables
         run: |
@@ -472,7 +472,7 @@ jobs:
       run: |
         git config --system core.autocrlf false
     - name: Checkout Code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with: { fetch-depth: 0, submodules: 'recursive' }
     - name: Build
       shell: pwsh
@@ -501,7 +501,7 @@ jobs:
       run: |
         git config --system core.autocrlf false
     - name: Checkout Code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with: { fetch-depth: 0, submodules: 'recursive' }
     - name: Build
       shell: pwsh
