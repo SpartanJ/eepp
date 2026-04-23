@@ -2214,27 +2214,67 @@ std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
 					continue;
 				}
 
-				if ( isClose && !isSame )
+				if ( isClose && !isSame ) {
+					mustClose = false;
+				} else if ( !isClose && !isNonWord( ch ) ) {
+					mustClose = false;
+				}
+			}
+
+			if ( mustClose && isSame ) {
+				Int64 left = sel.start().column() - 1;
+				Int64 right = sel.start().column();
+				const String& lineText = line( sel.start().line() ).getText();
+				Int64 len = lineText.size();
+				Int64 limitLeft = eemax<Int64>( 0ll, sel.start().column() - 512 );
+				Int64 limitRight = eemin<Int64>( len, sel.start().column() + 512 );
+				int unclosedQuotes = 0;
+				while ( left >= limitLeft || right < limitRight ) {
+					bool matchLeft = left >= limitLeft && lineText[left] == text[0];
+					bool matchRight = right < limitRight && lineText[right] == text[0];
+					if ( matchLeft && matchRight ) {
+						left--;
+						right++;
+					} else if ( matchLeft ) {
+						unclosedQuotes++;
+						left--;
+					} else if ( matchRight ) {
+						unclosedQuotes++;
+						right++;
+					} else {
+						if ( left >= limitLeft )
+							left--;
+						if ( right < limitRight )
+							right++;
+					}
+				}
+				if ( unclosedQuotes % 2 != 0 )
+					mustClose = false;
+			}
+
+			if ( mustClose && !isSame && !isClose ) {
+				int balance = 0;
+				int unmatchedRight = 0;
+				const String& lineText = line( sel.start().line() ).getText();
+				Int64 len = lineText.size();
+				Int64 limitLeft = eemax<Int64>( 0, sel.start().column() - 512 );
+				Int64 limitRight = eemin<Int64>( len, sel.start().column() + 512 );
+				for ( Int64 k = limitLeft; k < limitRight; ++k ) {
+					if ( lineText[k] == text[0] ) {
+						balance++;
+					} else if ( lineText[k] == closeChar ) {
+						if ( balance > 0 ) {
+							balance--;
+						} else if ( k >= sel.start().column() ) {
+							unmatchedRight++;
+						}
+					}
+				}
+				if ( unmatchedRight > 0 )
 					mustClose = false;
 			}
 
 			if ( mustClose ) {
-				/* // I'm not entirely convinced about this
-				TextPosition openStart = positionOffset( sel.start(), 1 );
-				if ( openStart != sel.start() ) {
-					int maxIt = 100;
-					while ( maxIt-- > 0 && openStart < endOfDoc() &&
-							isSpace( getChar( openStart ) ) ) {
-						openStart = nextChar( openStart );
-					}
-					if ( openStart < endOfDoc() && maxIt > 0 &&
-						 getChar( openStart ) == closeChar ) {
-						inserted.push_back( false );
-						continue;
-					}
-				}
-				*/
-
 				setSelection(
 					i, positionOffset( insert( i, sel.start(), text + String( closeChar ) ), -1 ) );
 				inserted.push_back( true );

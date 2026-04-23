@@ -113,9 +113,9 @@ UTEST( TextDocument, newLineMultiCursorAutoIndent ) {
 	doc.insert( 0, { 2, 3 }, ")" );
 
 	// Cursors between all pairs
-	doc.resetSelection( TextRanges( std::vector<TextRange>{
-		TextRange( { 0, 1 }, { 0, 1 } ), TextRange( { 1, 2 }, { 1, 2 } ),
-		TextRange( { 2, 3 }, { 2, 3 } ) } ) );
+	doc.resetSelection( TextRanges( std::vector<TextRange>{ TextRange( { 0, 1 }, { 0, 1 } ),
+															TextRange( { 1, 2 }, { 1, 2 } ),
+															TextRange( { 2, 3 }, { 2, 3 } ) } ) );
 
 	doc.newLine();
 
@@ -145,4 +145,48 @@ UTEST( TextDocument, newLineNormal ) {
 	EXPECT_STDSTREQ( TextPosition( 1, 2 ).toString(), doc.getSelection().start().toString() );
 }
 
+UTEST( TextDocument, autoCloseBrackets ) {
+	TextDocument doc;
+	doc.setAutoCloseBrackets( true );
 
+	// Test word boundary
+	doc.insert( 0, { 0, 0 }, "word" );
+	doc.setSelection( { 0, 0 } ); // Before 'word'
+	doc.textInput( "(" );		  // Next char 'w' is a word char, shouldn't auto close
+	EXPECT_STRINGEQ( "(word\n", doc.line( 0 ).getText() );
+
+	doc.reset();
+	doc.setAutoCloseBrackets( true );
+	doc.insert( 0, { 0, 0 }, " word" );
+	doc.setSelection( { 0, 0 } ); // Before ' word'
+	doc.textInput( "(" );		  // Next char ' ' is not a word char, should auto close
+	EXPECT_STRINGEQ( "() word\n", doc.line( 0 ).getText() );
+
+	doc.reset();
+	doc.setAutoCloseBrackets( true );
+	doc.insert( 0, { 0, 0 }, "() )" );
+	doc.setSelection( { 0, 1 } ); // Inside first parens
+	doc.textInput( "(" );		  // Unmatched right paren ahead, shouldn't auto close
+	EXPECT_STRINGEQ( "(() )\n", doc.line( 0 ).getText() );
+
+	doc.reset();
+	doc.setAutoCloseBrackets( true );
+	doc.insert( 0, { 0, 0 }, "()" );
+	doc.setSelection( { 0, 1 } ); // Inside first parens
+	doc.textInput( "(" );		  // Balanced right paren ahead, should auto close
+	EXPECT_STRINGEQ( "(())\n", doc.line( 0 ).getText() );
+
+	doc.reset();
+	doc.setAutoCloseBrackets( true );
+	doc.insert( 0, { 0, 0 }, "(\"\")" );
+	doc.setSelection( { 0, 2 } ); // Inside quotes
+	doc.textInput( "\"" );		  // Overwrites existing quote (stepping over)
+	EXPECT_STRINGEQ( "(\"\")\n", doc.line( 0 ).getText() );
+
+	doc.reset();
+	doc.setAutoCloseBrackets( true );
+	doc.insert( 0, { 0, 0 }, "()" );
+	doc.setSelection( { 0, 1 } ); // Inside parens
+	doc.textInput( "\"" );		  // Balanced quotes (0), should auto close
+	EXPECT_STRINGEQ( "(\"\")\n", doc.line( 0 ).getText() );
+}
