@@ -52,7 +52,7 @@
 	droppable-hovering-color: #FFFFFF20;
 }
 
-markdownview > *,
+MarkdownView > *,
 body {
 	color: var(--font);
 }
@@ -78,42 +78,57 @@ em {
 }
 
 h1 {
-	font-size: 32dp;
+	font-size: 2em;
 	margin: 0.67em 0;
+	font-weight: bold;
 }
 
 h2 {
-	font-size: 24dp;
+	font-size: 1.5em;
 	margin: 0.83em 0;
+	font-weight: bold;
 }
 
 h3 {
-	font-size: 18dp;
-	margin: 1.00em 0;
+	font-size: 1.17em;
+	margin: 1em 0;
+	font-weight: bold;
 }
 
 h4 {
-	font-size: 16dp;
+	font-size: 1em;
 	margin: 1.33em 0;
+	font-weight: bold;
 }
 
 h5 {
-	font-size: 13dp;
+	font-size: 0.83em;
 	margin: 1.67em 0;
+	font-weight: bold;
 }
 
 h6 {
-	font-size: 11dp;
-	margin: 1.67em 0;
+	font-size: 0.67em;
+	margin: 2.33em 0;
+	font-weight: bold;
 }
 
-code {
-	font-family: monospace;
-	background-color: var(--list-back);
+table, td {
+	text-align: left;
 }
 
-p, ol, ul, pre {
-  margin: 1em 0;
+hr {
+	min-height: 1dp;
+	background-color: gray;
+	margin: 0.5em 0;
+}
+
+center {
+	text-align: center;
+}
+
+p, ol, ul, pre, blockquote {
+	margin: 1em 0;
 }
 
 li > p {
@@ -121,35 +136,70 @@ li > p {
 }
 
 ol, ul {
-  margin-left: 2em;
+	margin: 0.67em 0;
 }
 
-li {
-  margin: 0.67em 0;
-  padding-left: 2em;
+ul > li,
+ol > li {
+	padding-left: 2em;
+}
+
+ol > li {
+  background-tint: var(--font);
+  background-position: 0.6em 0.3em;
+}
+
+ol > li:nth-child(1) {
+	background-image: glyph("monospace", 1em, "1");
+}
+
+ol > li:nth-child(2) {
+	background-image: glyph("monospace", 1em, "2");
+}
+
+ol > li:nth-child(3) {
+	background-image: glyph("monospace", 1em, "3");
+}
+
+ol > li:nth-child(4) {
+	background-image: glyph("monospace", 1em, "4");
+}
+
+ol > li:nth-child(5) {
+	background-image: glyph("monospace", 1em, "5");
+}
+
+ol > li:nth-child(6) {
+	background-image: glyph("monospace", 1em, "6");
+}
+
+ol > li:nth-child(7) {
+	background-image: glyph("monospace", 1em, "7");
+}
+
+ol > li:nth-child(8) {
+	background-image: glyph("monospace", 1em, "8");
+}
+
+ol > li:nth-child(9) {
+	background-image: glyph("monospace", 1em, "9");
+}
+
+ul > li {
   background-image: url("data:image/svg,<svg viewBox='0 0 24 24' width='12' height='12' fill='#ffffff'><path d='M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z'></path></svg>");
   background-tint: var(--font);
-  background-position: 0.6em 0.5em;
-  background-size: 0.8em 0.8em;
+  background-position: 0.6em 0.45em;
+  background-size: 0.5em 0.5em;
 }
 
 a {
-	color: var(--primary);
-	selection-color: var(--font-selected-pressed);
-	selection-back-color: var(--primary);
 	cursor: arrow;
 	text-decoration: none;
-	gravity: bottom;
 }
 
 a:hover {
-	color: var(--font-highlight);
-	cursor: hand;
 	text-decoration: underline;
-}
-
-br {
-	layout-height: 0;
+	cursor: hand;
 }
 
 img {
@@ -158,30 +208,70 @@ img {
 	layout-height: wrap_content;
 }
 
-markdownview {
-	background-color: var(--list-back);
-	padding: 4dp;
-}
-
-markdownview h1,
-markdownview h2 {
-	border-bottom: 1dp solid var(--tab-line);
-}
-
-markdownview img {
-	max-width: 100%;
-	max-height: 100vh;
-}
-
-markdownview table > thead > tr > th {
-	font-style: bold;
+body img {
+	scale-type: expand;
 }
 
 blockquote {
 	padding-left: 8dp;
 	background-color: var(--list-back);
 	border-left: 2dp solid var(--tab-line);
-	margin: 0.67em 0;
+}
+
+blockquote > *:first-child {
+	margin-top: 0dp;
+}
+
+blockquote > *:last-child {
+	margin-bottom: 0dp;
+}
+
+MarkdownView p,
+MarkdownView ol,
+MarkdownView ul,
+MarkdownView pre,
+MarkdownView blockquote {
+	margin-top: 0;
+}
+
+MarkdownView a {
+	color: var(--primary);
+	selection-color: var(--font-selected-pressed);
+	selection-back-color: var(--primary);
+	gravity: bottom;
+}
+
+MarkdownView a:hover {
+	color: var(--font-highlight);
+}
+
+MarkdownView {
+	background-color: var(--list-back);
+	padding: 4dp;
+}
+
+MarkdownView h1,
+MarkdownView h2 {
+	border-bottom: 1dp solid var(--tab-line);
+}
+
+MarkdownView img {
+	scale-type: fit-inside;
+	max-width: 100%;
+	max-height: 100vh;
+}
+
+MarkdownView table > thead > tr > th {
+	font-style: bold;
+}
+
+MarkdownView CodeEditor {
+	padding: 4dp;
+}
+
+MarkdownView code {
+	font-family: monospace;
+	background-color: var(--button-back);
 }
 
 pushbutton,
@@ -225,7 +315,7 @@ SpinBox::input,
 Tab,
 TextEdit,
 TextInput,
-TextInputPassword,
+TextArea,
 TextView,
 Anchor,
 Tooltip,
@@ -242,8 +332,8 @@ listview::cell {
 TextView,
 Anchor,
 TextEdit,
+TextArea,
 TextInput,
-TextInputPassword,
 ComboBox::DropDownList,
 SpinBox::input, {
 	selection-color: var(--font-selected-pressed);
@@ -307,7 +397,8 @@ SelectButton:selected:pressed {
 pushbutton:disabled,
 selectbutton:disabled,
 textinput:disabled,
-textedit:disabled {
+textedit:disabled,
+textarea:disabled {
 	color: var(--disabled-color);
 	border-color: var(--disabled-border);
 }
@@ -392,7 +483,7 @@ RadioButton::active {
 ListBox,
 DropDownList::ListBox,
 ComboBox::DropDownList::ListBox,
-Table,
+MarkdownView Table,
 ListView {
 	background-color: var(--list-back);
 	border-color: var(--button-border);
@@ -455,8 +546,7 @@ ComboBox::DropDownList::ListBox::item:selected {
 	tint: var(--font-selected-pressed);
 }
 
-TextInput,
-TextInputPassword {
+TextInput {
 	padding-left: var(--base-horizontal-padding);
 	padding-right: var(--base-horizontal-padding);
 	padding-top: var(--base-vertical-padding);
@@ -484,8 +574,6 @@ ComboBox::DropDownList {
 	padding-bottom: var(--base-vertical-padding);
 }
 
-TextInputPassword:hover,
-TextInputPassword:focus,
 TextInput:hover,
 TextInput:focus,
 SpinBox:hover,
@@ -521,7 +609,8 @@ SpinBox::btndown {
 	height: 13dp;
 }
 
-TextEdit {
+TextEdit,
+TextArea {
 	background-color: var(--list-back);
 	border-color: var(--button-border);
 	border-radius: var(--button-radius);
@@ -534,7 +623,9 @@ TextEdit {
 }
 
 TextEdit:focus,
-TextEdit:hover {
+TextEdit:hover,
+TextArea:focus,
+TextArea:hover {
 	border-color: var(--primary);
 }
 
@@ -1035,6 +1126,7 @@ Menu::RadioButton::icon:selected {
 
 ListBox > ScrollBar,
 TextEdit > ScrollBar,
+TextArea > ScrollBar,
 Table > ScrollBar {
 	background-color: var(--list-back);
 }

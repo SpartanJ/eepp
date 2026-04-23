@@ -56,12 +56,15 @@ class NotificationCenter;
 class ProjectDirectoryTree;
 struct TerminalConfig;
 class UIMainLayout;
+class UITreeViewFS;
 
 class PluginContextProvider {
   public:
 	virtual UIStatusBar* getStatusBar() const = 0;
 
 	virtual UISplitter* getMainSplitter() const = 0;
+
+	virtual UITreeViewFS* getProjectTreeView() const = 0;
 
 	virtual void hideGlobalSearchBar() = 0;
 
@@ -125,6 +128,8 @@ class PluginContextProvider {
 
 	virtual std::string getCurrentWorkingDir() const = 0;
 
+	virtual std::string getCurrentFileDir() const = 0;
+
 	virtual void focusOrLoadFile( const std::string& path, const TextRange& range = {},
 								  bool searchInSameContext = false ) = 0;
 
@@ -167,6 +172,8 @@ class PluginContextProvider {
 	virtual size_t getMenuIconSize() const = 0;
 
 	virtual const SyntaxColorScheme* getCurrentColorScheme() const = 0;
+
+	virtual void setAppTitle( const std::string& title ) = 0;
 };
 
 } // namespace ecode

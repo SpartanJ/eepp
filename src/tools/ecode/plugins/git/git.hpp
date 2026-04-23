@@ -130,10 +130,11 @@ class Git {
 		int inserts{ 0 };
 		int deletes{ 0 };
 		GitStatusReport report;
+		bool isBinary{ false };
 
 		bool operator==( const DiffFile& other ) const {
 			return file == other.file && inserts == other.inserts && deletes == other.deletes &&
-				   report == other.report;
+				   report == other.report && isBinary == other.isBinary;
 		}
 	};
 

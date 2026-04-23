@@ -685,4 +685,9 @@ bool StyleSheetProperty::isCachedProperty() const {
 	return mCachedProperty;
 }
 
+void StyleSheetProperty::setImportant( bool important ) {
+	mImportant = important;
+	mSpecificity = StyleSheetSelectorRule::SpecificityImportant;
+}
+
 }}} // namespace EE::UI::CSS

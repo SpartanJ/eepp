@@ -95,7 +95,7 @@ void RichText::draw( const Float& X, const Float& Y, const Vector2f& scale, cons
 											span.size );
 						}
 					},
-					[]( const Sizef& ) {} },
+					[]( const CustomBlock& ) {} },
 				span.block );
 		}
 	}
@@ -182,9 +182,9 @@ Vector2f RichText::findCharacterPos( Int64 index ) const {
 	return { 0, 0 };
 }
 
-std::vector<Rectf> RichText::getSelectionRects() const {
+SmallVector<Rectf> RichText::getSelectionRects() const {
 	const_cast<RichText*>( this )->updateLayout();
-	std::vector<Rectf> rects;
+	SmallVector<Rectf> rects;
 	if ( mSelection.start == mSelection.end )
 		return rects;
 
@@ -272,19 +272,19 @@ void RichText::addSpan( const String& text, const FontStyleConfig& style ) {
 	span->setString( text );
 	span->setStyleConfig( style );
 	mBlocks.push_back( span ); // Implicitly constructs the variant's Text alternative
-	mNeedsLayoutUpdate = true;
+	invalidateLayout();
 }
 
 void RichText::addDrawable( std::shared_ptr<Drawable> drawable ) {
 	if ( !drawable )
 		return;
 	mBlocks.push_back( drawable );
-	mNeedsLayoutUpdate = true;
+	invalidateLayout();
 }
 
-void RichText::addCustomSize( const Sizef& size ) {
-	mBlocks.push_back( size );
-	mNeedsLayoutUpdate = true;
+void RichText::addCustomSize( const Sizef& size, bool isBlock ) {
+	mBlocks.push_back( CustomBlock{ size, isBlock } );
+	invalidateLayout();
 }
 
 void RichText::addSpan( const String& text, Font* font, Uint32 characterSize, Color color,
@@ -307,36 +307,108 @@ void RichText::clear() {
 	mBlocks.clear();
 	mLines.clear();
 	mSelection = { 0, 0 };
-	mNeedsLayoutUpdate = true;
+	invalidateLayout();
 }
 
 void RichText::setFontStyleConfig( const FontStyleConfig& styleConfig ) {
 	mDefaultStyle = styleConfig;
-	mNeedsLayoutUpdate = true;
+	invalidateLayout();
 }
 
 void RichText::setAlign( Uint32 align ) {
 	if ( mAlign != align ) {
 		mAlign = align;
-		mNeedsLayoutUpdate = true;
+		invalidateLayout();
 	}
 }
 
 void RichText::setMaxWidth( Float width ) {
 	if ( mMaxWidth != width ) {
 		mMaxWidth = width;
-		mNeedsLayoutUpdate = true;
+		invalidateLayout();
 	}
 }
 
 void RichText::invalidate() {
-	mNeedsLayoutUpdate = true;
+	invalidateLayout();
 	for ( auto& block : mBlocks ) {
 		if ( auto pText = std::get_if<std::shared_ptr<Text>>( &block ) ) {
 			if ( *pText )
 				( *pText )->invalidate();
 		}
 	}
+}
+
+Float RichText::getMinIntrinsicWidth() {
+	Float minW = 0;
+	for ( auto& block : mBlocks ) {
+		if ( auto pText = std::get_if<std::shared_ptr<Text>>( &block ) ) {
+			auto& span = *pText;
+			if ( !span || span->getString().empty() )
+				continue;
+			const String& s = span->getString();
+			size_t start = 0;
+			size_t end = 0;
+			while ( start < s.size() ) {
+				while ( start < s.size() && ( s[start] == ' ' || s[start] == '\t' ||
+											  s[start] == '\n' || s[start] == '\r' ) )
+					start++;
+				end = start;
+				while ( end < s.size() &&
+						!( s[end] == ' ' || s[end] == '\t' || s[end] == '\n' || s[end] == '\r' ) )
+					end++;
+				if ( start < end ) {
+					minW = std::max( minW, Text::getTextWidth( s.substr( start, end - start ),
+															   span->getFontStyleConfig() ) );
+				}
+				start = end;
+			}
+		} else if ( auto pDrawable = std::get_if<std::shared_ptr<Drawable>>( &block ) ) {
+			minW = std::max( minW, ( *pDrawable )->getPixelsSize().getWidth() );
+		} else if ( auto pSize = std::get_if<CustomBlock>( &block ) ) {
+			minW = std::max( minW, pSize->size.getWidth() );
+		}
+	}
+	return minW;
+}
+
+Float RichText::getMaxIntrinsicWidth() {
+	Float maxW = 0;
+	Float curX = 0;
+	for ( auto& block : mBlocks ) {
+		if ( auto pText = std::get_if<std::shared_ptr<Text>>( &block ) ) {
+			auto& span = *pText;
+			if ( !span || span->getString().empty() )
+				continue;
+
+			const String& s = span->getString();
+			size_t start = 0;
+			size_t end = 0;
+			while ( ( end = s.find( '\n', start ) ) != String::InvalidPos ) {
+				curX += Text::getTextWidth( s.substr( start, end - start ),
+											span->getFontStyleConfig(), 4, span->getTextHints() );
+				maxW = std::max( maxW, curX );
+				curX = 0;
+				start = end + 1;
+			}
+			curX += Text::getTextWidth( s.substr( start ), span->getFontStyleConfig(), 4,
+										span->getTextHints() );
+		} else if ( auto pDrawable = std::get_if<std::shared_ptr<Drawable>>( &block ) ) {
+			curX += ( *pDrawable )->getPixelsSize().getWidth();
+		} else if ( auto pSize = std::get_if<CustomBlock>( &block ) ) {
+			if ( pSize->isBlock ) {
+				if ( curX > 0 ) {
+					maxW = std::max( maxW, curX );
+					curX = 0;
+				}
+				maxW = std::max( maxW, pSize->size.getWidth() );
+			} else {
+				curX += pSize->size.getWidth();
+			}
+		}
+	}
+	maxW = std::max( maxW, curX );
+	return maxW;
 }
 
 void RichText::updateLayout() {
@@ -420,15 +492,24 @@ void RichText::updateLayout() {
 			}
 		} else { // Drawable or CustomSize
 			Sizef blockSize;
+			bool isBlock = false;
 			if ( auto pDrawable = std::get_if<std::shared_ptr<Drawable>>( &block ) ) {
 				auto& drawable = *pDrawable;
 				blockSize = drawable ? drawable->getPixelsSize() : Sizef();
-			} else if ( auto pSize = std::get_if<Sizef>( &block ) ) {
-				blockSize = *pSize;
+			} else if ( auto pSize = std::get_if<CustomBlock>( &block ) ) {
+				blockSize = pSize->size;
+				isBlock = pSize->isBlock;
+			}
+
+			if ( isBlock && curX > 0 ) {
+				maxWidth = std::max( maxWidth, curX );
+				mLines.push_back( RenderParagraph() );
+				curX = 0;
 			}
 
 			// Wrap if needed
-			if ( mMaxWidth > 0 && curX + blockSize.getWidth() > mMaxWidth && curX > 0 ) {
+			if ( mMaxWidth > 0 && !isBlock &&
+				 ( curX + blockSize.getWidth() >= mMaxWidth || curX >= mMaxWidth ) && curX > 0 ) {
 				maxWidth = std::max( maxWidth, curX );
 				mLines.push_back( RenderParagraph() );
 				curX = 0;
@@ -451,7 +532,7 @@ void RichText::updateLayout() {
 			curX += blockSize.getWidth();
 			currentLine.width += blockSize.getWidth();
 
-			if ( mMaxWidth > 0 && curX + blockSize.getWidth() > mMaxWidth && curX > 0 ) {
+			if ( ( mMaxWidth > 0 && curX >= mMaxWidth ) || isBlock ) {
 				maxWidth = std::max( maxWidth, curX );
 				mLines.push_back( RenderParagraph() );
 				curX = 0;
@@ -509,6 +590,10 @@ void RichText::updateLayout() {
 Sizef RichText::getSize() {
 	updateLayout();
 	return mSize;
+}
+
+void RichText::invalidateLayout() {
+	mNeedsLayoutUpdate = true;
 }
 
 }} // namespace EE::Graphics

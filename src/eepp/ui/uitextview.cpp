@@ -11,7 +11,7 @@
 #include <eepp/ui/uitextview.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/window/clipboard.hpp>
-#include <eepp/window/engine.hpp>
+
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
@@ -835,7 +835,7 @@ std::string UITextView::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::format( "%dpx", getFontSize() );
+			return String::fromFloat( PixelDensity::pxToDp( getFontSize() ), "dp" );
 		case PropertyId::TextDecoration:
 			return Text::styleFlagToString( getTextDecoration() );
 		case PropertyId::FontStyle:
@@ -985,7 +985,7 @@ UIAnchor::UIAnchor( const std::string& tag ) : UITextView( tag ) {
 	onClick(
 		[this]( const MouseEvent* ) {
 			if ( !mHref.empty() )
-				Engine::instance()->openURI( mHref );
+				getUISceneNode()->openURL( mHref );
 		},
 		EE_BUTTON_LEFT );
 }
@@ -1019,7 +1019,7 @@ const std::string& UIAnchor::getHref() const {
 Uint32 UIAnchor::onKeyDown( const KeyEvent& event ) {
 	if ( event.getKeyCode() == KEY_KP_ENTER || event.getKeyCode() == KEY_RETURN ) {
 		if ( !mHref.empty() ) {
-			Engine::instance()->openURI( mHref );
+			getUISceneNode()->openURL( mHref );
 			return 1;
 		}
 	}

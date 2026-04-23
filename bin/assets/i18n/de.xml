@@ -202,7 +202,7 @@ Dateipfad: </string>
 	<string name="custom_variables">Angepasste Variablen</string>
 	<string name="custom_variables_desc">Angepasste Variablen erlauben das Vereinfachen von Build-Befehlsschritten durch Hinzufügen eigener Variablen, die über die Build-Einstellungen in Befehlen, Argumenten und Arbeitsverzeichnissen angewendet werden können.</string>
 	<string name="custom_variables_desc_2">Angepasste Variablen können mit ${variable_name} in beliebigen Befehlen aufgerufen werden.</string>
-	<string name="custom_variables_desc_3">Es gibt bereits vordefinierte angepasste Variablen zur Nutzung:&amp;#10;${project_root}: Ordner-/Projekt-Root-Verzeichnis.&amp;#10;${build_type}: Ausgewählter Build-Typ zur Projekterstellung.&amp;#10;${os}: Name des aktuellen Betriebssystems.&amp;#10;${arch}: Architektur des aktuellen Betriebssystems.&amp;#10;${nproc}: Anzahl logischer Prozessoreinheiten.&amp;#10;${current_doc}: Letzter oder aktueller Dokumentenpfad.&amp;#10;${current_doc_name}: Letzter oder aktueller Name fokussierten Dokuments (ohne Erweiterung).&amp;#10;${current_doc_dir}: Letztes oder gegenwärtig fokussiertes Projektverzeichnis.</string>	
+	<string name="custom_variables_desc_3">Es gibt bereits vordefinierte angepasste Variablen zur Nutzung:&#10;${project_root}: Das Projekt-Stammverzeichnis.&#10;${build_type}: Der aktuell ausgewählte Build-Typ.&#10;${os}: Der Name des aktuellen Betriebssystems.&#10;${arch}: Die Architektur des aktuellen Betriebssystems.&#10;${nproc}: Die Anzahl der logischen Prozessorkerne.&#10;${current_doc}: Der Pfad des aktuell fokussierten Dokuments.&#10;${current_doc_name}: Der Name des aktuell fokussierten Dokuments (ohne Erweiterung).&#10;${current_doc_dir}: Das Verzeichnis des aktuell fokussierten Dokuments.&#10;${relative_dir}: Der relative Verzeichnispfad zwischen ${project_root} und ${current_doc_dir}.</string>	
 	<string name="cut">Ausschneiden</string>
 	<string name="dark">Dunkel</string>
 	<string name="date">Datum</string>
@@ -280,6 +280,9 @@ Soll es jetzt heruntergeladen werden?</string>
 	<string name="enable_color_picker">Farbwähler aktivieren</string>
 	<string name="enable_color_picker_tooltip">Aktiviert den Farbwähler bei Doppelklick
 auf farbenrepräsentierende Wörter.</string>
+	<string name="enable_inline_color_boxes">Farbkästen aktivieren</string>
+	<string name="enable_inline_color_boxes_tooltip">Rendert ein Hintergrundfeld mit der analysierten Farbe direkt hinter dem
+Text selbst.</string>
 	<string name="enable_color_preview">Farbvorschau aktivieren</string>
 	<string name="enable_color_preview_tooltip">Aktiviert die Farbvorschau beim Halten der Maus
 über farbenrepräsentierenden Wörtern.</string>

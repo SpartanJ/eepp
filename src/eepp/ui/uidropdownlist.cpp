@@ -21,6 +21,8 @@ UIDropDownList* UIDropDownList::New() {
 UIDropDownList::UIDropDownList( const std::string& tag ) : UIDropDown( tag ), mListBox( NULL ) {
 	applyDefaultTheme();
 
+	mFlags |= UI_LOADS_ITS_CHILDREN;
+
 	mListBox = UIListBox::NewWithTag( mTag + "::listbox" );
 	mListBox->setSize( getSize().getWidth(),
 					   mStyleConfig.MaxNumVisibleItems * getSize().getHeight() );

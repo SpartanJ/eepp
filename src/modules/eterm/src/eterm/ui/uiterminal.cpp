@@ -435,10 +435,7 @@ bool UITerminal::isUsingCustomTitle() const {
 Uint32 UITerminal::onTextInput( const TextInputEvent& event ) {
 	Input* input = getInput();
 
-	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
-		 ( input->isLeftControlPressed() && !input->isLeftAltPressed() &&
-		   !input->isAltGrPressed() ) ||
-		 input->isMetaPressed() || ( input->isLeftAltPressed() && !input->isLeftControlPressed() ) )
+	if ( !event.isValid( input ) )
 		return 0;
 
 	mTerm->onTextInput( event.getChar() );

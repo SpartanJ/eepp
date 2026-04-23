@@ -160,6 +160,7 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 	bool mIsAgentMode{ false };
 	bool mChatLocked{ false };
 	bool mLinkMode{ false };
+	bool mDisplayReasoning{ false };
 	std::vector<LLMModel> mNewModels;
 
 	LLMModel findModel( const std::string& provider, const std::string& model );
@@ -237,7 +238,9 @@ class LLMChatUI : public UILinearLayout, public WidgetCommandExecuter {
 
 	void showSlashCommands();
 
-	void addChat( LLMChat::Role role, std::string conversation );
+	void addChat( LLMChat::Role role, const std::string& conversation );
+
+	void addChat( LLMChat::Role role, const String& conversation );
 
 	void writeToLastChat( const std::string& text );
 

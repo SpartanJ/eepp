@@ -42,6 +42,9 @@ class EE_API UIAbstractTableView : public UIAbstractView {
 
 	virtual void selectAll();
 
+	virtual std::vector<ModelIndex> getSelectionRange( const ModelIndex& start,
+													   const ModelIndex& end ) const;
+
 	const Float& getDragBorderDistance() const;
 
 	void setDragBorderDistance( const Float& dragBorderDistance );

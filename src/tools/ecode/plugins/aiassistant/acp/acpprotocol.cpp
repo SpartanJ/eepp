@@ -156,7 +156,12 @@ LoadSessionResponse::LoadSessionResponse( const json& body ) {
 }
 
 json SetConfigOptionRequest::toJson() const {
-	return { { "sessionId", sessionId }, { "configId", configId }, { "optionId", optionId } };
+	json j = { { "sessionId", sessionId }, { "configId", configId }, { "optionId", optionId } };
+	if ( !type.empty() )
+		j["type"] = type;
+	if ( !value.is_null() )
+		j["value"] = value;
+	return j;
 }
 
 SetConfigOptionResponse::SetConfigOptionResponse( const json& body, const std::string& configId,

@@ -671,7 +671,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 	}
 
 	auto parseNumStat = [&s, &buf, &projectDir, this, &subModulePattern]( bool isStaged ) {
-		std::string ptrn( "(%d+)%s+(%d+)%s+(.+)" );
+		std::string ptrn( "([-%d]+)%s+([-%d]+)%s+(.+)" );
 		LuaPattern pattern( ptrn );
 		std::string subModulePath = "";
 		String::readBySeparator( std::string_view{ buf }, [&]( std::string_view line ) {
@@ -685,10 +685,15 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 				auto deleted = line.substr( matches[2].start, matches[2].end - matches[2].start );
 				std::string file = std::string{
 					line.substr( matches[3].start, matches[3].end - matches[3].start ) };
-				int inserts;
-				int deletes;
-				if ( String::fromString( inserts, inserted ) &&
-					 String::fromString( deletes, deleted ) && ( inserts || deletes ) ) {
+				int inserts = 0;
+				int deletes = 0;
+				bool isBinary = inserted == "-" || deleted == "-";
+				if ( !isBinary ) {
+					String::fromString( inserts, inserted );
+					String::fromString( deletes, deleted );
+				}
+
+				if ( isBinary || ( inserts || deletes ) ) {
 					std::string rptrn( "(.*)%{.*%s->%s(.*)%}" );
 					LuaPattern pattern( rptrn );
 					if ( pattern.matches( file.data(), 0, matches, file.size() ) ) {
@@ -711,6 +716,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 									continue;
 								fileIt.inserts = inserts;
 								fileIt.deletes = deletes;
+								fileIt.isBinary = isBinary;
 								found = true;
 								break;
 							}
@@ -718,7 +724,7 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 					}
 					if ( !found ) {
 						s.files[repo].push_back(
-							{ std::move( filePath ), inserts, deletes, status } );
+							{ std::move( filePath ), inserts, deletes, status, isBinary } );
 					}
 					s.totalInserts += inserts;
 					s.totalDeletions += deletes;
@@ -745,11 +751,9 @@ Git::Status Git::status( bool recurseSubmodules, const std::string& projectDir )
 
 	for ( auto& [_, repo] : s.files ) {
 		for ( auto& val : repo ) {
-			if ( val.report.symbol == GitStatusChar::Added && val.inserts == 0 ) {
-				std::string fileText;
-				FileSystem::fileGet( ( projectDir.empty() ? mProjectPath : projectDir ) + val.file,
-									 fileText );
-				val.inserts = String::countLines( fileText );
+			if ( !val.isBinary && val.report.symbol == GitStatusChar::Added && val.inserts == 0 ) {
+				val.inserts = FileSystem::fileCountLines(
+					( projectDir.empty() ? mProjectPath : projectDir ) + val.file, &val.isBinary );
 				s.totalInserts += val.inserts;
 			}
 		}

@@ -81,7 +81,7 @@ Uint32 Text::stringToStyleFlag( const std::string& str ) {
 				flags |= Text::Bold;
 			else if ( "italic" == cur )
 				flags |= Text::Italic;
-			else if ( "strikethrough" == cur )
+			else if ( "strikethrough" == cur || "line-through" == cur )
 				flags |= Text::StrikeThrough;
 			else if ( "shadowed" == cur || "shadow" == cur )
 				flags |= Text::Shadow;
@@ -577,13 +577,8 @@ void Text::create( Font* font, const String& text, Color FontColor, Color FontSh
 	invalidate();
 }
 
-void Text::onNewString() {
-	mColorsNeedUpdate = true;
-	mGeometryNeedUpdate = true;
-	mCachedWidthNeedUpdate = true;
+void Text::checkColorEmojis() {
 	mContainsColorEmoji = false;
-	mVisualLinesNeedUpdate = true;
-	mTextHints = mString.getTextHints();
 	if ( mFontStyleConfig.Font && FontManager::instance()->getColorEmojiFont() != nullptr ) {
 		if ( mFontStyleConfig.Font->getType() == FontType::TTF ) {
 			FontTrueType* fontTrueType = static_cast<FontTrueType*>( mFontStyleConfig.Font );
@@ -591,6 +586,15 @@ void Text::onNewString() {
 				mContainsColorEmoji = Font::containsEmojiCodePoint( mString );
 		}
 	}
+}
+
+void Text::onNewString() {
+	mColorsNeedUpdate = true;
+	mGeometryNeedUpdate = true;
+	mCachedWidthNeedUpdate = true;
+	mVisualLinesNeedUpdate = true;
+	mTextHints = mString.getTextHints();
+	checkColorEmojis();
 }
 
 bool Text::setString( const String::View& string ) {
@@ -630,6 +634,7 @@ void Text::setFont( Font* font ) {
 		mGeometryNeedUpdate = true;
 		mCachedWidthNeedUpdate = true;
 		mVisualLinesNeedUpdate = true;
+		checkColorEmojis();
 	}
 }
 
@@ -783,8 +788,7 @@ Vector2f Text::findCharacterPos( std::size_t index ) const {
 
 	std::size_t visualLinesSize = mVisualLines.size();
 	std::size_t lineIndex = const_cast<Text*>( this )->findVisualLineFromCharIndex( index );
-	Float vspace = static_cast<Float>(
-		mFontStyleConfig.Font->getLineSpacing( mFontStyleConfig.CharacterSize ) );
+	Float vspace = getLineSpacing();
 	Float y = lineIndex * vspace;
 	Float centerDiffX = 0;
 
@@ -852,7 +856,7 @@ Int32 Text::findCharacterFromPos( const Vector2i& pos, bool returnNearest ) cons
 
 	const_cast<Text*>( this )->ensureVisualLinesUpdate();
 
-	Float vspace = mFontStyleConfig.Font->getLineSpacing( mFontStyleConfig.CharacterSize );
+	Float vspace = getLineSpacing();
 	int lineIndex = std::floor( pos.y / vspace );
 	std::size_t visualLinesSize = mVisualLines.size();
 
@@ -1605,13 +1609,10 @@ Float Text::getTextWidth() {
 Float Text::getTextHeight() {
 	cacheWidth();
 
-	return NULL != mFontStyleConfig.Font
-			   ? mFontStyleConfig.Font->getLineSpacing( mFontStyleConfig.CharacterSize ) *
-					 ( mLinesWidth.empty() ? 1 : mLinesWidth.size() )
-			   : 0;
+	return getLineSpacing() * ( mLinesWidth.empty() ? 1 : mLinesWidth.size() );
 }
 
-Float Text::getLineSpacing() {
+Float Text::getLineSpacing() const {
 	return NULL != mFontStyleConfig.Font
 			   ? mFontStyleConfig.Font->getLineSpacing( mFontStyleConfig.CharacterSize )
 			   : 0;
@@ -1697,6 +1698,9 @@ void Text::draw( const Float& X, const Float& Y, const Vector2f& scale, const Fl
 		}
 		return;
 	}
+
+	if ( mColors.empty() )
+		return;
 
 	Texture* texture = mFontStyleConfig.Font->getTexture( mFontStyleConfig.CharacterSize );
 	if ( !texture )
@@ -1796,7 +1800,7 @@ void Text::ensureGeometryUpdate() {
 	if ( mCachedWidthNeedUpdate )
 		mLinesWidth.clear();
 
-	mBounds = Rectf();
+	mBounds = Rectf::Zero;
 
 	// No font or text: nothing to draw
 	if ( !mFontStyleConfig.Font || mString.empty() )
@@ -1833,8 +1837,7 @@ void Text::ensureGeometryUpdate() {
 	Glyph hglyph =
 		mFontStyleConfig.Font->getGlyph( L' ', mFontStyleConfig.CharacterSize, bold, reqItalic );
 	Float hspace = static_cast<Float>( hglyph.advance );
-	Float vspace = static_cast<Float>(
-		mFontStyleConfig.Font->getLineSpacing( mFontStyleConfig.CharacterSize ) );
+	Float vspace = getLineSpacing();
 	Float x = mInitialOffset.x;
 	Float y = mFontStyleConfig.CharacterSize;
 
@@ -2742,7 +2745,9 @@ Uint32 Text::getTotalVertices() {
 	for ( const auto& ch : mString ) {
 		lineHasChars = true;
 
-		if ( ' ' == ch || '\n' == ch || '\t' == ch || '\r' == ch ) {
+		if ( ' ' == ch )
+			skipped++;
+		else if ( '\n' == ch || '\t' == ch || '\r' == ch ) {
 			lineHasChars = false;
 			skipped++;
 
@@ -2883,8 +2888,8 @@ size_t Text::findVisualLineFromCharIndex( size_t charIndex ) {
 	return 0;
 }
 
-std::vector<Rectf> Text::getSelectionRects( TextSelectionRange range ) {
-	std::vector<Rectf> rects;
+SmallVector<Rectf> Text::getSelectionRects( TextSelectionRange range ) {
+	SmallVector<Rectf> rects;
 
 	if ( range.start == range.end || !mFontStyleConfig.Font )
 		return rects;
@@ -2902,8 +2907,7 @@ std::vector<Rectf> Text::getSelectionRects( TextSelectionRange range ) {
 			->getGlyph( ' ', mFontStyleConfig.CharacterSize, mFontStyleConfig.Style & Text::Bold,
 						mFontStyleConfig.Style & Text::Italic )
 			.advance;
-	Float vspace = static_cast<Float>(
-		mFontStyleConfig.Font->getLineSpacing( mFontStyleConfig.CharacterSize ) );
+	Float vspace = getLineSpacing();
 
 	for ( size_t i = startLine; i <= endLine; ++i ) {
 		Float top = i * vspace;

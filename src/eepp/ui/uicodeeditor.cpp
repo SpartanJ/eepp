@@ -695,6 +695,8 @@ void UICodeEditor::onDocumentReset( TextDocument* ) {
 	DocEvent event( this, mDoc.get(), Event::OnDocumentReset );
 	sendEvent( &event );
 	mDocView.clear();
+	mLinesWidthCache.clear();
+	mColorBoxesCache.clear();
 	invalidateEditor();
 	invalidateDraw();
 	invalidateLongestLineWidth();
@@ -741,6 +743,7 @@ void UICodeEditor::disableEditorFeatures( bool useDefaultStyle ) {
 	mHighlightMatchingBracket = false;
 	mHighlightSelectionMatch = false;
 	mEnableColorPickerOnSelection = false;
+	mEnableInlineColorBoxes = false;
 	mMinimapEnabled = false;
 	mFindReplaceEnabled = false;
 	mLineBreakingColumn = 0;
@@ -1115,10 +1118,7 @@ Uint32 UICodeEditor::onTextInput( const TextInputEvent& event ) {
 		return 0;
 	Input* input = getInput();
 
-	if ( ( input->isLeftAltPressed() && !event.getText().empty() && event.getText()[0] == '\t' ) ||
-		 ( input->isLeftControlPressed() && !input->isLeftAltPressed() &&
-		   !input->isAltGrPressed() ) ||
-		 input->isMetaPressed() || ( input->isLeftAltPressed() && !input->isLeftControlPressed() ) )
+	if ( !event.isValid( input ) )
 		return 0;
 
 	if ( mLastExecuteEventId == getInput()->getEventsSentId() &&
@@ -1257,6 +1257,8 @@ std::string UICodeEditor::getCodeEditorFlags( bool enabled ) const {
 		flags += "highlightselectionmatch|";
 	if ( mEnableColorPickerOnSelection == enabled )
 		flags += "colorpickeronselection|";
+	if ( mEnableInlineColorBoxes == enabled )
+		flags += "inlinecolorboxes|";
 	if ( getVerticalScrollBarEnabled() == enabled )
 		flags += "verticalscrollbar|";
 	if ( mColorPreview == enabled )
@@ -1990,7 +1992,7 @@ void UICodeEditor::checkColorPickerAction() {
 					mDoc->replaceSelection( isRgba || color.a != 255 ? color.toRgbaString()
 																	 : color.toRgbString() );
 				} );
-				colorPicker->setColor( Color::fromString( mDoc->getSelectedText() ) );
+				colorPicker->setColor( Color::fromString( mDoc->getSelectedText().toUtf8() ) );
 			}
 		}
 		if ( colorPicker )
@@ -2342,6 +2344,33 @@ void UICodeEditor::onDocumentClosed( TextDocument* doc ) {
 void UICodeEditor::onDocumentLineMove( const Int64& fromLine, const Int64& toLine,
 									   const Int64& numLines ) {
 	mDocView.updateCache( fromLine, toLine, numLines );
+
+	if ( !mColorBoxesCache.empty() ) {
+		Int64 linesCount = mDoc->linesCount();
+		if ( numLines > 0 ) {
+			for ( Int64 i = linesCount - 1; i >= fromLine; --i ) {
+				auto lineIt = mColorBoxesCache.find( i - numLines );
+				if ( lineIt != mColorBoxesCache.end() ) {
+					const auto& line = lineIt->second;
+					if ( line.first == mDoc->getLineHash( i ) ) {
+						auto nl = mColorBoxesCache.extract( lineIt );
+						nl.key() = i;
+						mColorBoxesCache.insert( std::move( nl ) );
+					}
+				}
+			}
+		} else if ( numLines < 0 ) {
+			for ( Int64 i = fromLine; i < linesCount; i++ ) {
+				auto lineIt = mColorBoxesCache.find( i - numLines );
+				if ( lineIt != mColorBoxesCache.end() &&
+					 lineIt->second.first == mDoc->getLineHash( i ) ) {
+					auto nl = mColorBoxesCache.extract( lineIt );
+					nl.key() = i;
+					mColorBoxesCache[i] = std::move( nl.mapped() );
+				}
+			}
+		}
+	}
 
 	if ( !mFont || mFont->isMonospace() || mLinesWidthCache.empty() )
 		return;
@@ -3056,7 +3085,7 @@ std::string UICodeEditor::getPropertyString( const PropertyDefinition* propertyD
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::fromFloat( getFontSize(), "px" );
+			return String::fromFloat( PixelDensity::pxToDp( getFontSize() ), "dp" );
 		case PropertyId::TextDecoration:
 			return Text::styleFlagToString( getTextDecoration() );
 		case PropertyId::FontStyle:
@@ -3160,6 +3189,13 @@ const bool& UICodeEditor::getEnableColorPickerOnSelection() const {
 
 void UICodeEditor::setEnableColorPickerOnSelection( const bool& enableColorPickerOnSelection ) {
 	mEnableColorPickerOnSelection = enableColorPickerOnSelection;
+}
+
+void UICodeEditor::setEnableInlineColorBoxes( const bool& enableInlineColorBoxes ) {
+	if ( enableInlineColorBoxes != mEnableInlineColorBoxes ) {
+		mEnableInlineColorBoxes = enableInlineColorBoxes;
+		invalidateDraw();
+	}
 }
 
 void UICodeEditor::setSyntaxDefinition( const SyntaxDefinition& definition ) {
@@ -4020,6 +4056,42 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 		ttf->setEnableFallbackFont( false );
 		ttf->setEnableEmojiFallback( false );
 	}
+
+	const std::vector<ColorBoxData>* colorBoxesPtr = nullptr;
+	size_t colorBoxIdx = 0;
+	if ( mEnableInlineColorBoxes ) {
+		auto it = mColorBoxesCache.find( line );
+		if ( it == mColorBoxesCache.end() || it->second.first != mDoc->getLineHash( line ) ) {
+			std::vector<ColorBoxData> colorBoxes;
+			size_t cachePos = 0;
+			for ( const auto& token : tokens ) {
+				if ( token.type == "string"_sst || token.type == "number"_sst ||
+					 token.type == "literal"_sst ) {
+					String::View text = strLine.view().substr( cachePos, token.len );
+					String::View str = String::trim( text );
+					if ( str.size() >= 4 ) {
+						if ( str[0] == '"' || str[0] == '\'' )
+							str = str.substr( 1 );
+						if ( !str.empty() && ( str.back() == '"' || str.back() == '\'' ) )
+							str = str.substr( 0, str.size() - 1 );
+						if ( Color::isColorString( str, false ) ) {
+							ColorBoxData data;
+							data.startColumn = cachePos;
+							data.endColumn = cachePos + token.len;
+							data.color = Color::fromString( String( str ).toUtf8() );
+							colorBoxes.push_back( data );
+						}
+					}
+				}
+				cachePos += token.len;
+			}
+			mColorBoxesCache[line] = { mDoc->getLineHash( line ), std::move( colorBoxes ) };
+			it = mColorBoxesCache.find( line );
+		}
+		if ( !it->second.second.empty() )
+			colorBoxesPtr = &it->second.second;
+	}
+
 	WhitespaceDisplayConfig whitespaceDisplayConfig =
 		mShowWhitespaces ? WhitespaceDisplayConfig{ L'·', mTabIndentCharacter, mTabIndentAlignment,
 													Color( mWhitespaceColor ).blendAlpha( mAlpha ),
@@ -4065,6 +4137,34 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 															   mTabStops ? position.x - initX
 																		 : std::optional<Float>{} ),
 												 lineHeight ) ) );
+						}
+					}
+
+					if ( colorBoxesPtr ) {
+						while ( colorBoxIdx < colorBoxesPtr->size() &&
+								(Int64)pos >= ( *colorBoxesPtr )[colorBoxIdx].endColumn ) {
+							colorBoxIdx++;
+						}
+						if ( colorBoxIdx < colorBoxesPtr->size() ) {
+							const auto& colorBox = ( *colorBoxesPtr )[colorBoxIdx];
+							if ( (Int64)pos >= colorBox.startColumn &&
+								 (Int64)pos < colorBox.endColumn ) {
+								primitives.setColor( colorBox.color );
+								primitives.drawRectangle( Rectf(
+									position,
+									Sizef( getTextWidth( text, isMonospace,
+														 mTabStops ? position.x - initX
+																   : std::optional<Float>{} ),
+										   lineHeight ) ) );
+
+								Color textColor;
+								if ( colorBox.color.perceivedLuminance() > 128 ) {
+									textColor = Color::Black;
+								} else {
+									textColor = Color::White;
+								}
+								fontStyle.FontColor = textColor.blendAlpha( mAlpha );
+							}
 						}
 					}
 
@@ -4133,6 +4233,31 @@ void UICodeEditor::drawLineText( const Int64& line, Vector2f position, const Flo
 						primitives.setColor( Color( style.background ).blendAlpha( mAlpha ) );
 						primitives.drawRectangle(
 							Rectf( position, Sizef( textWidth, lineHeight ) ) );
+					}
+				}
+
+				if ( colorBoxesPtr ) {
+					while ( colorBoxIdx < colorBoxesPtr->size() &&
+							(Int64)( pos - token.len ) >=
+								( *colorBoxesPtr )[colorBoxIdx].endColumn ) {
+						colorBoxIdx++;
+					}
+					if ( colorBoxIdx < colorBoxesPtr->size() ) {
+						const auto& colorBox = ( *colorBoxesPtr )[colorBoxIdx];
+						if ( (Int64)( pos - token.len ) >= colorBox.startColumn &&
+							 (Int64)( pos - token.len ) < colorBox.endColumn ) {
+							primitives.setColor( colorBox.color );
+							primitives.drawRectangle(
+								Rectf( position, Sizef( textWidth, lineHeight ) ) );
+
+							Color textColor;
+							if ( colorBox.color.perceivedLuminance() > 128 ) {
+								textColor = Color::Black;
+							} else {
+								textColor = Color::White;
+							}
+							fontStyle.FontColor = textColor.blendAlpha( mAlpha );
+						}
 					}
 				}
 
@@ -4731,7 +4856,7 @@ void UICodeEditor::checkMouseOverColor( const Vector2i& position ) {
 			}
 		}
 		if ( found ) {
-			mPreviewColor = Color::fromString( word );
+			mPreviewColor = Color::fromString( word.toUtf8() );
 			mPreviewColorRange = wordPos;
 			invalidateDraw();
 		} else {

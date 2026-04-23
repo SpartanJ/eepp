@@ -91,6 +91,12 @@ class EE_API FileSystem {
 	/** @return The modification date of the file */
 	static Uint32 fileGetModificationDate( const std::string& filepath );
 
+	/** @return The number of lines in a file.
+	 * @param path The file path.
+	 * @param isBinary If provided, it will be set to true if the file is binary.
+	 */
+	static size_t fileCountLines( const std::string& path, bool* isBinary = nullptr );
+
 	/** @return If a file path is writeable */
 	static bool fileCanWrite( const std::string& filepath );
 

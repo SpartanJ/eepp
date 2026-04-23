@@ -26,7 +26,13 @@ class EE_API UIRichText : public UILayout {
 
 	static UIRichText* NewH6() { return UIRichText::NewWithTag( "h6" ); };
 
-	static UIRichText* NewBr() { return UIRichText::NewWithTag( "br" ); };
+	static UIRichText* NewBr();
+
+	static UIRichText* NewHr();
+
+	static UIRichText* NewHtml();
+
+	static UIRichText* NewBody();
 
 	static UIRichText* NewDiv() { return UIRichText::NewWithTag( "div" ); };
 
@@ -35,8 +41,6 @@ class EE_API UIRichText : public UILayout {
 	static UIRichText* NewListItem() { return UIRichText::NewWithTag( "li" ); };
 
 	static UIRichText* NewBlockquote() { return UIRichText::NewWithTag( "blockquote" ); };
-
-	explicit UIRichText( const std::string& tag = "richtext" );
 
 	virtual Uint32 getType() const;
 
@@ -47,6 +51,10 @@ class EE_API UIRichText : public UILayout {
 	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
 	virtual bool applyProperty( const StyleSheetProperty& attribute );
+
+	virtual Float getMinIntrinsicWidth() const;
+
+	virtual Float getMaxIntrinsicWidth() const;
 
 	virtual std::string getPropertyString( const PropertyDefinition* propertyDef,
 										   const Uint32& propertyIndex = 0 ) const;
@@ -126,6 +134,8 @@ class EE_API UIRichText : public UILayout {
 	bool mSelecting{ false };
 	size_t mResizedCount{ 0 };
 
+	explicit UIRichText( const std::string& tag = "richtext" );
+
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 	virtual Uint32 onMouseDown( const Vector2i& position, const Uint32& flags );
 	virtual Uint32 onMouseUp( const Vector2i& position, const Uint32& flags );
@@ -145,9 +155,33 @@ class EE_API UIRichText : public UILayout {
 	Int64 selCurInit() const { return mSelCurInit; }
 	Int64 selCurEnd() const { return mSelCurEnd; }
 
-	void rebuildRichText();
+	enum class IntrinsicMode { None, Min, Max };
+	void rebuildRichText( RichText& richText, IntrinsicMode mode = IntrinsicMode::None );
 	void positionChildren();
 	void updateDefaultSpansStyle();
+};
+
+class EE_API UIHTMLHtml : public UIRichText {
+  public:
+	static UIHTMLHtml* New( const std::string& tag );
+	virtual Uint32 getType() const override;
+	bool isType( const Uint32& type ) const override;
+
+  protected:
+	UIHTMLHtml( const std::string& tag = "html" );
+};
+
+class EE_API UIHTMLBody : public UIRichText {
+  public:
+	static UIHTMLBody* New( const std::string& tag );
+	virtual Uint32 getType() const override;
+	bool isType( const Uint32& type ) const override;
+	bool applyProperty( const StyleSheetProperty& attribute ) override;
+
+  protected:
+	bool mPropagatedBackground{ false };
+
+	UIHTMLBody( const std::string& tag = "body" );
 };
 
 }} // namespace EE::UI

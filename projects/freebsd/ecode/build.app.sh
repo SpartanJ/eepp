@@ -32,14 +32,17 @@ while [ $# -gt 0 ]; do
 done
 
 CONFIG_NAME=
+SO_LIB_PATH=
 if command -v premake5 &> /dev/null
 then
     premake5 gmake || exit
     CONFIG_NAME=release_x86_64
+    SO_LIB_PATH=../../../libs/bsd/x86_64/libeepp.so
 elif command -v premake4 &> /dev/null
 then
     premake4 gmake || exit
     CONFIG_NAME=release
+    SO_LIB_PATH=../../../libs/bsd/libeepp.so
 else
     echo "Neither premake5 nor premake4 is available. Please install one."
     exit 1
@@ -63,7 +66,7 @@ chmod +x AppRun
 cp AppRun ecode.app/
 cp ecode.desktop ecode.app/
 cp ../../../bin/assets/icon/ecode.png ecode.app/ecode.png
-cp ../../../libs/bsd/x86_64/libeepp.so ecode.app/libs/
+cp $SO_LIB_PATH ecode.app/libs/
 cp ../../../bin/ecode ecode.app/ecode.bin
 cp -L /usr/local/lib/libSDL2-2.0.so.0 ecode.app/libs/
 strip ecode.app/libs/libSDL2-2.0.so.0

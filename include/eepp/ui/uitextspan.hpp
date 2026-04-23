@@ -26,6 +26,8 @@ class EE_API UITextSpan : public UIWidget {
 
 	static UITextSpan* NewStrikethrough() { return NewWithTag( "s" ); }
 
+	static UITextSpan* NewFont() { return NewWithTag( "font" ); }
+
 	static UITextSpan* NewMark() { return NewWithTag( "mark" ); }
 
 	static UITextSpan* NewCode() { return NewWithTag( "code" ); }

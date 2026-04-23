@@ -9,8 +9,9 @@
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/scopedop.hpp>
 #include <eepp/system/sys.hpp>
-#include <eepp/ui/uihtmltable.hpp>
+#include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uiapplication.hpp>
+#include <eepp/ui/uihtmltable.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uitextspan.hpp>
@@ -22,6 +23,7 @@ using namespace EE::Graphics;
 using namespace EE::Window;
 using namespace EE::Scene;
 using namespace EE::UI;
+using namespace EE::UI::Tools;
 
 UTEST( RichText, basicFunctionality ) {
 	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Test",
@@ -248,8 +250,9 @@ UTEST( RichText, RichTextTest ) {
 	};
 
 	const auto& runTest = [&createRichText, &utest_result]() {
-		auto win =
-			Engine::instance()->createWindow( WindowSettings( 1024, 650, "RichText Example" ) );
+		auto win = Engine::instance()->createWindow(
+			WindowSettings( 1024, 650, "RichText Example", WindowStyle::Default,
+							WindowBackend::Default, 32, "", 1, EE_SCREEN_KEYBOARD_ENABLED, true ) );
 
 		if ( !win->isOpen() )
 			return;
@@ -364,8 +367,9 @@ UTEST( UIRichText, IntegrationAndLayoutVerification ) {
 	EXPECT_TRUE( text1->getFillColor() == Color::fromString( "#FF0000" ) );
 
 	// Check CustomSize block
-	EXPECT_TRUE( std::holds_alternative<Sizef>( blocks[2] ) );
-	EXPECT_EQ( std::get<Sizef>( blocks[2] ).getWidth(), PixelDensity::dpToPx( 50 ) );
+	EXPECT_TRUE( std::holds_alternative<RichText::CustomBlock>( blocks[2] ) );
+	EXPECT_EQ( std::get<RichText::CustomBlock>( blocks[2] ).size.getWidth(),
+			   PixelDensity::dpToPx( 50 ) );
 
 	UI::UIWidget* placeholder = rt->find<UI::UIWidget>( "placeholder" );
 	ASSERT_TRUE( placeholder != nullptr );
@@ -462,10 +466,11 @@ UTEST( UIRichText, NestedWidgetsIntegration ) {
 	// Check block types
 	EXPECT_TRUE( std::holds_alternative<std::shared_ptr<Graphics::Text>>( blocks[0] ) );
 	EXPECT_TRUE( std::holds_alternative<std::shared_ptr<Graphics::Text>>( blocks[1] ) );
-	EXPECT_TRUE( std::holds_alternative<Sizef>( blocks[2] ) );
+	EXPECT_TRUE( std::holds_alternative<RichText::CustomBlock>( blocks[2] ) );
 	EXPECT_TRUE( std::holds_alternative<std::shared_ptr<Graphics::Text>>( blocks[3] ) );
 
-	EXPECT_EQ( std::get<Sizef>( blocks[2] ).getWidth(), PixelDensity::dpToPx( 50 ) );
+	EXPECT_EQ( std::get<RichText::CustomBlock>( blocks[2] ).size.getWidth(),
+			   PixelDensity::dpToPx( 50 ) );
 
 	UI::UIWidget* strongNode = rt->find<UI::UIWidget>( "strong" );
 	ASSERT_TRUE( strongNode != nullptr );
@@ -684,7 +689,8 @@ UTEST( UIRichText, WhitespaceCollapseTest ) {
 
 	// Only 1 text span ("Hello") should be generated,
 	// the whitespace between <span> and <ul>, and after <ul>
-	// should be correctly collapsed into nothing since they aren't adjacent to inline elements on both sides.
+	// should be correctly collapsed into nothing since they aren't adjacent to inline elements on
+	// both sides.
 	EXPECT_EQ( spanCount, 1 );
 
 	eeDelete( sceneNode );
@@ -869,7 +875,8 @@ UTEST( UIRichText, WhitespaceCollapseBRTest ) {
 	// The "ecode" text span should NOT have a leading space.
 	bool foundEcodeWithLeadingSpace = false;
 	auto checkSpansRecursive = [&]( Node* n, auto&& checkSpansRecursiveRef ) -> void {
-		if ( !n ) return;
+		if ( !n )
+			return;
 		if ( n->isWidget() && n->isType( UI_TYPE_TEXTSPAN ) ) {
 			UI::UITextSpan* span = static_cast<UI::UITextSpan*>( n );
 			if ( span->getText().size() > 0 && span->getText()[0] == ' ' &&
@@ -921,7 +928,7 @@ UTEST( UIRichText, MarginsTest ) {
 	ASSERT_TRUE( d2 != nullptr );
 
 	sceneNode->update( Time::Zero );
-	
+
 	// Check the layout position of the first div
 	Vector2f pos1 = d1->getPixelsPosition();
 	// margin left is 40px, top is 10px, so position inside richtext should be (40, 10)
@@ -933,7 +940,7 @@ UTEST( UIRichText, MarginsTest ) {
 	Vector2f pos2 = d2->getPixelsPosition();
 	// The widgets flow inline (horizontally) since total width < 800.
 	// d1 footprint width: 40 (left) + 50 (width) + 20 (right) = 110.
-	// d2 left margin: 5. 
+	// d2 left margin: 5.
 	// Therefore d2 x position = 110 + 5 = 115.
 	// Line height is determined by max footprint height.
 	// d1 footprint height: 10 + 50 + 30 = 90.
@@ -953,4 +960,486 @@ UTEST( UIRichText, MarginsTest ) {
 
 	eeDelete( sceneNode );
 	Engine::destroySingleton();
+}
+
+UTEST( UIRichText, ForcedLineBreak ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "BR Test", WindowStyle::Default,
+													  WindowBackend::Default, 32, {}, 1, false,
+													  true ) );
+
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	String xml = R"xml(<richtext id="rt">Line 1<br/>Line 2</richtext>)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+	UIRichText* rt = sceneNode->find<UIRichText>( "rt" );
+	ASSERT_TRUE( rt != nullptr );
+
+	sceneNode->update( Time::Zero );
+
+	const auto& richText = rt->getRichText();
+	EXPECT_EQ( richText.getLines().size(), (size_t)3 );
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
+UTEST( UIRichText, CustomBRHeight ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "BR Test", WindowStyle::Default,
+													  WindowBackend::Default, 32, {}, 1, false,
+													  true ) );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	sceneNode->getUIThemeManager()->setDefaultFont( font );
+
+	String xml = R"xml(<richtext id="rt">Line 1<br font-size="50px"/>Line 2</richtext>)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+	UIRichText* rt = sceneNode->find<UIRichText>( "rt" );
+	ASSERT_TRUE( rt != nullptr );
+
+	sceneNode->update( Time::Zero );
+
+	const auto& richText = rt->getRichText();
+	const auto& lines = richText.getLines();
+	EXPECT_EQ( lines.size(), (size_t)3 );
+
+	if ( lines.size() >= 2 ) {
+		EXPECT_GT( lines[0].height, lines[1].height );
+		EXPECT_GT( lines[2].height, 0.f );
+	}
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
+UTEST( UIRichText, MinMaxWidth ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "RichText Min/Max Width Test",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+		<LinearLayout id="container" layout_width="match_parent" layout_height="match_parent">
+			<RichText id="rt_min" layout_width="wrap_content" layout_height="wrap_content" min-width="200dp">Short</RichText>
+			<RichText id="rt_max" layout_width="wrap_content" layout_height="wrap_content" max-width="100dp">This is a very long text that should definitely wrap because of the max-width property being set to 100dp.</RichText>
+			<RichText id="rt_max_fixed" layout_width="500dp" layout_height="wrap_content" max-width="100dp">This is another very long text with fixed width policy.</RichText>
+		</LinearLayout>
+	)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+	UI::UIRichText* rtMin = sceneNode->find<UI::UIRichText>( "rt_min" );
+	UI::UIRichText* rtMax = sceneNode->find<UI::UIRichText>( "rt_max" );
+	UI::UIRichText* rtMaxFixed = sceneNode->find<UI::UIRichText>( "rt_max_fixed" );
+	ASSERT_TRUE( rtMin != nullptr );
+	ASSERT_TRUE( rtMax != nullptr );
+	ASSERT_TRUE( rtMaxFixed != nullptr );
+
+	sceneNode->update( Time::Zero );
+
+	EXPECT_EQ( rtMin->getSize().getWidth(), PixelDensity::dpToPx( 200 ) );
+	EXPECT_LE( rtMax->getSize().getWidth(), PixelDensity::dpToPx( 100 ) );
+	EXPECT_GT( rtMax->getSize().getHeight(),
+			   PixelDensity::dpToPx( 30 ) ); // should wrap to multiple lines
+	EXPECT_LE( rtMaxFixed->getSize().getWidth(), PixelDensity::dpToPx( 100 ) );
+	EXPECT_GT( rtMaxFixed->getSize().getHeight(),
+			   PixelDensity::dpToPx( 30 ) ); // should wrap to multiple lines
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
+UTEST( UIRichText, MinMaxWidthChildren ) {
+	Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "RichText Min/Max Width Children Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+		<LinearLayout id="container" layout_width="match_parent" layout_height="match_parent">
+			<RichText id="rt_parent" layout_width="wrap_content" layout_height="wrap_content" max-width="100dp">
+				This is a long text that expands the RichText so its max-width is reached.
+				<Widget id="child_widget" layout_width="match_parent" layout_height="50dp" />
+			</RichText>
+		</LinearLayout>
+	)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+	UI::UIRichText* rtParent = sceneNode->find<UI::UIRichText>( "rt_parent" );
+	UI::UIWidget* childWidget = sceneNode->find<UI::UIWidget>( "child_widget" );
+	ASSERT_TRUE( rtParent != nullptr );
+	ASSERT_TRUE( childWidget != nullptr );
+
+	sceneNode->update( Time::Zero );
+	sceneNode->update( Time::Zero ); // Run a second pass to allow MatchParent to resolve against
+									 // the new clamped parent size
+	sceneNode->update( Time::Zero );
+
+	EXPECT_LE( rtParent->getSize().getWidth(), PixelDensity::dpToPx( 100 ) );
+	EXPECT_GT( rtParent->getSize().getWidth(), 0 ); // Assert it's not 0
+	EXPECT_EQ( childWidget->getSize().getWidth(), rtParent->getSize().getWidth() );
+	EXPECT_LE( childWidget->getSize().getWidth(), PixelDensity::dpToPx( 100 ) );
+	EXPECT_GT( childWidget->getSize().getWidth(), 0 ); // Assert it's not 0
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
+UTEST( UIRichText, MatchParentChildPadding ) {
+	Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "RichText MatchParent Child Padding Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+		<LinearLayout id="container" layout_width="match_parent" layout_height="match_parent">
+			<RichText id="rt_parent" layout_width="200dp" layout_height="wrap_content" padding="10dp">
+				<Widget id="child_widget" layout_width="match_parent" layout_height="50dp" />
+			</RichText>
+		</LinearLayout>
+	)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+	UI::UIRichText* rtParent = sceneNode->find<UI::UIRichText>( "rt_parent" );
+	UI::UIWidget* childWidget = sceneNode->find<UI::UIWidget>( "child_widget" );
+	ASSERT_TRUE( rtParent != nullptr );
+	ASSERT_TRUE( childWidget != nullptr );
+
+	sceneNode->update( Time::Zero );
+
+	Float parentWidth = rtParent->getSize().getWidth();
+	Float childWidth = childWidget->getSize().getWidth();
+	Float expectedChildWidth = parentWidth - PixelDensity::dpToPx( 20 );
+
+	EXPECT_EQ( childWidth, expectedChildWidth );
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
+UTEST( UILayout, MinMaxWidthChildren ) {
+	Engine::instance()->createWindow(
+		WindowSettings( 800, 600, "Layout Min/Max Width Children Test", WindowStyle::Default,
+						WindowBackend::Default, 32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UI::UISceneNode* sceneNode = UI::UISceneNode::New();
+	UI::UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+		<LinearLayout id="container" layout_width="match_parent" layout_height="match_parent">
+			<LinearLayout id="ll_parent" layout_width="wrap_content" layout_height="wrap_content" max-width="150dp">
+				<Widget id="child_widget1" layout_width="300dp" layout_height="50dp" />
+				<Widget id="child_widget2" layout_width="match_parent" layout_height="50dp" />
+			</LinearLayout>
+		</LinearLayout>
+	)xml";
+
+	sceneNode->loadLayoutFromString( xml );
+	UI::UIWidget* llParent = sceneNode->find<UI::UIWidget>( "ll_parent" );
+	UI::UIWidget* childWidget2 = sceneNode->find<UI::UIWidget>( "child_widget2" );
+	ASSERT_TRUE( llParent != nullptr );
+	ASSERT_TRUE( childWidget2 != nullptr );
+
+	sceneNode->update( Time::Zero );
+	sceneNode->update( Time::Zero );
+	sceneNode->update( Time::Zero );
+
+	EXPECT_LE( llParent->getSize().getWidth(), PixelDensity::dpToPx( 150 ) );
+	EXPECT_GT( llParent->getSize().getWidth(), 0 ); // Assert it's not 0
+	EXPECT_EQ( childWidget2->getSize().getWidth(), llParent->getSize().getWidth() );
+	EXPECT_LE( childWidget2->getSize().getWidth(), PixelDensity::dpToPx( 150 ) );
+	EXPECT_GT( childWidget2->getSize().getWidth(), 0 ); // Assert it's not 0
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
+UTEST( UIRichText, InvalidWidthLengthComputation ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "Invalid Anchor Width",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+		<ScrollView id="html_view" layout_width="match_parent" layout_height="match_parent" />
+	)xml";
+
+	String html = R"html(
+		<!doctype html>
+		<html lang="en">
+		  <body>
+		    <div>
+		      <div id="anchor_parent">
+		        <a id="anchor" href="#">
+		          <div></div>
+		          <div>
+		            <div>
+		              <h2>No, I Won't Download Your App. The Web Version is A-OK.</h2>
+		            </div>
+		          </div>
+		        </a>
+		      </div>
+		      <footer class="site-footer">
+		        <a href="/">← Return to System</a>
+		      </footer>
+		    </div>
+		  </body>
+		</html>
+	)html";
+
+	sceneNode->loadLayoutFromString( xml );
+	auto htmlView = sceneNode->find( "html_view" );
+	ASSERT_TRUE( htmlView != nullptr );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ), htmlView );
+	auto parent = sceneNode->find<UIWidget>( "anchor_parent" );
+	auto anchor = sceneNode->find<UIWidget>( "anchor" );
+	ASSERT_TRUE( parent != nullptr );
+	ASSERT_TRUE( anchor != nullptr );
+
+	sceneNode->update( Time::Zero );
+
+	EXPECT_LE( anchor->getSize().getWidth(), parent->getSize().getWidth() );
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
+UTEST( UIRichText, InvalidWidthLengthComputation2 ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "Invalid Anchor Width 2",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+		<ScrollView id="html_view" layout_width="match_parent" layout_height="match_parent" />
+	)xml";
+
+	String html = R"html(<!doctype html>
+		<html lang="en">
+		  <body>
+		    <div class="container">
+		      <div id="anchor_parent">
+		        <a id="anchor" href="#">
+		          <div id="anchor_div">
+		              <h2 id="anchor_h2">
+		                No, I Won't Download Your App. The Web Version is A-OK.
+		              </h2>
+		              <span id="anchor_span">Apr 6, 2026</span>
+		          </div>
+		        </a>
+		      </div>
+		    </div>
+		  </body>
+		</html>
+	)html";
+
+	sceneNode->loadLayoutFromString( xml );
+	auto htmlView = sceneNode->find( "html_view" );
+	ASSERT_TRUE( htmlView != nullptr );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ), htmlView );
+	auto parent = sceneNode->find<UIWidget>( "anchor_parent" );
+	auto anchor = sceneNode->find<UIWidget>( "anchor" );
+	auto anchorDiv = sceneNode->find<UIWidget>( "anchor_div" );
+	auto anchorH2 = sceneNode->find<UIWidget>( "anchor_h2" );
+	auto anchorSpan = sceneNode->find<UIWidget>( "anchor_span" );
+	ASSERT_TRUE( parent != nullptr );
+	ASSERT_TRUE( anchor != nullptr );
+	ASSERT_TRUE( anchorDiv != nullptr );
+	ASSERT_TRUE( anchorH2 != nullptr );
+	ASSERT_TRUE( anchorSpan != nullptr );
+
+	sceneNode->update( Time::Zero );
+
+	EXPECT_GT( anchor->getSize().getWidth(), 0 );
+	EXPECT_GT( anchorDiv->getSize().getWidth(), 0 );
+	EXPECT_GT( anchorH2->getSize().getWidth(), 0 );
+	EXPECT_GT( anchorSpan->getSize().getWidth(), 0 );
+	EXPECT_LE( anchor->getSize().getWidth(), parent->getSize().getWidth() );
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
+UTEST( UIRichText, InvalidWidthLengthComputation3 ) {
+	Engine::instance()->createWindow( WindowSettings( 800, 600, "Invalid Anchor Width 3",
+													  WindowStyle::Default, WindowBackend::Default,
+													  32, {}, 1, false, true ) );
+	FileSystem::changeWorkingDirectory( Sys::getProcessPath() );
+
+	FontTrueType* font = FontTrueType::New( "NotoSans-Regular" );
+	font->loadFromFile( "../assets/fonts/NotoSans-Regular.ttf" );
+	ASSERT_TRUE( font->loaded() );
+	FontFamily::loadFromRegular( font );
+
+	UISceneNode* sceneNode = UISceneNode::New();
+	UIThemeManager* themeManager = sceneNode->getUIThemeManager();
+	themeManager->setDefaultFont( font );
+
+	String xml = R"xml(
+		<ScrollView id="html_view" layout_width="match_parent" layout_height="match_parent" />
+	)xml";
+
+	std::string html;
+	FileSystem::fileGet( "assets/html/blog_main_incorrect_widths.html", html );
+
+	sceneNode->loadLayoutFromString( xml );
+	auto htmlView = sceneNode->find( "html_view" );
+	ASSERT_TRUE( htmlView != nullptr );
+	sceneNode->loadLayoutFromString( HTMLFormatter::HTMLtoXML( html ), htmlView );
+
+	auto container = sceneNode->getRoot()->querySelector( ".container" );
+	auto posts = sceneNode->getRoot()->querySelectorAll( ".post-list > a" );
+	auto items = sceneNode->getRoot()->querySelectorAll( ".post-list > a > .post-item-content" );
+	auto titles = sceneNode->getRoot()->querySelectorAll(
+		".post-list > a > .post-item-content > .post-header-row" );
+
+	ASSERT_TRUE( container != nullptr );
+	ASSERT_TRUE( posts.size() > 0 );
+	ASSERT_TRUE( items.size() == posts.size() );
+	ASSERT_TRUE( items.size() == titles.size() );
+
+	sceneNode->update( Time::Zero );
+
+	for ( size_t i = 0; i < posts.size(); i++ ) {
+		auto anchor = posts[i];
+		auto item = items[i];
+		auto title = titles[i];
+		EXPECT_LE( anchor->getPixelsSize().getWidth(), container->getPixelsSize().getWidth() );
+		EXPECT_LE( item->getPixelsSize().getWidth(), anchor->getPixelsSize().getWidth() );
+		EXPECT_LE( title->getPixelsSize().getWidth(), item->getPixelsSize().getWidth() );
+	}
+
+	eeDelete( sceneNode );
+	Engine::destroySingleton();
+}
+
+UTEST( UIRichText, InvalidWidthLengthComputation4 ) {
+	UIApplication app( { 1280, 720, "eepp - UI HTML Example" } );
+
+	auto ui = app.getUI();
+
+	ui->loadLayoutFromString( R"xml(
+		<ScrollView id="html_view" layout_width="match_parent" layout_height="0" layout_weight="1">
+			<vbox layout_width="match_parent" layout_height="wrap_content" id="html_doc"></vbox>
+		</ScrollView>
+	)xml" );
+
+	auto mainContainer = ui->find( "html_doc" );
+
+	bool exit = false;
+	ui->runOnMainThread(
+		[&] {
+			std::string data;
+			URI url( "assets/html/blog_main_incorrect_widths.html" );
+			FileSystem::fileGet( url.getPath(), data );
+			mainContainer->closeAllChildren();
+			ui->getStyleSheet().removeAllWithoutMarker( app.getStyleSheetDefaultMarker() );
+			ui->setURIFromURL( url );
+			auto urlStr = url.toString();
+			auto hash = String::hash( urlStr );
+			ui->loadLayoutFromString( HTMLFormatter::HTMLtoXML( data ), mainContainer, hash );
+			exit = true;
+		},
+		Seconds( 0.2 ) );
+
+	while ( !exit ) {
+		SceneManager::instance()->update();
+		app.getWindow()->clear();
+		SceneManager::instance()->draw();
+		app.getWindow()->display();
+	}
+
+	SceneManager::instance()->update();
+
+	auto container = ui->getRoot()->querySelector( ".container" );
+	auto posts = ui->getRoot()->querySelectorAll( ".post-list > a" );
+	auto items = ui->getRoot()->querySelectorAll( ".post-list > a > .post-item-content" );
+	auto titles =
+		ui->getRoot()->querySelectorAll( ".post-list > a > .post-item-content > .post-header-row" );
+
+	ASSERT_TRUE( container != nullptr );
+	ASSERT_TRUE( posts.size() > 0 );
+	ASSERT_TRUE( items.size() == posts.size() );
+	ASSERT_TRUE( items.size() == titles.size() );
+
+	ui->update( Time::Zero );
+
+	for ( size_t i = 0; i < posts.size(); i++ ) {
+		auto anchor = posts[i];
+		auto item = items[i];
+		auto title = titles[i];
+		EXPECT_GT( anchor->getPixelsSize().getWidth(), 0 );
+		EXPECT_GT( item->getPixelsSize().getWidth(), 0 );
+		EXPECT_GT( title->getPixelsSize().getWidth(), 0 );
+		EXPECT_LE( anchor->getPixelsSize().getWidth(), container->getPixelsSize().getWidth() );
+		EXPECT_LE( item->getPixelsSize().getWidth(), anchor->getPixelsSize().getWidth() );
+		EXPECT_LE( title->getPixelsSize().getWidth(), item->getPixelsSize().getWidth() );
+	}
 }

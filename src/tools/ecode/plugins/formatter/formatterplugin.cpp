@@ -206,8 +206,14 @@ void FormatterPlugin::loadFormatterConfig( const std::string& path, bool updateC
 			config["auto_format_on_save"] = getAutoFormatOnSave();
 	}
 
-	if ( mKeyBindings.empty() )
+	if ( mKeyBindings.empty() ) {
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+		mKeyBindings["format-doc"] = "mod+alt+f";
+#else
 		mKeyBindings["format-doc"] = "alt+f";
+#endif
+	}
+
 	if ( j.contains( "keybindings" ) && j["keybindings"].contains( "format-doc" ) )
 		mKeyBindings["format-doc"] = j["keybindings"]["format-doc"];
 	else if ( updateConfigFile )

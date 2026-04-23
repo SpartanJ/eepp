@@ -658,6 +658,27 @@ String::HashType String::hash( const String& str ) {
 						 str.size() * sizeof( String::StringBaseType ) );
 }
 
+String::HashType String::hashToLower( const std::string& str ) {
+	return String::hashToLower( str.c_str(), str.length() );
+}
+
+String::HashType String::hashToLower( const std::string_view& str ) {
+	return String::hashToLower( str.data(), str.length() );
+}
+
+String::HashType String::hashToLower( const String::View& str ) {
+	String::HashType hash = 5381;
+	for ( size_t i = 0; i < str.size(); ++i ) {
+		int c = str[i];
+		hash = ( ( hash << 5 ) + hash ) + ( c >= 'A' && c <= 'Z' ? c + 32 : c );
+	}
+	return hash;
+}
+
+String::HashType String::hashToLower( const String& str ) {
+	return String::hashToLower( str.view() );
+}
+
 bool String::isCharacter( const int& value ) {
 	return ( value >= 32 && value <= 126 ) || ( value >= 161 && value <= 255 ) || ( value == 9 );
 }
@@ -1293,6 +1314,11 @@ bool String::startsWith( const String& haystack, const String& needle ) {
 		   std::equal( needle.begin(), needle.end(), haystack.begin() );
 }
 
+bool String::startsWith( String::View haystack, String::View needle ) {
+	return needle.length() <= haystack.length() &&
+		   std::equal( needle.begin(), needle.end(), haystack.begin() );
+}
+
 bool String::startsWith( const char* haystack, const char* needle ) {
 	return strncmp( needle, haystack, strlen( needle ) ) == 0;
 }
@@ -1302,12 +1328,56 @@ bool String::startsWith( std::string_view haystack, std::string_view needle ) {
 		   std::equal( needle.begin(), needle.end(), haystack.begin() );
 }
 
+bool String::istartsWith( const std::string& haystack, const std::string& needle ) {
+	return needle.length() <= haystack.length() &&
+		   std::equal( needle.begin(), needle.end(), haystack.begin(), []( char c1, char c2 ) {
+			   return std::tolower( c1 ) == std::tolower( c2 );
+		   } );
+}
+
+bool String::istartsWith( const String& haystack, const String& needle ) {
+	return needle.length() <= haystack.length() &&
+		   std::equal( needle.begin(), needle.end(), haystack.begin(),
+					   []( String::StringBaseType c1, String::StringBaseType c2 ) {
+						   return std::tolower( c1 ) == std::tolower( c2 );
+					   } );
+}
+
+bool String::istartsWith( String::View haystack, String::View needle ) {
+	return needle.length() <= haystack.length() &&
+		   std::equal( needle.begin(), needle.end(), haystack.begin(),
+					   []( String::StringBaseType c1, String::StringBaseType c2 ) {
+						   return std::tolower( c1 ) == std::tolower( c2 );
+					   } );
+}
+
+bool String::istartsWith( const char* haystack, const char* needle ) {
+	size_t needleLen = strlen( needle );
+	if ( needleLen > strlen( haystack ) )
+		return false;
+	return std::equal( needle, needle + needleLen, haystack, []( char c1, char c2 ) {
+		return std::tolower( c1 ) == std::tolower( c2 );
+	} );
+}
+
+bool String::istartsWith( std::string_view haystack, std::string_view needle ) {
+	return needle.length() <= haystack.length() &&
+		   std::equal( needle.begin(), needle.end(), haystack.begin(), []( char c1, char c2 ) {
+			   return std::tolower( c1 ) == std::tolower( c2 );
+		   } );
+}
+
 bool String::endsWith( const std::string& haystack, const std::string& needle ) {
 	return needle.length() <= haystack.length() &&
 		   haystack.compare( haystack.size() - needle.size(), needle.size(), needle ) == 0;
 }
 
 bool String::endsWith( const String& haystack, const String& needle ) {
+	return needle.length() <= haystack.length() &&
+		   haystack.compare( haystack.size() - needle.size(), needle.size(), needle ) == 0;
+}
+
+bool String::endsWith( String::View haystack, String::View needle ) {
 	return needle.length() <= haystack.length() &&
 		   haystack.compare( haystack.size() - needle.size(), needle.size(), needle ) == 0;
 }
@@ -1345,7 +1415,7 @@ bool String::icontains( std::string_view haystack, std::string_view needle ) {
 						} ) != haystack.end();
 }
 
-void String::replaceAll( std::string& target, const std::string& that, const std::string& with ) {
+void String::replaceAll( std::string& target, std::string_view that, std::string_view with ) {
 	std::string::size_type pos = 0;
 
 	while ( ( pos = target.find( that, pos ) ) != std::string::npos ) {
@@ -2432,14 +2502,12 @@ void String::readBySeparatorStoppable( std::string_view buf,
 }
 
 size_t String::countLines( std::string_view text ) {
-	const char* startPtr = text.data();
-	const char* endPtr = text.data() + text.size();
-	size_t count = 0;
-	if ( startPtr != endPtr ) {
-		count = 1 + *startPtr == '\n' ? 1 : 0;
-		while ( ++startPtr && startPtr != endPtr )
-			count += ( '\n' == *startPtr ) ? 1 : 0;
-	}
+	if ( text.empty() )
+		return 0;
+	size_t count = 1;
+	for ( const auto& c : text )
+		if ( c == '\n' )
+			count++;
 	return count;
 }
 
@@ -2468,14 +2536,12 @@ void String::readBySeparatorStoppable( String::View buf,
 }
 
 size_t String::countLines( String::View text ) {
-	const String::StringBaseType* startPtr = text.data();
-	const String::StringBaseType* endPtr = text.data() + text.size();
-	size_t count = 0;
-	if ( startPtr != endPtr ) {
-		count = 1 + *startPtr == '\n' ? 1 : 0;
-		while ( ++startPtr && startPtr != endPtr )
-			count += ( '\n' == *startPtr ) ? 1 : 0;
-	}
+	if ( text.empty() )
+		return 0;
+	size_t count = 1;
+	for ( const auto& c : text )
+		if ( c == '\n' )
+			count++;
 	return count;
 }
 

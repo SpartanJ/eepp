@@ -121,7 +121,7 @@ static std::map<std::string, ACPAgent> parseACPAgents( const nlohmann::json& j )
 		agent.name = agentName;
 		agent.enabled = agentJson.value( "enabled", true );
 		agent.command = agentJson.value( "command", "" );
-		
+
 		if ( agentJson.contains( "args" ) && agentJson["args"].is_array() ) {
 			for ( const auto& arg : agentJson["args"] ) {
 				agent.args.push_back( arg.get<std::string>() );
@@ -133,7 +133,7 @@ static std::map<std::string, ACPAgent> parseACPAgents( const nlohmann::json& j )
 				agent.environment[envItem.key()] = envItem.value().get<std::string>();
 			}
 		}
-		
+
 		agents[agentName] = agent;
 	}
 	return agents;
@@ -337,6 +337,11 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 	if ( j.contains( "config" ) ) {
 		auto& config = j["config"];
 
+		if ( config.contains( "display_reasoning" ) && config["display_reasoning"].is_boolean() )
+			mDisplayReasoning = config.value( "display_reasoning", false );
+		else if ( updateConfigFile )
+			config["display_reasoning"] = mDisplayReasoning;
+
 		if ( config.contains( "openai_api_key" ) )
 			mApiKeys["openai"] = config.value( "openai_api_key", "" );
 		else if ( updateConfigFile )
@@ -391,6 +396,11 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 			mApiKeys["nvidia"] = config.value( "nvidia_api_key", "" );
 		else if ( updateConfigFile )
 			config["nvidia_api_key"] = mApiKeys["nvidia"];
+
+		if ( config.contains( "together_api_key" ) )
+			mApiKeys["together"] = config.value( "together_api_key", "" );
+		else if ( updateConfigFile )
+			config["together_api_key"] = mApiKeys["together"];
 	}
 
 	if ( mKeyBindings.empty() ) {
@@ -407,6 +417,8 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 		mKeyBindings["ai-chat-toggle-role"] = "mod+shift+r";
 		mKeyBindings["ai-refresh-local-models"] = "mod+shift+l";
 		mKeyBindings["ai-attach-file"] = "mod+shift+a";
+		mKeyBindings["ai-toggle-agent-mode"] = "mod+shift+d";
+		mKeyBindings["ai-agent-config"] = "shift+alt+c";
 	}
 
 	auto& kb = j["keybindings"];
@@ -597,6 +609,8 @@ std::optional<std::string> AIAssistantPlugin::getApiKeyFromProvider( const std::
 		ret = getenv( "MOONSHOT_API_KEY" );
 	} else if ( provider == "nvidia" ) {
 		ret = getenv( "NVIDIA_API_KEY" );
+	} else if ( provider == "together" ) {
+		ret = getenv( "TOGETHER_API_KEY" );
 	} else {
 		const auto& providerModelIt = instance->mProviders.find( provider );
 		if ( providerModelIt != instance->mProviders.end() && providerModelIt->second.openApi )

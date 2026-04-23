@@ -304,8 +304,11 @@ class EE_API UISceneNode : public SceneNode {
 	 *
 	 * @param styleSheet The CSS StyleSheet to combine.
 	 * @param forceReloadStyle If true, forces immediate style reload (default: true).
+	 * @param baseURI If the resource was loaded from an URI, pass the URI in order to solve
+	 * relative paths in CSS
 	 */
-	void combineStyleSheet( const CSS::StyleSheet& styleSheet, bool forceReloadStyle = true );
+	void combineStyleSheet( const CSS::StyleSheet& styleSheet, bool forceReloadStyle = true,
+							URI baseURI = {} );
 
 	/**
 	 * @brief Combines an inline stylesheet with the existing one.
@@ -315,9 +318,11 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param inlineStyleSheet The CSS stylesheet as a string.
 	 * @param forceReloadStyle If true, forces immediate style reload (default: true).
 	 * @param marker Marker to associate with the new styles.
+	 * @param baseURI If the resource was loaded from an URI, pass the URI in order to solve
+	 * relative paths in CSS
 	 */
 	void combineStyleSheet( const std::string& inlineStyleSheet, bool forceReloadStyle = true,
-							const Uint32& marker = 0 );
+							const Uint32& marker = 0, URI baseURI = {} );
 
 	/**
 	 * @brief Gets the reference to the current stylesheet.
@@ -689,8 +694,29 @@ class EE_API UISceneNode : public SceneNode {
 	/** Sets the document / scene URI used to resolve paths of inner elements */
 	void setURI( const URI& uri );
 
+	/** Sets the document / scene URI used to resolve paths from a complete URI (with
+	 * path+query+fragment+etc) */
+	void setURIFromURL( const URI& url );
+
 	/** @return the document / scene URI used to resolve paths of inner elements */
 	const URI& getURI() const { return mURI; }
+
+	/** Handles opening an specific URI */
+	void openURL( URI uri );
+
+	/* Sets a callback to intercept the openURL calls, returns true if intercepted, false to leave
+	 * the default openURL implementation handle it.
+	 */
+	void setURLInterceptorCb( std::function<bool( URI uri )> cb ) { mURLInterceptorCb = cb; };
+
+	/**
+	 * Solves a relative path with no scheme or authority into a complete URI.
+	 * @param baseURI If must solve from a specific baseURI it must be passed here.
+	 */
+	URI solveRelativePath( URI uri, URI baseURI = {} );
+
+	/** @return The document referer */
+	URI getReferer() const { return mReferer; };
 
   protected:
 	friend class EE::UI::UIWindow;
@@ -720,6 +746,8 @@ class EE_API UISceneNode : public SceneNode {
 	Uint32 mCurOnSizeChangeListener{ 0 };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	URI mURI;
+	URI mReferer;
+	std::function<bool( URI uri )> mURLInterceptorCb;
 
 	/**
 	 * @brief Protected constructor.
@@ -856,8 +884,10 @@ class EE_API UISceneNode : public SceneNode {
 	 * the stylesheet's at-rules and loads them.
 	 *
 	 * @param styleSheet The stylesheet to process.
+	 * @param baseURI If the resource was loaded from an URI, pass the URI in order to solve
+	 * relative paths in CSS
 	 */
-	void processStyleSheetAtRules( const CSS::StyleSheet& styleSheet );
+	void processStyleSheetAtRules( const CSS::StyleSheet& styleSheet, URI baseURI = {} );
 
 	/**
 	 * @brief Loads font faces from @font-face rules.
@@ -866,8 +896,10 @@ class EE_API UISceneNode : public SceneNode {
 	 * (files, URLs, VFS).
 	 *
 	 * @param styles Vector of stylesheet styles from @font-face rules.
+	 * @param baseURI If the resource was loaded from an URI, pass the URI in order to solve
+	 * relative paths in CSS
 	 */
-	void loadFontFaces( const CSS::StyleSheetStyleVector& styles );
+	void loadFontFaces( const CSS::StyleSheetStyleVector& styles, URI baseURI = {} );
 
 	/**
 	 * @brief Loads CSS files from URI
@@ -926,6 +958,10 @@ class EE_API UISceneNode : public SceneNode {
 	 * @param to The root node of the subtree to theme.
 	 */
 	void setTheme( UITheme* theme, Node* to );
+
+	/** @return The document / scene URI used to resolve paths from a complete URI (with
+	 * path+query+fragment+etc) */
+	URI getURIFromURL( const URI& url ) const;
 };
 
 }} // namespace EE::UI

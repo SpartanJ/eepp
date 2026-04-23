@@ -40,6 +40,8 @@ class EE_API StyleSheetSpecification {
 	PropertyDefinition& registerProperty( const std::string& propertyVame,
 										  const std::string& defaultValue, bool inherited = false );
 
+	const PropertyDefinition* getProperty( const PropertyId& id ) const;
+
 	const PropertyDefinition* getProperty( const Uint32& id ) const;
 
 	const PropertyDefinition* getProperty( const std::string& name ) const;

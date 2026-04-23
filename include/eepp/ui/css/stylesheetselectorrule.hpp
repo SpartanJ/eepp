@@ -21,9 +21,11 @@ class EE_API StyleSheetSelectorRule {
 		Pressed = ( 1 << 3 ),
 		Disabled = ( 1 << 4 ),
 		FocusWithin = ( 1 << 5 ),
+		Link = ( 1 << 6 ),
+		Visited = ( 1 << 7 ),
 	};
 
-	static constexpr auto PseudoClassesTotal = 6;
+	static constexpr auto PseudoClassesTotal = 8;
 
 	enum TypeIdentifier {
 		TAG = 0,

@@ -28,6 +28,7 @@ EEPP_C_INCLUDES			:= \
 	$(EEPP_THIRD_PARTY_PATH)/oniguruma \
 	$(EEPP_THIRD_PARTY_PATH)/SheenBidi/Headers \
 	$(EEPP_THIRD_PARTY_PATH)/efsw/include \
+	$(EEPP_THIRD_PARTY_PATH)/brotli/include \
 	$(EEPP_BASE_PATH)/modules/eterm/include \
 	$(EEPP_BASE_PATH)/modules/eterm/src \
 	$(EEPP_BASE_PATH)/modules/maps/include \
@@ -112,7 +113,7 @@ LOCAL_C_INCLUDES		:= $(EEPP_C_INCLUDES)
 
 LOCAL_SRC_FILES			:= $(foreach F, $(CODE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES	:= freetype libpng libwebp md4c pcre2 oniguruma harfbuzz sheenbidi
+LOCAL_STATIC_LIBRARIES	:= freetype libpng libwebp md4c pcre2 oniguruma harfbuzz sheenbidi gumbo-parser brotli
 
 LOCAL_SHARED_LIBRARIES	:= SDL2
 
@@ -153,7 +154,7 @@ LOCAL_MODULE			:= freetype
 
 APP_SUBDIRS				:= $(patsubst $(LOCAL_PATH)/%, %, $(shell find $(LOCAL_PATH)/src -type d))
 
-LOCAL_C_INCLUDES		:= $(foreach D, $(APP_SUBDIRS), $(LOCAL_PATH)/$(D)) $(LOCAL_PATH)/include $(EEPP_THIRD_PARTY_PATH)/libpng
+LOCAL_C_INCLUDES		:= $(foreach D, $(APP_SUBDIRS), $(LOCAL_PATH)/$(D)) $(LOCAL_PATH)/include $(EEPP_THIRD_PARTY_PATH)/libpng $(EEPP_THIRD_PARTY_PATH)/brotli/include
 LOCAL_CFLAGS			:= -Os -DFT2_BUILD_LIBRARY
 
 LOCAL_SRC_FILES			+= $(foreach F, $(APP_SUBDIRS), $(addprefix $(F)/,$(notdir $(wildcard $(LOCAL_PATH)/$(F)/*.c))))
@@ -341,7 +342,7 @@ LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
 
 LOCAL_MODULE			:= sheenbidi
 
-SHEENBIDI_SRCS			:=  SheenBidi/Source/**.c
+SHEENBIDI_SRCS			:= SheenBidi/Source/**.c
 
 LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/SheenBidi/Headers
 LOCAL_CFLAGS			:= -Os -I$(LOCAL_PATH)/freetype2/include
@@ -368,6 +369,40 @@ LOCAL_SRC_FILES			:= $(foreach F, $(LIBYAML_SRCS), $(addprefix $(dir $(F)),$(not
 include $(BUILD_STATIC_LIBRARY)
 #*************** LIBYAML ***************
 
+#*************** GUMBOPARSER ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
+
+LOCAL_MODULE			:= gumbo-parser
+
+GUMBOPARSER_SRCS		:= gumbo-parser/*.c
+
+LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/gumbo-parser
+LOCAL_CFLAGS			:= -Os
+
+LOCAL_SRC_FILES			:= $(foreach F, $(GUMBOPARSER_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** GUMBOPARSER ***************
+
+#*************** BROTLI ***************
+include $(CLEAR_VARS)
+
+LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
+
+LOCAL_MODULE			:= brotli
+
+BROTLI_SRCS				:= brotli/common/*.c brotli/dec/*.c
+
+LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/brotli $(LOCAL_PATH)/brotli/include
+LOCAL_CFLAGS			:= -Os
+
+LOCAL_SRC_FILES			:= $(foreach F, $(BROTLI_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+include $(BUILD_STATIC_LIBRARY)
+#*************** BROTLI ***************
+
 #*************** MD4C ***************
 include $(CLEAR_VARS)
 
@@ -375,7 +410,7 @@ LOCAL_PATH				:= $(EEPP_THIRD_PARTY_PATH)
 
 LOCAL_MODULE			:= md4c
 
-MD4C_SRCS			:= md4c/*.c
+MD4C_SRCS				:= md4c/*.c
 
 LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/md4c
 LOCAL_CFLAGS			:= -Os

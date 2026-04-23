@@ -15,6 +15,8 @@ class EE_API PropertySpecification {
 	PropertyDefinition& registerProperty( const std::string& propertyVame,
 										  const std::string& defaultValue, bool inherited );
 
+	const PropertyDefinition* getProperty( const PropertyId& id ) const;
+
 	const PropertyDefinition* getProperty( const Uint32& id ) const;
 
 	const PropertyDefinition* getProperty( const std::string& name ) const;

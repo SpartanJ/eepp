@@ -186,7 +186,7 @@ File path is: </string>
 	<string name="custom_variables">Custom Variables</string>
 	<string name="custom_variables_desc">Custom Variables allow to simplify the build commands steps adding custom variables that can be used over the build settings in commands, arguments, and working directories.</string>
 	<string name="custom_variables_desc_2">Custom Variables can be invoked using ${variable_name} in any of the commands.</string>
-	<string name="custom_variables_desc_3">There are predefined custom variables available to use:&#10;${project_root}: The folder / project root directory.&#10;${build_type}: The build type selected to build the project.&#10;${os}: The current operating system name.&#10;${arch}: The current operating architecture.&#10;${nproc}: The number of logical processing units.&#10;${current_doc}: The last or current focused document path.&#10;${current_doc_name}: The last or current focused document name without extension.&#10;${current_doc_dir}: The last or current focused document directory.</string>
+	<string name="custom_variables_desc_3">There are predefined custom variables available to use:&#10;${project_root}: The project root directory.&#10;${build_type}: The currently selected build type.&#10;${os}: The current operating system name.&#10;${arch}: The current operating system architecture.&#10;${nproc}: The number of logical processor cores.&#10;${current_doc}: The path of the currently focused document.&#10;${current_doc_name}: The name of the currently focused document (without extension).&#10;${current_doc_dir}: The directory of the currently focused document.&#10;${relative_dir}: The relative directory path between ${project_root} and ${current_doc_dir}.</string>
 	<string name="cut">Cut</string>
 	<string name="dark">Dark</string>
 	<string name="date">Date</string>
@@ -264,6 +264,9 @@ Do you want to download it now?</string>
 	<string name="enable_color_picker">Enable Color Picker</string>
 	<string name="enable_color_picker_tooltip">Enables the color picker tool when a double click selection
 is done over a word representing a color.</string>
+	<string name="enable_inline_color_boxes">Enable Color Boxes</string>
+	<string name="enable_inline_color_boxes_tooltip">Renders a background box of the parsed color directly behind the
+text itself.</string>
 	<string name="enable_color_preview">Enable Color Preview</string>
 	<string name="enable_color_preview_tooltip">Enables a quick preview of a color when the mouse
 is hover a word that represents a color.</string>

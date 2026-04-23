@@ -27,6 +27,17 @@ namespace EE { namespace Network {
 
 #define PACKET_BUFFER_SIZE ( 16384 )
 
+static std::string sDefaultUserAgent = "Mozilla/5.0 (Linux; x86_64) eepp-network/1.0 "
+									   "Chrome/146.0.0.0 AppleWebKit/537.36 Safari/537.36";
+
+void Http::setDefaultUserAgent( const std::string& userAgent ) {
+	sDefaultUserAgent = userAgent;
+}
+
+std::string Http::getDefaultUserAgent() {
+	return sDefaultUserAgent;
+}
+
 std::string Http::Request::statusToString( Http::Request::Status status ) {
 	switch ( status ) {
 		case Connected:
@@ -199,9 +210,11 @@ const Http::Request::CancelCallback& Http::Request::getCancelCallback() const {
 	return mCancelCallback;
 }
 
-void Http::Request::cancel() {
+void Http::Request::cancel( bool resetCancelCallback ) {
 	mCancel = true;
 	setProgressCallback( {} );
+	if ( resetCancelCallback )
+		setCancelCallback( {} );
 }
 
 const bool& Http::Request::isCancelled() const {
@@ -220,7 +233,7 @@ std::string Http::Request::prepareTunnel( const Http& http ) {
 
 	setField( "Host", String::format( "%s:%d", http.getHostName().c_str(), http.getPort() ) );
 	setField( "Proxy-Connection", "Keep-Alive" );
-	setField( "User-Agent", "eepp-network" );
+	setField( "User-Agent", sDefaultUserAgent );
 
 	for ( FieldTable::const_iterator i = mFields.begin(); i != mFields.end(); ++i )
 		out << i->first << ": " << i->second << "\r\n";
@@ -346,6 +359,10 @@ const char* Http::Response::statusToString( const Http::Response::Status& status
 			return "Moved Temporarily";
 		case NotModified:
 			return "Not Modified";
+		case TemporaryRedirect:
+			return "Temporary Redirect";
+		case PermanentRedirect:
+			return "Permanent Redirect";
 
 		// 4xx: client error
 		case BadRequest:
@@ -394,6 +411,8 @@ Http::Response::Status Http::Response::intAsStatus( const int& value ) {
 		case MultipleChoices:
 		case MovedPermanently:
 		case MovedTemporarily:
+		case TemporaryRedirect:
+		case PermanentRedirect:
 		case NotModified:
 		case BadRequest:
 		case Unauthorized:
@@ -452,6 +471,10 @@ Http::Response::Status Http::Response::getStatus() const {
 	return mStatus;
 }
 
+bool Http::Response::isOK() const {
+	return mStatus >= 200 && mStatus < 300;
+}
+
 const char* Http::Response::getStatusDescription() const {
 	switch ( mStatus ) {
 		// 2xx: success
@@ -474,8 +497,10 @@ const char* Http::Response::getStatusDescription() const {
 		case MultipleChoices:
 			return "The requested page can be accessed from several locations";
 		case MovedPermanently:
+		case PermanentRedirect:
 			return "The requested page has permanently moved to a new location";
 		case MovedTemporarily:
+		case TemporaryRedirect:
 			return "The requested page has temporarily moved to a new location";
 		case NotModified:
 			return "For conditional requests, means the requested page hasn't changed and doesn't "
@@ -1005,12 +1030,15 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 
 									// Check if the content is compressed
 									std::string encoding( received.getField( "content-encoding" ) );
-									compressed = encoding == "gzip" || encoding == "deflate";
+									compressed = encoding == "gzip" || encoding == "deflate" ||
+												 encoding == "br";
 
 									if ( compressed ) {
 										Compression::Mode compressionMode =
-											"gzip" == encoding ? Compression::MODE_GZIP
-															   : Compression::MODE_DEFLATE;
+											"gzip" == encoding
+												? Compression::MODE_GZIP
+												: ( "br" == encoding ? Compression::MODE_BROTLI
+																	 : Compression::MODE_DEFLATE );
 
 										inflateStream =
 											IOStreamInflate::New( writeTo, compressionMode );
@@ -1044,7 +1072,9 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 									// If a redirection is requested, and requests follows
 									// redirections, send a new request to the redirection location.
 									if ( ( received.getStatus() == Response::MovedPermanently ||
-										   received.getStatus() == Response::MovedTemporarily ) &&
+										   received.getStatus() == Response::MovedTemporarily ||
+										   received.getStatus() == Response::PermanentRedirect ||
+										   received.getStatus() == Response::TemporaryRedirect ) &&
 										 request.getFollowRedirect() ) {
 
 										// Only continue redirecting if less than 10 redirections
@@ -1070,7 +1100,7 @@ Http::Response Http::downloadRequest( const Http::Request& request, IOStream& wr
 
 											// Same host, expects a path in the same domain
 											if ( uri.getHost().empty() ||
-												 uri.getHost() == getHost() ) {
+												 uri.getHost() == getHostName() ) {
 												return downloadRequest( newRequest, writeTo,
 																		timeout );
 											} else {
@@ -1236,8 +1266,8 @@ Http::AsyncRequest::~AsyncRequest() {
 		eeSAFE_DELETE( mStream );
 }
 
-void Http::AsyncRequest::cancel() {
-	mRequest.cancel();
+void Http::AsyncRequest::cancel( bool resetCancelCallback ) {
+	mRequest.cancel( resetCancelCallback );
 }
 
 void Http::AsyncRequest::run() {
@@ -1278,7 +1308,7 @@ Http::Request Http::prepareFields( const Http::Request& request ) {
 	Request toSend( request );
 
 	if ( !toSend.hasField( "User-Agent" ) )
-		toSend.setField( "User-Agent", "eepp-network" );
+		toSend.setField( "User-Agent", sDefaultUserAgent );
 
 	if ( !toSend.hasField( "Accept" ) )
 		toSend.setField( "Accept", "*/*" );
@@ -1314,7 +1344,7 @@ Http::Request Http::prepareFields( const Http::Request& request ) {
 	}
 
 	if ( request.isCompressedResponse() )
-		toSend.setField( "Accept-Encoding", "gzip, deflate" );
+		toSend.setField( "Accept-Encoding", "gzip, deflate, br" );
 
 	return toSend;
 }
@@ -1331,11 +1361,11 @@ bool Http::isProxied() const {
 	return !mProxy.empty();
 }
 
-bool Http::setCancelRequest( Uint64 reqId ) {
+bool Http::setCancelRequest( Uint64 reqId, bool resetCancelCallback ) {
 	Lock l( mCurRequestsMutex );
 	auto found = mCurRequests.find( reqId );
 	if ( found != mCurRequests.end() ) {
-		found->second->cancel();
+		found->second->cancel( resetCancelCallback );
 		return true;
 	}
 	return false;

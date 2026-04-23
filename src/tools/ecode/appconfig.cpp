@@ -44,6 +44,23 @@ CharacterAlignment characterAlignmentFromString( const std::string_view& str ) {
 	return CharacterAlignment::Left;
 }
 
+static EE::UI::Doc::TextDocument::AutoIndentConfig autoIndentFromString( const std::string& str ) {
+	if ( str == "none" )
+		return EE::UI::Doc::TextDocument::AutoIndentConfig::None;
+	if ( str == "preserve" )
+		return EE::UI::Doc::TextDocument::AutoIndentConfig::Preserve;
+	return EE::UI::Doc::TextDocument::AutoIndentConfig::Smart;
+}
+
+static std::string
+autoIndentToString( const EE::UI::Doc::TextDocument::AutoIndentConfig& autoIndent ) {
+	if ( autoIndent == EE::UI::Doc::TextDocument::AutoIndentConfig::None )
+		return "none";
+	if ( autoIndent == EE::UI::Doc::TextDocument::AutoIndentConfig::Preserve )
+		return "preserve";
+	return "smart";
+}
+
 static PanelPosition panelPositionFromString( const std::string& str ) {
 	if ( String::toLower( str ) == "right" )
 		return PanelPosition::Right;
@@ -151,6 +168,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	doc.forceNewLineAtEndOfFile =
 		ini.getValueB( "document", "force_new_line_at_end_of_file", false );
 	doc.autoDetectIndentType = ini.getValueB( "document", "auto_detect_indent_type", true );
+	doc.autoIndent = autoIndentFromString( ini.getValue( "document", "auto_indent", "smart" ) );
 	doc.writeUnicodeBOM = ini.getValueB( "document", "write_bom", false );
 	doc.indentWidth = ini.getValueI( "document", "indent_width", 4 );
 	doc.indentSpaces = ini.getValueB( "document", "indent_spaces", false );
@@ -170,6 +188,7 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	editor.highlightSelectionMatch = ini.getValueB( "editor", "highlight_selection_match", true );
 	editor.colorPickerSelection = ini.getValueB( "editor", "color_picker_selection", true );
 	editor.colorPreview = ini.getValueB( "editor", "color_preview", true );
+	editor.inlineColorBoxes = ini.getValueB( "editor", "inline_color_boxes", false );
 	editor.minimap = ini.getValueB( "editor", "minimap", true );
 	editor.showDocInfo = ini.getValueB( "editor", "show_doc_info", true );
 	editor.hideTabBarOnSingleTab = ini.getValueB( "editor", "hide_tab_bar_on_single_tab", false );
@@ -225,6 +244,9 @@ void AppConfig::load( const std::string& confPath, std::string& keybindingsPath,
 	term.colorScheme = ini.getValue( "terminal", "colorscheme", "eterm" );
 	term.newTerminalOrientation = NewTerminalOrientation::fromString(
 		ini.getValue( "terminal", "new_terminal_orientation", "vertical" ) );
+	term.workingDir =
+		TerminalWorkingDir::fromString( ini.getValue( "terminal", "working_dir", "project" ) );
+	term.workingDirOther = ini.getValue( "terminal", "working_dir_other", "" );
 	term.scrollback = ini.getValueI( "terminal", "scrollback", 10000 );
 	term.unsupportedOSWarnDisabled =
 		ini.getValueB( "terminal", "unsupported_os_warn_disabled", false );
@@ -346,6 +368,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "document", "trim_trailing_whitespaces", doc.trimTrailingWhitespaces );
 	ini.setValueB( "document", "force_new_line_at_end_of_file", doc.forceNewLineAtEndOfFile );
 	ini.setValueB( "document", "auto_detect_indent_type", doc.autoDetectIndentType );
+	ini.setValue( "document", "auto_indent", autoIndentToString( doc.autoIndent ) );
 	ini.setValueB( "document", "write_bom", doc.writeUnicodeBOM );
 	ini.setValueI( "document", "indent_width", doc.indentWidth );
 	ini.setValueB( "document", "tab_stops", doc.tabStops );
@@ -357,6 +380,7 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValueB( "editor", "highlight_selection_match", editor.highlightSelectionMatch );
 	ini.setValueB( "editor", "color_picker_selection", editor.colorPickerSelection );
 	ini.setValueB( "editor", "color_preview", editor.colorPreview );
+	ini.setValueB( "editor", "inline_color_boxes", editor.inlineColorBoxes );
 	ini.setValueB( "editor", "minimap", editor.minimap );
 	ini.setValueB( "editor", "show_doc_info", editor.showDocInfo );
 	ini.setValueB( "editor", "hide_tab_bar_on_single_tab", editor.hideTabBarOnSingleTab );
@@ -403,6 +427,8 @@ void AppConfig::save( const std::vector<std::string>& recentFiles,
 	ini.setValue( "terminal", "colorscheme", term.colorScheme );
 	ini.setValue( "terminal", "new_terminal_orientation",
 				  NewTerminalOrientation::toString( term.newTerminalOrientation ) );
+	ini.setValue( "terminal", "working_dir", TerminalWorkingDir::toString( term.workingDir ) );
+	ini.setValue( "terminal", "working_dir_other", term.workingDirOther );
 	ini.setValue( "terminal", "scrollback", String::toString( term.scrollback ) );
 	ini.setValueB( "terminal", "unsupported_os_warn_disabled", term.unsupportedOSWarnDisabled );
 	ini.setValueB( "terminal", "close_terminal_tab_on_exit", term.closeTerminalTabOnExit );
@@ -562,6 +588,7 @@ void AppConfig::saveProject( std::string projectFolder, UICodeEditorSplitter* ed
 	cfg.setValueB( "document", "force_new_line_at_end_of_file",
 				   docConfig.doc.forceNewLineAtEndOfFile );
 	cfg.setValueB( "document", "auto_detect_indent_type", docConfig.doc.autoDetectIndentType );
+	cfg.setValue( "document", "auto_indent", autoIndentToString( docConfig.doc.autoIndent ) );
 	cfg.setValueB( "document", "write_bom", docConfig.doc.writeUnicodeBOM );
 	cfg.setValueI( "document", "indent_width", docConfig.doc.indentWidth );
 	cfg.setValueB( "document", "indent_spaces", docConfig.doc.indentSpaces );
@@ -852,6 +879,8 @@ void AppConfig::loadProject( std::string projectFolder, UICodeEditorSplitter* ed
 		cfg.getValueB( "document", "force_new_line_at_end_of_file", false );
 	docConfig.doc.autoDetectIndentType =
 		cfg.getValueB( "document", "auto_detect_indent_type", true );
+	docConfig.doc.autoIndent =
+		autoIndentFromString( cfg.getValue( "document", "auto_indent", "smart" ) );
 	docConfig.doc.writeUnicodeBOM = cfg.getValueB( "document", "write_bom", false );
 	docConfig.doc.indentWidth = cfg.getValueI( "document", "indent_width", 4 );
 	docConfig.doc.indentSpaces = cfg.getValueB( "document", "indent_spaces", false );

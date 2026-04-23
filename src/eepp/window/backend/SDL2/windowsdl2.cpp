@@ -125,8 +125,10 @@ bool WindowSDL::create( WindowSettings Settings, ContextSettings Context ) {
 
 #if EE_PLATFORM != EE_PLATFORM_MACOS && EE_PLATFORM != EE_PLATFORM_IOS && \
 	EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-	mWindow.WindowConfig.Width *= mWindow.WindowConfig.PixelDensity;
-	mWindow.WindowConfig.Height *= mWindow.WindowConfig.PixelDensity;
+	if ( Settings.PixelDensity > 0 ) {
+		mWindow.WindowConfig.Width *= mWindow.WindowConfig.PixelDensity;
+		mWindow.WindowConfig.Height *= mWindow.WindowConfig.PixelDensity;
+	}
 #endif
 
 	mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Title.c_str(), SDL_WINDOWPOS_UNDEFINED,

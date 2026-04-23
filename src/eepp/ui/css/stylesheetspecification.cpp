@@ -24,6 +24,10 @@ PropertyDefinition& StyleSheetSpecification::registerProperty( const std::string
 	return mPropertySpecification->registerProperty( propertyVame, defaultValue, inherited );
 }
 
+const PropertyDefinition* StyleSheetSpecification::getProperty( const PropertyId& id ) const {
+	return mPropertySpecification->getProperty( id );
+}
+
 const PropertyDefinition* StyleSheetSpecification::getProperty( const Uint32& id ) const {
 	return mPropertySpecification->getProperty( id );
 }
@@ -412,6 +416,14 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "focusable", "true" ).setType( PropertyType::Bool );
 	registerProperty( "expand-text", "false" ).setType( PropertyType::Bool );
 	registerProperty( "colspan", "1" ).setType( PropertyType::NumberInt );
+	registerProperty( "table-layout", "auto" ).setType( PropertyType::String );
+	registerProperty( "cellpadding", "0" ).setType( PropertyType::NumberLength );
+	registerProperty( "cellspacing", "0" ).setType( PropertyType::NumberLength );
+	registerProperty( "size", "20" ).setType( PropertyType::NumberInt );
+	registerProperty( "type", "text" ).setType( PropertyType::String );
+	registerProperty( "rows", "2" ).setType( PropertyType::NumberInt );
+	registerProperty( "cols", "20" ).setType( PropertyType::NumberInt );
+	registerProperty( "input-mode", "normal" ).setType( PropertyType::String );
 
 	registerProperty( "inner-widget-orientation", "widgeticontextbox" )
 		.setType( PropertyType::String );
@@ -731,23 +743,31 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 		String::removeExtraSpaces( value );
 		if ( value.empty() )
 			return {};
+
 		std::vector<StyleSheetProperty> properties;
 		const std::vector<std::string> propNames( shorthand->getProperties() );
+
 		if ( propNames.size() != 4 ) {
-			Log::error( "ShorthandType::Box properties must be 4 for %s",
-						shorthand->getName().c_str() );
+			Log::error( "ShorthandType::Box properties must be 4 for %s", shorthand->getName() );
 			return properties;
 		}
 
 		auto ltrbSplit = String::split( value, ' ', true );
+		if ( ltrbSplit.empty() )
+			return properties;
 
-		if ( ltrbSplit.size() >= 2 ) {
-			for ( size_t i = 0; i < ltrbSplit.size(); i++ )
-				properties.emplace_back( StyleSheetProperty( propNames[i], ltrbSplit[i] ) );
-		} else if ( ltrbSplit.size() == 1 ) {
-			for ( size_t i = 0; i < propNames.size(); i++ )
-				properties.emplace_back( StyleSheetProperty( propNames[i], ltrbSplit[0] ) );
-		}
+		// Apply CSS shorthand rules (Top, Right, Bottom, Left)
+		std::string top = ltrbSplit[0];
+		std::string right = ltrbSplit.size() > 1 ? ltrbSplit[1] : top;
+		std::string bottom = ltrbSplit.size() > 2 ? ltrbSplit[2] : top;
+		std::string left = ltrbSplit.size() > 3 ? ltrbSplit[3] : right;
+
+		// propNames order is Top, Right, Bottom, Left
+		properties.emplace_back( StyleSheetProperty( propNames[0], top ) );
+		properties.emplace_back( StyleSheetProperty( propNames[1], right ) );
+		properties.emplace_back( StyleSheetProperty( propNames[2], bottom ) );
+		properties.emplace_back( StyleSheetProperty( propNames[3], left ) );
+
 		return properties;
 	};
 
@@ -961,7 +981,7 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 						String::isNumber( tok[0] ) || tok[0] == '-' || tok[0] == '.' ||
 						tok[0] == '+' ) {
 				positionStr += tok + " ";
-			} else if ( Color::isColorString( tok ) ) {
+			} else {
 				int pos = getIndexEndingWith( propNames, "-color" );
 				if ( pos != -1 )
 					properties.emplace_back( StyleSheetProperty( propNames[pos], value ) );
@@ -1031,7 +1051,7 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 	mShorthandParsers["border-side"] = []( const ShorthandDefinition* shorthand,
 										   std::string value ) -> std::vector<StyleSheetProperty> {
 		value = String::trim( value );
-		if ( value.empty() || "none" == value )
+		if ( value.empty() )
 			return {};
 
 		std::vector<StyleSheetProperty> properties;
@@ -1042,8 +1062,16 @@ void StyleSheetSpecification::registerDefaultShorthandParsers() {
 			if ( -1 !=
 				 String::valueIndex(
 					 tok, "none;hidden;dotted;dashed;solid;double;groove;ridge;inset;outset" ) ) {
-				int pos = getIndexEndingWith( propNames, "-style" );
+
+				// At least reset the border width if "none" was used
+				if ( "none" == tok ) {
+					int pos = getIndexEndingWith( propNames, "-width" );
+					if ( pos != -1 )
+						properties.emplace_back( StyleSheetProperty( propNames[pos], "0" ) );
+				}
+
 				// boder-style is not implemented yet
+				int pos = getIndexEndingWith( propNames, "-style" );
 				if ( pos != -1 )
 					continue;
 			} else if ( Color::isColorString( tok ) || String::startsWith( tok, "var(" ) ) {

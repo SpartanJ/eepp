@@ -93,13 +93,14 @@ UIWidget* UIBreakpointsTableView::createCell( UIWidget* rowWidget, const ModelIn
 const std::map<KeyBindings::Shortcut, std::string>
 StatusDebuggerController::getLocalDefaultKeybindings() {
 	return {
-		{ { KEY_TAB, KeyMod::getDefaultModifier() }, "next-tab" },
-		{ { KEY_TAB, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "previous-tab" },
-		{ { KEY_1, KeyMod::getDefaultModifier() }, "switch-to-tab-1" },
-		{ { KEY_2, KeyMod::getDefaultModifier() }, "switch-to-tab-2" },
-		{ { KEY_3, KeyMod::getDefaultModifier() }, "switch-to-tab-3" },
-		{ { KEY_4, KeyMod::getDefaultModifier() }, "switch-to-tab-4" },
-		{ { KEY_5, KeyMod::getDefaultModifier() }, "switch-to-tab-5" },
+		{ { KEY_TAB, UICodeEditorSplitter::getDefaultSwitchToTabModifier() }, "next-tab" },
+		{ { KEY_TAB, UICodeEditorSplitter::getDefaultSwitchToTabModifier() | KEYMOD_SHIFT },
+		  "previous-tab" },
+		{ { KEY_1, UICodeEditorSplitter::getDefaultSwitchToTabModifier() }, "switch-to-tab-1" },
+		{ { KEY_2, UICodeEditorSplitter::getDefaultSwitchToTabModifier() }, "switch-to-tab-2" },
+		{ { KEY_3, UICodeEditorSplitter::getDefaultSwitchToTabModifier() }, "switch-to-tab-3" },
+		{ { KEY_4, UICodeEditorSplitter::getDefaultSwitchToTabModifier() }, "switch-to-tab-4" },
+		{ { KEY_5, UICodeEditorSplitter::getDefaultSwitchToTabModifier() }, "switch-to-tab-5" },
 	};
 }
 

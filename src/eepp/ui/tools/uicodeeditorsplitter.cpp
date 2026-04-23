@@ -18,14 +18,24 @@ const std::map<KeyBindings::Shortcut, std::string> UICodeEditorSplitter::getDefa
 	return localKeybindings;
 }
 
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+static Uint32 DefaultSwitchToTabModifier = KEYMOD_CTRL;
+#else
+static Uint32 DefaultSwitchToTabModifier = KeyMod::getDefaultModifier();
+#endif
+
+Uint32 UICodeEditorSplitter::getDefaultSwitchToTabModifier() {
+	return DefaultSwitchToTabModifier;
+}
+
 const std::map<KeyBindings::Shortcut, std::string>
 UICodeEditorSplitter::getLocalDefaultKeybindings() {
 	return {
 		{ { KEY_S, KeyMod::getDefaultModifier() }, "save-doc" },
 		{ { KEY_T, KeyMod::getDefaultModifier() }, "create-new" },
 		{ { KEY_W, KeyMod::getDefaultModifier() }, "close-tab" },
-		{ { KEY_TAB, KeyMod::getDefaultModifier() }, "next-tab" },
-		{ { KEY_TAB, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "previous-tab" },
+		{ { KEY_TAB, DefaultSwitchToTabModifier }, "next-tab" },
+		{ { KEY_TAB, DefaultSwitchToTabModifier | KEYMOD_SHIFT }, "previous-tab" },
 		{ { KEY_J, KEYMOD_LALT | KEYMOD_SHIFT }, "split-left" },
 		{ { KEY_L, KEYMOD_LALT | KEYMOD_SHIFT }, "split-right" },
 		{ { KEY_I, KEYMOD_LALT | KEYMOD_SHIFT }, "split-top" },
@@ -35,16 +45,16 @@ UICodeEditorSplitter::getLocalDefaultKeybindings() {
 		{ { KEY_L, KeyMod::getDefaultModifier() | KEYMOD_LALT }, "switch-to-next-split" },
 		{ { KEY_N, KeyMod::getDefaultModifier() | KEYMOD_LALT }, "switch-to-previous-colorscheme" },
 		{ { KEY_M, KeyMod::getDefaultModifier() | KEYMOD_LALT }, "switch-to-next-colorscheme" },
-		{ { KEY_1, KeyMod::getDefaultModifier() }, "switch-to-tab-1" },
-		{ { KEY_2, KeyMod::getDefaultModifier() }, "switch-to-tab-2" },
-		{ { KEY_3, KeyMod::getDefaultModifier() }, "switch-to-tab-3" },
-		{ { KEY_4, KeyMod::getDefaultModifier() }, "switch-to-tab-4" },
-		{ { KEY_5, KeyMod::getDefaultModifier() }, "switch-to-tab-5" },
-		{ { KEY_6, KeyMod::getDefaultModifier() }, "switch-to-tab-6" },
-		{ { KEY_7, KeyMod::getDefaultModifier() }, "switch-to-tab-7" },
-		{ { KEY_8, KeyMod::getDefaultModifier() }, "switch-to-tab-8" },
-		{ { KEY_9, KeyMod::getDefaultModifier() }, "switch-to-tab-9" },
-		{ { KEY_0, KeyMod::getDefaultModifier() }, "switch-to-last-tab" },
+		{ { KEY_1, DefaultSwitchToTabModifier }, "switch-to-tab-1" },
+		{ { KEY_2, DefaultSwitchToTabModifier }, "switch-to-tab-2" },
+		{ { KEY_3, DefaultSwitchToTabModifier }, "switch-to-tab-3" },
+		{ { KEY_4, DefaultSwitchToTabModifier }, "switch-to-tab-4" },
+		{ { KEY_5, DefaultSwitchToTabModifier }, "switch-to-tab-5" },
+		{ { KEY_6, DefaultSwitchToTabModifier }, "switch-to-tab-6" },
+		{ { KEY_7, DefaultSwitchToTabModifier }, "switch-to-tab-7" },
+		{ { KEY_8, DefaultSwitchToTabModifier }, "switch-to-tab-8" },
+		{ { KEY_9, DefaultSwitchToTabModifier }, "switch-to-tab-9" },
+		{ { KEY_0, DefaultSwitchToTabModifier }, "switch-to-last-tab" },
 		{ { KEY_LEFT, KEYMOD_LALT }, "editor-go-back" },
 		{ { KEY_RIGHT, KEYMOD_LALT }, "editor-go-forward" },
 	};
@@ -1516,6 +1526,18 @@ bool UICodeEditorSplitter::isWidgetInAnyWidget( UIWidget* checkWidget ) const {
 		return false;
 	} );
 	return found;
+}
+
+UITab* UICodeEditorSplitter::getTabFromWidget( UIWidget* checkWidget ) const {
+	for ( auto tabWidget : mTabWidgets ) {
+		size_t tabCount = tabWidget->getTabCount();
+		for ( size_t i = 0; i < tabCount; i++ ) {
+			UITab* tab = tabWidget->getTab( i );
+			if ( tab->getOwnedWidget() == checkWidget )
+				return tab;
+		}
+	}
+	return nullptr;
 }
 
 bool UICodeEditorSplitter::curEditorExists() const {

@@ -4,6 +4,7 @@
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uilinearlayout.hpp>
 #include <eepp/ui/uiselectbutton.hpp>
+#include <eepp/ui/widgetcommandexecuter.hpp>
 
 namespace EE { namespace UI {
 
@@ -13,7 +14,7 @@ namespace Tools {
 
 class UIDiffEditorPlugin;
 
-class EE_API UIDiffView : public UIWidget {
+class EE_API UIDiffView : public UIWidget, public WidgetCommandExecuter {
   public:
 	enum class ViewMode { Unified, SideBySide };
 	enum class SubLineDiffAlgorithm { LCS, SES };

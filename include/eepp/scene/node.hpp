@@ -1890,6 +1890,28 @@ class EE_API Node : public Transformable {
 	 */
 	bool hasEventsOfType( const Uint32& eventType ) const;
 
+	/**
+	 * @brief Enables clipping for the node's bounds.
+	 *
+	 * Convenience overload that automatically determines if clipping planes
+	 * are needed based on transforms.
+	 *
+	 * @param x Left edge.
+	 * @param y Top edge.
+	 * @param Width Width.
+	 * @param Height Height.
+	 */
+	void clipSmartEnable( const Int32& x, const Int32& y, const Uint32& Width,
+						  const Uint32& Height );
+
+	/**
+	 * @brief Disables clipping.
+	 *
+	 * Convenience overload that automatically determines if clipping planes
+	 * are active.
+	 */
+	void clipSmartDisable();
+
   protected:
 	/** @brief Map of event type to callback ID to callback function. */
 	typedef UnorderedMap<Uint32, std::map<Uint32, EventCallback>> EventsMap;
@@ -2464,28 +2486,6 @@ class EE_API Node : public Transformable {
 	 * @param needsClipPlanes Whether clipping planes are active.
 	 */
 	void clipSmartDisable( bool needsClipPlanes );
-
-	/**
-	 * @brief Enables clipping for the node's bounds.
-	 *
-	 * Convenience overload that automatically determines if clipping planes
-	 * are needed based on transforms.
-	 *
-	 * @param x Left edge.
-	 * @param y Top edge.
-	 * @param Width Width.
-	 * @param Height Height.
-	 */
-	void clipSmartEnable( const Int32& x, const Int32& y, const Uint32& Width,
-						  const Uint32& Height );
-
-	/**
-	 * @brief Disables clipping.
-	 *
-	 * Convenience overload that automatically determines if clipping planes
-	 * are active.
-	 */
-	void clipSmartDisable();
 
 	/**
 	 * @brief Finds the nearest draw invalidator in the parent chain.

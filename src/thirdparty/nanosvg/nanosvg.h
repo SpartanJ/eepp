@@ -165,7 +165,7 @@ typedef struct NSVGimage
 {
 	float width;				// Width of the image.
 	float height;				// Height of the image.
-	unsigned current_color;			// For "currentColor"
+	unsigned current_color;		// For "currentColor"
 	NSVGshape* shapes;			// Linked list of shapes in the image.
 } NSVGimage;
 
@@ -648,6 +648,10 @@ static NSVGparser* nsvg__createParser(unsigned current_color)
 	p->attr[0].fontSize = 40.0f;
 
 	p->image->current_color = current_color;
+
+	p->alignX = NSVG_ALIGN_MID;
+	p->alignY = NSVG_ALIGN_MID;
+	p->alignType = NSVG_ALIGN_MEET;
 
 	return p;
 

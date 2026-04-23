@@ -156,6 +156,60 @@ UIWidget* UIWidget::setLayoutMarginBottom( const Float& marginBottom ) {
 	return this;
 }
 
+UIWidget* UIWidget::setLayoutMarginAuto( Uint32 dir, bool isAuto ) {
+	if ( isAuto != ( ( mMarginAuto & dir ) != 0 ) ) {
+		if ( isAuto ) {
+			mMarginAuto |= dir;
+			calculateAutoMargin();
+		} else {
+			mMarginAuto &= ~dir;
+			notifyLayoutAttrChange();
+			notifyLayoutAttrChangeParent();
+		}
+	}
+	return this;
+}
+
+UIWidget* UIWidget::setLayoutMarginLeftAuto( bool isAuto ) {
+	return setLayoutMarginAuto( MarginAutoLeft, isAuto );
+}
+
+UIWidget* UIWidget::setLayoutMarginRightAuto( bool isAuto ) {
+	return setLayoutMarginAuto( MarginAutoRight, isAuto );
+}
+
+UIWidget* UIWidget::setLayoutMarginTopAuto( bool isAuto ) {
+	return setLayoutMarginAuto( MarginAutoTop, isAuto );
+}
+
+UIWidget* UIWidget::setLayoutMarginBottomAuto( bool isAuto ) {
+	return setLayoutMarginAuto( MarginAutoTop, isAuto );
+}
+
+UIWidget* UIWidget::setLayoutMarginAuto( bool left, bool right, bool top, bool bottom ) {
+	setLayoutMarginLeftAuto( left );
+	setLayoutMarginRightAuto( right );
+	setLayoutMarginTopAuto( top );
+	setLayoutMarginBottomAuto( bottom );
+	return this;
+}
+
+bool UIWidget::hasLayoutMarginLeftAuto() const {
+	return mMarginAuto & MarginAutoLeft;
+}
+
+bool UIWidget::hasLayoutMarginRightAuto() const {
+	return mMarginAuto & MarginAutoRight;
+}
+
+bool UIWidget::hasLayoutMarginTopAuto() const {
+	return mMarginAuto & MarginAutoTop;
+}
+
+bool UIWidget::hasLayoutMarginBottomAuto() const {
+	return mMarginAuto & MarginAutoBottom;
+}
+
 UIWidget* UIWidget::setLayoutPixelsMargin( const Rectf& margin ) {
 	if ( mLayoutMargin != margin ) {
 		mLayoutMarginPx = margin;
@@ -533,8 +587,83 @@ UITooltip* UIWidget::getTooltip() {
 	return mTooltip;
 }
 
+void UIWidget::calculateAutoMargin() {
+	if ( !mMarginAuto || !getParent() || !getParent()->isWidget() )
+		return;
+
+	UIWidget* parent = getParent()->asType<UIWidget>();
+	Sizef parentSize = parent->getPixelsSize();
+	Rectf parentPadding = parent->getPixelsPadding();
+
+	bool changed = false;
+	if ( ( mMarginAuto & MarginAutoLeft ) && ( mMarginAuto & MarginAutoRight ) ) {
+		Float availableWidth = parentSize.getWidth() - parentPadding.Left - parentPadding.Right -
+							   getPixelsSize().getWidth();
+		Float newMarginLeft = availableWidth > 0 ? availableWidth / 2.f : 0.f;
+		Float newMarginRight = availableWidth > 0 ? availableWidth / 2.f : 0.f;
+		if ( mLayoutMarginPx.Left != newMarginLeft || mLayoutMarginPx.Right != newMarginRight ) {
+			mLayoutMarginPx.Left = newMarginLeft;
+			mLayoutMarginPx.Right = newMarginRight;
+			changed = true;
+		}
+	} else if ( mMarginAuto & MarginAutoLeft ) {
+		Float availableWidth = parentSize.getWidth() - parentPadding.Left - parentPadding.Right -
+							   getPixelsSize().getWidth() - mLayoutMarginPx.Right;
+		Float newMarginLeft = std::max( 0.f, availableWidth );
+		if ( mLayoutMarginPx.Left != newMarginLeft ) {
+			mLayoutMarginPx.Left = newMarginLeft;
+			changed = true;
+		}
+	} else if ( mMarginAuto & MarginAutoRight ) {
+		Float availableWidth = parentSize.getWidth() - parentPadding.Left - parentPadding.Right -
+							   getPixelsSize().getWidth() - mLayoutMarginPx.Left;
+		Float newMarginRight = std::max( 0.f, availableWidth );
+		if ( mLayoutMarginPx.Right != newMarginRight ) {
+			mLayoutMarginPx.Right = newMarginRight;
+			changed = true;
+		}
+	}
+
+	if ( ( mMarginAuto & MarginAutoTop ) && ( mMarginAuto & MarginAutoBottom ) ) {
+		Float availableHeight = parentSize.getHeight() - parentPadding.Top - parentPadding.Bottom -
+								getPixelsSize().getHeight();
+		Float newMarginTop = availableHeight > 0 ? availableHeight / 2.f : 0.f;
+		Float newMarginBottom = availableHeight > 0 ? availableHeight / 2.f : 0.f;
+		if ( mLayoutMarginPx.Top != newMarginTop || mLayoutMarginPx.Bottom != newMarginBottom ) {
+			mLayoutMarginPx.Top = newMarginTop;
+			mLayoutMarginPx.Bottom = newMarginBottom;
+			changed = true;
+		}
+	} else if ( mMarginAuto & MarginAutoTop ) {
+		Float availableHeight = parentSize.getHeight() - parentPadding.Top - parentPadding.Bottom -
+								getPixelsSize().getHeight() - mLayoutMarginPx.Bottom;
+		Float newMarginTop = std::max( 0.f, availableHeight );
+		if ( mLayoutMarginPx.Top != newMarginTop ) {
+			mLayoutMarginPx.Top = newMarginTop;
+			changed = true;
+		}
+	} else if ( mMarginAuto & MarginAutoBottom ) {
+		Float availableHeight = parentSize.getHeight() - parentPadding.Top - parentPadding.Bottom -
+								getPixelsSize().getHeight() - mLayoutMarginPx.Top;
+		Float newMarginBottom = std::max( 0.f, availableHeight );
+		if ( mLayoutMarginPx.Bottom != newMarginBottom ) {
+			mLayoutMarginPx.Bottom = newMarginBottom;
+			changed = true;
+		}
+	}
+
+	if ( changed ) {
+		mLayoutMargin = PixelDensity::pxToDp( mLayoutMarginPx );
+		onMarginChange();
+		notifyLayoutAttrChange();
+		notifyLayoutAttrChangeParent();
+	}
+}
+
 void UIWidget::onParentSizeChange( const Vector2f& sizeChange ) {
 	updateAnchors( sizeChange );
+	if ( mMarginAuto != 0 )
+		calculateAutoMargin();
 	UINode::onParentSizeChange( sizeChange );
 }
 
@@ -551,6 +680,8 @@ void UIWidget::onVisibilityChange() {
 }
 
 void UIWidget::onSizeChange() {
+	if ( mMarginAuto != 0 )
+		calculateAutoMargin();
 	UINode::onSizeChange();
 
 	if ( mBorder != NULL )
@@ -572,6 +703,8 @@ void UIWidget::onAutoSize() {}
 void UIWidget::onWidgetCreated() {}
 
 void UIWidget::notifyLayoutAttrChange() {
+	invalidateIntrinsicSize();
+
 	if ( 0 == mAttributesTransactionCount ) {
 		NodeMessage msg( this, NodeMessage::LayoutAttributeChange );
 		messagePost( &msg );
@@ -584,12 +717,30 @@ void UIWidget::notifyLayoutAttrChangeParent() {
 	if ( NULL == mParentNode )
 		return;
 
+	invalidateIntrinsicSize();
+
 	if ( 0 == mAttributesTransactionCount ) {
 		NodeMessage msg( this, NodeMessage::LayoutAttributeChange );
 		mParentNode->messagePost( &msg );
 	} else {
 		mFlags |= UI_PARENT_ATTRIBUTE_CHANGED;
 	}
+}
+
+Float UIWidget::getMinIntrinsicWidth() const {
+	if ( mWidthPolicy == SizePolicy::Fixed )
+		return mSize.x;
+	return 0.f;
+}
+
+Float UIWidget::getMaxIntrinsicWidth() const {
+	if ( mWidthPolicy == SizePolicy::Fixed )
+		return mSize.x;
+	return 0.f;
+}
+
+void UIWidget::invalidateIntrinsicSize() {
+	mIntrinsicWidthsDirty = true;
 }
 
 void UIWidget::updateAnchors( const Vector2f& sizeChange ) {
@@ -850,6 +1001,12 @@ void UIWidget::updatePseudoClasses() {
 
 	if ( mState & UIState::StateFlagDisabled )
 		mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::Disabled;
+
+	if ( mState & UIState::StateFlagLink )
+		mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::Link;
+
+	if ( mState & UIState::StateFlagVisited )
+		mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::Visited;
 
 	invalidateDraw();
 }
@@ -1599,6 +1756,46 @@ void UIWidget::setStyleSheetInlineProperty( const std::string& name, const std::
 }
 
 void UIWidget::propagateInheritedProperty( const CSS::StyleSheetProperty& property ) {
+	CSS::StyleSheetProperty propToPropagate = property;
+
+	if ( property.getPropertyDefinition() &&
+		 property.getPropertyDefinition()->getPropertyId() == PropertyId::FontSize ) {
+		StyleSheetLength length( property.value() );
+		Float pxSize = 0;
+
+		if ( length.getUnit() == StyleSheetLength::Unit::Rem ) {
+			Float rootFontSize = 12.f;
+			if ( getUISceneNode() != NULL ) {
+				UIWidget* docRoot = this;
+				while ( docRoot->getParent() && docRoot->getParent()->isWidget() )
+					docRoot = docRoot->getParent()->asType<UIWidget>();
+				rootFontSize = getAbsoluteFontSize( docRoot );
+			}
+			pxSize = length.getValue() * rootFontSize;
+		} else if ( length.getUnit() == StyleSheetLength::Unit::Em ||
+					length.getUnit() == StyleSheetLength::Unit::Percentage ) {
+			Float parentFontSize = 12.f;
+			Node* parentNode = getParent();
+			while ( parentNode ) {
+				if ( parentNode->isWidget() ) {
+					parentFontSize = getAbsoluteFontSize( parentNode->asType<UIWidget>() );
+					break;
+				}
+				parentNode = parentNode->getParent();
+			}
+			if ( length.getUnit() == StyleSheetLength::Unit::Em )
+				pxSize = length.getValue() * parentFontSize;
+			else
+				pxSize = ( length.getValue() / 100.f ) * parentFontSize;
+		} else {
+			pxSize = lengthFromValue( property );
+		}
+
+		propToPropagate = CSS::StyleSheetProperty(
+			property.getName(), String::fromFloat( PixelDensity::pxToDp( pxSize ), "dp" ),
+			property.getSpecificity() );
+	}
+
 	Node* child = getFirstChild();
 	while ( child ) {
 		if ( child->isWidget() ) {
@@ -1607,8 +1804,8 @@ void UIWidget::propagateInheritedProperty( const CSS::StyleSheetProperty& proper
 			// Only propagate if the child doesn't explicitly override it
 			if ( childStyle && !childStyle->hasLocalProperty(
 								   property.getPropertyDefinition()->getPropertyId() ) ) {
-				childWidget->applyProperty( property );
-				childWidget->propagateInheritedProperty( property );
+				childWidget->applyProperty( propToPropagate );
+				childWidget->propagateInheritedProperty( propToPropagate );
 			}
 		}
 		child = child->getNextNode();
@@ -1779,18 +1976,46 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 			}
 			break;
 		}
-		case PropertyId::MarginLeft:
-			setLayoutMarginLeft( lengthFromValueAsDp( attribute ) );
+		case PropertyId::MarginLeft: {
+			if ( attribute.asString() == "auto" ) {
+				mMarginAuto |= MarginAutoLeft;
+				calculateAutoMargin();
+			} else {
+				mMarginAuto &= ~MarginAutoLeft;
+				setLayoutMarginLeft( lengthFromValueAsDp( attribute ) );
+			}
 			break;
-		case PropertyId::MarginRight:
-			setLayoutMarginRight( lengthFromValueAsDp( attribute ) );
+		}
+		case PropertyId::MarginRight: {
+			if ( attribute.asString() == "auto" ) {
+				mMarginAuto |= MarginAutoRight;
+				calculateAutoMargin();
+			} else {
+				mMarginAuto &= ~MarginAutoRight;
+				setLayoutMarginRight( lengthFromValueAsDp( attribute ) );
+			}
 			break;
-		case PropertyId::MarginTop:
-			setLayoutMarginTop( lengthFromValueAsDp( attribute ) );
+		}
+		case PropertyId::MarginTop: {
+			if ( attribute.asString() == "auto" ) {
+				mMarginAuto |= MarginAutoTop;
+				calculateAutoMargin();
+			} else {
+				mMarginAuto &= ~MarginAutoTop;
+				setLayoutMarginTop( lengthFromValueAsDp( attribute ) );
+			}
 			break;
-		case PropertyId::MarginBottom:
-			setLayoutMarginBottom( lengthFromValueAsDp( attribute ) );
+		}
+		case PropertyId::MarginBottom: {
+			if ( attribute.asString() == "auto" ) {
+				mMarginAuto |= MarginAutoBottom;
+				calculateAutoMargin();
+			} else {
+				mMarginAuto &= ~MarginAutoBottom;
+				setLayoutMarginBottom( lengthFromValueAsDp( attribute ) );
+			}
 			break;
+		}
 		case PropertyId::Tooltip: {
 			String text = getTranslatorString( attribute.value() );
 			setTooltipText( text );
@@ -2041,9 +2266,11 @@ void UIWidget::loadFromXmlNode( const pugi::xml_node& node ) {
 			propertiesParser.parse( std::string_view{ ait->value() } );
 			if ( !propertiesParser.getProperties().empty() ) {
 				for ( auto& [_, property] : propertiesParser.getProperties() ) {
+					auto propertyImportant( property );
+					propertyImportant.setImportant( true );
 					if ( mStyle )
-						mStyle->setStyleSheetProperty( property );
-					applyProperty( property );
+						mStyle->setStyleSheetProperty( propertyImportant );
+					applyProperty( propertyImportant );
 				}
 			}
 			continue;
@@ -2337,17 +2564,19 @@ void UIWidget::onFocusNextWidget() {
 }
 
 Float UIWidget::getMatchParentWidth() const {
-	Rectf padding = Rectf();
+	Rectf padding = Rectf::Zero;
 
 	if ( getParent()->isWidget() )
 		padding = static_cast<UIWidget*>( getParent() )->getPixelsPadding();
 
-	Float width = getParent()->getPixelsSize().getWidth() - mLayoutMarginPx.Left -
-				  mLayoutMarginPx.Right - padding.Left - padding.Right;
+	Float marginLeft = ( mMarginAuto & MarginAutoLeft ) ? 0.f : mLayoutMarginPx.Left;
+	Float marginRight = ( mMarginAuto & MarginAutoRight ) ? 0.f : mLayoutMarginPx.Right;
+
+	Float width = getParent()->getPixelsSize().getWidth() - marginLeft - marginRight -
+				  padding.Left - padding.Right;
 
 	if ( !mMaxWidthEq.empty() ) {
-		Float maxWidth( getMaxSizePx().getWidth() - mLayoutMarginPx.Left - mLayoutMarginPx.Right -
-						padding.Left - padding.Right );
+		Float maxWidth( getMaxSizePx().getWidth() );
 		if ( maxWidth > 0 && maxWidth < width )
 			width = maxWidth;
 	}
@@ -2356,17 +2585,19 @@ Float UIWidget::getMatchParentWidth() const {
 }
 
 Float UIWidget::getMatchParentHeight() const {
-	Rectf padding = Rectf();
+	Rectf padding = Rectf::Zero;
 
 	if ( getParent()->isWidget() )
-		padding = static_cast<UIWidget*>( getParent() )->getPadding();
+		padding = static_cast<UIWidget*>( getParent() )->getPixelsPadding();
 
-	Float height = getParent()->getPixelsSize().getHeight() - mLayoutMarginPx.Top -
-				   mLayoutMarginPx.Bottom - padding.Top - padding.Bottom;
+	Float marginTop = ( mMarginAuto & MarginAutoTop ) ? 0.f : mLayoutMarginPx.Top;
+	Float marginBottom = ( mMarginAuto & MarginAutoBottom ) ? 0.f : mLayoutMarginPx.Bottom;
+
+	Float height = getParent()->getPixelsSize().getHeight() - marginTop - marginBottom -
+				   padding.Top - padding.Bottom;
 
 	if ( !mMaxHeightEq.empty() ) {
-		Float maxHeight( getMaxSizePx().getHeight() - mLayoutMarginPx.Left - mLayoutMarginPx.Right -
-						 padding.Left - padding.Right );
+		Float maxHeight( getMaxSizePx().getHeight() );
 		if ( maxHeight > 0 && maxHeight < height )
 			height = maxHeight;
 	}
@@ -2392,6 +2623,22 @@ Sizef UIWidget::getSizeFromLayoutPolicy() {
 	}
 
 	return size;
+}
+
+Float UIWidget::getPropertyWidth() const {
+	const StyleSheetProperty* prop = nullptr;
+	if ( mStyle && ( prop = mStyle->getProperty( PropertyId::Width ) ) ) {
+		return lengthFromValue( *prop );
+	}
+	return 0.f;
+}
+
+Float UIWidget::getPropertyHeight() const {
+	const StyleSheetProperty* prop = nullptr;
+	if ( mStyle && ( prop = mStyle->getProperty( PropertyId::Height ) ) ) {
+		return lengthFromValue( *prop );
+	}
+	return 0.f;
 }
 
 }} // namespace EE::UI

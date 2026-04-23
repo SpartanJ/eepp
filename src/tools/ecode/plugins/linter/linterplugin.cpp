@@ -21,6 +21,11 @@
 #define YAML_DECLARE_STATIC
 #include <libyaml/include/yaml.h>
 
+#include <gumbo-parser/error.h>
+#include <gumbo-parser/gumbo.h>
+#include <gumbo-parser/parser.h>
+#include <gumbo-parser/string_buffer.h>
+
 using json = nlohmann::json;
 
 namespace ecode {
@@ -1644,6 +1649,67 @@ void LinterPlugin::registerNativeLinters() {
 			ret[line] = { match };
 		}
 
+		setMatches( doc.get(), MatchOrigin::Linter, ret );
+	};
+
+	mNativeLinters["html"] = [this]( std::shared_ptr<TextDocument> doc, const std::string& path ) {
+		std::map<Int64, std::vector<LinterMatch>> ret;
+
+		std::string contents;
+		if ( !FileSystem::fileGet( path, contents ) )
+			return;
+
+		GumboOutput* output = gumbo_parse( contents.c_str() );
+
+		if ( output->errors.length > 0 ) {
+			GumboInternalParser dummy_parser = {};
+			dummy_parser._options = &kGumboDefaultOptions;
+
+			for ( unsigned int i = 0; i < output->errors.length; ++i ) {
+				GumboError* error = static_cast<GumboError*>( output->errors.data[i] );
+
+				Int64 line = static_cast<Int64>( error->position.line ) - 1;
+				Int64 col = static_cast<Int64>( error->position.column ) - 1;
+
+				if ( line < 0 )
+					line = 0;
+				if ( col < 0 )
+					col = 0;
+
+				LinterMatch match;
+				match.range = { { line, col }, { line, col } };
+				match.range = { doc->nextWordBoundary( match.range.start(), false ),
+								doc->previousWordBoundary( match.range.start(), false ) };
+
+				if ( !match.range.hasSelection() )
+					match.range.setEnd( { line, col + 1 } );
+
+				GumboStringBuffer buffer;
+				gumbo_string_buffer_init( &dummy_parser, &buffer );
+				gumbo_error_to_string( &dummy_parser, error, &buffer );
+
+				std::string errorStr( buffer.data, buffer.length );
+				gumbo_string_buffer_destroy( &dummy_parser, &buffer );
+
+				// Gumbo prepends "@line:col: " to the string (e.g., "@12:5: The tag...").
+				// Since ecode visually places the error at the right line/col,
+				// we should strip this prefix out for a cleaner UI tooltip.
+				auto colonPos = errorStr.find( ": " );
+				if ( errorStr[0] == '@' && colonPos != std::string::npos ) {
+					// Also strips the space after the colon
+					errorStr = errorStr.substr( colonPos + 2 );
+				}
+
+				match.text = errorStr;
+				match.type = getLinterTypeFromSeverity( LSPDiagnosticSeverity::Warning );
+				match.lineHash = doc->getLineHash( match.range.start().line() );
+				match.origin = MatchOrigin::Linter;
+
+				ret[line].emplace_back( std::move( match ) );
+			}
+		}
+
+		gumbo_destroy_output( &kGumboDefaultOptions, output );
 		setMatches( doc.get(), MatchOrigin::Linter, ret );
 	};
 }

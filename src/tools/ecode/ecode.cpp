@@ -447,7 +447,7 @@ void App::openFontDialog( std::string& fontPath, bool loadingMonoFont, bool term
 	UIFileDialog* dialog = UIFileDialog::New(
 		UIFileDialog::DefaultFlags |
 			( mConfig.ui.nativeFileDialogs ? UIFileDialog::UseNativeFileDialog : 0 ),
-		"*.ttf; *.otf; *.wolff; *.otb; *.bdf; *.ttc",
+		"*.ttf; *.otf; *.woff; *.woff2; *.otb; *.bdf; *.ttc",
 		FileSystem::fileRemoveFileName( absoluteFontPath ) );
 	if ( dialog->getMultiView() ) {
 		ModelIndex index = dialog->getMultiView()->getListView()->findRowWithText(
@@ -1378,7 +1378,7 @@ UITextView* App::getDocInfo() const {
 	return mDocInfo;
 }
 
-UITreeView* App::getProjectTreeView() const {
+UITreeViewFS* App::getProjectTreeView() const {
 	return mProjectTreeView;
 }
 
@@ -1419,6 +1419,19 @@ std::string App::getCurrentWorkingDir() const {
 		 mSplitter->getCurEditor()->getDocument().hasFilepath() ) {
 		return mSplitter->getCurEditor()->getDocument().getFileInfo().getDirectoryPath();
 	}
+
+	return "";
+}
+
+std::string App::getCurrentFileDir() const {
+	if ( mSplitter && mSplitter->curEditorIsNotNull() && mSplitter->curEditorExists() &&
+		 mSplitter->getCurEditor()->hasDocument() &&
+		 mSplitter->getCurEditor()->getDocument().hasFilepath() ) {
+		return mSplitter->getCurEditor()->getDocument().getFileInfo().getDirectoryPath();
+	}
+
+	if ( !mCurrentProject.empty() && mCurrentProject != mPlaygroundPath )
+		return mCurrentProject;
 
 	return "";
 }
@@ -1666,8 +1679,14 @@ void App::onWidgetFocusChange( UIWidget* widget ) {
 	if ( widget && !widget->isType( UI_TYPE_CODEEDITOR ) ) {
 		if ( widget->isType( UI_TYPE_TERMINAL ) )
 			setAppTitle( widget->asType<UITerminal>()->getTitle() );
-		else
-			setAppTitle( "" );
+		else {
+			UITab* tab = nullptr;
+			if ( ( tab = mSplitter->getTabFromWidget( widget ) ) ) {
+				setAppTitle( tab->getText() );
+			} else {
+				setAppTitle( "" );
+			}
+		}
 	}
 }
 
@@ -1974,16 +1993,6 @@ void App::setTheme( const std::string& path ) {
 				}
 				theme->getStyleSheet().addKeyframes( parser.getStyleSheet().getKeyframes() );
 			}
-
-			/* auto inheritsEditorColors = style->getVariableByName( "--inherit-editor-colors" );
-			if ( !inheritsEditorColors.isEmpty() ) {
-				const SyntaxColorScheme* colorScheme = getCurrentColorScheme();
-				std::string themeString(
-					ColorSchemeTranslator::fromSyntaxColorScheme( *colorScheme ) );
-				StyleSheetParser parser;
-				if ( parser.loadFromString( themeString ) )
-					theme->getStyleSheet().combineStyleSheet( parser.getStyleSheet() );
-			} */
 		}
 	}
 
@@ -2131,6 +2140,12 @@ std::map<KeyBindings::Shortcut, std::string> App::getDefaultKeybindings() {
 	return local;
 }
 
+#if EE_PLATFORM == EE_PLATFORM_MACOS
+static Uint32 DefaultSwitchToStatusPanelModifier = KeyMod::getDefaultModifier();
+#else
+static Uint32 DefaultSwitchToStatusPanelModifier = KEYMOD_LALT;
+#endif
+
 std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 	return {
 		{ { KEY_RETURN, KEYMOD_LALT | KEYMOD_LCTRL }, "fullscreen-toggle" },
@@ -2166,11 +2181,11 @@ std::map<KeyBindings::Shortcut, std::string> App::getLocalKeybindings() {
 		  "terminal-split-swap" },
 		{ { KEY_T, KeyMod::getDefaultModifier() | KEYMOD_LALT | KEYMOD_SHIFT },
 		  "reopen-closed-tab" },
-		{ { KEY_1, KEYMOD_LALT }, "toggle-status-locate-bar" },
-		{ { KEY_2, KEYMOD_LALT }, "toggle-status-global-search-bar" },
-		{ { KEY_3, KEYMOD_LALT }, "toggle-status-terminal" },
-		{ { KEY_4, KEYMOD_LALT }, "toggle-status-build-output" },
-		{ { KEY_5, KEYMOD_LALT }, "toggle-status-app-output" },
+		{ { KEY_1, DefaultSwitchToStatusPanelModifier }, "toggle-status-locate-bar" },
+		{ { KEY_2, DefaultSwitchToStatusPanelModifier }, "toggle-status-global-search-bar" },
+		{ { KEY_3, DefaultSwitchToStatusPanelModifier }, "toggle-status-terminal" },
+		{ { KEY_4, DefaultSwitchToStatusPanelModifier }, "toggle-status-build-output" },
+		{ { KEY_5, DefaultSwitchToStatusPanelModifier }, "toggle-status-app-output" },
 		{ { KEY_B, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-start-cancel" },
 		{ { KEY_C, KeyMod::getDefaultModifier() | KEYMOD_SHIFT }, "project-build-cancel" },
 		{ { KEY_R, KeyMod::getDefaultModifier() }, "project-build-and-run" },
@@ -2662,6 +2677,7 @@ void App::loadDiffFromMemory( const std::string& content, const std::string& ori
 	diffView->setHeadersVisible( true );
 	diffView->loadFromPatch( content, originalFilePath );
 	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
+	registerUnlockedCommands( *diffView );
 }
 
 void App::loadDiffFromPath( const std::string& path ) {
@@ -2708,6 +2724,7 @@ void App::loadDiffFromPath( const std::string& path ) {
 	diffView->setHeadersVisible( true );
 	diffView->loadFromPatch( content, path );
 	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
+	registerUnlockedCommands( *diffView );
 }
 
 void App::loadDiffFromPaths( const std::string& oldPath, const std::string& newPath ) {
@@ -2727,6 +2744,7 @@ void App::loadDiffFromPaths( const std::string& oldPath, const std::string& newP
 	diffView->setHeadersVisible( true );
 	diffView->loadFromFile( oldPath, newPath );
 	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
+	registerUnlockedCommands( *diffView );
 }
 
 void App::loadDiffFromStrings( const std::string& str, const std::string& otherStr ) {
@@ -2739,6 +2757,7 @@ void App::loadDiffFromStrings( const std::string& str, const std::string& otherS
 	diffView->setHeadersVisible( true );
 	diffView->loadFromStrings( str, otherStr );
 	diffView->setSyntaxColorScheme( *getCurrentColorScheme() );
+	registerUnlockedCommands( *diffView );
 }
 
 void App::openFileFromPath( const std::string& path ) {
@@ -2922,6 +2941,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	editor->setFoldDrawable( findIcon( "chevron-down", PixelDensity::dpToPxI( 12 ) ) );
 	editor->setFoldedDrawable( findIcon( "chevron-right", PixelDensity::dpToPxI( 12 ) ) );
 	editor->setTabStops( mConfig.doc.tabStops );
+	editor->setEnableInlineColorBoxes( config.inlineColorBoxes );
 
 	doc.setAutoCloseBrackets( !mConfig.editor.autoCloseBrackets.empty() );
 	doc.setAutoCloseBracketsPairs( makeAutoClosePairs( mConfig.editor.autoCloseBrackets ) );
@@ -2932,6 +2952,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 										 : TextDocument::IndentType::IndentTabs );
 	doc.setIndentWidth( docc.indentWidth );
 	doc.setAutoDetectIndentType( docc.autoDetectIndentType );
+	doc.setAutoIndent( docc.autoIndent );
 	doc.setBOM( docc.writeUnicodeBOM );
 
 	doc.getFoldRangeService().setEnabled( config.codeFoldingEnabled );
@@ -3049,8 +3070,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			}
 
 			if ( otherEditor ) {
-				loadDiffFromStrings( editor->getDocument().getText().toUtf8(),
-									 otherEditor->getDocument().getText().toUtf8() );
+				loadDiffFromStrings( editor->getDocument().toUtf8String(),
+									 otherEditor->getDocument().toUtf8String() );
 			}
 		}
 	} );
@@ -3199,8 +3220,8 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 			editor->getDocument().setCommand(
 				"show-image-preview", [this]( TextDocument::Client* client ) {
 					loadImageFromMedium(
-						static_cast<UICodeEditor*>( client )->getDocument().getText().toUtf8(),
-						true, true );
+						static_cast<UICodeEditor*>( client )->getDocument().toUtf8String(), true,
+						true );
 				} );
 			editor->on( Event::OnCreateContextMenu, [this]( const Event* event ) {
 				auto cevent = static_cast<const ContextMenuEvent*>( event );
@@ -3238,7 +3259,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 										 !SceneManager::instance()->isShuttingDown() &&
 										 App::instance()->getSplitter()->editorExists( editor ) ) {
 										mdView->loadFromString(
-											editor->getDocument().getText().toUtf8() );
+											editor->getDocument().toUtf8String() );
 									}
 								},
 								Milliseconds( 400 ), (Action::UniqueID)mdView );
@@ -3251,7 +3272,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 						}
 					} );
 
-					mdView->loadFromString( doc->getText().toUtf8() );
+					mdView->loadFromString( doc->toUtf8String() );
 					auto title =
 						i18n( "markdown_live_preview_ellipsis", "Markdown Live Preview:" ) + " " +
 						doc->getFilename();
@@ -3270,7 +3291,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 						if ( !editor->isDirty() ) {
 							loadDiffFromPath( editor->getDocument().getFilePath() );
 						} else {
-							loadDiffFromMemory( editor->getDocument().getText().toUtf8(),
+							loadDiffFromMemory( editor->getDocument().toUtf8String(),
 												editor->getDocument().getFilePath() );
 						}
 					}
@@ -3288,8 +3309,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 					if ( editor->isDirty() ) {
 						std::string otherStr;
 						if ( FileSystem::fileGet( files[0], otherStr ) ) {
-							loadDiffFromStrings( editor->getDocument().getText().toUtf8(),
-												 otherStr );
+							loadDiffFromStrings( editor->getDocument().toUtf8String(), otherStr );
 						}
 					} else {
 						loadDiffFromPaths( editor->getDocument().getFilePath(), files[0] );
@@ -3301,7 +3321,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 		editor->getDocument().setCommand(
 			"compare-with-clipboard", [this]( TextDocument::Client* client ) {
 				auto editor = static_cast<UICodeEditor*>( client );
-				loadDiffFromStrings( editor->getDocument().getText().toUtf8(),
+				loadDiffFromStrings( editor->getDocument().toUtf8String(),
 									 getWindow()->getClipboard()->getText() );
 			} );
 
@@ -3758,7 +3778,7 @@ void App::initProjectViewEmptyCont() {
 
 void App::initProjectTreeViewUI() {
 	initProjectViewEmptyCont();
-	mProjectTreeView = mUISceneNode->find<UITreeView>( "project_view" );
+	mProjectTreeView = mUISceneNode->find<UITreeViewFS>( "project_view" );
 	mProjectTreeView->setColumnsHidden(
 		{ FileSystemModel::Icon, FileSystemModel::Size, FileSystemModel::Group,
 		  FileSystemModel::Inode, FileSystemModel::Owner, FileSystemModel::SymlinkTarget,
@@ -3789,8 +3809,9 @@ void App::initProjectTreeViewUI() {
 					} else {
 						tab->getTabWidget()->setTabSelected( tab );
 					}
-				} else { // ModelEventType::OpenMenu
-					mSettings->createProjectTreeMenu( FileInfo( path ) );
+				} else if ( !mProjectTreeView->getSelection().isEmpty() ) {
+					// ModelEventType::OpenMenu
+					mSettings->createProjectTreeMenu( mProjectTreeView->getSelectionsFileInfo() );
 				}
 			}
 		}
@@ -3804,7 +3825,10 @@ void App::initProjectTreeViewUI() {
 		if ( !mFileSystemModel )
 			return;
 		const KeyEvent* keyEvent = static_cast<const KeyEvent*>( event );
-		if ( keyEvent->getKeyCode() == KEY_F2 || keyEvent->getKeyCode() == KEY_DELETE ) {
+		if ( keyEvent->getKeyCode() == KEY_F2 ||
+			 ( ( keyEvent->getKeyCode() == KEY_DELETE ||
+				 keyEvent->getKeyCode() == KEY_BACKSPACE ) &&
+			   mProjectTreeView->getSelection().size() == 1 ) ) {
 			ModelIndex modelIndex = mProjectTreeView->getSelection().first();
 			if ( !modelIndex.isValid() )
 				return;
@@ -3813,10 +3837,15 @@ void App::initProjectTreeViewUI() {
 				FileInfo fileInfo( vPath.toString() );
 				if ( keyEvent->getKeyCode() == KEY_F2 ) {
 					renameFile( fileInfo );
-				} else {
+				} else if ( keyEvent->getKeyCode() == KEY_DELETE ||
+							keyEvent->getKeyCode() == KEY_BACKSPACE ) {
 					mSettings->deleteFileDialog( fileInfo );
 				}
 			}
+		} else if ( ( keyEvent->getKeyCode() == KEY_DELETE ||
+					  keyEvent->getKeyCode() == KEY_BACKSPACE ) &&
+					!mProjectTreeView->getSelection().isEmpty() ) {
+			mProjectTreeView->asType<UITreeViewFS>()->deleteSelectedFiles();
 		}
 	} );
 	mProjectTreeView->setDisableCellClipping( true );
@@ -5004,8 +5033,9 @@ void App::init( InitParameters& params ) {
 		Log::info( "Complete UI took: %.2f ms", globalClock.getElapsedTime().asMilliseconds() );
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-		if ( params.file == "./this.program" )
-			params.file = "";
+		if ( !params.files.empty() && params.files[0] == "./this.program" ) {
+			params.files.erase( params.files.begin() );
+		}
 #endif
 
 		if ( params.terminal && params.files.empty() && params.fileToOpen.empty() ) {
@@ -5031,7 +5061,7 @@ void App::init( InitParameters& params ) {
 				   globalClock.getElapsedTime().asMilliseconds() );
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-		if ( params.file.empty() || !mFileToOpen.empty() )
+		if ( params.files.empty() || !mFileToOpen.empty() )
 			downloadFileWeb(
 				mFileToOpen.empty()
 					? "https://raw.githubusercontent.com/SpartanJ/eepp/develop/README.md"

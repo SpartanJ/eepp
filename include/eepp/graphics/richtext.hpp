@@ -69,9 +69,20 @@ class EE_API RichText : public Drawable {
 	/** @return The maximum width for wrapping. */
 	Float getMaxWidth() const { return mMaxWidth; }
 
+	/** @return The minimum intrinsic width of the text block. */
+	Float getMinIntrinsicWidth();
+
+	/** @return The maximum intrinsic width of the text block. */
+	Float getMaxIntrinsicWidth();
+
 	enum class BlockType { Text, Drawable, CustomSize };
 
-	using Block = std::variant<std::shared_ptr<Text>, std::shared_ptr<Drawable>, Sizef>;
+	struct CustomBlock {
+		Sizef size;
+		bool isBlock{ false };
+	};
+
+	using Block = std::variant<std::shared_ptr<Text>, std::shared_ptr<Drawable>, CustomBlock>;
 
 	/**
 	 * @brief Adds a drawable (e.g., an image) into the text flow.
@@ -82,8 +93,9 @@ class EE_API RichText : public Drawable {
 	/**
 	 * @brief Adds a custom size spacer into the text flow.
 	 * @param size The physical dimensions of the spacer.
+	 * @param isBlock Whether this spacer acts as a block-level element.
 	 */
-	void addCustomSize( const Sizef& size );
+	void addCustomSize( const Sizef& size, bool isBlock = false );
 
 	/** @return The list of blocks. */
 	const std::vector<Block>& getBlocks() { return mBlocks; }
@@ -157,12 +169,17 @@ class EE_API RichText : public Drawable {
 	Vector2f findCharacterPos( Int64 index ) const;
 
 	/** @return A list of rectangles that cover the selection. */
-	std::vector<Rectf> getSelectionRects() const;
+	SmallVector<Rectf> getSelectionRects() const;
 
 	/** @return The current selection as a string. */
 	String getSelectionString() const;
 
+	/** Tries to update the layout if has been invalidated. This is automatically called before
+	 * draw. */
 	void updateLayout();
+
+	/** Invalidates the current layout */
+	void invalidateLayout();
 
   protected:
 	std::vector<Block> mBlocks;

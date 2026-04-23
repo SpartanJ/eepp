@@ -87,6 +87,8 @@ struct SetConfigOptionRequest {
 	std::string sessionId;
 	std::string configId;
 	std::string optionId;
+	std::string type;
+	json value;
 
 	SetConfigOptionRequest() = default;
 	json toJson() const;

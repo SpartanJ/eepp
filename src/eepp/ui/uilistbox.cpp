@@ -39,7 +39,7 @@ UIListBox::UIListBox( const std::string& tag ) :
 	mVisibleFirst( 0 ),
 	mVisibleLast( 0 ),
 	mSmoothScroll( true ) {
-	setFlags( UI_AUTO_PADDING );
+	setFlags( UI_AUTO_PADDING | UI_LOADS_ITS_CHILDREN );
 
 	auto cb = [this]( const Event* ) { containerResize(); };
 

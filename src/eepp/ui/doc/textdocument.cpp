@@ -16,6 +16,8 @@
 #include <eepp/ui/doc/textdocument.hpp>
 #include <eepp/window/engine.hpp>
 
+#include <set>
+
 using namespace std::literals;
 
 using namespace EE::Network;
@@ -28,8 +30,6 @@ namespace EE { namespace UI { namespace Doc {
 static constexpr char DEFAULT_NON_WORD_CHARS[] = " \t\n/\\()\"':,.;<>~!@#$%^&*|+=[]{}`?-";
 
 static UnorderedSet<String::HashType> TEXT_DOCUMENT_COMMANDS = {};
-
-#include <string_view> // Ensure this is included for std::string_view
 
 bool TextDocument::fileMightBeBinary( const std::string& file ) {
 	static constexpr size_t MAX_READ = 4096;
@@ -662,14 +662,14 @@ void TextDocument::guessIndentType() {
 		int guessCountdown = 10;
 		for ( size_t i = start; i < end; i++ ) {
 			const String& text = mLines[i].getText();
-			std::string match =
-				LuaPattern::match( text.size() > 128 ? text.substr( 0, 12 ) : text, "^  +" );
+			std::string match = LuaPattern::match(
+				text.size() > 128 ? text.substr( 0, 128 ).toUtf8() : text.toUtf8(), "^  +" );
 			if ( !match.empty() ) {
 				guessSpaces++;
 				guessWidth[match.size()]++;
 				guessCountdown--;
 			} else {
-				match = LuaPattern::match( mLines[i].getText(), "^\t+" );
+				match = LuaPattern::match( mLines[i].getText().toUtf8(), "^\t+" );
 				if ( !match.empty() ) {
 					guessTabs++;
 					guessCountdown--;
@@ -1043,8 +1043,9 @@ bool TextDocument::save( IOStream& stream, bool keepUndoRedoStatus ) {
 	}
 
 	size_t lastLine = linesCount() - 1;
+	std::string text;
 	for ( size_t i = 0; i <= lastLine; i++ ) {
-		std::string text( getLineTextUtf8( i ) );
+		text = getLineTextUtf8( i );
 
 		if ( !keepUndoRedoStatus && mTrimTrailingWhitespaces && text.size() > 1 &&
 			 whitespaces.find( text[text.size() - 2] ) != std::string::npos ) {
@@ -1287,6 +1288,15 @@ TextRange TextDocument::addSelection( TextRange selection ) {
 	return selection;
 }
 
+int TextDocument::selectionIndex( TextRange selection ) const {
+	if ( mSelection.exists( selection ) )
+		return mSelection.findIndex( selection );
+	selection = sanitizeRange( selection );
+	if ( mSelection.exists( selection ) )
+		return mSelection.findIndex( selection );
+	return -1;
+}
+
 void TextDocument::popSelection() {
 	mSelection.pop_back();
 	if ( mLastSelection >= mSelection.size() )
@@ -1357,18 +1367,47 @@ std::string TextDocument::getHashHexString() const {
 }
 
 String TextDocument::getText( const TextRange& range ) const {
-	TextRange nrange = sanitizeRange( range.normalized() );
 	Lock l( mLinesMutex );
-	if ( nrange.start().line() == nrange.end().line() ) {
-		return mLines[nrange.start().line()].substr(
-			nrange.start().column(), nrange.end().column() - nrange.start().column() );
+	Lock l2( *mDocumentMutex );
+
+	TextRange nrange = sanitizeRange( range.normalized() );
+	if ( !nrange.hasSelection() )
+		return String();
+
+	Int64 startLine = nrange.start().line();
+	Int64 endLine = nrange.end().line();
+	Int64 startCol = nrange.start().column();
+	Int64 endCol = nrange.end().column();
+
+	std::size_t totalSize = 0;
+	if ( startLine == endLine ) {
+		totalSize = endCol - startCol;
+	} else {
+		totalSize += ( mLines[startLine].size() - startCol );
+		for ( Int64 i = startLine + 1; i < endLine; ++i ) {
+			totalSize += mLines[i].size();
+		}
+		totalSize += endCol;
 	}
-	std::vector<String> lines = { mLines[nrange.start().line()].substr( nrange.start().column() ) };
-	for ( auto i = nrange.start().line() + 1; i <= nrange.end().line() - 1; i++ ) {
-		lines.emplace_back( mLines[i].getText() );
+
+	String result;
+	result.reserve( totalSize );
+
+	if ( startLine == endLine ) {
+		result.append( mLines[startLine].getText(), startCol, endCol - startCol );
+	} else {
+		result.append( mLines[startLine].getText(), startCol, mLines[startLine].size() - startCol );
+
+		for ( Int64 i = startLine + 1; i < endLine; ++i ) {
+			result.append( mLines[i].getText() );
+		}
+
+		if ( endCol > 0 ) {
+			result.append( mLines[endLine].getText(), 0, endCol );
+		}
 	}
-	lines.emplace_back( mLines[nrange.end().line()].substr( 0, nrange.end().column() ) );
-	return String::join( lines, -1 );
+
+	return result;
 }
 
 String TextDocument::getText() const {
@@ -1386,6 +1425,38 @@ String TextDocument::getAllSelectedText() const {
 		}
 	}
 	return text;
+}
+
+String TextDocument::toString() {
+	Lock l( mLinesMutex );
+	Lock l2( *mDocumentMutex );
+	String stream;
+	std::size_t totalSize = 0;
+	for ( const auto& line : mLines )
+		totalSize += line.size();
+	stream.reserve( totalSize );
+	for ( const auto& line : mLines )
+		stream.append( line.getText() );
+	return stream;
+}
+
+std::string TextDocument::toUtf8String() {
+	Lock l( mLinesMutex );
+	Lock l2( *mDocumentMutex );
+	std::string stream;
+	std::size_t totalCodepoints = 0;
+	for ( const auto& line : mLines )
+		totalCodepoints += line.size();
+
+	// Heuristic reserve: Codepoints + 25% to account for UTF-8 expansion
+	stream.reserve( totalCodepoints + ( totalCodepoints >> 2 ) );
+
+	for ( const auto& line : mLines ) {
+		const String& text = line.getText();
+		// Low-level conversion directly into the stream buffer
+		Utf32::toUtf8( text.begin(), text.end(), std::back_inserter( stream ) );
+	}
+	return stream;
 }
 
 std::vector<std::string> TextDocument::getCommandList() const {
@@ -2143,27 +2214,67 @@ std::vector<bool> TextDocument::autoCloseBrackets( const String& text ) {
 					continue;
 				}
 
-				if ( isClose && !isSame )
+				if ( isClose && !isSame ) {
+					mustClose = false;
+				} else if ( !isClose && !isNonWord( ch ) ) {
+					mustClose = false;
+				}
+			}
+
+			if ( mustClose && isSame ) {
+				Int64 left = sel.start().column() - 1;
+				Int64 right = sel.start().column();
+				const String& lineText = line( sel.start().line() ).getText();
+				Int64 len = lineText.size();
+				Int64 limitLeft = eemax<Int64>( 0ll, sel.start().column() - 512 );
+				Int64 limitRight = eemin<Int64>( len, sel.start().column() + 512 );
+				int unclosedQuotes = 0;
+				while ( left >= limitLeft || right < limitRight ) {
+					bool matchLeft = left >= limitLeft && lineText[left] == text[0];
+					bool matchRight = right < limitRight && lineText[right] == text[0];
+					if ( matchLeft && matchRight ) {
+						left--;
+						right++;
+					} else if ( matchLeft ) {
+						unclosedQuotes++;
+						left--;
+					} else if ( matchRight ) {
+						unclosedQuotes++;
+						right++;
+					} else {
+						if ( left >= limitLeft )
+							left--;
+						if ( right < limitRight )
+							right++;
+					}
+				}
+				if ( unclosedQuotes % 2 != 0 )
+					mustClose = false;
+			}
+
+			if ( mustClose && !isSame && !isClose ) {
+				int balance = 0;
+				int unmatchedRight = 0;
+				const String& lineText = line( sel.start().line() ).getText();
+				Int64 len = lineText.size();
+				Int64 limitLeft = eemax<Int64>( 0, sel.start().column() - 512 );
+				Int64 limitRight = eemin<Int64>( len, sel.start().column() + 512 );
+				for ( Int64 k = limitLeft; k < limitRight; ++k ) {
+					if ( lineText[k] == text[0] ) {
+						balance++;
+					} else if ( lineText[k] == closeChar ) {
+						if ( balance > 0 ) {
+							balance--;
+						} else if ( k >= sel.start().column() ) {
+							unmatchedRight++;
+						}
+					}
+				}
+				if ( unmatchedRight > 0 )
 					mustClose = false;
 			}
 
 			if ( mustClose ) {
-				/* // I'm not entirely convinced about this
-				TextPosition openStart = positionOffset( sel.start(), 1 );
-				if ( openStart != sel.start() ) {
-					int maxIt = 100;
-					while ( maxIt-- > 0 && openStart < endOfDoc() &&
-							isSpace( getChar( openStart ) ) ) {
-						openStart = nextChar( openStart );
-					}
-					if ( openStart < endOfDoc() && maxIt > 0 &&
-						 getChar( openStart ) == closeChar ) {
-						inserted.push_back( false );
-						continue;
-					}
-				}
-				*/
-
 				setSelection(
 					i, positionOffset( insert( i, sel.start(), text + String( closeChar ) ), -1 ) );
 				inserted.push_back( true );
@@ -2645,21 +2756,65 @@ void TextDocument::selectAll() {
 }
 
 void TextDocument::newLine() {
-	String input( "\n" );
-	TextPosition start = getSelection().start();
-	TextPosition indent = startOfContent( getSelection().start() );
-	if ( indent.column() != 0 )
-		input.append( line( start.line() ).getText().substr( 0, indent.column() ) );
-	textInput( input );
+	BoolScopedOp op( mDoingTextInput, true );
+	BoolScopedOp op2( mInsertingText, true );
+	AtomicBoolScopedOp op3( mRunningTransaction, true );
+	mUndoStack.clearRedoStack();
+	Time time = mTimer.getElapsedTime();
+
+	for ( int i = (int)mSelection.size() - 1; i >= 0; --i ) {
+		TextPosition start = getSelectionIndex( i ).start();
+		String indentStr;
+		if ( mAutoIndent != AutoIndentConfig::None ) {
+			TextPosition indentPos = startOfContent( start );
+			if ( indentPos.column() != 0 )
+				indentStr = line( start.line() ).getText().substr( 0, indentPos.column() );
+		}
+
+		String input( "\n" );
+		input.append( indentStr );
+
+		bool isPair = false;
+		if ( mAutoIndent == AutoIndentConfig::Smart && start > startOfDoc() &&
+			 start < endOfDoc() ) {
+			String::StringBaseType curChar = getChar( start );
+			String::StringBaseType prevChar = getPrevChar( start );
+			for ( const auto& pair : mAutoCloseBracketsPairs ) {
+				if ( prevChar == pair.first && curChar == pair.second &&
+					 pair.first != pair.second ) {
+					isPair = true;
+					break;
+				}
+			}
+		}
+
+		if ( mSelection[i].hasSelection() )
+			deleteTo( i, 0 );
+
+		if ( isPair ) {
+			String extraIndent = input + getIndentString();
+			String closingLine = "\n" + indentStr;
+
+			insert( i, getSelectionIndex( i ).start(), extraIndent + closingLine,
+					mUndoStack.getUndoStackContainer(), time );
+			setSelection( i, positionOffset( getSelectionIndex( i ).start(), extraIndent.size() ) );
+		} else {
+			setSelection( i, insert( i, getSelectionIndex( i ).start(), input,
+									 mUndoStack.getUndoStackContainer(), time ) );
+		}
+	}
+	mLastCursorChangeWasInteresting = true;
 }
 
 void TextDocument::newLineAbove() {
 	for ( size_t i = 0; i < mSelection.size(); ++i ) {
 		String input( "\n" );
 		TextPosition start = getSelectionIndex( i ).start();
-		TextPosition indent = startOfContent( getSelectionIndex( i ).start() );
-		if ( indent.column() != 0 )
-			input.insert( 0, line( start.line() ).getText().substr( 0, indent.column() ) );
+		if ( mAutoIndent != AutoIndentConfig::None ) {
+			TextPosition indent = startOfContent( getSelectionIndex( i ).start() );
+			if ( indent.column() != 0 )
+				input.insert( 0, line( start.line() ).getText().substr( 0, indent.column() ) );
+		}
 		insert( i, { start.line(), 0 }, input );
 		setSelection( i, { start.line(), (Int64)input.size() } );
 	}
@@ -2897,6 +3052,14 @@ const TextDocument::IndentType& TextDocument::getIndentType() const {
 
 void TextDocument::setIndentType( const IndentType& indentType ) {
 	mIndentType = indentType;
+}
+
+const TextDocument::AutoIndentConfig& TextDocument::getAutoIndent() const {
+	return mAutoIndent;
+}
+
+void TextDocument::setAutoIndent( const AutoIndentConfig& autoIndent ) {
+	mAutoIndent = autoIndent;
 }
 
 void TextDocument::undo() {
@@ -4614,6 +4777,35 @@ void TextDocument::convertIndentationToSpaces() {
 	}
 }
 
+void TextDocument::clearIndentation() {
+	TextRanges oldSelections = mSelection;
+	std::set<Int64> linesToClear;
+
+	if ( !hasSelection() ) {
+		linesToClear.insert( getSelection().start().line() );
+	} else {
+		for ( const auto& sel : mSelection ) {
+			TextRange normalizedSel = sel.normalized();
+			for ( Int64 lineNum = normalizedSel.start().line();
+				  lineNum <= normalizedSel.end().line(); ++lineNum ) {
+				linesToClear.insert( lineNum );
+			}
+		}
+	}
+
+	for ( Int64 lineNum : linesToClear ) {
+		TextRange lineRange = getLineRange( lineNum );
+		replace( "^%s+", "", lineRange.start(), true, false, FindReplaceType::LuaPattern,
+				 lineRange );
+	}
+
+	if ( !linesToClear.empty() ) {
+		setSelection( oldSelections );
+		notifySelectionChanged();
+		notifyCursorChanged();
+	}
+}
+
 void TextDocument::initializeCommands() {
 	mCommands["reset-document"] = [this] { reset(); };
 	mCommands["save-doc"] = [this] { save(); };
@@ -4687,6 +4879,7 @@ void TextDocument::initializeCommands() {
 	mCommands["duplicate-line-or-selection"] = [this] { duplicateLineOrSelection(); };
 	mCommands["convert-indentation-to-tabs"] = [this] { convertIndentationToTabs(); };
 	mCommands["convert-indentation-to-spaces"] = [this] { convertIndentationToSpaces(); };
+	mCommands["clear-indentation"] = [this] { clearIndentation(); };
 
 	if ( TEXT_DOCUMENT_COMMANDS.empty() ) {
 		for ( const auto& [cmd, _] : mCommands )

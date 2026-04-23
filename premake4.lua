@@ -763,6 +763,8 @@ function add_static_links()
 			"libwebp-static",
 			"libpng-static",
 			"md4c-static",
+			"gumbo-parser-static",
+			"brotli-static",
 	}
 
 	if not _OPTIONS["without-mojoal"] then
@@ -1005,6 +1007,7 @@ function build_eepp( build_name )
 		"src/thirdparty/libwebp/src",
 		"src/thirdparty/SheenBidi/Headers",
 		"src/thirdparty/SheenBidi/Headers/SheenBidi",
+		"src/thirdparty/brotli/include",
 	}
 
 	defines { "PCRE2_STATIC", "PCRE2_CODE_UNIT_WIDTH=8", "ONIG_STATIC" }
@@ -1193,7 +1196,7 @@ solution "eepp"
 		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
 		defines { "FT2_BUILD_LIBRARY" }
 		files { "src/thirdparty/freetype2/src/**.c" }
-		includedirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng" }
+		includedirs { "src/thirdparty/freetype2/include", "src/thirdparty/libpng", "src/thirdparty/brotli/include" }
 		build_base_configuration( "freetype" )
 
 	project "pcre2-8-static"
@@ -1359,6 +1362,14 @@ solution "eepp"
 			build_base_configuration( "mojoal" )
 	end
 
+	project "brotli-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		includedirs { "src/thirdparty/brotli/include", "src/thirdparty/brotli/include/brotli" }
+		files { "src/thirdparty/brotli/**.c" }
+		build_base_configuration( "brotli" )
+
 	project "md4c-static"
 		kind "StaticLib"
 		language "C"
@@ -1374,6 +1385,16 @@ solution "eepp"
 		files { "src/thirdparty/libyaml/**.c" }
 		includedirs { "src/thirdparty/libyaml/include" }
 		build_base_configuration( "libyaml" )
+
+	project "gumbo-parser-static"
+		kind "StaticLib"
+		language "C"
+		set_targetdir("libs/" .. os.get_real() .. "/thirdparty/")
+		files { "src/thirdparty/gumbo-parser/**.c" }
+		if is_vs() then
+			includedirs { "src/thirdparty/gumbo-parser/visualc/include/" }
+		end
+		build_base_configuration( "gumbo-parser" )
 
 	project "efsw-static"
 		kind "StaticLib"
@@ -1637,6 +1658,13 @@ solution "eepp"
 		files { "src/examples/ui_markdownview/*.cpp" }
 		build_link_configuration( "eepp-ui-markdownview", true )
 
+	project "eepp-ui-html"
+		set_kind()
+		language "C++"
+		includedirs { "src/thirdparty" }
+		files { "src/examples/ui_html/*.cpp" }
+		build_link_configuration( "eepp-ui-html", true )
+
 	project "eepp-richtext"
 		set_kind()
 		language "C++"
@@ -1749,6 +1777,9 @@ solution "eepp"
 		files { "src/tools/ecode/**.cpp" }
 		includedirs { "src/thirdparty/efsw/include", "src/thirdparty", "src/modules/eterm/include/", "src/modules/languages-syntax-highlighting/src" }
 		links { "efsw-static", "eterm-static", "languages-syntax-highlighting-static", "libyaml-static" }
+		if os.is("windows") then
+			links { "gumbo-parser-static" }
+		end
 		if not os.is("windows") and not os.is("haiku") then
 			links { "pthread" }
 		end

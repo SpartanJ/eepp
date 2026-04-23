@@ -1,18 +1,106 @@
 #include <eepp/graphics/fontmanager.hpp>
 #include <eepp/graphics/text.hpp>
 #include <eepp/ui/css/propertydefinition.hpp>
+#include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
+#include <eepp/ui/uistyle.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
 
 #define PUGIXML_HEADER_ONLY
-#include <eepp/ui/tools/htmlformatter.hpp>
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
+
+class UILineBreak : public UIRichText {
+  public:
+	static UILineBreak* New( const std::string& tag ) { return eeNew( UILineBreak, ( tag ) ); }
+
+	UILineBreak( const std::string& tag = "br" ) : UIRichText( tag ) {}
+
+	virtual Uint32 getType() const { return UI_TYPE_BR; }
+
+	bool isType( const Uint32& type ) const {
+		return UILineBreak::getType() == type ? true : UINode::isType( type );
+	}
+};
+
+UIHTMLHtml* UIHTMLHtml::New( const std::string& tag ) {
+	return eeNew( UIHTMLHtml, ( tag ) );
+}
+
+UIHTMLHtml::UIHTMLHtml( const std::string& tag ) : UIRichText( tag ) {}
+
+Uint32 UIHTMLHtml::getType() const {
+	return UI_TYPE_HTML_HTML;
+}
+
+bool UIHTMLHtml::isType( const Uint32& type ) const {
+	return UIHTMLHtml::getType() == type ? true : UIRichText::isType( type );
+}
+
+UIHTMLBody* UIHTMLBody::New( const std::string& tag ) {
+	return eeNew( UIHTMLBody, ( tag ) );
+}
+
+UIHTMLBody::UIHTMLBody( const std::string& tag ) : UIRichText( tag ) {}
+
+Uint32 UIHTMLBody::getType() const {
+	return UI_TYPE_HTML_BODY;
+}
+
+bool UIHTMLBody::isType( const Uint32& type ) const {
+	return UIHTMLBody::getType() == type ? true : UIRichText::isType( type );
+}
+
+bool UIHTMLBody::applyProperty( const StyleSheetProperty& attribute ) {
+	if ( !checkPropertyDefinition( attribute ) )
+		return false;
+
+	switch ( attribute.getPropertyDefinition()->getPropertyId() ) {
+		case PropertyId::BackgroundColor:
+		case PropertyId::BackgroundImage:
+		case PropertyId::BackgroundTint:
+		case PropertyId::BackgroundPositionX:
+		case PropertyId::BackgroundPositionY:
+		case PropertyId::BackgroundRepeat:
+		case PropertyId::BackgroundSize: {
+			if ( getParent() && getParent()->isType( UI_TYPE_HTML_HTML ) ) {
+				UIWidget* htmlParent = getParent()->asType<UIWidget>();
+				if ( htmlParent->getBackgroundColor() == Color::Transparent ||
+					 mPropagatedBackground ) {
+					mPropagatedBackground = true;
+					htmlParent->applyProperty( attribute );
+					return true;
+				}
+			}
+			break;
+		}
+		default:
+			break;
+	}
+
+	return UIRichText::applyProperty( attribute );
+}
+
+UIRichText* UIRichText::NewHtml() {
+	return UIHTMLHtml::New( "html" );
+}
+
+UIRichText* UIRichText::NewBody() {
+	return UIHTMLBody::New( "body" );
+}
+
+UIRichText* UIRichText::NewBr() {
+	return UILineBreak::New( "br" );
+};
+
+UIRichText* UIRichText::NewHr() {
+	return UILineBreak::New( "hr" );
+};
 
 UIRichText* UIRichText::New() {
 	return eeNew( UIRichText, () );
@@ -23,7 +111,7 @@ UIRichText* UIRichText::NewWithTag( const std::string& tag ) {
 }
 
 UIRichText::UIRichText( const std::string& tag ) : UILayout( tag ) {
-	mFlags |= UI_LOADS_ITS_CHILDREN | UI_OWNS_CHILDREN_POSITION;
+	mFlags |= UI_HTML_ELEMENT | UI_LOADS_ITS_CHILDREN | UI_OWNS_CHILDREN_POSITION;
 
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
@@ -152,7 +240,7 @@ std::string UIRichText::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::format( "%dpx", getFontSize() );
+			return String::fromFloat( PixelDensity::pxToDp( getFontSize() ), "dp" );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::TextDecoration:
@@ -370,12 +458,7 @@ void UIRichText::loadFromXmlNode( const pugi::xml_node& node ) {
 
 	for ( pugi::xml_node child = node.first_child(); child; child = child.next_sibling() ) {
 		if ( child.type() == pugi::node_element ) {
-			if ( String::iequals( child.name(), "span" ) ||
-				 String::iequals( child.name(), "textspan" ) ) {
-				UITextSpan* span = UITextSpan::New();
-				span->setParent( this );
-				span->loadFromXmlNode( child );
-			} else if ( mTag == "pre" && String::iequals( child.name(), "code" ) ) {
+			if ( mTag == "pre" && String::iequals( child.name(), "code" ) ) {
 				// Use a UICodeEditor for <pre><code>
 				UICodeEditor* editor = UICodeEditor::New();
 				if ( editor ) {
@@ -459,24 +542,35 @@ void UIRichText::onAlphaChange() {
 	UILayout::onAlphaChange();
 }
 
-void UIRichText::rebuildRichText() {
-	mRichText.clear();
+void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
+	richText.clear();
 
-	// Calculate maximum layout width for the RichText block
 	Float maxWidth = mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right;
 	if ( maxWidth < 0 )
 		maxWidth = 0;
-	if ( mWidthPolicy == SizePolicy::WrapContent ) {
-		mRichText.setMaxWidth( 0.f ); // Let it grow unbounded to query text bounds later
+
+	Float mw = 0.f;
+	if ( !mMaxWidthEq.empty() ) {
+		mw = getMaxSizePx().getWidth() - mPaddingPx.Left - mPaddingPx.Right;
+		if ( mw < 0 )
+			mw = 0.f;
+	}
+
+	if ( mode == IntrinsicMode::None ) {
+		if ( !mMaxWidthEq.empty() && ( maxWidth == 0 || mw < maxWidth ) ) {
+			richText.setMaxWidth( mw );
+		} else {
+			richText.setMaxWidth( maxWidth );
+		}
 	} else {
-		mRichText.setMaxWidth( maxWidth );
+		richText.setMaxWidth( 0.f ); // Let it grow unbounded to query text bounds later
 	}
 
 	auto processWidget = [&]( UIWidget* widget, auto& processWidgetRef ) -> void {
 		if ( widget->isType( UI_TYPE_TEXTSPAN ) ) {
 			UITextSpan* span = widget->asType<UITextSpan>();
 			if ( !span->getText().empty() ) {
-				mRichText.addSpan( span->getText(), span->getFontStyleConfig() );
+				richText.addSpan( span->getText(), span->getFontStyleConfig() );
 			}
 			Node* spanChild = span->getFirstChild();
 			while ( spanChild != NULL ) {
@@ -485,21 +579,48 @@ void UIRichText::rebuildRichText() {
 				}
 				spanChild = spanChild->getNextNode();
 			}
+		} else if ( widget->isType( UI_TYPE_BR ) ) {
+			richText.addSpan( "\n",
+							  widget->asType<UILineBreak>()->getRichText().getFontStyleConfig() );
 		} else {
 			Rectf margin = widget->getLayoutPixelsMargin();
+			bool isBlock = widget->getLayoutWidthPolicy() == SizePolicy::MatchParent;
 
-			if ( mSize.getWidth() != 0 &&
-				 widget->getLayoutWidthPolicy() == SizePolicy::MatchParent ) {
-				widget->setPixelsSize( mSize.getWidth() - margin.Left - margin.Right,
-									   widget->getPixelsSize().getHeight() );
-			} else if ( widget->getLayoutWidthPolicy() == SizePolicy::WrapContent ||
-						widget->getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
-				onAutoSizeChild( widget );
+			if ( mode == IntrinsicMode::None ) {
+				if ( isBlock ) {
+					if ( mSize.getWidth() != 0 ) {
+						Float maxSize =
+							eemax( 0.f, mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
+											margin.Left - margin.Right );
+						widget->setPixelsSize( eemax( 0.f, maxSize ),
+											   widget->getPixelsSize().getHeight() );
+					} else {
+						onAutoSizeChild( widget );
+					}
+				} else if ( widget->getLayoutWidthPolicy() == SizePolicy::WrapContent ||
+							widget->getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
+					onAutoSizeChild( widget );
+				}
 			}
 
-			Sizef size = widget->getPixelsSize();
-			mRichText.addCustomSize( Sizef( size.getWidth() + margin.Left + margin.Right,
-											size.getHeight() + margin.Top + margin.Bottom ) );
+			Sizef size;
+			if ( mode == IntrinsicMode::Min ) {
+				size = Sizef( widget->getMinIntrinsicWidth(), 0 );
+			} else if ( mode == IntrinsicMode::Max ) {
+				size = Sizef( widget->getMaxIntrinsicWidth(), 0 );
+			} else {
+				size = widget->getPixelsSize();
+			}
+
+			Float w = size.getWidth();
+			if ( isBlock && mode == IntrinsicMode::None && mSize.getWidth() != 0 ) {
+				w = eemax( 0.f, mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
+									margin.Left - margin.Right );
+			}
+
+			richText.addCustomSize( Sizef( w + margin.Left + margin.Right,
+										   size.getHeight() + margin.Top + margin.Bottom ),
+									isBlock );
 		}
 	};
 
@@ -526,7 +647,7 @@ void UIRichText::positionChildren() {
 			while ( currentSpan < line.spans.size() ) {
 				const auto& span = line.spans[currentSpan];
 				currentSpan++;
-				if ( std::holds_alternative<Sizef>( span.block ) )
+				if ( std::holds_alternative<RichText::CustomBlock>( span.block ) )
 					return &span;
 			}
 			currentSpan = 0;
@@ -610,6 +731,16 @@ void UIRichText::positionChildren() {
 				hitBoxes.clear();
 			}
 
+		} else if ( widget->isType( UI_TYPE_BR ) ) {
+			curCharIdx += 1;
+			Vector2f pos;
+			if ( widget->getPrevNode() && widget->getPrevNode()->isWidget() ) {
+				pos = widget->getPrevNode()->asType<UIWidget>()->getPixelsPosition();
+				pos.y += widget->getPrevNode()->getPixelsSize().getHeight();
+			}
+			widget->setPixelsPosition( pos );
+			widget->setPixelsSize(
+				{ eemax( 0.f, mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right ), 0 } );
 		} else {
 			curCharIdx += 1;
 			const auto* span = getNextCustomSpan();
@@ -623,7 +754,7 @@ void UIRichText::positionChildren() {
 
 				widget->setPixelsPosition( targetPos - offset );
 
-				bounds = Rectf( targetPos, widget->getPixelsSize() );
+				bounds = Rectf( targetPos, span->size );
 			}
 		}
 		return bounds;
@@ -656,21 +787,37 @@ void UIRichText::updateLayout() {
 
 	setMatchParentIfNeededVerticalGrowth();
 
-	rebuildRichText();
+	const StyleSheetProperty* prop = nullptr;
+	if ( getLayoutWidthPolicy() == SizePolicy::Fixed && mStyle &&
+		 ( prop = mStyle->getProperty( PropertyId::Width ) ) ) {
+		setInternalPixelsSize( { lengthFromValue( *prop ), mSize.getHeight() } );
+	}
+
+	rebuildRichText( mRichText );
 
 	mRichText.updateLayout();
 
 	positionChildren();
 
+	Float totW = mSize.getWidth();
 	if ( mWidthPolicy == SizePolicy::WrapContent ) {
-		setInternalPixelsWidth( mRichText.getSize().getWidth() + mPaddingPx.Left +
-								mPaddingPx.Right );
+		totW = mRichText.getSize().getWidth() + mPaddingPx.Left + mPaddingPx.Right;
+		if ( !mMaxWidthEq.empty() && totW > getMaxSizePx().getWidth() )
+			setClipType( ClipType::ContentBox );
 	}
 
+	if ( totW != mSize.getWidth() || mWidthPolicy == SizePolicy::WrapContent )
+		setInternalPixelsWidth( totW );
+
+	Float totH = mSize.getHeight();
 	if ( mHeightPolicy == SizePolicy::WrapContent ) {
-		setInternalPixelsHeight( mRichText.getSize().getHeight() + mPaddingPx.Top +
-								 mPaddingPx.Bottom );
+		totH = mRichText.getSize().getHeight() + mPaddingPx.Top + mPaddingPx.Bottom;
+		if ( !mMaxHeightEq.empty() && totH > getMaxSizePx().getHeight() )
+			setClipType( ClipType::ContentBox );
 	}
+
+	if ( totH != mSize.getHeight() || mHeightPolicy == SizePolicy::WrapContent )
+		setInternalPixelsHeight( totH );
 
 	if ( mResizedCount )
 		positionChildren();
@@ -680,9 +827,57 @@ void UIRichText::updateLayout() {
 	mResizedCount = 0;
 }
 
+Float UIRichText::getMinIntrinsicWidth() const {
+	if ( mWidthPolicy == SizePolicy::Fixed ) {
+		return getPropertyWidth();
+	}
+
+	if ( mIntrinsicWidthsDirty ) {
+		RichText richText( mRichText );
+		const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Min );
+		mMinIntrinsicWidth = richText.getMinIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
+		const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Max );
+		mMaxIntrinsicWidth = richText.getMaxIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
+		mIntrinsicWidthsDirty = false;
+	}
+
+	Float minWidth = mMinIntrinsicWidth;
+	if ( !mMinWidthEq.empty() )
+		minWidth = eemax( minWidth, getMinSizePx().getWidth() );
+	if ( !mMaxWidthEq.empty() )
+		minWidth = eemin( minWidth, getMaxSizePx().getWidth() );
+	return minWidth;
+}
+
+Float UIRichText::getMaxIntrinsicWidth() const {
+	if ( mWidthPolicy == SizePolicy::Fixed ) {
+		return getPropertyWidth();
+	}
+
+	if ( mIntrinsicWidthsDirty ) {
+		RichText richText( mRichText );
+		const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Min );
+		mMinIntrinsicWidth = richText.getMinIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
+		const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Max );
+		mMaxIntrinsicWidth = richText.getMaxIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
+		mIntrinsicWidthsDirty = false;
+	}
+
+	Float maxWidth = mMaxIntrinsicWidth;
+	if ( !mMinWidthEq.empty() )
+		maxWidth = eemax( maxWidth, getMinSizePx().getWidth() );
+	if ( !mMaxWidthEq.empty() )
+		maxWidth = eemin( maxWidth, getMaxSizePx().getWidth() );
+	return maxWidth;
+}
+
 Uint32 UIRichText::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::LayoutAttributeChange: {
+			if ( Msg->getSender() != this && !mPacking ) {
+				mIntrinsicWidthsDirty = true;
+				notifyLayoutAttrChangeParent();
+			}
 			tryUpdateLayout();
 			return 1;
 		}

@@ -1,12 +1,17 @@
 #include <eepp/system/iostreaminflate.hpp>
 
+#include <brotli/decode.h>
 #include <zlib.h>
 
 namespace EE { namespace System {
 
-struct LocalStreamData {
+struct LocalInflateStreamData {
 	z_stream strm;
 	int state;
+	BrotliDecoderState* brotliState;
+	BrotliDecoderResult brotliResult;
+	size_t brotliAvailIn;
+	const uint8_t* brotliNextIn;
 };
 
 IOStreamInflate* IOStreamInflate::New( IOStream& inOutStream, Compression::Mode mode ) {
@@ -17,23 +22,70 @@ IOStreamInflate::IOStreamInflate( IOStream& inOutStream, Compression::Mode mode 
 	mStream( inOutStream ),
 	mMode( mode ),
 	mBuffer( Compression::getModeDefaultChunkSize( mode ) ),
-	mLocalStream( eeNew( LocalStreamData, () ) ) {
-	int windowBits = mode == Compression::MODE_DEFLATE ? MAX_WBITS : MAX_WBITS | 16;
+	mLocalStream( eeNew( LocalInflateStreamData, () ) ) {
 
-	mLocalStream->strm = z_stream{};
-
-	mLocalStream->state = inflateInit2( &mLocalStream->strm, windowBits );
+	if ( mode == Compression::MODE_BROTLI ) {
+		mLocalStream->brotliState = BrotliDecoderCreateInstance( nullptr, nullptr, nullptr );
+		mLocalStream->brotliResult = BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT;
+		mLocalStream->brotliAvailIn = 0;
+		mLocalStream->brotliNextIn = nullptr;
+		mLocalStream->state = mLocalStream->brotliState ? Z_OK : Z_MEM_ERROR;
+	} else {
+		int windowBits = mode == Compression::MODE_DEFLATE ? MAX_WBITS : MAX_WBITS | 16;
+		mLocalStream->strm = z_stream{};
+		mLocalStream->state = inflateInit2( &mLocalStream->strm, windowBits );
+	}
 }
 
 IOStreamInflate::~IOStreamInflate() {
-	inflateEnd( &mLocalStream->strm );
+	if ( mMode == Compression::MODE_BROTLI ) {
+		if ( mLocalStream->brotliState )
+			BrotliDecoderDestroyInstance( mLocalStream->brotliState );
+	} else {
+		inflateEnd( &mLocalStream->strm );
+	}
 
 	eeSAFE_DELETE( mLocalStream );
 }
 
 ios_size IOStreamInflate::read( char* buffer, ios_size length ) {
-	if ( mLocalStream->state != Z_OK || !mStream.isOpen() )
+	if ( mLocalStream->state != Z_OK || !mStream.isOpen() || length == 0 )
 		return 0;
+
+	if ( mMode == Compression::MODE_BROTLI ) {
+		size_t avail_out = length;
+		uint8_t* next_out = reinterpret_cast<uint8_t*>( buffer );
+
+		while ( avail_out > 0 ) {
+			if ( mLocalStream->brotliAvailIn == 0 &&
+				 mLocalStream->brotliResult != BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT ) {
+				ios_size n = 0;
+				if ( mStream.isOpen() ) {
+					n = mStream.read( (char*)mBuffer.get(), mBuffer.length() );
+				}
+				if ( n == 0 )
+					break;
+				mLocalStream->brotliAvailIn = n;
+				mLocalStream->brotliNextIn = reinterpret_cast<const uint8_t*>( mBuffer.get() );
+			}
+
+			mLocalStream->brotliResult = BrotliDecoderDecompressStream(
+				mLocalStream->brotliState, &mLocalStream->brotliAvailIn,
+				&mLocalStream->brotliNextIn, &avail_out, &next_out, nullptr );
+
+			if ( mLocalStream->brotliResult == BROTLI_DECODER_RESULT_ERROR ) {
+				mLocalStream->state = Z_DATA_ERROR;
+				return 0;
+			}
+
+			if ( mLocalStream->brotliResult == BROTLI_DECODER_RESULT_SUCCESS ) {
+				mLocalStream->state = Z_STREAM_END;
+				break;
+			}
+		}
+
+		return length - avail_out;
+	}
 
 	z_stream& zstr = mLocalStream->strm;
 
@@ -93,6 +145,43 @@ ios_size IOStreamInflate::read( char* buffer, ios_size length ) {
 ios_size IOStreamInflate::write( const char* buffer, ios_size length ) {
 	if ( mLocalStream->state != Z_OK || !mStream.isOpen() || length == 0 )
 		return 0;
+
+	if ( mMode == Compression::MODE_BROTLI ) {
+		size_t avail_in = length;
+		const uint8_t* next_in = reinterpret_cast<const uint8_t*>( buffer );
+
+		while ( avail_in > 0 ||
+				mLocalStream->brotliResult == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT ) {
+			size_t avail_out = mBuffer.length();
+			uint8_t* next_out = reinterpret_cast<uint8_t*>( mBuffer.get() );
+
+			mLocalStream->brotliResult = BrotliDecoderDecompressStream(
+				mLocalStream->brotliState, &avail_in, &next_in, &avail_out, &next_out, nullptr );
+
+			if ( mLocalStream->brotliResult == BROTLI_DECODER_RESULT_ERROR ) {
+				mLocalStream->state = Z_DATA_ERROR;
+				return 0;
+			}
+
+			size_t have = mBuffer.length() - avail_out;
+			if ( have > 0 ) {
+				if ( mStream.write( (const char*)mBuffer.get(), have ) != (ios_size)have ) {
+					return 0;
+				}
+			}
+
+			if ( mLocalStream->brotliResult == BROTLI_DECODER_RESULT_SUCCESS ) {
+				mLocalStream->state = Z_STREAM_END;
+				break;
+			}
+
+			if ( mLocalStream->brotliResult == BROTLI_DECODER_RESULT_NEEDS_MORE_INPUT ) {
+				break;
+			}
+		}
+
+		return length;
+	}
 
 	z_stream& zstr = mLocalStream->strm;
 

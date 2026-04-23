@@ -346,6 +346,10 @@ const CSS::StyleSheet& UITheme::getStyleSheet() const {
 	return mStyleSheet;
 }
 
+void UITheme::setStyleSheet( CSS::StyleSheet&& styleSheet ) {
+	mStyleSheet = std::move( styleSheet );
+}
+
 void UITheme::setStyleSheet( const CSS::StyleSheet& styleSheet ) {
 	mStyleSheet = styleSheet;
 }

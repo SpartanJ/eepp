@@ -1092,7 +1092,11 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		mKeyBindings["lsp-go-to-definition"] = "f2";
 		mKeyBindings["lsp-go-to-implementation"] = "shift+f2";
 		mKeyBindings["lsp-symbol-info"] = "f1";
+		#if EE_PLATFORM == EE_PLATFORM_MACOS
+		mKeyBindings["lsp-symbol-code-action"] = "mod+return";
+		#else
 		mKeyBindings["lsp-symbol-code-action"] = "alt+return";
+		#endif
 		mKeyBindings["lsp-rename-symbol-under-cursor"] = "mod+shift+r";
 		mKeyBindings["lsp-symbol-references"] = "mod+shift+u";
 		mKeyBindings["lsp-format-range"] = "alt+shift+f";
@@ -1151,7 +1155,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 		}
 
 		// Allow overriding the command for already defined LSP
-		// And allow adding parameters to the already defined LSP
+		// And overriding parameters to the already defined LSP
 		if ( updateConfigFile && ( obj.contains( "name" ) || obj.contains( "use" ) ) &&
 			 ( obj.contains( "command" ) ||
 			   ( obj.contains( "command_parameters" ) &&
@@ -1176,7 +1180,7 @@ void LSPClientPlugin::loadLSPConfig( std::vector<LSPDefinition>& lsps, const std
 						std::string cmdParam( obj.value( "command_parameters", "" ) );
 						if ( !cmdParam.empty() && cmdParam.front() != ' ' )
 							cmdParam = " " + cmdParam;
-						lspR.commandParameters += cmdParam;
+						lspR.commandParameters = cmdParam;
 						LSPClientServer::sanitizeCommand( lspR.commandParameters,
 														  mManager->getWorkspaceFolder() );
 					}

@@ -186,16 +186,14 @@ void UIImage::calcDestSize() {
 void UIImage::draw() {
 	UINode::draw();
 
-	if ( mVisible ) {
-		if ( NULL != mDrawable && 0.f != mAlpha ) {
-			calcDestSize();
+	if ( mVisible && NULL != mDrawable && 0.f != mAlpha ) {
+		calcDestSize();
 
-			mDrawable->setColor( mColor );
-			mDrawable->draw( Vector2f( std::trunc( mScreenPos.x ) + std::trunc( mAlignOffset.x ),
-									   std::trunc( mScreenPos.y ) + std::trunc( mAlignOffset.y ) ),
-							 mDestSize );
-			mDrawable->clearColor();
-		}
+		mDrawable->setColor( mColor );
+		mDrawable->draw( Vector2f( std::trunc( mScreenPos.x ) + std::trunc( mAlignOffset.x ),
+								   std::trunc( mScreenPos.y ) + std::trunc( mAlignOffset.y ) ),
+						 mDestSize );
+		mDrawable->clearColor();
 	}
 }
 
@@ -263,11 +261,9 @@ void UIImage::onDrawableResourceEvent( DrawableResource::Event event, DrawableRe
 			auto s = mSize;
 			onAutoSize();
 			calcDestSize();
-
-			if ( mSize != s ) {
+			if ( mSize != s )
 				notifyLayoutAttrChangeParent();
-				invalidateDraw();
-			}
+			invalidateDraw();
 		} );
 	} else if ( event == DrawableResource::Unload ) {
 		mDrawable = NULL;
@@ -293,6 +289,22 @@ void UIImage::onAlignChange() {
 
 const Vector2f& UIImage::getAlignOffset() const {
 	return mAlignOffset;
+}
+
+Float UIImage::getMinIntrinsicWidth() const {
+	if ( mWidthPolicy == SizePolicy::Fixed )
+		return getPropertyWidth();
+	if ( mDrawable )
+		return mDrawable->getMinIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
+	return mPaddingPx.Left + mPaddingPx.Right;
+}
+
+Float UIImage::getMaxIntrinsicWidth() const {
+	if ( mWidthPolicy == SizePolicy::Fixed )
+		return getPropertyWidth();
+	if ( mDrawable )
+		return mDrawable->getMaxIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
+	return mPaddingPx.Left + mPaddingPx.Right;
 }
 
 std::string UIImage::getPropertyString( const PropertyDefinition* propertyDef,
@@ -351,12 +363,7 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 			bool ownIt;
 
 			if ( uri.getScheme().empty() && !getUISceneNode()->getURI().empty() ) {
-				uri = getUISceneNode()->getURI();
-				std::string newPath = uri.getPath();
-				if ( !path.empty() && path[0] != '/' )
-					FileSystem::dirAddSlashAtEnd( newPath );
-				newPath += path;
-				uri.setPath( newPath );
+				uri = getUISceneNode()->solveRelativePath( uri );
 				path = uri.toString();
 			}
 
@@ -367,7 +374,8 @@ bool UIImage::applyProperty( const StyleSheetProperty& attribute ) {
 				setDrawable( createdDrawable, ownIt );
 			} else {
 				Drawable* res = NULL;
-				if ( NULL != ( res = DrawableSearcher::searchByName( path ) ) )
+				if ( NULL != ( res = DrawableSearcher::searchByName(
+								   path, false, getUISceneNode()->getReferer() ) ) )
 					setDrawable( res, res->getDrawableType() == Drawable::SPRITE );
 			}
 			break;

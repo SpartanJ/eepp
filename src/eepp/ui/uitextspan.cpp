@@ -6,7 +6,6 @@
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uithememanager.hpp>
 #include <eepp/ui/uiwidgetcreator.hpp>
-#include <eepp/window/engine.hpp>
 
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
@@ -22,7 +21,7 @@ UITextSpan* UITextSpan::NewWithTag( const std::string& tag ) {
 }
 
 UITextSpan::UITextSpan( const std::string& tag ) : UIWidget( tag ) {
-	mFlags |= UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_LOADS_ITS_CHILDREN;
+	mFlags |= UI_HTML_ELEMENT | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_LOADS_ITS_CHILDREN;
 
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
 
@@ -115,7 +114,7 @@ std::string UITextSpan::getPropertyString( const PropertyDefinition* propertyDef
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::format( "%dpx", getFontSize() );
+			return String::fromFloat( PixelDensity::pxToDp( getFontSize() ), "dp" );
 		case PropertyId::FontStyle:
 			return Text::styleFlagToString( getFontStyle() );
 		case PropertyId::Color:
@@ -331,15 +330,18 @@ void UITextSpan::onAlphaChange() {
 
 void UITextSpan::onFontChanged() {
 	sendCommonEvent( Event::OnFontChanged );
+	notifyLayoutAttrChange();
 }
 
 void UITextSpan::onFontStyleChanged() {
 	sendCommonEvent( Event::OnFontStyleChanged );
+	notifyLayoutAttrChange();
 }
 
 void UITextSpan::onTextChanged() {
 	sendCommonEvent( Event::OnTextChanged );
 	sendCommonEvent( Event::OnValueChange );
+	notifyLayoutAttrChange();
 }
 
 void UITextSpan::onChildCountChange( Node* child, const bool& removed ) {
@@ -568,13 +570,16 @@ UIAnchorSpan* UIAnchorSpan::New() {
 	return eeNew( UIAnchorSpan, () );
 }
 
-UIAnchorSpan::UIAnchorSpan( const std::string& tag ) : UITextSpan( tag ) {}
+UIAnchorSpan::UIAnchorSpan( const std::string& tag ) : UITextSpan( tag ) {
+	mPseudoClasses |= StyleSheetSelectorRule::PseudoClasses::Link;
+	mState |= UIState::StateFlagLink;
+}
 
 Uint32 UIAnchorSpan::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::MouseClick: {
 			if ( !mHref.empty() && ( Msg->getFlags() & EE_BUTTON_LMASK ) )
-				Engine::instance()->openURI( mHref );
+				getUISceneNode()->openURL( mHref );
 			return 1;
 		}
 	}
@@ -610,7 +615,7 @@ const std::string& UIAnchorSpan::getHref() const {
 Uint32 UIAnchorSpan::onKeyDown( const KeyEvent& event ) {
 	if ( event.getKeyCode() == KEY_KP_ENTER || event.getKeyCode() == KEY_RETURN ) {
 		if ( !mHref.empty() ) {
-			Engine::instance()->openURI( mHref );
+			getUISceneNode()->openURL( mHref );
 			return 1;
 		}
 	}

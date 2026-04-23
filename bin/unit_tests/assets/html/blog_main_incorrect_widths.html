@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <style>
+      :root {
+        --bg-color: rgb(11, 26, 10);
+        --text-primary: #e5e5e5;
+        --text-secondary: #d4d4d4;
+        --text-muted: #a3a3a3;
+        --text-dim: #737373;
+        --accent: #fbbf24;
+        --border-color: #171717;
+        --white: #ffffff;
+        --font-main: 'Fira Code', monospace;
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        font-family: var(--font-main);
+        -webkit-font-smoothing: antialiased;
+        min-height: 100vh;
+        line-height: 1.5;
+      }
+
+      .container {
+        max-width: 48rem;
+        margin: 0 auto;
+        padding: 6rem 1.5rem;
+      }
+      @media (min-width: 768px) {
+        .container { padding-left: 3rem; padding-right: 3rem; }
+      }
+
+      a { color: inherit; text-decoration: none; transition: color 0.2s; }
+
+      /* Header & Nav */
+      .site-header { margin-bottom: 3rem; }
+      .site-header-index { margin-bottom: 4rem; }
+
+      .nav-bar { display: block; }
+
+      .site-brand {
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        white-space: nowrap;
+        font-size: 1rem;
+      }
+      @media (min-width: 768px) { .site-brand { font-size: 1.125rem; } }
+
+      .brand-sid {
+        color: var(--accent);
+        border: 3px solid var(--accent);
+        border-right: none;
+        padding: 5px 10px 5px 20px;
+        text-decoration: none;
+        transition: all 0.2s;
+        line-height: 1;
+      }
+      .brand-sid:hover {
+        color: var(--white);
+        border-color: var(--white);
+      }
+
+      .brand-blog {
+        color: var(--accent);
+        border: 3px solid var(--accent);
+        border-left: none;
+        padding: 5px 20px 5px 10px;
+        text-decoration: none;
+        transition: all 0.2s;
+        margin-left: 0;
+        line-height: 1;
+      }
+      .brand-blog:hover {
+        color: var(--white);
+        border-color: var(--white);
+      }
+
+      .header-stripe {
+        content: "";
+        background: repeating-linear-gradient(90deg,var(--accent),var(--accent) 10px,transparent 0,transparent 20px);
+        display: block;
+        height: 40px;
+        opacity: 0.7;
+      }
+
+      .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        color: var(--white);
+        margin-bottom: 0.5rem;
+        margin-top: 0.5rem;
+        text-align: center;
+        line-height: 1.25;
+      }
+      @media (min-width: 768px) { .page-title { font-size: 3rem; } }
+
+      .page-title-index {
+        font-size: 1.875rem;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        color: var(--white);
+        margin-bottom: 1rem;
+        margin-top: 0.5rem;
+        text-align: center;
+      }
+      @media (min-width: 768px) { .page-title-index { font-size: 3rem; } }
+
+      .post-meta {
+        font-size: 0.875rem;
+        color: var(--text-dim);
+        border-top: 1px solid var(--border-color);
+        padding-top: 0.5rem;
+        margin-top: 0.5rem;
+        text-align: center;
+      }
+
+      /* Post Content */
+      .prose { color: var(--text-secondary); max-width: none; }
+      .prose h1 { font-size: 2.25rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--white); margin-top: 0; line-height: 1.2; }
+      .prose h2 { font-size: 1.5rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; color: var(--white); line-height: 1.3; border-bottom: 4px solid #a98424;   display: inline-block;  margin-bottom: 30px;}
+      .prose h3 { font-size: 1.25rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; color: var(--white); }
+      .prose p { margin-bottom: 1.25rem; line-height: 1.75; }
+      .prose hr { margin: 2rem 0; border: 1px solid transparent; border-image: repeating-linear-gradient(to right, #b1b1b1 0 25px, transparent 0px 40px) 1; }
+      .prose a { color: var(--accent); border-bottom: 2px solid rgba(251, 191, 36, 0.7); transition: all 0.2s; }
+      .prose a:hover { border-bottom-color: var(--accent); color: var(--accent); }
+      .prose ul { list-style-type: &#10140; padding-left: 1.5rem; margin-bottom: 1.25rem; }
+      .prose li { margin-bottom: 0.5rem; }
+      .prose code { background: #000; color: #82d87c; padding: 0.2em 0.6em; border-radius: 0.25rem; font-size: 0.875em; font-family: var(--font-main); }
+      .prose pre { background: #1f1f1f; padding: 1rem; overflow-x: auto; border-radius: 0.5rem; margin-bottom: 1.5rem; }
+      .prose pre code { background: transparent; padding: 0; }
+      .prose-intro { margin-bottom: 5rem; color: var(--text-secondary); text-align: center; }
+
+      /* Post List */
+      .post-list { display: block; }
+
+      .post-item {
+        display: block;
+        position: relative;
+        text-decoration: none;
+      }
+
+      .post-item-bg {
+        background-color: transparent;
+        border-radius: 0.75rem;
+        transition: background-color 0.3s;
+        z-index: -1;
+      }
+      .post-item:hover .post-item-bg { background-color: rgba(23, 23, 23, 0.5); }
+
+      .post-item-content {
+        position: relative;
+        display: block;
+        padding: 0.5rem;
+      }
+
+      .post-item-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        transition: color 0.2s;
+        margin: 0;
+      }
+      @media (min-width: 768px) { .post-item-title { font-size: 1.5rem; } }
+      .post-item:hover .post-item-title { color: var(--accent); }
+
+      .post-item-date {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        margin-left: 0;
+      }
+      @media (min-width: 768px) { .post-item-date { margin-left: 1rem; } }
+
+      .read-more {
+        font-size: 0.875rem;
+        font-weight: 400;
+        color: var(--text-muted);
+        opacity: 0.6;
+        transition: opacity 0.2s;
+      }
+      .post-item:hover .read-more { opacity: 1; }
+
+      .arrow-icon { transition: transform 0.2s; display: inline-block; color: var(--accent); }
+      .post-item:hover .arrow-icon { transform: translateX(0.25rem); }
+
+      .divider { height: 1px; background-color: var(--border-color); width: 100%; margin: 0; border: none; display: block; }
+      .divider:last-child { display: none; }
+
+      .empty-state {
+        color: var(--text-dim);
+        font-style: italic;
+        padding: 1rem;
+        border: 1px dashed #262626;
+        border-radius: 0.25rem;
+      }
+
+      /* Footer */
+      .site-footer {
+        margin-top: 5rem;
+        padding-top: 2.5rem;
+        border-top: 1px solid var(--border-color);
+        font-size: 0.875rem;
+        color: var(--accent);
+        display: block;
+      }
+      .site-footer a { display: block; transition: color 0.2s; }
+      .site-footer a:hover { color: var(--white); }
+    </style>
+
+  </head>
+  <body>
+    <div class="container">
+
+      <header class="site-header-index">
+        <div class="nav-bar">
+            <div class="header-stripe"></div>
+            <p class="site-brand">
+              <a href="/" class="brand-sid">Sid's</a>
+              <a href="/blog/" class="brand-blog">Blog</a>
+            </p>
+            <div class="header-stripe"></div>
+        </div>
+      </header>
+
+
+        <div class="prose prose-intro">
+          <p>Personal pieces of rambling reflections and rants, tangential thoughts and tirades.</p>
+
+        </div>
+
+
+      <div class="post-list">
+
+        <a href="/blog/wont-download-your-app" class="post-item group">
+            <div class="post-item-bg"></div>
+            <div class="post-item-content">
+                <div class="post-header-row">
+                    <h2 class="post-item-title">
+
+                      No, I Won't Download Your App. The Web Version is A-OK.
+                    </h2>
+                    <span class="post-item-date">Apr 6, 2026</span>
+                </div>
+                <div class="read-more">
+                  <span>Read post</span>
+                  <span class="arrow-icon">→</span>
+                </div>
+            </div>
+        </a>
+        <hr class="divider" />
+
+        <a href="/blog/667mhz-machine" class="post-item group">
+            <div class="post-item-bg"></div>
+            <div class="post-item-content">
+                <div class="post-header-row">
+                    <h2 class="post-item-title">
+
+                      The 667MHz Machine
+                    </h2>
+                    <span class="post-item-date">Mar 25, 2026</span>
+                </div>
+                <div class="read-more">
+                  <span>Read post</span>
+                  <span class="arrow-icon">→</span>
+                </div>
+            </div>
+        </a>
+        <hr class="divider" />
+
+        <a href="/blog/online-tld-is-pain" class="post-item group">
+            <div class="post-item-bg"></div>
+            <div class="post-item-content">
+                <div class="post-header-row">
+                    <h2 class="post-item-title">
+
+                      Never Buy A .online Domain
+                    </h2>
+                    <span class="post-item-date">Feb 25, 2026</span>
+                </div>
+                <div class="read-more">
+                  <span>Read post</span>
+                  <span class="arrow-icon">→</span>
+                </div>
+            </div>
+        </a>
+        <hr class="divider" />
+
+        <a href="/blog/accelerated-ai-fomo" class="post-item group">
+            <div class="post-item-bg"></div>
+            <div class="post-item-content">
+                <div class="post-header-row">
+                    <h2 class="post-item-title">
+
+                      Accelerated FOMO in the Age of AI
+                    </h2>
+                    <span class="post-item-date">Feb 23, 2026</span>
+                </div>
+                <div class="read-more">
+                  <span>Read post</span>
+                  <span class="arrow-icon">→</span>
+                </div>
+            </div>
+        </a>
+        <hr class="divider" />
+
+        <a href="/blog/aidr" class="post-item group">
+            <div class="post-item-bg"></div>
+            <div class="post-item-content">
+                <div class="post-header-row">
+                    <h2 class="post-item-title">
+
+                      ai;dr
+                    </h2>
+                    <span class="post-item-date">Feb 12, 2026</span>
+                </div>
+                <div class="read-more">
+                  <span>Read post</span>
+                  <span class="arrow-icon">→</span>
+                </div>
+            </div>
+        </a>
+        <hr class="divider" />
+
+        <a href="/blog/apple-review-is-rng" class="post-item group">
+            <div class="post-item-bg"></div>
+            <div class="post-item-content">
+                <div class="post-header-row">
+                    <h2 class="post-item-title">
+
+                      App Store Review Feels Like RNG, and That’s the Problem
+                    </h2>
+                    <span class="post-item-date">Feb 5, 2026</span>
+                </div>
+                <div class="read-more">
+                  <span>Read post</span>
+                  <span class="arrow-icon">→</span>
+                </div>
+            </div>
+        </a>
+        <hr class="divider" />
+
+        <a href="/blog/welcome" class="post-item group">
+            <div class="post-item-bg"></div>
+            <div class="post-item-content">
+                <div class="post-header-row">
+                    <h2 class="post-item-title">
+
+                      Welcome to the Machine
+                    </h2>
+                    <span class="post-item-date">Feb 3, 2026</span>
+                </div>
+                <div class="read-more">
+                  <span>Read post</span>
+                  <span class="arrow-icon">→</span>
+                </div>
+            </div>
+        </a>
+        <hr class="divider" />
+
+
+      </div>
+      <footer class="site-footer">
+        <a href="/">← Return to System</a>
+        <a href="/blog/rss.xml" aria-label="RSS Feed">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
+          RSS Feed
+        </a>
+      </footer>
+    </div>
+</body>
+</html>

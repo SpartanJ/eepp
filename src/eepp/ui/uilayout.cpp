@@ -122,8 +122,26 @@ bool UILayout::setMatchParentIfNeededVerticalGrowth() {
 	return sizeChanged;
 }
 
+void UILayout::updateLayoutWrappingContents() {
+	auto oldWidthPolicy = mWidthPolicy;
+	auto oldHeightPolicy = mHeightPolicy;
+
+	if ( mWidthPolicy == SizePolicy::MatchParent )
+		mWidthPolicy = SizePolicy::WrapContent;
+	if ( mHeightPolicy == SizePolicy::MatchParent )
+		mHeightPolicy = SizePolicy::WrapContent;
+
+	updateLayout();
+
+	mWidthPolicy = oldWidthPolicy;
+	mHeightPolicy = oldHeightPolicy;
+}
+
 void UILayout::onAutoSizeChild( UIWidget* child ) {
-	child->onAutoSize();
+	if ( child->isLayout() ) {
+		child->asType<UILayout>()->updateLayoutWrappingContents();
+	} else
+		child->onAutoSize();
 }
 
 }} // namespace EE::UI

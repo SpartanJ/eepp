@@ -1,3 +1,4 @@
+#include <eepp/system/regex.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
 
 #include <string_view>
@@ -5,7 +6,145 @@
 #define PUGIXML_HEADER_ONLY
 #include <pugixml/pugixml.hpp>
 
+#include <gumbo-parser/gumbo.h>
+
+using namespace EE::System;
+
 namespace EE { namespace UI { namespace Tools {
+
+// Helper to escape text so pugixml doesn't crash on <, >, or &
+// and scrubs unwanted Unicode characters (like visible Non-Breaking Spaces)
+static std::string escapeXML( std::string_view input ) {
+	std::string out;
+	out.reserve( input.size() * 1.1 );
+
+	for ( size_t i = 0; i < input.size(); ++i ) {
+		unsigned char c = input[i];
+
+		// --- INTERCEPT UTF-8 NON-BREAKING SPACE ---
+		// A non-breaking space is encoded in UTF-8 as two bytes: 0xC2 0xA0
+		if ( c == 0xC2 && i + 1 < input.size() && (unsigned char)input[i + 1] == 0xA0 ) {
+			out += ' '; // Inject a standard ASCII space (Dec 32)
+			i++;		// Skip the second byte (0xA0)
+			continue;
+		}
+
+		switch ( c ) {
+			case '<':
+				out += "&lt;";
+				break;
+			case '>':
+				out += "&gt;";
+				break;
+			case '&':
+				out += "&amp;";
+				break;
+			case '"':
+				out += "&quot;";
+				break;
+			case '\'':
+				out += "&apos;";
+				break;
+			default:
+				out += c;
+				break;
+		}
+	}
+	return out;
+}
+
+// Recursive function to walk the Gumbo AST and build strict XML
+static void serializeGumboNodeToXML( GumboNode* node, std::string& out ) {
+	if ( !node )
+		return;
+
+	switch ( node->type ) {
+		case GUMBO_NODE_DOCUMENT: {
+			// Root document, process all children
+			GumboVector* children = &node->v.document.children;
+			for ( unsigned int i = 0; i < children->length; ++i ) {
+				serializeGumboNodeToXML( static_cast<GumboNode*>( children->data[i] ), out );
+			}
+			break;
+		}
+		case GUMBO_NODE_ELEMENT: {
+			// Handle the HTML tag
+			std::string tag;
+			if ( node->v.element.tag != GUMBO_TAG_UNKNOWN ) {
+				tag = gumbo_normalized_tagname( node->v.element.tag );
+			} else {
+				// For custom tags (like <eepp-widget>), Gumbo stores them as unknown.
+				// We extract the original tag string safely.
+				GumboStringPiece* original_tag = &node->v.element.original_tag;
+				gumbo_tag_from_original_text( original_tag ); // standardizes it
+				if ( original_tag->data && original_tag->length > 0 ) {
+					// Strip the `<` and any trailing spaces/brackets to get just the name
+					std::string raw( original_tag->data, original_tag->length );
+					size_t start = raw.find_first_not_of( "< " );
+					size_t end = raw.find_first_of( " >\r\n\t", start );
+					if ( start != std::string::npos ) {
+						tag = raw.substr( start, end - start );
+					}
+				}
+				if ( tag.empty() )
+					tag = "unknown";
+			}
+
+			out += "<" + tag;
+
+			// --- Process Attributes ---
+			GumboVector* attrs = &node->v.element.attributes;
+			for ( unsigned int i = 0; i < attrs->length; ++i ) {
+				GumboAttribute* attr = static_cast<GumboAttribute*>( attrs->data[i] );
+				std::string attr_name = attr->name;
+				std::string attr_value = attr->value;
+
+				// BOOLEAN ATTRIBUTE FIX:
+				// If Gumbo parsed an attribute without a value (e.g., <input disabled>),
+				// it often sets the value to empty. We enforce XML strictness.
+				if ( attr_value.empty() ) {
+					attr_value = attr_name;
+				}
+
+				out += " " + attr_name + "=\"" + escapeXML( attr_value ) + "\"";
+			}
+
+			// --- Handle Void Tags vs Standard Tags ---
+			// We enforce XML closing rules so pugixml doesn't fail
+			static const UnorderedSet<std::string> void_tags = {
+				"area",	 "base", "br",	 "col",	  "embed",	"hr",	 "img",
+				"input", "link", "meta", "param", "source", "track", "wbr" };
+
+			if ( void_tags.count( tag ) ) {
+				out += " />"; // Self-close
+			} else {
+				out += ">";
+
+				// Recursively process children
+				GumboVector* children = &node->v.element.children;
+				for ( unsigned int i = 0; i < children->length; ++i ) {
+					serializeGumboNodeToXML( static_cast<GumboNode*>( children->data[i] ), out );
+				}
+
+				out += "</" + tag + ">";
+			}
+			break;
+		}
+		case GUMBO_NODE_TEXT:
+		case GUMBO_NODE_WHITESPACE:
+		case GUMBO_NODE_CDATA: {
+			// Safely escape and write all raw text (including the insides of scripts/styles)
+			if ( node->v.text.text ) {
+				out += escapeXML( node->v.text.text );
+			}
+			break;
+		}
+		case GUMBO_NODE_COMMENT:
+		case GUMBO_NODE_TEMPLATE:
+			// We silently ignore comments to prevent XML double-hyphen crashes
+			break;
+	}
+}
 
 // In HTML, whitespace processing depends heavily on whether elements are block-level
 // or inline-level. The HTML specification states that sequences of whitespace
@@ -42,7 +181,7 @@ bool HTMLFormatter::isInlineNode( const pugi::xml_node& node ) {
 		   String::iequals( name, "em" ) || String::iequals( name, "s" ) ||
 		   String::iequals( name, "u" ) || String::iequals( name, "br" ) ||
 		   String::iequals( name, "code" ) || String::iequals( name, "img" ) ||
-		   String::iequals( name, "mark" );
+		   String::iequals( name, "mark" ) || String::iequals( name, "font" );
 }
 
 // "Significant text" in the context of HTML whitespace collapsing means any text
@@ -202,6 +341,23 @@ String HTMLFormatter::collapseXmlWhitespace( const String& text, const pugi::xml
 		res = res.substr( 0, res.size() - 1 );
 
 	return res;
+}
+
+std::string HTMLFormatter::HTMLtoXML( const std::string& layoutString ) {
+	if ( layoutString.empty() )
+		return "";
+
+	// 1. Parse the dirty HTML into a Gumbo AST
+	GumboOutput* output = gumbo_parse( layoutString.c_str() );
+
+	// 2. Serialize the AST into strict XML
+	std::string strict_xml;
+	serializeGumboNodeToXML( output->root, strict_xml );
+
+	// 3. Cleanup Gumbo's memory
+	gumbo_destroy_output( &kGumboDefaultOptions, output );
+
+	return strict_xml;
 }
 
 }}} // namespace EE::UI::Tools

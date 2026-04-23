@@ -303,6 +303,24 @@ class EE_API UIWidget : public UINode {
 	 */
 	UIWidget* setLayoutMarginBottom( const Float& marginBottom );
 
+	UIWidget* setLayoutMarginLeftAuto( bool isAuto );
+
+	UIWidget* setLayoutMarginRightAuto( bool isAuto );
+
+	UIWidget* setLayoutMarginTopAuto( bool isAuto );
+
+	UIWidget* setLayoutMarginBottomAuto( bool isAuto );
+
+	UIWidget* setLayoutMarginAuto( bool left, bool right, bool top, bool bottom );
+
+	bool hasLayoutMarginLeftAuto() const;
+
+	bool hasLayoutMarginRightAuto() const;
+
+	bool hasLayoutMarginTopAuto() const;
+
+	bool hasLayoutMarginBottomAuto() const;
+
 	/**
 	 * @brief Sets the layout margin for all sides in pixels.
 	 *
@@ -487,6 +505,35 @@ class EE_API UIWidget : public UINode {
 	PositionPolicy getLayoutPositionPolicy() const;
 
 	/**
+	 * @brief Gets the minimum intrinsic width of the widget.
+	 *
+	 * The minimum intrinsic width is the absolute minimum width the widget needs
+	 * to display its content without overflowing. For text, this is typically
+	 * the width of the longest unbreakable word.
+	 *
+	 * @return The minimum intrinsic width in pixels.
+	 */
+	virtual Float getMinIntrinsicWidth() const;
+
+	/**
+	 * @brief Gets the maximum intrinsic width of the widget.
+	 *
+	 * The maximum intrinsic width is the ideal width of the widget if it had
+	 * infinite horizontal space (i.e., no wrapping).
+	 *
+	 * @return The maximum intrinsic width in pixels.
+	 */
+	virtual Float getMaxIntrinsicWidth() const;
+
+	/**
+	 * @brief Invalidates the cached intrinsic width.
+	 *
+	 * Forces a recalculation of the intrinsic widths on the next call to
+	 * getMinIntrinsicWidth() or getMaxIntrinsicWidth().
+	 */
+	void invalidateIntrinsicSize();
+
+	/**
 	 * @brief Loads widget configuration from an XML node.
 	 *
 	 * Parses XML configuration to set up the widget's properties, styles, and
@@ -497,8 +544,8 @@ class EE_API UIWidget : public UINode {
 	virtual void loadFromXmlNode( const pugi::xml_node& node );
 
 	/**
-	* @brief Boolean that indicates if the widget is in charge of loading its children nodes
-	*/
+	 * @brief Boolean that indicates if the widget is in charge of loading its children nodes
+	 */
 	bool loadsItsChildren() const;
 
 	/**
@@ -1268,6 +1315,10 @@ class EE_API UIWidget : public UINode {
 	 */
 	virtual void onWidgetCreated();
 
+	Float getPropertyWidth() const;
+
+	Float getPropertyHeight() const;
+
   protected:
 	friend class UIManager;
 	friend class UISceneNode;
@@ -1294,6 +1345,17 @@ class EE_API UIWidget : public UINode {
 	std::string mSkinName;
 	std::vector<std::string> mClasses;
 	String mTooltipText;
+	mutable Float mMinIntrinsicWidth{ 0 };
+	mutable Float mMaxIntrinsicWidth{ 0 };
+	mutable bool mIntrinsicWidthsDirty{ true };
+	Uint8 mMarginAuto{ 0 };
+
+	static constexpr Uint8 MarginAutoLeft = ( 1 << 0 );
+	static constexpr Uint8 MarginAutoRight = ( 1 << 1 );
+	static constexpr Uint8 MarginAutoTop = ( 1 << 2 );
+	static constexpr Uint8 MarginAutoBottom = ( 1 << 3 );
+
+	void calculateAutoMargin();
 
 	/**
 	 * @brief Default constructor.
@@ -1645,6 +1707,7 @@ class EE_API UIWidget : public UINode {
 	/* @return The size of the widget when size policy is match_parent */
 	Sizef getSizeFromLayoutPolicy();
 
+	UIWidget* setLayoutMarginAuto( Uint32 dir, bool isAuto );
 };
 
 }} // namespace EE::UI

@@ -120,7 +120,7 @@ void UITooltip::setTheme( UITheme* Theme ) {
 }
 
 void UITooltip::autoPadding() {
-	if ( ( mFlags & UI_AUTO_PADDING ) && mPadding == Rectf() ) {
+	if ( ( mFlags & UI_AUTO_PADDING ) && mPadding == Rectf::Zero ) {
 		setPadding( makePadding( true, true, true, true ) );
 	}
 }
@@ -458,7 +458,7 @@ std::string UITooltip::getPropertyString( const PropertyDefinition* propertyDef,
 		case PropertyId::FontFamily:
 			return NULL != getFont() ? getFont()->getName() : "";
 		case PropertyId::FontSize:
-			return String::format( "%dpx", getCharacterSize() );
+			return String::fromFloat( PixelDensity::pxToDp( getCharacterSize() ), "dp" );
 		case PropertyId::TextDecoration:
 			return Text::styleFlagToString( getTextDecoration() );
 		case PropertyId::FontStyle:
@@ -566,6 +566,17 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 			break;
 		}
 		case PropertyId::FontSize:
+			if ( !mUsingCustomStyling )
+				setFontSize( lengthFromValue( attribute ) );
+			break;
+		case PropertyId::Wordwrap:
+			if ( attribute.asBool() )
+				mFlags |= UI_WORD_WRAP;
+			else
+				mFlags &= ~UI_WORD_WRAP;
+			autoWrap();
+			break;
+		case PropertyId::FontStyle: {
 			if ( !mUsingCustomStyling ) {
 				Uint32 flags = attribute.asFontStyle();
 
@@ -578,17 +589,7 @@ bool UITooltip::applyProperty( const StyleSheetProperty& attribute ) {
 				setFontStyle( flags );
 			}
 			break;
-		case PropertyId::Wordwrap:
-			if ( attribute.asBool() )
-				mFlags |= UI_WORD_WRAP;
-			else
-				mFlags &= ~UI_WORD_WRAP;
-			autoWrap();
-			break;
-		case PropertyId::FontStyle:
-			if ( !mUsingCustomStyling )
-				setFontStyle( attribute.asFontStyle() );
-			break;
+		}
 		case PropertyId::TextDecoration:
 			if ( !mUsingCustomStyling )
 				setTextDecoration( attribute.asTextDecoration() );

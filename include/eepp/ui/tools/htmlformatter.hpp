@@ -21,6 +21,8 @@ class EE_API HTMLFormatter {
 	static pugi::xml_node getLogicalNext( const pugi::xml_node& node );
 
 	static String collapseXmlWhitespace( const String& text, const pugi::xml_node& node );
+
+	static std::string HTMLtoXML( const std::string& layoutString );
 };
 
 }}} // namespace EE::UI::Tools

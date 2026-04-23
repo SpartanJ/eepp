@@ -1,3 +1,5 @@
+#include <eepp/ui/htmlinput.hpp>
+#include <eepp/ui/htmltextarea.hpp>
 #include <eepp/ui/tools/uidiffview.hpp>
 #include <eepp/ui/tools/uiimageviewer.hpp>
 #include <eepp/ui/tools/uitextureviewer.hpp>
@@ -36,7 +38,6 @@
 #include <eepp/ui/uitabwidget.hpp>
 #include <eepp/ui/uitextedit.hpp>
 #include <eepp/ui/uitextinput.hpp>
-#include <eepp/ui/uitextinputpassword.hpp>
 #include <eepp/ui/uitextspan.hpp>
 #include <eepp/ui/uitextureregion.hpp>
 #include <eepp/ui/uitextview.hpp>
@@ -84,7 +85,6 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["tabwidget"] = UITabWidget::New;
 		registeredWidget["textedit"] = UITextEdit::New;
 		registeredWidget["textinput"] = UITextInput::New;
-		registeredWidget["textinputpassword"] = UITextInputPassword::New;
 		registeredWidget["loader"] = UILoader::New;
 		registeredWidget["selectbutton"] = UISelectButton::New;
 		registeredWidget["window"] = UIWindow::New;
@@ -120,7 +120,6 @@ void UIWidgetCreator::createBaseWidgetList() {
 		// Aliases
 		registeredWidget["hbox"] = UILinearLayout::NewHorizontal;
 		registeredWidget["vbox"] = UILinearLayout::NewVertical;
-		registeredWidget["inputpassword"] = UITextInputPassword::New;
 		registeredWidget["viewpagerhorizontal"] = UIViewPager::NewHorizontal;
 		registeredWidget["viewpagervertical"] = UIViewPager::NewHorizontal;
 		registeredWidget["vslider"] = UISlider::NewHorizontal;
@@ -143,6 +142,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["ins"] = UITextSpan::NewUnderline;
 		registeredWidget["s"] = UITextSpan::NewStrikethrough;
 		registeredWidget["del"] = UITextSpan::NewStrikethrough;
+		registeredWidget["font"] = UITextSpan::NewFont;
 		registeredWidget["code"] = UITextSpan::NewCode;
 		registeredWidget["mark"] = UITextSpan::NewMark;
 		registeredWidget["div"] = UIRichText::NewDiv;
@@ -155,27 +155,28 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["h5"] = UIRichText::NewH5;
 		registeredWidget["h6"] = UIRichText::NewH6;
 		registeredWidget["br"] = UIRichText::NewBr;
+		registeredWidget["hr"] = UIRichText::NewHr;
 		registeredWidget["ul"] = [] { return UILinearLayout::NewVerticalWidthMatchParent( "ul" ); };
 		registeredWidget["ol"] = [] { return UILinearLayout::NewVerticalWidthMatchParent( "ol" ); };
 		registeredWidget["li"] = UIRichText::NewListItem;
 		registeredWidget["pre"] = UIRichText::NewPre;
-		registeredWidget["img"] = [] { return UIImage::NewWithTag( "img" ); };
-		registeredWidget["input"] = UITextInput::New;
-		registeredWidget["article"] = [] {
-			return UILinearLayout::NewVerticalWidthMatchParent( "article" );
+		registeredWidget["img"] = [] {
+			auto img = UIImage::NewWithTag( "img" );
+			img->setFlags( UI_HTML_ELEMENT );
+			return img;
 		};
-		registeredWidget["center"] = [] {
-			auto center = UIRichText::NewWithTag( "center" );
-			center->setLayoutWidthPolicy( SizePolicy::WrapContent );
-			return center;
-		};
-		registeredWidget["html"] = [] {
-			return UILinearLayout::NewVerticalWidthMatchParent( "html" );
-		};
+		registeredWidget["input"] = [] { return HTMLInput::New(); };
+		registeredWidget["header"] = [] { return UIRichText::NewWithTag( "header" ); };
+		registeredWidget["article"] = [] { return UIRichText::NewWithTag( "article" ); };
+		registeredWidget["footer"] = [] { return UIRichText::NewWithTag( "footer" ); };
+		registeredWidget["main"] = [] { return UIRichText::NewWithTag( "main" ); };
+		registeredWidget["section"] = [] { return UIRichText::NewWithTag( "section" ); };
+		registeredWidget["nav"] = [] { return UIRichText::NewWithTag( "nav" ); };
+		registeredWidget["center"] = [] { return UIRichText::NewWithTag( "center" ); };
+		registeredWidget["html"] = UIRichText::NewHtml;
 		registeredWidget["head"] = [] { return UIWidget::NewWithTag( "head" ); };
-		registeredWidget["body"] = [] {
-			return UILinearLayout::NewVerticalWidthMatchParent( "body" );
-		};
+		registeredWidget["body"] = UIRichText::NewBody;
+		registeredWidget["form"] = [] { return UIRichText::NewWithTag( "form" ); };
 		registeredWidget["table"] = UIHTMLTable::New;
 		registeredWidget["tr"] = UIHTMLTableRow::New;
 		registeredWidget["thead"] = UIHTMLTableHead::New;
@@ -183,6 +184,8 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["tfoot"] = UIHTMLTableFooter::New;
 		registeredWidget["th"] = [] { return UIHTMLTableCell::New( "th" ); };
 		registeredWidget["td"] = [] { return UIHTMLTableCell::New( "td" ); };
+		registeredWidget["input"] = HTMLInput::New;
+		registeredWidget["textarea"] = HTMLTextArea::New;
 
 		sBaseListCreated = true;
 	}
@@ -190,6 +193,9 @@ void UIWidgetCreator::createBaseWidgetList() {
 
 UIWidget* UIWidgetCreator::createFromName( const std::string& widgetName ) {
 	createBaseWidgetList();
+
+	if ( widgetName.empty() )
+		return nullptr;
 
 	std::string lwidgetName( String::toLower( widgetName ) );
 
@@ -201,7 +207,9 @@ UIWidget* UIWidgetCreator::createFromName( const std::string& widgetName ) {
 		return widgetCallback[lwidgetName]( lwidgetName );
 	}
 
-	return NULL;
+	eePRINTL( "UIWidgetCreator::createFromName: \"%s\" not found", widgetName.c_str() );
+
+	return nullptr;
 }
 
 void UIWidgetCreator::addCustomWidgetCallback( const std::string& widgetName,

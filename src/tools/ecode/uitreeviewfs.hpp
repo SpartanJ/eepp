@@ -1,7 +1,9 @@
 #pragma once
 
 #include <eepp/ui/keyboardshortcut.hpp>
+#include <eepp/ui/models/modelindex.hpp>
 #include <eepp/ui/uitreeview.hpp>
+#include <vector>
 
 using namespace EE::UI;
 
@@ -19,24 +21,36 @@ class UITreeViewFS : public UITreeView {
 
 	KeyBindings& getKeyBindings() { return mKeyBindings; }
 
-	void setSourceDrag( const std::string& src ) { mSrcDrag = src; }
+	std::vector<std::string>& getSourceDragMultiplePaths() { return mSrcDragMultiplePaths; }
 
-	void setSourceCopy( const std::string& src ) { mSrcCopy = src; }
+	std::string getSelectionPathAtIndex( int index ) const;
+
+	void deleteSelectedFiles();
+
+	void openSelectedFiles();
 
 	void execute( const std::string& cmd );
+
+	std::vector<FileInfo> getSelectionsFileInfo() const;
 
   protected:
 	KeyBindings mKeyBindings;
 	UnorderedMap<std::string, std::function<void()>> mCommands;
-	std::string mSrcDrag;
-	std::string mSrcCopy;
+	std::vector<std::string> mSrcDragMultiplePaths;
+	std::vector<std::string> mSrcCopyMultiplePaths;
 	bool mWasCut{ false };
+
+	friend class UITreeViewCellFS;
 
 	std::string getSelectionPath() const;
 
-	void moveFile( const std::string& src, const std::string& dst );
+	void moveFiles( const std::vector<std::string>& paths, const std::string& dstDir );
 
 	void copyFile( const std::string& src, const std::string& dst );
+
+	void copyFiles( const std::vector<std::string>& paths, const std::string& dstDir );
+
+	void deleteItems( const std::vector<std::string>& paths );
 };
 
 } // namespace ecode

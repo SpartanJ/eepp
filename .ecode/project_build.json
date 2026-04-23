@@ -375,6 +375,12 @@
         "command": "${project_root}/bin/eepp-ui-dropdownmodellist-debug",
         "name": "eepp-ui-dropdownmodellist-debug",
         "working_dir": "${project_root}/bin"
+      },
+      {
+        "args": "-c system --hn-dark",
+        "command": "${project_root}/bin/eepp-ui-html-debug",
+        "name": "eepp-ui-html-debug",
+        "working_dir": "${project_root}/bin"
       }
     ],
     "var": {
@@ -597,6 +603,18 @@
         "args": "",
         "command": "${project_root}/bin/unit_tests/eepp-unit_tests-debug",
         "name": "eepp-unit_test-debug",
+        "working_dir": "${project_root}/bin/"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-html-debug",
+        "name": "eepp-ui-html-debug",
+        "working_dir": "${project_root}/bin/"
+      },
+      {
+        "args": "",
+        "command": "${project_root}/bin/eepp-ui-markdownview-debug",
+        "name": "eepp-ui-markdownview-debug",
         "working_dir": "${project_root}/bin/"
       }
     ],

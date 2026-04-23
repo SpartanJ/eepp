@@ -6,6 +6,7 @@
 #include <eepp/graphics/linewrap.hpp>
 #include <eepp/graphics/pixeldensity.hpp>
 #include <eepp/graphics/textlayout.hpp>
+#include <eepp/graphics/textselectionrange.hpp>
 #include <eepp/graphics/texttransform.hpp>
 
 #include <functional>
@@ -23,11 +24,6 @@ struct WhitespaceDisplayConfig {
 	CharacterAlignment tabAlign{ CharacterAlignment::Center };
 	Color color;
 	std::optional<Float> tabOffset;
-};
-
-struct TextSelectionRange {
-	Int64 start{ 0 };
-	Int64 end{ 0 };
 };
 
 class EE_API Text {
@@ -126,14 +122,11 @@ class EE_API Text {
 									   TextDirection direction = TextDirection::Unspecified,
 									   const Vector2f& initialOffset = {} );
 
-	static Vector2f findCharacterPos( std::size_t index, Font* font, const Uint32& fontSize,
-									  const String& string, const Uint32& style,
-									  const Uint32& tabWidth = 4,
-									  const Float& outlineThickness = 0.f,
-									  std::optional<Float> tabOffset = {}, bool allowNewLine = true,
-									  Uint32 textHints = 0,
-									  TextDirection direction = TextDirection::Unspecified,
-									  const Vector2f& initialOffset = {} );
+	static Vector2f findCharacterPos(
+		std::size_t index, Font* font, const Uint32& fontSize, const String& string,
+		const Uint32& style, const Uint32& tabWidth = 4, const Float& outlineThickness = 0.f,
+		std::optional<Float> tabOffset = {}, bool allowNewLine = true, Uint32 textHints = 0,
+		TextDirection direction = TextDirection::Unspecified, const Vector2f& initialOffset = {} );
 
 	static std::size_t
 	findLastCharPosWithinLength( Font* font, const Uint32& fontSize, const String& string,
@@ -250,7 +243,7 @@ class EE_API Text {
 	Float getTextHeight();
 
 	/** @return The line spacing */
-	Float getLineSpacing();
+	Float getLineSpacing() const;
 
 	/** Draw the cached text on screen */
 	void draw( const Float& X, const Float& Y, const Vector2f& scale = Vector2f::One,
@@ -390,7 +383,7 @@ class EE_API Text {
 	/** @return A list of rectangles that cover the selection of the string, each rectangle
 	 * has the line spacing height and covers the width of the selection.
 	 */
-	std::vector<Rectf> getSelectionRects( TextSelectionRange range );
+	SmallVector<Rectf> getSelectionRects( TextSelectionRange range );
 
   protected:
 	struct VertexCoords {
@@ -507,6 +500,8 @@ class EE_API Text {
 									   std::optional<Float> tabOffset, Uint32 textHints,
 									   TextDirection direction, LineWrapMode lineWrapMode,
 									   Float maxWrapWidth, const Vector2f& initialOffset = {} );
+
+	void checkColorEmojis();
 };
 
 }} // namespace EE::Graphics

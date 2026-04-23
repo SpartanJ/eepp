@@ -39,7 +39,7 @@ class EE_API Version {
 	static Uint32 getVersionNum();
 
 	/** @return The library version name: "eepp version major.minor.patch" */
-	static std::string getVersionName();
+	static std::string getVersionName( bool fullName = true );
 
 	/** @return The version codename */
 	static std::string getCodename();

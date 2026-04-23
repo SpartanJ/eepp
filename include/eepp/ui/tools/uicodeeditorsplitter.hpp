@@ -20,6 +20,8 @@ class EE_API UICodeEditorSplitter {
 
 	static const std::map<KeyBindings::Shortcut, std::string> getLocalDefaultKeybindings();
 
+	static Uint32 getDefaultSwitchToTabModifier();
+
 	class EE_API Client {
 	  public:
 		virtual ~Client() {};
@@ -390,6 +392,8 @@ class EE_API UICodeEditorSplitter {
 	UITabWidget* getPreferredTabWidget() const;
 
 	UITabWidget* getCurTabWidget() const;
+
+	UITab* getTabFromWidget( UIWidget* ) const;
 
 	void
 	setCanCreateSplitFn( std::function<bool( SplitDirection direction, UIWidget* widget )> fn );

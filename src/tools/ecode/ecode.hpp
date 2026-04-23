@@ -32,6 +32,7 @@ class AutoCompletePlugin;
 class LinterPlugin;
 class FormatterPlugin;
 class SettingsMenu;
+class UITreeViewFS;
 
 class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
   public:
@@ -161,6 +162,8 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	const std::string& getCurrentProject() const { return mCurrentProject; }
 
 	std::string getCurrentWorkingDir() const;
+
+	std::string getCurrentFileDir() const;
 
 	Drawable* findIcon( const std::string& name );
 
@@ -369,6 +372,10 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 			if ( mTerminalManager )
 				mTerminalManager->configureTerminalScrollback();
 		} );
+		t.setCommand( "configure-terminal-working-dir", [this] {
+			if ( mTerminalManager )
+				mTerminalManager->configureTerminalWorkingDir();
+		} );
 		t.setCommand( "check-for-updates", [this] { mSettingsActions->checkForUpdates( false ); } );
 		t.setCommand( "create-new-window", [this] { openInNewWindow(); } );
 		t.setCommand( "create-new-welcome-tab", [this] { createWelcomeTab(); } );
@@ -504,7 +511,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 
 	UITextView* getDocInfo() const;
 
-	UITreeView* getProjectTreeView() const;
+	UITreeViewFS* getProjectTreeView() const;
 
 	void loadCurrentDirectory();
 
@@ -687,7 +694,7 @@ class App : public UICodeEditorSplitter::Client, public PluginContextProvider {
 	Float mDisplayDPI{ 96 };
 	std::shared_ptr<ThreadPool> mThreadPool;
 	std::shared_ptr<ProjectDirectoryTree> mDirTree;
-	UITreeView* mProjectTreeView{ nullptr };
+	UITreeViewFS* mProjectTreeView{ nullptr };
 	UILinearLayout* mProjectViewEmptyCont{ nullptr };
 	std::shared_ptr<FileSystemModel> mFileSystemModel;
 	std::shared_ptr<GitIgnoreMatcher> mFileSystemMatcher;

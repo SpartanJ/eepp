@@ -105,7 +105,7 @@ UTEST( UICodeEditor, DocumentViewStressTest ) {
 	UIApplication app(
 		WindowSettings( 800, 600, "eepp - Stress Test", WindowStyle::Default,
 						WindowBackend::Default, 32 ),
-		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash() ) );
+		UIApplication::Settings( Sys::getProcessPath() + ".." + FileSystem::getOSSlash(), 1 ) );
 
 	auto* editor = UICodeEditor::New();
 	editor->setParent( (Node*)app.getUI() );

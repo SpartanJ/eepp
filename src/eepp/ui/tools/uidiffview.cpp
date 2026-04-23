@@ -10,6 +10,7 @@
 #include <eepp/ui/uiscrollbar.hpp>
 #include <eepp/ui/uiscrollview.hpp>
 #include <eepp/ui/uithememanager.hpp>
+#include <eepp/window/window.hpp>
 
 #include <dtl/dtl.hpp>
 
@@ -294,7 +295,9 @@ std::vector<std::string> UIDiffView::splitDiff( const std::string& multiFileDiff
 	return diffs;
 }
 
-UIDiffView::UIDiffView() : UIWidget( "diffview" ) {
+UIDiffView::UIDiffView() :
+	UIWidget( "diffview" ),
+	WidgetCommandExecuter( KeyBindings{ getUISceneNode()->getWindow()->getInput() } ) {
 	setFlags( UI_AUTO_SIZE );
 	createEditor( mEditor, mPlugin );
 	createEditor( mLeftEditor, mLeftPlugin );

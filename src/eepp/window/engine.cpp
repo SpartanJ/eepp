@@ -4,6 +4,7 @@
 #include <eepp/graphics/ninepatchmanager.hpp>
 #include <eepp/graphics/renderer/renderer.hpp>
 #include <eepp/graphics/shaderprogrammanager.hpp>
+#include <eepp/graphics/textlayout.hpp>
 #include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/texturefactory.hpp>
 #include <eepp/graphics/vertexbuffermanager.hpp>
@@ -124,6 +125,8 @@ Engine::~Engine() {
 	ParserMatcherManager::destroySingleton();
 
 	Log::destroySingleton();
+
+	TextLayout::clearLayoutCache();
 }
 
 void Engine::destroy() {
@@ -215,7 +218,8 @@ EE::Window::Window* Engine::createWindow( WindowSettings Settings, ContextSettin
 
 	mWindows.insert( { mWindow->getWindowID(), mWindow } );
 
-	PixelDensity::setPixelDensity( Settings.PixelDensity );
+	if ( Settings.PixelDensity > 0 )
+		PixelDensity::setPixelDensity( Settings.PixelDensity );
 
 	return window;
 }
@@ -273,7 +277,7 @@ Uint32 Engine::getWindowCount() const {
 }
 
 bool Engine::isEngineRunning() {
-	return existsSingleton() && Engine::instance()->isRunning();
+	return existsSingleton() && !isShuttingDown() && Engine::instance()->isRunning();
 }
 
 bool Engine::isRunning() const {

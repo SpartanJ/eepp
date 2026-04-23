@@ -88,7 +88,7 @@ Rectf UIPushButton::calculatePadding() const {
 	Rectf autoPadding;
 	if ( mFlags & UI_AUTO_PADDING ) {
 		autoPadding = makePadding( true, true, true, true );
-		if ( autoPadding != Rectf() )
+		if ( autoPadding != Rectf::Zero )
 			autoPadding = PixelDensity::dpToPx( autoPadding );
 	}
 	if ( mPaddingPx.Top > autoPadding.Top )
@@ -671,6 +671,7 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 			setInnerWidgetOrientation( innerWidgetOrientationFromString( attribute.value() ) );
 			break;
 		case PropertyId::Text:
+		case PropertyId::Value:
 			if ( NULL != mSceneNode && mSceneNode->isUISceneNode() )
 				setText( getUISceneNode()->getTranslatorString( attribute.value() ) );
 			break;

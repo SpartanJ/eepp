@@ -23,6 +23,7 @@
 #ifndef _WIN32
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/log.hpp>
+#include <eepp/version.hpp>
 #include <eterm/system/process.hpp>
 #include <poll.h>
 #include <pwd.h>
@@ -140,6 +141,8 @@ static void execshell( const char* cmd, const char* const* args, std::string wor
 	setenv( "SHELL", sh, 1 );
 	setenv( "HOME", pw->pw_dir, 1 );
 	setenv( "TERM", "xterm-256color", 1 );
+	setenv( "TERM_PROGRAM", "eterm", 1 );
+	setenv( "TERM_PROGRAM_VERSION", EE::Version::getVersionName( false ).c_str(), 1 );
 	setenv( "COLORTERM", "24bit", 1 );
 
 	for ( const auto& e : env )
@@ -213,6 +216,7 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 #else
 
 #include <assert.h>
+#include <eepp/version.hpp>
 #include <eterm/system/pipe.hpp>
 #include <eterm/system/process.hpp>
 #include <eterm/terminal/windowserrors.hpp>
@@ -357,9 +361,9 @@ std::unique_ptr<Process> Process::createWithPipe( const std::string& program,
 		oss << ' ' << arg;
 	}
 	std::wstring commandLine = stringToWideString( oss.str() );
-	
-	std::vector<wchar_t> cmdLineMutable(commandLine.begin(), commandLine.end());
-	cmdLineMutable.push_back(0);
+
+	std::vector<wchar_t> cmdLineMutable( commandLine.begin(), commandLine.end() );
+	cmdLineMutable.push_back( 0 );
 
 	std::wstring workingDir = stringToWideString( workingDirectory );
 
@@ -390,6 +394,8 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 	SetEnvironmentVariableA( "WSLENV", "TERM/u" );
 	SetEnvironmentVariableA( "TERM", "xterm-256color" );
 	SetEnvironmentVariableA( "COLORTERM", "24bit" );
+	SetEnvironmentVariableA( "TERM_PROGRAM", "eterm" );
+	SetEnvironmentVariableA( "TERM_PROGRAM_VERSION", EE::Version::getVersionName( false ).c_str() );
 
 	for ( const auto& e : env )
 		SetEnvironmentVariableA( e.first.c_str(), e.second.c_str() );
@@ -401,7 +407,7 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 
 	STARTUPINFOEXW startupInfo{};
 	startupInfo.StartupInfo.cb = sizeof( STARTUPINFOEXW );
-	startupInfo.StartupInfo.dwFlags = STARTF_USESTDHANDLES; 
+	startupInfo.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
 	startupInfo.StartupInfo.hStdInput = INVALID_HANDLE_VALUE;
 	startupInfo.StartupInfo.hStdOutput = INVALID_HANDLE_VALUE;
 	startupInfo.StartupInfo.hStdError = INVALID_HANDLE_VALUE;
@@ -432,23 +438,24 @@ Process::createWithPseudoTerminal( const std::string& program, const std::vector
 		goto fail;
 	}
 
-	if ( !UpdateProcThreadAttribute( startupInfo.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
-									 pseudoTerminal.mPHPC, sizeof( HPCON ), NULL, NULL ) ) {
+	if ( !UpdateProcThreadAttribute( startupInfo.lpAttributeList, 0,
+									 PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, pseudoTerminal.mPHPC,
+									 sizeof( HPCON ), NULL, NULL ) ) {
 		Log::error( "UpdateProcThreadAttribute failed." );
 		goto fail;
 	}
 
-	hr = CreateProcessW( NULL,							// No module name - use Command Line
-						 commandLine.data(), 			// Must be a mutable buffer to prevent ERROR_INSUFFICIENT_BUFFER
-						 NULL,							// Process handle not inheritable
-						 NULL,							// Thread handle not inheritable
-						 FALSE,							// Inherit handles
-						 EXTENDED_STARTUPINFO_PRESENT,	// Creation flags
-						 NULL,							// Use parent's environment block
-						 workingDir.empty() ? NULL
-											: workingDir.c_str(), // Use parent's starting directory
-						 &startupInfo.StartupInfo,				  // Pointer to STARTUPINFO
-						 &piClient )							  // Pointer to PROCESS_INFORMATION
+	hr = CreateProcessW(
+			 NULL,				 // No module name - use Command Line
+			 commandLine.data(), // Must be a mutable buffer to prevent ERROR_INSUFFICIENT_BUFFER
+			 NULL,				 // Process handle not inheritable
+			 NULL,				 // Thread handle not inheritable
+			 FALSE,				 // Inherit handles
+			 EXTENDED_STARTUPINFO_PRESENT,					 // Creation flags
+			 NULL,											 // Use parent's environment block
+			 workingDir.empty() ? NULL : workingDir.c_str(), // Use parent's starting directory
+			 &startupInfo.StartupInfo,						 // Pointer to STARTUPINFO
+			 &piClient )									 // Pointer to PROCESS_INFORMATION
 			 ? S_OK
 			 : HANDLE_WIN_ERR( GetLastError() );
 

@@ -41,6 +41,10 @@ class EE_API Drawable {
 
 	virtual Sizef getPixelsSize() = 0;
 
+	virtual Float getMinIntrinsicWidth() { return getPixelsSize().getWidth(); }
+
+	virtual Float getMaxIntrinsicWidth() { return getPixelsSize().getWidth(); }
+
 	virtual void draw() = 0;
 
 	virtual void draw( const Vector2f& position ) = 0;
