@@ -1104,10 +1104,17 @@ void GitPlugin::diff( const Git::DiffMode mode, const std::string& repoPath ) {
 	} );
 }
 
-void GitPlugin::diff( const std::string& file, bool isStaged ) {
-	mThreadPool->run( [this, file, isStaged] {
+void GitPlugin::diff( const std::string& file, Git::GitStatusType status ) {
+	mThreadPool->run( [this, file, status] {
 		auto filePath = fixFilePath( file );
-		auto res = mGit->diff( filePath, isStaged, mGit->repoPath( file ) );
+		if ( status == Git::GitStatusType::Untracked ) {
+			getUISceneNode()->runOnMainThread( [this, filePath = std::move( filePath )] {
+				getPluginContext()->loadDiffFromPaths( "", filePath );
+			} );
+			return;
+		}
+		auto res =
+			mGit->diff( filePath, status == Git::GitStatusType::Staged, mGit->repoPath( file ) );
 		if ( res.fail() )
 			return;
 
@@ -1599,7 +1606,7 @@ void GitPlugin::buildSidePanelTab() {
 					break;
 				}
 				case ModelEventType::Open: {
-					diff( file->file, file->report.type == Git::GitStatusType::Staged );
+					diff( file->file, file->report.type );
 					break;
 				}
 				default:
@@ -1863,7 +1870,7 @@ void GitPlugin::openFileStatusMenu( const Git::DiffFile& file ) {
 		} else if ( id == "git-open-file" ) {
 			openFile( file.file );
 		} else if ( id == "git-diff" ) {
-			diff( file.file, file.report.type == Git::GitStatusType::Staged );
+			diff( file.file, file.report.type );
 		}
 	} );
 
