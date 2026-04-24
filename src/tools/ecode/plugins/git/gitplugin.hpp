@@ -182,7 +182,7 @@ class GitPlugin : public PluginBase {
 
 	void diff( const Git::DiffMode mode, const std::string& repoPath );
 
-	void diff( const std::string& file, bool isStaged );
+	void diff( const std::string& file, Git::GitStatusType status );
 
 	void openFile( const std::string& file );
 
