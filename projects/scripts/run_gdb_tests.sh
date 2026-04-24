@@ -5,7 +5,7 @@ cd ../../bin/unit_tests
 
 echo "=== Running eepp unit tests under GDB (xvfb) ==="
 
-xvfb-run -s "-screen 0 1280x1024x24" \
+ASAN_OPTIONS=detect_leaks=0 xvfb-run -s "-screen 0 1280x1024x24" \
   gdb --batch --quiet --return-child-result \
     -ex "set confirm off" \
     -ex "set print thread-events off" \
