@@ -36,8 +36,8 @@ jobs:
           name: ecode ${{ steps.tag.outputs.version }}
           draft: false
           prerelease: true
-          generate_release_notes: true
-          body: >
+          generate_release_notes: false
+          body: |
             Builds that include most recent changes as they happen. For stable releases check the whole list of [releases](https://github.com/SpartanJ/ecode/releases).
 
   build_linux_x86_64:

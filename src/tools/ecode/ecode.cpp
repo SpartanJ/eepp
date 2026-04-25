@@ -2283,6 +2283,7 @@ std::vector<std::string> App::getUnlockedCommands() {
 		"reset-project-language-extensions-priorities",
 		"maximize-tab-widget",
 		"restore-maximized-tab-widget",
+		"close-folder",
 	};
 }
 
@@ -2980,7 +2981,6 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 	doc.setCommand( "find-prev", [this] {
 		mDocSearchController->findPrevText( mDocSearchController->getSearchState() );
 	} );
-	doc.setCommand( "close-folder", [this] { closeFolder(); } );
 	doc.setCommand( "lock", [this] {
 		if ( mSplitter->curEditorExistsAndFocused() ) {
 			mSplitter->getCurEditor()->setLocked( true );
