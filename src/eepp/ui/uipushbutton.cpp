@@ -6,6 +6,9 @@
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uithememanager.hpp>
 
+#define PUGIXML_HEADER_ONLY
+#include <pugixml/pugixml.hpp>
+
 namespace EE { namespace UI {
 
 InnerWidgetOrientation UIPushButton::innerWidgetOrientationFromString( std::string iwo ) {
@@ -737,6 +740,12 @@ bool UIPushButton::applyProperty( const StyleSheetProperty& attribute ) {
 	}
 
 	return attributeSet;
+}
+
+void UIPushButton::loadFromXmlNode( const pugi::xml_node& node ) {
+	UIWidget::loadFromXmlNode( node );
+	if ( !node.text().empty() )
+		setText( node.text().as_string() );
 }
 
 }} // namespace EE::UI

@@ -1670,6 +1670,11 @@ Float UINode::lengthFromValue( const StyleSheetProperty& property,
 				res.setValue( 1.2f, StyleSheetLength::Unit::Em );
 			}
 			return convertLength( res, 0 );
+		} else if ( property.getValue() == "inherit" ) {
+			// TODO: FIX inherit value
+			StyleSheetLength res;
+			res.setValue( 1, StyleSheetLength::Unit::Em );
+			return convertLength( res, 0 );
 		}
 	}
 	return lengthFromValue( property.getValue(),

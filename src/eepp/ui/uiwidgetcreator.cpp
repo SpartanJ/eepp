@@ -126,7 +126,6 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["hslider"] = UISlider::NewHorizontal;
 		registeredWidget["vscrollbar"] = UIScrollBar::NewVertical;
 		registeredWidget["hscrollbar"] = UIScrollBar::NewHorizontal;
-		registeredWidget["button"] = UIPushButton::New;
 		registeredWidget["rlay"] = UIRelativeLayout::New;
 		registeredWidget["tooltip"] = UITooltip::New;
 		registeredWidget["tv"] = UITextView::New;
@@ -137,6 +136,7 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["em"] = UITextSpan::NewEmphasis;
 		registeredWidget["b"] = UITextSpan::NewBold;
 		registeredWidget["strong"] = UITextSpan::NewBold;
+		registeredWidget["small"] = UITextSpan::NewSmall;
 		registeredWidget["i"] = UITextSpan::NewItalics;
 		registeredWidget["u"] = UITextSpan::NewUnderline;
 		registeredWidget["ins"] = UITextSpan::NewUnderline;
@@ -186,6 +186,12 @@ void UIWidgetCreator::createBaseWidgetList() {
 		registeredWidget["td"] = [] { return UIHTMLTableCell::New( "td" ); };
 		registeredWidget["input"] = HTMLInput::New;
 		registeredWidget["textarea"] = HTMLTextArea::New;
+		registeredWidget["button"] = [] {
+			auto but = UIPushButton::NewWithTag( "button" );
+			but->setFlags( UI_HTML_ELEMENT );
+			but->setLayoutSizePolicy( SizePolicy::WrapContent, SizePolicy::WrapContent );
+			return but;
+		};
 
 		sBaseListCreated = true;
 	}

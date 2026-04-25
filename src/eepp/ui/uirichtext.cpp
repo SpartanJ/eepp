@@ -20,7 +20,9 @@ UIHTMLHtml* UIHTMLHtml::New( const std::string& tag ) {
 	return eeNew( UIHTMLHtml, ( tag ) );
 }
 
-UIHTMLHtml::UIHTMLHtml( const std::string& tag ) : UIRichText( tag ) {}
+UIHTMLHtml::UIHTMLHtml( const std::string& tag ) : UIRichText( tag ) {
+	enableReportSizeChangeToChildren();
+}
 
 Uint32 UIHTMLHtml::getType() const {
 	return UI_TYPE_HTML_HTML;

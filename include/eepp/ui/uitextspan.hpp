@@ -33,6 +33,8 @@ class EE_API UITextSpan : public UIHTMLWidget {
 
 	static UITextSpan* NewCode() { return NewWithTag( "code" ); }
 
+	static UITextSpan* NewSmall() { return NewWithTag( "small" ); }
+
 	virtual ~UITextSpan();
 
 	virtual Uint32 getType() const;

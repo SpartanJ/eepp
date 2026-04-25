@@ -62,6 +62,10 @@ strong {
 	font-style: bold;
 }
 
+small {
+	font-size: smaller;
+}
+
 u,
 ins {
 	text-decoration: underline;
