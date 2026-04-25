@@ -657,7 +657,6 @@ Glyph FontTrueType::getGlyphByIndex( Uint32 index, unsigned int characterSize, b
 GlyphDrawable* FontTrueType::getGlyphDrawable( Uint32 codePoint, unsigned int characterSize,
 											   bool bold, bool italic,
 											   Float outlineThickness ) const {
-	// mKeyCache
 	Page& page = getPage( characterSize );
 	GlyphDrawableTable& drawables = page.drawables;
 

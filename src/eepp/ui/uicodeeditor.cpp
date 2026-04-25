@@ -488,7 +488,7 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 		invalidateDraw();
 	}
 
-	if ( mDoc && !mDoc->isLoading() && mHorizontalScrollBarEnabled && isVisible() &&
+	if ( mDoc && !mDoc->isLoading() && needsHorizontalLength() && isVisible() &&
 		 mLongestLineWidthDirty &&
 		 mLongestLineWidthLastUpdate.getElapsedTime() > mFindLongestLineWidthUpdateFrequency ) {
 		updateLongestLineWidth();
@@ -499,8 +499,7 @@ void UICodeEditor::scheduledUpdate( const Time& ) {
 }
 
 void UICodeEditor::updateLongestLineWidth() {
-	if ( mHorizontalScrollBarEnabled && mDoc && !mDoc->isLoading() &&
-		 !mDoc->isRunningTransaction() ) {
+	if ( needsHorizontalLength() && mDoc && !mDoc->isLoading() && !mDoc->isRunningTransaction() ) {
 		Float maxWidth = mLongestLineWidth;
 		findLongestLine();
 		mLongestLineWidthLastUpdate.restart();
@@ -2060,7 +2059,7 @@ void UICodeEditor::onPaddingChange() {
 
 std::pair<size_t, Float> UICodeEditor::findLongestLineInRange( const TextRange& range ) {
 	std::pair<size_t, Float> curRange{ mLongestLineIndex, mLongestLineWidth };
-	if ( mHorizontalScrollBarEnabled ) {
+	if ( needsHorizontalLength() ) {
 		Float longestLineWidth = 0;
 		for ( Int64 lineIndex = range.start().line(); lineIndex <= range.end().line();
 			  lineIndex++ ) {
@@ -2076,7 +2075,7 @@ std::pair<size_t, Float> UICodeEditor::findLongestLineInRange( const TextRange& 
 }
 
 void UICodeEditor::findLongestLine() {
-	if ( mHorizontalScrollBarEnabled ) {
+	if ( needsHorizontalLength() ) {
 		auto range = findLongestLineInRange( mDoc->getDocRange() );
 		mLongestLineIndex = range.first;
 		mLongestLineWidth = range.second;
@@ -5725,6 +5724,10 @@ void UICodeEditor::onClassChange() {
 			setSyntaxDefinition( SyntaxDefinitionManager::instance()->findFromString( langname ) );
 		}
 	}
+}
+
+bool UICodeEditor::needsHorizontalLength() const {
+	return mDocView.getConfig().mode == LineWrapMode::NoWrap;
 }
 
 }} // namespace EE::UI
