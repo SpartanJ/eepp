@@ -21,9 +21,10 @@ static std::initializer_list<std::string> AIAssistantUnlockedCommandList = {
 
 static std::initializer_list<std::string> AIAssistantCommandList = {
 
-	"ai-prompt",	   "ai-add-chat",  "ai-chat-history",		 "ai-attach-file",
-	"ai-clone-chat",   "ai-settings",  "ai-toggle-private-chat", "ai-save-chat",
-	"ai-rename-chat",  "ai-show-menu", "ai-chat-toggle-role",	 "ai-refresh-local-models",
+	"ai-prompt",	   "ai-chat-history", "ai-attach-file",			"ai-link-file",
+	"ai-clone-chat",   "ai-settings",	  "ai-toggle-private-chat", "ai-save-chat",
+	"ai-rename-chat",  "ai-show-menu",	  "ai-chat-toggle-role",	"ai-refresh-local-models",
+	"ai-add-chat",	   "ai-select-model", "ai-toggle-agent-mode",	"ai-agent-config",
 	"new-ai-assistant"
 
 };
@@ -406,7 +407,6 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 	if ( mKeyBindings.empty() ) {
 		mKeyBindings["new-ai-assistant"] = "mod+shift+m";
 		mKeyBindings["ai-prompt"] = "mod+return";
-		mKeyBindings["ai-add-chat"] = "mod+shift+return";
 		mKeyBindings["ai-chat-history"] = "mod+h";
 		mKeyBindings["ai-clone-chat"] = "mod+shift+c";
 		mKeyBindings["ai-settings"] = "mod+shift+s";
@@ -417,8 +417,11 @@ void AIAssistantPlugin::loadAIAssistantConfig( const std::string& path, bool upd
 		mKeyBindings["ai-chat-toggle-role"] = "mod+shift+r";
 		mKeyBindings["ai-refresh-local-models"] = "mod+shift+l";
 		mKeyBindings["ai-attach-file"] = "mod+shift+a";
+		mKeyBindings["ai-link-file"] = "mod+shift+z";
+		mKeyBindings["ai-select-model"] = "mod+shift+x";
 		mKeyBindings["ai-toggle-agent-mode"] = "mod+shift+d";
 		mKeyBindings["ai-agent-config"] = "shift+alt+c";
+		mKeyBindings["ai-add-chat"] = "mod+shift+return";
 	}
 
 	auto& kb = j["keybindings"];
