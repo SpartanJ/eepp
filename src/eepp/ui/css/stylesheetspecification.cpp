@@ -425,6 +425,14 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "cols", "20" ).setType( PropertyType::NumberInt );
 	registerProperty( "input-mode", "normal" ).setType( PropertyType::String );
 
+	registerProperty( "display", "inline" );
+	registerProperty( "position", "static" );
+	registerProperty( "top", "auto" );
+	registerProperty( "right", "auto" );
+	registerProperty( "bottom", "auto" );
+	registerProperty( "left", "auto" );
+	registerProperty( "z-index", "auto" );
+
 	registerProperty( "inner-widget-orientation", "widgeticontextbox" )
 		.setType( PropertyType::String );
 

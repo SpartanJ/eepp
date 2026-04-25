@@ -3,6 +3,7 @@
 #include <eepp/ui/css/propertydefinition.hpp>
 #include <eepp/ui/tools/htmlformatter.hpp>
 #include <eepp/ui/uicodeeditor.hpp>
+#include <eepp/ui/uilayouter.hpp>
 #include <eepp/ui/uirichtext.hpp>
 #include <eepp/ui/uiscenenode.hpp>
 #include <eepp/ui/uistyle.hpp>
@@ -14,19 +15,6 @@
 #include <pugixml/pugixml.hpp>
 
 namespace EE { namespace UI {
-
-class UILineBreak : public UIRichText {
-  public:
-	static UILineBreak* New( const std::string& tag ) { return eeNew( UILineBreak, ( tag ) ); }
-
-	UILineBreak( const std::string& tag = "br" ) : UIRichText( tag ) {}
-
-	virtual Uint32 getType() const { return UI_TYPE_BR; }
-
-	bool isType( const Uint32& type ) const {
-		return UILineBreak::getType() == type ? true : UINode::isType( type );
-	}
-};
 
 UIHTMLHtml* UIHTMLHtml::New( const std::string& tag ) {
 	return eeNew( UIHTMLHtml, ( tag ) );
@@ -40,6 +28,20 @@ Uint32 UIHTMLHtml::getType() const {
 
 bool UIHTMLHtml::isType( const Uint32& type ) const {
 	return UIHTMLHtml::getType() == type ? true : UIRichText::isType( type );
+}
+
+UILineBreak* UILineBreak::New( const std::string& tag ) {
+	return eeNew( UILineBreak, ( tag ) );
+}
+
+UILineBreak::UILineBreak( const std::string& tag ) : UIRichText( tag ) {}
+
+Uint32 UILineBreak::getType() const {
+	return UI_TYPE_BR;
+}
+
+bool UILineBreak::isType( const Uint32& type ) const {
+	return UILineBreak::getType() == type ? true : UIHTMLWidget::isType( type );
 }
 
 UIHTMLBody* UIHTMLBody::New( const std::string& tag ) {
@@ -110,7 +112,7 @@ UIRichText* UIRichText::NewWithTag( const std::string& tag ) {
 	return eeNew( UIRichText, ( tag ) );
 }
 
-UIRichText::UIRichText( const std::string& tag ) : UILayout( tag ) {
+UIRichText::UIRichText( const std::string& tag ) : UIHTMLWidget( tag ) {
 	mFlags |= UI_HTML_ELEMENT | UI_LOADS_ITS_CHILDREN | UI_OWNS_CHILDREN_POSITION;
 
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
@@ -137,7 +139,7 @@ Uint32 UIRichText::getType() const {
 }
 
 bool UIRichText::isType( const Uint32& type ) const {
-	return UIRichText::getType() == type ? true : UILayout::isType( type );
+	return UIRichText::getType() == type ? true : UIHTMLWidget::isType( type );
 }
 
 const RichText& UIRichText::getRichText() {
@@ -542,22 +544,23 @@ void UIRichText::onAlphaChange() {
 	UILayout::onAlphaChange();
 }
 
-void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
+void UIRichText::rebuildRichText( UILayout* container, RichText& richText, IntrinsicMode mode ) {
 	richText.clear();
-
-	Float maxWidth = mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right;
+	Float maxWidth = container->getPixelsSize().getWidth() - container->getPixelsPadding().Left -
+					 container->getPixelsPadding().Right;
 	if ( maxWidth < 0 )
 		maxWidth = 0;
 
 	Float mw = 0.f;
-	if ( !mMaxWidthEq.empty() ) {
-		mw = getMaxSizePx().getWidth() - mPaddingPx.Left - mPaddingPx.Right;
+	if ( !container->getMaxWidthEq().empty() ) {
+		mw = container->getMaxSizePx().getWidth() - container->getPixelsPadding().Left -
+			 container->getPixelsPadding().Right;
 		if ( mw < 0 )
 			mw = 0.f;
 	}
 
 	if ( mode == IntrinsicMode::None ) {
-		if ( !mMaxWidthEq.empty() && ( maxWidth == 0 || mw < maxWidth ) ) {
+		if ( !container->getMaxWidthEq().empty() && ( maxWidth == 0 || mw < maxWidth ) ) {
 			richText.setMaxWidth( mw );
 		} else {
 			richText.setMaxWidth( maxWidth );
@@ -588,18 +591,19 @@ void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
 
 			if ( mode == IntrinsicMode::None ) {
 				if ( isBlock ) {
-					if ( mSize.getWidth() != 0 ) {
-						Float maxSize =
-							eemax( 0.f, mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
-											margin.Left - margin.Right );
+					if ( container->getPixelsSize().getWidth() != 0 ) {
+						Float maxSize = eemax( 0.f, container->getPixelsSize().getWidth() -
+														container->getPixelsPadding().Left -
+														container->getPixelsPadding().Right -
+														margin.Left - margin.Right );
 						widget->setPixelsSize( eemax( 0.f, maxSize ),
 											   widget->getPixelsSize().getHeight() );
 					} else {
-						onAutoSizeChild( widget );
+						container->onAutoSizeChild( widget );
 					}
 				} else if ( widget->getLayoutWidthPolicy() == SizePolicy::WrapContent ||
 							widget->getLayoutHeightPolicy() == SizePolicy::WrapContent ) {
-					onAutoSizeChild( widget );
+					container->onAutoSizeChild( widget );
 				}
 			}
 
@@ -613,9 +617,12 @@ void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
 			}
 
 			Float w = size.getWidth();
-			if ( isBlock && mode == IntrinsicMode::None && mSize.getWidth() != 0 ) {
-				w = eemax( 0.f, mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right -
-									margin.Left - margin.Right );
+			if ( isBlock && mode == IntrinsicMode::None &&
+				 container->getPixelsSize().getWidth() != 0 ) {
+				w = eemax( 0.f, container->getPixelsSize().getWidth() -
+									container->getPixelsPadding().Left -
+									container->getPixelsPadding().Right - margin.Left -
+									margin.Right );
 			}
 
 			richText.addCustomSize( Sizef( w + margin.Left + margin.Right,
@@ -624,7 +631,7 @@ void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
 		}
 	};
 
-	Node* child = mChild;
+	Node* child = container->getFirstChild();
 	while ( NULL != child ) {
 		if ( child->isWidget() ) {
 			processWidget( child->asType<UIWidget>(), processWidget );
@@ -633,140 +640,8 @@ void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
 	}
 }
 
-void UIRichText::positionChildren() {
-	const auto& lines = mRichText.getLines();
-	Node* child = mChild;
-
-	size_t currentLine = 0;
-	size_t currentSpan = 0;
-
-	// Helper to find the next RenderSpan of type CustomSize
-	auto getNextCustomSpan = [&]() -> const RichText::RenderSpan* {
-		while ( currentLine < lines.size() ) {
-			const auto& line = lines[currentLine];
-			while ( currentSpan < line.spans.size() ) {
-				const auto& span = line.spans[currentSpan];
-				currentSpan++;
-				if ( std::holds_alternative<RichText::CustomBlock>( span.block ) )
-					return &span;
-			}
-			currentSpan = 0;
-			currentLine++;
-		}
-		return nullptr;
-	};
-
-	Int64 curCharIdx = 0;
-
-	auto processWidget = [&]( UIWidget* widget, auto& processWidgetRef ) -> Rectf {
-		constexpr Float maxF = std::numeric_limits<Float>::max();
-		constexpr Float lowF = std::numeric_limits<Float>::lowest();
-		Rectf bounds( maxF, maxF, lowF, lowF );
-
-		Vector2f offset;
-		Node* p = widget->getParent();
-		while ( p && p != this ) {
-			offset += p->isWidget() ? p->asType<UIWidget>()->getPixelsPosition() : p->getPosition();
-			p = p->getParent();
-		}
-
-		if ( widget->isType( UI_TYPE_TEXTSPAN ) ) {
-			UITextSpan* textSpan = widget->asType<UITextSpan>();
-			Int64 startChar = curCharIdx;
-			Int64 endChar = curCharIdx;
-			if ( !textSpan->getText().empty() ) {
-				endChar += textSpan->getText().length();
-				curCharIdx = endChar;
-			}
-
-			auto& hitBoxes = textSpan->getHitBoxes();
-			hitBoxes.clear();
-
-			if ( startChar < endChar ) {
-				for ( const auto& line : lines ) {
-					bool passedText = false;
-					for ( const auto& rspan : line.spans ) {
-						if ( rspan.startCharIndex >= startChar && rspan.endCharIndex <= endChar ) {
-							Rectf hb( mPaddingPx.Left + rspan.position.x,
-									  mPaddingPx.Top + line.y + rspan.position.y,
-									  mPaddingPx.Left + rspan.position.x + rspan.size.getWidth(),
-									  mPaddingPx.Top + line.y + rspan.position.y +
-										  rspan.size.getHeight() );
-
-							hitBoxes.push_back( hb );
-							bounds.expand( hb );
-						} else if ( rspan.startCharIndex > endChar ) {
-							passedText = true;
-							break;
-						}
-					}
-					if ( passedText )
-						break;
-				}
-			}
-
-			Node* spanChild = widget->getFirstChild();
-			while ( spanChild != NULL ) {
-				if ( spanChild->isWidget() ) {
-					bounds.expand(
-						processWidgetRef( spanChild->asType<UIWidget>(), processWidgetRef ) );
-				}
-				spanChild = spanChild->getNextNode();
-			}
-
-			// Ensure the parent span at least has enough size to cover its children
-			if ( bounds.Left <= bounds.Right && bounds.Top <= bounds.Bottom ) {
-				Vector2f boundsPos = bounds.getPosition();
-
-				widget->setPixelsPosition( boundsPos - offset );
-				if ( bounds.getSize() != widget->getPixelsSize() ) {
-					widget->setPixelsSize( bounds.getSize() );
-					mResizedCount++;
-				}
-
-				for ( auto& hb : hitBoxes )
-					hb.move( -boundsPos );
-
-			} else {
-				hitBoxes.clear();
-			}
-
-		} else if ( widget->isType( UI_TYPE_BR ) ) {
-			curCharIdx += 1;
-			Vector2f pos;
-			if ( widget->getPrevNode() && widget->getPrevNode()->isWidget() ) {
-				pos = widget->getPrevNode()->asType<UIWidget>()->getPixelsPosition();
-				pos.y += widget->getPrevNode()->getPixelsSize().getHeight();
-			}
-			widget->setPixelsPosition( pos );
-			widget->setPixelsSize(
-				{ eemax( 0.f, mSize.getWidth() - mPaddingPx.Left - mPaddingPx.Right ), 0 } );
-		} else {
-			curCharIdx += 1;
-			const auto* span = getNextCustomSpan();
-			if ( span ) {
-				size_t lineIdx = currentSpan > 0 ? currentLine : currentLine - 1;
-				Float lineY = lines[lineIdx].y;
-				Rectf margin = widget->getLayoutPixelsMargin();
-
-				Vector2f targetPos( mPaddingPx.Left + span->position.x + margin.Left,
-									mPaddingPx.Top + lineY + span->position.y + margin.Top );
-
-				widget->setPixelsPosition( targetPos - offset );
-
-				bounds = Rectf( targetPos, span->size );
-			}
-		}
-		return bounds;
-	};
-
-	child = mChild;
-	while ( NULL != child ) {
-		if ( child->isWidget() ) {
-			processWidget( child->asType<UIWidget>(), processWidget );
-		}
-		child = child->getNextNode();
-	}
+void UIRichText::rebuildRichText( RichText& richText, IntrinsicMode mode ) {
+	rebuildRichText( this, richText, mode );
 }
 
 void UIRichText::updateDefaultSpansStyle() {
@@ -780,51 +655,13 @@ void UIRichText::updateDefaultSpansStyle() {
 }
 
 void UIRichText::updateLayout() {
-	if ( mPacking )
-		return;
-	mResizedCount = 0;
-	mPacking = true;
-
-	setMatchParentIfNeededVerticalGrowth();
-
-	const StyleSheetProperty* prop = nullptr;
-	if ( getLayoutWidthPolicy() == SizePolicy::Fixed && mStyle &&
-		 ( prop = mStyle->getProperty( PropertyId::Width ) ) ) {
-		setInternalPixelsSize( { lengthFromValue( *prop ), mSize.getHeight() } );
+	if ( getLayouter() ) {
+		getLayouter()->updateLayout();
+	} else {
+		UILayout::updateLayout();
 	}
 
-	rebuildRichText( mRichText );
-
-	mRichText.updateLayout();
-
-	positionChildren();
-
-	Float totW = mSize.getWidth();
-	if ( mWidthPolicy == SizePolicy::WrapContent ) {
-		totW = mRichText.getSize().getWidth() + mPaddingPx.Left + mPaddingPx.Right;
-		if ( !mMaxWidthEq.empty() && totW > getMaxSizePx().getWidth() )
-			setClipType( ClipType::ContentBox );
-	}
-
-	if ( totW != mSize.getWidth() || mWidthPolicy == SizePolicy::WrapContent )
-		setInternalPixelsWidth( totW );
-
-	Float totH = mSize.getHeight();
-	if ( mHeightPolicy == SizePolicy::WrapContent ) {
-		totH = mRichText.getSize().getHeight() + mPaddingPx.Top + mPaddingPx.Bottom;
-		if ( !mMaxHeightEq.empty() && totH > getMaxSizePx().getHeight() )
-			setClipType( ClipType::ContentBox );
-	}
-
-	if ( totH != mSize.getHeight() || mHeightPolicy == SizePolicy::WrapContent )
-		setInternalPixelsHeight( totH );
-
-	if ( mResizedCount )
-		positionChildren();
-
-	mPacking = false;
 	mDirtyLayout = false;
-	mResizedCount = 0;
 }
 
 Float UIRichText::getMinIntrinsicWidth() const {
@@ -832,11 +669,18 @@ Float UIRichText::getMinIntrinsicWidth() const {
 		return getPropertyWidth();
 	}
 
-	if ( mIntrinsicWidthsDirty ) {
+	UILayouter* layouter = const_cast<UIRichText*>( this )->getLayouter();
+	if ( mIntrinsicWidthsDirty && layouter ) {
+		layouter->computeIntrinsicWidths();
+		mMinIntrinsicWidth = layouter->getMinIntrinsicWidth();
+		mMaxIntrinsicWidth = layouter->getMaxIntrinsicWidth();
+	} else if ( mIntrinsicWidthsDirty ) {
 		RichText richText( mRichText );
-		const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Min );
+		UIRichText::rebuildRichText( const_cast<UIRichText*>( this ), richText,
+									 IntrinsicMode::Min );
 		mMinIntrinsicWidth = richText.getMinIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
-		const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Max );
+		UIRichText::rebuildRichText( const_cast<UIRichText*>( this ), richText,
+									 IntrinsicMode::Max );
 		mMaxIntrinsicWidth = richText.getMaxIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
 		mIntrinsicWidthsDirty = false;
 	}
@@ -854,16 +698,24 @@ Float UIRichText::getMaxIntrinsicWidth() const {
 		return getPropertyWidth();
 	}
 
-	if ( mIntrinsicWidthsDirty ) {
-		RichText richText( mRichText );
-		const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Min );
-		mMinIntrinsicWidth = richText.getMinIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
-		const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Max );
-		mMaxIntrinsicWidth = richText.getMaxIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
-		mIntrinsicWidthsDirty = false;
+	Float maxW = 0;
+	if ( const_cast<UIRichText*>( this )->getLayouter() ) {
+		maxW = const_cast<UIRichText*>( this )->getLayouter()->getMaxIntrinsicWidth();
+	} else {
+		if ( mIntrinsicWidthsDirty ) {
+			RichText richText( mRichText );
+			const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Min );
+			mMinIntrinsicWidth =
+				richText.getMinIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
+			const_cast<UIRichText*>( this )->rebuildRichText( richText, IntrinsicMode::Max );
+			mMaxIntrinsicWidth =
+				richText.getMaxIntrinsicWidth() + mPaddingPx.Left + mPaddingPx.Right;
+			mIntrinsicWidthsDirty = false;
+		}
+		maxW = mMaxIntrinsicWidth;
 	}
 
-	Float maxWidth = mMaxIntrinsicWidth;
+	Float maxWidth = maxW;
 	if ( !mMinWidthEq.empty() )
 		maxWidth = eemax( maxWidth, getMinSizePx().getWidth() );
 	if ( !mMaxWidthEq.empty() )
@@ -875,7 +727,7 @@ Uint32 UIRichText::onMessage( const NodeMessage* Msg ) {
 	switch ( Msg->getMsg() ) {
 		case NodeMessage::LayoutAttributeChange: {
 			if ( Msg->getSender() != this && !mPacking ) {
-				mIntrinsicWidthsDirty = true;
+				invalidateIntrinsicSize();
 				notifyLayoutAttrChangeParent();
 			}
 			tryUpdateLayout();

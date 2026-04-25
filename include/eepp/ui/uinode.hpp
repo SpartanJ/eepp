@@ -32,6 +32,9 @@ class UIWidget;
 
 class EE_API UINode : public Node {
   public:
+	friend class BlockLayouter;
+	friend class InlineLayouter;
+	friend class TableLayouter;
 	/**
 	 * @brief Creates a new UINode instance.
 	 *

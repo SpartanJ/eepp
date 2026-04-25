@@ -531,7 +531,7 @@ class EE_API UIWidget : public UINode {
 	 * Forces a recalculation of the intrinsic widths on the next call to
 	 * getMinIntrinsicWidth() or getMaxIntrinsicWidth().
 	 */
-	void invalidateIntrinsicSize();
+	virtual void invalidateIntrinsicSize();
 
 	/**
 	 * @brief Loads widget configuration from an XML node.
