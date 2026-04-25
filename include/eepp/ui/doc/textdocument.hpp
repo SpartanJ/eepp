@@ -658,7 +658,7 @@ class EE_API TextDocument {
 	TextPosition getMatchingBracket( TextPosition startPosition,
 									 const String::StringBaseType& openBracket,
 									 const String::StringBaseType& closeBracket, MatchDirection dir,
-									 bool allowDepth = true );
+									 bool allowDepth = true, Time timeout = Time::Zero );
 
 	TextRange getMatchingBracket( TextPosition startPosition, const String& openBracket,
 								  const String& closeBracket, MatchDirection dir,
