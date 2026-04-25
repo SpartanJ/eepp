@@ -3261,14 +3261,16 @@ void UICodeEditor::checkMatchingBrackets() {
 		String::StringBaseType openBracket = open[index];
 		String::StringBaseType closeBracket = close[index];
 		TextPosition closePosition = mDoc->getMatchingBracket(
-			pos, openBracket, closeBracket, TextDocument::MatchDirection::Forward );
+			pos, openBracket, closeBracket, TextDocument::MatchDirection::Forward, true,
+			Milliseconds( 100 ) );
 		mMatchingBrackets = { pos, closePosition };
 	} else if ( isCloseIt != close.end() ) {
 		size_t index = std::distance( close.begin(), isCloseIt );
 		String::StringBaseType openBracket = open[index];
 		String::StringBaseType closeBracket = close[index];
 		TextPosition closePosition = mDoc->getMatchingBracket(
-			pos, openBracket, closeBracket, TextDocument::MatchDirection::Backward );
+			pos, openBracket, closeBracket, TextDocument::MatchDirection::Backward, true,
+			Milliseconds( 100 ) );
 		mMatchingBrackets = { pos, closePosition };
 	}
 }

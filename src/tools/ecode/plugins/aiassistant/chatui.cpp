@@ -1195,7 +1195,6 @@ void LLMChatUI::bindCmds( UICodeEditor* editor, bool bindToChatUI ) {
 	addKb( editor, "mod+shift+a", "ai-attach-file", bindToChatUI );
 	addKb( editor, "mod+shift+z", "ai-link-file", bindToChatUI );
 	addKb( editor, "mod+shift+x", "ai-select-model", bindToChatUI );
-	addKb( editor, "mod+shift+x", "ai-select-agent", bindToChatUI );
 	addKb( editor, "mod+shift+d", "ai-toggle-agent-mode", bindToChatUI );
 	addKb( editor, "shift+alt+c", "ai-agent-config", bindToChatUI );
 

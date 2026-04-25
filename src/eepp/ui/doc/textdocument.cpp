@@ -1819,9 +1819,13 @@ TextPosition TextDocument::positionOffset( TextPosition position, int columnOffs
 
 			// As long as we are not at a grapheme boundary yet, keep
 			// moving the cursor position until we arrive at one
-			while ( cursorIndex > 0 && cursorIndex < lineLen - 1 &&
-					!getLineText( position.line() ).isGraphemeBoundary( cursorIndex ) ) {
-				cursorIndex += direction;
+			if ( position.line() >= 0 && position.line() < static_cast<Int64>( mLines.size() ) ) {
+				Lock l( mLinesMutex );
+				const auto& text = mLines[position.line()].getText();
+				while ( cursorIndex > 0 && cursorIndex < lineLen - 1 &&
+						!text.isGraphemeBoundary( cursorIndex ) ) {
+					cursorIndex += direction;
+				}
 			}
 
 			if ( position.column() != cursorIndex )
@@ -3883,10 +3887,11 @@ static inline void changeDepth( SyntaxHighlighter* highlighter, int& depth, cons
 TextPosition TextDocument::getMatchingBracket( TextPosition sp,
 											   const String::StringBaseType& openBracket,
 											   const String::StringBaseType& closeBracket,
-											   MatchDirection dir, bool allowDepth ) {
+											   MatchDirection dir, bool allowDepth, Time timeout ) {
 	SyntaxHighlighter* highlighter = getHighlighter();
 	int depth = 0;
-	while ( sp.isValid() ) {
+	Clock c;
+	while ( sp.isValid() && ( timeout == Time::Zero || c.getElapsedTime() < timeout ) ) {
 		auto byte = getCharFromUnsanitizedPosition( sp );
 		if ( byte == openBracket ) {
 			changeDepth( highlighter, depth, sp, 1 );
