@@ -63,7 +63,7 @@ class EE_API DocumentView {
 
 	void updateCache( Int64 fromLine, Int64 toLine, Int64 numLines );
 
-	Config getConfig() const { return mConfig; }
+	const Config& getConfig() const { return mConfig; }
 
 	void setConfig( Config config );
 

@@ -1219,6 +1219,8 @@ class EE_API UICodeEditor : public UIWidget, public TextDocument::Client {
 	virtual void onAutoSize();
 
 	virtual void onClassChange();
+
+	inline bool needsHorizontalLength() const;
 };
 
 }} // namespace EE::UI
