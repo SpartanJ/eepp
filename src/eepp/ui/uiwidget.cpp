@@ -2248,6 +2248,9 @@ bool UIWidget::applyProperty( const StyleSheetProperty& attribute ) {
 				unsetFlags( UI_TAB_FOCUSABLE );
 			}
 			break;
+		case PropertyId::Hidden:
+			setVisible( false );
+			break;
 		default:
 			attributeSet = false;
 			break;

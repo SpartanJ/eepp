@@ -2,28 +2,17 @@
 #define EE_UI_UIHTMLTABLE_HPP
 
 #include <eepp/core/small_vector.hpp>
-#include <eepp/ui/uilayout.hpp>
+#include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uirichtext.hpp>
 
 namespace EE { namespace UI {
 
-class UIHTMLTableRow;
-class UIHTMLTableCell;
-class UIHTMLTableHead;
-class UIHTMLTableBody;
-class UIHTMLTableFooter;
-
-enum class TableLayout { Auto, Fixed };
-
-class EE_API UIHTMLTable : public UILayout {
+class EE_API UIHTMLTable : public UIHTMLWidget {
   public:
+	friend class TableLayouter;
 	static UIHTMLTable* New();
 
 	UIHTMLTable();
-
-	void setTableLayout( TableLayout layout );
-
-	TableLayout getTableLayout() const;
 
 	virtual Uint32 getType() const;
 
@@ -41,25 +30,12 @@ class EE_API UIHTMLTable : public UILayout {
 	virtual Uint32 onMessage( const NodeMessage* Msg );
 
 	void computeIntrinsicWidths() const;
-
-	SmallVector<UIHTMLTableRow*> mRows;
-	SmallVector<Float> mColWidths;
-	SmallVector<UIHTMLTableCell*> mCells;
-	SmallVector<Uint32> mRowCellOffsets;
-	mutable SmallVector<Float> mColMinWidths;
-	mutable SmallVector<Float> mColMaxWidths;
-	mutable SmallVector<Float> mColSpecifiedWidths;
-	TableLayout mTableLayout{ TableLayout::Auto };
-	mutable UIHTMLTableHead* mHead{ nullptr };
-	mutable UIHTMLTableBody* mBody{ nullptr };
-	mutable UIHTMLTableFooter* mFooter{ nullptr };
-	Float mCellpadding{ 0 };
-	Float mCellspacing{ 0 };
 };
 
 class EE_API UIHTMLTableCell : public UIRichText {
   public:
-  	friend class UIHTMLTable;
+	friend class UIHTMLTable;
+	friend class TableLayouter;
 
 	static UIHTMLTableCell* New( const std::string& tag );
 
@@ -79,7 +55,7 @@ class EE_API UIHTMLTableCell : public UIRichText {
 	Uint32 mColspan{ 1 };
 };
 
-class EE_API UIHTMLTableRow : public UIWidget {
+class EE_API UIHTMLTableRow : public UIHTMLWidget {
   public:
 	static UIHTMLTableRow* New();
 
@@ -90,7 +66,7 @@ class EE_API UIHTMLTableRow : public UIWidget {
 	virtual bool isType( const Uint32& type ) const;
 };
 
-class EE_API UIHTMLTableHead : public UIWidget {
+class EE_API UIHTMLTableHead : public UIHTMLWidget {
   public:
 	static UIHTMLTableHead* New();
 
@@ -101,7 +77,7 @@ class EE_API UIHTMLTableHead : public UIWidget {
 	virtual bool isType( const Uint32& type ) const;
 };
 
-class EE_API UIHTMLTableFooter : public UIWidget {
+class EE_API UIHTMLTableFooter : public UIHTMLWidget {
   public:
 	static UIHTMLTableFooter* New();
 
@@ -112,7 +88,7 @@ class EE_API UIHTMLTableFooter : public UIWidget {
 	virtual bool isType( const Uint32& type ) const;
 };
 
-class EE_API UIHTMLTableBody : public UIWidget {
+class EE_API UIHTMLTableBody : public UIHTMLWidget {
   public:
 	static UIHTMLTableBody* New();
 

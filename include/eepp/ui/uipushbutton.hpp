@@ -89,6 +89,8 @@ class EE_API UIPushButton : public UIWidget {
 
 	UIPushButton* setExpandTextView( bool expand );
 
+	virtual void loadFromXmlNode( const pugi::xml_node& node );
+
   protected:
 	UIImage* mIcon;
 	UITextView* mTextBox;

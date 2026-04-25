@@ -400,10 +400,21 @@ void UISceneNode::setStyleSheet( const std::string& inlineStyleSheet ) {
 void UISceneNode::combineStyleSheet( const CSS::StyleSheet& styleSheet, bool forceReloadStyle,
 									 URI baseURI ) {
 	mStyleSheet.combineStyleSheet( styleSheet );
+
+	bool mediaChanged = false;
+	if ( !mStyleSheet.isMediaQueryListEmpty() &&
+		 mStyleSheet.updateMediaLists( getMediaFeatures() ) ) {
+		mediaChanged = true;
+	}
+
+	processStyleSheetAtRules( styleSheet, baseURI );
+
 	if ( mRoot && mRoot->getUIStyle() )
 		mRoot->getUIStyle()->resetGlobalDefinition();
-	processStyleSheetAtRules( styleSheet, baseURI );
-	onMediaChanged();
+
+	if ( mRoot && mediaChanged )
+		mRoot->reportStyleStateChangeRecursive( false, false );
+
 	if ( forceReloadStyle )
 		reloadStyle();
 }

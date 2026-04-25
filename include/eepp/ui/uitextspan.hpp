@@ -2,13 +2,14 @@
 #define EE_UI_UITEXTSPAN_HPP
 
 #include <eepp/ui/uifontstyleconfig.hpp>
+#include <eepp/ui/uihtmlwidget.hpp>
 #include <eepp/ui/uiwidget.hpp>
 
 namespace EE { namespace UI {
 
 using SpanHitBoxes = SmallVector<Rectf, 4>;
 
-class EE_API UITextSpan : public UIWidget {
+class EE_API UITextSpan : public UIHTMLWidget {
   public:
 	static UITextSpan* New();
 
@@ -31,6 +32,8 @@ class EE_API UITextSpan : public UIWidget {
 	static UITextSpan* NewMark() { return NewWithTag( "mark" ); }
 
 	static UITextSpan* NewCode() { return NewWithTag( "code" ); }
+
+	static UITextSpan* NewSmall() { return NewWithTag( "small" ); }
 
 	virtual ~UITextSpan();
 

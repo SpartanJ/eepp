@@ -20,7 +20,8 @@ UITextSpan* UITextSpan::NewWithTag( const std::string& tag ) {
 	return eeNew( UITextSpan, ( tag ) );
 }
 
-UITextSpan::UITextSpan( const std::string& tag ) : UIWidget( tag ) {
+UITextSpan::UITextSpan( const std::string& tag ) : UIHTMLWidget( tag ) {
+	mDisplay = CSSDisplay::Inline;
 	mFlags |= UI_HTML_ELEMENT | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_LOADS_ITS_CHILDREN;
 
 	UITheme* theme = getUISceneNode()->getUIThemeManager()->getDefaultTheme();
