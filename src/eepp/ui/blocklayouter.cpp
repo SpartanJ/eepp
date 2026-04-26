@@ -54,6 +54,8 @@ void BlockLayouter::updateLayout() {
 	mResizedCount = 0;
 	mPacking = true;
 
+	mContainer->beginAttributesTransaction();
+
 	setMatchParentIfNeededVerticalGrowth();
 
 	const StyleSheetProperty* prop = nullptr;
@@ -93,6 +95,8 @@ void BlockLayouter::updateLayout() {
 	if ( totH != mContainer->getPixelsSize().getHeight() ||
 		 mContainer->getLayoutHeightPolicy() == SizePolicy::WrapContent )
 		mContainer->setInternalPixelsHeight( totH );
+
+	mContainer->endAttributesTransaction();
 
 	if ( mResizedCount > 0 )
 		positionRichTextChildren( rt );

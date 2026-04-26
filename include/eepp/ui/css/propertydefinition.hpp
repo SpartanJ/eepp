@@ -247,6 +247,7 @@ enum class PropertyId : Uint32 {
 	Bottom = String::hash( "bottom" ),
 	Left = String::hash( "left" ),
 	ZIndex = String::hash( "z-index" ),
+	DataLanguage = String::hash( "data-language" ), // Minor hack
 };
 
 enum class PropertyType : Uint32 {

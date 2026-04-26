@@ -50,7 +50,9 @@ UIHTMLBody* UIHTMLBody::New( const std::string& tag ) {
 	return eeNew( UIHTMLBody, ( tag ) );
 }
 
-UIHTMLBody::UIHTMLBody( const std::string& tag ) : UIRichText( tag ) {}
+UIHTMLBody::UIHTMLBody( const std::string& tag ) : UIRichText( tag ) {
+	enableReportSizeChangeToChildren();
+}
 
 Uint32 UIHTMLBody::getType() const {
 	return UI_TYPE_HTML_BODY;
@@ -226,6 +228,13 @@ bool UIRichText::applyProperty( const StyleSheetProperty& attribute ) {
 				setTextAlign( TEXT_ALIGN_LEFT );
 			else if ( align == "right" )
 				setTextAlign( TEXT_ALIGN_RIGHT );
+			break;
+		}
+		case PropertyId::DataLanguage: {
+			if ( mTag == "pre" && mChild && mChild->isType( UI_TYPE_CODEEDITOR ) ) {
+				mChild->asType<UICodeEditor>()->applyProperty( attribute );
+			} else
+				mDataProperties["data-language"] = attribute;
 			break;
 		}
 		default:
@@ -479,6 +488,11 @@ void UIRichText::loadFromXmlNode( const pugi::xml_node& node ) {
 					editor->setShowLineNumber( false );
 					editor->setShowFoldingRegion( false );
 					editor->setLocked( true );
+
+					auto langIt = mDataProperties.find( "data-language" );
+					if ( langIt != mDataProperties.end() ) {
+						editor->applyProperty( langIt->second );
+					}
 				}
 			} else {
 				// Let parent logic load standard child widget

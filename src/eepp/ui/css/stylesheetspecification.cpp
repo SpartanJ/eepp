@@ -456,6 +456,8 @@ void StyleSheetSpecification::registerDefaultProperties() {
 	registerProperty( "display-options", "" ).setType( PropertyType::String );
 	registerProperty( "menu-width-mode", "" ).setType( PropertyType::String );
 
+	registerProperty( "data-language", "" ).setType( PropertyType::String );
+
 	// Shorthands
 	registerShorthand( "margin", { "margin-top", "margin-right", "margin-bottom", "margin-left" },
 					   "box" );

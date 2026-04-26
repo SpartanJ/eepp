@@ -56,6 +56,7 @@ class EE_API UIHTMLWidget : public UILayout {
 	Rectf mOffsets{ 0, 0, 0, 0 };
 	int mZIndex{ 0 };
 	UILayouter* mLayouter{ nullptr };
+	UnorderedMap<std::string, StyleSheetProperty> mDataProperties;
 };
 
 }} // namespace EE::UI

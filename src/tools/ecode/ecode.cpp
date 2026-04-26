@@ -3236,7 +3236,7 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 					auto splitter = getSplitter();
 					auto editor = static_cast<UICodeEditor*>( client );
 					auto doc = editor->getDocumentRef();
-					auto scrollView = UIScrollView::New();
+					auto scrollView = UIScrollViewCommandExecuter::New();
 					auto mdView = UIMarkdownView::New();
 					mdView->setParent( scrollView );
 
@@ -3274,11 +3274,14 @@ void App::onCodeEditorCreated( UICodeEditor* editor, TextDocument& doc ) {
 
 					mdView->loadFromString( doc->toUtf8String() );
 					auto title =
-						i18n( "markdown_live_preview_ellipsis", "Markdown Live Preview:" ) + " " +
+						i18n( "markdown_live_preview_colon", "Markdown Live Preview:" ) + " " +
 						doc->getFilename();
 					auto [tab, _] =
 						getSplitter()->createWidgetInTabWidget( tabWidget, scrollView, title );
 					tab->setIcon( findIcon( "filetype-md" ) );
+					tab->setTooltipText( title );
+
+					registerUnlockedCommands( *scrollView );
 
 					if ( removeUnusedEditor )
 						splitter->removeUnusedTab( tabWidget );

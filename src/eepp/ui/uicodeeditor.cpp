@@ -3055,6 +3055,10 @@ bool UICodeEditor::applyProperty( const StyleSheetProperty& attribute ) {
 		case PropertyId::Text:
 			mDoc->textInput( attribute.asString() );
 			break;
+		case PropertyId::DataLanguage:
+			setSyntaxDefinition(
+				SyntaxDefinitionManager::instance()->findFromString( attribute.asString() ) );
+			break;
 		default:
 			return UIWidget::applyProperty( attribute );
 	}
@@ -5697,12 +5701,45 @@ void UICodeEditor::loadFromXmlNode( const pugi::xml_node& node ) {
 
 	UIWidget::loadFromXmlNode( node );
 
-	if ( !node.text().empty() ) {
-		std::string_view str{ node.text().as_string() };
-		if ( '\n' == str.back() )
-			str = str.substr( 0, str.size() - 1 );
-		mDoc->textInput( str );
+	std::string text;
+	bool hasElementChildren = false;
+	for ( pugi::xml_node child : node.children() ) {
+		if ( child.type() == pugi::node_element ) {
+			hasElementChildren = true;
+			break;
+		}
 	}
+
+	auto collectText = []( const pugi::xml_node& n, std::string& out, auto& self ) -> void {
+		for ( pugi::xml_node c : n.children() ) {
+			if ( c.type() == pugi::node_pcdata || c.type() == pugi::node_cdata ) {
+				out += c.value();
+			} else if ( c.type() == pugi::node_element ) {
+				self( c, out, self );
+			}
+		}
+	};
+
+	if ( hasElementChildren ) {
+		for ( pugi::xml_node child : node.children() ) {
+			if ( child.type() == pugi::node_element ) {
+				if ( !text.empty() )
+					text += "\n";
+				collectText( child, text, collectText );
+			}
+		}
+	} else {
+		for ( pugi::xml_node child : node.children() ) {
+			if ( child.type() == pugi::node_pcdata || child.type() == pugi::node_cdata ) {
+				text += child.value();
+			}
+		}
+		if ( !text.empty() && text.back() == '\n' )
+			text.pop_back();
+	}
+
+	if ( !text.empty() )
+		mDoc->textInput( text );
 
 	endAttributesTransaction();
 }
