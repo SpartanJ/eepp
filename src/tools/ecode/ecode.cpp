@@ -1739,7 +1739,7 @@ void App::onTabCreated( UITab* tab, UIWidget* ) {
 			menuAdd( "open_containing_folder_in_fm", "Open Containing Folder in File Manager",
 					 "folder-open", "open-containing-folder" );
 
-			menuAdd( "copy_containing_folder_path_ellipsis", "Copy Containing Folder Path...",
+			menuAdd( "copy_containing_folder_path", "Copy Containing Folder Path",
 					 "copy", "copy-containing-folder-path" );
 
 			menuAdd( "copy_file_path", "Copy File Path", "copy", "copy-file-path" );

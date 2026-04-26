@@ -1321,7 +1321,7 @@ UIMenu* SettingsMenu::createEditMenu() {
 			   findIcon( "folder-open" ), getKeybind( "open-containing-folder" ) )
 		->setId( "open-containing-folder" );
 	mEditMenu
-		->add( i18n( "copy_containing_folder_path_ellipsis", "Copy Containing Folder Path..." ),
+		->add( i18n( "copy_containing_folder_path", "Copy Containing Folder Path" ),
 			   findIcon( "copy" ), getKeybind( "copy-containing-folder-path" ) )
 		->setId( "copy-containing-folder-path" );
 	mEditMenu
@@ -1764,8 +1764,7 @@ UIMenu* SettingsMenu::createViewMenu() {
 				} );
 
 				mLineWrapMenu
-					->addSubMenu( i18n( "wrap_type_ellipsis", "Wrap Against..." ), nullptr,
-								  wrapTypeMenu )
+					->addSubMenu( i18n( "wrap_type", "Wrap Against" ), nullptr, wrapTypeMenu )
 					->setId( "wrap_type" );
 
 				mLineWrapMenu->addCheckBox( i18n( "keep_indentation", "Keep Indentation" ) )
@@ -2061,13 +2060,13 @@ UIMenu* SettingsMenu::createViewMenu() {
 					   getKeybind( "toggle-menu-bar" ) )
 		->setId( "toggle-menu-bar" );
 	mViewMenu
-		->add( i18n( "move_panel_left_ellipsis", "Move panel to left..." ),
-			   findIcon( "layout-left" ), getKeybind( "layout-left" ) )
+		->add( i18n( "move_panel_to_left", "Move Panel To Left" ), findIcon( "layout-left" ),
+			   getKeybind( "layout-left" ) )
 		->setId( "move-panel-left" )
 		->setVisible( mApp->getConfig().ui.panelPosition == PanelPosition::Right );
 	mViewMenu
-		->add( i18n( "move_panel_right_ellipsis", "Move panel to right..." ),
-			   findIcon( "layout-right" ), getKeybind( "layout-right" ) )
+		->add( i18n( "move_panel_to_right", "Move Panel To Right" ), findIcon( "layout-right" ),
+			   getKeybind( "layout-right" ) )
 		->setId( "move-panel-right" )
 		->setVisible( mApp->getConfig().ui.panelPosition == PanelPosition::Left );
 
@@ -2257,12 +2256,11 @@ UIPopUpMenu* SettingsMenu::createToolsMenu() {
 
 UIMenu* SettingsMenu::createHelpMenu() {
 	mHelpMenu = UIPopUpMenu::New();
-	mHelpMenu->add( i18n( "ecode_source_ellipsis", "ecode source code..." ), findIcon( "github" ) )
+	mHelpMenu->add( i18n( "ecode_source", "ecode Source Code" ), findIcon( "github" ) )
 		->setId( "ecode-source" );
-	mHelpMenu
-		->add( i18n( "check_for_updates_ellipsis", "Check for Updates..." ), findIcon( "refresh" ) )
+	mHelpMenu->add( i18n( "check_for_updates", "Check for Updates" ), findIcon( "refresh" ) )
 		->setId( "check-for-updates" );
-	mHelpMenu->add( i18n( "about_ecode", "About ecode..." ), findIcon( "ecode" ) )
+	mHelpMenu->add( i18n( "about_ecode", "About ecode" ), findIcon( "ecode" ) )
 		->setId( "about-ecode" );
 	mHelpMenu->on( Event::OnItemClicked,
 				   [this]( const Event* event ) { runCommand( event->getNode()->getId() ); } );
@@ -2613,8 +2611,7 @@ void SettingsMenu::createProjectTreeMenu() {
 						   !mApp->getFileSystemModel()->getDisplayConfig().ignoreHidden )
 			->setId( "show-hidden-files" );
 		mProjectTreeMenu->addSeparator();
-		mProjectTreeMenu
-			->add( i18n( "refresh_view_ellipsis", "Refresh View..." ), findIcon( "refresh" ) )
+		mProjectTreeMenu->add( i18n( "refresh_view", "Refresh View" ), findIcon( "refresh" ) )
 			->setId( "refresh-view" );
 		mProjectTreeMenu->addSeparator();
 		mProjectTreeMenu
@@ -2775,8 +2772,7 @@ void SettingsMenu::createProjectTreeMenu( const std::vector<FileInfo>& files ) {
 	mProjectTreeMenu->add( i18n( "expand_all", "Expand All" ), findIcon( "expand-all" ) )
 		->setId( "expand-all" );
 	mProjectTreeMenu->addSeparator();
-	mProjectTreeMenu
-		->add( i18n( "refresh_view_ellipsis", "Refresh View..." ), findIcon( "refresh" ) )
+	mProjectTreeMenu->add( i18n( "refresh_view", "Refresh View" ), findIcon( "refresh" ) )
 		->setId( "refresh-view" );
 
 	if ( !mApp->getCurrentProject().empty() ) {
@@ -2995,7 +2991,7 @@ void SettingsMenu::createProjectMenu() {
 		->addRadioButton( "Objective-C++", hExtLanguageType == HExtLanguageType::ObjectiveCPP )
 		->setId( "objective-cpp" );
 
-	mProjectMenu->addSubMenu( i18n( "treat_h_files_as_ellipsis", "Treat .h files as..." ), nullptr,
+	mProjectMenu->addSubMenu( i18n( "treat_h_files_as", "Treat .h files as" ), nullptr,
 							  mHExtLanguageTypeMenu );
 
 	mProjectMenu->addSeparator();

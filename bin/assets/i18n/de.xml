@@ -99,7 +99,6 @@ Diese Operation kann nicht rückgängig gemacht werden!</string>
 	<string name="chat_history">Unterhaltungsverlauf</string>
 	<string name="check_for_new_updates_at_startup">Bei Programmstart nach Aktualisierungen suchen</string>
 	<string name="check_for_updates">Prüfe auf Aktualisierungen</string>
-	<string name="check_for_updates_ellipsis">Prüfe auf Aktualisierungen...</string>
 	<string name="check_languages_health">Sprachenintegrität prüfen</string>
 	<string name="clean">Bereinigen</string>
 	<string name="clean_failed">In der Bereinigung traten Fehler auf
@@ -171,7 +170,6 @@ Alle ungespeicherten Änderungen gehen dann verloren.</string>
 	<string name="continue_editing">Bearbeitung fortsetzen</string>
 	<string name="copy">Kopieren</string>
 	<string name="copy_containing_folder_path">Ordnerpfad kopieren</string>
-	<string name="copy_containing_folder_path_ellipsis">Ordnerpfad kopieren...</string>
 	<string name="copy_error_message">Fehlermeldung kopieren</string>
 	<string name="copy_file_path">Dateipfad kopieren</string>
 	<string name="copy_file_path_and_position">Dateipfad und -position kopieren</string>
@@ -260,7 +258,6 @@ Dateipfad: </string>
 	<string name="duplicate_file_ellipsis">Datei duplizieren...</string>
 	<string name="ecode_no_updates_available">Gegenwärtig steht keine Aktualisierung an.</string>
 	<string name="ecode_source">ecode-Quelltext</string>
-	<string name="ecode_source_ellipsis">ecode-Quelltext...</string>
 	<string name="ecode_unreleased_version">Sie führen eine unveröffentlichte Version von ecode aus.
 Gegenwärtige Version: </string>
 	<string name="ecode_updates_available"> verfügbar!
@@ -412,7 +409,7 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="go_to_line_in_current_document">In aktuellem Dokument zu Zeile springen</string>
 	<string name="gone">verschwunden</string>  <!-- ###STATE### -->
 	<string name="group">Gruppierung</string>
-	<string name="treat_h_files_as_ellipsis">.h-Dateien als C++-Code ansehen.</string>
+	<string name="treat_h_files_as">.h-Dateien als ansehen</string>
 	<string name="help">Hilfe</string>
 	<string name="hide">Ausblenden</string>
 	<string name="hide_tabbar_on_single_tab">Tableiste bei einzelnem Tab ausblenden</string>
@@ -503,10 +500,8 @@ Beachten Sie, dass der Großteil der Tastenzuweisungen hier definiert wird.</str
 	<string name="more_ellipsis">Mehr...</string>
 	<string name="more_options">Weitere Optionen</string>
 	<string name="move_down">Nach unten</string>
-	<string name="move_panel_left">Paneel nach links bewegen</string>
-	<string name="move_panel_left_ellipsis">Paneel nach links bewegen...</string>
-	<string name="move_panel_right">Paneel nach rechts bewegen</string>
-	<string name="move_panel_right_ellipsis">Paneel nach rechts bewegen...</string>
+	<string name="move_panel_to_left">Paneel nach links bewegen</string>
+	<string name="move_panel_to_right">Paneel nach rechts bewegen</string>
 	<string name="move_scroll_down">Scrollen nach unten bewegen</string>
 	<string name="move_scroll_up">Scrollen nach oben bewegen</string>
 	<string name="move_to_end_of_line">Zum Zeilenende bewegen</string>
@@ -868,7 +863,7 @@ in der Baumansicht und in Öffen-/Schließdialogen aktivieren.</string>
 	<string name="ui_scale_factor">Oberflächenskalierung</string>
 	<string name="ui_thene">Thema der Oberfläche</string>
 	<string name="uicodeeditor_copy">Kopieren</string>
-	<string name="uicodeeditor_copy_containing_folder_path_ellipsis">Überordnerpfad kopieren...</string>
+	<string name="uicodeeditor_copy_containing_folder_path">Überordnerpfad kopieren</string>
 	<string name="uicodeeditor_copy_file_path">Dateipfad kopieren</string>
 	<string name="uicodeeditor_copy_file_path_and_position">Dateipfad und -position kopieren</string>
 	<string name="uicodeeditor_cut">Ausschneiden</string>
@@ -926,7 +921,7 @@ Für sichtbare Änderung ecode neu starten.</string>
 	<string name="workspace_symbol_find_ellipsis">Arbeitsbereichssymbol suchen...</string>
 	<string name="wrap_letter">Zeichentrennung</string>
 	<string name="wrap_mode">Trennmodus</string>
-	<string name="wrap_type_ellipsis">Trennen an...</string>
+	<string name="wrap_type">Trennen an</string>
 	<string name="wrap_word">Worttrennung</string>
 	<string name="write_unicode_bom">Unicode-BOM schreiben</string>
 	<string name="you_have_not_yet_opened_a_folder">Es wurde noch kein Ordner geöffnet.</string>

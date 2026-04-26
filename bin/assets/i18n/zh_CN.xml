@@ -123,7 +123,6 @@
 	<string name="console_toggle">Console Toggle</string>
 	<string name="copy">复制</string>
 	<string name="copy_containing_folder_path">Copy Containing Folder Path</string>
-	<string name="copy_containing_folder_path_ellipsis">Copy Containing Folder Path...</string>
 	<string name="copy_error_message">复制错误信息</string>
 	<string name="copy_file_path">复制文件路径</string>
 	<string name="copy_file_path_and_position">复制文件路径</string>
@@ -377,10 +376,8 @@ Name your stash (optional):</string>
 	<string name="monospace_font_ellipsis">Monospace Font...</string>
 	<string name="more_ellipsis">更多...</string>
 	<string name="move_down">下移</string>
-	<string name="move_panel_left">面板左移</string>
-	<string name="move_panel_left_ellipsis">面板左移...</string>
-	<string name="move_panel_right">面板右移</string>
-	<string name="move_panel_right_ellipsis">面板右移...</string>
+	<string name="move_panel_to_left">面板左移</string>
+	<string name="move_panel_to_right">面板右移</string>
 	<string name="move_scroll_down">下一页</string>
 	<string name="move_scroll_up">上一页</string>
 	<string name="move_to_next_line">下一行</string>
@@ -639,7 +636,7 @@ file in the directory tree.</string>
 	<string name="ui_scale_factor">界面缩放比例</string>
 	<string name="ui_thene">界面主题</string>
 	<string name="uicodeeditor_copy">复制</string>
-	<string name="uicodeeditor_copy_containing_folder_path_ellipsis">复制所在文件夹路径...</string>
+	<string name="uicodeeditor_copy_containing_folder_path">复制所在文件夹路径</string>
 	<string name="uicodeeditor_copy_file_path">复制文件路径</string>
 	<string name="uicodeeditor_copy_file_path_and_position">复制文件路径和位置</string>
 	<string name="uicodeeditor_cut">剪切</string>

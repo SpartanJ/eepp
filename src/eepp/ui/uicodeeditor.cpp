@@ -1435,8 +1435,7 @@ void UICodeEditor::createDefaultContextMenuOptions( UIPopUpMenu* menu ) {
 				 "folder-open", "open-containing-folder" );
 
 		menuAdd( menu,
-				 i18n( "uicodeeditor_copy_containing_folder_path_ellipsis",
-					   "Copy Containing Folder Path..." ),
+				 i18n( "uicodeeditor_copy_containing_folder_path", "Copy Containing Folder Path" ),
 				 "copy", "copy-containing-folder-path" );
 
 		menuAdd( menu, i18n( "uicodeeditor_copy_file_path", "Copy File Path" ), "copy",

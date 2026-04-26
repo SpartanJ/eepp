@@ -83,7 +83,6 @@ This operation cannot be reverted!</string>
 	<string name="chat_history">Chat History</string>
 	<string name="check_for_new_updates_at_startup">Always check for new updates at startup.</string>
 	<string name="check_for_updates">Check For Updates</string>
-	<string name="check_for_updates_ellipsis">Check for Updates...</string>
 	<string name="check_languages_health">Check Languages Health</string>
 	<string name="clean">Clean</string>
 	<string name="clean_failed">Clean run with errors
@@ -155,7 +154,6 @@ All changes will be lost.</string>
 	<string name="continue_editing">Continue Editing</string>
 	<string name="copy">Copy</string>
 	<string name="copy_containing_folder_path">Copy Containing Folder Path</string>
-	<string name="copy_containing_folder_path_ellipsis">Copy Containing Folder Path...</string>
 	<string name="copy_error_message">Copy Error Message</string>
 	<string name="copy_file_path">Copy File Path</string>
 	<string name="copy_file_path_and_position">Copy File Path And Position</string>
@@ -243,8 +241,7 @@ File path is: </string>
 	<string name="duplicate_file">Duplicate file</string>
 	<string name="duplicate_file_ellipsis">Duplicate File...</string>
 	<string name="ecode_no_updates_available">There are currently no updates available.</string>
-	<string name="ecode_source">Ecode Source</string>
-	<string name="ecode_source_ellipsis">ecode source code...</string>
+	<string name="ecode_source">ecode Source Code</string>
 	<string name="ecode_unreleased_version">You are running an unreleased version of ecode!
 Current version: </string>
 	<string name="ecode_updates_available"> is available!
@@ -396,7 +393,7 @@ Restart ecode to see the changes.</string>
 	<string name="go_to_line_in_current_document">Go To Line in Current Document</string>
 	<string name="gone">gone</string>
 	<string name="group">Group</string>
-	<string name="treat_h_files_as_ellipsis">Treat .h files as C++ code.</string>
+	<string name="treat_h_files_as">Treat .h files as</string>
 	<string name="help">Help</string>
 	<string name="hide">Hide</string>
 	<string name="hide_tabbar_on_single_tab">Hide tabbar on single tab</string>
@@ -487,10 +484,8 @@ Be aware that many of the core keybindings can be found there.</string>
 	<string name="more_ellipsis">More...</string>
 	<string name="more_options">More Options</string>
 	<string name="move_down">Move Down</string>
-	<string name="move_panel_left">Move Panel Left</string>
-	<string name="move_panel_left_ellipsis">Move panel to left...</string>
-	<string name="move_panel_right">Move Panel Right</string>
-	<string name="move_panel_right_ellipsis">Move panel to right...</string>
+	<string name="move_panel_to_left">Move Panel To Left</string>
+	<string name="move_panel_to_right">Move Panel To Right</string>
 	<string name="move_scroll_down">Move Scroll Down</string>
 	<string name="move_scroll_up">Move Scroll Up</string>
 	<string name="move_to_end_of_line">Move To End Of Line</string>
@@ -623,7 +618,7 @@ Please check that the application directory has write permissions.</string>
 	<string name="recent_folders_ellipsis">Recent Folders...</string>
 	<string name="redo">Redo</string>
 	<string name="refresh_model_ui">Refresh Local Models</string>
-	<string name="refresh_view_ellipsis">Refresh View...</string>
+	<string name="refresh_view">Refresh View</string>
 	<string name="regex_match">Regular Expression Match</string>
 	<string name="regular_expression">Regular Expression</string>
 	<string name="reload">Reload</string>
@@ -852,7 +847,7 @@ the directory tree and in file dialogs to open a folder or file.</string>
 	<string name="ui_scale_factor">Ui Scale Factor</string>
 	<string name="ui_thene">UI Theme</string>
 	<string name="uicodeeditor_copy">Copy</string>
-	<string name="uicodeeditor_copy_containing_folder_path_ellipsis">Copy Containing Folder Path...</string>
+	<string name="uicodeeditor_copy_containing_folder_path">Copy Containing Folder Path</string>
 	<string name="uicodeeditor_copy_file_path">Copy File Path</string>
 	<string name="uicodeeditor_copy_file_path_and_position">Copy File Path and Position</string>
 	<string name="uicodeeditor_cut">Cut</string>
@@ -910,7 +905,7 @@ Restart ecode to see the changes.</string>
 	<string name="workspace_symbol_find_ellipsis">Search Workspace Symbol...</string>
 	<string name="wrap_letter">Letter wrap</string>
 	<string name="wrap_mode">Wrap Mode</string>
-	<string name="wrap_type_ellipsis">Wrap Against...</string>
+	<string name="wrap_type">Wrap Against</string>
 	<string name="wrap_word">Word wrap</string>
 	<string name="write_unicode_bom">Write Unicode BOM</string>
 	<string name="you_have_not_yet_opened_a_folder">You have not yet opened a folder.</string>
